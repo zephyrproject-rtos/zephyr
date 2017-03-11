@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM CORTEX-M3 interrupt management
+ * @brief ARM Cortex-M interrupt management
  *
  *
  * Interrupt management: enabling/disabling and dynamic ISR

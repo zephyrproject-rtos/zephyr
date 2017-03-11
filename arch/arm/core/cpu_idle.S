@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM CORTEX-M3 power management
+ * @brief ARM Cortex-M power management
  *
  */
 
@@ -100,7 +100,7 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
  *
  * @brief Power save idle routine for ARM Cortex-M
  *
- * This function will be called by the ernel idle loop or possibly within
+ * This function will be called by the kernel idle loop or possibly within
  * an implementation of _sys_power_save_idle in the kernel when the
  * '_sys_power_save_flag' variable is non-zero.  The ARM 'wfi' instruction
  * will be issued, causing a low-power consumption sleep mode.

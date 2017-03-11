@@ -9,7 +9,7 @@
  * @brief Thread context switching for ARM Cortex-M
  *
  * This module implements the routines necessary for thread context switching
- * on ARM Cortex-M3/M4 CPUs.
+ * on ARM Cortex-M CPUs.
  */
 
 #include <kernel_structs.h>

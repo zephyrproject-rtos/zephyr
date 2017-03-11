@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM CORTEX-M3 System Control Block interface
+ * @brief ARM Cortex-M System Control Block interface
  *
  *
  * Most of the SCB interface consists of simple bit-flipping methods, and is
