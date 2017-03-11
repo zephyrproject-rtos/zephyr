@@ -108,7 +108,7 @@ Open another terminal window and type:
 
 .. code-block:: console
 
-	mosquito_sub -t sensors
+	mosquitto_sub -t sensors
 
 Sample output
 =============

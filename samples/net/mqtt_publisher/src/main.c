@@ -469,5 +469,7 @@ lb_exit:
 
 void main(void)
 {
+	printk("Wait for network device to come up...\n");
+	k_sleep(K_SECONDS(6));
 	publisher();
 }
