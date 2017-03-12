@@ -19,11 +19,11 @@
 #define ENC28J60_REG_ECON1 0x1F
 
 /* Register Encoding
- * Byte 3  : 0x0 ETH Register
- *           0x1 MAC Register
- *           0x2 MII Register
- * Byte 2  : Bank number
- * Byte 1-0: Register address
+ * Nibble 3  : 0x0 ETH Register
+ *             0x1 MAC Register
+ *             0x2 MII Register
+ * Nibble 2  : Bank number
+ * Nibble 1-0: Register address
  */
 
 /* Bank 0 Registers */
