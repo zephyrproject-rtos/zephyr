@@ -148,8 +148,21 @@ of hardware are required.
   * USB to TTL Serial Cable
   * FTDI USB to TTL Serial Part #TTL-232R-3V3 http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm
 
-We recommend using the ``dfu-util`` to flash the Arduino 101 board. If you'd
-like to flash using JTAG, the following additional hardware is needed:
+We recommend using the ``dfu-util`` tool to flash the Arduino 101 board.
+For Linux environments, verify that ``udev`` has the proper rules for granting
+you access to the Arduino 101 board in DFU mode. You can easily add the required
+rules, using the ``create_dfu_udev_rule`` script provided with the
+`Intel Curie Boards package`_ for the Arduino Desktop IDE. You can get and run
+this script standalone with the following commands:
+
+.. code-block:: console
+
+   $ wget https://github.com/01org/intel-arduino-tools/raw/linux64/scripts/create_dfu_udev_rule
+   $ chmod +x create_dfu_udev_rule
+   $ sudo ./create_dfu_udev_rule
+   $ rm create_dfu_udev_rule
+
+If you'd like to flash using JTAG, the following additional hardware is needed:
 
 * FlySwatter2 JTAG debugger
 * ARM Micro JTAG Connector, Model: ARM-JTAG-20-10
@@ -213,11 +226,22 @@ Flashing
 ========
 
 The ``dfu-util`` flashing application will only recognize the Arduino 101 as a
-DFU-capable device within five seconds after the Master Reset is pressed on the
-board. Type the ``dfu-util`` command line, press the Master Reset button, and then
-quickly press return to execute the dfu-util command. If dfu-util fails saying
-"No DFU capable USB device available", try again more quickly after pressing
-the master reset button.
+DFU-capable device within five seconds after the Master Reset button is pressed
+on the board. You can run this application, either manually, or with the help of
+``make``:
+
+* Manual method: Type the ``dfu-util`` command line, press the Master Reset
+  button, and then quickly press Return to execute the dfu-util command. If
+  dfu-util fails saying "No DFU capable USB device available", try again more
+  quickly after pressing the Master Reset button.
+* Make method: Define the environment variable ``ZEPHYR_FLASH_OVER_DFU=y`` and
+  run ``make flash``. You will be prompted to reset the board when make is ready
+  to flash it. If you regularly use this method, you can add the following line
+  into your ``~/.zephyrrc`` file:
+
+.. code-block:: console
+
+   export ZEPHYR_FLASH_OVER_DFU=y
 
 Flashing the Sensor Subsystem Core
 ----------------------------------
@@ -232,12 +256,18 @@ Change directories to your local checkout copy of Zephyr, and run:
    $ cd $ZEPHYR_BASE/samples/hello_world
    $ make BOARD=arduino_101_sss
 
-Once the image has been built, flash it with:
+Once the image has been built, flash it with either this command using the
+manual method:
 
 .. code-block:: console
 
    $ dfu-util -a sensor_core -D outdir/arduino_101_sss/zephyr.bin
 
+or with this command using the make-assisted method:
+
+.. code-block:: console
+
+   $ ZEPHYR_FLASH_OVER_DFU=y make BOARD=arduino_101_sss flash
 
 Flashing the x86 Application Core
 ---------------------------------
@@ -252,14 +282,18 @@ Change directories to your local checkout copy of Zephyr, and run:
    $ cd $ZEPHYR_BASE/samples/hello_world
    $ make BOARD=arduino_101
 
-Verify the Arduino 101 has power.
-
-Once the image has been built, flash it with:
+Once the image has been built, flash it with either this command using the
+manual method:
 
 .. code-block:: console
 
    $ dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
 
+or with this command using the make-assisted method:
+
+.. code-block:: console
+
+   $ ZEPHYR_FLASH_OVER_DFU=y make BOARD=arduino_101 flash
 
 .. _bluetooth_firmware_arduino_101:
 
@@ -281,14 +315,21 @@ To build the Bluetooth controller image, follow the instructions below:
 
 .. code-block:: console
 
-   $ cd samples/bluetooth/hci_uart
+   $ cd $ZEPHYR_BASE/samples/bluetooth/hci_uart
    $ make BOARD=arduino_101_ble
 
-Flash the binary using USB DFU:
+Once the image has been built, flash it with either this command using the
+manual method:
 
 .. code-block:: console
 
    $ dfu-util -a ble_core -D outdir/arduino_101_ble/zephyr.bin
+
+or with this command using the make-assisted method:
+
+.. code-block:: console
+
+   $ ZEPHYR_FLASH_OVER_DFU=y make BOARD=arduino_101_ble flash
 
 After successfully completing these steps your Arduino 101 should now have a HCI
 compatible BLE firmware.
@@ -483,3 +524,5 @@ References
 .. _QMSI Bootloader: https://github.com/quark-mcu/qm-bootloader
 
 .. _Flashpack Utility: https://downloadcenter.intel.com/downloads/eula/25470/Arduino-101-software-package?httpDown=https%3A%2F%2Fdownloadmirror.intel.com%2F25470%2Feng%2Farduino101-factory_recovery-flashpack.tar.bz2
+
+.. _Intel Curie Boards package: https://www.arduino.cc/en/Guide/Arduino101#toc2
