@@ -51,7 +51,7 @@ When using the Zephyr kernel, the pinout mapping for the Arduino 101 becomes a
 little more complicated. The table below details which pins in Zephyr map to
 those on the Arduino 101 board for control. Full details of the pinmux
 implementation, what valid options can be configured, and where things map can
-be found in the :file:`boards/arduino_101/pinmux.c` file.
+be found in the :file:`boards/x86/arduino_101/pinmux.c` file.
 
 
 +-------------+----------+------------+
@@ -100,7 +100,7 @@ be found in the :file:`boards/arduino_101/pinmux.c` file.
 | ADC5        | AIN9     | 9          |
 +-------------+----------+------------+
 
-.. note:
+.. note::
 
    IO-3 and IO-5 require both pins to be set for functionality changes.
 
@@ -141,11 +141,11 @@ of hardware are required.
 
 * The USB port for power will work; however, we recommend the 7V-12V barrel
   connector be used when working with the JTAG connector.
-* If you wish to grab any data off the serial port, you will need a TTY-to-USB
-  adaptor. The following adapters require male-to-male jumper cables in order to
+* If you wish to grab any data off the serial port, you will need a TTL-to-USB
+  adapter. The following adapters require male-to-male jumper cables in order to
   connect to the Arduino 101 board.
 
-  * USB to TTL Serial Cable
+  * USB to 3.3V TTL Serial Cable
   * FTDI USB to TTL Serial Part #TTL-232R-3V3 http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm
 
 We recommend using the ``dfu-util`` tool to flash the Arduino 101 board.
@@ -164,14 +164,14 @@ this script standalone with the following commands:
 
 If you'd like to flash using JTAG, the following additional hardware is needed:
 
-* FlySwatter2 JTAG debugger
+* Flyswatter2 JTAG debugger
 * ARM Micro JTAG Connector, Model: ARM-JTAG-20-10
 
 Connecting Serial Output
 ========================
 
 The default configuration defined in the Zephyr kernel supports serial output
-via the UART0 on the board. To read the output, you will need a USB to TTL
+via the UART1 on the board. To read the output, you will need a USB to 3.3V TTL
 serial cable. To enable serial output:
 
 * Connect the Serial Cable RX pin to the Arduino 101's TX->1 pin.
@@ -205,7 +205,7 @@ Use the ``arduino_101`` board definition to build a kernel for the Quark core. U
 the ``arduino_101_sss`` board definition when targeting the sensor subsystem.
 
 When your application is targeting the Quark processor only, it is important to
-disable the sensor subsystem processor using the CONFIG_ARC_INIT option.
+disable the sensor subsystem processor using the ``CONFIG_ARC_INIT=n`` option,
 otherwise the board will appear to hang waiting for the sensor subsystem
 processor to boot.
 
@@ -339,11 +339,11 @@ Flashing using JTAG Adapter
 ---------------------------
 
 We recommend using the ``dfu-util`` tool to flash the Arduino 101 board for typical
-development work. JTAG is intended for for advanced development and debugging.
+development work. JTAG is intended for advanced development and debugging.
 
-* Connect the ARM Micro JTAG Connector to the FlySwatter2.
+* Connect the ARM Micro JTAG Connector to the Flyswatter2.
 
-* Locate the micro JTAG connector on the Arduino 101 board. It is adjacent to the
+* Locate the micro JTAG header on the Arduino 101 board. It is adjacent to the
   SCL and SDA pins in the Arduino headers, highlighted as the red square in the
   figure below.
 
@@ -353,22 +353,22 @@ development work. JTAG is intended for for advanced development and debugging.
      :alt: Arduino/Genuino 101 JTAG
 
 * Beside the micro JTAG header is a small white dot indicating the location of
-  pin 1 on the header. The orange arrow on the figure points to the dot.
+  pin 1 on the header. The green arrow on the figure points to the dot.
 
-* Connect the FlySwatter2 to the Arduino 101 micro JTAG connector.
+* Connect the ARM Micro JTAG Connector to the Arduino 101 micro JTAG header.
 
 Ensure that both the cable and header pin 1 locations line up. The cable from
-the ARM Micro JTAG connector uses a red wire on the cable to denote which end on
+the ARM Micro JTAG Connector uses a red wire on the cable to denote which end on
 the cable has the pin 1.
 
-For Linux environments, to control the FlySwatter your Linux account needs to be
+For Linux environments, to control the Flyswatter2 your Linux account needs to be
 granted HAL layer interaction permissions. This is done through the group
 'plugdev'. Verifying the group exists and adding your username can be
 accomplished with the usermod command:
 
 .. code-block:: console
 
-   $ sudo usermod -a -G plugdev $USERNAME
+   $ sudo usermod -a -G plugdev $LOGNAME
 
 If the group does not exist, you can add it by running the following command:
 
@@ -378,16 +378,17 @@ If the group does not exist, you can add it by running the following command:
    $ sudo groupadd -r plugdev
 
 For Linux environments, verify that ``udev`` has the proper rules for giving your
-user control of the FlySwatter device. Adding the following rule to udev will
-give members of the plugdev group control of the FlySwatter.
+user control of the Flyswatter2 device. Adding the following rule to udev will
+give members of the plugdev group control of the Flyswatter2.
 
 .. code-block:: console
 
-   $ su -
+   $ sudo su
    $ cat <<EOF > /etc/udev/rules.d/99-openocd.rules
-   # TinCanTools FlySwatter2
+   # TinCanTools Flyswatter2
    ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="664", GROUP="plugdev"
    EOF
+   $ exit
 
 Once your udev rules are setup, you will need to reload the rules:
 
@@ -395,7 +396,7 @@ Once your udev rules are setup, you will need to reload the rules:
 
    $ sudo udevadm control --reload-rules
 
-Plug the USB Type B cable into the FlySwatter2 and your computer. On Linux, you
+Plug the USB Type B cable into the Flyswatter2 and your computer. On Linux, you
 should see something similar to the following in your dmesg:
 
 .. code-block:: console
@@ -420,7 +421,7 @@ Debugging
 The instructions below will help you debug the Arduino 101 on the x86 core or
 the ARC core, respectively.
 
-Application Core (X86)
+Application Core (x86)
 ----------------------
 
 Build and flash the x86 application with the following commands:
@@ -441,7 +442,7 @@ Connect to the debug server at the x86 core from a second console:
 .. code-block:: console
 
    $ cd <my x86 app>
-   $ /opt/zephyr-sdk/sysroots/i686-pokysdk-linux/usr/bin/iamcu-poky-elfiamcu/i586-poky-elfiamcu-gdb outdir/arduino_101/zephyr.elf
+   $ $ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb outdir/arduino_101/zephyr.elf
    (gdb) target remote localhost:3333
    (gdb) b main
    (gdb) c
@@ -449,16 +450,16 @@ Connect to the debug server at the x86 core from a second console:
 Sensor Subsystem Core (ARC)
 ---------------------------
 
-Enable ARC INIT from the x86 core. This can be done by flashing an x86 app (like
-a simple hello world or dummy app) with CONFIG_ARC_INIT=y.
-
+Enable ARC INIT from the x86 core. This can be done by flashing an x86
+application that sets the ``CONFIG_ARC_INIT=y`` option, such as the booting stub
+provided with the Zephyr Test Framework.
 
 .. code-block:: console
 
-   $ cd samples/hello_world
+   $ cd $ZEPHYR_BASE/tests/booting/stub
    $ make BOARD=arduino_101 flash
 
-Build and flash the ARC app as shown:
+Build and flash the ARC application with the following commands:
 
 .. code-block:: console
 
@@ -471,12 +472,12 @@ Launch the debug server on the ARC core:
 
    $ make BOARD=arduino_101_sss debugserver
 
-Connect to the debugserver at ARC from a second console:
+Connect to the debug server at the ARC core from a second console:
 
 .. code-block:: console
 
    $ cd <my arc app>
-   $ /opt/zephyr-sdk/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb outdir/arduino_101_sss/zephyr.elf
+   $ $ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/arc-zephyr-elf/arc-zephyr-elf-gdb outdir/arduino_101_sss/zephyr.elf
    (gdb) target remote localhost:3334
    (gdb) b main
    (gdb) c
@@ -498,10 +499,10 @@ building your application:
    CONFIG_UART_CONSOLE=n
    CONFIG_UART_QMSI_1_BAUDRATE=1000000
 
-The first item replaces the BLUETOOTH_DEBUG_STDOUT option, the second one
+The first item replaces the BLUETOOTH_DEBUG_LOG option, the second one
 disables the default printk/printf hooks, and the third one matches the console
 baudrate with what's used to communicate with the nRF51, in order not to create
-a bottle neck.
+a bottleneck.
 
 To decode the binary protocol that will now be sent to the console UART you need
 to use the btmon tool from BlueZ 5.40 or later:
