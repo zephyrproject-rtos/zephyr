@@ -27,7 +27,8 @@ struct mgmt_event_wait {
 	struct net_if *iface;
 };
 
-static struct k_sem network_event;
+static K_SEM_DEFINE(network_event, 0, UINT_MAX);
+
 NET_STACK_DEFINE(MGMT, mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE,
 		 CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
@@ -284,8 +285,6 @@ void net_mgmt_event_init(void)
 
 	in_event = 0;
 	out_event = 0;
-
-	k_sem_init(&network_event, 0, UINT_MAX);
 
 	memset(events, 0,
 	       CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
