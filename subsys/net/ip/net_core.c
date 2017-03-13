@@ -63,6 +63,7 @@ NET_STACK_DEFINE(RX, rx_stack, CONFIG_NET_RX_STACK_SIZE,
 
 static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
+static K_SEM_DEFINE(startup_sync, 0, UINT_MAX);
 
 #if defined(CONFIG_NET_IPV6)
 static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
@@ -540,8 +541,16 @@ static void net_rx_thread(void)
 
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
+	 * We synchronize the startup of the device so that both RX and TX
+	 * are only started fully when both are ready to receive or send
+	 * data.
 	 */
-	net_if_init();
+	net_if_init(&startup_sync);
+
+	k_sem_take(&startup_sync, K_FOREVER);
+
+	/* This will take the interface up and start everything. */
+	net_if_post_init();
 
 	while (1) {
 #if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
