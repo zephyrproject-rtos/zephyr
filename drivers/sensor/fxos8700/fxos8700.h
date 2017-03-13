@@ -31,6 +31,7 @@
 #define FXOS8700_REG_CTRLREG4			0x2d
 #define FXOS8700_REG_CTRLREG5			0x2e
 #define FXOS8700_REG_M_OUTXMSB			0x33
+#define FXOS8700_REG_TEMP			0x51
 #define FXOS8700_REG_M_CTRLREG1			0x5b
 #define FXOS8700_REG_M_CTRLREG2			0x5c
 
@@ -131,6 +132,9 @@ struct fxos8700_data {
 	struct device *dev;
 #endif
 	int16_t raw[FXOS8700_MAX_NUM_CHANNELS];
+#ifdef CONFIG_FXOS8700_TEMP
+	int8_t temp;
+#endif
 };
 
 int fxos8700_get_power(struct device *dev, enum fxos8700_power *power);

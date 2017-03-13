@@ -57,6 +57,15 @@ config FXOS8700_MODE_HYBRID
 
 endchoice
 
+config FXOS8700_TEMP
+	bool "Enable temperature"
+	depends on FXOS8700 && (FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID)
+	default n
+	help
+	Enable the temperature sensor. Note that the temperature sensor is
+	uncalibrated and its output for a given temperature may vary from one
+	device to the next.
+
 choice
 	prompt "Range"
 	depends on FXOS8700

@@ -54,6 +54,15 @@ static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 		*raw++ = (buffer[i] << 8) | (buffer[i+1]);
 	}
 
+#ifdef CONFIG_FXOS8700_TEMP
+	if (i2c_reg_read_byte(data->i2c, config->i2c_address, FXOS8700_REG_TEMP,
+			      &data->temp)) {
+		SYS_LOG_ERR("Could not fetch temperature");
+		ret = -EIO;
+		goto exit;
+	}
+#endif
+
 exit:
 	k_sem_give(&data->sem);
 
@@ -99,6 +108,21 @@ static void fxos8700_magn_convert(struct sensor_value *val, int16_t raw)
 	val->val1 = micro_g / 1000000;
 	val->val2 = micro_g % 1000000;
 }
+
+#ifdef CONFIG_FXOS8700_TEMP
+static void fxos8700_temp_convert(struct sensor_value *val, int8_t raw)
+{
+	int32_t micro_c;
+
+	/* Convert units to micro Celsius. Raw temperature data always has a
+	 * resolution of 0.96 deg C/LSB.
+	 */
+	micro_c = raw * 960 * 1000;
+
+	val->val1 = micro_c / 1000000;
+	val->val2 = micro_c % 1000000;
+}
+#endif
 
 static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
@@ -191,6 +215,12 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 		if (num_channels > 0) {
 			ret = 0;
 		}
+#ifdef CONFIG_FXOS8700_TEMP
+		if (chan == SENSOR_CHAN_TEMP) {
+			fxos8700_temp_convert(val, data->temp);
+			ret = 0;
+		}
+#endif
 	}
 
 	if (ret != 0) {
