@@ -2431,6 +2431,10 @@ static void le_conn_param_req(struct pdu_data *pdu_data, u16_t handle,
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_CONN_PARAM_REQ)) {
+		/* event masked, reject the conn param req */
+		ll_conn_update(handle, 2, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
+			       0, 0, 0);
+
 		return;
 	}
 

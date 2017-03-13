@@ -112,6 +112,13 @@ config BT_CTLR_LE_ENC
 	# Enable support for Bluetooth v4.0 LE Encryption feature in the
 	# Controller.
 
+config BT_CTLR_CONN_PARAM_REQ
+	bool "Connection Parameter Request"
+	default y
+	help
+	  Enable support for Bluetooth v4.1 Connection Parameter Request feature
+	  in the Controller.
+
 config BT_CTLR_LE_PING
 	bool "LE Ping"
 	default y
