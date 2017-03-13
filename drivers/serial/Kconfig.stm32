@@ -15,6 +15,8 @@ menuconfig UART_STM32
 	  processors. Say y if you wish to use serial port on STM32F10x
 	  MCU.
 
+if UART_STM32
+
 # --- port 1 ---
 
 config UART_STM32_PORT_1
@@ -118,3 +120,5 @@ config UART_STM32_PORT_3_IRQ_PRI
 	  The interrupt priority for USART3 port.
 
 endif # !HAS_DTS
+
+endif # UART_STM32
