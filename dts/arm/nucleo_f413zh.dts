@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2017 Florian Vaussard, HEIG-VD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f413.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F413ZH-NUCLEO board";
+	compatible = "st,stm32f413zh-nucleo", "st,stm32f413";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart3 {
+	current-speed = <115200>;
+	status = "ok";
+};
