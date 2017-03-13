@@ -17,6 +17,7 @@ enum llcp {
 	LLCP_FEATURE_EXCHANGE,
 	LLCP_VERSION_EXCHANGE,
 	/* LLCP_TERMINATE, */
+	LLCP_CONNECTION_PARAM_REQ,
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	LLCP_PING,
@@ -126,32 +127,17 @@ struct connection {
 			u16_t interval;
 			u16_t latency;
 			u16_t timeout;
-			u8_t  preferred_periodicity;
 			u16_t instant;
-			u16_t offset0;
-			u16_t offset1;
-			u16_t offset2;
-			u16_t offset3;
-			u16_t offset4;
-			u16_t offset5;
-			u32_t ticks_ref;
-			u32_t ticks_to_offset_next;
 			u32_t win_offset_us;
+			u8_t win_size;
+			u8_t state:2;
+#define LLCP_CPI_STATE_INPROG 0
+#define LLCP_CPI_STATE_USE 1
+#define LLCP_CPI_STATE_SELECT 2
+			u8_t is_internal:1;
 			u16_t *pdu_win_offset;
-			u8_t  win_size;
-			u8_t  state:3;
-#define LLCP_CONN_STATE_INPROG    0	/* master + slave proc in progress
-					 * until instant
-					 */
-#define LLCP_CONN_STATE_INITIATE  1	/* master sends conn_update */
-#define LLCP_CONN_STATE_REQ       2	/* master / slave send req */
-#define LLCP_CONN_STATE_RSP       3	/* master rej / slave rej/rsp */
-#define LLCP_CONN_STATE_APP_WAIT  4	/* app resp */
-#define LLCP_CONN_STATE_RSP_WAIT  5	/* master rsp or slave conn_update
-					 * or rej
-					 */
-			u8_t  is_internal:2;
-		} connection_update;
+			u32_t ticks_anchor;
+		} conn_upd;
 		struct {
 			u8_t  initiate;
 			u8_t  chm[5];
@@ -197,6 +183,31 @@ struct connection {
 			u8_t reason;
 		} radio_pdu_node_rx;
 	} llcp_terminate;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
+	struct {
+		u8_t req;
+		u8_t ack;
+		u8_t state:2;
+#define LLCP_CPR_STATE_REQ      0 /* master / slave send req */
+#define LLCP_CPR_STATE_RSP      1 /* master rej/rsp / slave rej/rsp */
+#define LLCP_CPR_STATE_APP_WAIT 2 /* wait app resp */
+#define LLCP_CPR_STATE_RSP_WAIT 3 /* wait master/slave rsp/rej */
+		u16_t interval;
+		u16_t latency;
+		u16_t timeout;
+		u8_t preferred_periodicity;
+		u16_t reference_conn_event_count;
+		u16_t offset0;
+		u16_t offset1;
+		u16_t offset2;
+		u16_t offset3;
+		u16_t offset4;
+		u16_t offset5;
+		u32_t ticks_to_offset_next;
+		u8_t is_internal:1;
+	} llcp_conn_param;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	struct {
