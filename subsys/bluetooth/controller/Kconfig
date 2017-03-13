@@ -57,8 +57,10 @@ config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
 	  Set the Subversion Number that will be used in VERSION_IND PDU.
 
 config BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS
-	hex "Public Device Address"
-	default 0
+	prompt "Public Device Address"
+	hex
+	default 0x000000000000
+	range 0x000000000000 0xFFFFFFFFFFFF
 	help
 	  Initialize a public device address that will be return by HCI read
 	  Bluetooth device address command.
