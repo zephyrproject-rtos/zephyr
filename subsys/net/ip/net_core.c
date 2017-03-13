@@ -712,6 +712,9 @@ int net_send_data(struct net_buf *buf)
 /* Called by driver when an IP packet has been received */
 int net_recv_data(struct net_if *iface, struct net_buf *buf)
 {
+	NET_ASSERT(buf && buf->frags);
+	NET_ASSERT(iface);
+
 	if (!buf->frags) {
 		return -ENODATA;
 	}
