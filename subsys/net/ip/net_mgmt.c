@@ -116,38 +116,41 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
-		if ((mgmt_event->event & cb->event_mask) == mgmt_event->event) {
-			if (NET_MGMT_EVENT_SYNCHRONOUS(cb->event_mask)) {
-				struct mgmt_event_wait *sync_data =
-					CONTAINER_OF(cb->sync_call,
-						     struct mgmt_event_wait,
-						     sync_call);
-
-				NET_DBG("Unlocking %p synchronous call", cb);
-
-				cb->raised_event = mgmt_event->event;
-				sync_data->iface = mgmt_event->iface;
-
-				k_sem_give(cb->sync_call);
-
-				sys_slist_remove(&event_callbacks,
-						 prev, &cb->node);
-			} else {
-				NET_DBG("Running callback %p : %p",
-					cb, cb->handler);
-
-				cb->handler(cb, mgmt_event->event,
-					    mgmt_event->iface);
-				prev = &cb->node;
-			}
+		if ((mgmt_event->event & cb->event_mask) != mgmt_event->event) {
+			continue;
 		}
 
-#ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-			net_analyze_stack("Net MGMT event stack",
-					  mgmt_stack,
-					  CONFIG_NET_MGMT_EVENT_STACK_SIZE);
-#endif
+		if (NET_MGMT_EVENT_SYNCHRONOUS(cb->event_mask)) {
+			struct mgmt_event_wait *sync_data =
+				CONTAINER_OF(cb->sync_call,
+					     struct mgmt_event_wait, sync_call);
+
+			if (sync_data->iface &&
+			    sync_data->iface != mgmt_event->iface) {
+				continue;
+			}
+
+			NET_DBG("Unlocking %p synchronous call", cb);
+
+			cb->raised_event = mgmt_event->event;
+			sync_data->iface = mgmt_event->iface;
+
+			k_sem_give(cb->sync_call);
+
+			sys_slist_remove(&event_callbacks, prev, &cb->node);
+		} else {
+			NET_DBG("Running callback %p : %p",
+				cb, cb->handler);
+
+			cb->handler(cb, mgmt_event->event, mgmt_event->iface);
+			prev = &cb->node;
+		}
 	}
+
+#ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
+	net_analyze_stack("Net MGMT event stack", mgmt_stack,
+			  CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+#endif
 }
 
 static void mgmt_thread(void)
@@ -179,6 +182,47 @@ static void mgmt_thread(void)
 
 		k_yield();
 	}
+}
+
+static int mgmt_event_wait_call(struct net_if *iface,
+				uint32_t mgmt_event_mask,
+				uint32_t *raised_event,
+				struct net_if **event_iface,
+				int timeout)
+{
+	struct mgmt_event_wait sync_data = {
+		.sync_call = K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
+	};
+	struct net_mgmt_event_callback sync = {
+		.sync_call = &sync_data.sync_call,
+		.event_mask = mgmt_event_mask | NET_MGMT_SYNC_EVENT_BIT,
+	};
+	int ret;
+
+	if (iface) {
+		sync_data.iface = iface;
+	}
+
+	NET_DBG("Synchronous event 0x%08x wait %p", sync.event_mask, &sync);
+
+	net_mgmt_add_event_callback(&sync);
+
+	ret = k_sem_take(sync.sync_call, timeout);
+	if (ret == -EAGAIN) {
+		ret = -ETIMEDOUT;
+	} else {
+		if (!ret) {
+			if (raised_event) {
+				*raised_event = sync.raised_event;
+			}
+
+			if (event_iface) {
+				*event_iface = sync_data.iface;
+			}
+		}
+	}
+
+	return ret;
 }
 
 void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb)
@@ -217,35 +261,20 @@ int net_mgmt_event_wait(uint32_t mgmt_event_mask,
 			struct net_if **iface,
 			int timeout)
 {
-	struct mgmt_event_wait sync_data = {
-		.sync_call = K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
-	};
-	struct net_mgmt_event_callback sync = {
-		.sync_call = &sync_data.sync_call,
-		.event_mask = mgmt_event_mask | NET_MGMT_SYNC_EVENT_BIT,
-	};
-	int ret;
+	return mgmt_event_wait_call(NULL, mgmt_event_mask,
+				    raised_event, iface, timeout);
+}
 
-	NET_DBG("Synchronous event wait %p", &cb);
+int net_mgmt_event_wait_on_iface(struct net_if *iface,
+				 uint32_t mgmt_event_mask,
+				 uint32_t *raised_event,
+				 int timeout)
+{
+	NET_ASSERT(NET_MGMT_ON_IFACE(mgmt_event_mask));
+	NET_ASSERT(iface);
 
-	net_mgmt_add_event_callback(&sync);
-
-	ret = k_sem_take(sync.sync_call, timeout);
-	if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	} else {
-		if (!ret) {
-			if (raised_event) {
-				*raised_event = sync.raised_event;
-			}
-
-			if (iface) {
-				*iface = sync_data.iface;
-			}
-		}
-	}
-
-	return ret;
+	return mgmt_event_wait_call(iface, mgmt_event_mask,
+				    raised_event, NULL, timeout);
 }
 
 void net_mgmt_event_init(void)

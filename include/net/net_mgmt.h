@@ -211,6 +211,27 @@ int net_mgmt_event_wait(uint32_t mgmt_event_mask,
 			int timeout);
 
 /**
+ * @brief Used to wait synchronously on an event mask for a specific iface
+ * @param iface a pointer on a valid network interface to listen event to
+ * @param mgmt_event_mask A mask of relevant events to wait on. Listened
+ *        to events should be relevant to iface events and thus have the bit
+ *        NET_MGMT_IFACE_BIT set.
+ * @param raised_event a pointer on a uint32_t to get which event from
+ *        the mask generated the event. Can be NULL if the caller is not
+ *        interested in that information.
+ * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
+ *        undefinitely.
+ *
+ * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
+ *         be specifically returned if the timeout kick-in instead of an
+ *         actual event.
+ */
+int net_mgmt_event_wait_on_iface(struct net_if *iface,
+				 uint32_t mgmt_event_mask,
+				 uint32_t *raised_event,
+				 int timeout);
+
+/**
  * @brief Used by the core of the network stack to initialize the network
  *        event processing.
  */
@@ -225,6 +246,14 @@ static inline int net_mgmt_event_wait(uint32_t mgmt_event_mask,
 				      uint32_t *raised_event,
 				      struct net_if **iface,
 				      int timeout)
+{
+	return 0;
+}
+
+static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
+					       uint32_t mgmt_event_mask,
+					       uint32_t *raised_event,
+					       int timeout)
 {
 	return 0;
 }
