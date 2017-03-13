@@ -140,8 +140,8 @@ no special definitions for that arch. Options are:
     Indicates whether binaries for this platform can run under QEMU
 
 The set of test cases that actually run depends on directives in the
-testcase and archtecture .ini file and options passed in on the command
-line. If there is every any confusion, running with -v or --discard-report
+testcase and architecture .ini file and options passed in on the command
+line. If there is any confusion, running with -v or --discard-report
 can help show why particular test cases were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
