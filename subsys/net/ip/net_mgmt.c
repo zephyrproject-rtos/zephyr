@@ -22,6 +22,11 @@ struct mgmt_event_entry {
 	struct net_if *iface;
 };
 
+struct mgmt_event_wait {
+	struct k_sem sync_call;
+	struct net_if *iface;
+};
+
 static struct k_sem network_event;
 NET_STACK_DEFINE(MGMT, mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE,
 		 CONFIG_NET_MGMT_EVENT_STACK_SIZE);
@@ -102,6 +107,7 @@ static inline bool mgmt_is_event_handled(uint32_t mgmt_event)
 
 static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 {
+	sys_snode_t *prev = NULL;
 	struct net_mgmt_event_callback *cb, *tmp;
 
 	NET_DBG("Event layer %u code %u type %u",
@@ -110,10 +116,30 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
-		NET_DBG("Running callback %p : %p", cb, cb->handler);
-
 		if ((mgmt_event->event & cb->event_mask) == mgmt_event->event) {
-			cb->handler(cb, mgmt_event->event, mgmt_event->iface);
+			if (NET_MGMT_EVENT_SYNCHRONOUS(cb->event_mask)) {
+				struct mgmt_event_wait *sync_data =
+					CONTAINER_OF(cb->sync_call,
+						     struct mgmt_event_wait,
+						     sync_call);
+
+				NET_DBG("Unlocking %p synchronous call", cb);
+
+				cb->raised_event = mgmt_event->event;
+				sync_data->iface = mgmt_event->iface;
+
+				k_sem_give(cb->sync_call);
+
+				sys_slist_remove(&event_callbacks,
+						 prev, &cb->node);
+			} else {
+				NET_DBG("Running callback %p : %p",
+					cb, cb->handler);
+
+				cb->handler(cb, mgmt_event->event,
+					    mgmt_event->iface);
+				prev = &cb->node;
+			}
 		}
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
@@ -184,6 +210,42 @@ void net_mgmt_event_notify(uint32_t mgmt_event, struct net_if *iface)
 		mgmt_push_event(mgmt_event, iface);
 		k_sem_give(&network_event);
 	}
+}
+
+int net_mgmt_event_wait(uint32_t mgmt_event_mask,
+			uint32_t *raised_event,
+			struct net_if **iface,
+			int timeout)
+{
+	struct mgmt_event_wait sync_data = {
+		.sync_call = K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
+	};
+	struct net_mgmt_event_callback sync = {
+		.sync_call = &sync_data.sync_call,
+		.event_mask = mgmt_event_mask | NET_MGMT_SYNC_EVENT_BIT,
+	};
+	int ret;
+
+	NET_DBG("Synchronous event wait %p", &cb);
+
+	net_mgmt_add_event_callback(&sync);
+
+	ret = k_sem_take(sync.sync_call, timeout);
+	if (ret == -EAGAIN) {
+		ret = -ETIMEDOUT;
+	} else {
+		if (!ret) {
+			if (raised_event) {
+				*raised_event = sync.raised_event;
+			}
+
+			if (iface) {
+				*iface = sync_data.iface;
+			}
+		}
+	}
+
+	return ret;
 }
 
 void net_mgmt_event_init(void)

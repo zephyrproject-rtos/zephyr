@@ -13,9 +13,9 @@
 #include <net/net_mgmt.h>
 #include <net/nbuf.h>
 
-#define TEST_MGMT_REQUEST		0x0ABC1234
-#define TEST_MGMT_EVENT			0x8ABC1234
-#define TEST_MGMT_EVENT_UNHANDLED	0x8ABC4321
+#define TEST_MGMT_REQUEST		0x07AB1234
+#define TEST_MGMT_EVENT			0x87AB1234
+#define TEST_MGMT_EVENT_UNHANDLED	0x87AB4321
 
 /* Notifier infra */
 static uint32_t event2throw;
