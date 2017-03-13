@@ -678,6 +678,8 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 	struct net_if *iface = NULL;
 	struct net_nbr *nbr;
 
+	NET_ASSERT(buf && buf->frags);
+
 	/* Workaround Linux bug, see:
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
