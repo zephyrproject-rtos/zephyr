@@ -808,7 +808,7 @@ try_send:
 		return NULL;
 	}
 
-	NET_DBG("Buf %p will be sent later", buf);
+	NET_DBG("Buf %p (frag %p) will be sent later", buf, buf->frags);
 
 	return NULL;
 }
