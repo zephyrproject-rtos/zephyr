@@ -47,13 +47,13 @@ static uint8_t *net_arp_get_mac(struct device *dev)
 {
 	struct net_arp_context *context = dev->driver_data;
 
-	if (context->mac_addr[0] == 0x00) {
-		/* 10-00-00-00-00 to 10-00-00-00-FF Documentation RFC7042 */
-		context->mac_addr[0] = 0x10;
+	if (context->mac_addr[2] == 0x00) {
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		context->mac_addr[0] = 0x00;
 		context->mac_addr[1] = 0x00;
-		context->mac_addr[2] = 0x00;
+		context->mac_addr[2] = 0x5E;
 		context->mac_addr[3] = 0x00;
-		context->mac_addr[4] = 0x00;
+		context->mac_addr[4] = 0x53;
 		context->mac_addr[5] = sys_rand32_get();
 	}
 
