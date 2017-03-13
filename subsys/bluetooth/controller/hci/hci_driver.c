@@ -49,11 +49,6 @@
 
 #include "hal/debug.h"
 
-#define HCI_CMD		0x01
-#define HCI_ACL		0x02
-#define HCI_SCO		0x03
-#define HCI_EVT		0x04
-
 static uint8_t MALIGN(4) _rand_context[3 + 4 + 1];
 static uint8_t MALIGN(4) _ticker_nodes[RADIO_TICKER_NODES][TICKER_NODE_T_SIZE];
 static uint8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT]
