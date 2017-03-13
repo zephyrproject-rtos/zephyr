@@ -42,6 +42,7 @@ void main(void)
 {
 	struct sensor_value accel[3];
 	struct sensor_value magn[3];
+	struct sensor_value temp;
 	struct device *dev = device_get_binding(CONFIG_FXOS8700_NAME);
 
 	if (dev == NULL) {
@@ -64,15 +65,18 @@ void main(void)
 
 		sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, accel);
 		sensor_channel_get(dev, SENSOR_CHAN_MAGN_XYZ, magn);
+		sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
 
 		/* Print accel x,y,z and mag x,y,z data */
 		printf("AX=%10.6f AY=%10.6f AZ=%10.6f "
-		       "MX=%10.6f MY=%10.6f MZ=%10.6f\n",
+		       "MX=%10.6f MY=%10.6f MZ=%10.6f "
+		       "T=%10.6f\n",
 		       sensor_value_to_double(&accel[0]),
 		       sensor_value_to_double(&accel[1]),
 		       sensor_value_to_double(&accel[2]),
 		       sensor_value_to_double(&magn[0]),
 		       sensor_value_to_double(&magn[1]),
-		       sensor_value_to_double(&magn[2]));
+		       sensor_value_to_double(&magn[2]),
+		       sensor_value_to_double(&temp));
 	}
 }
