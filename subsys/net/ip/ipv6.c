@@ -1703,6 +1703,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 			  &NET_ICMPV6_NS_BUF(buf)->tgt);
 
 	if (net_send_data(buf) < 0) {
+		NET_DBG("Cannot send NS %p (pending %p)", buf, pending);
+
+		if (pending) {
+			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
+		}
+
 		goto drop;
 	}
 
