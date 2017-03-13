@@ -716,6 +716,10 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 		return -ENODATA;
 	}
 
+	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+		return -ENETDOWN;
+	}
+
 	NET_DBG("fifo %p iface %p buf %p len %zu", &rx_queue, iface, buf,
 		net_buf_frags_len(buf));
 
