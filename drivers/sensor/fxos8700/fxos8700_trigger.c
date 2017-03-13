@@ -59,7 +59,7 @@ static int fxos8700_handle_pulse_int(struct device *dev)
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      FXOS8700_REG_PULSE_SRC,
 			      &pulse_source)) {
-		SYS_LOG_DBG("Could not read pulse source");
+		SYS_LOG_ERR("Could not read pulse source");
 	}
 
 	k_sem_give(&data->sem);
@@ -92,7 +92,7 @@ static void fxos8700_handle_int(void *arg)
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      FXOS8700_REG_INT_SOURCE,
 			      &int_source)) {
-		SYS_LOG_DBG("Could not read interrupt source");
+		SYS_LOG_ERR("Could not read interrupt source");
 		int_source = 0;
 	}
 
@@ -164,7 +164,7 @@ int fxos8700_trigger_set(struct device *dev,
 		break;
 #endif
 	default:
-		SYS_LOG_DBG("Unsupported sensor trigger");
+		SYS_LOG_ERR("Unsupported sensor trigger");
 		ret = -ENOTSUP;
 		goto exit;
 	}
@@ -174,14 +174,14 @@ int fxos8700_trigger_set(struct device *dev,
 	 * later.
 	 */
 	if (fxos8700_get_power(dev, &power)) {
-		SYS_LOG_DBG("Could not get power mode");
+		SYS_LOG_ERR("Could not get power mode");
 		ret = -EIO;
 		goto exit;
 	}
 
 	/* Put the sensor in standby mode */
 	if (fxos8700_set_power(dev, FXOS8700_POWER_STANDBY)) {
-		SYS_LOG_DBG("Could not set standby mode");
+		SYS_LOG_ERR("Could not set standby mode");
 		ret = -EIO;
 		goto exit;
 	}
@@ -191,14 +191,14 @@ int fxos8700_trigger_set(struct device *dev,
 				FXOS8700_REG_CTRLREG4,
 				mask,
 				handler ? mask : 0)) {
-		SYS_LOG_DBG("Could not configure interrupt");
+		SYS_LOG_ERR("Could not configure interrupt");
 		ret = -EIO;
 		goto exit;
 	}
 
 	/* Restore the previous power mode */
 	if (fxos8700_set_power(dev, power)) {
-		SYS_LOG_DBG("Could not restore power mode");
+		SYS_LOG_ERR("Could not restore power mode");
 		ret = -EIO;
 		goto exit;
 	}
@@ -281,13 +281,13 @@ int fxos8700_trigger_init(struct device *dev)
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 			       FXOS8700_REG_CTRLREG5, ctrl_reg5)) {
-		SYS_LOG_DBG("Could not configure interrupt pin routing");
+		SYS_LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
 
 #ifdef CONFIG_FXOS8700_PULSE
 	if (fxos8700_pulse_init(dev)) {
-		SYS_LOG_DBG("Could not configure pulse");
+		SYS_LOG_ERR("Could not configure pulse");
 		return -EIO;
 	}
 #endif
@@ -295,7 +295,7 @@ int fxos8700_trigger_init(struct device *dev)
 	/* Get the GPIO device */
 	data->gpio = device_get_binding(config->gpio_name);
 	if (data->gpio == NULL) {
-		SYS_LOG_DBG("Could not find GPIO device");
+		SYS_LOG_ERR("Could not find GPIO device");
 		return -EINVAL;
 	}
 
