@@ -20,6 +20,7 @@ extern void net_if_init(void);
 extern void net_context_init(void);
 extern void net_ipv6_init(void);
 
+extern const char *net_proto2str(enum net_ip_protocol proto);
 extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
