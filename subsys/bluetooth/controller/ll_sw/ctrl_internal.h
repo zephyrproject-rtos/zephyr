@@ -7,7 +7,7 @@
 
 enum llcp {
 	LLCP_NONE,
-	LLCP_CONNECTION_UPDATE,
+	LLCP_CONN_UPD,
 	LLCP_CHAN_MAP,
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -17,6 +17,7 @@ enum llcp {
 	LLCP_FEATURE_EXCHANGE,
 	LLCP_VERSION_EXCHANGE,
 	/* LLCP_TERMINATE, */
+	LLCP_CONNECTION_PARAM_REQ,
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	LLCP_PING,
@@ -131,35 +132,21 @@ struct connection {
 	enum  llcp llcp_type;
 	union {
 		struct {
+			enum {
+				LLCP_CUI_STATE_INPROG,
+				LLCP_CUI_STATE_USE,
+				LLCP_CUI_STATE_SELECT
+			} state:2 __packed;
+			u8_t  is_internal:1;
 			u16_t interval;
 			u16_t latency;
 			u16_t timeout;
-			u8_t  preferred_periodicity;
 			u16_t instant;
-			u16_t offset0;
-			u16_t offset1;
-			u16_t offset2;
-			u16_t offset3;
-			u16_t offset4;
-			u16_t offset5;
-			u32_t ticks_ref;
-			u32_t ticks_to_offset_next;
 			u32_t win_offset_us;
-			u16_t *pdu_win_offset;
 			u8_t  win_size;
-			u8_t  state:3;
-#define LLCP_CONN_STATE_INPROG    0	/* master + slave proc in progress
-					 * until instant
-					 */
-#define LLCP_CONN_STATE_INITIATE  1	/* master sends conn_update */
-#define LLCP_CONN_STATE_REQ       2	/* master / slave send req */
-#define LLCP_CONN_STATE_RSP       3	/* master rej / slave rej/rsp */
-#define LLCP_CONN_STATE_APP_WAIT  4	/* app resp */
-#define LLCP_CONN_STATE_RSP_WAIT  5	/* master rsp or slave conn_update
-					 * or rej
-					 */
-			u8_t  is_internal:2;
-		} connection_update;
+			u16_t *pdu_win_offset;
+			u32_t ticks_anchor;
+		} conn_upd;
 		struct {
 			u8_t  initiate;
 			u8_t  chm[5];
@@ -205,6 +192,37 @@ struct connection {
 			u8_t reason;
 		} radio_pdu_node_rx;
 	} llcp_terminate;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	struct {
+		u8_t  req;
+		u8_t  ack;
+		enum {
+			LLCP_CPR_STATE_REQ,
+			LLCP_CPR_STATE_RSP,
+			LLCP_CPR_STATE_APP_REQ,
+			LLCP_CPR_STATE_APP_WAIT,
+			LLCP_CPR_STATE_RSP_WAIT,
+			LLCP_CPR_STATE_UPD
+		} state:3 __packed;
+		u8_t  cmd:1;
+		u8_t  status;
+		u16_t interval;
+		u16_t latency;
+		u16_t timeout;
+		u8_t  preferred_periodicity;
+		u16_t reference_conn_event_count;
+		u16_t offset0;
+		u16_t offset1;
+		u16_t offset2;
+		u16_t offset3;
+		u16_t offset4;
+		u16_t offset5;
+		u16_t *pdu_win_offset0;
+		u32_t ticks_ref;
+		u32_t ticks_to_offset_next;
+	} llcp_conn_param;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	struct {
