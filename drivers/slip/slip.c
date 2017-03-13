@@ -48,6 +48,7 @@ struct slip_context {
 	struct net_buf *rx;	/* and then placed into this net_buf */
 	struct net_buf *last;	/* Pointer to last fragment in the list */
 	uint8_t *ptr;		/* Where in net_buf to add data */
+	struct net_if *iface;
 	uint8_t state;
 
 	uint8_t mac_addr[6];
@@ -237,7 +238,7 @@ static void process_msg(struct slip_context *slip)
 		return;
 	}
 
-	if (net_recv_data(net_if_get_by_link_addr(&slip->ll_addr), buf) < 0) {
+	if (net_recv_data(slip->iface, buf) < 0) {
 		net_nbuf_unref(buf);
 	}
 
@@ -447,6 +448,7 @@ static void slip_iface_init(struct net_if *iface)
 	struct net_linkaddr *ll_addr = slip_get_mac(slip);
 
 	slip->init_done = true;
+	slip->iface = iface;
 
 	if (CONFIG_SLIP_MAC_ADDR[0] != 0) {
 		if (_slip_mac_addr_from_str(slip, CONFIG_SLIP_MAC_ADDR) < 0) {
