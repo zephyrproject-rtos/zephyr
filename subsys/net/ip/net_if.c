@@ -176,10 +176,6 @@ static int net_if_prepare_events(void)
 	int ev_count = 0;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-		if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
-			continue;
-		}
-
 		k_poll_event_init(&__net_if_event_start[ev_count],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
