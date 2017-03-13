@@ -99,7 +99,7 @@ static void disconnect(struct net_buf *buf, struct net_buf **evt)
 	uint32_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = radio_terminate_ind_send(handle, cmd->reason);
+	status = ll_terminate_ind_send(handle, cmd->reason);
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
@@ -111,7 +111,7 @@ static void read_remote_ver_info(struct net_buf *buf, struct net_buf **evt)
 	uint32_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = radio_version_ind_send(handle);
+	status = ll_version_ind_send(handle);
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
@@ -147,7 +147,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
-	ctrl_reset();
+	ll_reset();
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -454,7 +454,7 @@ static void le_create_conn_cancel(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
-	status = radio_connect_disable();
+	status = ll_connect_disable();
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -474,7 +474,7 @@ static void le_clear_wl(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
-	radio_filter_clear();
+	ll_filter_clear();
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -486,7 +486,7 @@ static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
-	status = radio_filter_add(cmd->addr.type, &cmd->addr.a.val[0]);
+	status = ll_filter_add(cmd->addr.type, &cmd->addr.a.val[0]);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -498,7 +498,7 @@ static void le_rem_dev_from_wl(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
-	status = radio_filter_remove(cmd->addr.type, &cmd->addr.a.val[0]);
+	status = ll_filter_remove(cmd->addr.type, &cmd->addr.a.val[0]);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -521,8 +521,8 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 	/** @todo if peer supports LE Conn Param Req,
 	* use Req cmd (1) instead of Initiate cmd (0).
 	*/
-	status = radio_conn_update(handle, 0, 0, conn_interval_max,
-				   conn_latency, supervision_timeout);
+	status = ll_conn_update(handle, 0, 0, conn_interval_max,
+				conn_latency, supervision_timeout);
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
@@ -533,7 +533,7 @@ static void le_set_host_ch_classif(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
-	status = radio_chm_update(&cmd->ch_map[0]);
+	status = ll_chm_update(&cmd->ch_map[0]);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -546,7 +546,7 @@ static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 	uint16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = radio_feature_req_send(handle);
+	status = ll_feature_req_send(handle);
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
@@ -583,10 +583,10 @@ static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 	uint16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = radio_enc_req_send(handle,
-			       (uint8_t *)&cmd->rand,
-			       (uint8_t *)&cmd->ediv,
-			       &cmd->ltk[0]);
+	status = ll_enc_req_send(handle,
+				 (uint8_t *)&cmd->rand,
+				 (uint8_t *)&cmd->ediv,
+				 &cmd->ltk[0]);
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
@@ -599,7 +599,7 @@ static void le_ltk_req_reply(struct net_buf *buf, struct net_buf **evt)
 	uint16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = radio_start_enc_req_send(handle, 0x00, &cmd->ltk[0]);
+	status = ll_start_enc_req_send(handle, 0x00, &cmd->ltk[0]);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -614,8 +614,8 @@ static void le_ltk_req_neg_reply(struct net_buf *buf, struct net_buf **evt)
 	uint16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = radio_start_enc_req_send(handle, BT_HCI_ERR_PIN_OR_KEY_MISSING,
-					  NULL);
+	status = ll_start_enc_req_send(handle, BT_HCI_ERR_PIN_OR_KEY_MISSING,
+				       NULL);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -647,8 +647,8 @@ static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 	latency = sys_le16_to_cpu(cmd->latency);
 	timeout = sys_le16_to_cpu(cmd->timeout);
 
-	status = radio_conn_update(handle, 2, 0, interval_max, latency,
-				   timeout);
+	status = ll_conn_update(handle, 2, 0, interval_max, latency,
+				timeout);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -664,7 +664,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	uint16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = radio_conn_update(handle, 2, cmd->reason, 0, 0, 0);
+	status = ll_conn_update(handle, 2, cmd->reason, 0, 0, 0);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -683,7 +683,7 @@ static void le_set_data_len(struct net_buf *buf, struct net_buf **evt)
 	handle = sys_le16_to_cpu(cmd->handle);
 	tx_octets = sys_le16_to_cpu(cmd->tx_octets);
 	/** @todo add reject_ext_ind support in ctrl.c */
-	status = radio_length_req_send(handle, tx_octets);
+	status = ll_length_req_send(handle, tx_octets);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -696,7 +696,7 @@ static void le_read_default_data_len(struct net_buf *buf, struct net_buf **evt)
 
 	rp = cmd_complete(evt, sizeof(*rp));
 
-	radio_length_default_get(&rp->max_tx_octets, &rp->max_tx_time);
+	ll_length_default_get(&rp->max_tx_octets, &rp->max_tx_time);
 	rp->status = 0x00;
 }
 
@@ -707,7 +707,7 @@ static void le_write_default_data_len(struct net_buf *buf,
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
-	status = radio_length_default_set(cmd->max_tx_octets, cmd->max_tx_time);
+	status = ll_length_default_set(cmd->max_tx_octets, cmd->max_tx_time);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_INVALID_LL_PARAMS;
@@ -719,8 +719,8 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 
 	rp = cmd_complete(evt, sizeof(*rp));
 
-	radio_length_max_get(&rp->max_tx_octets, &rp->max_tx_time,
-			     &rp->max_rx_octets, &rp->max_rx_time);
+	ll_length_max_get(&rp->max_tx_octets, &rp->max_tx_time,
+			  &rp->max_rx_octets, &rp->max_rx_time);
 	rp->status = 0x00;
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */

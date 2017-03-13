@@ -410,7 +410,7 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 	return retcode;
 }
 
-void ctrl_reset(void)
+void ll_reset(void)
 {
 	uint16_t conn_handle;
 
@@ -6761,13 +6761,13 @@ struct radio_adv_data *radio_scan_data_get(void)
 	return &_radio.advertiser.scan_data;
 }
 
-void radio_filter_clear(void)
+void ll_filter_clear(void)
 {
 	_radio.filter_enable_bitmask = 0;
 	_radio.filter_addr_type_bitmask = 0;
 }
 
-uint32_t radio_filter_add(uint8_t addr_type, uint8_t *addr)
+uint32_t ll_filter_add(uint8_t addr_type, uint8_t *addr)
 {
 	if (_radio.filter_enable_bitmask != 0xFF) {
 		uint8_t index;
@@ -6787,7 +6787,7 @@ uint32_t radio_filter_add(uint8_t addr_type, uint8_t *addr)
 	return 1;
 }
 
-uint32_t radio_filter_remove(uint8_t addr_type, uint8_t *addr)
+uint32_t ll_filter_remove(uint8_t addr_type, uint8_t *addr)
 {
 	uint8_t index;
 
@@ -6811,12 +6811,12 @@ uint32_t radio_filter_remove(uint8_t addr_type, uint8_t *addr)
 	return 1;
 }
 
-void radio_irk_clear(void)
+void ll_irk_clear(void)
 {
 	_radio.nirk = 0;
 }
 
-uint32_t radio_irk_add(uint8_t *irk)
+uint32_t ll_irk_add(uint8_t *irk)
 {
 	if (_radio.nirk >= RADIO_IRK_COUNT_MAX) {
 		return 1;
@@ -7518,7 +7518,7 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	return 0;
 }
 
-uint32_t radio_connect_disable(void)
+uint32_t ll_connect_disable(void)
 {
 	uint32_t status;
 
@@ -7531,9 +7531,9 @@ uint32_t radio_connect_disable(void)
 	return status;
 }
 
-uint32_t radio_conn_update(uint16_t handle, uint8_t cmd, uint8_t status,
-			   uint16_t interval, uint16_t latency,
-			   uint16_t timeout)
+uint32_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status,
+			uint16_t interval, uint16_t latency,
+			uint16_t timeout)
 {
 	struct connection *conn;
 
@@ -7568,7 +7568,7 @@ uint32_t radio_conn_update(uint16_t handle, uint8_t cmd, uint8_t status,
 	return 0;
 }
 
-uint32_t radio_chm_update(uint8_t *chm)
+uint32_t ll_chm_update(uint8_t *chm)
 {
 	uint8_t instance;
 
@@ -7603,7 +7603,7 @@ uint32_t radio_chm_update(uint8_t *chm)
 	return 0;
 }
 
-uint32_t radio_chm_get(uint16_t handle, uint8_t *chm)
+uint32_t ll_chm_get(uint16_t handle, uint8_t *chm)
 {
 	struct connection *conn;
 
@@ -7618,8 +7618,8 @@ uint32_t radio_chm_get(uint16_t handle, uint8_t *chm)
 	return 0;
 }
 
-uint32_t radio_enc_req_send(uint16_t handle, uint8_t *rand, uint8_t *ediv,
-			    uint8_t *ltk)
+uint32_t ll_enc_req_send(uint16_t handle, uint8_t *rand, uint8_t *ediv,
+			 uint8_t *ltk)
 {
 	struct connection *conn;
 	struct radio_pdu_node_tx *node_tx;
@@ -7693,8 +7693,8 @@ uint32_t radio_enc_req_send(uint16_t handle, uint8_t *rand, uint8_t *ediv,
 	return 1;
 }
 
-uint32_t radio_start_enc_req_send(uint16_t handle, uint8_t error_code,
-				  uint8_t const *const ltk)
+uint32_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
+			       uint8_t const *const ltk)
 {
 	struct connection *conn;
 
@@ -7740,7 +7740,7 @@ uint32_t radio_start_enc_req_send(uint16_t handle, uint8_t error_code,
 	return 0;
 }
 
-uint32_t radio_feature_req_send(uint16_t handle)
+uint32_t ll_feature_req_send(uint16_t handle)
 {
 	struct connection *conn;
 
@@ -7755,7 +7755,7 @@ uint32_t radio_feature_req_send(uint16_t handle)
 	return 0;
 }
 
-uint32_t radio_version_ind_send(uint16_t handle)
+uint32_t ll_version_ind_send(uint16_t handle)
 {
 	struct connection *conn;
 
@@ -7770,7 +7770,7 @@ uint32_t radio_version_ind_send(uint16_t handle)
 	return 0;
 }
 
-uint32_t radio_terminate_ind_send(uint16_t handle, uint8_t reason)
+uint32_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct connection *conn;
 
@@ -7787,7 +7787,7 @@ uint32_t radio_terminate_ind_send(uint16_t handle, uint8_t reason)
 }
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
-uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets)
+uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets)
 {
 	struct connection *conn;
 
@@ -7806,13 +7806,13 @@ uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets)
 	return 0;
 }
 
-void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
+void ll_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
 {
 	*max_tx_octets = _radio.default_tx_octets;
 	*max_tx_time = _radio.default_tx_time;
 }
 
-uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
+uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 {
 	/* TODO: parameter check (for BT 5.0 compliance) */
 
@@ -7822,8 +7822,8 @@ uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 	return 0;
 }
 
-void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
-			  uint16_t *max_rx_octets, uint16_t *max_rx_time)
+void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
+		       uint16_t *max_rx_octets, uint16_t *max_rx_time)
 {
 	*max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
 	*max_tx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
