@@ -1908,16 +1908,16 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 
 	prefix = net_if_ipv6_prefix_lookup(net_nbuf_iface(buf),
 					   &prefix_info->prefix,
-					   prefix_info->len);
+					   prefix_info->prefix_len);
 	if (!prefix) {
 		if (!prefix_info->valid_lifetime) {
 			return;
 		}
 
 		prefix = net_if_ipv6_prefix_add(net_nbuf_iface(buf),
-					&prefix_info->prefix,
-					prefix_info->len,
-					prefix_info->valid_lifetime);
+						&prefix_info->prefix,
+						prefix_info->prefix_len,
+						prefix_info->valid_lifetime);
 		if (prefix) {
 			NET_DBG("Interface %p add prefix %s/%d lifetime %u",
 				net_nbuf_iface(buf),
@@ -1927,7 +1927,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 		} else {
 			NET_ERR("Prefix %s/%d could not be added to iface %p",
 				net_sprint_ipv6_addr(&prefix_info->prefix),
-				prefix_info->len,
+				prefix_info->prefix_len,
 				net_nbuf_iface(buf));
 
 			return;
@@ -1939,7 +1939,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 		NET_DBG("Interface %p delete prefix %s/%d",
 			net_nbuf_iface(buf),
 			net_sprint_ipv6_addr(&prefix_info->prefix),
-			prefix_info->len);
+			prefix_info->prefix_len);
 
 		net_if_ipv6_prefix_rm(net_nbuf_iface(buf),
 				      &prefix->prefix,
