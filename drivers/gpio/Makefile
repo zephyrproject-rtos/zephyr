@@ -12,3 +12,4 @@ obj-$(CONFIG_GPIO_NRF5) += gpio_nrf5.o
 obj-$(CONFIG_GPIO_CMSDK_AHB) += gpio_cmsdk_ahb.o
 obj-$(CONFIG_GPIO_CC32XX) += gpio_cc32xx.o
 obj-$(CONFIG_GPIO_PULPINO) += gpio_pulpino.o
+obj-$(CONFIG_GPIO_FE310) += gpio_fe310.o
