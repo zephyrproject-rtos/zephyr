@@ -907,6 +907,8 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 
 	NET_DBG("Prefix lifetime %u ms", timeout);
 
+	net_if_ipv6_prefix_unset_timer(prefix);
+
 	k_delayed_work_init(&prefix->lifetime, prefix_lf_timeout);
 	k_delayed_work_submit(&prefix->lifetime, timeout);
 }
