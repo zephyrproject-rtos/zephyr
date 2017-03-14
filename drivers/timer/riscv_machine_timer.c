@@ -32,6 +32,13 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 	uint64_t rtc;
 
 	/*
+	 * Disable timer interrupt while rearming the timer
+	 * to avoid generation of interrupts while setting
+	 * the mtimecmp->val_low register.
+	 */
+	irq_disable(RISCV_MACHINE_TIMER_IRQ);
+
+	/*
 	 * Following machine-mode timer implementation in QEMU, the actual
 	 * RTC read is performed when reading low timer value register.
 	 * Reading high timer value just reads the most significant 32-bits
@@ -49,6 +56,9 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 	rtc += sys_clock_hw_cycles_per_tick;
 	mtimecmp->val_low = (uint32_t)(rtc & 0xffffffff);
 	mtimecmp->val_high = (uint32_t)((rtc >> 32) & 0xffffffff);
+
+	/* Enable timer interrupt */
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 }
 
 static void riscv_machine_timer_irq_handler(void *unused)
@@ -71,8 +81,6 @@ int _sys_clock_driver_init(struct device *device)
 
 	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0,
 		    riscv_machine_timer_irq_handler, NULL, 0);
-
-	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 
 	/* Initialize timer, just call riscv_machine_rearm_timer */
 	riscv_machine_rearm_timer();
