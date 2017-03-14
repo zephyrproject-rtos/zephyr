@@ -268,11 +268,11 @@ extern struct device_pm_ops device_pm_ops_nop;
 
  /** @def DEVICE_DECLARE
   *
-  * @brief Declare a device object
+  * @brief Declare a static device object
   *
   * This macro can be used at the top-level to declare a device, such
   * that DEVICE_GET() may be used before the full declaration in
-  * DEVICE_INIT(), or reference the device in another C file.
+  * DEVICE_INIT().
   *
   * This is often useful when configuring interrupts statically in a
   * device's init or per-instance config function, as the init function
@@ -281,7 +281,7 @@ extern struct device_pm_ops device_pm_ops_nop;
   *
   * @param name Device name
   */
-#define DEVICE_DECLARE(name) extern struct device DEVICE_NAME_GET(name)
+#define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
 
 struct device;
 
