@@ -83,4 +83,6 @@ source "drivers/serial/Kconfig.cmsdk_apb"
 
 source "drivers/serial/Kconfig.riscv_qemu"
 
+source "drivers/serial/Kconfig.fe310"
+
 endif
