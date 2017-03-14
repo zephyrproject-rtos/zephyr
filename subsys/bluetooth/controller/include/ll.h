@@ -8,6 +8,7 @@
 #ifndef _LL_H_
 #define _LL_H_
 
+int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 void ll_address_get(uint8_t addr_type, uint8_t *p_bdaddr);
 void ll_address_set(uint8_t addr_type, uint8_t const *const p_bdaddr);

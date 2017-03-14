@@ -9,6 +9,14 @@
 #include <string.h>
 
 #include <soc.h>
+#include <device.h>
+#include <clock_control.h>
+#ifdef CONFIG_CLOCK_CONTROL_NRF5
+#include <drivers/clock_control/nrf5_clock_control.h>
+#endif
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#include <bluetooth/log.h>
 
 #include "ccm.h"
 #include "radio.h"
@@ -16,12 +24,32 @@
 #include "mem.h"
 #include "util.h"
 #include "ticker.h"
-
+#include "config.h"
+#include "mayfly.h"
+#include "mem.h"
+#include "rand.h"
+#include "radio.h"
+#include "cntr.h"
+#include "cpu.h"
 #include "pdu.h"
 #include "ctrl.h"
+#include "ctrl_internal.h"
 #include "ll.h"
 
 #include "debug.h"
+
+/* Global singletons */
+static uint8_t MALIGN(4) _rand_context[3 + 4 + 1];
+static uint8_t MALIGN(4) _ticker_nodes[RADIO_TICKER_NODES][TICKER_NODE_T_SIZE];
+static uint8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT]
+						[TICKER_USER_T_SIZE];
+static uint8_t MALIGN(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
+						[TICKER_USER_OP_T_SIZE];
+static uint8_t MALIGN(4) _radio[LL_MEM_TOTAL];
+
+K_MUTEX_DEFINE(mutex_rand);
+
+static struct k_sem *sem_recv;
 
 static struct {
 	uint8_t pub_addr[BDADDR_SIZE];
@@ -46,6 +74,190 @@ static struct {
 	uint8_t tx_addr:1;
 	uint8_t filter_policy:1;
 } _ll_scan_params;
+
+int bt_rand(void *buf, size_t len)
+{
+	while (len) {
+		k_mutex_lock(&mutex_rand, K_FOREVER);
+		len = rand_get(len, buf);
+		k_mutex_unlock(&mutex_rand);
+		if (len) {
+			cpu_sleep();
+		}
+	}
+
+	return 0;
+}
+
+void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
+{
+	(void)caller_id;
+
+	LL_ASSERT(callee_id == MAYFLY_CALL_ID_1);
+
+	if (enable) {
+		irq_enable(SWI4_IRQn);
+	} else {
+		irq_disable(SWI4_IRQn);
+	}
+}
+
+uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id)
+{
+	(void)caller_id;
+
+	if (callee_id == MAYFLY_CALL_ID_0) {
+		return irq_is_enabled(RTC0_IRQn);
+	} else if (callee_id == MAYFLY_CALL_ID_1) {
+		return irq_is_enabled(SWI4_IRQn);
+	}
+
+	LL_ASSERT(0);
+
+	return 0;
+}
+
+uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id)
+{
+	return (caller_id == callee_id) ||
+	       ((caller_id == MAYFLY_CALL_ID_0) &&
+		(callee_id == MAYFLY_CALL_ID_1)) ||
+	       ((caller_id == MAYFLY_CALL_ID_1) &&
+		(callee_id == MAYFLY_CALL_ID_0));
+}
+
+void mayfly_pend(uint8_t caller_id, uint8_t callee_id)
+{
+	(void)caller_id;
+
+	switch (callee_id) {
+	case MAYFLY_CALL_ID_0:
+		NVIC_SetPendingIRQ(RTC0_IRQn);
+		break;
+
+	case MAYFLY_CALL_ID_1:
+		NVIC_SetPendingIRQ(SWI4_IRQn);
+		break;
+
+	case MAYFLY_CALL_ID_PROGRAM:
+	default:
+		LL_ASSERT(0);
+		break;
+	}
+}
+
+void radio_active_callback(uint8_t active)
+{
+}
+
+void radio_event_callback(void)
+{
+	k_sem_give(sem_recv);
+}
+
+ISR_DIRECT_DECLARE(radio_nrf5_isr)
+{
+	isr_radio();
+
+	ISR_DIRECT_PM();
+	return 1;
+}
+
+static void rtc0_nrf5_isr(void *arg)
+{
+	uint32_t compare0, compare1;
+
+	/* store interested events */
+	compare0 = NRF_RTC0->EVENTS_COMPARE[0];
+	compare1 = NRF_RTC0->EVENTS_COMPARE[1];
+
+	/* On compare0 run ticker worker instance0 */
+	if (compare0) {
+		NRF_RTC0->EVENTS_COMPARE[0] = 0;
+
+		ticker_trigger(0);
+	}
+
+	/* On compare1 run ticker worker instance1 */
+	if (compare1) {
+		NRF_RTC0->EVENTS_COMPARE[1] = 0;
+
+		ticker_trigger(1);
+	}
+
+	mayfly_run(MAYFLY_CALL_ID_0);
+}
+
+static void rng_nrf5_isr(void *arg)
+{
+	isr_rand(arg);
+}
+
+static void swi4_nrf5_isr(void *arg)
+{
+	mayfly_run(MAYFLY_CALL_ID_1);
+}
+
+int ll_init(struct k_sem *sem_rx)
+{
+	struct device *clk_k32;
+	struct device *clk_m16;
+	uint32_t err;
+
+	sem_recv = sem_rx;
+
+	/* TODO: bind and use RNG driver */
+	rand_init(_rand_context, sizeof(_rand_context));
+
+	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
+	if (!clk_k32) {
+		return -ENODEV;
+	}
+
+	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF5_K32SRC);
+
+	/* TODO: bind and use counter driver */
+	cntr_init();
+
+	mayfly_init();
+
+	_ticker_users[MAYFLY_CALL_ID_0][0] = RADIO_TICKER_USER_WORKER_OPS;
+	_ticker_users[MAYFLY_CALL_ID_1][0] = RADIO_TICKER_USER_JOB_OPS;
+	_ticker_users[MAYFLY_CALL_ID_2][0] = 0;
+	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = RADIO_TICKER_USER_APP_OPS;
+
+	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, RADIO_TICKER_NODES,
+		    &_ticker_nodes[0], MAYFLY_CALLER_COUNT, &_ticker_users[0],
+		    RADIO_TICKER_USER_OPS, &_ticker_user_ops[0]);
+
+	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
+	if (!clk_m16) {
+		return -ENODEV;
+	}
+
+	err = radio_init(clk_m16, CLOCK_CONTROL_NRF5_K32SRC_ACCURACY,
+			 RADIO_CONNECTION_CONTEXT_MAX,
+			 RADIO_PACKET_COUNT_RX_MAX,
+			 RADIO_PACKET_COUNT_TX_MAX,
+			 RADIO_LL_LENGTH_OCTETS_RX_MAX,
+			 RADIO_PACKET_TX_DATA_SIZE, &_radio[0], sizeof(_radio));
+	if (err) {
+		BT_ERR("Required RAM size: %d, supplied: %u.", err,
+		       sizeof(_radio));
+		return -ENOMEM;
+	}
+
+	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0);
+	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, 0, swi4_nrf5_isr, 0, 0);
+	irq_enable(NRF5_IRQ_RADIO_IRQn);
+	irq_enable(NRF5_IRQ_RTC0_IRQn);
+	irq_enable(NRF5_IRQ_RNG_IRQn);
+	irq_enable(NRF5_IRQ_SWI4_IRQn);
+
+	return 0;
+}
 
 void ll_address_get(uint8_t addr_type, uint8_t *bdaddr)
 {
