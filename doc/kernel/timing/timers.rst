@@ -27,7 +27,9 @@ A timer has the following key properties:
 * A :dfn:`period` specifying the time interval between all timer expirations
   after the first one, measured in milliseconds. It must be non-negative.
   A period of zero means that the timer is a one shot timer that stops
-  after a single expiration.
+  after a single expiration. (For example then, if a timer is started with a
+  duration of 200 and a period of 75, it will first expire after 200ms and
+  then every 75ms after that.)
 
 * An :dfn:`expiry function` that is executed each time the timer expires.
   The function is executed by the system clock interrupt handler.
