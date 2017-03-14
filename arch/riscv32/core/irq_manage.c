@@ -19,6 +19,12 @@ void _irq_spurious(void *unused)
 	mcause &= SOC_MCAUSE_EXP_MASK;
 
 	printk("Spurious interrupt detected! IRQ: %d\n", (int)mcause);
+#if defined(CONFIG_RISCV_HAS_PLIC)
+	if (mcause == RISCV_MACHINE_EXT_IRQ) {
+		printk("PLIC interrupt line causing the IRQ: %d\n",
+		       riscv_plic_get_irq());
+	}
+#endif
 
 	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
 }

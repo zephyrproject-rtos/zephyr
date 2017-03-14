@@ -17,6 +17,8 @@
 #define RISCV_MACHINE_TIMER_IRQ      7  /* Machine Timer Interrupt */
 #define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
 
+#define RISCV_MAX_GENERIC_IRQ        11 /* Max Generic Interrupt */
+
 /* Exception numbers */
 #define RISCV_MACHINE_ECALL_EXP      11 /* Machine ECALL instruction */
 
@@ -55,6 +57,14 @@
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 void soc_interrupt_init(void);
+#endif
+
+#if defined(CONFIG_RISCV_HAS_PLIC)
+void riscv_plic_irq_enable(uint32_t irq);
+void riscv_plic_irq_disable(uint32_t irq);
+int riscv_plic_irq_is_enabled(uint32_t irq);
+void riscv_plic_set_priority(uint32_t irq, uint32_t priority);
+int riscv_plic_get_irq(void);
 #endif
 
 #endif /* !_ASMLANGUAGE */

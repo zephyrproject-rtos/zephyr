@@ -72,11 +72,20 @@ void _irq_spurious(void *unused);
  *
  * @return The vector assigned to this interrupt
  */
+#if defined(CONFIG_RISCV_HAS_PLIC)
+#define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+({ \
+	_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
+	riscv_plic_set_priority(irq_p, priority_p); \
+	irq_p; \
+})
+#else
 #define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	irq_p; \
 })
+#endif
 
 /*
  * use atomic instruction csrrc to lock global irq
