@@ -2,6 +2,19 @@ if BLUETOOTH_CONTROLLER
 
 comment "BLE Controller configuration"
 
+choice
+	prompt "Bluetooth Link Layer Selection"
+	default BLUETOOTH_LL_SW
+	help
+	  Select the Bluetooth Link Layer to compile.
+
+config BLUETOOTH_LL_SW
+	bool "Use the software-based BLE Link Layer"
+	help
+	  Use Zephyr's software BLE Link Layer implementation.
+
+endchoice
+
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
 	int
