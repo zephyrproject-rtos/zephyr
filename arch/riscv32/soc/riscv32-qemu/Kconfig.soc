@@ -1,3 +1,0 @@
-config SOC_RISCV32_QEMU
-	bool "riscv32_qemu SOC implementation"
-	select ATOMIC_OPERATIONS_C

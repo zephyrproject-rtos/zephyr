@@ -1,23 +1,22 @@
 /*
- * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief riscv32-qemu interrupt management code
+ * @brief interrupt management code for riscv SOCs supporting the riscv
+	  privileged architecture specification
  */
 #include <irq.h>
-#include <soc.h>
 
+/* TODO: account for RISCV PLIC */
 void _arch_irq_enable(unsigned int irq)
 {
 	uint32_t mie;
 
 	/*
-	 * Since only internal Timer device has interrupt within in
-	 * riscv32-qemu, use only mie CSR register to enable device interrupt.
 	 * CSR mie register is updated using atomic instruction csrrs
 	 * (atomic read and set bits in CSR register)
 	 */
@@ -55,8 +54,6 @@ void soc_interrupt_init(void)
 	(void)irq_lock();
 
 	__asm__ volatile ("csrwi mie, 0\n"
-			  "csrwi sie, 0\n"
-			  "csrwi mip, 0\n"
-			  "csrwi sip, 0\n");
+			  "csrwi mip, 0\n");
 }
 #endif

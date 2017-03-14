@@ -9,8 +9,8 @@
  *       privileged architecture specification
  */
 
-#ifndef __RISCV_PRIVILEGE_H_
-#define __RISCV_PRIVILEGE_H_
+#ifndef __SOC_COMMON_H_
+#define __SOC_COMMON_H_
 
 /* IRQ numbers */
 #define RISCV_MACHINE_SOFT_IRQ       3  /* Machine Software Interrupt */
@@ -51,4 +51,12 @@
 /* SOC-Specific EXIT ISR command */
 #define SOC_ERET                     mret
 
-#endif /* __RISCV_PRIVILEGE_H_ */
+#ifndef _ASMLANGUAGE
+
+#if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
+void soc_interrupt_init(void);
+#endif
+
+#endif /* !_ASMLANGUAGE */
+
+#endif /* __SOC_COMMON_H_ */

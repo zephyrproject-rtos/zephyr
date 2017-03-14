@@ -1,6 +1,6 @@
-if SOC_RISCV32_QEMU
+if SOC_SERIES_RISCV32_QEMU
 
-config SOC
+config SOC_SERIES
 	string
 	default "riscv32-qemu"
 
@@ -36,4 +36,4 @@ config RISCV_RAM_SIZE_MB
 	int
 	default 32
 
-endif # SOC_RISCV32_QEMU
+endif # SOC_SERIES_RISCV32_QEMU
