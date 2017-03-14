@@ -3604,6 +3604,10 @@ int bt_send(struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
+	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+		return bt_hci_ecc_send(buf);
+	}
+
 	return bt_dev.drv->send(buf);
 }
 
@@ -3678,7 +3682,7 @@ int bt_recv_prio(struct net_buf *buf)
 	return 0;
 }
 
-int bt_hci_driver_register(struct bt_hci_driver *drv)
+int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
 	if (bt_dev.drv) {
 		return -EALREADY;
@@ -3838,7 +3842,9 @@ int bt_enable(bt_ready_cb_t cb)
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
 
-	bt_hci_ecc_init();
+	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+		bt_hci_ecc_init();
+	}
 
 	err = bt_dev.drv->open();
 	if (err) {

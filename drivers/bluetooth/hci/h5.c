@@ -747,7 +747,7 @@ static int h5_open(void)
 	return 0;
 }
 
-static struct bt_hci_driver drv = {
+static const struct bt_hci_driver drv = {
 	.name		= "H:5",
 	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h5_open,
