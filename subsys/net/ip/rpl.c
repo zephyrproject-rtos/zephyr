@@ -3143,27 +3143,33 @@ static int dao_ack_send(struct net_buf *orig,
 	return 0;
 }
 
-static void forwarding_dao(struct net_rpl_instance *instance,
-			   struct net_rpl_dag *dag,
-			   struct in6_addr *dao_sender,
-			   struct net_buf *buf,
-			   uint8_t sequence,
-			   uint8_t flags,
-			   char *str)
+static int forwarding_dao(struct net_rpl_instance *instance,
+			  struct net_rpl_dag *dag,
+			  struct in6_addr *dao_sender,
+			  struct net_buf *buf,
+			  uint8_t sequence,
+			  uint8_t flags,
+			  char *str)
 {
 	struct in6_addr *paddr;
+	int r = -EINVAL;
 
 	paddr = net_rpl_get_parent_addr(instance->iface,
 					dag->preferred_parent);
 	if (paddr) {
 		NET_DBG("%s %s", str, net_sprint_ipv6_addr(paddr));
 
-		dao_forward(dag->instance->iface, buf, paddr);
+		r = dao_forward(dag->instance->iface, buf, paddr);
+		if (r < 0) {
+			return r;
+		}
 
 		if (flags & NET_RPL_DAO_K_FLAG) {
-			dao_ack_send(buf, instance, dao_sender, sequence);
+			r = dao_ack_send(buf, instance, dao_sender, sequence);
 		}
 	}
+
+	return r;
 }
 
 static enum net_verdict handle_dao(struct net_buf *buf)
@@ -3187,6 +3193,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	uint8_t flags;
 	uint8_t subopt_type;
 	int len;
+	int r = -EINVAL;
 
 	net_rpl_info(buf, "Destination Advertisement Object");
 
@@ -3350,15 +3357,19 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 			 * if we have one.
 			 */
 			if (dag->preferred_parent) {
-				forwarding_dao(instance, dag, dao_sender,
-					       buf, sequence, flags,
+				r = forwarding_dao(instance, dag, dao_sender,
+						   buf, sequence, flags,
 #if defined(CONFIG_NET_DEBUG_RPL)
-					       "Forwarding no-path DAO to "
-					       "parent"
+						   "Forwarding no-path DAO to "
+						   "parent"
 #else
-					       ""
+						   ""
 #endif
-					);
+						  );
+				if (r >= 0) {
+					net_nbuf_unref(buf);
+					return NET_OK;
+				}
 			}
 		}
 
@@ -3416,15 +3427,19 @@ fwd_dao:
 
 	if (learned_from == NET_RPL_ROUTE_UNICAST_DAO) {
 		if (dag->preferred_parent) {
-			forwarding_dao(instance, dag,
-				       dao_sender, buf,
-				       sequence, flags,
+			r = forwarding_dao(instance, dag,
+					   dao_sender, buf,
+					   sequence, flags,
 #if defined(CONFIG_NET_DEBUG_RPL)
-				       "Forwarding DAO to parent"
+					   "Forwarding DAO to parent"
 #else
-				       ""
+					   ""
 #endif
-				);
+					   );
+			if (r >= 0) {
+				net_nbuf_unref(buf);
+				return NET_OK;
+			}
 		}
 	}
 
