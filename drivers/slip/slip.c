@@ -313,6 +313,14 @@ static inline int slip_input_byte(struct slip_context *slip,
 		break;
 	}
 
+	/* It is possible that slip->last is not set during the startup
+	 * of the device. If this happens do not continue and overwrite
+	 * some random memory.
+	 */
+	if (!slip->last) {
+		return 0;
+	}
+
 	if (!net_buf_tailroom(slip->last)) {
 		/* We need to allocate a new fragment */
 		struct net_buf *frag;
