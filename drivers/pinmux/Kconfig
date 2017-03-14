@@ -52,4 +52,6 @@ source "drivers/pinmux/Kconfig.stm32"
 
 source "drivers/pinmux/Kconfig.beetle"
 
+source "drivers/pinmux/Kconfig.fe310"
+
 endif # PINMUX
