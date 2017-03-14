@@ -53,6 +53,21 @@ struct json_obj_descr {
 };
 
 /**
+ * @brief Function pointer type to append bytes to a buffer while
+ * encoding JSON data.
+ *
+ * @param bytes Contents to write to the output
+ * @param len Number of bytes in @param bytes to append to output
+ * @param data User-provided pointer
+ *
+ * @return This callback function should return a negative number on
+ * error (which will be propagated to the return value of
+ * json_obj_encode()), or 0 on success.
+ */
+typedef int (*json_append_bytes_t)(const uint8_t *bytes, size_t len,
+				   void *data);
+
+/**
  * @brief Helper macro to declare a descriptor for an object value
  *
  * @param struct_ Struct packing the values
@@ -195,5 +210,61 @@ ssize_t json_escape(char *str, size_t *len, size_t buf_size);
  * @return The length str would have if it were escaped
  */
 size_t json_calc_escaped_len(const char *str, size_t len);
+
+/**
+ * @brief Calculates the string length to fully encode an object
+ *
+ * @param descr Pointer to the descriptor array
+ *
+ * @param descr_len Number of elements in the descriptor array
+ *
+ * @param val Struct holding the values
+ *
+ * @return Number of bytes necessary to encode the values if >0,
+ * an error code is returned.
+ */
+ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
+			      size_t descr_len, const void *val);
+
+/**
+ * @brief Encodes an object in a contiguous memory location
+ *
+ * @param descr Pointer to the descriptor array
+ *
+ * @param descr_len Number of elements in the descriptor array
+ *
+ * @param val Struct holding the values
+ *
+ * @param buffer Buffer to store the JSON data
+ *
+ * @param buf_size Size of buffer, in bytes, with space for the terminating
+ * NUL character
+ *
+ * @return 0 if object has been successfully encoded. A negative value
+ * indicates an error (as defined on errno.h).
+ */
+int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
+			const void *val, char *buffer, size_t buf_size);
+
+/**
+ * @brief Encodes an object using an arbitrary writer function
+ *
+ * @param descr Pointer to the descriptor array
+ *
+ * @param descr_len Number of elements in the descriptor array
+ *
+ * @param val Struct holding the values
+ *
+ * @param append_bytes Function to append bytes to the output
+ *
+ * @param data Data pointer to be passed to the append_bytes callback
+ * function.
+ *
+ * @return 0 if object has been successfully encoded. A negative value
+ * indicates an error.
+ */
+int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
+		    const void *val, json_append_bytes_t append_bytes,
+		    void *data);
 
 #endif /* __JSON_H */

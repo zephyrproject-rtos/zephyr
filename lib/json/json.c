@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
+#include <misc/printk.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -621,26 +622,74 @@ int json_obj_parse(char *payload, size_t len,
 
 static const char escapable[] = "\"\\/\b\f\n\r\t";
 
-static int json_escape_internal(char *str, size_t *len, size_t buf_size)
+static int json_escape_internal(const char *str,
+				json_append_bytes_t append_bytes,
+				void *data)
 {
-	char tmp_buf[buf_size + 1];
-	char *cur, *out = tmp_buf, *escape;
+	const char *cur, *escape;
+	size_t out_len = 0;
+	int ret = 0;
 
-	for (cur = str; *cur; cur++) {
+	for (cur = str; ret == 0 && *cur; cur++) {
 		escape = memchr(escapable, *cur, sizeof(escapable) - 1);
+
 		if (escape) {
-			*out++ = '\\';
-			*out++ = "\"\\/bfnrt"[escape - escapable];
+			uint8_t bytes[2] = {
+				'\\', "\"\\/bfnrt"[escape - escapable]
+			};
+
+			ret = append_bytes(bytes, 2, data);
+			out_len += 2;
 		} else {
-			*out++ = *cur;
+			ret = append_bytes(cur, 1, data);
+			out_len++;
 		}
 	}
 
-	*out = '\0';
-	*len = out - tmp_buf;
-	memcpy(str, tmp_buf, *len);
+	return ret;
+}
+
+struct appender {
+	char *buffer;
+	size_t used;
+	size_t size;
+};
+
+static int append_bytes_to_buf(const uint8_t *bytes, size_t len, void *data)
+{
+	struct appender *appender = data;
+
+	if (len > appender->size - appender->used) {
+		return -ENOMEM;
+	}
+
+	memcpy(appender->buffer + appender->used, bytes, len);
+	appender->used += len;
+	appender->buffer[appender->used] = '\0';
 
 	return 0;
+}
+
+static int json_escape_buf(char *str, size_t *len, size_t buf_size)
+{
+	char tmp_buf[buf_size + 1];
+	struct appender appender = { .buffer = tmp_buf, .size = buf_size };
+	int ret;
+
+	ret = json_escape_internal(str, append_bytes_to_buf, &appender);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = append_bytes_to_buf("", 1, &appender);
+	if (!ret) {
+		memcpy(str, tmp_buf, appender.size);
+		if (len) {
+			*len = appender.size;
+		}
+	}
+
+	return ret;
 }
 
 size_t json_calc_escaped_len(const char *str, size_t len)
@@ -674,5 +723,201 @@ ssize_t json_escape(char *str, size_t *len, size_t buf_size)
 		return -ENOMEM;
 	}
 
-	return json_escape_internal(str, len, escaped_len);
+	return json_escape_buf(str, len, escaped_len);
+}
+
+static int encode(const struct json_obj_descr *descr, const void *val,
+		  json_append_bytes_t append_bytes, void *data);
+
+static int arr_encode(const struct json_obj_descr *descr, const void *field,
+		      const void *val, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	struct json_obj_descr elem_descr = { .type = descr->type };
+	ptrdiff_t elem_size = get_elem_size(descr);
+	size_t n_elem = *(size_t *)((char *)val + descr->offset);
+	size_t i;
+	int ret;
+
+	ret = append_bytes("[", 1, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (i = 0; i < n_elem; i++) {
+		ret = encode(&elem_descr, field, append_bytes, data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (i < n_elem - 1) {
+			ret = append_bytes(",", 1, data);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		field = (char *)field + elem_size;
+	}
+
+	return append_bytes("]", 1, data);
+}
+
+static int str_encode(const char **str, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	int ret;
+
+	ret = append_bytes("\"", 1, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = json_escape_internal(*str, append_bytes, data);
+	if (!ret) {
+		return append_bytes("\"", 1, data);
+	}
+
+	return ret;
+}
+
+static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	char buf[3 * sizeof(int32_t)];
+	int ret;
+
+	ret = snprintk(buf, sizeof(buf), "%d", *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
+static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
+		       void *data)
+{
+	if (*value) {
+		return append_bytes("true", 4, data);
+	}
+
+	return append_bytes("false", 5, data);
+}
+
+static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
+		      const void *val, json_append_bytes_t append_bytes,
+		      void *data);
+
+static int encode(const struct json_obj_descr *descr, const void *val,
+		  json_append_bytes_t append_bytes, void *data)
+{
+	void *ptr = (char *)val + descr->offset;
+
+	switch (descr->type) {
+	case JSON_TOK_FALSE:
+	case JSON_TOK_TRUE:
+		return bool_encode(ptr, append_bytes, data);
+	case JSON_TOK_STRING:
+		return str_encode(ptr, append_bytes, data);
+	case JSON_TOK_LIST_START:
+		return arr_encode(descr->element_descr, ptr,
+				  val, append_bytes, data);
+	case JSON_TOK_OBJECT_START:
+		return obj_encode(descr->sub_descr, descr->sub_descr_len,
+				  ptr, append_bytes, data);
+	case JSON_TOK_NUMBER:
+		return num_encode(ptr, append_bytes, data);
+	default:
+		return -EINVAL;
+	}
+}
+
+static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
+		      const void *val, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	size_t i;
+	int ret;
+
+	ret = append_bytes("{", 1, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (i = 0; i < descr_len; i++) {
+		ret = str_encode((const char **)&descr[i].field_name,
+				 append_bytes, data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = append_bytes(":", 1, data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = encode(&descr[i], val, append_bytes, data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (i < descr_len - 1) {
+			ret = append_bytes(",", 1, data);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return append_bytes("}", 1, data);
+}
+
+int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
+		    const void *val, json_append_bytes_t append_bytes,
+		    void *data)
+{
+	int ret;
+
+	ret = obj_encode(descr, descr_len, val, append_bytes, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return append_bytes("", 1, data);
+}
+
+int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
+			const void *val, char *buffer, size_t buf_size)
+{
+	struct appender appender = { .buffer = buffer, .size = buf_size };
+
+	return json_obj_encode(descr, descr_len, val, append_bytes_to_buf,
+			       &appender);
+}
+
+static int measure_bytes(const uint8_t *bytes, size_t len, void *data)
+{
+	ssize_t *total = data;
+
+	*total += (ssize_t)len;
+
+	return 0;
+}
+
+ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
+			      size_t descr_len, const void *val)
+{
+	ssize_t total = 0;
+	int ret;
+
+	ret = json_obj_encode(descr, descr_len, val, measure_bytes, &total);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return total;
 }
