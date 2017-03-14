@@ -215,7 +215,16 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr);
 #define net_ipv6_mld_leave(...)
 #endif /* CONFIG_NET_IPV6_MLD */
 
-#if defined(CONFIG_NET_IPV6_ND)
+/**
+ * @typedef net_nbr_cb_t
+ * @brief Callback used while iterating over neighbors.
+ *
+ * @param nbr A valid pointer on current neighbor.
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*net_nbr_cb_t)(struct net_nbr *nbr, void *user_data);
+
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 /**
  * @brief Make sure the link layer address is set according to
  * destination address. If the ll address is not yet known, then
@@ -293,24 +302,6 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr);
 
 /**
- * @brief Set the neighbor reachable timer.
- *
- * @param iface A valid pointer on a network interface
- * @param nbr Neighbor struct pointer
- */
-void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
-				      struct net_nbr *nbr);
-
-/**
- * @typedef net_nbr_cb_t
- * @brief Callback used while iterating over neighbors.
- *
- * @param nbr A valid pointer on current neighbor.
- * @param user_data A valid pointer on some user data or NULL
- */
-typedef void (*net_nbr_cb_t)(struct net_nbr *nbr, void *user_data);
-
-/**
  * @brief Go through all the neighbors and call callback for each of them.
  *
  * @param cb User supplied callback function to call.
@@ -318,7 +309,7 @@ typedef void (*net_nbr_cb_t)(struct net_nbr *nbr, void *user_data);
  */
 void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data);
 
-#else /* CONFIG_NET_IPV6_ND */
+#else /* CONFIG_NET_IPV6_NBR_CACHE */
 static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 {
 	return buf;
@@ -346,6 +337,28 @@ static inline struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 	return NULL;
 }
 
+static inline bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
+{
+	return true;
+}
+
+static inline void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data)
+{
+	return;
+}
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
+
+#if defined(CONFIG_NET_IPV6_ND)
+/**
+ * @brief Set the neighbor reachable timer.
+ *
+ * @param iface A valid pointer on a network interface
+ * @param nbr Neighbor struct pointer
+ */
+void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
+				      struct net_nbr *nbr);
+
+#else /* CONFIG_NET_IPV6_ND */
 static inline void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 						    struct net_nbr *nbr)
 {

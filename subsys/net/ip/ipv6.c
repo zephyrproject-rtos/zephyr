@@ -34,6 +34,10 @@
 #include "net_stats.h"
 
 #if defined(CONFIG_NET_IPV6_ND)
+static void nd_reachable_timeout(struct k_work *work);
+#endif
+
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 
 #define MAX_MULTICAST_SOLICIT 3
 #define MAX_UNICAST_SOLICIT   3
@@ -42,7 +46,6 @@
 
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
-static void nd_reachable_timeout(struct k_work *work);
 
 NET_NBR_POOL_INIT(net_neighbor_pool,
 		  CONFIG_NET_IPV6_MAX_NEIGHBORS,
@@ -339,7 +342,7 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 
 	return NULL;
 }
-#endif /* CONFIG_NET_IPV6_ND */
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 const struct in6_addr *net_ipv6_unspecified_address(void)
 {
@@ -557,43 +560,7 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #define dbg_addr_sent_tgt(...)
 #endif /* CONFIG_NET_DEBUG_IPV6 */
 
-#if defined(CONFIG_NET_IPV6_ND)
-#define NS_REPLY_TIMEOUT MSEC_PER_SEC
-
-static void ns_reply_timeout(struct k_work *work)
-{
-	/* We did not receive reply to a sent NS */
-	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
-						      struct net_ipv6_nbr_data,
-						      send_ns);
-
-	struct net_nbr *nbr = get_nbr_from_data(data);
-
-	if (!nbr) {
-		NET_DBG("NS timeout but no nbr data");
-		return;
-	}
-
-	if (!data->pending) {
-		/* Silently return, this is not an error as the work
-		 * cannot be cancelled in certain cases.
-		 */
-		return;
-	}
-
-	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(data->pending)->dst));
-
-	/* To unref when pending variable was set */
-	net_nbuf_unref(data->pending);
-
-	/* To unref the original buf allocation */
-	net_nbuf_unref(data->pending);
-
-	data->pending = NULL;
-
-	net_nbr_unref(nbr);
-}
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 
 /* If the reserve has changed, we need to adjust it accordingly in the
  * fragment chain. This can only happen in IEEE 802.15.4 where the link
@@ -795,6 +762,7 @@ try_send:
 		return update_ll_reserve(buf, nexthop);
 	}
 
+#if defined(CONFIG_NET_IPV6_ND)
 	/* We need to send NS and wait for NA before sending the packet. */
 	if (net_ipv6_send_ns(net_nbuf_iface(buf),
 			     buf,
@@ -809,6 +777,12 @@ try_send:
 	}
 
 	NET_DBG("Buf %p (frag %p) will be sent later", buf, buf->frags);
+#else
+	NET_DBG("Buf %p (frag %p) cannot be sent, dropping it.", buf,
+		buf->frags);
+
+	net_nbuf_unref(buf);
+#endif /* CONFIG_NET_IPV6_ND */
 
 	return NULL;
 }
@@ -842,6 +816,43 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx)
 	}
 
 	return NULL;
+}
+
+#define NS_REPLY_TIMEOUT MSEC_PER_SEC
+
+static void ns_reply_timeout(struct k_work *work)
+{
+	/* We did not receive reply to a sent NS */
+	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
+						      struct net_ipv6_nbr_data,
+						      send_ns);
+
+	struct net_nbr *nbr = get_nbr_from_data(data);
+
+	if (!nbr) {
+		NET_DBG("NS timeout but no nbr data");
+		return;
+	}
+
+	if (!data->pending) {
+		/* Silently return, this is not an error as the work
+		 * cannot be cancelled in certain cases.
+		 */
+		return;
+	}
+
+	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(data->pending)->dst));
+
+	/* To unref when pending variable was set */
+	net_nbuf_unref(data->pending);
+
+	/* To unref the original buf allocation */
+	net_nbuf_unref(data->pending);
+
+	data->pending = NULL;
+
+	net_nbr_unref(nbr);
 }
 
 static inline uint8_t get_llao_len(struct net_if *iface)
@@ -1201,7 +1212,9 @@ drop:
 
 	return NET_DROP;
 }
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
+#if defined(CONFIG_NET_IPV6_ND)
 static void nd_reachable_timeout(struct k_work *work)
 {
 	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
@@ -1304,7 +1317,9 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 
 	k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->reachable, time);
 }
+#endif /* CONFIG_NET_IPV6_ND */
 
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static inline bool handle_na_neighbor(struct net_buf *buf,
 				      struct net_icmpv6_nd_opt_hdr *hdr,
 				      uint8_t *tllao)
@@ -1722,7 +1737,9 @@ drop:
 
 	return -EINVAL;
 }
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
+#if defined(CONFIG_NET_IPV6_ND)
 int net_ipv6_send_rs(struct net_if *iface)
 {
 	struct net_buf *buf, *frag;
@@ -2586,7 +2603,7 @@ static struct net_icmpv6_handler mld_query_input_handler = {
 };
 #endif /* CONFIG_NET_IPV6_MLD */
 
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,
 	.code = 0,
@@ -2598,7 +2615,9 @@ static struct net_icmpv6_handler na_input_handler = {
 	.code = 0,
 	.handler = handle_na_input,
 };
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
+#if defined(CONFIG_NET_IPV6_ND)
 static struct net_icmpv6_handler ra_input_handler = {
 	.type = NET_ICMPV6_RA,
 	.code = 0,
@@ -2608,9 +2627,11 @@ static struct net_icmpv6_handler ra_input_handler = {
 
 void net_ipv6_init(void)
 {
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 	net_icmpv6_register_handler(&ns_input_handler);
 	net_icmpv6_register_handler(&na_input_handler);
+#endif
+#if defined(CONFIG_NET_IPV6_ND)
 	net_icmpv6_register_handler(&ra_input_handler);
 #endif
 #if defined(CONFIG_NET_IPV6_MLD)
