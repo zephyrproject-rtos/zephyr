@@ -127,6 +127,8 @@ extern uint32_t _timer_cycle_get_32(void);
 #include <arch/riscv32/pulpino/asm_inline.h>
 #elif defined(CONFIG_SOC_RISCV32_QEMU)
 #include <arch/riscv32/riscv32-qemu/asm_inline.h>
+#elif defined(CONFIG_SOC_RISCV32_FE310)
+#include <arch/riscv32/fe310/asm_inline.h>
 #endif
 
 #ifdef __cplusplus
