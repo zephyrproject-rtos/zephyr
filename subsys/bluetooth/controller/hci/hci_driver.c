@@ -381,16 +381,6 @@ static int hci_driver_open(void)
 		return -ENOMEM;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS)) {
-		uint64_t addr64 = CONFIG_BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS;
-		uint8_t bdaddr[6];
-
-		sys_put_le32(addr64 & 0xFFFFFFFF, &bdaddr[0]);
-		sys_put_le16((addr64 >> 32) & 0xFFFF, &bdaddr[4]);
-
-		ll_address_set(0, bdaddr);
-	}
-
 	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0);
 	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, 0, 0);
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, 0, 0);
