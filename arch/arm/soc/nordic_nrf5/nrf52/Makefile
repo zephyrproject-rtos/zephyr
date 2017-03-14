@@ -2,6 +2,7 @@ ZEPHYRINCLUDE += -I$(srctree)/arch/arm/soc/nordic_nrf5/include
 
 ifdef CONFIG_SOC_NRF52832
 soc-cflags += -DNRF52832_XXAA
+soc-cflags += -DNRF52832
 endif
 
 ifdef CONFIG_SOC_NRF52840
