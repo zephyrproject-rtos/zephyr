@@ -136,9 +136,9 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 			cb->raised_event = mgmt_event->event;
 			sync_data->iface = mgmt_event->iface;
 
-			k_sem_give(cb->sync_call);
-
 			sys_slist_remove(&event_callbacks, prev, &cb->node);
+
+			k_sem_give(cb->sync_call);
 		} else {
 			NET_DBG("Running callback %p : %p",
 				cb, cb->handler);
