@@ -46,8 +46,6 @@ static uint8_t MALIGN(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 						[TICKER_USER_OP_T_SIZE];
 static uint8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
-K_MUTEX_DEFINE(mutex_rand);
-
 static struct k_sem *sem_recv;
 
 static struct {
@@ -73,20 +71,6 @@ static struct {
 	uint8_t tx_addr:1;
 	uint8_t filter_policy:1;
 } _ll_scan_params;
-
-int bt_rand(void *buf, size_t len)
-{
-	while (len) {
-		k_mutex_lock(&mutex_rand, K_FOREVER);
-		len = rand_get(len, buf);
-		k_mutex_unlock(&mutex_rand);
-		if (len) {
-			cpu_sleep();
-		}
-	}
-
-	return 0;
-}
 
 void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {
