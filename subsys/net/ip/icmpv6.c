@@ -388,12 +388,15 @@ enum net_verdict net_icmpv6_input(struct net_buf *buf,
 {
 	struct net_icmpv6_handler *cb;
 
+	net_stats_update_icmp_recv();
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {
-			net_stats_update_icmp_recv();
 			return cb->handler(buf);
 		}
 	}
+
+	net_stats_update_icmp_drop();
 
 	return NET_DROP;
 }

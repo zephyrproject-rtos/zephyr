@@ -167,10 +167,14 @@ enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
 	ARG_UNUSED(code);
 	ARG_UNUSED(len);
 
+	net_stats_update_icmp_recv();
+
 	switch (type) {
 	case NET_ICMPV4_ECHO_REQUEST:
 		return handle_echo_request(buf);
 	}
+
+	net_stats_update_icmp_drop();
 
 	return NET_DROP;
 }
