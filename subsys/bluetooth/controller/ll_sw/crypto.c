@@ -5,8 +5,13 @@
  */
 
 #include <soc.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#include <bluetooth/log.h>
+
 #include "hal/cpu.h"
 #include "hal/rand.h"
+#include "hal/ecb.h"
 
 K_MUTEX_DEFINE(mutex_rand);
 
@@ -20,6 +25,18 @@ int bt_rand(void *buf, size_t len)
 			cpu_sleep();
 		}
 	}
+
+	return 0;
+}
+
+int bt_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
+	       uint8_t enc_data[16])
+{
+	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
+
+	ecb_encrypt(key, plaintext, enc_data, NULL);
+
+	BT_DBG("enc_data %s", bt_hex(enc_data, 16));
 
 	return 0;
 }

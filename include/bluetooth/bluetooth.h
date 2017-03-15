@@ -3,6 +3,7 @@
  */
 
 /*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -468,6 +469,21 @@ int bt_br_set_connectable(bool enable);
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_rand(void *buf, size_t len);
+
+/** @brief AES encrypt data.
+ *
+ *  An AES encrypt helper is used to request the Bluetooth controller's own
+ *  hardware to encrypt the plaintext using the key and returns the encrypted
+ *  data.
+ *
+ *  @param key 128 bit LS byte first key for the encryption of the plaintext
+ *  @param plaintext 128 bit LS byte first plaintext data block to be encrypted
+ *  @param enc_data 128 bit LS byte first encrypted data block
+ *
+ *  @return Zero on success or error code otherwise.
+ */
+int bt_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
+	       uint8_t enc_data[16]);
 
 /**
  * @}
