@@ -35,6 +35,10 @@
 #include <gatt/ipss.h>
 #endif
 
+#if defined(CONFIG_NET_L2_IEEE802154)
+#include <ieee802154_settings.h>
+#endif
+
 #define DEVICE_NAME "zperf shell"
 
 static const char *CONFIG =
@@ -1087,6 +1091,13 @@ void main(void)
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 	if (bt_enable(NULL)) {
 		NET_ERR("Bluetooth init failed\n");
+		return;
+	}
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+	if (ieee802154_sample_setup()) {
+		NET_ERR("IEEE 802.15.4 setup failed");
 		return;
 	}
 #endif

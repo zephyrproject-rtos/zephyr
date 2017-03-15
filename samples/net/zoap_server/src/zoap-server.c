@@ -29,6 +29,10 @@
 #include <gatt/ipss.h>
 #endif
 
+#if defined(CONFIG_NET_L2_IEEE802154)
+#include <ieee802154_settings.h>
+#endif
+
 #define MY_COAP_PORT 5683
 
 #define STACKSIZE 2000
@@ -1235,6 +1239,13 @@ void main(void)
 	ipss_init();
 
 	ipss_advertise();
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+	if (ieee802154_sample_setup()) {
+		NET_ERR("IEEE 802.15.4 setup failed");
+		return;
+	}
 #endif
 
 	if (!join_coap_multicast_group()) {

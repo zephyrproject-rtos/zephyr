@@ -35,7 +35,7 @@ config NET_L2_IEEE802154_ACK_REPLY
 
 choice
 	prompt "Device features level support"
-	default NET_L2_IEEE802154_ORFD
+	default NET_L2_IEEE802154_RFD
 	help
 	  Select which features level you want on the device. Depending on it,
 	  the device might expose more or less 802.15.4 protocol features.

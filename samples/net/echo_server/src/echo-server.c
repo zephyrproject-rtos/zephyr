@@ -26,6 +26,10 @@
 #include <gatt/ipss.h>
 #endif
 
+#if defined(CONFIG_NET_L2_IEEE802154)
+#include <ieee802154_settings.h>
+#endif
+
 /* Allow binding to ANY IP address. */
 #define NET_BIND_ANY_ADDR 1
 
@@ -568,6 +572,13 @@ void main(void)
 	}
 	ipss_init();
 	ipss_advertise();
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+	if (ieee802154_sample_setup()) {
+		NET_ERR("IEEE 802.15.4 setup failed");
+		return;
+	}
 #endif
 
 	k_thread_spawn(&thread_stack[0], STACKSIZE,
