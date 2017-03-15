@@ -333,18 +333,5 @@ void ieee802154_init(struct net_if *iface)
 	radio->set_ieee_addr(iface->dev, long_addr);
 	memcpy(ctx->ext_addr, long_addr, 8);
 
-#ifdef CONFIG_NET_L2_IEEE802154_ORFD
-	uint16_t short_addr;
-
-	short_addr = (mac[0] << 8) + mac[1];
-	radio->set_short_addr(iface->dev, short_addr);
-
-	ctx->short_addr = short_addr;
-	ctx->pan_id = CONFIG_NET_L2_IEEE802154_ORFD_PAN_ID;
-	ctx->channel = CONFIG_NET_L2_IEEE802154_ORFD_CHANNEL;
-
-	radio->set_pan_id(iface->dev, ctx->pan_id);
-	radio->set_channel(iface->dev, ctx->channel);
-#endif
 	radio->start(iface->dev);
 }
