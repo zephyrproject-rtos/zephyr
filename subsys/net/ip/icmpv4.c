@@ -272,7 +272,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 
 	if (net_send_data(buf) >= 0) {
 		net_stats_update_icmp_sent();
-		return -EIO;
+		return 0;
 	}
 
 drop:
@@ -281,8 +281,5 @@ drop:
 drop_no_buf:
 	net_stats_update_icmp_drop();
 
-	/* Note that we always return < 0 so that the caller knows to
-	 * discard the original buffer.
-	 */
 	return err;
 }
