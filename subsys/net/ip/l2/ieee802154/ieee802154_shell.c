@@ -214,7 +214,7 @@ static int shell_cmd_set_chan(int argc, char *argv[])
 	struct net_if *iface = net_if_get_default();
 	uint16_t channel = (uint16_t) atoi(argv[1]);
 
-	if (net_mgmt(NET_REQUEST_IEEE802154_SET_CHAN, iface,
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_CHANNEL, iface,
 		     &channel, sizeof(uint16_t))) {
 		printk("Could not set channel %u\n", channel);
 	} else {
@@ -229,7 +229,7 @@ static int shell_cmd_get_chan(int argc, char *argv[])
 	struct net_if *iface = net_if_get_default();
 	uint16_t channel;
 
-	if (net_mgmt(NET_REQUEST_IEEE802154_GET_CHAN, iface,
+	if (net_mgmt(NET_REQUEST_IEEE802154_GET_CHANNEL, iface,
 		     &channel, sizeof(uint16_t))) {
 		printk("Could not get channel\n");
 	} else {

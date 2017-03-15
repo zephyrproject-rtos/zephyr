@@ -386,7 +386,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 
 	value = *((uint16_t *) data);
 
-	if (mgmt_request == NET_REQUEST_IEEE802154_SET_CHAN) {
+	if (mgmt_request == NET_REQUEST_IEEE802154_SET_CHANNEL) {
 		if (ctx->channel != value) {
 			ret = radio->set_channel(iface->dev, value);
 			if (!ret) {
@@ -424,7 +424,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 	return ret;
 }
 
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_CHAN,
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_CHANNEL,
 				  ieee802154_set_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_PAN_ID,
@@ -450,7 +450,7 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 
 	value = (uint16_t *)data;
 
-	if (mgmt_request == NET_REQUEST_IEEE802154_GET_CHAN) {
+	if (mgmt_request == NET_REQUEST_IEEE802154_GET_CHANNEL) {
 		*value = ctx->channel;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_PAN_ID) {
 		*value = ctx->pan_id;
@@ -467,7 +467,7 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 	return 0;
 }
 
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_CHAN,
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_CHANNEL,
 				  ieee802154_get_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_PAN_ID,
