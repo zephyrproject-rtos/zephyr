@@ -68,30 +68,35 @@ static char upper_if_set(char chr, bool set)
 	return chr | 0x20;
 }
 
-static void net_tcp_trace(char *str, struct net_buf *buf)
+static void net_tcp_trace(struct net_buf *buf, struct net_tcp *tcp)
 {
 	uint8_t flags = NET_TCP_FLAGS(buf);
+	uint32_t rel_ack;
 
-	NET_INFO("%s[TCP header]", str);
-	NET_INFO("|(SrcPort)         %5u |(DestPort)      %5u |",
-		 ntohs(NET_TCP_BUF(buf)->src_port),
-		 ntohs(NET_TCP_BUF(buf)->dst_port));
-	NET_INFO("|(Sequence number)                 0x%010x |",
-		 sys_get_be32(NET_TCP_BUF(buf)->seq));
-	NET_INFO("|(ACK number)                      0x%010x |",
-		 sys_get_be32(NET_TCP_BUF(buf)->ack));
-	NET_INFO("|(HL) %2u |(F)  %c%c%c%c%c%c |(Window)           %5u |",
-		 (NET_TCP_BUF(buf)->offset >> 4) * 4,
-		 upper_if_set('u', flags & NET_TCP_URG),
-		 upper_if_set('a', flags & NET_TCP_ACK),
-		 upper_if_set('p', flags & NET_TCP_PSH),
-		 upper_if_set('r', flags & NET_TCP_RST),
-		 upper_if_set('s', flags & NET_TCP_SYN),
-		 upper_if_set('f', flags & NET_TCP_FIN),
-		 sys_get_be16(NET_TCP_BUF(buf)->wnd));
-	NET_INFO("|(Checksum)    0x%04x |(Urgent)           %5u |",
-		 ntohs(NET_TCP_BUF(buf)->chksum),
-		 sys_get_be16(NET_TCP_BUF(buf)->urg));
+	if (!tcp->sent_ack) {
+		rel_ack = 0;
+	} else {
+		rel_ack = sys_get_be32(NET_TCP_BUF(buf)->ack) ?
+		       sys_get_be32(NET_TCP_BUF(buf)->ack) - tcp->sent_ack : 0;
+	}
+
+	NET_DBG("buf %p src %u dst %u seq 0x%04x ack 0x%04x (%u) "
+		"flags %c%c%c%c%c%c win %u chk 0x%04x",
+		buf,
+		ntohs(NET_TCP_BUF(buf)->src_port),
+		ntohs(NET_TCP_BUF(buf)->dst_port),
+		sys_get_be32(NET_TCP_BUF(buf)->seq),
+		sys_get_be32(NET_TCP_BUF(buf)->ack),
+		/* This tells how many bytes we are acking now */
+		rel_ack,
+		upper_if_set('u', flags & NET_TCP_URG),
+		upper_if_set('a', flags & NET_TCP_ACK),
+		upper_if_set('p', flags & NET_TCP_PSH),
+		upper_if_set('r', flags & NET_TCP_RST),
+		upper_if_set('s', flags & NET_TCP_SYN),
+		upper_if_set('f', flags & NET_TCP_FIN),
+		sys_get_be16(NET_TCP_BUF(buf)->wnd),
+		ntohs(NET_TCP_BUF(buf)->chksum));
 }
 #else
 #define net_tcp_trace(...)
@@ -336,7 +341,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		return NULL;
 	}
 
-	net_tcp_trace("", buf);
+	net_tcp_trace(buf, tcp);
 
 	return buf;
 }
