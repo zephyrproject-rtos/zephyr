@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -18,25 +18,24 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
 
-#include "ccm.h"
-#include "radio.h"
+#include "hal/cpu.h"
+#include "hal/cntr.h"
+#include "hal/rand.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
+#include "hal/debug.h"
 
-#include "mem.h"
-#include "util.h"
-#include "ticker.h"
-#include "config.h"
-#include "mayfly.h"
-#include "mem.h"
-#include "rand.h"
-#include "radio.h"
-#include "cntr.h"
-#include "cpu.h"
+#include "util/config.h"
+#include "util/util.h"
+#include "util/mem.h"
+#include "util/mayfly.h"
+
+#include "ticker/ticker.h"
+
 #include "pdu.h"
 #include "ctrl.h"
 #include "ctrl_internal.h"
 #include "ll.h"
-
-#include "debug.h"
 
 /* Global singletons */
 static uint8_t MALIGN(4) _rand_context[3 + 4 + 1];

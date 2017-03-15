@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -15,27 +15,27 @@
 #include <bluetooth/hci.h>
 #include <misc/util.h>
 
-#include "cpu.h"
-#include "rand.h"
-#include "ecb.h"
-#include "ccm.h"
-#include "radio.h"
+#include "hal/cpu.h"
+#include "hal/rand.h"
+#include "hal/ecb.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
+#include "hal/debug.h"
 
-#include "mem.h"
-#include "memq.h"
-#include "mayfly.h"
-#include "util.h"
-#include "ticker.h"
+#include "util/config.h"
+#include "util/util.h"
+#include "util/mem.h"
+#include "util/memq.h"
+#include "util/mayfly.h"
+
+#include "ticker/ticker.h"
 
 #include "pdu.h"
 #include "ctrl.h"
 #include "ctrl_internal.h"
 
-#include "config.h"
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
-#include "debug.h"
 
 #define RADIO_PREAMBLE_TO_ADDRESS_US	40
 #define RADIO_HCTO_US			(150 + 2 + 2 + \
