@@ -139,7 +139,7 @@ static bool send_tcp_data(struct net_context *ctx,
 
 #define MY_PREFIX_LEN 64
 
-#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#if defined(CONFIG_NET_APP_SETTINGS)
 static struct in6_addr in6addr_my = MY_IP6ADDR;
 static struct in6_addr in6addr_peer = PEER_IP6ADDR;
 #endif
@@ -168,7 +168,7 @@ static char __noinit __stack ipv6_tcp_stack[STACKSIZE];
 #define MY_IP4ADDR { { { 192, 0, 2, 1 } } }
 #define PEER_IP4ADDR { { { 192, 0, 2, 2 } } }
 
-#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#if defined(CONFIG_NET_APP_SETTINGS)
 static struct in_addr in4addr_my = MY_IP4ADDR;
 static struct in_addr in4addr_peer = PEER_IP4ADDR;
 #endif
@@ -204,23 +204,23 @@ static inline void init_app(void)
 	NET_INFO("Run echo client");
 
 #if defined(CONFIG_NET_IPV6)
-#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#if defined(CONFIG_NET_APP_SETTINGS)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  CONFIG_NET_APP_MY_IPV6_ADDR,
 			  &my_addr6.sin6_addr) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
-			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+			CONFIG_NET_APP_MY_IPV6_ADDR);
 
 		net_ipaddr_copy(&my_addr6.sin6_addr, &in6addr_my);
 	}
 #endif
 
-#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#if defined(CONFIG_NET_APP_SETTINGS)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_SAMPLES_PEER_IPV6_ADDR,
+			  CONFIG_NET_APP_PEER_IPV6_ADDR,
 			  &peer_addr6.sin6_addr) < 0) {
 		NET_ERR("Invalid peer IPv6 address %s",
-			CONFIG_NET_SAMPLES_PEER_IPV6_ADDR);
+			CONFIG_NET_APP_PEER_IPV6_ADDR);
 
 		net_ipaddr_copy(&peer_addr6.sin6_addr, &in6addr_peer);
 	}
@@ -243,23 +243,23 @@ static inline void init_app(void)
 #if defined(CONFIG_NET_DHCPV4)
 	net_dhcpv4_start(net_if_get_default());
 #else
-#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#if defined(CONFIG_NET_APP_SETTINGS)
 	if (net_addr_pton(AF_INET,
-			  CONFIG_NET_SAMPLES_MY_IPV4_ADDR,
+			  CONFIG_NET_APP_MY_IPV4_ADDR,
 			  &my_addr4.sin_addr) < 0) {
 		NET_ERR("Invalid IPv4 address %s",
-			CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
+			CONFIG_NET_APP_MY_IPV4_ADDR);
 
 		net_ipaddr_copy(&my_addr4.sin_addr, &in4addr_my);
 	}
 #endif
 
-#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#if defined(CONFIG_NET_APP_SETTINGS)
 	if (net_addr_pton(AF_INET,
-			  CONFIG_NET_SAMPLES_PEER_IPV4_ADDR,
+			  CONFIG_NET_APP_PEER_IPV4_ADDR,
 			  &peer_addr4.sin_addr) < 0) {
 		NET_ERR("Invalid peer IPv4 address %s",
-			CONFIG_NET_SAMPLES_PEER_IPV4_ADDR);
+			CONFIG_NET_APP_PEER_IPV4_ADDR);
 
 		net_ipaddr_copy(&peer_addr4.sin_addr, &in4addr_peer);
 	}

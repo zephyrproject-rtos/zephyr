@@ -89,8 +89,8 @@ for example:
 
 .. code-block:: console
 
-	CONFIG_NET_SAMPLES_MY_IPV6_ADDR="2001:db8::1"
-	CONFIG_NET_SAMPLES_PEER_IPV6_ADDR="2001:db8::2"
+	CONFIG_NET_APP_MY_IPV6_ADDR="2001:db8::1"
+	CONFIG_NET_APP_PEER_IPV6_ADDR="2001:db8::2"
 
 are the IPv6 addresses for the DNS client running Zephyr and the
 DNS server, respectively.
@@ -241,4 +241,3 @@ Known Issues
 - IPv4: there is still an issue not yet isolated that causes the application
   to fail during the first two queries. The issue lies between L2 (ARP) and
   UDP and it only appears during application startup.
-

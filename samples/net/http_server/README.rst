@@ -52,8 +52,8 @@ project configuration file:
 
 .. code-block:: console
 
-	CONFIG_NET_SAMPLES_MY_IPV6_ADDR="2001:db8::1"
-	CONFIG_NET_SAMPLES_MY_IPV4_ADDR="192.168.1.101"
+	CONFIG_NET_APP_MY_IPV6_ADDR="2001:db8::1"
+	CONFIG_NET_APP_MY_IPV4_ADDR="192.168.1.101"
 
 Adding URLs
 ===========

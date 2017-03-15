@@ -103,12 +103,12 @@ static inline void init_app(void)
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 #if defined(CONFIG_NET_IPV6)
-#if defined(CONFIG_NET_SAMPLES_MY_IPV6_ADDR)
+#if defined(CONFIG_NET_APP_MY_IPV6_ADDR)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  CONFIG_NET_APP_MY_IPV6_ADDR,
 			  &in6addr_my) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
-			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+			CONFIG_NET_APP_MY_IPV6_ADDR);
 	}
 #endif
 
@@ -124,12 +124,12 @@ static inline void init_app(void)
 #if defined(CONFIG_NET_DHCPV4)
 	net_dhcpv4_start(net_if_get_default());
 #else
-#if defined(CONFIG_NET_SAMPLES_MY_IPV4_ADDR)
+#if defined(CONFIG_NET_APP_MY_IPV4_ADDR)
 	if (net_addr_pton(AF_INET,
-			  CONFIG_NET_SAMPLES_MY_IPV4_ADDR,
+			  CONFIG_NET_APP_MY_IPV4_ADDR,
 			  &in4addr_my) < 0) {
 		NET_ERR("Invalid IPv4 address %s",
-			CONFIG_NET_SAMPLES_MY_IPV4_ADDR);
+			CONFIG_NET_APP_MY_IPV4_ADDR);
 	}
 
 	net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my,
