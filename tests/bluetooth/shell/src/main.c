@@ -688,6 +688,23 @@ static void cmd_active_scan_on(void)
 	}
 }
 
+static void cmd_passive_scan_on(void)
+{
+	struct bt_le_scan_param param = {
+			.type       = BT_HCI_LE_SCAN_PASSIVE,
+			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+			.interval   = 0x10,
+			.window     = 0x10 };
+	int err;
+
+	err = bt_le_scan_start(&param, device_found);
+	if (err) {
+		printk("Bluetooth set passive scan failed (err %d)\n", err);
+	} else {
+		printk("Bluetooth passive scan enabled\n");
+	}
+}
+
 static void cmd_scan_off(void)
 {
 	int err;
@@ -713,6 +730,8 @@ static int cmd_scan(int argc, char *argv[])
 		cmd_active_scan_on();
 	} else if (!strcmp(action, "off")) {
 		cmd_scan_off();
+	} else if (!strcmp(action, "passive")) {
+		cmd_passive_scan_on();
 	} else {
 		return -EINVAL;
 	}
