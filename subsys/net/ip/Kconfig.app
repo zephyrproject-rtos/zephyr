@@ -50,4 +50,25 @@ config NET_APP_PEER_IPV4_ADDR
 
 endif # NET_IPV4
 
+if NET_L2_IEEE802154 || NET_L2_RAW_CHANNEL
+
+config NET_APP_IEEE802154_DEV_NAME
+	string "IEEE 802.15.4 device name"
+	help
+	  The device name to get bindings from in the sample application.
+
+config NET_APP_IEEE802154_PAN_ID
+	hex "IEEE 802.15.4 PAN ID"
+	default 0xabcd
+	help
+	  The PAN ID to use by default in the sample.
+
+config NET_APP_IEEE802154_CHANNEL
+	int "IEEE 802.15.4 channel"
+	default 26
+	help
+	  The channel to use by default in the sample application.
+
+endif # NET_L2_IEEE802154 || NET_L2_RAW_CHANNEL
+
 endif # NET_APP_SETTINGS
