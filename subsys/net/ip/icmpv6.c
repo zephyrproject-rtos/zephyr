@@ -28,6 +28,8 @@
 #include "rpl.h"
 #endif
 
+#define BUF_WAIT_TIME K_SECONDS(1)
+
 static sys_slist_t handlers;
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler)
@@ -101,12 +103,15 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 
 	iface = net_nbuf_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(0, BUF_WAIT_TIME);
+	if (!buf) {
+		goto drop_no_buf;
+	}
 
 	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
 
-	frag = net_nbuf_copy_all(orig, 0, K_FOREVER);
+	frag = net_nbuf_copy_all(orig, 0, BUF_WAIT_TIME);
 	if (!frag) {
 		goto drop;
 	}
@@ -185,6 +190,8 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 
 drop:
 	net_nbuf_unref(buf);
+
+drop_no_buf:
 	net_stats_update_icmp_drop();
 
 	return NET_DROP;
@@ -197,17 +204,23 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	struct net_if *iface;
 	struct in6_addr *src, *dst;
 	size_t extra_len, reserve;
+	int err = -EIO;
 
 	if (NET_IPV6_BUF(orig)->nexthdr == IPPROTO_ICMPV6) {
 		if (NET_ICMP_BUF(orig)->code < 128) {
 			/* We must not send ICMP errors back */
-			return -EINVAL;
+			err = -EINVAL;
+			goto drop_no_buf;
 		}
 	}
 
 	iface = net_nbuf_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(0, BUF_WAIT_TIME);
+	if (!buf) {
+		err = -ENOMEM;
+		goto drop_no_buf;
+	}
 
 	/* We need to remember the original location of source and destination
 	 * addresses as the net_nbuf_copy() will mangle the original buffer.
@@ -241,8 +254,9 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	/* We only copy minimal IPv6 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig, extra_len, reserve, K_FOREVER);
+	frag = net_nbuf_copy(orig, extra_len, reserve, BUF_WAIT_TIME);
 	if (!frag) {
+		err = -ENOMEM;
 		goto drop;
 	}
 
@@ -301,12 +315,14 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 
 drop:
 	net_nbuf_unref(buf);
+
+drop_no_buf:
 	net_stats_update_icmp_drop();
 
 	/* Note that we always return < 0 so that the caller knows to
 	 * discard the original buffer.
 	 */
-	return -EIO;
+	return err;
 }
 
 int net_icmpv6_send_echo_request(struct net_if *iface,
