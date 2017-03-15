@@ -787,6 +787,7 @@ static int cmd_advertise(int argc, char *argv[])
 	struct bt_le_adv_param param;
 	const struct bt_data *ad, *scan_rsp;
 	size_t ad_len, scan_rsp_len;
+	int err;
 
 	if (argc < 2) {
 		goto fail;
@@ -802,6 +803,7 @@ static int cmd_advertise(int argc, char *argv[])
 		return 0;
 	}
 
+	param.own_addr = NULL;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
@@ -839,8 +841,9 @@ static int cmd_advertise(int argc, char *argv[])
 		ad_len = ARRAY_SIZE(ad_discov);
 	}
 
-	if (bt_le_adv_start(&param, ad, ad_len, scan_rsp, scan_rsp_len) < 0) {
-		printk("Failed to start advertising\n");
+	err = bt_le_adv_start(&param, ad, ad_len, scan_rsp, scan_rsp_len);
+	if (err < 0) {
+		printk("Failed to start advertising (err %d)\n", err);
 	} else {
 		printk("Advertising started\n");
 	}
