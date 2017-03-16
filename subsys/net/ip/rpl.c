@@ -3307,8 +3307,8 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 					     addr.s6_addr);
 			break;
 		case NET_RPL_OPTION_TRANSIT:
-			/* The path sequence and control are ignored. */
-			frag = net_nbuf_skip(frag, pos, &pos, 2);
+			/* The flags, path sequence and control are ignored. */
+			frag = net_nbuf_skip(frag, pos, &pos, 3);
 			frag = net_nbuf_read_u8(frag, pos, &pos, &lifetime);
 			break;
 		}
