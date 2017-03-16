@@ -1,0 +1,14 @@
+# Kconfig - Memory Protection Unit (MPU) configuration options
+
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ARM_MPU
+	bool "ARM MPU Support"
+	depends on CPU_HAS_MPU
+	default n
+	help
+	  MCU has ARM MPU

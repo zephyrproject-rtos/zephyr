@@ -8,3 +8,4 @@ obj-$(CONFIG_GEN_SW_ISR_TABLE) += isr_wrapper.o
 obj-$(CONFIG_CPLUSPLUS) += __aeabi_atexit.o
 obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_CPU_CORTEX_M) += cortex_m/
+obj-$(CONFIG_CPU_HAS_MPU) += cortex_m/mpu/
