@@ -20,8 +20,12 @@ static int shell_cmd_ping(int argc, char *argv[])
 
 static int shell_cmd_params(int argc, char *argv[])
 {
-	printk("argc = %d, argv[0] = %s\n", argc, argv[0]);
+	int cnt;
 
+	printk("argc = %d\n", argc);
+	for (cnt = 0; cnt < argc; cnt++) {
+		printk("  argv[%d] = %s\n", cnt, argv[cnt]);
+	}
 	return 0;
 }
 
