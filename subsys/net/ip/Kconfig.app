@@ -69,6 +69,38 @@ config NET_APP_IEEE802154_CHANNEL
 	help
 	  The channel to use by default in the sample application.
 
+config NET_APP_IEEE802154_SECURITY_KEY
+	string "IEEE 802.15.4 security key"
+	default "moooh!"
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	  The key string to use for the link-layer security part.
+
+config NET_APP_IEEE802154_SECURITY_KEY_MODE
+	int "IEEE 802.15.4 security key mode"
+	default 0
+	range 0 0
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	  The key mode to use for the link-layer security part.
+	  Only implicit mode is supported, thus 0.
+
+config NET_APP_IEEE802154_SECURITY_LEVEL
+	int "IEEE 802.15.4 security level (0-7)"
+	default 0
+	range 0 7
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	  The security level to use for the link-layer security part.
+	  0 means no security
+	  1 authentication only with a 4 bytes length tag
+	  2 authentication only with a 8 bytes length tag
+	  3 authentication only with a 16 bytes length tag
+	  4 encryption only
+	  5 encryption/authentication with a 4 bytes length tag
+	  6 encryption/authentication with a 8 bytes length tag
+	  7 encryption/authentication with a 16 bytes length tag
+
 endif # NET_L2_IEEE802154 || NET_L2_RAW_CHANNEL
 
 endif # NET_APP_SETTINGS
