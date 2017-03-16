@@ -266,7 +266,7 @@ void dtls_client(void)
 	mbedtls_ssl_set_timer_cb(&ssl, &timer, dtls_timing_set_delay,
 				 dtls_timing_get_delay);
 
-	mbedtls_ssl_set_bio(&ssl, &ctx, udp_tx, NULL, udp_rx);
+	mbedtls_ssl_set_bio(&ssl, &ctx, udp_tx, udp_rx, NULL);
 
 	do {
 		ret = mbedtls_ssl_handshake(&ssl);
