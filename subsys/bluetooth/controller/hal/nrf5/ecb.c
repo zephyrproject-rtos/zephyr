@@ -16,35 +16,42 @@
 #include <bluetooth/log.h>
 #include "debug.h"
 
-void ecb_encrypt(uint8_t const *const key_le,
-		 uint8_t const *const clear_text_le,
-		 uint8_t * const cipher_text_le,
-		 uint8_t * const cipher_text_be)
+struct ecb_param {
+	uint8_t key[16];
+	uint8_t clear_text[16];
+	uint8_t cipher_text[16];
+} __packed;
+
+static void do_ecb(struct ecb_param *ecb)
 {
-	struct {
-		uint8_t key[16];
-		uint8_t clear_text[16];
-		uint8_t cipher_text[16];
-	} __packed ecb;
-
-	mem_rcopy(&ecb.key[0], key_le, sizeof(ecb.key));
-	mem_rcopy(&ecb.clear_text[0], clear_text_le, sizeof(ecb.clear_text));
-
 	do {
 		NRF_ECB->TASKS_STOPECB = 1;
-		NRF_ECB->ECBDATAPTR = (uint32_t) &ecb;
+		NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
 		NRF_ECB->TASKS_STARTECB = 1;
 		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
-				(NRF_ECB->EVENTS_ERRORECB == 0) &&
-				(NRF_ECB->ECBDATAPTR != 0)) {
+		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
+		       (NRF_ECB->ECBDATAPTR != 0)) {
 			/*__WFE();*/
 		}
 		NRF_ECB->TASKS_STOPECB = 1;
 	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
 
 	NRF_ECB->ECBDATAPTR = 0;
+}
+
+void ecb_encrypt(uint8_t const *const key_le,
+		 uint8_t const *const clear_text_le,
+		 uint8_t * const cipher_text_le,
+		 uint8_t * const cipher_text_be)
+{
+	struct ecb_param ecb;
+
+	mem_rcopy(&ecb.key[0], key_le, sizeof(ecb.key));
+	mem_rcopy(&ecb.clear_text[0], clear_text_le, sizeof(ecb.clear_text));
+
+	do_ecb(&ecb);
 
 	if (cipher_text_le) {
 		mem_rcopy(cipher_text_le, &ecb.cipher_text[0],
