@@ -686,8 +686,6 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 
 	NET_DBG("DIO Timer interval set to %d", time);
 
-	k_delayed_work_cancel(&instance->dio_timer);
-	k_delayed_work_init(&instance->dio_timer, dio_timer);
 	k_delayed_work_submit(&instance->dio_timer, time);
 }
 
@@ -951,10 +949,60 @@ static void net_rpl_schedule_probing(struct net_rpl_instance *instance)
 	NET_DBG("Send probe in %d ms, instance %p (%d)",
 		expiration, instance, instance->instance_id);
 
-	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
 	k_delayed_work_submit(&instance->probing_timer, expiration);
 }
 #endif /* CONFIG_NET_RPL_PROBING */
+
+static void dao_timer(struct net_rpl_instance *instance)
+{
+	/* Send the DAO to the preferred parent. */
+	if (instance->current_dag->preferred_parent) {
+		NET_DBG("Sending DAO iface %p", instance->iface);
+
+		dao_send(instance->current_dag->preferred_parent,
+			 instance->default_lifetime,
+			 instance->iface);
+
+#if NET_RPL_MULTICAST
+		/* Send DAOs for multicast prefixes only if the instance is
+		 * in MOP 3.
+		 */
+		if (instance->mop == NET_RPL_MOP_STORING_MULTICAST) {
+			send_mcast_dao(instance);
+		}
+#endif
+	} else {
+		NET_DBG("No suitable DAO parent found.");
+	}
+}
+
+static void dao_lifetime_timer(struct k_work *work)
+{
+	struct net_rpl_instance *instance =
+		CONTAINER_OF(work, struct net_rpl_instance,
+			     dao_lifetime_timer);
+
+	dao_timer(instance);
+
+	instance->dao_lifetime_timer_active = false;
+
+	set_dao_lifetime_timer(instance);
+}
+
+static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
+					 uint8_t id)
+{
+	memset(instance, 0, sizeof(struct net_rpl_instance));
+
+	instance->instance_id = id;
+	instance->default_route = NULL;
+	instance->is_used = true;
+
+	k_delayed_work_init(&instance->dio_timer, dio_timer);
+	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
+	k_delayed_work_init(&instance->dao_lifetime_timer, dao_lifetime_timer);
+	k_delayed_work_init(&instance->dao_timer, dao_send_timer);
+}
 
 static struct net_rpl_instance *net_rpl_alloc_instance(uint8_t instance_id)
 {
@@ -965,11 +1013,7 @@ static struct net_rpl_instance *net_rpl_alloc_instance(uint8_t instance_id)
 			continue;
 		}
 
-		memset(&rpl_instances[i], 0, sizeof(struct net_rpl_instance));
-
-		rpl_instances[i].instance_id = instance_id;
-		rpl_instances[i].default_route = NULL;
-		rpl_instances[i].is_used = true;
+		net_rpl_instance_init(&rpl_instances[i], instance_id);
 
 #if defined(CONFIG_NET_RPL_PROBING)
 		net_rpl_schedule_probing(&rpl_instances[i]);
@@ -1511,42 +1555,6 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 	return NULL;
 }
 
-static void dao_timer(struct net_rpl_instance *instance)
-{
-	/* Send the DAO to the preferred parent. */
-	if (instance->current_dag->preferred_parent) {
-		NET_DBG("Sending DAO iface %p", instance->iface);
-
-		dao_send(instance->current_dag->preferred_parent,
-			 instance->default_lifetime,
-			 instance->iface);
-
-#if NET_RPL_MULTICAST
-		/* Send DAOs for multicast prefixes only if the instance is
-		 * in MOP 3.
-		 */
-		if (instance->mop == NET_RPL_MOP_STORING_MULTICAST) {
-			send_mcast_dao(instance);
-		}
-#endif
-	} else {
-		NET_DBG("No suitable DAO parent found.");
-	}
-}
-
-static void dao_lifetime_timer(struct k_work *work)
-{
-	struct net_rpl_instance *instance =
-		CONTAINER_OF(work, struct net_rpl_instance,
-			     dao_lifetime_timer);
-
-	dao_timer(instance);
-
-	instance->dao_lifetime_timer_active = false;
-
-	set_dao_lifetime_timer(instance);
-}
-
 static void set_dao_lifetime_timer(struct net_rpl_instance *instance)
 {
 	if (net_rpl_get_mode() == NET_RPL_MODE_FEATHER) {
@@ -1569,8 +1577,6 @@ static void set_dao_lifetime_timer(struct net_rpl_instance *instance)
 		NET_DBG("Scheduling DAO lifetime timer %d ms in the future",
 			expiration_time);
 
-		k_delayed_work_init(&instance->dao_lifetime_timer,
-				    dao_lifetime_timer);
 		k_delayed_work_submit(&instance->dao_lifetime_timer,
 				      expiration_time);
 	}
@@ -1621,7 +1627,6 @@ static void schedule_dao(struct net_rpl_instance *instance, int latency)
 
 	instance->dao_timer_active = true;
 
-	k_delayed_work_init(&instance->dao_timer, dao_send_timer);
 	k_delayed_work_submit(&instance->dao_timer, expiration);
 
 	if (!instance->dao_lifetime_timer_active) {
