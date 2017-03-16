@@ -280,6 +280,43 @@ static inline struct net_nbr *nbr_add(struct net_buf *buf,
 				is_router, state);
 }
 
+#define NS_REPLY_TIMEOUT MSEC_PER_SEC
+
+static void ns_reply_timeout(struct k_work *work)
+{
+	/* We did not receive reply to a sent NS */
+	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
+						      struct net_ipv6_nbr_data,
+						      send_ns);
+
+	struct net_nbr *nbr = get_nbr_from_data(data);
+
+	if (!nbr) {
+		NET_DBG("NS timeout but no nbr data");
+		return;
+	}
+
+	if (!data->pending) {
+		/* Silently return, this is not an error as the work
+		 * cannot be cancelled in certain cases.
+		 */
+		return;
+	}
+
+	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(data->pending)->dst));
+
+	/* To unref when pending variable was set */
+	net_nbuf_unref(data->pending);
+
+	/* To unref the original buf allocation */
+	net_nbuf_unref(data->pending);
+
+	data->pending = NULL;
+
+	net_nbr_unref(nbr);
+}
+
 static struct net_nbr *nbr_new(struct net_if *iface,
 			       struct in6_addr *addr,
 			       enum net_nbr_state state)
@@ -296,6 +333,13 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
 	nbr_set_state(nbr, state);
 	net_ipv6_nbr_data(nbr)->pending = NULL;
+
+#if defined(CONFIG_NET_IPV6_ND)
+	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
+			    nd_reachable_timeout);
+#endif
+	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
+			    ns_reply_timeout);
 
 	NET_DBG("nbr %p iface %p state %d IPv6 %s",
 		nbr, iface, state, net_sprint_ipv6_addr(addr));
@@ -750,9 +794,6 @@ try_send:
 		if (net_ipv6_nbr_data(nbr)->state == NET_NBR_STALE) {
 			nbr_set_state(nbr, NET_NBR_DELAY);
 
-			k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
-					    nd_reachable_timeout);
-
 			k_delayed_work_submit(
 				&net_ipv6_nbr_data(nbr)->reachable,
 				DELAY_FIRST_PROBE_TIME);
@@ -816,43 +857,6 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx)
 	}
 
 	return NULL;
-}
-
-#define NS_REPLY_TIMEOUT MSEC_PER_SEC
-
-static void ns_reply_timeout(struct k_work *work)
-{
-	/* We did not receive reply to a sent NS */
-	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
-						      struct net_ipv6_nbr_data,
-						      send_ns);
-
-	struct net_nbr *nbr = get_nbr_from_data(data);
-
-	if (!nbr) {
-		NET_DBG("NS timeout but no nbr data");
-		return;
-	}
-
-	if (!data->pending) {
-		/* Silently return, this is not an error as the work
-		 * cannot be cancelled in certain cases.
-		 */
-		return;
-	}
-
-	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(data->pending)->dst));
-
-	/* To unref when pending variable was set */
-	net_nbuf_unref(data->pending);
-
-	/* To unref the original buf allocation */
-	net_nbuf_unref(data->pending);
-
-	data->pending = NULL;
-
-	net_nbr_unref(nbr);
 }
 
 static inline uint8_t get_llao_len(struct net_if *iface)
@@ -1290,9 +1294,6 @@ static void nd_reachable_timeout(struct k_work *work)
 			net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
 					 &data->addr, false);
 
-			k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
-					    nd_reachable_timeout);
-
 			k_delayed_work_submit(
 				&net_ipv6_nbr_data(nbr)->reachable,
 				RETRANS_TIMER);
@@ -1311,9 +1312,6 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 
 	NET_DBG("Starting reachable timer nbr %p data %p time %d ms",
 		nbr, net_ipv6_nbr_data(nbr), time);
-
-	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
-			    nd_reachable_timeout);
 
 	k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->reachable, time);
 }
@@ -1706,8 +1704,6 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 		NET_DBG("Setting timeout %d for NS", NS_REPLY_TIMEOUT);
 
-		k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
-				    ns_reply_timeout);
 		k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->send_ns,
 				      NS_REPLY_TIMEOUT);
 	}
