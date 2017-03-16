@@ -3080,7 +3080,12 @@ static inline int dao_forward(struct net_if *iface,
 
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
 
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_iface(buf, iface);
+
+	NET_ICMP_BUF(buf)->chksum = 0;
+	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
