@@ -67,7 +67,7 @@ struct bt_conn_br {
 
 struct bt_conn_sco {
 	/* Reference to ACL Connection */
-	struct bt_conn          *conn;
+	struct bt_conn          *acl;
 	uint16_t                pkt_type;
 };
 #endif

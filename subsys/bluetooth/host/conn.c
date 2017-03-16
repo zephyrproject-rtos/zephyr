@@ -279,7 +279,7 @@ struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
 			continue;
 		}
 
-		if (!bt_addr_cmp(peer, &sco_conns[i].sco.conn->br.dst)) {
+		if (!bt_addr_cmp(peer, &sco_conns[i].sco.acl->br.dst)) {
 			return bt_conn_ref(&sco_conns[i]);
 		}
 	}
@@ -316,7 +316,7 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 		return NULL;
 	}
 
-	sco_conn->sco.conn = bt_conn_lookup_addr_br(peer);
+	sco_conn->sco.acl = bt_conn_lookup_addr_br(peer);
 	sco_conn->type = BT_CONN_TYPE_SCO;
 
 	if (link_type == BT_HCI_SCO) {
