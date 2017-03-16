@@ -168,74 +168,50 @@ error:
 	return NULL;
 }
 
+static int accept_run(struct lexer *lexer, const char *run)
+{
+	for (; *run; run++) {
+		if (next(lexer) != *run) {
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
 static void *lexer_boolean(struct lexer *lexer)
 {
 	backup(lexer);
 
 	switch (next(lexer)) {
 	case 't':
-		if (next(lexer) != 'r') {
-			goto error;
+		if (!accept_run(lexer, "rue")) {
+			emit(lexer, JSON_TOK_TRUE);
+			return lexer_json;
 		}
-
-		if (next(lexer) != 'u') {
-			goto error;
-		}
-
-		if (next(lexer) != 'e') {
-			goto error;
-		}
-
-		emit(lexer, JSON_TOK_TRUE);
-		return lexer_json;
+		break;
 	case 'f':
-		if (next(lexer) != 'a') {
-			goto error;
+		if (!accept_run(lexer, "alse")) {
+			emit(lexer, JSON_TOK_FALSE);
+			return lexer_json;
 		}
-
-		if (next(lexer) != 'l') {
-			goto error;
-		}
-
-		if (next(lexer) != 's') {
-			goto error;
-		}
-
-		if (next(lexer) != 'e') {
-			goto error;
-		}
-
-		emit(lexer, JSON_TOK_FALSE);
-		return lexer_json;
+		break;
 	}
 
-error:
 	emit(lexer, JSON_TOK_ERROR);
 	return NULL;
 }
 
 static void *lexer_null(struct lexer *lexer)
 {
-	if (next(lexer) != 'u') {
-		goto error;
-	}
-
-	if (next(lexer) != 'l') {
-		goto error;
-	}
-
-	if (next(lexer) != 'l') {
-		goto error;
+	if (accept_run(lexer, "ull") < 0) {
+		emit(lexer, JSON_TOK_ERROR);
+		return NULL;
 	}
 
 	emit(lexer, JSON_TOK_NULL);
 	return lexer_json;
-
-error:
-	emit(lexer, JSON_TOK_ERROR);
-	return NULL;
 }
-
 
 static void *lexer_number(struct lexer *lexer)
 {
