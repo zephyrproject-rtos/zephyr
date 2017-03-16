@@ -3459,9 +3459,12 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
 	net_rpl_info(buf, "Destination Advertisement Object Ack");
 
+	/* TODO: Handle DAO ACK properly */
 	net_stats_update_rpl_dao_ack_recv();
 
-	return NET_DROP;
+	net_nbuf_unref(buf);
+
+	return NET_OK;
 }
 
 static struct net_icmpv6_handler dodag_info_solicitation_handler = {
