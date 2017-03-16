@@ -41,6 +41,20 @@ static void do_ecb(struct ecb_param *ecb)
 	NRF_ECB->ECBDATAPTR = 0;
 }
 
+void ecb_encrypt_be(uint8_t const *const key_be,
+		    uint8_t const *const clear_text_be,
+		    uint8_t * const cipher_text_be)
+{
+	struct ecb_param ecb;
+
+	memcpy(&ecb.key[0], key_be, sizeof(ecb.key));
+	memcpy(&ecb.clear_text[0], clear_text_be, sizeof(ecb.clear_text));
+
+	do_ecb(&ecb);
+
+	memcpy(cipher_text_be, &ecb.cipher_text[0], sizeof(ecb.cipher_text));
+}
+
 void ecb_encrypt(uint8_t const *const key_le,
 		 uint8_t const *const clear_text_le,
 		 uint8_t * const cipher_text_le,
