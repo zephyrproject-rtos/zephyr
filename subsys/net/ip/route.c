@@ -671,6 +671,60 @@ net_route_mcast_lookup(struct in6_addr *group)
 }
 #endif /* CONFIG_NET_ROUTE_MCAST */
 
+bool net_route_get_info(struct in6_addr *dst,
+			struct net_route_entry **route,
+			struct in6_addr **nexthop)
+{
+	*route = net_route_lookup(NULL, dst);
+	if (*route) {
+		*nexthop = net_route_get_nexthop(*route);
+		if (!*nexthop) {
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+int net_route_packet(struct net_buf *buf, struct net_route_entry *route,
+		     struct in6_addr *nexthop)
+{
+	struct net_linkaddr_storage *lladdr;
+	struct net_nbr *nbr;
+
+	nbr = net_ipv6_nbr_lookup(route->iface, nexthop);
+	if (!nbr) {
+		NET_DBG("Cannot find %s neighbor.",
+			net_sprint_ipv6_addr(nexthop));
+		return -ENOENT;
+	}
+
+	lladdr = net_nbr_get_lladdr(nbr->idx);
+	if (!lladdr) {
+		NET_DBG("Cannot find %s neighbor link layer address.",
+			net_sprint_ipv6_addr(nexthop));
+		return -ESRCH;
+	}
+
+	net_nbuf_set_iface(buf, route->iface);
+	net_nbuf_set_forwarding(buf, true);
+
+	/* Set the destination and source ll address in the packet.
+	 * We set the destination address to be the nexthop recipient.
+	 */
+	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
+	net_nbuf_ll_src(buf)->type = net_nbuf_ll_if(buf)->type;
+	net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+
+	net_nbuf_ll_dst(buf)->addr = lladdr->addr;
+	net_nbuf_ll_dst(buf)->type = lladdr->type;
+	net_nbuf_ll_dst(buf)->len = lladdr->len;
+
+	return net_send_data(buf);
+}
+
 void net_route_init(void)
 {
 	NET_DBG("Allocated %d routing entries (%zu bytes)",

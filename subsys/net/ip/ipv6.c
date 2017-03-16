@@ -621,6 +621,14 @@ static struct net_buf *update_ll_reserve(struct net_buf *buf,
 	uint16_t reserve, room_len, copy_len, pos;
 	struct net_buf *orig_frag, *frag;
 
+	/* No need to do anything if we are forwarding the packet
+	 * as we already know everything about the destination of
+	 * the packet.
+	 */
+	if (net_nbuf_forwarding(buf)) {
+		return buf;
+	}
+
 	reserve = net_if_get_ll_reserve(net_nbuf_iface(buf), addr);
 	if (reserve == net_nbuf_ll_reserve(buf)) {
 		return buf;
