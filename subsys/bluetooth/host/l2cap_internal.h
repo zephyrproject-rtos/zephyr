@@ -247,7 +247,14 @@ struct net_buf *bt_l2cap_create_pdu(struct net_buf_pool *pool, size_t reserve);
 struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve);
 
 /* Send L2CAP PDU over a connection */
-void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf);
+void bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
+		      bt_conn_tx_cb_t cb);
+
+static inline void bt_l2cap_send(struct bt_conn *conn, uint16_t cid,
+				 struct net_buf *buf)
+{
+	bt_l2cap_send_cb(conn, cid, buf, NULL);
+}
 
 /* Receive a new L2CAP PDU from a connection */
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf);

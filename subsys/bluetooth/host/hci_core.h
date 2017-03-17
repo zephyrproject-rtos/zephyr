@@ -22,7 +22,8 @@
 /* k_poll event tags */
 enum {
 	BT_EVENT_CMD_TX,
-	BT_EVENT_CONN_TX,
+	BT_EVENT_CONN_TX_NOTIFY,
+	BT_EVENT_CONN_TX_QUEUE,
 };
 
 /* bt_dev flags: the flags defined here represent BT controller state */

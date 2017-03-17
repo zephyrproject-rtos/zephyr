@@ -18,6 +18,8 @@
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/hfp_hf.h>
 
+#include "hci_core.h"
+#include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "rfcomm_internal.h"
 #include "at.h"

@@ -464,7 +464,8 @@ struct net_buf *bt_l2cap_create_pdu(struct net_buf_pool *pool, size_t reserve)
 	return bt_conn_create_pdu(pool, sizeof(struct bt_l2cap_hdr) + reserve);
 }
 
-void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
+void bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
+		      bt_conn_tx_cb_t cb)
 {
 	struct bt_l2cap_hdr *hdr;
 
@@ -474,7 +475,7 @@ void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct net_buf *buf)
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 	hdr->cid = sys_cpu_to_le16(cid);
 
-	bt_conn_send(conn, buf);
+	bt_conn_send_cb(conn, buf, cb);
 }
 
 static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,

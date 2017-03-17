@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <atomic.h>
 #include <misc/util.h>
+#include <misc/slist.h>
 #include <misc/byteorder.h>
 #include <misc/stack.h>
 #include <misc/__assert.h>
@@ -489,17 +490,21 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			continue;
 		}
 
-		if (conn->pending_pkts >= count) {
-			conn->pending_pkts -= count;
-		} else {
-			BT_ERR("completed packets mismatch: %u > %u",
-			       count, conn->pending_pkts);
-			conn->pending_pkts = 0;
-		}
-
 		irq_unlock(key);
 
 		while (count--) {
+			sys_snode_t *node;
+
+			key = irq_lock();
+			node = sys_slist_get(&conn->tx_pending);
+			irq_unlock(key);
+
+			if (!node) {
+				BT_ERR("packets count mismatch");
+				break;
+			}
+
+			k_fifo_put(&conn->tx_notify, node);
 			k_sem_give(bt_conn_get_pkts(conn));
 		}
 
@@ -2727,13 +2732,20 @@ static void process_events(struct k_poll_event *ev, int count)
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
 			if (ev->tag == BT_EVENT_CMD_TX) {
 				send_cmd();
-			} else if (IS_ENABLED(CONFIG_BLUETOOTH_CONN) &&
-				   ev->tag == BT_EVENT_CONN_TX) {
+			} else if (IS_ENABLED(CONFIG_BLUETOOTH_CONN)) {
 				struct bt_conn *conn;
 
-				conn = CONTAINER_OF(ev->fifo, struct bt_conn,
-						    tx_queue);
-				bt_conn_process_tx(conn);
+				if (ev->tag == BT_EVENT_CONN_TX_NOTIFY) {
+					conn = CONTAINER_OF(ev->fifo,
+							    struct bt_conn,
+							    tx_notify);
+					bt_conn_notify_tx(conn);
+				} else if (ev->tag == BT_EVENT_CONN_TX_QUEUE) {
+					conn = CONTAINER_OF(ev->fifo,
+							    struct bt_conn,
+							    tx_queue);
+					bt_conn_process_tx(conn);
+				}
 			}
 			break;
 		case K_POLL_STATE_NOT_READY:
@@ -2746,8 +2758,8 @@ static void process_events(struct k_poll_event *ev, int count)
 }
 
 #if defined(CONFIG_BLUETOOTH_CONN)
-/* command FIFO + conn_change signal + MAX_CONN */
-#define EV_COUNT (2 + CONFIG_BLUETOOTH_MAX_CONN)
+/* command FIFO + conn_change signal + MAX_CONN * 2 (tx & tx_notify) */
+#define EV_COUNT (2 + (CONFIG_BLUETOOTH_MAX_CONN * 2))
 #else
 /* command FIFO */
 #define EV_COUNT 1
@@ -2854,6 +2866,8 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.le.mtu);
 
+	pkts = min(pkts, CONFIG_BLUETOOTH_CONN_TX_MAX);
+
 	k_sem_init(&bt_dev.le.pkts, pkts, pkts);
 }
 #endif
@@ -2862,16 +2876,19 @@ static void read_buffer_size_complete(struct net_buf *buf)
 static void le_read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_buffer_size *rp = (void *)buf->data;
+	uint8_t le_max_num;
 
 	BT_DBG("status %u", rp->status);
 
 	bt_dev.le.mtu = sys_le16_to_cpu(rp->le_max_len);
-
-	if (bt_dev.le.mtu) {
-		k_sem_init(&bt_dev.le.pkts, rp->le_max_num, rp->le_max_num);
-		BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num,
-		       bt_dev.le.mtu);
+	if (!bt_dev.le.mtu) {
+		return;
 	}
+
+	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num, bt_dev.le.mtu);
+
+	le_max_num = min(rp->le_max_num, CONFIG_BLUETOOTH_CONN_TX_MAX);
+	k_sem_init(&bt_dev.le.pkts, le_max_num, le_max_num);
 }
 #endif
 
