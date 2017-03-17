@@ -1589,21 +1589,19 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	/* Cancel any pending update */
 	k_delayed_work_cancel(&conn->le.update_work);
 
-	/*
-	 * If remote does not support LL Connection Parameters Request
-	 * Procedure
+	/* Use LE connection parameter request if both local and remote support
+	 * it; or if local role is master then use LE connection update.
 	 */
-	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features)) {
-		return bt_l2cap_update_conn_param(conn, param);
-	}
-
-	if (BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
-	    BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
+	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features) &&
+	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features)) ||
+	    (conn->role == BT_HCI_ROLE_MASTER)) {
 		return bt_conn_le_conn_update(conn, param);
 	}
 
-	return -EBUSY;
+	/* If remote master does not support LL Connection Parameters Request
+	 * Procedure
+	 */
+	return bt_l2cap_update_conn_param(conn, param);
 }
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
