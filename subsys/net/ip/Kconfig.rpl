@@ -9,7 +9,8 @@
 menuconfig NET_RPL
 	bool "Enable RPL (Ripple) support"
 	default n
-	select NET_IPV6_ND
+	select NET_IPV6
+	select NET_IPV6_NBR_CACHE
 	select NET_ROUTE
 	help
 	  See RFC 6550 and RFC 6551 for details. Enable this if required by

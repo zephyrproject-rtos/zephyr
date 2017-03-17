@@ -53,11 +53,13 @@ config NET_MAX_ROUTERS
 	help
 	The value depends on your network needs.
 
+# Normally the route support is enabled by RPL or similar technology
+# that needs to use the routing infrastructure.
 config NET_ROUTE
 	bool
-	depends on NET_IPV6
+	depends on NET_IPV6_NBR_CACHE
 	default n
-	default y if NET_IPV6
+	default y if NET_IPV6_NBR_CACHE
 
 config	NET_MAX_ROUTES
 	int "Max number of routing entries stored."
