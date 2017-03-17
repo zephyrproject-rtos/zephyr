@@ -557,7 +557,7 @@ static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_rp_le_encrypt *rp;
 	uint8_t enc_data[16];
 
-	ecb_encrypt(cmd->key, cmd->plaintext, enc_data, 0);
+	ecb_encrypt(cmd->key, cmd->plaintext, enc_data, NULL);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 

@@ -1500,7 +1500,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			/* enable transmit encryption */
 			_radio.conn_curr->enc_tx = 1;
 
-			start_enc_rsp_send(_radio.conn_curr, 0);
+			start_enc_rsp_send(_radio.conn_curr, NULL);
 
 			/* resume data packet rx and tx */
 			_radio.conn_curr->pause_rx = 0;
@@ -2734,7 +2734,7 @@ static inline void isr_radio_state_close(void)
 
 	radio_tmr_stop();
 
-	event_inactive(0, 0, 0, 0);
+	event_inactive(0, 0, 0, NULL);
 
 	clock_control_off(_radio.hf_clock, NULL);
 
@@ -2948,7 +2948,7 @@ static void event_inactive(uint32_t ticks_at_expire, uint32_t remainder,
 			   uint16_t lazy, void *context)
 {
 	static void *s_link[2];
-	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, 0,
+	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, NULL,
 						     mayfly_radio_inactive};
 	uint32_t retval;
 
@@ -2975,7 +2975,7 @@ static void event_xtal(uint32_t ticks_at_expire, uint32_t remainder,
 				 uint16_t lazy, void *context)
 {
 	static void *s_link[2];
-	static struct mayfly s_mfy_xtal_start = {0, 0, s_link, 0,
+	static struct mayfly s_mfy_xtal_start = {0, 0, s_link, NULL,
 						 mayfly_xtal_start};
 	uint32_t retval;
 
@@ -3008,7 +3008,7 @@ static void mayfly_xtal_retain(uint8_t retain)
 		if (!s_xtal_retained) {
 			static void *s_link[2];
 			static struct mayfly s_mfy_xtal_start = {0, 0, s_link,
-				0, mayfly_xtal_start};
+				NULL, mayfly_xtal_start};
 			uint32_t retval;
 
 			s_xtal_retained = 1;
@@ -3022,7 +3022,7 @@ static void mayfly_xtal_retain(uint8_t retain)
 		if (s_xtal_retained) {
 			static void *s_link[2];
 			static struct mayfly s_mfy_xtal_stop = {0, 0, s_link,
-				0, mayfly_xtal_stop};
+				NULL, mayfly_xtal_stop};
 			uint32_t retval;
 
 			s_xtal_retained = 0;
@@ -3743,7 +3743,7 @@ static void event_stop(uint32_t ticks_at_expire, uint32_t remainder,
 		       uint16_t lazy, void *context)
 {
 	static void *s_link[2];
-	static struct mayfly s_mfy_radio_stop = {0, 0, s_link, 0,
+	static struct mayfly s_mfy_radio_stop = {0, 0, s_link, NULL,
 						 mayfly_radio_stop};
 	uint32_t retval;
 
@@ -3804,12 +3804,12 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 				     RADIO_TICKER_ID_MARKER_0, ticks_at_expire,
 				     ticks_to_active, TICKER_NULL_PERIOD,
 				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-				     TICKER_NULL_SLOT, event_active, 0,
+				     TICKER_NULL_SLOT, event_active, NULL,
 				     ticker_success_assert, (void *)__LINE__);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 
-		event_xtal(0, 0, 0, 0);
+		event_xtal(0, 0, 0, NULL);
 	} else if (_ticks_active_to_start > _ticks_xtal_to_start) {
 		uint32_t ticks_to_xtal;
 
@@ -3817,7 +3817,7 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 		ticks_to_xtal = _ticks_active_to_start - _ticks_xtal_to_start;
 		ticks_to_start = _ticks_active_to_start;
 
-		event_active(0, 0, 0, 0);
+		event_active(0, 0, 0, NULL);
 
 		ticker_status =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -3825,7 +3825,7 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 				     RADIO_TICKER_ID_MARKER_0, ticks_at_expire,
 				     ticks_to_xtal, TICKER_NULL_PERIOD,
 				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-				     TICKER_NULL_SLOT, event_xtal, 0,
+				     TICKER_NULL_SLOT, event_xtal, NULL,
 				     ticker_success_assert, (void *)__LINE__);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
@@ -3835,8 +3835,8 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 		 */
 		ticks_to_start = _ticks_xtal_to_start;
 
-		event_active(0, 0, 0, 0);
-		event_xtal(0, 0, 0, 0);
+		event_active(0, 0, 0, NULL);
+		event_xtal(0, 0, 0, NULL);
 	}
 
 	/* remember the remainder to be used in pkticker */
@@ -3907,7 +3907,7 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 #if XTAL_ADVANCED
 	{
 		static void *s_link[2];
-		static struct mayfly s_mfy_xtal_stop_calc = {0, 0, s_link, 0,
+		static struct mayfly s_mfy_xtal_stop_calc = {0, 0, s_link, NULL,
 			mayfly_xtal_stop_calc};
 		uint32_t retval;
 
@@ -4108,7 +4108,7 @@ void radio_event_adv_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 			     &_radio.advertiser.hdr.ticks_xtal_to_start,
 			     &_radio.advertiser.hdr.ticks_active_to_start,
 			     _radio.advertiser.hdr.ticks_preempt_to_start,
-			     RADIO_TICKER_ID_ADV, event_adv, 0);
+			     RADIO_TICKER_ID_ADV, event_adv, NULL);
 
 	DEBUG_RADIO_PREPARE_A(0);
 }
@@ -4205,7 +4205,7 @@ static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
 		ticker_status =
 		    ticker_job_idle_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 					RADIO_TICKER_USER_ID_WORKER,
-					ticker_job_disable, 0);
+					ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 	}
@@ -4284,7 +4284,7 @@ static void event_obs_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 			     &_radio.observer.hdr.ticks_xtal_to_start,
 			     &_radio.observer.hdr.ticks_active_to_start,
 			     _radio.observer.hdr.ticks_preempt_to_start,
-			     RADIO_TICKER_ID_OBS, event_obs, 0);
+			     RADIO_TICKER_ID_OBS, event_obs, NULL);
 
 #if SCHED_ADVANCED
 	/* calc next group in us for the anchor where first connection event
@@ -4293,7 +4293,7 @@ static void event_obs_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 	if (_radio.observer.conn) {
 		static void *s_link[2];
 		static struct mayfly s_mfy_sched_after_mstr_free_offset_get = {
-			0, 0, s_link, 0,
+			0, 0, s_link, NULL,
 			mayfly_sched_after_mstr_free_offset_get};
 		uint32_t ticks_at_expire_normal = ticks_at_expire;
 		uint32_t retval;
@@ -4409,7 +4409,7 @@ static void event_obs(uint32_t ticks_at_expire, uint32_t remainder,
 			ticker_status =
 				ticker_job_idle_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 						    RADIO_TICKER_USER_ID_WORKER,
-						    ticker_job_disable, 0);
+						    ticker_job_disable, NULL);
 
 			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 				  (ticker_status == TICKER_STATUS_BUSY));
@@ -4632,7 +4632,7 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 #if SCHED_ADVANCED
 			static void *s_link[2];
 			static struct mayfly s_mfy_sched_offset = {0, 0,
-				s_link, 0, 0 };
+				s_link, NULL, NULL };
 			void (*fp_mayfly_select_or_use)(void *);
 #endif
 			struct radio_pdu_node_tx *node_tx;
@@ -4988,7 +4988,7 @@ static inline void event_enc_prep(struct connection *conn)
 			/* calc the Session Key */
 			ecb_encrypt(&conn->llcp.encryption.ltk[0],
 				    &conn->llcp.encryption.skd[0],
-				    0, &conn->ccm_rx.key[0]);
+				    NULL, &conn->ccm_rx.key[0]);
 
 			/* copy the Session Key */
 			memcpy(&conn->ccm_tx.key[0], &conn->ccm_rx.key[0],
@@ -5045,7 +5045,7 @@ static inline void event_enc_prep(struct connection *conn)
 
 				/* calc the Session Key */
 				ecb_encrypt(&conn->llcp.encryption.ltk[0],
-					    &conn->llcp.encryption.skd[0], 0,
+					    &conn->llcp.encryption.skd[0], NULL,
 					    &conn->ccm_rx.key[0]);
 
 				/* copy the Session Key */
@@ -5086,7 +5086,7 @@ static inline void event_enc_prep(struct connection *conn)
 			/* enable transmit encryption */
 			_radio.conn_curr->enc_tx = 1;
 
-			start_enc_rsp_send(_radio.conn_curr, 0);
+			start_enc_rsp_send(_radio.conn_curr, NULL);
 
 			/* resume data packet rx and tx */
 			_radio.conn_curr->pause_rx = 0;
@@ -5709,7 +5709,7 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 		ticker_status =
 			ticker_job_idle_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
-					    ticker_job_disable, 0);
+					    ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 	}
@@ -5846,7 +5846,7 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 		ticker_status =
 			ticker_job_idle_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
-					    ticker_job_disable, 0);
+					    ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 	}
@@ -6079,7 +6079,7 @@ static void packet_rx_callback(void)
 	radio_event_callback();
 #else
 	static void *s_link[2];
-	static struct mayfly s_mfy_callback = {0, 0, s_link, 0,
+	static struct mayfly s_mfy_callback = {0, 0, s_link, NULL,
 		(void *)radio_event_callback};
 
 	mayfly_enqueue(RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_USER_ID_JOB, 1,
@@ -6847,7 +6847,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 				       uint32_t ticks_active_to_start)
 {
 	static void *s_link[2];
-	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, 0,
+	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, NULL,
 		mayfly_radio_inactive};
 	uint32_t volatile ticker_status_event;
 
@@ -6866,7 +6866,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 
 	if (ticker_status_event == TICKER_STATUS_SUCCESS) {
 		static void *s_link[2];
-		static struct mayfly s_mfy_xtal_stop = {0, 0, s_link, 0,
+		static struct mayfly s_mfy_xtal_stop = {0, 0, s_link, NULL,
 			mayfly_xtal_stop};
 		uint32_t volatile ticker_status_pre_event;
 
@@ -6959,7 +6959,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 		if (_radio.role != ROLE_NONE) {
 			static void *s_link[2];
 			static struct mayfly s_mfy_radio_stop = {0, 0, s_link,
-				0, mayfly_radio_stop};
+				NULL, mayfly_radio_stop};
 			uint32_t retval;
 
 			/* Radio state STOP is supplied in params */
@@ -7209,7 +7209,7 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				     (ticks_slot_offset +
 				      _radio.advertiser.hdr.ticks_slot),
-				     radio_event_adv_prepare, 0,
+				     radio_event_adv_prepare, NULL,
 				     ticker_if_done, (void *)&ticker_status);
 
 		/** @todo design to avoid this wait */
@@ -7229,7 +7229,7 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 							RADIO_TICKER_XTAL_OFFSET_US),
 				     TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY, TICKER_NULL_SLOT,
-				     event_adv_stop, 0, ticker_if_done,
+				     event_adv_stop, NULL, ticker_if_done,
 				     (void *)&ticker_status);
 	} else {
 		ticker_status =
@@ -7241,8 +7241,8 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				     (ticks_slot_offset +
 				      _radio.advertiser.hdr.ticks_slot),
-				     radio_event_adv_prepare, 0, ticker_if_done,
-				     (void *)&ticker_status);
+				     radio_event_adv_prepare, NULL,
+				     ticker_if_done, (void *)&ticker_status);
 	}
 
 	/** @todo design to avoid this wait */
@@ -7359,7 +7359,7 @@ uint32_t radio_scan_enable(uint8_t scan_type, uint8_t init_addr_type,
 			     TICKER_NULL_LAZY,
 			     (ticks_slot_offset +
 			      _radio.observer.hdr.ticks_slot),
-			     event_obs_prepare, 0, ticker_if_done,
+			     event_obs_prepare, NULL, ticker_if_done,
 			     (void *)&ticker_status);
 
 	/** @todo design to avoid this wait */

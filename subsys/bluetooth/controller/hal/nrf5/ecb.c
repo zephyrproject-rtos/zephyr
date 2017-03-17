@@ -125,7 +125,7 @@ void isr_ecb(void *param)
 
 		ecb_cleanup();
 
-		ecb->fp_ecb(1, 0, ecb->context);
+		ecb->fp_ecb(1, NULL, ecb->context);
 	}
 
 	else if (NRF_ECB->EVENTS_ENDECB) {
@@ -174,7 +174,7 @@ uint32_t ecb_ut(void)
 	struct ecb ecb;
 	struct ecb_ut_context context;
 
-	ecb_encrypt(key, clear_text, cipher_text, 0);
+	ecb_encrypt(key, clear_text, cipher_text, NULL);
 
 	context.done = 0;
 	ecb.in_key_le = key;
