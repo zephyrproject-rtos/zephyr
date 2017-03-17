@@ -42,16 +42,17 @@ static inline void zperf_upload_decode_stat(struct net_buf *buf,
 		return;
 	}
 
-	frag = net_nbuf_read_be32(frag, offset, &pos, &hdr.flags);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.total_len1);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.total_len2);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.stop_sec);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.stop_usec);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.error_cnt);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.outorder_cnt);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.datagrams);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.jitter1);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.jitter2);
+	frag = net_nbuf_read_be32(frag, offset, &pos, (uint32_t *)&hdr.flags);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.total_len1);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.total_len2);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.stop_sec);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.stop_usec);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.error_cnt);
+	frag = net_nbuf_read_be32(frag, pos, &pos,
+				  (uint32_t *)&hdr.outorder_cnt);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.datagrams);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.jitter1);
+	frag = net_nbuf_read_be32(frag, pos, &pos, (uint32_t *)&hdr.jitter2);
 
 	results->nb_packets_rcvd = hdr.datagrams;
 	results->nb_packets_lost = hdr.error_cnt;
@@ -121,7 +122,8 @@ static inline void zperf_upload_fin(struct net_context *context,
 
 			frag = net_nbuf_write(buf, net_buf_frag_last(buf),
 					     sizeof(struct zperf_udp_datagram),
-					      &pos, size, sample_packet,
+					      &pos, size,
+					      (uint8_t *)sample_packet,
 					      K_FOREVER);
 		}
 

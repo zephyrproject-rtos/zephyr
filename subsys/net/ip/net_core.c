@@ -63,6 +63,7 @@ NET_STACK_DEFINE(RX, rx_stack, CONFIG_NET_RX_STACK_SIZE,
 
 static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
+static K_SEM_DEFINE(startup_sync, 0, UINT_MAX);
 
 #if defined(CONFIG_NET_IPV6)
 static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
@@ -126,6 +127,9 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 {
 	uint8_t opt_type, opt_len;
 	uint16_t length = 0, loc;
+#if defined(CONFIG_NET_RPL)
+	bool result;
+#endif
 
 	if (len > total_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
@@ -158,10 +162,17 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 #if defined(CONFIG_NET_RPL)
 		case NET_IPV6_EXT_HDR_OPT_RPL:
 			NET_DBG("Processing RPL option");
-			if (!net_rpl_verify_header(buf, loc, &loc)) {
+			frag = net_rpl_verify_header(buf, frag, loc, &loc,
+						     &result);
+			if (!result) {
 				NET_DBG("RPL option error, packet dropped");
 				goto drop;
 			}
+
+			if (!frag && *pos == 0xffff) {
+				goto drop;
+			}
+
 			*verdict = NET_CONTINUE;
 			return frag;
 #endif
@@ -530,8 +541,16 @@ static void net_rx_thread(void)
 
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
+	 * We synchronize the startup of the device so that both RX and TX
+	 * are only started fully when both are ready to receive or send
+	 * data.
 	 */
-	net_if_init();
+	net_if_init(&startup_sync);
+
+	k_sem_take(&startup_sync, K_FOREVER);
+
+	/* This will take the interface up and start everything. */
+	net_if_post_init();
 
 	while (1) {
 #if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
@@ -693,8 +712,15 @@ int net_send_data(struct net_buf *buf)
 /* Called by driver when an IP packet has been received */
 int net_recv_data(struct net_if *iface, struct net_buf *buf)
 {
+	NET_ASSERT(buf && buf->frags);
+	NET_ASSERT(iface);
+
 	if (!buf->frags) {
 		return -ENODATA;
+	}
+
+	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+		return -ENETDOWN;
 	}
 
 	NET_DBG("fifo %p iface %p buf %p len %zu", &rx_queue, iface, buf,

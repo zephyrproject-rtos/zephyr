@@ -77,4 +77,15 @@ config  SLIP_TAP
 	  By default TUN is used. In TAP the Ethernet frames
 	  are transferred over SLIP.
 
+
+config	SLIP_MAC_ADDR
+	string "MAC address for the interface"
+	default ""
+	help
+	  Specify a MAC address for the SLIP interface in the form of
+	  six hex 8-bit chars separaed by colons (eg:
+	  aa:33:cc:22:e2:c0).  The default is an empty string, which
+	  means the code will make 00:00:5E:00:53:XX, where XX will be
+	  random.
+
 endif

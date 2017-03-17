@@ -34,9 +34,15 @@
 #include "net_stats.h"
 
 #if defined(CONFIG_NET_IPV6_ND)
+static void nd_reachable_timeout(struct k_work *work);
+#endif
+
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 
 #define MAX_MULTICAST_SOLICIT 3
 #define MAX_UNICAST_SOLICIT   3
+#define DELAY_FIRST_PROBE_TIME (5 * MSEC_PER_SEC) /* RFC 4861 ch 10 */
+#define RETRANS_TIMER 1000 /* in ms, RFC 4861 ch 10 */
 
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
@@ -51,6 +57,37 @@ NET_NBR_TABLE_INIT(NET_NBR_GLOBAL,
 		   neighbor,
 		   net_neighbor_pool,
 		   net_neighbor_table_clear);
+
+const char *net_nbr_state2str(enum net_nbr_state state)
+{
+	switch (state) {
+	case NET_NBR_INCOMPLETE:
+		return "incomplete";
+	case NET_NBR_REACHABLE:
+		return "reachable";
+	case NET_NBR_STALE:
+		return "stale";
+	case NET_NBR_DELAY:
+		return "delay";
+	case NET_NBR_PROBE:
+		return "probe";
+	}
+
+	return "<invalid state>";
+}
+
+static void nbr_set_state(struct net_nbr *nbr, enum net_nbr_state new_state)
+{
+	if (new_state == net_ipv6_nbr_data(nbr)->state) {
+		return;
+	}
+
+	NET_DBG("nbr %p %s -> %s", nbr,
+		net_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
+		net_nbr_state2str(new_state));
+
+	net_ipv6_nbr_data(nbr)->state = new_state;
+}
 
 static inline bool net_is_solicited(struct net_buf *buf)
 {
@@ -222,7 +259,7 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 	}
 
 	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
-	net_ipv6_nbr_data(nbr)->state = state;
+	nbr_set_state(nbr, state);
 	net_ipv6_nbr_data(nbr)->is_router = is_router;
 
 	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s",
@@ -243,6 +280,43 @@ static inline struct net_nbr *nbr_add(struct net_buf *buf,
 				is_router, state);
 }
 
+#define NS_REPLY_TIMEOUT MSEC_PER_SEC
+
+static void ns_reply_timeout(struct k_work *work)
+{
+	/* We did not receive reply to a sent NS */
+	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
+						      struct net_ipv6_nbr_data,
+						      send_ns);
+
+	struct net_nbr *nbr = get_nbr_from_data(data);
+
+	if (!nbr) {
+		NET_DBG("NS timeout but no nbr data");
+		return;
+	}
+
+	if (!data->pending) {
+		/* Silently return, this is not an error as the work
+		 * cannot be cancelled in certain cases.
+		 */
+		return;
+	}
+
+	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(data->pending)->dst));
+
+	/* To unref when pending variable was set */
+	net_nbuf_unref(data->pending);
+
+	/* To unref the original buf allocation */
+	net_nbuf_unref(data->pending);
+
+	data->pending = NULL;
+
+	net_nbr_unref(nbr);
+}
+
 static struct net_nbr *nbr_new(struct net_if *iface,
 			       struct in6_addr *addr,
 			       enum net_nbr_state state)
@@ -257,8 +331,15 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 	nbr->iface = iface;
 
 	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
-	net_ipv6_nbr_data(nbr)->state = state;
+	nbr_set_state(nbr, state);
 	net_ipv6_nbr_data(nbr)->pending = NULL;
+
+#if defined(CONFIG_NET_IPV6_ND)
+	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
+			    nd_reachable_timeout);
+#endif
+	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
+			    ns_reply_timeout);
 
 	NET_DBG("nbr %p iface %p state %d IPv6 %s",
 		nbr, iface, state, net_sprint_ipv6_addr(addr));
@@ -305,7 +386,7 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 
 	return NULL;
 }
-#endif /* CONFIG_NET_IPV6_ND */
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 const struct in6_addr *net_ipv6_unspecified_address(void)
 {
@@ -370,8 +451,7 @@ struct net_buf *net_ipv6_create(struct net_context *context,
 				   net_context_get_ip_proto(context));
 }
 
-struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
-				      uint8_t next_header)
+int net_ipv6_finalize_raw(struct net_buf *buf, uint8_t next_header)
 {
 	/* Set the length of the IPv6 header */
 	size_t total_len;
@@ -381,6 +461,7 @@ struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
 		/* Check if we need to add RPL header to sent UDP packet. */
 		if (net_rpl_insert_header(buf) < 0) {
 			NET_DBG("RPL HBHO insert failed");
+			return -EINVAL;
 		}
 	}
 #endif
@@ -414,14 +495,12 @@ struct net_buf *net_ipv6_finalize_raw(struct net_buf *buf,
 							     IPPROTO_ICMPV6);
 	}
 
-	return buf;
+	return 0;
 }
 
-struct net_buf *net_ipv6_finalize(struct net_context *context,
-				  struct net_buf *buf)
+int net_ipv6_finalize(struct net_context *context, struct net_buf *buf)
 {
-	return net_ipv6_finalize_raw(buf,
-				     net_context_get_ip_proto(context));
+	return net_ipv6_finalize_raw(buf, net_context_get_ip_proto(context));
 }
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -525,43 +604,7 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #define dbg_addr_sent_tgt(...)
 #endif /* CONFIG_NET_DEBUG_IPV6 */
 
-#if defined(CONFIG_NET_IPV6_ND)
-#define NS_REPLY_TIMEOUT MSEC_PER_SEC
-
-static void ns_reply_timeout(struct k_work *work)
-{
-	/* We did not receive reply to a sent NS */
-	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
-						      struct net_ipv6_nbr_data,
-						      send_ns);
-
-	struct net_nbr *nbr = get_nbr_from_data(data);
-
-	if (!nbr) {
-		NET_DBG("NS timeout but no nbr data");
-		return;
-	}
-
-	if (!data->pending) {
-		/* Silently return, this is not an error as the work
-		 * cannot be cancelled in certain cases.
-		 */
-		return;
-	}
-
-	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(data->pending)->dst));
-
-	/* To unref when pending variable was set */
-	net_nbuf_unref(data->pending);
-
-	/* To unref the original buf allocation */
-	net_nbuf_unref(data->pending);
-
-	data->pending = NULL;
-
-	net_nbr_unref(nbr);
-}
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 
 /* If the reserve has changed, we need to adjust it accordingly in the
  * fragment chain. This can only happen in IEEE 802.15.4 where the link
@@ -621,7 +664,13 @@ static struct net_buf *update_ll_reserve(struct net_buf *buf,
 		}
 
 		if (!copy_len) {
-			orig_frag = net_nbuf_frag_del(NULL, orig_frag);
+			struct net_buf *tmp = orig_frag;
+
+			orig_frag = orig_frag->frags;
+
+			tmp->frags = NULL;
+			net_nbuf_unref(tmp);
+
 			if (!orig_frag) {
 				break;
 			}
@@ -639,6 +688,8 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 	struct in6_addr *nexthop = NULL;
 	struct net_if *iface = NULL;
 	struct net_nbr *nbr;
+
+	NET_ASSERT(buf && buf->frags);
 
 	/* Workaround Linux bug, see:
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
@@ -719,10 +770,11 @@ struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
 try_send:
 	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf), nexthop);
 
-	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s", nbr,
+	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s state %s", nbr,
 		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN,
 		net_nbuf_iface(buf),
-		net_sprint_ipv6_addr(nexthop));
+		net_sprint_ipv6_addr(nexthop),
+		net_nbr_state2str(net_ipv6_nbr_data(nbr)->state));
 
 	if (nbr && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr_storage *lladdr;
@@ -735,9 +787,23 @@ try_send:
 		NET_DBG("Neighbor %p addr %s", nbr,
 			net_sprint_ll_addr(lladdr->addr, lladdr->len));
 
+		/* Start the NUD if we are in STALE state.
+		 * See RFC 4861 ch 7.3.3 for details.
+		 */
+#if defined(CONFIG_NET_IPV6_ND)
+		if (net_ipv6_nbr_data(nbr)->state == NET_NBR_STALE) {
+			nbr_set_state(nbr, NET_NBR_DELAY);
+
+			k_delayed_work_submit(
+				&net_ipv6_nbr_data(nbr)->reachable,
+				DELAY_FIRST_PROBE_TIME);
+		}
+#endif
+
 		return update_ll_reserve(buf, nexthop);
 	}
 
+#if defined(CONFIG_NET_IPV6_ND)
 	/* We need to send NS and wait for NA before sending the packet. */
 	if (net_ipv6_send_ns(net_nbuf_iface(buf),
 			     buf,
@@ -751,7 +817,13 @@ try_send:
 		return NULL;
 	}
 
-	NET_DBG("Buf %p will be sent later", buf);
+	NET_DBG("Buf %p (frag %p) will be sent later", buf, buf->frags);
+#else
+	NET_DBG("Buf %p (frag %p) cannot be sent, dropping it.", buf,
+		buf->frags);
+
+	net_nbuf_unref(buf);
+#endif /* CONFIG_NET_IPV6_ND */
 
 	return NULL;
 }
@@ -869,6 +941,12 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 
 			return;
 		}
+
+		/* Send NS so that we can verify that the neighbor is
+		 * reachable.
+		 */
+		net_ipv6_send_ns(net_nbuf_iface(buf), NULL, NULL, NULL,
+				 &net_ipv6_nbr_data(nbr)->addr, false);
 	}
 
 	if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
@@ -886,11 +964,11 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 			net_linkaddr_set(cached_lladdr, lladdr.addr,
 					 lladdr.len);
 
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+			nbr_set_state(nbr, NET_NBR_STALE);
 		} else {
 			if (net_ipv6_nbr_data(nbr)->state ==
 							NET_NBR_INCOMPLETE) {
-				net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+				nbr_set_state(nbr, NET_NBR_STALE);
 			}
 		}
 	}
@@ -1138,17 +1216,20 @@ drop:
 
 	return NET_DROP;
 }
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
+#if defined(CONFIG_NET_IPV6_ND)
 static void nd_reachable_timeout(struct k_work *work)
 {
 	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
 						      struct net_ipv6_nbr_data,
-						      send_ns);
+						      reachable);
 
 	struct net_nbr *nbr = get_nbr_from_data(data);
 
 	if (!data || !nbr) {
-		NET_DBG("ND reachable timeout but no nbr data");
+		NET_DBG("ND reachable timeout but no nbr data "
+			"(nbr %p data %p)", nbr, data);
 		return;
 	}
 
@@ -1187,7 +1268,8 @@ static void nd_reachable_timeout(struct k_work *work)
 
 		NET_DBG("nbr %p moving %s state to PROBE (%d)",
 			nbr, net_sprint_ipv6_addr(&data->addr), data->state);
-		break;
+
+		/* Intentionally continuing to probe state */
 
 	case NET_NBR_PROBE:
 		if (data->ns_count >= MAX_UNICAST_SOLICIT) {
@@ -1211,6 +1293,10 @@ static void nd_reachable_timeout(struct k_work *work)
 
 			net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
 					 &data->addr, false);
+
+			k_delayed_work_submit(
+				&net_ipv6_nbr_data(nbr)->reachable,
+				RETRANS_TIMER);
 		}
 		break;
 	}
@@ -1224,12 +1310,14 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 
 	NET_ASSERT_INFO(time, "Zero reachable timeout!");
 
-	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
-			    nd_reachable_timeout);
+	NET_DBG("Starting reachable timer nbr %p data %p time %d ms",
+		nbr, net_ipv6_nbr_data(nbr), time);
 
 	k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->reachable, time);
 }
+#endif /* CONFIG_NET_IPV6_ND */
 
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static inline bool handle_na_neighbor(struct net_buf *buf,
 				      struct net_icmpv6_nd_opt_hdr *hdr,
 				      uint8_t *tllao)
@@ -1307,13 +1395,17 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		}
 
 		if (net_is_solicited(buf)) {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_REACHABLE;
+			nbr_set_state(nbr, NET_NBR_REACHABLE);
 			net_ipv6_nbr_data(nbr)->ns_count = 0;
+
+			/* We might have active timer from PROBE */
+			k_delayed_work_cancel(
+				&net_ipv6_nbr_data(nbr)->reachable);
 
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
 		} else {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+			nbr_set_state(nbr, NET_NBR_STALE);
 		}
 
 		net_ipv6_nbr_data(nbr)->is_router = net_is_router(buf);
@@ -1326,7 +1418,7 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 	 */
 	if (!net_is_override(buf) && lladdr_changed) {
 		if (net_ipv6_nbr_data(nbr)->state == NET_NBR_REACHABLE) {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+			nbr_set_state(nbr, NET_NBR_STALE);
 		}
 
 		return false;
@@ -1347,13 +1439,17 @@ static inline bool handle_na_neighbor(struct net_buf *buf,
 		}
 
 		if (net_is_solicited(buf)) {
-			net_ipv6_nbr_data(nbr)->state = NET_NBR_REACHABLE;
+			nbr_set_state(nbr, NET_NBR_REACHABLE);
+
+			/* We might have active timer from PROBE */
+			k_delayed_work_cancel(
+				&net_ipv6_nbr_data(nbr)->reachable);
 
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
 							 nbr);
 		} else {
 			if (lladdr_changed) {
-				net_ipv6_nbr_data(nbr)->state = NET_NBR_STALE;
+				nbr_set_state(nbr, NET_NBR_STALE);
 			}
 		}
 	}
@@ -1608,8 +1704,6 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 		NET_DBG("Setting timeout %d for NS", NS_REPLY_TIMEOUT);
 
-		k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
-				    ns_reply_timeout);
 		k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->send_ns,
 				      NS_REPLY_TIMEOUT);
 	}
@@ -1620,6 +1714,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 			  &NET_ICMPV6_NS_BUF(buf)->tgt);
 
 	if (net_send_data(buf) < 0) {
+		NET_DBG("Cannot send NS %p (pending %p)", buf, pending);
+
+		if (pending) {
+			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
+		}
+
 		goto drop;
 	}
 
@@ -1633,7 +1733,9 @@ drop:
 
 	return -EINVAL;
 }
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
+#if defined(CONFIG_NET_IPV6_ND)
 int net_ipv6_send_rs(struct net_if *iface)
 {
 	struct net_buf *buf, *frag;
@@ -1781,11 +1883,11 @@ static inline struct net_buf *handle_ra_neighbor(struct net_buf *buf,
 			net_linkaddr_set(cached_lladdr, lladdr.addr,
 					 lladdr.len);
 
-			net_ipv6_nbr_data(*nbr)->state = NET_NBR_STALE;
+			nbr_set_state(*nbr, NET_NBR_STALE);
 		} else {
 			if (net_ipv6_nbr_data(*nbr)->state ==
 							NET_NBR_INCOMPLETE) {
-				net_ipv6_nbr_data(*nbr)->state = NET_NBR_STALE;
+				nbr_set_state(*nbr, NET_NBR_STALE);
 			}
 		}
 	}
@@ -1802,16 +1904,16 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 
 	prefix = net_if_ipv6_prefix_lookup(net_nbuf_iface(buf),
 					   &prefix_info->prefix,
-					   prefix_info->len);
+					   prefix_info->prefix_len);
 	if (!prefix) {
 		if (!prefix_info->valid_lifetime) {
 			return;
 		}
 
 		prefix = net_if_ipv6_prefix_add(net_nbuf_iface(buf),
-					&prefix_info->prefix,
-					prefix_info->len,
-					prefix_info->valid_lifetime);
+						&prefix_info->prefix,
+						prefix_info->prefix_len,
+						prefix_info->valid_lifetime);
 		if (prefix) {
 			NET_DBG("Interface %p add prefix %s/%d lifetime %u",
 				net_nbuf_iface(buf),
@@ -1821,7 +1923,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 		} else {
 			NET_ERR("Prefix %s/%d could not be added to iface %p",
 				net_sprint_ipv6_addr(&prefix_info->prefix),
-				prefix_info->len,
+				prefix_info->prefix_len,
 				net_nbuf_iface(buf));
 
 			return;
@@ -1833,7 +1935,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 		NET_DBG("Interface %p delete prefix %s/%d",
 			net_nbuf_iface(buf),
 			net_sprint_ipv6_addr(&prefix_info->prefix),
-			prefix_info->len);
+			prefix_info->prefix_len);
 
 		net_if_ipv6_prefix_rm(net_nbuf_iface(buf),
 				      &prefix->prefix,
@@ -1867,12 +1969,7 @@ static inline void handle_prefix_onlink(struct net_buf *buf,
 
 static inline uint32_t remaining(struct k_delayed_work *work)
 {
-	if (work->timeout.delta_ticks_from_prev < 0) {
-		return NET_IPV6_ND_INFINITE_LIFETIME;
-	}
-
-	return (uint32_t)work->timeout.delta_ticks_from_prev /
-		sys_clock_ticks_per_sec;
+	return k_delayed_work_remaining_get(work) / MSEC_PER_SEC;
 }
 
 static inline void handle_prefix_autonomous(struct net_buf *buf,
@@ -1983,6 +2080,21 @@ static inline struct net_buf *handle_ra_6co(struct net_buf *buf,
 	context.len = len * 8 - 2;
 
 	frag = net_nbuf_read_u8(frag, offset, pos, &context.context_len);
+
+	/* RFC 6775, 4.2
+	 * Context Length: 8-bit unsigned integer.  The number of leading
+	 * bits in the Context Prefix field that are valid.  The value ranges
+	 * from 0 to 128.  If it is more than 64, then the Length MUST be 3.
+	 */
+	if (context.context_len > 64 && len != 3) {
+		return NULL;
+	}
+
+	if (context.context_len <= 64 && len != 2) {
+		return NULL;
+	}
+
+	context.context_len = context.context_len / 8;
 	frag = net_nbuf_read_u8(frag, *pos, pos, &context.flag);
 
 	/* Skip reserved bytes */
@@ -2001,11 +2113,18 @@ static inline struct net_buf *handle_ra_6co(struct net_buf *buf,
 		 */
 		frag = net_nbuf_read(frag, *pos, pos, 8,
 				     context.prefix.s6_addr);
-		memset(context.prefix.s6_addr + 8, 0, 8);
 	}
 
 	if (!frag && *pos) {
 		return NULL;
+	}
+
+	/* context_len: The number of leading bits in the Context Prefix
+	 * field that are valid. So set remaining data to zero.
+	 */
+	if (context.context_len != sizeof(struct in6_addr)) {
+		memset(context.prefix.s6_addr + context.context_len, 0,
+		       sizeof(struct in6_addr) - context.context_len);
 	}
 
 	net_6lo_set_context(net_nbuf_iface(buf), &context);
@@ -2285,7 +2404,10 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	/* Insert the actual multicast record(s) here */
 	net_buf_frag_add(buf, frags);
 
-	buf = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
+	ret = net_ipv6_finalize_raw(buf, NET_IPV6_NEXTHDR_HBHO);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	net_nbuf_set_ext_len(buf, ROUTER_ALERT_LEN);
 
@@ -2295,17 +2417,20 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 
 	ret = net_send_data(buf);
 	if (ret < 0) {
-		net_nbuf_unref(buf);
-		net_stats_update_icmp_drop();
-		net_stats_update_ipv6_mld_drop();
-
-		return ret;
+		goto drop;
 	}
 
 	net_stats_update_icmp_sent();
 	net_stats_update_ipv6_mld_sent();
 
 	return 0;
+
+drop:
+	net_nbuf_unref(buf);
+	net_stats_update_icmp_drop();
+	net_stats_update_ipv6_mld_drop();
+
+	return ret;
 }
 
 static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
@@ -2474,7 +2599,7 @@ static struct net_icmpv6_handler mld_query_input_handler = {
 };
 #endif /* CONFIG_NET_IPV6_MLD */
 
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,
 	.code = 0,
@@ -2486,7 +2611,9 @@ static struct net_icmpv6_handler na_input_handler = {
 	.code = 0,
 	.handler = handle_na_input,
 };
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
+#if defined(CONFIG_NET_IPV6_ND)
 static struct net_icmpv6_handler ra_input_handler = {
 	.type = NET_ICMPV6_RA,
 	.code = 0,
@@ -2496,9 +2623,11 @@ static struct net_icmpv6_handler ra_input_handler = {
 
 void net_ipv6_init(void)
 {
-#if defined(CONFIG_NET_IPV6_ND)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
 	net_icmpv6_register_handler(&ns_input_handler);
 	net_icmpv6_register_handler(&na_input_handler);
+#endif
+#if defined(CONFIG_NET_IPV6_ND)
 	net_icmpv6_register_handler(&ra_input_handler);
 #endif
 #if defined(CONFIG_NET_IPV6_MLD)

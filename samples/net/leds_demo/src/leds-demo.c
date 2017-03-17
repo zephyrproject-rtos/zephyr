@@ -143,8 +143,13 @@ static int led_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return r;
 }
 
 static int led_post(struct zoap_resource *resource,
@@ -216,8 +221,13 @@ static int led_post(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return r;
 }
 
 static int led_put(struct zoap_resource *resource,
@@ -290,8 +300,13 @@ static int led_put(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return r;
 }
 
 static int dummy_get(struct zoap_resource *resource,
@@ -342,8 +357,13 @@ static int dummy_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return r;
 }
 
 static const char * const led_default_path[] = { "led", NULL };

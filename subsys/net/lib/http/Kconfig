@@ -14,7 +14,7 @@ config HTTP_SERVER
 	bool
 	prompt "HTTP server support"
 	default n
-	depends on HTTP
+	select HTTP
 	help
 	Enables HTTP server routines
 
@@ -31,7 +31,7 @@ config HTTP_CLIENT
 	bool
 	prompt "HTTP client support"
 	default n
-	depends on HTTP
+	select HTTP
 	help
 	Enables HTTP client routines
 
@@ -39,7 +39,7 @@ config HTTP_PARSER
 	bool
 	prompt "HTTP Parser support"
 	default n
-	depends on HTTP
+	select HTTP
 	help
 	This option enables the http_parser library from nodejs.
 	This parser requires some string-related routines commonly

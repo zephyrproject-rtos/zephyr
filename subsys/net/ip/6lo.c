@@ -36,7 +36,7 @@ struct net_6lo_context {
 
 static inline uint8_t get_6co_compress(struct net_icmpv6_nd_opt_6co *opt)
 {
-	return (opt->flag & 0x10) > 4;
+	return (opt->flag & 0x10) >> 4;
 }
 
 static inline uint8_t get_6co_cid(struct net_icmpv6_nd_opt_6co *opt)

@@ -38,21 +38,24 @@
  * Verify Kconfig configuration
  */
 
-#if CONFIG_NET_NBUF_RX_DATA_COUNT <= CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT
-#error CONFIG_NET_NBUF_RX_DATA_COUNT has to be larger than \
-	CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT
-#endif
-
-#if CONFIG_NET_NBUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT \
+#if CONFIG_NET_NBUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_NBUF_RX_DATA_COUNT \
 	< GMAC_FRAME_SIZE_MAX
-#error CONFIG_NET_NBUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT is not \
-	large enough to hold a full frame
+#error CONFIG_NET_NBUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_NBUF_RX_DATA_COUNT is \
+	not large enough to hold a full frame
 #endif
 
-#if CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_RX_DATA_COUNT \
-	< 2 * GMAC_FRAME_SIZE_MAX
-#error CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_RX_DATA_COUNT is not large\
-	enough to hold two full frames
+#if CONFIG_NET_NBUF_DATA_SIZE * (CONFIG_NET_NBUF_RX_DATA_COUNT - \
+	CONFIG_ETH_SAM_GMAC_NBUF_RX_DATA_COUNT) < GMAC_FRAME_SIZE_MAX
+#error Remaining free RX data buffers (CONFIG_NET_NBUF_RX_DATA_COUNT -
+	CONFIG_ETH_SAM_GMAC_NBUF_RX_DATA_COUNT) * CONFIG_NET_NBUF_DATA_SIZE
+	are not large enough to hold a full frame
+#endif
+
+#if CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_TX_DATA_COUNT \
+	< GMAC_FRAME_SIZE_MAX
+#pragma message "Maximum frame size GMAC driver is able to transmit " \
+	"CONFIG_NET_NBUF_DATA_SIZE * CONFIG_NET_NBUF_TX_DATA_COUNT is smaller" \
+	"than a full Ethernet frame"
 #endif
 
 #if CONFIG_NET_NBUF_DATA_SIZE & 0x3F
@@ -225,6 +228,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 
 		tx_desc = &tx_desc_list->buf[tx_desc_list->tail];
 		MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
+		k_sem_give(&queue->tx_desc_sem);
 
 		if (tx_desc->w1 & GMAC_TXW1_LASTBUFFER) {
 			/* Release net buffer to the buffer pool */
@@ -242,19 +246,36 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
  */
 static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 {
+	struct net_buf *buf;
+	struct ring_buf *tx_frames = &queue->tx_frames;
+
 	queue->err_tx_flushed_count++;
 
 	/* Stop transmission, clean transmit pipeline and control registers */
 	gmac->GMAC_NCR &= ~GMAC_NCR_TXEN;
 
+	/* Free all nbuf resources in the TX path */
+	while (tx_frames->tail != tx_frames->head) {
+		/* Release net buffer to the buffer pool */
+		buf = UINT_TO_POINTER(tx_frames->buf[tx_frames->tail]);
+		net_buf_unref(buf);
+		SYS_LOG_DBG("Dropping buf %p", buf);
+		MODULO_INC(tx_frames->tail, tx_frames->len);
+	}
+
+	/* Reinitialize TX descriptor list */
+	k_sem_reset(&queue->tx_desc_sem);
 	tx_descriptors_init(gmac, queue);
+	for (int i = 0; i < queue->tx_desc_list.len - 1; i++) {
+		k_sem_give(&queue->tx_desc_sem);
+	}
 
 	/* Restart transmission */
 	gmac->GMAC_NCR |=  GMAC_NCR_TXEN;
 }
 
 /*
- * Clean RX queue, any received data stored still in the buffers is abandoned.
+ * Clean RX queue, any received data still stored in the buffers is abandoned.
  */
 static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 {
@@ -378,6 +399,13 @@ static int queue_init(Gmac *gmac, struct gmac_queue *queue)
 	}
 
 	tx_descriptors_init(gmac, queue);
+
+	/* Initialize TX descriptors semaphore. The semaphore is required as the
+	 * size of the TX descriptor list is limited while the number of TX data
+	 * buffers is not.
+	 */
+	k_sem_init(&queue->tx_desc_sem, queue->tx_desc_list.len - 1,
+		   queue->tx_desc_list.len - 1);
 
 	/* Set Receive Buffer Queue Pointer Register */
 	gmac->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
@@ -509,7 +537,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 			DCACHE_INVALIDATE(frag_data, frag_len);
 
 			/* Get a new data net buffer from the buffer pool */
-			new_frag = net_nbuf_get_frag(buf, K_NO_WAIT);
+			new_frag = net_nbuf_get_frag(rx_frame, K_NO_WAIT);
 			if (new_frag == NULL) {
 				queue->err_rx_frames_dropped++;
 				net_buf_unref(rx_frame);
@@ -576,6 +604,8 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	struct net_buf *frag;
 	uint8_t *frag_data;
 	uint16_t frag_len;
+	uint32_t err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
+	unsigned int key;
 
 	__ASSERT(buf, "buf pointer is NULL");
 	__ASSERT(buf->frags, "Frame data missing");
@@ -605,6 +635,20 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 		/* Assure cache coherency before DMA read operation */
 		DCACHE_CLEAN(frag_data, frag_len);
 
+		k_sem_take(&queue->tx_desc_sem, K_FOREVER);
+
+		/* The following section becomes critical and requires IRQ lock
+		 * / unlock protection only due to the possibility of executing
+		 * tx_error_handler() function.
+		 */
+		key = irq_lock();
+
+		/* Check if tx_error_handler() function was executed */
+		if (queue->err_tx_flushed_count != err_tx_flushed_count_at_entry) {
+			irq_unlock(key);
+			return -EIO;
+		}
+
 		tx_desc = &tx_desc_list->buf[tx_desc_list->head];
 
 		/* Update buffer descriptor address word */
@@ -626,10 +670,20 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 		__ASSERT(tx_desc_list->head != tx_desc_list->tail,
 			 "tx_desc_list overflow");
 
+		irq_unlock(key);
+
 		/* Continue with the rest of fragments (only data) */
 		frag = frag->frags;
 		frag_data = frag->data;
 		frag_len = frag->len;
+	}
+
+	key = irq_lock();
+
+	/* Check if tx_error_handler() function was executed */
+	if (queue->err_tx_flushed_count != err_tx_flushed_count_at_entry) {
+		irq_unlock(key);
+		return -EIO;
 	}
 
 	/* Ensure the descriptor following the last one is marked as used */
@@ -638,6 +692,8 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 
 	/* Account for a sent frame */
 	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(buf));
+
+	irq_unlock(key);
 
 	/* Start transmission */
 	gmac->GMAC_NCR |= GMAC_NCR_TSTART;

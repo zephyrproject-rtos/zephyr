@@ -23,6 +23,15 @@
 
 #define ZEPHYR_PORT		80
 
+#define HTTP_AUTH_URL		"/auth"
+#define HTTP_AUTH_TYPE		"Basic"
+
+/* HTTP Basic Auth, see https://tools.ietf.org/html/rfc7617 */
+#define HTTP_AUTH_REALM		"Zephyr"
+#define HTTP_AUTH_USERNAME	"zephyr"
+#define HTTP_AUTH_PASSWORD	"0123456789"
+#define HTTP_AUTH_CREDENTIALS	"emVwaHlyOjAxMjM0NTY3ODk="
+
 #define APP_SLEEP_MSECS		500
 
 #ifdef CONFIG_MBEDTLS

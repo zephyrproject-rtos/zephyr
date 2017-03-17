@@ -72,9 +72,7 @@ static enum net_verdict packet_received(struct net_conn *conn,
 				 struct net_buf *buf,
 				 void *user_data);
 
-static void set_appdata_values(struct net_buf *buf,
-			       enum net_ip_protocol proto,
-			       size_t total_len);
+static void set_appdata_values(struct net_buf *buf, enum net_ip_protocol proto);
 
 #if defined(CONFIG_NET_TCP)
 static struct sockaddr *create_sockaddr(struct net_buf *buf,
@@ -526,7 +524,9 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			}
 		}
 
-		NET_DBG("Context %p binding to [%s]:%d iface %p", context,
+		NET_DBG("Context %p binding to %s [%s]:%d iface %p",
+			context,
+			net_proto2str(net_context_get_ip_proto(context)),
 			net_sprint_ipv6_addr(ptr), ntohs(addr6->sin6_port),
 			iface);
 
@@ -595,7 +595,9 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			}
 		}
 
-		NET_DBG("Context %p binding to %s:%d iface %p", context,
+		NET_DBG("Context %p binding to %s %s:%d iface %p",
+			context,
+			net_proto2str(net_context_get_ip_proto(context)),
 			net_sprint_ipv4_addr(ptr),
 			ntohs(addr4->sin_port), iface);
 
@@ -815,7 +817,7 @@ NET_CONN_CB(tcp_established)
 		return NET_DROP;
 	}
 
-	set_appdata_values(buf, IPPROTO_TCP, net_buf_frags_len(buf));
+	set_appdata_values(buf, IPPROTO_TCP);
 	context->tcp->send_ack += net_nbuf_appdatalen(buf);
 
 	ret = packet_received(conn, buf, context->tcp->recv_user_data);
@@ -1591,13 +1593,15 @@ static int create_udp_packet(struct net_context *context,
 			     const struct sockaddr *dst_addr,
 			     struct net_buf **out_buf)
 {
+	int r = 0;
+
 #if defined(CONFIG_NET_IPV6)
 	if (net_nbuf_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		buf = net_ipv6_create(context, buf, NULL, &addr6->sin6_addr);
 		buf = net_udp_append(context, buf, ntohs(addr6->sin6_port));
-		buf = net_ipv6_finalize(context, buf);
+		r = net_ipv6_finalize(context, buf);
 	} else
 #endif /* CONFIG_NET_IPV6 */
 
@@ -1607,7 +1611,7 @@ static int create_udp_packet(struct net_context *context,
 
 		buf = net_ipv4_create(context, buf, NULL, &addr4->sin_addr);
 		buf = net_udp_append(context, buf, ntohs(addr4->sin_port));
-		buf = net_ipv4_finalize(context, buf);
+		r = net_ipv4_finalize(context, buf);
 	} else
 #endif /* CONFIG_NET_IPV4 */
 	{
@@ -1616,7 +1620,7 @@ static int create_udp_packet(struct net_context *context,
 
 	*out_buf = buf;
 
-	return 0;
+	return r;
 }
 #endif /* CONFIG_NET_UDP */
 
@@ -1784,17 +1788,14 @@ int net_context_sendto(struct net_buf *buf,
 	return sendto(buf, dst_addr, addrlen, cb, timeout, token, user_data);
 }
 
-static void set_appdata_values(struct net_buf *buf,
-			       enum net_ip_protocol proto,
-			       size_t total_len)
+static void set_appdata_values(struct net_buf *buf, enum net_ip_protocol proto)
 {
+	size_t total_len = net_buf_frags_len(buf);
+
 #if defined(CONFIG_NET_UDP)
 	if (proto == IPPROTO_UDP) {
 		net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
 				     sizeof(struct net_udp_hdr));
-		net_nbuf_set_appdatalen(buf, total_len -
-					net_nbuf_ip_hdr_len(buf) -
-					sizeof(struct net_udp_hdr));
 	} else
 #endif /* CONFIG_NET_UDP */
 
@@ -1802,17 +1803,16 @@ static void set_appdata_values(struct net_buf *buf,
 	if (proto == IPPROTO_TCP) {
 		net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
 				     tcp_hdr_len(buf));
-		net_nbuf_set_appdatalen(buf, total_len -
-					net_nbuf_ip_hdr_len(buf) -
-					tcp_hdr_len(buf));
 	} else
 #endif /* CONFIG_NET_TCP */
 	{
 		net_nbuf_set_appdata(buf, net_nbuf_ip_data(buf) +
 				     net_nbuf_ip_hdr_len(buf));
-		net_nbuf_set_appdatalen(buf, total_len -
-					net_nbuf_ip_hdr_len(buf));
 	}
+
+	net_nbuf_set_appdatalen(buf, total_len -
+				(net_nbuf_appdata(buf) -
+				 net_nbuf_ip_data(buf)));
 
 	NET_ASSERT_INFO(net_nbuf_appdatalen(buf) < total_len,
 			"Wrong appdatalen %u, total %zu",
@@ -1831,49 +1831,37 @@ static enum net_verdict packet_received(struct net_conn *conn,
 	net_context_set_iface(context, net_nbuf_iface(buf));
 	net_nbuf_set_context(buf, context);
 
-	if (context->recv_cb) {
-		size_t total_len = net_buf_frags_len(buf);
-
-		if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
-			/* TCP packets get appdata earlier in
-			 * tcp_established().
-			 */
-			if (net_nbuf_family(buf) == AF_INET6) {
-				set_appdata_values(buf,
-						   NET_IPV6_BUF(buf)->nexthdr,
-						   total_len);
-			} else {
-				set_appdata_values(buf,
-						   NET_IPV4_BUF(buf)->proto,
-						   total_len);
-			}
-		}
-#if defined(CONFIG_NET_TCP)
-		else if (net_context_get_type(context) == SOCK_STREAM) {
-			if (net_nbuf_appdatalen(buf) == 0) {
-				net_nbuf_unref(buf);
-				return NET_OK;
-			}
-		}
-#endif /* CONFIG_NET_TCP */
-
-		NET_DBG("Set appdata %p to len %u (total %zu)",
-			net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),
-			total_len);
-
-		context->recv_cb(context, buf, 0, user_data);
-
-#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-		k_sem_give(&context->recv_data_wait);
-#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
-
-		return NET_OK;
-	}
-
 	/* If there is no callback registered, then we can only drop
 	 * the packet.
 	 */
-	return NET_DROP;
+
+	if (!context->recv_cb) {
+		return NET_DROP;
+	}
+
+	if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
+		/* TCP packets get appdata earlier in tcp_established(). */
+		set_appdata_values(buf, IPPROTO_UDP);
+	}
+#if defined(CONFIG_NET_TCP)
+	else if (net_context_get_type(context) == SOCK_STREAM) {
+		if (net_nbuf_appdatalen(buf) == 0) {
+			net_nbuf_unref(buf);
+			return NET_OK;
+		}
+	}
+#endif /* CONFIG_NET_TCP */
+	NET_DBG("Set appdata %p to len %u (total %zu)",
+		net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),
+		net_buf_frags_len(buf));
+
+	context->recv_cb(context, buf, 0, user_data);
+
+#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
+	k_sem_give(&context->recv_data_wait);
+#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
+
+	return NET_OK;
 }
 
 #if defined(CONFIG_NET_UDP)

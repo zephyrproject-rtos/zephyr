@@ -13,13 +13,14 @@
 #include <net/net_mgmt.h>
 #include <net/nbuf.h>
 
-#define TEST_MGMT_REQUEST		0x0ABC1234
-#define TEST_MGMT_EVENT			0x8ABC1234
-#define TEST_MGMT_EVENT_UNHANDLED	0x8ABC4321
+#define TEST_MGMT_REQUEST		0x07AB1234
+#define TEST_MGMT_EVENT			0x87AB1234
+#define TEST_MGMT_EVENT_UNHANDLED	0x87AB4321
 
 /* Notifier infra */
 static uint32_t event2throw;
 static uint32_t throw_times;
+static int throw_sleep;
 static char __noinit __stack thrower_stack[512];
 static struct k_sem thrower_lock;
 
@@ -101,7 +102,10 @@ static void thrower_thread(void)
 			 event2throw, throw_times);
 
 		for (; throw_times; throw_times--) {
-			net_mgmt_event_notify(event2throw, NULL);
+			k_sleep(throw_sleep);
+
+			net_mgmt_event_notify(event2throw,
+					      net_if_get_default());
 		}
 	}
 }
@@ -152,10 +156,47 @@ static inline int test_sending_event(uint32_t times, bool receiver)
 	return ret;
 }
 
+static int test_synchronous_event_listener(uint32_t times, bool on_iface)
+{
+	uint32_t event_mask;
+	int ret;
+
+	TC_PRINT("- Synchronous event listener %s\n",
+		 on_iface ? "on interface" : "");
+
+	event2throw = TEST_MGMT_EVENT | (on_iface ? NET_MGMT_IFACE_BIT : 0);
+	throw_times = times;
+	throw_sleep = K_MSEC(200);
+
+	event_mask = event2throw;
+
+	k_sem_give(&thrower_lock);
+
+	if (on_iface) {
+		ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
+						   event_mask, NULL,
+						   K_SECONDS(1));
+	} else {
+		ret = net_mgmt_event_wait(event_mask, NULL, NULL,
+					  K_SECONDS(1));
+	}
+
+	if (ret < 0) {
+		if (ret == -ETIMEDOUT) {
+			TC_ERROR("Call timed out\n");
+		}
+
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
 static void initialize_event_tests(void)
 {
 	event2throw = 0;
 	throw_times = 0;
+	throw_sleep = K_NO_WAIT;
 
 	rx_event = 0;
 	rx_calls = 0;
@@ -256,6 +297,14 @@ void main(void)
 
 	if (test_core_event(NET_EVENT_IPV6_ADDR_DEL,
 			    _iface_ip6_del) != TC_PASS) {
+		goto end;
+	}
+
+	if (test_synchronous_event_listener(2, false) != TC_PASS) {
+		goto end;
+	}
+
+	if (test_synchronous_event_listener(2, true) != TC_PASS) {
 		goto end;
 	}
 

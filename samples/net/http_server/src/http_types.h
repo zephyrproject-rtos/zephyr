@@ -11,10 +11,10 @@
 #include <net/http.h>
 
 /* Max number of HTTP header field-value pairs */
-#define HTTP_PARSER_MAX_FIELD_VALUES	10
+#define HTTP_PARSER_MAX_FIELD_VALUES	CONFIG_HTTP_HEADER_FIELD_ITEMS
 
 /* Max number of HTTP server context available to this app */
-#define HTTP_MAX_NUMBER_SERVER_CTX	16
+#define HTTP_MAX_NUMBER_SERVER_CTX	CONFIG_NET_MAX_CONTEXTS
 
 /* Max number of URLs this server will handle */
 #define HTTP_MAX_NUMBER_URL		16

@@ -143,9 +143,9 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl)
 	/* TTL value */
 	*ttl = dns_answer_ttl(DNS_COMMON_UINT_SIZE, answer);
 	pos = dns_msg->answer_offset + DNS_ANSWER_MIN_SIZE;
-	len = dns_unpack_answer_rdlength(DNS_COMMON_UINT_SIZE, answer);
+	len = dns_answer_rdlength(DNS_COMMON_UINT_SIZE, answer);
 
-	switch (dns_response_type(DNS_COMMON_UINT_SIZE, answer)) {
+	switch (dns_answer_type(DNS_COMMON_UINT_SIZE, answer)) {
 	case DNS_RR_TYPE_A:
 	case DNS_RR_TYPE_AAAA:
 		set_dns_msg_response(dns_msg, DNS_RESPONSE_IP, pos, len);

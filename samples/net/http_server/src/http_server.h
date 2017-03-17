@@ -52,4 +52,6 @@ int http_url_default_handler(int (*write_cb)(struct http_server_ctx *));
 int http_url_add(const char *url, uint8_t flags,
 		 int (*write_cb)(struct http_server_ctx *http_ctx));
 
+int http_auth(struct http_server_ctx *ctx);
+
 #endif

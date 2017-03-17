@@ -157,6 +157,224 @@ lb_exit:
 	return rc;
 }
 
+/* The DNS response min size is computed as follows:
+ * (hdr size) + (question min size) +  (RR min size)
+ */
+#define RESPONSE_MIN_SIZE	(DNS_HEADER_SIZE + 6 + 14)
+
+/* DNS QNAME size here is 2 because we use DNS pointers */
+#define NAME_PTR_SIZE	2
+/* DNS integer size */
+#define INT_SIZE	2
+/* DNS answer TTL size */
+#define ANS_TTL_SIZE	4
+
+struct dns_response_test {
+	/* domain name: example.com */
+	const char *dname;
+
+	/* expected result */
+	uint8_t *res;
+	/* expected result length */
+	uint16_t res_len;
+
+	/* transaction id */
+	uint16_t tid;
+	/* A, AAAA */
+	uint8_t answer_type;
+	/* answer counter */
+	uint8_t ancount;
+	/* answer TTL */
+	uint32_t ttl;
+	/* recursion available */
+	uint8_t ra;
+	/* data len */
+	uint8_t rdlen;
+	/* data */
+	const uint8_t *rdata;
+};
+
+/* This routine evaluates DNS responses with one RR, and assumes that the
+ * RR's name points to the DNS question's qname.
+ */
+static int eval_response1(struct dns_response_test *resp)
+{
+	uint8_t *ptr = resp->res;
+	uint16_t offset;
+	int  rc;
+
+	if (resp->res_len < RESPONSE_MIN_SIZE) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	if (dns_unpack_header_id(resp->res) != resp->tid) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* This is a response */
+	if (dns_header_qr(resp->res) != DNS_RESPONSE) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* For the DNS response, this value is standard query */
+	if (dns_header_opcode(resp->res) != DNS_QUERY) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Authoritative Answer */
+	if (dns_header_aa(resp->res) != 0) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* TrunCation is always 0 */
+	if (dns_header_tc(resp->res) != 0) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Recursion Desired is always 1 in the Zephyr DNS implementation */
+	if (dns_header_rd(resp->res) != 1) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Recursion Available */
+	if (dns_header_ra(resp->res) != resp->ra) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Z is always 0 */
+	if (dns_header_z(resp->res) != 0) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Response code must be 0 (no error) */
+	if (dns_header_rcode(resp->res) != DNS_HEADER_NOERROR) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Question counter must be 1 */
+	if (dns_header_qdcount(resp->res) != 1) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Answer counter */
+	if (dns_header_ancount(resp->res) != resp->ancount) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Name server resource records counter must be 0 */
+	if (dns_header_nscount(resp->res) != 0) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* Additional records counter must be 0 */
+	if (dns_header_arcount(resp->res) != 0) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	rc = dns_msg_pack_qname(&qname_len, qname, MAX_BUF_SIZE, resp->dname);
+	if (rc != 0) {
+		goto lb_exit;
+	}
+
+	offset = DNS_HEADER_SIZE;
+
+	/* DNS header + qname + qtype (int size) + qclass (int size) */
+	if (offset + qname_len + 2 * INT_SIZE >= resp->res_len) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	if (memcmp(qname, resp->res + offset, qname_len) != 0) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	offset += qname_len;
+
+	if (dns_unpack_query_qtype(resp->res + offset) != resp->answer_type) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	if (dns_unpack_query_qclass(resp->res + offset) != DNS_CLASS_IN) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* we add here qtype and qclass */
+	offset += INT_SIZE + INT_SIZE;
+
+	/* 0xc0 and 0x0c are derived from RFC 1035 4.1.4. Message compression.
+	 * 0x0c is the DNS Header Size (fixed size) and 0xc0 is the
+	 * DNS pointer marker.
+	 */
+	if (resp->res[offset + 0] != 0xc0 || resp->res[offset + 1] != 0x0c) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	/* simplify the following lines by applying the offset here */
+	resp->res += offset;
+	offset = NAME_PTR_SIZE;
+
+	if (dns_answer_type(NAME_PTR_SIZE, resp->res) != resp->answer_type) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	offset += INT_SIZE;
+
+	if (dns_answer_class(NAME_PTR_SIZE, resp->res) != DNS_CLASS_IN) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	offset += INT_SIZE;
+
+	if (dns_answer_ttl(NAME_PTR_SIZE, resp->res) != resp->ttl) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	offset += ANS_TTL_SIZE;
+
+	if (dns_answer_rdlength(NAME_PTR_SIZE, resp->res) != resp->rdlen) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	offset += INT_SIZE;
+
+	if (resp->rdlen + offset > resp->res_len) {
+		rc = -EINVAL;
+		goto lb_exit;
+	}
+
+	if (memcmp(resp->res + offset, resp->rdata, resp->rdlen) != 0) {
+		rc = -EINVAL;
+	}
+
+lb_exit:
+	resp->res = ptr;
+
+	return rc;
+}
+
+
 void test_dns_query(void)
 {
 	int rc;
@@ -178,9 +396,55 @@ void test_dns_query(void)
 	assert_not_equal(rc, 0, "Query test with invalid ID failed");
 }
 
+/* DNS response for www.zephyrproject.org with the following parameters:
+ * Transaction ID: 0xb041
+ * Answer type: RR A
+ * Answer counter: 1
+ * TTL: 3028
+ * Recursion Available: 1
+ * RD len: 4 (IPv4 Address)
+ * RData: 140.211.169.8
+ */
+static uint8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
+			       0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77,
+			       0x0d, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x70,
+			       0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x03, 0x6f,
+			       0x72, 0x67, 0x00, 0x00, 0x01, 0x00, 0x01, 0xc0,
+			       0x0c, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x0b,
+			       0xd4, 0x00, 0x04, 0x8c, 0xd3, 0xa9, 0x08 };
+
+static const uint8_t resp_ipv4_addr[] = {140, 211, 169, 8};
+
+void test_dns_response(void)
+{
+	struct dns_response_test test1 = { .dname = DNAME1,
+					   .res = resp_ipv4,
+					   .res_len = sizeof(resp_ipv4),
+					   .tid = 0xb041,
+					   .answer_type = DNS_RR_TYPE_A,
+					   .ancount = 1,
+					   .ttl = 3028,
+					   .ra = 1,
+					   .rdlen = 4, /* IPv4 test */
+					   .rdata = resp_ipv4_addr };
+	int rc;
+
+	rc = eval_response1(&test1);
+	assert_equal(rc, 0, "Response test failed for domain: "DNAME1);
+}
+
 void test_main(void)
 {
-	ztest_test_suite(dns_tests, ztest_unit_test(test_dns_query));
+	ztest_test_suite(dns_tests,
+			 ztest_unit_test(test_dns_query),
+			 ztest_unit_test(test_dns_response));
 
 	ztest_run_test_suite(dns_tests);
+
+	/* TODO:
+	 *	1) add malformed DNS data
+	 *	2) add validations against buffer overflows
+	 *	3) add debug info to detect the exit point (or split the tests)
+	 *	4) add test data with CNAME and more RR
+	 */
 }

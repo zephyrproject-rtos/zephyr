@@ -80,10 +80,10 @@ static int shell_cmd_associate(int argc, char *argv[])
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_ASSOCIATE, iface,
 		     &params, sizeof(struct ieee802154_req_params))) {
-		printk("Could not associate to %s on PAN ID %u",
+		printk("Could not associate to %s on PAN ID %u\n",
 		       argv[2], params.pan_id);
 	} else {
-		printk("Associated to PAN ID %u", params.pan_id);
+		printk("Associated to PAN ID %u\n", params.pan_id);
 	}
 
 	return 0;
@@ -275,7 +275,7 @@ static int shell_cmd_set_ext_addr(int argc, char *argv[])
 	uint8_t addr[IEEE802154_EXT_ADDR_LENGTH];
 
 	if (strlen(argv[2]) != 23) {
-		printk("23 characters needed");
+		printk("23 characters needed\n");
 		return 0;
 	}
 
@@ -310,6 +310,8 @@ static int shell_cmd_get_ext_addr(int argc, char *argv[])
 				printk(":");
 			}
 		}
+
+		printk("\n");
 	}
 
 	return 0;

@@ -11,6 +11,7 @@
  */
 
 #include <zephyr.h>
+#include <stdlib.h>
 #include <shell/shell.h>
 
 #include <net/net_if.h>
@@ -704,36 +705,25 @@ static int shell_cmd_mem(int argc, char *argv[])
 }
 
 #if defined(CONFIG_NET_IPV6)
-static inline const char *nbrstate2str(enum net_nbr_state state)
-{
-	switch (state) {
-	case NET_NBR_INCOMPLETE:
-		return "incomplete";
-	case NET_NBR_REACHABLE:
-		return "reachable";
-	case NET_NBR_STALE:
-		return "stale";
-	case NET_NBR_DELAY:
-		return "delay";
-	case NET_NBR_PROBE:
-		return "probe";
-	}
-
-	return "<invalid state>";
-}
-
 static void nbr_cb(struct net_nbr *nbr, void *user_data)
 {
 	int *count = user_data;
 
+	if (*count == 0) {
+		printk("     Neighbor   Flags   Interface  State\t"
+		       "Remain\tLink              Address\n");
+	}
+
 	(*count)++;
 
-	printk("[%d] %d/%d/%d/%d %10s iface %p ll %s addr %s\n",
-	       *count, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
+	printk("[%2d] %p %d/%d/%d/%d %p %9s\t%6d\t%17s %s\n",
+	       *count, nbr, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
 	       net_ipv6_nbr_data(nbr)->is_router,
 	       net_ipv6_nbr_data(nbr)->link_metric,
-	       nbrstate2str(net_ipv6_nbr_data(nbr)->state),
 	       nbr->iface,
+	       net_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
+	       k_delayed_work_remaining_get(
+		       &net_ipv6_nbr_data(nbr)->reachable),
 	       nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
 	       net_sprint_ll_addr(
 		       net_nbr_get_lladdr(nbr->idx)->addr,
@@ -746,9 +736,40 @@ static int shell_cmd_nbr(int argc, char *argv[])
 {
 #if defined(CONFIG_NET_IPV6)
 	int count = 0;
+	int arg = 1;
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	if (strcmp(argv[0], "nbr")) {
+		arg++;
+	}
+
+	if (argv[arg]) {
+		struct in6_addr addr;
+		int ret;
+
+		if (strcmp(argv[arg], "rm")) {
+			printk("Unknown command '%s'\n", argv[arg]);
+			return 0;
+		}
+
+		if (!argv[++arg]) {
+			printk("Neighbor IPv6 address missing.\n");
+			return 0;
+		}
+
+		ret = net_addr_pton(AF_INET6, argv[arg], &addr);
+		if (ret < 0) {
+			printk("Cannot parse '%s'\n", argv[arg]);
+			return 0;
+		}
+
+		if (!net_ipv6_nbr_rm(net_if_get_default(), &addr)) {
+			printk("Cannot remove neighbor %s\n",
+			       net_sprint_ipv6_addr(&addr));
+		} else {
+			printk("Neighbor %s removed.\n",
+			       net_sprint_ipv6_addr(&addr));
+		}
+	}
 
 	net_ipv6_nbr_foreach(nbr_cb, &count);
 
@@ -940,6 +961,7 @@ static int shell_cmd_help(int argc, char *argv[])
 	printk("net iface\n\tPrint information about network interfaces\n");
 	printk("net mem\n\tPrint network buffer information\n");
 	printk("net nbr\n\tPrint neighbor information\n");
+	printk("net nbr rm <IPv6 address>\n\tRemove neighbor from cache\n");
 	printk("net ping <host>\n\tPing a network host\n");
 	printk("net route\n\tShow network routes\n");
 	printk("net stacks\n\tShow network stacks information\n");

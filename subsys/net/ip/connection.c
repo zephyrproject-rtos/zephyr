@@ -50,26 +50,6 @@ static struct net_conn conns[CONFIG_NET_MAX_CONN];
  */
 #define NET_CONN_BUF(buf) ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
 
-#if defined(CONFIG_NET_DEBUG_CONN)
-static inline const char *proto2str(enum net_ip_protocol proto)
-{
-	switch (proto) {
-	case IPPROTO_ICMP:
-		return "ICMPv4";
-	case IPPROTO_TCP:
-		return "TCP";
-	case IPPROTO_UDP:
-		return "UDP";
-	case IPPROTO_ICMPV6:
-		return "ICMPv6";
-	default:
-		break;
-	}
-
-	return "<unknown>";
-}
-#endif /* CONFIG_NET_DEBUG_CONN */
-
 #if defined(CONFIG_NET_CONN_CACHE)
 
 /* Cache the connection so that we do not have to go
@@ -314,7 +294,7 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 
 			NET_DBG("Cache %s listener for buf %p src port %u "
 				"dst port %u family %d cache[%d] 0x%x",
-				proto2str(proto), buf,
+				net_proto2str(proto), buf,
 				ntohs(NET_CONN_BUF(buf)->src_port),
 				ntohs(NET_CONN_BUF(buf)->dst_port),
 				net_nbuf_family(buf), *pos,
@@ -672,7 +652,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 		}
 
 		NET_DBG("Check %s listener for buf %p src port %u dst port %u "
-			"family %d chksum 0x%04x", proto2str(proto), buf,
+			"family %d chksum 0x%04x", net_proto2str(proto), buf,
 			ntohs(NET_CONN_BUF(buf)->src_port),
 			ntohs(NET_CONN_BUF(buf)->dst_port),
 			net_nbuf_family(buf), ntohs(chksum));
