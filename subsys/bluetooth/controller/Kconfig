@@ -27,7 +27,7 @@ config BLUETOOTH_CONTROLLER_RX_BUFFERS
 config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	prompt "Number of Tx buffers"
 	int
-	default 1
+	default 2
 	default 7 if BLUETOOTH_HCI_RAW
 	range 1 10
 	help
