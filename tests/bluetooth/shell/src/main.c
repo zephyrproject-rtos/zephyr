@@ -378,6 +378,22 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	printk("LE conn  param req: int (0x%04x, 0x%04x) lat %d to %d\n",
+	       param->interval_min, param->interval_max, param->latency,
+	       param->timeout);
+
+	return true;
+}
+
+static void le_param_updated(struct bt_conn *conn, uint16_t interval,
+			     uint16_t latency, uint16_t timeout)
+{
+	printk("LE conn param updated: int 0x%04x lat %d to %d\n", interval,
+	       latency, timeout);
+}
+
 #if defined(CONFIG_BLUETOOTH_SMP)
 static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
@@ -405,6 +421,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level)
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.le_param_req = le_param_req,
+	.le_param_updated = le_param_updated,
 #if defined(CONFIG_BLUETOOTH_SMP)
 	.identity_resolved = identity_resolved,
 #endif
@@ -735,6 +753,30 @@ static int cmd_select(int argc, char *argv[])
 	}
 
 	default_conn = conn;
+
+	return 0;
+}
+
+static int cmd_conn_update(int argc, char *argv[])
+{
+	struct bt_le_conn_param param;
+	int err;
+
+	if (argc < 5) {
+		return -EINVAL;
+	}
+
+	param.interval_min = strtoul(argv[1], NULL, 16);
+	param.interval_max = strtoul(argv[2], NULL, 16);
+	param.latency = strtoul(argv[3], NULL, 16);
+	param.timeout = strtoul(argv[4], NULL, 16);
+
+	err = bt_conn_le_param_update(default_conn, &param);
+	if (err) {
+		printk("conn update failed (err %d).\n", err);
+	} else {
+		printk("conn update initiated.\n");
+	}
 
 	return 0;
 }
@@ -2459,6 +2501,7 @@ static const struct shell_cmd commands[] = {
 	{ "disconnect", cmd_disconnect, HELP_NONE },
 	{ "auto-conn", cmd_auto_conn, HELP_ADDR_LE },
 	{ "select", cmd_select, HELP_ADDR_LE },
+	{ "conn-update", cmd_conn_update, "<min> <max> <latency> <timeout>" },
 	{ "oob", cmd_oob },
 	{ "clear", cmd_clear },
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
