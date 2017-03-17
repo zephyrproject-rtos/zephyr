@@ -35,10 +35,10 @@ fi
 # zephyr-env_install.bash in your home directory. It will be automatically
 # run (if it exists) by this script.
 
-uname | grep -q MINGW && MINGW_OPT="-W"
+uname | grep -q -P "MINGW|MSYS" && PWD_OPT="-W"
 
 # identify OS source tree root directory
-export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${MINGW_OPT})
+export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${PWD_OPT})
 
 scripts_path=${ZEPHYR_BASE}/scripts
 scripts_path=$(echo "/$scripts_path" | sed 's/\\/\//g' | sed 's/://')

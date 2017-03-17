@@ -24,7 +24,11 @@ endif
 MAKEFLAGS += -rR --include-dir=$(CURDIR)
 
 UNAME := $(shell uname)
-ifeq (MINGW, $(findstring MINGW, $(UNAME)))
+ifeq (MSYS, $(findstring MSYS, $(UNAME)))
+DISABLE_TRYRUN=y
+HOST_OS=MSYS
+PWD_OPT=-W
+else ifeq (MINGW, $(findstring MINGW, $(UNAME)))
 HOST_OS=MINGW
 PWD_OPT=-W
 DISABLE_TRYRUN=y
