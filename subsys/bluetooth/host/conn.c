@@ -1580,7 +1580,9 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 
 	/* Check if there's a need to update conn params */
 	if (conn->le.interval >= param->interval_min &&
-	    conn->le.interval <= param->interval_max) {
+	    conn->le.interval <= param->interval_max &&
+	    conn->le.latency == param->latency &&
+	    conn->le.timeout == param->timeout) {
 		return -EALREADY;
 	}
 
