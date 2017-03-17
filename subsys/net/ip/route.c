@@ -675,12 +675,26 @@ bool net_route_get_info(struct in6_addr *dst,
 			struct net_route_entry **route,
 			struct in6_addr **nexthop)
 {
+	struct net_if_router *router;
+
 	*route = net_route_lookup(NULL, dst);
 	if (*route) {
 		*nexthop = net_route_get_nexthop(*route);
 		if (!*nexthop) {
 			return false;
 		}
+
+		return true;
+	} else {
+		/* No specific route to this host, use the default
+		 * route instead.
+		 */
+		router = net_if_ipv6_router_find_default(NULL, dst);
+		if (!router) {
+			return false;
+		}
+
+		*nexthop = &router->address.in6_addr;
 
 		return true;
 	}
@@ -694,7 +708,11 @@ int net_route_packet(struct net_buf *buf, struct net_route_entry *route,
 	struct net_linkaddr_storage *lladdr;
 	struct net_nbr *nbr;
 
-	nbr = net_ipv6_nbr_lookup(route->iface, nexthop);
+	if (route) {
+		net_nbuf_set_iface(buf, route->iface);
+	}
+
+	nbr = net_ipv6_nbr_lookup(net_nbuf_iface(buf), nexthop);
 	if (!nbr) {
 		NET_DBG("Cannot find %s neighbor.",
 			net_sprint_ipv6_addr(nexthop));
@@ -708,7 +726,6 @@ int net_route_packet(struct net_buf *buf, struct net_route_entry *route,
 		return -ESRCH;
 	}
 
-	net_nbuf_set_iface(buf, route->iface);
 	net_nbuf_set_forwarding(buf, true);
 
 	/* Set the destination and source ll address in the packet.
