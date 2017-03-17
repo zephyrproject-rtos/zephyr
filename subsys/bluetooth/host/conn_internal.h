@@ -93,8 +93,8 @@ struct bt_conn {
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
 
-	/* L2CAP channels */
-	void			*channels;
+	/* Active L2CAP channels */
+	struct bt_l2cap_chan	*channels;
 
 	atomic_t		ref;
 
