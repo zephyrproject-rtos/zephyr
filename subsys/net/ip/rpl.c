@@ -2719,7 +2719,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 	frag = net_nbuf_read_u8(frag, pos, &pos, &dio.version);
 	frag = net_nbuf_read_be16(frag, pos, &pos, &dio.rank);
 
-	NET_DBG("Incoming DIO len %d id %d ver %d rank %d",
+	NET_DBG("Incoming DIO len %zu id %d ver %d rank %d",
 		net_buf_frags_len(buf) - offset,
 		dio.instance_id, dio.version, dio.rank);
 
@@ -3992,7 +3992,7 @@ void net_rpl_init(void)
 	static struct net_if_link_cb link_cb;
 	struct in6_addr addr;
 
-	NET_DBG("Allocated %d routing entries (%d bytes)",
+	NET_DBG("Allocated %d routing entries (%zu bytes)",
 		CONFIG_NET_IPV6_MAX_NEIGHBORS,
 		sizeof(net_rpl_neighbor_pool));
 
