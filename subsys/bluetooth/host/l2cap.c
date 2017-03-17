@@ -1104,16 +1104,16 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 	if (!sent) {
 		/* Add SDU length for the first segment */
-		sent = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
-		if (sent < 0) {
-			if (sent == -EAGAIN) {
-				sent = 0;
+		ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
+		if (ret < 0) {
+			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
 				memcpy(net_buf_user_data(buf), &sent,
 				       sizeof(sent));
 			}
-			return sent;
+			return ret;
 		}
+		sent = ret;
 	}
 
 	/* Send remaining segments */
