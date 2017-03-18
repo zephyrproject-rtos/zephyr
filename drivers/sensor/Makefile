@@ -21,6 +21,7 @@ obj-$(CONFIG_LPS25HB) += lps25hb/
 obj-$(CONFIG_LSM6DS0) += lsm6ds0/
 obj-$(CONFIG_LSM9DS0_GYRO) += lsm9ds0_gyro/
 obj-$(CONFIG_LSM9DS0_MFD) += lsm9ds0_mfd/
+obj-$(CONFIG_MAX30101) += max30101/
 obj-$(CONFIG_MAX44009) += max44009/
 obj-$(CONFIG_MCP9808) += mcp9808/
 obj-$(CONFIG_MPU6050) += mpu6050/
