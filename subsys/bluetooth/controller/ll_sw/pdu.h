@@ -10,6 +10,11 @@
 
 #define BDADDR_SIZE 6
 
+/* PDU Sizes */
+#define PDU_EM_SIZE_MAX 3
+#define PDU_AC_SIZE_OVERHEAD 3
+#define PDU_AC_SIZE_MAX (37 + PDU_AC_SIZE_OVERHEAD)
+
 struct pdu_adv_payload_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
 	uint8_t data[31];

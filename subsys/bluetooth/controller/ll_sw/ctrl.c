@@ -349,7 +349,7 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 
 	/* initialise rx memory size and count */
 	_radio.packet_data_octets_max = packet_data_octets_max;
-	if ((RADIO_ACPDU_SIZE_MAX + 1) <
+	if ((PDU_AC_SIZE_MAX + 1) <
 	    (offsetof(struct pdu_data, payload) +
 			_radio.packet_data_octets_max)) {
 		_radio.packet_rx_data_pool_size =
@@ -359,7 +359,7 @@ uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 	} else {
 		_radio.packet_rx_data_pool_size =
 			(MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) +
-			  (RADIO_ACPDU_SIZE_MAX + 1)) * rx_count_max);
+			  (PDU_AC_SIZE_MAX + 1)) * rx_count_max);
 	}
 	_radio.packet_rx_data_size = PACKET_RX_DATA_SIZE_MIN;
 	_radio.packet_rx_data_count = (_radio.packet_rx_data_pool_size /
@@ -5394,11 +5394,11 @@ static inline void event_len_prep(struct connection *conn)
 			}
 
 			/* calculate the new rx node size and new count */
-			if (conn->max_rx_octets < (RADIO_ACPDU_SIZE_MAX + 1)) {
+			if (conn->max_rx_octets < (PDU_AC_SIZE_MAX + 1)) {
 				_radio.packet_rx_data_size =
 				    MROUND(offsetof(struct radio_pdu_node_rx,
 						    pdu_data) +
-					   (RADIO_ACPDU_SIZE_MAX + 1));
+					   (PDU_AC_SIZE_MAX + 1));
 			} else {
 				_radio.packet_rx_data_size =
 					packet_rx_data_size;

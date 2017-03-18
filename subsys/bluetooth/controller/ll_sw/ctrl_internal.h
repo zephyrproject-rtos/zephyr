@@ -199,7 +199,7 @@ struct pdu_data_q_tx {
 /* Minimum Rx Data allocation size */
 #define PACKET_RX_DATA_SIZE_MIN \
 			MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) + \
-			(RADIO_ACPDU_SIZE_MAX + 1))
+			(PDU_AC_SIZE_MAX + 1))
 
 /* Minimum Tx Ctrl allocation size */
 #define PACKET_TX_CTRL_SIZE_MIN \
@@ -219,13 +219,13 @@ struct pdu_data_q_tx {
 
 #define LL_MEM_RX_POOL_SZ (MROUND(offsetof(struct radio_pdu_node_rx,\
 				pdu_data) + ((\
-			(RADIO_ACPDU_SIZE_MAX + 1) < \
+			(PDU_AC_SIZE_MAX + 1) < \
 			 (offsetof(struct pdu_data, payload) + \
 			  RADIO_LL_LENGTH_OCTETS_RX_MAX)) ? \
 		      (offsetof(struct pdu_data, payload) + \
 		      RADIO_LL_LENGTH_OCTETS_RX_MAX) \
 			: \
-		      (RADIO_ACPDU_SIZE_MAX + 1))) * \
+		      (PDU_AC_SIZE_MAX + 1))) * \
 			(RADIO_PACKET_COUNT_RX_MAX + 3))
 
 #define LL_MEM_RX_LINK_POOL (sizeof(void *) * 2 * ((RADIO_PACKET_COUNT_RX_MAX +\

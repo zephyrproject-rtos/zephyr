@@ -167,7 +167,7 @@
  * Controller Interface Structures
  ****************************************************************************/
 struct radio_adv_data {
-	uint8_t data[DOUBLE_BUFFER_SIZE][RADIO_ACPDU_SIZE_MAX];
+	uint8_t data[DOUBLE_BUFFER_SIZE][PDU_AC_SIZE_MAX];
 	uint8_t first;
 	uint8_t last;
 };
