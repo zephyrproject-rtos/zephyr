@@ -7,10 +7,10 @@
 
 #include <soc.h>
 
-#include "rand.h"
+#include "hal/rand.h"
 
 #include <bluetooth/log.h>
-#include "debug.h"
+#include "hal/debug.h"
 
 #define RAND_RESERVED (4)
 

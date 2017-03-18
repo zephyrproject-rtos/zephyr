@@ -9,12 +9,11 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-#include "mem.h"
-
-#include "ecb.h"
+#include "util/mem.h"
+#include "hal/ecb.h"
 
 #include <bluetooth/log.h>
-#include "debug.h"
+#include "hal/debug.h"
 
 struct ecb_param {
 	uint8_t key[16];

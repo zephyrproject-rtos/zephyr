@@ -1,17 +1,6 @@
-ccflags-$(CONFIG_BLUETOOTH_LL_SW) += -I$(srctree)/subsys/bluetooth/controller/util
-ccflags-$(CONFIG_BLUETOOTH_LL_SW) += -I$(srctree)/subsys/bluetooth/controller/hal
-ccflags-$(CONFIG_BLUETOOTH_LL_SW) += -I$(srctree)/subsys/bluetooth/controller/ticker
-ccflags-$(CONFIG_BLUETOOTH_LL_SW) += -I$(srctree)/subsys/bluetooth/controller/ll_sw
-ccflags-$(CONFIG_BLUETOOTH_LL_SW) += -I$(srctree)/subsys/bluetooth/controller/include
-obj-$(CONFIG_BLUETOOTH_LL_SW) += util/mem.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += util/memq.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += util/mayfly.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += util/util.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += hal/nrf5/cntr.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += hal/nrf5/rand.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += hal/nrf5/ecb.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += hal/nrf5/radio.o
-obj-$(CONFIG_BLUETOOTH_LL_SW) += ticker/ticker.o
+obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hci/
+
+obj-$(CONFIG_BLUETOOTH_LL_SW) += util/
+obj-$(CONFIG_BLUETOOTH_LL_SW) += hal/
+obj-$(CONFIG_BLUETOOTH_LL_SW) += ticker/
 obj-$(CONFIG_BLUETOOTH_LL_SW) += ll_sw/
-obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hci/hci_driver.o
-obj-$(CONFIG_BLUETOOTH_CONTROLLER) += hci/hci.o

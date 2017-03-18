@@ -7,10 +7,10 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-#include "mem.h"
-#include "pdu.h"
-#include "ccm.h"
-#include "radio.h"
+#include "util/mem.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
+#include "ll_sw/pdu.h"
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define RADIO_PDU_LEN_MAX (BIT(5) - 1)

@@ -18,22 +18,16 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
-#include "util.h"
-#include "mem.h"
-#include "ticker.h"
-#include "cpu.h"
-#include "rand.h"
-#include "ecb.h"
-#include "ccm.h"
-#include "radio.h"
-#include "pdu.h"
-#include "ctrl.h"
+#include "util/util.h"
+#include "hal/ecb.h"
+#include "ll_sw/pdu.h"
+#include "ll_sw/ctrl.h"
 #include "ll.h"
 #include "hci_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <bluetooth/log.h>
-#include "debug.h"
+#include "hal/debug.h"
 
 /* opcode of the HCI command currently being processed. The opcode is stored
  * by hci_cmd_handle() and then used during the creation of cmd complete and
