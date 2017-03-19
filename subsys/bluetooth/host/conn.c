@@ -64,6 +64,17 @@ static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
 };
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
+struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
+{
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.mtu) {
+		return &bt_dev.br.pkts;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
+	return &bt_dev.le.pkts;
+}
+
 static inline const char *state2str(bt_conn_state_t state)
 {
 	switch (state) {
