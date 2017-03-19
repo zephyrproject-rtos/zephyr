@@ -274,15 +274,24 @@ static bool verify_osc_stabilization(struct cc2520_context *cc2520)
 static inline uint8_t *get_mac(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
+
+#if defined(CONFIG_IEEE802154_CC2520_RANDOM_MAC)
 	uint32_t *ptr = (uint32_t *)(cc2520->mac_addr + 4);
+
+	UNALIGNED_PUT(sys_rand32_get(), ptr);
+
+	cc2520->mac_addr[7] = (cc2520->mac_addr[7] & ~0x01) | 0x02;
+#else
+	cc2520->mac_addr[4] = CONFIG_IEEE802154_CC2520_MAC4;
+	cc2520->mac_addr[5] = CONFIG_IEEE802154_CC2520_MAC5;
+	cc2520->mac_addr[6] = CONFIG_IEEE802154_CC2520_MAC6;
+	cc2520->mac_addr[7] = CONFIG_IEEE802154_CC2520_MAC7;
+#endif
 
 	cc2520->mac_addr[0] = 0x00;
 	cc2520->mac_addr[1] = 0x12;
 	cc2520->mac_addr[2] = 0x4b;
 	cc2520->mac_addr[3] = 0x00;
-	UNALIGNED_PUT(sys_rand32_get(), ptr);
-
-	cc2520->mac_addr[7] = (cc2520->mac_addr[7] & ~0x01) | 0x02;
 
 	return cc2520->mac_addr;
 }

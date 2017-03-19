@@ -24,6 +24,24 @@
 #include <net/nbuf.h>
 #include <net/net_core.h>
 
+const char *net_proto2str(enum net_ip_protocol proto)
+{
+	switch (proto) {
+	case IPPROTO_ICMP:
+		return "ICMPv4";
+	case IPPROTO_TCP:
+		return "TCP";
+	case IPPROTO_UDP:
+		return "UDP";
+	case IPPROTO_ICMPV6:
+		return "ICMPv6";
+	default:
+		break;
+	}
+
+	return "UNK_PROTO";
+}
+
 char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad)
 {
 	int i, val;

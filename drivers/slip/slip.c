@@ -48,6 +48,7 @@ struct slip_context {
 	struct net_buf *rx;	/* and then placed into this net_buf */
 	struct net_buf *last;	/* Pointer to last fragment in the list */
 	uint8_t *ptr;		/* Where in net_buf to add data */
+	struct net_if *iface;
 	uint8_t state;
 
 	uint8_t mac_addr[6];
@@ -237,7 +238,7 @@ static void process_msg(struct slip_context *slip)
 		return;
 	}
 
-	if (net_recv_data(net_if_get_by_link_addr(&slip->ll_addr), buf) < 0) {
+	if (net_recv_data(slip->iface, buf) < 0) {
 		net_nbuf_unref(buf);
 	}
 
@@ -310,6 +311,14 @@ static inline int slip_input_byte(struct slip_context *slip,
 		}
 
 		break;
+	}
+
+	/* It is possible that slip->last is not set during the startup
+	 * of the device. If this happens do not continue and overwrite
+	 * some random memory.
+	 */
+	if (!slip->last) {
+		return 0;
 	}
 
 	if (!net_buf_tailroom(slip->last)) {
@@ -387,6 +396,33 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 	return buf;
 }
 
+static inline int _slip_mac_addr_from_str(struct slip_context *slip,
+					  const char *src)
+{
+	unsigned int len, i;
+	char *endptr;
+
+	len = strlen(src);
+	for (i = 0; i < len; i++) {
+		if (!(src[i] >= '0' && src[i] <= '9') &&
+		    !(src[i] >= 'A' && src[i] <= 'F') &&
+		    !(src[i] >= 'a' && src[i] <= 'f') &&
+		    src[i] != ':') {
+			return -EINVAL;
+		}
+	}
+
+	memset(slip->mac_addr, 0, sizeof(slip->mac_addr));
+
+	for (i = 0; i < sizeof(slip->mac_addr); i++) {
+		slip->mac_addr[i] = strtol(src, &endptr, 16);
+		src = ++endptr;
+	}
+
+	return 0;
+}
+
+
 static int slip_init(struct device *dev)
 {
 	struct slip_context *slip = dev->driver_data;
@@ -408,17 +444,6 @@ static int slip_init(struct device *dev)
 
 static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 {
-	if (slip->mac_addr[0] == 0x00) {
-		/* 10-00-00-00-00 to 10-00-00-00-FF Documentation RFC7042 */
-		slip->mac_addr[0] = 0x10;
-		slip->mac_addr[1] = 0x00;
-		slip->mac_addr[2] = 0x00;
-
-		slip->mac_addr[3] = 0x00;
-		slip->mac_addr[4] = 0x00;
-		slip->mac_addr[5] = sys_rand32_get();
-	}
-
 	slip->ll_addr.addr = slip->mac_addr;
 	slip->ll_addr.len = sizeof(slip->mac_addr);
 
@@ -431,7 +456,22 @@ static void slip_iface_init(struct net_if *iface)
 	struct net_linkaddr *ll_addr = slip_get_mac(slip);
 
 	slip->init_done = true;
+	slip->iface = iface;
 
+	if (CONFIG_SLIP_MAC_ADDR[0] != 0) {
+		if (_slip_mac_addr_from_str(slip, CONFIG_SLIP_MAC_ADDR) < 0) {
+			goto use_random_mac;
+		}
+	} else {
+use_random_mac:
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		slip->mac_addr[0] = 0x00;
+		slip->mac_addr[1] = 0x00;
+		slip->mac_addr[2] = 0x5E;
+		slip->mac_addr[3] = 0x00;
+		slip->mac_addr[4] = 0x53;
+		slip->mac_addr[5] = sys_rand32_get();
+	}
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 }

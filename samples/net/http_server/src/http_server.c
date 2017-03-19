@@ -113,7 +113,6 @@ void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
 	if (!rx) {
 		printf("[%s:%d] Connection closed by peer\n",
 		       __func__, __LINE__);
-		http_ctx_release(http_ctx);
 		goto lb_exit;
 	}
 
@@ -136,6 +135,8 @@ void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
 		goto lb_exit;
 	}
 
+	data->data[min(data->size - 1, rcv_len)] = 0;
+
 	parser_init(http_ctx);
 	parsed_len = parser_parse_request(http_ctx, data);
 	if (parsed_len <= 0) {
@@ -152,6 +153,8 @@ void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
 lb_exit:
 	net_buf_unref(data);
 	net_buf_unref(rx);
+
+	http_ctx_release(http_ctx);
 }
 
 /**
@@ -314,8 +317,7 @@ int http_ctx_set(struct http_server_ctx *http_ctx, struct net_context *net_ctx)
 	return 0;
 }
 
-static
-int http_ctx_release(struct http_server_ctx *http_ctx)
+static int http_ctx_release(struct http_server_ctx *http_ctx)
 {
 	if (http_ctx == NULL) {
 		return 0;
@@ -431,4 +433,15 @@ static void http_tx(struct http_server_ctx *http_ctx)
 		       __func__, __LINE__,
 		       http_ctx->url_len, http_ctx->url);
 	}
+}
+
+int http_auth(struct http_server_ctx *ctx)
+{
+	const char *auth_str = "Authorization: Basic "HTTP_AUTH_CREDENTIALS;
+
+	if (strstr(ctx->field_values[0].key, auth_str)) {
+		return http_response_auth(ctx);
+	}
+
+	return http_response_401(ctx);
 }

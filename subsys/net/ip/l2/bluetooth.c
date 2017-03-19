@@ -52,7 +52,7 @@ struct bt_context {
 
 static enum net_verdict net_bt_recv(struct net_if *iface, struct net_buf *buf)
 {
-	NET_DBG("iface %p buf %p len %u", iface, buf, net_buf_frags_len(buf));
+	NET_DBG("iface %p buf %p len %zu", iface, buf, net_buf_frags_len(buf));
 
 	if (!net_6lo_uncompress(buf)) {
 		NET_DBG("Packet decompression failed");
@@ -66,7 +66,7 @@ static enum net_verdict net_bt_send(struct net_if *iface, struct net_buf *buf)
 {
 	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
 
-	NET_DBG("iface %p buf %p len %u", iface, buf, net_buf_frags_len(buf));
+	NET_DBG("iface %p buf %p len %zu", iface, buf, net_buf_frags_len(buf));
 
 	/* Only accept IPv6 packets */
 	if (net_nbuf_family(buf) != AF_INET6) {
@@ -174,7 +174,7 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_context *ctxt = CHAN_CTXT(chan);
 	struct net_buf *nbuf;
 
-	NET_DBG("Incoming data channel %p len %u", chan,
+	NET_DBG("Incoming data channel %p len %zu", chan,
 		net_buf_frags_len(buf));
 
 	/* Get buffer for bearer / protocol related data */
@@ -226,7 +226,7 @@ static int bt_iface_send(struct net_if *iface, struct net_buf *buf)
 	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
 	int ret;
 
-	NET_DBG("iface %p buf %p len %u", iface, buf, net_buf_frags_len(buf));
+	NET_DBG("iface %p buf %p len %zu", iface, buf, net_buf_frags_len(buf));
 
 	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, buf);
 	if (ret < 0) {

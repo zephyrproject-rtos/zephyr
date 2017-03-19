@@ -96,13 +96,13 @@ static uint8_t *net_route_get_mac(struct device *dev)
 {
 	struct net_route_test *route = dev->driver_data;
 
-	if (route->mac_addr[0] == 0x00) {
-		/* 10-00-00-00-00 to 10-00-00-00-FF Documentation RFC7042 */
-		route->mac_addr[0] = 0x10;
+	if (route->mac_addr[2] == 0x00) {
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		route->mac_addr[0] = 0x00;
 		route->mac_addr[1] = 0x00;
-		route->mac_addr[2] = 0x00;
+		route->mac_addr[2] = 0x5E;
 		route->mac_addr[3] = 0x00;
-		route->mac_addr[4] = 0x00;
+		route->mac_addr[4] = 0x53;
 		route->mac_addr[5] = sys_rand32_get();
 	}
 
@@ -397,7 +397,9 @@ static bool net_test_send_na(struct net_if *iface,
 
 	NET_ICMPV6_NA_BUF(buf)->flags = NET_ICMPV6_NA_FLAG_SOLICITED;
 
-	buf = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
+	if (net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6) < 0) {
+		return false;
+	}
 
 	if (net_send_data(buf) < 0) {
 		TC_ERROR("Cannot send NA buffer\n");

@@ -442,7 +442,7 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint16_t *value;
 
-	if (mgmt_request != NET_REQUEST_IEEE802154_SET_EXT_ADDR &&
+	if (mgmt_request != NET_REQUEST_IEEE802154_GET_EXT_ADDR &&
 	    (len != sizeof(uint16_t) || !data)) {
 		return -EINVAL;
 	}

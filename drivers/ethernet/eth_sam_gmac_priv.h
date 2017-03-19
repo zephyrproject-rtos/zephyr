@@ -20,10 +20,9 @@
 /** Total number of queues supported by GMAC hardware module */
 #define GMAC_QUEUE_NO                     3
 /** RX descriptors count for main queue */
-#define MAIN_QUEUE_RX_DESC_COUNT CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT
+#define MAIN_QUEUE_RX_DESC_COUNT CONFIG_ETH_SAM_GMAC_NBUF_RX_DATA_COUNT
 /** TX descriptors count for main queue */
-#define MAIN_QUEUE_TX_DESC_COUNT (CONFIG_NET_NBUF_RX_DATA_COUNT - \
-		CONFIG_ETH_SAM_GMAC_NBUF_DATA_COUNT + 1)
+#define MAIN_QUEUE_TX_DESC_COUNT (CONFIG_NET_NBUF_TX_DATA_COUNT + 1)
 /** RX/TX descriptors count for priority queues */
 #define PRIORITY_QUEUE_DESC_COUNT         1
 
@@ -151,6 +150,7 @@ struct gmac_desc_list {
 struct gmac_queue {
 	struct gmac_desc_list rx_desc_list;
 	struct gmac_desc_list tx_desc_list;
+	struct k_sem tx_desc_sem;
 
 	struct ring_buf rx_nbuf_list;
 	struct ring_buf tx_frames;

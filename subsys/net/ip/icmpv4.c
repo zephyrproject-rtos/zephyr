@@ -22,6 +22,8 @@
 #include "icmpv4.h"
 #include "net_stats.h"
 
+#define BUF_WAIT_TIME K_SECONDS(1)
+
 static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 {
 	/* Note that we send the same data buffers back and just swap
@@ -165,10 +167,14 @@ enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
 	ARG_UNUSED(code);
 	ARG_UNUSED(len);
 
+	net_stats_update_icmp_recv();
+
 	switch (type) {
 	case NET_ICMPV4_ECHO_REQUEST:
 		return handle_echo_request(buf);
 	}
+
+	net_stats_update_icmp_drop();
 
 	return NET_DROP;
 }
@@ -179,17 +185,23 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	struct net_if *iface = net_nbuf_iface(orig);
 	size_t extra_len, reserve;
 	struct in_addr addr, *src, *dst;
+	int err = -EIO;
 
 	if (NET_IPV4_BUF(orig)->proto == IPPROTO_ICMP) {
 		if (NET_ICMP_BUF(orig)->code < 8) {
 			/* We must not send ICMP errors back */
-			return -EINVAL;
+			err = -EINVAL;
+			goto drop_no_buf;
 		}
 	}
 
 	iface = net_nbuf_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_nbuf_get_reserve_tx(0, BUF_WAIT_TIME);
+	if (!buf) {
+		err = -ENOMEM;
+		goto drop_no_buf;
+	}
 
 	reserve = sizeof(struct net_ipv4_hdr) + sizeof(struct net_icmp_hdr) +
 		NET_ICMPV4_UNUSED_LEN;
@@ -220,8 +232,9 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	/* We only copy minimal IPv4 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig, extra_len, reserve, K_FOREVER);
+	frag = net_nbuf_copy(orig, extra_len, reserve, BUF_WAIT_TIME);
 	if (!frag) {
+		err = -ENOMEM;
 		goto drop;
 	}
 
@@ -259,15 +272,14 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 
 	if (net_send_data(buf) >= 0) {
 		net_stats_update_icmp_sent();
-		return -EIO;
+		return 0;
 	}
 
 drop:
 	net_nbuf_unref(buf);
+
+drop_no_buf:
 	net_stats_update_icmp_drop();
 
-	/* Note that we always return < 0 so that the caller knows to
-	 * discard the original buffer.
-	 */
-	return -EIO;
+	return err;
 }

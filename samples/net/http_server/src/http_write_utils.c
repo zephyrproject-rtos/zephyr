@@ -7,6 +7,7 @@
 #include "http_write_utils.h"
 #include "http_types.h"
 #include "http_utils.h"
+#include "config.h"
 
 #include <net/nbuf.h>
 #include <stdio.h>
@@ -15,6 +16,10 @@
 				"Content-Type: text/html\r\n" \
 				"Transfer-Encoding: chunked\r\n" \
 				"\r\n"
+
+#define HTTP_401_STATUS_US	"HTTP/1.1 401 Unauthorized status\r\n" \
+				"WWW-Authenticate: Basic realm=" \
+				"\""HTTP_AUTH_REALM"\"\r\n\r\n"
 
 #define HTML_HEADER		"<html><head>" \
 				"<title>Zephyr HTTP Server</title>" \
@@ -89,9 +94,22 @@ int http_response_it_works(struct http_server_ctx *ctx)
 			     HTML_FOOTER);
 }
 
+int http_response_401(struct http_server_ctx *ctx)
+{
+	return http_response(ctx, HTTP_401_STATUS_US, NULL);
+}
+
 int http_response_soft_404(struct http_server_ctx *ctx)
 {
 	return http_response(ctx, HTTP_STATUS_200_OK, HTML_HEADER
 			     "<h2><center>404 Not Found</center></h2>"
+			     HTML_FOOTER);
+}
+
+int http_response_auth(struct http_server_ctx *ctx)
+{
+	return http_response(ctx, HTTP_STATUS_200_OK,
+			     HTML_HEADER"<h2><center>user: "HTTP_AUTH_USERNAME
+			     ", password: "HTTP_AUTH_PASSWORD"</center></h2>"
 			     HTML_FOOTER);
 }

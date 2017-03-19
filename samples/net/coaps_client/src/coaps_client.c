@@ -163,22 +163,19 @@ static int entropy_source(void *data, unsigned char *output, size_t len,
 			  size_t *olen)
 {
 	uint32_t seed;
-	char *ptr = data;
+
+	ARG_UNUSED(data);
 
 	seed = sys_rand32_get();
 
-	if (!seed) {
-		seed = 7;
+	if (len > sizeof(seed)) {
+		len = sizeof(seed);
 	}
 
-	for (int i = 0; i < len; i++) {
-		seed ^= seed << 13;
-		seed ^= seed >> 17;
-		seed ^= seed << 5;
-		*ptr++ = (char)seed;
-	}
+	memcpy(output, &seed, len);
 
 	*olen = len;
+
 	return 0;
 }
 
@@ -269,7 +266,7 @@ void dtls_client(void)
 	mbedtls_ssl_set_timer_cb(&ssl, &timer, dtls_timing_set_delay,
 				 dtls_timing_get_delay);
 
-	mbedtls_ssl_set_bio(&ssl, &ctx, udp_tx, NULL, udp_rx);
+	mbedtls_ssl_set_bio(&ssl, &ctx, udp_tx, udp_rx, NULL);
 
 	do {
 		ret = mbedtls_ssl_handshake(&ssl);

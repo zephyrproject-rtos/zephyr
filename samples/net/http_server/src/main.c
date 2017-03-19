@@ -31,6 +31,7 @@ void main(void)
 	http_ctx_init();
 
 	http_url_default_handler(http_response_soft_404);
+	http_url_add(HTTP_AUTH_URL, HTTP_URL_STANDARD, http_auth);
 	http_url_add("/headers", HTTP_URL_STANDARD,
 		     http_response_header_fields);
 	http_url_add("/index.html", HTTP_URL_STANDARD, http_response_it_works);

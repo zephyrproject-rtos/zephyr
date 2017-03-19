@@ -395,24 +395,19 @@ static int entropy_source(void *data, unsigned char *output, size_t len,
 			  size_t *olen)
 {
 	uint32_t seed;
-	char *ptr = data;
 
 	ARG_UNUSED(data);
 
 	seed = sys_rand32_get();
 
-	if (!seed) {
-		seed = 7;
+	if (len > sizeof(seed)) {
+		len = sizeof(seed);
 	}
 
-	for (size_t i = 0; i < len; i++) {
-		seed ^= seed << 13;
-		seed ^= seed >> 17;
-		seed ^= seed << 5;
-		*ptr++ = (char)seed;
-	}
+	memcpy(output, &seed, len);
 
 	*olen = len;
+
 	return 0;
 }
 

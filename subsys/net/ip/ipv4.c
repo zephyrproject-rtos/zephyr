@@ -77,8 +77,7 @@ struct net_buf *net_ipv4_create(struct net_context *context,
 				   net_context_get_ip_proto(context));
 }
 
-struct net_buf *net_ipv4_finalize_raw(struct net_buf *buf,
-				      uint8_t next_header)
+int net_ipv4_finalize_raw(struct net_buf *buf, uint8_t next_header)
 {
 	/* Set the length of the IPv4 header */
 	size_t total_len;
@@ -106,11 +105,10 @@ struct net_buf *net_ipv4_finalize_raw(struct net_buf *buf,
 	}
 #endif
 
-	return buf;
+	return 0;
 }
 
-struct net_buf *net_ipv4_finalize(struct net_context *context,
-				  struct net_buf *buf)
+int net_ipv4_finalize(struct net_context *context, struct net_buf *buf)
 {
 	return net_ipv4_finalize_raw(buf,
 				     net_context_get_ip_proto(context));

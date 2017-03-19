@@ -48,8 +48,16 @@ config NET_IPV6_MLD
 	be active. Currently we support only MLDv2. See RFC 3810 for
 	details.
 
+config NET_IPV6_NBR_CACHE
+	bool "Neighbor cache"
+	default y
+	help
+	The value depends on your network needs. Neighbor cache should
+	normally be active.
+
 config NET_IPV6_ND
 	bool "Activate neighbor discovery"
+	depends on NET_IPV6_NBR_CACHE
 	default y
 	help
 	The value depends on your network needs. ND should normally
@@ -57,7 +65,7 @@ config NET_IPV6_ND
 
 config NET_IPV6_DAD
 	bool "Activate duplicate address detection"
-	depends on NET_IPV6_ND
+	depends on NET_IPV6_NBR_CACHE
 	default y
 	help
 	The value depends on your network needs. DAD should normally

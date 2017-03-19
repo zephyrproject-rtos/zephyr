@@ -68,30 +68,35 @@ static char upper_if_set(char chr, bool set)
 	return chr | 0x20;
 }
 
-static void net_tcp_trace(char *str, struct net_buf *buf)
+static void net_tcp_trace(struct net_buf *buf, struct net_tcp *tcp)
 {
 	uint8_t flags = NET_TCP_FLAGS(buf);
+	uint32_t rel_ack;
 
-	NET_INFO("%s[TCP header]", str);
-	NET_INFO("|(SrcPort)         %5u |(DestPort)      %5u |",
-		 ntohs(NET_TCP_BUF(buf)->src_port),
-		 ntohs(NET_TCP_BUF(buf)->dst_port));
-	NET_INFO("|(Sequence number)                 0x%010x |",
-		 sys_get_be32(NET_TCP_BUF(buf)->seq));
-	NET_INFO("|(ACK number)                      0x%010x |",
-		 sys_get_be32(NET_TCP_BUF(buf)->ack));
-	NET_INFO("|(HL) %2u |(F)  %c%c%c%c%c%c |(Window)           %5u |",
-		 (NET_TCP_BUF(buf)->offset >> 4) * 4,
-		 upper_if_set('u', flags & NET_TCP_URG),
-		 upper_if_set('a', flags & NET_TCP_ACK),
-		 upper_if_set('p', flags & NET_TCP_PSH),
-		 upper_if_set('r', flags & NET_TCP_RST),
-		 upper_if_set('s', flags & NET_TCP_SYN),
-		 upper_if_set('f', flags & NET_TCP_FIN),
-		 sys_get_be16(NET_TCP_BUF(buf)->wnd));
-	NET_INFO("|(Checksum)    0x%04x |(Urgent)           %5u |",
-		 ntohs(NET_TCP_BUF(buf)->chksum),
-		 sys_get_be16(NET_TCP_BUF(buf)->urg));
+	if (!tcp->sent_ack) {
+		rel_ack = 0;
+	} else {
+		rel_ack = sys_get_be32(NET_TCP_BUF(buf)->ack) ?
+		       sys_get_be32(NET_TCP_BUF(buf)->ack) - tcp->sent_ack : 0;
+	}
+
+	NET_DBG("buf %p src %u dst %u seq 0x%04x ack 0x%04x (%u) "
+		"flags %c%c%c%c%c%c win %u chk 0x%04x",
+		buf,
+		ntohs(NET_TCP_BUF(buf)->src_port),
+		ntohs(NET_TCP_BUF(buf)->dst_port),
+		sys_get_be32(NET_TCP_BUF(buf)->seq),
+		sys_get_be32(NET_TCP_BUF(buf)->ack),
+		/* This tells how many bytes we are acking now */
+		rel_ack,
+		upper_if_set('u', flags & NET_TCP_URG),
+		upper_if_set('a', flags & NET_TCP_ACK),
+		upper_if_set('p', flags & NET_TCP_PSH),
+		upper_if_set('r', flags & NET_TCP_RST),
+		upper_if_set('s', flags & NET_TCP_SYN),
+		upper_if_set('f', flags & NET_TCP_FIN),
+		sys_get_be16(NET_TCP_BUF(buf)->wnd),
+		ntohs(NET_TCP_BUF(buf)->chksum));
 }
 #else
 #define net_tcp_trace(...)
@@ -235,20 +240,22 @@ static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
 	return optlen;
 }
 
-static void finalize_segment(struct net_context *context, struct net_buf *buf)
+static int finalize_segment(struct net_context *context, struct net_buf *buf)
 {
 #if defined(CONFIG_NET_IPV4)
 	if (net_nbuf_family(buf) == AF_INET) {
-		net_ipv4_finalize(context, buf);
+		return net_ipv4_finalize(context, buf);
 	} else
 #endif
 #if defined(CONFIG_NET_IPV6)
 	if (net_nbuf_family(buf) == AF_INET6) {
-		net_ipv6_finalize(context, buf);
+		return net_ipv6_finalize(context, buf);
 	}
 #endif
 	{
 	}
+
+	return 0;
 }
 
 static struct net_buf *prepare_segment(struct net_tcp *tcp,
@@ -329,9 +336,12 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 		net_buf_frag_add(buf, tail);
 	}
 
-	finalize_segment(context, buf);
+	if (finalize_segment(context, buf) < 0) {
+		net_nbuf_unref(buf);
+		return NULL;
+	}
 
-	net_tcp_trace("", buf);
+	net_tcp_trace(buf, tcp);
 
 	return buf;
 }
@@ -421,6 +431,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	segment.optlen = optlen;
 
 	*send_buf = prepare_segment(tcp, &segment, *send_buf);
+	if (!*send_buf) {
+		return -EINVAL;
+	}
 
 	tcp->send_seq = seq;
 
@@ -523,10 +536,9 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 
 		net_tcp_set_syn_opt(tcp, options, &optionlen);
 
-		net_tcp_prepare_segment(tcp, NET_TCP_SYN | NET_TCP_ACK,
-					options, optionlen, NULL, remote, buf);
-		break;
-
+		return net_tcp_prepare_segment(tcp, NET_TCP_SYN | NET_TCP_ACK,
+					       options, optionlen, NULL, remote,
+					       buf);
 	case NET_TCP_FIN_WAIT_1:
 	case NET_TCP_LAST_ACK:
 		/* In the FIN_WAIT_1 and LAST_ACK states acknowledgment must
@@ -534,17 +546,14 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 		 */
 		tcp->send_seq--;
 
-		net_tcp_prepare_segment(tcp, NET_TCP_FIN | NET_TCP_ACK,
-					0, 0, NULL, remote, buf);
-		break;
-
+		return net_tcp_prepare_segment(tcp, NET_TCP_FIN | NET_TCP_ACK,
+					       0, 0, NULL, remote, buf);
 	default:
-		net_tcp_prepare_segment(tcp, NET_TCP_ACK, 0, 0, NULL, remote,
-					buf);
-		break;
+		return net_tcp_prepare_segment(tcp, NET_TCP_ACK, 0, 0, NULL,
+					       remote, buf);
 	}
 
-	return 0;
+	return -EINVAL;
 }
 
 int net_tcp_prepare_reset(struct net_tcp *tcp,

@@ -20,20 +20,20 @@ config ETH_SAM_GMAC_NAME
 	  Device name allows user to obtain a handle to the device object
 	  required by all driver API functions. Device name has to be unique.
 
-config ETH_SAM_GMAC_NBUF_DATA_COUNT
-	int "Network data buffers pre-allocated by the SAM ETH driver"
-	default 12
+config ETH_SAM_GMAC_NBUF_RX_DATA_COUNT
+	int "Network RX data buffers pre-allocated by the SAM ETH driver"
+	default 18
 	help
 	  Number of network data buffers that will be permanently allocated by the
 	  Ethernet driver. These data buffers are used in receive path. They are
 	  pre-alocated by the driver and made available to the GMAC module to be
 	  filled in with incoming data. Their number has to be large enough to fit
 	  at least one complete Ethernet frame. SAM ETH driver will always allocate
-	  that amount of buffers for itself thus reducing the NET_NBUF_DATA_COUNT
-	  which is a total amount of data buffers used by the whole networking
-	  stack. One has to ensure that NET_NBUF_DATA_COUNT is large enough to fit
-	  at least two ethernet frames: one being received by the GMAC module and
-	  the other being processed by the higer layer networking stack.
+	  that amount of buffers for itself thus reducing the NET_NBUF_RX_DATA_COUNT
+	  which is a total amount of RX data buffers used by the whole networking
+	  stack. One has to ensure that NET_NBUF_RX_DATA_COUNT is large enough to
+	  fit at least two ethernet frames: one being received by the GMAC module
+	  and the other being processed by the higer layer networking stack.
 
 config ETH_SAM_GMAC_IRQ_PRI
 	int "Interrupt priority"
