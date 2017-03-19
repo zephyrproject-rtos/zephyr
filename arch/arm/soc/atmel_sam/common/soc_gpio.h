@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Piotr Mienkowski
+ * Copyright (c) 2016-2017 Piotr Mienkowski
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -112,13 +112,13 @@ void soc_gpio_list_configure(const struct soc_gpio_pin pins[],
 			     unsigned int size);
 
 /**
- * \brief Set pin(s) high.
+ * @brief Set pin(s) high.
  *
  * Set pin(s) defined in the mask parameter to high. The pin(s) have to be
  * configured as output by the configure function. The flags field which
  * is part of pin struct is ignored.
  *
- * \param pin  pointer to a pin instance describing one or more pins.
+ * @param pin  pointer to a pin instance describing one or more pins.
  */
 static inline void soc_gpio_set(const struct soc_gpio_pin *pin)
 {
@@ -126,17 +126,56 @@ static inline void soc_gpio_set(const struct soc_gpio_pin *pin)
 }
 
 /**
- * \brief Set pin(s) low.
+ * @brief Set pin(s) low.
  *
  * Set pin(s) defined in the mask field to low. The pin(s) have to be
  * configured as output by the configure function. The flags field which
  * is part of pin struct is ignored.
  *
- * \param pin  pointer to a pin instance describing one or more pins.
+ * @param pin  pointer to a pin instance describing one or more pins.
  */
 static inline void soc_gpio_clear(const struct soc_gpio_pin *pin)
 {
 	pin->regs->PIO_CODR = pin->mask;
+}
+
+/**
+ * @brief Get pin(s) value.
+ *
+ * Get value of the pin(s) defined in the mask field.
+ *
+ * @param pin  pointer to a pin instance describing one or more pins.
+ * @return pin(s) value. To assess value of a specific pin the pin's bit
+ * field has to be read.
+ */
+static inline uint32_t soc_gpio_get(const struct soc_gpio_pin *pin)
+{
+	return pin->regs->PIO_PDSR & pin->mask;
+}
+
+/**
+ * @brief Set the length of the debounce window.
+ *
+ * The debouncing filter automatically rejects a pulse with a duration of less
+ * than 1/2 programmable divided slow clock period tdiv_slck, while a pulse with
+ * a duration of one or more tdiv_slck cycles is accepted. For pulse durations
+ * between 1/2 selected clock cycle and one tdiv_slck clock cycle, the pulse may
+ * or may not be taken into account, depending on the precise timing of its
+ * occurrence.
+ *
+ * tdiv_slck = ((div + 1) × 2) × tslck
+ * where tslck is the slow clock, typically 32.768 kHz.
+ *
+ * Setting the length of the debounce window is only meaningful if the pin is
+ * configured as input and the debounce pin option is enabled.
+ *
+ * @param pin  pointer to a pin instance describing one or more pins.
+ * @param div  slow clock divider, valid values: from 0 to 2^14 - 1
+ */
+static inline void soc_gpio_debounce_length_set(const struct soc_gpio_pin *pin,
+						uint32_t div)
+{
+	pin->regs->PIO_SCDR = PIO_SCDR_DIV(div);
 }
 
 #endif /* _ATMEL_SAM_SOC_GPIO_H_ */
