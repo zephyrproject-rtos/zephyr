@@ -11,10 +11,11 @@ config DNS_RESOLVER
 	help
 	This option enables the DNS client side support for Zephyr
 
+if DNS_RESOLVER
+
 config DNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int
 	prompt "Additional DNS buffers"
-	depends on DNS_RESOLVER
 	default 0
 	help
 	Number of additional buffers available for the DNS resolver.
@@ -25,7 +26,6 @@ config DNS_RESOLVER_ADDITIONAL_BUF_CTR
 config DNS_RESOLVER_ADDITIONAL_QUERIES
 	int
 	prompt "Additional DNS queries"
-	depends on DNS_RESOLVER
 	range 0 2
 	default 1
 	help
@@ -33,3 +33,27 @@ config DNS_RESOLVER_ADDITIONAL_QUERIES
 	generate when the RR ANSWER only contains CNAME(s).
 	The maximum value of this variable is constrained to avoid
 	'alias loops'.
+
+config DNS_RESOLVER_MAX_SERVERS
+	int "Number of DNS server addresses"
+	default 1
+	help
+	Max number of DNS servers that we can connect to. Normally one
+	DNS server is enough.
+
+config DNS_NUM_CONCUR_QUERIES
+	int "Number of simultaneous DNS queries per one DNS context"
+	range 1 NET_MAX_CONTEXTS
+	default 1
+	help
+	This defines how many concurrent DNS queries can be generated using
+	same DNS context. Normally 1 is a good default value. Each query
+	will use one network context.
+
+config NET_DEBUG_DNS_RESOLVE
+	bool "Debug DNS resolver"
+	default n
+	help
+	Enables DNS resolver code to output debug messages
+
+endif # DNS_RESOLVER
