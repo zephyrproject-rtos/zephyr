@@ -28,6 +28,7 @@
 #include <net/arp.h>
 #include <net/nbuf.h>
 #include <net/net_core.h>
+#include <net/dns_resolve.h>
 
 #include "net_private.h"
 #include "net_shell.h"
@@ -765,6 +766,8 @@ static inline void l3_init(void)
 	net_tcp_init();
 
 	net_route_init();
+
+	dns_init_resolver();
 
 	NET_DBG("Network L3 init done");
 }

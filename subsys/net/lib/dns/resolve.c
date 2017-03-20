@@ -69,6 +69,8 @@ NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, DNS_MAX_NAME_LEN,
 		    0, NULL);
 
+static struct dns_resolve_context dns_default_ctx;
+
 int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 {
 #if defined(CONFIG_NET_IPV6)
@@ -857,4 +859,49 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 	}
 
 	return 0;
+}
+
+struct dns_resolve_context *dns_resolve_get_default(void)
+{
+	return &dns_default_ctx;
+}
+
+void dns_init_resolver(void)
+{
+#if defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
+	static const char *dns_servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + 1];
+	int count = CONFIG_DNS_RESOLVER_MAX_SERVERS;
+	int ret;
+
+	if (count > 5) {
+		count = 5;
+	}
+
+	switch (count) {
+	case 5:
+		dns_servers[4] = CONFIG_DNS_SERVER5;
+		/* fallthrough */
+	case 4:
+		dns_servers[3] = CONFIG_DNS_SERVER4;
+		/* fallthrough */
+	case 3:
+		dns_servers[2] = CONFIG_DNS_SERVER3;
+		/* fallthrough */
+	case 2:
+		dns_servers[1] = CONFIG_DNS_SERVER2;
+		/* fallthrough */
+	case 1:
+		dns_servers[0] = CONFIG_DNS_SERVER1;
+		/* fallthrough */
+	case 0:
+		break;
+	}
+
+	dns_servers[CONFIG_DNS_RESOLVER_MAX_SERVERS] = NULL;
+
+	ret = dns_resolve_init(dns_resolve_get_default(), dns_servers);
+	if (ret < 0) {
+		NET_WARN("Cannot initialize DNS resolver (%d)", ret);
+	}
+#endif
 }

@@ -223,6 +223,25 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		     void *user_data,
 		     int32_t timeout);
 
+/**
+ * @brief Get default DNS context.
+ *
+ * @detail The system level DNS context uses DNS servers that are
+ * defined in project config file. If no DNS servers are defined by the
+ * user, then resolving DNS names using default DNS context will do nothing.
+ * The configuration options are described in subsys/net/lib/dns/Kconfig file.
+ *
+ * @return Default DNS context.
+ */
+struct dns_resolve_context *dns_resolve_get_default(void);
+
+/**
+ * @brief Initialize DNS subsystem.
+ */
+void dns_init_resolver(void);
+
+#else
+#define dns_init_resolver(...)
 #endif /* CONFIG_DNS_RESOLVER */
 
 #endif /* _DNS_RESOLVE_H */
