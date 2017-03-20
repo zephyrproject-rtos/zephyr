@@ -7,16 +7,16 @@
 #include <zephyr.h>
 #include <ztest.h>
 
+#include <net/net_core.h>
+#define NET_LOG_ENABLED 1
+#define NET_SYS_LOG_LEVEL 4
+#include "net_private.h"
+
 #include <net/net_ip.h>
 #include <net/nbuf.h>
 
 #include <ieee802154_frame.h>
 #include <ipv6.h>
-
-#include <net/net_core.h>
-#define NET_LOG_ENABLED 1
-#define NET_SYS_LOG_LEVEL 4
-#include "net_private.h"
 
 struct ieee802154_pkt_test {
 	char *name;
@@ -79,6 +79,25 @@ struct ieee802154_pkt_test test_beacon_pkt = {
 	.mhr_check.dst_addr = NULL,
 	.mhr_check.src_addr =
 	(struct ieee802154_address_field *) (beacon_pkt + 3),
+};
+
+uint8_t sec_data_pkt[] = {
+	0x49, 0xd8, 0x03, 0xcd, 0xab, 0xff, 0xff, 0x02, 0x6d, 0xbb, 0xa7,
+	0x00, 0x4b, 0x12, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0xd3, 0x8e,
+	0x49, 0xa7, 0xe2, 0x00, 0x67, 0xd4, 0x00, 0x42, 0x52, 0x6f, 0x01,
+	0x02, 0x00, 0x12, 0x4b, 0x00, 0xa7, 0xbb, 0x6d, 0x02, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x19, 0x7f, 0x91, 0xcf, 0x73, 0xf0
+};
+
+struct ieee802154_pkt_test test_sec_data_pkt = {
+	.name = "Secured data frame",
+	.pkt = sec_data_pkt,
+	.length = sizeof(sec_data_pkt),
+	.mhr_check.fc_seq = (struct ieee802154_fcf_seq *)sec_data_pkt,
+	.mhr_check.dst_addr =
+	(struct ieee802154_address_field *)(sec_data_pkt + 3),
+	.mhr_check.src_addr =
+	(struct ieee802154_address_field *)(sec_data_pkt + 7),
 };
 
 struct net_buf *current_buf;
@@ -321,6 +340,15 @@ static void parsing_beacon_pkt(void)
 	assert_true(ret, "Beacon parsed");
 }
 
+static void parsing_sec_data_pkt(void)
+{
+	bool ret;
+
+	ret = test_packet_parsing(&test_sec_data_pkt);
+
+	assert_true(ret, "Secured data frame parsed");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(ieee802154_l2,
@@ -329,7 +357,8 @@ void test_main(void)
 			 ztest_unit_test(sending_ns_pkt),
 			 ztest_unit_test(parsing_ack_pkt),
 			 ztest_unit_test(replying_ack_pkt),
-			 ztest_unit_test(parsing_beacon_pkt)
+			 ztest_unit_test(parsing_beacon_pkt),
+			 ztest_unit_test(parsing_sec_data_pkt)
 		);
 
 	ztest_run_test_suite(ieee802154_l2);
