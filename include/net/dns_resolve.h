@@ -145,6 +145,9 @@ struct dns_resolve_context {
  *
  * @details This function sets the DNS server address and initializes the
  * DNS context that is used by the actual resolver.
+ * Note that the recommended way to resolve DNS names is to use
+ * the dns_get_addr_info() API. In that case user does not need to
+ * call dns_resolve_init() as the DNS servers are already setup by the system.
  *
  * @param ctx DNS context. If the context variable is allocated from
  * the stack, then the variable needs to be valid for the whole duration of
@@ -234,6 +237,63 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
  * @return Default DNS context.
  */
 struct dns_resolve_context *dns_resolve_get_default(void);
+
+/**
+ * @brief Get IP address info from DNS.
+ *
+ * @details This function can be used to resolve e.g., IPv4 or IPv6 address.
+ * Note that this is asynchronous call, the function will return immediately
+ * and system will call the callback after resolving has finished or timeout
+ * has occurred.
+ * We might send the query to multiple servers (if there are more than one
+ * server configured), but we only use the result of the first received
+ * response.
+ * This variant uses system wide DNS servers.
+ *
+ * @param query What the caller wants to resolve.
+ * @param type What kind of data the caller wants to get.
+ * @param dns_id DNS id is returned to the caller. This is needed if one
+ * wishes to cancel the query. This can be set to NULL if there is no need
+ * to cancel the query.
+ * @param cb Callback to call after the resolving has finished or timeout
+ * has happened.
+ * @param user_data The user data.
+ * @param timeout The timeout value for the connection. Possible values:
+ * K_FOREVER: the query is tried forever, user needs to cancel it manually
+ *            if it takes too long time to finish
+ * >0: start the query and let the system timeout it after specified ms
+ *
+ * @return 0 if resolving was started ok, < 0 otherwise
+ */
+static inline int dns_get_addr_info(const char *query,
+				    enum dns_query_type type,
+				    uint16_t *dns_id,
+				    dns_resolve_cb_t cb,
+				    void *user_data,
+				    int32_t timeout)
+{
+	return dns_resolve_name(dns_resolve_get_default(),
+				query,
+				type,
+				dns_id,
+				cb,
+				user_data,
+				timeout);
+}
+
+/**
+ * @brief Cancel a pending DNS query.
+ *
+ * @details This releases DNS resources used by a pending query.
+ *
+ * @param dns_id DNS id of the pending query
+ *
+ * @return 0 if ok, <0 if error.
+ */
+static inline int dns_cancel_addr_info(uint16_t dns_id)
+{
+	return dns_resolve_cancel(dns_resolve_get_default(), dns_id);
+}
 
 /**
  * @brief Initialize DNS subsystem.
