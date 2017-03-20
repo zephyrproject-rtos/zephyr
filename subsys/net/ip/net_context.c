@@ -522,6 +522,9 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 					ntohs(addr6->sin6_port));
 				return ret;
 			}
+		} else {
+			addr6->sin6_port =
+				net_sin6_ptr(&context->local)->sin6_port;
 		}
 
 		NET_DBG("Context %p binding to %s [%s]:%d iface %p",
@@ -593,6 +596,9 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 					ntohs(addr4->sin_port));
 				return ret;
 			}
+		} else {
+			addr4->sin_port =
+				net_sin_ptr(&context->local)->sin_port;
 		}
 
 		NET_DBG("Context %p binding to %s %s:%d iface %p",
