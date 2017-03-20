@@ -7,7 +7,7 @@ This section describes how to configure your development environment and
 to build Zephyr applications in a Microsoft Windows environment.
 
 This guide was tested by compiling and running the Zephyr's sample
-applications on Windows version 8.1 (and should work with Windows 10 as well).
+applications on Windows versions 7 and 8.1 (and should work with Windows 10 as well).
 
 Update Your Operating System
 ****************************
@@ -19,6 +19,92 @@ Windows system with the latest updates installed.
 
 Installing Requirements and Dependencies
 ****************************************
+
+Using MSYS2 (recommended)
+=========================
+
+The simplest way to install a development environment on Windows is to use
+MSYS2, a modern UNIX environment for Windows. Follow the steps below to set it
+up:
+
+1. Download and install :program:`MSYS2`. Download the appropriate (32 or
+   64-bit) MSYS2 installer from `MSYS2 Download`_ and execute it.
+
+2. Launch the `MSYS2 MSYS Shell` from your start menu.
+
+3. Install the dependencies required to build Zephyr:
+
+   .. code-block:: console
+
+      $ pacman -S git make gcc diffutils ncurses-devel python2 python3
+
+4. The build system should now be ready to work with any toolchain installed in
+   your system. As an example below you can find instructions to build for both
+   x86 and ARM using their respective toolchains.
+
+5. Installed cross compiler:
+
+   * For x86, install ISSM toolchain from the Intel Developer Zone: `ISSM Toolchain`_.
+
+   * For ARM, install GNU ARM Embedded from the ARM developer website:
+     `GNU ARM Embedded Download`_ (install to :file:`c:\gccarmemb`).
+
+6. From within the `MSYS2 MSYS Shell`, clone a copy of the Zephyr source into
+   your home directory using Git:
+
+   .. code-block:: console
+
+      $ cd ~
+      $ git clone https://gerrit.zephyrproject.org/r/zephyr
+
+7. Also within the MSYS console, set up environment variables for the installed
+   tools and for the Zephyr environment (using the provided shell script):
+
+   For x86:
+
+   .. code-block:: console
+
+      $ export ZEPHYR_GCC_VARIANT=issm
+      $ export ISSM_INSTALLATION_PATH=/c/IntelSWTools/ISSM_2016.1.067
+
+   For ARM:
+
+   .. code-block:: console
+
+      $ export ZEPHYR_GCC_VARIANT=gccarmemb
+      $ export ISSM_INSTALLATION_PATH=/c/gccarmemb
+
+   Finally run the provided script:
+
+   .. code-block:: console
+
+      $ unset ZEPHYR_SDK_INSTALL_DIR
+      $ source ~/zephyr/zephyr-env.sh
+
+8. Finally, you can try building the :ref:`hello_world` sample to check things
+   out.
+
+   To build for the x86-based Arduino 101:
+
+    .. code-block:: console
+
+       $ cd $ZEPHYR_BASE/samples/hello_world
+       $ make board=arduino_101
+
+   To build for the ARM-based Nordic nRF52 Development Kit:
+
+    .. code-block:: console
+
+       $ cd $ZEPHYR_BASE/samples/hello_world
+       $ make board=nrf52_pca10040
+
+
+    This should check that all the tools and toolchain are setup correctly for
+    your own Zephyr development.
+
+
+Using MinGW (not recommended)
+=============================
 
 To install the software components required to build Zephyr applications on
 Windows, you will need to build or install a toolchain:
@@ -55,8 +141,8 @@ Windows, you will need to build or install a toolchain:
 
    .. code-block:: console
 
-      mingw-get update
-      mingw-get install libpthread msys-libregex-dev --all-related
+      $ mingw-get update
+      $ mingw-get install libpthread msys-libregex-dev --all-related
 
 
    When done, move libregex files (``libregex.a``, ``libregex.dll.a``,
@@ -73,8 +159,8 @@ Windows, you will need to build or install a toolchain:
    system. For instance, the Zephyr build system was tested using the mingw
    MSYS console (as described below) with the toolchain
    provided with the ISSM 2016 (Intel System Studio for Microcontrollers)
-   installation.  Install ISSM from the Intel Developer Zone:
-   `ISSM 2016 Download`_
+   installation.  Install ISSM toolchain from the Intel Developer Zone:
+   `ISSM Toolchain`_
 
    .. note::
 
@@ -90,20 +176,20 @@ Windows, you will need to build or install a toolchain:
 
    .. code-block:: console
 
-      cd ~
-      git clone https://gerrit.zephyrproject.org/r/zephyr
+      $ cd ~
+      $ git clone https://gerrit.zephyrproject.org/r/zephyr
 
 9. Also within the MSYS console, set up environment variables for installed
    tools and for the Zephyr environment (using the provided shell script):
 
    .. code-block:: console
 
-      export PATH=$PATH:/c/python27/
-      export MINGW_DIR=/c/mingw
-      export ZEPHYR_GCC_VARIANT=issm
-      export ISSM_INSTALLATION_PATH=C:/IntelSWTools/ISSM_2016.1.067
-      unset ZEPHYR_SDK_INSTALL_DIR
-      source ~/zephyr/zephyr-env.sh
+      $ export PATH=$PATH:/c/python27/
+      $ export MINGW_DIR=/c/mingw
+      $ export ZEPHYR_GCC_VARIANT=issm
+      $ export ISSM_INSTALLATION_PATH=C:/IntelSWTools/ISSM_2016.1.067
+      $ unset ZEPHYR_SDK_INSTALL_DIR
+      $ source ~/zephyr/zephyr-env.sh
 
 10. Finally, you can try building the :ref:`hello_world` sample to check things
     out.  In this example, we'll build the hello_world sample for the Arduino
@@ -111,16 +197,18 @@ Windows, you will need to build or install a toolchain:
 
     .. code-block:: console
 
-       cd $ZEPHYR_BASE/samples/hello_world
-       make board=arduino_101
+       $ cd $ZEPHYR_BASE/samples/hello_world
+       $ make board=arduino_101
 
     This should check that all the tools and toolchain are setup correctly for
     your own Zephyr development.
 
 
+.. _GNU ARM Embedded Download: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
+.. _MSYS2 Download: http://www.msys2.org/
 .. _GIT Download: https://git-scm.com/download/win
 .. _Python Download: https://www.python.org/downloads/
 .. _MinGW Home: http://www.mingw.org/
 .. _MinGW Repository: http://sourceforge.net/projects/mingw/files/
-.. _ISSM 2016 Download: https://software.intel.com/en-us/intel-system-studio-microcontrollers
+.. _ISSM Toolchain: https://software.intel.com/en-us/articles/issm-toolchain-only-download
 .. _Getting Started on Arduino 101 with ISSM: https://software.intel.com/en-us/articles/getting-started-arduino-101genuino-101-with-intel-system-studio-for-microcontrollers
