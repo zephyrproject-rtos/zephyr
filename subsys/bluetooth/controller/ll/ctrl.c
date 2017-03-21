@@ -2978,7 +2978,7 @@ static void mayfly_xtal_stop(void *params)
 }
 
 #if XTAL_ADVANCED
-static void mayfly_xtal_retain(uint8_t retain)
+static void mayfly_xtal_retain(uint8_t caller_id, uint8_t retain)
 {
 	static uint8_t s_xtal_retained;
 
@@ -2989,25 +2989,45 @@ static void mayfly_xtal_retain(uint8_t retain)
 				0, mayfly_xtal_start};
 			uint32_t retval;
 
+			/* Only user id job will try to retain the XTAL. */
+			LL_ASSERT(caller_id == RADIO_TICKER_USER_ID_JOB);
+
 			s_xtal_retained = 1;
 
-			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_WORKER,
+			retval = mayfly_enqueue(caller_id,
 						RADIO_TICKER_USER_ID_WORKER, 0,
 						&s_mfy_xtal_start);
 			LL_ASSERT(!retval);
 		}
 	} else {
 		if (s_xtal_retained) {
-			static void *s_link[2];
-			static struct mayfly s_mfy_xtal_stop = {0, 0, s_link,
-				0, mayfly_xtal_stop};
+			static void *s_link[2][2];
+			static struct mayfly s_mfy_xtal_stop[2] = {
+				{0, 0, s_link[0], NULL, mayfly_xtal_stop},
+				{0, 0, s_link[1], NULL, mayfly_xtal_stop}
+			};
+			struct mayfly *p_mfy_xtal_stop = NULL;
 			uint32_t retval;
 
 			s_xtal_retained = 0;
 
-			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_WORKER,
+			switch (caller_id) {
+			case RADIO_TICKER_USER_ID_WORKER:
+				p_mfy_xtal_stop = &s_mfy_xtal_stop[0];
+				break;
+
+			case RADIO_TICKER_USER_ID_JOB:
+				p_mfy_xtal_stop = &s_mfy_xtal_stop[1];
+				break;
+
+			default:
+				LL_ASSERT(0);
+				break;
+			}
+
+			retval = mayfly_enqueue(caller_id,
 						RADIO_TICKER_USER_ID_WORKER, 0,
-						&s_mfy_xtal_stop);
+						p_mfy_xtal_stop);
 			LL_ASSERT(!retval);
 		}
 	}
@@ -3073,7 +3093,7 @@ static uint32_t preempt_calc(struct shdr *hdr, uint8_t ticker_id,
 
 	diff += 3;
 	if (diff > TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US)) {
-		mayfly_xtal_retain(0);
+		mayfly_xtal_retain(RADIO_TICKER_USER_ID_WORKER, 0);
 
 		prepare_normal_set(hdr, RADIO_TICKER_USER_ID_WORKER, ticker_id);
 
@@ -3122,7 +3142,7 @@ static void mayfly_xtal_stop_calc(void *params)
 
 	if ((ticker_id != 0xff) &&
 	    (ticks_to_expire < TICKER_US_TO_TICKS(10000))) {
-		mayfly_xtal_retain(1);
+		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 1);
 
 		if (ticker_id >= RADIO_TICKER_ID_ADV) {
 #if SCHED_ADVANCED
@@ -3260,7 +3280,7 @@ static void mayfly_xtal_stop_calc(void *params)
 #endif /* SCHED_ADVANCED */
 		}
 	} else {
-		mayfly_xtal_retain(0);
+		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 0);
 
 		if ((ticker_id != 0xff) && (ticker_id >= RADIO_TICKER_ID_ADV)) {
 			struct shdr *hdr = NULL;
@@ -6836,7 +6856,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 			    ticker_if_done, (void *)&ticker_status_event);
 
 	if (ticker_status_event == TICKER_STATUS_BUSY) {
-		mayfly_enable(RADIO_TICKER_USER_ID_JOB,
+		mayfly_enable(RADIO_TICKER_USER_ID_APP,
 			      RADIO_TICKER_USER_ID_JOB, 1);
 
 		LL_ASSERT(ticker_status_event != TICKER_STATUS_BUSY);
@@ -6859,7 +6879,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 				    (void *)&ticker_status_pre_event);
 
 		if (ticker_status_pre_event == TICKER_STATUS_BUSY) {
-			mayfly_enable(RADIO_TICKER_USER_ID_JOB,
+			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 
 			LL_ASSERT(ticker_status_event != TICKER_STATUS_BUSY);
@@ -6876,7 +6896,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 				 * here
 				 */
 				retval = mayfly_enqueue(
-						RADIO_TICKER_USER_ID_JOB,
+						RADIO_TICKER_USER_ID_APP,
 						RADIO_TICKER_USER_ID_WORKER, 0,
 						&s_mfy_radio_inactive);
 				LL_ASSERT(!retval);
@@ -6885,7 +6905,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 
 				/* XTAL started, handle XTAL stop here */
 				retval = mayfly_enqueue(
-						RADIO_TICKER_USER_ID_JOB,
+						RADIO_TICKER_USER_ID_APP,
 						RADIO_TICKER_USER_ID_WORKER, 0,
 						&s_mfy_xtal_stop);
 				LL_ASSERT(!retval);
@@ -6896,13 +6916,13 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 			/* Step 2.1.2: Deassert Radio Active and XTAL start */
 
 			/* radio active asserted, handle deasserting here */
-			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_APP,
 						RADIO_TICKER_USER_ID_WORKER, 0,
 						&s_mfy_radio_inactive);
 			LL_ASSERT(!retval);
 
 			/* XTAL started, handle XTAL stop here */
-			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_APP,
 						RADIO_TICKER_USER_ID_WORKER, 0,
 						&s_mfy_xtal_stop);
 			LL_ASSERT(!retval);
@@ -6925,7 +6945,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 				    (void *)&ticker_status_stop);
 
 		if (ticker_status_stop == TICKER_STATUS_BUSY) {
-			mayfly_enable(RADIO_TICKER_USER_ID_JOB,
+			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 
 			LL_ASSERT(ticker_status_event != TICKER_STATUS_BUSY);
@@ -6944,7 +6964,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 			s_mfy_radio_stop.param = (void *)STATE_STOP;
 
 			/* Stop Radio Tx/Rx */
-			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_APP,
 						RADIO_TICKER_USER_ID_WORKER, 0,
 						&s_mfy_radio_stop);
 			LL_ASSERT(!retval);
@@ -7017,7 +7037,7 @@ static uint32_t role_disable(uint8_t ticker_id_primary,
 	if (ticker_status == TICKER_STATUS_BUSY) {
 		/* if inside our event, enable Job. */
 		if (_radio.ticker_id_event == ticker_id_primary) {
-			mayfly_enable(RADIO_TICKER_USER_ID_JOB,
+			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 		}
 
