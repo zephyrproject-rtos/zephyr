@@ -389,8 +389,7 @@ static int arr_next(struct json_obj *json, struct token *value)
 static int decode_num(const struct token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
-	 * so using strtol() here; this means no floating point
-	 * numbers.
+	 * so using strtol() here.
 	 */
 	char *endptr;
 	char prev_end;
@@ -407,7 +406,7 @@ static int decode_num(const struct token *token, int32_t *num)
 		return -errno;
 	}
 
-	if (*endptr) {
+	if (endptr != token->end) {
 		return -EINVAL;
 	}
 
