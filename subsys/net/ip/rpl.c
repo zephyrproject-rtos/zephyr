@@ -3106,7 +3106,8 @@ static int dao_ack_send(struct in6_addr *src,
 			struct in6_addr *dst,
 			struct net_if *iface,
 			struct net_rpl_instance *instance,
-			uint8_t sequence)
+			uint8_t sequence,
+			uint8_t status)
 {
 	struct net_buf *buf;
 	int ret;
@@ -3129,7 +3130,7 @@ static int dao_ack_send(struct in6_addr *src,
 	net_nbuf_append_u8(buf, instance->instance_id);
 	net_nbuf_append_u8(buf, 0); /* reserved */
 	net_nbuf_append_u8(buf, sequence);
-	net_nbuf_append_u8(buf, 0); /* status */
+	net_nbuf_append_u8(buf, status); /* status */
 
 	ret = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
 	if (ret < 0) {
@@ -3172,13 +3173,16 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 		net_ipaddr_copy(&dst, &NET_IPV6_BUF(buf)->dst);
 
 		r = dao_forward(dag->instance->iface, buf, paddr);
-		if (r < 0) {
+		if (r >= 0) {
 			return r;
 		}
 
+		/* Send DAO ACK incase of failed to forward the
+		 * original DAO message.
+		 */
 		if (flags & NET_RPL_DAO_K_FLAG) {
 			r = dao_ack_send(&dst, &src, net_nbuf_iface(buf),
-					 instance, sequence);
+					 instance, sequence, 128);
 		}
 	}
 
