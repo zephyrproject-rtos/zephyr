@@ -45,6 +45,8 @@
 #define CONN_UPDATE_TIMEOUT  K_SECONDS(5)
 #define RPA_TIMEOUT          K_SECONDS(CONFIG_BLUETOOTH_RPA_TIMEOUT)
 
+#define HCI_CMD_TIMEOUT      K_SECONDS(10)
+
 /* Stacks for the threads */
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
@@ -229,7 +231,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
-	k_sem_take(&sync_sem, K_FOREVER);
+	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
+	__ASSERT(err == 0, "k_sem_take failed with err %d", err);
 
 	BT_DBG("opcode 0x%04x status 0x%02x", opcode, cmd(buf)->status);
 
