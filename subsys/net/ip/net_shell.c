@@ -15,6 +15,7 @@
 #include <shell/shell.h>
 
 #include <net/net_if.h>
+#include <net/dns_resolve.h>
 #include <misc/printk.h>
 
 #include "route.h"
@@ -565,6 +566,198 @@ static int shell_cmd_conn(int argc, char *argv[])
 	}
 #endif
 
+	return 0;
+}
+
+#if defined(CONFIG_DNS_RESOLVER)
+static void dns_result_cb(enum dns_resolve_status status,
+			  struct dns_addrinfo *info,
+			  void *user_data)
+{
+	bool *first = user_data;
+
+	if (status == DNS_EAI_CANCELED) {
+		printk("\nTimeout while resolving name.\n");
+		*first = false;
+		return;
+	}
+
+	if (status == DNS_EAI_INPROGRESS && info) {
+		char addr[NET_IPV6_ADDR_LEN];
+
+		if (*first) {
+			printk("\n");
+			*first = false;
+		}
+
+		if (info->ai_family == AF_INET) {
+			net_addr_ntop(AF_INET,
+				      &net_sin(&info->ai_addr)->sin_addr,
+				      addr, NET_IPV4_ADDR_LEN);
+		} else if (info->ai_family == AF_INET6) {
+			net_addr_ntop(AF_INET6,
+				      &net_sin6(&info->ai_addr)->sin6_addr,
+				      addr, NET_IPV6_ADDR_LEN);
+		} else {
+			strncpy(addr, "Invalid protocol family",
+				sizeof(addr));
+		}
+
+		printk("\t%s\n", addr);
+		return;
+	}
+
+	if (status == DNS_EAI_ALLDONE) {
+		printk("All results received\n");
+		*first = false;
+		return;
+	}
+
+	if (status == DNS_EAI_FAIL) {
+		printk("No such name found.\n");
+		*first = false;
+		return;
+	}
+
+	printk("Unhandled status %d received\n", status);
+}
+
+static void print_dns_info(struct dns_resolve_context *ctx)
+{
+	int i;
+
+	printk("DNS servers:\n");
+
+	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
+		if (ctx->servers[i].dns_server.family == AF_INET) {
+			printk("\t%s:%u\n",
+			       net_sprint_ipv4_addr(
+				       &net_sin(&ctx->servers[i].dns_server)->
+				       sin_addr),
+			       ntohs(net_sin(&ctx->servers[i].
+					     dns_server)->sin_port));
+		} else if (ctx->servers[i].dns_server.family == AF_INET6) {
+			printk("\t[%s]:%u\n",
+			       net_sprint_ipv6_addr(
+				       &net_sin6(&ctx->servers[i].dns_server)->
+				       sin6_addr),
+			       ntohs(net_sin6(&ctx->servers[i].
+					     dns_server)->sin6_port));
+		}
+	}
+
+	printk("Pending queries:\n");
+
+	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		int32_t remaining;
+
+		if (!ctx->queries[i].cb) {
+			continue;
+		}
+
+		remaining =
+			k_delayed_work_remaining_get(&ctx->queries[i].timer);
+
+		if (ctx->queries[i].query_type == DNS_QUERY_TYPE_A) {
+			printk("\tIPv4[%u]: %s remaining %d\n",
+			       ctx->queries[i].id,
+			       ctx->queries[i].query,
+			       remaining);
+		} else if (ctx->queries[i].query_type == DNS_QUERY_TYPE_AAAA) {
+			printk("\tIPv6[%u]: %s remaining %d\n",
+			       ctx->queries[i].id,
+			       ctx->queries[i].query,
+			       remaining);
+		}
+	}
+}
+#endif
+
+static int shell_cmd_dns(int argc, char *argv[])
+{
+#if defined(CONFIG_DNS_RESOLVER)
+#define DNS_TIMEOUT 2000 /* ms */
+
+	struct dns_resolve_context *ctx;
+	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
+	char *host, *type = NULL;
+	bool first = true;
+	int arg = 1;
+	int ret, i;
+
+	if (strcmp(argv[0], "dns")) {
+		arg++;
+	}
+
+	if (!argv[arg]) {
+		/* DNS status */
+		ctx = dns_resolve_get_default();
+		if (!ctx) {
+			printk("No default DNS context found.\n");
+			return 0;
+		}
+
+		print_dns_info(ctx);
+		return 0;
+	}
+
+	if (strcmp(argv[arg], "cancel") == 0) {
+		ctx = dns_resolve_get_default();
+		if (!ctx) {
+			printk("No default DNS context found.\n");
+			return 0;
+		}
+
+		for (ret = 0, i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+			if (!ctx->queries[i].cb) {
+				continue;
+			}
+
+			if (!dns_resolve_cancel(ctx, ctx->queries[i].id)) {
+				ret++;
+			}
+		}
+
+		if (ret) {
+			printk("Cancelled %d pending requests.\n", ret);
+		} else {
+			printk("No pending DNS requests.\n");
+		}
+
+		return 0;
+	}
+
+	host = argv[arg++];
+
+	if (argv[arg]) {
+		type = argv[arg];
+	}
+
+	if (type) {
+		if (strcmp(type, "A") == 0) {
+			qtype = DNS_QUERY_TYPE_A;
+			printk("IPv4 address type\n");
+		} else if (strcmp(type, "AAAA") == 0) {
+			qtype = DNS_QUERY_TYPE_AAAA;
+			printk("IPv6 address type\n");
+		} else {
+			printk("Unknown query type, specify either "
+			       "A or AAAA\n");
+			return 0;
+		}
+	}
+
+	ret = dns_get_addr_info(host, qtype, NULL, dns_result_cb, &first,
+				DNS_TIMEOUT);
+	if (ret < 0) {
+		printk("Cannot resolve '%s' (%d)\n", host, ret);
+	} else {
+		printk("Query for '%s' sent.\n", host);
+	}
+
+#else
+	printk("DNS resolver not supported.\n");
+#endif
 	return 0;
 }
 
@@ -1323,6 +1516,10 @@ static int shell_cmd_help(int argc, char *argv[])
 	/* Keep the commands in alphabetical order */
 	printk("net allocs\n\tPrint network buffer allocations\n");
 	printk("net conn\n\tPrint information about network connections\n");
+	printk("net dns\n\tShow how DNS is configured\n");
+	printk("net dns cancel\n\tCancel all pending requests\n");
+	printk("net dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default)"
+	       " or IPv6 address for a host name\n");
 	printk("net iface\n\tPrint information about network interfaces\n");
 	printk("net mem\n\tPrint network buffer information\n");
 	printk("net nbr\n\tPrint neighbor information\n");
@@ -1341,6 +1538,7 @@ static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
 	{ "allocs", shell_cmd_allocs, NULL },
 	{ "conn", shell_cmd_conn, NULL },
+	{ "dns", shell_cmd_dns, NULL },
 	{ "help", shell_cmd_help, NULL },
 	{ "iface", shell_cmd_iface, NULL },
 	{ "mem", shell_cmd_mem, NULL },
