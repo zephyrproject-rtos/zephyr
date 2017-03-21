@@ -7,6 +7,7 @@
 #ifndef __JSON_H
 #define __JSON_H
 
+#include <misc/util.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -15,6 +16,8 @@ enum json_tokens {
 	JSON_TOK_NONE = '_',
 	JSON_TOK_OBJECT_START = '{',
 	JSON_TOK_OBJECT_END = '}',
+	JSON_TOK_LIST_START = '[',
+	JSON_TOK_LIST_END = ']',
 	JSON_TOK_STRING = '"',
 	JSON_TOK_COLON = ':',
 	JSON_TOK_COMMA = ',',
@@ -32,10 +35,95 @@ struct json_obj_descr {
 	size_t offset;
 
 	/* Valid values here: JSON_TOK_STRING, JSON_TOK_NUMBER,
-	 * JSON_TOK_TRUE, JSON_TOK_FALSE. (All others ignored.)
+	 * JSON_TOK_TRUE, JSON_TOK_FALSE, JSON_TOK_OBJECT_START,
+	 * JSON_TOK_LIST_START. (All others ignored.)
 	 */
 	enum json_tokens type;
+
+	union {
+		struct {
+			const struct json_obj_descr *sub_descr;
+			size_t sub_descr_len;
+		};
+		struct {
+			const struct json_obj_descr *element_descr;
+			size_t n_elements;
+		};
+	};
 };
+
+/**
+ * @brief Helper macro to declare a descriptor for an object value
+ *
+ * @param struct_ Struct packing the values
+ *
+ * @param field_name_ Field name in the struct
+ *
+ * @param sub_descr_ Array of json_obj_descr describing the subobject
+ *
+ * Here's an example of use:
+ *      struct nested {
+ *          int foo;
+ *          struct {
+ *             int baz;
+ *          } bar;
+ *      };
+ *
+ *      struct json_obj_descr nested_bar[] = {
+ *          { ... declare bar.baz descriptor ... },
+ *      };
+ *      struct json_obj_descr nested[] = {
+ *          { ... declare foo descriptor ... },
+ *          JSON_OBJ_DESCR_OBJECT(struct nested, bar, nested_bar),
+ *      };
+ */
+#define JSON_OBJ_DESCR_OBJECT(struct_, field_name_, sub_descr_) \
+	{ \
+		.field_name = (#field_name_), \
+		.field_name_len = (sizeof(#field_name_) - 1), \
+		.offset = offsetof(struct_, field_name_), \
+		.type = JSON_TOK_OBJECT_START, \
+		.sub_descr = sub_descr_, \
+		.sub_descr_len = ARRAY_SIZE(sub_descr_) \
+	}
+
+/**
+ * @brief Helper macro to declare a descriptor for an array value
+ *
+ * @param struct_ Struct packing the values
+ *
+ * @param field_name_ Field name in the struct
+ *
+ * @param max_len_ Maximum number of elements in array
+ *
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ *
+ * @param elem_type_ Element type
+ *
+ * Here's an example of use:
+ *      struct example {
+ *          int foo[10];
+ *          size_t foo_len;
+ *      };
+ *
+ *      struct json_obj_descr array[] = {
+ *           JSON_OBJ_DESCR_ARRAY(struct example, foo, JSON_TOK_NUMBER)
+ *      };
+ */
+#define JSON_OBJ_DESCR_ARRAY(struct_, field_name_, max_len_, \
+			     len_field_, elem_type_) \
+	{ \
+		.field_name = (#field_name_), \
+		.field_name_len = sizeof(#field_name_) - 1, \
+		.offset = offsetof(struct_, field_name_), \
+		.type = JSON_TOK_LIST_START, \
+		.element_descr = &(struct json_obj_descr) { \
+			.type = elem_type_, \
+			.offset = offsetof(struct_, len_field_), \
+		}, \
+		.n_elements = (max_len_), \
+	}
 
 /**
  * @brief Parses the JSON-encoded object pointer to by @param json, with
@@ -55,11 +143,12 @@ struct json_obj_descr {
  *         .type = JSON_TOK_STRING }
  *    };
  *
- * Since this parser is designed for machine-to-machine communications,
- * some liberties were taken to simplify the design: (1) strings are not
- * unescaped; (2) no UTF-8 validation is performed; (3) only integer
- * numbers are supported; (4) nested objects are not supported, including
- * arrays and objects within objects.
+ * Since this parser is designed for machine-to-machine communications, some
+ * liberties were taken to simplify the design:
+ * (1) strings are not unescaped (but only valid escape sequences are
+ * accepted);
+ * (2) no UTF-8 validation is performed; and
+ * (3) only integer numbers are supported (no strtod() in the minimal libc).
  *
  * @param json Pointer to JSON-encoded value to be parsed
  *

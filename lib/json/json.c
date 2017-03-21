@@ -263,6 +263,8 @@ static void *lexer_json(struct lexer *lexer)
 			return NULL;
 		case '}':
 		case '{':
+		case '[':
+		case ']':
 		case ',':
 		case ':':
 			emit(lexer, (enum json_tokens)chr);
@@ -321,7 +323,23 @@ static int obj_init(struct json_obj *json, char *data, size_t len)
 	return 0;
 }
 
-static int obj_next(struct json_obj *json, struct json_obj_key_value *kv)
+static int element_token(enum json_tokens token)
+{
+	switch (token) {
+	case JSON_TOK_OBJECT_START:
+	case JSON_TOK_LIST_START:
+	case JSON_TOK_STRING:
+	case JSON_TOK_NUMBER:
+	case JSON_TOK_TRUE:
+	case JSON_TOK_FALSE:
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int obj_next(struct json_obj *json,
+		    struct json_obj_key_value *kv)
 {
 	struct token token;
 
@@ -369,16 +387,26 @@ static int obj_next(struct json_obj *json, struct json_obj_key_value *kv)
 		return -EINVAL;
 	}
 
-	switch (kv->value.type) {
-	case JSON_TOK_STRING:
-	case JSON_TOK_NUMBER:
-	case JSON_TOK_TRUE:
-	case JSON_TOK_FALSE:
-	case JSON_TOK_NULL:
-		return 0;
-	default:
+	return element_token(kv->value.type);
+}
+
+static int arr_next(struct json_obj *json, struct token *value)
+{
+	if (!lexer_next(&json->lexer, value)) {
 		return -EINVAL;
 	}
+
+	if (value->type == JSON_TOK_LIST_END) {
+		return 0;
+	}
+
+	if (value->type == JSON_TOK_COMMA) {
+		if (!lexer_next(&json->lexer, value)) {
+			return -EINVAL;
+		}
+	}
+
+	return element_token(value->type);
 }
 
 static int decode_num(const struct token *token, int32_t *num)
@@ -418,34 +446,131 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	return type1 == type2;
 }
 
-int json_obj_parse(char *payload, size_t len,
-		   const struct json_obj_descr *descr, size_t descr_len,
-		   void *val)
+static int obj_parse(struct json_obj *obj,
+		     const struct json_obj_descr *descr, size_t descr_len,
+		     void *val);
+static int arr_parse(struct json_obj *obj,
+		     const struct json_obj_descr *elem_descr,
+		     size_t max_elements, void *field, void *val);
+
+static int decode_value(struct json_obj *obj,
+			const struct json_obj_descr *descr,
+			struct token *value, void *field, void *val)
 {
-	struct json_obj obj;
+
+	if (!equivalent_types(value->type, descr->type)) {
+		return -EINVAL;
+	}
+
+	switch (descr->type) {
+	case JSON_TOK_OBJECT_START:
+		return obj_parse(obj, descr->sub_descr,
+				 descr->sub_descr_len,
+				 field);
+	case JSON_TOK_LIST_START:
+		return arr_parse(obj, descr->element_descr,
+				 descr->n_elements, field, val);
+	case JSON_TOK_FALSE:
+	case JSON_TOK_TRUE: {
+		bool *value = field;
+
+		*value = descr->type == JSON_TOK_TRUE;
+
+		return 0;
+	}
+	case JSON_TOK_NUMBER: {
+		int32_t *num = field;
+
+		return decode_num(value, num);
+	}
+	case JSON_TOK_STRING: {
+		char **str = field;
+
+		*value->end = '\0';
+		*str = value->start;
+
+		return 0;
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
+{
+	switch (descr->type) {
+	case JSON_TOK_NUMBER:
+		return sizeof(int32_t);
+	case JSON_TOK_STRING:
+		return sizeof(char *);
+	case JSON_TOK_TRUE:
+	case JSON_TOK_FALSE:
+		return sizeof(bool);
+	case JSON_TOK_LIST_START:
+		return descr->n_elements * get_elem_size(descr->element_descr);
+	case JSON_TOK_OBJECT_START: {
+		ptrdiff_t total = 0;
+		size_t i;
+
+		for (i = 0; i < descr->sub_descr_len; i++) {
+			total += get_elem_size(&descr->sub_descr[i]);
+		}
+
+		return total;
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static int arr_parse(struct json_obj *obj,
+		     const struct json_obj_descr *elem_descr,
+		     size_t max_elements, void *field, void *val)
+{
+	ptrdiff_t elem_size = get_elem_size(elem_descr);
+	void *last_elem = (char *)field + elem_size * max_elements;
+	size_t *elements = (size_t *)((char *)val + elem_descr->offset);
+	struct token value;
+
+	assert(elem_size > 0);
+
+	*elements = 0;
+
+	while (!arr_next(obj, &value)) {
+		if (value.type == JSON_TOK_LIST_END) {
+			return 0;
+		}
+
+		if (decode_value(obj, elem_descr, &value, field, val) < 0) {
+			return -EINVAL;
+		}
+
+		(*elements)++;
+
+		field = (char *)field + elem_size;
+		if (field == last_elem) {
+			return -ENOSPC;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
+		     size_t descr_len, void *val)
+{
 	struct json_obj_key_value kv;
 	int32_t decoded_fields = 0;
 	size_t i;
 	int ret;
 
-	assert(descr_len < (sizeof(decoded_fields) * CHAR_BIT - 1));
-
-	ret = obj_init(&obj, payload, len);
-	if (ret < 0) {
-		return ret;
-	}
-
-	while (!obj_next(&obj, &kv)) {
+	while (!obj_next(obj, &kv)) {
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
-			if (decoded_fields == (1 << descr_len) - 1) {
-				return decoded_fields;
-			}
-
-			return -EINVAL;
+			return decoded_fields;
 		}
 
 		for (i = 0; i < descr_len; i++) {
-			void *field = (char *)val + descr[i].offset;
+			void *decode_field = (char *)val + descr[i].offset;
 
 			/* Field has been decoded already, skip */
 			if (decoded_fields & (1 << i)) {
@@ -458,51 +583,40 @@ int json_obj_parse(char *payload, size_t len,
 			}
 
 			if (memcmp(kv.key, descr[i].field_name,
-				    descr[i].field_name_len)) {
+				   descr[i].field_name_len)) {
 				continue;
 			}
 
-			/* Is the value of the expected type? */
-			if (!equivalent_types(kv.value.type, descr[i].type)) {
-				return -EINVAL;
-			}
-
 			/* Store the decoded value */
-			switch (descr[i].type) {
-			case JSON_TOK_FALSE:
-			case JSON_TOK_TRUE: {
-				bool *value = field;
-
-				*value = descr[i].type == JSON_TOK_TRUE;
-
-				break;
-			}
-			case JSON_TOK_NUMBER: {
-				int32_t *num = field;
-
-				if (decode_num(&kv.value, num) < 0) {
-					return -EINVAL;
-				}
-
-				break;
-			}
-			case JSON_TOK_STRING: {
-				char **str = field;
-
-				*kv.value.end = '\0';
-				*str = kv.value.start;
-
-				break;
-			}
-			default:
-				return -EINVAL;
+			ret = decode_value(obj, &descr[i], &kv.value,
+					   decode_field, val);
+			if (ret < 0) {
+				return ret;
 			}
 
 			decoded_fields |= 1<<i;
+			break;
 		}
 	}
 
 	return -EINVAL;
+}
+
+int json_obj_parse(char *payload, size_t len,
+		   const struct json_obj_descr *descr, size_t descr_len,
+		   void *val)
+{
+	struct json_obj obj;
+	int ret;
+
+	assert(descr_len < (sizeof(ret) * CHAR_BIT - 1));
+
+	ret = obj_init(&obj, payload, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return obj_parse(&obj, descr, descr_len, val);
 }
 
 static const char escapable[] = "\"\\/\b\f\n\r\t";
