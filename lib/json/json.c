@@ -596,29 +596,44 @@ int json_obj_parse(char *payload, size_t len,
 	return obj_parse(&obj, descr, descr_len, val);
 }
 
-static const char escapable[] = "\"\\/\b\f\n\r\t";
+static uint8_t escape_as(uint8_t chr)
+{
+	switch (chr) {
+	case '"':
+		return '"';
+	case '\\':
+		return '\\';
+	case '\b':
+		return 'b';
+	case '\f':
+		return 'f';
+	case '\n':
+		return 'n';
+	case '\r':
+		return 'r';
+	case '\t':
+		return 't';
+	}
+
+	return 0;
+}
 
 static int json_escape_internal(const char *str,
 				json_append_bytes_t append_bytes,
 				void *data)
 {
-	const char *cur, *escape;
-	size_t out_len = 0;
+	const char *cur;
 	int ret = 0;
 
 	for (cur = str; ret == 0 && *cur; cur++) {
-		escape = memchr(escapable, *cur, sizeof(escapable) - 1);
+		uint8_t escaped = escape_as(*cur);
 
-		if (escape) {
-			uint8_t bytes[2] = {
-				'\\', "\"\\/bfnrt"[escape - escapable]
-			};
+		if (escaped) {
+			uint8_t bytes[2] = { '\\', escaped };
 
 			ret = append_bytes(bytes, 2, data);
-			out_len += 2;
 		} else {
 			ret = append_bytes(cur, 1, data);
-			out_len++;
 		}
 	}
 
@@ -674,7 +689,7 @@ size_t json_calc_escaped_len(const char *str, size_t len)
 	size_t pos;
 
 	for (pos = 0; pos < len; pos++) {
-		if (memchr(escapable, str[pos], sizeof(escapable) - 1)) {
+		if (escape_as(str[pos])) {
 			escaped_len++;
 		}
 	}
