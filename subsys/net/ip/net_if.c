@@ -1043,6 +1043,8 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 			i, iface, net_sprint_ipv6_addr(addr), lifetime,
 			routers[i].is_default);
 
+		net_mgmt_event_notify(NET_EVENT_IPV6_ROUTER_ADD, iface);
+
 		return &routers[i];
 	}
 
@@ -1065,6 +1067,9 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 		k_delayed_work_cancel(&routers[i].lifetime);
 
 		routers[i].is_used = false;
+
+		net_mgmt_event_notify(NET_EVENT_IPV6_ROUTER_DEL,
+				      routers[i].iface);
 
 		NET_DBG("[%d] router %s removed",
 			i, net_sprint_ipv6_addr(&routers[i].address.in6_addr));
