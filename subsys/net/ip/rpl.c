@@ -3457,9 +3457,72 @@ out:
 
 static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
+	struct net_rpl_instance *instance;
+	struct net_rpl_parent *parent;
+	struct net_buf *frag;
+	uint16_t offset;
+	uint16_t pos;
+	uint8_t instance_id;
+	uint8_t sequence;
+	uint8_t status;
+
 	net_rpl_info(buf, "Destination Advertisement Object Ack");
 
-	/* TODO: Handle DAO ACK properly */
+	/* offset tells now where the ICMPv6 header is starting */
+	offset = net_nbuf_icmp_data(buf) - net_nbuf_ip_data(buf);
+
+	offset += sizeof(struct net_icmp_hdr);
+
+	frag = net_nbuf_read_u8(buf->frags, offset, &pos, &instance_id);
+	if (!frag && pos == 0xffff) {
+		/* Read error */
+		return NET_DROP;
+	}
+
+	instance = net_rpl_get_instance(instance_id);
+	if (!instance || !instance->current_dag) {
+		NET_DBG("Ignoring DAO ACK for an unknown instance %d",
+			instance_id);
+		return NET_DROP;
+	}
+
+	parent = find_parent(net_nbuf_iface(buf), instance->current_dag,
+			     &NET_IPV6_BUF(buf)->src);
+	if (!parent) {
+		NET_DBG("Received a DAO ACK from a not joined instance %d",
+			instance_id);
+		return NET_DROP;
+	}
+
+	/* Skip reserved byte */
+	frag = net_nbuf_skip(frag, pos, &pos, 1);
+	frag = net_nbuf_read_u8(frag, pos, &pos, &sequence);
+	frag = net_nbuf_read_u8(frag, pos, &pos, &status);
+	if (!frag && pos == 0xffff) {
+		return NET_DROP;
+	}
+
+	NET_DBG("Received a DAO ACK with seq number %d(%d) status %d from %s",
+		sequence, rpl_dao_sequence, status,
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
+
+	if (sequence == rpl_dao_sequence) {
+		NET_DBG("Status %s", status < 128 ? "ACK" : "NACK");
+		/* FIXME: Stop any DAO retransimission. */
+		if (status >= 128) {
+			/* Rejection, the node sending the DAO-ACK is unwilling
+			 * to act as a parent.
+			 * Trigger a local repair since we can not get our DAO.
+			 */
+			net_rpl_local_repair(net_nbuf_iface(buf), instance);
+			return NET_DROP;
+		}
+	} else {
+		/* FIXME: Forward or drop ? */
+		NET_DBG("DAO ACK not for me");
+		return NET_DROP;
+	}
+
 	net_stats_update_rpl_dao_ack_recv();
 
 	net_nbuf_unref(buf);
