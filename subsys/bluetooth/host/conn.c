@@ -1304,6 +1304,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		k_fifo_init(&conn->tx_queue);
 		k_poll_signal(&conn_change, 0);
 
+		sys_slist_init(&conn->channels);
+
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
 		break;

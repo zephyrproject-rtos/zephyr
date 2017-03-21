@@ -94,7 +94,7 @@ struct bt_conn {
 	struct k_fifo		tx_queue;
 
 	/* Active L2CAP channels */
-	struct bt_l2cap_chan	*channels;
+	sys_slist_t		channels;
 
 	atomic_t		ref;
 

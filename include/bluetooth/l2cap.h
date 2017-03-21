@@ -74,7 +74,7 @@ struct bt_l2cap_chan {
 	struct bt_conn			*conn;
 	/** Channel operations reference */
 	struct bt_l2cap_chan_ops	*ops;
-	struct bt_l2cap_chan		*_next;
+	sys_snode_t			node;
 	bt_l2cap_chan_destroy_t		destroy;
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_delayed_work		rtx_work;

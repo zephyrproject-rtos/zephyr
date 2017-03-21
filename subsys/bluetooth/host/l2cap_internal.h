@@ -215,6 +215,9 @@ void bt_l2cap_disconnected(struct bt_conn *conn);
 void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		       bt_l2cap_chan_destroy_t destroy);
 
+/* Remove channel from the connection */
+void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *chan);
+
 /* Delete channel */
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
 

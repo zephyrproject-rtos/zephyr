@@ -53,12 +53,6 @@
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-/* Wrapper macros making action on channel's list assigned to connection */
-#define l2cap_lookup_chan(conn, chan) \
-	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_LOOKUP)
-#define l2cap_detach_chan(conn, chan) \
-	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_DETACH)
-
 static struct bt_l2cap_fixed_chan *le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *servers;
@@ -100,6 +94,7 @@ void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 	le_channels = chan;
 }
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 						     struct bt_l2cap_chan *chan)
 {
@@ -124,63 +119,41 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 	return NULL;
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_le_chan *
 __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, bool remove)
 {
-	struct bt_l2cap_chan *chan, *prev;
+	struct bt_l2cap_chan *chan;
+	sys_snode_t *prev = NULL;
 
-	for (chan = conn->channels, prev = NULL; chan;
-	     prev = chan, chan = chan->_next) {
-		if (chan->ident != ident) {
-			continue;
-		}
-
-		if (!remove) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (chan->ident == ident) {
+			if (remove) {
+				sys_slist_remove(&conn->channels, prev,
+						 &chan->node);
+			}
 			return BT_L2CAP_LE_CHAN(chan);
 		}
 
-		if (!prev) {
-			conn->channels = chan->_next;
-		} else {
-			prev->_next = chan->_next;
-		}
-
-		return BT_L2CAP_LE_CHAN(chan);
+		prev = &chan->node;
 	}
 
 	return NULL;
 }
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-static struct bt_l2cap_le_chan *__l2cap_chan(struct bt_conn *conn,
-					     struct bt_l2cap_chan *ch,
-					     enum l2cap_conn_list_action action)
+void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *ch)
 {
-	struct bt_l2cap_chan *chan, *prev;
+	struct bt_l2cap_chan *chan;
+	sys_snode_t *prev = NULL;
 
-	for (chan = conn->channels, prev = NULL; chan;
-	     prev = chan, chan = chan->_next) {
-		if (chan != ch) {
-			continue;
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (chan == ch) {
+			sys_slist_remove(&conn->channels, prev, &chan->node);
+			return;
 		}
 
-		switch (action) {
-		case BT_L2CAP_CHAN_DETACH:
-			if (!prev) {
-				conn->channels = chan->_next;
-			} else {
-				prev->_next = chan->_next;
-			}
-
-			return BT_L2CAP_LE_CHAN(chan);
-		case BT_L2CAP_CHAN_LOOKUP:
-		default:
-			return BT_L2CAP_LE_CHAN(chan);
-		}
+		prev = &chan->node;
 	}
-
-	return NULL;
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -286,7 +259,7 @@ static void l2cap_rtx_timeout(struct k_work *work)
 
 	BT_ERR("chan %p timeout", chan);
 
-	l2cap_detach_chan(chan->chan.conn, &chan->chan);
+	bt_l2cap_chan_remove(chan->chan.conn, &chan->chan);
 	bt_l2cap_chan_del(&chan->chan);
 }
 
@@ -294,8 +267,7 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		       bt_l2cap_chan_destroy_t destroy)
 {
 	/* Attach channel to the connection */
-	chan->_next = conn->channels;
-	conn->channels = chan;
+	sys_slist_append(&conn->channels, &chan->node);
 	chan->conn = conn;
 	chan->destroy = destroy;
 
@@ -305,7 +277,13 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			   bt_l2cap_chan_destroy_t destroy)
 {
-	struct bt_l2cap_le_chan *ch = l2cap_chan_alloc_cid(conn, chan);
+	struct bt_l2cap_le_chan *ch;
+
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+	ch = l2cap_chan_alloc_cid(conn, chan);
+#else
+	ch = BT_L2CAP_LE_CHAN(chan);
+#endif
 
 	if (!ch) {
 		BT_ERR("Unable to allocate L2CAP CID");
@@ -364,20 +342,11 @@ void bt_l2cap_connected(struct bt_conn *conn)
 
 void bt_l2cap_disconnected(struct bt_conn *conn)
 {
-	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_chan *chan, *next;
 
-	for (chan = conn->channels; chan;) {
-		struct bt_l2cap_chan *next;
-
-		/* prefetch since disconnected callback may cleanup */
-		next = chan->_next;
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
 		bt_l2cap_chan_del(chan);
-
-		chan = next;
 	}
-
-	conn->channels = NULL;
 }
 
 static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
@@ -448,7 +417,7 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 	}
 
 	if (status) {
-		l2cap_detach_chan(chan->conn, chan);
+		bt_l2cap_chan_remove(chan->conn, chan);
 		bt_l2cap_chan_del(chan);
 		return;
 	}
@@ -468,7 +437,7 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 		return;
 	}
 
-	for (chan = conn->channels; chan; chan = chan->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 		l2cap_le_encrypt_change(chan, hci_status);
 #endif
@@ -575,6 +544,34 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
+						uint16_t cid)
+{
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BT_L2CAP_LE_CHAN(chan)->tx.cid == cid) {
+			return chan;
+		}
+	}
+
+	return NULL;
+}
+
+struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
+						uint16_t cid)
+{
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BT_L2CAP_LE_CHAN(chan)->rx.cid == cid) {
+			return chan;
+		}
+	}
+
+	return NULL;
+}
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
@@ -806,29 +803,21 @@ rsp:
 static struct bt_l2cap_le_chan *l2cap_remove_tx_cid(struct bt_conn *conn,
 						    uint16_t cid)
 {
-	struct bt_l2cap_chan *chan, *prev;
+	struct bt_l2cap_chan *chan;
+	sys_snode_t *prev = NULL;
 
 	/* Protect fixed channels against accidental removal */
 	if (!L2CAP_LE_CID_IS_DYN(cid)) {
 		return NULL;
 	}
 
-	for (chan = conn->channels, prev = NULL; chan;
-	     prev = chan, chan = chan->_next) {
-		/* get the app's l2cap object wherein this chan is contained */
-		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-		if (ch->tx.cid != cid) {
-			continue;
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BT_L2CAP_LE_CHAN(chan)->rx.cid == cid) {
+			sys_slist_remove(&conn->channels, prev, &chan->node);
+			return BT_L2CAP_LE_CHAN(chan);
 		}
 
-		if (!prev) {
-			conn->channels = chan->_next;
-		} else {
-			prev->_next = chan->_next;
-		}
-
-		return ch;
+		prev = &chan->node;
 	}
 
 	return NULL;
@@ -969,7 +958,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		if (l2cap_change_security(chan, result) == 0) {
 			return;
 		}
-		l2cap_detach_chan(conn, &chan->chan);
+		bt_l2cap_chan_remove(conn, &chan->chan);
 	default:
 		bt_l2cap_chan_del(&chan->chan);
 	}
@@ -1562,37 +1551,6 @@ void bt_l2cap_init(void)
 	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR)) {
 		bt_l2cap_br_init();
 	}
-}
-
-struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
-						uint16_t cid)
-{
-	struct bt_l2cap_chan *chan;
-
-	for (chan = conn->channels; chan; chan = chan->_next) {
-		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-		if (ch->tx.cid == cid)
-			return chan;
-	}
-
-	return NULL;
-}
-
-struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
-						uint16_t cid)
-{
-	struct bt_l2cap_chan *chan;
-
-	for (chan = conn->channels; chan; chan = chan->_next) {
-		struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
-
-		if (ch->rx.cid == cid) {
-			return chan;
-		}
-	}
-
-	return NULL;
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)

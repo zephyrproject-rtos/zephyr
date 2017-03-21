@@ -60,12 +60,6 @@
  */
 #define L2CAP_FEAT_FIXED_CHAN_MASK	0x00000080
 
-/* Wrapper macros making action on channel's list assigned to connection */
-#define l2cap_br_lookup_chan(conn, chan) \
-	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_LOOKUP)
-#define l2cap_br_detach_chan(conn, chan) \
-	__l2cap_chan(conn, chan, BT_L2CAP_CHAN_DETACH)
-
 enum {
 	/* Connection oriented channels flags */
 	L2CAP_FLAG_CONN_LCONF_DONE,	/* local config accepted by remote */
@@ -105,10 +99,8 @@ struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 {
 	struct bt_l2cap_chan *chan;
 
-	for (chan = conn->channels; chan; chan = chan->_next) {
-		struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
-
-		if (ch->rx.cid == cid) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BR_CHAN(chan)->rx.cid == cid) {
 			return chan;
 		}
 	}
@@ -116,15 +108,13 @@ struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 	return NULL;
 }
 
-static struct bt_l2cap_chan *bt_l2cap_br_lookup_tx_cid(struct bt_conn *conn,
-						       uint16_t cid)
+struct bt_l2cap_chan *bt_l2cap_br_lookup_tx_cid(struct bt_conn *conn,
+						uint16_t cid)
 {
 	struct bt_l2cap_chan *chan;
 
-	for (chan = conn->channels; chan; chan = chan->_next) {
-		struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
-
-		if (ch->tx.cid == cid) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BR_CHAN(chan)->tx.cid == cid) {
 			return chan;
 		}
 	}
@@ -160,40 +150,9 @@ l2cap_br_chan_alloc_cid(struct bt_conn *conn, struct bt_l2cap_chan *chan)
 	return NULL;
 }
 
-static struct bt_l2cap_br_chan *__l2cap_chan(struct bt_conn *conn,
-					     struct bt_l2cap_chan *ch,
-					     enum l2cap_conn_list_action action)
-{
-	struct bt_l2cap_chan *chan, *prev;
-
-	for (chan = conn->channels, prev = NULL; chan;
-	     prev = chan, chan = chan->_next) {
-
-		if (chan != ch) {
-			continue;
-		}
-
-		switch (action) {
-		case BT_L2CAP_CHAN_DETACH:
-			if (!prev) {
-				conn->channels = chan->_next;
-			} else {
-				prev->_next = chan->_next;
-			}
-
-			return BR_CHAN(chan);
-		case BT_L2CAP_CHAN_LOOKUP:
-		default:
-			return BR_CHAN(chan);
-		}
-	}
-
-	return NULL;
-}
-
 static void l2cap_br_chan_cleanup(struct bt_l2cap_chan *chan)
 {
-	l2cap_br_detach_chan(chan->conn, chan);
+	bt_l2cap_chan_remove(chan->conn, chan);
 	bt_l2cap_chan_del(chan);
 }
 
@@ -1090,29 +1049,21 @@ send_rsp:
 static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
 						       uint16_t cid)
 {
-	struct bt_l2cap_chan *chan, *prev;
+	struct bt_l2cap_chan *chan;
+	sys_snode_t *prev = NULL;
 
 	/* Protect fixed channels against accidental removal */
 	if (!L2CAP_BR_CID_IS_DYN(cid)) {
 		return NULL;
 	}
 
-	for (chan = conn->channels, prev = NULL; chan;
-	     prev = chan, chan = chan->_next) {
-		/* get the app's l2cap object wherein this chan is contained */
-		struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
-
-		if (ch->tx.cid != cid) {
-			continue;
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BR_CHAN(chan)->rx.cid == cid) {
+			sys_slist_remove(&conn->channels, prev, &chan->node);
+			return BR_CHAN(chan);
 		}
 
-		if (!prev) {
-			conn->channels = chan->_next;
-		} else {
-			prev->_next = chan->_next;
-		}
-
-		return ch;
+		prev = &chan->node;
 	}
 
 	return NULL;
@@ -1518,7 +1469,7 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
 
-	for (chan = conn->channels; chan; chan = chan->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		l2cap_br_conn_pend(chan, hci_status);
 
 		if (chan->ops && chan->ops->encrypt_change) {
