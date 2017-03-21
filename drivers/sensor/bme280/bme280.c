@@ -1,20 +1,88 @@
-/* sensor_bmp280.c - Driver for Bosch BMP280 temperature and pressure sensor */
+/* bmp280.c - Driver for Bosch BMP280 temperature and pressure sensor */
 
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2016, 2017 Intel Corporation
+ * Copyright (c) 2017 IpTronix S.r.l.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <kernel.h>
-#include <i2c.h>
 #include <sensor.h>
 #include <init.h>
 #include <gpio.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
+#ifdef CONFIG_BME280_DEV_TYPE_I2C
+#include <i2c.h>
+#elif defined CONFIG_BME280_DEV_TYPE_SPI
+#include <spi.h>
+#endif
+
 #include "bme280.h"
+
+static int bm280_reg_read(struct bme280_data *data,
+			  uint8_t start, uint8_t *buf, int size)
+{
+#ifdef CONFIG_BME280_DEV_TYPE_I2C
+	return i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
+			      start, buf, size);
+#elif defined CONFIG_BME280_DEV_TYPE_SPI
+	uint8_t tx_buf[2];
+	uint8_t rx_buf[2];
+	int i;
+	int ret;
+
+	for (i = 0; i < size; i++) {
+
+		ret = spi_slave_select(data->spi, data->spi_slave);
+		if (ret) {
+			SYS_LOG_DBG("spi_slave_select FAIL %d\n", ret);
+			return ret;
+		}
+
+		tx_buf[0] = (start + i) | 0x80;
+		ret = spi_transceive(data->spi, tx_buf, 2, rx_buf, 2);
+		if (ret) {
+			SYS_LOG_DBG("spi_transceive FAIL %d\n", ret);
+			return ret;
+		}
+
+		buf[i] = rx_buf[1];
+	}
+#endif
+	return 0;
+}
+
+static int bm280_reg_write(struct bme280_data *data, uint8_t reg, uint8_t val)
+{
+#ifdef CONFIG_BME280_DEV_TYPE_I2C
+	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
+				  reg, val);
+#elif defined CONFIG_BME280_DEV_TYPE_SPI
+	uint8_t tx_buf[2];
+	uint8_t rx_buf[2];
+	int ret;
+
+	ret = spi_slave_select(data->spi, data->spi_slave);
+	if (ret) {
+		SYS_LOG_DBG("spi_slave_select FAIL %d\n", ret);
+		return ret;
+	}
+
+	reg &= 0x7F;
+	tx_buf[0] = reg;
+	tx_buf[1] = val;
+	ret = spi_transceive(data->spi, tx_buf, 2, rx_buf, 2);
+	if (ret) {
+		SYS_LOG_DBG("spi_transceive FAIL %d\n", ret);
+		return ret;
+	}
+
+#endif
+	return 0;
+}
 
 /*
  * Compensation code taken from BME280 datasheet, Section 4.2.3
@@ -85,16 +153,16 @@ static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	uint8_t buf[8];
 	int32_t adc_press, adc_temp, adc_humidity;
 	int size = 6;
+	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	if (data->chip_id == BME280_CHIP_ID) {
 		size = 8;
 	}
-
-	if (i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
-			   BME280_REG_PRESS_MSB, buf, size) < 0) {
-		return -EIO;
+	ret = bm280_reg_read(data, BME280_REG_PRESS_MSB, buf, size);
+	if (ret < 0) {
+		return ret;
 	}
 
 	adc_press = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4);
@@ -165,8 +233,7 @@ static int bme280_read_compensation(struct bme280_data *data)
 	uint8_t hbuf[7];
 	int err = 0;
 
-	err = i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
-			     BME280_REG_COMP_START,
+	err = bm280_reg_read(data, BME280_REG_COMP_START,
 			     (uint8_t *)buf, sizeof(buf));
 
 	if (err < 0) {
@@ -188,17 +255,13 @@ static int bme280_read_compensation(struct bme280_data *data)
 	data->dig_p9 = sys_le16_to_cpu(buf[11]);
 
 	if (data->chip_id == BME280_CHIP_ID) {
-		err = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-					BME280_REG_HUM_COMP_PART1,
-					&data->dig_h1);
-
+		err = bm280_reg_read(data, BME280_REG_HUM_COMP_PART1,
+				     &data->dig_h1, 1);
 		if (err < 0) {
 			return err;
 		}
 
-		err = i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
-				     BME280_REG_HUM_COMP_PART2, hbuf, 7);
-
+		err = bm280_reg_read(data, BME280_REG_HUM_COMP_PART2, hbuf, 7);
 		if (err < 0) {
 			return err;
 		}
@@ -216,10 +279,9 @@ static int bme280_read_compensation(struct bme280_data *data)
 static int bme280_chip_init(struct device *dev)
 {
 	struct bme280_data *data = (struct bme280_data *) dev->driver_data;
+	int err;
 
-	int err = i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-				    BME280_REG_ID, &data->chip_id);
-
+	err = bm280_reg_read(data, BME280_REG_ID, &data->chip_id, 1);
 	if (err < 0) {
 		return err;
 	}
@@ -235,28 +297,64 @@ static int bme280_chip_init(struct device *dev)
 	}
 
 	err = bme280_read_compensation(data);
-
 	if (err < 0) {
 		return err;
 	}
 
 	if (data->chip_id == BME280_CHIP_ID) {
-		i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
-				   BME280_REG_CTRL_HUM, BME280_HUMIDITY_OVER);
+		err = bm280_reg_write(data, BME280_REG_CTRL_HUM,
+				      BME280_HUMIDITY_OVER);
+		if (err < 0) {
+			return err;
+		}
 	}
 
-	i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
-			   BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
-	i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
-			   BME280_REG_CONFIG, BME280_CONFIG_VAL);
+	err = bm280_reg_write(data, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
+	if (err < 0) {
+		return err;
+	}
+
+	err = bm280_reg_write(data, BME280_REG_CONFIG, BME280_CONFIG_VAL);
+	if (err < 0) {
+		return err;
+	}
 
 	return 0;
 }
+
+#ifdef CONFIG_BME280_DEV_TYPE_SPI
+static inline int bme280_spi_init(struct bme280_data *data)
+{
+	struct spi_config spi_config;
+	int ret;
+
+	data->spi = device_get_binding(CONFIG_BME280_SPI_DEV_NAME);
+	if (!data->spi) {
+		SYS_LOG_DBG("spi device not found: %s",
+			    CONFIG_BME280_SPI_DEV_NAME);
+		return -EINVAL;
+	}
+
+	spi_config.config = SPI_WORD(8) | SPI_TRANSFER_MSB |
+			    SPI_MODE_CPOL | SPI_MODE_CPHA;
+	spi_config.max_sys_freq = 4;
+
+	ret = spi_configure(data->spi, &spi_config);
+	if (ret) {
+		SYS_LOG_DBG("SPI configuration error %s %d\n",
+			    CONFIG_BME280_SPI_DEV_NAME, ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif
 
 int bme280_init(struct device *dev)
 {
 	struct bme280_data *data = dev->driver_data;
 
+#ifdef CONFIG_BME280_DEV_TYPE_I2C
 	data->i2c_master = device_get_binding(CONFIG_BME280_I2C_MASTER_DEV_NAME);
 	if (!data->i2c_master) {
 		SYS_LOG_DBG("i2c master not found: %s",
@@ -265,17 +363,25 @@ int bme280_init(struct device *dev)
 	}
 
 	data->i2c_slave_addr = BME280_I2C_ADDR;
+#elif defined CONFIG_BME280_DEV_TYPE_SPI
+	if (!bme280_spi_init(data)) {
+		SYS_LOG_DBG("spi master not found: %s",
+			    CONFIG_BME280_I2C_MASTER_DEV_NAME);
+		return -EINVAL;
+	}
+
+	data->spi_slave = CONFIG_BME280_SPI_DEV_SLAVE;
+#endif
 
 	if (bme280_chip_init(dev) < 0) {
 		return -EINVAL;
 	}
-
-	dev->driver_api = &bme280_api_funcs;
 
 	return 0;
 }
 
 static struct bme280_data bme280_data;
 
-DEVICE_INIT(bme280, CONFIG_BME280_DEV_NAME, bme280_init, &bme280_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(bme280, CONFIG_BME280_DEV_NAME, bme280_init, &bme280_data,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &bme280_api_funcs);
