@@ -28,7 +28,7 @@ MSYS2, a modern UNIX environment for Windows. Follow the steps below to set it
 up:
 
 1. Download and install :program:`MSYS2`. Download the appropriate (32 or
-   64-bit) MSYS2 installer from `MSYS2 Download`_ and execute it.
+   64-bit) MSYS2 installer from the `MSYS2 website`_ and execute it.
 
 2. Launch the `MSYS2 MSYS Shell` from your start menu.
 
@@ -47,7 +47,7 @@ up:
    * For x86, install ISSM toolchain from the Intel Developer Zone: `ISSM Toolchain`_.
 
    * For ARM, install GNU ARM Embedded from the ARM developer website:
-     `GNU ARM Embedded Download`_ (install to :file:`c:\gccarmemb`).
+     `GNU ARM Embedded`_ (install to :file:`c:\\gccarmemb`).
 
 6. From within the `MSYS2 MSYS Shell`, clone a copy of the Zephyr source into
    your home directory using Git:
@@ -72,7 +72,7 @@ up:
    .. code-block:: console
 
       $ export ZEPHYR_GCC_VARIANT=gccarmemb
-      $ export ISSM_INSTALLATION_PATH=/c/gccarmemb
+      $ export GCCARMEMB_TOOLCHAIN_PATH=/c/gccarmemb
 
    Finally run the provided script:
 
@@ -204,8 +204,8 @@ Windows, you will need to build or install a toolchain:
     your own Zephyr development.
 
 
-.. _GNU ARM Embedded Download: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
-.. _MSYS2 Download: http://www.msys2.org/
+.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
+.. _MSYS2 website: http://www.msys2.org/
 .. _GIT Download: https://git-scm.com/download/win
 .. _Python Download: https://www.python.org/downloads/
 .. _MinGW Home: http://www.mingw.org/
