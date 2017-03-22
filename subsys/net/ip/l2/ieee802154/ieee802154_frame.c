@@ -334,7 +334,7 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 	uint8_t type = mpdu->mhr.fs->fc.frame_type;
 	uint8_t payload_length;
 
-	payload_length = length - (p_buf - buf) - IEEE802154_MFR_LENGTH;
+	payload_length = length - (p_buf - buf);
 
 	NET_DBG("Header size: %u, vs total length %u: payload size %u",
 		(uint32_t)(p_buf - buf), length, payload_length);

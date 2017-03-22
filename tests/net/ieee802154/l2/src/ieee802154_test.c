@@ -55,7 +55,7 @@ struct ieee802154_pkt_test test_ns_pkt = {
 	.mhr_check.src_addr = (struct ieee802154_address_field *)(ns_pkt + 7),
 };
 
-uint8_t ack_pkt[] = { 0x02, 0x10, 0x16, 0xa2, 0x97 };
+uint8_t ack_pkt[] = { 0x02, 0x10, 0x16 };
 
 struct ieee802154_pkt_test test_ack_pkt = {
 	.name = "ACK frame",

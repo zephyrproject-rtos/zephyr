@@ -16,7 +16,7 @@
 #include <net/nbuf.h>
 
 #define IEEE802154_MTU				127
-#define IEEE802154_MIN_LENGTH			5
+#define IEEE802154_MIN_LENGTH			3
 /* See Section 5.2.1.4 */
 #define IEEE802154_BROADCAST_ADDRESS		0xFFFF
 #define IEEE802154_BROADCAST_PAN_ID		0xFFFF
