@@ -3201,7 +3201,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	uint8_t target_len;
 	uint8_t flags;
 	uint8_t subopt_type;
-	int len;
+	uint8_t len;
 	int r = -EINVAL;
 
 	net_rpl_info(buf, "Destination Advertisement Object");
@@ -3280,34 +3280,35 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 
 	/* Handle any DAO suboptions */
 	while (frag) {
+		len = 0;
 		frag = net_nbuf_read_u8(frag, pos, &pos, &subopt_type);
-
-		if (pos == 0) {
+		if (!frag && pos == 0) {
 			/* We are at the end of the message */
-			frag = NULL;
 			break;
-		}
-
-		if (subopt_type == NET_RPL_OPTION_PAD1) {
-			len = 1;
-		} else {
-			uint8_t tmp;
-
-			/* Suboption with a two-byte header + payload */
-			frag = net_nbuf_read_u8(frag, pos, &pos, &tmp);
-
-			len = 2 + tmp;
-		}
-
-		if (!frag && pos) {
+		} else if (!frag && pos == 0xffff) {
+			/* Read error */
 			NET_DBG("Invalid DAO packet");
 			net_stats_update_rpl_malformed_msgs();
-			goto out;
+			return NET_DROP;
 		}
 
-		NET_DBG("DAO option %u length %d", subopt_type, len - 2);
+		if (subopt_type != NET_RPL_OPTION_PAD1) {
+			/* Suboption with a two-byte header + payload */
+			frag = net_nbuf_read_u8(frag, pos, &pos, &len);
+			len += 2;
+		}
+
+		NET_DBG("DAO option %u length %d", subopt_type,
+			subopt_type == NET_RPL_OPTION_PAD1 ? 0 : len - 2);
 
 		switch (subopt_type) {
+		case NET_RPL_OPTION_PAD1:
+			/* Special case without options length and payload. */
+			break;
+		case NET_RPL_OPTION_PADN:
+			/* Skip padding bytes */
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
+			break;
 		case NET_RPL_OPTION_TARGET:
 			frag = net_nbuf_skip(frag, pos, &pos, 1); /* reserved */
 			frag = net_nbuf_read_u8(frag, pos, &pos, &target_len);
@@ -3319,6 +3320,10 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 			/* The flags, path sequence and control are ignored. */
 			frag = net_nbuf_skip(frag, pos, &pos, 3);
 			frag = net_nbuf_read_u8(frag, pos, &pos, &lifetime);
+			break;
+		default:
+			/* Skip unknown sub options */
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
 			break;
 		}
 	}
@@ -3451,7 +3456,6 @@ fwd_dao:
 		}
 	}
 
-out:
 	return NET_DROP;
 }
 
