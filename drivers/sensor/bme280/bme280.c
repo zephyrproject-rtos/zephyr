@@ -364,9 +364,9 @@ int bme280_init(struct device *dev)
 
 	data->i2c_slave_addr = BME280_I2C_ADDR;
 #elif defined CONFIG_BME280_DEV_TYPE_SPI
-	if (!bme280_spi_init(data)) {
+	if (bme280_spi_init(data) < 0) {
 		SYS_LOG_DBG("spi master not found: %s",
-			    CONFIG_BME280_I2C_MASTER_DEV_NAME);
+			    CONFIG_BME280_SPI_DEV_NAME);
 		return -EINVAL;
 	}
 
