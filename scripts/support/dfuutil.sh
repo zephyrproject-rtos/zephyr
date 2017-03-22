@@ -39,6 +39,11 @@ do_flash() {
         done
     fi
 
+    # Allow DfuSe based devices by checking for DFUUTIL_DFUSE_ADDR
+    if [ -n "${DFUUTIL_DFUSE_ADDR}" ]; then
+        DFUUTIL_CMD="${DFUUTIL_CMD} -s ${DFUUTIL_DFUSE_ADDR}:leave"
+    fi
+
     # Flash DFU device with specified image
     # Do NOT reset with -R, to avoid random 'error resetting after download'
     $DFUUTIL_CMD -a $DFUUTIL_ALT -D $DFUUTIL_IMG
