@@ -2742,32 +2742,34 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 
 	/* Handle any DIO suboptions */
 	while (frag) {
+		len = 0;
 		frag = net_nbuf_read_u8(frag, pos, &pos, &subopt_type);
-
-		if (pos == 0) {
+		if (!frag && pos == 0) {
 			/* We are at the end of the message */
-			frag = NULL;
 			break;
-		}
-
-		if (subopt_type == NET_RPL_OPTION_PAD1) {
-			len = 1;
-		} else {
-			/* Suboption with a two-byte header + payload */
-			frag = net_nbuf_read_u8(frag, pos, &pos, &tmp);
-
-			len = 2 + tmp;
-		}
-
-		if (!frag && pos) {
+		} else if (!frag && pos == 0xffff) {
 			NET_DBG("Invalid DIO packet");
 			net_stats_update_rpl_malformed_msgs();
-			goto out;
+			return NET_DROP;
 		}
 
-		NET_DBG("DIO option %u length %d", subopt_type, len - 2);
+		if (subopt_type != NET_RPL_OPTION_PAD1) {
+			/* Suboption with a two-byte header + payload */
+			frag = net_nbuf_read_u8(frag, pos, &pos, &len);
+			len += 2;
+		}
+
+		NET_DBG("DIO option %u length %d", subopt_type,
+			subopt_type == NET_RPL_OPTION_PAD1 ? 0 : len - 2);
 
 		switch (subopt_type) {
+		case NET_RPL_OPTION_PAD1:
+			/* Special case without options length and payload. */
+			break;
+		case NET_RPL_OPTION_PADN:
+			/* Skip padding bytes */
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
+			break;
 		case NET_RPL_OPTION_DAG_METRIC_CONTAINER:
 			if (len < 6) {
 				NET_DBG("Invalid DAG MC len %d", len);
@@ -2917,6 +2919,8 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 		default:
 			NET_DBG("Unsupported suboption type in DIO %d",
 				subopt_type);
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
+			break;
 		}
 	}
 
