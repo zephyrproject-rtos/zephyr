@@ -342,14 +342,44 @@ int ciev_handle(struct at_client *hf_at)
 	return 0;
 }
 
+static const struct unsolicited {
+	const char *cmd;
+	enum at_cmd_type type;
+	int (*func)(struct at_client *hf_at);
+} handlers[] = {
+	{ "CIEV", AT_CMD_TYPE_UNSOLICITED, ciev_handle }
+};
+
+static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(handlers); i++) {
+		if (!strncmp(hf_at->buf, handlers[i].cmd,
+			     strlen(handlers[i].cmd))) {
+			return &handlers[i];
+		}
+	}
+
+	return NULL;
+}
+
 int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 {
-	if (!at_parse_cmd_input(hf_at, buf, "CIEV", ciev_handle,
-				AT_CMD_TYPE_UNSOLICITED)) {
+	const struct unsolicited *handler;
+
+	handler = hfp_hf_unsol_lookup(hf_at);
+	if (!handler) {
+		BT_ERR("Unhandled unsolicited response");
+		return -ENOMSG;
+	}
+
+	if (!at_parse_cmd_input(hf_at, buf, handler->cmd, handler->func,
+				handler->type)) {
 		return 0;
 	}
 
-	return -EINVAL;
+	return -ENOMSG;
 }
 
 int cmee_finish(struct at_client *hf_at, enum at_result result,
