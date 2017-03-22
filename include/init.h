@@ -59,29 +59,6 @@ extern "C" {
 	DEVICE_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level, prio)
 
 /**
- * @def SYS_INIT_PM
- *
- * @warning This macro is deprecated and will be removed in
- *        a future version, superseded by SYS_DEVICE_DEFINE.
- *
- * @brief Run an initialization function at boot at specified priority,
- * and define functions to run at suspend/resume.
- *
- * @copydetails SYS_INIT
- * @param device_pm_ops Pointer to power management functions.
- * @param drv_name Name of this system device
- */
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#define SYS_INIT_PM(drv_name, init_fn, device_pm_ops, level, prio) \
-	DEVICE_INIT_PM(_SYS_NAME(init_fn), drv_name, init_fn, device_pm_ops, \
-		NULL, NULL, level, prio)
-#else
-#define SYS_INIT_PM(drv_name, init_fn, device_pm_ops, level, prio) \
-	DEVICE_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level, prio)
-#endif
-
-/**
  * @def SYS_DEVICE_DEFINE
  *
  * @brief Run an initialization function at boot at specified priority,
