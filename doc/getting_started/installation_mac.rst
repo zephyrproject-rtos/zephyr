@@ -55,7 +55,7 @@ the brew command line.
 
 .. code-block:: console
 
-   $ brew install gettext qemu help2man mpfr gmp coreutils wget python3
+   $ brew install gettext qemu help2man mpfr gmp coreutils wget python3 dfu-util
 
    $ brew tap homebrew/dupes
 
