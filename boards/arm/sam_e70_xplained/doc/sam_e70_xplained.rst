@@ -72,23 +72,31 @@ chip.
 Programming and Debugging
 *************************
 
-Flashing
-========
-
 Flashing the Zephyr project onto SAM E70 MCU requires the `OpenOCD tool`_.
 Support for Atmel SAM E microcontroller series was added in OpenOCD release
 0.10.0. The current OpenOCD version available in the Zephyr SDK is 0.9 and
 unfortunately it does not support Atmel SAM E microcontrollers. Since few, if
 any major Linux distributions currently offer OpenOCD version 0.10.0 as a
 package you will have to compile and install it yourself. Make sure to enable
-CMSIS-DAP support as this is the debugging interface used by the on board EDBG
-chip.
+CMSIS-DAP support as this is the debug interface used by the on board EDBG chip.
 
-By default SAM E70 chip will boot SAM-BA bootloader located in the ROM, not the
-flashed image. This can be changed with SAM Boot Assistant (`SAM-BA`_) In-system
-Programmer from Atmel by reprogramming GPNVM1 (General-purpose NVM bit 1).
-This operation needs to be performed only once. If you do not need to debug
-your firmware you can also use SAM-BA instead of OpenOCD to flash your project.
+By default a factory new SAM E70 chip will boot SAM-BA boot loader located in
+the ROM, not the flashed image. This is determined by the value of GPNVM1
+(General-Purpose NVM bit 1). The flash procedure will ensure that GPNVM1 is
+set to 1 changing the default behavior to boot from Flash.
+
+If your chip has a security bit GPNVM0 set you will be unable to program flash
+memory or connect to it via a debug interface. The only way to clear GPNVM0
+is to perform a chip erase procedure that will erase all GPNVM bits and the full
+contents of the SAM E70 flash memory:
+
+- With the board power off, set a jumper on the J200 header.
+- Turn the board power on. The jumper can be removed soon after the power is on
+  (flash erasing procedure is started when the erase line is asserted for at
+  least 230ms)
+
+Flashing
+========
 
 #. Build the Zephyr kernel and the application:
 
@@ -119,7 +127,7 @@ your firmware you can also use SAM-BA instead of OpenOCD to flash your project.
 
    .. code-block:: console
 
-      $ openocd -f board/atmel_same70_xplained.cfg -c "program outdir/sam_e70_xplained/zephyr.elf verify reset exit"
+      $ make BOARD=sam_e70_xplained flash
 
    The command will also verify that the image was programmed correctly, reset
    the board and run the Zephyr application.
