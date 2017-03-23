@@ -449,9 +449,9 @@ static int decode_value(struct json_obj *obj,
 				 descr->n_elements, field, val);
 	case JSON_TOK_FALSE:
 	case JSON_TOK_TRUE: {
-		bool *value = field;
+		bool *v = field;
 
-		*value = descr->type == JSON_TOK_TRUE;
+		*v = value->type == JSON_TOK_TRUE;
 
 		return 0;
 	}
