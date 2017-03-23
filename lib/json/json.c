@@ -261,6 +261,7 @@ static void *lexer_json(struct lexer *lexer)
 			/* fallthrough */
 		default:
 			if (isspace(chr)) {
+				ignore(lexer);
 				continue;
 			}
 
