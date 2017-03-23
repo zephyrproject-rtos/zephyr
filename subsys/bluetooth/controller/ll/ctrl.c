@@ -3120,25 +3120,27 @@ static uint32_t preempt_calc(struct shdr *hdr, uint8_t ticker_id,
  */
 static void mayfly_xtal_stop_calc(void *params)
 {
-	uint32_t volatile ticker_status;
-	uint8_t ticker_id;
-	uint32_t ticks_current;
+	uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	uint32_t ticks_to_expire;
+	uint32_t ticks_current;
+	uint8_t ticker_id;
+	uint32_t ret;
 
 	ticker_id = 0xff;
 	ticks_to_expire = 0;
-	ticker_status =
-		ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
-				     RADIO_TICKER_USER_ID_JOB, &ticker_id,
-				     &ticks_current, &ticks_to_expire,
-				     ticker_if_done, (void *)&ticker_status);
+	ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
+				   RADIO_TICKER_USER_ID_JOB, &ticker_id,
+				   &ticks_current, &ticks_to_expire,
+				   ticker_if_done, (void *)&ret_cb);
 
-	while (ticker_status == TICKER_STATUS_BUSY) {
-		ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
-				 RADIO_TICKER_USER_ID_JOB);
+	if (ret == TICKER_STATUS_BUSY) {
+		while (ret_cb == TICKER_STATUS_BUSY) {
+			ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
+					 RADIO_TICKER_USER_ID_JOB);
+		}
 	}
 
-	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
 
 	if ((ticker_id != 0xff) &&
 	    (ticks_to_expire < TICKER_US_TO_TICKS(10000))) {
@@ -3189,6 +3191,7 @@ static void mayfly_xtal_stop_calc(void *params)
 					uint32_t ticks_drift_plus =
 						hdr->ticks_xtal_to_start -
 						ticks_prepare_to_start;
+					uint32_t ticker_status;
 
 					ticker_status =
 						ticker_update(
@@ -3326,21 +3329,23 @@ static void sched_after_mstr_free_slot_get(uint8_t user_id,
 	ticks_to_expire = ticks_to_expire_prev = *us_offset = 0;
 	ticks_slot_prev_abs = 0;
 	while (1) {
-		uint32_t volatile ticker_status;
+		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		struct connection *conn;
+		uint32_t ret;
 
-		ticker_status =
-			ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
-					     user_id, &ticker_id, ticks_anchor,
-					     &ticks_to_expire, ticker_if_done,
-					     (void *)&ticker_status);
+		ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
+					   user_id, &ticker_id, ticks_anchor,
+					   &ticks_to_expire, ticker_if_done,
+					   (void *)&ret_cb);
 
-		while (ticker_status == TICKER_STATUS_BUSY) {
-			ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
-					 user_id);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
+						 user_id);
+			}
 		}
 
-		LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
 
 		if (ticker_id == 0xff) {
 			break;
@@ -3478,23 +3483,24 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 		ticks_anchor_prev = offset_index = _win_offset = 0;
 	ticks_slot_prev_abs = 0;
 	do {
-		uint32_t volatile ticker_status;
+		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		struct connection *conn;
+		uint32_t ret;
 
-		ticker_status =
-			ticker_next_slot_get(
-					     RADIO_TICKER_INSTANCE_ID_RADIO,
-					     RADIO_TICKER_USER_ID_JOB,
-					     &ticker_id, &ticks_anchor,
-					     &ticks_to_expire, ticker_if_done,
-					     (void *)&ticker_status);
+		ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
+					   RADIO_TICKER_USER_ID_JOB,
+					   &ticker_id, &ticks_anchor,
+					   &ticks_to_expire, ticker_if_done,
+					   (void *)&ret_cb);
 
-		while (ticker_status == TICKER_STATUS_BUSY) {
-			ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
-					 RADIO_TICKER_USER_ID_JOB);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
+						 RADIO_TICKER_USER_ID_JOB);
+			}
 		}
 
-		LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
 
 		if (ticker_id == 0xff) {
 			break;
@@ -6847,45 +6853,44 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 	static void *s_link[2];
 	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, 0,
 		mayfly_radio_inactive};
-	uint32_t volatile ticker_status_event;
+	uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+	uint32_t ret;
 
 	/* Step 2: Is caller before Event? Stop Event */
-	ticker_status_event =
-		ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-			    RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_EVENT,
-			    ticker_if_done, (void *)&ticker_status_event);
+	ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+			  RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_EVENT,
+			  ticker_if_done, (void *)&ret_cb);
 
-	if (ticker_status_event == TICKER_STATUS_BUSY) {
+	if (ret == TICKER_STATUS_BUSY) {
 		mayfly_enable(RADIO_TICKER_USER_ID_APP,
 			      RADIO_TICKER_USER_ID_JOB, 1);
 
-		LL_ASSERT(ticker_status_event != TICKER_STATUS_BUSY);
+		LL_ASSERT(ret_cb != TICKER_STATUS_BUSY);
 	}
 
-	if (ticker_status_event == TICKER_STATUS_SUCCESS) {
+	if (ret_cb == TICKER_STATUS_SUCCESS) {
 		static void *s_link[2];
 		static struct mayfly s_mfy_xtal_stop = {0, 0, s_link, 0,
 			mayfly_xtal_stop};
-		uint32_t volatile ticker_status_pre_event;
+		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		uint32_t ret;
 
 		/* Step 2.1: Is caller between Primary and Marker0?
 		 * Stop the Marker0 event
 		 */
-		ticker_status_pre_event =
-			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				    RADIO_TICKER_USER_ID_APP,
-				    RADIO_TICKER_ID_MARKER_0,
-				    ticker_if_done,
-				    (void *)&ticker_status_pre_event);
+		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+				  RADIO_TICKER_USER_ID_APP,
+				  RADIO_TICKER_ID_MARKER_0,
+				  ticker_if_done, (void *)&ret_cb);
 
-		if (ticker_status_pre_event == TICKER_STATUS_BUSY) {
+		if (ret == TICKER_STATUS_BUSY) {
 			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 
-			LL_ASSERT(ticker_status_event != TICKER_STATUS_BUSY);
+			LL_ASSERT(ret_cb != TICKER_STATUS_BUSY);
 		}
 
-		if (ticker_status_pre_event == TICKER_STATUS_SUCCESS) {
+		if (ret_cb == TICKER_STATUS_SUCCESS) {
 			/* Step 2.1.1: Check and deassert Radio Active or XTAL
 			 * start
 			 */
@@ -6910,7 +6915,7 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 						&s_mfy_xtal_stop);
 				LL_ASSERT(!retval);
 			}
-		} else if (ticker_status_pre_event == TICKER_STATUS_FAILURE) {
+		} else if (ret_cb == TICKER_STATUS_FAILURE) {
 			uint32_t retval;
 
 			/* Step 2.1.2: Deassert Radio Active and XTAL start */
@@ -6929,8 +6934,9 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 		} else {
 			LL_ASSERT(0);
 		}
-	} else if (ticker_status_event == TICKER_STATUS_FAILURE) {
-		uint32_t volatile ticker_status_stop;
+	} else if (ret_cb == TICKER_STATUS_FAILURE) {
+		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		uint32_t ret;
 
 		/* Step 3: Caller inside Event, handle graceful stop of Event
 		 * (role dependent)
@@ -6938,21 +6944,19 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 		/* Stop ticker "may" be in use for direct adv or observer,
 		 * hence stop may fail if ticker not used.
 		 */
-		ticker_status_stop =
-			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				    RADIO_TICKER_USER_ID_APP, ticker_id_stop,
-				    ticker_if_done,
-				    (void *)&ticker_status_stop);
+		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+				  RADIO_TICKER_USER_ID_APP, ticker_id_stop,
+				  ticker_if_done, (void *)&ret_cb);
 
-		if (ticker_status_stop == TICKER_STATUS_BUSY) {
+		if (ret == TICKER_STATUS_BUSY) {
 			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 
-			LL_ASSERT(ticker_status_event != TICKER_STATUS_BUSY);
+			LL_ASSERT(ret_cb != TICKER_STATUS_BUSY);
 		}
 
-		LL_ASSERT((ticker_status_stop == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status_stop == TICKER_STATUS_FAILURE));
+		LL_ASSERT((ret_cb == TICKER_STATUS_SUCCESS) ||
+			  (ret_cb == TICKER_STATUS_FAILURE));
 
 		if (_radio.role != ROLE_NONE) {
 			static void *s_link[2];
@@ -6977,15 +6981,15 @@ static inline void role_active_disable(uint8_t ticker_id_stop,
 	} else {
 		LL_ASSERT(0);
 	}
-
 }
 
 static uint32_t role_disable(uint8_t ticker_id_primary,
 			     uint8_t ticker_id_stop)
 {
-	uint32_t volatile ticker_status;
-	uint32_t ticks_xtal_to_start = 0;
+	uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	uint32_t ticks_active_to_start = 0;
+	uint32_t ticks_xtal_to_start = 0;
+	uint32_t ret;
 
 	switch (ticker_id_primary) {
 	case RADIO_TICKER_ID_ADV:
@@ -7028,26 +7032,24 @@ static uint32_t role_disable(uint8_t ticker_id_primary,
 	_radio.ticker_id_stop = ticker_id_primary;
 
 	/* Step 1: Is Primary started? Stop the Primary ticker */
-	ticker_status =
-		ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-			    RADIO_TICKER_USER_ID_APP,
-			    ticker_id_primary, ticker_if_done,
-			    (void *)&ticker_status);
+	ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+			  RADIO_TICKER_USER_ID_APP, ticker_id_primary,
+			  ticker_if_done, (void *)&ret_cb);
 
-	if (ticker_status == TICKER_STATUS_BUSY) {
+	if (ret == TICKER_STATUS_BUSY) {
 		/* if inside our event, enable Job. */
 		if (_radio.ticker_id_event == ticker_id_primary) {
 			mayfly_enable(RADIO_TICKER_USER_ID_APP,
 				      RADIO_TICKER_USER_ID_JOB, 1);
 		}
 
-		/** @todo design to avoid this wait */
-		while (ticker_status == TICKER_STATUS_BUSY) {
+		/* wait for ticker to be stopped */
+		while (ret_cb == TICKER_STATUS_BUSY) {
 			cpu_sleep();
 		}
 	}
 
-	if (ticker_status != TICKER_STATUS_SUCCESS) {
+	if (ret_cb != TICKER_STATUS_SUCCESS) {
 		goto role_disable_cleanup;
 	}
 
@@ -7060,22 +7062,23 @@ static uint32_t role_disable(uint8_t ticker_id_primary,
 	}
 
 	if (!_radio.ticker_id_stop) {
-		ticker_status = TICKER_STATUS_FAILURE;
+		ret_cb = TICKER_STATUS_FAILURE;
 	}
 
 role_disable_cleanup:
 	_radio.ticker_id_stop = 0;
 
-	return ticker_status;
+	return ret_cb;
 }
 
 uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 			  uint8_t filter_policy)
 {
-	struct connection *conn;
-	uint32_t volatile ticker_status;
+	uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	uint32_t ticks_slot_offset;
+	struct connection *conn;
 	struct pdu_adv *pdu_adv;
+	uint32_t ret;
 
 	pdu_adv = (struct pdu_adv *)
 		&_radio.advertiser.adv_data.data[_radio.advertiser.adv_data.last][0];
@@ -7198,28 +7201,28 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 	if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 		uint32_t ticks_now = ticker_ticks_now_get();
 
-		ticker_status =
-			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
-				     RADIO_TICKER_USER_ID_APP,
-				     RADIO_TICKER_ID_ADV, ticks_now, 0,
-				     (ticks_slot_offset +
-				      _radio.advertiser.hdr.ticks_slot),
-				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-				     (ticks_slot_offset +
-				      _radio.advertiser.hdr.ticks_slot),
-				     radio_event_adv_prepare, 0,
-				     ticker_if_done, (void *)&ticker_status);
+		ret = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
+				   RADIO_TICKER_USER_ID_APP,
+				   RADIO_TICKER_ID_ADV, ticks_now, 0,
+				   (ticks_slot_offset +
+				    _radio.advertiser.hdr.ticks_slot),
+				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				   (ticks_slot_offset +
+				    _radio.advertiser.hdr.ticks_slot),
+				   radio_event_adv_prepare, NULL,
+				   ticker_if_done, (void *)&ret_cb);
 
-		/** @todo design to avoid this wait */
-		while (ticker_status == TICKER_STATUS_BUSY) {
-			cpu_sleep();
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				cpu_sleep();
+			}
 		}
 
-		if (ticker_status != TICKER_STATUS_SUCCESS) {
+		if (ret_cb != TICKER_STATUS_SUCCESS) {
 			goto failure_cleanup;
 		}
 
-		ticker_status =
+		ret =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_APP,
 				     RADIO_TICKER_ID_ADV_STOP, ticks_now,
@@ -7227,10 +7230,10 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 							RADIO_TICKER_XTAL_OFFSET_US),
 				     TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY, TICKER_NULL_SLOT,
-				     event_adv_stop, 0, ticker_if_done,
-				     (void *)&ticker_status);
+				     event_adv_stop, NULL, ticker_if_done,
+				     (void *)&ret_cb);
 	} else {
-		ticker_status =
+		ret =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_APP,
 				     RADIO_TICKER_ID_ADV,
@@ -7239,16 +7242,17 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				     (ticks_slot_offset +
 				      _radio.advertiser.hdr.ticks_slot),
-				     radio_event_adv_prepare, 0, ticker_if_done,
-				     (void *)&ticker_status);
+				     radio_event_adv_prepare, NULL,
+				     ticker_if_done, (void *)&ret_cb);
 	}
 
-	/** @todo design to avoid this wait */
-	while (ticker_status == TICKER_STATUS_BUSY) {
-		cpu_sleep();
+	if (ret == TICKER_STATUS_BUSY) {
+		while (ret_cb == TICKER_STATUS_BUSY) {
+			cpu_sleep();
+		}
 	}
 
-	if (ticker_status == TICKER_STATUS_SUCCESS) {
+	if (ret_cb == TICKER_STATUS_SUCCESS) {
 		return 0;
 	}
 
@@ -7289,11 +7293,12 @@ uint32_t radio_scan_enable(uint8_t scan_type, uint8_t init_addr_type,
 			   uint8_t *init_addr, uint16_t interval,
 			   uint16_t window, uint8_t filter_policy)
 {
-	uint32_t volatile ticker_status;
+	uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
+	uint32_t ticks_slot_offset;
+	uint32_t ticks_interval;
 	uint32_t ticks_anchor;
 	uint32_t us_offset;
-	uint32_t ticks_interval;
-	uint32_t ticks_slot_offset;
+	uint32_t ret;
 
 	_radio.observer.scan_type = scan_type;
 	_radio.observer.init_addr_type = init_addr_type;
@@ -7348,24 +7353,25 @@ uint32_t radio_scan_enable(uint8_t scan_type, uint8_t init_addr_type,
 	}
 #endif
 
-	ticker_status =
-		ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
-			     RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_OBS,
-			     (ticks_anchor + TICKER_US_TO_TICKS(us_offset)), 0,
-			     ticks_interval,
-			     TICKER_REMAINDER((uint64_t) interval * 625),
-			     TICKER_NULL_LAZY,
-			     (ticks_slot_offset +
-			      _radio.observer.hdr.ticks_slot),
-			     event_obs_prepare, 0, ticker_if_done,
-			     (void *)&ticker_status);
+	ret = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
+			   RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_OBS,
+			   (ticks_anchor + TICKER_US_TO_TICKS(us_offset)), 0,
+			   ticks_interval,
+			   TICKER_REMAINDER((uint64_t) interval * 625),
+			   TICKER_NULL_LAZY,
+			   (ticks_slot_offset +
+			    _radio.observer.hdr.ticks_slot),
+			   event_obs_prepare, NULL, ticker_if_done,
+			   (void *)&ret_cb);
 
-	/** @todo design to avoid this wait */
-	while (ticker_status == TICKER_STATUS_BUSY) {
-		cpu_sleep();
+	if (ret == TICKER_STATUS_BUSY) {
+		while (ret_cb == TICKER_STATUS_BUSY) {
+			cpu_sleep();
+		}
 	}
 
-	return ((ticker_status == TICKER_STATUS_SUCCESS) ? 0 : 1);
+
+	return ((ret_cb == TICKER_STATUS_SUCCESS) ? 0 : 1);
 }
 
 uint32_t radio_scan_disable(void)
