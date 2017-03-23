@@ -1,6 +1,0 @@
-% Application       : Stack Protector Regression
-
-% TASK NAME             PRIO ENTRY	      STACK GROUPS
-% ======================================================
-  TASK REGRESSIONTASK      7 RegressionTask   2048 [EXE]
-  TASK ALTERNATETASK       5 AlternateTask    2048 []
