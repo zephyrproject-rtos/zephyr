@@ -721,7 +721,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	       net_ipv6_nbr_data(nbr)->is_router,
 	       net_ipv6_nbr_data(nbr)->link_metric,
 	       nbr->iface,
-	       net_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
+	       net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
 	       k_delayed_work_remaining_get(
 		       &net_ipv6_nbr_data(nbr)->reachable),
 	       nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :

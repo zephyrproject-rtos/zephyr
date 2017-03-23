@@ -2700,7 +2700,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 				       &NET_IPV6_BUF(buf)->src,
 				       net_nbuf_ll_src(buf),
 				       0,
-				       NET_NBR_REACHABLE);
+				       NET_IPV6_NBR_STATE_REACHABLE);
 		if (!nbr) {
 			NET_DBG("Cannot add neighbor by DIO");
 			goto out;
@@ -3391,7 +3391,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	if (!nbr) {
 		nbr = net_ipv6_nbr_add(net_nbuf_iface(buf), dao_sender,
 				       net_nbuf_ll_src(buf), false,
-				       NET_NBR_REACHABLE);
+				       NET_IPV6_NBR_STATE_REACHABLE);
 		if (nbr) {
 			/* Set reachable timer */
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
