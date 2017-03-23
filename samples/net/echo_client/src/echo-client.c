@@ -130,10 +130,6 @@ static bool send_tcp_data(struct net_context *ctx,
 #endif /* CONFIG_NET_TCP */
 
 #if defined(CONFIG_NET_IPV6)
-/* admin-local, dynamically allocated multicast address */
-#define MCAST_IP6ADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, \
-			    0, 0, 0, 0, 0, 0, 0, 0x2 } } }
-
 /* Define the peer IP address where to send messages */
 #define PEER_IP6ADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			   0, 0, 0, 0, 0, 0, 0, 0x2 } } }
@@ -148,19 +144,12 @@ static struct in6_addr in6addr_my = MY_IP6ADDR;
 static struct in6_addr in6addr_peer = PEER_IP6ADDR;
 #endif
 
-static struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
-
 static struct sockaddr_in6 my_addr6 = {
 	.sin6_family = AF_INET6,
 	.sin6_port = htons(MY_PORT),
 };
 
 static struct sockaddr_in6 peer_addr6 = {
-	.sin6_family = AF_INET6,
-	.sin6_port = htons(PEER_PORT),
-};
-
-static struct sockaddr_in6 mcast_addr6 = {
 	.sin6_family = AF_INET6,
 	.sin6_port = htons(PEER_PORT),
 };
@@ -176,9 +165,6 @@ static char __noinit __stack ipv6_tcp_stack[STACKSIZE];
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-/* Organization-local 239.192.0.0/14 */
-#define MCAST_IP4ADDR { { { 239, 192, 0, 2 } } }
-
 #define MY_IP4ADDR { { { 192, 0, 2, 1 } } }
 #define PEER_IP4ADDR { { { 192, 0, 2, 2 } } }
 
@@ -248,9 +234,6 @@ static inline void init_app(void)
 					      NET_ADDR_MANUAL, 0);
 	} while (0);
 
-	net_ipaddr_copy(&mcast_addr6.sin6_addr, &in6addr_mcast);
-	net_if_ipv6_maddr_add(net_if_get_default(), &in6addr_mcast);
-
 #if defined(CONFIG_NET_UDP)
 	k_sem_init(&conf.recv_ipv6, 0, UINT_MAX);
 #endif
@@ -295,8 +278,7 @@ static inline void init_app(void)
 static inline bool get_context(struct net_context **udp_recv4,
 			       struct net_context **udp_recv6,
 			       struct net_context **tcp_recv4,
-			       struct net_context **tcp_recv6,
-			       struct net_context **mcast_recv6)
+			       struct net_context **tcp_recv6)
 {
 	int ret;
 
@@ -315,22 +297,6 @@ static inline bool get_context(struct net_context **udp_recv4,
 	if (ret < 0) {
 		NET_ERR("Cannot bind IPv6 UDP port %d (%d)",
 			ntohs(my_addr6.sin6_port), ret);
-		return false;
-	}
-
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, mcast_recv6);
-	if (ret < 0) {
-		NET_ERR("Cannot get receiving IPv6 mcast "
-			"network context (%d)", ret);
-		return false;
-	}
-
-	net_context_setup_pools(*mcast_recv6, tx_udp_pool, data_udp_pool);
-
-	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6,
-			       sizeof(struct sockaddr_in6));
-	if (ret < 0) {
-		NET_ERR("Cannot bind IPv6 mcast (%d)", ret);
 		return false;
 	}
 #endif
@@ -889,13 +855,11 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	struct net_context *udp_send6 = { 0 };
 	struct net_context *tcp_send4 = { 0 };
 	struct net_context *tcp_send6 = { 0 };
-	struct net_context *mcast_send6 = { 0 };
 
 	ipsum_len = strlen(lorem_ipsum);
 
 	if (!get_context(&udp_send4, &udp_send6,
-			 &tcp_send4, &tcp_send6,
-			 &mcast_send6)) {
+			 &tcp_send4, &tcp_send6)) {
 		NET_ERR("Cannot get network contexts");
 		return;
 	}
