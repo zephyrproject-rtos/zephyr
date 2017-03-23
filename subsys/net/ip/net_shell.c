@@ -950,6 +950,288 @@ static int shell_cmd_stats(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_TCP)
+static struct net_context *tcp_ctx;
+
+#define TCP_CONNECT_TIMEOUT K_SECONDS(5) /* ms */
+#define TCP_TIMEOUT K_SECONDS(2) /* ms */
+
+static void tcp_connected(struct net_context *context,
+			  int status,
+			  void *user_data)
+{
+	if (status < 0) {
+		printk("TCP connection failed (%d)\n", status);
+
+		net_context_put(context);
+
+		tcp_ctx = NULL;
+	} else {
+		printk("TCP connected\n");
+	}
+}
+
+#if defined(CONFIG_NET_IPV6)
+static void get_my_ipv6_addr(struct net_if *iface,
+			     struct sockaddr *myaddr)
+{
+	const struct in6_addr *my6addr;
+
+	my6addr = net_if_ipv6_select_src_addr(net_if_get_default(),
+					      &net_sin6(myaddr)->sin6_addr);
+
+	memcpy(&net_sin6(myaddr)->sin6_addr, my6addr, sizeof(struct in6_addr));
+
+	net_sin6(myaddr)->sin6_port = 0; /* let the IP stack to select */
+}
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+static void get_my_ipv4_addr(struct net_if *iface,
+			     struct sockaddr *myaddr)
+{
+	/* Just take the first IPv4 address of an interface. */
+	memcpy(&net_sin(myaddr)->sin_addr,
+	       &iface->ipv4.unicast[0].address.in_addr,
+	       sizeof(struct in_addr));
+
+	net_sin(myaddr)->sin_port = 0; /* let the IP stack to select */
+}
+#endif
+
+static void print_connect_info(int family,
+			       struct sockaddr *myaddr,
+			       struct sockaddr *addr)
+{
+	switch (family) {
+	case AF_INET:
+#if defined(CONFIG_NET_IPV4)
+		printk("Connecting from %s:%u ",
+		       net_sprint_ipv4_addr(&net_sin(myaddr)->sin_addr),
+		       ntohs(net_sin(myaddr)->sin_port));
+		printk("to %s:%u\n",
+		       net_sprint_ipv4_addr(&net_sin(addr)->sin_addr),
+		       ntohs(net_sin(addr)->sin_port));
+#else
+		printk("IPv4 not supported\n");
+#endif
+		break;
+
+	case AF_INET6:
+#if defined(CONFIG_NET_IPV6)
+		printk("Connecting from [%s]:%u ",
+		       net_sprint_ipv6_addr(&net_sin6(myaddr)->sin6_addr),
+		       ntohs(net_sin6(myaddr)->sin6_port));
+		printk("to [%s]:%u\n",
+		       net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr),
+		       ntohs(net_sin6(addr)->sin6_port));
+#else
+		printk("IPv6 not supported\n");
+#endif
+		break;
+
+	default:
+		printk("Unknown protocol family (%d)\n", family);
+		break;
+	}
+}
+
+static int tcp_connect(char *host, uint16_t port, struct net_context **ctx)
+{
+	struct sockaddr addr;
+	struct sockaddr myaddr;
+	int addrlen;
+	int family;
+	int ret;
+
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+	ret = net_addr_pton(AF_INET6, host, &net_sin6(&addr)->sin6_addr);
+	if (ret < 0) {
+		printk("Invalid IPv6 address\n");
+		return 0;
+	}
+
+	net_sin6(&addr)->sin6_port = htons(port);
+	addrlen = sizeof(struct sockaddr_in6);
+	get_my_ipv6_addr(net_if_get_default(), &myaddr);
+	family = addr.family = myaddr.family = AF_INET6;
+#endif
+
+#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+	ret = net_addr_pton(AF_INET, host, &net_sin(&addr)->sin_addr);
+	if (ret < 0) {
+		printk("Invalid IPv4 address\n");
+		return 0;
+	}
+
+	get_my_ipv4_addr(net_if_get_default(), &myaddr);
+	net_sin(&addr)->sin_port = htons(port);
+	addrlen = sizeof(struct sockaddr_in);
+	family = addr.family = myaddr.family = AF_INET;
+#endif
+
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+	ret = net_addr_pton(AF_INET6, host, &net_sin6(&addr)->sin6_addr);
+	if (ret < 0) {
+		ret = net_addr_pton(AF_INET, host, &net_sin(&addr)->sin_addr);
+		if (ret < 0) {
+			printk("Invalid IP address\n");
+			return 0;
+		}
+
+		net_sin(&addr)->sin_port = htons(port);
+		addrlen = sizeof(struct sockaddr_in);
+		get_my_ipv4_addr(net_if_get_default(), &myaddr);
+		family = addr.family = myaddr.family = AF_INET;
+	} else {
+		net_sin6(&addr)->sin6_port = htons(port);
+		addrlen = sizeof(struct sockaddr_in6);
+		get_my_ipv6_addr(net_if_get_default(), &myaddr);
+		family = addr.family = myaddr.family = AF_INET6;
+	}
+#endif
+
+	print_connect_info(family, &myaddr, &addr);
+
+	ret = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, ctx);
+	if (ret < 0) {
+		printk("Cannot get TCP context (%d)\n", ret);
+		return ret;
+	}
+
+	ret = net_context_bind(*ctx, &myaddr, addrlen);
+	if (ret < 0) {
+		printk("Cannot bind TCP (%d)\n", ret);
+		return ret;
+	}
+
+	return net_context_connect(*ctx, &addr, addrlen, tcp_connected,
+				   K_NO_WAIT, NULL);
+}
+
+static void tcp_sent_cb(struct net_context *context,
+			int status,
+			void *token,
+			void *user_data)
+{
+	printk("Message sent\n");
+}
+#endif
+
+static int shell_cmd_tcp(int argc, char *argv[])
+{
+#if defined(CONFIG_NET_TCP)
+	int arg = 1;
+	int ret;
+
+	if (strcmp(argv[0], "tcp")) {
+		arg++;
+	}
+
+	if (argv[arg]) {
+		if (!strcmp(argv[arg], "connect")) {
+			/* tcp connect <ip> port */
+			char *ip;
+			uint16_t port;
+
+			if (tcp_ctx && net_context_is_used(tcp_ctx)) {
+				printk("Already connected\n");
+				return 0;
+			}
+
+			if (!argv[++arg]) {
+				printk("Peer IP address missing.\n");
+				return 0;
+			}
+
+			ip = argv[arg];
+
+			if (!argv[++arg]) {
+				printk("Peer port missing.\n");
+				return 0;
+			}
+
+			port = strtol(argv[arg], NULL, 10);
+
+			return tcp_connect(ip, port, &tcp_ctx);
+		}
+
+		if (!strcmp(argv[arg], "send")) {
+			/* tcp send <data> */
+			struct net_buf *buf;
+
+			if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
+				printk("Not connected\n");
+				return 0;
+			}
+
+			if (!argv[++arg]) {
+				printk("No data to send.\n");
+				return 0;
+			}
+
+			buf = net_nbuf_get_tx(tcp_ctx, TCP_TIMEOUT);
+			if (!buf) {
+				printk("Out of bufs, msg cannot be sent.\n");
+				return 0;
+			}
+
+			ret = net_nbuf_append(buf, strlen(argv[arg]),
+					      argv[arg], TCP_TIMEOUT);
+			if (!ret) {
+				printk("Cannot build msg (out of bufs)\n");
+				net_nbuf_unref(buf);
+				return 0;
+			}
+
+			ret = net_context_send(buf, tcp_sent_cb, TCP_TIMEOUT,
+					       NULL, NULL);
+			if (ret < 0) {
+				printk("Cannot send msg (%d)\n", ret);
+				net_nbuf_unref(buf);
+				return 0;
+			}
+
+			return 0;
+		}
+
+		if (!strcmp(argv[arg], "close")) {
+			/* tcp close */
+			if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
+				printk("Not connected\n");
+				return 0;
+			}
+
+			ret = net_context_put(tcp_ctx);
+			if (ret < 0) {
+				printk("Cannot close the connection (%d)\n",
+				       ret);
+				return 0;
+			}
+
+			printk("Connection closed.\n");
+			tcp_ctx = NULL;
+
+			return 0;
+		}
+
+		printk("Unknown command '%s'\n", argv[arg]);
+		goto usage;
+	} else {
+		printk("Invalid command.\n");
+	usage:
+		printk("Usage:\n");
+		printk("\ttcp connect <ipaddr> port\n");
+		printk("\ttcp send <data>\n");
+		printk("\ttcp close\n");
+	}
+#else
+	printk("TCP not enabled.\n");
+#endif /* CONFIG_NET_TCP */
+
+	return 0;
+}
+
 static int shell_cmd_help(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -966,6 +1248,9 @@ static int shell_cmd_help(int argc, char *argv[])
 	printk("net route\n\tShow network routes\n");
 	printk("net stacks\n\tShow network stacks information\n");
 	printk("net stats\n\tShow network statistics\n");
+	printk("net tcp connect <ip> port\n\tConnect to TCP peer\n");
+	printk("net tcp send <data>\n\tSend data to peer using TCP\n");
+	printk("net tcp close\n\tClose TCP connection\n");
 	return 0;
 }
 
@@ -981,6 +1266,7 @@ static struct shell_cmd net_commands[] = {
 	{ "route", shell_cmd_route, NULL },
 	{ "stacks", shell_cmd_stacks, NULL },
 	{ "stats", shell_cmd_stats, NULL },
+	{ "tcp", shell_cmd_tcp, NULL },
 	{ NULL, NULL, NULL }
 };
 
