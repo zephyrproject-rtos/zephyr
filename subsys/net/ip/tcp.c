@@ -71,13 +71,14 @@ static char upper_if_set(char chr, bool set)
 static void net_tcp_trace(struct net_buf *buf, struct net_tcp *tcp)
 {
 	uint8_t flags = NET_TCP_FLAGS(buf);
-	uint32_t rel_ack;
+	uint32_t rel_ack, ack;
+
+	ack = sys_get_be32(NET_TCP_BUF(buf)->ack);
 
 	if (!tcp->sent_ack) {
 		rel_ack = 0;
 	} else {
-		rel_ack = sys_get_be32(NET_TCP_BUF(buf)->ack) ?
-		       sys_get_be32(NET_TCP_BUF(buf)->ack) - tcp->sent_ack : 0;
+		rel_ack = ack ? ack - tcp->sent_ack : 0;
 	}
 
 	NET_DBG("buf %p src %u dst %u seq 0x%04x ack 0x%04x (%u) "
@@ -86,7 +87,7 @@ static void net_tcp_trace(struct net_buf *buf, struct net_tcp *tcp)
 		ntohs(NET_TCP_BUF(buf)->src_port),
 		ntohs(NET_TCP_BUF(buf)->dst_port),
 		sys_get_be32(NET_TCP_BUF(buf)->seq),
-		sys_get_be32(NET_TCP_BUF(buf)->ack),
+		ack,
 		/* This tells how many bytes we are acking now */
 		rel_ack,
 		upper_if_set('u', flags & NET_TCP_URG),
