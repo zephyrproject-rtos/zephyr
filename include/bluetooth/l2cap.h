@@ -232,7 +232,7 @@ struct bt_l2cap_server {
 	 */
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
-	struct bt_l2cap_server	*_next;
+	sys_snode_t node;
 };
 
 /** @brief Register L2CAP server.

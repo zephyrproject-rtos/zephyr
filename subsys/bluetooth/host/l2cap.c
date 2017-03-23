@@ -55,7 +55,7 @@
 
 static struct bt_l2cap_fixed_chan *le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-static struct bt_l2cap_server *servers;
+static sys_slist_t servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -578,7 +578,7 @@ static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
 {
 	struct bt_l2cap_server *server;
 
-	for (server = servers; server; server = server->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&servers, server, node) {
 		if (server->psm == psm) {
 			return server;
 		}
@@ -609,8 +609,7 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 
 	BT_DBG("PSM 0x%04x", server->psm);
 
-	server->_next = servers;
-	servers = server;
+	sys_slist_append(&servers, &server->node);
 
 	return 0;
 }

@@ -75,7 +75,7 @@ enum {
 	L2CAP_FLAG_FIXED_CONNECTED,		/* fixed connected */
 };
 
-static struct bt_l2cap_server *br_servers;
+static sys_slist_t br_servers;
 static struct bt_l2cap_fixed_chan *br_fixed_channels;
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
@@ -490,7 +490,7 @@ static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
 {
 	struct bt_l2cap_server *server;
 
-	for (server = br_servers; server; server = server->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&br_servers, server, node) {
 		if (server->psm == psm) {
 			return server;
 		}
@@ -858,8 +858,7 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 
 	BT_DBG("PSM 0x%04x", server->psm);
 
-	server->_next = br_servers;
-	br_servers = server;
+	sys_slist_append(&br_servers, &server->node);
 
 	return 0;
 }
@@ -1562,6 +1561,8 @@ void bt_l2cap_br_init(void)
 			.cid	= BT_L2CAP_CID_BR_SIG,
 			.accept = l2cap_br_accept,
 			};
+
+	sys_slist_init(&br_servers);
 
 	bt_l2cap_br_fixed_chan_register(&chan_br);
 
