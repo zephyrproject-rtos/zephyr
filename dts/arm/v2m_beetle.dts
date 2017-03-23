@@ -33,16 +33,14 @@
 		uart0: uart@40004000 {
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40004000 0x14>;
-			interrupts = <IRQ_UART0>;
-			zephyr,irq-prio = <3>;
+			interrupts = <IRQ_UART0 3>;
 			baud-rate = <115200>;
 		};
 
 		uart1: uart@40005000 {
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40005000 0x14>;
-			interrupts = <IRQ_UART1>;
-			zephyr,irq-prio = <3>;
+			interrupts = <IRQ_UART1 3>;
 			baud-rate = <115200>;
 		};
 	};

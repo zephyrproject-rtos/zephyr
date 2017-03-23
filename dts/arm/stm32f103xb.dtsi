@@ -27,8 +27,7 @@
 		usart1: uart@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
-			interrupts = <37>;
-			zephyr,irq-prio = <0>;
+			interrupts = <37 0>;
 			baud-rate = <115200>;
 			status = "disabled";
 		};
@@ -36,8 +35,7 @@
 		usart2: uart@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
-			interrupts = <38>;
-			zephyr,irq-prio = <0>;
+			interrupts = <38 0>;
 			baud-rate = <115200>;
 			status = "disabled";
 		};
@@ -45,8 +43,7 @@
 		usart3: uart@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
-			interrupts = <39>;
-			zephyr,irq-prio = <0>;
+			interrupts = <39 0>;
 			baud-rate = <115200>;
 			status = "disabled";
 		};

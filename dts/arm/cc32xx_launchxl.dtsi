@@ -28,8 +28,7 @@
 		uart0: uart@UARTA0_BASE {
 			compatible = "ti,cc32xx-uart";
 			reg = <UARTA0_BASE 0x4c>;
-			interrupts = <EXP_UARTA0>;
-			zephyr,irq-prio = <3>;
+			interrupts = <EXP_UARTA0 3>;
 			baud-rate = <115200>;
 			status = "disabled";
 		};
@@ -37,8 +36,7 @@
 		uart1: uart@UARTA1_BASE {
 			compatible = "ti,cc32xx-uart";
 			reg = <UARTA1_BASE 0x4c>;
-			interrupts = <EXP_UARTA1>;
-			zephyr,irq-prio = <3>;
+			interrupts = <EXP_UARTA1 3>;
 			baud-rate = <115200>;
 			status = "disabled";
 		};

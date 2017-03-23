@@ -8,7 +8,6 @@ description: >
 
 inherits:
   - !include uart.yaml
-  - !include zephyr_devices.yaml
 
 properties:
   - compatible:

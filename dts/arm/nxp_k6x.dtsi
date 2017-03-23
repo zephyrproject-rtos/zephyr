@@ -58,7 +58,7 @@
 		flash-controller@4001f000 {
 			compatible = "nxp,k64f-flash-controller";
 			reg = <0x4001f000 0x27c>;
-			interrupts = <18>, <19>;
+			interrupts = <18 0>, <19 0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -71,9 +71,8 @@
 		uart0: uart@4006a000 {
 			compatible = "nxp,k64f-uart";
 			reg = <0x4006a000 0x1000>;
-			interrupts = <31>, <32>;
+			interrupts = <31 0>, <32 0>;
 			interrupt-names = "status", "error";
-			zephyr,irq-prio = <0>;
 
 			pinctrl-0 = <&uart0_default>;
 			pinctrl-names = "default";
@@ -84,9 +83,8 @@
 		uart1: uart@4006b000 {
 			compatible = "nxp,k64f-uart";
 			reg = <0x4006b000 0x1000>;
-			interrupts = <33>, <34>;
+			interrupts = <33 0>, <34 0>;
 			interrupt-names = "status", "error";
-			zephyr,irq-prio = <0>;
 
 			status = "disabled";
 		};
@@ -94,9 +92,8 @@
 		uart2: uart@4006c000 {
 			compatible = "nxp,k64f-uart";
 			reg = <0x4006c000 0x1000>;
-			interrupts = <35>, <36>;
+			interrupts = <35 0>, <36 0>;
 			interrupt-names = "status", "error";
-			zephyr,irq-prio = <0>;
 
 			status = "disabled";
 		};
@@ -104,9 +101,8 @@
 		uart3: uart@4006d000 {
 			compatible = "nxp,k64f-uart";
 			reg = <0x4006d000 0x1000>;
-			interrupts = <37>, <38>;
+			interrupts = <37 0>, <38 0>;
 			interrupt-names = "status", "error";
-			zephyr,irq-prio = <0>;
 
 			status = "disabled";
 		};
@@ -114,9 +110,8 @@
 		uart4: uart@400ea000 {
 			compatible = "nxp,k64f-uart";
 			reg = <0x400ea000 0x1000>;
-			interrupts = <66>, <67>;
+			interrupts = <66 0>, <67 0>;
 			interrupt-names = "status", "error";
-			zephyr,irq-prio = <0>;
 
 			status = "disabled";
 		};
@@ -124,9 +119,8 @@
 		uart5: uart@400eb000 {
 			compatible = "nxp,k64f-uart";
 			reg = <0x400eb000 0x1000>;
-			interrupts = <68>, <69>;
+			interrupts = <68 0>, <69 0>;
 			interrupt-names = "status", "error";
-			zephyr,irq-prio = <0>;
 
 			status = "disabled";
 		};
@@ -186,8 +180,7 @@
 		gpioa: gpio@400ff000 {
 			compatible = "nxp,k64f-gpio";
 			reg = <0x400ff000 0x40>;
-			interrupts = <59>;
-			zephyr,irq-prio = <2>;
+			interrupts = <59 2>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -196,9 +189,8 @@
 		gpiob: gpio@400ff040 {
 			compatible = "nxp,k64f-gpio";
 			reg = <0x400ff040 0x40>;
-			interrupts = <60>;
+			interrupts = <60 2>;
 
-			zephyr,irq-prio = <2>;
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -206,9 +198,8 @@
 		gpioc: gpio@400ff080 {
 			compatible = "nxp,k64f-gpio";
 			reg = <0x400ff080 0x40>;
-			interrupts = <61>;
+			interrupts = <61 2>;
 
-			zephyr,irq-prio = <2>;
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -216,8 +207,7 @@
 		gpiod: gpio@400ff0c0 {
 			compatible = "nxp,k64f-gpio";
 			reg = <0x400ff0c0 0x40>;
-			interrupts = <62>;
-			zephyr,irq-prio = <2>;
+			interrupts = <62 2>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -226,8 +216,7 @@
 		gpioe: gpio@400ff100 {
 			compatible = "nxp,k64f-gpio";
 			reg = <0x400ff100 0x40>;
-			interrupts = <63>;
-			zephyr,irq-prio = <2>;
+			interrupts = <63 2>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -236,7 +225,7 @@
 		spi0: spi@4002c000 {
 			compatible = "nxp,k64f-spi";
 			reg = <0x4002c000 0x88>;
-			interrupts = <26>;
+			interrupts = <26 0>;
 			clocks = <&sim 0x103C 12>;		/* clk gate */
 
 			cs = <&gpiob 10 0>, <&gpiob 9 0>;
@@ -247,7 +236,7 @@
 		spi1: spi@4002d000 {
 			compatible = "nxp,k64f-spi";
 			reg = <0x4002d000 0x88>;
-			interrupts = <0>;
+			interrupts = <0 0>;
 			clocks = <&sim 0x103C 13>;		/* clk gate */
 			status = "disabled";
 		};
