@@ -18,12 +18,12 @@ config OBJECTS_WHILELOOP
 	bool "run whileloop"
 	default y
 
-config OBJECTS_FIBER
-	bool "enable fiber"
+config OBJECTS_THREAD
+	bool "enable thread"
 	default n
 
 config OBJECTS_SEMAPHORE
-	bool "enable semphore"
+	bool "enable semaphore"
 	default n
 
 config OBJECTS_LIFO
@@ -42,10 +42,10 @@ config OBJECTS_TIMER
 	bool "enable timer"
 	default n
 
-config FIBER_STACK_SIZE
-	int "set fiber stack size"
+config THREAD_STACK_SIZE
+	int "set thread stack size"
 	default 512
-	depends on OBJECTS_FIBER
+	depends on OBJECTS_THREAD
 
 config STATIC_ISR
 	bool "static isr"
