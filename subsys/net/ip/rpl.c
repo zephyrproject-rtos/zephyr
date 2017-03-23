@@ -100,6 +100,10 @@
 #define NET_RPL_GROUNDED false
 #endif
 
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+#define NET_RPL_DAO_RETRANSMIT_TIMEOUT	K_SECONDS(8)
+#endif
+
 #define NET_RPL_PARENT_FLAG_UPDATED           0x1
 #define NET_RPL_PARENT_FLAG_LINK_METRIC_VALID 0x2
 
@@ -132,6 +136,8 @@ static void remove_parents(struct net_if *iface,
 			   uint16_t minimum_rank);
 
 static void net_rpl_schedule_dao_now(struct net_rpl_instance *instance);
+static void net_rpl_local_repair(struct net_if *iface,
+				 struct net_rpl_instance *instance);
 
 void net_rpl_set_join_callback(net_rpl_join_callback_t cb)
 {
@@ -953,6 +959,12 @@ static void dao_timer(struct net_rpl_instance *instance)
 			send_mcast_dao(instance);
 		}
 #endif
+
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+		instance->dao_transmissions = 1;
+		k_delayed_work_submit(&instance->dao_retransmit_timer,
+				      NET_RPL_DAO_RETRANSMIT_TIMEOUT);
+#endif
 	} else {
 		NET_DBG("No suitable DAO parent found.");
 	}
@@ -971,6 +983,32 @@ static void dao_lifetime_timer(struct k_work *work)
 	set_dao_lifetime_timer(instance);
 }
 
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+static void dao_retransmit_timer(struct k_work *work)
+{
+	struct net_rpl_instance *instance =
+		CONTAINER_OF(work, struct net_rpl_instance,
+			     dao_retransmit_timer);
+
+	if (instance->dao_transmissions >
+	    CONFIG_NET_RPL_DAO_MAX_RETRANSMISSIONS) {
+		/* No more retransmissions - give up.
+		 * FIXME: Perform local repair and find another parent ?
+		 */
+		return;
+	}
+
+	NET_DBG("Retransmitting DAO %d", instance->dao_transmissions);
+
+	instance->dao_transmissions++;
+	k_delayed_work_submit(&instance->dao_retransmit_timer,
+			      NET_RPL_DAO_RETRANSMIT_TIMEOUT);
+
+	dao_send(instance->current_dag->preferred_parent,
+		 instance->default_lifetime, instance->iface);
+}
+#endif
+
 static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 					 uint8_t id)
 {
@@ -984,6 +1022,10 @@ static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
 	k_delayed_work_init(&instance->dao_lifetime_timer, dao_lifetime_timer);
 	k_delayed_work_init(&instance->dao_timer, dao_send_timer);
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+	k_delayed_work_init(&instance->dao_retransmit_timer,
+			    dao_retransmit_timer);
+#endif
 }
 
 static struct net_rpl_instance *net_rpl_alloc_instance(uint8_t instance_id)
@@ -3462,7 +3504,6 @@ fwd_dao:
 static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
 	struct net_rpl_instance *instance;
-	struct net_rpl_parent *parent;
 	struct net_buf *frag;
 	uint16_t offset;
 	uint16_t pos;
@@ -3490,14 +3531,6 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 		return NET_DROP;
 	}
 
-	parent = find_parent(net_nbuf_iface(buf), instance->current_dag,
-			     &NET_IPV6_BUF(buf)->src);
-	if (!parent) {
-		NET_DBG("Received a DAO ACK from a not joined instance %d",
-			instance_id);
-		return NET_DROP;
-	}
-
 	/* Skip reserved byte */
 	frag = net_nbuf_skip(frag, pos, &pos, 1);
 	frag = net_nbuf_read_u8(frag, pos, &pos, &sequence);
@@ -3512,7 +3545,10 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 
 	if (sequence == rpl_dao_sequence) {
 		NET_DBG("Status %s", status < 128 ? "ACK" : "NACK");
-		/* FIXME: Stop any DAO retransimission. */
+
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+		k_delayed_work_cancel(&instance->dao_retransmit_timer);
+#endif
 		if (status >= 128) {
 			/* Rejection, the node sending the DAO-ACK is unwilling
 			 * to act as a parent.
@@ -3522,8 +3558,7 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 			return NET_DROP;
 		}
 	} else {
-		/* FIXME: Forward or drop ? */
-		NET_DBG("DAO ACK not for me");
+		NET_DBG("Seq mismatch %u(%u)", rpl_dao_sequence, sequence);
 		return NET_DROP;
 	}
 

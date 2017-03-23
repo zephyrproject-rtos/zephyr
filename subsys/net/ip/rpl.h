@@ -427,6 +427,14 @@ struct net_rpl_instance {
 	/** DAO lifetime timer. */
 	struct k_delayed_work dao_lifetime_timer;
 
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+	/** DAO retransmit timer */
+	struct k_delayed_work dao_retransmit_timer;
+
+	/** DAO number of retransmissions */
+	uint8_t dao_transmissions;
+#endif
+
 	/** Network interface to send DAO */
 	struct net_if *iface;
 
