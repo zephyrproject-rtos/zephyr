@@ -550,12 +550,7 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 
 	dbg_update_neighbor_lladdr(&lladdr, old_lladdr, addr);
 }
-#else
-#define dbg_update_neighbor_lladdr(...)
-#define dbg_update_neighbor_lladdr_raw(...)
-#endif /* CONFIG_NET_DEBUG_IPV6 */
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		char out[NET_IPV6_ADDR_LEN];				\
@@ -595,6 +590,8 @@ static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
 #define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
 	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
 #else
+#define dbg_update_neighbor_lladdr(...)
+#define dbg_update_neighbor_lladdr_raw(...)
 #define dbg_addr(...)
 #define dbg_addr_recv(...)
 #define dbg_addr_sent(...)
