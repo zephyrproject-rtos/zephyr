@@ -1,5 +1,3 @@
-/* microkernel_footprint.c - microkernel footprint */
-
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
@@ -11,7 +9,7 @@
 
 #ifdef TEST_min
 
-/* INTENTIONALLY LEFT EMPTY (I.E. NO APPLICATION TASKS, FIBERS, OR ISRS) */
+/* INTENTIONALLY LEFT EMPTY (I.E. NO APPLICATION THREADS, OR ISRS) */
 
 #else
 
@@ -23,16 +21,16 @@
 #define TEST_SOFT_INT	  64
 
 #ifdef TEST_max
-#define MESSAGE "Running maximal microkernel configuration %p\n"
+#define MESSAGE "Running maximal kernel configuration %p\n"
 #else
-#define MESSAGE "Running regular microkernel configuration %p\n"
+#define MESSAGE "Running regular kernel configuration %p\n"
 #endif /* TEST_max */
 
-typedef void* (*pfunc) (void*);
+typedef void* (*pfunc) (void *);
 
 /* variables */
 
-volatile int i = 0;		/* counter used by foreground task */
+volatile int i;	/* counter used by foreground task */
 
 static pfunc func_array[] = {
 	/* mutexes */
@@ -155,7 +153,7 @@ static pfunc func_array[] = {
  *
  * @return N/A
  */
-void dummyIsr(void *unused)
+void dummy_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 }
@@ -169,10 +167,11 @@ void dummyIsr(void *unused)
  *
  * @return N/A
  */
-void fgTaskEntry(void)
+void main(void)
 {
+	i = 0;
 #ifdef TEST_reg
-	IRQ_CONNECT(IRQ_LINE, IRQ_PRIORITY, dummyIsr, NULL, 0);
+	IRQ_CONNECT(IRQ_LINE, IRQ_PRIORITY, dummy_isr, NULL, 0);
 #endif
 	/* note: referencing "func_array" ensures it isn't optimized out */
 #ifdef TEST_max
