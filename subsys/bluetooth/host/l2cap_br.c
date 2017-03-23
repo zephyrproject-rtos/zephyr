@@ -76,7 +76,7 @@ enum {
 };
 
 static sys_slist_t br_servers;
-static struct bt_l2cap_fixed_chan *br_fixed_channels;
+static sys_slist_t br_fixed_channels;
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 NET_BUF_POOL_DEFINE(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
@@ -385,7 +385,7 @@ static uint8_t get_fixed_channels_mask(void)
 	uint8_t mask = 0;
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
-	for (fchan = br_fixed_channels; fchan; fchan = fchan->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&br_fixed_channels, fchan, node) {
 		mask |= BIT(fchan->cid);
 	}
 
@@ -451,7 +451,7 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
-	for (fchan = br_fixed_channels; fchan; fchan = fchan->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&br_fixed_channels, fchan, node) {
 		struct bt_l2cap_br_chan *ch;
 
 		if (!fchan->accept) {
@@ -1551,8 +1551,7 @@ void bt_l2cap_br_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 {
 	BT_DBG("CID 0x%04x", chan->cid);
 
-	chan->_next = br_fixed_channels;
-	br_fixed_channels = chan;
+	sys_slist_append(&br_fixed_channels, &chan->node);
 }
 
 void bt_l2cap_br_init(void)

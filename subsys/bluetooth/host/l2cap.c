@@ -53,7 +53,7 @@
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-static struct bt_l2cap_fixed_chan *le_channels;
+static sys_slist_t le_channels;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static sys_slist_t servers;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
@@ -90,8 +90,7 @@ void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 {
 	BT_DBG("CID 0x%04x", chan->cid);
 
-	chan->_next = le_channels;
-	le_channels = chan;
+	sys_slist_append(&le_channels, &chan->node);
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
@@ -313,9 +312,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		return;
 	}
 
-	fchan = le_channels;
-
-	for (; fchan; fchan = fchan->_next) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&le_channels, fchan, node) {
 		struct bt_l2cap_le_chan *ch;
 
 		if (fchan->accept(conn, &chan) < 0) {
