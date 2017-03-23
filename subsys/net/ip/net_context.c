@@ -833,7 +833,10 @@ NET_CONN_CB(tcp_established)
 		 * LAST_ACK state
 		 */
 		context->tcp->fin_rcvd = 1;
-		net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
+
+		if (net_tcp_get_state(context->tcp) == NET_TCP_ESTABLISHED) {
+			net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
+		}
 
 		context->tcp->send_ack += 1;
 
