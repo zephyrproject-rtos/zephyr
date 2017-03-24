@@ -271,24 +271,6 @@ struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data)
 	return NULL;
 }
 
-static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
-				  struct net_if *iface,
-				  struct in6_addr *addr)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = get_nbr(i);
-
-		if (nbr->ref && nbr->iface == iface &&
-		    net_ipv6_addr_cmp(&nbr_data(nbr)->dag->dag_id, addr)) {
-			return nbr;
-		}
-	}
-
-	return NULL;
-}
-
 static inline void nbr_free(struct net_nbr *nbr)
 {
 	NET_DBG("nbr %p", nbr);
@@ -2246,13 +2228,23 @@ struct net_rpl_parent *find_parent_any_dag_any_instance(struct net_if *iface,
 							struct in6_addr *addr)
 {
 	struct net_nbr *nbr, *rpl_nbr;
+	struct net_linkaddr_storage *lsaddr;
+	struct net_linkaddr lladdr;
 
 	nbr = net_ipv6_nbr_lookup(iface, addr);
 	if (!nbr) {
 		return NULL;
 	}
 
-	rpl_nbr = nbr_lookup(&net_rpl_parents.table, iface, addr);
+	lsaddr = net_nbr_get_lladdr(nbr->idx);
+	if (!lsaddr) {
+		return NULL;
+	}
+
+	lladdr.addr = lsaddr->addr;
+	lladdr.len = lsaddr->len;
+
+	rpl_nbr = net_nbr_lookup(&net_rpl_parents.table, iface, &lladdr);
 	if (!rpl_nbr) {
 		return NULL;
 	}
