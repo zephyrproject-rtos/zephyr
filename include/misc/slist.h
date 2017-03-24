@@ -104,7 +104,7 @@ typedef struct _slist sys_slist_t;
  * @param __n The field name of sys_node_t within the container struct
  */
 #define SYS_SLIST_CONTAINER(__ln, __cn, __n) \
-	(__ln ? CONTAINER_OF(__ln, __typeof__(*__cn), __n) : NULL)
+	((__ln) ? CONTAINER_OF((__ln), __typeof__(*(__cn)), __n) : NULL)
 /*
  * @brief Provide the primitive to peek container of the list head
  *
@@ -133,7 +133,7 @@ typedef struct _slist sys_slist_t;
  */
 
 #define SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n) \
-	SYS_SLIST_CONTAINER(sys_slist_peek_next(&(__cn->__n)), __cn, __n)
+	SYS_SLIST_CONTAINER(sys_slist_peek_next(&((__cn)->__n)), __cn, __n)
 
 /**
  * @brief Provide the primitive to iterate on a list under a container
