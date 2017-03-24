@@ -443,7 +443,11 @@ void net_if_start_dad(struct net_if *iface)
 	}
 }
 #else
-#define net_if_ipv6_start_dad(...)
+static inline void net_if_ipv6_start_dad(struct net_if *iface,
+					 struct net_if_addr *ifaddr)
+{
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+}
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
