@@ -233,6 +233,31 @@ net_route_mcast_lookup(struct in6_addr *group);
 
 #endif /* CONFIG_NET_ROUTE_MCAST */
 
+/**
+ * @brief Return a route to destination via some intermediate host.
+ *
+ * @param dst Destination IPv6 address
+ * @param route Route entry to destination is returned.
+ * @param nexthop Next hop neighbor IPv6 address is returned.
+ *
+ * @return True if there is a route to the destination, False otherwise
+ */
+bool net_route_get_info(struct in6_addr *dst,
+			struct net_route_entry **route,
+			struct in6_addr **nexthop);
+
+/**
+ * @brief Send the network packet to network via some intermediate host.
+ *
+ * @param buf Network buffer to send.
+ * @param route Route entry to destination.
+ * @param nexthop Next hop neighbor IPv6 address.
+ *
+ * @return 0 if there was no error, <0 if the packet could not be sent.
+ */
+int net_route_packet(struct net_buf *buf, struct net_route_entry *route,
+		     struct in6_addr *nexthop);
+
 #else /* CONFIG_NET_ROUTE */
 #define net_route_init(...)
 #endif /* CONFIG_NET_ROUTE */

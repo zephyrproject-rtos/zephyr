@@ -440,7 +440,7 @@ static bool net_test_send_ns(void)
 			       &in6addr_my,
 			       &iface->link_addr,
 			       false,
-			       NET_NBR_REACHABLE);
+			       NET_IPV6_NBR_STATE_REACHABLE);
 	if (!nbr) {
 		TC_ERROR("Cannot add to neighbor cache\n");
 		return false;
@@ -484,7 +484,7 @@ static bool net_test_nbr_lookup_ok(void)
 	    net_sprint_ipv6_addr(&peer_addr),
 	    net_sprint_ll_addr(llstorage->addr, llstorage->len));
 
-	net_ipv6_nbr_data(nbr)->state = NET_NBR_REACHABLE;
+	net_ipv6_nbr_data(nbr)->state = NET_IPV6_NBR_STATE_REACHABLE;
 
 	return true;
 }

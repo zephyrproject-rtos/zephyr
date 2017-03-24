@@ -34,6 +34,15 @@ struct net_icmpv4_echo_req {
 	((struct net_icmpv4_echo_req *)(net_nbuf_icmp_data(buf) +	\
 				      sizeof(struct net_icmp_hdr)))
 
+typedef enum net_verdict (*icmpv4_callback_handler_t)(struct net_buf *buf);
+
+struct net_icmpv4_handler {
+	sys_snode_t node;
+	uint8_t type;
+	uint8_t code;
+	icmpv4_callback_handler_t handler;
+};
+
 /**
  * @brief Send ICMPv4 error message.
  * @param buf Network buffer that this error is related to.
@@ -60,7 +69,17 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 				 uint16_t identifier,
 				 uint16_t sequence);
 
-enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
+void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
+
+void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
+
+enum net_verdict net_icmpv4_input(struct net_buf *buf,
 				  uint8_t type, uint8_t code);
+
+#if defined(CONFIG_NET_IPV4)
+void net_icmpv4_init(void);
+#else
+#define net_icmpv4_init(...)
+#endif
 
 #endif /* __ICMPV4_H */

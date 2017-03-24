@@ -2700,7 +2700,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 				       &NET_IPV6_BUF(buf)->src,
 				       net_nbuf_ll_src(buf),
 				       0,
-				       NET_NBR_REACHABLE);
+				       NET_IPV6_NBR_STATE_REACHABLE);
 		if (!nbr) {
 			NET_DBG("Cannot add neighbor by DIO");
 			goto out;
@@ -2719,7 +2719,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 	frag = net_nbuf_read_u8(frag, pos, &pos, &dio.version);
 	frag = net_nbuf_read_be16(frag, pos, &pos, &dio.rank);
 
-	NET_DBG("Incoming DIO len %d id %d ver %d rank %d",
+	NET_DBG("Incoming DIO len %zu id %d ver %d rank %d",
 		net_buf_frags_len(buf) - offset,
 		dio.instance_id, dio.version, dio.rank);
 
@@ -3080,7 +3080,12 @@ static inline int dao_forward(struct net_if *iface,
 
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
 
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_nbuf_set_family(buf, AF_INET6);
 	net_nbuf_set_iface(buf, iface);
+
+	NET_ICMP_BUF(buf)->chksum = 0;
+	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
 
 	ret = net_send_data(buf);
 	if (ret >= 0) {
@@ -3093,13 +3098,12 @@ static inline int dao_forward(struct net_if *iface,
 	return ret;
 }
 
-static int dao_ack_send(struct net_buf *orig,
-			struct net_rpl_instance *instance,
+static int dao_ack_send(struct in6_addr *src,
 			struct in6_addr *dst,
+			struct net_if *iface,
+			struct net_rpl_instance *instance,
 			uint8_t sequence)
 {
-	struct in6_addr *src = &NET_IPV6_BUF(orig)->dst;
-	struct net_if *iface = net_nbuf_iface(orig);
 	struct net_buf *buf;
 	int ret;
 
@@ -3143,27 +3147,38 @@ static int dao_ack_send(struct net_buf *orig,
 	return 0;
 }
 
-static void forwarding_dao(struct net_rpl_instance *instance,
-			   struct net_rpl_dag *dag,
-			   struct in6_addr *dao_sender,
-			   struct net_buf *buf,
-			   uint8_t sequence,
-			   uint8_t flags,
-			   char *str)
+static int forwarding_dao(struct net_rpl_instance *instance,
+			  struct net_rpl_dag *dag,
+			  struct net_buf *buf,
+			  uint8_t sequence,
+			  uint8_t flags,
+			  char *str)
 {
 	struct in6_addr *paddr;
+	struct in6_addr src;
+	struct in6_addr dst;
+	int r = -EINVAL;
 
 	paddr = net_rpl_get_parent_addr(instance->iface,
 					dag->preferred_parent);
 	if (paddr) {
 		NET_DBG("%s %s", str, net_sprint_ipv6_addr(paddr));
 
-		dao_forward(dag->instance->iface, buf, paddr);
+		net_ipaddr_copy(&src, &NET_IPV6_BUF(buf)->src);
+		net_ipaddr_copy(&dst, &NET_IPV6_BUF(buf)->dst);
+
+		r = dao_forward(dag->instance->iface, buf, paddr);
+		if (r < 0) {
+			return r;
+		}
 
 		if (flags & NET_RPL_DAO_K_FLAG) {
-			dao_ack_send(buf, instance, dao_sender, sequence);
+			r = dao_ack_send(&dst, &src, net_nbuf_iface(buf),
+					 instance, sequence);
 		}
 	}
+
+	return r;
 }
 
 static enum net_verdict handle_dao(struct net_buf *buf)
@@ -3187,6 +3202,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	uint8_t flags;
 	uint8_t subopt_type;
 	int len;
+	int r = -EINVAL;
 
 	net_rpl_info(buf, "Destination Advertisement Object");
 
@@ -3300,8 +3316,8 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 					     addr.s6_addr);
 			break;
 		case NET_RPL_OPTION_TRANSIT:
-			/* The path sequence and control are ignored. */
-			frag = net_nbuf_skip(frag, pos, &pos, 2);
+			/* The flags, path sequence and control are ignored. */
+			frag = net_nbuf_skip(frag, pos, &pos, 3);
 			frag = net_nbuf_read_u8(frag, pos, &pos, &lifetime);
 			break;
 		}
@@ -3350,15 +3366,19 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 			 * if we have one.
 			 */
 			if (dag->preferred_parent) {
-				forwarding_dao(instance, dag, dao_sender,
-					       buf, sequence, flags,
+				r = forwarding_dao(instance, dag,
+						   buf, sequence, flags,
 #if defined(CONFIG_NET_DEBUG_RPL)
-					       "Forwarding no-path DAO to "
-					       "parent"
+						   "Forwarding no-path DAO to "
+						   "parent"
 #else
-					       ""
+						   ""
 #endif
-					);
+						  );
+				if (r >= 0) {
+					net_nbuf_unref(buf);
+					return NET_OK;
+				}
 			}
 		}
 
@@ -3371,7 +3391,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	if (!nbr) {
 		nbr = net_ipv6_nbr_add(net_nbuf_iface(buf), dao_sender,
 				       net_nbuf_ll_src(buf), false,
-				       NET_NBR_REACHABLE);
+				       NET_IPV6_NBR_STATE_REACHABLE);
 		if (nbr) {
 			/* Set reachable timer */
 			net_ipv6_nbr_set_reachable_timer(net_nbuf_iface(buf),
@@ -3416,15 +3436,18 @@ fwd_dao:
 
 	if (learned_from == NET_RPL_ROUTE_UNICAST_DAO) {
 		if (dag->preferred_parent) {
-			forwarding_dao(instance, dag,
-				       dao_sender, buf,
-				       sequence, flags,
+			r = forwarding_dao(instance, dag,
+					   buf, sequence, flags,
 #if defined(CONFIG_NET_DEBUG_RPL)
-				       "Forwarding DAO to parent"
+					   "Forwarding DAO to parent"
 #else
-				       ""
+					   ""
 #endif
-				);
+					   );
+			if (r >= 0) {
+				net_nbuf_unref(buf);
+				return NET_OK;
+			}
 		}
 	}
 
@@ -3436,9 +3459,12 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
 	net_rpl_info(buf, "Destination Advertisement Object Ack");
 
+	/* TODO: Handle DAO ACK properly */
 	net_stats_update_rpl_dao_ack_recv();
 
-	return NET_DROP;
+	net_nbuf_unref(buf);
+
+	return NET_OK;
 }
 
 static struct net_icmpv6_handler dodag_info_solicitation_handler = {
@@ -3992,7 +4018,7 @@ void net_rpl_init(void)
 	static struct net_if_link_cb link_cb;
 	struct in6_addr addr;
 
-	NET_DBG("Allocated %d routing entries (%d bytes)",
+	NET_DBG("Allocated %d routing entries (%zu bytes)",
 		CONFIG_NET_IPV6_MAX_NEIGHBORS,
 		sizeof(net_rpl_neighbor_pool));
 

@@ -10,9 +10,7 @@
 #include <device.h>
 #include <init.h>
 
-#if defined(CONFIG_IEEE802154_CC2520_LEGACY) || \
-	defined(CONFIG_IEEE802154_CC2520) || \
-	defined(CONFIG_IEEE802154_CC2520_RAW)
+#if defined(CONFIG_IEEE802154_CC2520)
 
 #include <ieee802154/cc2520.h>
 #include <gpio.h>
@@ -61,6 +59,4 @@ struct cc2520_gpio_configuration *cc2520_configure_gpios(void)
 	return cc2520_gpios;
 }
 
-#endif /* CONFIG_IEEE802154_CC2520_LEGACY || CONFIG_IEEE802154_CC2520 ||
-	* CONFIG_IEEE802154_CC2520_RAW
-	*/
+#endif /* CONFIG_IEEE802154_CC2520 */

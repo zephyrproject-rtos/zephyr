@@ -20,10 +20,6 @@ extern "C" {
 
 struct net_if;
 
-#if defined(CONFIG_NET_L2_OFFLOAD_IP)
-struct net_l2_offload_ip;
-#endif /* CONFIG_NET_L2_OFFLOAD_IP */
-
 struct net_l2 {
 	/**
 	 * This function is used by net core to get iface's L2 layer parsing
@@ -50,10 +46,6 @@ struct net_l2 {
 	 * interface.
 	 */
 	int (*enable)(struct net_if *iface, bool state);
-
-#if defined(CONFIG_NET_L2_OFFLOAD_IP)
-	struct net_l2_offload_ip *offload_ip;
-#endif /* CONFIG_NET_L2_OFFLOAD_IP */
 };
 
 #define NET_L2_GET_NAME(_name) (__net_l2_##_name)
@@ -87,10 +79,10 @@ NET_L2_DECLARE_PUBLIC(IEEE802154_L2);
 #define BLUETOOTH_L2_CTX_TYPE	void*
 #endif /* CONFIG_NET_L2_BLUETOOTH */
 
-#ifdef CONFIG_NET_L2_OFFLOAD_IP
+#ifdef CONFIG_NET_OFFLOAD
 #define OFFLOAD_IP_L2		OFFLOAD_IP
 #define OFFLOAD_IP_L2_CTX_TYPE	void*
-#endif /* CONFIG_NET_L2_OFFLOAD_IP */
+#endif /* CONFIG_NET_OFFLOAD */
 
 extern struct net_l2 __net_l2_end[];
 
