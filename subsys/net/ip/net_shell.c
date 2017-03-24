@@ -783,41 +783,128 @@ static int shell_cmd_nbr(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+
+K_SEM_DEFINE(ping_timeout, 0, 1);
+
 #if defined(CONFIG_NET_IPV6)
+
+static enum net_verdict _handle_ipv6_echo_reply(struct net_buf *buf);
+
+static struct net_icmpv6_handler ping6_handler = {
+	.type = NET_ICMPV6_ECHO_REPLY,
+	.code = 0,
+	.handler = _handle_ipv6_echo_reply,
+};
+
+static inline void _remove_ipv6_ping_handler(void)
+{
+	net_icmpv6_unregister_handler(&ping6_handler);
+}
+
+static enum net_verdict _handle_ipv6_echo_reply(struct net_buf *buf)
+{
+	char addr[NET_IPV6_ADDR_LEN];
+
+	snprintk(addr, sizeof(addr), "%s",
+		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+
+	printk("Received echo reply from %s to %s\n",
+	       net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), addr);
+
+	k_sem_give(&ping_timeout);
+	_remove_ipv6_ping_handler();
+
+	return NET_OK;
+}
+
 static int _ping_ipv6(char *host)
 {
 	struct in6_addr ipv6_target;
+	int ret;
 
 	if (net_addr_pton(AF_INET6, host, &ipv6_target) < 0) {
 		return -EINVAL;
 	}
 
-	return net_icmpv6_send_echo_request(net_if_get_default(),
-					    &ipv6_target,
-					    sys_rand32_get(),
-					    sys_rand32_get());
+	net_icmpv6_register_handler(&ping6_handler);
+
+	ret = net_icmpv6_send_echo_request(net_if_get_default(),
+					   &ipv6_target,
+					   sys_rand32_get(),
+					   sys_rand32_get());
+	if (ret) {
+		_remove_ipv6_ping_handler();
+	} else {
+		printk("Sent a ping to %s\n", host);
+	}
+
+	return ret;
 }
 #else
 #define _ping_ipv6(...) -EINVAL
+#define _remove_ipv6_ping_handler()
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
+
+static enum net_verdict _handle_ipv4_echo_reply(struct net_buf *buf);
+
+static struct net_icmpv4_handler ping4_handler = {
+	.type = NET_ICMPV4_ECHO_REPLY,
+	.code = 0,
+	.handler = _handle_ipv4_echo_reply,
+};
+
+static inline void _remove_ipv4_ping_handler(void)
+{
+	net_icmpv4_unregister_handler(&ping4_handler);
+}
+
+static enum net_verdict _handle_ipv4_echo_reply(struct net_buf *buf)
+{
+	char addr[NET_IPV4_ADDR_LEN];
+
+	snprintk(addr, sizeof(addr), "%s",
+		 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
+
+	printk("Received echo reply from %s to %s\n",
+	       net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), addr);
+
+	k_sem_give(&ping_timeout);
+	_remove_ipv4_ping_handler();
+
+	return NET_OK;
+}
+
 static int _ping_ipv4(char *host)
 {
 	struct in_addr ipv4_target;
+	int ret;
 
 	if (net_addr_pton(AF_INET, host, &ipv4_target) < 0) {
 		return -EINVAL;
 	}
 
-	return net_icmpv4_send_echo_request(net_if_get_default(),
-					    &ipv4_target,
-					    sys_rand32_get(),
-					    sys_rand32_get());
+	net_icmpv4_register_handler(&ping4_handler);
+
+	ret = net_icmpv4_send_echo_request(net_if_get_default(),
+					   &ipv4_target,
+					   sys_rand32_get(),
+					   sys_rand32_get());
+	if (ret) {
+		_remove_ipv4_ping_handler();
+	} else {
+		printk("Sent a ping to %s\n", host);
+	}
+
+	return ret;
 }
 #else
 #define _ping_ipv4(...) -EINVAL
+#define _remove_ipv4_ping_handler()
 #endif /* CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
 
 static int shell_cmd_ping(int argc, char *argv[])
 {
@@ -834,19 +921,29 @@ static int shell_cmd_ping(int argc, char *argv[])
 
 	ret = _ping_ipv6(host);
 	if (!ret) {
-		return 0;
+		goto wait_reply;
 	} else if (ret == -EIO) {
 		printk("Cannot send IPv6 ping\n");
 		return 0;
 	}
 
 	ret = _ping_ipv4(host);
-	if (ret == -EIO) {
-		printk("Cannot send IPv4 ping\n");
+	if (ret) {
+		if (ret == -EIO) {
+			printk("Cannot send IPv4 ping\n");
+		} else if (ret == -EINVAL) {
+			printk("Invalid IP address\n");
+		}
+
+		return 0;
 	}
 
-	if (ret == -EINVAL) {
-		printk("Invalid IP address\n");
+wait_reply:
+	ret = k_sem_take(&ping_timeout, K_SECONDS(2));
+	if (ret == -EAGAIN) {
+		printk("Ping timeout\n");
+		_remove_ipv6_ping_handler();
+		_remove_ipv4_ping_handler();
 	}
 
 	return 0;
