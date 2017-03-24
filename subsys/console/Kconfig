@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Console (pull-style)"
+
+config CONSOLE_PULL
+	bool
+	default n
+	prompt "Enable pull-style Console access"
+	help
+	Get data from console using getchar/getline calls
+
+if CONSOLE_PULL
+choice
+	prompt "Console 'get' function selection"
+
+config CONSOLE_GETCHAR
+	bool "Character by character input"
+	select UART_CONSOLE_DEBUG_SERVER_HOOKS
+	select CONSOLE_HANDLER
+
+config CONSOLE_GETLINE
+	bool "Line by line input"
+	select CONSOLE_HANDLER
+
+endchoice
+
+if CONSOLE_GETCHAR
+
+config CONSOLE_GETCHAR_BUFSIZE
+	int "console_getchar() buffer size"
+	default 16
+	help
+	  Buffer size for console_getchar(). Must be power of 2. The
+	  default is optimized to save RAM. You may need to increase
+	  it e.g. to support large host-side clipboard pastes.
+
+endif # CONSOLE_GETCHAR
+
+endif # CONSOLE_PULL
+endmenu

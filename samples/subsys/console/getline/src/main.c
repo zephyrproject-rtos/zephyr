@@ -1,0 +1,16 @@
+#include <string.h>
+#include <zephyr.h>
+#include <misc/printk.h>
+#include <console.h>
+
+void main(void)
+{
+	console_getline_init();
+
+	while (1) {
+		char *s = console_getline();
+
+		printk("line: %s\n", s);
+		printk("last char was: 0x%x\n", s[strlen(s) - 1]);
+	}
+}

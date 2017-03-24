@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CONSOLE_H__
-#define __CONSOLE_H__
+#ifndef __DRIVERS_CONSOLE_CONSOLE_H__
+#define __DRIVERS_CONSOLE_CONSOLE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,4 +46,4 @@ typedef void (*console_input_fn)(struct k_fifo *avail, struct k_fifo *lines,
 }
 #endif
 
-#endif /* __CONSOLE_H__ */
+#endif /* __DRIVERS_CONSOLE_CONSOLE_H__ */
