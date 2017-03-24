@@ -117,12 +117,12 @@ int sx9500_init(struct device *dev)
 	data->i2c_slave_addr = CONFIG_SX9500_I2C_ADDR;
 
 	if (sx9500_init_chip(dev) < 0) {
-		SYS_LOG_DBG("sx9500: failed to initialize chip err %d", ret);
+		SYS_LOG_DBG("sx9500: failed to initialize chip");
 		return -EINVAL;
 	}
 
 	if (sx9500_setup_interrupt(dev) < 0) {
-		SYS_LOG_DBG("sx9500: failed to setup interrupt err %d", ret);
+		SYS_LOG_DBG("sx9500: failed to setup interrupt");
 		return -EINVAL;
 	}
 

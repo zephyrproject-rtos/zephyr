@@ -81,7 +81,7 @@ static void sx9500_thread_main(int arg1, int unused)
 
 		if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 					SX9500_REG_IRQ_SRC, &reg_val) < 0) {
-			SYS_LOG_DBG("sx9500: error %d reading IRQ source register", ret);
+			SYS_LOG_DBG("sx9500: error reading IRQ source register");
 			continue;
 		}
 
@@ -116,7 +116,7 @@ static void sx9500_gpio_thread_cb(void *arg)
 
 	if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 			      SX9500_REG_IRQ_SRC, &reg_val) < 0) {
-		SYS_LOG_DBG("sx9500: error %d reading IRQ source register", ret);
+		SYS_LOG_DBG("sx9500: error reading IRQ source register");
 		return;
 	}
 
