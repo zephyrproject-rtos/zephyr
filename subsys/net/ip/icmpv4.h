@@ -73,7 +73,7 @@ void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
 
 void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
 
-enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
+enum net_verdict net_icmpv4_input(struct net_buf *buf,
 				  uint8_t type, uint8_t code);
 
 #if defined(CONFIG_NET_IPV4)

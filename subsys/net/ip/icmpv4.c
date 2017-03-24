@@ -278,12 +278,10 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
 	sys_slist_find_and_remove(&handlers, &handler->node);
 }
 
-enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
+enum net_verdict net_icmpv4_input(struct net_buf *buf,
 				  uint8_t type, uint8_t code)
 {
 	struct net_icmpv4_handler *cb;
-
-	ARG_UNUSED(len);
 
 	net_stats_update_icmp_recv();
 

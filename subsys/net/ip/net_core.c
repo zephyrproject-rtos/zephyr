@@ -412,12 +412,11 @@ static inline enum net_verdict process_icmpv4_pkt(struct net_buf *buf,
 						  struct net_ipv4_hdr *ipv4)
 {
 	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
-	uint16_t len = (ipv4->len[0] << 8) + ipv4->len[1];
 
-	NET_DBG("ICMPv4 packet received length %d type %d code %d",
-		len, hdr->type, hdr->code);
+	NET_DBG("ICMPv4 packet received type %d code %d",
+		hdr->type, hdr->code);
 
-	return net_icmpv4_input(buf, len, hdr->type, hdr->code);
+	return net_icmpv4_input(buf, hdr->type, hdr->code);
 }
 #endif /* CONFIG_NET_IPV4 */
 
