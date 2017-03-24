@@ -783,14 +783,44 @@ static int shell_cmd_nbr(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV6)
+static int _ping_ipv6(char *host)
+{
+	struct in6_addr ipv6_target;
+
+	if (net_addr_pton(AF_INET6, host, &ipv6_target) < 0) {
+		return -EINVAL;
+	}
+
+	return net_icmpv6_send_echo_request(net_if_get_default(),
+					    &ipv6_target,
+					    sys_rand32_get(),
+					    sys_rand32_get());
+}
+#else
+#define _ping_ipv6(...) -EINVAL
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+static int _ping_ipv4(char *host)
+{
+	struct in_addr ipv4_target;
+
+	if (net_addr_pton(AF_INET, host, &ipv4_target) < 0) {
+		return -EINVAL;
+	}
+
+	return net_icmpv4_send_echo_request(net_if_get_default(),
+					    &ipv4_target,
+					    sys_rand32_get(),
+					    sys_rand32_get());
+}
+#else
+#define _ping_ipv4(...) -EINVAL
+#endif /* CONFIG_NET_IPV4 */
+
 static int shell_cmd_ping(int argc, char *argv[])
 {
-#if defined(CONFIG_NET_IPV6)
-	struct in6_addr ipv6_target;
-#endif
-#if defined(CONFIG_NET_IPV4)
-	struct in_addr ipv4_target;
-#endif
 	char *host;
 	int ret;
 
@@ -802,66 +832,22 @@ static int shell_cmd_ping(int argc, char *argv[])
 		host = argv[2];
 	}
 
-#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
-	ret = net_addr_pton(AF_INET6, host, &ipv6_target);
-	if (ret < 0) {
-		printk("Invalid IPv6 address\n");
+	ret = _ping_ipv6(host);
+	if (!ret) {
 		return 0;
-	}
-
-	ret = net_icmpv6_send_echo_request(net_if_get_default(),
-					   &ipv6_target,
-					   sys_rand32_get(),
-					   sys_rand32_get());
-	if (ret < 0) {
+	} else if (ret == -EIO) {
 		printk("Cannot send IPv6 ping\n");
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
-	ret = net_addr_pton(AF_INET, host, &ipv4_target);
-	if (ret < 0) {
-		printk("Invalid IPv4 address\n");
 		return 0;
 	}
 
-	ret = net_icmpv4_send_echo_request(net_if_get_default(),
-					   &ipv4_target,
-					   sys_rand32_get(),
-					   sys_rand32_get());
-	if (ret < 0) {
+	ret = _ping_ipv4(host);
+	if (ret == -EIO) {
 		printk("Cannot send IPv4 ping\n");
 	}
-#endif
 
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
-	ret = net_addr_pton(AF_INET6, host, &ipv6_target);
-	if (ret < 0) {
-		ret = net_addr_pton(AF_INET, host, &ipv4_target);
-		if (ret < 0) {
-			printk("Invalid IP address\n");
-			return 0;
-		}
-
-		ret = net_icmpv4_send_echo_request(net_if_get_default(),
-						   &ipv4_target,
-						   sys_rand32_get(),
-						   sys_rand32_get());
-		if (ret < 0) {
-			printk("Cannot send IPv4 ping\n");
-		}
-
-		return 0;
-	} else {
-		ret = net_icmpv6_send_echo_request(net_if_get_default(),
-						   &ipv6_target,
-						   sys_rand32_get(),
-						   sys_rand32_get());
-		if (ret < 0) {
-			printk("Cannot send IPv6 ping\n");
-		}
+	if (ret == -EINVAL) {
+		printk("Invalid IP address\n");
 	}
-#endif
 
 	return 0;
 }
