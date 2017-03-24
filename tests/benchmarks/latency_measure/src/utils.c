@@ -17,5 +17,5 @@
 #include "utils.h"
 
 /* scratchpad for the string used to print on console */
-char tmpString[TMP_STRING_SIZE];
+char tmp_string[TMP_STRING_SIZE];
 

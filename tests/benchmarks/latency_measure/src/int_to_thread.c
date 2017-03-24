@@ -1,15 +1,15 @@
-/* micro_int_to_task.c - measure time from ISR back to interrupted task */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2017 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * DESCRIPTION
+/**
+ * @file measure time from ISR back to interrupted thread
+ *
  * This file contains test that measures time to switch from the interrupt
- * handler back to the interrupted task in microkernel.
+ * handler back to the interrupted thread.
  */
 
 #include "timestamp.h"
@@ -18,7 +18,7 @@
 #include <arch/cpu.h>
 #include <irq_offload.h>
 
-static volatile int flagVar;
+static volatile int flag_var;
 
 static uint32_t timestamp;
 
@@ -30,11 +30,11 @@ static uint32_t timestamp;
  *
  * @return N/A
  */
-static void latencyTestIsr(void *unused)
+static void latency_test_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 
-	flagVar = 1;
+	flag_var = 1;
 	timestamp = TIME_STAMP_DELTA_GET(0);
 }
 
@@ -47,11 +47,11 @@ static void latencyTestIsr(void *unused)
  *
  * @return N/A
  */
-static void makeInt(void)
+static void make_int(void)
 {
-	flagVar = 0;
-	irq_offload(latencyTestIsr, NULL);
-	if (flagVar != 1) {
+	flag_var = 0;
+	irq_offload(latency_test_isr, NULL);
+	if (flag_var != 1) {
 		PRINT_FORMAT(" Flag variable has not changed. FAILED\n");
 	} else {
 		timestamp = TIME_STAMP_DELTA_GET(timestamp);
@@ -64,13 +64,13 @@ static void makeInt(void)
  *
  * @return 0 on success
  */
-int microIntToTask(void)
+int int_to_thread(void)
 {
-	PRINT_FORMAT(" 1- Measure time to switch from ISR back to"
-		     " interrupted task");
+	PRINT_FORMAT(" 1 - Measure time to switch from ISR back to"
+		     " interrupted thread");
 	TICK_SYNCH();
-	makeInt();
-	if (flagVar == 1) {
+	make_int();
+	if (flag_var == 1) {
 		PRINT_FORMAT(" switching time is %u tcs = %u nsec",
 			     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}

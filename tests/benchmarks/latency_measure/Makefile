@@ -1,4 +1,3 @@
-MDEF_FILE = prj.mdef
 BOARD ?= qemu_x86
 
 small_freq_divider_frdm_k64f=y

@@ -1,4 +1,3 @@
-/* micro_sema_lock_release.c - measure time for sema lock and release */
 
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
@@ -7,9 +6,10 @@
  */
 
 /*
- * DESCRIPTION
+ * @file measure time for sema lock and release
+ *
  * This file contains the test that measures semaphore and mutex lock and
- * release time in a microkernel. There is no contention on the sema nor the
+ * release time in the kernel. There is no contention on the sema nor the
  * mutex being tested.
  */
 
@@ -28,6 +28,9 @@
 
 static uint32_t timestamp;
 
+K_SEM_DEFINE(lock_unlock_sema, 0, N_TEST_SEMA);
+K_MUTEX_DEFINE(TEST_MUTEX);
+
 /**
  *
  * @brief The function tests semaphore lock/unlock time
@@ -37,16 +40,16 @@ static uint32_t timestamp;
  *
  * @return 0 on success
  */
-int microSemaLockUnlock(void)
+int sema_lock_unlock(void)
 {
 	int i;
 
-	PRINT_FORMAT(" 3- Measure average time to signal a sema then test"
+	PRINT_FORMAT(" 3 - Measure average time to signal a sema then test"
 		     " that sema");
 	bench_test_start();
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < N_TEST_SEMA; i++) {
-		task_sem_give(SEMA_LOCK_UNLOCK);
+		k_sem_give(&lock_unlock_sema);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
@@ -56,14 +59,14 @@ int microSemaLockUnlock(void)
 			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
 							   N_TEST_SEMA));
 	} else {
-		errorCount++;
+		error_count++;
 		PRINT_OVERFLOW_ERROR();
 	}
 
 	bench_test_start();
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < N_TEST_SEMA; i++) {
-		task_sem_take(SEMA_LOCK_UNLOCK, TICKS_UNLIMITED);
+		k_sem_take(&lock_unlock_sema, K_FOREVER);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
@@ -73,7 +76,7 @@ int microSemaLockUnlock(void)
 			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
 							   N_TEST_SEMA));
 	} else {
-		errorCount++;
+		error_count++;
 		PRINT_OVERFLOW_ERROR();
 	}
 	return 0;
@@ -88,7 +91,7 @@ int microSemaLockUnlock(void)
  *
  * @return 0 on success
  */
-int microMutexLockUnlock(void)
+int mutex_lock_unlock(void)
 {
 	int i;
 
@@ -96,7 +99,7 @@ int microMutexLockUnlock(void)
 		     " unlock that mutex");
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < N_TEST_MUTEX; i++) {
-		task_mutex_lock(TEST_MUTEX, TICKS_UNLIMITED);
+		k_mutex_lock(&TEST_MUTEX, K_FOREVER);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	PRINT_FORMAT(" Average time to lock the mutex %u tcs = %u nsec",
@@ -104,7 +107,7 @@ int microMutexLockUnlock(void)
 		     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_MUTEX));
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < N_TEST_MUTEX; i++) {
-		task_mutex_unlock(TEST_MUTEX);
+		k_mutex_unlock(&TEST_MUTEX);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	PRINT_FORMAT(" Average time to unlock the mutex %u tcs = %u nsec",

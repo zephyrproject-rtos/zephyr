@@ -19,8 +19,8 @@
 #include <misc/printk.h>
 #include <stdio.h>
 #include "timestamp.h"
-extern char tmpString[];
-extern int errorCount;
+extern char tmp_string[];
+extern int error_count;
 
 #define TMP_STRING_SIZE  100
 
@@ -29,8 +29,8 @@ extern int errorCount;
 
 #define PRINT_FORMAT(fmt, ...)						\
 	do {                                                            \
-		snprintf(tmpString, TMP_STRING_SIZE, fmt, ##__VA_ARGS__); \
-		PRINTF("|%-77s|\n", tmpString);				\
+		snprintf(tmp_string, TMP_STRING_SIZE, fmt, ##__VA_ARGS__); \
+		PRINTF("|%-77s|\n", tmp_string);				\
 	} while (0)
 
 /**
@@ -39,7 +39,7 @@ extern int errorCount;
  *
  * @return N/A
  */
-static inline void printDashLine(void)
+static inline void print_dash_line(void)
 {
 	PRINTF("|-------------------------------------------------------"
 	       "----------------------|\n");
@@ -49,23 +49,16 @@ static inline void printDashLine(void)
 	do {								\
 	PRINTF("|                                    E N D             " \
 	       "                       |\n");				\
-	printDashLine();						\
+	print_dash_line();						\
 	} while (0)
 
-#define PRINT_NANO_BANNER()						\
-	do {								\
-	printDashLine();						\
-	PRINTF("|                        Nanokernel Latency Benchmark  " \
-	       "                       |\n");				\
-	printDashLine();						\
-	} while (0)
 
-#define PRINT_MICRO_BANNER()						\
+#define PRINT_BANNER()						\
 	do {								\
-	printDashLine();						\
-	PRINTF("|                        Microkernel Latency Benchmark " \
+	print_dash_line();						\
+	PRINTF("|                            Latency Benchmark         " \
 	       "                       |\n");				\
-	printDashLine();						\
+	print_dash_line();						\
 	} while (0)
 
 
@@ -73,7 +66,7 @@ static inline void printDashLine(void)
 	do {								\
 	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %u nsec",	\
 		     SYS_CLOCK_HW_CYCLES_TO_NS(1));			\
-	printDashLine();						\
+	print_dash_line();						\
 	} while (0)
 
 #define PRINT_OVERFLOW_ERROR()			\
@@ -85,13 +78,6 @@ static inline void printDashLine(void)
 
 void raiseIntFunc(void);
 extern void raiseInt(uint8_t id);
-
-/* test the interrupt latency */
-int nanoIntLatency(void);
-int nanoIntToFiber(void);
-int nanoIntToFiberSem(void);
-int nanoCtxSwitch(void);
-int nanoIntLockUnlock(void);
 
 /* pointer to the ISR */
 typedef void (*ptestIsr) (void *unused);
