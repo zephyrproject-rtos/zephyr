@@ -24,12 +24,6 @@ properties:
       description: number of bits of IRQ priorities
       generation: define
 
-  - num-irqs:
-      category: required
-      type: int
-      description: number of interrupts controlled by controller
-      generation: define
-
 cell_string: IRQ
 
 "#cells":

@@ -18,13 +18,13 @@ config SRAM_SIZE
 config FLASH_SIZE
 	default 0
 
+endif # !HAS_DTS
+
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
 	# This includes the NWP interrupt
 	default 179
-
-endif # !HAS_DTS
 
 config CC3200SDK_LIBRARY
 	def_bool n

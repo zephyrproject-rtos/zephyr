@@ -17,11 +17,11 @@ config NUM_IRQ_PRIO_BITS
 	int
 	default 2
 
+endif # !HAS_DTS
+
 config NUM_IRQS
 	int
 	default 32
-
-endif # !HAS_DTS
 
 if PINMUX
 

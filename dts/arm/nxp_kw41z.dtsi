@@ -182,6 +182,5 @@
 };
 
 &nvic {
-	num-irqs = <32>;
 	num-irq-prio-bits = <2>;
 };

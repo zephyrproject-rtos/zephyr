@@ -23,12 +23,12 @@ config NUM_IRQ_PRIO_BITS
 	int
 	default 4
 
+endif # !HAS_DTS
+
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
 	default 86
-
-endif # !HAS_DTS
 
 source "arch/arm/soc/nxp_kinetis/k6x/Kconfig.defconfig.mk*"
 

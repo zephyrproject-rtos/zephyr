@@ -94,5 +94,4 @@
 
 &nvic {
 	num-irq-prio-bits = <4>;
-	num-irqs = <59>;
 };

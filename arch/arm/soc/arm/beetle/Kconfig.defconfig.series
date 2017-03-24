@@ -13,15 +13,15 @@ source "arch/arm/soc/arm/beetle/Kconfig.defconfig.beetle*"
 config SOC_SERIES
 	default beetle
 
+config NUM_IRQS
+	int
+	default 45
+
 if !HAS_DTS
 
 config NUM_IRQ_PRIO_BITS
 	int
 	default 3
-
-config NUM_IRQS
-	int
-	default 45
 
 config SRAM_BASE_ADDRESS
 	default 0x20000000
