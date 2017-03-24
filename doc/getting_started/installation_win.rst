@@ -6,8 +6,8 @@ Development Environment Setup on Windows
 This section describes how to configure your development environment and
 to build Zephyr applications in a Microsoft Windows environment.
 
-This guide was tested by compiling and running the Zephyr's sample
-applications on Windows versions 7 and 8.1 (and should work with Windows 10 as well).
+This guide was tested by building the Zephyr :ref:`hello_world` sample
+application on Windows versions 7, 8.1, and 10.
 
 Update Your Operating System
 ****************************
@@ -28,28 +28,59 @@ MSYS2, a modern UNIX environment for Windows. Follow the steps below to set it
 up:
 
 1. Download and install :program:`MSYS2`. Download the appropriate (32 or
-   64-bit) MSYS2 installer from the `MSYS2 website`_ and execute it.
+   64-bit) MSYS2 installer from the `MSYS2 website`_ and execute it. On the
+   final installation screen, check the "Run MSYS2 now." box to start up an
+   MSYS2 shell when installation is complete.  Follow the rest of the
+   installation instructions on the MSYS2 website to update the package
+   database and core system packages.  You may be advised to "terminate MSYS2
+   without returning to shell and check for updates again".  If so, simply
+   close the ``MSYS2 MSYS`` desktop app and run it again to complete the update.)
 
-2. Launch the `MSYS2 MSYS Shell` from your start menu.
+#. Launch the ``MSYS2 MSYS`` desktop app from your start menu (if it's not still open).
 
-3. Install the dependencies required to build Zephyr:
+#. If you're behind a corporate firewall, you'll likely need to specify a
+   proxy to get access to internet resources::
+
+      $ export http_proxy=http://proxy.mycompany.com:123
+      $ export https_proxy=$http_proxy
+
+#. Install the dependencies required to build Zephyr:
 
    .. code-block:: console
 
       $ pacman -S git make gcc diffutils ncurses-devel python2 python3
 
-4. The build system should now be ready to work with any toolchain installed in
-   your system. As an example below you can find instructions to build for both
-   x86 and ARM using their respective toolchains.
+#. The build system should now be ready to work with any toolchain installed in
+   your system. In the next step you'll find instructions for installing
+   toolchains for building both x86 and ARM applications.
 
-5. Installed cross compiler:
+#. Install cross compiler toolchain:
 
-   * For x86, install ISSM toolchain from the Intel Developer Zone: `ISSM Toolchain`_.
+   * For x86, install the 2017 Windows host ISSM toolchain from the Intel
+     Developer Zone: `ISSM Toolchain`_. Use your web browser to
+     download the toolchain's ``tar.gz`` file.
+
+     You'll need the tar application to unpack this file. In an ``MSYS2 MSYS``
+     console, install ``tar`` and use it to extract the toolchain archive::
+
+        $ pacman -S tar
+        $ tar -zxvf /c/Users/myusername/Downloads/issm-toolchain-windows-2017-01-15.tar.gz -C /c
+
+     substituting the .tar.gz path name with the one you downloaded.
+
+     .. note::
+
+        The ISSM toolset only supports development for Intel® Quark™
+        Microcontrollers, for example, the Arduino 101 board.  (Check out the
+        "Zephyr Development Environment
+        Setup" in this `Getting Started on Arduino 101 with ISSM`_ document.)
+        Additional setup is required to use the ISSM GUI for development.
+
 
    * For ARM, install GNU ARM Embedded from the ARM developer website:
      `GNU ARM Embedded`_ (install to :file:`c:\\gccarmemb`).
 
-6. From within the `MSYS2 MSYS Shell`, clone a copy of the Zephyr source into
+#. From within the `MSYS2 MSYS Shell`, clone a copy of the Zephyr source into
    your home directory using Git:
 
    .. code-block:: console
@@ -57,7 +88,7 @@ up:
       $ cd ~
       $ git clone https://gerrit.zephyrproject.org/r/zephyr
 
-7. Also within the MSYS console, set up environment variables for the installed
+#. Also within the MSYS console, set up environment variables for the installed
    tools and for the Zephyr environment (using the provided shell script):
 
    For x86:
@@ -65,7 +96,9 @@ up:
    .. code-block:: console
 
       $ export ZEPHYR_GCC_VARIANT=issm
-      $ export ISSM_INSTALLATION_PATH=/c/IntelSWTools/ISSM_2016.1.067
+      $ export ISSM_INSTALLATION_PATH=/c/issm0-toolchain-windows-2017-01-25
+
+   Use the path where you extracted the ISSM toolchain.
 
    For ARM:
 
@@ -74,32 +107,33 @@ up:
       $ export ZEPHYR_GCC_VARIANT=gccarmemb
       $ export GCCARMEMB_TOOLCHAIN_PATH=/c/gccarmemb
 
-   Finally run the provided script:
+   And for either, run the provided script to set up zephyr project specific
+   variables:
 
    .. code-block:: console
 
       $ unset ZEPHYR_SDK_INSTALL_DIR
       $ source ~/zephyr/zephyr-env.sh
 
-8. Finally, you can try building the :ref:`hello_world` sample to check things
+#. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
 
-   To build for the x86-based Arduino 101:
+   To build for the Intel® Quark™ (x86-based) Arduino 101:
 
     .. code-block:: console
 
        $ cd $ZEPHYR_BASE/samples/hello_world
-       $ make board=arduino_101
+       $ make BOARD=arduino_101
 
    To build for the ARM-based Nordic nRF52 Development Kit:
 
     .. code-block:: console
 
        $ cd $ZEPHYR_BASE/samples/hello_world
-       $ make board=nrf52_pca10040
+       $ make BOARD=nrf52_pca10040
 
 
-    This should check that all the tools and toolchain are setup correctly for
+    This should check that all the tools and toolchain are set up correctly for
     your own Zephyr development.
 
 
@@ -198,13 +232,13 @@ Windows, you will need to build or install a toolchain:
     .. code-block:: console
 
        $ cd $ZEPHYR_BASE/samples/hello_world
-       $ make board=arduino_101
+       $ make BOARD=arduino_101
 
     This should check that all the tools and toolchain are setup correctly for
     your own Zephyr development.
 
 
-.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
+.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 .. _MSYS2 website: http://www.msys2.org/
 .. _GIT Download: https://git-scm.com/download/win
 .. _Python Download: https://www.python.org/downloads/
