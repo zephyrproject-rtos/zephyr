@@ -153,7 +153,9 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	ARG_UNUSED(arg);
 
 	int oldLevel; /* old interrupt lock level */
+#if !defined(CONFIG_HAS_SYSMPU)
 	u32_t temp_reg;
+#endif /* !CONFIG_HAS_SYSMPU */
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
@@ -161,6 +163,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
+#if !defined(CONFIG_HAS_SYSMPU)
 	/*
 	 * Disable memory protection and clear slave port errors.
 	 * Note that the K64F does not implement the optional ARMv7-M memory
@@ -171,6 +174,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	temp_reg &= ~SYSMPU_CESR_VLD_MASK;
 	temp_reg |= SYSMPU_CESR_SPERR_MASK;
 	SYSMPU->CESR = temp_reg;
+#endif /* !CONFIG_HAS_SYSMPU */
 
 	_ClearFaults();
 

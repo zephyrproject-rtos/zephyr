@@ -64,6 +64,14 @@ config HAS_LPSCI
 	help
 	  Set if the low power uart (LPSCI) module is present in the SoC.
 
+config HAS_SYSMPU
+	bool "Enable MPU"
+	depends on CPU_HAS_MPU
+	select NXP_MPU
+	default n
+	help
+	  Enable MPU
+
 if HAS_OSC
 
 choice

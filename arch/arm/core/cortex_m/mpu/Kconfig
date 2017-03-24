@@ -13,3 +13,11 @@ config ARM_MPU
 	default n
 	help
 	  MCU has ARM MPU
+
+config NXP_MPU
+	bool "NXP MPU Support"
+	depends on CPU_HAS_MPU
+	depends on SOC_FAMILY_KINETIS
+	default n
+	help
+	  MCU has NXP MPU
