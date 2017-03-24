@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -132,6 +132,9 @@ void SAI_TransferTxCreateHandleEDMA(
 
     uint32_t instance = SAI_GetInstance(base);
 
+    /* Zero the handle */
+    memset(handle, 0, sizeof(*handle));
+
     /* Set sai base to handle */
     handle->dmaHandle = dmaHandle;
     handle->callback = callback;
@@ -156,6 +159,9 @@ void SAI_TransferRxCreateHandleEDMA(
     assert(handle && dmaHandle);
 
     uint32_t instance = SAI_GetInstance(base);
+
+    /* Zero the handle */
+    memset(handle, 0, sizeof(*handle));
 
     /* Set sai base to handle */
     handle->dmaHandle = dmaHandle;
@@ -187,7 +193,14 @@ void SAI_TransferTxSetFormatEDMA(I2S_Type *base,
     SAI_TxSetFormat(base, format, mclkSourceClockHz, bclkSourceClockHz);
 
     /* Get the tranfer size from format, this should be used in EDMA configuration */
-    handle->bytesPerFrame = format->bitWidth / 8U;
+    if (format->bitWidth == 24U)
+    {
+        handle->bytesPerFrame = 4U;
+    }
+    else
+    {
+        handle->bytesPerFrame = format->bitWidth / 8U;
+    }
 
     /* Update the data channel SAI used */
     handle->channel = format->channel;
@@ -210,7 +223,14 @@ void SAI_TransferRxSetFormatEDMA(I2S_Type *base,
     SAI_RxSetFormat(base, format, mclkSourceClockHz, bclkSourceClockHz);
 
     /* Get the tranfer size from format, this should be used in EDMA configuration */
-    handle->bytesPerFrame = format->bitWidth / 8U;
+    if (format->bitWidth == 24U)
+    {
+        handle->bytesPerFrame = 4U;
+    }
+    else
+    {
+        handle->bytesPerFrame = format->bitWidth / 8U;
+    }
 
     /* Update the data channel SAI used */
     handle->channel = format->channel;
@@ -344,7 +364,7 @@ void SAI_TransferAbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 
     /* Disable DMA enable bit */
     SAI_RxEnableDMA(base, kSAI_FIFORequestDMAEnable, false);
-    
+
     /* Disable Rx */
     SAI_RxEnable(base, false);
 

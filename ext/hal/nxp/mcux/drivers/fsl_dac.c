@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -58,7 +58,7 @@ static uint32_t DAC_GetInstance(DAC_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_DAC_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_dacBases); instance++)
     {
         if (s_dacBases[instance] == base)
         {
@@ -66,7 +66,7 @@ static uint32_t DAC_GetInstance(DAC_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_DAC_COUNT);
+    assert(instance < ARRAY_SIZE(s_dacBases));
 
     return instance;
 }

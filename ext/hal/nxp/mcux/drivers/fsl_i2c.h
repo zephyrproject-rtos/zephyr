@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -43,8 +43,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief I2C driver version 2.0.2. */
-#define FSL_I2C_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
+/*! @brief I2C driver version 2.0.3. */
+#define FSL_I2C_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
 /*@}*/
 
 #if (defined(FSL_FEATURE_I2C_HAS_START_STOP_DETECT) && FSL_FEATURE_I2C_HAS_START_STOP_DETECT || \
@@ -167,9 +167,6 @@ typedef enum _i2c_slave_transfer_event
 typedef struct _i2c_master_config
 {
     bool enableMaster; /*!< Enables the I2C peripheral at initialization time. */
-#if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
-    bool enableHighDrive; /*!< Controls the drive capability of the I2C pads. */
-#endif
 #if defined(FSL_FEATURE_I2C_HAS_STOP_HOLD_OFF) && FSL_FEATURE_I2C_HAS_STOP_HOLD_OFF
     bool enableStopHold; /*!< Controls the stop hold enable. */
 #endif
@@ -187,9 +184,6 @@ typedef struct _i2c_slave_config
     bool enableSlave;       /*!< Enables the I2C peripheral at initialization time. */
     bool enableGeneralCall; /*!< Enables the general call addressing mode. */
     bool enableWakeUp;      /*!< Enables/disables waking up MCU from low-power mode. */
-#if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
-    bool enableHighDrive; /*!< Controls the drive capability of the I2C pads. */
-#endif
 #if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
     bool enableDoubleBuffering; /*!< Controls a double buffer enable; notice that
                                      enabling the double buffer disables the clock stretch. */

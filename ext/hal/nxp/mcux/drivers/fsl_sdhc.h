@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,14 +12,14 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
  * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
@@ -43,8 +43,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief Driver version 2.1.2. */
-#define FSL_SDHC_DRIVER_VERSION (MAKE_VERSION(2U, 1U, 2U))
+/*! @brief Driver version 2.1.5. */
+#define FSL_SDHC_DRIVER_VERSION (MAKE_VERSION(2U, 1U, 5U))
 /*@}*/
 
 /*! @brief Maximum block count can be set one time */
@@ -57,6 +57,8 @@ enum _sdhc_status
     kStatus_SDHC_PrepareAdmaDescriptorFailed = MAKE_STATUS(kStatusGroup_SDHC, 1U), /*!< Set DMA descriptor failed */
     kStatus_SDHC_SendCommandFailed = MAKE_STATUS(kStatusGroup_SDHC, 2U),           /*!< Send command failed */
     kStatus_SDHC_TransferDataFailed = MAKE_STATUS(kStatusGroup_SDHC, 3U),          /*!< Transfer data failed */
+    kStatus_SDHC_DMADataBufferAddrNotAlign =
+        MAKE_STATUS(kStatusGroup_SDHC, 4U), /*!< data buffer addr not align in DMA mode */
 };
 
 /*! @brief Host controller capabilities flag mask */
@@ -282,32 +284,32 @@ typedef enum _sdhc_boot_mode
 } sdhc_boot_mode_t;
 
 /*! @brief The command type */
-typedef enum _sdhc_command_type
+typedef enum _sdhc_card_command_type
 {
-    kSDHC_CommandTypeNormal = 0U,  /*!< Normal command */
-    kSDHC_CommandTypeSuspend = 1U, /*!< Suspend command */
-    kSDHC_CommandTypeResume = 2U,  /*!< Resume command */
-    kSDHC_CommandTypeAbort = 3U,   /*!< Abort command */
-} sdhc_command_type_t;
+    kCARD_CommandTypeNormal = 0U,  /*!< Normal command */
+    kCARD_CommandTypeSuspend = 1U, /*!< Suspend command */
+    kCARD_CommandTypeResume = 2U,  /*!< Resume command */
+    kCARD_CommandTypeAbort = 3U,   /*!< Abort command */
+} sdhc_card_command_type_t;
 
 /*!
  * @brief The command response type.
  *
  * Define the command response type from card to host controller.
  */
-typedef enum _sdhc_response_type
+typedef enum _sdhc_card_response_type
 {
-    kSDHC_ResponseTypeNone = 0U, /*!< Response type: none */
-    kSDHC_ResponseTypeR1 = 1U,   /*!< Response type: R1 */
-    kSDHC_ResponseTypeR1b = 2U,  /*!< Response type: R1b */
-    kSDHC_ResponseTypeR2 = 3U,   /*!< Response type: R2 */
-    kSDHC_ResponseTypeR3 = 4U,   /*!< Response type: R3 */
-    kSDHC_ResponseTypeR4 = 5U,   /*!< Response type: R4 */
-    kSDHC_ResponseTypeR5 = 6U,   /*!< Response type: R5 */
-    kSDHC_ResponseTypeR5b = 7U,  /*!< Response type: R5b */
-    kSDHC_ResponseTypeR6 = 8U,   /*!< Response type: R6 */
-    kSDHC_ResponseTypeR7 = 9U,   /*!< Response type: R7 */
-} sdhc_response_type_t;
+    kCARD_ResponseTypeNone = 0U, /*!< Response type: none */
+    kCARD_ResponseTypeR1 = 1U,   /*!< Response type: R1 */
+    kCARD_ResponseTypeR1b = 2U,  /*!< Response type: R1b */
+    kCARD_ResponseTypeR2 = 3U,   /*!< Response type: R2 */
+    kCARD_ResponseTypeR3 = 4U,   /*!< Response type: R3 */
+    kCARD_ResponseTypeR4 = 5U,   /*!< Response type: R4 */
+    kCARD_ResponseTypeR5 = 6U,   /*!< Response type: R5 */
+    kCARD_ResponseTypeR5b = 7U,  /*!< Response type: R5b */
+    kCARD_ResponseTypeR6 = 8U,   /*!< Response type: R6 */
+    kCARD_ResponseTypeR7 = 9U,   /*!< Response type: R7 */
+} sdhc_card_response_type_t;
 
 /*! @brief The alignment size for ADDRESS filed in ADMA1's descriptor */
 #define SDHC_ADMA1_ADDRESS_ALIGN (4096U)
@@ -498,11 +500,13 @@ typedef struct _sdhc_data
  */
 typedef struct _sdhc_command
 {
-    uint32_t index;                    /*!< Command index */
-    uint32_t argument;                 /*!< Command argument */
-    sdhc_command_type_t type;          /*!< Command type */
-    sdhc_response_type_t responseType; /*!< Command response type */
-    uint32_t response[4U];             /*!< Response for this command */
+    uint32_t index;                         /*!< Command index */
+    uint32_t argument;                      /*!< Command argument */
+    sdhc_card_command_type_t type;          /*!< Command type */
+    sdhc_card_response_type_t responseType; /*!< Command response type */
+    uint32_t response[4U];                  /*!< Response for this command */
+    uint32_t responseErrorFlags;            /*!< response error flag, the flag which need to check
+                                                the command reponse*/
 } sdhc_command_t;
 
 /*! @brief Transfer state */
@@ -1011,6 +1015,8 @@ static inline void SDHC_SetForceEvent(SDHC_Type *base, uint32_t mask)
  *
  * This function waits until the command response/data is received or the SDHC encounters an error by polling the status
  * flag.
+ * This function support non word align data addr transfer support, if data buffer addr is not align in DMA mode,
+ * the API will continue finish the transfer by polling IO directly
  * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
  * the re-entry mechanism.
  *
@@ -1049,6 +1055,8 @@ void SDHC_TransferCreateHandle(SDHC_Type *base,
  *
  * This function sends a command and data and returns immediately. It doesn't wait the transfer complete or encounter an
  * error.
+ * This function support non word align data addr transfer support, if data buffer addr is not align in DMA mode,
+ * the API will continue finish the transfer by polling IO directly
  * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
  * the re-entry mechanism.
  *

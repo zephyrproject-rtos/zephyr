@@ -1,14 +1,13 @@
 /*
 ** ###################################################################
 **     Version:             rev. 2.15, 2016-03-21
-**     Build:               b160829
+**     Build:               b170228
 **
 **     Abstract:
 **         Chip specific module features.
 **
-**     Copyright (c) 2016 Freescale Semiconductor, Inc.
-**     All rights reserved.
-**
+**     Copyright 2016 Freescale Semiconductor, Inc.
+**     Copyright 2016-2017 NXP
 **     Redistribution and use in source and binary forms, with or without modification,
 **     are permitted provided that the following conditions are met:
 **
@@ -19,7 +18,7 @@
 **       list of conditions and the following disclaimer in the documentation and/or
 **       other materials provided with the distribution.
 **
-**     o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+**     o Neither the name of the copyright holder nor the names of its
 **       contributors may be used to endorse or promote products derived from this
 **       software without specific prior written permission.
 **
@@ -34,8 +33,8 @@
 **     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 **     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **
-**     http:                 www.freescale.com
-**     mail:                 support@freescale.com
+**     http:                 www.nxp.com
+**     mail:                 support@nxp.com
 **
 **     Revisions:
 **     - rev. 1.0 (2013-08-12)
@@ -230,8 +229,8 @@
     #define FSL_FEATURE_SOC_MMAU_COUNT (0)
     /* @brief MMDVSQ availability on the SoC. */
     #define FSL_FEATURE_SOC_MMDVSQ_COUNT (0)
-    /* @brief MPU availability on the SoC. */
-    #define FSL_FEATURE_SOC_MPU_COUNT (1)
+    /* @brief SYSMPU availability on the SoC. */
+    #define FSL_FEATURE_SOC_SYSMPU_COUNT (1)
     /* @brief MSCAN availability on the SoC. */
     #define FSL_FEATURE_SOC_MSCAN_COUNT (0)
     /* @brief MSCM availability on the SoC. */
@@ -322,6 +321,8 @@
     #define FSL_FEATURE_SOC_USB_COUNT (1)
     /* @brief USBDCD availability on the SoC. */
     #define FSL_FEATURE_SOC_USBDCD_COUNT (1)
+    /* @brief USBHS availability on the SoC. */
+    #define FSL_FEATURE_SOC_USBHS_COUNT (0)
     /* @brief USBHSDCD availability on the SoC. */
     #define FSL_FEATURE_SOC_USBHSDCD_COUNT (0)
     /* @brief USBPHY availability on the SoC. */
@@ -477,8 +478,8 @@
     #define FSL_FEATURE_SOC_MMAU_COUNT (0)
     /* @brief MMDVSQ availability on the SoC. */
     #define FSL_FEATURE_SOC_MMDVSQ_COUNT (0)
-    /* @brief MPU availability on the SoC. */
-    #define FSL_FEATURE_SOC_MPU_COUNT (1)
+    /* @brief SYSMPU availability on the SoC. */
+    #define FSL_FEATURE_SOC_SYSMPU_COUNT (1)
     /* @brief MSCAN availability on the SoC. */
     #define FSL_FEATURE_SOC_MSCAN_COUNT (0)
     /* @brief MSCM availability on the SoC. */
@@ -564,11 +565,13 @@
     /* @brief TSTMR availability on the SoC. */
     #define FSL_FEATURE_SOC_TSTMR_COUNT (0)
     /* @brief UART availability on the SoC. */
-    #define FSL_FEATURE_SOC_UART_COUNT (6)
+    #define FSL_FEATURE_SOC_UART_COUNT (5)
     /* @brief USB availability on the SoC. */
     #define FSL_FEATURE_SOC_USB_COUNT (1)
     /* @brief USBDCD availability on the SoC. */
     #define FSL_FEATURE_SOC_USBDCD_COUNT (1)
+    /* @brief USBHS availability on the SoC. */
+    #define FSL_FEATURE_SOC_USBHS_COUNT (0)
     /* @brief USBHSDCD availability on the SoC. */
     #define FSL_FEATURE_SOC_USBHSDCD_COUNT (0)
     /* @brief USBPHY availability on the SoC. */
@@ -756,6 +759,8 @@
     #define FSL_FEATURE_FLASH_HAS_MCM_FLASH_CACHE_CONTROLS (0)
     /* @brief Has flash cache control in MSCM module. */
     #define FSL_FEATURE_FLASH_HAS_MSCM_FLASH_CACHE_CONTROLS (0)
+    /* @brief Has prefetch speculation control in flash, such as kv5x. */
+    #define FSL_FEATURE_FLASH_PREFETCH_SPECULATION_CONTROL_IN_FLASH (0)
     /* @brief P-Flash start address. */
     #define FSL_FEATURE_FLASH_PFLASH_START_ADDRESS (0x00000000)
     /* @brief P-Flash block count. */
@@ -941,6 +946,8 @@
     #define FSL_FEATURE_FLASH_HAS_MCM_FLASH_CACHE_CONTROLS (0)
     /* @brief Has flash cache control in MSCM module. */
     #define FSL_FEATURE_FLASH_HAS_MSCM_FLASH_CACHE_CONTROLS (0)
+    /* @brief Has prefetch speculation control in flash, such as kv5x. */
+    #define FSL_FEATURE_FLASH_PREFETCH_SPECULATION_CONTROL_IN_FLASH (0)
     /* @brief P-Flash start address. */
     #define FSL_FEATURE_FLASH_PFLASH_START_ADDRESS (0x00000000)
     /* @brief P-Flash block count. */
@@ -978,7 +985,7 @@
     /* @brief FlexRAM size. */
     #define FSL_FEATURE_FLASH_FLEX_RAM_SIZE (4096)
     /* @brief Has 0x00 Read 1s Block command. */
-    #define FSL_FEATURE_FLASH_HAS_READ_1S_BLOCK_CMD (0)
+    #define FSL_FEATURE_FLASH_HAS_READ_1S_BLOCK_CMD (1)
     /* @brief Has 0x01 Read 1s Section command. */
     #define FSL_FEATURE_FLASH_HAS_READ_1S_SECTION_CMD (1)
     /* @brief Has 0x02 Program Check command. */
@@ -990,7 +997,7 @@
     /* @brief Has 0x07 Program Phrase command. */
     #define FSL_FEATURE_FLASH_HAS_PROGRAM_PHRASE_CMD (1)
     /* @brief Has 0x08 Erase Flash Block command. */
-    #define FSL_FEATURE_FLASH_HAS_ERASE_FLASH_BLOCK_CMD (0)
+    #define FSL_FEATURE_FLASH_HAS_ERASE_FLASH_BLOCK_CMD (1)
     /* @brief Has 0x09 Erase Flash Sector command. */
     #define FSL_FEATURE_FLASH_HAS_ERASE_FLASH_SECTOR_CMD (1)
     /* @brief Has 0x0B Program Section command. */
@@ -1204,6 +1211,8 @@
 #define FSL_FEATURE_LLWU_HAS_PF (0)
 /* @brief Has possibility to enable reset in low leakage power mode and enable digital filter for RESET pin (register LLWU_RST). */
 #define FSL_FEATURE_LLWU_HAS_RESET_ENABLE (1)
+/* @brief Has no internal module wakeup flag register. */
+#define FSL_FEATURE_LLWU_HAS_NO_INTERNAL_MODULE_WAKEUP_FLAG_REG (0)
 /* @brief Has external pin 0 connected to LLWU device. */
 #define FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN0 (1)
 /* @brief Index of port of external pin. */
@@ -1427,6 +1436,8 @@
 #define FSL_FEATURE_LPTMR_HAS_SHARED_IRQ_HANDLER (0)
 /* @brief Whether LPTMR counter is 32 bits width. */
 #define FSL_FEATURE_LPTMR_CNR_WIDTH_IS_32B (0)
+/* @brief Has timer DMA request enable (register bit CSR[TDRE]). */
+#define FSL_FEATURE_LPTMR_HAS_CSR_TDRE (0)
 
 /* MCG module features */
 
@@ -1468,7 +1479,7 @@
 #define FSL_FEATURE_MCG_USE_PLLREFSEL (0)
 /* @brief TBD */
 #define FSL_FEATURE_MCG_USE_SYSTEM_CLOCK (0)
-/* @brief Has phase-locked loop (PLL) (register C5 and bits C6[VDIV], C6[PLLS], C6[LOLIE0], S[PLLST], S[LOCK0], S[LOLS]). */
+/* @brief Has phase-locked loop (PLL) (register C5 and bits C6[VDIV], C6[PLLS], C6[LOLIE0], S[PLLST], S[LOCK0], S[LOLS0]). */
 #define FSL_FEATURE_MCG_HAS_PLL (1)
 /* @brief Has phase-locked loop (PLL) PRDIV (register C5[PRDIV]. */
 #define FSL_FEATURE_MCG_HAS_PLL_PRDIV (1)
@@ -1498,21 +1509,6 @@
 #define FSL_FEATURE_MCG_HAS_PLL_INTERNAL_MODE (0)
 /* @brief Reset clock mode is BLPI. */
 #define FSL_FEATURE_MCG_RESET_IS_BLPI (0)
-
-/* MPU module features */
-
-/* @brief Specifies number of descriptors available. */
-#define FSL_FEATURE_MPU_DESCRIPTOR_COUNT (12)
-/* @brief Has process identifier support. */
-#define FSL_FEATURE_MPU_HAS_PROCESS_IDENTIFIER (1)
-/* @brief Total number of MPU master. */
-#define FSL_FEATURE_MPU_MASTER_COUNT (8)
-/* @brief Total number of MPU master with privileged rights */
-#define FSL_FEATURE_MPU_PRIVILEGED_RIGHTS_MASTER_COUNT (4)
-/* @brief Max index of used MPU master. */
-#define FSL_FEATURE_MPU_MASTER_MAX_INDEX (5)
-/* @brief Has master 4 or 5 or 6 or 7. */
-#define FSL_FEATURE_MPU_HAS_MASTER_4_7 (1)
 
 /* interrupt module features */
 
@@ -1611,6 +1607,8 @@
 #define FSL_FEATURE_PORT_PCR_MUX_WIDTH (3)
 /* @brief Has dedicated interrupt vector. */
 #define FSL_FEATURE_PORT_HAS_INTERRUPT_VECTOR (1)
+/* @brief Has multiple pin IRQ configuration (register GICLR and GICHR). */
+#define FSL_FEATURE_PORT_HAS_MULTIPLE_IRQ_CONFIG (0)
 /* @brief Defines whether PCR[IRQC] bit-field has flag states. */
 #define FSL_FEATURE_PORT_HAS_IRQC_FLAG (0)
 /* @brief Defines whether PCR[IRQC] bit-field has trigger states. */
@@ -1983,6 +1981,12 @@
 #define FSL_FEATURE_SMC_HAS_PARAM (0)
 /* @brief Has SMC_VERID. */
 #define FSL_FEATURE_SMC_HAS_VERID (0)
+/* @brief Has stop abort flag (register bit PMCTRL[STOPA]). */
+#define FSL_FEATURE_SMC_HAS_PMCTRL_STOPA (1)
+/* @brief Has tamper reset (register bit SRS[TAMPER]). */
+#define FSL_FEATURE_SMC_HAS_SRS_TAMPER (0)
+/* @brief Has security violation reset (register bit SRS[SECVIO]). */
+#define FSL_FEATURE_SMC_HAS_SRS_SECVIO (0)
 
 /* DSPI module features */
 
@@ -2009,6 +2013,17 @@
     ((x) == DSPI1 ? (0) : \
     ((x) == DSPI2 ? (0) : (-1))))
 
+/* SYSMPU module features */
+
+/* @brief Specifies number of descriptors available. */
+#define FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT (12)
+/* @brief Has process identifier support. */
+#define FSL_FEATURE_SYSMPU_HAS_PROCESS_IDENTIFIER (1)
+/* @brief Total number of MPU slave. */
+#define FSL_FEATURE_SYSMPU_SLAVE_COUNT (5)
+/* @brief Total number of MPU master. */
+#define FSL_FEATURE_SYSMPU_MASTER_COUNT (6)
+
 /* SysTick module features */
 
 /* @brief Systick has external reference clock. */
@@ -2018,75 +2033,146 @@
 
 /* UART module features */
 
-/* @brief Has receive FIFO overflow detection (bit field CFIFO[RXOFE]). */
-#define FSL_FEATURE_UART_HAS_IRQ_EXTENDED_FUNCTIONS (1)
-/* @brief Has low power features (can be enabled in wait mode via register bit C1[DOZEEN] or CTRL[DOZEEN] if the registers are 32-bit wide). */
-#define FSL_FEATURE_UART_HAS_LOW_POWER_UART_SUPPORT (0)
-/* @brief Has extended data register ED (or extra flags in the DATA register if the registers are 32-bit wide). */
-#define FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS (1)
-/* @brief Capacity (number of entries) of the transmit/receive FIFO (or zero if no FIFO is available). */
-#define FSL_FEATURE_UART_HAS_FIFO (1)
-/* @brief Hardware flow control (RTS, CTS) is supported. */
-#define FSL_FEATURE_UART_HAS_MODEM_SUPPORT (1)
-/* @brief Infrared (modulation) is supported. */
-#define FSL_FEATURE_UART_HAS_IR_SUPPORT (1)
-/* @brief 2 bits long stop bit is available. */
-#define FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT (1)
-/* @brief If 10-bit mode is supported. */
-#define FSL_FEATURE_UART_HAS_10BIT_DATA_SUPPORT (1)
-/* @brief Baud rate fine adjustment is available. */
-#define FSL_FEATURE_UART_HAS_BAUD_RATE_FINE_ADJUST_SUPPORT (1)
-/* @brief Baud rate oversampling is available (has bit fields C4[OSR], C5[BOTHEDGE], C5[RESYNCDIS] or BAUD[OSR], BAUD[BOTHEDGE], BAUD[RESYNCDIS] if the registers are 32-bit wide). */
-#define FSL_FEATURE_UART_HAS_BAUD_RATE_OVER_SAMPLING_SUPPORT (0)
-/* @brief Baud rate oversampling is available. */
-#define FSL_FEATURE_UART_HAS_RX_RESYNC_SUPPORT (0)
-/* @brief Baud rate oversampling is available. */
-#define FSL_FEATURE_UART_HAS_BOTH_EDGE_SAMPLING_SUPPORT (0)
-/* @brief Peripheral type. */
-#define FSL_FEATURE_UART_IS_SCI (0)
-/* @brief Capacity (number of entries) of the transmit/receive FIFO (or zero if no FIFO is available). */
-#define FSL_FEATURE_UART_FIFO_SIZEn(x) \
-    ((x) == UART0 ? (8) : \
-    ((x) == UART1 ? (8) : \
-    ((x) == UART2 ? (1) : \
-    ((x) == UART3 ? (1) : \
-    ((x) == UART4 ? (1) : \
-    ((x) == UART5 ? (1) : (-1)))))))
-/* @brief Maximal data width without parity bit. */
-#define FSL_FEATURE_UART_MAX_DATA_WIDTH_WITH_NO_PARITY (9)
-/* @brief Maximal data width with parity bit. */
-#define FSL_FEATURE_UART_MAX_DATA_WIDTH_WITH_PARITY (10)
-/* @brief Supports two match addresses to filter incoming frames. */
-#define FSL_FEATURE_UART_HAS_ADDRESS_MATCHING (1)
-/* @brief Has transmitter/receiver DMA enable bits C5[TDMAE]/C5[RDMAE] (or BAUD[TDMAE]/BAUD[RDMAE] if the registers are 32-bit wide). */
-#define FSL_FEATURE_UART_HAS_DMA_ENABLE (0)
-/* @brief Has transmitter/receiver DMA select bits C4[TDMAS]/C4[RDMAS], resp. C5[TDMAS]/C5[RDMAS] if IS_SCI = 0. */
-#define FSL_FEATURE_UART_HAS_DMA_SELECT (1)
-/* @brief Data character bit order selection is supported (bit field S2[MSBF] or STAT[MSBF] if the registers are 32-bit wide). */
-#define FSL_FEATURE_UART_HAS_BIT_ORDER_SELECT (1)
-/* @brief Has smart card (ISO7816 protocol) support and no improved smart card support. */
-#define FSL_FEATURE_UART_HAS_SMART_CARD_SUPPORT (1)
-/* @brief Has improved smart card (ISO7816 protocol) support. */
-#define FSL_FEATURE_UART_HAS_IMPROVED_SMART_CARD_SUPPORT (0)
-/* @brief Has local operation network (CEA709.1-B protocol) support. */
-#define FSL_FEATURE_UART_HAS_LOCAL_OPERATION_NETWORK_SUPPORT (0)
-/* @brief Has 32-bit registers (BAUD, STAT, CTRL, DATA, MATCH, MODIR) instead of 8-bit (BDH, BDL, C1, S1, D, etc.). */
-#define FSL_FEATURE_UART_HAS_32BIT_REGISTERS (0)
-/* @brief Lin break detect available (has bit BDH[LBKDIE]). */
-#define FSL_FEATURE_UART_HAS_LIN_BREAK_DETECT (1)
-/* @brief UART stops in Wait mode available (has bit C1[UARTSWAI]). */
-#define FSL_FEATURE_UART_HAS_WAIT_MODE_OPERATION (1)
-/* @brief Has separate DMA RX and TX requests. */
-#define FSL_FEATURE_UART_HAS_SEPARATE_DMA_RX_TX_REQn(x) \
-    ((x) == UART0 ? (1) : \
-    ((x) == UART1 ? (1) : \
-    ((x) == UART2 ? (1) : \
-    ((x) == UART3 ? (1) : \
-    ((x) == UART4 ? (0) : \
-    ((x) == UART5 ? (0) : (-1)))))))
+#if defined(CPU_MK64FN1M0CAJ12) || defined(CPU_MK64FN1M0VDC12) || defined(CPU_MK64FN1M0VLQ12) || defined(CPU_MK64FN1M0VMD12) || \
+    defined(CPU_MK64FX512VDC12) || defined(CPU_MK64FX512VLQ12) || defined(CPU_MK64FX512VMD12)
+    /* @brief Has receive FIFO overflow detection (bit field CFIFO[RXOFE]). */
+    #define FSL_FEATURE_UART_HAS_IRQ_EXTENDED_FUNCTIONS (1)
+    /* @brief Has low power features (can be enabled in wait mode via register bit C1[DOZEEN] or CTRL[DOZEEN] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_LOW_POWER_UART_SUPPORT (0)
+    /* @brief Has extended data register ED (or extra flags in the DATA register if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS (1)
+    /* @brief Capacity (number of entries) of the transmit/receive FIFO (or zero if no FIFO is available). */
+    #define FSL_FEATURE_UART_HAS_FIFO (1)
+    /* @brief Hardware flow control (RTS, CTS) is supported. */
+    #define FSL_FEATURE_UART_HAS_MODEM_SUPPORT (1)
+    /* @brief Infrared (modulation) is supported. */
+    #define FSL_FEATURE_UART_HAS_IR_SUPPORT (1)
+    /* @brief 2 bits long stop bit is available. */
+    #define FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT (1)
+    /* @brief If 10-bit mode is supported. */
+    #define FSL_FEATURE_UART_HAS_10BIT_DATA_SUPPORT (1)
+    /* @brief Baud rate fine adjustment is available. */
+    #define FSL_FEATURE_UART_HAS_BAUD_RATE_FINE_ADJUST_SUPPORT (1)
+    /* @brief Baud rate oversampling is available (has bit fields C4[OSR], C5[BOTHEDGE], C5[RESYNCDIS] or BAUD[OSR], BAUD[BOTHEDGE], BAUD[RESYNCDIS] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_BAUD_RATE_OVER_SAMPLING_SUPPORT (0)
+    /* @brief Baud rate oversampling is available. */
+    #define FSL_FEATURE_UART_HAS_RX_RESYNC_SUPPORT (0)
+    /* @brief Baud rate oversampling is available. */
+    #define FSL_FEATURE_UART_HAS_BOTH_EDGE_SAMPLING_SUPPORT (0)
+    /* @brief Peripheral type. */
+    #define FSL_FEATURE_UART_IS_SCI (0)
+    /* @brief Capacity (number of entries) of the transmit/receive FIFO (or zero if no FIFO is available). */
+    #define FSL_FEATURE_UART_FIFO_SIZEn(x) \
+        ((x) == UART0 ? (8) : \
+        ((x) == UART1 ? (8) : \
+        ((x) == UART2 ? (1) : \
+        ((x) == UART3 ? (1) : \
+        ((x) == UART4 ? (1) : \
+        ((x) == UART5 ? (1) : (-1)))))))
+    /* @brief Maximal data width without parity bit. */
+    #define FSL_FEATURE_UART_MAX_DATA_WIDTH_WITH_NO_PARITY (9)
+    /* @brief Maximal data width with parity bit. */
+    #define FSL_FEATURE_UART_MAX_DATA_WIDTH_WITH_PARITY (10)
+    /* @brief Supports two match addresses to filter incoming frames. */
+    #define FSL_FEATURE_UART_HAS_ADDRESS_MATCHING (1)
+    /* @brief Has transmitter/receiver DMA enable bits C5[TDMAE]/C5[RDMAE] (or BAUD[TDMAE]/BAUD[RDMAE] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_DMA_ENABLE (0)
+    /* @brief Has transmitter/receiver DMA select bits C4[TDMAS]/C4[RDMAS], resp. C5[TDMAS]/C5[RDMAS] if IS_SCI = 0. */
+    #define FSL_FEATURE_UART_HAS_DMA_SELECT (1)
+    /* @brief Data character bit order selection is supported (bit field S2[MSBF] or STAT[MSBF] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_BIT_ORDER_SELECT (1)
+    /* @brief Has smart card (ISO7816 protocol) support and no improved smart card support. */
+    #define FSL_FEATURE_UART_HAS_SMART_CARD_SUPPORT (1)
+    /* @brief Has improved smart card (ISO7816 protocol) support. */
+    #define FSL_FEATURE_UART_HAS_IMPROVED_SMART_CARD_SUPPORT (0)
+    /* @brief Has local operation network (CEA709.1-B protocol) support. */
+    #define FSL_FEATURE_UART_HAS_LOCAL_OPERATION_NETWORK_SUPPORT (0)
+    /* @brief Has 32-bit registers (BAUD, STAT, CTRL, DATA, MATCH, MODIR) instead of 8-bit (BDH, BDL, C1, S1, D, etc.). */
+    #define FSL_FEATURE_UART_HAS_32BIT_REGISTERS (0)
+    /* @brief Lin break detect available (has bit BDH[LBKDIE]). */
+    #define FSL_FEATURE_UART_HAS_LIN_BREAK_DETECT (1)
+    /* @brief UART stops in Wait mode available (has bit C1[UARTSWAI]). */
+    #define FSL_FEATURE_UART_HAS_WAIT_MODE_OPERATION (1)
+    /* @brief Has separate DMA RX and TX requests. */
+    #define FSL_FEATURE_UART_HAS_SEPARATE_DMA_RX_TX_REQn(x) \
+        ((x) == UART0 ? (1) : \
+        ((x) == UART1 ? (1) : \
+        ((x) == UART2 ? (1) : \
+        ((x) == UART3 ? (1) : \
+        ((x) == UART4 ? (0) : \
+        ((x) == UART5 ? (0) : (-1)))))))
+#elif defined(CPU_MK64FN1M0VLL12) || defined(CPU_MK64FX512VLL12)
+    /* @brief Has receive FIFO overflow detection (bit field CFIFO[RXOFE]). */
+    #define FSL_FEATURE_UART_HAS_IRQ_EXTENDED_FUNCTIONS (1)
+    /* @brief Has low power features (can be enabled in wait mode via register bit C1[DOZEEN] or CTRL[DOZEEN] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_LOW_POWER_UART_SUPPORT (0)
+    /* @brief Has extended data register ED (or extra flags in the DATA register if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS (1)
+    /* @brief Capacity (number of entries) of the transmit/receive FIFO (or zero if no FIFO is available). */
+    #define FSL_FEATURE_UART_HAS_FIFO (1)
+    /* @brief Hardware flow control (RTS, CTS) is supported. */
+    #define FSL_FEATURE_UART_HAS_MODEM_SUPPORT (1)
+    /* @brief Infrared (modulation) is supported. */
+    #define FSL_FEATURE_UART_HAS_IR_SUPPORT (1)
+    /* @brief 2 bits long stop bit is available. */
+    #define FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT (1)
+    /* @brief If 10-bit mode is supported. */
+    #define FSL_FEATURE_UART_HAS_10BIT_DATA_SUPPORT (1)
+    /* @brief Baud rate fine adjustment is available. */
+    #define FSL_FEATURE_UART_HAS_BAUD_RATE_FINE_ADJUST_SUPPORT (1)
+    /* @brief Baud rate oversampling is available (has bit fields C4[OSR], C5[BOTHEDGE], C5[RESYNCDIS] or BAUD[OSR], BAUD[BOTHEDGE], BAUD[RESYNCDIS] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_BAUD_RATE_OVER_SAMPLING_SUPPORT (0)
+    /* @brief Baud rate oversampling is available. */
+    #define FSL_FEATURE_UART_HAS_RX_RESYNC_SUPPORT (0)
+    /* @brief Baud rate oversampling is available. */
+    #define FSL_FEATURE_UART_HAS_BOTH_EDGE_SAMPLING_SUPPORT (0)
+    /* @brief Peripheral type. */
+    #define FSL_FEATURE_UART_IS_SCI (0)
+    /* @brief Capacity (number of entries) of the transmit/receive FIFO (or zero if no FIFO is available). */
+    #define FSL_FEATURE_UART_FIFO_SIZEn(x) \
+        ((x) == UART0 ? (8) : \
+        ((x) == UART1 ? (8) : \
+        ((x) == UART2 ? (1) : \
+        ((x) == UART3 ? (1) : \
+        ((x) == UART4 ? (1) : (-1))))))
+    /* @brief Maximal data width without parity bit. */
+    #define FSL_FEATURE_UART_MAX_DATA_WIDTH_WITH_NO_PARITY (9)
+    /* @brief Maximal data width with parity bit. */
+    #define FSL_FEATURE_UART_MAX_DATA_WIDTH_WITH_PARITY (10)
+    /* @brief Supports two match addresses to filter incoming frames. */
+    #define FSL_FEATURE_UART_HAS_ADDRESS_MATCHING (1)
+    /* @brief Has transmitter/receiver DMA enable bits C5[TDMAE]/C5[RDMAE] (or BAUD[TDMAE]/BAUD[RDMAE] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_DMA_ENABLE (0)
+    /* @brief Has transmitter/receiver DMA select bits C4[TDMAS]/C4[RDMAS], resp. C5[TDMAS]/C5[RDMAS] if IS_SCI = 0. */
+    #define FSL_FEATURE_UART_HAS_DMA_SELECT (1)
+    /* @brief Data character bit order selection is supported (bit field S2[MSBF] or STAT[MSBF] if the registers are 32-bit wide). */
+    #define FSL_FEATURE_UART_HAS_BIT_ORDER_SELECT (1)
+    /* @brief Has smart card (ISO7816 protocol) support and no improved smart card support. */
+    #define FSL_FEATURE_UART_HAS_SMART_CARD_SUPPORT (1)
+    /* @brief Has improved smart card (ISO7816 protocol) support. */
+    #define FSL_FEATURE_UART_HAS_IMPROVED_SMART_CARD_SUPPORT (0)
+    /* @brief Has local operation network (CEA709.1-B protocol) support. */
+    #define FSL_FEATURE_UART_HAS_LOCAL_OPERATION_NETWORK_SUPPORT (0)
+    /* @brief Has 32-bit registers (BAUD, STAT, CTRL, DATA, MATCH, MODIR) instead of 8-bit (BDH, BDL, C1, S1, D, etc.). */
+    #define FSL_FEATURE_UART_HAS_32BIT_REGISTERS (0)
+    /* @brief Lin break detect available (has bit BDH[LBKDIE]). */
+    #define FSL_FEATURE_UART_HAS_LIN_BREAK_DETECT (1)
+    /* @brief UART stops in Wait mode available (has bit C1[UARTSWAI]). */
+    #define FSL_FEATURE_UART_HAS_WAIT_MODE_OPERATION (1)
+    /* @brief Has separate DMA RX and TX requests. */
+    #define FSL_FEATURE_UART_HAS_SEPARATE_DMA_RX_TX_REQn(x) \
+        ((x) == UART0 ? (1) : \
+        ((x) == UART1 ? (1) : \
+        ((x) == UART2 ? (1) : \
+        ((x) == UART3 ? (1) : \
+        ((x) == UART4 ? (0) : (-1))))))
+#endif /* defined(CPU_MK64FN1M0CAJ12) || defined(CPU_MK64FN1M0VDC12) || defined(CPU_MK64FN1M0VLQ12) || defined(CPU_MK64FN1M0VMD12) || \
+    defined(CPU_MK64FX512VDC12) || defined(CPU_MK64FX512VLQ12) || defined(CPU_MK64FX512VMD12) */
 
 /* USB module features */
 
+/* @brief KHCI module instance count */
+#define FSL_FEATURE_USB_KHCI_COUNT (1)
 /* @brief HOST mode enabled */
 #define FSL_FEATURE_USB_KHCI_HOST_ENABLED (1)
 /* @brief OTG mode enabled */

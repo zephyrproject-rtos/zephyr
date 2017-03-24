@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -37,15 +37,14 @@
  * @{
  */
 
-
 /******************************************************************************
  * Definitions
  *****************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief FlexCAN driver version 2.1.0. */
-#define FLEXCAN_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
+/*! @brief FlexCAN driver version 2.2.0. */
+#define FLEXCAN_DRIVER_VERSION (MAKE_VERSION(2, 2, 0))
 /*@}*/
 
 /*! @brief FlexCAN Frame ID helper macro. */
@@ -69,19 +68,18 @@
      (FLEXCAN_ID_STD(id) << 1)) /*!< Standard Rx FIFO Mask helper macro Type A helper macro. */
 #define FLEXCAN_RX_FIFO_STD_MASK_TYPE_B_HIGH(id, rtr, ide)                     \
     (((uint32_t)((uint32_t)(rtr) << 31) | (uint32_t)((uint32_t)(ide) << 30)) | \
-     (FLEXCAN_ID_STD(id) << 16)) /*!< Standard Rx FIFO Mask helper macro Type B upper part helper macro. */
+     (((uint32_t)(id) & 0x7FF) << 19)) /*!< Standard Rx FIFO Mask helper macro Type B upper part helper macro. */
 #define FLEXCAN_RX_FIFO_STD_MASK_TYPE_B_LOW(id, rtr, ide)                      \
     (((uint32_t)((uint32_t)(rtr) << 15) | (uint32_t)((uint32_t)(ide) << 14)) | \
-     FLEXCAN_ID_STD(id)) /*!< Standard Rx FIFO Mask helper macro Type B lower part helper macro. */
+     (((uint32_t)(id) & 0x7FF) << 3)) /*!< Standard Rx FIFO Mask helper macro Type B lower part helper macro. */
 #define FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_HIGH(id) \
-    ((FLEXCAN_ID_STD(id) & 0x7F8) << 21) /*!< Standard Rx FIFO Mask helper macro Type C upper part helper macro. */
-#define FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_MID_HIGH(id)                                                                 \
-    ((FLEXCAN_ID_STD(id) & 0x7F8) << 13) /*!< Standard Rx FIFO Mask helper macro Type C mid-upper part helper macro. \
-                                                */
+    (((uint32_t)(id) & 0x7F8) << 21) /*!< Standard Rx FIFO Mask helper macro Type C upper part helper macro. */
+#define FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_MID_HIGH(id) \
+    (((uint32_t)(id) & 0x7F8) << 13) /*!< Standard Rx FIFO Mask helper macro Type C mid-upper part helper macro. */
 #define FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_MID_LOW(id) \
-    ((FLEXCAN_ID_STD(id) & 0x7F8) << 5) /*!< Standard Rx FIFO Mask helper macro Type C mid-lower part helper macro. */
+    (((uint32_t)(id) & 0x7F8) << 5) /*!< Standard Rx FIFO Mask helper macro Type C mid-lower part helper macro. */
 #define FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_LOW(id) \
-    ((FLEXCAN_ID_STD(id) & 0x7F8) >> 3) /*!< Standard Rx FIFO Mask helper macro Type C lower part helper macro. */
+    (((uint32_t)(id) & 0x7F8) >> 3) /*!< Standard Rx FIFO Mask helper macro Type C lower part helper macro. */
 #define FLEXCAN_RX_FIFO_EXT_MASK_TYPE_A(id, rtr, ide)                          \
     (((uint32_t)((uint32_t)(rtr) << 31) | (uint32_t)((uint32_t)(ide) << 30)) | \
      (FLEXCAN_ID_EXT(id) << 1)) /*!< Extend Rx FIFO Mask helper macro Type A helper macro. */
@@ -157,7 +155,7 @@ enum _flexcan_status
     kStatus_FLEXCAN_RxFifoBusy = MAKE_STATUS(kStatusGroup_FLEXCAN, 6),     /*!< Rx Message FIFO is Busy. */
     kStatus_FLEXCAN_RxFifoIdle = MAKE_STATUS(kStatusGroup_FLEXCAN, 7),     /*!< Rx Message FIFO is Idle. */
     kStatus_FLEXCAN_RxFifoOverflow = MAKE_STATUS(kStatusGroup_FLEXCAN, 8), /*!< Rx Message FIFO is overflowed. */
-    kStatus_FLEXCAN_RxFifoWarning = MAKE_STATUS(kStatusGroup_FLEXCAN, 0),  /*!< Rx Message FIFO is almost overflowed. */
+    kStatus_FLEXCAN_RxFifoWarning = MAKE_STATUS(kStatusGroup_FLEXCAN, 9),  /*!< Rx Message FIFO is almost overflowed. */
     kStatus_FLEXCAN_ErrorStatus = MAKE_STATUS(kStatusGroup_FLEXCAN, 10),   /*!< FlexCAN Module Error and Status. */
     kStatus_FLEXCAN_UnHandled = MAKE_STATUS(kStatusGroup_FLEXCAN, 11),     /*!< UnHadled Interrupt asserted. */
 };
@@ -176,12 +174,14 @@ typedef enum _flexcan_frame_type
     kFLEXCAN_FrameTypeRemote = 0x1U, /*!< Remote frame type attribute. */
 } flexcan_frame_type_t;
 
+#if (!defined(FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE)) || !FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE
 /*! @brief FlexCAN clock source. */
 typedef enum _flexcan_clock_source
 {
     kFLEXCAN_ClkSrcOsc = 0x0U,  /*!< FlexCAN Protocol Engine clock from Oscillator. */
     kFLEXCAN_ClkSrcPeri = 0x1U, /*!< FlexCAN Protocol Engine clock from Peripheral Clock. */
 } flexcan_clock_source_t;
+#endif /* FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE */
 
 /*! @brief FlexCAN Rx Fifo Filter type. */
 typedef enum _flexcan_rx_fifo_filter_type
@@ -326,7 +326,9 @@ typedef struct _flexcan_frame
 typedef struct _flexcan_config
 {
     uint32_t baudRate;             /*!< FlexCAN baud rate in bps. */
+#if (!defined(FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE)) || !FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE
     flexcan_clock_source_t clkSrc; /*!< Clock source for FlexCAN Protocol Engine. */
+#endif /* FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE */
     uint8_t maxMbNum;              /*!< The maximum number of Message Buffers used by user. */
     bool enableLoopBack;           /*!< Enable or Disable Loop Back Self Test Mode. */
     bool enableSelfWakeup;         /*!< Enable or Disable Self Wakeup Mode. */
@@ -676,7 +678,7 @@ static inline void FLEXCAN_ClearMbStatusFlags(CAN_Type *base, uint32_t mask)
 #endif
 {
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-    base->IFLAG1 = (uint32_t)(mask & 0xFFFFFFFF);
+    base->IFLAG1 = (uint32_t)(mask & 0xFFFFFFFFU);
     base->IFLAG2 = (uint32_t)(mask >> 32);
 #else
     base->IFLAG1 = mask;
@@ -747,7 +749,7 @@ static inline void FLEXCAN_EnableMbInterrupts(CAN_Type *base, uint32_t mask)
 #endif
 {
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-    base->IMASK1 |= (uint32_t)(mask & 0xFFFFFFFF);
+    base->IMASK1 |= (uint32_t)(mask & 0xFFFFFFFFU);
     base->IMASK2 |= (uint32_t)(mask >> 32);
 #else
     base->IMASK1 |= mask;
@@ -769,7 +771,7 @@ static inline void FLEXCAN_DisableMbInterrupts(CAN_Type *base, uint32_t mask)
 #endif
 {
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-    base->IMASK1 &= ~((uint32_t)(mask & 0xFFFFFFFF));
+    base->IMASK1 &= ~((uint32_t)(mask & 0xFFFFFFFFU));
     base->IMASK2 &= ~((uint32_t)(mask >> 32));
 #else
     base->IMASK1 &= ~mask;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -35,6 +35,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#if defined(__ICCARM__)
+#include <stddef.h>
+#endif
+
 #include "fsl_device_registers.h"
 
 /*!
@@ -59,6 +64,7 @@
 #define DEBUG_CONSOLE_DEVICE_TYPE_LPSCI 3U    /*!< Debug console base on LPSCI.  */
 #define DEBUG_CONSOLE_DEVICE_TYPE_USBCDC 4U   /*!< Debug console base on USBCDC. */
 #define DEBUG_CONSOLE_DEVICE_TYPE_FLEXCOMM 5U /*!< Debug console base on USBCDC. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_IUART 6U    /*!< Debug console base on i.MX UART. */
 
 /*! @brief Status group numbers. */
 enum _status_groups
@@ -85,9 +91,11 @@ enum _status_groups
     kStatusGroup_SCG = 21,                    /*!< Group number for SCG status codes. */
     kStatusGroup_SDSPI = 22,                  /*!< Group number for SDSPI status codes. */
     kStatusGroup_FLEXIO_I2S = 23,             /*!< Group number for FLEXIO I2S status codes */
+    kStatusGroup_FLEXIO_MCULCD = 24,          /*!< Group number for FLEXIO LCD status codes */
     kStatusGroup_FLASHIAP = 25,               /*!< Group number for FLASHIAP status codes */
     kStatusGroup_FLEXCOMM_I2C = 26,           /*!< Group number for FLEXCOMM I2C status codes */
     kStatusGroup_I2S = 27,                    /*!< Group number for I2S status codes */
+    kStatusGroup_IUART = 28,                  /*!< Group number for IUART status codes */
     kStatusGroup_SDRAMC = 35,                 /*!< Group number for SDRAMC status codes. */
     kStatusGroup_POWER = 39,                  /*!< Group number for POWER status codes. */
     kStatusGroup_ENET = 40,                   /*!< Group number for ENET status codes. */
@@ -104,6 +112,16 @@ enum _status_groups
     kStatusGroup_FLEXIO_CAMERA = 55,          /*!< Group number for FLEXIO CAMERA status codes. */
     kStatusGroup_LPC_SPI = 56,                /*!< Group number for LPC_SPI status codes. */
     kStatusGroup_LPC_USART = 57,              /*!< Group number for LPC_USART status codes. */
+    kStatusGroup_DMIC = 58,                   /*!< Group number for DMIC status codes. */
+    kStatusGroup_SDIF = 59,                   /*!< Group number for SDIF status codes.*/
+    kStatusGroup_SPIFI = 60,                  /*!< Group number for SPIFI status codes. */
+    kStatusGroup_OTP = 61,                    /*!< Group number for OTP status codes. */
+    kStatusGroup_MCAN = 62,                   /*!< Group number for MCAN status codes. */
+    kStatusGroup_CAAM = 63,                   /*!< Group number for CAAM status codes. */
+    kStatusGroup_ECSPI = 64,                  /*!< Group number for ECSPI status codes. */
+    kStatusGroup_USDHC = 65,                  /*!< Group number for USDHC status codes.*/
+    kStatusGroup_ESAI = 69,                   /*!< Group number for ESAI status codes. */
+    kStatusGroup_FLEXSPI = 70,                /*!< Group number for FLEXSPI status codes. */
     kStatusGroup_NOTIFIER = 98,               /*!< Group number for NOTIFIER status codes. */
     kStatusGroup_DebugConsole = 99,           /*!< Group number for debug console status codes. */
     kStatusGroup_ApplicationRangeStart = 100, /*!< Starting number for application groups. */
@@ -204,7 +222,11 @@ static inline void EnableIRQ(IRQn_Type interrupt)
     if (interrupt < FSL_FEATURE_INTMUX_IRQ_START_INDEX)
 #endif
     {
+#if defined(__GIC_PRIO_BITS)
+        GIC_EnableIRQ(interrupt);
+#else
         NVIC_EnableIRQ(interrupt);
+#endif
     }
 }
 
@@ -226,7 +248,11 @@ static inline void DisableIRQ(IRQn_Type interrupt)
     if (interrupt < FSL_FEATURE_INTMUX_IRQ_START_INDEX)
 #endif
     {
+#if defined(__GIC_PRIO_BITS)
+        GIC_DisableIRQ(interrupt);
+#else
         NVIC_DisableIRQ(interrupt);
+#endif
     }
 }
 
@@ -240,11 +266,19 @@ static inline void DisableIRQ(IRQn_Type interrupt)
  */
 static inline uint32_t DisableGlobalIRQ(void)
 {
+#if defined(CPSR_I_Msk)
+    uint32_t cpsr = __get_CPSR() & CPSR_I_Msk;
+
+    __disable_irq();
+
+    return cpsr;
+#else
     uint32_t regPrimask = __get_PRIMASK();
 
     __disable_irq();
 
     return regPrimask;
+#endif
 }
 
 /*!
@@ -259,7 +293,11 @@ static inline uint32_t DisableGlobalIRQ(void)
  */
 static inline void EnableGlobalIRQ(uint32_t primask)
 {
+#if defined(CPSR_I_Msk)
+    __set_CPSR((__get_CPSR() & ~CPSR_I_Msk) | primask);
+#else
     __set_PRIMASK(primask);
+#endif
 }
 
 /*!
@@ -267,8 +305,9 @@ static inline void EnableGlobalIRQ(uint32_t primask)
  *
  * @param irq IRQ number
  * @param irqHandler IRQ handler address
+ * @return The old IRQ handler address
  */
-void InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler);
+uint32_t InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler);
 
 #if (defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0))
 /*!

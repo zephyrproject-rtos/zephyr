@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -37,7 +37,6 @@
  * @addtogroup crc
  * @{
  */
-
 
 /*******************************************************************************
  * Definitions
@@ -108,7 +107,7 @@ extern "C" {
 /*!
  * @brief Enables and configures the CRC peripheral module.
  *
- * This function enables the clock gate in the Kinetis SIM module for the CRC peripheral.
+ * This function enables the clock gate in the SIM module for the CRC peripheral.
  * It also configures the CRC module and starts a checksum computation by writing the seed.
  *
  * @param base CRC peripheral address.
@@ -119,7 +118,7 @@ void CRC_Init(CRC_Type *base, const crc_config_t *config);
 /*!
  * @brief Disables the CRC peripheral module.
  *
- * This function disables the clock gate in the Kinetis SIM module for the CRC peripheral.
+ * This function disables the clock gate in the SIM module for the CRC peripheral.
  *
  * @param base CRC peripheral address.
  */

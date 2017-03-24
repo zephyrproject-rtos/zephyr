@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -170,7 +170,7 @@ uint32_t I2C_GetInstance(I2C_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_I2C_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_i2cBases); instance++)
     {
         if (s_i2cBases[instance] == base)
         {
@@ -178,7 +178,7 @@ uint32_t I2C_GetInstance(I2C_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_I2C_COUNT);
+    assert(instance < ARRAY_SIZE(s_i2cBases));
 
     return instance;
 }
@@ -475,9 +475,6 @@ void I2C_MasterInit(I2C_Type *base, const i2c_master_config_t *masterConfig, uin
 
     /* Temporary register for filter read. */
     uint8_t fltReg;
-#if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
-    uint8_t c2Reg;
-#endif
 #if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFER_ENABLE
     uint8_t s2Reg;
 #endif
@@ -485,6 +482,19 @@ void I2C_MasterInit(I2C_Type *base, const i2c_master_config_t *masterConfig, uin
     /* Enable I2C clock. */
     CLOCK_EnableClock(s_i2cClocks[I2C_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+    /* Reset the module. */
+    base->A1 = 0;
+    base->F = 0;
+    base->C1 = 0;
+    base->S = 0xFFU;
+    base->C2 = 0;
+#if defined(FSL_FEATURE_I2C_HAS_START_STOP_DETECT) && FSL_FEATURE_I2C_HAS_START_STOP_DETECT
+    base->FLT = 0x50U;
+#elif defined(FSL_FEATURE_I2C_HAS_STOP_DETECT) && FSL_FEATURE_I2C_HAS_STOP_DETECT
+    base->FLT = 0x40U;
+#endif
+    base->RA = 0;
 
     /* Disable I2C prior to configuring it. */
     base->C1 &= ~(I2C_C1_IICEN_MASK);
@@ -494,14 +504,6 @@ void I2C_MasterInit(I2C_Type *base, const i2c_master_config_t *masterConfig, uin
 
     /* Configure baud rate. */
     I2C_MasterSetBaudRate(base, masterConfig->baudRate_Bps, srcClock_Hz);
-
-#if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
-    /* Configure high drive feature. */
-    c2Reg = base->C2;
-    c2Reg &= ~(I2C_C2_HDRS_MASK);
-    c2Reg |= I2C_C2_HDRS(masterConfig->enableHighDrive);
-    base->C2 = c2Reg;
-#endif
 
     /* Read out the FLT register. */
     fltReg = base->FLT;
@@ -546,11 +548,6 @@ void I2C_MasterGetDefaultConfig(i2c_master_config_t *masterConfig)
 
     /* Default baud rate at 100kbps. */
     masterConfig->baudRate_Bps = 100000U;
-
-/* Default pin high drive is disabled. */
-#if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
-    masterConfig->enableHighDrive = false;
-#endif
 
 /* Default stop hold enable is disabled. */
 #if defined(FSL_FEATURE_I2C_HAS_STOP_HOLD_OFF) && FSL_FEATURE_I2C_HAS_STOP_HOLD_OFF
@@ -1213,6 +1210,19 @@ void I2C_SlaveInit(I2C_Type *base, const i2c_slave_config_t *slaveConfig, uint32
     CLOCK_EnableClock(s_i2cClocks[I2C_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+    /* Reset the module. */
+    base->A1 = 0;
+    base->F = 0;
+    base->C1 = 0;
+    base->S = 0xFFU;
+    base->C2 = 0;
+#if defined(FSL_FEATURE_I2C_HAS_START_STOP_DETECT) && FSL_FEATURE_I2C_HAS_START_STOP_DETECT
+    base->FLT = 0x50U;
+#elif defined(FSL_FEATURE_I2C_HAS_STOP_DETECT) && FSL_FEATURE_I2C_HAS_STOP_DETECT
+    base->FLT = 0x40U;
+#endif
+    base->RA = 0;
+
     /* Configure addressing mode. */
     switch (slaveConfig->addressingMode)
     {
@@ -1236,14 +1246,10 @@ void I2C_SlaveInit(I2C_Type *base, const i2c_slave_config_t *slaveConfig, uint32
     tmpReg &= ~I2C_C1_WUEN_MASK;
     base->C1 = tmpReg | I2C_C1_WUEN(slaveConfig->enableWakeUp) | I2C_C1_IICEN(slaveConfig->enableSlave);
 
-    /* Configure general call & baud rate control & high drive feature. */
+    /* Configure general call & baud rate control. */
     tmpReg = base->C2;
     tmpReg &= ~(I2C_C2_SBRC_MASK | I2C_C2_GCAEN_MASK);
     tmpReg |= I2C_C2_SBRC(slaveConfig->enableBaudRateCtl) | I2C_C2_GCAEN(slaveConfig->enableGeneralCall);
-#if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
-    tmpReg &= ~I2C_C2_HDRS_MASK;
-    tmpReg |= I2C_C2_HDRS(slaveConfig->enableHighDrive);
-#endif
     base->C2 = tmpReg;
 
 /* Enable/Disable double buffering. */
@@ -1279,11 +1285,6 @@ void I2C_SlaveGetDefaultConfig(i2c_slave_config_t *slaveConfig)
 
     /* Slave address match waking up MCU from low power mode is disabled. */
     slaveConfig->enableWakeUp = false;
-
-#if defined(FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION) && FSL_FEATURE_I2C_HAS_HIGH_DRIVE_SELECTION
-    /* Default pin high drive is disabled. */
-    slaveConfig->enableHighDrive = false;
-#endif
 
     /* Independent slave mode baud rate at maximum frequency is disabled. */
     slaveConfig->enableBaudRateCtl = false;
@@ -1524,7 +1525,10 @@ void I2C_SlaveTransferHandleIRQ(I2C_Type *base, void *i2cHandle)
             }
         }
 
-        return;
+        if (!(status & kI2C_AddressMatchFlag))
+        {
+            return;
+        }
     }
 #endif /* I2C_HAS_STOP_DETECT */
 
@@ -1724,27 +1728,30 @@ void I2C_SlaveTransferHandleIRQ(I2C_Type *base, void *i2cHandle)
     }
 }
 
+#if defined(I2C0)
 void I2C0_DriverIRQHandler(void)
 {
     I2C_TransferCommonIRQHandler(I2C0, s_i2cHandle[0]);
 }
+#endif
 
-#if (FSL_FEATURE_SOC_I2C_COUNT > 1)
+#if defined(I2C1)
 void I2C1_DriverIRQHandler(void)
 {
     I2C_TransferCommonIRQHandler(I2C1, s_i2cHandle[1]);
 }
-#endif /* I2C COUNT > 1 */
+#endif
 
-#if (FSL_FEATURE_SOC_I2C_COUNT > 2)
+#if defined(I2C2)
 void I2C2_DriverIRQHandler(void)
 {
     I2C_TransferCommonIRQHandler(I2C2, s_i2cHandle[2]);
 }
-#endif /* I2C COUNT > 2 */
-#if (FSL_FEATURE_SOC_I2C_COUNT > 3)
+#endif
+
+#if defined(I2C3)
 void I2C3_DriverIRQHandler(void)
 {
     I2C_TransferCommonIRQHandler(I2C3, s_i2cHandle[3]);
 }
-#endif /* I2C COUNT > 3 */
+#endif

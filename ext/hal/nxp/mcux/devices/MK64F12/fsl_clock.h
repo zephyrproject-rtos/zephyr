@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016 - 2017 , NXP
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -12,7 +13,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -39,8 +40,26 @@
 /*! @file */
 
 /*******************************************************************************
- * Definitions
+ * Configurations
  ******************************************************************************/
+
+/*! @brief Configures whether to check a parameter in a function.
+ *
+ * Some MCG settings must be changed with conditions, for example:
+ *  1. MCGIRCLK settings, such as the source, divider, and the trim value should not change when
+ *     MCGIRCLK is used as a system clock source.
+ *  2. MCG_C7[OSCSEL] should not be changed  when the external reference clock is used
+ *     as a system clock source. For example, in FBE/BLPE/PBE modes.
+ *  3. The users should only switch between the supported clock modes.
+ *
+ * MCG functions check the parameter and MCG status before setting, if not allowed
+ * to change, the functions return error. The parameter checking increases code size,
+ * if code size is a critical requirement, change #MCG_CONFIG_CHECK_PARAM to 0 to
+ * disable parameter checking.
+ */
+#ifndef MCG_CONFIG_CHECK_PARAM
+#define MCG_CONFIG_CHECK_PARAM 0U
+#endif
 
 /*! @brief Configure whether driver controls clock
  *
@@ -56,10 +75,14 @@
 #define FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL 0
 #endif
 
+/*******************************************************************************
+ * Definitions
+ ******************************************************************************/
+
 /*! @name Driver version */
 /*@{*/
-/*! @brief CLOCK driver version 2.2.0. */
-#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 2, 0))
+/*! @brief CLOCK driver version 2.2.1. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 2, 1))
 /*@}*/
 
 /*! @brief External XTAL0 (OSC0) clock frequency.
@@ -193,9 +216,9 @@ extern uint32_t g_xtal32Freq;
     }
 
 /*! @brief Clock ip name array for MPU. */
-#define MPU_CLOCKS  \
-    {               \
-        kCLOCK_Mpu0 \
+#define SYSMPU_CLOCKS  \
+    {                  \
+        kCLOCK_Sysmpu0 \
     }
 
 /*! @brief Clock ip name array for VREF. */
@@ -401,7 +424,7 @@ typedef enum _clock_ip_name
 
     kCLOCK_Flexbus0 = CLK_GATE_DEFINE(0x1040U, 0U),
     kCLOCK_Dma0 = CLK_GATE_DEFINE(0x1040U, 1U),
-    kCLOCK_Mpu0 = CLK_GATE_DEFINE(0x1040U, 2U),
+    kCLOCK_Sysmpu0 = CLK_GATE_DEFINE(0x1040U, 2U),
 } clock_ip_name_t;
 
 /*!@brief SIM configuration structure for clock setting. */

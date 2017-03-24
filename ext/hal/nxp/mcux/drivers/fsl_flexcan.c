@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -165,8 +165,6 @@ static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-/* Array of FlexCAN handle. */
-static flexcan_handle_t *s_flexcanHandle[FSL_FEATURE_SOC_FLEXCAN_COUNT];
 
 /* Array of FlexCAN peripheral base address. */
 static CAN_Type *const s_flexcanBases[] = CAN_BASE_PTRS;
@@ -179,9 +177,16 @@ static const IRQn_Type s_flexcanErrorIRQ[] = CAN_Error_IRQS;
 static const IRQn_Type s_flexcanBusOffIRQ[] = CAN_Bus_Off_IRQS;
 static const IRQn_Type s_flexcanMbIRQ[] = CAN_ORed_Message_buffer_IRQS;
 
+/* Array of FlexCAN handle. */
+static flexcan_handle_t *s_flexcanHandle[ARRAY_SIZE(s_flexcanBases)];
+
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /* Array of FlexCAN clock name. */
 static const clock_ip_name_t s_flexcanClock[] = FLEXCAN_CLOCKS;
+#if defined(FLEXCAN_PERIPH_CLOCKS)
+/* Array of FlexCAN serial clock name. */
+static const clock_ip_name_t s_flexcanPeriphClock[] = FLEXCAN_PERIPH_CLOCKS;
+#endif /* FLEXCAN_PERIPH_CLOCKS */
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /* FlexCAN ISR for transactional APIs. */
@@ -196,7 +201,7 @@ uint32_t FLEXCAN_GetInstance(CAN_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_FLEXCAN_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_flexcanBases); instance++)
     {
         if (s_flexcanBases[instance] == base)
         {
@@ -204,7 +209,7 @@ uint32_t FLEXCAN_GetInstance(CAN_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_FLEXCAN_COUNT);
+    assert(instance < ARRAY_SIZE(s_flexcanBases));
 
     return instance;
 }
@@ -316,9 +321,13 @@ static bool FLEXCAN_IsMbIntEnabled(CAN_Type *base, uint8_t mbIdx)
     else
     {
         if (base->IMASK2 & ((uint32_t)(1 << (mbIdx - 32))))
+        {
             return true;
+        }
         else
+        {
             return false;
+        }
     }
 #endif
 }
@@ -422,16 +431,25 @@ static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_
 void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *config, uint32_t sourceClock_Hz)
 {
     uint32_t mcrTemp;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    uint32_t instance;
+#endif
 
     /* Assertion. */
     assert(config);
     assert((config->maxMbNum > 0) && (config->maxMbNum <= FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base)));
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    instance = FLEXCAN_GetInstance(base);
     /* Enable FlexCAN clock. */
-    CLOCK_EnableClock(s_flexcanClock[FLEXCAN_GetInstance(base)]);
+    CLOCK_EnableClock(s_flexcanClock[instance]);
+#if defined(FLEXCAN_PERIPH_CLOCKS)
+    /* Enable FlexCAN serial clock. */
+    CLOCK_EnableClock(s_flexcanPeriphClock[instance]);
+#endif /* FLEXCAN_PERIPH_CLOCKS */
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+#if (!defined(FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE)) || !FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE
     /* Disable FlexCAN Module. */
     FLEXCAN_Enable(base, false);
 
@@ -440,6 +458,7 @@ void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *config, uint32_t sourc
      */
     base->CTRL1 = (kFLEXCAN_ClkSrcOsc == config->clkSrc) ? base->CTRL1 & ~CAN_CTRL1_CLKSRC_MASK :
                                                            base->CTRL1 | CAN_CTRL1_CLKSRC_MASK;
+#endif /* FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE */
 
     /* Enable FlexCAN Module for configuartion. */
     FLEXCAN_Enable(base, true);
@@ -476,6 +495,9 @@ void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *config, uint32_t sourc
 
 void FLEXCAN_Deinit(CAN_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    uint32_t instance;
+#endif
     /* Reset all Register Contents. */
     FLEXCAN_Reset(base);
 
@@ -483,8 +505,13 @@ void FLEXCAN_Deinit(CAN_Type *base)
     FLEXCAN_Enable(base, false);
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    instance = FLEXCAN_GetInstance(base);
+#if defined(FLEXCAN_PERIPH_CLOCKS)
+    /* Disable FlexCAN serial clock. */
+    CLOCK_DisableClock(s_flexcanPeriphClock[instance]);
+#endif /* FLEXCAN_PERIPH_CLOCKS */
     /* Disable FlexCAN clock. */
-    CLOCK_DisableClock(s_flexcanClock[FLEXCAN_GetInstance(base)]);
+    CLOCK_DisableClock(s_flexcanClock[instance]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
@@ -494,7 +521,9 @@ void FLEXCAN_GetDefaultConfig(flexcan_config_t *config)
     assert(config);
 
     /* Initialize FlexCAN Module config struct with default value. */
+#if (!defined(FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE)) || !FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE
     config->clkSrc = kFLEXCAN_ClkSrcOsc;
+#endif /* FSL_FEATURE_FLEXCAN_SUPPORT_ENGINE_CLK_SEL_REMOVE */
     config->baudRate = 125000U;
     config->maxMbNum = 16;
     config->enableLoopBack = false;
@@ -1299,13 +1328,13 @@ void FLEXCAN_TransferHandleIRQ(CAN_Type *base, flexcan_handle_t *handle)
            (0 != (result & (kFLEXCAN_TxWarningIntFlag | kFLEXCAN_RxWarningIntFlag | kFLEXCAN_BusOffIntFlag |
                             kFLEXCAN_ErrorIntFlag | kFLEXCAN_WakeUpIntFlag))));
 #else
-        while ((0 != FLEXCAN_GetMbStatusFlags(base, 0xFFFFFFFFU)) ||
-               (0 != (result & (kFLEXCAN_TxWarningIntFlag | kFLEXCAN_RxWarningIntFlag | kFLEXCAN_BusOffIntFlag |
-                                kFLEXCAN_ErrorIntFlag | kFLEXCAN_WakeUpIntFlag))));
+    while ((0 != FLEXCAN_GetMbStatusFlags(base, 0xFFFFFFFFU)) ||
+            (0 != (result & (kFLEXCAN_TxWarningIntFlag | kFLEXCAN_RxWarningIntFlag | kFLEXCAN_BusOffIntFlag |
+                            kFLEXCAN_ErrorIntFlag | kFLEXCAN_WakeUpIntFlag))));
 #endif
 }
 
-#if (FSL_FEATURE_SOC_FLEXCAN_COUNT > 0)
+#if defined(CAN0)
 void CAN0_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[0]);
@@ -1314,7 +1343,7 @@ void CAN0_DriverIRQHandler(void)
 }
 #endif
 
-#if (FSL_FEATURE_SOC_FLEXCAN_COUNT > 1)
+#if defined(CAN1)
 void CAN1_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[1]);
@@ -1323,7 +1352,7 @@ void CAN1_DriverIRQHandler(void)
 }
 #endif
 
-#if (FSL_FEATURE_SOC_FLEXCAN_COUNT > 2)
+#if defined(CAN2)
 void CAN2_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[2]);
@@ -1332,7 +1361,7 @@ void CAN2_DriverIRQHandler(void)
 }
 #endif
 
-#if (FSL_FEATURE_SOC_FLEXCAN_COUNT > 3)
+#if defined(CAN3)
 void CAN3_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[3]);
@@ -1341,11 +1370,38 @@ void CAN3_DriverIRQHandler(void)
 }
 #endif
 
-#if (FSL_FEATURE_SOC_FLEXCAN_COUNT > 4)
+#if defined(CAN4)
 void CAN4_DriverIRQHandler(void)
 {
     assert(s_flexcanHandle[4]);
 
     s_flexcanIsr(CAN4, s_flexcanHandle[4]);
+}
+#endif
+
+#if defined(DMA_CAN0)
+void DMA_FLEXCAN0_DriverIRQHandler(void)
+{
+    assert(s_flexcanHandle[FLEXCAN_GetInstance(DMA_CAN0)]);
+
+    s_flexcanIsr(DMA_CAN0, s_flexcanHandle[FLEXCAN_GetInstance(DMA_CAN0)]);
+}
+#endif
+
+#if defined(DMA_CAN1)
+void DMA_FLEXCAN1_DriverIRQHandler(void)
+{
+    assert(s_flexcanHandle[FLEXCAN_GetInstance(DMA_CAN1)]);
+
+    s_flexcanIsr(DMA_CAN0, s_flexcanHandle[FLEXCAN_GetInstance(DMA_CAN1)]);
+}
+#endif
+
+#if defined(DMA_CAN2)
+void DMA_FLEXCAN2_DriverIRQHandler(void)
+{
+    assert(s_flexcanHandle[FLEXCAN_GetInstance(DMA_CAN2)]);
+
+    s_flexcanIsr(DMA_CAN2, s_flexcanHandle[FLEXCAN_GetInstance(DMA_CAN2)]);
 }
 #endif

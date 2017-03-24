@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -40,9 +40,12 @@ void EWM_Init(EWM_Type *base, const ewm_config_t *config)
 
     uint32_t value = 0U;
 
+#if !((defined(FSL_FEATURE_SOC_PCC_COUNT) && FSL_FEATURE_SOC_PCC_COUNT) && \
+    (defined(FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE) && FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE))
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif
     value = EWM_CTRL_EWMEN(config->enableEwm) | EWM_CTRL_ASSIN(config->setInputAssertLogic) |
             EWM_CTRL_INEN(config->enableEwmInput) | EWM_CTRL_INTEN(config->enableInterrupt);
 #if defined(FSL_FEATURE_EWM_HAS_PRESCALER) && FSL_FEATURE_EWM_HAS_PRESCALER
@@ -61,9 +64,12 @@ void EWM_Init(EWM_Type *base, const ewm_config_t *config)
 void EWM_Deinit(EWM_Type *base)
 {
     EWM_DisableInterrupts(base, kEWM_InterruptEnable);
+#if !((defined(FSL_FEATURE_SOC_PCC_COUNT) && FSL_FEATURE_SOC_PCC_COUNT) && \
+    (defined(FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE) && FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE))
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_DisableClock(kCLOCK_Ewm0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE */
 }
 
 void EWM_GetDefaultConfig(ewm_config_t *config)

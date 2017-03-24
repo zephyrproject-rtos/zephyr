@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -43,7 +43,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_LPTMR_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
+#define FSL_LPTMR_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1 */
 /*@}*/
 
 /*! @brief LPTMR pin selection used in pulse counter mode.*/
@@ -156,14 +156,14 @@ extern "C" {
  * @param base   LPTMR peripheral base address
  * @param config A pointer to the LPTMR configuration structure.
  */
-void LPTMR_Init(LPTMR_Type* base, const lptmr_config_t* config);
+void LPTMR_Init(LPTMR_Type *base, const lptmr_config_t *config);
 
 /*!
  * @brief Gates the LPTMR clock.
  *
  * @param base LPTMR peripheral base address
  */
-void LPTMR_Deinit(LPTMR_Type* base);
+void LPTMR_Deinit(LPTMR_Type *base);
 
 /*!
  * @brief Fills in the LPTMR configuration structure with default settings.
@@ -180,7 +180,7 @@ void LPTMR_Deinit(LPTMR_Type* base);
  * @endcode
  * @param config A pointer to the LPTMR configuration structure.
  */
-void LPTMR_GetDefaultConfig(lptmr_config_t* config);
+void LPTMR_GetDefaultConfig(lptmr_config_t *config);
 
 /*! @}*/
 
@@ -196,7 +196,7 @@ void LPTMR_GetDefaultConfig(lptmr_config_t* config);
  * @param mask The interrupts to enable. This is a logical OR of members of the
  *             enumeration ::lptmr_interrupt_enable_t
  */
-static inline void LPTMR_EnableInterrupts(LPTMR_Type* base, uint32_t mask)
+static inline void LPTMR_EnableInterrupts(LPTMR_Type *base, uint32_t mask)
 {
     uint32_t reg = base->CSR;
 
@@ -213,7 +213,7 @@ static inline void LPTMR_EnableInterrupts(LPTMR_Type* base, uint32_t mask)
  * @param mask The interrupts to disable. This is a logical OR of members of the
  *             enumeration ::lptmr_interrupt_enable_t.
  */
-static inline void LPTMR_DisableInterrupts(LPTMR_Type* base, uint32_t mask)
+static inline void LPTMR_DisableInterrupts(LPTMR_Type *base, uint32_t mask)
 {
     uint32_t reg = base->CSR;
 
@@ -231,7 +231,7 @@ static inline void LPTMR_DisableInterrupts(LPTMR_Type* base, uint32_t mask)
  * @return The enabled interrupts. This is the logical OR of members of the
  *         enumeration ::lptmr_interrupt_enable_t
  */
-static inline uint32_t LPTMR_GetEnabledInterrupts(LPTMR_Type* base)
+static inline uint32_t LPTMR_GetEnabledInterrupts(LPTMR_Type *base)
 {
     return (base->CSR & LPTMR_CSR_TIE_MASK);
 }
@@ -251,7 +251,7 @@ static inline uint32_t LPTMR_GetEnabledInterrupts(LPTMR_Type* base)
  * @return The status flags. This is the logical OR of members of the
  *         enumeration ::lptmr_status_flags_t
  */
-static inline uint32_t LPTMR_GetStatusFlags(LPTMR_Type* base)
+static inline uint32_t LPTMR_GetStatusFlags(LPTMR_Type *base)
 {
     return (base->CSR & LPTMR_CSR_TCF_MASK);
 }
@@ -263,7 +263,7 @@ static inline uint32_t LPTMR_GetStatusFlags(LPTMR_Type* base)
  * @param mask The status flags to clear. This is a logical OR of members of the
  *             enumeration ::lptmr_status_flags_t.
  */
-static inline void LPTMR_ClearStatusFlags(LPTMR_Type* base, uint32_t mask)
+static inline void LPTMR_ClearStatusFlags(LPTMR_Type *base, uint32_t mask)
 {
     base->CSR |= mask;
 }
@@ -288,8 +288,9 @@ static inline void LPTMR_ClearStatusFlags(LPTMR_Type* base, uint32_t mask)
  * @param base  LPTMR peripheral base address
  * @param ticks A timer period in units of ticks, which should be equal or greater than 1.
  */
-static inline void LPTMR_SetTimerPeriod(LPTMR_Type* base, uint16_t ticks)
+static inline void LPTMR_SetTimerPeriod(LPTMR_Type *base, uint32_t ticks)
 {
+    assert(ticks > 0);
     base->CMR = ticks - 1;
 }
 
@@ -305,13 +306,13 @@ static inline void LPTMR_SetTimerPeriod(LPTMR_Type* base, uint16_t ticks)
  *
  * @return The current counter value in ticks
  */
-static inline uint16_t LPTMR_GetCurrentTimerCount(LPTMR_Type* base)
+static inline uint32_t LPTMR_GetCurrentTimerCount(LPTMR_Type *base)
 {
     /* Must first write any value to the CNR. This synchronizes and registers the current value
      * of the CNR into a temporary register which can then be read
      */
     base->CNR = 0U;
-    return (uint16_t)base->CNR;
+    return (uint32_t)((base->CNR & LPTMR_CNR_COUNTER_MASK) >> LPTMR_CNR_COUNTER_SHIFT);
 }
 
 /*! @}*/
@@ -331,7 +332,7 @@ static inline uint16_t LPTMR_GetCurrentTimerCount(LPTMR_Type* base)
  *
  * @param base LPTMR peripheral base address
  */
-static inline void LPTMR_StartTimer(LPTMR_Type* base)
+static inline void LPTMR_StartTimer(LPTMR_Type *base)
 {
     uint32_t reg = base->CSR;
 
@@ -348,7 +349,7 @@ static inline void LPTMR_StartTimer(LPTMR_Type* base)
  *
  * @param base LPTMR peripheral base address
  */
-static inline void LPTMR_StopTimer(LPTMR_Type* base)
+static inline void LPTMR_StopTimer(LPTMR_Type *base)
 {
     uint32_t reg = base->CSR;
 

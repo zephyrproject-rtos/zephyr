@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -143,14 +143,14 @@ enum _uart_flags
     kUART_LinBreakFlag =
         (UART_S2_LBKDIF_MASK
          << 8), /*!< LIN break detect interrupt flag, sets when
-                                                           LIN break char detected and LIN circuit enabled */
+                                                       LIN break char detected and LIN circuit enabled */
 #endif
     kUART_RxActiveEdgeFlag =
         (UART_S2_RXEDGIF_MASK << 8), /*!< RX pin active edge interrupt flag,
-                                                                                sets when active edge detected */
+                                                                            sets when active edge detected */
     kUART_RxActiveFlag =
         (UART_S2_RAF_MASK << 8), /*!< Receiver Active Flag (RAF),
-                                                                            sets at beginning of valid start bit */
+                                                                        sets at beginning of valid start bit */
 #if defined(FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS) && FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS
     kUART_NoiseErrorInRxDataRegFlag = (UART_ED_NOISY_MASK << 16),    /*!< Noisy bit, sets if noise detected. */
     kUART_ParityErrorInRxDataRegFlag = (UART_ED_PARITYE_MASK << 16), /*!< Paritye bit, sets if parity error detected. */

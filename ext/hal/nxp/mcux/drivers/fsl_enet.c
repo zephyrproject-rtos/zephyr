@@ -1,32 +1,32 @@
 /*
-* Copyright (c) 2015, Freescale Semiconductor, Inc.
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
-*
-* o Redistributions of source code must retain the above copyright notice, this list
-*   of conditions and the following disclaimer.
-*
-* o Redistributions in binary form must reproduce the above copyright notice, this
-*   list of conditions and the following disclaimer in the documentation and/or
-*   other materials provided with the distribution.
-*
-* o Neither the name of Freescale Semiconductor, Inc. nor the names of its
-*   contributors may be used to endorse or promote products derived from this
-*   software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2015 - 2016, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * o Redistributions of source code must retain the above copyright notice, this list
+ *   of conditions and the following disclaimer.
+ *
+ * o Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ *
+ * o Neither the name of the copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "fsl_enet.h"
 
@@ -90,10 +90,8 @@
 #define ENET_IPV6VERSION 0x0006U
 /*! @brief Ethernet mac address length. */
 #define ENET_FRAME_MACLEN 6U
-/*! @brief Ethernet Frame header length. */
-#define ENET_FRAME_HEADERLEN 14U
 /*! @brief Ethernet VLAN header length. */
-#define ENET_FRAME_VLAN_HEADERLEN 18U
+#define ENET_FRAME_VLAN_TAGLEN 4U
 /*! @brief MDC frequency. */
 #define ENET_MDC_FREQUENCY 2500000U
 /*! @brief NanoSecond in one second. */
@@ -134,7 +132,18 @@ static void ENET_SetMacController(ENET_Type *base,
                                   const enet_buffer_config_t *bufferConfig,
                                   uint8_t *macAddr,
                                   uint32_t srcClock_Hz);
-
+/*!
+ * @brief Set ENET handler.
+ *
+ * @param base ENET peripheral base address.
+ * @param handle The ENET handle pointer.
+ * @param config ENET configuration stucture pointer.
+ * @param bufferConfig ENET buffer configuration.
+ */
+static void ENET_SetHandler(ENET_Type *base,
+                            enet_handle_t *handle,
+                            const enet_config_t *config,
+                            const enet_buffer_config_t *bufferConfig);
 /*!
  * @brief Set ENET MAC transmit buffer descriptors.
  *
@@ -229,7 +238,7 @@ static enet_handle_t *s_ENETHandle[FSL_FEATURE_SOC_ENET_COUNT] = {NULL};
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to enet clocks for each instance. */
-const clock_ip_name_t s_enetClock[FSL_FEATURE_SOC_ENET_COUNT] = ENET_CLOCKS;
+const clock_ip_name_t s_enetClock[] = ENET_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*! @brief Pointers to enet transmit IRQ number for each instance. */
@@ -250,6 +259,7 @@ static ENET_Type *const s_enetBases[] = ENET_BASE_PTRS;
 static enet_isr_t s_enetTxIsr;
 static enet_isr_t s_enetRxIsr;
 static enet_isr_t s_enetErrIsr;
+static enet_isr_t s_enetTsIsr;
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -259,7 +269,7 @@ uint32_t ENET_GetInstance(ENET_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_ENET_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_enetBases); instance++)
     {
         if (s_enetBases[instance] == base)
         {
@@ -267,7 +277,7 @@ uint32_t ENET_GetInstance(ENET_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_ENET_COUNT);
+    assert(instance < ARRAY_SIZE(s_enetBases));
 
     return instance;
 }
@@ -310,7 +320,7 @@ void ENET_Init(ENET_Type *base,
     /* Make sure the buffers should be have the capability of process at least one maximum frame. */
     if (config->macSpecialConfig & kENET_ControlVLANTagEnable)
     {
-        assert(bufferConfig->txBuffSizeAlign * bufferConfig->txBdNumber > ENET_FRAME_MAX_VALNFRAMELEN);
+        assert(bufferConfig->txBuffSizeAlign * bufferConfig->txBdNumber > (ENET_FRAME_MAX_FRAMELEN + ENET_FRAME_VLAN_TAGLEN));
     }
     else
     {
@@ -340,27 +350,8 @@ void ENET_Init(ENET_Type *base,
     /* Initializes the ENET MAC controller. */
     ENET_SetMacController(base, config, bufferConfig, macAddr, srcClock_Hz);
 
-    /* Initialize the handle to zero. */
-    memset(handle, 0, sizeof(enet_handle_t));
-
-    /* Store transfer parameters in handle pointer. */
-    handle->rxBdBase = bufferConfig->rxBdStartAddrAlign;
-    handle->rxBdCurrent = bufferConfig->rxBdStartAddrAlign;
-    handle->txBdBase = bufferConfig->txBdStartAddrAlign;
-    handle->txBdCurrent = bufferConfig->txBdStartAddrAlign;
-    handle->rxBuffSizeAlign = bufferConfig->rxBuffSizeAlign;
-    handle->txBuffSizeAlign = bufferConfig->txBuffSizeAlign;
-
-    /* Save the handle pointer in the global variables. */
-    s_ENETHandle[instance] = handle;
-
-    /* Set the IRQ handler when the interrupt is enabled. */
-    if (config->interrupt)
-    {
-        s_enetTxIsr = ENET_TransmitIRQHandler;
-        s_enetRxIsr = ENET_ReceiveIRQHandler;
-        s_enetErrIsr = ENET_ErrorIRQHandler;
-    }
+    /* Set all buffers or data in handler for data transmit/receive process. */
+    ENET_SetHandler(base, handle, config, bufferConfig);
 }
 
 void ENET_Deinit(ENET_Type *base)
@@ -386,6 +377,43 @@ void ENET_SetCallback(enet_handle_t *handle, enet_callback_t callback, void *use
     handle->userData = userData;
 }
 
+static void ENET_SetHandler(ENET_Type *base,
+                            enet_handle_t *handle,
+                            const enet_config_t *config,
+                            const enet_buffer_config_t *bufferConfig)
+{
+    uint32_t instance = ENET_GetInstance(base);
+
+    memset(handle, 0, sizeof(enet_handle_t));
+
+    handle->rxBdBase = bufferConfig->rxBdStartAddrAlign;
+    handle->rxBdCurrent = bufferConfig->rxBdStartAddrAlign;
+    handle->txBdBase = bufferConfig->txBdStartAddrAlign;
+    handle->txBdCurrent = bufferConfig->txBdStartAddrAlign;
+    handle->rxBuffSizeAlign = bufferConfig->rxBuffSizeAlign;
+    handle->txBuffSizeAlign = bufferConfig->txBuffSizeAlign;
+
+    /* Save the handle pointer in the global variables. */
+    s_ENETHandle[instance] = handle;
+
+    /* Set the IRQ handler when the interrupt is enabled. */
+    if (config->interrupt & ENET_TX_INTERRUPT)
+    {
+        s_enetTxIsr = ENET_TransmitIRQHandler;
+        EnableIRQ(s_enetTxIrqId[instance]);
+    }
+    if (config->interrupt & ENET_RX_INTERRUPT)
+    {
+        s_enetRxIsr = ENET_ReceiveIRQHandler;
+        EnableIRQ(s_enetRxIrqId[instance]);
+    }
+    if (config->interrupt & ENET_ERR_INTERRUPT)
+    {
+        s_enetErrIsr = ENET_ErrorIRQHandler;
+        EnableIRQ(s_enetErrIrqId[instance]);
+    }
+}
+
 static void ENET_SetMacController(ENET_Type *base,
                                   const enet_config_t *config,
                                   const enet_buffer_config_t *bufferConfig,
@@ -396,7 +424,13 @@ static void ENET_SetMacController(ENET_Type *base,
     uint32_t tcr = 0;
     uint32_t ecr = 0;
     uint32_t macSpecialConfig = config->macSpecialConfig;
-    uint32_t instance = ENET_GetInstance(base);
+    uint32_t maxFrameLen = config->rxMaxFrameLen;
+
+    /* Maximum frame length check. */
+    if ((macSpecialConfig & kENET_ControlVLANTagEnable) && (maxFrameLen <= ENET_FRAME_MAX_FRAMELEN))
+    {
+        maxFrameLen = (ENET_FRAME_MAX_FRAMELEN + ENET_FRAME_VLAN_TAGLEN);
+    }
 
     /* Configures MAC receive controller with user configure structure. */
     rcr = ENET_RCR_NLC(!!(macSpecialConfig & kENET_ControlRxPayloadCheckEnable)) |
@@ -406,16 +440,16 @@ static void ENET_SetMacController(ENET_Type *base,
           ENET_RCR_BC_REJ(!!(macSpecialConfig & kENET_ControlRxBroadCastRejectEnable)) |
           ENET_RCR_PROM(!!(macSpecialConfig & kENET_ControlPromiscuousEnable)) | ENET_RCR_MII_MODE(1) |
           ENET_RCR_RMII_MODE(config->miiMode) | ENET_RCR_RMII_10T(!config->miiSpeed) |
-          ENET_RCR_MAX_FL(config->rxMaxFrameLen) | ENET_RCR_CRCFWD(1);
+          ENET_RCR_MAX_FL(maxFrameLen) | ENET_RCR_CRCFWD(1);
     /* Receive setting for half duplex. */
     if (config->miiDuplex == kENET_MiiHalfDuplex)
     {
-        rcr |= ENET_RCR_DRT(1);
+        rcr |= ENET_RCR_DRT_MASK;
     }
     /* Sets internal loop only for MII mode. */
     if ((config->macSpecialConfig & kENET_ControlMIILoopEnable) && (config->miiMode == kENET_MiiMode))
     {
-        rcr |= ENET_RCR_LOOP(1);
+        rcr |= ENET_RCR_LOOP_MASK;
         rcr &= ~ENET_RCR_DRT_MASK;
     }
     base->RCR = rcr;
@@ -435,7 +469,7 @@ static void ENET_SetMacController(ENET_Type *base,
         uint32_t reemReg;
         base->OPD = config->pauseDuration;
         reemReg = ENET_RSEM_RX_SECTION_EMPTY(config->rxFifoEmptyThreshold);
-#if FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD
+#if defined (FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD) && FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD
         reemReg |= ENET_RSEM_STAT_SECTION_EMPTY(config->rxFifoStatEmptyThreshold);
 #endif /* FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD */
         base->RSEM = reemReg;
@@ -481,22 +515,23 @@ static void ENET_SetMacController(ENET_Type *base,
         ENET_SetSMI(base, srcClock_Hz, !!(config->macSpecialConfig & kENET_ControlSMIPreambleDisable));
     }
 
-    /* Enables Ethernet interrupt and NVIC. */
+/* Enables Ethernet interrupt and NVIC. */
+#if defined(FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) && FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
+    if (config->intCoalesceCfg)
+    {
+        uint32_t intMask = (ENET_EIMR_TXB_MASK | ENET_EIMR_RXB_MASK);
+
+        /* Clear all buffer interrupts. */
+        base->EIMR &= ~intMask;
+
+        /* Set the interrupt coalescence. */
+        base->TXIC = ENET_TXIC_ICFT(config->intCoalesceCfg->txCoalesceFrameCount[0]) |
+                     config->intCoalesceCfg->txCoalesceTimeCount[0] | ENET_TXIC_ICCS_MASK | ENET_TXIC_ICEN_MASK;
+        base->RXIC = ENET_RXIC_ICFT(config->intCoalesceCfg->rxCoalesceFrameCount[0]) |
+                     config->intCoalesceCfg->rxCoalesceTimeCount[0] | ENET_RXIC_ICCS_MASK | ENET_RXIC_ICEN_MASK;
+    }
+#endif /* FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE */
     ENET_EnableInterrupts(base, config->interrupt);
-    if (config->interrupt & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt))
-    {
-        EnableIRQ(s_enetRxIrqId[instance]);
-    }
-    if (config->interrupt & (kENET_TxBufferInterrupt | kENET_TxFrameInterrupt))
-    {
-        EnableIRQ(s_enetTxIrqId[instance]);
-    }
-    if (config->interrupt & (kENET_BabrInterrupt | kENET_BabtInterrupt | kENET_GraceStopInterrupt | kENET_MiiInterrupt |
-                             kENET_EBusERInterrupt | kENET_LateCollisionInterrupt | kENET_RetryLimitInterrupt |
-                             kENET_UnderrunInterrupt | kENET_PayloadRxInterrupt | kENET_WakeupInterrupt))
-    {
-        EnableIRQ(s_enetErrIrqId[instance]);
-    }
 
     /* ENET control register setting. */
     ecr = base->ECR;
@@ -588,12 +623,8 @@ static void ENET_SetRxBufferDescriptors(volatile enet_rx_bd_struct_t *rxBdStartA
 
 void ENET_SetMII(ENET_Type *base, enet_mii_speed_t speed, enet_mii_duplex_t duplex)
 {
-    uint32_t rcr;
-    uint32_t tcr;
-
-    rcr = base->RCR;
-    tcr = base->TCR;
-
+    uint32_t rcr = base->RCR;
+    uint32_t tcr = base->TCR;
     /* Sets speed mode. */
     if (kENET_MiiSpeed10M == speed)
     {
@@ -686,6 +717,46 @@ void ENET_StartSMIRead(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg, enet_
     mmfr = ENET_MMFR_ST(1) | ENET_MMFR_OP(operation) | ENET_MMFR_PA(phyAddr) | ENET_MMFR_RA(phyReg) | ENET_MMFR_TA(2);
     base->MMFR = mmfr;
 }
+
+#if defined(FSL_FEATURE_ENET_HAS_EXTEND_MDIO) && FSL_FEATURE_ENET_HAS_EXTEND_MDIO
+void ENET_StartExtC45SMIWrite(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg, uint32_t data)
+{
+    uint32_t mmfr = 0;
+
+    /* Parse the address from the input register. */
+    uint16_t devAddr = (phyReg >> ENET_MMFR_TA_SHIFT) & 0x1FU;
+    uint16_t regAddr = (uint16_t)(phyReg & 0xFFFFU);
+
+    /* Address write firstly. */
+    mmfr = ENET_MMFR_ST(0) | ENET_MMFR_OP(kENET_MiiAddrWrite_C45) | ENET_MMFR_PA(phyAddr) | ENET_MMFR_RA(devAddr) |
+           ENET_MMFR_TA(2) | ENET_MMFR_DATA(regAddr);
+    base->MMFR = mmfr;
+
+    /* Build MII write command. */
+    mmfr = ENET_MMFR_ST(0) | ENET_MMFR_OP(kENET_MiiWriteFrame_C45) | ENET_MMFR_PA(phyAddr) | ENET_MMFR_RA(devAddr) |
+           ENET_MMFR_TA(2) | ENET_MMFR_DATA(data);
+    base->MMFR = mmfr;
+}
+
+void ENET_StartExtC45SMIRead(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg)
+{
+    uint32_t mmfr = 0;
+
+    /* Parse the address from the input register. */
+    uint16_t devAddr = (phyReg >> ENET_MMFR_TA_SHIFT) & 0x1FU;
+    uint16_t regAddr = (uint16_t)(phyReg & 0xFFFFU);
+
+    /* Address write firstly. */
+    mmfr = ENET_MMFR_ST(0) | ENET_MMFR_OP(kENET_MiiAddrWrite_C45) | ENET_MMFR_PA(phyAddr) | ENET_MMFR_RA(devAddr) |
+           ENET_MMFR_TA(2) | ENET_MMFR_DATA(regAddr);
+    base->MMFR = mmfr;
+
+    /* Build MII read command. */
+    mmfr = ENET_MMFR_ST(0) | ENET_MMFR_OP(kENET_MiiReadFrame_C45) | ENET_MMFR_PA(phyAddr) | ENET_MMFR_RA(devAddr) |
+           ENET_MMFR_TA(2);
+    base->MMFR = mmfr;
+}
+#endif /* FSL_FEATURE_ENET_HAS_EXTEND_MDIO */
 
 void ENET_GetRxErrBeforeReadFrame(enet_handle_t *handle, enet_data_error_stats_t *eErrorStatic)
 {
@@ -848,7 +919,7 @@ status_t ENET_ReadFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
     }
     else
     {
-        /* A frame on one buffer or several receive buffers are both considered. */
+/* A frame on one buffer or several receive buffers are both considered. */
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
         enet_ptp_time_data_t ptpTimestamp;
         bool isPtpEventMessage = false;
@@ -942,7 +1013,7 @@ status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
     assert(handle);
     assert(handle->txBdCurrent);
     assert(data);
-    assert(length <= (ENET_FRAME_MAX_VALNFRAMELEN - 4));
+    assert(length <= ENET_FRAME_MAX_FRAMELEN);
 
     volatile enet_tx_bd_struct_t *curBuffDescrip = handle->txBdCurrent;
     uint32_t len = 0;
@@ -998,7 +1069,6 @@ status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
         /* One frame requires more than one transmit buffers. */
         do
         {
-
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
             /* For enable the timestamp. */
             if (isPtpEventMessage)
@@ -1213,7 +1283,7 @@ static bool ENET_Ptp1588ParseFrame(uint8_t *data, enet_ptp_time_data_t *ptpTsDat
     /* Check for VLAN frame. */
     if (*(uint16_t *)(buffer + ENET_PTP1588_ETHL2_PACKETTYPE_OFFSET) == ENET_HTONS(ENET_8021QVLAN))
     {
-        buffer += (ENET_FRAME_VLAN_HEADERLEN - ENET_FRAME_HEADERLEN);
+        buffer += ENET_FRAME_VLAN_TAGLEN;
     }
 
     ptpType = *(uint16_t *)(buffer + ENET_PTP1588_ETHL2_PACKETTYPE_OFFSET);
@@ -1296,14 +1366,10 @@ void ENET_Ptp1588Configure(ENET_Type *base, enet_handle_t *handle, enet_ptp_conf
 
     /* Enables the time stamp interrupt for the master clock on a device. */
     ENET_EnableInterrupts(base, kENET_TsTimerInterrupt);
-    EnableIRQ(s_enetTsIrqId[instance]);
-
     /* Enables only frame interrupt for transmit side to store the transmit
     frame time-stamp when the whole frame is transmitted out. */
     ENET_EnableInterrupts(base, kENET_TxFrameInterrupt);
     ENET_DisableInterrupts(base, kENET_TxBufferInterrupt);
-
-    EnableIRQ(s_enetTxIrqId[instance]);
 
     /* Setting the receive and transmit state for transaction. */
     handle->rxPtpTsDataRing.ptpTsData = ptpConfig->rxPtpTsData;
@@ -1320,6 +1386,9 @@ void ENET_Ptp1588Configure(ENET_Type *base, enet_handle_t *handle, enet_ptp_conf
 
     /* Set the IRQ handler when the interrupt is enabled. */
     s_enetTxIsr = ENET_TransmitIRQHandler;
+    s_enetTsIsr = ENET_Ptp1588TimerIRQHandler;
+    EnableIRQ(s_enetTsIrqId[instance]);
+    EnableIRQ(s_enetTxIrqId[instance]);
 }
 
 void ENET_Ptp1588StartTimer(ENET_Type *base, uint32_t ptpClkSrc)
@@ -1721,13 +1790,34 @@ void ENET_Ptp1588TimerIRQHandler(ENET_Type *base, enet_handle_t *handle)
         }
     }
 }
-
-void ENET_1588_Timer_IRQHandler(void)
-{
-    ENET_Ptp1588TimerIRQHandler(ENET, s_ENETHandle[0]);
-}
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 
+void ENET_CommonFrame0IRQHandler(ENET_Type *base)
+{
+    uint32_t event = base->EIR;
+    uint32_t instance = ENET_GetInstance(base);
+
+    if (event & ENET_TX_INTERRUPT)
+    {
+        s_enetTxIsr(base, s_ENETHandle[instance]);
+    }
+
+    if (event & ENET_RX_INTERRUPT)
+    {
+        s_enetRxIsr(base, s_ENETHandle[instance]);
+    }
+
+    if (event & ENET_TS_INTERRUPT)
+    {
+        s_enetTsIsr(base, s_ENETHandle[instance]);
+    }
+    if (event & ENET_ERR_INTERRUPT)
+    {
+        s_enetErrIsr(base, s_ENETHandle[instance]);
+    }
+}
+
+#if defined(ENET)
 void ENET_Transmit_IRQHandler(void)
 {
     s_enetTxIsr(ENET, s_ENETHandle[0]);
@@ -1742,4 +1832,10 @@ void ENET_Error_IRQHandler(void)
 {
     s_enetErrIsr(ENET, s_ENETHandle[0]);
 }
+
+void ENET_1588_Timer_IRQHandler(void)
+{
+    s_enetTsIsr(ENET, s_ENETHandle[0]);
+}
+#endif
 

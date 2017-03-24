@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013-2016, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -59,15 +59,15 @@
 #endif
 
 /*! @brief Flash driver version for SDK*/
-#define FSL_FLASH_DRIVER_VERSION (MAKE_VERSION(2, 2, 0)) /*!< Version 2.2.0. */
+#define FSL_FLASH_DRIVER_VERSION (MAKE_VERSION(2, 3, 1)) /*!< Version 2.3.1. */
 
 /*! @brief Flash driver version for ROM*/
 enum _flash_driver_version_constants
 {
     kFLASH_DriverVersionName = 'F', /*!< Flash driver version name.*/
     kFLASH_DriverVersionMajor = 2,  /*!< Major flash driver version.*/
-    kFLASH_DriverVersionMinor = 2,  /*!< Minor flash driver version.*/
-    kFLASH_DriverVersionBugfix = 0  /*!< Bugfix for flash driver version.*/
+    kFLASH_DriverVersionMinor = 3,  /*!< Minor flash driver version.*/
+    kFLASH_DriverVersionBugfix = 1  /*!< Bugfix for flash driver version.*/
 };
 /*@}*/
 
@@ -83,25 +83,16 @@ enum _flash_driver_version_constants
 /*! @brief Indicates whether the FlexNVM is enabled in the Flash driver */
 #define FLASH_SSD_IS_FLEXNVM_ENABLED (FLASH_SSD_CONFIG_ENABLE_FLEXNVM_SUPPORT && FSL_FEATURE_FLASH_HAS_FLEX_NVM)
 
+/*! @brief Indicates whether to support Secondary flash in the Flash driver */
+#if !defined(FLASH_SSD_CONFIG_ENABLE_SECONDARY_FLASH_SUPPORT)
+#define FLASH_SSD_CONFIG_ENABLE_SECONDARY_FLASH_SUPPORT 1 /*!< Enables the secondary flash support by default. */
+#endif
+
 /*! @brief Indicates whether the secondary flash is supported in the Flash driver */
 #if defined(FSL_FEATURE_FLASH_HAS_MULTIPLE_FLASH) || defined(FSL_FEATURE_FLASH_PFLASH_1_START_ADDRESS)
-#define FLASH_SSD_IS_SECONDARY_FLASH_SUPPORTED (1)
+#define FLASH_SSD_IS_SECONDARY_FLASH_ENABLED (FLASH_SSD_CONFIG_ENABLE_SECONDARY_FLASH_SUPPORT)
 #else
-#define FLASH_SSD_IS_SECONDARY_FLASH_SUPPORTED (0)
-#endif
-
-/*! @brief Indicates whether the secondary flash has its own protection register in flash module */
-#if defined(FSL_FEATURE_FLASH_HAS_MULTIPLE_FLASH) && defined(FTFE_FPROTS_PROTS_MASK)
-#define FLASH_SSD_SECONDARY_FLASH_HAS_ITS_OWN_PROTECTION_REGISTER (1)
-#else
-#define FLASH_SSD_SECONDARY_FLASH_HAS_ITS_OWN_PROTECTION_REGISTER (0)
-#endif
-
-/*! @brief Indicates whether the secondary flash has its own Execute-Only access register in flash module */
-#if defined(FSL_FEATURE_FLASH_HAS_MULTIPLE_FLASH) && defined(FTFE_FACSSS_SGSIZE_S_MASK)
-#define FLASH_SSD_SECONDARY_FLASH_HAS_ITS_OWN_ACCESS_REGISTER (1)
-#else
-#define FLASH_SSD_SECONDARY_FLASH_HAS_ITS_OWN_ACCESS_REGISTER (0)
+#define FLASH_SSD_IS_SECONDARY_FLASH_ENABLED (0)
 #endif
 
 /*! @brief Flash driver location. */
@@ -118,7 +109,7 @@ enum _flash_driver_version_constants
 #if (defined(BL_TARGET_ROM) || defined(BL_TARGET_FLASH))
 #define FLASH_DRIVER_IS_EXPORTED 1 /*!< Used for the ROM bootloader. */
 #else
-#define FLASH_DRIVER_IS_EXPORTED 0 /*!< Used for the KSDK application. */
+#define FLASH_DRIVER_IS_EXPORTED 0 /*!< Used for the MCUXpresso SDK application. */
 #endif
 #endif
 /*@}*/
@@ -273,7 +264,8 @@ typedef enum _flash_property_tag
     kFLASH_PropertyDflashBlockCount = 0x13U,         /*!< Dflash block count property.*/
     kFLASH_PropertyDflashBlockBaseAddr = 0x14U,      /*!< Dflash block base address property.*/
     kFLASH_PropertyEepromTotalSize = 0x15U,          /*!< EEPROM total size property.*/
-    kFLASH_PropertyFlashMemoryIndex = 0x20U          /*!< Flash memory index property.*/
+    kFLASH_PropertyFlashMemoryIndex = 0x20U,         /*!< Flash memory index property.*/
+    kFLASH_PropertyFlashCacheControllerIndex = 0x21U /*!< Flash cache controller index property.*/
 } flash_property_tag_t;
 
 /*!
@@ -337,6 +329,16 @@ enum _flash_read_resource_range
 #endif
     kFLASH_ResourceRangeDflashIfrStart = 0x800000U, /*!< Dflash IFR start address.*/
     kFLASH_ResourceRangeDflashIfrEnd = 0x8003FFU,   /*!< Dflash IFR end address.*/
+};
+
+/*!
+ * @brief Enumeration for the index of read/program once record
+ */
+enum _k3_flash_read_once_index
+{
+    kFLASH_RecordIndexSwapAddr = 0xA1U,    /*!< Index of Swap indicator address.*/
+    kFLASH_RecordIndexSwapEnable = 0xA2U,  /*!< Index of Swap system enable.*/
+    kFLASH_RecordIndexSwapDisable = 0xA3U, /*!< Index of Swap system disable.*/
 };
 
 /*!
@@ -455,9 +457,9 @@ typedef union _pflash_protection_status_low
 typedef struct _pflash_protection_status
 {
     pflash_protection_status_low_t valueLow32b; /*!< PROT[31:0] or PROTS[15:0].*/
-#if ((FSL_FEATURE_FLASH_IS_FTFA == 1) && (defined(FTFA_FPROT_PROT_MASK))) || \
-    ((FSL_FEATURE_FLASH_IS_FTFE == 1) && (defined(FTFE_FPROT_PROT_MASK))) || \
-    ((FSL_FEATURE_FLASH_IS_FTFL == 1) && (defined(FTFL_FPROT_PROT_MASK)))
+#if ((FSL_FEATURE_FLASH_IS_FTFA == 1) && (defined(FTFA_FPROTH0_PROT_MASK))) || \
+    ((FSL_FEATURE_FLASH_IS_FTFE == 1) && (defined(FTFE_FPROTH0_PROT_MASK))) || \
+    ((FSL_FEATURE_FLASH_IS_FTFL == 1) && (defined(FTFL_FPROTH0_PROT_MASK)))
     // uint32_t protHigh; /*!< PROT[63:32].*/
     struct
     {
@@ -485,6 +487,15 @@ typedef enum _flash_memory_index
     kFLASH_MemoryIndexSecondaryFlash = 0x01U, /*!< Current flash memory is secondary flash.*/
 } flash_memory_index_t;
 
+/*!
+ * @brief Enumeration for the flash cache controller index.
+ */
+typedef enum _flash_cache_controller_index
+{
+    kFLASH_CacheControllerIndexForCore0 = 0x00U, /*!< Current flash cache controller is for core 0.*/
+    kFLASH_CacheControllerIndexForCore1 = 0x01U, /*!< Current flash cache controller is for core 1.*/
+} flash_cache_controller_index_t;
+
 /*! @brief A callback type used for the Pflash block*/
 typedef void (*flash_callback_t)(void);
 
@@ -493,8 +504,8 @@ typedef void (*flash_callback_t)(void);
  */
 typedef enum _flash_prefetch_speculation_option
 {
-    kFLASH_prefetchSpeculationOptionEnable = 0x00000000U,
-    kFLASH_prefetchSpeculationOptionDisable = 0xFFFFFFFFU
+    kFLASH_prefetchSpeculationOptionEnable = 0x00U,
+    kFLASH_prefetchSpeculationOptionDisable = 0x01U
 } flash_prefetch_speculation_option_t;
 
 /*!
@@ -505,6 +516,15 @@ typedef struct _flash_prefetch_speculation_status
     flash_prefetch_speculation_option_t instructionOption; /*!< Instruction speculation.*/
     flash_prefetch_speculation_option_t dataOption;        /*!< Data speculation.*/
 } flash_prefetch_speculation_status_t;
+
+/*!
+ * @brief Flash cache clear process code.
+ */
+typedef enum _flash_cache_clear_process
+{
+    kFLASH_CacheClearProcessPre = 0x00U,  /*!< Pre flash cache clear process.*/
+    kFLASH_CacheClearProcessPost = 0x01U, /*!< Post flash cache clear process.*/
+} flash_cache_clear_process_t;
 
 /*!
  * @brief Active flash protection information for the current operation.
@@ -550,27 +570,27 @@ typedef struct _flash_config
 {
     uint32_t PFlashBlockBase;                /*!< A base address of the first PFlash block */
     uint32_t PFlashTotalSize;                /*!< The size of the combined PFlash block. */
-    uint32_t PFlashBlockCount;               /*!< A number of PFlash blocks. */
+    uint8_t PFlashBlockCount;                /*!< A number of PFlash blocks. */
+    uint8_t FlashMemoryIndex;                /*!< 0 - primary flash; 1 - secondary flash*/
+    uint8_t FlashCacheControllerIndex;       /*!< 0 - Controller for core 0; 1 - Controller for core 1 */
+    uint8_t Reserved0;                       /*!< Reserved field 0 */
     uint32_t PFlashSectorSize;               /*!< The size in bytes of a sector of PFlash. */
     flash_callback_t PFlashCallback;         /*!< The callback function for the flash API. */
     uint32_t PFlashAccessSegmentSize;        /*!< A size in bytes of an access segment of PFlash. */
     uint32_t PFlashAccessSegmentCount;       /*!< A number of PFlash access segments. */
     uint32_t *flashExecuteInRamFunctionInfo; /*!< An information structure of the flash execute-in-RAM function. */
+    uint32_t FlexRAMBlockBase;               /*!< For the FlexNVM device, this is the base address of the FlexRAM */
+    /*!< For the non-FlexNVM device, this is the base address of the acceleration RAM memory */
+    uint32_t FlexRAMTotalSize; /*!< For the FlexNVM device, this is the size of the FlexRAM */
+                               /*!< For the non-FlexNVM device, this is the size of the acceleration RAM memory */
     uint32_t
-        FlexRAMBlockBase;      /*!< For the FlexNVM device, this is the base address of the FlexRAM
-                                    For the non-FlexNVM device, this is the base address of the acceleration RAM memory */
-    uint32_t FlexRAMTotalSize; /*!< For the FlexNVM device, this is the size of the FlexRAM
-                                    For the non-FlexNVM device, this is the size of the acceleration RAM memory */
-    uint32_t
-        DFlashBlockBase; /*!< For the FlexNVM device, this is the base address of the D-Flash memory (FlexNVM memory)
-                              For the non-FlexNVM device, this field is unused */
-    uint32_t DFlashTotalSize; /*!< For the FlexNVM device, this is the total size of the FlexNVM memory;
-                                   For the non-FlexNVM device, this field is unused */
-    uint32_t
-        EEpromTotalSize; /*!< For the FlexNVM device, this is the size in bytes of the EEPROM area which was partitioned
-                            from FlexRAM
-                              For the non-FlexNVM device, this field is unused */
-    uint32_t FlashMemoryIndex; /*!< 0 - primary flash; 1 - secondary flash*/
+        DFlashBlockBase; /*!< For the FlexNVM device, this is the base address of the D-Flash memory (FlexNVM memory) */
+                         /*!< For the non-FlexNVM device, this field is unused */
+    uint32_t DFlashTotalSize; /*!< For the FlexNVM device, this is the total size of the FlexNVM memory; */
+                              /*!< For the non-FlexNVM device, this field is unused */
+    uint32_t EEpromTotalSize; /*!< For the FlexNVM device, this is the size in bytes of the EEPROM area which was
+                                 partitioned from FlexRAM */
+    /*!< For the non-FlexNVM device, this field is unused */
 } flash_config_t;
 
 /*******************************************************************************
@@ -1101,9 +1121,7 @@ status_t FLASH_GetProperty(flash_config_t *config, flash_property_tag_t whichPro
  * @retval #kStatus_FLASH_InvalidPropertyValue An invalid property value.
  * @retval #kStatus_FLASH_ReadOnlyProperty An read-only property tag.
  */
-#if FLASH_SSD_IS_SECONDARY_FLASH_SUPPORTED
 status_t FLASH_SetProperty(flash_config_t *config, flash_property_tag_t whichProperty, uint32_t value);
-#endif
 
 /*@}*/
 
