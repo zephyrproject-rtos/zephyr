@@ -780,7 +780,8 @@ try_send:
 		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN,
 		net_nbuf_iface(buf),
 		net_sprint_ipv6_addr(nexthop),
-		net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state));
+		nbr ? net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state) :
+		"-");
 
 	if (nbr && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr_storage *lladdr;
