@@ -1,6 +1,0 @@
-# @testcase dynamic
-
-# @targets \
-#    board:(?!arduino_101_sss) \
-#    board:(?!quark_d2000_crb) \
-#    board:(?!quark_se_c1000_ss_devboard) \
