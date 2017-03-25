@@ -2,6 +2,19 @@ if BLUETOOTH_CONTROLLER
 
 comment "BLE Controller configuration"
 
+choice
+	prompt "Bluetooth Link Layer Selection"
+	default BLUETOOTH_LL_SW
+	help
+	  Select the Bluetooth Link Layer to compile.
+
+config BLUETOOTH_LL_SW
+	bool "Use the software-based BLE Link Layer"
+	help
+	  Use Zephyr's software BLE Link Layer implementation.
+
+endchoice
+
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
 	int
@@ -14,7 +27,7 @@ config BLUETOOTH_CONTROLLER_RX_BUFFERS
 config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	prompt "Number of Tx buffers"
 	int
-	default 1
+	default 2
 	default 7 if BLUETOOTH_HCI_RAW
 	range 1 10
 	help
@@ -40,12 +53,21 @@ config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
 
 comment "BLE Controller features"
 
-config BLUETOOTH_CONTROLLER_PUBLIC_ADDRESS
-	hex "Public Device Address"
-	default 0
+config BLUETOOTH_CONTROLLER_COMPANY_ID
+	prompt "Company Id"
+	hex
+	default 0xFFFF
+	range 0x0000 0xFFFF
 	help
-	  Initialize a public device address that will be return by HCI read
-	  Bluetooth device address command.
+	  Set the Company Id that will be used in VERSION_IND PDU.
+
+config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
+	prompt "Subversion Number"
+	hex
+	default 0xFFFF
+	range 0x0000 0xFFFF
+	help
+	  Set the Subversion Number that will be used in VERSION_IND PDU.
 
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
@@ -86,6 +108,11 @@ config BLUETOOTH_CONTROLLER_CONN_RSSI
 	bool "Connection RSSI"
 	help
 	  Enable connection RSSI measurement.
+
+config BLUETOOTH_CONTROLLER_ADV_INDICATION
+	bool "Advertisement indications"
+	help
+	  Generate events indicating on air advertisement events.
 
 comment "BLE Controller debug configuration"
 

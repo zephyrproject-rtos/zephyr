@@ -42,7 +42,6 @@
 						BT_GATT_PERM_WRITE_ENCRYPT)
 #define BT_GATT_PERM_AUTHEN_MASK		(BT_GATT_PERM_READ_AUTHEN | \
 						BT_GATT_PERM_WRITE_AUTHEN)
-#define BT_ATT_OP_CMD_FLAG			0x40
 
 #define ATT_TIMEOUT				K_SECONDS(30)
 
@@ -1601,69 +1600,136 @@ static uint8_t att_confirm(struct bt_att *att, struct net_buf *buf)
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static const struct {
+static const struct att_handler {
 	uint8_t  op;
-	uint8_t  (*func)(struct bt_att *att, struct net_buf *buf);
 	uint8_t  expect_len;
+	enum __packed {
+		ATT_COMMAND,
+		ATT_REQUEST,
+		ATT_RESPONSE,
+		ATT_NOTIFICATION,
+		ATT_CONFIRMATION,
+		ATT_INDICATION,
+	} type;
+	uint8_t  (*func)(struct bt_att *att, struct net_buf *buf);
 } handlers[] = {
-	{ BT_ATT_OP_ERROR_RSP, att_error_rsp,
-	  sizeof(struct bt_att_error_rsp) },
-	{ BT_ATT_OP_MTU_REQ, att_mtu_req,
-	  sizeof(struct bt_att_exchange_mtu_req) },
-	{ BT_ATT_OP_MTU_RSP, att_mtu_rsp,
-	  sizeof(struct bt_att_exchange_mtu_rsp) },
-	{ BT_ATT_OP_FIND_INFO_REQ, att_find_info_req,
-	  sizeof(struct bt_att_find_info_req) },
-	{ BT_ATT_OP_FIND_INFO_RSP, att_handle_find_info_rsp,
-	  sizeof(struct bt_att_find_info_rsp) },
-	{ BT_ATT_OP_FIND_TYPE_REQ, att_find_type_req,
-	  sizeof(struct bt_att_find_type_req) },
-	{ BT_ATT_OP_FIND_TYPE_RSP, att_handle_find_type_rsp,
-	  sizeof(struct bt_att_find_type_rsp) },
-	{ BT_ATT_OP_READ_TYPE_REQ, att_read_type_req,
-	  sizeof(struct bt_att_read_type_req) },
-	{ BT_ATT_OP_READ_TYPE_RSP, att_handle_read_type_rsp,
-	  sizeof(struct bt_att_read_type_rsp) },
-	{ BT_ATT_OP_READ_REQ, att_read_req,
-	  sizeof(struct bt_att_read_req) },
-	{ BT_ATT_OP_READ_RSP, att_handle_read_rsp,
-	  sizeof(struct bt_att_read_rsp) },
-	{ BT_ATT_OP_READ_BLOB_REQ, att_read_blob_req,
-	  sizeof(struct bt_att_read_blob_req) },
-	{ BT_ATT_OP_READ_BLOB_RSP, att_handle_read_blob_rsp,
-	  sizeof(struct bt_att_read_blob_rsp) },
-	{ BT_ATT_OP_READ_MULT_REQ, att_read_mult_req,
-	  BT_ATT_READ_MULT_MIN_LEN_REQ },
-	{ BT_ATT_OP_READ_MULT_RSP, att_handle_read_mult_rsp,
-	  sizeof(struct bt_att_read_mult_rsp) },
-	{ BT_ATT_OP_READ_GROUP_REQ, att_read_group_req,
-	  sizeof(struct bt_att_read_group_req) },
-	{ BT_ATT_OP_WRITE_REQ, att_write_req,
-	  sizeof(struct bt_att_write_req) },
-	{ BT_ATT_OP_WRITE_RSP, att_handle_write_rsp, 0 },
-	{ BT_ATT_OP_PREPARE_WRITE_REQ, att_prepare_write_req,
-	  sizeof(struct bt_att_prepare_write_req) },
-	{ BT_ATT_OP_PREPARE_WRITE_RSP, att_handle_prepare_write_rsp,
-	  sizeof(struct bt_att_prepare_write_rsp) },
-	{ BT_ATT_OP_EXEC_WRITE_REQ, att_exec_write_req,
-	  sizeof(struct bt_att_exec_write_req) },
-	{ BT_ATT_OP_EXEC_WRITE_RSP, att_handle_exec_write_rsp, 0 },
-	{ BT_ATT_OP_NOTIFY, att_notify,
-	  sizeof(struct bt_att_notify) },
-	{ BT_ATT_OP_INDICATE, att_indicate,
-	  sizeof(struct bt_att_indicate) },
-	{ BT_ATT_OP_CONFIRM, att_confirm, 0 },
-	{ BT_ATT_OP_WRITE_CMD, att_write_cmd,
-	  sizeof(struct bt_att_write_cmd) },
-	{ BT_ATT_OP_SIGNED_WRITE_CMD, att_signed_write_cmd,
-	  sizeof(struct bt_att_write_cmd) + sizeof(struct bt_att_signature) },
+	{ BT_ATT_OP_ERROR_RSP,
+		sizeof(struct bt_att_error_rsp),
+		ATT_RESPONSE,
+		att_error_rsp },
+	{ BT_ATT_OP_MTU_REQ,
+		sizeof(struct bt_att_exchange_mtu_req),
+		ATT_REQUEST,
+		att_mtu_req },
+	{ BT_ATT_OP_MTU_RSP,
+		sizeof(struct bt_att_exchange_mtu_rsp),
+		ATT_RESPONSE,
+		att_mtu_rsp },
+	{ BT_ATT_OP_FIND_INFO_REQ,
+		sizeof(struct bt_att_find_info_req),
+		ATT_REQUEST,
+		att_find_info_req },
+	{ BT_ATT_OP_FIND_INFO_RSP,
+		sizeof(struct bt_att_find_info_rsp),
+		ATT_RESPONSE,
+		att_handle_find_info_rsp },
+	{ BT_ATT_OP_FIND_TYPE_REQ,
+		sizeof(struct bt_att_find_type_req),
+		ATT_REQUEST,
+		att_find_type_req },
+	{ BT_ATT_OP_FIND_TYPE_RSP,
+		sizeof(struct bt_att_find_type_rsp),
+		ATT_RESPONSE,
+		att_handle_find_type_rsp },
+	{ BT_ATT_OP_READ_TYPE_REQ,
+		sizeof(struct bt_att_read_type_req),
+		ATT_REQUEST,
+		att_read_type_req },
+	{ BT_ATT_OP_READ_TYPE_RSP,
+		sizeof(struct bt_att_read_type_rsp),
+		ATT_RESPONSE,
+		att_handle_read_type_rsp },
+	{ BT_ATT_OP_READ_REQ,
+		sizeof(struct bt_att_read_req),
+		ATT_REQUEST,
+		att_read_req },
+	{ BT_ATT_OP_READ_RSP,
+		sizeof(struct bt_att_read_rsp),
+		ATT_RESPONSE,
+		att_handle_read_rsp },
+	{ BT_ATT_OP_READ_BLOB_REQ,
+		sizeof(struct bt_att_read_blob_req),
+		ATT_REQUEST,
+		att_read_blob_req },
+	{ BT_ATT_OP_READ_BLOB_RSP,
+		sizeof(struct bt_att_read_blob_rsp),
+		ATT_RESPONSE,
+		att_handle_read_blob_rsp },
+	{ BT_ATT_OP_READ_MULT_REQ,
+		BT_ATT_READ_MULT_MIN_LEN_REQ,
+		ATT_REQUEST,
+		att_read_mult_req },
+	{ BT_ATT_OP_READ_MULT_RSP,
+		sizeof(struct bt_att_read_mult_rsp),
+		ATT_RESPONSE,
+		att_handle_read_mult_rsp },
+	{ BT_ATT_OP_READ_GROUP_REQ,
+		sizeof(struct bt_att_read_group_req),
+		ATT_REQUEST,
+		att_read_group_req },
+	{ BT_ATT_OP_WRITE_REQ,
+		sizeof(struct bt_att_write_req),
+		ATT_REQUEST,
+		att_write_req },
+	{ BT_ATT_OP_WRITE_RSP,
+		0,
+		ATT_RESPONSE,
+		att_handle_write_rsp },
+	{ BT_ATT_OP_PREPARE_WRITE_REQ,
+		sizeof(struct bt_att_prepare_write_req),
+		ATT_REQUEST,
+		att_prepare_write_req },
+	{ BT_ATT_OP_PREPARE_WRITE_RSP,
+		sizeof(struct bt_att_prepare_write_rsp),
+		ATT_RESPONSE,
+		att_handle_prepare_write_rsp },
+	{ BT_ATT_OP_EXEC_WRITE_REQ,
+		sizeof(struct bt_att_exec_write_req),
+		ATT_REQUEST,
+		att_exec_write_req },
+	{ BT_ATT_OP_EXEC_WRITE_RSP,
+		0,
+		ATT_RESPONSE,
+		att_handle_exec_write_rsp },
+	{ BT_ATT_OP_NOTIFY,
+		sizeof(struct bt_att_notify),
+		ATT_NOTIFICATION,
+		att_notify },
+	{ BT_ATT_OP_INDICATE,
+		sizeof(struct bt_att_indicate),
+		ATT_INDICATION,
+		att_indicate },
+	{ BT_ATT_OP_CONFIRM,
+		0,
+		ATT_CONFIRMATION,
+		att_confirm },
+	{ BT_ATT_OP_WRITE_CMD,
+		sizeof(struct bt_att_write_cmd),
+		ATT_COMMAND,
+		att_write_cmd },
+	{ BT_ATT_OP_SIGNED_WRITE_CMD,
+		(sizeof(struct bt_att_write_cmd) +
+		 sizeof(struct bt_att_signature)),
+		ATT_COMMAND,
+		att_signed_write_cmd },
 };
 
 static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_att *att = ATT_CHAN(chan);
 	struct bt_att_hdr *hdr = (void *)buf->data;
-	uint8_t err = BT_ATT_ERR_NOT_SUPPORTED;
+	const struct att_handler *handler;
+	uint8_t err;
 	size_t i;
 
 	if (buf->len < sizeof(*hdr)) {
@@ -1675,28 +1741,26 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	net_buf_pull(buf, sizeof(*hdr));
 
-	for (i = 0; i < ARRAY_SIZE(handlers); i++) {
-		if (hdr->code != handlers[i].op) {
-			continue;
-		}
-
-		if (buf->len < handlers[i].expect_len) {
-			BT_ERR("Invalid len %u for code 0x%02x", buf->len,
-			       hdr->code);
-			err = BT_ATT_ERR_INVALID_PDU;
+	for (i = 0, handler = NULL; i < ARRAY_SIZE(handlers); i++) {
+		if (hdr->code == handlers[i].op) {
+			handler = &handlers[i];
 			break;
 		}
-
-		err = handlers[i].func(att, buf);
-		break;
 	}
 
-	/* Commands don't have response */
-	if ((hdr->code & BT_ATT_OP_CMD_FLAG)) {
+	if (!handler) {
+		BT_WARN("Unknown ATT code 0x%02x", hdr->code);
 		return;
 	}
 
-	if (err) {
+	if (buf->len < handler->expect_len) {
+		BT_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
+		err = BT_ATT_ERR_INVALID_PDU;
+	} else {
+		err = handler->func(att, buf);
+	}
+
+	if (handler->type == ATT_REQUEST && err) {
 		BT_DBG("ATT error 0x%02x", err);
 		send_err_rsp(chan->conn, hdr->code, 0, err);
 	}

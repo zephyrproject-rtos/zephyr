@@ -9,42 +9,62 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-#include "mem.h"
-
-#include "ecb.h"
+#include "util/mem.h"
+#include "hal/ecb.h"
 
 #include <bluetooth/log.h>
-#include "debug.h"
+#include "hal/debug.h"
 
-void ecb_encrypt(uint8_t const *const key_le,
-		 uint8_t const *const clear_text_le,
-		 uint8_t * const cipher_text_le,
-		 uint8_t * const cipher_text_be)
+struct ecb_param {
+	uint8_t key[16];
+	uint8_t clear_text[16];
+	uint8_t cipher_text[16];
+} __packed;
+
+static void do_ecb(struct ecb_param *ecb)
 {
-	struct {
-		uint8_t key[16];
-		uint8_t clear_text[16];
-		uint8_t cipher_text[16];
-	} __packed ecb;
-
-	mem_rcopy(&ecb.key[0], key_le, sizeof(ecb.key));
-	mem_rcopy(&ecb.clear_text[0], clear_text_le, sizeof(ecb.clear_text));
-
 	do {
 		NRF_ECB->TASKS_STOPECB = 1;
-		NRF_ECB->ECBDATAPTR = (uint32_t) &ecb;
+		NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
 		NRF_ECB->TASKS_STARTECB = 1;
 		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
-				(NRF_ECB->EVENTS_ERRORECB == 0) &&
-				(NRF_ECB->ECBDATAPTR != 0)) {
+		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
+		       (NRF_ECB->ECBDATAPTR != 0)) {
 			/*__WFE();*/
 		}
 		NRF_ECB->TASKS_STOPECB = 1;
 	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
 
 	NRF_ECB->ECBDATAPTR = 0;
+}
+
+void ecb_encrypt_be(uint8_t const *const key_be,
+		    uint8_t const *const clear_text_be,
+		    uint8_t * const cipher_text_be)
+{
+	struct ecb_param ecb;
+
+	memcpy(&ecb.key[0], key_be, sizeof(ecb.key));
+	memcpy(&ecb.clear_text[0], clear_text_be, sizeof(ecb.clear_text));
+
+	do_ecb(&ecb);
+
+	memcpy(cipher_text_be, &ecb.cipher_text[0], sizeof(ecb.cipher_text));
+}
+
+void ecb_encrypt(uint8_t const *const key_le,
+		 uint8_t const *const clear_text_le,
+		 uint8_t * const cipher_text_le,
+		 uint8_t * const cipher_text_be)
+{
+	struct ecb_param ecb;
+
+	mem_rcopy(&ecb.key[0], key_le, sizeof(ecb.key));
+	mem_rcopy(&ecb.clear_text[0], clear_text_le, sizeof(ecb.clear_text));
+
+	do_ecb(&ecb);
 
 	if (cipher_text_le) {
 		mem_rcopy(cipher_text_le, &ecb.cipher_text[0],
@@ -104,7 +124,7 @@ void isr_ecb(void *param)
 
 		ecb_cleanup();
 
-		ecb->fp_ecb(1, 0, ecb->context);
+		ecb->fp_ecb(1, NULL, ecb->context);
 	}
 
 	else if (NRF_ECB->EVENTS_ENDECB) {
@@ -153,7 +173,7 @@ uint32_t ecb_ut(void)
 	struct ecb ecb;
 	struct ecb_ut_context context;
 
-	ecb_encrypt(key, clear_text, cipher_text, 0);
+	ecb_encrypt(key, clear_text, cipher_text, NULL);
 
 	context.done = 0;
 	ecb.in_key_le = key;

@@ -20,11 +20,6 @@
 #define RADIO_TX_CHAIN_DELAY_US 1
 #define RADIO_RX_CHAIN_DELAY_US	10
 
-/* Radio Pkt Size */
-#define RADIO_EMPDU_SIZE_MAX 3
-#define RADIO_ACPDU_SIZE_OVERHEAD 3
-#define RADIO_ACPDU_SIZE_MAX (37 + RADIO_ACPDU_SIZE_OVERHEAD)
-
 typedef void (*radio_isr_fp) (void);
 
 void isr_radio(void);

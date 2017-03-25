@@ -338,7 +338,7 @@ static int bt_spi_open(void)
 	return 0;
 }
 
-static struct bt_hci_driver drv = {
+static const struct bt_hci_driver drv = {
 	.name		= "BT SPI",
 	.bus		= BT_HCI_DRIVER_BUS_SPI,
 	.open		= bt_spi_open,

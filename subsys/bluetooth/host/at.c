@@ -306,6 +306,9 @@ int at_parse_input(struct at_client *at, struct net_buf *buf)
 		}
 		ret = parser_cb[at->state](at, buf);
 		if (ret < 0) {
+			/* Reset the state in case of error */
+			at->cmd_state = AT_CMD_START;
+			at->state = AT_STATE_START;
 			return ret;
 		}
 	}
@@ -388,9 +391,7 @@ int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 			return ret;
 		}
 		/* Check for main state, the end of cmd parsing and return. */
-		if (at->state == AT_STATE_START ||
-		    (at->state == AT_STATE_UNSOLICITED_CMD &&
-		     type == AT_CMD_TYPE_UNSOLICITED)) {
+		if (at->state == AT_STATE_START) {
 			return 0;
 		}
 	}

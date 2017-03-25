@@ -31,10 +31,6 @@ config BLUETOOTH_HCI_HOST
 	default y
 	depends on !BLUETOOTH_HCI_RAW
 	select POLL
-	select TINYCRYPT if !BLUETOOTH_CONTROLLER
-	select TINYCRYPT_SHA256 if !BLUETOOTH_CONTROLLER
-	select TINYCRYPT_SHA256_HMAC if !BLUETOOTH_CONTROLLER
-	select TINYCRYPT_SHA256_HMAC_PRNG if !BLUETOOTH_CONTROLLER
 
 config BLUETOOTH_RECV_IS_RX_THREAD
 	# Virtual option set by the HCI driver to indicate that there's
@@ -99,6 +95,18 @@ config BLUETOOTH_RX_STACK_SIZE
 	  accommodate for that.
 
 if BLUETOOTH_HCI_HOST
+config BLUETOOTH_HOST_CRYPTO
+	# Hidden option that compiles in random number generation and AES
+	# encryption support using TinyCrypt library if software-based
+	# controller is disabled.
+	bool
+	default y if !BLUETOOTH_CONTROLLER
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	select TINYCRYPT_SHA256
+	select TINYCRYPT_SHA256_HMAC
+	select TINYCRYPT_SHA256_HMAC_PRNG
+
 config BLUETOOTH_INTERNAL_STORAGE
 	bool "Use an internal persistent storage handler"
 	depends on FILE_SYSTEM

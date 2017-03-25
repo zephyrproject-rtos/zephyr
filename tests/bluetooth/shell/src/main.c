@@ -378,6 +378,22 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	printk("LE conn  param req: int (0x%04x, 0x%04x) lat %d to %d\n",
+	       param->interval_min, param->interval_max, param->latency,
+	       param->timeout);
+
+	return true;
+}
+
+static void le_param_updated(struct bt_conn *conn, uint16_t interval,
+			     uint16_t latency, uint16_t timeout)
+{
+	printk("LE conn param updated: int 0x%04x lat %d to %d\n", interval,
+	       latency, timeout);
+}
+
 #if defined(CONFIG_BLUETOOTH_SMP)
 static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
@@ -405,6 +421,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level)
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.le_param_req = le_param_req,
+	.le_param_updated = le_param_updated,
 #if defined(CONFIG_BLUETOOTH_SMP)
 	.identity_resolved = identity_resolved,
 #endif
@@ -548,6 +566,69 @@ static int cmd_init(int argc, char *argv[])
 	return 0;
 }
 
+static void cmd_active_scan_on(void)
+{
+	int err;
+
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	if (err) {
+		printk("Bluetooth set active scan failed (err %d)\n", err);
+	} else {
+		printk("Bluetooth active scan enabled\n");
+	}
+}
+
+static void cmd_passive_scan_on(void)
+{
+	struct bt_le_scan_param param = {
+			.type       = BT_HCI_LE_SCAN_PASSIVE,
+			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+			.interval   = 0x10,
+			.window     = 0x10 };
+	int err;
+
+	err = bt_le_scan_start(&param, device_found);
+	if (err) {
+		printk("Bluetooth set passive scan failed (err %d)\n", err);
+	} else {
+		printk("Bluetooth passive scan enabled\n");
+	}
+}
+
+static void cmd_scan_off(void)
+{
+	int err;
+
+	err = bt_le_scan_stop();
+	if (err) {
+		printk("Stopping scanning failed (err %d)\n", err);
+	} else {
+		printk("Scan successfully stopped\n");
+	}
+}
+
+static int cmd_scan(int argc, char *argv[])
+{
+	const char *action;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	action = argv[1];
+	if (!strcmp(action, "on")) {
+		cmd_active_scan_on();
+	} else if (!strcmp(action, "off")) {
+		cmd_scan_off();
+	} else if (!strcmp(action, "passive")) {
+		cmd_passive_scan_on();
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int cmd_connect_le(int argc, char *argv[])
 {
 	int err;
@@ -676,45 +757,25 @@ static int cmd_select(int argc, char *argv[])
 	return 0;
 }
 
-static void cmd_active_scan_on(void)
+static int cmd_conn_update(int argc, char *argv[])
 {
+	struct bt_le_conn_param param;
 	int err;
 
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
-	if (err) {
-		printk("Bluetooth set active scan failed (err %d)\n", err);
-	} else {
-		printk("Bluetooth active scan enabled\n");
-	}
-}
-
-static void cmd_scan_off(void)
-{
-	int err;
-
-	err = bt_le_scan_stop();
-	if (err) {
-		printk("Stopping scanning failed (err %d)\n", err);
-	} else {
-		printk("Scan successfully stopped\n");
-	}
-}
-
-static int cmd_scan(int argc, char *argv[])
-{
-	const char *action;
-
-	if (argc < 2) {
+	if (argc < 5) {
 		return -EINVAL;
 	}
 
-	action = argv[1];
-	if (!strcmp(action, "on")) {
-		cmd_active_scan_on();
-	} else if (!strcmp(action, "off")) {
-		cmd_scan_off();
+	param.interval_min = strtoul(argv[1], NULL, 16);
+	param.interval_max = strtoul(argv[2], NULL, 16);
+	param.latency = strtoul(argv[3], NULL, 16);
+	param.timeout = strtoul(argv[4], NULL, 16);
+
+	err = bt_conn_le_param_update(default_conn, &param);
+	if (err) {
+		printk("conn update failed (err %d).\n", err);
 	} else {
-		return -EINVAL;
+		printk("conn update initiated.\n");
 	}
 
 	return 0;
@@ -787,6 +848,7 @@ static int cmd_advertise(int argc, char *argv[])
 	struct bt_le_adv_param param;
 	const struct bt_data *ad, *scan_rsp;
 	size_t ad_len, scan_rsp_len;
+	int err;
 
 	if (argc < 2) {
 		goto fail;
@@ -802,6 +864,7 @@ static int cmd_advertise(int argc, char *argv[])
 		return 0;
 	}
 
+	param.own_addr = NULL;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
@@ -839,8 +902,9 @@ static int cmd_advertise(int argc, char *argv[])
 		ad_len = ARRAY_SIZE(ad_discov);
 	}
 
-	if (bt_le_adv_start(&param, ad, ad_len, scan_rsp, scan_rsp_len) < 0) {
-		printk("Failed to start advertising\n");
+	err = bt_le_adv_start(&param, ad, ad_len, scan_rsp, scan_rsp_len);
+	if (err < 0) {
+		printk("Failed to start advertising (err %d)\n", err);
 	} else {
 		printk("Advertising started\n");
 	}
@@ -2430,13 +2494,14 @@ static int cmd_bredr_sdp_find_record(int argc, char *argv[])
 
 static const struct shell_cmd commands[] = {
 	{ "init", cmd_init, HELP_ADDR_LE },
+	{ "scan", cmd_scan, "<value: on, off>" },
+	{ "advertise", cmd_advertise,
+	"<type: off, on, scan, nconn> <mode: discov, non_discov>"  },
 	{ "connect", cmd_connect_le, HELP_ADDR_LE },
 	{ "disconnect", cmd_disconnect, HELP_NONE },
 	{ "auto-conn", cmd_auto_conn, HELP_ADDR_LE },
 	{ "select", cmd_select, HELP_ADDR_LE },
-	{ "scan", cmd_scan, "<value: on, off>" },
-	{ "advertise", cmd_advertise,
-	"<type: off, on, scan, nconn> <mode: discov, non_discov>"  },
+	{ "conn-update", cmd_conn_update, "<min> <max> <latency> <timeout>" },
 	{ "oob", cmd_oob },
 	{ "clear", cmd_clear },
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)

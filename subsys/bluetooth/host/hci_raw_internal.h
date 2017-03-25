@@ -12,7 +12,7 @@ extern "C" {
 
 struct bt_dev_raw {
 	/* Registered HCI driver */
-	struct bt_hci_driver	*drv;
+	const struct bt_hci_driver *drv;
 };
 
 extern struct bt_dev_raw bt_dev;

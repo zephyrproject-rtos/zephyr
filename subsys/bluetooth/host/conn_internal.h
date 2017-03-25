@@ -67,7 +67,7 @@ struct bt_conn_br {
 
 struct bt_conn_sco {
 	/* Reference to ACL Connection */
-	struct bt_conn          *conn;
+	struct bt_conn          *acl;
 	uint16_t                pkt_type;
 };
 #endif
@@ -93,8 +93,8 @@ struct bt_conn {
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
 
-	/* L2CAP channels */
-	void			*channels;
+	/* Active L2CAP channels */
+	sys_slist_t		channels;
 
 	atomic_t		ref;
 
@@ -126,6 +126,12 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
 
 /* Add a new SCO connection */
 struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type);
+
+/* Cleanup SCO references */
+void bt_sco_cleanup(struct bt_conn *sco_conn);
+
+/* Look up an existing sco connection by BT address */
+struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
 
 /* Look up an existing connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);

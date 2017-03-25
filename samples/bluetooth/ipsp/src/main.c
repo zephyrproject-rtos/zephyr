@@ -163,10 +163,8 @@ static struct net_buf *build_reply_buf(const char *name,
 	 */
 	net_buf_pull(tmp, header_len);
 
-	if (tmp) {
-		/* Add the entire chain into reply */
-		net_buf_frag_add(reply_buf, tmp);
-	}
+	/* Add the entire chain into reply */
+	net_buf_frag_add(reply_buf, tmp);
 
 	reply_len = net_buf_frags_len(reply_buf->frags);
 

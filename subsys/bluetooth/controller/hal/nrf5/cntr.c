@@ -6,10 +6,10 @@
  */
 
 #include <soc.h>
-#include "cntr.h"
+#include "hal/cntr.h"
 
 #include <bluetooth/log.h>
-#include "debug.h"
+#include "hal/debug.h"
 
 #ifndef NRF_RTC
 #define NRF_RTC NRF_RTC0

@@ -53,7 +53,6 @@ static const uint8_t debug_public_key[64] = {
 #endif
 
 static K_FIFO_DEFINE(ecc_queue);
-static int (*drv_send)(struct net_buf *buf);
 static uint32_t private_key[8];
 
 static void send_cmd_status(uint16_t opcode, uint8_t status)
@@ -247,7 +246,7 @@ static void clear_ecc_events(struct net_buf *buf)
 	cmd->events[1] &= ~0x01; /* LE Generate DHKey Compl Event */
 }
 
-static int ecc_send(struct net_buf *buf)
+int bt_hci_ecc_send(struct net_buf *buf)
 {
 	if (bt_buf_get_type(buf) == BT_BUF_CMD) {
 
@@ -266,7 +265,7 @@ static int ecc_send(struct net_buf *buf)
 		}
 	}
 
-	return drv_send(buf);
+	return bt_dev.drv->send(buf);
 }
 
 void bt_hci_ecc_init(void)
@@ -274,8 +273,4 @@ void bt_hci_ecc_init(void)
 	k_thread_spawn(ecc_thread_stack, sizeof(ecc_thread_stack),
 		       ecc_thread, NULL, NULL, NULL,
 		       K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
-
-	/* set wrapper for driver send function */
-	drv_send = bt_dev.drv->send;
-	bt_dev.drv->send = ecc_send;
 }

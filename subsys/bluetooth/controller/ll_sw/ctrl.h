@@ -86,9 +86,18 @@
 /*****************************************************************************
  * Controller Interface Defines
  ****************************************************************************/
-#define RADIO_BLE_VERSION_NUMBER	(0x08)
-#define RADIO_BLE_COMPANY_ID		(0xFFFF)
-#define RADIO_BLE_SUB_VERSION_NUMBER	(0xFFFF)
+#define RADIO_BLE_VERSION_NUMBER	BT_HCI_VERSION_5_0
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_COMPANY_ID)
+#define RADIO_BLE_COMPANY_ID            CONFIG_BLUETOOTH_CONTROLLER_COMPANY_ID
+#else
+#define RADIO_BLE_COMPANY_ID            0xFFFF
+#endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER)
+#define RADIO_BLE_SUB_VERSION_NUMBER \
+				CONFIG_BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
+#else
+#define RADIO_BLE_SUB_VERSION_NUMBER    0xFFFF
+#endif
 
 #define RADIO_BLE_FEATURES              (BIT(BT_LE_FEAT_BIT_ENC) | \
 					 BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ) | \
@@ -158,7 +167,7 @@
  * Controller Interface Structures
  ****************************************************************************/
 struct radio_adv_data {
-	uint8_t data[DOUBLE_BUFFER_SIZE][RADIO_ACPDU_SIZE_MAX];
+	uint8_t data[DOUBLE_BUFFER_SIZE][PDU_AC_SIZE_MAX];
 	uint8_t first;
 	uint8_t last;
 };
@@ -209,6 +218,10 @@ enum radio_pdu_node_rx_type {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 	NODE_RX_TYPE_PROFILE,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
+	NODE_RX_TYPE_ADV_INDICATION,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION */
 };
 
 struct radio_pdu_node_rx_hdr {
@@ -230,20 +243,15 @@ struct radio_pdu_node_rx {
 /*****************************************************************************
  * Controller Interface Functions
  ****************************************************************************/
+/* Downstream */
 uint32_t radio_init(void *hf_clock, uint8_t sca, uint8_t connection_count_max,
 		    uint8_t rx_count_max, uint8_t tx_count_max,
 		    uint16_t packet_data_octets_max,
 		    uint16_t packet_tx_data_size, uint8_t *mem_radio,
 		    uint16_t mem_size);
-void ctrl_reset(void);
 void radio_ticks_active_to_start_set(uint32_t ticks_active_to_start);
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
-void radio_filter_clear(void);
-uint32_t radio_filter_add(uint8_t addr_type, uint8_t *addr);
-uint32_t radio_filter_remove(uint8_t addr_type, uint8_t *addr);
-void radio_irk_clear(void);
-uint32_t radio_irk_add(uint8_t *irk);
 uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		uint8_t filter_policy);
 uint32_t radio_adv_disable(void);
@@ -251,31 +259,11 @@ uint32_t radio_scan_enable(uint8_t scan_type, uint8_t init_addr_type,
 		uint8_t *init_addr, uint16_t interval,
 		uint16_t window, uint8_t filter_policy);
 uint32_t radio_scan_disable(void);
+
 uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 		uint16_t interval, uint16_t latency,
 			      uint16_t timeout);
-uint32_t radio_connect_disable(void);
-uint32_t radio_conn_update(uint16_t handle, uint8_t cmd, uint8_t status,
-		uint16_t interval, uint16_t latency,
-		uint16_t timeout);
-uint32_t radio_chm_update(uint8_t *chm);
-uint32_t radio_chm_get(uint16_t handle, uint8_t *chm);
-uint32_t radio_enc_req_send(uint16_t handle, uint8_t *rand, uint8_t *ediv,
-		uint8_t *ltk);
-uint32_t radio_start_enc_req_send(uint16_t handle, uint8_t err_code,
-		uint8_t const *const ltk);
-uint32_t radio_feature_req_send(uint16_t handle);
-uint32_t radio_version_ind_send(uint16_t handle);
-uint32_t radio_terminate_ind_send(uint16_t handle, uint8_t reason);
-
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
-uint32_t radio_length_req_send(uint16_t handle, uint16_t tx_octets);
-void radio_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time);
-uint32_t radio_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
-void radio_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
-			  uint16_t *max_rx_octets, uint16_t *max_rx_time);
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
-
+/* Upstream */
 uint8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx,
 		uint16_t *handle);
 void radio_rx_dequeue(void);
@@ -286,7 +274,7 @@ struct radio_pdu_node_tx *radio_tx_mem_acquire(void);
 void radio_tx_mem_release(struct radio_pdu_node_tx *pdu_data_node_tx);
 uint32_t radio_tx_mem_enqueue(uint16_t handle,
 		struct radio_pdu_node_tx *pdu_data_node_tx);
-
+/* Callbacks */
 extern void radio_active_callback(uint8_t active);
 extern void radio_event_callback(void);
 
