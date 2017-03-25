@@ -6,15 +6,14 @@
  */
 
 #include <stdint.h>
+#include <soc.h>
 
-#include "cntr.h"
+#include "util/config.h"
+#include "hal/cntr.h"
 #include "ticker.h"
 
-#include "config.h"
-
-#include <soc.h>
 #include <bluetooth/log.h>
-#include "debug.h"
+#include "hal/debug.h"
 
 /*****************************************************************************
  * Defines
@@ -1178,8 +1177,7 @@ static inline void ticker_job(struct ticker_instance *instance)
  * TODO: decouple it from using work/mayfly in this file and dynamically
  *       import it.
  ****************************************************************************/
-#include "mayfly.h"
-#include "config.h"
+#include "util/mayfly.h"
 
 static uint8_t ticker_instance0_caller_id_get(uint8_t user_id)
 {

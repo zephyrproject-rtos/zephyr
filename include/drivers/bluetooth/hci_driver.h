@@ -151,7 +151,7 @@ struct bt_hci_driver {
  *
  * @return 0 on success or negative error number on failure.
  */
-int bt_hci_driver_register(struct bt_hci_driver *drv);
+int bt_hci_driver_register(const struct bt_hci_driver *drv);
 
 #ifdef __cplusplus
 }

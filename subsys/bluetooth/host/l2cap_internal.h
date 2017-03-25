@@ -199,7 +199,7 @@ struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
-	struct bt_l2cap_fixed_chan	*_next;
+	sys_snode_t		node;
 };
 
 /* Register a fixed L2CAP channel for L2CAP */
@@ -214,6 +214,9 @@ void bt_l2cap_disconnected(struct bt_conn *conn);
 /* Add channel to the connection */
 void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		       bt_l2cap_chan_destroy_t destroy);
+
+/* Remove channel from the connection */
+void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *chan);
 
 /* Delete channel */
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);

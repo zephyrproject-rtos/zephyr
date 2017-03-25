@@ -191,6 +191,13 @@ static struct bt_conn *conn_new(void)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
+void bt_sco_cleanup(struct bt_conn *sco_conn)
+{
+	bt_conn_unref(sco_conn->sco.acl);
+	sco_conn->sco.acl = NULL;
+	bt_conn_unref(sco_conn);
+}
+
 static struct bt_conn *sco_conn_new(void)
 {
 	struct bt_conn *sco_conn = NULL;
@@ -266,6 +273,89 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	return conn;
 }
 
+struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
+{
+	struct bt_hci_cp_setup_sync_conn *cp;
+	struct bt_conn *sco_conn;
+	struct net_buf *buf;
+	int link_type;
+
+	sco_conn = bt_conn_lookup_addr_sco(peer);
+	if (sco_conn) {
+		switch (sco_conn->state) {
+			return sco_conn;
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return sco_conn;
+		default:
+			bt_conn_unref(sco_conn);
+			return NULL;
+		}
+	}
+
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+		link_type = BT_HCI_ESCO;
+	} else {
+		link_type = BT_HCI_SCO;
+	}
+
+	sco_conn = bt_conn_add_sco(peer, link_type);
+	if (!sco_conn) {
+		return NULL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SETUP_SYNC_CONN, sizeof(*cp));
+	if (!buf) {
+		bt_sco_cleanup(sco_conn);
+		return NULL;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	memset(cp, 0, sizeof(*cp));
+
+	BT_ERR("handle : %x", sco_conn->sco.acl->handle);
+
+	cp->handle = sco_conn->sco.acl->handle;
+	cp->pkt_type = sco_conn->sco.pkt_type;
+	cp->tx_bandwidth = 0x00001f40;
+	cp->rx_bandwidth = 0x00001f40;
+	cp->max_latency = 0x0007;
+	cp->retrans_effort = 0x01;
+	cp->content_format = BT_VOICE_CVSD_16BIT;
+
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf,
+				 NULL) < 0) {
+		bt_sco_cleanup(sco_conn);
+		return NULL;
+	}
+
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
+
+	return sco_conn;
+}
+
+struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+		if (!atomic_get(&sco_conns[i].ref)) {
+			continue;
+		}
+
+		if (sco_conns[i].type != BT_CONN_TYPE_SCO) {
+			continue;
+		}
+
+		if (!bt_addr_cmp(peer, &sco_conns[i].sco.acl->br.dst)) {
+			return bt_conn_ref(&sco_conns[i]);
+		}
+	}
+
+	return NULL;
+}
+
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 {
 	int i;
@@ -295,7 +385,7 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 		return NULL;
 	}
 
-	sco_conn->sco.conn = bt_conn_lookup_addr_br(peer);
+	sco_conn->sco.acl = bt_conn_lookup_addr_br(peer);
 	sco_conn->type = BT_CONN_TYPE_SCO;
 
 	if (link_type == BT_HCI_SCO) {
@@ -1207,13 +1297,24 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	/* Actions needed for entering the new state */
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			/* TODO: Notify sco connected */
+			break;
+		}
 		k_fifo_init(&conn->tx_queue);
 		k_poll_signal(&conn_change, 0);
+
+		sys_slist_init(&conn->channels);
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
 		break;
 	case BT_CONN_DISCONNECTED:
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			/* TODO: Notify sco disconnected */
+			bt_conn_unref(conn);
+			break;
+		}
 		/* Notify disconnection and queue a dummy buffer to wake
 		 * up and stop the tx thread for states where it was
 		 * running.
@@ -1254,6 +1355,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_CONNECT_SCAN:
 		break;
 	case BT_CONN_CONNECT:
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			break;
+		}
 		/*
 		 * Timer is needed only for LE. For other link types controller
 		 * will handle connection timeout.
@@ -1293,6 +1397,24 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 			return bt_conn_ref(&conns[i]);
 		}
 	}
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+		if (!atomic_get(&sco_conns[i].ref)) {
+			continue;
+		}
+
+		/* We only care about connections with a valid handle */
+		if (sco_conns[i].state != BT_CONN_CONNECTED &&
+		    sco_conns[i].state != BT_CONN_DISCONNECT) {
+			continue;
+		}
+
+		if (sco_conns[i].handle == handle) {
+			return bt_conn_ref(&sco_conns[i]);
+		}
+	}
+#endif
 
 	return NULL;
 }
@@ -1460,28 +1582,28 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 
 	/* Check if there's a need to update conn params */
 	if (conn->le.interval >= param->interval_min &&
-	    conn->le.interval <= param->interval_max) {
+	    conn->le.interval <= param->interval_max &&
+	    conn->le.latency == param->latency &&
+	    conn->le.timeout == param->timeout) {
 		return -EALREADY;
 	}
 
 	/* Cancel any pending update */
 	k_delayed_work_cancel(&conn->le.update_work);
 
-	/*
-	 * If remote does not support LL Connection Parameters Request
-	 * Procedure
+	/* Use LE connection parameter request if both local and remote support
+	 * it; or if local role is master then use LE connection update.
 	 */
-	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
-	    !BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features)) {
-		return bt_l2cap_update_conn_param(conn, param);
-	}
-
-	if (BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
-	    BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
+	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features) &&
+	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features)) ||
+	    (conn->role == BT_HCI_ROLE_MASTER)) {
 		return bt_conn_le_conn_update(conn, param);
 	}
 
-	return -EBUSY;
+	/* If remote master does not support LL Connection Parameters Request
+	 * Procedure
+	 */
+	return bt_l2cap_update_conn_param(conn, param);
 }
 
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)

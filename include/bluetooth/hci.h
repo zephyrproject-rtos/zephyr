@@ -324,6 +324,17 @@ struct bt_hci_cp_accept_conn_req {
 	uint8_t   role;
 } __packed;
 
+#define BT_HCI_OP_SETUP_SYNC_CONN               BT_OP(BT_OGF_LINK_CTRL, 0x0028)
+struct bt_hci_cp_setup_sync_conn {
+	uint16_t  handle;
+	uint32_t  tx_bandwidth;
+	uint32_t  rx_bandwidth;
+	uint16_t  max_latency;
+	uint16_t  content_format;
+	uint8_t   retrans_effort;
+	uint16_t  pkt_type;
+} __packed;
+
 #define BT_HCI_OP_ACCEPT_SYNC_CONN_REQ          BT_OP(BT_OGF_LINK_CTRL, 0x0029)
 struct bt_hci_cp_accept_sync_conn_req {
 	bt_addr_t bdaddr;
@@ -1072,6 +1083,19 @@ struct bt_hci_evt_remote_ext_features {
 	uint8_t  page;
 	uint8_t  max_page;
 	uint8_t  features[8];
+} __packed;
+
+#define BT_HCI_EVT_SYNC_CONN_COMPLETE           0x2c
+struct bt_hci_evt_sync_conn_complete {
+	uint8_t   status;
+	uint16_t  handle;
+	bt_addr_t bdaddr;
+	uint8_t   link_type;
+	uint8_t   tx_interval;
+	uint8_t   retansmission_window;
+	uint16_t  rx_pkt_length;
+	uint16_t  tx_pkt_length;
+	uint8_t   air_mode;
 } __packed;
 
 #define BT_HCI_EVT_EXTENDED_INQUIRY_RESULT      0x2f

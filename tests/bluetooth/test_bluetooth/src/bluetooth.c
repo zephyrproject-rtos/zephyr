@@ -29,7 +29,7 @@ static int driver_send(struct net_buf *buf)
 	return 0;
 }
 
-static struct bt_hci_driver drv = {
+static const struct bt_hci_driver drv = {
 	.name         = "test",
 	.bus          = BT_HCI_DRIVER_BUS_VIRTUAL,
 	.open         = driver_open,

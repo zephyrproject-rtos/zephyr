@@ -31,3 +31,5 @@ ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 
 	obj-$(CONFIG_BLUETOOTH_A2DP) += a2dp.o
 endif
+
+obj-$(CONFIG_BLUETOOTH_HOST_CRYPTO) += crypto.o

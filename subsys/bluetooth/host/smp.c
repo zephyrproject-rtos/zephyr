@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -285,33 +286,6 @@ static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 	return gen_method_sc[remote_io][get_io_capa()];
 }
 
-static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
-		      uint8_t enc_data[16])
-{
-	struct tc_aes_key_sched_struct s;
-	uint8_t tmp[16];
-
-	BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
-
-	sys_memcpy_swap(tmp, key, 16);
-
-	if (tc_aes128_set_encrypt_key(&s, tmp) == TC_CRYPTO_FAIL) {
-		return -EINVAL;
-	}
-
-	sys_memcpy_swap(tmp, plaintext, 16);
-
-	if (tc_aes_encrypt(enc_data, tmp, &s) == TC_CRYPTO_FAIL) {
-		return -EINVAL;
-	}
-
-	sys_mem_swap(enc_data, 16);
-
-	BT_DBG("enc_data %s", bt_hex(enc_data, 16));
-
-	return 0;
-}
-
 static struct net_buf *smp_create_pdu(struct bt_conn *conn, uint8_t op,
 				      size_t len)
 {
@@ -338,7 +312,7 @@ static int smp_ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 	memcpy(res, r, 3);
 	memset(res + 3, 0, 13);
 
-	err = le_encrypt(irk, res, res);
+	err = bt_encrypt_le(irk, res, res);
 	if (err) {
 		return err;
 	}
@@ -1578,7 +1552,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	/* Using enc_data as temporary output buffer */
 	xor_128(r, p1, enc_data);
 
-	err = le_encrypt(k, enc_data, enc_data);
+	err = bt_encrypt_le(k, enc_data, enc_data);
 	if (err) {
 		return err;
 	}
@@ -1592,7 +1566,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 
 	xor_128(enc_data, p2, enc_data);
 
-	return le_encrypt(k, enc_data, enc_data);
+	return bt_encrypt_le(k, enc_data, enc_data);
 }
 #endif /* !CONFIG_BLUETOOTH_SMP_SC_ONLY */
 
@@ -1823,7 +1797,7 @@ static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
 	memcpy(out + 8, r1, 8);
 
 	/* s1(k, r1 , r2) = e(k, r') */
-	return le_encrypt(k, out, out);
+	return bt_encrypt_le(k, out, out);
 }
 
 static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)

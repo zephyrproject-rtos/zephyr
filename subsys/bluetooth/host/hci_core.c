@@ -1,6 +1,7 @@
 /* hci_core.c - HCI core Bluetooth handling */
 
 /*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -34,6 +35,10 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "smp.h"
+
+#if defined(CONFIG_BLUETOOTH_HOST_CRYPTO)
+#include "crypto.h"
+#endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_SECONDS(5)
@@ -562,6 +567,10 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	if (conn->type != BT_CONN_TYPE_LE) {
 #if defined(CONFIG_BLUETOOTH_BREDR)
+		if (conn->type == BT_CONN_TYPE_SCO) {
+			bt_sco_cleanup(conn);
+			return;
+		}
 		/*
 		 * If only for one connection session bond was set, clear keys
 		 * database row for this connection.
@@ -1053,7 +1062,14 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 		return;
 	}
 
-	accept_sco_conn(&evt->bdaddr, sco_conn);
+	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
+		BT_ERR("Error accepting connection from %s",
+		       bt_addr_str(&evt->bdaddr));
+		reject_conn(&evt->bdaddr, BT_HCI_ERR_UNSPECIFIED);
+		bt_sco_cleanup(sco_conn);
+		return;
+	}
+
 	sco_conn->role = BT_HCI_ROLE_SLAVE;
 	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
 	bt_conn_unref(sco_conn);
@@ -1111,6 +1127,33 @@ static void update_sec_level_br(struct bt_conn *conn)
 		BT_ERR("Failed to set required security level");
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
 	}
+}
+
+static void synchronous_conn_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_sync_conn_complete *evt = (void *)buf->data;
+	struct bt_conn *sco_conn;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+
+	BT_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle,
+	       evt->link_type);
+
+	sco_conn = bt_conn_lookup_addr_sco(&evt->bdaddr);
+	if (!sco_conn) {
+		BT_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (evt->status) {
+		sco_conn->err = evt->status;
+		bt_conn_set_state(sco_conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(sco_conn);
+		return;
+	}
+
+	sco_conn->handle = handle;
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECTED);
+	bt_conn_unref(sco_conn);
 }
 
 static void conn_complete(struct net_buf *buf)
@@ -2327,94 +2370,6 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
-#if !defined(CONFIG_BLUETOOTH_CONTROLLER)
-#include <tinycrypt/constants.h>
-#include <tinycrypt/hmac_prng.h>
-#include <tinycrypt/utils.h>
-
-static struct tc_hmac_prng_struct prng;
-
-static int prng_reseed(struct tc_hmac_prng_struct *h)
-{
-	uint8_t seed[32];
-	int64_t extra;
-	int ret, i;
-
-	for (i = 0; i < (sizeof(seed) / 8); i++) {
-		struct bt_hci_rp_le_rand *rp;
-		struct net_buf *rsp;
-
-		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-		if (ret) {
-			return ret;
-		}
-
-		rp = (void *)rsp->data;
-		memcpy(&seed[i * 8], rp->rand, 8);
-
-		net_buf_unref(rsp);
-	}
-
-	extra = k_uptime_get();
-
-	ret = tc_hmac_prng_reseed(h, seed, sizeof(seed), (uint8_t *)&extra,
-				  sizeof(extra));
-	if (ret == TC_CRYPTO_FAIL) {
-		BT_ERR("Failed to re-seed PRNG");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int prng_init(struct tc_hmac_prng_struct *h)
-{
-	struct bt_hci_rp_le_rand *rp;
-	struct net_buf *rsp;
-	int ret;
-
-	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-	if (ret) {
-		return ret;
-	}
-
-	rp = (void *)rsp->data;
-
-	ret = tc_hmac_prng_init(h, rp->rand, sizeof(rp->rand));
-
-	net_buf_unref(rsp);
-
-	if (ret == TC_CRYPTO_FAIL) {
-		BT_ERR("Failed to initialize PRNG");
-		return -EIO;
-	}
-
-	/* re-seed is needed after init */
-	return prng_reseed(h);
-}
-
-int bt_rand(void *buf, size_t len)
-{
-	int ret;
-
-	ret = tc_hmac_prng_generate(buf, len, &prng);
-	if (ret == TC_HMAC_PRNG_RESEED_REQ) {
-		ret = prng_reseed(&prng);
-		if (ret) {
-			return ret;
-		}
-
-		ret = tc_hmac_prng_generate(buf, len, &prng);
-	}
-
-	if (ret == TC_CRYPTO_SUCCESS) {
-		return 0;
-	}
-
-	return -EIO;
-}
-#endif /* !CONFIG_BLUETOOTH_CONTROLLER */
-
 static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 			 uint8_t filter_dup)
 {
@@ -2691,6 +2646,9 @@ static void hci_event(struct net_buf *buf)
 	case BT_HCI_EVT_ROLE_CHANGE:
 		role_change(buf);
 		break;
+	case BT_HCI_EVT_SYNC_CONN_COMPLETE:
+		synchronous_conn_complete(buf);
+		break;
 #endif
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
@@ -2965,12 +2923,12 @@ static int common_init(void)
 	hci_reset_complete(rsp);
 	net_buf_unref(rsp);
 
+#if defined(CONFIG_BLUETOOTH_HOST_CRYPTO)
 	/*
 	 * initialize PRNG right after reset so that it is safe to use it later
 	 * on in initialization process
 	 */
-#if !defined(CONFIG_BLUETOOTH_CONTROLLER)
-	err = prng_init(&prng);
+	err = prng_init();
 	if (err) {
 		return err;
 	}
@@ -3574,6 +3532,10 @@ int bt_send(struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
+	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+		return bt_hci_ecc_send(buf);
+	}
+
 	return bt_dev.drv->send(buf);
 }
 
@@ -3648,7 +3610,7 @@ int bt_recv_prio(struct net_buf *buf)
 	return 0;
 }
 
-int bt_hci_driver_register(struct bt_hci_driver *drv)
+int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
 	if (bt_dev.drv) {
 		return -EALREADY;
@@ -3808,7 +3770,9 @@ int bt_enable(bt_ready_cb_t cb)
 		       K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
 
-	bt_hci_ecc_init();
+	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+		bt_hci_ecc_init();
+	}
 
 	err = bt_dev.drv->open();
 	if (err) {

@@ -25,7 +25,7 @@ NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
 
 struct bt_dev_raw bt_dev;
 
-int bt_hci_driver_register(struct bt_hci_driver *drv)
+int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
 	if (bt_dev.drv) {
 		return -EALREADY;
@@ -114,7 +114,7 @@ int bt_send(struct net_buf *buf)
 
 int bt_enable_raw(struct k_fifo *rx_queue)
 {
-	struct bt_hci_driver *drv = bt_dev.drv;
+	const struct bt_hci_driver *drv = bt_dev.drv;
 	int err;
 
 	BT_DBG("");
@@ -126,7 +126,9 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 		return -ENODEV;
 	}
 
-	bt_hci_ecc_init();
+	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+		bt_hci_ecc_init();
+	}
 
 	err = drv->open();
 	if (err) {

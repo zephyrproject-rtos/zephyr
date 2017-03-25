@@ -39,7 +39,7 @@ config BLUETOOTH_CONTROLLER
 	bool "Bluetooth Controller"
 	select BLUETOOTH_RECV_IS_RX_THREAD
 	help
-	  Enables support for SoC native controller implementation.
+	  Enables support for SoC native controller implementations.
 
 source "subsys/bluetooth/host/Kconfig"
 

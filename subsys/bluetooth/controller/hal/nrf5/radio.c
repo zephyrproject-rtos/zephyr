@@ -7,11 +7,10 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-#include "util.h"
-#include "mem.h"
-#include "pdu.h"
-#include "ccm.h"
-#include "radio.h"
+#include "util/mem.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
+#include "ll_sw/pdu.h"
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define RADIO_PDU_LEN_MAX (BIT(5) - 1)
@@ -205,10 +204,10 @@ uint32_t radio_crc_is_valid(void)
 	return NRF_RADIO->CRCSTATUS;
 }
 
-static uint8_t MALIGN(4) _pkt_empty[RADIO_EMPDU_SIZE_MAX];
+static uint8_t MALIGN(4) _pkt_empty[PDU_EM_SIZE_MAX];
 static uint8_t MALIGN(4) _pkt_scratch[
-			((RADIO_PDU_LEN_MAX + 3) > RADIO_ACPDU_SIZE_MAX) ?
-			(RADIO_PDU_LEN_MAX + 3) : RADIO_ACPDU_SIZE_MAX];
+			((RADIO_PDU_LEN_MAX + 3) > PDU_AC_SIZE_MAX) ?
+			(RADIO_PDU_LEN_MAX + 3) : PDU_AC_SIZE_MAX];
 
 void *radio_pkt_empty_get(void)
 {
@@ -274,7 +273,7 @@ void radio_filter_configure(uint8_t bitmask_enable,
 			((uint32_t)bdaddr[1] << 8) |
 			bdaddr[0];
 		NRF_RADIO->DAP[index] = ((uint32_t)bdaddr[5] << 8) | bdaddr[4];
-		bdaddr += BDADDR_SIZE;
+		bdaddr += 6;
 	}
 
 	NRF_RADIO->DACNF = ((uint32_t)bitmask_addr_type << 8) | bitmask_enable;
