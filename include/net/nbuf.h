@@ -76,6 +76,10 @@ struct net_nbuf {
 #if defined(CONFIG_NET_TCP)
 	bool buf_sent; /* Is this net_buf sent or not */
 #endif
+
+#if defined(CONFIG_NET_ROUTE)
+	bool forwarding; /* Are we forwarding this buf */
+#endif
 	/* @endcond */
 };
 
@@ -215,6 +219,23 @@ static inline uint8_t net_nbuf_buf_sent(struct net_buf *buf)
 static inline void net_nbuf_set_buf_sent(struct net_buf *buf, bool sent)
 {
 	((struct net_nbuf *)net_buf_user_data(buf))->buf_sent = sent;
+}
+#endif
+
+#if defined(CONFIG_NET_ROUTE)
+static inline bool net_nbuf_forwarding(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->forwarding;
+}
+
+static inline void net_nbuf_set_forwarding(struct net_buf *buf, bool forward)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->forwarding = forward;
+}
+#else
+static inline bool net_nbuf_forwarding(struct net_buf *buf)
+{
+	return false;
 }
 #endif
 

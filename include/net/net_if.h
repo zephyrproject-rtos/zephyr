@@ -162,6 +162,11 @@ enum {
 	NET_IF_NUM_FLAGS
 };
 
+#if defined(CONFIG_NET_OFFLOAD)
+struct net_offload;
+#endif /* CONFIG_NET_OFFLOAD */
+
+
 /**
  * @brief Network Interface structure
  *
@@ -194,11 +199,14 @@ struct net_if {
 	/** The hardware MTU */
 	uint16_t mtu;
 
-	/** Is the IP stack is offloaded. If set, then the IP stack is located
-	 * in the communication chip that is accessed via this network
-	 * interface.
+#if defined(CONFIG_NET_OFFLOAD)
+	/** TCP/IP Offload functions.
+	 * If non-NULL, then the TCP/IP stack is located
+	 * in the communication chip that is accessed via this
+	 * network interface.
 	 */
-	bool offload_ip;
+	struct net_offload *offload;
+#endif /* CONFIG_NET_OFFLOAD */
 
 	/** Queue for outgoing packets from apps */
 	struct k_fifo tx_queue;
@@ -379,6 +387,7 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
 	net_buf_put(&iface->tx_queue, buf);
 }
 
+#if defined(CONFIG_NET_OFFLOAD)
 /**
  * @brief Return the IP offload status.
  *
@@ -388,8 +397,9 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
  */
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
-	return iface->offload_ip;
+	return (iface->offload != NULL);
 }
+#endif
 
 /**
  * @brief Get an network interface's link address

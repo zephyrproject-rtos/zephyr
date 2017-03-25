@@ -28,6 +28,7 @@
 #include <net/arp.h>
 #include <net/nbuf.h>
 #include <net/net_core.h>
+#include <net/dns_resolve.h>
 
 #include "net_private.h"
 #include "net_shell.h"
@@ -35,9 +36,7 @@
 #include "icmpv6.h"
 #include "ipv6.h"
 
-#if defined(CONFIG_NET_IPV4)
 #include "icmpv4.h"
-#endif
 
 #if defined(CONFIG_NET_DHCPV4)
 #include "dhcpv4.h"
@@ -258,7 +257,29 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 	    !net_is_my_ipv6_maddr(&hdr->dst) &&
 	    !net_is_ipv6_addr_mcast(&hdr->dst) &&
 	    !net_is_ipv6_addr_loopback(&hdr->dst)) {
-		NET_DBG("IPv6 packet in buf %p not for me", buf);
+#if defined(CONFIG_NET_ROUTE)
+		struct net_route_entry *route;
+		struct in6_addr *nexthop;
+
+		/* Check if the packet can be routed */
+		if (net_route_get_info(&hdr->dst, &route, &nexthop)) {
+			int ret;
+
+			ret = net_route_packet(buf, route, nexthop);
+			if (ret < 0) {
+				NET_DBG("Cannot re-route buf %p via %s (%d)",
+					buf, net_sprint_ipv6_addr(nexthop),
+					ret);
+			} else {
+				return NET_OK;
+			}
+		} else
+#endif /* CONFIG_NET_ROUTE */
+
+		{
+			NET_DBG("IPv6 packet in buf %p not for me", buf);
+		}
+
 		net_stats_update_ipv6_drop();
 		goto drop;
 	}
@@ -392,12 +413,11 @@ static inline enum net_verdict process_icmpv4_pkt(struct net_buf *buf,
 						  struct net_ipv4_hdr *ipv4)
 {
 	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
-	uint16_t len = (ipv4->len[0] << 8) + ipv4->len[1];
 
-	NET_DBG("ICMPv4 packet received length %d type %d code %d",
-		len, hdr->type, hdr->code);
+	NET_DBG("ICMPv4 packet received type %d code %d",
+		hdr->type, hdr->code);
 
-	return net_icmpv4_input(buf, len, hdr->type, hdr->code);
+	return net_icmpv4_input(buf, hdr->type, hdr->code);
 }
 #endif /* CONFIG_NET_IPV4 */
 
@@ -735,6 +755,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 
 static inline void l3_init(void)
 {
+	net_icmpv4_init();
 	net_icmpv6_init();
 	net_ipv6_init();
 
@@ -745,6 +766,8 @@ static inline void l3_init(void)
 	net_tcp_init();
 
 	net_route_init();
+
+	dns_init_resolver();
 
 	NET_DBG("Network L3 init done");
 }

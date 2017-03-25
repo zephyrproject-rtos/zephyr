@@ -22,7 +22,7 @@
 
 #include <net/buf.h>
 
-#define SYS_LOG_DOMAIN "main"
+#define SYS_LOG_DOMAIN "wpan_serial"
 #include <logging/sys_log.h>
 
 #include <net_private.h>

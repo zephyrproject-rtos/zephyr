@@ -9,7 +9,8 @@
 menuconfig NET_RPL
 	bool "Enable RPL (Ripple) support"
 	default n
-	select NET_IPV6_ND
+	select NET_IPV6
+	select NET_IPV6_NBR_CACHE
 	select NET_ROUTE
 	help
 	  See RFC 6550 and RFC 6551 for details. Enable this if required by
@@ -176,6 +177,14 @@ config	NET_RPL_DAO_TIMER
 	default 4
 	help
 	  How many seconds to wait before sending DAO.
+
+config	NET_RPL_DAO_ACK
+	bool "Node expecting DAO ACK"
+	depends on NET_RPL
+	default n
+	help
+	  Node expecting DAO ACK for DAO message. Enable if interested
+	  in status of DAO message.
 
 config	NET_RPL_PREFERENCE
 	int "DAG preference field default value"

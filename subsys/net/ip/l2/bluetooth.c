@@ -144,7 +144,8 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	 * A Bluetooth LE 6LN MUST NOT register its link-local address.
 	 */
 	net_ipv6_addr_create_iid(&in6, &ll);
-	net_ipv6_nbr_add(ctxt->iface, &in6, &ll, false, NET_NBR_REACHABLE);
+	net_ipv6_nbr_add(ctxt->iface, &in6, &ll, false,
+			 NET_IPV6_NBR_STATE_REACHABLE);
 
 	/* Set iface up */
 	net_if_up(ctxt->iface);

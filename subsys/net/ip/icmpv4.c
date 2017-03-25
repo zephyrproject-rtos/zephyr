@@ -24,6 +24,8 @@
 
 #define BUF_WAIT_TIME K_SECONDS(1)
 
+static sys_slist_t handlers;
+
 static inline enum net_verdict handle_echo_request(struct net_buf *buf)
 {
 	/* Note that we send the same data buffers back and just swap
@@ -161,24 +163,6 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	return -EIO;
 }
 
-enum net_verdict net_icmpv4_input(struct net_buf *buf, uint16_t len,
-				  uint8_t type, uint8_t code)
-{
-	ARG_UNUSED(code);
-	ARG_UNUSED(len);
-
-	net_stats_update_icmp_recv();
-
-	switch (type) {
-	case NET_ICMPV4_ECHO_REQUEST:
-		return handle_echo_request(buf);
-	}
-
-	net_stats_update_icmp_drop();
-
-	return NET_DROP;
-}
-
 int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 {
 	struct net_buf *buf, *frag;
@@ -282,4 +266,43 @@ drop_no_buf:
 	net_stats_update_icmp_drop();
 
 	return err;
+}
+
+void net_icmpv4_register_handler(struct net_icmpv4_handler *handler)
+{
+	sys_slist_prepend(&handlers, &handler->node);
+}
+
+void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
+{
+	sys_slist_find_and_remove(&handlers, &handler->node);
+}
+
+enum net_verdict net_icmpv4_input(struct net_buf *buf,
+				  uint8_t type, uint8_t code)
+{
+	struct net_icmpv4_handler *cb;
+
+	net_stats_update_icmp_recv();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
+		if (cb->type == type && (cb->code == code || cb->code == 0)) {
+			return cb->handler(buf);
+		}
+	}
+
+	net_stats_update_icmp_drop();
+
+	return NET_DROP;
+}
+
+static struct net_icmpv4_handler echo_request_handler = {
+	.type = NET_ICMPV4_ECHO_REQUEST,
+	.code = 0,
+	.handler = handle_echo_request,
+};
+
+void net_icmpv4_init(void)
+{
+	net_icmpv4_register_handler(&echo_request_handler);
 }

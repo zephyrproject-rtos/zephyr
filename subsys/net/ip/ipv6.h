@@ -64,15 +64,15 @@
 #define NET_IPV6_MLDv2_BLOCK_OLD_SOURCES      6
 
 /* State of the neighbor */
-enum net_nbr_state {
-	NET_NBR_INCOMPLETE,
-	NET_NBR_REACHABLE,
-	NET_NBR_STALE,
-	NET_NBR_DELAY,
-	NET_NBR_PROBE,
+enum net_ipv6_nbr_state {
+	NET_IPV6_NBR_STATE_INCOMPLETE,
+	NET_IPV6_NBR_STATE_REACHABLE,
+	NET_IPV6_NBR_STATE_STALE,
+	NET_IPV6_NBR_STATE_DELAY,
+	NET_IPV6_NBR_STATE_PROBE,
 };
 
-const char *net_nbr_state2str(enum net_nbr_state state);
+const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state);
 
 /**
  * @brief IPv6 neighbor information.
@@ -91,7 +91,7 @@ struct net_ipv6_nbr_data {
 	struct k_delayed_work send_ns;
 
 	/** State of the neighbor discovery */
-	enum net_nbr_state state;
+	enum net_ipv6_nbr_state state;
 
 	/** Link metric for the neighbor */
 	uint16_t link_metric;
@@ -289,7 +289,7 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 struct in6_addr *addr,
 				 struct net_linkaddr *lladdr,
 				 bool is_router,
-				 enum net_nbr_state state);
+				 enum net_ipv6_nbr_state state);
 
 /**
  * @brief Remove a neighbour from neighbor cache.
@@ -332,7 +332,7 @@ static inline struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 					       struct in6_addr *addr,
 					       struct net_linkaddr *lladdr,
 					       bool is_router,
-					       enum net_nbr_state state)
+					       enum net_ipv6_nbr_state state)
 {
 	return NULL;
 }

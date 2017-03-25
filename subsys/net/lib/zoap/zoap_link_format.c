@@ -275,6 +275,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
 			    &format, sizeof(format));
 	if (r < 0) {
+		net_nbuf_unref(buf);
 		return -EINVAL;
 	}
 
@@ -298,6 +299,11 @@ done:
 		zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_BAD_REQUEST);
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return r;
 }

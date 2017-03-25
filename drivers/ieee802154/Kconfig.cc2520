@@ -7,17 +7,7 @@ menuconfig IEEE802154_CC2520
 	select NET_L2_IEEE802154
 	default n
 
-menuconfig IEEE802154_CC2520_RAW
-	bool "TI CC2520 Driver RAW channel"
-	select NET_L2_RAW_CHANNEL
-	default n
-	help
-	Enable IEEE802154_CC2520 driver with RAW channel
-
-	The CC2520 driver with RAW channel allows to export radio interface
-	over USB making an USB 802.15.4 dongle.
-
-if IEEE802154_CC2520 || IEEE802154_CC2520_RAW
+if IEEE802154_CC2520
 
 config IEEE802154_CC2520_DRV_NAME
 	string "TI CC2520 Driver's name"
@@ -99,6 +89,17 @@ config IEEE802154_CC2520_MAC7
 	range 0 ff
 	help
 	  This is the byte 7 of the MAC address.
-endif
 
-endif
+endif # ! IEEE802154_CC2520_RANDOM_MAC
+
+config IEEE802154_CC2520_RAW
+	bool "TI CC2520 Driver RAW channel"
+	select NET_L2_RAW_CHANNEL
+	default n
+	help
+	Enable IEEE802154_CC2520 driver with RAW channel
+
+	The CC2520 driver with RAW channel allows to export radio interface
+	over USB making an USB 802.15.4 dongle.
+
+endif # IEEE802154_CC2520
