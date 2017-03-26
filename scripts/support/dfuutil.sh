@@ -4,8 +4,25 @@
 # fwversion.sh, included in arduino101-factory_recovery-flashpack.tar.bz2,
 # which is available from https://downloadcenter.intel.com/download/25470
 
+# It requires the following environment variables to be defined, typically
+# exported from Makefile.board:
+# - DFUUTIL_PID: vendor_ID:product_ID of the board in DFU mode
+# - DFUUTIL_ALT: alternate setting name or number of the DFU interface
+# - DFUUTIL_IMG: path to the binary image sent to the board
+# - DFUUTIL_DFUSE_ADDR: target address, for DfuSe devices
+
 DFUUTIL_EXE=${DFUUTIL:-dfu-util}
 DFUUTIL_CMD="$DFUUTIL_EXE -d,$DFUUTIL_PID"
+
+# Is DFUUTIL_ALT a numeric value?
+num=$(printf '%u' "$DFUUTIL_ALT" 2>/dev/null)
+if [ $? -eq 0 -a "$num" = "$DFUUTIL_ALT" ]; then
+    # alternate setting number
+    pattern=", alt=$DFUUTIL_ALT,"
+else
+    # alternate setting name
+    pattern=", name=\"$DFUUTIL_ALT\","
+fi
 
 test_exe() {
     if ! which $DFUUTIL_EXE >/dev/null 2>&1; then
@@ -22,7 +39,7 @@ test_img() {
 }
 
 find_dfu() {
-    $DFUUTIL_CMD -l |grep "$DFUUTIL_ALT" >/dev/null 2>&1
+    $DFUUTIL_CMD -l |grep "$pattern" >/dev/null 2>&1
 }
 
 do_flash() {
@@ -46,7 +63,7 @@ do_flash() {
 
     # Flash DFU device with specified image
     # Do NOT reset with -R, to avoid random 'error resetting after download'
-    $DFUUTIL_CMD -a $DFUUTIL_ALT -D $DFUUTIL_IMG
+    $DFUUTIL_CMD -a "$DFUUTIL_ALT" -D $DFUUTIL_IMG
     ok=$?
     if [ $ok -eq 0 -a $reset_dfu -eq 1 ]; then
         echo "Now reset your board again to switch back to runtime mode."
