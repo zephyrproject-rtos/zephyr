@@ -167,10 +167,10 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	 * protection unit (MPU), specified by the architecture (PMSAv7), in the
 	 * Cortex-M4 core.  Instead, the processor includes its own MPU module.
 	 */
-	temp_reg = MPU->CESR;
-	temp_reg &= ~MPU_CESR_VLD_MASK;
-	temp_reg |= MPU_CESR_SPERR_MASK;
-	MPU->CESR = temp_reg;
+	temp_reg = SYSMPU->CESR;
+	temp_reg &= ~SYSMPU_CESR_VLD_MASK;
+	temp_reg |= SYSMPU_CESR_SPERR_MASK;
+	SYSMPU->CESR = temp_reg;
 
 	_ClearFaults();
 

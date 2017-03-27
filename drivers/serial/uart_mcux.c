@@ -298,10 +298,12 @@ static void uart_mcux_config_func_0(struct device *dev)
 
 	irq_enable(IRQ_UART0_STATUS);
 
+#ifdef IRQ_UART0_ERROR
 	IRQ_CONNECT(IRQ_UART0_ERROR, CONFIG_UART_MCUX_0_IRQ_PRI,
 		    uart_mcux_isr, DEVICE_GET(uart_0), 0);
 
 	irq_enable(IRQ_UART0_ERROR);
+#endif
 }
 #endif
 
@@ -338,10 +340,12 @@ static void uart_mcux_config_func_1(struct device *dev)
 
 	irq_enable(IRQ_UART1_STATUS);
 
+#ifdef IRQ_UART1_ERROR
 	IRQ_CONNECT(IRQ_UART1_ERROR, CONFIG_UART_MCUX_1_IRQ_PRI,
 		    uart_mcux_isr, DEVICE_GET(uart_1), 0);
 
 	irq_enable(IRQ_UART1_ERROR);
+#endif
 }
 #endif
 
@@ -378,10 +382,12 @@ static void uart_mcux_config_func_2(struct device *dev)
 
 	irq_enable(IRQ_UART2_STATUS);
 
+#ifdef IRQ_UART2_ERROR
 	IRQ_CONNECT(IRQ_UART2_ERROR, CONFIG_UART_MCUX_2_IRQ_PRI,
 		    uart_mcux_isr, DEVICE_GET(uart_2), 0);
 
 	irq_enable(IRQ_UART2_ERROR);
+#endif
 }
 #endif
 
@@ -418,10 +424,12 @@ static void uart_mcux_config_func_3(struct device *dev)
 
 	irq_enable(IRQ_UART3_STATUS);
 
+#ifdef IRQ_UART3_ERROR
 	IRQ_CONNECT(IRQ_UART3_ERROR, CONFIG_UART_MCUX_3_IRQ_PRI,
 		    uart_mcux_isr, DEVICE_GET(uart_3), 0);
 
 	irq_enable(IRQ_UART3_ERROR);
+#endif
 }
 #endif
 
@@ -458,10 +466,12 @@ static void uart_mcux_config_func_4(struct device *dev)
 
 	irq_enable(IRQ_UART4_STATUS);
 
+#ifdef IRQ_UART4_ERROR
 	IRQ_CONNECT(IRQ_UART4_ERROR, CONFIG_UART_MCUX_4_IRQ_PRI,
 		    uart_mcux_isr, DEVICE_GET(uart_4), 0);
 
 	irq_enable(IRQ_UART4_ERROR);
+#endif
 }
 #endif
 
@@ -498,10 +508,12 @@ static void uart_mcux_config_func_5(struct device *dev)
 
 	irq_enable(IRQ_UART5_STATUS);
 
+#ifdef IRQ_UART5_ERROR
 	IRQ_CONNECT(IRQ_UART5_ERROR, CONFIG_UART_MCUX_5_IRQ_PRI,
 		    uart_mcux_isr, DEVICE_GET(uart_5), 0);
 
 	irq_enable(IRQ_UART5_ERROR);
+#endif
 }
 #endif
 

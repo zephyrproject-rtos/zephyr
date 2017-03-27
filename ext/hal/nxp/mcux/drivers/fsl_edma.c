@@ -1,32 +1,32 @@
 /*
-* Copyright (c) 2015, Freescale Semiconductor, Inc.
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
-*
-* o Redistributions of source code must retain the above copyright notice, this list
-*   of conditions and the following disclaimer.
-*
-* o Redistributions in binary form must reproduce the above copyright notice, this
-*   list of conditions and the following disclaimer in the documentation and/or
-*   other materials provided with the distribution.
-*
-* o Neither the name of Freescale Semiconductor, Inc. nor the names of its
-*   contributors may be used to endorse or promote products derived from this
-*   software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * o Redistributions of source code must retain the above copyright notice, this list
+ *   of conditions and the following disclaimer.
+ *
+ * o Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ *
+ * o Neither the name of the copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "fsl_edma.h"
 
@@ -63,11 +63,13 @@ static void EDMA_InstallTCD(DMA_Type *base, uint32_t channel, edma_tcd_t *tcd);
 /*! @brief Array to map EDMA instance number to base pointer. */
 static DMA_Type *const s_edmaBases[] = DMA_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Array to map EDMA instance number to clock name. */
 static const clock_ip_name_t s_edmaClockName[] = EDMA_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*! @brief Array to map EDMA instance number to IRQ number. */
-static const IRQn_Type s_edmaIRQNumber[] = DMA_CHN_IRQS;
+static const IRQn_Type s_edmaIRQNumber[][FSL_FEATURE_EDMA_MODULE_CHANNEL] = DMA_CHN_IRQS;
 
 /*! @brief Pointers to transfer handle for each EDMA channel. */
 static edma_handle_t *s_EDMAHandle[FSL_FEATURE_EDMA_MODULE_CHANNEL * FSL_FEATURE_SOC_EDMA_COUNT];
@@ -81,7 +83,7 @@ static uint32_t EDMA_GetInstance(DMA_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_EDMA_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_edmaBases); instance++)
     {
         if (s_edmaBases[instance] == base)
         {
@@ -89,7 +91,7 @@ static uint32_t EDMA_GetInstance(DMA_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_EDMA_COUNT);
+    assert(instance < ARRAY_SIZE(s_edmaBases));
 
     return instance;
 }
@@ -122,8 +124,10 @@ void EDMA_Init(DMA_Type *base, const edma_config_t *config)
 
     uint32_t tmpreg;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate EDMA periphral clock */
     CLOCK_EnableClock(s_edmaClockName[EDMA_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
     /* Configure EDMA peripheral according to the configuration structure. */
     tmpreg = base->CR;
     tmpreg &= ~(DMA_CR_ERCA_MASK | DMA_CR_HOE_MASK | DMA_CR_CLM_MASK | DMA_CR_EDBG_MASK);
@@ -134,8 +138,10 @@ void EDMA_Init(DMA_Type *base, const edma_config_t *config)
 
 void EDMA_Deinit(DMA_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate EDMA periphral clock */
     CLOCK_DisableClock(s_edmaClockName[EDMA_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void EDMA_GetDefaultConfig(edma_config_t *config)
@@ -409,46 +415,32 @@ void EDMA_TcdDisableInterrupts(edma_tcd_t *tcd, uint32_t mask)
     }
 }
 
-uint32_t EDMA_GetRemainingBytes(DMA_Type *base, uint32_t channel)
+uint32_t EDMA_GetRemainingMajorLoopCount(DMA_Type *base, uint32_t channel)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
 
-    uint32_t nbytes = 0;
-    uint32_t remainingBytes = 0;
+    uint32_t remainingCount = 0;
 
     if (DMA_CSR_DONE_MASK & base->TCD[channel].CSR)
     {
-        remainingBytes = 0;
+        remainingCount = 0;
     }
     else
     {
-        /* Calculate the nbytes */
-        if (base->TCD[channel].NBYTES_MLOFFYES & (DMA_NBYTES_MLOFFYES_SMLOE_MASK | DMA_NBYTES_MLOFFYES_DMLOE_MASK))
-        {
-            nbytes = (base->TCD[channel].NBYTES_MLOFFYES & DMA_NBYTES_MLOFFYES_NBYTES_MASK) >>
-                     DMA_NBYTES_MLOFFYES_NBYTES_SHIFT;
-        }
-        else
-        {
-            nbytes =
-                (base->TCD[channel].NBYTES_MLOFFNO & DMA_NBYTES_MLOFFNO_NBYTES_MASK) >> DMA_NBYTES_MLOFFNO_NBYTES_SHIFT;
-        }
         /* Calculate the unfinished bytes */
         if (base->TCD[channel].CITER_ELINKNO & DMA_CITER_ELINKNO_ELINK_MASK)
         {
-            remainingBytes = ((base->TCD[channel].CITER_ELINKYES & DMA_CITER_ELINKYES_CITER_MASK) >>
-                              DMA_CITER_ELINKYES_CITER_SHIFT) *
-                             nbytes;
+            remainingCount =
+                (base->TCD[channel].CITER_ELINKYES & DMA_CITER_ELINKYES_CITER_MASK) >> DMA_CITER_ELINKYES_CITER_SHIFT;
         }
         else
         {
-            remainingBytes =
-                ((base->TCD[channel].CITER_ELINKNO & DMA_CITER_ELINKNO_CITER_MASK) >> DMA_CITER_ELINKNO_CITER_SHIFT) *
-                nbytes;
+            remainingCount =
+                (base->TCD[channel].CITER_ELINKNO & DMA_CITER_ELINKNO_CITER_MASK) >> DMA_CITER_ELINKNO_CITER_SHIFT;
         }
     }
 
-    return remainingBytes;
+    return remainingCount;
 }
 
 uint32_t EDMA_GetChannelStatusFlags(DMA_Type *base, uint32_t channel)
@@ -497,14 +489,19 @@ void EDMA_CreateHandle(edma_handle_t *handle, DMA_Type *base, uint32_t channel)
     uint32_t channelIndex;
     edma_tcd_t *tcdRegs;
 
+    /* Zero the handle */
+    memset(handle, 0, sizeof(*handle));
+
     handle->base = base;
     handle->channel = channel;
     /* Get the DMA instance number */
     edmaInstance = EDMA_GetInstance(base);
     channelIndex = (edmaInstance * FSL_FEATURE_EDMA_MODULE_CHANNEL) + channel;
     s_EDMAHandle[channelIndex] = handle;
+
     /* Enable NVIC interrupt */
-    EnableIRQ(s_edmaIRQNumber[channelIndex]);
+    EnableIRQ(s_edmaIRQNumber[edmaInstance][channel]);
+
     /*
        Reset TCD registers to zero. Unlike the EDMA_TcdReset(DREQ will be set),
        CSR will be 0. Because in order to suit EDMA busy check mechanism in
@@ -558,8 +555,8 @@ void EDMA_PrepareTransfer(edma_transfer_config_t *config,
     assert(config != NULL);
     assert(srcAddr != NULL);
     assert(destAddr != NULL);
-    assert(srcWidth == 1U || srcWidth == 2U || srcWidth == 4U || srcWidth == 16U || srcWidth == 32U);
-    assert(destWidth == 1U || destWidth == 2U || destWidth == 4U || destWidth == 16U || destWidth == 32U);
+    assert((srcWidth == 1U) || (srcWidth == 2U) || (srcWidth == 4U) || (srcWidth == 16U) || (srcWidth == 32U));
+    assert((destWidth == 1U) || (destWidth == 2U) || (destWidth == 4U) || (destWidth == 16U) || (destWidth == 32U));
     assert(transferBytes % bytesEachRequest == 0);
 
     config->destAddr = (uint32_t)destAddr;
@@ -825,11 +822,11 @@ void EDMA_HandleIRQ(edma_handle_t *handle)
 
     /* Clear EDMA interrupt flag */
     handle->base->CINT = handle->channel;
-    if (handle->tcdPool == NULL)
+    if ((handle->tcdPool == NULL) && (handle->callback != NULL))
     {
         (handle->callback)(handle, handle->userData, true, 0);
     }
-    else /* Use the TCD queue. */
+    else /* Use the TCD queue. Please refer to the API descriptions in the eDMA header file for detailed information. */
     {
         uint32_t sga = handle->base->TCD[handle->channel].DLAST_SGA;
         uint32_t sga_index;
@@ -839,19 +836,19 @@ void EDMA_HandleIRQ(edma_handle_t *handle)
 
         /* Check if transfer is already finished. */
         transfer_done = ((handle->base->TCD[handle->channel].CSR & DMA_CSR_DONE_MASK) != 0);
-        /* Get the offset of the current transfer TCD blcoks. */
+        /* Get the offset of the next transfer TCD blcoks to be loaded into the eDMA engine. */
         sga -= (uint32_t)handle->tcdPool;
-        /* Get the index of the current transfer TCD blcoks. */
+        /* Get the index of the next transfer TCD blcoks to be loaded into the eDMA engine. */
         sga_index = sga / sizeof(edma_tcd_t);
         /* Adjust header positions. */
         if (transfer_done)
         {
-            /* New header shall point to the next TCD (current one is already finished) */
+            /* New header shall point to the next TCD to be loaded (current one is already finished) */
             new_header = sga_index;
         }
         else
         {
-            /* New header shall point to this descriptor (not finished yet) */
+            /* New header shall point to this descriptor currently loaded (not finished yet) */
             new_header = sga_index ? sga_index - 1U : handle->tcdSize - 1U;
         }
         /* Calculate the number of finished TCDs */
@@ -863,7 +860,7 @@ void EDMA_HandleIRQ(edma_handle_t *handle)
             }
             else
             {
-                /* Internal error occurs. */
+                /* No TCD in the memory are going to be loaded or internal error occurs. */
                 tcds_done = 0;
             }
         }
@@ -875,9 +872,9 @@ void EDMA_HandleIRQ(edma_handle_t *handle)
                 tcds_done += handle->tcdSize;
             }
         }
-        /* Advance header to the point beyond the last finished TCD block. */
+        /* Advance header which points to the TCD to be loaded into the eDMA engine from memory. */
         handle->header = new_header;
-        /* Release TCD blocks. */
+        /* Release TCD blocks. tcdUsed is the TCD number which can be used/loaded in the memory pool. */
         handle->tcdUsed -= tcds_done;
         /* Invoke callback function. */
         if (handle->callback)
@@ -937,12 +934,260 @@ void DMA0_37_DriverIRQHandler(void)
         EDMA_HandleIRQ(s_EDMAHandle[7]);
     }
 }
+
+#if defined(DMA1)
+void DMA1_04_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 0U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[8]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 4U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[12]);
+    }
+}
+
+void DMA1_15_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 1U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[9]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 5U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[13]);
+    }
+}
+
+void DMA1_26_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 2U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[10]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 6U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[14]);
+    }
+}
+
+void DMA1_37_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 3U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[11]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 7U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[15]);
+    }
+}
+#endif
 #endif /* 8 channels (Shared) */
+
+/* 16 channels (Shared): K32H844P */
+#if defined(FSL_FEATURE_EDMA_MODULE_CHANNEL) && FSL_FEATURE_EDMA_MODULE_CHANNEL == 16U
+
+void DMA0_08_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 0U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[0]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 8U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[8]);
+    }
+}
+
+void DMA0_19_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 1U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[1]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 9U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[9]);
+    }
+}
+
+void DMA0_210_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 2U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[2]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 10U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[10]);
+    }
+}
+
+void DMA0_311_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 3U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[3]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 11U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[11]);
+    }
+}
+
+void DMA0_412_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 4U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[4]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 12U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[12]);
+    }
+}
+
+void DMA0_513_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 5U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[5]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 13U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[13]);
+    }
+}
+
+void DMA0_614_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 6U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[6]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 14U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[14]);
+    }
+}
+
+void DMA0_715_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 7U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[7]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 15U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[15]);
+    }
+}
+
+#if defined(DMA1)
+void DMA1_08_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 0U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[16]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 8U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[24]);
+    }
+}
+
+void DMA1_19_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 1U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[17]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 9U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[25]);
+    }
+}
+
+void DMA1_210_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 2U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[18]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 10U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[26]);
+    }
+}
+
+void DMA1_311_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 3U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[19]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 11U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[27]);
+    }
+}
+
+void DMA1_412_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 4U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[20]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 12U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[28]);
+    }
+}
+
+void DMA1_513_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 5U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[21]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 13U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[29]);
+    }
+}
+
+void DMA1_614_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 6U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[22]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 14U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[30]);
+    }
+}
+
+void DMA1_715_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 7U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[23]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 15U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[31]);
+    }
+}
+#endif
+#endif /* 16 channels (Shared) */
 
 /* 32 channels (Shared): k80 */
 #if defined(FSL_FEATURE_EDMA_MODULE_CHANNEL) && FSL_FEATURE_EDMA_MODULE_CHANNEL == 32U
 
-void DMA0_DMA16_IRQHandler(void)
+void DMA0_DMA16_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 0U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -954,7 +1199,7 @@ void DMA0_DMA16_IRQHandler(void)
     }
 }
 
-void DMA1_DMA17_IRQHandler(void)
+void DMA1_DMA17_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 1U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -966,7 +1211,7 @@ void DMA1_DMA17_IRQHandler(void)
     }
 }
 
-void DMA2_DMA18_IRQHandler(void)
+void DMA2_DMA18_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 2U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -978,7 +1223,7 @@ void DMA2_DMA18_IRQHandler(void)
     }
 }
 
-void DMA3_DMA19_IRQHandler(void)
+void DMA3_DMA19_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 3U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -990,7 +1235,7 @@ void DMA3_DMA19_IRQHandler(void)
     }
 }
 
-void DMA4_DMA20_IRQHandler(void)
+void DMA4_DMA20_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 4U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1002,7 +1247,7 @@ void DMA4_DMA20_IRQHandler(void)
     }
 }
 
-void DMA5_DMA21_IRQHandler(void)
+void DMA5_DMA21_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 5U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1014,7 +1259,7 @@ void DMA5_DMA21_IRQHandler(void)
     }
 }
 
-void DMA6_DMA22_IRQHandler(void)
+void DMA6_DMA22_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 6U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1026,7 +1271,7 @@ void DMA6_DMA22_IRQHandler(void)
     }
 }
 
-void DMA7_DMA23_IRQHandler(void)
+void DMA7_DMA23_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 7U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1038,7 +1283,7 @@ void DMA7_DMA23_IRQHandler(void)
     }
 }
 
-void DMA8_DMA24_IRQHandler(void)
+void DMA8_DMA24_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 8U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1050,7 +1295,7 @@ void DMA8_DMA24_IRQHandler(void)
     }
 }
 
-void DMA9_DMA25_IRQHandler(void)
+void DMA9_DMA25_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 9U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1062,7 +1307,7 @@ void DMA9_DMA25_IRQHandler(void)
     }
 }
 
-void DMA10_DMA26_IRQHandler(void)
+void DMA10_DMA26_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 10U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1074,7 +1319,7 @@ void DMA10_DMA26_IRQHandler(void)
     }
 }
 
-void DMA11_DMA27_IRQHandler(void)
+void DMA11_DMA27_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 11U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1086,7 +1331,7 @@ void DMA11_DMA27_IRQHandler(void)
     }
 }
 
-void DMA12_DMA28_IRQHandler(void)
+void DMA12_DMA28_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 12U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1098,7 +1343,7 @@ void DMA12_DMA28_IRQHandler(void)
     }
 }
 
-void DMA13_DMA29_IRQHandler(void)
+void DMA13_DMA29_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 13U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1110,7 +1355,7 @@ void DMA13_DMA29_IRQHandler(void)
     }
 }
 
-void DMA14_DMA30_IRQHandler(void)
+void DMA14_DMA30_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 14U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1122,7 +1367,7 @@ void DMA14_DMA30_IRQHandler(void)
     }
 }
 
-void DMA15_DMA31_IRQHandler(void)
+void DMA15_DMA31_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 15U) & kEDMA_InterruptFlag) != 0U)
     {
@@ -1134,6 +1379,202 @@ void DMA15_DMA31_IRQHandler(void)
     }
 }
 #endif /* 32 channels (Shared) */
+
+/* 32 channels (Shared): MCIMX7U5_M4 */
+#if defined(FSL_FEATURE_EDMA_MODULE_CHANNEL) && FSL_FEATURE_EDMA_MODULE_CHANNEL == 32U
+
+void DMA0_0_4_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 0U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[0]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 4U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[4]);
+    }
+}
+
+void DMA0_1_5_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 1U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[1]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 5U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[5]);
+    }
+}
+
+void DMA0_2_6_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 2U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[2]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 6U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[6]);
+    }
+}
+
+void DMA0_3_7_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 3U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[3]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 7U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[7]);
+    }
+}
+
+void DMA0_8_12_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 8U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[8]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 12U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[12]);
+    }
+}
+
+void DMA0_9_13_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 9U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[9]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 13U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[13]);
+    }
+}
+
+void DMA0_10_14_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 10U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[10]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 14U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[14]);
+    }
+}
+
+void DMA0_11_15_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 11U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[11]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 15U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[15]);
+    }
+}
+
+void DMA0_16_20_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 16U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[16]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 20U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[20]);
+    }
+}
+
+void DMA0_17_21_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 17U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[17]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 21U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[21]);
+    }
+}
+
+void DMA0_18_22_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 18U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[18]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 22U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[22]);
+    }
+}
+
+void DMA0_19_23_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 19U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[19]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 23U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[23]);
+    }
+}
+
+void DMA0_24_28_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 24U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[24]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 28U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[28]);
+    }
+}
+
+void DMA0_25_29_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 25U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[25]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 29U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[29]);
+    }
+}
+
+void DMA0_26_30_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 26U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[26]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 30U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[30]);
+    }
+}
+
+void DMA0_27_31_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA0, 27U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[27]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA0, 31U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[31]);
+    }
+}
+#endif /* 32 channels (Shared): MCIMX7U5 */
 
 /* 4 channels (No Shared): kv10  */
 #if defined(FSL_FEATURE_EDMA_MODULE_CHANNEL) && FSL_FEATURE_EDMA_MODULE_CHANNEL > 0

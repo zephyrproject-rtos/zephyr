@@ -12,9 +12,11 @@ source "arch/arm/soc/st_stm32/stm32f1/Kconfig.defconfig.stm32f1*"
 config SOC_SERIES
 	default stm32f1
 
+if !HAS_DTS
 config NUM_IRQ_PRIO_BITS
 	int
 	default 4
+endif # !HAS_DTS
 
 if WATCHDOG
 

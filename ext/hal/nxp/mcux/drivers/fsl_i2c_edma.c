@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -162,6 +162,26 @@ static void I2C_MasterTransferCallbackEDMA(edma_handle_t *handle, void *userData
             result = I2C_MasterStop(i2cPrivateHandle->base);
         }
     }
+    else
+    {
+        if (i2cPrivateHandle->handle->transfer.direction == kI2C_Read)
+        {
+            /* Change to send NAK at the last byte. */
+            i2cPrivateHandle->base->C1 |= I2C_C1_TXAK_MASK;
+
+            /* Wait the last data to be received. */
+            while (!(i2cPrivateHandle->base->S & kI2C_TransferCompleteFlag))
+            {
+            }
+
+            /* Change direction to send. */
+            i2cPrivateHandle->base->C1 |= I2C_C1_TX_MASK;
+
+            /* Read the last data byte. */
+            *(i2cPrivateHandle->handle->transfer.data + i2cPrivateHandle->handle->transfer.dataSize - 1) =
+                i2cPrivateHandle->base->D;
+        }
+    }
 
     i2cPrivateHandle->handle->state = kIdleState;
 
@@ -203,7 +223,6 @@ static status_t I2C_InitTransferStateMachineEDMA(I2C_Type *base,
     assert(xfer);
 
     status_t result = kStatus_Success;
-    uint16_t timeout = UINT16_MAX;
 
     if (handle->state != kIdleState)
     {
@@ -221,16 +240,6 @@ static status_t I2C_InitTransferStateMachineEDMA(I2C_Type *base,
 
         handle->state = kTransferDataState;
 
-        /* Wait until ready to complete. */
-        while ((!(base->S & kI2C_TransferCompleteFlag)) && (--timeout))
-        {
-        }
-
-        /* Failed to start the transfer. */
-        if (timeout == 0)
-        {
-            return kStatus_I2C_Timeout;
-        }
         /* Clear all status before transfer. */
         I2C_MasterClearStatusFlags(base, kClearFlags);
 
@@ -250,21 +259,54 @@ static status_t I2C_InitTransferStateMachineEDMA(I2C_Type *base,
             result = I2C_MasterStart(base, handle->transfer.slaveAddress, direction);
         }
 
+        if (result)
+        {
+            return result;
+        }
+
+        while (!(base->S & kI2C_IntPendingFlag))
+        {
+        }
+
+        /* Check if there's transfer error. */
+        result = I2C_CheckAndClearError(base, base->S);
+
+        /* Return if error. */
+        if (result)
+        {
+            if (result == kStatus_I2C_Nak)
+            {
+                result = kStatus_I2C_Addr_Nak;
+
+                if (I2C_MasterStop(base) != kStatus_Success)
+                {
+                    result = kStatus_I2C_Timeout;
+                }
+
+                if (handle->completionCallback)
+                {
+                    (handle->completionCallback)(base, handle, result, handle->userData);
+                }
+            }
+
+            return result;
+        }
+
         /* Send subaddress. */
         if (handle->transfer.subaddressSize)
         {
             do
             {
-                /* Wait until data transfer complete. */
-                while (!(base->S & kI2C_IntPendingFlag))
-                {
-                }
-
                 /* Clear interrupt pending flag. */
                 base->S = kI2C_IntPendingFlag;
 
                 handle->transfer.subaddressSize--;
                 base->D = ((handle->transfer.subaddress) >> (8 * handle->transfer.subaddressSize));
+
+                /* Wait until data transfer complete. */
+                while (!(base->S & kI2C_IntPendingFlag))
+                {
+                }
 
                 /* Check if there's transfer error. */
                 result = I2C_CheckAndClearError(base, base->S);
@@ -278,34 +320,34 @@ static status_t I2C_InitTransferStateMachineEDMA(I2C_Type *base,
 
             if (handle->transfer.direction == kI2C_Read)
             {
-                /* Wait until data transfer complete. */
-                while (!(base->S & kI2C_IntPendingFlag))
-                {
-                }
-
                 /* Clear pending flag. */
                 base->S = kI2C_IntPendingFlag;
 
                 /* Send repeated start and slave address. */
                 result = I2C_MasterRepeatedStart(base, handle->transfer.slaveAddress, kI2C_Read);
+
+                if (result)
+                {
+                    return result;
+                }
+
+                /* Wait until data transfer complete. */
+                while (!(base->S & kI2C_IntPendingFlag))
+                {
+                }
+
+                /* Check if there's transfer error. */
+                result = I2C_CheckAndClearError(base, base->S);
+
+                if (result)
+                {
+                    return result;
+                }
             }
-        }
-
-        if (result)
-        {
-            return result;
-        }
-
-        /* Wait until data transfer complete. */
-        while (!(base->S & kI2C_IntPendingFlag))
-        {
         }
 
         /* Clear pending flag. */
         base->S = kI2C_IntPendingFlag;
-
-        /* Check if there's transfer error. */
-        result = I2C_CheckAndClearError(base, base->S);
     }
 
     return result;
@@ -319,17 +361,7 @@ static void I2C_MasterTransferEDMAConfig(I2C_Type *base, i2c_master_edma_handle_
     {
         transfer_config.srcAddr = (uint32_t)I2C_GetDataRegAddr(base);
         transfer_config.destAddr = (uint32_t)(handle->transfer.data);
-
-        /* Send stop if kI2C_TransferNoStop flag is not asserted. */
-        if (!(handle->transfer.flags & kI2C_TransferNoStopFlag))
-        {
-            transfer_config.majorLoopCounts = (handle->transfer.dataSize - 1);
-        }
-        else
-        {
-            transfer_config.majorLoopCounts = handle->transfer.dataSize;
-        }
-
+        transfer_config.majorLoopCounts = (handle->transfer.dataSize - 1);
         transfer_config.srcTransferSize = kEDMA_TransferSize1Bytes;
         transfer_config.srcOffset = 0;
         transfer_config.destTransferSize = kEDMA_TransferSize1Bytes;
@@ -347,6 +379,9 @@ static void I2C_MasterTransferEDMAConfig(I2C_Type *base, i2c_master_edma_handle_
         transfer_config.destOffset = 0;
         transfer_config.minorLoopBytes = 1;
     }
+
+    /* Store the initially configured eDMA minor byte transfer count into the I2C handle */
+    handle->nbytes = transfer_config.minorLoopBytes;
 
     EDMA_SubmitTransfer(handle->dmaHandle, &transfer_config);
     EDMA_StartTransfer(handle->dmaHandle);
@@ -427,7 +462,7 @@ status_t I2C_MasterTransferEDMA(I2C_Type *base, i2c_master_edma_handle_t *handle
         if (handle->transfer.direction == kI2C_Read)
         {
             /* Change direction for receive. */
-            base->C1 &= ~I2C_C1_TX_MASK;
+            base->C1 &= ~(I2C_C1_TX_MASK | I2C_C1_TXAK_MASK);
 
             /* Read dummy to release the bus. */
             dummy = base->D;
@@ -479,6 +514,11 @@ status_t I2C_MasterTransferEDMA(I2C_Type *base, i2c_master_edma_handle_t *handle
         {
             result = I2C_MasterStop(base);
         }
+        else
+        {
+            /* Change direction to send. */
+            base->C1 |= I2C_C1_TX_MASK;
+        }
 
         /* Read the last byte of data. */
         if (handle->transfer.direction == kI2C_Read)
@@ -504,7 +544,9 @@ status_t I2C_MasterTransferGetCountEDMA(I2C_Type *base, i2c_master_edma_handle_t
 
     if (kIdleState != handle->state)
     {
-        *count = (handle->transferSize - EDMA_GetRemainingBytes(handle->dmaHandle->base, handle->dmaHandle->channel));
+        *count = (handle->transferSize -
+                  (uint32_t)handle->nbytes *
+                      EDMA_GetRemainingMajorLoopCount(handle->dmaHandle->base, handle->dmaHandle->channel));
     }
     else
     {

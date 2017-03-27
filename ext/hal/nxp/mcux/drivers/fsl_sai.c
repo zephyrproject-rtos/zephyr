@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -39,6 +39,12 @@ enum _sai_transfer_state
     kSAI_Idle,        /*!< Transfer is done. */
     kSAI_Error        /*!< Transfer error occured. */
 };
+
+/*! @brief Typedef for sai tx interrupt handler. */
+typedef void (*sai_tx_isr_t)(I2S_Type *base, sai_handle_t *saiHandle);
+
+/*! @brief Typedef for sai rx interrupt handler. */
+typedef void (*sai_rx_isr_t)(I2S_Type *base, sai_handle_t *saiHandle);
 
 /*******************************************************************************
  * Prototypes
@@ -89,15 +95,21 @@ static void SAI_ReadNonBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWi
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-/*!@brief SAI handle pointer */
-sai_handle_t *s_saiHandle[FSL_FEATURE_SOC_I2S_COUNT][2];
 /* Base pointer array */
 static I2S_Type *const s_saiBases[] = I2S_BASE_PTRS;
+/*!@brief SAI handle pointer */
+sai_handle_t *s_saiHandle[ARRAY_SIZE(s_saiBases)][2];
 /* IRQ number array */
 static const IRQn_Type s_saiTxIRQ[] = I2S_TX_IRQS;
 static const IRQn_Type s_saiRxIRQ[] = I2S_RX_IRQS;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /* Clock name array */
 static const clock_ip_name_t s_saiClock[] = SAI_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+/*! @brief Pointer to tx IRQ handler for each instance. */
+static sai_tx_isr_t s_saiTxIsr;
+/*! @brief Pointer to tx IRQ handler for each instance. */
+static sai_rx_isr_t s_saiRxIsr;
 
 /*******************************************************************************
  * Code
@@ -171,7 +183,7 @@ uint32_t SAI_GetInstance(I2S_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_I2S_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_saiBases); instance++)
     {
         if (s_saiBases[instance] == base)
         {
@@ -179,7 +191,7 @@ uint32_t SAI_GetInstance(I2S_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_I2S_COUNT);
+    assert(instance < ARRAY_SIZE(s_saiBases));
 
     return instance;
 }
@@ -227,16 +239,19 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
 {
     uint32_t val = 0;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the SAI clock */
     CLOCK_EnableClock(s_saiClock[SAI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-    /* Configure Master clock output enable */
-    base->MCR = I2S_MCR_MOE(config->mclkOutputEnable);
-
     /* Master clock source setting */
     val = (base->MCR & ~I2S_MCR_MICS_MASK);
     base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
+
+    /* Configure Master clock output enable */
+    val = (base->MCR & ~I2S_MCR_MOE_MASK);
+    base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 
     /* Configure audio protocol */
@@ -328,16 +343,19 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
 {
     uint32_t val = 0;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable SAI clock first. */
     CLOCK_EnableClock(s_saiClock[SAI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-    /* Configure Master clock output enable */
-    base->MCR = I2S_MCR_MOE(config->mclkOutputEnable);
-
     /* Master clock source setting */
     val = (base->MCR & ~I2S_MCR_MICS_MASK);
     base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
+
+    /* Configure Master clock output enable */
+    val = (base->MCR & ~I2S_MCR_MOE_MASK);
+    base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 
     /* Configure audio protocol */
@@ -429,7 +447,9 @@ void SAI_Deinit(I2S_Type *base)
 {
     SAI_TxEnable(base, false);
     SAI_RxEnable(base, false);
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_DisableClock(s_saiClock[SAI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void SAI_TxGetDefaultConfig(sai_config_t *config)
@@ -620,7 +640,7 @@ void SAI_WriteBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint
     uint32_t i = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
 
-    for (i = 0; i < size; i++)
+    while (i < size)
     {
         /* Wait until it can write data */
         while (!(base->TCSR & I2S_TCSR_FWF_MASK))
@@ -629,6 +649,7 @@ void SAI_WriteBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint
 
         SAI_WriteNonBlocking(base, channel, bitWidth, buffer, bytesPerWord);
         buffer += bytesPerWord;
+        i += bytesPerWord;
     }
 
     /* Wait until the last data is sent */
@@ -642,7 +663,7 @@ void SAI_ReadBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8
     uint32_t i = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
 
-    for (i = 0; i < size; i++)
+    while (i < size)
     {
         /* Wait until data is received */
         while (!(base->RCSR & I2S_RCSR_FWF_MASK))
@@ -651,6 +672,7 @@ void SAI_ReadBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8
 
         SAI_ReadNonBlocking(base, channel, bitWidth, buffer, bytesPerWord);
         buffer += bytesPerWord;
+        i += bytesPerWord;
     }
 }
 
@@ -658,10 +680,16 @@ void SAI_TransferTxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
 {
     assert(handle);
 
+    /* Zero the handle */
+    memset(handle, 0, sizeof(*handle));
+
     s_saiHandle[SAI_GetInstance(base)][0] = handle;
 
     handle->callback = callback;
     handle->userData = userData;
+
+    /* Set the isr pointer */
+    s_saiTxIsr = SAI_TransferTxHandleIRQ;
 
     /* Enable Tx irq */
     EnableIRQ(s_saiTxIRQ[SAI_GetInstance(base)]);
@@ -671,10 +699,16 @@ void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
 {
     assert(handle);
 
+    /* Zero the handle */
+    memset(handle, 0, sizeof(*handle));
+
     s_saiHandle[SAI_GetInstance(base)][1] = handle;
 
     handle->callback = callback;
     handle->userData = userData;
+
+    /* Set the isr pointer */
+    s_saiRxIsr = SAI_TransferRxHandleIRQ;
 
     /* Enable Rx irq */
     EnableIRQ(s_saiRxIRQ[SAI_GetInstance(base)]);
@@ -1006,43 +1040,153 @@ void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 }
 
 #if defined(I2S0)
-#if defined(FSL_FEATURE_SAI_INT_SOURCE_NUM) && (FSL_FEATURE_SAI_INT_SOURCE_NUM == 1)
 void I2S0_DriverIRQHandler(void)
 {
-    if ((s_saiHandle[0][1]) && ((I2S0->RCSR & kSAI_FIFOWarningFlag) || (I2S0->RCSR & kSAI_FIFOErrorFlag)))
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[0][1]) && ((I2S0->RCSR & kSAI_FIFORequestFlag) || (I2S0->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S0->RCSR & kSAI_FIFORequestInterruptEnable) || (I2S0->RCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[0][1]) && ((I2S0->RCSR & kSAI_FIFOWarningFlag) || (I2S0->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S0->RCSR & kSAI_FIFOWarningInterruptEnable) || (I2S0->RCSR & kSAI_FIFOErrorInterruptEnable)))
+#endif
     {
-        SAI_TransferRxHandleIRQ(I2S0, s_saiHandle[0][1]);
+        s_saiRxIsr(I2S0, s_saiHandle[0][1]);
     }
-    if ((s_saiHandle[0][0]) && ((I2S0->TCSR & kSAI_FIFOWarningFlag) || (I2S0->TCSR & kSAI_FIFOErrorFlag)))
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[0][0]) && ((I2S0->TCSR & kSAI_FIFORequestFlag) || (I2S0->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S0->TCSR & kSAI_FIFORequestInterruptEnable) || (I2S0->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[0][0]) && ((I2S0->TCSR & kSAI_FIFOWarningFlag) || (I2S0->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S0->TCSR & kSAI_FIFOWarningInterruptEnable) || (I2S0->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#endif
     {
-        SAI_TransferTxHandleIRQ(I2S0, s_saiHandle[0][0]);
+        s_saiTxIsr(I2S0, s_saiHandle[0][0]);
     }
 }
-#else
+
 void I2S0_Tx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[0][0]);
-    SAI_TransferTxHandleIRQ(I2S0, s_saiHandle[0][0]);
+    s_saiTxIsr(I2S0, s_saiHandle[0][0]);
 }
 
 void I2S0_Rx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[0][1]);
-    SAI_TransferRxHandleIRQ(I2S0, s_saiHandle[0][1]);
+    s_saiRxIsr(I2S0, s_saiHandle[0][1]);
 }
-#endif /* FSL_FEATURE_SAI_INT_SOURCE_NUM */
 #endif /* I2S0*/
 
 #if defined(I2S1)
+void I2S1_DriverIRQHandler(void)
+{
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[1][1]) && ((I2S1->RCSR & kSAI_FIFORequestFlag) || (I2S1->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S1->RCSR & kSAI_FIFORequestInterruptEnable) || (I2S1->RCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[1][1]) && ((I2S1->RCSR & kSAI_FIFOWarningFlag) || (I2S1->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S1->RCSR & kSAI_FIFOWarningInterruptEnable) || (I2S1->RCSR & kSAI_FIFOErrorInterruptEnable)))
+#endif
+    {
+        s_saiRxIsr(I2S1, s_saiHandle[1][1]);
+    }
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[1][0]) && ((I2S1->TCSR & kSAI_FIFORequestFlag) || (I2S1->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S1->TCSR & kSAI_FIFORequestInterruptEnable) || (I2S1->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[1][0]) && ((I2S1->TCSR & kSAI_FIFOWarningFlag) || (I2S1->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S1->TCSR & kSAI_FIFOWarningInterruptEnable) || (I2S1->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#endif
+    {
+        s_saiTxIsr(I2S1, s_saiHandle[1][0]);
+    }
+}
+
 void I2S1_Tx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[1][0]);
-    SAI_TransferTxHandleIRQ(I2S1, s_saiHandle[1][0]);
+    s_saiTxIsr(I2S1, s_saiHandle[1][0]);
 }
 
 void I2S1_Rx_DriverIRQHandler(void)
 {
     assert(s_saiHandle[1][1]);
-    SAI_TransferRxHandleIRQ(I2S1, s_saiHandle[1][1]);
+    s_saiRxIsr(I2S1, s_saiHandle[1][1]);
 }
+#endif /* I2S1*/
+
+#if defined(I2S2)
+void I2S2_DriverIRQHandler(void)
+{
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[2][1]) && ((I2S2->RCSR & kSAI_FIFORequestFlag) || (I2S2->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S2->RCSR & kSAI_FIFORequestInterruptEnable) || (I2S2->RCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[2][1]) && ((I2S2->RCSR & kSAI_FIFOWarningFlag) || (I2S2->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S2->RCSR & kSAI_FIFOWarningInterruptEnable) || (I2S2->RCSR & kSAI_FIFOErrorInterruptEnable)))
 #endif
+    {
+        s_saiRxIsr(I2S2, s_saiHandle[2][1]);
+    }
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[2][0]) && ((I2S2->TCSR & kSAI_FIFORequestFlag) || (I2S2->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S2->TCSR & kSAI_FIFORequestInterruptEnable) || (I2S2->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[2][0]) && ((I2S2->TCSR & kSAI_FIFOWarningFlag) || (I2S2->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S2->TCSR & kSAI_FIFOWarningInterruptEnable) || (I2S2->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#endif
+    {
+        s_saiTxIsr(I2S2, s_saiHandle[2][0]);
+    }
+}
+
+void I2S2_Tx_DriverIRQHandler(void)
+{
+    assert(s_saiHandle[2][0]);
+    s_saiTxIsr(I2S2, s_saiHandle[2][0]);
+}
+
+void I2S2_Rx_DriverIRQHandler(void)
+{
+    assert(s_saiHandle[2][1]);
+    s_saiRxIsr(I2S2, s_saiHandle[2][1]);
+}
+#endif /* I2S2*/
+
+#if defined(I2S3)
+void I2S3_DriverIRQHandler(void)
+{
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[3][1]) && ((I2S3->RCSR & kSAI_FIFORequestFlag) || (I2S3->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S3->RCSR & kSAI_FIFORequestInterruptEnable) || (I2S3->RCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[3][1]) && ((I2S3->RCSR & kSAI_FIFOWarningFlag) || (I2S3->RCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S3->RCSR & kSAI_FIFOWarningInterruptEnable) || (I2S3->RCSR & kSAI_FIFOErrorInterruptEnable)))
+#endif
+    {
+        s_saiRxIsr(I2S3, s_saiHandle[3][1]);
+    }
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    if ((s_saiHandle[3][0]) && ((I2S3->TCSR & kSAI_FIFORequestFlag) || (I2S3->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S3->TCSR & kSAI_FIFORequestInterruptEnable) || (I2S3->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#else
+    if ((s_saiHandle[3][0]) && ((I2S3->TCSR & kSAI_FIFOWarningFlag) || (I2S3->TCSR & kSAI_FIFOErrorFlag)) &&
+                               ((I2S3->TCSR & kSAI_FIFOWarningInterruptEnable) || (I2S3->TCSR & kSAI_FIFOErrorInterruptEnable)))
+#endif
+    {
+        s_saiTxIsr(I2S3, s_saiHandle[3][0]);
+    }
+}
+
+void I2S3_Tx_DriverIRQHandler(void)
+{
+    assert(s_saiHandle[3][0]);
+    s_saiTxIsr(I2S3, s_saiHandle[3][0]);
+}
+
+void I2S3_Rx_DriverIRQHandler(void)
+{
+    assert(s_saiHandle[3][1]);
+    s_saiRxIsr(I2S3, s_saiHandle[3][1]);
+}
+#endif /* I2S3*/

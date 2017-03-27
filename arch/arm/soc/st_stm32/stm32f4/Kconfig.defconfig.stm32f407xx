@@ -19,6 +19,6 @@ config FLASH_SIZE
 
 config NUM_IRQS
 	int
-	default 85
+	default 82
 
 endif # SOC_STM32F407XX

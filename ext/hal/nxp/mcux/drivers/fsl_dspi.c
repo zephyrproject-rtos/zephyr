@@ -1,32 +1,32 @@
 /*
-* Copyright (c) 2015, Freescale Semiconductor, Inc.
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
-*
-* o Redistributions of source code must retain the above copyright notice, this list
-*   of conditions and the following disclaimer.
-*
-* o Redistributions in binary form must reproduce the above copyright notice, this
-*   list of conditions and the following disclaimer in the documentation and/or
-*   other materials provided with the distribution.
-*
-* o Neither the name of Freescale Semiconductor, Inc. nor the names of its
-*   contributors may be used to endorse or promote products derived from this
-*   software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * o Redistributions of source code must retain the above copyright notice, this list
+ *   of conditions and the following disclaimer.
+ *
+ * o Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ *
+ * o Neither the name of the copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "fsl_dspi.h"
 
@@ -65,27 +65,27 @@ static void DSPI_SetOnePcsPolarity(SPI_Type *base, dspi_which_pcs_t pcs, dspi_pc
 
 /*!
  * @brief Master fill up the TX FIFO with data.
- * This is not a public API as it is called from other driver functions.
+ * This is not a public API.
  */
 static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle);
 
 /*!
  * @brief Master finish up a transfer.
  * It would call back if there is callback function and set the state to idle.
- * This is not a public API as it is called from other driver functions.
+ * This is not a public API.
  */
 static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *handle);
 
 /*!
  * @brief Slave fill up the TX FIFO with data.
- * This is not a public API as it is called from other driver functions.
+ * This is not a public API.
  */
 static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle);
 
 /*!
  * @brief Slave finish up a transfer.
  * It would call back if there is callback function and set the state to idle.
- * This is not a public API as it is called from other driver functions.
+ * This is not a public API.
  */
 static void DSPI_SlaveTransferComplete(SPI_Type *base, dspi_slave_handle_t *handle);
 
@@ -100,7 +100,7 @@ static void DSPI_CommonIRQHandler(SPI_Type *base, void *param);
 /*!
  * @brief Master prepare the transfer.
  * Basically it set up dspi_master_handle .
- * This is not a public API as it is called from other driver functions. fsl_dspi_edma.c also call this function.
+ * This is not a public API.
  */
 static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer);
 
@@ -123,11 +123,13 @@ static SPI_Type *const s_dspiBases[] = SPI_BASE_PTRS;
 /*! @brief Pointers to dspi IRQ number for each instance. */
 static IRQn_Type const s_dspiIRQ[] = SPI_IRQS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to dspi clocks for each instance. */
 static clock_ip_name_t const s_dspiClock[] = DSPI_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*! @brief Pointers to dspi handles for each instance. */
-static void *g_dspiHandle[FSL_FEATURE_SOC_DSPI_COUNT];
+static void *g_dspiHandle[ARRAY_SIZE(s_dspiBases)];
 
 /*! @brief Pointer to master IRQ handler for each instance. */
 static dspi_master_isr_t s_dspiMasterIsr;
@@ -143,7 +145,7 @@ uint32_t DSPI_GetInstance(SPI_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_DSPI_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_dspiBases); instance++)
     {
         if (s_dspiBases[instance] == base)
         {
@@ -151,16 +153,20 @@ uint32_t DSPI_GetInstance(SPI_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_DSPI_COUNT);
+    assert(instance < ARRAY_SIZE(s_dspiBases));
 
     return instance;
 }
 
 void DSPI_MasterInit(SPI_Type *base, const dspi_master_config_t *masterConfig, uint32_t srcClock_Hz)
 {
+    assert(masterConfig);
+
     uint32_t temp;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* enable DSPI clock */
     CLOCK_EnableClock(s_dspiClock[DSPI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     DSPI_Enable(base, true);
     DSPI_StopTransfer(base);
@@ -201,6 +207,8 @@ void DSPI_MasterInit(SPI_Type *base, const dspi_master_config_t *masterConfig, u
 
 void DSPI_MasterGetDefaultConfig(dspi_master_config_t *masterConfig)
 {
+    assert(masterConfig);
+
     masterConfig->whichCtar = kDSPI_Ctar0;
     masterConfig->ctarConfig.baudRate = 500000;
     masterConfig->ctarConfig.bitsPerFrame = 8;
@@ -223,10 +231,14 @@ void DSPI_MasterGetDefaultConfig(dspi_master_config_t *masterConfig)
 
 void DSPI_SlaveInit(SPI_Type *base, const dspi_slave_config_t *slaveConfig)
 {
+    assert(slaveConfig);
+
     uint32_t temp = 0;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* enable DSPI clock */
     CLOCK_EnableClock(s_dspiClock[DSPI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     DSPI_Enable(base, true);
     DSPI_StopTransfer(base);
@@ -255,6 +267,8 @@ void DSPI_SlaveInit(SPI_Type *base, const dspi_slave_config_t *slaveConfig)
 
 void DSPI_SlaveGetDefaultConfig(dspi_slave_config_t *slaveConfig)
 {
+    assert(slaveConfig);
+
     slaveConfig->whichCtar = kDSPI_Ctar0;
     slaveConfig->ctarConfig.bitsPerFrame = 8;
     slaveConfig->ctarConfig.cpol = kDSPI_ClockPolarityActiveHigh;
@@ -271,8 +285,10 @@ void DSPI_Deinit(SPI_Type *base)
     DSPI_StopTransfer(base);
     DSPI_Enable(base, false);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* disable DSPI clock */
     CLOCK_DisableClock(s_dspiClock[DSPI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 static void DSPI_SetOnePcsPolarity(SPI_Type *base, dspi_which_pcs_t pcs, dspi_pcs_polarity_config_t activeLowOrHigh)
@@ -457,6 +473,8 @@ uint32_t DSPI_MasterSetDelayTimes(SPI_Type *base,
 
 void DSPI_GetDefaultDataCommandConfig(dspi_command_data_config_t *command)
 {
+    assert(command);
+
     command->isPcsContinuous = false;
     command->whichCtar = kDSPI_Ctar0;
     command->whichPcs = kDSPI_Pcs0;
@@ -466,6 +484,8 @@ void DSPI_GetDefaultDataCommandConfig(dspi_command_data_config_t *command)
 
 void DSPI_MasterWriteDataBlocking(SPI_Type *base, dspi_command_data_config_t *command, uint16_t data)
 {
+    assert(command);
+
     /* First, clear Transmit Complete Flag (TCF) */
     DSPI_ClearStatusFlags(base, kDSPI_TxCompleteFlag);
 
@@ -598,6 +618,7 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
     command = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
+    commandStruct.isEndOfQueue = true;
     commandStruct.isPcsContinuous = (bool)(transfer->configFlags & kDSPI_MasterActiveAfterTransfer);
     lastCommand = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
@@ -626,25 +647,6 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
         {
             if (remainingSendByteCount == 1)
             {
-                while ((remainingReceiveByteCount - remainingSendByteCount) >= fifoSize)
-                {
-                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
-                    {
-                        if (rxData != NULL)
-                        {
-                            *(rxData) = DSPI_ReadData(base);
-                            rxData++;
-                        }
-                        else
-                        {
-                            DSPI_ReadData(base);
-                        }
-                        remainingReceiveByteCount--;
-
-                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
-                    }
-                }
-
                 while (!(DSPI_GetStatusFlags(base) & kDSPI_TxFifoFillRequestFlag))
                 {
                     DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
@@ -702,20 +704,23 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
                 DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
 
-                if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
+                while ((remainingReceiveByteCount - remainingSendByteCount) >= fifoSize)
                 {
-                    if (rxData != NULL)
+                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
                     {
-                        *(rxData) = DSPI_ReadData(base);
-                        rxData++;
-                    }
-                    else
-                    {
-                        DSPI_ReadData(base);
-                    }
-                    remainingReceiveByteCount--;
+                        if (rxData != NULL)
+                        {
+                            *(rxData) = DSPI_ReadData(base);
+                            rxData++;
+                        }
+                        else
+                        {
+                            DSPI_ReadData(base);
+                        }
+                        remainingReceiveByteCount--;
 
-                    DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                    }
                 }
             }
         }
@@ -726,25 +731,6 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
         {
             if (remainingSendByteCount <= 2)
             {
-                while (((remainingReceiveByteCount - remainingSendByteCount) / 2) >= fifoSize)
-                {
-                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
-                    {
-                        wordReceived = DSPI_ReadData(base);
-
-                        if (rxData != NULL)
-                        {
-                            *rxData = wordReceived;
-                            ++rxData;
-                            *rxData = wordReceived >> 8;
-                            ++rxData;
-                        }
-                        remainingReceiveByteCount -= 2;
-
-                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
-                    }
-                }
-
                 while (!(DSPI_GetStatusFlags(base) & kDSPI_TxFifoFillRequestFlag))
                 {
                     DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
@@ -825,20 +811,23 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
                 DSPI_ClearStatusFlags(base, kDSPI_TxFifoFillRequestFlag);
 
-                if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
+                while (((remainingReceiveByteCount - remainingSendByteCount) / 2) >= fifoSize)
                 {
-                    wordReceived = DSPI_ReadData(base);
-
-                    if (rxData != NULL)
+                    if (DSPI_GetStatusFlags(base) & kDSPI_RxFifoDrainRequestFlag)
                     {
-                        *rxData = wordReceived;
-                        ++rxData;
-                        *rxData = wordReceived >> 8;
-                        ++rxData;
-                    }
-                    remainingReceiveByteCount -= 2;
+                        wordReceived = DSPI_ReadData(base);
 
-                    DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                        if (rxData != NULL)
+                        {
+                            *rxData = wordReceived;
+                            ++rxData;
+                            *rxData = wordReceived >> 8;
+                            ++rxData;
+                        }
+                        remainingReceiveByteCount -= 2;
+
+                        DSPI_ClearStatusFlags(base, kDSPI_RxFifoDrainRequestFlag);
+                    }
                 }
             }
         }
@@ -849,6 +838,9 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer)
 
 static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer)
 {
+    assert(handle);
+    assert(transfer);
+
     dspi_command_data_config_t commandStruct;
 
     DSPI_StopTransfer(base);
@@ -864,6 +856,7 @@ static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *han
     commandStruct.isPcsContinuous = (bool)(transfer->configFlags & kDSPI_MasterPcsContinuous);
     handle->command = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
+    commandStruct.isEndOfQueue = true;
     commandStruct.isPcsContinuous = (bool)(transfer->configFlags & kDSPI_MasterActiveAfterTransfer);
     handle->lastCommand = DSPI_MasterGetFormattedCommand(&(commandStruct));
 
@@ -886,7 +879,8 @@ static void DSPI_MasterTransferPrepare(SPI_Type *base, dspi_master_handle_t *han
 
 status_t DSPI_MasterTransferNonBlocking(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer)
 {
-    assert(handle && transfer);
+    assert(handle);
+    assert(transfer);
 
     /* If the transfer count is zero, then return immediately.*/
     if (transfer->dataSize == 0)
@@ -943,6 +937,8 @@ status_t DSPI_MasterTransferGetCount(SPI_Type *base, dspi_master_handle_t *handl
 
 static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     /* Disable interrupt requests*/
     DSPI_DisableInterrupts(base, kDSPI_RxFifoDrainRequestInterruptEnable | kDSPI_TxFifoFillRequestInterruptEnable);
 
@@ -956,17 +952,18 @@ static void DSPI_MasterTransferComplete(SPI_Type *base, dspi_master_handle_t *ha
         status = kStatus_Success;
     }
 
+    handle->state = kDSPI_Idle;
+
     if (handle->callback)
     {
         handle->callback(base, handle, status, handle->userData);
     }
-
-    /* The transfer is complete.*/
-    handle->state = kDSPI_Idle;
 }
 
 static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     uint16_t wordToSend = 0;
     uint8_t dummyData = DSPI_DUMMY_DATA;
 
@@ -1081,6 +1078,8 @@ static void DSPI_MasterTransferFillUpTxFifo(SPI_Type *base, dspi_master_handle_t
 
 void DSPI_MasterTransferAbort(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     DSPI_StopTransfer(base);
 
     /* Disable interrupt requests*/
@@ -1091,6 +1090,8 @@ void DSPI_MasterTransferAbort(SPI_Type *base, dspi_master_handle_t *handle)
 
 void DSPI_MasterTransferHandleIRQ(SPI_Type *base, dspi_master_handle_t *handle)
 {
+    assert(handle);
+
     /* RECEIVE IRQ handler: Check read buffer only if there are remaining bytes to read. */
     if (handle->remainingReceiveByteCount)
     {
@@ -1212,7 +1213,8 @@ void DSPI_SlaveTransferCreateHandle(SPI_Type *base,
 
 status_t DSPI_SlaveTransferNonBlocking(SPI_Type *base, dspi_slave_handle_t *handle, dspi_transfer_t *transfer)
 {
-    assert(handle && transfer);
+    assert(handle);
+    assert(transfer);
 
     /* If receive length is zero */
     if (transfer->dataSize == 0)
@@ -1300,6 +1302,8 @@ status_t DSPI_SlaveTransferGetCount(SPI_Type *base, dspi_slave_handle_t *handle,
 
 static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     uint16_t transmitData = 0;
     uint8_t dummyPattern = DSPI_DUMMY_DATA;
 
@@ -1386,6 +1390,8 @@ static void DSPI_SlaveTransferFillUpTxFifo(SPI_Type *base, dspi_slave_handle_t *
 
 static void DSPI_SlaveTransferComplete(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     /* Disable interrupt requests */
     DSPI_DisableInterrupts(base, kDSPI_TxFifoUnderflowInterruptEnable | kDSPI_TxFifoFillRequestInterruptEnable |
                                      kDSPI_RxFifoOverflowInterruptEnable | kDSPI_RxFifoDrainRequestInterruptEnable);
@@ -1406,16 +1412,18 @@ static void DSPI_SlaveTransferComplete(SPI_Type *base, dspi_slave_handle_t *hand
         status = kStatus_Success;
     }
 
+    handle->state = kDSPI_Idle;
+
     if (handle->callback)
     {
         handle->callback(base, handle, status, handle->userData);
     }
-
-    handle->state = kDSPI_Idle;
 }
 
 void DSPI_SlaveTransferAbort(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     DSPI_StopTransfer(base);
 
     /* Disable interrupt requests */
@@ -1429,6 +1437,8 @@ void DSPI_SlaveTransferAbort(SPI_Type *base, dspi_slave_handle_t *handle)
 
 void DSPI_SlaveTransferHandleIRQ(SPI_Type *base, dspi_slave_handle_t *handle)
 {
+    assert(handle);
+
     uint8_t dummyPattern = DSPI_DUMMY_DATA;
     uint32_t dataReceived;
     uint32_t dataSend = 0;

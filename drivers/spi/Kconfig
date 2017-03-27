@@ -263,6 +263,6 @@ config SPI_SS_1_CS_GPIO_PIN
 
 source "drivers/spi/Kconfig.dw"
 
-source "drivers/spi/Kconfig.mcux"
+source "drivers/spi/Kconfig.mcux_dspi"
 
 endif # SPI

@@ -97,7 +97,7 @@ tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
  * Use ENET_FRAME_MAX_FRAMELEN for ethernet frame size
  */
 #define ETH_MCUX_BUFFER_SIZE \
-	ROUND_UP(ENET_FRAME_MAX_VALNFRAMELEN, ENET_BUFF_ALIGNMENT)
+	ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
 
 static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
 rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
@@ -471,14 +471,12 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	case kENET_WakeUpEvent:
 		/* Wake up from sleep mode event. */
 		break;
-#ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
 	case kENET_TimeStampEvent:
 		/* Time stamp event.  */
 		break;
 	case kENET_TimeStampAvailEvent:
 		/* Time stamp available event.  */
 		break;
-#endif
 	}
 }
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -38,7 +38,6 @@
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -46,7 +45,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_FLEXBUS_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0. */
+#define FSL_FLEXBUS_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
 /*@}*/
 
 /*!
@@ -197,11 +196,11 @@ extern "C" {
  *
  * This function enables the clock gate for FlexBus module.
  * Only chip 0 is validated and set to known values. Other chips are disabled.
- * NOTE: In this function, certain parameters, depending on external memories,  must
- * be set before using FLEXBUS_Init() function.
+ * Note that in this function, certain parameters, depending on external memories,  must
+ * be set before using the FLEXBUS_Init() function.
  * This example shows how to set up the uart_state_t and the
  * flexbus_config_t parameters and how to call the FLEXBUS_Init function by passing
- * in these parameters:
+ * in these parameters.
    @code
     flexbus_config_t flexbusConfig;
     FLEXBUS_GetDefaultConfig(&flexbusConfig);
@@ -212,7 +211,7 @@ extern "C" {
    @endcode
  *
  * @param base FlexBus peripheral address.
- * @param config Pointer to the configure structure
+ * @param config Pointer to the configuration structure
 */
 void FLEXBUS_Init(FB_Type *base, const flexbus_config_t *config);
 
@@ -229,7 +228,7 @@ void FLEXBUS_Deinit(FB_Type *base);
  * @brief Initializes the FlexBus configuration structure.
  *
  * This function initializes the FlexBus configuration structure to default value. The default
- * values are:
+ * values are.
    @code
    fbConfig->chip                   = 0;
    fbConfig->writeProtect           = 0;
