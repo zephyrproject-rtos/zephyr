@@ -91,6 +91,14 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
+config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+	bool "Show advanced features"
+	help
+	  Makes advanced features visible to controller developers.
+
+menu "Advanced features"
+	visible if BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+
 config BLUETOOTH_CONTROLLER_XTAL_ADVANCED
 	bool "Advanced event preparation"
 	default y
@@ -164,6 +172,8 @@ config BLUETOOTH_CONTROLLER_ADV_INDICATION
 	bool "Advertisement indications"
 	help
 	  Generate events indicating on air advertisement events.
+
+endmenu
 
 comment "BLE Controller debug configuration"
 
