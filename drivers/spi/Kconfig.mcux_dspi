@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig SPI_MCUX
+menuconfig SPI_MCUX_DSPI
 	bool
 	prompt "MCUX SPI driver"
 	depends on SPI && HAS_MCUX
@@ -14,7 +14,7 @@ menuconfig SPI_MCUX
 	help
 	Enable support for mcux spi driver.
 
-if SPI_MCUX
+if SPI_MCUX_DSPI
 
 config SPI_MCUX_BUF_SIZE
 	int "Number of bytes in the local buffer"
@@ -33,4 +33,4 @@ config SPI_MCUX_DUMMY_CHAR
 	This option configures what value to send when the tx buffer length is
 	less than the rx buffer length.
 
-endif # SPI_MCUX
+endif # SPI_MCUX_DSPI

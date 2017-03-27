@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -45,8 +45,10 @@ static uint32_t PDB_GetInstance(PDB_Type *base);
  ******************************************************************************/
 /*! @brief Pointers to PDB bases for each instance. */
 static PDB_Type *const s_pdbBases[] = PDB_BASE_PTRS;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to PDB clocks for each instance. */
-const clock_ip_name_t s_pdbClocks[] = PDB_CLOCKS;
+static const clock_ip_name_t s_pdbClocks[] = PDB_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Codes
@@ -56,7 +58,7 @@ static uint32_t PDB_GetInstance(PDB_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_PDB_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_pdbBases); instance++)
     {
         if (s_pdbBases[instance] == base)
         {
@@ -64,7 +66,7 @@ static uint32_t PDB_GetInstance(PDB_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_PDB_COUNT);
+    assert(instance < ARRAY_SIZE(s_pdbBases));
 
     return instance;
 }
@@ -75,8 +77,10 @@ void PDB_Init(PDB_Type *base, const pdb_config_t *config)
 
     uint32_t tmp32;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock. */
     CLOCK_EnableClock(s_pdbClocks[PDB_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Configure. */
     /* PDBx_SC. */
@@ -98,8 +102,10 @@ void PDB_Deinit(PDB_Type *base)
 {
     PDB_Enable(base, false); /* Disable the PDB module. */
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable the clock. */
     CLOCK_DisableClock(s_pdbClocks[PDB_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void PDB_GetDefaultConfig(pdb_config_t *config)

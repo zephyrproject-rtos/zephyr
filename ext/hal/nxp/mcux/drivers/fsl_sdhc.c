@@ -1,34 +1,28 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
  *
- * Redistribution and use in source and binary forms, with or without
- * modification,
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this
- * list
+ * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
  *
- * o Redistributions in binary form must reproduce the above copyright notice,
- * this
+ * o Redistributions in binary form must reproduce the above copyright notice, this
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -42,13 +36,12 @@
 /*! @brief Clock setting */
 /* Max SD clock divisor from base clock */
 #define SDHC_MAX_DVS ((SDHC_SYSCTL_DVS_MASK >> SDHC_SYSCTL_DVS_SHIFT) + 1U)
-#define SDHC_INITIAL_DVS (1U)   /* Initial value of SD clock divisor */
-#define SDHC_INITIAL_CLKFS (2U) /* Initial value of SD clock frequency selector */
-#define SDHC_NEXT_DVS(x) ((x) += 1U)
 #define SDHC_PREV_DVS(x) ((x) -= 1U)
 #define SDHC_MAX_CLKFS ((SDHC_SYSCTL_SDCLKFS_MASK >> SDHC_SYSCTL_SDCLKFS_SHIFT) + 1U)
-#define SDHC_NEXT_CLKFS(x) ((x) <<= 1U)
 #define SDHC_PREV_CLKFS(x) ((x) >>= 1U)
+
+/* Typedef for interrupt handler. */
+typedef void (*sdhc_isr_t)(SDHC_Type *base, sdhc_handle_t *handle);
 
 /*! @brief ADMA table configuration */
 typedef struct _sdhc_adma_table_config
@@ -82,8 +75,9 @@ static void SDHC_SetTransferInterrupt(SDHC_Type *base, bool usingInterruptSignal
  * @param base SDHC peripheral base address.
  * @param command Command to be sent.
  * @param data Data to be transferred.
+ * @param DMA mode selection
  */
-static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_data_t *data);
+static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_data_t *data, sdhc_dma_mode_t dmaMode);
 
 /*!
  * @brief Receive command response
@@ -91,7 +85,7 @@ static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_da
  * @param base SDHC peripheral base address.
  * @param command Command to be sent.
  */
-static void SDHC_ReceiveCommandResponse(SDHC_Type *base, sdhc_command_t *command);
+static status_t SDHC_ReceiveCommandResponse(SDHC_Type *base, sdhc_command_t *command);
 
 /*!
  * @brief Read DATAPORT when buffer enable bit is set.
@@ -227,8 +221,13 @@ static SDHC_Type *const s_sdhcBase[] = SDHC_BASE_PTRS;
 /*! @brief SDHC IRQ name array */
 static const IRQn_Type s_sdhcIRQ[] = SDHC_IRQS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief SDHC clock array name */
 static const clock_ip_name_t s_sdhcClock[] = SDHC_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+/* SDHC ISR for transactional APIs. */
+static sdhc_isr_t s_sdhcIsr;
 
 /*******************************************************************************
  * Code
@@ -237,12 +236,12 @@ static uint32_t SDHC_GetInstance(SDHC_Type *base)
 {
     uint8_t instance = 0;
 
-    while ((instance < FSL_FEATURE_SOC_SDHC_COUNT) && (s_sdhcBase[instance] != base))
+    while ((instance < ARRAY_SIZE(s_sdhcBase)) && (s_sdhcBase[instance] != base))
     {
         instance++;
     }
 
-    assert(instance < FSL_FEATURE_SOC_SDHC_COUNT);
+    assert(instance < ARRAY_SIZE(s_sdhcBase));
 
     return instance;
 }
@@ -250,7 +249,6 @@ static uint32_t SDHC_GetInstance(SDHC_Type *base)
 static void SDHC_SetTransferInterrupt(SDHC_Type *base, bool usingInterruptSignal)
 {
     uint32_t interruptEnabled; /* The Interrupt status flags to be enabled */
-    sdhc_dma_mode_t dmaMode = (sdhc_dma_mode_t)((base->PROCTL & SDHC_PROCTL_DMAS_MASK) >> SDHC_PROCTL_DMAS_SHIFT);
     bool cardDetectDat3 = (bool)(base->PROCTL & SDHC_PROCTL_D3CD_MASK);
 
     /* Disable all interrupts */
@@ -261,22 +259,11 @@ static void SDHC_SetTransferInterrupt(SDHC_Type *base, bool usingInterruptSignal
     interruptEnabled =
         (kSDHC_CommandIndexErrorFlag | kSDHC_CommandCrcErrorFlag | kSDHC_CommandEndBitErrorFlag |
          kSDHC_CommandTimeoutFlag | kSDHC_CommandCompleteFlag | kSDHC_DataTimeoutFlag | kSDHC_DataCrcErrorFlag |
-         kSDHC_DataEndBitErrorFlag | kSDHC_DataCompleteFlag | kSDHC_AutoCommand12ErrorFlag);
+         kSDHC_DataEndBitErrorFlag | kSDHC_DataCompleteFlag | kSDHC_AutoCommand12ErrorFlag | kSDHC_BufferReadReadyFlag |
+         kSDHC_BufferWriteReadyFlag | kSDHC_DmaErrorFlag | kSDHC_DmaCompleteFlag);
     if (cardDetectDat3)
     {
         interruptEnabled |= (kSDHC_CardInsertionFlag | kSDHC_CardRemovalFlag);
-    }
-    switch (dmaMode)
-    {
-        case kSDHC_DmaModeAdma1:
-        case kSDHC_DmaModeAdma2:
-            interruptEnabled |= (kSDHC_DmaErrorFlag | kSDHC_DmaCompleteFlag);
-            break;
-        case kSDHC_DmaModeNo:
-            interruptEnabled |= (kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
-            break;
-        default:
-            break;
     }
 
     SDHC_EnableInterruptStatus(base, interruptEnabled);
@@ -286,50 +273,47 @@ static void SDHC_SetTransferInterrupt(SDHC_Type *base, bool usingInterruptSignal
     }
 }
 
-static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_data_t *data)
+static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_data_t *data, sdhc_dma_mode_t dmaMode)
 {
-    assert(command);
-
     uint32_t flags = 0U;
-    sdhc_transfer_config_t sdhcTransferConfig;
-    sdhc_dma_mode_t dmaMode;
+    sdhc_transfer_config_t sdhcTransferConfig = {0};
 
     /* Define the flag corresponding to each response type. */
     switch (command->responseType)
     {
-        case kSDHC_ResponseTypeNone:
+        case kCARD_ResponseTypeNone:
             break;
-        case kSDHC_ResponseTypeR1: /* Response 1 */
+        case kCARD_ResponseTypeR1: /* Response 1 */
             flags |= (kSDHC_ResponseLength48Flag | kSDHC_EnableCrcCheckFlag | kSDHC_EnableIndexCheckFlag);
             break;
-        case kSDHC_ResponseTypeR1b: /* Response 1 with busy */
+        case kCARD_ResponseTypeR1b: /* Response 1 with busy */
             flags |= (kSDHC_ResponseLength48BusyFlag | kSDHC_EnableCrcCheckFlag | kSDHC_EnableIndexCheckFlag);
             break;
-        case kSDHC_ResponseTypeR2: /* Response 2 */
+        case kCARD_ResponseTypeR2: /* Response 2 */
             flags |= (kSDHC_ResponseLength136Flag | kSDHC_EnableCrcCheckFlag);
             break;
-        case kSDHC_ResponseTypeR3: /* Response 3 */
+        case kCARD_ResponseTypeR3: /* Response 3 */
             flags |= (kSDHC_ResponseLength48Flag);
             break;
-        case kSDHC_ResponseTypeR4: /* Response 4 */
+        case kCARD_ResponseTypeR4: /* Response 4 */
             flags |= (kSDHC_ResponseLength48Flag);
             break;
-        case kSDHC_ResponseTypeR5: /* Response 5 */
-            flags |= (kSDHC_ResponseLength48Flag | kSDHC_EnableCrcCheckFlag);
-            break;
-        case kSDHC_ResponseTypeR5b: /* Response 5 with busy */
-            flags |= (kSDHC_ResponseLength48BusyFlag | kSDHC_EnableCrcCheckFlag | kSDHC_EnableIndexCheckFlag);
-            break;
-        case kSDHC_ResponseTypeR6: /* Response 6 */
+        case kCARD_ResponseTypeR5: /* Response 5 */
             flags |= (kSDHC_ResponseLength48Flag | kSDHC_EnableCrcCheckFlag | kSDHC_EnableIndexCheckFlag);
             break;
-        case kSDHC_ResponseTypeR7: /* Response 7 */
+        case kCARD_ResponseTypeR5b: /* Response 5 with busy */
+            flags |= (kSDHC_ResponseLength48BusyFlag | kSDHC_EnableCrcCheckFlag | kSDHC_EnableIndexCheckFlag);
+            break;
+        case kCARD_ResponseTypeR6: /* Response 6 */
+            flags |= (kSDHC_ResponseLength48Flag | kSDHC_EnableCrcCheckFlag | kSDHC_EnableIndexCheckFlag);
+            break;
+        case kCARD_ResponseTypeR7: /* Response 7 */
             flags |= (kSDHC_ResponseLength48Flag | kSDHC_EnableCrcCheckFlag | kSDHC_EnableIndexCheckFlag);
             break;
         default:
             break;
     }
-    if (command->type == kSDHC_CommandTypeAbort)
+    if (command->type == kCARD_CommandTypeAbort)
     {
         flags |= kSDHC_CommandTypeAbortFlag;
     }
@@ -337,7 +321,7 @@ static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_da
     if (data)
     {
         flags |= kSDHC_DataPresentFlag;
-        dmaMode = (sdhc_dma_mode_t)((base->PROCTL & SDHC_PROCTL_DMAS_MASK) >> SDHC_PROCTL_DMAS_SHIFT);
+
         if (dmaMode != kSDHC_DmaModeNo)
         {
             flags |= kSDHC_EnableDmaFlag;
@@ -355,18 +339,9 @@ static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_da
                 flags |= kSDHC_EnableAutoCommand12Flag;
             }
         }
-        if (data->blockCount > SDHC_MAX_BLOCK_COUNT)
-        {
-            sdhcTransferConfig.dataBlockSize = data->blockSize;
-            sdhcTransferConfig.dataBlockCount = SDHC_MAX_BLOCK_COUNT;
 
-            flags &= ~(uint32_t)kSDHC_EnableBlockCountFlag;
-        }
-        else
-        {
-            sdhcTransferConfig.dataBlockSize = data->blockSize;
-            sdhcTransferConfig.dataBlockCount = data->blockCount;
-        }
+        sdhcTransferConfig.dataBlockSize = data->blockSize;
+        sdhcTransferConfig.dataBlockCount = data->blockCount;
     }
     else
     {
@@ -380,16 +355,14 @@ static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_da
     SDHC_SetTransferConfig(base, &sdhcTransferConfig);
 }
 
-static void SDHC_ReceiveCommandResponse(SDHC_Type *base, sdhc_command_t *command)
+static status_t SDHC_ReceiveCommandResponse(SDHC_Type *base, sdhc_command_t *command)
 {
-    assert(command);
-
     uint32_t i;
 
-    if (command->responseType != kSDHC_ResponseTypeNone)
+    if (command->responseType != kCARD_ResponseTypeNone)
     {
         command->response[0U] = SDHC_GetCommandResponse(base, 0U);
-        if (command->responseType == kSDHC_ResponseTypeR2)
+        if (command->responseType == kCARD_ResponseTypeR2)
         {
             command->response[1U] = SDHC_GetCommandResponse(base, 1U);
             command->response[2U] = SDHC_GetCommandResponse(base, 2U);
@@ -408,16 +381,37 @@ static void SDHC_ReceiveCommandResponse(SDHC_Type *base, sdhc_command_t *command
             } while (i--);
         }
     }
+    /* check response error flag */
+    if ((command->responseErrorFlags != 0U) &&
+        ((command->responseType == kCARD_ResponseTypeR1) || (command->responseType == kCARD_ResponseTypeR1b) ||
+         (command->responseType == kCARD_ResponseTypeR6) || (command->responseType == kCARD_ResponseTypeR5)))
+    {
+        if (((command->responseErrorFlags) & (command->response[0U])) != 0U)
+        {
+            return kStatus_SDHC_SendCommandFailed;
+        }
+    }
+
+    return kStatus_Success;
 }
 
 static uint32_t SDHC_ReadDataPort(SDHC_Type *base, sdhc_data_t *data, uint32_t transferredWords)
 {
-    assert(data);
-
     uint32_t i;
     uint32_t totalWords;
     uint32_t wordsCanBeRead; /* The words can be read at this time. */
     uint32_t readWatermark = ((base->WML & SDHC_WML_RDWML_MASK) >> SDHC_WML_RDWML_SHIFT);
+
+    /*
+       * Add non aligned access support ,user need make sure your buffer size is big
+       * enough to hold the data,in other words,user need make sure the buffer size
+       * is 4 byte aligned
+       */
+    if (data->blockSize % sizeof(uint32_t) != 0U)
+    {
+        data->blockSize +=
+            sizeof(uint32_t) - (data->blockSize % sizeof(uint32_t)); /* make the block size as word-aligned */
+    }
 
     totalWords = ((data->blockCount * data->blockSize) / sizeof(uint32_t));
 
@@ -451,11 +445,20 @@ static uint32_t SDHC_ReadDataPort(SDHC_Type *base, sdhc_data_t *data, uint32_t t
 
 static status_t SDHC_ReadByDataPortBlocking(SDHC_Type *base, sdhc_data_t *data)
 {
-    assert(data);
-
     uint32_t totalWords;
     uint32_t transferredWords = 0U;
     status_t error = kStatus_Success;
+
+    /*
+       * Add non aligned access support ,user need make sure your buffer size is big
+       * enough to hold the data,in other words,user need make sure the buffer size
+       * is 4 byte aligned
+       */
+    if (data->blockSize % sizeof(uint32_t) != 0U)
+    {
+        data->blockSize +=
+            sizeof(uint32_t) - (data->blockSize % sizeof(uint32_t)); /* make the block size as word-aligned */
+    }
 
     totalWords = ((data->blockCount * data->blockSize) / sizeof(uint32_t));
 
@@ -476,25 +479,33 @@ static status_t SDHC_ReadByDataPortBlocking(SDHC_Type *base, sdhc_data_t *data)
         {
             transferredWords = SDHC_ReadDataPort(base, data, transferredWords);
         }
-
-        /* Clear buffer enable flag to trigger transfer. Clear data error flag when SDHC encounter error */
-        SDHC_ClearInterruptStatusFlags(base, (kSDHC_BufferReadReadyFlag | kSDHC_DataErrorFlag));
+        /* clear buffer ready and error */
+        SDHC_ClearInterruptStatusFlags(base, kSDHC_BufferReadReadyFlag | kSDHC_DataErrorFlag);
     }
 
     /* Clear data complete flag after the last read operation. */
-    SDHC_ClearInterruptStatusFlags(base, kSDHC_DataCompleteFlag);
+    SDHC_ClearInterruptStatusFlags(base, kSDHC_DataCompleteFlag | kSDHC_DataErrorFlag);
 
     return error;
 }
 
 static uint32_t SDHC_WriteDataPort(SDHC_Type *base, sdhc_data_t *data, uint32_t transferredWords)
 {
-    assert(data);
-
     uint32_t i;
     uint32_t totalWords;
     uint32_t wordsCanBeWrote; /* Words can be wrote at this time. */
     uint32_t writeWatermark = ((base->WML & SDHC_WML_WRWML_MASK) >> SDHC_WML_WRWML_SHIFT);
+
+    /*
+       * Add non aligned access support ,user need make sure your buffer size is big
+       * enough to hold the data,in other words,user need make sure the buffer size
+       * is 4 byte aligned
+       */
+    if (data->blockSize % sizeof(uint32_t) != 0U)
+    {
+        data->blockSize +=
+            sizeof(uint32_t) - (data->blockSize % sizeof(uint32_t)); /* make the block size as word-aligned */
+    }
 
     totalWords = ((data->blockCount * data->blockSize) / sizeof(uint32_t));
 
@@ -528,11 +539,20 @@ static uint32_t SDHC_WriteDataPort(SDHC_Type *base, sdhc_data_t *data, uint32_t 
 
 static status_t SDHC_WriteByDataPortBlocking(SDHC_Type *base, sdhc_data_t *data)
 {
-    assert(data);
-
     uint32_t totalWords;
     uint32_t transferredWords = 0U;
     status_t error = kStatus_Success;
+
+    /*
+       * Add non aligned access support ,user need make sure your buffer size is big
+       * enough to hold the data,in other words,user need make sure the buffer size
+       * is 4 byte aligned
+       */
+    if (data->blockSize % sizeof(uint32_t) != 0U)
+    {
+        data->blockSize +=
+            sizeof(uint32_t) - (data->blockSize % sizeof(uint32_t)); /* make the block size as word-aligned */
+    }
 
     totalWords = (data->blockCount * data->blockSize) / sizeof(uint32_t);
 
@@ -569,6 +589,7 @@ static status_t SDHC_WriteByDataPortBlocking(SDHC_Type *base, sdhc_data_t *data)
             error = kStatus_Fail;
         }
     }
+
     SDHC_ClearInterruptStatusFlags(base, (kSDHC_DataCompleteFlag | kSDHC_DataErrorFlag));
 
     return error;
@@ -576,8 +597,6 @@ static status_t SDHC_WriteByDataPortBlocking(SDHC_Type *base, sdhc_data_t *data)
 
 static status_t SDHC_SendCommandBlocking(SDHC_Type *base, sdhc_command_t *command)
 {
-    assert(command);
-
     status_t error = kStatus_Success;
 
     /* Wait command complete or SDHC encounters error. */
@@ -592,7 +611,7 @@ static status_t SDHC_SendCommandBlocking(SDHC_Type *base, sdhc_command_t *comman
     /* Receive response when command completes successfully. */
     if (error == kStatus_Success)
     {
-        SDHC_ReceiveCommandResponse(base, command);
+        error = SDHC_ReceiveCommandResponse(base, command);
     }
 
     SDHC_ClearInterruptStatusFlags(base, (kSDHC_CommandCompleteFlag | kSDHC_CommandErrorFlag));
@@ -602,8 +621,6 @@ static status_t SDHC_SendCommandBlocking(SDHC_Type *base, sdhc_command_t *comman
 
 static status_t SDHC_TransferByDataPortBlocking(SDHC_Type *base, sdhc_data_t *data)
 {
-    assert(data);
-
     status_t error = kStatus_Success;
 
     if (data->rxData)
@@ -669,8 +686,6 @@ static status_t SDHC_TransferDataBlocking(sdhc_dma_mode_t dmaMode, SDHC_Type *ba
 
 static void SDHC_TransferHandleCardDetect(sdhc_handle_t *handle, uint32_t interruptFlags)
 {
-    assert(interruptFlags & kSDHC_CardDetectFlag);
-
     if (interruptFlags & kSDHC_CardInsertionFlag)
     {
         if (handle->callback.CardInserted)
@@ -689,7 +704,7 @@ static void SDHC_TransferHandleCardDetect(sdhc_handle_t *handle, uint32_t interr
 
 static void SDHC_TransferHandleCommand(SDHC_Type *base, sdhc_handle_t *handle, uint32_t interruptFlags)
 {
-    assert(interruptFlags & kSDHC_CommandFlag);
+    assert(handle->command);
 
     if ((interruptFlags & kSDHC_CommandErrorFlag) && (!(handle->data)) && (handle->callback.TransferComplete))
     {
@@ -709,7 +724,6 @@ static void SDHC_TransferHandleCommand(SDHC_Type *base, sdhc_handle_t *handle, u
 static void SDHC_TransferHandleData(SDHC_Type *base, sdhc_handle_t *handle, uint32_t interruptFlags)
 {
     assert(handle->data);
-    assert(interruptFlags & kSDHC_DataFlag);
 
     if ((!(handle->data->enableIgnoreError)) && (interruptFlags & (kSDHC_DataErrorFlag | kSDHC_DmaErrorFlag)) &&
         (handle->callback.TransferComplete))
@@ -726,7 +740,11 @@ static void SDHC_TransferHandleData(SDHC_Type *base, sdhc_handle_t *handle, uint
         {
             handle->transferredWords = SDHC_WriteDataPort(base, handle->data, handle->transferredWords);
         }
-        else if ((interruptFlags & kSDHC_DataCompleteFlag) && (handle->callback.TransferComplete))
+        else
+        {
+        }
+
+        if ((interruptFlags & kSDHC_DataCompleteFlag) && (handle->callback.TransferComplete))
         {
             handle->callback.TransferComplete(base, handle, kStatus_Success, handle->userData);
         }
@@ -759,12 +777,16 @@ void SDHC_Init(SDHC_Type *base, const sdhc_config_t *config)
 #if !defined FSL_SDHC_ENABLE_ADMA1
     assert(config->dmaMode != kSDHC_DmaModeAdma1);
 #endif /* FSL_SDHC_ENABLE_ADMA1 */
+    assert((config->writeWatermarkLevel >= 1U) && (config->writeWatermarkLevel <= 128U));
+    assert((config->readWatermarkLevel >= 1U) && (config->readWatermarkLevel <= 128U));
 
     uint32_t proctl;
     uint32_t wml;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable SDHC clock. */
     CLOCK_EnableClock(s_sdhcClock[SDHC_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
     /* Reset SDHC. */
     SDHC_Reset(base, kSDHC_ResetAll, 100);
@@ -798,8 +820,10 @@ void SDHC_Init(SDHC_Type *base, const sdhc_config_t *config)
 
 void SDHC_Deinit(SDHC_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable clock. */
     CLOCK_DisableClock(s_sdhcClock[SDHC_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 bool SDHC_Reset(SDHC_Type *base, uint32_t mask, uint32_t timeout)
@@ -850,46 +874,86 @@ void SDHC_GetCapability(SDHC_Type *base, sdhc_capability_t *capability)
 
 uint32_t SDHC_SetSdClock(SDHC_Type *base, uint32_t srcClock_Hz, uint32_t busClock_Hz)
 {
-    assert(busClock_Hz && (busClock_Hz < srcClock_Hz));
+    assert(srcClock_Hz != 0U);
+    assert((busClock_Hz != 0U) && (busClock_Hz <= srcClock_Hz));
 
-    uint32_t divisor;
-    uint32_t prescaler;
-    uint32_t sysctl;
-    uint32_t nearestFrequency = 0;
+    uint32_t totalDiv = 0U;
+    uint32_t divisor = 0U;
+    uint32_t prescaler = 0U;
+    uint32_t sysctl = 0U;
+    uint32_t nearestFrequency = 0U;
 
-    divisor = SDHC_INITIAL_DVS;
-    prescaler = SDHC_INITIAL_CLKFS;
+    /* calucate total divisor first */
+    totalDiv = srcClock_Hz / busClock_Hz;
+
+    if (totalDiv != 0U)
+    {
+        /* calucate the divisor (srcClock_Hz / divisor) <= busClock_Hz */
+        if ((srcClock_Hz / totalDiv) > busClock_Hz)
+        {
+            totalDiv++;
+        }
+
+        /* divide the total divisor to div and prescaler */
+        if (totalDiv > SDHC_MAX_DVS)
+        {
+            prescaler = totalDiv / SDHC_MAX_DVS;
+            /* prescaler must be a value which equal 2^n and smaller than SDHC_MAX_CLKFS */
+            while (((SDHC_MAX_CLKFS % prescaler) != 0U) || (prescaler == 1U))
+            {
+                prescaler++;
+            }
+            /* calucate the divisor */
+            divisor = totalDiv / prescaler;
+            /* fine tuning the divisor until divisor * prescaler >= totalDiv */
+            while ((divisor * prescaler) < totalDiv)
+            {
+                divisor++;
+            }
+            nearestFrequency = srcClock_Hz / divisor / prescaler;
+        }
+        else
+        {
+            divisor = totalDiv;
+            prescaler = 0U;
+            nearestFrequency = srcClock_Hz / divisor;
+        }
+    }
+    /* in this condition , srcClock_Hz = busClock_Hz, */
+    else
+    {
+        /* total divider = 1U */
+        divisor = 0U;
+        prescaler = 0U;
+        nearestFrequency = srcClock_Hz;
+    }
+
+    /* calucate the value write to register */
+    if (divisor != 0U)
+    {
+        SDHC_PREV_DVS(divisor);
+    }
+    /* calucate the value write to register */
+    if (prescaler != 0U)
+    {
+        SDHC_PREV_CLKFS(prescaler);
+    }
 
     /* Disable SD clock. It should be disabled before changing the SD clock frequency.*/
     base->SYSCTL &= ~SDHC_SYSCTL_SDCLKEN_MASK;
 
-    if (busClock_Hz > 0U)
+    /* Set the SD clock frequency divisor, SD clock frequency select, data timeout counter value. */
+    sysctl = base->SYSCTL;
+    sysctl &= ~(SDHC_SYSCTL_DVS_MASK | SDHC_SYSCTL_SDCLKFS_MASK | SDHC_SYSCTL_DTOCV_MASK);
+    sysctl |= (SDHC_SYSCTL_DVS(divisor) | SDHC_SYSCTL_SDCLKFS(prescaler) | SDHC_SYSCTL_DTOCV(0xEU));
+    base->SYSCTL = sysctl;
+
+    /* Wait until the SD clock is stable. */
+    while (!(base->PRSSTAT & SDHC_PRSSTAT_SDSTB_MASK))
     {
-        while ((srcClock_Hz / prescaler / SDHC_MAX_DVS > busClock_Hz) && (prescaler < SDHC_MAX_CLKFS))
-        {
-            SDHC_NEXT_CLKFS(prescaler);
-        }
-        while ((srcClock_Hz / prescaler / divisor > busClock_Hz) && (divisor < SDHC_MAX_DVS))
-        {
-            SDHC_NEXT_DVS(divisor);
-        }
-        nearestFrequency = srcClock_Hz / prescaler / divisor;
-        SDHC_PREV_CLKFS(prescaler);
-        SDHC_PREV_DVS(divisor);
-
-        /* Set the SD clock frequency divisor, SD clock frequency select, data timeout counter value. */
-        sysctl = base->SYSCTL;
-        sysctl &= ~(SDHC_SYSCTL_DVS_MASK | SDHC_SYSCTL_SDCLKFS_MASK | SDHC_SYSCTL_DTOCV_MASK);
-        sysctl |= (SDHC_SYSCTL_DVS(divisor) | SDHC_SYSCTL_SDCLKFS(prescaler) | SDHC_SYSCTL_DTOCV(0xEU));
-        base->SYSCTL = sysctl;
-
-        /* Wait until the SD clock is stable. */
-        while (!(base->PRSSTAT & SDHC_PRSSTAT_SDSTB_MASK))
-        {
-        }
-        /* Enable the SD clock. */
-        base->SYSCTL |= SDHC_SYSCTL_SDCLKEN_MASK;
     }
+    /* Enable the SD clock. */
+    base->SYSCTL |= SDHC_SYSCTL_SDCLKEN_MASK;
 
     return nearestFrequency;
 }
@@ -898,7 +962,7 @@ bool SDHC_SetCardActive(SDHC_Type *base, uint32_t timeout)
 {
     base->SYSCTL |= SDHC_SYSCTL_INITA_MASK;
     /* Delay some time to wait card become active state. */
-    while (!(base->SYSCTL & SDHC_SYSCTL_INITA_MASK))
+    while (base->SYSCTL & SDHC_SYSCTL_INITA_MASK)
     {
         if (!timeout)
         {
@@ -913,6 +977,8 @@ bool SDHC_SetCardActive(SDHC_Type *base, uint32_t timeout)
 void SDHC_SetTransferConfig(SDHC_Type *base, const sdhc_transfer_config_t *config)
 {
     assert(config);
+    assert(config->dataBlockSize <= (SDHC_BLKATTR_BLKSIZE_MASK >> SDHC_BLKATTR_BLKSIZE_SHIFT));
+    assert(config->dataBlockCount <= (SDHC_BLKATTR_BLKCNT_MASK >> SDHC_BLKATTR_BLKCNT_SHIFT));
 
     base->BLKATTR = ((base->BLKATTR & ~(SDHC_BLKATTR_BLKSIZE_MASK | SDHC_BLKATTR_BLKCNT_MASK)) |
                      (SDHC_BLKATTR_BLKSIZE(config->dataBlockSize) | SDHC_BLKATTR_BLKCNT(config->dataBlockCount)));
@@ -975,12 +1041,13 @@ void SDHC_EnableSdioControl(SDHC_Type *base, uint32_t mask, bool enable)
 void SDHC_SetMmcBootConfig(SDHC_Type *base, const sdhc_boot_config_t *config)
 {
     assert(config);
+    assert(config->ackTimeoutCount <= (SDHC_MMCBOOT_DTOCVACK_MASK >> SDHC_MMCBOOT_DTOCVACK_SHIFT));
+    assert(config->blockCount <= (SDHC_MMCBOOT_BOOTBLKCNT_MASK >> SDHC_MMCBOOT_BOOTBLKCNT_SHIFT));
 
-    uint32_t mmcboot;
+    uint32_t mmcboot = 0U;
 
-    mmcboot = base->MMCBOOT;
-    mmcboot |= (SDHC_MMCBOOT_DTOCVACK(config->ackTimeoutCount) | SDHC_MMCBOOT_BOOTMODE(config->bootMode) |
-                SDHC_MMCBOOT_BOOTBLKCNT(config->blockCount));
+    mmcboot = (SDHC_MMCBOOT_DTOCVACK(config->ackTimeoutCount) | SDHC_MMCBOOT_BOOTMODE(config->bootMode) |
+               SDHC_MMCBOOT_BOOTBLKCNT(config->blockCount));
     if (config->enableBootAck)
     {
         mmcboot |= SDHC_MMCBOOT_BOOTACK_MASK;
@@ -1004,7 +1071,7 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                                  uint32_t dataBytes)
 {
     status_t error = kStatus_Success;
-    const uint32_t *startAddress;
+    const uint32_t *startAddress = data;
     uint32_t entries;
     uint32_t i;
 #if defined FSL_SDHC_ENABLE_ADMA1
@@ -1016,10 +1083,18 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
         (!data) || (!dataBytes)
 #if !defined FSL_SDHC_ENABLE_ADMA1
         || (dmaMode == kSDHC_DmaModeAdma1)
-#endif /* FSL_SDHC_ENABLE_ADMA1 */
+#endif
             )
     {
         error = kStatus_InvalidArgument;
+    }
+    else if (((dmaMode == kSDHC_DmaModeAdma2) && (((uint32_t)startAddress % SDHC_ADMA2_LENGTH_ALIGN) != 0U))
+#if defined FSL_SDHC_ENABLE_ADMA1
+             || ((dmaMode == kSDHC_DmaModeAdma1) && (((uint32_t)startAddress % SDHC_ADMA1_LENGTH_ALIGN) != 0U))
+#endif
+                 )
+    {
+        error = kStatus_SDHC_DMADataBufferAddrNotAlign;
     }
     else
     {
@@ -1029,7 +1104,17 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                 break;
 #if defined FSL_SDHC_ENABLE_ADMA1
             case kSDHC_DmaModeAdma1:
-                startAddress = data;
+                /*
+                * Add non aligned access support ,user need make sure your buffer size is big
+                * enough to hold the data,in other words,user need make sure the buffer size
+                * is 4 byte aligned
+                */
+                if (dataBytes % sizeof(uint32_t) != 0U)
+                {
+                    dataBytes +=
+                        sizeof(uint32_t) - (dataBytes % sizeof(uint32_t)); /* make the data length as word-aligned */
+                }
+
                 /* Check if ADMA descriptor's number is enough. */
                 entries = ((dataBytes / SDHC_ADMA1_DESCRIPTOR_MAX_LENGTH_PER_ENTRY) + 1U);
                 /* ADMA1 needs two descriptors to finish a transfer */
@@ -1054,7 +1139,7 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                             adma1EntryAddress[i + 1U] =
                                 ((uint32_t)(startAddress) << SDHC_ADMA1_DESCRIPTOR_ADDRESS_SHIFT);
                             adma1EntryAddress[i + 1U] |=
-                                (SDHC_ADMA1_DESCRIPTOR_TYPE_TRANSFER | SDHC_ADMA1_DESCRIPTOR_END_MASK);
+                                (kSDHC_Adma1DescriptorTypeTransfer | kSDHC_Adma1DescriptorEndFlag);
                         }
                         else
                         {
@@ -1071,11 +1156,24 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                     /* When use ADMA, disable simple DMA */
                     base->DSADDR = 0U;
                     base->ADSADDR = (uint32_t)table;
+                    /* disable the buffer ready flag in DMA mode */
+                    SDHC_DisableInterruptSignal(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
+                    SDHC_DisableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
                 }
                 break;
 #endif /* FSL_SDHC_ENABLE_ADMA1 */
             case kSDHC_DmaModeAdma2:
-                startAddress = data;
+                /*
+                * Add non aligned access support ,user need make sure your buffer size is big
+                * enough to hold the data,in other words,user need make sure the buffer size
+                * is 4 byte aligned
+                */
+                if (dataBytes % sizeof(uint32_t) != 0U)
+                {
+                    dataBytes +=
+                        sizeof(uint32_t) - (dataBytes % sizeof(uint32_t)); /* make the data length as word-aligned */
+                }
+
                 /* Check if ADMA descriptor's number is enough. */
                 entries = ((dataBytes / SDHC_ADMA2_DESCRIPTOR_MAX_LENGTH_PER_ENTRY) + 1U);
                 if (entries > ((tableWords * sizeof(uint32_t)) / sizeof(sdhc_adma2_descriptor_t)))
@@ -1112,6 +1210,9 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                     /* When use ADMA, disable simple DMA */
                     base->DSADDR = 0U;
                     base->ADSADDR = (uint32_t)table;
+                    /* disable the buffer read flag in DMA mode */
+                    SDHC_DisableInterruptSignal(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
+                    SDHC_DisableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
                 }
                 break;
             default:
@@ -1125,55 +1226,62 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
 status_t SDHC_TransferBlocking(SDHC_Type *base, uint32_t *admaTable, uint32_t admaTableWords, sdhc_transfer_t *transfer)
 {
     assert(transfer);
-    assert(transfer->command); /* Command must not be NULL, data can be NULL. */
 
     status_t error = kStatus_Success;
     sdhc_dma_mode_t dmaMode = (sdhc_dma_mode_t)((base->PROCTL & SDHC_PROCTL_DMAS_MASK) >> SDHC_PROCTL_DMAS_SHIFT);
     sdhc_command_t *command = transfer->command;
     sdhc_data_t *data = transfer->data;
 
-    /* DATA-PORT is 32-bit align, ADMA2 4 bytes align, ADMA1 is 4096 bytes align */
-    if ((!command) || (data && (data->blockSize % 4U)))
+    /* make sure the cmd/block count is valid */
+    if ((!command) || (data && (data->blockCount > SDHC_MAX_BLOCK_COUNT)))
     {
-        error = kStatus_InvalidArgument;
+        return kStatus_InvalidArgument;
     }
-    else
-    {
-        /* Wait until command/data bus out of busy status. */
-        while (SDHC_GetPresentStatusFlags(base) & kSDHC_CommandInhibitFlag)
-        {
-        }
-        while (data && (SDHC_GetPresentStatusFlags(base) & kSDHC_DataInhibitFlag))
-        {
-        }
 
-        /* Update ADMA descriptor table if data isn't NULL. */
-        if (data && (kStatus_Success != SDHC_SetAdmaTableConfig(base, dmaMode, admaTable, admaTableWords,
-                                                                (data->rxData ? data->rxData : data->txData),
-                                                                (data->blockCount * data->blockSize))))
+    /* Wait until command/data bus out of busy status. */
+    while (SDHC_GetPresentStatusFlags(base) & kSDHC_CommandInhibitFlag)
+    {
+    }
+    while (data && (SDHC_GetPresentStatusFlags(base) & kSDHC_DataInhibitFlag))
+    {
+    }
+
+    /* Update ADMA descriptor table according to different DMA mode(no DMA, ADMA1, ADMA2).*/
+    if (data && (NULL != admaTable))
+    {
+        error =
+            SDHC_SetAdmaTableConfig(base, dmaMode, admaTable, admaTableWords,
+                                    (data->rxData ? data->rxData : data->txData), (data->blockCount * data->blockSize));
+        /* in this situation , we disable the DMA instead of polling transfer mode */
+        if (error == kStatus_SDHC_DMADataBufferAddrNotAlign)
         {
-            error = kStatus_SDHC_PrepareAdmaDescriptorFailed;
+            dmaMode = kSDHC_DmaModeNo;
+            SDHC_EnableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
+        }
+        else if (error != kStatus_Success)
+        {
+            return error;
         }
         else
         {
-            SDHC_StartTransfer(base, command, data);
-
-            /* Send command and receive data. */
-            if (kStatus_Success != SDHC_SendCommandBlocking(base, command))
-            {
-                error = kStatus_SDHC_SendCommandFailed;
-            }
-            else if (data && (kStatus_Success != SDHC_TransferDataBlocking(dmaMode, base, data)))
-            {
-                error = kStatus_SDHC_TransferDataFailed;
-            }
-            else
-            {
-            }
         }
     }
 
-    return error;
+    /* Send command and receive data. */
+    SDHC_StartTransfer(base, command, data, dmaMode);
+    if (kStatus_Success != SDHC_SendCommandBlocking(base, command))
+    {
+        return kStatus_SDHC_SendCommandFailed;
+    }
+    else if (data && (kStatus_Success != SDHC_TransferDataBlocking(dmaMode, base, data)))
+    {
+        return kStatus_SDHC_TransferDataFailed;
+    }
+    else
+    {
+    }
+
+    return kStatus_Success;
 }
 
 void SDHC_TransferCreateHandle(SDHC_Type *base,
@@ -1200,6 +1308,10 @@ void SDHC_TransferCreateHandle(SDHC_Type *base,
 
     /* Enable interrupt in NVIC. */
     SDHC_SetTransferInterrupt(base, true);
+
+    /* save IRQ handler */
+    s_sdhcIsr = SDHC_TransferHandleIRQ;
+
     EnableIRQ(s_sdhcIRQ[SDHC_GetInstance(base)]);
 }
 
@@ -1213,42 +1325,52 @@ status_t SDHC_TransferNonBlocking(
     sdhc_command_t *command = transfer->command;
     sdhc_data_t *data = transfer->data;
 
-    /* DATA-PORT is 32-bit align, ADMA2 4 bytes align, ADMA1 is 4096 bytes align */
-    if ((!(transfer->command)) || ((transfer->data) && (transfer->data->blockSize % 4U)))
+    /* make sure cmd/block count is valid */
+    if ((!command) || (data && (data->blockCount > SDHC_MAX_BLOCK_COUNT)))
     {
-        error = kStatus_InvalidArgument;
+        return kStatus_InvalidArgument;
     }
-    else
+
+    /* Wait until command/data bus out of busy status. */
+    if ((SDHC_GetPresentStatusFlags(base) & kSDHC_CommandInhibitFlag) ||
+        (data && (SDHC_GetPresentStatusFlags(base) & kSDHC_DataInhibitFlag)))
     {
-        /* Wait until command/data bus out of busy status. */
-        if ((SDHC_GetPresentStatusFlags(base) & kSDHC_CommandInhibitFlag) ||
-            (data && (SDHC_GetPresentStatusFlags(base) & kSDHC_DataInhibitFlag)))
+        return kStatus_SDHC_BusyTransferring;
+    }
+
+    /* Update ADMA descriptor table according to different DMA mode(no DMA, ADMA1, ADMA2).*/
+    if (data && (NULL != admaTable))
+    {
+        error =
+            SDHC_SetAdmaTableConfig(base, dmaMode, admaTable, admaTableWords,
+                                    (data->rxData ? data->rxData : data->txData), (data->blockCount * data->blockSize));
+        /* in this situation , we disable the DMA instead of polling transfer mode */
+        if (error == kStatus_SDHC_DMADataBufferAddrNotAlign)
         {
-            error = kStatus_SDHC_BusyTransferring;
+            /* change to polling mode */
+            dmaMode = kSDHC_DmaModeNo;
+            SDHC_EnableInterruptSignal(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
+            SDHC_EnableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
+        }
+        else if (error != kStatus_Success)
+        {
+            return error;
         }
         else
         {
-            /* Update ADMA descriptor table and reset transferred words if data isn't NULL. */
-            if (data && (kStatus_Success != SDHC_SetAdmaTableConfig(base, dmaMode, admaTable, admaTableWords,
-                                                                    (data->rxData ? data->rxData : data->txData),
-                                                                    (data->blockCount * data->blockSize))))
-            {
-                error = kStatus_SDHC_PrepareAdmaDescriptorFailed;
-            }
-            else
-            {
-                /* Save command and data into handle before transferring. */
-                handle->command = command;
-                handle->data = data;
-                handle->interruptFlags = 0U;
-                /* transferredWords will only be updated in ISR when transfer way is DATAPORT. */
-                handle->transferredWords = 0U;
-                SDHC_StartTransfer(base, command, data);
-            }
         }
     }
 
-    return error;
+    /* Save command and data into handle before transferring. */
+    handle->command = command;
+    handle->data = data;
+    handle->interruptFlags = 0U;
+    /* transferredWords will only be updated in ISR when transfer way is DATAPORT. */
+    handle->transferredWords = 0U;
+
+    SDHC_StartTransfer(base, command, data, dmaMode);
+
+    return kStatus_Success;
 }
 
 void SDHC_TransferHandleIRQ(SDHC_Type *base, sdhc_handle_t *handle)
@@ -1289,6 +1411,6 @@ void SDHC_DriverIRQHandler(void)
 {
     assert(s_sdhcHandle[0]);
 
-    SDHC_TransferHandleIRQ(SDHC, s_sdhcHandle[0]);
+    s_sdhcIsr(SDHC, s_sdhcHandle[0]);
 }
 #endif

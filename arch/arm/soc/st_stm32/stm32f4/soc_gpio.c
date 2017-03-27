@@ -210,12 +210,12 @@ int stm32_gpio_set(uint32_t *base, int pin, int value)
 {
 	struct stm32f4x_gpio *gpio = (struct stm32f4x_gpio *)base;
 
-	int pval = 1 << (pin & 0xf);
-
 	if (value) {
-		gpio->odr |= pval;
+		/* atomic set */
+		gpio->bsr = (1 << (pin & 0x0f));
 	} else {
-		gpio->odr &= ~pval;
+		/* atomic reset */
+		gpio->bsr = (1 << ((pin & 0x0f) + 0x10));
 	}
 
 	return 0;

@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "armv7-m.dtsi"
+
+/ {
+	sram0: memory {
+		reg = <0x20000000 0x5000>;
+	};
+
+	flash0: flash {
+		reg = <0x08000000 0x20000>;
+	};
+
+	clocks {
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <0>;
+		};
+	};
+
+	soc {
+		usart1: uart@40013800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40013800 0x400>;
+			interrupts = <37>;
+			zephyr,irq-prio = <0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		usart2: uart@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			interrupts = <38>;
+			zephyr,irq-prio = <0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		usart3: uart@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			interrupts = <39>;
+			zephyr,irq-prio = <0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		pin-controller {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "st,stm32f103xb-pinctrl";
+			ranges = <0 0x40010800 0x1400>;
+
+			gpioa: gpio@40010800 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x0 0x400>;
+				st,bank-name = "GPIOA";
+			};
+
+			gpiob: gpio@40010C00 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x400 0x400>;
+				st,bank-name = "GPIOB";
+			};
+
+			gpioc: gpio@40011000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x800 0x400>;
+				st,bank-name = "GPIOC";
+			};
+
+			gpiod: gpio@40011400 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0xc00 0x400>;
+				st,bank-name = "GPIOD";
+			};
+
+			gpioe: gpio@40011800 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x1000 0x400>;
+				st,bank-name = "GPIOE";
+			};
+		};
+	};
+};
+
+&nvic {
+	num-irq-prio-bits = <4>;
+	num-irqs = <59>;
+};

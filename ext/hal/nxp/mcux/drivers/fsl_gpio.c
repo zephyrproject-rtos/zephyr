@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -57,7 +57,7 @@ static uint32_t GPIO_GetInstance(GPIO_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_GPIO_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_gpioBases); instance++)
     {
         if (s_gpioBases[instance] == base)
         {
@@ -65,7 +65,7 @@ static uint32_t GPIO_GetInstance(GPIO_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_GPIO_COUNT);
+    assert(instance < ARRAY_SIZE(s_gpioBases));
 
     return instance;
 }
@@ -103,6 +103,14 @@ void GPIO_ClearPinsInterruptFlags(GPIO_Type *base, uint32_t mask)
     portBase->ISFR = mask;
 }
 
+#if defined(FSL_FEATURE_GPIO_HAS_ATTRIBUTE_CHECKER) && FSL_FEATURE_GPIO_HAS_ATTRIBUTE_CHECKER
+void GPIO_CheckAttributeBytes(GPIO_Type *base, gpio_checker_attribute_t attribute)
+{
+    base->GACR = ((uint32_t)attribute << GPIO_GACR_ACB0_SHIFT) | ((uint32_t)attribute << GPIO_GACR_ACB1_SHIFT) |
+                 ((uint32_t)attribute << GPIO_GACR_ACB2_SHIFT) | ((uint32_t)attribute << GPIO_GACR_ACB3_SHIFT);
+}
+#endif
+
 #if defined(FSL_FEATURE_SOC_FGPIO_COUNT) && FSL_FEATURE_SOC_FGPIO_COUNT
 
 /*******************************************************************************
@@ -130,7 +138,7 @@ static uint32_t FGPIO_GetInstance(FGPIO_Type *base)
     uint32_t instance;
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < FSL_FEATURE_SOC_FGPIO_COUNT; instance++)
+    for (instance = 0; instance < ARRAY_SIZE(s_fgpioBases); instance++)
     {
         if (s_fgpioBases[instance] == base)
         {
@@ -138,7 +146,7 @@ static uint32_t FGPIO_GetInstance(FGPIO_Type *base)
         }
     }
 
-    assert(instance < FSL_FEATURE_SOC_FGPIO_COUNT);
+    assert(instance < ARRAY_SIZE(s_fgpioBases));
 
     return instance;
 }
@@ -175,5 +183,13 @@ void FGPIO_ClearPinsInterruptFlags(FGPIO_Type *base, uint32_t mask)
     portBase = s_portBases[instance];
     portBase->ISFR = mask;
 }
+
+#if defined(FSL_FEATURE_FGPIO_HAS_ATTRIBUTE_CHECKER) && FSL_FEATURE_FGPIO_HAS_ATTRIBUTE_CHECKER
+void FGPIO_CheckAttributeBytes(FGPIO_Type *base, gpio_checker_attribute_t attribute)
+{
+    base->GACR = (attribute << FGPIO_GACR_ACB0_SHIFT) | (attribute << FGPIO_GACR_ACB1_SHIFT) |
+                 (attribute << FGPIO_GACR_ACB2_SHIFT) | (attribute << FGPIO_GACR_ACB3_SHIFT);
+}
+#endif
 
 #endif /* FSL_FEATURE_SOC_FGPIO_COUNT */

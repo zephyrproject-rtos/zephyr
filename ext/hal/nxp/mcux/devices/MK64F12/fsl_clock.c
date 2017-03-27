@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016 - 2017 , NXP
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -12,7 +13,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -28,7 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fsl_common.h"
 #include "fsl_clock.h"
 
 /*******************************************************************************
@@ -120,7 +120,6 @@ static uint32_t s_fastIrcFreq = 4000000U;
 
 /* External XTAL0 (OSC0) clock frequency. */
 uint32_t g_xtal0Freq;
-
 /* External XTAL32K clock frequency. */
 uint32_t g_xtal32Freq;
 
@@ -191,17 +190,36 @@ static uint32_t CLOCK_GetPll0RefFreq(void);
  */
 static uint8_t CLOCK_GetOscRangeFromFreq(uint32_t freq);
 
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
+
+#ifndef MCG_USER_CONFIG_FLL_STABLE_DELAY_EN
 /*!
  * @brief Delay function to wait FLL stable.
  *
  * Delay function to wait FLL stable in FEI mode or FEE mode, should wait at least
  * 1ms. Every time changes FLL setting, should wait this time for FLL stable.
  */
-static void CLOCK_FllStableDelay(void);
-
-/*******************************************************************************
- * Code
- ******************************************************************************/
+void CLOCK_FllStableDelay(void)
+{
+    /*
+       Should wait at least 1ms. Because in these modes, the core clock is 100MHz
+       at most, so this function could obtain the 1ms delay.
+     */
+    volatile uint32_t i = 30000U;
+    while (i--)
+    {
+        __NOP();
+    }
+}
+#else  /* With MCG_USER_CONFIG_FLL_STABLE_DELAY_EN defined. */
+/* Once user defines the MCG_USER_CONFIG_FLL_STABLE_DELAY_EN to use their own delay function, he has to
+ * create his own CLOCK_FllStableDelay() function in application code. Since the clock functions in this
+ * file would call the CLOCK_FllStableDelay() regardness how it is defined.
+ */
+extern void CLOCK_FllStableDelay(void);
+#endif /* MCG_USER_CONFIG_FLL_STABLE_DELAY_EN */
 
 static uint32_t CLOCK_GetMcgExtClkFreq(void)
 {
@@ -336,19 +354,6 @@ static uint8_t CLOCK_GetOscRangeFromFreq(uint32_t freq)
     }
 
     return range;
-}
-
-static void CLOCK_FllStableDelay(void)
-{
-    /*
-       Should wait at least 1ms. Because in these modes, the core clock is 100MHz
-       at most, so this function could obtain the 1ms delay.
-     */
-    volatile uint32_t i = 30000U;
-    while (i--)
-    {
-        __NOP();
-    }
 }
 
 uint32_t CLOCK_GetOsc0ErClkFreq(void)
@@ -632,6 +637,12 @@ uint32_t CLOCK_GetPll0Freq(void)
 
     mcgpll0clk = CLOCK_GetPll0RefFreq();
 
+    /*
+     * Please call CLOCK_SetXtal0Freq base on board setting before using OSC0 clock.
+     * Please call CLOCK_SetXtal1Freq base on board setting before using OSC1 clock.
+     */
+    assert(mcgpll0clk);
+
     mcgpll0clk /= (FSL_FEATURE_MCG_PLL_PRDIV_BASE + MCG_C5_PRDIV0_VAL);
     mcgpll0clk *= (FSL_FEATURE_MCG_PLL_VDIV_BASE + MCG_C6_VDIV0_VAL);
 
@@ -662,16 +673,6 @@ status_t CLOCK_SetExternalRefClkConfig(mcg_oscsel_t oscsel)
     }
 
     MCG->C7 = (MCG->C7 & ~MCG_C7_OSCSEL_MASK) | MCG_C7_OSCSEL(oscsel);
-    if (kMCG_OscselOsc == oscsel)
-    {
-        if (MCG->C2 & MCG_C2_EREFS_MASK)
-        {
-            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
-            {
-            }
-        }
-    }
-
     if (needDelay)
     {
         /* ERR009878 Delay at least 50 micro-seconds for external clock change valid. */
@@ -1167,7 +1168,7 @@ mcg_mode_t CLOCK_GetMode(void)
     return mode;
 }
 
-status_t CLOCK_SetFeiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
+status_t CLOCK_SetFeiMode(mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableDelay)(void))
 {
     uint8_t mcg_c4;
     bool change_drs = false;
@@ -1211,7 +1212,7 @@ status_t CLOCK_SetFeiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
     }
 
     /* In FEI mode, the MCG_C4[DMX32] is set to 0U. */
-    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DRST_DRS(drs));
+    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DMX32(dmx32) | MCG_C4_DRST_DRS(drs));
 
     /* Check MCG_S[CLKST] */
     while (kMCG_ClkOutStatFll != MCG_S_CLKST_VAL)
@@ -1260,6 +1261,17 @@ status_t CLOCK_SetFeeMode(uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void 
                 | MCG_C1_FRDIV(frdiv)                  /* FRDIV */
                 | MCG_C1_IREFS(kMCG_FllSrcExternal))); /* IREFS = 0 */
 
+    /* If use external crystal as clock source, wait for it stable. */
+    if (MCG_C7_OSCSEL(kMCG_OscselOsc) == (MCG->C7 & MCG_C7_OSCSEL_MASK))
+    {
+        if (MCG->C2 & MCG_C2_EREFS_MASK)
+        {
+            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
+            {
+            }
+        }
+    }
+
     /* Wait and check status. */
     while (kMCG_FllSrcExternal != MCG_S_IREFST_VAL)
     {
@@ -1294,7 +1306,7 @@ status_t CLOCK_SetFeeMode(uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void 
     return kStatus_Success;
 }
 
-status_t CLOCK_SetFbiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
+status_t CLOCK_SetFbiMode(mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableDelay)(void))
 {
     uint8_t mcg_c4;
     bool change_drs = false;
@@ -1347,7 +1359,7 @@ status_t CLOCK_SetFbiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
     {
     }
 
-    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DRST_DRS(drs));
+    MCG->C4 = (mcg_c4 & ~(MCG_C4_DMX32_MASK | MCG_C4_DRST_DRS_MASK)) | (MCG_C4_DMX32(dmx32) | MCG_C4_DRST_DRS(drs));
 
     /* Wait for FLL stable time. */
     if (fllStableDelay)
@@ -1401,6 +1413,17 @@ status_t CLOCK_SetFbeMode(uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void 
                (MCG_C1_CLKS(kMCG_ClkOutSrcExternal)    /* CLKS = 2 */
                 | MCG_C1_FRDIV(frdiv)                  /* FRDIV = frdiv */
                 | MCG_C1_IREFS(kMCG_FllSrcExternal))); /* IREFS = 0 */
+
+    /* If use external crystal as clock source, wait for it stable. */
+    if (MCG_C7_OSCSEL(kMCG_OscselOsc) == (MCG->C7 & MCG_C7_OSCSEL_MASK))
+    {
+        if (MCG->C2 & MCG_C2_EREFS_MASK)
+        {
+            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
+            {
+            }
+        }
+    }
 
     /* Wait for Reference clock Status bit to clear */
     while (kMCG_FllSrcExternal != MCG_S_IREFST_VAL)
@@ -1462,6 +1485,8 @@ status_t CLOCK_SetBlpeMode(void)
 
 status_t CLOCK_SetPbeMode(mcg_pll_clk_select_t pllcs, mcg_pll_config_t const *config)
 {
+    assert(config);
+
     /*
        This function is designed to change MCG to PBE mode from PEE/BLPE/FBE,
        but with this workflow, the source mode could be all modes except PEI/PBI.
@@ -1490,6 +1515,8 @@ status_t CLOCK_SetPbeMode(mcg_pll_clk_select_t pllcs, mcg_pll_config_t const *co
 
     /* Change to PLL mode. */
     MCG->C6 |= MCG_C6_PLLS_MASK;
+
+    /* Wait for PLL mode changed. */
     while (!(MCG->S & MCG_S_PLLST_MASK))
     {
     }
@@ -1564,9 +1591,9 @@ status_t CLOCK_InternalModeToFbiModeQuick(void)
     return kStatus_Success;
 }
 
-status_t CLOCK_BootToFeiMode(mcg_drs_t drs, void (*fllStableDelay)(void))
+status_t CLOCK_BootToFeiMode(mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableDelay)(void))
 {
-    return CLOCK_SetFeiMode(drs, fllStableDelay);
+    return CLOCK_SetFeiMode(dmx32, drs, fllStableDelay);
 }
 
 status_t CLOCK_BootToFeeMode(
@@ -1602,6 +1629,17 @@ status_t CLOCK_BootToBlpeMode(mcg_oscsel_t oscsel)
     MCG->C1 =
         ((MCG->C1 & ~(MCG_C1_CLKS_MASK | MCG_C1_IREFS_MASK)) | (MCG_C1_CLKS(kMCG_ClkOutSrcExternal)    /* CLKS = 2 */
                                                                 | MCG_C1_IREFS(kMCG_FllSrcExternal))); /* IREFS = 0 */
+
+    /* If use external crystal as clock source, wait for it stable. */
+    if (MCG_C7_OSCSEL(kMCG_OscselOsc) == (MCG->C7 & MCG_C7_OSCSEL_MASK))
+    {
+        if (MCG->C2 & MCG_C2_EREFS_MASK)
+        {
+            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
+            {
+            }
+        }
+    }
 
     /* Wait for MCG_S[CLKST] and MCG_S[IREFST]. */
     while ((MCG->S & (MCG_S_IREFST_MASK | MCG_S_CLKST_MASK)) !=
@@ -1675,7 +1713,7 @@ status_t CLOCK_SetMcgConfig(const mcg_config_t *config)
         if (!(MCG->S & MCG_S_IRCST_MASK))
         {
             CLOCK_ExternalModeToFbeModeQuick();
-            CLOCK_SetFeiMode(config->drs, (void (*)(void))0);
+            CLOCK_SetFeiMode(config->dmx32, config->drs, (void (*)(void))0);
         }
 
         CLOCK_SetExternalRefClkConfig(config->oscsel);
@@ -1687,7 +1725,7 @@ status_t CLOCK_SetMcgConfig(const mcg_config_t *config)
         MCG->C2 &= ~MCG_C2_LP_MASK; /* Disable lowpower. */
 
         {
-            CLOCK_SetFeiMode(config->drs, CLOCK_FllStableDelay);
+            CLOCK_SetFeiMode(config->dmx32, config->drs, CLOCK_FllStableDelay);
         }
     }
 
@@ -1703,13 +1741,13 @@ status_t CLOCK_SetMcgConfig(const mcg_config_t *config)
         switch (next_mode)
         {
             case kMCG_ModeFEI:
-                status = CLOCK_SetFeiMode(config->drs, CLOCK_FllStableDelay);
+                status = CLOCK_SetFeiMode(config->dmx32, config->drs, CLOCK_FllStableDelay);
                 break;
             case kMCG_ModeFEE:
                 status = CLOCK_SetFeeMode(config->frdiv, config->dmx32, config->drs, CLOCK_FllStableDelay);
                 break;
             case kMCG_ModeFBI:
-                status = CLOCK_SetFbiMode(config->drs, (void (*)(void))0);
+                status = CLOCK_SetFbiMode(config->dmx32, config->drs, (void (*)(void))0);
                 break;
             case kMCG_ModeFBE:
                 status = CLOCK_SetFbeMode(config->frdiv, config->dmx32, config->drs, (void (*)(void))0);

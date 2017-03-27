@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -125,6 +125,8 @@ extern uint32_t UART_GetInstance(UART_Type *base);
 
 static void UART_SendEDMACallback(edma_handle_t *handle, void *param, bool transferDone, uint32_t tcds)
 {
+    assert(param);
+
     uart_edma_private_handle_t *uartPrivateHandle = (uart_edma_private_handle_t *)param;
 
     /* Avoid the warning for unused variables. */
@@ -145,6 +147,8 @@ static void UART_SendEDMACallback(edma_handle_t *handle, void *param, bool trans
 
 static void UART_ReceiveEDMACallback(edma_handle_t *handle, void *param, bool transferDone, uint32_t tcds)
 {
+    assert(param);
+
     uart_edma_private_handle_t *uartPrivateHandle = (uart_edma_private_handle_t *)param;
 
     /* Avoid warning for unused parameters. */
@@ -165,11 +169,11 @@ static void UART_ReceiveEDMACallback(edma_handle_t *handle, void *param, bool tr
 }
 
 void UART_TransferCreateHandleEDMA(UART_Type *base,
-                           uart_edma_handle_t *handle,
-                           uart_edma_transfer_callback_t callback,
-                           void *userData,
-                           edma_handle_t *txEdmaHandle,
-                           edma_handle_t *rxEdmaHandle)
+                                   uart_edma_handle_t *handle,
+                                   uart_edma_transfer_callback_t callback,
+                                   void *userData,
+                                   edma_handle_t *txEdmaHandle,
+                                   edma_handle_t *rxEdmaHandle)
 {
     assert(handle);
 
@@ -219,16 +223,14 @@ void UART_TransferCreateHandleEDMA(UART_Type *base,
 
 status_t UART_SendEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_transfer_t *xfer)
 {
+    assert(handle);
     assert(handle->txEdmaHandle);
+    assert(xfer);
+    assert(xfer->data);
+    assert(xfer->dataSize);
 
     edma_transfer_config_t xferConfig;
     status_t status;
-
-    /* Return error if xfer invalid. */
-    if ((0U == xfer->dataSize) || (NULL == xfer->data))
-    {
-        return kStatus_InvalidArgument;
-    }
 
     /* If previous TX not finished. */
     if (kUART_TxBusy == handle->txState)
@@ -243,6 +245,9 @@ status_t UART_SendEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_transfe
         /* Prepare transfer. */
         EDMA_PrepareTransfer(&xferConfig, xfer->data, sizeof(uint8_t), (void *)UART_GetDataRegisterAddress(base),
                              sizeof(uint8_t), sizeof(uint8_t), xfer->dataSize, kEDMA_MemoryToPeripheral);
+
+        /* Store the initially configured eDMA minor byte transfer count into the UART handle */
+        handle->nbytes = sizeof(uint8_t);
 
         /* Submit transfer. */
         EDMA_SubmitTransfer(handle->txEdmaHandle, &xferConfig);
@@ -259,16 +264,14 @@ status_t UART_SendEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_transfe
 
 status_t UART_ReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_transfer_t *xfer)
 {
+    assert(handle);
     assert(handle->rxEdmaHandle);
+    assert(xfer);
+    assert(xfer->data);
+    assert(xfer->dataSize);
 
     edma_transfer_config_t xferConfig;
     status_t status;
-
-    /* Return error if xfer invalid. */
-    if ((0U == xfer->dataSize) || (NULL == xfer->data))
-    {
-        return kStatus_InvalidArgument;
-    }
 
     /* If previous RX not finished. */
     if (kUART_RxBusy == handle->rxState)
@@ -283,6 +286,9 @@ status_t UART_ReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_tran
         /* Prepare transfer. */
         EDMA_PrepareTransfer(&xferConfig, (void *)UART_GetDataRegisterAddress(base), sizeof(uint8_t), xfer->data,
                              sizeof(uint8_t), sizeof(uint8_t), xfer->dataSize, kEDMA_PeripheralToMemory);
+
+        /* Store the initially configured eDMA minor byte transfer count into the UART handle */
+        handle->nbytes = sizeof(uint8_t);
 
         /* Submit transfer. */
         EDMA_SubmitTransfer(handle->rxEdmaHandle, &xferConfig);
@@ -299,6 +305,7 @@ status_t UART_ReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_tran
 
 void UART_TransferAbortSendEDMA(UART_Type *base, uart_edma_handle_t *handle)
 {
+    assert(handle);
     assert(handle->txEdmaHandle);
 
     /* Disable UART TX EDMA. */
@@ -312,6 +319,7 @@ void UART_TransferAbortSendEDMA(UART_Type *base, uart_edma_handle_t *handle)
 
 void UART_TransferAbortReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle)
 {
+    assert(handle);
     assert(handle->rxEdmaHandle);
 
     /* Disable UART RX EDMA. */
@@ -325,38 +333,36 @@ void UART_TransferAbortReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle)
 
 status_t UART_TransferGetReceiveCountEDMA(UART_Type *base, uart_edma_handle_t *handle, uint32_t *count)
 {
+    assert(handle);
     assert(handle->rxEdmaHandle);
+    assert(count);
 
     if (kUART_RxIdle == handle->rxState)
     {
         return kStatus_NoTransferInProgress;
     }
 
-    if (!count)
-    {
-        return kStatus_InvalidArgument;
-    }
-
-    *count = handle->rxDataSizeAll - EDMA_GetRemainingBytes(handle->rxEdmaHandle->base, handle->rxEdmaHandle->channel);
+    *count = handle->rxDataSizeAll -
+             (uint32_t)handle->nbytes *
+                 EDMA_GetRemainingMajorLoopCount(handle->rxEdmaHandle->base, handle->rxEdmaHandle->channel);
 
     return kStatus_Success;
 }
 
 status_t UART_TransferGetSendCountEDMA(UART_Type *base, uart_edma_handle_t *handle, uint32_t *count)
 {
+    assert(handle);
     assert(handle->txEdmaHandle);
+    assert(count);
 
     if (kUART_TxIdle == handle->txState)
     {
         return kStatus_NoTransferInProgress;
     }
 
-    if (!count)
-    {
-        return kStatus_InvalidArgument;
-    }
-
-    *count = handle->txDataSizeAll - EDMA_GetRemainingBytes(handle->txEdmaHandle->base, handle->txEdmaHandle->channel);
+    *count = handle->txDataSizeAll -
+             (uint32_t)handle->nbytes *
+                 EDMA_GetRemainingMajorLoopCount(handle->txEdmaHandle->base, handle->txEdmaHandle->channel);
 
     return kStatus_Success;
 }

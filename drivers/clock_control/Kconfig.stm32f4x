@@ -84,11 +84,13 @@ config CLOCK_STM32F4X_PLLN_MULTIPLIER
 	int "Multiplier factor for PLL VCO output clock"
 	depends on CLOCK_CONTROL_STM32F4X && CLOCK_STM32F4X_SYSCLK_SRC_PLL
 	default 336
-	range 192 432
+	range 192 432 if SOC_STM32F401XE
+	range 50 432
 	help
 	 PLLN multiplier factor needs to be set correctly to ensure that the
-	 VCO output frequency is between 192 and 432 MHz.
-	 Allowed values: 192-432
+	 VCO output frequency is between 100 and 432 MHz, except on STM32F401
+	 where the frequency must be between 192 and 432 MHz.
+	 Allowed values: 50-432 (STM32F401: 192-432)
 
 config CLOCK_STM32F4X_PLLP_DIV_FACTOR
 	int "PLL division factor for main system clock"

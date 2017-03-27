@@ -46,4 +46,16 @@ config GPIO_STM32_PORTH
 	bool "Enable GPIO port H support"
 	default n
 
+config GPIO_STM32_PORTI
+	bool "Enable GPIO port I support"
+	default n
+
+config GPIO_STM32_PORTJ
+	bool "Enable GPIO port J support"
+	default n
+
+config GPIO_STM32_PORTK
+	bool "Enable GPIO port K support"
+	default n
+
 endif # GPIO_STM32
