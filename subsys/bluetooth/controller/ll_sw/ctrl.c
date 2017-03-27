@@ -56,7 +56,6 @@
 
 #define RADIO_IRK_COUNT_MAX	8
 
-#define XTAL_ADVANCED		1
 #define SCHED_ADVANCED		1
 #define SILENT_CONNECTION	0
 
@@ -2999,7 +2998,7 @@ static void mayfly_xtal_stop(void *params)
 	DEBUG_RADIO_CLOSE(0);
 }
 
-#if XTAL_ADVANCED
+#if CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED
 static void mayfly_xtal_retain(uint8_t caller_id, uint8_t retain)
 {
 	static uint8_t s_xtal_retained;
@@ -3165,7 +3164,8 @@ static void mayfly_xtal_stop_calc(void *params)
 	LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
 
 	if ((ticker_id != 0xff) &&
-	    (ticks_to_expire < TICKER_US_TO_TICKS(10000))) {
+	    (ticks_to_expire <
+	     TICKER_US_TO_TICKS(CONFIG_BLUETOOTH_CONTROLLER_XTAL_THRESHOLD))) {
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 1);
 
 		if (ticker_id >= RADIO_TICKER_ID_ADV) {
@@ -3333,7 +3333,7 @@ static void mayfly_xtal_stop_calc(void *params)
 		}
 	}
 }
-#endif /* XTAL_ADVANCED */
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
 #if SCHED_ADVANCED
 static void sched_after_mstr_free_slot_get(uint8_t user_id,
@@ -3929,8 +3929,8 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 	/* route all packets queued for connections */
 	packet_tx_enqueue(0xFF);
 
+#if CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED
 	/* calc whether xtal needs to be retained after this event */
-#if XTAL_ADVANCED
 	{
 		static void *s_link[2];
 		static struct mayfly s_mfy_xtal_stop_calc = {0, 0, s_link, NULL,
@@ -3944,7 +3944,7 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 					&s_mfy_xtal_stop_calc);
 		LL_ASSERT(!retval);
 	}
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 }
 
 static uint8_t channel_calc(uint8_t *channel_use, uint8_t hop,
@@ -4213,15 +4213,15 @@ static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
 			_radio.remainder_anchor);
 	radio_tmr_end_capture();
 
-#if (XTAL_ADVANCED && (RADIO_TICKER_PREEMPT_PART_US \
-			<= RADIO_TICKER_PREEMPT_PART_MIN_US))
+#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+     (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (preempt_calc(&_radio.advertiser.hdr, RADIO_TICKER_ID_ADV,
 			 ticks_at_expire) != 0) {
 		_radio.state = STATE_STOP;
 		radio_disable();
 	} else
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
 	/* Ticker Job Silence */
 #if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
@@ -4402,15 +4402,15 @@ static void event_obs(uint32_t ticks_at_expire, uint32_t remainder,
 			_radio.remainder_anchor);
 	radio_tmr_end_capture();
 
-#if (XTAL_ADVANCED && (RADIO_TICKER_PREEMPT_PART_US\
-			<= RADIO_TICKER_PREEMPT_PART_MIN_US))
+#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+     (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (preempt_calc(&_radio.observer.hdr, RADIO_TICKER_ID_OBS,
 			 ticks_at_expire) != 0) {
 		_radio.state = STATE_STOP;
 		radio_disable();
 	} else
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 	{
 		/* start window close timeout */
 		ticker_status =
@@ -5717,15 +5717,15 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 			       conn->role.slave.window_size_event_us);
 	radio_tmr_end_capture();
 
-#if (XTAL_ADVANCED && (RADIO_TICKER_PREEMPT_PART_US \
-		<= RADIO_TICKER_PREEMPT_PART_MIN_US))
+#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+     (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (preempt_calc(&conn->hdr, (RADIO_TICKER_ID_FIRST_CONNECTION +
 				      conn->handle), ticks_at_expire) != 0) {
 		_radio.state = STATE_STOP;
 		radio_disable();
 	} else
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
 	/* Ticker Job Silence */
 #if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
@@ -5853,8 +5853,8 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 	}
 #endif
 
-#if (XTAL_ADVANCED && (RADIO_TICKER_PREEMPT_PART_US \
-			<= RADIO_TICKER_PREEMPT_PART_MIN_US))
+#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+     (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (0 !=
 	    preempt_calc(&conn->hdr, (RADIO_TICKER_ID_FIRST_CONNECTION +
@@ -5862,7 +5862,7 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 		_radio.state = STATE_STOP;
 		radio_disable();
 	} else
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
 	/* Ticker Job Silence */
 #if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)

@@ -91,6 +91,38 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
+config BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+	bool "Advanced event preparation"
+	default y
+	help
+	  Enables advanced event preparation offset ahead of radio tx/rx, taking
+	  into account predictive processing time requirements in preparation to
+	  the event, like control procedure handling and CPU execution speeds.
+	  Crystal oscillator is retained between closely spaced consecutive
+	  radio events to reduce the overall number of crystal settling current
+	  consumptions.
+
+	  This feature maximizes radio utilization in an average role event
+	  timeslice when they are closely spaced by using a reduced offset
+	  between preparation and radio event.
+
+	  By disabling this feature, the controller will use a constant offset
+	  between the preparation and radio event. The controller will toggle
+	  crystal oscillator between two closely spaced radio events leading to
+	  higher average current due to increased number of crystal settling
+	  current consumptions.
+
+config BLUETOOTH_CONTROLLER_XTAL_THRESHOLD
+	prompt "Crystal shutdown threshold in uS"
+	depends on BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+	int
+	default 5168
+	help
+	  Configure the optimal delta in micro seconds between two consecutive
+	  radio events below which (active clock) crystal will be retained. This
+	  value is board dependent. The value 5168 is based on crude calculation
+	  for nRF51 current versus startup time of high frequency crystal.
+
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
 	help
