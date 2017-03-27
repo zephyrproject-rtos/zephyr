@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014 - 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -36,7 +36,9 @@ void TSI_Init(TSI_Type *base, const tsi_config_t *config)
     bool is_module_enabled = false;
     bool is_int_enabled = false;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Tsi0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
     if (base->GENCS & TSI_GENCS_TSIEN_MASK)
     {
         is_module_enabled = true;
@@ -47,18 +49,31 @@ void TSI_Init(TSI_Type *base, const tsi_config_t *config)
         is_int_enabled = true;
         TSI_DisableInterrupts(base, kTSI_GlobalInterruptEnable);
     }
-
-    TSI_SetHighThreshold(base, config->thresh);
-    TSI_SetLowThreshold(base, config->thresl);
-    TSI_SetElectrodeOSCPrescaler(base, config->prescaler);
-    TSI_SetReferenceChargeCurrent(base, config->refchrg);
-    TSI_SetElectrodeChargeCurrent(base, config->extchrg);
-    TSI_SetNumberOfScans(base, config->nscn);
-    TSI_SetAnalogMode(base, config->mode);
-    TSI_SetOscVoltageRails(base, config->dvolt);
-    TSI_SetElectrodeSeriesResistor(base, config->resistor);
-    TSI_SetFilterBits(base, config->filter);
-
+    
+    if(config->mode == kTSI_AnalogModeSel_Capacitive)
+    {
+      TSI_SetHighThreshold(base, config->thresh);
+      TSI_SetLowThreshold(base, config->thresl);
+      TSI_SetElectrodeOSCPrescaler(base, config->prescaler);
+      TSI_SetReferenceChargeCurrent(base, config->refchrg);
+      TSI_SetElectrodeChargeCurrent(base, config->extchrg);
+      TSI_SetNumberOfScans(base, config->nscn);
+      TSI_SetAnalogMode(base, config->mode);
+      TSI_SetOscVoltageRails(base, config->dvolt);   
+    }
+    else /* For noise modes */
+    {  
+      TSI_SetHighThreshold(base, config->thresh);
+      TSI_SetLowThreshold(base, config->thresl);
+      TSI_SetElectrodeOSCPrescaler(base, config->prescaler);
+      TSI_SetReferenceChargeCurrent(base, config->refchrg);
+      TSI_SetNumberOfScans(base, config->nscn);
+      TSI_SetAnalogMode(base, config->mode);
+      TSI_SetOscVoltageRails(base, config->dvolt);
+      TSI_SetElectrodeSeriesResistor(base, config->resistor);
+      TSI_SetFilterBits(base, config->filter);  
+    }
+     
     if (is_module_enabled)
     {
         TSI_EnableModule(base, true);
@@ -74,7 +89,9 @@ void TSI_Deinit(TSI_Type *base)
     base->GENCS = 0U;
     base->DATA = 0U;
     base->TSHD = 0U;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_DisableClock(kCLOCK_Tsi0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void TSI_GetNormalModeDefaultConfig(tsi_config_t *userConfig)
@@ -82,13 +99,11 @@ void TSI_GetNormalModeDefaultConfig(tsi_config_t *userConfig)
     userConfig->thresh = 0U;
     userConfig->thresl = 0U;
     userConfig->prescaler = kTSI_ElecOscPrescaler_2div;
-    userConfig->extchrg = kTSI_ExtOscChargeCurrent_4uA;
+    userConfig->extchrg = kTSI_ExtOscChargeCurrent_500nA;
     userConfig->refchrg = kTSI_RefOscChargeCurrent_4uA;
     userConfig->nscn = kTSI_ConsecutiveScansNumber_5time;
     userConfig->mode = kTSI_AnalogModeSel_Capacitive;
     userConfig->dvolt = kTSI_OscVolRailsOption_0;
-    userConfig->resistor = kTSI_SeriesResistance_32k;
-    userConfig->filter = kTSI_FilterBits_3;
 }
 
 void TSI_GetLowPowerModeDefaultConfig(tsi_config_t *userConfig)
@@ -96,13 +111,11 @@ void TSI_GetLowPowerModeDefaultConfig(tsi_config_t *userConfig)
     userConfig->thresh = 400U;
     userConfig->thresl = 0U;
     userConfig->prescaler = kTSI_ElecOscPrescaler_2div;
-    userConfig->extchrg = kTSI_ExtOscChargeCurrent_4uA;
+    userConfig->extchrg = kTSI_ExtOscChargeCurrent_500nA;
     userConfig->refchrg = kTSI_RefOscChargeCurrent_4uA;
     userConfig->nscn = kTSI_ConsecutiveScansNumber_5time;
     userConfig->mode = kTSI_AnalogModeSel_Capacitive;
     userConfig->dvolt = kTSI_OscVolRailsOption_0;
-    userConfig->resistor = kTSI_SeriesResistance_32k;
-    userConfig->filter = kTSI_FilterBits_3;
 }
 
 void TSI_Calibrate(TSI_Type *base, tsi_calibration_data_t *calBuff)

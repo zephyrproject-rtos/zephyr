@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -53,8 +53,10 @@ static uint32_t TPM_GetInstance(TPM_Type *base);
 /*! @brief Pointers to TPM bases for each instance. */
 static TPM_Type *const s_tpmBases[] = TPM_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /*! @brief Pointers to TPM clocks for each instance. */
 static const clock_ip_name_t s_tpmClocks[] = TPM_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Code
@@ -82,8 +84,10 @@ void TPM_Init(TPM_Type *base, const tpm_config_t *config)
 {
     assert(config);
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the module clock */
     CLOCK_EnableClock(s_tpmClocks[TPM_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(FSL_FEATURE_TPM_HAS_GLOBAL) && FSL_FEATURE_TPM_HAS_GLOBAL
     /* TPM reset is available on certain SoC's */
@@ -94,9 +98,9 @@ void TPM_Init(TPM_Type *base, const tpm_config_t *config)
     base->SC = TPM_SC_PS(config->prescale);
 
     /* Setup the counter operation */
-    base->CONF = TPM_CONF_DOZEEN(config->enableDoze) | TPM_CONF_DBGMODE(config->enableDebugMode) |
-                 TPM_CONF_GTBEEN(config->useGlobalTimeBase) | TPM_CONF_CROT(config->enableReloadOnTrigger) |
-                 TPM_CONF_CSOT(config->enableStartOnTrigger) | TPM_CONF_CSOO(config->enableStopOnOverflow) |
+    base->CONF = TPM_CONF_DOZEEN(config->enableDoze) | TPM_CONF_GTBEEN(config->useGlobalTimeBase) |
+                 TPM_CONF_CROT(config->enableReloadOnTrigger) | TPM_CONF_CSOT(config->enableStartOnTrigger) |
+                 TPM_CONF_CSOO(config->enableStopOnOverflow) |
 #if defined(FSL_FEATURE_TPM_HAS_PAUSE_COUNTER_ON_TRIGGER) && FSL_FEATURE_TPM_HAS_PAUSE_COUNTER_ON_TRIGGER
                  TPM_CONF_CPOT(config->enablePauseOnTrigger) |
 #endif
@@ -104,14 +108,24 @@ void TPM_Init(TPM_Type *base, const tpm_config_t *config)
                  TPM_CONF_TRGSRC(config->triggerSource) |
 #endif
                  TPM_CONF_TRGSEL(config->triggerSelect);
+    if (config->enableDebugMode)
+    {
+        base->CONF |= TPM_CONF_DBGMODE_MASK;
+    }
+    else
+    {
+        base->CONF &= ~TPM_CONF_DBGMODE_MASK;
+    }
 }
 
 void TPM_Deinit(TPM_Type *base)
 {
     /* Stop the counter */
     base->SC &= ~TPM_SC_CMOD_MASK;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the TPM clock */
     CLOCK_DisableClock(s_tpmClocks[TPM_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void TPM_GetDefaultConfig(tpm_config_t *config)
@@ -151,11 +165,29 @@ status_t TPM_SetupPwm(TPM_Type *base,
                       uint32_t srcClock_Hz)
 {
     assert(chnlParams);
+    assert(pwmFreq_Hz);
+    assert(numOfChnls);
+    assert(srcClock_Hz);
+#if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
+    if(mode == kTPM_CombinedPwm)
+    {
+        assert(FSL_FEATURE_TPM_COMBINE_HAS_EFFECTn(base));
+    }
+#endif
 
     uint32_t mod;
     uint32_t tpmClock = (srcClock_Hz / (1U << (base->SC & TPM_SC_PS_MASK)));
     uint16_t cnv;
     uint8_t i;
+
+#if defined(FSL_FEATURE_TPM_HAS_QDCTRL) && FSL_FEATURE_TPM_HAS_QDCTRL
+    /* The TPM's QDCTRL register required to be effective */
+    if( FSL_FEATURE_TPM_QDCTRL_HAS_EFFECTn(base) )
+    {
+        /* Clear quadrature Decoder mode because in quadrature Decoder mode PWM doesn't operate*/
+        base->QDCTRL &= ~TPM_QDCTRL_QUADEN_MASK;
+    }
+#endif
 
     switch (mode)
     {
@@ -233,9 +265,6 @@ status_t TPM_SetupPwm(TPM_Type *base,
                     cnv = mod + 1;
                 }
             }
-            /* Set the channel pair values */
-            base->CONTROLS[chnlParams->chnlNumber * 2].CnV = cnvFirstEdge;
-            base->CONTROLS[(chnlParams->chnlNumber * 2) + 1].CnV = cnvFirstEdge + cnv;
 
             /* Set the combine bit for the channel pair */
             base->COMBINE |= (1U << (TPM_COMBINE_COMBINE0_SHIFT + (TPM_COMBINE_SHIFT * chnlParams->chnlNumber)));
@@ -259,6 +288,8 @@ status_t TPM_SetupPwm(TPM_Type *base,
                      (TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)))
             {
             }
+            /* Set the channel pair values */
+            base->CONTROLS[chnlParams->chnlNumber * 2].CnV = cnvFirstEdge;
 
             /* When switching mode, disable channel n + 1 first */
             base->CONTROLS[(chnlParams->chnlNumber * 2) + 1].CnSC &=
@@ -279,6 +310,8 @@ status_t TPM_SetupPwm(TPM_Type *base,
                      (TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)))
             {
             }
+            /* Set the channel pair values */
+            base->CONTROLS[(chnlParams->chnlNumber * 2) + 1].CnV = cnvFirstEdge + cnv;
         }
         else
         {
@@ -297,8 +330,6 @@ status_t TPM_SetupPwm(TPM_Type *base,
                     cnv = mod + 1;
                 }
             }
-
-            base->CONTROLS[chnlParams->chnlNumber].CnV = cnv;
 
             /* When switching mode, disable channel first */
             base->CONTROLS[chnlParams->chnlNumber].CnSC &=
@@ -319,6 +350,7 @@ status_t TPM_SetupPwm(TPM_Type *base,
                      (TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)))
             {
             }
+            base->CONTROLS[chnlParams->chnlNumber].CnV = cnv;
 #if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
         }
 #endif
@@ -335,6 +367,12 @@ void TPM_UpdatePwmDutycycle(TPM_Type *base,
                             uint8_t dutyCyclePercent)
 {
     assert(chnlNumber < FSL_FEATURE_TPM_CHANNEL_COUNTn(base));
+#if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
+    if(currentPwmMode == kTPM_CombinedPwm)
+    {
+        assert(FSL_FEATURE_TPM_COMBINE_HAS_EFFECTn(base));
+    }
+#endif
 
     uint16_t cnv, mod;
 
@@ -407,6 +445,27 @@ void TPM_SetupInputCapture(TPM_Type *base, tpm_chnl_t chnlNumber, tpm_input_capt
 {
     assert(chnlNumber < FSL_FEATURE_TPM_CHANNEL_COUNTn(base));
 
+#if defined(FSL_FEATURE_TPM_HAS_QDCTRL) && FSL_FEATURE_TPM_HAS_QDCTRL
+    /* The TPM's QDCTRL register required to be effective */
+    if( FSL_FEATURE_TPM_QDCTRL_HAS_EFFECTn(base) )
+    {
+        /* Clear quadrature Decoder mode for channel 0 or 1*/
+        if ((chnlNumber == 0) || (chnlNumber == 1))
+        {
+            base->QDCTRL &= ~TPM_QDCTRL_QUADEN_MASK;
+        }
+    }
+#endif
+
+#if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
+        /* The TPM's COMBINE register required to be effective */
+    if( FSL_FEATURE_TPM_COMBINE_HAS_EFFECTn(base) )
+    {
+        /* Clear the combine bit for chnlNumber */
+        base->COMBINE &= ~(1U << TPM_COMBINE_SHIFT * (chnlNumber / 2));
+    }
+#endif
+
     /* When switching mode, disable channel first  */
     base->CONTROLS[chnlNumber].CnSC &=
         ~(TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK);
@@ -433,6 +492,18 @@ void TPM_SetupOutputCompare(TPM_Type *base,
                             uint32_t compareValue)
 {
     assert(chnlNumber < FSL_FEATURE_TPM_CHANNEL_COUNTn(base));
+
+#if defined(FSL_FEATURE_TPM_HAS_QDCTRL) && FSL_FEATURE_TPM_HAS_QDCTRL
+    /* The TPM's QDCTRL register required to be effective */
+    if( FSL_FEATURE_TPM_QDCTRL_HAS_EFFECTn(base) )
+    {
+        /* Clear quadrature Decoder mode for channel 0 or 1 */
+        if ((chnlNumber == 0) || (chnlNumber == 1))
+        {
+            base->QDCTRL &= ~TPM_QDCTRL_QUADEN_MASK;
+        }
+    }
+#endif
 
     /* When switching mode, disable channel first  */
     base->CONTROLS[chnlNumber].CnSC &=
@@ -464,8 +535,22 @@ void TPM_SetupDualEdgeCapture(TPM_Type *base,
                               uint32_t filterValue)
 {
     assert(edgeParam);
+    assert(chnlPairNumber < FSL_FEATURE_TPM_CHANNEL_COUNTn(base) / 2);
+    assert(FSL_FEATURE_TPM_COMBINE_HAS_EFFECTn(base));
 
     uint32_t reg;
+
+#if defined(FSL_FEATURE_TPM_HAS_QDCTRL) && FSL_FEATURE_TPM_HAS_QDCTRL
+    /* The TPM's QDCTRL register required to be effective */
+    if( FSL_FEATURE_TPM_QDCTRL_HAS_EFFECTn(base) )
+    {
+        /* Clear quadrature Decoder mode for channel 0 or 1*/
+        if (chnlPairNumber == 0)
+        {
+            base->QDCTRL &= ~TPM_QDCTRL_QUADEN_MASK;
+        }
+    }
+#endif
 
     /* Unlock: When switching mode, disable channel first */
     base->CONTROLS[chnlPairNumber * 2].CnSC &=
@@ -544,7 +629,14 @@ void TPM_SetupQuadDecode(TPM_Type *base,
 {
     assert(phaseAParams);
     assert(phaseBParams);
+    assert(FSL_FEATURE_TPM_QDCTRL_HAS_EFFECTn(base));
 
+    base->CONTROLS[0].CnSC &= ~(TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK);
+
+    /* Wait till mode change to disable channel is acknowledged */
+    while ((base->CONTROLS[0].CnSC & (TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)))
+    {
+    }
     uint32_t reg;
 
     /* Set Phase A filter value */
@@ -553,6 +645,7 @@ void TPM_SetupQuadDecode(TPM_Type *base,
     reg |= TPM_FILTER_CH0FVAL(phaseAParams->phaseFilterVal);
     base->FILTER = reg;
 
+#if defined(FSL_FEATURE_TPM_HAS_POL) && FSL_FEATURE_TPM_HAS_POL
     /* Set Phase A polarity */
     if (phaseAParams->phasePolarity)
     {
@@ -562,13 +655,20 @@ void TPM_SetupQuadDecode(TPM_Type *base,
     {
         base->POL &= ~TPM_POL_POL0_MASK;
     }
+#endif
 
+    base->CONTROLS[1].CnSC &= ~(TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK);
+
+    /* Wait till mode change to disable channel is acknowledged */
+    while ((base->CONTROLS[1].CnSC & (TPM_CnSC_MSA_MASK | TPM_CnSC_MSB_MASK | TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)))
+    {
+    }
     /* Set Phase B filter value */
     reg = base->FILTER;
     reg &= ~(TPM_FILTER_CH1FVAL_MASK);
     reg |= TPM_FILTER_CH1FVAL(phaseBParams->phaseFilterVal);
     base->FILTER = reg;
-
+#if defined(FSL_FEATURE_TPM_HAS_POL) && FSL_FEATURE_TPM_HAS_POL
     /* Set Phase B polarity */
     if (phaseBParams->phasePolarity)
     {
@@ -578,6 +678,7 @@ void TPM_SetupQuadDecode(TPM_Type *base,
     {
         base->POL &= ~TPM_POL_POL1_MASK;
     }
+#endif
 
     /* Set Quadrature mode */
     reg = base->QDCTRL;

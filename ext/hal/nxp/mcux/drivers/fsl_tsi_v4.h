@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -37,7 +37,6 @@
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -45,13 +44,13 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief TSI driver version 2.0.0. */
-#define FSL_TSI_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief TSI driver version */
+#define FSL_TSI_DRIVER_VERSION (MAKE_VERSION(2, 1, 2))
 /*@}*/
 
 /*! @brief TSI status flags macro collection */
 #define ALL_FLAGS_MASK  (TSI_GENCS_EOSF_MASK | TSI_GENCS_OUTRGF_MASK)
- 
+
 /*! @brief resistor bit shift in EXTCHRG bit-field */
 #define TSI_V4_EXTCHRG_RESISTOR_BIT_SHIFT TSI_GENCS_EXTCHRG_SHIFT
 
@@ -289,13 +288,11 @@ void TSI_Deinit(TSI_Type *base);
  * The user configure is set to these values:
  * @code
     userConfig->prescaler = kTSI_ElecOscPrescaler_2div;
-    userConfig->extchrg = kTSI_ExtOscChargeCurrent_4uA;
+    userConfig->extchrg = kTSI_ExtOscChargeCurrent_500nA;
     userConfig->refchrg = kTSI_RefOscChargeCurrent_4uA;
     userConfig->nscn = kTSI_ConsecutiveScansNumber_10time;
     userConfig->mode = kTSI_AnalogModeSel_Capacitive;
     userConfig->dvolt = kTSI_OscVolRailsOption_0;
-    userConfig->resistor = kTSI_SeriesResistance_32k;
-    userConfig->filter = kTSI_FilterBits_1;
     userConfig->thresh = 0U;
     userConfig->thresl = 0U;
    @endcode
@@ -311,13 +308,11 @@ void TSI_GetNormalModeDefaultConfig(tsi_config_t *userConfig);
  * The user configure is set to these values:
  * @code
     userConfig->prescaler = kTSI_ElecOscPrescaler_2div;
-    userConfig->extchrg = kTSI_ExtOscChargeCurrent_4uA;
+    userConfig->extchrg = kTSI_ExtOscChargeCurrent_500nA;
     userConfig->refchrg = kTSI_RefOscChargeCurrent_4uA;
     userConfig->nscn = kTSI_ConsecutiveScansNumber_10time;
     userConfig->mode = kTSI_AnalogModeSel_Capacitive;
     userConfig->dvolt = kTSI_OscVolRailsOption_0;
-    userConfig->resistor = kTSI_SeriesResistance_32k;
-    userConfig->filter = kTSI_FilterBits_1;
     userConfig->thresh = 400U;
     userConfig->thresl = 0U;
    @endcode
