@@ -125,5 +125,5 @@
 };
 
 &nvic {
-	num-irq-prio-bits = <4>;
+	arm,num-irq-priority-bits = <4>;
 };
