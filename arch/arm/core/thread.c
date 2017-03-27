@@ -23,17 +23,17 @@
 /*
  * Add a thread to the kernel's list of active threads.
  */
-static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
+static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
 {
 	unsigned int key;
 
 	key = irq_lock();
-	tcs->next_thread = _kernel.threads;
-	_kernel.threads = tcs;
+	thread->next_thread = _kernel.threads;
+	_kernel.threads = thread;
 	irq_unlock(key);
 }
 #else
-#define thread_monitor_init(tcs) \
+#define thread_monitor_init(thread) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif /* CONFIG_THREAD_MONITOR */
@@ -42,7 +42,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
  *
  * @brief Intialize a new thread from its stack space
  *
- * The control structure (TCS) is put at the lower address of the stack. An
+ * The control structure (thread) is put at the lower address of the stack. An
  * initial context, to be "restored" by __pendsv(), is put at the other end of
  * the stack, and thus reusable by the stack when not needed anymore.
  *
@@ -81,7 +81,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 
 	char *stackEnd = pStackMem + stackSize;
 	struct __esf *pInitCtx;
-	struct tcs *tcs = (struct tcs *) pStackMem;
+	struct k_thread *thread = (struct k_thread *) pStackMem;
 
 #ifdef CONFIG_INIT_STACKS
 	memset(pStackMem, 0xaa, stackSize);
@@ -100,32 +100,35 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
-	_init_thread_base(&tcs->base, priority, _THREAD_PRESTART, options);
+	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
-	tcs->init_data = NULL;
-	tcs->fn_abort = NULL;
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 
-	tcs->custom_data = NULL;
+	thread->custom_data = NULL;
 #endif
 
 #ifdef CONFIG_THREAD_MONITOR
 	/*
-	 * In debug mode tcs->entry give direct access to the thread entry
+	 * In debug mode thread->entry give direct access to the thread entry
 	 * and the corresponding parameters.
 	 */
-	tcs->entry = (struct __thread_entry *)(pInitCtx);
+	thread->entry = (struct __thread_entry *)(pInitCtx);
 #endif
 
-	tcs->callee_saved.psp = (uint32_t)pInitCtx;
-	tcs->arch.basepri = 0;
+	thread->callee_saved.psp = (uint32_t)pInitCtx;
+	thread->arch.basepri = 0;
 
 	/* swap_return_value can contain garbage */
 
-	/* initial values in all other registers/TCS entries are irrelevant */
+	/*
+	 * initial values in all other registers/thread entries are
+	 * irrelevant.
+	 */
 
-	thread_monitor_init(tcs);
+	thread_monitor_init(thread);
 }

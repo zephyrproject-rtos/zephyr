@@ -58,11 +58,11 @@ SECTION_FUNC(TEXT, __pendsv)
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
 
-    /* addr of callee-saved regs in TCS in r0 */
+    /* addr of callee-saved regs in thread in r0 */
     ldr r0, =_thread_offset_to_callee_saved
     add r0, r2
 
-    /* save callee-saved + psp in TCS */
+    /* save callee-saved + psp in thread */
     mrs ip, PSP
 
 #if defined(CONFIG_ARMV6_M)
@@ -167,7 +167,7 @@ _thread_irq_disabled:
     vldmia r0, {s16-s31}
 #endif
 
-    /* load callee-saved + psp from TCS */
+    /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved
     ldmia r0, {v1-v8, ip}
 #else
@@ -260,7 +260,7 @@ _context_switch:
  * interrupts were not locked: in that case the BASEPRI value is 0.
  *
  * Given that _Swap() is called to effect a cooperative context switch,
- * only the caller-saved integer registers need to be saved in the TCS of the
+ * only the caller-saved integer registers need to be saved in the thread of the
  * outgoing thread. This is all performed by the hardware, which stores it in
  * its exception stack frame, created when handling the svc exception.
  *

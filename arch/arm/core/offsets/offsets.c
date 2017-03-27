@@ -63,7 +63,10 @@ GEN_OFFSET_SYM(_callee_saved_t, psp);
 
 GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
 
-/* size of the struct tcs structure sans save area for floating point regs */
+/*
+ * size of the struct k_thread structure sans save area for floating
+ * point registers.
+ */
 
 #ifdef CONFIG_FLOAT
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
