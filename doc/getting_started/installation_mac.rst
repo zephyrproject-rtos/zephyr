@@ -56,15 +56,9 @@ the brew command line.
 .. code-block:: console
 
    $ brew install gettext qemu help2man mpfr gmp coreutils wget python3 dfu-util
-
    $ brew tap homebrew/dupes
-
    $ brew install grep --with-default-names
-
    $ pip3 install ply
-
-.. code-block:: console
-
    $ brew install crosstool-ng
 
 Alternatively you can install the latest version of :program:`crosstool-ng`
@@ -73,17 +67,11 @@ latest version usually supports the latest released compilers.
 
 .. code-block:: console
 
-   $ wget
-   http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.22.0.tar.bz2
-
+   $ wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.22.0.tar.bz2
    $ tar xvf crosstool-ng-1.22.0.tar.bz2
-
    $ cd crosstool-ng/
-
    $ ./configure
-
    $ make
-
    $ make install
 
 .. _setting_up_mac_toolchain:
@@ -117,9 +105,7 @@ When mounted, the file system of the image will be available under
 .. code-block:: console
 
    $ cd /Volumes/CrossToolNG
-
    $ mkdir build
-
    $ cd build
 
 Setting the Toolchain Options
@@ -185,7 +171,6 @@ and use the target location where the toolchain was installed, type:
 .. code-block:: console
 
    $ export ZEPHYR_GCC_VARIANT=xtools
-
    $ export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 
 

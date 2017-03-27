@@ -69,7 +69,6 @@ To build an example application follow these steps:
    .. code-block:: console
 
       $ export ZEPHYR_GCC_VARIANT=zephyr
-
       $ export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
 
 #. Navigate to the main project directory:
@@ -90,7 +89,6 @@ To build an example application follow these steps:
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE/samples/hello_world
-
       $ make
 
 The above invocation of make will build the :ref:`hello_world` sample application
@@ -138,7 +136,6 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
    .. code-block:: console
 
       $ unset ZEPHYR_GCC_VARIANT
-
       $ unset ZEPHYR_SDK_INSTALL_DIR
 
 #. We will use the `GCC ARM Embedded`_ compiler for this example, download the
@@ -165,11 +162,8 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
    .. code-block:: console
 
       $ export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
-
       $ export ZEPHYR_GCC_VARIANT=gccarmemb
-
       $ cd $ZEPHYR_BASE/samples/hello_world
-
       $ make CROSS_COMPILE=~/gcc-arm-none-eabi-5_3-2016q1/bin/arm-none-eabi- BOARD=arduino_due
 
 The above will build the sample using the toolchain downloaded from
@@ -180,15 +174,10 @@ Alternatively, you can use the existing support for GCC ARM Embedded:
    .. code-block:: console
 
       $ export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
-
       $ export ZEPHYR_GCC_VARIANT=gccarmemb
-
       $ cd zephyr-project
-
       $ source zephyr-env.sh
-
       $ cd $ZEPHYR_BASE/samples/hello_world
-
       $ make BOARD=arduino_due
 
 Running a Sample Application in QEMU

@@ -112,7 +112,6 @@ Follow these steps to install the SDK on your Linux host system.
    .. code-block:: console
 
       $ chmod +x zephyr-sdk-<version>-setup.run
-
       $ ./zephyr-sdk-<version>-setup.run
 
    There is no need for `sudo` if the SDK is installed in the current
@@ -129,7 +128,6 @@ Follow these steps to install the SDK on your Linux host system.
    .. code-block:: console
 
       $ export ZEPHYR_GCC_VARIANT=zephyr
-
       $ export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
 
   To use the same toolchain in new sessions in the future you can set the
