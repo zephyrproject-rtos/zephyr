@@ -47,12 +47,6 @@ config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
 	  Maximum is set to 16384 due to implementation limitations (use of
 	  uint16_t for size/length variables).
 
-config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
-	int
-	default 320
-
-comment "BLE Controller features"
-
 config BLUETOOTH_CONTROLLER_COMPANY_ID
 	prompt "Company Id"
 	hex
@@ -68,6 +62,12 @@ config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
 	range 0x0000 0xFFFF
 	help
 	  Set the Subversion Number that will be used in VERSION_IND PDU.
+
+config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
+	int
+	default 320
+
+comment "BLE Controller features"
 
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
