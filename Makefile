@@ -1030,7 +1030,6 @@ depend dep:
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
-CLEAN_DIRS  += $(MODVERDIR) dts/
 
 CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
 		misc/generated/sysgen/sysgen.h \
