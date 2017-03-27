@@ -422,50 +422,49 @@ static void context_cb(struct net_context *context, void *user_data)
 #endif
 
 	int *count = user_data;
-	char addr_str[ADDR_LEN];
+	char addr_local[ADDR_LEN];
+	char addr_remote[ADDR_LEN];
 
+#if defined(CONFIG_NET_IPV6)
 	if (context->local.family == AF_INET6) {
-		snprintk(addr_str, ADDR_LEN, "%s",
+		snprintk(addr_local, ADDR_LEN, "%s",
 			 net_sprint_ipv6_addr(
 				 net_sin6_ptr(&context->local)->sin6_addr));
-
-		printk("%p\t%16s\t%16s\t%p\t%c%c%c\n", context, addr_str,
-		       net_sprint_ipv6_addr(
-			       &net_sin6(&context->remote)->sin6_addr),
-		       net_context_get_iface(context),
-		       net_context_get_family(context) == AF_INET6 ? '6' : '4',
-		       net_context_get_type(context) == SOCK_DGRAM ? 'D' : 'S',
-		       net_context_get_ip_proto(context) == IPPROTO_UDP ?
-		       'U' : 'T');
-
-		(*count)++;
-
-		return;
-	}
-
+		snprintk(addr_remote, ADDR_LEN, "%s",
+			 net_sprint_ipv6_addr(
+				 &net_sin6(&context->remote)->sin6_addr));
+	} else
+#endif
+#if defined(CONFIG_NET_IPV4)
 	if (context->local.family == AF_INET) {
-		snprintk(addr_str, ADDR_LEN, "%s",
+		snprintk(addr_local, ADDR_LEN, "%s",
 			 net_sprint_ipv4_addr(
 				 net_sin_ptr(&context->local)->sin_addr));
-
-		printk("%p\t%16s\t%16s\t%p\t%c%c%c\n", context, addr_str,
-		       net_sprint_ipv4_addr(
-			       &net_sin(&context->remote)->sin_addr),
-		       net_context_get_iface(context),
-		       net_context_get_family(context) == AF_INET6 ? '6' : '4',
-		       net_context_get_type(context) == SOCK_DGRAM ? 'D' : 'S',
-		       net_context_get_ip_proto(context) == IPPROTO_UDP ?
-		       'U' : 'T');
-
-		(*count)++;
-
+		snprintk(addr_remote, ADDR_LEN, "%s",
+			 net_sprint_ipv4_addr(
+				 &net_sin(&context->remote)->sin_addr));
+	} else
+#endif
+	if (context->local.family == AF_UNSPEC) {
+		printk("Network address family not set for context %p\n",
+		       context);
+		return;
+	} else {
+		printk("Invalid address family (%d) for context %p\n",
+		       context->local.family, context);
 		return;
 	}
 
-	if (context->local.family != AF_UNSPEC) {
-		printk("Invalid address family (%d) for context %p\n",
-		       context->local.family, context);
-	}
+	printk("[%2d] %p\t%p    %c%c%c   %16s\t%16s\n",
+	       (*count) + 1, context,
+	       net_context_get_iface(context),
+	       net_context_get_family(context) == AF_INET6 ? '6' : '4',
+	       net_context_get_type(context) == SOCK_DGRAM ? 'D' : 'S',
+	       net_context_get_ip_proto(context) == IPPROTO_UDP ?
+							     'U' : 'T',
+	       addr_local, addr_remote);
+
+	(*count)++;
 }
 
 #if defined(CONFIG_NET_TCP)
@@ -474,11 +473,12 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 	int *count = user_data;
 	uint16_t recv_mss = net_tcp_get_recv_mss(tcp);
 
-	printk("%p\t%12s\t%10u%10u%11u%11u%5u\n",
-	       tcp, net_tcp_state_str(net_tcp_get_state(tcp)),
+	printk("%p    %5u     %5u %10u %10u %5u   %s\n",
+	       tcp,
 	       ntohs(net_sin6_ptr(&tcp->context->local)->sin6_port),
 	       ntohs(net_sin6(&tcp->context->remote)->sin6_port),
-	       tcp->send_seq, tcp->send_ack, recv_mss);
+	       tcp->send_seq, tcp->send_ack, recv_mss,
+	       net_tcp_state_str(net_tcp_get_state(tcp)));
 
 	(*count)++;
 }
@@ -544,8 +544,8 @@ static int shell_cmd_conn(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	printk("Context   \tLocal           \tRemote          \tIface     \t"
-	       "Flags\n");
+	printk("     Context   \tIface         Flags "
+	       "Local           \tRemote\n");
 
 	net_context_foreach(context_cb, &count);
 
@@ -554,8 +554,8 @@ static int shell_cmd_conn(int argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_TCP)
-	printk("\nTCP       \tState    \tSrc port  Dst port  "
-	       "Send-Seq   Send-Ack   MSS\n");
+	printk("\nTCP        Src port  Dst port   Send-Seq   Send-Ack  MSS    "
+	       "State\n");
 
 	count = 0;
 
