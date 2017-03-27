@@ -123,6 +123,25 @@ config BLUETOOTH_CONTROLLER_XTAL_THRESHOLD
 	  value is board dependent. The value 5168 is based on crude calculation
 	  for nRF51 current versus startup time of high frequency crystal.
 
+config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+	bool "Advanced scheduling"
+	depends on (BLUETOOTH_MAX_CONN != 0)
+	default y
+	default n if BLUETOOTH_PERIPHERAL && !BLUETOOTH_CENTRAL
+	help
+	  Enable non-overlapping placement of observer, initiator and master
+	  roles in timespace. Uses window offset in connection updates and uses
+	  connection parameter request in slave role to negotiate
+	  non-overlapping placement with active master roles to avoid slave
+	  roles drifting into active master roles in the local controller.
+
+	  This feature maximizes the average data transmission amongst active
+	  concurrent master and slave connections while other observer,
+	  initiator, master or slave roles are active in the local controller.
+
+	  Disabling this feature will lead to overlapping role in timespace
+	  leading to skipped events amongst active roles.
+
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
 	help
