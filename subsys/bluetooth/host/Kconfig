@@ -1,6 +1,7 @@
 # Kconfig - Bluetooth LE stack configuration options
 
 #
+# Copyright (c) 2016-2017 Nordic Semiconductor ASA
 # Copyright (c) 2015-2016 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -23,12 +24,38 @@ config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	  to connect to an external Bluetooth Host when Zephyr is
 	  acting as a Bluetooth Controller.
 
-# Virtual/hidden option to make the conditions more intuitive
 config BLUETOOTH_HCI_HOST
+	# Virtual/hidden option to make the conditions more intuitive
 	bool
 	default y
 	depends on !BLUETOOTH_HCI_RAW
 	select POLL
+
+config BLUETOOTH_PERIPHERAL
+	bool "Peripheral Role support"
+	select BLUETOOTH_CONN
+	default y if BLUETOOTH_HCI_RAW
+	help
+	  Select this for LE Peripheral role support.
+
+config BLUETOOTH_CENTRAL
+	bool "Central Role support"
+	select BLUETOOTH_CONN
+	default y if BLUETOOTH_HCI_RAW
+	help
+	  Select this for LE Central role support.
+
+config BLUETOOTH_CONN
+	bool
+
+config BLUETOOTH_MAX_CONN
+	int "Maximum number of simultaneous connections"
+	depends on BLUETOOTH_CONN
+	range 1 64
+	default 1
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported.
 
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
@@ -115,21 +142,6 @@ config BLUETOOTH_INTERNAL_STORAGE
 	  When selected the application doesn't need to register its own
 	  persistent storage handlers through the bt_storage API, rather
 	  an internal default handler is used for this.
-
-config BLUETOOTH_PERIPHERAL
-	bool "Peripheral Role support"
-	select BLUETOOTH_CONN
-	help
-	  Select this for LE Peripheral role support.
-
-config BLUETOOTH_CENTRAL
-	bool "Central Role support"
-	select BLUETOOTH_CONN
-	help
-	  Select this for LE Central role support.
-
-config BLUETOOTH_CONN
-	bool
 
 if BLUETOOTH_CONN
 config BLUETOOTH_L2CAP_TX_BUF_COUNT
@@ -267,15 +279,6 @@ config BLUETOOTH_TINYCRYPT_ECC
 	  In builds including the HCI Raw interface and the BLE Controller, this
 	  option injects support for the 2 HCI commands required for LE Secure
 	  Connections so that Hosts can make use of those.
-
-config BLUETOOTH_MAX_CONN
-	int "Maximum number of simultaneous connections"
-	depends on BLUETOOTH_CONN || BLUETOOTH_CONTROLLER
-	default 1
-	range 1 64
-	help
-	  Maximum number of simultaneous Bluetooth connections
-	  supported. The minimum (and default) number is 1.
 
 config BLUETOOTH_DEBUG
 	bool
