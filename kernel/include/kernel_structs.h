@@ -65,6 +65,16 @@ struct __thread_entry {
 };
 #endif
 
+#if defined(CONFIG_THREAD_STACK_INFO)
+/* Contains the stack information of a thread */
+struct _thread_stack_info {
+	/* Stack Start */
+	u32_t start;
+	/* Stack Size */
+	u32_t size;
+};
+#endif /* CONFIG_THREAD_STACK_INFO */
+
 /* can be used for creating 'dummy' threads, e.g. for pending on objects */
 struct _thread_base {
 
@@ -147,6 +157,11 @@ struct k_thread {
 	/* per-thread errno variable */
 	int errno_var;
 #endif
+
+#if defined(CONFIG_THREAD_STACK_INFO)
+	/* Stack Info */
+	struct _thread_stack_info stack_info;
+#endif /* CONFIG_THREAD_STACK_INFO */
 
 	/* arch-specifics: must always be at the end */
 	struct _thread_arch arch;
@@ -264,6 +279,11 @@ static ALWAYS_INLINE struct k_thread *_new_thread_init(char *pStack,
 	/* Initialize custom data field (value is opaque to kernel) */
 	thread->custom_data = NULL;
 #endif
+
+#if defined(CONFIG_THREAD_STACK_INFO)
+	thread->stack_info.start = (u32_t)pStack;
+	thread->stack_info.size = (u32_t)stackSize;
+#endif /* CONFIG_THREAD_STACK_INFO */
 
 	return thread;
 }
