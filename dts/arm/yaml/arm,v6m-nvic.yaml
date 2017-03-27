@@ -10,7 +10,7 @@ properties:
       category: required
       type: string
       description: compatible strings
-      constraint: "arm,armv6m-nvic"
+      constraint: "arm,v6m-nvic"
 
   - reg:
       category: required
