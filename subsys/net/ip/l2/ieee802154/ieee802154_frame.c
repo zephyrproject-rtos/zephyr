@@ -570,7 +570,7 @@ bool data_addr_to_fs_settings(struct net_linkaddr *dst,
 }
 
 static
-uint8_t *generate_addressing_fields(struct net_if *iface,
+uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 				    struct ieee802154_fcf_seq *fs,
 				    struct ieee802154_frame_params *params,
 				    uint8_t *p_buf)
@@ -614,8 +614,8 @@ uint8_t *generate_addressing_fields(struct net_if *iface,
 		src_addr->short_addr = sys_cpu_to_le16(params->short_addr);
 		p_buf += IEEE802154_SHORT_ADDR_LENGTH;
 	} else {
-		sys_memcpy_swap(src_addr->ext_addr, iface->link_addr.addr,
-				IEEE802154_EXT_ADDR_LENGTH);
+		memcpy(src_addr->ext_addr, ctx->ext_addr,
+		       IEEE802154_EXT_ADDR_LENGTH);
 		p_buf += IEEE802154_EXT_ADDR_LENGTH;
 	}
 
@@ -673,7 +673,7 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 
 	broadcast = data_addr_to_fs_settings(dst, fs, &params);
 
-	p_buf = generate_addressing_fields(iface, fs, &params, p_buf);
+	p_buf = generate_addressing_fields(ctx, fs, &params, p_buf);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	if (broadcast) {
@@ -843,7 +843,7 @@ ieee802154_create_mac_cmd_frame(struct net_if *iface,
 		goto error;
 	}
 
-	p_buf = generate_addressing_fields(iface, fs, params, p_buf);
+	p_buf = generate_addressing_fields(ctx, fs, params, p_buf);
 
 	/* Let's insert the cfi */
 	((struct ieee802154_command *)p_buf)->cfi = type;
