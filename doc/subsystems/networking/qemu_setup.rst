@@ -115,6 +115,21 @@ echo_server sample, CONFIG_NET_TCP=y):
 
 You can also use the telnet command to achieve the above.
 
+Step 5 - Stop supporting daemons
+================================
+
+When you are finished with network testing using QEMU, you should stop
+any daemons or helpers started in the initial steps, to avoid possible
+networking or routing problems such as address conflicts in local network
+interfaces. For example, you definitely need to stop them if you switch
+from testing networking with QEMU to using real hardware. For example,
+there was a report of an airport WiFi connection not working during
+travel due to an address conflict.
+
+To stop the daemons, just press Ctrl+C in the corresponding terminal windows
+(you need to stop both ``loop-slip-tap.sh`` and ``loop-socat.sh``).
+
+
 Setting up NAT/masquerading to access Internet
 **********************************************
 
