@@ -268,6 +268,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 static enum net_verdict ieee802154_send(struct net_if *iface,
 					struct net_buf *buf)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t reserved_space = net_nbuf_ll_reserve(buf);
 	struct net_buf *frag;
 
@@ -287,7 +288,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		if (!ieee802154_create_data_frame(iface, net_nbuf_ll_dst(buf),
+		if (!ieee802154_create_data_frame(ctx, net_nbuf_ll_dst(buf),
 						  frag, reserved_space)) {
 			return NET_DROP;
 		}

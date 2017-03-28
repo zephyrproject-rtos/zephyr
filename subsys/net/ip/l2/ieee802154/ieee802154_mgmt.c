@@ -106,7 +106,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		params.dst.pan_id = IEEE802154_BROADCAST_PAN_ID;
 
 		buf = ieee802154_create_mac_cmd_frame(
-			iface, IEEE802154_CFI_BEACON_REQUEST, &params);
+			ctx, IEEE802154_CFI_BEACON_REQUEST, &params);
 		if (!buf) {
 			NET_DBG("Could not create Beacon Request");
 			return -ENOBUFS;
@@ -251,7 +251,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 	buf = ieee802154_create_mac_cmd_frame(
-		iface, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
+		ctx, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
 	if (!buf) {
 		ret = -ENOBUFS;
 		goto out;
@@ -322,7 +322,7 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	params.pan_id = ctx->pan_id;
 
 	buf = ieee802154_create_mac_cmd_frame(
-		iface, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION, &params);
+		ctx, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION, &params);
 	if (!buf) {
 		return -ENOBUFS;
 	}

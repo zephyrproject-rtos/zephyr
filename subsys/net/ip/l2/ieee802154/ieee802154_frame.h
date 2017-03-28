@@ -459,13 +459,13 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 uint16_t ieee802154_compute_header_size(struct net_if *iface,
 					struct in6_addr *dst);
 
-bool ieee802154_create_data_frame(struct net_if *iface,
+bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
 				  struct net_buf *frag,
 				  uint8_t reserved_len);
 
 struct net_buf *
-ieee802154_create_mac_cmd_frame(struct net_if *iface,
+ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params);
 

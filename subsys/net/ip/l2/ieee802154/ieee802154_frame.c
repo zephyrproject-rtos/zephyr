@@ -651,12 +651,11 @@ uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 }
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-bool ieee802154_create_data_frame(struct net_if *iface,
+bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
 				  struct net_buf *frag,
 				  uint8_t reserved_len)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
 	uint8_t *p_buf = frag->data - reserved_len;
@@ -810,11 +809,10 @@ static inline uint8_t mac_command_length(enum ieee802154_cfi cfi)
 }
 
 struct net_buf *
-ieee802154_create_mac_cmd_frame(struct net_if *iface,
+ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params)
 {
-	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_fcf_seq *fs;
 	struct net_buf *buf, *frag;
 	uint8_t *p_buf;
