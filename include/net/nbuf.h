@@ -61,7 +61,28 @@ struct net_nbuf {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	/* Fragment id */
+	uint32_t ipv6_fragment_id;
+
+	/* Where is the start of the fragment header */
+	uint8_t *ipv6_frag_hdr_start;
+
+	/* What is the fragment offset of this IPv6 packet */
+	uint16_t ipv6_fragment_offset;
+#endif
+
 	uint16_t appdatalen;
+
+#if defined(CONFIG_NET_IPV6)
+	/* Where is the start of the last header before payload data
+	 * in IPv6 packet. This is offset value from start of the IPv6
+	 * packet. Note that this value should be updated by who ever
+	 * adds IPv6 extension headers to the network packet.
+	 */
+	uint16_t ipv6_prev_hdr_start;
+#endif
+
 	uint8_t ll_reserve;	/* link layer header length */
 	uint8_t family;		/* IPv4 vs IPv6 */
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
@@ -339,6 +360,60 @@ static inline void net_nbuf_copy_user_data(struct net_buf *new,
 	       (struct net_nbuf *)net_buf_user_data(orig),
 	       sizeof(struct net_nbuf));
 }
+
+#if defined(CONFIG_NET_IPV6)
+static inline uint16_t net_nbuf_ipv6_hdr_prev(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_prev_hdr_start;
+}
+
+static inline void net_nbuf_set_ipv6_hdr_prev(struct net_buf *buf,
+					      uint16_t offset)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_prev_hdr_start = offset;
+}
+#endif
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+static inline uint8_t *net_nbuf_ipv6_fragment_start(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_frag_hdr_start;
+}
+
+static inline void net_nbuf_set_ipv6_fragment_start(struct net_buf *buf,
+						    uint8_t *start)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_frag_hdr_start = start;
+}
+
+static inline uint16_t net_nbuf_ipv6_fragment_offset(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_fragment_offset;
+}
+
+static inline void net_nbuf_set_ipv6_fragment_offset(struct net_buf *buf,
+						     uint16_t offset)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_fragment_offset = offset;
+}
+
+static inline uint32_t net_nbuf_ipv6_fragment_id(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->ipv6_fragment_id;
+}
+
+static inline void net_nbuf_set_ipv6_fragment_id(struct net_buf *buf,
+						 uint32_t id)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ipv6_fragment_id = id;
+}
+#endif
 
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))

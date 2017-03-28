@@ -244,6 +244,13 @@ struct net_ipv6_hdr {
 	struct in6_addr dst;
 } __packed;
 
+struct net_ipv6_frag_hdr {
+	uint8_t nexthdr;
+	uint8_t reserved;
+	uint16_t offset;
+	uint32_t id;
+} __packed;
+
 struct net_ipv4_hdr {
 	uint8_t vhl;
 	uint8_t tos;

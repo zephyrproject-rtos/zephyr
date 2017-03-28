@@ -365,6 +365,54 @@ static inline void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 }
 #endif
 
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+/* We do not have to accept larger than 1500 byte IPv6 packet (RFC 2460 ch 5).
+ * This means that we should receive everything within first two fragments.
+ * The first one being 1280 bytes and the second one 220 bytes.
+ */
+#define NET_IPV6_FRAGMENTS_MAX_BUF 2
+
+/** Store pending IPv6 fragment information that is needed for reassembly. */
+struct net_ipv6_reassembly {
+	/** IPv6 source address of the fragment */
+	struct in6_addr src;
+
+	/** IPv6 destination address of the fragment */
+	struct in6_addr dst;
+
+	/**
+	 * Timeout for cancelling the reassembly. The timer is used
+	 * also to detect if this reassembly slot is used or not.
+	 */
+	struct k_delayed_work timer;
+
+	/** Pointers to pending fragments */
+	struct net_buf *buf[NET_IPV6_FRAGMENTS_MAX_BUF];
+
+	/** IPv6 fragment identification */
+	uint32_t id;
+};
+
+/**
+ * @typedef net_ipv6_frag_cb_t
+ * @brief Callback used while iterating over pending IPv6 fragments.
+ *
+ * @param reass IPv6 fragment reassembly struct
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*net_ipv6_frag_cb_t)(struct net_ipv6_reassembly *reass,
+				   void *user_data);
+
+/**
+ * @brief Go through all the currently pending IPv6 fragments.
+ *
+ * @param cb Callback to call for each pending IPv6 fragment.
+ * @param user_data User specified data or NULL.
+ */
+void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
+
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);
 #else

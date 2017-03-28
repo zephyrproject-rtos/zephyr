@@ -3787,6 +3787,8 @@ static inline int add_rpl_opt(struct net_buf *buf, uint16_t offset)
 	bool ret;
 
 	/* next header */
+	net_nbuf_set_ipv6_hdr_prev(buf, offset);
+
 	ret = net_nbuf_insert_u8(buf, buf->frags, offset++,
 				 NET_IPV6_BUF(buf)->nexthdr);
 	if (!ret) {
@@ -3853,6 +3855,8 @@ static int net_rpl_update_header_empty(struct net_buf *buf)
 	uint16_t pos;
 
 	NET_DBG("Verifying the presence of the RPL header option");
+
+	net_nbuf_set_ipv6_hdr_prev(buf, offset);
 
 	frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
 	frag = net_nbuf_read_u8(frag, offset, &offset, &len);
