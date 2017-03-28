@@ -88,6 +88,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 }
 
 /* HCI Error Codes */
+#define BT_HCI_ERR_SUCCESS                      0x00
 #define BT_HCI_ERR_UNKNOWN_CMD                  0x01
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
 #define BT_HCI_ERR_AUTHENTICATION_FAIL          0x05
