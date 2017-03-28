@@ -517,8 +517,7 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf,
 }
 
 static inline enum ieee802154_addressing_mode
-get_dst_addr_mode(struct net_if *iface, struct net_linkaddr *dst,
-		  bool *broadcast)
+get_dst_addr_mode(struct net_linkaddr *dst, bool *broadcast)
 {
 	if (!dst->addr) {
 		NET_DBG("Broadcast destination");
@@ -542,14 +541,13 @@ get_dst_addr_mode(struct net_if *iface, struct net_linkaddr *dst,
 }
 
 static inline
-bool data_addr_to_fs_settings(struct net_if *iface,
-			      struct net_linkaddr *dst,
+bool data_addr_to_fs_settings(struct net_linkaddr *dst,
 			      struct ieee802154_fcf_seq *fs,
 			      struct ieee802154_frame_params *params)
 {
 	bool broadcast;
 
-	fs->fc.dst_addr_mode = get_dst_addr_mode(iface, dst, &broadcast);
+	fs->fc.dst_addr_mode = get_dst_addr_mode(dst, &broadcast);
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
 		fs->fc.pan_id_comp = 1;
 
@@ -673,7 +671,7 @@ bool ieee802154_create_data_frame(struct net_if *iface,
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
 
-	broadcast = data_addr_to_fs_settings(iface, dst, fs, &params);
+	broadcast = data_addr_to_fs_settings(dst, fs, &params);
 
 	p_buf = generate_addressing_fields(iface, fs, &params, p_buf);
 
