@@ -8,6 +8,7 @@ obj-$(CONFIG_BME280) += bme280/
 obj-$(CONFIG_BMG160) += bmg160/
 obj-$(CONFIG_BMI160) += bmi160/
 obj-$(CONFIG_DHT) += dht/
+obj-$(CONFIG_FXAS21002) += fxas21002/
 obj-$(CONFIG_FXOS8700) += fxos8700/
 obj-$(CONFIG_HDC1008) += hdc1008/
 obj-$(CONFIG_HMC5883L) += hmc5883l/
