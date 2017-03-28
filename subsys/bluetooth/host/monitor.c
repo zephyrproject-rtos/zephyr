@@ -31,6 +31,12 @@
 
 static struct device *monitor_dev;
 
+enum {
+	BT_LOG_BUSY,
+};
+
+static atomic_t flags;
+
 extern int _prf(int (*func)(), void *dest,
 		const char *format, va_list vargs);
 
@@ -71,7 +77,7 @@ void bt_log(int prio, const char *fmt, ...)
 	struct bt_monitor_hdr hdr;
 	const char id[] = "bt";
 	va_list ap;
-	int len, key;
+	int len;
 
 	va_start(ap, fmt);
 	len = vsnprintk(NULL, 0, fmt, ap);
@@ -87,7 +93,9 @@ void bt_log(int prio, const char *fmt, ...)
 	encode_hdr(&hdr, BT_MONITOR_USER_LOGGING,
 		   sizeof(log) + sizeof(id) + len + 1);
 
-	key = irq_lock();
+	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
+		return;
+	}
 
 	monitor_send(&hdr, sizeof(hdr));
 	monitor_send(&log, sizeof(log));
@@ -100,22 +108,23 @@ void bt_log(int prio, const char *fmt, ...)
 	/* Terminate the string with null */
 	uart_poll_out(monitor_dev, '\0');
 
-	irq_unlock(key);
+	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 {
 	struct bt_monitor_hdr hdr;
-	int key;
 
 	encode_hdr(&hdr, opcode, len);
 
-	key = irq_lock();
+	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
+		return;
+	}
 
 	monitor_send(&hdr, sizeof(hdr));
 	monitor_send(data, len);
 
-	irq_unlock(key);
+	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
 void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
