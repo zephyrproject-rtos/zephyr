@@ -45,6 +45,9 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
 #endif
+	/* FXAS21002 INT2 */
+	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
 	/* FXOS8700 INT2 */
 	pinmux_pin_set(portd, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
 

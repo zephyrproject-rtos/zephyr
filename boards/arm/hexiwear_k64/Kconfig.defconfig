@@ -132,6 +132,22 @@ config FXOS8700_GPIO_PIN
 
 endif # FXOS8700
 
+if FXAS21002
+
+config FXAS21002_I2C_NAME
+	default I2C_1_NAME
+
+config FXAS21002_I2C_ADDRESS
+	default 0x20
+
+config FXAS21002_GPIO_NAME
+	default GPIO_MCUX_PORTC_NAME
+
+config FXAS21002_GPIO_PIN
+	default 18
+
+endif # FXAS21002
+
 if PWM_K64_FTM
 
 config PWM_K64_FTM_0
