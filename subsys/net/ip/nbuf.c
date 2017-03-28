@@ -260,12 +260,20 @@ static inline int16_t get_frees(struct net_buf_pool *pool)
 #if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
 static inline struct net_buf_pool *get_tx_pool(struct net_context *context)
 {
-	return context->tx_pool();
+	if (context->tx_pool) {
+		return context->tx_pool();
+	}
+
+	return NULL;
 }
 
 static inline struct net_buf_pool *get_data_pool(struct net_context *context)
 {
-	return context->data_pool();
+	if (context->data_pool) {
+		return context->data_pool();
+	}
+
+	return NULL;
 }
 #else
 #define get_tx_pool(context) NULL
