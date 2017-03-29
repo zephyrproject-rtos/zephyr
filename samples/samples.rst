@@ -12,6 +12,7 @@ Samples and Demos
    basic/*
    subsys/subsys.rst
    mpu_test/*
+   mpu_stack_guard_test/*
    net/net.rst
    bluetooth/bluetooth.rst
    sensor/*
