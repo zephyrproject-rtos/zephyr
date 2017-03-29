@@ -237,7 +237,7 @@ int mbedtls_platform_std_nv_seed_read( unsigned char *buf, size_t buf_len )
     }
 
     fclose( file );
-    return( n );
+    return( (int)n );
 }
 
 int mbedtls_platform_std_nv_seed_write( unsigned char *buf, size_t buf_len )
@@ -255,7 +255,7 @@ int mbedtls_platform_std_nv_seed_write( unsigned char *buf, size_t buf_len )
     }
 
     fclose( file );
-    return( n );
+    return( (int)n );
 }
 #endif /* MBEDTLS_PLATFORM_NO_STD_FUNCTIONS */
 
