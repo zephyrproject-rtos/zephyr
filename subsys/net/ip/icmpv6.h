@@ -150,6 +150,8 @@ struct net_icmpv6_nd_opt_6co {
 
 typedef enum net_verdict (*icmpv6_callback_handler_t)(struct net_buf *buf);
 
+const char *net_icmpv6_type2str(int icmpv6_type);
+
 struct net_icmpv6_handler {
 	sys_snode_t node;
 	uint8_t type;

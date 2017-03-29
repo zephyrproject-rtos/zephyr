@@ -2639,8 +2639,8 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_buf *buf,
 {
 	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
 
-	NET_DBG("ICMPv6 packet received type %d code %d",
-		hdr->type, hdr->code);
+	NET_DBG("ICMPv6 %s received type %d code %d",
+		net_icmpv6_type2str(hdr->type), hdr->type, hdr->code);
 
 	return net_icmpv6_input(buf, hdr->type, hdr->code);
 }
