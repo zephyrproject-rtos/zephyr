@@ -537,7 +537,7 @@ menu "Legacy Kernel Options"
 
 config LEGACY_KERNEL
 	bool "Legacy Kernel Options"
-	default y
+	default n
 	help
 	Enable legacy kernel features.
 
