@@ -1525,7 +1525,7 @@
  *          library/pkwrite.c
  *          library/x509_create.c
  *          library/x509write_crt.c
- *          library/mbedtls_x509write_csr.c
+ *          library/x509write_csr.c
  */
 #define MBEDTLS_ASN1_WRITE_C
 
@@ -1886,7 +1886,7 @@
  *
  * Enable the generic message digest layer.
  *
- * Module:  library/mbedtls_md.c
+ * Module:  library/md.c
  * Caller:
  *
  * Uncomment to enable generic message digest wrappers.
@@ -1898,7 +1898,7 @@
  *
  * Enable the MD2 hash algorithm.
  *
- * Module:  library/mbedtls_md2.c
+ * Module:  library/md2.c
  * Caller:
  *
  * Uncomment to enable support for (rare) MD2-signed X.509 certs.
@@ -1910,7 +1910,7 @@
  *
  * Enable the MD4 hash algorithm.
  *
- * Module:  library/mbedtls_md4.c
+ * Module:  library/md4.c
  * Caller:
  *
  * Uncomment to enable support for (rare) MD4-signed X.509 certs.
@@ -1922,8 +1922,8 @@
  *
  * Enable the MD5 hash algorithm.
  *
- * Module:  library/mbedtls_md5.c
- * Caller:  library/mbedtls_md.c
+ * Module:  library/md5.c
+ * Caller:  library/md.c
  *          library/pem.c
  *          library/ssl_tls.c
  *
@@ -1980,11 +1980,11 @@
  *          library/rsa.c
  *          library/x509.c
  *          library/x509_create.c
- *          library/mbedtls_x509_crl.c
- *          library/mbedtls_x509_crt.c
- *          library/mbedtls_x509_csr.c
+ *          library/x509_crl.c
+ *          library/x509_crt.c
+ *          library/x509_csr.c
  *          library/x509write_crt.c
- *          library/mbedtls_x509write_csr.c
+ *          library/x509write_csr.c
  *
  * This modules translates between OIDs and internal values.
  */
@@ -2012,9 +2012,9 @@
  * Module:  library/pem.c
  * Caller:  library/dhm.c
  *          library/pkparse.c
- *          library/mbedtls_x509_crl.c
- *          library/mbedtls_x509_crt.c
- *          library/mbedtls_x509_csr.c
+ *          library/x509_crl.c
+ *          library/x509_crt.c
+ *          library/x509_csr.c
  *
  * Requires: MBEDTLS_BASE64_C
  *
@@ -2030,7 +2030,7 @@
  * Module:  library/pem.c
  * Caller:  library/pkwrite.c
  *          library/x509write_crt.c
- *          library/mbedtls_x509write_csr.c
+ *          library/x509write_csr.c
  *
  * Requires: MBEDTLS_BASE64_C
  *
@@ -2060,8 +2060,8 @@
  * Enable the generic public (asymetric) key parser.
  *
  * Module:  library/pkparse.c
- * Caller:  library/mbedtls_x509_crt.c
- *          library/mbedtls_x509_csr.c
+ * Caller:  library/x509_crt.c
+ *          library/x509_csr.c
  *
  * Requires: MBEDTLS_PK_C
  *
@@ -2152,8 +2152,8 @@
  *
  * Enable the RIPEMD-160 hash algorithm.
  *
- * Module:  library/mbedtls_ripemd160.c
- * Caller:  library/mbedtls_md.c
+ * Module:  library/ripemd160.c
+ * Caller:  library/md.c
  *
  */
 #define MBEDTLS_RIPEMD160_C
@@ -2181,8 +2181,8 @@
  *
  * Enable the SHA1 cryptographic hash algorithm.
  *
- * Module:  library/mbedtls_sha1.c
- * Caller:  library/mbedtls_md.c
+ * Module:  library/sha1.c
+ * Caller:  library/md.c
  *          library/ssl_cli.c
  *          library/ssl_srv.c
  *          library/ssl_tls.c
@@ -2197,9 +2197,9 @@
  *
  * Enable the SHA-224 and SHA-256 cryptographic hash algorithms.
  *
- * Module:  library/mbedtls_sha256.c
+ * Module:  library/sha256.c
  * Caller:  library/entropy.c
- *          library/mbedtls_md.c
+ *          library/md.c
  *          library/ssl_cli.c
  *          library/ssl_srv.c
  *          library/ssl_tls.c
@@ -2214,9 +2214,9 @@
  *
  * Enable the SHA-384 and SHA-512 cryptographic hash algorithms.
  *
- * Module:  library/mbedtls_sha512.c
+ * Module:  library/sha512.c
  * Caller:  library/entropy.c
- *          library/mbedtls_md.c
+ *          library/md.c
  *          library/ssl_cli.c
  *          library/ssl_srv.c
  *
@@ -2364,9 +2364,9 @@
  * Enable X.509 core for using certificates.
  *
  * Module:  library/x509.c
- * Caller:  library/mbedtls_x509_crl.c
- *          library/mbedtls_x509_crt.c
- *          library/mbedtls_x509_csr.c
+ * Caller:  library/x509_crl.c
+ *          library/x509_crt.c
+ *          library/x509_csr.c
  *
  * Requires: MBEDTLS_ASN1_PARSE_C, MBEDTLS_BIGNUM_C, MBEDTLS_OID_C,
  *           MBEDTLS_PK_PARSE_C
@@ -2380,7 +2380,7 @@
  *
  * Enable X.509 certificate parsing.
  *
- * Module:  library/mbedtls_x509_crt.c
+ * Module:  library/x509_crt.c
  * Caller:  library/ssl_cli.c
  *          library/ssl_srv.c
  *          library/ssl_tls.c
@@ -2396,8 +2396,8 @@
  *
  * Enable X.509 CRL parsing.
  *
- * Module:  library/mbedtls_x509_crl.c
- * Caller:  library/mbedtls_x509_crt.c
+ * Module:  library/x509_crl.c
+ * Caller:  library/x509_crt.c
  *
  * Requires: MBEDTLS_X509_USE_C
  *
@@ -2410,7 +2410,7 @@
  *
  * Enable X.509 Certificate Signing Request (CSR) parsing.
  *
- * Module:  library/mbedtls_x509_csr.c
+ * Module:  library/x509_csr.c
  * Caller:  library/x509_crt_write.c
  *
  * Requires: MBEDTLS_X509_USE_C
