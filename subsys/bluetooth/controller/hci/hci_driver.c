@@ -46,6 +46,11 @@ static BT_STACK_NOINIT(prio_recv_thread_stack,
 		       CONFIG_BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE);
 static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
+#if defined(CONFIG_INIT_STACKS)
+static uint32_t prio_ts;
+static uint32_t rx_ts;
+#endif
+
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
@@ -79,8 +84,14 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&sem_prio_recv, K_FOREVER);
 		BT_DBG("sem taken");
 
-		stack_analyze("prio recv thread stack", prio_recv_thread_stack,
-			      sizeof(prio_recv_thread_stack));
+#if defined(CONFIG_INIT_STACKS)
+		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
+			stack_analyze("prio recv thread stack",
+				      prio_recv_thread_stack,
+				      sizeof(prio_recv_thread_stack));
+			prio_ts = k_uptime_get_32();
+		}
+#endif
 	}
 }
 
@@ -135,8 +146,13 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 		k_yield();
 
-		stack_analyze("recv thread stack", recv_thread_stack,
-			      sizeof(recv_thread_stack));
+#if defined(CONFIG_INIT_STACKS)
+		if (k_uptime_get_32() - rx_ts > K_SECONDS(5)) {
+			stack_analyze("recv thread stack", recv_thread_stack,
+				      sizeof(recv_thread_stack));
+			rx_ts = k_uptime_get_32();
+		}
+#endif
 	}
 }
 
