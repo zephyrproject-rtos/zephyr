@@ -23,6 +23,14 @@ on QEMU as follows:
    $ cd samples/synchronization
    $ make run
 
+On the supported ARM MCUs the project can be built with the MPU and the Thread
+Stack Guard feature enabled:
+
+.. code-block:: console
+
+   $ cd samples/synchronization
+   $ make BOARD=v2m_beetle CONF_FILE=prj_stack_guard.conf
+
 Sample Output
 =============
 
