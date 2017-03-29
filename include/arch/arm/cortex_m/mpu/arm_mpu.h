@@ -6,6 +6,8 @@
 #ifndef _ARM_MPU_H_
 #define _ARM_MPU_H_
 
+#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
+
 struct arm_mpu {
 	/* 0xE000ED90 MPU Type Register */
 	volatile u32_t type;

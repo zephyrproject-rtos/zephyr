@@ -6,10 +6,26 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config ARM_CORE_MPU
+	bool "ARM Core MPU functionalities"
+	depends on CPU_HAS_MPU
+	select THREAD_STACK_INFO
+	default n
+	help
+	  ARM Core MPU functionalities
+
+config MPU_STACK_GUARD
+	bool "Thread Stack Guards"
+	depends on ARM_CORE_MPU
+	default n
+	help
+	  Enable Thread Stack Guards via MPU
+
 config ARM_MPU
 	bool "ARM MPU Support"
 	depends on CPU_HAS_MPU
 	depends on SOC_FAMILY_ARM || SOC_FAMILY_STM32
+	select ARM_CORE_MPU
 	default n
 	help
 	  MCU has ARM MPU
@@ -18,6 +34,7 @@ config NXP_MPU
 	bool "NXP MPU Support"
 	depends on CPU_HAS_MPU
 	depends on SOC_FAMILY_KINETIS
+	select ARM_CORE_MPU
 	default n
 	help
 	  MCU has NXP MPU
