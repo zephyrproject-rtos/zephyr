@@ -74,11 +74,6 @@ static pfunc func_array[] = {
 	(pfunc)k_msgq_num_free_get,
 	(pfunc)k_msgq_num_used_get,
 
-	/* semaphore groups */
-	(pfunc)k_sem_group_take,
-	(pfunc)k_sem_group_give,
-	(pfunc)k_sem_group_reset,
-
 	/* stacks */
 	(pfunc)k_stack_init,
 	(pfunc)k_stack_push,
