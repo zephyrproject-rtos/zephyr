@@ -3140,7 +3140,6 @@ static uint32_t preempt_calc(struct shdr *hdr, uint8_t ticker_id,
  */
 static void mayfly_xtal_stop_calc(void *params)
 {
-	uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint8_t ticker_id;
@@ -3150,17 +3149,9 @@ static void mayfly_xtal_stop_calc(void *params)
 	ticks_to_expire = 0;
 	ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 				   RADIO_TICKER_USER_ID_JOB, &ticker_id,
-				   &ticks_current, &ticks_to_expire,
-				   ticker_if_done, (void *)&ret_cb);
-
-	if (ret == TICKER_STATUS_BUSY) {
-		while (ret_cb == TICKER_STATUS_BUSY) {
-			ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
-					 RADIO_TICKER_USER_ID_JOB);
-		}
-	}
-
-	LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+				   &ticks_current, &ticks_to_expire, NULL,
+				   NULL);
+	LL_ASSERT(ret == TICKER_STATUS_SUCCESS);
 
 	if ((ticker_id != 0xff) &&
 	    (ticks_to_expire <
@@ -3350,23 +3341,13 @@ static void sched_after_mstr_free_slot_get(uint8_t user_id,
 	ticks_to_expire = ticks_to_expire_prev = *us_offset = 0;
 	ticks_slot_prev_abs = 0;
 	while (1) {
-		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		struct connection *conn;
 		uint32_t ret;
 
 		ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 					   user_id, &ticker_id, ticks_anchor,
-					   &ticks_to_expire, ticker_if_done,
-					   (void *)&ret_cb);
-
-		if (ret == TICKER_STATUS_BUSY) {
-			while (ret_cb == TICKER_STATUS_BUSY) {
-				ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
-						 user_id);
-			}
-		}
-
-		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+					   &ticks_to_expire, NULL, NULL);
+		LL_ASSERT(ret == TICKER_STATUS_SUCCESS);
 
 		if (ticker_id == 0xff) {
 			break;
@@ -3504,24 +3485,14 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 		ticks_anchor_prev = offset_index = _win_offset = 0;
 	ticks_slot_prev_abs = 0;
 	do {
-		uint32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		struct connection *conn;
 		uint32_t ret;
 
 		ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
 					   RADIO_TICKER_USER_ID_JOB,
 					   &ticker_id, &ticks_anchor,
-					   &ticks_to_expire, ticker_if_done,
-					   (void *)&ret_cb);
-
-		if (ret == TICKER_STATUS_BUSY) {
-			while (ret_cb == TICKER_STATUS_BUSY) {
-				ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
-						 RADIO_TICKER_USER_ID_JOB);
-			}
-		}
-
-		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+					   &ticks_to_expire, NULL, NULL);
+		LL_ASSERT(ret == TICKER_STATUS_SUCCESS);
 
 		if (ticker_id == 0xff) {
 			break;
