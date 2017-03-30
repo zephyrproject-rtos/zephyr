@@ -16,9 +16,9 @@
 extern void _xt_user_exit(void);
 
 /*
- * @brief Initialize a new thread from its stack space
+ * @brief Initialize a new thread
  *
- * The struct k_thread is put at the lower address of the stack. An
+ * Any coprocessor context data is put at the lower address of the stack. An
  * initial context, to be "restored" by __return_from_coop(), is put at
  * the other end of the stack, and thus reusable by the stack when not
  * needed anymore.
@@ -29,6 +29,7 @@ extern void _xt_user_exit(void);
  *
  * <options> is currently unused.
  *
+ * @param thread pointer to k_thread memory
  * @param pStackmem the pointer to aligned stack memory
  * @param stackSize the stack size in bytes
  * @param pEntry thread entry point routine
@@ -41,23 +42,19 @@ extern void _xt_user_exit(void);
  * @return N/A
  */
 
-void _new_thread(char *pStack, size_t stackSize,
+void _new_thread(struct k_thread *thread, char *pStack, size_t stackSize,
 		void (*pEntry)(void *, void *, void *),
 		void *p1, void *p2, void *p3,
 		int priority, unsigned int options)
 {
 	/* Align stack end to maximum alignment requirement. */
 	char *stackEnd = (char *)ROUND_DOWN(pStack + stackSize, 16);
-	/* k_thread is located at top of stack while frames are located at end
-	 * of it
-	 */
-	struct k_thread *thread;
 #if XCHAL_CP_NUM > 0
 	u32_t *cpSA;
 	char *cpStack;
 #endif
 
-	thread = _new_thread_init(pStack, stackSize, priority, options);
+	_new_thread_init(thread, pStack, stackSize, priority, options);
 
 #ifdef CONFIG_DEBUG
 	printk("\nstackPtr = %p, stackSize = %d\n", pStack, stackSize);

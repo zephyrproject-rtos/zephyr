@@ -355,6 +355,12 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  * scheduler may preempt the current thread to allow the new thread to
  * execute.
  *
+ * Kernel data structures for bookkeeping and context storage for this thread
+ * will be placed at the beginning of the thread's stack memory region and may
+ * become corrupted if too much of the stack is used. This function has been
+ * deprecated in favor of k_thread_create() to give the user more control on
+ * where these data structures reside.
+ *
  * Thread options are architecture-specific, and can include K_ESSENTIAL,
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
@@ -371,10 +377,48 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  *
  * @return ID of new thread.
  */
-extern k_tid_t k_thread_spawn(char *stack, size_t stack_size,
+extern __deprecated k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay);
+
+/**
+ * @brief Create a thread.
+ *
+ * This routine initializes a thread, then schedules it for execution.
+ *
+ * The new thread may be scheduled for immediate execution or a delayed start.
+ * If the newly spawned thread does not have a delayed start the kernel
+ * scheduler may preempt the current thread to allow the new thread to
+ * execute.
+ *
+ * Thread options are architecture-specific, and can include K_ESSENTIAL,
+ * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
+ * them using "|" (the logical OR operator).
+ *
+ * Historically, users often would use the beginning of the stack memory region
+ * to store the struct k_thread data, although corruption will occur if the
+ * stack overflows this region and stack protection features may not detect this
+ * situation.
+ *
+ * @param new_thread Pointer to uninitialized struct k_thread
+ * @param stack Pointer to the stack space.
+ * @param stack_size Stack size in bytes.
+ * @param entry Thread entry function.
+ * @param p1 1st entry point parameter.
+ * @param p2 2nd entry point parameter.
+ * @param p3 3rd entry point parameter.
+ * @param prio Thread priority.
+ * @param options Thread options.
+ * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay).
+ *
+ * @return ID of new thread.
+ */
+extern k_tid_t k_thread_create(struct k_thread *new_thread, char *stack,
+			       size_t stack_size,
+			       void (*entry)(void *, void *, void*),
+			       void *p1, void *p2, void *p3,
+			       int prio, u32_t options, s32_t delay);
 
 /**
  * @brief Put the current thread to sleep.
@@ -469,10 +513,8 @@ extern void k_thread_abort(k_tid_t thread);
 #define _INACTIVE (-1)
 
 struct _static_thread_data {
-	union {
-		char *init_stack;
-		struct k_thread *thread;
-	};
+	struct k_thread *init_thread;
+	char *init_stack;
 	unsigned int init_stack_size;
 	void (*init_entry)(void *, void *, void *);
 	void *init_p1;
@@ -485,11 +527,12 @@ struct _static_thread_data {
 	u32_t init_groups;
 };
 
-#define _THREAD_INITIALIZER(stack, stack_size,                   \
+#define _THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
 			    prio, options, delay, abort, groups) \
 	{                                                        \
-	{.init_stack = (stack)},                                 \
+	.init_thread = (thread),				 \
+	.init_stack = (stack),					 \
 	.init_stack_size = (stack_size),                         \
 	.init_entry = (void (*)(void *, void *, void *))entry,   \
 	.init_p1 = (void *)p1,                                   \
@@ -536,13 +579,15 @@ struct _static_thread_data {
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
 			prio, options, delay)                            \
-	char __noinit __stack _k_thread_obj_##name[stack_size];          \
+	char __noinit __stack _k_thread_stack_##name[stack_size];        \
+	struct k_thread _k_thread_obj_##name;				 \
 	struct _static_thread_data _k_thread_data_##name __aligned(4)    \
 		__in_section(_static_thread_data, static, name) =        \
-		_THREAD_INITIALIZER(_k_thread_obj_##name, stack_size,    \
+		_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
+				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL, 0); \
-	const k_tid_t name = (k_tid_t)_k_thread_obj_##name
+				NULL, 0);				 \
+	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
  * @brief Get a thread's priority.
@@ -1795,6 +1840,7 @@ typedef void (*k_work_handler_t)(struct k_work *work);
 
 struct k_work_q {
 	struct k_fifo fifo;
+	struct k_thread thread;
 };
 
 enum {

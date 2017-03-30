@@ -81,8 +81,11 @@ u64_t __noinit __end_tick_tsc;
 char __noinit __stack _main_stack[MAIN_STACK_SIZE];
 char __noinit __stack _idle_stack[IDLE_STACK_SIZE];
 
-k_tid_t const _main_thread = (k_tid_t)_main_stack;
-k_tid_t const _idle_thread = (k_tid_t)_idle_stack;
+static struct k_thread _main_thread_s;
+static struct k_thread _idle_thread_s;
+
+k_tid_t const _main_thread = (k_tid_t)&_main_thread_s;
+k_tid_t const _idle_thread = (k_tid_t)&_idle_thread_s;
 
 /*
  * storage space for the interrupt stack
@@ -271,15 +274,15 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 */
 	_ready_q.cache = _main_thread;
 
-	_new_thread(_main_stack, MAIN_STACK_SIZE,
-		    _main, NULL, NULL, NULL,
+	_new_thread(_main_thread, _main_stack,
+		    MAIN_STACK_SIZE, _main, NULL, NULL, NULL,
 		    CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
 	_mark_thread_as_started(_main_thread);
 	_add_thread_to_ready_q(_main_thread);
 
 #ifdef CONFIG_MULTITHREADING
-	_new_thread(_idle_stack, IDLE_STACK_SIZE,
-		    idle, NULL, NULL, NULL,
+	_new_thread(_idle_thread, _idle_stack,
+		    IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
 		    K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(_idle_thread);
 	_add_thread_to_ready_q(_idle_thread);
@@ -295,7 +298,8 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 static void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	_arch_switch_to_main_thread(_main_stack, MAIN_STACK_SIZE, _main);
+	_arch_switch_to_main_thread(_main_thread, _main_stack, MAIN_STACK_SIZE,
+				    _main);
 #else
 	/*
 	 * Context switch to main task (entry function is _main()): the
