@@ -216,6 +216,7 @@ static int at_state_process_cmd(struct at_client *at, struct net_buf *buf)
 
 	if (at->resp) {
 		at->resp(at, buf);
+		at->resp = NULL;
 		return 0;
 	}
 	at->state = AT_STATE_UNSOLICITED_CMD;
