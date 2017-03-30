@@ -41,7 +41,7 @@ config PINMUX
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
-	def_bool n
+	def_bool y if MAX30101
 
 config PINMUX_MCUX_PORTB
 	def_bool y if UART_MCUX_0
@@ -60,7 +60,7 @@ endif # PINMUX_MCUX
 if GPIO_MCUX
 
 config GPIO_MCUX_PORTA
-	def_bool n
+	def_bool y if MAX30101
 
 config GPIO_MCUX_PORTB
 	def_bool y
@@ -137,6 +137,13 @@ config FXAS21002_GPIO_PIN
 	default 18
 
 endif # FXAS21002
+
+if MAX30101
+
+config MAX30101_I2C_NAME
+	default I2C_0_NAME
+
+endif # MAX30101
 
 if PWM_K64_FTM
 

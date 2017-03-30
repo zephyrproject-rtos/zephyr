@@ -6,6 +6,7 @@
 
 #include <init.h>
 #include <pinmux.h>
+#include <gpio.h>
 #include <fsl_port.h>
 
 static int hexiwear_k64_pinmux_init(struct device *dev)
@@ -38,6 +39,22 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
+#if CONFIG_I2C_0
+	/* I2C0 SCL, SDA - heart rate, light, humidity */
+	pinmux_pin_set(portb,  0, PORT_PCR_MUX(kPORT_MuxAlt2)
+					| PORT_PCR_ODE_MASK);
+	pinmux_pin_set(portb,  1, PORT_PCR_MUX(kPORT_MuxAlt2)
+					| PORT_PCR_ODE_MASK);
+
+	/* 3V3B_EN */
+	pinmux_pin_set(portb, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	struct device *gpiob = device_get_binding(CONFIG_GPIO_MCUX_PORTB_NAME);
+
+	gpio_pin_configure(gpiob, 12, GPIO_DIR_OUT);
+	gpio_pin_write(gpiob, 12, 0);
+#endif
+
 #if CONFIG_I2C_1
 	/* I2C1 SCL, SDA - accel/mag, gyro, pressure */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2)
@@ -61,6 +78,16 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	/* UART4 RX, TX - BLE */
 	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+
+#ifdef CONFIG_MAX30101
+	/* LDO - MAX30101 power supply */
+	pinmux_pin_set(porta, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	struct device *gpioa = device_get_binding(CONFIG_GPIO_MCUX_PORTA_NAME);
+
+	gpio_pin_configure(gpioa, 29, GPIO_DIR_OUT);
+	gpio_pin_write(gpioa, 29, 1);
 #endif
 
 	return 0;
