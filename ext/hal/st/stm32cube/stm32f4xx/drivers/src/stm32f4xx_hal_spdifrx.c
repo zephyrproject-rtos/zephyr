@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_spdifrx.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   This file provides firmware functions to manage the following
   *          functionalities of the SPDIFRX audio interface:
   *           + Initialization and Configuration
@@ -94,7 +94,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -437,7 +437,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_SetDataFormat(SPDIFRX_HandleTypeDef *hspdif, SPDIF
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size, uint32_t Timeout)
 {
-  if((pData == NULL ) || (Size == 0U))
+  if((pData == NULL ) || (Size == 0))
   {
     return  HAL_ERROR;
   }
@@ -462,7 +462,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow(SPDIFRX_HandleTypeDef *hspdif, uin
     __HAL_SPDIFRX_RCV(hspdif);
 
     /* Receive data flow */
-    while(Size > 0U)
+    while(Size > 0)
     {
       /* Wait until RXNE flag is set */
       if(SPDIFRX_WaitOnFlagUntilTimeout(hspdif, SPDIFRX_FLAG_RXNE, RESET, Timeout) != HAL_OK)
@@ -499,7 +499,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow(SPDIFRX_HandleTypeDef *hspdif, uin
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size, uint32_t Timeout)
 {
-  if((pData == NULL ) || (Size == 0U))
+  if((pData == NULL ) || (Size == 0))
   {
     return  HAL_ERROR;
   }
@@ -524,7 +524,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow(SPDIFRX_HandleTypeDef *hspdif, 
     __HAL_SPDIFRX_RCV(hspdif);
 
     /* Receive control flow */
-    while(Size > 0U)
+    while(Size > 0)
     {
       /* Wait until CSRNE flag is set */
       if(SPDIFRX_WaitOnFlagUntilTimeout(hspdif, SPDIFRX_FLAG_CSRNE, RESET, Timeout) != HAL_OK)
@@ -562,7 +562,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif, 
 
   if((hspdif->State == HAL_SPDIFRX_STATE_READY) || (hspdif->State == HAL_SPDIFRX_STATE_BUSY_CX))
   {
-    if((pData == NULL) || (Size == 0U))
+    if((pData == NULL) || (Size == 0))
     {
       return HAL_ERROR;
     }
@@ -599,7 +599,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif, 
       /* Wait until SYNCD flag is set */
       do
       {
-        if (count-- == 0)
+        if (count-- == 0U)
         {
           /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
           __HAL_SPDIFRX_DISABLE_IT(hspdif, SPDIFRX_IT_RXNE);
@@ -645,7 +645,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_IT(SPDIFRX_HandleTypeDef *hspdi
 
   if((hspdif->State == HAL_SPDIFRX_STATE_READY) || (hspdif->State == HAL_SPDIFRX_STATE_BUSY_RX))
   {
-    if((pData == NULL ) || (Size == 0U))
+    if((pData == NULL ) || (Size == 0))
     {
       return HAL_ERROR;
     }
@@ -682,7 +682,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_IT(SPDIFRX_HandleTypeDef *hspdi
       /* Wait until SYNCD flag is set */
       do
       {
-        if (count-- == 0)
+        if (count-- == 0U)
         {
           /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
           __HAL_SPDIFRX_DISABLE_IT(hspdif, SPDIFRX_IT_RXNE);
@@ -726,7 +726,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_DMA(SPDIFRX_HandleTypeDef *hspdif,
 {
   __IO uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
 
-  if((pData == NULL) || (Size == 0U))
+  if((pData == NULL) || (Size == 0))
   {
     return  HAL_ERROR;
   }
@@ -766,7 +766,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_DMA(SPDIFRX_HandleTypeDef *hspdif,
       /* Wait until SYNCD flag is set */
       do
       {
-        if (count-- == 0)
+        if (count-- == 0U)
         {
           /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
           __HAL_SPDIFRX_DISABLE_IT(hspdif, SPDIFRX_IT_RXNE);
@@ -813,7 +813,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_DMA(SPDIFRX_HandleTypeDef *hspd
 {
   __IO uint32_t count = SPDIFRX_TIMEOUT_VALUE * (SystemCoreClock / 24U / 1000U);
 
-  if((pData == NULL) || (Size == 0U))
+  if((pData == NULL) || (Size == 0))
   {
     return  HAL_ERROR;
   }
@@ -853,7 +853,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_DMA(SPDIFRX_HandleTypeDef *hspd
       /* Wait until SYNCD flag is set */
       do
       {
-        if (count-- == 0)
+        if (count-- == 0U)
         {
           /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
           __HAL_SPDIFRX_DISABLE_IT(hspdif, SPDIFRX_IT_RXNE);

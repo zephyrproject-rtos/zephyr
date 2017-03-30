@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_tim_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of TIM HAL Extension module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -122,28 +122,28 @@ typedef struct
 /** @defgroup TIMEx_Remap  TIM Remap
   * @{
   */
-#define TIM_TIM2_TIM8_TRGO                     (0x00000000U)
-#define TIM_TIM2_ETH_PTP                       (0x00000400U)
-#define TIM_TIM2_USBFS_SOF                     (0x00000800U)
-#define TIM_TIM2_USBHS_SOF                     (0x00000C00U)
-#define TIM_TIM5_GPIO                          (0x00000000U)
-#define TIM_TIM5_LSI                           (0x00000040U)
-#define TIM_TIM5_LSE                           (0x00000080U)
-#define TIM_TIM5_RTC                           (0x000000C0U)
-#define TIM_TIM11_GPIO                         (0x00000000U)
-#define TIM_TIM11_HSE                          (0x00000002U)
+#define TIM_TIM2_TIM8_TRGO                     0x00000000U
+#define TIM_TIM2_ETH_PTP                       0x00000400U
+#define TIM_TIM2_USBFS_SOF                     0x00000800U
+#define TIM_TIM2_USBHS_SOF                     0x00000C00U
+#define TIM_TIM5_GPIO                          0x00000000U
+#define TIM_TIM5_LSI                           0x00000040U
+#define TIM_TIM5_LSE                           0x00000080U
+#define TIM_TIM5_RTC                           0x000000C0U
+#define TIM_TIM11_GPIO                         0x00000000U
+#define TIM_TIM11_HSE                          0x00000002U
 
 #if defined(STM32F413xx) || defined(STM32F423xx)
-#define TIM_TIM9_TIM3_TRGO                     (0x10000000U)
-#define TIM_TIM9_LPTIM                         (0x10000010U)
-#define TIM_TIM5_TIM3_TRGO                     (0x10000000U)
-#define TIM_TIM5_LPTIM                         (0x10000008U)
-#define TIM_TIM1_TIM3_TRGO                     (0x10000000U)
-#define TIM_TIM1_LPTIM                         (0x10000004U)
+#define TIM_TIM9_TIM3_TRGO                     0x10000000U
+#define TIM_TIM9_LPTIM                         0x10000010U
+#define TIM_TIM5_TIM3_TRGO                     0x10000000U
+#define TIM_TIM5_LPTIM                         0x10000008U
+#define TIM_TIM1_TIM3_TRGO                     0x10000000U
+#define TIM_TIM1_LPTIM                         0x10000004U
 #endif /* STM32F413xx | STM32F423xx */
 
 #if defined (STM32F446xx) 
-#define TIM_TIM11_SPDIFRX                      (0x00000001U)
+#define TIM_TIM11_SPDIFRX                      0x00000001U
 #endif /* STM32F446xx */
 /**
   * @}
@@ -153,9 +153,9 @@ typedef struct
 /** @defgroup TIMEx_SystemBreakInput  TIM System Break Input
   * @{
   */
-#define TIM_SYSTEMBREAKINPUT_HARDFAULT     ((uint32_t)0x00000001U) /* Core Lockup lock output(Hardfault) is connected to Break Input of TIM1 and TIM8 */
-#define TIM_SYSTEMBREAKINPUT_PVD           ((uint32_t)0x00000004U) /* PVD Interrupt is connected to Break Input of TIM1 and TIM8 */
-#define TIM_SYSTEMBREAKINPUT_HARDFAULT_PVD ((uint32_t)0x00000005U) /* Core Lockup lock output(Hardfault) and PVD Interrupt are connected to Break Input of TIM1 and TIM8 */   
+#define TIM_SYSTEMBREAKINPUT_HARDFAULT     0x00000001U /* Core Lockup lock output(Hardfault) is connected to Break Input of TIM1 and TIM8 */
+#define TIM_SYSTEMBREAKINPUT_PVD           0x00000004U /* PVD Interrupt is connected to Break Input of TIM1 and TIM8 */
+#define TIM_SYSTEMBREAKINPUT_HARDFAULT_PVD 0x00000005U /* Core Lockup lock output(Hardfault) and PVD Interrupt are connected to Break Input of TIM1 and TIM8 */   
 /**
   * @}
   */

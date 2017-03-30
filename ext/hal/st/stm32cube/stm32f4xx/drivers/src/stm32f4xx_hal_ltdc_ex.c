@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_ltdc_ex.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   LTDC Extension HAL module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -75,15 +75,15 @@
 #if defined(STM32F469xx) || defined(STM32F479xx)
 /**
   * @brief  Retrieve common parameters from DSI Video mode configuration structure
-  * @param  hltdc: pointer to a LTDC_HandleTypeDef structure that contains
-  *                the configuration information for the LTDC.
-  * @param  VidCfg: pointer to a DSI_VidCfgTypeDef structure that contains
+  * @param  hltdc   pointer to a LTDC_HandleTypeDef structure that contains
+  *                 the configuration information for the LTDC.
+  * @param  VidCfg  pointer to a DSI_VidCfgTypeDef structure that contains
   *                 the DSI video mode configuration parameters
   * @note   The implementation of this function is taking into account the LTDC
   *         polarities inversion as described in the current LTDC specification
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_LTDC_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc, DSI_VidCfgTypeDef *VidCfg)
+HAL_StatusTypeDef HAL_LTDCEx_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc, DSI_VidCfgTypeDef *VidCfg)
 {
   /* Retrieve signal polarities from DSI */
   
@@ -111,22 +111,22 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc, 
 
 /**
   * @brief  Retrieve common parameters from DSI Adapted command mode configuration structure
-  * @param  hltdc: pointer to a LTDC_HandleTypeDef structure that contains
-  *                the configuration information for the LTDC.
-  * @param  CmdCfg: pointer to a DSI_CmdCfgTypeDef structure that contains
+  * @param  hltdc   pointer to a LTDC_HandleTypeDef structure that contains
+  *                 the configuration information for the LTDC.
+  * @param  CmdCfg  pointer to a DSI_CmdCfgTypeDef structure that contains
   *                 the DSI command mode configuration parameters
   * @note   The implementation of this function is taking into account the LTDC
   *         polarities inversion as described in the current LTDC specification
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef* hltdc, DSI_CmdCfgTypeDef *CmdCfg)
+HAL_StatusTypeDef HAL_LTDCEx_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef* hltdc, DSI_CmdCfgTypeDef *CmdCfg)
 {
   /* Retrieve signal polarities from DSI */
   
   /* The following polarities are inverted:
                      LTDC_DEPOLARITY_AL <-> LTDC_DEPOLARITY_AH
-	                   LTDC_VSPOLARITY_AL <-> LTDC_VSPOLARITY_AH
-	                   LTDC_HSPOLARITY_AL <-> LTDC_HSPOLARITY_AH)*/
+                     LTDC_VSPOLARITY_AL <-> LTDC_VSPOLARITY_AH
+                     LTDC_HSPOLARITY_AL <-> LTDC_HSPOLARITY_AH)*/
   
   /* Note 1 : Code in line w/ Current LTDC specification */
   hltdc->Init.DEPolarity = (CmdCfg->DEPolarity == DSI_DATA_ENABLE_ACTIVE_HIGH) ? LTDC_DEPOLARITY_AL : LTDC_DEPOLARITY_AH;

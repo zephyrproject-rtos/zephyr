@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_def.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   This file contains HAL common defines, enumeration, macros and 
   *          structures definitions. 
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -102,7 +102,7 @@ typedef enum
   */
 #define __HAL_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = 0U)
 
-#if (USE_RTOS == 1)
+#if (USE_RTOS == 1U)
   /* Reserved for future use */
   #error "USE_RTOS should be 0 in the current HAL release"
 #else
@@ -116,12 +116,12 @@ typedef enum
                                     {                                      \
                                        (__HANDLE__)->Lock = HAL_LOCKED;    \
                                     }                                      \
-                                  }while (0)
+                                  }while (0U)
 
   #define __HAL_UNLOCK(__HANDLE__)                                          \
                                   do{                                       \
                                       (__HANDLE__)->Lock = HAL_UNLOCKED;    \
-                                    }while (0)
+                                    }while (0U)
 #endif /* USE_RTOS */
 
 #if  defined ( __GNUC__ )
@@ -148,7 +148,7 @@ typedef enum
   #endif /* __ALIGN_END */
   #ifndef __ALIGN_BEGIN      
     #if defined   (__CC_ARM)      /* ARM Compiler */
-      #define __ALIGN_BEGIN    __align(4)  
+      #define __ALIGN_BEGIN    __align(4)
     #elif defined (__ICCARM__)    /* IAR Compiler */
       #define __ALIGN_BEGIN 
     #endif /* __CC_ARM */

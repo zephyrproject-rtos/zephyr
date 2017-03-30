@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_uart.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   UART HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Universal Asynchronous Receiver Transmitter (UART) peripheral:
@@ -126,7 +126,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -623,7 +623,7 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
   /* Check that a Tx process is not already ongoing */
   if(huart->gState == HAL_UART_STATE_READY) 
   {
-    if((pData == NULL ) || (Size == 0U)) 
+    if((pData == NULL ) || (Size == 0)) 
     {
       return  HAL_ERROR;
     }
@@ -649,7 +649,7 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
           return HAL_TIMEOUT;
         }
         tmp = (uint16_t*) pData;
-        huart->Instance->DR = (*tmp & (uint16_t)0x01FFU);
+        huart->Instance->DR = (*tmp & (uint16_t)0x01FF);
         if(huart->Init.Parity == UART_PARITY_NONE)
         {
           pData +=2U;
@@ -665,7 +665,7 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
         {
           return HAL_TIMEOUT;
         }
-        huart->Instance->DR = (*pData++ & (uint8_t)0xFFU);
+        huart->Instance->DR = (*pData++ & (uint8_t)0xFF);
       } 
     }
     
@@ -705,7 +705,7 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
   /* Check that a Rx process is not already ongoing */
   if(huart->RxState == HAL_UART_STATE_READY) 
   { 
-    if((pData == NULL ) || (Size == 0U)) 
+    if((pData == NULL ) || (Size == 0)) 
     {
       return  HAL_ERROR;
     }
@@ -735,12 +735,12 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
         tmp = (uint16_t*) pData;
         if(huart->Init.Parity == UART_PARITY_NONE)
         {
-          *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x01FFU);
+          *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x01FF);
           pData +=2U;
         }
         else
         {
-          *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x00FFU);
+          *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x00FF);
           pData +=1U;
         }
 
@@ -753,11 +753,11 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
         }
         if(huart->Init.Parity == UART_PARITY_NONE)
         {
-          *pData++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x00FFU);
+          *pData++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x00FF);
         }
         else
         {
-          *pData++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x007FU);
+          *pData++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x007F);
         }
         
       }
@@ -790,7 +790,7 @@ HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef *huart, uint8_t *pData
   /* Check that a Tx process is not already ongoing */
   if(huart->gState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL ) || (Size == 0U)) 
+    if((pData == NULL ) || (Size == 0)) 
     {
       return HAL_ERROR;
     }
@@ -832,7 +832,7 @@ HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t *pData,
   /* Check that a Rx process is not already ongoing */ 
   if(huart->RxState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL ) || (Size == 0U)) 
+    if((pData == NULL ) || (Size == 0)) 
     {
       return HAL_ERROR;
     }
@@ -879,7 +879,7 @@ HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pDat
   /* Check that a Tx process is not already ongoing */
   if(huart->gState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL ) || (Size == 0U))
+    if((pData == NULL ) || (Size == 0))
     {
       return HAL_ERROR;
     }
@@ -944,7 +944,7 @@ HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData
   /* Check that a Rx process is not already ongoing */
   if(huart->RxState == HAL_UART_STATE_READY) 
   {
-    if((pData == NULL ) || (Size == 0U)) 
+    if((pData == NULL ) || (Size == 0)) 
     {
       return HAL_ERROR;
     }
@@ -972,7 +972,13 @@ HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData
 
     /* Enable the DMA Stream */
     tmp = (uint32_t*)&pData;
-    HAL_DMA_Start_IT(huart->hdmarx, (uint32_t)&huart->Instance->DR, *(uint32_t*)tmp, Size); 
+    HAL_DMA_Start_IT(huart->hdmarx, (uint32_t)&huart->Instance->DR, *(uint32_t*)tmp, Size);
+
+    /* Clear the Overrun flag just before enabling the DMA Rx request: can be mandatory for the second transfer */
+    __HAL_UART_CLEAR_OREFLAG(huart);
+
+    /* Process Unlocked */
+    __HAL_UNLOCK(huart);
 
     /* Enable the UART Parity Error Interrupt */
     SET_BIT(huart->Instance->CR1, USART_CR1_PEIE);
@@ -983,10 +989,7 @@ HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData
     /* Enable the DMA transfer for the receiver request by setting the DMAR bit 
     in the UART CR3 register */
     SET_BIT(huart->Instance->CR3, USART_CR3_DMAR);
-    
-    /* Process Unlocked */
-    __HAL_UNLOCK(huart);
-    
+
     return HAL_OK;
   }
   else
@@ -2170,8 +2173,8 @@ static void UART_EndRxTransfer(UART_HandleTypeDef *huart)
 static void UART_DMAAbortOnError(DMA_HandleTypeDef *hdma)
 {
   UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  huart->RxXferCount = 0;
-  huart->TxXferCount = 0;
+  huart->RxXferCount = 0U;
+  huart->TxXferCount = 0U;
 
   HAL_UART_ErrorCallback(huart);
 }
@@ -2310,7 +2313,7 @@ static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart)
     if(huart->Init.WordLength == UART_WORDLENGTH_9B)
     {
       tmp = (uint16_t*) huart->pTxBuffPtr;
-      huart->Instance->DR = (uint16_t)(*tmp & (uint16_t)0x01FFU);
+      huart->Instance->DR = (uint16_t)(*tmp & (uint16_t)0x01FF);
       if(huart->Init.Parity == UART_PARITY_NONE)
       {
         huart->pTxBuffPtr += 2U;
@@ -2322,7 +2325,7 @@ static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart)
     } 
     else
     {
-      huart->Instance->DR = (uint8_t)(*huart->pTxBuffPtr++ & (uint8_t)0x00FFU);
+      huart->Instance->DR = (uint8_t)(*huart->pTxBuffPtr++ & (uint8_t)0x00FF);
     }
 
     if(--huart->TxXferCount == 0U)
@@ -2378,12 +2381,12 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
       tmp = (uint16_t*) huart->pRxBuffPtr;
       if(huart->Init.Parity == UART_PARITY_NONE)
       {
-        *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x01FFU);
+        *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x01FF);
         huart->pRxBuffPtr += 2U;
       }
       else
       {
-        *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x00FFU);
+        *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x00FF);
         huart->pRxBuffPtr += 1U;
       }
     }
@@ -2391,11 +2394,11 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
     {
       if(huart->Init.Parity == UART_PARITY_NONE)
       {
-        *huart->pRxBuffPtr++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x00FFU);
+        *huart->pRxBuffPtr++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x00FF);
       }
       else
       {
-        *huart->pRxBuffPtr++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x007FU);
+        *huart->pRxBuffPtr++ = (uint8_t)(huart->Instance->DR & (uint8_t)0x007F);
       }
     }
 
@@ -2483,10 +2486,17 @@ static void UART_SetConfig(UART_HandleTypeDef *huart)
   if(huart->Init.OverSampling == UART_OVERSAMPLING_8)
   {
     /*-------------------------- USART BRR Configuration ---------------------*/
+#if defined(USART6) 
     if((huart->Instance == USART1) || (huart->Instance == USART6))
     {
       huart->Instance->BRR = UART_BRR_SAMPLING8(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate);
     }
+#else
+    if(huart->Instance == USART1)
+    {
+      huart->Instance->BRR = UART_BRR_SAMPLING8(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate);
+    }	
+#endif /* USART6 */
     else
     {
       huart->Instance->BRR = UART_BRR_SAMPLING8(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate);
@@ -2495,10 +2505,17 @@ static void UART_SetConfig(UART_HandleTypeDef *huart)
   else
   {
     /*-------------------------- USART BRR Configuration ---------------------*/
+#if defined(USART6) 
     if((huart->Instance == USART1) || (huart->Instance == USART6))
     {
       huart->Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate);
     }
+#else
+    if(huart->Instance == USART1)
+    {
+      huart->Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate);
+    }	
+#endif /* USART6 */
     else
     {
       huart->Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate);

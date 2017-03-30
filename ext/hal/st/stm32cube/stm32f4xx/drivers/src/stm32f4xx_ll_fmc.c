@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_fmc.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   FMC Low Layer HAL module driver.
   *    
   *          This file provides firmware functions to manage the following 
@@ -46,7 +46,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -282,8 +282,8 @@ HAL_StatusTypeDef FMC_NORSRAM_DeInit(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_EX
     Device->BTCR[Bank] = 0x000030D2U;
   }
   
-  Device->BTCR[Bank + 1] = 0x0FFFFFFFU;
-  ExDevice->BWTR[Bank]   = 0x0FFFFFFFU;
+  Device->BTCR[Bank + 1U] = 0x0FFFFFFFU;
+  ExDevice->BWTR[Bank]    = 0x0FFFFFFFU;
    
   return HAL_OK;
 }
@@ -333,7 +333,7 @@ HAL_StatusTypeDef FMC_NORSRAM_Timing_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSR
   /* Configure Clock division value (in NORSRAM bank 1) when continuous clock is enabled */
   if(HAL_IS_BIT_SET(Device->BTCR[FMC_NORSRAM_BANK1], FMC_BCR1_CCLKEN))
   {
-    tmpr = (uint32_t)(Device->BTCR[FMC_NORSRAM_BANK1 + 1U] & ~(((uint32_t)0x0FU) << 20U)); 
+    tmpr = (uint32_t)(Device->BTCR[FMC_NORSRAM_BANK1 + 1U] & ~(0x0FU << 20U)); 
     tmpr |= (uint32_t)(((Timing->CLKDivision) - 1U) << 20U);
     Device->BTCR[FMC_NORSRAM_BANK1 + 1U] = tmpr;
   }  
@@ -1474,8 +1474,8 @@ HAL_StatusTypeDef FMC_SDRAM_Timing_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_Tim
     /* Clear TRC and TRP bits */
     tmpr1 &= ((uint32_t)~(FMC_SDTR1_TRC | FMC_SDTR1_TRP));
     
-    tmpr1 |= (uint32_t)((((Timing->RowCycleDelay)-1) << 12)       |\
-                        (((Timing->RPDelay)-1) << 20)); 
+    tmpr1 |= (uint32_t)((((Timing->RowCycleDelay)-1U) << 12U)       |\
+                        (((Timing->RPDelay)-1U) << 20U)); 
     
     tmpr2 = Device->SDTR[FMC_SDRAM_BANK2];
     
@@ -1484,11 +1484,11 @@ HAL_StatusTypeDef FMC_SDRAM_Timing_Init(FMC_SDRAM_TypeDef *Device, FMC_SDRAM_Tim
                           FMC_SDTR1_TRC  | FMC_SDTR1_TWR | FMC_SDTR1_TRP | \
                           FMC_SDTR1_TRCD));
     
-    tmpr2 |= (uint32_t)((((Timing->LoadToActiveDelay)-1)           |\
-                       (((Timing->ExitSelfRefreshDelay)-1) << 4)  |\
-                       (((Timing->SelfRefreshTime)-1) << 8)       |\
-                       (((Timing->WriteRecoveryTime)-1) <<16)     |\
-                       (((Timing->RCDDelay)-1) << 24)));   
+    tmpr2 |= (uint32_t)((((Timing->LoadToActiveDelay)-1U)           |\
+                       (((Timing->ExitSelfRefreshDelay)-1U) << 4U)  |\
+                       (((Timing->SelfRefreshTime)-1U) << 8U)       |\
+                       (((Timing->WriteRecoveryTime)-1U) <<16U)     |\
+                       (((Timing->RCDDelay)-1U) << 24U)));   
 
     Device->SDTR[FMC_SDRAM_BANK1] = tmpr1;
     Device->SDTR[FMC_SDRAM_BANK2] = tmpr2;

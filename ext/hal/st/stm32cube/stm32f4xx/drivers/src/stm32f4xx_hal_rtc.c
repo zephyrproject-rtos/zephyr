@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_rtc.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   RTC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Real Time Clock (RTC) peripheral:
@@ -108,7 +108,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -299,10 +299,10 @@ HAL_StatusTypeDef HAL_RTC_DeInit(RTC_HandleTypeDef *hrtc)
   else
   {
     /* Reset TR, DR and CR registers */
-    hrtc->Instance->TR = (uint32_t)0x00000000U;
-    hrtc->Instance->DR = (uint32_t)0x00002101U;
+    hrtc->Instance->TR = 0x00000000U;
+    hrtc->Instance->DR = 0x00002101U;
     /* Reset All CR bits except CR[2:0] */
-    hrtc->Instance->CR &= (uint32_t)0x00000007U;
+    hrtc->Instance->CR &= 0x00000007U;
 
     /* Get tick */
     tickstart = HAL_GetTick();
@@ -323,19 +323,19 @@ HAL_StatusTypeDef HAL_RTC_DeInit(RTC_HandleTypeDef *hrtc)
     }
     
     /* Reset all RTC CR register bits */
-    hrtc->Instance->CR &= (uint32_t)0x00000000U;
-    hrtc->Instance->WUTR = (uint32_t)0x0000FFFFU;
-    hrtc->Instance->PRER = (uint32_t)0x007F00FFU;
-    hrtc->Instance->CALIBR = (uint32_t)0x00000000U;
-    hrtc->Instance->ALRMAR = (uint32_t)0x00000000U;
-    hrtc->Instance->ALRMBR = (uint32_t)0x00000000U;
-    hrtc->Instance->SHIFTR = (uint32_t)0x00000000U;
-    hrtc->Instance->CALR = (uint32_t)0x00000000U;
-    hrtc->Instance->ALRMASSR = (uint32_t)0x00000000U;
-    hrtc->Instance->ALRMBSSR = (uint32_t)0x00000000U;
+    hrtc->Instance->CR &= 0x00000000U;
+    hrtc->Instance->WUTR = 0x0000FFFFU;
+    hrtc->Instance->PRER = 0x007F00FFU;
+    hrtc->Instance->CALIBR = 0x00000000U;
+    hrtc->Instance->ALRMAR = 0x00000000U;
+    hrtc->Instance->ALRMBR = 0x00000000U;
+    hrtc->Instance->SHIFTR = 0x00000000U;
+    hrtc->Instance->CALR = 0x00000000U;
+    hrtc->Instance->ALRMASSR = 0x00000000U;
+    hrtc->Instance->ALRMBSSR = 0x00000000U;
     
     /* Reset ISR register and exit initialization mode */
-    hrtc->Instance->ISR = (uint32_t)0x00000000U;
+    hrtc->Instance->ISR = 0x00000000U;
     
     /* Reset Tamper and alternate functions configuration register */
     hrtc->Instance->TAFCR = 0x00000000U;
@@ -578,7 +578,7 @@ HAL_StatusTypeDef HAL_RTC_GetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTim
   
   /* Fill the structure fields with the read parameters */
   sTime->Hours = (uint8_t)((tmpreg & (RTC_TR_HT | RTC_TR_HU)) >> 16U);
-  sTime->Minutes = (uint8_t)((tmpreg & (RTC_TR_MNT | RTC_TR_MNU)) >>8U);
+  sTime->Minutes = (uint8_t)((tmpreg & (RTC_TR_MNT | RTC_TR_MNU)) >> 8U);
   sTime->Seconds = (uint8_t)(tmpreg & (RTC_TR_ST | RTC_TR_SU));
   sTime->TimeFormat = (uint8_t)((tmpreg & (RTC_TR_PM)) >> 16U); 
   
@@ -1060,7 +1060,7 @@ HAL_StatusTypeDef HAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef 
     /* Wait till RTC ALRAWF flag is set and if Time out is reached exit */
     do
     {
-      if (count-- == 0)
+      if (count-- == 0U)
       {
         /* Enable the write protection for RTC registers */
         __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
@@ -1094,7 +1094,7 @@ HAL_StatusTypeDef HAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef 
     /* Wait till RTC ALRBWF flag is set and if Time out is reached exit */
     do
     {
-      if (count-- == 0)
+      if (count-- == 0U)
       {
         /* Enable the write protection for RTC registers */
         __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
@@ -1527,8 +1527,8 @@ uint8_t RTC_ByteToBcd2(uint8_t Value)
 uint8_t RTC_Bcd2ToByte(uint8_t Value)
 {
   uint32_t tmp = 0U;
-  tmp = ((uint8_t)(Value & (uint8_t)0xF0U) >> (uint8_t)0x4U) * 10U;
-  return (tmp + (Value & (uint8_t)0x0FU));
+  tmp = ((uint8_t)(Value & (uint8_t)0xF0) >> (uint8_t)0x4) * 10;
+  return (tmp + (Value & (uint8_t)0x0F));
 }
 
 /**

@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_hash.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of HASH HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -157,7 +157,7 @@ typedef struct
 /** @defgroup HASH_Exported_Constants_Group1 HASH Algorithm Selection
   * @{
   */
-#define HASH_ALGOSELECTION_SHA1      ((uint32_t)0x00000000U)  /*!< HASH function is SHA1   */
+#define HASH_ALGOSELECTION_SHA1      0x00000000U         /*!< HASH function is SHA1   */
 #define HASH_ALGOSELECTION_SHA224    HASH_CR_ALGO_1      /*!< HASH function is SHA224 */
 #define HASH_ALGOSELECTION_SHA256    HASH_CR_ALGO        /*!< HASH function is SHA256 */
 #define HASH_ALGOSELECTION_MD5       HASH_CR_ALGO_0      /*!< HASH function is MD5    */
@@ -168,8 +168,8 @@ typedef struct
 /** @defgroup HASH_Exported_Constants_Group2 HASH Algorithm Mode
   * @{
   */
-#define HASH_ALGOMODE_HASH         ((uint32_t)0x00000000U)  /*!< Algorithm is HASH */ 
-#define HASH_ALGOMODE_HMAC         HASH_CR_MODE            /*!< Algorithm is HMAC */
+#define HASH_ALGOMODE_HASH         0x00000000U           /*!< Algorithm is HASH */ 
+#define HASH_ALGOMODE_HMAC         HASH_CR_MODE          /*!< Algorithm is HMAC */
 /**
   * @}
   */
@@ -177,10 +177,10 @@ typedef struct
 /** @defgroup HASH_Data_Type HASH Data Type
   * @{
   */
-#define HASH_DATATYPE_32B          ((uint32_t)0x00000000U) /*!< 32-bit data. No swapping                     */
-#define HASH_DATATYPE_16B          HASH_CR_DATATYPE_0 /*!< 16-bit data. Each half word is swapped       */
-#define HASH_DATATYPE_8B           HASH_CR_DATATYPE_1 /*!< 8-bit data. All bytes are swapped            */
-#define HASH_DATATYPE_1B           HASH_CR_DATATYPE   /*!< 1-bit data. In the word all bits are swapped */
+#define HASH_DATATYPE_32B          0x00000000U           /*!< 32-bit data. No swapping                     */
+#define HASH_DATATYPE_16B          HASH_CR_DATATYPE_0    /*!< 16-bit data. Each half word is swapped       */
+#define HASH_DATATYPE_8B           HASH_CR_DATATYPE_1    /*!< 8-bit data. All bytes are swapped            */
+#define HASH_DATATYPE_1B           HASH_CR_DATATYPE      /*!< 1-bit data. In the word all bits are swapped */
 /**
   * @}
   */
@@ -189,8 +189,8 @@ typedef struct
   * @brief HASH HMAC Long key used only for HMAC mode
   * @{
   */
-#define HASH_HMAC_KEYTYPE_SHORTKEY      ((uint32_t)0x00000000U)  /*!< HMAC Key is <= 64 bytes */
-#define HASH_HMAC_KEYTYPE_LONGKEY       HASH_CR_LKEY            /*!< HMAC Key is > 64 bytes  */
+#define HASH_HMAC_KEYTYPE_SHORTKEY      0x00000000U      /*!< HMAC Key is <= 64 bytes */
+#define HASH_HMAC_KEYTYPE_LONGKEY       HASH_CR_LKEY     /*!< HMAC Key is > 64 bytes  */
 /**
   * @}
   */
@@ -198,11 +198,11 @@ typedef struct
 /** @defgroup HASH_Exported_Constants_Group5 HASH Flags definition 
   * @{
   */
-#define HASH_FLAG_DINIS            HASH_SR_DINIS  /*!< 16 locations are free in the DIN : A new block can be entered into the input buffer */
-#define HASH_FLAG_DCIS             HASH_SR_DCIS   /*!< Digest calculation complete                                                         */
-#define HASH_FLAG_DMAS             HASH_SR_DMAS   /*!< DMA interface is enabled (DMAE=1) or a transfer is ongoing                          */
-#define HASH_FLAG_BUSY             HASH_SR_BUSY   /*!< The hash core is Busy : processing a block of data                                  */
-#define HASH_FLAG_DINNE            HASH_CR_DINNE  /*!< DIN not empty : The input buffer contains at least one word of data                 */
+#define HASH_FLAG_DINIS            HASH_SR_DINIS         /*!< 16 locations are free in the DIN : A new block can be entered into the input buffer */
+#define HASH_FLAG_DCIS             HASH_SR_DCIS          /*!< Digest calculation complete                                                         */
+#define HASH_FLAG_DMAS             HASH_SR_DMAS          /*!< DMA interface is enabled (DMAE=1) or a transfer is ongoing                          */
+#define HASH_FLAG_BUSY             HASH_SR_BUSY          /*!< The hash core is Busy : processing a block of data                                  */
+#define HASH_FLAG_DINNE            HASH_CR_DINNE         /*!< DIN not empty : The input buffer contains at least one word of data                 */
 /**
   * @}
   */
@@ -210,8 +210,8 @@ typedef struct
 /** @defgroup HASH_Exported_Constants_Group6 HASH Interrupts definition 
   * @{
   */
-#define HASH_IT_DINI               HASH_IMR_DINIE  /*!< A new block can be entered into the input buffer (DIN) */
-#define HASH_IT_DCI                HASH_IMR_DCIE   /*!< Digest calculation complete                            */
+#define HASH_IT_DINI               HASH_IMR_DINIE        /*!< A new block can be entered into the input buffer (DIN) */
+#define HASH_IT_DCI                HASH_IMR_DCIE         /*!< Digest calculation complete                            */
 /**
   * @}
   */
@@ -417,7 +417,7 @@ void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 #define IS_HASH_HMAC_KEYTYPE(__KEYTYPE__) (((__KEYTYPE__) == HASH_HMAC_KEYTYPE_SHORTKEY) || \
                                            ((__KEYTYPE__) == HASH_HMAC_KEYTYPE_LONGKEY))
 
-#define IS_HASH_SHA1_BUFFER_SIZE(__SIZE__) ((((__SIZE__)%4) != 0U)? 0U: 1U)
+#define IS_HASH_SHA1_BUFFER_SIZE(__SIZE__) ((((__SIZE__)%4U) != 0U)? 0U: 1U)
 
 /**
   * @}

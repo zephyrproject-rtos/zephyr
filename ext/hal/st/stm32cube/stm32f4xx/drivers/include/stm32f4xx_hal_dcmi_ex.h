@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dcmi_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of DCMI Extension HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -131,7 +131,7 @@ typedef struct
 /** @defgroup DCMIEx_Byte_Select_Mode DCMI Byte Select Mode
   * @{
   */
-#define DCMI_BSM_ALL                 ((uint32_t)0x00000000U)                     /*!< Interface captures all received data                       */
+#define DCMI_BSM_ALL                 0x00000000U                                 /*!< Interface captures all received data                       */
 #define DCMI_BSM_OTHER               ((uint32_t)DCMI_CR_BSM_0)                   /*!< Interface captures every other byte from the received data */
 #define DCMI_BSM_ALTERNATE_4         ((uint32_t)DCMI_CR_BSM_1)                   /*!< Interface captures one byte out of four                    */
 #define DCMI_BSM_ALTERNATE_2         ((uint32_t)(DCMI_CR_BSM_0 | DCMI_CR_BSM_1)) /*!< Interface captures two bytes out of four                   */
@@ -143,7 +143,7 @@ typedef struct
 /** @defgroup DCMIEx_Byte_Select_Start DCMI Byte Select Start
   * @{
   */ 
-#define DCMI_OEBS_ODD               ((uint32_t)0x00000000U) /*!< Interface captures first data from the frame/line start, second one being dropped  */
+#define DCMI_OEBS_ODD               0x00000000U              /*!< Interface captures first data from the frame/line start, second one being dropped  */
 #define DCMI_OEBS_EVEN              ((uint32_t)DCMI_CR_OEBS) /*!< Interface captures second data from the frame/line start, first one being dropped */
 
 /**
@@ -153,7 +153,7 @@ typedef struct
 /** @defgroup DCMIEx_Line_Select_Mode DCMI Line Select Mode
   * @{
   */
-#define DCMI_LSM_ALL                 ((uint32_t)0x00000000U) /*!< Interface captures all received lines  */
+#define DCMI_LSM_ALL                 0x00000000U             /*!< Interface captures all received lines  */
 #define DCMI_LSM_ALTERNATE_2         ((uint32_t)DCMI_CR_LSM) /*!< Interface captures one line out of two */
 
 /**
@@ -163,7 +163,7 @@ typedef struct
 /** @defgroup DCMIEx_Line_Select_Start DCMI Line Select Start
   * @{
   */ 
-#define DCMI_OELS_ODD               ((uint32_t)0x00000000U) /*!< Interface captures first line from the frame start, second one being dropped  */
+#define DCMI_OELS_ODD               0x00000000U              /*!< Interface captures first line from the frame start, second one being dropped  */
 #define DCMI_OELS_EVEN              ((uint32_t)DCMI_CR_OELS) /*!< Interface captures second line from the frame start, first one being dropped */
 
 /**

@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_sai_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of SAI Extension HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -64,15 +64,15 @@
   * @{
   */
 #if defined(STM32F413xx) || defined(STM32F423xx)      
-#define SAI_CLKSOURCE_PLLI2S             ((uint32_t)0x00000000U)
-#define SAI_CLKSOURCE_EXT                ((uint32_t)0x00100000U)
-#define SAI_CLKSOURCE_PLLR               ((uint32_t)0x00200000U)
-#define SAI_CLKSOURCE_HS                 ((uint32_t)0x00300000U)
+#define SAI_CLKSOURCE_PLLI2S             0x00000000U
+#define SAI_CLKSOURCE_EXT                0x00100000U
+#define SAI_CLKSOURCE_PLLR               0x00200000U
+#define SAI_CLKSOURCE_HS                 0x00300000U
 #else      
-#define SAI_CLKSOURCE_PLLSAI             ((uint32_t)0x00000000U)
-#define SAI_CLKSOURCE_PLLI2S             ((uint32_t)0x00100000U)
-#define SAI_CLKSOURCE_EXT                ((uint32_t)0x00200000U)
-#define SAI_CLKSOURCE_NA                 ((uint32_t)0x00400000U) /*!< No applicable for STM32F446xx */
+#define SAI_CLKSOURCE_PLLSAI             0x00000000U
+#define SAI_CLKSOURCE_PLLI2S             0x00100000U
+#define SAI_CLKSOURCE_EXT                0x00200000U
+#define SAI_CLKSOURCE_NA                 0x00400000U /*!< No applicable for STM32F446xx */
 #endif
 
 

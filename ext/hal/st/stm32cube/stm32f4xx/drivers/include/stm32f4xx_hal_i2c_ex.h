@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_i2c_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of I2C HAL Extension module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -66,7 +66,7 @@
 /** @defgroup I2CEx_Analog_Filter I2C Analog Filter
   * @{
   */
-#define I2C_ANALOGFILTER_ENABLE        ((uint32_t)0x00000000U)
+#define I2C_ANALOGFILTER_ENABLE        0x00000000U
 #define I2C_ANALOGFILTER_DISABLE       I2C_FLTR_ANOFF
 /**
   * @}

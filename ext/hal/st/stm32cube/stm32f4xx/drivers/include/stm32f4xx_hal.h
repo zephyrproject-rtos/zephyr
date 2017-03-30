@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f4xx_hal.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   This file contains all the functions prototypes for the HAL 
   *          module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -164,7 +164,7 @@
 /**
  * @}
  */
-                                                 
+
 /** @defgroup PVD_Lock_Enable PVD Lock
   * @{
   */
@@ -220,6 +220,7 @@ void HAL_DBGMCU_EnableDBGStandbyMode(void);
 void HAL_DBGMCU_DisableDBGStandbyMode(void);
 void HAL_EnableCompensationCell(void);
 void HAL_DisableCompensationCell(void);
+void HAL_GetUID(uint32_t *UID);
 #if defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx)|| defined(STM32F439xx) ||\
     defined(STM32F469xx) || defined(STM32F479xx)
 void HAL_EnableMemorySwappingBank(void);
