@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_rtc_ex.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   RTC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Real Time Clock (RTC) Extension peripheral:
@@ -241,7 +241,10 @@ HAL_StatusTypeDef HAL_RTCEx_SetTimeStamp_IT(RTC_HandleTypeDef *hrtc, uint32_t Ti
   hrtc->Instance->CR = (uint32_t)tmpreg;
   
   hrtc->Instance->OR &= (uint32_t)~RTC_OR_TSINSEL;
-  hrtc->Instance->OR |= (uint32_t)(RTC_TimeStampPin); 
+  hrtc->Instance->OR |= (uint32_t)(RTC_TimeStampPin);
+  
+  /* Clear RTC Timestamp flag */
+  __HAL_RTC_TIMESTAMP_CLEAR_FLAG(hrtc, RTC_FLAG_TSF);
   
   __HAL_RTC_TIMESTAMP_ENABLE(hrtc);
   
@@ -589,6 +592,22 @@ HAL_StatusTypeDef HAL_RTCEx_SetTamper_IT(RTC_HandleTypeDef *hrtc, RTC_TamperType
                                        (uint32_t)RTC_TAMPCR_TAMP2MF | (uint32_t)RTC_TAMPCR_TAMP3MF);
 
   hrtc->Instance->TAMPCR |= tmpreg;
+  
+  if(sTamper->Tamper == RTC_TAMPER_1)
+  {
+    /* Clear RTC Tamper 1 flag */
+    __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP1F);
+  }
+  else if(sTamper->Tamper == RTC_TAMPER_2)
+  {
+    /* Clear RTC Tamper 2 flag */
+    __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP2F);    
+  }
+  else
+  {
+    /* Clear RTC Tamper 3 flag */
+    __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP3F);  
+  }
 
   /* RTC Tamper Interrupt Configuration: EXTI configuration */
   __HAL_RTC_TAMPER_TIMESTAMP_EXTI_ENABLE_IT();
@@ -1084,6 +1103,9 @@ HAL_StatusTypeDef HAL_RTCEx_SetWakeUpTimer_IT(RTC_HandleTypeDef *hrtc, uint32_t 
   __HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_IT();
   
   EXTI->RTSR |= RTC_EXTI_LINE_WAKEUPTIMER_EVENT;
+  
+  /* Clear RTC Wake Up timer Flag */
+  __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(hrtc, RTC_FLAG_WUTF);
   
   /* Configure the Interrupt in the RTC_CR register */
   __HAL_RTC_WAKEUPTIMER_ENABLE_IT(hrtc,RTC_IT_WUT);

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_can.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of CAN HAL module.
   ******************************************************************************
   * @attention
@@ -232,8 +232,8 @@ typedef struct
 
   HAL_LockTypeDef             Lock;       /*!< CAN locking object             */
 
-  __IO uint32_t               ErrorCode;  /*!< CAN Error code                 */
-
+  __IO uint32_t               ErrorCode;  /*!< CAN Error code
+                                               This parameter can be a value of @ref CAN_Error_Code */
 }CAN_HandleTypeDef;
 
 /**
@@ -245,7 +245,7 @@ typedef struct
   * @{
   */
 
-/** @defgroup HAL_CAN_Error_Code HAL CAN Error Code
+/** @defgroup CAN_Error_Code CAN Error Code
   * @{
   */
 #define   HAL_CAN_ERROR_NONE      0x00U    /*!< No error             */

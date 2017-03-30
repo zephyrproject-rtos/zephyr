@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dcmi.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of DCMI HAL module.
   ******************************************************************************
   * @attention
@@ -45,6 +45,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
+
+#if defined (DCMI)
  
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{
@@ -615,6 +617,7 @@ uint32_t              HAL_DCMI_GetError(DCMI_HandleTypeDef *hdcmi);
 /**
   * @}
   */ 
+#endif /* DCMI */
 
 #ifdef __cplusplus
 }

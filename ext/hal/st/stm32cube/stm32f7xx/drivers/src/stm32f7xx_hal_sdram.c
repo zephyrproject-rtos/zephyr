@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_sdram.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   SDRAM HAL module driver.
   *          This file provides a generic firmware to drive SDRAM memories mounted 
   *          as external device.

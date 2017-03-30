@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_pcd_ex.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of PCD HAL module.
   ******************************************************************************
   * @attention
@@ -60,6 +60,17 @@ typedef enum
   PCD_LPM_L1_ACTIVE = 0x01U, /* LPM L1 sleep */
 }PCD_LPM_MsgTypeDef;
 
+typedef enum  
+{
+  PCD_BCD_ERROR                     = 0xFF, 
+  PCD_BCD_CONTACT_DETECTION         = 0xFE,
+  PCD_BCD_STD_DOWNSTREAM_PORT       = 0xFD,
+  PCD_BCD_CHARGING_DOWNSTREAM_PORT  = 0xFC,
+  PCD_BCD_DEDICATED_CHARGING_PORT   = 0xFB,
+  PCD_BCD_DISCOVERY_COMPLETED       = 0x00,
+  
+}PCD_BCD_MsgTypeDef;
+
 /* Exported constants --------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
@@ -73,7 +84,11 @@ HAL_StatusTypeDef HAL_PCDEx_SetTxFiFo(PCD_HandleTypeDef *hpcd, uint8_t fifo, uin
 HAL_StatusTypeDef HAL_PCDEx_SetRxFiFo(PCD_HandleTypeDef *hpcd, uint16_t size);
 HAL_StatusTypeDef HAL_PCDEx_ActivateLPM(PCD_HandleTypeDef *hpcd);
 HAL_StatusTypeDef HAL_PCDEx_DeActivateLPM(PCD_HandleTypeDef *hpcd);
+HAL_StatusTypeDef HAL_PCDEx_ActivateBCD(PCD_HandleTypeDef *hpcd);
+HAL_StatusTypeDef HAL_PCDEx_DeActivateBCD(PCD_HandleTypeDef *hpcd);
+void HAL_PCDEx_BCD_VBUSDetect(PCD_HandleTypeDef *hpcd);
 void HAL_PCDEx_LPM_Callback(PCD_HandleTypeDef *hpcd, PCD_LPM_MsgTypeDef msg);
+void HAL_PCDEx_BCD_Callback(PCD_HandleTypeDef *hpcd, PCD_BCD_MsgTypeDef msg);
 
 /**
   * @}

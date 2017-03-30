@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_jpeg.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   JPEG HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the JPEG encoder/decoder peripheral:
@@ -202,7 +202,7 @@
 #define JPEG_AC_HUFF_TABLE_SIZE  ((uint32_t)162U) /* Huffman AC table size : 162 codes*/
 #define JPEG_DC_HUFF_TABLE_SIZE  ((uint32_t)12U)  /* Huffman AC table size : 12 codes*/
 
-#define JPEG_FIFO_SIZE ((uint32_t)8U)             /* JPEG Input/Output HW FIFO size in words*/
+#define JPEG_FIFO_SIZE ((uint32_t)16U)             /* JPEG Input/Output HW FIFO size in words*/
 
 #define JPEG_INTERRUPT_MASK  ((uint32_t)0x0000007EU) /* JPEG Interrupt Mask*/
 
@@ -438,6 +438,7 @@ static uint32_t JPEG_GetQuality(JPEG_HandleTypeDef *hjpeg);
 static HAL_StatusTypeDef JPEG_DMA_StartProcess(JPEG_HandleTypeDef *hjpeg);
 static uint32_t JPEG_DMA_ContinueProcess(JPEG_HandleTypeDef *hjpeg);
 static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg);
+static void JPEG_DMA_PollResidualData(JPEG_HandleTypeDef *hjpeg);
 static void JPEG_DMAOutCpltCallback(DMA_HandleTypeDef *hdma);
 static void JPEG_DMAInCpltCallback(DMA_HandleTypeDef *hdma);
 static void JPEG_DMAErrorCallback(DMA_HandleTypeDef *hdma);
@@ -1593,6 +1594,12 @@ HAL_StatusTypeDef  HAL_JPEG_Resume(JPEG_HandleTypeDef *hjpeg, uint32_t XferSelec
 
   assert_param(IS_JPEG_PAUSE_RESUME_STATE(XferSelection));  
   
+  if(((hjpeg->Context & JPEG_CONTEXT_PAUSE_INPUT) == 0) &&  ((hjpeg->Context & JPEG_CONTEXT_PAUSE_OUTPUT) == 0)) 
+  {
+    /* if nothing paused to resume return error*/
+    return HAL_ERROR;      
+  }
+
   if((hjpeg->Context & JPEG_CONTEXT_METHOD_MASK) == JPEG_CONTEXT_DMA)
   {
     
@@ -1614,11 +1621,20 @@ HAL_StatusTypeDef  HAL_JPEG_Resume(JPEG_HandleTypeDef *hjpeg, uint32_t XferSelec
     }
     if((XferSelection & JPEG_PAUSE_RESUME_OUTPUT) == JPEG_PAUSE_RESUME_OUTPUT)
     {
-      hjpeg->Context &= (~JPEG_CONTEXT_PAUSE_OUTPUT);
-      mask |= JPEG_DMA_ODMA;
       
-      /* Start DMA FIFO Out transfer */
-      HAL_DMA_Start_IT(hjpeg->hdmaout, (uint32_t)&hjpeg->Instance->DOR, (uint32_t)hjpeg->pJpegOutBuffPtr, hjpeg->OutDataLength >> 2);
+      if((hjpeg->Context & JPEG_CONTEXT_ENDING_DMA) != 0)
+      {
+        JPEG_DMA_PollResidualData(hjpeg);
+      }
+      else
+      {
+        hjpeg->Context &= (~JPEG_CONTEXT_PAUSE_OUTPUT);
+        mask |= JPEG_DMA_ODMA;
+        
+        /* Start DMA FIFO Out transfer */
+        HAL_DMA_Start_IT(hjpeg->hdmaout, (uint32_t)&hjpeg->Instance->DOR, (uint32_t)hjpeg->pJpegOutBuffPtr, hjpeg->OutDataLength >> 2);
+      }  
+      
     }    
     JPEG_ENABLE_DMA(hjpeg,mask);
 
@@ -3155,8 +3171,7 @@ static uint32_t JPEG_DMA_ContinueProcess(JPEG_HandleTypeDef *hjpeg)
   */
 static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg)
 {
-  uint32_t tmpContext, count = JPEG_FIFO_SIZE, *pDataOut;
-  
+  uint32_t tmpContext;  
   hjpeg->JpegOutCount = hjpeg->OutDataLength - ((hjpeg->hdmaout->Instance->NDTR & DMA_SxNDT) << 2);
   
   /*if Output Buffer is full, call HAL_JPEG_DataReadyCallback*/
@@ -3166,6 +3181,51 @@ static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg)
     hjpeg->JpegOutCount = 0;
   }
   
+  /*Check if remaining data in the output FIFO*/
+  if(__HAL_JPEG_GET_FLAG(hjpeg, JPEG_FLAG_OFNEF) == 0)
+  {
+    /*Stop Encoding/Decoding*/
+    hjpeg->Instance->CONFR0 &=  ~JPEG_CONFR0_START;
+    
+    tmpContext = hjpeg->Context;
+    /*Clear all context fileds execpt JPEG_CONTEXT_CONF_ENCODING and JPEG_CONTEXT_CUSTOM_TABLES*/
+    hjpeg->Context &= (JPEG_CONTEXT_CONF_ENCODING | JPEG_CONTEXT_CUSTOM_TABLES);
+    
+    /* Process Unlocked */
+    __HAL_UNLOCK(hjpeg);
+    
+    /* Change the JPEG state */
+    hjpeg->State = HAL_JPEG_STATE_READY;
+    
+    /*Call End of Encoding/Decoding callback */
+    if((tmpContext & JPEG_CONTEXT_OPERATION_MASK) == JPEG_CONTEXT_DECODE)
+    {
+      HAL_JPEG_DecodeCpltCallback(hjpeg);
+    }
+    else if((tmpContext & JPEG_CONTEXT_OPERATION_MASK) == JPEG_CONTEXT_ENCODE)
+    {
+      HAL_JPEG_EncodeCpltCallback(hjpeg);        
+    }    
+  }  
+  else if((hjpeg->Context &  JPEG_CONTEXT_PAUSE_OUTPUT) == 0)
+  {
+    JPEG_DMA_PollResidualData(hjpeg);
+
+    return JPEG_PROCESS_DONE; 
+  }  
+  
+  return JPEG_PROCESS_ONGOING; 
+}
+
+/**
+  * @brief  Poll residual output data when DMA process (encoding/decoding) 
+  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  *         the configuration information for JPEG module
+  * @retval None.
+  */
+static void JPEG_DMA_PollResidualData(JPEG_HandleTypeDef *hjpeg)
+{
+  uint32_t tmpContext, count = JPEG_FIFO_SIZE, *pDataOut;  
   pDataOut = (uint32_t *)(hjpeg->pJpegOutBuffPtr + hjpeg->JpegOutCount);
   
   while((__HAL_JPEG_GET_FLAG(hjpeg, JPEG_FLAG_OFNEF) != 0) && (count > 0))
@@ -3213,9 +3273,6 @@ static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg)
   {
     HAL_JPEG_EncodeCpltCallback(hjpeg);        
   }
-  
-  
-  return JPEG_PROCESS_DONE; 
 }
 
 /**

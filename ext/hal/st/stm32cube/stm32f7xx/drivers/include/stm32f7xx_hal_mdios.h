@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_mdios.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of MDIOS HAL module.
   ******************************************************************************
   * @attention
@@ -43,10 +43,10 @@
  extern "C" {
 #endif
 
-#if defined (MDIOS)
-   
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
+
+#if defined (MDIOS)
 
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{

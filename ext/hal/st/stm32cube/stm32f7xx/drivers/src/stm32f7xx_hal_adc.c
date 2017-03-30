@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_adc.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Analog to Digital Convertor (ADC) peripheral:
   *           + Initialization and de-initialization functions
@@ -270,7 +270,7 @@ HAL_StatusTypeDef HAL_ADC_Init(ADC_HandleTypeDef* hadc)
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
   assert_param(IS_ADC_CLOCKPRESCALER(hadc->Init.ClockPrescaler));
   assert_param(IS_ADC_RESOLUTION(hadc->Init.Resolution));
-  assert_param(IS_FUNCTIONAL_STATE(hadc->Init.ScanConvMode));
+  assert_param(IS_ADC_SCAN_MODE(hadc->Init.ScanConvMode));
   assert_param(IS_FUNCTIONAL_STATE(hadc->Init.ContinuousConvMode));
   assert_param(IS_ADC_EXT_TRIG(hadc->Init.ExternalTrigConv));
   assert_param(IS_ADC_DATA_ALIGN(hadc->Init.DataAlign));

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dma2d.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of DMA2D HAL module.
   ******************************************************************************
   * @attention
@@ -45,6 +45,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
+
+#if defined (DMA2D)
 
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{
@@ -624,6 +626,7 @@ uint32_t               HAL_DMA2D_GetError(DMA2D_HandleTypeDef *hdma2d);
   * @}
   */
 
+#endif /* DMA2D */
 
 #ifdef __cplusplus
 }

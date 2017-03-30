@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    system_stm32f7xx.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   CMSIS Cortex-M7 Device System Source File for STM32F7xx devices.       
   ******************************************************************************  
   * @attention

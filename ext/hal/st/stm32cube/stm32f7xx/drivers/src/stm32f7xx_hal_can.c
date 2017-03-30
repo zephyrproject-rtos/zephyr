@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_can.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   CAN HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Controller Area Network (CAN) peripheral:
@@ -381,10 +381,12 @@ HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef* hcan, CAN_FilterConfTy
 
   /* Initialisation mode for the filter */
   can_ip->FMR |= (uint32_t)CAN_FMR_FINIT;
-  
+
+#if defined (CAN2)  
   /* Select the start slave bank */
   can_ip->FMR &= ~((uint32_t)CAN_FMR_CAN2SB);
   can_ip->FMR |= (uint32_t)(sFilterConfig->BankNumber << 8);
+#endif
      
   /* Filter Deactivation */
   can_ip->FA1R &= ~(uint32_t)filternbrbitpos;
