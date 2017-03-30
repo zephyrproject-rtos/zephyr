@@ -71,6 +71,7 @@ NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT, BT_ATT_MTU,
 enum {
 	ATT_PENDING_RSP,
 	ATT_PENDING_CFM,
+	ATT_DISCONNECTED,
 
 	/* Total number of flags - must be at the end of the enum */
 	ATT_NUM_FLAGS,
@@ -84,6 +85,7 @@ struct bt_att {
 	struct bt_att_req	*req;
 	sys_slist_t		reqs;
 	struct k_delayed_work	timeout_work;
+	struct k_sem            tx_sem;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct k_fifo		prep_queue;
 #endif
@@ -104,32 +106,49 @@ static void att_req_destroy(struct bt_att_req *req)
 	memset(req, 0, sizeof(*req));
 }
 
-static void att_clear_flag(struct bt_conn *conn, int flag)
+static struct bt_att *att_get(struct bt_conn *conn)
 {
-#if defined(CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW)
 	struct bt_l2cap_chan *chan;
-	struct bt_att *att;
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_ATT);
 	__ASSERT(chan, "No ATT channel found");
 
-	att = CONTAINER_OF(chan, struct bt_att, chan);
-	atomic_clear_bit(att->flags, flag);
-#endif /* CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW */
+	return CONTAINER_OF(chan, struct bt_att, chan);
 }
 
 static void att_cfm_sent(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", conn);
+	struct bt_att *att = att_get(conn);
 
-	att_clear_flag(conn, ATT_PENDING_CFM);
+	BT_DBG("conn %p att %p", conn, att);
+
+#if defined(CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW)
+	atomic_clear_bit(att->flags, ATT_PENDING_CFM);
+#endif /* CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW */
+
+	k_sem_give(&att->tx_sem);
 }
 
 static void att_rsp_sent(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", conn);
+	struct bt_att *att = att_get(conn);
 
-	att_clear_flag(conn, ATT_PENDING_RSP);
+	BT_DBG("conn %p att %p", conn, att);
+
+#if defined(CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW)
+	atomic_clear_bit(att->flags, ATT_PENDING_RSP);
+#endif /* CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW */
+
+	k_sem_give(&att->tx_sem);
+}
+
+static void att_pdu_sent(struct bt_conn *conn)
+{
+	struct bt_att *att = att_get(conn);
+
+	BT_DBG("conn %p att %p", conn, att);
+
+	k_sem_give(&att->tx_sem);
 }
 
 static bt_conn_tx_cb_t att_cb(struct net_buf *buf)
@@ -140,7 +159,7 @@ static bt_conn_tx_cb_t att_cb(struct net_buf *buf)
 	case ATT_CONFIRMATION:
 		return att_cfm_sent;
 	default:
-		return NULL;
+		return att_pdu_sent;
 	}
 }
 
@@ -213,11 +232,24 @@ static uint8_t att_mtu_req(struct bt_att *att, struct net_buf *buf)
 	return 0;
 }
 
+static inline bool att_is_connected(struct bt_att *att)
+{
+	return (att->chan.chan.conn->state != BT_CONN_CONNECTED ||
+		!atomic_test_bit(att->flags, ATT_DISCONNECTED));
+}
+
 static int att_send_req(struct bt_att *att, struct bt_att_req *req)
 {
 	BT_DBG("req %p", req);
 
 	att->req = req;
+
+	k_sem_take(&att->tx_sem, K_FOREVER);
+	if (!att_is_connected(att)) {
+		BT_WARN("Disconnected");
+		k_sem_give(&att->tx_sem);
+		return -ENOTCONN;
+	}
 
 	/* Save request state so it can be resent */
 	net_buf_simple_save(&req->buf->b, &req->state);
@@ -1851,6 +1883,12 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 static struct bt_att *att_chan_get(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
+	struct bt_att *att;
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_WARN("Not connected");
+		return NULL;
+	}
 
 	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
 	if (!chan) {
@@ -1858,7 +1896,13 @@ static struct bt_att *att_chan_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	return ATT_CHAN(chan);
+	att = ATT_CHAN(chan);
+	if (atomic_test_bit(att->flags, ATT_DISCONNECTED)) {
+		BT_WARN("ATT context flagged as disconnected");
+		return NULL;
+	}
+
+	return att;
 }
 
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
@@ -1889,6 +1933,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 static void att_reset(struct bt_att *att)
 {
 	struct bt_att_req *req, *tmp;
+	int i;
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	struct net_buf *buf;
 
@@ -1897,6 +1942,13 @@ static void att_reset(struct bt_att *att)
 		net_buf_unref(buf);
 	}
 #endif
+
+	atomic_set_bit(att->flags, ATT_DISCONNECTED);
+
+	/* Ensure that any waiters are woken up */
+	for (i = 0; i < CONFIG_BLUETOOTH_ATT_TX_MAX; i++) {
+		k_sem_give(&att->tx_sem);
+	}
 
 	/* Notify pending requests */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->reqs, req, tmp, node) {
@@ -2001,6 +2053,13 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 		return;
 	}
 
+	k_sem_take(&att->tx_sem, K_FOREVER);
+	if (!att_is_connected(att)) {
+		BT_WARN("Disconnected");
+		k_sem_give(&att->tx_sem);
+		return;
+	}
+
 	BT_DBG("Retrying");
 
 	/* Resend buffer */
@@ -2032,6 +2091,9 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		}
 
 		att->chan.chan.ops = &ops;
+		atomic_set(att->flags, 0);
+		k_sem_init(&att->tx_sem, CONFIG_BLUETOOTH_ATT_TX_MAX,
+			   CONFIG_BLUETOOTH_ATT_TX_MAX);
 
 		*chan = &att->chan.chan;
 
@@ -2080,6 +2142,13 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
+	k_sem_take(&att->tx_sem, K_FOREVER);
+	if (!att_is_connected(att)) {
+		BT_WARN("Disconnected");
+		k_sem_give(&att->tx_sem);
+		return -ENOTCONN;
+	}
+
 	hdr = (void *)buf->data;
 
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
@@ -2088,6 +2157,7 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 		err = bt_smp_sign(conn, buf);
 		if (err) {
 			BT_ERR("Error signing data");
+			k_sem_give(&att->tx_sem);
 			return err;
 		}
 	}
