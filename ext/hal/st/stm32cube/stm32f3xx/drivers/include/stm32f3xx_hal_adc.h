@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file containing functions prototypes of ADC HAL library.
   ******************************************************************************
   * @attention
@@ -71,36 +71,36 @@
   *           " if (HAL_IS_BIT_SET(HAL_ADC_GetState(hadc1), HAL_ADC_STATE_AWD1)    ) "
   */
 /* States of ADC global scope */
-#define HAL_ADC_STATE_RESET             ((uint32_t)0x00000000)    /*!< ADC not yet initialized or disabled */
-#define HAL_ADC_STATE_READY             ((uint32_t)0x00000001)    /*!< ADC peripheral ready for use */
-#define HAL_ADC_STATE_BUSY_INTERNAL     ((uint32_t)0x00000002)    /*!< ADC is busy to internal process (initialization, calibration) */
-#define HAL_ADC_STATE_TIMEOUT           ((uint32_t)0x00000004)    /*!< TimeOut occurrence */
+#define HAL_ADC_STATE_RESET             (0x00000000U)    /*!< ADC not yet initialized or disabled */
+#define HAL_ADC_STATE_READY             (0x00000001U)    /*!< ADC peripheral ready for use */
+#define HAL_ADC_STATE_BUSY_INTERNAL     (0x00000002U)    /*!< ADC is busy to internal process (initialization, calibration) */
+#define HAL_ADC_STATE_TIMEOUT           (0x00000004U)    /*!< TimeOut occurrence */
 
 /* States of ADC errors */
-#define HAL_ADC_STATE_ERROR_INTERNAL    ((uint32_t)0x00000010)    /*!< Internal error occurrence */
-#define HAL_ADC_STATE_ERROR_CONFIG      ((uint32_t)0x00000020)    /*!< Configuration error occurrence */
-#define HAL_ADC_STATE_ERROR_DMA         ((uint32_t)0x00000040)    /*!< DMA error occurrence */
+#define HAL_ADC_STATE_ERROR_INTERNAL    (0x00000010U)    /*!< Internal error occurrence */
+#define HAL_ADC_STATE_ERROR_CONFIG      (0x00000020U)    /*!< Configuration error occurrence */
+#define HAL_ADC_STATE_ERROR_DMA         (0x00000040U)    /*!< DMA error occurrence */
 
 /* States of ADC group regular */
-#define HAL_ADC_STATE_REG_BUSY          ((uint32_t)0x00000100)    /*!< A conversion on group regular is ongoing or can occur (either by continuous mode,
+#define HAL_ADC_STATE_REG_BUSY          (0x00000100U)    /*!< A conversion on group regular is ongoing or can occur (either by continuous mode,
                                                                        external trigger, low power auto power-on, multimode ADC master control) */
-#define HAL_ADC_STATE_REG_EOC           ((uint32_t)0x00000200)    /*!< Conversion data available on group regular */
-#define HAL_ADC_STATE_REG_OVR           ((uint32_t)0x00000400)    /*!< Not available on STM32F1 device: Overrun occurrence */
-#define HAL_ADC_STATE_REG_EOSMP         ((uint32_t)0x00000800)    /*!< Not available on STM32F1 device: End Of Sampling flag raised  */
+#define HAL_ADC_STATE_REG_EOC           (0x00000200U)    /*!< Conversion data available on group regular */
+#define HAL_ADC_STATE_REG_OVR           (0x00000400U)    /*!< Overrun occurrence */
+#define HAL_ADC_STATE_REG_EOSMP         (0x00000800U)    /*!< End Of Sampling flag raised  */
 
 /* States of ADC group injected */
-#define HAL_ADC_STATE_INJ_BUSY          ((uint32_t)0x00001000)    /*!< A conversion on group injected is ongoing or can occur (either by auto-injection mode,
+#define HAL_ADC_STATE_INJ_BUSY          (0x00001000U)    /*!< A conversion on group injected is ongoing or can occur (either by auto-injection mode,
                                                                        external trigger, low power auto power-on, multimode ADC master control) */
-#define HAL_ADC_STATE_INJ_EOC           ((uint32_t)0x00002000)    /*!< Conversion data available on group injected */
-#define HAL_ADC_STATE_INJ_JQOVF         ((uint32_t)0x00004000)    /*!< Not available on STM32F1 device: Injected queue overflow occurrence */
+#define HAL_ADC_STATE_INJ_EOC           (0x00002000U)    /*!< Conversion data available on group injected */
+#define HAL_ADC_STATE_INJ_JQOVF         (0x00004000U)    /*!< Injected queue overflow occurrence */
 
 /* States of ADC analog watchdogs */
-#define HAL_ADC_STATE_AWD1              ((uint32_t)0x00010000)    /*!< Out-of-window occurrence of analog watchdog 1 */
-#define HAL_ADC_STATE_AWD2              ((uint32_t)0x00020000)    /*!< Not available on STM32F1 device: Out-of-window occurrence of analog watchdog 2 */
-#define HAL_ADC_STATE_AWD3              ((uint32_t)0x00040000)    /*!< Not available on STM32F1 device: Out-of-window occurrence of analog watchdog 3 */
+#define HAL_ADC_STATE_AWD1              (0x00010000U)    /*!< Out-of-window occurrence of analog watchdog 1 */
+#define HAL_ADC_STATE_AWD2              (0x00020000U)    /*!< Out-of-window occurrence of analog watchdog 2 */
+#define HAL_ADC_STATE_AWD3              (0x00040000U)    /*!< Out-of-window occurrence of analog watchdog 3 */
 
 /* States of ADC multi-mode */
-#define HAL_ADC_STATE_MULTIMODE_SLAVE   ((uint32_t)0x00100000)    /*!< ADC in multimode slave state, controlled by another ADC master ( */
+#define HAL_ADC_STATE_MULTIMODE_SLAVE   (0x00100000U)    /*!< ADC in multimode slave state, controlled by another ADC master ( */
 
 
 /**

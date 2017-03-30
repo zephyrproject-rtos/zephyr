@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_dac.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   DAC HAL module driver.
   *         This file provides firmware functions to manage the following
   *         functionalities of the Digital to Analog Converter (DAC) peripheral:
@@ -105,7 +105,7 @@
           VEF+ is the input voltage reference (refer to the device datasheet)
        [..]
         e.g. To set DAC_OUT1 to 0.7V, use
-       (+)  Assuming that VREF+ = 3.3V, DAC_OUT1 = (3.3 * 868) / 4095 = 0.7V
+       (+)  Assuming that VREF+ = 3.3V, DAC_OUT1 = (3.3U * 868U) / 4095U = 0.7V
 
        *** DMA requests  ***
        =====================
@@ -490,8 +490,8 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
     defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
     defined(STM32F373xC) || defined(STM32F378xx)
 
-  /* For all products including channel 2 */
-  /* DAC channel 2 is available on top of DAC channel 1 */
+  /* For all products including channel 2U */
+  /* DAC channel 2 is available on top of DAC channel 1U */
   else /* Channel2 is used for */
   {
     /* Disable the DMA channel */

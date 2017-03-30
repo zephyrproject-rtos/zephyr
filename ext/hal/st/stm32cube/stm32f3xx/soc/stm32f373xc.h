@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f373xc.h
   * @author  MCD Application Team
-  * @version V2.3.0
-  * @date    29-April-2015
+  * @version V2.3.1
+  * @date    16-December-2016
   * @brief   CMSIS STM32F373xC Devices Peripheral Access Layer Header File.
   *
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheralï¿½s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -5661,6 +5661,15 @@ typedef struct
 #define  EXTI_IMR_IM26 EXTI_IMR_MR26
 #define  EXTI_IMR_IM27 EXTI_IMR_MR27
 #define  EXTI_IMR_IM28 EXTI_IMR_MR28
+#if defined(EXTI_IMR_MR29)
+#define  EXTI_IMR_IM29 EXTI_IMR_MR29
+#endif
+#if defined(EXTI_IMR_MR30)
+#define  EXTI_IMR_IM30 EXTI_IMR_MR30
+#endif
+#if defined(EXTI_IMR_MR31)
+#define  EXTI_IMR_IM31 EXTI_IMR_MR31
+#endif
 
 #define EXTI_IMR_IM_Pos            (0U)
 #define EXTI_IMR_IM_Msk            (0x1FFFFFFFU << EXTI_IMR_IM_Pos)            /*!< 0x1FFFFFFF */
@@ -5785,6 +5794,15 @@ typedef struct
 #define  EXTI_EMR_EM26 EXTI_EMR_MR26
 #define  EXTI_EMR_EM27 EXTI_EMR_MR27
 #define  EXTI_EMR_EM28 EXTI_EMR_MR28
+#if defined(EXTI_EMR_MR29)
+#define  EXTI_EMR_EM29 EXTI_EMR_MR29
+#endif
+#if defined(EXTI_EMR_MR30)
+#define  EXTI_EMR_EM30 EXTI_EMR_MR30
+#endif
+#if defined(EXTI_EMR_MR31)
+#define  EXTI_EMR_EM31 EXTI_EMR_MR31
+#endif
 
 /******************  Bit definition for EXTI_RTSR register  *******************/
 #define EXTI_RTSR_TR0_Pos          (0U)
@@ -5841,9 +5859,21 @@ typedef struct
 #define EXTI_RTSR_TR17_Pos         (17U)
 #define EXTI_RTSR_TR17_Msk         (0x1U << EXTI_RTSR_TR17_Pos)                /*!< 0x00020000 */
 #define EXTI_RTSR_TR17             EXTI_RTSR_TR17_Msk                          /*!< Rising trigger event configuration bit of line 17 */
+#define EXTI_RTSR_TR18_Pos         (18U)
+#define EXTI_RTSR_TR18_Msk         (0x1U << EXTI_RTSR_TR18_Pos)                /*!< 0x00040000 */
+#define EXTI_RTSR_TR18             EXTI_RTSR_TR18_Msk                          /*!< Rising trigger event configuration bit of line 18 */
 #define EXTI_RTSR_TR19_Pos         (19U)
 #define EXTI_RTSR_TR19_Msk         (0x1U << EXTI_RTSR_TR19_Pos)                /*!< 0x00080000 */
 #define EXTI_RTSR_TR19             EXTI_RTSR_TR19_Msk                          /*!< Rising trigger event configuration bit of line 19 */
+#define EXTI_RTSR_TR20_Pos         (20U)
+#define EXTI_RTSR_TR20_Msk         (0x1U << EXTI_RTSR_TR20_Pos)                /*!< 0x00100000 */
+#define EXTI_RTSR_TR20             EXTI_RTSR_TR20_Msk                          /*!< Rising trigger event configuration bit of line 20 */
+#define EXTI_RTSR_TR21_Pos         (21U)
+#define EXTI_RTSR_TR21_Msk         (0x1U << EXTI_RTSR_TR21_Pos)                /*!< 0x00200000 */
+#define EXTI_RTSR_TR21             EXTI_RTSR_TR21_Msk                          /*!< Rising trigger event configuration bit of line 21 */
+#define EXTI_RTSR_TR22_Pos         (22U)
+#define EXTI_RTSR_TR22_Msk         (0x1U << EXTI_RTSR_TR22_Pos)                /*!< 0x00400000 */
+#define EXTI_RTSR_TR22             EXTI_RTSR_TR22_Msk                          /*!< Rising trigger event configuration bit of line 22 */
 
 /* References Defines */
 #define EXTI_RTSR_RT0 EXTI_RTSR_TR0
@@ -5864,7 +5894,38 @@ typedef struct
 #define EXTI_RTSR_RT15 EXTI_RTSR_TR15
 #define EXTI_RTSR_RT16 EXTI_RTSR_TR16
 #define EXTI_RTSR_RT17 EXTI_RTSR_TR17
+#define EXTI_RTSR_RT18 EXTI_RTSR_TR18
 #define EXTI_RTSR_RT19 EXTI_RTSR_TR19
+#define EXTI_RTSR_RT20 EXTI_RTSR_TR20
+#define EXTI_RTSR_RT21 EXTI_RTSR_TR21
+#define EXTI_RTSR_RT22 EXTI_RTSR_TR22
+#if defined(EXTI_RTSR_TR23)
+#define EXTI_RTSR_RT23 EXTI_RTSR_TR23
+#endif
+#if defined(EXTI_RTSR_TR24)
+#define EXTI_RTSR_RT24 EXTI_RTSR_TR24
+#endif
+#if defined(EXTI_RTSR_TR25)
+#define EXTI_RTSR_RT25 EXTI_RTSR_TR25
+#endif
+#if defined(EXTI_RTSR_TR26)
+#define EXTI_RTSR_RT26 EXTI_RTSR_TR26
+#endif
+#if defined(EXTI_RTSR_TR27)
+#define EXTI_RTSR_RT27 EXTI_RTSR_TR27
+#endif
+#if defined(EXTI_RTSR_TR28)
+#define EXTI_RTSR_RT28 EXTI_RTSR_TR28
+#endif
+#if defined(EXTI_RTSR_TR29)
+#define EXTI_RTSR_RT29 EXTI_RTSR_TR29
+#endif
+#if defined(EXTI_RTSR_TR30)
+#define EXTI_RTSR_RT30 EXTI_RTSR_TR30
+#endif
+#if defined(EXTI_RTSR_TR31)
+#define EXTI_RTSR_RT31 EXTI_RTSR_TR31
+#endif
 
 /******************  Bit definition for EXTI_FTSR register  *******************/
 #define EXTI_FTSR_TR0_Pos          (0U)
@@ -5921,9 +5982,21 @@ typedef struct
 #define EXTI_FTSR_TR17_Pos         (17U)
 #define EXTI_FTSR_TR17_Msk         (0x1U << EXTI_FTSR_TR17_Pos)                /*!< 0x00020000 */
 #define EXTI_FTSR_TR17             EXTI_FTSR_TR17_Msk                          /*!< Falling trigger event configuration bit of line 17 */
+#define EXTI_FTSR_TR18_Pos         (18U)
+#define EXTI_FTSR_TR18_Msk         (0x1U << EXTI_FTSR_TR18_Pos)                /*!< 0x00040000 */
+#define EXTI_FTSR_TR18             EXTI_FTSR_TR18_Msk                          /*!< Falling trigger event configuration bit of line 18 */
 #define EXTI_FTSR_TR19_Pos         (19U)
 #define EXTI_FTSR_TR19_Msk         (0x1U << EXTI_FTSR_TR19_Pos)                /*!< 0x00080000 */
 #define EXTI_FTSR_TR19             EXTI_FTSR_TR19_Msk                          /*!< Falling trigger event configuration bit of line 19 */
+#define EXTI_FTSR_TR20_Pos         (20U)
+#define EXTI_FTSR_TR20_Msk         (0x1U << EXTI_FTSR_TR20_Pos)                /*!< 0x00100000 */
+#define EXTI_FTSR_TR20             EXTI_FTSR_TR20_Msk                          /*!< Falling trigger event configuration bit of line 20 */
+#define EXTI_FTSR_TR21_Pos         (21U)
+#define EXTI_FTSR_TR21_Msk         (0x1U << EXTI_FTSR_TR21_Pos)                /*!< 0x00200000 */
+#define EXTI_FTSR_TR21             EXTI_FTSR_TR21_Msk                          /*!< Falling trigger event configuration bit of line 21 */
+#define EXTI_FTSR_TR22_Pos         (22U)
+#define EXTI_FTSR_TR22_Msk         (0x1U << EXTI_FTSR_TR22_Pos)                /*!< 0x00400000 */
+#define EXTI_FTSR_TR22             EXTI_FTSR_TR22_Msk                          /*!< Falling trigger event configuration bit of line 22 */
 
 /* References Defines */
 #define EXTI_FTSR_FT0 EXTI_FTSR_TR0
@@ -5944,7 +6017,38 @@ typedef struct
 #define EXTI_FTSR_FT15 EXTI_FTSR_TR15
 #define EXTI_FTSR_FT16 EXTI_FTSR_TR16
 #define EXTI_FTSR_FT17 EXTI_FTSR_TR17
-#define  EXTI_FTSR_FT19 EXTI_FTSR_TR19
+#define EXTI_FTSR_FT18 EXTI_FTSR_TR18
+#define EXTI_FTSR_FT19 EXTI_FTSR_TR19
+#define EXTI_FTSR_FT20 EXTI_FTSR_TR20
+#define EXTI_FTSR_FT21 EXTI_FTSR_TR21
+#define EXTI_FTSR_FT22 EXTI_FTSR_TR22
+#if defined(EXTI_FTSR_TR23)
+#define EXTI_FTSR_FT23 EXTI_FTSR_TR23
+#endif
+#if defined(EXTI_FTSR_TR24)
+#define EXTI_FTSR_FT24 EXTI_FTSR_TR24
+#endif
+#if defined(EXTI_FTSR_TR25)
+#define EXTI_FTSR_FT25 EXTI_FTSR_TR25
+#endif
+#if defined(EXTI_FTSR_TR26)
+#define EXTI_FTSR_FT26 EXTI_FTSR_TR26
+#endif
+#if defined(EXTI_FTSR_TR27)
+#define EXTI_FTSR_FT27 EXTI_FTSR_TR27
+#endif
+#if defined(EXTI_FTSR_TR28)
+#define EXTI_FTSR_FT28 EXTI_FTSR_TR28
+#endif
+#if defined(EXTI_FTSR_TR29)
+#define EXTI_FTSR_FT29 EXTI_FTSR_TR29
+#endif
+#if defined(EXTI_FTSR_TR30)
+#define EXTI_FTSR_FT30 EXTI_FTSR_TR30
+#endif
+#if defined(EXTI_FTSR_TR31)
+#define EXTI_FTSR_FT31 EXTI_FTSR_TR31
+#endif
 
 /******************  Bit definition for EXTI_SWIER register  ******************/
 #define EXTI_SWIER_SWIER0_Pos      (0U)
@@ -6001,9 +6105,21 @@ typedef struct
 #define EXTI_SWIER_SWIER17_Pos     (17U)
 #define EXTI_SWIER_SWIER17_Msk     (0x1U << EXTI_SWIER_SWIER17_Pos)            /*!< 0x00020000 */
 #define EXTI_SWIER_SWIER17         EXTI_SWIER_SWIER17_Msk                      /*!< Software Interrupt on line 17 */
+#define EXTI_SWIER_SWIER18_Pos     (18U)
+#define EXTI_SWIER_SWIER18_Msk     (0x1U << EXTI_SWIER_SWIER18_Pos)            /*!< 0x00040000 */
+#define EXTI_SWIER_SWIER18         EXTI_SWIER_SWIER18_Msk                      /*!< Software Interrupt on line 18 */
 #define EXTI_SWIER_SWIER19_Pos     (19U)
 #define EXTI_SWIER_SWIER19_Msk     (0x1U << EXTI_SWIER_SWIER19_Pos)            /*!< 0x00080000 */
 #define EXTI_SWIER_SWIER19         EXTI_SWIER_SWIER19_Msk                      /*!< Software Interrupt on line 19 */
+#define EXTI_SWIER_SWIER20_Pos     (20U)
+#define EXTI_SWIER_SWIER20_Msk     (0x1U << EXTI_SWIER_SWIER20_Pos)            /*!< 0x00100000 */
+#define EXTI_SWIER_SWIER20         EXTI_SWIER_SWIER20_Msk                      /*!< Software Interrupt on line 20 */
+#define EXTI_SWIER_SWIER21_Pos     (21U)
+#define EXTI_SWIER_SWIER21_Msk     (0x1U << EXTI_SWIER_SWIER21_Pos)            /*!< 0x00200000 */
+#define EXTI_SWIER_SWIER21         EXTI_SWIER_SWIER21_Msk                      /*!< Software Interrupt on line 21 */
+#define EXTI_SWIER_SWIER22_Pos     (22U)
+#define EXTI_SWIER_SWIER22_Msk     (0x1U << EXTI_SWIER_SWIER22_Pos)            /*!< 0x00400000 */
+#define EXTI_SWIER_SWIER22         EXTI_SWIER_SWIER22_Msk                      /*!< Software Interrupt on line 22 */
 
 /* References Defines */
 #define EXTI_SWIER_SWI0 EXTI_SWIER_SWIER0
@@ -6024,7 +6140,38 @@ typedef struct
 #define EXTI_SWIER_SWI15 EXTI_SWIER_SWIER15
 #define EXTI_SWIER_SWI16 EXTI_SWIER_SWIER16
 #define EXTI_SWIER_SWI17 EXTI_SWIER_SWIER17
-#define  EXTI_SWIER_SWI19 EXTI_SWIER_SWIER19
+#define EXTI_SWIER_SWI18 EXTI_SWIER_SWIER18
+#define EXTI_SWIER_SWI19 EXTI_SWIER_SWIER19
+#define EXTI_SWIER_SWI20 EXTI_SWIER_SWIER20
+#define EXTI_SWIER_SWI21 EXTI_SWIER_SWIER21
+#define EXTI_SWIER_SWI22 EXTI_SWIER_SWIER22
+#if defined(EXTI_SWIER_SWIER23)
+#define EXTI_SWIER_SWI23 EXTI_SWIER_SWIER23
+#endif
+#if defined(EXTI_SWIER_SWIER24)
+#define EXTI_SWIER_SWI24 EXTI_SWIER_SWIER24
+#endif
+#if defined(EXTI_SWIER_SWIER25)
+#define EXTI_SWIER_SWI25 EXTI_SWIER_SWIER25
+#endif
+#if defined(EXTI_SWIER_SWIER26)
+#define EXTI_SWIER_SWI26 EXTI_SWIER_SWIER26
+#endif
+#if defined(EXTI_SWIER_SWIER27)
+#define EXTI_SWIER_SWI27 EXTI_SWIER_SWIER27
+#endif
+#if defined(EXTI_SWIER_SWIER28)
+#define EXTI_SWIER_SWI28 EXTI_SWIER_SWIER28
+#endif
+#if defined(EXTI_SWIER_SWIER29)
+#define EXTI_SWIER_SWI29 EXTI_SWIER_SWIER29
+#endif
+#if defined(EXTI_SWIER_SWIER30)
+#define EXTI_SWIER_SWI30 EXTI_SWIER_SWIER30
+#endif
+#if defined(EXTI_SWIER_SWIER31)
+#define EXTI_SWIER_SWI31 EXTI_SWIER_SWIER31
+#endif
 
 /*******************  Bit definition for EXTI_PR register  ********************/
 #define EXTI_PR_PR0_Pos            (0U)
@@ -6081,9 +6228,21 @@ typedef struct
 #define EXTI_PR_PR17_Pos           (17U)
 #define EXTI_PR_PR17_Msk           (0x1U << EXTI_PR_PR17_Pos)                  /*!< 0x00020000 */
 #define EXTI_PR_PR17               EXTI_PR_PR17_Msk                            /*!< Pending bit for line 17 */
+#define EXTI_PR_PR18_Pos           (18U)
+#define EXTI_PR_PR18_Msk           (0x1U << EXTI_PR_PR18_Pos)                  /*!< 0x00040000 */
+#define EXTI_PR_PR18               EXTI_PR_PR18_Msk                            /*!< Pending bit for line 18 */
 #define EXTI_PR_PR19_Pos           (19U)
 #define EXTI_PR_PR19_Msk           (0x1U << EXTI_PR_PR19_Pos)                  /*!< 0x00080000 */
 #define EXTI_PR_PR19               EXTI_PR_PR19_Msk                            /*!< Pending bit for line 19 */
+#define EXTI_PR_PR20_Pos           (20U)
+#define EXTI_PR_PR20_Msk           (0x1U << EXTI_PR_PR20_Pos)                  /*!< 0x00100000 */
+#define EXTI_PR_PR20               EXTI_PR_PR20_Msk                            /*!< Pending bit for line 20 */
+#define EXTI_PR_PR21_Pos           (21U)
+#define EXTI_PR_PR21_Msk           (0x1U << EXTI_PR_PR21_Pos)                  /*!< 0x00200000 */
+#define EXTI_PR_PR21               EXTI_PR_PR21_Msk                            /*!< Pending bit for line 21 */
+#define EXTI_PR_PR22_Pos           (22U)
+#define EXTI_PR_PR22_Msk           (0x1U << EXTI_PR_PR22_Pos)                  /*!< 0x00400000 */
+#define EXTI_PR_PR22               EXTI_PR_PR22_Msk                            /*!< Pending bit for line 22 */
 
 /* References Defines */
 #define EXTI_PR_PIF0 EXTI_PR_PR0
@@ -6092,6 +6251,7 @@ typedef struct
 #define EXTI_PR_PIF3 EXTI_PR_PR3
 #define EXTI_PR_PIF4 EXTI_PR_PR4
 #define EXTI_PR_PIF5 EXTI_PR_PR5
+#define EXTI_PR_PIF6 EXTI_PR_PR6
 #define EXTI_PR_PIF6 EXTI_PR_PR6
 #define EXTI_PR_PIF7 EXTI_PR_PR7
 #define EXTI_PR_PIF8 EXTI_PR_PR8
@@ -6104,7 +6264,39 @@ typedef struct
 #define EXTI_PR_PIF15 EXTI_PR_PR15
 #define EXTI_PR_PIF16 EXTI_PR_PR16
 #define EXTI_PR_PIF17 EXTI_PR_PR17
-#define  EXTI_PR_PIF19 EXTI_PR_PR19
+#define EXTI_PR_PIF18 EXTI_PR_PR18
+#define EXTI_PR_PIF19 EXTI_PR_PR19
+#define EXTI_PR_PIF20 EXTI_PR_PR20
+#define EXTI_PR_PIF21 EXTI_PR_PR21
+#define EXTI_PR_PIF22 EXTI_PR_PR22
+#if defined(EXTI_PR_PR23)
+#define EXTI_PR_PIF23 EXTI_PR_PR23
+#endif
+#if defined(EXTI_PR_PR24)
+#define EXTI_PR_PIF24 EXTI_PR_PR24
+#endif
+#if defined(EXTI_PR_PR25)
+#define EXTI_PR_PIF25 EXTI_PR_PR25
+#endif
+#if defined(EXTI_PR_PR26)
+#define EXTI_PR_PIF26 EXTI_PR_PR26
+#endif
+#if defined(EXTI_PR_PR27)
+#define EXTI_PR_PIF27 EXTI_PR_PR27
+#endif
+#if defined(EXTI_PR_PR28)
+#define EXTI_PR_PIF28 EXTI_PR_PR28
+#endif
+#if defined(EXTI_PR_PR29)
+#define EXTI_PR_PIF29 EXTI_PR_PR29
+#endif
+#if defined(EXTI_PR_PR30)
+#define EXTI_PR_PIF30 EXTI_PR_PR30
+#endif
+#if defined(EXTI_PR_PR31)
+#define EXTI_PR_PIF31 EXTI_PR_PR31
+#endif
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -7266,15 +7458,25 @@ typedef struct
 #define PWR_CR_DBP_Pos             (8U)
 #define PWR_CR_DBP_Msk             (0x1U << PWR_CR_DBP_Pos)                    /*!< 0x00000100 */
 #define PWR_CR_DBP                 PWR_CR_DBP_Msk                              /*!< Disable Backup Domain write protection */
-#define PWR_CR_SDADC1EN_Pos        (9U)
-#define PWR_CR_SDADC1EN_Msk        (0x1U << PWR_CR_SDADC1EN_Pos)               /*!< 0x00000200 */
-#define PWR_CR_SDADC1EN            PWR_CR_SDADC1EN_Msk                         /*!< Enable Analog part of the SDADC1 */
-#define PWR_CR_SDADC2EN_Pos        (10U)
-#define PWR_CR_SDADC2EN_Msk        (0x1U << PWR_CR_SDADC2EN_Pos)               /*!< 0x00000400 */
-#define PWR_CR_SDADC2EN            PWR_CR_SDADC2EN_Msk                         /*!< Enable Analog part of the SDADC2 */
-#define PWR_CR_SDADC3EN_Pos        (11U)
-#define PWR_CR_SDADC3EN_Msk        (0x1U << PWR_CR_SDADC3EN_Pos)               /*!< 0x00000800 */
-#define PWR_CR_SDADC3EN            PWR_CR_SDADC3EN_Msk                         /*!< Enable Analog part of the SDADC3 */
+#define PWR_CR_ENSD1_Pos           (9U)
+#define PWR_CR_ENSD1_Msk           (0x1U << PWR_CR_ENSD1_Pos)               /*!< 0x00000200 */
+#define PWR_CR_ENSD1               PWR_CR_ENSD1_Msk                         /*!< Enable Analog part of the SDADC1 */
+#define PWR_CR_ENSD2_Pos           (10U)
+#define PWR_CR_ENSD2_Msk           (0x1U << PWR_CR_ENSD2_Pos)               /*!< 0x00000400 */
+#define PWR_CR_ENSD2               PWR_CR_ENSD2_Msk                         /*!< Enable Analog part of the SDADC2 */
+#define PWR_CR_ENSD3_Pos           (11U)
+#define PWR_CR_ENSD3_Msk           (0x1U << PWR_CR_ENSD3_Pos)               /*!< 0x00000800 */
+#define PWR_CR_ENSD3               PWR_CR_ENSD3_Msk                         /*!< Enable Analog part of the SDADC3 */
+/* Legacy aliases */
+#define PWR_CR_SDADC1EN_Pos        PWR_CR_ENSD1_Pos
+#define PWR_CR_SDADC1EN_Msk        PWR_CR_ENSD1_Msk
+#define PWR_CR_SDADC1EN            PWR_CR_ENSD1
+#define PWR_CR_SDADC2EN_Pos        PWR_CR_ENSD2_Pos
+#define PWR_CR_SDADC2EN_Msk        PWR_CR_ENSD2_Msk
+#define PWR_CR_SDADC2EN            PWR_CR_ENSD2
+#define PWR_CR_SDADC3EN_Pos        PWR_CR_ENSD3_Pos
+#define PWR_CR_SDADC3EN_Msk        PWR_CR_ENSD3_Msk
+#define PWR_CR_SDADC3EN            PWR_CR_ENSD3
 
 /*******************  Bit definition for PWR_CSR register  ********************/
 #define PWR_CSR_WUF_Pos            (0U)
@@ -7509,33 +7711,61 @@ typedef struct
 #define RCC_CFGR_MCOSEL_HSE                  RCC_CFGR_MCO_HSE
 #define RCC_CFGR_MCOSEL_PLL_DIV2             RCC_CFGR_MCO_PLL
 
-/*!< SDADCPRE configuration */
-#define RCC_CFGR_SDADCPRE_Pos                    (27U)
-#define RCC_CFGR_SDADCPRE_Msk                    (0x1FU << RCC_CFGR_SDADCPRE_Pos) /*!< 0xF8000000 */
-#define RCC_CFGR_SDADCPRE                        RCC_CFGR_SDADCPRE_Msk         /*!< SDADCPRE[4:0] bits (Sigma Delta ADC prescaler) */
-#define RCC_CFGR_SDADCPRE_0                      (0x01U << RCC_CFGR_SDADCPRE_Pos) /*!< 0x08000000 */
-#define RCC_CFGR_SDADCPRE_1                      (0x02U << RCC_CFGR_SDADCPRE_Pos) /*!< 0x10000000 */
-#define RCC_CFGR_SDADCPRE_2                      (0x04U << RCC_CFGR_SDADCPRE_Pos) /*!< 0x20000000 */
-#define RCC_CFGR_SDADCPRE_3                      (0x08U << RCC_CFGR_SDADCPRE_Pos) /*!< 0x40000000 */
-#define RCC_CFGR_SDADCPRE_4                      (0x10U << RCC_CFGR_SDADCPRE_Pos) /*!< 0x80000000 */
+/*!< SDPRE configuration */
+#define RCC_CFGR_SDPRE_Pos                    (27U)
+#define RCC_CFGR_SDPRE_Msk                    (0x1FU << RCC_CFGR_SDPRE_Pos) /*!< 0xF8000000 */
+#define RCC_CFGR_SDPRE                        RCC_CFGR_SDPRE_Msk         /*!< SDPRE[4:0] bits (Sigma Delta ADC prescaler) */
+#define RCC_CFGR_SDPRE_0                      (0x01U << RCC_CFGR_SDPRE_Pos) /*!< 0x08000000 */
+#define RCC_CFGR_SDPRE_1                      (0x02U << RCC_CFGR_SDPRE_Pos) /*!< 0x10000000 */
+#define RCC_CFGR_SDPRE_2                      (0x04U << RCC_CFGR_SDPRE_Pos) /*!< 0x20000000 */
+#define RCC_CFGR_SDPRE_3                      (0x08U << RCC_CFGR_SDPRE_Pos) /*!< 0x40000000 */
+#define RCC_CFGR_SDPRE_4                      (0x10U << RCC_CFGR_SDPRE_Pos) /*!< 0x80000000 */
 
-#define RCC_CFGR_SDADCPRE_DIV1                   (0x00000000U)                 /*!< SDADC CLK not divided */
-#define RCC_CFGR_SDADCPRE_DIV2                   (0x80000000U)                 /*!< SDADC CLK divided by 2 */
-#define RCC_CFGR_SDADCPRE_DIV4                   (0x88000000U)                 /*!< SDADC CLK divided by 4 */
-#define RCC_CFGR_SDADCPRE_DIV6                   (0x90000000U)                 /*!< SDADC CLK divided by 6 */
-#define RCC_CFGR_SDADCPRE_DIV8                   (0x98000000U)                 /*!< SDADC CLK divided by 8 */
-#define RCC_CFGR_SDADCPRE_DIV10                  (0xA0000000U)                 /*!< SDADC CLK divided by 10 */
-#define RCC_CFGR_SDADCPRE_DIV12                  (0xA8000000U)                 /*!< SDADC CLK divided by 12 */
-#define RCC_CFGR_SDADCPRE_DIV14                  (0xB0000000U)                 /*!< SDADC CLK divided by 14 */
-#define RCC_CFGR_SDADCPRE_DIV16                  (0xB8000000U)                 /*!< SDADC CLK divided by 16 */
-#define RCC_CFGR_SDADCPRE_DIV20                  (0xC0000000U)                 /*!< SDADC CLK divided by 20 */
-#define RCC_CFGR_SDADCPRE_DIV24                  (0xC8000000U)                 /*!< SDADC CLK divided by 24 */
-#define RCC_CFGR_SDADCPRE_DIV28                  (0xD0000000U)                 /*!< SDADC CLK divided by 28 */
-#define RCC_CFGR_SDADCPRE_DIV32                  (0xD8000000U)                 /*!< SDADC CLK divided by 32 */
-#define RCC_CFGR_SDADCPRE_DIV36                  (0xE0000000U)                 /*!< SDADC CLK divided by 36 */
-#define RCC_CFGR_SDADCPRE_DIV40                  (0xE8000000U)                 /*!< SDADC CLK divided by 40 */
-#define RCC_CFGR_SDADCPRE_DIV44                  (0xF0000000U)                 /*!< SDADC CLK divided by 44 */
-#define RCC_CFGR_SDADCPRE_DIV48                  (0xF8000000U)                 /*!< SDADC CLK divided by 48 */
+#define RCC_CFGR_SDPRE_DIV1                   (0x00000000U)                 /*!< SDADC CLK not divided */
+#define RCC_CFGR_SDPRE_DIV2                   (0x80000000U)                 /*!< SDADC CLK divided by 2 */
+#define RCC_CFGR_SDPRE_DIV4                   (0x88000000U)                 /*!< SDADC CLK divided by 4 */
+#define RCC_CFGR_SDPRE_DIV6                   (0x90000000U)                 /*!< SDADC CLK divided by 6 */
+#define RCC_CFGR_SDPRE_DIV8                   (0x98000000U)                 /*!< SDADC CLK divided by 8 */
+#define RCC_CFGR_SDPRE_DIV10                  (0xA0000000U)                 /*!< SDADC CLK divided by 10 */
+#define RCC_CFGR_SDPRE_DIV12                  (0xA8000000U)                 /*!< SDADC CLK divided by 12 */
+#define RCC_CFGR_SDPRE_DIV14                  (0xB0000000U)                 /*!< SDADC CLK divided by 14 */
+#define RCC_CFGR_SDPRE_DIV16                  (0xB8000000U)                 /*!< SDADC CLK divided by 16 */
+#define RCC_CFGR_SDPRE_DIV20                  (0xC0000000U)                 /*!< SDADC CLK divided by 20 */
+#define RCC_CFGR_SDPRE_DIV24                  (0xC8000000U)                 /*!< SDADC CLK divided by 24 */
+#define RCC_CFGR_SDPRE_DIV28                  (0xD0000000U)                 /*!< SDADC CLK divided by 28 */
+#define RCC_CFGR_SDPRE_DIV32                  (0xD8000000U)                 /*!< SDADC CLK divided by 32 */
+#define RCC_CFGR_SDPRE_DIV36                  (0xE0000000U)                 /*!< SDADC CLK divided by 36 */
+#define RCC_CFGR_SDPRE_DIV40                  (0xE8000000U)                 /*!< SDADC CLK divided by 40 */
+#define RCC_CFGR_SDPRE_DIV44                  (0xF0000000U)                 /*!< SDADC CLK divided by 44 */
+#define RCC_CFGR_SDPRE_DIV48                  (0xF8000000U)                 /*!< SDADC CLK divided by 48 */
+
+/* Legacy aliases */
+#define RCC_CFGR_SDADCPRE_Pos                  RCC_CFGR_SDPRE_Pos
+#define RCC_CFGR_SDADCPRE_Msk                  RCC_CFGR_SDPRE_Msk
+#define RCC_CFGR_SDADCPRE                      RCC_CFGR_SDPRE
+#define RCC_CFGR_SDADCPRE_0                    RCC_CFGR_SDPRE_0
+#define RCC_CFGR_SDADCPRE_1                    RCC_CFGR_SDPRE_1
+#define RCC_CFGR_SDADCPRE_2                    RCC_CFGR_SDPRE_2
+#define RCC_CFGR_SDADCPRE_3                    RCC_CFGR_SDPRE_3
+#define RCC_CFGR_SDADCPRE_4                    RCC_CFGR_SDPRE_4
+
+#define RCC_CFGR_SDADCPRE_DIV1                 RCC_CFGR_SDPRE_DIV1
+#define RCC_CFGR_SDADCPRE_DIV2                 RCC_CFGR_SDPRE_DIV2
+#define RCC_CFGR_SDADCPRE_DIV4                 RCC_CFGR_SDPRE_DIV4
+#define RCC_CFGR_SDADCPRE_DIV6                 RCC_CFGR_SDPRE_DIV6
+#define RCC_CFGR_SDADCPRE_DIV8                 RCC_CFGR_SDPRE_DIV8
+#define RCC_CFGR_SDADCPRE_DIV10                RCC_CFGR_SDPRE_DIV10
+#define RCC_CFGR_SDADCPRE_DIV12                RCC_CFGR_SDPRE_DIV12
+#define RCC_CFGR_SDADCPRE_DIV14                RCC_CFGR_SDPRE_DIV14
+#define RCC_CFGR_SDADCPRE_DIV16                RCC_CFGR_SDPRE_DIV16
+#define RCC_CFGR_SDADCPRE_DIV20                RCC_CFGR_SDPRE_DIV20
+#define RCC_CFGR_SDADCPRE_DIV24                RCC_CFGR_SDPRE_DIV24
+#define RCC_CFGR_SDADCPRE_DIV28                RCC_CFGR_SDPRE_DIV28
+#define RCC_CFGR_SDADCPRE_DIV32                RCC_CFGR_SDPRE_DIV32
+#define RCC_CFGR_SDADCPRE_DIV36                RCC_CFGR_SDPRE_DIV36
+#define RCC_CFGR_SDADCPRE_DIV40                RCC_CFGR_SDPRE_DIV40
+#define RCC_CFGR_SDADCPRE_DIV44                RCC_CFGR_SDPRE_DIV44
+#define RCC_CFGR_SDADCPRE_DIV48                RCC_CFGR_SDPRE_DIV48
 
 /*********************  Bit definition for RCC_CIR register  ********************/
 #define RCC_CIR_LSIRDYF_Pos                      (0U)
@@ -8973,7 +9203,7 @@ typedef struct
 #define SDADC_CONF1R_COMMON1_Msk      (0x3U << SDADC_CONF1R_COMMON1_Pos)       /*!< 0xC0000000 */
 #define SDADC_CONF1R_COMMON1          SDADC_CONF1R_COMMON1_Msk                 /*!< Common mode for configuration 1 */
 #define SDADC_CONF1R_COMMON1_0        (0x1U << SDADC_CONF1R_COMMON1_Pos)       /*!< 0x40000000 */
-#define SDADC_CONF1R_COMMON1_1        (0x1U << SDADC_CONF1R_COMMON1_Pos)       /*!< 0x40000000 */
+#define SDADC_CONF1R_COMMON1_1        (0x2U << SDADC_CONF1R_COMMON1_Pos)       /*!< 0x80000000 */
 
 /******************  Bit definition for SDADC_CONF2R register  ****************/
 #define SDADC_CONF2R_OFFSET2_Pos      (0U)
@@ -9626,18 +9856,6 @@ typedef struct
 #define TIM_CR2_OIS2_Pos          (10U)
 #define TIM_CR2_OIS2_Msk          (0x1U << TIM_CR2_OIS2_Pos)                   /*!< 0x00000400 */
 #define TIM_CR2_OIS2              TIM_CR2_OIS2_Msk                             /*!<Output Idle state 2 (OC2 output) */
-#define TIM_CR2_OIS2N_Pos         (11U)
-#define TIM_CR2_OIS2N_Msk         (0x1U << TIM_CR2_OIS2N_Pos)                  /*!< 0x00000800 */
-#define TIM_CR2_OIS2N             TIM_CR2_OIS2N_Msk                            /*!<Output Idle state 2 (OC2N output) */
-#define TIM_CR2_OIS3_Pos          (12U)
-#define TIM_CR2_OIS3_Msk          (0x1U << TIM_CR2_OIS3_Pos)                   /*!< 0x00001000 */
-#define TIM_CR2_OIS3              TIM_CR2_OIS3_Msk                             /*!<Output Idle state 3 (OC3 output) */
-#define TIM_CR2_OIS3N_Pos         (13U)
-#define TIM_CR2_OIS3N_Msk         (0x1U << TIM_CR2_OIS3N_Pos)                  /*!< 0x00002000 */
-#define TIM_CR2_OIS3N             TIM_CR2_OIS3N_Msk                            /*!<Output Idle state 3 (OC3N output) */
-#define TIM_CR2_OIS4_Pos          (14U)
-#define TIM_CR2_OIS4_Msk          (0x1U << TIM_CR2_OIS4_Pos)                   /*!< 0x00004000 */
-#define TIM_CR2_OIS4              TIM_CR2_OIS4_Msk                             /*!<Output Idle state 4 (OC4 output) */
 
 /*******************  Bit definition for TIM_SMCR register  *******************/
 #define TIM_SMCR_SMS_Pos          (0U)
@@ -11111,9 +11329,9 @@ typedef struct
 #define USB_EP_CONTROL                       ((uint16_t)0x0200U)               /*!< EndPoint CONTROL */
 #define USB_EP_ISOCHRONOUS                   ((uint16_t)0x0400U)               /*!< EndPoint ISOCHRONOUS */
 #define USB_EP_INTERRUPT                     ((uint16_t)0x0600U)               /*!< EndPoint INTERRUPT */
-#define USB_EP_T_MASK      (~USB_EP_T_FIELD & USB_EPREG_MASK)
+#define USB_EP_T_MASK                        ((uint16_t) ~USB_EP_T_FIELD & USB_EPREG_MASK)
 
-#define USB_EPKIND_MASK    (~USB_EP_KIND & USB_EPREG_MASK)            /*!< EP_KIND EndPoint KIND */
+#define USB_EPKIND_MASK                      ((uint16_t) ~USB_EP_KIND & USB_EPREG_MASK)            /*!< EP_KIND EndPoint KIND */
                                                                                /*!< STAT_TX[1:0] STATus for TX transfer */
 #define USB_EP_TX_DIS                        ((uint16_t)0x0000U)               /*!< EndPoint TX DISabled */
 #define USB_EP_TX_STALL                      ((uint16_t)0x0010U)               /*!< EndPoint TX STALLed */
@@ -11381,6 +11599,9 @@ typedef struct
    ((INSTANCE) == TIM19))
 
 /************************** TIM Instances : Advanced-control timers ***********/
+
+/****************** TIM Instances : Advanced timer instances *******************/
+#define IS_TIM_ADVANCED_INSTANCE(INSTANCE) (0U)
 
 /****************** TIM Instances : supporting clock selection ****************/
 #define IS_TIM_CLOCK_SELECT_INSTANCE(INSTANCE)\

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_cortex.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   CORTEX HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the CORTEX:
@@ -46,7 +46,7 @@
    (+) The HAL_SYSTICK_Config()function calls the SysTick_Config() function which
        is a CMSIS function that:
         (++) Configures the SysTick Reload register with value passed as function parameter.
-        (++) Configures the SysTick IRQ priority to the lowest value (0x0F).
+        (++) Configures the SysTick IRQ priority to the lowest value (0x0FU).
         (++) Resets the SysTick Counter register.
         (++) Configures the SysTick Counter clock source to be Core Clock Source (HCLK).
         (++) Enables the SysTick Interrupt.
@@ -105,19 +105,19 @@
        ==========================================================================================================================
          NVIC_PriorityGroup   | NVIC_IRQChannelPreemptionPriority | NVIC_IRQChannelSubPriority  |       Description
        ==========================================================================================================================
-        NVIC_PRIORITYGROUP_0  |                0                  |            0-15             | 0 bits for pre-emption priority
+        NVIC_PRIORITYGROUP_0  |                0                  |            0U-15             | 0 bits for pre-emption priority
                               |                                   |                             | 4 bits for subpriority
        --------------------------------------------------------------------------------------------------------------------------
-        NVIC_PRIORITYGROUP_1  |                0-1                |            0-7              | 1 bits for pre-emption priority
+        NVIC_PRIORITYGROUP_1  |                0U-1                |            0U-7              | 1 bits for pre-emption priority
                               |                                   |                             | 3 bits for subpriority
        --------------------------------------------------------------------------------------------------------------------------
-        NVIC_PRIORITYGROUP_2  |                0-3                |            0-3              | 2 bits for pre-emption priority
+        NVIC_PRIORITYGROUP_2  |                0U-3                |            0U-3              | 2 bits for pre-emption priority
                               |                                   |                             | 2 bits for subpriority
        --------------------------------------------------------------------------------------------------------------------------
-        NVIC_PRIORITYGROUP_3  |                0-7                |            0-1              | 3 bits for pre-emption priority
+        NVIC_PRIORITYGROUP_3  |                0U-7                |            0U-1              | 3 bits for pre-emption priority
                               |                                   |                             | 1 bits for subpriority
        --------------------------------------------------------------------------------------------------------------------------
-        NVIC_PRIORITYGROUP_4  |                0-15               |            0                | 4 bits for pre-emption priority
+        NVIC_PRIORITYGROUP_4  |                0U-15               |            0                | 4 bits for pre-emption priority
                               |                                   |                             | 0 bits for subpriority
        ==========================================================================================================================
 
@@ -208,7 +208,7 @@ void HAL_NVIC_SetPriorityGrouping(uint32_t PriorityGroup)
   */
 void HAL_NVIC_SetPriority(IRQn_Type IRQn, uint32_t PreemptPriority, uint32_t SubPriority)
 {
-  uint32_t prioritygroup = 0x00;
+  uint32_t prioritygroup = 0x00U;
 
   /* Check the parameters */
   assert_param(IS_NVIC_SUB_PRIORITY(SubPriority));
@@ -294,8 +294,42 @@ uint32_t HAL_SYSTICK_Config(uint32_t TicksNumb)
   * @{
   */
 
-#if (__MPU_PRESENT == 1)
+#if (__MPU_PRESENT == 1U)
+
 /**
+  * @brief  Disables the MPU also clears the HFNMIENA bit (ARM recommendation)
+  * @retval None
+  */
+void HAL_MPU_Disable(void)
+{
+  /* Disable fault exceptions */
+  SCB->SHCSR &= ~SCB_SHCSR_MEMFAULTENA_Msk;
+
+  /* Disable the MPU */
+  MPU->CTRL = 0U;
+}
+
+/**
+  * @brief  Enables the MPU
+  * @param  MPU_Control: Specifies the control mode of the MPU during hard fault,
+  *          NMI, FAULTMASK and privileged access to the default memory
+  *          This parameter can be one of the following values:
+  *            @arg MPU_HFNMI_PRIVDEF_NONE
+  *            @arg MPU_HARDFAULT_NMI
+  *            @arg MPU_PRIVILEGED_DEFAULT
+  *            @arg MPU_HFNMI_PRIVDEF
+  * @retval None
+  */
+void HAL_MPU_Enable(uint32_t MPU_Control)
+{
+  /* Enable the MPU */
+  MPU->CTRL   = MPU_Control | MPU_CTRL_ENABLE_Msk;
+
+  /* Enable fault exceptions */
+  SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;
+}
+
+	/**
   * @brief  Initializes and configures the Region and the memory to be protected.
   * @param  MPU_Init: Pointer to a MPU_Region_InitTypeDef structure that contains
   *                the initialization and configuration information.
@@ -335,8 +369,8 @@ void HAL_MPU_ConfigRegion(MPU_Region_InitTypeDef *MPU_Init)
   }
   else
   {
-    MPU->RBAR = 0x00;
-    MPU->RASR = 0x00;
+    MPU->RBAR = 0x00U;
+    MPU->RASR = 0x00U;
   }
 }
 #endif /* __MPU_PRESENT */
@@ -404,7 +438,7 @@ void HAL_NVIC_SetPendingIRQ(IRQn_Type IRQn)
   */
 uint32_t HAL_NVIC_GetPendingIRQ(IRQn_Type IRQn)
 {
-  /* Return 1 if pending else 0 */
+  /* Return 1 if pending else 0U */
   return NVIC_GetPendingIRQ(IRQn);
 }
 
@@ -431,7 +465,7 @@ void HAL_NVIC_ClearPendingIRQ(IRQn_Type IRQn)
   */
 uint32_t HAL_NVIC_GetActive(IRQn_Type IRQn)
 {
-  /* Return 1 if active else 0 */
+  /* Return 1 if active else 0U */
   return NVIC_GetActive(IRQn);
 }
 

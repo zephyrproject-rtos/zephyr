@@ -2,16 +2,16 @@
   ******************************************************************************
   * @file    stm32f3xx.h
   * @author  MCD Application Team
-  * @version V2.3.0
-  * @date    29-April-2015
+  * @version V2.3.1
+  * @date    16-December-2016
   * @brief   CMSIS STM32F3xx Device Peripheral Access Layer Header File.
   *
   *          The file is the unique include file that the application programmer
   *          is using in the C source code, usually in main.c. This file contains:
   *           - Configuration section that allows to select:
   *              - The STM32F3xx device used in the target application
-  *              - To use or not the peripheral’s drivers in application code(i.e.
-  *                code will be based on direct access to peripheral’s registers
+  *              - To use or not the peripheralï¿½s drivers in application code(i.e.
+  *                code will be based on direct access to peripheralï¿½s registers
   *                rather than drivers API), this option is controlled by
   *                "#define USE_HAL_DRIVER"
   *
@@ -121,11 +121,11 @@
 #endif /* USE_HAL_DRIVER */
 
 /**
-  * @brief CMSIS Device version number V2.3.0
+  * @brief CMSIS Device version number V2.3.1
   */
 #define __STM32F3_CMSIS_VERSION_MAIN   (0x02) /*!< [31:24] main version */
 #define __STM32F3_CMSIS_VERSION_SUB1   (0x03) /*!< [23:16] sub1 version */
-#define __STM32F3_CMSIS_VERSION_SUB2   (0x00) /*!< [15:8]  sub2 version */
+#define __STM32F3_CMSIS_VERSION_SUB2   (0x01) /*!< [15:8]  sub2 version */
 #define __STM32F3_CMSIS_VERSION_RC     (0x00) /*!< [7:0]  release candidate */
 #define __STM32F3_CMSIS_VERSION        ((__STM32F3_CMSIS_VERSION_MAIN     << 24)\
                                        |(__STM32F3_CMSIS_VERSION_SUB1 << 16)\

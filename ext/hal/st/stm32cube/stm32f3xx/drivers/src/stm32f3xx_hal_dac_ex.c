@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_dac_ex.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   DACEx HAL module driver.
   *          This file provides firmware functions to manage the extended
   *          functionalities of the DAC peripheral.
@@ -81,7 +81,7 @@ static void DAC_DMAHalfConvCpltCh1(DMA_HandleTypeDef *hdma);
     defined(STM32F303xC) || defined(STM32F358xx)                         || \
     defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
     defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC channel 2 is available on top of DAC channel 1 */
+/* DAC channel 2 is available on top of DAC channel 1U */
 static void DAC_DMAConvCpltCh2(DMA_HandleTypeDef *hdma);
 static void DAC_DMAErrorCh2(DMA_HandleTypeDef *hdma);
 static void DAC_DMAHalfConvCpltCh2(DMA_HandleTypeDef *hdma);
@@ -108,7 +108,7 @@ static void DAC_DMAHalfConvCpltCh2(DMA_HandleTypeDef *hdma);
     [..]  This section provides functions allowing to:
       (+) Set the specified data holding register value for DAC channel.
       (+) Set the specified data holding register value for dual DAC channel
-	      (when DAC channel 2 is present in DAC 1)
+	      (when DAC channel 2 is present in DAC 1U)
 
 @endverbatim
   * @{
@@ -129,7 +129,7 @@ static void DAC_DMAHalfConvCpltCh2(DMA_HandleTypeDef *hdma);
   */
 HAL_StatusTypeDef HAL_DAC_SetValue(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t Alignment, uint32_t Data)
 {
-  __IO uint32_t tmp = 0;
+  __IO uint32_t tmp = 0U;
 
   /* Check the parameters */
   assert_param(IS_DAC_CHANNEL(Channel));
@@ -139,7 +139,7 @@ HAL_StatusTypeDef HAL_DAC_SetValue(DAC_HandleTypeDef* hdac, uint32_t Channel, ui
   tmp = (uint32_t) (hdac->Instance);
 
 /* DAC 1 has 1 or 2 channels - no DAC2 */
-/* DAC 1 has 2 channels 1 & 2 - DAC 2 has one channel 1 */
+/* DAC 1 has 2 channels 1U & 2U - DAC 2 has one channel 1U */
 
   if(Channel == DAC_CHANNEL_1)
   {
@@ -169,7 +169,7 @@ HAL_StatusTypeDef HAL_DAC_SetValue(DAC_HandleTypeDef* hdac, uint32_t Channel, ui
      defined(STM32F303xC) || defined(STM32F358xx)                         || \
      defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
      defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC channel 2 is present in DAC 1 */
+/* DAC channel 2 is present in DAC 1U */
 /**
   * @brief  Set the specified data holding register value for dual DAC channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -187,7 +187,7 @@ HAL_StatusTypeDef HAL_DAC_SetValue(DAC_HandleTypeDef* hdac, uint32_t Channel, ui
   */
 HAL_StatusTypeDef HAL_DACEx_DualSetValue(DAC_HandleTypeDef* hdac, uint32_t Alignment, uint32_t Data1, uint32_t Data2)
 {
-  uint32_t data = 0, tmp = 0;
+  uint32_t data = 0U, tmp = 0U;
 
   /* Check the parameters */
   assert_param(IS_DAC_ALIGN(Alignment));
@@ -197,11 +197,11 @@ HAL_StatusTypeDef HAL_DACEx_DualSetValue(DAC_HandleTypeDef* hdac, uint32_t Align
   /* Calculate and set dual DAC data holding register value */
   if (Alignment == DAC_ALIGN_8B_R)
   {
-    data = ((uint32_t)Data2 << 8) | Data1;
+    data = ((uint32_t)Data2 << 8U) | Data1;
   }
   else
   {
-    data = ((uint32_t)Data2 << 16) | Data1;
+    data = ((uint32_t)Data2 << 16U) | Data1;
   }
 
     tmp = (uint32_t) (hdac->Instance);
@@ -246,7 +246,7 @@ HAL_StatusTypeDef HAL_DACEx_DualSetValue(DAC_HandleTypeDef* hdac, uint32_t Align
      defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
      defined(STM32F373xC) || defined(STM32F378xx)
 
-/* DAC 1 has 2 channels 1 & 2 - DAC 2 has one channel 1 */
+/* DAC 1 has 2 channels 1U & 2U - DAC 2 has one channel 1U */
 /**
   * @brief  Enables DAC and starts conversion of channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -307,7 +307,7 @@ HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
 #if defined(STM32F302xE) || \
     defined(STM32F302xC) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
-/* DAC 1 has 1 channels 1 */
+/* DAC 1 has 1 channels 1U */
 /**
   * @brief  Enables DAC and starts conversion of channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -352,12 +352,12 @@ HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
        /* STM32F302xC                               || */
        /* STM32F301x8 || STM32F302x8 || STM32F318xx    */
 
-/* DAC 1 has 2 channels 1 & 2 - DAC 2 has one channel 1 */
+/* DAC 1 has 2 channels 1U & 2U - DAC 2 has one channel 1U */
 #if defined(STM32F303xE) || defined(STM32F398xx)                         || \
     defined(STM32F303xC) || defined(STM32F358xx)                         || \
     defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
     defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC 1 has 2 channels 1 & 2 */
+/* DAC 1 has 2 channels 1U & 2U */
 /**
   * @brief  Enables DAC and starts conversion of channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -377,7 +377,7 @@ HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
   */
 HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t* pData, uint32_t Length, uint32_t Alignment)
 {
-  uint32_t tmpreg = 0;
+  uint32_t tmpreg = 0U;
 
   /* Check the parameters */
   assert_param(IS_DAC_CHANNEL_INSTANCE(hdac->Instance, Channel));
@@ -403,7 +403,7 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
     /* Enable the selected DAC channel1 DMA request */
     SET_BIT(hdac->Instance->CR, DAC_CR_DMAEN1);
 
-    /* Case of use of channel 1 */
+    /* Case of use of channel 1U */
     switch(Alignment)
     {
       case DAC_ALIGN_12B_R:
@@ -436,7 +436,7 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
     /* Enable the selected DAC channel2 DMA request */
     SET_BIT(hdac->Instance->CR, DAC_CR_DMAEN2);
 
-    /* Case of use of channel 2 */
+    /* Case of use of channel 2U */
     switch(Alignment)
     {
       case DAC_ALIGN_12B_R:
@@ -491,7 +491,7 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
 #if defined(STM32F302xE) || \
     defined(STM32F302xC) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
-/* DAC 1 has 1 channel (channel 1)  */
+/* DAC 1 has 1 channel (channel 1U)  */
 /**
   * @brief  Enables DAC and starts conversion of channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -510,7 +510,7 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
   */
 HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t* pData, uint32_t Length, uint32_t Alignment)
 {
-  uint32_t tmpreg = 0;
+  uint32_t tmpreg = 0U;
 
   /* Check the parameters */
   assert_param(IS_DAC_CHANNEL_INSTANCE(hdac->Instance, Channel));
@@ -534,7 +534,7 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
   /* Enable the selected DAC channel1 DMA request */
   SET_BIT(hdac->Instance->CR, DAC_CR_DMAEN1);
 
-  /* Case of use of channel 1 */
+  /* Case of use of channel 1U */
   switch(Alignment)
   {
     case DAC_ALIGN_12B_R:
@@ -573,12 +573,12 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
        /* STM32F302xC                               || */
        /* STM32F301x8 || STM32F302x8 || STM32F318xx    */
 
-/* DAC 1 has 2 channels 1 & 2 - DAC 2 has one channel 1 */
+/* DAC 1 has 2 channels 1U & 2U - DAC 2 has one channel 1U */
 #if  defined(STM32F303xE) || defined(STM32F398xx)                         || \
      defined(STM32F303xC) || defined(STM32F358xx)                         || \
      defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
      defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC 1 has 2 channels 1 & 2 */
+/* DAC 1 has 2 channels 1U & 2U */
 /**
   * @brief  Returns the last data output value of the selected DAC channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -612,7 +612,7 @@ uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
 #if defined(STM32F302xE) || \
     defined(STM32F302xC) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
-/* DAC 1 has 1 channel (channel 1)  */
+/* DAC 1 has 1 channel (channel 1U)  */
 /**
   * @brief  Returns the last data output value of the selected DAC channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -642,7 +642,7 @@ uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
   */
 uint32_t HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac)
 {
-  uint32_t tmp = 0;
+  uint32_t tmp = 0U;
 
   tmp |= hdac->Instance->DOR1;
 
@@ -650,8 +650,8 @@ uint32_t HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac)
      defined(STM32F303xC) || defined(STM32F358xx)                         || \
      defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
      defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC channel 2 is present in DAC 1 */
-  tmp |= hdac->Instance->DOR2 << 16;
+/* DAC channel 2 is present in DAC 1U */
+  tmp |= hdac->Instance->DOR2 << 16U;
 #endif /* STM32F303xE || STM32F398xx                || */
        /* STM32F303xC || STM32F358xx                || */
        /* STM32F303x8 || STM32F334x8 || STM32F328xx || */
@@ -665,7 +665,7 @@ uint32_t HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac)
      defined(STM32F303xC) || defined(STM32F358xx)                         || \
      defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
      defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC channel 2 is available on top of DAC channel 1 */
+/* DAC channel 2 is available on top of DAC channel 1U */
 /**
   * @brief  Handles DAC interrupt request
   *         This function uses the interruption of DMA
@@ -678,7 +678,7 @@ void HAL_DAC_IRQHandler(struct __DAC_HandleTypeDef* hdac)
 {
   if(__HAL_DAC_GET_IT_SOURCE(hdac, DAC_IT_DMAUDR1))
   {
-    /* Check underrun flag of DAC channel 1 */
+    /* Check underrun flag of DAC channel 1U */
     if(__HAL_DAC_GET_FLAG(hdac, DAC_FLAG_DMAUDR1))
     {
       /* Change DAC state to error state */
@@ -700,7 +700,7 @@ void HAL_DAC_IRQHandler(struct __DAC_HandleTypeDef* hdac)
 
   if(__HAL_DAC_GET_IT_SOURCE(hdac, DAC_IT_DMAUDR2))
   {
-    /* Check underrun flag of DAC channel 1 */
+    /* Check underrun flag of DAC channel 1U */
     if (__HAL_DAC_GET_FLAG(hdac, DAC_FLAG_DMAUDR2))
     {
       /* Change DAC state to error state */
@@ -741,7 +741,7 @@ void HAL_DAC_IRQHandler(struct __DAC_HandleTypeDef* hdac)
 {
   if(__HAL_DAC_GET_IT_SOURCE(hdac, DAC_IT_DMAUDR1))
   {
-    /* Check underrun flag of DAC channel 1 */
+    /* Check underrun flag of DAC channel 1U */
     if(__HAL_DAC_GET_FLAG(hdac, DAC_FLAG_DMAUDR1))
     {
       /* Change DAC state to error state */
@@ -780,7 +780,7 @@ void HAL_DAC_IRQHandler(struct __DAC_HandleTypeDef* hdac)
 
 HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef* hdac, DAC_ChannelConfTypeDef* sConfig, uint32_t Channel)
 {
-  uint32_t tmpreg1 = 0, tmpreg2 = 0;
+  uint32_t tmpreg1 = 0U, tmpreg2 = 0U;
 
   /* Check the DAC parameters */
   assert_param(IS_DAC_TRIGGER(sConfig->DAC_Trigger));
@@ -791,7 +791,7 @@ HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef* hdac, DAC_ChannelConf
     /* Output Buffer (BOFF1) control */
     assert_param(IS_DAC_OUTPUT_BUFFER_STATE(sConfig->DAC_OutputBuffer));
   }
-  else /* DAC1 channel 2 & DAC2 channel 1 */
+  else /* DAC1 channel 2U & DAC2 channel 1U */
   {
     /* Output Switch (OUTEN) control */
     assert_param(IS_DAC_OUTPUT_SWITCH_STATE(sConfig->DAC_OutputSwitch));
@@ -823,7 +823,7 @@ HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef* hdac, DAC_ChannelConf
     tmpreg1 &= ~(((uint32_t)(DAC_CR_MAMP1 | DAC_CR_WAVE1 | DAC_CR_TSEL1 | DAC_CR_TEN1 | DAC_CR_BOFF1)) << Channel);
     tmpreg2 = (sConfig->DAC_Trigger | sConfig->DAC_OutputBuffer);
   }
-  else /* DAC1 channel 2 & DAC2 channel 1 */
+  else /* DAC1 channel 2U & DAC2 channel 1U */
   {
     /* Output Switch (OUTEN) control */
     tmpreg1 &= ~(((uint32_t)(DAC_CR_MAMP1 | DAC_CR_WAVE1 | DAC_CR_TSEL1 | DAC_CR_TEN1 | DAC_CR_OUTEN1)) << Channel);
@@ -955,7 +955,7 @@ HAL_StatusTypeDef HAL_DACEx_NoiseWaveGenerate(DAC_HandleTypeDef* hdac, uint32_t 
      defined(STM32F303xC) || defined(STM32F358xx)                         || \
      defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
      defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC channel 2 is available on top of DAC channel 1 */
+/* DAC channel 2 is available on top of DAC channel 1U */
 /**
   * @brief  Conversion complete callback in non blocking mode for Channel2
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -1086,7 +1086,7 @@ static void DAC_DMAErrorCh1(DMA_HandleTypeDef *hdma)
      defined(STM32F303xC) || defined(STM32F358xx)                         || \
      defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
      defined(STM32F373xC) || defined(STM32F378xx)
-/* DAC channel 2 is available on top of DAC channel 1 */
+/* DAC channel 2 is available on top of DAC channel 1U */
 /**
   * @brief  DMA conversion complete callback.
   * @param  hdma: pointer to DMA handle.

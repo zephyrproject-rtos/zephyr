@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_exti.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of EXTI LL module.
   ******************************************************************************
   * @attention
@@ -127,7 +127,9 @@ typedef struct
 #define LL_EXTI_LINE_16                EXTI_IMR_IM16          /*!< Extended line 16 */
 #endif
 #define LL_EXTI_LINE_17                EXTI_IMR_IM17          /*!< Extended line 17 */
+#if defined(EXTI_IMR_IM18)
 #define LL_EXTI_LINE_18                EXTI_IMR_IM18          /*!< Extended line 18 */
+#endif
 #define LL_EXTI_LINE_19                EXTI_IMR_IM19          /*!< Extended line 19 */
 #if defined(EXTI_IMR_IM20)
 #define LL_EXTI_LINE_20                EXTI_IMR_IM20          /*!< Extended line 20 */
@@ -167,14 +169,29 @@ typedef struct
 
 #if defined(EXTI_32_63_SUPPORT)
 #define LL_EXTI_LINE_32                EXTI_IMR2_IM32          /*!< Extended line 32 */
+#if defined(EXTI_IMR2_IM33)
 #define LL_EXTI_LINE_33                EXTI_IMR2_IM33          /*!< Extended line 33 */
+#endif
+#if defined(EXTI_IMR2_IM34)
 #define LL_EXTI_LINE_34                EXTI_IMR2_IM34          /*!< Extended line 34 */
+#endif
+#if defined(EXTI_IMR2_IM35)
 #define LL_EXTI_LINE_35                EXTI_IMR2_IM35          /*!< Extended line 35 */
+#endif
+#if defined(EXTI_IMR2_IM36)
 #define LL_EXTI_LINE_36                EXTI_IMR2_IM36          /*!< Extended line 36 */
+#endif
+#if defined(EXTI_IMR2_IM37)
 #define LL_EXTI_LINE_37                EXTI_IMR2_IM37          /*!< Extended line 37 */
+#endif
+#if defined(EXTI_IMR2_IM38)
 #define LL_EXTI_LINE_38                EXTI_IMR2_IM38          /*!< Extended line 38 */
+#endif
+#if defined(EXTI_IMR2_IM39)
 #define LL_EXTI_LINE_39                EXTI_IMR2_IM39          /*!< Extended line 39 */
+#endif
 #define LL_EXTI_LINE_ALL_32_63         EXTI_IMR2_IM            /*!< All Extended line not reserved*/
+
 #endif
 
 #define LL_EXTI_LINE_ALL               ((uint32_t)0xFFFFFFFFU)  /*!< All Extended line */

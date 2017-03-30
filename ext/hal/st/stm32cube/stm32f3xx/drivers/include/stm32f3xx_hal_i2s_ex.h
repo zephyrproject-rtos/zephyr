@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_i2s_ex.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of I2S HAL Extended module.
   ******************************************************************************
   * @attention
@@ -119,7 +119,7 @@
   * @retval None
   */
 #define __HAL_I2SEXT_CLEAR_OVRFLAG(__HANDLE__) do{(I2SxEXT((__HANDLE__)->Instance)->DR;\
-                                                  (I2SxEXT((__HANDLE__)->Instance)->SR;}while(0)
+                                                  (I2SxEXT((__HANDLE__)->Instance)->SR;}while(0U)
 /** @brief Clears the I2SExt UDR pending flag.
   * @param  __HANDLE__: specifies the I2S Handle.
   * @retval None

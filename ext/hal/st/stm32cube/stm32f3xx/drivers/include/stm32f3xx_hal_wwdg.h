@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_wwdg.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of WWDG HAL module.
   ******************************************************************************
   * @attention
@@ -69,10 +69,10 @@ typedef struct
                                This parameter can be a value of @ref WWDG_Prescaler */
 
   uint32_t Window;        /*!< Specifies the WWDG window value to be compared to the downcounter.
-                               This parameter must be a number Min_Data = 0x40 and Max_Data = 0x7F */
+                               This parameter must be a number Min_Data = 0x40 and Max_Data = 0x7FU */
 
   uint32_t Counter;       /*!< Specifies the WWDG free-running downcounter  value.
-                               This parameter must be a number between Min_Data = 0x40 and Max_Data = 0x7F */
+                               This parameter must be a number between Min_Data = 0x40 and Max_Data = 0x7FU */
 
   uint32_t EWIMode ;      /*!< Specifies if WWDG Early Wakeup Interupt is enable or not.
                                This parameter can be a value of @ref WWDG_EWI_Mode */
@@ -119,10 +119,10 @@ typedef struct
 /** @defgroup WWDG_Prescaler WWDG Prescaler
   * @{
   */
-#define WWDG_PRESCALER_1                    0x00000000u       /*!< WWDG counter clock = (PCLK1/4096)/1 */
-#define WWDG_PRESCALER_2                    WWDG_CFR_WDGTB_0  /*!< WWDG counter clock = (PCLK1/4096)/2 */
-#define WWDG_PRESCALER_4                    WWDG_CFR_WDGTB_1  /*!< WWDG counter clock = (PCLK1/4096)/4 */
-#define WWDG_PRESCALER_8                    WWDG_CFR_WDGTB    /*!< WWDG counter clock = (PCLK1/4096)/8 */
+#define WWDG_PRESCALER_1                    0x00000000u       /*!< WWDG counter clock = (PCLK1/4096U)/1U */
+#define WWDG_PRESCALER_2                    WWDG_CFR_WDGTB_0  /*!< WWDG counter clock = (PCLK1/4096U)/2U */
+#define WWDG_PRESCALER_4                    WWDG_CFR_WDGTB_1  /*!< WWDG counter clock = (PCLK1/4096U)/4U */
+#define WWDG_PRESCALER_8                    WWDG_CFR_WDGTB    /*!< WWDG counter clock = (PCLK1/4096U)/8U */
 /**
   * @}
   */

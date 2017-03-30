@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_nor.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   NOR HAL module driver.
   *          This file provides a generic firmware to drive NOR memories mounted
   *          as external device.
@@ -330,7 +330,7 @@ __weak void HAL_NOR_MspWait(NOR_HandleTypeDef *hnor, uint32_t Timeout)
   */
 HAL_StatusTypeDef HAL_NOR_Read_ID(NOR_HandleTypeDef *hnor, NOR_IDTypeDef *pNOR_ID)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -390,7 +390,7 @@ HAL_StatusTypeDef HAL_NOR_Read_ID(NOR_HandleTypeDef *hnor, NOR_IDTypeDef *pNOR_I
   */
 HAL_StatusTypeDef HAL_NOR_ReturnToReadMode(NOR_HandleTypeDef *hnor)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -440,7 +440,7 @@ HAL_StatusTypeDef HAL_NOR_ReturnToReadMode(NOR_HandleTypeDef *hnor)
   */
 HAL_StatusTypeDef HAL_NOR_Read(NOR_HandleTypeDef *hnor, uint32_t *pAddress, uint16_t *pData)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -499,7 +499,7 @@ HAL_StatusTypeDef HAL_NOR_Read(NOR_HandleTypeDef *hnor, uint32_t *pAddress, uint
   */
 HAL_StatusTypeDef HAL_NOR_Program(NOR_HandleTypeDef *hnor, uint32_t *pAddress, uint16_t *pData)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -560,7 +560,7 @@ HAL_StatusTypeDef HAL_NOR_Program(NOR_HandleTypeDef *hnor, uint32_t *pAddress, u
   */
 HAL_StatusTypeDef HAL_NOR_ReadBuffer(NOR_HandleTypeDef *hnor, uint32_t uwAddress, uint16_t *pData, uint32_t uwBufferSize)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -598,10 +598,10 @@ HAL_StatusTypeDef HAL_NOR_ReadBuffer(NOR_HandleTypeDef *hnor, uint32_t uwAddress
   NOR_WRITE(uwAddress, NOR_CMD_DATA_READ_RESET);
 
   /* Read buffer */
-  while( uwBufferSize > 0)
+  while( uwBufferSize > 0U)
   {
     *pData++ = *(__IO uint16_t *)uwAddress;
-    uwAddress += 2;
+    uwAddress += 2U;
     uwBufferSize--;
   }
 
@@ -632,7 +632,7 @@ HAL_StatusTypeDef HAL_NOR_ProgramBuffer(NOR_HandleTypeDef *hnor, uint32_t uwAddr
 {
   uint16_t * p_currentaddress = (uint16_t *)NULL;
   uint16_t * p_endaddress = (uint16_t *)NULL;
-  uint32_t lastloadedaddress = 0, deviceaddress = 0;
+  uint32_t lastloadedaddress = 0U, deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -666,7 +666,7 @@ HAL_StatusTypeDef HAL_NOR_ProgramBuffer(NOR_HandleTypeDef *hnor, uint32_t uwAddr
 
   /* Initialize variables */
   p_currentaddress  = (uint16_t*)((uint32_t)(uwAddress));
-  p_endaddress      = p_currentaddress + (uwBufferSize-1);
+  p_endaddress      = p_currentaddress + (uwBufferSize-1U);
   lastloadedaddress = (uint32_t)(uwAddress);
 
   /* Issue unlock command sequence */
@@ -675,7 +675,7 @@ HAL_StatusTypeDef HAL_NOR_ProgramBuffer(NOR_HandleTypeDef *hnor, uint32_t uwAddr
 
   /* Write Buffer Load Command */
   NOR_WRITE((uint32_t)(p_currentaddress), NOR_CMD_DATA_BUFFER_AND_PROG);
-  NOR_WRITE((uint32_t)(p_currentaddress), (uwBufferSize-1));
+  NOR_WRITE((uint32_t)(p_currentaddress), (uwBufferSize-1U));
 
   /* Load Data into NOR Buffer */
   while(p_currentaddress <= p_endaddress)
@@ -710,7 +710,7 @@ HAL_StatusTypeDef HAL_NOR_ProgramBuffer(NOR_HandleTypeDef *hnor, uint32_t uwAddr
   */
 HAL_StatusTypeDef HAL_NOR_Erase_Block(NOR_HandleTypeDef *hnor, uint32_t BlockAddress, uint32_t Address)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -769,7 +769,7 @@ HAL_StatusTypeDef HAL_NOR_Erase_Block(NOR_HandleTypeDef *hnor, uint32_t BlockAdd
   */
 HAL_StatusTypeDef HAL_NOR_Erase_Chip(NOR_HandleTypeDef *hnor, uint32_t Address)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -827,7 +827,7 @@ HAL_StatusTypeDef HAL_NOR_Erase_Chip(NOR_HandleTypeDef *hnor, uint32_t Address)
   */
 HAL_StatusTypeDef HAL_NOR_Read_CFI(NOR_HandleTypeDef *hnor, NOR_CFITypeDef *pNOR_CFI)
 {
-  uint32_t deviceaddress = 0;
+  uint32_t deviceaddress = 0U;
 
   /* Process Locked */
   __HAL_LOCK(hnor);
@@ -987,8 +987,8 @@ HAL_NOR_StateTypeDef HAL_NOR_GetState(NOR_HandleTypeDef *hnor)
 HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Address, uint32_t Timeout)
 {
   HAL_NOR_StatusTypeDef status = HAL_NOR_STATUS_ONGOING;
-  uint16_t tmp_sr1 = 0, tmp_sr2 = 0;
-  uint32_t tickstart = 0;
+  uint16_t tmp_sr1 = 0U, tmp_sr2 = 0U;
+  uint32_t tickstart = 0U;
 
   /* Poll on NOR memory Ready/Busy signal ------------------------------------*/
   HAL_NOR_MspWait(hnor, Timeout);
@@ -1000,7 +1000,7 @@ HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Addres
     /* Check for the Timeout */
     if(Timeout != HAL_MAX_DELAY)
     {
-      if((Timeout == 0)||((HAL_GetTick() - tickstart ) > Timeout))
+      if((Timeout == 0U)||((HAL_GetTick() - tickstart ) > Timeout))
     {
       status = HAL_NOR_STATUS_TIMEOUT;
     }

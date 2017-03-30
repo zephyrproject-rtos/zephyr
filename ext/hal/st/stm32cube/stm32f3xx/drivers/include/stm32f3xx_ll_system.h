@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_system.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of SYSTEM LL module.
   @verbatim
   ==============================================================================
@@ -205,8 +205,8 @@ extern "C" {
 #define LL_SYSCFG_TIM7_RMP_DMA1_CH4         ((SYSCFG_CFGR1_TIM7DAC1Ch2_DMA_RMP << 8U) | SYSCFG_CFGR1_TIM7DAC1Ch2_DMA_RMP)    /*!< TIM7 DMA requests mapped on DMA1 channel 4 */
 #endif /*SYSCFG_CFGR1_TIM7DAC1Ch2_DMA_RMP*/
 #if defined(SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP)
-#define LL_SYSCFG_TIM18_RMP_DMA2_CH4        ((SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP << 8U) | (uint32_t)0x00000000U)              /*!< TIM18 DMA requests mapped on DMA2 channel 5 */
-#define LL_SYSCFG_TIM18_RMP_DMA1_CH4        ((SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP << 8U) | SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP)  /*!< TIM18 DMA requests mapped on DMA1 channel 5 */
+#define LL_SYSCFG_TIM18_RMP_DMA2_CH5        ((SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP << 8U) | (uint32_t)0x00000000U)              /*!< TIM18 DMA requests mapped on DMA2 channel 5 */
+#define LL_SYSCFG_TIM18_RMP_DMA1_CH5        ((SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP << 8U) | SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP)  /*!< TIM18 DMA requests mapped on DMA1 channel 5 */
 #endif /*SYSCFG_CFGR1_TIM18DAC2Ch1_DMA_RMP*/
 /**
   * @}
@@ -640,7 +640,7 @@ __STATIC_INLINE void LL_SYSCFG_SetRemapDMA_DAC(uint32_t Remap)
   *         @arg @ref LL_SYSCFG_TIM17_RMP_DMA1_CH1 or @ref LL_SYSCFG_TIM17_RMP_DMA1_CH7
   *         @arg @ref LL_SYSCFG_TIM6_RMP_DMA2_CH3 or @ref LL_SYSCFG_TIM6_RMP_DMA1_CH3
   *         @arg @ref LL_SYSCFG_TIM7_RMP_DMA2_CH4 or @ref LL_SYSCFG_TIM7_RMP_DMA1_CH4 (*)
-  *         @arg @ref LL_SYSCFG_TIM18_RMP_DMA2_CH4 or @ref LL_SYSCFG_TIM18_RMP_DMA1_CH4 (*)
+  *         @arg @ref LL_SYSCFG_TIM18_RMP_DMA2_CH5 or @ref LL_SYSCFG_TIM18_RMP_DMA1_CH5 (*)
   *
   *         (*) value not defined in all devices.
   * @retval None
@@ -845,6 +845,186 @@ __STATIC_INLINE void LL_SYSCFG_EnableFastModePlus(uint32_t ConfigFastModePlus)
 __STATIC_INLINE void LL_SYSCFG_DisableFastModePlus(uint32_t ConfigFastModePlus)
 {
   CLEAR_BIT(SYSCFG->CFGR1, ConfigFastModePlus);
+}
+
+/**
+  * @brief  Enable Floating Point Unit Invalid operation Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_0      LL_SYSCFG_EnableIT_FPU_IOC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_EnableIT_FPU_IOC(void)
+{
+  SET_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_0);
+}
+
+/**
+  * @brief  Enable Floating Point Unit Divide-by-zero Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_1      LL_SYSCFG_EnableIT_FPU_DZC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_EnableIT_FPU_DZC(void)
+{
+  SET_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_1);
+}
+
+/**
+  * @brief  Enable Floating Point Unit Underflow Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_2      LL_SYSCFG_EnableIT_FPU_UFC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_EnableIT_FPU_UFC(void)
+{
+  SET_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_2);
+}
+
+/**
+  * @brief  Enable Floating Point Unit Overflow Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_3      LL_SYSCFG_EnableIT_FPU_OFC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_EnableIT_FPU_OFC(void)
+{
+  SET_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_3);
+}
+
+/**
+  * @brief  Enable Floating Point Unit Input denormal Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_4      LL_SYSCFG_EnableIT_FPU_IDC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_EnableIT_FPU_IDC(void)
+{
+  SET_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_4);
+}
+
+/**
+  * @brief  Enable Floating Point Unit Inexact Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_5      LL_SYSCFG_EnableIT_FPU_IXC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_EnableIT_FPU_IXC(void)
+{
+  SET_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_5);
+}
+
+/**
+  * @brief  Disable Floating Point Unit Invalid operation Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_0      LL_SYSCFG_DisableIT_FPU_IOC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_DisableIT_FPU_IOC(void)
+{
+  CLEAR_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_0);
+}
+
+/**
+  * @brief  Disable Floating Point Unit Divide-by-zero Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_1      LL_SYSCFG_DisableIT_FPU_DZC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_DisableIT_FPU_DZC(void)
+{
+  CLEAR_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_1);
+}
+
+/**
+  * @brief  Disable Floating Point Unit Underflow Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_2      LL_SYSCFG_DisableIT_FPU_UFC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_DisableIT_FPU_UFC(void)
+{
+  CLEAR_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_2);
+}
+
+/**
+  * @brief  Disable Floating Point Unit Overflow Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_3      LL_SYSCFG_DisableIT_FPU_OFC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_DisableIT_FPU_OFC(void)
+{
+  CLEAR_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_3);
+}
+
+/**
+  * @brief  Disable Floating Point Unit Input denormal Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_4      LL_SYSCFG_DisableIT_FPU_IDC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_DisableIT_FPU_IDC(void)
+{
+  CLEAR_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_4);
+}
+
+/**
+  * @brief  Disable Floating Point Unit Inexact Interrupt
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_5      LL_SYSCFG_DisableIT_FPU_IXC
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_DisableIT_FPU_IXC(void)
+{
+  CLEAR_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_5);
+}
+
+/**
+  * @brief  Check if Floating Point Unit Invalid operation Interrupt source is enabled or disabled.
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_0      LL_SYSCFG_IsEnabledIT_FPU_IOC
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_IOC(void)
+{
+  return (READ_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_0) == (SYSCFG_CFGR1_FPU_IE_0));
+}
+
+/**
+  * @brief  Check if Floating Point Unit Divide-by-zero Interrupt source is enabled or disabled.
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_1      LL_SYSCFG_IsEnabledIT_FPU_DZC
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_DZC(void)
+{
+  return (READ_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_1) == (SYSCFG_CFGR1_FPU_IE_1));
+}
+
+/**
+  * @brief  Check if Floating Point Unit Underflow Interrupt source is enabled or disabled.
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_2      LL_SYSCFG_IsEnabledIT_FPU_UFC
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_UFC(void)
+{
+  return (READ_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_2) == (SYSCFG_CFGR1_FPU_IE_2));
+}
+
+/**
+  * @brief  Check if Floating Point Unit Overflow Interrupt source is enabled or disabled.
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_3      LL_SYSCFG_IsEnabledIT_FPU_OFC
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_OFC(void)
+{
+  return (READ_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_3) == (SYSCFG_CFGR1_FPU_IE_3));
+}
+
+/**
+  * @brief  Check if Floating Point Unit Input denormal Interrupt source is enabled or disabled.
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_4      LL_SYSCFG_IsEnabledIT_FPU_IDC
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_IDC(void)
+{
+  return (READ_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_4) == (SYSCFG_CFGR1_FPU_IE_4));
+}
+
+/**
+  * @brief  Check if Floating Point Unit Inexact Interrupt source is enabled or disabled.
+  * @rmtoll SYSCFG_CFGR1 FPU_IE_5      LL_SYSCFG_IsEnabledIT_FPU_IXC
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_IXC(void)
+{
+  return (READ_BIT(SYSCFG->CFGR1, SYSCFG_CFGR1_FPU_IE_5) == (SYSCFG_CFGR1_FPU_IE_5));
 }
 
 /**

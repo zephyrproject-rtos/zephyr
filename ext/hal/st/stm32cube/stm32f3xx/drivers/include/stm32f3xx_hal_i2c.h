@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_i2c.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of I2C HAL module.
   ******************************************************************************
   * @attention
@@ -245,8 +245,8 @@ typedef struct __I2C_HandleTypeDef
 /** @defgroup I2C_XFEROPTIONS  I2C Sequential Transfer Options
   * @{
   */
-#define I2C_NO_OPTION_FRAME             (0xFFFF0000U)
 #define I2C_FIRST_FRAME                 ((uint32_t)I2C_SOFTEND_MODE)
+#define I2C_FIRST_AND_NEXT_FRAME        ((uint32_t)(I2C_RELOAD_MODE | I2C_SOFTEND_MODE))
 #define I2C_NEXT_FRAME                  ((uint32_t)(I2C_RELOAD_MODE | I2C_SOFTEND_MODE))
 #define I2C_FIRST_AND_LAST_FRAME        ((uint32_t)I2C_AUTOEND_MODE)
 #define I2C_LAST_FRAME                  ((uint32_t)I2C_AUTOEND_MODE)
@@ -658,6 +658,7 @@ uint32_t             HAL_I2C_GetError(I2C_HandleTypeDef *hi2c);
                                          ((REQUEST) == I2C_NO_STARTSTOP))
 
 #define IS_I2C_TRANSFER_OPTIONS_REQUEST(REQUEST)  (((REQUEST) == I2C_FIRST_FRAME)          || \
+                                                   ((REQUEST) == I2C_FIRST_AND_NEXT_FRAME) || \
                                                    ((REQUEST) == I2C_NEXT_FRAME)           || \
                                                    ((REQUEST) == I2C_FIRST_AND_LAST_FRAME) || \
                                                    ((REQUEST) == I2C_LAST_FRAME))

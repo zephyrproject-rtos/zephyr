@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_pwr_ex.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Extended PWR HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Power Controller (PWR) peripheral:
@@ -59,10 +59,10 @@
 /** @defgroup PWREx_Private_Constants PWR Extended Private Constants
   * @{
   */
-#define PVD_MODE_IT               ((uint32_t)0x00010000)
-#define PVD_MODE_EVT              ((uint32_t)0x00020000)
-#define PVD_RISING_EDGE           ((uint32_t)0x00000001)
-#define PVD_FALLING_EDGE          ((uint32_t)0x00000002)
+#define PVD_MODE_IT               (0x00010000U)
+#define PVD_MODE_EVT              (0x00020000U)
+#define PVD_RISING_EDGE           (0x00000001U)
+#define PVD_FALLING_EDGE          (0x00000002U)
 /**
   * @}
   */
@@ -109,7 +109,7 @@
           In Stop mode, the regulator is powered off. The contents of the registers and SRAM
           are lost except for the Standby circuitry and the Backup Domain.
           Note: in the STM32F3x8xx devices, the voltage regulator is bypassed and the
-          microcontroller must be powered from a nominal VDD = 1.8V +/-8% voltage.
+          microcontroller must be powered from a nominal VDD = 1.8V +/-8U% voltage.
 
 
       (+) A PVDO flag is available to indicate if VDD/VDDA is higher or lower
