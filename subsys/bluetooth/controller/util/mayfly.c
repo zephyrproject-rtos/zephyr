@@ -9,8 +9,6 @@
 #include "memq.h"
 #include "mayfly.h"
 
-#include "config.h"
-
 static struct {
 	void *head;
 	void *tail;

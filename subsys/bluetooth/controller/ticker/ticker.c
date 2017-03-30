@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <soc.h>
 
-#include "util/config.h"
 #include "hal/cntr.h"
 #include "ticker.h"
 
@@ -1181,34 +1180,40 @@ static inline void ticker_job(struct ticker_instance *instance)
 
 static uint8_t ticker_instance0_caller_id_get(uint8_t user_id)
 {
-	if (user_id == TICKER_MAYFLY_CALL_ID_PROGRAM) {
-		return CALL_ID_USER;
-	} else if (user_id == TICKER_MAYFLY_CALL_ID_JOB0) {
-		return CALL_ID_JOB;
-	} else if (user_id == TICKER_MAYFLY_CALL_ID_WORKER0) {
+	switch (user_id) {
+	case MAYFLY_CALL_ID_0:
 		return CALL_ID_WORKER;
-	} else if (user_id == TICKER_MAYFLY_CALL_ID_TRIGGER) {
-		return CALL_ID_TRIGGER;
-	}
 
-	LL_ASSERT(0);
+	case MAYFLY_CALL_ID_1:
+		return CALL_ID_JOB;
+
+	case MAYFLY_CALL_ID_PROGRAM:
+		return CALL_ID_USER;
+
+	case MAYFLY_CALL_ID_2:
+	default:
+		LL_ASSERT(0);
+		break;
+	}
 
 	return 0;
 }
 
 static uint8_t ticker_instance1_caller_id_get(uint8_t user_id)
 {
-	if (user_id == TICKER_MAYFLY_CALL_ID_PROGRAM) {
-		return CALL_ID_USER;
-	} else if (user_id == TICKER_MAYFLY_CALL_ID_JOB1) {
+	switch (user_id) {
+	case MAYFLY_CALL_ID_2:
 		return CALL_ID_JOB;
-	} else if (user_id == TICKER_MAYFLY_CALL_ID_WORKER1) {
-		return CALL_ID_WORKER;
-	} else if (user_id == TICKER_MAYFLY_CALL_ID_TRIGGER) {
-		return CALL_ID_TRIGGER;
-	}
 
-	LL_ASSERT(0);
+	case MAYFLY_CALL_ID_PROGRAM:
+		return CALL_ID_USER;
+
+	case MAYFLY_CALL_ID_0:
+	case MAYFLY_CALL_ID_1:
+	default:
+		LL_ASSERT(0);
+		break;
+	}
 
 	return 0;
 }
@@ -1232,24 +1237,8 @@ static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_worker
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
-				       TICKER_MAYFLY_CALL_ID_WORKER0,
-				       chain,
-				       &m);
-		}
-		break;
-
-		case CALL_ID_JOB:
-		{
-			static void *link[2];
-			static struct mayfly m = {
-				0, 0, link,
-				(void *)&_instance[0],
-				(void *)ticker_job
-			};
-
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
-				       TICKER_MAYFLY_CALL_ID_JOB0,
+			mayfly_enqueue(MAYFLY_CALL_ID_0,
+				       MAYFLY_CALL_ID_0,
 				       chain,
 				       &m);
 		}
@@ -1272,8 +1261,8 @@ static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_job
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_WORKER0,
-				       TICKER_MAYFLY_CALL_ID_JOB0,
+			mayfly_enqueue(MAYFLY_CALL_ID_0,
+				       MAYFLY_CALL_ID_1,
 				       chain,
 				       &m);
 		}
@@ -1296,8 +1285,8 @@ static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_worker
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB0,
-				       TICKER_MAYFLY_CALL_ID_WORKER0,
+			mayfly_enqueue(MAYFLY_CALL_ID_1,
+				       MAYFLY_CALL_ID_0,
 				       chain,
 				       &m);
 		}
@@ -1312,8 +1301,33 @@ static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_job
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB0,
-				       TICKER_MAYFLY_CALL_ID_JOB0,
+			mayfly_enqueue(MAYFLY_CALL_ID_1,
+				       MAYFLY_CALL_ID_1,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	case CALL_ID_USER:
+		switch (callee_id) {
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[0],
+				(void *)ticker_job
+			};
+
+			/* TODO: scheduler lock, if OS used */
+			mayfly_enqueue(MAYFLY_CALL_ID_PROGRAM,
+				       MAYFLY_CALL_ID_1,
 				       chain,
 				       &m);
 		}
@@ -1326,28 +1340,7 @@ static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
 		break;
 
 	default:
-		switch (callee_id) {
-		case CALL_ID_JOB:
-		{
-			static void *link[2];
-			static struct mayfly m = {
-				0, 0, link,
-				(void *)&_instance[0],
-				(void *)ticker_job
-			};
-
-			/* TODO: scheduler lock, if OS used */
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_PROGRAM,
-				       TICKER_MAYFLY_CALL_ID_JOB0,
-				       chain,
-				       &m);
-		}
-		break;
-
-		default:
-			LL_ASSERT(0);
-			break;
-		}
+		LL_ASSERT(0);
 		break;
 	}
 }
@@ -1371,24 +1364,8 @@ static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_worker
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
-				       TICKER_MAYFLY_CALL_ID_WORKER1,
-				       chain,
-				       &m);
-		}
-		break;
-
-		case CALL_ID_JOB:
-		{
-			static void *link[2];
-			static struct mayfly m = {
-				0, 0, link,
-				(void *)&_instance[1],
-				(void *)ticker_job
-			};
-
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_TRIGGER,
-				       TICKER_MAYFLY_CALL_ID_JOB1,
+			mayfly_enqueue(MAYFLY_CALL_ID_0,
+				       MAYFLY_CALL_ID_2,
 				       chain,
 				       &m);
 		}
@@ -1411,8 +1388,8 @@ static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_job
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_WORKER1,
-				       TICKER_MAYFLY_CALL_ID_JOB1,
+			mayfly_enqueue(MAYFLY_CALL_ID_2,
+				       MAYFLY_CALL_ID_2,
 				       chain,
 				       &m);
 		}
@@ -1435,8 +1412,8 @@ static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_worker
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB1,
-				       TICKER_MAYFLY_CALL_ID_WORKER1,
+			mayfly_enqueue(MAYFLY_CALL_ID_2,
+				       MAYFLY_CALL_ID_2,
 				       chain,
 				       &m);
 		}
@@ -1451,8 +1428,33 @@ static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
 				(void *)ticker_job
 			};
 
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_JOB1,
-				       TICKER_MAYFLY_CALL_ID_JOB1,
+			mayfly_enqueue(MAYFLY_CALL_ID_2,
+				       MAYFLY_CALL_ID_2,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+
+	case CALL_ID_USER:
+		switch (callee_id) {
+		case CALL_ID_JOB:
+		{
+			static void *link[2];
+			static struct mayfly m = {
+				0, 0, link,
+				(void *)&_instance[1],
+				(void *)ticker_job
+			};
+
+			/* TODO: scheduler lock, if OS used */
+			mayfly_enqueue(MAYFLY_CALL_ID_PROGRAM,
+				       MAYFLY_CALL_ID_2,
 				       chain,
 				       &m);
 		}
@@ -1465,28 +1467,7 @@ static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
 		break;
 
 	default:
-		switch (callee_id) {
-		case CALL_ID_JOB:
-		{
-			static void *link[2];
-			static struct mayfly m = {
-				0, 0, link,
-				(void *)&_instance[1],
-				(void *)ticker_job
-			};
-
-			/* TODO: scheduler lock, if OS used */
-			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_PROGRAM,
-				       TICKER_MAYFLY_CALL_ID_JOB1,
-				       chain,
-				       &m);
-		}
-		break;
-
-		default:
-			LL_ASSERT(0);
-			break;
-		}
+		LL_ASSERT(0);
 		break;
 	}
 }

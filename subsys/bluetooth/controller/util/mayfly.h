@@ -8,6 +8,13 @@
 #ifndef _MAYFLY_H_
 #define _MAYFLY_H_
 
+#define MAYFLY_CALL_ID_0       0
+#define MAYFLY_CALL_ID_1       1
+#define MAYFLY_CALL_ID_2       2
+#define MAYFLY_CALL_ID_PROGRAM 3
+#define MAYFLY_CALLER_COUNT    4
+#define MAYFLY_CALLEE_COUNT    4
+
 struct mayfly {
 	uint8_t volatile _req;
 	uint8_t _ack;

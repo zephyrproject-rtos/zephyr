@@ -25,7 +25,6 @@
 #include "hal/radio.h"
 #include "hal/debug.h"
 
-#include "util/config.h"
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/mayfly.h"
