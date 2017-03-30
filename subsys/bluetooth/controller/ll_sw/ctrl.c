@@ -4192,9 +4192,9 @@ static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
 	} else
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
+	{
 	/* Ticker Job Silence */
 #if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
-	{
 		uint32_t ticker_status;
 
 		ticker_status =
@@ -4203,8 +4203,8 @@ static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
 					ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
-	}
 #endif
+	}
 
 	DEBUG_RADIO_START_A(0);
 }
@@ -5696,9 +5696,9 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 	} else
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
+	{
 	/* Ticker Job Silence */
 #if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
-	{
 		uint32_t ticker_status;
 
 		ticker_status =
@@ -5707,8 +5707,8 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 					    ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
-	}
 #endif
+	}
 
 	/* Route the tx packet to respective connections */
 	packet_tx_enqueue(2);
@@ -5833,9 +5833,9 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 	} else
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
+	{
 	/* Ticker Job Silence */
 #if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
-	{
 		uint32_t ticker_status;
 
 		ticker_status =
@@ -5844,8 +5844,8 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 					    ticker_job_disable, NULL);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
-	}
 #endif
+	}
 
 	DEBUG_RADIO_START_M(0);
 }
