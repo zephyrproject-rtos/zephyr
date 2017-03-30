@@ -1,0 +1,11 @@
+# Kconfig - CC3220 SDK HAL configuration
+
+config HAS_CC3220SDK
+	bool
+
+menuconfig CC3220SDK
+	bool "TI CC3220 SDK support"
+	default n
+	depends on HAS_CC3220SDK
+	help
+	Build required peripheral driverlib files from the CC3220 SDK

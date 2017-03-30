@@ -1,7 +1,7 @@
 # Kconfig - external HAL source code configuration options
 
 #
-# Copyright (c) 2016 Linaro Ltd.
+# Copyright (c) 2016-2017 Linaro Ltd.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,5 +23,7 @@ source "ext/hal/qmsi/Kconfig"
 source "ext/hal/st/stm32cube/Kconfig"
 
 source "ext/hal/ti/cc3200sdk/Kconfig"
+
+source "ext/hal/ti/cc3220sdk/Kconfig"
 
 endmenu
