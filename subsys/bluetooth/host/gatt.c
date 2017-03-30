@@ -1481,15 +1481,6 @@ static void gatt_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	params->func(conn, err, params);
 }
 
-static bool write_signed_allowed(struct bt_conn *conn)
-{
-#if defined(CONFIG_BLUETOOTH_SMP)
-	return conn->encrypt == 0;
-#else
-	return false;
-#endif /* CONFIG_BLUETOOTH_SMP */
-}
-
 int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 				   const void *data, uint16_t length, bool sign)
 {
@@ -1503,7 +1494,18 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 		return -ENOTCONN;
 	}
 
-	if (sign && write_signed_allowed(conn)) {
+#if defined(CONFIG_BLUETOOTH_SMP)
+	if (conn->encrypt) {
+		/* Don't need to sign if already encrypted */
+		sign = false;
+	}
+#else
+	if (sign) {
+		return -EOPNOTSUPP;
+	}
+#endif
+
+	if (sign) {
 		buf = bt_att_create_pdu(conn, BT_ATT_OP_SIGNED_WRITE_CMD,
 					sizeof(*cmd) + length + 12);
 	} else {
