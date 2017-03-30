@@ -10,16 +10,6 @@ if BOARD_FRDM_K64F
 config BOARD
 	default frdm_k64f
 
-if !HAS_DTS
-
-config FLASH_SIZE
-	default 1024
-
-config SRAM_SIZE
-	default 192
-
-endif # !HAS_DTS
-
 config OSC_XTAL0_FREQ
 	default 50000000
 

@@ -17,20 +17,6 @@ config NUM_IRQS
 	int
 	default 45
 
-if !HAS_DTS
-
-config NUM_IRQ_PRIO_BITS
-	int
-	default 3
-
-config SRAM_BASE_ADDRESS
-	default 0x20000000
-
-config FLASH_BASE_ADDRESS
-	default 0x00000000
-
-endif # !HAS_DTS
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 24000000
