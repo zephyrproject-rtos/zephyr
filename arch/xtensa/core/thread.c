@@ -17,12 +17,11 @@ extern void _xt_user_exit(void);
 #if CONFIG_MICROKERNEL
 extern FUNC_NORETURN void _TaskAbort(void);
 #endif
-extern void fiber_abort(void);
 
 #if defined(CONFIG_THREAD_MONITOR)
-#define THREAD_MONITOR_INIT(tcs) _thread_monitor_init(tcs)
+#define THREAD_MONITOR_INIT(thread) _thread_monitor_init(thread)
 #else
-#define THREAD_MONITOR_INIT(tcs) \
+#define THREAD_MONITOR_INIT(thread) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif
@@ -37,20 +36,19 @@ extern void fiber_abort(void);
  * @return N/A
  */
 
-static inline void _thread_monitor_init(struct tcs *tcs)
+static inline void _thread_monitor_init(struct k_thread *thread)
 {
 	unsigned int key;
 
 	/*
 	 * Add the newly initialized thread to head of the list of threads.
 	 * This singly linked list of threads maintains ALL the threads in the
-	 * system:
-	 * both tasks and fibers regardless of whether they are runnable.
+	 * system regardless of whether they are runnable.
 	 */
 
 	key = irq_lock();
-	tcs->next_thread = _nanokernel.threads;
-	_nanokernel.threads = tcs;
+	thread->next_thread = _nanokernel.threads;
+	_nanokernel.threads = thread;
 	irq_unlock(key);
 }
 #endif /* CONFIG_THREAD_MONITOR */
@@ -58,7 +56,7 @@ static inline void _thread_monitor_init(struct tcs *tcs)
 /*
  * @brief Initialize a new thread from its stack space
  *
- * The control structure (TCS) is put at the lower address of the stack. An
+ * The struct k_thread is put at the lower address of the stack. An
  * initial context, to be "restored" by __return_from_coop(), is put at
  * the other end of the stack, and thus reusable by the stack when not
  * needed anymore.
@@ -75,7 +73,7 @@ static inline void _thread_monitor_init(struct tcs *tcs)
  * @param p1 first param to entry point
  * @param p2 second param to entry point
  * @param p3 third param to entry point
- * @param fiber prio, -1 for task
+ * @param prio thread priority
  * @param options is unused (saved for future expansion)
  *
  * @return N/A
@@ -89,10 +87,10 @@ void _new_thread(char *pStack, size_t stackSize,
 	/* Align stack end to maximum alignment requirement. */
 	char *stackEnd = (char *)ROUND_DOWN(pStack + stackSize,
 		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
-	/* TCS is located at top of stack while frames are located at end
+	/* k_thread is located at top of stack while frames are located at end
 	 * of it
 	 */
-	struct tcs *tcs = (struct tcs *)(pStack);
+	struct k_thread *thread = (struct k_thread *)(pStack);
 #if XCHAL_CP_NUM > 0
 	uint32_t *cpSA;
 #endif
@@ -105,16 +103,16 @@ void _new_thread(char *pStack, size_t stackSize,
 	memset(pStack, 0xaa, stackSize);
 #endif
 #if XCHAL_CP_NUM > 0
-	/* Coprocessor's stack is allocated just after the TCS */
-	tcs->arch.preempCoprocReg.cpStack = pStack + sizeof(struct k_thread);
-	cpSA = (uint32_t *)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA);
+	/* Coprocessor's stack is allocated just after the k_thread */
+	thread->arch.preempCoprocReg.cpStack = pStack + sizeof(struct k_thread);
+	cpSA = (uint32_t *)(thread->arch.preempCoprocReg.cpStack + XT_CP_ASA);
 	/* Coprocessor's save area alignment is at leat 16 bytes */
 	*cpSA = ROUND_UP(cpSA + 1,
 		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
 #ifdef CONFIG_DEBUG
-	printk("cpStack  = %p\n", tcs->arch.preempCoprocReg.cpStack);
+	printk("cpStack  = %p\n", thread->arch.preempCoprocReg.cpStack);
 	printk("cpAsa    = %p\n",
-	       *(void **)(tcs->arch.preempCoprocReg.cpStack + XT_CP_ASA));
+	       *(void **)(thread->arch.preempCoprocReg.cpStack + XT_CP_ASA));
 #endif
 #endif
 	/* Thread's first frame alignment is granted as both operands are
@@ -155,25 +153,27 @@ void _new_thread(char *pStack, size_t stackSize,
 	pInitCtx->a9 = (uint32_t)p3;
 	pInitCtx->ps = PS_UM | PS_EXCM | PS_WOE | PS_CALLINC(1);
 #endif
-	tcs->callee_saved.topOfStack = pInitCtx;
-	tcs->arch.flags = 0;
-	_init_thread_base(&tcs->base, prio, _THREAD_PRESTART, options);
+	thread->callee_saved.topOfStack = pInitCtx;
+	thread->arch.flags = 0;
+	_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
 	/* static threads overwrite it afterwards with real value */
-	tcs->init_data = NULL;
-	tcs->fn_abort = NULL;
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
-	tcs->custom_data = NULL;
+	thread->custom_data = NULL;
 #endif
 #ifdef CONFIG_THREAD_MONITOR
 	/*
-	 * In debug mode tcs->entry give direct access to the thread entry
+	 * In debug mode thread->entry give direct access to the thread entry
 	 * and the corresponding parameters.
 	 */
-	tcs->entry = (struct __thread_entry *)(pInitCtx);
+	thread->entry = (struct __thread_entry *)(pInitCtx);
 #endif
-	/* initial values in all other registers/TCS entries are irrelevant */
+	/* initial values in all other registers/k_thread entries are
+	 * irrelevant
+	 */
 
-	THREAD_MONITOR_INIT(tcs);
+	THREAD_MONITOR_INIT(thread);
 }
 

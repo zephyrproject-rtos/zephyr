@@ -61,7 +61,7 @@ struct _caller_saved {
 	 * and exception stubs (_ExcEnt/_ExcEnter) use the stack to save and
 	 * restore the values of these registers in order to support interrupt
 	 * nesting.  The stubs do _not_ copy the saved values from the stack
-	 * into the TCS.
+	 * into the k_thread.
 	 */
 };
 
@@ -77,7 +77,7 @@ struct _callee_saved {
 	/*
 	 * The following registers are considered non-volatile, i.e.
 	 * callee-saved, but their values are pushed onto the stack rather than
-	 * stored in the TCS structure:
+	 * stored in the k_thread structure:
 	 */
 	uint32_t retval; /* a2 */
 	XtExcFrame *topOfStack; /* a1 = sp */
@@ -121,16 +121,14 @@ typedef struct s_preempCoprocReg {
 
 /*
  * The thread control stucture definition.  It contains the
- * various fields to manage a _single_ thread. The TCS will be aligned
- * to the appropriate architecture specific boundary via the
- * _new_thread() call.
+ * various fields to manage a _single_ thread.
  */
 struct _thread_arch {
 	/*
 	 * See the above flag definitions above for valid bit settings.  This
-	 * field must remain near the start of struct tcs, specifically before
-	 * any #ifdef'ed fields since the host tools currently use a fixed
-	 * offset to read the 'flags' field.
+	 * field must remain near the start of struct k_thread, specifically
+	 * before any #ifdef'ed fields since the host tools currently use a
+	 * fixed offset to read the 'flags' field.
 	 */
 	uint32_t flags;
 #ifdef CONFIG_THREAD_CUSTOM_DATA
@@ -140,24 +138,24 @@ struct _thread_arch {
 	/* thread entry and parameters description */
 	struct __thread_entry *entry;
 
-	/* next item in list of ALL fiber+tasks */
-	struct tcs *next_thread;
+	/* next item in list of ALL threads n*/
+	struct k_thread *next_thread;
 #endif
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif
 	/*
 	 * The location of all floating point related structures/fields MUST be
-	 * located at the end of struct tcs.  This way only the fibers/tasks
+	 * located at the end of struct k_thread.  This way only the threads
 	 * that actually utilize non-integer capabilities need to account for
 	 * the increased memory required for storing FP state when sizing
 	 * stacks.
 	 *
-	 * Given that stacks "grow down" on Xtensa, and the TCS is located at
-	 * the start of a thread's "workspace" memory, the stacks of
-	 * fibers/tasks that do not utilize floating point instruction can
-	 * effectively consume the memory occupied by the 'tCoopCoprocReg'
-	 * and 'tPreempCoprocReg' structures without ill effect.
+	 * Given that stacks "grow down" on Xtensa, and the k_thread is located
+	 * at the start of a thread's "workspace" memory, the stacks of threads
+	 * that do not utilize floating point instruction can effectively
+	 * consume the memory occupied by the 'tCoopCoprocReg' and
+	 * 'tPreempCoprocReg' structures without ill effect.
 	 *
 	 * TODO: Move Xtensa coprocessor's stack here to get rid of extra
 	 * indirection

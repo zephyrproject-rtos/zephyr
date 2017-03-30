@@ -49,14 +49,14 @@ static ALWAYS_INLINE void nanoArchInit(void)
 
 /**
  *
- * @brief Set the return value for the specified fiber (inline)
+ * @brief Set the return value for the specified thread (inline)
  *
- * @param fiber pointer to fiber
+ * @param thread pointer to thread
  * @param value value to set as return value
  *
  * The register used to store the return value from a function call invocation
- * is set to <value>.  It is assumed that the specified <fiber> is pending, and
- * thus the fibers context is stored in its TCS.
+ * is set to <value>.  It is assumed that the specified thread is pending, and
+ * thus the thread's context is stored in its k_thread.
  *
  * @return N/A
  */
@@ -69,10 +69,8 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 extern void nano_cpu_atomic_idle(unsigned int imask);
 
 /*
- * _IntLibInit() is called from the non-arch specific nanokernel function,
- * _nano_init(). The IA-32 nanokernel does not require any special
- * initialization of the interrupt subsystem. However, we still need to
- * provide an _IntLibInit() of some sort to prevent build errors.
+ * Required by the core kernel even though we don't have to do anything on this
+ * arch.
  */
 static inline void _IntLibInit(void)
 {
