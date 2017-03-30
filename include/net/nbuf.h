@@ -1113,6 +1113,35 @@ static inline bool net_nbuf_insert_be32(struct net_buf *buf,
 }
 
 /**
+ * @brief Split a fragment to two parts at arbitrary offset.
+ *
+ * @details This will generate two new fragments (fragA and fragB) from
+ * one (orig_frag). The original fragment is not modified but two new
+ * fragments are allocated and returned to the caller. The original fragment
+ * must be part of the chain pointed by the buf parameter. If the len parameter
+ * is larger than the amount of data in the orig fragment, then the fragA will
+ * contain all the data and fragB will be empty.
+ *
+ * @param buf Head of the network buffer fragment list.
+ * @param orig_frag Original network buffer fragment which is to be split.
+ * @param len Amount of data in the first returned fragment.
+ * @param fragA A fragment is returned. This will contain len bytes that
+ * are copied from start of orig_frag.
+ * @param fragB Another fragment is returned. This will contain remaining
+ * bytes (orig_frag->len - len) from the orig_frag or NULL if all the data
+ * was copied into fragA.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ * If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as long as
+ * necessary. Otherwise, wait up to the specified number of milliseconds before
+ * timing out.
+ *
+ * @return 0 on success, <0 otherwise.
+ */
+int net_nbuf_split(struct net_buf *buf, struct net_buf *orig_frag,
+		   uint16_t len, struct net_buf **fragA,
+		   struct net_buf **fragB, int32_t timeout);
+
+/**
  * @brief Get information about pre-defined RX, TX and DATA pools.
  *
  * @param rx Pointer to RX pool is returned.
