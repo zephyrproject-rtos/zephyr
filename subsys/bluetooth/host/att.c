@@ -142,6 +142,18 @@ static void att_rsp_sent(struct bt_conn *conn)
 	k_sem_give(&att->tx_sem);
 }
 
+static void att_req_sent(struct bt_conn *conn)
+{
+	struct bt_att *att = att_get(conn);
+
+	BT_DBG("conn %p att %p", conn, att);
+
+	k_sem_give(&att->tx_sem);
+
+	/* Start timeout work */
+	k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+}
+
 static void att_pdu_sent(struct bt_conn *conn)
 {
 	struct bt_att *att = att_get(conn);
@@ -158,6 +170,9 @@ static bt_conn_tx_cb_t att_cb(struct net_buf *buf)
 		return att_rsp_sent;
 	case ATT_CONFIRMATION:
 		return att_cfm_sent;
+	case ATT_REQUEST:
+	case ATT_INDICATION:
+		return att_req_sent;
 	default:
 		return att_pdu_sent;
 	}
@@ -253,9 +268,6 @@ static int att_send_req(struct bt_att *att, struct bt_att_req *req)
 
 	/* Save request state so it can be resent */
 	net_buf_simple_save(&req->buf->b, &req->state);
-
-	/* Start timeout work */
-	k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 
 	/* Keep a reference for resending in case of an error */
 	bt_l2cap_send_cb(att->chan.chan.conn, BT_L2CAP_CID_ATT,
