@@ -13,8 +13,8 @@ Building and Running
 ********************
 
 This project outputs sensor data to the console. It requires an fxos8700
-sensor, which is present on the frdm_k64f, frdm_kw41z, and hexiwear_k64 boards.
-It does not work on QEMU.
+sensor, which is present on the :ref:`frdm_k64f`, :ref:`frdm_kw41z`, and
+:ref:`hexiwear_k64` boards.  It does not work on QEMU.
 
 .. code-block:: console
 
@@ -26,12 +26,12 @@ Sample Output
 
 .. code-block:: console
 
-   AX=  9.835380 AY=  0.009576 AZ=  0.383072 MX=  0.015000 MY=  0.509000 MZ=  1.346000
-   AX=  9.816226 AY=  0.038307 AZ=  0.497993 MX=  0.029000 MY=  0.522000 MZ=  1.350000
-   AX=  9.844957 AY=  0.067037 AZ=  0.430956 MX=  0.025000 MY=  0.518000 MZ=  1.353000
-   AX=  9.835380 AY=  0.038307 AZ=  0.497993 MX=  0.026000 MY=  0.507000 MZ=  1.352000
-   AX=  9.825803 AY=  0.057460 AZ=  0.421379 MX=  0.030000 MY=  0.502000 MZ=  1.342000
-   AX=  9.816226 AY=  0.019153 AZ=  0.478840 MX=  0.017000 MY=  0.523000 MZ=  1.318000
-   AX=  9.835380 AY=  0.000000 AZ=  0.507570 MX=  0.014000 MY=  0.502000 MZ=  1.367000
+   AX= -0.191537 AY=  0.067037 AZ=  9.902418 MX=  0.379000 MY=  0.271000 MZ= -0.056000 T= 22.080000
+   AX= -0.162806 AY=  0.143652 AZ=  9.940725 MX=  0.391000 MY=  0.307000 MZ= -0.058000 T= 22.080000
+   AX= -0.172383 AY=  0.134075 AZ=  9.969455 MX=  0.395000 MY=  0.287000 MZ= -0.017000 T= 22.080000
+   AX= -0.210690 AY=  0.105344 AZ=  9.911994 MX=  0.407000 MY=  0.306000 MZ= -0.068000 T= 22.080000
+   AX= -0.153229 AY=  0.124498 AZ=  9.950302 MX=  0.393000 MY=  0.301000 MZ= -0.021000 T= 22.080000
+   AX= -0.153229 AY=  0.095768 AZ=  9.921571 MX=  0.398000 MY=  0.278000 MZ= -0.040000 T= 22.080000
+   AX= -0.162806 AY=  0.105344 AZ=  9.902418 MX=  0.372000 MY=  0.300000 MZ= -0.046000 T= 22.080000
 
 <repeats endlessly>
