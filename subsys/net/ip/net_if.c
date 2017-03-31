@@ -1022,6 +1022,8 @@ static inline void net_if_router_init(struct net_if_router *router,
 		router->is_infinite = false;
 
 		k_delayed_work_init(&router->lifetime, ipv6_router_expired);
+		k_delayed_work_submit(&router->lifetime,
+				      lifetime * MSEC_PER_SEC);
 
 		NET_DBG("Expiring %s in %u secs", net_sprint_ipv6_addr(addr),
 			lifetime);
