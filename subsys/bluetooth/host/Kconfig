@@ -14,6 +14,15 @@ config BLUETOOTH_HCI_RAW
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
+config BLUETOOTH_UART_TO_HOST_DEV_NAME
+	string "Device Name of UART Device to an external Bluetooth Host"
+	default "UART_0"
+	depends on BLUETOOTH_HCI_RAW
+	help
+	  This option specifies the name of UART device to be used
+	  to connect to an external Bluetooth Host when Zephyr is
+	  acting as a Bluetooth Controller.
+
 # Virtual/hidden option to make the conditions more intuitive
 config BLUETOOTH_HCI_HOST
 	bool
@@ -50,15 +59,6 @@ config BLUETOOTH_RX_BUF_LEN
 	  wasted space. The minimum of 73 has been taken for LE SC which has
 	  an L2CAP MTU of 65 bytes. On top of this there's the L2CAP header
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
-
-config BLUETOOTH_UART_TO_HOST_DEV_NAME
-	string "Device Name of UART Device to an external Bluetooth Host"
-	default "UART_0"
-	depends on BLUETOOTH_HCI_RAW
-	help
-	  This option specifies the name of UART device to be used
-	  to connect to an external Bluetooth Host when Zephyr is
-	  acting as a Bluetooth Controller.
 
 config BLUETOOTH_HCI_TX_STACK_SIZE
 	# Stack size needed for executing bt_send with specified driver
