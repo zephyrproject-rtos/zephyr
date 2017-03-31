@@ -10,6 +10,16 @@
  *
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
+
+/*
+ * GCC 4.6 and higher have _Static_assert built in, and its output is
+ * easier to understand than the common BUILD_ASSERT macros.
+ */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#define BUILD_ASSERT(EXPR) _Static_assert(EXPR, "")
+#define BUILD_ASSERT_MSG(EXPR, MSG) _Static_assert(EXPR, MSG)
+#endif
+
 #include <toolchain/common.h>
 
 #define ALIAS_OF(of) __attribute__((alias(#of)))
