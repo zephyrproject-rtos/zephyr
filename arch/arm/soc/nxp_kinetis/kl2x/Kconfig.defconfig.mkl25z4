@@ -1,0 +1,68 @@
+# Kconfig - Kinetis KL2x SoC configuration options
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MKL25Z4
+
+config SOC
+	string
+	default mkl25z4
+
+if !HAS_DTS
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 2
+
+config NUM_IRQS
+	int
+	default 32
+
+endif # !HAS_DTS
+
+if PINMUX
+
+config PINMUX_MCUX
+	def_bool y
+
+endif # PINMUX
+
+if GPIO
+
+config GPIO_MCUX
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_MCUX
+	def_bool y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_MCUX
+	def_bool y
+
+endif # I2C
+
+if SPI
+
+config SPI_MCUX
+	def_bool y
+
+endif # SPI
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	def_bool y
+
+endif # FLASH
+
+endif # SOC_MKL25Z
