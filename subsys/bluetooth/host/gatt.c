@@ -1499,10 +1499,6 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 		/* Don't need to sign if already encrypted */
 		sign = false;
 	}
-#else
-	if (sign) {
-		return -EOPNOTSUPP;
-	}
 #endif
 
 	if (sign) {
