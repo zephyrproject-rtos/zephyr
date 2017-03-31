@@ -55,7 +55,7 @@ struct ieee802154_context {
 	uint8_t ack_requested	: 1;
 	uint8_t associated	: 1;
 	uint8_t _unused		: 5;
-} __packed;
+};
 
 
 /* Management part definitions */
@@ -224,7 +224,7 @@ struct ieee802154_req_params {
 	uint8_t len;
 	/** Link quality information, between 0 and 255 */
 	uint8_t lqi;
-} __packed;
+};
 
 /**
  * @brief Security parameters
