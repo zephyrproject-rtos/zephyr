@@ -262,10 +262,15 @@ static inline enum net_verdict process_ipv6_pkt(struct net_buf *buf)
 		struct in6_addr *nexthop;
 
 		/* Check if the packet can be routed */
-		if (net_route_get_info(&hdr->dst, &route, &nexthop)) {
+		if (net_route_get_info(net_nbuf_iface(buf), &hdr->dst, &route,
+				       &nexthop)) {
 			int ret;
 
-			ret = net_route_packet(buf, route, nexthop);
+			if (route) {
+				net_nbuf_set_iface(buf, route->iface);
+			}
+
+			ret = net_route_packet(buf, nexthop);
 			if (ret < 0) {
 				NET_DBG("Cannot re-route buf %p via %s (%d)",
 					buf, net_sprint_ipv6_addr(nexthop),
