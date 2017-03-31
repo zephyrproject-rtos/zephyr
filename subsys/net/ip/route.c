@@ -22,6 +22,7 @@
 #include <net/nbuf.h>
 #include <net/net_core.h>
 #include <net/net_stats.h>
+#include <net/net_mgmt.h>
 #include <net/net_ip.h>
 
 #include "net_private.h"
@@ -410,7 +411,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 	net_route_info("Added", route, addr);
 
-	/* TODO: Send notification that we added a route */
+	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_ADD, iface);
 
 	return route;
 }
@@ -433,6 +434,8 @@ int net_route_del(struct net_route_entry *route)
 
 	net_route_info("Deleted", route, &route->addr);
 
+	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_DEL, nbr->iface);
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		if (!nexthop_route->nbr) {
 			continue;
@@ -442,8 +445,6 @@ int net_route_del(struct net_route_entry *route)
 	}
 
 	nbr_free(nbr);
-
-	/* TODO: Send notification that we deleted a route */
 
 	return 0;
 }
