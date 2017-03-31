@@ -547,6 +547,7 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 {
 	struct net_route_nexthop *nexthop_route;
+	struct net_ipv6_nbr_data *ipv6_nbr_data;
 
 	NET_ASSERT(route);
 
@@ -559,8 +560,10 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 			continue;
 		}
 
-		addr = net_ipv6_nbr_lookup_by_index(route->iface,
-						    nexthop_route->nbr->idx);
+		ipv6_nbr_data = net_ipv6_nbr_data(nexthop_route->nbr);
+		NET_ASSERT(ipv6_nbr_data);
+
+		addr = &ipv6_nbr_data->addr;
 		NET_ASSERT(addr);
 
 		return addr;
