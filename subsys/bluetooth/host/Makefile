@@ -20,16 +20,16 @@ ifeq ($(CONFIG_BLUETOOTH_CONN),y)
 	else
 		obj-y += smp_null.o
 	endif
-
-	obj-$(CONFIG_BLUETOOTH_BREDR) += keys_br.o l2cap_br.o avdtp.o sdp.o
-
-	obj-$(CONFIG_BLUETOOTH_RFCOMM) += rfcomm.o
-
-	obj-$(CONFIG_BLUETOOTH_HFP_HF) += at.o hfp_hf.o
-
-	obj-$(CONFIG_BLUETOOTH_AVDTP) += avdtp.o
-
-	obj-$(CONFIG_BLUETOOTH_A2DP) += a2dp.o
 endif
 
 obj-$(CONFIG_BLUETOOTH_HOST_CRYPTO) += crypto.o
+
+obj-$(CONFIG_BLUETOOTH_BREDR) += keys_br.o l2cap_br.o sdp.o
+
+obj-$(CONFIG_BLUETOOTH_RFCOMM) += rfcomm.o
+
+obj-$(CONFIG_BLUETOOTH_HFP_HF) += at.o hfp_hf.o
+
+obj-$(CONFIG_BLUETOOTH_AVDTP) += avdtp.o
+
+obj-$(CONFIG_BLUETOOTH_A2DP) += a2dp.o
