@@ -613,25 +613,17 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	SYS_LOG_DBG("ETH tx");
 
 	/* First fragment is special - it contains link layer (Ethernet
-	 * in our case) header.
+	 * in our case) header. Modify the data pointer to account for more data
+	 * in the beginning of the buffer.
 	 */
-	frag_data = net_nbuf_ll(buf);
-	frag_len = net_nbuf_ll_reserve(buf) + buf->frags->len;
-	/* TODO: make following workaround compiler version dependent when
-	 * the bug is fixed.
-	 */
-#if defined(__GNUC__)
-	/* NOTE: the following cast is a workaround for arm-none-eabi-gcc bug
-	 * observed with the 5.4.1 20160919 release. When compiling with
-	 * optimization enabled '-Os' the while(frag) conditional loop is
-	 * optimized to while(1) breaking the logic.
-	 */
-	frag = ((volatile struct net_buf *)buf)->frags;
-#else
+	net_buf_push(buf->frags, net_nbuf_ll_reserve(buf));
+
 	frag = buf->frags;
-#endif
 
 	while (frag) {
+		frag_data = frag->data;
+		frag_len = frag->len;
+
 		/* Assure cache coherency before DMA read operation */
 		DCACHE_CLEAN(frag_data, frag_len);
 
@@ -674,8 +666,6 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 
 		/* Continue with the rest of fragments (only data) */
 		frag = frag->frags;
-		frag_data = frag->data;
-		frag_len = frag->len;
 	}
 
 	key = irq_lock();
