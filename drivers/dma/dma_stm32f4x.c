@@ -188,21 +188,19 @@ static void dma_stm32_write(struct dma_stm32_device *ddata,
 
 static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, uint32_t id)
 {
-	uint32_t scr   = dma_stm32_read(ddata, DMA_STM32_SCR(id));
-	uint32_t ndtr  = dma_stm32_read(ddata, DMA_STM32_SNDTR(id));
-	uint32_t spar  = dma_stm32_read(ddata, DMA_STM32_SPAR(id));
-	uint32_t sm0ar = dma_stm32_read(ddata, DMA_STM32_SM0AR(id));
-	uint32_t sm1ar = dma_stm32_read(ddata, DMA_STM32_SM1AR(id));
-	uint32_t sfcr  = dma_stm32_read(ddata, DMA_STM32_SFCR(id));
-
 	SYS_LOG_INF("Using stream: %d\n", id);
-	SYS_LOG_INF("SCR:   0x%x \t(config)\n", scr);
-	SYS_LOG_INF("NDTR:  0x%x \t(length)\n", ndtr);
-	SYS_LOG_INF("SPAR:  0x%x \t(source)\n", spar);
-	SYS_LOG_INF("SFCR:  0x%x \t(fifo control)\n", sfcr);
-	SYS_LOG_INF("SM0AR: 0x%x \t(destination)\n", sm0ar);
+	SYS_LOG_INF("SCR:   0x%x \t(config)\n",
+		    dma_stm32_read(ddata, DMA_STM32_SCR(id)));
+	SYS_LOG_INF("SNDTR:  0x%x \t(length)\n",
+		    dma_stm32_read(ddata, DMA_STM32_SNDTR(id)));
+	SYS_LOG_INF("SPAR:  0x%x \t(source)\n",
+		    dma_stm32_read(ddata, DMA_STM32_SPAR(id)));
+	SYS_LOG_INF("SM0AR: 0x%x \t(destination)\n",
+		    dma_stm32_read(ddata, DMA_STM32_SM0AR(id)));
 	SYS_LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))\n",
-		    sm1ar);
+		    dma_stm32_read(ddata, DMA_STM32_SM1AR(id)));
+	SYS_LOG_INF("SFCR:  0x%x \t(fifo control)\n",
+		    dma_stm32_read(ddata, DMA_STM32_SFCR(id)));
 }
 
 static uint32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
