@@ -107,3 +107,7 @@
 /* compile-time assertion that makes the build fail */
 #define BUILD_ASSERT(EXPR) typedef char __build_assert_failure[(EXPR) ? 1 : -1]
 #endif
+#ifndef BUILD_ASSERT_MSG
+/* build assertion with message -- common implementation swallows message. */
+#define BUILD_ASSERT_MSG(EXPR, MSG) BUILD_ASSERT(EXPR)
+#endif
