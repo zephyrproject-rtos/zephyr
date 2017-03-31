@@ -34,8 +34,8 @@ static struct spi_config spi_conf = {
 	.max_sys_freq = SPI_MAX_CLK_FREQ_250KHZ,
 };
 
-static unsigned char wbuf[16] = "Hello";
-static unsigned char rbuf[16] = {};
+static char *wbuf = "Hello world";
+static char rbuf[16] = {};
 
 static int test_spi(uint32_t mode)
 {
@@ -61,17 +61,14 @@ static int test_spi(uint32_t mode)
 	}
 
 	/* 3. verify spi_write() */
-	if (spi_write(spi_dev, (uint8_t *) wbuf, 6) != 0) {
+	if (spi_write(spi_dev, wbuf, len) != 0) {
 		TC_PRINT("SPI write failed\n");
 		return TC_FAIL;
 	}
 
-	strcpy((char *)wbuf, "So what then?");
-	len = strlen(wbuf);
-
 	/* 4. verify spi_transceive() */
 	TC_PRINT("SPI sent: %s\n", wbuf);
-	if (spi_transceive(spi_dev, wbuf, len + 1, rbuf, len + 1) != 0) {
+	if (spi_transceive(spi_dev, wbuf, len, rbuf, len) != 0) {
 		TC_PRINT("SPI transceive failed\n");
 		return TC_FAIL;
 	}
