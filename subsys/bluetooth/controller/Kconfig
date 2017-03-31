@@ -30,13 +30,56 @@ endchoice
 
 comment "BLE Controller configuration"
 
+menu "Advertiser"
+	visible if !BLUETOOTH_CONTROLLER_ROLE_SLAVE
+
+config BLUETOOTH_CONTROLLER_STATE_ADV
+	bool "Enable Advertiser"
+	default y if !BLUETOOTH_CONTROLLER_STATE_SCAN
+	help
+	  Enable support for advertising state in the Controller.
+
+endmenu
+
+menu "Scanner"
+	visible if !BLUETOOTH_CONTROLLER_ROLE_MASTER
+
+config BLUETOOTH_CONTROLLER_STATE_SCAN
+	bool "Enable Scanner"
+	help
+	  Enable support for scanning state in the Controller.
+
+endmenu
+
 config BLUETOOTH_CONTROLLER_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
+	depends on BLUETOOTH_CONTROLLER_STATE_SCAN
 	default 16
 	help
 	  Set the number of unique BLE addresses that can be filtered as
 	  duplicates while scanning.
+
+config BLUETOOTH_CONTROLLER_ROLE_SLAVE
+	# Hidden
+	bool
+	select BLUETOOTH_CONTROLLER_STATE_ADV
+	default y if BLUETOOTH_PERIPHERAL
+	help
+	  Enable support for slave role in the Controller.
+
+config BLUETOOTH_CONTROLLER_ROLE_MASTER
+	# Hidden
+	bool
+	select BLUETOOTH_CONTROLLER_STATE_SCAN
+	default y if BLUETOOTH_CENTRAL
+	help
+	  Enable support for master role in the Controller.
+
+config BLUETOOTH_CONTROLLER_STATE_CONN
+	# Hidden
+	bool
+	default y if BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
