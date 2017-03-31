@@ -39,6 +39,7 @@ uname | grep -q -P "MINGW|MSYS" && PWD_OPT="-W"
 
 # identify OS source tree root directory
 export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${PWD_OPT})
+unset PWD_OPT
 
 scripts_path=${ZEPHYR_BASE}/scripts
 scripts_path=$(echo "/$scripts_path" | sed 's/\\/\//g' | sed 's/://')
