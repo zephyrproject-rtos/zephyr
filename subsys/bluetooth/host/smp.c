@@ -3720,7 +3720,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 		BT_ERR("Unable to create signature for %s",
 		       bt_addr_le_str(&conn->le.dst));
 		return -EIO;
-	};
+	}
 
 	keys->local_csrk.cnt++;
 
