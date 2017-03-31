@@ -8,17 +8,6 @@
 
 comment "Host Stack Configuration"
 
-# Stack size needed for executing bt_send with specified driver
-config BLUETOOTH_HCI_TX_STACK_SIZE
-	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 256
-	default 256 if BLUETOOTH_H4
-	default 256 if BLUETOOTH_H5
-	default 256 if BLUETOOTH_SPI
-	default 640 if BLUETOOTH_CONTROLLER
-
 config BLUETOOTH_HCI_RAW
 	bool "RAW HCI access"
 	help
@@ -31,14 +20,6 @@ config BLUETOOTH_HCI_HOST
 	default y
 	depends on !BLUETOOTH_HCI_RAW
 	select POLL
-
-config BLUETOOTH_RECV_IS_RX_THREAD
-	# Virtual option set by the HCI driver to indicate that there's
-	# no need for the host to have its own RX thread, rather the
-	# context that bt_recv() gets called in is already good enough.
-	# If this is set, the driver RX thread is required as the first
-	# thing to make a call to bt_rx_thread_ready().
-	bool
 
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
@@ -78,6 +59,25 @@ config BLUETOOTH_UART_TO_HOST_DEV_NAME
 	  This option specifies the name of UART device to be used
 	  to connect to an external Bluetooth Host when Zephyr is
 	  acting as a Bluetooth Controller.
+
+config BLUETOOTH_HCI_TX_STACK_SIZE
+	# Stack size needed for executing bt_send with specified driver
+	int
+	# Even if no driver is selected the following default is still
+	# needed e.g. for unit tests.
+	default 256
+	default 256 if BLUETOOTH_H4
+	default 256 if BLUETOOTH_H5
+	default 256 if BLUETOOTH_SPI
+	default 640 if BLUETOOTH_CONTROLLER
+
+config BLUETOOTH_RECV_IS_RX_THREAD
+	# Virtual option set by the HCI driver to indicate that there's
+	# no need for the host to have its own RX thread, rather the
+	# context that bt_recv() gets called in is already good enough.
+	# If this is set, the driver RX thread is required as the first
+	# thing to make a call to bt_rx_thread_ready().
+	bool
 
 config BLUETOOTH_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
