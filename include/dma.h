@@ -402,7 +402,7 @@ static inline enum dma_burst_length dma_width_index(uint32_t size)
 	}
 
 	/* Ensure size is a power of 2 */
-	if (!(size & (size - 1))) {
+	if (!is_power_of_two(size)) {
 		return 0; /* Zero is the default (8 Bytes) */
 	}
 
