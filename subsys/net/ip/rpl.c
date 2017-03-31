@@ -3388,13 +3388,12 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	}
 #endif
 
-	route = net_route_lookup(net_nbuf_iface(buf), &addr);
-
 	if (lifetime == NET_RPL_ZERO_LIFETIME) {
 		struct in6_addr *nexthop;
 
 		NET_DBG("No-Path DAO received");
 
+		route = net_route_lookup(net_nbuf_iface(buf), &addr);
 		nbr = net_route_get_nbr(route);
 		extra = net_nbr_extra_data(nbr);
 		nexthop = net_route_get_nexthop(route);
