@@ -6,7 +6,7 @@
 #FLASH_SCRIPT = openocd.sh
 #  ^^ Keep FLASH_SCRIPT undefined for now since flashing a self-boot image
 #     is not yet supported by Zephyr Makefile.
-OPENOCD_PRE_CMD = "-c targets 1"
+OPENOCD_PRE_CMD = "targets 1"
 OPENOCD_LOAD_CMD = "load_image ${O}/${KERNEL_BIN_NAME} $(CONFIG_ICCM_BASE_ADDRESS)"
 OPENOCD_VERIFY_CMD = "verify_image ${O}/${KERNEL_BIN_NAME} $(CONFIG_ICCM_BASE_ADDRESS)"
 

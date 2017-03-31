@@ -35,12 +35,12 @@ do_flash() {
     sh -c  "${OPENOCD_CMD} -f '${OPENOCD_CONFIG}' \
             -c 'init' \
             -c 'targets' \
-            ${OPENOCD_PRE_CMD} \
+            ${OPENOCD_PRE_CMD:+-c $OPENOCD_PRE_CMD} \
             -c 'reset halt' \
             -c ${OPENOCD_LOAD_CMD} \
             -c 'reset halt' \
             -c ${OPENOCD_VERIFY_CMD} \
-            ${OPENOCD_POST_CMD} \
+            ${OPENOCD_POST_CMD:+-c $OPENOCD_POST_CMD} \
             -c 'reset run' \
             -c 'shutdown'"
     echo 'Done flashing'
