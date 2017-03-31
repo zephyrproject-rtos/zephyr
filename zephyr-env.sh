@@ -32,7 +32,7 @@ if [ "X$NAME" "==" "Xzephyr-env.sh" ]; then
 fi
 
 # You can further customize your environment by creating a bash script called
-# zephyr-env_install.bash in your home directory. It will be automatically
+# .zephyrrc in your home directory. It will be automatically
 # run (if it exists) by this script.
 
 uname | grep -q -P "MINGW|MSYS" && PWD_OPT="-W"
