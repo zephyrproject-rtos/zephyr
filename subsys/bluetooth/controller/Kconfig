@@ -1,6 +1,19 @@
-if BLUETOOTH_CONTROLLER
+# Kconfig - Bluetooth Controller configuration options
+#
+# Copyright (c) 2016-2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
-comment "BLE Controller configuration"
+comment "BLE Controller support"
+
+config BLUETOOTH_CONTROLLER
+	bool "Bluetooth Controller"
+	select BLUETOOTH_RECV_IS_RX_THREAD
+	help
+	  Enables support for SoC native controller implementations.
+
+if BLUETOOTH_CONTROLLER
 
 choice
 	prompt "Bluetooth Link Layer Selection"
@@ -14,6 +27,8 @@ config BLUETOOTH_LL_SW
 	  Use Zephyr's software BLE Link Layer implementation.
 
 endchoice
+
+comment "BLE Controller configuration"
 
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
