@@ -518,16 +518,16 @@ static bool init_ieee802154(void)
 	 */
 	get_mac(ieee802154_dev);
 
-#ifdef CONFIG_NET_L2_IEEE802154_ORFD
+#ifdef CONFIG_NET_SAMPLES_SETTINGS
 	SYS_LOG_INF("Set panid %x channel %d",
-		    CONFIG_NET_L2_IEEE802154_ORFD_PAN_ID,
-		    CONFIG_NET_L2_IEEE802154_ORFD_CHANNEL);
+		    CONFIG_NET_SAMPLES_IEEE802154_PAN_ID,
+		    CONFIG_NET_SAMPLES_IEEE802154_CHANNEL);
 
 	radio_api->set_pan_id(ieee802154_dev,
-			      CONFIG_NET_L2_IEEE802154_ORFD_PAN_ID);
+			      CONFIG_NET_SAMPLES_IEEE802154_PAN_ID);
 	radio_api->set_channel(ieee802154_dev,
-			       CONFIG_NET_L2_IEEE802154_ORFD_CHANNEL);
-#endif /* CONFIG_NET_L2_IEEE802154_ORFD */
+			       CONFIG_NET_SAMPLES_IEEE802154_CHANNEL);
+#endif /* CONFIG_NET_SAMPLES_SETTINGS */
 
 	/* Set short address */
 	short_addr = (mac_addr[0] << 8) + mac_addr[1];

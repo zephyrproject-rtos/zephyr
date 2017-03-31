@@ -28,6 +28,7 @@
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt.h"
+#include "ieee802154_security.h"
 
 #if 0
 
@@ -255,6 +256,10 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	set_buf_ll_addr(net_nbuf_ll_dst(buf), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
+	if (!ieee802154_decipher_data_frame(iface, buf, &mpdu)) {
+		return NET_DROP;
+	}
+
 	pkt_hexdump(buf, true);
 
 	return ieee802154_manage_recv_buffer(iface, buf);
@@ -263,6 +268,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 static enum net_verdict ieee802154_send(struct net_if *iface,
 					struct net_buf *buf)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t reserved_space = net_nbuf_ll_reserve(buf);
 	struct net_buf *frag;
 
@@ -282,9 +288,8 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		if (!ieee802154_create_data_frame(iface, net_nbuf_ll_dst(buf),
-						  frag->data - reserved_space,
-						  reserved_space)) {
+		if (!ieee802154_create_data_frame(ctx, net_nbuf_ll_dst(buf),
+						  frag, reserved_space)) {
 			return NET_DROP;
 		}
 
@@ -318,23 +323,16 @@ void ieee802154_init(struct net_if *iface)
 
 	ieee802154_mgmt_init(iface);
 
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	if (ieee802154_security_init(&ctx->sec_ctx)) {
+		NET_ERR("Initializing link-layer security failed");
+	}
+#endif
+
 	sys_memcpy_swap(long_addr, mac, 8);
 
 	radio->set_ieee_addr(iface->dev, long_addr);
 	memcpy(ctx->ext_addr, long_addr, 8);
 
-#ifdef CONFIG_NET_L2_IEEE802154_ORFD
-	uint16_t short_addr;
-
-	short_addr = (mac[0] << 8) + mac[1];
-	radio->set_short_addr(iface->dev, short_addr);
-
-	ctx->short_addr = short_addr;
-	ctx->pan_id = CONFIG_NET_L2_IEEE802154_ORFD_PAN_ID;
-	ctx->channel = CONFIG_NET_L2_IEEE802154_ORFD_CHANNEL;
-
-	radio->set_pan_id(iface->dev, ctx->pan_id);
-	radio->set_channel(iface->dev, ctx->channel);
-#endif
 	radio->start(iface->dev);
 }

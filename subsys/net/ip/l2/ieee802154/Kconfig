@@ -28,26 +28,18 @@ config NET_DEBUG_L2_IEEE802154
 
 config NET_L2_IEEE802154_ACK_REPLY
 	bool "Enable IEEE 802.15.4 ACK reply logic"
-	default y
+	default n
 	help
 	  Enable inner stack's logic on handling ACK request. Note that
 	  if the hw driver has an AUTOACK feature, this is then unnecessary.
 
 choice
 	prompt "Device features level support"
-	default NET_L2_IEEE802154_ORFD
+	default NET_L2_IEEE802154_RFD
 	help
 	  Select which features level you want on the device. Depending on it,
 	  the device might expose more or less 802.15.4 protocol features.
-
-config NET_L2_IEEE802154_ORFD
-	bool "Support only an OVERLY Reduced Functionality Device"
-	help
-	  This is a TEST ONLY support. Do not use that in production!
-	  This is not spec compliant. This is added for 2 reasons:
-	  to support legacy stack behavior and for testing. PAN ID is fixed
-	  as well as the channel. The device is not able to scan, associate
-	  to a PAN or anything else like that. You have been warned.
+	  Only RFD is supported for now.
 
 config NET_L2_IEEE802154_RFD
 	bool "Support Reduced Functionality Device level"
@@ -56,7 +48,7 @@ config NET_L2_IEEE802154_RFD
 	  This is the level for PAN device, not PAN coordinator. This will make
 	  possible to do active and/or passive scans, as well as associating
 	  and disassociating to/from a PAN. Current support is very fragile,
-	  thus it is not set as the default level
+	  thus it is not set as the default level.
 endchoice
 
 config NET_L2_IEEE802154_SHELL
@@ -67,32 +59,6 @@ config NET_L2_IEEE802154_SHELL
 	help
 	This can be used for testing 15.4 through the console via exposing
 	a shell module named "ieee15_4".
-
-config NET_L2_IEEE802154_ACK_SET
-	bool "Expose ACK request setting"
-	default n
-	depends on NET_L2_IEEE802154_ORFD
-	select NET_L2_IEEE802154_MGMT
-	help
-	  Enable a network management request to let upper layers to force
-	  requesting a ACK on any DATA frames. Such setting can be found
-	  useful if one needs to send a buffer "reliably". Note however, this
-	  becomes utterly useless if application protocol already handles
-	  reliability like TCP.
-
-config NET_L2_IEEE802154_ORFD_PAN_ID
-	hex "IEEE 802.15.4 fixed PAN ID"
-	depends on NET_L2_IEEE802154_ORFD
-	default 0xabcd
-	help
-	  The fixed PAN ID to use for the ORFD.
-
-config NET_L2_IEEE802154_ORFD_CHANNEL
-	int "IEEE 802.15.4 fixed channel"
-	depends on NET_L2_IEEE802154_ORFD
-	default 26
-	help
-	  The fixed channel to use for the ORFD.
 
 config NET_L2_IEEE802154_FRAGMENT
 	bool "Enable 802.15.4 fragmentation support"
@@ -124,6 +90,22 @@ config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
 	default n
+
+config NET_L2_IEEE802154_SECURITY
+	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
+	default n
+	help
+	Enable 802.15.4 frame security handling, in order to bring data
+	confidentiality and authenticity.
+
+config NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME
+	string "Crypto device name used for <en/de>cryption"
+	default ""
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	This option should be used to set the crypto device name that
+	IEEE 802.15.4 soft MAC will use to run authentication, encryption and
+	decryption operations on incoming/outgoing frames.
 
 source "subsys/net/ip/l2/ieee802154/Kconfig.radio"
 

@@ -53,10 +53,10 @@ static inline void init_app(void)
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  CONFIG_NET_APP_MY_IPV6_ADDR,
 			  &in6addr_my) < 0) {
 		printk("Invalid IPv6 address %s",
-			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+			CONFIG_NET_APP_MY_IPV6_ADDR);
 	}
 
 	do {

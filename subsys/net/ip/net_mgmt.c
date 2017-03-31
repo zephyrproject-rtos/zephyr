@@ -111,13 +111,20 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 	sys_snode_t *prev = NULL;
 	struct net_mgmt_event_callback *cb, *tmp;
 
-	NET_DBG("Event layer %u code %u type %u",
+	NET_DBG("Event layer %u code %u cmd %u",
 		NET_MGMT_GET_LAYER(mgmt_event->event),
 		NET_MGMT_GET_LAYER_CODE(mgmt_event->event),
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
-		if ((mgmt_event->event & cb->event_mask) != mgmt_event->event) {
+		if (!(NET_MGMT_GET_LAYER(mgmt_event->event) &
+		      NET_MGMT_GET_LAYER(cb->event_mask)) ||
+		    !(NET_MGMT_GET_LAYER_CODE(mgmt_event->event) &
+		      NET_MGMT_GET_LAYER_CODE(cb->event_mask)) ||
+		    (NET_MGMT_GET_COMMAND(mgmt_event->event) &&
+		     NET_MGMT_GET_COMMAND(cb->event_mask) &&
+		     !(NET_MGMT_GET_COMMAND(mgmt_event->event) &
+		       NET_MGMT_GET_COMMAND(cb->event_mask)))) {
 			continue;
 		}
 

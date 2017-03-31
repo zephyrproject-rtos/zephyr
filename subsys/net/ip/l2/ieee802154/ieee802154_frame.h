@@ -16,7 +16,7 @@
 #include <net/nbuf.h>
 
 #define IEEE802154_MTU				127
-#define IEEE802154_MIN_LENGTH			5
+#define IEEE802154_MIN_LENGTH			3
 /* See Section 5.2.1.4 */
 #define IEEE802154_BROADCAST_ADDRESS		0xFFFF
 #define IEEE802154_BROADCAST_PAN_ID		0xFFFF
@@ -130,11 +130,92 @@ struct ieee802154_address_field {
 	};
 } __packed;
 
+/* See Section 7.4.1.1 */
+enum ieee802154_security_level {
+	IEEE802154_SECURITY_LEVEL_NONE			= 0x0,
+	IEEE802154_SECURITY_LEVEL_MIC_32		= 0x1,
+	IEEE802154_SECURITY_LEVEL_MIC_64		= 0x2,
+	IEEE802154_SECURITY_LEVEL_MIC_128		= 0x3,
+	IEEE802154_SECURITY_LEVEL_ENC			= 0x4,
+	IEEE802154_SECURITY_LEVEL_ENC_MIC_32		= 0x5,
+	IEEE802154_SECURITY_LEVEL_ENC_MIC_64		= 0x6,
+	IEEE802154_SECURITY_LEVEL_ENC_MIC_128		= 0x7,
+};
+
+/* This will match above *_MIC_<32/64/128> */
+#define IEEE8021254_AUTH_TAG_LENGTH_32			4
+#define IEEE8021254_AUTH_TAG_LENGTH_64			8
+#define IEEE8021254_AUTH_TAG_LENGTH_128			16
+
+/* See Section 7.4.1.2 */
+enum ieee802154_key_id_mode {
+	IEEE802154_KEY_ID_MODE_IMPLICIT			= 0x0,
+	IEEE802154_KEY_ID_MODE_INDEX			= 0x1,
+	IEEE802154_KEY_ID_MODE_SRC_4_INDEX		= 0x2,
+	IEEE802154_KEY_ID_MODE_SRC_8_INDEX		= 0x3,
+};
+
+#define IEEE8021254_KEY_ID_FIELD_INDEX_LENGTH		1
+#define IEEE8021254_KEY_ID_FIELD_SRC_4_INDEX_LENGTH	5
+#define IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH	9
+
+#define IEEE802154_KEY_MAX_LEN				16
+
+/* See Section 7.4.1 */
+struct ieee802154_security_control_field {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t security_level	:3;
+	uint8_t key_id_mode	:2;
+	uint8_t reserved	:3;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t reserved	:3;
+	uint8_t key_id_mode	:2;
+	uint8_t security_level	:3;
+#endif
+} __packed;
+
+#define IEEE802154_SECURITY_CF_LENGTH	1
+
+/* See Section 7.4.3 */
+struct ieee802154_key_identifier_field {
+	union {
+		/* mode_0 being implicit, it holds no info here */
+		struct {
+			uint8_t key_index;
+		} mode_1;
+
+		struct {
+			uint8_t key_src[4];
+			uint8_t key_index;
+		} mode_2;
+
+		struct {
+			uint8_t key_src[8];
+			uint8_t key_index;
+		} mode_3;
+	};
+} __packed;
+
+/*
+ * Auxiliary Security Header
+ * See Section 7.4
+ */
+struct ieee802154_aux_security_hdr {
+	struct ieee802154_security_control_field control;
+	uint32_t frame_counter;
+	struct ieee802154_key_identifier_field kif;
+} __packed;
+
+#define IEEE802154_SECURITY_FRAME_COUNTER_LENGTH 4
+
 /** MAC header */
 struct ieee802154_mhr {
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_address_field *dst_addr;
 	struct ieee802154_address_field *src_addr;
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	struct ieee802154_aux_security_hdr *aux_sec;
+#endif
 };
 
 struct ieee802154_mfr {
@@ -367,19 +448,24 @@ struct ieee802154_frame_params {
 	uint16_t pan_id;
 } __packed;
 
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+struct ieee802154_aux_security_hdr *
+ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf);
+#endif
+
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 			       struct ieee802154_mpdu *mpdu);
 
 uint16_t ieee802154_compute_header_size(struct net_if *iface,
 					struct in6_addr *dst);
 
-bool ieee802154_create_data_frame(struct net_if *iface,
+bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
-				  uint8_t *p_buf,
-				  uint8_t len);
+				  struct net_buf *frag,
+				  uint8_t reserved_len);
 
 struct net_buf *
-ieee802154_create_mac_cmd_frame(struct net_if *iface,
+ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params);
 
@@ -401,5 +487,12 @@ static inline bool ieee802154_ack_required(struct net_buf *buf)
 
 	return fs->fc.ar;
 }
+
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
+				    struct ieee802154_mpdu *mpdu);
+#else
+#define ieee802154_decipher_data_frame(...) true
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
 #endif /* __IEEE802154_FRAME_H__ */

@@ -4,97 +4,43 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if 1
+#define SYS_LOG_DOMAIN "15_4_hw_test"
+#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define NET_LOG_ENABLED 1
+#endif
+
 #include <zephyr.h>
 #include <errno.h>
 
 #include <net/net_if.h>
 #include <net/net_core.h>
-#include <net/net_mgmt.h>
-#include <net/ieee802154.h>
 
-#include <misc/printk.h>
-#define PRINT	printk
+#include <ieee802154_settings.h>
 
-#ifdef CONFIG_IEEE802154_CC2520_DRV_NAME
-#define IEEE802154_DRV_NAME	CONFIG_IEEE802154_CC2520_DRV_NAME
-#endif
-#ifdef CONFIG_IEEE802154_MCR20A_DRV_NAME
-#define IEEE802154_DRV_NAME	CONFIG_IEEE802154_MCR20A_DRV_NAME
-#endif
-#ifdef CONFIG_IEEE802154_NRF5_DRV_NAME
-#define IEEE802154_DRV_NAME	CONFIG_IEEE802154_NRF5_DRV_NAME
-#endif
-
-
-#ifndef CONFIG_NET_L2_IEEE802154_SHELL
-
-static struct ieee802154_req_params scan_ctx;
-static struct net_mgmt_event_callback scan_cb;
-
-static void scan_result_cb(struct net_mgmt_event_callback *cb,
-			   uint32_t mgmt_event, struct net_if *iface)
+static void setup_ipv6(struct net_if *iface)
 {
-	PRINT("Got a scan result:\n");
-	PRINT("\tChannel: %u\n", scan_ctx.channel);
-	PRINT("\tPAN ID : %u\n", scan_ctx.pan_id);
-	PRINT("\tLQI    : %u\n", scan_ctx.lqi);
-}
+	char hr_addr[NET_IPV6_ADDR_LEN];
+	struct in6_addr addr;
 
-static inline void scan(struct net_if *iface)
-{
-	size_t len = sizeof(struct ieee802154_req_params);
-	int ret;
-
-	net_mgmt_init_event_callback(&scan_cb, scan_result_cb,
-				     NET_EVENT_IEEE802154_SCAN_RESULT);
-	memset(&scan_ctx, 0, len);
-	scan_ctx.channel_set = IEEE802154_ALL_CHANNELS;
-	scan_ctx.duration = K_SECONDS(1);
-
-	ret = net_mgmt(NET_REQUEST_IEEE802154_ACTIVE_SCAN,
-		       iface, &scan_ctx, len);
-	if (ret < 0) {
-		PRINT("Scan did not proceed well %u\n", ret);
-	}
-}
-
-#else
-#define scan(...)
-#endif /* CONFIG_NET_L2_IEEE802154_SHELL */
-
-static struct net_if *init_device(void)
-{
-	struct net_if *iface;
-	struct device *dev;
-
-	dev = device_get_binding(IEEE802154_DRV_NAME);
-	if (!dev) {
-		PRINT("Cannot get device binding\n");
-		return NULL;
+	if (net_addr_pton(AF_INET6, CONFIG_NET_APP_MY_IPV6_ADDR, &addr)) {
+		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV6_ADDR);
+		return;
 	}
 
-	iface = net_if_lookup_by_dev(dev);
-	if (!iface) {
-		PRINT("Cannot get 802.15.4 network interface\n");
-		return NULL;
-	}
+	net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
-	PRINT("802.15.4 device up and running\n");
-
-	return iface;
+	NET_INFO("IPv6 address: %s",
+		 net_addr_ntop(AF_INET6, &addr, hr_addr, NET_IPV6_ADDR_LEN));
 }
+
 void main(void)
 {
-	struct net_if *iface;
+	struct net_if *iface = net_if_get_default();
 
-	iface = init_device();
-	if (!iface) {
-		goto end;
+	if (ieee802154_sample_setup()) {
+		NET_ERR("IEEE 802.15.4 setup failed");
 	}
 
-	k_sleep(K_SECONDS(5));
-
-	scan(iface);
-end:
-	return;
+	setup_ipv6(iface);
 }

@@ -37,8 +37,8 @@ static void setup_device(void)
 		return;
 	}
 
-	if (net_addr_pton(AF_INET6, CONFIG_NET_SAMPLES_MY_IPV6_ADDR, &addr)) {
-		NET_ERR("Invalid address: %s", CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+	if (net_addr_pton(AF_INET6, CONFIG_NET_APP_MY_IPV6_ADDR, &addr)) {
+		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV6_ADDR);
 		return;
 	}
 

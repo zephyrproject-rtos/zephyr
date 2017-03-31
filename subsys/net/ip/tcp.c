@@ -45,7 +45,11 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 #define INIT_RETRY_MS 200
 
 /* 2MSL timeout, where "MSL" is arbitrarily 2 minutes in the RFC */
-#define TIME_WAIT_MS (2 * 2 * 60 * 1000)
+#if defined(CONFIG_NET_TCP_2MSL_TIME)
+#define TIME_WAIT_MS K_SECONDS(CONFIG_NET_TCP_2MSL_TIME)
+#else
+#define TIME_WAIT_MS K_SECONDS(2 * 2 * 60)
+#endif
 
 struct tcp_segment {
 	uint32_t seq;

@@ -120,7 +120,9 @@ static bool net_if_tx(struct net_if *iface)
 		net_context_send_cb(context, context_token, status);
 	}
 
-	net_if_call_link_cb(iface, dst, status);
+	if (dst->addr) {
+		net_if_call_link_cb(iface, dst, status);
+	}
 
 	return true;
 }
@@ -282,7 +284,7 @@ done:
 		net_context_send_cb(context, token, status);
 	}
 
-	if (verdict == NET_DROP) {
+	if (verdict == NET_DROP && dst->addr) {
 		net_if_call_link_cb(iface, dst, status);
 	}
 

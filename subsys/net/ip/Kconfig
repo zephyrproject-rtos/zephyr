@@ -103,6 +103,7 @@ config NET_DEBUG_TCP
 
 config NET_TCP_TIME_WAIT
 	bool "Enable TCP TIME_WAIT timeouts"
+	depends on NET_TCP
 	default n
 	help
 	Officially, the TCP standard requires a 4 minute timeout on
@@ -112,6 +113,13 @@ config NET_TCP_TIME_WAIT
 	and is optional.  Modern systems with well-randomized sequence
 	numbers don't need this, but it is present for specification
 	compliance where needed.
+
+config NET_TCP_2MSL_TIME
+	int "How long to wait in TIME_WAIT (in seconds)"
+	depends on NET_TCP_TIME_WAIT
+	default 240
+	help
+	The value is in seconds.
 
 config NET_UDP
 	bool "Enable UDP"
@@ -291,6 +299,6 @@ source "subsys/net/ip/Kconfig.rpl"
 
 source "subsys/net/ip/Kconfig.stats"
 
-source "subsys/net/ip/Kconfig.samples"
+source "subsys/net/ip/Kconfig.app"
 
 endmenu

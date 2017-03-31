@@ -27,6 +27,13 @@
 
 #include <gpio.h>
 
+#ifdef CONFIG_IEEE802154_CC2520_CRYPTO
+
+#include <crypto/cipher.h>
+#include <crypto/cipher_structs.h>
+
+#endif /* CONFIG_IEEE802154_CC2520_CRYPTO */
+
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_cc2520.h"
@@ -232,14 +239,20 @@ bool _cc2520_write_reg(struct cc2520_spi *spi, bool freg,
 bool _cc2520_write_ram(struct cc2520_spi *spi, uint16_t addr,
 		       uint8_t *data_buf, uint8_t len)
 {
-	spi->cmd_buf[0] = CC2520_INS_MEMWR | (addr >> 8);
-	spi->cmd_buf[1] = addr;
+#ifndef CONFIG_IEEE802154_CC2520_CRYPTO
+	uint8_t *cmd_data = spi->cmd_buf;
+#else
+	uint8_t cmd_data[128];
+#endif
 
-	memcpy(&spi->cmd_buf[2], data_buf, len);
+	cmd_data[0] = CC2520_INS_MEMWR | (addr >> 8);
+	cmd_data[1] = addr;
+
+	memcpy(&cmd_data[2], data_buf, len);
 
 	spi_slave_select(spi->dev, spi->slave);
 
-	return (spi_write(spi->dev, spi->cmd_buf, len + 2) == 0);
+	return (spi_write(spi->dev, cmd_data, len + 2) == 0);
 }
 
 static uint8_t _cc2520_status(struct cc2520_spi *spi)
@@ -844,6 +857,10 @@ static int cc2520_tx(struct device *dev,
 		goto error;
 	}
 
+#ifdef CONFIG_IEEE802154_CC2520_CRYPTO
+	k_sem_take(&cc2520->access_lock, K_FOREVER);
+#endif
+
 	/* 1 retry is allowed here */
 	do {
 		atomic_set(&cc2520->tx, 1);
@@ -860,16 +877,22 @@ static int cc2520_tx(struct device *dev,
 		status = verify_tx_done(cc2520);
 	} while (!status && retry);
 
-	if (!status) {
-		SYS_LOG_ERR("No TX_FRM_DONE");
-		_cc2520_print_exceptions(cc2520);
-		_cc2520_print_errors(cc2520);
+#ifdef CONFIG_IEEE802154_CC2520_CRYPTO
+	k_sem_give(&cc2520->access_lock);
+#endif
 
-		goto error;
+	if (status) {
+		return 0;
 	}
 
-	return 0;
 error:
+#ifdef CONFIG_IEEE802154_CC2520_CRYPTO
+	k_sem_give(&cc2520->access_lock);
+#endif
+	SYS_LOG_ERR("No TX_FRM_DONE");
+	_cc2520_print_exceptions(cc2520);
+	_cc2520_print_errors(cc2520);
+
 	atomic_set(&cc2520->tx, 0);
 	instruct_sflushtx(&cc2520->spi);
 
@@ -1027,6 +1050,10 @@ static int cc2520_init(struct device *dev)
 	atomic_set(&cc2520->tx, 0);
 	k_sem_init(&cc2520->rx_lock, 0, UINT_MAX);
 
+#ifdef CONFIG_IEEE802154_CC2520_CRYPTO
+	k_sem_init(&cc2520->access_lock, 1, 1);
+#endif
+
 	cc2520->gpios = cc2520_configure_gpios();
 	if (!cc2520->gpios) {
 		SYS_LOG_ERR("Configuring GPIOS failed");
@@ -1108,3 +1135,370 @@ NET_STACK_INFO_ADDR(RX, cc2520,
 							cc2520_rx_stack,
 		    0);
 #endif
+
+
+#ifdef CONFIG_IEEE802154_CC2520_CRYPTO
+
+static bool _cc2520_read_ram(struct cc2520_spi *spi, uint16_t addr,
+			     uint8_t *data_buf, uint8_t len)
+{
+	uint8_t cmd_buf[128];
+
+	cmd_buf[0] = CC2520_INS_MEMRD | (addr >> 8);
+	cmd_buf[1] = addr;
+
+	spi_slave_select(spi->dev, spi->slave);
+
+	if (spi_transceive(spi->dev, cmd_buf, len + 2,
+			   cmd_buf, len + 2) != 0) {
+		return false;
+	}
+
+	memcpy(data_buf, &cmd_buf[2], len);
+
+	return true;
+}
+
+static inline bool instruct_ccm(struct cc2520_context *cc2520,
+				uint8_t key_addr,
+				uint8_t auth_crypt,
+				uint8_t nonce_addr,
+				uint16_t input_addr,
+				uint16_t output_addr,
+				uint8_t in_len,
+				uint8_t m)
+{
+	uint8_t cmd[9];
+	int ret;
+
+	SYS_LOG_DBG("CCM(P={01} K={%02x} C={%02x} N={%02x}"
+		    " A={%03x} E={%03x} F{%02x} M={%02x})",
+		    key_addr, auth_crypt, nonce_addr,
+		    input_addr, output_addr, in_len, m);
+
+	cmd[0] = CC2520_INS_CCM | 1;
+	cmd[1] = key_addr;
+	cmd[2] = (auth_crypt & 0x7f);
+	cmd[3] = nonce_addr;
+	cmd[4] = (uint8_t)(((input_addr & 0x0f00) >> 4) |
+			   ((output_addr & 0x0f00) >> 8));
+	cmd[5] = (uint8_t)(input_addr & 0x00ff);
+	cmd[6] = (uint8_t)(output_addr & 0x00ff);
+	cmd[7] = (in_len & 0x7f);
+	cmd[8] = (m & 0x03);
+
+	k_sem_take(&cc2520->access_lock, K_FOREVER);
+
+	ret = spi_write(cc2520->spi.dev, cmd, 9);
+
+	k_sem_give(&cc2520->access_lock);
+
+	if (ret) {
+		SYS_LOG_ERR("CCM Failed");
+		return false;
+	}
+
+	return true;
+}
+
+static inline bool instruct_uccm(struct cc2520_context *cc2520,
+				 uint8_t key_addr,
+				 uint8_t auth_crypt,
+				 uint8_t nonce_addr,
+				 uint16_t input_addr,
+				 uint16_t output_addr,
+				 uint8_t in_len,
+				 uint8_t m)
+{
+	uint8_t cmd[9];
+	int ret;
+
+	SYS_LOG_DBG("UCCM(P={01} K={%02x} C={%02x} N={%02x}"
+		    " A={%03x} E={%03x} F{%02x} M={%02x})",
+		    key_addr, auth_crypt, nonce_addr,
+		    input_addr, output_addr, in_len, m);
+
+	cmd[0] = CC2520_INS_UCCM | 1;
+	cmd[1] = key_addr;
+	cmd[2] = (auth_crypt & 0x7f);
+	cmd[3] = nonce_addr;
+	cmd[4] = (uint8_t)(((input_addr & 0x0f00) >> 4) |
+			   ((output_addr & 0x0f00) >> 8));
+	cmd[5] = (uint8_t)(input_addr & 0x00ff);
+	cmd[6] = (uint8_t)(output_addr & 0x00ff);
+	cmd[7] = (in_len & 0x7f);
+	cmd[8] = (m & 0x03);
+
+	k_sem_take(&cc2520->access_lock, K_FOREVER);
+
+	ret = spi_write(cc2520->spi.dev, cmd, 9);
+
+	k_sem_give(&cc2520->access_lock);
+
+	if (ret) {
+		SYS_LOG_ERR("UCCM Failed");
+		return false;
+	}
+
+	return true;
+}
+
+static inline void generate_nonce(uint8_t *ccm_nonce, uint8_t *nonce,
+				  struct cipher_aead_pkt *apkt, uint8_t m)
+{
+	nonce[0] = 0 | (apkt->ad_len ? 0x40 : 0) | (m << 3) | 1;
+
+	memcpy(&nonce[1], ccm_nonce, 13);
+
+	nonce[14] = (uint8_t)(apkt->pkt->in_len >> 8);
+	nonce[15] = (uint8_t)(apkt->pkt->in_len);
+
+	/* See section 26.8.1 */
+	sys_mem_swap(nonce, 16);
+}
+
+static int insert_crypto_parameters(struct cipher_ctx *ctx,
+				    struct cipher_aead_pkt *apkt,
+				    uint8_t *ccm_nonce, uint8_t *auth_crypt)
+{
+	struct cc2520_context *cc2520 = ctx->device->driver_data;
+	uint8_t data[128];
+	uint8_t *in_buf;
+	uint8_t in_len;
+	uint8_t m = 0;
+
+	if (!apkt->pkt->out_buf || !apkt->pkt->out_buf_max) {
+		SYS_LOG_ERR("Out buffer needs to be set");
+		return -EINVAL;
+	}
+
+	if (!ctx->key.bit_stream || !ctx->keylen) {
+		SYS_LOG_ERR("No key installed");
+		return -EINVAL;
+	}
+
+	if (!(ctx->flags & CAP_INPLACE_OPS)) {
+		SYS_LOG_ERR("It supports only in-place operation");
+		return -EINVAL;
+	}
+
+	if (!apkt->ad || !apkt->ad_len) {
+		SYS_LOG_ERR("CCM needs associated data");
+		return -EINVAL;
+	}
+
+	if (apkt->pkt->in_buf && apkt->pkt->in_buf - apkt->ad_len != apkt->ad) {
+		SYS_LOG_ERR("In-place needs ad and input in same memory");
+		return -EINVAL;
+	}
+
+	if (!apkt->pkt->in_buf) {
+		if (!ctx->mode_params.ccm_info.tag_len) {
+			SYS_LOG_ERR("Auth only needs a tag length");
+			return -EINVAL;
+		}
+
+		in_buf = apkt->ad;
+		in_len = apkt->ad_len;
+
+		*auth_crypt = 0;
+	} else {
+		in_buf = data;
+
+		memcpy(in_buf, apkt->ad, apkt->ad_len);
+		memcpy(in_buf + apkt->ad_len,
+		       apkt->pkt->in_buf, apkt->pkt->in_len);
+		in_len = apkt->ad_len + apkt->pkt->in_len;
+
+		*auth_crypt = !apkt->tag ? apkt->pkt->in_len :
+			apkt->pkt->in_len - ctx->mode_params.ccm_info.tag_len;
+	}
+
+	if (ctx->mode_params.ccm_info.tag_len) {
+		if ((ctx->mode_params.ccm_info.tag_len >> 2) > 3) {
+			m = 3;
+		} else {
+			m = ctx->mode_params.ccm_info.tag_len >> 2;
+		}
+	}
+
+	/* Writing the frame in RAM */
+	if (!_cc2520_write_ram(&cc2520->spi, CC2520_MEM_DATA, in_buf, in_len)) {
+		SYS_LOG_ERR("Cannot write the frame in RAM");
+		return -EIO;
+	}
+
+	/* See section 26.8.1 */
+	sys_memcpy_swap(data, ctx->key.bit_stream, ctx->keylen);
+
+	/* Writing the key in RAM */
+	if (!_cc2520_write_ram(&cc2520->spi, CC2520_MEM_KEY, data, 16)) {
+		SYS_LOG_ERR("Cannot write the key in RAM");
+		return -EIO;
+	}
+
+	generate_nonce(ccm_nonce, data, apkt, m);
+
+	/* Writing the nonce in RAM */
+	if (!_cc2520_write_ram(&cc2520->spi, CC2520_MEM_NONCE, data, 16)) {
+		SYS_LOG_ERR("Cannot write the nonce in RAM");
+		return -EIO;
+	}
+
+	return m;
+}
+
+static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
+			      struct cipher_aead_pkt *apkt,
+			      uint8_t *ccm_nonce)
+{
+	struct cc2520_context *cc2520 = ctx->device->driver_data;
+	uint8_t auth_crypt;
+	int m;
+
+	if (!apkt || !apkt->pkt) {
+		SYS_LOG_ERR("Invalid crypto packet to operate with");
+		return -EINVAL;
+	}
+
+	if (apkt->tag) {
+		SYS_LOG_ERR("CCM encryption does not take a tag");
+		return -EINVAL;
+	}
+
+	m = insert_crypto_parameters(ctx, apkt, ccm_nonce, &auth_crypt);
+	if (m < 0) {
+		SYS_LOG_ERR("Inserting crypto parameters failed");
+		return m;
+	}
+
+	apkt->pkt->out_len = apkt->pkt->in_len + apkt->ad_len +
+		(m ? ctx->mode_params.ccm_info.tag_len : 0);
+
+	if (apkt->pkt->out_len > apkt->pkt->out_buf_max) {
+		SYS_LOG_ERR("Result will not fit into out buffer %u vs %u",
+			    apkt->pkt->out_len, apkt->pkt->out_buf_max);
+		return -ENOBUFS;
+	}
+
+	if (!instruct_ccm(cc2520, CC2520_MEM_KEY >> 4, auth_crypt,
+			  CC2520_MEM_NONCE >> 4, CC2520_MEM_DATA,
+			  0x000, apkt->ad_len, m) ||
+	    !_cc2520_read_ram(&cc2520->spi, CC2520_MEM_DATA,
+			      apkt->pkt->out_buf, apkt->pkt->out_len)) {
+		SYS_LOG_ERR("CCM or reading result from RAM failed");
+		return -EIO;
+	}
+
+	apkt->tag = apkt->pkt->out_buf + apkt->pkt->in_len;
+
+	return 0;
+}
+
+static int _cc2520_crypto_uccm(struct cipher_ctx *ctx,
+			       struct cipher_aead_pkt *apkt,
+			       uint8_t *ccm_nonce)
+{
+	struct cc2520_context *cc2520 = ctx->device->driver_data;
+	uint8_t auth_crypt;
+	int m;
+
+	if (!apkt || !apkt->pkt) {
+		SYS_LOG_ERR("Invalid crypto packet to operate with");
+		return -EINVAL;
+	}
+
+	if (ctx->mode_params.ccm_info.tag_len && !apkt->tag) {
+		SYS_LOG_ERR("In case of MIC you need to provide a tag");
+		return -EINVAL;
+	}
+
+	m = insert_crypto_parameters(ctx, apkt, ccm_nonce, &auth_crypt);
+	if (m < 0) {
+		return m;
+	}
+
+	apkt->pkt->out_len = apkt->pkt->in_len + apkt->ad_len;
+
+	if (!instruct_uccm(cc2520, CC2520_MEM_KEY >> 4, auth_crypt,
+			   CC2520_MEM_NONCE >> 4, CC2520_MEM_DATA,
+			   0x000, apkt->ad_len, m) ||
+	    !_cc2520_read_ram(&cc2520->spi, CC2520_MEM_DATA,
+			      apkt->pkt->out_buf, apkt->pkt->out_len)) {
+		SYS_LOG_ERR("UCCM or reading result from RAM failed");
+		return -EIO;
+	}
+
+	if (m && (!(read_reg_dpustat(&cc2520->spi) & DPUSTAT_AUTHSTAT_H))) {
+		SYS_LOG_ERR("Authentication of the frame failed");
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int cc2520_crypto_hw_caps(struct device *dev)
+{
+	return CAP_RAW_KEY | CAP_INPLACE_OPS | CAP_SYNC_OPS;
+}
+
+static int cc2520_crypto_begin_session(struct device *dev,
+				       struct cipher_ctx *ctx,
+				       enum cipher_algo algo,
+				       enum cipher_mode mode,
+				       enum cipher_op op_type)
+{
+	if (algo != CRYPTO_CIPHER_ALGO_AES || mode != CRYPTO_CIPHER_MODE_CCM) {
+		SYS_LOG_ERR("Wrong algo (%u) or mode (%u)", algo, mode);
+		return -EINVAL;
+	}
+
+	if (ctx->mode_params.ccm_info.nonce_len != 13) {
+		SYS_LOG_ERR("Nonce length erroneous (%u)",
+			    ctx->mode_params.ccm_info.nonce_len);
+		return -EINVAL;
+	}
+
+	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
+		ctx->ops.ccm_crypt_hndlr = _cc2520_crypto_ccm;
+	} else {
+		ctx->ops.ccm_crypt_hndlr = _cc2520_crypto_uccm;
+	}
+
+	ctx->ops.cipher_mode = mode;
+	ctx->device = dev;
+
+	return 0;
+}
+
+static int cc2520_crypto_free_session(struct device *dev,
+				      struct cipher_ctx *ctx)
+{
+	ARG_UNUSED(dev);
+
+	ctx->ops.ccm_crypt_hndlr = NULL;
+	ctx->device = NULL;
+
+	return 0;
+}
+
+static int cc2520_crypto_init(struct device *dev)
+{
+	SYS_LOG_INF("CC2520 crypto part initialized");
+
+	return 0;
+}
+
+struct crypto_driver_api cc2520_crypto_api = {
+	.query_hw_caps			= cc2520_crypto_hw_caps,
+	.begin_session			= cc2520_crypto_begin_session,
+	.free_session			= cc2520_crypto_free_session,
+	.crypto_async_callback_set	= NULL
+};
+
+DEVICE_AND_API_INIT(cc2520_crypto, CONFIG_IEEE802154_CC2520_CRYPTO_DRV_NAME,
+		    cc2520_crypto_init, &cc2520_context_data, NULL,
+		    POST_KERNEL, CONFIG_IEEE802154_CC2520_CRYPTO_INIT_PRIO,
+		    &cc2520_crypto_api);
+
+#endif /* CONFIG_IEEE802154_CC2520_CRYPTO */

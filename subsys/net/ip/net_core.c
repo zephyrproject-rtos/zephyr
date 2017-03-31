@@ -621,7 +621,11 @@ static inline int check_ip_addr(struct net_buf *buf)
 			return -EADDRNOTAVAIL;
 		}
 
-		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(buf)->dst)) {
+		/* If the destination address is our own, then route it
+		 * back to us.
+		 */
+		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(buf)->dst) ||
+		    net_is_my_ipv6_addr(&NET_IPV6_BUF(buf)->dst)) {
 			struct in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
@@ -652,7 +656,11 @@ static inline int check_ip_addr(struct net_buf *buf)
 			return -EADDRNOTAVAIL;
 		}
 
-		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(buf)->dst)) {
+		/* If the destination address is our own, then route it
+		 * back to us.
+		 */
+		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(buf)->dst) ||
+		    net_is_my_ipv4_addr(&NET_IPV4_BUF(buf)->dst)) {
 			struct in_addr addr;
 
 			/* Swap the addresses so that in receiving side

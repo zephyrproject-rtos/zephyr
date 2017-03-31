@@ -19,6 +19,7 @@
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt.h"
+#include "ieee802154_security.h"
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu)
@@ -105,7 +106,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		params.dst.pan_id = IEEE802154_BROADCAST_PAN_ID;
 
 		buf = ieee802154_create_mac_cmd_frame(
-			iface, IEEE802154_CFI_BEACON_REQUEST, &params);
+			ctx, IEEE802154_CFI_BEACON_REQUEST, &params);
 		if (!buf) {
 			NET_DBG("Could not create Beacon Request");
 			return -ENOBUFS;
@@ -250,7 +251,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 	buf = ieee802154_create_mac_cmd_frame(
-		iface, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
+		ctx, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
 	if (!buf) {
 		ret = -ENOBUFS;
 		goto out;
@@ -321,7 +322,7 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	params.pan_id = ctx->pan_id;
 
 	buf = ieee802154_create_mac_cmd_frame(
-		iface, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION, &params);
+		ctx, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION, &params);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -385,7 +386,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 
 	value = *((uint16_t *) data);
 
-	if (mgmt_request == NET_REQUEST_IEEE802154_SET_CHAN) {
+	if (mgmt_request == NET_REQUEST_IEEE802154_SET_CHANNEL) {
 		if (ctx->channel != value) {
 			ret = radio->set_channel(iface->dev, value);
 			if (!ret) {
@@ -423,7 +424,7 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 	return ret;
 }
 
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_CHAN,
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_CHANNEL,
 				  ieee802154_set_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_PAN_ID,
@@ -449,7 +450,7 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 
 	value = (uint16_t *)data;
 
-	if (mgmt_request == NET_REQUEST_IEEE802154_GET_CHAN) {
+	if (mgmt_request == NET_REQUEST_IEEE802154_GET_CHANNEL) {
 		*value = ctx->channel;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_PAN_ID) {
 		*value = ctx->pan_id;
@@ -466,7 +467,7 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 	return 0;
 }
 
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_CHAN,
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_CHANNEL,
 				  ieee802154_get_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_PAN_ID,
@@ -477,3 +478,63 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_EXT_ADDR,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SHORT_ADDR,
 				  ieee802154_get_parameters);
+
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+
+static int ieee802154_set_security_settings(uint32_t mgmt_request,
+					    struct net_if *iface,
+					    void *data, size_t len)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_security_params *params;
+
+	if (ctx->associated) {
+		return -EBUSY;
+	}
+
+	if (len != sizeof(struct ieee802154_security_params) ||
+	    !data) {
+		return -EINVAL;
+	}
+
+	params = (struct ieee802154_security_params *)data;
+
+	if (ieee802154_security_setup_session(&ctx->sec_ctx, params->level,
+					      params->key_mode, params->key,
+					      params->key_len)) {
+		NET_ERR("Could not set the security parameters");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SECURITY_SETTINGS,
+				  ieee802154_set_security_settings);
+
+static int ieee802154_get_security_settings(uint32_t mgmt_request,
+					    struct net_if *iface,
+					    void *data, size_t len)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_security_params *params;
+
+	if (len != sizeof(struct ieee802154_security_params) ||
+	    !data) {
+		return -EINVAL;
+	}
+
+	params = (struct ieee802154_security_params *)data;
+
+	memcpy(params->key, ctx->sec_ctx.key, ctx->sec_ctx.key_len);
+	params->key_len = ctx->sec_ctx.key_len;
+	params->key_mode = ctx->sec_ctx.key_mode;
+	params->level = ctx->sec_ctx.level;
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SECURITY_SETTINGS,
+				  ieee802154_get_security_settings);
+
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
