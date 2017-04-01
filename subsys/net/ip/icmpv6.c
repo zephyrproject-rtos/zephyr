@@ -202,7 +202,6 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 {
 	struct net_buf *buf, *frag;
 	struct net_if *iface;
-	struct in6_addr *src, *dst;
 	size_t extra_len, reserve;
 	int err = -EIO;
 
@@ -222,12 +221,6 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 		goto drop_no_buf;
 	}
 
-	/* We need to remember the original location of source and destination
-	 * addresses as the net_nbuf_copy() will mangle the original buffer.
-	 */
-	src = &NET_IPV6_BUF(orig)->src;
-	dst = &NET_IPV6_BUF(orig)->dst;
-
 	/* There is unsed part in ICMPv6 error msg header what we might need
 	 * to store the param variable.
 	 */
@@ -242,7 +235,8 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 			sizeof(struct net_tcp_hdr);
 	} else {
 		size_t space = CONFIG_NET_NBUF_DATA_SIZE -
-			net_if_get_ll_reserve(iface, dst);
+			net_if_get_ll_reserve(iface,
+					      &NET_IPV6_BUF(orig)->dst);
 
 		if (reserve > space) {
 			extra_len = 0;
@@ -276,16 +270,19 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 			     sizeof(struct net_icmp_hdr));
 	}
 
-	if (net_is_ipv6_addr_mcast(dst)) {
-		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, src);
+	if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(orig)->dst)) {
+		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst,
+				&NET_IPV6_BUF(orig)->src);
 
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
-				net_if_ipv6_select_src_addr(iface, dst));
+				net_if_ipv6_select_src_addr(iface,
+						    &NET_IPV6_BUF(orig)->dst));
 	} else {
 		struct in6_addr addr;
 
-		net_ipaddr_copy(&addr, src);
-		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, dst);
+		net_ipaddr_copy(&addr, &NET_IPV6_BUF(orig)->src);
+		net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
+				&NET_IPV6_BUF(orig)->dst);
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, &addr);
 	}
 

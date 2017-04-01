@@ -350,65 +350,6 @@ static inline void setup_icmpv6_hdr(struct net_buf *buf, uint8_t type,
 	       NET_ICMPV6_UNUSED_LEN);
 }
 
-static bool net_test_send_na(struct net_if *iface,
-			     struct in6_addr *addr,
-			     struct net_linkaddr *lladdr,
-			     struct in6_addr *dst)
-{
-	struct net_buf *buf, *frag;
-	uint8_t llao_len;
-
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				      K_FOREVER);
-
-	NET_ASSERT_INFO(buf, "Out of TX buffers");
-
-	buf = net_ipv6_create_raw(buf, addr, dst, iface, IPPROTO_ICMPV6);
-
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
-
-	NET_ASSERT_INFO(frag, "Out of DATA buffers");
-
-	net_buf_frag_add(buf, frag);
-
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-
-	NET_IPV6_BUF(buf)->hop_limit = NET_IPV6_ND_HOP_LIMIT;
-
-	setup_icmpv6_hdr(buf->frags, NET_ICMPV6_NA, 0);
-
-	net_nbuf_ll_clear(buf);
-
-	llao_len = get_llao_len(iface);
-
-	net_nbuf_set_ext_len(buf, 0);
-
-	net_ipaddr_copy(&NET_ICMPV6_NA_BUF(buf)->tgt, addr);
-
-	set_llao(lladdr,
-		 net_nbuf_icmp_data(buf) + sizeof(struct net_icmp_hdr) +
-					sizeof(struct net_icmpv6_na_hdr),
-		 llao_len, NET_ICMPV6_ND_OPT_TLLAO);
-
-	net_buf_add(buf->frags, llao_len + sizeof(struct net_icmp_hdr) +
-					sizeof(struct net_icmpv6_na_hdr));
-
-	NET_ICMPV6_NA_BUF(buf)->flags = NET_ICMPV6_NA_FLAG_SOLICITED;
-
-	if (net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6) < 0) {
-		return false;
-	}
-
-	if (net_send_data(buf) < 0) {
-		TC_ERROR("Cannot send NA buffer\n");
-		return false;
-	}
-
-	return true;
-}
-
 static bool net_test_send_ns(struct net_if *iface,
 			     struct in6_addr *addr)
 {
@@ -445,6 +386,8 @@ static bool net_test_nbr_lookup_ok(struct net_if *iface,
 
 static bool populate_nbr_cache(void)
 {
+	struct net_nbr *nbr;
+
 	msg_sending = NET_ICMPV6_NS;
 	feed_data = true;
 	data_failure = false;
@@ -455,20 +398,13 @@ static bool populate_nbr_cache(void)
 		return false;
 	}
 
-	/* The NS message sending causes some NA to be sent. Those
-	 * NAs will be discarded because there is no suitable interface
-	 * with such destination address. This is quite normal and those
-	 * extra NA messages can be safely discarded.
-	 */
-
-	/* The next NA will cause the ll address to be added to the
-	 * neighbor cache.
-	 */
-
-	if (!net_test_send_na(peer_iface,
-			      &peer_addr,
-			      &net_route_data_peer.ll_addr,
-			      &my_addr)) {
+	nbr = net_ipv6_nbr_add(net_if_get_default(),
+			       &peer_addr,
+			       &net_route_data_peer.ll_addr,
+			       false,
+			       NET_IPV6_NBR_STATE_REACHABLE);
+	if (!nbr) {
+		TC_ERROR("Cannot add peer to neighbor cache\n");
 		return false;
 	}
 

@@ -271,24 +271,6 @@ struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data)
 	return NULL;
 }
 
-static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
-				  struct net_if *iface,
-				  struct in6_addr *addr)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		struct net_nbr *nbr = get_nbr(i);
-
-		if (nbr->ref && nbr->iface == iface &&
-		    net_ipv6_addr_cmp(&nbr_data(nbr)->dag->dag_id, addr)) {
-			return nbr;
-		}
-	}
-
-	return NULL;
-}
-
 static inline void nbr_free(struct net_nbr *nbr)
 {
 	NET_DBG("nbr %p", nbr);
@@ -2246,13 +2228,23 @@ struct net_rpl_parent *find_parent_any_dag_any_instance(struct net_if *iface,
 							struct in6_addr *addr)
 {
 	struct net_nbr *nbr, *rpl_nbr;
+	struct net_linkaddr_storage *lsaddr;
+	struct net_linkaddr lladdr;
 
 	nbr = net_ipv6_nbr_lookup(iface, addr);
 	if (!nbr) {
 		return NULL;
 	}
 
-	rpl_nbr = nbr_lookup(&net_rpl_parents.table, iface, addr);
+	lsaddr = net_nbr_get_lladdr(nbr->idx);
+	if (!lsaddr) {
+		return NULL;
+	}
+
+	lladdr.addr = lsaddr->addr;
+	lladdr.len = lsaddr->len;
+
+	rpl_nbr = net_nbr_lookup(&net_rpl_parents.table, iface, &lladdr);
 	if (!rpl_nbr) {
 		return NULL;
 	}
@@ -2742,32 +2734,34 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 
 	/* Handle any DIO suboptions */
 	while (frag) {
+		len = 0;
 		frag = net_nbuf_read_u8(frag, pos, &pos, &subopt_type);
-
-		if (pos == 0) {
+		if (!frag && pos == 0) {
 			/* We are at the end of the message */
-			frag = NULL;
 			break;
-		}
-
-		if (subopt_type == NET_RPL_OPTION_PAD1) {
-			len = 1;
-		} else {
-			/* Suboption with a two-byte header + payload */
-			frag = net_nbuf_read_u8(frag, pos, &pos, &tmp);
-
-			len = 2 + tmp;
-		}
-
-		if (!frag && pos) {
+		} else if (!frag && pos == 0xffff) {
 			NET_DBG("Invalid DIO packet");
 			net_stats_update_rpl_malformed_msgs();
-			goto out;
+			return NET_DROP;
 		}
 
-		NET_DBG("DIO option %u length %d", subopt_type, len - 2);
+		if (subopt_type != NET_RPL_OPTION_PAD1) {
+			/* Suboption with a two-byte header + payload */
+			frag = net_nbuf_read_u8(frag, pos, &pos, &len);
+			len += 2;
+		}
+
+		NET_DBG("DIO option %u length %d", subopt_type,
+			subopt_type == NET_RPL_OPTION_PAD1 ? 0 : len - 2);
 
 		switch (subopt_type) {
+		case NET_RPL_OPTION_PAD1:
+			/* Special case without options length and payload. */
+			break;
+		case NET_RPL_OPTION_PADN:
+			/* Skip padding bytes */
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
+			break;
 		case NET_RPL_OPTION_DAG_METRIC_CONTAINER:
 			if (len < 6) {
 				NET_DBG("Invalid DAG MC len %d", len);
@@ -2917,6 +2911,8 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 		default:
 			NET_DBG("Unsupported suboption type in DIO %d",
 				subopt_type);
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
+			break;
 		}
 	}
 
@@ -3102,7 +3098,8 @@ static int dao_ack_send(struct in6_addr *src,
 			struct in6_addr *dst,
 			struct net_if *iface,
 			struct net_rpl_instance *instance,
-			uint8_t sequence)
+			uint8_t sequence,
+			uint8_t status)
 {
 	struct net_buf *buf;
 	int ret;
@@ -3125,7 +3122,7 @@ static int dao_ack_send(struct in6_addr *src,
 	net_nbuf_append_u8(buf, instance->instance_id);
 	net_nbuf_append_u8(buf, 0); /* reserved */
 	net_nbuf_append_u8(buf, sequence);
-	net_nbuf_append_u8(buf, 0); /* status */
+	net_nbuf_append_u8(buf, status); /* status */
 
 	ret = net_ipv6_finalize_raw(buf, IPPROTO_ICMPV6);
 	if (ret < 0) {
@@ -3168,13 +3165,16 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 		net_ipaddr_copy(&dst, &NET_IPV6_BUF(buf)->dst);
 
 		r = dao_forward(dag->instance->iface, buf, paddr);
-		if (r < 0) {
+		if (r >= 0) {
 			return r;
 		}
 
+		/* Send DAO ACK incase of failed to forward the
+		 * original DAO message.
+		 */
 		if (flags & NET_RPL_DAO_K_FLAG) {
 			r = dao_ack_send(&dst, &src, net_nbuf_iface(buf),
-					 instance, sequence);
+					 instance, sequence, 128);
 		}
 	}
 
@@ -3201,7 +3201,7 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	uint8_t target_len;
 	uint8_t flags;
 	uint8_t subopt_type;
-	int len;
+	uint8_t len;
 	int r = -EINVAL;
 
 	net_rpl_info(buf, "Destination Advertisement Object");
@@ -3280,34 +3280,35 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 
 	/* Handle any DAO suboptions */
 	while (frag) {
+		len = 0;
 		frag = net_nbuf_read_u8(frag, pos, &pos, &subopt_type);
-
-		if (pos == 0) {
+		if (!frag && pos == 0) {
 			/* We are at the end of the message */
-			frag = NULL;
 			break;
-		}
-
-		if (subopt_type == NET_RPL_OPTION_PAD1) {
-			len = 1;
-		} else {
-			uint8_t tmp;
-
-			/* Suboption with a two-byte header + payload */
-			frag = net_nbuf_read_u8(frag, pos, &pos, &tmp);
-
-			len = 2 + tmp;
-		}
-
-		if (!frag && pos) {
+		} else if (!frag && pos == 0xffff) {
+			/* Read error */
 			NET_DBG("Invalid DAO packet");
 			net_stats_update_rpl_malformed_msgs();
-			goto out;
+			return NET_DROP;
 		}
 
-		NET_DBG("DAO option %u length %d", subopt_type, len - 2);
+		if (subopt_type != NET_RPL_OPTION_PAD1) {
+			/* Suboption with a two-byte header + payload */
+			frag = net_nbuf_read_u8(frag, pos, &pos, &len);
+			len += 2;
+		}
+
+		NET_DBG("DAO option %u length %d", subopt_type,
+			subopt_type == NET_RPL_OPTION_PAD1 ? 0 : len - 2);
 
 		switch (subopt_type) {
+		case NET_RPL_OPTION_PAD1:
+			/* Special case without options length and payload. */
+			break;
+		case NET_RPL_OPTION_PADN:
+			/* Skip padding bytes */
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
+			break;
 		case NET_RPL_OPTION_TARGET:
 			frag = net_nbuf_skip(frag, pos, &pos, 1); /* reserved */
 			frag = net_nbuf_read_u8(frag, pos, &pos, &target_len);
@@ -3319,6 +3320,10 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 			/* The flags, path sequence and control are ignored. */
 			frag = net_nbuf_skip(frag, pos, &pos, 3);
 			frag = net_nbuf_read_u8(frag, pos, &pos, &lifetime);
+			break;
+		default:
+			/* Skip unknown sub options */
+			frag = net_nbuf_skip(frag, pos, &pos, len - 2);
 			break;
 		}
 	}
@@ -3451,15 +3456,77 @@ fwd_dao:
 		}
 	}
 
-out:
 	return NET_DROP;
 }
 
 static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
+	struct net_rpl_instance *instance;
+	struct net_rpl_parent *parent;
+	struct net_buf *frag;
+	uint16_t offset;
+	uint16_t pos;
+	uint8_t instance_id;
+	uint8_t sequence;
+	uint8_t status;
+
 	net_rpl_info(buf, "Destination Advertisement Object Ack");
 
-	/* TODO: Handle DAO ACK properly */
+	/* offset tells now where the ICMPv6 header is starting */
+	offset = net_nbuf_icmp_data(buf) - net_nbuf_ip_data(buf);
+
+	offset += sizeof(struct net_icmp_hdr);
+
+	frag = net_nbuf_read_u8(buf->frags, offset, &pos, &instance_id);
+	if (!frag && pos == 0xffff) {
+		/* Read error */
+		return NET_DROP;
+	}
+
+	instance = net_rpl_get_instance(instance_id);
+	if (!instance || !instance->current_dag) {
+		NET_DBG("Ignoring DAO ACK for an unknown instance %d",
+			instance_id);
+		return NET_DROP;
+	}
+
+	parent = find_parent(net_nbuf_iface(buf), instance->current_dag,
+			     &NET_IPV6_BUF(buf)->src);
+	if (!parent) {
+		NET_DBG("Received a DAO ACK from a not joined instance %d",
+			instance_id);
+		return NET_DROP;
+	}
+
+	/* Skip reserved byte */
+	frag = net_nbuf_skip(frag, pos, &pos, 1);
+	frag = net_nbuf_read_u8(frag, pos, &pos, &sequence);
+	frag = net_nbuf_read_u8(frag, pos, &pos, &status);
+	if (!frag && pos == 0xffff) {
+		return NET_DROP;
+	}
+
+	NET_DBG("Received a DAO ACK with seq number %d(%d) status %d from %s",
+		sequence, rpl_dao_sequence, status,
+		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
+
+	if (sequence == rpl_dao_sequence) {
+		NET_DBG("Status %s", status < 128 ? "ACK" : "NACK");
+		/* FIXME: Stop any DAO retransimission. */
+		if (status >= 128) {
+			/* Rejection, the node sending the DAO-ACK is unwilling
+			 * to act as a parent.
+			 * Trigger a local repair since we can not get our DAO.
+			 */
+			net_rpl_local_repair(net_nbuf_iface(buf), instance);
+			return NET_DROP;
+		}
+	} else {
+		/* FIXME: Forward or drop ? */
+		NET_DBG("DAO ACK not for me");
+		return NET_DROP;
+	}
+
 	net_stats_update_rpl_dao_ack_recv();
 
 	net_nbuf_unref(buf);

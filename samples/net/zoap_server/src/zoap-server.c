@@ -29,6 +29,10 @@
 #include <gatt/ipss.h>
 #endif
 
+#if defined(CONFIG_NET_L2_IEEE802154)
+#include <ieee802154_settings.h>
+#endif
+
 #define MY_COAP_PORT 5683
 
 #define STACKSIZE 2000
@@ -1173,12 +1177,12 @@ static bool join_coap_multicast_group(void)
 		return false;
 	}
 
-#if defined(CONFIG_NET_SAMPLES_IP_ADDRESSES)
+#if defined(CONFIG_NET_APP_SETTINGS)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_SAMPLES_MY_IPV6_ADDR,
+			  CONFIG_NET_APP_MY_IPV6_ADDR,
 			  &my_addr) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
-			CONFIG_NET_SAMPLES_MY_IPV6_ADDR);
+			CONFIG_NET_APP_MY_IPV6_ADDR);
 	}
 #endif
 
@@ -1235,6 +1239,13 @@ void main(void)
 	ipss_init();
 
 	ipss_advertise();
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+	if (ieee802154_sample_setup()) {
+		NET_ERR("IEEE 802.15.4 setup failed");
+		return;
+	}
 #endif
 
 	if (!join_coap_multicast_group()) {
