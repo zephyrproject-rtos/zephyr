@@ -15,6 +15,7 @@ Samples and Demos
    grove/*
    advanced
    power/power.rst
+   boards/*
 
 
 

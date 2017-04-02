@@ -71,4 +71,7 @@ source "drivers/dma/Kconfig"
 source "drivers/usb/Kconfig"
 
 source "drivers/crypto/Kconfig"
+
+source "drivers/display/Kconfig"
+
 endmenu
