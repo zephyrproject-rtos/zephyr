@@ -75,6 +75,9 @@ content: scripts/extract_content.py
 kconfig: scripts/genrest/genrest.py
 	$(Q)srctree=../ SRCARCH=x86 python $< ../Kconfig reference/kconfig/
 
+
+prep: doxy content kconfig
+
 html: content kconfig
 	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@rm -rf samples
@@ -95,8 +98,10 @@ pickle:
 	@echo
 	@echo "Build finished; now you can process the pickle files."
 
-json:
-	$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) $(BUILDDIR)/json
+json: prep
+	$(SPHINXBUILD) -t $(DOC_TAG) -b json $(ALLSPHINXOPTS) $(BUILDDIR)/json
+	@rm -rf samples
+	@rm -rf boards
 	@echo
 	@echo "Build finished; now you can process the JSON files."
 
