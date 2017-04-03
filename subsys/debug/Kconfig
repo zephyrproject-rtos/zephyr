@@ -60,7 +60,7 @@ endmenu
 config DEBUG_INFO
 	bool "Enable system debugging information"
 	default n
-	depends on X86 && !X86_IAMCU
+	depends on X86
 	help
 	This option enables the addition of various information that can be used
 	by debuggers in debugging the system.
