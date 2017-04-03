@@ -3597,89 +3597,80 @@ int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr)
 	uint16_t pos = 0;
 	struct net_rpl_parent *parent;
 	struct net_buf *frag;
+	uint16_t sender_rank;
+	uint16_t offset;
 	uint8_t next;
 	uint8_t len;
 
 	frag = buf->frags;
 
-	if (NET_IPV6_BUF(buf)->nexthdr == NET_IPV6_NEXTHDR_HBHO) {
-		/* The HBHO will start right after IPv6 header */
-		frag = net_nbuf_skip(frag, pos, &pos,
-				     sizeof(struct net_ipv6_hdr));
-		if (!frag && pos) {
-			/* Not enough data in the message */
-			return -EMSGSIZE;
-		}
-
-		frag = net_nbuf_read(frag, pos, &pos, 1, &next);
-		frag = net_nbuf_read(frag, pos, &pos, 1, &len);
-		if (!frag && pos) {
-			return -EMSGSIZE;
-		}
-
-		if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
-			NET_DBG("Non RPL Hop-by-hop options support not "
-				"implemented");
-			return 0;
-		}
-
-		if (next == NET_RPL_EXT_HDR_OPT_RPL) {
-			uint16_t sender_rank, offset;
-
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt type */
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt len */
-
-			offset = pos; /* Where the flags is located in the
-				       * packet, that info is need few lines
-				       * below.
-				       */
-
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* flags */
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* instance */
-
-			frag = net_nbuf_read(frag, pos, &pos, 2,
-					     (uint8_t *)&sender_rank);
-			if (!frag && pos) {
-				return -EMSGSIZE;
-			}
-
-			if (sender_rank == 0) {
-				NET_DBG("Updating RPL option");
-				if (!rpl_default_instance ||
-				    !rpl_default_instance->is_used ||
-				    !net_rpl_dag_is_joined(
-					  rpl_default_instance->current_dag)) {
-
-					NET_DBG("Unable to add hop-by-hop "
-						"extension header: incorrect "
-						"default instance");
-					return -EINVAL;
-				}
-
-				parent = find_parent(net_nbuf_iface(buf),
-						     rpl_default_instance->
-						     current_dag,
-						     addr);
-
-				if (!parent ||
-				    parent != parent->dag->preferred_parent) {
-					net_nbuf_write_u8(buf, buf->frags,
-							  offset, &pos,
-							  NET_RPL_HDR_OPT_DOWN);
-				}
-
-				offset++;
-
-				net_nbuf_write_u8(buf, buf->frags, offset, &pos,
-					     rpl_default_instance->instance_id);
-
-				net_nbuf_write_be16(buf, buf->frags, pos, &pos,
-					     htons(rpl_default_instance->
-						   current_dag->rank));
-			}
-		}
+	if (NET_IPV6_BUF(buf)->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
+		NET_DBG("Next header is not NET_IPV6_NEXTHDR_HBHO");
+		return 0;
 	}
 
+	/* The HBHO will start right after IPv6 header */
+	frag = net_nbuf_skip(frag, pos, &pos, sizeof(struct net_ipv6_hdr));
+	if (!frag && pos) {
+		/* Not enough data in the message */
+		return -EMSGSIZE;
+	}
+
+	frag = net_nbuf_read(frag, pos, &pos, 1, &next);
+	frag = net_nbuf_read(frag, pos, &pos, 1, &len);
+	if (!frag && pos) {
+		return -EMSGSIZE;
+	}
+
+	if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
+		NET_DBG("Non RPL Hop-by-hop options support not implemented");
+		return 0;
+	}
+
+	if (next != NET_RPL_EXT_HDR_OPT_RPL) {
+		NET_DBG("Next header option is not NET_RPL_EXT_HDR_OPT_RPL");
+		return 0;
+	}
+
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt type */
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt len */
+
+	/* Where the flags is located in the packet, that info is
+	 * need few lines below.
+	 */
+	offset = pos;
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* flags */
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* instance */
+	frag = net_nbuf_read(frag, pos, &pos, 2, (uint8_t *)&sender_rank);
+	if (!frag && pos) {
+		return -EMSGSIZE;
+	}
+
+	if (sender_rank != 0) {
+		return 0;
+	}
+
+	NET_DBG("Updating RPL option");
+	if (!rpl_default_instance || !rpl_default_instance->is_used ||
+	    !net_rpl_dag_is_joined(rpl_default_instance->current_dag)) {
+		NET_DBG("Unable to add hop-by-hop extension header: incorrect "
+			"default instance");
+		return -EINVAL;
+	}
+
+	parent = find_parent(net_nbuf_iface(buf),
+			     rpl_default_instance->current_dag, addr);
+	if (!parent || parent != parent->dag->preferred_parent) {
+		net_nbuf_write_u8(buf, buf->frags, offset, &pos,
+				  NET_RPL_HDR_OPT_DOWN);
+	}
+
+	offset++;
+	net_nbuf_write_u8(buf, buf->frags, offset, &pos,
+			  rpl_default_instance->instance_id);
+	net_nbuf_write_be16(buf, buf->frags, pos, &pos,
+			    htons(rpl_default_instance->
+					  current_dag->rank));
 	return 0;
 }
 
