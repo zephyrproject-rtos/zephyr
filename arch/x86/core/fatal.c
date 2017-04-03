@@ -20,6 +20,7 @@
 #include <arch/x86/irq_controller.h>
 #include <arch/x86/segmentation.h>
 #include <exception.h>
+#include <inttypes.h>
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
@@ -168,10 +169,36 @@ EXC_FUNC_CODE(IV_INVALID_TSS);
 EXC_FUNC_CODE(IV_SEGMENT_NOT_PRESENT);
 EXC_FUNC_CODE(IV_STACK_FAULT);
 EXC_FUNC_CODE(IV_GENERAL_PROTECTION);
-EXC_FUNC_CODE(IV_PAGE_FAULT);
 EXC_FUNC_NOCODE(IV_X87_FPU_FP_ERROR);
 EXC_FUNC_CODE(IV_ALIGNMENT_CHECK);
 EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 
+/* Page fault error code flags */
+#define PRESENT	BIT(0)
+#define WR	BIT(1)
+#define US	BIT(2)
+#define RSVD	BIT(3)
+#define ID	BIT(4)
+#define PK	BIT(5)
+#define SGX	BIT(15)
+
+FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
+{
+	uint32_t err, cr2;
+
+	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
+	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
+
+	err = pEsf->errorCode;
+	printk("***** CPU Page Fault (error code 0x%08" PRIx32 ")\n", err);
+
+	printk("%s thread %s address 0x%08" PRIx32 "\n",
+	       err & US ? "User" : "Supervisor",
+	       err & ID ? "executed" : (err & WR ? "wrote" : "read"),
+	       cr2);
+
+	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
+}
+_EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
