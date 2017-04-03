@@ -65,8 +65,9 @@ static void spi_control_cs(struct device *dev, bool active)
 	const struct spi_qmsi_config *config = dev->config->config_info;
 	struct device *gpio = context->gpio_cs;
 
-	if (!gpio)
+	if (!gpio) {
 		return;
+	}
 
 	gpio_pin_write(gpio, config->cs_pin, !active);
 }
@@ -99,8 +100,9 @@ static void transfer_complete(void *data, int error, qm_spi_status_t status,
 	struct device *dev = pending->dev;
 	struct spi_qmsi_runtime *context;
 
-	if (!dev)
+	if (!dev) {
 		return;
+	}
 
 	context = dev->driver_data;
 
@@ -121,12 +123,17 @@ static int spi_qmsi_slave_select(struct device *dev, u32_t slave)
 
 static inline u8_t frame_size_to_dfs(qm_spi_frame_size_t frame_size)
 {
-	if (frame_size <= QM_SPI_FRAME_SIZE_8_BIT)
+	if (frame_size <= QM_SPI_FRAME_SIZE_8_BIT) {
 		return 1;
-	if (frame_size <= QM_SPI_FRAME_SIZE_16_BIT)
+	}
+
+	if (frame_size <= QM_SPI_FRAME_SIZE_16_BIT) {
 		return 2;
-	if (frame_size <= QM_SPI_FRAME_SIZE_32_BIT)
+	}
+
+	if (frame_size <= QM_SPI_FRAME_SIZE_32_BIT) {
 		return 4;
+	}
 
 	/* This should never happen, it will crash later on. */
 	return 0;
@@ -166,19 +173,20 @@ static int spi_qmsi_transceive(struct device *dev,
 	xfer->callback_data = dev;
 	xfer->callback = transfer_complete;
 
-	if (tx_buf_len == 0)
+	if (tx_buf_len == 0) {
 		cfg->transfer_mode = QM_SPI_TMOD_RX;
-	else if (rx_buf_len == 0)
+	} else if (rx_buf_len == 0) {
 		cfg->transfer_mode = QM_SPI_TMOD_TX;
-	else {
+	} else {
 		/* FIXME: QMSI expects rx_buf_len and tx_buf_len to
 		 * have the same size.
 		 */
 		cfg->transfer_mode = QM_SPI_TMOD_TX_RX;
 	}
 
-	if (context->loopback)
+	if (context->loopback) {
 		QM_SPI[spi]->ctrlr0 |= BIT(11);
+	}
 
 	rc = qm_spi_set_config(spi, cfg);
 	if (rc != 0) {
@@ -211,12 +219,14 @@ static struct device *gpio_cs_init(const struct spi_qmsi_config *config)
 {
 	struct device *gpio;
 
-	if (!config->cs_port)
+	if (!config->cs_port) {
 		return NULL;
+	}
 
 	gpio = device_get_binding(config->cs_port);
-	if (!gpio)
+	if (!gpio) {
 		return NULL;
+	}
 
 	if (gpio_pin_configure(gpio, config->cs_pin, GPIO_DIR_OUT) != 0) {
 		return NULL;
