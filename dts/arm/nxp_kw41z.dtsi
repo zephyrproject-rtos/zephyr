@@ -1,4 +1,4 @@
-#include "armv6-m.dtsi"
+#include <arm/armv6-m.dtsi>
 
 / {
 	cpus {

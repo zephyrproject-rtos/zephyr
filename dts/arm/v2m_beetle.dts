@@ -1,6 +1,6 @@
 /dts-v1/;
 
-#include "armv7-m.dtsi"
+#include <arm/armv7-m.dtsi>
 #include "arm/beetle/soc_irq.h"
 
 / {

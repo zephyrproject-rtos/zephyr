@@ -1,4 +1,4 @@
-#include "armv7-m.dtsi"
+#include <arm/armv7-m.dtsi>
 #include <inc/hw_memmap.h>
 #include <inc/hw_ints.h>
 
