@@ -3,7 +3,7 @@ Samples and Demos
 
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :glob:
 
    kernel
