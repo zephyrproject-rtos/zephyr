@@ -19,7 +19,7 @@
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #ifdef __cplusplus
 extern "C" {

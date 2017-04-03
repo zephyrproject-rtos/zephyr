@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <misc/printk.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/net_core.h>
 
@@ -54,15 +54,15 @@ void zperf_tcp_upload(struct net_context *ctx,
 		loop_time = k_cycle_get_32();
 		last_loop_time = loop_time;
 
-		buf = net_nbuf_get_tx(ctx, K_FOREVER);
+		buf = net_pkt_get_tx(ctx, K_FOREVER);
 		if (!buf) {
 			printk(TAG "ERROR! Failed to retrieve a buffer\n");
 			break;
 		}
 
-		frag = net_nbuf_get_data(ctx, K_FOREVER);
+		frag = net_pkt_get_data(ctx, K_FOREVER);
 		if (!frag) {
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 			printk(TAG "ERROR! Failed to retrieve a fragment\n");
 			break;
 		}
@@ -70,12 +70,12 @@ void zperf_tcp_upload(struct net_context *ctx,
 		net_buf_frag_add(buf, frag);
 
 		/* Fill in the TCP payload */
-		st = net_nbuf_append(buf, sizeof(sample_packet),
+		st = net_pkt_append(buf, sizeof(sample_packet),
 				     sample_packet, K_FOREVER);
 		if (!st) {
 			printk(TAG "ERROR! Failed to fill packet\n");
 
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 			nb_errors++;
 			break;
 		}
@@ -86,7 +86,7 @@ void zperf_tcp_upload(struct net_context *ctx,
 			printk(TAG "ERROR! Failed to send the buffer (%d)\n",
 			       ret);
 
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 			nb_errors++;
 			break;
 		} else {

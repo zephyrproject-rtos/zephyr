@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include "net_private.h"
 
@@ -157,7 +157,7 @@ net_dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type)
 /* Add magic cookie to DCHPv4 messages */
 static inline bool add_cookie(struct net_buf *buf)
 {
-	return net_nbuf_append(buf, sizeof(magic_cookie), magic_cookie,
+	return net_pkt_append(buf, sizeof(magic_cookie), magic_cookie,
 		K_FOREVER);
 }
 
@@ -165,15 +165,15 @@ static inline bool add_cookie(struct net_buf *buf)
 static bool add_option_length_value(struct net_buf *buf, uint8_t option,
 				    uint8_t size, const uint8_t *value)
 {
-	if (!net_nbuf_append_u8(buf, option)) {
+	if (!net_pkt_append_u8(buf, option)) {
 		return false;
 	}
 
-	if (!net_nbuf_append_u8(buf, size)) {
+	if (!net_pkt_append_u8(buf, size)) {
 		return false;
 	}
 
-	if (!net_nbuf_append(buf, size, value, K_FOREVER)) {
+	if (!net_pkt_append(buf, size, value, K_FOREVER)) {
 		return false;
 	}
 
@@ -197,7 +197,7 @@ static bool add_req_options(struct net_buf *buf)
 					 DHCPV4_OPTIONS_ROUTER,
 					 DHCPV4_OPTIONS_DNS_SERVER };
 
-	return net_nbuf_append(buf, sizeof(data), data, K_FOREVER);
+	return net_pkt_append(buf, sizeof(data), data, K_FOREVER);
 }
 
 static bool add_server_id(struct net_buf *buf, const struct in_addr *addr)
@@ -215,7 +215,7 @@ static bool add_req_ipaddr(struct net_buf *buf, const struct in_addr *addr)
 /* Add DHCPv4 Options end, rest of the message can be padded wit zeros */
 static inline bool add_end(struct net_buf *buf)
 {
-	return net_nbuf_append_u8(buf, DHCPV4_OPTIONS_END);
+	return net_pkt_append_u8(buf, DHCPV4_OPTIONS_END);
 }
 
 /* File is empty ATM */
@@ -224,7 +224,7 @@ static inline bool add_file(struct net_buf *buf)
 	uint8_t len = SIZE_OF_FILE;
 
 	while (len-- > 0) {
-		if (!net_nbuf_append_u8(buf, 0)) {
+		if (!net_pkt_append_u8(buf, 0)) {
 			return false;
 		}
 	}
@@ -238,7 +238,7 @@ static inline bool add_sname(struct net_buf *buf)
 	uint8_t len = SIZE_OF_SNAME;
 
 	while (len-- > 0) {
-		if (!net_nbuf_append_u8(buf, 0)) {
+		if (!net_pkt_append_u8(buf, 0)) {
 			return false;
 		}
 	}
@@ -287,14 +287,14 @@ static struct net_buf *prepare_message(struct net_if *iface, uint8_t type,
 	struct net_buf *frag;
 	struct dhcp_msg *msg;
 
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				      K_FOREVER);
+	buf = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				     K_FOREVER);
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	net_buf_frag_add(buf, frag);
 
@@ -338,7 +338,7 @@ static struct net_buf *prepare_message(struct net_if *iface, uint8_t type,
 	return buf;
 
 fail:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	return NULL;
 }
 
@@ -442,7 +442,7 @@ fail:
 	NET_DBG("Message preparation failed");
 
 	if (!buf) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 }
 
@@ -485,7 +485,7 @@ fail:
 	NET_DBG("Message preparation failed");
 
 	if (!buf) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 }
 
@@ -672,8 +672,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 	uint8_t type;
 	uint16_t pos;
 
-	frag = net_nbuf_read(buf, offset, &pos, sizeof(magic_cookie),
-			     (uint8_t *)cookie);
+	frag = net_pkt_read(buf, offset, &pos, sizeof(magic_cookie),
+			    (uint8_t *)cookie);
 	if (!frag || memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
 
 		NET_DBG("Incorrect magic cookie");
@@ -681,14 +681,14 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 	}
 
 	while (frag) {
-		frag = net_nbuf_read_u8(frag, pos, &pos, &type);
+		frag = net_pkt_read_u8(frag, pos, &pos, &type);
 
 		if (type == DHCPV4_OPTIONS_END) {
 			NET_DBG("options_end");
 			return NET_OK;
 		}
 
-		frag = net_nbuf_read_u8(frag, pos, &pos, &length);
+		frag = net_pkt_read_u8(frag, pos, &pos, &length);
 		if (!frag) {
 			NET_ERR("option parsing, bad length");
 			return NET_DROP;
@@ -703,8 +703,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read(frag, pos, &pos, length,
-					     netmask.s4_addr);
+			frag = net_pkt_read(frag, pos, &pos, length,
+					    netmask.s4_addr);
 			if (!frag && pos) {
 				NET_ERR("options_subnet_mask, short packet");
 				return NET_DROP;
@@ -728,9 +728,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read(frag, pos, &pos, 4,
-					     router.s4_addr);
-			frag = net_nbuf_skip(frag, pos, &pos, length - 4);
+			frag = net_pkt_read(frag, pos, &pos, 4, router.s4_addr);
+			frag = net_pkt_skip(frag, pos, &pos, length - 4);
 			if (!frag && pos) {
 				NET_ERR("options_router, short packet");
 				return NET_DROP;
@@ -747,8 +746,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read_be32(frag, pos, &pos,
-						  &iface->dhcpv4.lease_time);
+			frag = net_pkt_read_be32(frag, pos, &pos,
+						 &iface->dhcpv4.lease_time);
 			NET_DBG("options_lease_time: %u",
 				iface->dhcpv4.lease_time);
 			if (!iface->dhcpv4.lease_time) {
@@ -762,8 +761,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read_be32(frag, pos, &pos,
-						  &iface->dhcpv4.renewal_time);
+			frag = net_pkt_read_be32(frag, pos, &pos,
+						 &iface->dhcpv4.renewal_time);
 			NET_DBG("options_renewal: %u",
 				iface->dhcpv4.renewal_time);
 			if (!iface->dhcpv4.renewal_time) {
@@ -777,8 +776,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read_be32(frag, pos, &pos,
-					  &iface->dhcpv4.rebinding_time);
+			frag = net_pkt_read_be32(frag, pos, &pos,
+						 &iface->dhcpv4.rebinding_time);
 			NET_DBG("options_rebinding: %u",
 				iface->dhcpv4.rebinding_time);
 			if (!iface->dhcpv4.rebinding_time) {
@@ -792,8 +791,8 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read(frag, pos, &pos, length,
-					     iface->dhcpv4.server_id.s4_addr);
+			frag = net_pkt_read(frag, pos, &pos, length,
+					    iface->dhcpv4.server_id.s4_addr);
 			NET_DBG("options_server_id: %s",
 				net_sprint_ipv4_addr(&iface->dhcpv4.server_id));
 			break;
@@ -805,13 +804,13 @@ static enum net_verdict parse_options(struct net_if *iface, struct net_buf *buf,
 				return NET_DROP;
 			}
 
-			frag = net_nbuf_read_u8(frag, pos, &pos, &v);
+			frag = net_pkt_read_u8(frag, pos, &pos, &v);
 			*msg_type = v;
 			break;
 		}
 		default:
 			NET_DBG("option unknown: %d", type);
-			frag = net_nbuf_skip(frag, pos, &pos, length);
+			frag = net_pkt_skip(frag, pos, &pos, length);
 			break;
 		}
 
@@ -939,7 +938,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		return NET_DROP;
 	}
 
-	iface = net_nbuf_iface(buf);
+	iface = net_pkt_iface(buf);
 	if (!iface) {
 		NET_DBG("no iface");
 		return NET_DROP;
@@ -984,7 +983,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	       sizeof(msg->yiaddr));
 
 	/* SNAME, FILE are not used at the moment, skip it */
-	frag = net_nbuf_skip(frag, min, &pos, SIZE_OF_SNAME + SIZE_OF_FILE);
+	frag = net_pkt_skip(frag, min, &pos, SIZE_OF_SNAME + SIZE_OF_FILE);
 	if (!frag && pos) {
 		NET_DBG("short packet while skipping sname");
 		goto drop;
@@ -995,7 +994,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	handle_dhcpv4_reply(iface, msg_type);
 

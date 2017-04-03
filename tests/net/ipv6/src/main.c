@@ -15,7 +15,7 @@
 
 #include <tc_util.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/net_core.h>
 #include <net/ethernet.h>
@@ -170,20 +170,20 @@ static struct net_buf *prepare_ra_message(void)
 
 	iface = net_if_get_default();
 
-	buf = net_nbuf_get_reserve_rx(net_if_get_ll_reserve(iface, NULL),
+	buf = net_pkt_get_reserve_rx(net_if_get_ll_reserve(iface, NULL),
 				      K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of RX buffers");
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
-	net_nbuf_ll_clear(buf);
+	net_pkt_ll_clear(buf);
 
 	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
 	       icmpv6_ra, sizeof(icmpv6_ra));
@@ -202,7 +202,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 
 	/* Reply with RA messge */
 	if (icmp->type == NET_ICMPV6_RS) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		buf = prepare_ra_message();
 	}
 
@@ -215,7 +215,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	return 0;
 
 out:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	test_failed = true;
 
 	return 0;
@@ -412,20 +412,20 @@ static bool net_test_send_ns_extra_options(void)
 
 	iface = net_if_get_default();
 
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+	buf = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				      K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
-	net_nbuf_ll_clear(buf);
+	net_pkt_ll_clear(buf);
 
 	memcpy(net_buf_add(frag, sizeof(icmpv6_ns_invalid)),
 	       icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
@@ -445,20 +445,20 @@ static bool net_test_send_ns_no_options(void)
 
 	iface = net_if_get_default();
 
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+	buf = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				      K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
-	net_nbuf_ll_clear(buf);
+	net_pkt_ll_clear(buf);
 
 	memcpy(net_buf_add(frag, sizeof(icmpv6_ns_no_sllao)),
 	       icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
@@ -562,20 +562,20 @@ static bool net_test_hbho_message(void)
 
 	iface = net_if_get_default();
 
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+	buf = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				      K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
-	net_nbuf_ll_clear(buf);
+	net_pkt_ll_clear(buf);
 
 	memcpy(net_buf_add(frag, sizeof(ipv6_hbho)),
 	       ipv6_hbho, sizeof(ipv6_hbho));
@@ -604,18 +604,18 @@ static bool net_test_change_ll_addr(void)
 
 	iface = net_if_get_default();
 
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
+	buf = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
 				      K_FOREVER);
 
 	NET_ASSERT_INFO(buf, "Out of TX buffers");
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	flags = NET_ICMPV6_NA_FLAG_ROUTER |
 		NET_ICMPV6_NA_FLAG_OVERRIDE;

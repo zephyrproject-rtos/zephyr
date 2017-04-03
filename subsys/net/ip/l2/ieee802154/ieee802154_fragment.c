@@ -15,7 +15,7 @@
 
 #include <errno.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
 
@@ -83,7 +83,7 @@ static inline struct net_buf *prepare_new_fragment(struct net_buf *buf,
 {
 	struct net_buf *frag;
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		return NULL;
 	}
@@ -140,7 +140,7 @@ static inline uint8_t calc_max_payload(struct net_buf *buf,
 {
 	uint8_t max;
 
-	max = frag->size - net_nbuf_ll_reserve(buf);
+	max = frag->size - net_pkt_ll_reserve(buf);
 	max -= offset ? NET_6LO_FRAGN_HDR_LEN : NET_6LO_FRAG1_HDR_LEN;
 
 	return (max & 0xF8);
@@ -286,7 +286,7 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff)
 		compact_frag(next, move);
 
 		if (!next->len) {
-			next = net_nbuf_frag_del(NULL, next);
+			next = net_pkt_frag_del(NULL, next);
 			if (!next) {
 				break;
 			}
@@ -314,7 +314,7 @@ static inline void remove_frag_header(struct net_buf *frag, uint8_t hdr_len)
 
 static void update_protocol_header_lengths(struct net_buf *buf, uint16_t size)
 {
-	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
+	net_pkt_set_ip_hdr_len(buf, NET_IPV6H_LEN);
 
 	NET_IPV6_BUF(buf)->len[0] = (size - NET_IPV6H_LEN) >> 8;
 	NET_IPV6_BUF(buf)->len[1] = (uint8_t) (size - NET_IPV6H_LEN);
@@ -334,7 +334,7 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 		}
 
 		if (cache[i].buf) {
-			net_nbuf_unref(cache[i].buf);
+			net_pkt_unref(cache[i].buf);
 		}
 
 		cache[i].buf = NULL;
@@ -354,7 +354,7 @@ static void reass_timeout(struct k_work *work)
 	struct frag_cache *cache = CONTAINER_OF(work, struct frag_cache, timer);
 
 	if (cache->buf) {
-		net_nbuf_unref(cache->buf);
+		net_pkt_unref(cache->buf);
 	}
 
 	cache->buf = NULL;
@@ -423,13 +423,13 @@ static inline bool copy_frag(struct net_buf *buf,
 	write = buf->frags;
 
 	while (input) {
-		write = net_nbuf_write(buf, write, pos, &pos, input->len,
-				       input->data, NET_6LO_RX_NBUF_TIMEOUT);
+		write = net_pkt_write(buf, write, pos, &pos, input->len,
+				       input->data, NET_6LO_RX_PKT_TIMEOUT);
 		if (!write && pos == 0xffff) {
 			/* Free the new bufs we tried to get, we need to discard
 			 * the whole fragment chain.
 			 */
-			net_nbuf_unref(buf->frags);
+			net_pkt_unref(buf->frags);
 			buf->frags = NULL;
 
 			return false;
@@ -438,7 +438,7 @@ static inline bool copy_frag(struct net_buf *buf,
 		input = input->frags;
 	}
 
-	net_nbuf_unref(frag);
+	net_pkt_unref(frag);
 
 	return true;
 }
@@ -553,7 +553,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_buf *buf,
 	}
 
 	/* Unref Rx part of original buffer */
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return NET_OK;
 }

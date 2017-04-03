@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
 #include <misc/byteorder.h>
@@ -119,11 +119,11 @@ static inline uint32_t retry_timeout(const struct net_tcp *tcp)
 }
 
 #define is_6lo_technology(buf)						    \
-	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_nbuf_family(buf) == AF_INET6 && \
+	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(buf) == AF_INET6 &&  \
 	 ((IS_ENABLED(CONFIG_NET_L2_BLUETOOTH) &&			    \
-	   net_nbuf_ll_dst(buf)->type == NET_LINK_BLUETOOTH) ||		    \
+	   net_pkt_ll_dst(buf)->type == NET_LINK_BLUETOOTH) ||		    \
 	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
-	   net_nbuf_ll_dst(buf)->type == NET_LINK_IEEE802154)))
+	   net_pkt_ll_dst(buf)->type == NET_LINK_IEEE802154)))
 
 static inline void do_ref_if_needed(struct net_buf *buf)
 {
@@ -134,7 +134,7 @@ static inline void do_ref_if_needed(struct net_buf *buf)
 	 * need to take a reference of it. See also net_tcp_send_buf().
 	 */
 	if (!is_6lo_technology(buf)) {
-		buf = net_nbuf_ref(buf);
+		buf = net_pkt_ref(buf);
 	}
 }
 
@@ -155,7 +155,7 @@ static void tcp_retry_expired(struct k_timer *timer)
 
 		do_ref_if_needed(buf);
 		if (net_tcp_send_buf(buf) < 0 && !is_6lo_technology(buf)) {
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 		}
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
@@ -211,7 +211,7 @@ int net_tcp_release(struct net_tcp *tcp)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, buf, tmp,
 					  sent_list) {
 		sys_slist_remove(&tcp->sent_list, NULL, &buf->sent_list);
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	k_delayed_work_cancel(&tcp->ack_timer);
@@ -250,12 +250,12 @@ static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
 static int finalize_segment(struct net_context *context, struct net_buf *buf)
 {
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		return net_ipv4_finalize(context, buf);
 	} else
 #endif
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		return net_ipv6_finalize(context, buf);
 	}
 #endif
@@ -279,18 +279,18 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 
 	if (buf) {
 		/* TCP transmit data comes in with a pre-allocated
-		 * nbuf at the head (so that net_context_send can find
+		 * net_pkt at the head (so that net_context_send can find
 		 * the context), and the data after.  Rejigger so we
 		 * can insert a TCP header cleanly
 		 */
 		tail = buf->frags;
 		buf->frags = NULL;
 	} else {
-		buf = net_nbuf_get_tx(context, K_FOREVER);
+		buf = net_pkt_get_tx(context, K_FOREVER);
 	}
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		net_ipv4_create(context, buf,
 				net_sin_ptr(segment->src_addr)->sin_addr,
 				&(net_sin(segment->dst_addr)->sin_addr));
@@ -301,7 +301,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	} else
 #endif
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		net_ipv6_create(tcp->context, buf,
 				net_sin6_ptr(segment->src_addr)->sin6_addr,
 				&(net_sin6(segment->dst_addr)->sin6_addr));
@@ -313,12 +313,12 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 #endif
 	{
 		NET_DBG("Protocol family %d not supported",
-			net_nbuf_family(buf));
-		net_nbuf_unref(buf);
+			net_pkt_family(buf));
+		net_pkt_unref(buf);
 		return NULL;
 	}
 
-	header = net_nbuf_get_data(context, K_FOREVER);
+	header = net_pkt_get_data(context, K_FOREVER);
 	net_buf_frag_add(buf, header);
 
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
@@ -344,7 +344,7 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	}
 
 	if (finalize_segment(context, buf) < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return NULL;
 	}
 
@@ -663,7 +663,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 
 int net_tcp_send_buf(struct net_buf *buf)
 {
-	struct net_context *ctx = net_nbuf_context(buf);
+	struct net_context *ctx = net_pkt_context(buf);
 	struct net_tcp_hdr *tcphdr = NET_TCP_BUF(buf);
 
 	sys_put_be32(ctx->tcp->send_ack, tcphdr->ack);
@@ -683,7 +683,7 @@ int net_tcp_send_buf(struct net_buf *buf)
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
-	net_nbuf_set_buf_sent(buf, true);
+	net_pkt_set_buf_sent(buf, true);
 
 	/* We must have special handling for some network technologies that
 	 * tweak the IP protocol headers during packet sending. This happens
@@ -713,10 +713,10 @@ int net_tcp_send_buf(struct net_buf *buf)
 		}
 
 		if (buf_in_slist) {
-			new_buf = net_nbuf_get_tx(ctx, K_FOREVER);
+			new_buf = net_pkt_get_tx(ctx, K_FOREVER);
 
-			new_buf->frags = net_nbuf_copy_all(buf, 0, K_FOREVER);
-			net_nbuf_copy_user_data(new_buf, buf);
+			new_buf->frags = net_pkt_copy_all(buf, 0, K_FOREVER);
+			net_pkt_copy_user_data(new_buf, buf);
 
 			NET_DBG("Copied %zu bytes from %p to %p",
 				net_buf_frags_len(new_buf), buf, new_buf);
@@ -727,7 +727,7 @@ int net_tcp_send_buf(struct net_buf *buf)
 			 */
 			ret = net_send_data(new_buf);
 			if (ret < 0) {
-				net_nbuf_unref(new_buf);
+				net_pkt_unref(new_buf);
 			}
 
 			return ret;
@@ -765,10 +765,10 @@ int net_tcp_send_data(struct net_context *context)
 	 * add window handling and retry/ACK logic.
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&context->tcp->sent_list, buf, sent_list) {
-		if (!net_nbuf_buf_sent(buf)) {
+		if (!net_pkt_buf_sent(buf)) {
 			if (net_tcp_send_buf(buf) < 0 &&
 			    !is_6lo_technology(buf)) {
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 			}
 		}
 	}
@@ -791,7 +791,7 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 		buf = CONTAINER_OF(head, struct net_buf, sent_list);
 		tcphdr = NET_TCP_BUF(buf);
 
-		seq = sys_get_be32(tcphdr->seq) + net_nbuf_appdatalen(buf) - 1;
+		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(buf) - 1;
 
 		if (!seq_greater(ack, seq)) {
 			break;
@@ -808,7 +808,7 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 		}
 
 		sys_slist_remove(list, NULL, head);
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		valid_ack = true;
 	}
 
@@ -831,9 +831,9 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 
 			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, buf,
 						     sent_list) {
-				if (net_nbuf_buf_sent(buf)) {
+				if (net_pkt_buf_sent(buf)) {
 					do_ref_if_needed(buf);
-					net_nbuf_set_buf_sent(buf, false);
+					net_pkt_set_buf_sent(buf, false);
 				}
 			}
 

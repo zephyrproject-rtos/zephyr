@@ -16,7 +16,7 @@
 #include <misc/slist.h>
 #include <zephyr/types.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include "icmpv6.h"
 
 typedef bool (*fragment_handler_t)(struct net_buf *, int);

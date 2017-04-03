@@ -9,7 +9,7 @@
 
 #include <net/net_core.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/printk.h>
 
@@ -89,7 +89,7 @@ void recv_cb(struct net_context *net_ctx, struct net_buf *rx, int status,
 		return;
 	}
 
-	if (rx == NULL || net_nbuf_appdatalen(rx) == 0) {
+	if (rx == NULL || net_pkt_appdatalen(rx) == 0) {
 		goto lb_exit;
 	}
 

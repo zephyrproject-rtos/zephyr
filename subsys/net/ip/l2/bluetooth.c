@@ -19,7 +19,7 @@
 #include <device.h>
 #include <init.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
@@ -69,7 +69,7 @@ static enum net_verdict net_bt_send(struct net_if *iface, struct net_buf *buf)
 	NET_DBG("iface %p buf %p len %zu", iface, buf, net_buf_frags_len(buf));
 
 	/* Only accept IPv6 packets */
-	if (net_nbuf_family(buf) != AF_INET6) {
+	if (net_pkt_family(buf) != AF_INET6) {
 		return NET_DROP;
 	}
 
@@ -173,32 +173,32 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_context *ctxt = CHAN_CTXT(chan);
-	struct net_buf *nbuf;
+	struct net_buf *pkt;
 
 	NET_DBG("Incoming data channel %p len %zu", chan,
 		net_buf_frags_len(buf));
 
 	/* Get buffer for bearer / protocol related data */
-	nbuf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 
 	/* Set destination address */
-	net_nbuf_ll_dst(nbuf)->addr = ctxt->src.val;
-	net_nbuf_ll_dst(nbuf)->len = sizeof(ctxt->src);
-	net_nbuf_ll_dst(nbuf)->type = NET_LINK_BLUETOOTH;
+	net_pkt_ll_dst(pkt)->addr = ctxt->src.val;
+	net_pkt_ll_dst(pkt)->len = sizeof(ctxt->src);
+	net_pkt_ll_dst(pkt)->type = NET_LINK_BLUETOOTH;
 
 	/* Set source address */
-	net_nbuf_ll_src(nbuf)->addr = ctxt->dst.val;
-	net_nbuf_ll_src(nbuf)->len = sizeof(ctxt->dst);
-	net_nbuf_ll_src(nbuf)->type = NET_LINK_BLUETOOTH;
+	net_pkt_ll_src(pkt)->addr = ctxt->dst.val;
+	net_pkt_ll_src(pkt)->len = sizeof(ctxt->dst);
+	net_pkt_ll_src(pkt)->type = NET_LINK_BLUETOOTH;
 
 	/* Add data buffer as fragment of RX buffer, take a reference while
 	 * doing so since L2CAP will unref the buffer after return.
 	 */
-	net_buf_frag_add(nbuf, net_nbuf_ref(buf));
+	net_buf_frag_add(pkt, net_pkt_ref(buf));
 
-	if (net_recv_data(ctxt->iface, nbuf) < 0) {
+	if (net_recv_data(ctxt->iface, pkt) < 0) {
 		NET_DBG("Packet dropped by NET stack");
-		net_nbuf_unref(nbuf);
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -206,7 +206,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_nbuf_get_reserve_rx_data(0, K_FOREVER);
+	return net_pkt_get_reserve_rx_data(0, K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops ipsp_ops = {

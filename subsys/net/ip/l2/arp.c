@@ -15,7 +15,7 @@
 
 #include <errno.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
 #include <net/arp.h>
@@ -107,19 +107,19 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 	struct net_eth_hdr *eth;
 	struct in_addr *my_addr;
 
-	buf = net_nbuf_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
+	buf = net_pkt_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!buf) {
 		goto fail;
 	}
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		goto fail;
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET);
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET);
 
 	hdr = NET_ARP_BUF(buf);
 	eth = NET_ETH_BUF(buf);
@@ -130,8 +130,8 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 	 * request and we want to send it again.
 	 */
 	if (entry) {
-		entry->pending = net_nbuf_ref(pending);
-		entry->iface = net_nbuf_iface(buf);
+		entry->pending = net_pkt_ref(pending);
+		entry->iface = net_pkt_iface(buf);
 
 		net_ipaddr_copy(&entry->ip, next_addr);
 
@@ -177,8 +177,8 @@ static inline struct net_buf *prepare_arp(struct net_if *iface,
 	return buf;
 
 fail:
-	net_nbuf_unref(buf);
-	net_nbuf_unref(pending);
+	net_pkt_unref(buf);
+	net_pkt_unref(pending);
 	return NULL;
 }
 
@@ -194,27 +194,27 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 		return NULL;
 	}
 
-	if (net_nbuf_ll_reserve(buf) != sizeof(struct net_eth_hdr)) {
+	if (net_pkt_ll_reserve(buf) != sizeof(struct net_eth_hdr)) {
 		/* Add the ethernet header if it is missing. */
 		struct net_buf *header;
 		struct net_linkaddr *ll;
 
-		net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
+		net_pkt_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
 
-		header = net_nbuf_get_frag(buf, K_FOREVER);
+		header = net_pkt_get_frag(buf, K_FOREVER);
 
 		hdr = (struct net_eth_hdr *)(header->data -
-					     net_nbuf_ll_reserve(buf));
+					     net_pkt_ll_reserve(buf));
 
 		hdr->type = htons(NET_ETH_PTYPE_IP);
 
-		ll = net_nbuf_ll_dst(buf);
+		ll = net_pkt_ll_dst(buf);
 		if (ll->addr) {
 			memcpy(&hdr->dst.addr, ll->addr,
 			       sizeof(struct net_eth_addr));
 		}
 
-		ll = net_nbuf_ll_src(buf);
+		ll = net_pkt_ll_src(buf);
 		if (ll->addr) {
 			memcpy(&hdr->src.addr, ll->addr,
 			       sizeof(struct net_eth_addr));
@@ -222,17 +222,17 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 
 		net_buf_frag_insert(buf, header);
 
-		net_nbuf_compact(buf);
+		net_pkt_compact(buf);
 	}
 
-	hdr = (struct net_eth_hdr *)net_nbuf_ll(buf);
+	hdr = (struct net_eth_hdr *)net_pkt_ll(buf);
 
 	/* Is the destination in the local network, if not route via
 	 * the gateway address.
 	 */
-	if (!net_if_ipv4_addr_mask_cmp(net_nbuf_iface(buf),
+	if (!net_if_ipv4_addr_mask_cmp(net_pkt_iface(buf),
 				       &NET_IPV4_BUF(buf)->dst)) {
-		addr = &net_nbuf_iface(buf)->ipv4.gw;
+		addr = &net_pkt_iface(buf)->ipv4.gw;
 	} else {
 		addr = &NET_IPV4_BUF(buf)->dst;
 	}
@@ -240,7 +240,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 	/* If the destination address is already known, we do not need
 	 * to send any ARP packet.
 	 */
-	entry = find_entry(net_nbuf_iface(buf),
+	entry = find_entry(net_pkt_iface(buf),
 			   addr, &free_entry, &non_pending);
 	if (!entry) {
 		if (!free_entry) {
@@ -255,11 +255,11 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 				 */
 				struct net_buf *req;
 
-				req = prepare_arp(net_nbuf_iface(buf),
+				req = prepare_arp(net_pkt_iface(buf),
 						  addr, NULL, buf);
 				NET_DBG("Resending ARP %p", req);
 
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 
 				return req;
 			}
@@ -267,7 +267,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 			free_entry = non_pending;
 		}
 
-		return prepare_arp(net_nbuf_iface(buf), addr, free_entry, buf);
+		return prepare_arp(net_pkt_iface(buf), addr, free_entry, buf);
 	}
 
 	ll = net_if_get_link_addr(entry->iface);
@@ -287,7 +287,7 @@ struct net_buf *net_arp_prepare(struct net_buf *buf)
 		}
 
 		hdr = (struct net_eth_hdr *)(frag->data -
-						 net_nbuf_ll_reserve(buf));
+						 net_pkt_ll_reserve(buf));
 		hdr->type = htons(NET_ETH_PTYPE_IP);
 
 		memcpy(&hdr->src.addr, ll->addr,
@@ -313,7 +313,7 @@ static inline void send_pending(struct net_if *iface, struct net_buf **buf)
 
 	if (net_if_send_data(iface, pending) == NET_DROP) {
 		/* This is to unref the original ref */
-		net_nbuf_unref(pending);
+		net_pkt_unref(pending);
 	}
 
 	/* The pending buf was referenced when
@@ -321,7 +321,7 @@ static inline void send_pending(struct net_if *iface, struct net_buf **buf)
 	 * unref it now when it is removed from
 	 * the cache.
 	 */
-	net_nbuf_unref(pending);
+	net_pkt_unref(pending);
 }
 
 static inline void arp_update(struct net_if *iface,
@@ -351,9 +351,9 @@ static inline void arp_update(struct net_if *iface,
 				       sizeof(struct net_eth_addr));
 
 				/* Set the dst in the pending packet */
-				net_nbuf_ll_dst(arp_table[i].pending)->len =
+				net_pkt_ll_dst(arp_table[i].pending)->len =
 					sizeof(struct net_eth_addr);
-				net_nbuf_ll_dst(arp_table[i].pending)->addr =
+				net_pkt_ll_dst(arp_table[i].pending)->addr =
 					(uint8_t *)
 					&NET_ETH_BUF(arp_table[i].pending)->dst.addr;
 
@@ -372,19 +372,19 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	struct net_arp_hdr *hdr, *query;
 	struct net_eth_hdr *eth, *eth_query;
 
-	buf = net_nbuf_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
+	buf = net_pkt_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!buf) {
 		goto fail;
 	}
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		goto fail;
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_family(buf, AF_INET);
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET);
 
 	hdr = NET_ARP_BUF(buf);
 	eth = NET_ETH_BUF(buf);
@@ -417,7 +417,7 @@ static inline struct net_buf *prepare_arp_reply(struct net_if *iface,
 	return buf;
 
 fail:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	return NULL;
 }
 
@@ -427,11 +427,11 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 	struct net_buf *reply;
 
 	if (net_buf_frags_len(buf) < (sizeof(struct net_arp_hdr) -
-				       net_nbuf_ll_reserve(buf))) {
+				       net_pkt_ll_reserve(buf))) {
 		NET_DBG("Invalid ARP header (len %zu, min %zu bytes)",
 			net_buf_frags_len(buf),
 			sizeof(struct net_arp_hdr) -
-			net_nbuf_ll_reserve(buf));
+			net_pkt_ll_reserve(buf));
 		return NET_DROP;
 	}
 
@@ -441,7 +441,7 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 	case NET_ARP_REQUEST:
 		/* Someone wants to know our ll address */
 		if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-				       if_get_addr(net_nbuf_iface(buf)))) {
+				       if_get_addr(net_pkt_iface(buf)))) {
 			/* Not for us so drop the packet silently */
 			return NET_DROP;
 		}
@@ -461,21 +461,21 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 #endif /* CONFIG_NET_DEBUG_ARP */
 
 		/* Send reply */
-		reply = prepare_arp_reply(net_nbuf_iface(buf), buf);
+		reply = prepare_arp_reply(net_pkt_iface(buf), buf);
 		if (reply) {
-			net_if_queue_tx(net_nbuf_iface(reply), reply);
+			net_if_queue_tx(net_pkt_iface(reply), reply);
 		}
 		break;
 
 	case NET_ARP_REPLY:
 		if (net_is_my_ipv4_addr(&arp_hdr->dst_ipaddr)) {
-			arp_update(net_nbuf_iface(buf), &arp_hdr->src_ipaddr,
+			arp_update(net_pkt_iface(buf), &arp_hdr->src_ipaddr,
 				   &arp_hdr->src_hwaddr);
 		}
 		break;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return NET_OK;
 }

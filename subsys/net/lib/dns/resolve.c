@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/dns_resolve.h>
 #include "dns_pack.h"
 
@@ -377,12 +377,12 @@ static int dns_read(struct dns_resolve_context *ctx,
 	int ret;
 	int server_idx, query_idx;
 
-	data_len = min(net_nbuf_appdatalen(buf), DNS_RESOLVER_MAX_BUF_SIZE);
+	data_len = min(net_pkt_appdatalen(buf), DNS_RESOLVER_MAX_BUF_SIZE);
 	offset = net_buf_frags_len(buf) - data_len;
 
 	/* TODO: Instead of this temporary copy, just use the net_buf directly.
 	 */
-	ret = net_nbuf_linear_copy(dns_data, buf, offset, data_len);
+	ret = net_pkt_linear_copy(dns_data, buf, offset, data_len);
 	if (ret < 0) {
 		ret = DNS_EAI_MEMORY;
 		goto quit;
@@ -526,7 +526,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 	ctx->queries[query_idx].cb = NULL;
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return 0;
 
@@ -534,7 +534,7 @@ finished:
 	dns_resolve_cancel(ctx, *dns_id);
 
 quit:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return ret;
 }
@@ -661,13 +661,13 @@ static int dns_write(struct dns_resolve_context *ctx,
 		goto quit;
 	}
 
-	buf = net_nbuf_get_tx(net_ctx, ctx->buf_timeout);
+	buf = net_pkt_get_tx(net_ctx, ctx->buf_timeout);
 	if (!buf) {
 		ret = -ENOMEM;
 		goto quit;
 	}
 
-	ret = net_nbuf_append(buf, dns_data->len, dns_data->data,
+	ret = net_pkt_append(buf, dns_data->len, dns_data->data,
 			      ctx->buf_timeout);
 	if (ret < 0) {
 		ret = -ENOMEM;
@@ -686,7 +686,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 				 K_NO_WAIT, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", ret);
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		goto quit;
 	}
 

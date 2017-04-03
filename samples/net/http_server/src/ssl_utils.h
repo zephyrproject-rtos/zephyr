@@ -18,7 +18,7 @@ struct rx_fifo_block {
 
 struct ssl_context {
 	struct net_context *net_ctx;
-	struct net_buf *rx_nbuf;
+	struct net_buf *rx_pkt;
 	struct net_buf *frag;
 	struct k_sem tx_sem;
 	struct k_fifo rx_fifo;

@@ -50,7 +50,7 @@ static struct k_fifo tx_queue;
 static char __noinit __stack tx_stack[1024];
 
 /* Buffer for SLIP encoded data for the worst case */
-static uint8_t slip_buf[1 + 2 * CONFIG_NET_NBUF_DATA_SIZE];
+static uint8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
 
 /* ieee802.15.4 device */
 static struct ieee802154_radio_api *radio_api;
@@ -143,15 +143,15 @@ static int slip_process_byte(unsigned char c)
 #endif
 
 	if (!pkt_curr) {
-		pkt_curr = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+		pkt_curr = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!pkt_curr) {
 			SYS_LOG_ERR("No more buffers");
 			return 0;
 		}
-		buf = net_nbuf_get_frag(pkt_curr, K_NO_WAIT);
+		buf = net_pkt_get_frag(pkt_curr, K_NO_WAIT);
 		if (!buf) {
 			SYS_LOG_ERR("No more buffers");
-			net_nbuf_unref(pkt_curr);
+			net_pkt_unref(pkt_curr);
 			return 0;
 		}
 		net_buf_frag_insert(pkt_curr, buf);
@@ -162,7 +162,7 @@ static int slip_process_byte(unsigned char c)
 	if (!net_buf_tailroom(buf)) {
 		SYS_LOG_ERR("No more buf space: buf %p len %u", buf, buf->len);
 
-		net_nbuf_unref(pkt_curr);
+		net_pkt_unref(pkt_curr);
 		pkt_curr = NULL;
 		return 0;
 	}
@@ -220,16 +220,16 @@ static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 {
 	struct net_buf *buf, *pkt;
 
-	pkt = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
 		SYS_LOG_DBG("No buf available");
 		return;
 	}
 
-	buf = net_nbuf_get_frag(pkt, K_NO_WAIT);
+	buf = net_pkt_get_frag(pkt, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_DBG("No fragment available");
-		net_nbuf_unref(pkt);
+		net_pkt_unref(pkt);
 		return;
 	}
 
@@ -381,7 +381,7 @@ static void rx_thread(void)
 			break;
 		}
 
-		net_nbuf_unref(pkt);
+		net_pkt_unref(pkt);
 
 		k_yield();
 	}
@@ -455,7 +455,7 @@ static void tx_thread(void)
 		len = slip_buffer(slip_buf, buf);
 		uart_fifo_fill(uart_dev, slip_buf, len);
 
-		net_nbuf_unref(pkt);
+		net_pkt_unref(pkt);
 
 #if 0
 		k_yield();
@@ -587,8 +587,8 @@ void main(void)
 
 	SYS_LOG_INF("USB serial initialized");
 
-	/* Initialize nbufs */
-	net_nbuf_init();
+	/* Initialize net_pkt */
+	net_pkt_init();
 
 	/* Initialize RX queue */
 	init_rx_queue();

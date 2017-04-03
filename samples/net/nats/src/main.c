@@ -6,7 +6,6 @@
 
 #include <board.h>
 #include <gpio.h>
-#include <net/nbuf.h>
 #include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_if.h>

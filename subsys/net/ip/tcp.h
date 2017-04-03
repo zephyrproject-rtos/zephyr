@@ -17,7 +17,7 @@
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 
 #include "connection.h"
@@ -70,7 +70,7 @@ enum net_tcp_state {
 #define NET_TCP_URG 0x20
 #define NET_TCP_CTL 0x3f
 
-#define NET_TCP_FLAGS(nbuf) (NET_TCP_BUF(nbuf)->flags & NET_TCP_CTL)
+#define NET_TCP_FLAGS(net_pkt) (NET_TCP_BUF(net_pkt)->flags & NET_TCP_CTL)
 
 /* TCP max window size */
 #define NET_TCP_MAX_WIN   (4 * 1024)

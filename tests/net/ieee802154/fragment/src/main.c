@@ -18,7 +18,7 @@
 #include <init.h>
 #include <misc/printk.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #include <tc_util.h>
@@ -157,7 +157,7 @@ static void net_fragment_iface_init(struct net_if *iface)
 
 static int tester_send(struct net_if *iface, struct net_buf *buf)
 {
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	return NET_OK;
 }
 
@@ -221,18 +221,18 @@ static struct net_buf *create_buf(struct net_fragment_data *data)
 	uint16_t len;
 	int remaining;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
 
-	net_nbuf_set_ll_reserve(buf, 0);
-	net_nbuf_set_iface(buf, net_if_get_default());
-	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
+	net_pkt_set_ll_reserve(buf, 0);
+	net_pkt_set_iface(buf, net_if_get_default());
+	net_pkt_set_ip_hdr_len(buf, NET_IPV6H_LEN);
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	if (!frag) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return NULL;
 	}
 
@@ -264,14 +264,14 @@ static struct net_buf *create_buf(struct net_fragment_data *data)
 		remaining -= bytes;
 
 		if (net_buf_tailroom(frag) - (bytes - copy)) {
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 			return NULL;
 		}
 
 		net_buf_frag_add(buf, frag);
 
 		if (remaining > 0) {
-			frag = net_nbuf_get_frag(buf, K_FOREVER);
+			frag = net_pkt_get_frag(buf, K_FOREVER);
 		}
 	}
 
@@ -446,14 +446,14 @@ static int test_fragment(struct net_fragment_data *data)
 	frag = buf->frags;
 
 	while (frag) {
-		rxbuf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+		rxbuf = net_pkt_get_reserve_rx(0, K_FOREVER);
 		if (!rxbuf) {
 			goto end;
 		}
 
-		net_nbuf_set_ll_reserve(rxbuf, 0);
+		net_pkt_set_ll_reserve(rxbuf, 0);
 
-		dfrag = net_nbuf_get_frag(rxbuf, K_FOREVER);
+		dfrag = net_pkt_get_frag(rxbuf, K_FOREVER);
 		if (!dfrag) {
 			goto end;
 		}
@@ -470,7 +470,7 @@ static int test_fragment(struct net_fragment_data *data)
 		case NET_CONTINUE:
 			goto compare;
 		case NET_DROP:
-			net_nbuf_unref(rxbuf);
+			net_pkt_unref(rxbuf);
 			goto end;
 		}
 	}
@@ -487,8 +487,8 @@ compare:
 	}
 
 end:
-	net_nbuf_unref(rxbuf);
-	net_nbuf_unref(buf);
+	net_pkt_unref(rxbuf);
+	net_pkt_unref(buf);
 
 	return result;
 }

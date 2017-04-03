@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <misc/slist.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include "net_private.h"
 #include "icmpv4.h"
@@ -86,7 +86,7 @@ static inline void setup_ipv4_header(struct net_buf *buf, uint8_t extra_len,
 	NET_IPV4_BUF(buf)->offset[0] = NET_IPV4_BUF(buf)->offset[1] = 0;
 	NET_IPV4_BUF(buf)->id[0] = NET_IPV4_BUF(buf)->id[1] = 0;
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	NET_IPV4_BUF(buf)->chksum = 0;
 	NET_IPV4_BUF(buf)->chksum = ~net_calc_chksum_ipv4(buf);
@@ -94,7 +94,7 @@ static inline void setup_ipv4_header(struct net_buf *buf, uint8_t extra_len,
 	NET_ICMP_BUF(buf)->type = icmp_type;
 	NET_ICMP_BUF(buf)->code = icmp_code;
 
-	memset(net_nbuf_icmp_data(buf) + sizeof(struct net_icmp_hdr), 0,
+	memset(net_pkt_icmp_data(buf) + sizeof(struct net_icmp_hdr), 0,
 	       NET_ICMPV4_UNUSED_LEN);
 }
 
@@ -113,15 +113,15 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	 * as IPv4 cannot be used in 802.15.4 where it is the reserve
 	 * size can change depending on address.
 	 */
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface,
+	buf = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
 					      (const struct in6_addr *)dst),
 				      K_FOREVER);
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_set_family(buf, AF_INET);
-	net_nbuf_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET);
+	net_pkt_set_iface(buf, iface);
 
 	setup_ipv4_header(buf, 0, net_if_ipv4_get_ttl(iface),
 			  NET_ICMPV4_ECHO_REQUEST, 0);
@@ -157,7 +157,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 		return 0;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	net_stats_update_icmp_drop();
 
 	return -EIO;
@@ -166,7 +166,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 {
 	struct net_buf *buf, *frag;
-	struct net_if *iface = net_nbuf_iface(orig);
+	struct net_if *iface = net_pkt_iface(orig);
 	size_t extra_len, reserve;
 	struct in_addr addr, *src, *dst;
 	int err = -EIO;
@@ -179,9 +179,9 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 		}
 	}
 
-	iface = net_nbuf_iface(orig);
+	iface = net_pkt_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0, BUF_WAIT_TIME);
+	buf = net_pkt_get_reserve_tx(0, BUF_WAIT_TIME);
 	if (!buf) {
 		err = -ENOMEM;
 		goto drop_no_buf;
@@ -197,7 +197,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 		extra_len = sizeof(struct net_ipv4_hdr);
 		/* FIXME, add TCP header length too */
 	} else {
-		size_t space = CONFIG_NET_NBUF_DATA_SIZE -
+		size_t space = CONFIG_NET_BUF_DATA_SIZE -
 			net_if_get_ll_reserve(iface, NULL);
 
 		if (reserve > space) {
@@ -208,7 +208,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	}
 
 	/* We need to remember the original location of source and destination
-	 * addresses as the net_nbuf_copy() will mangle the original buffer.
+	 * addresses as the net_pkt_copy() will mangle the original buffer.
 	 */
 	src = &NET_IPV4_BUF(orig)->src;
 	dst = &NET_IPV4_BUF(orig)->dst;
@@ -216,16 +216,16 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	/* We only copy minimal IPv4 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig, extra_len, reserve, BUF_WAIT_TIME);
+	frag = net_pkt_copy(orig, extra_len, reserve, BUF_WAIT_TIME);
 	if (!frag) {
 		err = -ENOMEM;
 		goto drop;
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_set_family(buf, AF_INET);
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_family(buf, AF_INET);
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv4_header(buf, extra_len, net_if_ipv4_get_ttl(iface),
 			  type, code);
@@ -234,10 +234,10 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->src, dst);
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, &addr);
 
-	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_dst(orig)->addr;
-	net_nbuf_ll_src(buf)->len = net_nbuf_ll_dst(orig)->len;
-	net_nbuf_ll_dst(buf)->addr = net_nbuf_ll_src(orig)->addr;
-	net_nbuf_ll_dst(buf)->len = net_nbuf_ll_src(orig)->len;
+	net_pkt_ll_src(buf)->addr = net_pkt_ll_dst(orig)->addr;
+	net_pkt_ll_src(buf)->len = net_pkt_ll_dst(orig)->len;
+	net_pkt_ll_dst(buf)->addr = net_pkt_ll_src(orig)->addr;
+	net_pkt_ll_dst(buf)->len = net_pkt_ll_src(orig)->len;
 
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv4(buf);
@@ -260,7 +260,7 @@ int net_icmpv4_send_error(struct net_buf *orig, uint8_t type, uint8_t code)
 	}
 
 drop:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 drop_no_buf:
 	net_stats_update_icmp_drop();

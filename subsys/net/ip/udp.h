@@ -17,7 +17,7 @@
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 
 #include "connection.h"
@@ -46,10 +46,10 @@ static inline struct net_buf *net_udp_append_raw(struct net_buf *buf,
 	net_buf_add(buf->frags, sizeof(struct net_udp_hdr));
 
 	NET_UDP_BUF(buf)->len = htons(net_buf_frags_len(buf) -
-				      net_nbuf_ip_hdr_len(buf));
+				      net_pkt_ip_hdr_len(buf));
 
-	net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
-			     sizeof(struct net_udp_hdr));
+	net_pkt_set_appdata(buf, net_pkt_udp_data(buf) +
+			    sizeof(struct net_udp_hdr));
 
 	return buf;
 }

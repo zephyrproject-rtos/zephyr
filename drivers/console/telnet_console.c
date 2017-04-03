@@ -26,7 +26,7 @@
 
 #include <console/console.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
 
@@ -125,9 +125,9 @@ static void telnet_end_client_connection(void)
 
 static int telnet_setup_out_buf(struct net_context *client)
 {
-	out_buf = net_nbuf_get_tx(client, K_FOREVER);
+	out_buf = net_pkt_get_tx(client, K_FOREVER);
 	if (!out_buf) {
-		/* Cannot happen atm, nbuf waits indefinitely */
+		/* Cannot happen atm, net_pkt waits indefinitely */
 		return -ENOBUFS;
 	}
 
@@ -234,7 +234,7 @@ static inline bool telnet_send(void)
 	struct line_buf *lb = telnet_rb_get_line_out();
 
 	if (lb) {
-		net_nbuf_append(out_buf, lb->len, lb->buf, K_FOREVER);
+		net_pkt_append(out_buf, lb->len, lb->buf, K_FOREVER);
 
 		/* We reinitialize the line buffer */
 		lb->len = 0;
@@ -258,7 +258,7 @@ static int telnet_console_out_nothing(int c)
 
 static inline void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 {
-	net_nbuf_append(out_buf, len, msg, K_FOREVER);
+	net_pkt_append(out_buf, len, msg, K_FOREVER);
 
 	net_context_send(out_buf, telnet_sent_cb,
 			 K_NO_WAIT, NULL, NULL);
@@ -329,7 +329,7 @@ out:
 static inline bool telnet_handle_command(struct net_buf *buf)
 {
 	struct telnet_simple_command *cmd =
-		(struct telnet_simple_command *)net_nbuf_appdata(buf);
+		(struct telnet_simple_command *)net_pkt_appdata(buf);
 
 	if (cmd->iac != NVT_CMD_IAC) {
 		return false;
@@ -356,7 +356,7 @@ static inline void telnet_handle_input(struct net_buf *buf)
 	struct console_input *input;
 	uint16_t len, offset, pos;
 
-	len = net_nbuf_appdatalen(buf);
+	len = net_pkt_appdatalen(buf);
 	if (len > CONSOLE_MAX_LINE_LEN || len < TELNET_MIN_MSG) {
 		return;
 	}
@@ -375,7 +375,7 @@ static inline void telnet_handle_input(struct net_buf *buf)
 	}
 
 	offset = net_buf_frags_len(buf) - len;
-	net_nbuf_read(buf->frags, offset, &pos, len, input->line);
+	net_pkt_read(buf->frags, offset, &pos, len, input->line);
 
 	/* LF/CR will be removed if only the line is not NUL terminated */
 	if (input->line[len-1] != NVT_NUL) {

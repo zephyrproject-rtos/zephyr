@@ -13,7 +13,7 @@
 
 #include <misc/byteorder.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #include <net/zoap.h>
@@ -472,7 +472,7 @@ bool zoap_pending_cycle(struct zoap_pending *pending)
 		 * When it it is the last retransmission, the buffer
 		 * will be destroyed when it is transmitted.
 		 */
-		net_nbuf_ref(pending->buf);
+		net_pkt_ref(pending->buf);
 	}
 
 	return cont;
@@ -481,7 +481,7 @@ bool zoap_pending_cycle(struct zoap_pending *pending)
 void zoap_pending_clear(struct zoap_pending *pending)
 {
 	pending->timeout = 0;
-	net_nbuf_unref(pending->buf);
+	net_pkt_unref(pending->buf);
 	pending->buf = NULL;
 }
 

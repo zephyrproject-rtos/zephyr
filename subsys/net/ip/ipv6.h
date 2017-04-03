@@ -16,7 +16,7 @@
 #include <zephyr/types.h>
 
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_context.h>
 

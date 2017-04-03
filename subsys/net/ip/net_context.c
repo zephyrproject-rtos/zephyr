@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
 #include <net/net_offload.h>
@@ -79,7 +79,7 @@ static struct sockaddr *create_sockaddr(struct net_buf *buf,
 					struct sockaddr *addr)
 {
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(addr)->sin6_addr,
 				&NET_IPV6_BUF(buf)->src);
 		net_sin6(addr)->sin6_port = NET_TCP_BUF(buf)->src_port;
@@ -88,7 +88,7 @@ static struct sockaddr *create_sockaddr(struct net_buf *buf,
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		net_ipaddr_copy(&net_sin(addr)->sin_addr,
 				&NET_IPV4_BUF(buf)->src);
 		net_sin(addr)->sin_port = NET_TCP_BUF(buf)->src_port;
@@ -357,7 +357,7 @@ static void queue_fin(struct net_context *ctx)
 
 	ret = net_tcp_send_buf(buf);
 	if (ret < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 }
 
@@ -709,7 +709,7 @@ static inline int send_control_segment(struct net_context *context,
 
 	ret = net_send_data(buf);
 	if (ret < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	net_tcp_print_send_info(msg, buf, NET_TCP_BUF(buf)->dst_port);
@@ -756,7 +756,7 @@ static inline int send_ack(struct net_context *context,
 
 	ret = net_tcp_send_buf(buf);
 	if (ret < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return ret;
@@ -777,7 +777,7 @@ static int send_reset(struct net_context *context,
 
 	ret = net_send_data(buf);
 	if (ret < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return ret;
@@ -786,7 +786,7 @@ static int send_reset(struct net_context *context,
 static int tcp_hdr_len(struct net_buf *buf)
 {
 	/* "Offset": 4-bit field in high nibble, units of dwords */
-	struct net_tcp_hdr *hdr = (void *)net_nbuf_tcp_data(buf);
+	struct net_tcp_hdr *hdr = (void *)net_pkt_tcp_data(buf);
 
 	return 4 * (hdr->offset >> 4);
 }
@@ -825,7 +825,7 @@ NET_CONN_CB(tcp_established)
 	}
 
 	set_appdata_values(buf, IPPROTO_TCP);
-	context->tcp->send_ack += net_nbuf_appdatalen(buf);
+	context->tcp->send_ack += net_pkt_appdatalen(buf);
 
 	ret = packet_received(conn, buf, context->tcp->recv_user_data);
 
@@ -868,7 +868,7 @@ NET_CONN_CB(tcp_synack_received)
 
 	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_SYN_SENT:
-		net_context_set_iface(context, net_nbuf_iface(buf));
+		net_context_set_iface(context, net_pkt_iface(buf));
 		break;
 	default:
 		NET_DBG("Context %p in wrong state %d",
@@ -876,9 +876,9 @@ NET_CONN_CB(tcp_synack_received)
 		return NET_DROP;
 	}
 
-	net_nbuf_set_context(buf, context);
+	net_pkt_set_context(buf, context);
 
-	NET_ASSERT(net_nbuf_iface(buf));
+	NET_ASSERT(net_pkt_iface(buf));
 
 	if (NET_TCP_FLAGS(buf) & NET_TCP_RST) {
 		if (context->connect_cb) {
@@ -911,7 +911,7 @@ NET_CONN_CB(tcp_synack_received)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-		if (net_nbuf_family(buf) == AF_INET6) {
+		if (net_pkt_family(buf) == AF_INET6) {
 			laddr = (struct sockaddr *)&l6addr;
 			raddr = (struct sockaddr *)&r6addr;
 
@@ -927,7 +927,7 @@ NET_CONN_CB(tcp_synack_received)
 		} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-		if (net_nbuf_family(buf) == AF_INET) {
+		if (net_pkt_family(buf) == AF_INET) {
 			laddr = (struct sockaddr *)&l4addr;
 			raddr = (struct sockaddr *)&r4addr;
 
@@ -943,7 +943,7 @@ NET_CONN_CB(tcp_synack_received)
 		} else
 #endif
 		{
-			NET_DBG("Invalid family (%d)", net_nbuf_family(buf));
+			NET_DBG("Invalid family (%d)", net_pkt_family(buf));
 			return NET_DROP;
 		}
 
@@ -1211,7 +1211,7 @@ static void buf_get_sockaddr(sa_family_t family, struct net_buf *buf,
 #endif
 }
 
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static inline void copy_pool_vars(struct net_context *new_context,
 				  struct net_context *listen_context)
 {
@@ -1220,7 +1220,7 @@ static inline void copy_pool_vars(struct net_context *new_context,
 }
 #else
 #define copy_pool_vars(...)
-#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 /* This callback is called when we are waiting connections and we receive
  * a packet. We need to check if we are receiving proper msg (SYN) here.
@@ -1239,10 +1239,10 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_LISTEN:
-		net_context_set_iface(context, net_nbuf_iface(buf));
+		net_context_set_iface(context, net_pkt_iface(buf));
 		break;
 	case NET_TCP_SYN_RCVD:
-		if (net_nbuf_iface(buf) != net_context_get_iface(context)) {
+		if (net_pkt_iface(buf) != net_context_get_iface(context)) {
 			return NET_DROP;
 		}
 		break;
@@ -1252,9 +1252,9 @@ NET_CONN_CB(tcp_syn_rcvd)
 		return NET_DROP;
 	}
 
-	net_nbuf_set_context(buf, context);
+	net_pkt_set_context(buf, context);
 
-	NET_ASSERT(net_nbuf_iface(buf));
+	NET_ASSERT(net_pkt_iface(buf));
 
 	/*
 	 * If we receive SYN, we send SYN-ACK and go to SYN_RCVD state.
@@ -1330,7 +1330,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		/* We create a new context that starts to wait data.
 		 */
-		ret = net_context_get(net_nbuf_family(buf),
+		ret = net_context_get(net_pkt_family(buf),
 				      SOCK_STREAM, IPPROTO_TCP,
 				      &new_context);
 		if (ret < 0) {
@@ -1570,7 +1570,7 @@ static int send_data(struct net_context *context,
 {
 	context->send_cb = cb;
 	context->user_data = user_data;
-	net_nbuf_set_token(buf, token);
+	net_pkt_set_token(buf, token);
 
 	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
 		return net_send_data(buf);
@@ -1606,7 +1606,7 @@ static int create_udp_packet(struct net_context *context,
 	int r = 0;
 
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		buf = net_ipv6_create(context, buf, NULL, &addr6->sin6_addr);
@@ -1616,7 +1616,7 @@ static int create_udp_packet(struct net_context *context,
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
 		buf = net_ipv4_create(context, buf, NULL, &addr4->sin_addr);
@@ -1642,7 +1642,7 @@ static int sendto(struct net_buf *buf,
 		  void *token,
 		  void *user_data)
 {
-	struct net_context *context = net_nbuf_context(buf);
+	struct net_context *context = net_pkt_context(buf);
 	int ret;
 
 	if (!net_context_is_used(context)) {
@@ -1667,16 +1667,16 @@ static int sendto(struct net_buf *buf,
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)
-	if (net_if_is_ip_offloaded(net_nbuf_iface(buf))) {
+	if (net_if_is_ip_offloaded(net_pkt_iface(buf))) {
 		return net_offload_sendto(
-			net_nbuf_iface(buf),
+			net_pkt_iface(buf),
 			buf, dst_addr, addrlen,
 			cb, timeout, token, user_data);
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
@@ -1690,7 +1690,7 @@ static int sendto(struct net_buf *buf,
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
@@ -1703,7 +1703,7 @@ static int sendto(struct net_buf *buf,
 	} else
 #endif /* CONFIG_NET_IPV4 */
 	{
-		NET_DBG("Invalid protocol family %d", net_nbuf_family(buf));
+		NET_DBG("Invalid protocol family %d", net_pkt_family(buf));
 		return -EINVAL;
 	}
 
@@ -1738,15 +1738,15 @@ int net_context_send(struct net_buf *buf,
 		     void *token,
 		     void *user_data)
 {
-	struct net_context *context = net_nbuf_context(buf);
+	struct net_context *context = net_pkt_context(buf);
 	socklen_t addrlen;
 
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 #if defined(CONFIG_NET_OFFLOAD)
-	if (net_if_is_ip_offloaded(net_nbuf_iface(buf))) {
+	if (net_if_is_ip_offloaded(net_pkt_iface(buf))) {
 		return net_offload_send(
-			net_nbuf_iface(buf),
+			net_pkt_iface(buf),
 			buf, cb, timeout,
 			token, user_data);
 	}
@@ -1758,13 +1758,13 @@ int net_context_send(struct net_buf *buf,
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
 	} else
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		addrlen = sizeof(struct sockaddr_in);
 	} else
 #endif /* CONFIG_NET_IPV4 */
@@ -1785,7 +1785,7 @@ int net_context_sendto(struct net_buf *buf,
 		       void *user_data)
 {
 #if defined(CONFIG_NET_TCP)
-	struct net_context *context = net_nbuf_context(buf);
+	struct net_context *context = net_pkt_context(buf);
 
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
@@ -1804,29 +1804,29 @@ static void set_appdata_values(struct net_buf *buf, enum net_ip_protocol proto)
 
 #if defined(CONFIG_NET_UDP)
 	if (proto == IPPROTO_UDP) {
-		net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
+		net_pkt_set_appdata(buf, net_pkt_udp_data(buf) +
 				     sizeof(struct net_udp_hdr));
 	} else
 #endif /* CONFIG_NET_UDP */
 
 #if defined(CONFIG_NET_TCP)
 	if (proto == IPPROTO_TCP) {
-		net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
+		net_pkt_set_appdata(buf, net_pkt_udp_data(buf) +
 				     tcp_hdr_len(buf));
 	} else
 #endif /* CONFIG_NET_TCP */
 	{
-		net_nbuf_set_appdata(buf, net_nbuf_ip_data(buf) +
-				     net_nbuf_ip_hdr_len(buf));
+		net_pkt_set_appdata(buf, net_pkt_ip_data(buf) +
+				     net_pkt_ip_hdr_len(buf));
 	}
 
-	net_nbuf_set_appdatalen(buf, total_len -
-				(net_nbuf_appdata(buf) -
-				 net_nbuf_ip_data(buf)));
+	net_pkt_set_appdatalen(buf, total_len -
+				(net_pkt_appdata(buf) -
+				 net_pkt_ip_data(buf)));
 
-	NET_ASSERT_INFO(net_nbuf_appdatalen(buf) < total_len,
+	NET_ASSERT_INFO(net_pkt_appdatalen(buf) < total_len,
 			"Wrong appdatalen %u, total %zu",
-			net_nbuf_appdatalen(buf), total_len);
+			net_pkt_appdatalen(buf), total_len);
 }
 
 static enum net_verdict packet_received(struct net_conn *conn,
@@ -1836,10 +1836,10 @@ static enum net_verdict packet_received(struct net_conn *conn,
 	struct net_context *context = find_context(conn);
 
 	NET_ASSERT(context);
-	NET_ASSERT(net_nbuf_iface(buf));
+	NET_ASSERT(net_pkt_iface(buf));
 
-	net_context_set_iface(context, net_nbuf_iface(buf));
-	net_nbuf_set_context(buf, context);
+	net_context_set_iface(context, net_pkt_iface(buf));
+	net_pkt_set_context(buf, context);
 
 	/* If there is no callback registered, then we can only drop
 	 * the packet.
@@ -1855,14 +1855,14 @@ static enum net_verdict packet_received(struct net_conn *conn,
 	}
 #if defined(CONFIG_NET_TCP)
 	else if (net_context_get_type(context) == SOCK_STREAM) {
-		if (net_nbuf_appdatalen(buf) == 0) {
-			net_nbuf_unref(buf);
+		if (net_pkt_appdatalen(buf) == 0) {
+			net_pkt_unref(buf);
 			return NET_OK;
 		}
 	}
 #endif /* CONFIG_NET_TCP */
 	NET_DBG("Set appdata %p to len %u (total %zu)",
-		net_nbuf_appdata(buf), net_nbuf_appdatalen(buf),
+		net_pkt_appdata(buf), net_pkt_appdatalen(buf),
 		net_buf_frags_len(buf));
 
 	context->recv_cb(context, buf, 0, user_data);

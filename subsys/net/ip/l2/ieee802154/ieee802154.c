@@ -65,7 +65,7 @@ static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
 
 static void pkt_hexdump(struct net_buf *buf, bool each_frag_reserve)
 {
-	uint16_t reserve = each_frag_reserve ? net_nbuf_ll_reserve(buf) : 0;
+	uint16_t reserve = each_frag_reserve ? net_pkt_ll_reserve(buf) : 0;
 	struct net_buf *frag;
 
 	printk("IEEE 802.15.4 packet content:\n");
@@ -93,12 +93,12 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		return;
 	}
 
-	buf = net_nbuf_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, K_FOREVER);
+	buf = net_pkt_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, K_FOREVER);
 	if (!buf) {
 		return;
 	}
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_insert(buf, frag);
 
@@ -111,7 +111,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		radio->tx(iface->dev, buf, frag);
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return;
 }
@@ -156,25 +156,25 @@ enum net_verdict ieee802154_manage_recv_buffer(struct net_if *iface,
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
 	 */
-	if (net_nbuf_ll_src(buf)->addr &&
-	    net_nbuf_ll_src(buf)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_nbuf_ll_src(buf)->addr,
-			     net_nbuf_ll_src(buf)->len);
+	if (net_pkt_ll_src(buf)->addr &&
+	    net_pkt_ll_src(buf)->len == IEEE802154_EXT_ADDR_LENGTH) {
+		sys_mem_swap(net_pkt_ll_src(buf)->addr,
+			     net_pkt_ll_src(buf)->len);
 	}
 
-	if (net_nbuf_ll_dst(buf)->addr &&
-	    net_nbuf_ll_dst(buf)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_nbuf_ll_dst(buf)->addr,
-			     net_nbuf_ll_dst(buf)->len);
+	if (net_pkt_ll_dst(buf)->addr &&
+	    net_pkt_ll_dst(buf)->len == IEEE802154_EXT_ADDR_LENGTH) {
+		sys_mem_swap(net_pkt_ll_dst(buf)->addr,
+			     net_pkt_ll_dst(buf)->len);
 	}
 
 	/** Uncompress will drop the current fragment. Buf ll src/dst address
 	 * will then be wrong and must be updated according to the new fragment.
 	 */
-	src = net_nbuf_ll_src(buf)->addr ?
-		net_nbuf_ll_src(buf)->addr - net_nbuf_ll(buf) : 0;
-	dst = net_nbuf_ll_dst(buf)->addr ?
-		net_nbuf_ll_dst(buf)->addr - net_nbuf_ll(buf) : 0;
+	src = net_pkt_ll_src(buf)->addr ?
+		net_pkt_ll_src(buf)->addr - net_pkt_ll(buf) : 0;
+	dst = net_pkt_ll_dst(buf)->addr ?
+		net_pkt_ll_dst(buf)->addr - net_pkt_ll(buf) : 0;
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(buf);
@@ -188,8 +188,8 @@ enum net_verdict ieee802154_manage_recv_buffer(struct net_if *iface,
 		goto out;
 	}
 #endif
-	net_nbuf_ll_src(buf)->addr = src ? net_nbuf_ll(buf) + src : NULL;
-	net_nbuf_ll_dst(buf)->addr = dst ? net_nbuf_ll(buf) + dst : NULL;
+	net_pkt_ll_src(buf)->addr = src ? net_pkt_ll(buf) + src : NULL;
+	net_pkt_ll_dst(buf)->addr = dst ? net_pkt_ll(buf) + dst : NULL;
 
 	pkt_hexdump(buf, false);
 out:
@@ -226,7 +226,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 {
 	struct ieee802154_mpdu mpdu;
 
-	if (!ieee802154_validate_frame(net_nbuf_ll(buf),
+	if (!ieee802154_validate_frame(net_pkt_ll(buf),
 				       net_buf_frags_len(buf), &mpdu)) {
 		return NET_DROP;
 	}
@@ -247,13 +247,13 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	ieee802154_acknowledge(iface, &mpdu);
 
-	net_nbuf_set_ll_reserve(buf, mpdu.payload - (void *)net_nbuf_ll(buf));
-	net_buf_pull(buf->frags, net_nbuf_ll_reserve(buf));
+	net_pkt_set_ll_reserve(buf, mpdu.payload - (void *)net_pkt_ll(buf));
+	net_buf_pull(buf->frags, net_pkt_ll_reserve(buf));
 
-	set_buf_ll_addr(net_nbuf_ll_src(buf), mpdu.mhr.fs->fc.pan_id_comp,
+	set_buf_ll_addr(net_pkt_ll_src(buf), mpdu.mhr.fs->fc.pan_id_comp,
 			mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
 
-	set_buf_ll_addr(net_nbuf_ll_dst(buf), false,
+	set_buf_ll_addr(net_pkt_ll_dst(buf), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
 	if (!ieee802154_decipher_data_frame(iface, buf, &mpdu)) {
@@ -269,10 +269,10 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 					struct net_buf *buf)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	uint8_t reserved_space = net_nbuf_ll_reserve(buf);
+	uint8_t reserved_space = net_pkt_ll_reserve(buf);
 	struct net_buf *frag;
 
-	if (net_nbuf_family(buf) != AF_INET6) {
+	if (net_pkt_family(buf) != AF_INET6) {
 		return NET_DROP;
 	}
 
@@ -288,7 +288,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		if (!ieee802154_create_data_frame(ctx, net_nbuf_ll_dst(buf),
+		if (!ieee802154_create_data_frame(ctx, net_pkt_ll_dst(buf),
 						  frag, reserved_space)) {
 			return NET_DROP;
 		}

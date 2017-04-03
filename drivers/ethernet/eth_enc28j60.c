@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <gpio.h>
 #include <spi.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
 
@@ -466,8 +466,8 @@ static int eth_enc28j60_tx(struct device *dev, struct net_buf *buf,
 		uint16_t data_len;
 
 		if (first_frag) {
-			data_ptr = net_nbuf_ll(buf);
-			data_len = net_nbuf_ll_reserve(buf) + frag->len;
+			data_ptr = net_pkt_ll(buf);
+			data_len = net_pkt_ll_reserve(buf) + frag->len;
 			first_frag = false;
 		} else {
 			data_ptr = frag->data;
@@ -552,7 +552,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		buf = net_nbuf_get_reserve_rx(0, config->timeout);
+		buf = net_pkt_get_reserve_rx(0, config->timeout);
 		if (!buf) {
 			SYS_LOG_ERR("Could not allocate rx buffer");
 			goto done;
@@ -566,7 +566,7 @@ static int eth_enc28j60_rx(struct device *dev)
 			size_t spi_frame_len;
 
 			/* Reserve a data frag to receive the frame */
-			pkt_buf = net_nbuf_get_frag(buf, config->timeout);
+			pkt_buf = net_pkt_get_frag(buf, config->timeout);
 			if (!pkt_buf) {
 				SYS_LOG_ERR("Could not allocate data buffer");
 				net_buf_unref(buf);
@@ -656,14 +656,14 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2)
 
 static int eth_net_tx(struct net_if *iface, struct net_buf *buf)
 {
-	uint16_t len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
+	uint16_t len = net_pkt_ll_reserve(buf) + net_buf_frags_len(buf);
 	int ret;
 
 	SYS_LOG_DBG("buf %p (len %u)", buf, len);
 
 	ret = eth_enc28j60_tx(iface->dev, buf, len);
 	if (ret == 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return ret;

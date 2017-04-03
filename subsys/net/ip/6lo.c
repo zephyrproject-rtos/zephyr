@@ -15,7 +15,6 @@
 
 #include <errno.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
 
@@ -315,13 +314,13 @@ static inline uint8_t compress_sa(struct net_ipv6_hdr *ipv6,
 			memcpy(&IPHC[offset], &ipv6->src.s6_addr[14], 2);
 			offset += 2;
 		} else {
-			if (!net_nbuf_ll_src(buf)) {
+			if (!net_pkt_ll_src(buf)) {
 				NET_ERR("Invalid src ll address");
 				return 0;
 			}
 
 			if (net_ipv6_addr_based_on_ll(&ipv6->src,
-						      net_nbuf_ll_src(buf))) {
+						      net_pkt_ll_src(buf))) {
 				NET_DBG("SAM_11 src address is fully elided");
 
 				/* Address is fully elided */
@@ -371,7 +370,7 @@ static inline uint8_t compress_sa_ctx(struct net_ipv6_hdr *ipv6,
 		memcpy(&IPHC[offset], &ipv6->src.s6_addr[14], 2);
 		offset += 2;
 	} else if (net_ipv6_addr_based_on_ll(&ipv6->src,
-					     net_nbuf_ll_src(buf))) {
+					     net_pkt_ll_src(buf))) {
 		NET_DBG("SAM_11 src address is fully elided");
 
 		/* Address is fully elided */
@@ -467,13 +466,13 @@ static inline uint8_t compress_da(struct net_ipv6_hdr *ipv6,
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[14], 2);
 			offset += 2;
 		} else {
-			if (!net_nbuf_ll_dst(buf)) {
+			if (!net_pkt_ll_dst(buf)) {
 				NET_ERR("Invalid dst ll address");
 				return 0;
 			}
 
 			if (net_ipv6_addr_based_on_ll(&ipv6->dst,
-						      net_nbuf_ll_dst(buf))) {
+						      net_pkt_ll_dst(buf))) {
 				NET_DBG("DAM_11 dst addr fully elided");
 
 				/* Address is fully elided */
@@ -522,8 +521,7 @@ static inline uint8_t compress_da_ctx(struct net_ipv6_hdr *ipv6,
 		offset += 2;
 	} else {
 		if (net_ipv6_addr_based_on_ll(&ipv6->dst,
-					      net_nbuf_ll_dst(buf))) {
-
+					      net_pkt_ll_dst(buf))) {
 			NET_DBG("DAM_11 dst addr fully elided");
 
 			/* Address is fully elided */
@@ -636,12 +634,12 @@ static inline bool is_src_and_dst_addr_ctx_based(struct net_ipv6_hdr *ipv6,
 {
 	/* If compress flag is unset means use only in uncompression. */
 
-	*src = get_6lo_context_by_addr(net_nbuf_iface(buf), &ipv6->src);
+	*src = get_6lo_context_by_addr(net_pkt_iface(buf), &ipv6->src);
 	if (*src && !((*src)->compress)) {
 		*src = NULL;
 	}
 
-	*dst = get_6lo_context_by_addr(net_nbuf_iface(buf), &ipv6->dst);
+	*dst = get_6lo_context_by_addr(net_pkt_iface(buf), &ipv6->dst);
 	if (*dst && !((*dst)->compress)) {
 		*dst = NULL;
 	}
@@ -703,7 +701,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 		return false;
 	}
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	IPHC[offset++] = NET_6LO_DISPATCH_IPHC;
 	IPHC[offset++] = 0;
@@ -730,7 +728,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 	offset = compress_sa(ipv6, buf, frag, offset);
 #endif
 	if (!offset) {
-		net_nbuf_unref(frag);
+		net_pkt_unref(frag);
 		return false;
 	}
 
@@ -742,7 +740,7 @@ static inline bool compress_IPHC_header(struct net_buf *buf,
 #endif
 
 	if (!offset) {
-		net_nbuf_unref(frag);
+		net_pkt_unref(frag);
 		return false;
 	}
 
@@ -769,13 +767,13 @@ end:
 	net_buf_add(frag, buf->frags->len - compressed);
 
 	/* Delete uncompressed(original) header fragment */
-	net_nbuf_frag_del(buf, buf->frags);
+	net_pkt_frag_del(buf, buf->frags);
 
 	/* Insert compressed header fragment */
 	net_buf_frag_insert(buf, frag);
 
 	/* Compact the fragments, so that gaps will be filled */
-	net_nbuf_compact(buf);
+	net_pkt_compact(buf);
 
 	if (fragment) {
 		return fragment(buf, compressed - offset);
@@ -902,7 +900,7 @@ static inline uint8_t uncompress_sa(struct net_buf *buf,
 	case NET_6LO_IPHC_SAM_11:
 		NET_DBG("SAM_11 generate src addr from ll");
 
-		net_ipv6_addr_create_iid(&ipv6->src, net_nbuf_ll_src(buf));
+		net_ipv6_addr_create_iid(&ipv6->src, net_pkt_ll_src(buf));
 		break;
 	}
 
@@ -952,7 +950,7 @@ static inline uint8_t uncompress_sa_ctx(struct net_buf *buf,
 		 * the encapsulating header.
 		 * (e.g., 802.15.4 or IPv6 source address).
 		 */
-		net_ipv6_addr_create_iid(&ipv6->src, net_nbuf_ll_src(buf));
+		net_ipv6_addr_create_iid(&ipv6->src, net_pkt_ll_src(buf));
 
 		/* net_ipv6_addr_create_iid will copy first 8 bytes
 		 * as link local prefix.
@@ -1070,7 +1068,7 @@ static inline uint8_t uncompress_da(struct net_buf *buf,
 	case NET_6LO_IPHC_DAM_11:
 		NET_DBG("DAM_11 generate dst addr from ll");
 
-		net_ipv6_addr_create_iid(&ipv6->dst, net_nbuf_ll_dst(buf));
+		net_ipv6_addr_create_iid(&ipv6->dst, net_pkt_ll_dst(buf));
 		break;
 	}
 
@@ -1132,7 +1130,7 @@ static inline uint8_t uncompress_da_ctx(struct net_buf *buf,
 		 * the encapsulating header.
 		 * (e.g., 802.15.4 or IPv6 source address).
 		 */
-		net_ipv6_addr_create_iid(&ipv6->dst, net_nbuf_ll_dst(buf));
+		net_ipv6_addr_create_iid(&ipv6->dst, net_pkt_ll_dst(buf));
 
 		/* net_ipv6_addr_create_iid will copy first 8 bytes
 		 * as link local prefix.
@@ -1216,13 +1214,13 @@ static inline bool uncompress_cid(struct net_buf *buf,
 	 * Either src or dest address is context based or both.
 	 */
 	cid = (CIPHC[2] >> 4) & 0x0F;
-	*src = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
+	*src = get_6lo_context_by_cid(net_pkt_iface(buf), cid);
 	if (!(*src)) {
 		NET_DBG("Unknown src cid %d", cid);
 	}
 
 	cid = CIPHC[2] & 0x0F;
-	*dst = get_6lo_context_by_cid(net_nbuf_iface(buf), cid);
+	*dst = get_6lo_context_by_cid(net_pkt_iface(buf), cid);
 	if (!(*dst)) {
 		NET_DBG("Unknown dst cid %d", cid);
 	}
@@ -1266,7 +1264,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 #endif
 	}
 
-	frag = net_nbuf_get_frag(buf, NET_6LO_RX_NBUF_TIMEOUT);
+	frag = net_pkt_get_frag(buf, NET_6LO_RX_PKT_TIMEOUT);
 	if (!frag) {
 		return false;
 	}
@@ -1275,7 +1273,7 @@ static inline bool uncompress_IPHC_header(struct net_buf *buf)
 
 	/* Version is always 6 */
 	ipv6->vtc = 0x60;
-	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
+	net_pkt_set_ip_hdr_len(buf, NET_IPV6H_LEN);
 
 	/* Uncompress Traffic class and Flow label */
 	offset = uncompress_tfl(buf, ipv6, offset);
@@ -1352,14 +1350,14 @@ end:
 	buf->frags->len -= offset;
 
 	/* Copying ll part, if any */
-	if (net_nbuf_ll_reserve(buf)) {
-		memcpy(frag->data - net_nbuf_ll_reserve(buf),
-		       net_nbuf_ll(buf), net_nbuf_ll_reserve(buf));
+	if (net_pkt_ll_reserve(buf)) {
+		memcpy(frag->data - net_pkt_ll_reserve(buf),
+		       net_pkt_ll(buf), net_pkt_ll_reserve(buf));
 	}
 
 	/* Insert the fragment (this one holds uncompressed headers) */
 	net_buf_frag_insert(buf, frag);
-	net_nbuf_compact(buf);
+	net_pkt_compact(buf);
 
 	/* Set IPv6 header and UDP (if next header is) length */
 	len = net_buf_frags_len(buf) - NET_IPV6H_LEN;
@@ -1377,7 +1375,7 @@ end:
 	return true;
 
 fail:
-	net_nbuf_unref(frag);
+	net_pkt_unref(frag);
 	return false;
 }
 
@@ -1387,7 +1385,7 @@ static inline bool compress_ipv6_header(struct net_buf *buf,
 {
 	struct net_buf *frag;
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	frag->data[0] = NET_6LO_DISPATCH_IPV6;
 	net_buf_add(frag, 1);
@@ -1395,7 +1393,7 @@ static inline bool compress_ipv6_header(struct net_buf *buf,
 	net_buf_frag_insert(buf, frag);
 
 	/* Compact the fragments, so that gaps will be filled */
-	net_nbuf_compact(buf);
+	net_pkt_compact(buf);
 
 	if (fragment) {
 		return fragment(buf, -1);

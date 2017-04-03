@@ -19,7 +19,7 @@
 #include <device.h>
 #include <init.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/byteorder.h>
 #include <string.h>
@@ -547,7 +547,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 
 	pkt_len = len - MCR20A_FCS_LENGTH;
 
-	buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+	buf = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_ERR("No buf available");
 		goto out;
@@ -558,9 +558,9 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 	/**
 	 * Reserve 1 byte for length
 	 */
-	net_nbuf_set_ll_reserve(buf, 1);
+	net_pkt_set_ll_reserve(buf, 1);
 #endif
-	pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
+	pkt_buf = net_pkt_get_frag(buf, K_NO_WAIT);
 	if (!pkt_buf) {
 		SYS_LOG_ERR("No pkt_buf available");
 		goto out;
@@ -1035,8 +1035,8 @@ static inline bool write_txfifo_content(struct mcr20a_spi *spi,
 					struct net_buf *frag)
 {
 	uint8_t cmd[2 + MCR20A_PSDU_LENGTH];
-	uint8_t payload_len = net_nbuf_ll_reserve(buf) + frag->len;
-	uint8_t *payload = frag->data - net_nbuf_ll_reserve(buf);
+	uint8_t payload_len = net_pkt_ll_reserve(buf) + frag->len;
+	uint8_t *payload = frag->data - net_pkt_ll_reserve(buf);
 	bool retval;
 
 	k_sem_take(&spi->spi_sem, K_FOREVER);
@@ -1077,7 +1077,7 @@ static int mcr20a_tx(struct device *dev,
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	SYS_LOG_DBG("%p (%u)",
-		    frag, net_nbuf_ll_reserve(buf) + frag->len);
+		    frag, net_pkt_ll_reserve(buf) + frag->len);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
 		SYS_LOG_ERR("Failed to mask IRQ_B");

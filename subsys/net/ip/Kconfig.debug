@@ -38,7 +38,7 @@ config NET_LOG_GLOBAL
 	select NET_DEBUG_IF
 	select NET_DEBUG_UTILS
 	select NET_DEBUG_CONTEXT
-	select NET_DEBUG_NET_BUF
+	select NET_DEBUG_NET_PKT
 	select NET_DEBUG_CONN
 	select NET_DEBUG_ROUTE if NET_ROUTE
 	select NET_DEBUG_IPV6 if NET_IPV6
@@ -85,19 +85,19 @@ config NET_DEBUG_CONTEXT
 	help
 	Enables printing of network context allocations and frees.
 
-config NET_DEBUG_NET_BUF
-	bool "Debug network buffer allocation"
+config NET_DEBUG_NET_PKT
+	bool "Debug network packet and buffer allocation"
 	default n
 	select NET_BUF_POOL_USAGE
 	help
-	Enables printing of network buffer allocations and frees.
+	Enables printing of network packet and buffer allocations and frees.
 
-config NET_DEBUG_NET_BUF_EXTERNALS
-	int "How many external network buffer allocations"
+config NET_DEBUG_NET_PKT_EXTERNALS
+	int "How many external network packet allocations"
 	default 0
-	depends on NET_DEBUG_NET_BUF
+	depends on NET_DEBUG_NET_PKT
 	help
-	How many external net_buf's are there in user specic pools.
+	How many external net_pkt's are there in user specic pools.
 	This value is used when allocating space for tracking the
 	memory allocations.
 

@@ -15,7 +15,7 @@
 #include <kernel.h>
 
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #include <tc_util.h>
@@ -29,7 +29,7 @@
 #define NUM_OBSERVERS 3
 #define NUM_REPLIES 3
 
-NET_BUF_POOL_DEFINE(zoap_nbuf_pool, 4, 0, sizeof(struct net_nbuf), NULL);
+NET_BUF_POOL_DEFINE(zoap_pkt_pool, 4, 0, sizeof(struct net_pkt), NULL);
 
 NET_BUF_POOL_DEFINE(zoap_data_pool, 4, ZOAP_BUF_SIZE, 0, NULL);
 
@@ -68,7 +68,7 @@ static int test_build_empty_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -127,7 +127,7 @@ static int test_build_simple_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -221,7 +221,7 @@ static int test_build_no_size_for_options(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -281,7 +281,7 @@ static int test_parse_empty_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -353,7 +353,7 @@ static int test_parse_simple_pdu(void)
 	int result = TC_FAIL;
 	int r, count = 16;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -472,7 +472,7 @@ static int test_retransmit_second_round(void)
 	int r;
 	uint16_t id;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -524,7 +524,7 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	resp_buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	resp_buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!resp_buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -637,7 +637,7 @@ static int server_resource_1_get(struct zoap_resource *resource,
 
 	zoap_register_observer(resource, observer);
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		return -ENOMEM;
@@ -699,7 +699,7 @@ static int test_observer_server(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -737,9 +737,9 @@ static int test_observer_server(void)
 		goto done;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -800,7 +800,7 @@ static int test_observer_client(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -913,7 +913,7 @@ static int test_block_size(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
@@ -985,7 +985,7 @@ static int test_block_size(void)
 	/* Let's try the second packet */
 	zoap_next_block(&req_ctx);
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;

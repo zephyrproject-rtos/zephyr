@@ -139,18 +139,18 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
 					 int status,
 					 void *user_data);
 
-/* The net_nbuf_get_pool_func_t is here in order to avoid circular
- * dependency between nbuf.h and net_context.h
+/* The net_pkt_get_pool_func_t is here in order to avoid circular
+ * dependency between net_pkt.h and net_context.h
  */
 /**
- * @typedef net_nbuf_get_pool_func_t
+ * @typedef net_pkt_get_pool_func_t
  *
  * @brief Function that is called to get the pool that is used
  * for net_buf allocations.
  *
  * @return Pointer to valid struct net_buf_pool instance.
  */
-typedef struct net_buf_pool *(*net_nbuf_get_pool_func_t)(void);
+typedef struct net_buf_pool *(*net_pkt_get_pool_func_t)(void);
 
 struct net_tcp;
 
@@ -197,15 +197,15 @@ struct net_context {
 	 */
 	void *user_data;
 
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	/** Get TX net_buf pool for this context.
 	 */
-	net_nbuf_get_pool_func_t tx_pool;
+	net_pkt_get_pool_func_t tx_pool;
 
 	/** Get DATA net_buf pool for this context.
 	 */
-	net_nbuf_get_pool_func_t data_pool;
-#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+	net_pkt_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	/**
@@ -733,10 +733,10 @@ void net_context_foreach(net_context_cb_t cb, void *user_data);
  * to the caller. The DATA pool is used to store data that is sent to
  * the network.
  */
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static inline void net_context_setup_pools(struct net_context *context,
-					   net_nbuf_get_pool_func_t tx_pool,
-					   net_nbuf_get_pool_func_t data_pool)
+					   net_pkt_get_pool_func_t tx_pool,
+					   net_pkt_get_pool_func_t data_pool)
 {
 	NET_ASSERT(context);
 	NET_ASSERT(tx_pool);

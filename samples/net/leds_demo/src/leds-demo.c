@@ -18,7 +18,7 @@
 #include <misc/byteorder.h>
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 
 #include <net_private.h>
@@ -104,12 +104,12 @@ static int led_get(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
@@ -150,7 +150,7 @@ static int led_get(struct zoap_resource *resource,
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return r;
@@ -176,12 +176,12 @@ static int led_post(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
@@ -228,7 +228,7 @@ static int led_post(struct zoap_resource *resource,
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return r;
@@ -259,12 +259,12 @@ static int led_put(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
@@ -307,7 +307,7 @@ static int led_put(struct zoap_resource *resource,
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return r;
@@ -326,12 +326,12 @@ static int dummy_get(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
@@ -364,7 +364,7 @@ static int dummy_get(struct zoap_resource *resource,
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return r;
@@ -418,20 +418,20 @@ static void udp_receive(struct net_context *context,
 	 * zoap expects that buffer->data starts at the
 	 * beginning of the CoAP header
 	 */
-	header_len = net_nbuf_appdata(buf) - buf->frags->data;
+	header_len = net_pkt_appdata(buf) - buf->frags->data;
 	net_buf_pull(buf->frags, header_len);
 
 	r = zoap_packet_parse(&request, buf);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return;
 	}
 
 	r = zoap_handle_request(&request, resources,
 				(const struct sockaddr *) &from);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	if (r < 0) {
 		NET_ERR("No handler for such request (%d)\n", r);

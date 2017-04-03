@@ -15,7 +15,7 @@
 
 #include <errno.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_stats.h>
 #include <net/net_context.h>
 #include "net_private.h"
@@ -32,7 +32,7 @@ struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
 {
 	struct net_buf *header;
 
-	header = net_nbuf_get_frag(buf, K_FOREVER);
+	header = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_insert(buf, header);
 
@@ -49,8 +49,8 @@ struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
 
 	NET_IPV4_BUF(buf)->proto = next_header;
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
-	net_nbuf_set_family(buf, AF_INET);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_family(buf, AF_INET);
 
 	net_buf_add(header, sizeof(struct net_ipv4_hdr));
 
@@ -70,7 +70,7 @@ struct net_buf *net_ipv4_create(struct net_context *context,
 
 	if (net_is_ipv4_addr_unspecified(src)
 	    || net_is_ipv4_addr_mcast(src)) {
-		src = &net_nbuf_iface(buf)->ipv4.unicast[0].address.in_addr;
+		src = &net_pkt_iface(buf)->ipv4.unicast[0].address.in_addr;
 	}
 
 	return net_ipv4_create_raw(buf,
@@ -85,7 +85,7 @@ int net_ipv4_finalize_raw(struct net_buf *buf, uint8_t next_header)
 	/* Set the length of the IPv4 header */
 	size_t total_len;
 
-	net_nbuf_compact(buf);
+	net_pkt_compact(buf);
 
 	total_len = net_buf_frags_len(buf->frags);
 
@@ -165,7 +165,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_buf *buf)
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_IPV4 */
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	if (!net_is_my_ipv4_addr(&hdr->dst)) {
 #if defined(CONFIG_NET_DHCPV4)

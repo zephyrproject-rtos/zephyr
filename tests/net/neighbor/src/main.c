@@ -15,7 +15,6 @@
 #include <init.h>
 #include <misc/printk.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
 #include <sections.h>

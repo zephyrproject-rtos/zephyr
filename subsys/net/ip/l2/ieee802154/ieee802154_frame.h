@@ -13,7 +13,7 @@
 #define __IEEE802154_FRAME_H__
 
 #include <kernel.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #define IEEE802154_MTU				127
 #define IEEE802154_MIN_LENGTH			3
@@ -472,7 +472,7 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 static inline
 struct ieee802154_command *ieee802154_get_mac_command(struct net_buf *buf)
 {
-	return (struct ieee802154_command *)net_nbuf_ip_data(buf);
+	return (struct ieee802154_command *)net_pkt_ip_data(buf);
 }
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
@@ -483,7 +483,7 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 static inline bool ieee802154_ack_required(struct net_buf *buf)
 {
 	struct ieee802154_fcf_seq *fs =
-		(struct ieee802154_fcf_seq *)net_nbuf_ll(buf);
+		(struct ieee802154_fcf_seq *)net_pkt_ll(buf);
 
 	return fs->fc.ar;
 }

@@ -13,7 +13,7 @@
 #include "net_private.h"
 
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <ieee802154_frame.h>
 #include <ipv6.h>
@@ -182,17 +182,17 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	pkt_hexdump(net_nbuf_ll(current_buf), net_buf_frags_len(current_buf));
+	pkt_hexdump(net_pkt_ll(current_buf), net_buf_frags_len(current_buf));
 
-	if (!ieee802154_validate_frame(net_nbuf_ll(current_buf),
+	if (!ieee802154_validate_frame(net_pkt_ll(current_buf),
 				       net_buf_frags_len(current_buf), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
-		net_nbuf_unref(current_buf);
+		net_pkt_unref(current_buf);
 
 		return false;
 	}
 
-	net_nbuf_unref(current_buf->frags);
+	net_pkt_unref(current_buf->frags);
 	current_buf->frags = NULL;
 
 	return true;
@@ -216,8 +216,8 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 	NET_INFO("- Sending ACK reply to a data packet\n");
 
-	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	memcpy(frag->data, data_pkt, sizeof(data_pkt));
 	frag->len = sizeof(data_pkt);
@@ -234,9 +234,9 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	pkt_hexdump(net_nbuf_ll(current_buf), net_buf_frags_len(current_buf));
+	pkt_hexdump(net_pkt_ll(current_buf), net_buf_frags_len(current_buf));
 
-	if (!ieee802154_validate_frame(net_nbuf_ll(current_buf),
+	if (!ieee802154_validate_frame(net_pkt_ll(current_buf),
 				       net_buf_frags_len(current_buf), &mpdu)) {
 		NET_ERR("*** ACK Reply is invalid\n");
 		return false;
@@ -248,7 +248,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	net_nbuf_unref(current_buf->frags);
+	net_pkt_unref(current_buf->frags);
 	current_buf->frags = NULL;
 
 	return true;
@@ -260,7 +260,7 @@ static bool initialize_test_environment(void)
 
 	k_sem_init(&driver_lock, 0, UINT_MAX);
 
-	current_buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	current_buf = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!current_buf) {
 		NET_ERR("*** No buffer to allocate\n");
 		return false;

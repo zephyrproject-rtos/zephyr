@@ -11,7 +11,7 @@
 
 #include <misc/byteorder.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_mgmt.h>
 #include <net/net_ip.h>
 #include <net/zoap.h>
@@ -82,7 +82,7 @@ static void udp_receive(struct net_context *context,
 	 * zoap expects that buffer->data starts at the
 	 * beginning of the CoAP header
 	 */
-	header_len = net_nbuf_appdata(buf) - buf->frags->data;
+	header_len = net_pkt_appdata(buf) - buf->frags->data;
 	net_buf_pull(buf->frags, header_len);
 
 	r = zoap_packet_parse(&response, buf);
@@ -167,13 +167,13 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 	k_delayed_work_init(&retransmit_work, retransmit_request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
 	if (!buf) {
 		printk("Unable to get TX buffer, not enough memory.\n");
 		return;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		printk("Unable to get DATA buffer, not enough memory.\n");
 		return;

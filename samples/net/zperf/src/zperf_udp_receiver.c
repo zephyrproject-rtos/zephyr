@@ -11,7 +11,7 @@
 #include <misc/printk.h>
 
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -65,27 +65,27 @@ static inline struct net_buf *build_reply_buf(struct net_context *context,
 {
 	struct net_buf *reply_buf, *frag;
 
-	printk(TAG "received %d bytes\n",  net_nbuf_appdatalen(buf));
+	printk(TAG "received %d bytes\n",  net_pkt_appdatalen(buf));
 
-	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	reply_buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(reply_buf, frag);
 
-	net_nbuf_append_be32(reply_buf, hdr->id);
-	net_nbuf_append_be32(reply_buf, hdr->tv_sec);
-	net_nbuf_append_be32(reply_buf, hdr->tv_usec);
+	net_pkt_append_be32(reply_buf, hdr->id);
+	net_pkt_append_be32(reply_buf, hdr->tv_sec);
+	net_pkt_append_be32(reply_buf, hdr->tv_usec);
 
-	net_nbuf_append_be32(reply_buf, stat->flags);
-	net_nbuf_append_be32(reply_buf, stat->total_len1);
-	net_nbuf_append_be32(reply_buf, stat->total_len2);
-	net_nbuf_append_be32(reply_buf, stat->stop_sec);
-	net_nbuf_append_be32(reply_buf, stat->stop_usec);
-	net_nbuf_append_be32(reply_buf, stat->error_cnt);
-	net_nbuf_append_be32(reply_buf, stat->outorder_cnt);
-	net_nbuf_append_be32(reply_buf, stat->datagrams);
-	net_nbuf_append_be32(reply_buf, stat->jitter1);
-	net_nbuf_append_be32(reply_buf, stat->jitter2);
+	net_pkt_append_be32(reply_buf, stat->flags);
+	net_pkt_append_be32(reply_buf, stat->total_len1);
+	net_pkt_append_be32(reply_buf, stat->total_len2);
+	net_pkt_append_be32(reply_buf, stat->stop_sec);
+	net_pkt_append_be32(reply_buf, stat->stop_usec);
+	net_pkt_append_be32(reply_buf, stat->error_cnt);
+	net_pkt_append_be32(reply_buf, stat->outorder_cnt);
+	net_pkt_append_be32(reply_buf, stat->datagrams);
+	net_pkt_append_be32(reply_buf, stat->jitter1);
+	net_pkt_append_be32(reply_buf, stat->jitter2);
 
 	return reply_buf;
 }
@@ -100,20 +100,20 @@ static int zperf_receiver_send_stat(struct net_context *context,
 	struct sockaddr dst_addr;
 	int ret;
 
-	set_dst_addr(net_nbuf_family(buf), buf, &dst_addr);
+	set_dst_addr(net_pkt_family(buf), buf, &dst_addr);
 
 	reply_buf = build_reply_buf(context, buf, hdr, stat);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	ret = net_context_sendto(reply_buf, &dst_addr,
-				 net_nbuf_family(buf) == AF_INET6 ?
+				 net_pkt_family(buf) == AF_INET6 ?
 				 sizeof(struct sockaddr_in6) :
 				 sizeof(struct sockaddr_in),
 				 NULL, 0, NULL, NULL);
 	if (ret < 0) {
 		printk(TAG " Cannot send data to peer (%d)", ret);
-		net_nbuf_unref(reply_buf);
+		net_pkt_unref(reply_buf);
 	}
 
 	return ret;
@@ -136,8 +136,8 @@ static void udp_received(struct net_context *context,
 		return;
 	}
 
-	if (net_nbuf_appdatalen(buf) < sizeof(struct zperf_udp_datagram)) {
-		net_nbuf_unref(buf);
+	if (net_pkt_appdatalen(buf) < sizeof(struct zperf_udp_datagram)) {
+		net_pkt_unref(buf);
 		return;
 	}
 
@@ -149,11 +149,11 @@ static void udp_received(struct net_context *context,
 		return;
 	}
 
-	offset = net_nbuf_appdata(buf) - net_nbuf_ip_data(buf);
+	offset = net_pkt_appdata(buf) - net_pkt_ip_data(buf);
 
-	frag = net_nbuf_read_be32(frag, offset, &pos, (uint32_t *)&hdr.id);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.tv_sec);
-	frag = net_nbuf_read_be32(frag, pos, &pos, &hdr.tv_usec);
+	frag = net_pkt_read_be32(frag, offset, &pos, (uint32_t *)&hdr.id);
+	frag = net_pkt_read_be32(frag, pos, &pos, &hdr.tv_sec);
+	frag = net_pkt_read_be32(frag, pos, &pos, &hdr.tv_usec);
 
 	id = hdr.id;
 
@@ -170,7 +170,7 @@ static void udp_received(struct net_context *context,
 				printk(TAG "ERROR! Failed to send the "
 				       "buffer\n");
 
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 			}
 		} else {
 			session->state = STATE_LAST_PACKET_RECEIVED;
@@ -200,7 +200,7 @@ static void udp_received(struct net_context *context,
 
 	/* Update counter */
 	session->counter++;
-	session->length += net_nbuf_appdatalen(buf);
+	session->length += net_pkt_appdatalen(buf);
 
 	/* Compute jitter */
 	transit_time = time_delta(HW_CYCLES_TO_USEC(time),
@@ -254,7 +254,7 @@ static void udp_received(struct net_context *context,
 				printk(TAG "ERROR! Failed to send the "
 				       "buffer\n");
 
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 			}
 
 			printk(TAG " duration:\t\t");
@@ -277,7 +277,7 @@ static void udp_received(struct net_context *context,
 			printk("\n");
 		}
 	} else {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 }
 

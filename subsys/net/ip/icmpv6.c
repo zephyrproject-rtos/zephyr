@@ -17,7 +17,7 @@
 #include <misc/slist.h>
 #include <misc/byteorder.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include "net_private.h"
 #include "icmpv6.h"
@@ -88,14 +88,14 @@ static inline void setup_ipv6_header(struct net_buf *buf, uint16_t extra_len,
 	NET_IPV6_BUF(buf)->nexthdr = IPPROTO_ICMPV6;
 	NET_IPV6_BUF(buf)->hop_limit = hop_limit;
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	NET_ICMP_BUF(buf)->type = icmp_type;
 	NET_ICMP_BUF(buf)->code = icmp_code;
 
 	/* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1
 	 */
-	memset(net_nbuf_icmp_data(buf) + sizeof(struct net_icmp_hdr), 0,
+	memset(net_pkt_icmp_data(buf) + sizeof(struct net_icmp_hdr), 0,
 	       NET_ICMPV6_UNUSED_LEN);
 }
 
@@ -133,9 +133,9 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 
 	echo_request_debug(orig);
 
-	iface = net_nbuf_iface(orig);
+	iface = net_pkt_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0, BUF_WAIT_TIME);
+	buf = net_pkt_get_reserve_tx(0, BUF_WAIT_TIME);
 	if (!buf) {
 		goto drop_no_buf;
 	}
@@ -143,21 +143,21 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
 
-	frag = net_nbuf_copy_all(orig, 0, BUF_WAIT_TIME);
+	frag = net_pkt_copy_all(orig, 0, BUF_WAIT_TIME);
 	if (!frag) {
 		goto drop;
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
-	if (net_nbuf_ext_len(orig)) {
-		net_nbuf_set_ext_len(buf, net_nbuf_ext_len(orig));
+	if (net_pkt_ext_len(orig)) {
+		net_pkt_set_ext_len(buf, net_pkt_ext_len(orig));
 	} else {
-		net_nbuf_set_ext_len(buf, 0);
+		net_pkt_set_ext_len(buf, 0);
 	}
 
 	/* Set up IPv6 Header fields */
@@ -198,13 +198,13 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 #endif
 	}
 
-	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_dst(orig)->addr;
-	net_nbuf_ll_src(buf)->len = net_nbuf_ll_dst(orig)->len;
+	net_pkt_ll_src(buf)->addr = net_pkt_ll_dst(orig)->addr;
+	net_pkt_ll_src(buf)->len = net_pkt_ll_dst(orig)->len;
 
 	/* We must not set the destination ll address here but trust
 	 * that it is set properly using a value from neighbor cache.
 	 */
-	net_nbuf_ll_dst(buf)->addr = NULL;
+	net_pkt_ll_dst(buf)->addr = NULL;
 
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
@@ -215,13 +215,13 @@ static enum net_verdict handle_echo_request(struct net_buf *orig)
 		goto drop;
 	}
 
-	net_nbuf_unref(orig);
+	net_pkt_unref(orig);
 	net_stats_update_icmp_sent();
 
 	return NET_OK;
 
 drop:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 drop_no_buf:
 	net_stats_update_icmp_drop();
@@ -245,9 +245,9 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 		}
 	}
 
-	iface = net_nbuf_iface(orig);
+	iface = net_pkt_iface(orig);
 
-	buf = net_nbuf_get_reserve_tx(0, BUF_WAIT_TIME);
+	buf = net_pkt_get_reserve_tx(0, BUF_WAIT_TIME);
 	if (!buf) {
 		err = -ENOMEM;
 		goto drop_no_buf;
@@ -266,7 +266,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 		extra_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_tcp_hdr);
 	} else {
-		size_t space = CONFIG_NET_NBUF_DATA_SIZE -
+		size_t space = CONFIG_NET_BUF_DATA_SIZE -
 			net_if_get_ll_reserve(iface,
 					      &NET_IPV6_BUF(orig)->dst);
 
@@ -280,17 +280,17 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	/* We only copy minimal IPv6 + next header from original message.
 	 * This is so that the memory pressure is minimized.
 	 */
-	frag = net_nbuf_copy(orig, extra_len, reserve, BUF_WAIT_TIME);
+	frag = net_pkt_copy(orig, extra_len, reserve, BUF_WAIT_TIME);
 	if (!frag) {
 		err = -ENOMEM;
 		goto drop;
 	}
 
 	net_buf_frag_add(buf, frag);
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
-	net_nbuf_set_ext_len(buf, 0);
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_ext_len(buf, 0);
 
 	setup_ipv6_header(buf, extra_len, net_if_ipv6_get_hop_limit(iface),
 			  type, code);
@@ -298,7 +298,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	/* Depending on error option, we store the param into the ICMP message.
 	 */
 	if (type == NET_ICMPV6_PARAM_PROBLEM) {
-		sys_put_be32(param, net_nbuf_icmp_data(buf) +
+		sys_put_be32(param, net_pkt_icmp_data(buf) +
 			     sizeof(struct net_icmp_hdr));
 	}
 
@@ -318,10 +318,10 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 		net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, &addr);
 	}
 
-	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_dst(orig)->addr;
-	net_nbuf_ll_src(buf)->len = net_nbuf_ll_dst(orig)->len;
-	net_nbuf_ll_dst(buf)->addr = net_nbuf_ll_src(orig)->addr;
-	net_nbuf_ll_dst(buf)->len = net_nbuf_ll_src(orig)->len;
+	net_pkt_ll_src(buf)->addr = net_pkt_ll_dst(orig)->addr;
+	net_pkt_ll_src(buf)->len = net_pkt_ll_dst(orig)->len;
+	net_pkt_ll_dst(buf)->addr = net_pkt_ll_src(orig)->addr;
+	net_pkt_ll_dst(buf)->len = net_pkt_ll_src(orig)->len;
 
 	NET_ICMP_BUF(buf)->chksum = 0;
 	NET_ICMP_BUF(buf)->chksum = ~net_calc_chksum_icmpv6(buf);
@@ -343,7 +343,7 @@ int net_icmpv6_send_error(struct net_buf *orig, uint8_t type, uint8_t code,
 	}
 
 drop:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 drop_no_buf:
 	net_stats_update_icmp_drop();
@@ -361,19 +361,19 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
-	buf = net_nbuf_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
+	buf = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				      K_FOREVER);
 
 	buf = net_ipv6_create_raw(buf, src, dst, iface, IPPROTO_ICMPV6);
 
-	net_nbuf_set_family(buf, AF_INET6);
-	net_nbuf_set_iface(buf, iface);
+	net_pkt_set_family(buf, AF_INET6);
+	net_pkt_set_iface(buf, iface);
 
-	net_nbuf_append_u8(buf, NET_ICMPV6_ECHO_REQUEST);
-	net_nbuf_append_u8(buf, 0);   /* code */
-	net_nbuf_append_be16(buf, 0); /* checksum */
-	net_nbuf_append_be16(buf, identifier);
-	net_nbuf_append_be16(buf, sequence);
+	net_pkt_append_u8(buf, NET_ICMPV6_ECHO_REQUEST);
+	net_pkt_append_u8(buf, 0);   /* code */
+	net_pkt_append_be16(buf, 0); /* checksum */
+	net_pkt_append_be16(buf, identifier);
+	net_pkt_append_be16(buf, sequence);
 
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, src);
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
@@ -403,7 +403,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	}
 
 drop:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	net_stats_update_icmp_drop();
 
 	return -EIO;

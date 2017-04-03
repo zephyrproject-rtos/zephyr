@@ -19,7 +19,7 @@
 #include <misc/printk.h>
 #include <net/buf.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
 
@@ -86,7 +86,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 
 	DBG("Data was sent successfully\n");
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	send_status = 0;
 
@@ -154,7 +154,7 @@ static enum net_verdict test_ok(struct net_conn *conn,
 
 	returned_ud = user_data;
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return NET_OK;
 }
@@ -189,14 +189,14 @@ static void setup_ipv6_udp(struct net_buf *buf,
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, remote_addr);
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, local_addr);
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	NET_UDP_BUF(buf)->src_port = htons(remote_port);
 	NET_UDP_BUF(buf)->dst_port = htons(local_port);
 
-	net_nbuf_set_ext_len(buf, 0);
+	net_pkt_set_ext_len(buf, 0);
 
-	net_buf_add(buf->frags, net_nbuf_ip_hdr_len(buf) +
+	net_buf_add(buf->frags, net_pkt_ip_hdr_len(buf) +
 				sizeof(struct net_udp_hdr));
 }
 
@@ -217,14 +217,14 @@ static void setup_ipv4_udp(struct net_buf *buf,
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->src, remote_addr);
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, local_addr);
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	NET_UDP_BUF(buf)->src_port = htons(remote_port);
 	NET_UDP_BUF(buf)->dst_port = htons(local_port);
 
-	net_nbuf_set_ext_len(buf, 0);
+	net_pkt_set_ext_len(buf, 0);
 
-	net_buf_add(buf->frags, net_nbuf_ip_hdr_len(buf) +
+	net_buf_add(buf->frags, net_pkt_ip_hdr_len(buf) +
 				sizeof(struct net_udp_hdr));
 }
 
@@ -242,12 +242,12 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv6_udp(buf, src, dst, src_port, dst_port);
 
@@ -290,12 +290,12 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
 
 	setup_ipv4_udp(buf, src, dst, src_port, dst_port);
 

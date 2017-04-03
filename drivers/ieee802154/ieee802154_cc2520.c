@@ -19,7 +19,7 @@
 #include <device.h>
 #include <init.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/byteorder.h>
 #include <string.h>
@@ -559,7 +559,7 @@ static inline bool verify_crc(struct cc2520_context *cc2520,
 		return false;
 	}
 
-	net_nbuf_set_ieee802154_rssi(buf, cc2520->spi.cmd_buf[1]);
+	net_pkt_set_ieee802154_rssi(buf, cc2520->spi.cmd_buf[1]);
 
 	/**
 	 * CC2520 does not provide an LQI but a correlation factor.
@@ -619,7 +619,7 @@ static void cc2520_rx(int arg)
 			goto flush;
 		}
 
-		buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+		buf = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!buf) {
 			SYS_LOG_ERR("No buf available");
 			goto flush;
@@ -629,9 +629,9 @@ static void cc2520_rx(int arg)
 		/**
 		 * Reserve 1 byte for length
 		 */
-		net_nbuf_set_ll_reserve(buf, 1);
+		net_pkt_set_ll_reserve(buf, 1);
 #endif
-		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
+		pkt_buf = net_pkt_get_frag(buf, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available");
 			goto flush;
@@ -840,8 +840,8 @@ static int cc2520_tx(struct device *dev,
 		     struct net_buf *buf,
 		     struct net_buf *frag)
 {
-	uint8_t *frame = frag->data - net_nbuf_ll_reserve(buf);
-	uint8_t len = net_nbuf_ll_reserve(buf) + frag->len;
+	uint8_t *frame = frag->data - net_pkt_ll_reserve(buf);
+	uint8_t len = net_pkt_ll_reserve(buf) + frag->len;
 	struct cc2520_context *cc2520 = dev->driver_data;
 	uint8_t retry = 2;
 	bool status;

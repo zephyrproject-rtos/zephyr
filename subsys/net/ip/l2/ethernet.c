@@ -37,11 +37,11 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
 		snprintk(out, sizeof(out), "%s",			   \
-			 net_sprint_ll_addr(net_nbuf_ll_src(buf)->addr,    \
+			 net_sprint_ll_addr(net_pkt_ll_src(buf)->addr,    \
 					    sizeof(struct net_eth_addr))); \
 									   \
 		NET_DBG("src %s dst %s type 0x%x len %zu", out,		   \
-			net_sprint_ll_addr(net_nbuf_ll_dst(buf)->addr,	   \
+			net_sprint_ll_addr(net_pkt_ll_dst(buf)->addr,	   \
 					   sizeof(struct net_eth_addr)),   \
 			type, (size_t)len);				   \
 	} while (0)
@@ -60,7 +60,7 @@ static inline void ethernet_update_length(struct net_if *iface,
 	 * frame size of 60 bytes. In that case, we need to get rid of it.
 	 */
 
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		len = ((NET_IPV4_BUF(buf)->len[0] << 8) +
 		       NET_IPV4_BUF(buf)->len[1]);
 	} else {
@@ -93,11 +93,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	switch (ntohs(hdr->type)) {
 	case NET_ETH_PTYPE_IP:
 	case NET_ETH_PTYPE_ARP:
-		net_nbuf_set_family(buf, AF_INET);
+		net_pkt_set_family(buf, AF_INET);
 		family = AF_INET;
 		break;
 	case NET_ETH_PTYPE_IPV6:
-		net_nbuf_set_family(buf, AF_INET6);
+		net_pkt_set_family(buf, AF_INET6);
 		family = AF_INET6;
 		break;
 	default:
@@ -106,13 +106,13 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 	/* Set the pointers to ll src and dst addresses */
-	lladdr = net_nbuf_ll_src(buf);
-	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->src.addr;
+	lladdr = net_pkt_ll_src(buf);
+	lladdr->addr = ((struct net_eth_hdr *)net_pkt_ll(buf))->src.addr;
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
-	lladdr = net_nbuf_ll_dst(buf);
-	lladdr->addr = ((struct net_eth_hdr *)net_nbuf_ll(buf))->dst.addr;
+	lladdr = net_pkt_ll_dst(buf);
+	lladdr->addr = ((struct net_eth_hdr *)net_pkt_ll(buf))->dst.addr;
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
@@ -131,8 +131,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	net_nbuf_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
-	net_buf_pull(buf->frags, net_nbuf_ll_reserve(buf));
+	net_pkt_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
+	net_buf_pull(buf->frags, net_pkt_ll_reserve(buf));
 
 #ifdef CONFIG_NET_ARP
 	if (family == AF_INET && hdr->type == htons(NET_ETH_PTYPE_ARP)) {
@@ -155,10 +155,10 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 	if (net_ipv4_addr_cmp(&NET_IPV4_BUF(buf)->dst,
 			      net_ipv4_broadcast_address())) {
 		/* Broadcast address */
-		net_nbuf_ll_dst(buf)->addr = (uint8_t *)broadcast_eth_addr.addr;
-		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
-		net_nbuf_ll_src(buf)->addr = net_if_get_link_addr(iface)->addr;
-		net_nbuf_ll_src(buf)->len = sizeof(struct net_eth_addr);
+		net_pkt_ll_dst(buf)->addr = (uint8_t *)broadcast_eth_addr.addr;
+		net_pkt_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+		net_pkt_ll_src(buf)->addr = net_if_get_link_addr(iface)->addr;
+		net_pkt_ll_src(buf)->len = sizeof(struct net_eth_addr);
 
 		return true;
 	} else if (NET_IPV4_BUF(buf)->dst.s4_addr[0] == 224) {
@@ -170,9 +170,9 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 		hdr->dst.addr[4] = NET_IPV4_BUF(buf)->dst.s4_addr[2];
 		hdr->dst.addr[5] = NET_IPV4_BUF(buf)->dst.s4_addr[3];
 
-		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
-		net_nbuf_ll_src(buf)->addr = net_if_get_link_addr(iface)->addr;
-		net_nbuf_ll_src(buf)->len = sizeof(struct net_eth_addr);
+		net_pkt_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+		net_pkt_ll_src(buf)->addr = net_if_get_link_addr(iface)->addr;
+		net_pkt_ll_src(buf)->len = sizeof(struct net_eth_addr);
 
 		return true;
 	}
@@ -188,7 +188,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	uint16_t ptype;
 
 #ifdef CONFIG_NET_ARP
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		struct net_buf *arp_buf;
 
 		if (check_if_dst_is_broadcast_or_mcast(iface, buf)) {
@@ -205,10 +205,10 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 
 		buf = arp_buf;
 
-		net_nbuf_ll_src(buf)->addr = (uint8_t *)&NET_ETH_BUF(buf)->src;
-		net_nbuf_ll_src(buf)->len = sizeof(struct net_eth_addr);
-		net_nbuf_ll_dst(buf)->addr = (uint8_t *)&NET_ETH_BUF(buf)->dst;
-		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+		net_pkt_ll_src(buf)->addr = (uint8_t *)&NET_ETH_BUF(buf)->src;
+		net_pkt_ll_src(buf)->len = sizeof(struct net_eth_addr);
+		net_pkt_ll_dst(buf)->addr = (uint8_t *)&NET_ETH_BUF(buf)->dst;
+		net_pkt_ll_dst(buf)->len = sizeof(struct net_eth_addr);
 
 		/* For ARP message, we do not touch the packet further but will
 		 * send it as it is because the arp.c has prepared the packet
@@ -226,19 +226,19 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	 * substitute the src address using the real ll address.
 	 */
 	if (net_eth_is_addr_broadcast((struct net_eth_addr *)
-					net_nbuf_ll_src(buf)->addr) ||
+					net_pkt_ll_src(buf)->addr) ||
 	    net_eth_is_addr_multicast((struct net_eth_addr *)
-					net_nbuf_ll_src(buf)->addr)) {
-		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
-		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+					net_pkt_ll_src(buf)->addr)) {
+		net_pkt_ll_src(buf)->addr = net_pkt_ll_if(buf)->addr;
+		net_pkt_ll_src(buf)->len = net_pkt_ll_if(buf)->len;
 	}
 
 	/* If the destination address is not set, then use broadcast
 	 * or multicast address.
 	 */
-	if (!net_nbuf_ll_dst(buf)->addr) {
+	if (!net_pkt_ll_dst(buf)->addr) {
 #if defined(CONFIG_NET_IPV6)
-		if (net_nbuf_family(buf) == AF_INET6 &&
+		if (net_pkt_family(buf) == AF_INET6 &&
 		    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
 			struct net_eth_addr *dst = &NET_ETH_BUF(buf)->dst;
 
@@ -248,25 +248,25 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			       (uint8_t *)(&NET_IPV6_BUF(buf)->dst) + 12,
 				sizeof(struct net_eth_addr) - 2);
 
-			net_nbuf_ll_dst(buf)->addr = (uint8_t *)dst->addr;
+			net_pkt_ll_dst(buf)->addr = (uint8_t *)dst->addr;
 		} else
 #endif
 		{
-			net_nbuf_ll_dst(buf)->addr =
+			net_pkt_ll_dst(buf)->addr =
 				(uint8_t *)broadcast_eth_addr.addr;
 		}
 
-		net_nbuf_ll_dst(buf)->len = sizeof(struct net_eth_addr);
+		net_pkt_ll_dst(buf)->len = sizeof(struct net_eth_addr);
 
 		NET_DBG("Destination address was not set, using %s",
-			net_sprint_ll_addr(net_nbuf_ll_dst(buf)->addr,
-					   net_nbuf_ll_dst(buf)->len));
+			net_sprint_ll_addr(net_pkt_ll_dst(buf)->addr,
+					   net_pkt_ll_dst(buf)->len));
 	}
 
 setup_hdr:
 	__unused;
 
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		ptype = htons(NET_ETH_PTYPE_IP);
 	} else {
 		ptype = htons(NET_ETH_PTYPE_IPV6);
@@ -282,10 +282,10 @@ setup_hdr:
 		NET_ASSERT(net_buf_headroom(frag) > sizeof(struct net_eth_addr));
 
 		hdr = (struct net_eth_hdr *)(frag->data -
-					     net_nbuf_ll_reserve(buf));
-		memcpy(&hdr->dst, net_nbuf_ll_dst(buf)->addr,
+					     net_pkt_ll_reserve(buf));
+		memcpy(&hdr->dst, net_pkt_ll_dst(buf)->addr,
 		       sizeof(struct net_eth_addr));
-		memcpy(&hdr->src, net_nbuf_ll_src(buf)->addr,
+		memcpy(&hdr->src, net_pkt_ll_src(buf)->addr,
 		       sizeof(struct net_eth_addr));
 		hdr->type = ptype;
 		print_ll_addrs(buf, ntohs(hdr->type), frag->len);

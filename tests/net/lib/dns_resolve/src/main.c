@@ -130,9 +130,9 @@ static int sender_iface(struct net_if *iface, struct net_buf *buf)
 		DBG("Sending at iface %d %p\n", net_if_get_by_iface(iface),
 		    iface);
 
-		if (net_nbuf_iface(buf) != iface) {
+		if (net_pkt_iface(buf) != iface) {
 			DBG("Invalid interface %p, expecting %p\n",
-				 net_nbuf_iface(buf), iface);
+				 net_pkt_iface(buf), iface);
 			test_failed = true;
 		}
 
@@ -170,7 +170,7 @@ static int sender_iface(struct net_if *iface, struct net_buf *buf)
 	}
 
 out:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return 0;
 }

@@ -26,7 +26,7 @@
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
 #include <net/arp.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/dns_resolve.h>
 
@@ -75,7 +75,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	 * an IPv6 packet, then do not pass it to L2 as the packet does
 	 * not have link layer headers in it.
 	 */
-	if (net_nbuf_ipv6_fragment_start(buf)) {
+	if (net_pkt_ipv6_fragment_start(buf)) {
 		locally_routed = true;
 	}
 #endif
@@ -95,7 +95,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	}
 
 	if (!is_loopback && !locally_routed) {
-		ret = net_if_recv_data(net_nbuf_iface(buf), buf);
+		ret = net_if_recv_data(net_pkt_iface(buf), buf);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Buffer %p discarded by L2", buf);
@@ -111,13 +111,13 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
 		net_stats_update_ipv6_recv();
-		net_nbuf_set_family(buf, PF_INET6);
+		net_pkt_set_family(buf, PF_INET6);
 		return net_ipv6_process_pkt(buf);
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
 		net_stats_update_ipv4_recv();
-		net_nbuf_set_family(buf, PF_INET);
+		net_pkt_set_family(buf, PF_INET);
 		return net_ipv4_process_pkt(buf);
 #endif
 	}
@@ -139,7 +139,7 @@ static void processing_data(struct net_buf *buf, bool is_loopback)
 	case NET_DROP:
 	default:
 		NET_DBG("Dropping buf %p", buf);
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		break;
 	}
 }
@@ -182,7 +182,7 @@ static void net_rx_thread(void)
 		processing_data(buf, false);
 
 		net_print_statistics();
-		net_nbuf_print();
+		net_pkt_print();
 
 		k_yield();
 	}
@@ -205,7 +205,7 @@ static void init_rx_queue(void)
 static inline int check_ip_addr(struct net_buf *buf)
 {
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		if (net_ipv6_addr_cmp(&NET_IPV6_BUF(buf)->dst,
 				      net_ipv6_unspecified_address())) {
 			NET_DBG("IPv6 dst address missing");
@@ -241,7 +241,7 @@ static inline int check_ip_addr(struct net_buf *buf)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET) {
 		if (net_ipv4_addr_cmp(&NET_IPV4_BUF(buf)->dst,
 				      net_ipv4_unspecified_address())) {
 			return -EADDRNOTAVAIL;
@@ -295,12 +295,12 @@ int net_send_data(struct net_buf *buf)
 		return -ENODATA;
 	}
 
-	if (!net_nbuf_iface(buf)) {
+	if (!net_pkt_iface(buf)) {
 		return -EINVAL;
 	}
 
 #if defined(CONFIG_NET_STATISTICS)
-	switch (net_nbuf_family(buf)) {
+	switch (net_pkt_family(buf)) {
 	case AF_INET:
 		net_stats_update_ipv4_sent();
 		break;
@@ -321,7 +321,7 @@ int net_send_data(struct net_buf *buf)
 		return 0;
 	}
 
-	if (net_if_send_data(net_nbuf_iface(buf), buf) == NET_DROP) {
+	if (net_if_send_data(net_pkt_iface(buf), buf) == NET_DROP) {
 		return -EIO;
 	}
 
@@ -345,7 +345,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 	NET_DBG("fifo %p iface %p buf %p len %zu", &rx_queue, iface, buf,
 		net_buf_frags_len(buf));
 
-	net_nbuf_set_iface(buf, iface);
+	net_pkt_set_iface(buf, iface);
 
 	net_buf_put(&rx_queue, buf);
 
@@ -386,7 +386,7 @@ static int net_init(struct device *unused)
 
 	net_shell_init();
 
-	net_nbuf_init();
+	net_pkt_init();
 
 	net_context_init();
 

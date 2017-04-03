@@ -508,7 +508,7 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
 static void allocs_cb(struct net_buf *buf,
 		      const char *func_alloc,
 		      int line_alloc,
@@ -532,16 +532,16 @@ static void allocs_cb(struct net_buf *buf,
 	if (func_alloc) {
 		if (in_use) {
 			printk("%p/%d\t%5s\t%5s\t%s():%d\n", buf, buf->ref,
-			       str, net_nbuf_pool2str(buf->pool), func_alloc,
+			       str, net_pkt_pool2str(buf->pool), func_alloc,
 			       line_alloc);
 		} else {
 			printk("%p\t%5s\t%5s\t%s():%d -> %s():%d\n", buf,
-			       str, net_nbuf_pool2str(buf->pool), func_alloc,
+			       str, net_pkt_pool2str(buf->pool), func_alloc,
 			       line_alloc, func_free, line_free);
 		}
 	}
 }
-#endif /* CONFIG_NET_DEBUG_NET_BUF */
+#endif /* CONFIG_NET_DEBUG_NET_PKT */
 
 /* Put the actual shell commands after this */
 
@@ -550,13 +550,13 @@ static int shell_cmd_allocs(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
 	printk("Network buffer allocations\n\n");
 	printk("net_buf\t\tStatus\tPool\tFunction alloc -> freed\n");
-	net_nbuf_allocs_foreach(allocs_cb, NULL);
+	net_pkt_allocs_foreach(allocs_cb, NULL);
 #else
-	printk("Enable CONFIG_NET_DEBUG_NET_BUF to see allocations.\n");
-#endif /* CONFIG_NET_DEBUG_NET_BUF */
+	printk("Enable CONFIG_NET_DEBUG_NET_PKT to see allocations.\n");
+#endif /* CONFIG_NET_DEBUG_NET_PKT */
 
 	return 0;
 }
@@ -810,7 +810,7 @@ struct ctx_info {
 	struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
 };
 
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static bool pool_found_already(struct ctx_info *info,
 			       struct net_buf_pool *pool)
 {
@@ -829,7 +829,7 @@ static bool pool_found_already(struct ctx_info *info,
 
 static void context_info(struct net_context *context, void *user_data)
 {
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	struct ctx_info *info = user_data;
 	struct net_buf_pool *pool;
 
@@ -844,7 +844,7 @@ static void context_info(struct net_context *context, void *user_data)
 			return;
 		}
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
 		printk("ETX (%s)\t%d\t%d\t%d\t%p\n",
 		       pool->name, pool->pool_size, pool->buf_count,
 		       pool->avail_count, pool);
@@ -862,7 +862,7 @@ static void context_info(struct net_context *context, void *user_data)
 			return;
 		}
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
 		printk("EDATA (%s)\t%d\t%d\t%d\t%p\n",
 		       pool->name, pool->pool_size, pool->buf_count,
 		       pool->avail_count, pool);
@@ -874,7 +874,7 @@ static void context_info(struct net_context *context, void *user_data)
 	}
 
 	info->pos++;
-#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 }
 
 static int shell_cmd_mem(int argc, char *argv[])
@@ -884,13 +884,13 @@ static int shell_cmd_mem(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	net_nbuf_get_info(&rx, &tx, &rx_data, &tx_data);
+	net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 
-	printk("Fragment length %d bytes\n", CONFIG_NET_NBUF_DATA_SIZE);
+	printk("Fragment length %d bytes\n", CONFIG_NET_BUF_DATA_SIZE);
 
 	printk("Network buffer pools:\n");
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
 	printk("Name\t\t\tSize\tCount\tAvail\tAddress\n");
 
 	printk("RX (%s)\t\t%d\t%d\t%d\t%p\n",
@@ -913,9 +913,9 @@ static int shell_cmd_mem(int argc, char *argv[])
 	printk("TX      \t%d\t%p\n", tx->buf_count, tx);
 	printk("RX DATA \t%d\t%p\n", rx_data->buf_count, rx_data);
 	printk("TX DATA \t%d\t%p\n", tx_data->buf_count, tx_data);
-#endif /* CONFIG_NET_DEBUG_NET_BUF */
+#endif /* CONFIG_NET_DEBUG_NET_PKT */
 
-	if (IS_ENABLED(CONFIG_NET_CONTEXT_NBUF_POOL)) {
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
 		struct ctx_info info;
 
 		memset(&info, 0, sizeof(info));
@@ -1482,17 +1482,17 @@ static int shell_cmd_tcp(int argc, char *argv[])
 				return 0;
 			}
 
-			buf = net_nbuf_get_tx(tcp_ctx, TCP_TIMEOUT);
+			buf = net_pkt_get_tx(tcp_ctx, TCP_TIMEOUT);
 			if (!buf) {
 				printk("Out of bufs, msg cannot be sent.\n");
 				return 0;
 			}
 
-			ret = net_nbuf_append(buf, strlen(argv[arg]),
+			ret = net_pkt_append(buf, strlen(argv[arg]),
 					      argv[arg], TCP_TIMEOUT);
 			if (!ret) {
 				printk("Cannot build msg (out of bufs)\n");
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 				return 0;
 			}
 
@@ -1500,7 +1500,7 @@ static int shell_cmd_tcp(int argc, char *argv[])
 					       NULL, NULL);
 			if (ret < 0) {
 				printk("Cannot send msg (%d)\n", ret);
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 				return 0;
 			}
 

@@ -14,7 +14,7 @@
 #include <drivers/rand32.h>
 #include <errno.h>
 #include <gpio.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_if.h>
@@ -140,12 +140,12 @@ transmit(struct net_context *ctx, char buffer[], size_t len)
 {
 	struct net_buf *send_buf;
 
-	send_buf = net_nbuf_get_tx(ctx, K_FOREVER);
+	send_buf = net_pkt_get_tx(ctx, K_FOREVER);
 	if (!send_buf) {
 		return -ENOMEM;
 	}
 
-	if (!net_nbuf_append(send_buf, len, buffer, K_FOREVER)) {
+	if (!net_pkt_append(send_buf, len, buffer, K_FOREVER)) {
 		return -EINVAL;
 	}
 
@@ -289,14 +289,14 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	if (status) {
 		/* TODO: handle connection error */
 		NET_ERR("Connection error: %d\n", -status);
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return;
 	}
 
 	/* tmp points to fragment containing IP header */
 	tmp = buf->frags;
 	/* skip pos to the first TCP payload */
-	pos = net_nbuf_appdata(buf) - tmp->data;
+	pos = net_pkt_appdata(buf) - tmp->data;
 
 	while (tmp) {
 		len = tmp->len - pos;
@@ -314,13 +314,13 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 			break;
 		}
 
-		tmp = net_nbuf_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
+		tmp = net_pkt_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
 		cmd_len += len;
 
 		if (end_of_line) {
 			/* skip the /n char after /r */
 			if (tmp) {
-				tmp = net_nbuf_read(tmp, pos, &pos, 1, NULL);
+				tmp = net_pkt_read(tmp, pos, &pos, 1, NULL);
 			}
 
 			cmd_buf[cmd_len] = '\0';
@@ -329,7 +329,7 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 		}
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	/* TODO: handle messages that spans multiple packets? */
 }

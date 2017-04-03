@@ -136,7 +136,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 
 		if (net_recv_data(recipient, buf) < 0) {
 			TC_ERROR("Data receive failed.");
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 			test_failed = true;
 		}
 
@@ -147,7 +147,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 
 	DBG("Buf %p to be sent len %lu\n", buf, net_buf_frags_len(buf));
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	if (data_failure) {
 		test_failed = true;
@@ -176,7 +176,7 @@ static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
 
 		if (net_recv_data(recipient, buf) < 0) {
 			TC_ERROR("Data receive failed.");
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 			test_failed = true;
 		}
 
@@ -187,7 +187,7 @@ static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
 
 	DBG("Buf %p to be sent len %lu\n", buf, net_buf_frags_len(buf));
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	if (data_failure) {
 		test_failed = true;

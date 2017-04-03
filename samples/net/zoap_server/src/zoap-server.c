@@ -18,7 +18,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #include <net/zoap.h>
@@ -88,8 +88,8 @@ static int test_del(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -140,8 +140,8 @@ static int test_put(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -198,8 +198,8 @@ static int test_post(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -260,8 +260,8 @@ static int location_query_post(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -313,8 +313,8 @@ static int piggyback_get(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -408,8 +408,8 @@ static int query_get(struct zoap_resource *resource,
 
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -477,8 +477,8 @@ static int separate_get(struct zoap_resource *resource,
 		goto done;
 	}
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -501,8 +501,8 @@ static int separate_get(struct zoap_resource *resource,
 	}
 
 done:
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -600,8 +600,8 @@ static int large_get(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -703,8 +703,8 @@ static int large_update_put(struct zoap_resource *resource,
 
 	/* Do something with the payload */
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -773,8 +773,8 @@ static int large_create_post(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -829,8 +829,8 @@ static int send_notification_packet(const struct sockaddr *addr, uint16_t age,
 	uint16_t len;
 	int r;
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -967,8 +967,8 @@ static int core_get(struct zoap_resource *resource,
 	id = zoap_header_get_id(request);
 	token = zoap_header_get_token(request, &tkl);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -1113,20 +1113,20 @@ static void udp_receive(struct net_context *context,
 	 * zoap expects that buffer->data starts at the
 	 * beginning of the CoAP header
 	 */
-	header_len = net_nbuf_appdata(buf) - buf->frags->data;
+	header_len = net_pkt_appdata(buf) - buf->frags->data;
 	net_buf_pull(buf->frags, header_len);
 
 	r = zoap_packet_parse(&request, buf);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return;
 	}
 
 	pending = zoap_pending_received(&request, pendings,
 					NUM_PENDINGS);
 	if (pending) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return;
 	}
 
@@ -1152,7 +1152,7 @@ not_found:
 	r = zoap_handle_request(&request, resources,
 				(const struct sockaddr *) &from);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	if (r < 0) {
 		NET_ERR("No handler for such request (%d)\n", r);

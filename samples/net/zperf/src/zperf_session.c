@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include "zperf_session.h"
 
@@ -37,13 +37,13 @@ struct session *get_session(struct net_buf *buf, enum session_proto proto)
 	/* Get tuple of the remote connection */
 	port = NET_UDP_BUF(buf)->src_port;
 
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		net_ipaddr_copy(&ipv6, &NET_IPV6_BUF(buf)->src);
-	} else if (net_nbuf_family(buf) == AF_INET) {
+	} else if (net_pkt_family(buf) == AF_INET) {
 		net_ipaddr_copy(&ipv4, &NET_IPV4_BUF(buf)->src);
 	} else {
 		printk("Error! unsupported protocol %d\n",
-		       net_nbuf_family(buf));
+		       net_pkt_family(buf));
 		return NULL;
 	}
 
@@ -53,7 +53,7 @@ struct session *get_session(struct net_buf *buf, enum session_proto proto)
 
 #if defined(CONFIG_NET_IPV4)
 		if (ptr->port == port &&
-		    net_nbuf_family(buf) == AF_INET &&
+		    net_pkt_family(buf) == AF_INET &&
 		    net_ipv4_addr_cmp(&ptr->ip.in_addr, &ipv4)) {
 			/* We found an active session */
 			active = ptr;
@@ -61,7 +61,7 @@ struct session *get_session(struct net_buf *buf, enum session_proto proto)
 #endif
 #if defined(CONFIG_NET_IPV6)
 		if (ptr->port == port &&
-		    net_nbuf_family(buf) == AF_INET6 &&
+		    net_pkt_family(buf) == AF_INET6 &&
 		    net_ipv6_addr_cmp(&ptr->ip.in6_addr, &ipv6)) {
 			/* We found an active session */
 			active = ptr;
@@ -82,12 +82,12 @@ struct session *get_session(struct net_buf *buf, enum session_proto proto)
 		active->port = port;
 
 #if defined(CONFIG_NET_IPV6)
-		if (net_nbuf_family(buf) == AF_INET6) {
+		if (net_pkt_family(buf) == AF_INET6) {
 			net_ipaddr_copy(&active->ip.in6_addr, &ipv6);
 		}
 #endif
 #if defined(CONFIG_NET_IPV4)
-		if (net_nbuf_family(buf) == AF_INET) {
+		if (net_pkt_family(buf) == AF_INET) {
 			net_ipaddr_copy(&active->ip.in_addr, &ipv4);
 		}
 #endif

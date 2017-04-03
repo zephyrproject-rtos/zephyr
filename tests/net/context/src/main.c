@@ -499,8 +499,8 @@ static bool net_ctx_send_v6(void)
 	int ret, len;
 	struct net_buf *buf, *frag;
 
-	buf = net_nbuf_get_tx(udp_v6_ctx, K_FOREVER);
-	frag = net_nbuf_get_data(udp_v6_ctx, K_FOREVER);
+	buf = net_pkt_get_tx(udp_v6_ctx, K_FOREVER);
+	frag = net_pkt_get_data(udp_v6_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -508,7 +508,7 @@ static bool net_ctx_send_v6(void)
 
 	memcpy(net_buf_add(frag, len), test_data, len);
 
-	net_nbuf_set_appdatalen(buf, len);
+	net_pkt_set_appdatalen(buf, len);
 
 	test_token = SENDING;
 
@@ -527,8 +527,8 @@ static bool net_ctx_send_v4(void)
 	int ret, len;
 	struct net_buf *buf, *frag;
 
-	buf = net_nbuf_get_tx(udp_v4_ctx, K_FOREVER);
-	frag = net_nbuf_get_data(udp_v4_ctx, K_FOREVER);
+	buf = net_pkt_get_tx(udp_v4_ctx, K_FOREVER);
+	frag = net_pkt_get_data(udp_v4_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -536,7 +536,7 @@ static bool net_ctx_send_v4(void)
 
 	memcpy(net_buf_add(frag, len), test_data, len);
 
-	net_nbuf_set_appdatalen(buf, len);
+	net_pkt_set_appdatalen(buf, len);
 
 	test_token = SENDING;
 
@@ -561,8 +561,8 @@ static bool net_ctx_sendto_v6(void)
 				   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v6_ctx, K_FOREVER);
-	frag = net_nbuf_get_data(udp_v6_ctx, K_FOREVER);
+	buf = net_pkt_get_tx(udp_v6_ctx, K_FOREVER);
+	frag = net_pkt_get_data(udp_v6_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -570,7 +570,7 @@ static bool net_ctx_sendto_v6(void)
 
 	memcpy(net_buf_add(frag, len), test_data, len);
 
-	net_nbuf_set_appdatalen(buf, len);
+	net_pkt_set_appdatalen(buf, len);
 
 	test_token = SENDING;
 
@@ -597,8 +597,8 @@ static bool net_ctx_sendto_v4(void)
 		.sin_addr = { { { 192, 0, 2, 2 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v4_ctx, K_FOREVER);
-	frag = net_nbuf_get_data(udp_v4_ctx, K_FOREVER);
+	buf = net_pkt_get_tx(udp_v4_ctx, K_FOREVER);
+	frag = net_pkt_get_data(udp_v4_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -606,7 +606,7 @@ static bool net_ctx_sendto_v4(void)
 
 	memcpy(net_buf_add(frag, len), test_data, len);
 
-	net_nbuf_set_appdatalen(buf, len);
+	net_pkt_set_appdatalen(buf, len);
 
 	test_token = SENDING;
 
@@ -695,8 +695,8 @@ static bool net_ctx_sendto_v6_wrong_src(void)
 				   0, 0, 0, 0, 0, 0, 0, 0x3 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v6_ctx, K_FOREVER);
-	frag = net_nbuf_get_data(udp_v6_ctx, K_FOREVER);
+	buf = net_pkt_get_tx(udp_v6_ctx, K_FOREVER);
+	frag = net_pkt_get_data(udp_v6_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -704,7 +704,7 @@ static bool net_ctx_sendto_v6_wrong_src(void)
 
 	memcpy(net_buf_add(frag, len), test_data, len);
 
-	net_nbuf_set_appdatalen(buf, len);
+	net_pkt_set_appdatalen(buf, len);
 
 	test_token = SENDING;
 
@@ -752,8 +752,8 @@ static bool net_ctx_sendto_v4_wrong_src(void)
 		.sin_addr = { { { 192, 0, 2, 3 } } },
 	};
 
-	buf = net_nbuf_get_tx(udp_v4_ctx, K_FOREVER);
-	frag = net_nbuf_get_data(udp_v4_ctx, K_FOREVER);
+	buf = net_pkt_get_tx(udp_v4_ctx, K_FOREVER);
+	frag = net_pkt_get_data(udp_v4_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
@@ -761,7 +761,7 @@ static bool net_ctx_sendto_v4_wrong_src(void)
 
 	memcpy(net_buf_add(frag, len), test_data, len);
 
-	net_nbuf_set_appdatalen(buf, len);
+	net_pkt_set_appdatalen(buf, len);
 
 	test_token = SENDING;
 
@@ -1076,7 +1076,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		 */
 		uint16_t port;
 
-		if (net_nbuf_family(buf) == AF_INET6) {
+		if (net_pkt_family(buf) == AF_INET6) {
 			struct in6_addr addr;
 
 			net_ipaddr_copy(&addr, &NET_IPV6_BUF(buf)->src);
@@ -1107,7 +1107,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	}
 
 out:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	if (data_failure) {
 		test_failed = true;

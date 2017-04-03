@@ -17,7 +17,7 @@
 #include <misc/util.h>
 
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
@@ -48,7 +48,7 @@ static struct net_conn conns[CONFIG_NET_MAX_CONN];
  * both TCP and UDP header have these in the same location, we can check
  * them both using the UDP struct.
  */
-#define NET_CONN_BUF(buf) ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
+#define NET_CONN_BUF(buf) ((struct net_udp_hdr *)(net_pkt_udp_data(buf)))
 
 #if defined(CONFIG_NET_CONN_CACHE)
 
@@ -284,7 +284,7 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 					   uint32_t *cache_value,
 					   int32_t *pos)
 {
-	*pos = get_conn(proto, net_nbuf_family(buf), buf, cache_value);
+	*pos = get_conn(proto, net_pkt_family(buf), buf, cache_value);
 	if (*pos >= 0) {
 		if (conn_cache[*pos].idx >= 0) {
 			/* Connection is in the cache */
@@ -297,7 +297,7 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 				net_proto2str(proto), buf,
 				ntohs(NET_CONN_BUF(buf)->src_port),
 				ntohs(NET_CONN_BUF(buf)->dst_port),
-				net_nbuf_family(buf), *pos,
+				net_pkt_family(buf), *pos,
 				conn_cache[*pos].value);
 
 			return conn->cb(conn, buf, conn->user_data);
@@ -561,12 +561,12 @@ static bool check_addr(struct net_buf *buf,
 		       struct sockaddr *addr,
 		       bool is_remote)
 {
-	if (addr->family != net_nbuf_family(buf)) {
+	if (addr->family != net_pkt_family(buf)) {
 		return false;
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6 && addr->family == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6 && addr->family == AF_INET6) {
 		struct in6_addr *addr6;
 
 		if (is_remote) {
@@ -588,7 +588,7 @@ static bool check_addr(struct net_buf *buf,
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET && addr->family == AF_INET) {
+	if (net_pkt_family(buf) == AF_INET && addr->family == AF_INET) {
 		struct in_addr *addr4;
 
 		if (is_remote) {
@@ -611,7 +611,7 @@ static bool check_addr(struct net_buf *buf,
 
 static inline void send_icmp_error(struct net_buf *buf)
 {
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		net_icmpv6_send_error(buf, NET_ICMPV6_DST_UNREACH,
 				      NET_ICMPV6_DST_UNREACH_NO_PORT, 0);
@@ -655,7 +655,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 			"family %d chksum 0x%04x", net_proto2str(proto), buf,
 			ntohs(NET_CONN_BUF(buf)->src_port),
 			ntohs(NET_CONN_BUF(buf)->dst_port),
-			net_nbuf_family(buf), ntohs(chksum));
+			net_pkt_family(buf), ntohs(chksum));
 	}
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
@@ -748,13 +748,13 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 	/* If the destination address is multicast address,
 	 * we do not send ICMP error as that makes no sense.
 	 */
-	if (net_nbuf_family(buf) == AF_INET6 &&
+	if (net_pkt_family(buf) == AF_INET6 &&
 	    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
 		;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET &&
+	if (net_pkt_family(buf) == AF_INET &&
 	    net_is_ipv4_addr_mcast(&NET_IPV4_BUF(buf)->dst)) {
 		;
 	} else

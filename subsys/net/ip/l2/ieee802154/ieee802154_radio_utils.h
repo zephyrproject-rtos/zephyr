@@ -73,7 +73,7 @@ static inline int tx_buffer_fragments(struct net_if *iface,
 	}
 
 	if (!ret) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return ret;

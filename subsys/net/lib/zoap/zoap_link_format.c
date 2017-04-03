@@ -13,7 +13,7 @@
 
 #include <misc/byteorder.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/printk.h>
 
@@ -229,16 +229,16 @@ static int send_error_response(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	context = net_nbuf_context(request->buf);
+	context = net_pkt_context(request->buf);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return -ENOMEM;
 	}
 
@@ -246,7 +246,7 @@ static int send_error_response(struct zoap_resource *resource,
 
 	r = zoap_packet_init(&response, buf);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return r;
 	}
 
@@ -259,7 +259,7 @@ static int send_error_response(struct zoap_resource *resource,
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return r;
@@ -293,16 +293,16 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 	num_queries = r;
 
-	context = net_nbuf_context(request->buf);
+	context = net_pkt_context(request->buf);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
+	buf = net_pkt_get_tx(context, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return -ENOMEM;
 	}
 
@@ -323,7 +323,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
 			    &format, sizeof(format));
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return -EINVAL;
 	}
 
@@ -347,9 +347,9 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 			*str = 0xFF;
 			response.start = str + 1;
 		} else {
-			temp = net_nbuf_get_data(context, K_FOREVER);
+			temp = net_pkt_get_data(context, K_FOREVER);
 			if (!temp) {
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 				return -ENOMEM;
 			}
 
@@ -362,18 +362,18 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 		}
 	}
 
-	net_nbuf_compact(buf);
+	net_pkt_compact(buf);
 
 done:
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return send_error_response(resource, request, from);
 	}
 
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return r;

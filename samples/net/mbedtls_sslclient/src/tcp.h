@@ -14,7 +14,7 @@
 struct tcp_context {
 	struct net_context *net_ctx;
 	struct sockaddr local_sock;
-	struct net_buf *rx_nbuf;
+	struct net_buf *rx_pkt;
 	int32_t timeout;
 };
 

@@ -29,7 +29,7 @@ how the L2 layer is supposed to behave. The generic L2 API has 3
 functions:
 
 - recv: All device drivers, once they receive a packet which they put
-  into a :c:type:`struct net_nbuf`, will push this buffer to the IP
+  into a :c:type:`struct net_pkt`, will push this buffer to the IP
   core stack via :c:func:`net_recv_data()`. At this point, the IP core
   stack does not know what to do with it. Instead, it passes the
   buffer along to the L2 stack's recv() function for handling. The L2
@@ -77,12 +77,12 @@ Ethernet device driver
 
 On reception, it is up to the device driver to fill-in the buffer with
 as many data fragments as required. The buffer itself is a
-:c:type:`struct net_nbuf` and should be allocated through
-:c:func:`net_nbuf_get_reserve_rx(0)`. Then all fragments will be
-allocated through :c:func:`net_nbuf_get_reserve_data(0)`. Of course
+:c:type:`struct net_pkt` and should be allocated through
+:c:func:`net_pkt_get_reserve_rx(0)`. Then all fragments will be
+allocated through :c:func:`net_pkt_get_reserve_data(0)`. Of course
 the amount of required fragments depends on the size of the received
 packet and on the size of a fragment, which is given by
-`CONFIG_NET_NBUF_DATA_SIZE`.
+`CONFIG_NET_PKT_DATA_SIZE`.
 
 Note that it is not up to the device driver to decide on the
 link-layer space to be reserved in the buffer. Hence the 0 given as
@@ -91,13 +91,13 @@ once the packet's Ethernet header has been successfully parsed.
 
 In case :c:func:`net_recv_data()` call fails, it will be up to the
 device driver to un-reference the buffer via
-:c:func:`net_nbuf_unref()`.
+:c:func:`net_pkt_unref()`.
 
 On sending, it is up to the device driver to send the buffer all at
 once, with all the fragments.
 
 In case of a fully successful packet transmission only, the device
-driver must un-reference the buffer via `net_nbuf_unref()`.
+driver must un-reference the buffer via `net_pkt_unref()`.
 
 Each Ethernet device driver will need, in the end, to call
 `NET_DEVICE_INIT_INSTANCE()` like this:

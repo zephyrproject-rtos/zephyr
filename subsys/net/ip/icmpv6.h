@@ -17,7 +17,7 @@
 #include <zephyr/types.h>
 
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 struct net_icmpv6_ns_hdr {
 	uint32_t reserved;
@@ -76,24 +76,24 @@ struct net_icmpv6_nd_opt_6co {
 } __packed;
 
 #define NET_ICMPV6_NS_BUF(buf)						\
-	((struct net_icmpv6_ns_hdr *)(net_nbuf_icmp_data(buf) +		\
+	((struct net_icmpv6_ns_hdr *)(net_pkt_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
 
 #define NET_ICMPV6_ND_OPT_HDR_BUF(buf)					\
-	((struct net_icmpv6_nd_opt_hdr *)(net_nbuf_icmp_data(buf) +	\
+	((struct net_icmpv6_nd_opt_hdr *)(net_pkt_icmp_data(buf) +	\
 					  sizeof(struct net_icmp_hdr) +	\
-					  net_nbuf_ext_opt_len(buf)))
+					  net_pkt_ext_opt_len(buf)))
 
 #define NET_ICMPV6_NA_BUF(buf)						\
-	((struct net_icmpv6_na_hdr *)(net_nbuf_icmp_data(buf) +		\
+	((struct net_icmpv6_na_hdr *)(net_pkt_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
 
 #define NET_ICMPV6_RS_BUF(buf)						\
-	((struct net_icmpv6_rs_hdr *)(net_nbuf_icmp_data(buf) +		\
+	((struct net_icmpv6_rs_hdr *)(net_pkt_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
 
 #define NET_ICMPV6_RA_BUF(buf)						\
-	((struct net_icmpv6_ra_hdr *)(net_nbuf_icmp_data(buf) +		\
+	((struct net_icmpv6_ra_hdr *)(net_pkt_icmp_data(buf) +		\
 				      sizeof(struct net_icmp_hdr)))
 
 #define NET_ICMPV6_ND_O_FLAG(flag) ((flag) & 0x40)

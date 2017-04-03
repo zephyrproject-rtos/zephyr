@@ -34,7 +34,7 @@
 #include <net/net_context.h>
 #include <net/net_if.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #include <net/zoap.h>
@@ -60,7 +60,7 @@ static unsigned char heap[8192];
 
 #define ZOAP_BUF_SIZE 128
 
-NET_BUF_POOL_DEFINE(zoap_nbuf_pool, 4, 0, sizeof(struct net_nbuf), NULL);
+NET_BUF_POOL_DEFINE(zoap_pkt_pool, 4, 0, sizeof(struct net_pkt), NULL);
 NET_BUF_POOL_DEFINE(zoap_data_pool, 4, ZOAP_BUF_SIZE, 0, NULL);
 
 /*
@@ -92,7 +92,7 @@ static int send_response(struct zoap_packet *request, uint8_t response_code)
 	printk("type: %u code %u id %u\n", type, code, id);
 	printk("*******\n");
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -164,7 +164,7 @@ static int piggyback_get(struct zoap_resource *resource,
 	printk("type: %u code %u id %u\n", type, code, id);
 	printk("*******\n");
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -258,7 +258,7 @@ static int query_get(struct zoap_resource *resource,
 
 	printk("*******\n");
 
-	buf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -417,7 +417,7 @@ void dtls_server(void)
 	struct udp_context ctx;
 	struct dtls_timing_context timer;
 	struct zoap_packet pkt;
-	struct net_buf *nbuf, *frag;
+	struct net_buf *buf, *frag;
 
 	mbedtls_ssl_cookie_ctx cookie_ctx;
 	mbedtls_entropy_context entropy;
@@ -549,8 +549,8 @@ reset:
 
 	do {
 		/* Read the request */
-		nbuf = net_buf_alloc(&zoap_nbuf_pool, K_NO_WAIT);
-		if (!nbuf) {
+		buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
+		if (!buf) {
 			mbedtls_printf("Could not get buffer from pool\n");
 			goto exit;
 		}
@@ -561,7 +561,7 @@ reset:
 			goto exit;
 		}
 
-		net_buf_frag_add(nbuf, frag);
+		net_buf_frag_add(buf, frag);
 		len = ZOAP_BUF_SIZE - 1;
 		memset(frag->data, 0, ZOAP_BUF_SIZE);
 
@@ -572,7 +572,7 @@ reset:
 		}
 
 		if (ret <= 0) {
-			net_buf_unref(nbuf);
+			net_buf_unref(buf);
 
 			switch (ret) {
 			case MBEDTLS_ERR_SSL_TIMEOUT:
@@ -594,7 +594,7 @@ reset:
 		len = ret;
 		frag->len = len;
 
-		ret = zoap_packet_parse(&pkt, nbuf);
+		ret = zoap_packet_parse(&pkt, buf);
 		if (ret) {
 			mbedtls_printf("Could not parse packet\n");
 			goto exit;
@@ -607,7 +607,7 @@ reset:
 				       ret);
 		}
 
-		net_buf_unref(nbuf);
+		net_buf_unref(buf);
 
 	} while (1);
 

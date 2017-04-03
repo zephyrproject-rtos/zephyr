@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
@@ -158,9 +158,9 @@ static struct net_buf *build_reply_buf(const char *name,
 	int header_len, recv_len, reply_len;
 
 	printk("%s received %d bytes", name,
-	      net_nbuf_appdatalen(buf));
+	      net_pkt_appdatalen(buf));
 
-	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
+	reply_buf = net_pkt_get_tx(context, K_FOREVER);
 
 	recv_len = net_buf_frags_len(buf->frags);
 
@@ -171,7 +171,7 @@ static struct net_buf *build_reply_buf(const char *name,
 	/* First fragment will contain IP header so move the data
 	 * down in order to get rid of it.
 	 */
-	header_len = net_nbuf_appdata(buf) - tmp->data;
+	header_len = net_pkt_appdata(buf) - tmp->data;
 
 	/* After this pull, the tmp->data points directly to application
 	 * data.
@@ -216,7 +216,7 @@ static void udp_received(struct net_context *context,
 {
 	struct net_buf *reply_buf;
 	struct sockaddr dst_addr;
-	sa_family_t family = net_nbuf_family(buf);
+	sa_family_t family = net_pkt_family(buf);
 	static char dbg[MAX_DBG_PRINT + 1];
 	int ret;
 
@@ -227,7 +227,7 @@ static void udp_received(struct net_context *context,
 
 	reply_buf = build_reply_buf(dbg, context, buf);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	ret = net_context_sendto(reply_buf, &dst_addr,
 				 family == AF_INET6 ?
@@ -238,7 +238,7 @@ static void udp_received(struct net_context *context,
 				 user_data);
 	if (ret < 0) {
 		printk("Cannot send data to peer (%d)", ret);
-		net_nbuf_unref(reply_buf);
+		net_pkt_unref(reply_buf);
 	}
 }
 
@@ -258,7 +258,7 @@ static void tcp_received(struct net_context *context,
 			 void *user_data)
 {
 	static char dbg[MAX_DBG_PRINT + 1];
-	sa_family_t family = net_nbuf_family(buf);
+	sa_family_t family = net_pkt_family(buf);
 	struct net_buf *reply_buf;
 	int ret;
 
@@ -274,7 +274,7 @@ static void tcp_received(struct net_context *context,
 			       NULL);
 	if (ret < 0) {
 		printk("Cannot send data to peer (%d)", ret);
-		net_nbuf_unref(reply_buf);
+		net_pkt_unref(reply_buf);
 
 		quit();
 	}

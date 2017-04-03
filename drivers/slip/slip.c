@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <misc/util.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <console/uart_pipe.h>
@@ -129,7 +129,7 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 {
 	struct net_buf *frag;
 #if defined(CONFIG_SLIP_TAP)
-	uint16_t ll_reserve = net_nbuf_ll_reserve(buf);
+	uint16_t ll_reserve = net_pkt_ll_reserve(buf);
 	bool send_header_once = false;
 #endif
 	uint8_t *ptr;
@@ -201,20 +201,20 @@ static int slip_send(struct net_if *iface, struct net_buf *buf)
 
 #if defined(CONFIG_SLIP_DEBUG)
 		SYS_LOG_DBG("sent data %d bytes",
-			    frag->len + net_nbuf_ll_reserve(buf));
+			    frag->len + net_pkt_ll_reserve(buf));
 		if (frag->len + ll_reserve) {
 			char msg[8 + 1];
 
 			snprintf(msg, sizeof(msg), "<slip %2d", frag_count++);
 
-			hexdump(msg, net_nbuf_ll(buf),
-				frag->len + net_nbuf_ll_reserve(buf),
-				net_nbuf_ll_reserve(buf));
+			hexdump(msg, net_pkt_ll(buf),
+				frag->len + net_pkt_ll_reserve(buf),
+				net_pkt_ll_reserve(buf));
 		}
 #endif
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	slip_writeb(SLIP_END);
 
 	return 0;
@@ -239,7 +239,7 @@ static void process_msg(struct slip_context *slip)
 	}
 
 	if (net_recv_data(slip->iface, buf) < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	slip->rx = slip->last = NULL;
@@ -294,20 +294,20 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (!slip->first) {
 			slip->first = true;
 
-			slip->rx = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+			slip->rx = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 			if (!slip->rx) {
 				return 0;
 			}
 
-			slip->last = net_nbuf_get_frag(slip->rx, K_NO_WAIT);
+			slip->last = net_pkt_get_frag(slip->rx, K_NO_WAIT);
 			if (!slip->last) {
-				net_nbuf_unref(slip->rx);
+				net_pkt_unref(slip->rx);
 				slip->rx = NULL;
 				return 0;
 			}
 
 			net_buf_frag_add(slip->rx, slip->last);
-			slip->ptr = net_nbuf_ip_data(slip->rx);
+			slip->ptr = net_pkt_ip_data(slip->rx);
 		}
 
 		break;
@@ -325,11 +325,11 @@ static inline int slip_input_byte(struct slip_context *slip,
 		/* We need to allocate a new fragment */
 		struct net_buf *frag;
 
-		frag = net_nbuf_get_reserve_rx_data(0, K_NO_WAIT);
+		frag = net_pkt_get_reserve_rx_data(0, K_NO_WAIT);
 		if (!frag) {
 			SYS_LOG_ERR("[%p] cannot allocate data fragment",
 				    slip);
-			net_nbuf_unref(slip->rx);
+			net_pkt_unref(slip->rx);
 			slip->rx = NULL;
 			slip->last = NULL;
 

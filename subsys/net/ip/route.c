@@ -19,7 +19,7 @@
 #include <zephyr/types.h>
 #include <misc/slist.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/net_stats.h>
 #include <net/net_mgmt.h>
@@ -721,7 +721,7 @@ int net_route_packet(struct net_buf *buf, struct in6_addr *nexthop)
 	struct net_linkaddr_storage *lladdr;
 	struct net_nbr *nbr;
 
-	nbr = net_ipv6_nbr_lookup(net_nbuf_iface(buf), nexthop);
+	nbr = net_ipv6_nbr_lookup(net_pkt_iface(buf), nexthop);
 	if (!nbr) {
 		NET_DBG("Cannot find %s neighbor.",
 			net_sprint_ipv6_addr(nexthop));
@@ -738,23 +738,23 @@ int net_route_packet(struct net_buf *buf, struct in6_addr *nexthop)
 	/* Sanitycheck: If src and dst ll addresses are going to be same,
 	 * then something went wrong in route lookup.
 	 */
-	if (!memcmp(net_nbuf_ll_src(buf)->addr, lladdr->addr, lladdr->len)) {
+	if (!memcmp(net_pkt_ll_src(buf)->addr, lladdr->addr, lladdr->len)) {
 		NET_ERR("Src ll and Dst ll are same");
 		return -EINVAL;
 	}
 
-	net_nbuf_set_forwarding(buf, true);
+	net_pkt_set_forwarding(buf, true);
 
 	/* Set the destination and source ll address in the packet.
 	 * We set the destination address to be the nexthop recipient.
 	 */
-	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
-	net_nbuf_ll_src(buf)->type = net_nbuf_ll_if(buf)->type;
-	net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	net_pkt_ll_src(buf)->addr = net_pkt_ll_if(buf)->addr;
+	net_pkt_ll_src(buf)->type = net_pkt_ll_if(buf)->type;
+	net_pkt_ll_src(buf)->len = net_pkt_ll_if(buf)->len;
 
-	net_nbuf_ll_dst(buf)->addr = lladdr->addr;
-	net_nbuf_ll_dst(buf)->type = lladdr->type;
-	net_nbuf_ll_dst(buf)->len = lladdr->len;
+	net_pkt_ll_dst(buf)->addr = lladdr->addr;
+	net_pkt_ll_dst(buf)->type = lladdr->type;
+	net_pkt_ll_dst(buf)->len = lladdr->len;
 
 	return net_send_data(buf);
 }

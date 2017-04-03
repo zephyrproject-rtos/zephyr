@@ -19,7 +19,7 @@
 #include <device.h>
 #include <init.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/byteorder.h>
 #include <string.h>
@@ -71,7 +71,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		SYS_LOG_DBG("Frame received");
 
-		buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
+		buf = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!buf) {
 			SYS_LOG_ERR("No buf available");
 			goto out;
@@ -81,10 +81,10 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		/**
 		 * Reserve 1 byte for length
 		 */
-		net_nbuf_set_ll_reserve(buf, 1);
+		net_pkt_set_ll_reserve(buf, 1);
 #endif
 
-		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
+		pkt_buf = net_pkt_get_frag(buf, K_NO_WAIT);
 		if (!pkt_buf) {
 			SYS_LOG_ERR("No pkt_buf available");
 			goto out;
@@ -234,8 +234,8 @@ static int nrf5_tx(struct device *dev,
 		   struct net_buf *frag)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	uint8_t payload_len = net_nbuf_ll_reserve(buf) + frag->len;
-	uint8_t *payload = frag->data - net_nbuf_ll_reserve(buf);
+	uint8_t payload_len = net_pkt_ll_reserve(buf) + frag->len;
+	uint8_t *payload = frag->data - net_pkt_ll_reserve(buf);
 
 	SYS_LOG_DBG("%p (%u)", payload, payload_len);
 

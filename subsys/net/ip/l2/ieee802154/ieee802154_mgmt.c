@@ -138,14 +138,14 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 
 		/* Active scan sends a beacon request */
 		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
-			net_nbuf_ref(buf);
-			net_nbuf_ref(buf->frags);
+			net_pkt_ref(buf);
+			net_pkt_ref(buf->frags);
 
 			ret = ieee802154_radio_send(iface, buf);
 			if (ret) {
 				NET_DBG("Could not send Beacon Request (%d)",
 					ret);
-				net_nbuf_unref(buf);
+				net_pkt_unref(buf);
 
 				break;
 			}
@@ -169,7 +169,7 @@ out:
 	ctx->scan_ctx = NULL;
 
 	if (buf) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	}
 
 	return ret;
@@ -267,7 +267,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	ctx->associated = false;
 
 	if (net_if_send_data(iface, buf)) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		ret = -EIO;
 		goto out;
 	}
@@ -331,7 +331,7 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	cmd->disassoc_note.reason = IEEE802154_DRF_DEVICE_WISH;
 
 	if (net_if_send_data(iface, buf)) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return -EIO;
 	}
 

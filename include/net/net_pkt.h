@@ -1,5 +1,5 @@
 /** @file
- * @brief Network buffer API
+ * @brief Network packet buffer descriptor API
  *
  * Network data is passed between different parts of the stack via
  * net_buf struct.
@@ -13,8 +13,8 @@
 
 /* Data buffer API - used for all data to/from net */
 
-#ifndef __NBUF_H
-#define __NBUF_H
+#ifndef __NET_PKT_H__
+#define __NET_PKT_H__
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -41,7 +41,7 @@ enum net_dir {
 	NET_RX = 1,
 };
 
-struct net_nbuf {
+struct net_pkt {
 	/** Network connection context */
 	struct net_context *context;
 
@@ -115,349 +115,349 @@ struct net_nbuf {
 
 
 /* The interface real ll address */
-static inline struct net_linkaddr *net_nbuf_ll_if(struct net_buf *buf)
+static inline struct net_linkaddr *net_pkt_ll_if(struct net_buf *buf)
 {
 	return net_if_get_link_addr(
-		((struct net_nbuf *)net_buf_user_data(buf))->iface);
+		((struct net_pkt *)net_buf_user_data(buf))->iface);
 }
 
-static inline struct net_context *net_nbuf_context(struct net_buf *buf)
+static inline struct net_context *net_pkt_context(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->context;
+	return ((struct net_pkt *)net_buf_user_data(buf))->context;
 }
 
-static inline void net_nbuf_set_context(struct net_buf *buf,
+static inline void net_pkt_set_context(struct net_buf *buf,
 					struct net_context *ctx)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->context = ctx;
+	((struct net_pkt *)net_buf_user_data(buf))->context = ctx;
 }
 
-static inline void *net_nbuf_token(struct net_buf *buf)
+static inline void *net_pkt_token(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->token;
+	return ((struct net_pkt *)net_buf_user_data(buf))->token;
 }
 
-static inline void net_nbuf_set_token(struct net_buf *buf, void *token)
+static inline void net_pkt_set_token(struct net_buf *buf, void *token)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->token = token;
+	((struct net_pkt *)net_buf_user_data(buf))->token = token;
 }
 
-static inline struct net_if *net_nbuf_iface(struct net_buf *buf)
+static inline struct net_if *net_pkt_iface(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->iface;
+	return ((struct net_pkt *)net_buf_user_data(buf))->iface;
 }
 
-static inline void net_nbuf_set_iface(struct net_buf *buf, struct net_if *iface)
+static inline void net_pkt_set_iface(struct net_buf *buf, struct net_if *iface)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->iface = iface;
+	((struct net_pkt *)net_buf_user_data(buf))->iface = iface;
 
-	/* If the network interface is set in nbuf, then also set the type of
-	 * the network address that is stored in nbuf. This is done here so
+	/* If the network interface is set in pkt, then also set the type of
+	 * the network address that is stored in pkt. This is done here so
 	 * that the address type is properly set and is not forgotten.
 	 */
-	((struct net_nbuf *)net_buf_user_data(buf))->lladdr_src.type =
+	((struct net_pkt *)net_buf_user_data(buf))->lladdr_src.type =
 		iface->link_addr.type;
-	((struct net_nbuf *)net_buf_user_data(buf))->lladdr_dst.type =
+	((struct net_pkt *)net_buf_user_data(buf))->lladdr_dst.type =
 		iface->link_addr.type;
 }
 
-static inline uint8_t net_nbuf_family(struct net_buf *buf)
+static inline uint8_t net_pkt_family(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->family;
+	return ((struct net_pkt *)net_buf_user_data(buf))->family;
 }
 
-static inline void net_nbuf_set_family(struct net_buf *buf, uint8_t family)
+static inline void net_pkt_set_family(struct net_buf *buf, uint8_t family)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->family = family;
+	((struct net_pkt *)net_buf_user_data(buf))->family = family;
 }
 
-static inline uint8_t net_nbuf_ip_hdr_len(struct net_buf *buf)
+static inline uint8_t net_pkt_ip_hdr_len(struct net_buf *buf)
 {
-	return ((struct net_nbuf *) net_buf_user_data(buf))->ip_hdr_len;
+	return ((struct net_pkt *) net_buf_user_data(buf))->ip_hdr_len;
 }
 
-static inline void net_nbuf_set_ip_hdr_len(struct net_buf *buf, uint8_t len)
+static inline void net_pkt_set_ip_hdr_len(struct net_buf *buf, uint8_t len)
 {
-	((struct net_nbuf *) net_buf_user_data(buf))->ip_hdr_len = len;
+	((struct net_pkt *) net_buf_user_data(buf))->ip_hdr_len = len;
 }
 
-static inline uint8_t net_nbuf_ext_len(struct net_buf *buf)
+static inline uint8_t net_pkt_ext_len(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->ext_len;
+	return ((struct net_pkt *)net_buf_user_data(buf))->ext_len;
 }
 
-static inline void net_nbuf_set_ext_len(struct net_buf *buf, uint8_t len)
+static inline void net_pkt_set_ext_len(struct net_buf *buf, uint8_t len)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->ext_len = len;
+	((struct net_pkt *)net_buf_user_data(buf))->ext_len = len;
 }
 
-static inline uint8_t net_nbuf_ext_bitmap(struct net_buf *buf)
+static inline uint8_t net_pkt_ext_bitmap(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap;
+	return ((struct net_pkt *)net_buf_user_data(buf))->ext_bitmap;
 }
 
-static inline void net_nbuf_set_ext_bitmap(struct net_buf *buf, uint8_t bm)
+static inline void net_pkt_set_ext_bitmap(struct net_buf *buf, uint8_t bm)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap = bm;
+	((struct net_pkt *)net_buf_user_data(buf))->ext_bitmap = bm;
 }
 
-static inline void net_nbuf_add_ext_bitmap(struct net_buf *buf, uint8_t bm)
+static inline void net_pkt_add_ext_bitmap(struct net_buf *buf, uint8_t bm)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->ext_bitmap |= bm;
+	((struct net_pkt *)net_buf_user_data(buf))->ext_bitmap |= bm;
 }
 
-static inline uint8_t net_nbuf_dir(struct net_buf *buf)
+static inline uint8_t net_pkt_dir(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->net_dir;
+	return ((struct net_pkt *)net_buf_user_data(buf))->net_dir;
 }
 
-static inline void net_nbuf_set_dir(struct net_buf *buf, enum net_dir dir)
+static inline void net_pkt_set_dir(struct net_buf *buf, enum net_dir dir)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->net_dir = dir;
+	((struct net_pkt *)net_buf_user_data(buf))->net_dir = dir;
 }
 
-static inline uint8_t *net_nbuf_next_hdr(struct net_buf *buf)
+static inline uint8_t *net_pkt_next_hdr(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->next_hdr;
+	return ((struct net_pkt *)net_buf_user_data(buf))->next_hdr;
 }
 
-static inline void net_nbuf_set_next_hdr(struct net_buf *buf, uint8_t *hdr)
+static inline void net_pkt_set_next_hdr(struct net_buf *buf, uint8_t *hdr)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->next_hdr = hdr;
+	((struct net_pkt *)net_buf_user_data(buf))->next_hdr = hdr;
 }
 
 #if defined(CONFIG_NET_IPV6)
-static inline uint8_t net_nbuf_ext_opt_len(struct net_buf *buf)
+static inline uint8_t net_pkt_ext_opt_len(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->ext_opt_len;
+	return ((struct net_pkt *)net_buf_user_data(buf))->ext_opt_len;
 }
 
-static inline void net_nbuf_set_ext_opt_len(struct net_buf *buf, uint8_t len)
+static inline void net_pkt_set_ext_opt_len(struct net_buf *buf, uint8_t len)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->ext_opt_len = len;
+	((struct net_pkt *)net_buf_user_data(buf))->ext_opt_len = len;
 }
 #endif
 
 #if defined(CONFIG_NET_TCP)
-static inline uint8_t net_nbuf_buf_sent(struct net_buf *buf)
+static inline uint8_t net_pkt_buf_sent(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->buf_sent;
+	return ((struct net_pkt *)net_buf_user_data(buf))->buf_sent;
 }
 
-static inline void net_nbuf_set_buf_sent(struct net_buf *buf, bool sent)
+static inline void net_pkt_set_buf_sent(struct net_buf *buf, bool sent)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->buf_sent = sent;
+	((struct net_pkt *)net_buf_user_data(buf))->buf_sent = sent;
 }
 #endif
 
 #if defined(CONFIG_NET_ROUTE)
-static inline bool net_nbuf_forwarding(struct net_buf *buf)
+static inline bool net_pkt_forwarding(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->forwarding;
+	return ((struct net_pkt *)net_buf_user_data(buf))->forwarding;
 }
 
-static inline void net_nbuf_set_forwarding(struct net_buf *buf, bool forward)
+static inline void net_pkt_set_forwarding(struct net_buf *buf, bool forward)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->forwarding = forward;
+	((struct net_pkt *)net_buf_user_data(buf))->forwarding = forward;
 }
 #else
-static inline bool net_nbuf_forwarding(struct net_buf *buf)
+static inline bool net_pkt_forwarding(struct net_buf *buf)
 {
 	return false;
 }
 #endif
 
-static inline uint16_t net_nbuf_get_len(struct net_buf *buf)
+static inline uint16_t net_pkt_get_len(struct net_buf *buf)
 {
 	return buf->len;
 }
 
-static inline void net_nbuf_set_len(struct net_buf *buf, uint16_t len)
+static inline void net_pkt_set_len(struct net_buf *buf, uint16_t len)
 {
 	buf->len = len;
 }
 
-static inline uint8_t *net_nbuf_ip_data(struct net_buf *buf)
+static inline uint8_t *net_pkt_ip_data(struct net_buf *buf)
 {
 	return buf->frags->data;
 }
 
-static inline uint8_t *net_nbuf_udp_data(struct net_buf *buf)
+static inline uint8_t *net_pkt_udp_data(struct net_buf *buf)
 {
-	return &buf->frags->data[net_nbuf_ip_hdr_len(buf) +
-				 net_nbuf_ext_len(buf)];
+	return &buf->frags->data[net_pkt_ip_hdr_len(buf) +
+				 net_pkt_ext_len(buf)];
 }
 
-static inline uint8_t *net_nbuf_tcp_data(struct net_buf *buf)
+static inline uint8_t *net_pkt_tcp_data(struct net_buf *buf)
 {
-	return &buf->frags->data[net_nbuf_ip_hdr_len(buf) +
-				 net_nbuf_ext_len(buf)];
+	return &buf->frags->data[net_pkt_ip_hdr_len(buf) +
+				 net_pkt_ext_len(buf)];
 }
 
-static inline uint8_t *net_nbuf_icmp_data(struct net_buf *buf)
+static inline uint8_t *net_pkt_icmp_data(struct net_buf *buf)
 {
-	return &buf->frags->data[net_nbuf_ip_hdr_len(buf) +
-				 net_nbuf_ext_len(buf)];
+	return &buf->frags->data[net_pkt_ip_hdr_len(buf) +
+				 net_pkt_ext_len(buf)];
 }
 
-static inline uint8_t *net_nbuf_appdata(struct net_buf *buf)
+static inline uint8_t *net_pkt_appdata(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->appdata;
+	return ((struct net_pkt *)net_buf_user_data(buf))->appdata;
 }
 
-static inline void net_nbuf_set_appdata(struct net_buf *buf, uint8_t *data)
+static inline void net_pkt_set_appdata(struct net_buf *buf, uint8_t *data)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->appdata = data;
+	((struct net_pkt *)net_buf_user_data(buf))->appdata = data;
 }
 
-static inline uint16_t net_nbuf_appdatalen(struct net_buf *buf)
+static inline uint16_t net_pkt_appdatalen(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->appdatalen;
+	return ((struct net_pkt *)net_buf_user_data(buf))->appdatalen;
 }
 
-static inline void net_nbuf_set_appdatalen(struct net_buf *buf, uint16_t len)
+static inline void net_pkt_set_appdatalen(struct net_buf *buf, uint16_t len)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->appdatalen = len;
+	((struct net_pkt *)net_buf_user_data(buf))->appdatalen = len;
 }
 
-static inline uint8_t net_nbuf_ll_reserve(struct net_buf *buf)
+static inline uint8_t net_pkt_ll_reserve(struct net_buf *buf)
 {
-	return ((struct net_nbuf *) net_buf_user_data(buf))->ll_reserve;
+	return ((struct net_pkt *) net_buf_user_data(buf))->ll_reserve;
 }
 
-static inline void net_nbuf_set_ll_reserve(struct net_buf *buf, uint8_t len)
+static inline void net_pkt_set_ll_reserve(struct net_buf *buf, uint8_t len)
 {
-	((struct net_nbuf *) net_buf_user_data(buf))->ll_reserve = len;
+	((struct net_pkt *) net_buf_user_data(buf))->ll_reserve = len;
 }
 
-static inline uint8_t *net_nbuf_ll(struct net_buf *buf)
+static inline uint8_t *net_pkt_ll(struct net_buf *buf)
 {
-	return net_nbuf_ip_data(buf) - net_nbuf_ll_reserve(buf);
+	return net_pkt_ip_data(buf) - net_pkt_ll_reserve(buf);
 }
 
-static inline struct net_linkaddr *net_nbuf_ll_src(struct net_buf *buf)
+static inline struct net_linkaddr *net_pkt_ll_src(struct net_buf *buf)
 {
-	return &((struct net_nbuf *)net_buf_user_data(buf))->lladdr_src;
+	return &((struct net_pkt *)net_buf_user_data(buf))->lladdr_src;
 }
 
-static inline struct net_linkaddr *net_nbuf_ll_dst(struct net_buf *buf)
+static inline struct net_linkaddr *net_pkt_ll_dst(struct net_buf *buf)
 {
-	return &((struct net_nbuf *)net_buf_user_data(buf))->lladdr_dst;
+	return &((struct net_pkt *)net_buf_user_data(buf))->lladdr_dst;
 }
 
-static inline void net_nbuf_ll_clear(struct net_buf *buf)
+static inline void net_pkt_ll_clear(struct net_buf *buf)
 {
-	memset(net_nbuf_ll(buf), 0, net_nbuf_ll_reserve(buf));
-	net_nbuf_ll_src(buf)->addr = NULL;
-	net_nbuf_ll_src(buf)->len = 0;
+	memset(net_pkt_ll(buf), 0, net_pkt_ll_reserve(buf));
+	net_pkt_ll_src(buf)->addr = NULL;
+	net_pkt_ll_src(buf)->len = 0;
 }
 
-static inline void net_nbuf_ll_swap(struct net_buf *buf)
+static inline void net_pkt_ll_swap(struct net_buf *buf)
 {
-	uint8_t *addr = net_nbuf_ll_src(buf)->addr;
+	uint8_t *addr = net_pkt_ll_src(buf)->addr;
 
-	net_nbuf_ll_src(buf)->addr = net_nbuf_ll_dst(buf)->addr;
-	net_nbuf_ll_dst(buf)->addr = addr;
+	net_pkt_ll_src(buf)->addr = net_pkt_ll_dst(buf)->addr;
+	net_pkt_ll_dst(buf)->addr = addr;
 }
 
-static inline void net_nbuf_copy_user_data(struct net_buf *new,
-					   struct net_buf *orig)
+static inline void net_pkt_copy_user_data(struct net_buf *new,
+					  struct net_buf *orig)
 {
-	memcpy((struct net_nbuf *)net_buf_user_data(new),
-	       (struct net_nbuf *)net_buf_user_data(orig),
-	       sizeof(struct net_nbuf));
+	memcpy((struct net_pkt *)net_buf_user_data(new),
+	       (struct net_pkt *)net_buf_user_data(orig),
+	       sizeof(struct net_pkt));
 }
 
 #if defined(CONFIG_NET_IPV6)
-static inline uint16_t net_nbuf_ipv6_hdr_prev(struct net_buf *buf)
+static inline uint16_t net_pkt_ipv6_hdr_prev(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)
+	return ((struct net_pkt *)
 		net_buf_user_data(buf))->ipv6_prev_hdr_start;
 }
 
-static inline void net_nbuf_set_ipv6_hdr_prev(struct net_buf *buf,
-					      uint16_t offset)
+static inline void net_pkt_set_ipv6_hdr_prev(struct net_buf *buf,
+					     uint16_t offset)
 {
-	((struct net_nbuf *)
+	((struct net_pkt *)
 	 net_buf_user_data(buf))->ipv6_prev_hdr_start = offset;
 }
 
-static inline uint8_t net_nbuf_ipv6_hop_limit(struct net_buf *buf)
+static inline uint8_t net_pkt_ipv6_hop_limit(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)
+	return ((struct net_pkt *)
 		net_buf_user_data(buf))->ipv6_hop_limit;
 }
 
-static inline void net_nbuf_set_ipv6_hop_limit(struct net_buf *buf,
-					       uint8_t hop_limit)
+static inline void net_pkt_set_ipv6_hop_limit(struct net_buf *buf,
+					      uint8_t hop_limit)
 {
-	((struct net_nbuf *)
+	((struct net_pkt *)
 	 net_buf_user_data(buf))->ipv6_hop_limit = hop_limit;
 }
 #endif
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-static inline uint8_t *net_nbuf_ipv6_fragment_start(struct net_buf *buf)
+static inline uint8_t *net_pkt_ipv6_fragment_start(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)
+	return ((struct net_pkt *)
 		net_buf_user_data(buf))->ipv6_frag_hdr_start;
 }
 
-static inline void net_nbuf_set_ipv6_fragment_start(struct net_buf *buf,
-						    uint8_t *start)
+static inline void net_pkt_set_ipv6_fragment_start(struct net_buf *buf,
+						   uint8_t *start)
 {
-	((struct net_nbuf *)
+	((struct net_pkt *)
 	 net_buf_user_data(buf))->ipv6_frag_hdr_start = start;
 }
 
-static inline uint16_t net_nbuf_ipv6_fragment_offset(struct net_buf *buf)
+static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)
+	return ((struct net_pkt *)
 		net_buf_user_data(buf))->ipv6_fragment_offset;
 }
 
-static inline void net_nbuf_set_ipv6_fragment_offset(struct net_buf *buf,
-						     uint16_t offset)
+static inline void net_pkt_set_ipv6_fragment_offset(struct net_buf *buf,
+						    uint16_t offset)
 {
-	((struct net_nbuf *)
+	((struct net_pkt *)
 	 net_buf_user_data(buf))->ipv6_fragment_offset = offset;
 }
 
-static inline uint32_t net_nbuf_ipv6_fragment_id(struct net_buf *buf)
+static inline uint32_t net_pkt_ipv6_fragment_id(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->ipv6_fragment_id;
+	return ((struct net_pkt *)net_buf_user_data(buf))->ipv6_fragment_id;
 }
 
-static inline void net_nbuf_set_ipv6_fragment_id(struct net_buf *buf,
-						 uint32_t id)
+static inline void net_pkt_set_ipv6_fragment_id(struct net_buf *buf,
+						uint32_t id)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->ipv6_fragment_id = id;
+	((struct net_pkt *)net_buf_user_data(buf))->ipv6_fragment_id = id;
 }
 #endif
 
 #if defined(CONFIG_NET_L2_IEEE802154)
-static inline uint8_t net_nbuf_ieee802154_rssi(struct net_buf *buf)
+static inline uint8_t net_pkt_ieee802154_rssi(struct net_buf *buf)
 {
-	return ((struct net_nbuf *)net_buf_user_data(buf))->ieee802154_rssi;
+	return ((struct net_pkt *)net_buf_user_data(buf))->ieee802154_rssi;
 }
 
-static inline void net_nbuf_set_ieee802154_rssi(struct net_buf *buf,
+static inline void net_pkt_set_ieee802154_rssi(struct net_buf *buf,
 						uint8_t rssi)
 {
-	((struct net_nbuf *)net_buf_user_data(buf))->ieee802154_rssi = rssi;
+	((struct net_pkt *)net_buf_user_data(buf))->ieee802154_rssi = rssi;
 }
 #endif
 
-#define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
-#define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
-#define NET_ICMP_BUF(buf) ((struct net_icmp_hdr *)net_nbuf_icmp_data(buf))
-#define NET_UDP_BUF(buf)  ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
-#define NET_TCP_BUF(buf)  ((struct net_tcp_hdr *)(net_nbuf_tcp_data(buf)))
+#define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_pkt_ip_data(buf))
+#define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_pkt_ip_data(buf))
+#define NET_ICMP_BUF(buf) ((struct net_icmp_hdr *)net_pkt_icmp_data(buf))
+#define NET_UDP_BUF(buf)  ((struct net_udp_hdr *)(net_pkt_udp_data(buf)))
+#define NET_TCP_BUF(buf)  ((struct net_tcp_hdr *)(net_pkt_tcp_data(buf)))
 
-static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
+static inline void net_pkt_set_src_ipv6_addr(struct net_buf *buf)
 {
 	net_if_ipv6_select_src_addr(net_context_get_iface(
-					    net_nbuf_context(buf)),
+					    net_pkt_context(buf)),
 				    &NET_IPV6_BUF(buf)->src);
 }
 
@@ -470,8 +470,8 @@ static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
  * @param name Name of the pool.
  * @param count Number of net_buf in this pool.
  */
-#define NET_NBUF_TX_POOL_DEFINE(name, count)				\
-	NET_BUF_POOL_DEFINE(name, count, 0, sizeof(struct net_nbuf), NULL)
+#define NET_PKT_TX_POOL_DEFINE(name, count)				\
+	NET_BUF_POOL_DEFINE(name, count, 0, sizeof(struct net_pkt), NULL)
 
 /**
  * @brief Create a DATA net_buf pool that is used when sending user
@@ -480,87 +480,87 @@ static inline void net_nbuf_set_src_ipv6_addr(struct net_buf *buf)
  * @param name Name of the pool.
  * @param count Number of net_buf in this pool.
  */
-#define NET_NBUF_DATA_POOL_DEFINE(name, count)				\
-	NET_BUF_POOL_DEFINE(name, count, CONFIG_NET_NBUF_DATA_SIZE,	\
-			    CONFIG_NET_NBUF_USER_DATA_SIZE, NULL)
+#define NET_PKT_DATA_POOL_DEFINE(name, count)				\
+	NET_BUF_POOL_DEFINE(name, count, CONFIG_NET_BUF_DATA_SIZE,	\
+			    CONFIG_NET_BUF_USER_DATA_SIZE, NULL)
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
 
-/* Debug versions of the nbuf functions that are used when tracking
+/* Debug versions of the net_pkt functions that are used when tracking
  * buffer usage.
  */
 
-struct net_buf *net_nbuf_get_reserve_debug(struct net_buf_pool *pool,
-					   uint16_t reserve_head,
-					   int32_t timeout,
-					   const char *caller,
-					   int line);
-#define net_nbuf_get_reserve(pool, reserve_head, timeout)		\
-	net_nbuf_get_reserve_debug(pool, reserve_head, timeout,		\
-				   __func__, __LINE__)
+struct net_buf *net_pkt_get_reserve_debug(struct net_buf_pool *pool,
+					  uint16_t reserve_head,
+					  int32_t timeout,
+					  const char *caller,
+					  int line);
+#define net_pkt_get_reserve(pool, reserve_head, timeout)		\
+	net_pkt_get_reserve_debug(pool, reserve_head, timeout,		\
+				  __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_rx_debug(struct net_context *context,
-				      int32_t timeout,
-				      const char *caller, int line);
-#define net_nbuf_get_rx(context, timeout)				\
-	net_nbuf_get_rx_debug(context, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_rx_debug(struct net_context *context,
+				     int32_t timeout,
+				     const char *caller, int line);
+#define net_pkt_get_rx(context, timeout)				\
+	net_pkt_get_rx_debug(context, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_tx_debug(struct net_context *context,
-				      int32_t timeout,
-				      const char *caller, int line);
-#define net_nbuf_get_tx(context, timeout)				\
-	net_nbuf_get_tx_debug(context, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_tx_debug(struct net_context *context,
+				     int32_t timeout,
+				     const char *caller, int line);
+#define net_pkt_get_tx(context, timeout)				\
+	net_pkt_get_tx_debug(context, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_data_debug(struct net_context *context,
-					int32_t timeout,
-					const char *caller, int line);
-#define net_nbuf_get_data(context, timeout)				\
-	net_nbuf_get_data_debug(context, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_data_debug(struct net_context *context,
+				       int32_t timeout,
+				       const char *caller, int line);
+#define net_pkt_get_data(context, timeout)				\
+	net_pkt_get_data_debug(context, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_reserve_rx_debug(uint16_t reserve_head,
-					      int32_t timeout,
-					      const char *caller, int line);
-#define net_nbuf_get_reserve_rx(res, timeout)				\
-	net_nbuf_get_reserve_rx_debug(res, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_reserve_rx_debug(uint16_t reserve_head,
+					     int32_t timeout,
+					     const char *caller, int line);
+#define net_pkt_get_reserve_rx(res, timeout)				\
+	net_pkt_get_reserve_rx_debug(res, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_reserve_tx_debug(uint16_t reserve_head,
-					      int32_t timeout,
-					      const char *caller, int line);
-#define net_nbuf_get_reserve_tx(res, timeout)				\
-	net_nbuf_get_reserve_tx_debug(res, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_reserve_tx_debug(uint16_t reserve_head,
+					     int32_t timeout,
+					     const char *caller, int line);
+#define net_pkt_get_reserve_tx(res, timeout)				\
+	net_pkt_get_reserve_tx_debug(res, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_reserve_rx_data_debug(uint16_t reserve_head,
-						   int32_t timeout,
-						   const char *caller,
-						   int line);
-#define net_nbuf_get_reserve_rx_data(res, timeout)			\
-	net_nbuf_get_reserve_rx_data_debug(res, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_reserve_rx_data_debug(uint16_t reserve_head,
+						  int32_t timeout,
+						  const char *caller,
+						  int line);
+#define net_pkt_get_reserve_rx_data(res, timeout)			\
+	net_pkt_get_reserve_rx_data_debug(res, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_reserve_tx_data_debug(uint16_t reserve_head,
-						   int32_t timeout,
-						   const char *caller,
-						   int line);
-#define net_nbuf_get_reserve_tx_data(res, timeout)			\
-	net_nbuf_get_reserve_tx_data_debug(res, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_reserve_tx_data_debug(uint16_t reserve_head,
+						  int32_t timeout,
+						  const char *caller,
+						  int line);
+#define net_pkt_get_reserve_tx_data(res, timeout)			\
+	net_pkt_get_reserve_tx_data_debug(res, timeout, __func__, __LINE__)
 
-struct net_buf *net_nbuf_get_frag_debug(struct net_buf *buf,
-					int32_t timeout,
-					const char *caller, int line);
-#define net_nbuf_get_frag(buf, timeout)					\
-	net_nbuf_get_frag_debug(buf, timeout, __func__, __LINE__)
+struct net_buf *net_pkt_get_frag_debug(struct net_buf *buf,
+				       int32_t timeout,
+				       const char *caller, int line);
+#define net_pkt_get_frag(buf, timeout)					\
+	net_pkt_get_frag_debug(buf, timeout, __func__, __LINE__)
 
-void net_nbuf_unref_debug(struct net_buf *buf, const char *caller, int line);
-#define net_nbuf_unref(buf) net_nbuf_unref_debug(buf, __func__, __LINE__)
+void net_pkt_unref_debug(struct net_buf *buf, const char *caller, int line);
+#define net_pkt_unref(buf) net_pkt_unref_debug(buf, __func__, __LINE__)
 
-struct net_buf *net_nbuf_ref_debug(struct net_buf *buf, const char *caller,
-				   int line);
-#define net_nbuf_ref(buf) net_nbuf_ref_debug(buf, __func__, __LINE__)
+struct net_buf *net_pkt_ref_debug(struct net_buf *buf, const char *caller,
+				  int line);
+#define net_pkt_ref(buf) net_pkt_ref_debug(buf, __func__, __LINE__)
 
-struct net_buf *net_nbuf_frag_del_debug(struct net_buf *parent,
-					struct net_buf *frag,
-					const char *caller, int line);
-#define net_nbuf_frag_del(parent, frag)					\
-	net_nbuf_frag_del_debug(parent, frag, __func__, __LINE__)
+struct net_buf *net_pkt_frag_del_debug(struct net_buf *parent,
+				       struct net_buf *frag,
+				       const char *caller, int line);
+#define net_pkt_frag_del(parent, frag)					\
+	net_pkt_frag_del_debug(parent, frag, __func__, __LINE__)
 
 /**
  * @brief Print fragment list and the fragment sizes
@@ -570,11 +570,11 @@ struct net_buf *net_nbuf_frag_del_debug(struct net_buf *parent,
  * @param buf Network buffer fragment. This should be the first fragment (data)
  * in the fragment list.
  */
-void net_nbuf_print_frags(struct net_buf *buf);
+void net_pkt_print_frags(struct net_buf *buf);
 
-#else /* CONFIG_NET_DEBUG_NET_BUF */
+#else /* CONFIG_NET_DEBUG_NET_PKT */
 
-#define net_nbuf_print_frags(...)
+#define net_pkt_print_frags(...)
 
 /**
  * @brief Get buffer from the given buffer pool.
@@ -590,9 +590,9 @@ void net_nbuf_print_frags(struct net_buf *buf);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
-				     uint16_t reserve_head,
-				     int32_t timeout);
+struct net_buf *net_pkt_get_reserve(struct net_buf_pool *pool,
+				    uint16_t reserve_head,
+				    int32_t timeout);
 
 /**
  * @brief Get buffer from the RX buffers pool.
@@ -609,8 +609,8 @@ struct net_buf *net_nbuf_get_reserve(struct net_buf_pool *pool,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_rx(struct net_context *context,
-				int32_t timeout);
+struct net_buf *net_pkt_get_rx(struct net_context *context,
+			       int32_t timeout);
 
 /**
  * @brief Get buffer from the TX buffers pool.
@@ -627,8 +627,8 @@ struct net_buf *net_nbuf_get_rx(struct net_context *context,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_tx(struct net_context *context,
-				int32_t timeout);
+struct net_buf *net_pkt_get_tx(struct net_context *context,
+			       int32_t timeout);
 
 /**
  * @brief Get buffer from the DATA buffers pool.
@@ -645,8 +645,8 @@ struct net_buf *net_nbuf_get_tx(struct net_context *context,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_data(struct net_context *context,
-				  int32_t timeout);
+struct net_buf *net_pkt_get_data(struct net_context *context,
+				 int32_t timeout);
 
 /**
  * @brief Get RX buffer from pool but also reserve headroom for
@@ -663,8 +663,8 @@ struct net_buf *net_nbuf_get_data(struct net_context *context,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head,
-					int32_t timeout);
+struct net_buf *net_pkt_get_reserve_rx(uint16_t reserve_head,
+				       int32_t timeout);
 
 /**
  * @brief Get TX buffer from pool but also reserve headroom for
@@ -681,12 +681,12 @@ struct net_buf *net_nbuf_get_reserve_rx(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
-					int32_t timeout);
+struct net_buf *net_pkt_get_reserve_tx(uint16_t reserve_head,
+				       int32_t timeout);
 
 /**
  * @brief Get RX DATA buffer from pool but also reserve headroom for
- * potential headers. Normally you should use net_nbuf_get_frag() instead.
+ * potential headers. Normally you should use net_pkt_get_frag() instead.
  *
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
@@ -699,12 +699,12 @@ struct net_buf *net_nbuf_get_reserve_tx(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_rx_data(uint16_t reserve_head,
-					     int32_t timeout);
+struct net_buf *net_pkt_get_reserve_rx_data(uint16_t reserve_head,
+					    int32_t timeout);
 
 /**
  * @brief Get TX DATA buffer from pool but also reserve headroom for
- * potential headers. Normally you should use net_nbuf_get_frag() instead.
+ * potential headers. Normally you should use net_pkt_get_frag() instead.
  *
  * @details Normally this version is not useful for applications
  * but is mainly used by network fragmentation code.
@@ -717,8 +717,8 @@ struct net_buf *net_nbuf_get_reserve_rx_data(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_reserve_tx_data(uint16_t reserve_head,
-					     int32_t timeout);
+struct net_buf *net_pkt_get_reserve_tx_data(uint16_t reserve_head,
+					    int32_t timeout);
 
 /**
  * @brief Get a data fragment that might be from user specific
@@ -733,8 +733,7 @@ struct net_buf *net_nbuf_get_reserve_tx_data(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_get_frag(struct net_buf *buf,
-				  int32_t timeout);
+struct net_buf *net_pkt_get_frag(struct net_buf *buf, int32_t timeout);
 
 /**
  * @brief Place buffer back into the available buffers pool.
@@ -746,7 +745,7 @@ struct net_buf *net_nbuf_get_frag(struct net_buf *buf,
  * @param buf Network buffer to release.
  *
  */
-void net_nbuf_unref(struct net_buf *buf);
+void net_pkt_unref(struct net_buf *buf);
 
 /**
  * @brief Increase the ref count
@@ -757,7 +756,7 @@ void net_nbuf_unref(struct net_buf *buf);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_ref(struct net_buf *buf);
+struct net_buf *net_pkt_ref(struct net_buf *buf);
 
 /** @brief Delete existing fragment from a chain of bufs.
  *
@@ -767,10 +766,9 @@ struct net_buf *net_nbuf_ref(struct net_buf *buf);
  *  @return Pointer to the buffer following the fragment, or NULL if it
  *          had no further fragments.
  */
-struct net_buf *net_nbuf_frag_del(struct net_buf *parent,
-				  struct net_buf *frag);
+struct net_buf *net_pkt_frag_del(struct net_buf *parent, struct net_buf *frag);
 
-#endif /* CONFIG_NET_DEBUG_NET_BUF */
+#endif /* CONFIG_NET_DEBUG_NET_PKT */
 
 /**
  * @brief Copy a buffer with fragments while reserving some extra space
@@ -788,8 +786,8 @@ struct net_buf *net_nbuf_frag_del(struct net_buf *parent,
  *
  * @return New fragment list if successful, NULL otherwise.
  */
-struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
-			      size_t reserve, int32_t timeout);
+struct net_buf *net_pkt_copy(struct net_buf *buf, size_t amount,
+			     size_t reserve, int32_t timeout);
 
 /**
  * @brief Copy a buffer with fragments while reserving some extra space
@@ -807,11 +805,11 @@ struct net_buf *net_nbuf_copy(struct net_buf *buf, size_t amount,
  *
  * @return New fragment list if successful, NULL otherwise.
  */
-static inline struct net_buf *net_nbuf_copy_all(struct net_buf *buf,
-						size_t reserve,
-						int32_t timeout)
+static inline struct net_buf *net_pkt_copy_all(struct net_buf *buf,
+					       size_t reserve,
+					       int32_t timeout)
 {
-	return net_nbuf_copy(buf, net_buf_frags_len(buf), reserve, timeout);
+	return net_pkt_copy(buf, net_buf_frags_len(buf), reserve, timeout);
 }
 
 /**
@@ -827,8 +825,8 @@ static inline struct net_buf *net_nbuf_copy_all(struct net_buf *buf,
  * @return 0 on success
  * @return -ENOMEM on error
  */
-int net_nbuf_linear_copy(struct net_buf *dst, struct net_buf *src,
-			 uint16_t offset, uint16_t len);
+int net_pkt_linear_copy(struct net_buf *dst, struct net_buf *src,
+			uint16_t offset, uint16_t len);
 
 /**
  * @brief Compact the fragment list.
@@ -840,7 +838,7 @@ int net_nbuf_linear_copy(struct net_buf *dst, struct net_buf *src,
  *         when input is data fragment)
  *
  */
-bool net_nbuf_compact(struct net_buf *buf);
+bool net_pkt_compact(struct net_buf *buf);
 
 /**
  * @brief Check if the buffer chain is compact or not.
@@ -854,7 +852,7 @@ bool net_nbuf_compact(struct net_buf *buf);
  * @return True if there is no free space in the fragment list,
  * false otherwise.
  */
-bool net_nbuf_is_compact(struct net_buf *buf);
+bool net_pkt_is_compact(struct net_buf *buf);
 
 /**
  * @brief Remove given amount of data from the beginning of fragment list.
@@ -867,7 +865,7 @@ bool net_nbuf_is_compact(struct net_buf *buf);
  * @return Pointer to start of the fragment list if successful. NULL can be
  * returned if all fragments were removed from the list.
  */
-struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
+struct net_buf *net_pkt_pull(struct net_buf *buf, size_t amount);
 
 /**
  * @brief Append data to last fragment in fragment list
@@ -888,8 +886,8 @@ struct net_buf *net_nbuf_pull(struct net_buf *buf, size_t amount);
  *         False otherwise (In-case of false buf might contain input
  *         data in the process of placing into fragments).
  */
-bool net_nbuf_append(struct net_buf *buf, uint16_t len, const uint8_t *data,
-		     int32_t timeout);
+bool net_pkt_append(struct net_buf *buf, uint16_t len, const uint8_t *data,
+		    int32_t timeout);
 
 /**
  * @brief Append uint8_t data to last fragment in fragment list
@@ -905,9 +903,9 @@ bool net_nbuf_append(struct net_buf *buf, uint16_t len, const uint8_t *data,
  *         False otherwise (In-case of false buf might contain input
  *         data in the process of placing into fragments).
  */
-static inline bool net_nbuf_append_u8(struct net_buf *buf, uint8_t data)
+static inline bool net_pkt_append_u8(struct net_buf *buf, uint8_t data)
 {
-	return net_nbuf_append(buf, 1, &data, K_FOREVER);
+	return net_pkt_append(buf, 1, &data, K_FOREVER);
 }
 
 /**
@@ -924,12 +922,12 @@ static inline bool net_nbuf_append_u8(struct net_buf *buf, uint8_t data)
  *         False otherwise (In-case of false buf might contain input data
  *         in the process of placing into fragments).
  */
-static inline bool net_nbuf_append_be16(struct net_buf *buf, uint16_t data)
+static inline bool net_pkt_append_be16(struct net_buf *buf, uint16_t data)
 {
 	uint16_t value = sys_cpu_to_be16(data);
 
-	return net_nbuf_append(buf, sizeof(uint16_t), (uint8_t *)&value,
-			       K_FOREVER);
+	return net_pkt_append(buf, sizeof(uint16_t), (uint8_t *)&value,
+			      K_FOREVER);
 }
 
 /**
@@ -946,12 +944,12 @@ static inline bool net_nbuf_append_be16(struct net_buf *buf, uint16_t data)
  *         False otherwise (In-case of false buf might contain input data
  *         in the process of placing into fragments).
  */
-static inline bool net_nbuf_append_be32(struct net_buf *buf, uint32_t data)
+static inline bool net_pkt_append_be32(struct net_buf *buf, uint32_t data)
 {
 	uint32_t value = sys_cpu_to_be32(data);
 
-	return net_nbuf_append(buf, sizeof(uint32_t), (uint8_t *)&value,
-			       K_FOREVER);
+	return net_pkt_append(buf, sizeof(uint32_t), (uint8_t *)&value,
+			      K_FOREVER);
 }
 
 /**
@@ -968,12 +966,12 @@ static inline bool net_nbuf_append_be32(struct net_buf *buf, uint32_t data)
  *         False otherwise (In-case of false buf might contain input data
  *         in the process of placing into fragments).
  */
-static inline bool net_nbuf_append_le32(struct net_buf *buf, uint32_t data)
+static inline bool net_pkt_append_le32(struct net_buf *buf, uint32_t data)
 {
 	uint32_t value = sys_cpu_to_le32(data);
 
-	return net_nbuf_append(buf, sizeof(uint32_t), (uint8_t *)&value,
-			       K_FOREVER);
+	return net_pkt_append(buf, sizeof(uint32_t), (uint8_t *)&value,
+			      K_FOREVER);
 }
 
 /**
@@ -995,8 +993,8 @@ static inline bool net_nbuf_append_le32(struct net_buf *buf, uint32_t data)
  *         NULL and pos is 0 after successful read,
  *         NULL and pos is 0xffff otherwise.
  */
-struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
-			      uint16_t *pos, uint16_t len, uint8_t *data);
+struct net_buf *net_pkt_read(struct net_buf *buf, uint16_t offset,
+			     uint16_t *pos, uint16_t len, uint8_t *data);
 
 /**
  * @brief Skip N number of bytes while reading buffer
@@ -1017,11 +1015,11 @@ struct net_buf *net_nbuf_read(struct net_buf *buf, uint16_t offset,
  *         NULL and pos is 0 after successful skip,
  *         NULL and pos is 0xffff otherwise.
  */
-static inline struct net_buf *net_nbuf_skip(struct net_buf *buf,
-					    uint16_t offset,
-					    uint16_t *pos, uint16_t len)
+static inline struct net_buf *net_pkt_skip(struct net_buf *buf,
+					   uint16_t offset,
+					   uint16_t *pos, uint16_t len)
 {
-	return net_nbuf_read(buf, offset, pos, len, NULL);
+	return net_pkt_read(buf, offset, pos, len, NULL);
 }
 
 /**
@@ -1036,12 +1034,12 @@ static inline struct net_buf *net_nbuf_skip(struct net_buf *buf,
  * @return Pointer to fragment after successful read,
  *         NULL otherwise (if pos is 0, NULL is not a failure case).
  */
-static inline struct net_buf *net_nbuf_read_u8(struct net_buf *buf,
-					       uint16_t offset,
-					       uint16_t *pos,
-					       uint8_t *value)
+static inline struct net_buf *net_pkt_read_u8(struct net_buf *buf,
+					      uint16_t offset,
+					      uint16_t *pos,
+					      uint8_t *value)
 {
-	return net_nbuf_read(buf, offset, pos, 1, value);
+	return net_pkt_read(buf, offset, pos, 1, value);
 }
 
 /**
@@ -1056,8 +1054,8 @@ static inline struct net_buf *net_nbuf_read_u8(struct net_buf *buf,
  * @return Pointer to fragment after successful read,
  *         NULL otherwise (if pos is 0, NULL is not a failure case).
  */
-struct net_buf *net_nbuf_read_be16(struct net_buf *buf, uint16_t offset,
-				   uint16_t *pos, uint16_t *value);
+struct net_buf *net_pkt_read_be16(struct net_buf *buf, uint16_t offset,
+				  uint16_t *pos, uint16_t *value);
 
 /**
  * @brief Get 32 bit big endian value from fragmented buffer
@@ -1071,8 +1069,8 @@ struct net_buf *net_nbuf_read_be16(struct net_buf *buf, uint16_t offset,
  * @return Pointer to fragment after successful read,
  *         NULL otherwise (if pos is 0, NULL is not a failure case).
  */
-struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
-				   uint16_t *pos, uint32_t *value);
+struct net_buf *net_pkt_read_be32(struct net_buf *buf, uint16_t offset,
+				  uint16_t *pos, uint32_t *value);
 
 /**
  * @brief Write data to an arbitrary offset in a series of fragments.
@@ -1089,29 +1087,29 @@ struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
  * If offset is more than already allocated length in fragment, then empty space
  * or extra empty fragments is created to reach proper offset.
  * If there is any data present on input fragment offset, then it will be
- * 'overwritten'. Use net_nbuf_insert() api if you don't want to overwrite.
+ * 'overwritten'. Use net_pkt_insert() api if you don't want to overwrite.
  *
  * Offset is calculated from starting point of data area in input fragment.
  * e.g. Buf(Tx/Rx) - Frag1 - Frag2 - Frag3 - Frag4
  *      (Assume FRAG DATA SIZE is 100 bytes after link layer header)
  *
- *      1) net_nbuf_write(buf, frag2, 20, &pos, 20, data, K_FOREVER)
+ *      1) net_pkt_write(buf, frag2, 20, &pos, 20, data, K_FOREVER)
  *         In this case write starts from "frag2->data + 20",
  *         returns frag2, pos = 40
  *
- *      2) net_nbuf_write(buf, frag1, 150, &pos, 60, data, K_FOREVER)
+ *      2) net_pkt_write(buf, frag1, 150, &pos, 60, data, K_FOREVER)
  *         In this case write starts from "frag2->data + 50"
  *         returns frag3, pos = 10
  *
- *      3) net_nbuf_write(buf, frag1, 350, &pos, 30, data, K_FOREVER)
+ *      3) net_pkt_write(buf, frag1, 350, &pos, 30, data, K_FOREVER)
  *         In this case write starts from "frag4->data + 50"
  *         returns frag4, pos = 80
  *
- *      4) net_nbuf_write(buf, frag2, 110, &pos, 90, data, K_FOREVER)
+ *      4) net_pkt_write(buf, frag2, 110, &pos, 90, data, K_FOREVER)
  *         In this case write starts from "frag3->data + 10"
  *         returns frag4, pos = 0
  *
- *      5) net_nbuf_write(buf, frag4, 110, &pos, 20, data, K_FOREVER)
+ *      5) net_pkt_write(buf, frag4, 110, &pos, 20, data, K_FOREVER)
  *         In this case write creates new data fragment and starts from
  *         "frag5->data + 10"
  *         returns frag5, pos = 30
@@ -1134,45 +1132,45 @@ struct net_buf *net_nbuf_read_be32(struct net_buf *buf, uint16_t offset,
  * @return Pointer to the fragment and position (*pos) where write ended,
  *         NULL and pos is 0xffff otherwise.
  */
-struct net_buf *net_nbuf_write(struct net_buf *buf, struct net_buf *frag,
-			       uint16_t offset, uint16_t *pos, uint16_t len,
-			       uint8_t *data, int32_t timeout);
+struct net_buf *net_pkt_write(struct net_buf *buf, struct net_buf *frag,
+			      uint16_t offset, uint16_t *pos, uint16_t len,
+			      uint8_t *data, int32_t timeout);
 
 /* Write uint8_t data to an arbitrary offset in fragment. */
-static inline struct net_buf *net_nbuf_write_u8(struct net_buf *buf,
-						struct net_buf *frag,
-						uint16_t offset,
-						uint16_t *pos,
-						uint8_t data)
+static inline struct net_buf *net_pkt_write_u8(struct net_buf *buf,
+					       struct net_buf *frag,
+					       uint16_t offset,
+					       uint16_t *pos,
+					       uint8_t data)
 {
-	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint8_t),
-			      &data, K_FOREVER);
+	return net_pkt_write(buf, frag, offset, pos, sizeof(uint8_t),
+			     &data, K_FOREVER);
 }
 
 /* Write uint16_t big endian value to an arbitrary offset in fragment. */
-static inline struct net_buf *net_nbuf_write_be16(struct net_buf *buf,
-						  struct net_buf *frag,
-						  uint16_t offset,
-						  uint16_t *pos,
-						  uint16_t data)
+static inline struct net_buf *net_pkt_write_be16(struct net_buf *buf,
+						 struct net_buf *frag,
+						 uint16_t offset,
+						 uint16_t *pos,
+						 uint16_t data)
 {
 	uint16_t value = htons(data);
 
-	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint16_t),
-			      (uint8_t *)&value, K_FOREVER);
+	return net_pkt_write(buf, frag, offset, pos, sizeof(uint16_t),
+			     (uint8_t *)&value, K_FOREVER);
 }
 
 /* Write uint32_t big endian value to an arbitrary offset in fragment. */
-static inline struct net_buf *net_nbuf_write_be32(struct net_buf *buf,
-						  struct net_buf *frag,
-						  uint16_t offset,
-						  uint16_t *pos,
-						  uint32_t data)
+static inline struct net_buf *net_pkt_write_be32(struct net_buf *buf,
+						 struct net_buf *frag,
+						 uint16_t offset,
+						 uint16_t *pos,
+						 uint32_t data)
 {
 	uint32_t value = htonl(data);
 
-	return net_nbuf_write(buf, frag, offset, pos, sizeof(uint32_t),
-			      (uint8_t *)&value, K_FOREVER);
+	return net_pkt_write(buf, frag, offset, pos, sizeof(uint32_t),
+			     (uint8_t *)&value, K_FOREVER);
 }
 
 /**
@@ -1180,10 +1178,10 @@ static inline struct net_buf *net_nbuf_write_be32(struct net_buf *buf,
  *
  * @details Insert data at an arbitrary offset in a series of fragments. Offset
  * is based on fragment length (only user written data length, any tailroom
- * in fragments does not come to consideration unlike net_nbuf_write()) and
+ * in fragments does not come to consideration unlike net_pkt_write()) and
  * calculates from input fragment starting position.
  *
- * Offset examples can be considered from net_nbuf_write() api.
+ * Offset examples can be considered from net_pkt_write() api.
  * If the offset is more than already allocated fragments length then it is an
  * error case.
  *
@@ -1200,46 +1198,46 @@ static inline struct net_buf *net_nbuf_write_be32(struct net_buf *buf,
  * @return True on success,
  *         False otherwise.
  */
-bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
-		     uint16_t offset, uint16_t len, uint8_t *data,
-		     int32_t timeout);
+bool net_pkt_insert(struct net_buf *buf, struct net_buf *frag,
+		    uint16_t offset, uint16_t len, uint8_t *data,
+		    int32_t timeout);
 
 /* Insert uint8_t data at an arbitrary offset in a series of fragments. */
-static inline bool net_nbuf_insert_u8(struct net_buf *buf,
-				      struct net_buf *frag,
-				      uint16_t offset,
-				      uint8_t data)
+static inline bool net_pkt_insert_u8(struct net_buf *buf,
+				     struct net_buf *frag,
+				     uint16_t offset,
+				     uint8_t data)
 {
-	return net_nbuf_insert(buf, frag, offset, sizeof(uint8_t), &data,
-			       K_FOREVER);
+	return net_pkt_insert(buf, frag, offset, sizeof(uint8_t), &data,
+			      K_FOREVER);
 }
 
 /* Insert uint16_t big endian value at an arbitrary offset in a series of
  * fragments.
  */
-static inline bool net_nbuf_insert_be16(struct net_buf *buf,
-					struct net_buf *frag,
-					uint16_t offset,
-					uint16_t data)
+static inline bool net_pkt_insert_be16(struct net_buf *buf,
+				       struct net_buf *frag,
+				       uint16_t offset,
+				       uint16_t data)
 {
 	uint16_t value = htons(data);
 
-	return net_nbuf_insert(buf, frag, offset, sizeof(uint16_t),
-			       (uint8_t *)&value, K_FOREVER);
+	return net_pkt_insert(buf, frag, offset, sizeof(uint16_t),
+			      (uint8_t *)&value, K_FOREVER);
 }
 
 /* Insert uint32_t big endian value at an arbitrary offset in a series of
  * fragments.
  */
-static inline bool net_nbuf_insert_be32(struct net_buf *buf,
-					struct net_buf *frag,
-					uint16_t offset,
-					uint32_t data)
+static inline bool net_pkt_insert_be32(struct net_buf *buf,
+				       struct net_buf *frag,
+				       uint16_t offset,
+				       uint32_t data)
 {
 	uint32_t value = htonl(data);
 
-	return net_nbuf_insert(buf, frag, offset, sizeof(uint32_t),
-			       (uint8_t *)&value, K_FOREVER);
+	return net_pkt_insert(buf, frag, offset, sizeof(uint32_t),
+			      (uint8_t *)&value, K_FOREVER);
 }
 
 /**
@@ -1267,9 +1265,9 @@ static inline bool net_nbuf_insert_be32(struct net_buf *buf,
  *
  * @return 0 on success, <0 otherwise.
  */
-int net_nbuf_split(struct net_buf *buf, struct net_buf *orig_frag,
-		   uint16_t len, struct net_buf **fragA,
-		   struct net_buf **fragB, int32_t timeout);
+int net_pkt_split(struct net_buf *buf, struct net_buf *orig_frag,
+		  uint16_t len, struct net_buf **fragA,
+		  struct net_buf **fragB, int32_t timeout);
 
 /**
  * @brief Get information about pre-defined RX, TX and DATA pools.
@@ -1279,36 +1277,35 @@ int net_nbuf_split(struct net_buf *buf, struct net_buf *orig_frag,
  * @param rx_data Pointer to RX DATA pool is returned.
  * @param tx_data Pointer to TX DATA pool is returned.
  */
-void net_nbuf_get_info(struct net_buf_pool **rx,
-		       struct net_buf_pool **tx,
-		       struct net_buf_pool **rx_data,
-		       struct net_buf_pool **tx_data);
+void net_pkt_get_info(struct net_buf_pool **rx,
+		      struct net_buf_pool **tx,
+		      struct net_buf_pool **rx_data,
+		      struct net_buf_pool **tx_data);
 
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
 /**
  * @brief Debug helper to print out the buffer allocations
  */
-void net_nbuf_print(void);
+void net_pkt_print(void);
+
+typedef void (*net_pkt_allocs_cb_t)(struct net_buf *buf,
+				    const char *func_alloc,
+				    int line_alloc,
+				    const char *func_free,
+				    int line_free,
+				    bool in_use,
+				    void *user_data);
+
+void net_pkt_allocs_foreach(net_pkt_allocs_cb_t cb, void *user_data);
+
+const char *net_pkt_pool2str(struct net_buf_pool *pool);
+
 #else
-#define net_nbuf_print(...)
-#endif /* CONFIG_NET_DEBUG_NET_BUF */
-
-#if defined(CONFIG_NET_DEBUG_NET_BUF)
-typedef void (*net_nbuf_allocs_cb_t)(struct net_buf *buf,
-				     const char *func_alloc,
-				     int line_alloc,
-				     const char *func_free,
-				     int line_free,
-				     bool in_use,
-				     void *user_data);
-
-void net_nbuf_allocs_foreach(net_nbuf_allocs_cb_t cb, void *user_data);
-const char *net_nbuf_pool2str(struct net_buf_pool *pool);
-
-#endif /* CONFIG_NET_DEBUG_NET_BUF */
+#define net_pkt_print(...)
+#endif /* CONFIG_NET_DEBUG_NET_PKT */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __NBUF_H */
+#endif /* __NET_PKT_H__ */

@@ -8,7 +8,7 @@
 #include <net/mqtt.h>
 
 #include <net/net_context.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/printk.h>
 #include <string.h>

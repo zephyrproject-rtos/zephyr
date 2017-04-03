@@ -13,7 +13,7 @@
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -69,7 +69,7 @@ static void tcp_received(struct net_context *context,
 		session->counter++;
 
 		if (buf) {
-			session->length += net_nbuf_appdatalen(buf);
+			session->length += net_pkt_appdatalen(buf);
 		}
 
 		if (!buf && status == 0) { /* EOF */
@@ -107,7 +107,7 @@ static void tcp_received(struct net_context *context,
 		printk(TAG "Error! Unsupported case\n");
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 }
 
 static void tcp_accepted(struct net_context *context,

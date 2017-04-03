@@ -9,7 +9,7 @@
 #include <json.h>
 #include <misc/printk.h>
 #include <misc/util.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_if.h>
@@ -101,14 +101,14 @@ static int transmitv(struct net_context *conn, int iovcnt,
 	struct net_buf *buf;
 	int i;
 
-	buf = net_nbuf_get_tx(conn, K_FOREVER);
+	buf = net_pkt_get_tx(conn, K_FOREVER);
 	if (!buf) {
 		return -ENOMEM;
 	}
 
 	for (i = 0; i < iovcnt; i++) {
-		if (!net_nbuf_append(buf, iov[i].len, iov[i].base, K_FOREVER)) {
-			net_nbuf_unref(buf);
+		if (!net_pkt_append(buf, iov[i].len, iov[i].base, K_FOREVER)) {
+			net_pkt_unref(buf);
 
 			return -ENOMEM;
 		}
@@ -231,7 +231,7 @@ static char *strsep(char *strp, const char *delims)
 	return NULL;
 }
 
-static int copy_nbuf_to_buf(struct net_buf *src, uint16_t offset,
+static int copy_pkt_to_buf(struct net_buf *src, uint16_t offset,
 			    char *dst, size_t dst_size, size_t n_bytes)
 {
 	uint16_t to_copy;
@@ -304,8 +304,8 @@ static int handle_server_msg(struct nats *nats, char *payload, size_t len,
 		return -ENOMEM;
 	}
 
-	if (copy_nbuf_to_buf(buf, offset, end_ptr, CMD_BUF_LEN - len,
-			     payload_size) < 0) {
+	if (copy_pkt_to_buf(buf, offset, end_ptr, CMD_BUF_LEN - len,
+			    payload_size) < 0) {
 		return -ENOMEM;
 	}
 	end_ptr[payload_size] = '\0';
@@ -553,7 +553,7 @@ static void receive_cb(struct net_context *ctx, struct net_buf *buf, int status,
 	}
 
 	tmp = buf->frags;
-	pos = net_nbuf_appdata(buf) - tmp->data;
+	pos = net_pkt_appdata(buf) - tmp->data;
 
 	while (tmp) {
 		len = tmp->len - pos;
@@ -567,14 +567,14 @@ static void receive_cb(struct net_context *ctx, struct net_buf *buf, int status,
 			break;
 		}
 
-		tmp = net_nbuf_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
+		tmp = net_pkt_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
 		cmd_len += len;
 
 		if (end_of_line) {
 			int ret;
 
 			if (tmp) {
-				tmp = net_nbuf_read(tmp, pos, &pos, 1, NULL);
+				tmp = net_pkt_read(tmp, pos, &pos, 1, NULL);
 			}
 
 			cmd_buf[cmd_len] = '\0';
@@ -589,7 +589,7 @@ static void receive_cb(struct net_context *ctx, struct net_buf *buf, int status,
 		}
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 }
 
 int nats_connect(struct nats *nats, struct sockaddr *addr, socklen_t addrlen)

@@ -8,7 +8,7 @@
 #include "http_client_types.h"
 #include "config.h"
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #ifdef LINEARIZE_BUFFER
 
@@ -31,10 +31,10 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
 		goto lb_exit;
 	}
 
-	data_len = min(net_nbuf_appdatalen(rx), HTTP_POOL_BUF_SIZE);
+	data_len = min(net_pkt_appdatalen(rx), HTTP_POOL_BUF_SIZE);
 	offset = net_buf_frags_len(rx) - data_len;
 
-	rc = net_nbuf_linear_copy(data_buf, rx, offset, data_len);
+	rc = net_pkt_linear_copy(data_buf, rx, offset, data_len);
 	if (rc != 0) {
 		rc = -ENOMEM;
 		goto lb_exit;
@@ -67,7 +67,7 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
 
 	http_ctx = CONTAINER_OF(tcp_ctx, struct http_client_ctx, tcp_ctx);
 
-	offset = net_buf_frags_len(buf) - net_nbuf_appdatalen(buf);
+	offset = net_buf_frags_len(buf) - net_pkt_appdatalen(buf);
 
 	/* find the fragment */
 	while (buf && offset >= buf->len) {

@@ -11,7 +11,7 @@
 #define NET_SYS_LOG_LEVEL 4
 #include "net_private.h"
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 /** FAKE ieee802.15.4 driver **/
 #include <net/ieee802154_radio.h>
@@ -86,7 +86,7 @@ static int fake_tx(struct device *dev,
 	NET_INFO("Sending buffer %p - length %zu\n",
 		 buf, net_buf_frags_len(buf));
 
-	net_nbuf_set_ll_reserve(current_buf, net_nbuf_ll_reserve(buf));
+	net_pkt_set_ll_reserve(current_buf, net_pkt_ll_reserve(buf));
 
 	insert_frag_dummy_way(buf);
 

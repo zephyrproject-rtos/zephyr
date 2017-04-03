@@ -14,7 +14,7 @@
 #include <sections.h>
 #include <string.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/arp.h>
 #include <net/net_mgmt.h>
@@ -92,9 +92,9 @@ static bool net_if_tx(struct net_if *iface)
 
 	debug_check_packet(buf);
 
-	dst = net_nbuf_ll_dst(buf);
-	context = net_nbuf_context(buf);
-	context_token = net_nbuf_token(buf);
+	dst = net_pkt_ll_dst(buf);
+	context = net_pkt_context(buf);
+	context_token = net_pkt_token(buf);
 
 	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
 #if defined(CONFIG_NET_STATISTICS)
@@ -108,7 +108,7 @@ static bool net_if_tx(struct net_if *iface)
 	}
 
 	if (status < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 	} else {
 		net_stats_update_bytes_sent(pkt_len);
 	}
@@ -224,9 +224,9 @@ static inline void init_iface(struct net_if *iface)
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 {
-	struct net_context *context = net_nbuf_context(buf);
-	struct net_linkaddr *dst = net_nbuf_ll_dst(buf);
-	void *token = net_nbuf_token(buf);
+	struct net_context *context = net_pkt_context(buf);
+	struct net_linkaddr *dst = net_pkt_ll_dst(buf);
+	void *token = net_pkt_token(buf);
 	enum net_verdict verdict;
 	int status = -EIO;
 
@@ -244,16 +244,16 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
 	if (!atomic_test_bit(iface->flags, NET_IF_POINTOPOINT) &&
-	    !net_nbuf_ll_src(buf)->addr) {
-		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
-		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	    !net_pkt_ll_src(buf)->addr) {
+		net_pkt_ll_src(buf)->addr = net_pkt_ll_if(buf)->addr;
+		net_pkt_ll_src(buf)->len = net_pkt_ll_if(buf)->len;
 	}
 
 #if defined(CONFIG_NET_IPV6)
 	/* If the ll dst address is not set check if it is present in the nbr
 	 * cache.
 	 */
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		buf = net_ipv6_prepare_for_send(buf);
 		if (!buf) {
 			verdict = NET_CONTINUE;

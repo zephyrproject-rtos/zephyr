@@ -19,7 +19,7 @@
 #include <misc/printk.h>
 #include <net/buf.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
 
@@ -148,7 +148,7 @@ static void v6_send_syn_ack(struct net_if *iface, struct net_buf *req)
 
 	ret =  net_recv_data(iface, rsp);
 	if (!ret) {
-		net_nbuf_unref(rsp);
+		net_pkt_unref(rsp);
 	}
 
 	k_sem_give(&wait_connect);
@@ -162,7 +162,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		DBG("No data to send!\n");
 		return -ENODATA;
 	}
-	if (syn_v6_sent && net_nbuf_family(buf) == AF_INET6) {
+	if (syn_v6_sent && net_pkt_family(buf) == AF_INET6) {
 		DBG("v6 SYN was sent successfully\n");
 		syn_v6_sent = false;
 		v6_send_syn_ack(iface, buf);
@@ -170,7 +170,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		DBG("Data was sent successfully\n");
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	send_status = 0;
 
@@ -186,7 +186,7 @@ static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
 
 	DBG("Peer data was sent successfully\n");
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return 0;
 }
@@ -237,7 +237,7 @@ static enum net_verdict test_ok(struct net_conn *conn,
 
 	returned_ud = user_data;
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return NET_OK;
 }
@@ -272,14 +272,14 @@ static void setup_ipv6_tcp(struct net_buf *buf,
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, remote_addr);
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, local_addr);
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
 
 	NET_TCP_BUF(buf)->src_port = htons(remote_port);
 	NET_TCP_BUF(buf)->dst_port = htons(local_port);
 
-	net_nbuf_set_ext_len(buf, 0);
+	net_pkt_set_ext_len(buf, 0);
 
-	net_buf_add(buf->frags, net_nbuf_ip_hdr_len(buf) +
+	net_buf_add(buf->frags, net_pkt_ip_hdr_len(buf) +
 				sizeof(struct net_tcp_hdr));
 }
 
@@ -300,14 +300,14 @@ static void setup_ipv4_tcp(struct net_buf *buf,
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->src, remote_addr);
 	net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, local_addr);
 
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	NET_TCP_BUF(buf)->src_port = htons(remote_port);
 	NET_TCP_BUF(buf)->dst_port = htons(local_port);
 
-	net_nbuf_set_ext_len(buf, 0);
+	net_pkt_set_ext_len(buf, 0);
 
-	net_buf_add(buf->frags, net_nbuf_ip_hdr_len(buf) +
+	net_buf_add(buf->frags, net_pkt_ip_hdr_len(buf) +
 				sizeof(struct net_tcp_hdr));
 }
 
@@ -325,15 +325,15 @@ static bool send_ipv6_tcp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
 
-	net_nbuf_set_ll_reserve(buf, 0);
+	net_pkt_set_ll_reserve(buf, 0);
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
+	net_pkt_set_iface(buf, iface);
 
 	setup_ipv6_tcp(buf, src, dst, src_port, dst_port);
 
@@ -376,15 +376,15 @@ static bool send_ipv4_tcp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
 
-	net_nbuf_set_ll_reserve(buf, 0);
+	net_pkt_set_ll_reserve(buf, 0);
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 
-	net_nbuf_set_iface(buf, iface);
+	net_pkt_set_iface(buf, iface);
 
 	setup_ipv4_tcp(buf, src, dst, src_port, dst_port);
 
@@ -783,7 +783,7 @@ static bool test_create_v6_reset_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -814,7 +814,7 @@ static bool test_create_v4_reset_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -845,7 +845,7 @@ static bool test_create_v6_syn_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -876,7 +876,7 @@ static bool test_create_v4_syn_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -908,7 +908,7 @@ static bool test_create_v6_synack_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -940,7 +940,7 @@ static bool test_create_v4_synack_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -971,7 +971,7 @@ static bool test_create_v6_fin_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -1002,7 +1002,7 @@ static bool test_create_v4_fin_packet(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -1034,7 +1034,7 @@ static bool test_v6_seq_check(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }
@@ -1066,7 +1066,7 @@ static bool test_v4_seq_check(void)
 		return false;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return true;
 }

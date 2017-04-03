@@ -382,14 +382,14 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 {
 	struct net_buf *pkt, *buf;
 
-	pkt = net_nbuf_get_reserve_tx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_tx(0, K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	buf = net_nbuf_get_frag(pkt, K_NO_WAIT);
+	buf = net_pkt_get_frag(pkt, K_NO_WAIT);
 	if (!buf) {
-		net_nbuf_unref(pkt);
+		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
 
@@ -455,7 +455,7 @@ static void tx_thread(void)
 			break;
 		}
 
-		net_nbuf_unref(pkt);
+		net_pkt_unref(pkt);
 
 		k_yield();
 	}
@@ -569,7 +569,7 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 
 	try_write(WPANUSB_ENDP_BULK_IN, frag->data, net_buf_frags_len(buf));
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return 0;
 }
@@ -603,8 +603,8 @@ void main(void)
 	}
 #endif
 
-	/* Initialize nbufs */
-	net_nbuf_init();
+	/* Initialize net_pkt */
+	net_pkt_init();
 
 	/* Initialize transmit queue */
 	init_tx_queue();

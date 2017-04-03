@@ -11,7 +11,7 @@
 #include "config.h"
 
 #include <net/http_parser.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <stdio.h>
 
 #define URL_DEFAULT_HANDLER_INDEX 0
@@ -116,7 +116,7 @@ void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
 		goto lb_exit;
 	}
 
-	rcv_len = net_nbuf_appdatalen(rx);
+	rcv_len = net_pkt_appdatalen(rx);
 	if (rcv_len == 0) {
 		/* don't print info about zero-length app data buffers */
 		goto lb_exit;
@@ -129,7 +129,7 @@ void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
 	}
 
 	offset = net_buf_frags_len(rx) - rcv_len;
-	rc = net_nbuf_linear_copy(data, rx, offset, rcv_len);
+	rc = net_pkt_linear_copy(data, rx, offset, rcv_len);
 	if (rc != 0) {
 		printf("[%s:%d] Linear copy error\n", __func__, __LINE__);
 		goto lb_exit;

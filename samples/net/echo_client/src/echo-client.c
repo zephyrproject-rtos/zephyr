@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
@@ -75,10 +75,10 @@ static int ipsum_len;
 /* Note that both tcp and udp can share the same pool but in this
  * example the UDP context and TCP context have separate pools.
  */
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 #if defined(CONFIG_NET_TCP)
-NET_NBUF_TX_POOL_DEFINE(echo_tx_tcp, 15);
-NET_NBUF_DATA_POOL_DEFINE(echo_data_tcp, 30);
+NET_PKT_TX_POOL_DEFINE(echo_tx_tcp, 15);
+NET_PKT_DATA_POOL_DEFINE(echo_data_tcp, 30);
 
 static struct net_buf_pool *tx_tcp_pool(void)
 {
@@ -92,8 +92,8 @@ static struct net_buf_pool *data_tcp_pool(void)
 #endif
 
 #if defined(CONFIG_NET_UDP)
-NET_NBUF_TX_POOL_DEFINE(echo_tx_udp, 5);
-NET_NBUF_DATA_POOL_DEFINE(echo_data_udp, 20);
+NET_PKT_TX_POOL_DEFINE(echo_tx_udp, 5);
+NET_PKT_DATA_POOL_DEFINE(echo_data_udp, 20);
 
 static struct net_buf_pool *tx_udp_pool(void)
 {
@@ -105,7 +105,7 @@ static struct net_buf_pool *data_udp_pool(void)
 	return &echo_data_udp;
 }
 #endif
-#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #define MY_PORT 8484
 #define PEER_PORT 4242
@@ -396,11 +396,11 @@ static struct net_buf *prepare_send_buf(const char *name,
 	struct net_buf *send_buf;
 	bool status;
 
-	send_buf = net_nbuf_get_tx(context, K_FOREVER);
+	send_buf = net_pkt_get_tx(context, K_FOREVER);
 
 	NET_ASSERT(send_buf);
 
-	status = net_nbuf_append(send_buf, expecting_len, lorem_ipsum,
+	status = net_pkt_append(send_buf, expecting_len, lorem_ipsum,
 				 K_FOREVER);
 	if (!status) {
 		NET_ERR("%s: cannot create send buf", name);
@@ -455,7 +455,7 @@ static inline void set_dst_addr(sa_family_t family,
 #if defined(CONFIG_NET_UDP)
 static bool compare_udp_data(struct net_buf *buf, int expecting_len)
 {
-	uint8_t *ptr = net_nbuf_appdata(buf);
+	uint8_t *ptr = net_pkt_appdata(buf);
 	int pos = 0;
 	int len;
 
@@ -542,7 +542,7 @@ static bool send_udp_data(struct net_context *udp,
 				 proto);
 	if (ret < 0) {
 		NET_ERR("Cannot send %s data to peer (%d)", proto, ret);
-		net_nbuf_unref(send_buf);
+		net_pkt_unref(send_buf);
 	} else {
 		status = true;
 	}
@@ -556,7 +556,7 @@ static void udp_received(struct net_context *context,
 			      int status,
 			      void *user_data)
 {
-	sa_family_t family = net_nbuf_family(buf);
+	sa_family_t family = net_pkt_family(buf);
 	struct data *data = user_data;
 	struct k_sem *recv;
 
@@ -569,16 +569,16 @@ static void udp_received(struct net_context *context,
 		recv = &conf.recv_ipv6;
 	}
 
-	if (data->expecting_udp != net_nbuf_appdatalen(buf)) {
+	if (data->expecting_udp != net_pkt_appdatalen(buf)) {
 		NET_ERR("Sent %d bytes, received %u bytes",
-			data->expecting_udp, net_nbuf_appdatalen(buf));
+			data->expecting_udp, net_pkt_appdatalen(buf));
 	}
 
 	if (!compare_udp_data(buf, data->expecting_udp)) {
 		NET_DBG("Data mismatch");
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	k_sem_give(recv);
 }
@@ -616,7 +616,7 @@ static void send_udp(struct net_context *udp,
 static bool compare_tcp_data(struct net_buf *buf, int expecting_len,
 			     int received_len)
 {
-	uint8_t *ptr = net_nbuf_appdata(buf), *start;
+	uint8_t *ptr = net_pkt_appdata(buf), *start;
 	int pos = 0;
 	struct net_buf *frag;
 	int len;
@@ -650,7 +650,7 @@ static bool compare_tcp_data(struct net_buf *buf, int expecting_len,
 		len = frag->len;
 	}
 
-	NET_DBG("Compared %d bytes, all ok", net_nbuf_appdatalen(buf));
+	NET_DBG("Compared %d bytes, all ok", net_pkt_appdatalen(buf));
 
 	return true;
 }
@@ -665,27 +665,27 @@ static void tcp_received(struct net_context *context,
 
 	ARG_UNUSED(status);
 
-	if (!buf || net_nbuf_appdatalen(buf) == 0) {
+	if (!buf || net_pkt_appdatalen(buf) == 0) {
 		if (buf) {
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 		}
 
 		return;
 	}
 
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(buf) == AF_INET6) {
 		proto = "IPv6";
 	} else {
 		proto = "IPv4";
 	}
 
 	NET_DBG("Sent %d bytes, received %u bytes",
-		data->expecting_tcp, net_nbuf_appdatalen(buf));
+		data->expecting_tcp, net_pkt_appdatalen(buf));
 
 	if (!compare_tcp_data(buf, data->expecting_tcp, data->received_tcp)) {
 		NET_DBG("Data mismatch");
 	} else {
-		data->received_tcp += net_nbuf_appdatalen(buf);
+		data->received_tcp += net_pkt_appdatalen(buf);
 	}
 
 	if (data->expecting_tcp <= data->received_tcp) {
@@ -693,7 +693,7 @@ static void tcp_received(struct net_context *context,
 		send_tcp_data(context, proto, data);
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 }
 
 static void setup_tcp_recv(struct net_context *tcp,
@@ -752,7 +752,7 @@ static bool send_tcp_data(struct net_context *ctx,
 			       UINT_TO_POINTER(len), proto);
 	if (ret < 0) {
 		NET_ERR("Cannot send %s data to peer (%d)", proto, ret);
-		net_nbuf_unref(send_buf);
+		net_pkt_unref(send_buf);
 	} else {
 		status = true;
 	}

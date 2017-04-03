@@ -16,7 +16,7 @@
 #include <misc/slist.h>
 #include <zephyr/types.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 /**
  *  @brief Fragment IPv6 packet as per RFC 6282

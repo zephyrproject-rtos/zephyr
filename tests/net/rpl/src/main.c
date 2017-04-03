@@ -109,8 +109,8 @@ static void set_buf_ll_addr(struct device *dev, struct net_buf *buf)
 {
 	struct net_rpl_test *rpl = dev->driver_data;
 
-	struct net_linkaddr *src = net_nbuf_ll_src(buf);
-	struct net_linkaddr *dst = net_nbuf_ll_dst(buf);
+	struct net_linkaddr *src = net_pkt_ll_src(buf);
+	struct net_linkaddr *dst = net_pkt_ll_dst(buf);
 
 	dst->len = lladdr_src.len;
 	dst->addr = lladdr_src.addr;
@@ -132,11 +132,11 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	data_failure = false;
 
 	if (feed_data) {
-		net_nbuf_ll_swap(buf);
+		net_pkt_ll_swap(buf);
 
 		if (net_recv_data(iface, buf) < 0) {
 			TC_ERROR("Data receive failed.");
-			net_nbuf_unref(buf);
+			net_pkt_unref(buf);
 			test_failed = true;
 		}
 
@@ -169,7 +169,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		} else {
 			/* Pass sent DIO message back to us */
 			if (msg_sending == NET_RPL_DODAG_INFO_OBJ) {
-				net_nbuf_ll_swap(buf);
+				net_pkt_ll_swap(buf);
 
 				if (!net_recv_data(iface, buf)) {
 					/* We must not unref the msg,
@@ -182,7 +182,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		}
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 out:
 	if (data_failure) {
@@ -317,8 +317,8 @@ static bool test_dio_dummy_input(void)
 	struct net_buf *buf, *frag;
 	int ret;
 
-	buf = net_nbuf_get_tx(udp_ctx, K_FOREVER);
-	frag = net_nbuf_get_data(udp_ctx, K_FOREVER);
+	buf = net_pkt_get_tx(udp_ctx, K_FOREVER);
+	frag = net_pkt_get_data(udp_ctx, K_FOREVER);
 
 	net_buf_frag_add(buf, frag);
 

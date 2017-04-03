@@ -155,7 +155,7 @@ The screen application will display the following information:
 	[print_client_banner:42] Connection accepted
 	Address: 192.168.1.10, port: 54327
 	[http_ctx_get:268] Free ctx found, index: 0
-	[http_write:59] net_nbuf_get_tx, rc: 0 <OK>
+	[http_write:59] net_pkt_get_tx, rc: 0 <OK>
 	[http_write:82] net_context_send: 0 <OK>
 	[http_rx_tx:86] Connection closed by peer
 

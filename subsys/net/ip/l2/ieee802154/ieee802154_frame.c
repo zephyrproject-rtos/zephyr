@@ -817,18 +817,18 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	struct net_buf *buf, *frag;
 	uint8_t *p_buf;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
+	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		goto error;
 	}
 
 	net_buf_frag_add(buf, frag);
-	p_buf = net_nbuf_ll(buf);
+	p_buf = net_pkt_ll(buf);
 
 	fs = generate_fcf_grounds(&p_buf,
 				  type == IEEE802154_CFI_BEACON_REQUEST ?
@@ -851,20 +851,20 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	 * to be easy to handle afterwards to point directly to MAC
 	 * command space, in order to fill-in its content.
 	 */
-	net_nbuf_set_ll_reserve(buf, p_buf - net_nbuf_ll(buf));
-	net_buf_pull(frag, net_nbuf_ll_reserve(buf));
+	net_pkt_set_ll_reserve(buf, p_buf - net_pkt_ll(buf));
+	net_buf_pull(frag, net_pkt_ll_reserve(buf));
 
 	/* Thus setting the right MAC command length
 	 * Now up to the caller to fill-in this space relevantly.
 	 * See ieee802154_mac_command() helper.
 	 */
-	net_nbuf_set_len(frag, mac_command_length(type));
+	net_pkt_set_len(frag, mac_command_length(type));
 
 	dbg_print_fs(fs);
 
 	return buf;
 error:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	return NULL;
 }
@@ -874,7 +874,7 @@ error:
 bool ieee802154_create_ack_frame(struct net_if *iface,
 				 struct net_buf *buf, uint8_t seq)
 {
-	uint8_t *p_buf = net_nbuf_ll(buf);
+	uint8_t *p_buf = net_pkt_ll(buf);
 	struct ieee802154_fcf_seq *fs;
 
 	if (!p_buf) {
@@ -916,10 +916,10 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
 	 * This will require to look up in nbr cache with short addr
 	 * in order to get the extended address related to it
 	 */
-	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_nbuf_ll(buf),
-				     net_nbuf_ll_reserve(buf),
+	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(buf),
+				     net_pkt_ll_reserve(buf),
 				     net_buf_frags_len(buf),
-				     net_nbuf_ll_src(buf)->addr,
+				     net_pkt_ll_src(buf)->addr,
 				     sys_le32_to_cpu(
 					mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");

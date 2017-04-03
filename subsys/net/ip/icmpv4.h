@@ -16,7 +16,7 @@
 #include <zephyr/types.h>
 
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #define NET_ICMPV4_DST_UNREACH  3	/* Destination unreachable */
 #define NET_ICMPV4_ECHO_REQUEST 8
@@ -31,7 +31,7 @@ struct net_icmpv4_echo_req {
 } __packed;
 
 #define NET_ICMPV4_ECHO_REQ_BUF(buf)					\
-	((struct net_icmpv4_echo_req *)(net_nbuf_icmp_data(buf) +	\
+	((struct net_icmpv4_echo_req *)(net_pkt_icmp_data(buf) +	\
 				      sizeof(struct net_icmp_hdr)))
 
 typedef enum net_verdict (*icmpv4_callback_handler_t)(struct net_buf *buf);

@@ -17,7 +17,7 @@
 #include <device.h>
 #include <init.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/dhcpv4.h>
 #include <net/ethernet.h>
@@ -199,19 +199,19 @@ static void net_dhcpv4_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
-static struct net_buf *nbuf_get_data(struct net_buf *buf, struct net_if *iface)
+static struct net_buf *pkt_get_data(struct net_buf *buf, struct net_if *iface)
 {
 	struct net_buf *frag;
 	struct net_eth_hdr *hdr;
 
-	net_nbuf_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
+	net_pkt_set_ll_reserve(buf, net_if_get_ll_reserve(iface, NULL));
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(buf, K_FOREVER);
 	if (!frag) {
 		return NULL;
 	}
 
-	hdr = (struct net_eth_hdr *)net_nbuf_ll(frag);
+	hdr = (struct net_eth_hdr *)net_pkt_ll(frag);
 	hdr->type = htons(NET_ETH_PTYPE_IP);
 
 	net_ipaddr_copy(&hdr->dst, &src_addr);
@@ -265,21 +265,21 @@ struct net_buf *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 	int bytes, remaining = sizeof(offer), pos = 0;
 	uint16_t offset;
 
-	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
 
-	frag = nbuf_get_data(buf, iface);
+	frag = pkt_get_data(buf, iface);
 	if (!frag) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return NULL;
 	}
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
-	net_nbuf_set_family(buf, AF_INET);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_family(buf, AF_INET);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	net_buf_frag_add(buf, frag);
 
@@ -306,7 +306,7 @@ struct net_buf *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 		remaining -= bytes;
 
 		if (remaining > 0) {
-			frag = nbuf_get_data(buf, iface);
+			frag = pkt_get_data(buf, iface);
 			if (!frag) {
 				goto fail;
 			}
@@ -317,14 +317,14 @@ struct net_buf *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 	}
 
 	/* Now fixup the expect XID */
-	frag = net_nbuf_write_be32(buf, buf->frags,
+	frag = net_pkt_write_be32(buf, buf->frags,
 				   (sizeof(struct net_ipv4_hdr) +
 				    sizeof(struct net_udp_hdr)) + 4,
 				   &offset, xid);
 	return buf;
 
 fail:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	return NULL;
 }
 
@@ -334,21 +334,21 @@ struct net_buf *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 	int bytes, remaining = sizeof(ack), pos = 0;
 	uint16_t offset;
 
-	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!buf) {
 		return NULL;
 	}
 
-	frag = nbuf_get_data(buf, iface);
+	frag = pkt_get_data(buf, iface);
 	if (!frag) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(buf);
 		return NULL;
 	}
 
-	net_nbuf_set_iface(buf, iface);
-	net_nbuf_set_ll_reserve(buf, net_buf_headroom(frag));
-	net_nbuf_set_family(buf, AF_INET);
-	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_iface(buf, iface);
+	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_family(buf, AF_INET);
+	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
 
 	net_buf_frag_add(buf, frag);
 
@@ -375,7 +375,7 @@ struct net_buf *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 		remaining -= bytes;
 
 		if (remaining > 0) {
-			frag = nbuf_get_data(buf, iface);
+			frag = pkt_get_data(buf, iface);
 			if (!frag) {
 				goto fail;
 			}
@@ -386,14 +386,14 @@ struct net_buf *prepare_dhcp_ack(struct net_if *iface, uint32_t xid)
 	}
 
 	/* Now fixup the expect XID */
-	frag = net_nbuf_write_be32(buf, buf->frags,
+	frag = net_pkt_write_be32(buf, buf->frags,
 				   (sizeof(struct net_ipv4_hdr) +
 				    sizeof(struct net_udp_hdr)) + 4,
 				   &offset, xid);
 	return buf;
 
 fail:
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	return NULL;
 }
 
@@ -403,7 +403,7 @@ static int parse_dhcp_message(struct net_buf *buf, struct dhcp_msg *msg)
 	uint8_t type;
 	uint16_t offset;
 
-	frag = net_nbuf_skip(frag, 0, &offset,
+	frag = net_pkt_skip(frag, 0, &offset,
 			   /* size of op, htype, hlen, hops */
 			   (sizeof(struct net_ipv4_hdr) +
 			    sizeof(struct net_udp_hdr)) + 4);
@@ -411,12 +411,12 @@ static int parse_dhcp_message(struct net_buf *buf, struct dhcp_msg *msg)
 		return 0;
 	}
 
-	frag = net_nbuf_read_be32(frag, offset, &offset, &msg->xid);
+	frag = net_pkt_read_be32(frag, offset, &offset, &msg->xid);
 	if (!frag) {
 		return 0;
 	}
 
-	frag = net_nbuf_skip(frag, offset, &offset,
+	frag = net_pkt_skip(frag, offset, &offset,
 			   /* size of op, htype ... cookie */
 			   (36 + 64 + 128 + 4));
 	if (!frag) {
@@ -426,18 +426,18 @@ static int parse_dhcp_message(struct net_buf *buf, struct dhcp_msg *msg)
 	while (frag) {
 		uint8_t length;
 
-		frag = net_nbuf_read_u8(frag, offset, &offset, &type);
+		frag = net_pkt_read_u8(frag, offset, &offset, &type);
 		if (!frag) {
 			return 0;
 		}
 
 		if (type == MSG_TYPE) {
-			frag = net_nbuf_skip(frag, offset, &offset, 1);
+			frag = net_pkt_skip(frag, offset, &offset, 1);
 			if (!frag) {
 				return 0;
 			}
 
-			frag = net_nbuf_read_u8(frag, offset, &offset,
+			frag = net_pkt_read_u8(frag, offset, &offset,
 						&msg->type);
 			if (!frag) {
 				return 0;
@@ -446,9 +446,9 @@ static int parse_dhcp_message(struct net_buf *buf, struct dhcp_msg *msg)
 			return 1;
 		}
 
-		frag = net_nbuf_read_u8(frag, offset, &offset, &length);
+		frag = net_pkt_read_u8(frag, offset, &offset, &length);
 		if (frag) {
-			frag = net_nbuf_skip(frag, offset, &offset, length);
+			frag = net_pkt_skip(frag, offset, &offset, length);
 			if (!frag) {
 				return 0;
 			}
@@ -472,7 +472,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	}
 
 	parse_dhcp_message(buf, &msg);
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	if (msg.type == DISCOVER) {
 		/* Reply with DHCPv4 offer message */
@@ -493,7 +493,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	}
 
 	if (net_recv_data(iface, rbuf)) {
-		net_nbuf_unref(rbuf);
+		net_pkt_unref(rbuf);
 
 		return -EINVAL;
 	}

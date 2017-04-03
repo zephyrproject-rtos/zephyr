@@ -13,9 +13,9 @@
 #include <errno.h>
 #include <misc/printk.h>
 #include <net/net_context.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
-extern void net_nbuf_init(void);
+extern void net_pkt_init(void);
 extern void net_if_init(struct k_sem *startup_sync);
 extern void net_if_post_init(void);
 extern void net_context_init(void);
@@ -148,7 +148,7 @@ static inline void net_hexdump_frags(const char *str, struct net_buf *buf)
 	struct net_buf *frag = buf->frags;
 
 	while (frag) {
-		net_hexdump(str, frag->data, net_nbuf_get_len(frag));
+		net_hexdump(str, frag->data, net_pkt_get_len(frag));
 		frag = frag->frags;
 	}
 }

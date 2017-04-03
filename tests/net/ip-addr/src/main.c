@@ -17,7 +17,7 @@
 #include <tc_util.h>
 
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #define NET_LOG_ENABLED 1
@@ -140,7 +140,7 @@ static void net_test_iface_init(struct net_if *iface)
 
 static int tester_send(struct net_if *iface, struct net_buf *buf)
 {
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 	return 0;
 }
 
