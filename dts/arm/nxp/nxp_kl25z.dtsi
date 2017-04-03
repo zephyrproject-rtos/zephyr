@@ -1,0 +1,32 @@
+#include "armv6-m.dtsi"
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m0+";
+		};
+	};
+
+	sram0: memory {
+		compatible = "mmio-sram";
+		reg = <0x1FFFF000 0x4000>;
+	};
+
+	soc {
+		flash0: flash@0 {
+			reg = <0 0x20000>;
+		};
+
+		uart0: uart@4006A000 {
+			compatible = "nxp,kinetis-lpsci";
+			reg = <0x4006A000 0xc>;
+			interrupts = <12 0>;
+
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};
