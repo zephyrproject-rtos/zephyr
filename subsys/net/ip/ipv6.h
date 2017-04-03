@@ -413,6 +413,16 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
 
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
+/**
+ * @brief Find the last IPv6 extension header in the network packet.
+ *
+ * @param buf Network head buffer.
+ *
+ * @return Offset to the extension header within the first fragment of net_buf.
+ * Return <0 if the packet is malformed.
+ */
+int net_ipv6_find_last_ext_hdr(struct net_buf *buf);
+
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);
 #else

@@ -390,6 +390,69 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 }
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
+int net_ipv6_find_last_ext_hdr(struct net_buf *buf)
+{
+	struct net_ipv6_hdr *hdr = NET_IPV6_BUF(buf);
+	struct net_buf *frag = buf->frags;
+	int pos = 6; /* Initial value if no extension fragments were found */
+	uint16_t offset;
+	uint8_t next_hdr;
+	uint8_t length;
+	uint8_t next;
+
+	offset = sizeof(struct net_ipv6_hdr);
+	next = hdr->nexthdr;
+
+	while (frag) {
+		frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
+		if (frag != buf->frags) {
+			break;
+		}
+
+		frag = net_nbuf_read_u8(frag, offset, &offset, &length);
+		if (!frag && offset == 0xffff) {
+			pos = -EINVAL;
+			goto fail;
+		}
+
+		length = length * 8 + 8;
+
+		switch (next) {
+		case NET_IPV6_NEXTHDR_NONE:
+			pos = offset;
+			goto out;
+
+		case NET_IPV6_NEXTHDR_HBHO:
+			pos = offset;
+			offset += length;
+			break;
+
+		case NET_IPV6_NEXTHDR_FRAG:
+			pos = offset;
+			offset += sizeof(struct net_ipv6_frag_hdr);
+			goto out;
+
+		case IPPROTO_ICMPV6:
+		case IPPROTO_UDP:
+		case IPPROTO_TCP:
+			pos = offset;
+			goto out;
+
+		default:
+			pos = -EINVAL;
+			goto fail;
+		}
+	}
+
+out:
+	if (pos > frag->len) {
+		pos = -EINVAL;
+	}
+
+fail:
+	return pos;
+}
+
 const struct in6_addr *net_ipv6_unspecified_address(void)
 {
 	static const struct in6_addr addr = IN6ADDR_ANY_INIT;
