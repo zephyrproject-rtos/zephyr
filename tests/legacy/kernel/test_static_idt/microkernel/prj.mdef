@@ -1,6 +1,0 @@
-% Application       : test static interrutps
-
-% TASK NAME         PRIO ENTRY           STACK GROUPS
-% ==================================================
-  TASK tStartTask      6 idtTestTask     2048 [EXE]
-  TASK tSpurTask       5 idtSpurTask     2048 []

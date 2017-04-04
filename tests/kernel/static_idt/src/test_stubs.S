@@ -27,8 +27,8 @@ testing.
 
 /* Static interrupt handler stubs */
 
-	GTEXT(nanoIntStub)
-SECTION_FUNC(TEXT, nanoIntStub)
+	GTEXT(int_stub)
+SECTION_FUNC(TEXT, int_stub)
         pushl   $0
         pushl   $isr_handler
         jmp     _interrupt_enter

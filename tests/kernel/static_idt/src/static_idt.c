@@ -1,4 +1,3 @@
-/* static_idt.c - test static IDT APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
@@ -6,9 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
-DESCRIPTION
-Ensures interrupt and exception stubs are installed correctly.
+/**
+ * @file
+ * test static IDT APIs
+ *  Ensures interrupt and exception stubs are installed correctly.
  */
 
 #include <zephyr.h>
@@ -26,43 +26,48 @@ Ensures interrupt and exception stubs are installed correctly.
 #define TEST_SOFT_INT 62
 #define TEST_SPUR_INT 63
 
+
+#define MY_STACK_SIZE 2048
+#define MY_PRIORITY 5
+
+char __noinit __stack my_stack_area[MY_STACK_SIZE];
+
 /* externs */
 
- /* the _idt_base_address symbol is generated via a linker script */
+/* The _idt_base_address symbol is generated via a linker script */
 
 extern unsigned char _idt_base_address[];
 
-extern void *nanoIntStub;
-NANO_CPU_INT_REGISTER(nanoIntStub, -1, -1, TEST_SOFT_INT, 0);
+extern void *int_stub;
+NANO_CPU_INT_REGISTER(int_stub, -1, -1, TEST_SOFT_INT, 0);
 
-static volatile int    excHandlerExecuted;
-static volatile int    intHandlerExecuted;
+static volatile int exc_handler_executed;
+static volatile int int_handler_executed;
 /* Assume the spurious interrupt handler will execute and abort the task */
-static volatile int    spurHandlerAbortedThread = 1;
+static volatile int spur_handler_aborted_thread = 1;
 
 
 /**
+ * Handler to perform various actions from within an ISR context
  *
- *  isr_handler - handler to perform various actions from within an ISR context
- *
- * This routine is the ISR handler for _trigger_isrHandler().
+ * This routine is the ISR handler for _trigger_isr_handler().
  *
  * @return N/A
  */
 
 void isr_handler(void)
 {
-	intHandlerExecuted++;
+	int_handler_executed++;
 }
 
 /**
  *
- * exc_divide_error_handler -
+ * This is the handler for the divde by zero exception.
  *
- * This is the handler for the divde by zero exception.  The source of this
- * divide-by-zero error comes from the following line in main() ...
- *         error = error / excHandlerExecuted;
- * Where excHandlerExecuted is zero.
+ * The source of this divide-by-zero error comes from the following line in
+ * main() ...
+ *         error = error / exc_handler_executed;
+ * Where exc_handler_executed is zero.
  * The disassembled code for it looks something like ....
  *         f7 fb                   idiv   %ecx
  * This handler is part of a test that is only interested in detecting the
@@ -75,16 +80,16 @@ void isr_handler(void)
  * @return N/A
  */
 
-void exc_divide_error_handler(NANO_ESF *pEsf)
+void exc_divide_error_handler(NANO_ESF *p_esf)
 {
-	pEsf->eip += 2;
-	excHandlerExecuted = 1;    /* provide evidence that the handler executed */
+	p_esf->eip += 2;
+	/* provide evidence that the handler executed */
+	exc_handler_executed = 1;
 }
 _EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR);
 extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
 
 /**
- *
  * @brief Check the IDT.
  *
  * This test examines the IDT and verifies that the static interrupt and
@@ -93,26 +98,26 @@ extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int nanoIdtStubTest(void)
+int idt_stub_test(void)
 {
-	struct segment_descriptor *pIdtEntry;
+	struct segment_descriptor *p_idt_entry;
 	uint32_t offset;
 
 	/* Check for the interrupt stub */
-	pIdtEntry = (struct segment_descriptor *)
-		(_idt_base_address + (TEST_SOFT_INT << 3));
-	offset = (uint32_t)(&nanoIntStub);
-	if (DTE_OFFSET(pIdtEntry) != offset) {
-		TC_ERROR("Failed to find offset of nanoIntStub (0x%x) at vector %d\n",
+	p_idt_entry = (struct segment_descriptor *)
+		      (_idt_base_address + (TEST_SOFT_INT << 3));
+	offset = (uint32_t)(&int_stub);
+	if (DTE_OFFSET(p_idt_entry) != offset) {
+		TC_ERROR("Failed to find offset of int_stub (0x%x) at vector %d\n",
 			 offset, TEST_SOFT_INT);
 		return TC_FAIL;
 	}
 
 	/* Check for the exception stub */
-	pIdtEntry = (struct segment_descriptor *)
-		(_idt_base_address + (IV_DIVIDE_ERROR << 3));
+	p_idt_entry = (struct segment_descriptor *)
+		      (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 	offset = (uint32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
-	if (DTE_OFFSET(pIdtEntry) != offset) {
+	if (DTE_OFFSET(p_idt_entry) != offset) {
 		TC_ERROR("Failed to find offset of exc stub (0x%x) at vector %d\n",
 			 offset, IV_DIVIDE_ERROR);
 		return TC_FAIL;
@@ -126,25 +131,23 @@ int nanoIdtStubTest(void)
 }
 
 /**
- *
  * @brief Task to test spurious handlers
  *
  * @return 0
  */
 
-void idtSpurTask(void)
+void idt_spur_task(void *arg1, void *arg2, void *arg3)
 {
 	TC_PRINT("- Expect to see unhandled interrupt/exception message\n");
 
-	_trigger_spurHandler();
+	_trigger_spur_handler();
 
 	/* Shouldn't get here */
-	spurHandlerAbortedThread = 0;
+	spur_handler_aborted_thread = 0;
 
 }
 
 /**
- *
  * @brief Entry point to static IDT tests
  *
  * This is the entry point to the static IDT tests.
@@ -152,69 +155,72 @@ void idtSpurTask(void)
  * @return N/A
  */
 
-void idtTestTask(void)
+void main(void)
 {
-	int           rv;       /* return value from tests */
-	volatile int  error;    /* used to create a divide by zero error */
+	int rv;                 /* return value from tests */
+	volatile int error;     /* used to create a divide by zero error */
 
 	TC_START("Starting static IDT tests");
 
 	TC_PRINT("Testing to see if IDT has address of test stubs()\n");
-	rv = nanoIdtStubTest();
+	rv = idt_stub_test();
 	if (rv != TC_PASS) {
-		goto doneTests;
+		goto done_tests;
 	}
 
 	TC_PRINT("Testing to see interrupt handler executes properly\n");
-	_trigger_isrHandler();
+	_trigger_isr_handler();
 
-	if (intHandlerExecuted == 0) {
+	if (int_handler_executed == 0) {
 		TC_ERROR("Interrupt handler did not execute\n");
 		rv = TC_FAIL;
-		goto doneTests;
-	} else if (intHandlerExecuted != 1) {
+		goto done_tests;
+	} else if (int_handler_executed != 1) {
 		TC_ERROR("Interrupt handler executed more than once! (%d)\n",
-				 intHandlerExecuted);
+			 int_handler_executed);
 		rv = TC_FAIL;
-		goto doneTests;
+		goto done_tests;
 	}
 
 	TC_PRINT("Testing to see exception handler executes properly\n");
 
 	/*
-	 * Use excHandlerExecuted instead of 0 to prevent the compiler issuing a
+	 * Use exc_handler_executed instead of 0 to prevent the compiler issuing a
 	 * 'divide by zero' warning.
 	 */
-	error = 32;	/* avoid static checker uninitialized warnings */
-	error = error / excHandlerExecuted;
+	error = 32;     /* avoid static checker uninitialized warnings */
+	error = error / exc_handler_executed;
 
-	if (excHandlerExecuted == 0) {
+	if (exc_handler_executed == 0) {
 		TC_ERROR("Exception handler did not execute\n");
 		rv = TC_FAIL;
-		goto doneTests;
-	} else if (excHandlerExecuted != 1) {
+		goto done_tests;
+	} else if (exc_handler_executed != 1) {
 		TC_ERROR("Exception handler executed more than once! (%d)\n",
-				 excHandlerExecuted);
+			 exc_handler_executed);
 		rv = TC_FAIL;
-		goto doneTests;
+		goto done_tests;
 	}
 
 	/*
 	 * Start task to trigger the spurious interrupt handler
 	 */
 	TC_PRINT("Testing to see spurious handler executes properly\n");
-	task_start(tSpurTask);
+	k_thread_spawn(my_stack_area, MY_STACK_SIZE,
+		       idt_spur_task, NULL, NULL, NULL,
+		       MY_PRIORITY, 0, K_NO_WAIT);
+
 	/*
 	 * The fiber/task should not run past where the spurious interrupt is
-	 * generated. Therefore spurHandlerAbortedThread should remain at 1.
+	 * generated. Therefore spur_handler_aborted_thread should remain at 1.
 	 */
-	if (spurHandlerAbortedThread == 0) {
+	if (spur_handler_aborted_thread == 0) {
 		TC_ERROR("Spurious handler did not execute as expected\n");
 		rv = TC_FAIL;
-		goto doneTests;
+		goto done_tests;
 	}
 
-doneTests:
+done_tests:
 	TC_END(rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT(rv);
 }
