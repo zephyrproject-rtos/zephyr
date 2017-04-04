@@ -337,24 +337,6 @@ extern void k_thread_abort(k_tid_t thread);
 /* timeout is not in use */
 #define _INACTIVE (-1)
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-#define _THREAD_TIMEOUT_INIT(obj) \
-	(obj).nano_timeout = { \
-	.node = { {0}, {0} }, \
-	.thread = NULL, \
-	.wait_q = NULL, \
-	.delta_ticks_from_prev = _INACTIVE, \
-	},
-#else
-#define _THREAD_TIMEOUT_INIT(obj)
-#endif
-
-#ifdef CONFIG_ERRNO
-#define _THREAD_ERRNO_INIT(obj) (obj).errno_var = 0,
-#else
-#define _THREAD_ERRNO_INIT(obj)
-#endif
-
 struct _static_thread_data {
 	union {
 		char *init_stack;
