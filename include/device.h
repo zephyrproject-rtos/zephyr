@@ -9,8 +9,6 @@
 #define _DEVICE_H_
 
 #include <kernel.h>
-/* for __deprecated */
-#include <toolchain.h>
 
 /**
  * @brief Device Driver APIs
@@ -30,27 +28,10 @@
 extern "C" {
 #endif
 
-/* XXX the easiest way to trigger a warning on a preprocessor macro
- * is to use _Pragma("GCC warning \"...\"), however it's impossible to filter
- * those out of -Werror, needed for sanitycheck. So we do this nastiness
- * instead. These functions get compiled but don't take up extra space in
- * the binary..
- */
-static __deprecated const int _INIT_LEVEL_PRIMARY = 1;
-static __deprecated const int _INIT_LEVEL_SECONDARY = 1;
-static __deprecated const int _INIT_LEVEL_NANOKERNEL = 1;
-static __deprecated const int _INIT_LEVEL_MICROKERNEL = 1;
 static const int _INIT_LEVEL_PRE_KERNEL_1 = 1;
 static const int _INIT_LEVEL_PRE_KERNEL_2 = 1;
 static const int _INIT_LEVEL_POST_KERNEL = 1;
 static const int _INIT_LEVEL_APPLICATION = 1;
-
-#define _DEPRECATION_CHECK(dev_name, level) \
-	static inline void _CONCAT(_deprecation_check_, dev_name)() \
-	{ \
-		int foo = _CONCAT(_INIT_LEVEL_, level); \
-		(void)foo; \
-	}
 
 /**
  * @def DEVICE_INIT
@@ -123,7 +104,6 @@ static const int _INIT_LEVEL_APPLICATION = 1;
 		.name = drv_name, .init = (init_fn), \
 		.config_info = (cfg_info) \
 	}; \
-	_DEPRECATION_CHECK(dev_name, level) \
 	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		 .config = &_CONCAT(__config_, dev_name), \
@@ -157,7 +137,6 @@ static const int _INIT_LEVEL_APPLICATION = 1;
 		.device_pm_control = (pm_control_fn), \
 		.config_info = (cfg_info) \
 	}; \
-	_DEPRECATION_CHECK(dev_name, level) \
 	static struct device _CONCAT(__device_, dev_name) __used \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		 .config = &_CONCAT(__config_, dev_name), \
