@@ -16,6 +16,7 @@
 
 #include <irq.h>
 #include <arch/x86/irq_controller.h>
+#include <kernel_arch_thread.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
@@ -48,20 +49,6 @@ void _int_latency_stop(void);
 #endif
 
 /* interrupt/exception/error related definitions */
-
-/**
- * Floating point register set alignment.
- *
- * If support for SSEx extensions is enabled a 16 byte boundary is required,
- * since the 'fxsave' and 'fxrstor' instructions require this. In all other
- * cases a 4 byte boundary is sufficient.
- */
-
-#ifdef CONFIG_SSE
-#define FP_REG_SET_ALIGN  16
-#else
-#define FP_REG_SET_ALIGN  4
-#endif
 
 /*
  * The TCS must be aligned to the same boundary as that used by the floating

@@ -28,6 +28,7 @@ extern "C" {
 #include <sections.h>
 #include <arch/cpu.h>
 #include <vector_table.h>
+#include <kernel_arch_thread.h>
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
@@ -38,16 +39,6 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-
-struct _caller_saved {
-	/*
-	 * Saved on the stack as part of handling a regular IRQ or by the
-	 * kernel when calling the FIRQ return code.
-	 */
-};
-
-typedef struct _caller_saved _caller_saved_t;
-
 struct _irq_stack_frame {
 	u32_t r0;
 	u32_t r1;
@@ -83,11 +74,6 @@ struct _irq_stack_frame {
 
 typedef struct _irq_stack_frame _isf_t;
 
-struct _callee_saved {
-	u32_t sp; /* r28 */
-};
-typedef struct _callee_saved _callee_saved_t;
-
 /* callee-saved registers pushed on the stack, not in k_thread */
 struct _callee_saved_stack {
 	u32_t r13;
@@ -116,45 +102,6 @@ struct _callee_saved_stack {
 
 typedef struct _callee_saved_stack _callee_saved_stack_t;
 
-#endif /* _ASMLANGUAGE */
-
-/* stacks */
-
-#define STACK_ALIGN_SIZE 4
-
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
-
-/*
- * Reason a thread has relinquished control: fibers can only be in the NONE
- * or COOP state, tasks can be one in the four.
- */
-#define _CAUSE_NONE 0
-#define _CAUSE_COOP 1
-#define _CAUSE_RIRQ 2
-#define _CAUSE_FIRQ 3
-
-#ifndef _ASMLANGUAGE
-
-struct _thread_arch {
-
-	/* interrupt key when relinquishing control */
-	u32_t intlock_key;
-
-	/* one of the _CAUSE_xxxx definitions above */
-	int relinquish_cause;
-
-	/* return value from _Swap */
-	unsigned int return_value;
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-	/* top of stack for hardware stack checking */
-	u32_t stack_top;
-#endif
-};
-
-typedef struct _thread_arch _thread_arch_t;
-
 struct _kernel_arch {
 
 	char *rirq_sp; /* regular IRQ stack pointer base */
@@ -169,6 +116,13 @@ struct _kernel_arch {
 typedef struct _kernel_arch _kernel_arch_t;
 
 #endif /* _ASMLANGUAGE */
+
+/* stacks */
+
+#define STACK_ALIGN_SIZE 4
+
+#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
+#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
 #ifdef __cplusplus
 }

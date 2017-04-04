@@ -14,6 +14,8 @@
 #ifndef _NANO_INTERNAL__H_
 #define _NANO_INTERNAL__H_
 
+#include <kernel.h>
+
 #define K_NUM_PRIORITIES \
 	(CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES + 1)
 
@@ -37,10 +39,6 @@ static inline void _data_copy(void)
 }
 #endif
 FUNC_NORETURN void _Cstart(void);
-
-/* helper type alias for thread control structure */
-
-typedef void (*_thread_entry_t)(void *, void *, void *);
 
 extern void _thread_entry(void (*)(void *, void *, void *),
 			  void *, void *, void *);
