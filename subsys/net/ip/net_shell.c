@@ -915,8 +915,12 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	       net_ipv6_nbr_data(nbr)->link_metric,
 	       nbr->iface,
 	       net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
+#if defined(CONFIG_NET_IPV6_ND)
 	       k_delayed_work_remaining_get(
 		       &net_ipv6_nbr_data(nbr)->reachable),
+#else
+	       0,
+#endif
 	       nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
 	       net_sprint_ll_addr(
 		       net_nbr_get_lladdr(nbr->idx)->addr,
