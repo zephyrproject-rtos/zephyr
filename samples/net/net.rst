@@ -1,3 +1,5 @@
+.. _networking-samples:
+
 Networking Samples
 ##################
 

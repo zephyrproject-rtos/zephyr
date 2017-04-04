@@ -1,3 +1,5 @@
+.. _http-client-sample:
+
 HTTP Client
 ###########
 

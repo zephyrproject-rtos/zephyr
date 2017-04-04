@@ -1,3 +1,5 @@
+.. _zperf-sample:
+
 zperf: Network Traffic Generator
 ################################
 

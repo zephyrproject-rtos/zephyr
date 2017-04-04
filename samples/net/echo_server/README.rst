@@ -1,3 +1,5 @@
+.. _echo-server-sample:
+
 Echo Server
 ###########
 

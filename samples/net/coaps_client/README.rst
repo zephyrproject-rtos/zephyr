@@ -1,3 +1,5 @@
+.. _coap-client-sample:
+
 CoAP over DTLS sample client
 ############################
 

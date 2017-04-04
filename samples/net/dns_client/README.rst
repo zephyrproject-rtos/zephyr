@@ -1,3 +1,5 @@
+.. _dns-client-sample:
+
 DNS Client Application
 ######################
 

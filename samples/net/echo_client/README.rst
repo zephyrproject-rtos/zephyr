@@ -1,3 +1,5 @@
+.. _echo-client-sample:
+
 Echo Client
 ###########
 

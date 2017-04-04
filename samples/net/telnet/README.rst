@@ -1,3 +1,5 @@
+.. _telnet-console-sample:
+
 Sample TELNET console application
 #################################
 

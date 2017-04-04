@@ -1,3 +1,5 @@
+.. _mbedtls-dtls-client-sample:
+
 mbedTLS DTLS client
 ####################
 

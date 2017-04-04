@@ -1,3 +1,5 @@
+.. _mbedtsl-delsserver-sample:
+
 mbedTLS DTLS sample server
 ############################
 

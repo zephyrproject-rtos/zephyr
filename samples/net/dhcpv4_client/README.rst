@@ -1,3 +1,5 @@
+.. _dhcpv4-client-sample:
+
 Sample DHCPv4 client application
 ################################
 

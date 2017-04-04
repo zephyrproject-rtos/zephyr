@@ -1,3 +1,5 @@
+.. _http-server-sample:
+
 HTTP Server
 ###########
 

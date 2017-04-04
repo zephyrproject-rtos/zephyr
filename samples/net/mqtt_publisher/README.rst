@@ -1,3 +1,5 @@
+.. _mqtt-publisher-sample:
+
 MQTT Publisher
 ##############
 

@@ -1,3 +1,5 @@
+.. _coap-server-sample:
+
 CoAP over DTLS sample server
 ############################
 

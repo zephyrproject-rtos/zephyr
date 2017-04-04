@@ -1,3 +1,5 @@
+.. _zoap-client-sample:
+
 CoAP client
 ###########
 

@@ -1,3 +1,5 @@
+.. _zoap-server-sample:
+
 CoAP Server
 ###########
 
