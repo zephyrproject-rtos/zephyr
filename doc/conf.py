@@ -127,6 +127,12 @@ todo_include_todos = False
 rst_epilog = """
 .. |codename| replace:: Zephyr Kernel
 .. |project| replace:: Zephyr Project
+.. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
+   :ltrim:
+.. |trade|  unicode:: U+02122 .. TRADEMARK SIGN
+   :ltrim:
+.. |reg|    unicode:: U+000AE .. REGISTERED TRADEMARK SIGN
+   :ltrim:
 """
 
 # -- Options for HTML output ----------------------------------------------
