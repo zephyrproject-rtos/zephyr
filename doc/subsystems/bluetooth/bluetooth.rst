@@ -6,13 +6,13 @@ Bluetooth
 Zephyr comes integrated with a feature-rich and highly configurable
 Bluetooth stack:
 
-* Bluetooth 4.2 compliant
+* Bluetooth 5.0 compliant (ESR10)
 
 * Bluetooth Controller support (LE Link Layer)
 
   * Currently supports Nordic Semiconductor nRF51 and nRF52
 
-* Generic Access Profile (GAP) with all possible roles
+* Generic Access Profile (GAP) with all possible LE roles
 
   * Peripheral & Central
   * Observer & Broadcaster
@@ -28,10 +28,18 @@ Bluetooth stack:
 
   * IPSP node sample application in ``samples/bluetooth/ipsp``
 
+* Basic Bluetooth BR/EDR (Classic) support
+
+  * Generic Access Profile (GAP)
+  * Logical Link Control and Adaptation Protocol (L2CAP)
+  * Serial Port emulation (RFCOMM protocol)
+  * Service Discovery Protocol (SDP)
+
 * Clean HCI driver abstraction
 
-  * 3-Wire (H:5) & 5-Wire (H:4) drivers available
-  * Local controller support also as an HCI driver
+  * 3-Wire (H:5) & 5-Wire (H:4) UART
+  * SPI
+  * Local controller support as a virtual HCI driver
 
 * Raw HCI interface to run Zephyr as a Controller instead of a full Host stack
 
