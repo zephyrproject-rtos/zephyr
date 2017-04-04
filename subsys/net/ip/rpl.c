@@ -781,7 +781,9 @@ static enum net_verdict handle_dis(struct net_buf *buf)
 		}
 	}
 
-	return NET_DROP;
+	net_nbuf_unref(buf);
+
+	return NET_OK;
 }
 
 static struct net_rpl_instance *net_rpl_get_instance(uint8_t instance_id)
