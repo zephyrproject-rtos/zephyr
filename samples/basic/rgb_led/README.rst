@@ -1,3 +1,5 @@
+.. _rgb-led-sample:
+
 PWM: RGB LED
 ############
 

@@ -1,3 +1,5 @@
+.. _disco-sample:
+
 Disco demo
 ##########
 

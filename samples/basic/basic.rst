@@ -1,3 +1,5 @@
+.. _basic-sample:
+
 Basic Samples
 #############
 

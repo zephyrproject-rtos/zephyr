@@ -1,3 +1,5 @@
+.. _fade-led-sample:
+
 PWM: Fade LED
 #############
 

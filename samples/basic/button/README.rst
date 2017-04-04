@@ -1,3 +1,5 @@
+.. _button-sample:
+
 Button demo
 ###########
 

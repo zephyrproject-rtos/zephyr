@@ -1,3 +1,5 @@
+.. _blinky-sample:
+
 Blinky Application
 ##################
 

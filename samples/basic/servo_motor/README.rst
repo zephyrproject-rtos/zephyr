@@ -1,3 +1,5 @@
+.. _servo-motor-sample:
+
 PWM: Servo motor
 ################
 
