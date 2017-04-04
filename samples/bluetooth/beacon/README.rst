@@ -1,3 +1,5 @@
+.. _bluetooth-beacon-sample:
+
 Bluetooth: Beacon
 #################
 

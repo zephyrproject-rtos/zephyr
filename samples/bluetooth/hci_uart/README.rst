@@ -1,3 +1,5 @@
+.. _bluetooth-hci-uart-sample:
+
 Bluetooth: HCI UART
 ####################
 

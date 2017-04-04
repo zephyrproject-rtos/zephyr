@@ -1,3 +1,5 @@
+.. _bluetooth-ipsp-sample:
+
 Bluetooth: IPSP Sample
 ######################
 

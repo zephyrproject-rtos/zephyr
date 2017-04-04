@@ -1,3 +1,5 @@
+.. _bluetooth-scan-adv-sample:
+
 Bluetooth: Scan & Advertise
 ###########################
 

@@ -1,3 +1,5 @@
+.. _bluetooth-hci-usb-sample:
+
 Bluetooth: HCI USB
 ##################
 

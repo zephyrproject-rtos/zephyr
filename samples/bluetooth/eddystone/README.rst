@@ -1,3 +1,5 @@
+.. _bluetooth-eddystone-sample:
+
 Bluetooth: Eddystone
 ####################
 
