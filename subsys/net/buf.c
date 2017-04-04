@@ -159,7 +159,6 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
 
 	buf = k_fifo_get(fifo, timeout);
 	if (!buf) {
-		NET_BUF_ERR("Failed to get free buffer");
 		return NULL;
 	}
 
