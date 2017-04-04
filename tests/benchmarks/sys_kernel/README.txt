@@ -40,7 +40,7 @@ average time for one iteration is displayed.
 TEST CASE: Semaphore #1
 TEST COVERAGE:
         k_sem_init
-        k_sem_take(TICKS_UNLIMITED)
+        k_sem_take(K_FOREVER)
         k_sem_give
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
@@ -61,10 +61,10 @@ END TEST CASE
 TEST CASE: Semaphore #3
 TEST COVERAGE:
         k_sem_init
-        k_sem_take(TICKS_UNLIMITED)
+        k_sem_take(K_FOREVER)
         k_sem_give
         k_sem_give
-        k_sem_take(TICKS_UNLIMITED)
+        k_sem_take(K_FOREVER)
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
 DETAILS: Average time for 1 iteration: NNNN nSec
@@ -141,7 +141,7 @@ END TEST CASE
 TEST CASE: Stack #1
 TEST COVERAGE:
         k_stack_init
-        k_stack_pop(TICKS_UNLIMITED)
+        k_stack_pop(K_FOREVER)
         k_stack_push
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL
@@ -151,7 +151,7 @@ END TEST CASE
 TEST CASE: Stack #2
 TEST COVERAGE:
         k_stack_init
-        k_stack_pop(TICKS_UNLIMITED)
+        k_stack_pop(K_FOREVER)
         k_stack_pop
         k_stack_push
         k_yield
@@ -163,9 +163,9 @@ END TEST CASE
 TEST CASE: Stack #3
 TEST COVERAGE:
         k_stack_init
-        k_stack_pop(TICKS_UNLIMITED)
+        k_stack_pop(K_FOREVER)
         k_stack_push
-        k_stack_pop(TICKS_UNLIMITED)
+        k_stack_pop(K_FOREVER)
         k_stack_push
 Starting test. Please wait...
 TEST RESULT: SUCCESSFUL

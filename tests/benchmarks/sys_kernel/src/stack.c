@@ -149,7 +149,7 @@ int stack_test(void)
 			"Stack #1");
 	fprintf(output_file, sz_description,
 			"\n\tk_stack_init"
-			"\n\tk_stack_pop(TICKS_UNLIMITED)"
+			"\n\tk_stack_pop(K_FOREVER)"
 			"\n\tk_stack_push");
 	printf(sz_test_start_fmt);
 
@@ -173,7 +173,7 @@ int stack_test(void)
 			"Stack #2");
 	fprintf(output_file, sz_description,
 			"\n\tk_stack_init"
-			"\n\tk_stack_pop(TICKS_UNLIMITED)"
+			"\n\tk_stack_pop(K_FOREVER)"
 			"\n\tk_stack_pop"
 			"\n\tk_stack_push"
 			"\n\tk_yield");
@@ -202,9 +202,9 @@ int stack_test(void)
 			"Stack #3");
 	fprintf(output_file, sz_description,
 			"\n\tk_stack_init"
-			"\n\tk_stack_pop(TICKS_UNLIMITED)"
+			"\n\tk_stack_pop(K_FOREVER)"
 			"\n\tk_stack_push"
-			"\n\tk_stack_pop(TICKS_UNLIMITED)"
+			"\n\tk_stack_pop(K_FOREVER)"
 			"\n\tk_stack_push");
 	printf(sz_test_start_fmt);
 

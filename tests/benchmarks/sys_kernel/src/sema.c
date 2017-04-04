@@ -115,7 +115,7 @@ int sema_test(void)
 			"Semaphore #1");
 	fprintf(output_file, sz_description,
 			"\n\tk_sem_init"
-			"\n\tk_sem_take(TICKS_UNLIMITED)"
+			"\n\tk_sem_take(K_FOREVER)"
 			"\n\tk_sem_give");
 	printf(sz_test_start_fmt);
 
@@ -163,10 +163,10 @@ int sema_test(void)
 			"Semaphore #3");
 	fprintf(output_file, sz_description,
 			"\n\tk_sem_init"
-			"\n\tk_sem_take(TICKS_UNLIMITED)"
+			"\n\tk_sem_take(K_FOREVER)"
 			"\n\tk_sem_give"
 			"\n\tk_sem_give"
-			"\n\tk_sem_take(TICKS_UNLIMITED)");
+			"\n\tk_sem_take(K_FOREVER)");
 	printf(sz_test_start_fmt);
 
 	sema_test_init();
