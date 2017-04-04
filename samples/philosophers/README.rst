@@ -1,3 +1,5 @@
+.. _dining-philosophers-sample:
+
 Dining Philosophers
 ###################
 

@@ -1,3 +1,5 @@
+.. _grove-lcd-sample:
+
 Grove LCD
 #########
 

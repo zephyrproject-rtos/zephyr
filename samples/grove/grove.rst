@@ -1,3 +1,5 @@
+.. _grove-kit-samples:
+
 Grove Kit Samples
 #################
 

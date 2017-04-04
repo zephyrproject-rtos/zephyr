@@ -1,3 +1,5 @@
+.. _power-management-samples:
+
 Power Management Samples
 ########################
 

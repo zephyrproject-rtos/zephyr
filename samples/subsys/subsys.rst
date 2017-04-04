@@ -1,3 +1,5 @@
+.. _subsystem-samples:
+
 Various Subsystems Samples
 ##########################
 

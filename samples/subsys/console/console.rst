@@ -1,3 +1,5 @@
+.. _console-samples:
+
 Console Samples
 ###############
 

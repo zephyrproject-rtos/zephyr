@@ -1,3 +1,5 @@
+.. _power-mgr-sample:
+
 Power management demo
 #####################
 
