@@ -35,6 +35,17 @@
  */
 static uint16_t _opcode;
 
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+/* Scan duplicate filter */
+struct dup {
+		uint8_t mask;
+		bt_addr_le_t addr;
+};
+static struct dup dup_filter[CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN];
+static int32_t dup_count;
+static uint32_t dup_curr;
+#endif
+
 static void evt_create(struct net_buf *buf, uint8_t evt, uint8_t len)
 {
 	struct bt_hci_evt_hdr *hdr;
@@ -142,6 +153,10 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 
 	ll_reset();
+
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+	dup_count = -1;
+#endif
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -411,6 +426,15 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+	/* initialize duplicate filtering */
+	if (cmd->enable && cmd->filter_dup) {
+		dup_count = 0;
+		dup_curr = 0;
+	} else {
+		dup_count = -1;
+	}
+#endif
 	status = ll_scan_enable(cmd->enable);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
@@ -973,6 +997,46 @@ static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *b,
 	uint8_t data_len;
 	uint8_t *rssi;
 	uint8_t info_len;
+	int i;
+
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+	/* check for duplicate filtering */
+	if (dup_count >= 0) {
+		for (i = 0; i < dup_count; i++) {
+			if (!memcmp(&adv->payload.adv_ind.addr[0],
+				    &dup_filter[i].addr.a.val[0],
+				    sizeof(bt_addr_t)) &&
+			    adv->tx_addr == dup_filter[i].addr.type) {
+
+				if (dup_filter[i].mask & BIT(adv->type)) {
+					/* duplicate found */
+					return;
+				}
+				/* report different adv types */
+				dup_filter[i].mask |= BIT(adv->type);
+				goto fill_report;
+			}
+		}
+
+		/* insert into the duplicate filter */
+		memcpy(&dup_filter[dup_curr].addr.a.val[0],
+		       &adv->payload.adv_ind.addr[0], sizeof(bt_addr_t));
+		dup_filter[dup_curr].addr.type = adv->tx_addr;
+		dup_filter[dup_curr].mask = BIT(adv->type);
+
+		if (dup_count < CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN) {
+			dup_count++;
+			dup_curr = dup_count;
+		} else {
+			dup_curr++;
+		}
+
+		if (dup_curr == CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN) {
+			dup_curr = 0;
+		}
+	}
+fill_report:
+#endif
 
 	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
 		data_len = (adv->len - BDADDR_SIZE);

@@ -566,11 +566,20 @@ static int cmd_init(int argc, char *argv[])
 	return 0;
 }
 
-static void cmd_active_scan_on(void)
+static void cmd_active_scan_on(int dups)
 {
 	int err;
+	struct bt_le_scan_param param = {
+			.type       = BT_HCI_LE_SCAN_PASSIVE,
+			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE,
+			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
+			.window     = BT_GAP_SCAN_FAST_WINDOW };
 
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	if (dups >= 0) {
+		param.filter_dup = dups;
+	}
+
+	err = bt_le_scan_start(&param, device_found);
 	if (err) {
 		printk("Bluetooth set active scan failed (err %d)\n", err);
 	} else {
@@ -578,7 +587,7 @@ static void cmd_active_scan_on(void)
 	}
 }
 
-static void cmd_passive_scan_on(void)
+static void cmd_passive_scan_on(int dups)
 {
 	struct bt_le_scan_param param = {
 			.type       = BT_HCI_LE_SCAN_PASSIVE,
@@ -586,6 +595,10 @@ static void cmd_passive_scan_on(void)
 			.interval   = 0x10,
 			.window     = 0x10 };
 	int err;
+
+	if (dups >= 0) {
+		param.filter_dup = dups;
+	}
 
 	err = bt_le_scan_start(&param, device_found);
 	if (err) {
@@ -610,18 +623,32 @@ static void cmd_scan_off(void)
 static int cmd_scan(int argc, char *argv[])
 {
 	const char *action;
+	int dups = -1;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
+	/* Parse duplicate filtering data */
+	if (argc >= 3) {
+		const char *dup_filter = argv[2];
+
+		if (!strcmp(dup_filter, "dups")) {
+			dups = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE;
+		} else if (!strcmp(dup_filter, "nodups")) {
+			dups = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE;
+		} else {
+			return -EINVAL;
+		}
+	}
+
 	action = argv[1];
 	if (!strcmp(action, "on")) {
-		cmd_active_scan_on();
+		cmd_active_scan_on(dups);
 	} else if (!strcmp(action, "off")) {
 		cmd_scan_off();
 	} else if (!strcmp(action, "passive")) {
-		cmd_passive_scan_on();
+		cmd_passive_scan_on(dups);
 	} else {
 		return -EINVAL;
 	}
@@ -2494,7 +2521,7 @@ static int cmd_bredr_sdp_find_record(int argc, char *argv[])
 
 static const struct shell_cmd commands[] = {
 	{ "init", cmd_init, HELP_ADDR_LE },
-	{ "scan", cmd_scan, "<value: on, off>" },
+	{ "scan", cmd_scan, "<value: on, off> <dup filter: dups, nodups>" },
 	{ "advertise", cmd_advertise,
 	"<type: off, on, scan, nconn> <mode: discov, non_discov>"  },
 	{ "connect", cmd_connect_le, HELP_ADDR_LE },
