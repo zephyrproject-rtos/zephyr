@@ -1,3 +1,5 @@
+.. _microbit-samples:
+
 BBC micro:bit Samples
 #####################
 

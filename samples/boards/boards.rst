@@ -1,3 +1,5 @@
+.. _board-specific-samples:
+
 Board-specific samples
 ######################
 
