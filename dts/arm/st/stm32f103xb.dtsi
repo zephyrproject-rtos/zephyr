@@ -5,14 +5,15 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <st/mem.h>
 
 / {
-	sram0: memory {
-		reg = <0x20000000 0x5000>;
+	flash0: flash {
+		reg = <0x08000000 DT_FLASH_SIZE>;
 	};
 
-	flash0: flash {
-		reg = <0x08000000 0x20000>;
+	sram0: memory {
+		reg = <0x20000000 DT_SRAM_SIZE>;
 	};
 
 	clocks {
