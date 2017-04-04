@@ -19,6 +19,9 @@
 #include <net/net_stats.h>
 #include <net/net_context.h>
 #include "net_private.h"
+#include "connection.h"
+#include "net_stats.h"
+#include "icmpv4.h"
 #include "ipv4.h"
 
 struct net_buf *net_ipv4_create_raw(struct net_buf *buf,
@@ -126,4 +129,77 @@ const struct in_addr *net_ipv4_broadcast_address(void)
 	static const struct in_addr addr = { { { 255, 255, 255, 255 } } };
 
 	return &addr;
+}
+
+static inline enum net_verdict process_icmpv4_pkt(struct net_buf *buf,
+						  struct net_ipv4_hdr *ipv4)
+{
+	struct net_icmp_hdr *hdr = NET_ICMP_BUF(buf);
+
+	NET_DBG("ICMPv4 packet received type %d code %d",
+		hdr->type, hdr->code);
+
+	return net_icmpv4_input(buf, hdr->type, hdr->code);
+}
+
+enum net_verdict net_ipv4_process_pkt(struct net_buf *buf)
+{
+	struct net_ipv4_hdr *hdr = NET_IPV4_BUF(buf);
+	int real_len = net_buf_frags_len(buf);
+	int pkt_len = (hdr->len[0] << 8) + hdr->len[1];
+	enum net_verdict verdict = NET_DROP;
+
+	if (real_len != pkt_len) {
+		NET_DBG("IPv4 packet size %d buf len %d", pkt_len, real_len);
+		goto drop;
+	}
+
+#if defined(CONFIG_NET_DEBUG_IPV4)
+	do {
+		char out[sizeof("xxx.xxx.xxx.xxx")];
+
+		snprintk(out, sizeof(out), "%s",
+			 net_sprint_ipv4_addr(&hdr->dst));
+		NET_DBG("IPv4 packet received from %s to %s",
+			net_sprint_ipv4_addr(&hdr->src), out);
+	} while (0);
+#endif /* CONFIG_NET_DEBUG_IPV4 */
+
+	net_nbuf_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+
+	if (!net_is_my_ipv4_addr(&hdr->dst)) {
+#if defined(CONFIG_NET_DHCPV4)
+		if (hdr->proto == IPPROTO_UDP &&
+		    net_ipv4_addr_cmp(&hdr->dst,
+				      net_ipv4_broadcast_address())) {
+
+			verdict = net_conn_input(IPPROTO_UDP, buf);
+			if (verdict != NET_DROP) {
+				return verdict;
+			}
+		}
+#endif
+		NET_DBG("IPv4 packet in buf %p not for me", buf);
+		goto drop;
+	}
+
+	switch (hdr->proto) {
+	case IPPROTO_ICMP:
+		verdict = process_icmpv4_pkt(buf, hdr);
+		break;
+	case IPPROTO_UDP:
+		verdict = net_conn_input(IPPROTO_UDP, buf);
+		break;
+	case IPPROTO_TCP:
+		verdict = net_conn_input(IPPROTO_TCP, buf);
+		break;
+	}
+
+	if (verdict != NET_DROP) {
+		return verdict;
+	}
+
+drop:
+	net_stats_update_ipv4_drop();
+	return NET_DROP;
 }
