@@ -1,3 +1,5 @@
+.. _advanced-samples:
+
 Advanced Samples
 #################
 
@@ -10,8 +12,3 @@ platform and use cases and can only be used with the documented target platform.
    :glob:
 
    environmental_sensing/*
-
-
-
-
-

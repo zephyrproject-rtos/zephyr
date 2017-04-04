@@ -1,3 +1,5 @@
+.. _kernel-samples:
+
 Kernel Samples
 ##############
 
@@ -11,8 +13,3 @@ plaforms:
    hello_world/*
    synchronization/*
    philosophers/*
-
-
-
-
-

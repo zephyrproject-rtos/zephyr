@@ -1,3 +1,5 @@
+.. _samples-and-demos:
+
 Samples and Demos
 #################
 
@@ -18,8 +20,5 @@ Samples and Demos
    boards/*
 
 
-
-
-
-To add a new sample documentation, please use the template available under
+To add a new sample document, please use the template available under
 :file:`doc/templates/sample.tmpl`
