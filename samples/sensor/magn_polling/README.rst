@@ -1,3 +1,5 @@
+.. _magn-polling-sample:
+
 BMC150 Magnetometer Sample
 ##########################
 

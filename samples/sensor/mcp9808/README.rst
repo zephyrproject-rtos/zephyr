@@ -1,3 +1,5 @@
+.. _mcp9808-sample:
+
 MCP9808 Temperature Sensor
 ##########################
 

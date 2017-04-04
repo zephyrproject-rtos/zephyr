@@ -1,3 +1,5 @@
+.. _sensor-samples:
+
 Sensor Samples
 ##############
 

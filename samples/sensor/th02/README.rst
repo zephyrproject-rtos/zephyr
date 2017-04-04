@@ -1,3 +1,5 @@
+.. _th02-sample:
+
 TH02: Temperature and Humidity Monitor
 ######################################
 

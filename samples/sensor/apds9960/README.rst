@@ -1,3 +1,5 @@
+.. _apds9960-sample:
+
 RGB and Gesture Sensor
 ######################
 
