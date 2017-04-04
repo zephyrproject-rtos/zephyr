@@ -8,6 +8,7 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
+#include <kernel.h>
 /* for __deprecated */
 #include <toolchain.h>
 
@@ -455,55 +456,6 @@ int device_busy_check(struct device *chk_dev);
 /**
  * @}
  */
-
-/**
- * Synchronous calls API
- */
-
-#include <kernel.h>
-#include <stdbool.h>
-
-/**
- * Specific type for synchronizing calls among the 2 possible contexts
- */
-typedef struct {
-	/** Nanokernel semaphore used for fiber context */
-	struct k_sem f_sem;
-} device_sync_call_t;
-
-
-/**
- * @brief Initialize the context-dependent synchronization data
- *
- * @param sync A pointer to a valid device_sync_call_t
- */
-static inline void __deprecated device_sync_call_init(device_sync_call_t *sync)
-{
-	k_sem_init(&sync->f_sem, 0, UINT_MAX);
-}
-
-/**
- * @brief Wait for the isr to complete the synchronous call
- * Note: It will simply wait on the internal semaphore.
- *
- * @param sync A pointer to a valid device_sync_call_t
- */
-static inline void __deprecated device_sync_call_wait(device_sync_call_t *sync)
-{
-	k_sem_take(&sync->f_sem, K_FOREVER);
-}
-
-/**
- * @brief Signal the waiter about synchronization completion
- * Note: It will simply release the internal semaphore
- *
- * @param sync A pointer to a valid device_sync_call_t
- */
-static inline void __deprecated
-		   device_sync_call_complete(device_sync_call_t *sync)
-{
-	k_sem_give(&sync->f_sem);
-}
 
 #ifdef __cplusplus
 }
