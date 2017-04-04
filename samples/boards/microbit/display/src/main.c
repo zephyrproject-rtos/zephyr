@@ -24,7 +24,7 @@ void main(void)
 	int x, y;
 
 	/* Display countdown from '9' to '0' */
-	mb_display_str(disp, "9876543210", K_SECONDS(1));
+	mb_display_string(disp, K_SECONDS(1), "9876543210");
 
 	k_sleep(K_SECONDS(11));
 
@@ -42,6 +42,6 @@ void main(void)
 	mb_display_image(disp, &smiley, K_SECONDS(2));
 	k_sleep(K_SECONDS(2));
 
-	/* Show some text ("Zephyr!") */
-	mb_display_str(disp, "Zephyr!", K_SECONDS(1));
+	/* Show some scrolling text ("Hello Zephyr!") */
+	mb_display_print(disp, "Hello Zephyr!");
 }

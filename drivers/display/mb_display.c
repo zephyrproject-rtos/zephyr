@@ -16,6 +16,8 @@
 #include <board.h>
 #include <gpio.h>
 #include <device.h>
+#include <string.h>
+#include <misc/printk.h>
 
 #include <display/mb_display.h>
 
@@ -24,19 +26,30 @@
 #define DISPLAY_ROWS 3
 #define DISPLAY_COLS 9
 
+#define SCROLL_OFF   0
+#define SCROLL_START 1
+
+/* Time between scroll shifts */
+#define SCROLL_DURATION K_MSEC(CONFIG_MICROBIT_DISPLAY_SCROLL_STEP)
+
 struct mb_display {
 	struct device  *dev;      /* GPIO device */
 
 	struct k_timer  timer;    /* Rendering timer */
 
 	/* The following variables track the currently shown image */
-	int             cur;      /* Currently rendered row */
-	uint32_t        row[3];   /* Content (columns) for each row */
-	int64_t         expiry;   /* When to stop showing the current image */
+	int             cur;         /* Currently rendered row */
+	uint32_t        row[3];      /* Content (columns) for each row */
+	int64_t         expiry;      /* When to stop showing current image */
+	int32_t         duration;    /* Duration for each shown image */
 
-	int32_t         duration; /* Duration for each shown image */
+	struct mb_image img[2];      /* Current and next image */
+	uint16_t        scroll;      /* Scroll shift */
 
-	const char     *str;      /* String to be shown */
+	const char     *str;         /* String to be shown */
+
+	/* Buffer for printed strings */
+	char            str_buf[CONFIG_MICROBIT_DISPLAY_STR_MAX];
 };
 
 struct x_y {
@@ -57,10 +70,24 @@ static const struct x_y map[DISPLAY_ROWS][DISPLAY_COLS] = {
 static const uint32_t col_mask = (((~0UL) << LED_COL1_GPIO_PIN) &
 				  ((~0UL) >> (31 - LED_COL9_GPIO_PIN)));
 
+static inline void img_copy(struct mb_image *dst, const struct mb_image *src)
+{
+	memcpy(dst, src, sizeof(*dst));
+}
+
+static inline const struct mb_image *get_font(char ch)
+{
+	if (ch < MB_FONT_START || ch > MB_FONT_END) {
+		return &mb_font[' ' - MB_FONT_START];
+	}
+
+	return &mb_font[ch - MB_FONT_START];
+}
+
 #define GET_PIXEL(img, x, y) ((img)->row[y] & BIT(x))
 
-/* Precalculate all three rows of an image */
-static void set_img(struct mb_display *disp, const struct mb_image *img)
+/* Precalculate all three rows of an image and start the rendering. */
+static void start_image(struct mb_display *disp, const struct mb_image *img)
 {
 	int row, col;
 
@@ -78,6 +105,14 @@ static void set_img(struct mb_display *disp, const struct mb_image *img)
 	}
 
 	disp->cur = 0;
+
+	if (disp->duration == K_FOREVER) {
+		disp->expiry = K_FOREVER;
+	} else {
+		disp->expiry = k_uptime_get() + disp->duration;
+	}
+
+	k_timer_start(&disp->timer, K_NO_WAIT, K_MSEC(5));
 }
 
 #define ROW_PIN(n) (LED_ROW1_GPIO_PIN + (n))
@@ -102,6 +137,40 @@ static inline void update_pins(struct mb_display *disp, uint32_t val)
 	}
 }
 
+static void update_scroll(struct mb_display *disp)
+{
+	if (disp->scroll < 5) {
+		struct mb_image img;
+		int i;
+
+		for (i = 0; i < 5; i++) {
+			img.row[i] = (disp->img[0].row[i] >> disp->scroll) |
+				(disp->img[1].row[i] << (5 - disp->scroll));
+		}
+
+		disp->scroll++;
+		start_image(disp, &img);
+	} else {
+		if (!disp->str) {
+			disp->scroll = SCROLL_OFF;
+			return;
+		}
+
+		img_copy(&disp->img[0], &disp->img[1]);
+
+		if (disp->str[0]) {
+			img_copy(&disp->img[1], get_font(disp->str[0]));
+			disp->str++;
+		} else {
+			img_copy(&disp->img[1], get_font(' '));
+			disp->str = NULL;
+		}
+
+		disp->scroll = SCROLL_START;
+		start_image(disp, &disp->img[0]);
+	}
+}
+
 static void show_row(struct k_timer *timer)
 {
 	struct mb_display *disp = CONTAINER_OF(timer, struct mb_display, timer);
@@ -111,11 +180,13 @@ static void show_row(struct k_timer *timer)
 
 	if (disp->cur == 0 && disp->expiry != K_FOREVER &&
 	    k_uptime_get() > disp->expiry) {
-		k_timer_stop(&disp->timer);
-
-		if (disp->str && disp->str[0]) {
-			mb_display_char(disp, disp->str[0], disp->duration);
+		if (disp->scroll) {
+			update_scroll(disp);
+		} else if (disp->str && disp->str[0]) {
+			start_image(disp, get_font(disp->str[0]));
 			disp->str++;
+		} else {
+			k_timer_stop(&disp->timer);
 		}
 	}
 }
@@ -134,44 +205,69 @@ static struct mb_display display = {
 void mb_display_image(struct mb_display *disp, const struct mb_image *img,
 		      int32_t duration)
 {
-	set_img(disp, img);
+	disp->str = NULL;
+	disp->scroll = SCROLL_OFF;
+	disp->duration = duration;
 
-	if (duration == K_FOREVER) {
-		disp->expiry = K_FOREVER;
-	} else {
-		disp->expiry = k_uptime_get() + duration;
-	}
-
-	k_timer_start(&disp->timer, K_NO_WAIT, K_MSEC(5));
+	start_image(disp, img);
 }
 
 void mb_display_stop(struct mb_display *disp)
 {
 	k_timer_stop(&disp->timer);
 	disp->str = NULL;
+	disp->scroll = SCROLL_OFF;
 }
 
 void mb_display_char(struct mb_display *disp, char chr, int32_t duration)
 {
-	if (chr < MB_FONT_START || chr > MB_FONT_END) {
-		chr = ' ';
-	}
-
-	mb_display_image(disp, &mb_font[chr - MB_FONT_START], duration);
+	mb_display_image(disp, get_font(chr), duration);
 }
 
-void mb_display_str(struct mb_display *disp, const char *str, int32_t duration)
+void mb_display_string(struct mb_display *disp, int32_t duration,
+		       const char *fmt, ...)
 {
-	__ASSERT(str, "NULL string");
+	va_list ap;
 
-	if (*str == '\0') {
+	va_start(ap, fmt);
+	vsnprintk(disp->str_buf, sizeof(disp->str_buf), fmt, ap);
+	va_end(ap);
+
+	if (disp->str_buf[0] == '\0') {
 		return;
 	}
 
-	disp->str = &str[1];
+	disp->str = &disp->str_buf[1];
 	disp->duration = duration;
+	disp->scroll = SCROLL_OFF;
 
-	mb_display_char(disp, *str, duration);
+	start_image(disp, get_font(disp->str_buf[0]));
+}
+
+void mb_display_print(struct mb_display *disp, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintk(disp->str_buf, sizeof(disp->str_buf), fmt, ap);
+	va_end(ap);
+
+	if (disp->str_buf[0] == '\0') {
+		return;
+	}
+
+	if (disp->str_buf[1] == '\0') {
+		disp->str = NULL;
+	} else {
+		disp->str = &disp->str_buf[2];
+	}
+
+	img_copy(&disp->img[0], get_font(disp->str_buf[0]));
+	img_copy(&disp->img[1], get_font(disp->str_buf[1]));
+	disp->scroll = SCROLL_START;
+	disp->duration = SCROLL_DURATION;
+
+	start_image(disp, &disp->img[0]);
 }
 
 struct mb_display *mb_display_get(void)

@@ -17,6 +17,7 @@
  * @{
  */
 
+#include <stdio.h>
 #include <stdint.h>
 #include <misc/util.h>
 
@@ -110,11 +111,32 @@ void mb_display_char(struct mb_display *disp, char chr, int32_t duration);
 /**
  * @brief Display a string of characters on the BBC micro:bit LED display.
  *
+ * This function takes a printf-style format string and outputs it one
+ * character at a time to the display. For scrolling-based string output
+ * see the mb_display_print() API.
+ *
  * @param disp     Display object.
- * @param str      String to display.
  * @param duration Duration how long to show each character (in milliseconds).
+ * @param fmt      printf-style format string.
+ * @param ...      Optional list of format arguments.
  */
-void mb_display_str(struct mb_display *disp, const char *str, int32_t duration);
+__printf_like(3, 4) void mb_display_string(struct mb_display *disp,
+					   int32_t duration,
+					   const char *fmt, ...);
+
+/**
+ * @brief Print a string of characters on the BBC micro:bit LED display.
+ *
+ * This function takes a printf-style format string and outputs it in a
+ * scrolling fashion to the display. For character-by-character output
+ * instead of scrolling, see the mb_display_string() API.
+ *
+ * @param disp     Display object.
+ * @param fmt      printf-style format string
+ * @param ...      Optional list of format arguments.
+ */
+__printf_like(2, 3) void mb_display_print(struct mb_display *disp,
+					  const char *fmt, ...);
 
 /**
  * @brief Stop the ongoing display of an image.

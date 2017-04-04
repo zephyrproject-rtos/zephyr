@@ -9,14 +9,16 @@
 config MICROBIT_DISPLAY
 	bool "BBC micro:bit 5x5 LED Display support"
 	depends on BOARD_BBC_MICROBIT
+	depends on PRINTK
 	depends on GPIO
 	help
 	  Enable this to be able to display images and text on the 5x5
 	  LED matrix display on the BBC micro:bit.
 
+if MICROBIT_DISPLAY
+
 config MICROBIT_DISPLAY_PIN_GRANULARITY
 	bool "Access the GPIO on a per-pin instead of per-port basis"
-	depends on MICROBIT_DISPLAY
 	help
 	  By default, the micro:bit display driver will update the GPIO
 	  pins of the display (pins 4 through 15) by accessing the entire
@@ -24,3 +26,24 @@ config MICROBIT_DISPLAY_PIN_GRANULARITY
 	  with other peripherals connected to the same GPIO port. Select
 	  this option if other peripherals are connected to the same GPIO
 	  port.
+
+config MICROBIT_DISPLAY_STR_MAX
+	int "Maximum length of strings that can be shown on the display"
+	range 3 1024
+	default 40
+	help
+	  This value specifies the maximum length of strings that can
+	  be displayed using the mb_display_string() and mb_display_print()
+	  APIs.
+
+config MICROBIT_DISPLAY_SCROLL_STEP
+	int "Duration between two string scrolling steps (in milliseconds)"
+	range 20 2000
+	default 100
+	help
+	  This value specifies the time between two scrolling steps of the
+	  string scrolling functionality. Smaller values mean faster
+	  scrolling whereas bigger values mean slower scrolling. It is
+	  usually best to leave this at its default value (100ms).
+
+endif # MICROBIT_DISPLAY
