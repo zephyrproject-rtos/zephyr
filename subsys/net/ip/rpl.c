@@ -1271,24 +1271,25 @@ struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 		for (i = 0; i < CONFIG_NET_RPL_MAX_DAG_PER_INSTANCE; i++) {
 			dag = &instance->dags[i];
 
-			if (net_rpl_dag_is_used(dag)) {
-				if (net_ipv6_addr_cmp(&dag->dag_id, dag_id)) {
-					version = dag->version;
-
-					net_rpl_lollipop_increment(&version);
-				}
-
-				if (dag == dag->instance->current_dag) {
-					NET_DBG("Dropping a joined DAG when "
-						"setting this node as root");
-					dag->instance->current_dag = NULL;
-				} else {
-					NET_DBG("Dropping a DAG when "
-						"setting this node as root");
-				}
-
-				net_rpl_free_dag(iface, dag);
+			if (!net_rpl_dag_is_used(dag)) {
+				continue;
 			}
+
+			if (net_ipv6_addr_cmp(&dag->dag_id, dag_id)) {
+				version = dag->version;
+				net_rpl_lollipop_increment(&version);
+			}
+
+			if (dag == dag->instance->current_dag) {
+				NET_DBG("Dropping a joined DAG when "
+					"setting this node as root");
+				dag->instance->current_dag = NULL;
+			} else {
+				NET_DBG("Dropping a DAG when "
+					"setting this node as root");
+			}
+
+			net_rpl_free_dag(iface, dag);
 		}
 	}
 
@@ -1440,21 +1441,22 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 	if (parent == dag->preferred_parent || !dag->preferred_parent) {
 		dag->rank = NET_RPL_INFINITE_RANK;
 
-		if (net_rpl_dag_is_joined(dag)) {
-			if (dag->instance->default_route) {
-				NET_DBG("Removing default route %s",
-					net_sprint_ipv6_addr(addr));
+		if (!net_rpl_dag_is_joined(dag)) {
+			return;
+		}
 
-				net_if_router_rm(dag->instance->default_route);
+		if (dag->instance->default_route) {
+			NET_DBG("Removing default route %s",
+				net_sprint_ipv6_addr(addr));
 
-				dag->instance->default_route = NULL;
-			}
+			net_if_router_rm(dag->instance->default_route);
+			dag->instance->default_route = NULL;
+		}
 
-			/* Send no-path DAO only to preferred parent, if any */
-			if (parent == dag->preferred_parent) {
-				dao_send(parent, NET_RPL_ZERO_LIFETIME, NULL);
-				net_rpl_set_preferred_parent(iface, dag, NULL);
-			}
+		/* Send no-path DAO only to preferred parent, if any */
+		if (parent == dag->preferred_parent) {
+			dao_send(parent, NET_RPL_ZERO_LIFETIME, NULL);
+			net_rpl_set_preferred_parent(iface, dag, NULL);
 		}
 	}
 
@@ -1465,29 +1467,30 @@ static void net_rpl_remove_parent(struct net_if *iface,
 				  struct net_rpl_parent *parent,
 				  struct net_nbr *nbr)
 {
-	if (!nbr) {
-		nbr = net_rpl_get_nbr(parent);
-	}
+#if defined(CONFIG_NET_DEBUG_RPL)
+	struct in6_addr *addr;
+	struct net_linkaddr_storage *lladdr;
+#endif
 
 	NET_ASSERT(iface);
 
-	if (nbr) {
+	if (!nbr) {
+		nbr = net_rpl_get_nbr(parent);
+		if (!nbr) {
+			return;
+		}
+	}
+
 #if defined(CONFIG_NET_DEBUG_RPL)
-		struct in6_addr *addr;
-		struct net_linkaddr_storage *lladdr;
+	addr = net_rpl_get_parent_addr(iface, parent);
+	lladdr = net_nbr_get_lladdr(nbr->idx);
 
-		addr = net_rpl_get_parent_addr(iface, parent);
-		lladdr = net_nbr_get_lladdr(nbr->idx);
-
-		NET_DBG("Removing parent %s [%s]",
-			net_sprint_ipv6_addr(addr),
-			net_sprint_ll_addr(lladdr->addr, lladdr->len));
+	NET_DBG("Removing parent %s [%s]", net_sprint_ipv6_addr(addr),
+		net_sprint_ll_addr(lladdr->addr, lladdr->len));
 #endif /* CONFIG_NET_DEBUG_RPL */
 
-		net_rpl_nullify_parent(iface, parent);
-
-		nbr_free(nbr);
-	}
+	net_rpl_nullify_parent(iface, parent);
+	nbr_free(nbr);
 }
 
 /* Remove DAG parents with a rank that is at least the same as minimum_rank.
@@ -2960,8 +2963,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 
 	NET_ASSERT_INFO(!pos && !frag, "DIO reading failure");
 
-	net_rpl_process_dio(net_nbuf_iface(buf), &NET_IPV6_BUF(buf)->src,
-			    &dio);
+	net_rpl_process_dio(net_nbuf_iface(buf), &NET_IPV6_BUF(buf)->src, &dio);
 
 out:
 	return NET_DROP;
@@ -3605,7 +3607,6 @@ int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr)
 	frag = buf->frags;
 
 	if (NET_IPV6_BUF(buf)->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
-		NET_DBG("Next header is not NET_IPV6_NEXTHDR_HBHO");
 		return 0;
 	}
 
