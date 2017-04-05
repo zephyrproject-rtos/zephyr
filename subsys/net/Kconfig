@@ -39,6 +39,18 @@ config SYS_LOG_NET_BUF_LEVEL
 	  3 INFO, write SYS_LOG_INF in adition to previous levels
 	  4 DEBUG, write SYS_LOG_DBG in adition to previous levels
 
+config NET_BUF_WARN_ALLOC_INTERVAL
+	int
+	prompt "Interval of Network buffer allocation warnings"
+	depends on NET_BUF_LOG
+	default 1
+	range 0 60
+	help
+	Interval in seconds of Network buffer allocation warnings which are
+	generated when a buffer cannot immediately be allocated with K_FOREVER
+	which may lead to deadlocks. Setting it to 0 makes warnings to be
+	printed only once per allocation.
+
 config NET_BUF_SIMPLE_LOG
 	bool "Network buffer memory debugging"
 	depends on NET_BUF_LOG

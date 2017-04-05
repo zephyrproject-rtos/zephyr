@@ -36,7 +36,11 @@
 #define NET_BUF_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_LOG */
 
-#define WARN_ALLOC_INTERVAL K_SECONDS(1)
+#if CONFIG_NET_BUF_WARN_ALLOC_INTERVAL > 0
+#define WARN_ALLOC_INTERVAL K_SECONDS(CONFIG_NET_BUF_WARN_ALLOC_INTERVAL)
+#else
+#define WARN_ALLOC_INTERVAL K_FOREVER
+#endif
 
 /* Helpers to access the storage array, since we don't have access to its
  * type at this point anymore.
