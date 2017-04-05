@@ -29,21 +29,11 @@ config MICROBIT_DISPLAY_PIN_GRANULARITY
 
 config MICROBIT_DISPLAY_STR_MAX
 	int "Maximum length of strings that can be shown on the display"
-	range 3 1024
+	range 3 255
 	default 40
 	help
 	  This value specifies the maximum length of strings that can
 	  be displayed using the mb_display_string() and mb_display_print()
 	  APIs.
-
-config MICROBIT_DISPLAY_SCROLL_STEP
-	int "Duration between two string scrolling steps (in milliseconds)"
-	range 20 2000
-	default 80
-	help
-	  This value specifies the time between two scrolling steps of the
-	  string scrolling functionality. Smaller values mean faster
-	  scrolling whereas bigger values mean slower scrolling. It is
-	  usually best to leave this at its default value (80ms).
 
 endif # MICROBIT_DISPLAY

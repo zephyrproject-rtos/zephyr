@@ -23,5 +23,5 @@ Sample Output
 =============
 
 The sample app displays a countdown of the characters 9-0, iterates
-through all pixels one-by-one, displays a smiley face, displays the text
-"Hello Zephyr!" by scrolling, and then stops.
+through all pixels one-by-one, displays a smiley face, some animations,
+and finally the text "Hello Zephyr!" by scrolling.

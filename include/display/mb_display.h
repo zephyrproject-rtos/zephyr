@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <misc/util.h>
 
 #ifdef __cplusplus
@@ -42,6 +43,27 @@ struct mb_image {
 		} r[5];
 		uint8_t row[5];
 	};
+};
+
+/**
+ * @brief Display mode.
+ *
+ * First 16 bits are reserved for modes, last 16 for flags.
+ */
+enum mb_display_mode {
+	/** Default mode ("single" for images, "scroll" for text). */
+	MB_DISPLAY_MODE_DEFAULT,
+
+	/** Display images sequentially, one at a time. */
+	MB_DISPLAY_MODE_SINGLE,
+
+	/** Display images by scrolling. */
+	MB_DISPLAY_MODE_SCROLL,
+
+	/* Display flags, i.e. modifiers to the chosen mode */
+
+	/** Loop back to the beginning when reaching the last image. */
+	MB_DISPLAY_FLAG_LOOP        = BIT(16),
 };
 
 /**
@@ -90,52 +112,41 @@ struct mb_display;
 struct mb_display *mb_display_get(void);
 
 /**
- * @brief Display an image on the BBC micro:bit LED display.
+ * @brief Display one or more images on the BBC micro:bit LED display.
  *
- * @param disp     Display object.
- * @param img      Bitmap of pixels.
- * @param duration Duration how long to show the image (in milliseconds).
+ * This function takes an array of one or more images and renders them
+ * sequentially on the micro:bit display. The call is asynchronous, i.e.
+ * the processing of the display happens in the background. If there is
+ * another image being displayed it will be canceled and the new one takes
+ * over.
+ *
+ * @param disp      Display object.
+ * @param mode      One of the MB_DISPLAY_MODE_* options.
+ * @param duration  Duration how long to show each image (in milliseconds).
+ * @param img       Array of image bitmaps (struct mb_image objects).
+ * @param img_count Number of images in 'img' array.
  */
-void mb_display_image(struct mb_display *disp, const struct mb_image *img,
-		      int32_t duration);
-
-/**
- * @brief Display a character on the BBC micro:bit LED display.
- *
- * @param disp     Display object.
- * @param chr      Character to display.
- * @param duration Duration how long to show the character (in milliseconds).
- */
-void mb_display_char(struct mb_display *disp, char chr, int32_t duration);
-
-/**
- * @brief Display a string of characters on the BBC micro:bit LED display.
- *
- * This function takes a printf-style format string and outputs it one
- * character at a time to the display. For scrolling-based string output
- * see the mb_display_print() API.
- *
- * @param disp     Display object.
- * @param duration Duration how long to show each character (in milliseconds).
- * @param fmt      printf-style format string.
- * @param ...      Optional list of format arguments.
- */
-__printf_like(3, 4) void mb_display_string(struct mb_display *disp,
-					   int32_t duration,
-					   const char *fmt, ...);
+void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
+		      const struct mb_image *img, uint8_t img_count);
 
 /**
  * @brief Print a string of characters on the BBC micro:bit LED display.
  *
  * This function takes a printf-style format string and outputs it in a
- * scrolling fashion to the display. For character-by-character output
- * instead of scrolling, see the mb_display_string() API.
+ * scrolling fashion to the display.
+ *
+ * The call is asynchronous, i.e. the processing of the display happens in
+ * the background. If there is another image or string being displayed it
+ * will be canceled and the new one takes over.
  *
  * @param disp     Display object.
+ * @param mode     One of the MB_DISPLAY_MODE_* options.
+ * @param duration Duration how long to show each character (in milliseconds).
  * @param fmt      printf-style format string
  * @param ...      Optional list of format arguments.
  */
-__printf_like(2, 3) void mb_display_print(struct mb_display *disp,
+__printf_like(4, 5) void mb_display_print(struct mb_display *disp,
+					  uint32_t mode, int32_t duration,
 					  const char *fmt, ...);
 
 /**
