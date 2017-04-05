@@ -8,9 +8,14 @@ Bluetooth stack:
 
 * Bluetooth 5.0 compliant (ESR10)
 
-* Bluetooth Controller support (LE Link Layer)
+* Bluetooth Low Energy Controller support (LE Link Layer)
 
-  * Currently supports Nordic Semiconductor nRF51 and nRF52
+  * BLE 5.0 compliant
+  * Unlimited role and connection count, all roles supported
+  * Concurrent multi-protocol support ready
+  * Intelligent scheduling of roles to minimize overlap
+  * Portable design to any open BLE radio, currently supports Nordic
+    Semiconductor nRF51 and nRF52
 
 * Generic Access Profile (GAP) with all possible LE roles
 
