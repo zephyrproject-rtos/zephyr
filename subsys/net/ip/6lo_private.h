@@ -85,7 +85,7 @@
 #define NET_6LO_NHC_UDP_4_BIT_PORT	0xF0B
 
 #define IPHC ((frag)->data)
-#define CIPHC ((buf->frags)->data)
+#define CIPHC ((pkt->frags)->data)
 
 #define NET_6LO_FRAG1_HDR_LEN		4
 #define NET_6LO_FRAGN_HDR_LEN		5

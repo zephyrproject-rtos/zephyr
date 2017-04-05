@@ -539,16 +539,14 @@ static inline bool read_rxfifo_content(struct mcr20a_spi *spi,
 
 static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 {
-	struct net_buf *pkt_buf = NULL;
-	struct net_buf *buf;
+	struct net_pkt *pkt = NULL;
+	struct net_buf *frag;
 	uint8_t pkt_len;
-
-	buf = NULL;
 
 	pkt_len = len - MCR20A_FCS_LENGTH;
 
-	buf = net_pkt_get_reserve_rx(0, K_NO_WAIT);
-	if (!buf) {
+	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	if (!pkt) {
 		SYS_LOG_ERR("No buf available");
 		goto out;
 	}
@@ -558,22 +556,22 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 	/**
 	 * Reserve 1 byte for length
 	 */
-	net_pkt_set_ll_reserve(buf, 1);
+	net_pkt_set_ll_reserve(pkt, 1);
 #endif
-	pkt_buf = net_pkt_get_frag(buf, K_NO_WAIT);
-	if (!pkt_buf) {
-		SYS_LOG_ERR("No pkt_buf available");
+	frag = net_pkt_get_frag(pkt, K_NO_WAIT);
+	if (!frag) {
+		SYS_LOG_ERR("No frag available");
 		goto out;
 	}
 
-	net_buf_frag_insert(buf, pkt_buf);
+	net_pkt_frag_insert(pkt, frag);
 
-	if (!read_rxfifo_content(&mcr20a->spi, pkt_buf, pkt_len)) {
+	if (!read_rxfifo_content(&mcr20a->spi, frag, pkt_len)) {
 		SYS_LOG_ERR("No content read");
 		goto out;
 	}
 
-	if (ieee802154_radio_handle_ack(mcr20a->iface, buf) == NET_OK) {
+	if (ieee802154_radio_handle_ack(mcr20a->iface, pkt) == NET_OK) {
 		SYS_LOG_DBG("ACK packet handled");
 		goto out;
 	}
@@ -584,10 +582,10 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 		    mcr20a_get_rssi(mcr20a->lqi));
 
 #if defined(CONFIG_IEEE802154_MCR20A_RAW)
-	net_buf_add_u8(pkt_buf, mcr20a->lqi);
+	net_buf_add_u8(frag, mcr20a->lqi);
 #endif
 
-	if (net_recv_data(mcr20a->iface, buf) < 0) {
+	if (net_recv_data(mcr20a->iface, pkt) < 0) {
 		SYS_LOG_DBG("Packet dropped by NET stack");
 		goto out;
 	}
@@ -597,8 +595,8 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, uint8_t len)
 			  CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE);
 	return;
 out:
-	if (buf) {
-		net_buf_unref(buf);
+	if (pkt) {
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -1031,12 +1029,12 @@ error:
 }
 
 static inline bool write_txfifo_content(struct mcr20a_spi *spi,
-					struct net_buf *buf,
+					struct net_pkt *pkt,
 					struct net_buf *frag)
 {
 	uint8_t cmd[2 + MCR20A_PSDU_LENGTH];
-	uint8_t payload_len = net_pkt_ll_reserve(buf) + frag->len;
-	uint8_t *payload = frag->data - net_pkt_ll_reserve(buf);
+	uint8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
+	uint8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
 	bool retval;
 
 	k_sem_take(&spi->spi_sem, K_FOREVER);
@@ -1067,7 +1065,7 @@ static inline bool write_txfifo_content(struct mcr20a_spi *spi,
 }
 
 static int mcr20a_tx(struct device *dev,
-		     struct net_buf *buf,
+		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
@@ -1077,7 +1075,7 @@ static int mcr20a_tx(struct device *dev,
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	SYS_LOG_DBG("%p (%u)",
-		    frag, net_pkt_ll_reserve(buf) + frag->len);
+		    frag, net_pkt_ll_reserve(pkt) + frag->len);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
 		SYS_LOG_ERR("Failed to mask IRQ_B");
@@ -1089,7 +1087,7 @@ static int mcr20a_tx(struct device *dev,
 		goto error;
 	}
 
-	if (!write_txfifo_content(&mcr20a->spi, buf, frag)) {
+	if (!write_txfifo_content(&mcr20a->spi, pkt, frag)) {
 		SYS_LOG_ERR("Did not write properly into TX FIFO");
 		goto error;
 	}

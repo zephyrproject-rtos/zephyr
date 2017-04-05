@@ -509,7 +509,8 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-static void allocs_cb(struct net_buf *buf,
+static void allocs_cb(struct net_pkt *pkt,
+		      struct net_buf *buf,
 		      const char *func_alloc,
 		      int line_alloc,
 		      const char *func_free,
@@ -529,6 +530,24 @@ static void allocs_cb(struct net_buf *buf,
 		}
 	}
 
+	if (buf) {
+		goto buf;
+	}
+
+	if (func_alloc) {
+		if (in_use) {
+			printk("%p/%d\t%5s\t%5s\t%s():%d\n", pkt, pkt->ref,
+			       str, net_pkt_slab2str(pkt->slab), func_alloc,
+			       line_alloc);
+		} else {
+			printk("%p\t%5s\t%5s\t%s():%d -> %s():%d\n", pkt,
+			       str, net_pkt_slab2str(pkt->slab), func_alloc,
+			       line_alloc, func_free, line_free);
+		}
+	}
+
+	return;
+buf:
 	if (func_alloc) {
 		if (in_use) {
 			printk("%p/%d\t%5s\t%5s\t%s():%d\n", buf, buf->ref,
@@ -551,8 +570,8 @@ static int shell_cmd_allocs(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-	printk("Network buffer allocations\n\n");
-	printk("net_buf\t\tStatus\tPool\tFunction alloc -> freed\n");
+	printk("Network memory allocations\n\n");
+	printk("memory\t\tStatus\tPool\tFunction alloc -> freed\n");
 	net_pkt_allocs_foreach(allocs_cb, NULL);
 #else
 	printk("Enable CONFIG_NET_DEBUG_NET_PKT to see allocations.\n");
@@ -806,20 +825,26 @@ static int shell_cmd_iface(int argc, char *argv[])
 struct ctx_info {
 	int pos;
 	bool are_external_pools;
-	struct net_buf_pool *tx_pools[CONFIG_NET_MAX_CONTEXTS];
+	struct k_mem_slab *tx_slabs[CONFIG_NET_MAX_CONTEXTS];
 	struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
 };
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-static bool pool_found_already(struct ctx_info *info,
-			       struct net_buf_pool *pool)
+static bool slab_pool_found_already(struct ctx_info *info,
+				    struct k_mem_slab *slab,
+				    struct net_buf_pool *pool)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_CONTEXTS; i++) {
-		if (info->tx_pools[i] == pool ||
-		    info->data_pools[i] == pool) {
-			return true;
+		if (slab) {
+			if (info->tx_slabs[i] == slab) {
+				return true;
+			}
+		} else {
+			if (info->data_pools[i] == pool) {
+				return true;
+			}
 		}
 	}
 
@@ -831,34 +856,35 @@ static void context_info(struct net_context *context, void *user_data)
 {
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	struct ctx_info *info = user_data;
+	struct k_mem_slab *slab;
 	struct net_buf_pool *pool;
 
 	if (!net_context_is_used(context)) {
 		return;
 	}
 
-	if (context->tx_pool) {
-		pool = context->tx_pool();
+	if (context->tx_slab) {
+		slab = context->tx_slab();
 
-		if (pool_found_already(info, pool)) {
+		if (slab_pool_found_already(info, slab, NULL)) {
 			return;
 		}
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-		printk("ETX (%s)\t%d\t%d\t%d\t%p\n",
-		       pool->name, pool->pool_size, pool->buf_count,
-		       pool->avail_count, pool);
+		printk("ETX\t%zu\t%u\t%u\t%p\n",
+		       slab->num_blocks * slab->block_size,
+		       slab->num_blocks, k_mem_slab_num_free_get(slab), slab);
 #else
-		printk("ETX     \t%d\t%p\n", pool->buf_count, pool);
+		printk("ETX     \t%d\t%p\n", slab->num_blocks, slab);
 #endif
 		info->are_external_pools = true;
-		info->tx_pools[info->pos] = pool;
+		info->tx_slabs[info->pos] = slab;
 	}
 
 	if (context->data_pool) {
 		pool = context->data_pool();
 
-		if (pool_found_already(info, pool)) {
+		if (slab_pool_found_already(info, NULL, pool)) {
 			return;
 		}
 
@@ -879,7 +905,8 @@ static void context_info(struct net_context *context, void *user_data)
 
 static int shell_cmd_mem(int argc, char *argv[])
 {
-	struct net_buf_pool *tx, *rx, *rx_data, *tx_data;
+	struct k_mem_slab *rx, *tx;
+	struct net_buf_pool *rx_data, *tx_data;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -893,11 +920,13 @@ static int shell_cmd_mem(int argc, char *argv[])
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	printk("Name\t\t\tSize\tCount\tAvail\tAddress\n");
 
-	printk("RX (%s)\t\t%d\t%d\t%d\t%p\n",
-	       rx->name, rx->pool_size, rx->buf_count, rx->avail_count, rx);
+	printk("RX\t\t%zu\t%d\t%u\t%p\n",
+	       rx->num_blocks * rx->block_size,
+	       rx->num_blocks, k_mem_slab_num_free_get(rx), rx);
 
-	printk("TX (%s)\t\t%d\t%d\t%d\t%p\n",
-	       tx->name, tx->pool_size, tx->buf_count, tx->avail_count, tx);
+	printk("TX\t\t%zu\t%d\t%u\t%p\n",
+	       tx->num_blocks * tx->block_size,
+	       tx->num_blocks, k_mem_slab_num_free_get(tx), tx);
 
 	printk("RX DATA (%s)\t%d\t%d\t%d\t%p\n",
 	       rx_data->name, rx_data->pool_size, rx_data->buf_count,
@@ -909,8 +938,8 @@ static int shell_cmd_mem(int argc, char *argv[])
 #else
 	printk("Name    \tCount\tAddress\n");
 
-	printk("RX      \t%d\t%p\n", rx->buf_count, rx);
-	printk("TX      \t%d\t%p\n", tx->buf_count, tx);
+	printk("RX      \t%d\t%p\n", rx->num_blocks, rx);
+	printk("TX      \t%d\t%p\n", tx->num_blocks, tx);
 	printk("RX DATA \t%d\t%p\n", rx_data->buf_count, rx_data);
 	printk("TX DATA \t%d\t%p\n", tx_data->buf_count, tx_data);
 #endif /* CONFIG_NET_DEBUG_NET_PKT */
@@ -1018,7 +1047,7 @@ K_SEM_DEFINE(ping_timeout, 0, 1);
 
 #if defined(CONFIG_NET_IPV6)
 
-static enum net_verdict _handle_ipv6_echo_reply(struct net_buf *buf);
+static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt);
 
 static struct net_icmpv6_handler ping6_handler = {
 	.type = NET_ICMPV6_ECHO_REPLY,
@@ -1031,15 +1060,15 @@ static inline void _remove_ipv6_ping_handler(void)
 	net_icmpv6_unregister_handler(&ping6_handler);
 }
 
-static enum net_verdict _handle_ipv6_echo_reply(struct net_buf *buf)
+static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
 {
 	char addr[NET_IPV6_ADDR_LEN];
 
 	snprintk(addr, sizeof(addr), "%s",
-		 net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->dst));
+		 net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));
 
 	printk("Received echo reply from %s to %s\n",
-	       net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src), addr);
+	       net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src), addr);
 
 	k_sem_give(&ping_timeout);
 	_remove_ipv6_ping_handler();
@@ -1077,7 +1106,7 @@ static int _ping_ipv6(char *host)
 
 #if defined(CONFIG_NET_IPV4)
 
-static enum net_verdict _handle_ipv4_echo_reply(struct net_buf *buf);
+static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt);
 
 static struct net_icmpv4_handler ping4_handler = {
 	.type = NET_ICMPV4_ECHO_REPLY,
@@ -1090,15 +1119,15 @@ static inline void _remove_ipv4_ping_handler(void)
 	net_icmpv4_unregister_handler(&ping4_handler);
 }
 
-static enum net_verdict _handle_ipv4_echo_reply(struct net_buf *buf)
+static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt)
 {
 	char addr[NET_IPV4_ADDR_LEN];
 
 	snprintk(addr, sizeof(addr), "%s",
-		 net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->dst));
+		 net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
 
 	printk("Received echo reply from %s to %s\n",
-	       net_sprint_ipv4_addr(&NET_IPV4_BUF(buf)->src), addr);
+	       net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src), addr);
 
 	k_sem_give(&ping_timeout);
 	_remove_ipv4_ping_handler();
@@ -1470,7 +1499,7 @@ static int shell_cmd_tcp(int argc, char *argv[])
 
 		if (!strcmp(argv[arg], "send")) {
 			/* tcp send <data> */
-			struct net_buf *buf;
+			struct net_pkt *pkt;
 
 			if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
 				printk("Not connected\n");
@@ -1482,25 +1511,25 @@ static int shell_cmd_tcp(int argc, char *argv[])
 				return 0;
 			}
 
-			buf = net_pkt_get_tx(tcp_ctx, TCP_TIMEOUT);
-			if (!buf) {
-				printk("Out of bufs, msg cannot be sent.\n");
+			pkt = net_pkt_get_tx(tcp_ctx, TCP_TIMEOUT);
+			if (!pkt) {
+				printk("Out of pkts, msg cannot be sent.\n");
 				return 0;
 			}
 
-			ret = net_pkt_append(buf, strlen(argv[arg]),
+			ret = net_pkt_append(pkt, strlen(argv[arg]),
 					      argv[arg], TCP_TIMEOUT);
 			if (!ret) {
-				printk("Cannot build msg (out of bufs)\n");
-				net_pkt_unref(buf);
+				printk("Cannot build msg (out of pkts)\n");
+				net_pkt_unref(pkt);
 				return 0;
 			}
 
-			ret = net_context_send(buf, tcp_sent_cb, TCP_TIMEOUT,
+			ret = net_context_send(pkt, tcp_sent_cb, TCP_TIMEOUT,
 					       NULL, NULL);
 			if (ret < 0) {
 				printk("Cannot send msg (%d)\n", ret);
-				net_pkt_unref(buf);
+				net_pkt_unref(pkt);
 				return 0;
 			}
 
@@ -1550,14 +1579,14 @@ static int shell_cmd_help(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	/* Keep the commands in alphabetical order */
-	printk("net allocs\n\tPrint network buffer allocations\n");
+	printk("net allocs\n\tPrint network memory allocations\n");
 	printk("net conn\n\tPrint information about network connections\n");
 	printk("net dns\n\tShow how DNS is configured\n");
 	printk("net dns cancel\n\tCancel all pending requests\n");
 	printk("net dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default)"
 	       " or IPv6 address for a host name\n");
 	printk("net iface\n\tPrint information about network interfaces\n");
-	printk("net mem\n\tPrint network buffer information\n");
+	printk("net mem\n\tPrint network memory information\n");
 	printk("net nbr\n\tPrint neighbor information\n");
 	printk("net nbr rm <IPv6 address>\n\tRemove neighbor from cache\n");
 	printk("net ping <host>\n\tPing a network host\n");

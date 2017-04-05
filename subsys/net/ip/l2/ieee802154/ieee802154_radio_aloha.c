@@ -20,12 +20,12 @@
 #include "ieee802154_radio_utils.h"
 
 static inline int aloha_tx_fragment(struct net_if *iface,
-				    struct net_buf *buf,
+				    struct net_pkt *pkt,
 				    struct net_buf *frag)
 {
 	uint8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	bool ack_required = prepare_for_ack(ctx, buf);
+	bool ack_required = prepare_for_ack(ctx, pkt);
 	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	int ret = -EIO;
 
@@ -34,7 +34,7 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 	while (retries) {
 		retries--;
 
-		ret = radio->tx(iface->dev, buf, frag);
+		ret = radio->tx(iface->dev, pkt, frag);
 		if (ret) {
 			continue;
 		}
@@ -48,19 +48,19 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 	return ret;
 }
 
-static int aloha_radio_send(struct net_if *iface, struct net_buf *buf)
+static int aloha_radio_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	NET_DBG("buf %p (frags %p)", buf, buf->frags);
+	NET_DBG("pkt %p (frags %p)", pkt, pkt->frags);
 
-	return tx_buffer_fragments(iface, buf, aloha_tx_fragment);
+	return tx_packet_fragments(iface, pkt, aloha_tx_fragment);
 }
 
 static enum net_verdict aloha_radio_handle_ack(struct net_if *iface,
-					       struct net_buf *buf)
+					       struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
-	return handle_ack(ctx, buf);
+	return handle_ack(ctx, pkt);
 }
 
 /* Declare the public Radio driver function used by the HW drivers */

@@ -70,7 +70,7 @@ struct zoap_reply replies[NUM_REPLIES];
 
 #define ZOAP_BUF_SIZE 128
 
-NET_BUF_POOL_DEFINE(zoap_pkt_pool, 4, 0, sizeof(struct net_pkt), NULL);
+NET_PKT_TX_SLAB_DEFINE(zoap_pkt_slab, 4);
 NET_BUF_POOL_DEFINE(zoap_data_pool, 4, ZOAP_BUF_SIZE, 0, NULL);
 
 static const char *const test_path[] = { "test", NULL };
@@ -100,7 +100,7 @@ static int resource_reply_cb(const struct zoap_packet *response,
 			     const struct sockaddr *from)
 {
 
-	struct net_buf *frag = response->buf->frags;
+	struct net_buf *frag = response->pkt->frags;
 
 	while (frag) {
 		msg_dump("reply", frag->data, frag->len);
@@ -184,9 +184,10 @@ void dtls_client(void)
 	int ret;
 	struct udp_context ctx;
 	struct dtls_timing_context timer;
-	struct zoap_packet request, pkt;
+	struct zoap_packet request, zkt;
 	struct zoap_reply *reply;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	uint8_t observe = 0;
 	const char *const *p;
 	uint16_t len;
@@ -281,8 +282,8 @@ void dtls_client(void)
 
 	/* Write to server */
 retry:
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
 		goto exit;
 	}
 
@@ -291,9 +292,9 @@ retry:
 		goto exit;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	ret = zoap_packet_init(&request, buf);
+	ret = zoap_packet_init(&request, pkt);
 	if (ret < 0) {
 		goto exit;
 	}
@@ -336,7 +337,7 @@ retry:
 	} while (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 		 ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	if (ret <= 0) {
 		mbedtls_printf("mbedtls_ssl_write failed returned 0x%x\n",
@@ -344,9 +345,9 @@ retry:
 		goto exit;
 	}
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		mbedtls_printf("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		mbedtls_printf("Could not get packet from pool\n");
 		goto exit;
 	}
 
@@ -356,7 +357,7 @@ retry:
 		goto exit;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 	len = ZOAP_BUF_SIZE - 1;
 	memset(frag->data, 0, ZOAP_BUF_SIZE);
 
@@ -366,7 +367,7 @@ retry:
 		 ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
 	if (ret <= 0) {
-		net_buf_unref(buf);
+		net_pkt_unref(pkt);
 
 		switch (ret) {
 		case MBEDTLS_ERR_SSL_TIMEOUT:
@@ -388,18 +389,18 @@ retry:
 	len = ret;
 	frag->len = len;
 
-	ret = zoap_packet_parse(&pkt, buf);
+	ret = zoap_packet_parse(&zpkt, pkt);
 	if (ret) {
 		mbedtls_printf("Could not parse packet\n");
 		goto exit;
 	}
 
-	reply = zoap_response_received(&pkt, NULL, replies, NUM_REPLIES);
+	reply = zoap_response_received(&zpkt, NULL, replies, NUM_REPLIES);
 	if (!reply) {
 		mbedtls_printf("No handler for response (%d)\n", ret);
 	}
 
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 	mbedtls_ssl_close_notify(&ssl);
 exit:
 

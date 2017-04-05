@@ -464,32 +464,32 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_buf *frag,
 				  uint8_t reserved_len);
 
-struct net_buf *
+struct net_pkt *
 ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params);
 
 static inline
-struct ieee802154_command *ieee802154_get_mac_command(struct net_buf *buf)
+struct ieee802154_command *ieee802154_get_mac_command(struct net_pkt *pkt)
 {
-	return (struct ieee802154_command *)net_pkt_ip_data(buf);
+	return (struct ieee802154_command *)net_pkt_ip_data(pkt);
 }
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,
-				 struct net_buf *buf, uint8_t seq);
+				 struct net_pkt *pkt, uint8_t seq);
 #endif
 
-static inline bool ieee802154_ack_required(struct net_buf *buf)
+static inline bool ieee802154_ack_required(struct net_pkt *pkt)
 {
 	struct ieee802154_fcf_seq *fs =
-		(struct ieee802154_fcf_seq *)net_pkt_ll(buf);
+		(struct ieee802154_fcf_seq *)net_pkt_ll(pkt);
 
 	return fs->fc.ar;
 }
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
-bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
+bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 				    struct ieee802154_mpdu *mpdu);
 #else
 #define ieee802154_decipher_data_frame(...) true

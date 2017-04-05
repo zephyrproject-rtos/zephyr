@@ -358,7 +358,7 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 }
 
 static int dns_read(struct dns_resolve_context *ctx,
-		    struct net_buf *buf,
+		    struct net_pkt *pkt,
 		    struct net_buf *dns_data,
 		    uint16_t *dns_id,
 		    struct net_buf *dns_cname,
@@ -377,12 +377,12 @@ static int dns_read(struct dns_resolve_context *ctx,
 	int ret;
 	int server_idx, query_idx;
 
-	data_len = min(net_pkt_appdatalen(buf), DNS_RESOLVER_MAX_BUF_SIZE);
-	offset = net_buf_frags_len(buf) - data_len;
+	data_len = min(net_pkt_appdatalen(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
+	offset = net_pkt_get_len(pkt) - data_len;
 
-	/* TODO: Instead of this temporary copy, just use the net_buf directly.
+	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
 	 */
-	ret = net_pkt_linear_copy(dns_data, buf, offset, data_len);
+	ret = net_frag_linear_copy(dns_data, pkt->frags, offset, data_len);
 	if (ret < 0) {
 		ret = DNS_EAI_MEMORY;
 		goto quit;
@@ -526,7 +526,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 	ctx->queries[query_idx].cb = NULL;
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	return 0;
 
@@ -534,13 +534,13 @@ finished:
 	dns_resolve_cancel(ctx, *dns_id);
 
 quit:
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	return ret;
 }
 
 static void cb_recv(struct net_context *net_ctx,
-		    struct net_buf *buf,
+		    struct net_pkt *pkt,
 		    int status,
 		    void *user_data)
 {
@@ -570,7 +570,7 @@ static void cb_recv(struct net_context *net_ctx,
 		goto quit;
 	}
 
-	ret = dns_read(ctx, buf, dns_data, &dns_id, dns_cname, &info);
+	ret = dns_read(ctx, pkt, dns_data, &dns_id, dns_cname, &info);
 	if (!ret) {
 		/* We called the callback already in dns_read() if there
 		 * was no errors.
@@ -643,7 +643,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	enum dns_query_type query_type;
 	struct net_context *net_ctx;
 	struct sockaddr *server;
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	int server_addr_len;
 	uint16_t dns_id;
 	int ret;
@@ -661,13 +661,13 @@ static int dns_write(struct dns_resolve_context *ctx,
 		goto quit;
 	}
 
-	buf = net_pkt_get_tx(net_ctx, ctx->buf_timeout);
-	if (!buf) {
+	pkt = net_pkt_get_tx(net_ctx, ctx->buf_timeout);
+	if (!pkt) {
 		ret = -ENOMEM;
 		goto quit;
 	}
 
-	ret = net_pkt_append(buf, dns_data->len, dns_data->data,
+	ret = net_pkt_append(pkt, dns_data->len, dns_data->data,
 			      ctx->buf_timeout);
 	if (ret < 0) {
 		ret = -ENOMEM;
@@ -682,11 +682,11 @@ static int dns_write(struct dns_resolve_context *ctx,
 
 	net_context_recv(net_ctx, cb_recv, K_NO_WAIT, ctx);
 
-	ret = net_context_sendto(buf, server, server_addr_len, NULL,
+	ret = net_context_sendto(pkt, server, server_addr_len, NULL,
 				 K_NO_WAIT, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", ret);
-		net_pkt_unref(buf);
+		net_pkt_unref(pkt);
 		goto quit;
 	}
 

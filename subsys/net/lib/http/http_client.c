@@ -19,7 +19,7 @@
 int http_request(struct net_context *net_ctx, int32_t timeout,
 		 struct http_client_request *req)
 {
-	struct net_buf *tx;
+	struct net_pkt *tx;
 	int rc = -ENOMEM;
 
 	tx = net_pkt_get_tx(net_ctx, timeout);
@@ -97,7 +97,7 @@ int http_request(struct net_context *net_ctx, int32_t timeout,
 	return net_context_send(tx, NULL, timeout, NULL, NULL);
 
 lb_exit:
-	net_buf_unref(tx);
+	net_pkt_unref(tx);
 
 	return rc;
 }

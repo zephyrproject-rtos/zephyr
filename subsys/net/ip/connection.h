@@ -35,7 +35,7 @@ struct net_conn_handle;
  * and port.
  */
 typedef enum net_verdict (*net_conn_cb_t)(struct net_conn *conn,
-					  struct net_buf *buf,
+					  struct net_pkt *pkt,
 					  void *user_data);
 
 /**
@@ -125,7 +125,7 @@ int net_conn_change_callback(struct net_conn_handle *handle,
 /**
  * @brief Called by net_core.c when a network packet is received.
  *
- * @param buf Network buffer holding received data
+ * @param pkt Network packet holding received data
  *
  * @return NET_OK if the packet was consumed, NET_DROP if
  * the packet parsing failed and the caller should handle
@@ -134,10 +134,10 @@ int net_conn_change_callback(struct net_conn_handle *handle,
  */
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 enum net_verdict net_conn_input(enum net_ip_protocol proto,
-				struct net_buf *buf);
+				struct net_pkt *pkt);
 #else
 static inline enum net_verdict net_conn_input(enum net_ip_protocol proto,
-					      struct net_buf *buf)
+					      struct net_pkt *pkt)
 {
 	return NET_DROP;
 }

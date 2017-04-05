@@ -14,7 +14,7 @@
 
 NET_BUF_POOL_DEFINE(http_pool, HTTP_POOL_BUF_CTR, HTTP_POOL_BUF_SIZE, 0, NULL);
 
-void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
+void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_pkt *rx)
 {
 	struct http_client_ctx *http_ctx;
 	struct net_buf *data_buf = NULL;
@@ -32,9 +32,9 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
 	}
 
 	data_len = min(net_pkt_appdatalen(rx), HTTP_POOL_BUF_SIZE);
-	offset = net_buf_frags_len(rx) - data_len;
+	offset = net_pkt_get_len(rx) - data_len;
 
-	rc = net_pkt_linear_copy(data_buf, rx, offset, data_len);
+	rc = net_frag_linear_copy(data_buf, rx->frags, offset, data_len);
 	if (rc != 0) {
 		rc = -ENOMEM;
 		goto lb_exit;
@@ -50,15 +50,15 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
 
 lb_exit:
 	net_buf_unref(data_buf);
-	net_buf_unref(rx);
+	net_pkt_unref(rx);
 }
 
 #else
 
-void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
+void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_pkt *rx)
 {
 	struct http_client_ctx *http_ctx;
-	struct net_buf *buf = rx;
+	struct net_buf *frag = rx->frags;
 	uint16_t offset;
 
 	if (!rx) {
@@ -67,19 +67,19 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
 
 	http_ctx = CONTAINER_OF(tcp_ctx, struct http_client_ctx, tcp_ctx);
 
-	offset = net_buf_frags_len(buf) - net_pkt_appdatalen(buf);
+	offset = net_pkt_frags_len(rx) - net_pkt_appdatalen(rx);
 
 	/* find the fragment */
-	while (buf && offset >= buf->len) {
-		offset -= buf->len;
-		buf = buf->frags;
+	while (frag && offset >= frag->len) {
+		offset -= frag->len;
+		frag = frag->frags;
 	}
 
-	while (buf) {
+	while (frag) {
 		(void)http_parser_execute(&http_ctx->parser,
 					  &http_ctx->settings,
-					  buf->data + offset,
-					  buf->len - offset);
+					  frag->data + offset,
+					  frag->len - offset);
 
 		/* after the first iteration, we set offset to 0 */
 		offset = 0;
@@ -91,11 +91,11 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx)
 			goto lb_exit;
 		}
 
-		buf = buf->frags;
+		frag = frag->frags;
 	}
 
 lb_exit:
-	net_buf_unref(rx);
+	net_pkt_unref(rx);
 }
 
 #endif

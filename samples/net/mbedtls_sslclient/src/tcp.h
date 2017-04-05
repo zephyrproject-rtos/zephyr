@@ -9,12 +9,12 @@
 
 #include <net/net_context.h>
 #include <net/net_ip.h>
-#include <net/buf.h>
+#include <net/net_pkt.h>
 
 struct tcp_context {
 	struct net_context *net_ctx;
 	struct sockaddr local_sock;
-	struct net_buf *rx_pkt;
+	struct net_pkt *rx_pkt;
 	int32_t timeout;
 };
 

@@ -70,7 +70,7 @@ static struct device *wpanusb_dev;
 static struct ieee802154_radio_api *radio_api;
 static struct device *ieee802154_dev;
 
-static struct nano_fifo tx_queue;
+static struct k_fifo tx_queue;
 
 /**
  * Stack for the tx thread.
@@ -349,9 +349,9 @@ static int stop(void)
 	return radio_api->stop(ieee802154_dev);
 }
 
-static int tx(struct net_buf *pkt)
+static int tx(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_buf_frag_last(pkt);
+	struct net_buf *buf = net_buf_frag_last(pkt->frags);
 	uint8_t seq = net_buf_pull_u8(buf);
 	int retries = 3;
 	int ret;
@@ -380,7 +380,8 @@ static int tx(struct net_buf *pkt)
 static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 				  int32_t *len, uint8_t **data)
 {
-	struct net_buf *pkt, *buf;
+	struct net_pkt *pkt;
+	struct net_buf *buf;
 
 	pkt = net_pkt_get_reserve_tx(0, K_NO_WAIT);
 	if (!pkt) {
@@ -393,7 +394,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 		return -ENOMEM;
 	}
 
-	net_buf_frag_insert(pkt, buf);
+	net_pkt_frag_insert(pkt, buf);
 
 	net_buf_add_u8(buf, setup->bRequest);
 
@@ -406,7 +407,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 
 	SYS_LOG_DBG("len %u seq %u", *len, setup->wIndex);
 
-	net_buf_put(&tx_queue, pkt);
+	k_fifo_put(&tx_queue, pkt);
 
 	return 0;
 }
@@ -417,10 +418,11 @@ static void tx_thread(void)
 
 	while (1) {
 		uint8_t cmd;
-		struct net_buf *pkt, *buf;
+		struct net_pkt *pkt;
+		struct net_buf *buf;
 
-		pkt = net_buf_get(&tx_queue, K_FOREVER);
-		buf = net_buf_frag_last(pkt);
+		pkt = k_fifo_get(&tx_queue, K_FOREVER);
+		buf = net_buf_frag_last(pkt->frags);
 		cmd = net_buf_pull_u8(buf);
 
 		hexdump(">", buf->data, buf->len);
@@ -533,13 +535,13 @@ static void init_tx_queue(void)
 }
 
 extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-						    struct net_buf *buf)
+						    struct net_pkt *pkt)
 {
 	/* parse on higher layer */
 	return NET_CONTINUE;
 }
 
-int ieee802154_radio_send(struct net_if *iface, struct net_buf *buf)
+int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	SYS_LOG_DBG("");
 
@@ -551,25 +553,25 @@ void ieee802154_init(struct net_if *iface)
 	SYS_LOG_DBG("");
 }
 
-int net_recv_data(struct net_if *iface, struct net_buf *buf)
+int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 
-	SYS_LOG_DBG("Got data, buf %p, len %d frags->len %d",
-		    buf, buf->len, net_buf_frags_len(buf));
+	SYS_LOG_DBG("Got data, pkt %p, frags->len %d",
+		    pkt, net_pkt_get_len(pkt));
 
-	frag = net_buf_frag_last(buf);
+	frag = net_buf_frag_last(pkt->frags);
 
 	/**
 	 * Add length 1 byte, do not forget to reserve it
 	 */
-	net_buf_push_u8(frag, net_buf_frags_len(buf) - 1);
+	net_buf_push_u8(frag, net_pkt_get_len(pkt) - 1);
 
-	hexdump("<", frag->data, net_buf_frags_len(buf));
+	hexdump("<", frag->data, net_pkt_get_len(pkt));
 
-	try_write(WPANUSB_ENDP_BULK_IN, frag->data, net_buf_frags_len(buf));
+	try_write(WPANUSB_ENDP_BULK_IN, frag->data, net_pkt_get_len(pkt));
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	return 0;
 }

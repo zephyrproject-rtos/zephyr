@@ -64,9 +64,9 @@ static void fake_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
 }
 
-static int fake_iface_send(struct net_if *iface, struct net_buf *buf)
+static int fake_iface_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	return NET_OK;
 }

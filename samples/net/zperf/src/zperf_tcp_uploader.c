@@ -46,7 +46,8 @@ void zperf_tcp_upload(struct net_context *ctx,
 
 	do {
 		int ret = 0;
-		struct net_buf *buf, *frag;
+		struct net_pkt *pkt;
+		struct net_buf *frag;
 		uint32_t loop_time;
 		bool st;
 
@@ -54,39 +55,39 @@ void zperf_tcp_upload(struct net_context *ctx,
 		loop_time = k_cycle_get_32();
 		last_loop_time = loop_time;
 
-		buf = net_pkt_get_tx(ctx, K_FOREVER);
-		if (!buf) {
-			printk(TAG "ERROR! Failed to retrieve a buffer\n");
+		pkt = net_pkt_get_tx(ctx, K_FOREVER);
+		if (!pkt) {
+			printk(TAG "ERROR! Failed to retrieve a packet\n");
 			break;
 		}
 
 		frag = net_pkt_get_data(ctx, K_FOREVER);
 		if (!frag) {
-			net_pkt_unref(buf);
+			net_pkt_unref(pkt);
 			printk(TAG "ERROR! Failed to retrieve a fragment\n");
 			break;
 		}
 
-		net_buf_frag_add(buf, frag);
+		net_pkt_frag_add(pkt, frag);
 
 		/* Fill in the TCP payload */
-		st = net_pkt_append(buf, sizeof(sample_packet),
+		st = net_pkt_append(pkt, sizeof(sample_packet),
 				     sample_packet, K_FOREVER);
 		if (!st) {
 			printk(TAG "ERROR! Failed to fill packet\n");
 
-			net_pkt_unref(buf);
+			net_pkt_unref(pkt);
 			nb_errors++;
 			break;
 		}
 
 		/* Send the packet */
-		ret = net_context_send(buf, NULL, K_NO_WAIT, NULL, NULL);
+		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
-			printk(TAG "ERROR! Failed to send the buffer (%d)\n",
+			printk(TAG "ERROR! Failed to send the packet (%d)\n",
 			       ret);
 
-			net_pkt_unref(buf);
+			net_pkt_unref(pkt);
 			nb_errors++;
 			break;
 		} else {

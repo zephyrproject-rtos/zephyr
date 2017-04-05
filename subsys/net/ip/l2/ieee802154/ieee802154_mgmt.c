@@ -87,7 +87,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_req_params *scan =
 		(struct ieee802154_req_params *)data;
-	struct net_buf *buf = NULL;
+	struct net_pkt *pkt = NULL;
 	uint8_t channel;
 	int ret;
 
@@ -105,9 +105,9 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		params.dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
 		params.dst.pan_id = IEEE802154_BROADCAST_PAN_ID;
 
-		buf = ieee802154_create_mac_cmd_frame(
+		pkt = ieee802154_create_mac_cmd_frame(
 			ctx, IEEE802154_CFI_BEACON_REQUEST, &params);
-		if (!buf) {
+		if (!pkt) {
 			NET_DBG("Could not create Beacon Request");
 			return -ENOBUFS;
 		}
@@ -138,14 +138,14 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 
 		/* Active scan sends a beacon request */
 		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
-			net_pkt_ref(buf);
-			net_pkt_ref(buf->frags);
+			net_pkt_ref(pkt);
+			net_pkt_frag_ref(pkt->frags);
 
-			ret = ieee802154_radio_send(iface, buf);
+			ret = ieee802154_radio_send(iface, pkt);
 			if (ret) {
 				NET_DBG("Could not send Beacon Request (%d)",
 					ret);
-				net_pkt_unref(buf);
+				net_pkt_unref(pkt);
 
 				break;
 			}
@@ -168,8 +168,8 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 out:
 	ctx->scan_ctx = NULL;
 
-	if (buf) {
-		net_pkt_unref(buf);
+	if (pkt) {
+		net_pkt_unref(pkt);
 	}
 
 	return ret;
@@ -229,7 +229,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 		(struct ieee802154_req_params *)data;
 	struct ieee802154_frame_params params;
 	struct ieee802154_command *cmd;
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	int ret = 0;
 
 	k_sem_take(&ctx->req_lock, K_FOREVER);
@@ -250,14 +250,14 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 		goto out;
 	}
 
-	buf = ieee802154_create_mac_cmd_frame(
+	pkt = ieee802154_create_mac_cmd_frame(
 		ctx, IEEE802154_CFI_ASSOCIATION_REQUEST, &params);
-	if (!buf) {
+	if (!pkt) {
 		ret = -ENOBUFS;
 		goto out;
 	}
 
-	cmd = ieee802154_get_mac_command(buf);
+	cmd = ieee802154_get_mac_command(pkt);
 	cmd->assoc_req.ci.dev_type = 0; /* RFD */
 	cmd->assoc_req.ci.power_src = 0; /* ToDo: set right power source */
 	cmd->assoc_req.ci.rx_on = 1; /* ToDo: that will depends on PM */
@@ -266,8 +266,8 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 
 	ctx->associated = false;
 
-	if (net_if_send_data(iface, buf)) {
-		net_pkt_unref(buf);
+	if (net_if_send_data(iface, pkt)) {
+		net_pkt_unref(pkt);
 		ret = -EIO;
 		goto out;
 	}
@@ -305,7 +305,7 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_frame_params params;
 	struct ieee802154_command *cmd;
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 
 	if (!ctx->associated) {
 		return -EALREADY;
@@ -321,17 +321,17 @@ static int ieee802154_disassociate(uint32_t mgmt_request, struct net_if *iface,
 
 	params.pan_id = ctx->pan_id;
 
-	buf = ieee802154_create_mac_cmd_frame(
+	pkt = ieee802154_create_mac_cmd_frame(
 		ctx, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION, &params);
-	if (!buf) {
+	if (!pkt) {
 		return -ENOBUFS;
 	}
 
-	cmd = ieee802154_get_mac_command(buf);
+	cmd = ieee802154_get_mac_command(pkt);
 	cmd->disassoc_note.reason = IEEE802154_DRF_DEVICE_WISH;
 
-	if (net_if_send_data(iface, buf)) {
-		net_pkt_unref(buf);
+	if (net_if_send_data(iface, pkt)) {
+		net_pkt_unref(pkt);
 		return -EIO;
 	}
 

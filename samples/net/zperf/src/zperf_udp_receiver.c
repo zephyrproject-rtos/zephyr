@@ -36,95 +36,96 @@ static struct sockaddr_in *in4_addr_my;
 #define MAX_DBG_PRINT 64
 
 static inline void set_dst_addr(sa_family_t family,
-				struct net_buf *buf,
+				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
 {
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-				&NET_IPV6_BUF(buf)->src);
+				&NET_IPV6_BUF(pkt)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
-		net_sin6(dst_addr)->sin6_port = NET_UDP_BUF(buf)->src_port;
+		net_sin6(dst_addr)->sin6_port = NET_UDP_BUF(pkt)->src_port;
 	}
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
 		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
-				&NET_IPV4_BUF(buf)->src);
+				&NET_IPV4_BUF(pkt)->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
-		net_sin(dst_addr)->sin_port = NET_UDP_BUF(buf)->src_port;
+		net_sin(dst_addr)->sin_port = NET_UDP_BUF(pkt)->src_port;
 	}
 #endif /* CONFIG_NET_IPV4 */
 }
 
-static inline struct net_buf *build_reply_buf(struct net_context *context,
-					      struct net_buf *buf,
+static inline struct net_pkt *build_reply_pkt(struct net_context *context,
+					      struct net_pkt *pkt,
 					      struct zperf_udp_datagram *hdr,
 					      struct zperf_server_hdr *stat)
 {
-	struct net_buf *reply_buf, *frag;
+	struct net_pkt *reply_pkt;
+	struct net_buf *frag;
 
-	printk(TAG "received %d bytes\n",  net_pkt_appdatalen(buf));
+	printk(TAG "received %d bytes\n",  net_pkt_appdatalen(pkt));
 
-	reply_buf = net_pkt_get_tx(context, K_FOREVER);
+	reply_pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(reply_buf, frag);
+	net_pkt_frag_add(reply_pkt, frag);
 
-	net_pkt_append_be32(reply_buf, hdr->id);
-	net_pkt_append_be32(reply_buf, hdr->tv_sec);
-	net_pkt_append_be32(reply_buf, hdr->tv_usec);
+	net_pkt_append_be32(reply_pkt, hdr->id);
+	net_pkt_append_be32(reply_pkt, hdr->tv_sec);
+	net_pkt_append_be32(reply_pkt, hdr->tv_usec);
 
-	net_pkt_append_be32(reply_buf, stat->flags);
-	net_pkt_append_be32(reply_buf, stat->total_len1);
-	net_pkt_append_be32(reply_buf, stat->total_len2);
-	net_pkt_append_be32(reply_buf, stat->stop_sec);
-	net_pkt_append_be32(reply_buf, stat->stop_usec);
-	net_pkt_append_be32(reply_buf, stat->error_cnt);
-	net_pkt_append_be32(reply_buf, stat->outorder_cnt);
-	net_pkt_append_be32(reply_buf, stat->datagrams);
-	net_pkt_append_be32(reply_buf, stat->jitter1);
-	net_pkt_append_be32(reply_buf, stat->jitter2);
+	net_pkt_append_be32(reply_pkt, stat->flags);
+	net_pkt_append_be32(reply_pkt, stat->total_len1);
+	net_pkt_append_be32(reply_pkt, stat->total_len2);
+	net_pkt_append_be32(reply_pkt, stat->stop_sec);
+	net_pkt_append_be32(reply_pkt, stat->stop_usec);
+	net_pkt_append_be32(reply_pkt, stat->error_cnt);
+	net_pkt_append_be32(reply_pkt, stat->outorder_cnt);
+	net_pkt_append_be32(reply_pkt, stat->datagrams);
+	net_pkt_append_be32(reply_pkt, stat->jitter1);
+	net_pkt_append_be32(reply_pkt, stat->jitter2);
 
-	return reply_buf;
+	return reply_pkt;
 }
 
 /* Send statistics to the remote client */
 static int zperf_receiver_send_stat(struct net_context *context,
-				    struct net_buf *buf,
+				    struct net_pkt *pkt,
 				    struct zperf_udp_datagram *hdr,
 				    struct zperf_server_hdr *stat)
 {
-	struct net_buf *reply_buf;
+	struct net_pkt *reply_pkt;
 	struct sockaddr dst_addr;
 	int ret;
 
-	set_dst_addr(net_pkt_family(buf), buf, &dst_addr);
+	set_dst_addr(net_pkt_family(pkt), pkt, &dst_addr);
 
-	reply_buf = build_reply_buf(context, buf, hdr, stat);
+	reply_pkt = build_reply_pkt(context, pkt, hdr, stat);
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
-	ret = net_context_sendto(reply_buf, &dst_addr,
-				 net_pkt_family(buf) == AF_INET6 ?
+	ret = net_context_sendto(reply_pkt, &dst_addr,
+				 net_pkt_family(pkt) == AF_INET6 ?
 				 sizeof(struct sockaddr_in6) :
 				 sizeof(struct sockaddr_in),
 				 NULL, 0, NULL, NULL);
 	if (ret < 0) {
 		printk(TAG " Cannot send data to peer (%d)", ret);
-		net_pkt_unref(reply_buf);
+		net_pkt_unref(reply_pkt);
 	}
 
 	return ret;
 }
 
 static void udp_received(struct net_context *context,
-			 struct net_buf *buf,
+			 struct net_pkt *pkt,
 			 int status,
 			 void *user_data)
 {
-	struct net_buf *frag = buf->frags;
+	struct net_buf *frag = pkt->frags;
 	struct zperf_udp_datagram hdr;
 	struct session *session;
 	uint16_t offset, pos;
@@ -132,28 +133,28 @@ static void udp_received(struct net_context *context,
 	uint32_t time;
 	int32_t id;
 
-	if (!buf) {
+	if (!pkt) {
 		return;
 	}
 
-	if (net_pkt_appdatalen(buf) < sizeof(struct zperf_udp_datagram)) {
-		net_pkt_unref(buf);
+	if (net_pkt_appdatalen(pkt) < sizeof(struct zperf_udp_datagram)) {
+		net_pkt_unref(pkt);
 		return;
 	}
 
 	time = k_cycle_get_32();
 
-	session = get_session(buf, SESSION_UDP);
+	session = get_session(pkt, SESSION_UDP);
 	if (!session) {
 		printk(TAG "ERROR! cannot get a session!\n");
 		return;
 	}
 
-	offset = net_pkt_appdata(buf) - net_pkt_ip_data(buf);
+	offset = net_pkt_appdata(pkt) - net_pkt_ip_data(pkt);
 
-	frag = net_pkt_read_be32(frag, offset, &pos, (uint32_t *)&hdr.id);
-	frag = net_pkt_read_be32(frag, pos, &pos, &hdr.tv_sec);
-	frag = net_pkt_read_be32(frag, pos, &pos, &hdr.tv_usec);
+	frag = net_frag_read_be32(frag, offset, &pos, (uint32_t *)&hdr.id);
+	frag = net_frag_read_be32(frag, pos, &pos, &hdr.tv_sec);
+	frag = net_frag_read_be32(frag, pos, &pos, &hdr.tv_usec);
 
 	id = hdr.id;
 
@@ -162,15 +163,15 @@ static void udp_received(struct net_context *context,
 		printk(TAG "End of session!\n");
 
 		if (session->state == STATE_COMPLETED) {
-			/* Session is already completed: Resend the stat buffer
+			/* Session is already completed: Resend the stat packet
 			 * and continue
 			 */
-			if (zperf_receiver_send_stat(context, buf, &hdr,
+			if (zperf_receiver_send_stat(context, pkt, &hdr,
 						     &session->stat) < 0) {
 				printk(TAG "ERROR! Failed to send the "
-				       "buffer\n");
+				       "packet\n");
 
-				net_pkt_unref(buf);
+				net_pkt_unref(pkt);
 			}
 		} else {
 			session->state = STATE_LAST_PACKET_RECEIVED;
@@ -200,7 +201,7 @@ static void udp_received(struct net_context *context,
 
 	/* Update counter */
 	session->counter++;
-	session->length += net_pkt_appdatalen(buf);
+	session->length += net_pkt_appdatalen(pkt);
 
 	/* Compute jitter */
 	transit_time = time_delta(HW_CYCLES_TO_USEC(time),
@@ -249,12 +250,12 @@ static void udp_received(struct net_context *context,
 			session->stat.jitter1 = 0;
 			session->stat.jitter2 = session->jitter;
 
-			if (zperf_receiver_send_stat(context, buf, &hdr,
+			if (zperf_receiver_send_stat(context, pkt, &hdr,
 						     &session->stat) < 0) {
 				printk(TAG "ERROR! Failed to send the "
-				       "buffer\n");
+				       "packet\n");
 
-				net_pkt_unref(buf);
+				net_pkt_unref(pkt);
 			}
 
 			printk(TAG " duration:\t\t");
@@ -277,7 +278,7 @@ static void udp_received(struct net_context *context,
 			printk("\n");
 		}
 	} else {
-		net_pkt_unref(buf);
+		net_pkt_unref(pkt);
 	}
 }
 

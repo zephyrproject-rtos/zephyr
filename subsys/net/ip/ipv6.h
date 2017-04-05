@@ -78,8 +78,8 @@ const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state);
  * @brief IPv6 neighbor information.
  */
 struct net_ipv6_nbr_data {
-	/** Any pending buffer waiting ND to finish. */
-	struct net_buf *pending;
+	/** Any pending packet waiting ND to finish. */
+	struct net_pkt *pending;
 
 	/** IPv6 address. */
 	struct in6_addr addr;
@@ -121,7 +121,7 @@ struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(uint8_t idx);
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);
 #endif
 
-int net_ipv6_send_ns(struct net_if *iface, struct net_buf *pending,
+int net_ipv6_send_ns(struct net_if *iface, struct net_pkt *pending,
 		     struct in6_addr *src, struct in6_addr *dst,
 		     struct in6_addr *tgt, bool is_my_address);
 
@@ -133,34 +133,34 @@ int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 		     uint8_t flags);
 
 /**
- * @brief Create IPv6 packet in provided net_buf.
+ * @brief Create IPv6 packet in provided net_pkt.
  *
- * @param buf Network buffer
+ * @param pkt Network packet
  * @param src Source IPv6 address
  * @param dst Destination IPv6 address
  * @param iface Network interface
  * @param next_header Protocol type of the next header after IPv6 header.
  *
- * @return Return network buffer that contains the IPv6 packet.
+ * @return Return network packet that contains the IPv6 packet.
  */
-struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
+struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
 				    const struct in6_addr *src,
 				    const struct in6_addr *dst,
 				    struct net_if *iface,
 				    uint8_t next_header);
 
 /**
- * @brief Create IPv6 packet in provided net_buf.
+ * @brief Create IPv6 packet in provided net_pkt.
  *
  * @param context Network context for a connection
- * @param buf Network buffer
+ * @param pkt Network packet
  * @param src_addr Source address, or NULL to choose a default from context
  * @param dst_addr Destination IPv6 address
  *
- * @return Return network buffer that contains the IPv6 packet.
+ * @return Return network packet that contains the IPv6 packet.
  */
-struct net_buf *net_ipv6_create(struct net_context *context,
-				struct net_buf *buf,
+struct net_pkt *net_ipv6_create(struct net_context *context,
+				struct net_pkt *pkt,
 				const struct in6_addr *src_addr,
 				const struct in6_addr *dst_addr);
 
@@ -170,12 +170,12 @@ struct net_buf *net_ipv6_create(struct net_context *context,
  * the packet. This function will set the length of the
  * packet and calculate the higher protocol checksum if needed.
  *
- * @param buf Network buffer
+ * @param pkt Network packet
  * @param next_header Protocol type of the next header after IPv6 header.
  *
  * @return Return 0 on Success, < 0 on Failure.
  */
-int net_ipv6_finalize_raw(struct net_buf *buf, uint8_t next_header);
+int net_ipv6_finalize_raw(struct net_pkt *pkt, uint8_t next_header);
 
 /**
  * @brief Finalize IPv6 packet. It should be called right before
@@ -184,11 +184,11 @@ int net_ipv6_finalize_raw(struct net_buf *buf, uint8_t next_header);
  * packet and calculate the higher protocol checksum if needed.
  *
  * @param context Network context for a connection
- * @param buf Network buffer
+ * @param pkt Network packet
  *
  * @return Return 0 on Success, < 0 on Failure.
  */
-int net_ipv6_finalize(struct net_context *context, struct net_buf *buf);
+int net_ipv6_finalize(struct net_context *context, struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_IPV6_MLD)
 /**
@@ -233,11 +233,11 @@ typedef void (*net_nbr_cb_t)(struct net_nbr *nbr, void *user_data);
  * and the original message is sent after Neighbor Advertisement
  * message is received.
  *
- * @param buf Network buffer
+ * @param pkt Network packet
  *
- * @return Return network buffer to be sent.
+ * @return Return network packet to be sent.
  */
-struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf);
+struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt);
 
 /**
  * @brief Look for a neighbor from it's address on an iface
@@ -313,9 +313,9 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr);
 void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data);
 
 #else /* CONFIG_NET_IPV6_NBR_CACHE */
-static inline struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf)
+static inline struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 {
-	return buf;
+	return pkt;
 }
 
 static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
@@ -373,7 +373,7 @@ static inline void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
  * This means that we should receive everything within first two fragments.
  * The first one being 1280 bytes and the second one 220 bytes.
  */
-#define NET_IPV6_FRAGMENTS_MAX_BUF 2
+#define NET_IPV6_FRAGMENTS_MAX_PKT 2
 
 /** Store pending IPv6 fragment information that is needed for reassembly. */
 struct net_ipv6_reassembly {
@@ -390,7 +390,7 @@ struct net_ipv6_reassembly {
 	struct k_delayed_work timer;
 
 	/** Pointers to pending fragments */
-	struct net_buf *buf[NET_IPV6_FRAGMENTS_MAX_BUF];
+	struct net_pkt *pkt[NET_IPV6_FRAGMENTS_MAX_PKT];
 
 	/** IPv6 fragment identification */
 	uint32_t id;
@@ -419,12 +419,12 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
 /**
  * @brief Find the last IPv6 extension header in the network packet.
  *
- * @param buf Network head buffer.
+ * @param pkt Network head packet.
  *
- * @return Offset to the extension header within the first fragment of net_buf.
+ * @return Offset to the extension header within the first fragment of net_pkt.
  * Return <0 if the packet is malformed.
  */
-int net_ipv6_find_last_ext_hdr(struct net_buf *buf);
+int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);

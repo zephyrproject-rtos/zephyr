@@ -63,7 +63,7 @@ static struct device *uart_dev;
 /* SLIP state machine */
 static uint8_t slip_state = STATE_OK;
 
-static struct net_buf *pkt_curr;
+static struct net_pkt *pkt_curr;
 
 /* General helpers */
 
@@ -154,9 +154,9 @@ static int slip_process_byte(unsigned char c)
 			net_pkt_unref(pkt_curr);
 			return 0;
 		}
-		net_buf_frag_insert(pkt_curr, buf);
+		net_pkt_frag_insert(pkt_curr, buf);
 	} else {
-		buf = net_buf_frag_last(pkt_curr);
+		buf = net_buf_frag_last(pkt_curr->frags);
 	}
 
 	if (!net_buf_tailroom(buf)) {
@@ -207,7 +207,7 @@ static void interrupt_handler(struct device *dev)
 
 					SYS_LOG_DBG("Full packet %p", pkt_curr);
 
-					net_buf_put(&rx_queue, pkt_curr);
+					k_fifo_put(&rx_queue, pkt_curr);
 					pkt_curr = NULL;
 				}
 			}
@@ -218,11 +218,12 @@ static void interrupt_handler(struct device *dev)
 /* Allocate and send data to USB Host */
 static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 {
-	struct net_buf *buf, *pkt;
+	struct net_pkt *pkt;
+	struct net_buf *buf;
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
-		SYS_LOG_DBG("No buf available");
+		SYS_LOG_DBG("No pkt available");
 		return;
 	}
 
@@ -233,7 +234,7 @@ static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 		return;
 	}
 
-	net_buf_frag_insert(pkt, buf);
+	net_pkt_frag_insert(pkt, buf);
 
 	SYS_LOG_DBG("queue pkt %p buf %p len %u", pkt, buf, len);
 
@@ -247,7 +248,7 @@ static void send_data(uint8_t *cfg, uint8_t *data, size_t len)
 	/* simulate FCS */
 	net_buf_add(buf, 2);
 
-	net_buf_put(&tx_queue, pkt);
+	k_fifo_put(&tx_queue, pkt);
 }
 
 static void get_ieee_addr(void)
@@ -290,9 +291,9 @@ static void send_pkt_report(uint8_t seq, uint8_t status, uint8_t num_tx)
 	send_data(cfg, report, sizeof(report));
 }
 
-static void process_data(struct net_buf *pkt)
+static void process_data(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_buf_frag_last(pkt);
+	struct net_buf *buf = net_buf_frag_last(pkt->frags);
 	uint8_t seq, num_attr;
 	int ret, i;
 
@@ -333,9 +334,9 @@ static void set_channel(uint8_t chan)
 	radio_api->set_channel(ieee802154_dev, chan);
 }
 
-static void process_config(struct net_buf *pkt)
+static void process_config(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_buf_frag_last(pkt);
+	struct net_buf *buf = net_buf_frag_last(pkt->frags);
 	uint8_t cmd = net_buf_pull_u8(buf);
 
 	SYS_LOG_DBG("Process config %c", cmd);
@@ -357,11 +358,12 @@ static void rx_thread(void)
 	SYS_LOG_INF("RX thread started");
 
 	while (1) {
-		struct net_buf *pkt, *buf;
+		struct net_pkt *pkt;
+		struct net_buf *buf;
 		uint8_t specifier;
 
-		pkt = net_buf_get(&rx_queue, K_FOREVER);
-		buf = net_buf_frag_last(pkt);
+		pkt = k_fifo_get(&rx_queue, K_FOREVER);
+		buf = net_buf_frag_last(pkt->frags);
 
 		SYS_LOG_DBG("Got pkt %p buf %p", pkt, buf);
 
@@ -431,14 +433,15 @@ static void tx_thread(void)
 	k_sem_give(&tx_sem);
 
 	while (1) {
-		struct net_buf *pkt, *buf;
+		struct net_pkt *pkt;
+		struct net_buf *buf;
 		size_t len;
 
 		k_sem_take(&tx_sem, K_FOREVER);
 
-		pkt = net_buf_get(&tx_queue, K_FOREVER);
-		buf = net_buf_frag_last(pkt);
-		len = net_buf_frags_len(pkt);
+		pkt = k_fifo_get(&tx_queue, K_FOREVER);
+		buf = net_buf_frag_last(pkt->frags);
+		len = net_pkt_get_len(pkt);
 
 		SYS_LOG_DBG("Send pkt %p buf %p len %d", pkt, buf, len);
 
@@ -616,18 +619,18 @@ void ieee802154_init(struct net_if *iface)
 	SYS_LOG_DBG("");
 }
 
-int net_recv_data(struct net_if *iface, struct net_buf *pkt)
+int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	SYS_LOG_DBG("Got data, buf %p, len %d frags->len %d",
-		    pkt, pkt->len, net_buf_frags_len(pkt));
+	SYS_LOG_DBG("Got data, pkt %p, frags->len %d",
+		    pkt, net_pkt_get_len(pkt));
 
-	net_buf_put(&tx_queue, pkt);
+	k_fifo_put(&tx_queue, pkt);
 
 	return 0;
 }
 
 extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-						    struct net_buf *buf)
+						    struct net_pkt *pkt)
 {
 	SYS_LOG_DBG("");
 
@@ -635,7 +638,7 @@ extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 	return NET_CONTINUE;
 }
 
-int ieee802154_radio_send(struct net_if *iface, struct net_buf *buf)
+int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	SYS_LOG_DBG("");
 

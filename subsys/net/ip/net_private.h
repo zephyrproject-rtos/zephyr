@@ -19,12 +19,12 @@ extern void net_pkt_init(void);
 extern void net_if_init(struct k_sem *startup_sync);
 extern void net_if_post_init(void);
 extern void net_context_init(void);
-enum net_verdict net_ipv4_process_pkt(struct net_buf *buf);
-enum net_verdict net_ipv6_process_pkt(struct net_buf *buf);
+enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt);
+enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt);
 extern void net_ipv6_init(void);
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_buf *buf,
+int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 uint16_t pkt_len);
 #endif
 
@@ -32,30 +32,30 @@ extern const char *net_proto2str(enum net_ip_protocol proto);
 extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
-extern uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto);
+extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
 
 #if defined(CONFIG_NET_IPV4)
-extern uint16_t net_calc_chksum_ipv4(struct net_buf *buf);
+extern uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */
 
-static inline uint16_t net_calc_chksum_icmpv6(struct net_buf *buf)
+static inline uint16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)
 {
-	return net_calc_chksum(buf, IPPROTO_ICMPV6);
+	return net_calc_chksum(pkt, IPPROTO_ICMPV6);
 }
 
-static inline uint16_t net_calc_chksum_icmpv4(struct net_buf *buf)
+static inline uint16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
 {
-	return net_calc_chksum(buf, IPPROTO_ICMP);
+	return net_calc_chksum(pkt, IPPROTO_ICMP);
 }
 
-static inline uint16_t net_calc_chksum_udp(struct net_buf *buf)
+static inline uint16_t net_calc_chksum_udp(struct net_pkt *pkt)
 {
-	return net_calc_chksum(buf, IPPROTO_UDP);
+	return net_calc_chksum(pkt, IPPROTO_UDP);
 }
 
-static inline uint16_t net_calc_chksum_tcp(struct net_buf *buf)
+static inline uint16_t net_calc_chksum_tcp(struct net_pkt *pkt)
 {
-	return net_calc_chksum(buf, IPPROTO_TCP);
+	return net_calc_chksum(pkt, IPPROTO_TCP);
 }
 
 #if NET_LOG_ENABLED > 0
@@ -143,26 +143,26 @@ static inline void net_hexdump(const char *str, const uint8_t *packet,
 }
 
 /* Hexdump from all fragments */
-static inline void net_hexdump_frags(const char *str, struct net_buf *buf)
+static inline void net_hexdump_frags(const char *str, struct net_pkt *pkt)
 {
-	struct net_buf *frag = buf->frags;
+	struct net_buf *frag = pkt->frags;
 
 	while (frag) {
-		net_hexdump(str, frag->data, net_pkt_get_len(frag));
+		net_hexdump(str, frag->data, frag->len);
 		frag = frag->frags;
 	}
 }
 
 /* Print fragment chain */
-static inline void net_print_frags(const char *str, struct net_buf *buf)
+static inline void net_print_frags(const char *str, struct net_pkt *pkt)
 {
-	struct net_buf *frag = buf->frags;
+	struct net_buf *frag = pkt->frags;
 
 	if (str) {
 		printk("%s", str);
 	}
 
-	printk("%p[%d]", buf, buf->ref);
+	printk("%p[%d]", pkt, pkt->ref);
 
 	if (frag) {
 		printk("->");

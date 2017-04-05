@@ -517,7 +517,7 @@ static inline uint8_t read_rxfifo_length(struct cc2520_spi *spi)
 }
 
 static inline bool read_rxfifo_content(struct cc2520_spi *spi,
-				       struct net_buf *buf, uint8_t len)
+				       struct net_buf *frag, uint8_t len)
 {
 	uint8_t data[128+1];
 
@@ -535,14 +535,14 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 		return false;
 	}
 
-	memcpy(buf->data, &data[1], len);
-	net_buf_add(buf, len);
+	memcpy(frag->data, &data[1], len);
+	net_buf_add(frag, len);
 
 	return true;
 }
 
 static inline bool verify_crc(struct cc2520_context *cc2520,
-			      struct net_buf *buf)
+			      struct net_pkt *pkt)
 {
 	cc2520->spi.cmd_buf[0] = CC2520_INS_RXBUF;
 	cc2520->spi.cmd_buf[1] = 0;
@@ -559,7 +559,7 @@ static inline bool verify_crc(struct cc2520_context *cc2520,
 		return false;
 	}
 
-	net_pkt_set_ieee802154_rssi(buf, cc2520->spi.cmd_buf[1]);
+	net_pkt_set_ieee802154_rssi(pkt, cc2520->spi.cmd_buf[1]);
 
 	/**
 	 * CC2520 does not provide an LQI but a correlation factor.
@@ -597,12 +597,12 @@ static void cc2520_rx(int arg)
 {
 	struct device *dev = INT_TO_POINTER(arg);
 	struct cc2520_context *cc2520 = dev->driver_data;
-	struct net_buf *pkt_buf = NULL;
-	struct net_buf *buf;
+	struct net_buf *pkt_frag = NULL;
+	struct net_pkt *pkt;
 	uint8_t pkt_len;
 
 	while (1) {
-		buf = NULL;
+		pkt = NULL;
 
 		k_sem_take(&cc2520->rx_lock, K_FOREVER);
 
@@ -619,9 +619,9 @@ static void cc2520_rx(int arg)
 			goto flush;
 		}
 
-		buf = net_pkt_get_reserve_rx(0, K_NO_WAIT);
-		if (!buf) {
-			SYS_LOG_ERR("No buf available");
+		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		if (!pkt) {
+			SYS_LOG_ERR("No pkt available");
 			goto flush;
 		}
 
@@ -629,27 +629,27 @@ static void cc2520_rx(int arg)
 		/**
 		 * Reserve 1 byte for length
 		 */
-		net_pkt_set_ll_reserve(buf, 1);
+		net_pkt_set_ll_reserve(pkt, 1);
 #endif
-		pkt_buf = net_pkt_get_frag(buf, K_NO_WAIT);
-		if (!pkt_buf) {
-			SYS_LOG_ERR("No pkt_buf available");
+		pkt_frag = net_pkt_get_frag(pkt, K_NO_WAIT);
+		if (!pkt_frag) {
+			SYS_LOG_ERR("No pkt_frag available");
 			goto flush;
 		}
 
-		net_buf_frag_insert(buf, pkt_buf);
+		net_pkt_frag_insert(pkt, pkt_frag);
 
 #if defined(CONFIG_IEEE802154_CC2520_RAW)
-		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len)) {
+		if (!read_rxfifo_content(&cc2520->spi, pkt_frag, pkt_len)) {
 			SYS_LOG_ERR("No content read");
 			goto flush;
 		}
 
-		if (!(pkt_buf->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
+		if (!(pkt_frag->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
 			goto out;
 		}
 
-		cc2520->lqi = pkt_buf->data[pkt_len - 1] &
+		cc2520->lqi = pkt_frag->data[pkt_len - 1] &
 			CC2520_FCS_CORRELATION;
 		if (cc2520->lqi <= 50) {
 			cc2520->lqi = 0;
@@ -659,30 +659,30 @@ static void cc2520_rx(int arg)
 			cc2520->lqi = (cc2520->lqi - 50) << 2;
 		}
 #else
-		if (!read_rxfifo_content(&cc2520->spi, pkt_buf, pkt_len - 2)) {
+		if (!read_rxfifo_content(&cc2520->spi, pkt_frag, pkt_len - 2)) {
 			SYS_LOG_ERR("No content read");
 			goto flush;
 		}
 
-		if (!verify_crc(cc2520, buf)) {
+		if (!verify_crc(cc2520, pkt)) {
 			SYS_LOG_ERR("Bad packet CRC");
 			goto out;
 		}
 #endif
 
-		if (ieee802154_radio_handle_ack(cc2520->iface, buf) == NET_OK) {
+		if (ieee802154_radio_handle_ack(cc2520->iface, pkt) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled");
 			goto out;
 		}
 
 #if defined(CONFIG_IEEE802154_CC2520_RAW)
-		net_buf_add_u8(pkt_buf, cc2520->lqi);
+		net_buf_add_u8(pkt_frag, cc2520->lqi);
 #endif
 
 		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)",
 			    pkt_len, cc2520->lqi);
 
-		if (net_recv_data(cc2520->iface, buf) < 0) {
+		if (net_recv_data(cc2520->iface, pkt) < 0) {
 			SYS_LOG_DBG("Packet dropped by NET stack");
 			goto out;
 		}
@@ -696,8 +696,8 @@ flush:
 		_cc2520_print_errors(cc2520);
 		flush_rxfifo(cc2520);
 out:
-		if (buf) {
-			net_buf_unref(buf);
+		if (pkt) {
+			net_pkt_unref(pkt);
 		}
 	}
 }
@@ -837,11 +837,11 @@ error:
 }
 
 static int cc2520_tx(struct device *dev,
-		     struct net_buf *buf,
+		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
-	uint8_t *frame = frag->data - net_pkt_ll_reserve(buf);
-	uint8_t len = net_pkt_ll_reserve(buf) + frag->len;
+	uint8_t *frame = frag->data - net_pkt_ll_reserve(pkt);
+	uint8_t len = net_pkt_ll_reserve(pkt) + frag->len;
 	struct cc2520_context *cc2520 = dev->driver_data;
 	uint8_t retry = 2;
 	bool status;

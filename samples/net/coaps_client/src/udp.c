@@ -37,14 +37,14 @@ static void set_destination(struct sockaddr *addr)
 }
 
 static void udp_received(struct net_context *context,
-			 struct net_buf *buf, int status, void *user_data)
+			 struct net_pkt *pkt, int status, void *user_data)
 {
 	struct udp_context *ctx = user_data;
 
 	ARG_UNUSED(context);
 	ARG_UNUSED(status);
 
-	ctx->rx_pkt = buf;
+	ctx->rx_pkt = pkt;
 	k_sem_give(&ctx->rx_sem);
 }
 
@@ -52,30 +52,30 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
 	struct net_context *udp_ctx;
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 	struct sockaddr dst_addr;
 	int rc, len;
 
 	udp_ctx = ctx->net_ctx;
 
-	send_buf = net_pkt_get_tx(udp_ctx, K_FOREVER);
-	if (!send_buf) {
+	send_pkt = net_pkt_get_tx(udp_ctx, K_FOREVER);
+	if (!send_pkt) {
 		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 	}
 
-	rc = net_pkt_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
+	rc = net_pkt_append(send_pkt, size, (uint8_t *) buf, K_FOREVER);
 	if (!rc) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
 
 	set_destination(&dst_addr);
-	len = net_buf_frags_len(send_buf);
+	len = net_pkt_frags_len(send_pkt);
 	k_sleep(UDP_TX_TIMEOUT);
 
-	rc = net_context_sendto(send_buf, &dst_addr,
+	rc = net_context_sendto(send_pkt, &dst_addr,
 				addrlen, NULL, K_FOREVER, NULL, NULL);
 	if (rc < 0) {
-		net_pkt_unref(send_buf);
+		net_pkt_unref(send_pkt);
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	} else {
 		return len;

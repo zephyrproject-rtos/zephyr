@@ -105,12 +105,12 @@ static void net_rpl_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static void set_buf_ll_addr(struct device *dev, struct net_buf *buf)
+static void set_pkt_ll_addr(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_rpl_test *rpl = dev->driver_data;
 
-	struct net_linkaddr *src = net_pkt_ll_src(buf);
-	struct net_linkaddr *dst = net_pkt_ll_dst(buf);
+	struct net_linkaddr *src = net_pkt_ll_src(pkt);
+	struct net_linkaddr *dst = net_pkt_ll_dst(pkt);
 
 	dst->len = lladdr_src.len;
 	dst->addr = lladdr_src.addr;
@@ -119,24 +119,24 @@ static void set_buf_ll_addr(struct device *dev, struct net_buf *buf)
 	src->addr = rpl->mac_addr;
 }
 
-static int tester_send(struct net_if *iface, struct net_buf *buf)
+static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	if (!buf->frags) {
+	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
 
-	set_buf_ll_addr(iface->dev, buf);
+	set_pkt_ll_addr(iface->dev, pkt);
 
 	/* By default we assume that the test is ok */
 	data_failure = false;
 
 	if (feed_data) {
-		net_pkt_ll_swap(buf);
+		net_pkt_ll_swap(pkt);
 
-		if (net_recv_data(iface, buf) < 0) {
+		if (net_recv_data(iface, pkt) < 0) {
 			TC_ERROR("Data receive failed.");
-			net_pkt_unref(buf);
+			net_pkt_unref(pkt);
 			test_failed = true;
 		}
 
@@ -145,15 +145,15 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		return 0;
 	}
 
-	DBG("Buf %p to be sent len %lu\n", buf, net_buf_frags_len(buf));
+	DBG("Pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
 
 #if 0
-	net_hexdump_frags("recv", buf);
+	net_hexdump_frags("recv", pkt);
 #endif
 
-	if (NET_ICMP_BUF(buf)->type != expected_icmpv6) {
+	if (NET_ICMP_BUF(pkt)->type != expected_icmpv6) {
 		DBG("ICMPv6 type %d, expected %d\n",
-		    NET_ICMP_BUF(buf)->type, expected_icmpv6);
+		    NET_ICMP_BUF(pkt)->type, expected_icmpv6);
 
 		data_failure = true;
 	}
@@ -161,17 +161,17 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	/* If we are not sending what is expected, then mark it as a failure
 	 */
 	if (msg_sending) {
-		if (msg_sending != NET_ICMP_BUF(buf)->code) {
+		if (msg_sending != NET_ICMP_BUF(pkt)->code) {
 			DBG("Received code %d, expected %d\n",
-			    NET_ICMP_BUF(buf)->code, msg_sending);
+			    NET_ICMP_BUF(pkt)->code, msg_sending);
 
 			data_failure = true;
 		} else {
 			/* Pass sent DIO message back to us */
 			if (msg_sending == NET_RPL_DODAG_INFO_OBJ) {
-				net_pkt_ll_swap(buf);
+				net_pkt_ll_swap(pkt);
 
-				if (!net_recv_data(iface, buf)) {
+				if (!net_recv_data(iface, pkt)) {
 					/* We must not unref the msg,
 					 * as it should be unfreed by
 					 * the upper stack.
@@ -182,7 +182,7 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		}
 	}
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 out:
 	if (data_failure) {
@@ -314,19 +314,20 @@ static bool test_rpl_mcast_addr(void)
 
 static bool test_dio_dummy_input(void)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	int ret;
 
-	buf = net_pkt_get_tx(udp_ctx, K_FOREVER);
+	pkt = net_pkt_get_tx(udp_ctx, K_FOREVER);
 	frag = net_pkt_get_data(udp_ctx, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
 	msg_sending = NET_RPL_DODAG_INFO_OBJ;
 
-	set_buf_ll_addr(net_if_get_default()->dev, buf);
+	set_pkt_ll_addr(net_if_get_default()->dev, pkt);
 
-	ret = net_icmpv6_input(buf, NET_ICMPV6_RPL, msg_sending);
+	ret = net_icmpv6_input(pkt, NET_ICMPV6_RPL, msg_sending);
 	if (!ret) {
 		TC_ERROR("%d: Callback in %s not called properly\n", __LINE__,
 			 __func__);

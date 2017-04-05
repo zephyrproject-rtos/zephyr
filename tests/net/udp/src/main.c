@@ -77,16 +77,16 @@ static void net_udp_iface_init(struct net_if *iface)
 
 static int send_status = -EINVAL;
 
-static int tester_send(struct net_if *iface, struct net_buf *buf)
+static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	if (!buf->frags) {
+	if (!pkt->frags) {
 		DBG("No data to send!\n");
 		return -ENODATA;
 	}
 
 	DBG("Data was sent successfully\n");
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	send_status = 0;
 
@@ -135,7 +135,7 @@ struct ud {
 static struct ud *returned_ud;
 
 static enum net_verdict test_ok(struct net_conn *conn,
-				struct net_buf *buf,
+				struct net_pkt *pkt,
 				void *user_data)
 {
 	struct ud *ud = (struct ud *)user_data;
@@ -154,13 +154,13 @@ static enum net_verdict test_ok(struct net_conn *conn,
 
 	returned_ud = user_data;
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	return NET_OK;
 }
 
 static enum net_verdict test_fail(struct net_conn *conn,
-				  struct net_buf *buf,
+				  struct net_pkt *pkt,
 				  void *user_data)
 {
 	/* This function should never be called as there should not
@@ -171,60 +171,60 @@ static enum net_verdict test_fail(struct net_conn *conn,
 	return NET_DROP;
 }
 
-static void setup_ipv6_udp(struct net_buf *buf,
+static void setup_ipv6_udp(struct net_pkt *pkt,
 			   struct in6_addr *remote_addr,
 			   struct in6_addr *local_addr,
 			   uint16_t remote_port,
 			   uint16_t local_port)
 {
-	NET_IPV6_BUF(buf)->vtc = 0x60;
-	NET_IPV6_BUF(buf)->tcflow = 0;
-	NET_IPV6_BUF(buf)->flow = 0;
-	NET_IPV6_BUF(buf)->len[0] = 0;
-	NET_IPV6_BUF(buf)->len[1] = NET_UDPH_LEN;
+	NET_IPV6_BUF(pkt)->vtc = 0x60;
+	NET_IPV6_BUF(pkt)->tcflow = 0;
+	NET_IPV6_BUF(pkt)->flow = 0;
+	NET_IPV6_BUF(pkt)->len[0] = 0;
+	NET_IPV6_BUF(pkt)->len[1] = NET_UDPH_LEN;
 
-	NET_IPV6_BUF(buf)->nexthdr = IPPROTO_UDP;
-	NET_IPV6_BUF(buf)->hop_limit = 255;
+	NET_IPV6_BUF(pkt)->nexthdr = IPPROTO_UDP;
+	NET_IPV6_BUF(pkt)->hop_limit = 255;
 
-	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, remote_addr);
-	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, local_addr);
+	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src, remote_addr);
+	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, local_addr);
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	NET_UDP_BUF(buf)->src_port = htons(remote_port);
-	NET_UDP_BUF(buf)->dst_port = htons(local_port);
+	NET_UDP_BUF(pkt)->src_port = htons(remote_port);
+	NET_UDP_BUF(pkt)->dst_port = htons(local_port);
 
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ext_len(pkt, 0);
 
-	net_buf_add(buf->frags, net_pkt_ip_hdr_len(buf) +
+	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
 				sizeof(struct net_udp_hdr));
 }
 
-static void setup_ipv4_udp(struct net_buf *buf,
+static void setup_ipv4_udp(struct net_pkt *pkt,
 			   struct in_addr *remote_addr,
 			   struct in_addr *local_addr,
 			   uint16_t remote_port,
 			   uint16_t local_port)
 {
-	NET_IPV4_BUF(buf)->vhl = 0x45;
-	NET_IPV4_BUF(buf)->tos = 0;
-	NET_IPV4_BUF(buf)->len[0] = 0;
-	NET_IPV4_BUF(buf)->len[1] = NET_UDPH_LEN +
+	NET_IPV4_BUF(pkt)->vhl = 0x45;
+	NET_IPV4_BUF(pkt)->tos = 0;
+	NET_IPV4_BUF(pkt)->len[0] = 0;
+	NET_IPV4_BUF(pkt)->len[1] = NET_UDPH_LEN +
 		sizeof(struct net_ipv4_hdr);
 
-	NET_IPV4_BUF(buf)->proto = IPPROTO_UDP;
+	NET_IPV4_BUF(pkt)->proto = IPPROTO_UDP;
 
-	net_ipaddr_copy(&NET_IPV4_BUF(buf)->src, remote_addr);
-	net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, local_addr);
+	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src, remote_addr);
+	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, local_addr);
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
-	NET_UDP_BUF(buf)->src_port = htons(remote_port);
-	NET_UDP_BUF(buf)->dst_port = htons(local_port);
+	NET_UDP_BUF(pkt)->src_port = htons(remote_port);
+	NET_UDP_BUF(pkt)->dst_port = htons(local_port);
 
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ext_len(pkt, 0);
 
-	net_buf_add(buf->frags, net_pkt_ip_hdr_len(buf) +
+	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
 				sizeof(struct net_udp_hdr));
 }
 
@@ -238,22 +238,22 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 			      struct ud *ud,
 			      bool expect_failure)
 {
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
-	frag = net_pkt_get_frag(buf, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	net_pkt_frag_add(pkt, frag);
 
-	net_pkt_set_iface(buf, iface);
-	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 
-	setup_ipv6_udp(buf, src, dst, src_port, dst_port);
+	setup_ipv6_udp(pkt, src, dst, src_port, dst_port);
 
-	ret = net_recv_data(iface, buf);
+	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
-		printk("Cannot recv buf %p, ret %d\n", buf, ret);
+		printk("Cannot recv pkt %p, ret %d\n", pkt, ret);
 		return false;
 	}
 
@@ -286,22 +286,22 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 			      struct ud *ud,
 			      bool expect_failure)
 {
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	struct net_buf *frag;
 	int ret;
 
-	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
-	frag = net_pkt_get_frag(buf, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	net_pkt_frag_add(pkt, frag);
 
-	net_pkt_set_iface(buf, iface);
-	net_pkt_set_ll_reserve(buf, net_buf_headroom(frag));
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 
-	setup_ipv4_udp(buf, src, dst, src_port, dst_port);
+	setup_ipv4_udp(pkt, src, dst, src_port, dst_port);
 
-	ret = net_recv_data(iface, buf);
+	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
-		printk("Cannot recv buf %p, ret %d\n", buf, ret);
+		printk("Cannot recv pkt %p, ret %d\n", pkt, ret);
 		return false;
 	}
 

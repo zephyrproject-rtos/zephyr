@@ -29,7 +29,7 @@
 #define NUM_OBSERVERS 3
 #define NUM_REPLIES 3
 
-NET_BUF_POOL_DEFINE(zoap_pkt_pool, 4, 0, sizeof(struct net_pkt), NULL);
+NET_PKT_TX_SLAB_DEFINE(zoap_pkt_slab, 4);
 
 NET_BUF_POOL_DEFINE(zoap_data_pool, 4, ZOAP_BUF_SIZE, 0, NULL);
 
@@ -63,35 +63,36 @@ static struct sockaddr_in6 dummy_addr = {
 static int test_build_empty_pdu(void)
 {
 	uint8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
-	struct zoap_packet pkt;
-	struct net_buf *buf, *frag;
+	struct zoap_packet zpkt;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&pkt, buf);
+	r = zoap_packet_init(&zpkt, pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
 	}
 
-	zoap_header_set_version(&pkt, 1);
-	zoap_header_set_type(&pkt, ZOAP_TYPE_CON);
-	zoap_header_set_code(&pkt, ZOAP_METHOD_GET);
-	zoap_header_set_id(&pkt, 0);
+	zoap_header_set_version(&zpkt, 1);
+	zoap_header_set_type(&zpkt, ZOAP_TYPE_CON);
+	zoap_header_set_code(&zpkt, ZOAP_METHOD_GET);
+	zoap_header_set_id(&zpkt, 0);
 
 	if (frag->len != sizeof(result_pdu)) {
 		TC_PRINT("Different size from the reference packet\n");
@@ -106,7 +107,7 @@ static int test_build_empty_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
@@ -118,8 +119,9 @@ static int test_build_simple_pdu(void)
 	uint8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
 				 'n', 0xC1, 0x00, 0xFF, 'p', 'a', 'y', 'l',
 				 'o', 'a', 'd', 0x00 };
-	struct zoap_packet pkt;
-	struct net_buf *buf, *frag;
+	struct zoap_packet zpkt;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	const char token[] = "token";
 	uint8_t *appdata, payload[] = "payload";
 	uint16_t buflen;
@@ -127,47 +129,47 @@ static int test_build_simple_pdu(void)
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&pkt, buf);
+	r = zoap_packet_init(&zpkt, pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
 	}
 
-	zoap_header_set_version(&pkt, 1);
-	zoap_header_set_type(&pkt, ZOAP_TYPE_NON_CON);
-	zoap_header_set_code(&pkt,
+	zoap_header_set_version(&zpkt, 1);
+	zoap_header_set_type(&zpkt, ZOAP_TYPE_NON_CON);
+	zoap_header_set_code(&zpkt,
 			      ZOAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED);
-	zoap_header_set_id(&pkt, 0x1234);
+	zoap_header_set_id(&zpkt, 0x1234);
 
-	r = zoap_header_set_token(&pkt, (uint8_t *)token, strlen(token));
+	r = zoap_header_set_token(&zpkt, (uint8_t *)token, strlen(token));
 	if (r) {
 		TC_PRINT("Could not set token\n");
 		goto done;
 	}
 
-	r = zoap_add_option(&pkt, ZOAP_OPTION_CONTENT_FORMAT,
+	r = zoap_add_option(&zpkt, ZOAP_OPTION_CONTENT_FORMAT,
 			     &format, sizeof(format));
 	if (r) {
 		TC_PRINT("Could not add option\n");
 		goto done;
 	}
 
-	appdata = zoap_packet_get_payload(&pkt, &buflen);
-	if (!buf || buflen <= sizeof(payload)) {
+	appdata = zoap_packet_get_payload(&zpkt, &buflen);
+	if (!appdata || buflen <= sizeof(payload)) {
 		TC_PRINT("Not enough space to insert payload\n");
 		goto done;
 	}
@@ -186,7 +188,7 @@ static int test_build_simple_pdu(void)
 
 	memcpy(appdata, payload, sizeof(payload));
 
-	r = zoap_packet_set_used(&pkt, sizeof(payload));
+	r = zoap_packet_set_used(&zpkt, sizeof(payload));
 	if (r) {
 		TC_PRINT("Failed to set the amount of bytes used\n");
 		goto done;
@@ -205,7 +207,7 @@ static int test_build_simple_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
@@ -214,47 +216,48 @@ done:
 
 static int test_build_no_size_for_options(void)
 {
-	struct zoap_packet pkt;
-	struct net_buf *buf, *frag;
+	struct zoap_packet zpkt;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	const char token[] = "token";
 	uint8_t format = 0;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_limited_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&pkt, buf);
+	r = zoap_packet_init(&zpkt, pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
 	}
 
-	zoap_header_set_version(&pkt, 1);
-	zoap_header_set_type(&pkt, ZOAP_TYPE_NON_CON);
-	zoap_header_set_code(&pkt,
+	zoap_header_set_version(&zpkt, 1);
+	zoap_header_set_type(&zpkt, ZOAP_TYPE_NON_CON);
+	zoap_header_set_code(&zpkt,
 			      ZOAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED);
-	zoap_header_set_id(&pkt, 0x1234);
+	zoap_header_set_id(&zpkt, 0x1234);
 
-	r = zoap_header_set_token(&pkt, (uint8_t *)token, strlen(token));
+	r = zoap_header_set_token(&zpkt, (uint8_t *)token, strlen(token));
 	if (r) {
 		TC_PRINT("Could not set token\n");
 		goto done;
 	}
 
 	/* There won't be enough space for the option value */
-	r = zoap_add_option(&pkt, ZOAP_OPTION_CONTENT_FORMAT,
+	r = zoap_add_option(&zpkt, ZOAP_OPTION_CONTENT_FORMAT,
 			     &format, sizeof(format));
 	if (!r) {
 		TC_PRINT("Shouldn't have added the option, not enough space\n");
@@ -264,7 +267,7 @@ static int test_build_no_size_for_options(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
@@ -274,40 +277,41 @@ done:
 static int test_parse_empty_pdu(void)
 {
 	uint8_t pdu[] = { 0x40, 0x01, 0, 0 };
-	struct net_buf *buf, *frag;
-	struct zoap_packet pkt;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	struct zoap_packet zpkt;
 	uint8_t ver, type, code;
 	uint16_t id;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
 	memcpy(frag->data, pdu, sizeof(pdu));
 	frag->len = sizeof(pdu);
 
-	r = zoap_packet_parse(&pkt, buf);
+	r = zoap_packet_parse(&zpkt, pkt);
 	if (r) {
 		TC_PRINT("Could not parse packet\n");
 		goto done;
 	}
 
-	ver = zoap_header_get_version(&pkt);
-	type = zoap_header_get_type(&pkt);
-	code = zoap_header_get_code(&pkt);
-	id = zoap_header_get_id(&pkt);
+	ver = zoap_header_get_version(&zpkt);
+	type = zoap_header_get_type(&zpkt);
+	code = zoap_header_get_code(&zpkt);
+	id = zoap_header_get_id(&zpkt);
 
 	if (ver != 1) {
 		TC_PRINT("Invalid version for parsed packet\n");
@@ -332,7 +336,7 @@ static int test_parse_empty_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
@@ -344,8 +348,9 @@ static int test_parse_simple_pdu(void)
 	uint8_t pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
 			  'n',  0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y',
 			  'l', 'o', 'a', 'd', 0x00 };
-	struct zoap_packet pkt;
-	struct net_buf *buf, *frag;
+	struct zoap_packet zpkt;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_option options[16];
 	uint8_t ver, type, code, tkl;
 	const uint8_t *token, *payload;
@@ -353,33 +358,33 @@ static int test_parse_simple_pdu(void)
 	int result = TC_FAIL;
 	int r, count = 16;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
 	memcpy(frag->data, pdu, sizeof(pdu));
 	frag->len = sizeof(pdu);
 
-	r = zoap_packet_parse(&pkt, buf);
+	r = zoap_packet_parse(&zpkt, pkt);
 	if (r) {
 		TC_PRINT("Could not parse packet\n");
 		goto done;
 	}
 
-	ver = zoap_header_get_version(&pkt);
-	type = zoap_header_get_type(&pkt);
-	code = zoap_header_get_code(&pkt);
-	id = zoap_header_get_id(&pkt);
+	ver = zoap_header_get_version(&zpkt);
+	type = zoap_header_get_type(&zpkt);
+	code = zoap_header_get_code(&zpkt);
+	id = zoap_header_get_id(&zpkt);
 
 	if (ver != 1) {
 		TC_PRINT("Invalid version for parsed packet\n");
@@ -401,7 +406,7 @@ static int test_parse_simple_pdu(void)
 		goto done;
 	}
 
-	token = zoap_header_get_token(&pkt, &tkl);
+	token = zoap_header_get_token(&zpkt, &tkl);
 
 	if (!token) {
 		TC_PRINT("Couldn't extract token from packet\n");
@@ -418,7 +423,7 @@ static int test_parse_simple_pdu(void)
 		goto done;
 	}
 
-	count = zoap_find_options(&pkt, ZOAP_OPTION_CONTENT_FORMAT,
+	count = zoap_find_options(&zpkt, ZOAP_OPTION_CONTENT_FORMAT,
 				   options, count);
 	if (count != 1) {
 		TC_PRINT("Unexpected number of options in the packet\n");
@@ -436,13 +441,13 @@ static int test_parse_simple_pdu(void)
 	}
 
 	/* Not existent */
-	count = zoap_find_options(&pkt, ZOAP_OPTION_ETAG, options, count);
+	count = zoap_find_options(&zpkt, ZOAP_OPTION_ETAG, options, count);
 	if (count) {
 		TC_PRINT("There shouldn't be any ETAG option in the packet\n");
 		goto done;
 	}
 
-	payload = zoap_packet_get_payload(&pkt, &len);
+	payload = zoap_packet_get_payload(&zpkt, &len);
 	if (!payload || !len) {
 		TC_PRINT("There should be a payload in the packet\n");
 		goto done;
@@ -456,7 +461,7 @@ static int test_parse_simple_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
@@ -465,28 +470,29 @@ done:
 
 static int test_retransmit_second_round(void)
 {
-	struct zoap_packet pkt, resp;
+	struct zoap_packet zpkt, resp;
 	struct zoap_pending *pending, *resp_pending;
-	struct net_buf *buf, *frag, *resp_buf = NULL;
+	struct net_pkt *pkt, *resp_pkt = NULL;
+	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 	uint16_t id;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&pkt, buf);
+	r = zoap_packet_init(&zpkt, pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -494,10 +500,10 @@ static int test_retransmit_second_round(void)
 
 	id = zoap_next_id();
 
-	zoap_header_set_version(&pkt, 1);
-	zoap_header_set_type(&pkt, ZOAP_TYPE_CON);
-	zoap_header_set_code(&pkt, ZOAP_METHOD_GET);
-	zoap_header_set_id(&pkt, id);
+	zoap_header_set_version(&zpkt, 1);
+	zoap_header_set_type(&zpkt, ZOAP_TYPE_CON);
+	zoap_header_set_code(&zpkt, ZOAP_METHOD_GET);
+	zoap_header_set_id(&zpkt, id);
 
 	pending = zoap_pending_next_unused(pendings, NUM_PENDINGS);
 	if (!pending) {
@@ -505,7 +511,7 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	r = zoap_pending_init(pending, &pkt, (struct sockaddr *) &dummy_addr);
+	r = zoap_pending_init(pending, &zpkt, (struct sockaddr *) &dummy_addr);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -524,21 +530,21 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	resp_buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!resp_buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	resp_pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!resp_pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(resp_buf, frag);
+	net_pkt_frag_add(resp_pkt, frag);
 
-	r = zoap_packet_init(&resp, resp_buf);
+	r = zoap_packet_init(&resp, resp_pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -565,9 +571,9 @@ static int test_retransmit_second_round(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
-	if (resp_buf) {
-		net_buf_unref(resp_buf);
+	net_pkt_unref(pkt);
+	if (resp_pkt) {
+		net_pkt_unref(resp_pkt);
 	}
 
 	TC_END_RESULT(result);
@@ -612,7 +618,8 @@ static int server_resource_1_get(struct zoap_resource *resource,
 {
 	struct zoap_packet response;
 	struct zoap_observer *observer;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	char payload[] = "This is the payload";
 	const uint8_t *token;
 	uint8_t tkl, *p;
@@ -637,21 +644,21 @@ static int server_resource_1_get(struct zoap_resource *resource,
 
 	zoap_register_observer(resource, observer);
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		return -ENOMEM;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		return -ENOMEM;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		TC_PRINT("Unable to initialize packet.\n");
 		return -EINVAL;
@@ -675,7 +682,7 @@ static int server_resource_1_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	resource->user_data = buf;
+	resource->user_data = pkt;
 
 	return 0;
 }
@@ -695,28 +702,29 @@ static int test_observer_server(void)
 		0x51, 's', 0x01, '2', /* path */
 	};
 	struct zoap_packet req;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
 	memcpy(frag->data, valid_request_pdu, sizeof(valid_request_pdu));
 	frag->len = sizeof(valid_request_pdu);
 
-	r = zoap_packet_parse(&req, buf);
+	r = zoap_packet_parse(&req, pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -737,27 +745,27 @@ static int test_observer_server(void)
 		goto done;
 	}
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
 	memcpy(frag->data, not_found_request_pdu,
 	       sizeof(not_found_request_pdu));
 	frag->len = sizeof(not_found_request_pdu);
 
-	r = zoap_packet_parse(&req, buf);
+	r = zoap_packet_parse(&req, pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -773,7 +781,7 @@ static int test_observer_server(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
@@ -793,28 +801,29 @@ static int test_observer_client(void)
 {
 	struct zoap_packet req, rsp;
 	struct zoap_reply *reply;
-	struct net_buf *buf, *frag, *rsp_buf = NULL;
+	struct net_pkt *pkt, *rsp_pkt = NULL;
+	struct net_buf *frag;
 	const char token[] = "rndtoken";
 	const char * const *p;
 	int observe = 0;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&req, buf);
+	r = zoap_packet_init(&req, pkt);
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
@@ -838,7 +847,7 @@ static int test_observer_client(void)
 
 	for (p = server_resource_1_path; p && *p; p++) {
 		r = zoap_add_option(&req, ZOAP_OPTION_URI_PATH,
-				     *p, strlen(*p));
+				    *p, strlen(*p));
 		if (r < 0) {
 			TC_PRINT("Unable to add option to request.\n");
 			goto done;
@@ -855,7 +864,7 @@ static int test_observer_client(void)
 	reply->reply = resource_reply_cb;
 
 	/* Server side, not interesting for this test */
-	r = zoap_packet_parse(&req, buf);
+	r = zoap_packet_parse(&req, pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -869,13 +878,13 @@ static int test_observer_client(void)
 	}
 
 	/* We cheat, and communicate using the resource's user_data */
-	rsp_buf = server_resources[0].user_data;
+	rsp_pkt = server_resources[0].user_data;
 
 	/* The uninteresting part ends here */
 
-	/* 'rsp_buf' contains the response now */
+	/* 'rsp_pkt' contains the response now */
 
-	r = zoap_packet_parse(&rsp, rsp_buf);
+	r = zoap_packet_parse(&rsp, rsp_pkt);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -892,9 +901,9 @@ static int test_observer_client(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
-	if (rsp_buf) {
-		net_buf_unref(buf);
+	net_pkt_unref(pkt);
+	if (rsp_pkt) {
+		net_pkt_unref(pkt);
 	}
 
 	TC_END_RESULT(result);
@@ -906,28 +915,29 @@ static int test_block_size(void)
 {
 	struct zoap_block_context req_ctx, rsp_ctx;
 	struct zoap_packet req;
-	struct net_buf *frag, *buf = NULL;
+	struct net_pkt *pkt = NULL;
+	struct net_buf *frag;
 	const char token[] = "rndtoken";
 	uint8_t *payload;
 	uint16_t len;
 	int result = TC_FAIL;
 	int r;
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&req, buf);
+	r = zoap_packet_init(&req, pkt);
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
@@ -979,27 +989,27 @@ static int test_block_size(void)
 		goto done;
 	}
 
-	/* Suppose that buf was sent */
-	net_buf_unref(buf);
+	/* Suppose that pkt was sent */
+	net_pkt_unref(pkt);
 
 	/* Let's try the second packet */
 	zoap_next_block(&req_ctx);
 
-	buf = net_buf_alloc(&zoap_pkt_pool, K_NO_WAIT);
-	if (!buf) {
-		TC_PRINT("Could not get buffer from pool\n");
+	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
 		goto done;
 	}
 
 	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
-	if (!buf) {
+	if (!frag) {
 		TC_PRINT("Could not get buffer from pool\n");
 		goto done;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&req, buf);
+	r = zoap_packet_init(&req, pkt);
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
@@ -1043,7 +1053,7 @@ static int test_block_size(void)
 	result = TC_PASS;
 
 done:
-	net_buf_unref(buf);
+	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 

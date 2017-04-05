@@ -149,14 +149,15 @@ static const unsigned char pkt5[98] = {
 
 static bool run_tests(void)
 {
-	struct net_buf *frag, *buf;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	uint16_t chksum, orig_chksum;
 	int hdr_len, i, chunk, datalen, total = 0;
 
 	/* Packet fits to one fragment */
-	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
 	memcpy(net_buf_add(frag, sizeof(pkt1)), pkt1, sizeof(pkt1));
 	if (frag->len != sizeof(pkt1)) {
@@ -165,94 +166,94 @@ static bool run_tests(void)
 		return false;
 	}
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_family(buf, AF_INET6);
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ext_len(pkt, 0);
 
 	/* We need to zero the ICMP checksum */
-	hdr_len = net_pkt_ip_hdr_len(buf);
+	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMPV6));
+	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt1, should be 0x%x\n",
 		       chksum, orig_chksum);
 		return false;
 	}
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	/* Then a case where there will be two fragments */
-	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt2) / 2), pkt2, sizeof(pkt2) / 2);
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_family(buf, AF_INET6);
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ext_len(pkt, 0);
 
-	hdr_len = net_pkt_ip_hdr_len(buf);
+	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
 	frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt2) - sizeof(pkt2) / 2),
 	       pkt2 + sizeof(pkt2) / 2, sizeof(pkt2) - sizeof(pkt2) / 2);
 
-	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMPV6));
+	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt2, should be 0x%x\n",
 		       chksum, orig_chksum);
 		return false;
 	}
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	/* Then a case where there will be two fragments but odd data size */
-	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt3) / 2), pkt3, sizeof(pkt3) / 2);
 	printk("First fragment will have %zd bytes\n", sizeof(pkt3) / 2);
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_family(buf, AF_INET6);
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ext_len(pkt, 0);
 
-	hdr_len = net_pkt_ip_hdr_len(buf);
+	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
 	frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 	memcpy(net_buf_add(frag, sizeof(pkt3) - sizeof(pkt3) / 2),
 	       pkt3 + sizeof(pkt3) / 2, sizeof(pkt3) - sizeof(pkt3) / 2);
 	printk("Second fragment will have %zd bytes\n",
 	       sizeof(pkt3) - sizeof(pkt3) / 2);
 
-	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMPV6));
+	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
 		return false;
 	}
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	/* Then a case where there will be several fragments */
-	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 	memcpy(net_buf_add(frag, sizeof(struct net_ipv6_hdr)), pkt3,
 	       sizeof(struct net_ipv6_hdr));
 	printk("[0] IPv6 fragment will have %d bytes\n", frag->len);
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_family(buf, AF_INET6);
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ext_len(pkt, 0);
 
 	chunk = 29;
 	datalen = sizeof(pkt3) - sizeof(struct net_ipv6_hdr);
@@ -260,7 +261,7 @@ static bool run_tests(void)
 	for (i = 0; i < datalen/chunk; i++) {
 		/* Next fragments will contain the data in odd sizes */
 		frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-		net_buf_frag_add(buf, frag);
+		net_pkt_frag_add(pkt, frag);
 		memcpy(net_buf_add(frag, chunk),
 		       pkt3 + sizeof(struct net_ipv6_hdr) + i * chunk, chunk);
 		total += chunk;
@@ -279,7 +280,7 @@ static bool run_tests(void)
 	}
 	if ((datalen - total) > 0) {
 		frag = net_pkt_get_reserve_rx_data(10, K_FOREVER);
-		net_buf_frag_add(buf, frag);
+		net_pkt_frag_add(pkt, frag);
 		memcpy(net_buf_add(frag, datalen - total),
 		       pkt3 + sizeof(struct net_ipv6_hdr) + i * chunk,
 		       datalen - total);
@@ -290,79 +291,79 @@ static bool run_tests(void)
 
 	if ((total + sizeof(struct net_ipv6_hdr)) != sizeof(pkt3) ||
 	    (total + sizeof(struct net_ipv6_hdr)) !=
-				net_buf_frags_len(buf->frags)) {
+				net_pkt_get_len(pkt)) {
 		printk("pkt3 size differs from fragment sizes, "
 		       "pkt3 size %zd frags size %zd calc total %zd\n",
-		       sizeof(pkt3), net_buf_frags_len(buf->frags),
+		       sizeof(pkt3), net_pkt_get_len(pkt),
 		       total + sizeof(struct net_ipv6_hdr));
 		return false;
 	}
 
-	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMPV6));
+	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
 		return false;
 	}
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	/* Another packet that fits to one fragment.
 	 * This one has ethernet header before IPv4 data.
 	 */
-	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = net_pkt_get_reserve_rx_data(sizeof(struct net_eth_hdr),
 					    K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	net_pkt_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
-	memcpy(net_pkt_ll(buf), pkt4, sizeof(pkt4));
+	net_pkt_set_ll_reserve(pkt, sizeof(struct net_eth_hdr));
+	memcpy(net_pkt_ll(pkt), pkt4, sizeof(pkt4));
 	net_buf_add(frag, sizeof(pkt4) - sizeof(struct net_eth_hdr));
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
-	net_pkt_set_family(buf, AF_INET);
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_ext_len(pkt, 0);
 
-	hdr_len = net_pkt_ip_hdr_len(buf);
+	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMP));
+	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMP));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt4, should be 0x%x\n",
 		       chksum, orig_chksum);
 		return false;
 	}
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	/* Another packet that fits to one fragment and which has correct
 	 * checksum. This one has ethernet header before IPv4 data.
 	 */
-	buf = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = net_pkt_get_reserve_rx_data(sizeof(struct net_eth_hdr),
 					    K_FOREVER);
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	net_pkt_set_ll_reserve(buf, sizeof(struct net_eth_hdr));
-	memcpy(net_pkt_ll(buf), pkt5, sizeof(pkt5));
+	net_pkt_set_ll_reserve(pkt, sizeof(struct net_eth_hdr));
+	memcpy(net_pkt_ll(pkt), pkt5, sizeof(pkt5));
 	net_buf_add(frag, sizeof(pkt5) - sizeof(struct net_eth_hdr));
 
-	net_pkt_set_ip_hdr_len(buf, sizeof(struct net_ipv4_hdr));
-	net_pkt_set_family(buf, AF_INET);
-	net_pkt_set_ext_len(buf, 0);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_ext_len(pkt, 0);
 
-	hdr_len = net_pkt_ip_hdr_len(buf);
+	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	chksum = ntohs(~net_calc_chksum(buf, IPPROTO_ICMP));
+	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMP));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt5, should be 0x%x\n",
 		       chksum, orig_chksum);
 		return false;
 	}
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	return true;
 }

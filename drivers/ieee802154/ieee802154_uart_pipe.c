@@ -30,8 +30,8 @@ static struct device *upipe_dev;
 static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 {
 	struct upipe_context *upipe = upipe_dev->driver_data;
-	struct net_buf *pkt_buf = NULL;
-	struct net_buf *pkt = NULL;
+	struct net_pkt *pkt = NULL;
+	struct net_buf *frag = NULL;
 
 	if (!upipe_dev) {
 		goto done;
@@ -56,20 +56,20 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 	if (upipe->rx_len == upipe->rx_off) {
 		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!pkt) {
-			SYS_LOG_DBG("No buf available");
+			SYS_LOG_DBG("No pkt available");
 			goto flush;
 		}
 
-		pkt_buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-		if (!pkt_buf) {
+		frag = net_pkt_get_frag(pkt, K_NO_WAIT);
+		if (!frag) {
 			SYS_LOG_DBG("No fragment available");
 			goto out;
 		}
 
-		net_buf_frag_insert(pkt, pkt_buf);
+		net_pkt_frag_insert(pkt, frag);
 
-		memcpy(pkt_buf->data, upipe->rx_buf, upipe->rx_len - 2);
-		net_buf_add(pkt_buf, upipe->rx_len - 2);
+		memcpy(frag->data, upipe->rx_buf, upipe->rx_len - 2);
+		net_buf_add(frag, upipe->rx_len - 2);
 
 		if (ieee802154_radio_handle_ack(upipe->iface, pkt) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled");
@@ -93,7 +93,7 @@ flush:
 done:
 	*off = 0;
 
-	return buf;
+	return pkt;
 }
 
 static int upipe_cca(struct device *dev)
@@ -163,11 +163,11 @@ static int upipe_set_txpower(struct device *dev, int16_t dbm)
 }
 
 static int upipe_tx(struct device *dev,
-		    struct net_buf *buf,
+		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
-	uint8_t *pkt_buf = frag->data - net_pkt_ll_reserve(buf);
-	uint8_t len = net_pkt_ll_reserve(buf) + frag->len;
+	uint8_t *pkt_buf = frag->data - net_pkt_ll_reserve(pkt);
+	uint8_t len = net_pkt_ll_reserve(pkt) + frag->len;
 	struct upipe_context *upipe = dev->driver_data;
 	uint8_t i, data;
 

@@ -98,23 +98,23 @@ static bool is_sid_valid(const char *sid, size_t len)
 static int transmitv(struct net_context *conn, int iovcnt,
 		     struct io_vec *iov)
 {
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	int i;
 
-	buf = net_pkt_get_tx(conn, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_tx(conn, K_FOREVER);
+	if (!pkt) {
 		return -ENOMEM;
 	}
 
 	for (i = 0; i < iovcnt; i++) {
-		if (!net_pkt_append(buf, iov[i].len, iov[i].base, K_FOREVER)) {
-			net_pkt_unref(buf);
+		if (!net_pkt_append(pkt, iov[i].len, iov[i].base, K_FOREVER)) {
+			net_pkt_unref(pkt);
 
 			return -ENOMEM;
 		}
 	}
 
-	return net_context_send(buf, NULL, K_NO_WAIT, NULL, NULL);
+	return net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
 }
 
 static inline int transmit(struct net_context *conn, const char buffer[],
@@ -531,7 +531,7 @@ int nats_publish(const struct nats *nats,
 	});
 }
 
-static void receive_cb(struct net_context *ctx, struct net_buf *buf, int status,
+static void receive_cb(struct net_context *ctx, struct net_pkt *pkt, int status,
 		       void *user_data)
 {
 	struct nats *nats = user_data;
@@ -541,19 +541,19 @@ static void receive_cb(struct net_context *ctx, struct net_buf *buf, int status,
 	size_t len;
 	uint8_t *end_of_line;
 
-	if (!buf) {
+	if (!pkt) {
 		/* FIXME: How to handle disconnection? */
 		return;
 	}
 
 	if (status) {
 		/* FIXME: How to handle connectio error? */
-		net_buf_unref(buf);
+		net_pkt_unref(pkt);
 		return;
 	}
 
-	tmp = buf->frags;
-	pos = net_pkt_appdata(buf) - tmp->data;
+	tmp = pkt->frags;
+	pos = net_pkt_appdata(pkt) - tmp->data;
 
 	while (tmp) {
 		len = tmp->len - pos;
@@ -567,14 +567,14 @@ static void receive_cb(struct net_context *ctx, struct net_buf *buf, int status,
 			break;
 		}
 
-		tmp = net_pkt_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
+		tmp = net_frag_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
 		cmd_len += len;
 
 		if (end_of_line) {
 			int ret;
 
 			if (tmp) {
-				tmp = net_pkt_read(tmp, pos, &pos, 1, NULL);
+				tmp = net_frag_read(tmp, pos, &pos, 1, NULL);
 			}
 
 			cmd_buf[cmd_len] = '\0';
@@ -589,7 +589,7 @@ static void receive_cb(struct net_context *ctx, struct net_buf *buf, int status,
 		}
 	}
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 }
 
 int nats_connect(struct nats *nats, struct sockaddr *addr, socklen_t addrlen)

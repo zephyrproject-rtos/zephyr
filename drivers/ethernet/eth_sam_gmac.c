@@ -77,7 +77,7 @@ static struct gmac_desc tx_desc_que12[PRIORITY_QUEUE_DESC_COUNT]
 /* RX buffer accounting list */
 static struct net_buf *rx_buf_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
 /* TX frames accounting list */
-static struct net_buf *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
+static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
 
 #define MODULO_INC(val, max) {val = (++val < max) ? val : 0; }
 
@@ -219,7 +219,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 {
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tx_desc;
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 
 	__ASSERT(tx_desc_list->buf[tx_desc_list->tail].w1 & GMAC_TXW1_USED,
 		 "first buffer of a frame is not marked as own by GMAC");
@@ -232,9 +232,9 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 
 		if (tx_desc->w1 & GMAC_TXW1_LASTBUFFER) {
 			/* Release net buffer to the buffer pool */
-			buf = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
-			net_buf_unref(buf);
-			SYS_LOG_DBG("Dropping buf %p", buf);
+			pkt = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
+			net_pkt_unref(pkt);
+			SYS_LOG_DBG("Dropping pkt %p", pkt);
 
 			break;
 		}
@@ -246,7 +246,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
  */
 static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 {
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	struct ring_buf *tx_frames = &queue->tx_frames;
 
 	queue->err_tx_flushed_count++;
@@ -257,9 +257,9 @@ static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 	/* Free all pkt resources in the TX path */
 	while (tx_frames->tail != tx_frames->head) {
 		/* Release net buffer to the buffer pool */
-		buf = UINT_TO_POINTER(tx_frames->buf[tx_frames->tail]);
-		net_buf_unref(buf);
-		SYS_LOG_DBG("Dropping buf %p", buf);
+		pkt = UINT_TO_POINTER(tx_frames->buf[tx_frames->tail]);
+		net_pkt_unref(pkt);
+		SYS_LOG_DBG("Dropping pkt %p", pkt);
 		MODULO_INC(tx_frames->tail, tx_frames->len);
 	}
 
@@ -472,9 +472,8 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
 	struct gmac_desc *rx_desc;
 	struct ring_buf *rx_pkt_list = &queue->rx_pkt_list;
-	struct net_buf *rx_frame;
+	struct net_pkt *rx_frame;
 	bool frame_is_complete;
-	struct net_buf *prev_frag;
 	struct net_buf *frag;
 	struct net_buf *new_frag;
 	uint8_t *frag_data;
@@ -501,7 +500,6 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 	rx_frame = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 
 	/* Process a frame */
-	prev_frag = rx_frame;
 	tail = rx_desc_list->tail;
 	rx_desc = &rx_desc_list->buf[tail];
 	frame_is_complete = false;
@@ -540,12 +538,11 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 			new_frag = net_pkt_get_frag(rx_frame, K_NO_WAIT);
 			if (new_frag == NULL) {
 				queue->err_rx_frames_dropped++;
-				net_buf_unref(rx_frame);
+				net_pkt_unref(rx_frame);
 				rx_frame = NULL;
 			} else {
 				net_buf_add(frag, frag_len);
-				net_buf_frag_insert(prev_frag, frag);
-				prev_frag = frag;
+				net_pkt_frag_insert(rx_frame, frag);
 				frag = new_frag;
 				rx_pkt_list->buf[tail] = (uint32_t)frag;
 			}
@@ -577,7 +574,7 @@ static void eth_rx(struct gmac_queue *queue)
 {
 	struct eth_sam_dev_data *dev_data =
 		CONTAINER_OF(queue, struct eth_sam_dev_data, queue_list);
-	struct net_buf *rx_frame;
+	struct net_pkt *rx_frame;
 
 	/* More than one frame could have been received by GMAC, get all
 	 * complete frames stored in the GMAC RX descriptor list.
@@ -594,7 +591,7 @@ static void eth_rx(struct gmac_queue *queue)
 	}
 }
 
-static int eth_tx(struct net_if *iface, struct net_buf *buf)
+static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct device *const dev = net_if_get_device(iface);
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
@@ -609,8 +606,8 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	uint32_t err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
 	unsigned int key;
 
-	__ASSERT(buf, "buf pointer is NULL");
-	__ASSERT(buf->frags, "Frame data missing");
+	__ASSERT(pkt, "buf pointer is NULL");
+	__ASSERT(pkt->frags, "Frame data missing");
 
 	SYS_LOG_DBG("ETH tx");
 
@@ -618,10 +615,9 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	 * in our case) header. Modify the data pointer to account for more data
 	 * in the beginning of the buffer.
 	 */
-	net_buf_push(buf->frags, net_pkt_ll_reserve(buf));
+	net_buf_push(pkt->frags, net_pkt_ll_reserve(pkt));
 
-	frag = buf->frags;
-
+	frag = pkt->frags;
 	while (frag) {
 		frag_data = frag->data;
 		frag_len = frag->len;
@@ -683,7 +679,7 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	tx_desc->w1 |= GMAC_TXW1_USED;
 
 	/* Account for a sent frame */
-	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(buf));
+	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
 
 	irq_unlock(key);
 

@@ -82,7 +82,7 @@ static int http_url_cmp(const char *url, uint16_t url_len,
 
 static void http_tx(struct http_server_ctx *http_ctx);
 
-void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
+void http_rx_tx(struct net_context *net_ctx, struct net_pkt *rx, int status,
 		void *user_data)
 {
 	struct http_server_ctx *http_ctx = NULL;
@@ -128,8 +128,8 @@ void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
 		goto lb_exit;
 	}
 
-	offset = net_buf_frags_len(rx) - rcv_len;
-	rc = net_pkt_linear_copy(data, rx, offset, rcv_len);
+	offset = net_pkt_get_len(rx) - rcv_len;
+	rc = net_frag_linear_copy(data, rx->frags, offset, rcv_len);
 	if (rc != 0) {
 		printf("[%s:%d] Linear copy error\n", __func__, __LINE__);
 		goto lb_exit;
@@ -151,8 +151,8 @@ void http_rx_tx(struct net_context *net_ctx, struct net_buf *rx, int status,
 	}
 
 lb_exit:
-	net_buf_unref(data);
-	net_buf_unref(rx);
+	net_pkt_frag_unref(data);
+	net_pkt_unref(rx);
 
 	http_ctx_release(http_ctx);
 }

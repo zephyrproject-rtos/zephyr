@@ -234,7 +234,7 @@ int net_tcp_release(struct net_tcp *tcp);
  * @param local Source address, or NULL to use the local address of
  *        the TCP context
  * @param remote Peer address
- * @param send_buf Full IP + TCP header that is to be sent.
+ * @param send_pkt Full IP + TCP header that is to be sent.
  *
  * @return 0 if ok, < 0 if error
  */
@@ -242,31 +242,31 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
-			    struct net_buf **send_buf);
+			    struct net_pkt **send_pkt);
 
 /**
  * @brief Prepare a TCP ACK message that can be send to peer.
  *
  * @param tcp TCP context
  * @param remote Peer address
- * @param buf Network buffer
+ * @param pkt Network buffer
  *
  * @return 0 if ok, < 0 if error
  */
 int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
-			struct net_buf **buf);
+			struct net_pkt **pkt);
 
 /**
  * @brief Prepare a TCP RST message that can be send to peer.
  *
  * @param tcp TCP context
  * @param remote Peer address
- * @param buf Network buffer
+ * @param pkt Network buffer
  *
  * @return 0 if ok, < 0 if error
  */
 int net_tcp_prepare_reset(struct net_tcp *tcp, const struct sockaddr *remote,
-			  struct net_buf **buf);
+			  struct net_pkt **pkt);
 
 typedef void (*net_tcp_cb_t)(struct net_tcp *tcp, void *user_data);
 
@@ -292,19 +292,19 @@ int net_tcp_send_data(struct net_context *context);
  * @brief Enqueue a single packet for transmission
  *
  * @param context TCP context
- * @param buf Packet
+ * @param pkt Packet
  *
  * @return 0 if ok, < 0 if error
  */
-int net_tcp_queue_data(struct net_context *context, struct net_buf *buf);
+int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
 
 /**
  * @brief Sends one TCP packet initialized with the _prepare_*()
  *        family of functions.
  *
- * @param buf Packet
+ * @param pkt Packet
  */
-int net_tcp_send_buf(struct net_buf *buf);
+int net_tcp_send_pkt(struct net_pkt *pkt);
 
 /**
  * @brief Handle a received TCP ACK

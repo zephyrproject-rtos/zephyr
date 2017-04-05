@@ -38,20 +38,20 @@ static struct sockaddr_in *in4_addr_my;
 #endif
 
 static void tcp_received(struct net_context *context,
-			 struct net_buf *buf,
+			 struct net_pkt *pkt,
 			 int status,
 			 void *user_data)
 {
 	struct session *session;
 	uint32_t time;
 
-	if (!buf) {
+	if (!pkt) {
 		return;
 	}
 
 	time = k_cycle_get_32();
 
-	session = get_session(buf, SESSION_TCP);
+	session = get_session(pkt, SESSION_TCP);
 	if (!session) {
 		printk(TAG "ERROR! cannot get a session!\n");
 		return;
@@ -68,11 +68,11 @@ static void tcp_received(struct net_context *context,
 	case STATE_ONGOING:
 		session->counter++;
 
-		if (buf) {
-			session->length += net_pkt_appdatalen(buf);
+		if (pkt) {
+			session->length += net_pkt_appdatalen(pkt);
 		}
 
-		if (!buf && status == 0) { /* EOF */
+		if (!pkt && status == 0) { /* EOF */
 			uint32_t rate_in_kbps;
 			uint32_t duration = HW_CYCLES_TO_USEC(
 				time_delta(session->start_time, time));
@@ -107,7 +107,7 @@ static void tcp_received(struct net_context *context,
 		printk(TAG "Error! Unsupported case\n");
 	}
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 }
 
 static void tcp_accepted(struct net_context *context,

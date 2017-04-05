@@ -472,7 +472,7 @@ uint16_t ieee802154_compute_header_size(struct net_if *iface,
 		hdr_len += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
 	}
 
-	/* This is a _HACK_: as net buf do not let the possibility to
+	/* This is a _HACK_: as net pkt do not let the possibility to
 	 * reserve tailroom - here for authentication tag - it reserves
 	 * it in headroom so the payload won't occupy all the left space
 	 * and then when it will come to finalize the data frame it will
@@ -808,27 +808,28 @@ static inline uint8_t mac_command_length(enum ieee802154_cfi cfi)
 	return reserve;
 }
 
-struct net_buf *
+struct net_pkt *
 ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params)
 {
 	struct ieee802154_fcf_seq *fs;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	uint8_t *p_buf;
 
-	buf = net_pkt_get_reserve_tx(0, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	if (!pkt) {
 		return NULL;
 	}
 
-	frag = net_pkt_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
 		goto error;
 	}
 
-	net_buf_frag_add(buf, frag);
-	p_buf = net_pkt_ll(buf);
+	net_pkt_frag_add(pkt, frag);
+	p_buf = net_pkt_ll(pkt);
 
 	fs = generate_fcf_grounds(&p_buf,
 				  type == IEEE802154_CFI_BEACON_REQUEST ?
@@ -851,20 +852,20 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	 * to be easy to handle afterwards to point directly to MAC
 	 * command space, in order to fill-in its content.
 	 */
-	net_pkt_set_ll_reserve(buf, p_buf - net_pkt_ll(buf));
-	net_buf_pull(frag, net_pkt_ll_reserve(buf));
+	net_pkt_set_ll_reserve(pkt, p_buf - net_pkt_ll(pkt));
+	net_buf_pull(frag, net_pkt_ll_reserve(pkt));
 
 	/* Thus setting the right MAC command length
 	 * Now up to the caller to fill-in this space relevantly.
 	 * See ieee802154_mac_command() helper.
 	 */
-	net_pkt_set_len(frag, mac_command_length(type));
+	frag->len = mac_command_length(type);
 
 	dbg_print_fs(fs);
 
-	return buf;
+	return pkt;
 error:
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	return NULL;
 }
@@ -872,9 +873,9 @@ error:
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,
-				 struct net_buf *buf, uint8_t seq)
+				 struct net_pkt *pkt, uint8_t seq)
 {
-	uint8_t *p_buf = net_pkt_ll(buf);
+	uint8_t *p_buf = net_pkt_ll(pkt);
 	struct ieee802154_fcf_seq *fs;
 
 	if (!p_buf) {
@@ -894,7 +895,7 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 #endif /* CONFIG_NET_L2_IEEE802154_ACK_REPLY */
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
-bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
+bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 				    struct ieee802154_mpdu *mpdu)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -916,10 +917,10 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
 	 * This will require to look up in nbr cache with short addr
 	 * in order to get the extended address related to it
 	 */
-	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(buf),
-				     net_pkt_ll_reserve(buf),
-				     net_buf_frags_len(buf),
-				     net_pkt_ll_src(buf)->addr,
+	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(pkt),
+				     net_pkt_ll_reserve(pkt),
+				     net_pkt_get_len(pkt),
+				     net_pkt_ll_src(pkt)->addr,
 				     sys_le32_to_cpu(
 					mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
@@ -932,7 +933,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
 	}
 
 	/* We remove tag size from frag's length, it is now useless */
-	buf->frags->len -= level_2_tag_size[level];
+	pkt->frags->len -= level_2_tag_size[level];
 
 	return true;
 }

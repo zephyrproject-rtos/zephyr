@@ -400,12 +400,12 @@ static uint16_t calc_chksum(uint16_t sum, const uint8_t *ptr, uint16_t len)
 	return sum;
 }
 
-static inline uint16_t calc_chksum_buf(uint16_t sum, struct net_buf *buf,
+static inline uint16_t calc_chksum_pkt(uint16_t sum, struct net_pkt *pkt,
 				       uint16_t upper_layer_len)
 {
-	struct net_buf *frag = buf->frags;
-	uint16_t proto_len = net_pkt_ip_hdr_len(buf) +
-		net_pkt_ext_len(buf);
+	struct net_buf *frag = pkt->frags;
+	uint16_t proto_len = net_pkt_ip_hdr_len(pkt) +
+		net_pkt_ext_len(pkt);
 	int16_t len = frag->len - proto_len;
 	uint8_t *ptr = frag->data + proto_len;
 
@@ -443,45 +443,45 @@ static inline uint16_t calc_chksum_buf(uint16_t sum, struct net_buf *buf,
 	return sum;
 }
 
-uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto)
+uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 {
 	uint16_t upper_layer_len;
 	uint16_t sum;
 
-	switch (net_pkt_family(buf)) {
+	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
 	case AF_INET:
-		upper_layer_len = (NET_IPV4_BUF(buf)->len[0] << 8) +
-			NET_IPV4_BUF(buf)->len[1] -
-			net_pkt_ext_len(buf) -
-			net_pkt_ip_hdr_len(buf);
+		upper_layer_len = (NET_IPV4_BUF(pkt)->len[0] << 8) +
+			NET_IPV4_BUF(pkt)->len[1] -
+			net_pkt_ext_len(pkt) -
+			net_pkt_ip_hdr_len(pkt);
 
 		if (proto == IPPROTO_ICMP) {
-			return htons(calc_chksum(0, net_pkt_ip_data(buf) +
-						 net_pkt_ip_hdr_len(buf),
+			return htons(calc_chksum(0, net_pkt_ip_data(pkt) +
+						 net_pkt_ip_hdr_len(pkt),
 						 upper_layer_len));
 		} else {
 			sum = calc_chksum(upper_layer_len + proto,
-					  (uint8_t *)&NET_IPV4_BUF(buf)->src,
+					  (uint8_t *)&NET_IPV4_BUF(pkt)->src,
 					  2 * sizeof(struct in_addr));
 		}
 		break;
 #endif
 #if defined(CONFIG_NET_IPV6)
 	case AF_INET6:
-		upper_layer_len = (NET_IPV6_BUF(buf)->len[0] << 8) +
-			NET_IPV6_BUF(buf)->len[1] - net_pkt_ext_len(buf);
+		upper_layer_len = (NET_IPV6_BUF(pkt)->len[0] << 8) +
+			NET_IPV6_BUF(pkt)->len[1] - net_pkt_ext_len(pkt);
 		sum = calc_chksum(upper_layer_len + proto,
-				  (uint8_t *)&NET_IPV6_BUF(buf)->src,
+				  (uint8_t *)&NET_IPV6_BUF(pkt)->src,
 				  2 * sizeof(struct in6_addr));
 		break;
 #endif
 	default:
-		NET_DBG("Unknown protocol family %d", net_pkt_family(buf));
+		NET_DBG("Unknown protocol family %d", net_pkt_family(pkt));
 		return 0;
 	}
 
-	sum = calc_chksum_buf(sum, buf, upper_layer_len);
+	sum = calc_chksum_pkt(sum, pkt, upper_layer_len);
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 
@@ -489,11 +489,11 @@ uint16_t net_calc_chksum(struct net_buf *buf, uint8_t proto)
 }
 
 #if defined(CONFIG_NET_IPV4)
-uint16_t net_calc_chksum_ipv4(struct net_buf *buf)
+uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
 	uint16_t sum;
 
-	sum = calc_chksum(0, (uint8_t *)NET_IPV4_BUF(buf), NET_IPV4H_LEN);
+	sum = calc_chksum(0, (uint8_t *)NET_IPV4_BUF(pkt), NET_IPV4H_LEN);
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 

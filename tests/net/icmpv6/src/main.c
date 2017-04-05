@@ -20,27 +20,21 @@
 #include "icmpv6.h"
 
 static int handler_called;
-
-struct header {
-	int status;
-};
-
-#define buf_status(buf) (((struct header *)net_buf_user_data((buf)))->status)
+static int handler_status;
 
 #define TEST_MSG "foobar devnull"
 
-NET_BUF_POOL_DEFINE(bufs_pool, 2, 0, sizeof(struct header), NULL);
-
+NET_PKT_TX_SLAB_DEFINE(pkts_slab, 2);
 NET_BUF_POOL_DEFINE(data_pool, 2, 128, 0, NULL);
 
-static enum net_verdict handle_test_msg(struct net_buf *buf)
+static enum net_verdict handle_test_msg(struct net_pkt *pkt)
 {
-	struct net_buf *last = net_buf_frag_last(buf);
+	struct net_buf *last = net_buf_frag_last(pkt->frags);
 
 	if (last->len != (strlen(TEST_MSG) + 1)) {
-		buf_status(buf) = -EINVAL;
+		handler_status = -EINVAL;
 	} else {
-		buf_status(buf) = 0;
+		handler_status = 0;
 	}
 
 	handler_called++;
@@ -62,40 +56,45 @@ static struct net_icmpv6_handler test_handler2 = {
 
 static bool run_tests(void)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	int ret;
 
 	net_icmpv6_register_handler(&test_handler1);
 	net_icmpv6_register_handler(&test_handler2);
 
-	buf = net_buf_alloc(&bufs_pool, K_FOREVER);
+	pkt = net_pkt_get_reserve(&pkts_slab, 0, K_FOREVER);
 	frag = net_buf_alloc(&data_pool, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
 	memcpy(net_buf_add(frag, sizeof(TEST_MSG)),
 	       TEST_MSG, sizeof(TEST_MSG));
 
-	ret = net_icmpv6_input(buf, 0, 0);
+	ret = net_icmpv6_input(pkt, 0, 0);
 	if (!ret) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;
 	}
 
-	ret = net_icmpv6_input(buf, NET_ICMPV6_ECHO_REPLY, 0);
-	if (ret < 0 || buf_status(buf) != 0) {
+	handler_status = -1;
+
+	ret = net_icmpv6_input(pkt, NET_ICMPV6_ECHO_REPLY, 0);
+	if (ret < 0 || handler_status != 0) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;
 	}
 
-	ret = net_icmpv6_input(buf, 1, 0);
+	ret = net_icmpv6_input(pkt, 1, 0);
 	if (!ret) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;
 	}
 
-	ret = net_icmpv6_input(buf, NET_ICMPV6_ECHO_REQUEST, 0);
-	if (ret < 0 || buf_status(buf) != 0) {
+	handler_status = -1;
+
+	ret = net_icmpv6_input(pkt, NET_ICMPV6_ECHO_REQUEST, 0);
+	if (ret < 0 || handler_status != 0) {
 		printk("%d: Callback not called properly\n", __LINE__);
 		return false;
 	}

@@ -77,10 +77,10 @@ static int ipsum_len;
  */
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 #if defined(CONFIG_NET_TCP)
-NET_PKT_TX_POOL_DEFINE(echo_tx_tcp, 15);
+NET_PKT_TX_SLAB_DEFINE(echo_tx_tcp, 15);
 NET_PKT_DATA_POOL_DEFINE(echo_data_tcp, 30);
 
-static struct net_buf_pool *tx_tcp_pool(void)
+static struct k_mem_slab *tx_tcp_slab(void)
 {
 	return &echo_tx_tcp;
 }
@@ -92,10 +92,10 @@ static struct net_buf_pool *data_tcp_pool(void)
 #endif
 
 #if defined(CONFIG_NET_UDP)
-NET_PKT_TX_POOL_DEFINE(echo_tx_udp, 5);
+NET_PKT_TX_SLAB_DEFINE(echo_tx_udp, 5);
 NET_PKT_DATA_POOL_DEFINE(echo_data_udp, 20);
 
-static struct net_buf_pool *tx_udp_pool(void)
+static struct k_mem_slab *tx_udp_slab(void)
 {
 	return &echo_tx_udp;
 }
@@ -294,7 +294,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
-	net_context_setup_pools(*udp_recv6, tx_udp_pool, data_udp_pool);
+	net_context_setup_pools(*udp_recv6, tx_udp_slab, data_udp_pool);
 
 	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
@@ -313,7 +313,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
-	net_context_setup_pools(*udp_recv4, tx_udp_pool, data_udp_pool);
+	net_context_setup_pools(*udp_recv4, tx_udp_slab, data_udp_pool);
 
 	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4,
 			       sizeof(struct sockaddr_in));
@@ -334,7 +334,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 			return false;
 		}
 
-		net_context_setup_pools(*tcp_recv6, tx_tcp_pool, data_tcp_pool);
+		net_context_setup_pools(*tcp_recv6, tx_tcp_slab, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv6,
 				       (struct sockaddr *)&my_addr6,
@@ -356,7 +356,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 			return false;
 		}
 
-		net_context_setup_pools(*tcp_recv4, tx_tcp_pool, data_tcp_pool);
+		net_context_setup_pools(*tcp_recv4, tx_tcp_slab, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv4,
 				       (struct sockaddr *)&my_addr4,
@@ -389,25 +389,25 @@ static inline bool wait_reply(const char *name,
 	return false;
 }
 
-static struct net_buf *prepare_send_buf(const char *name,
+static struct net_pkt *prepare_send_pkt(const char *name,
 					struct net_context *context,
 					int expecting_len)
 {
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 	bool status;
 
-	send_buf = net_pkt_get_tx(context, K_FOREVER);
+	send_pkt = net_pkt_get_tx(context, K_FOREVER);
 
-	NET_ASSERT(send_buf);
+	NET_ASSERT(send_pkt);
 
-	status = net_pkt_append(send_buf, expecting_len, lorem_ipsum,
-				 K_FOREVER);
+	status = net_pkt_append(send_pkt, expecting_len, lorem_ipsum,
+				K_FOREVER);
 	if (!status) {
-		NET_ERR("%s: cannot create send buf", name);
+		NET_ERR("%s: cannot create send pkt", name);
 		return NULL;
 	}
 
-	return send_buf;
+	return send_pkt;
 }
 
 static inline void udp_sent(struct net_context *context,
@@ -424,10 +424,10 @@ static inline void udp_sent(struct net_context *context,
 }
 
 static inline void set_dst_addr(sa_family_t family,
-				struct net_buf *buf,
+				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
 {
-	ARG_UNUSED(buf);
+	ARG_UNUSED(pkt);
 
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
@@ -453,37 +453,38 @@ static inline void set_dst_addr(sa_family_t family,
 }
 
 #if defined(CONFIG_NET_UDP)
-static bool compare_udp_data(struct net_buf *buf, int expecting_len)
+static bool compare_udp_data(struct net_pkt *pkt, int expecting_len)
 {
-	uint8_t *ptr = net_pkt_appdata(buf);
+	uint8_t *ptr = net_pkt_appdata(pkt);
+	struct net_buf *frag;
 	int pos = 0;
 	int len;
 
-	/* Buf will now point to first fragment with IP header
+	/* frag will now point to first fragment with IP header
 	 * in it.
 	 */
-	buf = buf->frags;
+	frag = pkt->frags;
 
 	/* Do not include the protocol headers in the first fragment.
 	 * The remaining fragments contain only data so the user data
 	 * length is directly the fragment len.
 	 */
-	len = buf->len - (ptr - buf->data);
+	len = frag->len - (ptr - frag->data);
 
-	while (buf) {
+	while (frag) {
 		if (memcmp(ptr, lorem_ipsum + pos, len)) {
 			NET_DBG("Invalid data received");
 			return false;
 		} else {
 			pos += len;
 
-			buf = buf->frags;
-			if (!buf) {
+			frag = frag->frags;
+			if (!frag) {
 				break;
 			}
 
-			ptr = buf->data;
-			len = buf->len;
+			ptr = frag->data;
+			len = frag->len;
 		}
 	}
 
@@ -509,7 +510,7 @@ static bool send_udp_data(struct net_context *udp,
 			  struct data *data)
 {
 	bool status = false;
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 	struct sockaddr dst_addr;
 	socklen_t addrlen;
 	size_t len;
@@ -517,18 +518,18 @@ static bool send_udp_data(struct net_context *udp,
 
 	data->expecting_udp = sys_rand32_get() % ipsum_len;
 
-	send_buf = prepare_send_buf(proto, udp, data->expecting_udp);
-	if (!send_buf) {
+	send_pkt = prepare_send_pkt(proto, udp, data->expecting_udp);
+	if (!send_pkt) {
 		goto out;
 	}
 
-	len = net_buf_frags_len(send_buf);
+	len = net_pkt_get_len(send_pkt);
 
 	NET_ASSERT_INFO(data->expecting_udp == len,
 			"Data to send %d bytes, real len %zu",
 			data->expecting_udp, len);
 
-	set_dst_addr(family, send_buf, &dst_addr);
+	set_dst_addr(family, send_pkt, &dst_addr);
 
 	if (family == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
@@ -536,13 +537,13 @@ static bool send_udp_data(struct net_context *udp,
 		addrlen = sizeof(struct sockaddr_in);
 	}
 
-	ret = net_context_sendto(send_buf, &dst_addr,
+	ret = net_context_sendto(send_pkt, &dst_addr,
 				 addrlen, udp_sent, 0,
 				 UINT_TO_POINTER(len),
 				 proto);
 	if (ret < 0) {
 		NET_ERR("Cannot send %s data to peer (%d)", proto, ret);
-		net_pkt_unref(send_buf);
+		net_pkt_unref(send_pkt);
 	} else {
 		status = true;
 	}
@@ -552,11 +553,11 @@ out:
 }
 
 static void udp_received(struct net_context *context,
-			      struct net_buf *buf,
+			      struct net_pkt *pkt,
 			      int status,
 			      void *user_data)
 {
-	sa_family_t family = net_pkt_family(buf);
+	sa_family_t family = net_pkt_family(pkt);
 	struct data *data = user_data;
 	struct k_sem *recv;
 
@@ -569,16 +570,16 @@ static void udp_received(struct net_context *context,
 		recv = &conf.recv_ipv6;
 	}
 
-	if (data->expecting_udp != net_pkt_appdatalen(buf)) {
+	if (data->expecting_udp != net_pkt_appdatalen(pkt)) {
 		NET_ERR("Sent %d bytes, received %u bytes",
-			data->expecting_udp, net_pkt_appdatalen(buf));
+			data->expecting_udp, net_pkt_appdatalen(pkt));
 	}
 
-	if (!compare_udp_data(buf, data->expecting_udp)) {
+	if (!compare_udp_data(pkt, data->expecting_udp)) {
 		NET_DBG("Data mismatch");
 	}
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 
 	k_sem_give(recv);
 }
@@ -613,17 +614,17 @@ static void send_udp(struct net_context *udp,
 #endif /* CONFIG_NET_UDP */
 
 #if defined(CONFIG_NET_TCP)
-static bool compare_tcp_data(struct net_buf *buf, int expecting_len,
+static bool compare_tcp_data(struct net_pkt *pkt, int expecting_len,
 			     int received_len)
 {
-	uint8_t *ptr = net_pkt_appdata(buf), *start;
+	uint8_t *ptr = net_pkt_appdata(pkt), *start;
 	int pos = 0;
 	struct net_buf *frag;
 	int len;
 
 	/* frag will point to first fragment with IP header in it.
 	 */
-	frag = buf->frags;
+	frag = pkt->frags;
 
 	/* Do not include the protocol headers for the first fragment.
 	 * The remaining fragments contain only data so the user data
@@ -650,13 +651,13 @@ static bool compare_tcp_data(struct net_buf *buf, int expecting_len,
 		len = frag->len;
 	}
 
-	NET_DBG("Compared %d bytes, all ok", net_pkt_appdatalen(buf));
+	NET_DBG("Compared %d bytes, all ok", net_pkt_appdatalen(pkt));
 
 	return true;
 }
 
 static void tcp_received(struct net_context *context,
-			 struct net_buf *buf,
+			 struct net_pkt *pkt,
 			 int status,
 			 void *user_data)
 {
@@ -665,27 +666,27 @@ static void tcp_received(struct net_context *context,
 
 	ARG_UNUSED(status);
 
-	if (!buf || net_pkt_appdatalen(buf) == 0) {
-		if (buf) {
-			net_pkt_unref(buf);
+	if (!pkt || net_pkt_appdatalen(pkt) == 0) {
+		if (pkt) {
+			net_pkt_unref(pkt);
 		}
 
 		return;
 	}
 
-	if (net_pkt_family(buf) == AF_INET6) {
+	if (net_pkt_family(pkt) == AF_INET6) {
 		proto = "IPv6";
 	} else {
 		proto = "IPv4";
 	}
 
 	NET_DBG("Sent %d bytes, received %u bytes",
-		data->expecting_tcp, net_pkt_appdatalen(buf));
+		data->expecting_tcp, net_pkt_appdatalen(pkt));
 
-	if (!compare_tcp_data(buf, data->expecting_tcp, data->received_tcp)) {
+	if (!compare_tcp_data(pkt, data->expecting_tcp, data->received_tcp)) {
 		NET_DBG("Data mismatch");
 	} else {
-		data->received_tcp += net_pkt_appdatalen(buf);
+		data->received_tcp += net_pkt_appdatalen(pkt);
 	}
 
 	if (data->expecting_tcp <= data->received_tcp) {
@@ -693,7 +694,7 @@ static void tcp_received(struct net_context *context,
 		send_tcp_data(context, proto, data);
 	}
 
-	net_pkt_unref(buf);
+	net_pkt_unref(pkt);
 }
 
 static void setup_tcp_recv(struct net_context *tcp,
@@ -729,7 +730,7 @@ static bool send_tcp_data(struct net_context *ctx,
 			  char *proto,
 			  struct data *data)
 {
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 	bool status = false;
 	size_t len;
 	int ret;
@@ -737,22 +738,22 @@ static bool send_tcp_data(struct net_context *ctx,
 	data->expecting_tcp = sys_rand32_get() % ipsum_len;
 	data->received_tcp = 0;
 
-	send_buf = prepare_send_buf(proto, ctx, data->expecting_tcp);
-	if (!send_buf) {
+	send_pkt = prepare_send_pkt(proto, ctx, data->expecting_tcp);
+	if (!send_pkt) {
 		goto out;
 	}
 
-	len = net_buf_frags_len(send_buf);
+	len = net_pkt_get_len(send_pkt);
 
 	NET_ASSERT_INFO(data->expecting_tcp == len,
 			"%s data to send %d bytes, real len %zu",
 			proto, data->expecting_tcp, len);
 
-	ret = net_context_send(send_buf, tcp_sent, 0,
+	ret = net_context_send(send_pkt, tcp_sent, 0,
 			       UINT_TO_POINTER(len), proto);
 	if (ret < 0) {
 		NET_ERR("Cannot send %s data to peer (%d)", proto, ret);
-		net_pkt_unref(send_buf);
+		net_pkt_unref(send_pkt);
 	} else {
 		status = true;
 	}

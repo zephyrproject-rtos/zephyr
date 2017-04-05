@@ -10,6 +10,6 @@
 #include "tcp_client.h"
 
 /* HTTP reception callback */
-void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_buf *rx);
+void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_pkt *rx);
 
 #endif

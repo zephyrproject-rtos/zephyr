@@ -78,7 +78,7 @@ lb_exit:
 }
 
 static
-void recv_cb(struct net_context *net_ctx, struct net_buf *rx, int status,
+void recv_cb(struct net_context *net_ctx, struct net_pkt *rx, int status,
 	     void *data)
 {
 	struct tcp_client_ctx *ctx = (struct tcp_client_ctx *)data;
@@ -93,14 +93,14 @@ void recv_cb(struct net_context *net_ctx, struct net_buf *rx, int status,
 		goto lb_exit;
 	}
 
-	/* receive_cb must take ownership of the rx buffer */
+	/* receive_cb must take ownership of the rx packet */
 	if (ctx->receive_cb) {
 		ctx->receive_cb(ctx, rx);
 		return;
 	}
 
 lb_exit:
-	net_buf_unref(rx);
+	net_pkt_unref(rx);
 }
 
 int tcp_connect(struct tcp_client_ctx *ctx, const char *server_addr,

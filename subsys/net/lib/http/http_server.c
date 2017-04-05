@@ -32,7 +32,7 @@ static inline uint16_t http_strlen(const char *str)
 	return 0;
 }
 
-static int http_add_header(struct net_buf *tx, int32_t timeout, const char *str)
+static int http_add_header(struct net_pkt *tx, int32_t timeout, const char *str)
 {
 	if (net_pkt_append(tx, strlen(str), (uint8_t *)str, timeout)) {
 		return 0;
@@ -41,7 +41,7 @@ static int http_add_header(struct net_buf *tx, int32_t timeout, const char *str)
 	return -ENOMEM;
 }
 
-static int http_add_chunk(struct net_buf *tx, int32_t timeout, const char *str)
+static int http_add_chunk(struct net_pkt *tx, int32_t timeout, const char *str)
 {
 	char chunk_header[16];
 	char *rn = "\r\n";
@@ -71,12 +71,12 @@ static int http_add_chunk(struct net_buf *tx, int32_t timeout, const char *str)
 int http_response(struct http_server_ctx *ctx, const char *http_header,
 		  const char *html_payload)
 {
-	struct net_buf *tx;
+	struct net_pkt *tx;
 	int rc = -EINVAL;
 
 	tx = net_pkt_get_tx(ctx->net_ctx, ctx->timeout);
 	if (!tx) {
-		goto exit_routine;
+		return rc;
 	}
 
 	rc = http_add_header(tx, ctx->timeout, http_header);
@@ -105,7 +105,6 @@ int http_response(struct http_server_ctx *ctx, const char *http_header,
 	tx = NULL;
 
 exit_routine:
-	/* unref can handle NULL buffers, so we are covered */
 	net_pkt_unref(tx);
 
 	return rc;

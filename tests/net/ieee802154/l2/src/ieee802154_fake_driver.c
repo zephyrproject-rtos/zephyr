@@ -16,7 +16,7 @@
 /** FAKE ieee802.15.4 driver **/
 #include <net/ieee802154_radio.h>
 
-extern struct net_buf *current_buf;
+extern struct net_pkt *current_pkt;
 extern struct k_sem driver_lock;
 
 static int fake_cca(struct device *dev)
@@ -61,34 +61,34 @@ static int fake_set_txpower(struct device *dev, int16_t dbm)
 	return 0;
 }
 
-static inline void insert_frag_dummy_way(struct net_buf *buf)
+static inline void insert_frag_dummy_way(struct net_pkt *pkt)
 {
-	if (current_buf->frags) {
+	if (current_pkt->frags) {
 		struct net_buf *frag, *prev_frag = NULL;
 
-		frag = current_buf->frags;
+		frag = current_pkt->frags;
 		while (frag) {
 			prev_frag = frag;
 
 			frag = frag->frags;
 		}
 
-		prev_frag->frags = net_buf_ref(buf->frags);
+		prev_frag->frags = net_buf_ref(pkt->frags);
 	} else {
-		current_buf->frags = net_buf_ref(buf->frags);
+		current_pkt->frags = net_buf_ref(pkt->frags);
 	}
 }
 
 static int fake_tx(struct device *dev,
-		   struct net_buf *buf,
+		   struct net_pkt *pkt,
 		   struct net_buf *frag)
 {
-	NET_INFO("Sending buffer %p - length %zu\n",
-		 buf, net_buf_frags_len(buf));
+	NET_INFO("Sending packet %p - length %zu\n",
+		 pkt, net_pkt_get_len(pkt));
 
-	net_pkt_set_ll_reserve(current_buf, net_pkt_ll_reserve(buf));
+	net_pkt_set_ll_reserve(current_pkt, net_pkt_ll_reserve(pkt));
 
-	insert_frag_dummy_way(buf);
+	insert_frag_dummy_way(pkt);
 
 	k_sem_give(&driver_lock);
 

@@ -17,7 +17,7 @@
 
 #include <net/ethernet.h>
 
-#define NET_ARP_BUF(buf) ((struct net_arp_hdr *)net_pkt_ip_data(buf))
+#define NET_ARP_BUF(pkt) ((struct net_arp_hdr *)net_pkt_ip_data(pkt))
 
 struct net_arp_hdr {
 	uint16_t hwtype;		/* HTYPE */
@@ -36,8 +36,8 @@ struct net_arp_hdr {
 #define NET_ARP_REQUEST 1
 #define NET_ARP_REPLY   2
 
-struct net_buf *net_arp_prepare(struct net_buf *buf);
-enum net_verdict net_arp_input(struct net_buf *buf);
+struct net_pkt *net_arp_prepare(struct net_pkt *pkt);
+enum net_verdict net_arp_input(struct net_pkt *pkt);
 
 void net_arp_init(void);
 

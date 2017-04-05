@@ -72,12 +72,12 @@ static char upper_if_set(char chr, bool set)
 	return chr | 0x20;
 }
 
-static void net_tcp_trace(struct net_buf *buf, struct net_tcp *tcp)
+static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 {
-	uint8_t flags = NET_TCP_FLAGS(buf);
+	uint8_t flags = NET_TCP_FLAGS(pkt);
 	uint32_t rel_ack, ack;
 
-	ack = sys_get_be32(NET_TCP_BUF(buf)->ack);
+	ack = sys_get_be32(NET_TCP_BUF(pkt)->ack);
 
 	if (!tcp->sent_ack) {
 		rel_ack = 0;
@@ -85,12 +85,12 @@ static void net_tcp_trace(struct net_buf *buf, struct net_tcp *tcp)
 		rel_ack = ack ? ack - tcp->sent_ack : 0;
 	}
 
-	NET_DBG("buf %p src %u dst %u seq 0x%04x ack 0x%04x (%u) "
+	NET_DBG("pkt %p src %u dst %u seq 0x%04x ack 0x%04x (%u) "
 		"flags %c%c%c%c%c%c win %u chk 0x%04x",
-		buf,
-		ntohs(NET_TCP_BUF(buf)->src_port),
-		ntohs(NET_TCP_BUF(buf)->dst_port),
-		sys_get_be32(NET_TCP_BUF(buf)->seq),
+		pkt,
+		ntohs(NET_TCP_BUF(pkt)->src_port),
+		ntohs(NET_TCP_BUF(pkt)->dst_port),
+		sys_get_be32(NET_TCP_BUF(pkt)->seq),
 		ack,
 		/* This tells how many bytes we are acking now */
 		rel_ack,
@@ -100,8 +100,8 @@ static void net_tcp_trace(struct net_buf *buf, struct net_tcp *tcp)
 		upper_if_set('r', flags & NET_TCP_RST),
 		upper_if_set('s', flags & NET_TCP_SYN),
 		upper_if_set('f', flags & NET_TCP_FIN),
-		sys_get_be16(NET_TCP_BUF(buf)->wnd),
-		ntohs(NET_TCP_BUF(buf)->chksum));
+		sys_get_be16(NET_TCP_BUF(pkt)->wnd),
+		ntohs(NET_TCP_BUF(pkt)->chksum));
 }
 #else
 #define net_tcp_trace(...)
@@ -118,30 +118,30 @@ static inline uint32_t retry_timeout(const struct net_tcp *tcp)
 	return ((uint32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
 }
 
-#define is_6lo_technology(buf)						    \
-	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(buf) == AF_INET6 &&  \
+#define is_6lo_technology(pkt)						    \
+	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(pkt) == AF_INET6 &&  \
 	 ((IS_ENABLED(CONFIG_NET_L2_BLUETOOTH) &&			    \
-	   net_pkt_ll_dst(buf)->type == NET_LINK_BLUETOOTH) ||		    \
+	   net_pkt_ll_dst(pkt)->type == NET_LINK_BLUETOOTH) ||		    \
 	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
-	   net_pkt_ll_dst(buf)->type == NET_LINK_IEEE802154)))
+	   net_pkt_ll_dst(pkt)->type == NET_LINK_IEEE802154)))
 
-static inline void do_ref_if_needed(struct net_buf *buf)
+static inline void do_ref_if_needed(struct net_pkt *pkt)
 {
 	/* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
-	 * IPv6 header compression (6lo). For BT and 802.15.4 we copy the buf
+	 * IPv6 header compression (6lo). For BT and 802.15.4 we copy the pkt
 	 * chain we are about to send so it is fine if the network driver
 	 * releases it. As we have our own copy of the sent data, we do not
-	 * need to take a reference of it. See also net_tcp_send_buf().
+	 * need to take a reference of it. See also net_tcp_send_pkt().
 	 */
-	if (!is_6lo_technology(buf)) {
-		buf = net_pkt_ref(buf);
+	if (!is_6lo_technology(pkt)) {
+		pkt = net_pkt_ref(pkt);
 	}
 }
 
 static void tcp_retry_expired(struct k_timer *timer)
 {
 	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 
 	/* Double the retry period for exponential backoff and resent
 	 * the first (only the first!) unack'd packet.
@@ -150,12 +150,12 @@ static void tcp_retry_expired(struct k_timer *timer)
 		tcp->retry_timeout_shift++;
 		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 
-		buf = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
-				   struct net_buf, sent_list);
+		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
+				   struct net_pkt, sent_list);
 
-		do_ref_if_needed(buf);
-		if (net_tcp_send_buf(buf) < 0 && !is_6lo_technology(buf)) {
-			net_pkt_unref(buf);
+		do_ref_if_needed(pkt);
+		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
+			net_pkt_unref(pkt);
 		}
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
@@ -200,18 +200,18 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 int net_tcp_release(struct net_tcp *tcp)
 {
-	struct net_buf *buf;
-	struct net_buf *tmp;
+	struct net_pkt *pkt;
+	struct net_pkt *tmp;
 	int key;
 
 	if (!PART_OF_ARRAY(tcp_context, tcp)) {
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, buf, tmp,
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, pkt, tmp,
 					  sent_list) {
-		sys_slist_remove(&tcp->sent_list, NULL, &buf->sent_list);
-		net_pkt_unref(buf);
+		sys_slist_remove(&tcp->sent_list, NULL, &pkt->sent_list);
+		net_pkt_unref(pkt);
 	}
 
 	k_delayed_work_cancel(&tcp->ack_timer);
@@ -231,7 +231,7 @@ int net_tcp_release(struct net_tcp *tcp)
 }
 
 static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
-				      void *data)
+					  void *data)
 {
 	uint8_t optlen;
 
@@ -247,16 +247,16 @@ static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
 	return optlen;
 }
 
-static int finalize_segment(struct net_context *context, struct net_buf *buf)
+static int finalize_segment(struct net_context *context, struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(buf) == AF_INET) {
-		return net_ipv4_finalize(context, buf);
+	if (net_pkt_family(pkt) == AF_INET) {
+		return net_ipv4_finalize(context, pkt);
 	} else
 #endif
 #if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(buf) == AF_INET6) {
-		return net_ipv6_finalize(context, buf);
+	if (net_pkt_family(pkt) == AF_INET6) {
+		return net_ipv6_finalize(context, pkt);
 	}
 #endif
 	{
@@ -265,9 +265,9 @@ static int finalize_segment(struct net_context *context, struct net_buf *buf)
 	return 0;
 }
 
-static struct net_buf *prepare_segment(struct net_tcp *tcp,
+static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 				       struct tcp_segment *segment,
-				       struct net_buf *buf)
+				       struct net_pkt *pkt)
 {
 	struct net_buf *header, *tail = NULL;
 	struct net_tcp_hdr *tcphdr;
@@ -277,49 +277,49 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 
 	NET_ASSERT(context);
 
-	if (buf) {
+	if (pkt) {
 		/* TCP transmit data comes in with a pre-allocated
 		 * net_pkt at the head (so that net_context_send can find
 		 * the context), and the data after.  Rejigger so we
 		 * can insert a TCP header cleanly
 		 */
-		tail = buf->frags;
-		buf->frags = NULL;
+		tail = pkt->frags;
+		pkt->frags = NULL;
 	} else {
-		buf = net_pkt_get_tx(context, K_FOREVER);
+		pkt = net_pkt_get_tx(context, K_FOREVER);
 	}
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(buf) == AF_INET) {
-		net_ipv4_create(context, buf,
+	if (net_pkt_family(pkt) == AF_INET) {
+		net_ipv4_create(context, pkt,
 				net_sin_ptr(segment->src_addr)->sin_addr,
 				&(net_sin(segment->dst_addr)->sin_addr));
 		dst_port = net_sin(segment->dst_addr)->sin_port;
 		src_port = ((struct sockaddr_in_ptr *)&context->local)->
 								sin_port;
-		NET_IPV4_BUF(buf)->proto = IPPROTO_TCP;
+		NET_IPV4_BUF(pkt)->proto = IPPROTO_TCP;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(buf) == AF_INET6) {
-		net_ipv6_create(tcp->context, buf,
+	if (net_pkt_family(pkt) == AF_INET6) {
+		net_ipv6_create(tcp->context, pkt,
 				net_sin6_ptr(segment->src_addr)->sin6_addr,
 				&(net_sin6(segment->dst_addr)->sin6_addr));
 		dst_port = net_sin6(segment->dst_addr)->sin6_port;
 		src_port = ((struct sockaddr_in6_ptr *)&context->local)->
 								sin6_port;
-		NET_IPV6_BUF(buf)->nexthdr = IPPROTO_TCP;
+		NET_IPV6_BUF(pkt)->nexthdr = IPPROTO_TCP;
 	} else
 #endif
 	{
 		NET_DBG("Protocol family %d not supported",
-			net_pkt_family(buf));
-		net_pkt_unref(buf);
+			net_pkt_family(pkt));
+		net_pkt_unref(pkt);
 		return NULL;
 	}
 
 	header = net_pkt_get_data(context, K_FOREVER);
-	net_buf_frag_add(buf, header);
+	net_pkt_frag_add(pkt, header);
 
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
 
@@ -340,17 +340,17 @@ static struct net_buf *prepare_segment(struct net_tcp *tcp,
 	tcphdr->urg[1] = 0;
 
 	if (tail) {
-		net_buf_frag_add(buf, tail);
+		net_pkt_frag_add(pkt, tail);
 	}
 
-	if (finalize_segment(context, buf) < 0) {
-		net_pkt_unref(buf);
+	if (finalize_segment(context, pkt) < 0) {
+		net_pkt_unref(pkt);
 		return NULL;
 	}
 
-	net_tcp_trace(buf, tcp);
+	net_tcp_trace(pkt, tcp);
 
-	return buf;
+	return pkt;
 }
 
 static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
@@ -379,7 +379,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
-			    struct net_buf **send_buf)
+			    struct net_pkt **send_pkt)
 {
 	uint32_t seq;
 	uint16_t wnd;
@@ -437,8 +437,8 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	segment.options = options;
 	segment.optlen = optlen;
 
-	*send_buf = prepare_segment(tcp, &segment, *send_buf);
-	if (!*send_buf) {
+	*send_pkt = prepare_segment(tcp, &segment, *send_pkt);
+	if (!*send_pkt) {
 		return -EINVAL;
 	}
 
@@ -530,7 +530,7 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 }
 
 int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
-			struct net_buf **buf)
+			struct net_pkt **pkt)
 {
 	uint8_t options[NET_TCP_MAX_OPT_SIZE];
 	uint8_t optionlen;
@@ -546,7 +546,7 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 
 		return net_tcp_prepare_segment(tcp, NET_TCP_SYN | NET_TCP_ACK,
 					       options, optionlen, NULL, remote,
-					       buf);
+					       pkt);
 	case NET_TCP_FIN_WAIT_1:
 	case NET_TCP_LAST_ACK:
 		/* In the FIN_WAIT_1 and LAST_ACK states acknowledgment must
@@ -555,10 +555,10 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 		tcp->send_seq--;
 
 		return net_tcp_prepare_segment(tcp, NET_TCP_FIN | NET_TCP_ACK,
-					       0, 0, NULL, remote, buf);
+					       0, 0, NULL, remote, pkt);
 	default:
 		return net_tcp_prepare_segment(tcp, NET_TCP_ACK, 0, 0, NULL,
-					       remote, buf);
+					       remote, pkt);
 	}
 
 	return -EINVAL;
@@ -566,7 +566,7 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 
 int net_tcp_prepare_reset(struct net_tcp *tcp,
 			  const struct sockaddr *remote,
-			  struct net_buf **buf)
+			  struct net_pkt **pkt)
 {
 	struct tcp_segment segment = { 0 };
 
@@ -590,7 +590,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 		segment.options = NULL;
 		segment.optlen = 0;
 
-		*buf = prepare_segment(tcp, &segment, NULL);
+		*pkt = prepare_segment(tcp, &segment, NULL);
 	}
 
 	return 0;
@@ -630,10 +630,10 @@ const char * const net_tcp_state_str(enum net_tcp_state state)
 	return "";
 }
 
-int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
+int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 {
 	struct net_conn *conn = (struct net_conn *)context->conn_handler;
-	size_t data_len = net_buf_frags_len(buf);
+	size_t data_len = net_pkt_get_len(pkt);
 	int ret;
 
 	/* Set PSH on all packets, our window is so small that there's
@@ -641,14 +641,14 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 	 * coalesce packets.
 	 */
 	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_PSH | NET_TCP_ACK,
-				      NULL, 0, NULL, &conn->remote_addr, &buf);
+				      NULL, 0, NULL, &conn->remote_addr, &pkt);
 	if (ret) {
 		return ret;
 	}
 
 	context->tcp->send_seq += data_len;
 
-	sys_slist_append(&context->tcp->sent_list, &buf->sent_list);
+	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
 
 	/* We need to restart retry_timer if it is stopped. */
 	if (k_timer_remaining_get(&context->tcp->retry_timer) == 0) {
@@ -656,15 +656,15 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 			      retry_timeout(context->tcp), 0);
 	}
 
-	do_ref_if_needed(buf);
+	do_ref_if_needed(pkt);
 
 	return 0;
 }
 
-int net_tcp_send_buf(struct net_buf *buf)
+int net_tcp_send_pkt(struct net_pkt *pkt)
 {
-	struct net_context *ctx = net_pkt_context(buf);
-	struct net_tcp_hdr *tcphdr = NET_TCP_BUF(buf);
+	struct net_context *ctx = net_pkt_context(pkt);
+	struct net_tcp_hdr *tcphdr = NET_TCP_BUF(pkt);
 
 	sys_put_be32(ctx->tcp->send_ack, tcphdr->ack);
 
@@ -683,58 +683,58 @@ int net_tcp_send_buf(struct net_buf *buf)
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
-	net_pkt_set_buf_sent(buf, true);
+	net_pkt_set_sent(pkt, true);
 
 	/* We must have special handling for some network technologies that
 	 * tweak the IP protocol headers during packet sending. This happens
 	 * with Bluetooth and IEEE 802.15.4 which use IPv6 header compression
-	 * (6lo) and alter the sent network buffer. So in order to avoid any
+	 * (6lo) and alter the sent network packet. So in order to avoid any
 	 * corruption of the original data buffer, we must copy the sent data.
 	 * For Bluetooth, its fragmentation code will even mangle the data
 	 * part of the message so we need to copy those too.
 	 */
-	if (is_6lo_technology(buf)) {
-		struct net_buf *new_buf, *check_buf;
+	if (is_6lo_technology(pkt)) {
+		struct net_pkt *new_pkt, *check_pkt;
 		int ret;
-		bool buf_in_slist = false;
+		bool pkt_in_slist = false;
 
 		/*
-		 * There are users of this function that don't add buf to TCP
+		 * There are users of this function that don't add pkt to TCP
 		 * sent_list. (See send_ack() in net_context.c) In these cases,
 		 * we should avoid the extra 6lowpan specific buffer copy
 		 * below.
 		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list,
-					     check_buf, sent_list) {
-			if (check_buf == buf) {
-				buf_in_slist = true;
+					     check_pkt, sent_list) {
+			if (check_pkt == pkt) {
+				pkt_in_slist = true;
 				break;
 			}
 		}
 
-		if (buf_in_slist) {
-			new_buf = net_pkt_get_tx(ctx, K_FOREVER);
+		if (pkt_in_slist) {
+			new_pkt = net_pkt_get_tx(ctx, K_FOREVER);
 
-			new_buf->frags = net_pkt_copy_all(buf, 0, K_FOREVER);
-			net_pkt_copy_user_data(new_buf, buf);
+			memcpy(new_pkt, pkt, sizeof(struct net_pkt));
+			new_pkt->frags = net_pkt_copy_all(pkt, 0, K_FOREVER);
 
 			NET_DBG("Copied %zu bytes from %p to %p",
-				net_buf_frags_len(new_buf), buf, new_buf);
+				net_pkt_get_len(new_pkt), pkt, new_pkt);
 
 			/* This function is called from net_context.c and if we
-			 * return < 0, the caller will unref the original buf.
-			 * This would leak the new_buf so remove it here.
+			 * return < 0, the caller will unref the original pkt.
+			 * This would leak the new_pkt so remove it here.
 			 */
-			ret = net_send_data(new_buf);
+			ret = net_send_data(new_pkt);
 			if (ret < 0) {
-				net_pkt_unref(new_buf);
+				net_pkt_unref(new_pkt);
 			}
 
 			return ret;
 		}
 	}
 
-	return net_send_data(buf);
+	return net_send_data(pkt);
 }
 
 static void restart_timer(struct net_tcp *tcp)
@@ -759,16 +759,16 @@ static void restart_timer(struct net_tcp *tcp)
 
 int net_tcp_send_data(struct net_context *context)
 {
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 
 	/* For now, just send all queued data synchronously.  Need to
 	 * add window handling and retry/ACK logic.
 	 */
-	SYS_SLIST_FOR_EACH_CONTAINER(&context->tcp->sent_list, buf, sent_list) {
-		if (!net_pkt_buf_sent(buf)) {
-			if (net_tcp_send_buf(buf) < 0 &&
-			    !is_6lo_technology(buf)) {
-				net_pkt_unref(buf);
+	SYS_SLIST_FOR_EACH_CONTAINER(&context->tcp->sent_list, pkt, sent_list) {
+		if (!net_pkt_sent(pkt)) {
+			if (net_tcp_send_pkt(pkt) < 0 &&
+			    !is_6lo_technology(pkt)) {
+				net_pkt_unref(pkt);
 			}
 		}
 	}
@@ -781,17 +781,17 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 	struct net_tcp *tcp = ctx->tcp;
 	sys_slist_t *list = &ctx->tcp->sent_list;
 	sys_snode_t *head;
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	struct net_tcp_hdr *tcphdr;
 	uint32_t seq;
 	bool valid_ack = false;
 
 	while (!sys_slist_is_empty(list)) {
 		head = sys_slist_peek_head(list);
-		buf = CONTAINER_OF(head, struct net_buf, sent_list);
-		tcphdr = NET_TCP_BUF(buf);
+		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
+		tcphdr = NET_TCP_BUF(pkt);
 
-		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(buf) - 1;
+		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
 		if (!seq_greater(ack, seq)) {
 			break;
@@ -808,7 +808,7 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 		}
 
 		sys_slist_remove(list, NULL, head);
-		net_pkt_unref(buf);
+		net_pkt_unref(pkt);
 		valid_ack = true;
 	}
 
@@ -827,13 +827,13 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 		 * pipe is uncorked again.
 		 */
 		if (ctx->tcp->flags & NET_TCP_RETRYING) {
-			struct net_buf *buf;
+			struct net_pkt *pkt;
 
-			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, buf,
+			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, pkt,
 						     sent_list) {
-				if (net_pkt_buf_sent(buf)) {
-					do_ref_if_needed(buf);
-					net_pkt_set_buf_sent(buf, false);
+				if (net_pkt_sent(pkt)) {
+					do_ref_if_needed(pkt);
+					net_pkt_set_sent(pkt, false);
 				}
 			}
 
