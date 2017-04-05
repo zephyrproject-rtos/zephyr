@@ -1,0 +1,4 @@
+tests:
+-   test:
+        build_only: false
+        tags: crypto ctr prng

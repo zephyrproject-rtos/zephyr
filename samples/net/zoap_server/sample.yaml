@@ -1,0 +1,19 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        arch_whitelist: x86
+        build_only: true
+        platform_exclude: quark_d2000_crb
+        tags: net
+-   test_bt:
+        build_only: true
+        extra_args: CONF_FILE="prj_bt.conf"
+        platform_whitelist: qemu_x86
+        tags: net bluetooth
+-   test_net:
+        build_only: true
+        extra_args: CONF_FILE="prj_cc2520.conf"
+        platform_whitelist: quark_se_c1000_devboard
+        tags: net

@@ -1,0 +1,8 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        filter: ZEPHYR_GCC_VARIANT != "issm"
+        tags: apps

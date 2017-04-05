@@ -1,0 +1,12 @@
+tests:
+-   test:
+        build_only: true
+        filter: (CONFIG_SOC_QUARK_SE_C1000 or CONFIG_SOC_QUARK_SE_C1000_SS)
+        platform_exclude: tinytile panther
+        tags: samples power
+-   test_socwatch:
+        build_only: true
+        extra_args: CONF_FILE="prj_socwatch.conf"
+        filter: CONFIG_SOC_QUARK_SE_C1000
+        platform_exclude: tinytile panther
+        tags: samples power

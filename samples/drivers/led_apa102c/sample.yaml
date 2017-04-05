@@ -1,0 +1,9 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        arch_whitelist: x86
+        build_only: true
+        platform_whitelist: arduino_101
+        tags: samples
