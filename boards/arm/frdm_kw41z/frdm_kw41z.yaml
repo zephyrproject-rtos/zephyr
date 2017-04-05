@@ -1,0 +1,7 @@
+identifier: frdm_kw41z
+name: frdm_kw41z
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

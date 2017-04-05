@@ -1,0 +1,12 @@
+identifier: panther_ss
+name: Panther Board - Sensor Subsystem
+type: mcu
+arch: arc
+ram: 24
+flash: 152
+toolchain:
+  - zephyr
+testing:
+        ignore_tags:
+          - net
+          - bluetooth

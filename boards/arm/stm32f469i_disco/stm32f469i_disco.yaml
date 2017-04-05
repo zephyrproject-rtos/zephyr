@@ -1,0 +1,7 @@
+identifier: stm32f469i_disco
+name: stm32f469i_disco
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

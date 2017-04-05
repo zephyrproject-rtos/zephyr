@@ -1,0 +1,7 @@
+identifier: disco_l475_iot1
+name: disco_l475_iot1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

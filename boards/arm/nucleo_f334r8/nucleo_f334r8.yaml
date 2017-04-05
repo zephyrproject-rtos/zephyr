@@ -1,0 +1,8 @@
+identifier: nucleo_f334r8
+name: nucleo_f334r8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 12

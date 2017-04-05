@@ -1,0 +1,7 @@
+identifier: nrf52840_pca10056
+name: nrf52840_pca10056
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

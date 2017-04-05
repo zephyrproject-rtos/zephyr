@@ -1,0 +1,7 @@
+identifier: frdm_k64f
+name: frdm_k64f
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

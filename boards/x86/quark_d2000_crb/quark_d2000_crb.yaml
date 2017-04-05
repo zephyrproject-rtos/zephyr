@@ -1,0 +1,13 @@
+identifier: quark_d2000_crb
+name: Quark D2000 Devboard
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+  - issm
+ram: 8
+flash: 32
+testing:
+        ignore_tags:
+          - net
+          - bluetooth

@@ -1,0 +1,11 @@
+identifier: qemu_riscv32
+name: QEMU Emulation for RISC V
+type: qemu
+arch: riscv32
+toolchain:
+  - zephyr
+testing:
+        default: true
+        ignore_tags:
+          - net
+          - bluetooth

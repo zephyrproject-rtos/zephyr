@@ -1,0 +1,11 @@
+identifier: qemu_nios2
+name: QEMU Emulation for NIOS II
+type: qemu
+arch: nios2
+toolchain:
+  - zephyr
+testing:
+        default: true
+        ignore_tags:
+          - net
+          - bluetooth

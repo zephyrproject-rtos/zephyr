@@ -1,0 +1,7 @@
+identifier: arduino_101
+name: Arduino 101
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+  - issm

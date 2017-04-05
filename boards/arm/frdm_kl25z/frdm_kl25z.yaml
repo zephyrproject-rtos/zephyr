@@ -1,0 +1,9 @@
+identifier: frdm_kl25z
+name: frdm_kl25z
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gccarmemb
