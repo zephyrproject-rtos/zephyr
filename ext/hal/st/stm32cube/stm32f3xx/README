@@ -1,1 +1,5 @@
-The current version supported in Zephyr for STM32F3 Cube is V1.6.0
+The current version supported in Zephyr for STM32F3 Cube is V1.7.0
+
+Changes from official delivery:
+*dos2unix applied
+*trailing white spaces removed

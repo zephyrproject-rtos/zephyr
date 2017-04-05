@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_iwdg.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   IWDG HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Independent Watchdog (IWDG) peripheral:
@@ -22,8 +22,8 @@
         if the main clock fails.
 
     (+) Once the IWDG is started, the LSI is forced ON and both can not be
-        disabled. The counter starts counting down from the reset value (0xFFF).
-        When it reaches the end of count value (0x000) a reset signal is
+        disabled. The counter starts counting down from the reset value (0xFFFU).
+        When it reaches the end of count value (0x000U) a reset signal is
         generated (IWDG reset).
 
     (+) Whenever the key value 0x0000 AAAA is written in the IWDG_KR register,
@@ -41,7 +41,7 @@
         __HAL_DBGMCU_FREEZE_IWDG() and __HAL_DBGMCU_UNFREEZE_IWDG() macros
 
     [..] Min-max timeout value @41KHz (LSI): ~0.1ms / ~25.5s
-         The IWDG timeout may vary due to LSI frequency dispersion. STM32L4xx
+         The IWDG timeout may vary due to LSI frequency dispersion. STM32F3xx
          devices provide the capability to measure the LSI frequency (LSI clock
          connected internally to TIM16 CH1 input capture). The measured value
          can be used to have an IWDG timeout with an acceptable accuracy.
@@ -127,7 +127,7 @@
   * @{
   */
 /* Status register need 5 RC LSI divided by prescaler clock to be updated. With
-   higher prescaler (256), and according to HSI variation, we need to wait at
+   higher prescaler (256U), and according to HSI variation, we need to wait at
    least 6 cycles so 48 ms. */
 #define HAL_IWDG_DEFAULT_TIMEOUT            48u
 /**

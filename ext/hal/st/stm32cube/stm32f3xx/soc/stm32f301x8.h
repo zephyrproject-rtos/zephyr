@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f301x8.h
   * @author  MCD Application Team
-  * @version V2.3.0
-  * @date    29-April-2015
+  * @version V2.3.1
+  * @date    16-December-2016
   * @brief   CMSIS STM32F301x8 Devices Peripheral Access Layer Header File.
   *
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheralï¿½s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -2831,18 +2831,12 @@ typedef struct
 #define EXTI_IMR_MR17_Pos          (17U)
 #define EXTI_IMR_MR17_Msk          (0x1U << EXTI_IMR_MR17_Pos)                 /*!< 0x00020000 */
 #define EXTI_IMR_MR17              EXTI_IMR_MR17_Msk                           /*!< Interrupt Mask on line 17 */
-#define EXTI_IMR_MR18_Pos          (18U)
-#define EXTI_IMR_MR18_Msk          (0x1U << EXTI_IMR_MR18_Pos)                 /*!< 0x00040000 */
-#define EXTI_IMR_MR18              EXTI_IMR_MR18_Msk                           /*!< Interrupt Mask on line 18 */
 #define EXTI_IMR_MR19_Pos          (19U)
 #define EXTI_IMR_MR19_Msk          (0x1U << EXTI_IMR_MR19_Pos)                 /*!< 0x00080000 */
 #define EXTI_IMR_MR19              EXTI_IMR_MR19_Msk                           /*!< Interrupt Mask on line 19 */
 #define EXTI_IMR_MR20_Pos          (20U)
 #define EXTI_IMR_MR20_Msk          (0x1U << EXTI_IMR_MR20_Pos)                 /*!< 0x00100000 */
 #define EXTI_IMR_MR20              EXTI_IMR_MR20_Msk                           /*!< Interrupt Mask on line 20 */
-#define EXTI_IMR_MR21_Pos          (21U)
-#define EXTI_IMR_MR21_Msk          (0x1U << EXTI_IMR_MR21_Pos)                 /*!< 0x00200000 */
-#define EXTI_IMR_MR21              EXTI_IMR_MR21_Msk                           /*!< Interrupt Mask on line 21 */
 #define EXTI_IMR_MR22_Pos          (22U)
 #define EXTI_IMR_MR22_Msk          (0x1U << EXTI_IMR_MR22_Pos)                 /*!< 0x00400000 */
 #define EXTI_IMR_MR22              EXTI_IMR_MR22_Msk                           /*!< Interrupt Mask on line 22 */
@@ -2855,24 +2849,12 @@ typedef struct
 #define EXTI_IMR_MR25_Pos          (25U)
 #define EXTI_IMR_MR25_Msk          (0x1U << EXTI_IMR_MR25_Pos)                 /*!< 0x02000000 */
 #define EXTI_IMR_MR25              EXTI_IMR_MR25_Msk                           /*!< Interrupt Mask on line 25 */
-#define EXTI_IMR_MR26_Pos          (26U)
-#define EXTI_IMR_MR26_Msk          (0x1U << EXTI_IMR_MR26_Pos)                 /*!< 0x04000000 */
-#define EXTI_IMR_MR26              EXTI_IMR_MR26_Msk                           /*!< Interrupt Mask on line 26 */
 #define EXTI_IMR_MR27_Pos          (27U)
 #define EXTI_IMR_MR27_Msk          (0x1U << EXTI_IMR_MR27_Pos)                 /*!< 0x08000000 */
 #define EXTI_IMR_MR27              EXTI_IMR_MR27_Msk                           /*!< Interrupt Mask on line 27 */
-#define EXTI_IMR_MR28_Pos          (28U)
-#define EXTI_IMR_MR28_Msk          (0x1U << EXTI_IMR_MR28_Pos)                 /*!< 0x10000000 */
-#define EXTI_IMR_MR28              EXTI_IMR_MR28_Msk                           /*!< Interrupt Mask on line 28 */
-#define EXTI_IMR_MR29_Pos          (29U)
-#define EXTI_IMR_MR29_Msk          (0x1U << EXTI_IMR_MR29_Pos)                 /*!< 0x20000000 */
-#define EXTI_IMR_MR29              EXTI_IMR_MR29_Msk                           /*!< Interrupt Mask on line 29 */
 #define EXTI_IMR_MR30_Pos          (30U)
 #define EXTI_IMR_MR30_Msk          (0x1U << EXTI_IMR_MR30_Pos)                 /*!< 0x40000000 */
 #define EXTI_IMR_MR30              EXTI_IMR_MR30_Msk                           /*!< Interrupt Mask on line 30 */
-#define EXTI_IMR_MR31_Pos          (31U)
-#define EXTI_IMR_MR31_Msk          (0x1U << EXTI_IMR_MR31_Pos)                 /*!< 0x80000000 */
-#define EXTI_IMR_MR31              EXTI_IMR_MR31_Msk                           /*!< Interrupt Mask on line 31 */
 
 /* References Defines */
 #define  EXTI_IMR_IM0 EXTI_IMR_MR0
@@ -2893,20 +2875,32 @@ typedef struct
 #define  EXTI_IMR_IM15 EXTI_IMR_MR15
 #define  EXTI_IMR_IM16 EXTI_IMR_MR16
 #define  EXTI_IMR_IM17 EXTI_IMR_MR17
+#if defined(EXTI_IMR_MR18)
 #define  EXTI_IMR_IM18 EXTI_IMR_MR18
+#endif
 #define  EXTI_IMR_IM19 EXTI_IMR_MR19
 #define  EXTI_IMR_IM20 EXTI_IMR_MR20
+#if defined(EXTI_IMR_MR21)
 #define  EXTI_IMR_IM21 EXTI_IMR_MR21
+#endif
 #define  EXTI_IMR_IM22 EXTI_IMR_MR22
 #define  EXTI_IMR_IM23 EXTI_IMR_MR23
 #define  EXTI_IMR_IM24 EXTI_IMR_MR24
 #define  EXTI_IMR_IM25 EXTI_IMR_MR25
+#if defined(EXTI_IMR_MR26)
 #define  EXTI_IMR_IM26 EXTI_IMR_MR26
+#endif
 #define  EXTI_IMR_IM27 EXTI_IMR_MR27
+#if defined(EXTI_IMR_MR28)
 #define  EXTI_IMR_IM28 EXTI_IMR_MR28
+#endif
+#if defined(EXTI_IMR_MR29)
 #define  EXTI_IMR_IM29 EXTI_IMR_MR29
+#endif
 #define  EXTI_IMR_IM30 EXTI_IMR_MR30
+#if defined(EXTI_IMR_MR31)
 #define  EXTI_IMR_IM31 EXTI_IMR_MR31
+#endif
 
 #define EXTI_IMR_IM_Pos            (0U)
 #define EXTI_IMR_IM_Msk            (0xFFFFFFFFU << EXTI_IMR_IM_Pos)            /*!< 0xFFFFFFFF */
@@ -2967,18 +2961,12 @@ typedef struct
 #define EXTI_EMR_MR17_Pos          (17U)
 #define EXTI_EMR_MR17_Msk          (0x1U << EXTI_EMR_MR17_Pos)                 /*!< 0x00020000 */
 #define EXTI_EMR_MR17              EXTI_EMR_MR17_Msk                           /*!< Event Mask on line 17 */
-#define EXTI_EMR_MR18_Pos          (18U)
-#define EXTI_EMR_MR18_Msk          (0x1U << EXTI_EMR_MR18_Pos)                 /*!< 0x00040000 */
-#define EXTI_EMR_MR18              EXTI_EMR_MR18_Msk                           /*!< Event Mask on line 18 */
 #define EXTI_EMR_MR19_Pos          (19U)
 #define EXTI_EMR_MR19_Msk          (0x1U << EXTI_EMR_MR19_Pos)                 /*!< 0x00080000 */
 #define EXTI_EMR_MR19              EXTI_EMR_MR19_Msk                           /*!< Event Mask on line 19 */
 #define EXTI_EMR_MR20_Pos          (20U)
 #define EXTI_EMR_MR20_Msk          (0x1U << EXTI_EMR_MR20_Pos)                 /*!< 0x00100000 */
 #define EXTI_EMR_MR20              EXTI_EMR_MR20_Msk                           /*!< Event Mask on line 20 */
-#define EXTI_EMR_MR21_Pos          (21U)
-#define EXTI_EMR_MR21_Msk          (0x1U << EXTI_EMR_MR21_Pos)                 /*!< 0x00200000 */
-#define EXTI_EMR_MR21              EXTI_EMR_MR21_Msk                           /*!< Event Mask on line 21 */
 #define EXTI_EMR_MR22_Pos          (22U)
 #define EXTI_EMR_MR22_Msk          (0x1U << EXTI_EMR_MR22_Pos)                 /*!< 0x00400000 */
 #define EXTI_EMR_MR22              EXTI_EMR_MR22_Msk                           /*!< Event Mask on line 22 */
@@ -2991,24 +2979,12 @@ typedef struct
 #define EXTI_EMR_MR25_Pos          (25U)
 #define EXTI_EMR_MR25_Msk          (0x1U << EXTI_EMR_MR25_Pos)                 /*!< 0x02000000 */
 #define EXTI_EMR_MR25              EXTI_EMR_MR25_Msk                           /*!< Event Mask on line 25 */
-#define EXTI_EMR_MR26_Pos          (26U)
-#define EXTI_EMR_MR26_Msk          (0x1U << EXTI_EMR_MR26_Pos)                 /*!< 0x04000000 */
-#define EXTI_EMR_MR26              EXTI_EMR_MR26_Msk                           /*!< Event Mask on line 26 */
 #define EXTI_EMR_MR27_Pos          (27U)
 #define EXTI_EMR_MR27_Msk          (0x1U << EXTI_EMR_MR27_Pos)                 /*!< 0x08000000 */
 #define EXTI_EMR_MR27              EXTI_EMR_MR27_Msk                           /*!< Event Mask on line 27 */
-#define EXTI_EMR_MR28_Pos          (28U)
-#define EXTI_EMR_MR28_Msk          (0x1U << EXTI_EMR_MR28_Pos)                 /*!< 0x10000000 */
-#define EXTI_EMR_MR28              EXTI_EMR_MR28_Msk                           /*!< Event Mask on line 28 */
-#define EXTI_EMR_MR29_Pos          (29U)
-#define EXTI_EMR_MR29_Msk          (0x1U << EXTI_EMR_MR29_Pos)                 /*!< 0x20000000 */
-#define EXTI_EMR_MR29              EXTI_EMR_MR29_Msk                           /*!< Event Mask on line 29 */
 #define EXTI_EMR_MR30_Pos          (30U)
 #define EXTI_EMR_MR30_Msk          (0x1U << EXTI_EMR_MR30_Pos)                 /*!< 0x40000000 */
 #define EXTI_EMR_MR30              EXTI_EMR_MR30_Msk                           /*!< Event Mask on line 30 */
-#define EXTI_EMR_MR31_Pos          (31U)
-#define EXTI_EMR_MR31_Msk          (0x1U << EXTI_EMR_MR31_Pos)                 /*!< 0x80000000 */
-#define EXTI_EMR_MR31              EXTI_EMR_MR31_Msk                           /*!< Event Mask on line 31 */
 
 /* References Defines */
 #define  EXTI_EMR_EM0 EXTI_EMR_MR0
@@ -3029,20 +3005,32 @@ typedef struct
 #define  EXTI_EMR_EM15 EXTI_EMR_MR15
 #define  EXTI_EMR_EM16 EXTI_EMR_MR16
 #define  EXTI_EMR_EM17 EXTI_EMR_MR17
+#if defined(EXTI_EMR_MR18)
 #define  EXTI_EMR_EM18 EXTI_EMR_MR18
+#endif
 #define  EXTI_EMR_EM19 EXTI_EMR_MR19
 #define  EXTI_EMR_EM20 EXTI_EMR_MR20
+#if defined(EXTI_EMR_MR21)
 #define  EXTI_EMR_EM21 EXTI_EMR_MR21
+#endif
 #define  EXTI_EMR_EM22 EXTI_EMR_MR22
 #define  EXTI_EMR_EM23 EXTI_EMR_MR23
 #define  EXTI_EMR_EM24 EXTI_EMR_MR24
 #define  EXTI_EMR_EM25 EXTI_EMR_MR25
+#if defined(EXTI_EMR_MR26)
 #define  EXTI_EMR_EM26 EXTI_EMR_MR26
+#endif
 #define  EXTI_EMR_EM27 EXTI_EMR_MR27
+#if defined(EXTI_EMR_MR28)
 #define  EXTI_EMR_EM28 EXTI_EMR_MR28
+#endif
+#if defined(EXTI_EMR_MR29)
 #define  EXTI_EMR_EM29 EXTI_EMR_MR29
+#endif
 #define  EXTI_EMR_EM30 EXTI_EMR_MR30
+#if defined(EXTI_EMR_MR31)
 #define  EXTI_EMR_EM31 EXTI_EMR_MR31
+#endif
 
 /******************  Bit definition for EXTI_RTSR register  *******************/
 #define EXTI_RTSR_TR0_Pos          (0U)
@@ -3099,30 +3087,18 @@ typedef struct
 #define EXTI_RTSR_TR17_Pos         (17U)
 #define EXTI_RTSR_TR17_Msk         (0x1U << EXTI_RTSR_TR17_Pos)                /*!< 0x00020000 */
 #define EXTI_RTSR_TR17             EXTI_RTSR_TR17_Msk                          /*!< Rising trigger event configuration bit of line 17 */
-#define EXTI_RTSR_TR18_Pos         (18U)
-#define EXTI_RTSR_TR18_Msk         (0x1U << EXTI_RTSR_TR18_Pos)                /*!< 0x00040000 */
-#define EXTI_RTSR_TR18             EXTI_RTSR_TR18_Msk                          /*!< Rising trigger event configuration bit of line 18 */
 #define EXTI_RTSR_TR19_Pos         (19U)
 #define EXTI_RTSR_TR19_Msk         (0x1U << EXTI_RTSR_TR19_Pos)                /*!< 0x00080000 */
 #define EXTI_RTSR_TR19             EXTI_RTSR_TR19_Msk                          /*!< Rising trigger event configuration bit of line 19 */
 #define EXTI_RTSR_TR20_Pos         (20U)
 #define EXTI_RTSR_TR20_Msk         (0x1U << EXTI_RTSR_TR20_Pos)                /*!< 0x00100000 */
 #define EXTI_RTSR_TR20             EXTI_RTSR_TR20_Msk                          /*!< Rising trigger event configuration bit of line 20 */
-#define EXTI_RTSR_TR21_Pos         (21U)
-#define EXTI_RTSR_TR21_Msk         (0x1U << EXTI_RTSR_TR21_Pos)                /*!< 0x00200000 */
-#define EXTI_RTSR_TR21             EXTI_RTSR_TR21_Msk                          /*!< Rising trigger event configuration bit of line 21 */
 #define EXTI_RTSR_TR22_Pos         (22U)
 #define EXTI_RTSR_TR22_Msk         (0x1U << EXTI_RTSR_TR22_Pos)                /*!< 0x00400000 */
 #define EXTI_RTSR_TR22             EXTI_RTSR_TR22_Msk                          /*!< Rising trigger event configuration bit of line 22 */
-#define EXTI_RTSR_TR29_Pos         (29U)
-#define EXTI_RTSR_TR29_Msk         (0x1U << EXTI_RTSR_TR29_Pos)                /*!< 0x20000000 */
-#define EXTI_RTSR_TR29             EXTI_RTSR_TR29_Msk                          /*!< Rising trigger event configuration bit of line 29 */
 #define EXTI_RTSR_TR30_Pos         (30U)
 #define EXTI_RTSR_TR30_Msk         (0x1U << EXTI_RTSR_TR30_Pos)                /*!< 0x40000000 */
 #define EXTI_RTSR_TR30             EXTI_RTSR_TR30_Msk                          /*!< Rising trigger event configuration bit of line 30 */
-#define EXTI_RTSR_TR31_Pos         (31U)
-#define EXTI_RTSR_TR31_Msk         (0x1U << EXTI_RTSR_TR31_Pos)                /*!< 0x80000000 */
-#define EXTI_RTSR_TR31             EXTI_RTSR_TR31_Msk                          /*!< Rising trigger event configuration bit of line 31 */
 
 /* References Defines */
 #define EXTI_RTSR_RT0 EXTI_RTSR_TR0
@@ -3143,14 +3119,40 @@ typedef struct
 #define EXTI_RTSR_RT15 EXTI_RTSR_TR15
 #define EXTI_RTSR_RT16 EXTI_RTSR_TR16
 #define EXTI_RTSR_RT17 EXTI_RTSR_TR17
+#if defined(EXTI_RTSR_TR18)
 #define EXTI_RTSR_RT18 EXTI_RTSR_TR18
+#endif
 #define EXTI_RTSR_RT19 EXTI_RTSR_TR19
 #define EXTI_RTSR_RT20 EXTI_RTSR_TR20
+#if defined(EXTI_RTSR_TR21)
 #define EXTI_RTSR_RT21 EXTI_RTSR_TR21
+#endif
 #define EXTI_RTSR_RT22 EXTI_RTSR_TR22
+#if defined(EXTI_RTSR_TR23)
+#define EXTI_RTSR_RT23 EXTI_RTSR_TR23
+#endif
+#if defined(EXTI_RTSR_TR24)
+#define EXTI_RTSR_RT24 EXTI_RTSR_TR24
+#endif
+#if defined(EXTI_RTSR_TR25)
+#define EXTI_RTSR_RT25 EXTI_RTSR_TR25
+#endif
+#if defined(EXTI_RTSR_TR26)
+#define EXTI_RTSR_RT26 EXTI_RTSR_TR26
+#endif
+#if defined(EXTI_RTSR_TR27)
+#define EXTI_RTSR_RT27 EXTI_RTSR_TR27
+#endif
+#if defined(EXTI_RTSR_TR28)
+#define EXTI_RTSR_RT28 EXTI_RTSR_TR28
+#endif
+#if defined(EXTI_RTSR_TR29)
 #define EXTI_RTSR_RT29 EXTI_RTSR_TR29
+#endif
 #define EXTI_RTSR_RT30 EXTI_RTSR_TR30
+#if defined(EXTI_RTSR_TR31)
 #define EXTI_RTSR_RT31 EXTI_RTSR_TR31
+#endif
 
 /******************  Bit definition for EXTI_FTSR register  *******************/
 #define EXTI_FTSR_TR0_Pos          (0U)
@@ -3207,30 +3209,18 @@ typedef struct
 #define EXTI_FTSR_TR17_Pos         (17U)
 #define EXTI_FTSR_TR17_Msk         (0x1U << EXTI_FTSR_TR17_Pos)                /*!< 0x00020000 */
 #define EXTI_FTSR_TR17             EXTI_FTSR_TR17_Msk                          /*!< Falling trigger event configuration bit of line 17 */
-#define EXTI_FTSR_TR18_Pos         (18U)
-#define EXTI_FTSR_TR18_Msk         (0x1U << EXTI_FTSR_TR18_Pos)                /*!< 0x00040000 */
-#define EXTI_FTSR_TR18             EXTI_FTSR_TR18_Msk                          /*!< Falling trigger event configuration bit of line 18 */
 #define EXTI_FTSR_TR19_Pos         (19U)
 #define EXTI_FTSR_TR19_Msk         (0x1U << EXTI_FTSR_TR19_Pos)                /*!< 0x00080000 */
 #define EXTI_FTSR_TR19             EXTI_FTSR_TR19_Msk                          /*!< Falling trigger event configuration bit of line 19 */
 #define EXTI_FTSR_TR20_Pos         (20U)
 #define EXTI_FTSR_TR20_Msk         (0x1U << EXTI_FTSR_TR20_Pos)                /*!< 0x00100000 */
 #define EXTI_FTSR_TR20             EXTI_FTSR_TR20_Msk                          /*!< Falling trigger event configuration bit of line 20 */
-#define EXTI_FTSR_TR21_Pos         (21U)
-#define EXTI_FTSR_TR21_Msk         (0x1U << EXTI_FTSR_TR21_Pos)                /*!< 0x00200000 */
-#define EXTI_FTSR_TR21             EXTI_FTSR_TR21_Msk                          /*!< Falling trigger event configuration bit of line 21 */
 #define EXTI_FTSR_TR22_Pos         (22U)
 #define EXTI_FTSR_TR22_Msk         (0x1U << EXTI_FTSR_TR22_Pos)                /*!< 0x00400000 */
 #define EXTI_FTSR_TR22             EXTI_FTSR_TR22_Msk                          /*!< Falling trigger event configuration bit of line 22 */
-#define EXTI_FTSR_TR29_Pos         (29U)
-#define EXTI_FTSR_TR29_Msk         (0x1U << EXTI_FTSR_TR29_Pos)                /*!< 0x20000000 */
-#define EXTI_FTSR_TR29             EXTI_FTSR_TR29_Msk                          /*!< Falling trigger event configuration bit of line 29 */
 #define EXTI_FTSR_TR30_Pos         (30U)
 #define EXTI_FTSR_TR30_Msk         (0x1U << EXTI_FTSR_TR30_Pos)                /*!< 0x40000000 */
 #define EXTI_FTSR_TR30             EXTI_FTSR_TR30_Msk                          /*!< Falling trigger event configuration bit of line 30 */
-#define EXTI_FTSR_TR31_Pos         (31U)
-#define EXTI_FTSR_TR31_Msk         (0x1U << EXTI_FTSR_TR31_Pos)                /*!< 0x80000000 */
-#define EXTI_FTSR_TR31             EXTI_FTSR_TR31_Msk                          /*!< Falling trigger event configuration bit of line 31 */
 
 /* References Defines */
 #define EXTI_FTSR_FT0 EXTI_FTSR_TR0
@@ -3251,14 +3241,40 @@ typedef struct
 #define EXTI_FTSR_FT15 EXTI_FTSR_TR15
 #define EXTI_FTSR_FT16 EXTI_FTSR_TR16
 #define EXTI_FTSR_FT17 EXTI_FTSR_TR17
-#define  EXTI_FTSR_FT18 EXTI_FTSR_TR18
-#define  EXTI_FTSR_FT19 EXTI_FTSR_TR19
-#define  EXTI_FTSR_FT20 EXTI_FTSR_TR20
-#define  EXTI_FTSR_FT21 EXTI_FTSR_TR21
-#define  EXTI_FTSR_FT22 EXTI_FTSR_TR22
-#define  EXTI_FTSR_FT29 EXTI_FTSR_TR29
-#define  EXTI_FTSR_FT30 EXTI_FTSR_TR30
-#define  EXTI_FTSR_FT31 EXTI_FTSR_TR31
+#if defined(EXTI_FTSR_TR18)
+#define EXTI_FTSR_FT18 EXTI_FTSR_TR18
+#endif
+#define EXTI_FTSR_FT19 EXTI_FTSR_TR19
+#define EXTI_FTSR_FT20 EXTI_FTSR_TR20
+#if defined(EXTI_FTSR_TR21)
+#define EXTI_FTSR_FT21 EXTI_FTSR_TR21
+#endif
+#define EXTI_FTSR_FT22 EXTI_FTSR_TR22
+#if defined(EXTI_FTSR_TR23)
+#define EXTI_FTSR_FT23 EXTI_FTSR_TR23
+#endif
+#if defined(EXTI_FTSR_TR24)
+#define EXTI_FTSR_FT24 EXTI_FTSR_TR24
+#endif
+#if defined(EXTI_FTSR_TR25)
+#define EXTI_FTSR_FT25 EXTI_FTSR_TR25
+#endif
+#if defined(EXTI_FTSR_TR26)
+#define EXTI_FTSR_FT26 EXTI_FTSR_TR26
+#endif
+#if defined(EXTI_FTSR_TR27)
+#define EXTI_FTSR_FT27 EXTI_FTSR_TR27
+#endif
+#if defined(EXTI_FTSR_TR28)
+#define EXTI_FTSR_FT28 EXTI_FTSR_TR28
+#endif
+#if defined(EXTI_FTSR_TR29)
+#define EXTI_FTSR_FT29 EXTI_FTSR_TR29
+#endif
+#define EXTI_FTSR_FT30 EXTI_FTSR_TR30
+#if defined(EXTI_FTSR_TR31)
+#define EXTI_FTSR_FT31 EXTI_FTSR_TR31
+#endif
 
 /******************  Bit definition for EXTI_SWIER register  ******************/
 #define EXTI_SWIER_SWIER0_Pos      (0U)
@@ -3315,30 +3331,18 @@ typedef struct
 #define EXTI_SWIER_SWIER17_Pos     (17U)
 #define EXTI_SWIER_SWIER17_Msk     (0x1U << EXTI_SWIER_SWIER17_Pos)            /*!< 0x00020000 */
 #define EXTI_SWIER_SWIER17         EXTI_SWIER_SWIER17_Msk                      /*!< Software Interrupt on line 17 */
-#define EXTI_SWIER_SWIER18_Pos     (18U)
-#define EXTI_SWIER_SWIER18_Msk     (0x1U << EXTI_SWIER_SWIER18_Pos)            /*!< 0x00040000 */
-#define EXTI_SWIER_SWIER18         EXTI_SWIER_SWIER18_Msk                      /*!< Software Interrupt on line 18 */
 #define EXTI_SWIER_SWIER19_Pos     (19U)
 #define EXTI_SWIER_SWIER19_Msk     (0x1U << EXTI_SWIER_SWIER19_Pos)            /*!< 0x00080000 */
 #define EXTI_SWIER_SWIER19         EXTI_SWIER_SWIER19_Msk                      /*!< Software Interrupt on line 19 */
 #define EXTI_SWIER_SWIER20_Pos     (20U)
 #define EXTI_SWIER_SWIER20_Msk     (0x1U << EXTI_SWIER_SWIER20_Pos)            /*!< 0x00100000 */
 #define EXTI_SWIER_SWIER20         EXTI_SWIER_SWIER20_Msk                      /*!< Software Interrupt on line 20 */
-#define EXTI_SWIER_SWIER21_Pos     (21U)
-#define EXTI_SWIER_SWIER21_Msk     (0x1U << EXTI_SWIER_SWIER21_Pos)            /*!< 0x00200000 */
-#define EXTI_SWIER_SWIER21         EXTI_SWIER_SWIER21_Msk                      /*!< Software Interrupt on line 21 */
 #define EXTI_SWIER_SWIER22_Pos     (22U)
 #define EXTI_SWIER_SWIER22_Msk     (0x1U << EXTI_SWIER_SWIER22_Pos)            /*!< 0x00400000 */
 #define EXTI_SWIER_SWIER22         EXTI_SWIER_SWIER22_Msk                      /*!< Software Interrupt on line 22 */
-#define EXTI_SWIER_SWIER29_Pos     (29U)
-#define EXTI_SWIER_SWIER29_Msk     (0x1U << EXTI_SWIER_SWIER29_Pos)            /*!< 0x20000000 */
-#define EXTI_SWIER_SWIER29         EXTI_SWIER_SWIER29_Msk                      /*!< Software Interrupt on line 29 */
 #define EXTI_SWIER_SWIER30_Pos     (30U)
 #define EXTI_SWIER_SWIER30_Msk     (0x1U << EXTI_SWIER_SWIER30_Pos)            /*!< 0x40000000 */
 #define EXTI_SWIER_SWIER30         EXTI_SWIER_SWIER30_Msk                      /*!< Software Interrupt on line 30 */
-#define EXTI_SWIER_SWIER31_Pos     (31U)
-#define EXTI_SWIER_SWIER31_Msk     (0x1U << EXTI_SWIER_SWIER31_Pos)            /*!< 0x80000000 */
-#define EXTI_SWIER_SWIER31         EXTI_SWIER_SWIER31_Msk                      /*!< Software Interrupt on line 31 */
 
 /* References Defines */
 #define EXTI_SWIER_SWI0 EXTI_SWIER_SWIER0
@@ -3359,14 +3363,40 @@ typedef struct
 #define EXTI_SWIER_SWI15 EXTI_SWIER_SWIER15
 #define EXTI_SWIER_SWI16 EXTI_SWIER_SWIER16
 #define EXTI_SWIER_SWI17 EXTI_SWIER_SWIER17
-#define  EXTI_SWIER_SWI18 EXTI_SWIER_SWIER18
-#define  EXTI_SWIER_SWI19 EXTI_SWIER_SWIER19
-#define  EXTI_SWIER_SWI20 EXTI_SWIER_SWIER20
-#define  EXTI_SWIER_SWI21 EXTI_SWIER_SWIER21
-#define  EXTI_SWIER_SWI22 EXTI_SWIER_SWIER22
-#define  EXTI_SWIER_SWI29 EXTI_SWIER_SWIER29
-#define  EXTI_SWIER_SWI30 EXTI_SWIER_SWIER30
-#define  EXTI_SWIER_SWI31 EXTI_SWIER_SWIER31
+#if defined(EXTI_SWIER_SWIER18)
+#define EXTI_SWIER_SWI18 EXTI_SWIER_SWIER18
+#endif
+#define EXTI_SWIER_SWI19 EXTI_SWIER_SWIER19
+#define EXTI_SWIER_SWI20 EXTI_SWIER_SWIER20
+#if defined(EXTI_SWIER_SWIER21)
+#define EXTI_SWIER_SWI21 EXTI_SWIER_SWIER21
+#endif
+#define EXTI_SWIER_SWI22 EXTI_SWIER_SWIER22
+#if defined(EXTI_SWIER_SWIER23)
+#define EXTI_SWIER_SWI23 EXTI_SWIER_SWIER23
+#endif
+#if defined(EXTI_SWIER_SWIER24)
+#define EXTI_SWIER_SWI24 EXTI_SWIER_SWIER24
+#endif
+#if defined(EXTI_SWIER_SWIER25)
+#define EXTI_SWIER_SWI25 EXTI_SWIER_SWIER25
+#endif
+#if defined(EXTI_SWIER_SWIER26)
+#define EXTI_SWIER_SWI26 EXTI_SWIER_SWIER26
+#endif
+#if defined(EXTI_SWIER_SWIER27)
+#define EXTI_SWIER_SWI27 EXTI_SWIER_SWIER27
+#endif
+#if defined(EXTI_SWIER_SWIER28)
+#define EXTI_SWIER_SWI28 EXTI_SWIER_SWIER28
+#endif
+#if defined(EXTI_SWIER_SWIER29)
+#define EXTI_SWIER_SWI29 EXTI_SWIER_SWIER29
+#endif
+#define EXTI_SWIER_SWI30 EXTI_SWIER_SWIER30
+#if defined(EXTI_SWIER_SWIER31)
+#define EXTI_SWIER_SWI31 EXTI_SWIER_SWIER31
+#endif
 
 /*******************  Bit definition for EXTI_PR register  ********************/
 #define EXTI_PR_PR0_Pos            (0U)
@@ -3423,30 +3453,18 @@ typedef struct
 #define EXTI_PR_PR17_Pos           (17U)
 #define EXTI_PR_PR17_Msk           (0x1U << EXTI_PR_PR17_Pos)                  /*!< 0x00020000 */
 #define EXTI_PR_PR17               EXTI_PR_PR17_Msk                            /*!< Pending bit for line 17 */
-#define EXTI_PR_PR18_Pos           (18U)
-#define EXTI_PR_PR18_Msk           (0x1U << EXTI_PR_PR18_Pos)                  /*!< 0x00040000 */
-#define EXTI_PR_PR18               EXTI_PR_PR18_Msk                            /*!< Pending bit for line 18 */
 #define EXTI_PR_PR19_Pos           (19U)
 #define EXTI_PR_PR19_Msk           (0x1U << EXTI_PR_PR19_Pos)                  /*!< 0x00080000 */
 #define EXTI_PR_PR19               EXTI_PR_PR19_Msk                            /*!< Pending bit for line 19 */
 #define EXTI_PR_PR20_Pos           (20U)
 #define EXTI_PR_PR20_Msk           (0x1U << EXTI_PR_PR20_Pos)                  /*!< 0x00100000 */
 #define EXTI_PR_PR20               EXTI_PR_PR20_Msk                            /*!< Pending bit for line 20 */
-#define EXTI_PR_PR21_Pos           (21U)
-#define EXTI_PR_PR21_Msk           (0x1U << EXTI_PR_PR21_Pos)                  /*!< 0x00200000 */
-#define EXTI_PR_PR21               EXTI_PR_PR21_Msk                            /*!< Pending bit for line 21 */
 #define EXTI_PR_PR22_Pos           (22U)
 #define EXTI_PR_PR22_Msk           (0x1U << EXTI_PR_PR22_Pos)                  /*!< 0x00400000 */
 #define EXTI_PR_PR22               EXTI_PR_PR22_Msk                            /*!< Pending bit for line 22 */
-#define EXTI_PR_PR29_Pos           (29U)
-#define EXTI_PR_PR29_Msk           (0x1U << EXTI_PR_PR29_Pos)                  /*!< 0x20000000 */
-#define EXTI_PR_PR29               EXTI_PR_PR29_Msk                            /*!< Pending bit for line 29 */
 #define EXTI_PR_PR30_Pos           (30U)
 #define EXTI_PR_PR30_Msk           (0x1U << EXTI_PR_PR30_Pos)                  /*!< 0x40000000 */
 #define EXTI_PR_PR30               EXTI_PR_PR30_Msk                            /*!< Pending bit for line 30 */
-#define EXTI_PR_PR31_Pos           (31U)
-#define EXTI_PR_PR31_Msk           (0x1U << EXTI_PR_PR31_Pos)                  /*!< 0x80000000 */
-#define EXTI_PR_PR31               EXTI_PR_PR31_Msk                            /*!< Pending bit for line 31 */
 
 /* References Defines */
 #define EXTI_PR_PIF0 EXTI_PR_PR0
@@ -3455,6 +3473,7 @@ typedef struct
 #define EXTI_PR_PIF3 EXTI_PR_PR3
 #define EXTI_PR_PIF4 EXTI_PR_PR4
 #define EXTI_PR_PIF5 EXTI_PR_PR5
+#define EXTI_PR_PIF6 EXTI_PR_PR6
 #define EXTI_PR_PIF6 EXTI_PR_PR6
 #define EXTI_PR_PIF7 EXTI_PR_PR7
 #define EXTI_PR_PIF8 EXTI_PR_PR8
@@ -3467,14 +3486,40 @@ typedef struct
 #define EXTI_PR_PIF15 EXTI_PR_PR15
 #define EXTI_PR_PIF16 EXTI_PR_PR16
 #define EXTI_PR_PIF17 EXTI_PR_PR17
-#define  EXTI_PR_PIF18 EXTI_PR_PR18
-#define  EXTI_PR_PIF19 EXTI_PR_PR19
-#define  EXTI_PR_PIF20 EXTI_PR_PR20
-#define  EXTI_PR_PIF21 EXTI_PR_PR21
-#define  EXTI_PR_PIF22 EXTI_PR_PR22
-#define  EXTI_PR_PIF29 EXTI_PR_PR29
-#define  EXTI_PR_PIF30 EXTI_PR_PR30
-#define  EXTI_PR_PIF31 EXTI_PR_PR31
+#if defined(EXTI_PR_PR18)
+#define EXTI_PR_PIF18 EXTI_PR_PR18
+#endif
+#define EXTI_PR_PIF19 EXTI_PR_PR19
+#define EXTI_PR_PIF20 EXTI_PR_PR20
+#if defined(EXTI_PR_PR21)
+#define EXTI_PR_PIF21 EXTI_PR_PR21
+#endif
+#define EXTI_PR_PIF22 EXTI_PR_PR22
+#if defined(EXTI_PR_PR23)
+#define EXTI_PR_PIF23 EXTI_PR_PR23
+#endif
+#if defined(EXTI_PR_PR24)
+#define EXTI_PR_PIF24 EXTI_PR_PR24
+#endif
+#if defined(EXTI_PR_PR25)
+#define EXTI_PR_PIF25 EXTI_PR_PR25
+#endif
+#if defined(EXTI_PR_PR26)
+#define EXTI_PR_PIF26 EXTI_PR_PR26
+#endif
+#if defined(EXTI_PR_PR27)
+#define EXTI_PR_PIF27 EXTI_PR_PR27
+#endif
+#if defined(EXTI_PR_PR28)
+#define EXTI_PR_PIF28 EXTI_PR_PR28
+#endif
+#if defined(EXTI_PR_PR29)
+#define EXTI_PR_PIF29 EXTI_PR_PR29
+#endif
+#define EXTI_PR_PIF30 EXTI_PR_PR30
+#if defined(EXTI_PR_PR31)
+#define EXTI_PR_PIF31 EXTI_PR_PR31
+#endif
 
 #define EXTI_32_63_SUPPORT /* EXTI support more than 32 lines */
 
@@ -3482,21 +3527,19 @@ typedef struct
 #define EXTI_IMR2_MR32_Pos         (0U)
 #define EXTI_IMR2_MR32_Msk         (0x1U << EXTI_IMR2_MR32_Pos)                /*!< 0x00000001 */
 #define EXTI_IMR2_MR32             EXTI_IMR2_MR32_Msk                          /*!< Interrupt Mask on line 32 */
-#define EXTI_IMR2_MR33_Pos         (1U)
-#define EXTI_IMR2_MR33_Msk         (0x1U << EXTI_IMR2_MR33_Pos)                /*!< 0x00000002 */
-#define EXTI_IMR2_MR33             EXTI_IMR2_MR33_Msk                          /*!< Interrupt Mask on line 33 */
-#define EXTI_IMR2_MR34_Pos         (2U)
-#define EXTI_IMR2_MR34_Msk         (0x1U << EXTI_IMR2_MR34_Pos)                /*!< 0x00000004 */
-#define EXTI_IMR2_MR34             EXTI_IMR2_MR34_Msk                          /*!< Interrupt Mask on line 34 */
-#define EXTI_IMR2_MR35_Pos         (3U)
-#define EXTI_IMR2_MR35_Msk         (0x1U << EXTI_IMR2_MR35_Pos)                /*!< 0x00000008 */
-#define EXTI_IMR2_MR35             EXTI_IMR2_MR35_Msk                          /*!< Interrupt Mask on line 35 */
 
 /* References Defines */
-#define  EXTI_IMR2_IM32 EXTI_IMR2_MR32
-#define  EXTI_IMR2_IM33 EXTI_IMR2_MR33
-#define  EXTI_IMR2_IM34 EXTI_IMR2_MR34
-#define  EXTI_IMR2_IM35 EXTI_IMR2_MR35
+
+#define EXTI_IMR2_IM32 EXTI_IMR2_MR32
+#if defined(EXTI_IMR2_MR33)
+#define EXTI_IMR2_IM33 EXTI_IMR2_MR33
+#endif
+#if defined(EXTI_IMR2_MR34)
+#define EXTI_IMR2_IM34 EXTI_IMR2_MR34
+#endif
+#if defined(EXTI_IMR2_MR35)
+#define EXTI_IMR2_IM35 EXTI_IMR2_MR35
+#endif
 
 #define EXTI_IMR2_IM_Pos           (0U)
 #define EXTI_IMR2_IM_Msk           (0xFU << EXTI_IMR2_IM_Pos)                  /*!< 0x0000000F */
@@ -3506,69 +3549,87 @@ typedef struct
 #define EXTI_EMR2_MR32_Pos         (0U)
 #define EXTI_EMR2_MR32_Msk         (0x1U << EXTI_EMR2_MR32_Pos)                /*!< 0x00000001 */
 #define EXTI_EMR2_MR32             EXTI_EMR2_MR32_Msk                          /*!< Event Mask on line 32 */
-#define EXTI_EMR2_MR33_Pos         (1U)
-#define EXTI_EMR2_MR33_Msk         (0x1U << EXTI_EMR2_MR33_Pos)                /*!< 0x00000002 */
-#define EXTI_EMR2_MR33             EXTI_EMR2_MR33_Msk                          /*!< Event Mask on line 33 */
-#define EXTI_EMR2_MR34_Pos         (2U)
-#define EXTI_EMR2_MR34_Msk         (0x1U << EXTI_EMR2_MR34_Pos)                /*!< 0x00000004 */
-#define EXTI_EMR2_MR34             EXTI_EMR2_MR34_Msk                          /*!< Event Mask on line 34 */
-#define EXTI_EMR2_MR35_Pos         (3U)
-#define EXTI_EMR2_MR35_Msk         (0x1U << EXTI_EMR2_MR35_Pos)                /*!< 0x00000008 */
-#define EXTI_EMR2_MR35             EXTI_EMR2_MR35_Msk                          /*!< Event Mask on line 34 */
 
 /* References Defines */
-#define  EXTI_EMR2_EM32 EXTI_EMR2_MR32
-#define  EXTI_EMR2_EM33 EXTI_EMR2_MR33
-#define  EXTI_EMR2_EM34 EXTI_EMR2_MR34
-#define  EXTI_EMR2_EM35 EXTI_EMR2_MR35
+#define EXTI_EMR2_EM32 EXTI_EMR2_MR32
+#if defined(EXTI_EMR2_MR33)
+#define EXTI_EMR2_EM33 EXTI_EMR2_MR33
+#endif
+#if defined(EXTI_EMR2_MR34)
+#define EXTI_EMR2_EM34 EXTI_EMR2_MR34
+#endif
+#if defined(EXTI_EMR2_MR35)
+#define EXTI_EMR2_EM35 EXTI_EMR2_MR35
+#endif
 
 /******************  Bit definition for EXTI_RTSR2 register ********************/
 #define EXTI_RTSR2_TR32_Pos        (0U)
 #define EXTI_RTSR2_TR32_Msk        (0x1U << EXTI_RTSR2_TR32_Pos)               /*!< 0x00000001 */
 #define EXTI_RTSR2_TR32            EXTI_RTSR2_TR32_Msk                         /*!< Rising trigger event configuration bit of line 32 */
-#define EXTI_RTSR2_TR33_Pos        (1U)
-#define EXTI_RTSR2_TR33_Msk        (0x1U << EXTI_RTSR2_TR33_Pos)               /*!< 0x00000002 */
-#define EXTI_RTSR2_TR33            EXTI_RTSR2_TR33_Msk                         /*!< Rising trigger event configuration bit of line 33 */
 
 /* References Defines */
-#define  EXTI_RTSR2_RT32 EXTI_RTSR2_TR32
-#define  EXTI_RTSR2_RT33 EXTI_RTSR2_TR33
+#define EXTI_RTSR2_RT32 EXTI_RTSR2_TR32
+#if defined(EXTI_RTSR2_TR33)
+#define EXTI_RTSR2_RT33 EXTI_RTSR2_TR33
+#endif
+#if defined(EXTI_RTSR2_TR34)
+#define EXTI_RTSR2_RT34 EXTI_RTSR2_TR34
+#endif
+#if defined(EXTI_RTSR2_TR35)
+#define EXTI_RTSR2_RT35 EXTI_RTSR2_TR35
+#endif
 
 /******************  Bit definition for EXTI_FTSR2 register  ******************/
 #define EXTI_FTSR2_TR32_Pos        (0U)
 #define EXTI_FTSR2_TR32_Msk        (0x1U << EXTI_FTSR2_TR32_Pos)               /*!< 0x00000001 */
 #define EXTI_FTSR2_TR32            EXTI_FTSR2_TR32_Msk                         /*!< Falling trigger event configuration bit of line 32 */
-#define EXTI_FTSR2_TR33_Pos        (1U)
-#define EXTI_FTSR2_TR33_Msk        (0x1U << EXTI_FTSR2_TR33_Pos)               /*!< 0x00000002 */
-#define EXTI_FTSR2_TR33            EXTI_FTSR2_TR33_Msk                         /*!< Falling trigger event configuration bit of line 33 */
 
 /* References Defines */
-#define  EXTI_FTSR2_FT32 EXTI_FTSR2_TR32
-#define  EXTI_FTSR2_FT33 EXTI_FTSR2_TR33
+#define EXTI_FTSR2_FT32 EXTI_FTSR2_TR32
+#if defined(EXTI_FTSR2_TR33)
+#define EXTI_FTSR2_FT33 EXTI_FTSR2_TR33
+#endif
+#if defined(EXTI_FTSR2_TR34)
+#define EXTI_FTSR2_FT34 EXTI_FTSR2_TR34
+#endif
+#if defined(EXTI_FTSR2_TR35)
+#define EXTI_FTSR2_FT35 EXTI_FTSR2_TR35
+#endif
 
 /******************  Bit definition for EXTI_SWIER2 register  *****************/
 #define EXTI_SWIER2_SWIER32_Pos    (0U)
 #define EXTI_SWIER2_SWIER32_Msk    (0x1U << EXTI_SWIER2_SWIER32_Pos)           /*!< 0x00000001 */
 #define EXTI_SWIER2_SWIER32        EXTI_SWIER2_SWIER32_Msk                     /*!< Software Interrupt on line 32 */
-#define EXTI_SWIER2_SWIER33_Pos    (1U)
-#define EXTI_SWIER2_SWIER33_Msk    (0x1U << EXTI_SWIER2_SWIER33_Pos)           /*!< 0x00000002 */
-#define EXTI_SWIER2_SWIER33        EXTI_SWIER2_SWIER33_Msk                     /*!< Software Interrupt on line 33 */
 
 /* References Defines */
-#define  EXTI_SWIER2_SWI32 EXTI_SWIER2_SWIER32
-#define  EXTI_SWIER2_SWI33 EXTI_SWIER2_SWIER33
+#define EXTI_SWIER2_SWI32 EXTI_SWIER2_SWIER32
+#if defined(EXTI_SWIER2_SWIER33)
+#define EXTI_SWIER2_SWI33 EXTI_SWIER2_SWIER33
+#endif
+#if defined(EXTI_SWIER2_SWIER34)
+#define EXTI_SWIER2_SWI34 EXTI_SWIER2_SWIER34
+#endif
+#if defined(EXTI_SWIER2_SWIER35)
+#define EXTI_SWIER2_SWI35 EXTI_SWIER2_SWIER35
+#endif
 
 /*******************  Bit definition for EXTI_PR2 register  *******************/
 #define EXTI_PR2_PR32_Pos          (0U)
 #define EXTI_PR2_PR32_Msk          (0x1U << EXTI_PR2_PR32_Pos)                 /*!< 0x00000001 */
 #define EXTI_PR2_PR32              EXTI_PR2_PR32_Msk                           /*!< Pending bit for line 32 */
-#define EXTI_PR2_PR33_Pos          (1U)
-#define EXTI_PR2_PR33_Msk          (0x1U << EXTI_PR2_PR33_Pos)                 /*!< 0x00000002 */
-#define EXTI_PR2_PR33              EXTI_PR2_PR33_Msk                           /*!< Pending bit for line 33 */
 
 /* References Defines */
-#define  EXTI_PR2_PIF32 EXTI_PR2_PR32
-#define  EXTI_PR2_PIF33 EXTI_PR2_PR33
+#define EXTI_PR2_PIF32 EXTI_PR2_PR32
+#if defined(EXTI_PR2_PR33)
+#define EXTI_PR2_PIF33 EXTI_PR2_PR33
+#endif
+#if defined(EXTI_PR2_PR34)
+#define EXTI_PR2_PIF34 EXTI_PR2_PR34
+#endif
+#if defined(EXTI_PR2_PR35)
+#define EXTI_PR2_PIF35 EXTI_PR2_PR35
+#endif
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -6513,6 +6574,7 @@ typedef struct
 #define TIM_CR2_OIS4_Pos          (14U)
 #define TIM_CR2_OIS4_Msk          (0x1U << TIM_CR2_OIS4_Pos)                   /*!< 0x00004000 */
 #define TIM_CR2_OIS4              TIM_CR2_OIS4_Msk                             /*!<Output Idle state 4 (OC4 output) */
+
 #define TIM_CR2_OIS5_Pos          (16U)
 #define TIM_CR2_OIS5_Msk          (0x1U << TIM_CR2_OIS5_Pos)                   /*!< 0x00010000 */
 #define TIM_CR2_OIS5              TIM_CR2_OIS5_Msk                             /*!<Output Idle state 4 (OC4 output) */
@@ -8236,6 +8298,10 @@ typedef struct
   ((INSTANCE) == TIM1)
 
 /************************** TIM Instances : Advanced-control timers ***********/
+
+/****************** TIM Instances : Advanced timer instances *******************/
+#define IS_TIM_ADVANCED_INSTANCE(INSTANCE)\
+  ((INSTANCE) == TIM1)
 
 /****************** TIM Instances : supporting clock selection ****************/
 #define IS_TIM_CLOCK_SELECT_INSTANCE(INSTANCE)\

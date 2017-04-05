@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_lptim.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of LPTIM HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -182,7 +182,7 @@ typedef struct
 /** @defgroup LPTIM_Clock_Source LPTIM Clock Source
   * @{
   */
-#define LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC        ((uint32_t)0x00U)
+#define LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC        0x00U
 #define LPTIM_CLOCKSOURCE_ULPTIM                LPTIM_CFGR_CKSEL
 /**
   * @}
@@ -191,7 +191,7 @@ typedef struct
 /** @defgroup LPTIM_Clock_Prescaler LPTIM Clock Prescaler
   * @{
   */
-#define LPTIM_PRESCALER_DIV1                    ((uint32_t)0x00000000U)
+#define LPTIM_PRESCALER_DIV1                    0x00000000U
 #define LPTIM_PRESCALER_DIV2                    LPTIM_CFGR_PRESC_0
 #define LPTIM_PRESCALER_DIV4                    LPTIM_CFGR_PRESC_1
 #define LPTIM_PRESCALER_DIV8                    ((uint32_t)(LPTIM_CFGR_PRESC_0 | LPTIM_CFGR_PRESC_1))
@@ -207,7 +207,7 @@ typedef struct
   * @{
   */
 
-#define LPTIM_OUTPUTPOLARITY_HIGH               ((uint32_t)0x00000000U)
+#define LPTIM_OUTPUTPOLARITY_HIGH               0x00000000U
 #define LPTIM_OUTPUTPOLARITY_LOW                (LPTIM_CFGR_WAVPOL)
 /**
   * @}
@@ -216,7 +216,7 @@ typedef struct
 /** @defgroup LPTIM_Clock_Sample_Time LPTIM Clock Sample Time
   * @{
   */
-#define LPTIM_CLOCKSAMPLETIME_DIRECTTRANSITION ((uint32_t)0x00000000U)
+#define LPTIM_CLOCKSAMPLETIME_DIRECTTRANSITION 0x00000000U
 #define LPTIM_CLOCKSAMPLETIME_2TRANSITIONS     LPTIM_CFGR_CKFLT_0
 #define LPTIM_CLOCKSAMPLETIME_4TRANSITIONS     LPTIM_CFGR_CKFLT_1
 #define LPTIM_CLOCKSAMPLETIME_8TRANSITIONS     LPTIM_CFGR_CKFLT
@@ -228,7 +228,7 @@ typedef struct
   * @{
   */
 
-#define LPTIM_CLOCKPOLARITY_RISING                ((uint32_t)0x00000000U)
+#define LPTIM_CLOCKPOLARITY_RISING                0x00000000U
 #define LPTIM_CLOCKPOLARITY_FALLING               LPTIM_CFGR_CKPOL_0
 #define LPTIM_CLOCKPOLARITY_RISING_FALLING        LPTIM_CFGR_CKPOL_1
 /**
@@ -238,8 +238,8 @@ typedef struct
 /** @defgroup LPTIM_Trigger_Source LPTIM Trigger Source
   * @{
   */
-#define LPTIM_TRIGSOURCE_SOFTWARE               ((uint32_t)0x0000FFFFU)
-#define LPTIM_TRIGSOURCE_0                      ((uint32_t)0x00000000U)
+#define LPTIM_TRIGSOURCE_SOFTWARE               0x0000FFFFU
+#define LPTIM_TRIGSOURCE_0                      0x00000000U
 #define LPTIM_TRIGSOURCE_1                      ((uint32_t)LPTIM_CFGR_TRIGSEL_0)
 #define LPTIM_TRIGSOURCE_2                      LPTIM_CFGR_TRIGSEL_1
 #define LPTIM_TRIGSOURCE_3                      ((uint32_t)LPTIM_CFGR_TRIGSEL_0 | LPTIM_CFGR_TRIGSEL_1)
@@ -262,7 +262,7 @@ typedef struct
 /** @defgroup LPTIM_Trigger_Sample_Time LPTIM Trigger Sample Time
   * @{
   */
-#define LPTIM_TRIGSAMPLETIME_DIRECTTRANSITION  ((uint32_t)0x00000000U)
+#define LPTIM_TRIGSAMPLETIME_DIRECTTRANSITION  0x00000000U
 #define LPTIM_TRIGSAMPLETIME_2TRANSITIONS      LPTIM_CFGR_TRGFLT_0
 #define LPTIM_TRIGSAMPLETIME_4TRANSITIONS      LPTIM_CFGR_TRGFLT_1
 #define LPTIM_TRIGSAMPLETIME_8TRANSITIONS      LPTIM_CFGR_TRGFLT
@@ -274,7 +274,7 @@ typedef struct
   * @{
   */
 
-#define LPTIM_UPDATE_IMMEDIATE                  ((uint32_t)0x00000000U)
+#define LPTIM_UPDATE_IMMEDIATE                  0x00000000U
 #define LPTIM_UPDATE_ENDOFPERIOD                LPTIM_CFGR_PRELOAD
 /**
   * @}
@@ -284,7 +284,7 @@ typedef struct
   * @{
   */
 
-#define LPTIM_COUNTERSOURCE_INTERNAL            ((uint32_t)0x00000000U)
+#define LPTIM_COUNTERSOURCE_INTERNAL            0x00000000U
 #define LPTIM_COUNTERSOURCE_EXTERNAL            LPTIM_CFGR_COUNTMODE
 /**
   * @}
@@ -323,7 +323,7 @@ typedef struct
 /** @defgroup LPTIM_Option Register Definition
   * @{
   */
-#define LPTIM_OP_PAD_AF                          ((uint32_t)0x00000000U)
+#define LPTIM_OP_PAD_AF                          0x00000000U
 #define LPTIM_OP_PAD_PA4                         LPTIM_OR_LPT_IN1_RMP_0
 #define LPTIM_OP_PAD_PB9                         LPTIM_OR_LPT_IN1_RMP_1
 #define LPTIM_OP_TIM_DAC                         LPTIM_OR_LPT_IN1_RMP
@@ -526,7 +526,7 @@ typedef struct
   */
 #define __HAL_LPTIM_WAKEUPTIMER_EXTI_ENABLE_RISING_FALLING_EDGE() do{__HAL_LPTIM_WAKEUPTIMER_EXTI_ENABLE_RISING_EDGE();\
                                                                      __HAL_LPTIM_WAKEUPTIMER_EXTI_ENABLE_FALLING_EDGE();\
-                                                                    }while(0)
+                                                                    }while(0U)
 
 /**
   * @brief  Disable rising & falling edge trigger on the LPTIM Wake-up Timer associated Exti line.
@@ -535,7 +535,7 @@ typedef struct
   */
 #define __HAL_LPTIM_WAKEUPTIMER_EXTI_DISABLE_RISING_FALLING_EDGE() do{__HAL_LPTIM_WAKEUPTIMER_EXTI_DISABLE_RISING_EDGE();\
                                                                       __HAL_LPTIM_WAKEUPTIMER_EXTI_DISABLE_FALLING_EDGE();\
-                                                                     }while(0)
+                                                                     }while(0U)
 
 /**
   * @brief Check whether the LPTIM Wake-up Timer associated Exti line interrupt flag is set or not.

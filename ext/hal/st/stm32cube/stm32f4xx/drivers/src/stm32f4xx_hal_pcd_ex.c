@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_pcd_ex.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   PCD HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the USB Peripheral Controller:
@@ -12,7 +12,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -90,7 +90,7 @@
   */
 HAL_StatusTypeDef HAL_PCDEx_SetTxFiFo(PCD_HandleTypeDef *hpcd, uint8_t fifo, uint16_t size)
 {
-  uint8_t i = 0U;
+  uint8_t i = 0;
   uint32_t Tx_Offset = 0U;
 
   /*  TXn min size = 16 words. (n  : Transmit FIFO index)
@@ -105,20 +105,20 @@ HAL_StatusTypeDef HAL_PCDEx_SetTxFiFo(PCD_HandleTypeDef *hpcd, uint8_t fifo, uin
   
   Tx_Offset = hpcd->Instance->GRXFSIZ;
   
-  if(fifo == 0U)
+  if(fifo == 0)
   {
     hpcd->Instance->DIEPTXF0_HNPTXFSIZ = (uint32_t)(((uint32_t)size << 16U) | Tx_Offset);
   }
   else
   {
     Tx_Offset += (hpcd->Instance->DIEPTXF0_HNPTXFSIZ) >> 16U;
-    for (i = 0U; i < (fifo - 1U); i++)
+    for (i = 0; i < (fifo - 1); i++)
     {
       Tx_Offset += (hpcd->Instance->DIEPTXF[i] >> 16U);
     }
     
     /* Multiply Tx_Size by 2 to get higher performance */
-    hpcd->Instance->DIEPTXF[fifo - 1U] = (uint32_t)(((uint32_t)size << 16U) | Tx_Offset);        
+    hpcd->Instance->DIEPTXF[fifo - 1] = (uint32_t)(((uint32_t)size << 16U) | Tx_Offset);        
   }
   
   return HAL_OK;

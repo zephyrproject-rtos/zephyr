@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_pwr.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   PWR HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Power Controller (PWR) peripheral:
@@ -243,7 +243,7 @@ void HAL_PWR_DisableBkUpAccess(void)
     (+) Comparator auto-wakeup (AWU) from the Stop mode
 
       (++) To wake up from the Stop mode with a comparator wakeup event, it is necessary to:
-           (+++) Configure the EXTI Line associated with the comparator (example EXTI Line 22 for comparator 2)
+           (+++) Configure the EXTI Line associated with the comparator (example EXTI Line 22 for comparator 2U)
                  to be sensitive to to the selected edges (falling, rising or falling
                  and rising) (Interrupt or Event modes) using the EXTI_Init() function.
            (+++) Configure the comparator to generate the event.
@@ -255,7 +255,7 @@ void HAL_PWR_DisableBkUpAccess(void)
   * @brief Enables the WakeUp PINx functionality.
   * @param WakeUpPinx: Specifies the Power Wake-Up pin to enable.
   *         This parameter can be value of :
-  *           @ref PWREx_WakeUp_Pins
+  *           @ref PWR_WakeUp_Pins
   * @retval None
   */
 void HAL_PWR_EnableWakeUpPin(uint32_t WakeUpPinx)
@@ -270,7 +270,7 @@ void HAL_PWR_EnableWakeUpPin(uint32_t WakeUpPinx)
   * @brief Disables the WakeUp PINx functionality.
   * @param WakeUpPinx: Specifies the Power Wake-Up pin to disable.
   *         This parameter can be values of :
-  *           @ref PWREx_WakeUp_Pins
+  *           @ref PWR_WakeUp_Pins
   * @retval None
   */
 void HAL_PWR_DisableWakeUpPin(uint32_t WakeUpPinx)
@@ -342,7 +342,7 @@ void HAL_PWR_EnterSLEEPMode(uint32_t Regulator, uint8_t SLEEPEntry)
   */
 void HAL_PWR_EnterSTOPMode(uint32_t Regulator, uint8_t STOPEntry)
 {
-  uint32_t tmpreg = 0;
+  uint32_t tmpreg = 0U;
 
   /* Check the parameters */
   assert_param(IS_PWR_REGULATOR(Regulator));

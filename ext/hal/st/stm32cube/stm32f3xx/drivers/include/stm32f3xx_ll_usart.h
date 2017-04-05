@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_usart.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of USART LL module.
   ******************************************************************************
   * @attention
@@ -63,14 +63,6 @@ extern "C" {
 /** @defgroup USART_LL_Private_Constants USART Private Constants
   * @{
   */
-
-/* Defines used for the bit position in the register and perform offsets*/
-#define USART_POSITION_CR1_DEDT                 (uint32_t)POSITION_VAL(USART_CR1_DEDT)
-#define USART_POSITION_CR1_DEAT                 (uint32_t)POSITION_VAL(USART_CR1_DEAT)
-#define USART_POSITION_CR2_ADD                  (uint32_t)POSITION_VAL(USART_CR2_ADD)
-#define USART_POSITION_CR3_SCARCNT              (uint32_t)POSITION_VAL(USART_CR3_SCARCNT)
-#define USART_POSITION_RTOR_BLEN                (uint32_t)POSITION_VAL(USART_RTOR_BLEN)
-#define USART_POSITION_GTPR_GT                  (uint32_t)POSITION_VAL(USART_GTPR_GT)
 /**
   * @}
   */
@@ -1358,7 +1350,7 @@ __STATIC_INLINE uint32_t LL_USART_IsEnabledRxTimeout(USART_TypeDef *USARTx)
 __STATIC_INLINE void LL_USART_ConfigNodeAddress(USART_TypeDef *USARTx, uint32_t AddressLen, uint32_t NodeAddress)
 {
   MODIFY_REG(USARTx->CR2, USART_CR2_ADD | USART_CR2_ADDM7,
-             (uint32_t)(AddressLen | (NodeAddress << USART_POSITION_CR2_ADD)));
+             (uint32_t)(AddressLen | (NodeAddress << USART_CR2_ADD_Pos)));
 }
 
 /**
@@ -1373,7 +1365,7 @@ __STATIC_INLINE void LL_USART_ConfigNodeAddress(USART_TypeDef *USARTx, uint32_t 
   */
 __STATIC_INLINE uint32_t LL_USART_GetNodeAddress(USART_TypeDef *USARTx)
 {
-  return (uint32_t)(READ_BIT(USARTx->CR2, USART_CR2_ADD) >> USART_POSITION_CR2_ADD);
+  return (uint32_t)(READ_BIT(USARTx->CR2, USART_CR2_ADD) >> USART_CR2_ADD_Pos);
 }
 
 /**
@@ -1680,7 +1672,7 @@ __STATIC_INLINE uint32_t LL_USART_GetRxTimeout(USART_TypeDef *USARTx)
   */
 __STATIC_INLINE void LL_USART_SetBlockLength(USART_TypeDef *USARTx, uint32_t BlockLength)
 {
-  MODIFY_REG(USARTx->RTOR, USART_RTOR_BLEN, BlockLength << USART_POSITION_RTOR_BLEN);
+  MODIFY_REG(USARTx->RTOR, USART_RTOR_BLEN, BlockLength << USART_RTOR_BLEN_Pos);
 }
 
 /**
@@ -1691,7 +1683,7 @@ __STATIC_INLINE void LL_USART_SetBlockLength(USART_TypeDef *USARTx, uint32_t Blo
   */
 __STATIC_INLINE uint32_t LL_USART_GetBlockLength(USART_TypeDef *USARTx)
 {
-  return (uint32_t)(READ_BIT(USARTx->RTOR, USART_RTOR_BLEN) >> USART_POSITION_RTOR_BLEN);
+  return (uint32_t)(READ_BIT(USARTx->RTOR, USART_RTOR_BLEN) >> USART_RTOR_BLEN_Pos);
 }
 
 /**
@@ -1903,7 +1895,7 @@ __STATIC_INLINE uint32_t LL_USART_IsEnabledSmartcard(USART_TypeDef *USARTx)
   */
 __STATIC_INLINE void LL_USART_SetSmartcardAutoRetryCount(USART_TypeDef *USARTx, uint32_t AutoRetryCount)
 {
-  MODIFY_REG(USARTx->CR3, USART_CR3_SCARCNT, AutoRetryCount << USART_POSITION_CR3_SCARCNT);
+  MODIFY_REG(USARTx->CR3, USART_CR3_SCARCNT, AutoRetryCount << USART_CR3_SCARCNT_Pos);
 }
 
 /**
@@ -1916,7 +1908,7 @@ __STATIC_INLINE void LL_USART_SetSmartcardAutoRetryCount(USART_TypeDef *USARTx, 
   */
 __STATIC_INLINE uint32_t LL_USART_GetSmartcardAutoRetryCount(USART_TypeDef *USARTx)
 {
-  return (uint32_t)(READ_BIT(USARTx->CR3, USART_CR3_SCARCNT) >> USART_POSITION_CR3_SCARCNT);
+  return (uint32_t)(READ_BIT(USARTx->CR3, USART_CR3_SCARCNT) >> USART_CR3_SCARCNT_Pos);
 }
 
 /**
@@ -1960,7 +1952,7 @@ __STATIC_INLINE uint32_t LL_USART_GetSmartcardPrescaler(USART_TypeDef *USARTx)
   */
 __STATIC_INLINE void LL_USART_SetSmartcardGuardTime(USART_TypeDef *USARTx, uint32_t GuardTime)
 {
-  MODIFY_REG(USARTx->GTPR, USART_GTPR_GT, GuardTime << USART_POSITION_GTPR_GT);
+  MODIFY_REG(USARTx->GTPR, USART_GTPR_GT, GuardTime << USART_GTPR_GT_Pos);
 }
 
 /**
@@ -1974,7 +1966,7 @@ __STATIC_INLINE void LL_USART_SetSmartcardGuardTime(USART_TypeDef *USARTx, uint3
   */
 __STATIC_INLINE uint32_t LL_USART_GetSmartcardGuardTime(USART_TypeDef *USARTx)
 {
-  return (uint32_t)(READ_BIT(USARTx->GTPR, USART_GTPR_GT) >> USART_POSITION_GTPR_GT);
+  return (uint32_t)(READ_BIT(USARTx->GTPR, USART_GTPR_GT) >> USART_GTPR_GT_Pos);
 }
 
 /**
@@ -2121,7 +2113,7 @@ __STATIC_INLINE uint32_t LL_USART_IsEnabledLIN(USART_TypeDef *USARTx)
   */
 __STATIC_INLINE void LL_USART_SetDEDeassertionTime(USART_TypeDef *USARTx, uint32_t Time)
 {
-  MODIFY_REG(USARTx->CR1, USART_CR1_DEDT, Time << USART_POSITION_CR1_DEDT);
+  MODIFY_REG(USARTx->CR1, USART_CR1_DEDT, Time << USART_CR1_DEDT_Pos);
 }
 
 /**
@@ -2134,7 +2126,7 @@ __STATIC_INLINE void LL_USART_SetDEDeassertionTime(USART_TypeDef *USARTx, uint32
   */
 __STATIC_INLINE uint32_t LL_USART_GetDEDeassertionTime(USART_TypeDef *USARTx)
 {
-  return (uint32_t)(READ_BIT(USARTx->CR1, USART_CR1_DEDT) >> USART_POSITION_CR1_DEDT);
+  return (uint32_t)(READ_BIT(USARTx->CR1, USART_CR1_DEDT) >> USART_CR1_DEDT_Pos);
 }
 
 /**
@@ -2148,7 +2140,7 @@ __STATIC_INLINE uint32_t LL_USART_GetDEDeassertionTime(USART_TypeDef *USARTx)
   */
 __STATIC_INLINE void LL_USART_SetDEAssertionTime(USART_TypeDef *USARTx, uint32_t Time)
 {
-  MODIFY_REG(USARTx->CR1, USART_CR1_DEAT, Time << USART_POSITION_CR1_DEAT);
+  MODIFY_REG(USARTx->CR1, USART_CR1_DEAT, Time << USART_CR1_DEAT_Pos);
 }
 
 /**
@@ -2161,7 +2153,7 @@ __STATIC_INLINE void LL_USART_SetDEAssertionTime(USART_TypeDef *USARTx, uint32_t
   */
 __STATIC_INLINE uint32_t LL_USART_GetDEAssertionTime(USART_TypeDef *USARTx)
 {
-  return (uint32_t)(READ_BIT(USARTx->CR1, USART_CR1_DEAT) >> USART_POSITION_CR1_DEAT);
+  return (uint32_t)(READ_BIT(USARTx->CR1, USART_CR1_DEAT) >> USART_CR1_DEAT_Pos);
 }
 
 /**

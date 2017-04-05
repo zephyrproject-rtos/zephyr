@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_pccard.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   PCCARD HAL module driver.
   *          This file provides a generic firmware to drive PCCARD memories mounted 
   *          as external device.
@@ -50,7 +50,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -97,13 +97,13 @@
 /** @defgroup PCCARD_Private_Defines PCCARD Private Defines
   * @{
   */
-#define PCCARD_TIMEOUT_READ_ID                 (uint32_t)0x0000FFFFU
-#define PCCARD_TIMEOUT_READ_WRITE_SECTOR       (uint32_t)0x0000FFFFU
-#define PCCARD_TIMEOUT_ERASE_SECTOR            (uint32_t)0x00000400U
-#define PCCARD_TIMEOUT_STATUS                  (uint32_t)0x01000000U
+#define PCCARD_TIMEOUT_READ_ID                 0x0000FFFFU
+#define PCCARD_TIMEOUT_READ_WRITE_SECTOR       0x0000FFFFU
+#define PCCARD_TIMEOUT_ERASE_SECTOR            0x00000400U
+#define PCCARD_TIMEOUT_STATUS                  0x01000000U
 
-#define PCCARD_STATUS_OK                       (uint8_t)0x58U
-#define PCCARD_STATUS_WRITE_OK                 (uint8_t)0x50U
+#define PCCARD_STATUS_OK                       (uint8_t)0x58
+#define PCCARD_STATUS_WRITE_OK                 (uint8_t)0x50
 /**
   * @}
   */ 
@@ -264,7 +264,7 @@ __weak void HAL_PCCARD_MspDeInit(PCCARD_HandleTypeDef *hpccard)
 HAL_StatusTypeDef HAL_PCCARD_Read_ID(PCCARD_HandleTypeDef *hpccard, uint8_t CompactFlash_ID[], uint8_t *pStatus)
 {
   uint32_t timeout = PCCARD_TIMEOUT_READ_ID, index = 0U;
-  uint8_t status = 0U;
+  uint8_t status = 0;
   
   /* Process Locked */
   __HAL_LOCK(hpccard);  
@@ -282,7 +282,7 @@ HAL_StatusTypeDef HAL_PCCARD_Read_ID(PCCARD_HandleTypeDef *hpccard, uint8_t Comp
   *pStatus = PCCARD_READY;  
   
   /* Send the Identify Command */
-  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD)  = 0xECECU;
+  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD)  = 0xECEC;
     
   /* Read PCCARD IDs and timeout treatment */
   do 
@@ -327,7 +327,7 @@ HAL_StatusTypeDef HAL_PCCARD_Read_ID(PCCARD_HandleTypeDef *hpccard, uint8_t Comp
 HAL_StatusTypeDef HAL_PCCARD_Read_Sector(PCCARD_HandleTypeDef *hpccard, uint16_t *pBuffer, uint16_t SectorAddress, uint8_t *pStatus)
 {
   uint32_t timeout = PCCARD_TIMEOUT_READ_WRITE_SECTOR, index = 0U;
-  uint8_t status = 0U;
+  uint8_t status = 0;
 
   /* Process Locked */
   __HAL_LOCK(hpccard);
@@ -345,16 +345,16 @@ HAL_StatusTypeDef HAL_PCCARD_Read_Sector(PCCARD_HandleTypeDef *hpccard, uint16_t
   *pStatus = PCCARD_READY;
 
   /* Set the parameters to write a sector */
-  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_HIGH) = (uint16_t)0x00U;
-  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_SECTOR_COUNT)  = ((uint16_t)0x0100U ) | ((uint16_t)SectorAddress);
-  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD)    = (uint16_t)0xE4A0U;  
+  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_HIGH) = (uint16_t)0x00;
+  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_SECTOR_COUNT)  = ((uint16_t)0x0100) | ((uint16_t)SectorAddress);
+  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD)    = (uint16_t)0xE4A0;  
 
   do
   {
     /* wait till the Status = 0x80 */
     status =  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD_ALTERNATE);
     timeout--;
-  }while((status == 0x80U) && timeout);
+  }while((status == 0x80) && timeout);
   
   if(timeout == 0U)
   {
@@ -403,7 +403,7 @@ HAL_StatusTypeDef HAL_PCCARD_Read_Sector(PCCARD_HandleTypeDef *hpccard, uint16_t
 HAL_StatusTypeDef HAL_PCCARD_Write_Sector(PCCARD_HandleTypeDef *hpccard, uint16_t *pBuffer, uint16_t SectorAddress,  uint8_t *pStatus)
 {
   uint32_t timeout = PCCARD_TIMEOUT_READ_WRITE_SECTOR, index = 0U;
-  uint8_t status = 0U;
+  uint8_t status = 0;
 
   /* Process Locked */
   __HAL_LOCK(hpccard);  
@@ -421,9 +421,9 @@ HAL_StatusTypeDef HAL_PCCARD_Write_Sector(PCCARD_HandleTypeDef *hpccard, uint16_
   *pStatus = PCCARD_READY;  
     
   /* Set the parameters to write a sector */
-  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_HIGH) = (uint16_t)0x00U;
-  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_SECTOR_COUNT)  = ((uint16_t)0x0100U ) | ((uint16_t)SectorAddress);
-  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD)    = (uint16_t)0x30A0U;
+  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_HIGH) = (uint16_t)0x00;
+  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_SECTOR_COUNT)  = ((uint16_t)0x0100) | ((uint16_t)SectorAddress);
+  *(__IO uint16_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD)    = (uint16_t)0x30A0;
   
   do
   {
@@ -476,7 +476,7 @@ HAL_StatusTypeDef HAL_PCCARD_Write_Sector(PCCARD_HandleTypeDef *hpccard, uint16_
 HAL_StatusTypeDef  HAL_PCCARD_Erase_Sector(PCCARD_HandleTypeDef *hpccard, uint16_t SectorAddress, uint8_t *pStatus)
 {
   uint32_t timeout = PCCARD_TIMEOUT_ERASE_SECTOR;
-  uint8_t status = 0U;
+  uint8_t status = 0;
   
   /* Process Locked */
   __HAL_LOCK(hpccard);  
@@ -494,11 +494,11 @@ HAL_StatusTypeDef  HAL_PCCARD_Erase_Sector(PCCARD_HandleTypeDef *hpccard, uint16
   *pStatus = PCCARD_READY;
     
   /* Set the parameters to write a sector */
-  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_LOW)  = 0x00U;
-  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_HIGH) = 0x00U;
+  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_LOW)  = 0x00;
+  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CYLINDER_HIGH) = 0x00;
   *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_SECTOR_NUMBER) = SectorAddress;
-  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_SECTOR_COUNT)  = 0x01U;
-  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CARD_HEAD)     = 0xA0U;
+  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_SECTOR_COUNT)  = 0x01;
+  *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_CARD_HEAD)     = 0xA0;
   *(__IO uint8_t *)(PCCARD_IO_SPACE_PRIMARY_ADDR | ATA_STATUS_CMD)    = ATA_ERASE_SECTOR_CMD;
   
   /* wait till the PCCARD is ready */
@@ -551,7 +551,7 @@ HAL_StatusTypeDef HAL_PCCARD_Reset(PCCARD_HandleTypeDef *hpccard)
   /* Check the PCCARD controller state */
   hpccard->State = HAL_PCCARD_STATE_BUSY;
   
-  *(__IO uint8_t *)(PCCARD_ATTRIBUTE_SPACE_ADDRESS | ATA_CARD_CONFIGURATION ) = 0x01U;
+  *(__IO uint8_t *)(PCCARD_ATTRIBUTE_SPACE_ADDRESS | ATA_CARD_CONFIGURATION ) = 0x01;
     
   /* Check the PCCARD controller state */
   hpccard->State = HAL_PCCARD_STATE_READY;

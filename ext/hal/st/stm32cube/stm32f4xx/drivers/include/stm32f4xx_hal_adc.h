@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file containing functions prototypes of ADC HAL library.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -172,34 +172,34 @@ typedef struct
   * @brief  HAL ADC state machine: ADC states definition (bitfields)
   */ 
 /* States of ADC global scope */
-#define HAL_ADC_STATE_RESET             ((uint32_t)0x00000000U)    /*!< ADC not yet initialized or disabled */
-#define HAL_ADC_STATE_READY             ((uint32_t)0x00000001U)    /*!< ADC peripheral ready for use */
-#define HAL_ADC_STATE_BUSY_INTERNAL     ((uint32_t)0x00000002U)    /*!< ADC is busy to internal process (initialization, calibration) */
-#define HAL_ADC_STATE_TIMEOUT           ((uint32_t)0x00000004U)    /*!< TimeOut occurrence */
+#define HAL_ADC_STATE_RESET             0x00000000U    /*!< ADC not yet initialized or disabled */
+#define HAL_ADC_STATE_READY             0x00000001U    /*!< ADC peripheral ready for use */
+#define HAL_ADC_STATE_BUSY_INTERNAL     0x00000002U    /*!< ADC is busy to internal process (initialization, calibration) */
+#define HAL_ADC_STATE_TIMEOUT           0x00000004U    /*!< TimeOut occurrence */
 
 /* States of ADC errors */
-#define HAL_ADC_STATE_ERROR_INTERNAL    ((uint32_t)0x00000010U)    /*!< Internal error occurrence */
-#define HAL_ADC_STATE_ERROR_CONFIG      ((uint32_t)0x00000020U)    /*!< Configuration error occurrence */
-#define HAL_ADC_STATE_ERROR_DMA         ((uint32_t)0x00000040U)    /*!< DMA error occurrence */
+#define HAL_ADC_STATE_ERROR_INTERNAL    0x00000010U    /*!< Internal error occurrence */
+#define HAL_ADC_STATE_ERROR_CONFIG      0x00000020U    /*!< Configuration error occurrence */
+#define HAL_ADC_STATE_ERROR_DMA         0x00000040U    /*!< DMA error occurrence */
 
 /* States of ADC group regular */
-#define HAL_ADC_STATE_REG_BUSY          ((uint32_t)0x00000100U)    /*!< A conversion on group regular is ongoing or can occur (either by continuous mode,
-                                                                       external trigger, low power auto power-on (if feature available), multimode ADC master control (if feature available)) */
-#define HAL_ADC_STATE_REG_EOC           ((uint32_t)0x00000200U)    /*!< Conversion data available on group regular */
-#define HAL_ADC_STATE_REG_OVR           ((uint32_t)0x00000400U)    /*!< Overrun occurrence */
+#define HAL_ADC_STATE_REG_BUSY          0x00000100U    /*!< A conversion on group regular is ongoing or can occur (either by continuous mode,
+                                                            external trigger, low power auto power-on (if feature available), multimode ADC master control (if feature available)) */
+#define HAL_ADC_STATE_REG_EOC           0x00000200U    /*!< Conversion data available on group regular */
+#define HAL_ADC_STATE_REG_OVR           0x00000400U    /*!< Overrun occurrence */
 
 /* States of ADC group injected */
-#define HAL_ADC_STATE_INJ_BUSY          ((uint32_t)0x00001000U)    /*!< A conversion on group injected is ongoing or can occur (either by auto-injection mode,
-                                                                       external trigger, low power auto power-on (if feature available), multimode ADC master control (if feature available)) */
-#define HAL_ADC_STATE_INJ_EOC           ((uint32_t)0x00002000U)    /*!< Conversion data available on group injected */
+#define HAL_ADC_STATE_INJ_BUSY          0x00001000U    /*!< A conversion on group injected is ongoing or can occur (either by auto-injection mode,
+                                                            external trigger, low power auto power-on (if feature available), multimode ADC master control (if feature available)) */
+#define HAL_ADC_STATE_INJ_EOC           0x00002000U    /*!< Conversion data available on group injected */
 
 /* States of ADC analog watchdogs */
-#define HAL_ADC_STATE_AWD1              ((uint32_t)0x00010000U)    /*!< Out-of-window occurrence of analog watchdog 1 */
-#define HAL_ADC_STATE_AWD2              ((uint32_t)0x00020000U)    /*!< Not available on STM32F4 device: Out-of-window occurrence of analog watchdog 2 */
-#define HAL_ADC_STATE_AWD3              ((uint32_t)0x00040000U)    /*!< Not available on STM32F4 device: Out-of-window occurrence of analog watchdog 3 */
+#define HAL_ADC_STATE_AWD1              0x00010000U    /*!< Out-of-window occurrence of analog watchdog 1 */
+#define HAL_ADC_STATE_AWD2              0x00020000U    /*!< Not available on STM32F4 device: Out-of-window occurrence of analog watchdog 2 */
+#define HAL_ADC_STATE_AWD3              0x00040000U    /*!< Not available on STM32F4 device: Out-of-window occurrence of analog watchdog 3 */
 
 /* States of ADC multi-mode */
-#define HAL_ADC_STATE_MULTIMODE_SLAVE   ((uint32_t)0x00100000U)    /*!< Not available on STM32F4 device: ADC in multimode slave state, controlled by another ADC master ( */
+#define HAL_ADC_STATE_MULTIMODE_SLAVE   0x00100000U    /*!< Not available on STM32F4 device: ADC in multimode slave state, controlled by another ADC master ( */
 
 
 /** 
@@ -233,11 +233,11 @@ typedef struct
 /** @defgroup ADC_Error_Code ADC Error Code
   * @{
   */
-#define HAL_ADC_ERROR_NONE        ((uint32_t)0x00U)   /*!< No error                                              */
-#define HAL_ADC_ERROR_INTERNAL    ((uint32_t)0x01U)   /*!< ADC IP internal error: if problem of clocking, 
-                                                          enable/disable, erroneous state                       */
-#define HAL_ADC_ERROR_OVR         ((uint32_t)0x02U)   /*!< Overrun error                                         */
-#define HAL_ADC_ERROR_DMA         ((uint32_t)0x04U)   /*!< DMA transfer error                                    */
+#define HAL_ADC_ERROR_NONE        0x00U   /*!< No error                                              */
+#define HAL_ADC_ERROR_INTERNAL    0x01U   /*!< ADC IP internal error: if problem of clocking, 
+                                               enable/disable, erroneous state                       */
+#define HAL_ADC_ERROR_OVR         0x02U   /*!< Overrun error                                         */
+#define HAL_ADC_ERROR_DMA         0x04U   /*!< DMA transfer error                                    */
 /**
   * @}
   */
@@ -246,7 +246,7 @@ typedef struct
 /** @defgroup ADC_ClockPrescaler  ADC Clock Prescaler
   * @{
   */ 
-#define ADC_CLOCK_SYNC_PCLK_DIV2    ((uint32_t)0x00000000U)
+#define ADC_CLOCK_SYNC_PCLK_DIV2    0x00000000U
 #define ADC_CLOCK_SYNC_PCLK_DIV4    ((uint32_t)ADC_CCR_ADCPRE_0)
 #define ADC_CLOCK_SYNC_PCLK_DIV6    ((uint32_t)ADC_CCR_ADCPRE_1)
 #define ADC_CLOCK_SYNC_PCLK_DIV8    ((uint32_t)ADC_CCR_ADCPRE)
@@ -257,7 +257,7 @@ typedef struct
 /** @defgroup ADC_delay_between_2_sampling_phases ADC Delay Between 2 Sampling Phases
   * @{
   */ 
-#define ADC_TWOSAMPLINGDELAY_5CYCLES    ((uint32_t)0x00000000U)
+#define ADC_TWOSAMPLINGDELAY_5CYCLES    0x00000000U
 #define ADC_TWOSAMPLINGDELAY_6CYCLES    ((uint32_t)ADC_CCR_DELAY_0)
 #define ADC_TWOSAMPLINGDELAY_7CYCLES    ((uint32_t)ADC_CCR_DELAY_1)
 #define ADC_TWOSAMPLINGDELAY_8CYCLES    ((uint32_t)(ADC_CCR_DELAY_1 | ADC_CCR_DELAY_0))
@@ -280,7 +280,7 @@ typedef struct
 /** @defgroup ADC_Resolution ADC Resolution
   * @{
   */ 
-#define ADC_RESOLUTION_12B  ((uint32_t)0x00000000U)
+#define ADC_RESOLUTION_12B  0x00000000U
 #define ADC_RESOLUTION_10B  ((uint32_t)ADC_CR1_RES_0)
 #define ADC_RESOLUTION_8B   ((uint32_t)ADC_CR1_RES_1)
 #define ADC_RESOLUTION_6B   ((uint32_t)ADC_CR1_RES)
@@ -291,7 +291,7 @@ typedef struct
 /** @defgroup ADC_External_trigger_edge_Regular ADC External Trigger Edge Regular
   * @{
   */ 
-#define ADC_EXTERNALTRIGCONVEDGE_NONE           ((uint32_t)0x00000000U)
+#define ADC_EXTERNALTRIGCONVEDGE_NONE           0x00000000U
 #define ADC_EXTERNALTRIGCONVEDGE_RISING         ((uint32_t)ADC_CR2_EXTEN_0)
 #define ADC_EXTERNALTRIGCONVEDGE_FALLING        ((uint32_t)ADC_CR2_EXTEN_1)
 #define ADC_EXTERNALTRIGCONVEDGE_RISINGFALLING  ((uint32_t)ADC_CR2_EXTEN)
@@ -304,7 +304,7 @@ typedef struct
   */
 /* Note: Parameter ADC_SOFTWARE_START is a software parameter used for        */
 /*       compatibility with other STM32 devices.                              */
-#define ADC_EXTERNALTRIGCONV_T1_CC1    ((uint32_t)0x00000000U)
+#define ADC_EXTERNALTRIGCONV_T1_CC1    0x00000000U
 #define ADC_EXTERNALTRIGCONV_T1_CC2    ((uint32_t)ADC_CR2_EXTSEL_0)
 #define ADC_EXTERNALTRIGCONV_T1_CC3    ((uint32_t)ADC_CR2_EXTSEL_1)
 #define ADC_EXTERNALTRIGCONV_T2_CC2    ((uint32_t)(ADC_CR2_EXTSEL_1 | ADC_CR2_EXTSEL_0))
@@ -328,7 +328,7 @@ typedef struct
 /** @defgroup ADC_Data_align ADC Data Align
   * @{
   */ 
-#define ADC_DATAALIGN_RIGHT      ((uint32_t)0x00000000U)
+#define ADC_DATAALIGN_RIGHT      0x00000000U
 #define ADC_DATAALIGN_LEFT       ((uint32_t)ADC_CR2_ALIGN)
 /**
   * @}
@@ -337,7 +337,7 @@ typedef struct
 /** @defgroup ADC_channels  ADC Common Channels
   * @{
   */ 
-#define ADC_CHANNEL_0           ((uint32_t)0x00000000U)
+#define ADC_CHANNEL_0           0x00000000U
 #define ADC_CHANNEL_1           ((uint32_t)ADC_CR1_AWDCH_0)
 #define ADC_CHANNEL_2           ((uint32_t)ADC_CR1_AWDCH_1)
 #define ADC_CHANNEL_3           ((uint32_t)(ADC_CR1_AWDCH_1 | ADC_CR1_AWDCH_0))
@@ -366,7 +366,7 @@ typedef struct
 /** @defgroup ADC_sampling_times  ADC Sampling Times
   * @{
   */ 
-#define ADC_SAMPLETIME_3CYCLES    ((uint32_t)0x00000000U)
+#define ADC_SAMPLETIME_3CYCLES    0x00000000U
 #define ADC_SAMPLETIME_15CYCLES   ((uint32_t)ADC_SMPR1_SMP10_0)
 #define ADC_SAMPLETIME_28CYCLES   ((uint32_t)ADC_SMPR1_SMP10_1)
 #define ADC_SAMPLETIME_56CYCLES   ((uint32_t)(ADC_SMPR1_SMP10_1 | ADC_SMPR1_SMP10_0))
@@ -381,9 +381,9 @@ typedef struct
   /** @defgroup ADC_EOCSelection ADC EOC Selection
   * @{
   */ 
-#define ADC_EOC_SEQ_CONV              ((uint32_t)0x00000000U)
-#define ADC_EOC_SINGLE_CONV           ((uint32_t)0x00000001U)
-#define ADC_EOC_SINGLE_SEQ_CONV       ((uint32_t)0x00000002U)  /*!< reserved for future use */
+#define ADC_EOC_SEQ_CONV              0x00000000U
+#define ADC_EOC_SINGLE_CONV           0x00000001U
+#define ADC_EOC_SINGLE_SEQ_CONV       0x00000002U  /*!< reserved for future use */
 /**
   * @}
   */ 
@@ -406,7 +406,7 @@ typedef struct
 #define ADC_ANALOGWATCHDOG_ALL_REG            ((uint32_t)ADC_CR1_AWDEN)
 #define ADC_ANALOGWATCHDOG_ALL_INJEC          ((uint32_t)ADC_CR1_JAWDEN)
 #define ADC_ANALOGWATCHDOG_ALL_REGINJEC       ((uint32_t)(ADC_CR1_AWDEN | ADC_CR1_JAWDEN))
-#define ADC_ANALOGWATCHDOG_NONE               ((uint32_t)0x00000000U)
+#define ADC_ANALOGWATCHDOG_NONE               0x00000000U
 /**
   * @}
   */ 
@@ -438,9 +438,9 @@ typedef struct
 /** @defgroup ADC_channels_type ADC Channels Type
   * @{
   */ 
-#define ADC_ALL_CHANNELS      ((uint32_t)0x00000001U)
-#define ADC_REGULAR_CHANNELS  ((uint32_t)0x00000002U) /*!< reserved for future use */
-#define ADC_INJECTED_CHANNELS ((uint32_t)0x00000003U) /*!< reserved for future use */
+#define ADC_ALL_CHANNELS      0x00000001U
+#define ADC_REGULAR_CHANNELS  0x00000002U /*!< reserved for future use */
+#define ADC_INJECTED_CHANNELS 0x00000003U /*!< reserved for future use */
 /**
   * @}
   */
@@ -597,11 +597,11 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 /* Delay for ADC stabilization time.                                        */
 /* Maximum delay is 1us (refer to device datasheet, parameter tSTAB).       */
 /* Unit: us                                                                 */
-#define ADC_STAB_DELAY_US               ((uint32_t) 3U)
+#define ADC_STAB_DELAY_US               3U
 /* Delay for temperature sensor stabilization time.                         */
 /* Maximum delay is 10us (refer to device datasheet, parameter tSTART).     */
 /* Unit: us                                                                 */
-#define ADC_TEMPSENSOR_DELAY_US         ((uint32_t) 10U)
+#define ADC_TEMPSENSOR_DELAY_US         10U
 /**
   * @}
   */
@@ -729,16 +729,16 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 #define IS_ADC_CHANNELS_TYPE(CHANNEL_TYPE) (((CHANNEL_TYPE) == ADC_ALL_CHANNELS) || \
                                             ((CHANNEL_TYPE) == ADC_REGULAR_CHANNELS) || \
                                             ((CHANNEL_TYPE) == ADC_INJECTED_CHANNELS))
-#define IS_ADC_THRESHOLD(THRESHOLD) ((THRESHOLD) <= ((uint32_t)0xFFFU))
+#define IS_ADC_THRESHOLD(THRESHOLD) ((THRESHOLD) <= 0xFFFU)
 
-#define IS_ADC_REGULAR_LENGTH(LENGTH) (((LENGTH) >= ((uint32_t)1U)) && ((LENGTH) <= ((uint32_t)16U)))
-#define IS_ADC_REGULAR_RANK(RANK) (((RANK) >= ((uint32_t)1U)) && ((RANK) <= ((uint32_t)16U)))
-#define IS_ADC_REGULAR_DISC_NUMBER(NUMBER) (((NUMBER) >= ((uint32_t)1U)) && ((NUMBER) <= ((uint32_t)8U)))
+#define IS_ADC_REGULAR_LENGTH(LENGTH) (((LENGTH) >= 1U) && ((LENGTH) <= 16U))
+#define IS_ADC_REGULAR_RANK(RANK) (((RANK) >= 1U) && ((RANK) <= (16U)))
+#define IS_ADC_REGULAR_DISC_NUMBER(NUMBER) (((NUMBER) >= 1U) && ((NUMBER) <= 8U))
 #define IS_ADC_RANGE(RESOLUTION, ADC_VALUE)                                     \
-   ((((RESOLUTION) == ADC_RESOLUTION_12B) && ((ADC_VALUE) <= ((uint32_t)0x0FFFU))) || \
-    (((RESOLUTION) == ADC_RESOLUTION_10B) && ((ADC_VALUE) <= ((uint32_t)0x03FFU))) || \
-    (((RESOLUTION) == ADC_RESOLUTION_8B)  && ((ADC_VALUE) <= ((uint32_t)0x00FFU))) || \
-    (((RESOLUTION) == ADC_RESOLUTION_6B)  && ((ADC_VALUE) <= ((uint32_t)0x003FU))))
+   ((((RESOLUTION) == ADC_RESOLUTION_12B) && ((ADC_VALUE) <= 0x0FFFU)) || \
+    (((RESOLUTION) == ADC_RESOLUTION_10B) && ((ADC_VALUE) <= 0x03FFU)) || \
+    (((RESOLUTION) == ADC_RESOLUTION_8B)  && ((ADC_VALUE) <= 0x00FFU)) || \
+    (((RESOLUTION) == ADC_RESOLUTION_6B)  && ((ADC_VALUE) <= 0x003FU)))
 
 /**
   * @brief  Set ADC Regular channel sequence length.

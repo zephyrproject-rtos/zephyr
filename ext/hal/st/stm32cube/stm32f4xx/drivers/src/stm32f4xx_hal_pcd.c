@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_pcd.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   PCD HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the USB Peripheral Controller:
@@ -45,7 +45,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -329,7 +329,7 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
   uint32_t i = 0U, ep_intr = 0U, epint = 0U, epnum = 0U;
   uint32_t fifoemptymsk = 0U, temp = 0U;
   USB_OTG_EPTypeDef *ep;
-  uint32_t hclk = 180000000;
+  uint32_t hclk = 180000000U;
   
   /* ensure that we are in device mode */
   if (USB_GetMode(hpcd->Instance) == USB_OTG_MODE_DEVICE)
@@ -508,7 +508,7 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
       if( hpcd->LPM_State == LPM_L0)
       {
         hpcd->LPM_State = LPM_L1;
-        hpcd->BESL = (hpcd->Instance->GLPMCFG & USB_OTG_GLPMCFG_BESL) >>2 ;
+        hpcd->BESL = (hpcd->Instance->GLPMCFG & USB_OTG_GLPMCFG_BESL) >> 2U;
         HAL_PCDEx_LPM_Callback(hpcd, PCD_LPM_L1_ACTIVE);
       }
       else
@@ -522,7 +522,7 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
     if(__HAL_PCD_GET_FLAG(hpcd, USB_OTG_GINTSTS_USBRST))
     {
       USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_RWUSIG; 
-      USB_FlushTxFifo(hpcd->Instance , 0U);
+      USB_FlushTxFifo(hpcd->Instance , 0x10U);
       
       for (i = 0U; i < hpcd->Init.dev_endpoints; i++)
       {
@@ -578,64 +578,67 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
         time to IN tokens, the USB turnaround time, so to compensate for the longer AHB read access 
         latency to the Data FIFO */
         
-        if((hclk >= 14200000)&&(hclk < 15000000))
+        /* Get hclk frequency value */
+        hclk = HAL_RCC_GetHCLKFreq();
+        
+        if((hclk >= 14200000U)&&(hclk < 15000000U))
         {
           /* hclk Clock Range between 14.2-15 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0xF << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0xFU << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 15000000)&&(hclk < 16000000))
+        else if((hclk >= 15000000U)&&(hclk < 16000000U))
         {
           /* hclk Clock Range between 15-16 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0xE << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0xEU << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 16000000)&&(hclk < 17200000))
+        else if((hclk >= 16000000U)&&(hclk < 17200000U))
         {
           /* hclk Clock Range between 16-17.2 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0xD << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0xDU << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 17200000)&&(hclk < 18500000))
+        else if((hclk >= 17200000U)&&(hclk < 18500000U))
         {
           /* hclk Clock Range between 17.2-18.5 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0xC << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0xCU << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 18500000)&&(hclk < 20000000))
+        else if((hclk >= 18500000U)&&(hclk < 20000000U))
         {
           /* hclk Clock Range between 18.5-20 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0xB << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0xBU << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 20000000)&&(hclk < 21800000))
+        else if((hclk >= 20000000U)&&(hclk < 21800000U))
         {
           /* hclk Clock Range between 20-21.8 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0xA << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0xAU << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 21800000)&&(hclk < 24000000))
+        else if((hclk >= 21800000U)&&(hclk < 24000000U))
         {
           /* hclk Clock Range between 21.8-24 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0x9 << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0x9U << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 24000000)&&(hclk < 27700000))
+        else if((hclk >= 24000000U)&&(hclk < 27700000U))
         {
           /* hclk Clock Range between 24-27.7 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0x8 << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0x8U << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
-        else if((hclk >= 27700000)&&(hclk < 32000000))
+        else if((hclk >= 27700000U)&&(hclk < 32000000U))
         {
           /* hclk Clock Range between 27.7-32 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0x7 << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0x7U << 10U) & USB_OTG_GUSBCFG_TRDT);
         }
         
         else /* if(hclk >= 32000000) */
         {
           /* hclk Clock Range between 32-180 MHz */
-          hpcd->Instance->GUSBCFG |= (uint32_t)((0x6 << 10) & USB_OTG_GUSBCFG_TRDT);
+          hpcd->Instance->GUSBCFG |= (uint32_t)((0x6U << 10U) & USB_OTG_GUSBCFG_TRDT);
         }  
       }
       
@@ -944,17 +947,17 @@ HAL_StatusTypeDef HAL_PCD_EP_Open(PCD_HandleTypeDef *hpcd, uint8_t ep_addr, uint
   HAL_StatusTypeDef  ret = HAL_OK;
   USB_OTG_EPTypeDef *ep;
   
-  if ((ep_addr & 0x80U) == 0x80U)
+  if ((ep_addr & 0x80) == 0x80)
   {
-    ep = &hpcd->IN_ep[ep_addr & 0x7FU];
+    ep = &hpcd->IN_ep[ep_addr & 0x7F];
   }
   else
   {
-    ep = &hpcd->OUT_ep[ep_addr & 0x7FU];
+    ep = &hpcd->OUT_ep[ep_addr & 0x7F];
   }
-  ep->num   = ep_addr & 0x7FU;
+  ep->num   = ep_addr & 0x7F;
   
-  ep->is_in = (0x80U & ep_addr) != 0U;
+  ep->is_in = (0x80 & ep_addr) != 0;
   ep->maxpacket = ep_mps;
   ep->type = ep_type;
   if (ep->is_in)
@@ -985,17 +988,17 @@ HAL_StatusTypeDef HAL_PCD_EP_Close(PCD_HandleTypeDef *hpcd, uint8_t ep_addr)
 {  
   USB_OTG_EPTypeDef *ep;
   
-  if ((ep_addr & 0x80U) == 0x80U)
+  if ((ep_addr & 0x80) == 0x80)
   {
-    ep = &hpcd->IN_ep[ep_addr & 0x7FU];
+    ep = &hpcd->IN_ep[ep_addr & 0x7F];
   }
   else
   {
-    ep = &hpcd->OUT_ep[ep_addr & 0x7FU];
+    ep = &hpcd->OUT_ep[ep_addr & 0x7F];
   }
-  ep->num   = ep_addr & 0x7FU;
+  ep->num   = ep_addr & 0x7F;
   
-  ep->is_in = (0x80U & ep_addr) != 0U;
+  ep->is_in = (0x80 & ep_addr) != 0;
   
   __HAL_LOCK(hpcd); 
   USB_DeactivateEndpoint(hpcd->Instance , ep);
@@ -1016,23 +1019,21 @@ HAL_StatusTypeDef HAL_PCD_EP_Receive(PCD_HandleTypeDef *hpcd, uint8_t ep_addr, u
 {
   USB_OTG_EPTypeDef *ep;
   
-  ep = &hpcd->OUT_ep[ep_addr & 0x7FU];
+  ep = &hpcd->OUT_ep[ep_addr & 0x7F];
   
   /*setup and start the Xfer */
   ep->xfer_buff = pBuf;  
   ep->xfer_len = len;
   ep->xfer_count = 0U;
   ep->is_in = 0U;
-  ep->num = ep_addr & 0x7FU;
+  ep->num = ep_addr & 0x7F;
   
   if (hpcd->Init.dma_enable == 1U)
   {
     ep->dma_addr = (uint32_t)pBuf;  
   }
   
-  __HAL_LOCK(hpcd); 
-  
-  if ((ep_addr & 0x7FU) == 0U)
+  if ((ep_addr & 0x7F) == 0)
   {
     USB_EP0StartXfer(hpcd->Instance , ep, hpcd->Init.dma_enable);
   }
@@ -1040,7 +1041,6 @@ HAL_StatusTypeDef HAL_PCD_EP_Receive(PCD_HandleTypeDef *hpcd, uint8_t ep_addr, u
   {
     USB_EPStartXfer(hpcd->Instance , ep, hpcd->Init.dma_enable);
   }
-  __HAL_UNLOCK(hpcd); 
   
   return HAL_OK;
 }
@@ -1053,7 +1053,7 @@ HAL_StatusTypeDef HAL_PCD_EP_Receive(PCD_HandleTypeDef *hpcd, uint8_t ep_addr, u
   */
 uint16_t HAL_PCD_EP_GetRxCount(PCD_HandleTypeDef *hpcd, uint8_t ep_addr)
 {
-  return hpcd->OUT_ep[ep_addr & 0xFU].xfer_count;
+  return hpcd->OUT_ep[ep_addr & 0xF].xfer_count;
 }
 /**
   * @brief  Send an amount of data.  
@@ -1067,23 +1067,21 @@ HAL_StatusTypeDef HAL_PCD_EP_Transmit(PCD_HandleTypeDef *hpcd, uint8_t ep_addr, 
 {
   USB_OTG_EPTypeDef *ep;
   
-  ep = &hpcd->IN_ep[ep_addr & 0x7FU];
+  ep = &hpcd->IN_ep[ep_addr & 0x7F];
   
   /*setup and start the Xfer */
   ep->xfer_buff = pBuf;  
   ep->xfer_len = len;
   ep->xfer_count = 0U;
   ep->is_in = 1U;
-  ep->num = ep_addr & 0x7FU;
+  ep->num = ep_addr & 0x7F;
   
   if (hpcd->Init.dma_enable == 1U)
   {
     ep->dma_addr = (uint32_t)pBuf;  
   }
   
-  __HAL_LOCK(hpcd); 
-  
-  if ((ep_addr & 0x7FU) == 0U)
+  if ((ep_addr & 0x7F) == 0)
   {
     USB_EP0StartXfer(hpcd->Instance , ep, hpcd->Init.dma_enable);
   }
@@ -1092,8 +1090,6 @@ HAL_StatusTypeDef HAL_PCD_EP_Transmit(PCD_HandleTypeDef *hpcd, uint8_t ep_addr, 
     USB_EPStartXfer(hpcd->Instance , ep, hpcd->Init.dma_enable);
   }
   
-  __HAL_UNLOCK(hpcd);
-     
   return HAL_OK;
 }
 
@@ -1107,9 +1103,9 @@ HAL_StatusTypeDef HAL_PCD_EP_SetStall(PCD_HandleTypeDef *hpcd, uint8_t ep_addr)
 {
   USB_OTG_EPTypeDef *ep;
   
-  if ((0x80U & ep_addr) == 0x80U)
+  if ((0x80 & ep_addr) == 0x80)
   {
-    ep = &hpcd->IN_ep[ep_addr & 0x7FU];
+    ep = &hpcd->IN_ep[ep_addr & 0x7F];
   }
   else
   {
@@ -1117,13 +1113,13 @@ HAL_StatusTypeDef HAL_PCD_EP_SetStall(PCD_HandleTypeDef *hpcd, uint8_t ep_addr)
   }
   
   ep->is_stall = 1U;
-  ep->num   = ep_addr & 0x7FU;
-  ep->is_in = ((ep_addr & 0x80U) == 0x80U);
+  ep->num   = ep_addr & 0x7F;
+  ep->is_in = ((ep_addr & 0x80) == 0x80);
   
   
   __HAL_LOCK(hpcd); 
   USB_EPSetStall(hpcd->Instance , ep);
-  if((ep_addr & 0x7FU) == 0U)
+  if((ep_addr & 0x7F) == 0)
   {
     USB_EP0_OutStart(hpcd->Instance, hpcd->Init.dma_enable, (uint8_t *)hpcd->Setup);
   }
@@ -1142,9 +1138,9 @@ HAL_StatusTypeDef HAL_PCD_EP_ClrStall(PCD_HandleTypeDef *hpcd, uint8_t ep_addr)
 {
   USB_OTG_EPTypeDef *ep;
   
-  if ((0x80U & ep_addr) == 0x80U)
+  if ((0x80 & ep_addr) == 0x80)
   {
-    ep = &hpcd->IN_ep[ep_addr & 0x7FU];
+    ep = &hpcd->IN_ep[ep_addr & 0x7F];
   }
   else
   {
@@ -1152,8 +1148,8 @@ HAL_StatusTypeDef HAL_PCD_EP_ClrStall(PCD_HandleTypeDef *hpcd, uint8_t ep_addr)
   }
   
   ep->is_stall = 0U;
-  ep->num   = ep_addr & 0x7FU;
-  ep->is_in = ((ep_addr & 0x80U) == 0x80U);
+  ep->num   = ep_addr & 0x7F;
+  ep->is_in = ((ep_addr & 0x80) == 0x80);
   
   __HAL_LOCK(hpcd); 
   USB_EPClearStall(hpcd->Instance , ep);
@@ -1172,9 +1168,9 @@ HAL_StatusTypeDef HAL_PCD_EP_Flush(PCD_HandleTypeDef *hpcd, uint8_t ep_addr)
 {
   __HAL_LOCK(hpcd); 
   
-  if ((ep_addr & 0x80U) == 0x80U)
+  if ((ep_addr & 0x80) == 0x80)
   {
-    USB_FlushTxFifo(hpcd->Instance, ep_addr & 0x7FU);
+    USB_FlushTxFifo(hpcd->Instance, ep_addr & 0x7F);
   }
   else
   {
@@ -1282,9 +1278,9 @@ static HAL_StatusTypeDef PCD_WriteEmptyTxFifo(PCD_HandleTypeDef *hpcd, uint32_t 
   
   len32b = (len + 3U) / 4U;
  
-  while  ( (USBx_INEP(epnum)->DTXFSTS & USB_OTG_DTXFSTS_INEPTFSAV) > len32b &&
-          ep->xfer_count < ep->xfer_len &&
-            ep->xfer_len != 0U)
+  while  (((USBx_INEP(epnum)->DTXFSTS & USB_OTG_DTXFSTS_INEPTFSAV) > len32b) &&
+          (ep->xfer_count < ep->xfer_len) &&
+            (ep->xfer_len != 0U))
   {
     /* Write the FIFO */
     len = ep->xfer_len - ep->xfer_count;

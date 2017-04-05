@@ -1,6 +1,6 @@
 /dts-v1/;
 
-#include "cc32xx_launchxl.dtsi"
+#include <ti/cc32xx_launchxl.dtsi>
 
 / {
 	model = "TI CC3200 LaunchXL";

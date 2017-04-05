@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_nand.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of NAND HAL module.
   ******************************************************************************
   * @attention
@@ -61,32 +61,32 @@
 
 #define NAND_DEVICE1               FMC_BANK2
 #define NAND_DEVICE2               FMC_BANK3
-#define NAND_WRITE_TIMEOUT         ((uint32_t)1000)
+#define NAND_WRITE_TIMEOUT         (1000U)
 
-#define CMD_AREA                   ((uint32_t)(1<<16))  /* A16 = CLE high */
-#define ADDR_AREA                  ((uint32_t)(1<<17))  /* A17 = ALE high */
+#define CMD_AREA                   ((uint32_t)(1U<<16U))  /* A16U = CLE high */
+#define ADDR_AREA                  ((uint32_t)(1U<<17U))  /* A17U = ALE high */
 
-#define NAND_CMD_AREA_A            ((uint8_t)0x00)
-#define NAND_CMD_AREA_B            ((uint8_t)0x01)
-#define NAND_CMD_AREA_C            ((uint8_t)0x50)
-#define NAND_CMD_AREA_TRUE1        ((uint8_t)0x30)
+#define NAND_CMD_AREA_A            ((uint8_t)0x00U)
+#define NAND_CMD_AREA_B            ((uint8_t)0x01U)
+#define NAND_CMD_AREA_C            ((uint8_t)0x50U)
+#define NAND_CMD_AREA_TRUE1        ((uint8_t)0x30U)
 
-#define NAND_CMD_WRITE0            ((uint8_t)0x80)
-#define NAND_CMD_WRITE_TRUE1       ((uint8_t)0x10)
-#define NAND_CMD_ERASE0            ((uint8_t)0x60)
-#define NAND_CMD_ERASE1            ((uint8_t)0xD0)
-#define NAND_CMD_READID            ((uint8_t)0x90)
-#define NAND_CMD_STATUS            ((uint8_t)0x70)
-#define NAND_CMD_LOCK_STATUS       ((uint8_t)0x7A)
-#define NAND_CMD_RESET             ((uint8_t)0xFF)
+#define NAND_CMD_WRITE0            ((uint8_t)0x80U)
+#define NAND_CMD_WRITE_TRUE1       ((uint8_t)0x10U)
+#define NAND_CMD_ERASE0            ((uint8_t)0x60U)
+#define NAND_CMD_ERASE1            ((uint8_t)0xD0U)
+#define NAND_CMD_READID            ((uint8_t)0x90U)
+#define NAND_CMD_STATUS            ((uint8_t)0x70U)
+#define NAND_CMD_LOCK_STATUS       ((uint8_t)0x7AU)
+#define NAND_CMD_RESET             ((uint8_t)0xFFU)
 
 /* NAND memory status */
-#define NAND_VALID_ADDRESS         ((uint32_t)0x00000100)
-#define NAND_INVALID_ADDRESS       ((uint32_t)0x00000200)
-#define NAND_TIMEOUT_ERROR         ((uint32_t)0x00000400)
-#define NAND_BUSY                  ((uint32_t)0x00000000)
-#define NAND_ERROR                 ((uint32_t)0x00000001)
-#define NAND_READY                 ((uint32_t)0x00000040)
+#define NAND_VALID_ADDRESS         (0x00000100U)
+#define NAND_INVALID_ADDRESS       (0x00000200U)
+#define NAND_TIMEOUT_ERROR         (0x00000400U)
+#define NAND_BUSY                  (0x00000000U)
+#define NAND_ERROR                 (0x00000001U)
+#define NAND_READY                 (0x00000040U)
 
 /**
   * @}
@@ -111,9 +111,9 @@
   * @retval NAND address cycling value.
   */
 #define ADDR_1ST_CYCLE(__ADDRESS__)       (uint8_t)(__ADDRESS__)              /* 1st addressing cycle */
-#define ADDR_2ND_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) >> 8)       /* 2nd addressing cycle */
-#define ADDR_3RD_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) >> 16)      /* 3rd addressing cycle */
-#define ADDR_4TH_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) >> 24)      /* 4th addressing cycle */
+#define ADDR_2ND_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) >> 8U)       /* 2nd addressing cycle */
+#define ADDR_3RD_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) >> 16U)      /* 3rd addressing cycle */
+#define ADDR_4TH_CYCLE(__ADDRESS__)       (uint8_t)((__ADDRESS__) >> 24U)      /* 4th addressing cycle */
 
 /**
   * @}
@@ -130,9 +130,9 @@
   */
 typedef enum
 {
-  HAL_NAND_STATE_RESET     = 0x00,  /*!< NAND not yet initialized or disabled */
-  HAL_NAND_STATE_READY     = 0x01,  /*!< NAND initialized and ready for use   */
-  HAL_NAND_STATE_BUSY      = 0x02,  /*!< NAND internal process is ongoing     */
+  HAL_NAND_STATE_RESET     = 0x00U,  /*!< NAND not yet initialized or disabled */
+  HAL_NAND_STATE_READY     = 0x01U,  /*!< NAND initialized and ready for use   */
+  HAL_NAND_STATE_BUSY      = 0x02U,  /*!< NAND internal process is ongoing     */
   HAL_NAND_STATE_ERROR     = 0x03   /*!< NAND error state                     */
 }HAL_NAND_StateTypeDef;
 

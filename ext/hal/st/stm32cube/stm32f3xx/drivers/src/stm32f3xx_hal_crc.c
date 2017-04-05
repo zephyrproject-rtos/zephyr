@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_crc.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   CRC HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Cyclic Redundancy Check (CRC) peripheral:
@@ -276,12 +276,12 @@ __weak void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc)
                       ##### Peripheral Control functions #####
  ===============================================================================
     [..]  This section provides functions allowing to:
-      (+) compute the 7, 8, 16 or 32-bit CRC value of an 8, 16 or 32-bit data buffer
+      (+) compute the 7U, 8U, 16 or 32-bit CRC value of an 8U, 16 or 32-bit data buffer
           using the combination of the previous CRC value and the new one
 
        [..]  or
 
-      (+) compute the 7, 8, 16 or 32-bit CRC value of an 8, 16 or 32-bit data buffer
+      (+) compute the 7U, 8U, 16 or 32-bit CRC value of an 8U, 16 or 32-bit data buffer
           independently of the previous CRC value.
 
 @endverbatim
@@ -305,8 +305,8 @@ __weak void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc)
   */
 uint32_t HAL_CRC_Accumulate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_t BufferLength)
 {
-  uint32_t index = 0; /* CRC input data buffer index */
-  uint32_t temp = 0;  /* CRC output (read from hcrc->Instance->DR register) */
+  uint32_t index = 0U; /* CRC input data buffer index */
+  uint32_t temp = 0U;  /* CRC output (read from hcrc->Instance->DR register) */
 
   /* Process locked */
   __HAL_LOCK(hcrc);
@@ -318,7 +318,7 @@ uint32_t HAL_CRC_Accumulate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_
   {
     case CRC_INPUTDATA_FORMAT_WORDS:
       /* Enter Data to the CRC calculator */
-      for(index = 0; index < BufferLength; index++)
+      for(index = 0U; index < BufferLength; index++)
       {
         hcrc->Instance->DR = pBuffer[index];
       }
@@ -365,8 +365,8 @@ uint32_t HAL_CRC_Accumulate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_
   */
 uint32_t HAL_CRC_Calculate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_t BufferLength)
 {
-  uint32_t index = 0; /* CRC input data buffer index */
-  uint32_t temp = 0;  /* CRC output (read from hcrc->Instance->DR register) */
+  uint32_t index = 0U; /* CRC input data buffer index */
+  uint32_t temp = 0U;  /* CRC output (read from hcrc->Instance->DR register) */
 
   /* Process locked */
   __HAL_LOCK(hcrc);
@@ -382,7 +382,7 @@ uint32_t HAL_CRC_Calculate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_t
   {
     case CRC_INPUTDATA_FORMAT_WORDS:
       /* Enter 32-bit input data to the CRC calculator */
-      for(index = 0; index < BufferLength; index++)
+      for(index = 0U; index < BufferLength; index++)
       {
         hcrc->Instance->DR = pBuffer[index];
       }
@@ -464,27 +464,27 @@ HAL_CRC_StateTypeDef HAL_CRC_GetState(CRC_HandleTypeDef *hcrc)
   */
 static uint32_t CRC_Handle_8(CRC_HandleTypeDef *hcrc, uint8_t pBuffer[], uint32_t BufferLength)
 {
-  uint32_t i = 0; /* input data buffer index */
+  uint32_t i = 0U; /* input data buffer index */
 
    /* Processing time optimization: 4 bytes are entered in a row with a single word write,
     * last bytes must be carefully fed to the CRC calculator to ensure a correct type
     * handling by the IP */
-   for(i = 0; i < (BufferLength/4); i++)
+   for(i = 0U; i < (BufferLength/4U); i++)
    {
-      hcrc->Instance->DR = ((uint32_t)pBuffer[4*i]<<24) | ((uint32_t)pBuffer[4*i+1]<<16) | ((uint32_t)pBuffer[4*i+2]<<8) | (uint32_t)pBuffer[4*i+3];
+      hcrc->Instance->DR = ((uint32_t)pBuffer[4U*i]<<24U) | ((uint32_t)pBuffer[4U*i+1]<<16U) | ((uint32_t)pBuffer[4U*i+2]<<8U) | (uint32_t)pBuffer[4U*i+3];
    }
    /* last bytes specific handling */
-   if ((BufferLength%4) != 0)
+   if ((BufferLength%4U) != 0U)
    {
-     if  (BufferLength%4 == 1)
+     if  (BufferLength%4U == 1U)
      {
        *(uint8_t volatile*) (&hcrc->Instance->DR) = pBuffer[4*i];
      }
-     if  (BufferLength%4 == 2)
+     if  (BufferLength%4U == 2U)
      {
        *(uint16_t volatile*) (&hcrc->Instance->DR) = ((uint32_t)pBuffer[4*i]<<8) | (uint32_t)pBuffer[4*i+1];
      }
-     if  (BufferLength%4 == 3)
+     if  (BufferLength%4U == 3U)
      {
        *(uint16_t volatile*) (&hcrc->Instance->DR) = ((uint32_t)pBuffer[4*i]<<8) | (uint32_t)pBuffer[4*i+1];
        *(uint8_t volatile*) (&hcrc->Instance->DR) = pBuffer[4*i+2];
@@ -507,16 +507,16 @@ static uint32_t CRC_Handle_8(CRC_HandleTypeDef *hcrc, uint8_t pBuffer[], uint32_
   */
 static uint32_t CRC_Handle_16(CRC_HandleTypeDef *hcrc, uint16_t pBuffer[], uint32_t BufferLength)
 {
-  uint32_t i = 0;  /* input data buffer index */
+  uint32_t i = 0U;  /* input data buffer index */
 
   /* Processing time optimization: 2 HalfWords are entered in a row with a single word write,
    * in case of odd length, last HalfWord must be carefully fed to the CRC calculator to ensure
    * a correct type handling by the IP */
-  for(i = 0; i < (BufferLength/2); i++)
+  for(i = 0U; i < (BufferLength/2U); i++)
   {
-    hcrc->Instance->DR = ((uint32_t)pBuffer[2*i]<<16) | (uint32_t)pBuffer[2*i+1];
+    hcrc->Instance->DR = ((uint32_t)pBuffer[2U*i]<<16U) | (uint32_t)pBuffer[2U*i+1];
   }
-  if ((BufferLength%2) != 0)
+  if ((BufferLength%2U) != 0U)
   {
        *(uint16_t volatile*) (&hcrc->Instance->DR) = pBuffer[2*i];
   }

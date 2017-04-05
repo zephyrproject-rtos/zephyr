@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_cec.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   CEC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the High Definition Multimedia Interface 
@@ -42,14 +42,14 @@
     (#) Initialize the CEC registers by calling the HAL_CEC_Init() API.
    
   [..]
-    (@) This API (HAL_CEC_Init()) configures also the low level Hardware GPIO, CLOCK, CORTEX...etc)
+    (@) This API (HAL_CEC_Init()) configures also the low level Hardware (GPIO, CLOCK, CORTEX...)
         by calling the customed HAL_CEC_MspInit() API.
 
   @endverbatim
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -287,7 +287,7 @@ HAL_StatusTypeDef HAL_CEC_SetDeviceAddress(CEC_HandleTypeDef *hcec, uint16_t CEC
     
     if(CEC_OwnAddress != CEC_OWN_ADDRESS_NONE)
     {
-      hcec->Instance->CFGR |= ((uint32_t)CEC_OwnAddress<<16);
+      hcec->Instance->CFGR |= ((uint32_t)CEC_OwnAddress<<16U);
     }
     else
     {

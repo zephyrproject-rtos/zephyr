@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+/ {
+
+	clocks {
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <0>;
+		};
+	};
+
+	soc {
+		usart1: uart@40013800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40013800 0x400>;
+			interrupts = <37 0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		usart2: uart@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			interrupts = <38 0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		usart3: uart@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			interrupts = <39 0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		uart4: uart@40004c00 {
+			compatible = "st,stm32-uart";
+			reg = <0x40004c00 0x400>;
+			interrupts = <52 0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		uart5: uart@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			interrupts = <53 0>;
+			baud-rate = <115200>;
+			status = "disabled";
+		};
+
+		pin-controller {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "st,stm32l4xx-pinctrl";
+			ranges = <0 0x48000000 0x2000>;
+
+			gpioa: gpio@48000000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x0 0x400>;
+				st,bank-name = "GPIOA";
+
+			};
+
+			gpiob: gpio@48000400 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x400 0x400>;
+				st,bank-name = "GPIOB";
+			};
+
+			gpioc: gpio@48000800 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x800 0x400>;
+				st,bank-name = "GPIOC";
+			};
+
+			gpiod: gpio@48000c00 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0xc00 0x400>;
+				st,bank-name = "GPIOD";
+			};
+
+			gpioe: gpio@48001000 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x1000 0x400>;
+				st,bank-name = "GPIOE";
+			};
+
+			gpiof: gpio@48001400 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x1400 0x400>;
+				st,bank-name = "GPIOF";
+			};
+
+			gpiog: gpio@48001800 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x1800 0x400>;
+				st,bank-name = "GPIOG";
+			};
+
+			gpioh: gpio@48001c00 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x1c00 0x400>;
+				st,bank-name = "GPIOH";
+			};
+
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

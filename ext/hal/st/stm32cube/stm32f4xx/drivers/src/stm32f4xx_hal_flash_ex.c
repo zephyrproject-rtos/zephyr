@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_flash_ex.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Extended FLASH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the FLASH extension peripheral:
@@ -51,7 +51,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -97,7 +97,7 @@
 /** @addtogroup FLASHEx_Private_Constants
   * @{
   */    
-#define FLASH_TIMEOUT_VALUE       ((uint32_t)50000U)/* 50 s */
+#define FLASH_TIMEOUT_VALUE       50000U /* 50 s */
 /**
   * @}
   */
@@ -479,10 +479,10 @@ void HAL_FLASHEx_AdvOBGetConfig(FLASH_AdvOBProgramInitTypeDef *pAdvOBInit)
   */
 HAL_StatusTypeDef HAL_FLASHEx_OB_SelectPCROP(void)
 {
-  uint8_t optiontmp = 0xFFU;
+  uint8_t optiontmp = 0xFF;
 
   /* Mask SPRMOD bit */
-  optiontmp =  (uint8_t)((*(__IO uint8_t *)OPTCR_BYTE3_ADDRESS) & (uint8_t)0x7FU); 
+  optiontmp =  (uint8_t)((*(__IO uint8_t *)OPTCR_BYTE3_ADDRESS) & (uint8_t)0x7F); 
   
   /* Update Option Byte */
   *(__IO uint8_t *)OPTCR_BYTE3_ADDRESS = (uint8_t)(OB_PCROP_SELECTED | optiontmp); 
@@ -504,10 +504,10 @@ HAL_StatusTypeDef HAL_FLASHEx_OB_SelectPCROP(void)
   */
 HAL_StatusTypeDef HAL_FLASHEx_OB_DeSelectPCROP(void)
 {
-  uint8_t optiontmp = 0xFFU;
+  uint8_t optiontmp = 0xFF;
   
   /* Mask SPRMOD bit */
-  optiontmp =  (uint8_t)((*(__IO uint8_t *)OPTCR_BYTE3_ADDRESS) & (uint8_t)0x7FU); 
+  optiontmp =  (uint8_t)((*(__IO uint8_t *)OPTCR_BYTE3_ADDRESS) & (uint8_t)0x7F); 
   
   /* Update Option Byte */
   *(__IO uint8_t *)OPTCR_BYTE3_ADDRESS = (uint8_t)(OB_PCROP_DESELECTED | optiontmp);  
@@ -680,7 +680,7 @@ static HAL_StatusTypeDef FLASH_OB_EnableWRP(uint32_t WRPSector, uint32_t Banks)
        if(WRPSector == OB_WRP_SECTOR_All)
        {
           /*Write protection on all sector of BANK1*/
-          *(__IO uint16_t*)OPTCR_BYTE2_ADDRESS &= (~(WRPSector>>12U));  
+          *(__IO uint16_t*)OPTCR_BYTE2_ADDRESS &= (~(WRPSector>>12));  
        }
        else
        {
@@ -691,7 +691,7 @@ static HAL_StatusTypeDef FLASH_OB_EnableWRP(uint32_t WRPSector, uint32_t Banks)
     else 
     {
       /*Write protection done on sectors of BANK2*/
-      *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS &= (~(WRPSector>>12U));  
+      *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS &= (~(WRPSector>>12));  
     }
 
     /*Write protection on all sector of BANK2*/
@@ -702,7 +702,7 @@ static HAL_StatusTypeDef FLASH_OB_EnableWRP(uint32_t WRPSector, uint32_t Banks)
       
       if(status == HAL_OK)
       { 
-        *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS &= (~(WRPSector>>12U));  
+        *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS &= (~(WRPSector>>12));  
       }
     }
     
@@ -751,7 +751,7 @@ static HAL_StatusTypeDef FLASH_OB_DisableWRP(uint32_t WRPSector, uint32_t Banks)
        if(WRPSector == OB_WRP_SECTOR_All)
        {
           /*Write protection on all sector of BANK1*/
-          *(__IO uint16_t*)OPTCR_BYTE2_ADDRESS |= (uint16_t)(WRPSector>>12U); 
+          *(__IO uint16_t*)OPTCR_BYTE2_ADDRESS |= (uint16_t)(WRPSector>>12); 
        }
        else
        {
@@ -762,7 +762,7 @@ static HAL_StatusTypeDef FLASH_OB_DisableWRP(uint32_t WRPSector, uint32_t Banks)
     else 
     {
       /*Write protection done on sectors of BANK2*/
-      *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS |= (uint16_t)(WRPSector>>12U); 
+      *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS |= (uint16_t)(WRPSector>>12); 
     }
 
     /*Write protection on all sector  of BANK2*/
@@ -773,7 +773,7 @@ static HAL_StatusTypeDef FLASH_OB_DisableWRP(uint32_t WRPSector, uint32_t Banks)
       
       if(status == HAL_OK)
       { 
-        *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS |= (uint16_t)(WRPSector>>12U); 
+        *(__IO uint16_t*)OPTCR1_BYTE2_ADDRESS |= (uint16_t)(WRPSector>>12); 
       }
     }
     
@@ -1213,7 +1213,7 @@ static HAL_StatusTypeDef FLASH_OB_RDP_LevelConfig(uint8_t Level)
   */
 static HAL_StatusTypeDef FLASH_OB_UserConfig(uint8_t Iwdg, uint8_t Stop, uint8_t Stdby)
 {
-  uint8_t optiontmp = 0xFFU;
+  uint8_t optiontmp = 0xFF;
   HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the parameters */
@@ -1227,7 +1227,7 @@ static HAL_StatusTypeDef FLASH_OB_UserConfig(uint8_t Iwdg, uint8_t Stop, uint8_t
   if(status == HAL_OK)
   {     
     /* Mask OPTLOCK, OPTSTRT, BOR_LEV and BFB2 bits */
-    optiontmp =  (uint8_t)((*(__IO uint8_t *)OPTCR_BYTE0_ADDRESS) & (uint8_t)0x1FU);
+    optiontmp =  (uint8_t)((*(__IO uint8_t *)OPTCR_BYTE0_ADDRESS) & (uint8_t)0x1F);
 
     /* Update User Option Byte */
     *(__IO uint8_t *)OPTCR_BYTE0_ADDRESS = Iwdg | (uint8_t)(Stdby | (uint8_t)(Stop | ((uint8_t)optiontmp))); 
@@ -1267,7 +1267,7 @@ static HAL_StatusTypeDef FLASH_OB_BOR_LevelConfig(uint8_t Level)
 static uint8_t FLASH_OB_GetUser(void)
 {
   /* Return the User Option Byte */
-  return ((uint8_t)(FLASH->OPTCR & 0xE0U));
+  return ((uint8_t)(FLASH->OPTCR & 0xE0));
 }
 
 /**
@@ -1319,7 +1319,7 @@ static uint8_t FLASH_OB_GetRDP(void)
 static uint8_t FLASH_OB_GetBOR(void)
 {
   /* Return the FLASH BOR level */
-  return (uint8_t)(*(__IO uint8_t *)(OPTCR_BYTE0_ADDRESS) & (uint8_t)0x0CU);
+  return (uint8_t)(*(__IO uint8_t *)(OPTCR_BYTE0_ADDRESS) & (uint8_t)0x0C);
 }
 
 /**

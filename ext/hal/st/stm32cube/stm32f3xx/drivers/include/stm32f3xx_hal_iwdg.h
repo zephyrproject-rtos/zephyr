@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_iwdg.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of IWDG HAL module.
   ******************************************************************************
   * @attention
@@ -68,10 +68,10 @@ typedef struct
                             This parameter can be a value of @ref IWDG_Prescaler */
 
   uint32_t Reload;     /*!< Specifies the IWDG down-counter reload value.
-                            This parameter must be a number between Min_Data = 0 and Max_Data = 0x0FFF */
+                            This parameter must be a number between Min_Data = 0 and Max_Data = 0x0FFFU */
 
   uint32_t Window;     /*!< Specifies the window value to be compared to the down-counter.
-                            This parameter must be a number between Min_Data = 0 and Max_Data = 0x0FFF */
+                            This parameter must be a number between Min_Data = 0 and Max_Data = 0x0FFFU */
 
 } IWDG_InitTypeDef;
 
@@ -103,8 +103,8 @@ typedef struct
 #define IWDG_PRESCALER_16               IWDG_PR_PR_1                  /*!< IWDG prescaler set to 16  */
 #define IWDG_PRESCALER_32               (IWDG_PR_PR_1 | IWDG_PR_PR_0) /*!< IWDG prescaler set to 32  */
 #define IWDG_PRESCALER_64               IWDG_PR_PR_2                  /*!< IWDG prescaler set to 64  */
-#define IWDG_PRESCALER_128              (IWDG_PR_PR_2 | IWDG_PR_PR_0)   /*!< IWDG prescaler set to 128 */
-#define IWDG_PRESCALER_256              (IWDG_PR_PR_2 | IWDG_PR_PR_1)   /*!< IWDG prescaler set to 256 */
+#define IWDG_PRESCALER_128              (IWDG_PR_PR_2 | IWDG_PR_PR_0)   /*!< IWDG prescaler set to 128U */
+#define IWDG_PRESCALER_256              (IWDG_PR_PR_2 | IWDG_PR_PR_1)   /*!< IWDG prescaler set to 256U */
 /**
   * @}
   */
@@ -250,6 +250,6 @@ HAL_StatusTypeDef HAL_IWDG_Refresh(IWDG_HandleTypeDef *hiwdg);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_IWDG_H */
+#endif /* __STM32F3xx_HAL_IWDG_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

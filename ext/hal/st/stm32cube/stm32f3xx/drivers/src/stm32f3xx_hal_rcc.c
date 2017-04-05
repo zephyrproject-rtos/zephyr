@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_rcc.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   RCC HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Reset and Clock Control (RCC) peripheral:
@@ -120,10 +120,10 @@
 /** @defgroup RCC_Private_Variables RCC Private Variables
   * @{
   */
-const uint8_t aPLLMULFactorTable[16] = { 2,  3,  4,  5,  6,  7,  8,  9,
-                                       10, 11, 12, 13, 14, 15, 16, 16};
-const uint8_t aPredivFactorTable[16] = { 1, 2,  3,  4,  5,  6,  7,  8,
-                                         9,10, 11, 12, 13, 14, 15, 16};
+const uint8_t aPLLMULFactorTable[16] = { 2U,  3U,  4U,  5U,  6U,  7U,  8U,  9U,
+                                       10U, 11U, 12U, 13U, 14U, 15U, 16U, 16U};
+const uint8_t aPredivFactorTable[16] = { 1U, 2U,  3U,  4U,  5U,  6U,  7U,  8U,
+                                         9U,10U, 11U, 12U, 13U, 14U, 15U, 16U};
 /**
   * @}
   */
@@ -752,7 +752,7 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
   if(((RCC_ClkInitStruct->ClockType) & RCC_CLOCKTYPE_PCLK2) == RCC_CLOCKTYPE_PCLK2)
   {
     assert_param(IS_RCC_PCLK(RCC_ClkInitStruct->APB2CLKDivider));
-    MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE2, ((RCC_ClkInitStruct->APB2CLKDivider) << 3));
+    MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE2, ((RCC_ClkInitStruct->APB2CLKDivider) << 3U));
   }
 
   /* Update the SystemCoreClock global variable */
@@ -913,8 +913,8 @@ void HAL_RCC_DisableCSS(void)
   */
 uint32_t HAL_RCC_GetSysClockFreq(void)
 {
-  uint32_t tmpreg = 0, prediv = 0, pllclk = 0, pllmul = 0;
-  uint32_t sysclockfreq = 0;
+  uint32_t tmpreg = 0U, prediv = 0U, pllclk = 0U, pllmul = 0U;
+  uint32_t sysclockfreq = 0U;
 
   tmpreg = RCC->CFGR;
 
@@ -939,7 +939,7 @@ uint32_t HAL_RCC_GetSysClockFreq(void)
       else
       {
         /* HSI used as PLL clock source : PLLCLK = HSI/2 * PLLMUL */
-        pllclk = (HSI_VALUE >> 1) * pllmul;
+        pllclk = (HSI_VALUE >> 1U) * pllmul;
       }
 #else
       if ((tmpreg & RCC_CFGR_PLLSRC_HSE_PREDIV) == RCC_CFGR_PLLSRC_HSE_PREDIV)
@@ -1118,7 +1118,7 @@ void HAL_RCC_GetClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, uint32_t *pF
   RCC_ClkInitStruct->APB1CLKDivider = (uint32_t)(RCC->CFGR & RCC_CFGR_PPRE1);
 
   /* Get the APB2 configuration ----------------------------------------------*/
-  RCC_ClkInitStruct->APB2CLKDivider = (uint32_t)((RCC->CFGR & RCC_CFGR_PPRE2) >> 3);
+  RCC_ClkInitStruct->APB2CLKDivider = (uint32_t)((RCC->CFGR & RCC_CFGR_PPRE2) >> 3U);
 
   /* Get the Flash Wait State (Latency) configuration ------------------------*/
   *pFLatency = (uint32_t)(FLASH->ACR & FLASH_ACR_LATENCY);

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dma2d.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   DMA2D HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the DMA2D peripheral:
@@ -98,7 +98,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -150,8 +150,8 @@
 /** @defgroup DMA2D_TimeOut DMA2D Time Out
   * @{
   */
-#define DMA2D_TIMEOUT_ABORT           ((uint32_t)1000U)  /*!<  1s  */
-#define DMA2D_TIMEOUT_SUSPEND         ((uint32_t)1000U)  /*!<  1s  */
+#define DMA2D_TIMEOUT_ABORT           1000U  /*!<  1s  */
+#define DMA2D_TIMEOUT_SUSPEND         1000U  /*!<  1s  */
 /**
   * @}
   */

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of ADC HAL module.
   ******************************************************************************
   * @attention
@@ -217,7 +217,7 @@ typedef struct
   * @}
   */ 
 
-/** @defgroup ADCEx_injected_rank ADC Injected Rank
+/** @defgroup ADCEx_injected_rank ADC Injected Channel Rank
   * @{
   */ 
 #define ADC_INJECTED_RANK_1    ((uint32_t)0x00000001U)
@@ -333,9 +333,12 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
                                             ((__INJTRIG__) == ADC_EXTERNALTRIGINJECCONV_T5_TRGO)  || \
                                             ((__INJTRIG__) == ADC_EXTERNALTRIGINJECCONV_T3_CC1)   || \
                                             ((__INJTRIG__) == ADC_EXTERNALTRIGINJECCONV_T6_TRGO)  || \
-											((__INJTRIG__) == ADC_INJECTED_SOFTWARE_START))
+					    ((__INJTRIG__) == ADC_INJECTED_SOFTWARE_START))
+#define IS_ADC_INJECTED_RANK(__RANK__) (((__RANK__) == ADC_INJECTED_RANK_1) || \
+                                       ((__RANK__) == ADC_INJECTED_RANK_2) || \
+                                       ((__RANK__) == ADC_INJECTED_RANK_3) || \
+                                       ((__RANK__) == ADC_INJECTED_RANK_4))
 #define IS_ADC_INJECTED_LENGTH(__LENGTH__) (((__LENGTH__) >= ((uint32_t)1)) && ((__LENGTH__) <= ((uint32_t)4)))
-#define IS_ADC_INJECTED_RANK(__RANK__) (((__RANK__) >= ((uint32_t)1)) && ((__RANK__) <= ((uint32_t)4)))
 
 /**
   * @brief  Set the selected injected Channel rank.

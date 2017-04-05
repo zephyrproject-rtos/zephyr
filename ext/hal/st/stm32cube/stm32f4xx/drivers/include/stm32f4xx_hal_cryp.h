@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_cryp.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of CRYP HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -128,7 +128,7 @@ typedef enum
   HAL_CRYP_PHASE_READY             = 0x01U,    /*!< CRYP peripheral is ready for initialization. */
   HAL_CRYP_PHASE_PROCESS           = 0x02U,    /*!< CRYP peripheral is in processing phase */
   HAL_CRYP_PHASE_FINAL             = 0x03U     /*!< CRYP peripheral is in final phase
-                                                   This is relevant only with CCM and GCM modes */
+                                                    This is relevant only with CCM and GCM modes */
 }HAL_PhaseTypeDef;
 
 /** 
@@ -182,7 +182,7 @@ typedef struct
 /** @defgroup CRYP_Key_Size CRYP Key Size
   * @{
   */
-#define CRYP_KEYSIZE_128B         ((uint32_t)0x00000000U)
+#define CRYP_KEYSIZE_128B         0x00000000U
 #define CRYP_KEYSIZE_192B         CRYP_CR_KEYSIZE_0
 #define CRYP_KEYSIZE_256B         CRYP_CR_KEYSIZE_1
 /**
@@ -192,7 +192,7 @@ typedef struct
 /** @defgroup CRYP_Data_Type CRYP Data Type
   * @{
   */
-#define CRYP_DATATYPE_32B         ((uint32_t)0x00000000U)
+#define CRYP_DATATYPE_32B         0x00000000U
 #define CRYP_DATATYPE_16B         CRYP_CR_DATATYPE_0
 #define CRYP_DATATYPE_8B          CRYP_CR_DATATYPE_1
 #define CRYP_DATATYPE_1B          CRYP_CR_DATATYPE
@@ -203,21 +203,21 @@ typedef struct
 /** @defgroup CRYP_Exported_Constants_Group3 CRYP CRYP_AlgoModeDirection
   * @{
   */
-#define CRYP_CR_ALGOMODE_DIRECTION         ((uint32_t)0x0008003CU)
-#define CRYP_CR_ALGOMODE_TDES_ECB_ENCRYPT  ((uint32_t)0x00000000U)
-#define CRYP_CR_ALGOMODE_TDES_ECB_DECRYPT  ((uint32_t)0x00000004U)
-#define CRYP_CR_ALGOMODE_TDES_CBC_ENCRYPT  ((uint32_t)0x00000008U)
-#define CRYP_CR_ALGOMODE_TDES_CBC_DECRYPT  ((uint32_t)0x0000000CU)
-#define CRYP_CR_ALGOMODE_DES_ECB_ENCRYPT   ((uint32_t)0x00000010U)
-#define CRYP_CR_ALGOMODE_DES_ECB_DECRYPT   ((uint32_t)0x00000014U)
-#define CRYP_CR_ALGOMODE_DES_CBC_ENCRYPT   ((uint32_t)0x00000018U)
-#define CRYP_CR_ALGOMODE_DES_CBC_DECRYPT   ((uint32_t)0x0000001CU)
-#define CRYP_CR_ALGOMODE_AES_ECB_ENCRYPT   ((uint32_t)0x00000020U)
-#define CRYP_CR_ALGOMODE_AES_ECB_DECRYPT   ((uint32_t)0x00000024U)
-#define CRYP_CR_ALGOMODE_AES_CBC_ENCRYPT   ((uint32_t)0x00000028U)
-#define CRYP_CR_ALGOMODE_AES_CBC_DECRYPT   ((uint32_t)0x0000002CU)
-#define CRYP_CR_ALGOMODE_AES_CTR_ENCRYPT   ((uint32_t)0x00000030U)
-#define CRYP_CR_ALGOMODE_AES_CTR_DECRYPT   ((uint32_t)0x00000034U)
+#define CRYP_CR_ALGOMODE_DIRECTION         0x0008003CU
+#define CRYP_CR_ALGOMODE_TDES_ECB_ENCRYPT  0x00000000U
+#define CRYP_CR_ALGOMODE_TDES_ECB_DECRYPT  0x00000004U
+#define CRYP_CR_ALGOMODE_TDES_CBC_ENCRYPT  0x00000008U
+#define CRYP_CR_ALGOMODE_TDES_CBC_DECRYPT  0x0000000CU
+#define CRYP_CR_ALGOMODE_DES_ECB_ENCRYPT   0x00000010U
+#define CRYP_CR_ALGOMODE_DES_ECB_DECRYPT   0x00000014U
+#define CRYP_CR_ALGOMODE_DES_CBC_ENCRYPT   0x00000018U
+#define CRYP_CR_ALGOMODE_DES_CBC_DECRYPT   0x0000001CU
+#define CRYP_CR_ALGOMODE_AES_ECB_ENCRYPT   0x00000020U
+#define CRYP_CR_ALGOMODE_AES_ECB_DECRYPT   0x00000024U
+#define CRYP_CR_ALGOMODE_AES_CBC_ENCRYPT   0x00000028U
+#define CRYP_CR_ALGOMODE_AES_CBC_DECRYPT   0x0000002CU
+#define CRYP_CR_ALGOMODE_AES_CTR_ENCRYPT   0x00000030U
+#define CRYP_CR_ALGOMODE_AES_CTR_DECRYPT   0x00000034U
 /**
   * @}
   */
@@ -234,18 +234,18 @@ typedef struct
 /** @defgroup CRYP_Exported_Constants_Group5 CRYP CRYP_Flags
   * @{
   */
-#define CRYP_FLAG_BUSY   ((uint32_t)0x00000010U)  /*!< The CRYP core is currently 
-                                                     processing a block of data 
-                                                     or a key preparation (for 
-                                                     AES decryption). */
-#define CRYP_FLAG_IFEM   ((uint32_t)0x00000001U)  /*!< Input FIFO is empty */
-#define CRYP_FLAG_IFNF   ((uint32_t)0x00000002U)  /*!< Input FIFO is not Full */
-#define CRYP_FLAG_OFNE   ((uint32_t)0x00000004U)  /*!< Output FIFO is not empty */
-#define CRYP_FLAG_OFFU   ((uint32_t)0x00000008U)  /*!< Output FIFO is Full */
-#define CRYP_FLAG_OUTRIS ((uint32_t)0x01000002U)  /*!< Output FIFO service raw 
-                                                      interrupt status */
-#define CRYP_FLAG_INRIS  ((uint32_t)0x01000001U)  /*!< Input FIFO service raw 
-                                                      interrupt status */
+#define CRYP_FLAG_BUSY   0x00000010U  /*!< The CRYP core is currently 
+                                           processing a block of data 
+                                           or a key preparation (for 
+                                           AES decryption). */
+#define CRYP_FLAG_IFEM   0x00000001U  /*!< Input FIFO is empty */
+#define CRYP_FLAG_IFNF   0x00000002U  /*!< Input FIFO is not Full */
+#define CRYP_FLAG_OFNE   0x00000004U  /*!< Output FIFO is not empty */
+#define CRYP_FLAG_OFFU   0x00000008U  /*!< Output FIFO is Full */
+#define CRYP_FLAG_OUTRIS 0x01000002U  /*!< Output FIFO service raw 
+                                           interrupt status */
+#define CRYP_FLAG_INRIS  0x01000001U  /*!< Input FIFO service raw 
+                                           interrupt status */
 /**
   * @}
   */
@@ -485,7 +485,7 @@ HAL_CRYP_STATETypeDef HAL_CRYP_GetState(CRYP_HandleTypeDef *hcryp);
 /** @defgroup CRYP_Private_Constants CRYP Private Constants
   * @{
   */
-#define CRYP_FLAG_MASK  ((uint32_t)0x0000001FU)
+#define CRYP_FLAG_MASK  0x0000001FU
 /**
   * @}
   */ 
@@ -578,12 +578,12 @@ typedef struct
   */
 typedef enum
 {
-  HAL_CRYP_STATE_RESET             = 0x00,  /*!< CRYP not yet initialized or disabled  */
-  HAL_CRYP_STATE_READY             = 0x01,  /*!< CRYP initialized and ready for use    */
-  HAL_CRYP_STATE_BUSY              = 0x02,  /*!< CRYP internal processing is ongoing   */
-  HAL_CRYP_STATE_TIMEOUT           = 0x03,  /*!< CRYP timeout state                    */
-  HAL_CRYP_STATE_ERROR             = 0x04,  /*!< CRYP error state                      */
-  HAL_CRYP_STATE_SUSPENDED         = 0x05   /*!< CRYP suspended                        */
+  HAL_CRYP_STATE_RESET             = 0x00U,  /*!< CRYP not yet initialized or disabled  */
+  HAL_CRYP_STATE_READY             = 0x01U,  /*!< CRYP initialized and ready for use    */
+  HAL_CRYP_STATE_BUSY              = 0x02U,  /*!< CRYP internal processing is ongoing   */
+  HAL_CRYP_STATE_TIMEOUT           = 0x03U,  /*!< CRYP timeout state                    */
+  HAL_CRYP_STATE_ERROR             = 0x04U,  /*!< CRYP error state                      */
+  HAL_CRYP_STATE_SUSPENDED         = 0x05U   /*!< CRYP suspended                        */
 }HAL_CRYP_STATETypeDef;
 
 /** 
@@ -591,17 +591,17 @@ typedef enum
   */
 typedef enum
 {
-  HAL_CRYP_PHASE_READY             = 0x01,    /*!< CRYP peripheral is ready for initialization.           */
-  HAL_CRYP_PHASE_PROCESS           = 0x02,    /*!< CRYP peripheral is in processing phase                 */
-  HAL_CRYP_PHASE_START             = 0x03,    /*!< CRYP peripheral has been initialized but 
-                                                 GCM/GMAC/CMAC(/CCM) initialization phase has not started */
-  HAL_CRYP_PHASE_INIT_OVER         = 0x04,    /*!< GCM/GMAC/CMAC(/CCM) init phase has been carried out    */ 
-  HAL_CRYP_PHASE_HEADER_OVER       = 0x05,    /*!< GCM/GMAC/CMAC(/CCM) header phase has been carried out  */ 
-  HAL_CRYP_PHASE_PAYLOAD_OVER      = 0x06,    /*!< GCM(/CCM) payload phase has been carried out           */ 
-  HAL_CRYP_PHASE_FINAL_OVER        = 0x07,    /*!< GCM/GMAC/CMAC(/CCM) final phase has been carried out   */
-  HAL_CRYP_PHASE_HEADER_SUSPENDED  = 0x08,    /*!< GCM/GMAC/CMAC(/CCM) header phase has been suspended    */
-  HAL_CRYP_PHASE_PAYLOAD_SUSPENDED = 0x09,    /*!< GCM(/CCM) payload phase has been suspended             */  
-  HAL_CRYP_PHASE_NOT_USED          = 0x0a     /*!< Phase is irrelevant to the current chaining mode       */                                                                                                                                                                                                                                                                   
+  HAL_CRYP_PHASE_READY             = 0x01U,    /*!< CRYP peripheral is ready for initialization.           */
+  HAL_CRYP_PHASE_PROCESS           = 0x02U,    /*!< CRYP peripheral is in processing phase                 */
+  HAL_CRYP_PHASE_START             = 0x03U,    /*!< CRYP peripheral has been initialized but 
+                                                    GCM/GMAC/CMAC(/CCM) initialization phase has not started */
+  HAL_CRYP_PHASE_INIT_OVER         = 0x04U,    /*!< GCM/GMAC/CMAC(/CCM) init phase has been carried out    */ 
+  HAL_CRYP_PHASE_HEADER_OVER       = 0x05U,    /*!< GCM/GMAC/CMAC(/CCM) header phase has been carried out  */ 
+  HAL_CRYP_PHASE_PAYLOAD_OVER      = 0x06U,    /*!< GCM(/CCM) payload phase has been carried out           */ 
+  HAL_CRYP_PHASE_FINAL_OVER        = 0x07U,    /*!< GCM/GMAC/CMAC(/CCM) final phase has been carried out   */
+  HAL_CRYP_PHASE_HEADER_SUSPENDED  = 0x08U,    /*!< GCM/GMAC/CMAC(/CCM) header phase has been suspended    */
+  HAL_CRYP_PHASE_PAYLOAD_SUSPENDED = 0x09U,    /*!< GCM(/CCM) payload phase has been suspended             */  
+  HAL_CRYP_PHASE_NOT_USED          = 0x0AU     /*!< Phase is irrelevant to the current chaining mode       */                                                                                                                                                                                                                                                                   
 }HAL_PhaseTypeDef;
 
 /** 
@@ -609,19 +609,19 @@ typedef enum
   */
 typedef enum
 {
-  HAL_CRYP_SUSPEND_NONE            = 0x00,    /*!< CRYP peripheral suspension not requested */
-  HAL_CRYP_SUSPEND                 = 0x01     /*!< CRYP peripheral suspension requested     */                                                                                                                                                                                                                                                                  
+  HAL_CRYP_SUSPEND_NONE            = 0x00U,    /*!< CRYP peripheral suspension not requested */
+  HAL_CRYP_SUSPEND                 = 0x01U     /*!< CRYP peripheral suspension requested     */                                                                                                                                                                                                                                                                  
 }HAL_SuspendTypeDef;
 
 
 /** 
   * @brief  HAL CRYP Error Codes definition  
   */ 
-#define HAL_CRYP_ERROR_NONE      ((uint32_t)0x00000000)  /*!< No error        */
-#define HAL_CRYP_WRITE_ERROR     ((uint32_t)0x00000001)  /*!< Write error     */
-#define HAL_CRYP_READ_ERROR      ((uint32_t)0x00000002)  /*!< Read error      */
-#define HAL_CRYP_DMA_ERROR       ((uint32_t)0x00000004)  /*!< DMA error       */  
-#define HAL_CRYP_BUSY_ERROR      ((uint32_t)0x00000008)  /*!< Busy flag error */  
+#define HAL_CRYP_ERROR_NONE      0x00000000U  /*!< No error        */
+#define HAL_CRYP_WRITE_ERROR     0x00000001U  /*!< Write error     */
+#define HAL_CRYP_READ_ERROR      0x00000002U  /*!< Read error      */
+#define HAL_CRYP_DMA_ERROR       0x00000004U  /*!< DMA error       */  
+#define HAL_CRYP_BUSY_ERROR      0x00000008U  /*!< Busy flag error */  
 
 /** 
   * @brief  CRYP handle Structure definition
@@ -637,14 +637,14 @@ typedef struct
       uint8_t                  *pCrypOutBuffPtr; /*!< Pointer to CRYP processing (encryption, decryption,...) output buffer */
 
       uint32_t                 CrypInCount;      /*!< Input data size in bytes or, after suspension, the remaining 
-                                                       number of bytes to process */
+                                                      number of bytes to process */
 
       uint32_t                 CrypOutCount;     /*!< Output data size in bytes */
 
       HAL_PhaseTypeDef         Phase;            /*!< CRYP peripheral processing phase for GCM, GMAC, CMAC 
-                                                    (or CCM when applicable) modes.
-                                                     Indicates the last phase carried out to ease
-                                                     phase transitions  */
+                                                      (or CCM when applicable) modes.
+                                                      Indicates the last phase carried out to ease
+                                                      phase transitions  */
 
       DMA_HandleTypeDef        *hdmain;          /*!< CRYP peripheral Input DMA handle parameters */
 
@@ -672,7 +672,7 @@ typedef struct
 /** @defgroup CRYP_Key_Size  Key size selection
   * @{
   */
-#define CRYP_KEYSIZE_128B         ((uint32_t)0x00000000)  /*!< 128-bit long key */ 
+#define CRYP_KEYSIZE_128B         0x00000000U             /*!< 128-bit long key */ 
 #define CRYP_KEYSIZE_256B         AES_CR_KEYSIZE          /*!< 256-bit long key */ 
 /**
   * @}
@@ -681,7 +681,7 @@ typedef struct
 /** @defgroup CRYP_Data_Type  AES Data Type selection
   * @{
   */
-#define CRYP_DATATYPE_32B         ((uint32_t)0x00000000)  /*!< 32-bit data type (no swapping)        */
+#define CRYP_DATATYPE_32B         0x00000000U             /*!< 32-bit data type (no swapping)        */
 #define CRYP_DATATYPE_16B         AES_CR_DATATYPE_0       /*!< 16-bit data type (half-word swapping) */
 #define CRYP_DATATYPE_8B          AES_CR_DATATYPE_1       /*!< 8-bit data type (byte swapping)       */
 #define CRYP_DATATYPE_1B          AES_CR_DATATYPE         /*!< 1-bit data type (bit swapping)        */
@@ -692,8 +692,8 @@ typedef struct
  /** @defgroup CRYP_AES_State  AES Enable state
   * @{
   */ 
-#define CRYP_AES_DISABLE                 ((uint32_t)0x00000000)   /*!< Disable AES */
-#define CRYP_AES_ENABLE                   AES_CR_EN               /*!< Enable AES  */
+#define CRYP_AES_DISABLE                  0x00000000U              /*!< Disable AES */
+#define CRYP_AES_ENABLE                   AES_CR_EN                /*!< Enable AES  */
 /**
   * @}
   */            
@@ -701,19 +701,19 @@ typedef struct
 /** @defgroup CRYP_AES_OperatingMode AES operating mode
   * @{
   */ 
-#define CRYP_ALGOMODE_ENCRYPT                   ((uint32_t)0x00000000)  /*!< Encryption mode                            */
+#define CRYP_ALGOMODE_ENCRYPT                   0x00000000U             /*!< Encryption mode                            */
 #define CRYP_ALGOMODE_KEYDERIVATION             AES_CR_MODE_0           /*!< Key derivation mode                        */
 #define CRYP_ALGOMODE_DECRYPT                   AES_CR_MODE_1           /*!< Decryption                                 */
 #define CRYP_ALGOMODE_KEYDERIVATION_DECRYPT     AES_CR_MODE             /*!< Key derivation and decryption              */
-#define CRYP_ALGOMODE_TAG_GENERATION            ((uint32_t)0x00000000)  /*!< GMAC or CMAC authentication tag generation */
+#define CRYP_ALGOMODE_TAG_GENERATION            0x00000000U             /*!< GMAC or CMAC authentication tag generation */
 /**
   * @}
   */                   
 
 /** @defgroup CRYP_AES_ChainingMode AES chaining mode
   * @{
-  */                                                                
-#define CRYP_CHAINMODE_AES_ECB            ((uint32_t)0x00000000)            /*!< Electronic codebook chaining algorithm                   */
+  */
+#define CRYP_CHAINMODE_AES_ECB            0x00000000U                       /*!< Electronic codebook chaining algorithm                   */
 #define CRYP_CHAINMODE_AES_CBC            AES_CR_CHMOD_0                    /*!< Cipher block chaining algorithm                          */
 #define CRYP_CHAINMODE_AES_CTR            AES_CR_CHMOD_1                    /*!< Counter mode chaining algorithm                          */
 #define CRYP_CHAINMODE_AES_GCM_GMAC       (AES_CR_CHMOD_0 | AES_CR_CHMOD_1) /*!< Galois counter mode - Galois message authentication code */
@@ -728,8 +728,8 @@ typedef struct
 /** @defgroup CRYP_Key_Write AES decryption key write-up flag
   * @{
   */ 
-#define CRYP_KEY_WRITE_ENABLE            ((uint32_t)0x00000000)  /*!< Enable decryption key writing  */ 
-#define CRYP_KEY_WRITE_DISABLE           ((uint32_t)0x00000001)  /*!< Disable decryption key writing */ 
+#define CRYP_KEY_WRITE_ENABLE          0x00000000U               /*!< Enable decryption key writing  */ 
+#define CRYP_KEY_WRITE_DISABLE         0x00000001U               /*!< Disable decryption key writing */ 
 /**
   * @}
   */  
@@ -737,7 +737,7 @@ typedef struct
 /** @defgroup CRYP_DMAIN DMA Input phase management enable state
   * @{
   */
-#define CRYP_DMAIN_DISABLE             ((uint32_t)0x00000000)    /*!< Disable DMA Input phase management */
+#define CRYP_DMAIN_DISABLE             0x00000000U               /*!< Disable DMA Input phase management */
 #define CRYP_DMAIN_ENABLE              AES_CR_DMAINEN            /*!< Enable DMA Input phase management  */
 /**
   * @}
@@ -746,7 +746,7 @@ typedef struct
 /** @defgroup CRYP_DMAOUT DMA Output phase management enable state
   * @{
   */
-#define CRYP_DMAOUT_DISABLE             ((uint32_t)0x00000000)   /*!< Disable DMA Output phase management */
+#define CRYP_DMAOUT_DISABLE             0x00000000U              /*!< Disable DMA Output phase management */
 #define CRYP_DMAOUT_ENABLE              AES_CR_DMAOUTEN          /*!< Enable DMA Output phase management  */
 /**
   * @}
@@ -756,13 +756,13 @@ typedef struct
 /** @defgroup CRYP_GCM_CMAC_Phase GCM/GMAC and CMAC processing phase selection
   * @{
   */
-#define CRYP_GCM_INIT_PHASE             ((uint32_t)0x00000000)  /*!< GCM/GMAC (or CCM) init phase        */ 
+#define CRYP_GCM_INIT_PHASE             0x00000000U             /*!< GCM/GMAC (or CCM) init phase        */ 
 #define CRYP_GCMCMAC_HEADER_PHASE       AES_CR_GCMPH_0          /*!< GCM/GMAC or (CCM/)CMAC header phase */ 
 #define CRYP_GCM_PAYLOAD_PHASE          AES_CR_GCMPH_1          /*!< GCM(/CCM) payload phase             */ 
 #define CRYP_GCMCMAC_FINAL_PHASE        AES_CR_GCMPH            /*!< GCM/GMAC or (CCM/)CMAC final phase  */ 
 /* Definitions duplication for code readibility's sake: 
    supported or not supported chain modes are not specified for each phase */
-#define CRYP_INIT_PHASE                 ((uint32_t)0x00000000)  /*!< Init phase    */ 
+#define CRYP_INIT_PHASE                 0x00000000U             /*!< Init phase    */ 
 #define CRYP_HEADER_PHASE               AES_CR_GCMPH_0          /*!< Header phase  */ 
 #define CRYP_PAYLOAD_PHASE              AES_CR_GCMPH_1          /*!< Payload phase */ 
 #define CRYP_FINAL_PHASE                AES_CR_GCMPH            /*!< Final phase   */ 
@@ -795,8 +795,8 @@ typedef struct
 /** @defgroup AES_Interrupts_Enable AES Interrupts Enable bits
   * @{
   */ 
-#define CRYP_IT_CCFIE                         AES_CR_CCFIE /*!< Computation Complete interrupt enable */
-#define CRYP_IT_ERRIE                         AES_CR_ERRIE /*!< Error interrupt enable                */
+#define CRYP_IT_CCFIE     AES_CR_CCFIE  /*!< Computation Complete interrupt enable */
+#define CRYP_IT_ERRIE     AES_CR_ERRIE  /*!< Error interrupt enable                */
 /**
   * @}
   */
@@ -804,9 +804,9 @@ typedef struct
 /** @defgroup CRYP_Interrupts_Flags   AES Interrupts flags
   * @{
   */
-#define CRYP_IT_WRERR   AES_SR_WRERR  /*!< Write Error           */
-#define CRYP_IT_RDERR   AES_SR_RDERR  /*!< Read Error            */
-#define CRYP_IT_CCF     AES_SR_CCF    /*!< Computation completed */
+#define CRYP_IT_WRERR    AES_SR_WRERR   /*!< Write Error           */
+#define CRYP_IT_RDERR    AES_SR_RDERR   /*!< Read Error            */
+#define CRYP_IT_CCF      AES_SR_CCF     /*!< Computation completed */
 /**
   * @}
   */

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_rcc.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   RCC LL module driver.
   ******************************************************************************
   * @attention
@@ -61,9 +61,9 @@
 #if defined(RCC_CFGR2_ADC1PRES) || defined(RCC_CFGR2_ADCPRE12) || defined(RCC_CFGR2_ADCPRE34)
 const uint16_t aADCPrescTable[12]       = {1U, 2U, 4U, 6U, 8U, 10U, 12U, 16U, 32U, 64U, 128U, 256U};
 #endif /* RCC_CFGR2_ADC1PRES || RCC_CFGR2_ADCPRE12 || RCC_CFGR2_ADCPRE34 */
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 const uint8_t aSDADCPrescTable[16]       = {2U, 4U, 6U, 8U, 10U, 12U, 14U, 16U, 20U, 24U, 28U, 32U, 36U, 40U, 44U, 48U};
-#endif /* RCC_CFGR_SDADCPRE */
+#endif /* RCC_CFGR_SDPRE */
 /**
   * @}
   */
@@ -133,9 +133,9 @@ const uint8_t aSDADCPrescTable[16]       = {2U, 4U, 6U, 8U, 10U, 12U, 14U, 16U, 
 #endif /* RCC_CFGR2_ADC1PRES */
 #endif /* RCC_CFGR_ADCPRE */
 
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 #define IS_LL_RCC_SDADC_CLKSOURCE(__VALUE__)  (((__VALUE__) == LL_RCC_SDADC_CLKSOURCE))
-#endif /* RCC_CFGR_SDADCPRE */
+#endif /* RCC_CFGR_SDPRE */
 
 #if defined(CEC)
 #define IS_LL_RCC_CEC_CLKSOURCE(__VALUE__)    (((__VALUE__) == LL_RCC_CEC_CLKSOURCE))
@@ -615,7 +615,7 @@ uint32_t LL_RCC_GetI2CClockFreq(uint32_t I2CxSource)
   return i2c_frequency;
 }
 
-#if defined(RCC_CFGR_I2SSRC)
+#if  defined(RCC_CFGR_I2SSRC)
 /**
   * @brief  Return I2Sx clock frequency
   * @param  I2SxSource This parameter can be one of the following values:
@@ -644,8 +644,7 @@ uint32_t LL_RCC_GetI2SClockFreq(uint32_t I2SxSource)
 
   return i2s_frequency;
 }
-#endif /*RCC_CFGR_I2SSRC*/
-
+#endif /* RCC_CFGR_I2SSRC */
 #if defined(USB)
 /**
   * @brief  Return USBx clock frequency
@@ -730,7 +729,7 @@ uint32_t LL_RCC_GetADCClockFreq(uint32_t ADCxSource)
 }
 #endif /*RCC_CFGR_ADCPRE || RCC_CFGR2_ADC1PRES || RCC_CFGR2_ADCPRE12 || RCC_CFGR2_ADCPRE34 */
 
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 /**
   * @brief  Return SDADCx clock frequency
   * @param  SDADCxSource This parameter can be one of the following values:
@@ -754,7 +753,7 @@ uint32_t LL_RCC_GetSDADCClockFreq(uint32_t SDADCxSource)
 
   return sdadc_frequency;
 }
-#endif /*RCC_CFGR_SDADCPRE */
+#endif /*RCC_CFGR_SDPRE */
 
 #if defined(CEC)
 /**

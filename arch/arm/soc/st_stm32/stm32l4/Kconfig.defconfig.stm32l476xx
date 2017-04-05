@@ -19,10 +19,11 @@ config SRAM_SIZE
 config FLASH_SIZE
 	default 1024
 
+endif # !HAS_DTS
+
 config NUM_IRQS
 	int
 	default 82
-endif # !HAS_DTS
 
 endif # SOC_STM32L476XX
 

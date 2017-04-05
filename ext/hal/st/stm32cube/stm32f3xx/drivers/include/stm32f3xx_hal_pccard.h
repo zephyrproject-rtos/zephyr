@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_pccard.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of PCCARD HAL module.
   ******************************************************************************
   * @attention
@@ -60,36 +60,36 @@
   */
 
 #define PCCARD_DEVICE_ADDRESS           FMC_BANK4
-#define PCCARD_ATTRIBUTE_SPACE_ADDRESS  ((uint32_t)(FMC_BANK4 + 0x08000000))  /* Attribute space size to @0x9BFF FFFF */
+#define PCCARD_ATTRIBUTE_SPACE_ADDRESS  ((uint32_t)(FMC_BANK4 + 0x08000000U))  /* Attribute space size to @0x9BFF FFFF */
 #define PCCARD_COMMON_SPACE_ADDRESS     PCCARD_DEVICE_ADDRESS                           /* Common space size to @0x93FF FFFF    */
-#define PCCARD_IO_SPACE_ADDRESS         ((uint32_t)(FMC_BANK4 + 0x0C000000))  /* IO space size to @0x9FFF FFFF        */
-#define PCCARD_IO_SPACE_PRIMARY_ADDR    ((uint32_t)(FMC_BANK4 + 0x0C0001F0))  /* IO space size to @0x9FFF FFFF        */
+#define PCCARD_IO_SPACE_ADDRESS         ((uint32_t)(FMC_BANK4 + 0x0C000000U))  /* IO space size to @0x9FFF FFFF        */
+#define PCCARD_IO_SPACE_PRIMARY_ADDR    ((uint32_t)(FMC_BANK4 + 0x0C0001F0U))  /* IO space size to @0x9FFF FFFF        */
 
 /* Compact Flash-ATA registers description */
-#define ATA_DATA                        ((uint8_t)0x00)    /* Data register */
-#define ATA_SECTOR_COUNT                ((uint8_t)0x02)    /* Sector Count register */
-#define ATA_SECTOR_NUMBER               ((uint8_t)0x03)    /* Sector Number register */
-#define ATA_CYLINDER_LOW                ((uint8_t)0x04)    /* Cylinder low register */
-#define ATA_CYLINDER_HIGH               ((uint8_t)0x05)    /* Cylinder high register */
-#define ATA_CARD_HEAD                   ((uint8_t)0x06)    /* Card/Head register */
-#define ATA_STATUS_CMD                  ((uint8_t)0x07)    /* Status(read)/Command(write) register */
-#define ATA_STATUS_CMD_ALTERNATE        ((uint8_t)0x0E)    /* Alternate Status(read)/Command(write) register */
-#define ATA_COMMON_DATA_AREA            ((uint16_t)0x0400) /* Start of data area (for Common access only!) */
-#define ATA_CARD_CONFIGURATION          ((uint16_t)0x0202) /* Card Configuration and Status Register */
+#define ATA_DATA                        ((uint8_t)0x00U)    /* Data register */
+#define ATA_SECTOR_COUNT                ((uint8_t)0x02U)    /* Sector Count register */
+#define ATA_SECTOR_NUMBER               ((uint8_t)0x03U)    /* Sector Number register */
+#define ATA_CYLINDER_LOW                ((uint8_t)0x04U)    /* Cylinder low register */
+#define ATA_CYLINDER_HIGH               ((uint8_t)0x05U)    /* Cylinder high register */
+#define ATA_CARD_HEAD                   ((uint8_t)0x06U)    /* Card/Head register */
+#define ATA_STATUS_CMD                  ((uint8_t)0x07U)    /* Status(read)/Command(write) register */
+#define ATA_STATUS_CMD_ALTERNATE        ((uint8_t)0x0EU)    /* Alternate Status(read)/Command(write) register */
+#define ATA_COMMON_DATA_AREA            ((uint16_t)0x0400U) /* Start of data area (for Common access only!) */
+#define ATA_CARD_CONFIGURATION          ((uint16_t)0x0202U) /* Card Configuration and Status Register */
 
 /* Compact Flash-ATA commands */
-#define ATA_READ_SECTOR_CMD             ((uint8_t)0x20)
-#define ATA_WRITE_SECTOR_CMD            ((uint8_t)0x30)
-#define ATA_ERASE_SECTOR_CMD            ((uint8_t)0xC0)
-#define ATA_IDENTIFY_CMD                ((uint8_t)0xEC)
+#define ATA_READ_SECTOR_CMD             ((uint8_t)0x20U)
+#define ATA_WRITE_SECTOR_CMD            ((uint8_t)0x30U)
+#define ATA_ERASE_SECTOR_CMD            ((uint8_t)0xC0U)
+#define ATA_IDENTIFY_CMD                ((uint8_t)0xECU)
 
 /* Compact Flash status */
-#define PCCARD_TIMEOUT_ERROR            ((uint8_t)0x60)
-#define PCCARD_BUSY                     ((uint8_t)0x80)
-#define PCCARD_PROGR                    ((uint8_t)0x01)
-#define PCCARD_READY                    ((uint8_t)0x40)
+#define PCCARD_TIMEOUT_ERROR            ((uint8_t)0x60U)
+#define PCCARD_BUSY                     ((uint8_t)0x80U)
+#define PCCARD_PROGR                    ((uint8_t)0x01U)
+#define PCCARD_READY                    ((uint8_t)0x40U)
 
-#define PCCARD_SECTOR_SIZE              ((uint32_t)255)    /* In half words */
+#define PCCARD_SECTOR_SIZE              (255U)    /* In half words */
 
 
 /* Compact Flash redefinition */
@@ -136,15 +136,15 @@
   */
 typedef enum
 {
-  HAL_PCCARD_STATE_RESET     = 0x00,    /*!< PCCARD peripheral not yet initialized or disabled */
-  HAL_PCCARD_STATE_READY     = 0x01,    /*!< PCCARD peripheral ready                           */
-  HAL_PCCARD_STATE_BUSY      = 0x02,    /*!< PCCARD peripheral busy                            */
+  HAL_PCCARD_STATE_RESET     = 0x00U,    /*!< PCCARD peripheral not yet initialized or disabled */
+  HAL_PCCARD_STATE_READY     = 0x01U,    /*!< PCCARD peripheral ready                           */
+  HAL_PCCARD_STATE_BUSY      = 0x02U,    /*!< PCCARD peripheral busy                            */
   HAL_PCCARD_STATE_ERROR     = 0x04     /*!< PCCARD peripheral error                           */
 }HAL_PCCARD_StateTypeDef;
 
 typedef enum
 {
-  HAL_PCCARD_STATUS_SUCCESS = 0,
+  HAL_PCCARD_STATUS_SUCCESS = 0U,
   HAL_PCCARD_STATUS_ONGOING,
   HAL_PCCARD_STATUS_ERROR,
   HAL_PCCARD_STATUS_TIMEOUT

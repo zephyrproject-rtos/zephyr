@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_i2s_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of I2S HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -33,7 +33,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F4xx_HAL_I2S_EX_H
@@ -44,91 +44,119 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal_def.h"  
+#include "stm32f4xx_hal_def.h"
 
 /** @addtogroup STM32F4xx_HAL_Driver
   * @{
   */
-
-/** @addtogroup I2SEx
+#if defined(SPI_I2S_FULLDUPLEX_SUPPORT)
+/** @addtogroup I2SEx I2SEx
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
-/** @defgroup I2SEx_Exported_Types I2S Exported Types
-  * @{
-  */ 
-/**
-  * @}
-  */
-
 /* Exported constants --------------------------------------------------------*/
-/** @defgroup I2SEx_Exported_Constants I2S Exported Constants
+/* Exported macros -----------------------------------------------------------*/
+/** @defgroup I2SEx_Exported_Macros I2S Extended Exported Macros
   * @{
   */
 
-/** @defgroup I2S_Clock_Source I2S Clock Source 
-  * @{
+#define I2SxEXT(__INSTANCE__) ((__INSTANCE__) == (SPI2)? (SPI_TypeDef *)(I2S2ext_BASE): (SPI_TypeDef *)(I2S3ext_BASE))
+
+/** @brief  Enable or disable the specified I2SExt peripheral.
+  * @param  __HANDLE__: specifies the I2S Handle.
+  * @retval None
   */
+#define __HAL_I2SEXT_ENABLE(__HANDLE__) (I2SxEXT((__HANDLE__)->Instance)->I2SCFGR |= SPI_I2SCFGR_I2SE)
+#define __HAL_I2SEXT_DISABLE(__HANDLE__) (I2SxEXT((__HANDLE__)->Instance)->I2SCFGR &= ~SPI_I2SCFGR_I2SE)
 
-#if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx) || \
-    defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) || \
-    defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE) || defined(STM32F469xx) || \
-    defined(STM32F479xx)
-#define I2S_CLOCK_PLL                     ((uint32_t)0x00000000U)
-#define I2S_CLOCK_EXTERNAL                ((uint32_t)0x00000001U)      
-#endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx || STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx ||
-          STM32F401xC || STM32F401xE || STM32F411xE || STM32F469xx || STM32F479xx */    
-   
-#if defined(STM32F446xx) || defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) ||\
-    defined(STM32F413xx) || defined(STM32F423xx)
-#define I2S_CLOCK_PLL                     ((uint32_t)0x00000000U)
-#define I2S_CLOCK_EXTERNAL                ((uint32_t)0x00000001U) 
-#define I2S_CLOCK_PLLR                    ((uint32_t)0x00000002U)
-#define I2S_CLOCK_PLLSRC                  ((uint32_t)0x00000003U)
-#endif /* STM32F446xx || STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */
+/** @brief  Enable or disable the specified I2SExt interrupts.
+  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  *        This parameter can be one of the following values:
+  *            @arg I2S_IT_TXE: Tx buffer empty interrupt enable
+  *            @arg I2S_IT_RXNE: RX buffer not empty interrupt enable
+  *            @arg I2S_IT_ERR: Error interrupt enable
+  * @retval None
+  */
+#define __HAL_I2SEXT_ENABLE_IT(__HANDLE__, __INTERRUPT__) (I2SxEXT((__HANDLE__)->Instance)->CR2 |= (__INTERRUPT__))
+#define __HAL_I2SEXT_DISABLE_IT(__HANDLE__, __INTERRUPT__) (I2SxEXT((__HANDLE__)->Instance)->CR2 &= ~(__INTERRUPT__))
 
-#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx)
-#define I2S_CLOCK_PLLSRC                  ((uint32_t)0x00000000U)      
-#define I2S_CLOCK_EXTERNAL                ((uint32_t)0x00000001U) 
-#define I2S_CLOCK_PLLR                    ((uint32_t)0x00000002U)
-#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx */
+/** @brief  Checks if the specified I2SExt interrupt source is enabled or disabled.
+  * @param  __HANDLE__: specifies the I2S Handle.
+  *         This parameter can be I2S where x: 1, 2, or 3 to select the I2S peripheral.
+  * @param  __INTERRUPT__: specifies the I2S interrupt source to check.
+  *          This parameter can be one of the following values:
+  *            @arg I2S_IT_TXE: Tx buffer empty interrupt enable
+  *            @arg I2S_IT_RXNE: RX buffer not empty interrupt enable
+  *            @arg I2S_IT_ERR: Error interrupt enable
+  * @retval The new state of __IT__ (TRUE or FALSE).
+  */
+#define __HAL_I2SEXT_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) (((I2SxEXT((__HANDLE__)->Instance)->CR2 & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
+
+/** @brief  Checks whether the specified I2SExt flag is set or not.
+  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __FLAG__: specifies the flag to check.
+  *        This parameter can be one of the following values:
+  *            @arg I2S_FLAG_RXNE: Receive buffer not empty flag
+  *            @arg I2S_FLAG_TXE: Transmit buffer empty flag
+  *            @arg I2S_FLAG_UDR: Underrun flag
+  *            @arg I2S_FLAG_OVR: Overrun flag
+  *            @arg I2S_FLAG_FRE: Frame error flag
+  *            @arg I2S_FLAG_CHSIDE: Channel Side flag
+  *            @arg I2S_FLAG_BSY: Busy flag
+  * @retval The new state of __FLAG__ (TRUE or FALSE).
+  */
+#define __HAL_I2SEXT_GET_FLAG(__HANDLE__, __FLAG__) (((I2SxEXT((__HANDLE__)->Instance)->SR) & (__FLAG__)) == (__FLAG__))
+
+/** @brief Clears the I2SExt OVR pending flag.
+  * @param  __HANDLE__: specifies the I2S Handle.
+  * @retval None
+  */
+#define __HAL_I2SEXT_CLEAR_OVRFLAG(__HANDLE__) do{                                                 \
+                                                  __IO uint32_t tmpreg_ovr = 0x00U;                \
+                                                  tmpreg_ovr = I2SxEXT((__HANDLE__)->Instance)->DR;\
+                                                  tmpreg_ovr = I2SxEXT((__HANDLE__)->Instance)->SR;\
+                                                  UNUSED(tmpreg_ovr);                              \
+                                                  }while(0U)
+/** @brief Clears the I2SExt UDR pending flag.
+  * @param  __HANDLE__: specifies the I2S Handle.
+  * @retval None
+  */
+#define __HAL_I2SEXT_CLEAR_UDRFLAG(__HANDLE__) do{                                                 \
+                                                  __IO uint32_t tmpreg_udr = 0x00U;                \
+                                                  tmpreg_udr = I2SxEXT((__HANDLE__)->Instance)->SR;\
+                                                  UNUSED(tmpreg_udr);                              \
+                                                  }while(0U)
 /**
   * @}
   */
-
-/**
-  * @}
-  */ 
-
-/* Exported macro ------------------------------------------------------------*/
-/** @defgroup I2SEx_Exported_Macros I2S Exported Macros
-  * @{
-  */
-
-/**
-  * @}
-  */ 
 
 /* Exported functions --------------------------------------------------------*/
-/** @addtogroup I2SEx_Exported_Functions
+/** @addtogroup I2SEx_Exported_Functions I2S Extended Exported Functions
   * @{
   */
 
-/** @addtogroup I2SEx_Exported_Functions_Group1
+/** @addtogroup I2SEx_Exported_Functions_Group1 I2S Extended IO operation functions
   * @{
   */
 
-/* Extended features functions **************************************************/
+/* Extended features functions *************************************************/
 /* Blocking mode: Polling */
-HAL_StatusTypeDef HAL_I2SEx_TransmitReceive(I2S_HandleTypeDef *hi2s, uint16_t *pTxData, uint16_t *pRxData, uint16_t Size, uint32_t Timeout);
+HAL_StatusTypeDef HAL_I2SEx_TransmitReceive(I2S_HandleTypeDef *hi2s, uint16_t *pTxData, uint16_t *pRxData,
+                                            uint16_t Size, uint32_t Timeout);
 /* Non-Blocking mode: Interrupt */
-HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_IT(I2S_HandleTypeDef *hi2s, uint16_t *pTxData, uint16_t *pRxData, uint16_t Size);
+HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_IT(I2S_HandleTypeDef *hi2s, uint16_t *pTxData, uint16_t *pRxData,
+                                               uint16_t Size);
 /* Non-Blocking mode: DMA */
-HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_DMA(I2S_HandleTypeDef *hi2s, uint16_t *pTxData, uint16_t *pRxData, uint16_t Size);
+HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_DMA(I2S_HandleTypeDef *hi2s, uint16_t *pTxData, uint16_t *pRxData,
+                                                uint16_t Size);
+/* I2S IRQHandler and Callbacks used in non blocking modes (Interrupt and DMA) */
+void HAL_I2SEx_FullDuplex_IRQHandler(I2S_HandleTypeDef *hi2s);
+void HAL_I2SEx_TxRxCpltCallback(I2S_HandleTypeDef *hi2s);
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -136,70 +164,19 @@ HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_DMA(I2S_HandleTypeDef *hi2s, uint16_
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
-/** @defgroup I2SEx_Private_Constants I2S Private Constants
-  * @{
-  */
-/**
-  * @}
-  */
-
 /* Private macros ------------------------------------------------------------*/
-/** @defgroup I2SEx_Private_Macros I2S Private Macros
-  * @{
-  */
-#if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx) || \
-    defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) || \
-    defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE) || defined(STM32F469xx) || \
-    defined(STM32F479xx)
-#define IS_I2S_CLOCKSOURCE(CLOCK) (((CLOCK) == I2S_CLOCK_EXTERNAL) ||\
-                                   ((CLOCK) == I2S_CLOCK_PLL))
-#endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx || STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx ||
-          STM32F401xC || STM32F401xE || STM32F411xE || STM32F469xx || STM32F479xx */
-
-#if defined(STM32F446xx) || defined(STM32F412Zx) || defined(STM32F412Vx) ||\
-    defined(STM32F412Rx) || defined(STM32F412Cx) || defined (STM32F413xx) ||\
-    defined(STM32F423xx)
-#define IS_I2S_CLOCKSOURCE(CLOCK) (((CLOCK) == I2S_CLOCK_EXTERNAL) ||\
-                                   ((CLOCK) == I2S_CLOCK_PLL)      ||\
-                                   ((CLOCK) == I2S_CLOCK_PLLSRC)   ||\
-                                   ((CLOCK) == I2S_CLOCK_PLLR))
-#endif /* STM32F446xx || STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */
-
-#if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx)
-#define IS_I2S_CLOCKSOURCE(CLOCK) (((CLOCK) == I2S_CLOCK_EXTERNAL) ||\
-                                   ((CLOCK) == I2S_CLOCK_PLLSRC)     ||\
-                                   ((CLOCK) == I2S_CLOCK_PLLR))
-#endif /* STM32F410Tx || STM32F410Cx || STM32F410Rx */
-
-#if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx) || \
-    defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) || \
-    defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F410Cx) || defined(STM32F410Rx) || \
-    defined(STM32F411xE) || defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx) || \
-    defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) || \
-    defined(STM32F413xx) || defined(STM32F423xx)
-#define I2SxEXT(__INSTANCE__) ((__INSTANCE__) == (SPI2)? (SPI_TypeDef *)(I2S2ext_BASE): (SPI_TypeDef *)(I2S3ext_BASE))
-#endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx || STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx ||
-          STM32F401xC || STM32F401xE || STM32F410Cx || STM32F410Rx || STM32F411xE || STM32F446xx || STM32F469xx || STM32F479xx || 
-          STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */      
 
 /**
   * @}
   */
 
 /* Private functions ---------------------------------------------------------*/
-/** @defgroup I2SEx_Private_Functions I2S Private Functions
-  * @{
-  */
-HAL_StatusTypeDef I2SEx_TransmitReceive_IT(I2S_HandleTypeDef *hi2s);
-uint32_t I2S_GetInputClock(I2S_HandleTypeDef *hi2s); 
+
 /**
   * @}
   */
 
-/**
-  * @}
-  */ 
-
+#endif /* SPI_I2S_FULLDUPLEX_SUPPORT */
 /**
   * @}
   */

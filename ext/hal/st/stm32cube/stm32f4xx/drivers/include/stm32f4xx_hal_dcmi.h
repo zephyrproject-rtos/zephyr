@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dcmi.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of DCMI HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -117,11 +117,11 @@ typedef struct
 /** @defgroup DCMI_Error_Code DCMI Error Code
   * @{
   */
-#define HAL_DCMI_ERROR_NONE      ((uint32_t)0x00000000U)    /*!< No error              */
-#define HAL_DCMI_ERROR_OVR       ((uint32_t)0x00000001U)    /*!< Overrun error         */
-#define HAL_DCMI_ERROR_SYNC      ((uint32_t)0x00000002U)    /*!< Synchronization error */
-#define HAL_DCMI_ERROR_TIMEOUT   ((uint32_t)0x00000020U)    /*!< Timeout error         */
-#define HAL_DCMI_ERROR_DMA       ((uint32_t)0x00000040U)    /*!< DMA error             */
+#define HAL_DCMI_ERROR_NONE      0x00000000U    /*!< No error              */
+#define HAL_DCMI_ERROR_OVR       0x00000001U    /*!< Overrun error         */
+#define HAL_DCMI_ERROR_SYNC      0x00000002U    /*!< Synchronization error */
+#define HAL_DCMI_ERROR_TIMEOUT   0x00000020U    /*!< Timeout error         */
+#define HAL_DCMI_ERROR_DMA       0x00000040U    /*!< DMA error             */
 /**
   * @}
   */
@@ -129,7 +129,7 @@ typedef struct
 /** @defgroup DCMI_Capture_Mode DCMI Capture Mode
   * @{
   */ 
-#define DCMI_MODE_CONTINUOUS           ((uint32_t)0x00000000U) /*!< The received data are transferred continuously
+#define DCMI_MODE_CONTINUOUS         0x00000000U               /*!< The received data are transferred continuously
                                                                     into the destination memory through the DMA             */
 #define DCMI_MODE_SNAPSHOT             ((uint32_t)DCMI_CR_CM)  /*!< Once activated, the interface waits for the start of
                                                                     frame and then transfers a single frame through the DMA */
@@ -140,10 +140,10 @@ typedef struct
 /** @defgroup DCMI_Synchronization_Mode DCMI Synchronization Mode
   * @{
   */
-#define DCMI_SYNCHRO_HARDWARE        ((uint32_t)0x00000000U)  /*!< Hardware synchronization data capture (frame/line start/stop)
-                                                                   is synchronized with the HSYNC/VSYNC signals                  */
-#define DCMI_SYNCHRO_EMBEDDED        ((uint32_t)DCMI_CR_ESS)  /*!< Embedded synchronization data capture is synchronized with
-                                                                   synchronization codes embedded in the data flow               */
+#define DCMI_SYNCHRO_HARDWARE        0x00000000U               /*!< Hardware synchronization data capture (frame/line start/stop)
+                                                                    is synchronized with the HSYNC/VSYNC signals                  */
+#define DCMI_SYNCHRO_EMBEDDED        ((uint32_t)DCMI_CR_ESS)   /*!< Embedded synchronization data capture is synchronized with
+                                                                    synchronization codes embedded in the data flow               */
 
 /**
   * @}
@@ -152,8 +152,8 @@ typedef struct
 /** @defgroup DCMI_PIXCK_Polarity DCMI PIXCK Polarity
   * @{
   */
-#define DCMI_PCKPOLARITY_FALLING    ((uint32_t)0x00000000U)     /*!< Pixel clock active on Falling edge */
-#define DCMI_PCKPOLARITY_RISING     ((uint32_t)DCMI_CR_PCKPOL)  /*!< Pixel clock active on Rising edge  */
+#define DCMI_PCKPOLARITY_FALLING     0x00000000U                 /*!< Pixel clock active on Falling edge */
+#define DCMI_PCKPOLARITY_RISING      ((uint32_t)DCMI_CR_PCKPOL)  /*!< Pixel clock active on Rising edge  */
 
 /**
   * @}
@@ -162,8 +162,8 @@ typedef struct
 /** @defgroup DCMI_VSYNC_Polarity DCMI VSYNC Polarity
   * @{
   */
-#define DCMI_VSPOLARITY_LOW     ((uint32_t)0x00000000U)    /*!< Vertical synchronization active Low  */
-#define DCMI_VSPOLARITY_HIGH    ((uint32_t)DCMI_CR_VSPOL)  /*!< Vertical synchronization active High */
+#define DCMI_VSPOLARITY_LOW          0x00000000U                /*!< Vertical synchronization active Low  */
+#define DCMI_VSPOLARITY_HIGH         ((uint32_t)DCMI_CR_VSPOL)  /*!< Vertical synchronization active High */
 
 /**
   * @}
@@ -172,8 +172,8 @@ typedef struct
 /** @defgroup DCMI_HSYNC_Polarity DCMI HSYNC Polarity
   * @{
   */ 
-#define DCMI_HSPOLARITY_LOW     ((uint32_t)0x00000000U)    /*!< Horizontal synchronization active Low  */
-#define DCMI_HSPOLARITY_HIGH    ((uint32_t)DCMI_CR_HSPOL)  /*!< Horizontal synchronization active High */
+#define DCMI_HSPOLARITY_LOW          0x00000000U                /*!< Horizontal synchronization active Low  */
+#define DCMI_HSPOLARITY_HIGH         ((uint32_t)DCMI_CR_HSPOL)  /*!< Horizontal synchronization active High */
 
 /**
   * @}
@@ -182,8 +182,8 @@ typedef struct
 /** @defgroup DCMI_MODE_JPEG DCMI MODE JPEG
   * @{
   */
-#define DCMI_JPEG_DISABLE   ((uint32_t)0x00000000U)   /*!< Mode JPEG Disabled  */
-#define DCMI_JPEG_ENABLE    ((uint32_t)DCMI_CR_JPEG)  /*!< Mode JPEG Enabled   */
+#define DCMI_JPEG_DISABLE            0x00000000U               /*!< Mode JPEG Disabled  */
+#define DCMI_JPEG_ENABLE             ((uint32_t)DCMI_CR_JPEG)  /*!< Mode JPEG Enabled   */
 
 /**
   * @}
@@ -192,7 +192,7 @@ typedef struct
 /** @defgroup DCMI_Capture_Rate DCMI Capture Rate
   * @{
   */
-#define DCMI_CR_ALL_FRAME            ((uint32_t)0x00000000U)     /*!< All frames are captured        */
+#define DCMI_CR_ALL_FRAME            0x00000000U                 /*!< All frames are captured        */
 #define DCMI_CR_ALTERNATE_2_FRAME    ((uint32_t)DCMI_CR_FCRC_0)  /*!< Every alternate frame captured */
 #define DCMI_CR_ALTERNATE_4_FRAME    ((uint32_t)DCMI_CR_FCRC_1)  /*!< One frame in 4 frames captured */
 
@@ -203,7 +203,7 @@ typedef struct
 /** @defgroup DCMI_Extended_Data_Mode DCMI Extended Data Mode
   * @{
   */
-#define DCMI_EXTEND_DATA_8B     ((uint32_t)0x00000000U)                      /*!< Interface captures 8-bit data on every pixel clock  */
+#define DCMI_EXTEND_DATA_8B     0x00000000U                                  /*!< Interface captures 8-bit data on every pixel clock  */
 #define DCMI_EXTEND_DATA_10B    ((uint32_t)DCMI_CR_EDM_0)                    /*!< Interface captures 10-bit data on every pixel clock */
 #define DCMI_EXTEND_DATA_12B    ((uint32_t)DCMI_CR_EDM_1)                    /*!< Interface captures 12-bit data on every pixel clock */
 #define DCMI_EXTEND_DATA_14B    ((uint32_t)(DCMI_CR_EDM_0 | DCMI_CR_EDM_1))  /*!< Interface captures 14-bit data on every pixel clock */
@@ -215,7 +215,7 @@ typedef struct
 /** @defgroup DCMI_Window_Coordinate DCMI Window Coordinate
   * @{
   */
-#define DCMI_WINDOW_COORDINATE    ((uint32_t)0x3FFFU)  /*!< Window coordinate */
+#define DCMI_WINDOW_COORDINATE    0x3FFFU   /*!< Window coordinate */
 
 /**
   * @}
@@ -224,7 +224,7 @@ typedef struct
 /** @defgroup DCMI_Window_Height DCMI Window Height
   * @{
   */ 
-#define DCMI_WINDOW_HEIGHT    ((uint32_t)0x1FFFU)  /*!< Window Height */
+#define DCMI_WINDOW_HEIGHT        0x1FFFU   /*!< Window Height */
 
 /**
   * @}
@@ -407,8 +407,8 @@ typedef struct
 /* Initialization and de-initialization functions *****************************/
 HAL_StatusTypeDef HAL_DCMI_Init(DCMI_HandleTypeDef *hdcmi);
 HAL_StatusTypeDef HAL_DCMI_DeInit(DCMI_HandleTypeDef *hdcmi);
-void       HAL_DCMI_MspInit(DCMI_HandleTypeDef* hdcmi);
-void       HAL_DCMI_MspDeInit(DCMI_HandleTypeDef* hdcmi);
+void              HAL_DCMI_MspInit(DCMI_HandleTypeDef* hdcmi);
+void              HAL_DCMI_MspDeInit(DCMI_HandleTypeDef* hdcmi);
 /**
   * @}
   */
@@ -436,9 +436,9 @@ void              HAL_DCMI_IRQHandler(DCMI_HandleTypeDef *hdcmi);
  * @{
  */
 /* Peripheral Control functions ***********************************************/
-HAL_StatusTypeDef     HAL_DCMI_ConfigCrop(DCMI_HandleTypeDef *hdcmi, uint32_t X0, uint32_t Y0, uint32_t XSize, uint32_t YSize);
-HAL_StatusTypeDef     HAL_DCMI_EnableCrop(DCMI_HandleTypeDef *hdcmi);
-HAL_StatusTypeDef     HAL_DCMI_DisableCrop(DCMI_HandleTypeDef *hdcmi);
+HAL_StatusTypeDef HAL_DCMI_ConfigCrop(DCMI_HandleTypeDef *hdcmi, uint32_t X0, uint32_t Y0, uint32_t XSize, uint32_t YSize);
+HAL_StatusTypeDef HAL_DCMI_EnableCrop(DCMI_HandleTypeDef *hdcmi);
+HAL_StatusTypeDef HAL_DCMI_DisableCrop(DCMI_HandleTypeDef *hdcmi);
 /**
   * @}
   */
@@ -463,8 +463,8 @@ uint32_t              HAL_DCMI_GetError(DCMI_HandleTypeDef *hdcmi);
 /** @defgroup DCMI_Private_Constants DCMI Private Constants
   * @{
   */
-#define DCMI_MIS_INDEX        ((uint32_t)0x1000) /*!< DCMI MIS register index */
-#define DCMI_SR_INDEX         ((uint32_t)0x2000) /*!< DCMI SR register index  */
+#define DCMI_MIS_INDEX        0x1000U /*!< DCMI MIS register index */
+#define DCMI_SR_INDEX         0x2000U /*!< DCMI SR register index  */
 /**
   * @}
   */   

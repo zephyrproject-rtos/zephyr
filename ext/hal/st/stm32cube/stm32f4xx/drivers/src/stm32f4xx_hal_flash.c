@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_flash.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   FLASH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the internal FLASH memory:
@@ -65,7 +65,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -111,7 +111,7 @@
 /** @addtogroup FLASH_Private_Constants
   * @{
   */
-#define FLASH_TIMEOUT_VALUE       ((uint32_t)50000U)/* 50 s */
+#define FLASH_TIMEOUT_VALUE       50000U /* 50 s */
 /**
   * @}
   */         
@@ -281,8 +281,13 @@ void HAL_FLASH_IRQHandler(void)
   uint32_t addresstmp = 0U;
   
   /* Check FLASH operation error flags */
+#if defined(FLASH_SR_RDERR) 
   if(__HAL_FLASH_GET_FLAG((FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | \
     FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR | FLASH_FLAG_RDERR)) != RESET)
+#else
+  if(__HAL_FLASH_GET_FLAG((FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | \
+    FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR)) != RESET)
+#endif /* FLASH_SR_RDERR */
   {
     if(pFlash.ProcedureOnGoing == FLASH_PROC_SECTERASE)
     {
@@ -588,9 +593,13 @@ HAL_StatusTypeDef FLASH_WaitForLastOperation(uint32_t Timeout)
     /* Clear FLASH End of Operation pending bit */
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP);
   }
-  
+#if defined(FLASH_SR_RDERR)  
   if(__HAL_FLASH_GET_FLAG((FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | \
                            FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR | FLASH_FLAG_RDERR)) != RESET)
+#else
+  if(__HAL_FLASH_GET_FLAG((FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | \
+                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR)) != RESET)
+#endif /* FLASH_SR_RDERR */
   {
     /*Save the error code*/
     FLASH_SetErrorCode();
@@ -624,7 +633,9 @@ static void FLASH_Program_DoubleWord(uint32_t Address, uint64_t Data)
   FLASH->CR |= FLASH_PSIZE_DOUBLE_WORD;
   FLASH->CR |= FLASH_CR_PG;
 
-  *(__IO uint64_t*)Address = Data;
+  /* Program the double-word */
+  *(__IO uint32_t*)Address = (uint32_t)Data;
+  *(__IO uint32_t*)(Address+4) = (uint32_t)(Data >> 32);
 }
 
 
@@ -740,7 +751,7 @@ static void FLASH_SetErrorCode(void)
     /* Clear FLASH Programming sequence error pending bit */
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_PGSERR);
   }
-  
+#if defined(FLASH_SR_RDERR) 
   if(__HAL_FLASH_GET_FLAG(FLASH_FLAG_RDERR) != RESET)
   {
     pFlash.ErrorCode |= HAL_FLASH_ERROR_RD;
@@ -748,7 +759,7 @@ static void FLASH_SetErrorCode(void)
     /* Clear FLASH Proprietary readout protection error pending bit */
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_RDERR);
   }
-  
+#endif /* FLASH_SR_RDERR */  
   if(__HAL_FLASH_GET_FLAG(FLASH_FLAG_OPERR) != RESET)
   {
     pFlash.ErrorCode |= HAL_FLASH_ERROR_OPERATION;

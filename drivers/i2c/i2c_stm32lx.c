@@ -432,46 +432,90 @@ static int i2c_stm32lx_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_I2C_0
+#ifdef CONFIG_I2C_1
 
 #ifdef CONFIG_I2C_STM32LX_INTERRUPT
-static void i2c_stm32lx_irq_config_func_0(struct device *port);
+static void i2c_stm32lx_irq_config_func_1(struct device *port);
 #endif
 
-static const struct i2c_stm32lx_config i2c_stm32lx_cfg_0 = {
+static const struct i2c_stm32lx_config i2c_stm32lx_cfg_1 = {
 	.base = (uint8_t *)I2C1_BASE,
 	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
 		    .enr = LL_APB1_GRP1_PERIPH_I2C1 },
 #ifdef CONFIG_I2C_STM32LX_INTERRUPT
-	.irq_config_func = i2c_stm32lx_irq_config_func_0,
+	.irq_config_func = i2c_stm32lx_irq_config_func_1,
 #endif
 };
 
-static struct i2c_stm32lx_data i2c_stm32lx_dev_data_0 = {
-	.dev_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
+static struct i2c_stm32lx_data i2c_stm32lx_dev_data_1 = {
+	.dev_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
-DEVICE_AND_API_INIT(i2c_stm32lx_0, CONFIG_I2C_0_NAME, &i2c_stm32lx_init,
-		    &i2c_stm32lx_dev_data_0, &i2c_stm32lx_cfg_0,
+DEVICE_AND_API_INIT(i2c_stm32lx_1, CONFIG_I2C_1_NAME, &i2c_stm32lx_init,
+		    &i2c_stm32lx_dev_data_1, &i2c_stm32lx_cfg_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);
 
 #ifdef CONFIG_I2C_STM32LX_INTERRUPT
-static void i2c_stm32lx_irq_config_func_0(struct device *dev)
+static void i2c_stm32lx_irq_config_func_1(struct device *dev)
 {
 #ifdef CONFIG_SOC_SERIES_STM32L4X
-#define PORT_0_EV_IRQ STM32L4_IRQ_I2C1_EV
-#define PORT_0_ER_IRQ STM32L4_IRQ_I2C1_ER
+#define PORT_1_EV_IRQ STM32L4_IRQ_I2C1_EV
+#define PORT_1_ER_IRQ STM32L4_IRQ_I2C1_ER
 #endif
 
-	IRQ_CONNECT(PORT_0_EV_IRQ, CONFIG_I2C_0_IRQ_PRI,
-		i2c_stm32lx_ev_isr, DEVICE_GET(i2c_stm32lx_0), 0);
-	irq_enable(PORT_0_EV_IRQ);
+	IRQ_CONNECT(PORT_1_EV_IRQ, CONFIG_I2C_1_IRQ_PRI,
+		i2c_stm32lx_ev_isr, DEVICE_GET(i2c_stm32lx_1), 0);
+	irq_enable(PORT_1_EV_IRQ);
 
-	IRQ_CONNECT(PORT_0_ER_IRQ, CONFIG_I2C_0_IRQ_PRI,
-		i2c_stm32lx_er_isr, DEVICE_GET(i2c_stm32lx_0), 0);
-	irq_enable(PORT_0_ER_IRQ);
+	IRQ_CONNECT(PORT_1_ER_IRQ, CONFIG_I2C_1_IRQ_PRI,
+		i2c_stm32lx_er_isr, DEVICE_GET(i2c_stm32lx_1), 0);
+	irq_enable(PORT_1_ER_IRQ);
 }
 #endif
 
-#endif /* CONFIG_I2C_0 */
+#endif /* CONFIG_I2C_1 */
+
+#ifdef CONFIG_I2C_2
+
+#ifdef CONFIG_I2C_STM32LX_INTERRUPT
+static void i2c_stm32lx_irq_config_func_2(struct device *port);
+#endif
+
+static const struct i2c_stm32lx_config i2c_stm32lx_cfg_2 = {
+	.base = (uint8_t *)I2C1_BASE,
+	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
+		    .enr = LL_APB1_GRP1_PERIPH_I2C2 },
+#ifdef CONFIG_I2C_STM32LX_INTERRUPT
+	.irq_config_func = i2c_stm32lx_irq_config_func_2,
+#endif
+};
+
+static struct i2c_stm32lx_data i2c_stm32lx_dev_data_2 = {
+	.dev_config.raw = CONFIG_I2C_2_DEFAULT_CFG,
+};
+
+DEVICE_AND_API_INIT(i2c_stm32lx_2, CONFIG_I2C_2_NAME, &i2c_stm32lx_init,
+		    &i2c_stm32lx_dev_data_2, &i2c_stm32lx_cfg_2,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &api_funcs);
+
+#ifdef CONFIG_I2C_STM32LX_INTERRUPT
+static void i2c_stm32lx_irq_config_func_2(struct device *dev)
+{
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+#define PORT_2_EV_IRQ STM32L4_IRQ_I2C2_EV
+#define PORT_2_ER_IRQ STM32L4_IRQ_I2C2_ER
+#endif
+
+	IRQ_CONNECT(PORT_2_EV_IRQ, CONFIG_I2C_2_IRQ_PRI,
+		i2c_stm32lx_ev_isr, DEVICE_GET(i2c_stm32lx_2), 0);
+	irq_enable(PORT_2_EV_IRQ);
+
+	IRQ_CONNECT(PORT_2_ER_IRQ, CONFIG_I2C_2_IRQ_PRI,
+		i2c_stm32lx_er_isr, DEVICE_GET(i2c_stm32lx_2), 0);
+	irq_enable(PORT_2_ER_IRQ);
+}
+#endif
+
+#endif /* CONFIG_I2C_2 */

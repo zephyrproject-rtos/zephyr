@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_fmpi2c.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of FMPI2C HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -183,14 +183,14 @@ typedef enum
   * @brief  FMPI2C Error Code definition  
   * @{
   */
-#define HAL_FMPI2C_ERROR_NONE      ((uint32_t)0x00000000U)    /*!< No error              */
-#define HAL_FMPI2C_ERROR_BERR      ((uint32_t)0x00000001U)    /*!< BERR error            */
-#define HAL_FMPI2C_ERROR_ARLO      ((uint32_t)0x00000002U)    /*!< ARLO error            */
-#define HAL_FMPI2C_ERROR_AF        ((uint32_t)0x00000004U)    /*!< ACKF error            */
-#define HAL_FMPI2C_ERROR_OVR       ((uint32_t)0x00000008U)    /*!< OVR error             */
-#define HAL_FMPI2C_ERROR_DMA       ((uint32_t)0x00000010U)    /*!< DMA transfer error    */
-#define HAL_FMPI2C_ERROR_TIMEOUT   ((uint32_t)0x00000020U)    /*!< Timeout error         */
-#define HAL_FMPI2C_ERROR_SIZE      ((uint32_t)0x00000040U)    /*!< Size Management error */
+#define HAL_FMPI2C_ERROR_NONE      0x00000000U    /*!< No error              */
+#define HAL_FMPI2C_ERROR_BERR      0x00000001U    /*!< BERR error            */
+#define HAL_FMPI2C_ERROR_ARLO      0x00000002U    /*!< ARLO error            */
+#define HAL_FMPI2C_ERROR_AF        0x00000004U    /*!< ACKF error            */
+#define HAL_FMPI2C_ERROR_OVR       0x00000008U    /*!< OVR error             */
+#define HAL_FMPI2C_ERROR_DMA       0x00000010U    /*!< DMA transfer error    */
+#define HAL_FMPI2C_ERROR_TIMEOUT   0x00000020U    /*!< Timeout error         */
+#define HAL_FMPI2C_ERROR_SIZE      0x00000040U    /*!< Size Management error */
 /**
   * @}
   */
@@ -249,6 +249,7 @@ typedef struct __FMPI2C_HandleTypeDef
   * @{
   */
 #define FMPI2C_FIRST_FRAME                 ((uint32_t)FMPI2C_SOFTEND_MODE)
+#define FMPI2C_FIRST_AND_NEXT_FRAME        ((uint32_t)(FMPI2C_RELOAD_MODE | FMPI2C_SOFTEND_MODE))
 #define FMPI2C_NEXT_FRAME                  ((uint32_t)(FMPI2C_RELOAD_MODE | FMPI2C_SOFTEND_MODE))
 #define FMPI2C_FIRST_AND_LAST_FRAME        ((uint32_t)FMPI2C_AUTOEND_MODE)
 #define FMPI2C_LAST_FRAME                  ((uint32_t)FMPI2C_AUTOEND_MODE)
@@ -259,8 +260,8 @@ typedef struct __FMPI2C_HandleTypeDef
 /** @defgroup FMPI2C_ADDRESSING_MODE FMPI2C Addressing Mode
   * @{
   */
-#define FMPI2C_ADDRESSINGMODE_7BIT         ((uint32_t)0x00000001U)
-#define FMPI2C_ADDRESSINGMODE_10BIT        ((uint32_t)0x00000002U)
+#define FMPI2C_ADDRESSINGMODE_7BIT         0x00000001U
+#define FMPI2C_ADDRESSINGMODE_10BIT        0x00000002U
 /**
   * @}
   */
@@ -268,7 +269,7 @@ typedef struct __FMPI2C_HandleTypeDef
 /** @defgroup FMPI2C_DUAL_ADDRESSING_MODE FMPI2C Dual Addressing Mode
   * @{
   */
-#define FMPI2C_DUALADDRESS_DISABLE         ((uint32_t)0x00000000U)
+#define FMPI2C_DUALADDRESS_DISABLE         0x00000000U
 #define FMPI2C_DUALADDRESS_ENABLE          FMPI2C_OAR2_OA2EN
 /**
   * @}
@@ -278,14 +279,14 @@ typedef struct __FMPI2C_HandleTypeDef
   * @{
   */
 
-#define FMPI2C_OA2_NOMASK                  ((uint8_t)0x00U)
-#define FMPI2C_OA2_MASK01                  ((uint8_t)0x01U)
-#define FMPI2C_OA2_MASK02                  ((uint8_t)0x02U)
-#define FMPI2C_OA2_MASK03                  ((uint8_t)0x03U)
-#define FMPI2C_OA2_MASK04                  ((uint8_t)0x04U)
-#define FMPI2C_OA2_MASK05                  ((uint8_t)0x05U)
-#define FMPI2C_OA2_MASK06                  ((uint8_t)0x06U)
-#define FMPI2C_OA2_MASK07                  ((uint8_t)0x07U)
+#define FMPI2C_OA2_NOMASK                  ((uint8_t)0x00)
+#define FMPI2C_OA2_MASK01                  ((uint8_t)0x01)
+#define FMPI2C_OA2_MASK02                  ((uint8_t)0x02)
+#define FMPI2C_OA2_MASK03                  ((uint8_t)0x03)
+#define FMPI2C_OA2_MASK04                  ((uint8_t)0x04)
+#define FMPI2C_OA2_MASK05                  ((uint8_t)0x05)
+#define FMPI2C_OA2_MASK06                  ((uint8_t)0x06)
+#define FMPI2C_OA2_MASK07                  ((uint8_t)0x07)
 
 /**
   * @}
@@ -294,7 +295,7 @@ typedef struct __FMPI2C_HandleTypeDef
 /** @defgroup FMPI2C_GENERAL_CALL_ADDRESSING_MODE FMPI2C General Call Addressing Mode
   * @{
   */
-#define FMPI2C_GENERALCALL_DISABLE         ((uint32_t)0x00000000U)
+#define FMPI2C_GENERALCALL_DISABLE         0x00000000U
 #define FMPI2C_GENERALCALL_ENABLE          FMPI2C_CR1_GCEN
 /**
   * @}
@@ -303,7 +304,7 @@ typedef struct __FMPI2C_HandleTypeDef
 /** @defgroup FMPI2C_NOSTRETCH_MODE FMPI2C No-Stretch Mode
   * @{
   */
-#define FMPI2C_NOSTRETCH_DISABLE           ((uint32_t)0x00000000U)
+#define FMPI2C_NOSTRETCH_DISABLE           0x00000000U
 #define FMPI2C_NOSTRETCH_ENABLE            FMPI2C_CR1_NOSTRETCH
 /**
   * @}
@@ -312,8 +313,8 @@ typedef struct __FMPI2C_HandleTypeDef
 /** @defgroup FMPI2C_MEMORY_ADDRESS_SIZE FMPI2C Memory Address Size
   * @{
   */
-#define FMPI2C_MEMADD_SIZE_8BIT            ((uint32_t)0x00000001U)
-#define FMPI2C_MEMADD_SIZE_16BIT           ((uint32_t)0x00000002U)
+#define FMPI2C_MEMADD_SIZE_8BIT            0x00000001U
+#define FMPI2C_MEMADD_SIZE_16BIT           0x00000002U
 
 /**
   * @}
@@ -322,8 +323,8 @@ typedef struct __FMPI2C_HandleTypeDef
 /** @defgroup FMPI2C_XferDirection FMPI2C Transfer Direction
   * @{
   */
-#define FMPI2C_DIRECTION_RECEIVE           ((uint32_t)0x00000000U)
-#define FMPI2C_DIRECTION_TRANSMIT          ((uint32_t)0x00000001U)
+#define FMPI2C_DIRECTION_RECEIVE           0x00000000U
+#define FMPI2C_DIRECTION_TRANSMIT          0x00000001U
 
 /**
   * @}
@@ -334,7 +335,7 @@ typedef struct __FMPI2C_HandleTypeDef
   */
 #define  FMPI2C_RELOAD_MODE                FMPI2C_CR2_RELOAD
 #define  FMPI2C_AUTOEND_MODE               FMPI2C_CR2_AUTOEND
-#define  FMPI2C_SOFTEND_MODE               ((uint32_t)0x00000000U)
+#define  FMPI2C_SOFTEND_MODE               0x00000000U
 
 /**
   * @}
@@ -344,7 +345,7 @@ typedef struct __FMPI2C_HandleTypeDef
   * @{
   */
 
-#define  FMPI2C_NO_STARTSTOP               ((uint32_t)0x00000000U)
+#define  FMPI2C_NO_STARTSTOP               0x00000000U
 #define  FMPI2C_GENERATE_STOP              FMPI2C_CR2_STOP
 #define  FMPI2C_GENERATE_START_READ        (uint32_t)(FMPI2C_CR2_START | FMPI2C_CR2_RD_WRN)
 #define  FMPI2C_GENERATE_START_WRITE       FMPI2C_CR2_START
@@ -667,9 +668,10 @@ uint32_t             HAL_FMPI2C_GetError(FMPI2C_HandleTypeDef *hfmpi2c);
                                          ((REQUEST) == FMPI2C_NO_STARTSTOP))
 
 #define IS_FMPI2C_TRANSFER_OPTIONS_REQUEST(REQUEST)  (((REQUEST) == FMPI2C_FIRST_FRAME)          || \
-                                                   ((REQUEST) == FMPI2C_NEXT_FRAME)           || \
-                                                   ((REQUEST) == FMPI2C_FIRST_AND_LAST_FRAME) || \
-                                                   ((REQUEST) == FMPI2C_LAST_FRAME))
+                                                      ((REQUEST) == FMPI2C_FIRST_AND_NEXT_FRAME) || \
+                                                      ((REQUEST) == FMPI2C_NEXT_FRAME)           || \
+                                                      ((REQUEST) == FMPI2C_FIRST_AND_LAST_FRAME) || \
+                                                      ((REQUEST) == FMPI2C_LAST_FRAME))
 
 #define FMPI2C_RESET_CR2(__HANDLE__)                 ((__HANDLE__)->Instance->CR2 &= (uint32_t)~((uint32_t)(FMPI2C_CR2_SADD | FMPI2C_CR2_HEAD10R | FMPI2C_CR2_NBYTES | FMPI2C_CR2_RELOAD | FMPI2C_CR2_RD_WRN)))
 
@@ -679,11 +681,11 @@ uint32_t             HAL_FMPI2C_GetError(FMPI2C_HandleTypeDef *hfmpi2c);
 #define FMPI2C_GET_OWN_ADDRESS1(__HANDLE__)          ((__HANDLE__)->Instance->OAR1 & FMPI2C_OAR1_OA1)
 #define FMPI2C_GET_OWN_ADDRESS2(__HANDLE__)          ((__HANDLE__)->Instance->OAR2 & FMPI2C_OAR2_OA2)
 
-#define IS_FMPI2C_OWN_ADDRESS1(ADDRESS1)             ((ADDRESS1) <= (uint32_t)0x000003FFU)
-#define IS_FMPI2C_OWN_ADDRESS2(ADDRESS2)             ((ADDRESS2) <= (uint16_t)0x00FFU)
+#define IS_FMPI2C_OWN_ADDRESS1(ADDRESS1)             ((ADDRESS1) <= 0x000003FFU)
+#define IS_FMPI2C_OWN_ADDRESS2(ADDRESS2)             ((ADDRESS2) <= (uint16_t)0x00FF)
 
-#define FMPI2C_MEM_ADD_MSB(__ADDRESS__)              ((uint8_t)((uint16_t)(((uint16_t)((__ADDRESS__) & (uint16_t)(0xFF00U))) >> 8U)))
-#define FMPI2C_MEM_ADD_LSB(__ADDRESS__)              ((uint8_t)((uint16_t)((__ADDRESS__) & (uint16_t)(0x00FFU))))
+#define FMPI2C_MEM_ADD_MSB(__ADDRESS__)              ((uint8_t)((uint16_t)(((uint16_t)((__ADDRESS__) & (uint16_t)0xFF00)) >> 8U)))
+#define FMPI2C_MEM_ADD_LSB(__ADDRESS__)              ((uint8_t)((uint16_t)((__ADDRESS__) & (uint16_t)0x00FF)))
 
 #define FMPI2C_GENERATE_START(__ADDMODE__,__ADDRESS__) (((__ADDMODE__) == FMPI2C_ADDRESSINGMODE_7BIT) ? (uint32_t)((((uint32_t)(__ADDRESS__) & (FMPI2C_CR2_SADD)) | (FMPI2C_CR2_START) | (FMPI2C_CR2_AUTOEND)) & (~FMPI2C_CR2_RD_WRN)) : \
                                                           (uint32_t)((((uint32_t)(__ADDRESS__) & (FMPI2C_CR2_SADD)) | (FMPI2C_CR2_ADD10) | (FMPI2C_CR2_START)) & (~FMPI2C_CR2_RD_WRN)))

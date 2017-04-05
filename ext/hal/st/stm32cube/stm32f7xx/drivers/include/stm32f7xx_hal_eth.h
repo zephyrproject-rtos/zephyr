@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_eth.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of ETH HAL module.
   ******************************************************************************
   * @attention
@@ -45,6 +45,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
+
+#if defined (ETH)
 
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{
@@ -692,7 +694,7 @@ typedef struct
 
 /* 5 Ethernet driver receive buffers are used (in a chained linked list)*/ 
 #ifndef ETH_RXBUFNB
- #define ETH_RXBUFNB             ((uint32_t)5U     /*  5 Rx buffers of size ETH_RX_BUF_SIZE */
+ #define ETH_RXBUFNB             ((uint32_t)5U)     /*  5 Rx buffers of size ETH_RX_BUF_SIZE */
 #endif
 
 
@@ -719,7 +721,7 @@ typedef struct
 
 /* 5 Ethernet driver transmit buffers are used (in a chained linked list)*/ 
 #ifndef ETH_TXBUFNB
- #define ETH_TXBUFNB             ((uint32_t)5U      /* 5  Tx buffers of size ETH_TX_BUF_SIZE */
+ #define ETH_TXBUFNB             ((uint32_t)5U)      /* 5  Tx buffers of size ETH_TX_BUF_SIZE */
 #endif
 
  /**
@@ -2169,6 +2171,8 @@ HAL_ETH_StateTypeDef HAL_ETH_GetState(ETH_HandleTypeDef *heth);
 /**
   * @}
   */
+#endif /* ETH */
+
 #ifdef __cplusplus
 }
 #endif

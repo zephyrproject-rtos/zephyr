@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_spi.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of SPI LL module.
   ******************************************************************************
   * @attention
@@ -165,7 +165,7 @@ typedef struct
   * @{
   */
 #define LL_SPI_MODE_MASTER                 (SPI_CR1_MSTR | SPI_CR1_SSI)    /*!< Master configuration  */
-#define LL_SPI_MODE_SLAVE                  ((uint32_t)0x00000000U)         /*!< Slave configuration   */
+#define LL_SPI_MODE_SLAVE                  0x00000000U                     /*!< Slave configuration   */
 /**
   * @}
   */
@@ -173,7 +173,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_PROTOCOL Serial Protocol
   * @{
   */
-#define LL_SPI_PROTOCOL_MOTOROLA           ((uint32_t)0x00000000U)   /*!< Motorola mode. Used as default value */
+#define LL_SPI_PROTOCOL_MOTOROLA           0x00000000U               /*!< Motorola mode. Used as default value */
 #define LL_SPI_PROTOCOL_TI                 (SPI_CR2_FRF)             /*!< TI mode                              */
 /**
   * @}
@@ -182,7 +182,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_PHASE Clock Phase
   * @{
   */
-#define LL_SPI_PHASE_1EDGE                 ((uint32_t)0x00000000U)   /*!< First clock transition is the first data capture edge  */
+#define LL_SPI_PHASE_1EDGE                 0x00000000U               /*!< First clock transition is the first data capture edge  */
 #define LL_SPI_PHASE_2EDGE                 (SPI_CR1_CPHA)            /*!< Second clock transition is the first data capture edge */
 /**
   * @}
@@ -191,7 +191,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_POLARITY Clock Polarity
   * @{
   */
-#define LL_SPI_POLARITY_LOW                ((uint32_t)0x00000000U)   /*!< Clock to 0 when idle */
+#define LL_SPI_POLARITY_LOW                0x00000000U               /*!< Clock to 0 when idle */
 #define LL_SPI_POLARITY_HIGH               (SPI_CR1_CPOL)            /*!< Clock to 1 when idle */
 /**
   * @}
@@ -200,7 +200,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_BAUDRATEPRESCALER Baud Rate Prescaler
   * @{
   */
-#define LL_SPI_BAUDRATEPRESCALER_DIV2      ((uint32_t)0x00000000U)                        /*!< BaudRate control equal to fPCLK/2   */
+#define LL_SPI_BAUDRATEPRESCALER_DIV2      0x00000000U                                    /*!< BaudRate control equal to fPCLK/2   */
 #define LL_SPI_BAUDRATEPRESCALER_DIV4      (SPI_CR1_BR_0)                                 /*!< BaudRate control equal to fPCLK/4   */
 #define LL_SPI_BAUDRATEPRESCALER_DIV8      (SPI_CR1_BR_1)                                 /*!< BaudRate control equal to fPCLK/8   */
 #define LL_SPI_BAUDRATEPRESCALER_DIV16     (SPI_CR1_BR_1 | SPI_CR1_BR_0)                  /*!< BaudRate control equal to fPCLK/16  */
@@ -216,7 +216,7 @@ typedef struct
   * @{
   */
 #define LL_SPI_LSB_FIRST                   (SPI_CR1_LSBFIRST)        /*!< Data is transmitted/received with the LSB first */
-#define LL_SPI_MSB_FIRST                   ((uint32_t)0x00000000U)   /*!< Data is transmitted/received with the MSB first */
+#define LL_SPI_MSB_FIRST                   0x00000000U               /*!< Data is transmitted/received with the MSB first */
 /**
   * @}
   */
@@ -224,7 +224,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_TRANSFER_MODE Transfer Mode
   * @{
   */
-#define LL_SPI_FULL_DUPLEX                 ((uint32_t)0x00000000U)              /*!< Full-Duplex mode. Rx and Tx transfer on 2 lines */
+#define LL_SPI_FULL_DUPLEX                 0x00000000U                          /*!< Full-Duplex mode. Rx and Tx transfer on 2 lines */
 #define LL_SPI_SIMPLEX_RX                  (SPI_CR1_RXONLY)                     /*!< Simplex Rx mode.  Rx transfer only on 1 line    */
 #define LL_SPI_HALF_DUPLEX_RX              (SPI_CR1_BIDIMODE)                   /*!< Half-Duplex Rx mode. Rx transfer on 1 line      */
 #define LL_SPI_HALF_DUPLEX_TX              (SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE)  /*!< Half-Duplex Tx mode. Tx transfer on 1 line      */
@@ -236,7 +236,7 @@ typedef struct
   * @{
   */
 #define LL_SPI_NSS_SOFT                    (SPI_CR1_SSM)                     /*!< NSS managed internally. NSS pin not used and free              */
-#define LL_SPI_NSS_HARD_INPUT              ((uint32_t)0x00000000U)           /*!< NSS pin used in Input. Only used in Master mode                */
+#define LL_SPI_NSS_HARD_INPUT              0x00000000U                       /*!< NSS pin used in Input. Only used in Master mode                */
 #define LL_SPI_NSS_HARD_OUTPUT             (((uint32_t)SPI_CR2_SSOE << 16U)) /*!< NSS pin used in Output. Only used in Slave mode as chip select */
 /**
   * @}
@@ -266,7 +266,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_CRC_CALCULATION CRC Calculation
   * @{
   */
-#define LL_SPI_CRCCALCULATION_DISABLE      ((uint32_t)0x00000000U)   /*!< CRC calculation disabled */
+#define LL_SPI_CRCCALCULATION_DISABLE      0x00000000U               /*!< CRC calculation disabled */
 #define LL_SPI_CRCCALCULATION_ENABLE       (SPI_CR1_CRCEN)           /*!< CRC calculation enabled  */
 /**
   * @}
@@ -276,7 +276,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_CRC_LENGTH CRC Length
   * @{
   */
-#define LL_SPI_CRC_8BIT                    ((uint32_t)0x00000000U)   /*!<  8-bit CRC length */
+#define LL_SPI_CRC_8BIT                    0x00000000U               /*!<  8-bit CRC length */
 #define LL_SPI_CRC_16BIT                   (SPI_CR1_CRCL)            /*!< 16-bit CRC length */
 /**
   * @}
@@ -285,7 +285,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_RX_FIFO_TH RX FIFO Threshold
   * @{
   */
-#define LL_SPI_RX_FIFO_TH_HALF             ((uint32_t)0x00000000U)   /*!< RXNE event is generated if FIFO level is greater than or equel to 1/2 (16-bit) */
+#define LL_SPI_RX_FIFO_TH_HALF             0x00000000U               /*!< RXNE event is generated if FIFO level is greater than or equel to 1/2 (16-bit) */
 #define LL_SPI_RX_FIFO_TH_QUARTER          (SPI_CR2_FRXTH)           /*!< RXNE event is generated if FIFO level is greater than or equel to 1/4 (8-bit)  */
 /**
   * @}
@@ -294,7 +294,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_RX_FIFO RX FIFO Level
   * @{
   */
-#define LL_SPI_RX_FIFO_EMPTY               ((uint32_t)0x00000000U)           /*!< FIFO reception empty */
+#define LL_SPI_RX_FIFO_EMPTY               0x00000000U                       /*!< FIFO reception empty */
 #define LL_SPI_RX_FIFO_QUARTER_FULL        (SPI_SR_FRLVL_0)                  /*!< FIFO reception 1/4   */
 #define LL_SPI_RX_FIFO_HALF_FULL           (SPI_SR_FRLVL_1)                  /*!< FIFO reception 1/2   */
 #define LL_SPI_RX_FIFO_FULL                (SPI_SR_FRLVL_1 | SPI_SR_FRLVL_0) /*!< FIFO reception full  */
@@ -305,7 +305,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_TX_FIFO TX FIFO Level
   * @{
   */
-#define LL_SPI_TX_FIFO_EMPTY               ((uint32_t)0x00000000U)           /*!< FIFO transmission empty */
+#define LL_SPI_TX_FIFO_EMPTY               0x00000000U                       /*!< FIFO transmission empty */
 #define LL_SPI_TX_FIFO_QUARTER_FULL        (SPI_SR_FTLVL_0)                  /*!< FIFO transmission 1/4   */
 #define LL_SPI_TX_FIFO_HALF_FULL           (SPI_SR_FTLVL_1)                  /*!< FIFO transmission 1/2   */
 #define LL_SPI_TX_FIFO_FULL                (SPI_SR_FTLVL_1 | SPI_SR_FTLVL_0) /*!< FIFO transmission full  */
@@ -316,8 +316,8 @@ typedef struct
 /** @defgroup SPI_LL_EC_DMA_PARITY DMA Parity
   * @{
   */
-#define LL_SPI_DMA_PARITY_EVEN             ((uint32_t)0x00000000U)   /*!< Select DMA parity Even */
-#define LL_SPI_DMA_PARITY_ODD              ((uint32_t)0x00000001U)   /*!< Select DMA parity Odd  */
+#define LL_SPI_DMA_PARITY_EVEN             0x00000000U   /*!< Select DMA parity Even */
+#define LL_SPI_DMA_PARITY_ODD              0x00000001U   /*!< Select DMA parity Odd  */
 
 /**
   * @}
@@ -1511,7 +1511,7 @@ typedef struct
 /** @defgroup I2S_LL_EC_DATA_FORMAT Data format
   * @{
   */
-#define LL_I2S_DATAFORMAT_16B              ((uint32_t)0x00000000U)                       /*!< Data length 16 bits, Channel lenght 16bit */
+#define LL_I2S_DATAFORMAT_16B              0x00000000U                                   /*!< Data length 16 bits, Channel lenght 16bit */
 #define LL_I2S_DATAFORMAT_16B_EXTENDED     (SPI_I2SCFGR_CHLEN)                           /*!< Data length 16 bits, Channel lenght 32bit */
 #define LL_I2S_DATAFORMAT_24B              (SPI_I2SCFGR_CHLEN | SPI_I2SCFGR_DATLEN_0)    /*!< Data length 24 bits, Channel lenght 32bit */
 #define LL_I2S_DATAFORMAT_32B              (SPI_I2SCFGR_CHLEN | SPI_I2SCFGR_DATLEN_1)    /*!< Data length 16 bits, Channel lenght 32bit */
@@ -1522,7 +1522,7 @@ typedef struct
 /** @defgroup I2S_LL_EC_POLARITY Clock Polarity
   * @{
   */
-#define LL_I2S_POLARITY_LOW                ((uint32_t)0x00000000U)   /*!< Clock steady state is low level  */
+#define LL_I2S_POLARITY_LOW                0x00000000U               /*!< Clock steady state is low level  */
 #define LL_I2S_POLARITY_HIGH               (SPI_I2SCFGR_CKPOL)       /*!< Clock steady state is high level */
 /**
   * @}
@@ -1531,7 +1531,7 @@ typedef struct
 /** @defgroup I2S_LL_EC_STANDARD I2s Standard
   * @{
   */
-#define LL_I2S_STANDARD_PHILIPS            ((uint32_t)0x00000000U)                                             /*!< I2S standard philips                      */
+#define LL_I2S_STANDARD_PHILIPS            0x00000000U                                                         /*!< I2S standard philips                      */
 #define LL_I2S_STANDARD_MSB                (SPI_I2SCFGR_I2SSTD_0)                                              /*!< MSB justified standard (left justified)   */
 #define LL_I2S_STANDARD_LSB                (SPI_I2SCFGR_I2SSTD_1)                                              /*!< LSB justified standard (right justified)  */
 #define LL_I2S_STANDARD_PCM_SHORT          (SPI_I2SCFGR_I2SSTD_0 | SPI_I2SCFGR_I2SSTD_1)                       /*!< PCM standard, short frame synchronization */
@@ -1543,7 +1543,7 @@ typedef struct
 /** @defgroup I2S_LL_EC_MODE Operation Mode
   * @{
   */
-#define LL_I2S_MODE_SLAVE_TX               ((uint32_t)0x00000000U)                       /*!< Slave Tx configuration  */
+#define LL_I2S_MODE_SLAVE_TX               0x00000000U                                   /*!< Slave Tx configuration  */
 #define LL_I2S_MODE_SLAVE_RX               (SPI_I2SCFGR_I2SCFG_0)                        /*!< Slave Rx configuration  */
 #define LL_I2S_MODE_MASTER_TX              (SPI_I2SCFGR_I2SCFG_1)                        /*!< Master Tx configuration */
 #define LL_I2S_MODE_MASTER_RX              (SPI_I2SCFGR_I2SCFG_0 | SPI_I2SCFGR_I2SCFG_1) /*!< Master Rx configuration */
@@ -1554,7 +1554,7 @@ typedef struct
 /** @defgroup I2S_LL_EC_PRESCALER_FACTOR Prescaler Factor
   * @{
   */
-#define LL_I2S_PRESCALER_PARITY_EVEN       ((uint32_t)0x00000000U)   /*!< Odd factor: Real divider value is =  I2SDIV * 2    */
+#define LL_I2S_PRESCALER_PARITY_EVEN       0x00000000U               /*!< Odd factor: Real divider value is =  I2SDIV * 2    */
 #define LL_I2S_PRESCALER_PARITY_ODD        (SPI_I2SPR_ODD >> 8U)     /*!< Odd factor: Real divider value is = (I2SDIV * 2)+1 */
 /**
   * @}
@@ -1565,7 +1565,7 @@ typedef struct
 /** @defgroup I2S_LL_EC_MCLK_OUTPUT MCLK Output
   * @{
   */
-#define LL_I2S_MCLK_OUTPUT_DISABLE         ((uint32_t)0x00000000U)   /*!< Master clock output is disabled */
+#define LL_I2S_MCLK_OUTPUT_DISABLE         0x00000000U               /*!< Master clock output is disabled */
 #define LL_I2S_MCLK_OUTPUT_ENABLE          (SPI_I2SPR_MCKOE)         /*!< Master clock output is enabled  */
 /**
   * @}
@@ -1575,16 +1575,16 @@ typedef struct
   * @{
   */
 
-#define LL_I2S_AUDIOFREQ_192K              ((uint32_t)192000)        /*!< Audio Frequency configuration 192000 Hz       */
-#define LL_I2S_AUDIOFREQ_96K               ((uint32_t) 96000)        /*!< Audio Frequency configuration  96000 Hz       */
-#define LL_I2S_AUDIOFREQ_48K               ((uint32_t) 48000)        /*!< Audio Frequency configuration  48000 Hz       */
-#define LL_I2S_AUDIOFREQ_44K               ((uint32_t) 44100)        /*!< Audio Frequency configuration  44100 Hz       */
-#define LL_I2S_AUDIOFREQ_32K               ((uint32_t) 32000)        /*!< Audio Frequency configuration  32000 Hz       */
-#define LL_I2S_AUDIOFREQ_22K               ((uint32_t) 22050)        /*!< Audio Frequency configuration  22050 Hz       */
-#define LL_I2S_AUDIOFREQ_16K               ((uint32_t) 16000)        /*!< Audio Frequency configuration  16000 Hz       */
-#define LL_I2S_AUDIOFREQ_11K               ((uint32_t) 11025)        /*!< Audio Frequency configuration  11025 Hz       */
-#define LL_I2S_AUDIOFREQ_8K                ((uint32_t)  8000)        /*!< Audio Frequency configuration   8000 Hz       */
-#define LL_I2S_AUDIOFREQ_DEFAULT           ((uint32_t)     2)        /*!< Audio Freq not specified. Register I2SDIV = 2 */
+#define LL_I2S_AUDIOFREQ_192K              192000U       /*!< Audio Frequency configuration 192000 Hz       */
+#define LL_I2S_AUDIOFREQ_96K               96000U        /*!< Audio Frequency configuration  96000 Hz       */
+#define LL_I2S_AUDIOFREQ_48K               48000U        /*!< Audio Frequency configuration  48000 Hz       */
+#define LL_I2S_AUDIOFREQ_44K               44100U        /*!< Audio Frequency configuration  44100 Hz       */
+#define LL_I2S_AUDIOFREQ_32K               32000U        /*!< Audio Frequency configuration  32000 Hz       */
+#define LL_I2S_AUDIOFREQ_22K               22050U        /*!< Audio Frequency configuration  22050 Hz       */
+#define LL_I2S_AUDIOFREQ_16K               16000U        /*!< Audio Frequency configuration  16000 Hz       */
+#define LL_I2S_AUDIOFREQ_11K               11025U        /*!< Audio Frequency configuration  11025 Hz       */
+#define LL_I2S_AUDIOFREQ_8K                8000U         /*!< Audio Frequency configuration   8000 Hz       */
+#define LL_I2S_AUDIOFREQ_DEFAULT           2U            /*!< Audio Freq not specified. Register I2SDIV = 2 */
 /**
   * @}
   */

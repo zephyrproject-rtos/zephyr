@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_tsc.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   This file provides firmware functions to manage the following
   *          functionalities of the Touch Sensing Controller (TSC) peripheral:
   *           + Initialization and De-initialization
@@ -253,7 +253,7 @@ HAL_StatusTypeDef HAL_TSC_Init(TSC_HandleTypeDef* htsc)
   /* Set all functions */
   htsc->Instance->CR |= (htsc->Init.CTPulseHighLength |
                          htsc->Init.CTPulseLowLength |
-                         (uint32_t)(htsc->Init.SpreadSpectrumDeviation << 17) |
+                         (uint32_t)(htsc->Init.SpreadSpectrumDeviation << 17U) |
                          htsc->Init.SpreadSpectrumPrescaler |
                          htsc->Init.PulseGeneratorPrescaler |
                          htsc->Init.MaxCountValue |
@@ -844,14 +844,14 @@ __weak void HAL_TSC_ErrorCallback(TSC_HandleTypeDef* htsc)
   */
 static uint32_t TSC_extract_groups(uint32_t iomask)
 {
-  uint32_t groups = 0;
+  uint32_t groups = 0U;
   uint32_t idx;
 
-  for (idx = 0; idx < TSC_NB_OF_GROUPS; idx++)
+  for (idx = 0U; idx < TSC_NB_OF_GROUPS; idx++)
   {
-    if ((iomask & ((uint32_t)0x0F << (idx * 4))) != RESET)
+    if ((iomask & (0x0FU << (idx * 4U))) != RESET)
     {
-      groups |= ((uint32_t)1 << idx);
+      groups |= (1U << idx);
     }
   }
 

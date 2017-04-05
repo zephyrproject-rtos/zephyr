@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_ltdc_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of LTDC HAL Extension module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -58,79 +58,30 @@
 
 /* Exported types ------------------------------------------------------------*/ 
 /* Exported constants --------------------------------------------------------*/
-   
-/** @defgroup LTDCEx_Exported_Constants   LTDCEx Exported Constants
-  * @{
-  */
-
-/**
-  * @}
-  */
-
 /* Exported macro ------------------------------------------------------------*/
-/** @defgroup LTDCEx_Exported_Macros LTDC Exported Macros
-  * @{
-  */
-
-/**
-  * @}
-  */
-
 /* Exported functions --------------------------------------------------------*/
-/** @defgroup LTDCEx_Exported_Functions LTDC Extended Exported Functions
+/** @addtogroup LTDCEx_Exported_Functions
   * @{
   */
-HAL_StatusTypeDef HAL_LTDC_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc, DSI_VidCfgTypeDef *VidCfg);
-HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef* hltdc, DSI_CmdCfgTypeDef *CmdCfg);
+
+/** @addtogroup LTDCEx_Exported_Functions_Group1
+  * @{
+  */
+HAL_StatusTypeDef HAL_LTDCEx_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc, DSI_VidCfgTypeDef *VidCfg);
+HAL_StatusTypeDef HAL_LTDCEx_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef* hltdc, DSI_CmdCfgTypeDef *CmdCfg);
 /**
   * @}
   */ 
  
-
- /* Private types -------------------------------------------------------------*/
-/** @defgroup LTDCEx_Private_Types LTDCEx Private Types
-  * @{
-  */
-
 /**
   * @}
   */ 
 
+/* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/** @defgroup LTDCEx_Private_Variables LTDCEx Private Variables
-  * @{
-  */
-
-/**
-  * @}
-  */ 
-
 /* Private constants ---------------------------------------------------------*/
-/** @defgroup LTDCEx_Private_Constants LTDCEx Private Constants
-  * @{
-  */
-
-/**
-  * @}
-  */ 
-
 /* Private macros ------------------------------------------------------------*/
-/** @defgroup LTDCEx_Private_Macros LTDCEx Private Macros
-  * @{
-  */
-
- /**
-  * @}
-  */ 
-  
 /* Private functions ---------------------------------------------------------*/
-/** @defgroup LTDCEx_Private_Functions LTDCEx Private Functions
-  * @{
-  */
-
-/**
-  * @}
-  */
 
 /**
   * @}

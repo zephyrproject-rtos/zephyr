@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_rcc.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of RCC LL module.
   ******************************************************************************
   * @attention
@@ -580,32 +580,32 @@ typedef struct
 
 #endif /* RCC_CFGR_ADCPRE */
 
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 /** @defgroup RCC_LL_EC_SDADC_CLKSOURCE_SYSCLK Peripheral SDADC clock source selection
   * @{
   */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_1    RCC_CFGR_SDADCPRE_DIV1   /*!< SDADC CLK not divided */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_2    RCC_CFGR_SDADCPRE_DIV2   /*!< SDADC CLK divided by 2 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_4    RCC_CFGR_SDADCPRE_DIV4   /*!< SDADC CLK divided by 4 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_6    RCC_CFGR_SDADCPRE_DIV6   /*!< SDADC CLK divided by 6 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_8    RCC_CFGR_SDADCPRE_DIV8   /*!< SDADC CLK divided by 8 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_10   RCC_CFGR_SDADCPRE_DIV10  /*!< SDADC CLK divided by 10 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_12   RCC_CFGR_SDADCPRE_DIV12  /*!< SDADC CLK divided by 12 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_14   RCC_CFGR_SDADCPRE_DIV14  /*!< SDADC CLK divided by 14 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_16   RCC_CFGR_SDADCPRE_DIV16  /*!< SDADC CLK divided by 16 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_20   RCC_CFGR_SDADCPRE_DIV20  /*!< SDADC CLK divided by 20 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_24   RCC_CFGR_SDADCPRE_DIV24  /*!< SDADC CLK divided by 24 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_28   RCC_CFGR_SDADCPRE_DIV28  /*!< SDADC CLK divided by 28 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_32   RCC_CFGR_SDADCPRE_DIV32  /*!< SDADC CLK divided by 32 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_36   RCC_CFGR_SDADCPRE_DIV36  /*!< SDADC CLK divided by 36 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_40   RCC_CFGR_SDADCPRE_DIV40  /*!< SDADC CLK divided by 40 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_44   RCC_CFGR_SDADCPRE_DIV44  /*!< SDADC CLK divided by 44 */
-#define LL_RCC_SDADC_CLKSRC_SYS_DIV_48   RCC_CFGR_SDADCPRE_DIV48  /*!< SDADC CLK divided by 48 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_1    RCC_CFGR_SDPRE_DIV1   /*!< SDADC CLK not divided */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_2    RCC_CFGR_SDPRE_DIV2   /*!< SDADC CLK divided by 2 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_4    RCC_CFGR_SDPRE_DIV4   /*!< SDADC CLK divided by 4 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_6    RCC_CFGR_SDPRE_DIV6   /*!< SDADC CLK divided by 6 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_8    RCC_CFGR_SDPRE_DIV8   /*!< SDADC CLK divided by 8 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_10   RCC_CFGR_SDPRE_DIV10  /*!< SDADC CLK divided by 10 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_12   RCC_CFGR_SDPRE_DIV12  /*!< SDADC CLK divided by 12 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_14   RCC_CFGR_SDPRE_DIV14  /*!< SDADC CLK divided by 14 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_16   RCC_CFGR_SDPRE_DIV16  /*!< SDADC CLK divided by 16 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_20   RCC_CFGR_SDPRE_DIV20  /*!< SDADC CLK divided by 20 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_24   RCC_CFGR_SDPRE_DIV24  /*!< SDADC CLK divided by 24 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_28   RCC_CFGR_SDPRE_DIV28  /*!< SDADC CLK divided by 28 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_32   RCC_CFGR_SDPRE_DIV32  /*!< SDADC CLK divided by 32 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_36   RCC_CFGR_SDPRE_DIV36  /*!< SDADC CLK divided by 36 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_40   RCC_CFGR_SDPRE_DIV40  /*!< SDADC CLK divided by 40 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_44   RCC_CFGR_SDPRE_DIV44  /*!< SDADC CLK divided by 44 */
+#define LL_RCC_SDADC_CLKSRC_SYS_DIV_48   RCC_CFGR_SDPRE_DIV48  /*!< SDADC CLK divided by 48 */
 /**
   * @}
   */
 
-#endif /* RCC_CFGR_SDADCPRE */
+#endif /* RCC_CFGR_SDPRE */
 
 /** @defgroup RCC_LL_EC_USART Peripheral USART get clock source
   * @{
@@ -752,16 +752,16 @@ typedef struct
 
 #endif /* RCC_CFGR2_ADC1PRES || RCC_CFGR2_ADCPRE12 || RCC_CFGR2_ADCPRE34 */
 
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 /** @defgroup RCC_LL_EC_SDADC Peripheral SDADC get clock source
   * @{
   */
-#define LL_RCC_SDADC_CLKSOURCE           RCC_CFGR_SDADCPRE  /*!< SDADC Clock source selection */
+#define LL_RCC_SDADC_CLKSOURCE           RCC_CFGR_SDPRE  /*!< SDADC Clock source selection */
 /**
   * @}
   */
 
-#endif /* RCC_CFGR_SDADCPRE */
+#endif /* RCC_CFGR_SDPRE */
 
 
 /** @defgroup RCC_LL_EC_RTC_CLKSOURCE  RTC clock source selection
@@ -1741,10 +1741,10 @@ __STATIC_INLINE void LL_RCC_SetADCClockSource(uint32_t ADCxSource)
 }
 #endif /* RCC_CFGR_ADCPRE */
 
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 /**
   * @brief  Configure SDADCx clock source
-  * @rmtoll CFGR         SDADCPRE      LL_RCC_SetSDADCClockSource
+  * @rmtoll CFGR         SDPRE      LL_RCC_SetSDADCClockSource
   * @param  SDADCxSource This parameter can be one of the following values:
   *         @arg @ref LL_RCC_SDADC_CLKSRC_SYS_DIV_1
   *         @arg @ref LL_RCC_SDADC_CLKSRC_SYS_DIV_2
@@ -1767,9 +1767,9 @@ __STATIC_INLINE void LL_RCC_SetADCClockSource(uint32_t ADCxSource)
   */
 __STATIC_INLINE void LL_RCC_SetSDADCClockSource(uint32_t SDADCxSource)
 {
-  MODIFY_REG(RCC->CFGR, RCC_CFGR_SDADCPRE, SDADCxSource);
+  MODIFY_REG(RCC->CFGR, RCC_CFGR_SDPRE, SDADCxSource);
 }
-#endif /* RCC_CFGR_SDADCPRE */
+#endif /* RCC_CFGR_SDPRE */
 
 /**
   * @brief  Get USARTx clock source
@@ -2059,10 +2059,10 @@ __STATIC_INLINE uint32_t LL_RCC_GetADCClockSource(uint32_t ADCx)
 }
 #endif /* RCC_CFGR_ADCPRE */
 
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 /**
   * @brief  Get SDADCx clock source
-  * @rmtoll CFGR         SDADCPRE      LL_RCC_GetSDADCClockSource
+  * @rmtoll CFGR         SDPRE      LL_RCC_GetSDADCClockSource
   * @param  SDADCx This parameter can be one of the following values:
   *         @arg @ref LL_RCC_SDADC_CLKSOURCE
   * @retval Returned value can be one of the following values:
@@ -2088,7 +2088,7 @@ __STATIC_INLINE uint32_t LL_RCC_GetSDADCClockSource(uint32_t SDADCx)
 {
   return (uint32_t)(READ_BIT(RCC->CFGR, SDADCx));
 }
-#endif /* RCC_CFGR_SDADCPRE */
+#endif /* RCC_CFGR_SDPRE */
 
 /**
   * @}
@@ -2806,9 +2806,9 @@ uint32_t    LL_RCC_GetUSBClockFreq(uint32_t USBxSource);
 #if (defined(RCC_CFGR_ADCPRE) || defined(RCC_CFGR2_ADC1PRES) || defined(RCC_CFGR2_ADCPRE12) || defined(RCC_CFGR2_ADCPRE34))
 uint32_t    LL_RCC_GetADCClockFreq(uint32_t ADCxSource);
 #endif /*RCC_CFGR_ADCPRE || RCC_CFGR2_ADC1PRES || RCC_CFGR2_ADCPRE12 || RCC_CFGR2_ADCPRE34 */
-#if defined(RCC_CFGR_SDADCPRE)
+#if defined(RCC_CFGR_SDPRE)
 uint32_t    LL_RCC_GetSDADCClockFreq(uint32_t SDADCxSource);
-#endif /*RCC_CFGR_SDADCPRE */
+#endif /*RCC_CFGR_SDPRE */
 #if defined(CEC)
 uint32_t    LL_RCC_GetCECClockFreq(uint32_t CECxSource);
 #endif /* CEC */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Texas Instruments Incorporated
+ * Copyright (c) 2016-2017, Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,7 @@ static void uart_cc32xx_isr(void *arg);
 #endif
 
 static const struct uart_device_config uart_cc32xx_dev_cfg_0 = {
-	.base = (void *)UART_CC32XX_BASE_ADDRESS,
+	.base = (void *)TI_CC32XX_UART_4000C000_BASE_ADDRESS,
 	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 };
 
@@ -62,7 +62,7 @@ static int uart_cc32xx_init(struct device *dev)
 	/* This also calls MAP_UARTEnable() to enable the FIFOs: */
 	MAP_UARTConfigSetExpClk((unsigned long)config->base,
 				MAP_PRCMPeripheralClockGet(PRCM_UARTA0),
-				CONFIG_UART_CC32XX_BAUDRATE,
+				TI_CC32XX_UART_4000C000_BAUD_RATE,
 				(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE
 				 | UART_CONFIG_PAR_NONE));
 	MAP_UARTFlowControlSet((unsigned long)config->base,
@@ -75,11 +75,11 @@ static int uart_cc32xx_init(struct device *dev)
 	MAP_UARTIntClear((unsigned long)config->base,
 		(UART_INT_RX | UART_INT_TX));
 
-	IRQ_CONNECT(EXCEPTION_UARTA0,
-		    CONFIG_UART_CC32XX_IRQ_PRI,
+	IRQ_CONNECT(TI_CC32XX_UART_4000C000_IRQ_0,
+		    TI_CC32XX_UART_4000C000_IRQ_0_PRIORITY,
 		    uart_cc32xx_isr, DEVICE_GET(uart_cc32xx_0),
 		    0);
-	irq_enable(EXCEPTION_UARTA0);
+	irq_enable(TI_CC32XX_UART_4000C000_IRQ_0);
 #endif
 	return 0;
 }
@@ -309,5 +309,5 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 DEVICE_AND_API_INIT(uart_cc32xx_0, CONFIG_UART_CONSOLE_ON_DEV_NAME,
 		    uart_cc32xx_init, &uart_cc32xx_dev_data_0,
 		    &uart_cc32xx_dev_cfg_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_cc32xx_driver_api);

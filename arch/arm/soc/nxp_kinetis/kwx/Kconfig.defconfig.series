@@ -10,16 +10,6 @@ if SOC_SERIES_KINETIS_KWX
 config SOC_SERIES
 	default kwx
 
-if !HAS_DTS
-
-config SRAM_BASE_ADDRESS
-	default 0x20000000
-
-config FLASH_BASE_ADDRESS
-	default 0x00000000
-
-endif # !HAS_DTS
-
 source "arch/arm/soc/nxp_kinetis/kwx/Kconfig.defconfig.mk*"
 
 endif # SOC_SERIES_KINETIS_KWX

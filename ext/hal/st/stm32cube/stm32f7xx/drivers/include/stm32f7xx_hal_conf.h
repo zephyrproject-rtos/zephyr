@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_conf_template.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   HAL configuration template file. 
   *          This file should be copied to the application folder and renamed
   *          to stm32f7xx_hal_conf.h.
@@ -97,6 +97,8 @@
 #define HAL_DSI_MODULE_ENABLED
 #define HAL_JPEG_MODULE_ENABLED
 #define HAL_MDIOS_MODULE_ENABLED
+#define HAL_SMBUS_MODULE_ENABLED
+#define HAL_MMC_MODULE_ENABLED
 
 
 /* ########################## HSE/HSI Values adaptation ##################### */
@@ -425,6 +427,14 @@
 #ifdef HAL_MDIOS_MODULE_ENABLED
  #include "stm32f7xx_hal_mdios.h"
 #endif /* HAL_MDIOS_MODULE_ENABLED */
+
+#ifdef HAL_SMBUS_MODULE_ENABLED
+ #include "stm32f7xx_hal_smbus.h"
+#endif /* HAL_SMBUS_MODULE_ENABLED */
+
+#ifdef HAL_MMC_MODULE_ENABLED
+ #include "stm32f7xx_hal_mmc.h"
+#endif /* HAL_MMC_MODULE_ENABLED */
    
 /* Exported macro ------------------------------------------------------------*/
 #ifdef  USE_FULL_ASSERT

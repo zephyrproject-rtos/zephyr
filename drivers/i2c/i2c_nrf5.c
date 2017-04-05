@@ -328,7 +328,10 @@ static const struct i2c_driver_api i2c_nrf5_driver_api = {
 	.transfer = i2c_nrf5_transfer,
 };
 
-#ifdef CONFIG_I2C_0
+/* i2c & spi instance with the same id (e.g. I2C_0 and SPI_0) can NOT be used
+ * at the same time on nRF5x chip family.
+ */
+#if defined(CONFIG_I2C_0) && !defined(CONFIG_SPI_0)
 static void i2c_nrf5_config_func_0(struct device *dev);
 
 static const struct i2c_nrf5_config i2c_nrf5_config_0 = {
@@ -351,9 +354,9 @@ static void i2c_nrf5_config_func_0(struct device *dev)
 
 	irq_enable(NRF5_IRQ_SPI0_TWI0_IRQn);
 }
-#endif /* CONFIG_I2C_0 */
+#endif /* CONFIG_I2C_0 && !CONFIG_SPI_0 */
 
-#ifdef CONFIG_I2C_1
+#if defined(CONFIG_I2C_1) && !defined(CONFIG_SPI_1)
 static void i2c_nrf5_config_func_1(struct device *dev);
 
 static const struct i2c_nrf5_config i2c_nrf5_config_1 = {
@@ -376,4 +379,4 @@ static void i2c_nrf5_config_func_1(struct device *dev)
 
 	irq_enable(NRF5_IRQ_SPI1_TWI1_IRQn);
 }
-#endif /* CONFIG_I2C_1 */
+#endif /* CONFIG_I2C_1 && !CONFIG_SPI_1 */

@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_flash.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of FLASH HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -105,13 +105,13 @@ typedef struct
   * @brief    FLASH Error Code 
   * @{
   */ 
-#define HAL_FLASH_ERROR_NONE         ((uint32_t)0x00000000U)    /*!< No error                      */
-#define HAL_FLASH_ERROR_RD           ((uint32_t)0x00000001U)    /*!< Read Protection error         */
-#define HAL_FLASH_ERROR_PGS          ((uint32_t)0x00000002U)    /*!< Programming Sequence error    */
-#define HAL_FLASH_ERROR_PGP          ((uint32_t)0x00000004U)    /*!< Programming Parallelism error */
-#define HAL_FLASH_ERROR_PGA          ((uint32_t)0x00000008U)    /*!< Programming Alignment error   */
-#define HAL_FLASH_ERROR_WRP          ((uint32_t)0x00000010U)    /*!< Write protection error        */
-#define HAL_FLASH_ERROR_OPERATION    ((uint32_t)0x00000020U)    /*!< Operation Error               */
+#define HAL_FLASH_ERROR_NONE         0x00000000U    /*!< No error                      */
+#define HAL_FLASH_ERROR_RD           0x00000001U    /*!< Read Protection error         */
+#define HAL_FLASH_ERROR_PGS          0x00000002U    /*!< Programming Sequence error    */
+#define HAL_FLASH_ERROR_PGP          0x00000004U    /*!< Programming Parallelism error */
+#define HAL_FLASH_ERROR_PGA          0x00000008U    /*!< Programming Alignment error   */
+#define HAL_FLASH_ERROR_WRP          0x00000010U    /*!< Write protection error        */
+#define HAL_FLASH_ERROR_OPERATION    0x00000020U    /*!< Operation Error               */
 /**
   * @}
   */
@@ -119,10 +119,10 @@ typedef struct
 /** @defgroup FLASH_Type_Program FLASH Type Program
   * @{
   */ 
-#define FLASH_TYPEPROGRAM_BYTE        ((uint32_t)0x00U)  /*!< Program byte (8-bit) at a specified address           */
-#define FLASH_TYPEPROGRAM_HALFWORD    ((uint32_t)0x01U)  /*!< Program a half-word (16-bit) at a specified address   */
-#define FLASH_TYPEPROGRAM_WORD        ((uint32_t)0x02U)  /*!< Program a word (32-bit) at a specified address        */
-#define FLASH_TYPEPROGRAM_DOUBLEWORD  ((uint32_t)0x03U)  /*!< Program a double word (64-bit) at a specified address */
+#define FLASH_TYPEPROGRAM_BYTE        0x00000000U  /*!< Program byte (8-bit) at a specified address           */
+#define FLASH_TYPEPROGRAM_HALFWORD    0x00000001U  /*!< Program a half-word (16-bit) at a specified address   */
+#define FLASH_TYPEPROGRAM_WORD        0x00000002U  /*!< Program a word (32-bit) at a specified address        */
+#define FLASH_TYPEPROGRAM_DOUBLEWORD  0x00000003U  /*!< Program a double word (64-bit) at a specified address */
 /**
   * @}
   */
@@ -137,7 +137,9 @@ typedef struct
 #define FLASH_FLAG_PGAERR              FLASH_SR_PGAERR         /*!< FLASH Programming Alignment error flag    */
 #define FLASH_FLAG_PGPERR              FLASH_SR_PGPERR         /*!< FLASH Programming Parallelism error flag  */
 #define FLASH_FLAG_PGSERR              FLASH_SR_PGSERR         /*!< FLASH Programming Sequence error flag     */
-#define FLASH_FLAG_RDERR               ((uint32_t)0x00000100U)  /*!< Read Protection error flag (PCROP)        */
+#if defined(FLASH_SR_RDERR)
+#define FLASH_FLAG_RDERR               FLASH_SR_RDERR          /*!< Read Protection error flag (PCROP)        */
+#endif /* FLASH_SR_RDERR */
 #define FLASH_FLAG_BSY                 FLASH_SR_BSY            /*!< FLASH Busy flag                           */ 
 /**
   * @}
@@ -148,7 +150,7 @@ typedef struct
   * @{
   */ 
 #define FLASH_IT_EOP                   FLASH_CR_EOPIE          /*!< End of FLASH Operation Interrupt source */
-#define FLASH_IT_ERR                   ((uint32_t)0x02000000U)  /*!< Error Interrupt source                  */
+#define FLASH_IT_ERR                   0x02000000U             /*!< Error Interrupt source                  */
 /**
   * @}
   */  
@@ -156,11 +158,11 @@ typedef struct
 /** @defgroup FLASH_Program_Parallelism FLASH Program Parallelism
   * @{
   */
-#define FLASH_PSIZE_BYTE           ((uint32_t)0x00000000U)
-#define FLASH_PSIZE_HALF_WORD      ((uint32_t)0x00000100U)
-#define FLASH_PSIZE_WORD           ((uint32_t)0x00000200U)
-#define FLASH_PSIZE_DOUBLE_WORD    ((uint32_t)0x00000300U)
-#define CR_PSIZE_MASK              ((uint32_t)0xFFFFFCFFU)
+#define FLASH_PSIZE_BYTE           0x00000000U
+#define FLASH_PSIZE_HALF_WORD      0x00000100U
+#define FLASH_PSIZE_WORD           0x00000200U
+#define FLASH_PSIZE_DOUBLE_WORD    0x00000300U
+#define CR_PSIZE_MASK              0xFFFFFCFFU
 /**
   * @}
   */ 
@@ -168,11 +170,11 @@ typedef struct
 /** @defgroup FLASH_Keys FLASH Keys
   * @{
   */ 
-#define RDP_KEY                  ((uint16_t)0x00A5U)
-#define FLASH_KEY1               ((uint32_t)0x45670123U)
-#define FLASH_KEY2               ((uint32_t)0xCDEF89ABU)
-#define FLASH_OPT_KEY1           ((uint32_t)0x08192A3BU)
-#define FLASH_OPT_KEY2           ((uint32_t)0x4C5D6E7FU)
+#define RDP_KEY                  ((uint16_t)0x00A5)
+#define FLASH_KEY1               0x45670123U
+#define FLASH_KEY2               0xCDEF89ABU
+#define FLASH_OPT_KEY1           0x08192A3BU
+#define FLASH_OPT_KEY2           0x4C5D6E7FU
 /**
   * @}
   */ 
@@ -243,7 +245,7 @@ typedef struct
   */
 #define __HAL_FLASH_INSTRUCTION_CACHE_RESET() do {FLASH->ACR |= FLASH_ACR_ICRST;  \
                                                   FLASH->ACR &= ~FLASH_ACR_ICRST; \
-                                                 }while(0)
+                                                 }while(0U)
 
 /**
   * @brief  Resets the FLASH data Cache.
@@ -252,7 +254,7 @@ typedef struct
   */
 #define __HAL_FLASH_DATA_CACHE_RESET() do {FLASH->ACR |= FLASH_ACR_DCRST;  \
                                            FLASH->ACR &= ~FLASH_ACR_DCRST; \
-                                          }while(0)
+                                          }while(0U)
 /**
   * @brief  Enable the specified FLASH interrupt.
   * @param  __INTERRUPT__ : FLASH interrupt 
@@ -275,22 +277,23 @@ typedef struct
 
 /**
   * @brief  Get the specified FLASH flag status. 
-  * @param  __FLAG__: specifies the FLASH flag to check.
-  *          This parameter can be one of the following values:
+  * @param  __FLAG__: specifies the FLASH flags to check.
+  *          This parameter can be any combination of the following values:
   *            @arg FLASH_FLAG_EOP   : FLASH End of Operation flag 
   *            @arg FLASH_FLAG_OPERR : FLASH operation Error flag 
   *            @arg FLASH_FLAG_WRPERR: FLASH Write protected error flag 
   *            @arg FLASH_FLAG_PGAERR: FLASH Programming Alignment error flag
   *            @arg FLASH_FLAG_PGPERR: FLASH Programming Parallelism error flag
   *            @arg FLASH_FLAG_PGSERR: FLASH Programming Sequence error flag
-  *            @arg FLASH_FLAG_RDERR : FLASH Read Protection error flag (PCROP) 
+  *            @arg FLASH_FLAG_RDERR : FLASH Read Protection error flag (PCROP) (*)
   *            @arg FLASH_FLAG_BSY   : FLASH Busy flag
+  *           (*) FLASH_FLAG_RDERR is not available for STM32F405xx/407xx/415xx/417xx devices                             
   * @retval The new state of __FLAG__ (SET or RESET).
   */
 #define __HAL_FLASH_GET_FLAG(__FLAG__)   ((FLASH->SR & (__FLAG__)))
 
 /**
-  * @brief  Clear the specified FLASH flag.
+  * @brief  Clear the specified FLASH flags.
   * @param  __FLAG__: specifies the FLASH flags to clear.
   *          This parameter can be any combination of the following values:
   *            @arg FLASH_FLAG_EOP   : FLASH End of Operation flag 
@@ -299,7 +302,8 @@ typedef struct
   *            @arg FLASH_FLAG_PGAERR: FLASH Programming Alignment error flag 
   *            @arg FLASH_FLAG_PGPERR: FLASH Programming Parallelism error flag
   *            @arg FLASH_FLAG_PGSERR: FLASH Programming Sequence error flag
-  *            @arg FLASH_FLAG_RDERR : FLASH Read Protection error flag (PCROP)   
+  *            @arg FLASH_FLAG_RDERR : FLASH Read Protection error flag (PCROP) (*)
+  *           (*) FLASH_FLAG_RDERR is not available for STM32F405xx/407xx/415xx/417xx devices   
   * @retval none
   */
 #define __HAL_FLASH_CLEAR_FLAG(__FLAG__)   (FLASH->SR = (__FLAG__))
@@ -374,23 +378,23 @@ HAL_StatusTypeDef FLASH_WaitForLastOperation(uint32_t Timeout);
 /** 
   * @brief   ACR register byte 0 (Bits[7:0]) base address  
   */ 
-#define ACR_BYTE0_ADDRESS           ((uint32_t)0x40023C00U) 
+#define ACR_BYTE0_ADDRESS           0x40023C00U 
 /** 
   * @brief   OPTCR register byte 0 (Bits[7:0]) base address  
   */ 
-#define OPTCR_BYTE0_ADDRESS         ((uint32_t)0x40023C14U)
+#define OPTCR_BYTE0_ADDRESS         0x40023C14U
 /** 
   * @brief   OPTCR register byte 1 (Bits[15:8]) base address  
   */ 
-#define OPTCR_BYTE1_ADDRESS         ((uint32_t)0x40023C15U)
+#define OPTCR_BYTE1_ADDRESS         0x40023C15U
 /** 
   * @brief   OPTCR register byte 2 (Bits[23:16]) base address  
   */ 
-#define OPTCR_BYTE2_ADDRESS         ((uint32_t)0x40023C16U)
+#define OPTCR_BYTE2_ADDRESS         0x40023C16U
 /** 
   * @brief   OPTCR register byte 3 (Bits[31:24]) base address  
   */ 
-#define OPTCR_BYTE3_ADDRESS         ((uint32_t)0x40023C17U)
+#define OPTCR_BYTE3_ADDRESS         0x40023C17U
 
 /**
   * @}

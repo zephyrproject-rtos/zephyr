@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_tim.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Timer (TIM) peripheral:
@@ -98,7 +98,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -404,7 +404,7 @@ HAL_StatusTypeDef HAL_TIM_Base_Start_DMA(TIM_HandleTypeDef *htim, uint32_t *pDat
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if((pData == 0U) && (Length > 0U)) 
+    if((pData == 0U) && (Length > 0)) 
     {
       return HAL_ERROR;                                    
     }
@@ -803,7 +803,7 @@ HAL_StatusTypeDef HAL_TIM_OC_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Channel
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if(((uint32_t)pData == 0U) && (Length > 0U)) 
+    if(((uint32_t)pData == 0U) && (Length > 0)) 
     {
       return HAL_ERROR;                                    
     }
@@ -1163,7 +1163,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_Stop(TIM_HandleTypeDef *htim, uint32_t Channel)
   * @brief  Starts the PWM signal generation in interrupt mode.
   * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
   *                the configuration information for TIM module.
-  * @param  Channel: TIM Channel to be disabled.
+  * @param  Channel: TIM Channel to be enabled.
   *          This parameter can be one of the following values:
   *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
   *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
@@ -1318,7 +1318,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Channe
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if(((uint32_t)pData == 0U) && (Length > 0U)) 
+    if(((uint32_t)pData == 0U) && (Length > 0)) 
     {
       return HAL_ERROR;                                    
     }
@@ -1806,7 +1806,7 @@ HAL_StatusTypeDef HAL_TIM_IC_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Channel
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if((pData == 0U) && (Length > 0U)) 
+    if((pData == 0U) && (Length > 0)) 
     {
       return HAL_ERROR;                                    
     }
@@ -2106,6 +2106,9 @@ __weak void HAL_TIM_OnePulse_MspDeInit(TIM_HandleTypeDef *htim)
   */
 HAL_StatusTypeDef HAL_TIM_OnePulse_Start(TIM_HandleTypeDef *htim, uint32_t OutputChannel)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(OutputChannel);
+
   /* Enable the Capture compare and the Input Capture channels 
     (in the OPM Mode the two possible channels that can be used are TIM_CHANNEL_1 and TIM_CHANNEL_2)
     if TIM_CHANNEL_1 is used as output, the TIM_CHANNEL_2 will be used as input and
@@ -2140,6 +2143,9 @@ HAL_StatusTypeDef HAL_TIM_OnePulse_Start(TIM_HandleTypeDef *htim, uint32_t Outpu
   */
 HAL_StatusTypeDef HAL_TIM_OnePulse_Stop(TIM_HandleTypeDef *htim, uint32_t OutputChannel)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(OutputChannel);
+
   /* Disable the Capture compare and the Input Capture channels 
   (in the OPM Mode the two possible channels that can be used are TIM_CHANNEL_1 and TIM_CHANNEL_2)
   if TIM_CHANNEL_1 is used as output, the TIM_CHANNEL_2 will be used as input and
@@ -2182,7 +2188,10 @@ HAL_StatusTypeDef HAL_TIM_OnePulse_Start_IT(TIM_HandleTypeDef *htim, uint32_t Ou
     
     No need to enable the counter, it's enabled automatically by hardware 
     (the counter starts in response to a stimulus and generate a pulse */
- 
+
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(OutputChannel);
+
   /* Enable the TIM Capture/Compare 1 interrupt */
   __HAL_TIM_ENABLE_IT(htim, TIM_IT_CC1);
   
@@ -2214,6 +2223,9 @@ HAL_StatusTypeDef HAL_TIM_OnePulse_Start_IT(TIM_HandleTypeDef *htim, uint32_t Ou
   */
 HAL_StatusTypeDef HAL_TIM_OnePulse_Stop_IT(TIM_HandleTypeDef *htim, uint32_t OutputChannel)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(OutputChannel);
+
   /* Disable the TIM Capture/Compare 1 interrupt */
   __HAL_TIM_DISABLE_IT(htim, TIM_IT_CC1);  
   
@@ -2626,7 +2638,7 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Ch
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if((((pData1 == 0U) || (pData2 == 0U) )) && (Length > 0U)) 
+    if((((pData1 == 0U) || (pData2 == 0U) )) && (Length > 0)) 
     {
       return HAL_ERROR;                                    
     }

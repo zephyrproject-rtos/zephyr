@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_can.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Controller Area Network (CAN) peripheral:
   *           + Initialization and de-initialization functions 
@@ -77,7 +77,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -360,6 +360,9 @@ HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef* hcan, CAN_FilterConfTy
   uint32_t filternbrbitpos = 0U;
   CAN_TypeDef *can_ip;
   
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hcan);
+
   /* Check the parameters */
   assert_param(IS_CAN_FILTER_NUMBER(sFilterConfig->FilterNumber));
   assert_param(IS_CAN_FILTER_MODE(sFilterConfig->FilterMode));
@@ -368,7 +371,7 @@ HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef* hcan, CAN_FilterConfTy
   assert_param(IS_FUNCTIONAL_STATE(sFilterConfig->FilterActivation));
   assert_param(IS_CAN_BANKNUMBER(sFilterConfig->BankNumber));
   
-  filternbrbitpos = ((uint32_t)1U) << sFilterConfig->FilterNumber;
+  filternbrbitpos = 1U << sFilterConfig->FilterNumber;
 #if defined (CAN3)
   /* Check the CAN instance */
   if(hcan->Instance == CAN3)
@@ -561,7 +564,7 @@ __weak void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan)
 HAL_StatusTypeDef HAL_CAN_Transmit(CAN_HandleTypeDef* hcan, uint32_t Timeout)
 {
   uint32_t transmitmailbox = CAN_TXSTATUS_NOMAILBOX;
-  uint32_t tickstart = 0;
+  uint32_t tickstart = 0U;
 
   /* Check the parameters */
   assert_param(IS_CAN_IDTYPE(hcan->pTxMsg->IDE));
@@ -617,7 +620,7 @@ HAL_StatusTypeDef HAL_CAN_Transmit(CAN_HandleTypeDef* hcan, uint32_t Timeout)
     }
     
     /* Set up the DLC */
-    hcan->pTxMsg->DLC &= (uint8_t)0x0000000FU;
+    hcan->pTxMsg->DLC &= (uint8_t)0x0000000F;
     hcan->Instance->sTxMailBox[transmitmailbox].TDTR &= (uint32_t)0xFFFFFFF0U;
     hcan->Instance->sTxMailBox[transmitmailbox].TDTR |= hcan->pTxMsg->DLC;
 
@@ -647,6 +650,7 @@ HAL_StatusTypeDef HAL_CAN_Transmit(CAN_HandleTypeDef* hcan, uint32_t Timeout)
          hcan->State = HAL_CAN_STATE_TIMEOUT;
          /* Process unlocked */
          __HAL_UNLOCK(hcan);
+         __HAL_CAN_CANCEL_TRANSMIT(hcan, transmitmailbox);
          return HAL_TIMEOUT;
         }
       }
@@ -697,9 +701,7 @@ HAL_StatusTypeDef HAL_CAN_Transmit_IT(CAN_HandleTypeDef* hcan)
      ((hcan->Instance->TSR&CAN_TSR_TME1) == CAN_TSR_TME1) || \
      ((hcan->Instance->TSR&CAN_TSR_TME2) == CAN_TSR_TME2))
   {
-    /* Process Locked */
-    __HAL_LOCK(hcan);
-    
+
     /* Select one empty transmit mailbox */
     if((hcan->Instance->TSR&CAN_TSR_TME0) == CAN_TSR_TME0)
     {
@@ -731,7 +733,7 @@ HAL_StatusTypeDef HAL_CAN_Transmit_IT(CAN_HandleTypeDef* hcan)
     }
     
     /* Set up the DLC */
-    hcan->pTxMsg->DLC &= (uint8_t)0x0000000FU;
+    hcan->pTxMsg->DLC &= (uint8_t)0x0000000F;
     hcan->Instance->sTxMailBox[transmitmailbox].TDTR &= (uint32_t)0xFFFFFFF0U;
     hcan->Instance->sTxMailBox[transmitmailbox].TDTR |= hcan->pTxMsg->DLC;
 
@@ -758,10 +760,6 @@ HAL_StatusTypeDef HAL_CAN_Transmit_IT(CAN_HandleTypeDef* hcan)
       
     /* Set CAN error code to none */
     hcan->ErrorCode = HAL_CAN_ERROR_NONE;
-      
-    /* Process Unlocked */
-    __HAL_UNLOCK(hcan);
-	
     /* Enable Error warning, Error passive, Bus-off,
        Last error and Error Interrupts */	
     __HAL_CAN_ENABLE_IT(hcan, CAN_IT_EWG |
@@ -835,32 +833,32 @@ HAL_StatusTypeDef HAL_CAN_Receive(CAN_HandleTypeDef* hcan, uint8_t FIFONumber, u
   }
   
   /* Get the Id */
-  hcan->pRxMsg->IDE = (uint8_t)0x04U & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
+  hcan->pRxMsg->IDE = (uint8_t)0x04 & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
   if (hcan->pRxMsg->IDE == CAN_ID_STD)
   {
-    hcan->pRxMsg->StdId = (uint32_t)0x000007FFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 21U);
+    hcan->pRxMsg->StdId = 0x000007FFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 21U);
   }
   else
   {
-    hcan->pRxMsg->ExtId = (uint32_t)0x1FFFFFFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 3U);
+    hcan->pRxMsg->ExtId = 0x1FFFFFFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 3U);
   }
   
-  hcan->pRxMsg->RTR = (uint8_t)0x02U & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
+  hcan->pRxMsg->RTR = (uint8_t)0x02 & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
   /* Get the DLC */
-  hcan->pRxMsg->DLC = (uint8_t)0x0FU & hcan->Instance->sFIFOMailBox[FIFONumber].RDTR;
+  hcan->pRxMsg->DLC = (uint8_t)0x0F & hcan->Instance->sFIFOMailBox[FIFONumber].RDTR;
   /* Get the FMI */
-  hcan->pRxMsg->FMI = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDTR >> 8U);
+  hcan->pRxMsg->FMI = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDTR >> 8U);
   /* Get the FIFONumber */
   hcan->pRxMsg->FIFONumber = FIFONumber;
   /* Get the data field */
-  hcan->pRxMsg->Data[0U] = (uint8_t)0xFFU & hcan->Instance->sFIFOMailBox[FIFONumber].RDLR;
-  hcan->pRxMsg->Data[1U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 8U);
-  hcan->pRxMsg->Data[2U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 16U);
-  hcan->pRxMsg->Data[3U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 24U);
-  hcan->pRxMsg->Data[4U] = (uint8_t)0xFFU & hcan->Instance->sFIFOMailBox[FIFONumber].RDHR;
-  hcan->pRxMsg->Data[5U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 8U);
-  hcan->pRxMsg->Data[6U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 16U);
-  hcan->pRxMsg->Data[7U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 24U);
+  hcan->pRxMsg->Data[0U] = (uint8_t)0xFF & hcan->Instance->sFIFOMailBox[FIFONumber].RDLR;
+  hcan->pRxMsg->Data[1U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 8U);
+  hcan->pRxMsg->Data[2U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 16U);
+  hcan->pRxMsg->Data[3U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 24U);
+  hcan->pRxMsg->Data[4U] = (uint8_t)0xFF & hcan->Instance->sFIFOMailBox[FIFONumber].RDHR;
+  hcan->pRxMsg->Data[5U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 8U);
+  hcan->pRxMsg->Data[6U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 16U);
+  hcan->pRxMsg->Data[7U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 24U);
   
   /* Release the FIFO */
   if(FIFONumber == CAN_FIFO0)
@@ -909,9 +907,6 @@ HAL_StatusTypeDef HAL_CAN_Receive_IT(CAN_HandleTypeDef* hcan, uint8_t FIFONumber
   tmp = hcan->State;
   if((tmp == HAL_CAN_STATE_READY) || (tmp == HAL_CAN_STATE_BUSY_TX))
   {
-    /* Process locked */
-    __HAL_LOCK(hcan);
-  
     if(hcan->State == HAL_CAN_STATE_BUSY_TX) 
     {
       /* Change CAN state */
@@ -933,9 +928,6 @@ HAL_StatusTypeDef HAL_CAN_Receive_IT(CAN_HandleTypeDef* hcan, uint8_t FIFONumber
                               CAN_IT_BOF |
                               CAN_IT_LEC |
                               CAN_IT_ERR);
-
-    /* Process unlocked */
-    __HAL_UNLOCK(hcan);
 
     if(FIFONumber == CAN_FIFO0)
     {
@@ -1330,32 +1322,32 @@ static HAL_StatusTypeDef CAN_Transmit_IT(CAN_HandleTypeDef* hcan)
 static HAL_StatusTypeDef CAN_Receive_IT(CAN_HandleTypeDef* hcan, uint8_t FIFONumber)
 {
   /* Get the Id */
-  hcan->pRxMsg->IDE = (uint8_t)0x04U & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
+  hcan->pRxMsg->IDE = (uint8_t)0x04 & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
   if (hcan->pRxMsg->IDE == CAN_ID_STD)
   {
-    hcan->pRxMsg->StdId = (uint32_t)0x000007FFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 21U);
+    hcan->pRxMsg->StdId = 0x000007FFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 21U);
   }
   else
   {
-    hcan->pRxMsg->ExtId = (uint32_t)0x1FFFFFFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 3U);
+    hcan->pRxMsg->ExtId = 0x1FFFFFFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RIR >> 3U);
   }
   
-  hcan->pRxMsg->RTR = (uint8_t)0x02U & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
+  hcan->pRxMsg->RTR = (uint8_t)0x02 & hcan->Instance->sFIFOMailBox[FIFONumber].RIR;
   /* Get the DLC */
-  hcan->pRxMsg->DLC = (uint8_t)0x0FU & hcan->Instance->sFIFOMailBox[FIFONumber].RDTR;
+  hcan->pRxMsg->DLC = (uint8_t)0x0F & hcan->Instance->sFIFOMailBox[FIFONumber].RDTR;
   /* Get the FIFONumber */
   hcan->pRxMsg->FIFONumber = FIFONumber;
   /* Get the FMI */
-  hcan->pRxMsg->FMI = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDTR >> 8U);
+  hcan->pRxMsg->FMI = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDTR >> 8U);
   /* Get the data field */
-  hcan->pRxMsg->Data[0U] = (uint8_t)0xFFU & hcan->Instance->sFIFOMailBox[FIFONumber].RDLR;
-  hcan->pRxMsg->Data[1U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 8U);
-  hcan->pRxMsg->Data[2U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 16U);
-  hcan->pRxMsg->Data[3U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 24U);
-  hcan->pRxMsg->Data[4U] = (uint8_t)0xFFU & hcan->Instance->sFIFOMailBox[FIFONumber].RDHR;
-  hcan->pRxMsg->Data[5U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 8U);
-  hcan->pRxMsg->Data[6U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 16U);
-  hcan->pRxMsg->Data[7U] = (uint8_t)0xFFU & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 24U);
+  hcan->pRxMsg->Data[0U] = (uint8_t)0xFF & hcan->Instance->sFIFOMailBox[FIFONumber].RDLR;
+  hcan->pRxMsg->Data[1U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 8U);
+  hcan->pRxMsg->Data[2U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 16U);
+  hcan->pRxMsg->Data[3U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDLR >> 24U);
+  hcan->pRxMsg->Data[4U] = (uint8_t)0xFF & hcan->Instance->sFIFOMailBox[FIFONumber].RDHR;
+  hcan->pRxMsg->Data[5U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 8U);
+  hcan->pRxMsg->Data[6U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 16U);
+  hcan->pRxMsg->Data[7U] = (uint8_t)0xFF & (hcan->Instance->sFIFOMailBox[FIFONumber].RDHR >> 24U);
   /* Release the FIFO */
   /* Release FIFO0 */
   if (FIFONumber == CAN_FIFO0)
