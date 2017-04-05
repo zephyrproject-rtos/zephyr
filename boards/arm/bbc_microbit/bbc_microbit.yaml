@@ -1,0 +1,10 @@
+identifier: bbc_microbit
+name: bbc_microbit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 16
+testing:
+        default: true

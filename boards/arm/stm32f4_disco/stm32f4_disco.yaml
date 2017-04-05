@@ -1,0 +1,7 @@
+identifier: stm32f4_disco
+name: stm32f4_disco
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

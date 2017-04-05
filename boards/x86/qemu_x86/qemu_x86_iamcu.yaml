@@ -1,0 +1,8 @@
+identifier: qemu_x86_iamcu
+name: QEMU Emulation for X86 (IAMCU)
+type: qemu
+arch: x86
+toolchain:
+  - zephyr
+testing:
+        default: true

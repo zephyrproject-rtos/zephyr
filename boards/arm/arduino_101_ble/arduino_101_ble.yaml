@@ -1,0 +1,8 @@
+identifier: arduino_101_ble
+name: arduino_101_ble
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 16

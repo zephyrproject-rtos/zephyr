@@ -1,0 +1,7 @@
+identifier: sam_e70_xplained
+name: sam_e70_xplained
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

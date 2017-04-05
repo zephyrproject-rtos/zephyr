@@ -1,0 +1,8 @@
+identifier: curie_ble
+name: curie_ble
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 16

@@ -1,0 +1,9 @@
+identifier: 96b_carbon_nrf51
+name: 96b_carbon_nrf51
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gccarmemb

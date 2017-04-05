@@ -1,0 +1,7 @@
+identifier: cc3220sf_launchxl
+name: cc3220sf_launchxl
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

@@ -1,0 +1,8 @@
+identifier: stm32373c_eval
+name: stm32373c_eval
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 32

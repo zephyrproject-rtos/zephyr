@@ -1,0 +1,7 @@
+identifier: stm32_mini_a15
+name: stm32_mini_a15
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

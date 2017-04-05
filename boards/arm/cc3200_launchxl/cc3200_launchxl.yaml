@@ -1,0 +1,7 @@
+identifier: cc3200_launchxl
+name: cc3200_launchxl
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

@@ -1,0 +1,8 @@
+identifier: galileo
+name: Galileo Gen2
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+supported:
+  - pci

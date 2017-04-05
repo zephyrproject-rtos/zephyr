@@ -1,0 +1,7 @@
+identifier: 96b_nitrogen
+name: 96b_nitrogen
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

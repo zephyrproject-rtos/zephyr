@@ -1,0 +1,7 @@
+identifier: nucleo_f412zg
+name: STM32F412ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

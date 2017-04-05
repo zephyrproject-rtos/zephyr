@@ -1,0 +1,7 @@
+identifier: nucleo_l476rg
+name: nucleo_l476rg
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
