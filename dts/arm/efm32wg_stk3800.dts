@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32wg.dtsi>
+
+/ {
+	model = "Silicon Labs EFM32WG STK3800 board";
+	compatible = "silabs,efm32wg_stk3800", "silabs,efm32wg";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "ok";
+};
