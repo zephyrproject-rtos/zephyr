@@ -43,8 +43,7 @@ struct mb_display {
 	int64_t         expiry;      /* When to stop showing current image */
 	int32_t         duration;    /* Duration for each shown image */
 
-	struct mb_image img[2];      /* Current and next image */
-	uint16_t        scroll;      /* Scroll shift */
+	uint8_t         scroll;      /* Scroll shift */
 
 	const char     *str;         /* String to be shown */
 
@@ -69,11 +68,6 @@ static const struct x_y map[DISPLAY_ROWS][DISPLAY_COLS] = {
 /* Mask of all the column bits */
 static const uint32_t col_mask = (((~0UL) << LED_COL1_GPIO_PIN) &
 				  ((~0UL) >> (31 - LED_COL9_GPIO_PIN)));
-
-static inline void img_copy(struct mb_image *dst, const struct mb_image *src)
-{
-	memcpy(dst, src, sizeof(*dst));
-}
 
 static inline const struct mb_image *get_font(char ch)
 {
@@ -144,30 +138,31 @@ static void update_scroll(struct mb_display *disp)
 		int i;
 
 		for (i = 0; i < 5; i++) {
-			img.row[i] = (disp->img[0].row[i] >> disp->scroll) |
-				(disp->img[1].row[i] << (6 - disp->scroll));
+			const struct mb_image *i1 = get_font(disp->str[0]);
+			const struct mb_image *i2;
+
+			if (disp->str[0]) {
+				i2 = get_font(disp->str[1]);
+			} else {
+				i2 = get_font(' ');
+			}
+
+			img.row[i] = ((i1->row[i] >> disp->scroll) |
+				      (i2->row[i] << (6 - disp->scroll)));
 		}
 
 		disp->scroll++;
 		start_image(disp, &img);
 	} else {
-		if (!disp->str) {
+		if (!disp->str[1]) {
 			disp->scroll = SCROLL_OFF;
+			disp->str = NULL;
 			return;
 		}
 
-		img_copy(&disp->img[0], &disp->img[1]);
-
-		if (disp->str[0]) {
-			img_copy(&disp->img[1], get_font(disp->str[0]));
-			disp->str++;
-		} else {
-			img_copy(&disp->img[1], get_font(' '));
-			disp->str = NULL;
-		}
-
+		disp->str++;
 		disp->scroll = SCROLL_START;
-		start_image(disp, &disp->img[0]);
+		start_image(disp, get_font(disp->str[0]));
 	}
 }
 
@@ -268,15 +263,13 @@ void mb_display_print(struct mb_display *disp, const char *fmt, ...)
 	if (disp->str_buf[1] == '\0') {
 		disp->str = NULL;
 	} else {
-		disp->str = &disp->str_buf[2];
+		disp->str = disp->str_buf;
 	}
 
-	img_copy(&disp->img[0], get_font(disp->str_buf[0]));
-	img_copy(&disp->img[1], get_font(disp->str_buf[1]));
 	disp->scroll = SCROLL_START;
 	disp->duration = SCROLL_DURATION;
 
-	start_image(disp, &disp->img[0]);
+	start_image(disp, get_font(disp->str[0]));
 }
 
 struct mb_display *mb_display_get(void)
