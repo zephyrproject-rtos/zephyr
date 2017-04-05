@@ -1,0 +1,32 @@
+# Kconfig - Silicon Labs EFM32WG-STK3800 platform configuration options
+
+#
+# Copyright (c) 2017 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_EFM32WG
+
+config SOC
+	string
+	default efm32wg
+
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_GECKO
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_GECKO
+	def_bool y
+
+endif # SERIAL
+
+endif # SOC_EFM32
