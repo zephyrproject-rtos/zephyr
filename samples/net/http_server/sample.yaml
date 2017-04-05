@@ -1,0 +1,8 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: frdm_k64f qemu_x86
+        tags: net http

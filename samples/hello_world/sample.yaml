@@ -1,0 +1,15 @@
+sample:
+  name: hello world
+  description: Hello World sample, the simplest Zephyr application
+  platforms: all
+tests:
+    - test:
+        build_only: true
+        tags: samples tests
+        min_ram: 16
+    - singlethread:
+        build_only: true
+        extra_args: CONF_FILE=prj_single.conf
+        filter: not CONFIG_BLUETOOTH and not CONFIG_GPIO_SCH
+        tags: samples tests
+        min_ram: 16

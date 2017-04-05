@@ -1,0 +1,13 @@
+tests:
+-   test:
+        arch_whitelist: arm arc x86
+        build_only: false
+        filter: ( CONFIG_SRAM_SIZE > 32 or CONFIG_DCCM_SIZE
+            > 32 or CONFIG_RAM_SIZE > 32 )
+        tags: crypto sha256
+        timeout: '10800'
+-   test_nios2:
+        arch_whitelist: nios2
+        build_only: false
+        tags: crypto sha256
+        timeout: '10800'

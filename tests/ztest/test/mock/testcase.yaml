@@ -1,0 +1,7 @@
+tests:
+-   test:
+        arch_exclude: arm
+        tags: test_framework
+-   test_unit:
+        tags: test_framework
+        type: unit

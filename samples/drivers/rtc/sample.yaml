@@ -1,0 +1,9 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: quark_d2000_crb quark_se_c1000_devboard
+            arduino_101
+        tags: drivers

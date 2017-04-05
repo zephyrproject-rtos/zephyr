@@ -1,0 +1,6 @@
+tests:
+-   test:
+        filter: not CONFIG_X86_IAMCU
+        platform_whitelist: qemu_x86 qemu_cortex_m3
+        tags: kernel core
+        timeout: '200'

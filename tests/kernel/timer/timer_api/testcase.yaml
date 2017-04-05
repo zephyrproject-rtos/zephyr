@@ -1,0 +1,8 @@
+tests:
+-   test:
+        tags: kernel
+-   test_tickless:
+        build_only: true
+        extra_args: CONF_FILE="prj_tickless.conf"
+        filter: CONFIG_BOARD_QEMU_X86
+        tags: apps

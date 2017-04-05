@@ -1,0 +1,8 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: frdm_k64f quark_d2000_crb
+        tags: apps

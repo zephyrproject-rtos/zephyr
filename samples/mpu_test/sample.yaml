@@ -1,0 +1,9 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        arch_whitelist: arm
+        build_only: true
+        filter: CONFIG_CPU_HAS_MPU
+        tags: samples

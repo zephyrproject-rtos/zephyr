@@ -1,0 +1,10 @@
+tests:
+-   test:
+        filter: '( CONFIG_SRAM_SIZE > 32 or CONFIG_DCCM_SIZE
+            > 32 or
+
+            CONFIG_RAM_SIZE > 32 )'
+        tags: bat_commit core
+-   test_nios2:
+        arch_whitelist: nios2
+        tags: bat_commit core

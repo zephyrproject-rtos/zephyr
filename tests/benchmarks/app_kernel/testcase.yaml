@@ -1,0 +1,8 @@
+tests:
+-   test:
+        arch_whitelist: x86 arm
+        filter: ( CONFIG_SRAM_SIZE > 32 or CONFIG_DCCM_SIZE
+            > 32 or CONFIG_RAM_SIZE > 32 )
+        slow: 'True'
+        tags: benchmark
+        timeout: '300'

@@ -1,0 +1,7 @@
+tests:
+-   test_gpio:
+        arch_whitelist: x86 arc
+        build_only: true
+        platform_whitelist: quark_se_c1000_devboard
+            arduino_101 quark_d2000_crb
+        tags: drivers

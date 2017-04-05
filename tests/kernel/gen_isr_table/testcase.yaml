@@ -1,0 +1,4 @@
+tests:
+-   test:
+        filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M
+        tags: core

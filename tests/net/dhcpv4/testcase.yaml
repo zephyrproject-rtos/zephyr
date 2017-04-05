@@ -1,0 +1,5 @@
+tests:
+-   test:
+        arch_whitelist: x86
+        platform_exclude: quark_d2000_crb
+        tags: net

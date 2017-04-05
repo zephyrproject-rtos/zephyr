@@ -1,0 +1,14 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: qemu_cortex_m3 qemu_x86
+        tags: bluetooth
+-   test_nble:
+        arch_whitelist: x86
+        build_only: true
+        extra_args: CONF_FILE="prj_nble.conf"
+        platform_whitelist: arduino_101
+        tags: bluetooth
