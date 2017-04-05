@@ -202,21 +202,26 @@ static struct mb_display display = {
 	.timer = K_TIMER_INITIALIZER(display.timer, show_row, clear_display),
 };
 
+static void reset_display(struct mb_display *disp)
+{
+	k_timer_stop(&disp->timer);
+
+	disp->str = NULL;
+	disp->scroll = SCROLL_OFF;
+}
+
 void mb_display_image(struct mb_display *disp, const struct mb_image *img,
 		      int32_t duration)
 {
-	disp->str = NULL;
-	disp->scroll = SCROLL_OFF;
-	disp->duration = duration;
+	reset_display(disp);
 
+	disp->duration = duration;
 	start_image(disp, img);
 }
 
 void mb_display_stop(struct mb_display *disp)
 {
-	k_timer_stop(&disp->timer);
-	disp->str = NULL;
-	disp->scroll = SCROLL_OFF;
+	reset_display(disp);
 }
 
 void mb_display_char(struct mb_display *disp, char chr, int32_t duration)
@@ -237,6 +242,8 @@ void mb_display_string(struct mb_display *disp, int32_t duration,
 		return;
 	}
 
+	reset_display(disp);
+
 	disp->str = &disp->str_buf[1];
 	disp->duration = duration;
 	disp->scroll = SCROLL_OFF;
@@ -255,6 +262,8 @@ void mb_display_print(struct mb_display *disp, const char *fmt, ...)
 	if (disp->str_buf[0] == '\0') {
 		return;
 	}
+
+	reset_display(disp);
 
 	if (disp->str_buf[1] == '\0') {
 		disp->str = NULL;
