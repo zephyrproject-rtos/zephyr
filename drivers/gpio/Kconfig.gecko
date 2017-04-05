@@ -1,0 +1,95 @@
+# Kconfig.gecko - Gecko GPIO configuration options
+#
+# Copyright (c) 2017 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_GECKO
+	bool "Gecko GPIO driver"
+	depends on GPIO && HAS_SILABS_GECKO
+	default n
+	help
+	  Enable the Gecko gpio driver.
+
+if GPIO_GECKO
+
+config GPIO_GECKO_COMMON_NAME
+	string "Common driver name"
+	default "GPIO_COMMON"
+
+config GPIO_GECKO_COMMON_INIT_PRIORITY
+	int "Common initialization priority"
+	default 39
+
+config GPIO_GECKO_COMMON_PRI
+	int "Interrupt priority"
+	default 2
+
+config GPIO_GECKO_PORTA
+	bool "Port A"
+	default n
+	help
+	  Enable Port A.
+
+config GPIO_GECKO_PORTA_NAME
+	string "Port A driver name"
+	depends on GPIO_GECKO_PORTA
+	default "GPIO_0"
+
+config GPIO_GECKO_PORTB
+	bool "Port B"
+	default n
+	help
+	  Enable Port B.
+
+config GPIO_GECKO_PORTB_NAME
+	string "Port B driver name"
+	depends on GPIO_GECKO_PORTB
+	default "GPIO_1"
+
+config GPIO_GECKO_PORTC
+	bool "Port C"
+	default n
+	help
+	  Enable Port C.
+
+config GPIO_GECKO_PORTC_NAME
+	string "Port C driver name"
+	depends on GPIO_GECKO_PORTC
+	default "GPIO_2"
+
+config GPIO_GECKO_PORTD
+	bool "Port D"
+	default n
+	help
+	  Enable Port D.
+
+config GPIO_GECKO_PORTD_NAME
+	string "Port D driver name"
+	depends on GPIO_GECKO_PORTD
+	default "GPIO_3"
+
+config GPIO_GECKO_PORTE
+	bool "Port E"
+	default n
+	help
+	  Enable Port E.
+
+config GPIO_GECKO_PORTE_NAME
+	string "Port E driver name"
+	depends on GPIO_GECKO_PORTE
+	default "GPIO_4"
+
+config GPIO_GECKO_PORTF
+	bool "Port F"
+	default n
+	help
+	  Enable Port F.
+
+config GPIO_GECKO_PORTF_NAME
+	string "Port F driver name"
+	depends on GPIO_GECKO_PORTF
+	default "GPIO_5"
+
+endif # GPIO_GECKO
