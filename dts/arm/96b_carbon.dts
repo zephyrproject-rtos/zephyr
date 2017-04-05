@@ -22,3 +22,8 @@
 	baud-rate = <115200>;
 	status = "ok";
 };
+
+&usart2 {
+	baud-rate = <115200>;
+	status = "ok";
+};

@@ -11,12 +11,6 @@ config SOC
 	string
 	default stm32f407xx
 
-config SRAM_SIZE
-	default 192
-
-config FLASH_SIZE
-	default 1024
-
 config NUM_IRQS
 	int
 	default 82
