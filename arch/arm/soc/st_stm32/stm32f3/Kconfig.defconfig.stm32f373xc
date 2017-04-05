@@ -11,12 +11,6 @@ config SOC
 	string
 	default stm32f373xc
 
-config SRAM_SIZE
-	default 32
-
-config FLASH_SIZE
-	default 256
-
 config FLASH_PAGE_SIZE
 	hex
 	default 0x800
