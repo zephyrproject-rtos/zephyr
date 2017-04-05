@@ -1,0 +1,33 @@
+# Kconfig - EFM32WG MCU line
+#
+# Copyright (c) 2017 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "EFM32 Wonder Gecko MCU Selection"
+depends on SOC_SERIES_EFM32WG
+
+config SOC_EFM32WG
+	bool "SOC_EFM32WG"
+	select HAS_SILABS_GECKO
+	select HAS_CMU
+	select CPU_HAS_FPU
+
+endchoice
+
+if SOC_SERIES_EFM32WG
+
+config SOC_PART_NUMBER_EFM32WG990F256
+	bool
+
+config SOC_PART_NUMBER_EXX32_EFM32WG
+	string
+	default "EFM32WG990F256" if SOC_PART_NUMBER_EFM32WG990F256
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+endif # SOC_SERIES_EFM32WG
