@@ -1,0 +1,51 @@
+# Kconfig - EFM32WG STK3800 board
+#
+# Copyright (c) 2017, Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_EFM32WG_STK3800
+
+config BOARD
+	default efm32wg_stk3800
+
+config CMU_HFXO_FREQ
+	default 48000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+if GPIO_GECKO
+
+config GPIO_GECKO_PORTA
+	def_bool y
+
+config GPIO_GECKO_PORTB
+	def_bool y
+
+config GPIO_GECKO_PORTC
+	def_bool n
+
+config GPIO_GECKO_PORTD
+	def_bool n
+
+config GPIO_GECKO_PORTE
+	def_bool y
+
+config GPIO_GECKO_PORTF
+	def_bool y
+
+endif # GPIO_GECKO
+
+if UART_GECKO
+
+config UART_GECKO_0
+	def_bool y
+
+config UART_GECKO_0_GPIO_LOC
+	default 1
+
+endif # UART_GECKO
+
+endif # BOARD_EFM32WG_STK3800
