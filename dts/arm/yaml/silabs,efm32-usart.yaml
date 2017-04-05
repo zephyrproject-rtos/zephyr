@@ -1,0 +1,30 @@
+---
+title: EFM32 USART
+id: silabs,efm32-usart
+version: 0.1
+
+description: >
+    This binding gives a base representation of the EFM32 USART
+
+inherits:
+  - !include uart.yaml
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "silabs,efm32-usart"
+
+  - reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+  - interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...

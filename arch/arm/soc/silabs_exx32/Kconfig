@@ -1,0 +1,71 @@
+#
+# Copyright (c) 2017 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_EXX32
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+if SOC_FAMILY_EXX32
+config SOC_FAMILY
+	string
+	default "silabs_exx32"
+endif
+
+source "arch/arm/soc/silabs_exx32/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	string
+	default SOC_PART_NUMBER_EXX32_EFM32WG if SOC_SERIES_EFM32WG
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+config HAS_CMU
+	bool
+	default n
+	help
+	  Set if the clock management unit (CMU) is present in the SoC.
+
+if HAS_CMU
+
+choice
+	prompt "High Frequency Clock Selection"
+	default CMU_HFCLK_HFXO
+
+config CMU_HFCLK_HFXO
+	bool "External high frequency crystal oscillator"
+	help
+	  Set this option to use the external high frequency crystal oscillator
+	  as high frequency clock.
+
+config CMU_HFCLK_LFXO
+	bool "External low frequency crystal oscillator"
+	help
+	  Set this option to use the external low frequency crystal oscillator
+	  as high frequency clock.
+
+config CMU_HFCLK_HFRCO
+	bool "Internal high frequency RC oscillator"
+	help
+	  Set this option to use the internal high frequency RC oscillator as high frequency clock.
+
+endchoice
+
+config CMU_HFXO_FREQ
+	int "External high frequency oscillator frequency"
+	help
+	  Set the external high frequency oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config CMU_LFXO_FREQ
+	int "External low frequency oscillator frequency"
+	help
+	  Set the external low frequency oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+endif # HAS_CMU
