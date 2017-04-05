@@ -1,0 +1,6 @@
+identifier: qemu_x86
+name: qemu_x86
+type: qemu
+arch: x86
+toolchain:
+  - zephyr

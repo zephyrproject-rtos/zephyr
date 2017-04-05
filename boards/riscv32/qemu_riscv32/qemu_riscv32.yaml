@@ -1,0 +1,8 @@
+identifier: qemu_riscv32
+name: qemu_riscv32
+type: qemu
+arch: riscv32
+toolchain:
+  - zephyr
+testing:
+        default: true

@@ -1,0 +1,6 @@
+identifier: panther
+name: panther
+type: mcu
+arch: x86
+toolchain:
+  - zephyr

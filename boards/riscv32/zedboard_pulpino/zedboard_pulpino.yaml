@@ -1,0 +1,7 @@
+identifier: zedboard_pulpino
+name: zedboard_pulpino
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 32

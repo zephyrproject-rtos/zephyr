@@ -1,0 +1,6 @@
+identifier: minnowboard
+name: minnowboard
+type: mcu
+arch: x86
+toolchain:
+  - zephyr

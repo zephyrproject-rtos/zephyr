@@ -1,0 +1,6 @@
+identifier: arduino_101
+name: arduino_101
+type: mcu
+arch: x86
+toolchain:
+  - zephyr

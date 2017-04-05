@@ -1,0 +1,6 @@
+identifier: altera_max10
+name: altera_max10
+type: mcu
+arch: nios2
+toolchain:
+  - zephyr

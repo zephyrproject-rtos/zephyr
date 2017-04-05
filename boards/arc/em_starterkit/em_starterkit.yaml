@@ -1,0 +1,6 @@
+identifier: em_starterkit
+name: em_starterkit
+type: mcu
+arch: arc
+toolchain:
+  - zephyr

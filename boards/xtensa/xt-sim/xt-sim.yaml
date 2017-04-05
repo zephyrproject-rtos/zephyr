@@ -1,0 +1,6 @@
+identifier: xt-sim
+name: xt-sim
+type: mcu
+arch: xtensa
+toolchain:
+  - xcc

@@ -1,0 +1,8 @@
+identifier: galileo
+name: galileo
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+supported:
+  - pci

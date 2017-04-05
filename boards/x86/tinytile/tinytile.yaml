@@ -1,0 +1,6 @@
+identifier: tinytile
+name: tinytile
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
