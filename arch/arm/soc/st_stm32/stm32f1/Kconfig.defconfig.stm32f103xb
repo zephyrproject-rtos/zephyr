@@ -17,11 +17,11 @@ config SRAM_SIZE
 
 config FLASH_SIZE
 	default 128
+endif # !HAS_DTS
 
 config NUM_IRQS
 	int
 	default 59
-endif # !HAS_DTS
 
 endif # SOC_STM32F103XB
 

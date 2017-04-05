@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_i2c_ex.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   I2C Extended HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of I2C Extended peripheral:
@@ -31,7 +31,7 @@
           (++) HAL_I2CEx_DisableWakeUp()
     (#) Configure the enable or disable of fast mode plus driving capability using the functions :
           (++) HAL_I2CEx_EnableFastModePlus()
-          (++) HAL_I2CEx_DisbleFastModePlus()
+          (++) HAL_I2CEx_DisableFastModePlus()
   @endverbatim
   ******************************************************************************
   * @attention
@@ -90,7 +90,7 @@
 
 /** @defgroup I2CEx_Exported_Functions_Group1 Extended features functions
   * @brief    Extended features functions
-  *
+ *
 @verbatim
  ===============================================================================
                       ##### Extended features functions #####
@@ -151,7 +151,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigAnalogFilter(I2C_HandleTypeDef *hi2c, uint32_t
   * @brief  Configure I2C Digital noise filter.
   * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
   *                the configuration information for the specified I2Cx peripheral.
-  * @param  DigitalFilter Coefficient of digital noise filter between 0x00 and 0x0F.
+  * @param  DigitalFilter Coefficient of digital noise filter between Min_Data=0x00 and Max_Data=0x0F.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_t DigitalFilter)
@@ -238,7 +238,6 @@ HAL_StatusTypeDef HAL_I2CEx_EnableWakeUp (I2C_HandleTypeDef *hi2c)
   }
 }
 
-
 /**
   * @brief  Disable I2C wakeup from stop mode.
   * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
@@ -282,6 +281,15 @@ HAL_StatusTypeDef HAL_I2CEx_DisableWakeUp (I2C_HandleTypeDef *hi2c)
   * @brief Enable the I2C fast mode plus driving capability.
   * @param ConfigFastModePlus Selects the pin.
   *   This parameter can be one of the @ref I2CEx_FastModePlus values
+  * @note  For I2C1, fast mode plus driving capability can be enabled on all selected
+  *        I2C1 pins using I2C_FASTMODEPLUS_I2C1 parameter or independently
+  *        on each one of the following pins PB6, PB7, PB8 and PB9.
+  * @note  For remaining I2C1 pins (PA14, PA15...) fast mode plus driving capability
+  *        can be enabled only by using I2C_FASTMODEPLUS_I2C1 parameter.
+  * @note  For all I2C2 pins fast mode plus driving capability can be enabled
+  *        only by using I2C_FASTMODEPLUS_I2C2 parameter.
+  * @note  For all I2C3 pins fast mode plus driving capability can be enabled
+  *        only by using I2C_FASTMODEPLUS_I2C3 parameter.
   * @retval None
   */
 void HAL_I2CEx_EnableFastModePlus(uint32_t ConfigFastModePlus)
@@ -300,6 +308,15 @@ void HAL_I2CEx_EnableFastModePlus(uint32_t ConfigFastModePlus)
   * @brief Disable the I2C fast mode plus driving capability.
   * @param ConfigFastModePlus Selects the pin.
   *   This parameter can be one of the @ref I2CEx_FastModePlus values
+  * @note  For I2C1, fast mode plus driving capability can be disabled on all selected
+  *        I2C1 pins using I2C_FASTMODEPLUS_I2C1 parameter or independently
+  *        on each one of the following pins PB6, PB7, PB8 and PB9.
+  * @note  For remaining I2C1 pins (PA14, PA15...) fast mode plus driving capability
+  *        can be disabled only by using I2C_FASTMODEPLUS_I2C1 parameter.
+  * @note  For all I2C2 pins fast mode plus driving capability can be disabled
+  *        only by using I2C_FASTMODEPLUS_I2C2 parameter.
+  * @note  For all I2C3 pins fast mode plus driving capability can be disabled
+  *        only by using I2C_FASTMODEPLUS_I2C3 parameter.
   * @retval None
   */
 void HAL_I2CEx_DisableFastModePlus(uint32_t ConfigFastModePlus)

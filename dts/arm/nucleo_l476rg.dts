@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "stm32l476.dtsi"
+#include <st/stm32l476.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L476RG-NUCLEO board";

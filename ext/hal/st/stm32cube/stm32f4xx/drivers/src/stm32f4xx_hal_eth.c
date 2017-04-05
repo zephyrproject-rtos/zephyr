@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_eth.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   ETH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Ethernet (ETH) peripheral:
@@ -71,7 +71,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -120,9 +120,9 @@
 /** @defgroup ETH_Private_Constants ETH Private Constants
   * @{
   */
-#define ETH_TIMEOUT_SWRESET                ((uint32_t)500U)  
-#define ETH_TIMEOUT_LINKED_STATE          ((uint32_t)5000U)  
-#define ETH_TIMEOUT_AUTONEGO_COMPLETED    ((uint32_t)5000U)  
+#define ETH_TIMEOUT_SWRESET               500U  
+#define ETH_TIMEOUT_LINKED_STATE          5000U
+#define ETH_TIMEOUT_AUTONEGO_COMPLETED    5000U
 
 /**
   * @}
@@ -1082,8 +1082,8 @@ HAL_StatusTypeDef HAL_ETH_ReadPHYRegister(ETH_HandleTypeDef *heth, uint16_t PHYR
   /* Prepare the MII address register value */
   tmpreg1 |=(((uint32_t)heth->Init.PhyAddress << 11U) & ETH_MACMIIAR_PA); /* Set the PHY device address   */
   tmpreg1 |=(((uint32_t)PHYReg<<6U) & ETH_MACMIIAR_MR);                   /* Set the PHY register address */
-  tmpreg1 &= ~ETH_MACMIIAR_MW;                                           /* Set the read mode            */
-  tmpreg1 |= ETH_MACMIIAR_MB;                                            /* Set the MII Busy bit         */
+  tmpreg1 &= ~ETH_MACMIIAR_MW;                                            /* Set the read mode            */
+  tmpreg1 |= ETH_MACMIIAR_MB;                                             /* Set the MII Busy bit         */
   
   /* Write the result value into the MII Address register */
   heth->Instance->MACMIIAR = tmpreg1;
@@ -1436,7 +1436,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef 
     tmpreg1 = (heth->Instance)->MACCR;
     
     /* Clear FES and DM bits */
-    tmpreg1 &= ~((uint32_t)0x00004800U);
+    tmpreg1 &= ~(0x00004800U);
     
     tmpreg1 |= (uint32_t)(heth->Init.Speed | heth->Init.DuplexMode);
     
@@ -1866,6 +1866,9 @@ static void ETH_MACAddressConfig(ETH_HandleTypeDef *heth, uint32_t MacAddr, uint
 {
   uint32_t tmpreg1;
   
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(heth);
+
   /* Check the parameters */
   assert_param(IS_ETH_MAC_ADDRESS0123(MacAddr));
   
@@ -2035,7 +2038,7 @@ static void ETH_FlushTransmitFIFO(ETH_HandleTypeDef *heth)
   */
 static void ETH_Delay(uint32_t mdelay)
 {
-  __IO uint32_t Delay = mdelay * (SystemCoreClock / 8 / 1000);
+  __IO uint32_t Delay = mdelay * (SystemCoreClock / 8U / 1000U);
   do 
   {
     __NOP();

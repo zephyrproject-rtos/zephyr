@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_comp.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   COMP HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the COMP peripheral:
@@ -132,27 +132,27 @@
     +------------------------------------------------------------------------------------------+
     |                 |                | COMP1 | COMP2 | COMP3 | COMP4 | COMP5 | COMP6 | COMP7 |
     |-----------------|----------------|---------------|---------------------------------------|
-    |                 | 1/4 VREFINT    |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
-    |                 | 1/2 VREFINT    |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
-    |                 | 3/4 VREFINT    |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
+    |                 | 1U/4 VREFINT    |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
+    |                 | 1U/2 VREFINT    |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
+    |                 | 3U/4 VREFINT    |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
     | Inverting Input | VREFINT        |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
     |                 | DAC1 OUT (PA4) |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
     |                 | DAC2 OUT (PA5) |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |  OK   |
-    |                 | IO1            |  PA0  |  PA2  |  PD15 |  PE8  |  PD13 |  PD10 |  PC0  |
-    |                 | IO2            |  ---  |  ---  |  PB12 |  PB2  |  PB10 |  PB15 |  ---  |
+    |                 | IO1            |  PA0  |  PA2  |  PD15U |  PE8  |  PD13U |  PD10U |  PC0  |
+    |                 | IO2            |  ---  |  ---  |  PB12U |  PB2  |  PB10U |  PB15U |  ---  |
     |-----------------|----------------|-------|-------|-------|-------|-------|-------|-------|
-    |  Non Inverting  | IO1            |  PA1  |  PA7  |  PB14 |  PB0  |  PD12 |  PD11 |  PA0  |
-    |    Input        | IO2            |  ---  |  PA3  |  PD14 |  PE7  |  PB13 |  PB11 |  PC1  |
+    |  Non Inverting  | IO1            |  PA1  |  PA7  |  PB14U |  PB0  |  PD12U |  PD11U |  PA0  |
+    |    Input        | IO2            |  ---  |  PA3  |  PD14U |  PE7  |  PB13U |  PB11U |  PC1  |
     +------------------------------------------------------------------------------------------+
 
     Table 2. COMP Outputs for the STM32F303xB/STM32F303xC/STM32F303xE devices
     +-------------------------------------------------------+
     | COMP1 | COMP2 | COMP3 | COMP4 | COMP5 | COMP6 | COMP7 |
     |-------|-------|-------|-------|-------|-------|-------|
-    |  PA0  |  PA2  |  PB1  |  PC8  |  PC7  |  PA10 |  PC2  |
+    |  PA0  |  PA2  |  PB1  |  PC8  |  PC7  |  PA10U |  PC2  |
     |  PF4  |  PA7  |  ---  |  PA8  |  PA9  |  PC6  |  ---  |
-    |  PA6  |  PA12 |  ---  |  ---  |  ---  |  ---  |  ---  |
-    |  PA11 |  PB9  |  ---  |  ---  |  ---  |  ---  |  ---  |
+    |  PA6  |  PA12U |  ---  |  ---  |  ---  |  ---  |  ---  |
+    |  PA11U |  PB9  |  ---  |  ---  |  ---  |  ---  |  ---  |
     |  PB8  |  ---  |  ---  |  ---  |  ---  |  ---  |  ---  |
     +-------------------------------------------------------+
 
@@ -189,11 +189,11 @@
     +----------------------------------------------------------------------------------------------------------------------+
     |     COMP1      |     COMP2      |     COMP3      |     COMP4      |     COMP5      |     COMP6      |     COMP7      |
     |----------------|----------------|----------------|----------------|----------------|----------------|----------------|
-    |  TIM1 BKIN     |  TIM1 BKIN     |  TIM1 BKIN     |  TIM1 BKIN (1) |  TIM1 BKIN     |  TIM1 BKIN     |  TIM1 BKIN (1) |
+    |  TIM1 BKIN     |  TIM1 BKIN     |  TIM1 BKIN     |  TIM1 BKIN (1U) |  TIM1 BKIN     |  TIM1 BKIN     |  TIM1 BKIN (1U) |
     |                |                |                |                |                |                |                |
     |  TIM1 BKIN2    |  TIM1 BKIN2    |  TIM1 BKIN2    |  TIM1 BKIN2    |  TIM1 BKIN2    |  TIM1 BKIN2    |  TIM1 BKIN2    |
     |                |                |                |                |                |                |                |
-    |  TIM8 BKIN     |  TIM8 BKIN     |  TIM8 BKIN     |  TIM8 BKIN (1) |  TIM8 BKIN     |  TIM8 BKIN     |  TIM8 BKIN (1) |
+    |  TIM8 BKIN     |  TIM8 BKIN     |  TIM8 BKIN     |  TIM8 BKIN (1U) |  TIM8 BKIN     |  TIM8 BKIN     |  TIM8 BKIN (1U) |
     |                |                |                |                |                |                |                |
     |  TIM8 BKIN2    |  TIM8 BKIN2    |  TIM8 BKIN2    |  TIM8 BKIN2    |  TIM8 BKIN2    |  TIM8 BKIN2    |  TIM8 BKIN2    |
     |                |                |                |                |                |                |                |
@@ -213,7 +213,7 @@
     |                |                |                |                |                |                |                |
     |  TIM3 OCREFCLR |  TIM3 OCREFCLR |  TIM15 BKIN    |  TIM15 IC2     |  TIM17 IC1     |  TIM4 IC4      |  TIM17 BKIN    |
     |                |                |                |                |                |                |                |
-    |  TIM20 BKIN    |  TIM20 BKIN    |  TIM20 BKIN    |  TIM20 BKIN (1)|  TIM20 BKIN    |  TIM20 BKIN    |  TIM20 BKIN (1)|
+    |  TIM20 BKIN    |  TIM20 BKIN    |  TIM20 BKIN    |  TIM20 BKIN (1U)|  TIM20 BKIN    |  TIM20 BKIN    |  TIM20 BKIN (1U)|
     |                |                |                |                |                |                |                |
     |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |
     |                |                |                |                |                |                |                |
@@ -224,8 +224,8 @@
     |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |  TIM20 BKIN2   |
     |                |                |                |                |                |                |                |
     +----------------------------------------------------------------------------------------------------------------------+
-    (1):  This connection consists of connecting both GPIO and COMP output to TIM1/8/20 BRK input through an OR gate, instead
-          of connecting the GPIO to the TIM1/8/20 BRK input and the COMP output to the TIM1/8/20 BRK_ACTH input. The aim is to
+    (1U):  This connection consists of connecting both GPIO and COMP output to TIM1/8U/20 BRK input through an OR gate, instead
+          of connecting the GPIO to the TIM1/8U/20 BRK input and the COMP output to the TIM1/8U/20 BRK_ACTH input. The aim is to
           add a digital filter (3  bits) on the COMP output.
 
     Table 5. COMP Outputs blanking sources for the STM32F303xB/STM32F303xC/STM32F303xE devices
@@ -261,7 +261,7 @@
 /** @defgroup COMP_Private_Constants COMP Private Constants
   * @{
   */
-#define COMP_LOCK_DISABLE                      ((uint32_t)0x00000000)
+#define COMP_LOCK_DISABLE                      (0x00000000U)
 #define COMP_LOCK_ENABLE                       COMP_CSR_COMPxLOCK
 /**
   * @}
@@ -456,7 +456,7 @@ __weak void HAL_COMP_MspDeInit(COMP_HandleTypeDef *hcomp)
 HAL_StatusTypeDef HAL_COMP_Start(COMP_HandleTypeDef *hcomp)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  uint32_t extiline = 0;
+  uint32_t extiline = 0U;
 
   /* Check the COMP handle allocation and lock status */
   if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
@@ -563,7 +563,7 @@ HAL_StatusTypeDef HAL_COMP_Stop(COMP_HandleTypeDef *hcomp)
 HAL_StatusTypeDef HAL_COMP_Start_IT(COMP_HandleTypeDef *hcomp)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  uint32_t extiline = 0;
+  uint32_t extiline = 0U;
 
   /* Check the COMP handle allocation and lock status */
   if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
@@ -763,14 +763,14 @@ HAL_StatusTypeDef HAL_COMP_Lock(COMP_HandleTypeDef *hcomp)
   */
 uint32_t HAL_COMP_GetOutputLevel(COMP_HandleTypeDef *hcomp)
 {
-  uint32_t level=0;
+  uint32_t level=0U;
 
   /* Check the parameter */
   assert_param(IS_COMP_ALL_INSTANCE(hcomp->Instance));
 
   level = READ_BIT(hcomp->Instance->CSR, COMP_CSR_COMPxOUT);
 
-  if(level != 0)
+  if(level != 0U)
   {
     return(COMP_OUTPUTLEVEL_HIGH);
   }

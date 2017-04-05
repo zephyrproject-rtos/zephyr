@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_cryp.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   CRYP HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Cryptography (CRYP) peripheral:
@@ -70,7 +70,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -4071,8 +4071,8 @@ HAL_StatusTypeDef HAL_CRYP_Init(CRYP_HandleTypeDef *hcryp)
 #endif  
 
   /* Reset CrypInCount and CrypOutCount */
-  hcryp->CrypInCount = 0;
-  hcryp->CrypOutCount = 0;
+  hcryp->CrypInCount = 0U;
+  hcryp->CrypOutCount = 0U;
   
   /* Reset ErrorCode field */
   hcryp->ErrorCode = HAL_CRYP_ERROR_NONE;
@@ -4111,8 +4111,8 @@ HAL_StatusTypeDef HAL_CRYP_DeInit(CRYP_HandleTypeDef *hcryp)
   hcryp->Phase = HAL_CRYP_PHASE_READY;
   
   /* Reset CrypInCount and CrypOutCount */
-  hcryp->CrypInCount = 0;
-  hcryp->CrypOutCount = 0;
+  hcryp->CrypInCount = 0U;
+  hcryp->CrypOutCount = 0U;
   
   /* Disable the CRYP Peripheral Clock */
   __HAL_CRYP_DISABLE();
@@ -4956,7 +4956,7 @@ uint32_t HAL_CRYP_GetError(CRYP_HandleTypeDef *hcryp)
   */
 static HAL_StatusTypeDef  CRYP_SetKey(CRYP_HandleTypeDef *hcryp)
 {  
-  uint32_t keyaddr = 0x0;
+  uint32_t keyaddr = 0x0U;
   
   if ((uint32_t)(hcryp->Init.pKey == NULL))
   {
@@ -4969,21 +4969,21 @@ static HAL_StatusTypeDef  CRYP_SetKey(CRYP_HandleTypeDef *hcryp)
   if (hcryp->Init.KeySize == CRYP_KEYSIZE_256B)
   {
     hcryp->Instance->KEYR7 = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
+    keyaddr+=4U;
     hcryp->Instance->KEYR6 = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
+    keyaddr+=4U;
     hcryp->Instance->KEYR5 = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
+    keyaddr+=4U;
     hcryp->Instance->KEYR4 = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;      
+    keyaddr+=4U;      
   }  
   
   hcryp->Instance->KEYR3 = __REV(*(uint32_t*)(keyaddr));
-  keyaddr+=4;
+  keyaddr+=4U;
   hcryp->Instance->KEYR2 = __REV(*(uint32_t*)(keyaddr));
-  keyaddr+=4;
+  keyaddr+=4U;
   hcryp->Instance->KEYR1 = __REV(*(uint32_t*)(keyaddr));
-  keyaddr+=4;
+  keyaddr+=4U;
   hcryp->Instance->KEYR0 = __REV(*(uint32_t*)(keyaddr));  
   
   return HAL_OK;
@@ -4997,15 +4997,15 @@ static HAL_StatusTypeDef  CRYP_SetKey(CRYP_HandleTypeDef *hcryp)
   */
 static HAL_StatusTypeDef CRYP_SetInitVector(CRYP_HandleTypeDef *hcryp)
 {
-  uint32_t ivaddr = 0x0;
+  uint32_t ivaddr = 0x0U;
   
 #if !defined(AES_CR_NPBLB)
   if (hcryp->Init.ChainingMode == CRYP_CHAINMODE_AES_CMAC)
   {
-    hcryp->Instance->IVR3 = 0;
-    hcryp->Instance->IVR2 = 0;
-    hcryp->Instance->IVR1 = 0;        
-    hcryp->Instance->IVR0 = 0;
+    hcryp->Instance->IVR3 = 0U;
+    hcryp->Instance->IVR2 = 0U;
+    hcryp->Instance->IVR1 = 0U;        
+    hcryp->Instance->IVR0 = 0U;
   }
   else
 #endif
@@ -5018,11 +5018,11 @@ static HAL_StatusTypeDef CRYP_SetInitVector(CRYP_HandleTypeDef *hcryp)
     ivaddr = (uint32_t)(hcryp->Init.pInitVect);
   
     hcryp->Instance->IVR3 = __REV(*(uint32_t*)(ivaddr));
-    ivaddr+=4;
+    ivaddr+=4U;
     hcryp->Instance->IVR2 = __REV(*(uint32_t*)(ivaddr));
-    ivaddr+=4;
+    ivaddr+=4U;
     hcryp->Instance->IVR1 = __REV(*(uint32_t*)(ivaddr));
-    ivaddr+=4;
+    ivaddr+=4U;
     hcryp->Instance->IVR0 = __REV(*(uint32_t*)(ivaddr));
   }
   return HAL_OK;
@@ -5040,8 +5040,8 @@ static HAL_StatusTypeDef CRYP_SetInitVector(CRYP_HandleTypeDef *hcryp)
   */
 static HAL_StatusTypeDef CRYP_AES_IT(CRYP_HandleTypeDef *hcryp)
 {
-  uint32_t inputaddr = 0;
-  uint32_t outputaddr = 0;  
+  uint32_t inputaddr = 0U;
+  uint32_t outputaddr = 0U;  
 
   if(hcryp->State == HAL_CRYP_STATE_BUSY)
   {
@@ -5052,14 +5052,14 @@ static HAL_StatusTypeDef CRYP_AES_IT(CRYP_HandleTypeDef *hcryp)
       
       /* Read the last available output block from the Data Output Register */
       *(uint32_t*)(outputaddr) = hcryp->Instance->DOUTR;
-      outputaddr+=4;
+      outputaddr+=4U;
       *(uint32_t*)(outputaddr) = hcryp->Instance->DOUTR;
-      outputaddr+=4;
+      outputaddr+=4U;
       *(uint32_t*)(outputaddr) = hcryp->Instance->DOUTR;
-      outputaddr+=4;
+      outputaddr+=4U;
       *(uint32_t*)(outputaddr) = hcryp->Instance->DOUTR;
-      hcryp->pCrypOutBuffPtr += 16;
-      hcryp->CrypOutCount -= 16;
+      hcryp->pCrypOutBuffPtr += 16U;
+      hcryp->CrypOutCount -= 16U;
     
     }
     else
@@ -5068,27 +5068,27 @@ static HAL_StatusTypeDef CRYP_AES_IT(CRYP_HandleTypeDef *hcryp)
       if (hcryp->Init.KeySize == CRYP_KEYSIZE_256B)
       {   
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR7);
-        outputaddr+=4;
+        outputaddr+=4U;
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR6);
-        outputaddr+=4;
+        outputaddr+=4U;
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR5);
-        outputaddr+=4;
+        outputaddr+=4U;
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR4);
-        outputaddr+=4;
+        outputaddr+=4U;
       }
       
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR3);
-        outputaddr+=4;
+        outputaddr+=4U;
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR2);
-        outputaddr+=4;
+        outputaddr+=4U;
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR1);
-        outputaddr+=4;
+        outputaddr+=4U;
         *(uint32_t*)(outputaddr) = __REV(hcryp->Instance->KEYR0);
     }
     
     /* In case of ciphering or deciphering, check if all output text has been retrieved;
        In case of key derivation, stop right there */
-    if ((hcryp->CrypOutCount == 0) || (hcryp->Init.OperatingMode == CRYP_ALGOMODE_KEYDERIVATION))
+    if ((hcryp->CrypOutCount == 0U) || (hcryp->Init.OperatingMode == CRYP_ALGOMODE_KEYDERIVATION))
     {
       /* Disable Computation Complete Flag and Errors Interrupts */
       __HAL_CRYP_DISABLE_IT(CRYP_IT_CCFIE|CRYP_IT_ERRIE);
@@ -5125,16 +5125,16 @@ static HAL_StatusTypeDef CRYP_AES_IT(CRYP_HandleTypeDef *hcryp)
       inputaddr = (uint32_t)hcryp->pCrypInBuffPtr;
       
       /* Increment/decrement instance pointer/counter */
-      hcryp->pCrypInBuffPtr += 16;
-      hcryp->CrypInCount -= 16;
+      hcryp->pCrypInBuffPtr += 16U;
+      hcryp->CrypInCount -= 16U;
       
       /* Write the next input block in the Data Input register */
       hcryp->Instance->DINR = *(uint32_t*)(inputaddr);
-      inputaddr+=4;
+      inputaddr+=4U;
       hcryp->Instance->DINR = *(uint32_t*)(inputaddr);
-      inputaddr+=4;
+      inputaddr+=4U;
       hcryp->Instance->DINR  = *(uint32_t*)(inputaddr);
-      inputaddr+=4;
+      inputaddr+=4U;
       hcryp->Instance->DINR = *(uint32_t*)(inputaddr);
       
       return HAL_OK;      
@@ -5145,10 +5145,6 @@ static HAL_StatusTypeDef CRYP_AES_IT(CRYP_HandleTypeDef *hcryp)
     return HAL_BUSY; 
   }
 }
-
-/**
-  * @}
-  */
 
 /**
   * @}

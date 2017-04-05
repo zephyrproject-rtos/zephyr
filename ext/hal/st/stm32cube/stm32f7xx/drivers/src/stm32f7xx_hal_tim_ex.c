@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_tim_ex.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Timer extension peripheral:
@@ -176,6 +176,7 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Init(TIM_HandleTypeDef *htim, TIM_HallSen
   assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
   assert_param(IS_TIM_IC_POLARITY(sConfig->IC1Polarity));
   assert_param(IS_TIM_IC_PRESCALER(sConfig->IC1Prescaler));
   assert_param(IS_TIM_IC_FILTER(sConfig->IC1Filter));
@@ -1625,6 +1626,553 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigCommutationEvent_DMA(TIM_HandleTypeDef *htim, 
   __HAL_UNLOCK(htim);
   
   return HAL_OK;
+}  
+
+/**
+  * @brief  Configures the TIM in master mode.
+  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
+  *                the configuration information for TIM module.   
+  * @param  sMasterConfig: pointer to a TIM_MasterConfigTypeDef structure that
+  *         contains the selected trigger output (TRGO) and the Master/Slave 
+  *         mode. 
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim, TIM_MasterConfigTypeDef * sMasterConfig)
+{
+  uint32_t tmpcr2;  
+  uint32_t tmpsmcr;  
+
+  /* Check the parameters */
+  assert_param(IS_TIM_SYNCHRO_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_TRGO_SOURCE(sMasterConfig->MasterOutputTrigger));
+  assert_param(IS_TIM_MSM_STATE(sMasterConfig->MasterSlaveMode));
+  
+  /* Check input state */
+  __HAL_LOCK(htim);
+
+ /* Get the TIMx CR2 register value */
+  tmpcr2 = htim->Instance->CR2;
+
+  /* Get the TIMx SMCR register value */
+  tmpsmcr = htim->Instance->SMCR;
+
+  /* If the timer supports ADC synchronization through TRGO2, set the master mode selection 2 */
+  if (IS_TIM_TRGO2_INSTANCE(htim->Instance))
+  {
+    /* Check the parameters */
+    assert_param(IS_TIM_TRGO2_SOURCE(sMasterConfig->MasterOutputTrigger2));
+    
+    /* Clear the MMS2 bits */
+    tmpcr2 &= ~TIM_CR2_MMS2;
+    /* Select the TRGO2 source*/
+    tmpcr2 |= sMasterConfig->MasterOutputTrigger2;
+  }
+  
+  /* Reset the MMS Bits */
+  tmpcr2 &= ~TIM_CR2_MMS;
+  /* Select the TRGO source */
+  tmpcr2 |=  sMasterConfig->MasterOutputTrigger;
+
+  /* Reset the MSM Bit */
+  tmpsmcr &= ~TIM_SMCR_MSM;
+  /* Set master mode */
+  tmpsmcr |= sMasterConfig->MasterSlaveMode;
+  
+  /* Update TIMx CR2 */
+  htim->Instance->CR2 = tmpcr2;
+  
+  /* Update TIMx SMCR */
+  htim->Instance->SMCR = tmpsmcr;
+
+  __HAL_UNLOCK(htim);
+  
+  return HAL_OK;
+} 
+                                                     
+/**
+  * @brief   Configures the Break feature, dead time, Lock level, OSSI/OSSR State
+  *         and the AOE(automatic output enable).
+  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
+  *                the configuration information for TIM module.
+  * @param  sBreakDeadTimeConfig: pointer to a TIM_ConfigBreakDeadConfig_TypeDef structure that
+  *         contains the BDTR Register configuration  information for the TIM peripheral. 
+  * @retval HAL status
+  */ 
+HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim, 
+                                              TIM_BreakDeadTimeConfigTypeDef * sBreakDeadTimeConfig)
+{
+  uint32_t tmpbdtr = 0;
+  
+  /* Check the parameters */
+  assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_OSSR_STATE(sBreakDeadTimeConfig->OffStateRunMode));
+  assert_param(IS_TIM_OSSI_STATE(sBreakDeadTimeConfig->OffStateIDLEMode));
+  assert_param(IS_TIM_LOCK_LEVEL(sBreakDeadTimeConfig->LockLevel));
+  assert_param(IS_TIM_DEADTIME(sBreakDeadTimeConfig->DeadTime));
+  assert_param(IS_TIM_BREAK_STATE(sBreakDeadTimeConfig->BreakState));
+  assert_param(IS_TIM_BREAK_POLARITY(sBreakDeadTimeConfig->BreakPolarity));
+  assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->BreakFilter));
+  assert_param(IS_TIM_AUTOMATIC_OUTPUT_STATE(sBreakDeadTimeConfig->AutomaticOutput));
+  assert_param(IS_TIM_BREAK2_STATE(sBreakDeadTimeConfig->Break2State));
+  assert_param(IS_TIM_BREAK2_POLARITY(sBreakDeadTimeConfig->Break2Polarity));
+  assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->Break2Filter));
+  
+  /* Check input state */
+  __HAL_LOCK(htim);
+  
+  htim->State = HAL_TIM_STATE_BUSY;
+
+  /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
+     the OSSI State, the dead time value and the Automatic Output Enable Bit */
+  /* Set the BDTR bits */
+  MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, sBreakDeadTimeConfig->DeadTime);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, sBreakDeadTimeConfig->LockLevel);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSI, sBreakDeadTimeConfig->OffStateIDLEMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSR, sBreakDeadTimeConfig->OffStateRunMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKE, sBreakDeadTimeConfig->BreakState);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKP, sBreakDeadTimeConfig->BreakPolarity);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_AOE, sBreakDeadTimeConfig->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_MOE, sBreakDeadTimeConfig->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKF, (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT));
+  
+  if (IS_TIM_BKIN2_INSTANCE(htim->Instance))
+  {
+    assert_param(IS_TIM_BREAK2_STATE(sBreakDeadTimeConfig->Break2State));
+    assert_param(IS_TIM_BREAK2_POLARITY(sBreakDeadTimeConfig->Break2Polarity));
+    assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->Break2Filter));
+    
+    /* Set the BREAK2 input related BDTR bits */
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2F, (sBreakDeadTimeConfig->Break2Filter << BDTR_BK2F_SHIFT));
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2E, sBreakDeadTimeConfig->Break2State);
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2P, sBreakDeadTimeConfig->Break2Polarity);
+  }
+  
+
+  
+  /* Set TIMx_BDTR */
+  htim->Instance->BDTR = tmpbdtr;
+  
+  __HAL_UNLOCK(htim);
+  
+  return HAL_OK;
+}
+#if defined (STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || defined(STM32F777xx) || defined(STM32F779xx)
+/**
+  * @brief  Configures the break input source.
+  * @param  htim: TIM handle.
+  * @param  BreakInput: Break input to configure
+  *          This parameter can be one of the following values:
+  *            @arg TIM_BREAKINPUT_BRK: Timer break input
+  *            @arg TIM_BREAKINPUT_BRK2: Timer break 2 input
+  * @param  sBreakInputConfig: Break input source configuration
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
+                                             uint32_t BreakInput,
+                                             TIMEx_BreakInputConfigTypeDef *sBreakInputConfig)
+
+{
+  uint32_t tmporx = 0;
+  uint32_t bkin_enable_mask = 0;
+  uint32_t bkin_enable_bitpos = 0;
+
+  /* Check the parameters */
+  assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_BREAKINPUT(BreakInput));
+  assert_param(IS_TIM_BREAKINPUTSOURCE(sBreakInputConfig->Source));
+  assert_param(IS_TIM_BREAKINPUTSOURCE_STATE(sBreakInputConfig->Enable));
+
+  /* Check input state */
+  __HAL_LOCK(htim);
+  
+  switch(sBreakInputConfig->Source)
+  {
+  case TIM_BREAKINPUTSOURCE_BKIN:
+    {
+      bkin_enable_mask = TIM1_AF1_BKINE;
+      bkin_enable_bitpos = 0;
+    }
+    break;
+  
+  case TIM_BREAKINPUTSOURCE_DFSDM1:
+    {
+      bkin_enable_mask = TIM1_AF1_BKDF1BKE;
+      bkin_enable_bitpos = 8;
+    }
+    break;    
+
+  default:
+    break;
+  }
+  
+  switch(BreakInput)
+  {
+    case TIM_BREAKINPUT_BRK:
+      {
+        /* Get the TIMx_AF1 register value */
+        tmporx = htim->Instance->AF1;
+        
+        /* Enable the break input */
+        tmporx &= ~bkin_enable_mask;
+        tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
+        
+        /* Set TIMx_AF1 */
+        htim->Instance->AF1 = tmporx;        
+      }
+        break;
+    case TIM_BREAKINPUT_BRK2:
+      {
+        /* Get the TIMx_AF2 register value */
+        tmporx = htim->Instance->AF2;
+        
+        /* Enable the break input */
+        tmporx &= ~bkin_enable_mask;
+        tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
+        
+        /* Set TIMx_AF2 */
+        htim->Instance->AF2 = tmporx;        
+      }
+      break;    
+  default:
+    break;
+  }
+  
+  __HAL_UNLOCK(htim);
+
+  return HAL_OK;
+}
+#endif /* STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+
+/**
+  * @brief  Configures the TIM2, TIM5 and TIM11 Remapping input capabilities.
+  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
+  *                the configuration information for TIM module.
+  * @param  Remap: specifies the TIM input remapping source.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_TIM2_TIM8_TRGO: TIM2 ITR1 input is connected to TIM8 Trigger output(default)
+  *            @arg TIM_TIM2_ETH_PTP:   TIM2 ITR1 input is connected to ETH PTP trigger output.
+  *            @arg TIM_TIM2_USBFS_SOF: TIM2 ITR1 input is connected to USB FS SOF. 
+  *            @arg TIM_TIM2_USBHS_SOF: TIM2 ITR1 input is connected to USB HS SOF. 
+  *            @arg TIM_TIM5_GPIO:      TIM5 CH4 input is connected to dedicated Timer pin(default)
+  *            @arg TIM_TIM5_LSI:       TIM5 CH4 input is connected to LSI clock.
+  *            @arg TIM_TIM5_LSE:       TIM5 CH4 input is connected to LSE clock.
+  *            @arg TIM_TIM5_RTC:       TIM5 CH4 input is connected to RTC Output event.
+  *            @arg TIM_TIM11_GPIO:     TIM11 CH4 input is connected to dedicated Timer pin(default) 
+  *            @arg TIM_TIM11_SPDIF:    SPDIF Frame synchronous   
+  *            @arg TIM_TIM11_HSE:      TIM11 CH4 input is connected to HSE_RTC clock
+  *                                     (HSE divided by a programmable prescaler) 
+  *            @arg TIM_TIM11_MCO1:     TIM11 CH1 input is connected to MCO1    
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
+{
+  __HAL_LOCK(htim);
+    
+  /* Check parameters */
+  assert_param(IS_TIM_REMAP_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_REMAP(Remap));
+  
+  /* Set the Timer remapping configuration */
+  htim->Instance->OR = Remap;
+  
+  htim->State = HAL_TIM_STATE_READY;
+  
+  __HAL_UNLOCK(htim);  
+  
+  return HAL_OK;
+}
+
+/**
+  * @brief  Group channel 5 and channel 1, 2 or 3
+  * @param  htim: TIM handle.
+  * @param  OCRef: specifies the reference signal(s) the OC5REF is combined with.
+  *         This parameter can be any combination of the following values:
+  *         TIM_GROUPCH5_NONE: No effect of OC5REF on OC1REFC, OC2REFC and OC3REFC
+  *         TIM_GROUPCH5_OC1REFC: OC1REFC is the logical AND of OC1REFC and OC5REF
+  *         TIM_GROUPCH5_OC2REFC: OC2REFC is the logical AND of OC2REFC and OC5REF
+  *         TIM_GROUPCH5_OC3REFC: OC3REFC is the logical AND of OC3REFC and OC5REF
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_TIMEx_GroupChannel5(TIM_HandleTypeDef *htim, uint32_t OCRef)
+{
+  /* Check parameters */
+  assert_param(IS_TIM_COMBINED3PHASEPWM_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_GROUPCH5(OCRef));
+
+  /* Process Locked */
+  __HAL_LOCK(htim);
+  
+  htim->State = HAL_TIM_STATE_BUSY;
+  
+  /* Clear GC5Cx bit fields */
+  htim->Instance->CCR5 &= ~(TIM_CCR5_GC5C3|TIM_CCR5_GC5C2|TIM_CCR5_GC5C1);
+  
+  /* Set GC5Cx bit fields */
+  htim->Instance->CCR5 |= OCRef;
+                                   
+  htim->State = HAL_TIM_STATE_READY;                                 
+  
+  __HAL_UNLOCK(htim);
+  
+  return HAL_OK;
+}
+/**
+  * @}
+  */
+
+/** @defgroup TIMEx_Exported_Functions_Group6 Extended Callbacks functions 
+  * @brief    Extended Callbacks functions
+ *
+@verbatim   
+  ==============================================================================
+                    ##### Extension Callbacks functions #####
+  ==============================================================================  
+  [..]  
+    This section provides Extension TIM callback functions:
+    (+) Timer Commutation callback
+    (+) Timer Break callback
+
+@endverbatim
+  * @{
+  */
+
+/**
+  * @brief  Hall commutation changed callback in non blocking mode 
+  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
+  *                the configuration information for TIM module.
+  * @retval None
+  */
+__weak void HAL_TIMEx_CommutationCallback(TIM_HandleTypeDef *htim)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htim);
+ 
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the HAL_TIMEx_CommutationCallback could be implemented in the user file
+   */
+}
+
+/**
+  * @brief  Hall Break detection callback in non blocking mode 
+  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
+  *                the configuration information for TIM module.
+  * @retval None
+  */
+__weak void HAL_TIMEx_BreakCallback(TIM_HandleTypeDef *htim)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htim);
+ 
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the HAL_TIMEx_BreakCallback could be implemented in the user file
+   */
+}
+
+/**
+  * @}
+  */
+
+/** @defgroup TIMEx_Exported_Functions_Group7 Extended Peripheral State functions 
+ *  @brief    Extended Peripheral State functions
+ *
+@verbatim   
+  ==============================================================================
+                ##### Extension Peripheral State functions #####
+  ==============================================================================  
+  [..]
+    This subsection permits to get in run-time the status of the peripheral 
+    and the data flow.
+
+@endverbatim
+  * @{
+  */
+
+/**
+  * @brief  Return the TIM Hall Sensor interface state
+  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
+  *                the configuration information for TIM module.
+  * @retval HAL state
+  */
+HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef *htim)
+{
+  return htim->State;
+}
+
+/**
+  * @}
+  */
+
+/**
+  * @brief  TIM DMA Commutation callback. 
+  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
+  *                the configuration information for the specified DMA module.
+  * @retval None
+  */
+void HAL_TIMEx_DMACommutationCplt(DMA_HandleTypeDef *hdma)
+{
+  TIM_HandleTypeDef* htim = ( TIM_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+  
+  htim->State= HAL_TIM_STATE_READY;
+    
+  HAL_TIMEx_CommutationCallback(htim); 
+}
+/**
+  * @}
+  */
+
+/**
+  * @brief  Configures the OCRef clear feature
+  * @param  htim: TIM handle
+  * @param  sClearInputConfig: pointer to a TIM_ClearInputConfigTypeDef structure that
+  *         contains the OCREF clear feature and parameters for the TIM peripheral. 
+  * @param  Channel: specifies the TIM Channel
+  *          This parameter can be one of the following values:
+  *            @arg TIM_Channel_1: TIM Channel 1
+  *            @arg TIM_Channel_2: TIM Channel 2
+  *            @arg TIM_Channel_3: TIM Channel 3
+  *            @arg TIM_Channel_4: TIM Channel 4
+  *            @arg TIM_Channel_5: TIM Channel 5
+  *            @arg TIM_Channel_6: TIM Channel 6
+  * @retval None
+  */ 
+HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
+                                           TIM_ClearInputConfigTypeDef *sClearInputConfig,
+                                           uint32_t Channel)
+{ 
+  uint32_t tmpsmcr = 0;
+
+  /* Check the parameters */ 
+  assert_param(IS_TIM_OCXREF_CLEAR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_CLEARINPUT_SOURCE(sClearInputConfig->ClearInputSource));
+                                        
+  /* Check input state */
+  __HAL_LOCK(htim);
+  
+  switch (sClearInputConfig->ClearInputSource)
+  {
+    case TIM_CLEARINPUTSOURCE_NONE:
+    {
+      /* Get the TIMx SMCR register value */
+      tmpsmcr = htim->Instance->SMCR;
+      
+      /* Clear the ETR Bits */
+      tmpsmcr &= ~(TIM_SMCR_ETF | TIM_SMCR_ETPS | TIM_SMCR_ECE | TIM_SMCR_ETP);
+      
+      /* Set TIMx_SMCR */
+      htim->Instance->SMCR = tmpsmcr;
+   }
+    break;
+
+    case TIM_CLEARINPUTSOURCE_ETR:
+    {
+      /* Check the parameters */ 
+      assert_param(IS_TIM_CLEARINPUT_POLARITY(sClearInputConfig->ClearInputPolarity));
+      assert_param(IS_TIM_CLEARINPUT_PRESCALER(sClearInputConfig->ClearInputPrescaler));
+      assert_param(IS_TIM_CLEARINPUT_FILTER(sClearInputConfig->ClearInputFilter));
+      
+      TIM_ETR_SetConfig(htim->Instance,
+                        sClearInputConfig->ClearInputPrescaler,
+                        sClearInputConfig->ClearInputPolarity,
+                        sClearInputConfig->ClearInputFilter);
+    }
+    break;
+    default:  
+    break;
+  }
+  
+  switch (Channel)
+  { 
+    case TIM_CHANNEL_1:
+      {
+        if(sClearInputConfig->ClearInputState != RESET)
+        {
+          /* Enable the Ocref clear feature for Channel 1 */
+          htim->Instance->CCMR1 |= TIM_CCMR1_OC1CE;
+        }
+        else
+        {
+          /* Disable the Ocref clear feature for Channel 1 */
+          htim->Instance->CCMR1 &= ~TIM_CCMR1_OC1CE;      
+        }
+      }    
+      break;
+    case TIM_CHANNEL_2:    
+      {
+        if(sClearInputConfig->ClearInputState != RESET)
+        {
+          /* Enable the Ocref clear feature for Channel 2 */
+          htim->Instance->CCMR1 |= TIM_CCMR1_OC2CE;
+        }
+        else
+        {
+          /* Disable the Ocref clear feature for Channel 2 */
+          htim->Instance->CCMR1 &= ~TIM_CCMR1_OC2CE;      
+        }
+      }    
+    break;
+    case TIM_CHANNEL_3:    
+      {
+        if(sClearInputConfig->ClearInputState != RESET)
+        {
+          /* Enable the Ocref clear feature for Channel 3 */
+          htim->Instance->CCMR2 |= TIM_CCMR2_OC3CE;
+        }
+        else
+        {
+          /* Disable the Ocref clear feature for Channel 3 */
+          htim->Instance->CCMR2 &= ~TIM_CCMR2_OC3CE;      
+        }
+      }    
+    break;
+    case TIM_CHANNEL_4:    
+      {
+        if(sClearInputConfig->ClearInputState != RESET)
+        {
+          /* Enable the Ocref clear feature for Channel 4 */
+          htim->Instance->CCMR2 |= TIM_CCMR2_OC4CE;
+        }
+        else
+        {
+          /* Disable the Ocref clear feature for Channel 4 */
+          htim->Instance->CCMR2 &= ~TIM_CCMR2_OC4CE;      
+        }
+      }    
+    break;
+    case TIM_CHANNEL_5:    
+      {
+        if(sClearInputConfig->ClearInputState != RESET)
+        {
+          /* Enable the Ocref clear feature for Channel 1 */
+          htim->Instance->CCMR3 |= TIM_CCMR3_OC5CE;
+        }
+        else
+        {
+          /* Disable the Ocref clear feature for Channel 1 */
+          htim->Instance->CCMR3 &= ~TIM_CCMR3_OC5CE;      
+        }
+      }    
+    break;
+    case TIM_CHANNEL_6:    
+      {
+        if(sClearInputConfig->ClearInputState != RESET)
+        {
+          /* Enable the Ocref clear feature for Channel 1 */
+          htim->Instance->CCMR3 |= TIM_CCMR3_OC6CE;
+        }
+        else
+        {
+          /* Disable the Ocref clear feature for Channel 1 */
+          htim->Instance->CCMR3 &= ~TIM_CCMR3_OC6CE;      
+        }
+      }    
+    break;
+    default:  
+    break;
+  } 
+  
+  __HAL_UNLOCK(htim);
+
+  return HAL_OK;  
 }
 
 /**
@@ -1873,559 +2421,6 @@ HAL_StatusTypeDef HAL_TIM_PWM_ConfigChannel(TIM_HandleTypeDef *htim,
 }
 
 /**
-  * @brief  Configures the OCRef clear feature
-  * @param  htim: TIM handle
-  * @param  sClearInputConfig: pointer to a TIM_ClearInputConfigTypeDef structure that
-  *         contains the OCREF clear feature and parameters for the TIM peripheral. 
-  * @param  Channel: specifies the TIM Channel
-  *          This parameter can be one of the following values:
-  *            @arg TIM_Channel_1: TIM Channel 1
-  *            @arg TIM_Channel_2: TIM Channel 2
-  *            @arg TIM_Channel_3: TIM Channel 3
-  *            @arg TIM_Channel_4: TIM Channel 4
-  *            @arg TIM_Channel_5: TIM Channel 5
-  *            @arg TIM_Channel_6: TIM Channel 6
-  * @retval None
-  */ 
-HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
-                                           TIM_ClearInputConfigTypeDef *sClearInputConfig,
-                                           uint32_t Channel)
-{ 
-  uint32_t tmpsmcr = 0;
-
-  /* Check the parameters */ 
-  assert_param(IS_TIM_OCXREF_CLEAR_INSTANCE(htim->Instance));
-  assert_param(IS_TIM_CLEARINPUT_SOURCE(sClearInputConfig->ClearInputSource));
-                                        
-  /* Check input state */
-  __HAL_LOCK(htim);
-  
-  switch (sClearInputConfig->ClearInputSource)
-  {
-    case TIM_CLEARINPUTSOURCE_NONE:
-    {
-      /* Get the TIMx SMCR register value */
-      tmpsmcr = htim->Instance->SMCR;
-      
-      /* Clear the OCREF clear selection bit */
-      tmpsmcr &= ~TIM_SMCR_OCCS;
-      
-      /* Clear the ETR Bits */
-      tmpsmcr &= ~(TIM_SMCR_ETF | TIM_SMCR_ETPS | TIM_SMCR_ECE | TIM_SMCR_ETP);
-      
-      /* Set TIMx_SMCR */
-      htim->Instance->SMCR = tmpsmcr;
-   }
-    break;
-    
-    case TIM_CLEARINPUTSOURCE_OCREFCLR:
-    {
-      /* Clear the OCREF clear selection bit */
-      htim->Instance->SMCR &= ~TIM_SMCR_OCCS;
-    }
-    break;
-    
-    case TIM_CLEARINPUTSOURCE_ETR:
-    {
-      /* Check the parameters */ 
-      assert_param(IS_TIM_CLEARINPUT_POLARITY(sClearInputConfig->ClearInputPolarity));
-      assert_param(IS_TIM_CLEARINPUT_PRESCALER(sClearInputConfig->ClearInputPrescaler));
-      assert_param(IS_TIM_CLEARINPUT_FILTER(sClearInputConfig->ClearInputFilter));
-      
-      TIM_ETR_SetConfig(htim->Instance,
-                        sClearInputConfig->ClearInputPrescaler,
-                        sClearInputConfig->ClearInputPolarity,
-                        sClearInputConfig->ClearInputFilter);
-      
-      /* Set the OCREF clear selection bit */
-      htim->Instance->SMCR |= TIM_SMCR_OCCS;
-    }
-    break;
-    default:  
-    break;
-  }
-  
-  switch (Channel)
-  { 
-    case TIM_CHANNEL_1:
-      {
-        if(sClearInputConfig->ClearInputState != RESET)
-        {
-          /* Enable the Ocref clear feature for Channel 1 */
-          htim->Instance->CCMR1 |= TIM_CCMR1_OC1CE;
-        }
-        else
-        {
-          /* Disable the Ocref clear feature for Channel 1 */
-          htim->Instance->CCMR1 &= ~TIM_CCMR1_OC1CE;      
-        }
-      }    
-      break;
-    case TIM_CHANNEL_2:    
-      {
-        if(sClearInputConfig->ClearInputState != RESET)
-        {
-          /* Enable the Ocref clear feature for Channel 2 */
-          htim->Instance->CCMR1 |= TIM_CCMR1_OC2CE;
-        }
-        else
-        {
-          /* Disable the Ocref clear feature for Channel 2 */
-          htim->Instance->CCMR1 &= ~TIM_CCMR1_OC2CE;      
-        }
-      }    
-    break;
-    case TIM_CHANNEL_3:    
-      {
-        if(sClearInputConfig->ClearInputState != RESET)
-        {
-          /* Enable the Ocref clear feature for Channel 3 */
-          htim->Instance->CCMR2 |= TIM_CCMR2_OC3CE;
-        }
-        else
-        {
-          /* Disable the Ocref clear feature for Channel 3 */
-          htim->Instance->CCMR2 &= ~TIM_CCMR2_OC3CE;      
-        }
-      }    
-    break;
-    case TIM_CHANNEL_4:    
-      {
-        if(sClearInputConfig->ClearInputState != RESET)
-        {
-          /* Enable the Ocref clear feature for Channel 4 */
-          htim->Instance->CCMR2 |= TIM_CCMR2_OC4CE;
-        }
-        else
-        {
-          /* Disable the Ocref clear feature for Channel 4 */
-          htim->Instance->CCMR2 &= ~TIM_CCMR2_OC4CE;      
-        }
-      }    
-    break;
-    case TIM_CHANNEL_5:    
-      {
-        if(sClearInputConfig->ClearInputState != RESET)
-        {
-          /* Enable the Ocref clear feature for Channel 1 */
-          htim->Instance->CCMR3 |= TIM_CCMR3_OC5CE;
-        }
-        else
-        {
-          /* Disable the Ocref clear feature for Channel 1 */
-          htim->Instance->CCMR3 &= ~TIM_CCMR3_OC5CE;      
-        }
-      }    
-    break;
-    case TIM_CHANNEL_6:    
-      {
-        if(sClearInputConfig->ClearInputState != RESET)
-        {
-          /* Enable the Ocref clear feature for Channel 1 */
-          htim->Instance->CCMR3 |= TIM_CCMR3_OC6CE;
-        }
-        else
-        {
-          /* Disable the Ocref clear feature for Channel 1 */
-          htim->Instance->CCMR3 &= ~TIM_CCMR3_OC6CE;      
-        }
-      }    
-    break;
-    default:  
-    break;
-  } 
-  
-  __HAL_UNLOCK(htim);
-
-  return HAL_OK;  
-}  
-
-/**
-  * @brief  Configures the TIM in master mode.
-  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
-  *                the configuration information for TIM module.   
-  * @param  sMasterConfig: pointer to a TIM_MasterConfigTypeDef structure that
-  *         contains the selected trigger output (TRGO) and the Master/Slave 
-  *         mode. 
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim, TIM_MasterConfigTypeDef * sMasterConfig)
-{
-  uint32_t tmpcr2;  
-  uint32_t tmpsmcr;  
-
-  /* Check the parameters */
-  assert_param(IS_TIM_SYNCHRO_INSTANCE(htim->Instance));
-  assert_param(IS_TIM_TRGO_SOURCE(sMasterConfig->MasterOutputTrigger));
-  assert_param(IS_TIM_MSM_STATE(sMasterConfig->MasterSlaveMode));
-  
-  /* Check input state */
-  __HAL_LOCK(htim);
-
- /* Get the TIMx CR2 register value */
-  tmpcr2 = htim->Instance->CR2;
-
-  /* Get the TIMx SMCR register value */
-  tmpsmcr = htim->Instance->SMCR;
-
-  /* If the timer supports ADC synchronization through TRGO2, set the master mode selection 2 */
-  if (IS_TIM_TRGO2_INSTANCE(htim->Instance))
-  {
-    /* Check the parameters */
-    assert_param(IS_TIM_TRGO2_SOURCE(sMasterConfig->MasterOutputTrigger2));
-    
-    /* Clear the MMS2 bits */
-    tmpcr2 &= ~TIM_CR2_MMS2;
-    /* Select the TRGO2 source*/
-    tmpcr2 |= sMasterConfig->MasterOutputTrigger2;
-  }
-  
-  /* Reset the MMS Bits */
-  tmpcr2 &= ~TIM_CR2_MMS;
-  /* Select the TRGO source */
-  tmpcr2 |=  sMasterConfig->MasterOutputTrigger;
-
-  /* Reset the MSM Bit */
-  tmpsmcr &= ~TIM_SMCR_MSM;
-  /* Set master mode */
-  tmpsmcr |= sMasterConfig->MasterSlaveMode;
-  
-  /* Update TIMx CR2 */
-  htim->Instance->CR2 = tmpcr2;
-  
-  /* Update TIMx SMCR */
-  htim->Instance->SMCR = tmpsmcr;
-
-  __HAL_UNLOCK(htim);
-  
-  return HAL_OK;
-} 
-                                                     
-/**
-  * @brief   Configures the Break feature, dead time, Lock level, OSSI/OSSR State
-  *         and the AOE(automatic output enable).
-  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
-  *                the configuration information for TIM module.
-  * @param  sBreakDeadTimeConfig: pointer to a TIM_ConfigBreakDeadConfig_TypeDef structure that
-  *         contains the BDTR Register configuration  information for the TIM peripheral. 
-  * @retval HAL status
-  */    
-HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim, 
-                                              TIM_BreakDeadTimeConfigTypeDef * sBreakDeadTimeConfig)
-{
-  uint32_t tmpbdtr = 0;
-  
-  /* Check the parameters */
-  assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
-  assert_param(IS_TIM_OSSR_STATE(sBreakDeadTimeConfig->OffStateRunMode));
-  assert_param(IS_TIM_OSSI_STATE(sBreakDeadTimeConfig->OffStateIDLEMode));
-  assert_param(IS_TIM_LOCK_LEVEL(sBreakDeadTimeConfig->LockLevel));
-  assert_param(IS_TIM_DEADTIME(sBreakDeadTimeConfig->DeadTime));
-  assert_param(IS_TIM_BREAK_STATE(sBreakDeadTimeConfig->BreakState));
-  assert_param(IS_TIM_BREAK_POLARITY(sBreakDeadTimeConfig->BreakPolarity));
-  assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->BreakFilter));
-  assert_param(IS_TIM_AUTOMATIC_OUTPUT_STATE(sBreakDeadTimeConfig->AutomaticOutput));
-  assert_param(IS_TIM_BREAK2_STATE(sBreakDeadTimeConfig->Break2State));
-  assert_param(IS_TIM_BREAK2_POLARITY(sBreakDeadTimeConfig->Break2Polarity));
-  assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->Break2Filter));
-  
-  /* Check input state */
-  __HAL_LOCK(htim);
-  
-  htim->State = HAL_TIM_STATE_BUSY;
-
-  /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
-     the OSSI State, the dead time value and the Automatic Output Enable Bit */
-    
-  /* Clear the BDTR bits */
-  tmpbdtr &= ~(TIM_BDTR_DTG | TIM_BDTR_LOCK |  TIM_BDTR_OSSI | 
-               TIM_BDTR_OSSR | TIM_BDTR_BKE | TIM_BDTR_BKP | 
-               TIM_BDTR_AOE | TIM_BDTR_MOE | TIM_BDTR_BKF |
-               TIM_BDTR_BK2F | TIM_BDTR_BK2E | TIM_BDTR_BK2P);
-
-  /* Set the BDTR bits */
-  tmpbdtr |= sBreakDeadTimeConfig->DeadTime;
-  tmpbdtr |= sBreakDeadTimeConfig->LockLevel;
-  tmpbdtr |= sBreakDeadTimeConfig->OffStateIDLEMode;
-  tmpbdtr |= sBreakDeadTimeConfig->OffStateRunMode;
-  tmpbdtr |= sBreakDeadTimeConfig->BreakState;
-  tmpbdtr |= sBreakDeadTimeConfig->BreakPolarity;
-  tmpbdtr |= sBreakDeadTimeConfig->AutomaticOutput;
-  tmpbdtr |= (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT);
-  tmpbdtr |= (sBreakDeadTimeConfig->Break2Filter << BDTR_BK2F_SHIFT);
-  tmpbdtr |= sBreakDeadTimeConfig->Break2State;
-  tmpbdtr |= sBreakDeadTimeConfig->Break2Polarity;
-  
-  /* Set TIMx_BDTR */
-  htim->Instance->BDTR = tmpbdtr;
-  
-  __HAL_UNLOCK(htim);
-  
-  return HAL_OK;
-}
-#if defined (STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || defined(STM32F777xx) || defined(STM32F779xx)
-/**
-  * @brief  Configures the break input source.
-  * @param  htim: TIM handle.
-  * @param  BreakInput: Break input to configure
-  *          This parameter can be one of the following values:
-  *            @arg TIM_BREAKINPUT_BRK: Timer break input
-  *            @arg TIM_BREAKINPUT_BRK2: Timer break 2 input
-  * @param  sBreakInputConfig: Break input source configuration
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
-                                             uint32_t BreakInput,
-                                             TIMEx_BreakInputConfigTypeDef *sBreakInputConfig)
-
-{
-  uint32_t tmporx = 0;
-  uint32_t bkin_enable_mask = 0;
-  uint32_t bkin_enable_bitpos = 0;
-
-  /* Check the parameters */
-  assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
-  assert_param(IS_TIM_BREAKINPUT(BreakInput));
-  assert_param(IS_TIM_BREAKINPUTSOURCE(sBreakInputConfig->Source));
-  assert_param(IS_TIM_BREAKINPUTSOURCE_STATE(sBreakInputConfig->Enable));
-
-  /* Check input state */
-  __HAL_LOCK(htim);
-  
-  switch(sBreakInputConfig->Source)
-  {
-  case TIM_BREAKINPUTSOURCE_BKIN:
-    {
-      bkin_enable_mask = TIM1_AF1_BKINE;
-      bkin_enable_bitpos = 0;
-    }
-    break;
-  
-  case TIM_BREAKINPUTSOURCE_DFSDM1:
-    {
-      bkin_enable_mask = TIM1_AF1_BKDF1BKE;
-      bkin_enable_bitpos = 8;
-    }
-    break;    
-
-  default:
-    break;
-  }
-  
-  switch(BreakInput)
-  {
-    case TIM_BREAKINPUT_BRK:
-      {
-        /* Get the TIMx_AF1 register value */
-        tmporx = htim->Instance->AF1;
-        
-        /* Enable the break input */
-        tmporx &= ~bkin_enable_mask;
-        tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
-        
-        /* Set TIMx_AF1 */
-        htim->Instance->AF1 = tmporx;        
-      }
-        break;
-    case TIM_BREAKINPUT_BRK2:
-      {
-        /* Get the TIMx_AF2 register value */
-        tmporx = htim->Instance->AF2;
-        
-        /* Enable the break input */
-        tmporx &= ~bkin_enable_mask;
-        tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
-        
-        /* Set TIMx_AF2 */
-        htim->Instance->AF2 = tmporx;        
-      }
-      break;    
-  default:
-    break;
-  }
-  
-  __HAL_UNLOCK(htim);
-
-  return HAL_OK;
-}
-#endif /* STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
-
-/**
-  * @brief  Configures the TIM2, TIM5 and TIM11 Remapping input capabilities.
-  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
-  *                the configuration information for TIM module.
-  * @param  Remap: specifies the TIM input remapping source.
-  *          This parameter can be one of the following values:
-  *            @arg TIM_TIM2_TIM8_TRGO: TIM2 ITR1 input is connected to TIM8 Trigger output(default)
-  *            @arg TIM_TIM2_ETH_PTP:   TIM2 ITR1 input is connected to ETH PTP trigger output.
-  *            @arg TIM_TIM2_USBFS_SOF: TIM2 ITR1 input is connected to USB FS SOF. 
-  *            @arg TIM_TIM2_USBHS_SOF: TIM2 ITR1 input is connected to USB HS SOF. 
-  *            @arg TIM_TIM5_GPIO:      TIM5 CH4 input is connected to dedicated Timer pin(default)
-  *            @arg TIM_TIM5_LSI:       TIM5 CH4 input is connected to LSI clock.
-  *            @arg TIM_TIM5_LSE:       TIM5 CH4 input is connected to LSE clock.
-  *            @arg TIM_TIM5_RTC:       TIM5 CH4 input is connected to RTC Output event.
-  *            @arg TIM_TIM11_GPIO:     TIM11 CH4 input is connected to dedicated Timer pin(default) 
-  *            @arg TIM_TIM11_SPDIF:    SPDIF Frame synchronous   
-  *            @arg TIM_TIM11_HSE:      TIM11 CH4 input is connected to HSE_RTC clock
-  *                                     (HSE divided by a programmable prescaler) 
-  *            @arg TIM_TIM11_MCO1:     TIM11 CH1 input is connected to MCO1    
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
-{
-  __HAL_LOCK(htim);
-    
-  /* Check parameters */
-  assert_param(IS_TIM_REMAP_INSTANCE(htim->Instance));
-  assert_param(IS_TIM_REMAP(Remap));
-  
-  /* Set the Timer remapping configuration */
-  htim->Instance->OR = Remap;
-  
-  htim->State = HAL_TIM_STATE_READY;
-  
-  __HAL_UNLOCK(htim);  
-  
-  return HAL_OK;
-}
-
-/**
-  * @brief  Group channel 5 and channel 1, 2 or 3
-  * @param  htim: TIM handle.
-  * @param  OCRef: specifies the reference signal(s) the OC5REF is combined with.
-  *         This parameter can be any combination of the following values:
-  *         TIM_GROUPCH5_NONE: No effect of OC5REF on OC1REFC, OC2REFC and OC3REFC
-  *         TIM_GROUPCH5_OC1REFC: OC1REFC is the logical AND of OC1REFC and OC5REF
-  *         TIM_GROUPCH5_OC2REFC: OC2REFC is the logical AND of OC2REFC and OC5REF
-  *         TIM_GROUPCH5_OC3REFC: OC3REFC is the logical AND of OC3REFC and OC5REF
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_TIMEx_GroupChannel5(TIM_HandleTypeDef *htim, uint32_t OCRef)
-{
-  /* Check parameters */
-  assert_param(IS_TIM_COMBINED3PHASEPWM_INSTANCE(htim->Instance));
-  assert_param(IS_TIM_GROUPCH5(OCRef));
-
-  /* Process Locked */
-  __HAL_LOCK(htim);
-  
-  htim->State = HAL_TIM_STATE_BUSY;
-  
-  /* Clear GC5Cx bit fields */
-  htim->Instance->CCR5 &= ~(TIM_CCR5_GC5C3|TIM_CCR5_GC5C2|TIM_CCR5_GC5C1);
-  
-  /* Set GC5Cx bit fields */
-  htim->Instance->CCR5 |= OCRef;
-                                   
-  htim->State = HAL_TIM_STATE_READY;                                 
-  
-  __HAL_UNLOCK(htim);
-  
-  return HAL_OK;
-}
-
-/**
-  * @}
-  */
-
-/** @defgroup TIMEx_Exported_Functions_Group6 Extended Callbacks functions 
-  * @brief    Extended Callbacks functions
- *
-@verbatim   
-  ==============================================================================
-                    ##### Extension Callbacks functions #####
-  ==============================================================================  
-  [..]  
-    This section provides Extension TIM callback functions:
-    (+) Timer Commutation callback
-    (+) Timer Break callback
-
-@endverbatim
-  * @{
-  */
-
-/**
-  * @brief  Hall commutation changed callback in non blocking mode 
-  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
-  *                the configuration information for TIM module.
-  * @retval None
-  */
-__weak void HAL_TIMEx_CommutationCallback(TIM_HandleTypeDef *htim)
-{
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(htim);
- 
-  /* NOTE : This function Should not be modified, when the callback is needed,
-            the HAL_TIMEx_CommutationCallback could be implemented in the user file
-   */
-}
-
-/**
-  * @brief  Hall Break detection callback in non blocking mode 
-  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
-  *                the configuration information for TIM module.
-  * @retval None
-  */
-__weak void HAL_TIMEx_BreakCallback(TIM_HandleTypeDef *htim)
-{
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(htim);
- 
-  /* NOTE : This function Should not be modified, when the callback is needed,
-            the HAL_TIMEx_BreakCallback could be implemented in the user file
-   */
-}
-
-/**
-  * @}
-  */
-
-/** @defgroup TIMEx_Exported_Functions_Group7 Extended Peripheral State functions 
- *  @brief    Extended Peripheral State functions
- *
-@verbatim   
-  ==============================================================================
-                ##### Extension Peripheral State functions #####
-  ==============================================================================  
-  [..]
-    This subsection permits to get in run-time the status of the peripheral 
-    and the data flow.
-
-@endverbatim
-  * @{
-  */
-
-/**
-  * @brief  Return the TIM Hall Sensor interface state
-  * @param  htim: pointer to a TIM_HandleTypeDef structure that contains
-  *                the configuration information for TIM module.
-  * @retval HAL state
-  */
-HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef *htim)
-{
-  return htim->State;
-}
-
-/**
-  * @}
-  */
-
-/**
-  * @brief  TIM DMA Commutation callback. 
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
-  *                the configuration information for the specified DMA module.
-  * @retval None
-  */
-void HAL_TIMEx_DMACommutationCplt(DMA_HandleTypeDef *hdma)
-{
-  TIM_HandleTypeDef* htim = ( TIM_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  
-  htim->State= HAL_TIM_STATE_READY;
-    
-  HAL_TIMEx_CommutationCallback(htim); 
-}
-
-/**
   * @brief  Enables or disables the TIM Capture Compare Channel xN.
   * @param  TIMx to select the TIM peripheral
   * @param  Channel: specifies the TIM Channel
@@ -2557,11 +2552,7 @@ static void TIM_OC6_SetConfig(TIM_TypeDef *TIMx, TIM_OC_InitTypeDef *OC_Config)
   
   /* Write to TIMx CCER */
   TIMx->CCER = tmpccer;  
-} 
-
-/**
-  * @}
-  */
+}
 
 #endif /* HAL_TIM_MODULE_ENABLED */
 /**

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -33,11 +33,9 @@
 #include "fsl_common.h"
 
 /*!
- * @addtogroup tpm_driver
+ * @addtogroup tpm
  * @{
  */
-
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -45,7 +43,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_TPM_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1 */
+#define FSL_TPM_DRIVER_VERSION (MAKE_VERSION(2, 0, 2)) /*!< Version 2.0.2 */
 /*@}*/
 
 /*!
@@ -524,6 +522,47 @@ static inline void TPM_ClearStatusFlags(TPM_Type *base, uint32_t mask)
 }
 
 /*! @}*/
+
+/*!
+ * @name Read and write the timer period
+ * @{
+ */
+
+/*!
+ * @brief Sets the timer period in units of ticks.
+ *
+ * Timers counts from 0 until it equals the count value set here. The count value is written to
+ * the MOD register.
+ *
+ * @note
+ * 1. This API allows the user to use the TPM module as a timer. Do not mix usage
+ *    of this API with TPM's PWM setup API's.
+ * 2. Call the utility macros provided in the fsl_common.h to convert usec or msec to ticks.
+ *
+ * @param base TPM peripheral base address
+ * @param ticks A timer period in units of ticks, which should be equal or greater than 1.
+ */
+static inline void TPM_SetTimerPeriod(TPM_Type *base, uint32_t ticks)
+{
+    base->MOD = ticks;
+}
+
+/*!
+ * @brief Reads the current timer counting value.
+ *
+ * This function returns the real-time timer counting value in a range from 0 to a
+ * timer period.
+ *
+ * @note Call the utility macros provided in the fsl_common.h to convert ticks to usec or msec.
+ *
+ * @param base TPM peripheral base address
+ *
+ * @return The current counter value in ticks
+ */
+static inline uint32_t TPM_GetCurrentTimerCount(TPM_Type *base)
+{
+    return (uint32_t)((base->CNT & TPM_CNT_COUNT_MASK) >> TPM_CNT_COUNT_SHIFT);
+}
 
 /*!
  * @name Timer Start and Stop

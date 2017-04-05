@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_sdadc.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   This file provides firmware functions to manage the following
   *          functionalities of the Sigma-Delta Analog to Digital Converter
   *          (SDADC) peripherals:
@@ -286,8 +286,8 @@ HAL_StatusTypeDef HAL_SDADC_Init(SDADC_HandleTypeDef* hsdadc)
   /* Initialize SDADC variables with default values */
   hsdadc->RegularContMode     = SDADC_CONTINUOUS_CONV_OFF;
   hsdadc->InjectedContMode    = SDADC_CONTINUOUS_CONV_OFF;
-  hsdadc->InjectedChannelsNbr = 1;
-  hsdadc->InjConvRemaining    = 1;
+  hsdadc->InjectedChannelsNbr = 1U;
+  hsdadc->InjConvRemaining    = 1U;
   hsdadc->RegularTrigger      = SDADC_SOFTWARE_TRIGGER;
   hsdadc->InjectedTrigger     = SDADC_SOFTWARE_TRIGGER;
   hsdadc->ExtTriggerEdge      = SDADC_EXT_TRIG_RISING_EDGE;
@@ -317,14 +317,14 @@ HAL_StatusTypeDef HAL_SDADC_Init(SDADC_HandleTypeDef* hsdadc)
     SDADC1->CR1 |= hsdadc->Init.ReferenceVoltage;
 
     /* Wait at least 2ms before setting ADON */
-    HAL_Delay(2);
+    HAL_Delay(2U);
   }
 
   /* Enable SDADC */
   hsdadc->Instance->CR2 |= SDADC_CR2_ADON;
 
   /* Wait end of stabilization */
-  while((hsdadc->Instance->ISR & SDADC_ISR_STABIP) != 0)
+  while((hsdadc->Instance->ISR & SDADC_ISR_STABIP) != 0U)
   {
   }
 
@@ -355,14 +355,14 @@ HAL_StatusTypeDef HAL_SDADC_DeInit(SDADC_HandleTypeDef* hsdadc)
   hsdadc->Instance->CR2 &= ~(SDADC_CR2_ADON);
 
   /* Reset all registers */
-  hsdadc->Instance->CR1      = 0x00000000;
-  hsdadc->Instance->CR2      = 0x00000000;
-  hsdadc->Instance->JCHGR    = 0x00000001;
-  hsdadc->Instance->CONF0R   = 0x00000000;
-  hsdadc->Instance->CONF1R   = 0x00000000;
-  hsdadc->Instance->CONF2R   = 0x00000000;
-  hsdadc->Instance->CONFCHR1 = 0x00000000;
-  hsdadc->Instance->CONFCHR2 = 0x00000000;
+  hsdadc->Instance->CR1      = 0x00000000U;
+  hsdadc->Instance->CR2      = 0x00000000U;
+  hsdadc->Instance->JCHGR    = 0x00000001U;
+  hsdadc->Instance->CONF0R   = 0x00000000U;
+  hsdadc->Instance->CONF1R   = 0x00000000U;
+  hsdadc->Instance->CONF2R   = 0x00000000U;
+  hsdadc->Instance->CONFCHR1 = 0x00000000U;
+  hsdadc->Instance->CONFCHR2 = 0x00000000U;
 
   /* Call MSP deinit function */
   HAL_SDADC_MspDeInit(hsdadc);
@@ -445,7 +445,7 @@ HAL_StatusTypeDef HAL_SDADC_PrepareChannelConfig(SDADC_HandleTypeDef *hsdadc,
                                                  SDADC_ConfParamTypeDef* ConfParamStruct)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  uint32_t          tmp = 0;
+  uint32_t          tmp = 0U;
 
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
@@ -475,7 +475,7 @@ HAL_StatusTypeDef HAL_SDADC_PrepareChannelConfig(SDADC_HandleTypeDef *hsdadc,
       /* Program configuration register with parameters */
       tmp = (uint32_t)((uint32_t)(hsdadc->Instance) + \
                        SDADC_CONFREG_OFFSET + \
-                       (uint32_t)(ConfIndex << 2));
+                       (uint32_t)(ConfIndex << 2U));
       *(__IO uint32_t *) (tmp) = (uint32_t) (ConfParamStruct->InputMode | \
                                              ConfParamStruct->Gain | \
                                              ConfParamStruct->CommonMode | \
@@ -505,7 +505,7 @@ HAL_StatusTypeDef HAL_SDADC_AssociateChannelConfig(SDADC_HandleTypeDef *hsdadc,
                                                    uint32_t ConfIndex)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  uint32_t          channelnum = 0;
+  uint32_t          channelnum = 0U;
 
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
@@ -532,11 +532,11 @@ HAL_StatusTypeDef HAL_SDADC_AssociateChannelConfig(SDADC_HandleTypeDef *hsdadc,
       if(Channel != SDADC_CHANNEL_8)
       {
         /* Get channel number */
-        channelnum = (uint32_t)(Channel>>16);
+        channelnum = (uint32_t)(Channel>>16U);
 
         /* Set the channel configuration */
-        hsdadc->Instance->CONFCHR1 &= (uint32_t) ~((uint32_t)SDADC_CONFCHR1_CONFCH0 << (channelnum << 2));
-        hsdadc->Instance->CONFCHR1 |= (uint32_t) (ConfIndex << (channelnum << 2));
+        hsdadc->Instance->CONFCHR1 &= (uint32_t) ~((uint32_t)SDADC_CONFCHR1_CONFCH0 << (channelnum << 2U));
+        hsdadc->Instance->CONFCHR1 |= (uint32_t) (ConfIndex << (channelnum << 2U));
       }
       else
       {
@@ -1016,7 +1016,7 @@ HAL_StatusTypeDef HAL_SDADC_PollForCalibEvent(SDADC_HandleTypeDef* hsdadc, uint3
       /* Check the Timeout */
       if(Timeout != HAL_MAX_DELAY)
       {
-        if((Timeout == 0) || ((HAL_GetTick()-tickstart) > Timeout))
+        if((Timeout == 0U) || ((HAL_GetTick()-tickstart) > Timeout))
         {
           /* Return timeout status */
           return HAL_TIMEOUT;
@@ -1150,7 +1150,7 @@ HAL_StatusTypeDef HAL_SDADC_PollForConversion(SDADC_HandleTypeDef* hsdadc, uint3
       /* Check the Timeout */
       if(Timeout != HAL_MAX_DELAY)
       {
-        if((Timeout == 0) || ((HAL_GetTick()-tickstart) > Timeout))
+        if((Timeout == 0U) || ((HAL_GetTick()-tickstart) > Timeout))
         {
           /* Return timeout status */
           return HAL_TIMEOUT;
@@ -1289,7 +1289,7 @@ HAL_StatusTypeDef HAL_SDADC_Start_DMA(SDADC_HandleTypeDef *hsdadc, uint32_t *pDa
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
   assert_param(pData != NULL);
-  assert_param(Length != 0);
+  assert_param(Length != 0U);
 
   /* Check that DMA is not enabled for injected conversion */
   if((hsdadc->Instance->CR1 & SDADC_CR1_JDMAEN) == SDADC_CR1_JDMAEN)
@@ -1300,7 +1300,7 @@ HAL_StatusTypeDef HAL_SDADC_Start_DMA(SDADC_HandleTypeDef *hsdadc, uint32_t *pDa
   else if((hsdadc->RegularTrigger == SDADC_SOFTWARE_TRIGGER) && \
           (hsdadc->RegularContMode == SDADC_CONTINUOUS_CONV_OFF) && \
           (hsdadc->hdma->Init.Mode == DMA_NORMAL) && \
-          (Length != 1))
+          (Length != 1U))
   {
     status = HAL_ERROR;
   }
@@ -1465,7 +1465,7 @@ HAL_StatusTypeDef HAL_SDADC_PollForInjectedConversion(SDADC_HandleTypeDef* hsdad
       /* Check the Timeout */
       if(Timeout != HAL_MAX_DELAY)
       {
-        if((Timeout == 0) || ((HAL_GetTick()-tickstart) > Timeout))
+        if((Timeout == 0U) || ((HAL_GetTick()-tickstart) > Timeout))
         {
           /* Return timeout status */
           return HAL_TIMEOUT;
@@ -1484,7 +1484,7 @@ HAL_StatusTypeDef HAL_SDADC_PollForInjectedConversion(SDADC_HandleTypeDef* hsdad
     }
     /* Update remaining injected conversions */
     hsdadc->InjConvRemaining--;
-    if(hsdadc->InjConvRemaining == 0)
+    if(hsdadc->InjConvRemaining == 0U)
     {
       /* end of injected sequence, reset the value */
       hsdadc->InjConvRemaining = hsdadc->InjectedChannelsNbr;
@@ -1614,7 +1614,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStart_DMA(SDADC_HandleTypeDef *hsdadc, uint3
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
   assert_param(pData != NULL);
-  assert_param(Length != 0);
+  assert_param(Length != 0U);
 
   /* Check that DMA is not enabled for regular conversion */
   if((hsdadc->Instance->CR1 & SDADC_CR1_RDMAEN) == SDADC_CR1_RDMAEN)
@@ -1722,7 +1722,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStop_DMA(SDADC_HandleTypeDef *hsdadc)
   */
 uint32_t HAL_SDADC_InjectedGetValue(SDADC_HandleTypeDef *hsdadc, uint32_t* Channel)
 {
-  uint32_t value = 0;
+  uint32_t value = 0U;
 
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
@@ -1754,7 +1754,7 @@ HAL_StatusTypeDef HAL_SDADC_MultiModeStart_DMA(SDADC_HandleTypeDef* hsdadc, uint
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
   assert_param(pData != NULL);
-  assert_param(Length != 0);
+  assert_param(Length != 0U);
 
   /* Check instance is SDADC1 */
   if(hsdadc->Instance != SDADC1)
@@ -1770,7 +1770,7 @@ HAL_StatusTypeDef HAL_SDADC_MultiModeStart_DMA(SDADC_HandleTypeDef* hsdadc, uint
   else if((hsdadc->RegularTrigger == SDADC_SOFTWARE_TRIGGER) && \
           (hsdadc->RegularContMode == SDADC_CONTINUOUS_CONV_OFF) && \
           (hsdadc->hdma->Init.Mode == DMA_NORMAL) && \
-          (Length != 1))
+          (Length != 1U))
   {
     status = HAL_ERROR;
   }
@@ -1879,7 +1879,7 @@ HAL_StatusTypeDef HAL_SDADC_MultiModeStop_DMA(SDADC_HandleTypeDef* hsdadc)
   */
 uint32_t HAL_SDADC_MultiModeGetValue(SDADC_HandleTypeDef* hsdadc)
 {
-  uint32_t value = 0;
+  uint32_t value = 0U;
 
   /* Check parameters and check instance is SDADC1 */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
@@ -1910,7 +1910,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeStart_DMA(SDADC_HandleTypeDef* hsda
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
   assert_param(pData != NULL);
-  assert_param(Length != 0);
+  assert_param(Length != 0U);
 
   /* Check instance is SDADC1 */
   if(hsdadc->Instance != SDADC1)
@@ -1926,7 +1926,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeStart_DMA(SDADC_HandleTypeDef* hsda
   else if((hsdadc->InjectedTrigger == SDADC_SOFTWARE_TRIGGER) && \
           (hsdadc->InjectedContMode == SDADC_CONTINUOUS_CONV_OFF) && \
           (hsdadc->hdma->Init.Mode == DMA_NORMAL) && \
-          (Length > (hsdadc->InjectedChannelsNbr << 1)))
+          (Length > (hsdadc->InjectedChannelsNbr << 1U)))
   {
     status = HAL_ERROR;
   }
@@ -2035,7 +2035,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeStop_DMA(SDADC_HandleTypeDef* hsdad
   */
 uint32_t HAL_SDADC_InjectedMultiModeGetValue(SDADC_HandleTypeDef* hsdadc)
 {
-  uint32_t value = 0;
+  uint32_t value = 0U;
 
   /* Check parameters and check instance is SDADC1 */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
@@ -2084,7 +2084,7 @@ void HAL_SDADC_IRQHandler(SDADC_HandleTypeDef* hsdadc)
 
     /* Update remaining injected conversions */
     hsdadc->InjConvRemaining--;
-    if(hsdadc->InjConvRemaining ==0)
+    if(hsdadc->InjConvRemaining ==0U)
     {
       /* end of injected sequence, reset the value */
       hsdadc->InjConvRemaining = hsdadc->InjectedChannelsNbr;
@@ -2374,7 +2374,7 @@ uint32_t HAL_SDADC_GetError(SDADC_HandleTypeDef* hsdadc)
   */
 static HAL_StatusTypeDef SDADC_EnterInitMode(SDADC_HandleTypeDef* hsdadc)
 {
-  uint32_t tickstart = 0;
+  uint32_t tickstart = 0U;
 
   /* Set INIT bit on SDADC_CR1 register */
   hsdadc->Instance->CR1 |= SDADC_CR1_INIT;
@@ -2411,18 +2411,18 @@ static void SDADC_ExitInitMode(SDADC_HandleTypeDef* hsdadc)
   */
 static uint32_t SDADC_GetInjChannelsNbr(uint32_t Channels)
 {
-  uint32_t nbChannels = 0;
+  uint32_t nbChannels = 0U;
   uint32_t tmp,i;
 
   /* Get the number of channels from bitfield */
   tmp = (uint32_t) (Channels & SDADC_LSB_MASK);
-  for(i = 0 ; i < 9 ; i++)
+  for(i = 0U ; i < 9U ; i++)
   {
-    if((tmp & (uint32_t)0x00000001) != 0)
+    if((tmp & 0x00000001U) != 0U)
     {
       nbChannels++;
     }
-    tmp = (uint32_t) (tmp >> 1);
+    tmp = (uint32_t) (tmp >> 1U);
   }
   return nbChannels;
 }
@@ -2492,7 +2492,7 @@ static HAL_StatusTypeDef SDADC_RegConvStop(SDADC_HandleTypeDef* hsdadc)
   }
   /* Wait for the end of regular conversion */
   tickstart = HAL_GetTick();
-  while((hsdadc->Instance->ISR & SDADC_ISR_RCIP) != 0)
+  while((hsdadc->Instance->ISR & SDADC_ISR_RCIP) != 0U)
   {
     if((HAL_GetTick()-tickstart) > SDADC_TIMEOUT)
     {
@@ -2616,7 +2616,7 @@ static HAL_StatusTypeDef SDADC_InjConvStop(SDADC_HandleTypeDef* hsdadc)
   }
   /* Wait for the end of injected conversion */
   tickstart = HAL_GetTick();
-  while((hsdadc->Instance->ISR & SDADC_ISR_JCIP) != 0)
+  while((hsdadc->Instance->ISR & SDADC_ISR_JCIP) != 0U)
   {
     if((HAL_GetTick()-tickstart) > SDADC_TIMEOUT)
     {

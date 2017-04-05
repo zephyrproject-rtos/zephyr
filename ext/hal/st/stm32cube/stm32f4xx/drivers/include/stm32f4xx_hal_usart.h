@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_usart.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of USART HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -156,12 +156,12 @@ typedef struct
   * @brief    USART Error Code 
   * @{
   */ 
-#define HAL_USART_ERROR_NONE         ((uint32_t)0x00000000U)   /*!< No error            */
-#define HAL_USART_ERROR_PE           ((uint32_t)0x00000001U)   /*!< Parity error        */
-#define HAL_USART_ERROR_NE           ((uint32_t)0x00000002U)   /*!< Noise error         */
-#define HAL_USART_ERROR_FE           ((uint32_t)0x00000004U)   /*!< Frame error         */
-#define HAL_USART_ERROR_ORE          ((uint32_t)0x00000008U)   /*!< Overrun error       */
-#define HAL_USART_ERROR_DMA          ((uint32_t)0x00000010U)   /*!< DMA transfer error  */
+#define HAL_USART_ERROR_NONE         0x00000000U   /*!< No error            */
+#define HAL_USART_ERROR_PE           0x00000001U   /*!< Parity error        */
+#define HAL_USART_ERROR_NE           0x00000002U   /*!< Noise error         */
+#define HAL_USART_ERROR_FE           0x00000004U   /*!< Frame error         */
+#define HAL_USART_ERROR_ORE          0x00000008U   /*!< Overrun error       */
+#define HAL_USART_ERROR_DMA          0x00000010U   /*!< DMA transfer error  */
 /**
   * @}
   */
@@ -169,7 +169,7 @@ typedef struct
 /** @defgroup USART_Word_Length USART Word Length
   * @{
   */
-#define USART_WORDLENGTH_8B                  ((uint32_t)0x00000000U)
+#define USART_WORDLENGTH_8B                  0x00000000U
 #define USART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M)
 /**
   * @}
@@ -178,7 +178,7 @@ typedef struct
 /** @defgroup USART_Stop_Bits USART Number of Stop Bits
   * @{
   */
-#define USART_STOPBITS_1                     ((uint32_t)0x00000000U)
+#define USART_STOPBITS_1                     0x00000000U
 #define USART_STOPBITS_0_5                   ((uint32_t)USART_CR2_STOP_0)
 #define USART_STOPBITS_2                     ((uint32_t)USART_CR2_STOP_1)
 #define USART_STOPBITS_1_5                   ((uint32_t)(USART_CR2_STOP_0 | USART_CR2_STOP_1))
@@ -189,7 +189,7 @@ typedef struct
 /** @defgroup USART_Parity USART Parity
   * @{
   */ 
-#define USART_PARITY_NONE                    ((uint32_t)0x00000000U)
+#define USART_PARITY_NONE                    0x00000000U
 #define USART_PARITY_EVEN                    ((uint32_t)USART_CR1_PCE)
 #define USART_PARITY_ODD                     ((uint32_t)(USART_CR1_PCE | USART_CR1_PS))
 /**
@@ -209,7 +209,7 @@ typedef struct
 /** @defgroup USART_Clock USART Clock
   * @{
   */ 
-#define USART_CLOCK_DISABLE                 ((uint32_t)0x00000000U)
+#define USART_CLOCK_DISABLE                 0x00000000U
 #define USART_CLOCK_ENABLE                  ((uint32_t)USART_CR2_CLKEN)
 /**
   * @}
@@ -218,7 +218,7 @@ typedef struct
 /** @defgroup USART_Clock_Polarity USART Clock Polarity
   * @{
   */
-#define USART_POLARITY_LOW                   ((uint32_t)0x00000000U)
+#define USART_POLARITY_LOW                   0x00000000U
 #define USART_POLARITY_HIGH                  ((uint32_t)USART_CR2_CPOL)
 /**
   * @}
@@ -227,7 +227,7 @@ typedef struct
 /** @defgroup USART_Clock_Phase  USART Clock Phase
   * @{
   */
-#define USART_PHASE_1EDGE                    ((uint32_t)0x00000000U)
+#define USART_PHASE_1EDGE                    0x00000000U
 #define USART_PHASE_2EDGE                    ((uint32_t)USART_CR2_CPHA)
 /**
   * @}
@@ -236,7 +236,7 @@ typedef struct
 /** @defgroup USART_Last_Bit  USART Last Bit
   * @{
   */
-#define USART_LASTBIT_DISABLE                ((uint32_t)0x00000000U)
+#define USART_LASTBIT_DISABLE                0x00000000U
 #define USART_LASTBIT_ENABLE                 ((uint32_t)USART_CR2_LBCL)
 /**
   * @}
@@ -246,7 +246,7 @@ typedef struct
   * @{
   */
 #define USART_NACK_ENABLE           ((uint32_t)USART_CR3_NACK)
-#define USART_NACK_DISABLE          ((uint32_t)0x00000000U)
+#define USART_NACK_DISABLE          0x00000000U
 /**
   * @}
   */
@@ -256,14 +256,14 @@ typedef struct
   *           - 0xXXXX  : Flag mask in the SR register
   * @{
   */
-#define USART_FLAG_TXE                       ((uint32_t)0x00000080U)
-#define USART_FLAG_TC                        ((uint32_t)0x00000040U)
-#define USART_FLAG_RXNE                      ((uint32_t)0x00000020U)
-#define USART_FLAG_IDLE                      ((uint32_t)0x00000010U)
-#define USART_FLAG_ORE                       ((uint32_t)0x00000008U)
-#define USART_FLAG_NE                        ((uint32_t)0x00000004U)
-#define USART_FLAG_FE                        ((uint32_t)0x00000002U)
-#define USART_FLAG_PE                        ((uint32_t)0x00000001U)
+#define USART_FLAG_TXE                       0x00000080U
+#define USART_FLAG_TC                        0x00000040U
+#define USART_FLAG_RXNE                      0x00000020U
+#define USART_FLAG_IDLE                      0x00000010U
+#define USART_FLAG_ORE                       0x00000008U
+#define USART_FLAG_NE                        0x00000004U
+#define USART_FLAG_FE                        0x00000002U
+#define USART_FLAG_PE                        0x00000001U
 /**
   * @}
   */
@@ -357,7 +357,7 @@ typedef struct
     tmpreg = (__HANDLE__)->Instance->SR;        \
     tmpreg = (__HANDLE__)->Instance->DR;        \
     UNUSED(tmpreg);                             \
-  } while(0)
+  } while(0U)
                                                
 /** @brief  Clear the USART FE pending flag.
   * @param  __HANDLE__: specifies the USART Handle.
@@ -555,7 +555,7 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
 #define IS_USART_PARITY(PARITY) (((PARITY) == USART_PARITY_NONE) || \
                                      ((PARITY) == USART_PARITY_EVEN) || \
                                      ((PARITY) == USART_PARITY_ODD))
-#define IS_USART_MODE(MODE) ((((MODE) & (uint32_t)0xFFF3) == 0x00U) && ((MODE) != (uint32_t)0x00U))
+#define IS_USART_MODE(MODE) ((((MODE) & 0xFFF3U) == 0x00U) && ((MODE) != 0x00U))
 #define IS_USART_BAUDRATE(BAUDRATE) ((BAUDRATE) < 10500001U)
 
 #define USART_DIV(_PCLK_, _BAUD_)                  (((_PCLK_)*25U)/(2U*(_BAUD_)))

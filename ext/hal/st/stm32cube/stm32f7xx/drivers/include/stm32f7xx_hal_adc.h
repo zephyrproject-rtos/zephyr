@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of ADC HAL extension module.
   ******************************************************************************
   * @attention
@@ -88,6 +88,7 @@ typedef struct
                                                     Parameters 'NbrOfConversion' and 'InjectedNbrOfConversion' are discarded (equivalent to set to 1).
                                        If enabled:  Conversions are performed in sequence mode (multiple ranks defined by 'NbrOfConversion'/'InjectedNbrOfConversion' and each channel rank).
                                                     Scan direction is upward: from rank1 to rank 'n'.
+                                       This parameter can be a value of @ref ADC_Scan_mode.
                                        This parameter can be set to ENABLE or DISABLE */
   uint32_t EOCSelection;          /*!< Specifies what EOC (End Of Conversion) flag is used for conversion by polling and interruption: end of conversion of each rank or complete sequence.
                                        This parameter can be a value of @ref ADC_EOCSelection.
@@ -135,7 +136,8 @@ typedef struct
   uint32_t Channel;                /*!< Specifies the channel to configure into ADC regular group.
                                         This parameter can be a value of @ref ADC_channels */
   uint32_t Rank;                   /*!< Specifies the rank in the regular group sequencer.
-                                        This parameter must be a number between Min_Data = 1 and Max_Data = 16 */
+                                        This parameter must be a number between Min_Data = 1 and Max_Data = 16 
+                                        This parameter can be a value of @ref ADC_regular_rank */
   uint32_t SamplingTime;           /*!< Sampling time value to be set for the selected channel.
                                         Unit: ADC clock cycles
                                         Conversion time is the addition of sampling time and processing time (12 ADC clock cycles at ADC resolution 12 bits, 11 cycles at 10 bits, 9 cycles at 8 bits, 7 cycles at 6 bits).
@@ -336,6 +338,38 @@ typedef struct
 /**
   * @}
   */ 
+
+/** @defgroup ADC_Scan_mode ADC sequencer scan mode
+  * @{
+  */
+#define ADC_SCAN_DISABLE         ((uint32_t)0x00000000)        /*!< Scan mode disabled */
+#define ADC_SCAN_ENABLE          ((uint32_t)0x00000001)        /*!< Scan mode enabled  */
+/**
+  * @}
+  */
+
+/** @defgroup ADC_regular_rank ADC group regular sequencer rank
+  * @{
+  */
+#define ADC_REGULAR_RANK_1    ((uint32_t)0x00000001)       /*!< ADC regular conversion rank 1  */
+#define ADC_REGULAR_RANK_2    ((uint32_t)0x00000002)       /*!< ADC regular conversion rank 2  */
+#define ADC_REGULAR_RANK_3    ((uint32_t)0x00000003)       /*!< ADC regular conversion rank 3  */
+#define ADC_REGULAR_RANK_4    ((uint32_t)0x00000004)       /*!< ADC regular conversion rank 4  */
+#define ADC_REGULAR_RANK_5    ((uint32_t)0x00000005)       /*!< ADC regular conversion rank 5  */
+#define ADC_REGULAR_RANK_6    ((uint32_t)0x00000006)       /*!< ADC regular conversion rank 6  */
+#define ADC_REGULAR_RANK_7    ((uint32_t)0x00000007)       /*!< ADC regular conversion rank 7  */
+#define ADC_REGULAR_RANK_8    ((uint32_t)0x00000008)       /*!< ADC regular conversion rank 8  */
+#define ADC_REGULAR_RANK_9    ((uint32_t)0x00000009)       /*!< ADC regular conversion rank 9  */
+#define ADC_REGULAR_RANK_10   ((uint32_t)0x0000000A)       /*!< ADC regular conversion rank 10 */
+#define ADC_REGULAR_RANK_11   ((uint32_t)0x0000000B)       /*!< ADC regular conversion rank 11 */
+#define ADC_REGULAR_RANK_12   ((uint32_t)0x0000000C)       /*!< ADC regular conversion rank 12 */
+#define ADC_REGULAR_RANK_13   ((uint32_t)0x0000000D)       /*!< ADC regular conversion rank 13 */
+#define ADC_REGULAR_RANK_14   ((uint32_t)0x0000000E)       /*!< ADC regular conversion rank 14 */
+#define ADC_REGULAR_RANK_15   ((uint32_t)0x0000000F)       /*!< ADC regular conversion rank 15 */
+#define ADC_REGULAR_RANK_16   ((uint32_t)0x00000010)       /*!< ADC regular conversion rank 16 */
+/**
+  * @}
+  */
 
 /** @defgroup ADC_channels ADC Common Channels
   * @{
@@ -705,7 +739,8 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
                                       ((__REGTRIG__) == ADC_EXTERNALTRIGCONV_EXT_IT11) || \
 																			((__REGTRIG__) == ADC_SOFTWARE_START))
 #define IS_ADC_DATA_ALIGN(__ALIGN__) (((__ALIGN__) == ADC_DATAALIGN_RIGHT) || \
-                                      ((__ALIGN__) == ADC_DATAALIGN_LEFT))		
+                                      ((__ALIGN__) == ADC_DATAALIGN_LEFT))
+		
                                       									
 #define IS_ADC_SAMPLE_TIME(__TIME__) (((__TIME__) == ADC_SAMPLETIME_3CYCLES)   || \
                                       ((__TIME__) == ADC_SAMPLETIME_15CYCLES)  || \
@@ -730,9 +765,29 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 #define IS_ADC_CHANNELS_TYPE(CHANNEL_TYPE) (((CHANNEL_TYPE) == ADC_ALL_CHANNELS) || \
                                             ((CHANNEL_TYPE) == ADC_REGULAR_CHANNELS) || \
                                             ((CHANNEL_TYPE) == ADC_INJECTED_CHANNELS))
+
+#define IS_ADC_REGULAR_RANK(__RANK__) (((__RANK__) == ADC_REGULAR_RANK_1 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_2 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_3 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_4 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_5 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_6 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_7 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_8 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_9 ) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_10) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_11) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_12) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_13) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_14) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_15) || \
+                                       ((__RANK__) == ADC_REGULAR_RANK_16))
+
+#define IS_ADC_SCAN_MODE(__SCAN_MODE__) (((__SCAN_MODE__) == ADC_SCAN_DISABLE) || \
+                                         ((__SCAN_MODE__) == ADC_SCAN_ENABLE))
+
 #define IS_ADC_THRESHOLD(__THRESHOLD__) ((__THRESHOLD__) <= ((uint32_t)0xFFF))
 #define IS_ADC_REGULAR_LENGTH(__LENGTH__) (((__LENGTH__) >= ((uint32_t)1)) && ((__LENGTH__) <= ((uint32_t)16)))
-#define IS_ADC_REGULAR_RANK(__RANK__) (((__RANK__) >= ((uint32_t)1)) && ((__RANK__) <= ((uint32_t)16)))
 #define IS_ADC_REGULAR_DISC_NUMBER(__NUMBER__) (((__NUMBER__) >= ((uint32_t)1)) && ((__NUMBER__) <= ((uint32_t)8)))
 #define IS_ADC_RANGE(__RESOLUTION__, __ADC_VALUE__)                                     \
    ((((__RESOLUTION__) == ADC_RESOLUTION_12B) && ((__ADC_VALUE__) <= ((uint32_t)0x0FFF))) || \

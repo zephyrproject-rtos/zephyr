@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_comp.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of COMP LL module.
   ******************************************************************************
   * @attention
@@ -56,7 +56,7 @@ extern "C" {
 /*         (comparator output blanking, ...) (refer to reference manual).     */
 /*       - STM32F37x:                                                         */
 /*         COMP IP with 2 instances                                           */
-/*       This file contains the drivers of these ADC IP, located in 2 area    */
+/*       This file contains the drivers of these COMP IP, located in 2 area    */
 /*       delimited by compilation switches.                                   */
 
 #if defined(COMP_V1_3_0_0)
@@ -173,16 +173,29 @@ typedef struct
 /** @defgroup COMP_LL_EC_INPUT_PLUS Comparator inputs - Input plus (input non-inverting) selection
   * @{
   */
-#define LL_COMP_INPUT_PLUS_IO1          ((uint32_t)0x00000000U)  /*!< Comparator input plus connected to IO1 (pin PA1 for COMP1, pin PA7 for COMP2, PB14 for COMP3, PB0 for COMP4, PD12 for COMP5, PD11 for COMP6, PA0 for COMP7 (COMP instance availability depends on the selected device) (exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO1, PA7, PD12, PD11, PA0 are not available and are replaced respectively by PA3, PB13, PB11, PC1) (exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: in LL_COMP_INPUT_PLUS_IO1, PD11 is replaced by PB11)) */
-#if defined(COMP_CSR_COMPxNONINSEL)
-#define LL_COMP_INPUT_PLUS_IO2          (COMP_CSR_COMPxNONINSEL) /*!< Comparator input plus connected to IO2 (                   pin PA3 for COMP2, PD14 for COMP3, PE7 for COMP4, PB13 for COMP5, PB11 for COMP6, PC1 for COMP7 (COMP instance availability depends on the selected device) (exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO2, PD14, PE7 are not available and are replaced respectively by PB14, PB0) (exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: input plus IO2 available only on COMP instance: COMP6)) */
+#if !defined(COMP_CSR_COMPxNONINSEL)
+#define LL_COMP_INPUT_PLUS_IO1          ((uint32_t)0x00000000U)  /*!< Comparator input plus connected to IO1 (pin PA1 for COMP1, PA3 for COMP2 (except STM32F334xx: PA7), PB14 for COMP3, PB0 for COMP4, PD12 for COMP5, PD11 for COMP6, PA0  for COMP7) (COMP instance availability depends on the selected device) */
+#define LL_COMP_INPUT_PLUS_IO2          ((uint32_t)0x00000000U)  /*!< Comparator input plus connected to IO2: Same as IO1 */
 #else
-#define LL_COMP_INPUT_PLUS_IO2          ((uint32_t)0x00000000U)  /*!< Comparator input plus connected to IO2 (PB11 for COMP6 (COMP instance availability depends on the selected device) (Device without comparator input plus configurable: corresponds to setting "LL_COMP_INPUT_PLUS_IO1" or "LL_COMP_INPUT_PLUS_IO2" compared to other STM32F3 devices, depending on comparator instance (refer to reference manual)) */
+#define LL_COMP_INPUT_PLUS_IO1          ((uint32_t)0x00000000U)  /*!< Comparator input plus connected to IO1 (pin PA7 for COMP2, PB14 for COMP3, PB0 for COMP4, PD12 for COMP5, PD11 for COMP6, PA0  for COMP7) (COMP instance availability depends on the selected device) */
+#define LL_COMP_INPUT_PLUS_IO2          (COMP_CSR_COMPxNONINSEL) /*!< Comparator input plus connected to IO2 (pin PA3 for COMP2, PD14 for COMP3, PE7 for COMP4, PB13 for COMP5, PB11 for COMP6, PC1 for COMP7) (COMP instance availability depends on the selected device) */
 #endif
 #if defined(STM32F302xC) || defined(STM32F302xE) || defined(STM32F303xC) || defined(STM32F303xE) || defined(STM32F358xx) || defined(STM32F398xx)
 #define LL_COMP_INPUT_PLUS_DAC1_CH1_COMP1 (COMP_CSR_COMPxSW1)    /*!< Comparator input plus connected to DAC1 channel 1 (DAC_OUT1), through dedicated switch (Note: this switch is solely intended to redirect signals onto high impedance input, such as COMP1 input plus (highly resistive switch)) (specific to COMP instance: COMP1) */
+
+/* Note: Comparator input plus specific to COMP instances, defined with       */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_INPUT_PLUS_DAC1_CH1     LL_COMP_INPUT_PLUS_DAC1_CH1_COMP1      /*!< Comparator input plus connected to DAC1 channel 1 (DAC_OUT1), through dedicated switch. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+
 #elif defined(STM32F301x8) || defined(STM32F318xx) || defined(STM32F302x8)
-#define LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2 (COMP_CSR_COMPxSW1)    /*!< Comparator input plus connected to DAC1 channel 1 (DAC_OUT1), through dedicated switch (Note: this switch is solely intended to redirect signals onto high impedance input, such as COMP1 input plus (highly resistive switch)) (specific to COMP instance: COMP2) */
+#define LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2 (COMP_CSR_COMPxSW1)    /*!< Comparator input plus connected to DAC1 channel 1 (DAC_OUT1), through dedicated switch (Note: this switch is solely intended to redirect signals onto high impedance input, such as COMP2 input plus (highly resistive switch)) (specific to COMP instance: COMP2) */
+
+/* Note: Comparator input plus specific to COMP instances, defined with       */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_INPUT_PLUS_DAC1_CH1     LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2      /*!< Comparator input plus connected to DAC1 channel 1 (DAC_OUT1), through dedicated switch. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+
 #endif
 /**
   * @}
@@ -196,17 +209,27 @@ typedef struct
 #define LL_COMP_INPUT_MINUS_3_4VREFINT  (                       COMP_CSR_COMPxINSEL_1                        ) /*!< Comparator input minus connected to 3/4 VrefInt  */
 #define LL_COMP_INPUT_MINUS_VREFINT     (                       COMP_CSR_COMPxINSEL_1 | COMP_CSR_COMPxINSEL_0) /*!< Comparator input minus connected to VrefInt */
 #define LL_COMP_INPUT_MINUS_DAC1_CH1    (COMP_CSR_COMPxINSEL_2                                               ) /*!< Comparator input minus connected to DAC1 channel 1 (DAC_OUT1)  */
+#if defined(STM32F301x8) || defined(STM32F318xx) || defined(STM32F302x8) || defined(STM32F302xC) || defined(STM32F302xE)
+/* This device has no comparator input minus DAC1_CH2 */
+#else
 #define LL_COMP_INPUT_MINUS_DAC1_CH2    (COMP_CSR_COMPxINSEL_2                        | COMP_CSR_COMPxINSEL_0) /*!< Comparator input minus connected to DAC1 channel 2 (DAC_OUT2)  */
-#if defined(STM32F301x8) || defined(STM32F318xx)
-/* This device has no comparator input minus IO1 */
-#elif defined(STM32F303x8) || defined(STM32F328xx) || defined(STM32F334x8)
-#define LL_COMP_INPUT_MINUS_IO1         (COMP_CSR_COMPxINSEL_2 | COMP_CSR_COMPxINSEL_1                        ) /*!< Comparator input minus connected to IO1 (pin PA2 for COMP2 (COMP instance availability depends on the selected device)) */
+#endif
+#if defined(STM32F301x8) || defined(STM32F318xx) || defined(STM32F334x8)
+#define LL_COMP_INPUT_MINUS_IO1         (COMP_CSR_COMPxINSEL_2 | COMP_CSR_COMPxINSEL_1                        ) /*!< Comparator input minus connected to IO1 (pin PA2 for COMP2) */
 #else
 #define LL_COMP_INPUT_MINUS_IO1         (COMP_CSR_COMPxINSEL_2 | COMP_CSR_COMPxINSEL_1                        ) /*!< Comparator input minus connected to IO1 (pin PA0 for COMP1, pin PA2 for COMP2, PD15 for COMP3, PE8 for COMP4, PD13 for COMP5, PD10 for COMP6, PC0 for COMP7 (COMP instance availability depends on the selected device)) */
 #endif
 #define LL_COMP_INPUT_MINUS_IO2         (COMP_CSR_COMPxINSEL_2 | COMP_CSR_COMPxINSEL_1 | COMP_CSR_COMPxINSEL_0) /*!< Comparator input minus connected to IO2 (                                      PB12 for COMP3, PB2 for COMP4, PB10 for COMP5, PB15 for COMP6                (COMP instance availability depends on the selected device)) */
-#if defined(STM32F301x8) || defined(STM32F303x8) || defined(STM32F328xx) || defined(STM32F334x8) || defined(STM32F373xC) || defined(STM32F378xx)
+#if defined(STM32F301x8) || defined(STM32F318xx) || defined(STM32F334x8) || defined(STM32F302x8) || defined(STM32F303x8) || defined(STM32F328xx)
+/* This device has no comparator input minus IO3 */
+#else
+#define LL_COMP_INPUT_MINUS_IO3         (COMP_CSR_COMPxINSEL_2                         | COMP_CSR_COMPxINSEL_0) /*!< Comparator input minus connected to IO3 (pin PA5 for COMP1/2/3/4/5/6/7 (COMP instance availability depends on the selected device)) */
+#endif
+#define LL_COMP_INPUT_MINUS_IO4         (COMP_CSR_COMPxINSEL_2                                                ) /*!< Comparator input minus connected to IO4 (pin PA4 for COMP1/2/3/4/5/6/7 (COMP instance availability depends on the selected device)) */
+#if defined(STM32F303x8) || defined(STM32F328xx) || defined(STM32F334x8)
 #define LL_COMP_INPUT_MINUS_DAC2_CH1    (COMP_CSR_COMPxINSEL_3                                                ) /*!< Comparator input minus connected to DAC2 channel 1 (DAC2_OUT1)  */
+#else
+/* This device has no comparator input minus DAC2_CH1 */
 #endif
 /**
   * @}
@@ -235,10 +258,10 @@ typedef struct
 #define LL_COMP_OUTPUT_TIM1_BKIN        (COMP_CSR_COMPxOUTSEL_0)                                                    /*!< COMP output connected to TIM1 break input (BKIN) */
 #define LL_COMP_OUTPUT_TIM1_BKIN2       (COMP_CSR_COMPxOUTSEL_1)                                                    /*!< COMP output connected to TIM1 break input 2 (BKIN2) */
 
-#if defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
+#if defined(STM32F301x8) || defined(STM32F318xx)
 /* Note: Output redirection specific to COMP instance: COMP2 */
 #define LL_COMP_OUTPUT_TIM1_IC1_COMP2    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM1 input capture 1 (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM1_IC4_COMP2    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM1 input capture 4 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM2_IC4_COMP2    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM1 input capture 4 (specific to COMP instance: COMP2) */
 #define LL_COMP_OUTPUT_TIM1_OCCLR_COMP2  (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM1 OCREF clear (specific to COMP instance: COMP2) */
 #define LL_COMP_OUTPUT_TIM2_OCCLR_COMP2  (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM2 OCREF clear (specific to COMP instance: COMP2) */
 /* Note: Output redirection specific to COMP instance: COMP4 */
@@ -250,12 +273,32 @@ typedef struct
 #define LL_COMP_OUTPUT_TIM16_IC1_COMP6   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM16 input capture 1 (specific to COMP instance: COMP6) */
 #define LL_COMP_OUTPUT_TIM16_OCCLR_COMP6 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM16 OCREF clear (specific to COMP instance: COMP6) */
 
-#elif defined(STM32F303x8) || defined(STM32F328xx) || defined(STM32F334x8)
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+/* Note: Some output redirections cannot have a generic naming,               */
+/*       due to literal value different depending on COMP instance.           */
+/*       (For exemple: LL_COMP_OUTPUT_TIM2_OCCLR_COMP2 and                    */
+/*       LL_COMP_OUTPUT_TIM2_OCCLR_COMP6).                                    */
+#define LL_COMP_OUTPUT_TIM1_IC1          LL_COMP_OUTPUT_TIM1_IC1_COMP2         /*!< COMP output connected to TIM1 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM1_OCCLR        LL_COMP_OUTPUT_TIM1_OCCLR_COMP2       /*!< COMP output connected to TIM1 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC2          LL_COMP_OUTPUT_TIM2_IC2_COMP6         /*!< COMP output connected to TIM2 input capture 2.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC4          LL_COMP_OUTPUT_TIM2_IC4_COMP2         /*!< COMP output connected to TIM2 input capture 4.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_IC2         LL_COMP_OUTPUT_TIM15_IC2_COMP4        /*!< COMP output connected to TIM15 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_OCCLR       LL_COMP_OUTPUT_TIM15_OCCLR_COMP4      /*!< COMP output connected to TIM15 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_IC1         LL_COMP_OUTPUT_TIM16_IC1_COMP6        /*!< COMP output connected to TIM16 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_OCCLR       LL_COMP_OUTPUT_TIM16_OCCLR_COMP6      /*!< COMP output connected to TIM16 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       partially generic naming grouping COMP instance constraints.         */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2_3  LL_COMP_OUTPUT_TIM2_OCCLR_COMP2   /*!< COMP output connected to TIM2 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+
+#elif defined(STM32F303x8) || defined(STM32F328xx) || defined(STM32F334x8)|| defined(STM32F302x8)
 /* Note: Output redirection specific to COMP instance: COMP2, COMP4 */
 #define LL_COMP_OUTPUT_TIM3_OCCLR_COMP2_4 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM3 OCREF clear (specific to COMP instance: COMP2, COMP4) */
 /* Note: Output redirection specific to COMP instance: COMP2 */
 #define LL_COMP_OUTPUT_TIM1_IC1_COMP2    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM1 input capture 1 (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM1_IC4_COMP2    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM1 input capture 4 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM2_IC4_COMP2    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM1 input capture 4 (specific to COMP instance: COMP2) */
 #define LL_COMP_OUTPUT_TIM1_OCCLR_COMP2  (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM1 OCREF clear (specific to COMP instance: COMP2) */
 #define LL_COMP_OUTPUT_TIM2_OCCLR_COMP2  (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM2 OCREF clear (specific to COMP instance: COMP2) */
 #define LL_COMP_OUTPUT_TIM3_IC1_COMP2    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM3 input capture 1 (specific to COMP instance: COMP2) */
@@ -269,32 +312,80 @@ typedef struct
 #define LL_COMP_OUTPUT_TIM16_IC1_COMP6   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM16 input capture 1 (specific to COMP instance: COMP6) */
 #define LL_COMP_OUTPUT_TIM16_OCCLR_COMP6 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM16 OCREF clear (specific to COMP instance: COMP6) */
 
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+/* Note: Some output redirections cannot have a generic naming,               */
+/*       due to literal value different depending on COMP instance.           */
+/*       (For exemple: LL_COMP_OUTPUT_TIM2_OCCLR_COMP2 and                    */
+/*       LL_COMP_OUTPUT_TIM2_OCCLR_COMP6).                                    */
+#define LL_COMP_OUTPUT_TIM1_IC1          LL_COMP_OUTPUT_TIM1_IC1_COMP2         /*!< COMP output connected to TIM1 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM1_OCCLR        LL_COMP_OUTPUT_TIM1_OCCLR_COMP2       /*!< COMP output connected to TIM1 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC2          LL_COMP_OUTPUT_TIM2_IC2_COMP6         /*!< COMP output connected to TIM2 input capture 2.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC4          LL_COMP_OUTPUT_TIM2_IC4_COMP2         /*!< COMP output connected to TIM2 input capture 4.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_IC1          LL_COMP_OUTPUT_TIM3_IC1_COMP2         /*!< COMP output connected to TIM3 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_IC3          LL_COMP_OUTPUT_TIM3_IC3_COMP4         /*!< COMP output connected to TIM3 input capture 3.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_OCCLR        LL_COMP_OUTPUT_TIM3_OCCLR_COMP2_4     /*!< COMP output connected to TIM3 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_IC2         LL_COMP_OUTPUT_TIM15_IC2_COMP4        /*!< COMP output connected to TIM15 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_OCCLR       LL_COMP_OUTPUT_TIM15_OCCLR_COMP4      /*!< COMP output connected to TIM15 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_IC1         LL_COMP_OUTPUT_TIM16_IC1_COMP6        /*!< COMP output connected to TIM16 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_OCCLR       LL_COMP_OUTPUT_TIM16_OCCLR_COMP6      /*!< COMP output connected to TIM16 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       partially generic naming grouping COMP instance constraints.         */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2_3  LL_COMP_OUTPUT_TIM2_OCCLR_COMP2   /*!< COMP output connected to TIM2 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+
 #elif defined(STM32F302xC) || defined(STM32F302xE)
 /* Note: Output redirection specific to COMP instance: COMP1, COMP2, COMP4 */
 #define LL_COMP_OUTPUT_TIM3_OCCLR_COMP1_2_4 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM3 OCREF clear (specific to COMP instance: COMP2, COMP4) */
 /* Note: Output redirection specific to COMP instance: COMP1, COMP2 */
-#define LL_COMP_OUTPUT_TIM1_IC1_COMP1_2   (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM1 input capture 1 (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM1_IC4_COMP1_2   (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM1 input capture 4 (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM1_OCCLR_COMP1_2 (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM1 OCREF clear (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM2 OCREF clear (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM3_IC1_COMP1_2   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM3 input capture 1 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM1_IC1_COMP1_2    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM1 input capture 1 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM2_IC4_COMP1_2    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM2 input capture 4 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM1_OCCLR_COMP1_2  (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM1 OCREF clear (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2  (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM2 OCREF clear (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM3_IC1_COMP1_2    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM3 input capture 1 (specific to COMP instance: COMP2) */
 /* Note: Output redirection specific to COMP instance: COMP4 */
-#define LL_COMP_OUTPUT_TIM3_IC3_COMP4    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM3 input capture 3 (specific to COMP instance: COMP4) */
-#define LL_COMP_OUTPUT_TIM4_IC2_COMP4    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM4 input capture 2 (specific to COMP instance: COMP4) */
-#define LL_COMP_OUTPUT_TIM15_IC2_COMP4   (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM15 input capture 1 (specific to COMP instance: COMP4) */
-#define LL_COMP_OUTPUT_TIM15_OCCLR_COMP4 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM15 OCREF clear (specific to COMP instance: COMP4) */
+#define LL_COMP_OUTPUT_TIM3_IC3_COMP4      (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM3 input capture 3 (specific to COMP instance: COMP4) */
+#define LL_COMP_OUTPUT_TIM4_IC2_COMP4      (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM4 input capture 2 (specific to COMP instance: COMP4) */
+#define LL_COMP_OUTPUT_TIM15_IC2_COMP4     (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM15 input capture 1 (specific to COMP instance: COMP4) */
+#define LL_COMP_OUTPUT_TIM15_OCCLR_COMP4   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM15 OCREF clear (specific to COMP instance: COMP4) */
 /* Note: Output redirection specific to COMP instance: COMP6 */
-#define LL_COMP_OUTPUT_TIM2_IC2_COMP6    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM2 input capture 2 (specific to COMP instance: COMP6) */
-#define LL_COMP_OUTPUT_TIM2_OCCLR_COMP6  (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM2 OCREF clear (specific to COMP instance: COMP6) */
-#define LL_COMP_OUTPUT_TIM4_IC4_COMP6    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM4 input capture 4 (specific to COMP instance: COMP6) */
-#define LL_COMP_OUTPUT_TIM16_IC1_COMP6   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM16 input capture 1 (specific to COMP instance: COMP6) */
-#define LL_COMP_OUTPUT_TIM16_OCCLR_COMP6 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM16 OCREF clear (specific to COMP instance: COMP6) */
+#define LL_COMP_OUTPUT_TIM2_IC2_COMP6      (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM2 input capture 2 (specific to COMP instance: COMP6) */
+#define LL_COMP_OUTPUT_TIM2_OCCLR_COMP6    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM2 OCREF clear (specific to COMP instance: COMP6) */
+#define LL_COMP_OUTPUT_TIM4_IC4_COMP6      (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM4 input capture 4 (specific to COMP instance: COMP6) */
+#define LL_COMP_OUTPUT_TIM16_IC1_COMP6     (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM16 input capture 1 (specific to COMP instance: COMP6) */
+#define LL_COMP_OUTPUT_TIM16_OCCLR_COMP6   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM16 OCREF clear (specific to COMP instance: COMP6) */
+
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+/* Note: Some output redirections cannot have a generic naming,               */
+/*       due to literal value different depending on COMP instance.           */
+/*       (For exemple: LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2 and                  */
+/*       LL_COMP_OUTPUT_TIM2_OCCLR_COMP6).                                    */
+#define LL_COMP_OUTPUT_TIM1_IC1          LL_COMP_OUTPUT_TIM1_IC1_COMP1_2       /*!< COMP output connected to TIM1 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM1_OCCLR        LL_COMP_OUTPUT_TIM1_OCCLR_COMP1_2     /*!< COMP output connected to TIM1 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC2          LL_COMP_OUTPUT_TIM2_IC2_COMP6         /*!< COMP output connected to TIM2 input capture 2.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC4          LL_COMP_OUTPUT_TIM2_IC4_COMP1_2       /*!< COMP output connected to TIM2 input capture 4.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_IC1          LL_COMP_OUTPUT_TIM3_IC1_COMP1_2       /*!< COMP output connected to TIM3 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_IC3          LL_COMP_OUTPUT_TIM3_IC3_COMP4         /*!< COMP output connected to TIM3 input capture 3.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_OCCLR        LL_COMP_OUTPUT_TIM3_OCCLR_COMP1_2_4   /*!< COMP output connected to TIM3 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_IC2          LL_COMP_OUTPUT_TIM4_IC2_COMP4         /*!< COMP output connected to TIM4 input capture 2.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_IC4          LL_COMP_OUTPUT_TIM4_IC4_COMP6         /*!< COMP output connected to TIM4 input capture 4.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_IC2         LL_COMP_OUTPUT_TIM15_IC2_COMP4        /*!< COMP output connected to TIM15 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_OCCLR       LL_COMP_OUTPUT_TIM15_OCCLR_COMP4      /*!< COMP output connected to TIM15 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_IC1         LL_COMP_OUTPUT_TIM16_IC1_COMP6        /*!< COMP output connected to TIM16 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_OCCLR       LL_COMP_OUTPUT_TIM16_OCCLR_COMP6      /*!< COMP output connected to TIM16 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       partially generic naming grouping COMP instance constraints.         */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2_3  LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2   /*!< COMP output connected to TIM2 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
 
 #elif defined(STM32F303xC) || defined(STM32F358xx) || defined(STM32F303xE) || defined(STM32F398xx)
 /* Note: Output redirection common to all COMP instances */
-#define LL_COMP_OUTPUT_TIM8_BKIN        (COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0)                           /*!< COMP output connected to TIM8 break input (BKIN) */
-#define LL_COMP_OUTPUT_TIM8_BKIN2       (COMP_CSR_COMPxOUTSEL_2)                                                    /*!< COMP output connected to TIM8 break input 2 (BKIN2) */
-#define LL_COMP_OUTPUT_TIM1_TIM8_BKIN2  (COMP_CSR_COMPxOUTSEL_2| COMP_CSR_COMPxOUTSEL_0)                            /*!< COMP output connected to TIM1 break input 2 and TIM8 break input 2 (BKIN2) */
+#define LL_COMP_OUTPUT_TIM8_BKIN         (COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM8 break input (BKIN) */
+#define LL_COMP_OUTPUT_TIM8_BKIN2        (COMP_CSR_COMPxOUTSEL_2)                                                   /*!< COMP output connected to TIM8 break input 2 (BKIN2) */
+#define LL_COMP_OUTPUT_TIM1_TIM8_BKIN2   (COMP_CSR_COMPxOUTSEL_2| COMP_CSR_COMPxOUTSEL_0)                           /*!< COMP output connected to TIM1 break input 2 and TIM8 break input 2 (BKIN2) */
 #if defined(STM32F303xE) || defined(STM32F398xx)
 #define LL_COMP_OUTPUT_TIM20_BKIN        (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_2)                          /*!< COMP output connected to TIM8 break input (BKIN) */
 #define LL_COMP_OUTPUT_TIM20_BKIN2       (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM8 break input 2 (BKIN2) */
@@ -309,9 +400,9 @@ typedef struct
 /* Note: Output redirection specific to COMP instance: COMP4, COMP5, COMP6, COMP7 */
 #define LL_COMP_OUTPUT_TIM8_OCCLR_COMP4_5_6_7 (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM8 OCREF clear (specific to COMP instance: COMP4, COMP5, COMP6, COMP7) */
 /* Note: Output redirection specific to COMP instance: COMP1, COMP2 */
-#define LL_COMP_OUTPUT_TIM1_IC1_COMP1_2   (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM1 input capture 1 (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM1_IC4_COMP1_2   (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM1 input capture 4 (specific to COMP instance: COMP2) */
-#define LL_COMP_OUTPUT_TIM3_IC1_COMP1_2   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM3 input capture 1 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM1_IC1_COMP1_2  (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM1 input capture 1 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM2_IC4_COMP1_2  (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM2 input capture 4 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM3_IC1_COMP1_2  (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM3 input capture 1 (specific to COMP instance: COMP2) */
 #if defined(STM32F303xE) || defined(STM32F398xx)
 #define LL_COMP_OUTPUT_TIM20_OCCLR_COMP2 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM20 OCREF clear (specific to COMP instance: COMP2) */
 #endif
@@ -319,28 +410,65 @@ typedef struct
 #define LL_COMP_OUTPUT_TIM3_IC2_COMP3    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM3 input capture 2 (specific to COMP instance: COMP3) */
 #define LL_COMP_OUTPUT_TIM4_IC1_COMP3    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM4 input capture 1 (specific to COMP instance: COMP3) */
 #define LL_COMP_OUTPUT_TIM15_IC1_COMP3   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM15 input capture 1 (specific to COMP instance: COMP3) */
-#define LL_COMP_OUTPUT_TIM15_BKIN        (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM15 break input (BKIN) */
+#define LL_COMP_OUTPUT_TIM15_BKIN_COMP3  (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM15 break input (BKIN) */
 /* Note: Output redirection specific to COMP instance: COMP4 */
 #define LL_COMP_OUTPUT_TIM3_IC3_COMP4    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM3 input capture 3 (specific to COMP instance: COMP4) */
-#define LL_COMP_OUTPUT_TIM4_IC2_COMP4    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM4 input capture 2 (specific to COMP instance: COMP4) */
+#define LL_COMP_OUTPUT_TIM4_IC2_COMP4    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM4 input capture 2 (specific to COMP instance: COMP4) */
 #define LL_COMP_OUTPUT_TIM15_IC2_COMP4   (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM15 input capture 1 (specific to COMP instance: COMP4) */
 #define LL_COMP_OUTPUT_TIM15_OCCLR_COMP4 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM15 OCREF clear (specific to COMP instance: COMP4) */
 /* Note: Output redirection specific to COMP instance: COMP5 */
 #define LL_COMP_OUTPUT_TIM2_IC1_COMP5    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM2 input capture 1 (specific to COMP instance: COMP5) */
-#define LL_COMP_OUTPUT_TIM4_IC3_COMP5    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM4 input capture 3 (specific to COMP instance: COMP5) */
+#define LL_COMP_OUTPUT_TIM4_IC3_COMP5    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM4 input capture 3 (specific to COMP instance: COMP5) */
 #define LL_COMP_OUTPUT_TIM17_IC1_COMP5   (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM17 input capture 1 (specific to COMP instance: COMP5) */
-#define LL_COMP_OUTPUT_TIM16_BKIN        (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM16 break input (BKIN) */
+#define LL_COMP_OUTPUT_TIM16_BKIN_COMP5  (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM16 break input (BKIN) */
 /* Note: Output redirection specific to COMP instance: COMP6 */
 #define LL_COMP_OUTPUT_TIM2_IC2_COMP6    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM2 input capture 2 (specific to COMP instance: COMP6) */
 #define LL_COMP_OUTPUT_TIM2_OCCLR_COMP6  (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM2 OCREF clear (specific to COMP instance: COMP6) */
-#define LL_COMP_OUTPUT_TIM4_IC4_COMP6    (COMP_CSR_COMPxOUTSEL_2 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM4 input capture 4 (specific to COMP instance: COMP6) */
+#define LL_COMP_OUTPUT_TIM4_IC4_COMP6    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM4 input capture 4 (specific to COMP instance: COMP6) */
 #define LL_COMP_OUTPUT_TIM16_IC1_COMP6   (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM16 input capture 1 (specific to COMP instance: COMP6) */
 #define LL_COMP_OUTPUT_TIM16_OCCLR_COMP6 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM16 OCREF clear (specific to COMP instance: COMP6) */
 /* Note: Output redirection specific to COMP instance: COMP7 */
 #define LL_COMP_OUTPUT_TIM1_IC2_COMP7    (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_0)                          /*!< COMP output connected to TIM2 input capture 1 (specific to COMP instance: COMP7) */
 #define LL_COMP_OUTPUT_TIM2_IC3_COMP7    (COMP_CSR_COMPxOUTSEL_3)                                                   /*!< COMP output connected to TIM4 input capture 3 (specific to COMP instance: COMP7) */
 #define LL_COMP_OUTPUT_TIM17_OCCLR_COMP7 (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1)                          /*!< COMP output connected to TIM17 OCREF clear (specific to COMP instance: COMP7) */
-#define LL_COMP_OUTPUT_TIM17_BKIN        (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM17 break input (BKIN) */
+#define LL_COMP_OUTPUT_TIM17_BKIN_COMP7  (COMP_CSR_COMPxOUTSEL_3 | COMP_CSR_COMPxOUTSEL_1 | COMP_CSR_COMPxOUTSEL_0) /*!< COMP output connected to TIM17 break input (BKIN) */
+
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+/* Note: Some output redirections cannot have a generic naming,               */
+/*       due to literal value different depending on COMP instance.           */
+/*       (For exemple: LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2_3 and                */
+/*       LL_COMP_OUTPUT_TIM2_OCCLR_COMP6).                                    */
+#define LL_COMP_OUTPUT_TIM1_IC1          LL_COMP_OUTPUT_TIM1_IC1_COMP1_2       /*!< COMP output connected to TIM1 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM1_IC2          LL_COMP_OUTPUT_TIM1_IC2_COMP7         /*!< COMP output connected to TIM2 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM1_OCCLR        LL_COMP_OUTPUT_TIM1_OCCLR_COMP1_2_3_7 /*!< COMP output connected to TIM1 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC1          LL_COMP_OUTPUT_TIM2_IC1_COMP5         /*!< COMP output connected to TIM2 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC2          LL_COMP_OUTPUT_TIM2_IC2_COMP6         /*!< COMP output connected to TIM2 input capture 2.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC3          LL_COMP_OUTPUT_TIM2_IC3_COMP7         /*!< COMP output connected to TIM4 input capture 3.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM2_IC4          LL_COMP_OUTPUT_TIM2_IC4_COMP1_2       /*!< COMP output connected to TIM2 input capture 4.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_IC1          LL_COMP_OUTPUT_TIM3_IC1_COMP1_2       /*!< COMP output connected to TIM3 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_IC2          LL_COMP_OUTPUT_TIM3_IC2_COMP3         /*!< COMP output connected to TIM3 input capture 2.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_IC3          LL_COMP_OUTPUT_TIM3_IC3_COMP4         /*!< COMP output connected to TIM3 input capture 3.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM3_OCCLR        LL_COMP_OUTPUT_TIM3_OCCLR_COMP1_2_4_5 /*!< COMP output connected to TIM3 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_IC1          LL_COMP_OUTPUT_TIM4_IC1_COMP3         /*!< COMP output connected to TIM4 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_IC2          LL_COMP_OUTPUT_TIM4_IC2_COMP4         /*!< COMP output connected to TIM4 input capture 2.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_IC3          LL_COMP_OUTPUT_TIM4_IC3_COMP5         /*!< COMP output connected to TIM4 input capture 3.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_IC4          LL_COMP_OUTPUT_TIM4_IC4_COMP6         /*!< COMP output connected to TIM4 input capture 4.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM8_OCCLR        LL_COMP_OUTPUT_TIM8_OCCLR_COMP4_5_6_7 /*!< COMP output connected to TIM8 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_IC1         LL_COMP_OUTPUT_TIM15_IC1_COMP3        /*!< COMP output connected to TIM15 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_IC2         LL_COMP_OUTPUT_TIM15_IC2_COMP4        /*!< COMP output connected to TIM15 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_BKIN        LL_COMP_OUTPUT_TIM15_BKIN_COMP3       /*!< COMP output connected to TIM15 break input (BKIN). Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM15_OCCLR       LL_COMP_OUTPUT_TIM15_OCCLR_COMP4      /*!< COMP output connected to TIM15 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_IC1         LL_COMP_OUTPUT_TIM16_IC1_COMP6        /*!< COMP output connected to TIM16 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_BKIN        LL_COMP_OUTPUT_TIM16_BKIN_COMP5       /*!< COMP output connected to TIM16 break input (BKIN). Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_OCCLR       LL_COMP_OUTPUT_TIM16_OCCLR_COMP6      /*!< COMP output connected to TIM16 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM17_IC1         LL_COMP_OUTPUT_TIM17_IC1_COMP5        /*!< COMP output connected to TIM17 input capture 1.    Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM17_BKIN        LL_COMP_OUTPUT_TIM17_BKIN_COMP7       /*!< COMP output connected to TIM17 break input (BKIN). Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM17_OCCLR       LL_COMP_OUTPUT_TIM17_OCCLR_COMP7      /*!< COMP output connected to TIM17 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#if defined(STM32F303xE) || defined(STM32F398xx)
+#define LL_COMP_OUTPUT_TIM20_OCCLR       LL_COMP_OUTPUT_TIM20_OCCLR_COMP2      /*!< COMP output connected to TIM20 OCREF clear.        Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#endif
 
 #endif
 #endif
@@ -374,21 +502,43 @@ typedef struct
 #define LL_COMP_BLANKINGSRC_TIM2_OC4_COMP6  (COMP_CSR_COMPxBLANKING_0 | COMP_CSR_COMPxBLANKING_1) /*!< Comparator output blanking source TIM2 OC4 (specific to COMP instance: COMP6) */
 #define LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6 (COMP_CSR_COMPxBLANKING_0)                            /*!< Comparator output blanking source TIM15 OC2 (specific to COMP instance: COMP6) */
 
+/* Note: Output blanking source specific to COMP instances, defined with      */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_BLANKINGSRC_TIM1_OC5     LL_COMP_BLANKINGSRC_TIM1_OC5_COMP2                        /*!< Comparator output blanking source TIM1 OC5.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM2_OC3     LL_COMP_BLANKINGSRC_TIM2_OC3_COMP2                        /*!< Comparator output blanking source TIM2 OC3.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM2_OC4     LL_COMP_BLANKINGSRC_TIM2_OC4_COMP6                        /*!< Comparator output blanking source TIM2 OC4.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM3_OC3     LL_COMP_BLANKINGSRC_TIM3_OC3_COMP2                        /*!< Comparator output blanking source TIM3 OC3.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM3_OC4     LL_COMP_BLANKINGSRC_TIM3_OC4_COMP4                        /*!< Comparator output blanking source TIM3 OC4.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM15_OC1    LL_COMP_BLANKINGSRC_TIM15_OC1_COMP4                       /*!< Comparator output blanking source TIM15 OC1. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM15_OC2    LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6                       /*!< Comparator output blanking source TIM15 OC2. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+
 #elif defined(STM32F302xE) || defined(STM32F302xC)
 /* Note: Output blanking source specific to COMP instance: COMP1, COMP2 */
 #define LL_COMP_BLANKINGSRC_TIM1_OC5_COMP1_2 (COMP_CSR_COMPxBLANKING_0)                            /*!< Comparator output blanking source TIM1 OC5 (specific to COMP instance: COMP1, COMP2) */
 #define LL_COMP_BLANKINGSRC_TIM2_OC3_COMP1_2 (COMP_CSR_COMPxBLANKING_1)                            /*!< Comparator output blanking source TIM2 OC3 (specific to COMP instance: COMP1, COMP2) */
 #define LL_COMP_BLANKINGSRC_TIM3_OC3_COMP1_2 (COMP_CSR_COMPxBLANKING_1 | COMP_CSR_COMPxBLANKING_0) /*!< Comparator output blanking source TIM3 OC3 (specific to COMP instance: COMP1, COMP2) */
 /* Note: Output blanking source specific to COMP instance: COMP4 */
-#define LL_COMP_BLANKINGSRC_TIM3_OC4_COMP4  (COMP_CSR_COMPxBLANKING_0)                            /*!< Comparator output blanking source TIM3 OC4 (specific to COMP instance: COMP4) */
-#define LL_COMP_BLANKINGSRC_TIM15_OC1_COMP4 (COMP_CSR_COMPxBLANKING_0 | COMP_CSR_COMPxBLANKING_1) /*!< Comparator output blanking source TIM15 OC1 (specific to COMP instance: COMP4) */
+#define LL_COMP_BLANKINGSRC_TIM3_OC4_COMP4  (COMP_CSR_COMPxBLANKING_0)                             /*!< Comparator output blanking source TIM3 OC4 (specific to COMP instance: COMP4) */
+#define LL_COMP_BLANKINGSRC_TIM15_OC1_COMP4 (COMP_CSR_COMPxBLANKING_0 | COMP_CSR_COMPxBLANKING_1)  /*!< Comparator output blanking source TIM15 OC1 (specific to COMP instance: COMP4) */
 /* Note: Output blanking source specific to COMP instance: COMP6 */
-#define LL_COMP_BLANKINGSRC_TIM2_OC4_COMP6  (COMP_CSR_COMPxBLANKING_0 | COMP_CSR_COMPxBLANKING_1) /*!< Comparator output blanking source TIM2 OC4 (specific to COMP instance: COMP6) */
-#define LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6 (COMP_CSR_COMPxBLANKING_0)                            /*!< Comparator output blanking source TIM15 OC2 (specific to COMP instance: COMP6) */
+#define LL_COMP_BLANKINGSRC_TIM2_OC4_COMP6  (COMP_CSR_COMPxBLANKING_0 | COMP_CSR_COMPxBLANKING_1)  /*!< Comparator output blanking source TIM2 OC4 (specific to COMP instance: COMP6) */
+#define LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6 (COMP_CSR_COMPxBLANKING_0)                             /*!< Comparator output blanking source TIM15 OC2 (specific to COMP instance: COMP6) */
+
+/* Note: Output blanking source specific to COMP instances, defined with      */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_BLANKINGSRC_TIM1_OC5     LL_COMP_BLANKINGSRC_TIM1_OC5_COMP1_2                      /*!< Comparator output blanking source TIM1 OC5.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM2_OC3     LL_COMP_BLANKINGSRC_TIM2_OC3_COMP1_2                      /*!< Comparator output blanking source TIM2 OC3.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM2_OC4     LL_COMP_BLANKINGSRC_TIM2_OC4_COMP6                        /*!< Comparator output blanking source TIM2 OC4.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM3_OC3     LL_COMP_BLANKINGSRC_TIM3_OC3_COMP1_2                      /*!< Comparator output blanking source TIM3 OC3.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM3_OC4     LL_COMP_BLANKINGSRC_TIM3_OC4_COMP4                        /*!< Comparator output blanking source TIM3 OC4.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM15_OC1    LL_COMP_BLANKINGSRC_TIM15_OC1_COMP4                       /*!< Comparator output blanking source TIM15 OC1. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM15_OC2    LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6                       /*!< Comparator output blanking source TIM15 OC2. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
 
 #elif defined(STM32F303xE) || defined(STM32F398xx) || defined(STM32F303xC) || defined(STM32F358xx)
 /* Note: Output blanking source specific to COMP instance: COMP1, COMP2, COMP7 */
-#define LL_COMP_BLANKINGSRC_TIM1_OC5_COMP1_2_7 (COMP_CSR_COMPxBLANKING_0)                            /*!< Comparator output blanking source TIM1 OC5 (specific to COMP instance: COMP1, COMP2, COMP7) */
+#define LL_COMP_BLANKINGSRC_TIM1_OC5_COMP1_2_7 (COMP_CSR_COMPxBLANKING_0)                          /*!< Comparator output blanking source TIM1 OC5 (specific to COMP instance: COMP1, COMP2, COMP7) */
 /* Note: Output blanking source specific to COMP instance: COMP1, COMP2 */
 #define LL_COMP_BLANKINGSRC_TIM2_OC3_COMP1_2 (COMP_CSR_COMPxBLANKING_1)                            /*!< Comparator output blanking source TIM2 OC3 (specific to COMP instance: COMP1, COMP2) */
 #define LL_COMP_BLANKINGSRC_TIM3_OC3_COMP1_2 (COMP_CSR_COMPxBLANKING_1 | COMP_CSR_COMPxBLANKING_0) /*!< Comparator output blanking source TIM3 OC3 (specific to COMP instance: COMP1, COMP2) */
@@ -397,10 +547,23 @@ typedef struct
 /* Note: Output blanking source specific to COMP instance: COMP4, COMP5, COMP6, COMP7 */
 #define LL_COMP_BLANKINGSRC_TIM8_OC5_COMP4_5_6_7 (COMP_CSR_COMPxBLANKING_1)                        /*!< Comparator output blanking source TIM8 OC5 (specific to COMP instance: COMP4, COMP5, COMP6, COMP7) */
 /* Note: Output blanling source specific to COMP instance: COMP6, COMP7 */
-#define LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6_7 (COMP_CSR_COMPxBLANKING_2)                            /*!< Comparator output blanking source TIM15 OC2 (specific to COMP instance: COMP6, COMP7) */
+#define LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6_7 (COMP_CSR_COMPxBLANKING_2)                           /*!< Comparator output blanking source TIM15 OC2 (specific to COMP instance: COMP6, COMP7) */
 /* Note: Output blanking source specific to COMP instance: COMP4 */
 #define LL_COMP_BLANKINGSRC_TIM3_OC4_COMP4   (COMP_CSR_COMPxBLANKING_0)                            /*!< Comparator output blanking source TIM3 OC4 (specific to COMP instance: COMP4) */
 #define LL_COMP_BLANKINGSRC_TIM15_OC1_COMP4  (COMP_CSR_COMPxBLANKING_1 | COMP_CSR_COMPxBLANKING_0) /*!< Comparator output blanking source TIM15 OC1 (specific to COMP instance: COMP4) */
+
+/* Note: Output blanking source specific to COMP instances, defined with      */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+#define LL_COMP_BLANKINGSRC_TIM1_OC5     LL_COMP_BLANKINGSRC_TIM1_OC5_COMP1_2_7                    /*!< Comparator output blanking source TIM1 OC5.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM2_OC3     LL_COMP_BLANKINGSRC_TIM2_OC3_COMP1_2                      /*!< Comparator output blanking source TIM2 OC3.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM2_OC4     LL_COMP_BLANKINGSRC_TIM2_OC4_COMP3_6                      /*!< Comparator output blanking source TIM2 OC4.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM3_OC3     LL_COMP_BLANKINGSRC_TIM3_OC3_COMP1_2                      /*!< Comparator output blanking source TIM3 OC3.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM3_OC4     LL_COMP_BLANKINGSRC_TIM3_OC4_COMP4                        /*!< Comparator output blanking source TIM3 OC4.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM8_OC5     LL_COMP_BLANKINGSRC_TIM8_OC5_COMP4_5_6_7                  /*!< Comparator output blanking source TIM8 OC5.  Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM15_OC1    LL_COMP_BLANKINGSRC_TIM15_OC1_COMP4                       /*!< Comparator output blanking source TIM15 OC1. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_BLANKINGSRC_TIM15_OC2    LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6_7                     /*!< Comparator output blanking source TIM15 OC2. Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+
 #endif
 #endif
 /**
@@ -566,8 +729,8 @@ typedef struct
   *         @arg @ref LL_COMP_WINDOWMODE_COMP3_INPUT_PLUS_COMMON (2)
   *         @arg @ref LL_COMP_WINDOWMODE_COMP5_INPUT_PLUS_COMMON (2)
   *
-  *         (1) Parameter available on devices: STM32F303xC/D/E, STM32F358xx, STM32F398xx, STM32F302xC/D/E
-  *         (2) Parameter available on devices: STM32F303xC/D/E, STM32F358xx, STM32F398xx
+  *         (1) Parameter available on devices: STM32F302xB/C, STM32F303xB/C, STM32F358xC
+  *         (2) Parameter available on devices: STM32F303xB/C, STM32F358xC
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetCommonWindowMode(COMP_Common_TypeDef *COMPxy_COMMON, uint32_t WindowMode)
@@ -593,8 +756,8 @@ __STATIC_INLINE void LL_COMP_SetCommonWindowMode(COMP_Common_TypeDef *COMPxy_COM
   *         @arg @ref LL_COMP_WINDOWMODE_COMP3_INPUT_PLUS_COMMON (2)
   *         @arg @ref LL_COMP_WINDOWMODE_COMP5_INPUT_PLUS_COMMON (2)
   *
-  *         (1) Parameter available on devices: STM32F303xC/D/E, STM32F358xx, STM32F398xx, STM32F302xC/D/E
-  *         (2) Parameter available on devices: STM32F303xC/D/E, STM32F358xx, STM32F398xx
+  *         (1) Parameter available on devices: STM32F302xB/C, STM32F303xB/C, STM32F358xC
+  *         (2) Parameter available on devices: STM32F303xB/C, STM32F358xC
   */
 __STATIC_INLINE uint32_t LL_COMP_GetCommonWindowMode(COMP_Common_TypeDef *COMPxy_COMMON)
 {
@@ -624,7 +787,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetCommonWindowMode(COMP_Common_TypeDef *COMPxy
   *         @arg @ref LL_COMP_POWERMODE_LOWPOWER      (1)
   *         @arg @ref LL_COMP_POWERMODE_ULTRALOWPOWER (1)
   *
-  *         (1) Parameter available only on devices: STM32F303xB/C, STM32F358xC
+  *         (1) Parameter available only on devices: STM32F302xB/C, STM32F303xB/C, STM32F358xC
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetPowerMode(COMP_TypeDef *COMPx, uint32_t PowerMode)
@@ -648,7 +811,7 @@ __STATIC_INLINE void LL_COMP_SetPowerMode(COMP_TypeDef *COMPx, uint32_t PowerMod
   *         @arg @ref LL_COMP_POWERMODE_LOWPOWER      (1)
   *         @arg @ref LL_COMP_POWERMODE_ULTRALOWPOWER (1)
   *
-  *         (1) Parameter available only on devices: STM32F303xB/C, STM32F358xC
+  *         (1) Parameter available only on devices: STM32F302xB/C, STM32F303xB/C, STM32F358xC
   */
 __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
 {
@@ -687,24 +850,24 @@ __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_3_4VREFINT
   *         @arg @ref LL_COMP_INPUT_MINUS_VREFINT
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH1
-  *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2
+  *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2   (3)
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC2_CH1   (2)
-  *         @arg @ref LL_COMP_INPUT_MINUS_IO1        (1)
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO1
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2
-  *         (1) Parameter available on all devices except STM32F301x6/8, STM32F318x8.\n
-  *         (2) Parameter available only on devices STM32F303x6/8, STM32F328x8, STM32F334xx, STM32F37xx.
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO3        (1)
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO4
+  *         (1) Parameter available on all devices except STM32F301x6/8, STM32F318x8, STM32F302x6/8, STM32F303x6/8, STM32F328xx, STM32F334xx.\n
+  *         (2) Parameter available only on devices STM32F303x6/8, STM32F328x8, STM32F334xx.\n
+  *         (3) Parameter available on all devices except STM32F301x6/8, STM32F318x8, STM32F302xx.\n
   * @param  InputPlus This parameter can be one of the following values:
-  *         @arg @ref LL_COMP_INPUT_PLUS_IO1            (1)
-  *         @arg @ref LL_COMP_INPUT_PLUS_IO2            (2)
-  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP1 (3)
-  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2 (4)
+  *         @arg @ref LL_COMP_INPUT_PLUS_IO1
+  *         @arg @ref LL_COMP_INPUT_PLUS_IO2            (1)
+  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP1 (2)
+  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2 (3)
   *
-  *         (1) Exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO1, PA7, PD12, PD11, PA0 are not available and are replaced respectively by PA3, PB13, PB11, PC1.\n
-  *             Exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: in LL_COMP_INPUT_PLUS_IO1, PD11 is replaced by PB11.\n
-  *         (2) Exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO2, PD14, PE7 are not available and are replaced respectively by PB14, PB0.\n
-  *             Exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: input plus IO2 available only on COMP instance: COMP6.\n
-  *         (3) Parameter available on devices: STM32F302xC, STM32F302xE, STM32F303xC, STM32F303xE, defined(STM32F358xx, STM32F398xx).\n
-  *         (4) Parameter available on devices: STM32F301x8, STM32F318xx, STM32F302x8.
+  *         (1) Parameter available only on devices STM32F302xB/C, STM32F303xB/C, STM32F358xC.\n
+  *         (2) Parameter available on devices: STM32F302xB/C, STM32F302xD/E, STM32F303xB/C/D/E, STM32F358xC, STM32F398xE.\n
+  *         (3) Parameter available on devices: STM32F301x6/8, STM32F318xx, STM32F302x6/8.
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_ConfigInputs(COMP_TypeDef *COMPx, uint32_t InputMinus, uint32_t InputPlus)
@@ -741,17 +904,14 @@ __STATIC_INLINE void LL_COMP_ConfigInputs(COMP_TypeDef *COMPx, uint32_t InputMin
   * @rmtoll CSR      NONINSEL       LL_COMP_SetInputPlus
   * @param  COMPx Comparator instance
   * @param  InputPlus This parameter can be one of the following values:
-  *         @arg @ref LL_COMP_INPUT_PLUS_IO1            (1)
-  *         @arg @ref LL_COMP_INPUT_PLUS_IO2            (2)
-  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP1 (3)
-  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2 (4)
+  *         @arg @ref LL_COMP_INPUT_PLUS_IO1
+  *         @arg @ref LL_COMP_INPUT_PLUS_IO2            (1)
+  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP1 (2)
+  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2 (3)
   *
-  *         (1) Exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO1, PA7, PD12, PD11, PA0 are not available and are replaced respectively by PA3, PB13, PB11, PC1.\n
-  *             Exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: in LL_COMP_INPUT_PLUS_IO1, PD11 is replaced by PB11.\n
-  *         (2) Exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO2, PD14, PE7 are not available and are replaced respectively by PB14, PB0.\n
-  *             Exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: input plus IO2 available only on COMP instance: COMP6.\n
-  *         (3) Parameter available on devices: STM32F302xC, STM32F302xE, STM32F303xC, STM32F303xE, defined(STM32F358xx, STM32F398xx).\n
-  *         (4) Parameter available on devices: STM32F301x8, STM32F318xx, STM32F302x8.
+  *         (1) Parameter available only on devices STM32F302xB/C, STM32F303xB/C, STM32F358xC.\n
+  *         (2) Parameter available on devices: STM32F302xB/C, STM32F302xD/E, STM32F303xB/C/D/E, STM32F358xC, STM32F398xE.\n
+  *         (3) Parameter available on devices: STM32F301x6/8, STM32F318xx, STM32F302x6/8.
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetInputPlus(COMP_TypeDef *COMPx, uint32_t InputPlus)
@@ -779,13 +939,14 @@ __STATIC_INLINE void LL_COMP_SetInputPlus(COMP_TypeDef *COMPx, uint32_t InputPlu
   * @rmtoll CSR      NONINSEL       LL_COMP_GetInputPlus
   * @param  COMPx Comparator instance
   * @retval Returned value can be one of the following values:
-  *         @arg @ref LL_COMP_INPUT_PLUS_IO1 (1)
-  *         @arg @ref LL_COMP_INPUT_PLUS_IO2 (2)
+  *         @arg @ref LL_COMP_INPUT_PLUS_IO1
+  *         @arg @ref LL_COMP_INPUT_PLUS_IO2            (1)
+  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP1 (2)
+  *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1_COMP2 (3)
   *
-  *         (1) Exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO1, PA7, PD12, PD11, PA0 are not available and are replaced respectively by PA3, PB13, PB11, PC1.\n
-                Exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: in LL_COMP_INPUT_PLUS_IO1, PD11 is replaced by PB11.\n
-  *         (2) Exception on devices STM32F302x6/8, STM32F303x6/8: in LL_COMP_INPUT_PLUS_IO2, PD14, PE7 are not available and are replaced respectively by PB14, PB0.\n
-  *             Exception on devices STM32F302x6/8/D/E, STM32F303x6/8/D/E, STM32F398xE: input plus IO2 available only on COMP instance: COMP6.
+  *         (1) Parameter available only on devices STM32F302xB/C, STM32F303xB/C, STM32F358xC.\n
+  *         (2) Parameter available on devices: STM32F302xB/C, STM32F302xD/E, STM32F303xB/C/D/E, STM32F358xC, STM32F398xE.\n
+  *         (3) Parameter available on devices: STM32F301x6/8, STM32F318xx, STM32F302x6/8.
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
 {
@@ -823,12 +984,15 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_3_4VREFINT
   *         @arg @ref LL_COMP_INPUT_MINUS_VREFINT
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH1
-  *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2
+  *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2   (3)
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC2_CH1   (2)
-  *         @arg @ref LL_COMP_INPUT_MINUS_IO1        (1)
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO1
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2
-  *         (1) Parameter available on all devices except STM32F301x6/8, STM32F318x8.\n
-  *         (2) Parameter available only on devices STM32F303x6/8, STM32F328x8, STM32F334xx, STM32F37xx.
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO3        (1)
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO4
+  *         (1) Parameter available on all devices except STM32F301x6/8, STM32F318x8, STM32F302x6/8, STM32F303x6/8, STM32F328xx, STM32F334xx.\n
+  *         (2) Parameter available only on devices STM32F303x6/8, STM32F328x8, STM32F334xx.\n
+  *         (3) Parameter available on all devices except STM32F301x6/8, STM32F318x8, STM32F302xx.\n
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMinus)
@@ -849,12 +1013,15 @@ __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMi
   *         @arg @ref LL_COMP_INPUT_MINUS_3_4VREFINT
   *         @arg @ref LL_COMP_INPUT_MINUS_VREFINT
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH1
-  *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2
+  *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2   (3)
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC2_CH1   (2)
-  *         @arg @ref LL_COMP_INPUT_MINUS_IO1        (1)
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO1
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2
-  *         (1) Parameter available on all devices except STM32F301x6/8, STM32F318x8.\n
-  *         (2) Parameter available only on devices STM32F303x6/8, STM32F328x8, STM32F334xx, STM32F37xx.
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO3        (1)
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO4
+  *         (1) Parameter available on all devices except STM32F301x6/8, STM32F318x8, STM32F302x6/8, STM32F303x6/8, STM32F328xx, STM32F334xx.\n
+  *         (2) Parameter available only on devices STM32F303x6/8, STM32F328x8, STM32F334xx.\n
+  *         (3) Parameter available on all devices except STM32F301x6/8, STM32F318x8, STM32F302xx.\n
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputMinus(COMP_TypeDef *COMPx)
 {
@@ -871,7 +1038,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputMinus(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_HYSTERESIS_MEDIUM      (1)
   *         @arg @ref LL_COMP_HYSTERESIS_HIGH        (1)
   *
-  *         (1) Parameter available only on devices: STM32F303xB/C, STM32F358xC
+  *         (1) Parameter available only on devices: STM32F302xB/C, STM32F303xB/C, STM32F358xC
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetInputHysteresis(COMP_TypeDef *COMPx, uint32_t InputHysteresis)
@@ -895,7 +1062,7 @@ __STATIC_INLINE void LL_COMP_SetInputHysteresis(COMP_TypeDef *COMPx, uint32_t In
   *         @arg @ref LL_COMP_HYSTERESIS_MEDIUM      (1)
   *         @arg @ref LL_COMP_HYSTERESIS_HIGH        (1)
   *
-  *         (1) Parameter available only on devices: STM32F303xB/C, STM32F358xC
+  *         (1) Parameter available only on devices: STM32F302xB/C, STM32F303xB/C, STM32F358xC
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputHysteresis(COMP_TypeDef *COMPx)
 {
@@ -936,12 +1103,12 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputHysteresis(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2_3   (4)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR_COMP1_2_4_5 (4)
   *         @arg @ref LL_COMP_OUTPUT_TIM8_OCCLR_COMP4_5_6_7 (4)
-  *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR_COMP24      (6)
+  *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR_COMP2_4     (6)
   *         @arg @ref LL_COMP_OUTPUT_TIM1_IC1_COMP2         (2)
-  *         @arg @ref LL_COMP_OUTPUT_TIM1_IC4_COMP2         (2)
+  *         @arg @ref LL_COMP_OUTPUT_TIM2_IC4_COMP2         (2)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC1_COMP2         (1)
   *         @arg @ref LL_COMP_OUTPUT_TIM1_IC1_COMP1_2       (3)
-  *         @arg @ref LL_COMP_OUTPUT_TIM1_IC4_COMP1_2       (3)
+  *         @arg @ref LL_COMP_OUTPUT_TIM2_IC4_COMP1_2       (3)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC1_COMP1_2       (3)
   *         @arg @ref LL_COMP_OUTPUT_TIM20_OCCLR_COMP2      (5)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC2_COMP3         (4)
@@ -1000,12 +1167,12 @@ __STATIC_INLINE void LL_COMP_SetOutputSelection(COMP_TypeDef *COMPx, uint32_t Ou
   *         @arg @ref LL_COMP_OUTPUT_TIM2_OCCLR_COMP1_2_3   (4)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR_COMP1_2_4_5 (4)
   *         @arg @ref LL_COMP_OUTPUT_TIM8_OCCLR_COMP4_5_6_7 (4)
-  *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR_COMP24      (6)
+  *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR_COMP2_4     (6)
   *         @arg @ref LL_COMP_OUTPUT_TIM1_IC1_COMP2         (2)
-  *         @arg @ref LL_COMP_OUTPUT_TIM1_IC4_COMP2         (2)
+  *         @arg @ref LL_COMP_OUTPUT_TIM2_IC4_COMP2         (2)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC1_COMP2         (1)
   *         @arg @ref LL_COMP_OUTPUT_TIM1_IC1_COMP1_2       (3)
-  *         @arg @ref LL_COMP_OUTPUT_TIM1_IC4_COMP1_2       (3)
+  *         @arg @ref LL_COMP_OUTPUT_TIM2_IC4_COMP1_2       (3)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC1_COMP1_2       (3)
   *         @arg @ref LL_COMP_OUTPUT_TIM20_OCCLR_COMP2      (5)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC2_COMP3         (4)
@@ -1427,6 +1594,10 @@ typedef struct
 #define LL_COMP_INPUT_MINUS_DAC1_CH1    (COMP_CSR_COMP1INSEL_2                                                ) /*!< Comparator input minus connected to DAC1 channel 1 (DAC_OUT1)  */
 #define LL_COMP_INPUT_MINUS_DAC1_CH2    (COMP_CSR_COMP1INSEL_2                         | COMP_CSR_COMP1INSEL_0) /*!< Comparator input minus connected to DAC1 channel 2 (DAC_OUT2)  */
 #define LL_COMP_INPUT_MINUS_IO1         (COMP_CSR_COMP1INSEL_2 | COMP_CSR_COMP1INSEL_1                        ) /*!< Comparator input minus connected to IO1 (pin PA0 for COMP1, pin PA2 for COMP2) */
+#define LL_COMP_INPUT_MINUS_IO2         (COMP_CSR_COMP1INSEL_2 | COMP_CSR_COMP1INSEL_1 | COMP_CSR_COMP1INSEL_0) /*!< Comparator input minus connected to IO2 (pin PA6 for COMP1 & COMP2) */
+#define LL_COMP_INPUT_MINUS_IO3         (COMP_CSR_COMP1INSEL_2 |                         COMP_CSR_COMP1INSEL_0) /*!< Comparator input minus connected to IO3 (pin PA5 for COMP1 & COMP2) */
+#define LL_COMP_INPUT_MINUS_IO4         (COMP_CSR_COMP1INSEL_2                                                ) /*!< Comparator input minus connected to IO4 (pin PA4 for COMP1 & COMP2) */
+#define LL_COMP_INPUT_MINUS_DAC2_CH1    (COMP_CSR_COMP1INSEL_2 | COMP_CSR_COMP1INSEL_1 | COMP_CSR_COMP1INSEL_0) /*!< Comparator input minus connected to DAC2 channel 1 (DAC2_OUT1)  */
 /**
   * @}
   */
@@ -1447,14 +1618,36 @@ typedef struct
   */
 /* Note: Output redirection is common for COMP1 and COMP2 */
 #define LL_COMP_OUTPUT_NONE             ((uint32_t)0x00000000U)                                                    /*!< COMP output is not connected to other peripherals (except GPIO and EXTI that are always connected to COMP output) */
-#define LL_COMP_OUTPUT_TIM16_BKIN       (COMP_CSR_COMP1OUTSEL_0)                                                   /*!< COMP output connected to TIM16 break input (BKIN) */
-#define LL_COMP_OUTPUT_TIM4_IC1         (COMP_CSR_COMP1OUTSEL_1)                                                   /*!< COMP output connected to TIM4 input capture 1 */
-#define LL_COMP_OUTPUT_TIM4_OCCLR       (COMP_CSR_COMP1OUTSEL_1 | COMP_CSR_COMP1OUTSEL_0)                          /*!< COMP output connected to TIM4 OCREF clear */
 #define LL_COMP_OUTPUT_TIM2_IC4         (COMP_CSR_COMP1OUTSEL_2)                                                   /*!< COMP output connected to TIM2 input capture 4 */
 #define LL_COMP_OUTPUT_TIM2_OCCLR       (COMP_CSR_COMP1OUTSEL_2 | COMP_CSR_COMP1OUTSEL_0)                          /*!< COMP output connected to TIM2 OCREF clear */
-#define LL_COMP_OUTPUT_TIM3_IC1         (COMP_CSR_COMP1OUTSEL_2 | COMP_CSR_COMP1OUTSEL_1)                          /*!< COMP output connected to TIM3 input capture 1 */
-#define LL_COMP_OUTPUT_TIM3_OCCLR       (COMP_CSR_COMP1OUTSEL_2 | COMP_CSR_COMP1OUTSEL_1 | COMP_CSR_COMP1OUTSEL_0) /*!< COMP output connected to TIM3 OCREF clear */
 
+/* Note: Output redirection specific to COMP instance: COMP1 */
+#define LL_COMP_OUTPUT_TIM15_BKIN_COMP1 (COMP_CSR_COMP1OUTSEL_0)                                                   /*!< COMP output connected to TIM15 break input (BKIN) (specific to COMP instance: COMP1) */
+#define LL_COMP_OUTPUT_TIM3_IC1_COMP1   (COMP_CSR_COMP1OUTSEL_1)                                                   /*!< COMP output connected to TIM3 input capture 1 (specific to COMP instance: COMP1) */
+#define LL_COMP_OUTPUT_TIM3_OCCLR_COMP1 (COMP_CSR_COMP1OUTSEL_1 | COMP_CSR_COMP1OUTSEL_0)                          /*!< COMP output connected to TIM3 OCREF clear (specific to COMP instance: COMP1) */
+#define LL_COMP_OUTPUT_TIM5_IC4_COMP1   (COMP_CSR_COMP1OUTSEL_2 | COMP_CSR_COMP1OUTSEL_1)                          /*!< COMP output connected to TIM5 input capture 4 (specific to COMP instance: COMP1) */
+#define LL_COMP_OUTPUT_TIM5_OCCLR_COMP1 (COMP_CSR_COMP1OUTSEL_2 | COMP_CSR_COMP1OUTSEL_1 | COMP_CSR_COMP1OUTSEL_0) /*!< COMP output connected to TIM5 OCREF clear (specific to COMP instance: COMP1) */
+
+/* Note: Output redirection specific to COMP instance: COMP2 */
+#define LL_COMP_OUTPUT_TIM16_BKIN_COMP2 (COMP_CSR_COMP1OUTSEL_0)                                                   /*!< COMP output connected to TIM16 break input (BKIN) (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM4_IC1_COMP2   (COMP_CSR_COMP1OUTSEL_1)                                                   /*!< COMP output connected to TIM4 input capture 1 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM4_OCCLR_COMP2 (COMP_CSR_COMP1OUTSEL_1 | COMP_CSR_COMP1OUTSEL_0)                          /*!< COMP output connected to TIM4 OCREF clear (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM3_IC1_COMP2   (COMP_CSR_COMP1OUTSEL_2 | COMP_CSR_COMP1OUTSEL_1)                          /*!< COMP output connected to TIM3 input capture 1 (specific to COMP instance: COMP2) */
+#define LL_COMP_OUTPUT_TIM3_OCCLR_COMP2 (COMP_CSR_COMP1OUTSEL_2 | COMP_CSR_COMP1OUTSEL_1 | COMP_CSR_COMP1OUTSEL_0) /*!< COMP output connected to TIM3 OCREF clear (specific to COMP instance: COMP2) */
+
+/* Note: Output redirection specific to COMP instances, defined with          */
+/*       generic naming not taking into account COMP instance constraints.    */
+/*       Refer to literal definitions above for COMP instance constraints.    */
+/* Note: Some output redirections cannot have a generic naming,               */
+/*       due to literal value different depending on COMP instance.           */
+/*       (For exemple: LL_COMP_OUTPUT_TIM3_IC1_COMP1 and                      */
+/*       LL_COMP_OUTPUT_TIM3_IC1_COMP2).                                      */
+#define LL_COMP_OUTPUT_TIM15_BKIN       LL_COMP_OUTPUT_TIM15_BKIN_COMP1       /*!< COMP output connected to TIM15 break input (BKIN). Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM16_BKIN       LL_COMP_OUTPUT_TIM16_BKIN_COMP2       /*!< COMP output connected to TIM16 break input (BKIN). Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_IC1         LL_COMP_OUTPUT_TIM4_IC1_COMP2         /*!< COMP output connected to TIM4 input capture 1.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM4_OCCLR       LL_COMP_OUTPUT_TIM4_OCCLR_COMP2       /*!< COMP output connected to TIM4 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM5_IC4         LL_COMP_OUTPUT_TIM5_IC1_COMP1         /*!< COMP output connected to TIM5 input capture 4.     Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
+#define LL_COMP_OUTPUT_TIM5_OCCLR       LL_COMP_OUTPUT_TIM5_OCCLR_COMP1       /*!< COMP output connected to TIM5 OCREF clear.         Caution: Parameter specific to COMP instances, defined with generic naming, not taking into account COMP instance constraints. Refer to literal definitions above for COMP instance constraints. */
 /**
   * @}
   */
@@ -1671,6 +1864,10 @@ __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH1
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2
   *         @arg @ref LL_COMP_INPUT_MINUS_IO1
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO2
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO3
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO4
+  *         @arg @ref LL_COMP_INPUT_MINUS_DAC2_CH1
   * @param  InputPlus This parameter can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1 (1)
@@ -1752,6 +1949,10 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH1
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2
   *         @arg @ref LL_COMP_INPUT_MINUS_IO1
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO2
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO3
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO4
+  *         @arg @ref LL_COMP_INPUT_MINUS_DAC2_CH1
   * @retval None
   */
 __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMinus)
@@ -1776,6 +1977,10 @@ __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMi
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH1
   *         @arg @ref LL_COMP_INPUT_MINUS_DAC1_CH2
   *         @arg @ref LL_COMP_INPUT_MINUS_IO1
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO2
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO3
+  *         @arg @ref LL_COMP_INPUT_MINUS_IO4
+  *         @arg @ref LL_COMP_INPUT_MINUS_DAC2_CH1
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputMinus(COMP_TypeDef *COMPx)
 {

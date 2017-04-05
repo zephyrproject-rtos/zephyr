@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dcmi.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   DCMI HAL module driver
   *          This file provides firmware functions to manage the following
   *          functionalities of the Digital Camera Interface (DCMI) peripheral:
@@ -63,7 +63,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -108,7 +108,7 @@
     defined(STM32F479xx)
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define HAL_TIMEOUT_DCMI_STOP    ((uint32_t)14U)  /* Set timeout to 1s  */
+#define HAL_TIMEOUT_DCMI_STOP    14U  /* Set timeout to 1s  */
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -317,8 +317,8 @@ HAL_StatusTypeDef HAL_DCMI_Start_DMA(DCMI_HandleTypeDef* hdcmi, uint32_t DCMI_Mo
   hdcmi->DMA_Handle->XferAbortCallback = NULL;
   
   /* Reset transfer counters value */ 
-  hdcmi->XferCount = 0;
-  hdcmi->XferTransferNumber = 0;
+  hdcmi->XferCount = 0U;
+  hdcmi->XferTransferNumber = 0U;
 
   if(Length <= 0xFFFFU)
   {
@@ -386,7 +386,7 @@ HAL_StatusTypeDef HAL_DCMI_Stop(DCMI_HandleTypeDef* hdcmi)
   /* Check if the DCMI capture effectively disabled */
   do
   {
-    if (count-- == 0)
+    if (count-- == 0U)
     {
       /* Update error code */
       hdcmi->ErrorCode |= HAL_DCMI_ERROR_TIMEOUT;
@@ -394,7 +394,7 @@ HAL_StatusTypeDef HAL_DCMI_Stop(DCMI_HandleTypeDef* hdcmi)
       status = HAL_TIMEOUT;
     }
   }
-  while((hdcmi->Instance->CR & DCMI_CR_CAPTURE) != 0);
+  while((hdcmi->Instance->CR & DCMI_CR_CAPTURE) != 0U);
 
   /* Disable the DCMI */
   __HAL_DCMI_DISABLE(hdcmi);
@@ -415,6 +415,12 @@ HAL_StatusTypeDef HAL_DCMI_Stop(DCMI_HandleTypeDef* hdcmi)
   return status;
 }
 
+/**
+  * @brief  Suspend DCMI capture  
+  * @param  hdcmi: pointer to a DCMI_HandleTypeDef structure that contains
+  *                the configuration information for DCMI. 
+  * @retval HAL status     
+  */
 HAL_StatusTypeDef HAL_DCMI_Suspend(DCMI_HandleTypeDef* hdcmi)
 {
   __IO uint32_t count = SystemCoreClock / HAL_TIMEOUT_DCMI_STOP;
@@ -434,7 +440,7 @@ HAL_StatusTypeDef HAL_DCMI_Suspend(DCMI_HandleTypeDef* hdcmi)
     /* Check if the DCMI capture effectively disabled */
     do
     {
-      if (count-- == 0)
+      if (count-- == 0U)
       {        
         /* Update error code */
         hdcmi->ErrorCode |= HAL_DCMI_ERROR_TIMEOUT;
@@ -794,7 +800,7 @@ static void DCMI_DMAXferCplt(DMA_HandleTypeDef *hdma)
  
   DCMI_HandleTypeDef* hdcmi = ( DCMI_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
   
-  if(hdcmi->XferCount != 0)
+  if(hdcmi->XferCount != 0U)
   {
     /* Update memory 0 address location */
     tmp = ((hdcmi->DMA_Handle->Instance->CR) & DMA_SxCR_CT);

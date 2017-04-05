@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_tim_ex.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of TIM HAL Extension module.
   ******************************************************************************
   * @attention
@@ -151,7 +151,7 @@ typedef struct {
 #define TIM_CHANNEL_5                      ((uint32_t)0x0010U)
 #define TIM_CHANNEL_6                      ((uint32_t)0x0014U)
 #define TIM_CHANNEL_ALL                    ((uint32_t)0x003CU)
-                                 
+
 /**
   * @}
   */ 
@@ -201,7 +201,6 @@ typedef struct {
   * @{
   */
 #define TIM_CLEARINPUTSOURCE_ETR            ((uint32_t)0x0001U) 
-#define TIM_CLEARINPUTSOURCE_OCREFCLR       ((uint32_t)0x0002U) 
 #define TIM_CLEARINPUTSOURCE_NONE           ((uint32_t)0x0000U)
 /**
   * @}
@@ -355,6 +354,48 @@ typedef struct {
  ((__CHANNEL__) == TIM_CHANNEL_4) ? ((__HANDLE__)->Instance->CCR4) :\
  ((__CHANNEL__) == TIM_CHANNEL_5) ? ((__HANDLE__)->Instance->CCR5) :\
  ((__HANDLE__)->Instance->CCR6))
+
+/**
+  * @brief  Sets the TIM Output compare preload.
+  * @param  __HANDLE__: TIM handle.
+  * @param  __CHANNEL__: TIM Channels to be configured.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
+  *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
+  *            @arg TIM_CHANNEL_3: TIM Channel 3 selected
+  *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
+  *            @arg TIM_CHANNEL_5: TIM Channel 5 selected
+  *            @arg TIM_CHANNEL_6: TIM Channel 6 selected
+  * @retval None
+  */
+#define __HAL_TIM_ENABLE_OCxPRELOAD(__HANDLE__, __CHANNEL__)    \
+        (((__CHANNEL__) == TIM_CHANNEL_1) ? ((__HANDLE__)->Instance->CCMR1 |= TIM_CCMR1_OC1PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_2) ? ((__HANDLE__)->Instance->CCMR1 |= TIM_CCMR1_OC2PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_3) ? ((__HANDLE__)->Instance->CCMR2 |= TIM_CCMR2_OC3PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_4) ? ((__HANDLE__)->Instance->CCMR2 |= TIM_CCMR2_OC4PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_5) ? ((__HANDLE__)->Instance->CCMR3 |= TIM_CCMR3_OC5PE) :\
+         ((__HANDLE__)->Instance->CCMR3 |= TIM_CCMR3_OC6PE))
+
+/**
+  * @brief  Resets the TIM Output compare preload.
+  * @param  __HANDLE__: TIM handle.
+  * @param  __CHANNEL__: TIM Channels to be configured.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
+  *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
+  *            @arg TIM_CHANNEL_3: TIM Channel 3 selected
+  *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
+  *            @arg TIM_CHANNEL_5: TIM Channel 5 selected
+  *            @arg TIM_CHANNEL_6: TIM Channel 6 selected
+  * @retval None
+  */
+#define __HAL_TIM_DISABLE_OCxPRELOAD(__HANDLE__, __CHANNEL__)    \
+        (((__CHANNEL__) == TIM_CHANNEL_1) ? ((__HANDLE__)->Instance->CCMR1 &= (uint16_t)~TIM_CCMR1_OC1PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_2) ? ((__HANDLE__)->Instance->CCMR1 &= (uint16_t)~TIM_CCMR1_OC2PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_3) ? ((__HANDLE__)->Instance->CCMR2 &= (uint16_t)~TIM_CCMR2_OC3PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_4) ? ((__HANDLE__)->Instance->CCMR2 &= (uint16_t)~TIM_CCMR2_OC4PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_5) ? ((__HANDLE__)->Instance->CCMR3 &= (uint16_t)~TIM_CCMR3_OC5PE) :\
+         ((__HANDLE__)->Instance->CCMR3 &= (uint16_t)~TIM_CCMR3_OC6PE))
 
 /**
   * @}
@@ -536,7 +577,6 @@ HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef* htim);
 #define IS_TIM_DEADTIME(__DEADTIME__)      ((__DEADTIME__) <= 0xFF) 
 #define IS_TIM_BREAK_FILTER(__FILTER__) ((__FILTER__) <= 0xF)
 #define IS_TIM_CLEARINPUT_SOURCE(MODE) (((MODE) == TIM_CLEARINPUTSOURCE_ETR)      || \
-                                        ((MODE) == TIM_CLEARINPUTSOURCE_OCREFCLR)  || \
                                         ((MODE) == TIM_CLEARINPUTSOURCE_NONE))
 #define IS_TIM_BREAK2_STATE(STATE) (((STATE) == TIM_BREAK2_ENABLE) || \
                                     ((STATE) == TIM_BREAK2_DISABLE))

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_wwdg.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   WWDG HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Window Watchdog (WWDG) peripheral:
@@ -15,9 +15,9 @@
   ==============================================================================
   [..]
     Once enabled the WWDG generates a system reset on expiry of a programmed
-    time period, unless the program refreshes the counter (T[6;0] downcounter)
+    time period, unless the program refreshes the counter (T[6U;0] downcounter)
     before reaching 0x3F value (i.e. a reset is generated when the counter
-    value rolls over from 0x40 to 0x3F).
+    value rolls over from 0x40 to 0x3FU).
 
     (+) An MCU reset is also generated if the counter value is refreshed
         before the counter has reached the refresh window value. This
@@ -31,20 +31,20 @@
     (+) The WWDG downcounter input clock is derived from the APB clock divided
         by a programmable prescaler.
 
-    (+) WWDG downcounter clock (Hz) = PCLK1 / (4096 * Prescaler)
+    (+) WWDG downcounter clock (Hz) = PCLK1 / (4096U * Prescaler)
 
-    (+) WWDG timeout (ms) = (1000 * (T[5;0] + 1)) / (WWDG downcounter clock)
-        where T[5;0] are the lowest 6 bits of downcounter.
+    (+) WWDG timeout (ms) = (1000U * (T[5U;0] + 1U)) / (WWDG downcounter clock)
+        where T[5U;0] are the lowest 6 bits of downcounter.
 
     (+) WWDG Counter refresh is allowed between the following limits :
-        (++) min time (ms) = (1000 * (T[5;0] - Window)) / (WWDG downcounter clock)
-        (++) max time (ms) = (1000 * (T[5;0] - 0x40)) / (WWDG downcounter clock)
+        (++) min time (ms) = (1000U * (T[5U;0] - Window)) / (WWDG downcounter clock)
+        (++) max time (ms) = (1000U * (T[5U;0] - 0x40U)) / (WWDG downcounter clock)
 
     (+) Min-max timeout value @42 MHz(PCLK1): ~97.5 us / ~49.9 ms
 
     (+) The Early Wakeup Interrupt (EWI) can be used if specific safety
         operations or data logging must be performed before the actual reset is
-        generated. When the downcounter reaches the value 0x40, an EWI interrupt
+        generated. When the downcounter reaches the value 0x40U, an EWI interrupt
         is generated and the corresponding interrupt service routine (ISR) can
         be used to trigger specific actions (such as communications or data
         logging), before resetting the device.

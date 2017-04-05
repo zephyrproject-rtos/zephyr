@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_tim_ex.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of TIM HAL Extended module.
   ******************************************************************************
   * @attention
@@ -73,9 +73,9 @@ typedef struct
                                      This parameter can be a value of @ref TIM_Input_Capture_Prescaler */
 
   uint32_t IC1Filter;           /*!< Specifies the input capture filter.
-                                     This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xF */
+                                     This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xFU */
   uint32_t Commutation_Delay;  /*!< Specifies the pulse value to be loaded into the Capture Compare Register.
-                                    This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFF */
+                                    This parameter can be a number between Min_Data = 0x0000 and Max_Data = 0xFFFFU */
 } TIM_HallSensor_InitTypeDef;
 
 #if defined(STM32F373xC) || defined(STM32F378xx)
@@ -104,7 +104,7 @@ typedef struct
   uint32_t LockLevel;           /*!< TIM Lock level
                                          This parameter can be a value of @ref TIM_Lock_level */
   uint32_t DeadTime;           /*!< TIM dead Time
-                                         This parameter can be a number between Min_Data = 0x00 and Max_Data = 0xFF */
+                                         This parameter can be a number between Min_Data = 0x00 and Max_Data = 0xFFU */
   uint32_t BreakState;           /*!< TIM Break State
                                          This parameter can be a value of @ref TIM_Break_Input_enable_disable */
   uint32_t BreakPolarity;             /*!< TIM Break input polarity
@@ -133,19 +133,19 @@ typedef struct
   uint32_t LockLevel;           /*!< TIM Lock level
                                          This parameter can be a value of @ref TIM_Lock_level */
   uint32_t DeadTime;           /*!< TIM dead Time
-                                         This parameter can be a number between Min_Data = 0x00 and Max_Data = 0xFF */
+                                         This parameter can be a number between Min_Data = 0x00 and Max_Data = 0xFFU */
   uint32_t BreakState;           /*!< TIM Break State
                                          This parameter can be a value of @ref TIM_Break_Input_enable_disable */
   uint32_t BreakPolarity;             /*!< TIM Break input polarity
                                          This parameter can be a value of @ref TIM_Break_Polarity */
   uint32_t BreakFilter;               /*!< Specifies the brek input filter.
-                                         This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xF */
+                                         This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xFU */
   uint32_t Break2State;           /*!< TIM Break2 State
                                          This parameter can be a value of @ref TIMEx_Break2_Input_enable_disable */
   uint32_t Break2Polarity;            /*!< TIM Break2 input polarity
                                          This parameter can be a value of @ref TIMEx_Break2_Polarity */
   uint32_t Break2Filter;              /*!< TIM break2 input filter.
-                                         This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xF */
+                                         This parameter can be a number between Min_Data = 0x0 and Max_Data = 0xFU */
   uint32_t AutomaticOutput;           /*!< TIM Automatic Output Enable state
                                          This parameter can be a value of @ref TIM_AOE_Bit_Set_Reset */
 } TIM_BreakDeadTimeConfigTypeDef;
@@ -180,11 +180,11 @@ typedef struct {
 /** @defgroup TIMEx_Channel TIMEx Channel
   * @{
   */
-#define TIM_CHANNEL_1                      ((uint32_t)0x0000)
-#define TIM_CHANNEL_2                      ((uint32_t)0x0004)
-#define TIM_CHANNEL_3                      ((uint32_t)0x0008)
-#define TIM_CHANNEL_4                      ((uint32_t)0x000C)
-#define TIM_CHANNEL_ALL                    ((uint32_t)0x0018)
+#define TIM_CHANNEL_1                      (0x0000U)
+#define TIM_CHANNEL_2                      (0x0004U)
+#define TIM_CHANNEL_3                      (0x0008U)
+#define TIM_CHANNEL_4                      (0x000CU)
+#define TIM_CHANNEL_ALL                    (0x0018U)
 /**
   * @}
   */
@@ -192,7 +192,7 @@ typedef struct {
 /** @defgroup TIMEx_Output_Compare_and_PWM_modes TIMEx Output Compare and PWM Modes
   * @{
   */
-#define TIM_OCMODE_TIMING                   ((uint32_t)0x0000)
+#define TIM_OCMODE_TIMING                   (0x0000U)
 #define TIM_OCMODE_ACTIVE                   ((uint32_t)TIM_CCMR1_OC1M_0)
 #define TIM_OCMODE_INACTIVE                 ((uint32_t)TIM_CCMR1_OC1M_1)
 #define TIM_OCMODE_TOGGLE                   ((uint32_t)TIM_CCMR1_OC1M_0 | TIM_CCMR1_OC1M_1)
@@ -207,8 +207,8 @@ typedef struct {
 /** @defgroup TIMEx_ClearInput_Source TIMEx Clear Input Source
   * @{
   */
-#define TIM_CLEARINPUTSOURCE_ETR           ((uint32_t)0x0001)
-#define TIM_CLEARINPUTSOURCE_NONE          ((uint32_t)0x0000)
+#define TIM_CLEARINPUTSOURCE_ETR           (0x0001U)
+#define TIM_CLEARINPUTSOURCE_NONE          (0x0000U)
 /**
   * @}
   */
@@ -216,7 +216,7 @@ typedef struct {
 /** @defgroup TIMEx_Slave_Mode TIMEx Slave Mode
   * @{
   */
-#define TIM_SLAVEMODE_DISABLE                ((uint32_t)0x0000)
+#define TIM_SLAVEMODE_DISABLE                (0x0000U)
 #define TIM_SLAVEMODE_RESET                  ((uint32_t)(TIM_SMCR_SMS_2))
 #define TIM_SLAVEMODE_GATED                  ((uint32_t)(TIM_SMCR_SMS_2 | TIM_SMCR_SMS_0))
 #define TIM_SLAVEMODE_TRIGGER                ((uint32_t)(TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1))
@@ -229,10 +229,10 @@ typedef struct {
   * @{
   */
 #define TIM_EVENTSOURCE_UPDATE              TIM_EGR_UG     /*!< Reinitialize the counter and generates an update of the registers */
-#define TIM_EVENTSOURCE_CC1                 TIM_EGR_CC1G   /*!< A capture/compare event is generated on channel 1 */
-#define TIM_EVENTSOURCE_CC2                 TIM_EGR_CC2G   /*!< A capture/compare event is generated on channel 2 */
-#define TIM_EVENTSOURCE_CC3                 TIM_EGR_CC3G   /*!< A capture/compare event is generated on channel 3 */
-#define TIM_EVENTSOURCE_CC4                 TIM_EGR_CC4G   /*!< A capture/compare event is generated on channel 4 */
+#define TIM_EVENTSOURCE_CC1                 TIM_EGR_CC1G   /*!< A capture/compare event is generated on channel 1U */
+#define TIM_EVENTSOURCE_CC2                 TIM_EGR_CC2G   /*!< A capture/compare event is generated on channel 2U */
+#define TIM_EVENTSOURCE_CC3                 TIM_EGR_CC3G   /*!< A capture/compare event is generated on channel 3U */
+#define TIM_EVENTSOURCE_CC4                 TIM_EGR_CC4G   /*!< A capture/compare event is generated on channel 4U */
 #define TIM_EVENTSOURCE_COM                 TIM_EGR_COMG   /*!< A commutation event is generated */
 #define TIM_EVENTSOURCE_TRIGGER             TIM_EGR_TG     /*!< A trigger event is generated */
 #define TIM_EVENTSOURCE_BREAK               TIM_EGR_BG     /*!< A break event is generated */
@@ -243,26 +243,26 @@ typedef struct {
 /** @defgroup TIMEx_DMA_Base_address TIMEx DMA BAse Address
   * @{
   */
-#define TIM_DMABASE_CR1                    (0x00000000)
-#define TIM_DMABASE_CR2                    (0x00000001)
-#define TIM_DMABASE_SMCR                   (0x00000002)
-#define TIM_DMABASE_DIER                   (0x00000003)
-#define TIM_DMABASE_SR                     (0x00000004)
-#define TIM_DMABASE_EGR                    (0x00000005)
-#define TIM_DMABASE_CCMR1                  (0x00000006)
-#define TIM_DMABASE_CCMR2                  (0x00000007)
-#define TIM_DMABASE_CCER                   (0x00000008)
-#define TIM_DMABASE_CNT                    (0x00000009)
-#define TIM_DMABASE_PSC                    (0x0000000A)
-#define TIM_DMABASE_ARR                    (0x0000000B)
-#define TIM_DMABASE_RCR                    (0x0000000C)
-#define TIM_DMABASE_CCR1                   (0x0000000D)
-#define TIM_DMABASE_CCR2                   (0x0000000E)
-#define TIM_DMABASE_CCR3                   (0x0000000F)
-#define TIM_DMABASE_CCR4                   (0x00000010)
-#define TIM_DMABASE_BDTR                   (0x00000011)
-#define TIM_DMABASE_DCR                    (0x00000012)
-#define TIM_DMABASE_OR                     (0x00000013)
+#define TIM_DMABASE_CR1                    (0x00000000U)
+#define TIM_DMABASE_CR2                    (0x00000001U)
+#define TIM_DMABASE_SMCR                   (0x00000002U)
+#define TIM_DMABASE_DIER                   (0x00000003U)
+#define TIM_DMABASE_SR                     (0x00000004U)
+#define TIM_DMABASE_EGR                    (0x00000005U)
+#define TIM_DMABASE_CCMR1                  (0x00000006U)
+#define TIM_DMABASE_CCMR2                  (0x00000007U)
+#define TIM_DMABASE_CCER                   (0x00000008U)
+#define TIM_DMABASE_CNT                    (0x00000009U)
+#define TIM_DMABASE_PSC                    (0x0000000AU)
+#define TIM_DMABASE_ARR                    (0x0000000BU)
+#define TIM_DMABASE_RCR                    (0x0000000CU)
+#define TIM_DMABASE_CCR1                   (0x0000000DU)
+#define TIM_DMABASE_CCR2                   (0x0000000EU)
+#define TIM_DMABASE_CCR3                   (0x0000000FU)
+#define TIM_DMABASE_CCR4                   (0x00000010U)
+#define TIM_DMABASE_BDTR                   (0x00000011U)
+#define TIM_DMABASE_DCR                    (0x00000012U)
+#define TIM_DMABASE_OR                     (0x00000013U)
 /**
   * @}
   */
@@ -275,13 +275,13 @@ typedef struct {
 /** @defgroup TIMEx_Channel TIMEx Channel
   * @{
   */
-#define TIM_CHANNEL_1                      ((uint32_t)0x0000)
-#define TIM_CHANNEL_2                      ((uint32_t)0x0004)
-#define TIM_CHANNEL_3                      ((uint32_t)0x0008)
-#define TIM_CHANNEL_4                      ((uint32_t)0x000C)
-#define TIM_CHANNEL_5                      ((uint32_t)0x0010)
-#define TIM_CHANNEL_6                      ((uint32_t)0x0014)
-#define TIM_CHANNEL_ALL                    ((uint32_t)0x003C)
+#define TIM_CHANNEL_1                      (0x0000U)
+#define TIM_CHANNEL_2                      (0x0004U)
+#define TIM_CHANNEL_3                      (0x0008U)
+#define TIM_CHANNEL_4                      (0x000CU)
+#define TIM_CHANNEL_5                      (0x0010U)
+#define TIM_CHANNEL_6                      (0x0014U)
+#define TIM_CHANNEL_ALL                    (0x003CU)
 /**
   * @}
   */
@@ -289,7 +289,7 @@ typedef struct {
 /** @defgroup TIMEx_Output_Compare_and_PWM_modes TIMEx Output Compare and PWM Modes
   * @{
   */
-#define TIM_OCMODE_TIMING                   ((uint32_t)0x0000)
+#define TIM_OCMODE_TIMING                   (0x0000U)
 #define TIM_OCMODE_ACTIVE                   ((uint32_t)TIM_CCMR1_OC1M_0)
 #define TIM_OCMODE_INACTIVE                 ((uint32_t)TIM_CCMR1_OC1M_1)
 #define TIM_OCMODE_TOGGLE                   ((uint32_t)TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_0)
@@ -312,9 +312,9 @@ typedef struct {
 /** @defgroup TIMEx_ClearInput_Source TIMEx Clear Input Source
   * @{
   */
-#define TIM_CLEARINPUTSOURCE_ETR            ((uint32_t)0x0001)
-#define TIM_CLEARINPUTSOURCE_OCREFCLR       ((uint32_t)0x0002)
-#define TIM_CLEARINPUTSOURCE_NONE           ((uint32_t)0x0000)
+#define TIM_CLEARINPUTSOURCE_ETR            (0x0001U)
+#define TIM_CLEARINPUTSOURCE_OCREFCLR       (0x0002U)
+#define TIM_CLEARINPUTSOURCE_NONE           (0x0000U)
 /**
   * @}
   */
@@ -322,7 +322,7 @@ typedef struct {
 /** @defgroup TIMEx_Break2_Input_enable_disable  TIMEX Break input 2 Enable
   * @{
   */
-#define TIM_BREAK2_DISABLE         ((uint32_t)0x00000000)
+#define TIM_BREAK2_DISABLE         (0x00000000U)
 #define TIM_BREAK2_ENABLE          ((uint32_t)TIM_BDTR_BK2E)
 /**
   * @}
@@ -331,7 +331,7 @@ typedef struct {
 /** @defgroup TIMEx_Break2_Polarity TIMEx Break Input 2 Polarity
   * @{
   */
-#define TIM_BREAK2POLARITY_LOW        ((uint32_t)0x00000000)
+#define TIM_BREAK2POLARITY_LOW        (0x00000000U)
 #define TIM_BREAK2POLARITY_HIGH       ((uint32_t)TIM_BDTR_BK2P)
 /**
   * @}
@@ -340,7 +340,7 @@ typedef struct {
 /** @defgroup TIMEx_Master_Mode_Selection_2 TIMEx Master Mode Selection 2 (TRGO2)
   * @{
   */
-#define  TIM_TRGO2_RESET                          ((uint32_t)0x00000000)
+#define  TIM_TRGO2_RESET                          (0x00000000U)
 #define  TIM_TRGO2_ENABLE                         ((uint32_t)(TIM_CR2_MMS2_0))
 #define  TIM_TRGO2_UPDATE                         ((uint32_t)(TIM_CR2_MMS2_1))
 #define  TIM_TRGO2_OC1                            ((uint32_t)(TIM_CR2_MMS2_1 | TIM_CR2_MMS2_0))
@@ -363,7 +363,7 @@ typedef struct {
 /** @defgroup TIMEx_Slave_Mode TIMEx Slave mode
   * @{
   */
-#define TIM_SLAVEMODE_DISABLE                ((uint32_t)0x0000)
+#define TIM_SLAVEMODE_DISABLE                (0x0000U)
 #define TIM_SLAVEMODE_RESET                  ((uint32_t)(TIM_SMCR_SMS_2))
 #define TIM_SLAVEMODE_GATED                  ((uint32_t)(TIM_SMCR_SMS_2 | TIM_SMCR_SMS_0))
 #define TIM_SLAVEMODE_TRIGGER                ((uint32_t)(TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1))
@@ -377,10 +377,10 @@ typedef struct {
   * @{
   */
 #define TIM_EVENTSOURCE_UPDATE              TIM_EGR_UG     /*!< Reinitialize the counter and generates an update of the registers */
-#define TIM_EVENTSOURCE_CC1                 TIM_EGR_CC1G   /*!< A capture/compare event is generated on channel 1 */
-#define TIM_EVENTSOURCE_CC2                 TIM_EGR_CC2G   /*!< A capture/compare event is generated on channel 2 */
-#define TIM_EVENTSOURCE_CC3                 TIM_EGR_CC3G   /*!< A capture/compare event is generated on channel 3 */
-#define TIM_EVENTSOURCE_CC4                 TIM_EGR_CC4G   /*!< A capture/compare event is generated on channel 4 */
+#define TIM_EVENTSOURCE_CC1                 TIM_EGR_CC1G   /*!< A capture/compare event is generated on channel 1U */
+#define TIM_EVENTSOURCE_CC2                 TIM_EGR_CC2G   /*!< A capture/compare event is generated on channel 2U */
+#define TIM_EVENTSOURCE_CC3                 TIM_EGR_CC3G   /*!< A capture/compare event is generated on channel 3U */
+#define TIM_EVENTSOURCE_CC4                 TIM_EGR_CC4G   /*!< A capture/compare event is generated on channel 4U */
 #define TIM_EVENTSOURCE_COM                 TIM_EGR_COMG   /*!< A commutation event is generated */
 #define TIM_EVENTSOURCE_TRIGGER             TIM_EGR_TG     /*!< A trigger event is generated */
 #define TIM_EVENTSOURCE_BREAK               TIM_EGR_BG     /*!< A break event is generated */
@@ -392,29 +392,29 @@ typedef struct {
 /** @defgroup TIM_DMA_Base_address TIMEx DMA Base Address
   * @{
   */
-#define TIM_DMABASE_CR1                    (0x00000000)
-#define TIM_DMABASE_CR2                    (0x00000001)
-#define TIM_DMABASE_SMCR                   (0x00000002)
-#define TIM_DMABASE_DIER                   (0x00000003)
-#define TIM_DMABASE_SR                     (0x00000004)
-#define TIM_DMABASE_EGR                    (0x00000005)
-#define TIM_DMABASE_CCMR1                  (0x00000006)
-#define TIM_DMABASE_CCMR2                  (0x00000007)
-#define TIM_DMABASE_CCER                   (0x00000008)
-#define TIM_DMABASE_CNT                    (0x00000009)
-#define TIM_DMABASE_PSC                    (0x0000000A)
-#define TIM_DMABASE_ARR                    (0x0000000B)
-#define TIM_DMABASE_RCR                    (0x0000000C)
-#define TIM_DMABASE_CCR1                   (0x0000000D)
-#define TIM_DMABASE_CCR2                   (0x0000000E)
-#define TIM_DMABASE_CCR3                   (0x0000000F)
-#define TIM_DMABASE_CCR4                   (0x00000010)
-#define TIM_DMABASE_BDTR                   (0x00000011)
-#define TIM_DMABASE_DCR                    (0x00000012)
-#define TIM_DMABASE_CCMR3                  (0x00000015)
-#define TIM_DMABASE_CCR5                   (0x00000016)
-#define TIM_DMABASE_CCR6                   (0x00000017)
-#define TIM_DMABASE_OR                     (0x00000018)
+#define TIM_DMABASE_CR1                    (0x00000000U)
+#define TIM_DMABASE_CR2                    (0x00000001U)
+#define TIM_DMABASE_SMCR                   (0x00000002U)
+#define TIM_DMABASE_DIER                   (0x00000003U)
+#define TIM_DMABASE_SR                     (0x00000004U)
+#define TIM_DMABASE_EGR                    (0x00000005U)
+#define TIM_DMABASE_CCMR1                  (0x00000006U)
+#define TIM_DMABASE_CCMR2                  (0x00000007U)
+#define TIM_DMABASE_CCER                   (0x00000008U)
+#define TIM_DMABASE_CNT                    (0x00000009U)
+#define TIM_DMABASE_PSC                    (0x0000000AU)
+#define TIM_DMABASE_ARR                    (0x0000000BU)
+#define TIM_DMABASE_RCR                    (0x0000000CU)
+#define TIM_DMABASE_CCR1                   (0x0000000DU)
+#define TIM_DMABASE_CCR2                   (0x0000000EU)
+#define TIM_DMABASE_CCR3                   (0x0000000FU)
+#define TIM_DMABASE_CCR4                   (0x00000010U)
+#define TIM_DMABASE_BDTR                   (0x00000011U)
+#define TIM_DMABASE_DCR                    (0x00000012U)
+#define TIM_DMABASE_CCMR3                  (0x00000015U)
+#define TIM_DMABASE_CCR5                   (0x00000016U)
+#define TIM_DMABASE_CCR6                   (0x00000017U)
+#define TIM_DMABASE_OR                     (0x00000018U)
 /**
   * @}
   */
@@ -425,43 +425,40 @@ typedef struct {
 
 #if defined(STM32F302xE)                                                 || \
     defined(STM32F302xC)                                                 || \
-    defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
+    defined(STM32F303x8) || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
 /** @defgroup TIMEx_Remap TIMEx Remapping
   * @{
   */
-#define TIM_TIM1_ADC1_NONE                     (0x00000000) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
-#define TIM_TIM1_ADC1_AWD1                     (0x00000001) /*!< TIM1_ETR is connected to ADC1 AWD1 */
-#define TIM_TIM1_ADC1_AWD2                     (0x00000002) /*!< TIM1_ETR is connected to ADC1 AWD2 */
-#define TIM_TIM1_ADC1_AWD3                     (0x00000003) /*!< TIM1_ETR is connected to ADC1 AWD3 */
-#define TIM_TIM16_GPIO                         (0x00000000) /*!< TIM16 TI1 is connected to GPIO */
-#define TIM_TIM16_RTC                          (0x00000001) /*!< TIM16 TI1 is connected to RTC_clock */
-#define TIM_TIM16_HSE                          (0x00000002) /*!< TIM16 TI1 is connected to HSE/32 */
-#define TIM_TIM16_MCO                          (0x00000003) /*!< TIM16 TI1 is connected to MCO */
+#define TIM_TIM1_ADC1_NONE                     (0x00000000U) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
+#define TIM_TIM1_ADC1_AWD1                     (0x00000001U) /*!< TIM1_ETR is connected to ADC1 AWD1 */
+#define TIM_TIM1_ADC1_AWD2                     (0x00000002U) /*!< TIM1_ETR is connected to ADC1 AWD2 */
+#define TIM_TIM1_ADC1_AWD3                     (0x00000003U) /*!< TIM1_ETR is connected to ADC1 AWD3 */
+#define TIM_TIM16_GPIO                         (0x00000000U) /*!< TIM16 TI1 is connected to GPIO */
+#define TIM_TIM16_RTC                          (0x00000001U) /*!< TIM16 TI1 is connected to RTC_clock */
+#define TIM_TIM16_HSE                          (0x00000002U) /*!< TIM16 TI1 is connected to HSE/32U */
+#define TIM_TIM16_MCO                          (0x00000003U) /*!< TIM16 TI1 is connected to MCO */
 /**
   * @}
   */
 #endif /* STM32F302xE                               || */
        /* STM32F302xC                               || */
-       /* STM32F303x8 || STM32F334x8 || STM32F328xx || */
+       /* STM32F303x8 || STM32F328xx || */
        /* STM32F301x8 || STM32F302x8 || STM32F318xx || */
 
-#if defined(STM32F303xC) || defined(STM32F358xx)
+
+#if defined(STM32F334x8)
 /** @defgroup TIMEx_Remap TIMEx Remapping 1
   * @{
   */
-#define TIM_TIM1_ADC1_NONE                     (0x00000000) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
-#define TIM_TIM1_ADC1_AWD1                     (0x00000001) /*!< TIM1_ETR is connected to ADC1 AWD1 */
-#define TIM_TIM1_ADC1_AWD2                     (0x00000002) /*!< TIM1_ETR is connected to ADC1 AWD2 */
-#define TIM_TIM1_ADC1_AWD3                     (0x00000003) /*!< TIM1_ETR is connected to ADC1 AWD3 */
-#define TIM_TIM8_ADC2_NONE                     (0x00000000) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
-#define TIM_TIM8_ADC2_AWD1                     (0x00000001) /*!< TIM8_ETR is connected to ADC2 AWD1 */
-#define TIM_TIM8_ADC2_AWD2                     (0x00000002) /*!< TIM8_ETR is connected to ADC2 AWD2 */
-#define TIM_TIM8_ADC2_AWD3                     (0x00000003) /*!< TIM8_ETR is connected to ADC2 AWD3 */
-#define TIM_TIM16_GPIO                         (0x00000000) /*!< TIM16 TI1 is connected to GPIO */
-#define TIM_TIM16_RTC                          (0x00000001) /*!< TIM16 TI1 is connected to RTC_clock */
-#define TIM_TIM16_HSE                          (0x00000002) /*!< TIM16 TI1 is connected to HSE/32 */
-#define TIM_TIM16_MCO                          (0x00000003) /*!< TIM16 TI1 is connected to MCO */
+#define TIM_TIM1_ADC1_NONE                     (0x00000000U) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
+#define TIM_TIM1_ADC1_AWD1                     (0x00000001U) /*!< TIM1_ETR is connected to ADC1 AWD1 */
+#define TIM_TIM1_ADC1_AWD2                     (0x00000002U) /*!< TIM1_ETR is connected to ADC1 AWD2 */
+#define TIM_TIM1_ADC1_AWD3                     (0x00000003U) /*!< TIM1_ETR is connected to ADC1 AWD3 */
+#define TIM_TIM16_GPIO                         (0x00000000U) /*!< TIM16 TI1 is connected to GPIO */
+#define TIM_TIM16_RTC                          (0x00000001U) /*!< TIM16 TI1 is connected to RTC_clock */
+#define TIM_TIM16_HSE                          (0x00000002U) /*!< TIM16 TI1 is connected to HSE/32U */
+#define TIM_TIM16_MCO                          (0x00000003U) /*!< TIM16 TI1 is connected to MCO */
 /**
   * @}
   */
@@ -469,15 +466,48 @@ typedef struct {
 /** @defgroup TIMEx_Remap2 TIMEx Remapping 2
   * @{
   */
-#define TIM_TIM1_ADC4_NONE                     (0x00000000) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
-#define TIM_TIM1_ADC4_AWD1                     (0x00000004) /*!< TIM1_ETR is connected to ADC4 AWD1 */
-#define TIM_TIM1_ADC4_AWD2                     (0x00000008) /*!< TIM1_ETR is connected to ADC4 AWD2 */
-#define TIM_TIM1_ADC4_AWD3                     (0x0000000C) /*!< TIM1_ETR is connected to ADC4 AWD3 */
-#define TIM_TIM8_ADC3_NONE                     (0x00000000) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
-#define TIM_TIM8_ADC3_AWD1                     (0x00000004) /*!< TIM8_ETR is connected to ADC3 AWD1 */
-#define TIM_TIM8_ADC3_AWD2                     (0x00000008) /*!< TIM8_ETR is connected to ADC3 AWD2 */
-#define TIM_TIM8_ADC3_AWD3                     (0x0000000C) /*!< TIM8_ETR is connected to ADC3 AWD3 */
-#define TIM_TIM16_NONE                         (0x00000000) /*!< Non significant value for TIM16 */
+#define TIM_TIM1_ADC2_NONE                     (0x00000000U) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
+#define TIM_TIM1_ADC2_AWD1                     (0x00000004U) /*!< TIM1_ETR is connected to ADC2 AWD1 */
+#define TIM_TIM1_ADC2_AWD2                     (0x00000008U) /*!< TIM1_ETR is connected to ADC2 AWD2 */
+#define TIM_TIM1_ADC2_AWD3                     (0x0000000CU) /*!< TIM1_ETR is connected to ADC2 AWD3 */
+#define TIM_TIM16_NONE                         (0x00000000U) /*!< Non significant value for TIM16U */
+/**
+  * @}
+  */
+#endif /* STM32F334x8 */
+
+#if defined(STM32F303xC) || defined(STM32F358xx)
+/** @defgroup TIMEx_Remap TIMEx Remapping 1
+  * @{
+  */
+#define TIM_TIM1_ADC1_NONE                     (0x00000000U) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
+#define TIM_TIM1_ADC1_AWD1                     (0x00000001U) /*!< TIM1_ETR is connected to ADC1 AWD1 */
+#define TIM_TIM1_ADC1_AWD2                     (0x00000002U) /*!< TIM1_ETR is connected to ADC1 AWD2 */
+#define TIM_TIM1_ADC1_AWD3                     (0x00000003U) /*!< TIM1_ETR is connected to ADC1 AWD3 */
+#define TIM_TIM8_ADC2_NONE                     (0x00000000U) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
+#define TIM_TIM8_ADC2_AWD1                     (0x00000001U) /*!< TIM8_ETR is connected to ADC2 AWD1 */
+#define TIM_TIM8_ADC2_AWD2                     (0x00000002U) /*!< TIM8_ETR is connected to ADC2 AWD2 */
+#define TIM_TIM8_ADC2_AWD3                     (0x00000003U) /*!< TIM8_ETR is connected to ADC2 AWD3 */
+#define TIM_TIM16_GPIO                         (0x00000000U) /*!< TIM16 TI1 is connected to GPIO */
+#define TIM_TIM16_RTC                          (0x00000001U) /*!< TIM16 TI1 is connected to RTC_clock */
+#define TIM_TIM16_HSE                          (0x00000002U) /*!< TIM16 TI1 is connected to HSE/32U */
+#define TIM_TIM16_MCO                          (0x00000003U) /*!< TIM16 TI1 is connected to MCO */
+/**
+  * @}
+  */
+
+/** @defgroup TIMEx_Remap2 TIMEx Remapping 2
+  * @{
+  */
+#define TIM_TIM1_ADC4_NONE                     (0x00000000U) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
+#define TIM_TIM1_ADC4_AWD1                     (0x00000004U) /*!< TIM1_ETR is connected to ADC4 AWD1 */
+#define TIM_TIM1_ADC4_AWD2                     (0x00000008U) /*!< TIM1_ETR is connected to ADC4 AWD2 */
+#define TIM_TIM1_ADC4_AWD3                     (0x0000000CU) /*!< TIM1_ETR is connected to ADC4 AWD3 */
+#define TIM_TIM8_ADC3_NONE                     (0x00000000U) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
+#define TIM_TIM8_ADC3_AWD1                     (0x00000004U) /*!< TIM8_ETR is connected to ADC3 AWD1 */
+#define TIM_TIM8_ADC3_AWD2                     (0x00000008U) /*!< TIM8_ETR is connected to ADC3 AWD2 */
+#define TIM_TIM8_ADC3_AWD3                     (0x0000000CU) /*!< TIM8_ETR is connected to ADC3 AWD3 */
+#define TIM_TIM16_NONE                         (0x00000000U) /*!< Non significant value for TIM16U */
 /**
   * @}
   */
@@ -487,22 +517,22 @@ typedef struct {
 /** @defgroup TIMEx_Remap TIMEx Remapping 1
   * @{
   */
-#define TIM_TIM1_ADC1_NONE                     (0x00000000) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
-#define TIM_TIM1_ADC1_AWD1                     (0x00000001) /*!< TIM1_ETR is connected to ADC1 AWD1 */
-#define TIM_TIM1_ADC1_AWD2                     (0x00000002) /*!< TIM1_ETR is connected to ADC1 AWD2 */
-#define TIM_TIM1_ADC1_AWD3                     (0x00000003) /*!< TIM1_ETR is connected to ADC1 AWD3 */
-#define TIM_TIM8_ADC2_NONE                     (0x00000000) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
-#define TIM_TIM8_ADC2_AWD1                     (0x00000001) /*!< TIM8_ETR is connected to ADC2 AWD1 */
-#define TIM_TIM8_ADC2_AWD2                     (0x00000002) /*!< TIM8_ETR is connected to ADC2 AWD2 */
-#define TIM_TIM8_ADC2_AWD3                     (0x00000003) /*!< TIM8_ETR is connected to ADC2 AWD3 */
-#define TIM_TIM16_GPIO                         (0x00000000) /*!< TIM16 TI1 is connected to GPIO */
-#define TIM_TIM16_RTC                          (0x00000001) /*!< TIM16 TI1 is connected to RTC_clock */
-#define TIM_TIM16_HSE                          (0x00000002) /*!< TIM16 TI1 is connected to HSE/32 */
-#define TIM_TIM16_MCO                          (0x00000003) /*!< TIM16 TI1 is connected to MCO */
-#define TIM_TIM20_ADC3_NONE                    (0x00000000) /*!< TIM20_ETR is not connected to any AWD (analog watchdog) */
-#define TIM_TIM20_ADC3_AWD1                    (0x00000001) /*!< TIM20_ETR is connected to ADC3 AWD1 */
-#define TIM_TIM20_ADC3_AWD2                    (0x00000002) /*!< TIM20_ETR is connected to ADC3 AWD2 */
-#define TIM_TIM20_ADC3_AWD3                    (0x00000003) /*!< TIM20_ETR is connected to ADC3 AWD3 */
+#define TIM_TIM1_ADC1_NONE                     (0x00000000U) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
+#define TIM_TIM1_ADC1_AWD1                     (0x00000001U) /*!< TIM1_ETR is connected to ADC1 AWD1 */
+#define TIM_TIM1_ADC1_AWD2                     (0x00000002U) /*!< TIM1_ETR is connected to ADC1 AWD2 */
+#define TIM_TIM1_ADC1_AWD3                     (0x00000003U) /*!< TIM1_ETR is connected to ADC1 AWD3 */
+#define TIM_TIM8_ADC2_NONE                     (0x00000000U) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
+#define TIM_TIM8_ADC2_AWD1                     (0x00000001U) /*!< TIM8_ETR is connected to ADC2 AWD1 */
+#define TIM_TIM8_ADC2_AWD2                     (0x00000002U) /*!< TIM8_ETR is connected to ADC2 AWD2 */
+#define TIM_TIM8_ADC2_AWD3                     (0x00000003U) /*!< TIM8_ETR is connected to ADC2 AWD3 */
+#define TIM_TIM16_GPIO                         (0x00000000U) /*!< TIM16 TI1 is connected to GPIO */
+#define TIM_TIM16_RTC                          (0x00000001U) /*!< TIM16 TI1 is connected to RTC_clock */
+#define TIM_TIM16_HSE                          (0x00000002U) /*!< TIM16 TI1 is connected to HSE/32U */
+#define TIM_TIM16_MCO                          (0x00000003U) /*!< TIM16 TI1 is connected to MCO */
+#define TIM_TIM20_ADC3_NONE                    (0x00000000U) /*!< TIM20_ETR is not connected to any AWD (analog watchdog) */
+#define TIM_TIM20_ADC3_AWD1                    (0x00000001U) /*!< TIM20_ETR is connected to ADC3 AWD1 */
+#define TIM_TIM20_ADC3_AWD2                    (0x00000002U) /*!< TIM20_ETR is connected to ADC3 AWD2 */
+#define TIM_TIM20_ADC3_AWD3                    (0x00000003U) /*!< TIM20_ETR is connected to ADC3 AWD3 */
 /**
   * @}
   */
@@ -510,19 +540,19 @@ typedef struct {
 /** @defgroup TIMEx_Remap2 TIMEx Remapping 2
   * @{
   */
-#define TIM_TIM1_ADC4_NONE                     (0x00000000) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
-#define TIM_TIM1_ADC4_AWD1                     (0x00000004) /*!< TIM1_ETR is connected to ADC4 AWD1 */
-#define TIM_TIM1_ADC4_AWD2                     (0x00000008) /*!< TIM1_ETR is connected to ADC4 AWD2 */
-#define TIM_TIM1_ADC4_AWD3                     (0x0000000C) /*!< TIM1_ETR is connected to ADC4 AWD3 */
-#define TIM_TIM8_ADC3_NONE                     (0x00000000) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
-#define TIM_TIM8_ADC3_AWD1                     (0x00000004) /*!< TIM8_ETR is connected to ADC3 AWD1 */
-#define TIM_TIM8_ADC3_AWD2                     (0x00000008) /*!< TIM8_ETR is connected to ADC3 AWD2 */
-#define TIM_TIM8_ADC3_AWD3                     (0x0000000C) /*!< TIM8_ETR is connected to ADC3 AWD3 */
-#define TIM_TIM16_NONE                         (0x00000000) /*!< Non significant value for TIM16 */
-#define TIM_TIM20_ADC4_NONE                    (0x00000000) /*!< TIM20_ETR is not connected to any AWD (analog watchdog) */
-#define TIM_TIM20_ADC4_AWD1                    (0x00000004) /*!< TIM20_ETR is connected to ADC4 AWD1 */
-#define TIM_TIM20_ADC4_AWD2                    (0x00000008) /*!< TIM20_ETR is connected to ADC4 AWD2 */
-#define TIM_TIM20_ADC4_AWD3                    (0x0000000C) /*!< TIM20_ETR is connected to ADC4 AWD3 */
+#define TIM_TIM1_ADC4_NONE                     (0x00000000U) /*!< TIM1_ETR is not connected to any AWD (analog watchdog)*/
+#define TIM_TIM1_ADC4_AWD1                     (0x00000004U) /*!< TIM1_ETR is connected to ADC4 AWD1 */
+#define TIM_TIM1_ADC4_AWD2                     (0x00000008U) /*!< TIM1_ETR is connected to ADC4 AWD2 */
+#define TIM_TIM1_ADC4_AWD3                     (0x0000000CU) /*!< TIM1_ETR is connected to ADC4 AWD3 */
+#define TIM_TIM8_ADC3_NONE                     (0x00000000U) /*!< TIM8_ETR is not connected to any AWD (analog watchdog) */
+#define TIM_TIM8_ADC3_AWD1                     (0x00000004U) /*!< TIM8_ETR is connected to ADC3 AWD1 */
+#define TIM_TIM8_ADC3_AWD2                     (0x00000008U) /*!< TIM8_ETR is connected to ADC3 AWD2 */
+#define TIM_TIM8_ADC3_AWD3                     (0x0000000CU) /*!< TIM8_ETR is connected to ADC3 AWD3 */
+#define TIM_TIM16_NONE                         (0x00000000U) /*!< Non significant value for TIM16U */
+#define TIM_TIM20_ADC4_NONE                    (0x00000000U) /*!< TIM20_ETR is not connected to any AWD (analog watchdog) */
+#define TIM_TIM20_ADC4_AWD1                    (0x00000004U) /*!< TIM20_ETR is connected to ADC4 AWD1 */
+#define TIM_TIM20_ADC4_AWD2                    (0x00000008U) /*!< TIM20_ETR is connected to ADC4 AWD2 */
+#define TIM_TIM20_ADC4_AWD3                    (0x0000000CU) /*!< TIM20_ETR is connected to ADC4 AWD3 */
 /**
   * @}
   */
@@ -533,14 +563,14 @@ typedef struct {
 /** @defgroup TIMEx_Remap TIMEx remapping
   * @{
   */
-#define TIM_TIM2_TIM8_TRGO      (0x00000000)  /*!< TIM8 TRGOUT is connected to TIM2_ITR1 */
-#define TIM_TIM2_ETH_PTP        (0x00000400)  /*!< PTP trigger output is connected to TIM2_ITR1 */
-#define TIM_TIM2_USBFS_SOF      (0x00000800)  /*!< OTG FS SOF is connected to the TIM2_ITR1 input */
-#define TIM_TIM2_USBHS_SOF      (0x00000C00)  /*!< OTG HS SOF is connected to the TIM2_ITR1 input */
-#define TIM_TIM14_GPIO          (0x00000000) /*!< TIM14 TI1 is connected to GPIO */
-#define TIM_TIM14_RTC           (0x00000001) /*!< TIM14 TI1 is connected to RTC_clock */
-#define TIM_TIM14_HSE           (0x00000002) /*!< TIM14 TI1 is connected to HSE/32 */
-#define TIM_TIM14_MCO           (0x00000003) /*!< TIM14 TI1 is connected to MCO */
+#define TIM_TIM2_TIM8_TRGO      (0x00000000U)  /*!< TIM8 TRGOUT is connected to TIM2_ITR1 */
+#define TIM_TIM2_ETH_PTP        (0x00000400U)  /*!< PTP trigger output is connected to TIM2_ITR1 */
+#define TIM_TIM2_USBFS_SOF      (0x00000800U)  /*!< OTG FS SOF is connected to the TIM2_ITR1 input */
+#define TIM_TIM2_USBHS_SOF      (0x00000C00U)  /*!< OTG HS SOF is connected to the TIM2_ITR1 input */
+#define TIM_TIM14_GPIO          (0x00000000U) /*!< TIM14 TI1 is connected to GPIO */
+#define TIM_TIM14_RTC           (0x00000001U) /*!< TIM14 TI1 is connected to RTC_clock */
+#define TIM_TIM14_HSE           (0x00000002U) /*!< TIM14 TI1 is connected to HSE/32U */
+#define TIM_TIM14_MCO           (0x00000003U) /*!< TIM14 TI1 is connected to MCO */
 /**
   * @}
   */
@@ -550,10 +580,10 @@ typedef struct {
     defined(STM32F302xC) || defined(STM32F303xC) || defined(STM32F358xx) || \
     defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
-/** @defgroup TIMEx_Group_Channel5 Group Channel 5 and Channel 1, 2 or 3
+/** @defgroup TIMEx_Group_Channel5 Group Channel 5 and Channel 1U, 2 or 3
   * @{
   */
-#define TIM_GROUPCH5_NONE       (uint32_t)0x00000000  /*!< No effect of OC5REF on OC1REFC, OC2REFC and OC3REFC */
+#define TIM_GROUPCH5_NONE       0x00000000  /*!< No effect of OC5REF on OC1REFC, OC2REFC and OC3REFC */
 #define TIM_GROUPCH5_OC1REFC    (TIM_CCR5_GC5C1)      /*!< OC1REFC is the logical AND of OC1REFC and OC5REF */
 #define TIM_GROUPCH5_OC2REFC    (TIM_CCR5_GC5C2)      /*!< OC2REFC is the logical AND of OC2REFC and OC5REF */
 #define TIM_GROUPCH5_OC3REFC    (TIM_CCR5_GC5C3)       /*!< OC3REFC is the logical AND of OC3REFC and OC5REF */
@@ -608,7 +638,7 @@ typedef struct {
                                  ((MODE) == TIM_SLAVEMODE_TRIGGER) || \
                                  ((MODE) == TIM_SLAVEMODE_EXTERNAL1))
 
-#define IS_TIM_EVENT_SOURCE(SOURCE) ((((SOURCE) & 0xFFFFFF00U) == 0x00000000) && ((SOURCE) != 0x00000000))
+#define IS_TIM_EVENT_SOURCE(SOURCE) ((((SOURCE) & 0xFFFFFF00U) == 0x00000000U) && ((SOURCE) != 0x00000000U))
 
 #define IS_TIM_DMA_BASE(BASE) (((BASE) == TIM_DMABASE_CR1) || \
                                ((BASE) == TIM_DMABASE_CR2) || \
@@ -675,7 +705,7 @@ typedef struct {
                                         ((MODE) == TIM_CLEARINPUTSOURCE_OCREFCLR)  || \
                                         ((MODE) == TIM_CLEARINPUTSOURCE_NONE))
 
-#define IS_TIM_BREAK_FILTER(BRKFILTER) ((BRKFILTER) <= 0xF)
+#define IS_TIM_BREAK_FILTER(BRKFILTER) ((BRKFILTER) <= 0xFU)
 
 #define IS_TIM_BREAK2_STATE(STATE) (((STATE) == TIM_BREAK2_ENABLE) || \
                                     ((STATE) == TIM_BREAK2_DISABLE))
@@ -708,7 +738,7 @@ typedef struct {
                                  ((MODE) == TIM_SLAVEMODE_EXTERNAL1) || \
                                  ((MODE) == TIM_SLAVEMODE_COMBINED_RESETTRIGGER))
 
-#define IS_TIM_EVENT_SOURCE(SOURCE) ((((SOURCE) & 0xFFFFFE00U) == 0x00000000) && ((SOURCE) != 0x00000000))
+#define IS_TIM_EVENT_SOURCE(SOURCE) ((((SOURCE) & 0xFFFFFE00U) == 0x00000000U) && ((SOURCE) != 0x00000000U))
 
 #define IS_TIM_DMA_BASE(BASE) (((BASE) == TIM_DMABASE_CR1)   || \
                                ((BASE) == TIM_DMABASE_CR2)   || \
@@ -740,7 +770,7 @@ typedef struct {
 
 #if defined(STM32F302xE)                                                 || \
     defined(STM32F302xC)                                                 || \
-    defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
+    defined(STM32F303x8) || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
 
 #define IS_TIM_REMAP(REMAP)    (((REMAP) == TIM_TIM1_ADC1_NONE) ||\
@@ -754,8 +784,26 @@ typedef struct {
 
 #endif /* STM32F302xE                               || */
        /* STM32F302xC                               || */
-       /* STM32F303x8 || STM32F334x8 || STM32F328xx || */
+       /* STM32F303x8 || STM32F328xx || */
        /* STM32F301x8 || STM32F302x8 || STM32F318xx || */
+
+#if defined(STM32F334x8)
+#define IS_TIM_REMAP(REMAP1)   (((REMAP1) == TIM_TIM1_ADC1_NONE) ||\
+                                ((REMAP1) == TIM_TIM1_ADC1_AWD1) ||\
+                                ((REMAP1) == TIM_TIM1_ADC1_AWD2) ||\
+                                ((REMAP1) == TIM_TIM1_ADC1_AWD3) ||\
+                                ((REMAP1) == TIM_TIM16_GPIO)     ||\
+                                ((REMAP1) == TIM_TIM16_RTC)      ||\
+                                ((REMAP1) == TIM_TIM16_HSE)      ||\
+                                ((REMAP1) == TIM_TIM16_MCO))
+
+#define IS_TIM_REMAP2(REMAP2)  (((REMAP2) == TIM_TIM1_ADC2_NONE) ||\
+                                ((REMAP2) == TIM_TIM1_ADC2_AWD1) ||\
+                                ((REMAP2) == TIM_TIM1_ADC2_AWD2) ||\
+                                ((REMAP2) == TIM_TIM1_ADC2_AWD3) ||\
+                                ((REMAP2) == TIM_TIM16_NONE))
+
+#endif /* STM32F334x8 */
 
 #if defined(STM32F303xC) || defined(STM32F358xx)
 
@@ -838,14 +886,14 @@ typedef struct {
     defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
 
-#define IS_TIM_GROUPCH5(OCREF) ((((OCREF) & 0x1FFFFFFF) == 0x00000000))
+#define IS_TIM_GROUPCH5(OCREF) ((((OCREF) & 0x1FFFFFFFU) == 0x00000000U))
 
 #endif /* STM32F302xE || STM32F303xE || STM32F398xx || */
        /* STM32F302xC || STM32F303xC || STM32F358xx || */
        /* STM32F303x8 || STM32F334x8 || STM32F328xx || */
        /* STM32F301x8 || STM32F302x8 || STM32F318xx    */
 
-#define IS_TIM_DEADTIME(DEADTIME)      ((DEADTIME) <= 0xFF)
+#define IS_TIM_DEADTIME(DEADTIME)      ((DEADTIME) <= 0xFFU)
 
 /**
   * @}
@@ -873,7 +921,7 @@ typedef struct {
   * @retval None
   */
 #define __HAL_TIM_SET_COMPARE(__HANDLE__, __CHANNEL__, __COMPARE__) \
-(*(__IO uint32_t *)(&((__HANDLE__)->Instance->CCR1) + ((__CHANNEL__) >> 2)) = (__COMPARE__))
+(*(__IO uint32_t *)(&((__HANDLE__)->Instance->CCR1) + ((__CHANNEL__) >> 2U)) = (__COMPARE__))
 
 /**
   * @brief  Gets the TIM Capture Compare Register value on runtime
@@ -887,7 +935,42 @@ typedef struct {
   * @retval None
   */
 #define __HAL_TIM_GET_COMPARE(__HANDLE__, __CHANNEL__) \
-  (*(__IO uint32_t *)(&((__HANDLE__)->Instance->CCR1) + ((__CHANNEL__) >> 2)))
+  (*(__IO uint32_t *)(&((__HANDLE__)->Instance->CCR1) + ((__CHANNEL__) >> 2U)))
+
+/**
+  * @brief  Sets the TIM Output compare preload.
+  * @param  __HANDLE__: TIM handle.
+  * @param  __CHANNEL__: TIM Channels to be configured.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
+  *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
+  *            @arg TIM_CHANNEL_3: TIM Channel 3 selected
+  *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
+  * @retval None
+  */
+#define __HAL_TIM_ENABLE_OCxPRELOAD(__HANDLE__, __CHANNEL__)    \
+        (((__CHANNEL__) == TIM_CHANNEL_1) ? ((__HANDLE__)->Instance->CCMR1 |= TIM_CCMR1_OC1PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_2) ? ((__HANDLE__)->Instance->CCMR1 |= TIM_CCMR1_OC2PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_3) ? ((__HANDLE__)->Instance->CCMR2 |= TIM_CCMR2_OC3PE) :\
+         ((__HANDLE__)->Instance->CCMR2 |= TIM_CCMR2_OC4PE))
+
+/**
+  * @brief  Resets the TIM Output compare preload.
+  * @param  __HANDLE__: TIM handle.
+  * @param  __CHANNEL__: TIM Channels to be configured.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
+  *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
+  *            @arg TIM_CHANNEL_3: TIM Channel 3 selected
+  *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
+  * @retval None
+  */
+#define __HAL_TIM_DISABLE_OCxPRELOAD(__HANDLE__, __CHANNEL__)    \
+        (((__CHANNEL__) == TIM_CHANNEL_1) ? ((__HANDLE__)->Instance->CCMR1 &= (uint16_t)~TIM_CCMR1_OC1PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_2) ? ((__HANDLE__)->Instance->CCMR1 &= (uint16_t)~TIM_CCMR1_OC2PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_3) ? ((__HANDLE__)->Instance->CCMR2 &= (uint16_t)~TIM_CCMR2_OC3PE) :\
+         ((__HANDLE__)->Instance->CCMR2 &= (uint16_t)~TIM_CCMR2_OC4PE))
+
 #endif /* STM32F373xC || STM32F378xx */
 
 #if defined(STM32F302xE) || defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -937,6 +1020,49 @@ typedef struct {
  ((__CHANNEL__) == TIM_CHANNEL_4) ? ((__HANDLE__)->Instance->CCR4) :\
  ((__CHANNEL__) == TIM_CHANNEL_5) ? ((__HANDLE__)->Instance->CCR5) :\
  ((__HANDLE__)->Instance->CCR6))
+
+/**
+  * @brief  Sets the TIM Output compare preload.
+  * @param  __HANDLE__: TIM handle.
+  * @param  __CHANNEL__: TIM Channels to be configured.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
+  *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
+  *            @arg TIM_CHANNEL_3: TIM Channel 3 selected
+  *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
+  *            @arg TIM_CHANNEL_5: TIM Channel 5 selected
+  *            @arg TIM_CHANNEL_6: TIM Channel 6 selected
+  * @retval None
+  */
+#define __HAL_TIM_ENABLE_OCxPRELOAD(__HANDLE__, __CHANNEL__)    \
+        (((__CHANNEL__) == TIM_CHANNEL_1) ? ((__HANDLE__)->Instance->CCMR1 |= TIM_CCMR1_OC1PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_2) ? ((__HANDLE__)->Instance->CCMR1 |= TIM_CCMR1_OC2PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_3) ? ((__HANDLE__)->Instance->CCMR2 |= TIM_CCMR2_OC3PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_4) ? ((__HANDLE__)->Instance->CCMR2 |= TIM_CCMR2_OC4PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_5) ? ((__HANDLE__)->Instance->CCMR3 |= TIM_CCMR3_OC5PE) :\
+         ((__HANDLE__)->Instance->CCMR3 |= TIM_CCMR3_OC6PE))
+
+/**
+  * @brief  Resets the TIM Output compare preload.
+  * @param  __HANDLE__: TIM handle.
+  * @param  __CHANNEL__: TIM Channels to be configured.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
+  *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
+  *            @arg TIM_CHANNEL_3: TIM Channel 3 selected
+  *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
+  *            @arg TIM_CHANNEL_5: TIM Channel 5 selected
+  *            @arg TIM_CHANNEL_6: TIM Channel 6 selected
+  * @retval None
+  */
+#define __HAL_TIM_DISABLE_OCxPRELOAD(__HANDLE__, __CHANNEL__)    \
+        (((__CHANNEL__) == TIM_CHANNEL_1) ? ((__HANDLE__)->Instance->CCMR1 &= (uint16_t)~TIM_CCMR1_OC1PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_2) ? ((__HANDLE__)->Instance->CCMR1 &= (uint16_t)~TIM_CCMR1_OC2PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_3) ? ((__HANDLE__)->Instance->CCMR2 &= (uint16_t)~TIM_CCMR2_OC3PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_4) ? ((__HANDLE__)->Instance->CCMR2 &= (uint16_t)~TIM_CCMR2_OC4PE) :\
+         ((__CHANNEL__) == TIM_CHANNEL_5) ? ((__HANDLE__)->Instance->CCMR3 &= (uint16_t)~TIM_CCMR3_OC5PE) :\
+         ((__HANDLE__)->Instance->CCMR3 &= (uint16_t)~TIM_CCMR3_OC6PE))
+
 #endif /* STM32F302xE || STM32F303xE || STM32F398xx || */
        /* STM32F302xC || STM32F303xC || STM32F358xx || */
        /* STM32F303x8 || STM32F334x8 || STM32F328xx || */
@@ -1036,14 +1162,14 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
 HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim, TIM_BreakDeadTimeConfigTypeDef *sBreakDeadTimeConfig);
 
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
-    defined(STM32F303xC) || defined(STM32F358xx)
+    defined(STM32F303xC) || defined(STM32F358xx) || defined(STM32F334x8)
 HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap1, uint32_t Remap2);
 #endif /* STM32F303xE || STM32F398xx || */
        /* STM32F303xC || STM32F358xx    */
 
 #if defined(STM32F302xE)                                                 || \
     defined(STM32F302xC)                                                 || \
-    defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
+    defined(STM32F303x8)  || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx) || \
     defined(STM32F373xC) || defined(STM32F378xx)
 HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap);

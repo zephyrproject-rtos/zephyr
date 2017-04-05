@@ -10,16 +10,6 @@ if BOARD_HEXIWEAR_K64
 config BOARD
 	default hexiwear_k64
 
-if !HAS_DTS
-
-config FLASH_SIZE
-	default 1024
-
-config SRAM_SIZE
-	default 192
-
-endif # !HAS_DTS
-
 config OSC_XTAL0_FREQ
 	default 12000000
 

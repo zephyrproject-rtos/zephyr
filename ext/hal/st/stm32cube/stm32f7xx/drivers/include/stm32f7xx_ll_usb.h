@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_usb.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of USB Core HAL module.
   ******************************************************************************
   * @attention
@@ -125,7 +125,9 @@ typedef struct
   uint32_t low_power_enable;     /*!< Enable or disable the low power mode.                                  */
   
   uint32_t lpm_enable;           /*!< Enable or disable Link Power Management.                               */
-                          
+  
+  uint32_t battery_charging_enable; /*!< Enable or disable Battery charging.                                 */   
+  
   uint32_t vbus_sensing_enable;  /*!< Enable or disable the VBUS Sensing feature.                            */ 
 
   uint32_t use_dedicated_ep1;    /*!< Enable or disable the use of the dedicated EP1 interrupt.              */      
@@ -256,6 +258,12 @@ typedef struct
   */   
 #define USB_OTG_ULPI_PHY                       1U
 #define USB_OTG_EMBEDDED_PHY                   2U
+#define USB_OTG_HS_EMBEDDED_PHY                3U
+
+#if !defined  (USB_HS_PHYC_TUNE_VALUE) 
+  #define USB_HS_PHYC_TUNE_VALUE    0x00000F13U /*!< Value of USB HS PHY Tune */
+#endif /* USB_HS_PHYC_TUNE_VALUE */
+
 /**
   * @}
   */
@@ -382,6 +390,9 @@ typedef struct
 
 #define USBx_HOST       ((USB_OTG_HostTypeDef *)((uint32_t )USBx + USB_OTG_HOST_BASE))  
 #define USBx_HC(i)      ((USB_OTG_HostChannelTypeDef *)((uint32_t)USBx + USB_OTG_HOST_CHANNEL_BASE + (i)*USB_OTG_HOST_CHANNEL_SIZE))
+#define USBPHYC         ((USBPHYC_GlobalTypeDef *)((uint32_t )USB_PHY_HS_CONTROLLER_BASE))    
+    
+    
 /**
   * @}
   */

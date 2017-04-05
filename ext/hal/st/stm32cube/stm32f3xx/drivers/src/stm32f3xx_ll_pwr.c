@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_pwr.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   PWR LL module driver.
   ******************************************************************************
   * @attention

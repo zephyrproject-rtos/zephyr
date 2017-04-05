@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_i2s.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of I2S HAL module.
   ******************************************************************************
   * @attention
@@ -100,13 +100,13 @@ typedef struct
   */
 typedef enum
 {
-  HAL_I2S_STATE_RESET      = 0x00,  /*!< I2S not yet initialized or disabled                */
-  HAL_I2S_STATE_READY      = 0x01,  /*!< I2S initialized and ready for use                  */
-  HAL_I2S_STATE_BUSY       = 0x02,  /*!< I2S internal process is ongoing                    */
-  HAL_I2S_STATE_BUSY_TX    = 0x03,  /*!< Data Transmission process is ongoing               */
-  HAL_I2S_STATE_BUSY_RX    = 0x04,  /*!< Data Reception process is ongoing                  */
-  HAL_I2S_STATE_BUSY_TX_RX = 0x05,  /*!< Data Transmission and Reception process is ongoing */
-  HAL_I2S_STATE_TIMEOUT    = 0x06,  /*!< I2S timeout state                                  */
+  HAL_I2S_STATE_RESET      = 0x00U,  /*!< I2S not yet initialized or disabled                */
+  HAL_I2S_STATE_READY      = 0x01U,  /*!< I2S initialized and ready for use                  */
+  HAL_I2S_STATE_BUSY       = 0x02U,  /*!< I2S internal process is ongoing                    */
+  HAL_I2S_STATE_BUSY_TX    = 0x03U,  /*!< Data Transmission process is ongoing               */
+  HAL_I2S_STATE_BUSY_RX    = 0x04U,  /*!< Data Reception process is ongoing                  */
+  HAL_I2S_STATE_BUSY_TX_RX = 0x05U,  /*!< Data Transmission and Reception process is ongoing */
+  HAL_I2S_STATE_TIMEOUT    = 0x06U,  /*!< I2S timeout state                                  */
   HAL_I2S_STATE_ERROR      = 0x07   /*!< I2S error state                                    */
 }HAL_I2S_StateTypeDef;
 
@@ -159,12 +159,12 @@ typedef struct
 /** @defgroup I2S_Error I2S Error
   * @{
   */
-#define HAL_I2S_ERROR_NONE               ((uint32_t)0x00000000)  /*!< No error           */
-#define HAL_I2S_ERROR_TIMEOUT            ((uint32_t)0x00000001)  /*!< Timeout error      */
-#define HAL_I2S_ERROR_OVR                ((uint32_t)0x00000002)  /*!< OVR error          */
-#define HAL_I2S_ERROR_UDR                ((uint32_t)0x00000004)  /*!< UDR error          */
-#define HAL_I2S_ERROR_DMA                ((uint32_t)0x00000008)  /*!< DMA transfer error */
-#define HAL_I2S_ERROR_UNKNOW             ((uint32_t)0x00000010)  /*!< Unknow Error error */
+#define HAL_I2S_ERROR_NONE               (0x00000000U)  /*!< No error           */
+#define HAL_I2S_ERROR_TIMEOUT            (0x00000001U)  /*!< Timeout error      */
+#define HAL_I2S_ERROR_OVR                (0x00000002U)  /*!< OVR error          */
+#define HAL_I2S_ERROR_UDR                (0x00000004U)  /*!< UDR error          */
+#define HAL_I2S_ERROR_DMA                (0x00000008U)  /*!< DMA transfer error */
+#define HAL_I2S_ERROR_UNKNOW             (0x00000010U)  /*!< Unknow Error error */
 /**
   * @}
   */
@@ -172,8 +172,8 @@ typedef struct
 /** @defgroup I2S_Clock_Source I2S Clock Source
   * @{
   */
-#define I2S_CLOCK_EXTERNAL                ((uint32_t)0x00000001)
-#define I2S_CLOCK_SYSCLK                  ((uint32_t)0x00000002)
+#define I2S_CLOCK_EXTERNAL                (0x00000001U)
+#define I2S_CLOCK_SYSCLK                  (0x00000002U)
 
 #define IS_I2S_CLOCKSOURCE(CLOCK) (((CLOCK) == I2S_CLOCK_EXTERNAL) || \
                                    ((CLOCK) == I2S_CLOCK_SYSCLK))
@@ -184,10 +184,10 @@ typedef struct
 /** @defgroup I2S_Mode I2S Mode
   * @{
   */
-#define I2S_MODE_SLAVE_TX                ((uint32_t)0x00000000)
-#define I2S_MODE_SLAVE_RX                ((uint32_t)0x00000100)
-#define I2S_MODE_MASTER_TX               ((uint32_t)0x00000200)
-#define I2S_MODE_MASTER_RX               ((uint32_t)0x00000300)
+#define I2S_MODE_SLAVE_TX                (0x00000000U)
+#define I2S_MODE_SLAVE_RX                (0x00000100U)
+#define I2S_MODE_MASTER_TX               (0x00000200U)
+#define I2S_MODE_MASTER_RX               (0x00000300U)
 
 #define IS_I2S_MODE(MODE) (((MODE) == I2S_MODE_SLAVE_TX) || \
                            ((MODE) == I2S_MODE_SLAVE_RX) || \
@@ -200,11 +200,11 @@ typedef struct
 /** @defgroup I2S_Standard I2S Standard
   * @{
   */
-#define I2S_STANDARD_PHILIPS             ((uint32_t)0x00000000)
-#define I2S_STANDARD_MSB                 ((uint32_t)0x00000010)
-#define I2S_STANDARD_LSB                 ((uint32_t)0x00000020)
-#define I2S_STANDARD_PCM_SHORT           ((uint32_t)0x00000030)
-#define I2S_STANDARD_PCM_LONG            ((uint32_t)0x000000B0)
+#define I2S_STANDARD_PHILIPS             (0x00000000U)
+#define I2S_STANDARD_MSB                 (0x00000010U)
+#define I2S_STANDARD_LSB                 (0x00000020U)
+#define I2S_STANDARD_PCM_SHORT           (0x00000030U)
+#define I2S_STANDARD_PCM_LONG            (0x000000B0U)
 
 #define IS_I2S_STANDARD(STANDARD) (((STANDARD) == I2S_STANDARD_PHILIPS) || \
                                    ((STANDARD) == I2S_STANDARD_MSB) || \
@@ -218,10 +218,10 @@ typedef struct
 /** @defgroup I2S_Data_Format I2S Data Format
   * @{
   */
-#define I2S_DATAFORMAT_16B               ((uint32_t)0x00000000)
-#define I2S_DATAFORMAT_16B_EXTENDED      ((uint32_t)0x00000001)
-#define I2S_DATAFORMAT_24B               ((uint32_t)0x00000003)
-#define I2S_DATAFORMAT_32B               ((uint32_t)0x00000005)
+#define I2S_DATAFORMAT_16B               (0x00000000U)
+#define I2S_DATAFORMAT_16B_EXTENDED      (0x00000001U)
+#define I2S_DATAFORMAT_24B               (0x00000003U)
+#define I2S_DATAFORMAT_32B               (0x00000005U)
 
 #define IS_I2S_DATA_FORMAT(FORMAT) (((FORMAT) == I2S_DATAFORMAT_16B) || \
                                     ((FORMAT) == I2S_DATAFORMAT_16B_EXTENDED) || \
@@ -235,7 +235,7 @@ typedef struct
   * @{
   */
 #define I2S_MCLKOUTPUT_ENABLE           ((uint32_t)SPI_I2SPR_MCKOE)
-#define I2S_MCLKOUTPUT_DISABLE          ((uint32_t)0x00000000)
+#define I2S_MCLKOUTPUT_DISABLE          (0x00000000U)
 
 #define IS_I2S_MCLK_OUTPUT(OUTPUT) (((OUTPUT) == I2S_MCLKOUTPUT_ENABLE) || \
                                     ((OUTPUT) == I2S_MCLKOUTPUT_DISABLE))
@@ -246,16 +246,16 @@ typedef struct
 /** @defgroup I2S_Audio_Frequency I2S Audio Frequency
   * @{
   */
-#define I2S_AUDIOFREQ_192K               ((uint32_t)192000)
-#define I2S_AUDIOFREQ_96K                ((uint32_t)96000)
-#define I2S_AUDIOFREQ_48K                ((uint32_t)48000)
-#define I2S_AUDIOFREQ_44K                ((uint32_t)44100)
-#define I2S_AUDIOFREQ_32K                ((uint32_t)32000)
-#define I2S_AUDIOFREQ_22K                ((uint32_t)22050)
-#define I2S_AUDIOFREQ_16K                ((uint32_t)16000)
-#define I2S_AUDIOFREQ_11K                ((uint32_t)11025)
-#define I2S_AUDIOFREQ_8K                 ((uint32_t)8000)
-#define I2S_AUDIOFREQ_DEFAULT            ((uint32_t)2)
+#define I2S_AUDIOFREQ_192K               (192000U)
+#define I2S_AUDIOFREQ_96K                (96000U)
+#define I2S_AUDIOFREQ_48K                (48000U)
+#define I2S_AUDIOFREQ_44K                (44100U)
+#define I2S_AUDIOFREQ_32K                (32000U)
+#define I2S_AUDIOFREQ_22K                (22050U)
+#define I2S_AUDIOFREQ_16K                (16000U)
+#define I2S_AUDIOFREQ_11K                (11025U)
+#define I2S_AUDIOFREQ_8K                 (8000U)
+#define I2S_AUDIOFREQ_DEFAULT            (2U)
 
 #define IS_I2S_AUDIO_FREQ(FREQ) ((((FREQ) >= I2S_AUDIOFREQ_8K) && \
                                  ((FREQ) <= I2S_AUDIOFREQ_192K)) || \
@@ -267,8 +267,8 @@ typedef struct
 /** @defgroup I2S_FullDuplex_Mode I2S Full Duplex Mode
   * @{
   */
-#define I2S_FULLDUPLEXMODE_DISABLE                   ((uint32_t)0x00000000)
-#define I2S_FULLDUPLEXMODE_ENABLE                    ((uint32_t)0x00000001)
+#define I2S_FULLDUPLEXMODE_DISABLE                   (0x00000000U)
+#define I2S_FULLDUPLEXMODE_ENABLE                    (0x00000001U)
 
 #define IS_I2S_FULLDUPLEX_MODE(MODE) (((MODE) == I2S_FULLDUPLEXMODE_DISABLE) || \
                                       ((MODE) == I2S_FULLDUPLEXMODE_ENABLE))
@@ -279,7 +279,7 @@ typedef struct
 /** @defgroup I2S_Clock_Polarity I2S Clock Polarity
   * @{
   */
-#define I2S_CPOL_LOW                    ((uint32_t)0x00000000)
+#define I2S_CPOL_LOW                    (0x00000000U)
 #define I2S_CPOL_HIGH                   ((uint32_t)SPI_I2SCFGR_CKPOL)
 
 #define IS_I2S_CPOL(CPOL) (((CPOL) == I2S_CPOL_LOW) || \
@@ -384,7 +384,7 @@ typedef struct
                                                tmpreg = (__HANDLE__)->Instance->DR; \
                                                tmpreg = (__HANDLE__)->Instance->SR; \
                                                UNUSED(tmpreg); \
-                                              }while(0)
+                                              }while(0U)
 /** @brief Clears the I2S UDR pending flag.
   * @param  __HANDLE__: specifies the I2S Handle.
   * @retval None
@@ -393,7 +393,7 @@ typedef struct
                                                __IO uint32_t tmpreg;\
                                                tmpreg = ((__HANDLE__)->Instance->SR);\
                                                UNUSED(tmpreg); \
-                                              }while(0)
+                                              }while(0U)
 /**
   * @}
   */

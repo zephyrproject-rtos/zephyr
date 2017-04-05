@@ -10,15 +10,6 @@ if BOARD_FRDM_KW41Z
 config BOARD
 	default frdm_kw41z
 
-if !HAS_DTS
-
-config FLASH_SIZE
-	default 512
-
-config SRAM_SIZE
-	default 128
-endif # !HAS_DTS
-
 config OSC_XTAL0_FREQ
 	default 32000000
 

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_flash_ex.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of FLASH HAL Extension module.
   ******************************************************************************
   * @attention
@@ -113,6 +113,14 @@ typedef struct
   uint32_t BootAddr1;    /*!< Boot base address when Boot pin = 1.
                               This parameter can be a value of @ref FLASHEx_Boot_Address */
 
+#if defined (FLASH_OPTCR2_PCROP)
+  uint32_t PCROPSector;  /*!< Set the PCROP sector.
+                              This parameter can be a value of @ref FLASHEx_Option_Bytes_PCROP_Sectors */
+
+  uint32_t PCROPRdp;    /*!< Set the PCROP_RDP option.
+                              This parameter can be a value of @ref FLASHEx_Option_Bytes_PCROP_RDP */                                
+#endif /* FLASH_OPTCR2_PCROP */
+
 } FLASH_OBProgramInitTypeDef;
 
 /**
@@ -162,6 +170,10 @@ typedef struct
 #define OPTIONBYTE_BOR         ((uint32_t)0x08U)  /*!< BOR option byte configuration  */
 #define OPTIONBYTE_BOOTADDR_0  ((uint32_t)0x10U)  /*!< Boot 0 Address configuration   */
 #define OPTIONBYTE_BOOTADDR_1  ((uint32_t)0x20U)  /*!< Boot 1 Address configuration   */
+#if defined (FLASH_OPTCR2_PCROP)
+#define OPTIONBYTE_PCROP       ((uint32_t)0x40U)  /*!< PCROP configuration            */
+#define OPTIONBYTE_PCROP_RDP   ((uint32_t)0x80U)  /*!< PCROP_RDP configuration        */
+#endif /* FLASH_OPTCR2_PCROP */
 /**
   * @}
   */
@@ -275,7 +287,11 @@ typedef struct
 #define OB_BOOTADDR_AXIM_FLASH       ((uint32_t)0x2000U)  /*!< Boot from Flash on AXIM interface (0x08000000)  */
 #define OB_BOOTADDR_DTCM_RAM         ((uint32_t)0x8000U)  /*!< Boot from DTCM RAM (0x20000000)                 */
 #define OB_BOOTADDR_SRAM1            ((uint32_t)0x8004U)  /*!< Boot from SRAM1 (0x20010000)                    */
+#if (SRAM2_BASE == 0x2003C000U)
+#define OB_BOOTADDR_SRAM2            ((uint32_t)0x800FU)  /*!< Boot from SRAM2 (0x2003C000)                    */
+#else
 #define OB_BOOTADDR_SRAM2            ((uint32_t)0x8013U)  /*!< Boot from SRAM2 (0x2004C000)                    */
+#endif /* SRAM2_BASE == 0x2003C000U */
 /**
   * @}
   */
@@ -426,6 +442,33 @@ typedef struct
   */
 #endif /* FLASH_SECTOR_TOTAL == 8 */
 
+#if defined (FLASH_OPTCR2_PCROP)
+/** @defgroup FLASHEx_Option_Bytes_PCROP_Sectors FLASH Option Bytes PCROP Sectors
+  * @{
+  */
+#define OB_PCROP_SECTOR_0     ((uint32_t)0x00000001U) /*!< PC Readout protection of Sector0      */
+#define OB_PCROP_SECTOR_1     ((uint32_t)0x00000002U) /*!< PC Readout protection of Sector1      */
+#define OB_PCROP_SECTOR_2     ((uint32_t)0x00000004U) /*!< PC Readout protection of Sector2      */
+#define OB_PCROP_SECTOR_3     ((uint32_t)0x00000008U) /*!< PC Readout protection of Sector3      */
+#define OB_PCROP_SECTOR_4     ((uint32_t)0x00000010U) /*!< PC Readout protection of Sector4      */
+#define OB_PCROP_SECTOR_5     ((uint32_t)0x00000020U) /*!< PC Readout protection of Sector5      */
+#define OB_PCROP_SECTOR_6     ((uint32_t)0x00000040U) /*!< PC Readout protection of Sector6      */
+#define OB_PCROP_SECTOR_7     ((uint32_t)0x00000080U) /*!< PC Readout protection of Sector7      */
+#define OB_PCROP_SECTOR_All   ((uint32_t)0x000000FFU) /*!< PC Readout protection of all Sectors  */
+/**
+  * @}
+  */
+
+/** @defgroup FLASHEx_Option_Bytes_PCROP_RDP FLASH Option Bytes PCROP_RDP Bit
+  * @{
+  */
+#define OB_PCROP_RDP_ENABLE   ((uint32_t)0x80000000U) /*!< PCROP_RDP Enable      */
+#define OB_PCROP_RDP_DISABLE  ((uint32_t)0x00000000U) /*!< PCROP_RDP Disable     */
+/**
+  * @}
+  */
+#endif /* FLASH_OPTCR2_PCROP */
+
 /**
   * @}
   */ 
@@ -489,8 +532,14 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
 #define IS_WRPSTATE(VALUE)(((VALUE) == OB_WRPSTATE_DISABLE) || \
                            ((VALUE) == OB_WRPSTATE_ENABLE))  
 
+#if defined (FLASH_OPTCR2_PCROP)
+#define IS_OPTIONBYTE(VALUE)(((VALUE) <= (OPTIONBYTE_WRP | OPTIONBYTE_RDP        | OPTIONBYTE_USER |\
+                                          OPTIONBYTE_BOR | OPTIONBYTE_BOOTADDR_0 | OPTIONBYTE_BOOTADDR_1 |\
+                                          OPTIONBYTE_PCROP | OPTIONBYTE_PCROP_RDP)))
+#else
 #define IS_OPTIONBYTE(VALUE)(((VALUE) <= (OPTIONBYTE_WRP | OPTIONBYTE_RDP        | OPTIONBYTE_USER |\
                                           OPTIONBYTE_BOR | OPTIONBYTE_BOOTADDR_0 | OPTIONBYTE_BOOTADDR_1)))
+#endif /* FLASH_OPTCR2_PCROP */
 
 #define IS_OB_BOOT_ADDRESS(ADDRESS) ((ADDRESS) <= 0x8013)
 
@@ -530,8 +579,8 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
                                    ((LATENCY) == FLASH_LATENCY_14) || \
                                    ((LATENCY) == FLASH_LATENCY_15))
 
-#define IS_FLASH_ADDRESS(ADDRESS) (((ADDRESS) >= FLASH_BASE) && ((ADDRESS) <= FLASH_END))
-
+#define IS_FLASH_ADDRESS(ADDRESS) ((((ADDRESS) >= FLASH_BASE) && ((ADDRESS) <= FLASH_END)) || \
+                                   (((ADDRESS) >= FLASH_OTP_BASE) && ((ADDRESS) <= FLASH_OTP_END)))
 #define IS_FLASH_NBSECTORS(NBSECTORS) (((NBSECTORS) != 0U) && ((NBSECTORS) <= FLASH_SECTOR_TOTAL))
 
 #if (FLASH_SECTOR_TOTAL == 8)
@@ -540,7 +589,7 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
                                  ((SECTOR) == FLASH_SECTOR_4)   || ((SECTOR) == FLASH_SECTOR_5)   ||\
                                  ((SECTOR) == FLASH_SECTOR_6)   || ((SECTOR) == FLASH_SECTOR_7))
 
-#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & (uint32_t)0xFF00FFFF) == 0x00000000U) && ((SECTOR) != 0x00000000U))
+#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & 0xFF00FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
 #endif /* FLASH_SECTOR_TOTAL == 8 */
 
 #if (FLASH_SECTOR_TOTAL == 24)
@@ -557,7 +606,7 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
                                  ((SECTOR) == FLASH_SECTOR_20)  || ((SECTOR) == FLASH_SECTOR_21)  ||\
                                  ((SECTOR) == FLASH_SECTOR_22)  || ((SECTOR) == FLASH_SECTOR_23))
 
-#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & (uint32_t)0xF000FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
+#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & 0xF000FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
 #endif /* FLASH_SECTOR_TOTAL == 24 */
 
 #if defined (FLASH_OPTCR_nDBANK)
@@ -573,6 +622,12 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
 #define IS_OB_NDBOOT(VALUE)        (((VALUE) == OB_DUAL_BOOT_DISABLE) || \
                                     ((VALUE) == OB_DUAL_BOOT_ENABLE))
 #endif /* FLASH_OPTCR_nDBOOT */
+
+#if defined (FLASH_OPTCR2_PCROP)
+#define IS_OB_PCROP_SECTOR(SECTOR)   (((SECTOR) & (uint32_t)0xFFFFFF00U) == 0x00000000U)
+#define IS_OB_PCROP_RDP_VALUE(VALUE) (((VALUE) == OB_PCROP_RDP_DISABLE) || \
+                                      ((VALUE) == OB_PCROP_RDP_ENABLE))
+#endif /* FLASH_OPTCR2_PCROP */
 
 /**
   * @}

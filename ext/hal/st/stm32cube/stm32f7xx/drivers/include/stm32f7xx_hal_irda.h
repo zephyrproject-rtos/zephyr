@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_irda.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of IRDA HAL module.
   ******************************************************************************
   * @attention
@@ -157,7 +157,8 @@ typedef enum
   IRDA_CLOCKSOURCE_PCLK2      = 0x01U,    /*!< PCLK2 clock source  */
   IRDA_CLOCKSOURCE_HSI        = 0x02U,    /*!< HSI clock source    */
   IRDA_CLOCKSOURCE_SYSCLK     = 0x04U,    /*!< SYSCLK clock source */
-  IRDA_CLOCKSOURCE_LSE        = 0x08U     /*!< LSE clock source     */
+  IRDA_CLOCKSOURCE_LSE        = 0x08U,    /*!< LSE clock source     */
+  IRDA_CLOCKSOURCE_UNDEFINED  = 0x10      /*!< Undefined clock source */
 }IRDA_ClockSourceTypeDef;
 
 /** 
@@ -173,13 +174,13 @@ typedef struct
 
   uint16_t                 TxXferSize;       /* IRDA Tx Transfer size              */
 
-  uint16_t                 TxXferCount;      /* IRDA Tx Transfer Counter           */
+  __IO uint16_t            TxXferCount;      /* IRDA Tx Transfer Counter           */
 
   uint8_t                  *pRxBuffPtr;      /* Pointer to IRDA Rx transfer Buffer */
 
   uint16_t                 RxXferSize;       /* IRDA Rx Transfer size              */
 
-  uint16_t                 RxXferCount;      /* IRDA Rx Transfer Counter           */
+  __IO uint16_t            RxXferCount;      /* IRDA Rx Transfer Counter           */
 
   uint16_t                 Mask;             /* IRDA RX RDR register mask         */
 
@@ -401,6 +402,60 @@ typedef struct
   */
 #define __HAL_IRDA_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_IRDA_STATE_RESET)
 
+/** @brief  Flush the IRDA DR register.
+  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @retval None
+  */
+#define __HAL_IRDA_FLUSH_DRREGISTER(__HANDLE__)                            \
+    do{                                                                    \
+         SET_BIT((__HANDLE__)->Instance->RQR, IRDA_RXDATA_FLUSH_REQUEST); \
+         SET_BIT((__HANDLE__)->Instance->RQR, IRDA_TXDATA_FLUSH_REQUEST); \
+      } while(0)
+
+/** @brief  Clear the specified IRDA pending flag.
+  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __FLAG__: specifies the flag to check.
+  *          This parameter can be any combination of the following values:
+  *            @arg @ref IRDA_CLEAR_PEF
+  *            @arg @ref IRDA_CLEAR_FEF
+  *            @arg @ref IRDA_CLEAR_NEF
+  *            @arg @ref IRDA_CLEAR_OREF
+  *            @arg @ref IRDA_CLEAR_TCF
+  * @retval None
+  */
+#define __HAL_IRDA_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->ICR = (__FLAG__))
+
+/** @brief  Clear the IRDA PE pending flag.
+  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @retval None
+  */
+#define __HAL_IRDA_CLEAR_PEFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_PEF)
+
+
+/** @brief  Clear the IRDA FE pending flag.
+  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @retval None
+  */
+#define __HAL_IRDA_CLEAR_FEFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_FEF)
+
+/** @brief  Clear the IRDA NE pending flag.
+  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @retval None
+  */
+#define __HAL_IRDA_CLEAR_NEFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_NEF)
+
+/** @brief  Clear the IRDA ORE pending flag.
+  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @retval None
+  */
+#define __HAL_IRDA_CLEAR_OREFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_OREF)
+
+/** @brief  Clear the IRDA IDLE pending flag.
+  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @retval None
+  */
+#define __HAL_IRDA_CLEAR_IDLEFLAG(__HANDLE__)   __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_IDLEF)
+
 /** @brief  Check whether the specified IRDA flag is set or not.
   * @param  __HANDLE__: specifies the IRDA Handle.
   *         The Handle Instance which can be USART1 or USART2.
@@ -544,7 +599,7 @@ typedef struct
 #include "stm32f7xx_hal_irda_ex.h"  
 
 /* Exported functions --------------------------------------------------------*/
-/** @addtogroup IRDA_Exported_Functions IrDA Exported Functions
+/** @addtogroup IRDA_Exported_Functions IRDA Exported Functions
   * @{
   */
 
@@ -575,12 +630,24 @@ HAL_StatusTypeDef HAL_IRDA_Receive_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pData
 HAL_StatusTypeDef HAL_IRDA_DMAPause(IRDA_HandleTypeDef *hirda);
 HAL_StatusTypeDef HAL_IRDA_DMAResume(IRDA_HandleTypeDef *hirda);
 HAL_StatusTypeDef HAL_IRDA_DMAStop(IRDA_HandleTypeDef *hirda);
+/* Transfer Abort functions */
+HAL_StatusTypeDef HAL_IRDA_Abort(IRDA_HandleTypeDef *hirda);
+HAL_StatusTypeDef HAL_IRDA_AbortTransmit(IRDA_HandleTypeDef *hirda);
+HAL_StatusTypeDef HAL_IRDA_AbortReceive(IRDA_HandleTypeDef *hirda);
+HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda);
+HAL_StatusTypeDef HAL_IRDA_AbortTransmit_IT(IRDA_HandleTypeDef *hirda);
+HAL_StatusTypeDef HAL_IRDA_AbortReceive_IT(IRDA_HandleTypeDef *hirda);
+
 void HAL_IRDA_IRQHandler(IRDA_HandleTypeDef *hirda);
 void HAL_IRDA_TxCpltCallback(IRDA_HandleTypeDef *hirda);
 void HAL_IRDA_RxCpltCallback(IRDA_HandleTypeDef *hirda);
 void HAL_IRDA_TxHalfCpltCallback(IRDA_HandleTypeDef *hirda);
 void HAL_IRDA_RxHalfCpltCallback(IRDA_HandleTypeDef *hirda);
 void HAL_IRDA_ErrorCallback(IRDA_HandleTypeDef *hirda);
+void HAL_IRDA_AbortCpltCallback (IRDA_HandleTypeDef *hirda);
+void HAL_IRDA_AbortTransmitCpltCallback (IRDA_HandleTypeDef *hirda);
+void HAL_IRDA_AbortReceiveCpltCallback (IRDA_HandleTypeDef *hirda);
+
 /**
  * @}
  */

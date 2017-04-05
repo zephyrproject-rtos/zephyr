@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_opamp.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of OPAMP HAL module.
   ******************************************************************************
   * @attention
@@ -113,7 +113,7 @@ typedef struct
 
   uint32_t PgaGain;                     /*!< Specifies the gain in PGA mode
                                              i.e. when mode is OPAMP_PGA_MODE.
-                                             This parameter must be a value of @ref OPAMP_PgaGain (2, 4, 8 or 16 ) */
+                                             This parameter must be a value of @ref OPAMP_PgaGain (2U, 4U, 8 or 16U ) */
 
   uint32_t UserTrimming;                /*!< Specifies the trimming mode
                                              This parameter must be a value of @ref OPAMP_UserTrimming
@@ -121,11 +121,11 @@ typedef struct
 
   uint32_t TrimmingValueP;              /*!< Specifies the offset trimming value (PMOS)
                                              i.e. when UserTrimming is OPAMP_TRIMMING_USER.
-                                             This parameter must be a number between Min_Data = 1 and Max_Data = 31 */
+                                             This parameter must be a number between Min_Data = 1 and Max_Data = 31U */
 
   uint32_t TrimmingValueN;              /*!< Specifies the offset trimming value (NMOS)
                                              i.e. when UserTrimming is OPAMP_TRIMMING_USER.
-                                             This parameter must be a number between Min_Data = 1 and Max_Data = 31 */
+                                             This parameter must be a number between Min_Data = 1 and Max_Data = 31U */
 
 }OPAMP_InitTypeDef;
 
@@ -135,13 +135,13 @@ typedef struct
 
 typedef enum
 {
-  HAL_OPAMP_STATE_RESET               = 0x00000000, /*!< OPMAP is not yet Initialized          */
+  HAL_OPAMP_STATE_RESET               = 0x00000000U, /*!< OPMAP is not yet Initialized          */
 
-  HAL_OPAMP_STATE_READY               = 0x00000001, /*!< OPAMP is initialized and ready for use */
-  HAL_OPAMP_STATE_CALIBBUSY           = 0x00000002, /*!< OPAMP is enabled in auto calibration mode */
+  HAL_OPAMP_STATE_READY               = 0x00000001U, /*!< OPAMP is initialized and ready for use */
+  HAL_OPAMP_STATE_CALIBBUSY           = 0x00000002U, /*!< OPAMP is enabled in auto calibration mode */
 
-  HAL_OPAMP_STATE_BUSY                = 0x00000004, /*!< OPAMP is enabled and running in normal mode */
-  HAL_OPAMP_STATE_BUSYLOCKED          = 0x00000005, /*!< OPAMP is locked
+  HAL_OPAMP_STATE_BUSY                = 0x00000004U, /*!< OPAMP is enabled and running in normal mode */
+  HAL_OPAMP_STATE_BUSYLOCKED          = 0x00000005U, /*!< OPAMP is locked
                                                          only system reset allows reconfiguring the opamp. */
 
 }HAL_OPAMP_StateTypeDef;
@@ -189,7 +189,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
 /** @defgroup OPAMP_Mode OPAMP Mode
   * @{
   */
-#define OPAMP_STANDALONE_MODE            ((uint32_t)0x00000000) /*!< standalone mode */
+#define OPAMP_STANDALONE_MODE            (0x00000000U) /*!< standalone mode */
 #define OPAMP_PGA_MODE                   OPAMP_CSR_VMSEL_1      /*!< PGA mode */
 #define OPAMP_FOLLOWER_MODE              OPAMP_CSR_VMSEL        /*!< follower mode */
 
@@ -208,7 +208,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
 
 #define OPAMP_NONINVERTINGINPUT_IO0         OPAMP_CSR_VPSEL         /*!< VP0 (PA1 for OPAMP1, VP0 PA7  for OPAMP2, VP0 PB0  for OPAMP3, VP0 PB13 for OPAMP4)
                                                                                   connected to OPAMPx non inverting input */
-#define OPAMP_NONINVERTINGINPUT_IO1         ((uint32_t)0x00000000)  /*!< VP1 (PA7 for OPAMP1, VP3 PD14 for OPAMP2, VP1 PB13 for OPAMP3, VP1 PD11 for OPAMP4)
+#define OPAMP_NONINVERTINGINPUT_IO1         (0x00000000U)  /*!< VP1 (PA7 for OPAMP1, VP3 PD14 for OPAMP2, VP1 PB13 for OPAMP3, VP1 PD11 for OPAMP4)
                                                                                   connected to OPAMPx non inverting input */
 #define OPAMP_NONINVERTINGINPUT_IO2         OPAMP_CSR_VPSEL_1       /*!< VP2 (PA3 for OPAMP1, VP2 PB0  for OPAMP2, VP2 PA1  for OPAMP3, VP3 PA4  for OPAMP4)
                                                                                   connected to OPAMPx non inverting input */
@@ -228,7 +228,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_INVERTINGINPUT_IO0       ((uint32_t)0x00000000)            /*!< inverting input connected to VM0 */
+#define OPAMP_INVERTINGINPUT_IO0       (0x00000000U)            /*!< inverting input connected to VM0 */
 #define OPAMP_INVERTINGINPUT_IO1         OPAMP_CSR_VMSEL_0           /*!< inverting input connected to VM1 */
 
 #define IS_OPAMP_INVERTING_INPUT(INPUT) (((INPUT) == OPAMP_INVERTINGINPUT_IO0) || \
@@ -241,7 +241,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
 /** @defgroup OPAMP_TimerControlledMuxmode OPAMP Timer Controlled Mux mode
   * @{
   */
- #define OPAMP_TIMERCONTROLLEDMUXMODE_DISABLE ((uint32_t)0x00000000)    /*!< Timer controlled Mux mode disabled */
+ #define OPAMP_TIMERCONTROLLEDMUXMODE_DISABLE (0x00000000U)    /*!< Timer controlled Mux mode disabled */
  #define OPAMP_TIMERCONTROLLEDMUXMODE_ENABLE  OPAMP_CSR_TCMEN           /*!< Timer controlled Mux mode enabled */
 
  #define IS_OPAMP_TIMERCONTROLLED_MUXMODE(MUXMODE) (((MUXMODE) == OPAMP_TIMERCONTROLLEDMUXMODE_DISABLE) || \
@@ -256,7 +256,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
 
 #define OPAMP_SEC_NONINVERTINGINPUT_IO0          OPAMP_CSR_VPSSEL       /*!< VP0 (PA1 for OPAMP1, PA7 for OPAMP2, PB0 for OPAMP3, PB13 for OPAMP4)
                                                                               connected to OPAMPx non inverting input */
-#define OPAMP_SEC_NONINVERTINGINPUT_IO1          ((uint32_t)0x00000000) /*!< VP1 (PA7 for OPAMP1, PD14 for OPAMP2, PB13 for OPAMP3, PD11 for OPAMP4)
+#define OPAMP_SEC_NONINVERTINGINPUT_IO1          (0x00000000U) /*!< VP1 (PA7 for OPAMP1, PD14 for OPAMP2, PB13 for OPAMP3, PD11 for OPAMP4)
                                                                              connected to OPAMPx non inverting input */
 #define OPAMP_SEC_NONINVERTINGINPUT_IO2          OPAMP_CSR_VPSSEL_1     /*!< VP2 (PA3 for OPAMP1, PB0 for OPAMP2, PA1 for OPAMP3, PA4 for OPAMP4)
                                                                               connected to OPAMPx non inverting input */
@@ -276,7 +276,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_SEC_INVERTINGINPUT_IO0          ((uint32_t)0x00000000)    /*!< VM0 (PC5 for OPAMP1 and OPAMP2, PB10 for OPAMP3 and OPAMP4)
+#define OPAMP_SEC_INVERTINGINPUT_IO0          (0x00000000U)    /*!< VM0 (PC5 for OPAMP1 and OPAMP2, PB10 for OPAMP3 and OPAMP4)
                                                                           connected to OPAMPx inverting input */
 #define OPAMP_SEC_INVERTINGINPUT_IO1          OPAMP_CSR_VMSSEL         /*!< VM1 (PA3 for OPAMP1, PA5 for OPAMP2, PB2 for OPAMP3, PD8 for OPAMP4)
                                                                          connected to OPAMPx inverting input */
@@ -292,7 +292,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_PGA_CONNECT_INVERTINGINPUT_NO               ((uint32_t)0x00000000)                    /*!< In PGA mode, the non inverting input is not connected */
+#define OPAMP_PGA_CONNECT_INVERTINGINPUT_NO               (0x00000000U)                    /*!< In PGA mode, the non inverting input is not connected */
 #define OPAMP_PGA_CONNECT_INVERTINGINPUT_IO0               OPAMP_CSR_PGGAIN_3                       /*!< In PGA mode, the non inverting input is connected to VM0 */
 #define OPAMP_PGA_CONNECT_INVERTINGINPUT_IO1              (OPAMP_CSR_PGGAIN_2 | OPAMP_CSR_PGGAIN_3) /*!< In PGA mode, the non inverting input is connected to VM1 */
 
@@ -308,10 +308,10 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_PGA_GAIN_2                ((uint32_t)0x00000000)                        /*!< PGA gain =  2 */
-#define OPAMP_PGA_GAIN_4                OPAMP_CSR_PGGAIN_0                            /*!< PGA gain =  4 */
-#define OPAMP_PGA_GAIN_8                OPAMP_CSR_PGGAIN_1                            /*!< PGA gain =  8 */
-#define OPAMP_PGA_GAIN_16              (OPAMP_CSR_PGGAIN_0 | OPAMP_CSR_PGGAIN_1)      /*!< PGA gain = 16 */
+#define OPAMP_PGA_GAIN_2                (0x00000000U)                        /*!< PGA gain =  2U */
+#define OPAMP_PGA_GAIN_4                OPAMP_CSR_PGGAIN_0                            /*!< PGA gain =  4U */
+#define OPAMP_PGA_GAIN_8                OPAMP_CSR_PGGAIN_1                            /*!< PGA gain =  8U */
+#define OPAMP_PGA_GAIN_16              (OPAMP_CSR_PGGAIN_0 | OPAMP_CSR_PGGAIN_1)      /*!< PGA gain = 16U */
 
 #define IS_OPAMP_PGA_GAIN(GAIN) (((GAIN) == OPAMP_PGA_GAIN_2) || \
                                  ((GAIN) == OPAMP_PGA_GAIN_4) || \
@@ -325,7 +325,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_TRIMMING_FACTORY        ((uint32_t)0x00000000)                          /*!< Factory trimming */
+#define OPAMP_TRIMMING_FACTORY        (0x00000000U)                          /*!< Factory trimming */
 #define OPAMP_TRIMMING_USER           OPAMP_CSR_USERTRIM                              /*!< User trimming */
 
 #define IS_OPAMP_TRIMMING(TRIMMING) (((TRIMMING) == OPAMP_TRIMMING_FACTORY) || \
@@ -335,10 +335,10 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_FACTORYTRIMMING_DUMMY    ((uint32_t)0xFFFFFFFFU)                          /*!< Dummy trimming value */
+#define OPAMP_FACTORYTRIMMING_DUMMY    (0xFFFFFFFFU)                          /*!< Dummy trimming value */
 
-#define OPAMP_FACTORYTRIMMING_N        ((uint32_t)0x00000000)                          /*!< Offset trimming N */
-#define OPAMP_FACTORYTRIMMING_P        ((uint32_t)0x00000001)                          /*!< Offset trimming P */
+#define OPAMP_FACTORYTRIMMING_N        (0x00000000U)                          /*!< Offset trimming N */
+#define OPAMP_FACTORYTRIMMING_P        (0x00000001U)                          /*!< Offset trimming P */
 
 #define IS_OPAMP_FACTORYTRIMMING(TRIMMING) (((TRIMMING) == OPAMP_FACTORYTRIMMING_N) || \
                                              ((TRIMMING) == OPAMP_FACTORYTRIMMING_P))
@@ -352,7 +352,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define IS_OPAMP_TRIMMINGVALUE(TRIMMINGVALUE) ((TRIMMINGVALUE) <= 0x1F)
+#define IS_OPAMP_TRIMMINGVALUE(TRIMMINGVALUE) ((TRIMMINGVALUE) <= 0x1FU)
 
 
 /**
@@ -364,8 +364,8 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_INPUT_INVERTING                 ((uint32_t) 24) /*!< Inverting input */
-#define OPAMP_INPUT_NONINVERTING              ((uint32_t) 19) /*!< Non inverting input */
+#define OPAMP_INPUT_INVERTING                 ( 24U) /*!< Inverting input */
+#define OPAMP_INPUT_NONINVERTING              ( 19U) /*!< Non inverting input */
 
 #define IS_OPAMP_INPUT(INPUT) (((INPUT) == OPAMP_INPUT_INVERTING) || \
                                ((INPUT) == OPAMP_INPUT_NONINVERTING))
@@ -378,10 +378,10 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_VREF_3VDDA                    ((uint32_t)0x00000000)  /*!< OPMAP Vref = 3.3% VDDA */
-#define OPAMP_VREF_10VDDA                    OPAMP_CSR_CALSEL_0     /*!< OPMAP Vref = 10% VDDA  */
-#define OPAMP_VREF_50VDDA                    OPAMP_CSR_CALSEL_1     /*!< OPMAP Vref = 50% VDDA  */
-#define OPAMP_VREF_90VDDA                    OPAMP_CSR_CALSEL       /*!< OPMAP Vref = 90% VDDA  */
+#define OPAMP_VREF_3VDDA                    (0x00000000U)  /*!< OPMAP Vref = 3.3U% VDDA */
+#define OPAMP_VREF_10VDDA                    OPAMP_CSR_CALSEL_0     /*!< OPMAP Vref = 10U% VDDA  */
+#define OPAMP_VREF_50VDDA                    OPAMP_CSR_CALSEL_1     /*!< OPMAP Vref = 50U% VDDA  */
+#define OPAMP_VREF_90VDDA                    OPAMP_CSR_CALSEL       /*!< OPMAP Vref = 90U% VDDA  */
 
 #define IS_OPAMP_VREF(VREF) (((VREF) == OPAMP_VREF_3VDDA)  || \
                              ((VREF) == OPAMP_VREF_10VDDA) || \
@@ -395,8 +395,8 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
  /** @defgroup OPAMP_Vref2ADCforCalib OPAMP Vref2ADCforCalib
   */
 
-#define OPAMP_VREF_NOTCONNECTEDTO_ADC          ((uint32_t)0x00000000) /*!< VREF not connected to ADC */
-#define OPAMP_VREF_CONNECTEDTO_ADC             ((uint32_t)0x00000001) /*!< VREF not connected to ADC */
+#define OPAMP_VREF_NOTCONNECTEDTO_ADC          (0x00000000U) /*!< VREF not connected to ADC */
+#define OPAMP_VREF_CONNECTEDTO_ADC             (0x00000001U) /*!< VREF not connected to ADC */
 
 #define IS_OPAMP_ALLOPAMPVREF_CONNECT(CONNECT) (((CONNECT) == OPAMP_VREF_NOTCONNECTEDTO_ADC) || \
                                                 ((CONNECT) == OPAMP_VREF_CONNECTEDTO_ADC))

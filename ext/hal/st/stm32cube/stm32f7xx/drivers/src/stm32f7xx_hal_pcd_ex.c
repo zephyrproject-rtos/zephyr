@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_pcd_ex.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   PCD HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the USB Peripheral Controller:
@@ -166,6 +166,125 @@ HAL_StatusTypeDef HAL_PCDEx_DeActivateLPM(PCD_HandleTypeDef *hpcd)
   return HAL_OK;  
 }
 
+#if defined (USB_OTG_GCCFG_BCDEN)
+/**
+  * @brief  Handle BatteryCharging Process.
+  * @param  hpcd: PCD handle
+  * @retval HAL status
+  */
+void HAL_PCDEx_BCD_VBUSDetect(PCD_HandleTypeDef *hpcd)
+{
+  USB_OTG_GlobalTypeDef *USBx = hpcd->Instance;  
+  uint32_t tickstart = HAL_GetTick();
+  
+  /* Start BCD When device is connected */
+  if (USBx_DEVICE->DCTL & USB_OTG_DCTL_SDIS)
+  { 
+    /* Enable DCD : Data Contact Detect */
+    USBx->GCCFG |= USB_OTG_GCCFG_DCDEN;
+    
+    /* Wait Detect flag or a timeout is happen*/
+    while ((USBx->GCCFG & USB_OTG_GCCFG_DCDET) == 0)
+    {
+      /* Check for the Timeout */
+      if((HAL_GetTick() - tickstart ) > 1000)
+      {
+        HAL_PCDEx_BCD_Callback(hpcd, PCD_BCD_ERROR);
+        return;
+      }
+    }
+    
+    /* Right response got */
+    HAL_Delay(100); 
+    
+    /* Check Detect flag*/
+    if (USBx->GCCFG & USB_OTG_GCCFG_DCDET)
+    {
+      HAL_PCDEx_BCD_Callback(hpcd, PCD_BCD_CONTACT_DETECTION);
+    }
+    
+    /*Primary detection: checks if connected to Standard Downstream Port  
+    (without charging capability) */
+    USBx->GCCFG &=~ USB_OTG_GCCFG_DCDEN;
+    USBx->GCCFG |=  USB_OTG_GCCFG_PDEN;
+    HAL_Delay(100); 
+    
+    if (!(USBx->GCCFG & USB_OTG_GCCFG_PDET))
+    {
+      /* Case of Standard Downstream Port */
+      HAL_PCDEx_BCD_Callback(hpcd, PCD_BCD_STD_DOWNSTREAM_PORT);
+    }
+    else  
+    {
+      /* start secondary detection to check connection to Charging Downstream 
+      Port or Dedicated Charging Port */
+      USBx->GCCFG &=~ USB_OTG_GCCFG_PDEN;
+      USBx->GCCFG |=  USB_OTG_GCCFG_SDEN;
+      HAL_Delay(100); 
+      
+      if ((USBx->GCCFG) & USB_OTG_GCCFG_SDET)
+      { 
+        /* case Dedicated Charging Port  */
+        HAL_PCDEx_BCD_Callback(hpcd, PCD_BCD_DEDICATED_CHARGING_PORT);
+      }
+      else
+      {
+        /* case Charging Downstream Port  */
+        HAL_PCDEx_BCD_Callback(hpcd, PCD_BCD_CHARGING_DOWNSTREAM_PORT);
+      }
+    }
+    /* Battery Charging capability discovery finished */
+    HAL_PCDEx_BCD_Callback(hpcd, PCD_BCD_DISCOVERY_COMPLETED);
+  }
+}
+
+/**
+  * @brief  Activate BatteryCharging feature.
+  * @param  hpcd: PCD handle
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_PCDEx_ActivateBCD(PCD_HandleTypeDef *hpcd)
+{
+  USB_OTG_GlobalTypeDef *USBx = hpcd->Instance;  
+
+  hpcd->battery_charging_active = ENABLE; 
+  USBx->GCCFG |= (USB_OTG_GCCFG_BCDEN);
+  
+  return HAL_OK;  
+}
+
+/**
+  * @brief  Deactivate BatteryCharging feature.
+  * @param  hpcd: PCD handle
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_PCDEx_DeActivateBCD(PCD_HandleTypeDef *hpcd)
+{
+  USB_OTG_GlobalTypeDef *USBx = hpcd->Instance;  
+  hpcd->battery_charging_active = DISABLE; 
+  USBx->GCCFG &= ~(USB_OTG_GCCFG_BCDEN);
+  return HAL_OK;  
+}
+
+
+/**
+  * @brief  Send BatteryCharging message to user layer callback.
+  * @param  hpcd: PCD handle
+  * @param  msg: LPM message
+  * @retval HAL status
+  */
+__weak void HAL_PCDEx_BCD_Callback(PCD_HandleTypeDef *hpcd, PCD_BCD_MsgTypeDef msg)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hpcd);
+  UNUSED(msg);
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+            the HAL_PCDEx_BCD_Callback could be implemented in the user file
+   */ 
+}
+
+#endif /* USB_OTG_GCCFG_BCDEN */
 /**
   * @brief  Send LPM message to user layer callback.
   * @param  hpcd: PCD handle

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_timebase_rtc_wakeup_template.c 
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    01-July-2016
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   HAL time base based on the hardware RTC_WAKEUP Template.
   *    
   *          This file overrides the native HAL time base functions (defined as weak)
@@ -233,7 +233,6 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
 /**
   * @brief  Suspend Tick increment.
   * @note   Disable the tick increment by disabling RTC_WKUP interrupt.
-  * @param  None
   * @retval None
   */
 void HAL_SuspendTick(void)
@@ -249,7 +248,6 @@ void HAL_SuspendTick(void)
 /**
   * @brief  Resume Tick increment.
   * @note   Enable the tick increment by Enabling RTC_WKUP interrupt.
-  * @param  None
   * @retval None
   */
 void HAL_ResumeTick(void)
@@ -277,7 +275,6 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 
 /**
   * @brief  This function handles  WAKE UP TIMER  interrupt request.
-  * @param  None
   * @retval None
   */
 void RTC_WKUP_IRQHandler(void)

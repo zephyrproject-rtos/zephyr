@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_tim_ex.c
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Timer Extended peripheral:
@@ -119,8 +119,8 @@
     defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
 
-#define BDTR_BKF_SHIFT (16)
-#define BDTR_BK2F_SHIFT (20)
+#define BDTR_BKF_SHIFT (16U)
+#define BDTR_BK2F_SHIFT (20U)
 #endif /* STM32F302xE || STM32F303xE || STM32F398xx || */
        /* STM32F302xC || STM32F303xC || STM32F358xx || */
        /* STM32F303x8 || STM32F334x8 || STM32F328xx || */
@@ -199,6 +199,7 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Init(TIM_HandleTypeDef *htim, TIM_HallSen
   assert_param(IS_TIM_HALL_INTERFACE_INSTANCE(htim->Instance));
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
   assert_param(IS_TIM_IC_POLARITY(sConfig->IC1Polarity));
   assert_param(IS_TIM_IC_PRESCALER(sConfig->IC1Prescaler));
   assert_param(IS_TIM_IC_FILTER(sConfig->IC1Filter));
@@ -249,7 +250,7 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Init(TIM_HandleTypeDef *htim, TIM_HallSen
   TIM_OC2_SetConfig(htim->Instance, &OC_Config);
 
   /* Select OC2REF as trigger output on TRGO: write the MMS bits in the TIMx_CR2
-    register to 101 */
+    register to 101U */
   htim->Instance->CR2 &= ~TIM_CR2_MMS;
   htim->Instance->CR2 |= TIM_TRGO_OC2REF;
 
@@ -347,7 +348,7 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Stop(TIM_HandleTypeDef *htim)
   /* Check the parameters */
   assert_param(IS_TIM_HALL_INTERFACE_INSTANCE(htim->Instance));
 
-  /* Disable the Input Capture channels 1, 2 and 3
+  /* Disable the Input Capture channels 1U, 2 and 3
     (in the Hall Sensor Interface the three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
   TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_DISABLE);
 
@@ -424,7 +425,7 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_DMA(TIM_HandleTypeDef *htim, uint32
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if(((uint32_t)pData == 0 ) && (Length > 0))
+    if(((uint32_t)pData == 0U ) && (Length > 0U))
     {
       return HAL_ERROR;
     }
@@ -442,7 +443,7 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_DMA(TIM_HandleTypeDef *htim, uint32
   /* Set the DMA error callback */
   htim->hdma[TIM_DMA_ID_CC1]->XferErrorCallback = TIM_DMAError ;
 
-  /* Enable the DMA channel for Capture 1*/
+  /* Enable the DMA channel for Capture 1U*/
   HAL_DMA_Start_IT(htim->hdma[TIM_DMA_ID_CC1], (uint32_t)&htim->Instance->CCR1, (uint32_t)pData, Length);
 
   /* Enable the capture compare 1 Interrupt */
@@ -645,7 +646,7 @@ HAL_StatusTypeDef HAL_TIMEx_OCN_Start_IT(TIM_HandleTypeDef *htim, uint32_t Chann
   */
 HAL_StatusTypeDef HAL_TIMEx_OCN_Stop_IT(TIM_HandleTypeDef *htim, uint32_t Channel)
 {
-  uint32_t tmpccer = 0;
+  uint32_t tmpccer = 0U;
 
   /* Check the parameters */
   assert_param(IS_TIM_CCXN_INSTANCE(htim->Instance, Channel));
@@ -729,7 +730,7 @@ HAL_StatusTypeDef HAL_TIMEx_OCN_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Chan
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if(((uint32_t)pData == 0 ) && (Length > 0))
+    if(((uint32_t)pData == 0U ) && (Length > 0U))
     {
       return HAL_ERROR;
     }
@@ -1061,7 +1062,7 @@ HAL_StatusTypeDef HAL_TIMEx_PWMN_Start_IT(TIM_HandleTypeDef *htim, uint32_t Chan
   */
 HAL_StatusTypeDef HAL_TIMEx_PWMN_Stop_IT (TIM_HandleTypeDef *htim, uint32_t Channel)
 {
-  uint32_t tmpccer = 0;
+  uint32_t tmpccer = 0U;
 
   /* Check the parameters */
   assert_param(IS_TIM_CCXN_INSTANCE(htim->Instance, Channel));
@@ -1145,7 +1146,7 @@ HAL_StatusTypeDef HAL_TIMEx_PWMN_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Cha
   }
   else if((htim->State == HAL_TIM_STATE_READY))
   {
-    if(((uint32_t)pData == 0 ) && (Length > 0))
+    if(((uint32_t)pData == 0U ) && (Length > 0U))
     {
       return HAL_ERROR;
     }
@@ -1800,7 +1801,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_ConfigChannel(TIM_HandleTypeDef *htim,
 
       /* Configure the Output Fast mode */
       htim->Instance->CCMR1 &= ~TIM_CCMR1_OC2FE;
-      htim->Instance->CCMR1 |= sConfig->OCFastMode << 8;
+      htim->Instance->CCMR1 |= sConfig->OCFastMode << 8U;
     }
     break;
 
@@ -1834,7 +1835,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_ConfigChannel(TIM_HandleTypeDef *htim,
 
      /* Configure the Output Fast mode */
       htim->Instance->CCMR2 &= ~TIM_CCMR2_OC4FE;
-      htim->Instance->CCMR2 |= sConfig->OCFastMode << 8;
+      htim->Instance->CCMR2 |= sConfig->OCFastMode << 8U;
     }
     break;
 
@@ -1868,7 +1869,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_ConfigChannel(TIM_HandleTypeDef *htim,
 
      /* Configure the Output Fast mode */
       htim->Instance->CCMR3 &= ~TIM_CCMR3_OC6FE;
-      htim->Instance->CCMR3 |= sConfig->OCFastMode << 8;
+      htim->Instance->CCMR3 |= sConfig->OCFastMode << 8U;
     }
     break;
 
@@ -1912,7 +1913,7 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   /* Get the TIMx SMCR register value */
   tmpsmcr = htim->Instance->SMCR;
 
-  /* If the timer supports ADC synchronization through TRGO2, set the master mode selection 2 */
+  /* If the timer supports ADC synchronization through TRGO2, set the master mode selection 2U */
   if (IS_TIM_TRGO2_INSTANCE(htim->Instance))
   {
     /* Check the parameters */
@@ -2005,7 +2006,7 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
 HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
                                                 TIM_BreakDeadTimeConfigTypeDef * sBreakDeadTimeConfig)
 {
-  uint32_t tmpbdtr = 0;
+  uint32_t tmpbdtr = 0U;
 
   /* Check the parameters */
   assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
@@ -2022,48 +2023,29 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
   __HAL_LOCK(htim);
 
   /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
-     the OSSI State, the dead time value and the Automatic Output Enable Bit */
+  the OSSI State, the dead time value and the Automatic Output Enable Bit */
+
+  /* Set the BDTR bits */
+  MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, sBreakDeadTimeConfig->DeadTime);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, sBreakDeadTimeConfig->LockLevel);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSI, sBreakDeadTimeConfig->OffStateIDLEMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSR, sBreakDeadTimeConfig->OffStateRunMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKE, sBreakDeadTimeConfig->BreakState);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKP, sBreakDeadTimeConfig->BreakPolarity);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_AOE, sBreakDeadTimeConfig->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_MOE, sBreakDeadTimeConfig->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKF, (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT));
+
   if (IS_TIM_BKIN2_INSTANCE(htim->Instance))
   {
     assert_param(IS_TIM_BREAK2_STATE(sBreakDeadTimeConfig->Break2State));
     assert_param(IS_TIM_BREAK2_POLARITY(sBreakDeadTimeConfig->Break2Polarity));
     assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->Break2Filter));
 
-    /* Clear the BDTR bits */
-    tmpbdtr &= ~(TIM_BDTR_DTG | TIM_BDTR_LOCK |  TIM_BDTR_OSSI |
-                 TIM_BDTR_OSSR | TIM_BDTR_BKE | TIM_BDTR_BKP |
-                 TIM_BDTR_AOE | TIM_BDTR_MOE | TIM_BDTR_BKF |
-                 TIM_BDTR_BK2F | TIM_BDTR_BK2E | TIM_BDTR_BK2P);
-
-    /* Set the BDTR bits */
-    tmpbdtr |= sBreakDeadTimeConfig->DeadTime;
-    tmpbdtr |= sBreakDeadTimeConfig->LockLevel;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateIDLEMode;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateRunMode;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakState;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakPolarity;
-    tmpbdtr |= sBreakDeadTimeConfig->AutomaticOutput;
-    tmpbdtr |= (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT);
-    tmpbdtr |= (sBreakDeadTimeConfig->Break2Filter << BDTR_BK2F_SHIFT);
-    tmpbdtr |= sBreakDeadTimeConfig->Break2State;
-    tmpbdtr |= sBreakDeadTimeConfig->Break2Polarity;
-  }
-  else
-  {
-    /* Clear the BDTR bits */
-    tmpbdtr &= ~(TIM_BDTR_DTG | TIM_BDTR_LOCK |  TIM_BDTR_OSSI |
-                 TIM_BDTR_OSSR | TIM_BDTR_BKE | TIM_BDTR_BKP |
-                 TIM_BDTR_AOE | TIM_BDTR_MOE | TIM_BDTR_BKF);
-
-    /* Set the BDTR bits */
-    tmpbdtr |= sBreakDeadTimeConfig->DeadTime;
-    tmpbdtr |= sBreakDeadTimeConfig->LockLevel;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateIDLEMode;
-    tmpbdtr |= sBreakDeadTimeConfig->OffStateRunMode;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakState;
-    tmpbdtr |= sBreakDeadTimeConfig->BreakPolarity;
-    tmpbdtr |= sBreakDeadTimeConfig->AutomaticOutput;
-    tmpbdtr |= (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT);
+    /* Set the BREAK2 input related BDTR bits */
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2F, (sBreakDeadTimeConfig->Break2Filter << BDTR_BK2F_SHIFT));
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2E, sBreakDeadTimeConfig->Break2State);
+    MODIFY_REG(tmpbdtr, TIM_BDTR_BK2P, sBreakDeadTimeConfig->Break2Polarity);
   }
 
   /* Set TIMx_BDTR */
@@ -2090,6 +2072,8 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
 HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
                                                 TIM_BreakDeadTimeConfigTypeDef *sBreakDeadTimeConfig)
 {
+  uint32_t tmpbdtr = 0U;
+
   /* Check the parameters */
   assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
   assert_param(IS_TIM_OSSR_STATE(sBreakDeadTimeConfig->OffStateRunMode));
@@ -2107,14 +2091,19 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
 
   /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
      the OSSI State, the dead time value and the Automatic Output Enable Bit */
-  htim->Instance->BDTR = (uint32_t)sBreakDeadTimeConfig->OffStateRunMode  |
-                                   sBreakDeadTimeConfig->OffStateIDLEMode |
-                                   sBreakDeadTimeConfig->LockLevel        |
-                                   sBreakDeadTimeConfig->DeadTime         |
-                                   sBreakDeadTimeConfig->BreakState       |
-                                   sBreakDeadTimeConfig->BreakPolarity    |
-                                   sBreakDeadTimeConfig->AutomaticOutput;
 
+  /* Set the BDTR bits */
+  MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, sBreakDeadTimeConfig->DeadTime);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, sBreakDeadTimeConfig->LockLevel);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSI, sBreakDeadTimeConfig->OffStateIDLEMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_OSSR, sBreakDeadTimeConfig->OffStateRunMode);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKE, sBreakDeadTimeConfig->BreakState);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_BKP, sBreakDeadTimeConfig->BreakPolarity);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_AOE, sBreakDeadTimeConfig->AutomaticOutput);
+  MODIFY_REG(tmpbdtr, TIM_BDTR_MOE, sBreakDeadTimeConfig->AutomaticOutput);
+
+  /* Set TIMx_BDTR */
+  htim->Instance->BDTR = tmpbdtr;
 
   htim->State = HAL_TIM_STATE_READY;
 
@@ -2125,7 +2114,8 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
 #endif /* STM32F373xC || STM32F378xx */
 
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
-    defined(STM32F303xC) || defined(STM32F358xx)
+    defined(STM32F303xC) || defined(STM32F358xx) || \
+	defined(STM32F334x8)
 #if defined(STM32F303xE) || defined(STM32F398xx)
 /**
   * @brief  Configures the TIM1, TIM8, TIM16 and TIM20 Remapping input capabilities.
@@ -2165,7 +2155,7 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM20_ADC4_AWD3: TIM20_ETR is connected to ADC4 AWD3
   * @retval HAL status
   */
-#else  /* STM32F303xC || STM32F358xx */
+#elif defined(STM32F303xC) || defined(STM32F358xx)
 /**
   * @brief  Configures the TIM1, TIM8 and TIM16 Remapping input capabilities.
   * @param  htim: TIM handle.
@@ -2195,6 +2185,28 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM8_ADC3_AWD3: TIM8_ETR is connected to ADC3 AWD3
   * @retval HAL status
   */
+#else /* STM32F334x8 */
+/**
+  * @brief  Configures the TIM1, TIM8 and TIM16 Remapping input capabilities.
+  * @param  htim: TIM handle.
+  * @param  Remap1: specifies the first TIM remapping source.
+  *          This parameter can be one of the following values:
+  *            @arg TIM_TIM1_ADC1_NONE: TIM1_ETR is not connected to any AWD (analog watchdog)
+  *            @arg TIM_TIM1_ADC1_AWD1: TIM1_ETR is connected to ADC1 AWD1
+  *            @arg TIM_TIM1_ADC1_AWD2: TIM1_ETR is connected to ADC1 AWD2
+  *            @arg TIM_TIM1_ADC1_AWD3: TIM1_ETR is connected to ADC1 AWD3
+  *            @arg TIM_TIM16_GPIO: TIM16 TI1 is connected to GPIO
+  *            @arg TIM_TIM16_RTC: TIM16 TI1 is connected to RTC clock
+  *            @arg TIM_TIM16_HSE: TIM16 TI1 is connected to HSE/32
+  *            @arg TIM_TIM16_MCO: TIM16 TI1 is connected to MCO
+  * @param  Remap2: specifies the  second TIMremapping source (if any).
+  *          This parameter can be one of the following values:
+  *            @arg TIM_TIM1_ADC2_NONE: TIM1_ETR is not connected to any AWD (analog watchdog)
+  *            @arg TIM_TIM1_ADC2_AWD1: TIM1_ETR is connected to ADC2 AWD1
+  *            @arg TIM_TIM1_ADC2_AWD2: TIM1_ETR is connected to ADC2 AWD2
+  *            @arg TIM_TIM1_ADC2_AWD3: TIM1_ETR is connected to ADC2 AWD3
+  * @retval HAL status
+  */
 #endif /* STM32F303xE || STM32F398xx || */
 HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap1, uint32_t Remap2)
 {
@@ -2215,17 +2227,17 @@ HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap1
   return HAL_OK;
 }
 #endif /* STM32F303xE || STM32F398xx || */
-       /* STM32F303xC || STM32F358xx || */
+       /* STM32F303xC || STM32F358xx || STM32F334x8 */
 
 
 #if defined(STM32F302xE)                                                 || \
     defined(STM32F302xC)                                                 || \
-    defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
+    defined(STM32F303x8) || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx) || \
     defined(STM32F373xC) || defined(STM32F378xx)
 #if defined(STM32F302xE)                                                 || \
     defined(STM32F302xC)                                                 || \
-    defined(STM32F303x8) || defined(STM32F334x8) || defined(STM32F328xx) || \
+    defined(STM32F303x8) || defined(STM32F328xx) || \
     defined(STM32F301x8) || defined(STM32F302x8) || defined(STM32F318xx)
 /**
   * @brief  Configures the TIM1 and TIM16 Remapping input capabilities.
@@ -2362,7 +2374,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
                                            TIM_ClearInputConfigTypeDef *sClearInputConfig,
                                            uint32_t Channel)
 {
-  uint32_t tmpsmcr = 0;
+  uint32_t tmpsmcr = 0U;
 
   /* Check the parameters */
   assert_param(IS_TIM_OCXREF_CLEAR_INSTANCE(htim->Instance));
@@ -2424,12 +2436,12 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
       {
         if(sClearInputConfig->ClearInputState != RESET)
         {
-          /* Enable the Ocref clear feature for Channel 1 */
+          /* Enable the Ocref clear feature for Channel 1U */
           htim->Instance->CCMR1 |= TIM_CCMR1_OC1CE;
         }
         else
         {
-          /* Disable the Ocref clear feature for Channel 1 */
+          /* Disable the Ocref clear feature for Channel 1U */
           htim->Instance->CCMR1 &= ~TIM_CCMR1_OC1CE;
         }
       }
@@ -2438,12 +2450,12 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
       {
         if(sClearInputConfig->ClearInputState != RESET)
         {
-          /* Enable the Ocref clear feature for Channel 2 */
+          /* Enable the Ocref clear feature for Channel 2U */
           htim->Instance->CCMR1 |= TIM_CCMR1_OC2CE;
         }
         else
         {
-          /* Disable the Ocref clear feature for Channel 2 */
+          /* Disable the Ocref clear feature for Channel 2U */
           htim->Instance->CCMR1 &= ~TIM_CCMR1_OC2CE;
         }
       }
@@ -2452,12 +2464,12 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
       {
         if(sClearInputConfig->ClearInputState != RESET)
         {
-          /* Enable the Ocref clear feature for Channel 3 */
+          /* Enable the Ocref clear feature for Channel 3U */
           htim->Instance->CCMR2 |= TIM_CCMR2_OC3CE;
         }
         else
         {
-          /* Disable the Ocref clear feature for Channel 3 */
+          /* Disable the Ocref clear feature for Channel 3U */
           htim->Instance->CCMR2 &= ~TIM_CCMR2_OC3CE;
         }
       }
@@ -2466,12 +2478,12 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
       {
         if(sClearInputConfig->ClearInputState != RESET)
         {
-          /* Enable the Ocref clear feature for Channel 4 */
+          /* Enable the Ocref clear feature for Channel 4U */
           htim->Instance->CCMR2 |= TIM_CCMR2_OC4CE;
         }
         else
         {
-          /* Disable the Ocref clear feature for Channel 4 */
+          /* Disable the Ocref clear feature for Channel 4U */
           htim->Instance->CCMR2 &= ~TIM_CCMR2_OC4CE;
         }
       }
@@ -2480,12 +2492,12 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
       {
         if(sClearInputConfig->ClearInputState != RESET)
         {
-          /* Enable the Ocref clear feature for Channel 1 */
+          /* Enable the Ocref clear feature for Channel 1U */
           htim->Instance->CCMR3 |= TIM_CCMR3_OC5CE;
         }
         else
         {
-          /* Disable the Ocref clear feature for Channel 1 */
+          /* Disable the Ocref clear feature for Channel 1U */
           htim->Instance->CCMR3 &= ~TIM_CCMR3_OC5CE;
         }
       }
@@ -2494,12 +2506,12 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
       {
         if(sClearInputConfig->ClearInputState != RESET)
         {
-          /* Enable the Ocref clear feature for Channel 1 */
+          /* Enable the Ocref clear feature for Channel 1U */
           htim->Instance->CCMR3 |= TIM_CCMR3_OC6CE;
         }
         else
         {
-          /* Disable the Ocref clear feature for Channel 1 */
+          /* Disable the Ocref clear feature for Channel 1U */
           htim->Instance->CCMR3 &= ~TIM_CCMR3_OC6CE;
         }
       }
@@ -2636,7 +2648,7 @@ void TIMEx_DMACommutationCplt(DMA_HandleTypeDef *hdma)
   */
 static void TIM_CCxNChannelCmd(TIM_TypeDef* TIMx, uint32_t Channel, uint32_t ChannelNState)
 {
-  uint32_t tmp = 0;
+  uint32_t tmp = 0U;
 
   tmp = TIM_CCER_CC1NE << Channel;
 
@@ -2660,9 +2672,9 @@ static void TIM_CCxNChannelCmd(TIM_TypeDef* TIMx, uint32_t Channel, uint32_t Cha
 static void TIM_OC5_SetConfig(TIM_TypeDef *TIMx,
                               TIM_OC_InitTypeDef *OC_Config)
 {
-  uint32_t tmpccmrx = 0;
-  uint32_t tmpccer = 0;
-  uint32_t tmpcr2 = 0;
+  uint32_t tmpccmrx = 0U;
+  uint32_t tmpccer = 0U;
+  uint32_t tmpcr2 = 0U;
 
   /* Disable the output: Reset the CCxE Bit */
   TIMx->CCER &= ~TIM_CCER_CC5E;
@@ -2682,14 +2694,14 @@ static void TIM_OC5_SetConfig(TIM_TypeDef *TIMx,
   /* Reset the Output Polarity level */
   tmpccer &= ~TIM_CCER_CC5P;
   /* Set the Output Compare Polarity */
-  tmpccer |= (OC_Config->OCPolarity << 16);
+  tmpccer |= (OC_Config->OCPolarity << 16U);
 
   if(IS_TIM_BREAK_INSTANCE(TIMx))
   {
     /* Reset the Output Compare IDLE State */
     tmpcr2 &= ~TIM_CR2_OIS5;
     /* Set the Output Idle state */
-    tmpcr2 |= (OC_Config->OCIdleState << 8);
+    tmpcr2 |= (OC_Config->OCIdleState << 8U);
   }
   /* Write to TIMx CR2 */
   TIMx->CR2 = tmpcr2;
@@ -2713,9 +2725,9 @@ static void TIM_OC5_SetConfig(TIM_TypeDef *TIMx,
 static void TIM_OC6_SetConfig(TIM_TypeDef *TIMx,
                               TIM_OC_InitTypeDef *OC_Config)
 {
-  uint32_t tmpccmrx = 0;
-  uint32_t tmpccer = 0;
-  uint32_t tmpcr2 = 0;
+  uint32_t tmpccmrx = 0U;
+  uint32_t tmpccer = 0U;
+  uint32_t tmpcr2 = 0U;
 
   /* Disable the output: Reset the CCxE Bit */
   TIMx->CCER &= ~TIM_CCER_CC6E;
@@ -2730,19 +2742,19 @@ static void TIM_OC6_SetConfig(TIM_TypeDef *TIMx,
   /* Reset the Output Compare Mode Bits */
   tmpccmrx &= ~(TIM_CCMR3_OC6M);
   /* Select the Output Compare Mode */
-  tmpccmrx |= (OC_Config->OCMode << 8);
+  tmpccmrx |= (OC_Config->OCMode << 8U);
 
   /* Reset the Output Polarity level */
   tmpccer &= (uint32_t)~TIM_CCER_CC6P;
   /* Set the Output Compare Polarity */
-  tmpccer |= (OC_Config->OCPolarity << 20);
+  tmpccer |= (OC_Config->OCPolarity << 20U);
 
   if(IS_TIM_BREAK_INSTANCE(TIMx))
   {
     /* Reset the Output Compare IDLE State */
     tmpcr2 &= ~TIM_CR2_OIS6;
     /* Set the Output Idle state */
-    tmpcr2 |= (OC_Config->OCIdleState << 10);
+    tmpcr2 |= (OC_Config->OCIdleState << 10U);
   }
 
   /* Write to TIMx CR2 */

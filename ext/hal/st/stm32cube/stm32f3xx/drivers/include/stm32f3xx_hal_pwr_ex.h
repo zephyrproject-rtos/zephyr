@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_pwr_ex.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of PWR HAL Extended module.
   ******************************************************************************
   * @attention
@@ -114,13 +114,13 @@ typedef struct
 /** @defgroup PWREx_PVD_Mode PWR Extended PVD Mode
   * @{
   */
-#define PWR_PVD_MODE_NORMAL                 ((uint32_t)0x00000000)   /*!< Basic mode is used */
-#define PWR_PVD_MODE_IT_RISING              ((uint32_t)0x00010001)   /*!< External Interrupt Mode with Rising edge trigger detection */
-#define PWR_PVD_MODE_IT_FALLING             ((uint32_t)0x00010002)   /*!< External Interrupt Mode with Falling edge trigger detection */
-#define PWR_PVD_MODE_IT_RISING_FALLING      ((uint32_t)0x00010003)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection */
-#define PWR_PVD_MODE_EVENT_RISING           ((uint32_t)0x00020001)   /*!< Event Mode with Rising edge trigger detection */
-#define PWR_PVD_MODE_EVENT_FALLING          ((uint32_t)0x00020002)   /*!< Event Mode with Falling edge trigger detection */
-#define PWR_PVD_MODE_EVENT_RISING_FALLING   ((uint32_t)0x00020003)   /*!< Event Mode with Rising/Falling edge trigger detection */
+#define PWR_PVD_MODE_NORMAL                 (0x00000000U)   /*!< Basic mode is used */
+#define PWR_PVD_MODE_IT_RISING              (0x00010001U)   /*!< External Interrupt Mode with Rising edge trigger detection */
+#define PWR_PVD_MODE_IT_FALLING             (0x00010002U)   /*!< External Interrupt Mode with Falling edge trigger detection */
+#define PWR_PVD_MODE_IT_RISING_FALLING      (0x00010003U)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection */
+#define PWR_PVD_MODE_EVENT_RISING           (0x00020001U)   /*!< Event Mode with Rising edge trigger detection */
+#define PWR_PVD_MODE_EVENT_FALLING          (0x00020002U)   /*!< Event Mode with Falling edge trigger detection */
+#define PWR_PVD_MODE_EVENT_RISING_FALLING   (0x00020003U)   /*!< Event Mode with Rising/Falling edge trigger detection */
 /**
   * @}
   */
@@ -137,9 +137,9 @@ typedef struct
 /** @defgroup PWREx_SDADC_ANALOGx PWR Extended SDADC ANALOGx
   * @{
   */
-#define PWR_SDADC_ANALOG1              ((uint32_t)PWR_CR_SDADC1EN)   /*!< Enable SDADC1 */
-#define PWR_SDADC_ANALOG2              ((uint32_t)PWR_CR_SDADC2EN)   /*!< Enable SDADC2 */
-#define PWR_SDADC_ANALOG3              ((uint32_t)PWR_CR_SDADC3EN)   /*!< Enable SDADC3 */
+#define PWR_SDADC_ANALOG1              ((uint32_t)PWR_CR_ENSD1)   /*!< Enable SDADC1 */
+#define PWR_SDADC_ANALOG2              ((uint32_t)PWR_CR_ENSD2)   /*!< Enable SDADC2 */
+#define PWR_SDADC_ANALOG3              ((uint32_t)PWR_CR_ENSD3)   /*!< Enable SDADC3 */
 /**
   * @}
   */

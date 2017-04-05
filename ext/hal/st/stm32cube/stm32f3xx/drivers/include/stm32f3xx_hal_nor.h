@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_nor.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of NOR HAL module.
   ******************************************************************************
   * @attention
@@ -61,20 +61,20 @@
   */
 
 /* NOR device IDs addresses */
-#define MC_ADDRESS               ((uint16_t)0x0000)
-#define DEVICE_CODE1_ADDR        ((uint16_t)0x0001)
-#define DEVICE_CODE2_ADDR        ((uint16_t)0x000E)
-#define DEVICE_CODE3_ADDR        ((uint16_t)0x000F)
+#define MC_ADDRESS               ((uint16_t)0x0000U)
+#define DEVICE_CODE1_ADDR        ((uint16_t)0x0001U)
+#define DEVICE_CODE2_ADDR        ((uint16_t)0x000EU)
+#define DEVICE_CODE3_ADDR        ((uint16_t)0x000FU)
 
 /* NOR CFI IDs addresses */
-#define CFI1_ADDRESS             ((uint16_t)0x10)
-#define CFI2_ADDRESS             ((uint16_t)0x11)
-#define CFI3_ADDRESS             ((uint16_t)0x12)
-#define CFI4_ADDRESS             ((uint16_t)0x13)
+#define CFI1_ADDRESS             ((uint16_t)0x10U)
+#define CFI2_ADDRESS             ((uint16_t)0x11U)
+#define CFI3_ADDRESS             ((uint16_t)0x12U)
+#define CFI4_ADDRESS             ((uint16_t)0x13U)
 
 /* NOR memory data width */
-#define NOR_MEMORY_8B            ((uint8_t)0x0)
-#define NOR_MEMORY_16B           ((uint8_t)0x1)
+#define NOR_MEMORY_8B            ((uint8_t)0x0U)
+#define NOR_MEMORY_16B           ((uint8_t)0x1U)
 
 /* NOR memory device read/write start address */
 #define NOR_MEMORY_ADRESS1       FMC_BANK1_1
@@ -99,7 +99,7 @@
   */
 #define NOR_ADDR_SHIFT(__NOR_ADDRESS, __NOR_MEMORY_WIDTH_, __ADDRESS__)       \
             ((uint32_t)(((__NOR_MEMORY_WIDTH_) == NOR_MEMORY_16B)?              \
-              ((uint32_t)((__NOR_ADDRESS) + (2 * (__ADDRESS__)))):              \
+              ((uint32_t)((__NOR_ADDRESS) + (2U * (__ADDRESS__)))):              \
               ((uint32_t)((__NOR_ADDRESS) + (__ADDRESS__)))))
 
 /**
@@ -124,10 +124,10 @@
   */
 typedef enum
 {
-  HAL_NOR_STATE_RESET             = 0x00,  /*!< NOR not yet initialized or disabled  */
-  HAL_NOR_STATE_READY             = 0x01,  /*!< NOR initialized and ready for use    */
-  HAL_NOR_STATE_BUSY              = 0x02,  /*!< NOR internal processing is ongoing   */
-  HAL_NOR_STATE_ERROR             = 0x03,  /*!< NOR error state                      */
+  HAL_NOR_STATE_RESET             = 0x00U,  /*!< NOR not yet initialized or disabled  */
+  HAL_NOR_STATE_READY             = 0x01U,  /*!< NOR initialized and ready for use    */
+  HAL_NOR_STATE_BUSY              = 0x02U,  /*!< NOR internal processing is ongoing   */
+  HAL_NOR_STATE_ERROR             = 0x03U,  /*!< NOR error state                      */
   HAL_NOR_STATE_PROTECTED         = 0x04   /*!< NOR NORSRAM device write protected  */
 }HAL_NOR_StateTypeDef;
 
@@ -136,7 +136,7 @@ typedef enum
   */
 typedef enum
 {
-  HAL_NOR_STATUS_SUCCESS = 0,
+  HAL_NOR_STATUS_SUCCESS = 0U,
   HAL_NOR_STATUS_ONGOING,
   HAL_NOR_STATUS_ERROR,
   HAL_NOR_STATUS_TIMEOUT

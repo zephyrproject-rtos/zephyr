@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_cortex.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   CORTEX HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the CORTEX:
@@ -26,7 +26,7 @@
         function according to the following table.
     (#) Configure the priority of the selected IRQ Channels using HAL_NVIC_SetPriority(). 
     (#) Enable the selected IRQ Channels using HAL_NVIC_EnableIRQ().
-    (#) please refer to programing manual for details in how to configure priority. 
+    (#) please refer to programming manual for details in how to configure priority. 
       
      -@- When the NVIC_PRIORITYGROUP_0 is selected, IRQ preemption is no more possible. 
          The pending IRQ priority will be managed only by the sub priority.
@@ -45,7 +45,7 @@
    (+) The HAL_SYSTICK_Config() function calls the SysTick_Config() function which
        is a CMSIS function that:
         (++) Configures the SysTick Reload register with value passed as function parameter.
-        (++) Configures the SysTick IRQ priority to the lowest value (0x0FU).
+        (++) Configures the SysTick IRQ priority to the lowest value 0x0F.
         (++) Resets the SysTick Counter register.
         (++) Configures the SysTick Counter clock source to be Core Clock Source (HCLK).
         (++) Enables the SysTick Interrupt.
@@ -70,7 +70,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -269,6 +269,46 @@ uint32_t HAL_SYSTICK_Config(uint32_t TicksNumb)
   */
 
 #if (__MPU_PRESENT == 1U)
+/**
+  * @brief  Disables the MPU
+  * @retval None
+  */
+void HAL_MPU_Disable(void)
+{
+  /* Make sure outstanding transfers are done */
+  __DMB();
+
+  /* Disable fault exceptions */
+  SCB->SHCSR &= ~SCB_SHCSR_MEMFAULTENA_Msk;
+  
+  /* Disable the MPU and clear the control register*/
+  MPU->CTRL = 0U;
+}
+
+/**
+  * @brief  Enable the MPU.
+  * @param  MPU_Control: Specifies the control mode of the MPU during hard fault, 
+  *          NMI, FAULTMASK and privileged access to the default memory 
+  *          This parameter can be one of the following values:
+  *            @arg MPU_HFNMI_PRIVDEF_NONE
+  *            @arg MPU_HARDFAULT_NMI
+  *            @arg MPU_PRIVILEGED_DEFAULT
+  *            @arg MPU_HFNMI_PRIVDEF
+  * @retval None
+  */
+void HAL_MPU_Enable(uint32_t MPU_Control)
+{
+  /* Enable the MPU */
+  MPU->CTRL = MPU_Control | MPU_CTRL_ENABLE_Msk;
+  
+  /* Enable fault exceptions */
+  SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;
+  
+  /* Ensure MPU setting take effects */
+  __DSB();
+  __ISB();
+}
+
 /**
   * @brief  Initializes and configures the Region and the memory to be protected.
   * @param  MPU_Init: Pointer to a MPU_Region_InitTypeDef structure that contains

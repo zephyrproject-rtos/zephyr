@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_adc_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of ADC HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -152,7 +152,7 @@ typedef struct
 /** @defgroup ADCEx_Common_mode ADC Common Mode
   * @{
   */ 
-#define ADC_MODE_INDEPENDENT                  ((uint32_t)0x00000000U)
+#define ADC_MODE_INDEPENDENT                  0x00000000U
 #define ADC_DUALMODE_REGSIMULT_INJECSIMULT    ((uint32_t)ADC_CCR_MULTI_0)
 #define ADC_DUALMODE_REGSIMULT_ALTERTRIG      ((uint32_t)ADC_CCR_MULTI_1)
 #define ADC_DUALMODE_INJECSIMULT              ((uint32_t)(ADC_CCR_MULTI_2 | ADC_CCR_MULTI_0))
@@ -172,7 +172,7 @@ typedef struct
 /** @defgroup ADCEx_Direct_memory_access_mode_for_multi_mode ADC Direct Memory Access Mode For Multi Mode
   * @{
   */ 
-#define ADC_DMAACCESSMODE_DISABLED  ((uint32_t)0x00000000U)     /*!< DMA mode disabled */
+#define ADC_DMAACCESSMODE_DISABLED  0x00000000U                /*!< DMA mode disabled */
 #define ADC_DMAACCESSMODE_1         ((uint32_t)ADC_CCR_DMA_0)  /*!< DMA mode 1 enabled (2 / 3 half-words one by one - 1 then 2 then 3)*/
 #define ADC_DMAACCESSMODE_2         ((uint32_t)ADC_CCR_DMA_1)  /*!< DMA mode 2 enabled (2 / 3 half-words by pairs - 2&1 then 1&3 then 3&2)*/
 #define ADC_DMAACCESSMODE_3         ((uint32_t)ADC_CCR_DMA)    /*!< DMA mode 3 enabled (2 / 3 bytes by pairs - 2&1 then 1&3 then 3&2) */
@@ -183,7 +183,7 @@ typedef struct
 /** @defgroup ADCEx_External_trigger_edge_Injected ADC External Trigger Edge Injected
   * @{
   */ 
-#define ADC_EXTERNALTRIGINJECCONVEDGE_NONE           ((uint32_t)0x00000000U)
+#define ADC_EXTERNALTRIGINJECCONVEDGE_NONE           0x00000000U
 #define ADC_EXTERNALTRIGINJECCONVEDGE_RISING         ((uint32_t)ADC_CR2_JEXTEN_0)
 #define ADC_EXTERNALTRIGINJECCONVEDGE_FALLING        ((uint32_t)ADC_CR2_JEXTEN_1)
 #define ADC_EXTERNALTRIGINJECCONVEDGE_RISINGFALLING  ((uint32_t)ADC_CR2_JEXTEN)
@@ -194,7 +194,7 @@ typedef struct
 /** @defgroup ADCEx_External_trigger_Source_Injected ADC External Trigger Source Injected
   * @{
   */ 
-#define ADC_EXTERNALTRIGINJECCONV_T1_CC4           ((uint32_t)0x00000000U)
+#define ADC_EXTERNALTRIGINJECCONV_T1_CC4           0x00000000U
 #define ADC_EXTERNALTRIGINJECCONV_T1_TRGO          ((uint32_t)ADC_CR2_JEXTSEL_0)
 #define ADC_EXTERNALTRIGINJECCONV_T2_CC1           ((uint32_t)ADC_CR2_JEXTSEL_1)
 #define ADC_EXTERNALTRIGINJECCONV_T2_TRGO          ((uint32_t)(ADC_CR2_JEXTSEL_1 | ADC_CR2_JEXTSEL_0))
@@ -218,10 +218,10 @@ typedef struct
 /** @defgroup ADCEx_injected_rank ADC Injected Rank
   * @{
   */ 
-#define ADC_INJECTED_RANK_1    ((uint32_t)0x00000001U)
-#define ADC_INJECTED_RANK_2    ((uint32_t)0x00000002U)
-#define ADC_INJECTED_RANK_3    ((uint32_t)0x00000003U)
-#define ADC_INJECTED_RANK_4    ((uint32_t)0x00000004U)
+#define ADC_INJECTED_RANK_1    0x00000001U
+#define ADC_INJECTED_RANK_2    0x00000002U
+#define ADC_INJECTED_RANK_3    0x00000003U
+#define ADC_INJECTED_RANK_4    0x00000004U
 /**
   * @}
   */
@@ -239,7 +239,7 @@ typedef struct
 
 #if defined(STM32F411xE) || defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) || \
     defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx) 
-#define ADC_CHANNEL_DIFFERENCIATION_TEMPSENSOR_VBAT ((uint32_t)0x10000000U) /* Dummy bit for driver internal usage, not used in ADC channel setting registers CR1 or SQRx */
+#define ADC_CHANNEL_DIFFERENCIATION_TEMPSENSOR_VBAT 0x10000000U /* Dummy bit for driver internal usage, not used in ADC channel setting registers CR1 or SQRx */
 #define ADC_CHANNEL_TEMPSENSOR  ((uint32_t)ADC_CHANNEL_18 | ADC_CHANNEL_DIFFERENCIATION_TEMPSENSOR_VBAT)
 #endif /* STM32F411xE || STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx || STM32F446xx || STM32F469xx || STM32F479xx */
 /**
@@ -372,8 +372,8 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
                                         ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_T8_CC4)  || \
                                         ((INJTRIG) == ADC_EXTERNALTRIGINJECCONV_EXT_IT15)|| \
                                         ((INJTRIG) == ADC_INJECTED_SOFTWARE_START))
-#define IS_ADC_INJECTED_LENGTH(LENGTH) (((LENGTH) >= ((uint32_t)1U)) && ((LENGTH) <= ((uint32_t)4U)))
-#define IS_ADC_INJECTED_RANK(RANK) (((RANK) >= ((uint32_t)1U)) && ((RANK) <= ((uint32_t)4U)))
+#define IS_ADC_INJECTED_LENGTH(LENGTH) (((LENGTH) >= 1U) && ((LENGTH) <= 4U))
+#define IS_ADC_INJECTED_RANK(RANK) (((RANK) >= 1U) && ((RANK) <= 4U))
 
 /**
   * @brief  Set the selected injected Channel rank.
@@ -384,6 +384,17 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
   */
 #define   ADC_JSQR(_CHANNELNB_, _RANKNB_, _JSQR_JL_)  (((uint32_t)((uint16_t)(_CHANNELNB_))) << (5U * (uint8_t)(((_RANKNB_) + 3U) - (_JSQR_JL_))))
 
+/**
+  * @brief Defines if the selected ADC is within ADC common register ADC123 or ADC1
+  * if available (ADC2, ADC3 availability depends on STM32 product)
+  * @param __HANDLE__: ADC handle
+  * @retval Common control register ADC123 or ADC1
+  */
+#if defined(STM32F405xx) || defined(STM32F407xx) || defined(STM32F415xx) || defined(STM32F417xx) || defined(STM32F427xx) || defined(STM32F429xx) || defined(STM32F437xx) || defined(STM32F439xx) || defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx)
+#define ADC_COMMON_REGISTER(__HANDLE__)                ADC123_COMMON
+#else
+#define ADC_COMMON_REGISTER(__HANDLE__)                ADC1_COMMON
+#endif /* STM32F405xx || STM32F407xx || STM32F415xx || STM32F417xx || STM32F427xx || STM32F429xx || STM32F437xx || STM32F439xx || STM32F446xx || STM32F469xx || STM32F479xx */
 /**
   * @}
   */

@@ -11,30 +11,14 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 80000000
 
-if !HAS_DTS
-config SRAM_SIZE
-	default 240
-
-config FLASH_SIZE
-	default 0
-
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
 	# This includes the NWP interrupt
 	default 179
 
-endif # !HAS_DTS
-
 config CC3200SDK_LIBRARY
 	def_bool n
-
-if !HAS_DTS
-if UART_CC32XX
-config UART_CC32XX_IRQ_PRI
-	default 3
-endif # UART_CC32XX
-endif # !HAS_DTS
 
 if GPIO
 

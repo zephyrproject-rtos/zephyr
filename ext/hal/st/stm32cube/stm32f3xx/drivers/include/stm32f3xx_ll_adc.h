@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_adc.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of ADC LL module.
   ******************************************************************************
   * @attention
@@ -5960,7 +5960,8 @@ __STATIC_INLINE uint32_t LL_ADC_IsCalibrationOnGoing(ADC_TypeDef *ADCx)
   * @note   On this STM32 serie, setting of this feature is conditioned to
   *         ADC state:
   *         ADC must be enabled without conversion on going on group regular,
-  *         without conversion stop command on going on group regular.
+  *         without conversion stop command on going on group regular,
+  *         without ADC disable command on going.
   * @rmtoll CR       ADSTART        LL_ADC_REG_StartConversion
   * @param  ADCx ADC instance
   * @retval None
@@ -6142,7 +6143,8 @@ __STATIC_INLINE uint32_t LL_ADC_REG_ReadMultiConversionData32(ADC_Common_TypeDef
   * @note   On this STM32 serie, setting of this feature is conditioned to
   *         ADC state:
   *         ADC must be enabled without conversion on going on group injected,
-  *         without conversion stop command on going on group injected.
+  *         without conversion stop command on going on group injected,
+  *         without ADC disable command on going.
   * @rmtoll CR       JADSTART       LL_ADC_INJ_StartConversion
   * @param  ADCx ADC instance
   * @retval None

@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_usb.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of USB Core HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -379,10 +379,10 @@ typedef struct
 #define HC_PID_DATA1                           2U
 #define HC_PID_SETUP                           3U
 
-#define GRXSTS_PKTSTS_IN                       2
-#define GRXSTS_PKTSTS_IN_XFER_COMP             3
-#define GRXSTS_PKTSTS_DATA_TOGGLE_ERR          5
-#define GRXSTS_PKTSTS_CH_HALTED                7
+#define GRXSTS_PKTSTS_IN                       2U
+#define GRXSTS_PKTSTS_IN_XFER_COMP             3U
+#define GRXSTS_PKTSTS_DATA_TOGGLE_ERR          5U
+#define GRXSTS_PKTSTS_CH_HALTED                7U
     
 #define USBx_PCGCCTL    *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_PCGCCTL_BASE)
 #define USBx_HPRT0      *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_HOST_PORT_BASE)

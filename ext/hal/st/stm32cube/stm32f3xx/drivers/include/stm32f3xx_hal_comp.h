@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_comp.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of COMP HAL module.
   ******************************************************************************
   * @attention
@@ -90,7 +90,7 @@ typedef struct
                                     This parameter can be a value of @ref COMPEx_Mode
                                     Note: Not available on STM32F301x6/x8, STM32F302x6/x8, STM32F334x6/x8, STM32F318xx and STM32F328xx devices */
 
-  uint32_t WindowMode;         /*!< Selects the window mode of the comparator X (X=2, 4 or 6 if available).
+  uint32_t WindowMode;         /*!< Selects the window mode of the comparator X (X=2U, 4 or 6 if available).
                                     This parameter can be a value of @ref COMPEx_WindowMode */
 
   uint32_t TriggerMode;        /*!< Selects the trigger mode of the comparator (interrupt mode).
@@ -103,10 +103,10 @@ typedef struct
   */
 typedef enum
 {
-  HAL_COMP_STATE_RESET             = 0x00,    /*!< COMP not yet initialized or disabled             */
-  HAL_COMP_STATE_READY             = 0x01,    /*!< COMP initialized and ready for use               */
-  HAL_COMP_STATE_READY_LOCKED      = 0x11,    /*!< COMP initialized but the configuration is locked */
-  HAL_COMP_STATE_BUSY              = 0x02,    /*!< COMP is running                                  */
+  HAL_COMP_STATE_RESET             = 0x00U,    /*!< COMP not yet initialized or disabled             */
+  HAL_COMP_STATE_READY             = 0x01U,    /*!< COMP initialized and ready for use               */
+  HAL_COMP_STATE_READY_LOCKED      = 0x11U,    /*!< COMP initialized but the configuration is locked */
+  HAL_COMP_STATE_BUSY              = 0x02U,    /*!< COMP is running                                  */
   HAL_COMP_STATE_BUSY_LOCKED       = 0x12     /*!< COMP is running and the configuration is locked  */
 }HAL_COMP_StateTypeDef;
 
@@ -133,7 +133,7 @@ typedef struct
 /** @defgroup COMP_OutputPolarity COMP Output Polarity
   * @{
   */
-#define COMP_OUTPUTPOL_NONINVERTED             ((uint32_t)0x00000000)  /*!< COMP output on GPIO isn't inverted */
+#define COMP_OUTPUTPOL_NONINVERTED             (0x00000000U)  /*!< COMP output on GPIO isn't inverted */
 #define COMP_OUTPUTPOL_INVERTED                COMP_CSR_COMPxPOL       /*!< COMP output on GPIO is inverted  */
 /**
   * @}
@@ -144,7 +144,7 @@ typedef struct
   */
 /* When output polarity is not inverted, comparator output is low when
    the non-inverting input is at a lower voltage than the inverting input*/
-#define COMP_OUTPUTLEVEL_LOW                   ((uint32_t)0x00000000)
+#define COMP_OUTPUTLEVEL_LOW                   (0x00000000U)
 /* When output polarity is not inverted, comparator output is high when
    the non-inverting input is at a higher voltage than the inverting input */
 #define COMP_OUTPUTLEVEL_HIGH                  COMP_CSR_COMPxOUT
@@ -155,13 +155,13 @@ typedef struct
 /** @defgroup COMP_TriggerMode COMP Trigger Mode
   * @{
   */
-#define COMP_TRIGGERMODE_NONE                 ((uint32_t)0x00000000)   /*!< No External Interrupt trigger detection */
-#define COMP_TRIGGERMODE_IT_RISING            ((uint32_t)0x00000001)   /*!< External Interrupt Mode with Rising edge trigger detection */
-#define COMP_TRIGGERMODE_IT_FALLING           ((uint32_t)0x00000002)   /*!< External Interrupt Mode with Falling edge trigger detection */
-#define COMP_TRIGGERMODE_IT_RISING_FALLING    ((uint32_t)0x00000003)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection */
-#define COMP_TRIGGERMODE_EVENT_RISING         ((uint32_t)0x00000010)   /*!< Event Mode with Rising edge trigger detection */
-#define COMP_TRIGGERMODE_EVENT_FALLING        ((uint32_t)0x00000020)   /*!< Event Mode with Falling edge trigger detection */
-#define COMP_TRIGGERMODE_EVENT_RISING_FALLING ((uint32_t)0x00000030)   /*!< Event Mode with Rising/Falling edge trigger detection */
+#define COMP_TRIGGERMODE_NONE                 (0x00000000U)   /*!< No External Interrupt trigger detection */
+#define COMP_TRIGGERMODE_IT_RISING            (0x00000001U)   /*!< External Interrupt Mode with Rising edge trigger detection */
+#define COMP_TRIGGERMODE_IT_FALLING           (0x00000002U)   /*!< External Interrupt Mode with Falling edge trigger detection */
+#define COMP_TRIGGERMODE_IT_RISING_FALLING    (0x00000003U)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection */
+#define COMP_TRIGGERMODE_EVENT_RISING         (0x00000010U)   /*!< Event Mode with Rising edge trigger detection */
+#define COMP_TRIGGERMODE_EVENT_FALLING        (0x00000020U)   /*!< Event Mode with Falling edge trigger detection */
+#define COMP_TRIGGERMODE_EVENT_RISING_FALLING (0x00000030U)   /*!< Event Mode with Rising/Falling edge trigger detection */
 /**
   * @}
   */
@@ -169,7 +169,7 @@ typedef struct
 /** @defgroup COMP_State_Lock COMP State Lock
   * @{
   */
-#define COMP_STATE_BIT_LOCK                   ((uint32_t)0x00000010)   /* Lock bit in COMP handle state */
+#define COMP_STATE_BIT_LOCK                   (0x00000010U)   /* Lock bit in COMP handle state */
 /**
   * @}
   */

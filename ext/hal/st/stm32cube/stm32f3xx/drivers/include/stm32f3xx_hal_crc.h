@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_crc.h
   * @author  MCD Application Team
-  * @version V1.3.0
-  * @date    01-July-2016
+  * @version V1.4.0
+  * @date    16-December-2016
   * @brief   Header file of CRC HAL module.
   ******************************************************************************
   * @attention
@@ -63,10 +63,10 @@
   */
 typedef enum
 {
-  HAL_CRC_STATE_RESET     = 0x00,  /*!< CRC not yet initialized or disabled */
-  HAL_CRC_STATE_READY     = 0x01,  /*!< CRC initialized and ready for use   */
-  HAL_CRC_STATE_BUSY      = 0x02,  /*!< CRC internal process is ongoing     */
-  HAL_CRC_STATE_TIMEOUT   = 0x03,  /*!< CRC timeout state                   */
+  HAL_CRC_STATE_RESET     = 0x00U,  /*!< CRC not yet initialized or disabled */
+  HAL_CRC_STATE_READY     = 0x01U,  /*!< CRC initialized and ready for use   */
+  HAL_CRC_STATE_BUSY      = 0x02U,  /*!< CRC internal process is ongoing     */
+  HAL_CRC_STATE_TIMEOUT   = 0x03U,  /*!< CRC timeout state                   */
   HAL_CRC_STATE_ERROR     = 0x04   /*!< CRC error state                     */
 }HAL_CRC_StateTypeDef;
 
@@ -78,7 +78,7 @@ typedef struct
 {
   uint8_t DefaultPolynomialUse;       /*!< This parameter is a value of @ref CRC_Default_Polynomial and indicates if default polynomial is used.
                                             If set to DEFAULT_POLYNOMIAL_ENABLE, resort to default
-                                            X^32 + X^26 + X^23 + X^22 + X^16 + X^12 + X^11 + X^10 +X^8 + X^7 + X^5 + X^4 + X^2+ X +1.
+                                            X^32U + X^26U + X^23U + X^22U + X^16U + X^12U + X^11U + X^10U +X^8U + X^7U + X^5U + X^4U + X^2U+ X +1.
                                             In that case, there is no need to set GeneratingPolynomial field.
                                             If otherwise set to DEFAULT_POLYNOMIAL_DISABLE, GeneratingPolynomial and CRCLength fields must be set. */
 
@@ -87,9 +87,9 @@ typedef struct
                                            0xFFFFFFFF value. In that case, there is no need to set InitValue field.
                                            If otherwise set to DEFAULT_INIT_VALUE_DISABLE,  InitValue field must be set. */
 
-  uint32_t GeneratingPolynomial;      /*!< Set CRC generating polynomial as a 7, 8, 16 or 32-bit long value for a polynomial degree
-                                           respectively equal to 7, 8, 16 or 32. This field is written in normal representation,
-                                           e.g., for a polynomial of degree 7, X^7 + X^6 + X^5 + X^2 + 1 is written 0x65.
+  uint32_t GeneratingPolynomial;      /*!< Set CRC generating polynomial as a 7U, 8U, 16 or 32-bit long value for a polynomial degree
+                                           respectively equal to 7U, 8U, 16 or 32. This field is written in normal representation,
+                                           e.g., for a polynomial of degree 7U, X^7U + X^6U + X^5U + X^2U + 1 is written 0x65.
                                            No need to specify it if DefaultPolynomialUse is set to DEFAULT_POLYNOMIAL_ENABLE.   */
 
   uint32_t CRCLength;                 /*!< This parameter is a value of @ref CRC_Polynomial_Sizes and indicates CRC length.
@@ -107,12 +107,12 @@ typedef struct
                                            @arg CRC_INPUTDATA_INVERSION_NONE,      no input data inversion
                                            @arg CRC_INPUTDATA_INVERSION_BYTE,      byte-wise inversion, 0x1A2B3C4D becomes 0x58D43CB2
                                            @arg CRC_INPUTDATA_INVERSION_HALFWORD,  halfword-wise inversion, 0x1A2B3C4D becomes 0xD458B23C
-                                           @arg CRC_INPUTDATA_INVERSION_WORD,      word-wise inversion, 0x1A2B3C4D becomes 0xB23CD458 */
+                                           @arg CRC_INPUTDATA_INVERSION_WORD,      word-wise inversion, 0x1A2B3C4D becomes 0xB23CD458U */
 
   uint32_t OutputDataInversionMode;   /*!< This parameter is a value of @ref CRCEx_Output_Data_Inversion and specifies output data (i.e. CRC) inversion mode.
                                             Can be either
                                             @arg CRC_OUTPUTDATA_INVERSION_DISABLE:   no CRC inversion,
-                                            @arg CRC_OUTPUTDATA_INVERSION_ENABLE:    CRC 0x11223344 is converted into 0x22CC4488 */
+                                            @arg CRC_OUTPUTDATA_INVERSION_ENABLE:    CRC 0x11223344 is converted into 0x22CC4488U */
 }CRC_InitTypeDef;
 
 
@@ -149,7 +149,7 @@ typedef struct
 /** @defgroup CRC_Default_Polynomial_Value    Default CRC generating polynomial
   * @{
   */
-#define DEFAULT_CRC32_POLY      0x04C11DB7   /*!<  X^32 + X^26 + X^23 + X^22 + X^16 + X^12 + X^11 + X^10 +X^8 + X^7 + X^5 + X^4 + X^2+ X +1 */
+#define DEFAULT_CRC32_POLY      0x04C11DB7   /*!<  X^32U + X^26U + X^23U + X^22U + X^16U + X^12U + X^11U + X^10U +X^8U + X^7U + X^5U + X^4U + X^2U+ X +1U */
 
 /**
   * @}
@@ -167,8 +167,8 @@ typedef struct
 /** @defgroup CRC_Default_Polynomial    Indicates whether or not default polynomial is used
   * @{
   */
-#define DEFAULT_POLYNOMIAL_ENABLE       ((uint8_t)0x00)   /*!< Enable default generating polynomial 0x04C11DB7  */
-#define DEFAULT_POLYNOMIAL_DISABLE      ((uint8_t)0x01)   /*!< Disable default generating polynomial 0x04C11DB7 */
+#define DEFAULT_POLYNOMIAL_ENABLE       ((uint8_t)0x00U)   /*!< Enable default generating polynomial 0x04C11DB7  */
+#define DEFAULT_POLYNOMIAL_DISABLE      ((uint8_t)0x01U)   /*!< Disable default generating polynomial 0x04C11DB7U */
 /**
   * @}
   */
@@ -176,8 +176,8 @@ typedef struct
 /** @defgroup CRC_Default_InitValue_Use    Indicates whether or not default init value is used
   * @{
   */
-#define DEFAULT_INIT_VALUE_ENABLE      ((uint8_t)0x00)   /*!< Enable initial CRC default value  */
-#define DEFAULT_INIT_VALUE_DISABLE     ((uint8_t)0x01)   /*!< Disable initial CRC default value */
+#define DEFAULT_INIT_VALUE_ENABLE      ((uint8_t)0x00U)   /*!< Enable initial CRC default value  */
+#define DEFAULT_INIT_VALUE_DISABLE     ((uint8_t)0x01U)   /*!< Disable initial CRC default value */
 /**
   * @}
   */
@@ -185,7 +185,7 @@ typedef struct
 /** @defgroup CRC_Polynomial_Sizes Polynomial sizes to configure the IP
   * @{
   */
-#define CRC_POLYLENGTH_32B                  ((uint32_t)0x00000000)          /*!< Resort to a 32-bit long generating polynomial */
+#define CRC_POLYLENGTH_32B                  (0x00000000U)          /*!< Resort to a 32-bit long generating polynomial */
 #define CRC_POLYLENGTH_16B                  ((uint32_t)CRC_CR_POLYSIZE_0)   /*!< Resort to a 16-bit long generating polynomial */
 #define CRC_POLYLENGTH_8B                   ((uint32_t)CRC_CR_POLYSIZE_1)   /*!< Resort to a 8-bit long generating polynomial  */
 #define CRC_POLYLENGTH_7B                   ((uint32_t)CRC_CR_POLYSIZE)     /*!< Resort to a 7-bit long generating polynomial  */
@@ -212,10 +212,10 @@ typedef struct
  * an error is triggered in HAL_CRC_Init() if InputDataFormat field is set
  * to CRC_INPUT_FORMAT_UNDEFINED: the format MUST be defined by the user for
  * the CRC APIs to provide a correct result */
-#define CRC_INPUTDATA_FORMAT_UNDEFINED             ((uint32_t)0x00000000)   /*!< Undefined input data format    */
-#define CRC_INPUTDATA_FORMAT_BYTES                 ((uint32_t)0x00000001)   /*!< Input data in byte format      */
-#define CRC_INPUTDATA_FORMAT_HALFWORDS             ((uint32_t)0x00000002)   /*!< Input data in half-word format */
-#define CRC_INPUTDATA_FORMAT_WORDS                 ((uint32_t)0x00000003)   /*!< Input data in word format      */
+#define CRC_INPUTDATA_FORMAT_UNDEFINED             (0x00000000U)   /*!< Undefined input data format    */
+#define CRC_INPUTDATA_FORMAT_BYTES                 (0x00000001U)   /*!< Input data in byte format      */
+#define CRC_INPUTDATA_FORMAT_HALFWORDS             (0x00000002U)   /*!< Input data in half-word format */
+#define CRC_INPUTDATA_FORMAT_WORDS                 (0x00000003U)   /*!< Input data in word format      */
 /**
   * @}
   */

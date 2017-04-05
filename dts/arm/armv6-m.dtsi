@@ -9,10 +9,10 @@
 		ranges;
 
 		nvic: interrupt-controller@e000e100  {
-			compatible = "arm,armv6m-nvic";
+			compatible = "arm,v6m-nvic";
 			reg = <0xe000e100 0xc00>;
 			interrupt-controller;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 		};
 
 		systick: timer@e000e010 {

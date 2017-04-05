@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dac.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    04-November-2016
+  * @version V1.7.0
+  * @date    17-February-2017
   * @brief   Header file of DAC HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -130,8 +130,8 @@ typedef struct
   * @{
   */
 
-#define DAC_TRIGGER_NONE                   ((uint32_t)0x00000000U) /*!< Conversion is automatic once the DAC1_DHRxxxx register 
-                                                                       has been loaded, and not by external trigger */
+#define DAC_TRIGGER_NONE                   0x00000000U /*!< Conversion is automatic once the DAC1_DHRxxxx register 
+                                                            has been loaded, and not by external trigger */
 #define DAC_TRIGGER_T2_TRGO                ((uint32_t)(DAC_CR_TSEL1_2 | DAC_CR_TEN1)) /*!< TIM2 TRGO selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_T4_TRGO                ((uint32_t)(DAC_CR_TSEL1_2 | DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM4 TRGO selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_T5_TRGO                ((uint32_t)(DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM5 TRGO selected as external conversion trigger for DAC channel */
@@ -148,7 +148,7 @@ typedef struct
 /** @defgroup DAC_output_buffer  DAC Output Buffer
   * @{
   */
-#define DAC_OUTPUTBUFFER_ENABLE            ((uint32_t)0x00000000U)
+#define DAC_OUTPUTBUFFER_ENABLE            0x00000000U
 #define DAC_OUTPUTBUFFER_DISABLE           ((uint32_t)DAC_CR_BOFF1)
 /**
   * @}
@@ -157,8 +157,8 @@ typedef struct
 /** @defgroup DAC_Channel_selection DAC Channel Selection
   * @{
   */
-#define DAC_CHANNEL_1                      ((uint32_t)0x00000000U)
-#define DAC_CHANNEL_2                      ((uint32_t)0x00000010U)
+#define DAC_CHANNEL_1                      0x00000000U
+#define DAC_CHANNEL_2                      0x00000010U
 /**
   * @}
   */
@@ -166,9 +166,9 @@ typedef struct
 /** @defgroup DAC_data_alignment DAC Data Alignment
   * @{
   */
-#define DAC_ALIGN_12B_R                    ((uint32_t)0x00000000U)
-#define DAC_ALIGN_12B_L                    ((uint32_t)0x00000004U)
-#define DAC_ALIGN_8B_R                     ((uint32_t)0x00000008U)
+#define DAC_ALIGN_12B_R                    0x00000000U
+#define DAC_ALIGN_12B_L                    0x00000004U
+#define DAC_ALIGN_8B_R                     0x00000008U
 /**
   * @}
   */
@@ -367,7 +367,7 @@ void HAL_DAC_DMAUnderrunCallbackCh1(DAC_HandleTypeDef *hdac);
   * @param  __ALIGNMENT__: specifies the DAC alignment
   * @retval None
   */
-#define DAC_DHR12R1_ALIGNMENT(__ALIGNMENT__) (((uint32_t)0x00000008U) + (__ALIGNMENT__))
+#define DAC_DHR12R1_ALIGNMENT(__ALIGNMENT__) (0x00000008U + (__ALIGNMENT__))
 
 /** @brief  Set DHR12R2 alignment
   * @param  __ALIGNMENT__: specifies the DAC alignment
@@ -379,7 +379,7 @@ void HAL_DAC_DMAUnderrunCallbackCh1(DAC_HandleTypeDef *hdac);
   * @param  __ALIGNMENT__: specifies the DAC alignment
   * @retval None
   */
-#define DAC_DHR12RD_ALIGNMENT(__ALIGNMENT__) (((uint32_t)0x00000020U) + (__ALIGNMENT__))
+#define DAC_DHR12RD_ALIGNMENT(__ALIGNMENT__) (0x00000020U + (__ALIGNMENT__))
 
 /**
   * @}
