@@ -1,7 +1,7 @@
 .. _zephyr_1.6:
 
 Zephyr Kernel 1.6.0
-********************
+####################
 
 We are pleased to announce the release of Zephyr kernel version 1.6.0. This
 release introduces the unified Kernel replacing the separate nano- and
@@ -26,7 +26,7 @@ Major enhancements included with the release:
 A detailed list of changes since v1.5.0 by component follows:
 
 Kernel
-======
+******
 
 * Introduced the unified kernel.
 * Removed deprecated Tasks IRQs.
@@ -40,7 +40,7 @@ Kernel
 * Changed memory pool, memory maps, message queues and event handling APIs.
 
 Architectures
-=============
+*************
 
 * ARC: Removed CONFIG_TIMER0_CLOCK_FREQ.
 * ARC: Unified linker scripts.
@@ -57,7 +57,7 @@ Architectures
 * x86: Optimized and simplified IRQ and exception stubs.
 
 Boards
-======
+******
 
 * Renamed board Quark SE devboard to Quark SE C1000 devboard.
 * Renamed board Quark SE SSS devboard to Quark SE C1000 SS devboard.
@@ -72,7 +72,7 @@ Boards
 * Added support for NXP Hexiwear board.
 
 Drivers and Sensors
-===================
+*******************
 
 * SPI: Fixed typos in SPI port numbers.
 * Pinmux: Removed Quark dev unused file.
@@ -87,12 +87,12 @@ Drivers and Sensors
 * Added FXOS8700 accelerometer / magnetometer sensor driver.
 
 Networking
-==========
+**********
 
 * Minor fixes to uIP networking stack (This will be deprecated in 1.7)
 
 Bluetooth
-=========
+*********
 
 * Added native Bluetooth Controller support. Currently nRF51 & nRF52 are supported.
 * New location for Controller & Host implementations: subsys/bluetooth/
@@ -104,7 +104,7 @@ Bluetooth
 * Renamed bt_driver API to bt_hci_driver, in anticipation of Bluetooth radio drivers.
 
 Build Infrastructure
-====================
+********************
 
 * Makefile: Changed outdir into board-specific directory to avoid build collisions.
 * Makefile: Changed to use HOST_OS environment variable.
@@ -120,7 +120,7 @@ Build Infrastructure
 * Imported get_maintainer.pl from Linux kernel.
 
 Libraries
-=========
+*********
 
 * libc: Added subset of standard types in inttypes.h.
 * libc: Added support for 'z' length specifier.
@@ -133,7 +133,7 @@ Libraries
 * File system: Added API to flush cache of an opened file.
 
 HALs
-====
+****
 
 * QMSI: Updated to version 1.3.1.
 * HAL: Imported CC3200 SDK.
@@ -142,7 +142,7 @@ HALs
 * Imported SDK RNGA driver.
 
 Documentation
-=============
+*************
 
 * Drivers: Improved Zephyr Driver model.
 * Updated device power management API.
@@ -151,7 +151,7 @@ Documentation
 * Revised documentation for Kernel Event logger and Timing.
 
 Test and Samples
-================
+****************
 
 * Fixed incorrect printk usage.
 * Removed test for dynamic exceptions.
@@ -163,14 +163,14 @@ Test and Samples
 * Imported tinycrypt test cases for CTR, ECC DSA and ECC DH algorithm.
 
 Deprecations
-============
+************
 
 * Deprecated microkernel and nanokernel APIs.
 * Removed dynamic IRQs and exceptions.
 * Removed Tasks IRQs.
 
 JIRA Related Items
-==================
+******************
 
 * :jira:`ZEP-308` - Build System cleanup and Kernel / Application build separation
 * :jira:`ZEP-334` - Unified Kernel
@@ -366,7 +366,7 @@ JIRA Related Items
 * :jira:`ZEP-1353` - FDRM k64f Console output broken on normal flash mode
 
 Known Issues
-============
+************
 
 * :jira:`ZEP-1405` - function l2cap_br_conn_req in /subsys/bluetooth/host/l2cap_br.c
   references uninitialized pointer

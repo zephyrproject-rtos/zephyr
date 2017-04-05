@@ -1,7 +1,7 @@
 .. _zephyr_1.5:
 
 Zephyr Kernel 1.5.0
-********************
+####################
 
 The Zephyr Engineering team is glad to announce the release of Zephyr Kernel
 1.5.0. This is the first release to follow the 3-month release cadence.
@@ -20,7 +20,7 @@ Major enhancements included with the release:
 A detailed list of changes since v1.4.0 by component follows:
 
 Kernel
-======
+******
 
 - Added nano_fifo_put_list() APIs, which allows queuing  a list of elements
   on a nanokernel FIFO.
@@ -28,7 +28,7 @@ Kernel
 - Enhanced memory pool code.
 
 Architectures
-=============
+*************
 
 - ARM: Updated to include floating point registers.
 - Altera Nios II/f soft CPU architecture support
@@ -38,13 +38,13 @@ Architectures
       and 16550 UART as default for Altera MAX10.
 
 Boards
-======
+******
 
 - Added Nios II QEMU board.
 - Added configuration for Altera MAX10 FPGA.
 
 Drivers and Sensors
-===================
+*******************
 
 - Sensors: Added driver for I2C HMC5883L magnetometer.
 - Sensors: Added driver for I2C TMP112 temperature sensor.
@@ -59,7 +59,7 @@ Drivers and Sensors
 - Added driver for ENC28J60 Ethernet SPI module.
 
 Networking
-==========
+**********
 
 - TCP Support
 - Connection handling fixes in IP stack.
@@ -74,28 +74,28 @@ Network Buffers
 - Add more net_buf big endian helpers.
 
 Bluetooth
-=========
+*********
 
 - Multiple fixes & improvements to the nble driver.
 - New API for dealing with Out of Band data (like the local address).
 - Various smaller fixes & improvements in many places.
 
 Build and Infrastructure
-========================
+************************
 
 - Added “qemugdb” target to start a local GDB on port 1234.
 - Added script to filter known issues in the build output.
 - Sanity: Added “-R” option to build all test with assertions.
 
 Libraries
-=========
+*********
 
 - File system: Imported Open Source FAT FS 0.12a code.
 - Encryption: Imported mbedTLS library.
 - Encryption: Updated tinycrypt library to 2.0.
 
 Documentation
-=============
+*************
 
 - Fixed all the documentations warnings during build.
 - Fixed several typos, trademarks and grammar.
@@ -105,7 +105,7 @@ Documentation
 - Updated Mac OS X instructions.
 
 Test and Samples
-================
+****************
 
 - Samples: Replaced old debug macro to use new SYS_LOG macro.
 - Added TMP112 sensor application.
@@ -116,11 +116,11 @@ Test and Samples
 - Added mbedTLS sample client.
 
 JIRA Related Items
-==================
+******************
 
 
 Stories
--------
+========
 
 * :jira:`ZEP-49` - x86: unify separate SysV and IAMCU code
 * :jira:`ZEP-55` - enable nanokernel test_context on ARC
@@ -182,7 +182,7 @@ Stories
 * :jira:`ZEP-662` - QMSI shim driver: Pinmux: Implement suspend and resume callbacks
 
 Epic
-----
+====
 
 * :jira:`ZEP-278` - Enable Nios II CPU on Altera Max10
 * :jira:`ZEP-284` - Flash Filesystem Support
@@ -191,7 +191,7 @@ Epic
 * :jira:`ZEP-406` - Drivers shall be re-entrant
 
 Bug
----
+===
 
 * :jira:`ZEP-68` - Final image contains duplicates of some routines
 * :jira:`ZEP-156` - PWM Set Value API behaves incorrectly
@@ -263,7 +263,7 @@ Bug
 * :jira:`ZEP-739` - warnings when building samples for quark_se devboard
 
 Known issues
-------------
+============
 
 * :jira:`ZEP-517` - build on windows failed "zephyr/Makefile:869: \*\*\* multiple target patterns"
    - No workaround, will fix in future release.

@@ -1,7 +1,7 @@
 .. _zephyr_1.7:
 
 Zephyr Kernel 1.7.0
-********************
+####################
 
 We are pleased to announce the release of Zephyr kernel version 1.7.0. This
 release continues refinement of the unified kernel introduced with the 1.6.0
@@ -26,7 +26,7 @@ The following sections provide a detailed list of changes, by component,  since
 kernel version 1.6.0.
 
 Kernel
-======
+******
 
 * Introduction of k_poll API: k_poll() is similar to the POSIX poll() API in
   spirit in that it allows a single thread to monitor multiple events without
@@ -37,14 +37,14 @@ Kernel
 
 
 Architectures
-=============
+*************
 
 * ARM: Added support for device tree
 * ARM: Fixed exception priority access on Cortex M0(+)
 * ARM: Refactored to use CMSIS
 
 Boards
-======
+******
 
 * Added ARM MPS2_AN385 board
 * Added Atmel SAM E70 Xplained board
@@ -56,7 +56,7 @@ Boards
 * Added Qemu target for RISC V and a simulator target for the Xtensa architecture.
 
 Drivers and Sensors
-===================
+*******************
 
 * Added Atmel SAM pmc, gpio, uart, and ethernet drivers
 * Added STM32F3x clock, flash, gpio, pinmux drivers
@@ -67,7 +67,7 @@ Drivers and Sensors
 * Added Beetle clock control and watchdog drivers
 
 Networking
-==========
+**********
 
 This version removes the legacy uIP stack and introduces a new native IP stack.
 Because of this there is lot of changes in the code base. The native IP stack
@@ -107,7 +107,7 @@ add new networking features which are described below.
 * Redesigned buffer & pool allocation API.
 
 Bluetooth
-=========
+*********
 
 * Redesigned buffer pools for smaller memory consumption
 * Redesigned thread model for smaller memory consumption
@@ -118,13 +118,13 @@ Bluetooth
 * Added SPI HCI driver
 
 Libraries
-=========
+*********
 
 * Updated mbedTLS library
 * Updated TinyCrypt to version 0.2.5
 
 HALs
-====
+****
 
 * Updated FAT FS to rev 0.12b
 * Updated Nordic MDK header files
@@ -137,7 +137,7 @@ HALs
 * Imported stm32cube for F4 and L4
 
 Documentation
-=============
+*************
 
 * General improvements and additions to kernel component docs
 * Moved supported board information back to the website site.
@@ -153,7 +153,7 @@ Documentation
 
 
 JIRA Related Items
-==================
+******************
 
 
 .. comment  List derived from https://jira.zephyrproject.org/issues/?filter=10345
