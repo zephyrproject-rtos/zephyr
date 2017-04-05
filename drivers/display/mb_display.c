@@ -139,13 +139,13 @@ static inline void update_pins(struct mb_display *disp, uint32_t val)
 
 static void update_scroll(struct mb_display *disp)
 {
-	if (disp->scroll < 5) {
+	if (disp->scroll < 6) {
 		struct mb_image img;
 		int i;
 
 		for (i = 0; i < 5; i++) {
 			img.row[i] = (disp->img[0].row[i] >> disp->scroll) |
-				(disp->img[1].row[i] << (5 - disp->scroll));
+				(disp->img[1].row[i] << (6 - disp->scroll));
 		}
 
 		disp->scroll++;
