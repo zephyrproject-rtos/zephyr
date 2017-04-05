@@ -37,13 +37,13 @@ struct mb_display {
 
 	struct k_timer  timer;    /* Rendering timer */
 
+	uint8_t         scroll;      /* Scroll shift */
+
 	/* The following variables track the currently shown image */
-	int             cur;         /* Currently rendered row */
+	uint8_t         cur;         /* Currently rendered row */
 	uint32_t        row[3];      /* Content (columns) for each row */
 	int64_t         expiry;      /* When to stop showing current image */
 	int32_t         duration;    /* Duration for each shown image */
-
-	uint8_t         scroll;      /* Scroll shift */
 
 	const char     *str;         /* String to be shown */
 
