@@ -6,10 +6,10 @@
 /** @file
  * @brief Atmel SAM MCU family Ethernet MAC (GMAC) driver.
  *
- * This is a zero-copy networking implementation of GMAC driver. To prepare
- * for the incoming frames the driver will reserve a defined amount of data net
- * buffers during the initialization phase. This driver has to be initialized
- * after the higher layer networking stack is.
+ * This is a zero-copy networking implementation of an Ethernet driver. To
+ * prepare for the incoming frames the driver will permanently reserve a defined
+ * amount of RX data net buffers when the interface is brought up and thus
+ * reduce the total amount of RX data net buffers available to the application.
  *
  * Limitations:
  * - one shot PHY setup, no support for PHY disconnect/reconnect
@@ -731,16 +731,29 @@ static void queue0_isr(void *arg)
 
 static int eth_initialize(struct device *dev)
 {
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
-	uint32_t link_status;
-	uint32_t gmac_ncfgr_val;
-	int result;
 
 	cfg->config_func();
 
 	/* Enable GMAC module's clock */
 	soc_pmc_peripheral_enable(cfg->periph_id);
+
+	/* Connect pins to the peripheral */
+	soc_gpio_list_configure(cfg->pin_list, cfg->pin_list_size);
+
+	return 0;
+}
+
+static void eth0_iface_init(struct net_if *iface)
+{
+	struct device *const dev = net_if_get_device(iface);
+	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	uint32_t gmac_ncfgr_val;
+	uint32_t link_status;
+	int result;
+
+	dev_data->iface = iface;
 
 	/* Initialize GMAC driver, maximum frame length is 1518 bytes */
 	gmac_ncfgr_val =
@@ -751,8 +764,16 @@ static int eth_initialize(struct device *dev)
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
 	if (result < 0) {
 		SYS_LOG_ERR("Unable to initialize ETH driver");
-		return result;
+		return;
 	}
+
+	/* Set MAC Address for frame filtering logic */
+	mac_addr_set(cfg->regs, 0, dev_data->mac_addr);
+
+	/* Register Ethernet MAC Address with the upper layer */
+	net_if_set_link_addr(iface, dev_data->mac_addr,
+			     sizeof(dev_data->mac_addr),
+			     NET_LINK_ETHERNET);
 
 	/* Initialize GMAC queues */
 	/* Note: Queues 1 and 2 are not used, configured to stay idle */
@@ -761,44 +782,24 @@ static int eth_initialize(struct device *dev)
 	result = queue_init(cfg->regs, &dev_data->queue_list[0]);
 	if (result < 0) {
 		SYS_LOG_ERR("Unable to initialize ETH queue");
-		return result;
+		return;
 	}
-	/* Set MAC Address for frame filtering logic */
-	mac_addr_set(cfg->regs, 0, dev_data->mac_addr);
-
-	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(cfg->pin_list, cfg->pin_list_size);
 
 	/* PHY initialize */
 	result = phy_sam_gmac_init(&cfg->phy);
 	if (result < 0) {
 		SYS_LOG_ERR("ETH PHY Initialization Error");
-		return result;
+		return;
 	}
 	/* PHY auto-negotiate link parameters */
 	result = phy_sam_gmac_auto_negotiate(&cfg->phy, &link_status);
 	if (result < 0) {
 		SYS_LOG_ERR("ETH PHY auto-negotiate sequence failed");
-		return result;
+		return;
 	}
 
 	/* Set up link parameters */
 	link_configure(cfg->regs, link_status);
-
-	return 0;
-}
-
-static void eth0_iface_init(struct net_if *iface)
-{
-	struct device *const dev = net_if_get_device(iface);
-	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
-
-	/* Register Ethernet MAC Address with the upper layer */
-	net_if_set_link_addr(iface, dev_data->mac_addr,
-			     sizeof(dev_data->mac_addr),
-			     NET_LINK_ETHERNET);
-
-	dev_data->iface = iface;
 }
 
 static struct net_if_api eth0_api = {
