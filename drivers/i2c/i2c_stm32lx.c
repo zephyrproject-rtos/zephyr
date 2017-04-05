@@ -483,7 +483,7 @@ static void i2c_stm32lx_irq_config_func_2(struct device *port);
 #endif
 
 static const struct i2c_stm32lx_config i2c_stm32lx_cfg_2 = {
-	.base = (uint8_t *)I2C1_BASE,
+	.base = (uint8_t *)I2C2_BASE,
 	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
 		    .enr = LL_APB1_GRP1_PERIPH_I2C2 },
 #ifdef CONFIG_I2C_STM32LX_INTERRUPT
