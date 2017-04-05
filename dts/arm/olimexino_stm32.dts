@@ -5,11 +5,11 @@
  */
 
 /dts-v1/;
-#include <st/stm32f103xb.dtsi>
+#include <st/stm32f103Xb.dtsi>
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
-	compatible = "st,olimexino_stm32", "st,stm32f103xb";
+	compatible = "st,olimexino_stm32", "st,stm32f103rb";
 
 	chosen {
 		zephyr,console = &usart1;

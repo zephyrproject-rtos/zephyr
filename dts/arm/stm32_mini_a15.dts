@@ -5,11 +5,11 @@
  */
 
 /dts-v1/;
-#include <st/stm32f103xe.dtsi>
+#include <st/stm32f103Xe.dtsi>
 
 / {
 	model = "STM32 MINI A15 board";
-	compatible = "st,stm32_mini_a15", "st,stm32f103xe";
+	compatible = "st,stm32_mini_a15", "st,stm32f103ve";
 
 	chosen {
 		zephyr,console = &usart1;
