@@ -1,0 +1,17 @@
+# Kconfig - EFM32WG MCU line
+#
+# Copyright (c) 2017 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_EFM32WG
+	bool "EFM32WG Series MCU"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
+	select SOC_FAMILY_EXX32
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select CPU_HAS_SYSTICK
+	help
+	  Enable support for EFM32 WonderGecko MCU series

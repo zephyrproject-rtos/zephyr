@@ -1,0 +1,64 @@
+#include <arm/armv7-m.dtsi>
+#include <silabs/mem.h>
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m4f";
+		};
+	};
+
+	flash0: flash {
+		reg = <0 DT_FLASH_SIZE>;
+	};
+
+	sram0: memory {
+		reg = <0x20000000 DT_SRAM_SIZE>;
+	};
+
+	soc {
+		uart0: uart@4000c000 { /* USART0 */
+			compatible = "silabs,efm32-usart";
+			reg = <0x4000c000 0x400>;
+			interrupts = <3 0 4 0>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: uart@4000c400 { /* USART1 */
+			compatible = "silabs,efm32-usart";
+			reg = <0x4000c400 0x400>;
+			interrupts = <15 0 16 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		uart2: uart@4000c800 { /* USART2 */
+			compatible = "silabs,efm32-usart";
+			reg = <0x4000c800 0x400>;
+			interrupts = <18 0 19 0>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		uart3: uart@4000e000 { /* UART0 */
+			compatible = "silabs,efm32-uart";
+			reg = <0x4000e000 0x400>;
+			interrupts = <20 0 21 0>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		uart4: uart@4000e400 { /* UART1 */
+			compatible = "silabs,efm32-uart";
+			reg = <0x4000e400 0x400>;
+			interrupts = <22 0 23 0>;
+			status = "disabled";
+			label = "UART_4";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
