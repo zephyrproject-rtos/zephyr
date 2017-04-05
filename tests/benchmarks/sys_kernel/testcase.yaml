@@ -1,0 +1,5 @@
+tests:
+-   test:
+        arch_whitelist: x86
+        min_ram: 32
+        tags: benchmark

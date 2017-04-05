@@ -1,0 +1,9 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        filter: CONFIG_UART_CONSOLE
+        platform_exclude: qemu_riscv32 qemu_nios2
+        tags: samples

@@ -1,0 +1,5 @@
+tests:
+-   test_pinmux_dev:
+        build_only: true
+        platform_whitelist: arduino_101_sss
+        tags: drivers

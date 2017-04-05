@@ -1,0 +1,8 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        arch_whitelist: x86 arm
+        build_only: true
+        tags: apps

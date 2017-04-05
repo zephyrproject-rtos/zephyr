@@ -1,0 +1,6 @@
+tests:
+-   test:
+        platform_exclude: qemu_riscv32
+        slow: true
+        tags: crypto ecc dh
+        timeout: 500

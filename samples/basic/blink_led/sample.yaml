@@ -1,0 +1,10 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        arch_whitelist: x86 arm
+        build_only: true
+        platform_whitelist: arduino_101 quark_d2000_crb
+            nucleo_f103rb nucleo_f401re nucleo_l476rg
+        tags: apps

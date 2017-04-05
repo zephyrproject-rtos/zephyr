@@ -1,0 +1,5 @@
+tests:
+-   test:
+        arch_whitelist: x86
+        platform_whitelist: qemu_x86
+        tags: net

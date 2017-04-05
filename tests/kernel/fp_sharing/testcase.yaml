@@ -1,0 +1,12 @@
+tests:
+-   test_x86:
+        platform_whitelist: qemu_x86
+        slow: true
+        tags: core
+        timeout: 600
+-   test_arm:
+        extra_args: PI_NUM_ITERATIONS=70000
+        platform_whitelist: frdm_k64f
+        slow: true
+        tags: core
+        timeout: 600

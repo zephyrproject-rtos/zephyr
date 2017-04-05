@@ -1,0 +1,7 @@
+tests:
+-   test:
+        build_only: false
+        platform_whitelist: qemu_x86
+        slow: true
+        tags: dns net
+        timeout: 600

@@ -1,0 +1,5 @@
+tests:
+-   test:
+        filter: ( CONFIG_SRAM_SIZE > 16 or CONFIG_DCCM_SIZE
+            > 16 or CONFIG_RAM_SIZE > 16 )
+        tags: core bat_commit

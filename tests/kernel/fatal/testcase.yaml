@@ -1,0 +1,8 @@
+tests:
+-   stack-sentinel:
+        arch_exclude: arc
+        tags: core ignore_faults
+-   arc-stack-checking:
+        arch_whitelist: arc
+        extra_args: CONF_FILE=prj-arc.conf
+        tags: core ignore_faults

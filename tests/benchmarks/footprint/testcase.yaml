@@ -1,0 +1,28 @@
+tests:
+-   footprint-min:
+        build_only: true
+        extra_args: TEST=min
+        filter: not CONFIG_BOARD_GALILEO
+        platform_exclude: tinytile
+        tags: footprint
+-   footprint-reg:
+        arch_whitelist: x86 arm
+        build_only: true
+        extra_args: TEST=reg
+        min_ram: 8
+        platform_exclude: tinytile
+        tags: footprint
+-   footprint-max:
+        arch_whitelist: x86 arm
+        build_only: true
+        extra_args: TEST=max
+        min_ram: 8
+        platform_exclude: tinytile
+        tags: footprint
+-   footprint-float:
+        arch_whitelist: x86 arm
+        build_only: true
+        extra_args: TEST=float
+        filter: not CONFIG_CPU_MINUTEIA
+        platform_exclude: tinytile
+        tags: footprint
