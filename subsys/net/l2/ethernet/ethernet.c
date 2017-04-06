@@ -16,6 +16,7 @@
 #include <net/ethernet.h>
 #include <net/ethernet_mgmt.h>
 #include <net/gptp.h>
+#include <net/lldp.h>
 
 #include "arp.h"
 #include "net_private.h"
@@ -162,6 +163,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		family = AF_UNSPEC;
 		break;
 #endif
+	case NET_ETH_PTYPE_LLDP:
+		NET_DBG("LLDP Rx agent not implemented");
+		return NET_DROP;
 	default:
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
 		return NET_DROP;
@@ -404,6 +408,13 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	u16_t ptype;
 
+	/* If this is a LLDP packet, we just send it */
+	if (IS_ENABLED(CONFIG_NET_LLDP) &&
+	    ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_LLDP) {
+		ptype = htons(NET_ETH_PTYPE_LLDP);
+		goto send_frame;
+	}
+
 #ifdef CONFIG_NET_ARP
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_pkt *arp_pkt;
@@ -456,7 +467,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		 */
 		ptype = htons(NET_ETH_PTYPE_ARP);
 
-		goto send;
+		goto send_frame;
 	}
 #else
 	NET_DBG("Sending pkt %p to iface %p", pkt, iface);
@@ -514,9 +525,7 @@ setup_hdr:
 		ptype = htons(NET_ETH_PTYPE_IPV6);
 	}
 
-#ifdef CONFIG_NET_ARP
-send:
-#endif /* CONFIG_NET_ARP */
+send_frame:
 
 #if defined(CONFIG_NET_VLAN)
 	if (net_eth_is_vlan_enabled(ctx, iface)) {
@@ -898,6 +907,18 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable)
 	return net_mgmt(NET_REQUEST_ETHERNET_SET_PROMISC_MODE, iface,
 			&params, sizeof(struct ethernet_req_params));
 }
+
+#if defined(CONFIG_NET_LLDP)
+int net_eth_set_lldpdu(struct net_if *iface, const struct net_lldpdu *lldpdu)
+{
+	return net_lldp_config(iface, lldpdu);
+}
+
+void net_eth_unset_lldpdu(struct net_if *iface)
+{
+	net_lldp_config(iface, NULL);
+}
+#endif
 
 void ethernet_init(struct net_if *iface)
 {

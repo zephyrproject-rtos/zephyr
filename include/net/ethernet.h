@@ -19,6 +19,7 @@
 
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
+#include <net/lldp.h>
 #include <misc/util.h>
 #include <net/net_if.h>
 #include <net/ethernet_vlan.h>
@@ -45,6 +46,7 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_VLAN		0x8100
 #define NET_ETH_PTYPE_PTP		0x88f7
+#define NET_ETH_PTYPE_LLDP		0x88cc
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
@@ -87,6 +89,9 @@ enum ethernet_hw_caps {
 
 	/** MAC address filtering supported */
 	ETHERNET_HW_FILTERING		= BIT(12),
+
+	/** Link Layer Discovery Protocol supported */
+	ETHERNET_LLDP			= BIT(13),
 };
 
 enum ethernet_config_type {
@@ -231,6 +236,25 @@ struct ethernet_vlan {
 #define NET_VLAN_MAX_COUNT 1
 #endif
 
+#if defined(CONFIG_NET_LLDP)
+struct ethernet_lldp {
+	/** Used for track timers */
+	sys_snode_t node;
+
+	/** LLDP information element related to this network interface. */
+	const struct net_lldpdu *lldpdu;
+
+	/** Network interface that has LLDP supported. */
+	struct net_if *iface;
+
+	/** LLDP TX timer start time */
+	s64_t tx_timer_start;
+
+	/** LLDP TX timeout */
+	u32_t tx_timer_timeout;
+};
+#endif /* CONFIG_NET_LLDP */
+
 /** Ethernet L2 context that is needed for VLAN */
 struct ethernet_context {
 #if defined(CONFIG_NET_VLAN)
@@ -257,6 +281,10 @@ struct ethernet_context {
 		 */
 		struct net_if *iface;
 	} carrier_mgmt;
+
+#if defined(CONFIG_NET_LLDP)
+	struct ethernet_lldp lldp[NET_VLAN_MAX_COUNT];
+#endif
 
 #if defined(CONFIG_NET_GPTP)
 	/** The gPTP port number for this network device. We need to store the
@@ -339,7 +367,7 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 
 static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
 {
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_GPTP) || defined(CONFIG_NET_LLDP)
 	if (addr->addr[0] == 0x01 &&
 	    addr->addr[1] == 0x80 &&
 	    addr->addr[2] == 0xc2 &&
@@ -568,6 +596,43 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
 	return -ENODEV;
 }
 #endif /* CONFIG_NET_GPTP */
+
+struct net_lldpdu;
+
+/**
+ * @brief Set LLDP protocol data unit (LLDPDU) for the network interface.
+ *
+ * @param iface Network interface
+ * @param lldpdu LLDPDU pointer
+ *
+ * @return <0 if error, index in lldp array if iface is found there
+ */
+#if defined(CONFIG_NET_LLDP)
+int net_eth_set_lldpdu(struct net_if *iface, const struct net_lldpdu *lldpdu);
+#else
+static inline int net_eth_set_lldpdu(struct net_if *iface,
+				     const struct net_lldpdu *lldpdu)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(lldpdu);
+
+	return -ENOTSUP;
+}
+#endif
+
+/**
+ * @brief Unset LLDP protocol data unit (LLDPDU) for the network interface.
+ *
+ * @param iface Network interface
+ */
+#if defined(CONFIG_NET_LLDP)
+void net_eth_unset_lldpdu(struct net_if *iface);
+#else
+static inline void net_eth_unset_lldpdu(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
 
 #ifdef __cplusplus
 }

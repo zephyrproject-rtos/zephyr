@@ -135,6 +135,12 @@ Virtual LAN definitions and helpers
 .. doxygengroup:: vlan
    :project: Zephyr
 
+Link Layer Discovery Protocol definitions and helpers
+=====================================================
+
+.. doxygengroup:: lldp
+   :project: Zephyr
+
 IEEE 802.15.4
 =============
 
