@@ -1,0 +1,552 @@
+================ Revision history ============================================
+5.1.2:
+ Misc. bugfixes and improvements.
+
+5.1.1:
+ - Enabled errata CMU_E113 workaround for EFM32GG revE.
+
+5.1.0:
+ - em_timer: Added support for WTIMER0 and WTIMER1. Added EFM_ASSERT in
+   em_timer to check that operations on a 16 bit timer is always <= 0xFFFF.
+ - em_usart: Updated the baudrate sync calculation in USART_BaudrateSyncSet().
+   The calculated baudrate is not using any fractional bits and it is always
+   lower than or equal to the specified frequency.
+ - em_emu: added function EMU_DCDCConductionModeSet() to allow switching
+   between DCDC Low-Noise Continuous Conduction Mode (CCM) and
+   Discontinuous Conduction Mode (DCM).
+ - SYSTEM_GetSRAMSize() updated to return size of SRAM excluding RAMH for EFR32xG1.
+ - em_csen: Added support for CSEN (Capacitive Sense Module).
+ - em_adc: updated ADC_PosSel_TypeDef enum names.
+ - em_vdac: Added support for VDAC (voltage DAC).
+ - em_smu: Added support for SMU (Security Management Unit) module.
+   SMU is used to restrict access to device peripherals.
+ - Updated emlib to use the _SILICON_LABS_32B_SERIES_x,
+   _SILICON_LABS_32B_SERIES_x_CONFIG and _SILICON_LABS_GECKO_INTERNAL_SDID_x
+   macros instead of the _SILICON_LABS_32B_PLATFORM_x and
+   _SILICON_LABS_32B_PLATFORM_x_GEN_x macros.
+ - em_rtcc: added workarounds for errata RTCC_E203 and RTCC_E204 for
+   EFR32xG12, EFM32xG12, EFR32xG13 and EFM32xG13 devices.
+ - em_lesense: added LESENSE_DecoderPrsOut() for configuring PRS output
+   from the LESENSE decoder on EFM32xG12 and EFR32xG12.
+ - em_lesense: added support for the new evaluation modes for EFM32xG12 and
+   EFR32xG12.
+ - em_emu: added EMU_RamPowerDown() function for powering down a memory range
+   and deprecating EMU_MemPwrDown().
+ - em_emu: added support for voltage scaling.
+ - em_emu: added support for EM2 and 3 peripheral retention control.
+ - em_chip: added current consumption fixes for EFM32xG12 and EFR32xG12.
+ - em_emu: added support for DCDC EM01-LP mode.
+ - em_lesense: Support for Series 1 devices
+ - em_acmp: Added ACMP_ExternalInputSelect() which is used when the ACMP is
+   controlled by an external module like LESENSE.
+
+5.0.0:
+ - em_core: New module, contains API for enabling/disabling interrupts
+   and implementing critical regions.
+   em_core replaces em_int which is deprecated and marked for removal in a
+   later release.
+ - em_emu: Added EMU_SetBiasMode() for Series 1 Configuration 1 devices.
+ - em_chip: Adding EMU_E210 errata fix in CHIP_Init().
+ - em_adc: Changed default value of negSel in ADC_INITSINGLE_DEFAULT
+   from adcNegSelAPORT0XCH1 to adcNegSelVSS.
+ - em_emu, em_cmu, em_chip, em_system: Added support for Series 1,
+   Configuration 2 parts (eg. EFR32MG12)
+ - em_gpio: Fixed GPIO_ExtIntConfig() to enable correct interrupt number on
+   Series 1 devices.
+ - em_ldma: Updated LDMA_Init() and LDMA_StartTransfer() to support pointers
+   to const memory.
+ - em_ldma: Adding LDMA_DESCRIPTOR_SINGLE_P2P_BYTE which can be used when
+   transfering bytes from one peripheral to another peripheral.
+ - em_i2c: Fixed bug that may clear IEN bits set by the user.
+ - em_emu: DCDC LN mode RCOBAND is now set based on LNFORCECCM.
+ - em_emu: Member dcdcLnCompCtrl added to EMU_DCDCInit_TypeDef. This parameter
+   allows configuraiton of 1uF or 4.7uF DCDC capacitor. 1uF is default for
+   Series 1 Device Configuration 1 while 4.7 is default for Series 1
+   Device Configuration 2 and later.
+ - Updated documentation with more code examples for em_assert, em_common,
+   em_cryotimer, em_gpcrc, em_ldma, em_msc, em_ramfunc, em_system, em_usart.
+
+4.4.0:
+ - em_emu: Putting DCDC in bypass mode before entering EM4S.
+ - em_cmu: In the CMU_HFXOInit_TypeDef struct the following members have been
+   deprecated and are no longer in use: autoStartEm01, autoSelEm01, and
+   autoStartSelOnRacWakeup. Any application using the HFXO autostart feature
+   must use the CMU_HFXOAutostartEnable() function instead.
+ - em_emu: Updating DCDC LP comparator bias thresholds for EM2/3/4 according to
+   updated reference manual. The thresholds are compared to the
+   em234LoadCurrent_uA value of the EMU_DCDCInit_TypeDef struct.
+ - em_msc: Fix for errata FLASH_E201 - Potential program failure after power on
+   After a flash write the first word is checked to verify write operation. On
+   a verification failure the first word is re-programmed.
+ - em_adc: Enforcing at least 8 cycle aquisition time when reading ADC internal
+   temp sensor using a 1.25V reference on platform 2 generation 1 devices.
+ - em_adc: Setting GPBIASACC when initializing measurement of the ADC internal
+   temp sensor as documented in the reference manual.
+ - em_emu: Fix for errata EMU_E208 - Occasional Full Reset After Exiting EM4H
+ - em_cmu: Added the possibility to configure external clock as HFXO
+   and LFXO source via the CMU_HFXOInit() and CMU_LFXOInit() functions.
+ - em_emu: Added EMU_EnterEM4H and EMU_EnterEM4S functions.
+ - Fixed shift bug in ADC_EM2ClockConfig_TypeDef.
+ - Added bounds check on ADC prescaler.
+ - Updated ADC_INITSCAN_DEFAULT to match ADC_ScanInputClear().
+
+4.3.1:
+ - EFR32 and EFM32PG/JG em_cmu: Added automatic switching to HFXO
+   PEAKDETSHUNTOPTMODE=CMD  mode after the first enable. This means automatic
+   peak detection and shunt current optimization runs at the first call to
+   CMU_OscillatorEnable(cmuOsc_HFXO, true, true) or
+   CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO) only.
+   Optimization can be restarted by calling CMU_OscillatorTuningOptimize(). This is
+   required if the temperature changes by more than 100degC.
+ - Added CMU_HFXOAutostartEnable() function to support automatic HFXO start and
+   select.
+ - Updated default timeouts for CMU_HFXOInit() to optimize HFXO startup
+   time. The startup time reduction depends on the oscillator specification.
+   The new defaults are safe for typical oscillator specifications.
+ - em_ldma: LDMA_StartTransfer() now only enable a DMA channel once.
+ - em_cmu: Fixed condtitional compilation bug in CMU_ClockSelectGet().
+ - em_usart: Fixed bug in USART_BaudrateCalc() function.
+ - em_usart: Improved corner cases in synchrounous baudrate calculation math.
+ - em_emu.c: EMU_DCDCLnRcoBandSet() calls EMU_DCDCOptimizeSlice() as the slice
+   configuration depends on RCO band.
+
+4.3.0:
+ - em_cmu: Removed unused fields from CMU_HFXOInit_TypeDef. The removed fields
+   are regIshStartup and timeoutWarmSteady.
+ - em_rtc.h: Added RTC_CounterSet function for modifying the RTC Counter.
+ - em_burtc.c: Fixed bug when doing low frequency domain synchronization.
+ - em_gpio.c: Deprecated GPIO_IntConfig(), use new function GPIO_ExtIntConfig()
+   instead.
+ - Removed deprecated file em_part.h.
+ - em_dma.c: Replaced infinite loop on bus errors in default irq handler with
+   an assert.
+ - em_gpio.c: Use direct register write instead of BUS API in GPIO_PinModeSet
+   to prevent glitches.
+ - Fixed incorrect handling of CMU_CTRL_WSHFLE and CMU_HFPRESC_HFCLKLEPRESC in
+   em_cmu.c for EFM32 Pearl and Jade Gecko.
+ - Type enumerations cmuClock_HFLE and cmuSelect_HFCLKLE can now be used for
+   all families to select or reference the divided down HF clock for LE peripherals.
+ - Code size optimization in em_cmu.c.
+ - Added GPCRC support.
+ - Added support for WARNSEL, WINSEL and WDOGRSTDIS to em_wdog. Added interrupt
+   functions. Added support for multiple WDOG instances. Deprecated functions
+   WDOG_Enable(), WDOG_Feed(), WDOG_Init() and WDOG_Lock().
+ - GPIO_EM4GetPinWakeupCause() now returns the content of the EM4WU field from
+   the GPIO_IF register for platform 2 devices.
+ - Added function GPIO_SlewrateSet() to set slewrate for GPIO ports.
+ - Added fix for GPIO_E201 in CHIP_Init().
+ - Added function CMU_HFRCOBandGet() and CMU_HFRCOBandSet() for platform 2.
+   Functions with the same names are present for platform 1, but the parameter
+   and return types are different. Platform 1 and 2 also do not support the same
+   HFRCO/AUXHFRCO frequencies.
+ - Added HFLE wait-state control to CMU_HFRCOBandSet(). This is a bug on
+   EFM32 Wonder Gecko only as HFLE DIV4 is required at 24MHz, in between the 28HMz
+   and 21MHz HFRCO bands.
+ - Fixed reset-cause XMASKs for platform 2, gen 1 parts. Improved
+   documentation in em_rmu.c.
+ - Added support for configuring IrDA on USART1 for EFM32 Happy Gecko. The
+   function USART_InitIrDA() is deprecated, and replaced by USARTn_InitIrDA().
+ - Added module em_ramfunc. Fixed issue with calls from em_msc RAM code to Flash.
+ - Updated current limiter threshold equations for LNCLIMILIMSEL, LPCLIMILIMSEL
+   and DCDCZDETCTRL.
+ - Member type EMU_DcdcLnTransientMode_TypeDef in EMU_DCDCInit_TypeDef changed to
+   EMU_DcdcLnReverseCurrentControl_TypeDef to enable support for reverse current
+   limiter.
+ - EM2/3 current consumption optimization: Default value
+   emuDcdcAnaPeripheralPower_AVDD in EMU_DCDCINIT_DEFAULT for EFR32
+   changed to emuDcdcAnaPeripheralPower_DCDC.
+ - EM2/3 current consumption optimization: DCDC_LP_NFET_CNT updated to 7
+
+4.2.3:
+ - Added DMA and LDMA functions to enable/disable channel requests.
+
+4.2.2:
+ - em_gpio.c: Use direct register write instead of BUS API in GPIO_PinModeSet
+              to prevent glitches.
+
+4.2.1:
+ - Added errata fix for an issue that may cause BOD resets in EM2 when using
+   DCDC-to-DVDD mode. The fix is implemented in EMU_DCDCInit().
+ - Added function EMU_DCDCPowerOff() for boards with physically disconnected DCDC.
+ - Current consumption is optimized for DCDC bypass mode. This update is
+   implemented in EMU_DCDCInit().
+
+4.2.0:
+ - Updated I2C clock divider equation for platform 2 parts. Added constraints
+   to HFPER clock frequency in I2C_BusFreqSet().
+ - EMU EMU_EM23VregMode_TypeDef replaced with a bool.
+ - Added support for GPIO alternate drive strength and alternate control modes.
+ - DCDC setup is simplified. More tuning and optimization settings added to
+   EMU_DCDCInit().
+ - Added member pinRetentionMode to EMU_EM4Init_TypeDef.
+ - Added function EMU_UnlatchPinRetention() to support unlatching of pin
+   retention in EM4H/S.
+ - Fixed bug in ADC_InitScan() which caused a overwrite of single conversion
+   mode calibration values.
+ - Added support for CRYPTO module on EFM32 Pearl and Jade Gecko (em_crypto.c/h).
+
+4.1.1:
+ - EMU_DCDCInit() updated with new parameters for EM2 and 3. Current consumption
+   with DCDC at expected levels for EFR32 and EFM32 Pearl and Jade Gecko.
+ - EMU_DCDCInit_TypeDef updated with more parameters. EMU_DcdcLpcmpBiasMode_TypeDef
+   is removed.
+ - More assertions added to EMU_DCDCInit().
+ - HFXO default parameters updated.
+ - ADC defaults updated.
+ - RMU pin mode set fixed.
+ - Added missing define for cmuSelect_ULFRCO.
+ - Added missing functions for handling peripheral interrupts.
+ - Added support for VMON.
+
+4.1.0:
+ - New signature for RMU_ResetControl() function.
+ - The typedef EMU_EM23Init_TypeDef which is a parameter to EMU_EM23Init()
+   has got a new definition.
+ - Initial support _SILICON_LABS_32B_PLATFORM_2 devices added.
+
+4.0.0:
+ - Use ARM CMSIS version 4.2.0.
+ - New style version macros in em_version.h.
+
+3.20.14:
+ - USB release only.
+
+3.20.13:
+ - Added new style family #defines in em_system.h, including EZR32 families.
+ - Fixed I2C_FREQ_STANDARD_MAX macros.
+ - Fixed bug in MSC_WriteWord which called internal functions that were linked
+   to flash for armgcc. All subsequent calls of MSC_WriteWord should now be
+   linked to RAM for all supported compilers. The internals of MSC_WriteWord()
+   will check the global variable SystemCoreClock in order to make sure the
+   frequency is high enough for flash operations. If the core clock frequency
+   is changed, software is responsible for calling MSC_Init or
+   SystemCoreClockGet in order to set the SystemCoreClock variable to the
+   correct value.
+ - Added errata fix IDAC_101.
+
+3.20.12:
+ - Added errata fix EMU_108.
+ - #ifdef's now use register defines instead of a mix of register and family defines.
+ - Added a case for when there are only 4 DMA channels available:
+   Alignment was (correctly) defined at 7 bit, but got asserted for 8 bit, leading
+   to unpredictable tripped asserts.
+ - Added USART_INITPRSTRIGGER_DEFAULT defined structure to support HWCONF.
+ - Added support for LFC clock tree.
+ - Added CMU_USHFRCOBandSet() and CMU_USHFRCOBandGet().
+
+3.20.10:
+ - Maintenance release, no changes.
+
+3.20.9:
+ - Added support for Happy Gecko including support for the new oscillator USHFRCO.
+ - Added MSC_WriteWordFast() function. This flash write function has a similar
+   performance as the old  MSC_WriteWord(), but it disables interrupts and
+   requires a core clock frequency of at least 14MHz. The new MSC_WriteWord()
+   is slower, but it does not disable interrupts and may be called with core
+   clock frequencies down to 1MHz.
+ - Fixed a bug in EMU_EnterEM4() that set other EM4 configuration bits to 0
+   on EM4 entry.
+ - Added EMU_EM23Init().
+ - Fixed a bug in CMU_FlashWaitStateControl() where it failed to set the
+   required wait-state configuration if the MSC is locked.
+ - Added EMU interrupt handling functions.
+ - BURTC_Reset() changed to use async reset RMU_CTRL_BURSTEN instead of
+   reset value writeback. This makes the function independent of a selected
+   and enabled clock.
+ - BURTC_Sync() now returns without waiting for BURTC->SYNCBUSY to clear
+   when no clock is selected in BURTC_CTRL_CLKSEL.
+ - Fixed assertion bug in ACMP_ChannelSet() that checked the negSel parameter
+   against the wrong upper bound.
+
+3.20.7:
+ - Fixed CMU_MAX_FREQ_HFLE macro for Wonder family.
+ - Fixed MSC_WriteWord() bug.
+ - Added syncbusy wait in RTC_Reset() for Gecko family.
+
+3.20.6:
+ - Corrected fix for Errata EMU_E107.
+
+3.20.5:
+ - Updated license texts.
+ - Removed unnecessary fix for Wonder Gecko.
+ - Updated LFXO temperature compensation in CHIP_Init().
+ - Changed LESENSE_ScanStart, LESENSE_ScanStop, LESENSE_DecoderStart,
+   LESENSE_ResultBufferClear() and LESENSE_Reset() functions to wait until
+   CMD register writes complete in order to make sure CMD register writes do
+   not break each other, and for register values to be consistent when
+   returning from functions that write to the CMD register.
+ - Added fix for Errata EMU_E107.
+ - Added family to SYSTEM_ChipRevision_TypeDef.
+ - Fixed bug in function AES_OFB128 which failed on Zero Gecko.
+ - Fixed RMU_ResetCauseGet() to return correct reset causes.
+ - Fixed bug in RTC_CounterReset() which failed to reset counter immediately
+   after return on Gecko devices.
+ - Added static inline non-blocking USART receive functions (USART_Rx...).
+ - Added function SYSTEM_GetFamily().
+ - Added function DAC_ChannelOutputSet().
+ - Fixed MSC_WriteWord() to not use WDOUBLE if LPWRITE is set.
+
+3.20.2:
+ - Fixed bug regarding when MEMINFO in DEVINFO was introduced.
+   The correct crossover is production revision 18.
+ - Fixed bug in WDOG_Feed() which does not feed the watchdog if the watchdog
+   is disabled. Previously, the watchdog was broken after WDOG_Feed() fed it
+   when it was disabled.
+-  Fixed issue in em_i2c.c, which should set the NACK bit in the I2C CMD
+   register for the next to last byte received. The exception is when only
+   one byte is to be received. Then the NACK bit must be set like the
+   previous code was doing.
+-  Added function BURTC_ClockFreqGet() in order to determine clock frequency
+   of BURTC.
+-  Fixed bug in BURTC_Reset() which made a subsequent call to BURTC_Init hang.
+-  Added support for the IDAC module on the Zero Gecko family, em_idac.c/h.
+-  Fixed bug in DAC_PrescaleCalc() which could return higher values than
+   the maximum prescaler value. The fix makes sure to return the max prescaler
+   value resulting in possible higher DAC frequency than requested.
+-  Fixed I2C_BusFreqSet to use documented values for Nlow and Nhigh values,
+   and do not decrement the div(isor) by one according to the formula because
+   this resulted in higher I2C bus frequencies than desired.
+
+3.20.0:
+ - LEUART: Added LEUART_TxDmaInEM2Enable() and LEUART_RxDmaInEM2Enable() for
+   enabling and disabling DMA LEUART RX and Tx in EM2 support.
+
+3.0.3:
+ - Internal release for testing Wonder Gecko support.
+ - SYSTEM: Added function to enable/disable FPU access on Wonder parts,
+           SYSTEM_FpuAccessModeSet().
+ - USART: Added USART_SpiTransfer() function.
+
+3.0.2:
+ - MSC: In MSC_WriteWord(), added support for double word write cycle support
+   (WDOUBLE) on devices with more than 512KiBytes of Flash memory. This can
+   almost double the speed of the MSC_WriteWord function for large data sizes.
+ - MSC: In MSC_ErasePage(), added support for devices with Flash page size
+   larger than 512 bytes, like Giant and Leopard Gecko.
+ - CMU: Fixed bug in CMU_ClockDivSet(). Clear HFLE and HFCORECLKLEDIV flags when
+   the core runs at frequencies up to 32MHz.
+ - CMU: Fixed bug in CMU_ClockEnable(): Set the HFLE and HFCORECLKLEDIV flags
+   when the CORE clock runs at frequencies higher than 32MHz.
+ - CMU: Fixed bug in CMU_ClockSelectSet(): Set HFLE and DIV4 factor for peripheral
+   clock if HFCORE clock for LE is enabled and the CORE clock runs at
+   frequencies higher than 32MHz.
+ - BITBAND: Added BITBAND_PeripheralRead() and BITBAND_SRAMRead() functions.
+ - DMA: Added #ifndef EXCLUDE_DEFAULT_DMA_IRQ_HANDLER around DMA_IRQHandler in
+   order for the user to implement a custom IRQ handler or run without a DMA
+   IRQ handler by defining EXCLUDE_DEFAULT_DMA_IRQ_HANDLER with the -D compiler
+   option.
+ - BURTC: In functions BURTC_Init() and BURTC_CompareSet(), moved SYNCBUSY
+   loops in front of modifications of registers COMP0 and LPMODE.
+ - MSC: Fixed ram_code section error on Keil toolchain.
+ - MSC: Removed uneeded code from MSC init and deinit which would have no
+   effect (Big thanks to Martin Schreiber for reporting this bug!).
+ - System: Added access functions for reading some values out of the Device
+   Information page.
+
+3.0.1:
+ - LFXO fix for Giant family.
+ - USART: Fix for EFM32TG108Fxx which does not have USART0.
+ - EBI: The write to the CTRL register now happens before the ROUTE registers
+   are set. This avoids potential glitches.
+ - LESENSE: Fix issue when using lesenseAltExMapACMP.
+ - TIMER: Fix compilation on devices where ADC is not available.
+ - LCD: Fix bug where Aloc field would not be set to 0.
+ - BURTC: Fix Reset function by adding reset of COMP0 register and removing
+   reset of POWERDOWN register. The POWERDOWN register cannot be used to
+   power up the blocks after it has been powered down.
+ - CMU: Fixed bug where ClockDivSet, ClockDivGet and ClockFreqGet didn't work for
+   cmuClock_LCDpre clock. Also corrected 3 wrongly typed constants.
+ - CMU: Fixed bug where LFBE field in LFCLKSEL was not cleared before setting
+   bit-value.
+ - CMU: Fixed bug with CMU_ClockSelectGet. Did not give correct return value
+   for cmuClock_LFB.
+ - I2C: Fixed bug where I2C_Init would set divisor depending on the previous
+   master/slave configuration, not the one set in the initialization.
+ - I2C: Fixed issue in the function I2C_BusFreqSet (called by I2C_Init). The
+   input parameter 'I2C_ClockHLR_TypeDef type' was not in use. The fix enables
+   the parameter to add support for 'i2cClockHLRAsymetric' and 'i2cClockHLRFast'
+   modes. In order to use 'i2cClockHLRAsymetric' and 'i2cClockHLRFast' the
+   frequency of the HFPER clock may need to be increased.
+ - OPAMP: Fixed bug in the function OPAMP_Enable where an incorrect register
+   was used when setting the OPA2 calibration value.
+ - LEUART: Fixed issue in LEUART_BaudrateSet when a high clock frequency and a
+   low baudrate can overflow the clock divisor register (CLKDIV). The fix uses
+   an assert statement to check whether the calculated clock divisor is out of
+   range.
+ - USART: Fixed issue in USART_BaudrateAsyncSet when a high clock frequency and
+   a low baudrate can overflow the clock divisor register (CLKDIV). The fix uses
+   an assert statement to check whether the calculated clock divisor is out of
+   range.
+
+3.0.0:
+ - efm32lib renamed emlib, as it will include support for non-EFM32 devices
+   in the future
+ - Added CMSIS_V3 compatibility fixes, and use of CMSIS_V3 definitions
+ - See Device/Changes-EnergyMicro.txt for detailed path changes
+ - New prefixes of all files, efm32_<peripherqal>.c/h to em_<peripheral>.c/h
+ - New names for readme and changes files
+ - RMU - BUMODERST not masked away when EM4 bits has been set
+ - CMU - CMU_LFClkGet now accounts for ULFRCO bit for Tiny Gecko
+
+2.4.1:
+ - New, open source friendly license
+ - Fixed BURTC initialization hang if init->enable was false
+ - Fixed CMU issue with USBC and USB checks not being used correctly
+ - Added CMU feature, missing TIMER3 support
+ - Improved accuracy of SPI mode for USART baudrate calculation
+ - Corrected USBC HFCLKNODIV setting to comply with new header file defines
+
+2.4.0:
+ - Added efm32_version.h defining software version number
+ - Added BURTC support for Giant and Leopard Gecko
+ - Added RMU_ResetControl for BU reset flag
+ - Added some missing features to EMU for back up domain and EM4 support
+ - ADC TimebaseCalc(), Giant/Leopard Gecko have max 5 bits in TIMEBASE field
+ - Removed EMU Backup Power Domain threshold setings from EMU_BUPDInit, added
+   EMU_BUThresRangeSet() and EMU_BUThresholdSet() API calls. Threshold values
+   are factory calibrated and should not usually be overridden by the user.
+
+2.3.2:
+ - Added Tiny Gecko and Giant Gecko support in RMU for new reset causes
+ - CMU_ClockFreqGet will now report correct clock rates if HFLE is set (/4)
+ - Added Giant Gecko specific MSC_MassErase(), erase entire flash
+ - Added Giant Gecko specific MSC_BusStrategy (inline) function
+ - MSC_Init() will now configure TIMEBASE correctly according to AUXHFRCO clock
+   rate for Tiny Gecko and Giant Gecko
+
+2.3.0:
+ - USART - Added USART_InitPrsTrigger to initialize USART PRS triggered
+   transmissions.
+ - CMU - numerous updates, now supports full clock tree of Giant/Tiny Gecko
+ - CMU_ClockDivSet/Get will now use real dividend and not logarithmic values
+   as earlier. Prior enumerated values have been kept for backward compatibility.
+ - Added support for CMU HFLE and DIV4 factor for core clock for LE
+   peripherals
+ - Added support for alternate LCD segment animation range for Giant Gecko
+ - Fixed bug: Don't enable VCMP low power reference until after warm up,
+   allow biasprog value of 0 in VCMP_Init()
+ - Added support for ALTMAP (256MB address map) in EBI_BankAddress()
+ - TIMER_Init() will now reset CNT value
+
+2.2.2:
+ - Added DAC0 channel 0 and 1 to ACMP for Tiny and Giant devices
+ - Fixed bug in CMU for MSC WAITSTATE configuration, leading to too high wait
+   states depending on clock rate
+ - Fixed bug in CMU for UART1 clock enable
+
+2.2.1:
+ - UART_Reset() and LEUART_Reset() will now reset ROUTE register as well, this
+   will mean GPIO pins will not be driven after this call. Take care to ensure
+   that GPIO ROUTE register is configured after calls to *UART_Init*Sync
+ - Fixed problems with EFM_ASSERT when using UART in USART API
+ - Added Giant Gecko support for EBI (new modes and TFT direct drive)
+ - Added Giant Gecko support for CMU 2 WAIT STATES, and I2C1
+ - Added Giant Gecko support for UART1 in CMU
+ - Added Giant Gecko support for DMA LOOP and 2D Copy operations
+
+2.1.0:
+ - EMU_Restore will now disable HFRCO if it was not enabled when entering
+   an Energy Mode
+ - Run time changes only applies to Gecko devices, filter out Tiny and Giant
+   for CHIP_Init();
+ - Added const specificers to various initialization structures, to ensure
+   they can reside in flash instead of SRAM
+ - Bugfix in efm32_i2c.c, keep returning i2cTransferInProgress until done
+
+2.0.1:
+ - Changed enum OPAMP_PosSel_TypeDef. Enum value opaPosSelOpaIn changed from
+   DAC_OPA0MUX_POSSEL_OPA1IN to DAC_OPA0MUX_POSSEL_OPA0INP.
+ - Bugfix in efm32_lesense.h, LESENSE_ChClk_TypeDef now contains unshifted
+   values, fixed the implementation in efm32_lesense.c where the bug prevented
+   the sampleClk to be set to AUXHFRCO.
+
+2.0.0:
+ - USART_Init-functions now calls USART_Reset() which will also disable/reset
+   interrupt
+ - USART_BaudrateSyncSet() now asserts on invalid oversample configuration
+ - Added initialization of parity bit in LEUART_Init()
+ - Added Tiny Gecko support for CMU, ULFRCO, LESENSE clocks and continuous
+   calibration
+ - Added Tiny Gecko support for GPIO, EM4 pin retention and wake up support
+ - Added Tiny Gecko support for I2S, SPI auto TX mode on USART
+ - Added Tiny Gecko support for CACHE mesasurements for MSC module
+ - Added Tiny Gecko support for LCD module (with no HIGH segment registers)
+ - Added Tiny Gecko support for TIMER, PWM 2x,  (DT lock not supported)
+ - Added Tiny Gecko support for LESENSE module
+ - Added Tiny Gecko support for PRS input in PCNT
+ - Added Tiny Gecko support for async signals in PRS, PRS_SourceAsyncSignalSet()
+ - Initial support for some Giant Gecko features, where overlapping with Tiny
+ - Removed LPFEN / LPFREQ support from DAC
+ - Fixed comments around interrupt functions, making it clear it is bitwise
+   logical or interrupt flags
+ - Fixed PCNT initialization for external clock configurations, making sure
+   config is synchronized at startup to 3 clocks. Note fix only works for
+   >revC EFM32G devices.
+ - Fixed efm32_cmu.c, EFM_ASSERT statement for LEUART clock div logic was
+   inverted
+ - Fixed ADC_InitScan, PRSSEL shift value corrected
+ - Fixed CMU_ClockFreqGet for devices that do not have I2C
+ - Fixed I2C_TransferInit for devices with more than one I2C-bus (Giant Gecko)
+ - Changed ACMP_Disable() implementation, now only disables the ACMP instance
+   by clearing the EN bit in the CTRL register
+ - Removed ACMP_DisableNoReset() function
+ - Fixed ACMP_Init(), removed automatic enabling, added new structure member
+   "enaReq" for ACMP_Init_TypeDef to control, fixed the EFM_ASSERT of the
+   biasprog parameter
+ - Added default configuration macro ACMP_INIT_DEFAULT for ACMP_Init_TypeDef
+ - Fixed ACMP_CapsenseInit(), removed automatic enabling, added new structure member
+   "enaReq" for ACMP_CapsenseInit_TypeDef to control, fixed the EFM_ASSERT of
+   the biasprog parameter
+ - Changed the name of the default configuration macro for
+   ACMP_CapsenseInit_TypeDef to ACMP_CAPSENSE_INIT_DEFAULT
+ - Added RTC_Reset and RTC_CounterReset functions for RTC
+
+1.3.0:
+ - MSC is automatically enabled/disabled when using the MSC API. This saves
+   power, and reduces errors due to not calling MSC_Init().
+ - Added API for controlling Cortex-M3 MPU (memory protection unit)
+ - Adjusted bit fields to comply with latest CMSIS release, see EFM_CMSIS
+   changes file for details
+ - Fixed issue with bit mask clearing in ACMP
+ - Functions ACMP_Enable and ACMP_DisableNoReset added
+ - Added comment about rev.C chips in PCNT, CMD_LTOPBIM not neccessary any more
+ - Added missing instance validity asserts to peripherals (ACMP, LEUART, USART)
+ - Fixed UART0 check in CMU_ClockFreqGet()
+ - Fixed command sync for PCNT before setting TOPB value during init
+ - Fixed instance validity check macro in PCNT
+ - Fixed TIMER_Reset() removed write to unimplemented timer channel registers
+ - Fixed EFM_ASSERT statements in ACMP, VCMP
+ - General code style update: added missing curly braces, default cases, etc.
+
+1.2.1:
+ - Feature complete efm32lib, now also includes peripheral API for modules
+   AES,PCNT,MSC,ACMP,VCMP,LCD,EBI
+ - Fixed _TIMER_CC_CTRL_ICEDGE flags for correct timer configuration
+ - Fixed ADC calibration of Single and Scan mode of operation
+ - Added PCNT (ChipRev A/B PCNT0 errata NOT supported) and AES support
+ - Fixed conditional inclusion in efm32_emu.h
+ - Fixed code for LEUART0 for devices with multiple LEUARTs.
+ - Fixed incorrect setting of DOUT for GPIO configuration
+
+1.1.4
+ - Fix for TIMER_INIT_DEFAULT
+
+1.1.3:
+ - Added ADC, DAC, LETIMER, PRS, TIMER (except DTI) support
+ - Added utility for fetching chip revision (efm32_system.c/h)
+ - Removed RTC instance ref in API, only one RTC will be supported
+   (Affects also define in efm32_cmu.h)
+ - Added default init struct macros for LEUART, USART
+ - Added msbf parameter in USART synchronous init struct, USART_InitSync_TypeDef.
+ - Updated reset for I2C, USART, LEUART to also reset IEN register.
+ - Corrected fault in GPIO_PortOutSet()
+
+1.1.2:
+ - Corrected minor issues in EMU, EM3 mode when restoring clocks
+ - Corrected RMU reset cause checking
+ - Changed GPIO enumerator symbols to start with gpio (from GPIO_)
+ - Changed CMU and WDOG enum typedefs to start with CMU_/WDOG_ (from cmu/wdog)
+ - Added USART/UART, LEUART, DMA, I2C support
+
+1.1.1:
+ - First version including support for CMU, DBG, EMU, GPIO, RTC, WDOG

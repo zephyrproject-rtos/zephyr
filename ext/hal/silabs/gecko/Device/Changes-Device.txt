@@ -1,0 +1,489 @@
+================ Revision history ============================================
+5.1.2:
+ - No changes.
+
+5.1.1:
+ - Added missing calibration value symbols for OPA's on Jade/Pearl
+   EFM32JG12B and EFM32PG12B families.
+
+5.1.0:
+ - Added radiotype #define's to EFR32 part header files.
+   The _SILICON_LABS_EFR32_RADIO_TYPE #define will have one of these values:
+     #define _SILICON_LABS_EFR32_RADIO_SUBGHZ    1
+     #define _SILICON_LABS_EFR32_RADIO_2G4HZ     2
+     #define _SILICON_LABS_EFR32_RADIO_DUALBAND  3
+ - Added support for new EFR32 Series 1 Device Configuration 3 parts.
+   New family names are EFR32BG13P, EFR32FG13P and EFR32MG13P.
+ - Added support for new EFM32 Series 1 Device Configuration 2 and 3 parts.
+   New family names are EFM32JG12B, EFM32JG13B, EFM32PG12B and EFM32PG13B.
+
+5.0.0:
+ - Added support for new EFR32 Series 1 Device Configuration 2 parts.
+   New family names are EFR32BG12P, EFR32FG12P, EFR32MG12P and EFR32MG2P.
+
+4.4.0:
+ - Added support for sub GHz EFR devices.
+ - Added support for BGM121 (EFR32BG1X232FXXXGM56) module.
+ - Fixed bug in USB_GRXSTSR_FN on Giant/Leopard/Wonder families.
+   The bit field was not correctly placed in the register.
+
+4.3.1:
+ - The "SECURITY" Peripheral Register Block has been renamed to "AESCCM" to
+   avoid naming collisions.
+ - If the name MPU_BASE is already defined, it is undefined in the Device
+   header such that the CMSIS Core definitions can be used.
+
+4.3.0:
+ - Use ARM CMSIS version 4.5.0.
+ - Renamed some bitfields in ADC for Pearl/Jade/EFR's.
+ - Added usb LEMNAK and LEMADDR low power modes on Happy Gecko devices.
+ - SystemHFClockGet() is now calculating the frequency taking the HFCLK or
+   HFPRESC divider into account.
+ - It is now possible to skip FPU access enabling on Cortex-M4 devices.
+ - Fixed #define OPAMP_PRESENT for EZR32LG/WG parts.
+
+4.2.1:
+ - No changes.
+
+4.2.0:
+ - Various corrections and improvements of Jade/Pearl/EFR family files.
+
+4.1.1:
+ - Added CRYPTO module (cryptographic engine) to Jade/Pearl/EFR families.
+
+4.1.0:
+ - Added device headers for new families EZR32HG (EZR Happy Gecko), EFM32JG
+   (Jade Gecko) and EFM32PG (Pearl Gecko).
+ - Bugfixes in EZR32 LG and WG system/startup files.
+ - Added support for new EZR32HG family.
+
+4.0.0:
+ - Use ARM CMSIS version 4.2.0.
+ - emlib:  New style version macros in em_version.h.
+ - usb:    Added support for isochronous endpoint transfers.
+
+3.20.14:
+ - EFR32 header release.
+ - USB release.
+
+3.20.13:
+ - CMSIS:  No changes.
+ - Device: Added device header files for new Happy Gecko family.
+ - Device: Corrected RF_GPIO0_PORT macro in EZRLG/WG part header files.
+ - emlib:  Added new style family #defines in em_system.h, including EZR32 families.
+ - emlib:  Fixed I2C_FREQ_STANDARD_MAX macros.
+ - emlib:  Fixed bug in MSC_WriteWord which called internal functions that were
+           linked to flash for armgcc. All subsequent calls of MSC_WriteWord
+           should now be linked to RAM for all supported compilers. The
+           internals of MSC_WriteWord will check the global variable
+           SystemCoreClock in order to make sure the frequency is high enough
+           for flash operations. If the core clock frequency is changed,
+           software is responsible for calling MSC_Init or SystemCoreClockGet in
+           order to set the SystemCoreClock variable to the correct value.
+ - emlib:  Added errata fix IDAC_101.
+ - usb:    No changes.
+
+3.20.12:
+ - emlib: Added errata fix EMU_108.
+ - emlib: #ifdef's now use register defines instead of a mix of register and family defines.
+ - emlib: Added a case for when there are only 4 DMA channels available:
+          Alignment was (correctly) defined at 7 bit, but got asserted for 8 bit, leading
+          to unpredicatable tripped asserts.
+ - emlib: Added USART_INITPRSTRIGGER_DEFAULT defined structure to support HWCONF.
+ - emlib: Added support for LFC clock tree.
+ - emlib: Added CMU_USHFRCOBandSet() and CMU_USHFRCOBandGet().
+ - usb:   Replaced USB_EP0_SIZE and USB_MAX_EP_SIZE macros with new versions which
+          have correct values for low speed/full speed/endpoint types.
+
+3.20.11:
+ - Device header release only. Added part headers for EZR families EZR32LG
+   and EZR32WG.
+
+3.20.10:
+ - CMSIS/Device/emlib: No changes.
+ - usb: Added support for Happy Gecko USB LEM (Low Energy Modes).
+ - usb: Fixed bug in suspend powersave mode implementation.
+
+3.20.9:
+ - New and updated headers for the Happy Gecko family.
+ - emlib: Added support for Happy Gecko including support for the new oscillator USHFRCO.
+ - emlib: Added MSC_WriteWordFast() function. This flash write function has a similar
+          performance as the old  MSC_WriteWord(), but it disables interrupts and
+          requires a core clock frequency of at least 14MHz. The new MSC_WriteWord()
+          is slower, but it does not disable interrupts and may be called with core
+          clock frequencies down to 1MHz.
+ - emlib: Fixed a bug in EMU_EnterEM4() that set other EM4 configuration bits to 0
+          on EM4 entry.
+ - emlib: Added EMU_EM23Init().
+ - emlib: Fixed a bug in CMU_FlashWaitStateControl() where it failed to set the
+          required wait-state configuration if the MSC is locked.
+ - emlib: Added EMU interrupt handling functions.
+ - emlib: BURTC_Reset() changed to use async reset RMU_CTRL_BURSTEN instead of
+          reset value writeback. This makes the function independent of a selected
+          and enabled clock.
+ - emlib: BURTC_Sync() now returns without waiting for BURTC->SYNCBUSY to clear
+          when no clock is selected in BURTC_CTRL_CLKSEL.
+ - emlib: Fixed assertion bug in ACMP_ChannelSet() that checked the negSel parameter
+          against the wrong upper bound.
+ - usb: Added support for Happy Gecko USB peripheral.
+ - usb: Improved USB cable plug/unplug robustness.
+
+3.20.8:
+ - This release contains headers etc. for the Happy Gecko family.
+
+3.20.7:
+ - Support for new part numbers EFM32GG900F1024, EFM32GG900F512,
+   EFM32LG360F256 and EFM32WG360F256.
+ - Header files for Leopard device family are according to Product Revision E.
+   Ref. PCN #1406131.
+ - emlib: Fixed CMU_MAX_FREQ_HFLE macro for Wonder family.
+ - emlib: Fixed MSC_WriteWord() bug.
+ - emlib: Added syncbusy wait in RTC_Reset() for Gecko family.
+ - usb: Fixed bug in device stack when resuming from partial powerdown mode.
+ - usb: Disable PHY pins and stop USB clocks in USBD_Stop() and USBH_Stop() functions.
+ - usb: Fixed max FIFO size limit for device mode.
+ - usb: Fixed possible deadlock in USBD_Init() and USBH_WaitForDeviceConnectionB().
+ - usb: Added configurable VBUSEN pin usage to support hw without VBUS switch.
+
+3.20.6:
+ - emlib: Corrected fix for Errata EMU_E107.
+
+3.20.5:
+ - New part header file folder structure.
+   Header files are now in this path:
+     Device/SiliconLabs/EFM32<FAMILY>/Include/efm32<family><partno>.h
+   Old folder structure is still present for backward compatibility reasons.
+     Device/EnergyMicro/EFM32<FAMILY>/Include/efm32<family>_cmu.h
+   The same change of path applies to all startup and linker files:
+     Device/SiliconLabs/EFM32<FAMILY>/Source/...
+ - emlib: Updated license texts.
+ - emlib: Removed unnecessary fix for Wonder Gecko.
+ - emlib: Updated LFXO temperature compensation in CHIP_Init().
+ - emlib: Changed LESENSE_ScanStart, LESENSE_ScanStop, LESENSE_DecoderStart,
+          LESENSE_ResultBufferClear and LESENSE_Reset functions to wait until
+          CMD register writes complete in order to make sure CMD register writes do
+          not break each other, and for register values to be consistent when
+          returning from functions that write to the CMD register.
+ - emlib: Added fix for Errata EMU_E107.
+ - emlib: Added family to SYSTEM_ChipRevision_TypeDef.
+ - emlib: Fixed bug in function AES_OFB128 which failed on Zero Gecko.
+ - emlib: Fixed RMU_ResetCauseGet to return correct reset causes.
+ - emlib: Fixed bug in RTC_CounterReset which failed to reset counter immediately
+          after return on Gecko devices.
+ - emlib: Added static inline non-blocking USART receive functions (USART_Rx...).
+ - emlib: Added function SYSTEM_GetFamily.
+ - emlib: Added function DAC_ChannelOutputSet.
+ - emlib: Fixed MSC_WriteWord to not use WDOUBLE if LPWRITE is set.
+ - usb: Fixed bug which could cause malfunctioning when prescaling core clock.
+ - usb: Updated license terms.
+ - usb: Fixed potential EP sram partitioning problems.
+ - usb: Allow 64 and 32 byte EP0 max packetsize.
+ - usb: Fixed bug in USBTIMER_Start(), added check on timeout value of 0.
+ - usb: Fixed setting USB device state on USB reset from suspend.
+ - usb: Added support for composite devices in the device stack.
+ - usb: Made special provisions for passing USB-IF "Powered Suspend" test.
+
+3.20.2:
+ - Added Zero Gecko family header files.
+ - Added MEMINFO_FLASH_PAGE_SIZE to DEVINFO structure.
+ - emlib: Fixed bug regarding when MEMINFO in DEVINFO was introduced.
+   The correct crossover is production revision 18.
+ - emlib: Fixed bug in WDOG_Feed which does not feed the watchdog if the watchdog
+   is disabled. Previously, the watchdog was broken after WDOG_Feed fed it
+   when it was disabled.
+ - emlib: Fixed issue in em_i2c.c, which should set the NACK bit in the I2C CMD
+   register for the next to last byte received. The exception is when only
+   one byte is to be received. Then the NACK bit must be set like the
+   previous code was doing.
+ - emlib: Added function BURTC_ClockFreqGet in order to determine clock frequency
+   of BURTC.
+ - emlib: Fixed bug in BURTC_Reset which made a subsequent call to BURTC_Init hang.
+ - emlib: Added support for the IDAC module on the Zero Gecko family, em_idac.c/h.
+ - emlib: Fixed bug in DAC_PrescaleCalc() which could return higher values than
+   the maximum prescaler value. The fix makes sure to return the max prescaler
+   value resulting in possible higher DAC frequency than requested.
+ - emlib: Fixed I2C_BusFreqSet to use documented values for Nlow and Nhigh values,
+   and do not decrement the div(isor) by one according to the formula because
+   this resulted in higher I2C bus frequencies than desired.
+ - usb: Increased robustness when plug/unplug-ing the USB cable rapidly.
+ - usb: Changed implementation of usb string macro, wchar_t is no longer used.
+   GCC commandline options -fwide-exec-charset=UTF-16LE, -fshort-wchar and
+   -Wl,--no-wchar-size-warning are no longer needed.
+   Old version was used like this:
+     STATIC_CONST_STRING_DESC( iManufacturer, L"Energy Micro AS" );
+   New version is used like this:
+     STATIC_CONST_STRING_DESC( iManufacturer, 'E','n','e','r','g','y',' ', \
+                                              'M','i','c','r','o',' ','A','S' );
+
+3.20.0:
+ - Part header files: Added EFM32 Wonder Gecko support.
+ - Part header files: FLASH_PAGE_SIZE macro added to all part files.
+ - emlib: LEUART: Added LEUART_TxDmaInEM2Enable and LEUART_RxDmaInEM2Enable for
+   enabling and disabling DMA LEUART RX and Tx in EM2 support.
+ - usb: Documentation changes only.
+
+3.0.3:
+ - Internal release for testing Wonder Gecko support.
+
+3.0.2:
+ - Part header files: New header file em_device.h replace previous efm32.h.
+   efm32.h is kept for backward compatibility.
+ - Part startup files: system_efm32*.c files now handle CMU HFRCO frequencies
+   correct for Production Revision 19 and higher.
+   IAR startup_efm32*.c files now includes em_device.h.
+ - emlib: Changes in MSC, CMU, BITBAND, DMA, BURTC and SYSTEM modules.
+   Refer to emlib changes file for details.
+ - usb: Bugfix, USBD_Init() may now be called when USB peripheral is in partial
+   powerdown mode.
+   New function USBD_EpIsBusy( int epAddr ) added to API.
+   Changed USBD_AbortTransfer() from USBD_AbortTransfer( uint8_t ) to
+   USBD_AbortTransfer( int ).
+   Added configuration of which hw TIMER the stack will use.
+
+3.0.1:
+ - Part header files: Corrected resetvalue for CMU CTRL register
+ - Part header files: Added missing DMA channel registers for Giant family
+ - emlib: LFXO fix for Giant family.
+ - usb: Added more flexibility for taking advantage of energymodes in USB applications.
+
+3.0.0:
+ - WARNING: This is a major update which reorganizes Energy Micro software.
+   Peripheral APIs are kept intact, but you must update project-/makefiles
+   and source files to use this version. PLEASE READ THE INSTRUCTIONS BELOW
+   CAREFULLY.
+
+ - Updated to CMSIS-SP-00300-r3p1-00rel0 delivery from ARM Inc, including
+   DSP_Lib, RTOS abstraction layer, support for Cortex-M4, Cortex-M0+
+   (Flycatcher) and more. For a detailed overview see
+          CMSIS/Documentation/General/html/index.html
+
+ - New file structure of part specific header files deployed according to
+   CMSIS_V3 requirements. These are the most important changes, that must be
+   changed in project files/Makefiles to update to this new release.
+
+   Cortex-Mx Core header files
+          CMSIS/CM3/CoreSupport          -> CMSIS/Include
+   Gecko part specific header files
+          CMSIS/CM3/DeviceSupport/EFM32/ -> Device/EnergyMicro/EFM32G/Include
+   Tiny Gecko part specific header files
+          CMSIS/CM3/DeviceSupport/EFM32/ -> Device/EnergyMicro/EFM32TG/Include
+   Giant Gecko part specific header files
+          CMSIS/CM3/DeviceSupport/EFM32/ -> Device/EnergyMicro/EFM32GG/Include
+   Leopard Gecko part specific header files
+          CMSIS/CM3/DeviceSupport/EFM32/ -> Device/EnergyMicro/EFM32LG/Include
+
+ - The earlier "core_cm3.c" file is now gone and can be deleted from projects,
+   the functionality has moved into "core_cm3.h" (this header file is included
+   in the part specific header file)
+
+ - Part specific header file size reduction has been implemented. The most common
+   peripheral definitions have been moved into separate files, for instance a
+   standard CMU implementation will be in defined in the file
+        -> Device/EnergyMicro/EFM32<FAMILY>/Include/efm32<family>_cmu.h
+   For devices without a full configuration of the peripheral, the definitions
+   are kept in the part specific header file.
+
+ - System files moved to family specific "Source" folder
+   CMSIS/CM3/DeviceSupport/EFM32/system_efm32.c
+        -> Device/EnergyMicro/EFM32<FAMILY>/Source/system_efm32<family>.c
+
+ - Startup files moved to family specific "Source" folder
+   CMSIS/CM3/DeviceSupport/EFM32/startup/iar/
+          -> Device/EnergyMicro/EFM32<FAMILY>/Source/IAR
+   CMSIS/CM3/DeviceSupport/EFM32/startup/arm/
+          -> Device/EnergyMicro/EFM32<FAMILY>/Source/ARM
+   CMSIS/CM3/DeviceSupport/EFM32/startup/cs3/
+          -> Device/EnergyMicro/EFM32<FAMILY>/Source/G++
+
+ - Additional "generic GCC" (such as https://launchpad.net/gcc-arm-embedded or
+   http://www.yagarto.de) target startup/linker files
+          -> Device/EnergyMicro/EFM32<FAMILY>/Source/GCC
+
+ - Gecko startup file has got a "g" (for Gecko family) appended to filename,
+   i.e. startup_efm32g.s, not startup_efm32.s as earlier. Similar for linker
+   files.
+
+ - "efm32lib" has been renamed "emlib" as it will support future Energy Micro
+   devices that are not in the EFM32 families. You will need to change all
+   include files starting  with
+       #include "efm32_<peripheral>.h" -> #include "em_<peripheral>.h"
+   in your source code. APIs within peripherals are compatible with earlier
+   "efm32lib" releases.
+   Also see emlib/Changes_emlib.txt file for further updates.
+
+ - "efm32usb" folder has been renamed to just "usb" for the same reasons as
+   the peripheral library, and all files are now prefixed em_usb.
+   Change all header file references from
+      efm32_usb<component>.h -> em_usb<component.h>
+   Also see usb/Changes_usb.txt for further updates.
+
+2.4.1:
+ - New, open source friendly license for all core support files in CMSIS
+   and efm32lib (efm32usb keeps original license)
+ - Giant/Leopard Gecko Removed USBC_PRESENT from devices not having USB
+ - Giant/Leopard Gecko EMU BOD calibration registers for Backup Domain
+ - Giant/Leopard Gecko USB VBUSENCAP/DMPUAP_LOW and HIGH was inverted
+ - Giant/Leopard Gecko MSC BUSSTRATEGY_DMAEM2 define corrected to DMAEM1
+ - Giant/Leopard Gecko CMU, added HFXO boost constants
+ - Giant/Leopard Gecko CMU changed naming of HFCLK for USBC to HFCLKNODIV
+ - Updated efm32lib with fixes, see Changes file in efm32lib folder
+
+2.4.0:
+ - Removed unused OPAMP_TypeDef for Tiny Gecko
+ - Added OPAMP_PRESENT/COUNT for Giant Gecko
+ - efm32lib updates, see Changes file in efm32lib folder
+ - efm32usb updates, see Changes filr in efm32usb folder
+
+2.3.2:
+ - Fixed IAR startup files, corrected alignment of interrupt vector table
+ - Updated efm32usb library with fixes
+ - Updated efm32lib with new Tiny Gecko and Giant Gecko features
+
+2.3.0:
+ - Added DEVICE_FAMILY defines to identify Gecko/Tiny/Leopard/Giant parts
+ - Fixed missing EMU_IRQ definitions in Leopard Gecko startup files
+ - Added USART location to Tiny Gecko parts
+ - Added LEUART locations to Tiny Gecko parts
+ - Updated efm32lib with new Giant Gecko features (see separate readme)
+ - Updated efm32usb with USB Host stack support (see separate readme)
+
+2.2.2:
+ - Removed huge AF_PORT, AF_PIN macros from header files, only peripheral
+   specific alternate function defines are included
+ - Updated efm32usb library with fixes
+ - Updated efm32lib library with fixes
+
+2.2.1:
+ - Added interleave to all Giant Gecko parts
+ - Updated efm32lib with more Giant Gecko features
+ - Added efm32usb, USB Device stack for Giant Gecko USB parts
+ - Added LOCATION defines for all I2C alternate locations on Tiny Gecko
+
+2.1.1:
+ - Added header files for Giant Gecko and Leopard Gecko devices
+ - Minor fix for Gecko devices, EMU_CTRL_MASK was wrong
+ - Fix for linker issue alignment of .data section in codesourcery .ld files
+
+2.0.1:
+ - DAC_OPAnMUX_POSSEL_OPAnIN changed to DAC_OPAnMUX_POSSEL_OPAnINP for Tiny
+   Gecko
+ - Added CMU_ROUTE_LOCATION, LOC2 for Tiny Gecko
+ - PRS #define fixes, remove extra IRDA fields only available on USART0
+
+2.0.0:
+ - This release based on CMSIS_2_00, includes DSP_Lib (for Keil MDKARM, IAR has
+   a port included with EWARM)
+ - Removed "shadow" example that used to be in CMSIS directory earlier, use
+   "blink" from board examples as starting point instead
+ - Restructured header files to comply with CMSIS_2_00
+ - CMU_CALCTRL_REFSEL is renamed to CMU_CALCTRL_UPSEL to match reference
+   manual and clearify new DOWNSEL calibrartion features for Tiny Gecko
+ - Added header files for new package types for Gecko devices
+ - Added header files for Tiny Gecko devices
+
+1.3.0:
+ - DMA register WAITSTATUS changed to CHWAITSTATUS for consistency
+   DMA test req/sreq registers added, CHSREQSTATUS and CHREQSTATUS
+ - IFS and IFC interrupt registers are now marked as readable for several
+   peripherals
+ - TIMER, CCC renamed to CDTI
+ - TIMER, QEM has been renamed to QDM
+ - AF_DBG_SWV/TCLK/TDIO renamed to more commonly used AF_DBG_SWD/SWDIO/SWDCLK
+ - AF_EBI_ADDRDAT renamed to AF_EBI_AD
+ - Removed bit fields for extra LCD segment registers for Gecko parts
+ - Fixed LCD_SEGEN_MASK, bit width was too narrow in version 1.2.x
+ - Fixed LCD_SYNCBUSY bit fields
+ - CMU_PCNTCTRL reset values corrected
+ - PCNT_TOP and PCNT_TOPB reset values corrected
+ - ADC_LPFMODE_RCFILT and LPFMOD_DECAP definitions corrected (they were
+   reversed)
+ - USART_RXDATAFULLRIGHT and USART_RXDATAVRIGHT removed for Gecko parts
+ - GPIO, renamed INSENSE_PRSSENSE to INSENSE_PRS, similar for INT
+   to be consistent with updated documentation (Reference Manual)
+
+1.2.1:
+ - Fixed DEVINFO calibration shift and mask value for temperature sensor
+   fixed in rev.C Gecko devices
+
+1.2.0:
+ - Added new subgroup "Parts" for all part definitions in doxygen format
+ - Removed unused _PARAM_ type definitions, less clutter in header files
+ - _CMU_PCNTCTRL_RESETVALUE corrected
+ - Added C startup file for IAR, can be used as replacement for assembly file
+ - Use #defines instead of "numeric values reentered" in bit field definitions
+ - TIMER_PARAM_CCNUM(i) changed to TIMER_PARAM_CC_NUM(i)
+ - DPI_CHAN_COUNT changed to PRS_CHAN_COUNT
+
+1.1.4:
+ - TIMER_INIT_DEFAULT fix to efm32lib
+
+1.1.3:
+ - Removed ADC ROUTE register
+ - Renamed DEVINFO DACCAL  -> DAC0CAL for all 3 calibration registers and bit
+   fields
+ - Updated efm32lib with new peripherals
+
+1.1.2:
+ - Added support for CodeSourcery Sourcery G++ compiler and startup files
+ - Device Information page (DEVINFO_TypeDef) - fixed several issues with
+   endianness, and other changes to support test revision 4 and above parts.
+   This has led to a small incompatibilty with test rev <= 4 and rev A parts,
+   in that the flash and sram size bit fields has changed location.
+ - DMA_CONTROL_TypeDef changed name to DMA_DESCRIPTOR_TypeDef to be better
+   aligned with PL230 manual and code
+ - DMA bit fields not supported on EFM32 was removed for the PL230 controller
+ - DMA CTRL bit fields renamed to be more consistent with PL230 TRM manual
+ - Added additional volatile statements to pointers in DMA Control structure
+ - Fixed several registers that were readable, and was marked as __O (output
+   only)
+
+1.1.1:
+ - Fixed startup code, CMSIS SystemInit cannot update global variable
+
+1.1.0:
+ - Note - some register bit field updates in this release are _not_ backward
+   compatible
+ - Updated register bit fields to comply with documentation updates, i.e.
+   reference manual version > 0.83
+ - Apply patch to CMSIS core for GCC issues
+ - Added DMA_CONTROL_TypeDef control block for PrimeCell PL230 DMA controller
+ - Added ROMTABLE PID / CHIP revision table and masks
+ - Revised and updated Device Information page structure "DEVINFO page"
+   This structure is ONLY valid for rev.B production devices
+ - GPIO EXTIPSEL bit field marked "16" changed to 15 (bug correction)
+ - Added more bit fields to TIMER_ROUTE registers
+ - Cosmetic updates in doxygen comments and copyright statements
+
+1.0.4:
+ - ACMP INPUTSEL bit fields changed from ohm rating to res-n,
+ - Added bit-band base addresses for peripherals and sram
+
+1.0.3:
+ - ADC SCANMODE and SCANCTRL bit field updates and corrections
+ - Moved Readme.txt and Changes.txt to CMSIS/Readme-EFM32.txt and
+   CMSIS/Changes-EFM32.txt
+ - CCPEN and CDTIPEN splitted in TIMER_ROUTE
+ - EMVREG in EMU_CTRL enumeration changed
+ - LCD DISPCTRL volatage levels are part specific, changed settings changed to
+   reflect this
+ - Added "UL" (unsigned long) to some bit fields giving warnings due to sign
+   conversion
+
+1.0.2:
+ - Corrected revision numbers in file headers
+ - Removed example code that was moved into BSP/DVK installer package
+
+1.0.1:
+ - Updated to use official CMSIS1V30 release
+ - Corrected IRQ vector table in assembly startup files, IMEM to MSC,
+   UDMA to DMA
+ - DMA peripheral/signal names corrected
+ - Example Blinky application updated to work on all EFM32 MCU-Modules on DVK
+ - Added "simple" board support package to example
+ - Added "UL" (unsigned long) tag to several fields
+
+1.0.0:
+ - Initial release
+ - Includes CMSIS1V30 2nd PreRelease
+ - Now requires two include paths, CMSIS/CM3/DeviceSupport/EnergyMicro/EFM32 and
+   CMSIS/CM3/CoreSupport
