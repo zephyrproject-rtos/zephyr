@@ -11,6 +11,8 @@ endif
 
 -include $(srctree)/ext/hal/qmsi/Makefile
 
+-include $(srctree)/ext/hal/silabs/gecko/Makefile
+
 -include $(srctree)/ext/hal/st/stm32cube/Makefile
 
 -include $(srctree)/ext/hal/ti/simplelink/Makefile
