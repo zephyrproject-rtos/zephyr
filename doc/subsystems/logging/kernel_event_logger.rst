@@ -157,13 +157,13 @@ can also be found at :file:`samples/kernel_event_logger`.
         if (res > 0) {
             /* process the event */
             switch (event_id) {
-            case KERNEL_EVENT_CONTEXT_SWITCH_EVENT_ID:
+            case KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID:
                 /* ... Process the context switch event ... */
                 break;
-            case KERNEL_EVENT_INTERRUPT_EVENT_ID:
+            case KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID:
                 /* ... Process the interrupt event ... */
                 break;
-            case KERNEL_EVENT_SLEEP_EVENT_ID:
+            case KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID:
                 /* ... Process the sleep event ... */
                 break;
             default:
