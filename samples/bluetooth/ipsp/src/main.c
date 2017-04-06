@@ -39,6 +39,19 @@ char __noinit __stack thread_stack[STACKSIZE];
 
 #define MAX_DBG_PRINT 64
 
+NET_NBUF_TX_POOL_DEFINE(echo_tx_tcp, 15);
+NET_NBUF_DATA_POOL_DEFINE(echo_data_tcp, 30);
+
+static struct net_buf_pool *tx_tcp_pool(void)
+{
+	return &echo_tx_tcp;
+}
+
+static struct net_buf_pool *data_tcp_pool(void)
+{
+	return &echo_data_tcp;
+}
+
 static struct k_sem quit_lock;
 
 static inline void quit(void)
@@ -117,6 +130,8 @@ static inline bool get_context(struct net_context **udp_recv6,
 		printk("Cannot get network context for IPv6 TCP (%d)", ret);
 		return false;
 	}
+
+	net_context_setup_pools(*tcp_recv6, tx_tcp_pool, data_tcp_pool);
 
 	ret = net_context_bind(*tcp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
