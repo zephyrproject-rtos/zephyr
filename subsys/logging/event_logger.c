@@ -106,7 +106,7 @@ int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
 			 uint8_t *dropped_event_count, uint32_t *buffer,
 			 uint8_t *buffer_size)
 {
-	if (k_sem_take(&(logger->sync_sema), K_NO_WAIT)) {
+	if (k_sem_take(&(logger->sync_sema), K_NO_WAIT) == 0) {
 		return event_logger_get(logger, event_id, dropped_event_count,
 					buffer, buffer_size);
 	}
