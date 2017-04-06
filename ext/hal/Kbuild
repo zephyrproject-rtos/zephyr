@@ -4,3 +4,4 @@ obj-$(CONFIG_HAS_STM32CUBE) += st/stm32cube/
 obj-$(CONFIG_HAS_CC3220SDK) += ti/simplelink/
 obj-$(CONFIG_HAS_NORDIC_HAL) += nordic/
 obj-$(CONFIG_HAS_NORDIC_DRIVERS) += nordic/drivers/
+obj-$(CONFIG_HAS_SILABS_GECKO) += silabs/gecko/

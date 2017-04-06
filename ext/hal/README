@@ -12,6 +12,11 @@ cmsis
 The ARM Cortex Microcontroller Software Interface Standard (CMSIS) defines a
 set of standard interfaces to ARM Cortex-M SoCs.
 
+gecko
+-----
+The Silicon Labs Gecko SDK provides device header files and peripheral drivers
+for all Silicon Labs Gecko devices: EFM32, EZR32 and EFR32.
+
 mcux
 -------
 The NXP MCUXpresso Software Development Kit (MCUX) provides device header files
