@@ -1,0 +1,11 @@
+# Kconfig - Hexiwear KW40Z board
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_HEXIWEAR_KW40Z
+	bool "Hexiwear KW40Z"
+	depends on SOC_SERIES_KINETIS_KWX
+	select SOC_PART_NUMBER_MKW40Z160VHT4
