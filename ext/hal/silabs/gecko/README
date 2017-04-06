@@ -1,0 +1,24 @@
+Silabs Gecko SDK
+----------------
+
+Downloaded from https://github.com/SiliconLabs/Gecko_SDK
+
+How to update
++++++++++++++
+
+  * Downloaded current version from https://github.com/SiliconLabs/Gecko_SDK
+  * Extract
+  * Replace the necessary files in ext/hal/silabs/gecko/Device and ext/hal/silabs/gecko/emlib
+  * Ensure that the Makfile and Kbuild-file match the new version of the Gecko SDK
+
+The following folders are used in this HAL:
+
++-------------------+-----------------------------+--------------------------------------------------------------------+
+| Gecko SDK         | Zephyr                      | Comments                                                           |
++-------------------+-----------------------------+--------------------------------------------------------------------+
+| platform/Device/  | ext/hal/silabs/gecko/Device | Contains the device specific files in SiliconLabs/$(GECKO_DEVICE). |
+|                   |                             | The files are not modified.                                        |
++-------------------+-----------------------------+--------------------------------------------------------------------+
+| platform/emlib/   | ext/hal/silabs/gecko/emlib  | Contains the Silabs Peripheral Support library for the EXX32 SoCs. |
+|                   |                             | All files are copied over. The files are not modified.             |
++-------------------+-----------------------------+--------------------------------------------------------------------+

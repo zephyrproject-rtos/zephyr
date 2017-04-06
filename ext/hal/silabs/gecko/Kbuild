@@ -1,0 +1,4 @@
+obj-$(CONFIG_HAS_CMU) += emlib/src/em_cmu.o
+obj-y += emlib/src/em_system.o
+
+obj-$(CONFIG_SOC_SERIES_EFM32WG) += Device/SiliconLabs/EFM32WG/Source/system_efm32wg.o
