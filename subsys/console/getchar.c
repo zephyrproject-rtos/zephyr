@@ -30,10 +30,6 @@ static int console_irq_input_hook(uint8_t c)
 	uart_ringbuf[i_put] = c;
 	i_put = i_next;
 	k_sem_give(&uart_sem);
-	/** Allow waiting threads to pick up a char ASAP, or there can be
-	 *  buffer overflow.
-	 */
-	k_yield();
 
 	return 1;
 }
