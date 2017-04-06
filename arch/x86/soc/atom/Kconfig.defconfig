@@ -19,7 +19,7 @@ config PHYS_RAM_ADDR
 
 config RAM_SIZE
 	default 128 if XIP
-	default 192
+	default 256
 
 config ROM_SIZE
 	default 72 if XIP
