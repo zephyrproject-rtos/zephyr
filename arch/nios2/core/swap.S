@@ -9,18 +9,18 @@
 #include <offsets_short.h>
 
 /* exports */
-GTEXT(_Swap)
+GTEXT(__swap)
 GTEXT(_thread_entry_wrapper)
 
 /* imports */
 GTEXT(_sys_k_event_logger_context_switch)
 GTEXT(_k_neg_eagain)
 
-/* unsigned int _Swap(unsigned int key)
+/* unsigned int __swap(unsigned int key)
  *
  * Always called with interrupts locked
  */
-SECTION_FUNC(exception.other, _Swap)
+SECTION_FUNC(exception.other, __swap)
 
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
@@ -30,7 +30,7 @@ SECTION_FUNC(exception.other, _Swap)
 	ldw  r11, _kernel_offset_to_current(r10)
 
 	/* Store all the callee saved registers. We either got here via
-	 * an exception or from a cooperative invocation of _Swap() from C
+	 * an exception or from a cooperative invocation of __swap() from C
 	 * domain, so all the caller-saved registers have already been
 	 * saved by the exception asm or the calling C code already.
 	 */
@@ -93,7 +93,7 @@ SECTION_FUNC(exception.other, _Swap)
 	ldw sp,  _thread_offset_to_sp(r2)
 
 	/* We need to irq_unlock(current->coopReg.key);
-	 * key was supplied as argument to _Swap(). Fetch it.
+	 * key was supplied as argument to __swap(). Fetch it.
 	 */
 	ldw r3, _thread_offset_to_key(r2)
 

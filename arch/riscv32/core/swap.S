@@ -9,18 +9,18 @@
 #include <offsets_short.h>
 
 /* exports */
-GTEXT(_Swap)
+GTEXT(__swap)
 GTEXT(_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
 /*
- * unsigned int _Swap(unsigned int key)
+ * unsigned int __swap(unsigned int key)
  *
  * Always called with interrupts locked
  * key is stored in a0 register
  */
-SECTION_FUNC(exception.other, _Swap)
+SECTION_FUNC(exception.other, __swap)
 
 	/* Make a system call to perform context switch */
 	ecall
@@ -30,16 +30,16 @@ SECTION_FUNC(exception.other, _Swap)
 	 * Restored register a0 contains IRQ lock state of thread.
 	 *
 	 * Prior to unlocking irq, load return value of
-	 * _Swap to temp register t2 (from _thread_offset_to_swap_return_value).
-	 * Normally, it should be -EAGAIN, unless someone has previously
-	 * called _set_thread_return_value(..).
+	 * __swap to temp register t2 (from
+	 * _thread_offset_to_swap_return_value). Normally, it should be -EAGAIN,
+	 * unless someone has previously called _set_thread_return_value(..).
 	 */
 	la t0, _kernel
 
 	/* Get pointer to _kernel.current */
 	lw t1, _kernel_offset_to_current(t0)
 
-	/* Load return value of _Swap function in temp register t2 */
+	/* Load return value of __swap function in temp register t2 */
 	lw t2, _thread_offset_to_swap_return_value(t1)
 
 	/*
@@ -62,9 +62,9 @@ SECTION_FUNC(exception.other, _Swap)
 SECTION_FUNC(TEXT, _thread_entry_wrapper)
 	/*
 	 * _thread_entry_wrapper is called for every new thread upon the return
-	 * of _Swap or ISR. Its address, as well as its input function arguments
-	 * thread_entry_t, void *, void *, void * are restored from the thread
-	 * stack (initialized via function _thread).
+	 * of __swap or ISR. Its address, as well as its input function
+	 * arguments thread_entry_t, void *, void *, void * are restored from
+	 * the thread stack (initialized via function _thread).
 	 * In this case, thread_entry_t, * void *, void * and void * are stored
 	 * in registers a0, a1, a2 and a3. These registers are used as arguments
 	 * to function _thread_entry. Hence, just call _thread_entry with

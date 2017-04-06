@@ -50,7 +50,9 @@ extern void _new_thread(char *pStack, size_t stackSize,
 
 /* context switching and scheduling-related routines */
 
-extern unsigned int _Swap(unsigned int);
+extern unsigned int __swap(unsigned int key);
+
+#define _Swap(x)  __swap(x)
 
 /* set and clear essential fiber/task flag */
 

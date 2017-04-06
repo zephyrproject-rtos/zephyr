@@ -19,7 +19,7 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(_Swap)
+GTEXT(__swap)
 #if defined(CONFIG_ARMV6_M)
 #elif defined(CONFIG_ARMV7_M)
 GTEXT(__svc)
@@ -186,7 +186,7 @@ _thread_irq_disabled:
  *
  * @brief Service call handler
  *
- * The service call (svc) is only used in _Swap() to enter handler mode so we
+ * The service call (svc) is only used in __swap() to enter handler mode so we
  * can go through the PendSV exception to perform a context switch.
  *
  * @return N/A
@@ -257,13 +257,13 @@ _oops:
  *
  * @brief Initiate a cooperative context switch
  *
- * The _Swap() routine is invoked by various kernel services to effect
- * a cooperative context context switch.  Prior to invoking _Swap(), the caller
+ * The __swap() routine is invoked by various kernel services to effect
+ * a cooperative context context switch.  Prior to invoking __swap(), the caller
  * disables interrupts via irq_lock() and the return 'key' is passed as a
- * parameter to _Swap().  The 'key' actually represents the BASEPRI register
+ * parameter to __swap().  The 'key' actually represents the BASEPRI register
  * prior to disabling interrupts via the BASEPRI mechanism.
  *
- * _Swap() itself does not do much.
+ * __swap() itself does not do much.
  *
  * It simply stores the intlock key (the BASEPRI value) parameter into
  * current->basepri, and then triggers a service call exception (svc) to setup
@@ -273,7 +273,7 @@ _oops:
  * __pendsv all come from handling an interrupt, which means we know the
  * interrupts were not locked: in that case the BASEPRI value is 0.
  *
- * Given that _Swap() is called to effect a cooperative context switch,
+ * Given that __swap() is called to effect a cooperative context switch,
  * only the caller-saved integer registers need to be saved in the thread of the
  * outgoing thread. This is all performed by the hardware, which stores it in
  * its exception stack frame, created when handling the svc exception.
@@ -286,18 +286,18 @@ _oops:
  *
  * C function prototype:
  *
- * unsigned int _Swap (unsigned int basepri);
+ * unsigned int __swap (unsigned int basepri);
  *
  */
 
-SECTION_FUNC(TEXT, _Swap)
+SECTION_FUNC(TEXT, __swap)
 
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
     str r0, [r2, #_thread_offset_to_basepri]
 
     /*
-     * Set _Swap()'s default return code to -EAGAIN. This eliminates the need
+     * Set __swap()'s default return code to -EAGAIN. This eliminates the need
      * for the timeout code to set it itself.
      */
     ldr r1, =_k_neg_eagain
