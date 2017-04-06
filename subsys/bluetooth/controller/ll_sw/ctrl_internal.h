@@ -33,9 +33,20 @@ struct connection {
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
 	uint8_t data_chan_map[5];
-	uint8_t data_chan_count;
-	uint8_t data_chan_hop;
-	uint8_t data_chan_use;
+
+	uint8_t data_chan_count:6;
+	uint8_t data_chan_sel:1;
+	uint8_t rfu:1;
+
+	union {
+		struct {
+			uint8_t data_chan_hop;
+			uint8_t data_chan_use;
+		};
+
+		uint16_t data_chan_id;
+	};
+
 	uint16_t handle;
 	uint16_t event_counter;
 	uint16_t conn_interval;

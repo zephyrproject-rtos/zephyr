@@ -47,6 +47,12 @@
 #define RADIO_LL_LENGTH_OCTETS_RX_MAX 27
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
+#define RADIO_BLE_FEAT_BIT_CHAN_SEL_2 BIT(BT_LE_FEAT_BIT_CHAN_SEL_ALGO_2)
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
+#define RADIO_BLE_FEAT_BIT_CHAN_SEL_2 0
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
+
 /*****************************************************************************
  * Timer Resources (Controller defined)
  ****************************************************************************/
@@ -103,7 +109,8 @@
 					 BIT(BT_LE_FEAT_BIT_EXT_REJ_IND) | \
 					 BIT(BT_LE_FEAT_BIT_SLAVE_FEAT_REQ) | \
 					 RADIO_BLE_FEAT_BIT_PING | \
-					 RADIO_BLE_FEAT_BIT_DLE)
+					 RADIO_BLE_FEAT_BIT_DLE | \
+					 RADIO_BLE_FEAT_BIT_CHAN_SEL_2)
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_WORKER_PRIO)
 #define RADIO_TICKER_USER_ID_WORKER_PRIO CONFIG_BLUETOOTH_CONTROLLER_WORKER_PRIO
@@ -183,6 +190,39 @@ struct radio_adv_data {
 	uint8_t last;
 };
 
+struct radio_pdu_node_tx {
+	void *next;
+	uint8_t pdu_data[1];
+};
+
+enum radio_pdu_node_rx_type {
+	NODE_RX_TYPE_NONE,
+	NODE_RX_TYPE_DC_PDU,
+	NODE_RX_TYPE_REPORT,
+	NODE_RX_TYPE_CONNECTION,
+	NODE_RX_TYPE_TERMINATE,
+	NODE_RX_TYPE_CONN_UPDATE,
+	NODE_RX_TYPE_ENC_REFRESH,
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+	NODE_RX_TYPE_APTO,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+	NODE_RX_TYPE_CHAN_SEL_ALGO,
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
+	NODE_RX_TYPE_RSSI,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+	NODE_RX_TYPE_PROFILE,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
+	NODE_RX_TYPE_ADV_INDICATION,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION */
+};
+
 struct radio_le_conn_cmplt {
 	uint8_t status;
 	uint8_t role;
@@ -204,36 +244,9 @@ struct radio_le_conn_update_cmplt {
 	uint16_t timeout;
 } __packed;
 
-struct radio_pdu_node_tx {
-	void *next;
-	uint8_t pdu_data[1];
-};
-
-enum radio_pdu_node_rx_type {
-	NODE_RX_TYPE_NONE,
-	NODE_RX_TYPE_DC_PDU,
-	NODE_RX_TYPE_REPORT,
-	NODE_RX_TYPE_CONNECTION,
-	NODE_RX_TYPE_TERMINATE,
-	NODE_RX_TYPE_CONN_UPDATE,
-	NODE_RX_TYPE_ENC_REFRESH,
-
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
-	NODE_RX_TYPE_APTO,
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
-
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
-	NODE_RX_TYPE_RSSI,
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
-
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
-	NODE_RX_TYPE_PROFILE,
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
-
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
-	NODE_RX_TYPE_ADV_INDICATION,
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION */
-};
+struct radio_le_chan_sel_algo {
+	uint8_t chan_sel_algo;
+} __packed;
 
 struct radio_pdu_node_rx_hdr {
 	union {

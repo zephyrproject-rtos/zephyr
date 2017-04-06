@@ -73,7 +73,7 @@ enum pdu_adv_type {
 struct pdu_adv {
 	uint8_t type:4;
 	uint8_t rfu:1;
-	uint8_t ch_sel:1;
+	uint8_t chan_sel:1;
 	uint8_t tx_addr:1;
 	uint8_t rx_addr:1;
 

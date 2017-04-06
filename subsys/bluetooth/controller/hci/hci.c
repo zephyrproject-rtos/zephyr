@@ -1180,6 +1180,28 @@ static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
+static void le_chan_sel_algo(struct pdu_data *pdu_data, uint16_t handle,
+			     struct net_buf *buf)
+{
+	struct bt_hci_evt_le_chan_sel_algo *sep;
+	struct radio_le_chan_sel_algo *radio_le_chan_sel_algo;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CHAN_SEL_ALGO)) {
+		return;
+	}
+
+	radio_le_chan_sel_algo = (struct radio_le_chan_sel_algo *)
+					pdu_data->payload.lldata;
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CHAN_SEL_ALGO, sizeof(*sep));
+
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->chan_sel_algo = radio_le_chan_sel_algo->chan_sel_algo;
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
+
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
@@ -1214,6 +1236,12 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		auth_payload_timeout_exp(pdu_data, handle, buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
+	case NODE_RX_TYPE_CHAN_SEL_ALGO:
+		le_chan_sel_algo(pdu_data, handle, buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
