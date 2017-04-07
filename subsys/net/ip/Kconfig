@@ -162,6 +162,7 @@ config NET_MAX_CONTEXTS
 config NET_CONTEXT_NBUF_POOL
 	bool "Enable net_buf TX pool / context"
 	default n
+	default y if NET_TCP && NET_6LO
 	help
 	If enabled, then it is possible to fine-tune network buffer pool
 	for each context when sending network data. If this setting is
