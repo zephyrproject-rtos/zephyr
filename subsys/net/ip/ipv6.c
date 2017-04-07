@@ -2745,7 +2745,7 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_buf *buf,
 			return frag;
 #endif
 		default:
-			if (!check_unknown_option(frag, opt_type, length)) {
+			if (!check_unknown_option(buf, opt_type, length)) {
 				goto drop;
 			}
 
