@@ -566,7 +566,7 @@ static void cb_recv(struct net_context *net_ctx,
 
 		i = get_slot_by_id(ctx, dns_id);
 		if (i < 0) {
-			goto cancel;
+			goto free_buf;
 		}
 
 		for (j = 0; j < CONFIG_DNS_RESOLVER_MAX_SERVERS; j++) {
@@ -598,7 +598,6 @@ quit:
 		goto free_buf;
 	}
 
-cancel:
 	if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
 		k_delayed_work_cancel(&ctx->queries[i].timer);
 	}
