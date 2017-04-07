@@ -475,7 +475,9 @@ enum net_verdict net_arp_input(struct net_buf *buf)
 		break;
 	}
 
-	return NET_DROP;
+	net_nbuf_unref(buf);
+
+	return NET_OK;
 }
 
 void net_arp_init(void)
