@@ -134,8 +134,6 @@ event.
 
 The following code illustrates how a thread can retrieve the events
 recorded by the kernel event logger.
-A sample application that shows how to collect kernel event data
-can also be found at :file:`samples/kernel_event_logger`.
 
 .. code-block:: c
 
