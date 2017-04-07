@@ -647,6 +647,12 @@ int net_tcp_queue_data(struct net_context *context, struct net_buf *buf)
 
 	sys_slist_append(&context->tcp->sent_list, &buf->sent_list);
 
+	/* We need to restart retry_timer if it is stopped. */
+	if (k_timer_remaining_get(&context->tcp->retry_timer) == 0) {
+		k_timer_start(&context->tcp->retry_timer,
+			      retry_timeout(context->tcp), 0);
+	}
+
 	do_ref_if_needed(buf);
 
 	return 0;

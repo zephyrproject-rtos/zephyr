@@ -300,13 +300,18 @@ void net_nbuf_print_frags(struct net_buf *buf)
 {
 	struct net_buf *frag;
 	size_t total = 0;
-	int count = 0, frag_size = 0, ll_overhead = 0;
+	int count = -1, frag_size = 0, ll_overhead = 0;
 
-	NET_DBG("Buf %p frags %p", buf, buf->frags);
+	if (!buf) {
+		NET_INFO("Buf %p", buf);
+		return;
+	}
+
+	NET_INFO("Buf %p frags %p", buf, buf->frags);
 
 	NET_ASSERT(buf->frags);
 
-	frag = buf->frags;
+	frag = buf;
 
 	while (frag) {
 		total += frag->len;
@@ -314,15 +319,18 @@ void net_nbuf_print_frags(struct net_buf *buf)
 		frag_size = frag->size;
 		ll_overhead = net_buf_headroom(frag);
 
-		NET_DBG("[%d] frag %p len %d size %d reserve %d",
-			count, frag, frag->len, frag_size, ll_overhead);
+		NET_INFO("[%d] frag %p len %d size %d reserve %d "
+			 "pool %p [sz %d ud_sz %d]",
+			 count, frag, frag->len, frag_size, ll_overhead,
+			 frag->pool, frag->pool->buf_size,
+			 frag->pool->user_data_size);
 
 		count++;
 
 		frag = frag->frags;
 	}
 
-	NET_DBG("Total data size %zu, occupied %d bytes, ll overhead %d, "
+	NET_INFO("Total data size %zu, occupied %d bytes, ll overhead %d, "
 		"utilization %zu%%",
 		total, count * frag_size - count * ll_overhead,
 		count * ll_overhead, (total * 100) / (count * frag_size));

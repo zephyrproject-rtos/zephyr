@@ -179,10 +179,20 @@ config	NET_RPL_DAO_TIMER
 config	NET_RPL_DAO_ACK
 	bool "Node expecting DAO ACK"
 	depends on NET_RPL
-	default n
+	default y
 	help
 	Node expecting DAO ACK for DAO message. Enable if interested
 	in status of DAO message.
+
+config  NET_RPL_DAO_MAX_RETRANSMISSIONS
+	int "Max DAO retransmissions"
+	depends on NET_RPL && NET_RPL_DAO_ACK
+	default 4
+	range 1 5
+	help
+	If NET_RPL_DAO_ACK enabled then node expects DAO ACK message from
+	the parent. If DAO message is routed through different nodes, ACK
+	may be lost. So retry sending DAO message for max number of trials.
 
 config	NET_RPL_PREFERENCE
 	int "DAG preference field default value"

@@ -100,6 +100,10 @@
 #define NET_RPL_GROUNDED false
 #endif
 
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+#define NET_RPL_DAO_RETRANSMIT_TIMEOUT	K_SECONDS(8)
+#endif
+
 #define NET_RPL_PARENT_FLAG_UPDATED           0x1
 #define NET_RPL_PARENT_FLAG_LINK_METRIC_VALID 0x2
 
@@ -132,6 +136,8 @@ static void remove_parents(struct net_if *iface,
 			   uint16_t minimum_rank);
 
 static void net_rpl_schedule_dao_now(struct net_rpl_instance *instance);
+static void net_rpl_local_repair(struct net_if *iface,
+				 struct net_rpl_instance *instance);
 
 void net_rpl_set_join_callback(net_rpl_join_callback_t cb)
 {
@@ -775,7 +781,9 @@ static enum net_verdict handle_dis(struct net_buf *buf)
 		}
 	}
 
-	return NET_DROP;
+	net_nbuf_unref(buf);
+
+	return NET_OK;
 }
 
 static struct net_rpl_instance *net_rpl_get_instance(uint8_t instance_id)
@@ -953,6 +961,12 @@ static void dao_timer(struct net_rpl_instance *instance)
 			send_mcast_dao(instance);
 		}
 #endif
+
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+		instance->dao_transmissions = 1;
+		k_delayed_work_submit(&instance->dao_retransmit_timer,
+				      NET_RPL_DAO_RETRANSMIT_TIMEOUT);
+#endif
 	} else {
 		NET_DBG("No suitable DAO parent found.");
 	}
@@ -971,6 +985,32 @@ static void dao_lifetime_timer(struct k_work *work)
 	set_dao_lifetime_timer(instance);
 }
 
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+static void dao_retransmit_timer(struct k_work *work)
+{
+	struct net_rpl_instance *instance =
+		CONTAINER_OF(work, struct net_rpl_instance,
+			     dao_retransmit_timer);
+
+	if (instance->dao_transmissions >
+	    CONFIG_NET_RPL_DAO_MAX_RETRANSMISSIONS) {
+		/* No more retransmissions - give up.
+		 * FIXME: Perform local repair and find another parent ?
+		 */
+		return;
+	}
+
+	NET_DBG("Retransmitting DAO %d", instance->dao_transmissions);
+
+	instance->dao_transmissions++;
+	k_delayed_work_submit(&instance->dao_retransmit_timer,
+			      NET_RPL_DAO_RETRANSMIT_TIMEOUT);
+
+	dao_send(instance->current_dag->preferred_parent,
+		 instance->default_lifetime, instance->iface);
+}
+#endif
+
 static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 					 uint8_t id)
 {
@@ -984,6 +1024,10 @@ static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
 	k_delayed_work_init(&instance->dao_lifetime_timer, dao_lifetime_timer);
 	k_delayed_work_init(&instance->dao_timer, dao_send_timer);
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+	k_delayed_work_init(&instance->dao_retransmit_timer,
+			    dao_retransmit_timer);
+#endif
 }
 
 static struct net_rpl_instance *net_rpl_alloc_instance(uint8_t instance_id)
@@ -1229,24 +1273,25 @@ struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 		for (i = 0; i < CONFIG_NET_RPL_MAX_DAG_PER_INSTANCE; i++) {
 			dag = &instance->dags[i];
 
-			if (net_rpl_dag_is_used(dag)) {
-				if (net_ipv6_addr_cmp(&dag->dag_id, dag_id)) {
-					version = dag->version;
-
-					net_rpl_lollipop_increment(&version);
-				}
-
-				if (dag == dag->instance->current_dag) {
-					NET_DBG("Dropping a joined DAG when "
-						"setting this node as root");
-					dag->instance->current_dag = NULL;
-				} else {
-					NET_DBG("Dropping a DAG when "
-						"setting this node as root");
-				}
-
-				net_rpl_free_dag(iface, dag);
+			if (!net_rpl_dag_is_used(dag)) {
+				continue;
 			}
+
+			if (net_ipv6_addr_cmp(&dag->dag_id, dag_id)) {
+				version = dag->version;
+				net_rpl_lollipop_increment(&version);
+			}
+
+			if (dag == dag->instance->current_dag) {
+				NET_DBG("Dropping a joined DAG when "
+					"setting this node as root");
+				dag->instance->current_dag = NULL;
+			} else {
+				NET_DBG("Dropping a DAG when "
+					"setting this node as root");
+			}
+
+			net_rpl_free_dag(iface, dag);
 		}
 	}
 
@@ -1398,21 +1443,22 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 	if (parent == dag->preferred_parent || !dag->preferred_parent) {
 		dag->rank = NET_RPL_INFINITE_RANK;
 
-		if (net_rpl_dag_is_joined(dag)) {
-			if (dag->instance->default_route) {
-				NET_DBG("Removing default route %s",
-					net_sprint_ipv6_addr(addr));
+		if (!net_rpl_dag_is_joined(dag)) {
+			return;
+		}
 
-				net_if_router_rm(dag->instance->default_route);
+		if (dag->instance->default_route) {
+			NET_DBG("Removing default route %s",
+				net_sprint_ipv6_addr(addr));
 
-				dag->instance->default_route = NULL;
-			}
+			net_if_router_rm(dag->instance->default_route);
+			dag->instance->default_route = NULL;
+		}
 
-			/* Send no-path DAO only to preferred parent, if any */
-			if (parent == dag->preferred_parent) {
-				dao_send(parent, NET_RPL_ZERO_LIFETIME, NULL);
-				net_rpl_set_preferred_parent(iface, dag, NULL);
-			}
+		/* Send no-path DAO only to preferred parent, if any */
+		if (parent == dag->preferred_parent) {
+			dao_send(parent, NET_RPL_ZERO_LIFETIME, NULL);
+			net_rpl_set_preferred_parent(iface, dag, NULL);
 		}
 	}
 
@@ -1423,29 +1469,30 @@ static void net_rpl_remove_parent(struct net_if *iface,
 				  struct net_rpl_parent *parent,
 				  struct net_nbr *nbr)
 {
-	if (!nbr) {
-		nbr = net_rpl_get_nbr(parent);
-	}
+#if defined(CONFIG_NET_DEBUG_RPL)
+	struct in6_addr *addr;
+	struct net_linkaddr_storage *lladdr;
+#endif
 
 	NET_ASSERT(iface);
 
-	if (nbr) {
+	if (!nbr) {
+		nbr = net_rpl_get_nbr(parent);
+		if (!nbr) {
+			return;
+		}
+	}
+
 #if defined(CONFIG_NET_DEBUG_RPL)
-		struct in6_addr *addr;
-		struct net_linkaddr_storage *lladdr;
+	addr = net_rpl_get_parent_addr(iface, parent);
+	lladdr = net_nbr_get_lladdr(nbr->idx);
 
-		addr = net_rpl_get_parent_addr(iface, parent);
-		lladdr = net_nbr_get_lladdr(nbr->idx);
-
-		NET_DBG("Removing parent %s [%s]",
-			net_sprint_ipv6_addr(addr),
-			net_sprint_ll_addr(lladdr->addr, lladdr->len));
+	NET_DBG("Removing parent %s [%s]", net_sprint_ipv6_addr(addr),
+		net_sprint_ll_addr(lladdr->addr, lladdr->len));
 #endif /* CONFIG_NET_DEBUG_RPL */
 
-		net_rpl_nullify_parent(iface, parent);
-
-		nbr_free(nbr);
-	}
+	net_rpl_nullify_parent(iface, parent);
+	nbr_free(nbr);
 }
 
 /* Remove DAG parents with a rank that is at least the same as minimum_rank.
@@ -2918,8 +2965,7 @@ static enum net_verdict handle_dio(struct net_buf *buf)
 
 	NET_ASSERT_INFO(!pos && !frag, "DIO reading failure");
 
-	net_rpl_process_dio(net_nbuf_iface(buf), &NET_IPV6_BUF(buf)->src,
-			    &dio);
+	net_rpl_process_dio(net_nbuf_iface(buf), &NET_IPV6_BUF(buf)->src, &dio);
 
 out:
 	return NET_DROP;
@@ -3346,13 +3392,12 @@ static enum net_verdict handle_dao(struct net_buf *buf)
 	}
 #endif
 
-	route = net_route_lookup(net_nbuf_iface(buf), &addr);
-
 	if (lifetime == NET_RPL_ZERO_LIFETIME) {
 		struct in6_addr *nexthop;
 
 		NET_DBG("No-Path DAO received");
 
+		route = net_route_lookup(net_nbuf_iface(buf), &addr);
 		nbr = net_route_get_nbr(route);
 		extra = net_nbr_extra_data(nbr);
 		nexthop = net_route_get_nexthop(route);
@@ -3462,7 +3507,6 @@ fwd_dao:
 static enum net_verdict handle_dao_ack(struct net_buf *buf)
 {
 	struct net_rpl_instance *instance;
-	struct net_rpl_parent *parent;
 	struct net_buf *frag;
 	uint16_t offset;
 	uint16_t pos;
@@ -3490,14 +3534,6 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 		return NET_DROP;
 	}
 
-	parent = find_parent(net_nbuf_iface(buf), instance->current_dag,
-			     &NET_IPV6_BUF(buf)->src);
-	if (!parent) {
-		NET_DBG("Received a DAO ACK from a not joined instance %d",
-			instance_id);
-		return NET_DROP;
-	}
-
 	/* Skip reserved byte */
 	frag = net_nbuf_skip(frag, pos, &pos, 1);
 	frag = net_nbuf_read_u8(frag, pos, &pos, &sequence);
@@ -3512,7 +3548,10 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 
 	if (sequence == rpl_dao_sequence) {
 		NET_DBG("Status %s", status < 128 ? "ACK" : "NACK");
-		/* FIXME: Stop any DAO retransimission. */
+
+#if defined(CONFIG_NET_RPL_DAO_ACK)
+		k_delayed_work_cancel(&instance->dao_retransmit_timer);
+#endif
 		if (status >= 128) {
 			/* Rejection, the node sending the DAO-ACK is unwilling
 			 * to act as a parent.
@@ -3522,8 +3561,7 @@ static enum net_verdict handle_dao_ack(struct net_buf *buf)
 			return NET_DROP;
 		}
 	} else {
-		/* FIXME: Forward or drop ? */
-		NET_DBG("DAO ACK not for me");
+		NET_DBG("Seq mismatch %u(%u)", rpl_dao_sequence, sequence);
 		return NET_DROP;
 	}
 
@@ -3563,89 +3601,79 @@ int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr)
 	uint16_t pos = 0;
 	struct net_rpl_parent *parent;
 	struct net_buf *frag;
+	uint16_t sender_rank;
+	uint16_t offset;
 	uint8_t next;
 	uint8_t len;
 
 	frag = buf->frags;
 
-	if (NET_IPV6_BUF(buf)->nexthdr == NET_IPV6_NEXTHDR_HBHO) {
-		/* The HBHO will start right after IPv6 header */
-		frag = net_nbuf_skip(frag, pos, &pos,
-				     sizeof(struct net_ipv6_hdr));
-		if (!frag && pos) {
-			/* Not enough data in the message */
-			return -EMSGSIZE;
-		}
-
-		frag = net_nbuf_read(frag, pos, &pos, 1, &next);
-		frag = net_nbuf_read(frag, pos, &pos, 1, &len);
-		if (!frag && pos) {
-			return -EMSGSIZE;
-		}
-
-		if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
-			NET_DBG("Non RPL Hop-by-hop options support not "
-				"implemented");
-			return 0;
-		}
-
-		if (next == NET_RPL_EXT_HDR_OPT_RPL) {
-			uint16_t sender_rank, offset;
-
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt type */
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt len */
-
-			offset = pos; /* Where the flags is located in the
-				       * packet, that info is need few lines
-				       * below.
-				       */
-
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* flags */
-			frag = net_nbuf_skip(frag, pos, &pos, 1); /* instance */
-
-			frag = net_nbuf_read(frag, pos, &pos, 2,
-					     (uint8_t *)&sender_rank);
-			if (!frag && pos) {
-				return -EMSGSIZE;
-			}
-
-			if (sender_rank == 0) {
-				NET_DBG("Updating RPL option");
-				if (!rpl_default_instance ||
-				    !rpl_default_instance->is_used ||
-				    !net_rpl_dag_is_joined(
-					  rpl_default_instance->current_dag)) {
-
-					NET_DBG("Unable to add hop-by-hop "
-						"extension header: incorrect "
-						"default instance");
-					return -EINVAL;
-				}
-
-				parent = find_parent(net_nbuf_iface(buf),
-						     rpl_default_instance->
-						     current_dag,
-						     addr);
-
-				if (!parent ||
-				    parent != parent->dag->preferred_parent) {
-					net_nbuf_write_u8(buf, buf->frags,
-							  offset, &pos,
-							  NET_RPL_HDR_OPT_DOWN);
-				}
-
-				offset++;
-
-				net_nbuf_write_u8(buf, buf->frags, offset, &pos,
-					     rpl_default_instance->instance_id);
-
-				net_nbuf_write_be16(buf, buf->frags, pos, &pos,
-					     htons(rpl_default_instance->
-						   current_dag->rank));
-			}
-		}
+	if (NET_IPV6_BUF(buf)->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
+		return 0;
 	}
 
+	/* The HBHO will start right after IPv6 header */
+	frag = net_nbuf_skip(frag, pos, &pos, sizeof(struct net_ipv6_hdr));
+	if (!frag && pos) {
+		/* Not enough data in the message */
+		return -EMSGSIZE;
+	}
+
+	frag = net_nbuf_read(frag, pos, &pos, 1, &next);
+	frag = net_nbuf_read(frag, pos, &pos, 1, &len);
+	if (!frag && pos) {
+		return -EMSGSIZE;
+	}
+
+	if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
+		NET_DBG("Non RPL Hop-by-hop options support not implemented");
+		return 0;
+	}
+
+	if (next != NET_RPL_EXT_HDR_OPT_RPL) {
+		NET_DBG("Next header option is not NET_RPL_EXT_HDR_OPT_RPL");
+		return 0;
+	}
+
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt type */
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt len */
+
+	/* Where the flags is located in the packet, that info is
+	 * need few lines below.
+	 */
+	offset = pos;
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* flags */
+	frag = net_nbuf_skip(frag, pos, &pos, 1); /* instance */
+	frag = net_nbuf_read(frag, pos, &pos, 2, (uint8_t *)&sender_rank);
+	if (!frag && pos) {
+		return -EMSGSIZE;
+	}
+
+	if (sender_rank != 0) {
+		return 0;
+	}
+
+	NET_DBG("Updating RPL option");
+	if (!rpl_default_instance || !rpl_default_instance->is_used ||
+	    !net_rpl_dag_is_joined(rpl_default_instance->current_dag)) {
+		NET_DBG("Unable to add hop-by-hop extension header: incorrect "
+			"default instance");
+		return -EINVAL;
+	}
+
+	parent = find_parent(net_nbuf_iface(buf),
+			     rpl_default_instance->current_dag, addr);
+	if (!parent || parent != parent->dag->preferred_parent) {
+		net_nbuf_write_u8(buf, buf->frags, offset, &pos,
+				  NET_RPL_HDR_OPT_DOWN);
+	}
+
+	offset++;
+	net_nbuf_write_u8(buf, buf->frags, offset, &pos,
+			  rpl_default_instance->instance_id);
+	net_nbuf_write_be16(buf, buf->frags, pos, &pos,
+			    htons(rpl_default_instance->
+					  current_dag->rank));
 	return 0;
 }
 

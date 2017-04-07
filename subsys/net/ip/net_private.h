@@ -19,6 +19,8 @@ extern void net_nbuf_init(void);
 extern void net_if_init(struct k_sem *startup_sync);
 extern void net_if_post_init(void);
 extern void net_context_init(void);
+enum net_verdict net_ipv4_process_pkt(struct net_buf *buf);
+enum net_verdict net_ipv6_process_pkt(struct net_buf *buf);
 extern void net_ipv6_init(void);
 
 extern const char *net_proto2str(enum net_ip_protocol proto);

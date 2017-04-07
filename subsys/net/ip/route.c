@@ -22,6 +22,7 @@
 #include <net/nbuf.h>
 #include <net/net_core.h>
 #include <net/net_stats.h>
+#include <net/net_mgmt.h>
 #include <net/net_ip.h>
 
 #include "net_private.h"
@@ -410,7 +411,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 	net_route_info("Added", route, addr);
 
-	/* TODO: Send notification that we added a route */
+	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_ADD, iface);
 
 	return route;
 }
@@ -433,6 +434,8 @@ int net_route_del(struct net_route_entry *route)
 
 	net_route_info("Deleted", route, &route->addr);
 
+	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_DEL, nbr->iface);
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		if (!nexthop_route->nbr) {
 			continue;
@@ -442,8 +445,6 @@ int net_route_del(struct net_route_entry *route)
 	}
 
 	nbr_free(nbr);
-
-	/* TODO: Send notification that we deleted a route */
 
 	return 0;
 }
@@ -547,6 +548,7 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 {
 	struct net_route_nexthop *nexthop_route;
+	struct net_ipv6_nbr_data *ipv6_nbr_data;
 
 	NET_ASSERT(route);
 
@@ -559,8 +561,10 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 			continue;
 		}
 
-		addr = net_ipv6_nbr_lookup_by_index(route->iface,
-						    nexthop_route->nbr->idx);
+		ipv6_nbr_data = net_ipv6_nbr_data(nexthop_route->nbr);
+		NET_ASSERT(ipv6_nbr_data);
+
+		addr = &ipv6_nbr_data->addr;
 		NET_ASSERT(addr);
 
 		return addr;
@@ -671,13 +675,23 @@ net_route_mcast_lookup(struct in6_addr *group)
 }
 #endif /* CONFIG_NET_ROUTE_MCAST */
 
-bool net_route_get_info(struct in6_addr *dst,
+bool net_route_get_info(struct net_if *iface,
+			struct in6_addr *dst,
 			struct net_route_entry **route,
 			struct in6_addr **nexthop)
 {
 	struct net_if_router *router;
 
-	*route = net_route_lookup(NULL, dst);
+	/* Search in neighbor table first, if not search in routing table. */
+	if (net_ipv6_nbr_lookup(iface, dst)) {
+		/* Found nexthop, no need to look into routing table. */
+		*route = NULL;
+		*nexthop = dst;
+
+		return true;
+	}
+
+	*route = net_route_lookup(iface, dst);
 	if (*route) {
 		*nexthop = net_route_get_nexthop(*route);
 		if (!*nexthop) {
@@ -702,15 +716,10 @@ bool net_route_get_info(struct in6_addr *dst,
 	return false;
 }
 
-int net_route_packet(struct net_buf *buf, struct net_route_entry *route,
-		     struct in6_addr *nexthop)
+int net_route_packet(struct net_buf *buf, struct in6_addr *nexthop)
 {
 	struct net_linkaddr_storage *lladdr;
 	struct net_nbr *nbr;
-
-	if (route) {
-		net_nbuf_set_iface(buf, route->iface);
-	}
 
 	nbr = net_ipv6_nbr_lookup(net_nbuf_iface(buf), nexthop);
 	if (!nbr) {
@@ -724,6 +733,14 @@ int net_route_packet(struct net_buf *buf, struct net_route_entry *route,
 		NET_DBG("Cannot find %s neighbor link layer address.",
 			net_sprint_ipv6_addr(nexthop));
 		return -ESRCH;
+	}
+
+	/* Sanitycheck: If src and dst ll addresses are going to be same,
+	 * then something went wrong in route lookup.
+	 */
+	if (!memcmp(net_nbuf_ll_src(buf)->addr, lladdr->addr, lladdr->len)) {
+		NET_ERR("Src ll and Dst ll are same");
+		return -EINVAL;
 	}
 
 	net_nbuf_set_forwarding(buf, true);

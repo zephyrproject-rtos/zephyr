@@ -36,6 +36,12 @@
 #define NET_BUF_ASSERT(cond)
 #endif /* CONFIG_NET_BUF_LOG */
 
+#if CONFIG_NET_BUF_WARN_ALLOC_INTERVAL > 0
+#define WARN_ALLOC_INTERVAL K_SECONDS(CONFIG_NET_BUF_WARN_ALLOC_INTERVAL)
+#else
+#define WARN_ALLOC_INTERVAL K_FOREVER
+#endif
+
 /* Helpers to access the storage array, since we don't have access to its
  * type at this point anymore.
  */
@@ -106,11 +112,15 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 
 #if defined(CONFIG_NET_BUF_LOG) && SYS_LOG_LEVEL >= SYS_LOG_LEVEL_WARNING
 	if (timeout == K_FOREVER) {
+		uint32_t ref = k_uptime_get_32();
 		buf = k_lifo_get(&pool->free, K_NO_WAIT);
-		if (!buf) {
+		while (!buf) {
 			NET_BUF_WARN("%s():%d: Pool %p low on buffers.",
 				     func, line, pool);
-			buf = k_lifo_get(&pool->free, timeout);
+			buf = k_lifo_get(&pool->free, WARN_ALLOC_INTERVAL);
+			NET_BUF_WARN("%s():%d: blocked for %u secs",
+				     func, line,
+				     (k_uptime_get_32() - ref) / MSEC_PER_SEC);
 		}
 	} else {
 		buf = k_lifo_get(&pool->free, timeout);
@@ -153,7 +163,6 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, int32_t timeout)
 
 	buf = k_fifo_get(fifo, timeout);
 	if (!buf) {
-		NET_BUF_ERR("Failed to get free buffer");
 		return NULL;
 	}
 

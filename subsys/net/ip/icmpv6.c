@@ -32,6 +32,38 @@
 
 static sys_slist_t handlers;
 
+const char *net_icmpv6_type2str(int icmpv6_type)
+{
+	switch (icmpv6_type) {
+	case NET_ICMPV6_DST_UNREACH:
+		return "Destination Unreachable";
+	case NET_ICMPV6_PACKET_TOO_BIG:
+		return "Packet Too Big";
+	case NET_ICMPV6_TIME_EXCEEDED:
+		return "Time Exceeded";
+	case NET_ICMPV6_PARAM_PROBLEM:
+		return "IPv6 Bad Header";
+	case NET_ICMPV6_ECHO_REQUEST:
+		return "Echo Request";
+	case NET_ICMPV6_ECHO_REPLY:
+		return "Echo Reply";
+	case NET_ICMPV6_MLD_QUERY:
+		return "Multicast Listener Query";
+	case NET_ICMPV6_RS:
+		return "Router Solicitation";
+	case NET_ICMPV6_RA:
+		return "Router Advertisement";
+	case NET_ICMPV6_NS:
+		return "Neighbor Solicitation";
+	case NET_ICMPV6_NA:
+		return "Neighbor Advertisement";
+	case NET_ICMPV6_MLDv2:
+		return "Multicast Listener Report v2";
+	}
+
+	return "?";
+}
+
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler)
 {
 	sys_slist_prepend(&handlers, &handler->node);

@@ -438,6 +438,13 @@ struct net_buf {
 	 *  (the data pointer should be used instead).
 	 */
 	uint8_t __buf[0] __net_buf_align;
+
+	/** After __buf (as given by the "size" field, which can be 0),
+	 *  there may be so-called "user data", which is actually a system
+	 *  metadata for this buffer. This area can be accessed using
+	 *  net_buf_user_data(). (Its size is equal to
+	 *  this->pool->user_data_size.)
+	 */
 };
 
 struct net_buf_pool {
