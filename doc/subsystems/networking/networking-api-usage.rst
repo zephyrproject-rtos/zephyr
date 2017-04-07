@@ -10,7 +10,7 @@ The same API can be used when working with UDP or TCP data.
 The net_context API is similar to the BSD socket API and mapping between these
 two is possible. The main difference between net_context API and BSD socket
 API is that the net_context API uses the fragmented network buffers (net_buf)
-defined in :file:`net/buf.h` and BSD socket API uses linear memory buffers.
+defined in :file:`include/net/buf.h` and BSD socket API uses linear memory buffers.
 
 This example creates a simple server that listens to incoming UDP connections
 and sends the received data back. You can download the example application
