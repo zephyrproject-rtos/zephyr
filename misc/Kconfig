@@ -12,7 +12,8 @@ menu "Linker Options"
 config HAS_FLASH_LOAD_OFFSET
 	bool
 	help
-	This option is selected by targets having a FLASH_LOAD_OFFSET.
+	This option is selected by targets having a FLASH_LOAD_OFFSET
+	and FLASH_LOAD_SIZE.
 
 config FLASH_LOAD_OFFSET
 	hex "Kernel load offset"
@@ -23,6 +24,18 @@ config FLASH_LOAD_OFFSET
 	the kernel should be loaded into. Changing this value from zero will
 	affect the Zephyr image's link, and will decrease the total amount of
 	flash available for use by application code.
+
+	If unsure, leave at the default value 0.
+
+config FLASH_LOAD_SIZE
+	hex "Kernel load size"
+	default 0
+	depends on HAS_FLASH_LOAD_OFFSET
+	help
+	If non-zero, this option specifies the size, in bytes, of the flash
+	area that the Zephyr image will be allowed to occupy.  If zero, the
+	image will be able to occupy from the FLASH_LOAD_OFFSET to the end of
+	the device.
 
 	If unsure, leave at the default value 0.
 
