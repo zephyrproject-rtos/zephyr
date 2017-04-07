@@ -35,7 +35,7 @@ struct net_context;
 
 struct net_pkt {
 	/** FIFO uses first 4 bytes itself, reserve space */
-	int _unused;
+	int _reserved;
 
 	/** Slab pointer from where it belongs to */
 	struct k_mem_slab *slab;
@@ -55,6 +55,7 @@ struct net_pkt {
 	struct net_if *iface;
 
 	/** @cond ignore */
+
 	uint8_t *appdata;	/* application data starts here */
 	uint8_t *next_hdr;	/* where is the next header */
 
@@ -62,20 +63,28 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
-	/* Fragment id */
-	uint32_t ipv6_fragment_id;
+	uint16_t appdatalen;
+	uint8_t ll_reserve;	/* link layer header length */
+	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 
-	/* Where is the start of the fragment header */
-	uint8_t *ipv6_frag_hdr_start;
-
-	/* What is the fragment offset of this IPv6 packet */
-	uint16_t ipv6_fragment_offset;
+#if defined(CONFIG_NET_TCP)
+	sys_snode_t sent_list;
 #endif
 
-	uint16_t appdatalen;
+	uint8_t sent       : 1;	/* Is this sent or not
+				 * Used only if defined(CONFIG_NET_TCP)
+				 */
+	uint8_t forwarding : 1;	/* Are we forwarding this pkt
+				 * Used only if defined(CONFIG_NET_ROUTE)
+				 */
+	uint8_t family     : 4;	/* IPv4 vs IPv6 */
+	uint8_t _unused    : 4;
 
 #if defined(CONFIG_NET_IPV6)
+	uint8_t ipv6_hop_limit;	/* IPv6 hop limit for this network packet. */
+	uint8_t ext_len;	/* length of extension headers */
+	uint8_t ext_opt_len;	/* IPv6 ND option length */
+
 	/* Where is the start of the last header before payload data
 	 * in IPv6 packet. This is offset value from start of the IPv6
 	 * packet. Note that this value should be updated by who ever
@@ -83,27 +92,12 @@ struct net_pkt {
 	 */
 	uint16_t ipv6_prev_hdr_start;
 
-	/* IPv6 hop limit for this network packet. */
-	uint8_t ipv6_hop_limit;
-#endif
-
-	uint8_t ll_reserve;	/* link layer header length */
-	uint8_t family;		/* IPv4 vs IPv6 */
-	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
-	uint8_t ext_len;	/* length of extension headers */
-
-#if defined(CONFIG_NET_IPV6)
-	uint8_t ext_opt_len; /* IPv6 ND option length */
-#endif
-
-#if defined(CONFIG_NET_TCP)
-	sys_snode_t sent_list;
-	bool sent; /* Is this net_pkt sent or not */
-#endif
-
-#if defined(CONFIG_NET_ROUTE)
-	bool forwarding; /* Are we forwarding this pkt */
-#endif
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	uint16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
+	uint32_t ipv6_fragment_id;	/* Fragment id */
+	uint8_t *ipv6_frag_hdr_start;	/* Where starts the fragment header */
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+#endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_L2_IEEE802154)
 	uint8_t ieee802154_rssi;
@@ -181,16 +175,6 @@ static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, uint8_t len)
 	pkt->ip_hdr_len = len;
 }
 
-static inline uint8_t net_pkt_ext_len(struct net_pkt *pkt)
-{
-	return pkt->ext_len;
-}
-
-static inline void net_pkt_set_ext_len(struct net_pkt *pkt, uint8_t len)
-{
-	pkt->ext_len = len;
-}
-
 static inline uint8_t *net_pkt_next_hdr(struct net_pkt *pkt)
 {
 	return pkt->next_hdr;
@@ -200,18 +184,6 @@ static inline void net_pkt_set_next_hdr(struct net_pkt *pkt, uint8_t *hdr)
 {
 	pkt->next_hdr = hdr;
 }
-
-#if defined(CONFIG_NET_IPV6)
-static inline uint8_t net_pkt_ext_opt_len(struct net_pkt *pkt)
-{
-	return pkt->ext_opt_len;
-}
-
-static inline void net_pkt_set_ext_opt_len(struct net_pkt *pkt, uint8_t len)
-{
-	pkt->ext_opt_len = len;
-}
-#endif
 
 #if defined(CONFIG_NET_TCP)
 static inline uint8_t net_pkt_sent(struct net_pkt *pkt)
@@ -241,6 +213,88 @@ static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 	return false;
 }
 #endif
+
+#if defined(CONFIG_NET_IPV6)
+static inline uint8_t net_pkt_ext_opt_len(struct net_pkt *pkt)
+{
+	return pkt->ext_opt_len;
+}
+
+static inline void net_pkt_set_ext_opt_len(struct net_pkt *pkt, uint8_t len)
+{
+	pkt->ext_opt_len = len;
+}
+
+static inline uint8_t net_pkt_ext_len(struct net_pkt *pkt)
+{
+	return pkt->ext_len;
+}
+
+static inline void net_pkt_set_ext_len(struct net_pkt *pkt, uint8_t len)
+{
+	pkt->ext_len = len;
+}
+
+static inline uint16_t net_pkt_ipv6_hdr_prev(struct net_pkt *pkt)
+{
+	return pkt->ipv6_prev_hdr_start;
+}
+
+static inline void net_pkt_set_ipv6_hdr_prev(struct net_pkt *pkt,
+					     uint16_t offset)
+{
+	pkt->ipv6_prev_hdr_start = offset;
+}
+
+static inline uint8_t net_pkt_ipv6_hop_limit(struct net_pkt *pkt)
+{
+	return pkt->ipv6_hop_limit;
+}
+
+static inline void net_pkt_set_ipv6_hop_limit(struct net_pkt *pkt,
+					      uint8_t hop_limit)
+{
+	pkt->ipv6_hop_limit = hop_limit;
+}
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+static inline uint8_t *net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
+{
+	return pkt->ipv6_frag_hdr_start;
+}
+
+static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
+						   uint8_t *start)
+{
+	pkt->ipv6_frag_hdr_start = start;
+}
+
+static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
+{
+	return pkt->ipv6_fragment_offset;
+}
+
+static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
+						    uint16_t offset)
+{
+	pkt->ipv6_fragment_offset = offset;
+}
+
+static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
+{
+	return pkt->ipv6_fragment_id;
+}
+
+static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
+						uint32_t id)
+{
+	pkt->ipv6_fragment_id = id;
+}
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+#else /* CONFIG_NET_IPV6 */
+#define net_pkt_ext_len(...) 0
+#define net_pkt_set_ext_len(...)
+#endif /* CONFIG_NET_IPV6 */
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {
@@ -329,65 +383,6 @@ static inline void net_pkt_ll_swap(struct net_pkt *pkt)
 	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(pkt)->addr;
 	net_pkt_ll_dst(pkt)->addr = addr;
 }
-
-#if defined(CONFIG_NET_IPV6)
-static inline uint16_t net_pkt_ipv6_hdr_prev(struct net_pkt *pkt)
-{
-	return pkt->ipv6_prev_hdr_start;
-}
-
-static inline void net_pkt_set_ipv6_hdr_prev(struct net_pkt *pkt,
-					     uint16_t offset)
-{
-	pkt->ipv6_prev_hdr_start = offset;
-}
-
-static inline uint8_t net_pkt_ipv6_hop_limit(struct net_pkt *pkt)
-{
-	return pkt->ipv6_hop_limit;
-}
-
-static inline void net_pkt_set_ipv6_hop_limit(struct net_pkt *pkt,
-					      uint8_t hop_limit)
-{
-	pkt->ipv6_hop_limit = hop_limit;
-}
-#endif
-
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
-static inline uint8_t *net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
-{
-	return pkt->ipv6_frag_hdr_start;
-}
-
-static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
-						   uint8_t *start)
-{
-	pkt->ipv6_frag_hdr_start = start;
-}
-
-static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
-{
-	return pkt->ipv6_fragment_offset;
-}
-
-static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
-{
-	pkt->ipv6_fragment_offset = offset;
-}
-
-static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
-{
-	return pkt->ipv6_fragment_id;
-}
-
-static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
-						uint32_t id)
-{
-	pkt->ipv6_fragment_id = id;
-}
-#endif
 
 #if defined(CONFIG_NET_L2_IEEE802154)
 static inline uint8_t net_pkt_ieee802154_rssi(struct net_pkt *pkt)
