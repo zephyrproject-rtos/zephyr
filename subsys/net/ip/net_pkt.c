@@ -316,10 +316,6 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 
 	net_pkt_set_ll_reserve(pkt, reserve_head);
 
-	if (slab == &rx_pkts) {
-		net_pkt_set_dir(pkt, NET_RX);
-	}
-
 	pkt->ref = 1;
 	pkt->slab = slab;
 
@@ -406,7 +402,7 @@ struct net_buf *net_pkt_get_frag(struct net_pkt *pkt,
 	}
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-	if (net_pkt_dir(pkt) == NET_RX) {
+	if (pkt->slab == &rx_pkts) {
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 		return net_pkt_get_reserve_rx_data_debug(
 			net_pkt_ll_reserve(pkt), timeout, caller, line);

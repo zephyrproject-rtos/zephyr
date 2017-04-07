@@ -33,14 +33,6 @@ extern "C" {
 
 struct net_context;
 
-enum net_dir {
-	/* TX must be first and must have value 0 so that it is selected
-	 * by default.
-	 */
-	NET_TX = 0,
-	NET_RX = 1,
-};
-
 struct net_pkt {
 	/** FIFO uses first 4 bytes itself, reserve space */
 	int _unused;
@@ -100,7 +92,6 @@ struct net_pkt {
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 	uint8_t ext_len;	/* length of extension headers */
 	uint8_t ext_bitmap;
-	uint8_t net_dir;	/* is this RX or TX pkt */
 
 #if defined(CONFIG_NET_IPV6)
 	uint8_t ext_opt_len; /* IPv6 ND option length */
@@ -214,16 +205,6 @@ static inline void net_pkt_set_ext_bitmap(struct net_pkt *pkt, uint8_t bm)
 static inline void net_pkt_add_ext_bitmap(struct net_pkt *pkt, uint8_t bm)
 {
 	pkt->ext_bitmap |= bm;
-}
-
-static inline uint8_t net_pkt_dir(struct net_pkt *pkt)
-{
-	return pkt->net_dir;
-}
-
-static inline void net_pkt_set_dir(struct net_pkt *pkt, enum net_dir dir)
-{
-	pkt->net_dir = dir;
 }
 
 static inline uint8_t *net_pkt_next_hdr(struct net_pkt *pkt)
