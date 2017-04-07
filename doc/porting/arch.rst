@@ -451,7 +451,7 @@ Toolchain and Linking
 
 Toolchain support has to be added to the build system.
 
-Some architecture-specific definitions are needed in :file:`toolchain/gcc.h`.
+Some architecture-specific definitions are needed in :file:`include/toolchain/gcc.h`.
 See what exists in that file for currently supported architectures.
 
 Each architecture also needs its own linker script, even if most sections can
