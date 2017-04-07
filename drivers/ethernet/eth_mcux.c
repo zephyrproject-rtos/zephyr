@@ -448,7 +448,9 @@ static void eth_rx(struct device *iface)
 
 	irq_unlock(imask);
 
-	net_recv_data(context->iface, buf);
+	if (net_recv_data(context->iface, buf) < 0) {
+		net_nbuf_unref(buf);
+	}
 }
 
 static void eth_callback(ENET_Type *base, enet_handle_t *handle,
