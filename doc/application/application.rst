@@ -116,7 +116,7 @@ The following predefined variables configure the development project:
 
 * :makevar:`SOURCE_DIR`: Overrides the default value for the application's
   source code directory. The developer source code directory is set to
-  :file:`$(PROJECT_BASE/)src/` by default. This directory name should end
+  :file:`$(PROJECT_BASE)/src/` by default. This directory name should end
   with slash **'/'**.
 
 * :makevar:`BOARD`: Selects the board that the application's
@@ -306,7 +306,7 @@ An application's :file:`.conf` file defines its default kernel configuration.
 The settings in this file override or augment the board configuration settings.
 
 The board configuration settings can be viewed
-in :file:`\$ZEPHYR_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
+in :file:`$ZEPHYR_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
 
 .. note::
 
@@ -547,8 +547,8 @@ directory, including any sub-directories it may have.
          obj-y += directory_name/**
 
 
-This example is taken from the Philosopher's Sample. To examine this file in
-context, navigate to: :file:`\$ZEPHYR_BASE/samples/philosophers/src`.
+This example is taken from the :ref:`dining-philosophers-sample`. To examine this file in
+context, navigate to: :file:`$ZEPHYR_BASE/samples/philosophers/src`.
 
 .. code-block:: make
 
