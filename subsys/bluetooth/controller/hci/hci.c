@@ -1009,7 +1009,6 @@ static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *b,
 	uint8_t data_len;
 	uint8_t *rssi;
 	uint8_t info_len;
-	int i;
 
 	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
 	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_ADVERTISING_REPORT))) {
@@ -1019,6 +1018,8 @@ static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *b,
 #if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
 	/* check for duplicate filtering */
 	if (dup_count >= 0) {
+		int i;
+
 		for (i = 0; i < dup_count; i++) {
 			if (!memcmp(&adv->payload.adv_ind.addr[0],
 				    &dup_filter[i].addr.a.val[0],
