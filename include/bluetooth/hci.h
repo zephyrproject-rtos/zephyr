@@ -491,8 +491,12 @@ struct bt_hci_write_local_name {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+#define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031)
+struct bt_hci_cp_set_ctl_to_host_flow {
+	u8_t  flow_enable;
+} __packed;
 
 #define BT_HCI_OP_HOST_BUFFER_SIZE              BT_OP(BT_OGF_BASEBAND, 0x0033)
 struct bt_hci_cp_host_buffer_size {

@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <toolchain.h>
 #include <errno.h>
+#include <atomic.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
@@ -44,6 +45,18 @@ struct dup {
 static struct dup dup_filter[CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN];
 static s32_t dup_count;
 static u32_t dup_curr;
+#endif
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+s32_t    hci_hbuf_total;
+u32_t    hci_hbuf_sent;
+u32_t    hci_hbuf_acked;
+atomic_t hci_state_mask;
+static struct k_poll_signal *hbuf_signal;
+#endif
+
+#if defined(CONFIG_BLUETOOTH_CONN)
+static u32_t conn_count;
 #endif
 
 #define DEFAULT_EVENT_MASK    0x1fffffffffff
@@ -159,8 +172,6 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
-	ll_reset();
-
 #if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
 	dup_count = -1;
 #endif
@@ -168,9 +179,112 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	event_mask = DEFAULT_EVENT_MASK;
 	le_event_mask = DEFAULT_LE_EVENT_MASK;
 
-	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	if (buf) {
+		ll_reset();
+		ccst = cmd_complete(evt, sizeof(*ccst));
+		ccst->status = 0x00;
+	}
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+	hci_hbuf_total = 0;
+	hci_hbuf_sent = 0;
+	hci_hbuf_acked = 0;
+	conn_count = 0;
+	atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
+	k_poll_signal(hbuf_signal, 0x0);
+#endif
 }
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_set_ctl_to_host_flow *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+
+	/* require host buffer size before enabling flow control, and
+	 * disallow if any connections are up
+	 */
+	if (!hci_hbuf_total || conn_count) {
+		ccst->status = BT_HCI_ERR_CMD_DISALLOWED;
+		return;
+	} else {
+		ccst->status = 0x00;
+	}
+
+	switch (cmd->flow_enable) {
+	case BT_HCI_CTL_TO_HOST_FLOW_DISABLE:
+		if (hci_hbuf_total < 0) {
+			/* already disabled */
+			return;
+		}
+		break;
+	case BT_HCI_CTL_TO_HOST_FLOW_ENABLE:
+		if (hci_hbuf_total > 0) {
+			/* already enabled */
+			return;
+		}
+		break;
+	default:
+		ccst->status = BT_HCI_ERR_INVALID_PARAM;
+		return;
+	}
+
+	hci_hbuf_sent = 0;
+	hci_hbuf_acked = 0;
+	hci_hbuf_total = -hci_hbuf_total;
+}
+
+static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_host_buffer_size *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+
+	if (hci_hbuf_total) {
+		ccst->status = BT_HCI_ERR_CMD_DISALLOWED;
+		return;
+	}
+	/* fragmentation from controller to host not supported, require
+	 * ACL MTU to be at least the LL MTU
+	 */
+	if (cmd->acl_mtu < RADIO_LL_LENGTH_OCTETS_RX_MAX) {
+		ccst->status = BT_HCI_ERR_INVALID_PARAM;
+		return;
+	}
+
+	hci_hbuf_total = -cmd->acl_pkts;
+}
+
+static void host_num_completed_packets(struct net_buf *buf,
+				       struct net_buf **evt)
+{
+	struct bt_hci_cp_host_num_completed_packets *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	u32_t count = 0;
+	int i;
+
+	/* special case, no event returned except for error conditions */
+	if (hci_hbuf_total <= 0) {
+		ccst = cmd_complete(evt, sizeof(*ccst));
+		ccst->status = BT_HCI_ERR_CMD_DISALLOWED;
+		return;
+	} else if (!conn_count) {
+		ccst = cmd_complete(evt, sizeof(*ccst));
+		ccst->status = BT_HCI_ERR_INVALID_PARAM;
+		return;
+	}
+
+	/* leave *evt == NULL so no event is generated */
+	for (i = 0; i < cmd->num_handles; i++) {
+		count += cmd->h[i].count;
+	}
+
+	hci_hbuf_acked += count;
+	k_poll_signal(hbuf_signal, 0x0);
+}
+#endif
 
 static int ctrl_bb_cmd_handle(u8_t ocf, struct net_buf *cmd,
 			      struct net_buf **evt)
@@ -184,6 +298,19 @@ static int ctrl_bb_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		reset(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+	case BT_OCF(BT_HCI_OP_SET_CTL_TO_HOST_FLOW):
+		set_ctl_to_host_flow(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_HOST_BUFFER_SIZE):
+		host_buffer_size(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS):
+		host_num_completed_packets(cmd, evt);
+		break;
+#endif
 	default:
 		return -EINVAL;
 	}
@@ -1082,6 +1209,7 @@ fill_report:
 
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 			     struct net_buf *buf)
 {
@@ -1106,6 +1234,8 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 	sep->latency = sys_cpu_to_le16(radio_cc->latency);
 	sep->supv_timeout = sys_cpu_to_le16(radio_cc->timeout);
 	sep->clock_accuracy = radio_cc->mca;
+
+	conn_count++;
 }
 
 static void disconn_complete(struct pdu_data *pdu_data, u16_t handle,
@@ -1123,6 +1253,8 @@ static void disconn_complete(struct pdu_data *pdu_data, u16_t handle,
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 	ep->reason = *((u8_t *)pdu_data);
+
+	conn_count--;
 }
 
 static void le_conn_update_complete(struct pdu_data *pdu_data, u16_t handle,
@@ -1163,6 +1295,7 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, u16_t handle,
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 }
+#endif
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, u16_t handle,
@@ -1212,6 +1345,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		le_advertising_report(pdu_data, b, buf);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 	case NODE_RX_TYPE_CONNECTION:
 		le_conn_complete(pdu_data, handle, buf);
 		break;
@@ -1227,6 +1361,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 	case NODE_RX_TYPE_ENC_REFRESH:
 		enc_refresh_complete(pdu_data, handle, buf);
 		break;
+#endif
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	case NODE_RX_TYPE_APTO:
@@ -1460,6 +1595,7 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 {
 	struct bt_hci_acl_hdr *acl;
@@ -1484,6 +1620,13 @@ void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 		acl->len = sys_cpu_to_le16(pdu_data->len);
 		data = (void *)net_buf_add(buf, pdu_data->len);
 		memcpy(data, &pdu_data->payload.lldata[0], pdu_data->len);
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+		if (hci_hbuf_total > 0) {
+			LL_ASSERT((hci_hbuf_sent - hci_hbuf_acked) <
+				  hci_hbuf_total);
+			hci_hbuf_sent++;
+		}
+#endif
 		break;
 
 	default:
@@ -1492,6 +1635,7 @@ void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 	}
 
 }
+#endif
 
 void hci_evt_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 {
@@ -1533,4 +1677,55 @@ bool hci_evt_is_discardable(struct radio_pdu_node_rx *node_rx)
 	default:
 		return false;
 	}
+}
+
+s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
+{
+	struct pdu_data *pdu_data;
+
+	pdu_data = (struct pdu_data *)node_rx->pdu_data;
+
+	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
+
+		switch (node_rx->hdr.type) {
+		case NODE_RX_TYPE_REPORT:
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
+		case NODE_RX_TYPE_ADV_INDICATION:
+#endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+		case NODE_RX_TYPE_PROFILE:
+#endif
+			return HCI_CLASS_EVT_DISCARDABLE;
+		case NODE_RX_TYPE_CONNECTION:
+			return HCI_CLASS_EVT_REQUIRED;
+		case NODE_RX_TYPE_TERMINATE:
+		case NODE_RX_TYPE_CONN_UPDATE:
+		case NODE_RX_TYPE_ENC_REFRESH:
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
+		case NODE_RX_TYPE_RSSI:
+#endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+		case NODE_RX_TYPE_APTO:
+#endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
+		case NODE_RX_TYPE_CHAN_SEL_ALGO:
+#endif
+			return HCI_CLASS_EVT_CONNECTION;
+		default:
+			return -1;
+		}
+
+	} else if (pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
+		return HCI_CLASS_EVT_CONNECTION;
+	} else {
+		return HCI_CLASS_ACL_DATA;
+	}
+}
+
+void hci_init(struct k_poll_signal *signal_host_buf)
+{
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+	hbuf_signal = signal_host_buf;
+#endif
+	reset(NULL, NULL);
 }
