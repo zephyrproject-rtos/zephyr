@@ -16,6 +16,8 @@ menuconfig I2C
 	help
 	Enable I2C Driver Configuration
 
+if I2C
+
 config I2C_DW
 	bool "Design Ware I2C support"
 	depends on I2C
@@ -323,3 +325,5 @@ config I2C_SDA_RX_HOLD
 	The hold time on the data signal after a negative edge of i2c clock
 	while i2c acts as receiver.
 	The unit is i2c module base clock.
+
+endif
