@@ -17,6 +17,10 @@
  * @defgroup ztest Zephyr testing suite
  */
 
+#if !defined(CONFIG_ZTEST) && !defined(ZTEST_UNITTEST)
+#error "You need to add CONFIG_ZTEST to your config file."
+#endif
+
 #ifndef KERNEL
 #define CONFIG_STDOUT_CONSOLE 1
 #define CONFIG_ZTEST_ASSERT_VERBOSE 1

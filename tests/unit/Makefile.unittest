@@ -26,6 +26,7 @@ all: $(TARGET)
 
 ZTEST = tests/ztest/src
 LIB += $(ZTEST)/ztest.o $(ZTEST)/ztest_mock.o
+CFLAGS += -DZTEST_UNITTEST
 
 OBJS = $(addprefix $(O)/, $(OBJECTS) $(LIB))
 
