@@ -14,6 +14,7 @@
 #include <init.h>
 #include <device.h>
 #include <clock_control.h>
+#include <atomic.h>
 
 #include <misc/util.h>
 #include <misc/stack.h>
@@ -39,6 +40,9 @@
 
 #include "hal/debug.h"
 
+#define NODE_RX(_node) CONTAINER_OF(_node, struct radio_pdu_node_rx, \
+				    hdr.onion.node)
+
 static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
 static K_FIFO_DEFINE(recv_fifo);
 
@@ -51,23 +55,30 @@ static u32_t prio_ts;
 static u32_t rx_ts;
 #endif
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+static struct k_poll_signal hbuf_signal = K_POLL_SIGNAL_INITIALIZER();
+static sys_slist_t hbuf_pend;
+static s32_t hbuf_count;
+#endif
+
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		struct radio_pdu_node_rx *node_rx;
-		struct net_buf *buf;
 		u8_t num_cmplt;
 		u16_t handle;
 
 		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
+#if defined(CONFIG_BLUETOOTH_CONN)
+			struct net_buf *buf;
 
 			buf = bt_buf_get_rx(K_FOREVER);
 			bt_buf_set_type(buf, BT_BUF_EVT);
 			hci_num_cmplt_encode(buf, handle, num_cmplt);
 			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
 			bt_recv_prio(buf);
-
 			k_yield();
+#endif
 		}
 
 		if (node_rx) {
@@ -95,44 +106,209 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
+					  s8_t class)
+{
+	struct net_buf *buf = NULL;
+
+	/* Check if we need to generate an HCI event or ACL data */
+	switch (class) {
+	case HCI_CLASS_EVT_DISCARDABLE:
+	case HCI_CLASS_EVT_REQUIRED:
+	case HCI_CLASS_EVT_CONNECTION:
+		if (class == HCI_CLASS_EVT_DISCARDABLE) {
+			buf = bt_buf_get_rx(K_NO_WAIT);
+		} else {
+			buf = bt_buf_get_rx(K_FOREVER);
+		}
+		if (buf) {
+			bt_buf_set_type(buf, BT_BUF_EVT);
+			hci_evt_encode(node_rx, buf);
+		}
+		break;
+#if defined(CONFIG_BLUETOOTH_CONN)
+	case HCI_CLASS_ACL_DATA:
+		/* generate ACL data */
+		buf = bt_buf_get_rx(K_FOREVER);
+		bt_buf_set_type(buf, BT_BUF_ACL_IN);
+		hci_acl_encode(node_rx, buf);
+		break;
+#endif
+	default:
+		LL_ASSERT(0);
+		break;
+	}
+
+	radio_rx_fc_set(node_rx->hdr.handle, 0);
+	node_rx->hdr.onion.next = 0;
+	radio_rx_mem_release(&node_rx);
+
+	return buf;
+}
+
+static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
+{
+	s8_t class = hci_get_class(node_rx);
+	struct net_buf *buf = NULL;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+	if (hbuf_count != -1) {
+		bool pend = !sys_slist_is_empty(&hbuf_pend);
+
+		/* controller to host flow control enabled */
+		switch (class) {
+		case HCI_CLASS_EVT_DISCARDABLE:
+		case HCI_CLASS_EVT_REQUIRED:
+			break;
+		case HCI_CLASS_EVT_CONNECTION:
+			/* for conn-related events, only pend is relevant */
+			hbuf_count = 1;
+			/* fallthrough */
+		case HCI_CLASS_ACL_DATA:
+			if (pend || !hbuf_count) {
+				sys_slist_append(&hbuf_pend,
+						 &node_rx->hdr.onion.node);
+				return NULL;
+			}
+			break;
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+	}
+#endif
+
+	/* process regular node from radio */
+	buf = encode_node(node_rx, class);
+
+	return buf;
+}
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+static inline struct net_buf *process_hbuf(void)
+{
+	/* shadow total count in case of preemption */
+	s32_t hbuf_total = hci_hbuf_total;
+	struct net_buf *buf = NULL;
+	int reset;
+
+	reset = atomic_test_and_clear_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
+	if (reset) {
+		/* flush queue, no need to free, the LL has already done it */
+		sys_slist_init(&hbuf_pend);
+	}
+
+	if (hbuf_total > 0) {
+		struct radio_pdu_node_rx *node_rx = NULL;
+		s8_t class, next_class = -1;
+		sys_snode_t *node = NULL;
+
+		/* available host buffers */
+		hbuf_count = hbuf_total - (hci_hbuf_sent - hci_hbuf_acked);
+
+		/* host acked ACL packets, try to dequeue from hbuf */
+		node = sys_slist_peek_head(&hbuf_pend);
+		if (node) {
+			node_rx = NODE_RX(node);
+			class = hci_get_class(node_rx);
+			switch (class) {
+			case HCI_CLASS_EVT_CONNECTION:
+				node = sys_slist_get(&hbuf_pend);
+				break;
+			case HCI_CLASS_ACL_DATA:
+				if (hbuf_count) {
+					node = sys_slist_get(&hbuf_pend);
+					hbuf_count--;
+				} else {
+					/* no buffers, HCI will signal */
+					node = NULL;
+				}
+				break;
+			case HCI_CLASS_EVT_DISCARDABLE:
+			case HCI_CLASS_EVT_REQUIRED:
+			default:
+				LL_ASSERT(0);
+				break;
+			}
+
+			if (node) {
+				struct radio_pdu_node_rx *next;
+				bool empty = true;
+
+				node_rx = NODE_RX(node);
+				node = sys_slist_peek_head(&hbuf_pend);
+				if (node) {
+					next = NODE_RX(node);
+					next_class = hci_get_class(next);
+				}
+				empty = sys_slist_is_empty(&hbuf_pend);
+
+				buf = encode_node(node_rx, class);
+				if (!empty && (class == HCI_CLASS_EVT_CONNECTION ||
+					       (class == HCI_CLASS_ACL_DATA &&
+						hbuf_count))) {
+					/* more to process, schedule an
+					 * iteration
+					 */
+
+					k_poll_signal(&hbuf_signal, 0x0);
+				}
+			}
+		}
+	} else {
+		hbuf_count = -1;
+	}
+
+	return buf;
+}
+#endif
+
 static void recv_thread(void *p1, void *p2, void *p3)
 {
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+	/* @todo: check if the events structure really needs to be static */
+	static struct k_poll_event events[2] = {
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&hbuf_signal, 0),
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&recv_fifo, 0),
+	};
+#endif
+
 	while (1) {
-		struct radio_pdu_node_rx *node_rx;
-		struct pdu_data *pdu_data;
-		struct net_buf *buf;
+		struct radio_pdu_node_rx *node_rx = NULL;
+		struct net_buf *buf = NULL;
 
-		BT_DBG("RX node get");
-		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
-		BT_DBG("RX node dequeued");
+		BT_DBG("blocking");
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+		int err;
 
-		pdu_data = (void *)node_rx->pdu_data;
-		/* Check if we need to generate an HCI event or ACL
-		 * data
-		 */
-		if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU ||
-		    pdu_data->ll_id == PDU_DATA_LLID_CTRL) {
-			/* generate a (non-priority) HCI event */
-			if (hci_evt_is_discardable(node_rx)) {
-				buf = bt_buf_get_rx(K_NO_WAIT);
-			} else {
-				buf = bt_buf_get_rx(K_FOREVER);
-			}
-
-			if (buf) {
-				bt_buf_set_type(buf, BT_BUF_EVT);
-				hci_evt_encode(node_rx, buf);
-			}
-		} else {
-			/* generate ACL data */
-			buf = bt_buf_get_rx(K_FOREVER);
-			bt_buf_set_type(buf, BT_BUF_ACL_IN);
-			hci_acl_encode(node_rx, buf);
+		err = k_poll(events, 2, K_FOREVER);
+		LL_ASSERT(err == 0);
+		if (events[0].state == K_POLL_STATE_SIGNALED) {
+			events[0].signal->signaled = 0;
+		} else if (events[1].state ==
+			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
+			node_rx = k_fifo_get(events[1].fifo, 0);
 		}
 
-		radio_rx_fc_set(node_rx->hdr.handle, 0);
-		node_rx->hdr.onion.next = 0;
-		radio_rx_mem_release(&node_rx);
+		events[0].state = K_POLL_STATE_NOT_READY;
+		events[1].state = K_POLL_STATE_NOT_READY;
+
+		/* process host buffers first if any */
+		buf = process_hbuf();
+
+#else
+		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
+#endif
+		BT_DBG("unblocked");
+
+		if (node_rx && !buf) {
+			/* process regular node from radio */
+			buf = process_node(node_rx);
+		}
 
 		if (buf) {
 			if (buf->len) {
@@ -161,12 +337,10 @@ static int cmd_handle(struct net_buf *buf)
 	struct net_buf *evt;
 
 	evt = hci_cmd_handle(buf);
-	if (!evt) {
-		return -EINVAL;
+	if (evt) {
+		BT_DBG("Replying with event of %u bytes", evt->len);
+		bt_recv_prio(evt);
 	}
-
-	BT_DBG("Replying with event of %u bytes", evt->len);
-	bt_recv_prio(evt);
 
 	return 0;
 }
@@ -185,9 +359,11 @@ static int hci_driver_send(struct net_buf *buf)
 
 	type = bt_buf_get_type(buf);
 	switch (type) {
+#if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_BUF_ACL_OUT:
 		err = hci_acl_handle(buf);
 		break;
+#endif
 	case BT_BUF_CMD:
 		err = cmd_handle(buf);
 		break;
@@ -212,11 +388,16 @@ static int hci_driver_open(void)
 	DEBUG_INIT();
 
 	err = ll_init(&sem_prio_recv);
-
 	if (err) {
 		BT_ERR("LL initialization failed: %u", err);
 		return err;
 	}
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+	hci_init(&hbuf_signal);
+#else
+	hci_init(NULL);
+#endif
 
 	k_thread_spawn(prio_recv_thread_stack, sizeof(prio_recv_thread_stack),
 		       prio_recv_thread, NULL, NULL, NULL, K_PRIO_COOP(6), 0,
