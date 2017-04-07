@@ -941,6 +941,302 @@ struct bt_hci_rp_le_read_max_data_len {
 	uint16_t max_rx_time;
 } __packed;
 
+#define BT_HCI_LE_PHY_1M                        0x01
+#define BT_HCI_LE_PHY_2M                        0x02
+#define BT_HCI_LE_PHY_CODED                     0x03
+
+#define BT_HCI_OP_LE_READ_PHY                   BT_OP(BT_OGF_LE, 0x0030)
+struct bt_hci_cp_le_read_phy {
+	uint16_t handle;
+} __packed;
+struct bt_hci_rp_le_read_phy {
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint8_t  tx_phy;
+	uint8_t  rx_phy;
+} __packed;
+
+#define BT_HCI_LE_PHY_TX_ANY                    0x00
+#define BT_HCI_LE_PHY_RX_ANY                    0x01
+
+#define BT_HCI_LE_PHY_PREFER_1M                 0x00
+#define BT_HCI_LE_PHY_PREFER_2M                 0x01
+#define BT_HCI_LE_PHY_PREFER_CODED              0x02
+
+#define BT_HCI_OP_LE_SET_DEFAULT_PHY            BT_OP(BT_OGF_LE, 0x0031)
+struct bt_hci_cp_le_set_default_phy {
+	uint8_t all_phys;
+	uint8_t tx_phys;
+	uint8_t rx_phys;
+} __packed;
+
+#define BT_HCI_LE_PHY_CODED_ANY                 0x00
+#define BT_HCI_LE_PHY_CODED_S2                  0x01
+#define BT_HCI_LE_PHY_CODED_S8                  0x02
+
+#define BT_HCI_OP_LE_SET_PHY                    BT_OP(BT_OGF_LE, 0x0032)
+struct bt_hci_cp_le_set_phy {
+	uint16_t conn_handle;
+	uint8_t all_phys;
+	uint8_t tx_phys;
+	uint8_t rx_phys;
+	uint8_t phy_opts;
+} __packed;
+
+#define BT_HCI_LE_MOD_INDEX_STANDARD            0x00
+#define BT_HCI_LE_MOD_INDEX_STABLE              0x01
+
+#define BT_HCI_OP_LE_ENH_RX_TEST                BT_OP(BT_OGF_LE, 0x0033)
+struct bt_hci_cp_le_enh_rx_test {
+	uint8_t  rx_ch;
+	uint8_t  phy;
+	uint8_t  mod_index;
+} __packed;
+
+/* Extends BT_HCI_LE_PHY */
+#define BT_HCI_LE_TX_PHY_CODED_S8               0x03
+#define BT_HCI_LE_TX_PHY_CODED_S2               0x04
+
+#define BT_HCI_OP_LE_ENH_TX_TEST                BT_OP(BT_OGF_LE, 0x0034)
+struct bt_hci_cp_le_enh_tx_test {
+	uint8_t  tx_ch;
+	uint8_t  test_data_len;
+	uint8_t  pkt_payload;
+	uint8_t  phy;
+} __packed;
+
+#define BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR    BT_OP(BT_OGF_LE, 0x0035)
+struct bt_hci_cp_le_set_adv_set_random_addr {
+	uint8_t   handle;
+	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_LE_ADV_PROP_CONN                 BIT(0)
+#define BT_HCI_LE_ADV_PROP_SCAN                 BIT(1)
+#define BT_HCI_LE_ADV_PROP_DIRECT               BIT(2)
+#define BT_HCI_LE_ADV_PROP_HI_DC_CONN           BIT(3)
+#define BT_HCI_LE_ADV_PROP_LEGACY               BIT(4)
+#define BT_HCI_LE_ADV_PROP_ANON                 BIT(5)
+#define BT_HCI_LE_ADV_PROP_TX_POWER             BIT(6)
+
+#define BT_HCI_OP_LE_SET_EXT_ADV_PARAMS         BT_OP(BT_OGF_LE, 0x0036)
+struct bt_hci_cp_le_set_ext_adv_params {
+	uint8_t      handle;
+	uint16_t     props;
+	uint8_t      prim_min_interval[3];
+	uint8_t      prim_max_interval[3];
+	uint8_t      prim_channel_map;
+	uint8_t      own_addr_type;
+	bt_addr_le_t peer_addr;
+	uint8_t      filter_policy;
+	int8_t       tx_power;
+	uint8_t      prim_adv_phy;
+	uint8_t      sec_adv_max_skip;
+	uint8_t      sec_adv_phy;
+	uint8_t      sid;
+	uint8_t      scan_req_notify_enable;
+} __packed;
+struct bt_hci_rp_le_set_ext_adv_param {
+	uint8_t  status;
+	int8_t   tx_power;
+} __packed;
+
+#define BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG        0x00
+#define BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG         0x01
+#define BT_HCI_LE_EXT_ADV_OP_LAST_FRAG          0x02
+#define BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA      0x03
+#define BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA     0x04
+
+#define BT_HCI_LE_EXT_ADV_FRAG_ENABLED          0x00
+#define BT_HCI_LE_EXT_ADV_FRAG_DISABLED         0x01
+
+#define BT_HCI_OP_LE_SET_EXT_ADV_DATA           BT_OP(BT_OGF_LE, 0x0037)
+struct bt_hci_cp_le_set_ext_adv_data {
+	uint8_t  handle;
+	uint8_t  op;
+	uint8_t  frag_pref;
+	uint8_t  len;
+	uint8_t  data[251];
+} __packed;
+
+#define BT_HCI_OP_LE_SET_EXT_SCAN_RSP_DATA      BT_OP(BT_OGF_LE, 0x0038)
+struct bt_hci_cp_le_set_ext_scan_rsp_data {
+	uint8_t  handle;
+	uint8_t  op;
+	uint8_t  frag_pref;
+	uint8_t  len;
+	uint8_t  data[251];
+} __packed;
+
+#define BT_HCI_OP_LE_SET_EXT_ADV_ENABLE         BT_OP(BT_OGF_LE, 0x0039)
+struct bt_hci_ext_adv_set {
+	uint8_t  handle;
+	uint16_t duration;
+	uint8_t  max_ext_adv_evts;
+} __packed;
+
+struct bt_hci_cp_le_set_ext_adv_enable {
+	uint8_t  enable;
+	uint8_t  set_num;
+	struct bt_hci_ext_adv_set s[0];
+} __packed;
+
+#define BT_HCI_OP_LE_READ_MAX_ADV_DATA_LEN      BT_OP(BT_OGF_LE, 0x003a)
+struct bt_hci_rp_le_read_max_adv_data_len {
+	uint8_t  status;
+	uint16_t max_adv_data_len;
+} __packed;
+
+#define BT_HCI_OP_LE_READ_NUM_ADV_SETS          BT_OP(BT_OGF_LE, 0x003b)
+struct bt_hci_rp_le_read_num_adv_sets {
+	uint8_t  status;
+	uint8_t  num_sets;
+} __packed;
+
+#define BT_HCI_OP_LE_REMOVE_ADV_SET             BT_OP(BT_OGF_LE, 0x003c)
+struct bt_hci_cp_le_remove_adv_set {
+	uint8_t  handle;
+} __packed;
+
+#define BT_HCI_OP_CLEAR_ADV_SETS                BT_OP(BT_OGF_LE, 0x003d)
+
+#define BT_HCI_OP_LE_SET_PER_ADV_PARAMS         BT_OP(BT_OGF_LE, 0x003e)
+struct bt_hci_cp_le_set_per_adv_params {
+	uint8_t  handle;
+	uint16_t min_interval;
+	uint16_t max_interval;
+	uint16_t props;
+} __packed;
+
+#define BT_HCI_OP_LE_SET_PER_ADV_DATA           BT_OP(BT_OGF_LE, 0x003f)
+struct bt_hci_cp_le_set_per_adv_data {
+	uint8_t  handle;
+	uint8_t  op;
+	uint8_t  len;
+	uint8_t  data[251];
+} __packed;
+
+#define BT_HCI_OP_LE_SET_PER_ADV_ENABLE         BT_OP(BT_OGF_LE, 0x0040)
+struct bt_hci_cp_le_set_per_adv_enable {
+	uint8_t  enable;
+	uint8_t  handle;
+} __packed;
+
+#define BT_HCI_OP_LE_SET_EXT_SCAN_PARAMS        BT_OP(BT_OGF_LE, 0x0041)
+struct bt_hci_ext_scan_phy {
+	uint8_t  type;
+	uint16_t interval;
+	uint16_t window;
+} __packed;
+
+#define BT_HCI_LE_EXT_SCAN_PHY_1M               BIT(0)
+#define BT_HCI_LE_EXT_SCAN_PHY_2M               BIT(1)
+#define BT_HCI_LE_EXT_SCAN_PHY_CODED            BIT(2)
+
+struct bt_hci_cp_le_set_ext_scan_params {
+	uint8_t  own_addr_type;
+	uint8_t  filter_policy;
+	uint8_t  phys;
+	struct bt_hci_ext_scan_phy p[0];
+} __packed;
+
+/* Extends BT_HCI_LE_SCAN_FILTER_DUP */
+#define BT_HCI_LE_EXT_SCAN_FILTER_DUP_ENABLE_RESET  0x02
+
+#define BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE        BT_OP(BT_OGF_LE, 0x0042)
+struct bt_hci_cp_le_set_ext_scan_enable {
+	uint8_t  enable;
+	uint8_t  filter_dup;
+	uint16_t duration;
+	uint16_t period;
+} __packed;
+
+#define BT_HCI_OP_LE_EXT_CREATE_CONN            BT_OP(BT_OGF_LE, 0x0043)
+struct bt_hci_ext_conn_phy {
+	uint16_t interval;
+	uint16_t window;
+	uint16_t conn_interval_min;
+	uint16_t conn_interval_max;
+	uint16_t conn_latency;
+	uint16_t supervision_timeout;
+	uint16_t min_ce_len;
+	uint16_t max_ce_len;
+} __packed;
+
+struct bt_hci_cp_le_ext_create_conn {
+	uint8_t      filter_policy;
+	uint8_t      own_addr_type;
+	bt_addr_le_t peer_addr;
+	uint8_t      phys;
+	struct bt_hci_ext_conn_phy p[0];
+} __packed;
+
+#define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC        BT_OP(BT_OGF_LE, 0x0044)
+struct bt_hci_cp_le_per_adv_create_sync {
+	uint8_t  filter_policy;
+	uint8_t  sid;
+	bt_addr_le_t addr;
+	uint16_t skip;
+	uint16_t sync_timeout;
+	uint8_t  unused;
+} __packed;
+
+#define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL BT_OP(BT_OGF_LE, 0x0045)
+
+#define BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC     BT_OP(BT_OGF_LE, 0x0046)
+struct bt_hci_cp_le_per_adv_terminate_sync {
+	uint16_t handle;
+} __packed;
+
+#define BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST    BT_OP(BT_OGF_LE, 0x0047)
+struct bt_hci_cp_le_add_dev_to_per_adv_list {
+	bt_addr_le_t addr;
+	uint8_t sid;
+} __packed;
+
+#define BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST  BT_OP(BT_OGF_LE, 0x0048)
+struct bt_hci_cp_le_rem_dev_from_per_adv_list {
+	bt_addr_le_t addr;
+	uint8_t sid;
+} __packed;
+
+#define BT_HCI_OP_LE_CLEAR_PER_ADV_LIST         BT_OP(BT_OGF_LE, 0x0049)
+
+#define BT_HCI_OP_LE_READ_PER_ADV_LIST_SIZE     BT_OP(BT_OGF_LE, 0x004a)
+struct bt_hci_rp_le_read_per_adv_list_size {
+	uint8_t  status;
+	uint8_t  list_size;
+} __packed;
+
+#define BT_HCI_OP_LE_READ_TX_POWER              BT_OP(BT_OGF_LE, 0x004b)
+struct bt_hci_rp_le_read_tx_power {
+	uint8_t  status;
+	int8_t   min_tx_power;
+	int8_t   max_tx_power;
+} __packed;
+
+#define BT_HCI_OP_LE_READ_RF_PATH_COMP          BT_OP(BT_OGF_LE, 0x004c)
+struct bt_hci_rp_le_read_rf_path_comp {
+	uint8_t  status;
+	int16_t  tx_path_comp;
+	int16_t  rx_path_comp;
+} __packed;
+
+#define BT_HCI_OP_LE_WRITE_RF_PATH_COMP         BT_OP(BT_OGF_LE, 0x004d)
+struct bt_hci_cp_le_write_rf_path_comp {
+	int16_t  tx_path_comp;
+	int16_t  rx_path_comp;
+} __packed;
+
+#define BT_HCI_LE_PRIVACY_MODE_NETWORK          0x00
+#define BT_HCI_LE_PRIVACY_MODE_DEVICE           0x01
+
+#define BT_HCI_OP_LE_SET_PRIVACY_MODE           BT_OP(BT_OGF_LE, 0x004e)
+struct bt_hci_cp_le_set_privacy_mode {
+	bt_addr_le_t id_addr;
+	uint8_t mode;
+} __packed;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_VENDOR                       0xff
@@ -1269,6 +1565,85 @@ struct bt_hci_ev_le_direct_adv_report {
 	struct bt_hci_ev_le_direct_adv_info direct_adv_info[0];
 } __packed;
 
+#define BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE       0x0c
+struct bt_hci_evt_le_phy_update_complete {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  tx_phy;
+	uint8_t  rx_phy;
+} __packed;
+
+#define BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT    0x0d
+struct bt_hci_ev_le_ext_advertising_info {
+	uint8_t      evt_type;
+	bt_addr_le_t addr;
+	uint8_t      prim_phy;
+	uint8_t      sec_phy;
+	uint8_t      sid;
+	int8_t       tx_power;
+	int8_t       rssi;
+	uint16_t     interval;
+	bt_addr_le_t direct_addr;
+	uint8_t      length;
+	uint8_t      data[0];
+} __packed;
+struct bt_hci_ev_le_ext_advertising_report {
+	uint8_t num_reports;
+	struct bt_hci_ev_le_ext_advertising_info adv_info[0];
+} __packed;
+
+#define BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED  0x0e
+struct bt_hci_evt_le_per_adv_sync_established {
+	uint8_t      status;
+	uint16_t     handle;
+	uint8_t      sid;
+	bt_addr_le_t adv_addr;
+	uint8_t      phy;
+	uint16_t     interval;
+	uint8_t      clock_accuracy;
+} __packed;
+
+#define BT_HCI_EVT_LE_PER_ADVERTISING_REPORT    0x0f
+struct bt_hci_ev_le_per_advertising_report {
+	uint16_t     handle;
+	int8_t       tx_power;
+	int8_t       rssi;
+	uint8_t      unused;
+	uint8_t      data_status;
+	uint8_t      length;
+	uint8_t      data[0];
+} __packed;
+
+#define BT_HCI_EVT_LE_PER_ADV_SYNC_LOST         0x10
+struct bt_hci_evt_le_per_adv_sync_lost {
+	uint16_t     handle;
+} __packed;
+
+#define BT_HCI_EVT_LE_SCAN_TIMEOUT              0x11
+
+#define BT_HCI_EVT_LE_ADV_SET_TERMINATED        0x12
+struct bt_hci_evt_le_per_adv_set_terminated {
+	uint8_t      status;
+	uint8_t      adv_handle;
+	uint16_t     conn_handle;
+	uint8_t      num_completed_ext_adv_evts;
+} __packed;
+
+#define BT_HCI_EVT_LE_SCAN_REQ_RECEIVED         0x13
+struct bt_hci_evt_le_scan_req_received {
+	uint8_t      handle;
+	bt_addr_le_t addr;
+} __packed;
+
+#define BT_HCI_LE_CHAN_SEL_ALGO_1               0x00
+#define BT_HCI_LE_CHAN_SEL_ALGO_2               0x01
+
+#define BT_HCI_EVT_LE_CHAN_SEL_ALGO             0x14
+struct bt_hci_evt_le_chan_sel_algo {
+	uint16_t     handle;
+	uint8_t      chan_sel_algo;
+} __packed;
+
 /* Event mask bits */
 
 #define BT_EVT_BIT_INQUIRY_COMPLETE             0
@@ -1308,6 +1683,15 @@ struct bt_hci_ev_le_direct_adv_report {
 #define BT_EVT_BIT_LE_GENERATE_DHKEY_COMPLETE   8
 #define BT_EVT_BIT_LE_ENH_CONN_COMPLETE         9
 #define BT_EVT_BIT_LE_DIRECT_ADV_REPORT         10
+#define BT_EVT_BIT_LE_PHY_UPDATE_COMPLETE       11
+#define BT_EVT_BIT_LE_EXT_ADVERTISING_REPORT    12
+#define BT_EVT_BIT_LE_PER_ADV_SYNC_ESTABLISHED  13
+#define BT_EVT_BIT_LE_PER_ADVERTISING_REPORT    14
+#define BT_EVT_BIT_LE_PER_ADV_SYNC_LOST         15
+#define BT_EVT_BIT_LE_SCAN_TIMEOUT              16
+#define BT_EVT_BIT_LE_ADV_SET_TERMINATED        17
+#define BT_EVT_BIT_LE_SCAN_REQ_RECEIVED         18
+#define BT_EVT_BIT_LE_CHAN_SEL_ALGO             19
 
 #ifdef __cplusplus
 }
