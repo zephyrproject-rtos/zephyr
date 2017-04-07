@@ -336,7 +336,7 @@ Follow the instructions in the :ref:`nordic_segger` page to install and configur
 all the necessary software.
 
 This tutorial uses the sample application
-shell :file:`$ZEPHYR_BASE/samples/shell`, and uses the information that can be found in
+shell :file:`$ZEPHYR_BASE/samples/subsys/shell/shell`, and uses the information that can be found in
 :ref:`nordic_segger_flashing`.
 
 #. To build the Zephyr kernel, enter:
@@ -344,7 +344,7 @@ shell :file:`$ZEPHYR_BASE/samples/shell`, and uses the information that can be f
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE
-      $ make -C samples/shell BOARD=nrf52_pca10040
+      $ make -C samples/subsys/shell/shell BOARD=nrf52_pca10040
 
 #. Connect the micro-USB cable to the nRF52 DK and to your computer.
 
