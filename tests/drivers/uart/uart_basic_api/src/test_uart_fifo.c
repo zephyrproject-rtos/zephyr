@@ -46,7 +46,10 @@ static void uart_fifo_callback(struct device *dev)
 	uint8_t recvData;
 
 	/* Verify uart_irq_update() */
-	uart_irq_update(dev);
+	if (!uart_irq_update(dev)) {
+		TC_PRINT("retval should always be 1\n");
+		return;
+	}
 
 	/* Verify uart_irq_tx_ready() */
 	if (uart_irq_tx_ready(dev)) {
