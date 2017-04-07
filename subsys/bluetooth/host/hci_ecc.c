@@ -33,7 +33,7 @@
 #include "hci_core.h"
 #endif
 
-static BT_STACK_NOINIT(ecc_thread_stack, 1100);
+static BT_STACK_NOINIT(ecc_thread_stack, 1060);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const uint32_t debug_private_key[8] = {
@@ -61,11 +61,19 @@ static atomic_t flags;
 
 static K_SEM_DEFINE(cmd_sem, 0, 1);
 
-static uint32_t private_key[8];
+static struct {
+	/* Based on the current implementation of ecc_make_key() it's safe
+	 * for the private_key and random to occupy the same memory area.
+	 */
+	union {
+		uint32_t private_key[NUM_ECC_DIGITS];
+		uint32_t random[NUM_ECC_DIGITS * 2];
+	};
 
-static union {
-	EccPoint pk;
-	uint32_t dhkey[8];
+	union {
+		EccPoint pk;
+		uint32_t dhkey[NUM_ECC_DIGITS];
+	};
 } ecc;
 
 static void send_cmd_status(uint16_t opcode, uint8_t status)
@@ -91,29 +99,28 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	bt_recv_prio(buf);
 }
 
-static uint8_t generate_keys(EccPoint *pkey, uint32_t private_key[8])
+static uint8_t generate_keys(void)
 {
 #if !defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
 	do {
-		uint32_t random[8];
 		int rc;
 
-		if (bt_rand((uint8_t *)random, sizeof(random))) {
+		if (bt_rand((uint8_t *)ecc.random, sizeof(ecc.random))) {
 			BT_ERR("Failed to get random bytes for ECC keys");
 			return BT_HCI_ERR_UNSPECIFIED;
 		}
 
-		rc = ecc_make_key(pkey, private_key, random);
+		rc = ecc_make_key(&ecc.pk, ecc.private_key, ecc.random);
 		if (rc == TC_CRYPTO_FAIL) {
 			BT_ERR("Failed to create ECC public/private pair");
 			return BT_HCI_ERR_UNSPECIFIED;
 		}
 
 	/* make sure generated key isn't debug key */
-	} while (memcmp(private_key, debug_private_key, 32) == 0);
+	} while (memcmp(ecc.private_key, debug_private_key, 32) == 0);
 #else
-	memcpy(pkey, debug_public_key, 64);
-	memcpy(private_key, debug_private_key, 32);
+	memcpy(&ecc.pk, debug_public_key, 64);
+	memcpy(ecc.private_key, debug_private_key, 32);
 #endif
 	return 0;
 }
@@ -128,7 +135,7 @@ static void emulate_le_p256_public_key_cmd(void)
 
 	BT_DBG("");
 
-	status = generate_keys(&ecc.pk, private_key);
+	status = generate_keys();
 
 	buf = bt_buf_get_rx(K_FOREVER);
 	bt_buf_set_type(buf, BT_BUF_EVT);
@@ -166,7 +173,7 @@ static void emulate_le_generate_dhkey(void)
 	if (ecc_valid_public_key(&ecc.pk) < 0) {
 		ret = TC_CRYPTO_FAIL;
 	} else {
-		ret = ecdh_shared_secret(ecc.dhkey, &ecc.pk, private_key);
+		ret = ecdh_shared_secret(ecc.dhkey, &ecc.pk, ecc.private_key);
 	}
 
 	buf = bt_buf_get_rx(K_FOREVER);
