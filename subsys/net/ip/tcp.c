@@ -521,8 +521,9 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 		recv_mss = 0;
 	}
 
-	*((uint32_t *)(options + *optionlen)) =
-		htonl((uint32_t)(recv_mss | NET_TCP_MSS_HEADER));
+	UNALIGNED_PUT(htonl((uint32_t)recv_mss | NET_TCP_MSS_HEADER),
+		      (uint32_t *)(options + *optionlen));
+
 	*optionlen += NET_TCP_MSS_SIZE;
 }
 
