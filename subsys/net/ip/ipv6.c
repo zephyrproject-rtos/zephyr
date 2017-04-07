@@ -3493,6 +3493,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	uint8_t next, next_hdr, length;
 	uint8_t first_option;
 	uint16_t offset, total_len = 0;
+	uint8_t ext_bitmap;
 
 	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d pkt len %d", pkt_len, real_len);
@@ -3556,7 +3557,6 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	/* Check extension headers */
 	net_pkt_set_next_hdr(pkt, &hdr->nexthdr);
 	net_pkt_set_ext_len(pkt, 0);
-	net_pkt_set_ext_bitmap(pkt, 0);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	/* Fast path for main upper layer protocols. The handling of extension
@@ -3572,6 +3572,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	frag = pkt->frags;
 	next = hdr->nexthdr;
 	first_option = next;
+	ext_bitmap = 0;
 	offset = sizeof(struct net_ipv6_hdr);
 	prev_hdr = &NET_IPV6_BUF(pkt)->nexthdr - &NET_IPV6_BUF(pkt)->vtc;
 
@@ -3621,13 +3622,11 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 			}
 
 			/* Hop by hop option */
-			if (net_pkt_ext_bitmap(pkt) &
-			    NET_IPV6_EXT_HDR_BITMAP_HBHO) {
+			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_HBHO) {
 				goto bad_hdr;
 			}
 
-			net_pkt_add_ext_bitmap(pkt,
-						NET_IPV6_EXT_HDR_BITMAP_HBHO);
+			ext_bitmap |= NET_IPV6_EXT_HDR_BITMAP_HBHO;
 
 			frag = handle_ext_hdr_options(pkt, frag, real_len,
 						      length, offset, &offset,

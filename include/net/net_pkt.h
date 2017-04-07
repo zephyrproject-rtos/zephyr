@@ -91,7 +91,6 @@ struct net_pkt {
 	uint8_t family;		/* IPv4 vs IPv6 */
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 	uint8_t ext_len;	/* length of extension headers */
-	uint8_t ext_bitmap;
 
 #if defined(CONFIG_NET_IPV6)
 	uint8_t ext_opt_len; /* IPv6 ND option length */
@@ -190,21 +189,6 @@ static inline uint8_t net_pkt_ext_len(struct net_pkt *pkt)
 static inline void net_pkt_set_ext_len(struct net_pkt *pkt, uint8_t len)
 {
 	pkt->ext_len = len;
-}
-
-static inline uint8_t net_pkt_ext_bitmap(struct net_pkt *pkt)
-{
-	return pkt->ext_bitmap;
-}
-
-static inline void net_pkt_set_ext_bitmap(struct net_pkt *pkt, uint8_t bm)
-{
-	pkt->ext_bitmap = bm;
-}
-
-static inline void net_pkt_add_ext_bitmap(struct net_pkt *pkt, uint8_t bm)
-{
-	pkt->ext_bitmap |= bm;
 }
 
 static inline uint8_t *net_pkt_next_hdr(struct net_pkt *pkt)
