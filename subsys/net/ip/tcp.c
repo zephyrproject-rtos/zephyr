@@ -154,7 +154,9 @@ static void tcp_retry_expired(struct k_timer *timer)
 				   struct net_buf, sent_list);
 
 		do_ref_if_needed(buf);
-		net_tcp_send_buf(buf);
+		if (net_tcp_send_buf(buf) < 0 && !is_6lo_technology(buf)) {
+			net_nbuf_unref(buf);
+		}
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			net_context_unref(tcp->context);
@@ -764,7 +766,10 @@ int net_tcp_send_data(struct net_context *context)
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&context->tcp->sent_list, buf, sent_list) {
 		if (!net_nbuf_buf_sent(buf)) {
-			net_tcp_send_buf(buf);
+			if (net_tcp_send_buf(buf) < 0 &&
+			    !is_6lo_technology(buf)) {
+				net_nbuf_unref(buf);
+			}
 		}
 	}
 
