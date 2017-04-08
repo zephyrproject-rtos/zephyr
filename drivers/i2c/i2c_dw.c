@@ -705,13 +705,13 @@ static int i2c_dw_initialize(struct device *port)
 static void i2c_config_0(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_0 = {
-#ifdef CONFIG_I2C_0_IRQ_DIRECT
+#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 	.irq_num = I2C_DW_0_IRQ,
 #endif
 	.config_func = i2c_config_0,
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
-	.shared_irq_dev_name = CONFIG_I2C_0_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = CONFIG_I2C_DW_0_IRQ_SHARED_NAME,
 #endif
 };
 
@@ -736,11 +736,11 @@ DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 
 static void i2c_config_0(struct device *port)
 {
-#if defined(CONFIG_I2C_0_IRQ_DIRECT)
+#if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
 	IRQ_CONNECT(I2C_DW_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_0), I2C_DW_IRQ_FLAGS);
 	irq_enable(I2C_DW_0_IRQ);
-#elif defined(CONFIG_I2C_0_IRQ_SHARED)
+#elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
 	const struct i2c_dw_rom_config * const config =
 		port->config->config_info;
 	struct device *shared_irq_dev;
