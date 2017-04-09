@@ -20,7 +20,9 @@
 #include <net/net_if.h>
 #include <stdio.h>
 #include <zephyr.h>
-#include <net/dns_client.h>
+#include <net/dns_resolve.h>
+#include <net/net_mgmt.h>
+#include <net/net_event.h>
 
 #if !defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
 #error "CONFIG_NET_IPV6 or CONFIG_NET_IPV4 must be enabled for irc_bot"
@@ -63,9 +65,6 @@ static bool fake_led;
 #define ZIRC_PEER_IP_ADDR	"2001:db8::2"
 #endif /* CONFIG_NET_APP_PEER_IPV6_ADDR */
 
-/* Google DNS server for IPv6 */
-#define DNS_SERVER		"2001:4860:4860::8888"
-
 #else /* CONFIG_NET_IPV4 */
 
 #define ZIRC_AF_INET		AF_INET
@@ -74,23 +73,19 @@ static bool fake_led;
 #if defined(CONFIG_NET_APP_MY_IPV4_ADDR)
 #define ZIRC_LOCAL_IP_ADDR	CONFIG_NET_APP_MY_IPV4_ADDR
 #else
-#define ZIRC_LOCAL_IP_ADDR	"192.168.0.1"
+#define ZIRC_LOCAL_IP_ADDR	"192.0.2.1"
 #endif /* CONFIG_NET_APP_MY_IPV4_ADDR */
 
 #if defined(CONFIG_NET_APP_PEER_IPV4_ADDR)
 #define ZIRC_PEER_IP_ADDR	CONFIG_NET_APP_PEER_IPV4_ADDR
 #else
-#define ZIRC_PEER_IP_ADDR	"192.168.0.2"
+#define ZIRC_PEER_IP_ADDR	"192.0.2.2"
 #endif /* CONFIG_NET_APP_PEER_IPV4_ADDR */
-
-/* Google DNS server for IPv4 */
-#define DNS_SERVER		"8.8.8.8"
 
 #endif
 
 /* DNS API */
-#define DNS_PORT		53
-#define DNS_SLEEP_MSECS		400
+#define DNS_QUERY_TIMEOUT K_SECONDS(4)
 
 /* IRC API */
 #define DEFAULT_SERVER	"irc.freenode.net"
@@ -103,6 +98,15 @@ typedef void (*on_privmsg_rcvd_cb_t)(void *data, struct zirc_chan *chan,
 				  char *umask, char *msg);
 
 struct zirc {
+	struct sockaddr local_addr;
+	struct sockaddr remote_addr;
+
+#if defined(CONFIG_DNS_RESOLVER)
+	struct k_sem wait_dns;
+#endif
+
+	struct k_sem wait_iface;
+
 	struct net_context *conn;
 	struct zirc_chan *chans;
 
@@ -466,62 +470,68 @@ static int in_addr_set(sa_family_t family,
 	return rc;
 }
 
-static int
-zirc_dns_lookup(const char *host,
-		struct sockaddr *src_addr,
-		struct sockaddr *dst_addr)
+#if defined(CONFIG_DNS_RESOLVER)
+static void resolve_cb(enum dns_resolve_status status,
+			struct dns_addrinfo *info,
+			void *user_data)
 {
-	struct net_context *net_ctx;
-	struct dns_context dns_ctx;
-	struct sockaddr dns_addr = { 0 };
-	int ret;
+	struct zirc *irc = user_data;
 
-	/* query DNS for server IP */
-	dns_init(&dns_ctx);
+	/* Note that we cannot do any connection establishment in the DNS
+	 * callback as the DNS query will timeout very soon. We inform the
+	 * connect function via semaphore when it can continue.
+	 */
+	k_sem_give(&irc->wait_dns);
 
-	ret = net_context_get(ZIRC_AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	if (ret < 0) {
-		NET_ERR("Cannot get network context for IP UDP: %d\n", -ret);
-		return ret;
+	if (status != DNS_EAI_INPROGRESS || !info) {
+		return;
 	}
 
-	ret = net_context_bind(net_ctx, src_addr,
-			       sizeof(struct ZIRC_SOCKADDR_IN));
-	if (ret < 0) {
-		NET_ERR("Cannot bind: %d\n", -ret);
-		goto dns_exit;
-	}
-
-	in_addr_set(ZIRC_AF_INET, DNS_SERVER, DNS_PORT, &dns_addr);
-
-	dns_ctx.net_ctx = net_ctx;
-	dns_ctx.timeout = DNS_SLEEP_MSECS;
-	dns_ctx.dns_server = &dns_addr;
-	dns_ctx.elements = 1;
-#ifdef CONFIG_NET_IPV6
-	dns_ctx.query_type = DNS_QUERY_TYPE_AAAA;
-	dns_ctx.address.ipv6 = &net_sin6(dst_addr)->sin6_addr;
-#else
-	dns_ctx.query_type = DNS_QUERY_TYPE_A;
-	dns_ctx.address.ipv4 = &net_sin(dst_addr)->sin_addr;
+#if defined(CONFIG_NET_IPV6)
+	if (info->ai_family == AF_INET6) {
+		net_ipaddr_copy(&net_sin6(&irc->remote_addr)->sin6_addr,
+				&net_sin6(&info->ai_addr)->sin6_addr);
+		net_sin6(&irc->remote_addr)->sin6_port = htons(DEFAULT_PORT);
+		net_sin6(&irc->remote_addr)->sin6_family = AF_INET6;
+		irc->remote_addr.family = AF_INET6;
+	} else
 #endif
-	dns_ctx.name = DEFAULT_SERVER;
-	ret = dns_resolve(&dns_ctx);
-	if (ret != 0) {
-		NET_ERR("dns_resolve ERROR %d\n", -ret);
+#if defined(CONFIG_NET_IPV4)
+	if (info->ai_family == AF_INET) {
+		net_ipaddr_copy(&net_sin(&irc->remote_addr)->sin_addr,
+				&net_sin(&info->ai_addr)->sin_addr);
+		net_sin(&irc->remote_addr)->sin_port = htons(DEFAULT_PORT);
+		net_sin(&irc->remote_addr)->sin_family = AF_INET;
+		irc->remote_addr.family = AF_INET;
+	} else
+#endif
+	{
+		NET_ERR("Invalid IP address family %d", info->ai_family);
+		return;
 	}
 
-dns_exit:
-	net_context_put(net_ctx);
-
-	return ret;
+	return;
 }
+
+static inline int zirc_dns_lookup(const char *host, void *user_data)
+{
+	return dns_get_addr_info(host,
+#ifdef CONFIG_NET_IPV6
+				 DNS_QUERY_TYPE_AAAA,
+#else
+				 DNS_QUERY_TYPE_A,
+#endif
+				 NULL,
+				 resolve_cb,
+				 user_data,
+				 DNS_QUERY_TIMEOUT);
+}
+#endif /* CONFIG_DNS_RESOLVER */
 
 static int
 zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 {
 	struct net_if *iface;
-	struct sockaddr dst_addr, src_addr;
 	struct zirc_chan *chan;
 	int ret;
 	char name_buf[32];
@@ -531,62 +541,51 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 	ret = net_context_get(ZIRC_AF_INET, SOCK_STREAM, IPPROTO_TCP,
 			      &irc->conn);
 	if (ret < 0) {
-		NET_DBG("Could not get new context: %d", -ret);
+		NET_DBG("Could not get new context: %d", ret);
 		return ret;
 	}
 
 	iface = net_if_get_default();
 	if (!iface) {
-		NET_DBG("Could not get new context: %d", -ret);
+		NET_DBG("Could not get new context: %d", ret);
 		return -EIO;
 	}
 
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_DHCPV6)
-	/* TODO: IPV6 DHCP */
-#elif defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
-	net_ipaddr_copy(&net_sin(&src_addr)->sin_addr,
-			&iface->dhcpv4.requested_ip);
-	ret = in_addr_set(ZIRC_AF_INET, NULL, 0, &src_addr);
-#else
-	ret = in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR,
-			  0, &src_addr);
-	if (ret < 0) {
-		goto connect_exit;
-	}
-#endif
-
 #if defined(CONFIG_DNS_RESOLVER)
-	in_addr_set(ZIRC_AF_INET, NULL, port, &dst_addr);
+	irc->data = data;
 
-	/* set the IP address for the dst_addr via DNS */
-	ret = zirc_dns_lookup(host, &src_addr, &dst_addr);
+	ret = zirc_dns_lookup(host, irc);
 	if (ret < 0) {
 		NET_ERR("Could not peform DNS lookup on host %s: %d",
-			host, -ret);
+			host, ret);
 		goto connect_exit;
 	}
+
+	/* We continue the connection after the server name has been resolved.
+	 */
+	k_sem_take(&irc->wait_dns, K_FOREVER);
 #else
 	ret = in_addr_set(ZIRC_AF_INET, ZIRC_PEER_IP_ADDR,
-			  port, &dst_addr);
+			  port, &irc->remote_addr);
 	if (ret < 0) {
 		goto connect_exit;
 	}
 #endif
 
-	ret = net_context_bind(irc->conn, &src_addr,
+	ret = net_context_bind(irc->conn, &irc->local_addr,
 			       sizeof(struct ZIRC_SOCKADDR_IN));
 	if (ret < 0) {
-		NET_DBG("Could not bind to local address: %d", -ret);
+		NET_DBG("Could not bind to local address: %d", ret);
 		goto connect_exit;
 	}
 
 	irc->data = data;
 
-	ret = net_context_connect(irc->conn, &dst_addr,
+	ret = net_context_connect(irc->conn, &irc->remote_addr,
 				  sizeof(struct ZIRC_SOCKADDR_IN),
 				  NULL, K_FOREVER, irc);
 	if (ret < 0) {
-		NET_DBG("Could not connect, errno %d", -ret);
+		NET_DBG("Could not connect, errno %d", ret);
 		goto connect_exit;
 	}
 
@@ -845,12 +844,176 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 }
 #undef CMD
 
+#if defined(CONFIG_NET_DHCPV4) && !defined(CONFIG_NET_IPV6)
+#define DHCPV4_TIMEOUT K_SECONDS(30)
+
+static struct net_mgmt_event_callback mgmt4_cb;
+static struct k_sem dhcpv4_ok = K_SEM_INITIALIZER(dhcpv4_ok, 0, UINT_MAX);
+
+static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
+				  uint32_t mgmt_event,
+				  struct net_if *iface)
+{
+	char hr_addr[NET_IPV4_ADDR_LEN];
+	int i;
+
+	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+		return;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		struct net_if_addr *if_addr = &iface->ipv4.unicast[i];
+
+		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
+			continue;
+		}
+
+		NET_INFO("IPv4 address: %s",
+			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
+				       hr_addr, NET_IPV4_ADDR_LEN));
+		NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
+		NET_INFO("Subnet: %s",
+			 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
+				       hr_addr, NET_IPV4_ADDR_LEN));
+		NET_INFO("Router: %s",
+			 net_addr_ntop(AF_INET, &iface->ipv4.gw,
+				       hr_addr, NET_IPV4_ADDR_LEN));
+		break;
+	}
+
+	k_sem_give(&dhcpv4_ok);
+}
+
+static void setup_dhcpv4(struct zirc *irc, struct net_if *iface)
+{
+	NET_INFO("Running dhcpv4 client...");
+
+	net_mgmt_init_event_callback(&mgmt4_cb, ipv4_addr_add_handler,
+				     NET_EVENT_IPV4_ADDR_ADD);
+	net_mgmt_add_event_callback(&mgmt4_cb);
+
+	net_dhcpv4_start(iface);
+
+	if (k_sem_take(&dhcpv4_ok, DHCPV4_TIMEOUT) < 0) {
+		panic("No IPv4 address.");
+	}
+
+	net_ipaddr_copy(&net_sin(&irc->local_addr)->sin_addr,
+			&iface->dhcpv4.requested_ip);
+	irc->local_addr.family = AF_INET;
+	net_sin(&irc->local_addr)->sin_family = AF_INET;
+	net_sin(&irc->local_addr)->sin_port = 0;
+
+	k_sem_give(&irc->wait_iface);
+}
+#else
+#define setup_dhcpv4(...)
+#endif /* CONFIG_NET_DHCPV4 */
+
+#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4)
+
+static void setup_ipv4(struct zirc *irc, struct net_if *iface)
+{
+	char hr_addr[NET_IPV4_ADDR_LEN];
+	struct in_addr addr;
+
+	if (net_addr_pton(AF_INET, ZIRC_LOCAL_IP_ADDR, &addr)) {
+		NET_ERR("Invalid address: %s", ZIRC_LOCAL_IP_ADDR);
+		return;
+	}
+
+	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+
+	NET_INFO("IPv4 address: %s",
+		 net_addr_ntop(AF_INET, &addr, hr_addr, NET_IPV4_ADDR_LEN));
+
+	if (in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR, 0,
+			&irc->local_addr) < 0) {
+		NET_ERR("Invalid IP address: %s", ZIRC_LOCAL_IP_ADDR);
+	}
+
+	k_sem_give(&irc->wait_iface);
+}
+
+#else
+#define setup_ipv4(...)
+#endif /* CONFIG_NET_IPV4 && !CONFIG_NET_DHCPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+
+#define DAD_TIMEOUT K_SECONDS(3)
+
+static struct net_mgmt_event_callback mgmt6_cb;
+static struct k_sem dad_ok = K_SEM_INITIALIZER(dad_ok, 0, UINT_MAX);
+static struct in6_addr laddr;
+
+static void ipv6_dad_ok_handler(struct net_mgmt_event_callback *cb,
+				uint32_t mgmt_event,
+				struct net_if *iface)
+{
+	struct net_if_addr *ifaddr;
+
+	if (mgmt_event != NET_EVENT_IPV6_DAD_SUCCEED) {
+		return;
+	}
+
+	ifaddr = net_if_ipv6_addr_lookup(&laddr, &iface);
+	if (!ifaddr ||
+	    !(net_ipv6_addr_cmp(&ifaddr->address.in6_addr, &laddr) &&
+	      ifaddr->addr_state == NET_ADDR_PREFERRED)) {
+		/* Address is not yet properly setup */
+		return;
+	}
+
+	k_sem_give(&dad_ok);
+}
+
+static void setup_ipv6(struct zirc *irc, struct net_if *iface)
+{
+	char hr_addr[NET_IPV6_ADDR_LEN];
+
+	if (net_addr_pton(AF_INET6, ZIRC_LOCAL_IP_ADDR, &laddr)) {
+		NET_ERR("Invalid address: %s", ZIRC_LOCAL_IP_ADDR);
+		return;
+	}
+
+	NET_INFO("IPv6 address: %s",
+		 net_addr_ntop(AF_INET6, &laddr, hr_addr, NET_IPV6_ADDR_LEN));
+
+	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_dad_ok_handler,
+				     NET_EVENT_IPV6_DAD_SUCCEED);
+	net_mgmt_add_event_callback(&mgmt6_cb);
+
+	net_if_ipv6_addr_add(iface, &laddr, NET_ADDR_MANUAL, 0);
+
+	if (k_sem_take(&dad_ok, DAD_TIMEOUT) < 0) {
+		panic("IPv6 address setup failed.");
+	}
+
+	if (in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR, 0,
+			&irc->local_addr) < 0) {
+		NET_ERR("Invalid IP address: %s", ZIRC_LOCAL_IP_ADDR);
+	}
+
+	k_sem_give(&irc->wait_iface);
+}
+
+#else
+#define setup_ipv6(...)
+#endif /* CONFIG_NET_IPV6 */
+
 static void
-initialize_network(void)
+initialize_network(struct zirc *irc)
 {
 	struct net_if *iface;
 
-	 NET_INFO("Initializing network");
+	NET_INFO("Initializing network");
+
+#if defined(CONFIG_DNS_RESOLVER)
+	k_sem_init(&irc->wait_dns, 0, UINT_MAX);
+#endif
+
+	k_sem_init(&irc->wait_iface, 0, UINT_MAX);
 
 	iface = net_if_get_default();
 	if (!iface) {
@@ -859,44 +1022,16 @@ initialize_network(void)
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_DHCPV6)
 	/* TODO: IPV6 DHCP */
-#elif defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
-	net_dhcpv4_start(iface);
-
-	/* delay so DHCPv4 can assign IP */
-	/* TODO: add a timeout/retry */
-	NET_INFO("Waiting for DHCP ...");
-	do {
-		k_sleep(K_SECONDS(1));
-	} while (net_is_ipv4_addr_unspecified(&iface->dhcpv4.requested_ip));
-
-	NET_INFO("Done!");
-
-	/* TODO: add a timeout */
-	NET_INFO("Waiting for IP assginment ...");
-	do {
-		k_sleep(K_SECONDS(1));
-	} while (!net_is_my_ipv4_addr(&iface->dhcpv4.requested_ip));
-
-	NET_INFO("Done!");
+#elif !defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_DHCPV4)
+	setup_dhcpv4(irc, iface);
+#elif !defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+	setup_ipv4(irc, iface);
 #else
-	struct sockaddr addr;
-
-	if (in_addr_set(ZIRC_AF_INET, ZIRC_LOCAL_IP_ADDR, 0,
-			  &addr) < 0) {
-		NET_ERR("Invalid IP address: %s",
-			ZIRC_LOCAL_IP_ADDR);
-	}
-
-#if defined(CONFIG_NET_IPV6)
-	net_if_ipv6_addr_add(iface,
-			     &net_sin6(&addr)->sin6_addr,
-			     NET_ADDR_MANUAL, 0);
-#else
-	net_if_ipv4_addr_add(iface,
-			     &net_sin(&addr)->sin_addr,
-			     NET_ADDR_MANUAL, 0);
+	setup_ipv6(irc, iface);
 #endif
-#endif /* CONFIG_NET_IPV6 && CONFIG_NET_DHCPV6 */
+
+	/* Wait until we are ready to continue */
+	k_sem_take(&irc->wait_iface, K_FOREVER);
 }
 
 static void
@@ -914,14 +1049,20 @@ static void irc_bot(void)
 {
 	struct zirc irc = { };
 	struct zirc_chan chan = { };
+	int ret;
 
 	NET_INFO("Zephyr IRC bot sample");
 
-	initialize_network();
+	initialize_network(&irc);
 	initialize_hardware();
 
-	if (zirc_connect(&irc, DEFAULT_SERVER, DEFAULT_PORT, &chan) < 0) {
+	ret = zirc_connect(&irc, DEFAULT_SERVER, DEFAULT_PORT, &chan);
+	if (ret < 0 && ret != -EINPROGRESS) {
 		panic("Could not connect");
+	}
+
+	for (;;) {
+		k_sleep(K_FOREVER);
 	}
 }
 
