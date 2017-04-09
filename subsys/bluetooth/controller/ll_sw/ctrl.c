@@ -2996,7 +2996,7 @@ static void mayfly_xtal_stop(void *params)
 	DEBUG_RADIO_CLOSE(0);
 }
 
-#if CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED)
 static void mayfly_xtal_retain(uint8_t caller_id, uint8_t retain)
 {
 	static uint8_t s_xtal_retained;
@@ -3158,7 +3158,7 @@ static void mayfly_xtal_stop_calc(void *params)
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 1);
 
 		if (ticker_id >= RADIO_TICKER_ID_ADV) {
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 			uint8_t ticker_id_current = ((uint32_t)params & 0xff);
 			struct connection *conn_curr = NULL;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED */
@@ -3221,7 +3221,7 @@ static void mayfly_xtal_stop_calc(void *params)
 				}
 			}
 
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 			if (ticker_id_current >= RADIO_TICKER_ID_FIRST_CONNECTION) {
 				/* compensate the current ticker for reduced
 				 * prepare.
@@ -3324,7 +3324,7 @@ static void mayfly_xtal_stop_calc(void *params)
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 static void sched_after_mstr_free_slot_get(uint8_t user_id,
 					   uint32_t ticks_slot_abs,
 					   uint32_t *ticks_anchor,
@@ -3898,7 +3898,7 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 	/* route all packets queued for connections */
 	packet_tx_enqueue(0xFF);
 
-#if CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED)
 	/* calc whether xtal needs to be retained after this event */
 	{
 		static void *s_link[2];
@@ -4182,7 +4182,7 @@ static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
 			_radio.remainder_anchor);
 	radio_tmr_end_capture();
 
-#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+#if (defined(CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED) && \
      (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (preempt_calc(&_radio.advertiser.hdr, RADIO_TICKER_ID_ADV,
@@ -4281,7 +4281,7 @@ static void event_obs_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 			     _radio.observer.hdr.ticks_preempt_to_start,
 			     RADIO_TICKER_ID_OBS, event_obs, NULL);
 
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 	/* calc next group in us for the anchor where first connection event
 	 * to be placed
 	 */
@@ -4371,7 +4371,7 @@ static void event_obs(uint32_t ticks_at_expire, uint32_t remainder,
 			_radio.remainder_anchor);
 	radio_tmr_end_capture();
 
-#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+#if (defined(CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED) && \
      (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (preempt_calc(&_radio.observer.hdr, RADIO_TICKER_ID_OBS,
@@ -4523,7 +4523,7 @@ static inline void event_conn_update_st_req(struct connection *conn,
 	/* Start Procedure Timeout */
 	conn->procedure_expire = conn->procedure_reload;
 
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 	{
 		uint32_t retval;
 
@@ -4624,7 +4624,7 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 		     LLCP_CONN_STATE_APP_WAIT) &&
 		    (conn->llcp.connection_update.state !=
 		     LLCP_CONN_STATE_RSP_WAIT)) {
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 			static void *s_link[2];
 			static struct mayfly s_mfy_sched_offset = {0, 0,
 				s_link, NULL, NULL };
@@ -4641,14 +4641,14 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 
 			pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 			fp_mayfly_select_or_use = mayfly_sched_win_offset_use;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED */
 			state = conn->llcp.connection_update.state;
 			if ((state == LLCP_CONN_STATE_RSP) &&
 			    (conn->role.master.role == 0)) {
 				state = LLCP_CONN_STATE_INITIATE;
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 				fp_mayfly_select_or_use =
 					mayfly_sched_win_offset_select;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED */
@@ -4657,7 +4657,7 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 			switch (state) {
 			case LLCP_CONN_STATE_INITIATE:
 				if (conn->role.master.role == 0) {
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 					event_conn_update_st_init(conn,
 						event_counter,
 						pdu_ctrl_tx,
@@ -4677,7 +4677,7 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 				/* fall thru if slave */
 
 			case LLCP_CONN_STATE_REQ:
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 				event_conn_update_st_req(conn,
 							 event_counter,
 							 pdu_ctrl_tx,
@@ -5686,7 +5686,7 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 			       conn->role.slave.window_size_event_us);
 	radio_tmr_end_capture();
 
-#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+#if (defined(CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED) && \
      (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (preempt_calc(&conn->hdr, (RADIO_TICKER_ID_FIRST_CONNECTION +
@@ -5822,7 +5822,7 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 	}
 #endif
 
-#if (CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED && \
+#if (defined(CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED) && \
      (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
 	if (0 !=
@@ -7336,7 +7336,7 @@ uint32_t radio_scan_enable(uint8_t scan_type, uint8_t init_addr_type,
 	    !IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)) {
 		us_offset = 0;
 	}
-#if CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 	else {
 		sched_after_mstr_free_slot_get(RADIO_TICKER_USER_ID_APP,
 					       (ticks_slot_offset +
