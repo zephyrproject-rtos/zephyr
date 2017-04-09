@@ -644,7 +644,7 @@ void main(void)
 {
 	int  status = TC_PASS;
 
-	TC_START("Test Microkernel sprintf APIs\n");
+	TC_START("Test sprintf APIs\n");
 
 	PRINT_LINE;
 

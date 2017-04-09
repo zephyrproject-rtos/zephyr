@@ -1,9 +1,9 @@
-Title: Microkernel Footprint Measurement
+Title: Kernel Footprint Measurement
 
 Description:
 
 This project is designed to characterize the memory requirements of a
-standard microkernel image running on an Atom target.
+standard kernel image running on an Atom target.
 
 
 The project can be built using several configurations:
@@ -11,7 +11,6 @@ The project can be built using several configurations:
 minimal (a "do nothing" image that has support for few kernel capabilities)
 -------
 - Idle task is only task in system.
-- Microkernel server is only fiber in system.
 - No system timer support.
 - ISR for the spurious interrupt handling is present.
 - IDT and stack memory sizes are very limited.
@@ -46,7 +45,7 @@ maximal (a "complex" image that has support for many kernel capabilities)
 
 Building and Running Project:
 
-This microkernel project does not generate any output in the default case
+This project does not generate any output in the default case
 (TEST=min). In the regular case (TEST=reg) and the maximal case (TEST=max),
 it outputs to the console. It can be built and executed on QEMU as follows:
 
@@ -80,7 +79,7 @@ minimal
 -------
 This configuration does NOT produce any output. To observe its operation,
 invoke it using gdb and observe that:
-- the kernel's timer ISR & _k_server fiber increment "K_LowTime" on a regular
+- the kernel's timer ISR & main thread increment "K_LowTime" on a regular
   basis
 - nano_cpu_idle() is invoked by the idle task each time K_LowTime is incremented
 
@@ -88,13 +87,13 @@ regular
 -------
 This configuration prints the following message to the console:
 
-  Running regular microkernel configuration
+  Running regular kernel configuration
 
 maximal
 -------
 This configuration prints the following message to the console:
 
-  Running maximal microkernel configuration
+  Running maximal kernel configuration
 
 --------------------------------------------------------------------------------
 
@@ -102,4 +101,4 @@ Additional notes:
 
 Various host utilities (such as the Unix "size" utility) can be used
 to determine the footprint of the resulting
-outdir/$BOARD/microkernel.elf image.
+outdir/$BOARD/zephyr.elf image.

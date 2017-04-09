@@ -2,13 +2,13 @@ Title: Stack Protection Support
 
 Description:
 
-This test verifies that stack canaries operate as expected in the microkernel.
+This test verifies that stack canaries operate as expected.
 
 --------------------------------------------------------------------------------
 
 Building and Running Project:
 
-This microkernel project outputs to the console.  It can be built and executed
+This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
     make run

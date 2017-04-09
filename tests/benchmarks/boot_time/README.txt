@@ -6,7 +6,7 @@ BootTime measures the time:
    a) from system reset to kernel start (crt0.s's __start)
    b) from kernel start to begin of main()
    c) from kernel start to begin of first task
-   d) from kernel start to when microkernel's main task goes immediately idle
+   d) from kernel start to when kernel's main task goes immediately idle
 
 The project can be built using one of the following three configurations:
 
@@ -32,7 +32,7 @@ Building and Running Project:
 This benchmark outputs to the console.  It can be built and executed
 on QEMU as follows:
 
-    make qemu
+    make run
 
 --------------------------------------------------------------------------------
 
@@ -52,13 +52,13 @@ or
 Sample Output:
 
 tc_start() - Boot Time Measurement
-MicroKernel Boot Result: Clock Frequency: 20 MHz
-__start       : 377787 cycles, 18889 us
-_start->main(): 3915 cycles, 195 us
-_start->task  : 5898 cycles, 294 us
-_start->idle  : 6399 cycles, 319 us
+Boot Result: Clock Frequency: 25 MHz
+__start       : 88410717 cycles, 3536428 us
+_start->main(): 2422894 cycles, 96915 us
+_start->task  : 2450930 cycles, 98037 us
+_start->idle  : 37503993 cycles, 1500159 us
 Boot Time Measurement finished
 ===================================================================
-PASS - bootTimeTask.
+PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

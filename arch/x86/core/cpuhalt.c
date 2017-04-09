@@ -9,7 +9,7 @@
  * This module provides an implementation of the architecture-specific
  * k_cpu_idle() primitive required by the kernel idle loop component.
  * It can be called within an implementation of _sys_power_save_idle(),
- * which is provided for the microkernel by the platform.
+ * which is provided for the kernel by the platform.
  *
  * The module also provides an implementation of k_cpu_atomic_idle(), which
  * atomically re-enables interrupts and enters low power mode.
@@ -36,7 +36,7 @@ extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
  * @brief Power save idle routine for IA-32
  *
  * This function will be called by the kernel idle loop or possibly within
- * an implementation of _sys_power_save_idle in the microkernel when the
+ * an implementation of _sys_power_save_idle in the kernel when the
  * '_sys_power_save_flag' variable is non-zero.  The IA-32 'hlt' instruction
  * will be issued causing a low-power consumption sleep mode.
  *

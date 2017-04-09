@@ -40,7 +40,7 @@ extern "C" {
 #include <irq.h>
 #include <sw_isr_table.h>
 
-/* physical/virtual address types required by microkernel */
+/* physical/virtual address types required by the kernel */
 typedef unsigned int paddr_t;
 typedef unsigned int vaddr_t;
 

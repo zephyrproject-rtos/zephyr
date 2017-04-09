@@ -2,13 +2,13 @@ Title: Execute in Place (XIP) Support
 
 Description:
 
-This test verifies XIP is working in the microkernel
+This test verifies XIP is working
 
 --------------------------------------------------------------------------------
 
 Building and Running Project:
 
-This microkernel project outputs to the console.  It can be built and executed
+This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
     make run

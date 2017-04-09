@@ -30,7 +30,7 @@ static ALWAYS_INLINE void pulpino_idle(unsigned int key)
  * @brief Power save idle routine
  *
  * This function will be called by the kernel idle loop or possibly within
- * an implementation of _sys_power_save_idle in the microkernel when the
+ * an implementation of _sys_power_save_idle in the kernel when the
  * '_sys_power_save_flag' variable is non-zero.
  *
  * @return N/A

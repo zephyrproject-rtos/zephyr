@@ -14,9 +14,6 @@
 #include <xtensa_config.h>
 
 extern void _xt_user_exit(void);
-#if CONFIG_MICROKERNEL
-extern FUNC_NORETURN void _TaskAbort(void);
-#endif
 
 #if defined(CONFIG_THREAD_MONITOR)
 #define THREAD_MONITOR_INIT(thread) _thread_monitor_init(thread)

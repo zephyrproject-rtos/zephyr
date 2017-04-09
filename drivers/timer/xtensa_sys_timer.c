@@ -190,7 +190,7 @@ void _timer_idle_exit(void)
 	C = GET_TIMER_CURRENT_TIME();
 	r = F - C;
 	/*
-	 * Announce elapsed ticks to the microkernel. Note we are  guaranteed
+	 * Announce elapsed ticks to the kernel. Note we are  guaranteed
 	 * that the timer ISR will execute before the tick event is serviced,
 	 * so _sys_idle_elapsed_ticks is adjusted to account for it.
 	 */
@@ -264,7 +264,7 @@ void _xt_tick_divisor_init(void)
  * @brief System clock tick handler
  *
  * This routine handles the system clock periodic tick interrupt. It always
- * announces one tick by pushing a TICK_EVENT event onto the microkernel stack.
+ * announces one tick by pushing a TICK_EVENT event onto the kernel stack.
  *
  * @return N/A
  */
@@ -275,7 +275,7 @@ void _timer_int_handler(void *params)
 	extern void _sys_k_event_logger_interrupt(void);
 	_sys_k_event_logger_interrupt();
 #endif
-	/* Announce the tick event to the microkernel. */
+	/* Announce the tick event to the kernel. */
 	_sys_clock_final_tick_announce();
 }
 

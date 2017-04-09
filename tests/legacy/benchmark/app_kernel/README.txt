@@ -9,7 +9,7 @@ semaphores, FIFOs, mailboxes, pipes, memory maps, and memory pools.
 
 Building and Running Project:
 
-This microkernel project outputs to the console. It can be built and executed
+This project outputs to the console. It can be built and executed
 on QEMU as follows:
 
     make qemu

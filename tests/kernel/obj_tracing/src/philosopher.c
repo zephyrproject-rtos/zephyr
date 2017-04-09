@@ -26,9 +26,6 @@ extern struct k_sem forks[N_PHILOSOPHERS];
  *
  * @brief Entry point to a philosopher's thread
  *
- * This routine runs as a task in the microkernel environment
- * and as a thread in the nanokernel environment.
- *
  * @return N/A
  */
 
