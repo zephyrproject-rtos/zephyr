@@ -9,11 +9,11 @@
 /*
  * In RISC-V there is no conventional way to handle CPU power save.
  * Each RISC-V SOC handles it in its own way.
- * Hence, by default, nano_cpu_idle and nano_cpu_atomic_idle functions just
+ * Hence, by default, k_cpu_idle and k_cpu_atomic_idle functions just
  * unlock interrupts and return to the caller, without issuing any CPU power
  * saving instruction.
  *
- * Nonetheless, define the default nano_cpu_idle and nano_cpu_atomic_idle
+ * Nonetheless, define the default k_cpu_idle and k_cpu_atomic_idle
  * functions as weak functions, so that they can be replaced at the SOC-level.
  */
 
@@ -35,10 +35,6 @@ void __weak k_cpu_idle(void)
 /**
  *
  * @brief Atomically re-enable interrupts and enter low power mode
- *
- * This function is utilized by the nanokernel object "wait" APIs for tasks,
- * e.g. nano_task_lifo_get(), nano_task_sem_take(),
- * nano_task_stack_pop(), and nano_task_fifo_get().
  *
  * INTERNAL
  * The requirements for k_cpu_atomic_idle() are as follows:

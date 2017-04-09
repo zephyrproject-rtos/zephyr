@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <kernel.h>
 #include <stdint.h>
-#include <nanokernel.h>
 #include <system_timer.h>
 #include <xtensa_rtos.h>
 

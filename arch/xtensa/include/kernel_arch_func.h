@@ -31,7 +31,7 @@ extern void _xt_coproc_init(void);
  * @brief Performs architecture-specific initialization
  *
  * This routine performs architecture-specific initialization of the
- * nanokernel.  Trivial stuff is done inline; more complex initialization is
+ * kernel.  Trivial stuff is done inline; more complex initialization is
  * done via function calls.
  *
  * @return N/A
@@ -66,7 +66,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 	thread->callee_saved.retval = value;
 }
 
-extern void nano_cpu_atomic_idle(unsigned int imask);
+extern void k_cpu_atomic_idle(unsigned int imask);
 
 /*
  * Required by the core kernel even though we don't have to do anything on this

@@ -26,7 +26,7 @@ void k_cpu_idle(void)
  *
  * This function exits with interrupts restored to <key>.
  *
- * void nano_cpu_atomic_idle(unsigned int key)
+ * void k_cpu_atomic_idle(unsigned int key)
  */
 void k_cpu_atomic_idle(unsigned int key)
 {

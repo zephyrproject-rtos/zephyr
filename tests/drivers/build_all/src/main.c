@@ -11,7 +11,6 @@
 /*
  * @file
  * @brief Hello World demo
- * Nanokernel version of hello world demo
  */
 
 

@@ -8,7 +8,7 @@
  * @file
  * @brief Xtensa public exception handling
  *
- * Xtensa-specific nanokernel exception handling interface. Included by
+ * Xtensa-specific kernel exception handling interface. Included by
  * arch/xtensa/arch.h.
  */
 
@@ -22,7 +22,7 @@ extern "C" {
 #ifdef _ASMLANGUAGE
 #else
 /**
- * @brief Nanokernel Exception Stack Frame
+ * @brief Exception Stack Frame
  *
  * A pointer to an "exception stack frame" (ESF) is passed as an argument
  * to exception handlers registered via nanoCpuExcConnect().

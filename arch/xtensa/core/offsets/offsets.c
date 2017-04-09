@@ -9,11 +9,11 @@
  * @brief Xtensa kernel structure member offset definition file
  *
  * This module is responsible for the generation of the absolute symbols whose
- * value represents the member offsets for various Xtensa nanokernel
+ * value represents the member offsets for various Xtensa kernel
  * structures.
  *
  * All of the absolute symbols defined by this module will be present in the
- * final kernel or nanokernel ELF image (due to the linker's reference to
+ * final kernel or kernel ELF image (due to the linker's reference to
  * the _OffsetAbsSyms symbol).
  *
  * INTERNAL

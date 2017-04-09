@@ -9,7 +9,7 @@
  * @brief System/hardware module for STM32F3 processor
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>

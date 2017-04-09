@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
+#include <kernel.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
 
@@ -50,7 +49,7 @@ const NANO_ESF _default_esf = {
 
 /**
  *
- * @brief Nanokernel fatal error handler
+ * @brief Fatal error handler
  *
  * This routine is called when a fatal error condition is detected by either
  * hardware or software.

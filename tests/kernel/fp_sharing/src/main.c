@@ -270,7 +270,7 @@ void load_store_high(void)
 		 *
 		 * The initial byte value, and thus the contents of the entire
 		 * float_reg_set structure, must be different for each
-		 * thread to effectively test the nanokernel's ability to
+		 * thread to effectively test the kernel's ability to
 		 * properly save/restore the floating point values during a
 		 * context switch.
 		 */
@@ -289,10 +289,10 @@ void load_store_high(void)
 		 * The goal of the loading all floating point registers with
 		 * values that differ from the values used in other threads is
 		 * to help determine whether the floating point register
-		 * save/restore mechanism in the nanokernel's context switcher
+		 * save/restore mechanism in the kernel's context switcher
 		 * is operating correctly.
 		 *
-		 * When a subsequent nano_fiber_timer_test() invocation is
+		 * When a subsequent k_timer_test() invocation is
 		 * performed, a (cooperative) context switch back to the
 		 * preempted task will occur. This context switch should result
 		 * in restoring the state of the task's floating point
@@ -307,9 +307,9 @@ void load_store_high(void)
 		 * system clock tick, so that lower priority threads get a
 		 * chance to run.
 		 *
-		 * This exercises the ability of the nanokernel to restore the
+		 * This exercises the ability of the kernel to restore the
 		 * FPU state of a low priority thread _and_ the ability of the
-		 * nanokernel to provide a "clean" FPU state to this thread
+		 * kernel to provide a "clean" FPU state to this thread
 		 * once the sleep ends.
 		 */
 

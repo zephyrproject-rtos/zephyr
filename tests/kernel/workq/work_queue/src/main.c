@@ -7,7 +7,6 @@
 #include <stdbool.h>
 
 #include <zephyr.h>
-#include <nanokernel.h>
 #include <tc_util.h>
 #include <misc/util.h>
 #include <misc/nano_work.h>

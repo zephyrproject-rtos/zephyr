@@ -260,7 +260,7 @@ extern void _arch_isr_direct_footer(int maybe_swap);
 	static inline int name##_body(void)
 
 /**
- * @brief Nanokernel Exception Stack Frame
+ * @brief Exception Stack Frame
  *
  * A pointer to an "exception stack frame" (ESF) is passed as an argument
  * to exception handlers registered via nanoCpuExcConnect().  As the system
@@ -288,7 +288,7 @@ typedef struct nanoEsf {
 } NANO_ESF;
 
 /**
- * @brief Nanokernel "interrupt stack frame" (ISF)
+ * @brief "interrupt stack frame" (ISF)
  *
  * An "interrupt stack frame" (ISF) as constructed by the processor and the
  * interrupt wrapper function _interrupt_enter().  As the system always
@@ -491,7 +491,7 @@ extern void	k_cpu_idle(void);
 extern uint32_t _timer_cycle_get_32(void);
 #define _arch_k_cycle_get_32()	_timer_cycle_get_32()
 
-/** Nanokernel provided routine to report any detected fatal error. */
+/** kernel provided routine to report any detected fatal error. */
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 						 const NANO_ESF * pEsf);
 /** User provided routine to handle any detected fatal error post reporting. */

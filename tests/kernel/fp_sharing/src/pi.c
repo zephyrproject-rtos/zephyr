@@ -128,9 +128,9 @@ void calculate_pi_high(void)
 		 * system clock tick, so that lower priority threads get a
 		 * chance to run.
 		 *
-		 * This exercises the ability of the nanokernel to restore the
+		 * This exercises the ability of the kernel to restore the
 		 * FPU state of a low priority thread _and_ the ability of the
-		 * nanokernel to provide a "clean" FPU state to this thread
+		 * kernel to provide a "clean" FPU state to this thread
 		 * once the sleep ends.
 		 */
 

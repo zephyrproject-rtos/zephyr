@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nanokernel.h>
+#include <kernel.h>
 #include <irq_offload.h>
 #include <arch/xtensa/arch.h>
 #include <xtensa_api.h>

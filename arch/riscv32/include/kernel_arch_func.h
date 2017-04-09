@@ -22,8 +22,8 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-void nano_cpu_idle(void);
-void nano_cpu_atomic_idle(unsigned int key);
+void k_cpu_idle(void);
+void k_cpu_atomic_idle(unsigned int key);
 
 static ALWAYS_INLINE void nanoArchInit(void)
 {

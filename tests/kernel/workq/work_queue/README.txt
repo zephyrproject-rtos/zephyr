@@ -8,10 +8,10 @@ A simple application verifying the workqueue API
 
 Building and Running Project:
 
-This nanokernel project outputs to the console.  It can be built and executed
+This kernel project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
-    make qemu
+    make run
 
 --------------------------------------------------------------------------------
 

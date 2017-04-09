@@ -18,12 +18,6 @@ char __stack phil_stack[N_PHILOSOPHERS][STSIZE];
 char __stack mon_stack[STSIZE];
 struct k_sem forks[N_PHILOSOPHERS];
 
-/**
- *
- * @brief Nanokernel entry point
- *
- */
-
 int main(void)
 {
 	int i;

@@ -1,4 +1,4 @@
-Title: Nanokernel Object Footprint Measurement
+Title: Object Footprint Measurement
 
 Description:
 This sample builds multiple kernels with different configurations
