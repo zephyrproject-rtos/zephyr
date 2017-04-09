@@ -339,7 +339,8 @@ F:	drivers/ieee802154/
 F:	drivers/slip/
 
 NETWORK APPLICATIONS
-M:	Flavio Santes <flavio.santes@intel.com>
+M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
+M:	Tomasz Bursztyka <tomasz.bursztyka@linux.intel.com>
 S:	Supported
 F:	subsys/net/lib/dns/
 F:	subsys/net/lib/http/
@@ -447,7 +448,6 @@ F:	drivers/clock_control/*stm32f4*
 
 TINYCRYPT
 M:	Constanza Heath <constanza.m.heath@intel.com>
-M:	Flavio Santes <flavio.santes@intel.com>
 S:	Supported
 F:	ext/lib/crypto/tinycrypt/
 F:	tests/crypto/
