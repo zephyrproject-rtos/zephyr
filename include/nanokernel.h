@@ -13,6 +13,10 @@
 #ifndef __NANOKERNEL_H__
 #define __NANOKERNEL_H__
 
+#if !defined(CONFIG_LEGACY_KERNEL)
+#error "You should include kernel.h and not nanokernel.h or microkernel.h"
+#endif
+
 /* fundamental include files */
 
 #include <stddef.h>
