@@ -13,10 +13,14 @@
 #ifndef _DNS_RESOLVE_H
 #define _DNS_RESOLVE_H
 
-#if defined(CONFIG_DNS_RESOLVER)
-
 #include <net/net_ip.h>
 #include <net/net_context.h>
+
+/**
+ * @brief DNS resolving library
+ * @defgroup dns_resolve DNS Resolve Library
+ * @{
+ */
 
 /**
  * DNS query type enum
@@ -305,6 +309,11 @@ static inline int dns_cancel_addr_info(uint16_t dns_id)
 	return dns_resolve_cancel(dns_resolve_get_default(), dns_id);
 }
 
+/**
+ * @}
+ */
+
+#if defined(CONFIG_DNS_RESOLVER)
 /**
  * @brief Initialize DNS subsystem.
  */

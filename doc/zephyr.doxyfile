@@ -109,7 +109,7 @@ INPUT                  = \
                         ../lib/libc/minimal/include/ \
                         ../ext/lib/crypto/tinycrypt/include/ \
                         ../include/net/zoap.h \
-                        ../include/net/dns_client.h \
+                        ../include/net/dns_resolve.h \
                         ../tests/ztest/include/
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = "*.c" "*.h" "*.S"
