@@ -599,9 +599,9 @@ ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
 
 ifeq ($(CONFIG_DEBUG),y)
-KBUILD_CFLAGS += -Og
+KBUILD_CFLAGS_OPTIMIZE := -Og
 else
-KBUILD_CFLAGS += -Os
+KBUILD_CFLAGS_OPTIMIZE := -Os
 endif
 
 ifdef ZEPHYR_GCC_VARIANT
@@ -612,6 +612,9 @@ $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
 endif
 endif
+
+# Let Makefile.toolchain adjust optimization level
+KBUILD_CFLAGS += $(KBUILD_CFLAGS_OPTIMIZE)
 
 -include $(srctree)/ext/Makefile
 -include $(srctree)/lib/Makefile

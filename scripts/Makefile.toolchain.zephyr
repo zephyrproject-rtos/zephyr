@@ -36,6 +36,16 @@ ifeq ($(SDK_VERSION),0.8.2)
 	TOOLCHAIN_ARCH := i686
 endif
 
+# TODO remove once we have a replacement for 0.9 that fixes ZEP-1882
+# See https://jira.zephyrproject.org/browse/ZEP-1882
+ifeq ($(SDK_VERSION),0.9)
+ifeq ($(ARCH),arc)
+ifneq ($(CONFIG_DEBUG),y)
+KBUILD_CFLAGS_OPTIMIZE := -O2
+endif
+endif
+endif
+
 ifeq ($(HOST_OS),MINGW)
 	TOOLCHAIN_HOME = ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-mingw32
 else
