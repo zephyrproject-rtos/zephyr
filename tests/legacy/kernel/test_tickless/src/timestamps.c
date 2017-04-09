@@ -1,14 +1,13 @@
-/* timestamps.c - timestamp support for tickless idle testing */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
-DESCRIPTION
-Platform-specific timestamp support for the tickless idle test.
+/**
+ * @file timestamp support for tickless idle testing
+ *
+ * Platform-specific timestamp support for the tickless idle test.
  */
 
 #include <tc_util.h>
@@ -87,8 +86,8 @@ void _TimestampOpen(void)
  */
 uint32_t _TimestampRead(void)
 {
-	static uint32_t lastTimerVal = 0;
-	static uint32_t cnt = 0;
+	static uint32_t lastTimerVal;
+	static uint32_t cnt;
 	uint32_t timerVal = _TIMESTAMP_VAL;
 
 	/* handle rollover for every other read (end of sleep) */
@@ -198,8 +197,8 @@ void _TimestampOpen(void)
  */
 uint32_t _TimestampRead(void)
 {
-	static uint32_t lastPrescale = 0;
-	static uint32_t cnt = 0;
+	static uint32_t lastPrescale;
+	static uint32_t cnt;
 	uint32_t prescale1 = _TIMESTAMP_PRESCALE;
 	uint32_t prescale2 = _TIMESTAMP_PRESCALE;
 
@@ -301,36 +300,6 @@ void _TimestampClose(void)
 {
 	/* disable RTT clock from PMC */
 	__PMC->pcdr0 = (1 << PID_RTT);
-}
-
-#elif defined(CONFIG_SOC_QUARK_SE_C1000_SS)
-#include <device.h>
-#include <rtc.h>
-
-static struct device *rtc_device;
-
-void timestamp_open(void)
-{
-	struct rtc_config cfg = {
-		.init_val = 0xfff,
-		.alarm_enable = 0,
-		.alarm_val = 0,
-		.cb_fn = NULL
-	};
-	rtc_device = device_get_binding(CONFIG_RTC_0_NAME);
-	__ASSERT(rtc_device != NULL, "QMSI RTC device not found");
-	rtc_enable(rtc_device);
-	rtc_set_config(rtc_device, &cfg);
-}
-
-uint32_t timestamp_read(void)
-{
-	return rtc_read(rtc_device);
-}
-
-void timestamp_close(void)
-{
-	rtc_disable(rtc_device);
 }
 
 #else
