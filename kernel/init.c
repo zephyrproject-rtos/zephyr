@@ -113,14 +113,14 @@ void k_call_stacks_analyze(void)
 {
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
 	extern char sys_work_q_stack[CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE];
-#if defined(CONFIG_ARC)
+#if defined(CONFIG_ARC) && CONFIG_RGF_NUM_BANKS != 1
 	extern char _firq_stack[CONFIG_FIRQ_STACK_SIZE];
 #endif /* CONFIG_ARC */
 
 	printk("Kernel stacks:\n");
 	stack_analyze("main     ", _main_stack, sizeof(_main_stack));
 	stack_analyze("idle     ", _idle_stack, sizeof(_idle_stack));
-#if defined(CONFIG_ARC)
+#if defined(CONFIG_ARC) && CONFIG_RGF_NUM_BANKS != 1
 	stack_analyze("firq     ", _firq_stack, sizeof(_firq_stack));
 #endif /* CONFIG_ARC */
 	stack_analyze("interrupt", _interrupt_stack,
