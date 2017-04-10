@@ -1,5 +1,4 @@
 #include <zephyr.h>
-#include <misc/printk.h>
 #include <console.h>
 
 void main(void)
@@ -9,6 +8,9 @@ void main(void)
 	while (1) {
 		u8_t c = console_getchar();
 
-		printk("char: [0x%x] %c\n", c, c);
+		console_putchar(c);
+		if (c == '\r') {
+			console_putchar('\n');
+		}
 	}
 }
