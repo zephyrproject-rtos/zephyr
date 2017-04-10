@@ -286,9 +286,6 @@ static char *get_existing_block(struct k_mem_pool_block_set *block_set,
 			/* mark block as unavailable (using XOR to invert) */
 			block_set->quad_block[i].mem_status ^=
 				1 << free_bit;
-#ifdef CONFIG_OBJECT_MONITOR
-			block_set->count++;
-#endif
 			break;
 		}
 
@@ -371,9 +368,7 @@ static char *get_block_recursive(struct k_mem_pool *pool,
 		fr_table[index].quad_block[i].mem_blocks = larger_block;
 		fr_table[index].quad_block[i].mem_status =
 			_QUAD_BLOCK_AVAILABLE & (~0x1);
-#ifdef CONFIG_OBJECT_MONITOR
-		fr_table[index].count++;
-#endif
+
 		return larger_block;
 	}
 

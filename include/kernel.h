@@ -1894,20 +1894,9 @@ struct k_mutex {
 	struct k_thread *owner;
 	uint32_t lock_count;
 	int owner_orig_prio;
-#ifdef CONFIG_OBJECT_MONITOR
-	int num_lock_state_changes;
-	int num_conflicts;
-#endif
 
 	_OBJECT_TRACING_NEXT_PTR(k_mutex);
 };
-
-#ifdef CONFIG_OBJECT_MONITOR
-#define _MUTEX_INIT_OBJECT_MONITOR \
-	.num_lock_state_changes = 0, .num_conflicts = 0,
-#else
-#define _MUTEX_INIT_OBJECT_MONITOR
-#endif
 
 #define K_MUTEX_INITIALIZER(obj) \
 	{ \
@@ -1915,7 +1904,6 @@ struct k_mutex {
 	.owner = NULL, \
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_THREAD_PRIO, \
-	_MUTEX_INIT_OBJECT_MONITOR \
 	_OBJECT_TRACING_INIT \
 	}
 
