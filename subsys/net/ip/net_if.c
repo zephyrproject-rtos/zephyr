@@ -1414,7 +1414,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 				continue;
 			}
 
-			if (addr->s4_addr32[0] ==
+			if (UNALIGNED_GET(&addr->s4_addr32[0]) ==
 			    iface->ipv4.unicast[i].address.in_addr.s_addr[0]) {
 
 				if (ret) {

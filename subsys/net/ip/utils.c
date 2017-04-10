@@ -306,8 +306,8 @@ int net_addr_pton(sa_family_t family, const char *src,
 
 			if (*src != ':') {
 				/* Normal IPv6 16-bit piece */
-				addr->s6_addr16[i] = htons(strtol(src, NULL,
-								  16));
+				UNALIGNED_PUT(htons(strtol(src, NULL, 16)),
+					      &addr->s6_addr16[i]);
 				src = strchr(src, ':');
 				if (!src && i < expected_groups - 1) {
 					return -EINVAL;
@@ -320,7 +320,7 @@ int net_addr_pton(sa_family_t family, const char *src,
 			/* Two colons in a row */
 
 			for (; i < expected_groups; i++) {
-				addr->s6_addr16[i] = 0;
+				UNALIGNED_PUT(0, &addr->s6_addr16[i]);
 			}
 
 			tmp = strrchr(src, ':');

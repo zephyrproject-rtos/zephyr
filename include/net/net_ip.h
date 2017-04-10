@@ -316,10 +316,10 @@ struct net_tcp_hdr {
  */
 static inline bool net_is_ipv6_addr_loopback(struct in6_addr *addr)
 {
-	return addr->s6_addr32[0] == 0 &&
-		addr->s6_addr32[1] == 0 &&
-		addr->s6_addr32[2] == 0 &&
-		ntohl(addr->s6_addr32[3]) == 1;
+	return UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
+		UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
+		UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
+		ntohl(UNALIGNED_GET(&addr->s6_addr32[3])) == 1;
 }
 
 /**
@@ -508,8 +508,7 @@ static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
  */
 static inline bool net_is_ipv6_ll_addr(const struct in6_addr *addr)
 {
-	return ((addr->s6_addr[0]) == 0xFE) &&
-		((addr->s6_addr[1]) == 0x80);
+	return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFE80);
 }
 
 /**
@@ -561,8 +560,10 @@ static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
  */
 static inline bool net_is_ipv6_addr_unspecified(const struct in6_addr *addr)
 {
-	return addr->s6_addr32[0] == 0 && addr->s6_addr32[1] == 0 &&
-		addr->s6_addr32[2] == 0 && addr->s6_addr32[3] == 0;
+	return UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
+		UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
+		UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
+		UNALIGNED_GET(&addr->s6_addr32[3]) == 0;
 }
 
 /**
@@ -575,10 +576,11 @@ static inline bool net_is_ipv6_addr_unspecified(const struct in6_addr *addr)
  */
 static inline bool net_is_ipv6_addr_solicited_node(const struct in6_addr *addr)
 {
-	return addr->s6_addr32[0] == htonl(0xff020000) &&
-		addr->s6_addr32[1] == 0x00000000 &&
-		addr->s6_addr32[2] == htonl(0x00000001) &&
-		((addr->s6_addr32[3] & htonl(0xff000000)) == htonl(0xff000000));
+	return UNALIGNED_GET(&addr->s6_addr32[0]) == htonl(0xff020000) &&
+		UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00000000 &&
+		UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0x00000001) &&
+		((UNALIGNED_GET(&addr->s6_addr32[3]) & htonl(0xff000000)) ==
+		 htonl(0xff000000));
 }
 
 /**
@@ -607,15 +609,15 @@ void net_ipv6_addr_create_solicited_node(const struct in6_addr *src,
 {
 	dst->s6_addr[0]   = 0xFF;
 	dst->s6_addr[1]   = 0x02;
-	dst->s6_addr16[1] = 0;
-	dst->s6_addr16[2] = 0;
-	dst->s6_addr16[3] = 0;
-	dst->s6_addr16[4] = 0;
+	UNALIGNED_PUT(0, &dst->s6_addr16[1]);
+	UNALIGNED_PUT(0, &dst->s6_addr16[2]);
+	UNALIGNED_PUT(0, &dst->s6_addr16[3]);
+	UNALIGNED_PUT(0, &dst->s6_addr16[4]);
 	dst->s6_addr[10]  = 0;
 	dst->s6_addr[11]  = 0x01;
 	dst->s6_addr[12]  = 0xFF;
 	dst->s6_addr[13]  = src->s6_addr[13];
-	dst->s6_addr16[7] = src->s6_addr16[7];
+	UNALIGNED_PUT(UNALIGNED_GET(&src->s6_addr16[7]), &dst->s6_addr16[7]);
 }
 
 /** @brief Construct an IPv6 address from eight 16-bit words.
@@ -636,14 +638,14 @@ static inline void net_ipv6_addr_create(struct in6_addr *addr,
 					uint16_t addr4, uint16_t addr5,
 					uint16_t addr6, uint16_t addr7)
 {
-	addr->s6_addr16[0] = htons(addr0);
-	addr->s6_addr16[1] = htons(addr1);
-	addr->s6_addr16[2] = htons(addr2);
-	addr->s6_addr16[3] = htons(addr3);
-	addr->s6_addr16[4] = htons(addr4);
-	addr->s6_addr16[5] = htons(addr5);
-	addr->s6_addr16[6] = htons(addr6);
-	addr->s6_addr16[7] = htons(addr7);
+	UNALIGNED_PUT(htons(addr0), &addr->s6_addr16[0]);
+	UNALIGNED_PUT(htons(addr1), &addr->s6_addr16[1]);
+	UNALIGNED_PUT(htons(addr2), &addr->s6_addr16[2]);
+	UNALIGNED_PUT(htons(addr3), &addr->s6_addr16[3]);
+	UNALIGNED_PUT(htons(addr4), &addr->s6_addr16[4]);
+	UNALIGNED_PUT(htons(addr5), &addr->s6_addr16[5]);
+	UNALIGNED_PUT(htons(addr6), &addr->s6_addr16[6]);
+	UNALIGNED_PUT(htons(addr7), &addr->s6_addr16[7]);
 }
 
 /**
@@ -667,8 +669,8 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 {
 	addr->s6_addr[0] = 0xfe;
 	addr->s6_addr[1] = 0x80;
-	addr->s6_addr16[1] = 0;
-	addr->s6_addr32[1] = 0;
+	UNALIGNED_PUT(0, &addr->s6_addr16[1]);
+	UNALIGNED_PUT(0, &addr->s6_addr32[1]);
 
 	switch (lladdr->len) {
 	case 2:
@@ -676,7 +678,7 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 		 * Universal/Local bit. RFC 6282 ch 3.2.2
 		 */
 		if (lladdr->type == NET_LINK_IEEE802154) {
-			addr->s6_addr32[2] = 0;
+			UNALIGNED_PUT(0, &addr->s6_addr32[2]);
 			addr->s6_addr[11] = 0xff;
 			addr->s6_addr[12] = 0xfe;
 			addr->s6_addr[13] = 0;
