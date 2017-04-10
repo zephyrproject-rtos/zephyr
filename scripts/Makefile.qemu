@@ -23,5 +23,5 @@ qemu: run
 run: zephyr
 	$(if $(QEMU_PIPE),,@echo "To exit from QEMU enter: 'CTRL+a, x'")
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(ARCH))'
-	$(if $(CONFIG_X86_IAMCU),python $(ZEPHYR_BASE)/scripts/qemu-machine-hack.py $(KERNEL_ELF_NAME))
+	$(if $(CONFIG_X86_IAMCU),$(ZEPHYR_BASE)/scripts/qemu-machine-hack.py $(KERNEL_ELF_NAME))
 	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_ELF_NAME)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 
 # For some baffling reason IAMCU sets the instruction set architecture
