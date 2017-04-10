@@ -13,16 +13,17 @@
 extern "C" {
 #endif
 
-/** @brief Initialize console_getchar() call.
+/** @brief Initialize console_getchar()/putchar() calls.
  *
  *  This function should be called once to initialize pull-style
- *  access to console via console_getchar() function. This function
- *  supersedes, and incompatible with, callback (push-style) console
- *  handling (via console_input_fn callback, etc.).
+ *  access to console via console_getchar() function and buffered
+ *  output using console_putchar() function. This function supercedes,
+ *  and incompatible with, callback (push-style) console handling
+ *  (via console_input_fn callback, etc.).
  *
  *  @return N/A
  */
-void console_getchar_init(void);
+void console_init(void);
 
 /** @brief Get next char from console input buffer.
  *
@@ -37,6 +38,15 @@ void console_getchar_init(void);
  *  @return A character read, including control characters.
  */
 u8_t console_getchar(void);
+
+/** @brief Output a char to console (buffered).
+ *
+ *  Puts a character into console output buffer. It will be sent
+ *  to a console asynchronously, e.g. using an IRQ handler.
+ *
+ *  @return -1 on output buffer overflow, otherwise 0.
+ */
+int console_putchar(char c);
 
 /** @brief Initialize console_getline() call.
  *

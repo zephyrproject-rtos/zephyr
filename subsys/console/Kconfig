@@ -18,7 +18,7 @@ choice
 	prompt "Console 'get' function selection"
 
 config CONSOLE_GETCHAR
-	bool "Character by character input"
+	bool "Character by character input and output"
 	select UART_CONSOLE_DEBUG_SERVER_HOOKS
 	select CONSOLE_HANDLER
 
@@ -37,6 +37,15 @@ config CONSOLE_GETCHAR_BUFSIZE
 	  Buffer size for console_getchar(). Must be power of 2. The
 	  default is optimized to save RAM. You may need to increase
 	  it e.g. to support large host-side clipboard pastes.
+
+config CONSOLE_PUTCHAR_BUFSIZE
+	int "console_putchar() buffer size"
+	default 16
+	help
+	  Buffer size for console_putchar(). Must be power of 2. The
+	  default is optimized to save RAM. You may need to increase
+	  it e.g. to support large host-side clipboard pastes (with
+	  echo).
 
 endif # CONSOLE_GETCHAR
 
