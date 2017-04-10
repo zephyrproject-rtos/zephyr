@@ -415,10 +415,14 @@ static int dns_read(struct dns_resolve_context *ctx,
 		address_size = DNS_IPV4_LEN;
 		addr = (uint8_t *)&net_sin(&info->ai_addr)->sin_addr;
 		info->ai_family = AF_INET;
+		info->ai_addr.family = AF_INET;
+		info->ai_addrlen = sizeof(struct sockaddr_in);
 	} else if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_AAAA) {
 		address_size = DNS_IPV6_LEN;
 		addr = (uint8_t *)&net_sin6(&info->ai_addr)->sin6_addr;
 		info->ai_family = AF_INET6;
+		info->ai_addr.family = AF_INET6;
+		info->ai_addrlen = sizeof(struct sockaddr_in6);
 	} else {
 		ret = DNS_EAI_FAMILY;
 		goto quit;
@@ -446,7 +450,6 @@ static int dns_read(struct dns_resolve_context *ctx,
 			src = dns_msg.msg + dns_msg.response_position;
 
 			memcpy(addr, src, address_size);
-			info->ai_addrlen = address_size;
 
 			ctx->queries[query_idx].cb(DNS_EAI_INPROGRESS, info,
 					ctx->queries[query_idx].user_data);
