@@ -103,19 +103,18 @@ typedef struct s_coopCoprocReg {
 } tCoopCoprocReg;
 
 /*
- * The following structure defines the set of 'volatile' x87 FPU/MMX/SSE
- * registers.  These registers need not be preserved by a called C function.
+ * The following structure defines the set of 'volatile' coprocessor
+ * registers. These registers need not be preserved by a called C function.
  * Given that they are not preserved across function calls, they must be
  * save/restored (along with s_coopCoprocReg) when a preemptive context switch
  * occurs.
  */
 typedef struct s_preempCoprocReg {
 	/*
-	 * This structure intentionally left blank, as for now coprocessor's
-	 * stack is positioned at top of the stack.
+	 * This structure reserves coprocessor control and save area memory.
 	 */
 #if XCHAL_CP_NUM > 0
-	char *cpStack;
+	char __aligned(4) cpStack[XT_CP_SIZE];
 #endif
 } tPreempCoprocReg;
 
