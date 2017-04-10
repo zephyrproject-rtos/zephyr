@@ -23,8 +23,8 @@ extern "C" {
 	#define GDB_ARCH_CAN_STEP gdb_arch_can_step
 #endif
 
-#ifndef CONFIG_GDB_RAM_SIZE
-	#define CONFIG_GDB_RAM_SIZE (CONFIG_RAM_SIZE * 1024)
+#ifndef GDB_RAM_SIZE
+	#define GDB_RAM_SIZE (CONFIG_RAM_SIZE * 1024)
 #endif
 #ifndef CONFIG_GDB_RAM_ADDRESS
 	#define CONFIG_GDB_RAM_ADDRESS 0x100000

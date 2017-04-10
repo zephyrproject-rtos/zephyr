@@ -2427,9 +2427,9 @@ static void init_interrupt_handling(void)
 static void init_mem_safe_access(void)
 {
 	(void)_mem_safe_region_add((void *)CONFIG_GDB_RAM_ADDRESS,
-				   CONFIG_GDB_RAM_SIZE, SYS_MEM_SAFE_READ);
+				   GDB_RAM_SIZE, SYS_MEM_SAFE_READ);
 	(void)_mem_safe_region_add((void *)CONFIG_GDB_RAM_ADDRESS,
-				   CONFIG_GDB_RAM_SIZE, SYS_MEM_SAFE_WRITE);
+				   GDB_RAM_SIZE, SYS_MEM_SAFE_WRITE);
 }
 #else
 #define init_mem_safe_access() do { } while ((0))
