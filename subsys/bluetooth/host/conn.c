@@ -64,6 +64,17 @@ static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
 };
 #endif /* CONFIG_BLUETOOTH_BREDR */
 
+struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
+{
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.mtu) {
+		return &bt_dev.br.pkts;
+	}
+#endif /* CONFIG_BLUETOOTH_BREDR */
+
+	return &bt_dev.le.pkts;
+}
+
 static inline const char *state2str(bt_conn_state_t state)
 {
 	switch (state) {
@@ -1620,6 +1631,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
+		conn->err = reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_le_scan_update(false);
 		return 0;
@@ -1688,6 +1700,9 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	if (!conn) {
 		return NULL;
 	}
+
+	/* Set initial address - will be updated later if necessary. */
+	bt_addr_le_copy(&conn->le.resp_addr, peer);
 
 	bt_conn_set_param_le(conn, param);
 

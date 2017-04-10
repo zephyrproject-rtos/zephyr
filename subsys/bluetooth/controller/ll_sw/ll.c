@@ -25,7 +25,6 @@
 #include "hal/radio.h"
 #include "hal/debug.h"
 
-#include "util/config.h"
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/mayfly.h"
@@ -230,14 +229,19 @@ int ll_init(struct k_sem *sem_rx)
 		return -ENOMEM;
 	}
 
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, 0, radio_nrf5_isr, 0);
-	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, 0, rtc0_nrf5_isr, NULL, 0);
+	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn,
+			   CONFIG_BLUETOOTH_CONTROLLER_WORKER_PRIO,
+			   radio_nrf5_isr, 0);
+	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BLUETOOTH_CONTROLLER_WORKER_PRIO,
+		    rtc0_nrf5_isr, NULL, 0);
+	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BLUETOOTH_CONTROLLER_JOB_PRIO,
+		    swi4_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, 0, swi4_nrf5_isr, NULL, 0);
+
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
-	irq_enable(NRF5_IRQ_RNG_IRQn);
 	irq_enable(NRF5_IRQ_SWI4_IRQn);
+	irq_enable(NRF5_IRQ_RNG_IRQn);
 
 	return 0;
 }

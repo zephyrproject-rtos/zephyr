@@ -186,16 +186,7 @@ struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve);
 int bt_conn_init(void);
 
 /* Selects based on connecton type right semaphore for ACL packets */
-static inline struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
-{
-#if defined(CONFIG_BLUETOOTH_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.mtu) {
-		return &bt_dev.br.pkts;
-	}
-#endif /* CONFIG_BLUETOOTH_BREDR */
-
-	return &bt_dev.le.pkts;
-}
+struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 
 /* k_poll related helpers for the TX thread */
 int bt_conn_prepare_events(struct k_poll_event events[]);

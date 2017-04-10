@@ -1,6 +1,7 @@
 # Kconfig - Bluetooth LE stack configuration options
 
 #
+# Copyright (c) 2016-2017 Nordic Semiconductor ASA
 # Copyright (c) 2015-2016 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -8,37 +9,53 @@
 
 comment "Host Stack Configuration"
 
-# Stack size needed for executing bt_send with specified driver
-config BLUETOOTH_HCI_TX_STACK_SIZE
-	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 256
-	default 256 if BLUETOOTH_H4
-	default 256 if BLUETOOTH_H5
-	default 256 if BLUETOOTH_SPI
-	default 640 if BLUETOOTH_CONTROLLER
-
 config BLUETOOTH_HCI_RAW
 	bool "RAW HCI access"
 	help
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
-# Virtual/hidden option to make the conditions more intuitive
+config BLUETOOTH_UART_TO_HOST_DEV_NAME
+	string "Device Name of UART Device to an external Bluetooth Host"
+	default "UART_0"
+	depends on BLUETOOTH_HCI_RAW
+	help
+	  This option specifies the name of UART device to be used
+	  to connect to an external Bluetooth Host when Zephyr is
+	  acting as a Bluetooth Controller.
+
 config BLUETOOTH_HCI_HOST
+	# Virtual/hidden option to make the conditions more intuitive
 	bool
 	default y
 	depends on !BLUETOOTH_HCI_RAW
 	select POLL
 
-config BLUETOOTH_RECV_IS_RX_THREAD
-	# Virtual option set by the HCI driver to indicate that there's
-	# no need for the host to have its own RX thread, rather the
-	# context that bt_recv() gets called in is already good enough.
-	# If this is set, the driver RX thread is required as the first
-	# thing to make a call to bt_rx_thread_ready().
+config BLUETOOTH_PERIPHERAL
+	bool "Peripheral Role support"
+	select BLUETOOTH_CONN
+	default y if BLUETOOTH_HCI_RAW
+	help
+	  Select this for LE Peripheral role support.
+
+config BLUETOOTH_CENTRAL
+	bool "Central Role support"
+	select BLUETOOTH_CONN
+	default y if BLUETOOTH_HCI_RAW
+	help
+	  Select this for LE Central role support.
+
+config BLUETOOTH_CONN
 	bool
+
+config BLUETOOTH_MAX_CONN
+	int "Maximum number of simultaneous connections"
+	depends on BLUETOOTH_CONN
+	range 1 64
+	default 1
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported.
 
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
@@ -70,14 +87,24 @@ config BLUETOOTH_RX_BUF_LEN
 	  an L2CAP MTU of 65 bytes. On top of this there's the L2CAP header
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
-config BLUETOOTH_UART_TO_HOST_DEV_NAME
-	string "Device Name of UART Device to an external Bluetooth Host"
-	default "UART_0"
-	depends on BLUETOOTH_HCI_RAW
-	help
-	  This option specifies the name of UART device to be used
-	  to connect to an external Bluetooth Host when Zephyr is
-	  acting as a Bluetooth Controller.
+config BLUETOOTH_HCI_TX_STACK_SIZE
+	# Stack size needed for executing bt_send with specified driver
+	int
+	# Even if no driver is selected the following default is still
+	# needed e.g. for unit tests.
+	default 256
+	default 256 if BLUETOOTH_H4
+	default 256 if BLUETOOTH_H5
+	default 256 if BLUETOOTH_SPI
+	default 640 if BLUETOOTH_CONTROLLER
+
+config BLUETOOTH_RECV_IS_RX_THREAD
+	# Virtual option set by the HCI driver to indicate that there's
+	# no need for the host to have its own RX thread, rather the
+	# context that bt_recv() gets called in is already good enough.
+	# If this is set, the driver RX thread is required as the first
+	# thing to make a call to bt_rx_thread_ready().
+	bool
 
 config BLUETOOTH_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
@@ -115,21 +142,6 @@ config BLUETOOTH_INTERNAL_STORAGE
 	  When selected the application doesn't need to register its own
 	  persistent storage handlers through the bt_storage API, rather
 	  an internal default handler is used for this.
-
-config BLUETOOTH_PERIPHERAL
-	bool "Peripheral Role support"
-	select BLUETOOTH_CONN
-	help
-	  Select this for LE Peripheral role support.
-
-config BLUETOOTH_CENTRAL
-	bool "Central Role support"
-	select BLUETOOTH_CONN
-	help
-	  Select this for LE Central role support.
-
-config BLUETOOTH_CONN
-	bool
 
 if BLUETOOTH_CONN
 config BLUETOOTH_L2CAP_TX_BUF_COUNT
@@ -267,24 +279,6 @@ config BLUETOOTH_TINYCRYPT_ECC
 	  In builds including the HCI Raw interface and the BLE Controller, this
 	  option injects support for the 2 HCI commands required for LE Secure
 	  Connections so that Hosts can make use of those.
-
-config BLUETOOTH_MAX_SCO_CONN
-	int "Maximum number of simultaneous SCO connections"
-	depends on BLUETOOTH_CONN || BLUETOOTH_CONTROLLER
-	default 1
-	range 1 3
-	help
-	  Maximum number of simultaneous Bluetooth synchronous connections
-	  supported. The minimum (and default) number is 1.
-
-config BLUETOOTH_MAX_CONN
-	int "Maximum number of simultaneous connections"
-	depends on BLUETOOTH_CONN || BLUETOOTH_CONTROLLER
-	default 1
-	range 1 64
-	help
-	  Maximum number of simultaneous Bluetooth connections
-	  supported. The minimum (and default) number is 1.
 
 config BLUETOOTH_DEBUG
 	bool
@@ -456,6 +450,14 @@ config BLUETOOTH_BREDR
 	  This option enables Bluetooth BR/EDR support"
 
 if BLUETOOTH_BREDR
+config BLUETOOTH_MAX_SCO_CONN
+	int "Maximum number of simultaneous SCO connections"
+	default 1
+	range 1 3
+	help
+	  Maximum number of simultaneous Bluetooth synchronous connections
+	  supported. The minimum (and default) number is 1.
+
 config BLUETOOTH_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
 	help

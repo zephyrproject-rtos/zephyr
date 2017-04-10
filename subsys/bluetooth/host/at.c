@@ -216,6 +216,7 @@ static int at_state_process_cmd(struct at_client *at, struct net_buf *buf)
 
 	if (at->resp) {
 		at->resp(at, buf);
+		at->resp = NULL;
 		return 0;
 	}
 	at->state = AT_STATE_UNSOLICITED_CMD;
@@ -227,10 +228,24 @@ static int at_state_get_result_string(struct at_client *at, struct net_buf *buf)
 	return get_response_string(at, buf, '\r', AT_STATE_PROCESS_RESULT);
 }
 
+static bool is_ring(struct at_client *at)
+{
+	if (strncmp(at->buf, "RING", 4) == 0) {
+		return true;
+	}
+
+	return false;
+}
+
 static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 {
 	enum at_cme cme_err;
 	enum at_result result;
+
+	if (is_ring(at)) {
+		at->state = AT_STATE_UNSOLICITED_CMD;
+		return 0;
+	}
 
 	if (at_parse_result(at->buf, buf, &result) == 0) {
 		if (at->finish) {
@@ -327,8 +342,15 @@ static int at_cmd_start(struct at_client *at, struct net_buf *buf,
 		return -ENODATA;
 	}
 
-	reset_buffer(at);
-	at->cmd_state = AT_CMD_GET_VALUE;
+	if (type == AT_CMD_TYPE_OTHER) {
+		/* Skip for Other type such as ..RING.. which does not have
+		 * values to get processed.
+		 */
+		at->cmd_state = AT_CMD_PROCESS_VALUE;
+	} else {
+		at->cmd_state = AT_CMD_GET_VALUE;
+	}
+
 	return 0;
 }
 
@@ -336,6 +358,8 @@ static int at_cmd_get_value(struct at_client *at, struct net_buf *buf,
 			    const char *prefix, parse_val_t func,
 			    enum at_cmd_type type)
 {
+	/* Reset buffer before getting the values */
+	reset_buffer(at);
 	return get_cmd_value(at, buf, '\r', AT_CMD_PROCESS_VALUE);
 }
 

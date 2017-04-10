@@ -39,13 +39,24 @@
 #define BT_MONITOR_OTHER_DROPS   7
 #define BT_MONITOR_TS32          8
 
+#define BT_MONITOR_BASE_HDR_LEN  6
+
+#if defined(CONFIG_BLUETOOTH_BREDR)
+#define BT_MONITOR_EXT_HDR_MAX 19
+#else
+#define BT_MONITOR_EXT_HDR_MAX 15
+#endif
+
 struct bt_monitor_hdr {
 	uint16_t  data_len;
 	uint16_t  opcode;
 	uint8_t   flags;
 	uint8_t   hdr_len;
 
-	/* Extended header */
+	uint8_t   ext[BT_MONITOR_EXT_HDR_MAX];
+} __packed;
+
+struct bt_monitor_ts32 {
 	uint8_t   type;
 	uint32_t  ts32;
 } __packed;

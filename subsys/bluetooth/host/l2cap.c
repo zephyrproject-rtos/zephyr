@@ -1063,7 +1063,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
 	       buf->len, k_sem_count_get(&ch->tx.credits));
 
-	len = buf->len;
+	len = buf->len - sdu_hdr_len;
 
 	bt_l2cap_send(ch->chan.conn, ch->tx.cid, buf);
 
@@ -1119,7 +1119,8 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		}
 	}
 
-	BT_DBG("ch %p cid 0x%04x sent %u", ch, ch->tx.cid, sent);
+	BT_DBG("ch %p cid 0x%04x sent %u total_len %u", ch, ch->tx.cid, sent,
+	       total_len);
 
 	net_buf_unref(buf);
 
@@ -1640,7 +1641,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	BT_DBG("chan %p buf %p len %u", chan, buf, buf->len);
+	BT_DBG("chan %p buf %p len %zu", chan, buf, net_buf_frags_len(buf));
 
 	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;

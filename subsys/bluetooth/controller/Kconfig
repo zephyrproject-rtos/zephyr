@@ -1,6 +1,19 @@
-if BLUETOOTH_CONTROLLER
+# Kconfig - Bluetooth Controller configuration options
+#
+# Copyright (c) 2016-2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
-comment "BLE Controller configuration"
+comment "BLE Controller support"
+
+config BLUETOOTH_CONTROLLER
+	bool "Bluetooth Controller"
+	select BLUETOOTH_RECV_IS_RX_THREAD
+	help
+	  Enables support for SoC native controller implementations.
+
+if BLUETOOTH_CONTROLLER
 
 choice
 	prompt "Bluetooth Link Layer Selection"
@@ -14,6 +27,16 @@ config BLUETOOTH_LL_SW
 	  Use Zephyr's software BLE Link Layer implementation.
 
 endchoice
+
+comment "BLE Controller configuration"
+
+config BLUETOOTH_CONTROLLER_DUP_FILTER_LEN
+	prompt "Number of addresses in the scan duplicate filter"
+	int
+	default 16
+	help
+	  Set the number of unique BLE addresses that can be filtered as
+	  duplicates while scanning.
 
 config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
@@ -47,12 +70,6 @@ config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
 	  Maximum is set to 16384 due to implementation limitations (use of
 	  uint16_t for size/length variables).
 
-config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
-	int
-	default 320
-
-comment "BLE Controller features"
-
 config BLUETOOTH_CONTROLLER_COMPANY_ID
 	prompt "Company Id"
 	hex
@@ -68,6 +85,12 @@ config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
 	range 0x0000 0xFFFF
 	help
 	  Set the Subversion Number that will be used in VERSION_IND PDU.
+
+config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
+	int
+	default 320
+
+comment "BLE Controller features"
 
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
@@ -91,6 +114,85 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
+config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+	bool "Show advanced features"
+	help
+	  Makes advanced features visible to controller developers.
+
+menu "Advanced features"
+	visible if BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+
+config BLUETOOTH_CONTROLLER_WORKER_PRIO
+	prompt "Radio and Ticker's Worker IRQ priority"
+	int
+	range 0 3 if SOC_SERIES_NRF51X
+	range 0 6 if SOC_SERIES_NRF52X
+	default 0
+	help
+	  The interrupt priority for event preparation and radio IRQ. This value
+	  shall be less than or equal to the Ticker's Job priority value.
+
+config BLUETOOTH_CONTROLLER_JOB_PRIO
+	prompt "Ticker's JOB IRQ priority"
+	int
+	range BLUETOOTH_CONTROLLER_WORKER_PRIO 3 if SOC_SERIES_NRF51X
+	range BLUETOOTH_CONTROLLER_WORKER_PRIO 6 if SOC_SERIES_NRF52X
+	default 0
+	help
+	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
+	  be greater than or equal to the Ticker's Worker IRQ priority value.
+
+config BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+	bool "Advanced event preparation"
+	default y
+	help
+	  Enables advanced event preparation offset ahead of radio tx/rx, taking
+	  into account predictive processing time requirements in preparation to
+	  the event, like control procedure handling and CPU execution speeds.
+	  Crystal oscillator is retained between closely spaced consecutive
+	  radio events to reduce the overall number of crystal settling current
+	  consumptions.
+
+	  This feature maximizes radio utilization in an average role event
+	  timeslice when they are closely spaced by using a reduced offset
+	  between preparation and radio event.
+
+	  By disabling this feature, the controller will use a constant offset
+	  between the preparation and radio event. The controller will toggle
+	  crystal oscillator between two closely spaced radio events leading to
+	  higher average current due to increased number of crystal settling
+	  current consumptions.
+
+config BLUETOOTH_CONTROLLER_XTAL_THRESHOLD
+	prompt "Crystal shutdown threshold in uS"
+	depends on BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+	int
+	default 5168
+	help
+	  Configure the optimal delta in micro seconds between two consecutive
+	  radio events below which (active clock) crystal will be retained. This
+	  value is board dependent. The value 5168 is based on crude calculation
+	  for nRF51 current versus startup time of high frequency crystal.
+
+config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+	bool "Advanced scheduling"
+	depends on (BLUETOOTH_MAX_CONN != 0)
+	default y
+	default n if BLUETOOTH_PERIPHERAL && !BLUETOOTH_CENTRAL
+	help
+	  Enable non-overlapping placement of observer, initiator and master
+	  roles in timespace. Uses window offset in connection updates and uses
+	  connection parameter request in slave role to negotiate
+	  non-overlapping placement with active master roles to avoid slave
+	  roles drifting into active master roles in the local controller.
+
+	  This feature maximizes the average data transmission amongst active
+	  concurrent master and slave connections while other observer,
+	  initiator, master or slave roles are active in the local controller.
+
+	  Disabling this feature will lead to overlapping role in timespace
+	  leading to skipped events amongst active roles.
+
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
 	help
@@ -113,6 +215,8 @@ config BLUETOOTH_CONTROLLER_ADV_INDICATION
 	bool "Advertisement indications"
 	help
 	  Generate events indicating on air advertisement events.
+
+endmenu
 
 comment "BLE Controller debug configuration"
 

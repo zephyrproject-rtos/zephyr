@@ -2836,7 +2836,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	k_sem_init(&bt_dev.br.pkts, pkts, pkts);
 }
-#else
+#elif defined(CONFIG_BLUETOOTH_CONN)
 static void read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
@@ -2858,6 +2858,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 }
 #endif
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void le_read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_buffer_size *rp = (void *)buf->data;
@@ -2872,6 +2873,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 		       bt_dev.le.mtu);
 	}
 }
+#endif
 
 static void read_supported_commands_complete(struct net_buf *buf)
 {
@@ -2994,13 +2996,16 @@ static int le_init(void)
 	read_le_features_complete(rsp);
 	net_buf_unref(rsp);
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 	/* Read LE Buffer Size */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE, NULL, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,
+				   NULL, &rsp);
 	if (err) {
 		return err;
 	}
 	le_read_buffer_size_complete(rsp);
 	net_buf_unref(rsp);
+#endif
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
@@ -3262,6 +3267,7 @@ static int br_init(void)
 #else
 static int br_init(void)
 {
+#if defined(CONFIG_BLUETOOTH_CONN)
 	struct net_buf *rsp;
 	int err;
 
@@ -3277,6 +3283,7 @@ static int br_init(void)
 
 	read_buffer_size_complete(rsp);
 	net_buf_unref(rsp);
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 	return 0;
 }

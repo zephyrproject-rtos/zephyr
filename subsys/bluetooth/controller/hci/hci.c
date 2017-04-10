@@ -35,6 +35,24 @@
  */
 static uint16_t _opcode;
 
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+/* Scan duplicate filter */
+struct dup {
+		uint8_t mask;
+		bt_addr_le_t addr;
+};
+static struct dup dup_filter[CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN];
+static int32_t dup_count;
+static uint32_t dup_curr;
+#endif
+
+#define BIT64(n) (1ULL << (n))
+#define DEFAULT_EVENT_MASK    0x1fffffffffff
+#define DEFAULT_LE_EVENT_MASK 0x1f
+
+static uint64_t event_mask = DEFAULT_EVENT_MASK;
+static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
+
 static void evt_create(struct net_buf *buf, uint8_t evt, uint8_t len)
 {
 	struct bt_hci_evt_hdr *hdr;
@@ -129,9 +147,10 @@ static int link_control_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 
 static void set_event_mask(struct net_buf *buf, struct net_buf **evt)
 {
+	struct bt_hci_cp_set_event_mask *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 
-	/** TODO */
+	event_mask = sys_get_le64(cmd->events);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -142,6 +161,13 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 
 	ll_reset();
+
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+	dup_count = -1;
+#endif
+	/* reset event masks */
+	event_mask = DEFAULT_EVENT_MASK;
+	le_event_mask = DEFAULT_LE_EVENT_MASK;
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -280,9 +306,10 @@ static int info_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 
 static void le_set_event_mask(struct net_buf *buf, struct net_buf **evt)
 {
+	struct bt_hci_cp_set_event_mask *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 
-	/** TODO */
+	le_event_mask = sys_get_le64(cmd->events);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -411,6 +438,15 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+	/* initialize duplicate filtering */
+	if (cmd->enable && cmd->filter_dup) {
+		dup_count = 0;
+		dup_curr = 0;
+	} else {
+		dup_count = -1;
+	}
+#endif
 	status = ll_scan_enable(cmd->enable);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
@@ -974,6 +1010,52 @@ static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *b,
 	uint8_t *rssi;
 	uint8_t info_len;
 
+	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
+	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_ADVERTISING_REPORT))) {
+		return;
+	}
+
+#if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
+	/* check for duplicate filtering */
+	if (dup_count >= 0) {
+		int i;
+
+		for (i = 0; i < dup_count; i++) {
+			if (!memcmp(&adv->payload.adv_ind.addr[0],
+				    &dup_filter[i].addr.a.val[0],
+				    sizeof(bt_addr_t)) &&
+			    adv->tx_addr == dup_filter[i].addr.type) {
+
+				if (dup_filter[i].mask & BIT(adv->type)) {
+					/* duplicate found */
+					return;
+				}
+				/* report different adv types */
+				dup_filter[i].mask |= BIT(adv->type);
+				goto fill_report;
+			}
+		}
+
+		/* insert into the duplicate filter */
+		memcpy(&dup_filter[dup_curr].addr.a.val[0],
+		       &adv->payload.adv_ind.addr[0], sizeof(bt_addr_t));
+		dup_filter[dup_curr].addr.type = adv->tx_addr;
+		dup_filter[dup_curr].mask = BIT(adv->type);
+
+		if (dup_count < CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN) {
+			dup_count++;
+			dup_curr = dup_count;
+		} else {
+			dup_curr++;
+		}
+
+		if (dup_curr == CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN) {
+			dup_curr = 0;
+		}
+	}
+fill_report:
+#endif
+
 	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
 		data_len = (adv->len - BDADDR_SIZE);
 	} else {
@@ -1008,6 +1090,11 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_conn_complete *sep;
 	struct radio_le_conn_cmplt *radio_cc;
 
+	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
+	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_COMPLETE))) {
+		return;
+	}
+
 	radio_cc = (struct radio_le_conn_cmplt *) (pdu_data->payload.lldata);
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_COMPLETE, sizeof(*sep));
@@ -1028,6 +1115,10 @@ static void disconn_complete(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_disconn_complete *ep;
 
+	if (!(event_mask & BIT64(BT_EVT_BIT_DISCONN_COMPLETE))) {
+		return;
+	}
+
 	evt_create(buf, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*ep));
 	ep = net_buf_add(buf, sizeof(*ep));
 
@@ -1041,6 +1132,11 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_conn_update_complete *sep;
 	struct radio_le_conn_update_cmplt *radio_cu;
+
+	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
+	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_UPDATE_COMPLETE))) {
+		return;
+	}
 
 	radio_cu = (struct radio_le_conn_update_cmplt *)
 			(pdu_data->payload.lldata);
@@ -1058,6 +1154,10 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
 				 struct net_buf *buf)
 {
 	struct bt_hci_evt_encrypt_key_refresh_complete *ep;
+
+	if (!(event_mask & BIT64(BT_EVT_BIT_ENCRYPT_KEY_REFRESH_COMPLETE))) {
+		return;
+	}
 
 	evt_create(buf, BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE, sizeof(*ep));
 	ep = net_buf_add(buf, sizeof(*ep));
@@ -1150,6 +1250,11 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_ltk_request *sep;
 
+	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
+	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_LTK_REQUEST))) {
+		return;
+	}
+
 	sep = meta_evt(buf, BT_HCI_EVT_LE_LTK_REQUEST, sizeof(*sep));
 
 	sep->handle = sys_cpu_to_le16(handle);
@@ -1164,6 +1269,10 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 {
 	struct bt_hci_evt_encrypt_change *ep;
 
+	if (!(event_mask & BIT64(BT_EVT_BIT_ENCRYPT_CHANGE))) {
+		return;
+	}
+
 	evt_create(buf, BT_HCI_EVT_ENCRYPT_CHANGE, sizeof(*ep));
 	ep = net_buf_add(buf, sizeof(*ep));
 
@@ -1176,6 +1285,11 @@ static void le_remote_feat_complete(uint8_t status, struct pdu_data *pdu_data,
 				    uint16_t handle, struct net_buf *buf)
 {
 	struct bt_hci_ev_le_remote_feat_complete *sep;
+
+	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
+	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_REMOTE_FEAT_COMPLETE))) {
+		return;
+	}
 
 	sep = meta_evt(buf, BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE, sizeof(*sep));
 
@@ -1212,6 +1326,10 @@ static void remote_version_info(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_remote_version_info *ep;
 
+	if (!(event_mask & BIT64(BT_EVT_BIT_REMOTE_VERSION_INFO))) {
+		return;
+	}
+
 	evt_create(buf, BT_HCI_EVT_REMOTE_VERSION_INFO, sizeof(*ep));
 	ep = net_buf_add(buf, sizeof(*ep));
 
@@ -1230,6 +1348,11 @@ static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_conn_param_req *sep;
 
+	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
+	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_PARAM_REQ))) {
+		return;
+	}
+
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_PARAM_REQ, sizeof(*sep));
 
 	sep->handle = sys_cpu_to_le16(handle);
@@ -1245,6 +1368,11 @@ static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
 			       struct net_buf *buf)
 {
 	struct bt_hci_evt_le_data_len_change *sep;
+
+	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
+	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_DATA_LEN_CHANGE))) {
+		return;
+	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_DATA_LEN_CHANGE, sizeof(*sep));
 

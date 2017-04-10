@@ -31,6 +31,24 @@
 
 static struct device *monitor_dev;
 
+enum {
+	BT_LOG_BUSY,
+};
+
+static atomic_t flags;
+
+static struct {
+	atomic_t cmd;
+	atomic_t evt;
+	atomic_t acl_tx;
+	atomic_t acl_rx;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	atomic_t sco_tx;
+	atomic_t sco_rx;
+#endif
+	atomic_t other;
+} drops;
+
 extern int _prf(int (*func)(), void *dest,
 		const char *format, va_list vargs);
 
@@ -43,20 +61,42 @@ static void monitor_send(const void *data, size_t len)
 	}
 }
 
+static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
+			 atomic_t *val)
+{
+	atomic_val_t count;
+
+	count = atomic_set(val, 0);
+	if (count) {
+		hdr->ext[hdr->hdr_len++] = type;
+		hdr->ext[hdr->hdr_len++] = min(count, 255);
+	}
+}
+
 static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint16_t opcode,
 			      uint16_t len)
 {
-	uint32_t ts32;
+	struct bt_monitor_ts32 *ts;
 
-	hdr->hdr_len  = sizeof(hdr->type) + sizeof(hdr->ts32);
-	hdr->data_len = sys_cpu_to_le16(4 + hdr->hdr_len + len);
 	hdr->opcode   = sys_cpu_to_le16(opcode);
 	hdr->flags    = 0;
 
-	/* Extended header */
-	hdr->type = BT_MONITOR_TS32;
-	ts32 = k_uptime_get() * 10;
-	hdr->ts32 = sys_cpu_to_le32(ts32);
+	ts = (void *)hdr->ext;
+	ts->type = BT_MONITOR_TS32;
+	ts->ts32 = sys_cpu_to_le32(k_uptime_get() * 10);
+	hdr->hdr_len = sizeof(*ts);
+
+	encode_drops(hdr, BT_MONITOR_COMMAND_DROPS, &drops.cmd);
+	encode_drops(hdr, BT_MONITOR_EVENT_DROPS, &drops.evt);
+	encode_drops(hdr, BT_MONITOR_ACL_TX_DROPS, &drops.acl_tx);
+	encode_drops(hdr, BT_MONITOR_ACL_RX_DROPS, &drops.acl_rx);
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	encode_drops(hdr, BT_MONITOR_SCO_TX_DROPS, &drops.sco_tx);
+	encode_drops(hdr, BT_MONITOR_SCO_RX_DROPS, &drops.sco_rx);
+#endif
+	encode_drops(hdr, BT_MONITOR_OTHER_DROPS, &drops.other);
+
+	hdr->data_len = sys_cpu_to_le16(4 + hdr->hdr_len + len);
 }
 
 static int log_out(int c, void *unused)
@@ -65,13 +105,42 @@ static int log_out(int c, void *unused)
 	return 0;
 }
 
+static void drop_add(uint16_t opcode)
+{
+	switch (opcode) {
+	case BT_MONITOR_COMMAND_PKT:
+		atomic_inc(&drops.cmd);
+		break;
+	case BT_MONITOR_EVENT_PKT:
+		atomic_inc(&drops.evt);
+		break;
+	case BT_MONITOR_ACL_TX_PKT:
+		atomic_inc(&drops.acl_tx);
+		break;
+	case BT_MONITOR_ACL_RX_PKT:
+		atomic_inc(&drops.acl_rx);
+		break;
+#if defined(CONFIG_BLUETOOTH_BREDR)
+	case BT_MONITOR_SCO_TX_PKT:
+		atomic_inc(&drops.sco_tx);
+		break;
+	case BT_MONITOR_SCO_RX_PKT:
+		atomic_inc(&drops.sco_rx);
+		break;
+#endif
+	default:
+		atomic_inc(&drops.other);
+		break;
+	}
+}
+
 void bt_log(int prio, const char *fmt, ...)
 {
 	struct bt_monitor_user_logging log;
 	struct bt_monitor_hdr hdr;
 	const char id[] = "bt";
 	va_list ap;
-	int len, key;
+	int len;
 
 	va_start(ap, fmt);
 	len = vsnprintk(NULL, 0, fmt, ap);
@@ -84,12 +153,15 @@ void bt_log(int prio, const char *fmt, ...)
 	log.priority = prio;
 	log.ident_len = sizeof(id);
 
+	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
+		drop_add(BT_MONITOR_USER_LOGGING);
+		return;
+	}
+
 	encode_hdr(&hdr, BT_MONITOR_USER_LOGGING,
 		   sizeof(log) + sizeof(id) + len + 1);
 
-	key = irq_lock();
-
-	monitor_send(&hdr, sizeof(hdr));
+	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
 	monitor_send(&log, sizeof(log));
 	monitor_send(id, sizeof(id));
 
@@ -100,22 +172,24 @@ void bt_log(int prio, const char *fmt, ...)
 	/* Terminate the string with null */
 	uart_poll_out(monitor_dev, '\0');
 
-	irq_unlock(key);
+	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 {
 	struct bt_monitor_hdr hdr;
-	int key;
+
+	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
+		drop_add(opcode);
+		return;
+	}
 
 	encode_hdr(&hdr, opcode, len);
 
-	key = irq_lock();
-
-	monitor_send(&hdr, sizeof(hdr));
+	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
 	monitor_send(data, len);
 
-	irq_unlock(key);
+	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
 void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,

@@ -88,6 +88,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 }
 
 /* HCI Error Codes */
+#define BT_HCI_ERR_SUCCESS                      0x00
 #define BT_HCI_ERR_UNKNOWN_CMD                  0x01
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
 #define BT_HCI_ERR_AUTHENTICATION_FAIL          0x05
@@ -1267,6 +1268,46 @@ struct bt_hci_ev_le_direct_adv_report {
 	uint8_t num_reports;
 	struct bt_hci_ev_le_direct_adv_info direct_adv_info[0];
 } __packed;
+
+/* Event mask bits */
+
+#define BT_EVT_BIT_INQUIRY_COMPLETE             0
+#define BT_EVT_BIT_CONN_COMPLETE                2
+#define BT_EVT_BIT_CONN_REQUEST                 3
+#define BT_EVT_BIT_DISCONN_COMPLETE             4
+#define BT_EVT_BIT_AUTH_COMPLETE                5
+#define BT_EVT_BIT_REMOTE_NAME_REQ_COMPLETE     6
+#define BT_EVT_BIT_ENCRYPT_CHANGE               7
+#define BT_EVT_BIT_REMOTE_FEATURES              10
+#define BT_EVT_BIT_REMOTE_VERSION_INFO          11
+#define BT_EVT_BIT_ROLE_CHANGE                  17
+#define BT_EVT_BIT_PIN_CODE_REQ                 21
+#define BT_EVT_BIT_LINK_KEY_REQ                 22
+#define BT_EVT_BIT_LINK_KEY_NOTIFY              23
+#define BT_EVT_BIT_INQUIRY_RESULT_WITH_RSSI     33
+#define BT_EVT_BIT_REMOTE_EXT_FEATURES          34
+#define BT_EVT_BIT_SYNC_CONN_COMPLETE           43
+#define BT_EVT_BIT_EXTENDED_INQUIRY_RESULT      46
+#define BT_EVT_BIT_ENCRYPT_KEY_REFRESH_COMPLETE 47
+#define BT_EVT_BIT_IO_CAPA_REQ                  48
+#define BT_EVT_BIT_IO_CAPA_RESP                 49
+#define BT_EVT_BIT_USER_CONFIRM_REQ             50
+#define BT_EVT_BIT_USER_PASSKEY_REQ             51
+#define BT_EVT_BIT_SSP_COMPLETE                 53
+#define BT_EVT_BIT_USER_PASSKEY_NOTIFY          58
+#define BT_EVT_BIT_LE_META_EVENT                61
+
+#define BT_EVT_BIT_LE_CONN_COMPLETE             0
+#define BT_EVT_BIT_LE_ADVERTISING_REPORT        1
+#define BT_EVT_BIT_LE_CONN_UPDATE_COMPLETE      2
+#define BT_EVT_BIT_LE_REMOTE_FEAT_COMPLETE      3
+#define BT_EVT_BIT_LE_LTK_REQUEST               4
+#define BT_EVT_BIT_LE_CONN_PARAM_REQ            5
+#define BT_EVT_BIT_LE_DATA_LEN_CHANGE           6
+#define BT_EVT_BIT_LE_P256_PUBLIC_KEY_COMPLETE  7
+#define BT_EVT_BIT_LE_GENERATE_DHKEY_COMPLETE   8
+#define BT_EVT_BIT_LE_ENH_CONN_COMPLETE         9
+#define BT_EVT_BIT_LE_DIRECT_ADV_REPORT         10
 
 #ifdef __cplusplus
 }

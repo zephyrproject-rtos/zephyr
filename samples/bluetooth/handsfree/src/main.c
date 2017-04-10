@@ -63,6 +63,11 @@ static void battery(struct bt_conn *conn, uint32_t value)
 	printk("Battery indicator value: %u\n", value);
 }
 
+static void ring_cb(struct bt_conn *conn)
+{
+	printk("Incoming Call...\n");
+}
+
 static struct bt_hfp_hf_cb hf_cb = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -73,6 +78,7 @@ static struct bt_hfp_hf_cb hf_cb = {
 	.signal = signal,
 	.roam = roam,
 	.battery = battery,
+	.ring_indication = ring_cb,
 };
 
 static void bt_ready(int err)

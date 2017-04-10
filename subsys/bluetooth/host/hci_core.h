@@ -57,9 +57,11 @@ struct bt_dev_le {
 	/* LE states */
 	uint64_t                states;
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 	/* Controller buffer information */
 	uint16_t		mtu;
 	struct k_sem		pkts;
+#endif /* CONFIG_BLUETOOTH_CONN */
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)

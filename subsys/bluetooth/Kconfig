@@ -34,18 +34,8 @@ config BLUETOOTH_CUSTOM
 endchoice
 
 if BLUETOOTH_HCI
-
-config BLUETOOTH_CONTROLLER
-	bool "Bluetooth Controller"
-	select BLUETOOTH_RECV_IS_RX_THREAD
-	help
-	  Enables support for SoC native controller implementations.
-
 source "subsys/bluetooth/host/Kconfig"
-
-if BLUETOOTH_CONTROLLER
 source "subsys/bluetooth/controller/Kconfig"
-endif
-
 endif # BLUETOOTH_HCI
+
 endif # BLUETOOTH

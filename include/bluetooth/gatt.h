@@ -138,7 +138,7 @@ struct bt_gatt_attr {
 	/** Attribute permissions */
 	uint8_t			perm;
 #if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
-	struct bt_gatt_attr	*_next;
+	sys_snode_t		node;
 #endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 };
 
