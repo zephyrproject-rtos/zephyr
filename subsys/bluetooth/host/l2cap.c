@@ -985,6 +985,23 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_chan_del(&chan->chan);
 }
 
+static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
+{
+	struct net_buf *seg;
+
+	/* Try to use original pool if possible */
+	if (buf->pool->user_data_size >= BT_BUF_USER_DATA_MIN &&
+	    buf->pool->buf_size >= BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS)) {
+		seg = net_buf_alloc(buf->pool, K_NO_WAIT);
+		if (seg) {
+			net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
+			return seg;
+		}
+	}
+
+	return bt_l2cap_create_pdu(&le_data_pool, 0);
+}
+
 static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 					     struct net_buf *buf,
 					     size_t sdu_hdr_len)
@@ -1005,8 +1022,7 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 		goto segment;
 	}
 
-	headroom = sizeof(struct bt_hci_acl_hdr) +
-		   sizeof(struct bt_l2cap_hdr) + sdu_hdr_len;
+	headroom = BT_L2CAP_CHAN_SEND_RESERVE + sdu_hdr_len;
 
 	/* Check if original buffer has enough headroom and don't have any
 	 * fragments.
@@ -1020,7 +1036,7 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	}
 
 segment:
-	seg = bt_l2cap_create_pdu(&le_data_pool, 0);
+	seg = l2cap_alloc_seg(buf);
 
 	if (sdu_hdr_len) {
 		net_buf_add_le16(seg, net_buf_frags_len(buf));
