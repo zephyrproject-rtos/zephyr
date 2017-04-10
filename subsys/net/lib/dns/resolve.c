@@ -142,6 +142,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin6(&ctx->servers[idx].dns_server)->sin6_port =
 				htons(port);
 
+			NET_DBG("[%d] IPv6 server %s port %d", idx, server,
+				port);
+
 			ctx->servers[idx++].dns_server.family = AF_INET6;
 #endif /* CONFIG_NET_IPV6 */
 
@@ -190,6 +193,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin(&ctx->servers[idx].dns_server)->sin_port =
 				htons(port);
 
+			NET_DBG("[%d] IPv4 server %s port %d", idx, server,
+				port);
+
 			ctx->servers[idx++].dns_server.family = AF_INET;
 #endif /* CONFIG_NET_IPV4 */
 
@@ -209,6 +215,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin(&ctx->servers[idx].dns_server)->sin_port =
 				htons(53);
 
+			NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i],
+				53);
+
 			ctx->servers[idx++].dns_server.family = AF_INET;
 
 		} else if (ret == -EINVAL) {
@@ -227,6 +236,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin6(&ctx->servers[idx].dns_server)->sin6_port =
 				htons(53);
 
+			NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i],
+				53);
+
 			ctx->servers[idx++].dns_server.family = AF_INET6;
 		}
 #endif
@@ -243,6 +255,8 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			continue;
 		}
 
+		NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i], 53);
+
 		net_sin(&ctx->servers[idx].dns_server)->sin_port = htons(53);
 		ctx->servers[idx++].dns_server.family = AF_INET;
 #endif /* IPv4 && !IPv6 */
@@ -257,6 +271,8 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 		if (ret == -EINVAL) {
 			continue;
 		}
+
+		NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i], 53);
 
 		net_sin6(&ctx->servers[idx].dns_server)->sin6_port = htons(53);
 		ctx->servers[idx++].dns_server.family = AF_INET6;
