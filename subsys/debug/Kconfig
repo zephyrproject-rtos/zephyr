@@ -33,7 +33,7 @@ config MEM_SAFE_CHECK_BOUNDARIES
 
 	Other regions can be added as needed by using the
 	sys_mem_safe_region_add() API. The number of regions that can be added
-	is controlled via the MEM_SAFE_NUM_REGIONS kconfig option.
+	is controlled via the MEM_SAFE_NUM_EXTRA_REGIONS kconfig option.
 
 	This implementation requires initialization and thus consumes some boot
 	time.

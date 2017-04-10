@@ -120,7 +120,7 @@ extern int _mem_safe_write_to_text_section(void *dest, char *buf,
  * num_bytes. The read/write permissions are specified via @a perm and can
  * take the values either SYS_MEM_SAFE_READ or SYS_MEM_SAFE_WRITE.
  *
- * The table size is specified via the CONFIG_MEM_SAFE_NUM_REGIONS kconfig
+ * The table size is specified via the CONFIG_MEM_SAFE_NUM_EXTRA_REGIONS kconfig
  * option.
  *
  * If the implementation of safe memory access chosen does not need this API,
