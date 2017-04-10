@@ -18,7 +18,7 @@
 		fs->sequence)
 #else
 #define dbg_print_fs(...)
-#endif /* CONFIG_NET_L2_IEEE802154_DEBUG */
+#endif /* CONFIG_NET_DEBUG_L2_IEEE802154 */
 
 #include <net/net_core.h>
 #include <net/net_if.h>
