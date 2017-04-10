@@ -1021,7 +1021,9 @@ static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 	instance->is_used = true;
 
 	k_delayed_work_init(&instance->dio_timer, dio_timer);
+#if defined(CONFIG_NET_RPL_PROBING)
 	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
+#endif
 	k_delayed_work_init(&instance->dao_lifetime_timer, dao_lifetime_timer);
 	k_delayed_work_init(&instance->dao_timer, dao_send_timer);
 #if defined(CONFIG_NET_RPL_DAO_ACK)
