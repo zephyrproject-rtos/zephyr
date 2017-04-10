@@ -12,9 +12,9 @@
 
 /* #define EVENT_CHECK */
 #ifdef EVENT_CHECK
-static char EventSignalErr[] = "------------ Error signalling event.\n";
-static char EventTestErr[] = "------------ Error testing event.\n";
-static char EventHandlerErr[] = "------------ Error in event handler.\n";
+static const char EventSignalErr[] = "------------ Error signalling event.\n";
+static const char EventTestErr[] = "------------ Error testing event.\n";
+static const char EventHandlerErr[] = "------------ Error in event handler.\n";
 #endif
 
 /* global Event value */
@@ -23,7 +23,7 @@ volatile int nEventValue;
 /*
  * Function prototypes.
  */
-int example_handler (int event);
+int example_handler (struct k_alert *alert);
 
 /*
  * Function declarations.
@@ -37,16 +37,16 @@ int example_handler (int event);
  */
 void event_test(void)
 {
-	int nReturn;
+	int nReturn = 0;
 	int nCounter;
 	uint32_t et; /* elapsed time */
 
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
-		nReturn = task_event_send(TEST_EVENT);
+		k_alert_send(&TEST_EVENT);
 #ifdef EVENT_CHECK
-		if (nReturn != RC_OK) {
+		if (nReturn != 0) {
 			PRINT_STRING(EventSignalErr, output_file);
 			return; /* error */
 		}
@@ -60,19 +60,19 @@ void event_test(void)
 
 	et = BENCH_START();
 	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
-		nReturn = task_event_send(TEST_EVENT);
+		k_alert_send(&TEST_EVENT);
 #ifdef EVENT_CHECK
-		if (nReturn != RC_OK) {
+		if (nReturn != 0) {
 			PRINT_STRING(EventSignalErr, output_file);
-			task_sleep(SLEEP_TIME);
+			k_sleep(1);
 			return; /* error */
 		}
 #endif /* EVENT_CHECK */
-		nReturn = task_event_recv(TEST_EVENT, TICKS_NONE);
+		k_alert_recv(&TEST_EVENT, K_NO_WAIT);
 #ifdef EVENT_CHECK
-		if (nReturn != RC_OK) {
+		if (nReturn != 0) {
 			PRINT_STRING(EventTestErr, output_file);
-			task_sleep(SLEEP_TIME);
+			k_sleep(1);
 			return; /* error */
 		}
 #endif /* EVENT_CHECK */
@@ -85,16 +85,16 @@ void event_test(void)
 
 	et = BENCH_START();
 	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
-		nReturn = task_event_send(TEST_EVENT);
+		k_alert_send(&TEST_EVENT);
 #ifdef EVENT_CHECK
-		if (nReturn != RC_OK) {
+		if (nReturn != 0) {
 			PRINT_STRING(EventSignalErr, output_file);
 			return; /* error */
 		}
 #endif /* EVENT_CHECK */
-		nReturn = task_event_recv(TEST_EVENT, TICKS_UNLIMITED);
+		k_alert_recv(&TEST_EVENT, K_FOREVER);
 #ifdef EVENT_CHECK
-		if (nReturn != RC_OK) {
+		if (nReturn != 0) {
 			PRINT_STRING(EventTestErr, output_file);
 			return; /* error */
 		}
@@ -107,40 +107,41 @@ void event_test(void)
 			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_EVENT_RUNS));
 
 	PRINT_STRING("| Signal event with installed handler"
-				 "                                         |\n", output_file);
-	nReturn = task_event_handler_set (TEST_EVENT, example_handler);
-	if (nReturn != RC_OK) {
-		PRINT_F(output_file, "-------- Error installing event handler.\n");
-		task_sleep(SLEEP_TIME);
+		 "                                         |\n", output_file);
+	TEST_EVENT.handler = example_handler;
+	if (nReturn != 0) {
+		PRINT_F(output_file,
+			"-------- Error installing event handler.\n");
+		k_sleep(1);
 		return; /* error */
 	}
 
 	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
-		nReturn = task_event_send(TEST_EVENT);
+		k_alert_send(&TEST_EVENT);
 #ifdef EVENT_CHECK
-		if (nReturn != RC_OK) {
+		if (nReturn != 0) {
 			PRINT_STRING(EventSignalErr, output_file);
-			task_sleep(SLEEP_TIME);
+			k_sleep(1);
 			return; /* error */
 		}
-		if (nEventValue != TEST_EVENT + 1) {
+		if (nEventValue != TEST_EVENT.send_count + 1) {
 			PRINT_STRING(EventHandlerErr, output_file);
-			task_sleep(SLEEP_TIME);
+			k_sleep(1);
 			return; /* error */
 		}
 #endif /* EVENT_CHECK */
 		nEventValue = 0;
 	}
 
-	nReturn = task_event_handler_set (TEST_EVENT, NULL);
-	if (nReturn != RC_OK) {
+	TEST_EVENT.handler = NULL;
+	if (nReturn != 0) {
 		PRINT_F(output_file, "Error removing event handler.\n");
-		task_sleep(SLEEP_TIME);
+		k_sleep(1);
 		return; /* error */
 	}
 
 	PRINT_STRING("|    Handler responds OK"
-				 "                                                      |\n",
+		 "                                                      |\n",
 				 output_file);
 
 	return; /* success */
@@ -156,9 +157,10 @@ void event_test(void)
  *
  * @return 1
  */
-int example_handler (int event)
+int example_handler (struct k_alert *alert)
 {
-	nEventValue = event + 1;
+	ARG_UNUSED(alert);
+	nEventValue = alert->send_count + 1;
 
 	return 1;
 }

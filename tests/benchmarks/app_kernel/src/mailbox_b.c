@@ -10,13 +10,13 @@
 
 #ifdef MAILBOX_BENCH
 
-static struct k_msg Message;
+static struct k_mbox_msg Message;
 
 #ifdef FLOAT
 #define PRINT_HEADER()                                                       \
-	PRINT_STRING                                                             \
+	PRINT_STRING                                                           \
 	   ("|   size(B) |       time/packet (usec)       |          MB/sec" \
-	    "                |\n", output_file);
+	    "                |\n", output_file)
 #define PRINT_ONE_RESULT()                                                   \
 	PRINT_F(output_file, "|%11u|%32.3f|%32f|\n", putsize, puttime / 1000.0,\
 	     (1000.0 * putsize) / puttime)
@@ -27,15 +27,16 @@ static struct k_msg Message;
 	     "            |\n", EmptyMsgPutTime / 1000.0)
 
 #define PRINT_XFER_RATE()                                                     \
-	double NettoTransferRate;                                                 \
-	NettoTransferRate = 1000.0 * (putsize >> 1) / (puttime - EmptyMsgPutTime);\
+	double NettoTransferRate;                                               \
+	NettoTransferRate = 1000.0 * \
+		(putsize >> 1) / (puttime - EmptyMsgPutTime);		\
 	PRINT_F(output_file,						\
 	     "| raw transfer rate:     %10.3f MB/sec (without"		\
 	     " overhead)                 |\n", NettoTransferRate)
 
 #else
 #define PRINT_HEADER()                                                       \
-	PRINT_STRING                                                             \
+	PRINT_STRING                                                            \
 	   ("|   size(B) |       time/packet (nsec)       |          KB/sec" \
 	    "                |\n", output_file);
 
@@ -86,28 +87,28 @@ void mailbox_test(void)
 				 "                      |\n", output_file);
 	PRINT_STRING(dashline, output_file);
 	PRINT_STRING("| Send mailbox message to waiting high "
-				 "priority task and wait                 |\n", output_file);
+		 "priority task and wait                 |\n", output_file);
 	PRINT_F(output_file, "| repeat for %4d times and take the "
 			"average                                  |\n",
 			NR_OF_MBOX_RUNS);
 	PRINT_STRING(dashline, output_file);
 	PRINT_HEADER();
 	PRINT_STRING(dashline, output_file);
-	task_sem_reset(SEM0);
-	task_sem_give(STARTRCV);
+	k_sem_reset(&SEM0);
+	k_sem_give(&STARTRCV);
 
 	putcount = NR_OF_MBOX_RUNS;
 
 	putsize = 0;
 	mailbox_put(putsize, putcount, &puttime);
 	/* waiting for ack */
-	task_fifo_get(MB_COMM, &getinfo, TICKS_UNLIMITED);
+	k_msgq_get(&MB_COMM, &getinfo, K_FOREVER);
 	PRINT_ONE_RESULT();
 	EmptyMsgPutTime = puttime;
 	for (putsize = 8; putsize <= MESSAGE_SIZE; putsize <<= 1) {
 		mailbox_put(putsize, putcount, &puttime);
 		/* waiting for ack */
-		task_fifo_get(MB_COMM, &getinfo, TICKS_UNLIMITED);
+		k_msgq_get(&MB_COMM, &getinfo, K_FOREVER);
 		PRINT_ONE_RESULT();
 	}
 	PRINT_STRING(dashline, output_file);
@@ -131,15 +132,14 @@ void mailbox_put(uint32_t size, int count, uint32_t *time)
 	int i;
 	unsigned int t;
 
-	Message.rx_task = ANYTASK;
-	Message.tx_data = data_bench;
-	Message.size = size;
+	Message.rx_source_thread = K_ANY;
+	Message.tx_target_thread = K_ANY;
 
 	/* first sync with the receiver */
-	task_sem_give(SEM0);
+	k_sem_give(&SEM0);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-		task_mbox_put(MAILB1, 1, &Message, TICKS_UNLIMITED);
+		k_mbox_put(&MAILB1, &Message, K_FOREVER);
 	}
 	t = TIME_STAMP_DELTA_GET(t);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);

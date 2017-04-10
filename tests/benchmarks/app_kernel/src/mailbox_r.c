@@ -14,7 +14,10 @@
 /*
  * Function prototypes.
  */
-int mailbox_get(kmbox_t mailbox,int size,int count,unsigned int* time);
+int mailbox_get(struct k_mbox *mailbox,
+		int size,
+		int count,
+		unsigned int *time);
 
 /*
  * Function declarations.
@@ -38,20 +41,20 @@ void mailrecvtask(void)
 	getcount = NR_OF_MBOX_RUNS;
 
 	getsize = 0;
-	mailbox_get(MAILB1, getsize, getcount, &gettime);
+	mailbox_get(&MAILB1, getsize, getcount, &gettime);
 	getinfo.time = gettime;
 	getinfo.size = getsize;
 	getinfo.count = getcount;
 	/* acknowledge to master */
-	task_fifo_put(MB_COMM, &getinfo, TICKS_UNLIMITED);
+	k_msgq_put(&MB_COMM, &getinfo, K_FOREVER);
 
 	for (getsize = 8; getsize <= MESSAGE_SIZE; getsize <<= 1) {
-		mailbox_get(MAILB1, getsize, getcount, &gettime);
+		mailbox_get(&MAILB1, getsize, getcount, &gettime);
 		getinfo.time = gettime;
 		getinfo.size = getsize;
 		getinfo.count = getcount;
 		/* acknowledge to master */
-		task_fifo_put(MB_COMM, &getinfo, TICKS_UNLIMITED);
+		k_msgq_put(&MB_COMM, &getinfo, K_FOREVER);
 	}
 }
 
@@ -67,21 +70,20 @@ void mailrecvtask(void)
  * @param count     Number of data portions.
  * @param time      Resulting time.
  */
-int mailbox_get(kmbox_t mailbox, int size, int count, unsigned int* time)
+int mailbox_get(struct k_mbox *mailbox, int size, int count, unsigned int *time)
 {
 	int i;
 	unsigned int t;
-	struct k_msg Message;
+	struct k_mbox_msg Message;
 
-	Message.tx_task = ANYTASK;
-	Message.rx_data = data_recv;
+	Message.rx_source_thread = K_ANY;
 	Message.size = size;
 
 	/* sync with the sender */
-	task_sem_take(SEM0, TICKS_UNLIMITED);
+	k_sem_take(&SEM0, K_FOREVER);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-		task_mbox_get(mailbox, &Message, TICKS_UNLIMITED);
+		k_mbox_get(mailbox, &Message, &data_recv, K_FOREVER);
 	}
 
 	t = TIME_STAMP_DELTA_GET(t);

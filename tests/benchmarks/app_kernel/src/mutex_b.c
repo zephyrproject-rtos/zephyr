@@ -24,14 +24,14 @@ void mutex_test(void)
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_MUTEX_RUNS; i++) {
-		task_mutex_lock(DEMO_MUTEX, TICKS_UNLIMITED);
-		task_mutex_unlock(DEMO_MUTEX);
+		k_mutex_lock(&DEMO_MUTEX, K_FOREVER);
+		k_mutex_unlock(&DEMO_MUTEX);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
 	PRINT_F(output_file, FORMAT, "average lock and unlock mutex",
-			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MUTEX_RUNS)));
+		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MUTEX_RUNS)));
 }
 
 #endif /* MUTEX_BENCH */

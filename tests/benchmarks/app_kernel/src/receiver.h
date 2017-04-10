@@ -12,6 +12,7 @@
 #include <zephyr.h>
 #include "config.h"
 #include "memcfg.h"
+#include "master.h"
 
 /* type defines. */
 typedef struct {

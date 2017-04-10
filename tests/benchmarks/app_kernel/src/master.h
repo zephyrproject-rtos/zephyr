@@ -21,6 +21,7 @@
 
 #include <misc/util.h>
 
+
 /* uncomment the define below to use floating point arithmetic */
 /* #define FLOAT */
 
@@ -34,8 +35,10 @@
 /* length of the output line */
 #define SLINE_LEN 256
 
-#define SLEEP_TIME ((sys_clock_ticks_per_sec / 4) > 0? sys_clock_ticks_per_sec / 4: 1)
-#define WAIT_TIME ((sys_clock_ticks_per_sec / 10) > 0? sys_clock_ticks_per_sec / 10: 1)
+#define SLEEP_TIME ((sys_clock_ticks_per_sec / 4) > 0 ? \
+		    sys_clock_ticks_per_sec / 4 : 1)
+#define WAIT_TIME ((sys_clock_ticks_per_sec / 10) > 0 ? \
+		   sys_clock_ticks_per_sec / 10 : 1)
 #define NR_OF_NOP_RUNS 10000
 #define NR_OF_FIFO_RUNS 500
 #define NR_OF_SEMA_RUNS 500
@@ -45,12 +48,13 @@
 #define NR_OF_EVENT_RUNS  1000
 #define NR_OF_MBOX_RUNS 128
 #define NR_OF_PIPE_RUNS 256
-#define SEMA_WAIT_TIME (5 * sys_clock_ticks_per_sec)
+//#define SEMA_WAIT_TIME (5 * sys_clock_ticks_per_sec)
+#define SEMA_WAIT_TIME (5000)
 /* global data */
 extern char Msg[MAX_MSG];
 extern char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
-extern kpipe_t TestPipes[];
-extern FILE * output_file;
+extern struct k_pipe *TestPipes[];
+extern FILE *output_file;
 extern const char newline[];
 extern char sline[];
 
@@ -58,11 +62,23 @@ extern char sline[];
 	"|--------------------------------------" \
 	"---------------------------------------|\n"
 
+
+
+/* pipe amount of content to receive (0+, 1+, all) */
+typedef enum {
+	_0_TO_N = 0x0,
+	_1_TO_N = 0x1,
+	_ALL_N  = 0x2,
+} pipe_options;
+
 /* dummy_test is a function that is mapped when we */
 /* do not want to test a specific Benchmark */
 extern void dummy_test(void);
 
 /* other external functions */
+
+extern void BenchTask(void *p1, void *p2, void *p3);
+extern void recvtask(void *p1, void *p2, void *p3);
 
 #ifdef MAILBOX_BENCH
 extern void mailbox_test(void);
@@ -112,6 +128,37 @@ extern void event_test(void);
 #define event_test dummy_test
 #endif
 
+/* kernel objects needed for benchmarking */
+extern struct k_mutex DEMO_MUTEX;
+
+extern struct k_sem SEM0;
+extern struct k_sem SEM1;
+extern struct k_sem SEM2;
+extern struct k_sem SEM3;
+extern struct k_sem SEM4;
+extern struct k_sem STARTRCV;
+
+extern struct k_msgq DEMOQX1;
+extern struct k_msgq DEMOQX4;
+extern struct k_msgq MB_COMM;
+extern struct k_msgq CH_COMM;
+
+extern struct k_mbox MAILB1;
+
+
+extern struct k_pipe PIPE_NOBUFF;
+extern struct k_pipe PIPE_SMALLBUFF;
+extern struct k_pipe PIPE_BIGBUFF;
+
+
+extern struct k_mem_slab MAP1;
+
+extern struct k_alert TEST_EVENT;
+
+extern struct k_mem_pool DEMOPOOL;
+
+
+
 /* PRINT_STRING
  * Macro to print an ASCII NULL terminated string. fprintf is used
  * so output can go to console.
@@ -125,7 +172,7 @@ extern void event_test(void);
  */
 
 #define PRINT_F(stream, fmt, ...)					\
-{													\
+{									\
 	snprintf(sline, SLINE_LEN, fmt, ##__VA_ARGS__);	\
 	PRINT_STRING(sline, stream);					\
 }

@@ -24,7 +24,7 @@ void queue_test(void)
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-		task_fifo_put(DEMOQX1, data_bench, TICKS_UNLIMITED);
+		k_msgq_put(&DEMOQX1, data_bench, K_FOREVER);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 
@@ -33,7 +33,7 @@ void queue_test(void)
 
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-		task_fifo_get(DEMOQX1, data_bench, TICKS_UNLIMITED);
+		k_msgq_get(&DEMOQX1, data_bench, K_FOREVER);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
@@ -43,7 +43,7 @@ void queue_test(void)
 
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-		task_fifo_put(DEMOQX4, data_bench, TICKS_UNLIMITED);
+		k_msgq_put(&DEMOQX4, data_bench, K_FOREVER);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
@@ -53,7 +53,7 @@ void queue_test(void)
 
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-		task_fifo_get(DEMOQX4, data_bench, TICKS_UNLIMITED);
+		k_msgq_get(&DEMOQX4, data_bench, K_FOREVER);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
@@ -61,11 +61,11 @@ void queue_test(void)
 	PRINT_F(output_file, FORMAT, "dequeue 4 bytes msg in FIFO",
 			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_FIFO_RUNS));
 
-	task_sem_give(STARTRCV);
+	k_sem_give(&STARTRCV);
 
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-		task_fifo_put(DEMOQX1, data_bench, TICKS_UNLIMITED);
+		k_msgq_put(&DEMOQX1, data_bench, K_FOREVER);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
@@ -76,7 +76,7 @@ void queue_test(void)
 
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-		task_fifo_put(DEMOQX4, data_bench, TICKS_UNLIMITED);
+		k_msgq_put(&DEMOQX4, data_bench, K_FOREVER);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();

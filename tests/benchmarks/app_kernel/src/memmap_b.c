@@ -22,19 +22,19 @@ void memorymap_test(void)
 {
 	uint32_t et; /* elapsed time */
 	int i;
-	void* p;
+	void *p;
 
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_MAP_RUNS; i++) {
-		task_mem_map_alloc(MAP1, &p, TICKS_UNLIMITED);
-		task_mem_map_free(MAP1, &p);
+		k_mem_slab_alloc(&MAP1, &p, K_FOREVER);
+		k_mem_slab_free(&MAP1, &p);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
 	PRINT_F(output_file, FORMAT, "average alloc and dealloc memory page",
-			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MAP_RUNS)));
+		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MAP_RUNS)));
 }
 
 #endif /* MEMMAP_BENCH */

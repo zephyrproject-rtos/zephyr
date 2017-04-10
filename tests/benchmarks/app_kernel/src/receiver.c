@@ -7,12 +7,12 @@
  */
 
 /*
-	File Naming information.
-	------------------------
-	Files that end with:
-		_B : Is a file that contains a benchmark function
-		_R : Is a file that contains the receiver task
-			 of a benchmark function
+ *	File Naming information.
+ *	------------------------
+ *	Files that end with:
+ *		_B : Is a file that contains a benchmark function
+ *		_R : Is a file that contains the receiver task
+ *			 of a benchmark function
  */
 
 #include "receiver.h"
@@ -30,23 +30,23 @@ void piperecvtask(void);
  *
  * @return N/A
  */
-void recvtask(void)
+void recvtask(void *p1, void *p2, void *p3)
 {
 	/* order must be compatible with master.c ! */
 #ifdef FIFO_BENCH
-	task_sem_take(STARTRCV, TICKS_UNLIMITED);
+	k_sem_take(&STARTRCV, K_FOREVER);
 	dequtask();
 #endif
 #ifdef SEMA_BENCH
-	task_sem_take(STARTRCV, TICKS_UNLIMITED);
+	k_sem_take(&STARTRCV, K_FOREVER);
 	waittask();
 #endif
 #ifdef MAILBOX_BENCH
-	task_sem_take(STARTRCV, TICKS_UNLIMITED);
+	k_sem_take(&STARTRCV, K_FOREVER);
 	mailrecvtask();
 #endif
 #ifdef PIPE_BENCH
-	task_sem_take(STARTRCV, TICKS_UNLIMITED);
+	k_sem_take(&STARTRCV, K_FOREVER);
 	piperecvtask();
 #endif
 }

@@ -7,12 +7,12 @@
  */
 
 /*
-	File Naming information.
-	------------------------
-	Files that end with:
-		_B : Is a file that contains a benchmark function
-		_R : Is a file that contains the receiver task
-			 of a benchmark function
+ *File Naming information.
+ *	------------------------
+ *	Files that end with:
+ *		_B : Is a file that contains a benchmark function
+ *		_R : Is a file that contains the receiver task
+ *			 of a benchmark function
  */
 #include <tc_util.h>
 #include "master.h"
@@ -21,18 +21,51 @@ char Msg[MAX_MSG];
 char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 
 #ifdef PIPE_BENCH
-kpipe_t TestPipes[] = {PIPE_NOBUFF, PIPE_SMALLBUFF, PIPE_BIGBUFF};
+struct k_pipe *TestPipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
 #endif
 char sline[SLINE_LEN + 1];
 const char newline[] = "\n";
 
-FILE * output_file;
+FILE *output_file;
 
 /*
  * Time in timer cycles necessary to read time.
  * Used for correction in time measurements.
  */
 uint32_t tm_off;
+
+
+/********************************************************************/
+/* static allocation  */
+K_THREAD_DEFINE(RECVTASK, 1024, recvtask, NULL, NULL, NULL, 5, 0, K_NO_WAIT);
+K_THREAD_DEFINE(BENCHTASK, 1024, BenchTask, NULL, NULL, NULL, 6, 0, K_NO_WAIT);
+
+K_MSGQ_DEFINE(DEMOQX1, 1, 500, 4);
+K_MSGQ_DEFINE(DEMOQX4, 4, 500, 4);
+K_MSGQ_DEFINE(MB_COMM, 12, 1, 4);
+K_MSGQ_DEFINE(CH_COMM, 12, 1, 4);
+
+K_MEM_SLAB_DEFINE(MAP1, 16, 2, 4);
+
+K_SEM_DEFINE(SEM0, 0, 1);
+K_SEM_DEFINE(SEM1, 0, 1);
+K_SEM_DEFINE(SEM2, 0, 1);
+K_SEM_DEFINE(SEM3, 0, 1);
+K_SEM_DEFINE(SEM4, 0, 1);
+K_SEM_DEFINE(STARTRCV, 0, 1);
+
+K_MBOX_DEFINE(MAILB1);
+
+K_MUTEX_DEFINE(DEMO_MUTEX);
+
+K_PIPE_DEFINE(PIPE_NOBUFF, 0, 4);
+K_PIPE_DEFINE(PIPE_SMALLBUFF, 256, 4);
+K_PIPE_DEFINE(PIPE_BIGBUFF, 4096, 4);
+
+K_MEM_POOL_DEFINE(DEMOPOOL, 16, 16, 1, 4);
+
+K_ALERT_DEFINE(TEST_EVENT, NULL, 1);
+
 
 /**
  *
@@ -87,7 +120,7 @@ void output_close(void)
  *
  * @return N/A
  */
-void BenchTask(void)
+void BenchTask(void *p1, void *p2, void *p3)
 {
 	int autorun = 0, continuously = 0;
 
@@ -101,7 +134,6 @@ void BenchTask(void)
 					 "M E A S U R E M E N T S  |  nsec    |\n",
 					 output_file);
 		PRINT_STRING(dashline, output_file);
-		task_start(RECVTASK);
 		queue_test();
 		sema_test();
 		mutex_test();
@@ -114,15 +146,13 @@ void BenchTask(void)
 					 "                                   |\n",
 					 output_file);
 		PRINT_STRING(dashline, output_file);
-		PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n",output_file);
+		PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n", output_file);
 		TC_PRINT_RUNID;
 	} while (continuously && !kbhit());
 
 	WAIT_FOR_USER();
 
-	if (autorun) {
-		task_sleep(SECONDS(2));
-	}
+	k_thread_abort(RECVTASK);
 
 	output_close();
 }

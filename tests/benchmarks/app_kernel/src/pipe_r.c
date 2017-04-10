@@ -11,11 +11,12 @@
 
 #ifdef PIPE_BENCH
 
+
 /*
  * Function prototypes.
  */
-int pipeget(kpipe_t pipe, K_PIPE_OPTION option,
-			int size, int count, unsigned int* time);
+int pipeget(struct k_pipe *pipe, pipe_options option,
+			int size, int count, unsigned int *time);
 
 /*
  * Function declarations.
@@ -49,13 +50,13 @@ void piperecvtask(void)
 			getinfo.size = getsize;
 			getinfo.count = getcount;
 			/* acknowledge to master */
-			task_fifo_put(CH_COMM, &getinfo, TICKS_UNLIMITED);
+			k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
 		}
 	}
 
 	for (prio = 0; prio < 2; prio++) {
 		/* non-matching (1_TO_N) */
-		for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
+	for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
 			getcount = MESSAGE_SIZE_PIPE / getsize;
 			for (pipe = 0; pipe < 3; pipe++) {
 				/* size*count == MESSAGE_SIZE_PIPE */
@@ -65,7 +66,7 @@ void piperecvtask(void)
 				getinfo.size = getsize;
 				getinfo.count = getcount;
 				/* acknowledge to master */
-				task_fifo_put(CH_COMM, &getinfo, TICKS_UNLIMITED);
+				k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
 			}
 		}
 	}
@@ -85,25 +86,26 @@ void piperecvtask(void)
  * @param count    Number of data chunks.
  * @param time     Total write time.
  */
-int pipeget(kpipe_t pipe, K_PIPE_OPTION option, int size, int count,
-			unsigned int* time)
+int pipeget(struct k_pipe *pipe, pipe_options option, int size, int count,
+			unsigned int *time)
 {
 	int i;
 	unsigned int t;
-	int sizexferd_total = 0;
-	int size2xfer_total = size * count;
+	size_t sizexferd_total = 0;
+	size_t size2xfer_total = size * count;
 
 	/* sync with the sender */
-	task_sem_take(SEM0, TICKS_UNLIMITED);
+	k_sem_take(&SEM0, K_FOREVER);
 	t = BENCH_START();
 	for (i = 0; _1_TO_N == option || (i < count); i++) {
-		int sizexferd = 0;
-		int size2xfer = min(size, size2xfer_total - sizexferd_total);
+		size_t sizexferd = 0;
+		size_t size2xfer = min(size, size2xfer_total - sizexferd_total);
 		int ret;
 
-		ret = task_pipe_get(pipe, data_recv, size2xfer,
-							 &sizexferd, option, TICKS_UNLIMITED);
-		if (RC_OK != ret) {
+		ret = k_pipe_get(pipe, data_recv, size2xfer,
+				 &sizexferd, option, K_FOREVER);
+
+		if (0 != ret) {
 			return 1;
 		}
 
