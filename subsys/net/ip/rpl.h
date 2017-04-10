@@ -463,7 +463,7 @@ struct net_rpl_instance {
 	 */
 	uint16_t lifetime_unit;
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	/** Number of DIO intervals for this RPL instance. */
 	uint16_t dio_intervals;
 
@@ -472,7 +472,7 @@ struct net_rpl_instance {
 
 	/** Number of DIOs received for this RPL instance. */
 	uint16_t dio_recv_pkt;
-#endif /* CONFIG_NET_RPL_STATS */
+#endif /* CONFIG_NET_STATISTICS_RPL */
 
 	/**
 	 * This is the lifetime that is used as default for all RPL routes.

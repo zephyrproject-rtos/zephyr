@@ -371,7 +371,7 @@ static inline void net_shell_print_statistics(void)
 	       GET_STAT(udp.chkerr));
 #endif
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	printk("RPL DIS recv   %d\tsent\t%d\tdrop\t%d\n",
 	       GET_STAT(rpl.dis.recv),
 	       GET_STAT(rpl.dis.sent),

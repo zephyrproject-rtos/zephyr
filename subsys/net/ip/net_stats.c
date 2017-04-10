@@ -80,7 +80,7 @@ void net_print_statistics(void)
 			 GET_STAT(udp.chkerr));
 #endif
 
-#if defined(CONFIG_NET_STATISTICS_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 		NET_INFO("RPL DIS recv   %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(rpl.dis.recv),
 			 GET_STAT(rpl.dis.sent),
@@ -112,7 +112,7 @@ void net_print_statistics(void)
 			 GET_STAT(rpl.loop_warnings));
 		NET_INFO("RPL r-repairs  %d",
 			 GET_STAT(rpl.root_repairs));
-#endif
+#endif /* CONFIG_NET_STATISTICS_RPL */
 
 		NET_INFO("Bytes received %u", GET_STAT(bytes.received));
 		NET_INFO("Bytes sent     %u", GET_STAT(bytes.sent));

@@ -604,7 +604,7 @@ static void dio_timer(struct k_work *work)
 
 			net_rpl_dio_send(iface, instance, addr, NULL);
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 			instance->dio_send_pkt++;
 #endif
 		} else {
@@ -651,7 +651,7 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 	 */
 	instance->dio_next_delay -= time;
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	instance->dio_intervals++;
 	instance->dio_recv_pkt += instance->dio_counter;
 
@@ -667,7 +667,7 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 		instance->dio_interval_current,
 		instance->current_dag->rank == NET_RPL_ROOT_RANK(instance) ?
 		"ROOT" : "");
-#endif /* CONFIG_NET_RPL_STATS */
+#endif /* CONFIG_NET_STATISTICS_RPL */
 
 	instance->dio_counter = 0;
 	instance->dio_send = true;
@@ -4123,7 +4123,7 @@ void net_rpl_init(void)
 		CONFIG_NET_IPV6_MAX_NEIGHBORS,
 		sizeof(net_rpl_neighbor_pool));
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	memset(&net_stats.rpl, 0, sizeof(net_stats.rpl));
 #endif
 
