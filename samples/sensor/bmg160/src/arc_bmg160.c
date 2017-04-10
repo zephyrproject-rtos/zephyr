@@ -168,7 +168,7 @@ static void test_trigger_mode(struct device *bmg160)
 void main(void)
 {
 	struct device *bmg160;
-#if defined(CONFIG_BMG160_GYRO_RANGE_RUNTIME)
+#if defined(CONFIG_BMG160_RANGE_RUNTIME)
 	struct sensor_value attr;
 #endif
 
@@ -178,7 +178,7 @@ void main(void)
 		return;
 	}
 
-#if defined(CONFIG_BMG160_GYRO_RANGE_RUNTIME)
+#if defined(CONFIG_BMG160_RANGE_RUNTIME)
 	/*
 	 * Set gyro range to +/- 250 degrees/s. Since the sensor API needs SI
 	 * units, convert the range to rad/s.
