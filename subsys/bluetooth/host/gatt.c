@@ -59,7 +59,7 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 #else
 	sys_slist_init(&list);
 
-	if (!sys_slist_is_empty(&db)) {
+	if (sys_slist_is_empty(&db)) {
 		handle = 0;
 		goto populate;
 	}
