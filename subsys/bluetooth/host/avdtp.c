@@ -25,9 +25,6 @@
 #include "l2cap_internal.h"
 #include "avdtp_internal.h"
 
-/* TODO add config file*/
-#define CONFIG_BLUETOOTH_AVDTP_CONN CONFIG_BLUETOOTH_MAX_CONN
-
 #define AVDTP_MSG_POISTION 0x00
 #define AVDTP_PKT_POSITION 0x02
 #define AVDTP_TID_POSITION 0x04
