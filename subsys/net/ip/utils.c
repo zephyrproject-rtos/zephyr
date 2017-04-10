@@ -141,7 +141,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			uint8_t j;
 
 			for (j = i; j < 8; j++) {
-				if (w[j] != 0) {
+				if (UNALIGNED_GET(&w[j]) != 0) {
 					break;
 				}
 
@@ -208,7 +208,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			needcolon = false;
 		}
 
-		value = (uint32_t)sys_be16_to_cpu(w[i]);
+		value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
 		bh = value >> 8;
 		bl = value & 0xff;
 
