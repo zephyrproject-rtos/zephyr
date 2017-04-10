@@ -205,9 +205,9 @@ static inline void set_dst_addr(sa_family_t family,
 				struct sockaddr *dst_addr)
 {
 	net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-			&NET_IPV6_BUF(pkt)->src);
+			&NET_IPV6_HDR(pkt)->src);
 	net_sin6(dst_addr)->sin6_family = AF_INET6;
-	net_sin6(dst_addr)->sin6_port = NET_UDP_BUF(pkt)->src_port;
+	net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(pkt)->src_port;
 }
 
 static void udp_received(struct net_context *context,

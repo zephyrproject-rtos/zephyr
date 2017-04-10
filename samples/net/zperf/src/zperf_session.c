@@ -35,12 +35,12 @@ struct session *get_session(struct net_pkt *pkt, enum session_proto proto)
 	}
 
 	/* Get tuple of the remote connection */
-	port = NET_UDP_BUF(pkt)->src_port;
+	port = NET_UDP_HDR(pkt)->src_port;
 
 	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipaddr_copy(&ipv6, &NET_IPV6_BUF(pkt)->src);
+		net_ipaddr_copy(&ipv6, &NET_IPV6_HDR(pkt)->src);
 	} else if (net_pkt_family(pkt) == AF_INET) {
-		net_ipaddr_copy(&ipv4, &NET_IPV4_BUF(pkt)->src);
+		net_ipaddr_copy(&ipv4, &NET_IPV4_HDR(pkt)->src);
 	} else {
 		printk("Error! unsupported protocol %d\n",
 		       net_pkt_family(pkt));

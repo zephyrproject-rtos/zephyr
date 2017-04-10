@@ -194,7 +194,7 @@ static struct net_pkt *prepare_ra_message(void)
 
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_icmp_hdr *icmp = NET_ICMP_BUF(pkt);
+	struct net_icmp_hdr *icmp = NET_ICMP_HDR(pkt);
 
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");

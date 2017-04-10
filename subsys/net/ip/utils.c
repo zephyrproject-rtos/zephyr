@@ -451,8 +451,8 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
 	case AF_INET:
-		upper_layer_len = (NET_IPV4_BUF(pkt)->len[0] << 8) +
-			NET_IPV4_BUF(pkt)->len[1] -
+		upper_layer_len = (NET_IPV4_HDR(pkt)->len[0] << 8) +
+			NET_IPV4_HDR(pkt)->len[1] -
 			net_pkt_ext_len(pkt) -
 			net_pkt_ip_hdr_len(pkt);
 
@@ -462,17 +462,17 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 						 upper_layer_len));
 		} else {
 			sum = calc_chksum(upper_layer_len + proto,
-					  (uint8_t *)&NET_IPV4_BUF(pkt)->src,
+					  (uint8_t *)&NET_IPV4_HDR(pkt)->src,
 					  2 * sizeof(struct in_addr));
 		}
 		break;
 #endif
 #if defined(CONFIG_NET_IPV6)
 	case AF_INET6:
-		upper_layer_len = (NET_IPV6_BUF(pkt)->len[0] << 8) +
-			NET_IPV6_BUF(pkt)->len[1] - net_pkt_ext_len(pkt);
+		upper_layer_len = (NET_IPV6_HDR(pkt)->len[0] << 8) +
+			NET_IPV6_HDR(pkt)->len[1] - net_pkt_ext_len(pkt);
 		sum = calc_chksum(upper_layer_len + proto,
-				  (uint8_t *)&NET_IPV6_BUF(pkt)->src,
+				  (uint8_t *)&NET_IPV6_HDR(pkt)->src,
 				  2 * sizeof(struct in6_addr));
 		break;
 #endif
@@ -493,7 +493,7 @@ uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
 	uint16_t sum;
 
-	sum = calc_chksum(0, (uint8_t *)NET_IPV4_BUF(pkt), NET_IPV4H_LEN);
+	sum = calc_chksum(0, (uint8_t *)NET_IPV4_HDR(pkt), NET_IPV4H_LEN);
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 

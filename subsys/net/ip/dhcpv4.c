@@ -253,8 +253,8 @@ static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 	struct net_udp_hdr *udp;
 	uint16_t len;
 
-	ipv4 = NET_IPV4_BUF(pkt);
-	udp = NET_UDP_BUF(pkt);
+	ipv4 = NET_IPV4_HDR(pkt);
+	udp = NET_UDP_HDR(pkt);
 
 	len = net_pkt_get_len(pkt);
 

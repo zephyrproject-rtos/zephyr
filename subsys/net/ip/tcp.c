@@ -77,7 +77,7 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	uint8_t flags = NET_TCP_FLAGS(pkt);
 	uint32_t rel_ack, ack;
 
-	ack = sys_get_be32(NET_TCP_BUF(pkt)->ack);
+	ack = sys_get_be32(NET_TCP_HDR(pkt)->ack);
 
 	if (!tcp->sent_ack) {
 		rel_ack = 0;
@@ -88,9 +88,9 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	NET_DBG("pkt %p src %u dst %u seq 0x%04x ack 0x%04x (%u) "
 		"flags %c%c%c%c%c%c win %u chk 0x%04x",
 		pkt,
-		ntohs(NET_TCP_BUF(pkt)->src_port),
-		ntohs(NET_TCP_BUF(pkt)->dst_port),
-		sys_get_be32(NET_TCP_BUF(pkt)->seq),
+		ntohs(NET_TCP_HDR(pkt)->src_port),
+		ntohs(NET_TCP_HDR(pkt)->dst_port),
+		sys_get_be32(NET_TCP_HDR(pkt)->seq),
 		ack,
 		/* This tells how many bytes we are acking now */
 		rel_ack,
@@ -100,8 +100,8 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 		upper_if_set('r', flags & NET_TCP_RST),
 		upper_if_set('s', flags & NET_TCP_SYN),
 		upper_if_set('f', flags & NET_TCP_FIN),
-		sys_get_be16(NET_TCP_BUF(pkt)->wnd),
-		ntohs(NET_TCP_BUF(pkt)->chksum));
+		sys_get_be16(NET_TCP_HDR(pkt)->wnd),
+		ntohs(NET_TCP_HDR(pkt)->chksum));
 }
 #else
 #define net_tcp_trace(...)
@@ -297,7 +297,7 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		dst_port = net_sin(segment->dst_addr)->sin_port;
 		src_port = ((struct sockaddr_in_ptr *)&context->local)->
 								sin_port;
-		NET_IPV4_BUF(pkt)->proto = IPPROTO_TCP;
+		NET_IPV4_HDR(pkt)->proto = IPPROTO_TCP;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV6)
@@ -308,7 +308,7 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		dst_port = net_sin6(segment->dst_addr)->sin6_port;
 		src_port = ((struct sockaddr_in6_ptr *)&context->local)->
 								sin6_port;
-		NET_IPV6_BUF(pkt)->nexthdr = IPPROTO_TCP;
+		NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_TCP;
 	} else
 #endif
 	{
@@ -664,7 +664,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 int net_tcp_send_pkt(struct net_pkt *pkt)
 {
 	struct net_context *ctx = net_pkt_context(pkt);
-	struct net_tcp_hdr *tcphdr = NET_TCP_BUF(pkt);
+	struct net_tcp_hdr *tcphdr = NET_TCP_HDR(pkt);
 
 	sys_put_be32(ctx->tcp->send_ack, tcphdr->ack);
 
@@ -789,7 +789,7 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 	while (!sys_slist_is_empty(list)) {
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
-		tcphdr = NET_TCP_BUF(pkt);
+		tcphdr = NET_TCP_HDR(pkt);
 
 		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(pkt) - 1;
 

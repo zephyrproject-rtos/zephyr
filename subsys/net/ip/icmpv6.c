@@ -78,20 +78,20 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, uint16_t extra_len,
 				     uint8_t hop_limit, uint8_t icmp_type,
 				     uint8_t icmp_code)
 {
-	NET_IPV6_BUF(pkt)->vtc = 0x60;
-	NET_IPV6_BUF(pkt)->tcflow = 0;
-	NET_IPV6_BUF(pkt)->flow = 0;
+	NET_IPV6_HDR(pkt)->vtc = 0x60;
+	NET_IPV6_HDR(pkt)->tcflow = 0;
+	NET_IPV6_HDR(pkt)->flow = 0;
 
 	sys_put_be16(NET_ICMPH_LEN + extra_len + NET_ICMPV6_UNUSED_LEN,
-		     NET_IPV6_BUF(pkt)->len);
+		     NET_IPV6_HDR(pkt)->len);
 
-	NET_IPV6_BUF(pkt)->nexthdr = IPPROTO_ICMPV6;
-	NET_IPV6_BUF(pkt)->hop_limit = hop_limit;
+	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_ICMPV6;
+	NET_IPV6_HDR(pkt)->hop_limit = hop_limit;
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	NET_ICMP_BUF(pkt)->type = icmp_type;
-	NET_ICMP_BUF(pkt)->code = icmp_code;
+	NET_ICMP_HDR(pkt)->type = icmp_type;
+	NET_ICMP_HDR(pkt)->code = icmp_code;
 
 	/* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1
 	 */
@@ -105,9 +105,9 @@ static inline void echo_request_debug(struct net_pkt *pkt)
 	char out[NET_IPV6_ADDR_LEN];
 
 	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));
+		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 	NET_DBG("Received Echo Request from %s to %s",
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src), out);
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
 }
 
 static inline void echo_reply_debug(struct net_pkt *pkt)
@@ -115,9 +115,9 @@ static inline void echo_reply_debug(struct net_pkt *pkt)
 	char out[NET_IPV6_ADDR_LEN];
 
 	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));
+		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 	NET_DBG("Sending Echo Reply from %s to %s",
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src), out);
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
 }
 #else
 #define echo_request_debug(pkt)
@@ -140,7 +140,7 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 		goto drop_no_pkt;
 	}
 
-	payload_len = sys_get_be16(NET_IPV6_BUF(orig)->len) -
+	payload_len = sys_get_be16(NET_IPV6_HDR(orig)->len) -
 		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
 
 	frag = net_pkt_copy_all(orig, 0, PKT_WAIT_TIME);
@@ -161,33 +161,33 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	}
 
 	/* Set up IPv6 Header fields */
-	NET_IPV6_BUF(pkt)->vtc = 0x60;
-	NET_IPV6_BUF(pkt)->tcflow = 0;
-	NET_IPV6_BUF(pkt)->flow = 0;
-	NET_IPV6_BUF(pkt)->hop_limit = net_if_ipv6_get_hop_limit(iface);
+	NET_IPV6_HDR(pkt)->vtc = 0x60;
+	NET_IPV6_HDR(pkt)->tcflow = 0;
+	NET_IPV6_HDR(pkt)->flow = 0;
+	NET_IPV6_HDR(pkt)->hop_limit = net_if_ipv6_get_hop_limit(iface);
 
 	/* ICMPv6 fields */
-	NET_ICMP_BUF(pkt)->type = NET_ICMPV6_ECHO_REPLY;
-	NET_ICMP_BUF(pkt)->code = 0;
-	NET_ICMP_BUF(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->type = NET_ICMPV6_ECHO_REPLY;
+	NET_ICMP_HDR(pkt)->code = 0;
+	NET_ICMP_HDR(pkt)->chksum = 0;
 
-	if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(pkt)->dst)) {
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst,
-				&NET_IPV6_BUF(orig)->src);
+	if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
+				&NET_IPV6_HDR(orig)->src);
 
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src,
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
 				net_if_ipv6_select_src_addr(iface,
-						    &NET_IPV6_BUF(orig)->dst));
+						    &NET_IPV6_HDR(orig)->dst));
 	} else {
 		struct in6_addr addr;
 
-		net_ipaddr_copy(&addr, &NET_IPV6_BUF(orig)->src);
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src,
-				&NET_IPV6_BUF(orig)->dst);
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, &addr);
+		net_ipaddr_copy(&addr, &NET_IPV6_HDR(orig)->src);
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
+				&NET_IPV6_HDR(orig)->dst);
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
 	}
 
-	if (NET_IPV6_BUF(pkt)->nexthdr == NET_IPV6_NEXTHDR_HBHO) {
+	if (NET_IPV6_HDR(pkt)->nexthdr == NET_IPV6_NEXTHDR_HBHO) {
 #if defined(CONFIG_NET_RPL)
 		uint16_t offset = NET_IPV6H_LEN;
 
@@ -206,8 +206,8 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	 */
 	net_pkt_ll_dst(pkt)->addr = NULL;
 
-	NET_ICMP_BUF(pkt)->chksum = 0;
-	NET_ICMP_BUF(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	NET_ICMP_HDR(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
 
 	echo_reply_debug(pkt);
 
@@ -238,8 +238,8 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	size_t extra_len, reserve;
 	int err = -EIO;
 
-	if (NET_IPV6_BUF(orig)->nexthdr == IPPROTO_ICMPV6) {
-		if (NET_ICMP_BUF(orig)->code < 128) {
+	if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_ICMPV6) {
+		if (NET_ICMP_HDR(orig)->code < 128) {
 			/* We must not send ICMP errors back */
 			err = -EINVAL;
 			goto drop_no_pkt;
@@ -260,16 +260,16 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	reserve = sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
 		NET_ICMPV6_UNUSED_LEN;
 
-	if (NET_IPV6_BUF(orig)->nexthdr == IPPROTO_UDP) {
+	if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_UDP) {
 		extra_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_udp_hdr);
-	} else if (NET_IPV6_BUF(orig)->nexthdr == IPPROTO_TCP) {
+	} else if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_TCP) {
 		extra_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_tcp_hdr);
 	} else {
 		size_t space = CONFIG_NET_BUF_DATA_SIZE -
 			net_if_get_ll_reserve(iface,
-					      &NET_IPV6_BUF(orig)->dst);
+					      &NET_IPV6_HDR(orig)->dst);
 
 		if (reserve > space) {
 			extra_len = 0;
@@ -303,20 +303,20 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 			     sizeof(struct net_icmp_hdr));
 	}
 
-	if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(orig)->dst)) {
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst,
-				&NET_IPV6_BUF(orig)->src);
+	if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(orig)->dst)) {
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
+				&NET_IPV6_HDR(orig)->src);
 
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src,
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
 				net_if_ipv6_select_src_addr(iface,
-						    &NET_IPV6_BUF(orig)->dst));
+						    &NET_IPV6_HDR(orig)->dst));
 	} else {
 		struct in6_addr addr;
 
-		net_ipaddr_copy(&addr, &NET_IPV6_BUF(orig)->src);
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src,
-				&NET_IPV6_BUF(orig)->dst);
-		net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, &addr);
+		net_ipaddr_copy(&addr, &NET_IPV6_HDR(orig)->src);
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
+				&NET_IPV6_HDR(orig)->dst);
+		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
 	}
 
 	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(orig)->addr;
@@ -324,17 +324,17 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
 	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
 
-	NET_ICMP_BUF(pkt)->chksum = 0;
-	NET_ICMP_BUF(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	NET_ICMP_HDR(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
 		char out[NET_IPV6_ADDR_LEN];
 		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));
+			 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 		NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
 			" from %s to %s", type, code, param,
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src), out);
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
@@ -376,11 +376,11 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	net_pkt_append_be16(pkt, identifier);
 	net_pkt_append_be16(pkt, sequence);
 
-	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src, src);
-	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, dst);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
 
-	NET_ICMP_BUF(pkt)->chksum = 0;
-	NET_ICMP_BUF(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	NET_ICMP_HDR(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
 
 	if (net_ipv6_finalize_raw(pkt, IPPROTO_ICMPV6) < 0) {
 		goto drop;
@@ -391,10 +391,10 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		char out[NET_IPV6_ADDR_LEN];
 
 		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));
+			 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 		NET_DBG("Sending ICMPv6 Echo Request type %d"
 			" from %s to %s", NET_ICMPV6_ECHO_REQUEST,
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src), out);
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_ICMPV6 */
 

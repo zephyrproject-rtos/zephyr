@@ -682,7 +682,7 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 	struct net_6lo_context *src = NULL;
 	struct net_6lo_context *dst = NULL;
 #endif
-	struct net_ipv6_hdr *ipv6 = NET_IPV6_BUF(pkt);
+	struct net_ipv6_hdr *ipv6 = NET_IPV6_HDR(pkt);
 	uint8_t offset = 0;
 	struct net_udp_hdr *udp;
 	struct net_buf *frag;
@@ -752,7 +752,7 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 	}
 
 	/* UDP header compression */
-	udp = NET_UDP_BUF(pkt);
+	udp = NET_UDP_HDR(pkt);
 	IPHC[offset] = NET_6LO_NHC_UDP_BARE;
 	offset = compress_nh_udp(udp, frag, offset);
 

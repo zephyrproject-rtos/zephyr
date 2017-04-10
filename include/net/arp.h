@@ -17,7 +17,7 @@
 
 #include <net/ethernet.h>
 
-#define NET_ARP_BUF(pkt) ((struct net_arp_hdr *)net_pkt_ip_data(pkt))
+#define NET_ARP_HDR(pkt) ((struct net_arp_hdr *)net_pkt_ip_data(pkt))
 
 struct net_arp_hdr {
 	uint16_t hwtype;		/* HTYPE */

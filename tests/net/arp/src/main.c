@@ -92,7 +92,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	hdr = (struct net_eth_hdr *)net_pkt_ll(pkt);
 
 	if (ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
-		struct net_arp_hdr *arp_hdr = NET_ARP_BUF(pkt);
+		struct net_arp_hdr *arp_hdr = NET_ARP_HDR(pkt);
 
 		if (ntohs(arp_hdr->opcode) == NET_ARP_REPLY) {
 			if (!req_test && pkt != pending_pkt) {
@@ -183,8 +183,8 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 
-	hdr = NET_ARP_BUF(pkt);
-	eth = NET_ETH_BUF(pkt);
+	hdr = NET_ARP_HDR(pkt);
+	eth = NET_ETH_HDR(pkt);
 
 	eth->type = htons(NET_ETH_PTYPE_ARP);
 
@@ -203,8 +203,8 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	memcpy(&hdr->src_hwaddr.addr, addr,
 	       sizeof(struct net_eth_addr));
 
-	net_ipaddr_copy(&hdr->dst_ipaddr, &NET_ARP_BUF(req)->src_ipaddr);
-	net_ipaddr_copy(&hdr->src_ipaddr, &NET_ARP_BUF(req)->dst_ipaddr);
+	net_ipaddr_copy(&hdr->dst_ipaddr, &NET_ARP_HDR(req)->src_ipaddr);
+	net_ipaddr_copy(&hdr->src_ipaddr, &NET_ARP_HDR(req)->dst_ipaddr);
 
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
@@ -238,10 +238,10 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 
-	hdr = NET_ARP_BUF(pkt);
-	eth = NET_ETH_BUF(pkt);
-	req_hdr = NET_ARP_BUF(req);
-	eth_req = NET_ETH_BUF(req);
+	hdr = NET_ARP_HDR(pkt);
+	eth = NET_ETH_HDR(pkt);
+	req_hdr = NET_ARP_HDR(req);
+	eth_req = NET_ETH_HDR(req);
 
 	eth->type = htons(NET_ETH_PTYPE_ARP);
 
@@ -420,8 +420,8 @@ static bool run_tests(void)
 		return false;
 	}
 
-	arp_hdr = NET_ARP_BUF(pkt2);
-	eth_hdr = NET_ETH_BUF(pkt2);
+	arp_hdr = NET_ARP_HDR(pkt2);
+	eth_hdr = NET_ETH_HDR(pkt2);
 
 	if (eth_hdr->type != htons(NET_ETH_PTYPE_ARP)) {
 		printk("ETH type 0x%x, should be 0x%x\n",
@@ -460,22 +460,22 @@ static bool run_tests(void)
 	}
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &NET_IPV4_BUF(pkt)->dst)) {
+			       &NET_IPV4_HDR(pkt)->dst)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		printk("ARP IP dest invalid %s, should be %s", out,
-		       net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
+		       net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 		return false;
 	}
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->src_ipaddr,
-			       &NET_IPV4_BUF(pkt)->src)) {
+			       &NET_IPV4_HDR(pkt)->src)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&arp_hdr->src_ipaddr));
 		printk("ARP IP src invalid %s, should be %s", out,
-		       net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src));
+		       net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
 		return false;
 	}
 
@@ -504,7 +504,7 @@ static bool run_tests(void)
 		return false;
 	}
 
-	arp_hdr = NET_ARP_BUF(pkt2);
+	arp_hdr = NET_ARP_HDR(pkt2);
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr, &iface->ipv4.gw)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
@@ -577,7 +577,7 @@ static bool run_tests(void)
 
 	net_pkt_set_iface(pkt, iface);
 
-	arp_hdr = NET_ARP_BUF(pkt);
+	arp_hdr = NET_ARP_HDR(pkt);
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
@@ -631,7 +631,7 @@ static bool run_tests(void)
 	net_pkt_set_iface(pkt, iface);
 	send_status = -EINVAL;
 
-	arp_hdr = NET_ARP_BUF(pkt);
+	arp_hdr = NET_ARP_HDR(pkt);
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &src);

@@ -149,9 +149,9 @@ static inline void set_dst_addr(sa_family_t family,
 {
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-				&NET_IPV6_BUF(buf)->src);
+				&NET_IPV6_HDR(buf)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
-		net_sin6(dst_addr)->sin6_port = NET_UDP_BUF(buf)->src_port;
+		net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(buf)->src_port;
 	}
 }
 

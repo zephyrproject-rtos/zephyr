@@ -81,8 +81,8 @@ static struct sockaddr *create_sockaddr(struct net_pkt *pkt,
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(addr)->sin6_addr,
-				&NET_IPV6_BUF(pkt)->src);
-		net_sin6(addr)->sin6_port = NET_TCP_BUF(pkt)->src_port;
+				&NET_IPV6_HDR(pkt)->src);
+		net_sin6(addr)->sin6_port = NET_TCP_HDR(pkt)->src_port;
 		net_sin6(addr)->sin6_family = AF_INET6;
 	} else
 #endif
@@ -90,8 +90,8 @@ static struct sockaddr *create_sockaddr(struct net_pkt *pkt,
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET) {
 		net_ipaddr_copy(&net_sin(addr)->sin_addr,
-				&NET_IPV4_BUF(pkt)->src);
-		net_sin(addr)->sin_port = NET_TCP_BUF(pkt)->src_port;
+				&NET_IPV4_HDR(pkt)->src);
+		net_sin(addr)->sin_port = NET_TCP_HDR(pkt)->src_port;
 		net_sin(addr)->sin_family = AF_INET;
 	} else
 #endif
@@ -667,11 +667,11 @@ int net_context_listen(struct net_context *context, int backlog)
 	do {								\
 		if (net_context_get_family(context) == AF_INET6) {	\
 			NET_DBG("%s received from %s port %d", str,	\
-				net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src),\
+				net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),\
 				ntohs(port));				\
 		} else if (net_context_get_family(context) == AF_INET) {\
 			NET_DBG("%s received from %s port %d", str,	\
-				net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src),\
+				net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),\
 				ntohs(port));				\
 		}							\
 	} while (0)
@@ -680,11 +680,11 @@ int net_context_listen(struct net_context *context, int backlog)
 	do {								\
 		if (net_context_get_family(context) == AF_INET6) {	\
 			NET_DBG("%s sent to %s port %d", str,		\
-				net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst),\
+				net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst),\
 				ntohs(port));				\
 		} else if (net_context_get_family(context) == AF_INET) {\
 			NET_DBG("%s sent to %s port %d", str,		\
-				net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst),\
+				net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst),\
 				ntohs(port));				\
 		}							\
 	} while (0)
@@ -712,7 +712,7 @@ static inline int send_control_segment(struct net_context *context,
 		net_pkt_unref(pkt);
 	}
 
-	net_tcp_print_send_info(msg, pkt, NET_TCP_BUF(pkt)->dst_port);
+	net_tcp_print_send_info(msg, pkt, NET_TCP_HDR(pkt)->dst_port);
 
 	return ret;
 }
@@ -752,7 +752,7 @@ static inline int send_ack(struct net_context *context,
 		return ret;
 	}
 
-	net_tcp_print_send_info("ACK", pkt, NET_TCP_BUF(pkt)->dst_port);
+	net_tcp_print_send_info("ACK", pkt, NET_TCP_HDR(pkt)->dst_port);
 
 	ret = net_tcp_send_pkt(pkt);
 	if (ret < 0) {
@@ -773,7 +773,7 @@ static int send_reset(struct net_context *context,
 		return ret;
 	}
 
-	net_tcp_print_send_info("RST", pkt, NET_TCP_BUF(pkt)->dst_port);
+	net_tcp_print_send_info("RST", pkt, NET_TCP_HDR(pkt)->dst_port);
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
@@ -808,15 +808,15 @@ NET_CONN_CB(tcp_established)
 		return NET_DROP;
 	}
 
-	net_tcp_print_recv_info("DATA", pkt, NET_TCP_BUF(pkt)->src_port);
+	net_tcp_print_recv_info("DATA", pkt, NET_TCP_HDR(pkt)->src_port);
 
 	tcp_flags = NET_TCP_FLAGS(pkt);
 	if (tcp_flags & NET_TCP_ACK) {
 		net_tcp_ack_received(context,
-				     sys_get_be32(NET_TCP_BUF(pkt)->ack));
+				     sys_get_be32(NET_TCP_HDR(pkt)->ack));
 	}
 
-	if (sys_get_be32(NET_TCP_BUF(pkt)->seq) - context->tcp->send_ack) {
+	if (sys_get_be32(NET_TCP_HDR(pkt)->seq) - context->tcp->send_ack) {
 		/* Don't try to reorder packets.  If it doesn't
 		 * match the next segment exactly, drop and wait for
 		 * retransmit
@@ -891,7 +891,7 @@ NET_CONN_CB(tcp_synack_received)
 
 	if (NET_TCP_FLAGS(pkt) & NET_TCP_SYN) {
 		context->tcp->send_ack =
-			sys_get_be32(NET_TCP_BUF(pkt)->seq) + 1;
+			sys_get_be32(NET_TCP_HDR(pkt)->seq) + 1;
 		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 	}
 	/*
@@ -916,14 +916,14 @@ NET_CONN_CB(tcp_synack_received)
 			raddr = (struct sockaddr *)&r6addr;
 
 			r6addr.sin6_family = AF_INET6;
-			r6addr.sin6_port = NET_TCP_BUF(pkt)->src_port;
+			r6addr.sin6_port = NET_TCP_HDR(pkt)->src_port;
 			net_ipaddr_copy(&r6addr.sin6_addr,
-					&NET_IPV6_BUF(pkt)->src);
+					&NET_IPV6_HDR(pkt)->src);
 
 			l6addr.sin6_family = AF_INET6;
-			l6addr.sin6_port = NET_TCP_BUF(pkt)->dst_port;
+			l6addr.sin6_port = NET_TCP_HDR(pkt)->dst_port;
 			net_ipaddr_copy(&l6addr.sin6_addr,
-					&NET_IPV6_BUF(pkt)->dst);
+					&NET_IPV6_HDR(pkt)->dst);
 		} else
 #endif
 #if defined(CONFIG_NET_IPV4)
@@ -932,14 +932,14 @@ NET_CONN_CB(tcp_synack_received)
 			raddr = (struct sockaddr *)&r4addr;
 
 			r4addr.sin_family = AF_INET;
-			r4addr.sin_port = NET_TCP_BUF(pkt)->src_port;
+			r4addr.sin_port = NET_TCP_HDR(pkt)->src_port;
 			net_ipaddr_copy(&r4addr.sin_addr,
-					&NET_IPV4_BUF(pkt)->src);
+					&NET_IPV4_HDR(pkt)->src);
 
 			l4addr.sin_family = AF_INET;
-			l4addr.sin_port = NET_TCP_BUF(pkt)->dst_port;
+			l4addr.sin_port = NET_TCP_HDR(pkt)->dst_port;
 			net_ipaddr_copy(&l4addr.sin_addr,
-					&NET_IPV4_BUF(pkt)->dst);
+					&NET_IPV4_HDR(pkt)->dst);
 		} else
 #endif
 		{
@@ -954,8 +954,8 @@ NET_CONN_CB(tcp_synack_received)
 
 		ret = net_tcp_register(raddr,
 				       laddr,
-				       ntohs(NET_TCP_BUF(pkt)->src_port),
-				       ntohs(NET_TCP_BUF(pkt)->dst_port),
+				       ntohs(NET_TCP_HDR(pkt)->src_port),
+				       ntohs(NET_TCP_HDR(pkt)->dst_port),
 				       tcp_established,
 				       context,
 				       &context->conn_handler);
@@ -1195,8 +1195,8 @@ static void pkt_get_sockaddr(sa_family_t family, struct net_pkt *pkt,
 		struct sockaddr_in_ptr *addr4 = net_sin_ptr(addr);
 
 		addr4->sin_family = AF_INET;
-		addr4->sin_port = NET_TCP_BUF(pkt)->dst_port;
-		addr4->sin_addr = &NET_IPV4_BUF(pkt)->dst;
+		addr4->sin_port = NET_TCP_HDR(pkt)->dst_port;
+		addr4->sin_addr = &NET_IPV4_HDR(pkt)->dst;
 	}
 #endif
 
@@ -1205,8 +1205,8 @@ static void pkt_get_sockaddr(sa_family_t family, struct net_pkt *pkt,
 		struct sockaddr_in6_ptr *addr6 = net_sin6_ptr(addr);
 
 		addr6->sin6_family = AF_INET6;
-		addr6->sin6_port = NET_TCP_BUF(pkt)->dst_port;
-		addr6->sin6_addr = &NET_IPV6_BUF(pkt)->dst;
+		addr6->sin6_port = NET_TCP_HDR(pkt)->dst_port;
+		addr6->sin6_addr = &NET_IPV6_HDR(pkt)->dst;
 	}
 #endif
 }
@@ -1262,7 +1262,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_SYN) {
 		struct sockaddr peer, *remote;
 
-		net_tcp_print_recv_info("SYN", pkt, NET_TCP_BUF(pkt)->src_port);
+		net_tcp_print_recv_info("SYN", pkt, NET_TCP_HDR(pkt)->src_port);
 
 		net_tcp_change_state(tcp, NET_TCP_SYN_RCVD);
 
@@ -1270,7 +1270,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		/* FIXME: Is this the correct place to set tcp->send_ack? */
 		context->tcp->send_ack =
-			sys_get_be32(NET_TCP_BUF(pkt)->seq) + 1;
+			sys_get_be32(NET_TCP_HDR(pkt)->seq) + 1;
 		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 
 		pkt_get_sockaddr(net_context_get_family(context),
@@ -1294,7 +1294,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_RST) {
 		k_delayed_work_cancel(&tcp->ack_timer);
 
-		net_tcp_print_recv_info("RST", pkt, NET_TCP_BUF(pkt)->src_port);
+		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
 
 		net_tcp_change_state(tcp, NET_TCP_LISTEN);
 
@@ -1321,7 +1321,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 			goto reset;
 		}
 
-		net_tcp_print_recv_info("ACK", pkt, NET_TCP_BUF(pkt)->src_port);
+		net_tcp_print_recv_info("ACK", pkt, NET_TCP_HDR(pkt)->src_port);
 
 		if (!context->tcp->accept_cb) {
 			NET_DBG("No accept callback, connection reset.");
@@ -1353,13 +1353,13 @@ NET_CONN_CB(tcp_syn_rcvd)
 			remote_addr6->sin6_family = AF_INET6;
 			local_addr6->sin6_family = AF_INET6;
 
-			local_addr6->sin6_port = NET_TCP_BUF(pkt)->dst_port;
-			remote_addr6->sin6_port = NET_TCP_BUF(pkt)->src_port;
+			local_addr6->sin6_port = NET_TCP_HDR(pkt)->dst_port;
+			remote_addr6->sin6_port = NET_TCP_HDR(pkt)->src_port;
 
 			net_ipaddr_copy(&local_addr6->sin6_addr,
-					&NET_IPV6_BUF(pkt)->dst);
+					&NET_IPV6_HDR(pkt)->dst);
 			net_ipaddr_copy(&remote_addr6->sin6_addr,
-					&NET_IPV6_BUF(pkt)->src);
+					&NET_IPV6_HDR(pkt)->src);
 			addrlen = sizeof(struct sockaddr_in6);
 		} else
 #endif /* CONFIG_NET_IPV6 */
@@ -1374,13 +1374,13 @@ NET_CONN_CB(tcp_syn_rcvd)
 			remote_addr4->sin_family = AF_INET;
 			local_addr4->sin_family = AF_INET;
 
-			local_addr4->sin_port = NET_TCP_BUF(pkt)->dst_port;
-			remote_addr4->sin_port = NET_TCP_BUF(pkt)->src_port;
+			local_addr4->sin_port = NET_TCP_HDR(pkt)->dst_port;
+			remote_addr4->sin_port = NET_TCP_HDR(pkt)->src_port;
 
 			net_ipaddr_copy(&local_addr4->sin_addr,
-					&NET_IPV4_BUF(pkt)->dst);
+					&NET_IPV4_HDR(pkt)->dst);
 			net_ipaddr_copy(&remote_addr4->sin_addr,
-					&NET_IPV4_BUF(pkt)->src);
+					&NET_IPV4_HDR(pkt)->src);
 			addrlen = sizeof(struct sockaddr_in);
 		} else
 #endif /* CONFIG_NET_IPV4 */

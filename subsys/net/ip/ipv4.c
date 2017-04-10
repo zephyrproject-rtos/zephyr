@@ -36,18 +36,18 @@ struct net_pkt *net_ipv4_create_raw(struct net_pkt *pkt,
 
 	net_pkt_frag_insert(pkt, header);
 
-	NET_IPV4_BUF(pkt)->vhl = 0x45;
-	NET_IPV4_BUF(pkt)->tos = 0x00;
-	NET_IPV4_BUF(pkt)->proto = 0;
+	NET_IPV4_HDR(pkt)->vhl = 0x45;
+	NET_IPV4_HDR(pkt)->tos = 0x00;
+	NET_IPV4_HDR(pkt)->proto = 0;
 
-	NET_IPV4_BUF(pkt)->ttl = net_if_ipv4_get_ttl(iface);
-	NET_IPV4_BUF(pkt)->offset[0] = NET_IPV4_BUF(pkt)->offset[1] = 0;
-	NET_IPV4_BUF(pkt)->id[0] = NET_IPV4_BUF(pkt)->id[1] = 0;
+	NET_IPV4_HDR(pkt)->ttl = net_if_ipv4_get_ttl(iface);
+	NET_IPV4_HDR(pkt)->offset[0] = NET_IPV4_HDR(pkt)->offset[1] = 0;
+	NET_IPV4_HDR(pkt)->id[0] = NET_IPV4_HDR(pkt)->id[1] = 0;
 
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, dst);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src, src);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, dst);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, src);
 
-	NET_IPV4_BUF(pkt)->proto = next_header;
+	NET_IPV4_HDR(pkt)->proto = next_header;
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_family(pkt, AF_INET);
@@ -89,22 +89,22 @@ int net_ipv4_finalize_raw(struct net_pkt *pkt, uint8_t next_header)
 
 	total_len = net_pkt_get_len(pkt);
 
-	NET_IPV4_BUF(pkt)->len[0] = total_len / 256;
-	NET_IPV4_BUF(pkt)->len[1] = total_len - NET_IPV4_BUF(pkt)->len[0] * 256;
+	NET_IPV4_HDR(pkt)->len[0] = total_len / 256;
+	NET_IPV4_HDR(pkt)->len[1] = total_len - NET_IPV4_HDR(pkt)->len[0] * 256;
 
-	NET_IPV4_BUF(pkt)->chksum = 0;
-	NET_IPV4_BUF(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
+	NET_IPV4_HDR(pkt)->chksum = 0;
+	NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
 
 #if defined(CONFIG_NET_UDP)
 	if (next_header == IPPROTO_UDP) {
-		NET_UDP_BUF(pkt)->chksum = 0;
-		NET_UDP_BUF(pkt)->chksum = ~net_calc_chksum_udp(pkt);
+		NET_UDP_HDR(pkt)->chksum = 0;
+		NET_UDP_HDR(pkt)->chksum = ~net_calc_chksum_udp(pkt);
 	}
 #endif
 #if defined(CONFIG_NET_TCP)
 	if (next_header == IPPROTO_TCP) {
-		NET_TCP_BUF(pkt)->chksum = 0;
-		NET_TCP_BUF(pkt)->chksum = ~net_calc_chksum_tcp(pkt);
+		NET_TCP_HDR(pkt)->chksum = 0;
+		NET_TCP_HDR(pkt)->chksum = ~net_calc_chksum_tcp(pkt);
 	}
 #endif
 
@@ -134,7 +134,7 @@ const struct in_addr *net_ipv4_broadcast_address(void)
 static inline enum net_verdict process_icmpv4_pkt(struct net_pkt *pkt,
 						  struct net_ipv4_hdr *ipv4)
 {
-	struct net_icmp_hdr *hdr = NET_ICMP_BUF(pkt);
+	struct net_icmp_hdr *hdr = NET_ICMP_HDR(pkt);
 
 	NET_DBG("ICMPv4 packet received type %d code %d",
 		hdr->type, hdr->code);
@@ -144,7 +144,7 @@ static inline enum net_verdict process_icmpv4_pkt(struct net_pkt *pkt,
 
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *hdr = NET_IPV4_BUF(pkt);
+	struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
 	int real_len = net_pkt_get_len(pkt);
 	int pkt_len = (hdr->len[0] << 8) + hdr->len[1];
 	enum net_verdict verdict = NET_DROP;

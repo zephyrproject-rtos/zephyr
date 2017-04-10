@@ -101,7 +101,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	}
 
 	/* IP version and header length. */
-	switch (NET_IPV6_BUF(pkt)->vtc & 0xf0) {
+	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
 		net_stats_update_ipv6_recv();
@@ -117,7 +117,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	}
 
 	NET_DBG("Unknown IP family packet (0x%x)",
-		NET_IPV6_BUF(pkt)->vtc & 0xf0);
+		NET_IPV6_HDR(pkt)->vtc & 0xf0);
 	net_stats_update_ip_errors_protoerr();
 	net_stats_update_ip_errors_vhlerr();
 
@@ -200,7 +200,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_addr_cmp(&NET_IPV6_BUF(pkt)->dst,
+		if (net_ipv6_addr_cmp(&NET_IPV6_HDR(pkt)->dst,
 				      net_ipv6_unspecified_address())) {
 			NET_DBG("IPv6 dst address missing");
 			return -EADDRNOTAVAIL;
@@ -209,17 +209,17 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(pkt)->dst) ||
-		    net_is_my_ipv6_addr(&NET_IPV6_BUF(pkt)->dst)) {
+		if (net_is_ipv6_addr_loopback(&NET_IPV6_HDR(pkt)->dst) ||
+		    net_is_my_ipv6_addr(&NET_IPV6_HDR(pkt)->dst)) {
 			struct in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
 			 */
-			net_ipaddr_copy(&addr, &NET_IPV6_BUF(pkt)->src);
-			net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src,
-					&NET_IPV6_BUF(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, &addr);
+			net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
+			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
+					&NET_IPV6_HDR(pkt)->dst);
+			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
 
 			return 1;
 		}
@@ -227,7 +227,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* The source check must be done after the destination check
 		 * as having src ::1 is perfectly ok if dst is ::1 too.
 		 */
-		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(pkt)->src)) {
+		if (net_is_ipv6_addr_loopback(&NET_IPV6_HDR(pkt)->src)) {
 			NET_DBG("IPv6 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
@@ -236,7 +236,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_addr_cmp(&NET_IPV4_BUF(pkt)->dst,
+		if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
 			return -EADDRNOTAVAIL;
 		}
@@ -244,17 +244,17 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(pkt)->dst) ||
-		    net_is_my_ipv4_addr(&NET_IPV4_BUF(pkt)->dst)) {
+		if (net_is_ipv4_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
+		    net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)) {
 			struct in_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
 			 */
-			net_ipaddr_copy(&addr, &NET_IPV4_BUF(pkt)->src);
-			net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src,
-					&NET_IPV4_BUF(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, &addr);
+			net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
+			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
+					&NET_IPV4_HDR(pkt)->dst);
+			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
 			return 1;
 		}
@@ -263,7 +263,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		 * as having src 127.0.0.0/8 is perfectly ok if dst is in
 		 * localhost subnet too.
 		 */
-		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(pkt)->src)) {
+		if (net_is_ipv4_addr_loopback(&NET_IPV4_HDR(pkt)->src)) {
 			NET_DBG("IPv4 loopback src address");
 			return -EADDRNOTAVAIL;
 		}

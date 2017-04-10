@@ -75,24 +75,24 @@ struct net_icmpv6_nd_opt_6co {
 	struct in6_addr prefix;
 } __packed;
 
-#define NET_ICMPV6_NS_BUF(pkt)						\
+#define NET_ICMPV6_NS_HDR(pkt)						\
 	((struct net_icmpv6_ns_hdr *)(net_pkt_icmp_data(pkt) +		\
 				      sizeof(struct net_icmp_hdr)))
 
-#define NET_ICMPV6_ND_OPT_HDR_BUF(pkt)					\
+#define NET_ICMPV6_ND_OPT_HDR_HDR(pkt)					\
 	((struct net_icmpv6_nd_opt_hdr *)(net_pkt_icmp_data(pkt) +	\
 					  sizeof(struct net_icmp_hdr) +	\
 					  net_pkt_ext_opt_len(pkt)))
 
-#define NET_ICMPV6_NA_BUF(pkt)						\
+#define NET_ICMPV6_NA_HDR(pkt)						\
 	((struct net_icmpv6_na_hdr *)(net_pkt_icmp_data(pkt) +		\
 				      sizeof(struct net_icmp_hdr)))
 
-#define NET_ICMPV6_RS_BUF(pkt)						\
+#define NET_ICMPV6_RS_HDR(pkt)						\
 	((struct net_icmpv6_rs_hdr *)(net_pkt_icmp_data(pkt) +		\
 				      sizeof(struct net_icmp_hdr)))
 
-#define NET_ICMPV6_RA_BUF(pkt)						\
+#define NET_ICMPV6_RA_HDR(pkt)						\
 	((struct net_icmpv6_ra_hdr *)(net_pkt_icmp_data(pkt) +		\
 				      sizeof(struct net_icmp_hdr)))
 

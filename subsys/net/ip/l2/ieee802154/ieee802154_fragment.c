@@ -316,11 +316,11 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, uint16_t size)
 {
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
-	NET_IPV6_BUF(pkt)->len[0] = (size - NET_IPV6H_LEN) >> 8;
-	NET_IPV6_BUF(pkt)->len[1] = (uint8_t) (size - NET_IPV6H_LEN);
+	NET_IPV6_HDR(pkt)->len[0] = (size - NET_IPV6H_LEN) >> 8;
+	NET_IPV6_HDR(pkt)->len[1] = (uint8_t) (size - NET_IPV6H_LEN);
 
-	if (NET_IPV6_BUF(pkt)->nexthdr == IPPROTO_UDP) {
-		NET_UDP_BUF(pkt)->len = htons(size - NET_IPV6H_LEN);
+	if (NET_IPV6_HDR(pkt)->nexthdr == IPPROTO_UDP) {
+		NET_UDP_HDR(pkt)->len = htons(size - NET_IPV6H_LEN);
 	}
 }
 

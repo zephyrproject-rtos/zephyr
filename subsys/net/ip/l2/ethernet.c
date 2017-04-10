@@ -61,11 +61,11 @@ static inline void ethernet_update_length(struct net_if *iface,
 	 */
 
 	if (net_pkt_family(pkt) == AF_INET) {
-		len = ((NET_IPV4_BUF(pkt)->len[0] << 8) +
-		       NET_IPV4_BUF(pkt)->len[1]);
+		len = ((NET_IPV4_HDR(pkt)->len[0] << 8) +
+		       NET_IPV4_HDR(pkt)->len[1]);
 	} else {
-		len = ((NET_IPV6_BUF(pkt)->len[0] << 8) +
-		       NET_IPV6_BUF(pkt)->len[1]) +
+		len = ((NET_IPV6_HDR(pkt)->len[0] << 8) +
+		       NET_IPV6_HDR(pkt)->len[1]) +
 			NET_IPV6H_LEN;
 	}
 
@@ -86,7 +86,7 @@ static inline void ethernet_update_length(struct net_if *iface,
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
-	struct net_eth_hdr *hdr = NET_ETH_BUF(pkt);
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	struct net_linkaddr *lladdr;
 	sa_family_t family;
 
@@ -150,9 +150,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 						      struct net_pkt *pkt)
 {
-	struct net_eth_hdr *hdr = NET_ETH_BUF(pkt);
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
-	if (net_ipv4_addr_cmp(&NET_IPV4_BUF(pkt)->dst,
+	if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
 			      net_ipv4_broadcast_address())) {
 		/* Broadcast address */
 		net_pkt_ll_dst(pkt)->addr = (uint8_t *)broadcast_eth_addr.addr;
@@ -161,14 +161,14 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
 
 		return true;
-	} else if (NET_IPV4_BUF(pkt)->dst.s4_addr[0] == 224) {
+	} else if (NET_IPV4_HDR(pkt)->dst.s4_addr[0] == 224) {
 		/* Multicast address */
 		hdr->dst.addr[0] = 0x01;
 		hdr->dst.addr[1] = 0x00;
 		hdr->dst.addr[2] = 0x5e;
-		hdr->dst.addr[3] = NET_IPV4_BUF(pkt)->dst.s4_addr[1];
-		hdr->dst.addr[4] = NET_IPV4_BUF(pkt)->dst.s4_addr[2];
-		hdr->dst.addr[5] = NET_IPV4_BUF(pkt)->dst.s4_addr[3];
+		hdr->dst.addr[3] = NET_IPV4_HDR(pkt)->dst.s4_addr[1];
+		hdr->dst.addr[4] = NET_IPV4_HDR(pkt)->dst.s4_addr[2];
+		hdr->dst.addr[5] = NET_IPV4_HDR(pkt)->dst.s4_addr[3];
 
 		net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_ll_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
@@ -183,7 +183,7 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
-	struct net_eth_hdr *hdr = NET_ETH_BUF(pkt);
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	struct net_buf *frag;
 	uint16_t ptype;
 
@@ -205,9 +205,9 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 
 		pkt = arp_pkt;
 
-		net_pkt_ll_src(pkt)->addr = (uint8_t *)&NET_ETH_BUF(pkt)->src;
+		net_pkt_ll_src(pkt)->addr = (uint8_t *)&NET_ETH_HDR(pkt)->src;
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
-		net_pkt_ll_dst(pkt)->addr = (uint8_t *)&NET_ETH_BUF(pkt)->dst;
+		net_pkt_ll_dst(pkt)->addr = (uint8_t *)&NET_ETH_HDR(pkt)->dst;
 		net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 		/* For ARP message, we do not touch the packet further but will
@@ -239,13 +239,13 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 	if (!net_pkt_ll_dst(pkt)->addr) {
 #if defined(CONFIG_NET_IPV6)
 		if (net_pkt_family(pkt) == AF_INET6 &&
-		    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(pkt)->dst)) {
-			struct net_eth_addr *dst = &NET_ETH_BUF(pkt)->dst;
+		    net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+			struct net_eth_addr *dst = &NET_ETH_HDR(pkt)->dst;
 
 			memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 			       sizeof(struct net_eth_addr) - 4);
 			memcpy((uint8_t *)dst + 2,
-			       (uint8_t *)(&NET_IPV6_BUF(pkt)->dst) + 12,
+			       (uint8_t *)(&NET_IPV6_HDR(pkt)->dst) + 12,
 				sizeof(struct net_eth_addr) - 2);
 
 			net_pkt_ll_dst(pkt)->addr = (uint8_t *)dst->addr;

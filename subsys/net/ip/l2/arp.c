@@ -122,8 +122,8 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_INET);
 
-	hdr = NET_ARP_BUF(pkt);
-	eth = NET_ETH_BUF(pkt);
+	hdr = NET_ARP_HDR(pkt);
+	eth = NET_ETH_HDR(pkt);
 
 	/* If entry is not set, then we are just about to send
 	 * an ARP request using the data in pending net_pkt.
@@ -164,7 +164,7 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 	if (entry) {
 		my_addr = if_get_addr(entry->iface);
 	} else {
-		my_addr = &NET_IPV4_BUF(pending)->src;
+		my_addr = &NET_IPV4_HDR(pending)->src;
 	}
 
 	if (my_addr) {
@@ -232,10 +232,10 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	 * the gateway address.
 	 */
 	if (!net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt),
-				       &NET_IPV4_BUF(pkt)->dst)) {
+				       &NET_IPV4_HDR(pkt)->dst)) {
 		addr = &net_pkt_iface(pkt)->ipv4.gw;
 	} else {
-		addr = &NET_IPV4_BUF(pkt)->dst;
+		addr = &NET_IPV4_HDR(pkt)->dst;
 	}
 
 	/* If the destination address is already known, we do not need
@@ -275,7 +275,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 
 	NET_DBG("ARP using ll %s for IP %s",
 		net_sprint_ll_addr(ll->addr, sizeof(struct net_eth_addr)),
-		net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src));
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
 
 	frag = pkt->frags;
 	while (frag) {
@@ -307,7 +307,7 @@ static inline void send_pending(struct net_if *iface, struct net_pkt **pkt)
 	struct net_pkt *pending = *pkt;
 
 	NET_DBG("dst %s pending %p frag %p",
-		net_sprint_ipv4_addr(&NET_IPV4_BUF(pending)->dst), pending,
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pending)->dst), pending,
 		pending->frags);
 
 	*pkt = NULL;
@@ -341,28 +341,29 @@ static inline void arp_update(struct net_if *iface,
 					   sizeof(struct net_eth_addr)),
 			arp_table[i].pending);
 
-		if (arp_table[i].iface == iface &&
-		    net_ipv4_addr_cmp(&arp_table[i].ip, src)) {
-
-			if (arp_table[i].pending) {
-				/* We only update the ARP cache if we were
-				 * initiating a request.
-				 */
-				memcpy(&arp_table[i].eth, hwaddr,
-				       sizeof(struct net_eth_addr));
-
-				/* Set the dst in the pending packet */
-				net_pkt_ll_dst(arp_table[i].pending)->len =
-					sizeof(struct net_eth_addr);
-				net_pkt_ll_dst(arp_table[i].pending)->addr =
-					(uint8_t *)
-					&NET_ETH_BUF(arp_table[i].pending)->dst.addr;
-
-				send_pending(iface, &arp_table[i].pending);
-			}
-
-			return;
+		if (arp_table[i].iface != iface ||
+		    !net_ipv4_addr_cmp(&arp_table[i].ip, src)) {
+			continue;
 		}
+
+		if (arp_table[i].pending) {
+			/* We only update the ARP cache if we were
+			 * initiating a request.
+			 */
+			memcpy(&arp_table[i].eth, hwaddr,
+			       sizeof(struct net_eth_addr));
+
+			/* Set the dst in the pending packet */
+			net_pkt_ll_dst(arp_table[i].pending)->len =
+				sizeof(struct net_eth_addr);
+			net_pkt_ll_dst(arp_table[i].pending)->addr =
+				(uint8_t *)
+				&NET_ETH_HDR(arp_table[i].pending)->dst.addr;
+
+			send_pending(iface, &arp_table[i].pending);
+		}
+
+		return;
 	}
 }
 
@@ -388,10 +389,10 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_INET);
 
-	hdr = NET_ARP_BUF(pkt);
-	eth = NET_ETH_BUF(pkt);
-	query = NET_ARP_BUF(req);
-	eth_query = NET_ETH_BUF(req);
+	hdr = NET_ARP_HDR(pkt);
+	eth = NET_ETH_HDR(pkt);
+	query = NET_ARP_HDR(req);
+	eth_query = NET_ETH_HDR(req);
 
 	eth->type = htons(NET_ETH_PTYPE_ARP);
 
@@ -437,7 +438,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	arp_hdr = NET_ARP_BUF(pkt);
+	arp_hdr = NET_ARP_HDR(pkt);
 
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:

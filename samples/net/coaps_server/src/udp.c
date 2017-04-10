@@ -20,9 +20,9 @@ static const socklen_t addrlen = sizeof(struct sockaddr_in6);
 
 static void set_client_address(struct sockaddr *addr, struct net_pkt *rx_pkt)
 {
-	net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &NET_IPV6_BUF(rx_pkt)->src);
+	net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &NET_IPV6_HDR(rx_pkt)->src);
 	net_sin6(addr)->sin6_family = AF_INET6;
-	net_sin6(addr)->sin6_port = NET_UDP_BUF(rx_pkt)->src_port;
+	net_sin6(addr)->sin6_port = NET_UDP_HDR(rx_pkt)->src_port;
 }
 
 static void udp_received(struct net_context *context,

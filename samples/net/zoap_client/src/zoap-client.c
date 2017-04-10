@@ -97,8 +97,8 @@ static void udp_receive(struct net_context *context,
 		/* If necessary cancel retransmissions */
 	}
 
-	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_BUF(pkt)->src);
-	from.sin6_port = NET_UDP_BUF(pkt)->src_port;
+	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
+	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
 
 	reply = zoap_response_received(&response,
 				       (const struct sockaddr *) &from,

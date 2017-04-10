@@ -177,22 +177,22 @@ static void setup_ipv6_udp(struct net_pkt *pkt,
 			   uint16_t remote_port,
 			   uint16_t local_port)
 {
-	NET_IPV6_BUF(pkt)->vtc = 0x60;
-	NET_IPV6_BUF(pkt)->tcflow = 0;
-	NET_IPV6_BUF(pkt)->flow = 0;
-	NET_IPV6_BUF(pkt)->len[0] = 0;
-	NET_IPV6_BUF(pkt)->len[1] = NET_UDPH_LEN;
+	NET_IPV6_HDR(pkt)->vtc = 0x60;
+	NET_IPV6_HDR(pkt)->tcflow = 0;
+	NET_IPV6_HDR(pkt)->flow = 0;
+	NET_IPV6_HDR(pkt)->len[0] = 0;
+	NET_IPV6_HDR(pkt)->len[1] = NET_UDPH_LEN;
 
-	NET_IPV6_BUF(pkt)->nexthdr = IPPROTO_UDP;
-	NET_IPV6_BUF(pkt)->hop_limit = 255;
+	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_UDP;
+	NET_IPV6_HDR(pkt)->hop_limit = 255;
 
-	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src, remote_addr);
-	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, local_addr);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, remote_addr);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, local_addr);
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	NET_UDP_BUF(pkt)->src_port = htons(remote_port);
-	NET_UDP_BUF(pkt)->dst_port = htons(local_port);
+	NET_UDP_HDR(pkt)->src_port = htons(remote_port);
+	NET_UDP_HDR(pkt)->dst_port = htons(local_port);
 
 	net_pkt_set_ext_len(pkt, 0);
 
@@ -206,21 +206,21 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 			   uint16_t remote_port,
 			   uint16_t local_port)
 {
-	NET_IPV4_BUF(pkt)->vhl = 0x45;
-	NET_IPV4_BUF(pkt)->tos = 0;
-	NET_IPV4_BUF(pkt)->len[0] = 0;
-	NET_IPV4_BUF(pkt)->len[1] = NET_UDPH_LEN +
+	NET_IPV4_HDR(pkt)->vhl = 0x45;
+	NET_IPV4_HDR(pkt)->tos = 0;
+	NET_IPV4_HDR(pkt)->len[0] = 0;
+	NET_IPV4_HDR(pkt)->len[1] = NET_UDPH_LEN +
 		sizeof(struct net_ipv4_hdr);
 
-	NET_IPV4_BUF(pkt)->proto = IPPROTO_UDP;
+	NET_IPV4_HDR(pkt)->proto = IPPROTO_UDP;
 
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src, remote_addr);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, local_addr);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, remote_addr);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, local_addr);
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
-	NET_UDP_BUF(pkt)->src_port = htons(remote_port);
-	NET_UDP_BUF(pkt)->dst_port = htons(local_port);
+	NET_UDP_HDR(pkt)->src_port = htons(remote_port);
+	NET_UDP_HDR(pkt)->dst_port = htons(local_port);
 
 	net_pkt_set_ext_len(pkt, 0);
 

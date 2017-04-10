@@ -151,9 +151,9 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	net_hexdump_frags("recv", pkt);
 #endif
 
-	if (NET_ICMP_BUF(pkt)->type != expected_icmpv6) {
+	if (NET_ICMP_HDR(pkt)->type != expected_icmpv6) {
 		DBG("ICMPv6 type %d, expected %d\n",
-		    NET_ICMP_BUF(pkt)->type, expected_icmpv6);
+		    NET_ICMP_HDR(pkt)->type, expected_icmpv6);
 
 		data_failure = true;
 	}
@@ -161,9 +161,9 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	/* If we are not sending what is expected, then mark it as a failure
 	 */
 	if (msg_sending) {
-		if (msg_sending != NET_ICMP_BUF(pkt)->code) {
+		if (msg_sending != NET_ICMP_HDR(pkt)->code) {
 			DBG("Received code %d, expected %d\n",
-			    NET_ICMP_BUF(pkt)->code, msg_sending);
+			    NET_ICMP_HDR(pkt)->code, msg_sending);
 
 			data_failure = true;
 		} else {

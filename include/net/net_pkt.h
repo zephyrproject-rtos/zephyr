@@ -397,17 +397,17 @@ static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
 }
 #endif
 
-#define NET_IPV6_BUF(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
-#define NET_IPV4_BUF(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))
-#define NET_ICMP_BUF(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
-#define NET_UDP_BUF(pkt)  ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
-#define NET_TCP_BUF(pkt)  ((struct net_tcp_hdr *)(net_pkt_tcp_data(pkt)))
+#define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
+#define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))
+#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
+#define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
+#define NET_TCP_HDR(pkt)  ((struct net_tcp_hdr *)(net_pkt_tcp_data(pkt)))
 
 static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
 	net_if_ipv6_select_src_addr(net_context_get_iface(
 					    net_pkt_context(pkt)),
-				    &NET_IPV6_BUF(pkt)->src);
+				    &NET_IPV6_HDR(pkt)->src);
 }
 
 /* @endcond */

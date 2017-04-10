@@ -40,12 +40,12 @@ static inline struct net_pkt *net_udp_append_raw(struct net_pkt *pkt,
 						 uint16_t src_port,
 						 uint16_t dst_port)
 {
-	NET_UDP_BUF(pkt)->src_port = htons(src_port);
-	NET_UDP_BUF(pkt)->dst_port = htons(dst_port);
+	NET_UDP_HDR(pkt)->src_port = htons(src_port);
+	NET_UDP_HDR(pkt)->dst_port = htons(dst_port);
 
 	net_buf_add(pkt->frags, sizeof(struct net_udp_hdr));
 
-	NET_UDP_BUF(pkt)->len = htons(net_pkt_get_len(pkt) -
+	NET_UDP_HDR(pkt)->len = htons(net_pkt_get_len(pkt) -
 				      net_pkt_ip_hdr_len(pkt));
 
 	net_pkt_set_appdata(pkt, net_pkt_udp_data(pkt) +

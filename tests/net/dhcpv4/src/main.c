@@ -225,7 +225,7 @@ static void set_ipv4_header(struct net_pkt *pkt)
 	struct net_ipv4_hdr *ipv4;
 	uint16_t length;
 
-	ipv4 = NET_IPV4_BUF(pkt);
+	ipv4 = NET_IPV4_HDR(pkt);
 
 	ipv4->vhl = 0x45; /* IP version and header length */
 	ipv4->tos = 0x00;
@@ -250,7 +250,7 @@ static void set_udp_header(struct net_pkt *pkt)
 	struct net_udp_hdr *udp;
 	uint16_t length;
 
-	udp = NET_UDP_BUF(pkt);
+	udp = NET_UDP_HDR(pkt);
 	udp->src_port = htons(SERVER_PORT);
 	udp->dst_port = htons(CLIENT_PORT);
 

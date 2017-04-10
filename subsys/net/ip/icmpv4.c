@@ -37,26 +37,26 @@ static inline enum net_verdict handle_echo_request(struct net_pkt *pkt)
 	char out[sizeof("xxx.xxx.xxx.xxx")];
 
 	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
+		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 	NET_DBG("Received Echo Request from %s to %s",
-		net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src), out);
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
 #endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
-	net_ipaddr_copy(&addr, &NET_IPV4_BUF(pkt)->src);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src,
-			&NET_IPV4_BUF(pkt)->dst);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, &addr);
+	net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
+			&NET_IPV4_HDR(pkt)->dst);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
-	NET_ICMP_BUF(pkt)->type = NET_ICMPV4_ECHO_REPLY;
-	NET_ICMP_BUF(pkt)->code = 0;
-	NET_ICMP_BUF(pkt)->chksum = 0;
-	NET_ICMP_BUF(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
+	NET_ICMP_HDR(pkt)->type = NET_ICMPV4_ECHO_REPLY;
+	NET_ICMP_HDR(pkt)->code = 0;
+	NET_ICMP_HDR(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
+		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 	NET_DBG("Sending Echo Reply from %s to %s",
-		net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src), out);
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
 #endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
 	if (net_send_data(pkt) < 0) {
@@ -75,24 +75,24 @@ static inline void setup_ipv4_header(struct net_pkt *pkt, uint8_t extra_len,
 				     uint8_t ttl, uint8_t icmp_type,
 				     uint8_t icmp_code)
 {
-	NET_IPV4_BUF(pkt)->vhl = 0x45;
-	NET_IPV4_BUF(pkt)->tos = 0x00;
-	NET_IPV4_BUF(pkt)->len[0] = 0;
-	NET_IPV4_BUF(pkt)->len[1] = sizeof(struct net_ipv4_hdr) +
+	NET_IPV4_HDR(pkt)->vhl = 0x45;
+	NET_IPV4_HDR(pkt)->tos = 0x00;
+	NET_IPV4_HDR(pkt)->len[0] = 0;
+	NET_IPV4_HDR(pkt)->len[1] = sizeof(struct net_ipv4_hdr) +
 		NET_ICMPH_LEN + extra_len + NET_ICMPV4_UNUSED_LEN;
 
-	NET_IPV4_BUF(pkt)->proto = IPPROTO_ICMP;
-	NET_IPV4_BUF(pkt)->ttl = ttl;
-	NET_IPV4_BUF(pkt)->offset[0] = NET_IPV4_BUF(pkt)->offset[1] = 0;
-	NET_IPV4_BUF(pkt)->id[0] = NET_IPV4_BUF(pkt)->id[1] = 0;
+	NET_IPV4_HDR(pkt)->proto = IPPROTO_ICMP;
+	NET_IPV4_HDR(pkt)->ttl = ttl;
+	NET_IPV4_HDR(pkt)->offset[0] = NET_IPV4_HDR(pkt)->offset[1] = 0;
+	NET_IPV4_HDR(pkt)->id[0] = NET_IPV4_HDR(pkt)->id[1] = 0;
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
-	NET_IPV4_BUF(pkt)->chksum = 0;
-	NET_IPV4_BUF(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
+	NET_IPV4_HDR(pkt)->chksum = 0;
+	NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
 
-	NET_ICMP_BUF(pkt)->type = icmp_type;
-	NET_ICMP_BUF(pkt)->code = icmp_code;
+	NET_ICMP_HDR(pkt)->type = icmp_type;
+	NET_ICMP_HDR(pkt)->code = icmp_code;
 
 	memset(net_pkt_icmp_data(pkt) + sizeof(struct net_icmp_hdr), 0,
 	       NET_ICMPV4_UNUSED_LEN);
@@ -127,25 +127,25 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	setup_ipv4_header(pkt, 0, net_if_ipv4_get_ttl(iface),
 			  NET_ICMPV4_ECHO_REQUEST, 0);
 
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src, src);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, dst);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, src);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, dst);
 
-	NET_ICMPV4_ECHO_REQ_BUF(pkt)->identifier = htons(identifier);
-	NET_ICMPV4_ECHO_REQ_BUF(pkt)->sequence = htons(sequence);
+	NET_ICMPV4_ECHO_REQ(pkt)->identifier = htons(identifier);
+	NET_ICMPV4_ECHO_REQ(pkt)->sequence = htons(sequence);
 
-	NET_ICMP_BUF(pkt)->chksum = 0;
-	NET_ICMP_BUF(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
+	NET_ICMP_HDR(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
 		char out[NET_IPV4_ADDR_LEN];
 
 		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
+			 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 
 		NET_DBG("Sending ICMPv4 Echo Request type %d"
 			" from %s to %s", NET_ICMPV4_ECHO_REQUEST,
-			net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src), out);
+			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
@@ -173,8 +173,8 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	struct in_addr addr, *src, *dst;
 	int err = -EIO;
 
-	if (NET_IPV4_BUF(orig)->proto == IPPROTO_ICMP) {
-		if (NET_ICMP_BUF(orig)->code < 8) {
+	if (NET_IPV4_HDR(orig)->proto == IPPROTO_ICMP) {
+		if (NET_ICMP_HDR(orig)->code < 8) {
 			/* We must not send ICMP errors back */
 			err = -EINVAL;
 			goto drop_no_pkt;
@@ -192,10 +192,10 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	reserve = sizeof(struct net_ipv4_hdr) + sizeof(struct net_icmp_hdr) +
 		NET_ICMPV4_UNUSED_LEN;
 
-	if (NET_IPV4_BUF(orig)->proto == IPPROTO_UDP) {
+	if (NET_IPV4_HDR(orig)->proto == IPPROTO_UDP) {
 		extra_len = sizeof(struct net_ipv4_hdr) +
 			sizeof(struct net_udp_hdr);
-	} else if (NET_IPV4_BUF(orig)->proto == IPPROTO_TCP) {
+	} else if (NET_IPV4_HDR(orig)->proto == IPPROTO_TCP) {
 		extra_len = sizeof(struct net_ipv4_hdr);
 		/* FIXME, add TCP header length too */
 	} else {
@@ -212,8 +212,8 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	/* We need to remember the original location of source and destination
 	 * addresses as the net_pkt_copy() will mangle the original packet.
 	 */
-	src = &NET_IPV4_BUF(orig)->src;
-	dst = &NET_IPV4_BUF(orig)->dst;
+	src = &NET_IPV4_HDR(orig)->src;
+	dst = &NET_IPV4_HDR(orig)->dst;
 
 	/* We only copy minimal IPv4 + next header from original message.
 	 * This is so that the memory pressure is minimized.
@@ -233,26 +233,26 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 			  type, code);
 
 	net_ipaddr_copy(&addr, src);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src, dst);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, &addr);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, dst);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
 	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(orig)->addr;
 	net_pkt_ll_src(pkt)->len = net_pkt_ll_dst(orig)->len;
 	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
 	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
 
-	NET_ICMP_BUF(pkt)->chksum = 0;
-	NET_ICMP_BUF(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
+	NET_ICMP_HDR(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 
 		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
+			 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 		NET_DBG("Sending ICMPv4 Error Message type %d code %d "
 			"from %s to %s", type, code,
-			net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src), out);
+			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_ICMPV4 */
 

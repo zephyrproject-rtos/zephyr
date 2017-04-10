@@ -1085,22 +1085,22 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		if (net_pkt_family(pkt) == AF_INET6) {
 			struct in6_addr addr;
 
-			net_ipaddr_copy(&addr, &NET_IPV6_BUF(pkt)->src);
-			net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src,
-					&NET_IPV6_BUF(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, &addr);
+			net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
+			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
+					&NET_IPV6_HDR(pkt)->dst);
+			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
 		} else {
 			struct in_addr addr;
 
-			net_ipaddr_copy(&addr, &NET_IPV4_BUF(pkt)->src);
-			net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src,
-					&NET_IPV4_BUF(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, &addr);
+			net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
+			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
+					&NET_IPV4_HDR(pkt)->dst);
+			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 		}
 
-		port = NET_UDP_BUF(pkt)->src_port;
-		NET_UDP_BUF(pkt)->src_port = NET_UDP_BUF(pkt)->dst_port;
-		NET_UDP_BUF(pkt)->dst_port = port;
+		port = NET_UDP_HDR(pkt)->src_port;
+		NET_UDP_HDR(pkt)->src_port = NET_UDP_HDR(pkt)->dst_port;
+		NET_UDP_HDR(pkt)->dst_port = port;
 
 		if (net_recv_data(iface, pkt) < 0) {
 			TC_ERROR("Data receive failed.");

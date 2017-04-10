@@ -1065,10 +1065,10 @@ static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
 	char addr[NET_IPV6_ADDR_LEN];
 
 	snprintk(addr, sizeof(addr), "%s",
-		 net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));
+		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 
 	printk("Received echo reply from %s to %s\n",
-	       net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src), addr);
+	       net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), addr);
 
 	k_sem_give(&ping_timeout);
 	_remove_ipv6_ping_handler();
@@ -1124,10 +1124,10 @@ static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt)
 	char addr[NET_IPV4_ADDR_LEN];
 
 	snprintk(addr, sizeof(addr), "%s",
-		 net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
+		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 
 	printk("Received echo reply from %s to %s\n",
-	       net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src), addr);
+	       net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), addr);
 
 	k_sem_give(&ping_timeout);
 	_remove_ipv4_ping_handler();

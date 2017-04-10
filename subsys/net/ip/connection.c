@@ -48,7 +48,7 @@ static struct net_conn conns[CONFIG_NET_MAX_CONN];
  * both TCP and UDP header have these in the same location, we can check
  * them both using the UDP struct.
  */
-#define NET_CONN_BUF(pkt) ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
+#define NET_CONN_HDR(pkt) ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
 
 #if defined(CONFIG_NET_CONN_CACHE)
 
@@ -216,10 +216,10 @@ static inline int32_t get_conn(enum net_ip_protocol proto,
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
 		return check_hash(proto, family,
-				  &NET_IPV4_BUF(pkt)->src,
-				  &NET_IPV4_BUF(pkt)->dst,
-				  NET_UDP_BUF(pkt)->src_port,
-				  NET_UDP_BUF(pkt)->dst_port,
+				  &NET_IPV4_HDR(pkt)->src,
+				  &NET_IPV4_HDR(pkt)->dst,
+				  NET_UDP_HDR(pkt)->src_port,
+				  NET_UDP_HDR(pkt)->dst_port,
 				  cache_value);
 	}
 #endif
@@ -227,10 +227,10 @@ static inline int32_t get_conn(enum net_ip_protocol proto,
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		return check_hash(proto, family,
-				  &NET_IPV6_BUF(pkt)->src,
-				  &NET_IPV6_BUF(pkt)->dst,
-				  NET_UDP_BUF(pkt)->src_port,
-				  NET_UDP_BUF(pkt)->dst_port,
+				  &NET_IPV6_HDR(pkt)->src,
+				  &NET_IPV6_HDR(pkt)->dst,
+				  NET_UDP_HDR(pkt)->src_port,
+				  NET_UDP_HDR(pkt)->dst_port,
 				  cache_value);
 	}
 #endif
@@ -295,8 +295,8 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 			NET_DBG("Cache %s listener for pkt %p src port %u "
 				"dst port %u family %d cache[%d] 0x%x",
 				net_proto2str(proto), pkt,
-				ntohs(NET_CONN_BUF(pkt)->src_port),
-				ntohs(NET_CONN_BUF(pkt)->dst_port),
+				ntohs(NET_CONN_HDR(pkt)->src_port),
+				ntohs(NET_CONN_HDR(pkt)->dst_port),
 				net_pkt_family(pkt), *pos,
 				conn_cache[*pos].value);
 
@@ -570,9 +570,9 @@ static bool check_addr(struct net_pkt *pkt,
 		struct in6_addr *addr6;
 
 		if (is_remote) {
-			addr6 = &NET_IPV6_BUF(pkt)->src;
+			addr6 = &NET_IPV6_HDR(pkt)->src;
 		} else {
-			addr6 = &NET_IPV6_BUF(pkt)->dst;
+			addr6 = &NET_IPV6_HDR(pkt)->dst;
 		}
 
 		if (!net_is_ipv6_addr_unspecified(
@@ -592,9 +592,9 @@ static bool check_addr(struct net_pkt *pkt,
 		struct in_addr *addr4;
 
 		if (is_remote) {
-			addr4 = &NET_IPV4_BUF(pkt)->src;
+			addr4 = &NET_IPV4_HDR(pkt)->src;
 		} else {
-			addr4 = &NET_IPV4_BUF(pkt)->dst;
+			addr4 = &NET_IPV4_HDR(pkt)->dst;
 		}
 
 		if (net_sin(addr)->sin_addr.s_addr[0]) {
@@ -646,15 +646,15 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		uint16_t chksum;
 
 		if (proto == IPPROTO_TCP) {
-			chksum = NET_TCP_BUF(pkt)->chksum;
+			chksum = NET_TCP_HDR(pkt)->chksum;
 		} else {
-			chksum = NET_UDP_BUF(pkt)->chksum;
+			chksum = NET_UDP_HDR(pkt)->chksum;
 		}
 
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "
 			"family %d chksum 0x%04x", net_proto2str(proto), pkt,
-			ntohs(NET_CONN_BUF(pkt)->src_port),
-			ntohs(NET_CONN_BUF(pkt)->dst_port),
+			ntohs(NET_CONN_HDR(pkt)->src_port),
+			ntohs(NET_CONN_HDR(pkt)->dst_port),
 			net_pkt_family(pkt), ntohs(chksum));
 	}
 
@@ -669,14 +669,14 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 
 		if (net_sin(&conns[i].remote_addr)->sin_port) {
 			if (net_sin(&conns[i].remote_addr)->sin_port !=
-			    NET_CONN_BUF(pkt)->src_port) {
+			    NET_CONN_HDR(pkt)->src_port) {
 				continue;
 			}
 		}
 
 		if (net_sin(&conns[i].local_addr)->sin_port) {
 			if (net_sin(&conns[i].local_addr)->sin_port !=
-			    NET_CONN_BUF(pkt)->dst_port) {
+			    NET_CONN_HDR(pkt)->dst_port) {
 				continue;
 			}
 		}
@@ -749,13 +749,13 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	 * we do not send ICMP error as that makes no sense.
 	 */
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(pkt)->dst)) {
+	    net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET &&
-	    net_is_ipv4_addr_mcast(&NET_IPV4_BUF(pkt)->dst)) {
+	    net_is_ipv4_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
 		;
 	} else
 #endif

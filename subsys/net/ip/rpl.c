@@ -221,9 +221,9 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		char out[NET_IPV6_ADDR_LEN];				     \
 									     \
 		snprintk(out, sizeof(out), "%s",			     \
-			 net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));     \
+			 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));     \
 		NET_DBG("Received %s from %s to %s", req,		     \
-			net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src), out); \
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out); \
 	} while (0)
 
 #define net_rpl_dao_info(pkt, src, dst, prefix)				  \
@@ -775,13 +775,13 @@ static enum net_verdict handle_dis(struct net_pkt *pkt)
 			continue;
 		}
 
-		if (net_is_ipv6_addr_mcast(&NET_IPV6_BUF(pkt)->dst)) {
+		if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 			net_rpl_dio_reset_timer(instance);
 		} else {
 			net_rpl_dio_send(net_pkt_iface(pkt),
 					 instance,
-					 &NET_IPV6_BUF(pkt)->src,
-					 &NET_IPV6_BUF(pkt)->dst);
+					 &NET_IPV6_HDR(pkt)->src,
+					 &NET_IPV6_HDR(pkt)->dst);
 		}
 	}
 
@@ -2733,13 +2733,13 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 	dio.lifetime_unit = CONFIG_NET_RPL_DEFAULT_LIFETIME_UNIT;
 
 	nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt),
-				  &NET_IPV6_BUF(pkt)->src);
+				  &NET_IPV6_HDR(pkt)->src);
 	if (!nbr) {
 		NET_ASSERT_INFO(net_pkt_ll_src(pkt)->len,
 				"Link layer address not set");
 
 		nbr = net_ipv6_nbr_add(net_pkt_iface(pkt),
-				       &NET_IPV6_BUF(pkt)->src,
+				       &NET_IPV6_HDR(pkt)->src,
 				       net_pkt_ll_src(pkt),
 				       0,
 				       NET_IPV6_NBR_STATE_REACHABLE);
@@ -2968,7 +2968,7 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 
 	NET_ASSERT_INFO(!pos && !frag, "DIO reading failure");
 
-	net_rpl_process_dio(net_pkt_iface(pkt), &NET_IPV6_BUF(pkt)->src, &dio);
+	net_rpl_process_dio(net_pkt_iface(pkt), &NET_IPV6_HDR(pkt)->src, &dio);
 
 out:
 	return NET_DROP;
@@ -3123,14 +3123,14 @@ static inline int dao_forward(struct net_if *iface,
 	pkt->frags = orig->frags;
 	orig->frags = NULL;
 
-	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, dst);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
 
-	NET_ICMP_BUF(pkt)->chksum = 0;
-	NET_ICMP_BUF(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	NET_ICMP_HDR(pkt)->chksum = 0;
+	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
 
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
@@ -3210,8 +3210,8 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 	if (paddr) {
 		NET_DBG("%s %s", str, net_sprint_ipv6_addr(paddr));
 
-		net_ipaddr_copy(&src, &NET_IPV6_BUF(pkt)->src);
-		net_ipaddr_copy(&dst, &NET_IPV6_BUF(pkt)->dst);
+		net_ipaddr_copy(&src, &NET_IPV6_HDR(pkt)->src);
+		net_ipaddr_copy(&dst, &NET_IPV6_HDR(pkt)->dst);
 
 		r = dao_forward(dag->instance->iface, pkt, paddr);
 		if (r >= 0) {
@@ -3232,7 +3232,7 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 
 static enum net_verdict handle_dao(struct net_pkt *pkt)
 {
-	struct in6_addr *dao_sender = &NET_IPV6_BUF(pkt)->src;
+	struct in6_addr *dao_sender = &NET_IPV6_HDR(pkt)->src;
 	struct net_rpl_route_entry *extra = NULL;
 	struct net_rpl_parent *parent = NULL;
 	enum net_rpl_route_source learned_from;
@@ -3547,7 +3547,7 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 
 	NET_DBG("Received a DAO ACK with seq number %d(%d) status %d from %s",
 		sequence, rpl_dao_sequence, status,
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src));
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
 
 	if (sequence == rpl_dao_sequence) {
 		NET_DBG("Status %s", status < 128 ? "ACK" : "NACK");
@@ -3609,7 +3609,7 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 	uint8_t opt;
 	uint8_t len;
 
-	if (NET_IPV6_BUF(pkt)->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
+	if (NET_IPV6_HDR(pkt)->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
 		return 0;
 	}
 
@@ -3713,7 +3713,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 		NET_DBG("Forward error!");
 
 		route = net_route_lookup(net_pkt_iface(pkt),
-					 &NET_IPV6_BUF(pkt)->dst);
+					 &NET_IPV6_HDR(pkt)->dst);
 		if (route) {
 			net_route_del(route);
 		}
@@ -3790,7 +3790,7 @@ static inline int add_rpl_opt(struct net_pkt *pkt, uint16_t offset)
 	net_pkt_set_ipv6_hdr_prev(pkt, offset);
 
 	ret = net_pkt_insert_u8(pkt, pkt->frags, offset++,
-				NET_IPV6_BUF(pkt)->nexthdr);
+				NET_IPV6_HDR(pkt)->nexthdr);
 	if (!ret) {
 		return -EINVAL;
 	}
@@ -3834,7 +3834,7 @@ static inline int add_rpl_opt(struct net_pkt *pkt, uint16_t offset)
 		return -EINVAL;
 	}
 
-	NET_IPV6_BUF(pkt)->nexthdr = NET_IPV6_NEXTHDR_HBHO;
+	NET_IPV6_HDR(pkt)->nexthdr = NET_IPV6_NEXTHDR_HBHO;
 
 	net_pkt_set_ext_len(pkt, ext_len + NET_RPL_HOP_BY_HOP_LEN);
 
@@ -3844,7 +3844,7 @@ static inline int add_rpl_opt(struct net_pkt *pkt, uint16_t offset)
 static int net_rpl_update_header_empty(struct net_pkt *pkt)
 {
 	uint16_t offset = sizeof(struct net_ipv6_hdr);
-	uint8_t next = NET_IPV6_BUF(pkt)->nexthdr;
+	uint8_t next = NET_IPV6_HDR(pkt)->nexthdr;
 	struct net_buf *frag = pkt->frags;
 	struct net_rpl_instance *instance;
 	struct net_rpl_parent *parent;
@@ -3927,7 +3927,7 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 
 	offset -= 2; /* move back to flags */
 
-	route = net_route_lookup(net_pkt_iface(pkt), &NET_IPV6_BUF(pkt)->dst);
+	route = net_route_lookup(net_pkt_iface(pkt), &NET_IPV6_HDR(pkt)->dst);
 
 	/*
 	 * Check the direction of the down flag, as per
@@ -3959,7 +3959,7 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 			if (parent) {
 				net_rpl_dao_send(net_pkt_iface(pkt),
 						 parent,
-						 &NET_IPV6_BUF(pkt)->dst,
+						 &NET_IPV6_HDR(pkt)->dst,
 						 NET_RPL_ZERO_LIFETIME);
 			}
 
@@ -4059,7 +4059,7 @@ int net_rpl_insert_header(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
 	if (rpl_default_instance &&
-	    !net_is_ipv6_addr_mcast(&NET_IPV6_BUF(pkt)->dst)) {
+	    !net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		return net_rpl_update_header_empty(pkt);
 	}
 #endif

@@ -93,7 +93,7 @@ static void net_test_iface_init(struct net_if *iface)
 
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_icmp_hdr *icmp = NET_ICMP_BUF(pkt);
+	struct net_icmp_hdr *icmp = NET_ICMP_HDR(pkt);
 
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
@@ -302,7 +302,7 @@ static void send_query(struct net_if *iface)
 				  iface,
 				  NET_IPV6_NEXTHDR_HBHO);
 
-	NET_IPV6_BUF(pkt)->hop_limit = 1; /* RFC 3810 ch 7.4 */
+	NET_IPV6_HDR(pkt)->hop_limit = 1; /* RFC 3810 ch 7.4 */
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
 	net_pkt_append_u8(pkt, IPPROTO_ICMPV6);

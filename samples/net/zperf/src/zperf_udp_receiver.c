@@ -42,18 +42,18 @@ static inline void set_dst_addr(sa_family_t family,
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-				&NET_IPV6_BUF(pkt)->src);
+				&NET_IPV6_HDR(pkt)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
-		net_sin6(dst_addr)->sin6_port = NET_UDP_BUF(pkt)->src_port;
+		net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(pkt)->src_port;
 	}
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
 		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
-				&NET_IPV4_BUF(pkt)->src);
+				&NET_IPV4_HDR(pkt)->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
-		net_sin(dst_addr)->sin_port = NET_UDP_BUF(pkt)->src_port;
+		net_sin(dst_addr)->sin_port = NET_UDP_HDR(pkt)->src_port;
 	}
 #endif /* CONFIG_NET_IPV4 */
 }

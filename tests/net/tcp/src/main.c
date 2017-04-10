@@ -127,21 +127,21 @@ static void v6_send_syn_ack(struct net_if *iface, struct net_pkt *req)
 		return;
 	}
 
-	DBG("1) rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_BUF(rsp)->src),
-	    ntohs(NET_TCP_BUF(rsp)->src_port));
-	DBG("1) rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_BUF(rsp)->dst),
-	    ntohs(NET_TCP_BUF(rsp)->dst_port));
+	DBG("1) rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->src),
+	    ntohs(NET_TCP_HDR(rsp)->src_port));
+	DBG("1) rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->dst),
+	    ntohs(NET_TCP_HDR(rsp)->dst_port));
 
-	net_ipaddr_copy(&NET_IPV6_BUF(rsp)->src, &NET_IPV6_BUF(req)->dst);
-	net_ipaddr_copy(&NET_IPV6_BUF(rsp)->dst, &NET_IPV6_BUF(req)->src);
+	net_ipaddr_copy(&NET_IPV6_HDR(rsp)->src, &NET_IPV6_HDR(req)->dst);
+	net_ipaddr_copy(&NET_IPV6_HDR(rsp)->dst, &NET_IPV6_HDR(req)->src);
 
-	NET_TCP_BUF(rsp)->src_port = NET_TCP_BUF(req)->dst_port;
-	NET_TCP_BUF(rsp)->dst_port = NET_TCP_BUF(req)->src_port;
+	NET_TCP_HDR(rsp)->src_port = NET_TCP_HDR(req)->dst_port;
+	NET_TCP_HDR(rsp)->dst_port = NET_TCP_HDR(req)->src_port;
 
-	DBG("rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_BUF(rsp)->src),
-	    ntohs(NET_TCP_BUF(rsp)->src_port));
-	DBG("rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_BUF(rsp)->dst),
-	    ntohs(NET_TCP_BUF(rsp)->dst_port));
+	DBG("rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->src),
+	    ntohs(NET_TCP_HDR(rsp)->src_port));
+	DBG("rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->dst),
+	    ntohs(NET_TCP_HDR(rsp)->dst_port));
 
 	net_hexdump_frags("request TCPv6", req);
 	net_hexdump_frags("reply   TCPv6", rsp);
@@ -260,22 +260,22 @@ static void setup_ipv6_tcp(struct net_pkt *pkt,
 			   uint16_t remote_port,
 			   uint16_t local_port)
 {
-	NET_IPV6_BUF(pkt)->vtc = 0x60;
-	NET_IPV6_BUF(pkt)->tcflow = 0;
-	NET_IPV6_BUF(pkt)->flow = 0;
-	NET_IPV6_BUF(pkt)->len[0] = 0;
-	NET_IPV6_BUF(pkt)->len[1] = NET_TCPH_LEN;
+	NET_IPV6_HDR(pkt)->vtc = 0x60;
+	NET_IPV6_HDR(pkt)->tcflow = 0;
+	NET_IPV6_HDR(pkt)->flow = 0;
+	NET_IPV6_HDR(pkt)->len[0] = 0;
+	NET_IPV6_HDR(pkt)->len[1] = NET_TCPH_LEN;
 
-	NET_IPV6_BUF(pkt)->nexthdr = IPPROTO_TCP;
-	NET_IPV6_BUF(pkt)->hop_limit = 255;
+	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_TCP;
+	NET_IPV6_HDR(pkt)->hop_limit = 255;
 
-	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->src, remote_addr);
-	net_ipaddr_copy(&NET_IPV6_BUF(pkt)->dst, local_addr);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, remote_addr);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, local_addr);
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	NET_TCP_BUF(pkt)->src_port = htons(remote_port);
-	NET_TCP_BUF(pkt)->dst_port = htons(local_port);
+	NET_TCP_HDR(pkt)->src_port = htons(remote_port);
+	NET_TCP_HDR(pkt)->dst_port = htons(local_port);
 
 	net_pkt_set_ext_len(pkt, 0);
 
@@ -289,21 +289,21 @@ static void setup_ipv4_tcp(struct net_pkt *pkt,
 			   uint16_t remote_port,
 			   uint16_t local_port)
 {
-	NET_IPV4_BUF(pkt)->vhl = 0x45;
-	NET_IPV4_BUF(pkt)->tos = 0;
-	NET_IPV4_BUF(pkt)->len[0] = 0;
-	NET_IPV4_BUF(pkt)->len[1] = NET_TCPH_LEN +
+	NET_IPV4_HDR(pkt)->vhl = 0x45;
+	NET_IPV4_HDR(pkt)->tos = 0;
+	NET_IPV4_HDR(pkt)->len[0] = 0;
+	NET_IPV4_HDR(pkt)->len[1] = NET_TCPH_LEN +
 		sizeof(struct net_ipv4_hdr);
 
-	NET_IPV4_BUF(pkt)->proto = IPPROTO_TCP;
+	NET_IPV4_HDR(pkt)->proto = IPPROTO_TCP;
 
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->src, remote_addr);
-	net_ipaddr_copy(&NET_IPV4_BUF(pkt)->dst, local_addr);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, remote_addr);
+	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, local_addr);
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
-	NET_TCP_BUF(pkt)->src_port = htons(remote_port);
-	NET_TCP_BUF(pkt)->dst_port = htons(local_port);
+	NET_TCP_HDR(pkt)->src_port = htons(remote_port);
+	NET_TCP_HDR(pkt)->dst_port = htons(local_port);
 
 	net_pkt_set_ext_len(pkt, 0);
 
@@ -681,35 +681,35 @@ static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 				      const struct in6_addr *expected_dst_addr,
 				      uint16_t expected_dst_port)
 {
-	if (!net_ipv6_addr_cmp(&NET_IPV6_BUF(pkt)->src,
+	if (!net_ipv6_addr_cmp(&NET_IPV6_HDR(pkt)->src,
 			       &my_v6_addr.sin6_addr)) {
 		printk("%s: IPv6 source address mismatch, should be %s ",
 		       test_str,
 		       net_sprint_ipv6_addr(&my_v6_addr.sin6_addr));
 		printk("was %s\n",
-		       net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->src));
+		       net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
 		return false;
 	}
 
-	if (NET_TCP_BUF(pkt)->src_port != my_v6_addr.sin6_port) {
+	if (NET_TCP_HDR(pkt)->src_port != my_v6_addr.sin6_port) {
 		printk("%s: IPv6 source port mismatch, %d vs %d\n",
-		       test_str, ntohs(NET_TCP_BUF(pkt)->src_port),
+		       test_str, ntohs(NET_TCP_HDR(pkt)->src_port),
 		       ntohs(my_v6_addr.sin6_port));
 		return false;
 	}
 
-	if (!net_ipv6_addr_cmp(expected_dst_addr, &NET_IPV6_BUF(pkt)->dst)) {
+	if (!net_ipv6_addr_cmp(expected_dst_addr, &NET_IPV6_HDR(pkt)->dst)) {
 		printk("%s: IPv6 destination address mismatch, should be %s ",
 		       test_str,
 		       net_sprint_ipv6_addr(expected_dst_addr));
 		printk("was %s\n",
-		       net_sprint_ipv6_addr(&NET_IPV6_BUF(pkt)->dst));
+		       net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 		return false;
 	}
 
-	if (NET_TCP_BUF(pkt)->dst_port != htons(expected_dst_port)) {
+	if (NET_TCP_HDR(pkt)->dst_port != htons(expected_dst_port)) {
 		printk("%s: IPv6 destination port mismatch, %d vs %d\n",
-		       test_str, ntohs(NET_TCP_BUF(pkt)->dst_port),
+		       test_str, ntohs(NET_TCP_HDR(pkt)->dst_port),
 		       expected_dst_port);
 		return false;
 	}
@@ -721,35 +721,35 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 				      const struct in_addr *expected_dst_addr,
 				      uint16_t expected_dst_port)
 {
-	if (!net_ipv4_addr_cmp(&NET_IPV4_BUF(pkt)->src,
+	if (!net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->src,
 			       &my_v4_addr.sin_addr)) {
 		printk("%s: IPv4 source address mismatch, should be %s ",
 		       test_str,
 		       net_sprint_ipv4_addr(&my_v4_addr.sin_addr));
 		printk("was %s\n",
-		       net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->src));
+		       net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
 		return false;
 	}
 
-	if (NET_TCP_BUF(pkt)->src_port != my_v4_addr.sin_port) {
+	if (NET_TCP_HDR(pkt)->src_port != my_v4_addr.sin_port) {
 		printk("%s: IPv4 source port mismatch, %d vs %d\n",
-		       test_str, ntohs(NET_TCP_BUF(pkt)->src_port),
+		       test_str, ntohs(NET_TCP_HDR(pkt)->src_port),
 		       ntohs(my_v4_addr.sin_port));
 		return false;
 	}
 
-	if (!net_ipv4_addr_cmp(expected_dst_addr, &NET_IPV4_BUF(pkt)->dst)) {
+	if (!net_ipv4_addr_cmp(expected_dst_addr, &NET_IPV4_HDR(pkt)->dst)) {
 		printk("%s: IPv4 destination address mismatch, should be %s ",
 		       test_str,
 		       net_sprint_ipv4_addr(expected_dst_addr));
 		printk("was %s\n",
-		       net_sprint_ipv4_addr(&NET_IPV4_BUF(pkt)->dst));
+		       net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 		return false;
 	}
 
-	if (NET_TCP_BUF(pkt)->dst_port != htons(expected_dst_port)) {
+	if (NET_TCP_HDR(pkt)->dst_port != htons(expected_dst_port)) {
 		printk("%s: IPv4 destination port mismatch, %d vs %d\n",
-		       test_str, ntohs(NET_TCP_BUF(pkt)->dst_port),
+		       test_str, ntohs(NET_TCP_HDR(pkt)->dst_port),
 		       expected_dst_port);
 		return false;
 	}
@@ -1024,10 +1024,10 @@ static bool test_v6_seq_check(void)
 
 	net_hexdump_frags("TCPv6", pkt);
 
-	seq = NET_TCP_BUF(pkt)->seq[0] << 24 |
-		NET_TCP_BUF(pkt)->seq[1] << 16 |
-		NET_TCP_BUF(pkt)->seq[2] << 8 |
-		NET_TCP_BUF(pkt)->seq[3];
+	seq = NET_TCP_HDR(pkt)->seq[0] << 24 |
+		NET_TCP_HDR(pkt)->seq[1] << 16 |
+		NET_TCP_HDR(pkt)->seq[2] << 8 |
+		NET_TCP_HDR(pkt)->seq[3];
 	if (seq != (tcp->send_seq - 1)) {
 		printk("Seq does not match (%u vs %u)\n",
 		       seq + 1, tcp->send_seq);
@@ -1056,10 +1056,10 @@ static bool test_v4_seq_check(void)
 
 	net_hexdump_frags("TCPv4", pkt);
 
-	seq = NET_TCP_BUF(pkt)->seq[0] << 24 |
-		NET_TCP_BUF(pkt)->seq[1] << 16 |
-		NET_TCP_BUF(pkt)->seq[2] << 8 |
-		NET_TCP_BUF(pkt)->seq[3];
+	seq = NET_TCP_HDR(pkt)->seq[0] << 24 |
+		NET_TCP_HDR(pkt)->seq[1] << 16 |
+		NET_TCP_HDR(pkt)->seq[2] << 8 |
+		NET_TCP_HDR(pkt)->seq[3];
 	if (seq != (tcp->send_seq - 1)) {
 		printk("Seq does not match (%u vs %u)\n",
 		       seq + 1, tcp->send_seq);
