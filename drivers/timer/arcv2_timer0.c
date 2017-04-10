@@ -451,6 +451,6 @@ void sys_clock_disable(void)
 
 	/* disable interrupt in the interrupt controller */
 
-	irq_disable(CONFIG_ARCV2_TIMER0_INT_LVL);
+	irq_disable(ARCV2_TIMER0_INT_LVL);
 }
 #endif /* CONFIG_SYSTEM_CLOCK_DISABLE */
