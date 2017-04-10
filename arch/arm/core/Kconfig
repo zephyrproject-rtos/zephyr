@@ -20,6 +20,7 @@ config CPU_CORTEX_M
 	select CPU_CORTEX
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select HAS_CMSIS
+	select HAS_FLASH_LOAD_OFFSET
 	help
 	This option signifies the use of a CPU of the Cortex-M family.
 

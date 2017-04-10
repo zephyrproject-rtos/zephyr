@@ -9,6 +9,23 @@
 menu "Compile and Link Features"
 
 menu "Linker Options"
+config HAS_FLASH_LOAD_OFFSET
+	bool
+	help
+	This option is selected by targets having a FLASH_LOAD_OFFSET.
+
+config FLASH_LOAD_OFFSET
+	hex "Kernel load offset"
+	default 0
+	depends on HAS_FLASH_LOAD_OFFSET
+	help
+	This option specifies the byte offset from the beginning of flash that
+	the kernel should be loaded into. Changing this value from zero will
+	affect the Zephyr image's link, and will decrease the total amount of
+	flash available for use by application code.
+
+	If unsure, leave at the default value 0.
+
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
 	default 0
