@@ -872,7 +872,7 @@ static int le_conn_param_req(struct net_buf *buf)
 
 	if (!le_param_req(conn, &param)) {
 		err = le_conn_param_neg_reply(handle,
-					      BT_HCI_ERR_INVALID_LL_PARAMS);
+					      BT_HCI_ERR_INVALID_LL_PARAM);
 	} else {
 		err = le_conn_param_req_reply(handle, &param);
 	}
@@ -1393,14 +1393,14 @@ static void io_capa_resp(struct net_buf *buf)
 	if (evt->authentication > BT_HCI_GENERAL_BONDING_MITM) {
 		BT_ERR("Invalid remote authentication requirements");
 		io_capa_neg_reply(&evt->bdaddr,
-				  BT_HCI_ERR_UNSUPP_FEATURE_PARAMS_VAL);
+				  BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 		return;
 	}
 
 	if (evt->capability > BT_IO_NO_INPUT_OUTPUT) {
 		BT_ERR("Invalid remote io capability requirements");
 		io_capa_neg_reply(&evt->bdaddr,
-				  BT_HCI_ERR_UNSUPP_FEATURE_PARAMS_VAL);
+				  BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 		return;
 	}
 
@@ -2374,11 +2374,11 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 			 uint8_t filter_dup)
 {
 	struct net_buf *buf, *rsp;
-	struct bt_hci_cp_le_set_scan_params *set_param;
+	struct bt_hci_cp_le_set_scan_param *set_param;
 	struct bt_hci_cp_le_set_scan_enable *scan_enable;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS,
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAM,
 				sizeof(*set_param));
 	if (!buf) {
 		return -ENOBUFS;
@@ -2419,7 +2419,7 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 		}
 	}
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAM, buf);
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
 				sizeof(*scan_enable));
 	if (!buf) {
@@ -3900,7 +3900,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		}
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(*set_param));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM,
+				sizeof(*set_param));
 	if (!buf) {
 		return -ENOBUFS;
 	}

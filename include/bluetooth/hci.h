@@ -96,15 +96,15 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_MEM_CAPACITY_EXCEEDED        0x07
 #define BT_HCI_ERR_CMD_DISALLOWED               0x0c
 #define BT_HCI_ERR_INSUFFICIENT_RESOURCES       0x0d
-#define BT_HCI_ERR_UNSUPP_FEATURE_PARAMS_VAL    0x11
-#define BT_HCI_ERR_INVALID_PARAMS               0x12
+#define BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL     0x11
+#define BT_HCI_ERR_INVALID_PARAM                0x12
 #define BT_HCI_ERR_REMOTE_USER_TERM_CONN        0x13
 #define BT_HCI_ERR_PAIRING_NOT_ALLOWED          0x18
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE        0x1a
-#define BT_HCI_ERR_INVALID_LL_PARAMS            0x1e
+#define BT_HCI_ERR_INVALID_LL_PARAM             0x1e
 #define BT_HCI_ERR_UNSPECIFIED                  0x1f
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
-#define BT_HCI_ERR_UNACCEPT_CONN_PARAMS         0x3b
+#define BT_HCI_ERR_UNACCEPT_CONN_PARAM          0x3b
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
@@ -640,8 +640,8 @@ struct bt_hci_cp_le_set_adv_param {
 	uint8_t      filter_policy;
 } __packed;
 
-#define BT_HCI_OP_LE_READ_ADV_CH_TX_POWER       BT_OP(BT_OGF_LE, 0x0007)
-struct bt_hci_rp_le_read_ch_tx_power {
+#define BT_HCI_OP_LE_READ_ADV_CHAN_TX_POWER     BT_OP(BT_OGF_LE, 0x0007)
+struct bt_hci_rp_le_read_chan_tx_power {
 	uint8_t  status;
 	int8_t   tx_power_level;
 } __packed;
@@ -667,11 +667,11 @@ struct bt_hci_cp_le_set_adv_enable {
 } __packed;
 
 /* Scan types */
-#define BT_HCI_OP_LE_SET_SCAN_PARAMS            BT_OP(BT_OGF_LE, 0x000b)
+#define BT_HCI_OP_LE_SET_SCAN_PARAM             BT_OP(BT_OGF_LE, 0x000b)
 #define BT_HCI_LE_SCAN_PASSIVE                  0x00
 #define BT_HCI_LE_SCAN_ACTIVE                   0x01
 
-struct bt_hci_cp_le_set_scan_params {
+struct bt_hci_cp_le_set_scan_param {
 	uint8_t  scan_type;
 	uint16_t interval;
 	uint16_t window;
@@ -738,13 +738,13 @@ struct hci_cp_le_conn_update {
 	uint16_t max_ce_len;
 } __packed;
 
-#define BT_HCI_OP_LE_SET_HOST_CH_CLASSIF        BT_OP(BT_OGF_LE, 0x0014)
-struct bt_hci_cp_le_set_host_ch_classif {
+#define BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF      BT_OP(BT_OGF_LE, 0x0014)
+struct bt_hci_cp_le_set_host_chan_classif {
 	uint8_t  ch_map[5];
 } __packed;
 
-#define BT_HCI_OP_LE_READ_CH_MAP                BT_OP(BT_OGF_LE, 0x0015)
-struct bt_hci_cp_le_read_ch_map {
+#define BT_HCI_OP_LE_READ_CHAN_MAP              BT_OP(BT_OGF_LE, 0x0015)
+struct bt_hci_cp_le_read_chan_map {
 	uint16_t handle;
 } __packed;
 struct bt_hci_rp_le_read_ch_map {
@@ -1019,8 +1019,8 @@ struct bt_hci_cp_le_set_adv_set_random_addr {
 #define BT_HCI_LE_ADV_PROP_ANON                 BIT(5)
 #define BT_HCI_LE_ADV_PROP_TX_POWER             BIT(6)
 
-#define BT_HCI_OP_LE_SET_EXT_ADV_PARAMS         BT_OP(BT_OGF_LE, 0x0036)
-struct bt_hci_cp_le_set_ext_adv_params {
+#define BT_HCI_OP_LE_SET_EXT_ADV_PARAM          BT_OP(BT_OGF_LE, 0x0036)
+struct bt_hci_cp_le_set_ext_adv_param {
 	uint8_t      handle;
 	uint16_t     props;
 	uint8_t      prim_min_interval[3];
@@ -1100,8 +1100,8 @@ struct bt_hci_cp_le_remove_adv_set {
 
 #define BT_HCI_OP_CLEAR_ADV_SETS                BT_OP(BT_OGF_LE, 0x003d)
 
-#define BT_HCI_OP_LE_SET_PER_ADV_PARAMS         BT_OP(BT_OGF_LE, 0x003e)
-struct bt_hci_cp_le_set_per_adv_params {
+#define BT_HCI_OP_LE_SET_PER_ADV_PARAM          BT_OP(BT_OGF_LE, 0x003e)
+struct bt_hci_cp_le_set_per_adv_param {
 	uint8_t  handle;
 	uint16_t min_interval;
 	uint16_t max_interval;
@@ -1122,7 +1122,7 @@ struct bt_hci_cp_le_set_per_adv_enable {
 	uint8_t  handle;
 } __packed;
 
-#define BT_HCI_OP_LE_SET_EXT_SCAN_PARAMS        BT_OP(BT_OGF_LE, 0x0041)
+#define BT_HCI_OP_LE_SET_EXT_SCAN_PARAM         BT_OP(BT_OGF_LE, 0x0041)
 struct bt_hci_ext_scan_phy {
 	uint8_t  type;
 	uint16_t interval;
@@ -1133,7 +1133,7 @@ struct bt_hci_ext_scan_phy {
 #define BT_HCI_LE_EXT_SCAN_PHY_2M               BIT(1)
 #define BT_HCI_LE_EXT_SCAN_PHY_CODED            BIT(2)
 
-struct bt_hci_cp_le_set_ext_scan_params {
+struct bt_hci_cp_le_set_ext_scan_param {
 	uint8_t  own_addr_type;
 	uint8_t  filter_policy;
 	uint8_t  phys;

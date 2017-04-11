@@ -370,9 +370,9 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = 0x00;
 }
 
-static void le_read_adv_ch_tx_power(struct net_buf *buf, struct net_buf **evt)
+static void le_read_adv_chan_tx_power(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_rp_le_read_ch_tx_power *rp;
+	struct bt_hci_rp_le_read_chan_tx_power *rp;
 
 	rp = cmd_complete(evt, sizeof(*rp));
 
@@ -415,9 +415,9 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_set_scan_params(struct net_buf *buf, struct net_buf **evt)
+static void le_set_scan_param(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_cp_le_set_scan_params *cmd = (void *)buf->data;
+	struct bt_hci_cp_le_set_scan_param *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	uint16_t interval;
 	uint16_t window;
@@ -557,9 +557,9 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
 
-static void le_set_host_ch_classif(struct net_buf *buf, struct net_buf **evt)
+static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_cp_le_set_host_ch_classif *cmd = (void *)buf->data;
+	struct bt_hci_cp_le_set_host_chan_classif *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
@@ -740,7 +740,7 @@ static void le_write_default_data_len(struct net_buf *buf,
 	status = ll_length_default_set(cmd->max_tx_octets, cmd->max_tx_time);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_INVALID_LL_PARAMS;
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_INVALID_LL_PARAM;
 }
 
 static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
@@ -779,8 +779,8 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_set_adv_param(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_READ_ADV_CH_TX_POWER):
-		le_read_adv_ch_tx_power(cmd, evt);
+	case BT_OCF(BT_HCI_OP_LE_READ_ADV_CHAN_TX_POWER):
+		le_read_adv_chan_tx_power(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_DATA):
@@ -795,8 +795,8 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_set_adv_enable(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_PARAMS):
-		le_set_scan_params(cmd, evt);
+	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_PARAM):
+		le_set_scan_param(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_ENABLE):
@@ -831,8 +831,8 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_conn_update(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CH_CLASSIF):
-		le_set_host_ch_classif(cmd, evt);
+	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF):
+		le_set_host_chan_classif(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
