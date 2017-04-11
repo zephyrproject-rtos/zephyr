@@ -113,6 +113,10 @@ static enum net_rpl_mode rpl_mode = NET_RPL_MODE_MESH;
 static net_rpl_join_callback_t rpl_join_callback;
 static uint8_t rpl_dao_sequence;
 
+#if NET_RPL_MULTICAST
+static void send_mcast_dao(struct net_rpl_instance *instance);
+#endif
+
 #if defined(CONFIG_NET_RPL_DIS_SEND)
 /* DODAG Information Solicitation timer. */
 struct k_delayed_work dis_timer;
@@ -1132,12 +1136,10 @@ static void route_mcast_rm_cb(struct net_route_entry_mcast *route,
 			      void *user_data)
 {
 	struct net_rpl_dag *dag = user_data;
-	struct net_rpl_route_entry *extra;
-
-	extra = net_nbr_extra_data(net_route_get_nbr(entry));
+	struct net_rpl_route_entry *extra = route->data;
 
 	if (extra->dag == dag) {
-		net_route_mcast_del(route)
+		net_route_mcast_del(route);
 	}
 }
 #endif
@@ -1147,7 +1149,7 @@ static void net_rpl_remove_routes(struct net_rpl_dag *dag)
 	net_route_foreach(route_rm_cb, dag);
 
 #if NET_RPL_MULTICAST
-	net_route_mcast_foreach(route_mcast_rm_cb, dag);
+	net_route_mcast_foreach(route_mcast_rm_cb, NULL, dag);
 #endif
 }
 
@@ -2128,28 +2130,27 @@ static void global_repair(struct net_if *iface,
 	} while (0)
 
 #if NET_RPL_MULTICAST
-static void send_mcast_dao(struct net_route_entry_mcast *route,
-			   void *user_data)
+static void send_mcast_dao_cb(struct net_route_entry_mcast *route,
+			      void *user_data)
 {
 	struct net_rpl_instance *instance = user_data;
 
 	/* Don't send if it's also our own address, done that already */
 	if (!net_route_mcast_lookup(&route->group)) {
-		net_rpl_dao_send(instance->current_dag->preferred_parent,
+		net_rpl_dao_send(instance->iface,
+				 instance->current_dag->preferred_parent,
 				 &route->group,
 				 CONFIG_NET_RPL_MCAST_LIFETIME);
 	}
 }
 
-static inline void send_mcast_dao(struct net_rpl_instance *instance)
+static void send_mcast_dao(struct net_rpl_instance *instance)
 {
-	uip_mcast6_route_t *mcast_route;
+	struct in6_addr *addr = NULL;
 	uint8_t i;
 
 	/* Send a DAO for own multicast addresses */
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		struct in6_addr *addr;
-
 		addr = &instance->iface->ipv6.mcast[i].address.in6_addr;
 
 		if (instance->iface->ipv6.mcast[i].is_used &&
@@ -2163,7 +2164,7 @@ static inline void send_mcast_dao(struct net_rpl_instance *instance)
 	}
 
 	/* Iterate over multicast routes and send DAOs */
-	net_route_mcast_foreach(send_mcast_dao, addr, instance);
+	net_route_mcast_foreach(send_mcast_dao_cb, addr, instance);
 }
 #endif
 
