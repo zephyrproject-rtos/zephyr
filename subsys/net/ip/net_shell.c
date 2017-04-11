@@ -310,7 +310,7 @@ static void route_mcast_cb(struct net_route_entry_mcast *entry,
 	printk("========================================================\n");
 
 	printk("IPv6 group : %s\n", net_sprint_ipv6_addr(&entry->group));
-	printk("Lifetime   : %lu\n", entry->lifetime);
+	printk("Lifetime   : %u\n", entry->lifetime);
 }
 
 static void iface_per_mcast_route_cb(struct net_if *iface, void *user_data)
