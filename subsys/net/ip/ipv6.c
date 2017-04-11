@@ -477,7 +477,13 @@ struct net_buf *net_ipv6_create_raw(struct net_buf *buf,
 	NET_IPV6_BUF(buf)->flow = 0;
 
 	NET_IPV6_BUF(buf)->nexthdr = 0;
-	NET_IPV6_BUF(buf)->hop_limit = net_if_ipv6_get_hop_limit(iface);
+
+	/* User can tweak the default hop limit if needed */
+	NET_IPV6_BUF(buf)->hop_limit = net_nbuf_ipv6_hop_limit(buf);
+	if (NET_IPV6_BUF(buf)->hop_limit == 0) {
+		NET_IPV6_BUF(buf)->hop_limit =
+					net_if_ipv6_get_hop_limit(iface);
+	}
 
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, dst);
 	net_ipaddr_copy(&NET_IPV6_BUF(buf)->src, src);

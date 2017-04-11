@@ -814,7 +814,8 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 bool net_if_ipv6_router_rm(struct net_if_router *router);
 
 /**
- * @brief Get IPv6 hop limit specified for a given interface
+ * @brief Get IPv6 hop limit specified for a given interface. This is the
+ * default value but can be overridden by the user.
  *
  * @param iface Network interface
  *
@@ -826,7 +827,7 @@ static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 }
 
 /**
- * @brief Set IPv6 hop limit of a given interface
+ * @brief Set the default IPv6 hop limit of a given interface.
  *
  * @param iface Network interface
  * @param hop_limit New hop limit

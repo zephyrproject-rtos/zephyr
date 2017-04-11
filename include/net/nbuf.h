@@ -81,6 +81,9 @@ struct net_nbuf {
 	 * adds IPv6 extension headers to the network packet.
 	 */
 	uint16_t ipv6_prev_hdr_start;
+
+	/* IPv6 hop limit for this network packet. */
+	uint8_t ipv6_hop_limit;
 #endif
 
 	uint8_t ll_reserve;	/* link layer header length */
@@ -373,6 +376,19 @@ static inline void net_nbuf_set_ipv6_hdr_prev(struct net_buf *buf,
 {
 	((struct net_nbuf *)
 	 net_buf_user_data(buf))->ipv6_prev_hdr_start = offset;
+}
+
+static inline uint8_t net_nbuf_ipv6_hop_limit(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_hop_limit;
+}
+
+static inline void net_nbuf_set_ipv6_hop_limit(struct net_buf *buf,
+					       uint8_t hop_limit)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_hop_limit = hop_limit;
 }
 #endif
 
