@@ -652,8 +652,6 @@ static bool run_tests(void)
 		break;
 	}
 
-	net_nbuf_unref(buf2);
-
 	/* Yielding so that network interface TX thread can proceed. */
 	k_yield();
 
