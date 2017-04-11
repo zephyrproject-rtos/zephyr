@@ -79,7 +79,7 @@ KBUILD_CPPFLAGS += -I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
                    -D'__builtin_unreachable()=while(1);'
 
 # xt-xcc does not support -Og, replace with -O0
-KBUILD_CFLAGS:=$(patsubst -Og,-O0,${KBUILD_CFLAGS})
+KBUILD_CFLAGS_OPTIMIZE:=$(patsubst -Og,-O0,${KBUILD_CFLAGS_OPTIMIZE})
 KBUILD_CXXFLAGS:=$(filter-out \
 			-std=c++11 \
 			-fno-reorder-functions \
