@@ -243,45 +243,6 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
-struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
-				 struct in6_addr *addr,
-				 struct net_linkaddr *lladdr,
-				 bool is_router,
-				 enum net_ipv6_nbr_state state)
-{
-	struct net_nbr *nbr = net_nbr_get(&net_neighbor.table);
-
-	if (!nbr) {
-		return NULL;
-	}
-
-	if (net_nbr_link(nbr, iface, lladdr)) {
-		nbr_free(nbr);
-		return NULL;
-	}
-
-	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
-	ipv6_nbr_set_state(nbr, state);
-	net_ipv6_nbr_data(nbr)->is_router = is_router;
-
-	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s",
-		nbr->idx, nbr, state, is_router,
-		net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(lladdr->addr, lladdr->len));
-
-	return nbr;
-}
-
-static inline struct net_nbr *nbr_add(struct net_buf *buf,
-				      struct in6_addr *addr,
-				      struct net_linkaddr *lladdr,
-				      bool is_router,
-				      enum net_ipv6_nbr_state state)
-{
-	return net_ipv6_nbr_add(net_nbuf_iface(buf), addr, lladdr,
-				is_router, state);
-}
-
 #define NS_REPLY_TIMEOUT MSEC_PER_SEC
 
 static void ns_reply_timeout(struct k_work *work)
@@ -319,6 +280,63 @@ static void ns_reply_timeout(struct k_work *work)
 	net_nbr_unref(nbr);
 }
 
+static void nbr_init(struct net_nbr *nbr, struct net_if *iface,
+		     struct in6_addr *addr, bool is_router,
+		     enum net_ipv6_nbr_state state)
+{
+	nbr->idx = NET_NBR_LLADDR_UNKNOWN;
+	nbr->iface = iface;
+
+	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
+	ipv6_nbr_set_state(nbr, state);
+	net_ipv6_nbr_data(nbr)->is_router = is_router;
+	net_ipv6_nbr_data(nbr)->pending = NULL;
+
+#if defined(CONFIG_NET_IPV6_ND)
+	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
+			    nd_reachable_timeout);
+#endif
+	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
+			    ns_reply_timeout);
+}
+
+struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
+				 struct in6_addr *addr,
+				 struct net_linkaddr *lladdr,
+				 bool is_router,
+				 enum net_ipv6_nbr_state state)
+{
+	struct net_nbr *nbr = net_nbr_get(&net_neighbor.table);
+
+	if (!nbr) {
+		return NULL;
+	}
+
+	nbr_init(nbr, iface, addr, is_router, state);
+
+	if (net_nbr_link(nbr, iface, lladdr)) {
+		nbr_free(nbr);
+		return NULL;
+	}
+
+	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s",
+		nbr->idx, nbr, state, is_router,
+		net_sprint_ipv6_addr(addr),
+		net_sprint_ll_addr(lladdr->addr, lladdr->len));
+
+	return nbr;
+}
+
+static inline struct net_nbr *nbr_add(struct net_buf *buf,
+				      struct in6_addr *addr,
+				      struct net_linkaddr *lladdr,
+				      bool is_router,
+				      enum net_ipv6_nbr_state state)
+{
+	return net_ipv6_nbr_add(net_nbuf_iface(buf), addr, lladdr,
+				is_router, state);
+}
+
 static struct net_nbr *nbr_new(struct net_if *iface,
 			       struct in6_addr *addr,
 			       enum net_ipv6_nbr_state state)
@@ -329,19 +347,7 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 		return NULL;
 	}
 
-	nbr->idx = NET_NBR_LLADDR_UNKNOWN;
-	nbr->iface = iface;
-
-	net_ipaddr_copy(&net_ipv6_nbr_data(nbr)->addr, addr);
-	ipv6_nbr_set_state(nbr, state);
-	net_ipv6_nbr_data(nbr)->pending = NULL;
-
-#if defined(CONFIG_NET_IPV6_ND)
-	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
-			    nd_reachable_timeout);
-#endif
-	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
-			    ns_reply_timeout);
+	nbr_init(nbr, iface, addr, false, state);
 
 	NET_DBG("nbr %p iface %p state %d IPv6 %s",
 		nbr, iface, state, net_sprint_ipv6_addr(addr));
