@@ -130,7 +130,6 @@
  */
     .extern _kernel
     .extern _sys_power_save_idle_exit
-    .extern _power_save_idle_exit
 
     .macro  dispatch_c_isr    level  mask
 
@@ -198,9 +197,6 @@
     #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-#if defined(CONFIG_TICKLESS_IDLE)
-    call0   _power_save_idle_exit
-#else
     movi    a3, _kernel
 #ifdef __XTENSA_CALL0_ABI__
     mov     a12, a2
@@ -218,7 +214,6 @@
     call4   _sys_power_save_idle_exit
 #endif /* __XTENSA_CALL0_ABI__ */
 10:
-#endif /* defined(CONFIG_TICKLESS_IDLE) */
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
     /* Now look up in the dispatch table and call user ISR if any. */
