@@ -304,7 +304,7 @@ static int net_rpl_mrhof_update_mc(struct net_rpl_instance *instance)
 	instance->mc.type = NET_RPL_MC_NONE;
 	return 0;
 #else
-	rpl_path_metric_t path_metric;
+	uint16_t path_metric;
 	struct net_rpl_dag *dag;
 
 #if defined(CONFIG_NET_RPL_MC_ENERGY)
@@ -321,7 +321,7 @@ static int net_rpl_mrhof_update_mc(struct net_rpl_instance *instance)
 
 	dag = instance->current_dag;
 
-	if (!dag->joined) {
+	if (!net_rpl_dag_is_joined(dag)) {
 		NET_DBG("Cannot update the metric container when not joined.");
 		return -EINVAL;
 	}
