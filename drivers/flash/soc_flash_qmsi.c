@@ -147,7 +147,7 @@ static int flash_qmsi_write(struct device *dev, off_t addr,
 			return -EIO;
 		}
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
+#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 		if (offset >= (CONFIG_SOC_FLASH_QMSI_SYS_SIZE >> 1)) {
 			flash = QM_FLASH_1;
 			offset -= CONFIG_SOC_FLASH_QMSI_SYS_SIZE >> 1;
@@ -196,7 +196,7 @@ static int flash_qmsi_erase(struct device *dev, off_t addr, size_t size)
 
 	for (uint32_t i = 0; i < (size >> QM_FLASH_PAGE_SIZE_BITS); i++) {
 		page = get_page_num(addr) + i;
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
+#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 		if (page >= (CONFIG_SOC_FLASH_QMSI_SYS_SIZE >>
 				 (QM_FLASH_PAGE_SIZE_BITS + 1))) {
 			flash = QM_FLASH_1;
@@ -237,7 +237,7 @@ static int flash_qmsi_write_protection(struct device *dev, bool enable)
 
 	qm_flash_set_config(QM_FLASH_0, &qm_cfg);
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
+#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 	qm_flash_set_config(QM_FLASH_1, &qm_cfg);
 #endif
 
@@ -325,7 +325,7 @@ static int quark_flash_init(struct device *dev)
 
 	qm_flash_set_config(QM_FLASH_0, &qm_cfg);
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
+#if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 	qm_flash_set_config(QM_FLASH_1, &qm_cfg);
 #endif
 
