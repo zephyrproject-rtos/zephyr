@@ -6,11 +6,11 @@
 #
 
 
-if SOC_NRF52832
+if SOC_NRF52832_QFAA
 
 config SOC
 	string
-	default nRF52832
+	default nRF52832_QFAA
 
 config SRAM_SIZE
 	default 64
@@ -22,5 +22,5 @@ config NUM_IRQS
 	int
 	default 39
 
-endif # SOC_NRF52832
+endif # SOC_NRF52832_QFAA
 
