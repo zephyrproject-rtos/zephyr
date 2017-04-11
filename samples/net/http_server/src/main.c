@@ -9,6 +9,11 @@
 
 #include <misc/printk.h>
 
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
+
 #include "http_types.h"
 #include "http_server.h"
 #include "http_utils.h"
@@ -26,6 +31,28 @@ int network_setup(struct net_context **net_ctx, net_tcp_accept_cb_t accept_cb,
 
 void main(void)
 {
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	int err;
+
+	err = bt_enable(NULL);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	ipss_init();
+
+	err = ipss_advertise();
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising successfully started\n");
+#endif
+
 	struct net_context *net_ctx = NULL;
 
 	http_ctx_init();
