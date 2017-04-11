@@ -21,6 +21,7 @@ dtb-$(CONFIG_BOARD_STM32373C_EVAL)	=	stm32373c_eval.dts_compiled
 dtb-$(CONFIG_BOARD_96B_NITROGEN)	=	96b_nitrogen.dts_compiled
 dtb-$(CONFIG_BOARD_NRF52_PCA10040)	=	nrf52_pca10040.dts_compiled
 dtb-$(CONFIG_BOARD_NRF52_BLENANO2)	=	nrf52_blenano2.dts_compiled
+dtb-$(CONFIG_BOARD_NRF52840_PCA10056)	=	nrf52840_pca10056.dts_compiled
 
 always	:= $(dtb-y)
 endif

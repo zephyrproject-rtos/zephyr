@@ -1,0 +1,38 @@
+#include <arm/armv7-m.dtsi>
+#include <nordic/mem.h>
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m4f";
+		};
+	};
+
+	flash0: flash {
+		reg = <0x00000000 DT_FLASH_SIZE>;
+	};
+
+	sram0: memory {
+		reg = <0x20000000 DT_SRAM_SIZE>;
+	};
+
+	soc {
+		uart0: uart@40002000 {
+			compatible = "nordic,nrf-uarte", "nordic,nrf-uart";
+			reg = <0x40002000 0x1000>;
+			interrupts = <2 1>;
+			status = "disabled";
+		};
+
+		uart1: uart@40028000 {
+			compatible = "nordic,nrf-uarte";
+			reg = <0x40028000 0x1000>;
+			interrupts = <40 1>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
