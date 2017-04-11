@@ -4,9 +4,13 @@
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if XRC_D2PM_5swIrq
+if SOC_SAMPLE_CONTROLLER
+
+config SOC
+	string
+	default sample_controller
 
 config IRQ_OFFLOAD_INTNUM
-	default 22
+	default 7
 
 endif

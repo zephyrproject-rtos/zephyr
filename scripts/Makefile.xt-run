@@ -10,9 +10,9 @@ ifneq (${QEMU_PTY},)
 endif
 
 run: zephyr
-	@echo "**** Running simulation for Xtensa core \"${XTENSA_CORE}\" ****"
+	@echo "**** Running simulation for Xtensa core \"${CONFIG_SOC}\" ****"
 	$(if ${QEMU_PIPE},,@echo "To exit from XT-RUN enter: 'CTRL+c'")
-	@echo '[XT-RUN] CPU: ${XTENSA_CORE}'
+	@echo '[XT-RUN] CPU: ${CONFIG_SOC}'
 	# Run the emulator in the background and leave a PID file for
 	# sanitycheck
 ifneq ($(QEMU_PIPE),)

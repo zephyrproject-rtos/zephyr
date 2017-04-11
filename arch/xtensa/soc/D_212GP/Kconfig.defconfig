@@ -4,7 +4,11 @@
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if hifi2_std
+if SOC_D_212GP
+
+config SOC
+	string
+	default D_212GP
 
 config IRQ_OFFLOAD_INTNUM
 	default 7

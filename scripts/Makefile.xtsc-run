@@ -20,9 +20,9 @@ endif
 
 xtsc-run:run
 run:zephyr
-	${Q}echo "***** Running simulation for Xtensa core \"${XTENSA_CORE}\" *****"
+	${Q}echo "***** Running simulation for Xtensa core \"${CONFIG_SOC}\" *****"
 	$(if ${QEMU_PIPE},,@echo "To exit from XTSC-RUN enter: 'CTRL+c'")
-	@echo '[XTSC-RUN] CPU: ${XTENSA_CORE}'
+	@echo '[XTSC-RUN] CPU: ${CONFIG_SOC}'
 	${Q}test -f ${XTSC_INC} || ( \
 		echo '*** Error: $@ requires valid XTSC include file in \
 			"$${CONFIG_XTENSA_XTSC_INC}"' && \

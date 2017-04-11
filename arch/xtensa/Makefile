@@ -1,5 +1,3 @@
-SOC_PATH=${XTENSA_CORE}
-export SOC_PATH
 
 flagBoardType=
 ifeq ($(CONFIG_BOARD_XTENSA),y)
@@ -20,9 +18,7 @@ KBUILD_CFLAGS += $(call cc-option,-ffunction-sections,) \
 		 $(call cc-option,-fdata-sections,)
 
 KBUILD_AFLAGS += $(flagBoardType)
-KBUILD_CFLAGS += -DPROC_$(XTENSA_CORE) \
-		 -DCONFIG_$(XTENSA_CORE) \
-		 $(flagBoardType) \
+KBUILD_CFLAGS += $(flagBoardType) \
 		 $(call cc-option,-fms-extensions,)
 
 include $(srctree)/arch/$(ARCH)/core/Makefile

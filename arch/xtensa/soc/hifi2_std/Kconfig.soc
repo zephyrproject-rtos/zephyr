@@ -1,0 +1,6 @@
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_HIFI2_STD
+	bool "hifi2_std core"
+
