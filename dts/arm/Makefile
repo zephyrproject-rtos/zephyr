@@ -18,6 +18,9 @@ dtb-$(CONFIG_BOARD_STM3210C_EVAL)	=	stm3210c_eval.dts_compiled
 dtb-$(CONFIG_BOARD_STM32_MINI_A15)	=	stm32_mini_a15.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F334R8)	=	nucleo_f334r8.dts_compiled
 dtb-$(CONFIG_BOARD_STM32373C_EVAL)	=	stm32373c_eval.dts_compiled
+dtb-$(CONFIG_BOARD_96B_NITROGEN)	=	96b_nitrogen.dts_compiled
+dtb-$(CONFIG_BOARD_NRF52_PCA10040)	=	nrf52_pca10040.dts_compiled
+dtb-$(CONFIG_BOARD_NRF52_BLENANO2)	=	nrf52_blenano2.dts_compiled
 
 always	:= $(dtb-y)
 endif
