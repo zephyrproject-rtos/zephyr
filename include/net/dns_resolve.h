@@ -153,7 +153,7 @@ struct dns_resolve_context {
  * the stack, then the variable needs to be valid for the whole duration of
  * the resolving. Caller does not need to fill the variable beforehand or
  * edit the context afterwards.
- * @param server_array DNS server addresses. The array is null terminated.
+ * @param dns_servers DNS server addresses. The array is null terminated.
  * The port number can be given in the string.
  * Syntax for the server addresses with or without port numbers:
  *    IPv4        : 10.0.9.1
@@ -229,7 +229,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 /**
  * @brief Get default DNS context.
  *
- * @detail The system level DNS context uses DNS servers that are
+ * @details The system level DNS context uses DNS servers that are
  * defined in project config file. If no DNS servers are defined by the
  * user, then resolving DNS names using default DNS context will do nothing.
  * The configuration options are described in subsys/net/lib/dns/Kconfig file.
