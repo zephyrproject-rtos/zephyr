@@ -30,6 +30,16 @@ enum dns_query_type {
 #define DNS_MAX_NAME_SIZE 20
 #endif
 
+/* Make sure that we can compile things even if CONFIG_DNS_RESOLVER
+ * is not enabled.
+ */
+#if !defined(CONFIG_DNS_RESOLVER_MAX_SERVERS)
+#define CONFIG_DNS_RESOLVER_MAX_SERVERS 1
+#endif
+#if !defined(CONFIG_DNS_NUM_CONCUR_QUERIES)
+#define CONFIG_DNS_NUM_CONCUR_QUERIES 1
+#endif
+
 /**
  * Address info struct is passed to callback that gets all the results.
  */
