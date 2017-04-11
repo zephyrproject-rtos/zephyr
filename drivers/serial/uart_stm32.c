@@ -285,11 +285,11 @@ static int uart_stm32_init(struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
-	clock_control_on(data->clock, config->clock_subsys);
-#elif defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	clock_control_on(data->clock,
 			(clock_control_subsys_t *)&config->pclken);
+#else
+	clock_control_on(data->clock, config->clock_subsys);
 #endif
 
 	UartHandle->Instance = UART_STRUCT(dev);
