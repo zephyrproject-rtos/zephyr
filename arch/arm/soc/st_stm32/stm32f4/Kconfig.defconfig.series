@@ -42,9 +42,6 @@ endif #SERIAL
 
 if CLOCK_CONTROL
 
-config CLOCK_CONTROL_STM32F4X
-	def_bool n
-
 config CLOCK_CONTROL_STM32_CUBE
 	def_bool y
 

@@ -42,17 +42,6 @@ static const u32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32_PERIPH_GPIOH,
 #endif
 };
-#elif defined(CONFIG_SOC_SERIES_STM32F4X)
-static const u32_t ports_enable[STM32_PORTS_MAX] = {
-	STM32F4X_CLOCK_ENABLE_GPIOA,
-	STM32F4X_CLOCK_ENABLE_GPIOB,
-	STM32F4X_CLOCK_ENABLE_GPIOC,
-	STM32F4X_CLOCK_ENABLE_GPIOD,
-	STM32F4X_CLOCK_ENABLE_GPIOE,
-	STM32F4X_CLOCK_ENABLE_GPIOF,
-	STM32F4X_CLOCK_ENABLE_GPIOG,
-	STM32F4X_CLOCK_ENABLE_GPIOH,
-};
 #endif
 
 /**
@@ -79,18 +68,10 @@ static int enable_port(u32_t port, struct device *clk)
 
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 #else
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	/* TODO: Clean once F1 series moved to LL Clock control */
 	clock_control_subsys_t subsys = stm32_get_port_clock(port);
 
 	return clock_control_on(clk, subsys);
-#elif CONFIG_SOC_SERIES_STM32F4X
-	struct stm32f4x_pclken pclken;
-	/* AHB1 bus for all the GPIO ports */
-	pclken.bus = STM32F4X_CLOCK_BUS_AHB1;
-	pclken.enr = ports_enable[port];
-
-	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
-#endif
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 }
 

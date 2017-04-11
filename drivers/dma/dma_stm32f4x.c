@@ -66,11 +66,7 @@ static struct dma_stm32_device {
 } device_data[DMA_STM32_MAX_DEVS];
 
 struct dma_stm32_config {
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	struct stm32_pclken pclken;
-#else
-	struct stm32f4x_pclken pclken;
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 	void (*config)(struct dma_stm32_device *);
 };
 
@@ -500,13 +496,8 @@ static const struct dma_driver_api dma_funcs = {
 };
 
 const struct dma_stm32_config dma_stm32_1_cdata = {
-#if CONFIG_CLOCK_CONTROL_STM32F4X
-	.pclken = { .bus = STM32F4X_CLOCK_BUS_AHB1,
-		    .enr = STM32F4X_CLOCK_ENABLE_DMA1 },
-#else
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_DMA1 },
-#endif
 	.config = dma_stm32_1_config,
 };
 
@@ -516,13 +507,8 @@ DEVICE_AND_API_INIT(dma_stm32_1, CONFIG_DMA_1_NAME, &dma_stm32_init,
 		    (void *)&dma_funcs);
 
 static const struct dma_stm32_config dma_stm32_2_cdata = {
-#if CONFIG_CLOCK_CONTROL_STM32F4X
-	.pclken = { .bus = STM32F4X_CLOCK_BUS_AHB1,
-		    .enr = STM32F4X_CLOCK_ENABLE_DMA2 },
-#else
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_DMA2 },
-#endif /* CONFIG_CLOCK_CONTROL_STM32F4X */
 	.config = dma_stm32_2_config,
 };
 

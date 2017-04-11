@@ -53,9 +53,7 @@ struct gpio_stm32_config {
 	enum stm32_pin_port port;
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	struct stm32_pclken pclken;
-#elif CONFIG_SOC_SERIES_STM32F4X
-	struct stm32f4x_pclken pclken;
-#else /* SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X */
+#else /* SOC_SERIES_STM32F1X */
 	/* clock subsystem */
 	clock_control_subsys_t clock_subsys;
 #endif
