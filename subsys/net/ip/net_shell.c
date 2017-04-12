@@ -170,10 +170,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		       router->is_infinite ? " infinite" : "");
 	}
 
-	printk("IPv6 hop limit           : %d\n", iface->hop_limit);
-	printk("IPv6 base reachable time : %d\n", iface->base_reachable_time);
-	printk("IPv6 reachable time      : %d\n", iface->reachable_time);
-	printk("IPv6 retransmit timer    : %d\n", iface->retrans_timer);
+	printk("IPv6 hop limit           : %d\n", iface->ipv6.hop_limit);
+	printk("IPv6 base reachable time : %d\n",
+	       iface->ipv6.base_reachable_time);
+	printk("IPv6 reachable time      : %d\n", iface->ipv6.reachable_time);
+	printk("IPv6 retransmit timer    : %d\n", iface->ipv6.retrans_timer);
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)

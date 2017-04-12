@@ -2360,7 +2360,7 @@ static enum net_verdict handle_ra_input(struct net_buf *buf)
 	}
 
 	/* Cancel the RS timer on iface */
-	k_delayed_work_cancel(&net_nbuf_iface(buf)->rs_timer);
+	k_delayed_work_cancel(&net_nbuf_iface(buf)->ipv6.rs_timer);
 
 	net_nbuf_unref(buf);
 
