@@ -541,7 +541,8 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	return true;
 }
 
-static inline bool verify_crc(struct cc2520_context *cc2520)
+static inline bool verify_crc(struct cc2520_context *cc2520,
+			      struct net_buf *buf)
 {
 	cc2520->spi.cmd_buf[0] = CC2520_INS_RXBUF;
 	cc2520->spi.cmd_buf[1] = 0;
@@ -557,6 +558,8 @@ static inline bool verify_crc(struct cc2520_context *cc2520)
 	if (!(cc2520->spi.cmd_buf[2] & CC2520_FCS_CRC_OK)) {
 		return false;
 	}
+
+	net_nbuf_set_ieee802154_rssi(buf, cc2520->spi.cmd_buf[1]);
 
 	/**
 	 * CC2520 does not provide an LQI but a correlation factor.
@@ -661,7 +664,7 @@ static void cc2520_rx(int arg)
 			goto flush;
 		}
 
-		if (!verify_crc(cc2520)) {
+		if (!verify_crc(cc2520, buf)) {
 			SYS_LOG_ERR("Bad packet CRC");
 			goto out;
 		}
