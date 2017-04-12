@@ -644,7 +644,7 @@ uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 	aux_sec->control.key_id_mode = sec_ctx->key_mode;
 	aux_sec->control.reserved = 0;
 
-	aux_sec->frame_counter = sec_ctx->frame_counter;
+	aux_sec->frame_counter = sys_cpu_to_le32(sec_ctx->frame_counter);
 
 	return p_buf + IEEE802154_SECURITY_CF_LENGTH +
 		IEEE802154_SECURITY_FRAME_COUNTER_LENGTH;
@@ -920,7 +920,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_buf *buf,
 				     net_nbuf_ll_reserve(buf),
 				     net_buf_frags_len(buf),
 				     net_nbuf_ll_src(buf)->addr,
-				     mpdu->mhr.aux_sec->frame_counter)) {
+				     sys_le32_to_cpu(
+					mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
 		return false;
 	}
