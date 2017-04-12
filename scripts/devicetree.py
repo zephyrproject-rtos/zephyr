@@ -62,9 +62,9 @@ def parse_node_name(line):
     label = None
 
   if addr is None:
-    return label, name.strip(), None, None
+    return label, name.strip(), None
 
-  return label, name.strip(), addr, int(addr,16)
+  return label, name.strip(), int(addr, 16)
 
 def parse_values_internal(value, start, end, separator):
   out = []
@@ -142,18 +142,15 @@ def parse_property(property, fd):
 def build_node_name(name, addr):
   if addr is None:
     return name
-  elif isinstance(addr, int):
-    return '%s@%x' % (name, addr)
-
-  return '%s@%s' % (name, addr.strip())
+  return '%s@%x' % (name, addr)
 
 def parse_node(line, fd):
-  label, name, addr, numeric_addr = parse_node_name(line)
+  label, name, addr = parse_node_name(line)
 
   node = {
     'label': label,
     'type': type,
-    'addr': numeric_addr,
+    'addr': addr,
     'children': {},
     'props': {},
     'name': build_node_name(name, addr)
