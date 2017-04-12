@@ -347,6 +347,36 @@ static int shell_cmd_get_short_addr(int argc, char *argv[])
 	return 0;
 }
 
+static int shell_cmd_set_tx_power(int argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	int16_t tx_power = (int16_t) atoi(argv[1]);
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_TX_POWER, iface,
+		     &tx_power, sizeof(int16_t))) {
+		printk("Could not set TX power %d\n", tx_power);
+	} else {
+		printk("TX power %d set\n", tx_power);
+	}
+
+	return 0;
+}
+
+static int shell_cmd_get_tx_power(int argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	int16_t tx_power;
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_GET_SHORT_ADDR, iface,
+		     &tx_power, sizeof(int16_t))) {
+		printk("Could not get TX power\n");
+	} else {
+		printk("TX power (in dbm) %d\n", tx_power);
+	}
+
+	return 0;
+}
+
 static struct shell_cmd ieee802154_commands[] = {
 	{ "ack",		shell_cmd_ack,
 	  "<set/1 | unset/0>" },
@@ -372,6 +402,10 @@ static struct shell_cmd ieee802154_commands[] = {
 	{ "set_short_addr",	shell_cmd_set_short_addr,
 	  "<short address>" },
 	{ "get_short_addr",	shell_cmd_get_short_addr,
+	  NULL },
+	{ "set_tx_power",	shell_cmd_set_tx_power,
+	  "<-18/-7/-4/-2/0/1/2/3/5>" },
+	{ "get_tx_power",	shell_cmd_get_tx_power,
 	  NULL },
 	{ NULL, NULL, NULL },
 };
