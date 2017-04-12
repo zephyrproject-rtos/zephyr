@@ -33,7 +33,7 @@ enum net_event_if_cmd {
 
 /* IPv6 Events */
 #define _NET_IPV6_LAYER		NET_MGMT_LAYER_L3
-#define _NET_IPV6_CORE_CODE	0x600
+#define _NET_IPV6_CORE_CODE	0x060
 #define _NET_EVENT_IPV6_BASE	(NET_MGMT_EVENT_BIT |			\
 				 NET_MGMT_IFACE_BIT |			\
 				 NET_MGMT_LAYER(_NET_IPV6_LAYER) |	\
@@ -92,7 +92,7 @@ enum net_event_ipv6_cmd {
 
 /* IPv4 Events*/
 #define _NET_IPV4_LAYER		NET_MGMT_LAYER_L3
-#define _NET_IPV4_CORE_CODE	0x400
+#define _NET_IPV4_CORE_CODE	0x004
 #define _NET_EVENT_IPV4_BASE	(NET_MGMT_EVENT_BIT |			\
 				 NET_MGMT_IFACE_BIT |			\
 				 NET_MGMT_LAYER(_NET_IPV4_LAYER) |	\
