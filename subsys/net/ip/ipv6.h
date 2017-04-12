@@ -276,6 +276,9 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 /**
  * @brief Add a neighbour to neighbor cache
  *
+ * Add a neighbour to the cache after performing a lookup and in case
+ * there exists an entry in the cache update its state and lladdr.
+ *
  * @param iface A valid pointer on a network interface
  * @param addr Neighbor IPv6 address
  * @param lladdr Neighbor link layer address

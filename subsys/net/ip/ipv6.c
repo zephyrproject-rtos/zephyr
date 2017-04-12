@@ -300,11 +300,9 @@ static void nbr_init(struct net_nbr *nbr, struct net_if *iface,
 			    ns_reply_timeout);
 }
 
-struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
-				 struct in6_addr *addr,
-				 struct net_linkaddr *lladdr,
-				 bool is_router,
-				 enum net_ipv6_nbr_state state)
+static struct net_nbr *nbr_new(struct net_if *iface,
+			       struct in6_addr *addr, bool is_router,
+			       enum net_ipv6_nbr_state state)
 {
 	struct net_nbr *nbr = net_nbr_get(&net_neighbor.table);
 
@@ -312,11 +310,135 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	nbr_init(nbr, iface, addr, is_router, state);
+	nbr_init(nbr, iface, addr, true, state);
 
-	if (net_nbr_link(nbr, iface, lladdr)) {
-		nbr_free(nbr);
-		return NULL;
+	NET_DBG("nbr %p iface %p state %d IPv6 %s",
+		nbr, iface, state, net_sprint_ipv6_addr(addr));
+
+	return nbr;
+}
+
+#if defined(CONFIG_NET_DEBUG_IPV6)
+static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
+				struct net_linkaddr_storage *old_lladdr,
+				struct in6_addr *addr)
+{
+	char out[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+
+	snprintk(out, sizeof(out), "%s",
+		 net_sprint_ll_addr(old_lladdr->addr, old_lladdr->len));
+
+	NET_DBG("Updating neighbor %s lladdr %s (was %s)",
+		net_sprint_ipv6_addr(addr),
+		net_sprint_ll_addr(new_lladdr->addr, new_lladdr->len),
+		out);
+}
+
+static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
+				struct net_linkaddr_storage *old_lladdr,
+				struct in6_addr *addr)
+{
+	struct net_linkaddr lladdr = {
+		.len = old_lladdr->len,
+		.addr = new_lladdr,
+	};
+
+	dbg_update_neighbor_lladdr(&lladdr, old_lladdr, addr);
+}
+
+#define dbg_addr(action, pkt_str, src, dst)				\
+	do {								\
+		char out[NET_IPV6_ADDR_LEN];				\
+									\
+		snprintk(out, sizeof(out), "%s",			\
+			 net_sprint_ipv6_addr(dst));			\
+									\
+		NET_DBG("%s %s from %s to %s", action,			\
+			pkt_str, net_sprint_ipv6_addr(src), out);	\
+									\
+	} while (0)
+
+#define dbg_addr_recv(pkt_str, src, dst)	\
+	dbg_addr("Received", pkt_str, src, dst)
+
+#define dbg_addr_sent(pkt_str, src, dst)	\
+	dbg_addr("Sent", pkt_str, src, dst)
+
+#define dbg_addr_with_tgt(action, pkt_str, src, dst, target)		\
+	do {								\
+		char out[NET_IPV6_ADDR_LEN];				\
+		char tgt[NET_IPV6_ADDR_LEN];				\
+									\
+		snprintk(out, sizeof(out), "%s",			\
+			 net_sprint_ipv6_addr(dst));			\
+		snprintk(tgt, sizeof(tgt), "%s",			\
+			 net_sprint_ipv6_addr(target));			\
+									\
+		NET_DBG("%s %s from %s to %s, target %s", action,	\
+			pkt_str, net_sprint_ipv6_addr(src), out, tgt);	\
+									\
+	} while (0)
+
+#define dbg_addr_recv_tgt(pkt_str, src, dst, tgt)		\
+	dbg_addr_with_tgt("Received", pkt_str, src, dst, tgt)
+
+#define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
+	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
+#else
+#define dbg_update_neighbor_lladdr(...)
+#define dbg_update_neighbor_lladdr_raw(...)
+#define dbg_addr(...)
+#define dbg_addr_recv(...)
+#define dbg_addr_sent(...)
+
+#define dbg_addr_with_tgt(...)
+#define dbg_addr_recv_tgt(...)
+#define dbg_addr_sent_tgt(...)
+#endif /* CONFIG_NET_DEBUG_IPV6 */
+
+struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
+				 struct in6_addr *addr,
+				 struct net_linkaddr *lladdr,
+				 bool is_router,
+				 enum net_ipv6_nbr_state state)
+{
+	struct net_nbr *nbr;
+
+	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
+	if (!nbr) {
+		nbr = nbr_new(iface, addr, is_router, state);
+		if (!nbr) {
+			NET_ERR("Could not add router neighbor %s [%s]",
+				net_sprint_ipv6_addr(addr),
+				net_sprint_ll_addr(lladdr->addr, lladdr->len));
+			return NULL;
+		}
+	}
+
+	if (net_nbr_link(nbr, iface, lladdr) == -EALREADY) {
+		/* Update the lladdr if the node was already known */
+		struct net_linkaddr_storage *cached_lladdr;
+
+		cached_lladdr = net_nbr_get_lladdr(nbr->idx);
+
+		if (memcmp(cached_lladdr->addr, lladdr->addr, lladdr->len)) {
+			dbg_update_neighbor_lladdr(lladdr, cached_lladdr, addr);
+
+			net_linkaddr_set(cached_lladdr, lladdr->addr,
+					 lladdr->len);
+
+			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_STALE);
+		} else if (net_ipv6_nbr_data(nbr)->state ==
+			   NET_IPV6_NBR_STATE_INCOMPLETE) {
+			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_STALE);
+		}
+	}
+
+	if (net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_INCOMPLETE) {
+		/* Send NS so that we can verify that the neighbor is
+		 * reachable.
+		 */
+		net_ipv6_send_ns(iface, NULL, NULL, NULL, addr, false);
 	}
 
 	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s",
@@ -328,31 +450,12 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 }
 
 static inline struct net_nbr *nbr_add(struct net_buf *buf,
-				      struct in6_addr *addr,
 				      struct net_linkaddr *lladdr,
 				      bool is_router,
 				      enum net_ipv6_nbr_state state)
 {
-	return net_ipv6_nbr_add(net_nbuf_iface(buf), addr, lladdr,
-				is_router, state);
-}
-
-static struct net_nbr *nbr_new(struct net_if *iface,
-			       struct in6_addr *addr,
-			       enum net_ipv6_nbr_state state)
-{
-	struct net_nbr *nbr = net_nbr_get(&net_neighbor.table);
-
-	if (!nbr) {
-		return NULL;
-	}
-
-	nbr_init(nbr, iface, addr, false, state);
-
-	NET_DBG("nbr %p iface %p state %d IPv6 %s",
-		nbr, iface, state, net_sprint_ipv6_addr(addr));
-
-	return nbr;
+	return net_ipv6_nbr_add(net_nbuf_iface(buf), &NET_IPV6_BUF(buf)->src,
+				lladdr, is_router, state);
 }
 
 void net_neighbor_data_remove(struct net_nbr *nbr)
@@ -600,84 +703,6 @@ static inline bool dad_failed(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 #endif /* CONFIG_NET_IPV6_DAD */
-
-#if defined(CONFIG_NET_DEBUG_IPV6)
-static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
-				struct net_linkaddr_storage *old_lladdr,
-				struct in6_addr *addr)
-{
-	char out[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
-
-	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ll_addr(old_lladdr->addr, old_lladdr->len));
-
-	NET_DBG("Updating neighbor %s lladdr %s (was %s)",
-		net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(new_lladdr->addr, new_lladdr->len),
-		out);
-}
-
-static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
-				struct net_linkaddr_storage *old_lladdr,
-				struct in6_addr *addr)
-{
-	struct net_linkaddr lladdr = {
-		.len = old_lladdr->len,
-		.addr = new_lladdr,
-	};
-
-	dbg_update_neighbor_lladdr(&lladdr, old_lladdr, addr);
-}
-
-#define dbg_addr(action, pkt_str, src, dst)				\
-	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-									\
-		NET_DBG("%s %s from %s to %s", action,			\
-			pkt_str, net_sprint_ipv6_addr(src), out);	\
-									\
-	} while (0)
-
-#define dbg_addr_recv(pkt_str, src, dst)	\
-	dbg_addr("Received", pkt_str, src, dst)
-
-#define dbg_addr_sent(pkt_str, src, dst)	\
-	dbg_addr("Sent", pkt_str, src, dst)
-
-#define dbg_addr_with_tgt(action, pkt_str, src, dst, target)		\
-	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-		char tgt[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-		snprintk(tgt, sizeof(tgt), "%s",			\
-			 net_sprint_ipv6_addr(target));			\
-									\
-		NET_DBG("%s %s from %s to %s, target %s", action,	\
-			pkt_str, net_sprint_ipv6_addr(src), out, tgt);	\
-									\
-	} while (0)
-
-#define dbg_addr_recv_tgt(pkt_str, src, dst, tgt)		\
-	dbg_addr_with_tgt("Received", pkt_str, src, dst, tgt)
-
-#define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
-	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
-#else
-#define dbg_update_neighbor_lladdr(...)
-#define dbg_update_neighbor_lladdr_raw(...)
-#define dbg_addr(...)
-#define dbg_addr_recv(...)
-#define dbg_addr_sent(...)
-
-#define dbg_addr_with_tgt(...)
-#define dbg_addr_recv_tgt(...)
-#define dbg_addr_sent_tgt(...)
-#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 
@@ -1014,7 +1039,6 @@ static void setup_headers(struct net_buf *buf, uint8_t nd6_len,
 static inline void handle_ns_neighbor(struct net_buf *buf,
 				      struct net_icmpv6_nd_opt_hdr *hdr)
 {
-	struct net_nbr *nbr;
 	struct net_linkaddr lladdr = {
 		.len = 8 * hdr->len - 2,
 		.addr = (uint8_t *)hdr + 2,
@@ -1029,60 +1053,7 @@ static inline void handle_ns_neighbor(struct net_buf *buf,
 		lladdr.len = net_nbuf_ll_src(buf)->len;
 	}
 
-	nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
-			 &NET_IPV6_BUF(buf)->src);
-
-	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
-		net_nbuf_iface(buf),
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
-
-	if (!nbr) {
-		nbr_print();
-
-		nbr = nbr_new(net_nbuf_iface(buf),
-			      &NET_IPV6_BUF(buf)->src,
-			      NET_IPV6_NBR_STATE_INCOMPLETE);
-		if (nbr) {
-			NET_DBG("Added %s to nbr cache",
-				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
-		} else {
-			NET_ERR("Could not add neighbor %s",
-				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
-
-			return;
-		}
-
-		/* Send NS so that we can verify that the neighbor is
-		 * reachable.
-		 */
-		net_ipv6_send_ns(net_nbuf_iface(buf), NULL, NULL, NULL,
-				 &net_ipv6_nbr_data(nbr)->addr, false);
-	}
-
-	if (net_nbr_link(nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
-		/* Update the lladdr if the node was already known */
-		struct net_linkaddr_storage *cached_lladdr;
-
-		cached_lladdr = net_nbr_get_lladdr(nbr->idx);
-
-		if (memcmp(cached_lladdr->addr, lladdr.addr, lladdr.len)) {
-
-			dbg_update_neighbor_lladdr(&lladdr,
-						   cached_lladdr,
-						   &NET_IPV6_BUF(buf)->src);
-
-			net_linkaddr_set(cached_lladdr, lladdr.addr,
-					 lladdr.len);
-
-			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_STALE);
-		} else {
-			if (net_ipv6_nbr_data(nbr)->state ==
-			    NET_IPV6_NBR_STATE_INCOMPLETE) {
-				ipv6_nbr_set_state(nbr,
-						   NET_IPV6_NBR_STATE_STALE);
-			}
-		}
-	}
+	nbr_add(buf, &lladdr, false, NET_IPV6_NBR_STATE_INCOMPLETE);
 }
 
 int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
@@ -1794,7 +1765,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 		nbr_print();
 
 		nbr = nbr_new(net_nbuf_iface(buf),
-			      &NET_ICMPV6_NS_BUF(buf)->tgt,
+			      &NET_ICMPV6_NS_BUF(buf)->tgt, false,
 			      NET_IPV6_NBR_STATE_INCOMPLETE);
 		if (!nbr) {
 			NET_DBG("Could not create new neighbor %s",
@@ -1961,52 +1932,7 @@ static inline struct net_buf *handle_ra_neighbor(struct net_buf *buf,
 		}
 	}
 
-	*nbr = nbr_lookup(&net_neighbor.table, net_nbuf_iface(buf),
-			  &NET_IPV6_BUF(buf)->src);
-
-	NET_DBG("Neighbor lookup %p iface %p addr %s", *nbr,
-		net_nbuf_iface(buf),
-		net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src));
-
-	if (!*nbr) {
-		nbr_print();
-
-		*nbr = nbr_add(buf, &NET_IPV6_BUF(buf)->src, &lladdr,
-			       true, NET_IPV6_NBR_STATE_STALE);
-		if (!*nbr) {
-			NET_ERR("Could not add router neighbor %s [%s]",
-				net_sprint_ipv6_addr(&NET_IPV6_BUF(buf)->src),
-				net_sprint_ll_addr(lladdr.addr, lladdr.len));
-			return NULL;
-		}
-	}
-
-	if (net_nbr_link(*nbr, net_nbuf_iface(buf), &lladdr) == -EALREADY) {
-		/* Update the lladdr if the node was already known */
-		struct net_linkaddr_storage *cached_lladdr;
-
-		cached_lladdr = net_nbr_get_lladdr((*nbr)->idx);
-
-		if (memcmp(cached_lladdr->addr, lladdr.addr, lladdr.len)) {
-
-			dbg_update_neighbor_lladdr(&lladdr,
-						   cached_lladdr,
-						   &NET_IPV6_BUF(buf)->src);
-
-			net_linkaddr_set(cached_lladdr, lladdr.addr,
-					 lladdr.len);
-
-			ipv6_nbr_set_state(*nbr, NET_IPV6_NBR_STATE_STALE);
-		} else {
-			if (net_ipv6_nbr_data(*nbr)->state ==
-			    NET_IPV6_NBR_STATE_INCOMPLETE) {
-				ipv6_nbr_set_state(*nbr,
-						   NET_IPV6_NBR_STATE_STALE);
-			}
-		}
-	}
-
-	net_ipv6_nbr_data(*nbr)->is_router = true;
+	*nbr = nbr_add(buf, &lladdr, true, NET_IPV6_NBR_STATE_STALE);
 
 	return frag;
 }
