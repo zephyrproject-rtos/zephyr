@@ -154,10 +154,10 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	if (net_pkt_ext_len(orig)) {
-		net_pkt_set_ext_len(pkt, net_pkt_ext_len(orig));
+	if (net_pkt_ipv6_ext_len(orig)) {
+		net_pkt_set_ipv6_ext_len(pkt, net_pkt_ipv6_ext_len(orig));
 	} else {
-		net_pkt_set_ext_len(pkt, 0);
+		net_pkt_set_ipv6_ext_len(pkt, 0);
 	}
 
 	/* Set up IPv6 Header fields */
@@ -291,7 +291,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	setup_ipv6_header(pkt, extra_len, net_if_ipv6_get_hop_limit(iface),
 			  type, code);

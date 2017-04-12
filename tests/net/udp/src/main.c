@@ -194,7 +194,7 @@ static void setup_ipv6_udp(struct net_pkt *pkt,
 	NET_UDP_HDR(pkt)->src_port = htons(remote_port);
 	NET_UDP_HDR(pkt)->dst_port = htons(local_port);
 
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
 				sizeof(struct net_udp_hdr));
@@ -222,7 +222,7 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 	NET_UDP_HDR(pkt)->src_port = htons(remote_port);
 	NET_UDP_HDR(pkt)->dst_port = htons(local_port);
 
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
 				sizeof(struct net_udp_hdr));

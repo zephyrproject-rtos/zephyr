@@ -597,7 +597,7 @@ struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
 
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 	NET_IPV6_HDR(pkt)->nexthdr = next_header;
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
@@ -1083,7 +1083,7 @@ int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 
 	llao_len = get_llao_len(iface);
 
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	setup_headers(pkt, sizeof(struct net_icmpv6_na_hdr) + llao_len,
 		      NET_ICMPV6_NA);
@@ -1155,7 +1155,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	net_pkt_set_ext_opt_len(pkt, sizeof(struct net_icmpv6_ns_hdr));
+	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ns_hdr));
 	hdr = NET_ICMPV6_ND_OPT_HDR_HDR(pkt);
 
 	/* The parsing gets tricky if the ND struct is split
@@ -1169,7 +1169,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 	left_len = pkt->frags->len - (sizeof(struct net_ipv6_hdr) +
 				      sizeof(struct net_icmp_hdr));
 
-	while (net_pkt_ext_opt_len(pkt) < left_len &&
+	while (net_pkt_ipv6_ext_opt_len(pkt) < left_len &&
 	       left_len < pkt->frags->len) {
 
 		if (!hdr->len) {
@@ -1191,12 +1191,13 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 			break;
 		}
 
-		prev_opt_len = net_pkt_ext_opt_len(pkt);
+		prev_opt_len = net_pkt_ipv6_ext_opt_len(pkt);
 
-		net_pkt_set_ext_opt_len(pkt, net_pkt_ext_opt_len(pkt) +
-					 (hdr->len << 3));
+		net_pkt_set_ipv6_ext_opt_len(pkt,
+					     net_pkt_ipv6_ext_opt_len(pkt) +
+					     (hdr->len << 3));
 
-		if (prev_opt_len == net_pkt_ext_opt_len(pkt)) {
+		if (prev_opt_len == net_pkt_ipv6_ext_opt_len(pkt)) {
 			NET_ERR("Corrupted NS message");
 			goto drop;
 		}
@@ -1597,7 +1598,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	net_pkt_set_ext_opt_len(pkt, sizeof(struct net_icmpv6_na_hdr));
+	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_na_hdr));
 	hdr = NET_ICMPV6_ND_OPT_HDR_HDR(pkt);
 
 	/* The parsing gets tricky if the ND struct is split
@@ -1611,7 +1612,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 	left_len = pkt->frags->len - (sizeof(struct net_ipv6_hdr) +
 				      sizeof(struct net_icmp_hdr));
 
-	while (net_pkt_ext_opt_len(pkt) < left_len &&
+	while (net_pkt_ipv6_ext_opt_len(pkt) < left_len &&
 	       left_len < pkt->frags->len) {
 
 		if (!hdr->len) {
@@ -1628,12 +1629,13 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 			break;
 		}
 
-		prev_opt_len = net_pkt_ext_opt_len(pkt);
+		prev_opt_len = net_pkt_ipv6_ext_opt_len(pkt);
 
-		net_pkt_set_ext_opt_len(pkt, net_pkt_ext_opt_len(pkt) +
-					 (hdr->len << 3));
+		net_pkt_set_ipv6_ext_opt_len(pkt,
+					     net_pkt_ipv6_ext_opt_len(pkt) +
+					     (hdr->len << 3));
 
-		if (prev_opt_len == net_pkt_ext_opt_len(pkt)) {
+		if (prev_opt_len == net_pkt_ipv6_ext_opt_len(pkt)) {
 			NET_ERR("Corrupted NA message");
 			goto drop;
 		}
@@ -2207,7 +2209,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	}
 
 	frag = pkt->frags;
-	offset = sizeof(struct net_ipv6_hdr) + net_pkt_ext_len(pkt) +
+	offset = sizeof(struct net_ipv6_hdr) + net_pkt_ipv6_ext_len(pkt) +
 		sizeof(struct net_icmp_hdr);
 
 	frag = net_frag_read_u8(frag, offset, &offset, &hop_limit);
@@ -2453,7 +2455,7 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 		goto drop;
 	}
 
-	net_pkt_set_ext_len(pkt, ROUTER_ALERT_LEN);
+	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
 
 	net_pkt_write_be16(pkt, pkt->frags,
 			   NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
@@ -2608,7 +2610,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	pkt_len = sizeof(struct net_ipv6_hdr) +	net_pkt_ext_len(pkt) +
+	pkt_len = sizeof(struct net_ipv6_hdr) +	net_pkt_ipv6_ext_len(pkt) +
 		sizeof(struct net_icmp_hdr) + (2 + 2 + 16 + 2 + 2) +
 		sizeof(struct in6_addr) * num_src;
 
@@ -2873,11 +2875,11 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	}
 
 	/* Fix the total length of the IPv6 packet. */
-	len = net_pkt_ext_len(pkt);
+	len = net_pkt_ipv6_ext_len(pkt);
 	if (len > 0) {
 		NET_DBG("Old pkt %p IPv6 ext len is %d bytes", pkt, len);
-		net_pkt_set_ext_len(pkt,
-				    len - sizeof(struct net_ipv6_frag_hdr));
+		net_pkt_set_ipv6_ext_len(pkt,
+				len - sizeof(struct net_ipv6_frag_hdr));
 	}
 
 	len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
@@ -3157,8 +3159,8 @@ static int send_ipv6_fragment(struct net_if *iface,
 	/* Update the extension length metadata so that upper layer checksum
 	 * will be calculated properly by net_ipv6_finalize_raw().
 	 */
-	ext_len = net_pkt_ext_len(ipv6) + sizeof(struct net_ipv6_frag_hdr);
-	net_pkt_set_ext_len(ipv6, ext_len);
+	ext_len = net_pkt_ipv6_ext_len(ipv6) + sizeof(struct net_ipv6_frag_hdr);
+	net_pkt_set_ipv6_ext_len(ipv6, ext_len);
 
 	orig_copy = net_buf_clone(orig, FRAG_BUF_WAIT);
 	if (!orig_copy) {
@@ -3262,7 +3264,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	 * fragmentation header.
 	 */
 	ret = net_pkt_split(pkt, frag,
-			    net_pkt_ip_hdr_len(pkt) + net_pkt_ext_len(pkt),
+			    net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt),
 			    &orig_ipv6, &rest, FRAG_BUF_WAIT);
 	if (ret < 0) {
 		return -ENOMEM;
@@ -3556,7 +3558,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 
 	/* Check extension headers */
 	net_pkt_set_next_hdr(pkt, &hdr->nexthdr);
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	/* Fast path for main upper layer protocols. The handling of extension
@@ -3581,8 +3583,8 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 
 		if (is_upper_layer_protocol_header(next)) {
 			NET_DBG("IPv6 next header %d", next);
-			net_pkt_set_ext_len(pkt, offset -
-					    sizeof(struct net_ipv6_hdr));
+			net_pkt_set_ipv6_ext_len(pkt, offset -
+						 sizeof(struct net_ipv6_hdr));
 			goto upper_proto;
 		}
 
@@ -3659,7 +3661,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 upper_proto:
 	if (total_len > 0) {
 		NET_DBG("Extension len %d", total_len);
-		net_pkt_set_ext_len(pkt, total_len);
+		net_pkt_set_ipv6_ext_len(pkt, total_len);
 	}
 
 	switch (next) {

@@ -3783,7 +3783,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 
 static inline int add_rpl_opt(struct net_pkt *pkt, uint16_t offset)
 {
-	int ext_len = net_pkt_ext_len(pkt);
+	int ext_len = net_pkt_ipv6_ext_len(pkt);
 	bool ret;
 
 	/* next header */
@@ -3836,7 +3836,7 @@ static inline int add_rpl_opt(struct net_pkt *pkt, uint16_t offset)
 
 	NET_IPV6_HDR(pkt)->nexthdr = NET_IPV6_NEXTHDR_HBHO;
 
-	net_pkt_set_ext_len(pkt, ext_len + NET_RPL_HOP_BY_HOP_LEN);
+	net_pkt_set_ipv6_ext_len(pkt, ext_len + NET_RPL_HOP_BY_HOP_LEN);
 
 	return 0;
 }

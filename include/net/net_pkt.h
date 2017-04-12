@@ -82,8 +82,8 @@ struct net_pkt {
 
 #if defined(CONFIG_NET_IPV6)
 	uint8_t ipv6_hop_limit;	/* IPv6 hop limit for this network packet. */
-	uint8_t ext_len;	/* length of extension headers */
-	uint8_t ext_opt_len;	/* IPv6 ND option length */
+	uint8_t ipv6_ext_len;	/* length of extension headers */
+	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 
 	/* Where is the start of the last header before payload data
 	 * in IPv6 packet. This is offset value from start of the IPv6
@@ -215,24 +215,25 @@ static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-static inline uint8_t net_pkt_ext_opt_len(struct net_pkt *pkt)
+static inline uint8_t net_pkt_ipv6_ext_opt_len(struct net_pkt *pkt)
 {
-	return pkt->ext_opt_len;
+	return pkt->ipv6_ext_opt_len;
 }
 
-static inline void net_pkt_set_ext_opt_len(struct net_pkt *pkt, uint8_t len)
+static inline void net_pkt_set_ipv6_ext_opt_len(struct net_pkt *pkt,
+						uint8_t len)
 {
-	pkt->ext_opt_len = len;
+	pkt->ipv6_ext_opt_len = len;
 }
 
-static inline uint8_t net_pkt_ext_len(struct net_pkt *pkt)
+static inline uint8_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
 {
-	return pkt->ext_len;
+	return pkt->ipv6_ext_len;
 }
 
-static inline void net_pkt_set_ext_len(struct net_pkt *pkt, uint8_t len)
+static inline void net_pkt_set_ipv6_ext_len(struct net_pkt *pkt, uint8_t len)
 {
-	pkt->ext_len = len;
+	pkt->ipv6_ext_len = len;
 }
 
 static inline uint16_t net_pkt_ipv6_hdr_prev(struct net_pkt *pkt)
@@ -292,8 +293,8 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 #else /* CONFIG_NET_IPV6 */
-#define net_pkt_ext_len(...) 0
-#define net_pkt_set_ext_len(...)
+#define net_pkt_ipv6_ext_len(...) 0
+#define net_pkt_set_ipv6_ext_len(...)
 #endif /* CONFIG_NET_IPV6 */
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
@@ -309,19 +310,19 @@ static inline uint8_t *net_pkt_ip_data(struct net_pkt *pkt)
 static inline uint8_t *net_pkt_udp_data(struct net_pkt *pkt)
 {
 	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ext_len(pkt)];
+				 net_pkt_ipv6_ext_len(pkt)];
 }
 
 static inline uint8_t *net_pkt_tcp_data(struct net_pkt *pkt)
 {
 	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ext_len(pkt)];
+				 net_pkt_ipv6_ext_len(pkt)];
 }
 
 static inline uint8_t *net_pkt_icmp_data(struct net_pkt *pkt)
 {
 	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ext_len(pkt)];
+				 net_pkt_ipv6_ext_len(pkt)];
 }
 
 static inline uint8_t *net_pkt_appdata(struct net_pkt *pkt)

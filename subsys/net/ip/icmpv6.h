@@ -82,7 +82,7 @@ struct net_icmpv6_nd_opt_6co {
 #define NET_ICMPV6_ND_OPT_HDR_HDR(pkt)					\
 	((struct net_icmpv6_nd_opt_hdr *)(net_pkt_icmp_data(pkt) +	\
 					  sizeof(struct net_icmp_hdr) +	\
-					  net_pkt_ext_opt_len(pkt)))
+					  net_pkt_ipv6_ext_opt_len(pkt)))
 
 #define NET_ICMPV6_NA_HDR(pkt)						\
 	((struct net_icmpv6_na_hdr *)(net_pkt_icmp_data(pkt) +		\

@@ -277,7 +277,7 @@ static void setup_ipv6_tcp(struct net_pkt *pkt,
 	NET_TCP_HDR(pkt)->src_port = htons(remote_port);
 	NET_TCP_HDR(pkt)->dst_port = htons(local_port);
 
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
 				sizeof(struct net_tcp_hdr));
@@ -305,7 +305,7 @@ static void setup_ipv4_tcp(struct net_pkt *pkt,
 	NET_TCP_HDR(pkt)->src_port = htons(remote_port);
 	NET_TCP_HDR(pkt)->dst_port = htons(local_port);
 
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
 				sizeof(struct net_tcp_hdr));

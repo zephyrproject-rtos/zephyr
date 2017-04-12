@@ -168,7 +168,7 @@ static bool run_tests(void)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	/* We need to zero the ICMP checksum */
 	hdr_len = net_pkt_ip_hdr_len(pkt);
@@ -192,7 +192,7 @@ static bool run_tests(void)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
@@ -221,7 +221,7 @@ static bool run_tests(void)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
@@ -253,7 +253,7 @@ static bool run_tests(void)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	chunk = 29;
 	datalen = sizeof(pkt3) - sizeof(struct net_ipv6_hdr);
@@ -321,7 +321,7 @@ static bool run_tests(void)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_family(pkt, AF_INET);
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];
@@ -350,7 +350,7 @@ static bool run_tests(void)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_family(pkt, AF_INET);
-	net_pkt_set_ext_len(pkt, 0);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	hdr_len = net_pkt_ip_hdr_len(pkt);
 	orig_chksum = (frag->data[hdr_len + 2] << 8) + frag->data[hdr_len + 3];

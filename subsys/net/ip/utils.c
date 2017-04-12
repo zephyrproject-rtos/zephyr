@@ -405,7 +405,7 @@ static inline uint16_t calc_chksum_pkt(uint16_t sum, struct net_pkt *pkt,
 {
 	struct net_buf *frag = pkt->frags;
 	uint16_t proto_len = net_pkt_ip_hdr_len(pkt) +
-		net_pkt_ext_len(pkt);
+		net_pkt_ipv6_ext_len(pkt);
 	int16_t len = frag->len - proto_len;
 	uint8_t *ptr = frag->data + proto_len;
 
@@ -453,7 +453,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 	case AF_INET:
 		upper_layer_len = (NET_IPV4_HDR(pkt)->len[0] << 8) +
 			NET_IPV4_HDR(pkt)->len[1] -
-			net_pkt_ext_len(pkt) -
+			net_pkt_ipv6_ext_len(pkt) -
 			net_pkt_ip_hdr_len(pkt);
 
 		if (proto == IPPROTO_ICMP) {
@@ -470,7 +470,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 #if defined(CONFIG_NET_IPV6)
 	case AF_INET6:
 		upper_layer_len = (NET_IPV6_HDR(pkt)->len[0] << 8) +
-			NET_IPV6_HDR(pkt)->len[1] - net_pkt_ext_len(pkt);
+			NET_IPV6_HDR(pkt)->len[1] - net_pkt_ipv6_ext_len(pkt);
 		sum = calc_chksum(upper_layer_len + proto,
 				  (uint8_t *)&NET_IPV6_HDR(pkt)->src,
 				  2 * sizeof(struct in6_addr));
