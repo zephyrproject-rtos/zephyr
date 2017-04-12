@@ -460,7 +460,7 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 		}
 
 		memcpy(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
-	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_SHORT_ADDR) {
 		*value = ctx->short_addr;
 	}
 
