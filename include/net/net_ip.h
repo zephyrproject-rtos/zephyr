@@ -601,8 +601,9 @@ static inline bool net_is_ipv6_addr_mcast_global(const struct in6_addr *addr)
  *  @param src IPv6 address.
  *  @param dst IPv6 address.
  */
-static inline void net_ipv6_addr_create_solicited_node(struct in6_addr *src,
-						       struct in6_addr *dst)
+static inline
+void net_ipv6_addr_create_solicited_node(const struct in6_addr *src,
+					 struct in6_addr *dst)
 {
 	dst->s6_addr[0]   = 0xFF;
 	dst->s6_addr[1]   = 0x02;

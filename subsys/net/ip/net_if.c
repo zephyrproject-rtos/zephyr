@@ -617,7 +617,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 	return NULL;
 }
 
-bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr)
+bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	int i;
 

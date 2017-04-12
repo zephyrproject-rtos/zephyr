@@ -603,7 +603,7 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr);
+bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr);
 
 
 /**
