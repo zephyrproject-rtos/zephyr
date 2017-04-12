@@ -300,7 +300,7 @@ static int gpio_nrf5_enable_callback(struct device *dev,
 		/* clear event before any interrupt triggers */
 		gpiote->EVENTS_IN[i] = 0;
 		/* enable interrupt for the GPIOTE channel */
-		gpiote->INTENSET |= BIT(i);
+		gpiote->INTENSET = BIT(i);
 	} else {
 		return -ENOTSUP;
 	}
@@ -324,7 +324,7 @@ static int gpio_nrf5_disable_callback(struct device *dev,
 
 		data->pin_callback_enables &= ~(BIT(pin));
 		/* disable interrupt for the GPIOTE channel */
-		gpiote->INTENCLR &= ~(BIT(i));
+		gpiote->INTENCLR = BIT(i);
 	} else {
 		return -ENOTSUP;
 	}
