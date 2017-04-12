@@ -1,5 +1,4 @@
 #include <arm/armv7-m.dtsi>
-#include <inc/hw_memmap.h>
 #include <inc/hw_ints.h>
 
 /* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC3200 SDK */
@@ -25,17 +24,17 @@
 	};
 
 	soc {
-		uart0: uart@UARTA0_BASE {
+		uart0: uart@4000C000 {
 			compatible = "ti,cc32xx-uart";
-			reg = <UARTA0_BASE 0x4c>;
+			reg = <0x4000C000 0x4c>;
 			interrupts = <EXP_UARTA0 3>;
 			baud-rate = <115200>;
 			status = "disabled";
 		};
 
-		uart1: uart@UARTA1_BASE {
+		uart1: uart@4000D000 {
 			compatible = "ti,cc32xx-uart";
-			reg = <UARTA1_BASE 0x4c>;
+			reg = <0x4000D000 0x4c>;
 			interrupts = <EXP_UARTA1 3>;
 			baud-rate = <115200>;
 			status = "disabled";
