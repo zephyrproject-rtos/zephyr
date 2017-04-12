@@ -945,6 +945,15 @@ struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
 					 struct net_if **iface);
 
 /**
+ * @brief Stop IPv6 Duplicate Address Detection (DAD) procedure if
+ * we find out that our IPv6 address is already in use.
+ *
+ * @param iface Interface where the DAD was running.
+ * @param addr IPv6 address that failed DAD
+ */
+void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
+
+/**
  * @brief Return global IPv6 address from the first interface that has
  * a global IPv6 address either in TENTATIVE or PREFERRED state.
  *

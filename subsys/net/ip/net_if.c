@@ -397,6 +397,8 @@ static void dad_timeout(struct k_work *work)
 	 */
 	tmp = net_if_ipv6_addr_lookup(&ifaddr->address.in6_addr, &iface);
 	if (tmp == ifaddr) {
+		net_mgmt_event_notify(NET_EVENT_IPV6_DAD_SUCCEED, iface);
+
 		/* The address gets added to neighbor cache which is not needed
 		 * in this case as the address is our own one.
 		 */
@@ -443,6 +445,24 @@ void net_if_start_dad(struct net_if *iface)
 		NET_ERR("Cannot add %s address to interface %p, DAD fails",
 			net_sprint_ipv6_addr(&addr), iface);
 	}
+}
+
+void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
+{
+	struct net_if_addr *ifaddr;
+
+	ifaddr = net_if_ipv6_addr_lookup(addr, &iface);
+	if (!ifaddr) {
+		NET_ERR("Cannot find %s address in interface %p",
+			net_sprint_ipv6_addr(addr), iface);
+		return;
+	}
+
+	k_delayed_work_cancel(&ifaddr->dad_timer);
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_DAD_FAILED, iface);
+
+	net_if_ipv6_addr_rm(iface, addr);
 }
 #else
 static inline void net_if_ipv6_start_dad(struct net_if *iface,

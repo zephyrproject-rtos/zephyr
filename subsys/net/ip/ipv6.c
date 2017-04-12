@@ -698,7 +698,7 @@ static inline bool dad_failed(struct net_if *iface, struct in6_addr *addr)
 		return false;
 	}
 
-	net_if_ipv6_addr_rm(iface, addr);
+	net_if_ipv6_dad_failed(iface, addr);
 
 	return true;
 }
