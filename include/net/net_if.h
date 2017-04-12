@@ -41,20 +41,8 @@ extern "C" {
  * Stores the unicast IP addresses assigned to this network interface.
  */
 struct net_if_addr {
-	/** Is this IP address used or not */
-	bool is_used;
-
 	/** IP address */
 	struct net_addr address;
-
-	/** How the IP address was set */
-	enum net_addr_type addr_type;
-
-	/** What is the current state of the address */
-	enum net_addr_state addr_state;
-
-	/** Is the IP address valid forever */
-	bool is_infinite;
 
 	/** Timer that triggers renewal */
 	struct k_delayed_work lifetime;
@@ -62,10 +50,23 @@ struct net_if_addr {
 #if defined(CONFIG_NET_IPV6_DAD)
 	/** Duplicate address detection (DAD) timer */
 	struct k_delayed_work dad_timer;
+#endif
+	/** How the IP address was set */
+	enum net_addr_type addr_type;
 
+	/** What is the current state of the address */
+	enum net_addr_state addr_state;
+
+#if defined(CONFIG_NET_IPV6_DAD)
 	/** How many times we have done DAD */
 	uint8_t dad_count;
-#endif /* CONFIG_NET_IPV6_DAD */
+#endif
+
+	/** Is the IP address valid forever */
+	bool is_infinite;
+
+	/** Is this IP address used or not */
+	bool is_used;
 };
 
 /**
