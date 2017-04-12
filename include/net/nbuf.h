@@ -104,6 +104,10 @@ struct net_nbuf {
 #if defined(CONFIG_NET_ROUTE)
 	bool forwarding; /* Are we forwarding this buf */
 #endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+	uint8_t ieee802154_rssi;
+#endif
 	/* @endcond */
 };
 
@@ -428,6 +432,19 @@ static inline void net_nbuf_set_ipv6_fragment_id(struct net_buf *buf,
 						 uint32_t id)
 {
 	((struct net_nbuf *)net_buf_user_data(buf))->ipv6_fragment_id = id;
+}
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+static inline uint8_t net_nbuf_ieee802154_rssi(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->ieee802154_rssi;
+}
+
+static inline void net_nbuf_set_ieee802154_rssi(struct net_buf *buf,
+						uint8_t rssi)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ieee802154_rssi = rssi;
 }
 #endif
 
