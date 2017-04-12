@@ -29,6 +29,7 @@ void main(void)
 {
 	uint32_t i = 0;
 
+	TC_START("nmi_test_isr");
 	/* Configure the NMI isr */
 	_NmiHandlerSet(nmi_test_isr);
 

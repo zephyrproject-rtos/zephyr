@@ -45,6 +45,7 @@ void main(void)
 {
 	int ret, ret_code;
 
+	TC_START("bluetooth");
 	driver_init();
 
 	ret = bt_enable(NULL);

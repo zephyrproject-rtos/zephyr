@@ -48,6 +48,7 @@ void main(void)
 {
 	int rv = TC_PASS;
 
+	TC_START("kernel_errno");
 	k_fifo_init(&fifo);
 
 	errno = errno_values[N_THREADS];

@@ -15,6 +15,7 @@ void main(void)
 	volatile long long c = a / b;
 	int rv = TC_PASS;
 
+	TC_START("test_multilib");
 	if (c != 33) {
 		rv = TC_FAIL;
 	}

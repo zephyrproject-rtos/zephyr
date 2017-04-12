@@ -31,6 +31,7 @@ void main(void)
 	int  tcRC = TC_PASS;
 	int  i;
 
+	TC_START("kernel_xip");
 	PRINT_DATA("Starting XIP tests\n");
 	PRINT_LINE;
 
