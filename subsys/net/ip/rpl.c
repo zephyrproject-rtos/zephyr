@@ -3606,39 +3606,36 @@ int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr)
 	struct net_buf *frag;
 	uint16_t sender_rank;
 	uint16_t offset;
-	uint8_t next;
+	uint8_t opt;
 	uint8_t len;
-
-	frag = buf->frags;
 
 	if (NET_IPV6_BUF(buf)->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
 		return 0;
 	}
 
-	/* The HBHO will start right after IPv6 header */
-	frag = net_nbuf_skip(frag, pos, &pos, sizeof(struct net_ipv6_hdr));
+	frag = buf->frags;
+
+	/* The HBHO will start right after IPv6 header also skip
+	 * next header.
+	 */
+	pos = sizeof(struct net_ipv6_hdr) + 1;
+	frag = net_nbuf_read(frag, pos, &pos, 1, &len); /* HBH length */
+	frag = net_nbuf_read(frag, pos, &pos, 1, &opt); /* Opt type */
 	if (!frag && pos) {
 		/* Not enough data in the message */
 		return -EMSGSIZE;
 	}
 
-	frag = net_nbuf_read(frag, pos, &pos, 1, &next);
-	frag = net_nbuf_read(frag, pos, &pos, 1, &len);
-	if (!frag && pos) {
-		return -EMSGSIZE;
-	}
-
 	if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
-		NET_DBG("Non RPL Hop-by-hop options support not implemented");
+		NET_DBG("Invalid HBH length %d", len);
 		return 0;
 	}
 
-	if (next != NET_RPL_EXT_HDR_OPT_RPL) {
-		NET_DBG("Next header option is not NET_RPL_EXT_HDR_OPT_RPL");
+	if (opt != NET_RPL_EXT_HDR_OPT_RPL) {
+		NET_DBG("HBH option is not NET_RPL_EXT_HDR_OPT_RPL");
 		return 0;
 	}
 
-	frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt type */
 	frag = net_nbuf_skip(frag, pos, &pos, 1); /* opt len */
 
 	/* Where the flags is located in the packet, that info is
@@ -3859,6 +3856,17 @@ static int net_rpl_update_header_empty(struct net_buf *buf)
 
 	NET_DBG("Verifying the presence of the RPL header option");
 
+	if (next != NET_IPV6_NEXTHDR_HBHO) {
+		NET_DBG("No hop-by-hop option found, creating it");
+
+		if (add_rpl_opt(buf, offset) < 0) {
+			NET_DBG("Cannot add RPL options");
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
 	net_nbuf_set_ipv6_hdr_prev(buf, offset);
 
 	frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
@@ -3868,18 +3876,6 @@ static int net_rpl_update_header_empty(struct net_buf *buf)
 	}
 
 	length = 0;
-
-	if (next != NET_IPV6_NEXTHDR_HBHO) {
-		NET_DBG("No hop-by-hop option found, creating it");
-
-		 /* We already read 2 bytes so go back accordingly. */
-		if (add_rpl_opt(buf, offset - 2) < 0) {
-			NET_DBG("Cannot add RPL options");
-			return -EINVAL;
-		}
-
-		return 0;
-	}
 
 	if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
 		NET_DBG("Hop-by-hop ext header is wrong size "
