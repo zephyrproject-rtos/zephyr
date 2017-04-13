@@ -1206,6 +1206,102 @@ static int test_fragment_compact(void)
 	return 0;
 }
 
+static const char frag_data[CONFIG_NET_NBUF_DATA_SIZE] = { 42 };
+
+static int test_fragment_split(void)
+{
+#define TEST_FRAG_COUNT (FRAG_COUNT - 2)
+#define FRAGA (FRAG_COUNT - 2)
+#define FRAGB (FRAG_COUNT - 1)
+	struct net_buf *buf, *frags[FRAG_COUNT], *frag, *fragA, *fragB;
+	int i, total, splitA, splitB;
+	int ret;
+
+	buf = net_nbuf_get_reserve_rx(0, K_FOREVER);
+	frag = NULL;
+
+	for (i = 0, total = 0; i < TEST_FRAG_COUNT; i++) {
+		frags[i] = net_nbuf_get_reserve_rx_data(12, K_FOREVER);
+
+		if (frag) {
+			net_buf_frag_add(frag, frags[i]);
+		}
+
+		frag = frags[i];
+
+		/* Copy some test data in front of the fragment */
+		memcpy(net_buf_add(frags[i], sizeof(frag_data)),
+		       frag_data, sizeof(frag_data));
+
+		total++;
+	}
+
+	if (total != TEST_FRAG_COUNT) {
+		printk("There should be %d fragments but was %d\n",
+		       TEST_FRAG_COUNT, total);
+		return -1;
+	}
+
+	net_buf_frag_add(buf, frags[0]);
+
+	fragA = frags[FRAGA];
+	fragB = frags[FRAGB];
+
+	splitA = fragA->size * 2 / 3;
+	splitB = fragB->size - splitA;
+
+	/* Test some error cases first */
+	ret = net_nbuf_split(NULL, NULL, 1024, &fragA, &fragB, K_NO_WAIT);
+	if (!ret) {
+		printk("Invalid buf pointers\n");
+		return -1;
+	}
+
+	ret = net_nbuf_split(buf, buf->frags, 1024, &fragA, &fragB, K_NO_WAIT);
+	if (!ret) {
+		printk("Too long frag length %d\n", 1024);
+		return -1;
+	}
+
+	ret = net_nbuf_split(buf, buf->frags, CONFIG_NET_NBUF_DATA_SIZE + 1,
+			     &fragA, &fragB, K_NO_WAIT);
+	if (!ret) {
+		printk("Too long frag size %d vs %d\n",
+		       CONFIG_NET_NBUF_DATA_SIZE,
+		       CONFIG_NET_NBUF_DATA_SIZE + 1);
+		return -1;
+	}
+
+	ret = net_nbuf_split(buf, buf->frags, splitA,
+			     &fragA, &fragB, K_NO_WAIT);
+	if (ret < 0) {
+		printk("Cannot split into %d and %d parts\n", splitA, splitB);
+		return -1;
+	}
+
+	if (fragA->len != splitA) {
+		printk("Frag A len %d not %d\n", fragA->len, splitA);
+		return -1;
+	}
+
+	if (fragB->len != splitB) {
+		printk("Frag B len %d not %d\n", fragB->len, splitB);
+		return -1;
+	}
+
+	if (memcmp(buf->frags->data, fragA->data, splitA)) {
+		printk("Frag A data mismatch\n");
+		return -1;
+	}
+
+	if (memcmp(buf->frags->data + splitA, fragB->data, splitB)) {
+		printk("Frag B data mismatch\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 void main(void)
 {
 	if (test_ipv6_multi_frags() < 0) {
@@ -1229,6 +1325,10 @@ void main(void)
 	}
 
 	if (test_fragment_compact() < 0) {
+		goto fail;
+	}
+
+	if (test_fragment_split() < 0) {
 		goto fail;
 	}
 

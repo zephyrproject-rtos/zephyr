@@ -115,12 +115,23 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, int32_t timeout)
 		uint32_t ref = k_uptime_get_32();
 		buf = k_lifo_get(&pool->free, K_NO_WAIT);
 		while (!buf) {
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+			NET_BUF_WARN("%s():%d: Pool %s low on buffers.",
+				     func, line, pool->name);
+#else
 			NET_BUF_WARN("%s():%d: Pool %p low on buffers.",
 				     func, line, pool);
+#endif
 			buf = k_lifo_get(&pool->free, WARN_ALLOC_INTERVAL);
-			NET_BUF_WARN("%s():%d: blocked for %u secs",
-				     func, line,
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+			NET_BUF_WARN("%s():%d: Pool %s blocked for %u secs",
+				     func, line, pool->name,
 				     (k_uptime_get_32() - ref) / MSEC_PER_SEC);
+#else
+			NET_BUF_WARN("%s():%d: Pool %p blocked for %u secs",
+				     func, line, pool,
+				     (k_uptime_get_32() - ref) / MSEC_PER_SEC);
+#endif
 		}
 	} else {
 		buf = k_lifo_get(&pool->free, timeout);

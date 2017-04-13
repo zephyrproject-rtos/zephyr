@@ -586,7 +586,9 @@ static void eth_rx(struct gmac_queue *queue)
 	while (rx_frame) {
 		SYS_LOG_DBG("ETH rx");
 
-		net_recv_data(dev_data->iface, rx_frame);
+		if (net_recv_data(dev_data->iface, rx_frame) < 0) {
+			net_nbuf_unref(rx_frame);
+		}
 
 		rx_frame = frame_get(queue);
 	}

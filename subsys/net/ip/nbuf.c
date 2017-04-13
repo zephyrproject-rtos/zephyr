@@ -1516,6 +1516,59 @@ bool net_nbuf_insert(struct net_buf *buf, struct net_buf *frag,
 	return insert_data(buf, frag, temp, offset, len, data, timeout);
 }
 
+int net_nbuf_split(struct net_buf *buf, struct net_buf *orig_frag,
+		   uint16_t len, struct net_buf **fragA,
+		   struct net_buf **fragB, int32_t timeout)
+{
+	if (!buf || !orig_frag || is_from_data_pool(buf)) {
+		return -EINVAL;
+	}
+
+	NET_ASSERT(fragA && fragB);
+
+	if (len == 0) {
+		*fragA = NULL;
+		*fragB = NULL;
+		return 0;
+	}
+
+	if (len > net_buf_tailroom(*fragA)) {
+		NET_DBG("Length %u is larger than fragment size %zd",
+			len, net_buf_tailroom(*fragA));
+		return -EINVAL;
+	}
+
+	if (len > orig_frag->len) {
+		*fragA = net_nbuf_get_frag(buf, timeout);
+		if (!*fragA) {
+			return -ENOMEM;
+		}
+
+		memcpy(net_buf_add(*fragA, orig_frag->len), orig_frag->data,
+		       orig_frag->len);
+
+		*fragB = NULL;
+		return 0;
+	}
+
+	*fragA = net_nbuf_get_frag(buf, timeout);
+	if (!*fragA) {
+		return -ENOMEM;
+	}
+
+	*fragB = net_nbuf_get_frag(buf, timeout);
+	if (!*fragB) {
+		net_nbuf_unref(*fragA);
+		return -ENOMEM;
+	}
+
+	memcpy(net_buf_add(*fragA, len), orig_frag->data, len);
+	memcpy(net_buf_add(*fragB, orig_frag->len - len),
+	       orig_frag->data + len, orig_frag->len - len);
+
+	return 0;
+}
+
 void net_nbuf_get_info(struct net_buf_pool **rx,
 		       struct net_buf_pool **tx,
 		       struct net_buf_pool **rx_data,

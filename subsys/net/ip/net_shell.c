@@ -170,10 +170,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		       router->is_infinite ? " infinite" : "");
 	}
 
-	printk("IPv6 hop limit           : %d\n", iface->hop_limit);
-	printk("IPv6 base reachable time : %d\n", iface->base_reachable_time);
-	printk("IPv6 reachable time      : %d\n", iface->reachable_time);
-	printk("IPv6 retransmit timer    : %d\n", iface->retrans_timer);
+	printk("IPv6 hop limit           : %d\n", iface->ipv6.hop_limit);
+	printk("IPv6 base reachable time : %d\n",
+	       iface->ipv6.base_reachable_time);
+	printk("IPv6 reachable time      : %d\n", iface->ipv6.reachable_time);
+	printk("IPv6 retransmit timer    : %d\n", iface->ipv6.retrans_timer);
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -310,7 +311,7 @@ static void route_mcast_cb(struct net_route_entry_mcast *entry,
 	printk("========================================================\n");
 
 	printk("IPv6 group : %s\n", net_sprint_ipv6_addr(&entry->group));
-	printk("Lifetime   : %lu\n", entry->lifetime);
+	printk("Lifetime   : %u\n", entry->lifetime);
 }
 
 static void iface_per_mcast_route_cb(struct net_if *iface, void *user_data)
@@ -371,7 +372,7 @@ static inline void net_shell_print_statistics(void)
 	       GET_STAT(udp.chkerr));
 #endif
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	printk("RPL DIS recv   %d\tsent\t%d\tdrop\t%d\n",
 	       GET_STAT(rpl.dis.recv),
 	       GET_STAT(rpl.dis.sent),
@@ -484,6 +485,27 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 }
 #endif
 
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
+			 void *user_data)
+{
+	int *count = user_data;
+	char src[ADDR_LEN];
+
+	if (!*count) {
+		printk("\nIPv6 reassembly Id         Remain Src\t\t\t\tDst\n");
+	}
+
+	snprintk(src, ADDR_LEN, "%s", net_sprint_ipv6_addr(&reass->src));
+
+	printk("%p      0x%08x  %5d %s\t%s\n",
+	       reass, reass->id, k_delayed_work_remaining_get(&reass->timer),
+	       src, net_sprint_ipv6_addr(&reass->dst));
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+
 #if defined(CONFIG_NET_DEBUG_NET_BUF)
 static void allocs_cb(struct net_buf *buf,
 		      const char *func_alloc,
@@ -564,6 +586,14 @@ static int shell_cmd_conn(int argc, char *argv[])
 	if (count == 0) {
 		printk("No TCP connections\n");
 	}
+#endif
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	count = 0;
+
+	net_ipv6_frag_foreach(ipv6_frag_cb, &count);
+
+	/* Do not print anything if no fragments are pending atm */
 #endif
 
 	return 0;

@@ -23,6 +23,11 @@ enum net_verdict net_ipv4_process_pkt(struct net_buf *buf);
 enum net_verdict net_ipv6_process_pkt(struct net_buf *buf);
 extern void net_ipv6_init(void);
 
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_buf *buf,
+				 uint16_t pkt_len);
+#endif
+
 extern const char *net_proto2str(enum net_ip_protocol proto);
 extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,

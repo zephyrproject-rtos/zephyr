@@ -4,7 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "IEEE 802.15.4 Radio protocol"
+menu "IEEE 802.15.4 Radio"
+
+config NET_L2_IEEE802154_RADIO_DFLT_TX_POWER
+	int "Default radio transmission power"
+	default 0
+	help
+	  TX power in dbm. Valid setting are: -18, -7, -4, -2, 0, 1, 2, 3, 5
+	  If wrongly set, it will silently fail.
 
 config NET_L2_IEEE802154_RADIO_TX_RETRIES
 	int "Radio Transmission attempts"

@@ -61,7 +61,31 @@ struct net_nbuf {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	/* Fragment id */
+	uint32_t ipv6_fragment_id;
+
+	/* Where is the start of the fragment header */
+	uint8_t *ipv6_frag_hdr_start;
+
+	/* What is the fragment offset of this IPv6 packet */
+	uint16_t ipv6_fragment_offset;
+#endif
+
 	uint16_t appdatalen;
+
+#if defined(CONFIG_NET_IPV6)
+	/* Where is the start of the last header before payload data
+	 * in IPv6 packet. This is offset value from start of the IPv6
+	 * packet. Note that this value should be updated by who ever
+	 * adds IPv6 extension headers to the network packet.
+	 */
+	uint16_t ipv6_prev_hdr_start;
+
+	/* IPv6 hop limit for this network packet. */
+	uint8_t ipv6_hop_limit;
+#endif
+
 	uint8_t ll_reserve;	/* link layer header length */
 	uint8_t family;		/* IPv4 vs IPv6 */
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
@@ -79,6 +103,10 @@ struct net_nbuf {
 
 #if defined(CONFIG_NET_ROUTE)
 	bool forwarding; /* Are we forwarding this buf */
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+	uint8_t ieee802154_rssi;
 #endif
 	/* @endcond */
 };
@@ -339,6 +367,86 @@ static inline void net_nbuf_copy_user_data(struct net_buf *new,
 	       (struct net_nbuf *)net_buf_user_data(orig),
 	       sizeof(struct net_nbuf));
 }
+
+#if defined(CONFIG_NET_IPV6)
+static inline uint16_t net_nbuf_ipv6_hdr_prev(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_prev_hdr_start;
+}
+
+static inline void net_nbuf_set_ipv6_hdr_prev(struct net_buf *buf,
+					      uint16_t offset)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_prev_hdr_start = offset;
+}
+
+static inline uint8_t net_nbuf_ipv6_hop_limit(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_hop_limit;
+}
+
+static inline void net_nbuf_set_ipv6_hop_limit(struct net_buf *buf,
+					       uint8_t hop_limit)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_hop_limit = hop_limit;
+}
+#endif
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+static inline uint8_t *net_nbuf_ipv6_fragment_start(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_frag_hdr_start;
+}
+
+static inline void net_nbuf_set_ipv6_fragment_start(struct net_buf *buf,
+						    uint8_t *start)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_frag_hdr_start = start;
+}
+
+static inline uint16_t net_nbuf_ipv6_fragment_offset(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)
+		net_buf_user_data(buf))->ipv6_fragment_offset;
+}
+
+static inline void net_nbuf_set_ipv6_fragment_offset(struct net_buf *buf,
+						     uint16_t offset)
+{
+	((struct net_nbuf *)
+	 net_buf_user_data(buf))->ipv6_fragment_offset = offset;
+}
+
+static inline uint32_t net_nbuf_ipv6_fragment_id(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->ipv6_fragment_id;
+}
+
+static inline void net_nbuf_set_ipv6_fragment_id(struct net_buf *buf,
+						 uint32_t id)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ipv6_fragment_id = id;
+}
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+static inline uint8_t net_nbuf_ieee802154_rssi(struct net_buf *buf)
+{
+	return ((struct net_nbuf *)net_buf_user_data(buf))->ieee802154_rssi;
+}
+
+static inline void net_nbuf_set_ieee802154_rssi(struct net_buf *buf,
+						uint8_t rssi)
+{
+	((struct net_nbuf *)net_buf_user_data(buf))->ieee802154_rssi = rssi;
+}
+#endif
 
 #define NET_IPV6_BUF(buf) ((struct net_ipv6_hdr *)net_nbuf_ip_data(buf))
 #define NET_IPV4_BUF(buf) ((struct net_ipv4_hdr *)net_nbuf_ip_data(buf))
@@ -847,6 +955,28 @@ static inline bool net_nbuf_append_be32(struct net_buf *buf, uint32_t data)
 }
 
 /**
+ * @brief Append uint32_t data to last fragment in fragment list
+ *
+ * @details Append data to last fragment. If there is not enough space in last
+ * fragment then new data fragment will be created and will be added to
+ * fragment list. Convert data to LE.
+ *
+ * @param buf Network buffer fragment list.
+ * @param data Data to be added
+ *
+ * @return True if all the data is placed at end of fragment list,
+ *         False otherwise (In-case of false buf might contain input data
+ *         in the process of placing into fragments).
+ */
+static inline bool net_nbuf_append_le32(struct net_buf *buf, uint32_t data)
+{
+	uint32_t value = sys_cpu_to_le32(data);
+
+	return net_nbuf_append(buf, sizeof(uint32_t), (uint8_t *)&value,
+			       K_FOREVER);
+}
+
+/**
  * @brief Get data from buffer
  *
  * @details Get N number of bytes starting from fragment's offset. If the total
@@ -1111,6 +1241,35 @@ static inline bool net_nbuf_insert_be32(struct net_buf *buf,
 	return net_nbuf_insert(buf, frag, offset, sizeof(uint32_t),
 			       (uint8_t *)&value, K_FOREVER);
 }
+
+/**
+ * @brief Split a fragment to two parts at arbitrary offset.
+ *
+ * @details This will generate two new fragments (fragA and fragB) from
+ * one (orig_frag). The original fragment is not modified but two new
+ * fragments are allocated and returned to the caller. The original fragment
+ * must be part of the chain pointed by the buf parameter. If the len parameter
+ * is larger than the amount of data in the orig fragment, then the fragA will
+ * contain all the data and fragB will be empty.
+ *
+ * @param buf Head of the network buffer fragment list.
+ * @param orig_frag Original network buffer fragment which is to be split.
+ * @param len Amount of data in the first returned fragment.
+ * @param fragA A fragment is returned. This will contain len bytes that
+ * are copied from start of orig_frag.
+ * @param fragB Another fragment is returned. This will contain remaining
+ * bytes (orig_frag->len - len) from the orig_frag or NULL if all the data
+ * was copied into fragA.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ * If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as long as
+ * necessary. Otherwise, wait up to the specified number of milliseconds before
+ * timing out.
+ *
+ * @return 0 on success, <0 otherwise.
+ */
+int net_nbuf_split(struct net_buf *buf, struct net_buf *orig_frag,
+		   uint16_t len, struct net_buf **fragA,
+		   struct net_buf **fragB, int32_t timeout);
 
 /**
  * @brief Get information about pre-defined RX, TX and DATA pools.
