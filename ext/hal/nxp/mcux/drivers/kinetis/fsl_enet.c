@@ -2522,6 +2522,9 @@ static status_t ENET_StoreTxFrameTime(ENET_Type *base, enet_handle_t *handle, ui
                     ptpTimeData.timeStamp.second = handle->msTimerSecond - 1;
                 }
 
+                /* Save transmit time stamp nanosecond. */
+                ptpTimeData.timeStamp.nanosecond = curBuffDescrip->timestamp;
+
                 /* Enable the interrupt. */
                 EnableGlobalIRQ(primask);
 
