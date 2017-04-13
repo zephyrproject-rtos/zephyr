@@ -172,6 +172,7 @@ import csv
 import glob
 import concurrent
 import concurrent.futures
+import xml.etree.ElementTree as ET
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
@@ -185,6 +186,8 @@ import expr_parser
 VERBOSE = 0
 LAST_SANITY = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                            "last_sanity.csv")
+LAST_SANITY_XUNIT = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
+                           "last_sanity.xml")
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
 CPU_COUNTS = multiprocessing.cpu_count()
@@ -1555,6 +1558,63 @@ class TestSuite:
                                 lower_better))
         return results
 
+    def testcase_xunit_report(self, filename, args):
+        if self.goals == None:
+            raise SanityRuntimeException("execute() hasn't been run!")
+
+        fails = 0
+        passes = 0
+        errors = 0
+
+        for name, goal in self.goals.items():
+            if goal.failed:
+                if goal.reason in ['build_error', 'qemu_crash']:
+                    errors += 1
+                else:
+                    fails += 1
+            else:
+                passes += 1
+
+        run = "Sanitycheck"
+        eleTestsuite = None
+        append = args.only_failed
+
+        if os.path.exists(filename) or append:
+            tree = ET.parse(filename)
+            eleTestsuites = tree.getroot()
+            eleTestsuite =  tree.findall('testsuite')[0];
+        else:
+            eleTestsuites = ET.Element('testsuites')
+            eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite', name=run,
+                    tests="%d" %(errors + passes + fails),  failures="%d" %fails,  errors="%d" %errors, skip="0")
+
+        qemu_time = "0"
+        for name, goal in self.goals.items():
+
+            i = self.instances[name]
+            if append:
+                for tc in eleTestsuite.findall('testcase'):
+                    if tc.get('name') == "%s:%s" %(i.platform.name, i.test.name):
+                        eleTestsuite.remove(tc)
+
+            if not goal.failed and goal.qemu:
+                    qemu_time = "%s" %(goal.metrics["qemu_time"])
+
+            eleTestcase = ET.SubElement(eleTestsuite, 'testcase', name="%s:%s" %(i.platform.name, i.test.name), time=qemu_time)
+            if goal.failed:
+                failure = ET.SubElement(eleTestcase, 'failure', type="failure", message=goal.reason)
+                p = ("%s/%s/%s" %(args.outdir, i.platform.name, i.test.name))
+                bl = os.path.join(p, "build.log")
+                if os.path.exists(bl):
+                    with open(bl, "r") as f:
+                        log = f.read()
+                        failure.text = (str(log))
+
+        result = ET.tostring(eleTestsuites)
+        f = open(filename, 'wb')
+        f.write(result)
+        f.close()
+
     def testcase_report(self, filename):
         if self.goals == None:
             raise SanityRuntimeException("execute() hasn't been run!")
@@ -1924,6 +1984,7 @@ def main():
     if args.testcase_report:
         ts.testcase_report(args.testcase_report)
     if not args.no_update:
+        ts.testcase_xunit_report(LAST_SANITY_XUNIT, args)
         ts.testcase_report(LAST_SANITY)
     if args.release:
         ts.testcase_report(RELEASE_DATA)
