@@ -60,6 +60,6 @@ GEN_ABSOLUTE_SYM(__tPreempt_SIZEOF, sizeof(_caller_saved_t));
 /* size of the struct k_thread structure without save area for coproc regs */
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
 		 sizeof(struct k_thread) - sizeof(tCoopCoprocReg) -
-			 sizeof(tPreempCoprocReg));
+			 sizeof(tPreempCoprocReg) + XT_CP_DESCR_SIZE);
 
 GEN_ABS_SYM_END

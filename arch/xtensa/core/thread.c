@@ -89,6 +89,7 @@ void _new_thread(char *pStack, size_t stackSize,
 	struct k_thread *thread = (struct k_thread *)(pStack);
 #if XCHAL_CP_NUM > 0
 	uint32_t *cpSA;
+	char *cpStack;
 #endif
 
 #ifdef CONFIG_DEBUG
@@ -99,6 +100,9 @@ void _new_thread(char *pStack, size_t stackSize,
 	memset(pStack, 0xaa, stackSize);
 #endif
 #if XCHAL_CP_NUM > 0
+	/* Ensure CP state descriptor is correctly initialized */
+	cpStack = thread->arch.preempCoprocReg.cpStack; /* short hand alias */
+	memset(cpStack, 0, XT_CP_ASA); /* Set to zero to avoid bad surprises */
 	/* Coprocessor's stack is allocated just after the k_thread */
 	cpSA = (uint32_t *)(thread->arch.preempCoprocReg.cpStack + XT_CP_ASA);
 	/* Coprocessor's save area alignment is at leat 16 bytes */
