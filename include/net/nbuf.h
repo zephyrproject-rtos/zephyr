@@ -955,6 +955,28 @@ static inline bool net_nbuf_append_be32(struct net_buf *buf, uint32_t data)
 }
 
 /**
+ * @brief Append uint32_t data to last fragment in fragment list
+ *
+ * @details Append data to last fragment. If there is not enough space in last
+ * fragment then new data fragment will be created and will be added to
+ * fragment list. Convert data to LE.
+ *
+ * @param buf Network buffer fragment list.
+ * @param data Data to be added
+ *
+ * @return True if all the data is placed at end of fragment list,
+ *         False otherwise (In-case of false buf might contain input data
+ *         in the process of placing into fragments).
+ */
+static inline bool net_nbuf_append_le32(struct net_buf *buf, uint32_t data)
+{
+	uint32_t value = sys_cpu_to_le32(data);
+
+	return net_nbuf_append(buf, sizeof(uint32_t), (uint8_t *)&value,
+			       K_FOREVER);
+}
+
+/**
  * @brief Get data from buffer
  *
  * @details Get N number of bytes starting from fragment's offset. If the total
