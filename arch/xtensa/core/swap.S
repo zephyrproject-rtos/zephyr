@@ -70,12 +70,9 @@ _Swap:
 #if XCHAL_CP_NUM > 0
 	/* Clear CPENABLE, also in task's co-processor state save area. */
 	movi    a3,  0
-	/* a4 := current->arch.preempCoprocReg.cpStack */
-	l32i a4, a4, THREAD_OFFSET(cpStack)
+	/* a4 = _kernel->current */
 	wsr     a3,  CPENABLE
-	beqz    a4,  1f
-	s16i    a3,  a4, XT_CPENABLE        /* clear saved cpenable */
-1:
+	s16i    a3,  a4, THREAD_OFFSET(cpEnable) /* clear saved cpenable */
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH

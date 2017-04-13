@@ -66,8 +66,7 @@ _zxt_dispatch:
 
 #if XCHAL_CP_NUM > 0
 	/* Restore CPENABLE from task's co-processor save area. */
-	l32i a2, a3, THREAD_OFFSET(cpStack)
-	l16ui a3, a2, XT_CPENABLE
+	l16ui a3, a3, THREAD_OFFSET(cpEnable) /* a3 := cp_state->cpenable */
 	wsr a3, CPENABLE
 #endif
 	/*
@@ -179,9 +178,8 @@ _zxt_int_exit:
 
 #if XCHAL_CP_NUM > 0
 	l32i a3, a2, KERNEL_OFFSET(current) /* _thread := _kernel->current */
-	l32i a4, a3, THREAD_OFFSET(cpStack)
 	rsr a5, CPENABLE
-	s16i a5, a4, XT_CPENABLE         /* cp_state->cpenable = CPENABLE; */
+	s16i a5, a3, THREAD_OFFSET(cpEnable) /* cp_state->cpenable = CPENABLE */
 	movi a3, 0
 	wsr a3, CPENABLE                /* disable all co-processors */
 #endif
@@ -379,7 +377,7 @@ _zxt_task_coproc_state:
 	bnez a15, 1f
 	l32i a2, a2, KERNEL_OFFSET(current)
 	beqz a2, 1f
-	l32i a15, a2, THREAD_OFFSET(cpStack)
+	addi a15, a2, THREAD_OFFSET(cpStack)
 	ret
 
 1:	movi    a15, 0
