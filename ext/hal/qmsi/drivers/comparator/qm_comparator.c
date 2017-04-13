@@ -28,6 +28,7 @@
  */
 
 #include "qm_comparator.h"
+#include "clk.h"
 
 #if (HAS_SOC_CONTEXT_RETENTION)
 #include "power_states.h"
@@ -38,6 +39,7 @@ static void *callback_data;
 
 #define cmp_en cmp_en
 #define cmp_ref_pol cmp_ref_pol
+#define ONE_MICROSECOND (1)
 
 QM_ISR_DECLARE(qm_comparator_0_isr)
 {
@@ -78,6 +80,9 @@ int qm_ac_set_config(const qm_ac_config_t *const config)
 	QM_SCSS_CMP->cmp_ref_sel = reference;
 	QM_SCSS_CMP->cmp_ref_pol = config->polarity;
 	QM_SCSS_CMP->cmp_pwr = config->power;
+
+	/* Provide some delay after power Change to Comparator*/
+	clk_sys_udelay(5*ONE_MICROSECOND);
 
 	/* Clear all pending interrupts before we enable. */
 	QM_SCSS_CMP->cmp_stat_clr = 0x7FFFF;
