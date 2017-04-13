@@ -68,23 +68,23 @@ static void tqueue_get(struct k_queue *pqueue)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		assert_equal(rx_data, (void *)&data_p[i], NULL);
+		zassert_equal(rx_data, (void *)&data_p[i], NULL);
 	}
 	/*get queue data from "queue_append"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		assert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i], NULL);
 	}
 	/*get queue data from "queue_append_list"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		assert_equal(rx_data, (void *)&data_l[i], NULL);
+		zassert_equal(rx_data, (void *)&data_l[i], NULL);
 	}
 	/*get queue data from "queue_merge_slist"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		assert_equal(rx_data, (void *)&data_sl[i], NULL);
+		zassert_equal(rx_data, (void *)&data_sl[i], NULL);
 	}
 }
 

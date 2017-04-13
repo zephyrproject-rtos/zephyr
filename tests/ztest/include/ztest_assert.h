@@ -16,15 +16,11 @@
 
 #include <ztest.h>
 
-#ifdef assert
-#undef assert
-#endif
-
 void ztest_test_fail(void);
 
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
 
-static inline void _assert_(int cond, const char *file, int line)
+static inline void _zassert_(int cond, const char *file, int line)
 {
 	if (!(cond)) {
 		PRINT("\n    Assertion failed at %s:%d\n",
@@ -33,12 +29,12 @@ static inline void _assert_(int cond, const char *file, int line)
 	}
 }
 
-#define _assert(cond, msg, default_msg, file, line, func) \
-	_assert_(cond, file, line)
+#define _zassert(cond, msg, default_msg, file, line, func) \
+	_zassert_(cond, file, line)
 
 #else /* CONFIG_ZTEST_ASSERT_VERBOSE != 0 */
 
-static inline void _assert(int cond, const char *msg, const char *default_msg,
+static inline void _zassert(int cond, const char *msg, const char *default_msg,
 			   const char *file, int line, const char *func)
 {
 	if (!(cond)) {
@@ -69,50 +65,50 @@ static inline void _assert(int cond, const char *msg, const char *default_msg,
  * @brief Fail the test, if @a cond is false
  *
  * You probably don't need to call this macro directly. You should
- * instead use assert_{condition} macros below.
+ * instead use zassert_{condition} macros below.
  *
  * @param cond Condition to check
  * @param msg Optional, can be NULL. Message to print if @a cond is false.
  * @param default_msg Message to print if @a cond is false
  */
 
-#define assert(cond, msg, default_msg) \
-	_assert(cond, msg ? msg : "", msg ? ("(" default_msg ")") : (default_msg), \
+#define zassert(cond, msg, default_msg) \
+	_zassert(cond, msg ? msg : "", msg ? ("(" default_msg ")") : (default_msg), \
 		__FILE__, __LINE__, __func__)
 
 /**
  * @brief Assert that this function call won't be reached
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_unreachable(msg) assert(0, msg, "Reached unreachable code")
+#define zassert_unreachable(msg) zassert(0, msg, "Reached unreachable code")
 
 /**
  * @brief Assert that @a cond is true
  * @param cond Condition to check
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_true(cond, msg) assert(cond, msg, #cond " is false")
+#define zassert_true(cond, msg) zassert(cond, msg, #cond " is false")
 
 /**
  * @brief Assert that @a cond is false
  * @param cond Condition to check
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_false(cond, msg) assert(!(cond), msg, #cond " is true")
+#define zassert_false(cond, msg) zassert(!(cond), msg, #cond " is true")
 
 /**
  * @brief Assert that @a ptr is NULL
  * @param ptr Pointer to compare
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_is_null(ptr, msg) assert((ptr) == NULL, msg, #ptr " is not NULL")
+#define zassert_is_null(ptr, msg) zassert((ptr) == NULL, msg, #ptr " is not NULL")
 
 /**
  * @brief Assert that @a ptr is not NULL
  * @param ptr Pointer to compare
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_not_null(ptr, msg) assert((ptr) != NULL, msg, #ptr " is NULL")
+#define zassert_not_null(ptr, msg) zassert((ptr) != NULL, msg, #ptr " is NULL")
 
 /**
  * @brief Assert that @a a equals @a b
@@ -123,7 +119,7 @@ static inline void _assert(int cond, const char *msg, const char *default_msg,
  * @param b Value to compare
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_equal(a, b, msg) assert((a) == (b), msg, #a " not equal to " #b)
+#define zassert_equal(a, b, msg) zassert((a) == (b), msg, #a " not equal to " #b)
 
 /**
  * @brief Assert that @a a does not equal @a b
@@ -134,7 +130,7 @@ static inline void _assert(int cond, const char *msg, const char *default_msg,
  * @param b Value to compare
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_not_equal(a, b, msg) assert((a) != (b), msg, #a " equal to " #b)
+#define zassert_not_equal(a, b, msg) zassert((a) != (b), msg, #a " equal to " #b)
 
 /**
  * @brief Assert that @a a equals @a b
@@ -145,8 +141,8 @@ static inline void _assert(int cond, const char *msg, const char *default_msg,
  * @param b Value to compare
  * @param msg Optional message to print if the assertion fails
  */
-#define assert_equal_ptr(a, b, msg) \
-	assert((void *)(a) == (void *)(b), msg, #a " not equal to  " #b)
+#define zassert_equal_ptr(a, b, msg) \
+	zassert((void *)(a) == (void *)(b), msg, #a " not equal to  " #b)
 
 /**
  * @}

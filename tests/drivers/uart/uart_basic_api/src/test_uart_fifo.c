@@ -127,10 +127,10 @@ static int test_fifo_fill(void)
 
 void test_uart_fifo_fill(void)
 {
-	assert_true(test_fifo_fill() == TC_PASS, NULL);
+	zassert_true(test_fifo_fill() == TC_PASS, NULL);
 }
 
 void test_uart_fifo_read(void)
 {
-	assert_true(test_fifo_read() == TC_PASS, NULL);
+	zassert_true(test_fifo_read() == TC_PASS, NULL);
 }

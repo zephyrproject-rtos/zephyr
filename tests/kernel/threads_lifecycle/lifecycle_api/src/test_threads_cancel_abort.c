@@ -30,7 +30,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	k_thread_abort(k_current_get());
 	/*unreachable*/
 	execute_flag = 2;
-	assert_true(1 == 0, NULL);
+	zassert_true(1 == 0, NULL);
 }
 
 /*test cases*/
@@ -48,7 +48,7 @@ void test_threads_cancel_undelayed(void)
 	/**TESTPOINT: check cancel retcode when thread is not delayed*/
 	int cancel_ret = k_thread_cancel(tid);
 
-	assert_equal(cancel_ret, -EINVAL, NULL);
+	zassert_equal(cancel_ret, -EINVAL, NULL);
 	k_thread_abort(tid);
 }
 
@@ -67,7 +67,7 @@ void test_threads_cancel_started(void)
 	/**TESTPOINT: check cancel retcode when thread is started*/
 	int cancel_ret = k_thread_cancel(tid);
 
-	assert_equal(cancel_ret, -EINVAL, NULL);
+	zassert_equal(cancel_ret, -EINVAL, NULL);
 	k_thread_abort(tid);
 }
 
@@ -86,7 +86,7 @@ void test_threads_cancel_delayed(void)
 	/**TESTPOINT: check cancel retcode when thread is started*/
 	int cancel_ret = k_thread_cancel(tid);
 
-	assert_equal(cancel_ret, 0, NULL);
+	zassert_equal(cancel_ret, 0, NULL);
 	k_thread_abort(tid);
 }
 
@@ -98,7 +98,7 @@ void test_threads_abort_self(void)
 				     0, 0, 0);
 	k_sleep(100);
 	/**TESTPOINT: spawned thread executed but abort itself*/
-	assert_true(execute_flag == 1, NULL);
+	zassert_true(execute_flag == 1, NULL);
 	k_thread_abort(tid);
 }
 
@@ -112,7 +112,7 @@ void test_threads_abort_others(void)
 	k_thread_abort(tid);
 	k_sleep(100);
 	/**TESTPOINT: check not-started thread is aborted*/
-	assert_true(execute_flag == 0, NULL);
+	zassert_true(execute_flag == 0, NULL);
 
 	tid = k_thread_spawn(tstack, STACK_SIZE,
 			     thread_entry, NULL, NULL, NULL,
@@ -120,7 +120,7 @@ void test_threads_abort_others(void)
 	k_sleep(50);
 	k_thread_abort(tid);
 	/**TESTPOINT: check running thread is aborted*/
-	assert_true(execute_flag == 1, NULL);
+	zassert_true(execute_flag == 1, NULL);
 	k_sleep(1000);
-	assert_true(execute_flag == 1, NULL);
+	zassert_true(execute_flag == 1, NULL);
 }

@@ -8,12 +8,12 @@
 
 static void assert_tests(void)
 {
-	assert_true(1, "1 was false");
-	assert_false(0, "0 was true");
-	assert_is_null(NULL, "NULL was not NULL");
-	assert_not_null("foo", "\"foo\" was NULL");
-	assert_equal(1, 1, "1 was not equal to 1");
-	assert_equal_ptr(NULL, NULL, "NULL was not equal to NULL");
+	zassert_true(1, "1 was false");
+	zassert_false(0, "0 was true");
+	zassert_is_null(NULL, "NULL was not NULL");
+	zassert_not_null("foo", "\"foo\" was NULL");
+	zassert_equal(1, 1, "1 was not equal to 1");
+	zassert_equal_ptr(NULL, NULL, "NULL was not equal to NULL");
 }
 
 void test_main(void)

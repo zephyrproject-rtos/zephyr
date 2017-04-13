@@ -85,18 +85,18 @@ static int test_spi(uint32_t mode)
 void test_spi_cpol(void)
 {
 	TC_PRINT("Test SPI_MODE_CPOL\n");
-	assert_true(test_spi(SPI_WORD(8) | SPI_MODE_CPOL) == TC_PASS, NULL);
+	zassert_true(test_spi(SPI_WORD(8) | SPI_MODE_CPOL) == TC_PASS, NULL);
 }
 
 void test_spi_cpha(void)
 {
 	TC_PRINT("Test SPI_MODE_CPHA\n");
-	assert_true(test_spi(SPI_WORD(8) | SPI_MODE_CPHA) == TC_PASS, NULL);
+	zassert_true(test_spi(SPI_WORD(8) | SPI_MODE_CPHA) == TC_PASS, NULL);
 }
 
 void test_spi_cpol_cpha(void)
 {
 	TC_PRINT("Test SPI_MODE_CPOL | SPI_MODE_CPHA\n");
-	assert_true(test_spi(SPI_WORD(8) | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	zassert_true(test_spi(SPI_WORD(8) | SPI_MODE_CPOL | SPI_MODE_CPHA)
 					== TC_PASS, NULL);
 }

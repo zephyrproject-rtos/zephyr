@@ -133,10 +133,10 @@ static int test_burst_gy271(void)
 
 void test_i2c_gy271(void)
 {
-	assert_true(test_gy271() == TC_PASS, NULL);
+	zassert_true(test_gy271() == TC_PASS, NULL);
 }
 
 void test_i2c_burst_gy271(void)
 {
-	assert_true(test_burst_gy271() == TC_PASS, NULL);
+	zassert_true(test_burst_gy271() == TC_PASS, NULL);
 }

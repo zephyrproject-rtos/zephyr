@@ -26,7 +26,7 @@ void test_lifo_get_fail(void *p1, void *p2, void *p3)
 
 	k_lifo_init(&lifo);
 	/**TESTPOINT: lifo get returns NULL*/
-	assert_is_null(k_lifo_get(&lifo, K_NO_WAIT), NULL);
-	assert_is_null(k_lifo_get(&lifo, TIMEOUT), NULL);
+	zassert_is_null(k_lifo_get(&lifo, K_NO_WAIT), NULL);
+	zassert_is_null(k_lifo_get(&lifo, TIMEOUT), NULL);
 }
 

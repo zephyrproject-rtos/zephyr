@@ -69,5 +69,5 @@ static int test_task(void)
 
 void test_rtc_calendar(void)
 {
-	assert_true((test_task() == TC_PASS), NULL);
+	zassert_true((test_task() == TC_PASS), NULL);
 }

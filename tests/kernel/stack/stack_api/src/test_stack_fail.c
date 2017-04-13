@@ -30,7 +30,7 @@ void test_stack_pop_fail(void *p1, void *p2, void *p3)
 
 	k_stack_init(&stack, data, STACK_LEN);
 	/**TESTPOINT: stack pop returns -EBUSY*/
-	assert_equal(k_stack_pop(&stack, &rx_data, K_NO_WAIT), -EBUSY, NULL);
+	zassert_equal(k_stack_pop(&stack, &rx_data, K_NO_WAIT), -EBUSY, NULL);
 	/**TESTPOINT: stack pop returns -EAGAIN*/
-	assert_equal(k_stack_pop(&stack, &rx_data, TIMEOUT), -EAGAIN, NULL);
+	zassert_equal(k_stack_pop(&stack, &rx_data, TIMEOUT), -EAGAIN, NULL);
 }

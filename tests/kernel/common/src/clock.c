@@ -31,7 +31,7 @@ static void tclock_uptime(void)
 	/**TESTPOINT: uptime straddled ms boundary*/
 	t32 = k_uptime_get_32();
 	ALIGN_MS_BOUNDARY;
-	assert_true(k_uptime_get_32() > t32, NULL);
+	zassert_true(k_uptime_get_32() > t32, NULL);
 
 	/**TESTPOINT: uptime delta*/
 	d64 = k_uptime_delta(&d64);
@@ -46,7 +46,7 @@ static void tclock_uptime(void)
 	/**TESTPOINT: uptime delta straddled ms boundary*/
 	k_uptime_delta_32(&d64);
 	ALIGN_MS_BOUNDARY;
-	assert_true(k_uptime_delta_32(&d64) > 0, NULL);
+	zassert_true(k_uptime_delta_32(&d64) > 0, NULL);
 }
 
 static void tclock_cycle(void)
@@ -71,10 +71,10 @@ static void tclock_cycle(void)
 	/*avoid cycle counter wrap around*/
 	if (c1 > c0) {
 		/* delta cycle should be greater than 1 milli-second*/
-		assert_true((c1 - c0) >
+		zassert_true((c1 - c0) >
 			(sys_clock_hw_cycles_per_sec / MSEC_PER_SEC), NULL);
 		/* delta NS should be greater than 1 milli-second */
-		assert_true(SYS_CLOCK_HW_CYCLES_TO_NS(c1 - c0) >
+		zassert_true(SYS_CLOCK_HW_CYCLES_TO_NS(c1 - c0) >
 			(NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
 }

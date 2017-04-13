@@ -39,11 +39,11 @@ static void threads_suspend_resume(int prio)
 	k_thread_suspend(tid);
 	k_sleep(100);
 	/* checkpoint: spawned thread shouldn't be executed after suspend */
-	assert_false(last_prio == spawn_prio, NULL);
+	zassert_false(last_prio == spawn_prio, NULL);
 	k_thread_resume(tid);
 	k_sleep(100);
 	/* checkpoint: spawned thread should be executed after resume */
-	assert_true(last_prio == spawn_prio, NULL);
+	zassert_true(last_prio == spawn_prio, NULL);
 
 	k_thread_abort(tid);
 

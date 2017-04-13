@@ -39,9 +39,9 @@ void tmpool_alloc_free(void *data)
 		 * the block descriptor is set to the starting address of the
 		 * memory block.
 		 */
-		assert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
+		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
 			K_NO_WAIT) == 0, NULL);
-		assert_not_null(block[i].data, NULL);
+		zassert_not_null(block[i].data, NULL);
 	}
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
@@ -58,9 +58,9 @@ void tmpool_alloc_free(void *data)
 	 * @a max_size bytes long.
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		assert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MAX,
+		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MAX,
 			K_NO_WAIT) == 0, NULL);
-		assert_not_null(block[i].data, NULL);
+		zassert_not_null(block[i].data, NULL);
 	}
 
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
@@ -85,10 +85,10 @@ void test_mpool_alloc_size(void)
 	 * into quarters, down to blocks of @a min_size bytes long.
 	 */
 	while (size >= BLK_SIZE_MIN) {
-		assert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
+		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 			K_NO_WAIT) == 0, NULL);
-		assert_not_null(block[i].data, NULL);
-		assert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		zassert_not_null(block[i].data, NULL);
+		zassert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size >> 2;
 	}
@@ -103,10 +103,10 @@ void test_mpool_alloc_size(void)
 	 * aligned to this boundary, min_size must also be a multiple of align.
 	 */
 	while (size <= BLK_SIZE_MAX) {
-		assert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
+		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 			K_NO_WAIT) == 0, NULL);
-		assert_not_null(block[i].data, NULL);
-		assert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		zassert_not_null(block[i].data, NULL);
+		zassert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size << 2;
 	}
@@ -122,23 +122,23 @@ void test_mpool_alloc_timeout(void)
 	int64_t tms;
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
-		assert_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
+		zassert_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
 			K_NO_WAIT), 0, NULL);
 	}
 
 	/** TESTPOINT: Use K_NO_WAIT to return without waiting*/
 	/** TESTPOINT: @retval -ENOMEM Returned without waiting*/
-	assert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN,
+	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN,
 		K_NO_WAIT), -ENOMEM, NULL);
 	/** TESTPOINT: @retval -EAGAIN Waiting period timed out*/
 	tms = k_uptime_get();
-	assert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN, TIMEOUT),
+	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN, TIMEOUT),
 		-EAGAIN, NULL);
 	/**
 	 * TESTPOINT: Maximum time to wait for operation to complete (in
 	 * milliseconds)
 	 */
-	assert_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);
+	zassert_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		k_mem_pool_free(&block[i]);
@@ -152,7 +152,7 @@ void test_mpool_defrag(void)
 
 	/*fragment the memory pool into small blocks*/
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
-		assert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
+		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
 			K_NO_WAIT) == 0, NULL);
 	}
 	/*free the small blocks in the 1st half of the pool*/
@@ -160,7 +160,7 @@ void test_mpool_defrag(void)
 		k_mem_pool_free(&block[i]);
 	}
 	/*request a big block, the pool has "adjacent free blocks" to merge*/
-	assert_true(k_mem_pool_alloc(&kmpool, &block[0], BLK_SIZE_MAX,
+	zassert_true(k_mem_pool_alloc(&kmpool, &block[0], BLK_SIZE_MAX,
 		K_FOREVER) == 0, NULL);
 	/*free the small blocks in the 2nd half of the pool*/
 	for (int i = (BLK_NUM_MIN >> 1); i < BLK_NUM_MIN; i++) {
@@ -173,7 +173,7 @@ void test_mpool_defrag(void)
 	/*do manual de-fragment*/
 	k_mem_pool_defrag(&kmpool);
 	/*request a big block, the pool is de-fragmented*/
-	assert_true(k_mem_pool_alloc(&kmpool, &block[1], BLK_SIZE_MAX,
+	zassert_true(k_mem_pool_alloc(&kmpool, &block[1], BLK_SIZE_MAX,
 		K_NO_WAIT) == 0, NULL);
 	/*free the big blocks*/
 	for (int i = 0; i < BLK_NUM_MAX; i++) {

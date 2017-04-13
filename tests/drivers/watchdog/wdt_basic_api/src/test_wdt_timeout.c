@@ -145,14 +145,14 @@ static int test_wdt(uint32_t timeout, enum wdt_mode r_mode)
  */
 void test_wdt_int_reset_26(void)
 {
-	assert_true(test_wdt(WDT_2_26_CYCLES,
+	zassert_true(test_wdt(WDT_2_26_CYCLES,
 			     WDT_MODE_INTERRUPT_RESET) == TC_PASS, NULL);
 	QM_SCSS_GP->gps2 = 0;
 }
 
 void test_wdt_reset_26(void)
 {
-	assert_true(test_wdt(WDT_2_26_CYCLES,
+	zassert_true(test_wdt(WDT_2_26_CYCLES,
 			     WDT_MODE_RESET) == TC_PASS, NULL);
 	QM_SCSS_GP->gps2 = 0;
 }

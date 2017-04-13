@@ -22,7 +22,7 @@ static void set_aio_callback(int polarity, int disable)
 	gpio_pin_configure(gpio_dev, PIN_OUT, GPIO_DIR_OUT);
 
 	/* config AIN callback */
-	assert_true(aio_cmp_configure(aio_dev, PIN_IN,
+	zassert_true(aio_cmp_configure(aio_dev, PIN_IN,
 				      polarity, AIO_CMP_REF_A,
 				      callback, (void *)aio_dev) == 0,
 		    "ERROR registering callback");
@@ -46,11 +46,11 @@ static void set_aio_callback(int polarity, int disable)
 void test_aio_callback_rise(void)
 {
 	set_aio_callback(AIO_CMP_POL_RISE, 0);
-	assert_true(cb_cnt == 1, "callback is not invoked correctly");
+	zassert_true(cb_cnt == 1, "callback is not invoked correctly");
 }
 
 void test_aio_callback_rise_disable(void)
 {
 	set_aio_callback(AIO_CMP_POL_RISE, 1);
-	assert_true(cb_cnt == 0, "callback is not invoked correctly");
+	zassert_true(cb_cnt == 0, "callback is not invoked correctly");
 }

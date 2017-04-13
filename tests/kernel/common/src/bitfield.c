@@ -22,22 +22,22 @@ void bitfield_test(void)
 
 		sys_set_bit((mem_addr_t)&b1, bit);
 
-		assert_true(b1 == (1 << bit), "sys_set_bit failed on bit");
+		zassert_true(b1 == (1 << bit), "sys_set_bit failed on bit");
 
-		assert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0), "sys_test_bit did not detect bit");
+		zassert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0), "sys_test_bit did not detect bit");
 
 		sys_clear_bit((mem_addr_t)&b1, bit);
 
-		assert_true((b1 == 0), "sys_clear_bit failed for bit");
+		zassert_true((b1 == 0), "sys_clear_bit failed for bit");
 
-		assert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0), "sys_test_bit erroneously detected bit");
+		zassert_true((sys_test_bit((mem_addr_t)&b1, bit) == 0), "sys_test_bit erroneously detected bit");
 
-		assert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0), "sys_test_and_set_bit erroneously detected bit");
+		zassert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0), "sys_test_and_set_bit erroneously detected bit");
 
-		assert_true((b1 == (1 << bit)), "sys_test_and_set_bit");
+		zassert_true((b1 == (1 << bit)), "sys_test_and_set_bit");
 
 		printk("%d\n", sys_test_and_set_bit((mem_addr_t)&b1, bit));
-		assert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0), "sys_test_and_set_bit");
+		zassert_true((sys_test_and_set_bit((mem_addr_t)&b1, bit) == 0), "sys_test_and_set_bit");
 
 	}
 #if 0

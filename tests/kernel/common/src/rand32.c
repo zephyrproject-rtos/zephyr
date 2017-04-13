@@ -47,7 +47,7 @@ void rand32_test(void)
 		rnd_values[i] = sys_rand32_get();
 	}
 	for (i = 1; i <  N_VALUES; i++) {
-		assert_false((rnd_values[i - 1] == rnd_values[i]),
+		zassert_false((rnd_values[i - 1] == rnd_values[i]),
 			     "random number subsequent calls return same value");
 	}
 

@@ -35,8 +35,8 @@ void test_mheap_malloc_align4(void)
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		block[i] = k_malloc(i);
-		assert_not_null(block[i], NULL);
-		assert_false((int)block[i]%4, NULL);
+		zassert_not_null(block[i], NULL);
+		zassert_false((int)block[i]%4, NULL);
 	}
 
 	/* test case tear down*/
@@ -61,11 +61,11 @@ void test_mheap_min_block_size(void)
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		block[i] = k_malloc(TEST_SIZE_0);
-		assert_not_null(block[i], NULL);
+		zassert_not_null(block[i], NULL);
 	}
 	/* verify no more free blocks available*/
 	block_fail = k_malloc(BLK_SIZE_MIN);
-	assert_is_null(block_fail, NULL);
+	zassert_is_null(block_fail, NULL);
 
 	/* test case tear down*/
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
@@ -91,11 +91,11 @@ void test_mheap_block_desc(void)
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		block[i] = k_malloc(BLK_SIZE_EXCLUDE_DESC);
-		assert_not_null(block[i], NULL);
+		zassert_not_null(block[i], NULL);
 	}
 	/* verify no more free blocks available*/
 	block_fail = k_malloc(BLK_SIZE_MIN);
-	assert_is_null(block_fail, NULL);
+	zassert_is_null(block_fail, NULL);
 
 	/* test case tear down*/
 	for (int i = 0; i < BLK_NUM_MAX; i++) {

@@ -22,7 +22,7 @@ static struct timer_data tdata;
 	do {						\
 		if (!(exp)) {				\
 			k_timer_stop(tmr);		\
-			assert_true(exp, NULL);		\
+			zassert_true(exp, NULL);		\
 		}					\
 	} while (0)
 
@@ -247,7 +247,7 @@ void test_timer_user_data(void)
 				      (void *)user_data[ii]);
 		check = (intptr_t)k_timer_user_data_get(&user_data_timer[ii]);
 
-		assert_true(check == user_data[ii], NULL);
+		zassert_true(check == user_data[ii], NULL);
 	}
 
 	for (ii = 0; ii < 5; ii++) {
@@ -261,6 +261,6 @@ void test_timer_user_data(void)
 	}
 
 	for (ii = 0; ii < 5; ii++) {
-		assert_true(user_data_correct[ii], NULL);
+		zassert_true(user_data_correct[ii], NULL);
 	}
 }

@@ -51,10 +51,10 @@ static void tmpool_split_before_defrag(void)
 	 */
 	TC_PRINT("CONFIG_MEM_POOL_SPLIT_BEFORE_DEFRAG\n");
 	/* 1. request a mid-size block*/
-	assert_true(k_mem_pool_alloc(&mpool1, &block_split, BLK_SIZE_MID,
+	zassert_true(k_mem_pool_alloc(&mpool1, &block_split, BLK_SIZE_MID,
 		K_NO_WAIT) == 0, NULL);
 	/* 2. verify the previous block was split from the 2nd max block*/
-	assert_true(k_mem_pool_alloc(&mpool1, &block_max, BLK_SIZE_MAX,
+	zassert_true(k_mem_pool_alloc(&mpool1, &block_max, BLK_SIZE_MAX,
 		TIMEOUT) == -EAGAIN, NULL);
 	k_mem_pool_free(&block_split);
 }
@@ -77,10 +77,10 @@ static void tmpool_defrag_before_split(void)
 	 */
 	TC_PRINT("CONFIG_MEM_POOL_DEFRAG_BEFORE_SPLIT\n");
 	/* 1. request a mid-size block*/
-	assert_true(k_mem_pool_alloc(&mpool1, &block_defrag, BLK_SIZE_MID,
+	zassert_true(k_mem_pool_alloc(&mpool1, &block_defrag, BLK_SIZE_MID,
 		TIMEOUT) == 0, NULL);
 	/* 2. verify the previous block was defrag from block[0~3]*/
-	assert_true(k_mem_pool_alloc(&mpool1, &block_max, BLK_SIZE_MAX,
+	zassert_true(k_mem_pool_alloc(&mpool1, &block_max, BLK_SIZE_MAX,
 		K_NO_WAIT) == 0, NULL);
 	k_mem_pool_free(&block_defrag);
 	k_mem_pool_free(&block_max);
@@ -107,11 +107,11 @@ static void tmpool_split_only(void)
 	TC_PRINT("CONFIG_MEM_POOL_SPLIT_ONLY\n");
 	for (int i = 0; i < 4; i++) {
 		/* 1. verify allocation ok via spliting the max block*/
-		assert_true(k_mem_pool_alloc(&mpool1, &block_mid[i],
+		zassert_true(k_mem_pool_alloc(&mpool1, &block_mid[i],
 			BLK_SIZE_MID, K_NO_WAIT) == 0, NULL);
 	}
 	/* 2. verify allocation failed since no large blocks nor defrag*/
-	assert_true(k_mem_pool_alloc(&mpool1, &block_fail, BLK_SIZE_MID,
+	zassert_true(k_mem_pool_alloc(&mpool1, &block_fail, BLK_SIZE_MID,
 		TIMEOUT) == -EAGAIN, NULL);
 	for (int i = 0; i < 4; i++) {
 		k_mem_pool_free(&block_mid[i]);
@@ -124,7 +124,7 @@ void test_mpool_alloc_options(void)
 {
 	/* allocate 7 blocks, in size 4 4 4 4 16 16 16, respectively*/
 	for (int i = 0; i < block_count; i++) {
-		assert_true(k_mem_pool_alloc(&mpool1, &block[i], block_size[i],
+		zassert_true(k_mem_pool_alloc(&mpool1, &block[i], block_size[i],
 			K_NO_WAIT) == 0, NULL);
 	}
 	/* free block [0~3]*/

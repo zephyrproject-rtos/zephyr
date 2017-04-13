@@ -76,10 +76,10 @@ static void test_json_encoding(void)
 
 	ret = json_obj_encode_buf(test_descr, ARRAY_SIZE(test_descr),
 				  &ts, buffer, sizeof(buffer));
-	assert_equal(ret, 0, "Encoding function returned no errors");
+	zassert_equal(ret, 0, "Encoding function returned no errors");
 
 	ret = strncmp(buffer, encoded, sizeof(encoded) - 1);
-	assert_equal(ret, 0, "Encoded contents consistent");
+	zassert_equal(ret, 0, "Encoded contents consistent");
 }
 
 static void test_json_decoding(void)
@@ -102,22 +102,22 @@ static void test_json_decoding(void)
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
 			     ARRAY_SIZE(test_descr), &ts);
 
-	assert_equal(ret, (1 << ARRAY_SIZE(test_descr)) - 1,
+	zassert_equal(ret, (1 << ARRAY_SIZE(test_descr)) - 1,
 		     "All fields decoded correctly");
 
-	assert_true(!strcmp(ts.some_string, "zephyr 123"),
+	zassert_true(!strcmp(ts.some_string, "zephyr 123"),
 		    "String decoded correctly");
-	assert_equal(ts.some_int, 42, "Positive integer decoded correctly");
-	assert_equal(ts.some_bool, true, "Boolean decoded correctly");
-	assert_equal(ts.some_nested_struct.nested_int, -1234,
+	zassert_equal(ts.some_int, 42, "Positive integer decoded correctly");
+	zassert_equal(ts.some_bool, true, "Boolean decoded correctly");
+	zassert_equal(ts.some_nested_struct.nested_int, -1234,
 		     "Nested negative integer decoded correctly");
-	assert_equal(ts.some_nested_struct.nested_bool, false,
+	zassert_equal(ts.some_nested_struct.nested_bool, false,
 		     "Nested boolean value decoded correctly");
-	assert_true(!strcmp(ts.some_nested_struct.nested_string,
+	zassert_true(!strcmp(ts.some_nested_struct.nested_string,
 			    "this should be escaped: \\t"),
 		    "Nested string decoded correctly");
-	assert_equal(ts.some_array_len, 5, "Array has correct number of items");
-	assert_true(!memcmp(ts.some_array, expected_array,
+	zassert_equal(ts.some_array_len, 5, "Array has correct number of items");
+	zassert_true(!memcmp(ts.some_array, expected_array,
 		    sizeof(expected_array)),
 		    "Array decoded with unexpected values");
 }
@@ -130,7 +130,7 @@ static void test_json_invalid_unicode(void)
 
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
 			     ARRAY_SIZE(test_descr), &ts);
-	assert_equal(ret, -EINVAL, "Decoding has to fail");
+	zassert_equal(ret, -EINVAL, "Decoding has to fail");
 }
 
 static void test_json_missing_quote(void)
@@ -141,7 +141,7 @@ static void test_json_missing_quote(void)
 
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
 			     ARRAY_SIZE(test_descr), &ts);
-	assert_equal(ret, -EINVAL, "Decoding has to fail");
+	zassert_equal(ret, -EINVAL, "Decoding has to fail");
 }
 
 static void test_json_wrong_token(void)
@@ -152,7 +152,7 @@ static void test_json_wrong_token(void)
 
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
 			     ARRAY_SIZE(test_descr), &ts);
-	assert_equal(ret, -EINVAL, "Decoding has to fail");
+	zassert_equal(ret, -EINVAL, "Decoding has to fail");
 }
 
 static void test_json_item_wrong_type(void)
@@ -163,7 +163,7 @@ static void test_json_item_wrong_type(void)
 
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
 			     ARRAY_SIZE(test_descr), &ts);
-	assert_equal(ret, -EINVAL, "Decoding has to fail");
+	zassert_equal(ret, -EINVAL, "Decoding has to fail");
 }
 
 static void test_json_key_not_in_descr(void)
@@ -174,7 +174,7 @@ static void test_json_key_not_in_descr(void)
 
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
 			     ARRAY_SIZE(test_descr), &ts);
-	assert_equal(ret, 0, "No items should be decoded");
+	zassert_equal(ret, 0, "No items should be decoded");
 }
 
 void test_main(void)

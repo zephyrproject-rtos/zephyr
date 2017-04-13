@@ -73,7 +73,7 @@ void printk_test(void)
 	printk("%u %02u %04u %08u\n", 42, 42, 42, 42);
 
 	ram_console[pos] = '\0';
-	assert_true((strcmp(ram_console, expected) == 0), "printk failed");
+	zassert_true((strcmp(ram_console, expected) == 0), "printk failed");
 
 	memset(ram_console, 0, sizeof(ram_console));
 	count = 0;
@@ -99,5 +99,5 @@ void printk_test(void)
 			  "%u %02u %04u %08u\n", 42, 42, 42, 42);
 
 	ram_console[count] = '\0';
-	assert_true((strcmp(ram_console, expected) == 0), "snprintk failed");
+	zassert_true((strcmp(ram_console, expected) == 0), "snprintk failed");
 }

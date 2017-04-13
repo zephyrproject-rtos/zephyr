@@ -50,10 +50,10 @@ static void test_get_single_buffer(void)
 
 	buf = net_buf_alloc(&bufs_pool, K_NO_WAIT);
 
-	assert_equal(buf->ref, 1, "Invalid refcount");
-	assert_equal(buf->len, 0, "Invalid length");
-	assert_equal(buf->flags, 0, "Invalid flags");
-	assert_equal_ptr(buf->frags, NULL, "Frags not NULL");
+	zassert_equal(buf->ref, 1, "Invalid refcount");
+	zassert_equal(buf->len, 0, "Invalid length");
+	zassert_equal(buf->flags, 0, "Invalid flags");
+	zassert_equal_ptr(buf->frags, NULL, "Frags not NULL");
 }
 
 void test_main(void)

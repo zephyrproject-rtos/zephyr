@@ -115,7 +115,7 @@ option `CONFIG_ZTEST_ASSERT_VERBOSE=0`, the assertions will only print the
 file and line numbers, reducing the binary size of the test.
 
 Example output for a failed macro from
-`assert_equal(buf->ref, 2, "Invalid refcount")`:
+`zassert_equal(buf->ref, 2, "Invalid refcount")`:
 
 .. code-block:: none
 

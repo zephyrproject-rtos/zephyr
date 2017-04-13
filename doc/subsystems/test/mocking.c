@@ -21,7 +21,7 @@ static int returns_int(void)
 static void return_value_tests(void)
 {
 	ztest_returns_value(returns_int, 5);
-	assert_equal(returns_int(), 5, NULL);
+	zassert_equal(returns_int(), 5, NULL);
 }
 
 void test_main(void)

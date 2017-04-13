@@ -198,29 +198,29 @@ static void iface_setup(void)
 	((struct net_if_test *)iface3->dev->driver_data)->idx = 2;
 
 	idx = net_if_get_by_iface(iface1);
-	assert_equal(idx, 0, "Invalid index iface1");
+	zassert_equal(idx, 0, "Invalid index iface1");
 
 	idx = net_if_get_by_iface(iface2);
-	assert_equal(idx, 1, "Invalid index iface2");
+	zassert_equal(idx, 1, "Invalid index iface2");
 
 	idx = net_if_get_by_iface(iface3);
-	assert_equal(idx, 2, "Invalid index iface3");
+	zassert_equal(idx, 2, "Invalid index iface3");
 
 	DBG("Interfaces: [%d] iface1 %p, [%d] iface2 %p, [%d] iface3 %p\n",
 	    net_if_get_by_iface(iface1), iface1,
 	    net_if_get_by_iface(iface2), iface2,
 	    net_if_get_by_iface(iface3), iface3);
 
-	assert_not_null(iface1, "Interface 1");
-	assert_not_null(iface2, "Interface 2");
-	assert_not_null(iface3, "Interface 3");
+	zassert_not_null(iface1, "Interface 1");
+	zassert_not_null(iface2, "Interface 2");
+	zassert_not_null(iface3, "Interface 3");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		assert_not_null(ifaddr, "addr1");
+		zassert_not_null(ifaddr, "addr1");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -231,7 +231,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		assert_not_null(ifaddr, "ll_addr");
+		zassert_not_null(ifaddr, "ll_addr");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -241,7 +241,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr2));
-		assert_not_null(ifaddr, "addr2");
+		zassert_not_null(ifaddr, "addr2");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -251,7 +251,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr3));
-		assert_not_null(ifaddr, "addr3");
+		zassert_not_null(ifaddr, "addr3");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -262,7 +262,7 @@ static void iface_setup(void)
 	if (!maddr) {
 		DBG("Cannot add multicast IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&in6addr_mcast));
-		assert_not_null(maddr, "mcast");
+		zassert_not_null(maddr, "mcast");
 	}
 
 	net_if_up(iface1);
@@ -311,7 +311,7 @@ static void send_iface1(void)
 
 	ret = send_iface(iface1, 1, false);
 
-	assert_true(ret, "iface 1");
+	zassert_true(ret, "iface 1");
 }
 
 static void send_iface2(void)
@@ -322,7 +322,7 @@ static void send_iface2(void)
 
 	ret = send_iface(iface2, 2, false);
 
-	assert_true(ret, "iface 2");
+	zassert_true(ret, "iface 2");
 }
 
 static void send_iface3(void)
@@ -333,7 +333,7 @@ static void send_iface3(void)
 
 	ret = send_iface(iface3, 3, false);
 
-	assert_true(ret, "iface 3");
+	zassert_true(ret, "iface 3");
 }
 
 static void send_iface1_down(void)
@@ -346,7 +346,7 @@ static void send_iface1_down(void)
 
 	ret = send_iface(iface1, 1, true);
 
-	assert_true(ret, "iface 1 down");
+	zassert_true(ret, "iface 1 down");
 }
 
 static void send_iface1_up(void)
@@ -359,7 +359,7 @@ static void send_iface1_up(void)
 
 	ret = send_iface(iface1, 1, false);
 
-	assert_true(ret, "iface 1 up again");
+	zassert_true(ret, "iface 1 up again");
 }
 
 void test_main(void)

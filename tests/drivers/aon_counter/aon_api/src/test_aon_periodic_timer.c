@@ -102,5 +102,5 @@ static int test_timer(void)
 
 void test_aon_periodic_timer(void)
 {
-	assert_true(test_timer() == TC_PASS, NULL);
+	zassert_true(test_timer() == TC_PASS, NULL);
 }

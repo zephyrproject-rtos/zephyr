@@ -46,7 +46,7 @@ static void tsema_thread_thread(struct k_sem *psem)
 				     tThread_entry, psem, NULL, NULL,
 				     K_PRIO_PREEMPT(0), 0, 0);
 
-	assert_false(k_sem_take(psem, K_FOREVER), NULL);
+	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
 	/*clean the spawn thread avoid side effect in next TC*/
 	k_thread_abort(tid);
 }
@@ -55,7 +55,7 @@ static void tsema_thread_isr(struct k_sem *psem)
 {
 	/**TESTPOINT: thread-isr sync via sema*/
 	irq_offload(tIsr_entry, psem);
-	assert_false(k_sem_take(psem, K_FOREVER), NULL);
+	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
 }
 
 /*test cases*/
@@ -86,30 +86,30 @@ void test_sema_reset(void)
 	k_sem_init(&sema, SEM_INITIAL, SEM_LIMIT);
 	k_sem_give(&sema);
 	k_sem_reset(&sema);
-	assert_false(k_sem_count_get(&sema), NULL);
+	zassert_false(k_sem_count_get(&sema), NULL);
 	/**TESTPOINT: sem take return -EBUSY*/
-	assert_equal(k_sem_take(&sema, K_NO_WAIT), -EBUSY, NULL);
+	zassert_equal(k_sem_take(&sema, K_NO_WAIT), -EBUSY, NULL);
 	/**TESTPOINT: sem take return -EAGAIN*/
-	assert_equal(k_sem_take(&sema, TIMEOUT), -EAGAIN, NULL);
+	zassert_equal(k_sem_take(&sema, TIMEOUT), -EAGAIN, NULL);
 	k_sem_give(&sema);
-	assert_false(k_sem_take(&sema, K_FOREVER), NULL);
+	zassert_false(k_sem_take(&sema, K_FOREVER), NULL);
 }
 
 void test_sema_count_get(void)
 {
 	k_sem_init(&sema, SEM_INITIAL, SEM_LIMIT);
 	/**TESTPOINT: sem count get upon init*/
-	assert_equal(k_sem_count_get(&sema), SEM_INITIAL, NULL);
+	zassert_equal(k_sem_count_get(&sema), SEM_INITIAL, NULL);
 	k_sem_give(&sema);
 	/**TESTPOINT: sem count get after give*/
-	assert_equal(k_sem_count_get(&sema), SEM_INITIAL + 1, NULL);
+	zassert_equal(k_sem_count_get(&sema), SEM_INITIAL + 1, NULL);
 	k_sem_take(&sema, K_FOREVER);
 	/**TESTPOINT: sem count get after take*/
 	for (int i = 0; i < SEM_LIMIT; i++) {
-		assert_equal(k_sem_count_get(&sema), SEM_INITIAL + i, NULL);
+		zassert_equal(k_sem_count_get(&sema), SEM_INITIAL + i, NULL);
 		k_sem_give(&sema);
 	}
 	/**TESTPOINT: sem give above limit*/
 	k_sem_give(&sema);
-	assert_equal(k_sem_count_get(&sema), SEM_LIMIT, NULL);
+	zassert_equal(k_sem_count_get(&sema), SEM_LIMIT, NULL);
 }

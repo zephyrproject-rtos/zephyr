@@ -56,7 +56,7 @@ static void twork_submit(void *data)
 		/**TESTPOINT: init via k_work_init*/
 		k_work_init(&work[i], work_handler);
 		/**TESTPOINT: check pending after work init*/
-		assert_false(k_work_pending(&work[i]), NULL);
+		zassert_false(k_work_pending(&work[i]), NULL);
 		if (work_q) {
 			/**TESTPOINT: work submit to queue*/
 			k_work_submit_to_queue(work_q, &work[i]);
@@ -75,25 +75,25 @@ static void tdelayed_work_submit(void *data)
 		/**TESTPOINT: init via k_delayed_work_init*/
 		k_delayed_work_init(&delayed_work[i], work_handler);
 		/**TESTPOINT: check pending after delayed work init*/
-		assert_false(k_work_pending((struct k_work *)&delayed_work[i]),
+		zassert_false(k_work_pending((struct k_work *)&delayed_work[i]),
 			NULL);
 		/**TESTPOINT: check remaining timeout before submit*/
-		assert_equal(k_delayed_work_remaining_get(&delayed_work[i]), 0,
+		zassert_equal(k_delayed_work_remaining_get(&delayed_work[i]), 0,
 			NULL);
 		if (work_q) {
 			/**TESTPOINT: delayed work submit to queue*/
-			assert_true(k_delayed_work_submit_to_queue(work_q,
+			zassert_true(k_delayed_work_submit_to_queue(work_q,
 				&delayed_work[i], TIMEOUT) == 0, NULL);
 		} else {
 			/**TESTPOINT: delayed work submit to system queue*/
-			assert_true(k_delayed_work_submit(&delayed_work[i],
+			zassert_true(k_delayed_work_submit(&delayed_work[i],
 				TIMEOUT) == 0, NULL);
 		}
 		/**TESTPOINT: check remaining timeout after submit*/
-		assert_true(k_delayed_work_remaining_get(&delayed_work[i]) >=
+		zassert_true(k_delayed_work_remaining_get(&delayed_work[i]) >=
 			TIMEOUT, NULL);
 		/**TESTPOINT: check pending after delayed work submit*/
-		assert_true(k_work_pending((struct k_work *)&delayed_work[i])
+		zassert_true(k_work_pending((struct k_work *)&delayed_work[i])
 			== 0, NULL);
 	}
 }
@@ -129,29 +129,29 @@ static void tdelayed_work_cancel(void *data)
 	 *                delayed_work[1] completed
 	 *                cancel delayed_work_sleepy, expected -EINVAL
 	 */
-	assert_true(ret == 0, NULL);
+	zassert_true(ret == 0, NULL);
 	/**TESTPOINT: delayed work cancel when countdown*/
 	ret = k_delayed_work_cancel(&delayed_work[0]);
-	assert_true(ret == 0, NULL);
+	zassert_true(ret == 0, NULL);
 	/**TESTPOINT: check pending after delayed work cancel*/
-	assert_false(k_work_pending((struct k_work *)&delayed_work[0]), NULL);
+	zassert_false(k_work_pending((struct k_work *)&delayed_work[0]), NULL);
 	if (!k_is_in_isr()) {
 		/*wait for handling work_sleepy*/
 		k_sleep(TIMEOUT);
 		/**TESTPOINT: check pending when work pending*/
-		assert_true(k_work_pending((struct k_work *)&delayed_work[1]),
+		zassert_true(k_work_pending((struct k_work *)&delayed_work[1]),
 			NULL);
 		/**TESTPOINT: delayed work cancel when pending*/
 		ret = k_delayed_work_cancel(&delayed_work[1]);
-		assert_equal(ret, -EINPROGRESS, NULL);
+		zassert_equal(ret, -EINPROGRESS, NULL);
 		/*wait for completed work_sleepy and delayed_work[1]*/
 		k_sleep(TIMEOUT);
 		/**TESTPOINT: check pending when work completed*/
-		assert_false(k_work_pending(
+		zassert_false(k_work_pending(
 			(struct k_work *)&delayed_work_sleepy), NULL);
 		/**TESTPOINT: delayed work cancel when completed*/
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
-		assert_equal(ret, -EINVAL, NULL);
+		zassert_equal(ret, -EINVAL, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }

@@ -18,11 +18,11 @@ void byteorder_test_memcpy_swap(void)
 	uint8_t buf_dst[8] = { 0 };
 
 	sys_memcpy_swap(buf_dst, buf_orig, 8);
-	assert_true((memcmp(buf_dst, buf_chk, 8) == 0),
+	zassert_true((memcmp(buf_dst, buf_chk, 8) == 0),
 		    "Swap memcpy failed");
 
 	sys_memcpy_swap(buf_dst, buf_chk, 8);
-	assert_true((memcmp(buf_dst, buf_orig, 8) == 0),
+	zassert_true((memcmp(buf_dst, buf_orig, 8) == 0),
 		    "Swap memcpy failed");
 }
 
@@ -40,11 +40,11 @@ void byteorder_test_mem_swap(void)
 				  0x02, 0x01, 0x00 };
 
 	sys_mem_swap(buf_orig_1, 8);
-	assert_true((memcmp(buf_orig_1, buf_chk_1, 8) == 0),
+	zassert_true((memcmp(buf_orig_1, buf_chk_1, 8) == 0),
 		    "Swapping buffer failed");
 
 	sys_mem_swap(buf_orig_2, 11);
-	assert_true((memcmp(buf_orig_2, buf_chk_2, 11) == 0),
+	zassert_true((memcmp(buf_orig_2, buf_chk_2, 11) == 0),
 		    "Swapping buffer failed");
 }
 

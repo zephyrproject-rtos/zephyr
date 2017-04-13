@@ -129,10 +129,10 @@ void RegressionTask(void *arg1, void *arg2, void *arg3)
 	nCalls = criticalLoop(nCalls);
 
 	/* Wait for AlternateTask() to complete */
-	assert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
+	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
 		    "Timed out waiting for REGRESS_SEM");
 
-	assert_equal(criticalVar, nCalls + altTaskIterations,
+	zassert_equal(criticalVar, nCalls + altTaskIterations,
 		     "Unexpected value for <criticalVar>");
 
 	k_sched_time_slice_set(10, 10);
@@ -142,10 +142,10 @@ void RegressionTask(void *arg1, void *arg2, void *arg3)
 	nCalls = criticalLoop(nCalls);
 
 	/* Wait for AlternateTask() to finish */
-	assert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
+	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
 		    "Timed out waiting for REGRESS_SEM");
 
-	assert_equal(criticalVar, nCalls + altTaskIterations,
+	zassert_equal(criticalVar, nCalls + altTaskIterations,
 		     "Unexpected value for <criticalVar>");
 
 	k_sem_give(&TEST_SEM);
@@ -178,7 +178,7 @@ void test_critical(void)
 	init_objects();
 	start_threads();
 
-	assert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
+	zassert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
 		    "Timed out waiting for TEST_SEM");
 }
 

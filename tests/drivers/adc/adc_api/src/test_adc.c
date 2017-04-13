@@ -82,5 +82,5 @@ static int test_task(void)
 
 void test_adc_sample(void)
 {
-	assert_true(test_task() == TC_PASS, NULL);
+	zassert_true(test_task() == TC_PASS, NULL);
 }

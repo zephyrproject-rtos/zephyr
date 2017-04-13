@@ -32,12 +32,12 @@ void test_mheap_malloc_free(void)
 		 */
 		block[i] = k_malloc(i);
 		/** TESTPOINT: Address of the allocated memory if successful;*/
-		assert_not_null(block[i], NULL);
+		zassert_not_null(block[i], NULL);
 	}
 
 	block_fail = k_malloc(BLK_SIZE_MIN);
 	/** TESTPOINT: Return NULL if fail.*/
-	assert_is_null(block_fail, NULL);
+	zassert_is_null(block_fail, NULL);
 
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		/**

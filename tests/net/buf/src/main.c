@@ -74,7 +74,7 @@ static void buf_destroy(struct net_buf *buf)
 	struct net_buf_pool *pool = buf->pool;
 
 	destroy_called++;
-	assert_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
+	zassert_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
 	net_buf_destroy(buf);
 }
 
@@ -83,7 +83,7 @@ static void frag_destroy(struct net_buf *buf)
 	struct net_buf_pool *pool = buf->pool;
 
 	frag_destroy_called++;
-	assert_equal(pool, &frags_pool,
+	zassert_equal(pool, &frags_pool,
 		     "Invalid free frag pointer in buffer");
 	net_buf_destroy(buf);
 }
@@ -93,7 +93,7 @@ static void frag_destroy_big(struct net_buf *buf)
 	struct net_buf_pool *pool = buf->pool;
 
 	frag_destroy_called++;
-	assert_equal(pool, &big_frags_pool,
+	zassert_equal(pool, &big_frags_pool,
 		     "Invalid free big frag pointer in buffer");
 	net_buf_destroy(buf);
 }
@@ -110,7 +110,7 @@ static void net_buf_test_1(void)
 
 	for (i = 0; i < bufs_pool.buf_count; i++) {
 		buf = net_buf_alloc(&bufs_pool, K_NO_WAIT);
-		assert_not_null(buf, "Failed to get buffer");
+		zassert_not_null(buf, "Failed to get buffer");
 		bufs[i] = buf;
 	}
 
@@ -118,7 +118,7 @@ static void net_buf_test_1(void)
 		net_buf_unref(bufs[i]);
 	}
 
-	assert_equal(destroy_called, ARRAY_SIZE(bufs),
+	zassert_equal(destroy_called, ARRAY_SIZE(bufs),
 		     "Incorrect destroy callback count");
 }
 
@@ -129,12 +129,12 @@ static void net_buf_test_2(void)
 	int i;
 
 	head = net_buf_alloc(&bufs_pool, K_NO_WAIT);
-	assert_not_null(head, "Failed to get fragment list head");
+	zassert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < bufs_pool.buf_count - 1; i++) {
 		frag->frags = net_buf_alloc(&bufs_pool, K_NO_WAIT);
-		assert_not_null(frag->frags, "Failed to get fragment");
+		zassert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
 
@@ -144,7 +144,7 @@ static void net_buf_test_2(void)
 
 	destroy_called = 0;
 	net_buf_unref(head);
-	assert_equal(destroy_called, bufs_pool.buf_count,
+	zassert_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect fragment destroy callback count");
 }
 
@@ -157,11 +157,11 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(sema);
 
 	buf = net_buf_get(fifo, TEST_TIMEOUT);
-	assert_not_null(buf, "Unable to get buffer");
+	zassert_not_null(buf, "Unable to get buffer");
 
 	destroy_called = 0;
 	net_buf_unref(buf);
-	assert_equal(destroy_called, bufs_pool.buf_count,
+	zassert_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect destroy callback count");
 
 	k_sem_give(sema);
@@ -176,12 +176,12 @@ static void net_buf_test_3(void)
 	int i;
 
 	head = net_buf_alloc(&bufs_pool, K_NO_WAIT);
-	assert_not_null(head, "Failed to get fragment list head");
+	zassert_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < bufs_pool.buf_count - 1; i++) {
 		frag->frags = net_buf_alloc(&bufs_pool, K_NO_WAIT);
-		assert_not_null(frag->frags, "Failed to get fragment");
+		zassert_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
 
@@ -192,12 +192,12 @@ static void net_buf_test_3(void)
 		       (k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
 		       K_PRIO_COOP(7), 0, 0);
 
-	assert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
+	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");
 
 	net_buf_put(&fifo, head);
 
-	assert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
+	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");
 }
 
@@ -212,7 +212,7 @@ static void net_buf_test_4(void)
 	 */
 	buf = net_buf_alloc(&no_data_pool, K_FOREVER);
 
-	assert_equal(buf->size, 0, "Invalid buffer size");
+	zassert_equal(buf->size, 0, "Invalid buffer size");
 
 	/* Test the fragments by appending after last fragment */
 	for (i = 0; i < frags_pool.buf_count - 1; i++) {
@@ -228,7 +228,7 @@ static void net_buf_test_4(void)
 
 	frag = buf->frags;
 
-	assert_equal(frag->pool->user_data_size, 0, "Invalid user data size");
+	zassert_equal(frag->pool->user_data_size, 0, "Invalid user data size");
 
 	i = 0;
 	while (frag) {
@@ -236,7 +236,7 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	assert_equal(i, frags_pool.buf_count, "Incorrect fragment count");
+	zassert_equal(i, frags_pool.buf_count, "Incorrect fragment count");
 
 	/* Remove about half of the fragments and verify count */
 	i = removed = 0;
@@ -261,7 +261,7 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	assert_equal(i + removed, frags_pool.buf_count,
+	zassert_equal(i + removed, frags_pool.buf_count,
 		     "Incorrect removed fragment count");
 
 	removed = 0;
@@ -274,8 +274,8 @@ static void net_buf_test_4(void)
 		removed++;
 	}
 
-	assert_equal(removed, i, "Incorrect removed fragment count");
-	assert_equal(frag_destroy_called, frags_pool.buf_count,
+	zassert_equal(removed, i, "Incorrect removed fragment count");
+	zassert_equal(frag_destroy_called, frags_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 
 	/* Add the fragments back and verify that they are properly unref
@@ -300,13 +300,13 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	assert_equal(i, frags_pool.buf_count, "Incorrect fragment count");
+	zassert_equal(i, frags_pool.buf_count, "Incorrect fragment count");
 
 	frag_destroy_called = 0;
 
 	net_buf_unref(buf);
 
-	assert_equal(frag_destroy_called, frags_pool.buf_count,
+	zassert_equal(frag_destroy_called, frags_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 }
 
@@ -334,7 +334,7 @@ static void net_buf_test_big_buf(void)
 	/* First add some application data */
 	len = strlen(example_data);
 	for (i = 0; i < 2; i++) {
-		assert_true(net_buf_tailroom(frag) >= len,
+		zassert_true(net_buf_tailroom(frag) >= len,
 			    "Allocated buffer is too small");
 		memcpy(net_buf_add(frag, len), example_data, len);
 	}
@@ -345,7 +345,7 @@ static void net_buf_test_big_buf(void)
 	net_buf_frag_add(buf, frag);
 	net_buf_unref(buf);
 
-	assert_equal(frag_destroy_called, big_frags_pool.buf_count,
+	zassert_equal(frag_destroy_called, big_frags_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 }
 
@@ -387,7 +387,7 @@ static void net_buf_test_multi_frags(void)
 	/* First add some application data */
 	len = strlen(example_data);
 	for (i = 0; i < frags_pool.buf_count - 1; i++) {
-		assert_true(net_buf_tailroom(frags[i]) >= len,
+		zassert_true(net_buf_tailroom(frags[i]) >= len,
 			    "Allocated buffer is too small");
 		memcpy(net_buf_add(frags[i], len), example_data, len);
 		occupied += frags[i]->len;
@@ -398,7 +398,7 @@ static void net_buf_test_multi_frags(void)
 
 	net_buf_unref(buf);
 
-	assert_equal(frag_destroy_called, frags_pool.buf_count,
+	zassert_equal(frag_destroy_called, frags_pool.buf_count,
 		     "Incorrect big frag destroy callback count");
 }
 

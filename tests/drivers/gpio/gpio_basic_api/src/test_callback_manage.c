@@ -151,12 +151,12 @@ err_exit:
 
 void test_gpio_callback_add_remove(void)
 {
-	assert_true(
+	zassert_true(
 		test_callback_add_remove() == TC_PASS, NULL);
 }
 
 void test_gpio_callback_enable_disable(void)
 {
-	assert_true(
+	zassert_true(
 		test_callback_enable_disable() == TC_PASS, NULL);
 }

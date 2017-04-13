@@ -56,26 +56,26 @@ static void alert_recv(void)
 	if (palert->handler == K_ALERT_IGNORE ||
 			palert->handler == alert_handler0){
 		if (palert->handler == alert_handler0)
-			assert_equal(handler_executed, PENDING_MAX, NULL);
+			zassert_equal(handler_executed, PENDING_MAX, NULL);
 		ret = k_alert_recv(palert, TIMEOUT);
-		assert_equal(ret, -EAGAIN, NULL);
+		zassert_equal(ret, -EAGAIN, NULL);
 	}
 
 	if (palert->handler == K_ALERT_DEFAULT ||
 			palert->handler == alert_handler1){
 		if (palert->handler == alert_handler1)
-			assert_equal(handler_executed, PENDING_MAX, NULL);
+			zassert_equal(handler_executed, PENDING_MAX, NULL);
 		for (int i = 0; i < PENDING_MAX; i++) {
 			/**TESTPOINT: alert recv*/
 			ret = k_alert_recv(palert, K_NO_WAIT);
-			assert_false(ret, NULL);
+			zassert_false(ret, NULL);
 		}
 		/**TESTPOINT: alert recv -EAGAIN*/
 		ret = k_alert_recv(palert, TIMEOUT);
-		assert_equal(ret, -EAGAIN, NULL);
+		zassert_equal(ret, -EAGAIN, NULL);
 		/**TESTPOINT: alert recv -EBUSY*/
 		ret = k_alert_recv(palert, K_NO_WAIT);
-		assert_equal(ret, -EBUSY, NULL);
+		zassert_equal(ret, -EBUSY, NULL);
 	}
 }
 

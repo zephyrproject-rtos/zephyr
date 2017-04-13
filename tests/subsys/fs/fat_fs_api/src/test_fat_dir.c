@@ -158,9 +158,9 @@ static int test_rmdir(void)
 
 void test_fat_dir(void)
 {
-	assert_true(test_mkdir() == TC_PASS, NULL);
-	assert_true(test_lsdir("/") == TC_PASS, NULL);
-	assert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
-	assert_true(test_rmdir() == TC_PASS, NULL);
-	assert_true(test_lsdir("/") == TC_PASS, NULL);
+	zassert_true(test_mkdir() == TC_PASS, NULL);
+	zassert_true(test_lsdir("/") == TC_PASS, NULL);
+	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
+	zassert_true(test_rmdir() == TC_PASS, NULL);
+	zassert_true(test_lsdir("/") == TC_PASS, NULL);
 }

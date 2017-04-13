@@ -71,7 +71,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	if (t_create) {
 		uint64_t t_delay = k_uptime_get() - t_create;
 		/**TESTPOINT: check delay start*/
-		assert_true(t_delay >= expected.init_delay,
+		zassert_true(t_delay >= expected.init_delay,
 			"k_thread_spawn delay start failed\n");
 	}
 
@@ -79,10 +79,10 @@ static void thread_entry(void *p1, void *p2, void *p3)
 
 	k_tid_t tid = k_current_get();
 	/**TESTPOINT: check priority and params*/
-	assert_equal(k_thread_priority_get(tid), expected.init_prio, NULL);
-	assert_equal(p1, expected.init_p1, NULL);
-	assert_equal(p2, expected.init_p2, NULL);
-	assert_equal(p3, expected.init_p3, NULL);
+	zassert_equal(k_thread_priority_get(tid), expected.init_prio, NULL);
+	zassert_equal(p1, expected.init_p1, NULL);
+	zassert_equal(p2, expected.init_p2, NULL);
+	zassert_equal(p3, expected.init_p3, NULL);
 	/*option, stack size, not checked, no public API to get these values*/
 
 	k_sem_give(&end_sema);
@@ -145,7 +145,7 @@ void test_kinit_preempt_thread(void)
 		INIT_PREEMPT_PRIO, INIT_PREEMPT_OPTION, INIT_PREEMPT_DELAY);
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
-	assert_not_null(pthread, "thread spawn failed\n");
+	zassert_not_null(pthread, "thread spawn failed\n");
 
 	expected.init_p1 = INIT_PREEMPT_P1;
 	expected.init_p2 = INIT_PREEMPT_P2;
@@ -173,7 +173,7 @@ void test_kinit_coop_thread(void)
 		INIT_COOP_PRIO, INIT_COOP_OPTION, INIT_COOP_DELAY);
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
-	assert_not_null(pthread, "thread spawn failed\n");
+	zassert_not_null(pthread, "thread spawn failed\n");
 
 	expected.init_p1 = INIT_COOP_P1;
 	expected.init_p2 = INIT_COOP_P2;

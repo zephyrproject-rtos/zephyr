@@ -66,15 +66,15 @@ void timeout_order_test(void)
 	/* drop prio to get all poll events together */
 	k_thread_priority_set(k_current_get(), prio + 1);
 
-	assert_equal(k_poll(poll_events, NUM_TIMEOUTS, 2000), 0, "");
+	zassert_equal(k_poll(poll_events, NUM_TIMEOUTS, 2000), 0, "");
 
 	k_thread_priority_set(k_current_get(), prio - 1);
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
-		assert_equal(poll_events[ii].state,
+		zassert_equal(poll_events[ii].state,
 			     K_POLL_STATE_SEM_AVAILABLE, "");
 	}
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
-		assert_equal(results[ii], ii, "");
+		zassert_equal(results[ii], ii, "");
 	}
 }

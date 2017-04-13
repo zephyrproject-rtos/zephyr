@@ -23,7 +23,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 {
 	int ret = k_msgq_put((struct k_msgq *)p1, (void *)&data[0], TIMEOUT);
 
-	assert_equal(ret, -ENOMSG, NULL);
+	zassert_equal(ret, -ENOMSG, NULL);
 }
 
 /*test cases*/
@@ -37,7 +37,7 @@ void test_msgq_purge_when_put(void)
 	/*fill the queue to full*/
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(&msgq, (void *)&data[i], K_NO_WAIT);
-		assert_equal(ret, 0, NULL);
+		zassert_equal(ret, 0, NULL);
 	}
 	/*create another thread waiting to put msg*/
 	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
@@ -52,6 +52,6 @@ void test_msgq_purge_when_put(void)
 	/*verify msg put after purge*/
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(&msgq, (void *)&data[i], K_NO_WAIT);
-		assert_equal(ret, 0, NULL);
+		zassert_equal(ret, 0, NULL);
 	}
 }

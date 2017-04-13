@@ -40,9 +40,9 @@ static void tpipe_put(struct k_pipe *ppipe)
 		/**TESTPOINT: pipe put*/
 		to_wt = (PIPE_LEN - i) >= BYTES_TO_WRITE ?
 			BYTES_TO_WRITE : (PIPE_LEN - i);
-		assert_false(k_pipe_put(ppipe, &data[i], to_wt,
+		zassert_false(k_pipe_put(ppipe, &data[i], to_wt,
 				&wt_byte, 1, K_NO_WAIT), NULL);
-		assert_true(wt_byte == to_wt || wt_byte == 1, NULL);
+		zassert_true(wt_byte == to_wt || wt_byte == 1, NULL);
 	}
 }
 
@@ -52,7 +52,7 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema)
 
 	for (int i = 0; i < PIPE_LEN; i += BYTES_TO_WRITE) {
 		/**TESTPOINT: pipe block put*/
-		assert_equal(k_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
+		zassert_equal(k_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
 			K_NO_WAIT), 0, NULL);
 		memcpy(block.data, &data[i], BYTES_TO_WRITE);
 		k_pipe_block_put(ppipe, &block, BYTES_TO_WRITE, sema);
@@ -73,12 +73,12 @@ static void tpipe_get(struct k_pipe *ppipe)
 		/**TESTPOINT: pipe get*/
 		to_rd = (PIPE_LEN - i) >= BYTES_TO_READ ?
 			BYTES_TO_READ : (PIPE_LEN - i);
-		assert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
+		zassert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
 				&rd_byte, 1, K_FOREVER), NULL);
-		assert_true(rd_byte == to_rd || rd_byte == 1, NULL);
+		zassert_true(rd_byte == to_rd || rd_byte == 1, NULL);
 	}
 	for (int i = 0; i < PIPE_LEN; i++) {
-		assert_equal(rx_data[i], data[i], NULL);
+		zassert_equal(rx_data[i], data[i], NULL);
 	}
 }
 

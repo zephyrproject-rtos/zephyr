@@ -42,7 +42,7 @@ volatile long long_one = 1L;
 void limits_test(void)
 {
 
-	assert_true((long_max + long_one == LONG_MIN), NULL);
+	zassert_true((long_max + long_one == LONG_MIN), NULL);
 }
 
 /**
@@ -54,8 +54,8 @@ void limits_test(void)
 void stdbool_test(void)
 {
 
-	assert_true((true == 1), "true value");
-	assert_true((false == 0), "false value");
+	zassert_true((true == 1), "true value");
+	zassert_true((false == 0), "false value");
 }
 
 /*
@@ -75,7 +75,7 @@ volatile size_t size_of_long_variable = sizeof(long_variable);
 void stddef_test(void)
 {
 
-	assert_true((size_of_long_variable == 4), "sizeof");
+	zassert_true((size_of_long_variable == 4), "sizeof");
 }
 
 /*
@@ -94,7 +94,7 @@ volatile uint32_t unsigned_int = 0xffffff00;
 
 void stdint_test(void)
 {
-	assert_true((unsigned_int + unsigned_byte + 1u == 0), NULL);
+	zassert_true((unsigned_int + unsigned_byte + 1u == 0), NULL);
 
 }
 
@@ -115,8 +115,8 @@ char buffer[BUFSIZE];
 void memset_test(void)
 {
 	memset(buffer, 'a', BUFSIZE);
-	assert_true((buffer[0] == 'a'), "memset");
-	assert_true((buffer[BUFSIZE - 1] == 'a'), "memset");
+	zassert_true((buffer[0] == 'a'), "memset");
+	zassert_true((buffer[BUFSIZE - 1] == 'a'), "memset");
 }
 
 /**
@@ -129,7 +129,7 @@ void strlen_test(void)
 {
 	memset(buffer, '\0', BUFSIZE);
 	memset(buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
-	assert_equal(strlen(buffer), 5, "strlen");
+	zassert_equal(strlen(buffer), 5, "strlen");
 }
 
 /**
@@ -142,9 +142,9 @@ void strcmp_test(void)
 {
 	strcpy(buffer, "eeeee");
 
-	assert_true((strcmp(buffer, "fffff") < 0), "strcmp less ...");
-	assert_true((strcmp(buffer, "eeeee") == 0), "strcmp equal ...");
-	assert_true((strcmp(buffer, "ddddd") > 0), "strcmp greater ...");
+	zassert_true((strcmp(buffer, "fffff") < 0), "strcmp less ...");
+	zassert_true((strcmp(buffer, "eeeee") == 0), "strcmp equal ...");
+	zassert_true((strcmp(buffer, "ddddd") > 0), "strcmp greater ...");
 }
 
 /**
@@ -161,9 +161,9 @@ void strncmp_test(void)
 	__ASSERT_NO_MSG(sizeof(pattern) - 1 > BUFSIZE);
 	memcpy(buffer, pattern, BUFSIZE);
 
-	assert_true((strncmp(buffer, "fffff", 0) == 0), "strncmp 0");
-	assert_true((strncmp(buffer, "eeeff", 3) == 0), "strncmp 3");
-	assert_true((strncmp(buffer, "eeeeeeeeeeeff", BUFSIZE) == 0),
+	zassert_true((strncmp(buffer, "fffff", 0) == 0), "strncmp 0");
+	zassert_true((strncmp(buffer, "eeeff", 3) == 0), "strncmp 3");
+	zassert_true((strncmp(buffer, "eeeeeeeeeeeff", BUFSIZE) == 0),
 		    "strncmp 10");
 }
 
@@ -179,7 +179,7 @@ void strcpy_test(void)
 	memset(buffer, '\0', BUFSIZE);
 	strcpy(buffer, "10 chars!\0");
 
-	assert_true((strcmp(buffer, "10 chars!\0") == 0), "strcpy");
+	zassert_true((strcmp(buffer, "10 chars!\0") == 0), "strcpy");
 }
 
 /**
@@ -197,7 +197,7 @@ void strncpy_test(void)
 
 	/* Purposely different values */
 	ret = strncmp(buffer, "This is over 20 characters", BUFSIZE);
-	assert_true((ret == 0), "strncpy");
+	zassert_true((ret == 0), "strncpy");
 
 }
 
@@ -217,11 +217,11 @@ void strchr_test(void)
 
 	rs = strchr(buffer, '1');
 
-	assert_not_null(rs, "strchr");
+	zassert_not_null(rs, "strchr");
 
 
 	ret = strncmp(rs, "10", 2);
-	assert_true((ret == 0), "strchr");
+	zassert_true((ret == 0), "strchr");
 
 }
 
@@ -239,10 +239,10 @@ void memcmp_test(void)
 
 
 	ret = memcmp(m1, m2, 4);
-	assert_true((ret == 0), "memcmp 4");
+	zassert_true((ret == 0), "memcmp 4");
 
 	ret = memcmp(m1, m2, 5);
-	assert_true((ret != 0), "memcmp 5");
+	zassert_true((ret != 0), "memcmp 5");
 }
 
 /**

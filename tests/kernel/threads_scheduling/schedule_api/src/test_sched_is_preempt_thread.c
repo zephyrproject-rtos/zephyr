@@ -27,38 +27,38 @@ static struct k_sem end_sema;
 static void tIsr(void *data)
 {
 	/** TESTPOINT: The code is running at ISR.*/
-	assert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread(), NULL);
 }
 
 static void tpreempt_ctx(void *p1, void *p2, void *p3)
 {
 	/** TESTPOINT: The thread's priority is in the preemptible range.*/
-	assert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread(), NULL);
 	k_sched_lock();
 	/** TESTPOINT: The thread has locked the scheduler.*/
-	assert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread(), NULL);
 	k_sched_unlock();
 	/** TESTPOINT: The thread has not locked the scheduler.*/
-	assert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread(), NULL);
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(1));
 	/** TESTPOINT: The thread's priority is in the cooperative range.*/
-	assert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread(), NULL);
 	k_sem_give(&end_sema);
 }
 
 static void tcoop_ctx(void *p1, void *p2, void *p3)
 {
 	/** TESTPOINT: The thread's priority is in the cooperative range.*/
-	assert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread(), NULL);
 	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(1));
 	/** TESTPOINT: The thread's priority is in the preemptible range.*/
-	assert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread(), NULL);
 	k_sched_lock();
 	/** TESTPOINT: The thread has locked the scheduler.*/
-	assert_false(k_is_preempt_thread(), NULL);
+	zassert_false(k_is_preempt_thread(), NULL);
 	k_sched_unlock();
 	/** TESTPOINT: The thread has not locked the scheduler.*/
-	assert_true(k_is_preempt_thread(), NULL);
+	zassert_true(k_is_preempt_thread(), NULL);
 	k_sem_give(&end_sema);
 }
 

@@ -179,12 +179,12 @@ static void mld_setup(void)
 
 	iface = net_if_get_default();
 
-	assert_not_null(iface, "Interface is NULL");
+	zassert_not_null(iface, "Interface is NULL");
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_addr,
 				      NET_ADDR_MANUAL, 0);
 
-	assert_not_null(ifaddr, "Cannot add IPv6 address");
+	zassert_not_null(ifaddr, "Cannot add IPv6 address");
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
@@ -198,7 +198,7 @@ static void join_group(void)
 
 	ret = net_ipv6_mld_join(iface, &mcast_addr);
 
-	assert_equal(ret, 0, "Cannot join IPv6 multicast group");
+	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
 
 	k_yield();
 }
@@ -211,7 +211,7 @@ static void leave_group(void)
 
 	ret = net_ipv6_mld_leave(iface, &mcast_addr);
 
-	assert_equal(ret, 0, "Cannot leave IPv6 multicast group");
+	zassert_equal(ret, 0, "Cannot leave IPv6 multicast group");
 
 	k_yield();
 }
@@ -223,11 +223,11 @@ static void catch_join_group(void)
 	join_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		assert_true(0, "Timeout while waiting join event");
+		zassert_true(0, "Timeout while waiting join event");
 	}
 
 	if (!is_group_joined) {
-		assert_true(0, "Did not catch join event");
+		zassert_true(0, "Did not catch join event");
 	}
 
 	is_group_joined = false;
@@ -240,11 +240,11 @@ static void catch_leave_group(void)
 	leave_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		assert_true(0, "Timeout while waiting leave event");
+		zassert_true(0, "Timeout while waiting leave event");
 	}
 
 	if (!is_group_left) {
-		assert_true(0, "Did not catch leave event");
+		zassert_true(0, "Did not catch leave event");
 	}
 
 	is_group_left = false;
@@ -257,11 +257,11 @@ static void verify_join_group(void)
 	join_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		assert_true(0, "Timeout while waiting join event");
+		zassert_true(0, "Timeout while waiting join event");
 	}
 
 	if (!is_join_msg_ok) {
-		assert_true(0, "Join msg invalid");
+		zassert_true(0, "Join msg invalid");
 	}
 
 	is_join_msg_ok = false;
@@ -274,11 +274,11 @@ static void verify_leave_group(void)
 	leave_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		assert_true(0, "Timeout while waiting leave event");
+		zassert_true(0, "Timeout while waiting leave event");
 	}
 
 	if (!is_leave_msg_ok) {
-		assert_true(0, "Leave msg invalid");
+		zassert_true(0, "Leave msg invalid");
 	}
 
 	is_leave_msg_ok = false;
@@ -368,11 +368,11 @@ static void catch_query(void)
 	k_yield();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		assert_true(0, "Timeout while waiting query event");
+		zassert_true(0, "Timeout while waiting query event");
 	}
 
 	if (!is_query_received) {
-		assert_true(0, "Query msg invalid");
+		zassert_true(0, "Query msg invalid");
 	}
 
 	is_query_received = false;
@@ -396,11 +396,11 @@ static void verify_send_report(void)
 
 	/* Did we send a report? */
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		assert_true(0, "Timeout while waiting report");
+		zassert_true(0, "Timeout while waiting report");
 	}
 
 	if (!is_report_sent) {
-		assert_true(0, "Report not sent");
+		zassert_true(0, "Report not sent");
 	}
 }
 
@@ -420,7 +420,7 @@ static void test_allnodes(void)
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 
-	assert_not_null(ifmaddr, "Interface does not contain "
+	zassert_not_null(ifmaddr, "Interface does not contain "
 			"allnodes multicast address");
 }
 
@@ -434,7 +434,7 @@ static void test_solicit_node(void)
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 
-	assert_not_null(ifmaddr, "Interface does not contain "
+	zassert_not_null(ifmaddr, "Interface does not contain "
 			"solicit node multicast address");
 }
 

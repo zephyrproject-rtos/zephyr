@@ -46,7 +46,7 @@ static void tlifo_get(struct k_lifo *plifo)
 	for (int i = LIST_LEN-1; i >= 0; i--) {
 		/**TESTPOINT: lifo get*/
 		rx_data = k_lifo_get(plifo, K_FOREVER);
-		assert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i], NULL);
 	}
 }
 

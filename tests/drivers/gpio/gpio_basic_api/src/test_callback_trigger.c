@@ -32,7 +32,7 @@ static void callback(struct device *dev,
 		     struct gpio_callback *gpio_cb, uint32_t pins)
 {
 	/*= checkpoint: pins should be marked with correct pin number bit =*/
-	assert_true(pin_num(pins) == PIN_IN, NULL);
+	zassert_true(pin_num(pins) == PIN_IN, NULL);
 	TC_PRINT("callback triggered: %d\n", ++cb_cnt);
 	if (cb_cnt >= MAX_INT_CNT) {
 		struct drv_data *drv_data = CONTAINER_OF(gpio_cb,
@@ -113,28 +113,28 @@ err_exit:
 /* export test cases */
 void test_gpio_callback_edge_high(void)
 {
-	assert_true(
+	zassert_true(
 		test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH) == TC_PASS,
 		NULL);
 }
 
 void test_gpio_callback_edge_low(void)
 {
-	assert_true(
+	zassert_true(
 		test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW) == TC_PASS,
 		NULL);
 }
 
 void test_gpio_callback_level_high(void)
 {
-	assert_true(
+	zassert_true(
 		test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH) == TC_PASS,
 		NULL);
 }
 
 void test_gpio_callback_level_low(void)
 {
-	assert_true(
+	zassert_true(
 		test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_LOW) == TC_PASS,
 		NULL);
 }

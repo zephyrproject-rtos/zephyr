@@ -112,5 +112,5 @@ static int test_alarm(void)
 
 void test_rtc_alarm(void)
 {
-	assert_true(test_alarm() == TC_PASS, NULL);
+	zassert_true(test_alarm() == TC_PASS, NULL);
 }

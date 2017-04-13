@@ -158,6 +158,6 @@ static int test_gpio(uint32_t pin, uint32_t func)
 
 void test_pinmux_gpio(void)
 {
-	assert_true(test_gpio(PIN_IN, PINMUX_FUNC_A) == TC_PASS, NULL);
-	assert_true(test_gpio(PIN_IN, PINMUX_FUNC_B) == TC_FAIL, NULL);
+	zassert_true(test_gpio(PIN_IN, PINMUX_FUNC_A) == TC_PASS, NULL);
+	zassert_true(test_gpio(PIN_IN, PINMUX_FUNC_B) == TC_FAIL, NULL);
 }

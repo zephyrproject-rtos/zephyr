@@ -37,7 +37,7 @@ void test_mpool_alloc_merge_failed_diff_size(void)
 	 */
 	for (int i = 0; i < block_count; i++) {
 		/* 1. allocate blocks in different sizes*/
-		assert_true(k_mem_pool_alloc(&mpool3, &block[i], block_size[i],
+		zassert_true(k_mem_pool_alloc(&mpool3, &block[i], block_size[i],
 			K_NO_WAIT) == 0, NULL);
 	}
 	/* 2. free block [2~8], in different sizes*/
@@ -46,7 +46,7 @@ void test_mpool_alloc_merge_failed_diff_size(void)
 	}
 	/* 3. request a big block, expected failed to merge*/
 	k_mem_pool_defrag(&mpool3);
-	assert_true(k_mem_pool_alloc(&mpool3, &block_fail, BLK_SIZE_MAX,
+	zassert_true(k_mem_pool_alloc(&mpool3, &block_fail, BLK_SIZE_MAX,
 		TIMEOUT) == -EAGAIN, NULL);
 
 	/* 4. test case tear down*/

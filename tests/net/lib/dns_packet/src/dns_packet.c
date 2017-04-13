@@ -381,19 +381,19 @@ void test_dns_query(void)
 
 	rc = eval_query(DNAME1, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
-	assert_equal(rc, 0, "Query test failed for domain: "DNAME1);
+	zassert_equal(rc, 0, "Query test failed for domain: "DNAME1);
 
 	rc = eval_query(NULL, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
-	assert_not_equal(rc, 0, "Query test with invalid domain name failed");
+	zassert_not_equal(rc, 0, "Query test with invalid domain name failed");
 
 	rc = eval_query(DNAME1, tid1, DNS_RR_TYPE_AAAA,
 			query_ipv4, sizeof(query_ipv4));
-	assert_not_equal(rc, 0, "Query test for IPv4 with RR type AAAA failed");
+	zassert_not_equal(rc, 0, "Query test for IPv4 with RR type AAAA failed");
 
 	rc = eval_query(DNAME1, tid1 + 1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
-	assert_not_equal(rc, 0, "Query test with invalid ID failed");
+	zassert_not_equal(rc, 0, "Query test with invalid ID failed");
 }
 
 /* DNS response for www.zephyrproject.org with the following parameters:
@@ -430,7 +430,7 @@ void test_dns_response(void)
 	int rc;
 
 	rc = eval_response1(&test1);
-	assert_equal(rc, 0, "Response test failed for domain: "DNAME1);
+	zassert_equal(rc, 0, "Response test failed for domain: "DNAME1);
 }
 
 void test_main(void)

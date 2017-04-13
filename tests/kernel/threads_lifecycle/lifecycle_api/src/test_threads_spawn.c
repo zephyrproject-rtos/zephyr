@@ -25,15 +25,15 @@ static int spawn_prio;
 static void thread_entry_params(void *p1, void *p2, void *p3)
 {
 	/* checkpoint: check parameter 1, 2, 3 */
-	assert_equal((char *)p1, tp1, NULL);
-	assert_equal((int)p2, tp2, NULL);
-	assert_equal((struct k_sema *)p3, tp3, NULL);
+	zassert_equal((char *)p1, tp1, NULL);
+	zassert_equal((int)p2, tp2, NULL);
+	zassert_equal((struct k_sema *)p3, tp3, NULL);
 }
 
 static void thread_entry_priority(void *p1, void *p2, void *p3)
 {
 	/* checkpoint: check priority */
-	assert_equal(k_thread_priority_get(k_current_get()), spawn_prio, NULL);
+	zassert_equal(k_thread_priority_get(k_current_get()), spawn_prio, NULL);
 }
 
 static void thread_entry_delay(void *p1, void *p2, void *p3)
@@ -73,9 +73,9 @@ void test_threads_spawn_delay(void)
 	/* 100 < 120 ensure spawn thread not start */
 	k_sleep(100);
 	/* checkpoint: check spawn thread not execute */
-	assert_true(tp2 == 10, NULL);
+	zassert_true(tp2 == 10, NULL);
 	/* checkpoint: check spawn thread executed */
 	k_sleep(100);
-	assert_true(tp2 == 100, NULL);
+	zassert_true(tp2 == 100, NULL);
 	k_thread_abort(tid);
 }

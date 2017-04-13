@@ -74,5 +74,5 @@ static int test_counter(void)
 
 void test_aon_counter(void)
 {
-	assert_true(test_counter() == TC_PASS, NULL);
+	zassert_true(test_counter() == TC_PASS, NULL);
 }

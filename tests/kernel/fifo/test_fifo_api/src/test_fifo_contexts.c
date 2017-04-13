@@ -62,17 +62,17 @@ static void tfifo_get(struct k_fifo *pfifo)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: fifo get*/
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		assert_equal(rx_data, (void *)&data[i], NULL);
+		zassert_equal(rx_data, (void *)&data[i], NULL);
 	}
 	/*get fifo data from "fifo_put_list"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		assert_equal(rx_data, (void *)&data_l[i], NULL);
+		zassert_equal(rx_data, (void *)&data_l[i], NULL);
 	}
 	/*get fifo data from "fifo_put_slist"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get(pfifo, K_NO_WAIT);
-		assert_equal(rx_data, (void *)&data_sl[i], NULL);
+		zassert_equal(rx_data, (void *)&data_sl[i], NULL);
 	}
 }
 
@@ -80,13 +80,13 @@ static void tfifo_get(struct k_fifo *pfifo)
 static void tIsr_entry_put(void *p)
 {
 	tfifo_put((struct k_fifo *)p);
-	assert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
 }
 
 static void tIsr_entry_get(void *p)
 {
 	tfifo_get((struct k_fifo *)p);
-	assert_true(k_fifo_is_empty((struct k_fifo *)p), NULL);
+	zassert_true(k_fifo_is_empty((struct k_fifo *)p), NULL);
 }
 
 static void tThread_entry(void *p1, void *p2, void *p3)
@@ -129,11 +129,11 @@ static void tfifo_is_empty(void *p)
 
 	tfifo_put(&fifo);
 	/**TESTPOINT: return false when data available*/
-	assert_false(k_fifo_is_empty(pfifo), NULL);
+	zassert_false(k_fifo_is_empty(pfifo), NULL);
 
 	tfifo_get(&fifo);
 	/**TESTPOINT: return true with data unavailable*/
-	assert_true(k_fifo_is_empty(pfifo), NULL);
+	zassert_true(k_fifo_is_empty(pfifo), NULL);
 }
 
 /*test cases*/
@@ -171,7 +171,7 @@ void test_fifo_is_empty_thread(void)
 {
 	k_fifo_init(&fifo);
 	/**TESTPOINT: k_fifo_is_empty after init*/
-	assert_true(k_fifo_is_empty(&fifo), NULL);
+	zassert_true(k_fifo_is_empty(&fifo), NULL);
 
 	/**TESTPONT: check fifo is empty from thread*/
 	tfifo_is_empty(&fifo);

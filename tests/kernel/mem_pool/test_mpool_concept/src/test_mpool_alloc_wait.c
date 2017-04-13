@@ -51,14 +51,14 @@ void tmpool_alloc_wait_timeout(void *p1, void *p2, void *p3)
 {
 	struct k_mem_block block;
 
-	assert_true(k_mem_pool_alloc(&mpool1, &block, BLK_SIZE_MIN,
+	zassert_true(k_mem_pool_alloc(&mpool1, &block, BLK_SIZE_MIN,
 		TIMEOUT) == -EAGAIN, NULL);
 	k_sem_give(&sync_sema);
 }
 
 void tmpool_alloc_wait_ok(void *p1, void *p2, void *p3)
 {
-	assert_true(k_mem_pool_alloc(&mpool1, &block_ok, BLK_SIZE_MIN,
+	zassert_true(k_mem_pool_alloc(&mpool1, &block_ok, BLK_SIZE_MIN,
 		TIMEOUT) == 0, NULL);
 	k_sem_give(&sync_sema);
 }
@@ -72,7 +72,7 @@ void test_mpool_alloc_wait_prio(void)
 	k_sem_init(&sync_sema, 0, THREAD_NUM);
 	/*allocated up all blocks*/
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
-		assert_true(k_mem_pool_alloc(&mpool1, &block[i], BLK_SIZE_MIN,
+		zassert_true(k_mem_pool_alloc(&mpool1, &block[i], BLK_SIZE_MIN,
 			K_NO_WAIT) == 0, NULL);
 	}
 

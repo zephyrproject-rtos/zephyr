@@ -26,7 +26,7 @@ void test_queue_get_fail(void *p1, void *p2, void *p3)
 
 	k_queue_init(&queue);
 	/**TESTPOINT: queue get returns NULL*/
-	assert_is_null(k_queue_get(&queue, K_NO_WAIT), NULL);
-	assert_is_null(k_queue_get(&queue, TIMEOUT), NULL);
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT), NULL);
+	zassert_is_null(k_queue_get(&queue, TIMEOUT), NULL);
 }
 

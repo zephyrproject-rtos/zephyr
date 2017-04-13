@@ -12,12 +12,12 @@ static void empty_test(void)
 
 static void assert_tests(void)
 {
-	assert_true(1, NULL);
-	assert_false(0, NULL);
-	assert_is_null(NULL, NULL);
-	assert_not_null("foo", NULL);
-	assert_equal(1, 1, NULL);
-	assert_equal_ptr(NULL, NULL, NULL);
+	zassert_true(1, NULL);
+	zassert_false(0, NULL);
+	zassert_is_null(NULL, NULL);
+	zassert_not_null("foo", NULL);
+	zassert_equal(1, 1, NULL);
+	zassert_equal_ptr(NULL, NULL, NULL);
 }
 
 void test_main(void)

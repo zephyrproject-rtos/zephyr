@@ -166,34 +166,34 @@ void dlist_test(void)
 {
 	sys_dlist_init(&test_list);
 
-	assert_true((verify_emptyness(&test_list)), "test_list should be empty");
+	zassert_true((verify_emptyness(&test_list)), "test_list should be empty");
 
 	/* Appending node 1 */
 	sys_dlist_append(&test_list, &test_node_1.node);
-	assert_true((verify_content_amount(&test_list, 1)),
+	zassert_true((verify_content_amount(&test_list, 1)),
 		    "test_list has wrong content");
 
-	assert_true((verify_tail_head(&test_list, &test_node_1.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_1.node,
 				      &test_node_1.node, true)),
 		     "test_list head/tail are wrong");
 
 	/* Finding and removing node 1 */
 	sys_dlist_remove(&test_node_1.node);
-	assert_true((verify_emptyness(&test_list)),
+	zassert_true((verify_emptyness(&test_list)),
 		    "test_list should be empty");
 
 	/* Prepending node 1 */
 	sys_dlist_prepend(&test_list, &test_node_1.node);
-	assert_true((verify_content_amount(&test_list, 1)),
+	zassert_true((verify_content_amount(&test_list, 1)),
 		    "test_list has wrong content");
 
-	assert_true((verify_tail_head(&test_list, &test_node_1.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_1.node,
 				      &test_node_1.node, true)),
 		    "test_list head/tail are wrong");
 
 	/* Removing node 1 */
 	sys_dlist_remove(&test_node_1.node);
-	assert_true((verify_emptyness(&test_list)),
+	zassert_true((verify_emptyness(&test_list)),
 		    "test_list should be empty");
 
 	/* Appending node 1 */
@@ -201,24 +201,24 @@ void dlist_test(void)
 	/* Prepending node 2 */
 	sys_dlist_prepend(&test_list, &test_node_2.node);
 
-	assert_true((verify_content_amount(&test_list, 2)),
+	zassert_true((verify_content_amount(&test_list, 2)),
 		    "test_list has wrong content");
 
-	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				      &test_node_1.node, false)),
 		    "test_list head/tail are wrong");
 
 	/* Appending node 3 */
 	sys_dlist_append(&test_list, &test_node_3.node);
 
-	assert_true((verify_content_amount(&test_list, 3)),
+	zassert_true((verify_content_amount(&test_list, 3)),
 		    "test_list has wrong content");
 
-	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				      &test_node_3.node, false)),
 		    "test_list head/tail are wrong");
 
-	assert_true((sys_dlist_peek_next(&test_list, &test_node_2.node) ==
+	zassert_true((sys_dlist_peek_next(&test_list, &test_node_2.node) ==
 					 &test_node_1.node),
 		    "test_list node links are wrong");
 
@@ -226,44 +226,44 @@ void dlist_test(void)
 	sys_dlist_insert_after(&test_list, &test_node_2.node,
 			       &test_node_4.node);
 
-	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				      &test_node_3.node, false)),
 		    "test_list head/tail are wrong");
 
-	assert_true((sys_dlist_peek_next(&test_list, &test_node_2.node) ==
+	zassert_true((sys_dlist_peek_next(&test_list, &test_node_2.node) ==
 					 &test_node_4.node),
 		    "test_list node links are wrong");
 
 	/* Finding and removing node 1 */
 	sys_dlist_remove(&test_node_1.node);
-	assert_true((verify_content_amount(&test_list, 3)),
+	zassert_true((verify_content_amount(&test_list, 3)),
 		    "test_list has wrong content");
 
-	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				      &test_node_3.node, false)),
 		    "test_list head/tail are wrong");
 
 	/* Removing node 3 */
 	sys_dlist_remove(&test_node_3.node);
-	assert_true((verify_content_amount(&test_list, 2)),
+	zassert_true((verify_content_amount(&test_list, 2)),
 		    "test_list has wrong content");
 
-	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				      &test_node_4.node, false)),
 		    "test_list head/tail are wrong");
 
 	/* Removing node 4 */
 	sys_dlist_remove(&test_node_4.node);
-	assert_true((verify_content_amount(&test_list, 1)),
+	zassert_true((verify_content_amount(&test_list, 1)),
 		    "test_list has wrong content");
 
-	assert_true((verify_tail_head(&test_list, &test_node_2.node,
+	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				      &test_node_2.node, true)),
 		    "test_list head/tail are wrong");
 
 	/* Removing node 2 */
 	sys_dlist_remove(&test_node_2.node);
-	assert_true((verify_emptyness(&test_list)),
+	zassert_true((verify_emptyness(&test_list)),
 		    "test_list should be empty");
 
 	/* test iterator from a node */
@@ -294,7 +294,7 @@ void dlist_test(void)
 			break;
 		}
 	}
-	assert_equal(ii, 3, "");
+	zassert_equal(ii, 3, "");
 
 	ii = 0;
 	SYS_DLIST_ITERATE_FROM_NODE(&test_list, node) {
@@ -303,11 +303,11 @@ void dlist_test(void)
 			break;
 		}
 	}
-	assert_equal(ii, 1, "");
+	zassert_equal(ii, 1, "");
 
 	ii = 0;
 	SYS_DLIST_ITERATE_FROM_NODE(&test_list, node) {
 		ii++;
 	}
-	assert_equal(ii, 2, "");
+	zassert_equal(ii, 2, "");
 }

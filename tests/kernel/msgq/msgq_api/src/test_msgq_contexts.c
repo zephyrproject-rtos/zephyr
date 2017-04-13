@@ -28,11 +28,11 @@ static void put_msgq(struct k_msgq *pmsgq)
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(pmsgq, (void *)&data[i], K_NO_WAIT);
-		assert_false(ret, NULL);
+		zassert_false(ret, NULL);
 		/**TESTPOINT: msgq free get*/
-		assert_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN - 1 - i, NULL);
+		zassert_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN - 1 - i, NULL);
 		/**TESTPOINT: msgq used get*/
-		assert_equal(k_msgq_num_used_get(pmsgq), i + 1, NULL);
+		zassert_equal(k_msgq_num_used_get(pmsgq), i + 1, NULL);
 	}
 }
 
@@ -43,20 +43,20 @@ static void get_msgq(struct k_msgq *pmsgq)
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_get(pmsgq, &rx_data, K_FOREVER);
-		assert_false(ret, NULL);
-		assert_equal(rx_data, data[i], NULL);
+		zassert_false(ret, NULL);
+		zassert_equal(rx_data, data[i], NULL);
 		/**TESTPOINT: msgq free get*/
-		assert_equal(k_msgq_num_free_get(pmsgq), i + 1, NULL);
+		zassert_equal(k_msgq_num_free_get(pmsgq), i + 1, NULL);
 		/**TESTPOINT: msgq used get*/
-		assert_equal(k_msgq_num_used_get(pmsgq), MSGQ_LEN - 1 - i, NULL);
+		zassert_equal(k_msgq_num_used_get(pmsgq), MSGQ_LEN - 1 - i, NULL);
 	}
 }
 
 static void purge_msgq(struct k_msgq *pmsgq)
 {
 	k_msgq_purge(pmsgq);
-	assert_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN, NULL);
-	assert_equal(k_msgq_num_used_get(pmsgq), 0, NULL);
+	zassert_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN, NULL);
+	zassert_equal(k_msgq_num_used_get(pmsgq), 0, NULL);
 }
 
 static void tIsr_entry(void *p)

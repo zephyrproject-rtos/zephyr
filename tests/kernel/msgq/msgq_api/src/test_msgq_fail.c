@@ -27,15 +27,15 @@ void test_msgq_put_fail(void *p1, void *p2, void *p3)
 
 	int ret = k_msgq_put(&msgq, (void *)&data[0], K_NO_WAIT);
 
-	assert_false(ret, NULL);
+	zassert_false(ret, NULL);
 	ret = k_msgq_put(&msgq, (void *)&data[0], K_NO_WAIT);
-	assert_false(ret, NULL);
+	zassert_false(ret, NULL);
 	/**TESTPOINT: msgq put returns -ENOMSG*/
 	ret = k_msgq_put(&msgq, (void *)&data[1], K_NO_WAIT);
-	assert_equal(ret, -ENOMSG, NULL);
+	zassert_equal(ret, -ENOMSG, NULL);
 	/**TESTPOINT: msgq put returns -EAGAIN*/
 	ret = k_msgq_put(&msgq, (void *)&data[0], TIMEOUT);
-	assert_equal(ret, -EAGAIN, NULL);
+	zassert_equal(ret, -EAGAIN, NULL);
 
 	k_msgq_purge(&msgq);
 }
@@ -49,8 +49,8 @@ void test_msgq_get_fail(void *p1, void *p2, void *p3)
 	/**TESTPOINT: msgq get returns -ENOMSG*/
 	int ret = k_msgq_get(&msgq, &rx_data, K_NO_WAIT);
 
-	assert_equal(ret, -ENOMSG, NULL);
+	zassert_equal(ret, -ENOMSG, NULL);
 	/**TESTPOINT: msgq get returns -EAGAIN*/
 	ret = k_msgq_get(&msgq, &rx_data, TIMEOUT);
-	assert_equal(ret, -EAGAIN, NULL);
+	zassert_equal(ret, -EAGAIN, NULL);
 }
