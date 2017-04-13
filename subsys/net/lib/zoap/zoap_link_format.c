@@ -235,7 +235,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	token = zoap_header_get_token(request, &tkl);
 
 	/*
-	 * Per RFC 6690, Section 4.1, only one (or none) query parameter may me
+	 * Per RFC 6690, Section 4.1, only one (or none) query parameter may be
 	 * provided, use the first if multiple.
 	 */
 	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, &query, 1);
@@ -281,21 +281,46 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 	r = -ENOENT;
 
+	/* FIXME: In mesh kind of scenarios sending bulk (multiple fragments)
+	 * response to farthest node (over multiple hops) is not a good idea.
+	 * Send discovery response block by block.
+	 */
 	while (resource++ && resource->path) {
+		struct net_buf *temp;
+		uint8_t *str;
+
 		if (!match_queries_resource(resource, &query, num_queries)) {
 			continue;
 		}
 
-		frag = zoap_packet_get_buf(&response);
+		if (!response.start) {
+			temp = response.buf->frags;
+			str = net_buf_add(temp, 1);
+			*str = 0xFF;
+			response.start = str + 1;
+		} else {
+			temp = net_nbuf_get_data(context, K_FOREVER);
+			if (!temp) {
+				net_nbuf_unref(buf);
+				return -ENOMEM;
+			}
 
-		r = format_resource(resource, frag);
+			net_buf_frag_add(buf, temp);
+		}
+
+		r = format_resource(resource, temp);
 		if (r < 0) {
 			goto done;
 		}
 	}
 
+	net_nbuf_compact(buf);
+
 done:
 	if (r < 0) {
+		/* FIXME: If error occurs after appending some payload, better
+		 * remove payload and send only BAD_REQUEST response.
+		 */
 		zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_BAD_REQUEST);
 	}
 
