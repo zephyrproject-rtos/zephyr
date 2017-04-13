@@ -310,7 +310,7 @@ static inline void sys_slist_append_list(sys_slist_t *list,
 /**
  * @brief merge two slists, appending the second one to the first
  *
- * When the operation is completed, the original list is empty.
+ * When the operation is completed, the appending list is empty.
  *
  * @param list A pointer on the list to affect
  * @param list_to_append A pointer to the list to append.
@@ -320,7 +320,7 @@ static inline void sys_slist_merge_slist(sys_slist_t *list,
 {
 	sys_slist_append_list(list, list_to_append->head,
 				    list_to_append->tail);
-	sys_slist_init(list);
+	sys_slist_init(list_to_append);
 }
 
 /**
