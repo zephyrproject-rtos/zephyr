@@ -383,7 +383,7 @@ uint32_t test_12(void)
 	TC_END_RESULT(result);
 	return result;
 }
-
+#if EXTREME_SLOW
 uint32_t test_13(void)
 {
 	uint32_t result = TC_PASS;
@@ -445,6 +445,7 @@ uint32_t test_14(void)
 	TC_END_RESULT(result);
 	return result;
 }
+#endif
 
 /*
  * Main task to test AES
@@ -516,6 +517,7 @@ void main(void)
 		TC_ERROR("SHA256 test #12 failed.\n");
 		goto exitTest;
 	}
+#if EXTRME_SLOW
 	result = test_13();
 	if (result == TC_FAIL) {	/* terminate test */
 		TC_ERROR("SHA256 test #13 failed.\n");
@@ -526,6 +528,7 @@ void main(void)
 		TC_ERROR("SHA256 test #14 failed.\n");
 		goto exitTest;
 	}
+#endif
 
 	TC_PRINT("All SHA256 tests succeeded!\n");
 
