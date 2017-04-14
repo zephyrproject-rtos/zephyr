@@ -24,6 +24,7 @@ config UART_NRF5_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
+if !HAS_DTS
 config UART_NRF5_IRQ_PRI
 	int "UART Interrupt Priority (Interrupt support)"
 	range 0 1 if SOC_SERIES_NRF51X
@@ -41,6 +42,7 @@ config UART_NRF5_BAUD_RATE
 	depends on UART_NRF5
 	help
 	  The baud rate for UART port to be set to at boot.
+endif
 
 config UART_NRF5_CLK_FREQ
 	int

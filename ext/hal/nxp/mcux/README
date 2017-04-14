@@ -7,7 +7,10 @@ renamed to include support for LPC and i.MX SoCs.
 The K64F sources in this directory are imported from mcux.nxp.com.
 
 MCUX for KWxx is not yet deployed on mcux.nxp.com like most other devices,
-therefore the sources are imported from the KW41Z product page on nxp.com:
+therefore the sources are imported from the KWxx product pages on nxp.com:
+
+Kinetis KW40Z Connectivity Software(REV 1.0.1)
+https://www.nxp.com/webapp/Download?colCode=KW40Z-CONNECTIVITY-SOFTWARE&appType=license&Parent_nodeId=1432854896956716810497&Parent_pageType=product
 
 Kinetis KW41Z Connectivity Software Linux(REV 1.0.2)
 https://www.nxp.com/webapp/Download?colCode=KW41Z-CONNECTIVITY-SOFTWARE-LIN&appType=license&Parent_nodeId=1441226359347708902175&Parent_pageType=product
@@ -20,6 +23,9 @@ following SoCs:
 - MKW31Z4
 - MKW21Z4
 - MKL25Z4
+- MKW40Z4 (aka KW40Z)
+- MKW30Z4
+- MKW20Z4
 
 
 Additionally, it provides the following components:

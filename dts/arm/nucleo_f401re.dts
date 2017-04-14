@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f401.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F401RE-NUCLEO board";
+	compatible = "st,stm32f401re-nucleo", "st,stm32f401";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	baud-rate = <115200>;
+	status = "ok";
+};
+
+&usart2 {
+	baud-rate = <115200>;
+	status = "ok";
+};

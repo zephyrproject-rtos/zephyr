@@ -11,32 +11,14 @@
 	model = "STMicroelectronics STM32L476RG-NUCLEO board";
 	compatible = "st,stm32l476rg-nucleo", "st,stm32l476";
 
-	sram0: memory {
-		reg = <0x20000000 0x18000>;
-	};
-
-	flash0: flash {
-		reg = <0x08000000 0x100000>;
-	};
-
 	chosen {
 		zephyr,console = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
-
-	leds {
-		compatible = "gpio-leds";
-		green {
-			gpios = <&gpioa 5 0>;
-		};
-	};
-};
-
-&clk_hse {
-	clock-frequency = <8000000>;
 };
 
 &usart2 {
+	baud-rate = <115200>;
 	status = "ok";
 };

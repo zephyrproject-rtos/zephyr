@@ -6,4 +6,4 @@
 
 config BOARD_96B_NITROGEN
 	bool "96Boards Nitrogen"
-	depends on SOC_NRF52832
+	depends on SOC_NRF52832_QFAA

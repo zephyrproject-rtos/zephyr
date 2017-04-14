@@ -7,4 +7,4 @@
 
 config BOARD_NRF52_BLENANO2
 	bool "nRF52 BLENANO2"
-	depends on SOC_NRF52832
+	depends on SOC_NRF52832_QFAA

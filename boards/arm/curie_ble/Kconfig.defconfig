@@ -1,4 +1,4 @@
-# Kconfig - Arduino 101 BLE (nRF51822) configuration
+# Kconfig - Curie BLE (nRF51822) configuration
 #
 # Copyright (c) 2016 Intel Corporation
 #
@@ -7,7 +7,7 @@
 if BOARD_CURIE_BLE
 
 config BOARD
-	default arduino_101_ble
+	default curie_ble
 
 if UART_NRF5
 

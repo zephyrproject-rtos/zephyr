@@ -12,15 +12,6 @@ config SOC
 	string
 	default stm32l476xx
 
-if !HAS_DTS
-config SRAM_SIZE
-	default 96
-
-config FLASH_SIZE
-	default 1024
-
-endif # !HAS_DTS
-
 config NUM_IRQS
 	int
 	default 82

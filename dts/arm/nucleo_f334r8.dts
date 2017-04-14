@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f334.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F334R8-NUCLEO board";
+	compatible = "st,stm32f334r8-nucleo", "st,stm32f334";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart2 {
+	baud-rate = <115200>;
+	status = "ok";
+};

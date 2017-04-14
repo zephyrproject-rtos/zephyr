@@ -5,33 +5,20 @@
  */
 
 /dts-v1/;
-#include <st/stm32f103xb.dtsi>
+#include <st/stm32f103Xb.dtsi>
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
-	compatible = "st,olimexino_stm32", "st,stm32f103xb";
+	compatible = "st,olimexino_stm32", "st,stm32f103rb";
 
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
-
-	leds {
-		compatible = "gpio-leds";
-		green {
-			gpios = <&gpioa 5 0>;
-		};
-		yellow {
-			gpios = <&gpioa 1 0>;
-		};
-	};
-};
-
-&clk_hse {
-	clock-frequency = <72000000>;
 };
 
 &usart1 {
+	baud-rate = <115200>;
 	status = "ok";
 };

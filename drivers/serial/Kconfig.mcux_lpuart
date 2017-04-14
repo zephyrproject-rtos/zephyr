@@ -27,18 +27,6 @@ config UART_MCUX_LPUART_0_NAME
 	string "UART 0 driver name"
 	default "UART_0"
 
-if !HAS_DTS
-
-config UART_MCUX_LPUART_0_IRQ_PRI
-	int "UART 0 interrupt priority"
-	default 0
-
-config UART_MCUX_LPUART_0_BAUD_RATE
-	int "UART 0 baud rate"
-	default 115200
-
-endif # !HAS_DTS
-
 endif # UART_MCUX_LPUART_0
 
 endif # UART_MCUX_LPUART

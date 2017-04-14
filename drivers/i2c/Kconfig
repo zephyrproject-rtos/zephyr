@@ -55,6 +55,13 @@ config I2C_ATMEL_SAM3
 	Says y to enable additional options to enable support
 	for individual controllers.
 
+config TWIHS_SAM
+	bool "Atmel SAM I2C driver"
+	depends on I2C && SOC_FAMILY_SAM
+	default n
+	help
+	  Enable Atmel SAM MCU Family I2C bus driver.
+
 config I2C_MCUX
 	bool "MCUX I2C driver"
 	depends on I2C && HAS_MCUX

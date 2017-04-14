@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f107.dtsi>
+
+/ {
+	model = "STMicroelectronics STM3210C-EVAL board";
+	compatible = "st,stm3210c-eval", "st,stm32f107";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart2 {
+	baud-rate = <115200>;
+	status = "ok";
+};

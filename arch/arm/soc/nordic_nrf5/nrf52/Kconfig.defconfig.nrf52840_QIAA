@@ -6,11 +6,11 @@
 #
 
 
-if SOC_NRF52840
+if SOC_NRF52840_QIAA
 
 config SOC
 	string
-	default nRF52840
+	default nRF52840_QIAA
 
 config SRAM_SIZE
 	default 256
@@ -22,5 +22,5 @@ config NUM_IRQS
 	int
 	default 46
 
-endif # SOC_NRF52840
+endif # SOC_NRF52840_QIAA
 
