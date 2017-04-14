@@ -831,7 +831,10 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
 
 			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, buf,
 						     sent_list) {
-				net_nbuf_set_buf_sent(buf, false);
+				if (net_nbuf_buf_sent(buf)) {
+					do_ref_if_needed(buf);
+					net_nbuf_set_buf_sent(buf, false);
+				}
 			}
 
 			net_tcp_send_data(ctx);
