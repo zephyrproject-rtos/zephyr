@@ -228,7 +228,7 @@ static enum net_verdict test_ok(struct net_conn *conn,
 	if (!ud) {
 		fail = true;
 
-		DBG("Test %s failed.", ud->test);
+		DBG("Test failed.\n");
 
 		return NET_DROP;
 	}

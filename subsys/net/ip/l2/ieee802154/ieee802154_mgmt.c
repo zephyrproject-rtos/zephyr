@@ -419,6 +419,13 @@ static int ieee802154_set_parameters(uint32_t mgmt_request,
 				ctx->short_addr = value;
 			}
 		}
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_TX_POWER) {
+		if (ctx->tx_power != (int16_t)value) {
+			ret = radio->set_txpower(iface->dev, (int16_t)value);
+			if (!ret) {
+				ctx->tx_power = (int16_t)value;
+			}
+		}
 	}
 
 	return ret;
@@ -434,6 +441,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_EXT_ADDR,
 				  ieee802154_set_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_SHORT_ADDR,
+				  ieee802154_set_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_SET_TX_POWER,
 				  ieee802154_set_parameters);
 
 static int ieee802154_get_parameters(uint32_t mgmt_request,
@@ -460,8 +470,12 @@ static int ieee802154_get_parameters(uint32_t mgmt_request,
 		}
 
 		memcpy(data, ctx->ext_addr, IEEE802154_EXT_ADDR_LENGTH);
-	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_SHORT_ADDR) {
 		*value = ctx->short_addr;
+	} else if (mgmt_request == NET_REQUEST_IEEE802154_GET_TX_POWER) {
+		int16_t *s_value = (int16_t *)data;
+
+		*s_value = ctx->tx_power;
 	}
 
 	return 0;
@@ -477,6 +491,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_EXT_ADDR,
 				  ieee802154_get_parameters);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SHORT_ADDR,
+				  ieee802154_get_parameters);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_TX_POWER,
 				  ieee802154_get_parameters);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY

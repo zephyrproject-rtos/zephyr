@@ -113,6 +113,10 @@ static enum net_rpl_mode rpl_mode = NET_RPL_MODE_MESH;
 static net_rpl_join_callback_t rpl_join_callback;
 static uint8_t rpl_dao_sequence;
 
+#if NET_RPL_MULTICAST
+static void send_mcast_dao(struct net_rpl_instance *instance);
+#endif
+
 #if defined(CONFIG_NET_RPL_DIS_SEND)
 /* DODAG Information Solicitation timer. */
 struct k_delayed_work dis_timer;
@@ -604,7 +608,7 @@ static void dio_timer(struct k_work *work)
 
 			net_rpl_dio_send(iface, instance, addr, NULL);
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 			instance->dio_send_pkt++;
 #endif
 		} else {
@@ -651,7 +655,7 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 	 */
 	instance->dio_next_delay -= time;
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	instance->dio_intervals++;
 	instance->dio_recv_pkt += instance->dio_counter;
 
@@ -667,7 +671,7 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 		instance->dio_interval_current,
 		instance->current_dag->rank == NET_RPL_ROOT_RANK(instance) ?
 		"ROOT" : "");
-#endif /* CONFIG_NET_RPL_STATS */
+#endif /* CONFIG_NET_STATISTICS_RPL */
 
 	instance->dio_counter = 0;
 	instance->dio_send = true;
@@ -1021,7 +1025,9 @@ static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 	instance->is_used = true;
 
 	k_delayed_work_init(&instance->dio_timer, dio_timer);
+#if defined(CONFIG_NET_RPL_PROBING)
 	k_delayed_work_init(&instance->probing_timer, rpl_probing_timer);
+#endif
 	k_delayed_work_init(&instance->dao_lifetime_timer, dao_lifetime_timer);
 	k_delayed_work_init(&instance->dao_timer, dao_send_timer);
 #if defined(CONFIG_NET_RPL_DAO_ACK)
@@ -1130,12 +1136,10 @@ static void route_mcast_rm_cb(struct net_route_entry_mcast *route,
 			      void *user_data)
 {
 	struct net_rpl_dag *dag = user_data;
-	struct net_rpl_route_entry *extra;
-
-	extra = net_nbr_extra_data(net_route_get_nbr(entry));
+	struct net_rpl_route_entry *extra = route->data;
 
 	if (extra->dag == dag) {
-		net_route_mcast_del(route)
+		net_route_mcast_del(route);
 	}
 }
 #endif
@@ -1145,7 +1149,7 @@ static void net_rpl_remove_routes(struct net_rpl_dag *dag)
 	net_route_foreach(route_rm_cb, dag);
 
 #if NET_RPL_MULTICAST
-	net_route_mcast_foreach(route_mcast_rm_cb, dag);
+	net_route_mcast_foreach(route_mcast_rm_cb, NULL, dag);
 #endif
 }
 
@@ -2126,28 +2130,27 @@ static void global_repair(struct net_if *iface,
 	} while (0)
 
 #if NET_RPL_MULTICAST
-static void send_mcast_dao(struct net_route_entry_mcast *route,
-			   void *user_data)
+static void send_mcast_dao_cb(struct net_route_entry_mcast *route,
+			      void *user_data)
 {
 	struct net_rpl_instance *instance = user_data;
 
 	/* Don't send if it's also our own address, done that already */
 	if (!net_route_mcast_lookup(&route->group)) {
-		net_rpl_dao_send(instance->current_dag->preferred_parent,
+		net_rpl_dao_send(instance->iface,
+				 instance->current_dag->preferred_parent,
 				 &route->group,
 				 CONFIG_NET_RPL_MCAST_LIFETIME);
 	}
 }
 
-static inline void send_mcast_dao(struct net_rpl_instance *instance)
+static void send_mcast_dao(struct net_rpl_instance *instance)
 {
-	uip_mcast6_route_t *mcast_route;
+	struct in6_addr *addr = NULL;
 	uint8_t i;
 
 	/* Send a DAO for own multicast addresses */
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		struct in6_addr *addr;
-
 		addr = &instance->iface->ipv6.mcast[i].address.in6_addr;
 
 		if (instance->iface->ipv6.mcast[i].is_used &&
@@ -2161,7 +2164,7 @@ static inline void send_mcast_dao(struct net_rpl_instance *instance)
 	}
 
 	/* Iterate over multicast routes and send DAOs */
-	net_route_mcast_foreach(send_mcast_dao, addr, instance);
+	net_route_mcast_foreach(send_mcast_dao_cb, addr, instance);
 }
 #endif
 
@@ -3787,6 +3790,8 @@ static inline int add_rpl_opt(struct net_buf *buf, uint16_t offset)
 	bool ret;
 
 	/* next header */
+	net_nbuf_set_ipv6_hdr_prev(buf, offset);
+
 	ret = net_nbuf_insert_u8(buf, buf->frags, offset++,
 				 NET_IPV6_BUF(buf)->nexthdr);
 	if (!ret) {
@@ -3853,6 +3858,8 @@ static int net_rpl_update_header_empty(struct net_buf *buf)
 	uint16_t pos;
 
 	NET_DBG("Verifying the presence of the RPL header option");
+
+	net_nbuf_set_ipv6_hdr_prev(buf, offset);
 
 	frag = net_nbuf_read_u8(frag, offset, &offset, &next_hdr);
 	frag = net_nbuf_read_u8(frag, offset, &offset, &len);
@@ -4117,7 +4124,7 @@ void net_rpl_init(void)
 		CONFIG_NET_IPV6_MAX_NEIGHBORS,
 		sizeof(net_rpl_neighbor_pool));
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	memset(&net_stats.rpl, 0, sizeof(net_stats.rpl));
 #endif
 

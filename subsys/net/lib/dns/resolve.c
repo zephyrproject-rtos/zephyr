@@ -142,6 +142,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin6(&ctx->servers[idx].dns_server)->sin6_port =
 				htons(port);
 
+			NET_DBG("[%d] IPv6 server %s port %d", idx, server,
+				port);
+
 			ctx->servers[idx++].dns_server.family = AF_INET6;
 #endif /* CONFIG_NET_IPV6 */
 
@@ -190,6 +193,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin(&ctx->servers[idx].dns_server)->sin_port =
 				htons(port);
 
+			NET_DBG("[%d] IPv4 server %s port %d", idx, server,
+				port);
+
 			ctx->servers[idx++].dns_server.family = AF_INET;
 #endif /* CONFIG_NET_IPV4 */
 
@@ -209,6 +215,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin(&ctx->servers[idx].dns_server)->sin_port =
 				htons(53);
 
+			NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i],
+				53);
+
 			ctx->servers[idx++].dns_server.family = AF_INET;
 
 		} else if (ret == -EINVAL) {
@@ -227,6 +236,9 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			net_sin6(&ctx->servers[idx].dns_server)->sin6_port =
 				htons(53);
 
+			NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i],
+				53);
+
 			ctx->servers[idx++].dns_server.family = AF_INET6;
 		}
 #endif
@@ -243,6 +255,8 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			continue;
 		}
 
+		NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i], 53);
+
 		net_sin(&ctx->servers[idx].dns_server)->sin_port = htons(53);
 		ctx->servers[idx++].dns_server.family = AF_INET;
 #endif /* IPv4 && !IPv6 */
@@ -257,6 +271,8 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 		if (ret == -EINVAL) {
 			continue;
 		}
+
+		NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i], 53);
 
 		net_sin6(&ctx->servers[idx].dns_server)->sin6_port = htons(53);
 		ctx->servers[idx++].dns_server.family = AF_INET6;
@@ -415,10 +431,14 @@ static int dns_read(struct dns_resolve_context *ctx,
 		address_size = DNS_IPV4_LEN;
 		addr = (uint8_t *)&net_sin(&info->ai_addr)->sin_addr;
 		info->ai_family = AF_INET;
+		info->ai_addr.family = AF_INET;
+		info->ai_addrlen = sizeof(struct sockaddr_in);
 	} else if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_AAAA) {
 		address_size = DNS_IPV6_LEN;
 		addr = (uint8_t *)&net_sin6(&info->ai_addr)->sin6_addr;
 		info->ai_family = AF_INET6;
+		info->ai_addr.family = AF_INET6;
+		info->ai_addrlen = sizeof(struct sockaddr_in6);
 	} else {
 		ret = DNS_EAI_FAMILY;
 		goto quit;
@@ -446,7 +466,6 @@ static int dns_read(struct dns_resolve_context *ctx,
 			src = dns_msg.msg + dns_msg.response_position;
 
 			memcpy(addr, src, address_size);
-			info->ai_addrlen = address_size;
 
 			ctx->queries[query_idx].cb(DNS_EAI_INPROGRESS, info,
 					ctx->queries[query_idx].user_data);
@@ -566,7 +585,7 @@ static void cb_recv(struct net_context *net_ctx,
 
 		i = get_slot_by_id(ctx, dns_id);
 		if (i < 0) {
-			goto cancel;
+			goto free_buf;
 		}
 
 		for (j = 0; j < CONFIG_DNS_RESOLVER_MAX_SERVERS; j++) {
@@ -598,7 +617,6 @@ quit:
 		goto free_buf;
 	}
 
-cancel:
 	if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
 		k_delayed_work_cancel(&ctx->queries[i].timer);
 	}

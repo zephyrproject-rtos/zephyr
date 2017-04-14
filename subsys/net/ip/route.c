@@ -648,7 +648,7 @@ bool net_route_mcast_del(struct net_route_entry_mcast *route)
 	}
 
 	NET_ASSERT_INFO(route->is_used,
-			"Multicast route %d to %s was already removed", i,
+			"Multicast route %p to %s was already removed", route,
 			net_sprint_ipv6_addr(&route->group));
 
 	route->is_used = false;

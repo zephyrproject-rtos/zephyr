@@ -40,6 +40,38 @@ config NET_IPV6_MAX_NEIGHBORS
 	help
 	The value depends on your network needs.
 
+config NET_IPV6_FRAGMENT
+	bool "Support IPv6 fragmentation"
+	default n
+	help
+	IPv6 fragmentation is disabled by default. This saves memory and
+	should not cause issues normally as we support anyway the minimum
+	length IPv6 packets (1280 bytes). If you enable fragmentation
+	support, please increase amount of RX data buffers so that larger
+	than 1280 byte packets can be received.
+
+config NET_IPV6_FRAGMENT_MAX_COUNT
+	int "How many packets to reassemble at a time"
+	range 1 16
+	default 1
+	depends on NET_IPV6_FRAGMENT
+	help
+	How many fragmented IPv6 packets can be waiting reassembly
+	simultaneously. Each fragment count might use up to 1280 bytes
+	of memory so you need to plan this and increase the network buffer
+	count.
+
+config NET_IPV6_FRAGMENT_TIMEOUT
+	int "How long to wait the fragments to receive"
+	range 1 60
+	default 60
+	depends on NET_IPV6_FRAGMENT
+	help
+	How long to wait for IPv6 fragment to arrive before the reassembly
+	will timeout. RFC 2460 chapter 4.5 tells to wait for 60 seconds but
+	this might be too long in memory constrained devices. This value
+	is in seconds.
+
 config NET_IPV6_MLD
 	bool "Multicast Listener Discovery support"
 	default y

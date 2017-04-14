@@ -240,6 +240,13 @@ config	NET_RPL_DIS_INTERVAL
 	This value decides how often DIS messages are sent. The
 	value is in seconds.
 
+config NET_STATISTICS_RPL
+	bool "Collect RPL statistics"
+	depends on NET_STATISTICS
+	default n
+	help
+	Keep track of RPL related statistics
+
 config  NET_DEBUG_RPL
 	bool "Debug RPL"
 	default n

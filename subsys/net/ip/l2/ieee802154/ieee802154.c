@@ -334,5 +334,10 @@ void ieee802154_init(struct net_if *iface)
 	radio->set_ieee_addr(iface->dev, long_addr);
 	memcpy(ctx->ext_addr, long_addr, 8);
 
+	if (!radio->set_txpower(iface->dev,
+				CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER)) {
+		ctx->tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
+	}
+
 	radio->start(iface->dev);
 }

@@ -68,6 +68,17 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 					    bool is_loopback)
 {
 	int ret;
+	bool locally_routed = false;
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	/* If the packet is routed back to us when we have reassembled
+	 * an IPv6 packet, then do not pass it to L2 as the packet does
+	 * not have link layer headers in it.
+	 */
+	if (net_nbuf_ipv6_fragment_start(buf)) {
+		locally_routed = true;
+	}
+#endif
 
 	/* If there is no data, then drop the packet. Also if
 	 * the buffer is wrong type, then also drop the packet.
@@ -83,7 +94,7 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 		return NET_DROP;
 	}
 
-	if (!is_loopback) {
+	if (!is_loopback && !locally_routed) {
 		ret = net_if_recv_data(net_nbuf_iface(buf), buf);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {

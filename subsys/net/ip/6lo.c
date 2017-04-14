@@ -53,45 +53,36 @@ static struct net_6lo_context ctx_6co[CONFIG_NET_MAX_6LO_CONTEXTS];
 
 static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr *addr)
 {
-	return ((addr->s6_addr[2] == 0x00) &&
-		 (addr->s6_addr[3] == 0x00) &&
-		 (addr->s6_addr[4] == 0x00) &&
-		 (addr->s6_addr[5] == 0x00) &&
-		 (addr->s6_addr[6] == 0x00) &&
-		 (addr->s6_addr[7] == 0x00));
-
+	return ((UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
+		 (UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00));
 }
 
 static inline bool net_6lo_addr_16_bit_compressible(struct in6_addr *addr)
 {
-	return ((addr->s6_addr[8] == 0x00) &&
-		 (addr->s6_addr[9] == 0x00) &&
-		 (addr->s6_addr[10] == 0x00) &&
-		 (addr->s6_addr[11] == 0xFF) &&
-		 (addr->s6_addr[12] == 0xFE) &&
-		 (addr->s6_addr[13] == 0x00));
+	return ((UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0xFF)) &&
+		 (UNALIGNED_GET(&addr->s6_addr16[6]) == htons(0xFE00)));
 }
 
 static inline bool net_6lo_maddr_8_bit_compressible(struct in6_addr *addr)
 {
 	return ((addr->s6_addr[1] == 0x02) &&
-		 (addr->s6_addr16[1] == 0x00) &&
-		 (addr->s6_addr32[1] == 0x00) &&
-		 (addr->s6_addr32[2] == 0x00) &&
+		 (UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
+		 (UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
+		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
 		 (addr->s6_addr[14] == 0x00));
 }
 
 static inline bool net_6lo_maddr_32_bit_compressible(struct in6_addr *addr)
 {
-	return ((addr->s6_addr32[1] == 0x00) &&
-		 (addr->s6_addr32[2] == 0x00) &&
+	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
+		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
 		 (addr->s6_addr[12] == 0x00));
 }
 
 static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
 {
-	return ((addr->s6_addr32[1] == 0x00) &&
-		 (addr->s6_addr16[4] == 0x00) &&
+	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
+		 (UNALIGNED_GET(&addr->s6_addr16[4]) == 0x00) &&
 		 (addr->s6_addr[10] == 0x00));
 }
 

@@ -397,6 +397,8 @@ static void dad_timeout(struct k_work *work)
 	 */
 	tmp = net_if_ipv6_addr_lookup(&ifaddr->address.in6_addr, &iface);
 	if (tmp == ifaddr) {
+		net_mgmt_event_notify(NET_EVENT_IPV6_DAD_SUCCEED, iface);
+
 		/* The address gets added to neighbor cache which is not needed
 		 * in this case as the address is our own one.
 		 */
@@ -444,6 +446,24 @@ void net_if_start_dad(struct net_if *iface)
 			net_sprint_ipv6_addr(&addr), iface);
 	}
 }
+
+void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
+{
+	struct net_if_addr *ifaddr;
+
+	ifaddr = net_if_ipv6_addr_lookup(addr, &iface);
+	if (!ifaddr) {
+		NET_ERR("Cannot find %s address in interface %p",
+			net_sprint_ipv6_addr(addr), iface);
+		return;
+	}
+
+	k_delayed_work_cancel(&ifaddr->dad_timer);
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_DAD_FAILED, iface);
+
+	net_if_ipv6_addr_rm(iface, addr);
+}
 #else
 static inline void net_if_ipv6_start_dad(struct net_if *iface,
 					 struct net_if_addr *ifaddr)
@@ -459,13 +479,13 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 static void rs_timeout(struct k_work *work)
 {
 	/* Did not receive RA yet. */
-	struct net_if *iface = CONTAINER_OF(work, struct net_if, rs_timer);
+	struct net_if *iface = CONTAINER_OF(work, struct net_if, ipv6.rs_timer);
 
-	iface->rs_count++;
+	iface->ipv6.rs_count++;
 
-	NET_DBG("RS no respond iface %p count %d", iface, iface->rs_count);
+	NET_DBG("RS no respond iface %p count %d", iface, iface->ipv6.rs_count);
 
-	if (iface->rs_count < RS_COUNT) {
+	if (iface->ipv6.rs_count < RS_COUNT) {
 		net_if_start_rs(iface);
 	}
 }
@@ -475,7 +495,7 @@ void net_if_start_rs(struct net_if *iface)
 	NET_DBG("Interface %p", iface);
 
 	if (!net_ipv6_start_rs(iface)) {
-		k_delayed_work_submit(&iface->rs_timer, RS_TIMEOUT);
+		k_delayed_work_submit(&iface->ipv6.rs_timer, RS_TIMEOUT);
 	}
 }
 #endif /* CONFIG_NET_IPV6_ND */
@@ -617,7 +637,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 	return NULL;
 }
 
-bool net_if_ipv6_addr_rm(struct net_if *iface, struct in6_addr *addr)
+bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	int i;
 
@@ -1287,10 +1307,10 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 
 uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface)
 {
-	return MIN_RANDOM_FACTOR * iface->base_reachable_time +
+	return MIN_RANDOM_FACTOR * iface->ipv6.base_reachable_time +
 		sys_rand32_get() %
-		(MAX_RANDOM_FACTOR * iface->base_reachable_time -
-		 MIN_RANDOM_FACTOR * iface->base_reachable_time);
+		(MAX_RANDOM_FACTOR * iface->ipv6.base_reachable_time -
+		 MIN_RANDOM_FACTOR * iface->ipv6.base_reachable_time);
 }
 
 #else /* CONFIG_NET_IPV6 */
@@ -1394,7 +1414,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 				continue;
 			}
 
-			if (addr->s4_addr32[0] ==
+			if (UNALIGNED_GET(&addr->s4_addr32[0]) ==
 			    iface->ipv4.unicast[i].address.in_addr.s_addr[0]) {
 
 				if (ret) {
@@ -1638,17 +1658,17 @@ void net_if_init(struct k_sem *startup_sync)
 		init_iface(iface);
 
 #if defined(CONFIG_NET_IPV4)
-		iface->ttl = CONFIG_NET_INITIAL_TTL;
+		iface->ipv4.ttl = CONFIG_NET_INITIAL_TTL;
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-		iface->hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
-		iface->base_reachable_time = REACHABLE_TIME;
+		iface->ipv6.hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
+		iface->ipv6.base_reachable_time = REACHABLE_TIME;
 
 		net_if_ipv6_set_reachable_time(iface);
 
 #if defined(CONFIG_NET_IPV6_ND)
-		k_delayed_work_init(&iface->rs_timer, rs_timeout);
+		k_delayed_work_init(&iface->ipv6.rs_timer, rs_timeout);
 #endif
 #endif
 	}

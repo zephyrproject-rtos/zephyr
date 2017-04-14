@@ -141,7 +141,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			uint8_t j;
 
 			for (j = i; j < 8; j++) {
-				if (w[j] != 0) {
+				if (UNALIGNED_GET(&w[j]) != 0) {
 					break;
 				}
 
@@ -208,7 +208,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			needcolon = false;
 		}
 
-		value = (uint32_t)sys_be16_to_cpu(w[i]);
+		value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
 		bh = value >> 8;
 		bl = value & 0xff;
 
@@ -306,8 +306,8 @@ int net_addr_pton(sa_family_t family, const char *src,
 
 			if (*src != ':') {
 				/* Normal IPv6 16-bit piece */
-				addr->s6_addr16[i] = htons(strtol(src, NULL,
-								  16));
+				UNALIGNED_PUT(htons(strtol(src, NULL, 16)),
+					      &addr->s6_addr16[i]);
 				src = strchr(src, ':');
 				if (!src && i < expected_groups - 1) {
 					return -EINVAL;
@@ -320,7 +320,7 @@ int net_addr_pton(sa_family_t family, const char *src,
 			/* Two colons in a row */
 
 			for (; i < expected_groups; i++) {
-				addr->s6_addr16[i] = 0;
+				UNALIGNED_PUT(0, &addr->s6_addr16[i]);
 			}
 
 			tmp = strrchr(src, ':');

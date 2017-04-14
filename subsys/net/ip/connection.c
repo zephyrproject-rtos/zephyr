@@ -107,23 +107,23 @@ static inline uint16_t ipv6_to_hash(struct in6_addr *addr)
 	/* Use more bits from the lower part of address space */
 	return
 		/* Take 3 bits from higher values */
-		TAKE_BIT(addr->s6_addr32[0], 31, 11, 1) |
-		TAKE_BIT(addr->s6_addr32[0], 15, 11, 2) |
-		TAKE_BIT(addr->s6_addr32[0], 7, 11, 3) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[0]), 31, 11, 1) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[0]), 15, 11, 2) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[0]), 7, 11, 3) |
 
 		/* Take 2 bits from higher middle values */
-		TAKE_BIT(addr->s6_addr32[1], 31, 11, 4) |
-		TAKE_BIT(addr->s6_addr32[1], 15, 11, 5) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[1]), 31, 11, 4) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[1]), 15, 11, 5) |
 
 		/* Take 2 bits from lower middle values */
-		TAKE_BIT(addr->s6_addr32[2], 31, 11, 6) |
-		TAKE_BIT(addr->s6_addr32[2], 15, 11, 7) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[2]), 31, 11, 6) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[2]), 15, 11, 7) |
 
 		/* Take 4 bits from lower values */
-		TAKE_BIT(addr->s6_addr32[3], 31, 11, 8) |
-		TAKE_BIT(addr->s6_addr32[3], 15, 11, 9) |
-		TAKE_BIT(addr->s6_addr32[3], 7, 11, 10) |
-		TAKE_BIT(addr->s6_addr32[3], 0, 11, 11);
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 31, 11, 8) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 15, 11, 9) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 7, 11, 10) |
+		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 0, 11, 11);
 }
 
 static inline uint16_t ipv4_to_hash(struct in_addr *addr)

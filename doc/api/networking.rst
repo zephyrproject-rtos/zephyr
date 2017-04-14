@@ -58,9 +58,9 @@ MQTT 3.1.1
    :project: Zephyr
    :content-only:
 
-DNS Client
-==========
+DNS Resolve
+===========
 
-.. doxygengroup:: dns_client
+.. doxygengroup:: dns_resolve
    :project: Zephyr
    :content-only:

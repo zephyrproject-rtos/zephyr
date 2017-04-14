@@ -463,7 +463,7 @@ struct net_rpl_instance {
 	 */
 	uint16_t lifetime_unit;
 
-#if defined(CONFIG_NET_RPL_STATS)
+#if defined(CONFIG_NET_STATISTICS_RPL)
 	/** Number of DIO intervals for this RPL instance. */
 	uint16_t dio_intervals;
 
@@ -472,7 +472,7 @@ struct net_rpl_instance {
 
 	/** Number of DIOs received for this RPL instance. */
 	uint16_t dio_recv_pkt;
-#endif /* CONFIG_NET_RPL_STATS */
+#endif /* CONFIG_NET_STATISTICS_RPL */
 
 	/**
 	 * This is the lifetime that is used as default for all RPL routes.
@@ -639,10 +639,10 @@ struct net_rpl_route_entry {
  */
 static inline bool net_rpl_is_ipv6_addr_mcast(const struct in6_addr *addr)
 {
-	return addr->s6_addr32[0] == htonl(0xff020000) &&
-		addr->s6_addr32[1] == 0x00000000 &&
-		addr->s6_addr32[2] == 0x00000000 &&
-		addr->s6_addr32[3] == htonl(0x0000001a);
+	return UNALIGNED_GET(&addr->s6_addr32[0]) == htonl(0xff020000) &&
+		UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00000000 &&
+		UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00000000 &&
+		UNALIGNED_GET(&addr->s6_addr32[3]) == htonl(0x0000001a);
 }
 
 /**
@@ -657,12 +657,12 @@ struct in6_addr *net_rpl_create_mcast_address(struct in6_addr *addr)
 {
 	addr->s6_addr[0]   = 0xFF;
 	addr->s6_addr[1]   = 0x02;
-	addr->s6_addr16[1] = 0;
-	addr->s6_addr16[2] = 0;
-	addr->s6_addr16[3] = 0;
-	addr->s6_addr16[4] = 0;
-	addr->s6_addr16[5] = 0;
-	addr->s6_addr16[6] = 0;
+	UNALIGNED_PUT(0, &addr->s6_addr16[1]);
+	UNALIGNED_PUT(0, &addr->s6_addr16[2]);
+	UNALIGNED_PUT(0, &addr->s6_addr16[3]);
+	UNALIGNED_PUT(0, &addr->s6_addr16[4]);
+	UNALIGNED_PUT(0, &addr->s6_addr16[5]);
+	UNALIGNED_PUT(0, &addr->s6_addr16[6]);
 	addr->s6_addr[14]  = 0;
 	addr->s6_addr[15]  = 0x1a;
 
