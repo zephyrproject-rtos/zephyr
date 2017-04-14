@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <misc/util.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
