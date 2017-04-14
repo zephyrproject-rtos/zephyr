@@ -9,3 +9,8 @@ review process and the code documentation can be found on the
 Zephyr Project wiki.
 
 * https://wiki.zephyrproject.org/view/Collaboration_Guidelines
+
+.. toctree::
+   :maxdepth: 1
+
+   security.rst
