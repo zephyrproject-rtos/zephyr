@@ -40,6 +40,15 @@ NIOS II Boards
 
    nios2/**/*
 
+XTENSA Boards
+*************
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   xtensa/**/*
+
 A list of additional supported boards can be found on the `Zephyr project wiki`_.
 
 To add a new board, please use the template available under
