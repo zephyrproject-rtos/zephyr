@@ -14,9 +14,9 @@ void test_crc16(void)
 	uint8_t test1[] = { 'A' };
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	assert(crc16_ccitt(test0, sizeof(test0)) == 0x1d0f, "pass", "fail");
-	assert(crc16_ccitt(test1, sizeof(test1)) == 0x9479, "pass", "fail");
-	assert(crc16_ccitt(test2, sizeof(test2)) == 0xe5cc, "pass", "fail");
+	zassert(crc16_ccitt(test0, sizeof(test0)) == 0x1d0f, "pass", "fail");
+	zassert(crc16_ccitt(test1, sizeof(test1)) == 0x9479, "pass", "fail");
+	zassert(crc16_ccitt(test2, sizeof(test2)) == 0xe5cc, "pass", "fail");
 }
 
 void test_main(void *p1, void *p2, void *p3)
