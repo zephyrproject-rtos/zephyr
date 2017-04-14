@@ -89,7 +89,7 @@ typedef int (*handle_cmd_input_t)(struct at_client *at, struct net_buf *buf,
 				  enum at_cmd_type type);
 
 struct at_client {
-	char *buf;
+	unsigned char *buf;
 	uint8_t pos;
 	uint8_t buf_max_len;
 	uint8_t state;
