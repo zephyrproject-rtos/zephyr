@@ -459,25 +459,25 @@ lb_exit:
 
 void test_mqtt_init(void)
 {
-	assert_true(init_network() == TC_PASS, NULL);
+	zassert_true(init_network() == TC_PASS, NULL);
 }
 
 void test_mqtt_connect(void)
 {
-	assert_true(test_connect() == TC_PASS, NULL);
+	zassert_true(test_connect() == TC_PASS, NULL);
 }
 
 void test_mqtt_subscribe(void)
 {
-	assert_true(test_subscribe() == TC_PASS, NULL);
+	zassert_true(test_subscribe() == TC_PASS, NULL);
 }
 
 void test_mqtt_unsubscribe(void)
 {
-	assert_true(test_unsubscribe() == TC_PASS, NULL);
+	zassert_true(test_unsubscribe() == TC_PASS, NULL);
 }
 
 void test_mqtt_disconnect(void)
 {
-	assert_true(test_disconnect() == TC_PASS, NULL);
+	zassert_true(test_disconnect() == TC_PASS, NULL);
 }

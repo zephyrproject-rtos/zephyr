@@ -422,27 +422,27 @@ lb_exit:
 
 void test_mqtt_init(void)
 {
-	assert_true(init_network() == TC_PASS, NULL);
+	zassert_true(init_network() == TC_PASS, NULL);
 }
 
 void test_mqtt_connect(void)
 {
-	assert_true(test_connect() == TC_PASS, NULL);
+	zassert_true(test_connect() == TC_PASS, NULL);
 }
 
 void test_mqtt_pingreq(void)
 {
-	assert_true(test_pingreq() == TC_PASS, NULL);
+	zassert_true(test_pingreq() == TC_PASS, NULL);
 }
 
 void test_mqtt_publish(void)
 {
-	assert_true(test_publish(MQTT_QoS0) == TC_PASS, NULL);
-	assert_true(test_publish(MQTT_QoS1) == TC_PASS, NULL);
-	assert_true(test_publish(MQTT_QoS2) == TC_PASS, NULL);
+	zassert_true(test_publish(MQTT_QoS0) == TC_PASS, NULL);
+	zassert_true(test_publish(MQTT_QoS1) == TC_PASS, NULL);
+	zassert_true(test_publish(MQTT_QoS2) == TC_PASS, NULL);
 }
 
 void test_mqtt_disconnect(void)
 {
-	assert_true(test_disconnect() == TC_PASS, NULL);
+	zassert_true(test_disconnect() == TC_PASS, NULL);
 }

@@ -14,7 +14,7 @@
 
 static void ok(void)
 {
-	assert_true(true, "This test should never fail");
+	zassert_true(true, "This test should never fail");
 }
 
 void test_main(void)
