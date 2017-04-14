@@ -13,6 +13,7 @@ This module contains the code for testing sprintf() functionality.
 
 #include <tc_util.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #define DEADBEEF  0xdeadbeef
 
@@ -619,11 +620,13 @@ int sprintfStringTest(void)
 	}
 
 	len = sprintf(buffer, "%s", REALLY_LONG_STRING);
+#ifndef CONFIG_NEWLIB_LIBC
 	if (len != PRINTF_MAX_STRING_LENGTH) {
-		TC_ERROR("Internals changed.  Max string length no longer %d\n",
-				 PRINTF_MAX_STRING_LENGTH);
+		TC_ERROR("Internals changed.  Max string length no longer %d got %d\n",
+				 PRINTF_MAX_STRING_LENGTH, len);
 		status = TC_FAIL;
 	}
+#endif
 	if (strncmp(buffer, REALLY_LONG_STRING, PRINTF_MAX_STRING_LENGTH) != 0) {
 		TC_ERROR("First %d characters of REALLY_LONG_STRING not printed!\n",
 				 PRINTF_MAX_STRING_LENGTH);
