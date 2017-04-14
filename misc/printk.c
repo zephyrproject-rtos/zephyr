@@ -19,11 +19,18 @@
 
 typedef int (*out_func_t)(int c, void *ctx);
 
+enum pad_type {
+	PAD_NONE,
+	PAD_ZERO_BEFORE,
+	PAD_SPACE_BEFORE,
+	PAD_SPACE_AFTER,
+};
+
 static void _printk_dec_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, int pad_zero,
+			      const unsigned long num, enum pad_type padding,
 			      int min_width);
 static void _printk_hex_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, int pad_zero,
+			      const unsigned long num, enum pad_type padding,
 			      int min_width);
 
 /**
@@ -81,7 +88,7 @@ void *__printk_get_hook(void)
 void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
-	int pad_zero = 0;
+	enum pad_type padding = PAD_NONE;
 	int min_width = -1;
 
 	/* fmt has already been adjusted if needed */
@@ -93,13 +100,16 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			} else {
 				might_format = 1;
 				min_width = -1;
-				pad_zero = 0;
+				padding = PAD_NONE;
 			}
 		} else {
 			switch (*fmt) {
+			case '-':
+				padding = PAD_SPACE_AFTER;
+				goto still_might_format;
 			case '0':
-				if (min_width < 0 && pad_zero == 0) {
-					pad_zero = 1;
+				if (min_width < 0 && padding == PAD_NONE) {
+					padding = PAD_ZERO_BEFORE;
 					goto still_might_format;
 				}
 				/* Fall through */
@@ -108,6 +118,10 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					min_width = *fmt - '0';
 				} else {
 					min_width = 10 * min_width + *fmt - '0';
+				}
+
+				if (padding == PAD_NONE) {
+					padding = PAD_SPACE_BEFORE;
 				}
 				goto still_might_format;
 			case 'z':
@@ -124,14 +138,14 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					d = -d;
 					min_width--;
 				}
-				_printk_dec_ulong(out, ctx, d, pad_zero,
+				_printk_dec_ulong(out, ctx, d, padding,
 						  min_width);
 				break;
 			}
 			case 'u': {
 				unsigned long u = va_arg(
 					ap, unsigned long);
-				_printk_dec_ulong(out, ctx, u, pad_zero,
+				_printk_dec_ulong(out, ctx, u, padding,
 						  min_width);
 				break;
 			}
@@ -139,14 +153,14 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				  out('0', ctx);
 				  out('x', ctx);
 				  /* left-pad pointers with zeros */
-				  pad_zero = 1;
+				  padding = PAD_ZERO_BEFORE;
 				  min_width = 8;
 				  /* Fall through */
 			case 'x':
 			case 'X': {
 				unsigned long x = va_arg(
 					ap, unsigned long);
-				_printk_hex_ulong(out, ctx, x, pad_zero,
+				_printk_hex_ulong(out, ctx, x, padding,
 						  min_width);
 				break;
 			}
@@ -229,12 +243,13 @@ int printk(const char *fmt, ...)
  * @return N/A
  */
 static void _printk_hex_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, int pad_zero,
+			      const unsigned long num, enum pad_type padding,
 			      int min_width)
 {
 	int size = sizeof(num) * 2;
 	int found_largest_digit = 0;
 	int remaining = 8; /* 8 digits max */
+	int digits = 0;
 
 	for (; size; size--) {
 		char nibble = (num >> ((size - 1) << 2) & 0xf);
@@ -243,11 +258,23 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 			found_largest_digit = 1;
 			nibble += nibble > 9 ? 87 : 48;
 			out((int)nibble, ctx);
+			digits++;
 			continue;
 		}
 
 		if (remaining-- <= min_width) {
-			out((int)(pad_zero ? '0' : ' '), ctx);
+			if (padding == PAD_ZERO_BEFORE) {
+				out('0', ctx);
+			} else if (padding == PAD_SPACE_BEFORE) {
+				out(' ', ctx);
+			}
+		}
+	}
+
+	if (padding == PAD_SPACE_AFTER) {
+		remaining = min_width * 2 - digits;
+		while (remaining-- > 0) {
+			out(' ', ctx);
 		}
 	}
 }
@@ -262,13 +289,14 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
  * @return N/A
  */
 static void _printk_dec_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, int pad_zero,
+			      const unsigned long num, enum pad_type padding,
 			      int min_width)
 {
 	unsigned long pos = 999999999;
 	unsigned long remainder = num;
 	int found_largest_digit = 0;
 	int remaining = 10; /* 10 digits max */
+	int digits = 1;
 
 	/* make sure we don't skip if value is zero */
 	if (min_width <= 0) {
@@ -279,14 +307,24 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 		if (found_largest_digit || remainder > pos) {
 			found_largest_digit = 1;
 			out((int)((remainder / (pos + 1)) + 48), ctx);
-		} else if (remaining <= min_width) {
-			out((int)(pad_zero ? '0' : ' '), ctx);
+			digits++;
+		} else if (remaining <= min_width
+				&& padding < PAD_SPACE_AFTER) {
+			out((int)(padding == PAD_ZERO_BEFORE ? '0' : ' '), ctx);
+			digits++;
 		}
 		remaining--;
 		remainder %= (pos + 1);
 		pos /= 10;
 	}
 	out((int)(remainder + 48), ctx);
+
+	if (padding == PAD_SPACE_AFTER) {
+		remaining = min_width - digits;
+		while (remaining-- > 0) {
+			out(' ', ctx);
+		}
+	}
 }
 
 struct str_context {
