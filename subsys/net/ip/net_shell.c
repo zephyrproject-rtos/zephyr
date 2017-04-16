@@ -423,37 +423,39 @@ static void context_cb(struct net_context *context, void *user_data)
 #endif
 
 	int *count = user_data;
-	char addr_local[ADDR_LEN];
-	char addr_remote[ADDR_LEN];
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
 
 #if defined(CONFIG_NET_IPV6)
 	if (context->local.family == AF_INET6) {
-		snprintk(addr_local, ADDR_LEN, "%s",
+		snprintk(addr_local, sizeof(addr_local), "[%s]:%u",
 			 net_sprint_ipv6_addr(
-				 net_sin6_ptr(&context->local)->sin6_addr));
-		snprintk(addr_remote, ADDR_LEN, "%s",
+				 net_sin6_ptr(&context->local)->sin6_addr),
+			 ntohs(net_sin6_ptr(&context->local)->sin6_port));
+		snprintk(addr_remote, sizeof(addr_remote), "[%s]:%u",
 			 net_sprint_ipv6_addr(
-				 &net_sin6(&context->remote)->sin6_addr));
+				 &net_sin6(&context->remote)->sin6_addr),
+			 ntohs(net_sin6(&context->remote)->sin6_port));
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
 	if (context->local.family == AF_INET) {
-		snprintk(addr_local, ADDR_LEN, "%s",
+		snprintk(addr_local, sizeof(addr_local), "%s:%d",
 			 net_sprint_ipv4_addr(
-				 net_sin_ptr(&context->local)->sin_addr));
-		snprintk(addr_remote, ADDR_LEN, "%s",
+				 net_sin_ptr(&context->local)->sin_addr),
+			 ntohs(net_sin_ptr(&context->local)->sin_port));
+		snprintk(addr_remote, sizeof(addr_remote), "%s:%d",
 			 net_sprint_ipv4_addr(
-				 &net_sin(&context->remote)->sin_addr));
+				 &net_sin(&context->remote)->sin_addr),
+			 ntohs(net_sin(&context->remote)->sin_port));
 	} else
 #endif
 	if (context->local.family == AF_UNSPEC) {
-		printk("Network address family not set for context %p\n",
-		       context);
-		return;
+		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
 	} else {
-		printk("Invalid address family (%d) for context %p\n",
-		       context->local.family, context);
-		return;
+		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
+			 context->local.family);
 	}
 
 	printk("[%2d] %p\t%p    %c%c%c   %16s\t%16s\n",
