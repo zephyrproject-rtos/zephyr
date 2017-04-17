@@ -16,6 +16,7 @@
 #if !defined(_ASMLANGUAGE)
 #include <stddef.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <toolchain.h>
 #include <sections.h>
