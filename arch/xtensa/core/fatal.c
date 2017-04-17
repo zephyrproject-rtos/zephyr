@@ -68,7 +68,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 	printk("Current thread ID = %p\n"
-	       "Faulting instruction address = 0x%x\n",
+	       "Faulting instruction address = 0x%" PRIx32 "\n",
 	       k_current_get(),
 	       pEsf->pc);
 
