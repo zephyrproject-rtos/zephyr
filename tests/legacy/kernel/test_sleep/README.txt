@@ -1,15 +1,15 @@
-Title: Nanokernel Sleep and Wakeup APIs
+Title: cooperative thread  Sleep and Wakeup APIs
 
 Description:
 
-This test verifies that the nanokernel sleep and wakeup APIs operate as
+This test verifies that cooperative  sleep and wakeup APIs operate as
 expected.
 
 ---------------------------------------------------------------------------
 
 Building and Running Project:
 
-This nanokernel project outputs to the console.  It can be built and executed
+This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
     make qemu
@@ -31,15 +31,15 @@ or
 
 Sample Output:
 
-tc_start() - Test Nanokernel Sleep and Wakeup APIs
+tc_start() - Test kernel Sleep and Wakeup APIs
 
-Nanokernel objects initialized
-Test fiber started: id = 0x001030b8
-Helper fiber started: id = 0x001028e8
-Testing normal expiration of fiber_sleep()
-Testing fiber_sleep() + fiber_fiber_wakeup()
-Testing fiber_sleep() + isr_fiber_wakeup()
-Testing fiber_sleep() + task_fiber_wakeup()
-Testing nanokernel task_sleep()
+Kernel objects initialized
+Test thread started: id = 0x00103044
+Helper thread started: id = 0x00102f44
+Testing normal expiration of k_sleep()
+Testing: test thread sleep + helper thread wakeup test
+Testing: test thread sleep + isr offload wakeup test
+Testing: test thread sleep + main wakeup test thread
+Testing kernel k_sleep()
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL
