@@ -107,7 +107,7 @@ static int max30101_init(struct device *dev)
 		return -EIO;
 	}
 	if (part_id != MAX30101_PART_ID) {
-		SYS_LOG_ERR("Got Part ID 0x%02x, expected 0x%02x",
+		SYS_LOG_ERR("Got Part ID 0x%02" PRIx8 ", expected 0x%02x",
 			    part_id, MAX30101_PART_ID);
 		return -EIO;
 	}

@@ -128,11 +128,11 @@ static int lps25hb_init_chip(struct device *dev)
 		goto err_poweroff;
 	}
 	if (chip_id != LPS25HB_VAL_WHO_AM_I) {
-		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
+		SYS_LOG_DBG("invalid chip id 0x%" PRIx8, chip_id);
 		goto err_poweroff;
 	}
 
-	SYS_LOG_DBG("chip id 0x%x", chip_id);
+	SYS_LOG_DBG("chip id 0x%" PRIx8, chip_id);
 
 	if (lps25hb_set_odr_raw(dev, LPS25HB_DEFAULT_SAMPLING_RATE)
 				< 0) {

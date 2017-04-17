@@ -128,7 +128,7 @@ int bma280_init(struct device *dev)
 	}
 
 	if (id != BMA280_CHIP_ID) {
-		SYS_LOG_DBG("Unexpected chip id (%x)", id);
+		SYS_LOG_DBG("Unexpected chip id (%" PRIx8 ")", id);
 		return -EIO;
 	}
 

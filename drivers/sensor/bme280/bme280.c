@@ -292,7 +292,7 @@ static int bme280_chip_init(struct device *dev)
 		   data->chip_id == BMP280_CHIP_ID_SAMPLE_1) {
 		SYS_LOG_DBG("BMP280 chip detected");
 	} else {
-		SYS_LOG_DBG("bad chip id 0x%x", data->chip_id);
+		SYS_LOG_DBG("bad chip id 0x%" PRIx8, data->chip_id);
 		return -ENOTSUP;
 	}
 

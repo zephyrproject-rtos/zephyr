@@ -285,7 +285,7 @@ static int fxos8700_init(struct device *dev)
 	}
 
 	if (whoami != config->whoami) {
-		SYS_LOG_ERR("WHOAMI value received 0x%x, expected 0x%x",
+		SYS_LOG_ERR("WHOAMI value received 0x%" PRIx8 ", expected 0x%x",
 			    whoami, FXOS8700_REG_WHOAMI);
 		return -EIO;
 	}

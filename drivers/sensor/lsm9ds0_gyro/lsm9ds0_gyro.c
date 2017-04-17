@@ -276,10 +276,10 @@ static int lsm9ds0_gyro_init_chip(struct device *dev)
 		goto err_poweroff;
 	}
 	if (chip_id != LSM9DS0_GYRO_VAL_WHO_AM_I_G) {
-		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
+		SYS_LOG_DBG("invalid chip id 0x%" PRIx8, chip_id);
 		goto err_poweroff;
 	}
-	SYS_LOG_DBG("chip id 0x%x", chip_id);
+	SYS_LOG_DBG("chip id 0x%" PRIx8, chip_id);
 
 	if (lsm9ds0_gyro_set_fs_raw(dev, LSM9DS0_GYRO_DEFAULT_FULLSCALE) < 0) {
 		SYS_LOG_DBG("failed to set full-scale");
