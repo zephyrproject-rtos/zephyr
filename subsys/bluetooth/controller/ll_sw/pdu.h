@@ -46,7 +46,7 @@ struct pdu_adv_payload_connect_ind {
 		uint16_t interval;
 		uint16_t latency;
 		uint16_t timeout;
-		uint8_t channel_map[5];
+		uint8_t chan_map[5];
 		uint8_t hop:5;
 		uint8_t sca:3;
 	} __packed lldata;
@@ -99,7 +99,7 @@ enum pdu_data_llid {
 
 enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND = 0x00,
-	PDU_DATA_LLCTRL_TYPE_CHANNEL_MAP_IND = 0x01,
+	PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND = 0x01,
 	PDU_DATA_LLCTRL_TYPE_TERMINATE_IND = 0x02,
 	PDU_DATA_LLCTRL_TYPE_ENC_REQ = 0x03,
 	PDU_DATA_LLCTRL_TYPE_ENC_RSP = 0x04,
@@ -123,7 +123,7 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_PHY_REQ = 0x16,
 	PDU_DATA_LLCTRL_TYPE_PHY_RSP = 0x17,
 	PDU_DATA_LLCTRL_TYPE_PHY_UPDATE_IND = 0x18,
-	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHNLS_IND = 0x19,
+	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
 };
 
 struct pdu_data_llctrl_conn_update_ind {
@@ -135,7 +135,7 @@ struct pdu_data_llctrl_conn_update_ind {
 	uint16_t instant;
 } __packed;
 
-struct pdu_data_llctrl_channel_map_ind {
+struct pdu_data_llctrl_chan_map_ind {
 	uint8_t chm[5];
 	uint16_t instant;
 } __packed;
@@ -240,7 +240,7 @@ struct pdu_data_llctrl {
 	uint8_t opcode;
 	union {
 		struct pdu_data_llctrl_conn_update_ind conn_update_ind;
-		struct pdu_data_llctrl_channel_map_ind channel_map_ind;
+		struct pdu_data_llctrl_chan_map_ind chan_map_ind;
 		struct pdu_data_llctrl_terminate_ind terminate_ind;
 		struct pdu_data_llctrl_enc_req enc_req;
 		struct pdu_data_llctrl_enc_rsp enc_rsp;

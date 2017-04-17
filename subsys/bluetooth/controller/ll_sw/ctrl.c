@@ -99,7 +99,7 @@ struct observer {
 
 	uint8_t scan_type:1;
 	uint8_t scan_state:1;
-	uint8_t scan_channel:2;
+	uint8_t scan_chan:2;
 	uint8_t filter_policy:2;
 	uint8_t adv_addr_type:1;
 	uint8_t init_addr_type:1;
@@ -152,8 +152,8 @@ static struct {
 	uint8_t packet_counter;
 	uint8_t crc_expire;
 
-	uint8_t data_channel_map[5];
-	uint8_t data_channel_count;
+	uint8_t data_chan_map[5];
+	uint8_t data_chan_count;
 	uint8_t sca;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
@@ -262,8 +262,8 @@ static uint32_t conn_update(struct connection *conn,
 			    struct pdu_data *pdu_data_rx);
 static uint32_t is_peer_compatible(struct connection *conn);
 static uint32_t conn_update_req(struct connection *conn);
-static uint32_t channel_map_update(struct connection *conn,
-				   struct pdu_data *pdu_data_rx);
+static uint32_t chan_map_update(struct connection *conn,
+				struct pdu_data *pdu_data_rx);
 static void enc_req_reused_send(struct connection *conn,
 				struct radio_pdu_node_tx *node_tx);
 static void terminate_ind_rx_enqueue(struct connection *conn, uint8_t reason);
@@ -485,12 +485,12 @@ static void common_init(void)
 	_radio.advertiser.chl_map = 0x07;
 
 	/* initialise connection channel map */
-	_radio.data_channel_map[0] = 0xFF;
-	_radio.data_channel_map[1] = 0xFF;
-	_radio.data_channel_map[2] = 0xFF;
-	_radio.data_channel_map[3] = 0xFF;
-	_radio.data_channel_map[4] = 0x1F;
-	_radio.data_channel_count = 37;
+	_radio.data_chan_map[0] = 0xFF;
+	_radio.data_chan_map[1] = 0xFF;
+	_radio.data_chan_map[2] = 0xFF;
+	_radio.data_chan_map[3] = 0xFF;
+	_radio.data_chan_map[4] = 0x1F;
+	_radio.data_chan_count = 37;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	/* Initialize the DLE defaults */
@@ -614,12 +614,12 @@ static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
 		   (1 /** @todo own addr match check */) &&
 		   ((_radio.fc_ena == 0) || (_radio.fc_req == _radio.fc_ack)) &&
 		   (_radio.advertiser.conn)) {
-		struct connection *conn;
-		uint32_t ticker_status;
+		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 		uint32_t ticks_slot_offset;
 		uint32_t conn_interval_us;
 		struct pdu_data *pdu_data;
-		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
+		struct connection *conn;
+		uint32_t ticker_status;
 
 		 radio_pdu_node_rx = packet_rx_reserve_get(3);
 		 if (radio_pdu_node_rx == 0) {
@@ -637,27 +637,25 @@ static inline uint32_t isr_rx_adv(uint8_t devmatch_ok, uint8_t irkmatch_ok,
 		conn->handle = mem_index_get(conn, _radio.conn_pool,
 			CONNECTION_T_SIZE);
 		memcpy(&conn->crc_init[0],
-			 &pdu_adv->payload.connect_ind.lldata.crc_init[0],
-			 3);
+		       &pdu_adv->payload.connect_ind.lldata.crc_init[0],
+		       3);
 		memcpy(&conn->access_addr[0],
-			 &pdu_adv->payload.connect_ind.lldata.access_addr[0],
-			 4);
-		memcpy(&conn->data_channel_map[0],
-			 &pdu_adv->payload.connect_ind.lldata.channel_map[0],
-			 sizeof(conn->data_channel_map));
-		conn->data_channel_count =
-			util_ones_count_get(&conn->data_channel_map[0],
-					sizeof(conn->data_channel_map));
-		conn->data_channel_hop =
-		    pdu_adv->payload.connect_ind.lldata.hop;
+		       &pdu_adv->payload.connect_ind.lldata.access_addr[0],
+		       4);
+		memcpy(&conn->data_chan_map[0],
+		       &pdu_adv->payload.connect_ind.lldata.chan_map[0],
+		       sizeof(conn->data_chan_map));
+		conn->data_chan_count =
+			util_ones_count_get(&conn->data_chan_map[0],
+					    sizeof(conn->data_chan_map));
+		conn->data_chan_hop = pdu_adv->payload.connect_ind.lldata.hop;
 		conn->conn_interval =
-		    pdu_adv->payload.connect_ind.lldata.interval;
+			pdu_adv->payload.connect_ind.lldata.interval;
 		conn_interval_us =
-		    pdu_adv->payload.connect_ind.lldata.interval * 1250;
-		conn->latency =
-		    pdu_adv->payload.connect_ind.lldata.latency;
+			pdu_adv->payload.connect_ind.lldata.interval * 1250;
+		conn->latency = pdu_adv->payload.connect_ind.lldata.latency;
 		memcpy((void *)&conn->role.slave.force, &conn->access_addr[0],
-			 sizeof(conn->role.slave.force));
+		       sizeof(conn->role.slave.force));
 		conn->supervision_reload =
 			RADIO_CONN_EVENTS((pdu_adv->payload.connect_ind.lldata.timeout
 					   * 10 * 1000), conn_interval_us);
@@ -880,11 +878,11 @@ static inline uint32_t isr_rx_obs(uint8_t irkmatch_id, uint8_t rssi_ready)
 			_radio.observer.conn_latency;
 		pdu_adv_tx->payload.connect_ind.lldata.timeout =
 			_radio.observer.conn_timeout;
-		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.channel_map[0],
-		       &conn->data_channel_map[0],
-		       sizeof(pdu_adv_tx->payload.connect_ind.lldata.channel_map));
+		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.chan_map[0],
+		       &conn->data_chan_map[0],
+		       sizeof(pdu_adv_tx->payload.connect_ind.lldata.chan_map));
 		pdu_adv_tx->payload.connect_ind.lldata.hop =
-			conn->data_channel_hop;
+			conn->data_chan_hop;
 		pdu_adv_tx->payload.connect_ind.lldata.sca = _radio.sca;
 
 		radio_switch_complete_and_disable();
@@ -1409,8 +1407,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 		break;
 
-	case PDU_DATA_LLCTRL_TYPE_CHANNEL_MAP_IND:
-		if (channel_map_update(_radio.conn_curr, pdu_data_rx)) {
+	case PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND:
+		if (chan_map_update(_radio.conn_curr, pdu_data_rx)) {
 			_radio.conn_curr->llcp_terminate.reason_peer = 0x28;
 		}
 		break;
@@ -2629,7 +2627,7 @@ static inline void isr_close_conn(void)
 	/* break latency based on ctrl procedure pending */
 	if ((_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) &&
 	    ((_radio.conn_curr->llcp_type == LLCP_CONNECTION_UPDATE) ||
-	     (_radio.conn_curr->llcp_type == LLCP_CHANNEL_MAP))) {
+	     (_radio.conn_curr->llcp_type == LLCP_CHAN_MAP))) {
 		_radio.conn_curr->latency_event = 0;
 	}
 
@@ -3916,37 +3914,37 @@ static void event_common_prepare(uint32_t ticks_at_expire,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
 }
 
-static uint8_t channel_calc(uint8_t *channel_use, uint8_t hop,
-			    uint16_t latency, uint8_t *channel_map,
-			    uint8_t channel_count)
+static uint8_t chan_calc(uint8_t *chan_use, uint8_t hop,
+			 uint16_t latency, uint8_t *chan_map,
+			 uint8_t chan_count)
 {
-	uint8_t channel_next;
+	uint8_t chan_next;
 
-	channel_next = ((*channel_use) + (hop * (1 + latency))) % 37;
-	*channel_use = channel_next;
+	chan_next = ((*chan_use) + (hop * (1 + latency))) % 37;
+	*chan_use = chan_next;
 
-	if ((channel_map[channel_next >> 3] & (1 << (channel_next % 8))) == 0) {
-		uint8_t channel_index;
+	if ((chan_map[chan_next >> 3] & (1 << (chan_next % 8))) == 0) {
+		uint8_t chan_index;
 		uint8_t byte_count;
 
-		channel_index = channel_next % channel_count;
-		channel_next = 0;
+		chan_index = chan_next % chan_count;
+		chan_next = 0;
 
 		byte_count = 5;
 		while (byte_count--) {
 			uint8_t bite;
 			uint8_t bit_count;
 
-			bite = *channel_map;
+			bite = *chan_map;
 			bit_count = 8;
 			while (bit_count--) {
 				if (bite & 0x01) {
-					if (channel_index == 0) {
+					if (chan_index == 0) {
 						break;
 					}
-					channel_index--;
+					chan_index--;
 				}
-				channel_next++;
+				chan_next++;
 				bite >>= 1;
 			}
 
@@ -3954,42 +3952,42 @@ static uint8_t channel_calc(uint8_t *channel_use, uint8_t hop,
 				break;
 			}
 
-			channel_map++;
+			chan_map++;
 		}
 	} else {
 		/* channel can be used, return it */
 	}
 
-	return channel_next;
+	return chan_next;
 }
 
-static void channel_set(uint32_t channel)
+static void chan_set(uint32_t chan)
 {
-	switch (channel) {
+	switch (chan) {
 	case 37:
-		radio_freq_chnl_set(2);
+		radio_freq_chan_set(2);
 		break;
 
 	case 38:
-		radio_freq_chnl_set(26);
+		radio_freq_chan_set(26);
 		break;
 
 	case 39:
-		radio_freq_chnl_set(80);
+		radio_freq_chan_set(80);
 		break;
 
 	default:
-		if (channel < 11) {
-			radio_freq_chnl_set(4 + (2 * channel));
-		} else if (channel < 40) {
-			radio_freq_chnl_set(28 + (2 * (channel - 11)));
+		if (chan < 11) {
+			radio_freq_chan_set(4 + (2 * chan));
+		} else if (chan < 40) {
+			radio_freq_chan_set(28 + (2 * (chan - 11)));
 		} else {
 			LL_ASSERT(0);
 		}
 		break;
 	}
 
-	radio_whiten_iv_set(channel);
+	radio_whiten_iv_set(chan);
 }
 
 /** @brief Prepare access address as per BT Spec.
@@ -4111,7 +4109,7 @@ void radio_event_adv_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 static void adv_setup(void)
 {
 	uint8_t bitmap;
-	uint8_t channel;
+	uint8_t chan;
 
 	/* Use latest adv packet */
 	if (_radio.advertiser.adv_data.first !=
@@ -4130,15 +4128,15 @@ static void adv_setup(void)
 	radio_switch_complete_and_rx();
 
 	bitmap = _radio.advertiser.chl_map_current;
-	channel = 0;
+	chan = 0;
 	while ((bitmap & 0x01) == 0) {
-		channel++;
+		chan++;
 		bitmap >>= 1;
 	}
 	_radio.advertiser.chl_map_current &=
 		(_radio.advertiser.chl_map_current - 1);
 
-	channel_set(37 + channel);
+	chan_set(37 + chan);
 }
 
 static void event_adv(uint32_t ticks_at_expire, uint32_t remainder,
@@ -4345,9 +4343,9 @@ static void event_obs(uint32_t ticks_at_expire, uint32_t remainder,
 
 	adv_obs_configure(RADIO_PHY_ADV);
 
-	channel_set(37 + _radio.observer.scan_channel++);
-	if (_radio.observer.scan_channel == 3) {
-		_radio.observer.scan_channel = 0;
+	chan_set(37 + _radio.observer.scan_chan++);
+	if (_radio.observer.scan_chan == 3) {
+		_radio.observer.scan_chan = 0;
 	}
 
 	radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
@@ -4915,7 +4913,7 @@ static inline uint32_t event_conn_update_prep(struct connection *conn,
 static inline void event_ch_map_prep(struct connection *conn,
 				     uint16_t event_counter)
 {
-	if (conn->llcp.channel_map.initiate) {
+	if (conn->llcp.chan_map.initiate) {
 		struct radio_pdu_node_tx *node_tx;
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
@@ -4924,10 +4922,10 @@ static inline void event_ch_map_prep(struct connection *conn,
 				(struct pdu_data *)node_tx->pdu_data;
 
 			/* reset initiate flag */
-			conn->llcp.channel_map.initiate = 0;
+			conn->llcp.chan_map.initiate = 0;
 
 			/* set instant */
-			conn->llcp.channel_map.instant =
+			conn->llcp.chan_map.instant =
 				event_counter + conn->latency + 6;
 
 			/* place the channel map req packet as next in
@@ -4936,32 +4934,31 @@ static inline void event_ch_map_prep(struct connection *conn,
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
 						    ctrldata) +
-				sizeof(struct pdu_data_llctrl_channel_map_ind);
+				sizeof(struct pdu_data_llctrl_chan_map_ind);
 			pdu_ctrl_tx->payload.llctrl.opcode =
-				PDU_DATA_LLCTRL_TYPE_CHANNEL_MAP_IND;
+				PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND;
 			memcpy(&pdu_ctrl_tx->payload.llctrl.
-			       ctrldata.channel_map_ind.chm[0],
-			       &conn->llcp.channel_map.chm[0],
+			       ctrldata.chan_map_ind.chm[0],
+			       &conn->llcp.chan_map.chm[0],
 			       sizeof(pdu_ctrl_tx->payload.
-				      llctrl.ctrldata.channel_map_ind.chm));
-			pdu_ctrl_tx->payload.llctrl.ctrldata.channel_map_ind.instant =
-				conn->llcp.channel_map.instant;
+				      llctrl.ctrldata.chan_map_ind.chm));
+			pdu_ctrl_tx->payload.llctrl.ctrldata.chan_map_ind.instant =
+				conn->llcp.chan_map.instant;
 
 			ctrl_tx_enqueue(conn, node_tx);
 		}
-	} else
-	    if (((event_counter - conn->llcp.channel_map.instant) & 0xFFFF)
+	} else if (((event_counter - conn->llcp.chan_map.instant) & 0xFFFF)
 			    <= 0x7FFF) {
 		/* procedure request acked */
 		conn->llcp_ack = conn->llcp_req;
 
 		/* copy to active channel map */
-		memcpy(&conn->data_channel_map[0],
-		       &conn->llcp.channel_map.chm[0],
-		       sizeof(conn->data_channel_map));
-		conn->data_channel_count =
-			util_ones_count_get(&conn->data_channel_map[0],
-					    sizeof(conn->data_channel_map));
+		memcpy(&conn->data_chan_map[0],
+		       &conn->llcp.chan_map.chm[0],
+		       sizeof(conn->data_chan_map));
+		conn->data_chan_count =
+			util_ones_count_get(&conn->data_chan_map[0],
+					    sizeof(conn->data_chan_map));
 	}
 
 }
@@ -5494,7 +5491,7 @@ static void event_connection_prepare(uint32_t ticks_at_expire,
 				return;
 			}
 			break;
-		case LLCP_CHANNEL_MAP:
+		case LLCP_CHAN_MAP:
 			event_ch_map_prep(conn, event_counter);
 			break;
 
@@ -5610,8 +5607,8 @@ static void event_slave_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 			uint16_t lazy, void *context)
 {
+	uint8_t data_chan_use;
 	struct connection *conn;
-	uint8_t data_channel_use;
 	uint32_t remainder_us;
 
 	ARG_UNUSED(remainder);
@@ -5651,12 +5648,12 @@ static void event_slave(uint32_t ticks_at_expire, uint32_t remainder,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 	/* Setup Radio Channel */
-	data_channel_use = channel_calc(&conn->data_channel_use,
-					conn->data_channel_hop,
-					conn->latency_event,
-					&conn->data_channel_map[0],
-					conn->data_channel_count);
-	channel_set(data_channel_use);
+	data_chan_use = chan_calc(&conn->data_chan_use,
+				  conn->data_chan_hop,
+				  conn->latency_event,
+				  &conn->data_chan_map[0],
+				  conn->data_chan_count);
+	chan_set(data_chan_use);
 
 	/* current window widening */
 	conn->role.slave.window_widening_event_us +=
@@ -5729,9 +5726,9 @@ static void event_master_prepare(uint32_t ticks_at_expire, uint32_t remainder,
 static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 			 uint16_t lazy, void *context)
 {
-	struct connection *conn;
 	struct pdu_data *pdu_data_tx;
-	uint8_t data_channel_use;
+	struct connection *conn;
+	uint8_t data_chan_use;
 
 	ARG_UNUSED(remainder);
 	ARG_UNUSED(lazy);
@@ -5773,12 +5770,12 @@ static void event_master(uint32_t ticks_at_expire, uint32_t remainder,
 	radio_switch_complete_and_rx();
 
 	/* Setup Radio Channel */
-	data_channel_use = channel_calc(&conn->data_channel_use,
-					conn->data_channel_hop,
-					conn->latency_event,
-					&conn->data_channel_map[0],
-					conn->data_channel_count);
-	channel_set(data_channel_use);
+	data_chan_use = chan_calc(&conn->data_chan_use,
+				  conn->data_chan_hop,
+				  conn->latency_event,
+				  &conn->data_chan_map[0],
+				  conn->data_chan_count);
+	chan_set(data_chan_use);
 
 	/* normal connection! */
 #if SILENT_CONNECTION
@@ -6481,24 +6478,24 @@ static uint32_t conn_update_req(struct connection *conn)
 	return 2;
 }
 
-static uint32_t channel_map_update(struct connection *conn,
-				   struct pdu_data *pdu_data_rx)
+static uint32_t chan_map_update(struct connection *conn,
+				struct pdu_data *pdu_data_rx)
 {
-	if (((pdu_data_rx->payload.llctrl.ctrldata.channel_map_ind.instant -
+	if (((pdu_data_rx->payload.llctrl.ctrldata.chan_map_ind.instant -
 	      conn->event_counter) & 0xffff) > 0x7fff) {
 		return 1;
 	}
 
 	LL_ASSERT(conn->llcp_req == conn->llcp_ack);
 
-	memcpy(&conn->llcp.channel_map.chm[0],
-	       &pdu_data_rx->payload.llctrl.ctrldata.channel_map_ind.chm[0],
-	       sizeof(conn->llcp.channel_map.chm));
-	conn->llcp.channel_map.instant =
-		pdu_data_rx->payload.llctrl.ctrldata.channel_map_ind.instant;
-	conn->llcp.channel_map.initiate = 0;
+	memcpy(&conn->llcp.chan_map.chm[0],
+	       &pdu_data_rx->payload.llctrl.ctrldata.chan_map_ind.chm[0],
+	       sizeof(conn->llcp.chan_map.chm));
+	conn->llcp.chan_map.instant =
+		pdu_data_rx->payload.llctrl.ctrldata.chan_map_ind.instant;
+	conn->llcp.chan_map.initiate = 0;
 
-	conn->llcp_type = LLCP_CHANNEL_MAP;
+	conn->llcp_type = LLCP_CHAN_MAP;
 	conn->llcp_ack--;
 
 	return 0;
@@ -7096,7 +7093,7 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 
 		conn->handle = 0xFFFF;
 		conn->llcp_features = RADIO_BLE_FEATURES;
-		conn->data_channel_use = 0;
+		conn->data_chan_use = 0;
 		conn->event_counter = 0;
 		conn->latency_prepare = 0;
 		conn->latency_event = 0;
@@ -7430,11 +7427,11 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 	access_addr = access_addr_get();
 	memcpy(&conn->access_addr[0], &access_addr, sizeof(conn->access_addr));
 	memcpy(&conn->crc_init[0], &conn, 3);
-	memcpy(&conn->data_channel_map[0], &_radio.data_channel_map[0],
-	       sizeof(conn->data_channel_map));
-	conn->data_channel_count = _radio.data_channel_count;
-	conn->data_channel_hop = 6;
-	conn->data_channel_use = 0;
+	memcpy(&conn->data_chan_map[0], &_radio.data_chan_map[0],
+	       sizeof(conn->data_chan_map));
+	conn->data_chan_count = _radio.data_chan_count;
+	conn->data_chan_hop = 6;
+	conn->data_chan_use = 0;
 	conn->event_counter = 0;
 	conn->conn_interval = _radio.observer.conn_interval;
 	conn->latency_prepare = 0;
@@ -7568,11 +7565,11 @@ uint32_t ll_chm_update(uint8_t *chm)
 {
 	uint8_t instance;
 
-	memcpy(&_radio.data_channel_map[0], chm,
-	       sizeof(_radio.data_channel_map));
-	_radio.data_channel_count =
-		util_ones_count_get(&_radio.data_channel_map[0],
-				    sizeof(_radio.data_channel_map));
+	memcpy(&_radio.data_chan_map[0], chm,
+	       sizeof(_radio.data_chan_map));
+	_radio.data_chan_count =
+		util_ones_count_get(&_radio.data_chan_map[0],
+				    sizeof(_radio.data_chan_map));
 
 	instance = _radio.connection_count;
 	while (instance--) {
@@ -7587,12 +7584,12 @@ uint32_t ll_chm_update(uint8_t *chm)
 			return 1;
 		}
 
-		memcpy(&conn->llcp.channel_map.chm[0], chm,
-		       sizeof(conn->llcp.channel_map.chm));
-		/* conn->llcp.channel_map.instant     = 0; */
-		conn->llcp.channel_map.initiate = 1;
+		memcpy(&conn->llcp.chan_map.chm[0], chm,
+		       sizeof(conn->llcp.chan_map.chm));
+		/* conn->llcp.chan_map.instant     = 0; */
+		conn->llcp.chan_map.initiate = 1;
 
-		conn->llcp_type = LLCP_CHANNEL_MAP;
+		conn->llcp_type = LLCP_CHAN_MAP;
 		conn->llcp_req++;
 	}
 
@@ -7609,7 +7606,7 @@ uint32_t ll_chm_get(uint16_t handle, uint8_t *chm)
 	}
 
 	/** @todo make reading context-safe */
-	memcpy(chm, conn->data_channel_map, sizeof(conn->data_channel_map));
+	memcpy(chm, conn->data_chan_map, sizeof(conn->data_chan_map));
 
 	return 0;
 }
