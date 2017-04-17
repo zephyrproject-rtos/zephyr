@@ -388,6 +388,7 @@ int net_context_unref(struct net_context *context)
 
 	if (context->conn_handler) {
 		net_conn_unregister(context->conn_handler);
+		context->conn_handler = NULL;
 	}
 
 	context->flags &= ~NET_CONTEXT_IN_USE;
