@@ -1,5 +1,0 @@
-% Application       : TicklessTest
-
-% TASK NAME        PRIO ENTRY           STACK GROUPS
-% ==================================================
-  TASK timerApp       6 ticklessTestTask  4096 [EXE]

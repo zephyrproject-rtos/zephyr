@@ -1,4 +1,3 @@
-MDEF_FILE = prj.mdef
 BOARD ?= qemu_x86
 CONF_FILE ?= prj.conf
 

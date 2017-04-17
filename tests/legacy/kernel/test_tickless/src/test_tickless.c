@@ -17,11 +17,17 @@ Unit test for tickless idle feature.
 #include <arch/cpu.h>
 #include <tc_util.h>
 
+#define STACKSIZE 4096
+#define PRIORITY 6
+
 #define SLEEP_TICKS 10
 
 #ifdef CONFIG_TICKLESS_IDLE
 extern int32_t _sys_idle_threshold_ticks;
 #endif
+
+#define TICKS_TO_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
 
 /* NOTE: Clock speed may change between platforms */
 
@@ -64,10 +70,11 @@ extern void _TimestampClose(void);
 #error "Unknown target"
 #endif
 
-void ticklessTestTask(void)
+void ticklessTestThread(void)
 {
-	int32_t start_ticks;
-	int32_t end_ticks;
+	int32_t start_time;
+	int32_t end_time;
+	int32_t diff_time;
 	int32_t diff_ticks;
 	_timer_res_t start_tsc;
 	_timer_res_t end_tsc;
@@ -100,12 +107,15 @@ void ticklessTestTask(void)
 		 * Do a single tick sleep to get us as close to a tick boundary
 		 * as we can.
 		 */
-		task_sleep(1);
-		start_ticks = sys_tick_get_32();
+		k_sleep(TICKS_TO_MS);
+		start_time = k_uptime_get_32();
 		start_tsc = _TIMESTAMP_READ();
-		task_sleep(SLEEP_TICKS);
+		/* FIXME: one tick less to account for
+		 * one  extra tick for _TICK_ALIGN in k_sleep
+		 */
+		k_sleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
 		end_tsc = _TIMESTAMP_READ();
-		end_ticks = sys_tick_get_32();
+		end_time = k_uptime_get_32();
 		cal_tsc += end_tsc - start_tsc;
 	}
 	cal_tsc /= CAL_REPS;
@@ -130,22 +140,28 @@ void ticklessTestTask(void)
 		 * Do a single tick sleep to get us as close to a tick boundary
 		 * as we can.
 		 */
-		task_sleep(1);
-		start_ticks = sys_tick_get_32();
+		k_sleep(TICKS_TO_MS);
+		start_time = k_uptime_get_32();
 		start_tsc = _TIMESTAMP_READ();
-		task_sleep(SLEEP_TICKS);
+		/* FIXME: one tick less to account for
+		 * one  extra tick for _TICK_ALIGN in k_sleep
+		 */
+		k_sleep((SLEEP_TICKS - 1) * TICKS_TO_MS);
 		end_tsc = _TIMESTAMP_READ();
-		end_ticks = sys_tick_get_32();
+		end_time = k_uptime_get_32();
 		diff_tsc += end_tsc - start_tsc;
 	}
 
 	diff_tsc /= CAL_REPS;
 
-	diff_ticks = end_ticks - start_ticks;
+	diff_time = (end_time - start_time);
+	/* Convert ms to ticks*/
+	diff_ticks = (diff_time / TICKS_TO_MS);
 
-	printk("start ticks     : %d\n", start_ticks);
-	printk("end   ticks     : %d\n", end_ticks);
-	printk("diff  ticks     : %d\n", diff_ticks);
+	printk("start time     : %d\n", start_time);
+	printk("end   time     : %d\n", end_time);
+	printk("diff  time     : %d\n", diff_time);
+	printk("diff  ticks    : %d\n", diff_ticks);
 
 #if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	printk("diff  time stamp: 0x%x%x\n",
@@ -181,3 +197,6 @@ void ticklessTestTask(void)
 	}
 
 }
+
+K_THREAD_DEFINE(TICKLESS_THREAD, STACKSIZE, ticklessTestThread, NULL, NULL,
+		NULL, PRIORITY, 0, K_NO_WAIT);
