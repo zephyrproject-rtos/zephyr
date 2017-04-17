@@ -186,6 +186,15 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_DLE                      5
 #define BT_LE_FEAT_BIT_PRIVACY                  6
 #define BT_LE_FEAT_BIT_EXT_SCAN                 7
+#define BT_LE_FEAT_BIT_PHY_2M                   8
+#define BT_LE_FEAT_BIT_SMI_TX                   9
+#define BT_LE_FEAT_BIT_SMI_RX                   10
+#define BT_LE_FEAT_BIT_COD_PHY                  11
+#define BT_LE_FEAT_BIT_EXT_ADV                  12
+#define BT_LE_FEAT_BIT_PER_ADV                  13
+#define BT_LE_FEAT_BIT_CHAN_SEL_ALGO_2          14
+#define BT_LE_FEAT_BIT_PWR_CLASS_1              15
+#define BT_LE_FEAT_BIT_MIN_USED_CHAN_PROC       16
 
 #define BT_FEAT_LE_ENCR(feat)                   BT_FEAT_TEST(feat, 0, 0, \
 						BT_LE_FEAT_BIT_ENC)
