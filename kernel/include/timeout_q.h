@@ -148,7 +148,7 @@ static inline void _dump_timeout(struct _timeout *timeout, int extra_tab)
 
 	K_DEBUG("%stimeout %p, prev: %p, next: %p\n"
 		"%s\tthread: %p, wait_q: %p\n"
-		"%s\tticks remaining: %d\n"
+		"%s\tticks remaining: %" PRId32 "\n"
 		"%s\tfunction: %p\n",
 		tab, timeout, timeout->node.prev, timeout->node.next,
 		tab, timeout->thread, timeout->wait_q,

@@ -190,22 +190,22 @@ void int_latency_show(void)
 		} else {
 			intHandlerLatency = _hw_irq_to_c_handler_latency;
 			printk(" Min latency from hw interrupt up to 'C' int. "
-			       "handler:"
-			       " %d tcs = %d nsec\n",
+			       "handler: "
+			       " %" PRIu32 " tcs = %" PRIu32 " nsec\n",
 			       intHandlerLatency,
 			       SYS_CLOCK_HW_CYCLES_TO_NS(intHandlerLatency));
 		}
 
 		printk(" Max interrupt latency (includes hw int. to 'C' "
 		       "handler):"
-		       " %d tcs = %d nsec\n",
+		       " %" PRIu32 " tcs = %" PRIu32 " nsec\n",
 		       int_locked_latency_max + intHandlerLatency,
 		       SYS_CLOCK_HW_CYCLES_TO_NS(int_locked_latency_max + intHandlerLatency));
 
 		printk(" Overhead substracted from Max int. latency:\n"
-		       "  for int. lock           : %d tcs = %d nsec\n"
-		       "  each time int. lock nest: %d tcs = %d nsec\n"
-		       "  for int. unlocked       : %d tcs = %d nsec\n",
+		       "  for int. lock           : %" PRIu32 " tcs = %" PRIu32 " nsec\n"
+		       "  each time int. lock nest: %" PRIu32 " tcs = %" PRIu32 " nsec\n"
+		       "  for int. unlocked       : %" PRIu32 " tcs = %" PRIu32 " nsec\n",
 		       initial_start_delay,
 		       SYS_CLOCK_HW_CYCLES_TO_NS(initial_start_delay),
 		       nesting_delay,
