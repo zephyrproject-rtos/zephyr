@@ -281,7 +281,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	/* perform any architecture-specific initialization */
 
-	nanoArchInit();
+	kernel_arch_init();
 }
 
 static void switch_to_main_thread(void)

@@ -29,7 +29,7 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 extern void _FaultInit(void);
 extern void _CpuIdleInit(void);
-static ALWAYS_INLINE void nanoArchInit(void)
+static ALWAYS_INLINE void kernel_arch_init(void)
 {
 	_InterruptStackSetup();
 	_ExcSetup();

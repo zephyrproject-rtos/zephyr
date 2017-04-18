@@ -36,7 +36,7 @@ extern void _xt_coproc_init(void);
  *
  * @return N/A
  */
-static ALWAYS_INLINE void nanoArchInit(void)
+static ALWAYS_INLINE void kernel_arch_init(void)
 {
 	_kernel.nested = 0;
 #if XCHAL_CP_NUM > 0

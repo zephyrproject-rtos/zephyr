@@ -30,7 +30,7 @@ extern "C" {
  *
  * @return N/A
  */
-static inline void nanoArchInit(void)
+static inline void kernel_arch_init(void)
 {
 	extern void *__isr___SpuriousIntHandler;
 	extern void *_dummy_spurious_interrupt;
