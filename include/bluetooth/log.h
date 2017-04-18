@@ -85,7 +85,7 @@ static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
 
 #define BT_ASSERT(cond) if (!(cond)) { \
 				BT_ERR("assert: '" #cond "' failed"); \
-				_SysFatalErrorHandler(0, NULL); \
+				k_oops(); \
 			}
 
 #define BT_STACK(name, size) \

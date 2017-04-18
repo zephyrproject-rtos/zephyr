@@ -142,8 +142,7 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 
 #ifdef CONFIG_MULTITHREADING
 	if (_is_thread_essential()) {
-		_NanoFatalErrorHandler(_NANO_ERR_INVALID_TASK_EXIT,
-				       &_default_esf);
+		_k_except_reason(_NANO_ERR_INVALID_TASK_EXIT);
 	}
 
 	k_thread_abort(_current);

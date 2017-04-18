@@ -21,6 +21,7 @@
 #include <kernel_structs.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <kernel.h>
 
 /**
  *
@@ -34,9 +35,7 @@ void FUNC_NORETURN _StackCheckHandler(void)
 {
 	/* Stack canary error is a software fatal condition; treat it as such.
 	 */
-
-	_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, &_default_esf);
-	CODE_UNREACHABLE;
+	_k_except_reason(_NANO_ERR_STACK_CHK_FAIL);
 }
 
 /* Global variable */

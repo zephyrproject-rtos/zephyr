@@ -16,13 +16,7 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-
-#ifdef CONFIG_PRINTK
 #include <misc/printk.h>
-#define PR_EXC(...) printk(__VA_ARGS__)
-#else
-#define PR_EXC(...)
-#endif /* CONFIG_PRINTK */
 
 const NANO_ESF _default_esf = {
 	0xdeaddead, /* placeholder */
@@ -48,24 +42,32 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 {
 	switch (reason) {
 	case _NANO_ERR_INVALID_TASK_EXIT:
-		PR_EXC("***** Invalid Exit Software Error! *****\n");
+		printk("***** Invalid Exit Software Error! *****\n");
 		break;
 
 #if defined(CONFIG_STACK_CANARIES)
 	case _NANO_ERR_STACK_CHK_FAIL:
-		PR_EXC("***** Stack Check Fail! *****\n");
+		printk("***** Stack Check Fail! *****\n");
 		break;
 #endif
 
 	case _NANO_ERR_ALLOCATION_FAIL:
-		PR_EXC("**** Kernel Allocation Failure! ****\n");
+		printk("**** Kernel Allocation Failure! ****\n");
+		break;
+
+	case _NANO_ERR_KERNEL_OOPS:
+		printk("***** Kernel OOPS! *****\n");
+		break;
+
+	case _NANO_ERR_KERNEL_PANIC:
+		printk("***** Kernel Panic! *****\n");
 		break;
 
 	default:
-		PR_EXC("**** Unknown Fatal Error %d! ****\n", reason);
+		printk("**** Unknown Fatal Error %d! ****\n", reason);
 		break;
 	}
-	PR_EXC("Current thread ID = %p\n"
+	printk("Current thread ID = %p\n"
 	       "Faulting instruction address = 0x%lx\n",
 	       k_current_get(),
 	       _arc_v2_aux_reg_read(_ARC_V2_ERET));

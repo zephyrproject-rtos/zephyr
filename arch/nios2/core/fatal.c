@@ -65,6 +65,14 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		printk("**** Kernel Allocation Failure! ****\n");
 		break;
 
+	case _NANO_ERR_KERNEL_OOPS:
+		printk("***** Kernel OOPS! *****\n");
+		break;
+
+	case _NANO_ERR_KERNEL_PANIC:
+		printk("***** Kernel Panic! *****\n");
+		break;
+
 	default:
 		printk("**** Unknown Fatal Error %u! ****\n", reason);
 		break;
@@ -210,26 +218,30 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *pEsf)
 {
-	ARG_UNUSED(reason);
 	ARG_UNUSED(pEsf);
 
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
+	if (reason == _NANO_ERR_KERNEL_PANIC) {
+		goto hang_system;
+	}
 	if (k_is_in_isr() || _is_thread_essential()) {
 		printk("Fatal fault in %s! Spinning...\n",
 		       k_is_in_isr() ? "ISR" : "essential thread");
-#ifdef ALT_CPU_HAS_DEBUG_STUB
-		_nios2_break();
-#endif
-		for (;;)
-			; /* spin forever */
+		goto hang_system;
 	}
 	printk("Fatal fault in thread %p! Aborting.\n", _current);
 	k_thread_abort(_current);
+
+hang_system:
 #else
+	ARG_UNUSED(reason);
+#endif
+
+#ifdef ALT_CPU_HAS_DEBUG_STUB
+	_nios2_break();
+#endif
 	for (;;) {
 		k_cpu_idle();
 	}
-#endif
-
 	CODE_UNREACHABLE;
 }

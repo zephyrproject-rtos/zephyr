@@ -73,6 +73,8 @@ extern void _SysFatalErrorHandler(unsigned int reason,
 #define _NANO_ERR_STACK_CHK_FAIL (2)     /* Stack corruption detected */
 #define _NANO_ERR_ALLOCATION_FAIL (3)    /* Kernel Allocation Failure */
 #define _NANO_ERR_SPURIOUS_INT (4)	 /* Spurious interrupt */
+#define _NANO_ERR_KERNEL_OOPS (5)       /* Kernel oops (fatal to thread) */
+#define _NANO_ERR_KERNEL_PANIC (6)	/* Kernel panic (fatal to system) */
 
 #ifdef __cplusplus
 }

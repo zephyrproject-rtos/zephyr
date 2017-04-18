@@ -92,6 +92,13 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 #endif /* CONFIG_STACK_CANARIES */
 
+	case _NANO_ERR_KERNEL_OOPS:
+		printk("***** Kernel OOPS! *****\n");
+		break;
+
+	case _NANO_ERR_KERNEL_PANIC:
+		printk("***** Kernel Panic! *****\n");
+		break;
 
 	case _NANO_ERR_ALLOCATION_FAIL:
 		printk("**** Kernel Allocation Failure! ****\n");

@@ -50,6 +50,8 @@ extern "C" {
 #define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
 #define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
 #define _NANO_ERR_RESERVED_IRQ (4)	/* Reserved interrupt */
+#define _NANO_ERR_KERNEL_OOPS (5)       /* Kernel oops (fatal to thread) */
+#define _NANO_ERR_KERNEL_PANIC (6)	/* Kernel panic (fatal to system) */
 
 /* Xtensa GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }

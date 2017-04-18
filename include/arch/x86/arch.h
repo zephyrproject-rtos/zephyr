@@ -339,6 +339,10 @@ typedef struct nanoIsf {
 #define _NANO_ERR_ALLOCATION_FAIL    (5)
 /** Unhandled exception */
 #define _NANO_ERR_CPU_EXCEPTION		(6)
+/** Kernel oops (fatal to thread) */
+#define _NANO_ERR_KERNEL_OOPS		(7)
+/** Kernel panic (fatal to system) */
+#define _NANO_ERR_KERNEL_PANIC		(8)
 
 #ifndef _ASMLANGUAGE
 
