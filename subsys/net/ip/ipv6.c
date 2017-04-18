@@ -554,7 +554,7 @@ int net_ipv6_find_last_ext_hdr(struct net_buf *buf)
 	}
 
 out:
-	if (pos > frag->len) {
+	if (!frag || pos > frag->len) {
 		pos = -EINVAL;
 	}
 
