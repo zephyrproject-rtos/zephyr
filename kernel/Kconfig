@@ -305,15 +305,6 @@ endmenu
 
 menu "Other Kernel Object Options"
 
-config SEMAPHORE_GROUPS
-	bool "Enable semaphore groups"
-	default n
-	help
-	This option enables support for semaphore groups. Threads that use
-	semaphore groups require more stack space. Disabling this option will
-	both decrease the footprint as well as improve the performance of
-	the k_sem_give() routine.
-
 config NUM_MBOX_ASYNC_MSGS
 	int "Maximum number of in-flight asynchronous mailbox messages"
 	default 10
