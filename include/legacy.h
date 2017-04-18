@@ -735,7 +735,7 @@ extern void __deprecated task_start(ktask_t task);
  * @deprecated This API will be deprecated.
  *
  * This routine controls how task time slicing is performed by the task
- * scheduler; it specifes the maximum time slice length (in ticks) and
+ * scheduler; it specifies the maximum time slice length (in ticks) and
  * the highest priority task level for which time slicing is performed.
  *
  * To enable time slicing, a non-zero time slice length must be specified.
@@ -743,7 +743,7 @@ extern void __deprecated task_start(ktask_t task);
  * the specified number of ticks before giving other tasks of that priority
  * a chance to execute. (However, any task whose priority is higher than the
  * specified task priority level is exempted, and may execute as long as
- * desired without being pre-empted due to time slicing.)
+ * desired without being preempted due to time slicing.)
  *
  * Time slicing limits only the maximum amount of time a task may continuously
  * execute. Once the scheduler selects a task for execution, there is no minimum
@@ -1016,7 +1016,7 @@ static inline __deprecated void nano_sem_init(struct nano_sem *sem)
  * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
  * @deprecated This API will be deprecated.
  *
- * This routine performs a "give" operation on a nanokernel sempahore object.
+ * This routine performs a "give" operation on a nanokernel semaphore object.
  *
  * It is also a convenience wrapper for the execution of context-specific
  * APIs and helpful when the exact execution context is not known. However,
@@ -1088,7 +1088,7 @@ static inline __deprecated void nano_sem_give(struct nano_sem *sem)
  * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
  * @deprecated This API will be deprecated.
  *
- * This routine performs a "give" operation on a nanokernel sempahore object.
+ * This routine performs a "give" operation on a nanokernel semaphore object.
  *
  * It is also a convenience wrapper for the execution of context-specific
  * APIs and is helpful when the exact execution context is not known. However,
@@ -1384,7 +1384,7 @@ static inline __deprecated void task_sem_group_give(ksemg_t group)
  * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
  * @deprecated This API will be deprecated.
  *
- * This routine resets the count for each semaphore in the sempahore group
+ * This routine resets the count for each semaphore in the semaphore group
  * @a semagroup to zero. This method is faster than resetting the semaphores
  * individually.
  *
@@ -2510,7 +2510,7 @@ static inline __deprecated void nano_fifo_put(struct nano_fifo *fifo,
  *
  * Unlike the fiber/ISR versions of this API which is not much different
  * conceptually than calling nano_fifo_put once for each element to queue, the
- * behaviour is indeed different for tasks. There is no context switch being
+ * behavior is indeed different for tasks. There is no context switch being
  * done for each element queued, so the task can enqueue all elements without
  * being interrupted by a fiber being woken up.
  *
@@ -2580,7 +2580,7 @@ void nano_fifo_put_list(struct nano_fifo *fifo, void *head, void *tail);
  * <b> Legacy API: Will be deprecated in Zephyr 1.9 </b>
  * @deprecated This API will be deprecated.
  *
- * See nano_fifo_put_list for the description of the behaviour.
+ * See nano_fifo_put_list for the description of the behavior.
  *
  * It takes a pointer to a sys_slist_t object instead of the head and tail of a
  * custom singly-linked list. The sys_slist_t object is invalid afterwards and
@@ -2800,7 +2800,7 @@ nano_lifo_put(struct nano_lifo *lifo, void *data)
  * @deprecated This API will be deprecated.
  *
  * Like nano_lifo_put(), but may only be called from a task. A fiber
- * pending on the LIFO object will be made ready, and will preempty the
+ * pending on the LIFO object will be made ready, and will preempt the
  * running task immediately.
  *
  * @sa nano_lifo_put
@@ -2821,7 +2821,7 @@ nano_lifo_put(struct nano_lifo *lifo, void *data)
  * @param lifo LIFO on which to receive.
  * @param timeout_in_ticks Affects the action taken should the LIFO be empty.
  * If TICKS_NONE, then return immediately. If TICKS_UNLIMITED, then wait as
- * long as necesssary. Otherwise wait up to the specified number of ticks
+ * long as necessary. Otherwise wait up to the specified number of ticks
  * before timing out.
  *
  * @warning If it is to be called from the context of an ISR, then @a
@@ -3149,7 +3149,7 @@ extern __deprecated void task_timer_free(ktimer_t timer);
  * If either @a duration or @a period is passed an invalid value
  * (@a duration <= 0, * @a period < 0), this kernel API acts like a
  * task_timer_stop(): if the allocated timer was still running (from a
- * previous call), it will be cancelled; if not, nothing will happen.
+ * previous call), it will be canceled; if not, nothing will happen.
  *
  * @param timer      Timer to start.
  * @param duration   Initial delay in ticks.

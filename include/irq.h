@@ -60,7 +60,7 @@ extern "C" {
  * not go through common interrupt handling code. They must be implemented in
  * such a way that it is safe to put them directly in the vector table.  For
  * ISRs written in C, The ISR_DIRECT_DECLARE() macro will do this
- * automatically. For ISRs wriiten in assembly it is entirely up to the
+ * automatically. For ISRs written in assembly it is entirely up to the
  * developer to ensure that the right steps are taken.
  *
  * This type of interrupt currently has a few limitations compared to normal

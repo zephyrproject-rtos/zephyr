@@ -172,7 +172,7 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  *
  * @param name The same as dev_name provided to DEVICE_INIT()
  *
- * @return The exanded name of the device object created by DEVICE_INIT()
+ * @return The expanded name of the device object created by DEVICE_INIT()
  */
 #define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
 
@@ -201,7 +201,7 @@ static const int _INIT_LEVEL_APPLICATION = 1;
   * This is often useful when configuring interrupts statically in a
   * device's init or per-instance config function, as the init function
   * itself is required by DEVICE_INIT() and use of DEVICE_GET()
-  * inside it creates a circular dependeny.
+  * inside it creates a circular dependency.
   *
   * @param name Device name
   */

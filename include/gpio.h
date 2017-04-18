@@ -133,7 +133,7 @@ extern "C" {
  * when output is high.
  *
  * The DISCONNECT drive strength indicates that the pin is placed in a
- * high impediance state and not driven, this option is used to
+ * high impedance state and not driven, this option is used to
  * configure hardware that supports a open collector drive mode.
  *
  * The interface supports two different drive strengths:
@@ -141,7 +141,7 @@ extern "C" {
  * ALT - The highest drive strength supported by the HW
  *
  * On hardware that supports only one standard drive strength, both
- * DFLT and ALT have the same behaviour.
+ * DFLT and ALT have the same behavior.
  *
  * On hardware that does not support a disconnect mode, DISCONNECT
  * will behave the same as DFLT.
@@ -425,8 +425,8 @@ static inline int gpio_port_configure(struct device *port, int flags)
  *
  * Write the output state of a port. The state of each pin is
  * represented by one bit in the value.  Pin 0 corresponds to the
- * least signficiant bit, pin 31 corresponds to the most significant
- * bit.  For ports with less that 32 physical pins the most signficant
+ * least significant bit, pin 31 corresponds to the most significant
+ * bit.  For ports with less that 32 physical pins the most significant
  * bits which do not correspond to a physical pin are ignored.
  *
  * @param port Pointer to the device structure for the driver instance.
@@ -445,7 +445,7 @@ static inline int gpio_port_write(struct device *port, uint32_t value)
  *
  * Read the input state of a port.  The state of each pin is
  * represented by one bit in the returned value.  Pin 0 corresponds to
- * the least signficiant bit, pin 31 corresponds to the most
+ * the least significant bit, pin 31 corresponds to the most
  * significant bit. Unused bits for ports with less that 32 physical
  * pins are returned as 0.
  *

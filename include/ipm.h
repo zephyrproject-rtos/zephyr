@@ -79,7 +79,7 @@ typedef void (*ipm_register_callback_t)(struct device *port, ipm_callback_t cb,
 
 /**
  * @typedef ipm_set_enabled_t
- * @brief Callback API upon emablement of interrupts
+ * @brief Callback API upon enablement of interrupts
  *
  * See @a ipm_set_enabled() for argument definitions.
  */

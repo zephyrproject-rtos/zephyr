@@ -307,7 +307,7 @@ extern k_tid_t k_current_get(void);
  *
  * @param thread ID of thread to cancel.
  *
- * @retval 0 Thread spawning cancelled.
+ * @retval 0 Thread spawning canceled.
  * @retval -EINVAL Thread has already started executing.
  */
 extern int k_thread_cancel(k_tid_t thread);
@@ -494,7 +494,7 @@ extern void k_thread_resume(k_tid_t thread);
  * ensures that no thread runs for more than the specified time limit
  * before other threads of that priority are given a chance to execute.
  * Any thread whose priority is higher than @a prio is exempted, and may
- * execute as long as desired without being pre-empted due to time slicing.
+ * execute as long as desired without being preempted due to time slicing.
  *
  * Time slicing only limits the maximum amount of time a thread may continuously
  * execute. Once the scheduler selects a thread for execution, there is no
@@ -1754,7 +1754,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  *
  * This routine schedules work item @a work to be processed by workqueue
  * @a work_q after a delay of @a delay milliseconds. The routine initiates
- * an asychronous countdown for the work item and then returns to the caller.
+ * an asynchronous countdown for the work item and then returns to the caller.
  * Only when the countdown completes is the work item actually submitted to
  * the workqueue and becomes pending.
  *
@@ -1789,14 +1789,14 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * @brief Cancel a delayed work item.
  *
  * This routine cancels the submission of delayed work item @a work.
- * A delayed work item can only be cancelled while its countdown is still
+ * A delayed work item can only be canceled while its countdown is still
  * underway.
  *
  * @note Can be called by ISRs.
  *
  * @param work Address of delayed work item.
  *
- * @retval 0 Work item countdown cancelled.
+ * @retval 0 Work item countdown canceled.
  * @retval -EINPROGRESS Work item is already pending.
  * @retval -EINVAL Work item is being processed or has completed its work.
  */
@@ -1833,7 +1833,7 @@ static inline void k_work_submit(struct k_work *work)
  *
  * This routine schedules work item @a work to be processed by the system
  * workqueue after a delay of @a delay milliseconds. The routine initiates
- * an asychronous countdown for the work item and then returns to the caller.
+ * an asynchronous countdown for the work item and then returns to the caller.
  * Only when the countdown completes is the work item actually submitted to
  * the workqueue and becomes pending.
  *
@@ -2127,7 +2127,7 @@ static inline unsigned int k_sem_count_get(struct k_sem *sem)
  * @brief Alert handler function type.
  *
  * An alert's alert handler function is invoked by the system workqueue
- * when the alert is signalled. The alert handler function is optional,
+ * when the alert is signaled. The alert handler function is optional,
  * and is only invoked if the alert has been initialized with one.
  *
  * @param alert Address of the alert.
@@ -2984,13 +2984,13 @@ struct k_mem_pool {
 
 /*
  * Use .altmacro to be able to recalculate values and pass them as string
- * arguments when calling assembler macros resursively
+ * arguments when calling assembler macros recursively
  */
 __asm__(".altmacro\n\t");
 
 /*
  * Recursively calls a macro
- * The followig global symbols need to be initialized:
+ * The following global symbols need to be initialized:
  * __memory_pool_max_block_size - maximal size of the memory block
  * __memory_pool_min_block_size - minimal size of the memory block
  * Notes:
@@ -3015,7 +3015,7 @@ __asm__(".macro __do_recurse macro_name, name, n_max\n\t"
  * Macro allocates space in memory for the array of k_mem_pool_quad_block
  * structures and recursively calls itself for the next array, 4 times
  * larger.
- * The followig global symbols need to be initialized:
+ * The following global symbols need to be initialized:
  * __memory_pool_max_block_size - maximal size of the memory block
  * __memory_pool_min_block_size - minimal size of the memory block
  * __memory_pool_quad_block_size - sizeof(struct k_mem_pool_quad_block)
@@ -3034,7 +3034,7 @@ __asm__(".macro _build_quad_blocks n_max, name\n\t"
  * Build block sets and initialize them
  * Macro initializes the k_mem_pool_block_set structure and
  * recursively calls itself for the next one.
- * The followig global symbols need to be initialized:
+ * The following global symbols need to be initialized:
  * __memory_pool_max_block_size - maximal size of the memory block
  * __memory_pool_min_block_size - minimal size of the memory block
  * __memory_pool_block_set_count, the number of the elements in the

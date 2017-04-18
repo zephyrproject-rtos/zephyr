@@ -90,7 +90,7 @@
 
 /*
  * As for SECTION_PROLOGUE(), except that this one must (!) be used
- * for data sections which on XIP platforms will have differeing
+ * for data sections which on XIP platforms will have differing
  * virtual and load addresses (i.e. they'll be copied into RAM at
  * program startup).  Such a section must (!) also use
  * GROUP_LINK_IN_LMA to specify the correct output load address.

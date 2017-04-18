@@ -43,7 +43,7 @@ extern "C" {
 #define DISK_STATUS_WR_PROTECT		0x04
 
 /*
- * @brief perform any intialization
+ * @brief perform any initialization
  *
  * This call is made by the consumer before doing any IO calls so that the
  * disk or the backing device can do any initialization.

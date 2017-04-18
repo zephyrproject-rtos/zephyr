@@ -132,7 +132,7 @@ struct dma_transfer_config {
  *                                      start. HW specific.
  *     flow_control_mode  [ 12 ]      - 0-source request served upon data
  *                                        availability
- *                                      1-source request postphoned until
+ *                                      1-source request postponed until
  *                                        destination request happens
  *     reserved           [ 13 : 15 ]
  */
@@ -384,7 +384,7 @@ static inline int __deprecated dma_transfer_stop(struct device *dev,
  *
  * WARNING: This look-up works for most controllers, but *may* not work for
  *          yours.  Ensure your controller expects the most common register
- *          bit values before using this convienience function.  If your
+ *          bit values before using this convenience function.  If your
  *          controller does not support these values, you will have to write
  *          your own look-up inside the controller driver.
  *
@@ -413,7 +413,7 @@ static inline enum dma_burst_length dma_width_index(uint32_t size)
  *
  * WARNING: This look-up works for most controllers, but *may* not work for
  *          yours.  Ensure your controller expects the most common register
- *          bit values before using this convienience function.  If your
+ *          bit values before using this convenience function.  If your
  *          controller does not support these values, you will have to write
  *          your own look-up inside the controller driver.
  *

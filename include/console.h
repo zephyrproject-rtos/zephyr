@@ -15,7 +15,7 @@ extern "C" {
  *
  *  This function should be called once to initialize pull-style
  *  access to console via console_getchar() function. This function
- *  supercedes, and incompatible with, callback (push-style) console
+ *  supersedes, and incompatible with, callback (push-style) console
  *  handling (via console_input_fn callback, etc.).
  *
  *  @return N/A
@@ -40,7 +40,7 @@ uint8_t console_getchar(void);
  *
  *  This function should be called once to initialize pull-style
  *  access to console via console_getline() function. This function
- *  supercedes, and incompatible with, callback (push-style) console
+ *  supersedes, and incompatible with, callback (push-style) console
  *  handling (via console_input_fn callback, etc.).
  *
  *  @return N/A
