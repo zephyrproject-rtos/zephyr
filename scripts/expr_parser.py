@@ -173,7 +173,11 @@ def ast_sym(ast, env):
 
 def ast_sym_int(ast, env):
     if ast in env:
-        return int(env[ast])
+        v = env[ast]
+        if v.startswith("0x") or v.startswith("0X"):
+            return int(v, 16)
+        else:
+            return int(v, 10)
     return 0
 
 def ast_expr(ast, env):
