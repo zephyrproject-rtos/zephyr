@@ -1448,7 +1448,7 @@ class TestSuite:
                     if tc.tc_filter:
                         try:
                             res = expr_parser.parse(tc.tc_filter, defconfig)
-                        except SyntaxError as se:
+                        except (ValueError, SyntaxError) as se:
                             sys.stderr.write("Failed processing %s\n" % tc.inifile)
                             raise se
                         if not res:
