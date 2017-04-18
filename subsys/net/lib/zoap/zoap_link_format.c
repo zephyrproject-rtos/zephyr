@@ -217,6 +217,54 @@ static bool match_queries_resource(const struct zoap_resource *resource,
 	return match_attributes(attributes, query);
 }
 
+static int send_error_response(struct zoap_resource *resource,
+			       struct zoap_packet *request,
+			       const struct sockaddr *from)
+{
+	struct net_context *context;
+	struct zoap_packet response;
+	struct net_buf *buf, *frag;
+	uint16_t id;
+	int r;
+
+	id = zoap_header_get_id(request);
+
+	context = net_nbuf_context(request->buf);
+
+	buf = net_nbuf_get_tx(context, K_FOREVER);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	frag = net_nbuf_get_data(context, K_FOREVER);
+	if (!frag) {
+		net_nbuf_unref(buf);
+		return -ENOMEM;
+	}
+
+	net_buf_frag_add(buf, frag);
+
+	r = zoap_packet_init(&response, buf);
+	if (r < 0) {
+		net_nbuf_unref(buf);
+		return r;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_BAD_REQUEST);
+	zoap_header_set_id(&response, id);
+
+	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_nbuf_unref(buf);
+	}
+
+	return r;
+}
+
 int _zoap_well_known_core_get(struct zoap_resource *resource,
 			      struct zoap_packet *request,
 			      const struct sockaddr *from)
@@ -318,10 +366,8 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 done:
 	if (r < 0) {
-		/* FIXME: If error occurs after appending some payload, better
-		 * remove payload and send only BAD_REQUEST response.
-		 */
-		zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_BAD_REQUEST);
+		net_nbuf_unref(buf);
+		return send_error_response(resource, request, from);
 	}
 
 	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
