@@ -32,39 +32,6 @@ extern struct _static_thread_data _static_thread_data_list_end[];
 	     thread_data < _static_thread_data_list_end; \
 	     thread_data++)
 
-#if defined(CONFIG_LEGACY_KERNEL) && defined(CONFIG_FP_SHARING)
-static inline void _task_group_adjust(struct _static_thread_data *thread_data)
-{
-	/*
-	 * set thread options corresponding to legacy FPU and SSE task groups
-	 * so thread spawns properly; EXE and SYS task groups need no adjustment
-	 */
-	if (thread_data->init_groups & K_TASK_GROUP_FPU) {
-		thread_data->init_options |= K_FP_REGS;
-	}
-#ifdef CONFIG_SSE
-	if (thread_data->init_groups & K_TASK_GROUP_SSE) {
-		thread_data->init_options |= K_SSE_REGS;
-	}
-#endif /* CONFIG_SSE */
-}
-#else
-#define _task_group_adjust(thread_data) do { } while (0)
-#endif /* CONFIG_LEGACY_KERNEL && CONFIG_FP_SHARING */
-
-/* Legacy API */
-#if defined(CONFIG_LEGACY_KERNEL)
-int sys_execution_context_type_get(void)
-{
-	if (k_is_in_isr())
-		return NANO_CTX_ISR;
-
-	if (_current->base.prio < 0)
-		return NANO_CTX_FIBER;
-
-	return NANO_CTX_TASK;
-}
-#endif
 
 int k_is_in_isr(void)
 {
@@ -384,7 +351,6 @@ void _init_static_threads(void)
 	unsigned int  key;
 
 	_FOREACH_STATIC_THREAD(thread_data) {
-		_task_group_adjust(thread_data);
 		_new_thread(
 			thread_data->init_stack,
 			thread_data->init_stack_size,
@@ -399,10 +365,6 @@ void _init_static_threads(void)
 	}
 
 	_sched_lock();
-#if defined(CONFIG_LEGACY_KERNEL)
-	/* Start all (legacy) threads that are part of the EXE task group */
-	_k_thread_group_op(K_TASK_GROUP_EXE, _k_thread_single_start);
-#endif
 
 	/*
 	 * Non-legacy static threads may be started immediately or after a
@@ -463,13 +425,3 @@ void _k_thread_group_leave(uint32_t groups, struct k_thread *thread)
 	thread_data->init_groups &= groups;
 }
 
-/* legacy API */
-#if defined(CONFIG_LEGACY_KERNEL)
-void task_start(ktask_t task)
-{
-	int key = irq_lock();
-
-	_k_thread_single_start(task);
-	_reschedule_threads(key);
-}
-#endif
