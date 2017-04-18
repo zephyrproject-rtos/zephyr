@@ -238,13 +238,3 @@ of variable-size data items.
    :project: Zephyr
    :content-only:
 
-
-Legacy APIs
-***********
-
-These APIs will be deprecated in an upcoming release so we recommend you avoid
-using them in your applications.
-
-.. doxygengroup:: legacy_apis
-   :project: Zephyr
-   :content-only:

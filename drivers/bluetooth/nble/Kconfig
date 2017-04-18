@@ -9,7 +9,6 @@
 config NBLE
 	bool "Support for custom non-HCI nRF51 firmware [DEPRECATED]"
 	select UART_INTERRUPT_DRIVEN
-	select NANO_TIMEOUTS
 	select NET_BUF
 	depends on SERIAL
 	help

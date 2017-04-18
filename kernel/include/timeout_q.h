@@ -188,9 +188,6 @@ static inline void _dump_timeout_q(void)
  * they were queued. This could be changed at the cost of potential longer
  * interrupt latency.
  *
- * NOTE: The current implementation of the legacy semaphore feature depends on
- * the timeouts being queued in reverse order.
- *
  * Must be called with interrupts locked.
  */
 

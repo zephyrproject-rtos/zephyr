@@ -40,10 +40,3 @@ void k_thread_abort(k_tid_t thread)
 	_reschedule_threads(key);
 }
 #endif
-
-/* legacy API */
-
-void task_abort_handler_set(void (*func)(void))
-{
-	_current->fn_abort = func;
-}

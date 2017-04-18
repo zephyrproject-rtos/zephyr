@@ -280,7 +280,7 @@ static inline int sys_k_event_logger_get_wait(uint16_t *event_id,
  * @retval -EMSGSIZE Buffer too small; @a data_size now indicates
  *         the size of the event to be retrieved.
  */
-#if defined(CONFIG_KERNEL_EVENT_LOGGER) && defined(CONFIG_NANO_TIMEOUTS)
+#if defined(CONFIG_KERNEL_EVENT_LOGGER)
 static inline int sys_k_event_logger_get_wait_timeout(uint16_t *event_id,
 			uint8_t *dropped, uint32_t *event_data,
 			uint8_t *data_size, uint32_t timeout)
@@ -289,7 +289,7 @@ static inline int sys_k_event_logger_get_wait_timeout(uint16_t *event_id,
 						 dropped, event_data,
 						 data_size, timeout);
 }
-#endif /* CONFIG_KERNEL_EVENT_LOGGER && CONFIG_NANO_TIMEOUTS */
+#endif /* CONFIG_KERNEL_EVENT_LOGGER */
 
 /**
  * @brief Register thread that retrieves kernel events.

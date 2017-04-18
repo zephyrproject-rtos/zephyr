@@ -3553,10 +3553,6 @@ extern void k_cpu_atomic_idle(unsigned int key);
 
 extern void _sys_power_save_idle_exit(int32_t ticks);
 
-/* Include legacy APIs */
-#if defined(CONFIG_LEGACY_KERNEL)
-#include <legacy.h>
-#endif
 #include <arch/cpu.h>
 
 /*
