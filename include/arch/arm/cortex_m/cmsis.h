@@ -116,7 +116,7 @@ typedef enum {
 #elif defined(CONFIG_CPU_CORTEX_M7)
 #define __CM7_REV        0
 #else
-#error "Uknown Cortex-M device"
+#error "Unknown Cortex-M device"
 #endif
 
 #define __MPU_PRESENT                  0 /* Zephyr has no MPU support */
@@ -135,7 +135,7 @@ typedef enum {
 #elif defined(CONFIG_CPU_CORTEX_M7)
 #include <core_cm7.h>
 #else
-#error "Uknown Cortex-M device"
+#error "Unknown Cortex-M device"
 #endif
 
 #ifdef __cplusplus

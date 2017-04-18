@@ -36,7 +36,7 @@ extern "C" {
 
 
 /* NOTE: We currently do not have definitions for 16-bit segment, currently
- * assume everthing we are working with is 32-bit
+ * assume everything we are working with is 32-bit
  */
 
 #define SEG_TYPE_LDT		0x2
@@ -188,7 +188,7 @@ struct __packed segment_descriptor {
 			/* 1=code 0=data */
 			uint8_t executable:1;
 
-			/* Next 3 fields ctually common to all */
+			/* Next 3 fields actually common to all */
 
 			/* 1=code or data, 0=system type */
 			uint8_t descriptor_type:1;
@@ -490,7 +490,7 @@ static inline uint16_t _get_tss(void)
 /**
  * Get the current global descriptor table
  *
- * @param gdt Pointer to memory to receive GDT pseduo descriptor information
+ * @param gdt Pointer to memory to receive GDT pseudo descriptor information
  */
 static inline void _get_gdt(struct pseudo_descriptor *gdt)
 {
@@ -501,7 +501,7 @@ static inline void _get_gdt(struct pseudo_descriptor *gdt)
 /**
  * Get the current interrupt descriptor table
  *
- * @param idt Pointer to memory to receive IDT pseduo descriptor information
+ * @param idt Pointer to memory to receive IDT pseudo descriptor information
  */
 static inline void _get_idt(struct pseudo_descriptor *idt)
 {
@@ -574,7 +574,7 @@ static inline uint16_t _get_cs(void)
 
 
 /**
- * Get the segement selector for the current data segment
+ * Get the segment selector for the current data segment
  *
  * @return Segment selector
  */

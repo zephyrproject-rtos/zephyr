@@ -30,7 +30,7 @@ extern "C" {
 #define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
 #define _NANO_ERR_SPURIOUS_INT (4)	/* Spurious interrupt */
 
-/* APIs need to support non-byte addressible architectures */
+/* APIs need to support non-byte addressable architectures */
 
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)

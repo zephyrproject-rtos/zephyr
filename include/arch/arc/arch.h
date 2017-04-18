@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-/* APIs need to support non-byte addressible architectures */
+/* APIs need to support non-byte addressable architectures */
 
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)
