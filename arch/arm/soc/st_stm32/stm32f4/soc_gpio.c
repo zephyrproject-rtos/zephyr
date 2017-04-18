@@ -234,10 +234,17 @@ int stm32_gpio_enable_int(int port, int pin)
 		(struct stm32f4x_syscfg *)SYSCFG_BASE;
 	volatile union syscfg_exticr *exticr;
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	struct stm32_pclken pclken = {
+		.bus = STM32_CLOCK_BUS_APB2,
+		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
+	};
+#else
 	struct stm32f4x_pclken pclken = {
 		.bus = STM32F4X_CLOCK_BUS_APB2,
 		.enr = STM32F4X_CLOCK_ENABLE_SYSCFG
 	};
+#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 	int shift = 0;
 
 	/* Enable SYSCFG clock */

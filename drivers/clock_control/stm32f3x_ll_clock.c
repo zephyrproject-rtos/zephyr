@@ -65,6 +65,14 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
 
 /**
+ * @brief Activate default clocks
+ */
+void config_enable_default_clocks(void)
+{
+	/* Nothing for now */
+}
+
+/**
  * @brief Function kept for driver genericity
  */
 void LL_RCC_MSI_Disable(void)

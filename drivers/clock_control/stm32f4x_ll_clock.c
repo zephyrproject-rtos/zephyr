@@ -20,17 +20,17 @@
 #define _pllm(v) LL_RCC_PLLM_DIV_ ## v
 #define pllm(v) _pllm(v)
 
-#define _pllr(v) LL_RCC_PLLR_DIV_ ## v
-#define pllr(v) _pllr(v)
+#define _pllp(v) LL_RCC_PLLP_DIV_ ## v
+#define pllp(v) _pllp(v)
 
 /**
  * @brief fill in pll configuration structure
  */
 void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 {
-	pllinit->PLLM = pllm(CONFIG_CLOCK_STM32_PLL_M_DIVISOR);
-	pllinit->PLLN = CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER;
-	pllinit->PLLR = pllr(CONFIG_CLOCK_STM32_PLL_R_DIVISOR);
+	pllinit->PLLM = pllm(CONFIG_CLOCK_STM32_PLLM_DIV_FACTOR);
+	pllinit->PLLN = CONFIG_CLOCK_STM32_PLLN_MULTIPLIER;
+	pllinit->PLLP = pllp(CONFIG_CLOCK_STM32_PLLP_DIV_FACTOR);
 }
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
 
@@ -39,5 +39,14 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-	/* Nothing for now */
+	/* Power Interface clock enabled by default */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+}
+
+/**
+ * @brief Function kept for driver genericity
+ */
+void LL_RCC_MSI_Disable(void)
+{
+	/* Do nothing */
 }
