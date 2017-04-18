@@ -117,7 +117,7 @@ BOARDS/ARM - CC32XX LAUNCHXL
 M:      Gil Pitney <gil.pitney@linaro.org>
 S:      Supported
 F:      boards/arm/cc3200_launchxl/
-F:      boards/arm/cc3220s_launchxl/
+F:      boards/arm/cc3220sf_launchxl/
 
 BOARDS/ARM - NXP FRDM-K64F
 M:	Maureen Helm <maureen.helm@nxp.com>
