@@ -2979,6 +2979,7 @@ static int le_init(void)
 	struct bt_hci_cp_le_set_event_mask *cp_mask;
 	struct net_buf *buf;
 	struct net_buf *rsp;
+	uint64_t mask = 0;
 	int err;
 
 	/* For now we only support LE capable controllers */
@@ -3044,22 +3045,17 @@ static int le_init(void)
 	}
 
 	cp_mask = net_buf_add(buf, sizeof(*cp_mask));
-	memset(cp_mask, 0, sizeof(*cp_mask));
 
-	cp_mask->events[0] |= 0x02; /* LE Advertising Report Event */
+	mask |= BT_EVT_MASK_LE_ADVERTISING_REPORT;
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CONN)) {
-		/* LE Connection Complete Event */
-		cp_mask->events[0] |= 0x01;
-		/* LE Connection Update Complete Event */
-		cp_mask->events[0] |= 0x04;
-		/* LE Read Remote Used Features Compl Evt */
-		cp_mask->events[0] |= 0x08;
+		mask |= BT_EVT_MASK_LE_CONN_COMPLETE;
+		mask |= BT_EVT_MASK_LE_CONN_UPDATE_COMPLETE;
+		mask |= BT_EVT_MASK_LE_REMOTE_FEAT_COMPLETE;
 	}
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_SMP)) {
-		/* LE Long Term Key Request Event */
-		cp_mask->events[0] |= 0x10;
+		mask |= BT_EVT_MASK_LE_LTK_REQUEST;
 	}
 
 	/*
@@ -3068,10 +3064,11 @@ static int le_init(void)
 	 */
 	if ((bt_dev.supported_commands[34] & 0x02) &&
 	    (bt_dev.supported_commands[34] & 0x04)) {
-		cp_mask->events[0] |= 0x80; /* LE Read Local P-256 PKey Compl */
-		cp_mask->events[1] |= 0x01; /* LE Generate DHKey Compl Event */
+		mask |= BT_EVT_MASK_LE_P256_PUBLIC_KEY_COMPLETE;
+		mask |= BT_EVT_MASK_LE_GENERATE_DHKEY_COMPLETE;
 	}
 
+	sys_put_le64(mask, cp_mask->events);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
 	if (err) {
 		return err;
@@ -3293,6 +3290,7 @@ static int set_event_mask(void)
 {
 	struct bt_hci_cp_set_event_mask *ev;
 	struct net_buf *buf;
+	uint64_t mask = 0;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, sizeof(*ev));
 	if (!buf) {
@@ -3300,49 +3298,46 @@ static int set_event_mask(void)
 	}
 
 	ev = net_buf_add(buf, sizeof(*ev));
-	memset(ev, 0, sizeof(*ev));
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR)) {
-		ev->events[0] |= 0x01; /* Inquiry Complete  */
-		ev->events[0] |= 0x04; /* Connection Complete */
-		ev->events[0] |= 0x08; /* Connection Request */
-		ev->events[0] |= 0x20; /* Authentication Complete */
-		ev->events[0] |= 0x40; /* Remote Name Request Complete */
-		ev->events[1] |= 0x04; /* Read Remote Feature Complete */
-		ev->events[2] |= 0x02; /* Role Change */
-		ev->events[2] |= 0x20; /* Pin Code Request */
-		ev->events[2] |= 0x40; /* Link Key Request */
-		ev->events[2] |= 0x80; /* Link Key Notif */
-		ev->events[4] |= 0x02; /* Inquiry Result With RSSI */
-		ev->events[4] |= 0x04; /* Remote Extended Features Complete */
-		ev->events[5] |= 0x08; /* Synchronous Conn Complete Event */
-		ev->events[5] |= 0x40; /* Extended Inquiry Result */
-		ev->events[6] |= 0x01; /* IO Capability Request */
-		ev->events[6] |= 0x02; /* IO Capability Response */
-		ev->events[6] |= 0x04; /* User Confirmation Request */
-		ev->events[6] |= 0x08; /* User Passkey Request */
-		ev->events[6] |= 0x20; /* Simple Pairing Complete */
-		ev->events[7] |= 0x04; /* User Passkey Notification */
+		mask |= BT_EVT_MASK_INQUIRY_COMPLETE;
+		mask |= BT_EVT_MASK_CONN_COMPLETE;
+		mask |= BT_EVT_MASK_CONN_REQUEST;
+		mask |= BT_EVT_MASK_AUTH_COMPLETE;
+		mask |= BT_EVT_MASK_REMOTE_NAME_REQ_COMPLETE;
+		mask |= BT_EVT_MASK_REMOTE_FEATURES;
+		mask |= BT_EVT_MASK_ROLE_CHANGE;
+		mask |= BT_EVT_MASK_PIN_CODE_REQ;
+		mask |= BT_EVT_MASK_LINK_KEY_REQ;
+		mask |= BT_EVT_MASK_LINK_KEY_NOTIFY;
+		mask |= BT_EVT_MASK_INQUIRY_RESULT_WITH_RSSI;
+		mask |= BT_EVT_MASK_REMOTE_EXT_FEATURES;
+		mask |= BT_EVT_MASK_SYNC_CONN_COMPLETE;
+		mask |= BT_EVT_MASK_EXTENDED_INQUIRY_RESULT;
+		mask |= BT_EVT_MASK_IO_CAPA_REQ;
+		mask |= BT_EVT_MASK_IO_CAPA_RESP;
+		mask |= BT_EVT_MASK_USER_CONFIRM_REQ;
+		mask |= BT_EVT_MASK_USER_PASSKEY_REQ;
+		mask |= BT_EVT_MASK_SSP_COMPLETE;
+		mask |= BT_EVT_MASK_USER_PASSKEY_NOTIFY;
 	}
 
-	ev->events[1] |= 0x20; /* Command Complete */
-	ev->events[1] |= 0x40; /* Command Status */
-	ev->events[1] |= 0x80; /* Hardware Error */
-	ev->events[3] |= 0x02; /* Data Buffer Overflow */
-	ev->events[7] |= 0x20; /* LE Meta-Event */
+	mask |= BT_EVT_MASK_HARDWARE_ERROR;
+	mask |= BT_EVT_MASK_DATA_BUFFER_OVERFLOW;
+	mask |= BT_EVT_MASK_LE_META_EVENT;
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CONN)) {
-		ev->events[0] |= 0x10; /* Disconnection Complete */
-		ev->events[1] |= 0x08; /* Read Remote Version Info Complete */
-		ev->events[2] |= 0x04; /* Number of Completed Packets */
+		mask |= BT_EVT_MASK_DISCONN_COMPLETE;
+		mask |= BT_EVT_MASK_REMOTE_VERSION_INFO;
 	}
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_SMP) &&
 	    BT_FEAT_LE_ENCR(bt_dev.le.features)) {
-		ev->events[0] |= 0x80; /* Encryption Change */
-		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
+		mask |= BT_EVT_MASK_ENCRYPT_CHANGE;
+		mask |= BT_EVT_MASK_ENCRYPT_KEY_REFRESH_COMPLETE;
 	}
 
+	sys_put_le64(mask, ev->events);
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 }
 

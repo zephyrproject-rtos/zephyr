@@ -46,7 +46,6 @@ static int32_t dup_count;
 static uint32_t dup_curr;
 #endif
 
-#define BIT64(n) (1ULL << (n))
 #define DEFAULT_EVENT_MASK    0x1fffffffffff
 #define DEFAULT_LE_EVENT_MASK 0x1f
 
@@ -1010,8 +1009,8 @@ static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *b,
 	uint8_t *rssi;
 	uint8_t info_len;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_ADVERTISING_REPORT))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
 		return;
 	}
 
@@ -1090,8 +1089,8 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_conn_complete *sep;
 	struct radio_le_conn_cmplt *radio_cc;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CONN_COMPLETE)) {
 		return;
 	}
 
@@ -1115,7 +1114,7 @@ static void disconn_complete(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_disconn_complete *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_DISCONN_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_DISCONN_COMPLETE)) {
 		return;
 	}
 
@@ -1133,8 +1132,8 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_conn_update_complete *sep;
 	struct radio_le_conn_update_cmplt *radio_cu;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_UPDATE_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CONN_UPDATE_COMPLETE)) {
 		return;
 	}
 
@@ -1155,7 +1154,7 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_encrypt_key_refresh_complete *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_ENCRYPT_KEY_REFRESH_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_ENCRYPT_KEY_REFRESH_COMPLETE)) {
 		return;
 	}
 
@@ -1250,8 +1249,8 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_ltk_request *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_LTK_REQUEST))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_LTK_REQUEST)) {
 		return;
 	}
 
@@ -1269,7 +1268,7 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 {
 	struct bt_hci_evt_encrypt_change *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_ENCRYPT_CHANGE))) {
+	if (!(event_mask & BT_EVT_MASK_ENCRYPT_CHANGE)) {
 		return;
 	}
 
@@ -1286,8 +1285,8 @@ static void le_remote_feat_complete(uint8_t status, struct pdu_data *pdu_data,
 {
 	struct bt_hci_ev_le_remote_feat_complete *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_REMOTE_FEAT_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_REMOTE_FEAT_COMPLETE)) {
 		return;
 	}
 
@@ -1326,7 +1325,7 @@ static void remote_version_info(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_remote_version_info *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_REMOTE_VERSION_INFO))) {
+	if (!(event_mask & BT_EVT_MASK_REMOTE_VERSION_INFO)) {
 		return;
 	}
 
@@ -1348,8 +1347,8 @@ static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_conn_param_req *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_PARAM_REQ))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CONN_PARAM_REQ)) {
 		return;
 	}
 
@@ -1369,8 +1368,8 @@ static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_data_len_change *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_DATA_LEN_CHANGE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_DATA_LEN_CHANGE)) {
 		return;
 	}
 
