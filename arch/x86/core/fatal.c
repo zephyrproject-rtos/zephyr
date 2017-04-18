@@ -24,24 +24,6 @@
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
-/*
- * Define a default ESF for use with _NanoFatalErrorHandler() in the event
- * the caller does not have a NANO_ESF to pass
- */
-const NANO_ESF _default_esf = {
-	0xdeaddead, /* ESP */
-	0xdeaddead, /* EBP */
-	0xdeaddead, /* EBX */
-	0xdeaddead, /* ESI */
-	0xdeaddead, /* EDI */
-	0xdeaddead, /* EDX */
-	0xdeaddead, /* ECX */
-	0xdeaddead, /* EAX */
-	0xdeaddead, /* error code */
-	0xdeaddead, /* EIP */
-	0xdeaddead, /* CS */
-	0xdeaddead, /* EFLAGS */
-};
 
 /**
  *
@@ -110,9 +92,9 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	}
 
 	printk("Current thread ID = %p\n"
-	       "Faulting segment:address = 0x%x:0x%x\n"
-	       "eax: 0x%x, ebx: 0x%x, ecx: 0x%x, edx: 0x%x\n"
-	       "esi: 0x%x, edi: 0x%x, ebp: 0%x, esp: 0x%x\n"
+	       "Faulting segment:address = 0x%04x:0x%08x\n"
+	       "eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
+	       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
 	       "eflags: 0x%x\n",
 	       k_current_get(),
 	       pEsf->cs & 0xFFFF, pEsf->eip,
@@ -129,6 +111,45 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 	_SysFatalErrorHandler(reason, pEsf);
 }
+
+#ifdef CONFIG_X86_KERNEL_OOPS
+/* The reason code gets pushed onto the stack right before the exception is
+ * triggered, so it would be after the nano_esf data
+ */
+struct oops_esf {
+	NANO_ESF nano_esf;
+	unsigned int reason;
+};
+
+FUNC_NORETURN void _do_kernel_oops(const struct oops_esf *esf)
+{
+	_NanoFatalErrorHandler(esf->reason, &esf->nano_esf);
+}
+
+extern void (*_kernel_oops_handler)(void);
+NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
+		      CONFIG_X86_KERNEL_OOPS_VECTOR / 16,
+		      CONFIG_X86_KERNEL_OOPS_VECTOR, 0);
+#else
+/*
+ * Define a default ESF for use with _NanoFatalErrorHandler() in the event
+ * the caller does not have a NANO_ESF to pass
+ */
+const NANO_ESF _default_esf = {
+	0xdeaddead, /* ESP */
+	0xdeaddead, /* EBP */
+	0xdeaddead, /* EBX */
+	0xdeaddead, /* ESI */
+	0xdeaddead, /* EDI */
+	0xdeaddead, /* EDX */
+	0xdeaddead, /* ECX */
+	0xdeaddead, /* EAX */
+	0xdeaddead, /* error code */
+	0xdeaddead, /* EIP */
+	0xdeaddead, /* CS */
+	0xdeaddead, /* EFLAGS */
+};
+#endif /* CONFIG_X86_KERNEL_OOPS */
 
 #if CONFIG_EXCEPTION_DEBUG
 

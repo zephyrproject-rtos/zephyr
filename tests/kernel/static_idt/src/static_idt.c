@@ -23,8 +23,8 @@
 #endif
 
 /* These vectors are somewhat arbitrary. We try and use unused vectors */
-#define TEST_SOFT_INT 62
-#define TEST_SPUR_INT 63
+#define TEST_SOFT_INT 60
+#define TEST_SPUR_INT 61
 
 
 #define MY_STACK_SIZE 2048

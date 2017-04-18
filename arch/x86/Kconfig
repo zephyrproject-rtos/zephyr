@@ -256,6 +256,26 @@ config IRQ_OFFLOAD_VECTOR
 	where there is a fixed IRQ-to-vector mapping another value may be
 	needed to avoid collision.
 
+config X86_KERNEL_OOPS
+	bool "Enable handling of kernel oops as an exception"
+	default y
+	help
+	Enable handling of k_oops() API as a CPU exception, which will provide
+	extra debugging information such as program counter and register
+	values when the oops is triggered. Requires an entry in the IDT.
+
+config X86_KERNEL_OOPS_VECTOR
+	int "IDT vector to use for kernel oops"
+	default 62 if MVIC
+	default 33 if !MVIC
+	range 32 255
+	depends on X86_KERNEL_OOPS
+	help
+	Specify the IDT vector to use for the kernel oops exception handler.
+	The default should be fine for most arches, but on systems like MVIC
+	where there is a fixed IRQ-to-vector mapping another value may be
+	needed to avoid collision.
+
 config XIP
 	default n
 

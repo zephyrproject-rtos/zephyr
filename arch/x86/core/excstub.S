@@ -23,8 +23,11 @@
 	/* exports (internal APIs) */
 
 	GTEXT(_exception_enter)
+	GTEXT(_kernel_oops_handler)
 
 	/* externs (internal APIs) */
+	GTEXT(_do_kernel_oops)
+
 /**
  *
  * @brief Inform the kernel of an exception
@@ -226,3 +229,9 @@ nestedException:
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	iret
 
+#if CONFIG_X86_KERNEL_OOPS
+SECTION_FUNC(TEXT, _kernel_oops_handler)
+	push $0 /* dummy error code */
+	push $_do_kernel_oops
+	jmp _exception_enter
+#endif
