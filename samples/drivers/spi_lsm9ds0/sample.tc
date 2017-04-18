@@ -1,7 +1,0 @@
-# @testcase dynamic
-# @targets \
-#    board:(?!quark_se_c1000_ss_devboard) \
-#    board:(?!frdm_k64f) \
-#    board:(?!qemu-.*) \
-#
-# @eval console-rx %(console)s:15 LSM9DS0 Who Am I
