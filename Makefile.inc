@@ -42,7 +42,7 @@ $(shell mkdir -p $(O))
 override O := $(realpath $(O))
 endif
 
-export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
+export ARCH QEMU_EXTRA_FLAGS PROJECT_BASE
 
 override CONF_FILE := $(strip $(subst $(DQUOTE),,$(CONF_FILE)))
 

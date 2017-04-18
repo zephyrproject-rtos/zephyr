@@ -17,8 +17,4 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_MDEF
-#include <sysgen.h>
-#endif
-
 #endif /* _ZEPHYR__H */

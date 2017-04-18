@@ -163,7 +163,6 @@ int testSlabGetAllBlocks(void **p)
 
 	TC_PRINT("Function %s\n", __func__);
 
-	/* Number of blocks in the map is defined in MDEF file */
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
 		retValue = k_mem_slab_num_used_get(&MAP_LgBlks);
@@ -239,7 +238,6 @@ int testSlabFreeAllBlocks(void **p)
 
 	TC_PRINT("Function %s\n", __func__);
 
-	/* Number of blocks in the map is defined in MDEF file */
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
 		retValue = k_mem_slab_num_used_get(&MAP_LgBlks);

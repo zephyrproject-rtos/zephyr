@@ -536,7 +536,7 @@ void k_mem_pool_free(struct k_mem_block *block)
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 
 /*
- * Case 1: Heap is defined using HEAP_MEM_POOL_SIZE configuration option.
+ * Heap is defined using HEAP_MEM_POOL_SIZE configuration option.
  *
  * This module defines the heap memory pool and the _HEAP_MEM_POOL symbol
  * that has the address of the associated memory pool struct.
@@ -544,25 +544,6 @@ void k_mem_pool_free(struct k_mem_block *block)
 
 K_MEM_POOL_DEFINE(_heap_mem_pool, 64, CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
 #define _HEAP_MEM_POOL (&_heap_mem_pool)
-
-#else
-
-/*
- * Case 2: Heap is defined using HEAP_SIZE item type in MDEF.
- *
- * Sysgen defines the heap memory pool and the _heap_mem_pool_ptr variable
- * that has the address of the associated memory pool struct. This module
- * defines the _HEAP_MEM_POOL symbol as an alias for _heap_mem_pool_ptr.
- *
- * Note: If the MDEF does not define the heap memory pool k_malloc() will
- * compile successfully, but will trigger a link error if it is used.
- */
-
-extern struct k_mem_pool * const _heap_mem_pool_ptr;
-#define _HEAP_MEM_POOL _heap_mem_pool_ptr
-
-#endif /* CONFIG_HEAP_MEM_POOL_SIZE */
-
 
 void *k_malloc(size_t size)
 {
@@ -595,3 +576,5 @@ void k_free(void *ptr)
 		k_mem_pool_free(ptr);
 	}
 }
+#endif
+

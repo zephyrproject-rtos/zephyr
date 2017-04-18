@@ -201,7 +201,6 @@ This can be accomplished with the "make debug" build target:
      CHK     include/generated/version.h
      CHK     misc/generated/configs.c
      CHK     include/generated/offsets.h
-     CHK     misc/generated/sysgen/prj.mdef
    Nios II GDB server running on port 14777
    Ignoring --stop option because --tcpport also specified
    Python Exception <type 'exceptions.ImportError'> No module named gdb:

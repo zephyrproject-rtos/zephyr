@@ -1,4 +1,3 @@
-ccflags-y += -I$(CURDIR)/misc/generated/sysgen
 ccflags-y += -I${ZEPHYR_BASE}/tests/include
 
 obj-y := fifo_b.o mailbox_b.o master.o mempool_b.o \

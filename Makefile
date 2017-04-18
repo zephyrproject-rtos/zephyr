@@ -5,7 +5,7 @@ VERSION_RESERVED   = 0
 EXTRAVERSION       =
 NAME 		   = Zephyr Kernel
 
-export SOURCE_DIR PROJECT MDEF_FILE
+export SOURCE_DIR PROJECT
 
 ifeq ($(MAKECMDGOALS),)
 $(error Invoking make from top-level kernel directory is not supported)
@@ -373,7 +373,6 @@ ZEPHYRINCLUDE    = \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
 		-I$(CURDIR)/include/generated \
-		-I$(CURDIR)/misc/generated/sysgen \
 		$(USERINCLUDE) \
 		$(STDINCLUDE)
 
@@ -1034,12 +1033,7 @@ depend dep:
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
 
-CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
-		misc/generated/sysgen/sysgen.h \
-		misc/generated/sysgen/prj.mdef \
-		misc/generated/sysgen/micro_private_types.h \
-		misc/generated/sysgen/kernel_main.h \
-		include/generated/generated_dts_board.h \
+CLEAN_FILES += 	include/generated/generated_dts_board.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
 		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd

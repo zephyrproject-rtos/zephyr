@@ -68,16 +68,7 @@ uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
     #error "IDLE_STACK_SIZE must be a multiple of the stack alignment"
 #endif
 
-/* Some projects may specify their main thread and parameters in the
- * MDEF file. In this case, we need to use the stack size specified there
- * and not in Kconfig
- */
-#if defined(MDEF_MAIN_STACK_SIZE) && \
-		(MDEF_MAIN_STACK_SIZE > CONFIG_MAIN_STACK_SIZE)
-#define MAIN_STACK_SIZE MDEF_MAIN_STACK_SIZE
-#else
 #define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
-#endif
 
 char __noinit __stack _main_stack[MAIN_STACK_SIZE];
 char __noinit __stack _idle_stack[IDLE_STACK_SIZE];
@@ -201,13 +192,6 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 	extern void main(void);
 
-	/* If we're going to load the MDEF main() in this context, we need
-	 * to now set the priority to be what was specified in the MDEF file
-	 */
-#if defined(MDEF_MAIN_THREAD_PRIORITY) && \
-		(MDEF_MAIN_THREAD_PRIORITY != CONFIG_MAIN_THREAD_PRIORITY)
-	k_thread_priority_set(_main_thread, MDEF_MAIN_THREAD_PRIORITY);
-#endif
 	main();
 
 	/* Terminate thread normally since it has no more work to do */
