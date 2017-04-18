@@ -335,7 +335,9 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 
 	memset(&rp->features[0], 0x00, sizeof(rp->features));
-	rp->features[0] = RADIO_BLE_FEATURES;
+	rp->features[0] = RADIO_BLE_FEAT & 0xFF;
+	rp->features[1] = (RADIO_BLE_FEAT >> 8)  & 0xFF;
+	rp->features[2] = (RADIO_BLE_FEAT >> 16)  & 0xFF;
 }
 
 static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)

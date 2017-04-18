@@ -1210,6 +1210,17 @@ isr_rx_conn_pkt_release(struct radio_pdu_node_tx *node_tx)
 	return NULL;
 }
 
+static inline uint32_t feat_get(uint8_t *features)
+{
+	uint32_t feat;
+
+	feat = ~RADIO_BLE_FEAT_BIT_MASK_VALID | features[0] |
+	       (features[1] << 8) | (features[2] << 16);
+	feat &= RADIO_BLE_FEAT_BIT_MASK;
+
+	return feat;
+}
+
 static inline void
 isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			 uint8_t *rx_enqueue)
@@ -1523,24 +1534,34 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+	{
+		struct pdu_data_llctrl_feature_req *req;
+
+		req = &pdu_data_rx->payload.llctrl.ctrldata.feature_req;
+
 		/* AND the feature set to get Feature USED */
-		_radio.conn_curr->llcp_features &=
-			pdu_data_rx->payload.llctrl.ctrldata.feature_req.features[0];
+		_radio.conn_curr->llcp_features &= feat_get(&req->features[0]);
 
 		feature_rsp_send(_radio.conn_curr);
-		break;
+	}
+	break;
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+	{
+		struct pdu_data_llctrl_feature_rsp *rsp;
+
+		rsp = &pdu_data_rx->payload.llctrl.ctrldata.feature_rsp;
+
 		/* AND the feature set to get Feature USED */
-		_radio.conn_curr->llcp_features &=
-			pdu_data_rx->payload.llctrl.ctrldata.feature_rsp.features[0];
+		_radio.conn_curr->llcp_features &= feat_get(&rsp->features[0]);
 
 		/* enqueue the feature resp */
 		*rx_enqueue = 1;
 
 		/* Procedure complete */
 		_radio.conn_curr->procedure_expire = 0;
-		break;
+	}
+	break;
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		pause_enc_rsp_send(_radio.conn_curr);
@@ -5110,7 +5131,7 @@ static inline void event_fex_prep(struct connection *conn)
 		conn->llcp_ack = conn->llcp_req;
 
 		/* use initial feature bitmap */
-		conn->llcp_features = RADIO_BLE_FEATURES;
+		conn->llcp_features = RADIO_BLE_FEAT;
 
 		/* place the feature exchange req packet as next in tx queue */
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -5123,9 +5144,12 @@ static inline void event_fex_prep(struct connection *conn)
 		memset(&pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[0],
 		       0x00,
 		       sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features));
-
 		pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[0] =
-			conn->llcp_features;
+			conn->llcp_features & 0xFF;
+		pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[1] =
+			(conn->llcp_features >> 8) & 0xFF;
+		pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[2] =
+			(conn->llcp_features >> 16) & 0xFF;
 
 		ctrl_tx_enqueue(conn, node_tx);
 
@@ -6615,8 +6639,12 @@ static void feature_rsp_send(struct connection *conn)
 	memset(&pdu_ctrl_tx->payload.llctrl.ctrldata.feature_rsp.features[0],
 		0x00,
 		sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.feature_rsp.features));
-	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_rsp.features[0] =
-		conn->llcp_features;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[0] =
+		conn->llcp_features & 0xFF;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[1] =
+		(conn->llcp_features >> 8) & 0xFF;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[2] =
+		(conn->llcp_features >> 16) & 0xFF;
 
 	ctrl_tx_enqueue(conn, node_tx);
 }
@@ -7092,7 +7120,7 @@ uint32_t radio_adv_enable(uint16_t interval, uint8_t chl_map,
 		}
 
 		conn->handle = 0xFFFF;
-		conn->llcp_features = RADIO_BLE_FEATURES;
+		conn->llcp_features = RADIO_BLE_FEAT;
 		conn->data_chan_use = 0;
 		conn->event_counter = 0;
 		conn->latency_prepare = 0;
@@ -7423,7 +7451,7 @@ uint32_t radio_connect_enable(uint8_t adv_addr_type, uint8_t *adv_addr,
 				   RADIO_TX_READY_DELAY_US + 328 + 328 + 150);
 
 	conn->handle = 0xFFFF;
-	conn->llcp_features = RADIO_BLE_FEATURES;
+	conn->llcp_features = RADIO_BLE_FEAT;
 	access_addr = access_addr_get();
 	memcpy(&conn->access_addr[0], &access_addr, sizeof(conn->access_addr));
 	memcpy(&conn->crc_init[0], &conn, 3);

@@ -129,7 +129,7 @@ struct connection {
 		} encryption;
 	} llcp;
 
-	uint8_t llcp_features;
+	uint32_t llcp_features;
 
 	struct {
 		uint8_t tx:1;
