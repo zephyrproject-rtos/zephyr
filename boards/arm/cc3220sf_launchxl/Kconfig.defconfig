@@ -1,0 +1,9 @@
+# Kconfig - TI CC3220SF LaunchXL board configuration
+#
+
+if BOARD_CC3220SF_LAUNCHXL
+
+config BOARD
+	default cc3220sf_launchxl
+
+endif # BOARD_CC3220SF_LAUNCHXL

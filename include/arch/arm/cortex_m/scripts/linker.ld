@@ -80,6 +80,13 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
+#ifdef CONFIG_CC3220SF_DEBUG
+	/* Add CC3220SF flash header to disable flash verification */
+	. = 0x0;
+	KEEP(*(.dbghdr))
+	KEEP(*(".dbghdr.*"))
+#endif
+
 	. = CONFIG_TEXT_SECTION_OFFSET;
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))

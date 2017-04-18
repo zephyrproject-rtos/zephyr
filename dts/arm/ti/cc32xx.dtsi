@@ -24,6 +24,10 @@
 		reg = <0x0 DT_SFLASH_SIZE>;
 	};
 
+	flash1: flash {
+		reg = <0x01000000 DT_FLASH_SIZE>;
+	};
+
 	soc {
 		uart0: uart@4000C000 {
 			compatible = "ti,cc32xx-uart";
