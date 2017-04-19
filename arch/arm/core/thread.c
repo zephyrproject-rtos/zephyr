@@ -40,7 +40,7 @@ static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
 
 /**
  *
- * @brief Intialize a new thread from its stack space
+ * @brief Initialize a new thread from its stack space
  *
  * The control structure (thread) is put at the lower address of the stack. An
  * initial context, to be "restored" by __pendsv(), is put at the other end of

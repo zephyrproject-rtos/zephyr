@@ -32,7 +32,7 @@ GTEXT(_IntExit)
  *
  * When inserted in the vector table, _isr_wrapper() demuxes the ISR table using
  * the running interrupt number as the index, and invokes the registered ISR
- * with its correspoding argument. When returning from the ISR, it determines
+ * with its corresponding argument. When returning from the ISR, it determines
  * if a context switch needs to happen (see documentation for __pendsv()) and
  * pends the PendSV exception if so: the latter will perform the context switch
  * itself.
