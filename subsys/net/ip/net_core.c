@@ -311,6 +311,7 @@ int net_send_data(struct net_pkt *pkt)
 		/* Packet is destined back to us so send it directly
 		 * to RX processing.
 		 */
+		NET_DBG("Loopback pkt %p back to us", pkt);
 		processing_data(pkt, true);
 		return 0;
 	}
