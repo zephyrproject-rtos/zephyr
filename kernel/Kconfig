@@ -146,15 +146,6 @@ config  THREAD_CUSTOM_DATA
 	This option allows each thread to store 32 bits of custom data,
 	which can be accessed using the k_thread_custom_data_xxx() APIs.
 
-config NUM_DYNAMIC_TIMERS
-	int
-	prompt "Number of timers available for dynamic allocation"
-	default 0
-	depends on NANO_TIMERS
-	help
-	Number of timers available for dynamic allocation via the
-	k_timer_alloc()/k_timer_free() API.
-
 config ERRNO
 	bool
 	prompt "Enable errno support"
