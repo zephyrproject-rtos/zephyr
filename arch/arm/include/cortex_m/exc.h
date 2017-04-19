@@ -44,20 +44,30 @@ static ALWAYS_INLINE int _IsInIsr(void)
 {
 	u32_t vector = _IpsrGet();
 
-	/*
-	 * IRQs + PendSV (14) + SVC (11) + SYSTICK (15) are interrupts.
-	 * Vectors 12 and 13 are reserved, we'll never be in there
-	 * On ARMv6-M there is no nested execution bit, so we check exception 3,
-	 * hard fault, to a detect a nested exception.
-	 */
+	/* IRQs + PendSV (14) + SVC (11) + SYSTICK (15) are interrupts. */
+	return (vector > 10)
 #if defined(CONFIG_ARMV6_M)
-	return (vector > 10) || (vector == 3);
+		/* On ARMv6-M there is no nested execution bit, so we check
+		 * exception 3, hard fault, to a detect a nested exception.
+		 */
+		|| (vector == 3)
 #elif defined(CONFIG_ARMV7_M)
-	return (vector > 10) ||
-	       (vector && !(SCB->ICSR & SCB_ICSR_RETTOBASE_Msk));
+		/* If not in thread mode, and if RETTOBASE bit in ICSR is 0,
+		 * then there are preempted active exceptions to execute.
+		 */
+#ifndef CONFIG_BOARD_QEMU_CORTEX_M3
+		/* The polarity of RETTOBASE is incorrectly flipped in
+		 * all but the very latest master tip of QEMU's NVIC driver,
+		 * see commit "armv7m: Rewrite NVIC to not use any GIC code".
+		 * Until QEMU 2.9 is released, and the SDK is updated to
+		 * include it, skip this check in QEMU.
+		 */
+		|| (vector && !(SCB->ICSR & SCB_ICSR_RETTOBASE_Msk))
+#endif /* CONFIG_BOARD_QEMU_CORTEX_M3 */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */
+		;
 }
 
 #define _EXC_SVC_PRIO 0
