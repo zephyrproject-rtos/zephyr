@@ -450,7 +450,6 @@ PHONY += scripts_basic
 ifeq ($(PREBUILT_HOST_TOOLS),)
 scripts_basic:
 	$(Q)$(MAKE) $(build)=scripts/basic
-	$(Q)$(MAKE) $(build)=scripts/gen_idt
 	$(Q)$(MAKE) $(build)=scripts/gen_offset_header
 else
 scripts_basic:

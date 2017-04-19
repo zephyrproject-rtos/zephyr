@@ -28,7 +28,10 @@ quiet_cmd_gen_idt = SIDT    $@
 	rm staticIdt.bin irq_int_vector_map.bin isrList.bin			\
 )
 
-staticIdt.o: $(PREBUILT_KERNEL)
+$(GENIDT):
+	$(Q)$(MAKE) $(build)=scripts/gen_idt
+
+staticIdt.o: $(PREBUILT_KERNEL) $(GENIDT)
 	$(call cmd,gen_idt)
 
 quiet_cmd_lnk_elf = LINK    $@
