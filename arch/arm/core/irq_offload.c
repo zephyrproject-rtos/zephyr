@@ -11,7 +11,7 @@
 #include <kernel.h>
 #include <irq_offload.h>
 
-static irq_offload_routine_t offload_routine;
+volatile irq_offload_routine_t offload_routine;
 static void *offload_param;
 
 /* Called by __svc */
@@ -28,7 +28,12 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	offload_routine = routine;
 	offload_param = parameter;
 
-	__asm__ volatile ("svc #1" : : : "memory");
+	__asm__ volatile ("svc %[id]"
+			  :
+			  : [id] "i" (_SVC_CALL_IRQ_OFFLOAD)
+			  : "memory");
+
+	offload_routine = NULL;
 
 	irq_unlock(key);
 }

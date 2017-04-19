@@ -19,28 +19,6 @@
 #include <kernel_structs.h>
 #include <misc/printk.h>
 
-/*
- * Define a default ESF for use with _NanoFatalErrorHandler() in the event
- * the caller does not have a NANO_ESF to pass
- */
-const NANO_ESF _default_esf = {
-	{0xdeaddead}, /* r0/a1 */
-	{0xdeaddead}, /* r1/a2 */
-	{0xdeaddead}, /* r2/a3 */
-	{0xdeaddead}, /* r3/a4 */
-	{0xdeaddead}, /* r12/ip */
-	{0xdeaddead}, /* r14/lr */
-	{0xdeaddead}, /* r15/pc */
-	 0xdeaddead,  /* xpsr */
-#ifdef CONFIG_FLOAT
-	{0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead,   /* s0 .. s3 */
-	 0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead,    /* s4 .. s7 */
-	 0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead,    /* s8 .. s11 */
-	 0xdeaddead, 0xdeaddead, 0xdeaddead, 0xdeaddead},   /* s12 .. s15 */
-	0xdeaddead,  /* fpscr */
-	0xdeaddead,  /* undefined */
-#endif
-};
 
 /**
  *
@@ -107,4 +85,9 @@ void _NanoFatalErrorHandler(unsigned int reason,
 	 */
 
 	_SysFatalErrorHandler(reason, pEsf);
+}
+
+void _do_kernel_oops(const NANO_ESF *esf)
+{
+	_NanoFatalErrorHandler(esf->r0, esf);
 }

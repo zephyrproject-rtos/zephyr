@@ -28,14 +28,19 @@ extern "C" {
 #else
 
 #include <arch/arm/cortex_m/cmsis.h>
+#include <irq_offload.h>
+
+#ifdef CONFIG_IRQ_OFFLOAD
+extern volatile irq_offload_routine_t offload_routine;
+#endif
 
 /**
  *
  * @brief Find out if running in an ISR context
-	 *
+ *
  * The current executing vector is found in the IPSR register. We consider the
- * IRQs (exception 16 and up), and the SVC, PendSV, and SYSTICK exceptions,
- * to be interrupts. Taking a fault within an exception is also considered in
+ * IRQs (exception 16 and up), and the PendSV and SYSTICK exceptions to be
+ * interrupts. Taking a fault within an exception is also considered in
  * interrupt context.
  *
  * @return 1 if in ISR, 0 if not.
@@ -44,8 +49,12 @@ static ALWAYS_INLINE int _IsInIsr(void)
 {
 	u32_t vector = _IpsrGet();
 
-	/* IRQs + PendSV (14) + SVC (11) + SYSTICK (15) are interrupts. */
-	return (vector > 10)
+	/* IRQs + PendSV (14) + SYSTICK (15) are interrupts. */
+	return (vector > 13)
+#ifdef CONFIG_IRQ_OFFLOAD
+		/* Only non-NULL if currently running an offloaded function */
+		|| offload_routine != NULL
+#endif
 #if defined(CONFIG_ARMV6_M)
 		/* On ARMv6-M there is no nested execution bit, so we check
 		 * exception 3, hard fault, to a detect a nested exception.

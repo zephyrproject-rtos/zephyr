@@ -32,6 +32,19 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 #define _NANO_ERR_KERNEL_OOPS (4)       /* Kernel oops (fatal to thread) */
 #define _NANO_ERR_KERNEL_PANIC (5)	/* Kernel panic (fatal to system) */
 
+#define _SVC_CALL_IRQ_OFFLOAD		1
+#define _SVC_CALL_RUNTIME_EXCEPT	2
+
+#define _ARCH_EXCEPT(reason_p) do { \
+	__asm__ volatile ( \
+		"mov r0, %[reason]\n\t" \
+		"svc %[id]\n\t" \
+		: \
+		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
+		: "memory"); \
+	CODE_UNREACHABLE; \
+} while (0)
+
 #ifdef __cplusplus
 }
 #endif

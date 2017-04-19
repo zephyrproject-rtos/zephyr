@@ -63,8 +63,6 @@ struct __esf {
 
 typedef struct __esf NANO_ESF;
 
-extern const NANO_ESF _default_esf;
-
 extern void _ExcExit(void);
 
 /**
