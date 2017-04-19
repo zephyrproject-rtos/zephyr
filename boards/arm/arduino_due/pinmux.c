@@ -18,7 +18,7 @@
 /**
  * @brief Pinmux driver for Arduino due
  *
- * The SAM3X8E on Arduion Due has 4 PIO controllers. These controllers
+ * The SAM3X8E on Arduino Due has 4 PIO controllers. These controllers
  * are responsible for pin muxing, input/output, pull-up, etc.
  *
  * All PIO controller pins are flatten into sequentially incrementing

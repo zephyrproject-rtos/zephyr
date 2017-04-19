@@ -16,15 +16,15 @@
  * By default, the demo uses MUTEXES.
  *
  * The demo can also be configured to work with static objects or dynamic
- * objects. The behaviour will change depending if STATIC_OBJS is set to 0 or
+ * objects. The behavior will change depending if STATIC_OBJS is set to 0 or
  * 1.
  *
  * By default, the demo uses dynamic objects.
  *
  * The demo can be configured to work with threads of the same priority or
  * not. If using different priorities, two threads will be cooperative
- * threads, and the other four will be preemtible threads; if using one
- * priority, there will be six preemtible threads of priority 0. This is
+ * threads, and the other four will be preemptible threads; if using one
+ * priority, there will be six preemptible threads of priority 0. This is
  * changed via SAME_PRIO.
  *
  * By default, the demo uses different priorities.
