@@ -387,7 +387,7 @@ static int arr_next(struct json_obj *json, struct token *value)
 	return element_token(value->type);
 }
 
-static int decode_num(const struct token *token, int32_t *num)
+static int decode_num(const struct token *token, s32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
 	 * so using strtol() here.
@@ -456,7 +456,7 @@ static int decode_value(struct json_obj *obj,
 		return 0;
 	}
 	case JSON_TOK_NUMBER: {
-		int32_t *num = field;
+		s32_t *num = field;
 
 		return decode_num(value, num);
 	}
@@ -477,7 +477,7 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 {
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
-		return sizeof(int32_t);
+		return sizeof(s32_t);
 	case JSON_TOK_STRING:
 		return sizeof(char *);
 	case JSON_TOK_TRUE:
@@ -537,7 +537,7 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 		     size_t descr_len, void *val)
 {
 	struct json_obj_key_value kv;
-	int32_t decoded_fields = 0;
+	s32_t decoded_fields = 0;
 	size_t i;
 	int ret;
 
@@ -596,7 +596,7 @@ int json_obj_parse(char *payload, size_t len,
 	return obj_parse(&obj, descr, descr_len, val);
 }
 
-static uint8_t escape_as(uint8_t chr)
+static u8_t escape_as(u8_t chr)
 {
 	switch (chr) {
 	case '"':
@@ -626,10 +626,10 @@ static int json_escape_internal(const char *str,
 	int ret = 0;
 
 	for (cur = str; ret == 0 && *cur; cur++) {
-		uint8_t escaped = escape_as(*cur);
+		u8_t escaped = escape_as(*cur);
 
 		if (escaped) {
-			uint8_t bytes[2] = { '\\', escaped };
+			u8_t bytes[2] = { '\\', escaped };
 
 			ret = append_bytes(bytes, 2, data);
 		} else {
@@ -646,7 +646,7 @@ struct appender {
 	size_t size;
 };
 
-static int append_bytes_to_buf(const uint8_t *bytes, size_t len, void *data)
+static int append_bytes_to_buf(const u8_t *bytes, size_t len, void *data)
 {
 	struct appender *appender = data;
 
@@ -772,10 +772,10 @@ static int str_encode(const char **str, json_append_bytes_t append_bytes,
 	return ret;
 }
 
-static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
+static int num_encode(const s32_t *num, json_append_bytes_t append_bytes,
 		      void *data)
 {
-	char buf[3 * sizeof(int32_t)];
+	char buf[3 * sizeof(s32_t)];
 	int ret;
 
 	ret = snprintk(buf, sizeof(buf), "%d", *num);
@@ -890,7 +890,7 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 			       &appender);
 }
 
-static int measure_bytes(const uint8_t *bytes, size_t len, void *data)
+static int measure_bytes(const u8_t *bytes, size_t len, void *data)
 {
 	ssize_t *total = data;
 
