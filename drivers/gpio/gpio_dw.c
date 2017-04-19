@@ -494,7 +494,7 @@ static int gpio_dw_initialize(struct device *port)
 }
 
 /* Bindings to the plaform */
-#if CONFIG_GPIO_DW_0
+#ifdef CONFIG_GPIO_DW_0
 static void gpio_config_0_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_config_0 = {
@@ -562,7 +562,7 @@ static void gpio_config_0_irq(struct device *port)
 #endif /* CONFIG_GPIO_DW_0 */
 
 
-#if CONFIG_GPIO_DW_1
+#ifdef CONFIG_GPIO_DW_1
 static void gpio_config_1_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_1 = {
@@ -629,7 +629,7 @@ static void gpio_config_1_irq(struct device *port)
 
 #endif /* CONFIG_GPIO_DW_1 */
 
-#if CONFIG_GPIO_DW_2
+#ifdef CONFIG_GPIO_DW_2
 static void gpio_config_2_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_2 = {
@@ -696,7 +696,7 @@ static void gpio_config_2_irq(struct device *port)
 
 #endif /* CONFIG_GPIO_DW_2 */
 
-#if CONFIG_GPIO_DW_3
+#ifdef CONFIG_GPIO_DW_3
 static void gpio_config_3_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_3 = {
