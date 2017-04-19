@@ -171,11 +171,11 @@ static int stm32_clock_control_init(struct device *dev)
 	/* Disable PLL before configuration */
 	LL_RCC_PLL_Disable();
 
-#ifdef CONFIG_CLOCK_STM32_PLLQ_DIV_FACTOR
+#ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
-		   CONFIG_CLOCK_STM32_PLLQ_DIV_FACTOR
+		   CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
 		   << POSITION_VAL(RCC_PLLCFGR_PLLQ));
-#endif /* CONFIG_CLOCK_STM32_PLLQ_DIV_FACTOR */
+#endif /* CONFIG_CLOCK_STM32_PLL_Q_DIVISOR */
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_MSI
 	/* Switch to PLL with MSI as clock source */
