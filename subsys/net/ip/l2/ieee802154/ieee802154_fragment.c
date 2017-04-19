@@ -32,7 +32,7 @@
 static uint16_t datagram_tag;
 
 /**
- *  Reasseble cache : Depends on cache size it used for reassemble
+ *  Reassemble cache : Depends on cache size it used for reassemble
  *  IPv6 packets simultaneously.
  */
 struct frag_cache {
@@ -364,7 +364,7 @@ static void reass_timeout(struct k_work *work)
 }
 
 /**
- *  Upon receiption of first fragment with respective of size and tag
+ *  Upon reception of first fragment with respective of size and tag
  *  create a new cache. If number of unused cache are out then
  *  discard the fragments.
  */

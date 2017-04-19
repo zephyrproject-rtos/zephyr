@@ -130,7 +130,7 @@ extern "C" {
  * RPL modes
  *
  * The RPL module can be in either of three modes: mesh mode
- * (NET_RPL_MODE_MESH), feater mode (NET_RPL_MODE_FEATHER), and leaf mode
+ * (NET_RPL_MODE_MESH), feather mode (NET_RPL_MODE_FEATHER), and leaf mode
  * (NET_RPL_MODE_LEAF). In mesh mode, nodes forward data for other nodes,
  * and are reachable by others. In feather mode, nodes can forward
  * data for other nodes, but are not reachable themselves. In leaf

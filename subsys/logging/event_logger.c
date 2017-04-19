@@ -50,12 +50,12 @@ void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
 
 /**
  * @brief Send an event message to the logger with a non preemptible
- * behaviour.
+ * behavior.
  *
  * @details Add an event message to the ring buffer and signal the sync
  * semaphore using the internal function _sem_give_non_preemptible to inform
  * that there are event messages available, avoiding the preemptible
- * behaviour when the function is called from a task. This function
+ * behavior when the function is called from a task. This function
  * should be only used for special cases where the sys_event_logger_put
  * does not satisfy the needs.
  *

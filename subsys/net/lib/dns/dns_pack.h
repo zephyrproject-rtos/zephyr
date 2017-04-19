@@ -265,7 +265,7 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl);
  * @retval -ENOMEM if the buffer in msg has no enough space to store the header.
  * The header is always 12 bytes length.
  * @retval -EINVAL if the src_id does not match the header's id, or if the
- * eader's QR value is not DNS_RESPONSE or if the header's OPCODE value is not
+ * header's QR value is not DNS_RESPONSE or if the header's OPCODE value is not
  * DNS_QUERY, or if the header's Z value is not 0 or if the question counter
  * is not 1 or the answer counter is less than 1.
  * @retval RFC 1035 RCODEs (> 0) 1 Format error, 2 Server failure, 3 Name Error,
@@ -281,7 +281,7 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id);
  * @param size Buffer size
  * @param qname Domain name represented as a sequence of labels.
  * See RFC 1035, 4.1.2. Question section format.
- * @param qname_len Number of octects in qname.
+ * @param qname_len Number of octets in qname.
  * @param id Transaction Identifier
  * @param qtype Query type: AA, AAAA. See enum dns_rr_type
  * @retval 0 on success

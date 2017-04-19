@@ -88,7 +88,7 @@ typedef void (*ticker_op_func) (uint32_t status, void *op_context);
 *
 * \param[in]  instance_index  Timer mode instance 0 or 1 (uses RTC0 CMP0 or
 *				CMP1 respectively).
-* \param[in]  count_node      Max. no. of ticker nodes to initialise.
+* \param[in]  count_node      Max. no. of ticker nodes to initialize.
 * \param[in]  node
 * \param[in]  count_user
 * \param[in]  user

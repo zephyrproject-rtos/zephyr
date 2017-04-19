@@ -240,12 +240,12 @@ typedef void (*net_nbr_cb_t)(struct net_nbr *nbr, void *user_data);
 struct net_buf *net_ipv6_prepare_for_send(struct net_buf *buf);
 
 /**
- * @brief Look for a neighbour from it's address on an iface
+ * @brief Look for a neighbor from it's address on an iface
  *
  * @param iface A valid pointer on a network interface
  * @param addr The IPv6 address to match
  *
- * @return A valid pointer on a neighbour on success, NULL otherwise
+ * @return A valid pointer on a neighbor on success, NULL otherwise
  */
 struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 				    struct in6_addr *addr);
@@ -257,26 +257,26 @@ struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
  * whatever interface there is configured for the neighbor address.
  * @param idx Index of the link layer address in the address array
  *
- * @return A valid pointer on a neighbour on success, NULL otherwise
+ * @return A valid pointer on a neighbor on success, NULL otherwise
  */
 struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx);
 
 /**
- * @brief Look for a neighbour from it's link local address index
+ * @brief Look for a neighbor from it's link local address index
  *
  * @param iface Network interface to match. If NULL, then use
  * whatever interface there is configured for the neighbor address.
  * @param idx Index of the link layer address in the address array
  *
- * @return A valid pointer on a neighbour on success, NULL otherwise
+ * @return A valid pointer on a neighbor on success, NULL otherwise
  */
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 					      uint8_t idx);
 
 /**
- * @brief Add a neighbour to neighbor cache
+ * @brief Add a neighbor to neighbor cache
  *
- * Add a neighbour to the cache after performing a lookup and in case
+ * Add a neighbor to the cache after performing a lookup and in case
  * there exists an entry in the cache update its state and lladdr.
  *
  * @param iface A valid pointer on a network interface
@@ -286,7 +286,7 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
  * otherwise
  * @param state Initial state of the neighbor entry in the cache
  *
- * @return A valid pointer on a neighbour on success, NULL otherwise
+ * @return A valid pointer on a neighbor on success, NULL otherwise
  */
 struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 struct in6_addr *addr,
@@ -295,7 +295,7 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 enum net_ipv6_nbr_state state);
 
 /**
- * @brief Remove a neighbour from neighbor cache.
+ * @brief Remove a neighbor from neighbor cache.
  *
  * @param iface A valid pointer on a network interface
  * @param addr Neighbor IPv6 address

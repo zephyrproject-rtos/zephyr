@@ -49,7 +49,7 @@
  * callback is called.
  * When an IN request arrives, the callback is called immediately to either
  * put the control transfer data in the data store, or to get a pointer to
- * control transfer data. The data is then packetised and sent to the host.
+ * control transfer data. The data is then packetized and sent to the host.
  *
  * Standard request handler handles the 'chapter 9' processing, specifically
  * the standard device requests in table 9-3 from the universal serial bus

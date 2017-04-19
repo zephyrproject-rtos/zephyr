@@ -21,12 +21,12 @@
 /**
  *  @brief Fragment IPv6 packet as per RFC 6282
  *
- *  @details After IPv6 compression, transimission of IPv6 over 802.15.4
- *  needs to be fragmented. Every fragment will have frgmentation header
+ *  @details After IPv6 compression, transmission of IPv6 over 802.15.4
+ *  needs to be fragmented. Every fragment will have fragmentation header
  *  data size, data offset, data tag and payload.
  *
  *  @param Pointer to network buffer
- *  @param Header difference between origianl IPv6 header and compressed header
+ *  @param Header difference between original IPv6 header and compressed header
  *
  *  @return True in case of success, false otherwise
  */
@@ -35,8 +35,8 @@ bool ieee802154_fragment(struct net_buf *buf, int hdr_diff);
 /**
  *  @brief Reassemble 802.15.4 fragments as per RFC 6282
  *
- *  @details If the data does not fit into sinle fragment whole IPv6 packet
- *  comes in number of fragments. This funtion will reassemble them all as
+ *  @details If the data does not fit into single fragment whole IPv6 packet
+ *  comes in number of fragments. This function will reassemble them all as
  *  per data tag, data offset and data size. First packet is uncompressed
  *  immediately after reception.
  *

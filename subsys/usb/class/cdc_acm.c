@@ -488,7 +488,7 @@ static void cdc_acm_baudrate_set(struct device *dev, uint32_t baudrate)
  *
  * @param dev CDC ACM device struct.
  *
- * @return 0 allways.
+ * @return 0 always.
  */
 static int cdc_acm_init(struct device *dev)
 {

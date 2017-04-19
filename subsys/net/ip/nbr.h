@@ -151,7 +151,7 @@ struct net_nbr *net_nbr_ref(struct net_nbr *nbr);
 /**
  * @brief Get a free neighbor from specific table.
  * @param table Neighbor table
- * @return Pointer to neighbor, NULL if no free neigtbors
+ * @return Pointer to neighbor, NULL if no free neighbors
  */
 struct net_nbr *net_nbr_get(struct net_nbr_table *table);
 

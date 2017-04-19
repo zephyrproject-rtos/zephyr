@@ -38,7 +38,7 @@ bool net_6lo_compress(struct net_buf *buf, bool iphc,
 		      fragment_handler_t fragment);
 
 /**
- *  @brief Unompress IPv6 packet as per RFC 6282
+ *  @brief Uncompress IPv6 packet as per RFC 6282
  *
  *  @details After this IPv6 packet and next header(if UDP), headers
  *  are uncompressed as per RFC 6282. After header uncompression data
