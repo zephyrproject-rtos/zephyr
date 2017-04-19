@@ -122,6 +122,9 @@ rom_report: initconfig
 outputexports: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 
+dts: initconfig
+	$(Q)$(call zephyrmake,$(O),$@)
+
 menuconfig: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 

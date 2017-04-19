@@ -919,6 +919,33 @@ rom_report: $(KERNEL_STAT_NAME)
 
 zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 
+ifeq ($(CONFIG_HAS_DTS),y)
+define filechk_generated_dts_board.h
+	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */"; \
+		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py dts/$(ARCH)/$(BOARD_NAME).dts_compiled $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
+		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
+			echo; echo; \
+			echo "/* Following definitions fixup the generated include */"; \
+			echo; \
+			cat $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+		fi; \
+		)
+endef
+else
+define filechk_generated_dts_board.h
+	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */";)
+endef
+endif
+
+
+include/generated/generated_dts_board.h: include/config/auto.conf FORCE
+ifeq ($(CONFIG_HAS_DTS),y)
+	$(Q)$(MAKE) $(build)=dts/$(ARCH)
+endif
+	$(call filechk,generated_dts_board.h)
+
+dts: include/generated/generated_dts_board.h
+
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
 $(sort $(zephyr-deps)): $(zephyr-dirs) zephyr-app-dir ;
@@ -976,7 +1003,7 @@ archprepare = $(strip \
 		)
 
 # All the preparing..
-prepare: $(archprepare)  FORCE
+prepare: $(archprepare) dts FORCE
 	$(Q)$(MAKE) $(build)=.
 
 # Generate some files
