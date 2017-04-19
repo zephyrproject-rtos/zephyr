@@ -143,6 +143,25 @@ static inline enum net_verdict net_conn_input(enum net_ip_protocol proto,
 }
 #endif /* CONFIG_NET_UDP || CONFIG_NET_TCP */
 
+/**
+ * @typedef net_conn_foreach_cb_t
+ * @brief Callback used while iterating over network connection
+ * handlers.
+ *
+ * @param conn A valid pointer on current network connection handler.
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*net_conn_foreach_cb_t)(struct net_conn *conn, void *user_data);
+
+/**
+ * @brief Go through all the network connection handlers and call callback
+ * for each network connection handler.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ */
+void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data);
+
 void net_conn_init(void);
 
 #ifdef __cplusplus

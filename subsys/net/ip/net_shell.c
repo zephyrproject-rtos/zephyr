@@ -470,6 +470,61 @@ static void context_cb(struct net_context *context, void *user_data)
 	(*count)++;
 }
 
+#if defined(CONFIG_NET_DEBUG_CONN)
+static void conn_handler_cb(struct net_conn *conn, void *user_data)
+{
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#elif defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+#define ADDR_LEN NET_IPV4_ADDR_LEN
+#else
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#endif
+
+	int *count = user_data;
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
+
+#if defined(CONFIG_NET_IPV6)
+	if (conn->local_addr.family == AF_INET6) {
+		snprintk(addr_local, sizeof(addr_local), "[%s]:%u",
+			 net_sprint_ipv6_addr(
+				 &net_sin6(&conn->local_addr)->sin6_addr),
+			 ntohs(net_sin6(&conn->local_addr)->sin6_port));
+		snprintk(addr_remote, sizeof(addr_remote), "[%s]:%u",
+			 net_sprint_ipv6_addr(
+				 &net_sin6(&conn->remote_addr)->sin6_addr),
+			 ntohs(net_sin6(&conn->remote_addr)->sin6_port));
+	} else
+#endif
+#if defined(CONFIG_NET_IPV4)
+	if (conn->local_addr.family == AF_INET) {
+		snprintk(addr_local, sizeof(addr_local), "%s:%d",
+			 net_sprint_ipv4_addr(
+				 &net_sin(&conn->local_addr)->sin_addr),
+			 ntohs(net_sin(&conn->local_addr)->sin_port));
+		snprintk(addr_remote, sizeof(addr_remote), "%s:%d",
+			 net_sprint_ipv4_addr(
+				 &net_sin(&conn->remote_addr)->sin_addr),
+			 ntohs(net_sin(&conn->remote_addr)->sin_port));
+	} else
+#endif
+	if (conn->local_addr.family == AF_UNSPEC) {
+		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
+	} else {
+		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
+			 conn->local_addr.family);
+	}
+
+	printk("[%2d] %p %p\t%s\t%16s\t%16s\n",
+	       (*count) + 1, conn, conn->cb, net_proto2str(conn->proto),
+	       addr_local, addr_remote);
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_DEBUG_CONN */
+
 #if defined(CONFIG_NET_TCP)
 static void tcp_cb(struct net_tcp *tcp, void *user_data)
 {
@@ -595,6 +650,19 @@ static int shell_cmd_conn(int argc, char *argv[])
 	if (count == 0) {
 		printk("No connections\n");
 	}
+
+#if defined(CONFIG_NET_DEBUG_CONN)
+	printk("\n     Handler    Callback  \tProto\t"
+	       "Local           \tRemote\n");
+
+	count = 0;
+
+	net_conn_foreach(conn_handler_cb, &count);
+
+	if (count == 0) {
+		printk("No connection handlers found.\n");
+	}
+#endif
 
 #if defined(CONFIG_NET_TCP)
 	printk("\nTCP        Src port  Dst port   Send-Seq   Send-Ack  MSS    "

@@ -771,6 +771,19 @@ drop:
 	return NET_DROP;
 }
 
+void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
+		if (!(conns[i].flags & NET_CONN_IN_USE)) {
+			continue;
+		}
+
+		cb(&conns[i], user_data);
+	}
+}
+
 void net_conn_init(void)
 {
 #if defined(CONFIG_NET_CONN_CACHE)
