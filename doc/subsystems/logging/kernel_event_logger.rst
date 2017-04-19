@@ -69,8 +69,8 @@ An **interrupt event** has the following format:
 .. code-block:: c
 
     struct {
-        uint32_t timestamp;        /* time of interrupt */
-        uint32_t interrupt_id;     /* ID of interrupt */
+        u32_t timestamp;        /* time of interrupt */
+        u32_t interrupt_id;     /* ID of interrupt */
     };
 
 A **context-switch event** has the following format:
@@ -78,8 +78,8 @@ A **context-switch event** has the following format:
 .. code-block:: c
 
     struct {
-        uint32_t timestamp;        /* time of context switch */
-        uint32_t context_id;       /* ID of thread that was switched out */
+        u32_t timestamp;        /* time of context switch */
+        u32_t context_id;       /* ID of thread that was switched out */
     };
 
 A **sleep event** has the following format:
@@ -87,9 +87,9 @@ A **sleep event** has the following format:
 .. code-block:: c
 
     struct {
-        uint32_t sleep_timestamp;  /* time when CPU entered sleep mode */
-        uint32_t wake_timestamp;   /* time when CPU exited sleep mode */
-        uint32_t interrupt_id;     /* ID of interrupt that woke CPU */
+        u32_t sleep_timestamp;  /* time when CPU entered sleep mode */
+        u32_t wake_timestamp;   /* time when CPU exited sleep mode */
+        u32_t interrupt_id;     /* ID of interrupt that woke CPU */
     };
 
 A **custom event** must have a type ID that does not conflict with
@@ -137,10 +137,10 @@ recorded by the kernel event logger.
 
 .. code-block:: c
 
-    uint16_t event_id;
-    uint8_t  dropped_count;
-    uint32_t data[3];
-    uint8_t  data_size;
+    u16_t event_id;
+    u8_t  dropped_count;
+    u32_t data[3];
+    u8_t  data_size;
 
     while(1) {
         /* retrieve an event */
@@ -200,7 +200,7 @@ event consisting of two 32-bit words to the kernel event logger.
 
     /* record custom event only if recording is currently wanted */
     if (sys_k_must_log_event(MY_CUSTOM_EVENT_ID)) {
-        uint32_t data[2];
+        u32_t data[2];
 
         data[0] = custom_data_1;
         data[1] = custom_data_2;

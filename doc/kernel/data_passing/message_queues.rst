@@ -74,9 +74,9 @@ that is capable of holding 10 items, each of which is 12 bytes long.
 .. code-block:: c
 
     struct data_item_type {
-        uint32_t field1;
-	uint32_t field2;
-	uint32_t field3;
+        u32_t field1;
+	u32_t field2;
+	u32_t field3;
     };
 
     char __aligned(4) my_msgq_buffer[10 * sizeof(data_item_type)];

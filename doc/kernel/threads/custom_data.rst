@@ -47,12 +47,12 @@ each thread calls a specific routine.
 
     int call_tracking_routine(void)
     {
-        uint32_t call_count;
+        u32_t call_count;
 
         if (k_is_in_isr()) {
 	    /* ignore any call made by an ISR */
         } else {
-            call_count = (uint32_t)k_thread_custom_data_get();
+            call_count = (u32_t)k_thread_custom_data_get();
             call_count++;
             k_thread_custom_data_set((void *)call_count);
 	}

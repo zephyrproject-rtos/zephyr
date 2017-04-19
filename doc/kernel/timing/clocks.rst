@@ -93,8 +93,8 @@ between two points in time.
 
 .. code-block:: c
 
-    int64_t time_stamp;
-    int64_t milliseconds_spent;
+    s64_t time_stamp;
+    s64_t milliseconds_spent;
 
     /* capture initial time stamp */
     time_stamp = k_uptime_get();
@@ -113,10 +113,10 @@ between two points in time.
 
 .. code-block:: c
 
-    uint32_t start_time;
-    uint32_t stop_time;
-    uint32_t cycles_spent;
-    uint32_t nanoseconds_spent;
+    u32_t start_time;
+    u32_t stop_time;
+    u32_t cycles_spent;
+    u32_t nanoseconds_spent;
 
     /* capture initial time stamp */
     start_time = k_cycle_get_32();

@@ -253,7 +253,7 @@ portion of the message isn't used.
         while (1) {
 
             /* generate random value to send */
-            uint32_t random_value = sys_rand32_get();
+            u32_t random_value = sys_rand32_get();
 
             /* prepare to send empty message */
             send_msg.info = random_value;

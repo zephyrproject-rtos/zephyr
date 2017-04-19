@@ -21,8 +21,8 @@ Structures
 .. code-block:: c
 
    struct usb_dc_ep_cfg_data {
-      uint8_t ep_addr;
-      uint16_t ep_mps;
+      u8_t ep_addr;
+      u16_t ep_mps;
       enum usb_dc_ep_type ep_type;
    };
 
@@ -168,7 +168,7 @@ Callback function signature for the device status.
 
 .. code-block:: c
 
-   typedef void (*usb_ep_callback)(uint8_t ep,
+   typedef void (*usb_ep_callback)(u8_t ep,
       enum usb_dc_ep_cb_status_code cb_status);
 
 Callback function signature for the USB Endpoint.
@@ -176,7 +176,7 @@ Callback function signature for the USB Endpoint.
 .. code-block:: c
 
    typedef int (*usb_request_handler) (struct usb_setup_packet *setup,
-      int *transfer_len, uint8_t **payload_data);
+      int *transfer_len, u8_t **payload_data);
 
 Callback function signature for class specific requests. For host to device
 direction the 'len' and 'payload_data' contain the length of the received data
@@ -189,7 +189,7 @@ respectively.
 
    struct usb_ep_cfg_data {
       usb_ep_callback ep_cb;
-      uint8_t ep_addr;
+      u8_t ep_addr;
    };
 
 This structure contains configuration for a certain endpoint.
@@ -204,7 +204,7 @@ This structure contains configuration for a certain endpoint.
    struct usb_interface_cfg_data {
       usb_request_handler class_handler;
       usb_request_handler custom_handler;
-      uint8_t *payload_data;
+      u8_t *payload_data;
    };
 
 This structure contains USB interface configuration.
@@ -220,10 +220,10 @@ This structure contains USB interface configuration.
 .. code-block:: c
 
    struct usb_cfg_data {
-      const uint8_t *usb_device_description;
+      const u8_t *usb_device_description;
       usb_status_callback cb_usb_status;
       struct usb_interface_cfg_data interface;
-      uint8_t num_endpoints;
+      u8_t num_endpoints;
       struct usb_ep_cfg_data *endpoint;
    };
 
@@ -279,7 +279,7 @@ For example, for CDC_ACM sample application:
 
 .. code-block:: c
 
-   static const uint8_t cdc_acm_usb_description[] = {
+   static const u8_t cdc_acm_usb_description[] = {
       /* Device descriptor */
       USB_DEVICE_DESC_SIZE,           /* Descriptor size */
       USB_DEVICE_DESC,                /* Descriptor type */
@@ -472,7 +472,7 @@ class requests:
 .. code-block:: c
 
    int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
-         int32_t *len, uint8_t **data)
+         s32_t *len, u8_t **data)
    {
       struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
 
@@ -487,12 +487,12 @@ class requests:
       break;
 
       case CDC_SET_CONTROL_LINE_STATE:
-         dev_data->line_state = (uint8_t)sys_le16_to_cpu(pSetup->wValue);
+         dev_data->line_state = (u8_t)sys_le16_to_cpu(pSetup->wValue);
          DBG("CDC_SET_CONTROL_LINE_STATE 0x%x\n", dev_data->line_state);
             break;
 
       case CDC_GET_LINE_CODING:
-         *data = (uint8_t *)(&dev_data->line_coding);
+         *data = (u8_t *)(&dev_data->line_coding);
          *len = sizeof(dev_data->line_coding);
          DBG("\nCDC_GET_LINE_CODING %d %d %d %d\n",
          sys_le32_to_cpu(dev_data->line_coding.dwDTERate),

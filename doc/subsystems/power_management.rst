@@ -101,7 +101,7 @@ Suspend Hook function
 
 .. code-block:: c
 
-   int _sys_soc_suspend(int32_t ticks);
+   int _sys_soc_suspend(s32_t ticks);
 
 When the kernel is about to go idle, the power management subsystem calls the
 :code:`_sys_soc_suspend()` function, notifying the SOC interface that the kernel
@@ -317,7 +317,7 @@ Default Initializer Function
 
 .. code-block:: c
 
-   int device_pm_control_nop(struct device *unused_device, uint32_t unused_ctrl_command, void *unused_context);
+   int device_pm_control_nop(struct device *unused_device, u32_t unused_ctrl_command, void *unused_context);
 
 
 If the driver doesn't implement any power control operations, the driver can
@@ -353,7 +353,7 @@ Device Set Power State
 
 .. code-block:: c
 
-   int device_set_power_state(struct device *device, uint32_t device_power_state);
+   int device_set_power_state(struct device *device, u32_t device_power_state);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_SET_POWER_STATE command.
@@ -363,7 +363,7 @@ Device Get Power State
 
 .. code-block:: c
 
-   int device_get_power_state(struct device *device, uint32_t * device_power_state);
+   int device_get_power_state(struct device *device, u32_t * device_power_state);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_GET_POWER_STATE command.

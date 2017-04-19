@@ -32,7 +32,7 @@ struct nano_sem nanoSemFiber;
 void fiberEntry(void)
 {
 	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
+	u32_t data[2] = {0, 0};
 
 	nano_sem_init(&nanoSemFiber);
 	nano_timer_init(&timer, data);
@@ -54,7 +54,7 @@ void fiberEntry(void)
 void main(void)
 {
 	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
+	u32_t data[2] = {0, 0};
 
 	task_fiber_start(&fiberStack[0], STACKSIZE,
 			(nano_fiber_entry_t) fiberEntry, 0, 0, 7, 0);

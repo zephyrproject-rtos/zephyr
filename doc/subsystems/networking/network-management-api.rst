@@ -73,7 +73,7 @@ You define your handler modelled with this signature:
 
 .. code-block:: c
 
-   static int your_handler(uint32_t mgmt_event, struct net_if *iface,
+   static int your_handler(u32_t mgmt_event, struct net_if *iface,
                            void *data, size_t len);
 
 and then register it with an associated mgmt_request code:

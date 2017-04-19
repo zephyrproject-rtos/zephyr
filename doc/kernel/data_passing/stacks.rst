@@ -63,7 +63,7 @@ up to ten 32-bit data values.
 
     #define MAX_ITEMS 10
 
-    uint32_t my_stack_array[MAX_ITEMS];
+    u32_t my_stack_array[MAX_ITEMS];
     struct k_stack my_stack;
 
     k_stack_init(&my_stack, my_stack_array, MAX_ITEMS);
@@ -98,7 +98,7 @@ in a stack.
 
     /* save address of each data structure in a stack */
     for (int i = 0; i < MAX_ITEMS; i++) {
-        k_stack_push(&my_stack, (uint32_t)&my_buffers[i]);
+        k_stack_push(&my_stack, (u32_t)&my_buffers[i]);
     }
 
 Popping from a Stack
@@ -115,7 +115,7 @@ its address back on the stack to allow the data structure to be reused.
 
     struct my_buffer_type *new_buffer;
 
-    k_stack_pop(&buffer_stack, (uint32_t *)&new_buffer, K_FOREVER);
+    k_stack_pop(&buffer_stack, (u32_t *)&new_buffer, K_FOREVER);
     new_buffer->field1 = ...
 
 Suggested Uses

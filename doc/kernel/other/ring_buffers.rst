@@ -84,7 +84,7 @@ is capable of holding 64 words of data and metadata information.
 
     struct my_struct {
         struct ring_buf rb;
-        uint32_t buffer[MY_RING_BUF_SIZE];
+        u32_t buffer[MY_RING_BUF_SIZE];
         ...
     };
     struct my_struct ms;
@@ -121,7 +121,7 @@ A data item is added to a ring buffer by calling :cpp:func:`sys_ring_buf_put()`.
 
 .. code-block:: c
 
-    uint32_t my_data[MY_DATA_WORDS];
+    u32_t my_data[MY_DATA_WORDS];
     int ret;
 
     ret = sys_ring_buf_put(&ring_buf, TYPE_FOO, 0, my_data, SIZE32_OF(my_data));
@@ -152,16 +152,16 @@ A data item is removed from a ring buffer by calling
 
 .. code-block:: c
 
-    uint32_t my_data[MY_DATA_WORDS];
-    uint16_t my_type;
-    uint8_t  my_value;
-    uint8_t  my_size;
+    u32_t my_data[MY_DATA_WORDS];
+    u16_t my_type;
+    u8_t  my_value;
+    u8_t  my_size;
     int ret;
 
     my_size = SIZE32_OF(my_data);
     ret = sys_ring_buf_get(&ring_buf, &my_type, &my_value, my_data, &my_size);
     if (ret == -EMSGSIZE) {
-        printk("Buffer is too small, need %d uint32_t\n", my_size);
+        printk("Buffer is too small, need %d u32_t\n", my_size);
     } else if (ret == -EAGAIN) {
         printk("Ring buffer is empty\n");
     } else {
