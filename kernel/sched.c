@@ -147,7 +147,7 @@ void k_sched_lock(void)
 	 */
 	compiler_barrier();
 
-	K_DEBUG("scheduler locked (%p:%" PRIu8 ")\n",
+	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 #endif
 }
@@ -164,7 +164,7 @@ void k_sched_unlock(void)
 
 	++_current->base.sched_locked;
 
-	K_DEBUG("scheduler unlocked (%p:%" PRIu8 ")\n",
+	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 
 	_reschedule_threads(key);
@@ -228,7 +228,7 @@ void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout)
 int __must_switch_threads(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	K_DEBUG("current prio: %" PRId8 ", highest prio: %d\n",
+	K_DEBUG("current prio: %d, highest prio: %d\n",
 		_current->base.prio, _get_highest_ready_prio());
 
 	extern void _dump_ready_q(void);
@@ -314,7 +314,7 @@ void k_sleep(int32_t duration)
 	__ASSERT(!_is_in_isr(), "");
 	__ASSERT(duration != K_FOREVER, "");
 
-	K_DEBUG("thread %p for %" PRId32 " ns\n", _current, duration);
+	K_DEBUG("thread %p for %d ns\n", _current, duration);
 
 	/* wait of 0 ms is treated as a 'yield' */
 	if (duration == 0) {
@@ -366,7 +366,7 @@ void _dump_ready_q(void)
 {
 	K_DEBUG("bitmaps: ");
 	for (int bitmap = 0; bitmap < K_NUM_PRIO_BITMAPS; bitmap++) {
-		K_DEBUG("%" PRIx32, _ready_q.prio_bmap[bitmap]);
+		K_DEBUG("%x", _ready_q.prio_bmap[bitmap]);
 	}
 	K_DEBUG("\n");
 	for (int prio = 0; prio < K_NUM_PRIORITIES; prio++) {

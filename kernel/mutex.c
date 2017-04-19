@@ -92,8 +92,7 @@ static void adjust_owner_prio(struct k_mutex *mutex, int new_prio)
 {
 	if (mutex->owner->base.prio != new_prio) {
 
-		K_DEBUG("%p (ready (y/n): %c) prio changed to %d "
-			"(was %" PRId8 ")\n",
+		K_DEBUG("%p (ready (y/n): %c) prio changed to %d (was %d)\n",
 			mutex->owner, _is_thread_ready(mutex->owner) ?
 			'y' : 'n',
 			new_prio, mutex->owner->base.prio);
@@ -119,7 +118,7 @@ int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
 		mutex->lock_count++;
 		mutex->owner = _current;
 
-		K_DEBUG("%p took mutex %p, count: %" PRIu32 ", orig prio: %d\n",
+		K_DEBUG("%p took mutex %p, count: %d, orig prio: %d\n",
 			_current, mutex, mutex->lock_count,
 			mutex->owner_orig_prio);
 
@@ -201,7 +200,7 @@ void k_mutex_unlock(struct k_mutex *mutex)
 
 	mutex->lock_count--;
 
-	K_DEBUG("mutex %p lock_count: %" PRIu32 "\n", mutex, mutex->lock_count);
+	K_DEBUG("mutex %p lock_count: %d\n", mutex, mutex->lock_count);
 
 	if (mutex->lock_count != 0) {
 		k_sched_unlock();

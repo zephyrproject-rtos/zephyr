@@ -201,7 +201,7 @@ static inline void handle_timeouts(int32_t ticks)
 	struct _timeout *head =
 		(struct _timeout *)sys_dlist_peek_head(&_timeout_q);
 
-	K_DEBUG("head: %p, delta: %" PRId32 "\n",
+	K_DEBUG("head: %p, delta: %d\n",
 		head, head ? head->delta_ticks_from_prev : -2112);
 
 	if (!head) {
@@ -311,7 +311,7 @@ void _nano_sys_clock_tick_announce(int32_t ticks)
 {
 	unsigned int  key;
 
-	K_DEBUG("ticks: %" PRId32 "\n", ticks);
+	K_DEBUG("ticks: %d\n", ticks);
 
 	/* 64-bit value, ensure atomic access with irq lock */
 	key = irq_lock();

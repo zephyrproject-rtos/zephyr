@@ -241,7 +241,7 @@ static inline void _sched_lock(void)
 
 	compiler_barrier();
 
-	K_DEBUG("scheduler locked (%p:%" PRIu8 ")\n",
+	K_DEBUG("scheduler locked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 #endif
 }
@@ -391,15 +391,13 @@ static inline void _ready_thread(struct k_thread *thread)
 	__ASSERT(_is_prio_higher(thread->base.prio, K_LOWEST_THREAD_PRIO) ||
 		 ((thread->base.prio == K_LOWEST_THREAD_PRIO) &&
 		  (thread == _idle_thread)),
-		 "thread %p prio too low (is %" PRId8 ", "
-		 "cannot be lower than %d)",
+		 "thread %p prio too low (is %d, cannot be lower than %d)",
 		 thread, thread->base.prio,
 		 thread == _idle_thread ? K_LOWEST_THREAD_PRIO :
 					  K_LOWEST_APPLICATION_THREAD_PRIO);
 
 	__ASSERT(!_is_prio_higher(thread->base.prio, K_HIGHEST_THREAD_PRIO),
-		 "thread %p prio too high (id %" PRId8 ", "
-		 "cannot be higher than %d)",
+		 "thread %p prio too high (id %d, cannot be higher than %d)",
 		 thread, thread->base.prio, K_HIGHEST_THREAD_PRIO);
 
 	/* needed to handle the start-with-delay case */
