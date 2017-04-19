@@ -107,7 +107,7 @@ endif
 debugserver: FORCE
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(DEBUG_SCRIPT) debugserver
 
-initconfig outputexports: $(DOTCONFIG)
+initconfig: $(DOTCONFIG)
 
 $(BOARDCONFIG):
 	@rm -f $(O)/.board_*
@@ -117,6 +117,9 @@ ram_report: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 
 rom_report: initconfig
+	$(Q)$(call zephyrmake,$(O),$@)
+
+outputexports: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 
 menuconfig: initconfig
