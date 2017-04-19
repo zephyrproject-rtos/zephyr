@@ -1520,7 +1520,7 @@ int net_context_accept(struct net_context *context,
 			laddr = &local_addr;
 		}
 
-		net_sin6(&local_addr)->sin6_port =
+		net_sin6(&local_addr)->sin6_port = lport =
 			net_sin6((struct sockaddr *)&context->local)->sin6_port;
 	}
 #endif /* CONFIG_NET_IPV6 */
@@ -1534,7 +1534,8 @@ int net_context_accept(struct net_context *context,
 			laddr = &local_addr;
 		}
 
-		lport = net_sin((struct sockaddr *)&context->local)->sin_port;
+		net_sin(&local_addr)->sin_port = lport =
+			net_sin((struct sockaddr *)&context->local)->sin_port;
 	}
 #endif /* CONFIG_NET_IPV4 */
 
