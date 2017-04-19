@@ -54,7 +54,7 @@ int _arc_init(struct device *arg)
 	 * we read the value and stick it in shared_mem->arc_start which is
 	 * the beginning of the address space at 0xA8000000 */
 	reset_vector = (uint32_t *)RESET_VECTOR;
-	SYS_LOG_DBG("Reset vector address: %" PRIx32, *reset_vector);
+	SYS_LOG_DBG("Reset vector address: %x", *reset_vector);
 	shared_data->arc_start = *reset_vector;
 	shared_data->flags = 0;
 	if (!shared_data->arc_start) {
