@@ -1222,7 +1222,7 @@ static int shell_cmd_stacks(int argc, char *argv[])
 		       info->size + stack_offset, unused,
 		       info->size - unused, info->size, pcnt);
 #else
-		printk("%s [%s] stack size %u usage not available\n",
+		printk("%s [%s] stack size %zu usage not available\n",
 		       info->pretty_name, info->name, info->orig_size);
 #endif
 	}
