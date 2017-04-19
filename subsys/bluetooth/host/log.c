@@ -12,7 +12,7 @@
  */
 
 #include <stddef.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <zephyr.h>
 #include <misc/util.h>
 

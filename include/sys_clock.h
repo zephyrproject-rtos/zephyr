@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)

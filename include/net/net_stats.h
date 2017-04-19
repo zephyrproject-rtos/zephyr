@@ -14,7 +14,7 @@
 #ifndef __NET_STATS_H
 #define __NET_STATS_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

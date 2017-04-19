@@ -20,7 +20,7 @@
  */
 
 #include <string.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <misc/byteorder.h>
 #include <toolchain.h>

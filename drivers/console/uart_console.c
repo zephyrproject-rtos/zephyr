@@ -17,7 +17,7 @@
 #include <arch/cpu.h>
 
 #include <stdio.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <errno.h>
 #include <ctype.h>
 

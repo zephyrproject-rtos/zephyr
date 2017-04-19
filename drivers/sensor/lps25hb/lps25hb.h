@@ -11,7 +11,7 @@
 #ifndef __SENSOR_LPS25HB_H__
 #define __SENSOR_LPS25HB_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <i2c.h>
 #include <misc/util.h>
 

@@ -9,7 +9,7 @@
 
 #include <errno.h>
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 #include <sensor.h>
 #include <misc/util.h>

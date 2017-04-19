@@ -7,7 +7,7 @@
 #ifndef _GPIO_DW_H_
 #define _GPIO_DW_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <gpio.h>
 #include "gpio_dw_registers.h"
 

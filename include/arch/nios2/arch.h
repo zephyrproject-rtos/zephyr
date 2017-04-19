@@ -36,7 +36,7 @@ extern "C" {
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #ifndef _ASMLANGUAGE
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <irq.h>
 #include <sw_isr_table.h>
 

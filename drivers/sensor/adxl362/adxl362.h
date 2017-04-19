@@ -7,7 +7,7 @@
 #ifndef __SENSOR_ADXL362_H__
 #define __SENSOR_ADXL362_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 
 #define ADXL362_SLAVE_ID    1

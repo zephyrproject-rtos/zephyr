@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 #if !defined(_ASMLANGUAGE)
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <toolchain.h>
 
 /*

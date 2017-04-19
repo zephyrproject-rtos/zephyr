@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <misc/util.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <gpio.h>
 
 #define SYS_LOG_DOMAIN "HTS221"

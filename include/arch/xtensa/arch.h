@@ -21,7 +21,7 @@ extern "C" {
 
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include "sys_io.h" /* Include from the very same folder of this file */
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <sw_isr_table.h>
 #include <arch/xtensa/xtensa_irq.h>
 #include <xtensa/config/core.h>

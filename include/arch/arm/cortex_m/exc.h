@@ -43,7 +43,7 @@ extern "C" {
 #ifdef _ASMLANGUAGE
 GTEXT(_ExcExit);
 #else
-#include <stdint.h>
+#include <zephyr/types.h>
 
 struct __esf {
 	sys_define_gpr_with_alias(a1, r0);

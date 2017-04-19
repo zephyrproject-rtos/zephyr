@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdio.h>
 #include <xtensa_api.h>
 #include <kernel_arch_data.h>

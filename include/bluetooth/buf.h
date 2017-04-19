@@ -18,7 +18,7 @@
  * @{
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <net/buf.h>
 #include <bluetooth/hci.h>
 

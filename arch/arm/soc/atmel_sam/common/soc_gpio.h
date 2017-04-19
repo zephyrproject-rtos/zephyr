@@ -11,7 +11,7 @@
 #ifndef _ATMEL_SAM_SOC_GPIO_H_
 #define _ATMEL_SAM_SOC_GPIO_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <soc.h>
 #include <gpio.h>
 

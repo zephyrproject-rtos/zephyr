@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
 #include <json.h>

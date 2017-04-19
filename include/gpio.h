@@ -16,7 +16,7 @@
 #include <misc/__assert.h>
 #include <misc/slist.h>
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
 

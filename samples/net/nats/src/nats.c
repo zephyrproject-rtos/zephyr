@@ -14,7 +14,7 @@
 #include <net/net_core.h>
 #include <net/net_if.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

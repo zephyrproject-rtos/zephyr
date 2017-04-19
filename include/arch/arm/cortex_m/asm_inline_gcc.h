@@ -29,7 +29,7 @@ extern "C" {
 #define _SCS_ICSR_RETTOBASE (1 << 11)
 
 #else /* !_ASMLANGUAGE */
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <arch/arm/cortex_m/exc.h>
 #include <irq.h>
 

@@ -47,7 +47,7 @@
  */
 
 #ifndef _ASMLANGUAGE
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /* Implementation of irq_controller.h interface */
 

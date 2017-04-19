@@ -13,7 +13,7 @@
 #ifndef __SOC_H_
 #define __SOC_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/util.h>
 #include <uart.h>
 

@@ -10,7 +10,7 @@
 #include <device.h>
 #include <gpio.h>
 #include <misc/util.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #define SYS_LOG_DOMAIN "MPU6050"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL

@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <string.h>
 #include <board.h>
 #include <uart.h>

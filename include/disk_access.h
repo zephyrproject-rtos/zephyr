@@ -17,7 +17,7 @@
 #ifndef _DISK_ACCESS_H_
 #define _DISK_ACCESS_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

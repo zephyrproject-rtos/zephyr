@@ -9,7 +9,7 @@
 #ifndef __CLOCK_CONTROL_H__
 #define __CLOCK_CONTROL_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
 #include <misc/__assert.h>

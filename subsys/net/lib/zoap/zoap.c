@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>

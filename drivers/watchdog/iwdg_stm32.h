@@ -7,7 +7,7 @@
 #ifndef _STM32_IWDG_H_
 #define _STM32_IWDG_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /**
  * @brief Driver for Independent Watchdog (IWDG) for STM32 MCUs

@@ -7,7 +7,7 @@
  */
 
 #include <kernel.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <string.h>
 #include <device.h>
 #include <init.h>

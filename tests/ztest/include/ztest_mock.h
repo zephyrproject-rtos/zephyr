@@ -89,7 +89,7 @@
 
 #ifdef CONFIG_ZTEST_MOCKING
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 void _init_mock(void);
 int _cleanup_mock(void);

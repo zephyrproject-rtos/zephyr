@@ -10,7 +10,7 @@
 #ifndef _PHY_SAM_GMAC_H_
 #define _PHY_SAM_GMAC_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <soc.h>
 
 #ifdef __cplusplus

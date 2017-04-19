@@ -45,7 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /*
  * NIST SHA256 test vector 1.

@@ -32,7 +32,7 @@ extern "C" {
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include <kernel.h>            /* public kernel API */
 #include <nano_internal.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/dlist.h>
 #include <misc/util.h>
 

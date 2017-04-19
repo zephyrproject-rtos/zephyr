@@ -11,7 +11,7 @@
 
 #include <tc_util.h>
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>

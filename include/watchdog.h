@@ -7,7 +7,7 @@
 #ifndef _WDT_H_
 #define _WDT_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 #include <misc/util.h>
 

@@ -18,7 +18,7 @@
  */
 
 #include <misc/slist.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /** Current state of DHCPv4 client address negotiation.
  *

@@ -7,7 +7,7 @@
 #ifndef _MQTT_TYPES_H_
 #define _MQTT_TYPES_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /**
  * @brief MQTT library

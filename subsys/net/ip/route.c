@@ -16,7 +16,7 @@
 
 #include <kernel.h>
 #include <limits.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/slist.h>
 
 #include <net/nbuf.h>

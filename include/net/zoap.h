@@ -13,7 +13,7 @@
 #ifndef __ZOAP_H__
 #define __ZOAP_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <stdbool.h>
 

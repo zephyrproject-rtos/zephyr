@@ -13,7 +13,7 @@
 #ifndef __UDP_H
 #define __UDP_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>

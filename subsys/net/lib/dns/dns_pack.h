@@ -9,7 +9,7 @@
 
 #include <net/net_ip.h>
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
 

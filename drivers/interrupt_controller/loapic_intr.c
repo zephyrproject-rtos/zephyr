@@ -79,7 +79,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <string.h>
 #include <misc/__assert.h>
 

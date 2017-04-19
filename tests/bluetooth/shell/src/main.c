@@ -12,7 +12,7 @@
  */
 
 #include <errno.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>

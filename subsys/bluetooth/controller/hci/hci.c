@@ -6,7 +6,7 @@
  */
 
 #include <stddef.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <string.h>
 
 #include <soc.h>

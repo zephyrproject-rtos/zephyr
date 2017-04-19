@@ -14,7 +14,7 @@
 #define __NET_6LO_H
 
 #include <misc/slist.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <net/nbuf.h>
 #include "icmpv6.h"

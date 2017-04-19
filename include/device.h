@@ -22,7 +22,7 @@
  * @{
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

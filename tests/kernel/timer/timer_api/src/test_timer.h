@@ -6,7 +6,7 @@
 
 #ifndef __TEST_TIMER_H__
 #define __TEST_TIMER_H__
-#include <stdint.h>
+#include <zephyr/types.h>
 
 struct timer_data {
 	int expire_cnt;

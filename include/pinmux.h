@@ -19,7 +19,7 @@
  * @{
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 
 #ifdef __cplusplus

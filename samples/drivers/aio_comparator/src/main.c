@@ -25,7 +25,7 @@
  */
 
 #include <zephyr.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdio.h>
 #include <device.h>
 #include <aio_comparator.h>

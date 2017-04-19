@@ -9,7 +9,7 @@
 
 #include <misc/util.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <sys/types.h>
 
 enum json_tokens {

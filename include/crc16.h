@@ -11,7 +11,7 @@
 #ifndef __CRC16_H
 #define __CRC16_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 
 /**

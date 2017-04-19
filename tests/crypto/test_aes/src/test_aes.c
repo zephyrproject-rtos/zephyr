@@ -51,7 +51,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <misc/printk.h>
 

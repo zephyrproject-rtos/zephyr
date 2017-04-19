@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <misc/util.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <gpio.h>
 
 #define BMA280_I2C_ADDRESS		CONFIG_BMA280_I2C_ADDR

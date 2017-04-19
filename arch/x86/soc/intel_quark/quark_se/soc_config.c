@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 #include <init.h>
 

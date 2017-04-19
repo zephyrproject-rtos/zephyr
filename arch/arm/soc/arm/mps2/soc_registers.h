@@ -13,7 +13,7 @@
 #define _ARM_MPS2_REGS_H_
 
 #include <misc/util.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /* System Control Register (SYSCON) */
 struct mps2_syscon {

@@ -15,7 +15,7 @@
 #define NET_LOG_ENABLED 1
 #endif
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>

@@ -7,7 +7,7 @@
  */
 
 #include <atomic.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <string.h>
 
 #include <toolchain.h>

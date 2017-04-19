@@ -15,8 +15,7 @@
 
 #if !defined(_ASMLANGUAGE)
 #include <stddef.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <zephyr/types.h>
 #include <limits.h>
 #include <toolchain.h>
 #include <sections.h>

@@ -13,7 +13,7 @@
 #ifndef __TCP_H
 #define __TCP_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>

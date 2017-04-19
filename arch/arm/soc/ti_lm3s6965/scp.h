@@ -27,7 +27,7 @@
 #ifndef _SCP_H_
 #define _SCP_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

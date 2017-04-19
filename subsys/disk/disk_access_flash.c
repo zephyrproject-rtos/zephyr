@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
 #include <disk_access.h>

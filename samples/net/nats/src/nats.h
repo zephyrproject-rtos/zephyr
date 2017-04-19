@@ -7,7 +7,7 @@
 #ifndef __NATS_H
 #define __NATS_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <net/net_context.h>
 
 struct nats_msg {

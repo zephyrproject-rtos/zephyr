@@ -9,7 +9,7 @@
 #define __BT_HCI_H
 
 #include <toolchain.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
 #include <misc/util.h>

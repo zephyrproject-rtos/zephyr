@@ -16,7 +16,7 @@
 #ifndef __NBUF_H
 #define __NBUF_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 
 #include <net/buf.h>

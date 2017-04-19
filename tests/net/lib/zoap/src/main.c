@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>

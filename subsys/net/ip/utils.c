@@ -15,7 +15,7 @@
 #endif
 
 #include <stdlib.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>

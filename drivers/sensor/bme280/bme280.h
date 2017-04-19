@@ -8,7 +8,7 @@
 #ifndef __SENSOR_BME280_H__
 #define __SENSOR_BME280_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 
 #define BME280_REG_PRESS_MSB            0xF7

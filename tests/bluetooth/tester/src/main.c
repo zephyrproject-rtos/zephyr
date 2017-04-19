@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <toolchain.h>
 
 #include "bttester.h"

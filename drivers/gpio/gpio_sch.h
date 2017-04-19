@@ -10,7 +10,7 @@
 #ifndef __GPIO_SCH_H__
 #define __GPIO_SCH_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <kernel.h>
 #include <gpio.h>
 

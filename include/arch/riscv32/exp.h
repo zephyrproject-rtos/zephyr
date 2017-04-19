@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <toolchain.h>
 
 struct __esf {

@@ -23,7 +23,7 @@
  * swapped.
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <toolchain.h>
 #include "vector_table.h"
 

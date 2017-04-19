@@ -14,7 +14,7 @@
 #define __NET_IEEE802154_FRAGMENT_H__
 
 #include <misc/slist.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <net/nbuf.h>
 

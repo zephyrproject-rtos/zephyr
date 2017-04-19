@@ -16,7 +16,7 @@
  * initialization is performed.
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <toolchain.h>
 #include <linker-defs.h>
 #include <kernel_structs.h>

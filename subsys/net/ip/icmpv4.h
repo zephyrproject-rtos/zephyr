@@ -13,7 +13,7 @@
 #ifndef __ICMPV4_H
 #define __ICMPV4_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <net/net_ip.h>
 #include <net/nbuf.h>

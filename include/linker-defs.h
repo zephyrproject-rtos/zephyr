@@ -135,7 +135,7 @@ GDATA(__data_num_words)
 
 #else /* ! _ASMLANGUAGE */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 extern char __bss_start[];
 extern char __bss_end[];
 #ifdef CONFIG_XIP

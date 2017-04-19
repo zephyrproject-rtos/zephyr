@@ -9,7 +9,7 @@
 #include <zephyr.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>

@@ -20,7 +20,7 @@
 #ifndef __INCrand32h
 #define __INCrand32h
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

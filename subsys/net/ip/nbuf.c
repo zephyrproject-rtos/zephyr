@@ -18,7 +18,7 @@
 #include <kernel.h>
 #include <toolchain.h>
 #include <string.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <sys/types.h>
 
 #include <misc/util.h>

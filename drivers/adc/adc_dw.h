@@ -36,7 +36,7 @@
 #ifndef DW_ADC_H_
 #define DW_ADC_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <adc.h>
 
 #ifdef __cplusplus

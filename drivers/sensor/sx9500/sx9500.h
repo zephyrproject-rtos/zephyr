@@ -7,7 +7,7 @@
 #ifndef __SENSOR_SX9500_H__
 #define __SENSOR_SX9500_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 
 #define SX9500_REG_IRQ_SRC		0x00

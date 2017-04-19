@@ -12,7 +12,7 @@
 #ifndef __INCLUDE_ADC_H__
 #define __INCLUDE_ADC_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 
 #ifdef __cplusplus

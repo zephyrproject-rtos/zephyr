@@ -27,7 +27,7 @@ extern "C" {
 #define PWM_ACCESS_ALL		1
 
 #include <errno.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
 

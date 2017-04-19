@@ -16,7 +16,7 @@
 #ifndef _K20SIM_H_
 #define _K20SIM_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/__assert.h>
 
 #ifdef __cplusplus

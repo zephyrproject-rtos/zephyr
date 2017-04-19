@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <gpio.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 struct gpio_mmio32_config {
 	volatile uint32_t *reg;

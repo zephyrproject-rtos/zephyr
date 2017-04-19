@@ -20,7 +20,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /**
  *

@@ -4,7 +4,7 @@
  */
 
 #include <kernel.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <system_timer.h>
 #include <xtensa_rtos.h>
 

@@ -21,7 +21,7 @@
 #ifndef _STM32_EXTI_H_
 #define _STM32_EXTI_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /* device name */
 #define STM32_EXTI_NAME "stm32-exti"

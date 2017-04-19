@@ -9,7 +9,7 @@
 #include <zephyr.h>
 #include <sections.h>
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>

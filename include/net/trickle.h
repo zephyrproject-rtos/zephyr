@@ -14,7 +14,7 @@
 #define __TRICKLE_H
 
 #include <stdbool.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <kernel.h>
 #include <net/net_core.h>

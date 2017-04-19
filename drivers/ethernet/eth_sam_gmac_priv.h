@@ -10,7 +10,7 @@
 #ifndef _ETH_SAM_GMAC_PRIV_H_
 #define _ETH_SAM_GMAC_PRIV_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #define GMAC_MTU 1500
 #define GMAC_FRAME_SIZE_MAX (GMAC_MTU + 18)

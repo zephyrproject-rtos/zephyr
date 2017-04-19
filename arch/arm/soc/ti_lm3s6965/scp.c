@@ -15,7 +15,7 @@
  * Currently, only enabling the main OSC with default value is implemented.
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <toolchain.h>
 #include <sections.h>
 

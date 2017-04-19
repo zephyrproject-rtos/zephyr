@@ -10,7 +10,7 @@
 #include <limits.h>
 #include <misc/printk.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdlib.h>
 #include <string.h>
 

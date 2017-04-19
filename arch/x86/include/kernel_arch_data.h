@@ -34,7 +34,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
 #include <nano_internal.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/dlist.h>
 #endif
 

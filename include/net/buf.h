@@ -11,7 +11,7 @@
 #define __NET_BUF_H
 
 #include <stddef.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/util.h>
 #include <zephyr.h>
 

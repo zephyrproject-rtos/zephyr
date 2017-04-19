@@ -9,7 +9,7 @@
 #ifndef __SENSOR_BMC150_MAGN_H__
 #define __SENSOR_BMC150_MAGN_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <i2c.h>
 #include <misc/util.h>
 

@@ -315,7 +315,7 @@
  */
 
 #include <kernel.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <kernel_structs.h>

@@ -11,7 +11,7 @@
 #ifndef _ATMEL_SAM_SOC_PMC_H_
 #define _ATMEL_SAM_SOC_PMC_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /**
  * @brief Enable the clock of specified peripheral module.

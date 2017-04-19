@@ -20,7 +20,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /* Helper to pass a int as a pointer or vice-versa.
  * Those are available for 32 bits architectures:

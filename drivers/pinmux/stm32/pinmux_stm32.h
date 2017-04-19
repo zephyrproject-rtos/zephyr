@@ -11,7 +11,7 @@
 #ifndef _STM32_PINMUX_H_
 #define _STM32_PINMUX_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 #include <clock_control.h>
 #include "pinmux/pinmux.h"

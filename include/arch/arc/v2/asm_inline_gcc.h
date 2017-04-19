@@ -18,7 +18,7 @@ extern "C" {
 #include <sys_io.h>
 #include <arch/arc/v2/aux_regs.h>
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 
 /**

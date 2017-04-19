@@ -8,7 +8,7 @@
 
 #include "toolchain.h"
 #include "sections.h"
-#include <stdint.h>	    /* uint32_t */
+#include <zephyr/types.h>	    /* uint32_t */
 #include <limits.h>	    /* ULONG_MAX */
 #include <misc/printk.h> /* printk */
 #include <sys_clock.h>

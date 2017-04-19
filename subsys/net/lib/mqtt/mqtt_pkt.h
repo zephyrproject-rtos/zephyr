@@ -17,7 +17,7 @@
 #ifndef _MQTT_PKT_H_
 #define _MQTT_PKT_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 
 #include <net/mqtt_types.h>

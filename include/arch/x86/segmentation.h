@@ -7,7 +7,7 @@
 #ifndef _SEGMENTATION_H
 #define _SEGMENTATION_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /* Host gen_idt uses this header as well, don't depend on toolchain.h */
 #ifndef __packed

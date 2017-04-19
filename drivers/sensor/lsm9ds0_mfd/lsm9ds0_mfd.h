@@ -11,7 +11,7 @@
 #ifndef __SENSOR_LSM9DS0_MFD_H__
 #define __SENSOR_LSM9DS0_MFD_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <misc/util.h>
 
 #define LSM9DS0_MFD_REG_OUT_TEMP_L_XM		0x05

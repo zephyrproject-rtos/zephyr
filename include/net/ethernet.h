@@ -13,7 +13,7 @@
 #ifndef __ETHERNET_H
 #define __ETHERNET_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 
 #include <net/net_ip.h>

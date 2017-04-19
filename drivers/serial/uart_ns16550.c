@@ -24,7 +24,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <board.h>
 #include <init.h>

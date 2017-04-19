@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #include <kernel.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stddef.h>
 
 typedef uint32_t io_port_t;

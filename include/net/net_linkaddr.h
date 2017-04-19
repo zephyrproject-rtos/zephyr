@@ -12,7 +12,7 @@
 #ifndef __NET_LINKADDR_H__
 #define __NET_LINKADDR_H__
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <errno.h>
 

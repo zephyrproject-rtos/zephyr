@@ -9,7 +9,7 @@
 
 #include <device.h>
 #include <misc/util.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <gpio.h>
 
 #define LIS3DH_I2C_ADDRESS		CONFIG_LIS3DH_I2C_ADDR

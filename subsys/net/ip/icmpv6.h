@@ -14,7 +14,7 @@
 #define __ICMPV6_H
 
 #include <misc/slist.h>
-#include <stdint.h>
+#include <zephyr/types.h>
 
 #include <net/net_ip.h>
 #include <net/nbuf.h>

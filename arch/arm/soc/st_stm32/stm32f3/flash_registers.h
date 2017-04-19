@@ -7,7 +7,7 @@
 #ifndef _STM32F3X_FLASH_REGISTERS_H_
 #define _STM32F3X_FLASH_REGISTERS_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
 /**
  * @brief

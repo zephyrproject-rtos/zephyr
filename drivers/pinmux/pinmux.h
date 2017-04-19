@@ -8,7 +8,7 @@
 #ifndef __DRIVERS_PINMUX_H
 #define __DRIVERS_PINMUX_H
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <device.h>
 
 #ifdef __cplusplus
