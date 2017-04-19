@@ -111,9 +111,9 @@
  */
 #define PINMUX_MAX_REGISTERS	5
 
-static void _pinmux_defaults(uint32_t base)
+static void _pinmux_defaults(u32_t base)
 {
-	uint32_t mux_config[PINMUX_MAX_REGISTERS] = { 0, 0, 0, 0, 0 };
+	u32_t mux_config[PINMUX_MAX_REGISTERS] = { 0, 0, 0, 0, 0 };
 	int i = 0;
 
 #if !defined(CONFIG_SPI_1) && !defined(CONFIG_SPI_CS_GPIO)
@@ -153,7 +153,7 @@ static void _pinmux_defaults(uint32_t base)
 	}
 }
 
-static inline void _pinmux_pullups(uint32_t base_address)
+static inline void _pinmux_pullups(u32_t base_address)
 {
 	_quark_mcu_set_mux(base_address + PINMUX_PULLUP_OFFSET, 104,
 			  PINMUX_PULLUP_ENABLE);

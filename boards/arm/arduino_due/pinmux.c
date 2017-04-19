@@ -136,11 +136,11 @@
  */
 static void __pinmux_defaults(void)
 {
-	uint32_t ab_select[4];	/* A/B selection   */
-	uint32_t output_en[4];	/* output enabled  */
-	uint32_t pull_up[4];	/* pull-up enabled */
-	uint32_t pio_ctrl[4];	/* PIO enable      */
-	uint32_t tmp;
+	u32_t ab_select[4];	/* A/B selection   */
+	u32_t output_en[4];	/* output enabled  */
+	u32_t pull_up[4];	/* pull-up enabled */
+	u32_t pio_ctrl[4];	/* PIO enable      */
+	u32_t tmp;
 
 	/* Read defaults at boot, as the bootloader may have already
 	 * configured some pins.
