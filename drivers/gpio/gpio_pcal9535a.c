@@ -336,7 +336,7 @@ done:
 }
 
 /**
- * @brief Configurate pin or port
+ * @brief Configure pin or port
  *
  * @param dev Device struct of the PCAL9535A
  * @param access_op Access operation (pin or port)

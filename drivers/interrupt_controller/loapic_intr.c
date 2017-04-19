@@ -375,7 +375,7 @@ void _loapic_irq_disable(unsigned int irq)
  *
  * This routine finds the vector of the interrupt that is being processed.
  * The ISR (In-Service Register) register contain the vectors of the interrupts
- * in service. And the higher vector is the indentification of the interrupt
+ * in service. And the higher vector is the identification of the interrupt
  * being currently processed.
  *
  * This function must be called with interrupts locked in interrupt context.

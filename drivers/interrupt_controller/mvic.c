@@ -199,7 +199,7 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
  *
  * This routine finds the vector of the interrupt that is being processed.
  * The ISR (In-Service Register) register contain the vectors of the interrupts
- * in service. And the higher vector is the indentification of the interrupt
+ * in service. And the higher vector is the identification of the interrupt
  * being currently processed.
  *
  * MVIC ISR registers' offsets:

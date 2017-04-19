@@ -97,7 +97,7 @@ static void _config(struct device *dev, uint32_t mask, int flags)
 }
 
 /**
- * @brief Configurate pin or port
+ * @brief Configure pin or port
  *
  * @param dev Device struct
  * @param access_op Access operation (pin or port)

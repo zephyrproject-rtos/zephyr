@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief LOAPIC spurioys interrupt handler
+ * @brief LOAPIC spurious interrupt handler
  */
 
 #include <kernel_structs.h>

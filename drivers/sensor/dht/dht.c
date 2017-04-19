@@ -18,7 +18,7 @@
  * @brief Measure duration of signal send by sensor
  *
  * @param drv_data Pointer to the driver data structure
- * @param singnal_val Value of signal being measured
+ * @param signal_val Value of signal being measured
  *
  * @return duration in usec of signal being measured,
  *         -1 if duration exceeds DHT_SIGNAL_MAX_WAIT_DURATION

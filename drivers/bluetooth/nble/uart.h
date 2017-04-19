@@ -29,7 +29,7 @@ int nble_open(void);
  * transmission is already going, message needs to be queued
  *
  * @note This function needs to be executed with (UART) irq off to avoid
- * pre-emption from uart_ipc_isr causing state variable corruption.
+ * preemption from uart_ipc_isr causing state variable corruption.
  * It also called from uart_ipc_isr() to send the next IPC message.
  */
 int ipc_uart_ns16550_send_pdu(struct device *dev, void *handle, int len,

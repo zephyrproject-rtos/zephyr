@@ -282,7 +282,7 @@ struct stm32_pinmux_conf {
  * @param func  alternate function ID
  *
  * Helper function for mapping alternate function for given pin to its
- * configuration. This function must be implemented by SoC integartion
+ * configuration. This function must be implemented by SoC integration
  * code.
  *
  * @return SoC specific pin configuration
@@ -295,7 +295,7 @@ int stm32_get_pin_config(int pin, int func);
  * @param port  IO port
  *
  * Map given IO @port to corresponding clock subsystem. The returned
- * clock subsystemd ID must suitable for passing as parameter to
+ * clock subsystem ID must suitable for passing as parameter to
  * clock_control_on(). Implement this function at the SoC level.
  *
  * @return clock subsystem ID
@@ -321,7 +321,7 @@ int _pinmux_stm32_set(uint32_t pin, uint32_t func,
  * Obtain pin assignment/configuration for current board. This call
  * needs to be implemented at the board integration level. After
  * restart all pins are already configured as GPIO and can be skipped
- * in the configuration arrray. Pin numbers in @pin_num field are
+ * in the configuration array. Pin numbers in @pin_num field are
  * STM32PIN() encoded.
  *
  * @return array of pin assignments

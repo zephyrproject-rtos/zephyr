@@ -12,7 +12,7 @@
  * Telnet console driver.
  * Hooks into the printk and fputc (for printf) modules.
  *
- * Telnet has been standardised in 1983
+ * Telnet has been standardized in 1983
  * RFC 854 - https://tools.ietf.org/html/rfc854
  */
 

@@ -56,7 +56,7 @@
  * Its handler may make a task or fiber ready to run, so any elapsed ticks
  * must be accounted for and the timer must also expire at the end of the
  * next logical tick so _timer_int_handler() can put it back in periodic mode.
- * This can only be distinguished from the previous factor by the executiion of
+ * This can only be distinguished from the previous factor by the execution of
  * _timer_int_handler().
  *
  * 6. Tickless idle may end naturally.  The down counter should be zero in
@@ -315,7 +315,7 @@ static void tickless_idle_init(void)
  * Re-program the timer to enter into the idle state for the given number of
  * ticks. It is placed into one shot mode where it will fire in the number of
  * ticks supplied or the maximum number of ticks that can be programmed into
- * hardware. A value of -1 means inifinite number of ticks.
+ * hardware. A value of -1 means infinite number of ticks.
  *
  * @return N/A
  */

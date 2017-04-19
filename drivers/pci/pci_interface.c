@@ -320,7 +320,7 @@ void pci_read(uint32_t controller, union pci_addr_reg addr,
  *   the caller to enforce this.
  *
  * @param controller is the PCI controller to use
- * @param addr is the PCI addres to read
+ * @param addr is the PCI address to read
  * @param size is the size in bytes to write
  * @param data is the data to write
  *

@@ -207,8 +207,8 @@ void stm32_exti_trigger(int line, int trigger)
  * Check EXTI lines in range @min @max for pending interrupts
  *
  * @param arg isr argument
- * @parram min low end of EXTI# range
- * @parram max low end of EXTI# range
+ * @param min low end of EXTI# range
+ * @param max low end of EXTI# range
  */
 static void __stm32_exti_isr(int min, int max, void *arg)
 {

@@ -47,24 +47,24 @@
  *
  * INTERNALS
  * The whole logic runs around a structure: struct lookup_data, which exists
- * on one instanciation called 'lookup'.
+ * on one instantiation called 'lookup'.
  * Such structure is used for 2 distinct roles:
  * - to match devices the caller is looking for
  * - to loop on PCI bus, devices, function and BARs
  *
- * The search criterias are the class and/or the vendor_id/device_id of a PCI
+ * The search criteria are the class and/or the vendor_id/device_id of a PCI
  * device. The caller first initializes the lookup structure by calling
- * pci_bus_scan_init(), which will reset the search criterias as well as the
- * loop paramaters to 0. At the very first subsequent call of pci_bus_scan()
- * the lookup structure will store the search criterias. Then the loop starts.
+ * pci_bus_scan_init(), which will reset the search criteria as well as the
+ * loop parameters to 0. At the very first subsequent call of pci_bus_scan()
+ * the lookup structure will store the search criteria. Then the loop starts.
  * For each bus it will run through each device on which it will loop on each
- * function and BARs, as long as the criterias does not match or until it hit
+ * function and BARs, as long as the criteria does not match or until it hit
  * the limit of bus/dev/functions to scan.
  *
  * On a successful match, it will stop the loop, fill in the caller's
  * pci_dev_info structure with the found device information, and return 1.
  * Hopefully, the lookup structure still remembers where it stopped and the
- * original search criterias. Thus, when the caller asks to scan again for
+ * original search criteria. Thus, when the caller asks to scan again for
  * a possible result next, the loop will restart where it stopped.
  * That will work as long as there are relevant results found.
  */
@@ -352,8 +352,8 @@ void pci_bus_scan_init(void)
  *
  * @brief Scans PCI bus for devices
  *
- * The routine scans the PCI bus for the devices on criterias provided in the
- * given dev_info at first call. Which criterias can be class and/or
+ * The routine scans the PCI bus for the devices on criteria provided in the
+ * given dev_info at first call. Which criteria can be class and/or
  * vendor_id/device_id.
  *
  * @return 1 on success, 0 otherwise. On success, dev_info is filled in with

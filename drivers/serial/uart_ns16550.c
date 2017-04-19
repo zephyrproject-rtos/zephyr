@@ -302,7 +302,7 @@ static inline int ns16550_pci_uart_scan(struct device *dev)
  *
  * @param dev UART device struct
  *
- * @return 0 if successful, failed othersie
+ * @return 0 if successful, failed otherwise
  */
 static int uart_ns16550_init(struct device *dev)
 {
