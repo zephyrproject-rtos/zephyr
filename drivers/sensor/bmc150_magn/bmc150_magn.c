@@ -499,14 +499,14 @@ static int bmc150_magn_init_chip(struct device *dev)
 		goto err_poweroff;
 	}
 	if (chip_id != BMC150_MAGN_CHIP_ID_VAL) {
-		SYS_LOG_DBG("invalid chip id 0x%" PRIx8, chip_id);
+		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
 		goto err_poweroff;
 	}
-	SYS_LOG_DBG("chip id 0x%" PRIx8, chip_id);
+	SYS_LOG_DBG("chip id 0x%x", chip_id);
 
 	preset = bmc150_magn_presets_table[BMC150_MAGN_DEFAULT_PRESET];
 	if (bmc150_magn_set_odr(dev, preset.odr) < 0) {
-		SYS_LOG_DBG("failed to set ODR to %" PRIu8,
+		SYS_LOG_DBG("failed to set ODR to %d",
 			    preset.odr);
 		goto err_poweroff;
 	}
@@ -515,7 +515,7 @@ static int bmc150_magn_init_chip(struct device *dev)
 			       BMC150_MAGN_REG_REP_XY,
 			       BMC150_MAGN_REPXY_TO_REGVAL(preset.rep_xy))
 			       < 0) {
-		SYS_LOG_DBG("failed to set REP XY to %" PRIu8,
+		SYS_LOG_DBG("failed to set REP XY to %d",
 			    preset.rep_xy);
 		goto err_poweroff;
 	}
@@ -523,7 +523,7 @@ static int bmc150_magn_init_chip(struct device *dev)
 	if (i2c_reg_write_byte(data->i2c_master, config->i2c_slave_addr,
 			       BMC150_MAGN_REG_REP_Z,
 			       BMC150_MAGN_REPZ_TO_REGVAL(preset.rep_z)) < 0) {
-		SYS_LOG_DBG("failed to set REP Z to %" PRIu8,
+		SYS_LOG_DBG("failed to set REP Z to %d",
 			    preset.rep_z);
 		goto err_poweroff;
 	}

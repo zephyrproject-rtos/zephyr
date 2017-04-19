@@ -848,7 +848,7 @@ int bmi160_init(struct device *dev)
 	}
 
 	if (val != BMI160_CHIP_ID) {
-		SYS_LOG_DBG("Unsupported chip detected (0x%" PRIx8 ")!", val);
+		SYS_LOG_DBG("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
 

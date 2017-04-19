@@ -679,11 +679,11 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 	}
 
 	if (chip_id != LSM9DS0_MFD_VAL_WHO_AM_I_XM) {
-		SYS_LOG_DBG("invalid chip id 0x%" PRIx8, chip_id);
+		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("chip id 0x%" PRIx8, chip_id);
+	SYS_LOG_DBG("chip id 0x%x", chip_id);
 
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,

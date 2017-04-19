@@ -412,10 +412,10 @@ static int lsm6ds0_init_chip(struct device *dev)
 		return -EIO;
 	}
 	if (chip_id != LSM6DS0_VAL_WHO_AM_I) {
-		SYS_LOG_DBG("invalid chip id 0x%" PRIx8, chip_id);
+		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
-	SYS_LOG_DBG("chip id 0x%" PRIx8, chip_id);
+	SYS_LOG_DBG("chip id 0x%x", chip_id);
 
 	if (lsm6ds0_accel_axis_ctrl(dev, LSM6DS0_ACCEL_ENABLE_X_AXIS,
 				    LSM6DS0_ACCEL_ENABLE_Y_AXIS,

@@ -88,9 +88,9 @@ static int th02_sample_fetch(struct device *dev, enum sensor_channel chan)
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
 
 	drv_data->t_sample = get_temp(drv_data->i2c);
-	SYS_LOG_INF("temp: %" PRIu16, drv_data->t_sample);
+	SYS_LOG_INF("temp: %u", drv_data->t_sample);
 	drv_data->rh_sample = get_humi(drv_data->i2c);
-	SYS_LOG_INF("rh: %" PRIu16, drv_data->rh_sample);
+	SYS_LOG_INF("rh: %u", drv_data->rh_sample);
 
 	return 0;
 }
