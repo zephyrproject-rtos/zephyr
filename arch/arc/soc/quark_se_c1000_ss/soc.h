@@ -150,6 +150,9 @@
 #if defined(CONFIG_IOAPIC)
 #define GPIO_DW_0_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
 #define GPIO_DW_1_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
+#else
+#define GPIO_DW_0_IRQ_FLAGS			0
+#define GPIO_DW_1_IRQ_FLAGS			0
 #endif
 
 /*
