@@ -11,19 +11,19 @@
 /**
  * Internal data structure for a buffer header.
  *
- * We want all of this to fit in a single uint32_t. Every item stored in the
+ * We want all of this to fit in a single u32_t. Every item stored in the
  * ring buffer will be one of these headers plus any extra data supplied
  */
 struct ring_element {
-	uint32_t  type   :16; /**< Application-specific */
-	uint32_t  length :8;  /**< length in 32-bit chunks */
-	uint32_t  value  :8;  /**< Room for small integral values */
+	u32_t  type   :16; /**< Application-specific */
+	u32_t  length :8;  /**< length in 32-bit chunks */
+	u32_t  value  :8;  /**< Room for small integral values */
 };
 
-int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
-		     uint32_t *data, uint8_t size32)
+int sys_ring_buf_put(struct ring_buf *buf, u16_t type, u8_t value,
+		     u32_t *data, u8_t size32)
 {
-	uint32_t i, space, index, rc;
+	u32_t i, space, index, rc;
 
 	space = sys_ring_buf_space_get(buf);
 	if (space >= (size32 + 1)) {
@@ -55,11 +55,11 @@ int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 	return rc;
 }
 
-int sys_ring_buf_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
-		     uint32_t *data, uint8_t *size32)
+int sys_ring_buf_get(struct ring_buf *buf, u16_t *type, u8_t *value,
+		     u32_t *data, u8_t *size32)
 {
 	struct ring_element *header;
-	uint32_t i, index;
+	u32_t i, index;
 
 	if (sys_ring_buf_is_empty(buf)) {
 		return -EAGAIN;
