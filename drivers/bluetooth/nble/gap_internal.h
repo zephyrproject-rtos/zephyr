@@ -45,13 +45,13 @@ enum NBLE_GAP_SM_EVT {
 };
 
 struct nble_log_s {
-	uint8_t param0;
-	uint8_t param1;
-	uint8_t param2;
-	uint8_t param3;
+	u8_t param0;
+	u8_t param1;
+	u8_t param2;
+	u8_t param3;
 };
 
-void nble_log(const struct nble_log_s *par, char *data, uint8_t len);
+void nble_log(const struct nble_log_s *par, char *data, u8_t len);
 
 struct nble_common_rsp {
 	int status;
@@ -70,13 +70,13 @@ void on_nble_common_rsp(const struct nble_common_rsp *rsp);
 void nble_panic_req(void);
 
 struct nble_version {
-	uint8_t version;
-	uint8_t major;
-	uint8_t minor;
-	uint8_t patch;
+	u8_t version;
+	u8_t major;
+	u8_t minor;
+	u8_t patch;
 	char version_string[20];
-	uint8_t build_hash[4];
-	uint8_t hash[4];
+	u8_t build_hash[4];
+	u8_t hash[4];
 };
 
 typedef void (*ble_get_version_cb_t)(const struct nble_version *ver);
@@ -103,44 +103,44 @@ enum NBLE_GAP_SVC_ATTR_TYPE {
 
 struct nble_gap_device_name {
 	/* Security mode for writing device name, see BLE_GAP_SEC_MODES */
-	uint8_t sec_mode;
+	u8_t sec_mode;
 	/* 0: no authorization, 1: authorization required */
-	uint8_t authorization;
+	u8_t authorization;
 	/* Device name length (0-248) */
-	uint8_t len;
-	uint8_t name_array[20];
+	u8_t len;
+	u8_t name_array[20];
 };
 
 struct nble_conn_param {
 	/* minimal connection interval: range 0x0006 to 0x0c80 (unit 1.25ms) */
-	uint16_t interval_min;
+	u16_t interval_min;
 	/* maximum connection interval: range 0x0006 to 0x0c80 must be bigger then min! */
-	uint16_t interval_max;
+	u16_t interval_max;
 	/* maximum connection slave latency: 0x0000 to 0x01f3 */
-	uint16_t slave_latency;
+	u16_t slave_latency;
 	/* link supervision timeout: 0x000a to 0x0c80 (unit 10ms) */
-	uint16_t link_sup_to;
+	u16_t link_sup_to;
 };
 
 struct nble_gap_service_req {
 	/* GAP Characteristics attribute type see NBLE_GAP_SVC_ATTR_TYPE */
-	uint16_t attr_type;
+	u16_t attr_type;
 	union {
 		struct nble_gap_device_name name;
 		/* Appearance UUID */
-		uint16_t appearance;
+		u16_t appearance;
 		/* Preferred Peripheral Connection Parameters */
 		struct nble_conn_param ppcp;
 		/* Central Address Resolution support 0: no, 1: yes */
-		uint8_t car;
+		u8_t car;
 	};
 };
 
 void nble_gap_service_req(const struct nble_gap_service_req *req);
 
 struct nble_dbg_req {
-	uint32_t u0;
-	uint32_t u1;
+	u32_t u0;
+	u32_t u1;
 	void *user_data;
 };
 
@@ -148,8 +148,8 @@ void nble_dbg_req(const struct nble_dbg_req *req);
 
 struct nble_dbg_rsp {
 	int status;
-	uint32_t u0;
-	uint32_t u1;
+	u32_t u0;
+	u32_t u1;
 	void *user_data;
 };
 
@@ -192,8 +192,8 @@ struct nble_get_bda_rsp {
 void on_nble_get_bda_rsp(const struct nble_get_bda_rsp *rsp);
 
 struct nble_eir_data {
-	uint8_t len;
-	uint8_t data[31];
+	u8_t len;
+	u8_t data[31];
 };
 
 struct nble_gap_set_adv_data_req {
@@ -206,15 +206,15 @@ struct nble_gap_set_adv_data_req {
 void nble_gap_set_adv_data_req(struct nble_gap_set_adv_data_req *req);
 
 struct nble_gap_set_adv_params_req {
-	uint16_t timeout;
+	u16_t timeout;
 	/* min interval 0xffff: use default 0x0800 */
-	uint16_t interval_min;
+	u16_t interval_min;
 	/* max interval 0xffff: use default 0x0800 */
-	uint16_t interval_max;
+	u16_t interval_max;
 	/* advertisement types see GAP_ADV_TYPES */
-	uint8_t type;
+	u8_t type;
 	/* filter policy to apply with white list */
-	uint8_t filter_policy;
+	u8_t filter_policy;
 	/* bd address of peer device in case of directed advertisement */
 	bt_addr_le_t peer_bda;
 };
@@ -228,7 +228,7 @@ void on_nble_gap_start_adv_rsp(const struct nble_common_rsp *rsp);
 void nble_gap_stop_adv_req(void *user_data);
 
 struct nble_gap_conn_update_req {
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	struct nble_conn_param params;
 };
 
@@ -237,8 +237,8 @@ void nble_gap_conn_update_req(const struct nble_gap_conn_update_req *req);
 void on_nble_gap_conn_update_rsp(const struct nble_common_rsp *rsp);
 
 struct nble_gap_disconnect_req {
-	uint16_t conn_handle;
-	uint8_t reason;
+	u16_t conn_handle;
+	u8_t reason;
 };
 
 void nble_gap_disconnect_req(const struct nble_gap_disconnect_req *req);
@@ -253,16 +253,16 @@ void on_nble_sm_config_rsp(struct nble_sm_config_rsp *rsp);
 
 struct nble_sm_pairing_param {
 	/* authentication level see BLE_GAP_SM_OPTIONS */
-	uint8_t auth;
-	uint8_t io_capabilities;
-	uint8_t max_key_size;
-	uint8_t min_key_size;
-	uint8_t oob_flag;
+	u8_t auth;
+	u8_t io_capabilities;
+	u8_t max_key_size;
+	u8_t min_key_size;
+	u8_t oob_flag;
 };
 
 struct nble_sm_security_req {
 	struct bt_conn *conn;
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	/* Local authentication/bonding parameters */
 	struct nble_sm_pairing_param params;
 };
@@ -275,17 +275,17 @@ enum NBLE_SM_PASSKEY_TYPE {
 };
 
 struct nble_sm_passkey {
-	uint8_t type; /* see NBLE_SM_PASSKEY_TYPE */
+	u8_t type; /* see NBLE_SM_PASSKEY_TYPE */
 	union {
-		uint32_t passkey;
-		uint8_t oob[16];
-		uint8_t reason;
+		u32_t passkey;
+		u8_t oob[16];
+		u8_t reason;
 	};
 };
 
 struct nble_sm_passkey_reply_req {
 	struct bt_conn *conn;
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	struct nble_sm_passkey params;
 };
 
@@ -306,7 +306,7 @@ void on_nble_sm_common_rsp(const struct nble_sm_common_rsp *rsp);
 
 struct nble_sm_pairing_response_req {
 	struct bt_conn *conn;
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	struct nble_sm_pairing_param params;
 };
 
@@ -314,22 +314,22 @@ void nble_sm_pairing_response_req(const struct nble_sm_pairing_response_req *req
 
 struct nble_sm_error_req {
 	struct bt_conn *conn;
-	uint16_t conn_handle;
-	uint8_t reason;
+	u16_t conn_handle;
+	u8_t reason;
 };
 
 void nble_sm_error_req(const struct nble_sm_error_req *req);
 
 struct nble_gap_set_rssi_report_req {
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	/* RSSI operation see NBLE_GAP_RSSI_OPS */
-	uint8_t op;
+	u8_t op;
 	/* Channel for RSSI enabling */
-	uint8_t channel;
+	u8_t channel;
 	/* minimum RSSI dBm change to report a new RSSI value */
-	uint8_t delta_dBm;
+	u8_t delta_dBm;
 	/* number of delta_dBm changes before sending a new RSSI report */
-	uint8_t min_count;
+	u8_t min_count;
 };
 
 void nble_gap_set_rssi_report_req(const struct nble_gap_set_rssi_report_req *req,
@@ -338,12 +338,12 @@ void nble_gap_set_rssi_report_req(const struct nble_gap_set_rssi_report_req *req
 void on_nble_gap_set_rssi_report_rsp(const struct nble_common_rsp *rsp);
 
 struct nble_scan_param {
-	uint16_t interval;
-	uint16_t window;
+	u16_t interval;
+	u16_t window;
 	/* Unused for the connection request */
-	uint8_t scan_type;
+	u8_t scan_type;
 	/* Unused for the connection request */
-	uint8_t use_whitelist;
+	u8_t use_whitelist;
 };
 
 struct nble_gap_start_scan_req {
@@ -379,7 +379,7 @@ void nble_uas_rssi_calibrate_req(const struct nble_uas_rssi_calibrate_req *req);
 
 /* Temporary patch: RSSI processing for UAS */
 struct nble_uas_bucket_change {
-	uint8_t distance;
+	u8_t distance;
 };
 
 void on_nble_uas_bucket_change(const struct nble_uas_bucket_change *par);
@@ -389,7 +389,7 @@ void nble_gap_dtm_init_req(void *user_data);
 void on_nble_gap_dtm_init_rsp(void *user_data);
 
 struct nble_gap_set_tx_power_req {
-	int8_t tx_power;
+	s8_t tx_power;
 };
 
 void nble_gap_set_tx_power_req(const struct nble_gap_set_tx_power_req *req);
@@ -398,18 +398,18 @@ void on_nble_gap_set_tx_power_rsp(const struct nble_common_rsp *rsp);
 
 struct nble_conn_values {
 	/* Connection interval (unit 1.25 ms) */
-	uint16_t interval;
+	u16_t interval;
 	/* Connection latency (unit interval) */
-	uint16_t latency;
+	u16_t latency;
 	/* Connection supervision timeout (unit 10ms)*/
-	uint16_t supervision_to;
+	u16_t supervision_to;
 };
 
 struct nble_gap_connect_evt {
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	struct nble_conn_values conn_values;
 	/* 0 if connected as master, otherwise as slave */
-	uint8_t role_slave;
+	u8_t role_slave;
 	/* Address of peer device */
 	bt_addr_le_t peer_bda;
 };
@@ -417,14 +417,14 @@ struct nble_gap_connect_evt {
 void on_nble_gap_connect_evt(const struct nble_gap_connect_evt *evt);
 
 struct nble_gap_disconnect_evt {
-	uint16_t conn_handle;
-	uint8_t hci_reason;
+	u16_t conn_handle;
+	u8_t hci_reason;
 };
 
 void on_nble_gap_disconnect_evt(const struct nble_gap_disconnect_evt *evt);
 
 struct nble_gap_conn_update_evt {
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	struct nble_conn_values conn_values;
 };
 
@@ -432,16 +432,16 @@ void on_nble_gap_conn_update_evt(const struct nble_gap_conn_update_evt *evt);
 
 struct nble_gap_adv_report_evt {
 	bt_addr_le_t addr;
-	int8_t rssi;
-	uint8_t adv_type;
+	s8_t rssi;
+	u8_t adv_type;
 };
 
 void on_nble_gap_adv_report_evt(const struct nble_gap_adv_report_evt *evt,
-				const uint8_t *data, uint8_t len);
+				const u8_t *data, u8_t len);
 
 struct nble_gap_dir_adv_timeout_evt {
-	uint16_t conn_handle;
-	uint16_t error;
+	u16_t conn_handle;
+	u16_t error;
 };
 
 void on_nble_gap_dir_adv_timeout_evt(const struct nble_gap_dir_adv_timeout_evt *evt);
@@ -449,22 +449,22 @@ void on_nble_gap_dir_adv_timeout_evt(const struct nble_gap_dir_adv_timeout_evt *
 #define BLE_GAP_RSSI_EVT_SIZE 32
 
 struct nble_gap_rssi_evt {
-	uint16_t conn_handle;
-	int8_t rssi_data[BLE_GAP_RSSI_EVT_SIZE];
+	u16_t conn_handle;
+	s8_t rssi_data[BLE_GAP_RSSI_EVT_SIZE];
 };
 
 void on_nble_gap_rssi_evt(const struct nble_gap_rssi_evt *evt);
 
 struct nble_sm_passkey_req_evt {
-	uint16_t conn_handle;
-	uint8_t key_type;
+	u16_t conn_handle;
+	u8_t key_type;
 };
 
 void on_nble_sm_passkey_req_evt(const struct nble_sm_passkey_req_evt *evt);
 
 struct nble_sm_passkey_disp_evt {
-	uint16_t conn_handle;
-	uint32_t passkey;
+	u16_t conn_handle;
+	u32_t passkey;
 };
 
 void on_nble_sm_passkey_disp_evt(const struct nble_sm_passkey_disp_evt *evt);
@@ -478,12 +478,12 @@ enum NBLE_SM_STATUS_EVT {
 
 struct nble_link_sec {
 	bt_security_t sec_level;
-	uint8_t enc_size;
+	u8_t enc_size;
 };
 
 struct nble_sm_status_evt {
-	uint16_t conn_handle;
-	uint8_t evt_type; /* see NBLE_SM_STATUS_EVT */
+	u16_t conn_handle;
+	u8_t evt_type; /* see NBLE_SM_STATUS_EVT */
 	int status;
 	union {
 		struct nble_link_sec enc_link_sec;
@@ -494,21 +494,21 @@ struct nble_sm_status_evt {
 void on_nble_sm_status_evt(const struct nble_sm_status_evt *evt);
 
 struct nble_sec_param {
-	uint8_t auth;
-	uint8_t io_capabilities;
-	uint8_t min_key_size;
-	uint8_t max_key_size;
+	u8_t auth;
+	u8_t io_capabilities;
+	u8_t min_key_size;
+	u8_t max_key_size;
 };
 
 struct nble_sm_pairing_request_evt {
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	struct nble_sec_param sec_param;
 };
 
 void on_nble_sm_pairing_request_evt(const struct nble_sm_pairing_request_evt *evt);
 
 struct nble_sm_security_request_evt {
-	uint16_t conn_handle;
+	u16_t conn_handle;
 	struct nble_sec_param sec_param;
 };
 
@@ -516,7 +516,7 @@ void on_nble_sm_security_request_evt(const struct nble_sm_security_request_evt *
 
 struct nble_sm_bond_info;
 typedef void (*ble_bond_info_cb_t)(const struct nble_sm_bond_info *info,
-				   const bt_addr_le_t *addr, uint16_t len,
+				   const bt_addr_le_t *addr, u16_t len,
 				   void *user_data);
 
 struct nble_sm_bond_info_req {
@@ -529,8 +529,8 @@ void nble_sm_bond_info_req(const struct nble_sm_bond_info_req *req);
 
 struct nble_sm_bond_info {
 	int err;
-	uint8_t addr_count;
-	uint8_t irk_count;
+	u8_t addr_count;
+	u8_t irk_count;
 };
 
 struct nble_sm_bond_info_rsp {
@@ -540,29 +540,29 @@ struct nble_sm_bond_info_rsp {
 };
 
 void on_nble_sm_bond_info_rsp(const struct nble_sm_bond_info_rsp *rsp,
-			      const bt_addr_le_t *peer_addr, uint16_t len);
+			      const bt_addr_le_t *peer_addr, u16_t len);
 
 struct nble_uart_test_req {
 	/* Test type: 1 = start peer test, 2 = loopback test */
-	uint16_t test_type;
+	u16_t test_type;
 	/* Test type 1: Number of test events packets sent from peer to host */
-	uint16_t nb_loops;
+	u16_t nb_loops;
 	/* Test type 1: The maximum delay between packets (in ms) */
-	uint16_t max_delay;
+	u16_t max_delay;
 	/* Test type 1: The maximum length of packets (in bytes) */
-	uint16_t max_len;
+	u16_t max_len;
 };
 
 void nble_uart_test_req(const struct nble_uart_test_req *req,
-			const uint8_t *data, uint8_t len);
+			const u8_t *data, u8_t len);
 
 struct nble_uart_test_evt {
 	/* Number of loops executed */
-	uint16_t nb_loops;
+	u16_t nb_loops;
 };
 
 void on_nble_uart_test_evt(const struct nble_uart_test_evt *evt,
-			   const uint8_t *data, uint8_t len);
+			   const u8_t *data, u8_t len);
 
 /*
  * The following functions are NOT RPC functions
@@ -580,19 +580,19 @@ enum NBLE_GAP_RSSI_OPS {
 	NBLE_GAP_RSSI_ENABLE_REPORT
 };
 
-typedef void (*rssi_report_t)(const int8_t *rssi_data);
+typedef void (*rssi_report_t)(const s8_t *rssi_data);
 
 typedef void (*rssi_report_resp_t)(int status);
 
 struct ble_rssi_report_params {
 	/* RSSI operation see NBLE_GAP_RSSI_OPS */
-	uint8_t op;
+	u8_t op;
 	/* Channel for RSSI enabling */
-	uint8_t channel;
+	u8_t channel;
 	/* minimum RSSI dBm change to report a new RSSI value */
-	uint8_t delta_dBm;
+	u8_t delta_dBm;
 	/* number of delta_dBm changes before sending a new RSSI report */
-	uint8_t min_count;
+	u8_t min_count;
 };
 
 void ble_gap_set_rssi_report(struct ble_rssi_report_params *par,

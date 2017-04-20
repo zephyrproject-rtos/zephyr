@@ -35,14 +35,14 @@ struct bt_conn_le {
 	bt_addr_le_t		init_addr;
 	bt_addr_le_t		resp_addr;
 
-	uint16_t		interval;
-	uint16_t		interval_min;
-	uint16_t		interval_max;
+	u16_t		interval;
+	u16_t		interval_min;
+	u16_t		interval_max;
 
-	uint16_t		latency;
-	uint16_t		timeout;
+	u16_t		latency;
+	u16_t		timeout;
 
-	uint8_t			features[1][8];
+	u8_t			features[1][8];
 
 	struct bt_keys		*keys;
 
@@ -56,11 +56,11 @@ struct bt_conn_le {
 
 struct bt_conn_br {
 	bt_addr_t		dst;
-	uint8_t			remote_io_capa;
-	uint8_t			remote_auth;
-	uint8_t			pairing_method;
+	u8_t			remote_io_capa;
+	u8_t			remote_auth;
+	u8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
-	uint8_t			features[LMP_MAX_PAGES][8];
+	u8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
 };
@@ -68,7 +68,7 @@ struct bt_conn_br {
 struct bt_conn_sco {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
-	uint16_t                pkt_type;
+	u16_t                pkt_type;
 };
 #endif
 
@@ -80,19 +80,19 @@ struct bt_conn_tx {
 };
 
 struct bt_conn {
-	uint16_t		handle;
-	uint8_t			type;
-	uint8_t			role;
+	u16_t		handle;
+	u8_t			type;
+	u8_t			role;
 
 	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
-	uint8_t			encrypt;
+	u8_t			encrypt;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-	uint16_t		rx_len;
+	u16_t		rx_len;
 	struct net_buf		*rx;
 
 	/* Sent but not acknowledged TX packets */
@@ -109,7 +109,7 @@ struct bt_conn {
 	atomic_t		ref;
 
 	/* Connection error or reason for disconnect */
-	uint8_t			err;
+	u8_t			err;
 
 	bt_conn_state_t		state;
 
@@ -123,7 +123,7 @@ struct bt_conn {
 };
 
 /* Process incoming data for a connection */
-void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
+void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags);
 
 /* Send data over a connection */
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
@@ -153,14 +153,14 @@ struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
 
 void bt_conn_pin_code_req(struct bt_conn *conn);
-uint8_t bt_conn_get_io_capa(void);
-uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
-void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey);
+u8_t bt_conn_get_io_capa(void);
+u8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
+void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey);
 
 void bt_conn_disconnect_all(void);
 
 /* Look up an existing connection */
-struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
+struct bt_conn *bt_conn_lookup_handle(u16_t handle);
 
 /* Compare an address with bt_conn destination address */
 int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer);
@@ -183,8 +183,8 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
 #if defined(CONFIG_BLUETOOTH_SMP)
 /* rand and ediv should be in BT order */
-int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
-				uint16_t ediv, const uint8_t *ltk, size_t len);
+int bt_conn_le_start_encryption(struct bt_conn *conn, u64_t rand,
+				u16_t ediv, const u8_t *ltk, size_t len);
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);

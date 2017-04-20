@@ -28,26 +28,26 @@ enum {
 };
 
 struct bt_ltk {
-	uint64_t		rand;
-	uint16_t		ediv;
-	uint8_t			val[16];
+	u64_t		rand;
+	u16_t		ediv;
+	u8_t			val[16];
 };
 
 struct bt_irk {
-	uint8_t			val[16];
+	u8_t			val[16];
 	bt_addr_t		rpa;
 };
 
 struct bt_csrk {
-	uint8_t			val[16];
-	uint32_t		cnt;
+	u8_t			val[16];
+	u32_t		cnt;
 };
 
 struct bt_keys {
 	bt_addr_le_t		addr;
-	uint8_t			enc_size;
+	u8_t			enc_size;
 	ATOMIC_DEFINE(flags, BT_KEYS_NUM_FLAGS);
-	uint16_t		keys;
+	u16_t		keys;
 	struct bt_ltk		ltk;
 	struct bt_irk		irk;
 #if defined(CONFIG_BLUETOOTH_SIGNING)
@@ -81,7 +81,7 @@ enum {
 struct bt_keys_link_key {
 	bt_addr_t		addr;
 	ATOMIC_DEFINE(flags, BT_LINK_KEY_NUM_FLAGS);
-	uint8_t			val[16];
+	u8_t			val[16];
 };
 
 struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr);

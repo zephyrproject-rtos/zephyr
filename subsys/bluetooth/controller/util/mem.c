@@ -12,7 +12,7 @@
 
 #include "mem.h"
 
-void mem_init(void *mem_pool, uint16_t mem_size, uint16_t mem_count,
+void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 	      void **mem_head)
 {
 	*mem_head = mem_pool;
@@ -20,20 +20,20 @@ void mem_init(void *mem_pool, uint16_t mem_size, uint16_t mem_count,
 	/* Store free mem_count after the list's next pointer at an aligned
 	 * memory location to ensure atomic read/write (in ARM for now).
 	 */
-	*((uint16_t *)MROUND((uint8_t *)mem_pool + sizeof(mem_pool))) =
+	*((u16_t *)MROUND((u8_t *)mem_pool + sizeof(mem_pool))) =
 		mem_count;
 
 	/* Initialize next pointers to form a free list,
 	 * next pointer is stored in the first 32-bit of each block
 	 */
-	memset(((uint8_t *)mem_pool + (mem_size * (--mem_count))), 0,
+	memset(((u8_t *)mem_pool + (mem_size * (--mem_count))), 0,
 	       sizeof(mem_pool));
 	while (mem_count--) {
-		uint32_t next;
+		u32_t next;
 
-		next = (uint32_t)((uint8_t *) mem_pool +
+		next = (u32_t)((u8_t *) mem_pool +
 				(mem_size * (mem_count + 1)));
-		memcpy(((uint8_t *)mem_pool + (mem_size * mem_count)),
+		memcpy(((u8_t *)mem_pool + (mem_size * mem_count)),
 			 (void *)&next, sizeof(next));
 	}
 }
@@ -41,12 +41,12 @@ void mem_init(void *mem_pool, uint16_t mem_size, uint16_t mem_count,
 void *mem_acquire(void **mem_head)
 {
 	if (*mem_head) {
-		uint16_t free_count;
+		u16_t free_count;
 		void *head;
 		void *mem;
 
 		/* Get the free count from the list and decrement it */
-		free_count = *((uint16_t *)MROUND((uint8_t *)*mem_head +
+		free_count = *((u16_t *)MROUND((u8_t *)*mem_head +
 						  sizeof(mem_head)));
 		free_count--;
 
@@ -55,7 +55,7 @@ void *mem_acquire(void **mem_head)
 
 		/* Store free mem_count after the list's next pointer */
 		if (head) {
-			*((uint16_t *)MROUND((uint8_t *)head + sizeof(head))) =
+			*((u16_t *)MROUND((u8_t *)head + sizeof(head))) =
 				free_count;
 		}
 
@@ -68,11 +68,11 @@ void *mem_acquire(void **mem_head)
 
 void mem_release(void *mem, void **mem_head)
 {
-	uint16_t free_count = 0;
+	u16_t free_count = 0;
 
 	/* Get the free count from the list and increment it */
 	if (*mem_head) {
-		free_count = *((uint16_t *)MROUND((uint8_t *)*mem_head +
+		free_count = *((u16_t *)MROUND((u8_t *)*mem_head +
 						  sizeof(mem_head)));
 	}
 	free_count++;
@@ -80,36 +80,36 @@ void mem_release(void *mem, void **mem_head)
 	memcpy(mem, mem_head, sizeof(mem));
 
 	/* Store free mem_count after the list's next pointer */
-	*((uint16_t *)MROUND((uint8_t *)mem + sizeof(mem))) = free_count;
+	*((u16_t *)MROUND((u8_t *)mem + sizeof(mem))) = free_count;
 
 	*mem_head = mem;
 }
 
-uint16_t mem_free_count_get(void *mem_head)
+u16_t mem_free_count_get(void *mem_head)
 {
-	uint16_t free_count = 0;
+	u16_t free_count = 0;
 
 	/* Get the free count from the list */
 	if (mem_head) {
-		free_count = *((uint16_t *)MROUND((uint8_t *)mem_head +
+		free_count = *((u16_t *)MROUND((u8_t *)mem_head +
 						  sizeof(mem_head)));
 	}
 
 	return free_count;
 }
 
-void *mem_get(void *mem_pool, uint16_t mem_size, uint16_t index)
+void *mem_get(void *mem_pool, u16_t mem_size, u16_t index)
 {
-	return ((void *)((uint8_t *)mem_pool + (mem_size * index)));
+	return ((void *)((u8_t *)mem_pool + (mem_size * index)));
 }
 
-uint16_t mem_index_get(void *mem, void *mem_pool, uint16_t mem_size)
+u16_t mem_index_get(void *mem, void *mem_pool, u16_t mem_size)
 {
-	return ((uint16_t)((uint8_t *)mem - (uint8_t *)mem_pool) /
+	return ((u16_t)((u8_t *)mem - (u8_t *)mem_pool) /
 		mem_size);
 }
 
-void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len)
+void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len)
 {
 	src += len;
 	while (len--) {
@@ -117,7 +117,7 @@ void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len)
 	}
 }
 
-uint8_t mem_is_zero(uint8_t *src, uint16_t len)
+u8_t mem_is_zero(u8_t *src, u16_t len)
 {
 	while (len--) {
 		if (*src++) {
@@ -128,14 +128,14 @@ uint8_t mem_is_zero(uint8_t *src, uint16_t len)
 	return 0;
 }
 
-uint32_t mem_ut(void)
+u32_t mem_ut(void)
 {
 #define BLOCK_SIZE  MROUND(10)
 #define BLOCK_COUNT 10
-	uint8_t MALIGN(4) pool[BLOCK_COUNT][BLOCK_SIZE];
+	u8_t MALIGN(4) pool[BLOCK_COUNT][BLOCK_SIZE];
 	void *mem_free;
 	void *mem_used;
-	uint16_t mem_free_count;
+	u16_t mem_free_count;
 	void *mem;
 
 	mem_init(pool, BLOCK_SIZE, BLOCK_COUNT, &mem_free);
@@ -147,7 +147,7 @@ uint32_t mem_ut(void)
 
 	mem_used = 0;
 	while (mem_free_count--) {
-		uint16_t mem_free_count_current;
+		u16_t mem_free_count_current;
 
 		mem = mem_acquire(&mem_free);
 		mem_free_count_current = mem_free_count_get(mem_free);
@@ -165,7 +165,7 @@ uint32_t mem_ut(void)
 	}
 
 	while (++mem_free_count < BLOCK_COUNT) {
-		uint16_t mem_free_count_current;
+		u16_t mem_free_count_current;
 
 		mem = mem_used;
 		memcpy(&mem_used, mem, sizeof(void *));

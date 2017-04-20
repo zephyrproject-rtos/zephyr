@@ -57,8 +57,8 @@
  */
 #define SPI_MAX_MSG_LEN		255 /* As defined by X-NUCLEO-IDB04A1 BSP */
 
-static uint8_t rxmsg[SPI_MAX_MSG_LEN];
-static uint8_t txmsg[SPI_MAX_MSG_LEN];
+static u8_t rxmsg[SPI_MAX_MSG_LEN];
+static u8_t txmsg[SPI_MAX_MSG_LEN];
 
 static struct device		*spi_dev;
 #if defined(CONFIG_BLUETOOTH_SPI_BLUENRG)
@@ -82,10 +82,10 @@ static struct spi_config spi_conf = {
 
 #if defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include <misc/printk.h>
-static inline void spi_dump_message(const uint8_t *pre, uint8_t *buf,
-				    uint8_t size)
+static inline void spi_dump_message(const u8_t *pre, u8_t *buf,
+				    u8_t size)
 {
-	uint8_t i, c;
+	u8_t i, c;
 
 	printk("%s (%d): ", pre, size);
 	for (i = 0; i < size; i++) {
@@ -101,15 +101,15 @@ static inline void spi_dump_message(const uint8_t *pre, uint8_t *buf,
 }
 #else
 static inline
-void spi_dump_message(const uint8_t *pre, uint8_t *buf, uint8_t size) {}
+void spi_dump_message(const u8_t *pre, u8_t *buf, u8_t size) {}
 #endif
 
-static inline uint16_t bt_spi_get_cmd(uint8_t *txmsg)
+static inline u16_t bt_spi_get_cmd(u8_t *txmsg)
 {
 	return (txmsg[CMD_OCF] << 8) | txmsg[CMD_OGF];
 }
 
-static inline uint16_t bt_spi_get_evt(uint8_t *rxmsg)
+static inline u16_t bt_spi_get_evt(u8_t *rxmsg)
 {
 	return (rxmsg[EVT_VENDOR_CODE_MSB] << 8) | rxmsg[EVT_VENDOR_CODE_LSB];
 }
@@ -120,7 +120,7 @@ static void bt_spi_isr(struct device *unused1, struct gpio_callback *unused2,
 	k_sem_give(&sem_request);
 }
 
-static void bt_spi_handle_vendor_evt(uint8_t *rxmsg)
+static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
 {
 	switch (bt_spi_get_evt(rxmsg)) {
 	case EVT_BLUE_INITIALIZED:
@@ -133,10 +133,10 @@ static void bt_spi_handle_vendor_evt(uint8_t *rxmsg)
 static void bt_spi_rx_thread(void)
 {
 	struct net_buf *buf;
-	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
-	uint8_t header_slave[5];
+	u8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
+	u8_t header_slave[5];
 	struct bt_hci_acl_hdr acl_hdr;
-	uint8_t size;
+	u8_t size;
 
 	memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
@@ -213,8 +213,8 @@ static void bt_spi_rx_thread(void)
 
 static int bt_spi_send(struct net_buf *buf)
 {
-	uint8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
-	uint32_t pending;
+	u8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
+	u32_t pending;
 
 	/* Buffer needs an additional byte for type */
 	if (buf->len >= SPI_MAX_MSG_LEN) {

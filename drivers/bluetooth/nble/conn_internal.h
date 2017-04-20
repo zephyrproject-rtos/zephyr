@@ -5,8 +5,8 @@
  */
 
 struct bt_conn {
-	uint16_t handle;
-	uint8_t role;
+	u16_t handle;
+	u8_t role;
 	atomic_t ref;
 
 	bt_addr_le_t dst;
@@ -14,9 +14,9 @@ struct bt_conn {
 	bt_security_t sec_level;
 	bt_security_t required_sec_level;
 
-	uint16_t interval;
-	uint16_t latency;
-	uint16_t timeout;
+	u16_t interval;
+	u16_t latency;
+	u16_t timeout;
 
 	enum {
 		BT_CONN_DISCONNECTED,

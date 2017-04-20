@@ -67,7 +67,7 @@ enum pairing_method {
 };
 
 /* based on table 5.7, Core Spec 4.2, Vol.3 Part C, 5.2.2.6 */
-static const uint8_t ssp_method[4 /* remote */][4 /* local */] = {
+static const u8_t ssp_method[4 /* remote */][4 /* local */] = {
 	      { JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS },
 	      { JUST_WORKS, PASSKEY_CONFIRM, PASSKEY_INPUT, JUST_WORKS },
 	      { PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS },
@@ -458,7 +458,7 @@ static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_PIN_CODE_NEG_REPLY, buf, NULL);
 }
 
-static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
+static int pin_code_reply(struct bt_conn *conn, const char *pin, u8_t len)
 {
 	struct bt_hci_cp_pin_code_reply *cp;
 	struct net_buf *buf;
@@ -531,7 +531,7 @@ void bt_conn_pin_code_req(struct bt_conn *conn)
 	}
 }
 
-uint8_t bt_conn_get_io_capa(void)
+u8_t bt_conn_get_io_capa(void)
 {
 	if (!bt_auth) {
 		return BT_IO_NO_INPUT_OUTPUT;
@@ -552,12 +552,12 @@ uint8_t bt_conn_get_io_capa(void)
 	return BT_IO_NO_INPUT_OUTPUT;
 }
 
-static uint8_t ssp_pair_method(const struct bt_conn *conn)
+static u8_t ssp_pair_method(const struct bt_conn *conn)
 {
 	return ssp_method[conn->br.remote_io_capa][bt_conn_get_io_capa()];
 }
 
-uint8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
+u8_t bt_conn_ssp_get_auth(const struct bt_conn *conn)
 {
 	/* Validate no bond auth request, and if valid use it. */
 	if ((conn->br.remote_auth == BT_HCI_NO_BONDING) ||
@@ -612,7 +612,7 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 				    NULL);
 }
 
-void bt_conn_ssp_auth(struct bt_conn *conn, uint32_t passkey)
+void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey)
 {
 	conn->br.pairing_method = ssp_pair_method(conn);
 
@@ -767,8 +767,8 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	}
 }
 
-int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
-				uint16_t ediv, const uint8_t *ltk, size_t len)
+int bt_conn_le_start_encryption(struct bt_conn *conn, u64_t rand,
+				u16_t ediv, const u8_t *ltk, size_t len)
 {
 	struct bt_hci_cp_le_start_encryption *cp;
 	struct net_buf *buf;
@@ -793,7 +793,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 #endif /* CONFIG_BLUETOOTH_SMP */
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
+u8_t bt_conn_enc_key_size(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
 		return 0;
@@ -805,7 +805,7 @@ uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
 		struct bt_hci_rp_read_encryption_key_size *rp;
 		struct net_buf *buf;
 		struct net_buf *rsp;
-		uint8_t key_size;
+		u8_t key_size;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
 					sizeof(*cp));
@@ -965,10 +965,10 @@ static void bt_conn_reset_rx_state(struct bt_conn *conn)
 	conn->rx_len = 0;
 }
 
-void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 {
 	struct bt_l2cap_hdr *hdr;
-	uint16_t len;
+	u16_t len;
 
 	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
@@ -1112,7 +1112,7 @@ static void add_pending_tx(struct bt_conn *conn, bt_conn_tx_cb_t cb)
 	irq_unlock(key);
 }
 
-static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
+static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 		      bool always_consume)
 {
 	struct bt_hci_acl_hdr *hdr;
@@ -1157,7 +1157,7 @@ fail:
 	return false;
 }
 
-static inline uint16_t conn_mtu(struct bt_conn *conn)
+static inline u16_t conn_mtu(struct bt_conn *conn)
 {
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	if (conn->type == BT_CONN_TYPE_BR || !bt_dev.le.mtu) {
@@ -1171,7 +1171,7 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct net_buf *frag;
-	uint16_t frag_len;
+	u16_t frag_len;
 
 	frag = bt_conn_create_pdu(NULL, 0);
 
@@ -1472,7 +1472,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	}
 }
 
-struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
+struct bt_conn *bt_conn_lookup_handle(u16_t handle)
 {
 	int i;
 
@@ -1642,7 +1642,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	return -EINVAL;
 }
 
-static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
+static int bt_hci_disconnect(struct bt_conn *conn, u8_t reason)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_disconnect *disconn;
@@ -1700,7 +1700,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	return bt_l2cap_update_conn_param(conn, param);
 }
 
-int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
+int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 {
 	/* Disconnection is initiated by us, so auto connection shall
 	 * be disabled. Otherwise the passive scan would be enabled

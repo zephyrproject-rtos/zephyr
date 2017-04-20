@@ -33,7 +33,7 @@
 #define NBLE_VERSION_PATCH(v) (((v) >> 0)  & 0xFF)
 
 /* Set the firmware compatible with Nordic BLE RPC */
-static const uint32_t compatible_firmware = NBLE_VERSION(4, 0, 31);
+static const u32_t compatible_firmware = NBLE_VERSION(4, 0, 31);
 
 static bt_ready_cb_t bt_ready_cb;
 static bt_le_scan_cb_t *scan_dev_found_cb;
@@ -121,7 +121,7 @@ static int set_ad(struct nble_eir_data *eir, const struct bt_data *ad,
 	int i;
 
 	for (i = 0; i < ad_len; i++) {
-		uint8_t *p;
+		u8_t *p;
 
 		/* Check if ad fit in the remaining buffer */
 		if (eir->len + ad[i].data_len + 2 > 31) {
@@ -277,7 +277,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 }
 
 void on_nble_gap_adv_report_evt(const struct nble_gap_adv_report_evt *evt,
-				const uint8_t *buf, uint8_t len)
+				const u8_t *buf, u8_t len)
 {
 	BT_DBG("");
 
@@ -312,7 +312,7 @@ void on_nble_gap_scan_start_stop_rsp(const struct nble_common_rsp *rsp)
 	BT_DBG("");
 }
 
-void nble_log(const struct nble_log_s *param, char *format, uint8_t len)
+void nble_log(const struct nble_log_s *param, char *format, u8_t len)
 {
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 	/* Build meaningful output */
@@ -348,7 +348,7 @@ void on_nble_common_rsp(const struct nble_common_rsp *rsp)
 	BT_DBG("status %d", rsp->status);
 }
 
-void rpc_init_cb(uint32_t version, bool compatible)
+void rpc_init_cb(u32_t version, bool compatible)
 {
 	BT_DBG("");
 

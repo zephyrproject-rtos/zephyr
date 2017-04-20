@@ -31,10 +31,10 @@ struct bt_conn;
 
 /** Connection parameters for LE connections */
 struct bt_le_conn_param {
-	uint16_t interval_min;
-	uint16_t interval_max;
-	uint16_t latency;
-	uint16_t timeout;
+	u16_t interval_min;
+	u16_t interval_max;
+	u16_t latency;
+	u16_t timeout;
 };
 
 /** Helper to declare connection parameters inline
@@ -113,9 +113,9 @@ enum {
 struct bt_conn_le_info {
 	const bt_addr_le_t *src; /** Source Address */
 	const bt_addr_le_t *dst; /** Destination Address */
-	uint16_t interval; /** Connection interval */
-	uint16_t latency; /** Connection slave latency */
-	uint16_t timeout; /** Connection supervision timeout */
+	u16_t interval; /** Connection interval */
+	u16_t latency; /** Connection slave latency */
+	u16_t timeout; /** Connection supervision timeout */
 };
 
 /** BR/EDR Connection Info Structure */
@@ -138,9 +138,9 @@ enum {
  *  @param br BR/EDR Connection specific Info
  */
 struct bt_conn_info {
-	uint8_t type;
+	u8_t type;
 
-	uint8_t role;
+	u8_t role;
 
 	union {
 		struct bt_conn_le_info le;
@@ -178,7 +178,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
  *
  *  @return Zero on success or (negative) error code on failure.
  */
-int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
+int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
 
 /** @brief Initiate an LE connection to a remote device.
  *
@@ -276,7 +276,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
  *
  *  @return Encryption key size.
  */
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn);
+u8_t bt_conn_enc_key_size(struct bt_conn *conn);
 
 /** @brief Connection callback structure.
  *
@@ -298,7 +298,7 @@ struct bt_conn_cb {
 	 *  @param conn New connection object.
 	 *  @param err HCI error. Zero for success, non-zero otherwise.
 	 */
-	void (*connected)(struct bt_conn *conn, uint8_t err);
+	void (*connected)(struct bt_conn *conn, u8_t err);
 
 	/** @brief A connection has been disconnected.
 	 *
@@ -308,7 +308,7 @@ struct bt_conn_cb {
 	 *  @param conn Connection object.
 	 *  @param reason HCI reason for the disconnection.
 	 */
-	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
+	void (*disconnected)(struct bt_conn *conn, u8_t reason);
 
 	/** @brief LE connection parameter update request.
 	 *
@@ -344,8 +344,8 @@ struct bt_conn_cb {
 	 *  @param latency Connection latency.
 	 *  @param timeout Connection supervision timeout.
 	 */
-	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval,
-				 uint16_t latency, uint16_t timeout);
+	void (*le_param_updated)(struct bt_conn *conn, u16_t interval,
+				 u16_t latency, u16_t timeout);
 #if defined(CONFIG_BLUETOOTH_SMP)
 	/** @brief Remote Identity Address has been resolved.
 	 *

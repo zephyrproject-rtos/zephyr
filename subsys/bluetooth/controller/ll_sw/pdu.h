@@ -16,39 +16,39 @@
 #define PDU_AC_SIZE_MAX (37 + PDU_AC_SIZE_OVERHEAD)
 
 struct pdu_adv_payload_adv_ind {
-	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[31];
+	u8_t addr[BDADDR_SIZE];
+	u8_t data[31];
 } __packed;
 
 struct pdu_adv_payload_direct_ind {
-	uint8_t adv_addr[BDADDR_SIZE];
-	uint8_t tgt_addr[BDADDR_SIZE];
+	u8_t adv_addr[BDADDR_SIZE];
+	u8_t tgt_addr[BDADDR_SIZE];
 } __packed;
 
 struct pdu_adv_payload_scan_rsp {
-	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[31];
+	u8_t addr[BDADDR_SIZE];
+	u8_t data[31];
 } __packed;
 
 struct pdu_adv_payload_scan_req {
-	uint8_t scan_addr[BDADDR_SIZE];
-	uint8_t adv_addr[BDADDR_SIZE];
+	u8_t scan_addr[BDADDR_SIZE];
+	u8_t adv_addr[BDADDR_SIZE];
 } __packed;
 
 struct pdu_adv_payload_connect_ind {
-	uint8_t init_addr[BDADDR_SIZE];
-	uint8_t adv_addr[BDADDR_SIZE];
+	u8_t init_addr[BDADDR_SIZE];
+	u8_t adv_addr[BDADDR_SIZE];
 	struct {
-		uint8_t access_addr[4];
-		uint8_t crc_init[3];
-		uint8_t win_size;
-		uint16_t win_offset;
-		uint16_t interval;
-		uint16_t latency;
-		uint16_t timeout;
-		uint8_t chan_map[5];
-		uint8_t hop:5;
-		uint8_t sca:3;
+		u8_t access_addr[4];
+		u8_t crc_init[3];
+		u8_t win_size;
+		u16_t win_offset;
+		u16_t interval;
+		u16_t latency;
+		u16_t timeout;
+		u8_t chan_map[5];
+		u8_t hop:5;
+		u8_t sca:3;
 	} __packed lldata;
 } __packed;
 
@@ -71,15 +71,15 @@ enum pdu_adv_type {
 } __packed;
 
 struct pdu_adv {
-	uint8_t type:4;
-	uint8_t rfu:1;
-	uint8_t chan_sel:1;
-	uint8_t tx_addr:1;
-	uint8_t rx_addr:1;
+	u8_t type:4;
+	u8_t rfu:1;
+	u8_t chan_sel:1;
+	u8_t tx_addr:1;
+	u8_t rx_addr:1;
 
-	uint8_t len:8;
+	u8_t len:8;
 
-	uint8_t resv:8; /* TODO: remove nRF specific code */
+	u8_t resv:8; /* TODO: remove nRF specific code */
 
 	union {
 		struct pdu_adv_payload_adv_ind adv_ind;
@@ -127,117 +127,117 @@ enum pdu_data_llctrl_type {
 };
 
 struct pdu_data_llctrl_conn_update_ind {
-	uint8_t win_size;
-	uint16_t win_offset;
-	uint16_t interval;
-	uint16_t latency;
-	uint16_t timeout;
-	uint16_t instant;
+	u8_t win_size;
+	u16_t win_offset;
+	u16_t interval;
+	u16_t latency;
+	u16_t timeout;
+	u16_t instant;
 } __packed;
 
 struct pdu_data_llctrl_chan_map_ind {
-	uint8_t chm[5];
-	uint16_t instant;
+	u8_t chm[5];
+	u16_t instant;
 } __packed;
 
 struct pdu_data_llctrl_terminate_ind {
-	uint8_t error_code;
+	u8_t error_code;
 } __packed;
 
 struct pdu_data_llctrl_enc_req {
-	uint8_t rand[8];
-	uint8_t ediv[2];
-	uint8_t skdm[8];
-	uint8_t ivm[4];
+	u8_t rand[8];
+	u8_t ediv[2];
+	u8_t skdm[8];
+	u8_t ivm[4];
 } __packed;
 
 struct pdu_data_llctrl_enc_rsp {
-	uint8_t skds[8];
-	uint8_t ivs[4];
+	u8_t skds[8];
+	u8_t ivs[4];
 } __packed;
 
 struct pdu_data_llctrl_unknown_rsp {
-	uint8_t type;
+	u8_t type;
 } __packed;
 
 struct pdu_data_llctrl_feature_req {
-	uint8_t features[8];
+	u8_t features[8];
 } __packed;
 
 struct pdu_data_llctrl_feature_rsp {
-	uint8_t features[8];
+	u8_t features[8];
 } __packed;
 
 struct pdu_data_llctrl_version_ind {
-	uint8_t version_number;
-	uint16_t company_id;
-	uint16_t sub_version_number;
+	u8_t version_number;
+	u16_t company_id;
+	u16_t sub_version_number;
 } __packed;
 
 struct pdu_data_llctrl_reject_ind {
-	uint8_t error_code;
+	u8_t error_code;
 } __packed;
 
 struct pdu_data_llctrl_conn_param_req {
-	uint16_t interval_min;
-	uint16_t interval_max;
-	uint16_t latency;
-	uint16_t timeout;
-	uint8_t preferred_periodicity;
-	uint16_t reference_conn_event_count;
-	uint16_t offset0;
-	uint16_t offset1;
-	uint16_t offset2;
-	uint16_t offset3;
-	uint16_t offset4;
-	uint16_t offset5;
+	u16_t interval_min;
+	u16_t interval_max;
+	u16_t latency;
+	u16_t timeout;
+	u8_t preferred_periodicity;
+	u16_t reference_conn_event_count;
+	u16_t offset0;
+	u16_t offset1;
+	u16_t offset2;
+	u16_t offset3;
+	u16_t offset4;
+	u16_t offset5;
 } __packed;
 
 struct pdu_data_llctrl_conn_param_rsp {
-	uint16_t interval_min;
-	uint16_t interval_max;
-	uint16_t latency;
-	uint16_t timeout;
-	uint8_t preferred_periodicity;
-	uint16_t reference_conn_event_count;
-	uint16_t offset0;
-	uint16_t offset1;
-	uint16_t offset2;
-	uint16_t offset3;
-	uint16_t offset4;
-	uint16_t offset5;
+	u16_t interval_min;
+	u16_t interval_max;
+	u16_t latency;
+	u16_t timeout;
+	u8_t preferred_periodicity;
+	u16_t reference_conn_event_count;
+	u16_t offset0;
+	u16_t offset1;
+	u16_t offset2;
+	u16_t offset3;
+	u16_t offset4;
+	u16_t offset5;
 } __packed;
 
 struct pdu_data_llctrl_reject_ext_ind {
-	uint8_t reject_opcode;
-	uint8_t error_code;
+	u8_t reject_opcode;
+	u8_t error_code;
 } __packed;
 
 struct pdu_data_llctrl_length_req_rsp {
-	uint16_t max_rx_octets;
-	uint16_t max_rx_time;
-	uint16_t max_tx_octets;
-	uint16_t max_tx_time;
+	u16_t max_rx_octets;
+	u16_t max_rx_time;
+	u16_t max_tx_octets;
+	u16_t max_tx_time;
 } __packed;
 
 struct pdu_data_llctrl_phy_req_rsp {
-	uint8_t tx_phys;
-	uint8_t rx_phys;
+	u8_t tx_phys;
+	u8_t rx_phys;
 } __packed;
 
 struct pdu_data_llctrl_phy_update_ind {
-	uint8_t m_to_s_phy;
-	uint8_t s_to_m_phy;
-	uint16_t instant;
+	u8_t m_to_s_phy;
+	u8_t s_to_m_phy;
+	u16_t instant;
 } __packed;
 
 struct pdu_data_llctrl_min_used_chans_ind {
-	uint8_t phys;
-	uint8_t min_used_chans;
+	u8_t phys;
+	u8_t min_used_chans;
 } __packed;
 
 struct pdu_data_llctrl {
-	uint8_t opcode;
+	u8_t opcode;
 	union {
 		struct pdu_data_llctrl_conn_update_ind conn_update_ind;
 		struct pdu_data_llctrl_chan_map_ind chan_map_ind;
@@ -264,32 +264,32 @@ struct pdu_data_llctrl {
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
 struct profile {
-	uint8_t lcur;
-	uint8_t lmin;
-	uint8_t lmax;
-	uint8_t cur;
-	uint8_t min;
-	uint8_t max;
+	u8_t lcur;
+	u8_t lmin;
+	u8_t lmax;
+	u8_t cur;
+	u8_t min;
+	u8_t max;
 } __packed;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
 
 struct pdu_data {
-	uint8_t ll_id:2;
-	uint8_t nesn:1;
-	uint8_t sn:1;
-	uint8_t md:1;
-	uint8_t rfu:3;
+	u8_t ll_id:2;
+	u8_t nesn:1;
+	u8_t sn:1;
+	u8_t md:1;
+	u8_t rfu:3;
 
-	uint8_t len:8;
+	u8_t len:8;
 
-	uint8_t resv:8; /* TODO: remove nRF specific code */
+	u8_t resv:8; /* TODO: remove nRF specific code */
 
 	union {
-		uint8_t lldata[1];
+		u8_t lldata[1];
 		struct pdu_data_llctrl llctrl;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
-		uint8_t rssi;
+		u8_t rssi;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)

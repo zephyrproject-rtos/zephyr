@@ -90,11 +90,11 @@ LIST_FN_SIG_S_B_B_P
 #define FN_SIG_S_B_B_P(__fn, __s, __type1, __length1, __type2,		\
 		       __length2, __type3)		sizeof(*((__s)0)),
 
-static uint8_t m_size_s[] = { LIST_FN_SIG_S };
-static uint8_t m_size_s_b[] = { LIST_FN_SIG_S_B };
-static uint8_t m_size_s_p[] = { LIST_FN_SIG_S_P };
-static uint8_t m_size_s_b_p[] = { LIST_FN_SIG_S_B_P };
-static uint8_t m_size_s_b_b_p[] = { LIST_FN_SIG_S_B_B_P };
+static u8_t m_size_s[] = { LIST_FN_SIG_S };
+static u8_t m_size_s_b[] = { LIST_FN_SIG_S_B };
+static u8_t m_size_s_p[] = { LIST_FN_SIG_S_P };
+static u8_t m_size_s_b_p[] = { LIST_FN_SIG_S_B_P };
+static u8_t m_size_s_b_b_p[] = { LIST_FN_SIG_S_B_B_P };
 
 #undef FN_SIG_NONE
 #undef FN_SIG_S
@@ -156,16 +156,16 @@ static void (*m_fct_none[])(void) = { LIST_FN_SIG_NONE };
 static void (*m_fct_s[])(void *structure) = { LIST_FN_SIG_S };
 static void (*m_fct_p[])(void *pointer) = { LIST_FN_SIG_P };
 static void (*m_fct_s_b[])(void *structure, void *buffer,
-			   uint8_t length) = { LIST_FN_SIG_S_B };
-static void (*m_fct_b_b_p[])(void *buffer1, uint8_t length1,
-			     void *buffer2, uint8_t length2,
+			   u8_t length) = { LIST_FN_SIG_S_B };
+static void (*m_fct_b_b_p[])(void *buffer1, u8_t length1,
+			     void *buffer2, u8_t length2,
 			     void *pointer) = { LIST_FN_SIG_B_B_P };
 static void (*m_fct_s_p[])(void *structure,
 			   void *pointer) = { LIST_FN_SIG_S_P };
-static void (*m_fct_s_b_p[])(void *structure, void *buffer, uint8_t length,
+static void (*m_fct_s_b_p[])(void *structure, void *buffer, u8_t length,
 			     void *pointer) = { LIST_FN_SIG_S_B_P };
-static void (*m_fct_s_b_b_p[])(void *structure, void *buffer1, uint8_t length1,
-			       void *buffer2, uint8_t length2,
+static void (*m_fct_s_b_b_p[])(void *structure, void *buffer1, u8_t length1,
+			       void *buffer2, u8_t length2,
 			       void *pointer) = { LIST_FN_SIG_S_B_B_P };
 
 /* Build debug table to help development with this "robust" macro stuff */
@@ -263,9 +263,9 @@ static char *debug_func_s_b_b_p[] = { LIST_FN_SIG_S_B_B_P};
 		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
 	} while (0);
 
-uint32_t rpc_deserialize_hash(void)
+u32_t rpc_deserialize_hash(void)
 {
-	uint32_t hash = 5381;
+	u32_t hash = 5381;
 
 	LIST_FN_SIG_NONE;
 	LIST_FN_SIG_S;
@@ -287,18 +287,18 @@ static void panic(int err)
 	}
 }
 
-static void deserialize_struct(struct net_buf *buf, const uint8_t **struct_ptr,
-			       uint8_t *struct_length)
+static void deserialize_struct(struct net_buf *buf, const u8_t **struct_ptr,
+			       u8_t *struct_length)
 {
 	*struct_length = net_buf_pull_u8(buf);
 	*struct_ptr = buf->data;
 	net_buf_pull(buf, *struct_length);
 }
 
-static void deserialize_buf(struct net_buf *buf, const uint8_t **buf_ptr,
-			    uint16_t *buf_len)
+static void deserialize_buf(struct net_buf *buf, const u8_t **buf_ptr,
+			    u16_t *buf_len)
 {
-	uint8_t b;
+	u8_t b;
 
 	/* Get the current byte */
 	b = net_buf_pull_u8(buf);
@@ -306,7 +306,7 @@ static void deserialize_buf(struct net_buf *buf, const uint8_t **buf_ptr,
 	if (b & 0x80) {
 		/* Get the current byte */
 		b = net_buf_pull_u8(buf);
-		*buf_len += (uint16_t)b << 7;
+		*buf_len += (u16_t)b << 7;
 	}
 
 	/* Return the values */
@@ -321,7 +321,7 @@ static void deserialize_ptr(struct net_buf *buf, uintptr_t *priv)
 	net_buf_pull(buf, sizeof(*priv));
 }
 
-static void deserialize_none(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_none(u8_t fn_index, struct net_buf *buf)
 {
 	(void)buf;
 
@@ -332,10 +332,10 @@ static void deserialize_none(uint8_t fn_index, struct net_buf *buf)
 	m_fct_none[fn_index]();
 }
 
-static void deserialize_s(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_s(u8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *struct_ptr;
-	uint8_t struct_length;
+	const u8_t *struct_ptr;
+	u8_t struct_length;
 
 	deserialize_struct(buf, &struct_ptr, &struct_length);
 
@@ -352,7 +352,7 @@ static void deserialize_s(uint8_t fn_index, struct net_buf *buf)
 	}
 }
 
-static void deserialize_p(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_p(u8_t fn_index, struct net_buf *buf)
 {
 	uintptr_t priv;
 
@@ -365,12 +365,12 @@ static void deserialize_p(uint8_t fn_index, struct net_buf *buf)
 	m_fct_p[fn_index]((void *)priv);
 }
 
-static void deserialize_s_b(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_s_b(u8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *p_struct_data;
-	uint8_t struct_length;
-	const uint8_t *p_vbuf;
-	uint16_t vbuf_length;
+	const u8_t *p_struct_data;
+	u8_t struct_length;
+	const u8_t *p_vbuf;
+	u16_t vbuf_length;
 
 	deserialize_struct(buf, &p_struct_data, &struct_length);
 	deserialize_buf(buf, &p_vbuf, &vbuf_length);
@@ -396,12 +396,12 @@ static void deserialize_s_b(uint8_t fn_index, struct net_buf *buf)
 	}
 }
 
-static void deserialize_b_b_p(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_b_b_p(u8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *p_vbuf1;
-	uint16_t vbuf1_length;
-	const uint8_t *p_vbuf2;
-	uint16_t vbuf2_length;
+	const u8_t *p_vbuf1;
+	u16_t vbuf1_length;
+	const u8_t *p_vbuf2;
+	u16_t vbuf2_length;
 	uintptr_t priv;
 
 	deserialize_buf(buf, &p_vbuf1, &vbuf1_length);
@@ -432,10 +432,10 @@ static void deserialize_b_b_p(uint8_t fn_index, struct net_buf *buf)
 	}
 }
 
-static void deserialize_s_p(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_s_p(u8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *p_struct_data;
-	uint8_t struct_length;
+	const u8_t *p_struct_data;
+	u8_t struct_length;
 	uintptr_t priv;
 
 	deserialize_struct(buf, &p_struct_data, &struct_length);
@@ -454,12 +454,12 @@ static void deserialize_s_p(uint8_t fn_index, struct net_buf *buf)
 	}
 }
 
-static void deserialize_s_b_p(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_s_b_p(u8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *p_struct_data;
-	uint8_t struct_length;
-	const uint8_t *p_vbuf;
-	uint16_t vbuf_length;
+	const u8_t *p_struct_data;
+	u8_t struct_length;
+	const u8_t *p_vbuf;
+	u16_t vbuf_length;
 	uintptr_t priv;
 
 	deserialize_struct(buf, &p_struct_data, &struct_length);
@@ -488,14 +488,14 @@ static void deserialize_s_b_p(uint8_t fn_index, struct net_buf *buf)
 	}
 }
 
-static void deserialize_s_b_b_p(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_s_b_b_p(u8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *p_struct_data;
-	uint8_t struct_length;
-	const uint8_t *p_vbuf1;
-	uint16_t vbuf1_length;
-	const uint8_t *p_vbuf2;
-	uint16_t vbuf2_length;
+	const u8_t *p_struct_data;
+	u8_t struct_length;
+	const u8_t *p_vbuf1;
+	u16_t vbuf1_length;
+	const u8_t *p_vbuf2;
+	u16_t vbuf2_length;
 	uintptr_t priv;
 
 	deserialize_struct(buf, &p_struct_data, &struct_length);
@@ -533,14 +533,14 @@ static void deserialize_s_b_b_p(uint8_t fn_index, struct net_buf *buf)
 	}
 }
 
-static void deserialize_control(uint8_t fn_index, struct net_buf *buf)
+static void deserialize_control(u8_t fn_index, struct net_buf *buf)
 {
-	const uint8_t *p_struct_data;
-	uint8_t struct_length;
+	const u8_t *p_struct_data;
+	u8_t struct_length;
 	struct {
-		uint32_t version;
-		uint32_t ser_hash;
-		uint32_t des_hash;
+		u32_t version;
+		u32_t ser_hash;
+		u32_t des_hash;
 	} struct_data;
 
 	switch (fn_index) {
@@ -566,8 +566,8 @@ static void deserialize_control(uint8_t fn_index, struct net_buf *buf)
 void rpc_deserialize(struct net_buf *buf)
 {
 
-	uint8_t fn_index;
-	uint8_t sig_type;
+	u8_t fn_index;
+	u8_t sig_type;
 
 	sig_type = buf->data[0];
 	fn_index = buf->data[1];
@@ -633,6 +633,6 @@ void rpc_deserialize(struct net_buf *buf)
 }
 
 __weak
-void rpc_init_cb(uint32_t version, bool compatible)
+void rpc_init_cb(u32_t version, bool compatible)
 {
 }

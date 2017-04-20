@@ -8,12 +8,12 @@
 #include <zephyr/types.h>
 #include "util.h"
 
-uint8_t util_ones_count_get(uint8_t *octets, uint8_t octets_len)
+u8_t util_ones_count_get(u8_t *octets, u8_t octets_len)
 {
-	uint8_t one_count = 0;
+	u8_t one_count = 0;
 
 	while (octets_len--) {
-		uint8_t bite;
+		u8_t bite;
 
 		bite = *octets;
 		while (bite) {

@@ -15,15 +15,15 @@
 #define RAND_RESERVED (4)
 
 struct rand {
-	uint8_t count;
-	uint8_t first;
-	uint8_t last;
-	uint8_t rand[1];
+	u8_t count;
+	u8_t first;
+	u8_t last;
+	u8_t rand[1];
 };
 
 static struct rand *rng;
 
-void rand_init(uint8_t *context, uint8_t context_len)
+void rand_init(u8_t *context, u8_t context_len)
 {
 	LL_ASSERT(context_len > sizeof(struct rand));
 
@@ -38,10 +38,10 @@ void rand_init(uint8_t *context, uint8_t context_len)
 	NRF_RNG->TASKS_START = 1;
 }
 
-size_t rand_get(size_t octets, uint8_t *rand)
+size_t rand_get(size_t octets, u8_t *rand)
 {
-	uint8_t reserved;
-	uint8_t first;
+	u8_t reserved;
+	u8_t first;
 
 	while (octets) {
 		if (rng->first == rng->last) {
@@ -80,7 +80,7 @@ void isr_rand(void *param)
 	ARG_UNUSED(param);
 
 	if (NRF_RNG->EVENTS_VALRDY) {
-		uint8_t last;
+		u8_t last;
 
 		last = rng->last + 1;
 		if (last == rng->count) {

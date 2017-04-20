@@ -57,28 +57,28 @@
 #define LIST_FN_SIG_S_B							\
 	FN_SIG_S_B(nble_gatts_register_req,				\
 		   const struct nble_gatts_register_req *,		\
-		   uint8_t *, uint16_t)					\
+		   u8_t *, u16_t)					\
 	FN_SIG_S_B(nble_gatts_notify_req,				\
 		   const struct nble_gatts_notify_req *,		\
-		   const uint8_t *, uint16_t)				\
+		   const u8_t *, u16_t)				\
 	FN_SIG_S_B(nble_gatts_indicate_req,				\
 		   const struct nble_gatts_indicate_req *,		\
-		   const uint8_t *, uint8_t)				\
+		   const u8_t *, u8_t)				\
 	FN_SIG_S_B(nble_gatts_read_reply_req,				\
 		   const struct nble_gatts_read_reply_req *,		\
-		   uint8_t *, uint16_t)					\
+		   u8_t *, u16_t)					\
 	FN_SIG_S_B(nble_gattc_write_req,				\
 		   const struct nble_gattc_write_req *,			\
-		   const uint8_t *, uint16_t)				\
+		   const u8_t *, u16_t)				\
 	FN_SIG_S_B(nble_gattc_read_multi_req,				\
 		   const struct nble_gattc_read_multi_req *,		\
-		   const uint16_t *, uint16_t)				\
+		   const u16_t *, u16_t)				\
 	FN_SIG_S_B(nble_uart_test_req,					\
 		   const struct nble_uart_test_req *,			\
-		   const uint8_t *, uint8_t)				\
+		   const u8_t *, u8_t)				\
 	FN_SIG_S_B(nble_gatts_write_reply_req,				\
 		   const struct nble_gatts_write_reply_req *,		\
-		   const uint8_t *, uint8_t)
+		   const u8_t *, u8_t)
 
 #define LIST_FN_SIG_B_B_P
 

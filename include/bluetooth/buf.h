@@ -50,7 +50,7 @@ enum bt_buf_type {
  *                 K_NO_WAIT and K_FOREVER.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_rx(int32_t timeout);
+struct net_buf *bt_buf_get_rx(s32_t timeout);
 
 /** Allocate a buffer for an HCI Command Complete/Status Event
  *
@@ -61,7 +61,7 @@ struct net_buf *bt_buf_get_rx(int32_t timeout);
  *                 K_NO_WAIT and K_FOREVER.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_cmd_complete(int32_t timeout);
+struct net_buf *bt_buf_get_cmd_complete(s32_t timeout);
 
 /** Set the buffer type
  *
@@ -70,7 +70,7 @@ struct net_buf *bt_buf_get_cmd_complete(int32_t timeout);
  */
 static inline void bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
 {
-	*(uint8_t *)net_buf_user_data(buf) = type;
+	*(u8_t *)net_buf_user_data(buf) = type;
 }
 
 /** Get the buffer type
@@ -81,7 +81,7 @@ static inline void bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
  */
 static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 {
-	return *(uint8_t *)net_buf_user_data(buf);
+	return *(u8_t *)net_buf_user_data(buf);
 }
 
 /**

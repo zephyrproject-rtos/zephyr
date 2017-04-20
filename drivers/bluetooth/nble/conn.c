@@ -79,7 +79,7 @@ void bt_conn_unref(struct bt_conn *conn)
 	BT_DBG("handle %u ref %u", conn->handle, atomic_get(&conn->ref));
 }
 
-struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
+struct bt_conn *bt_conn_lookup_handle(u16_t handle)
 {
 	int i;
 
@@ -133,8 +133,8 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	return 0;
 }
 
-static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
-					   uint16_t latency, uint16_t timeout)
+static inline bool bt_le_conn_params_valid(u16_t min, u16_t max,
+					   u16_t latency, u16_t timeout)
 {
 	if (min > max || min < 6 || max > 3200) {
 		return false;
@@ -184,7 +184,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	return 0;
 }
 
-int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
+int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 {
 	struct nble_gap_disconnect_req req;
 
@@ -323,7 +323,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 	return err;
 }
 
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
+u8_t bt_conn_enc_key_size(struct bt_conn *conn)
 {
 	return 0;
 }

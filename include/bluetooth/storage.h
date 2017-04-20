@@ -34,7 +34,7 @@ enum {
 	BT_STORAGE_ID_ADDR,
 
 	/** Local Identity Resolving Key.
-	  * Type: uint8_t key[16]
+	  * Type: u8_t key[16]
 	  */
 	BT_STORAGE_LOCAL_IRK,
 
@@ -59,7 +59,7 @@ enum {
 	BT_STORAGE_LTK,
 
 	/** Identity Resolving Key
-	  * Type: uint8_t key[16]
+	  * Type: u8_t key[16]
 	  */
 	BT_STORAGE_IRK,
 };
@@ -74,12 +74,12 @@ enum {
 };
 
 struct bt_storage_ltk {
-	uint8_t                 flags;
+	u8_t                 flags;
 	/* Encryption key size used to generate key */
-	uint8_t                 size;
-	uint16_t                ediv;
-	uint8_t                 rand[8];
-	uint8_t                 val[16];
+	u8_t                 size;
+	u16_t                ediv;
+	u8_t                 rand[8];
+	u8_t                 val[16];
 };
 
 struct bt_storage {
@@ -93,7 +93,7 @@ struct bt_storage {
 	 *  @return Number of bytes read or negative error value on
 	 *          failure.
 	 */
-	ssize_t (*read)(const bt_addr_le_t *addr, uint16_t key,
+	ssize_t (*read)(const bt_addr_le_t *addr, u16_t key,
 			void *data, size_t length);
 
 	/** Write the value of a key to storage.
@@ -106,7 +106,7 @@ struct bt_storage {
 	 *  @return Number of bytes written or negative error value on
 	 *          failure.
 	 */
-	ssize_t (*write)(const bt_addr_le_t *addr, uint16_t key,
+	ssize_t (*write)(const bt_addr_le_t *addr, u16_t key,
 			 const void *data, size_t length);
 
 	/** Clear all keys for a specific address

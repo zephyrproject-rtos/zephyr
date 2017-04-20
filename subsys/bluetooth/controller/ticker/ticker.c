@@ -29,22 +29,22 @@
  * Types
  ****************************************************************************/
 struct ticker_node {
-	uint8_t next;
+	u8_t next;
 
-	uint8_t req;
-	uint8_t ack;
-	uint8_t force;
-	uint32_t ticks_periodic;
-	uint32_t ticks_to_expire;
+	u8_t req;
+	u8_t ack;
+	u8_t force;
+	u32_t ticks_periodic;
+	u32_t ticks_to_expire;
 	ticker_timeout_func timeout_func;
 	void *context;
 
-	uint16_t ticks_to_expire_minus;
-	uint16_t ticks_slot;
-	uint16_t lazy_periodic;
-	uint16_t lazy_current;
-	uint32_t remainder_periodic;
-	uint32_t remainder_current;
+	u16_t ticks_to_expire_minus;
+	u16_t ticks_slot;
+	u16_t lazy_periodic;
+	u16_t lazy_current;
+	u32_t remainder_periodic;
+	u32_t remainder_current;
 };
 
 enum ticker_user_op_type {
@@ -57,69 +57,69 @@ enum ticker_user_op_type {
 };
 
 struct ticker_user_op_start {
-	uint32_t ticks_at_start;
-	uint32_t ticks_first;
-	uint32_t ticks_periodic;
-	uint32_t remainder_periodic;
-	uint16_t lazy;
-	uint16_t ticks_slot;
+	u32_t ticks_at_start;
+	u32_t ticks_first;
+	u32_t ticks_periodic;
+	u32_t remainder_periodic;
+	u16_t lazy;
+	u16_t ticks_slot;
 	ticker_timeout_func fp_timeout_func;
 	void *context;
 };
 
 struct ticker_user_op_update {
-	uint16_t ticks_drift_plus;
-	uint16_t ticks_drift_minus;
-	uint16_t ticks_slot_plus;
-	uint16_t ticks_slot_minus;
-	uint16_t lazy;
-	uint8_t force;
+	u16_t ticks_drift_plus;
+	u16_t ticks_drift_minus;
+	u16_t ticks_slot_plus;
+	u16_t ticks_slot_minus;
+	u16_t lazy;
+	u8_t force;
 };
 
 struct ticker_user_op_slot_get {
-	uint8_t *ticker_id;
-	uint32_t *ticks_current;
-	uint32_t *ticks_to_expire;
+	u8_t *ticker_id;
+	u32_t *ticks_current;
+	u32_t *ticks_to_expire;
 };
 
 struct ticker_user_op {
 	enum ticker_user_op_type op;
-	uint8_t id;
+	u8_t id;
 	union {
 		struct ticker_user_op_start start;
 		struct ticker_user_op_update update;
 		struct ticker_user_op_slot_get slot_get;
 	} params;
-	uint32_t status;
+	u32_t status;
 	ticker_op_func fp_op_func;
 	void *op_context;
 };
 
 struct ticker_user {
-	uint8_t count_user_op;
-	uint8_t first;
-	uint8_t middle;
-	uint8_t last;
+	u8_t count_user_op;
+	u8_t first;
+	u8_t middle;
+	u8_t last;
 	struct ticker_user_op *user_op;
 };
 
 struct ticker_instance {
 	struct ticker_node *node;
 	struct ticker_user *user;
-	uint8_t count_node;
-	uint8_t count_user;
-	uint8_t ticks_elapsed_first;
-	uint8_t ticks_elapsed_last;
-	uint32_t ticks_elapsed[DOUBLE_BUFFER_SIZE];
-	uint32_t ticks_current;
-	uint8_t ticker_id_head;
-	uint8_t ticker_id_slot_previous;
-	uint16_t ticks_slot_previous;
-	uint8_t job_guard;
-	uint8_t worker_trigger;
-	uint8_t (*fp_caller_id_get)(uint8_t user_id);
-	void (*fp_sched)(uint8_t caller_id, uint8_t callee_id, uint8_t chain);
-	void (*fp_cmp_set)(uint32_t value);
+	u8_t count_node;
+	u8_t count_user;
+	u8_t ticks_elapsed_first;
+	u8_t ticks_elapsed_last;
+	u32_t ticks_elapsed[DOUBLE_BUFFER_SIZE];
+	u32_t ticks_current;
+	u8_t ticker_id_head;
+	u8_t ticker_id_slot_previous;
+	u16_t ticks_slot_previous;
+	u8_t job_guard;
+	u8_t worker_trigger;
+	u8_t (*fp_caller_id_get)(u8_t user_id);
+	void (*fp_sched)(u8_t caller_id, u8_t callee_id, u8_t chain);
+	void (*fp_cmp_set)(u32_t value);
 };
 
 /*****************************************************************************
@@ -130,13 +130,13 @@ static struct ticker_instance _instance[2];
 /*****************************************************************************
  * Static Functions
  ****************************************************************************/
-static uint8_t ticker_by_slot_get(struct ticker_node *node,
-					uint8_t ticker_id_head,
-					uint32_t ticks_slot)
+static u8_t ticker_by_slot_get(struct ticker_node *node,
+					u8_t ticker_id_head,
+					u32_t ticks_slot)
 {
 	while (ticker_id_head != TICKER_NULL) {
 		struct ticker_node *ticker;
-		uint32_t ticks_to_expire;
+		u32_t ticks_to_expire;
 
 		ticker = &node[ticker_id_head];
 		ticks_to_expire = ticker->ticks_to_expire;
@@ -157,14 +157,14 @@ static uint8_t ticker_by_slot_get(struct ticker_node *node,
 }
 
 static void ticker_by_next_slot_get(struct ticker_instance *instance,
-				       uint8_t *ticker_id_head,
-				       uint32_t *ticks_current,
-				       uint32_t *ticks_to_expire)
+				       u8_t *ticker_id_head,
+				       u32_t *ticks_current,
+				       u32_t *ticks_to_expire)
 {
 	struct ticker_node *node;
-	uint8_t _ticker_id_head;
+	u8_t _ticker_id_head;
 	struct ticker_node *ticker;
-	uint32_t _ticks_to_expire;
+	u32_t _ticks_to_expire;
 
 	node = instance->node;
 
@@ -195,19 +195,19 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 	*ticks_to_expire = _ticks_to_expire;
 }
 
-static uint8_t ticker_enqueue(struct ticker_instance *instance,
-				    uint8_t id)
+static u8_t ticker_enqueue(struct ticker_instance *instance,
+				    u8_t id)
 {
 	struct ticker_node *node;
 	struct ticker_node *ticker_new;
 	struct ticker_node *ticker_current;
-	uint8_t previous;
-	uint8_t current;
-	uint8_t ticker_id_slot_previous;
-	uint8_t collide;
-	uint32_t ticks_to_expire;
-	uint32_t ticks_to_expire_current;
-	uint32_t ticks_slot_previous;
+	u8_t previous;
+	u8_t current;
+	u8_t ticker_id_slot_previous;
+	u8_t collide;
+	u32_t ticks_to_expire;
+	u32_t ticks_to_expire_current;
+	u32_t ticks_slot_previous;
 
 	node = &instance->node[0];
 	ticker_new = &node[id];
@@ -269,15 +269,15 @@ static uint8_t ticker_enqueue(struct ticker_instance *instance,
 	return id;
 }
 
-static uint32_t ticker_dequeue(struct ticker_instance *instance,
-				uint8_t id)
+static u32_t ticker_dequeue(struct ticker_instance *instance,
+				u8_t id)
 {
 	struct ticker_node *ticker_current;
 	struct ticker_node *node;
-	uint8_t previous;
-	uint8_t current;
-	uint32_t timeout;
-	uint32_t total;
+	u8_t previous;
+	u8_t current;
+	u32_t timeout;
+	u32_t total;
 
 	/* find the ticker's position in ticker list */
 	node = &instance->node[0];
@@ -329,9 +329,9 @@ static uint32_t ticker_dequeue(struct ticker_instance *instance,
 static inline void ticker_worker(struct ticker_instance *instance)
 {
 	struct ticker_node *node;
-	uint32_t ticks_elapsed;
-	uint32_t ticks_expired;
-	uint8_t ticker_id_head;
+	u32_t ticks_elapsed;
+	u32_t ticks_expired;
+	u8_t ticker_id_head;
 
 	/* Defer worker if job running */
 	instance->worker_trigger = 1;
@@ -360,7 +360,7 @@ static inline void ticker_worker(struct ticker_instance *instance)
 	node = &instance->node[0];
 	while (ticker_id_head != TICKER_NULL) {
 		struct ticker_node *ticker;
-		uint32_t ticks_to_expire;
+		u32_t ticks_to_expire;
 
 		/* auto variable for current ticker node */
 		ticker = &node[ticker_id_head];
@@ -401,7 +401,7 @@ static inline void ticker_worker(struct ticker_instance *instance)
 
 	/* queue the elapsed value */
 	if (instance->ticks_elapsed_first == instance->ticks_elapsed_last) {
-		uint8_t last;
+		u8_t last;
 
 		last = instance->ticks_elapsed_last + 1;
 		if (last == DOUBLE_BUFFER_SIZE) {
@@ -418,18 +418,18 @@ static inline void ticker_worker(struct ticker_instance *instance)
 }
 
 static void prepare_ticks_to_expire(struct ticker_node *ticker,
-					uint32_t ticks_current,
-					uint32_t ticks_at_start)
+					u32_t ticks_current,
+					u32_t ticks_at_start)
 {
-	uint32_t ticks_to_expire = ticker->ticks_to_expire;
-	uint16_t ticks_to_expire_minus = ticker->ticks_to_expire_minus;
+	u32_t ticks_to_expire = ticker->ticks_to_expire;
+	u16_t ticks_to_expire_minus = ticker->ticks_to_expire_minus;
 
 	/* Calculate ticks to expire for this new node */
 	if (((ticks_at_start - ticks_current) & 0x00800000) == 0) {
 		ticks_to_expire +=
 		    ticker_ticks_diff_get(ticks_at_start, ticks_current);
 	} else {
-		uint32_t delta_current_start;
+		u32_t delta_current_start;
 
 		delta_current_start =
 		    ticker_ticks_diff_get(ticks_current, ticks_at_start);
@@ -455,7 +455,7 @@ static void prepare_ticks_to_expire(struct ticker_node *ticker,
 	ticker->ticks_to_expire_minus = ticks_to_expire_minus;
 }
 
-static uint8_t ticker_remainder_increment(struct ticker_node *ticker)
+static u8_t ticker_remainder_increment(struct ticker_node *ticker)
 {
 	ticker->remainder_current += ticker->remainder_periodic;
 	if ((ticker->remainder_current < 0x80000000)
@@ -466,9 +466,9 @@ static uint8_t ticker_remainder_increment(struct ticker_node *ticker)
 	return 0;
 }
 
-static uint8_t ticker_remainder_decrement(struct ticker_node *ticker)
+static u8_t ticker_remainder_decrement(struct ticker_node *ticker)
 {
-	uint8_t decrement = 0;
+	u8_t decrement = 0;
 
 	if ((ticker->remainder_current >= 0x80000000)
 	    || (ticker->remainder_current <= (30517578UL / 2))) {
@@ -482,12 +482,12 @@ static uint8_t ticker_remainder_decrement(struct ticker_node *ticker)
 
 static inline void ticker_job_node_update(struct ticker_node *ticker,
 					struct ticker_user_op *user_op,
-					uint32_t ticks_current,
-					uint32_t ticks_elapsed,
-					uint8_t *insert_head)
+					u32_t ticks_current,
+					u32_t ticks_elapsed,
+					u8_t *insert_head)
 {
-	uint32_t ticks_now;
-	uint32_t ticks_to_expire = ticker->ticks_to_expire;
+	u32_t ticks_now;
+	u32_t ticks_to_expire = ticker->ticks_to_expire;
 
 	ticks_now = cntr_cnt_get();
 	ticks_elapsed += ticker_ticks_diff_get(ticks_now, ticks_current);
@@ -545,15 +545,15 @@ static inline void ticker_job_node_update(struct ticker_node *ticker,
 	*insert_head = user_op->id;
 }
 
-static inline uint8_t ticker_job_list_manage(
+static inline u8_t ticker_job_list_manage(
 					struct ticker_instance *instance,
-					uint32_t ticks_elapsed,
-					uint8_t *insert_head)
+					u32_t ticks_elapsed,
+					u8_t *insert_head)
 {
-	uint8_t pending;
+	u8_t pending;
 	struct ticker_node *node;
 	struct ticker_user *users;
-	uint8_t count_user;
+	u8_t count_user;
 
 	pending = 0;
 	node = &instance->node[0];
@@ -568,9 +568,9 @@ static inline uint8_t ticker_job_list_manage(
 		while (user->middle != user->last) {
 			struct ticker_user_op *user_op;
 			struct ticker_node *ticker;
-			uint8_t state;
-			uint8_t prev;
-			uint8_t middle;
+			u8_t state;
+			u8_t prev;
+			u8_t middle;
 
 			user_op = &user_ops[user->middle];
 
@@ -696,19 +696,19 @@ static inline uint8_t ticker_job_list_manage(
 
 static inline void ticker_job_worker_bottom_half(
 					struct ticker_instance *instance,
-					uint32_t ticks_previous,
-					uint32_t ticks_elapsed,
-					uint8_t *insert_head)
+					u32_t ticks_previous,
+					u32_t ticks_elapsed,
+					u8_t *insert_head)
 {
 	struct ticker_node *node;
-	uint32_t ticks_expired;
+	u32_t ticks_expired;
 
 	node = &instance->node[0];
 	ticks_expired = 0;
 	while (instance->ticker_id_head != TICKER_NULL) {
 		struct ticker_node *ticker;
-		uint8_t id_expired;
-		uint32_t ticks_to_expire;
+		u8_t id_expired;
+		u32_t ticks_to_expire;
 
 		/* auto variable for current ticker node */
 		id_expired = instance->ticker_id_head;
@@ -747,7 +747,7 @@ static inline void ticker_job_worker_bottom_half(
 
 		/* ticker will be restarted if periodic */
 		if (ticker->ticks_periodic != 0) {
-			uint32_t count;
+			u32_t count;
 
 			count = 1 + ticker->lazy_periodic;
 
@@ -780,30 +780,30 @@ static inline void ticker_job_worker_bottom_half(
 
 static inline void ticker_job_list_insert(
 					struct ticker_instance *instance,
-					uint8_t insert_head)
+					u8_t insert_head)
 {
 	struct ticker_node *node;
 	struct ticker_user *users;
-	uint8_t count_user;
+	u8_t count_user;
 
 	node = &instance->node[0];
 	users = &instance->user[0];
 	count_user = instance->count_user;
 	while (count_user--) {
 		struct ticker_user *user;
-		uint8_t user_ops_first;
+		u8_t user_ops_first;
 
 		user = &users[count_user];
 		user_ops_first = user->first;
 		while ((insert_head != TICKER_NULL)
 		       || (user_ops_first != user->middle)
 		    ) {
-			uint8_t id_insert;
-			uint8_t id_collide;
+			u8_t id_insert;
+			u8_t id_collide;
 			struct ticker_user_op *user_op;
 			enum ticker_user_op_type _user_op;
 			struct ticker_node *ticker;
-			uint32_t status;
+			u32_t status;
 
 			if (insert_head != TICKER_NULL) {
 				id_insert = insert_head;
@@ -813,7 +813,7 @@ static inline void ticker_job_list_insert(
 				user_op = 0;
 				_user_op = TICKER_USER_OP_TYPE_START;
 			} else {
-				uint8_t first;
+				u8_t first;
 
 				user_op = &user->user_op[user_ops_first];
 				first = user_ops_first + 1;
@@ -940,7 +940,7 @@ static inline void ticker_job_list_inquire(
 					struct ticker_instance *instance)
 {
 	struct ticker_user *users;
-	uint8_t count_user;
+	u8_t count_user;
 
 	users = &instance->user[0];
 	count_user = instance->count_user;
@@ -951,7 +951,7 @@ static inline void ticker_job_list_inquire(
 		while (user->first != user->last) {
 			struct ticker_user_op *user_op;
 			ticker_op_func fp_op_func;
-			uint8_t first;
+			u8_t first;
 
 			user_op = &user->user_op[user->first];
 			fp_op_func = 0;
@@ -1004,15 +1004,15 @@ static inline void ticker_job_list_inquire(
 
 static inline void ticker_job_compare_update(
 					struct ticker_instance *instance,
-					uint8_t ticker_id_old_head)
+					u8_t ticker_id_old_head)
 {
 	struct ticker_node *ticker;
 	struct ticker_node *node;
-	uint32_t ticks_to_expire;
-	uint32_t ctr_post;
-	uint32_t ctr;
-	uint32_t cc;
-	uint32_t i;
+	u32_t ticks_to_expire;
+	u32_t ctr_post;
+	u32_t ctr;
+	u32_t cc;
+	u32_t i;
 
 	if (instance->ticker_id_head == TICKER_NULL) {
 		if (cntr_stop() == 0) {
@@ -1023,7 +1023,7 @@ static inline void ticker_job_compare_update(
 	}
 
 	if (ticker_id_old_head == TICKER_NULL) {
-		uint32_t ticks_current;
+		u32_t ticks_current;
 
 		ticks_current = cntr_cnt_get();
 
@@ -1043,7 +1043,7 @@ static inline void ticker_job_compare_update(
 	 */
 	i = 10;
 	do {
-		uint32_t ticks_elapsed;
+		u32_t ticks_elapsed;
 
 		LL_ASSERT(i);
 		i--;
@@ -1065,13 +1065,13 @@ static inline void ticker_job_compare_update(
 
 static inline void ticker_job(struct ticker_instance *instance)
 {
-	uint8_t ticker_id_old_head;
-	uint8_t insert_head;
-	uint32_t ticks_elapsed;
-	uint32_t ticks_previous;
-	uint8_t flag_elapsed;
-	uint8_t pending;
-	uint8_t flag_compare_update;
+	u8_t ticker_id_old_head;
+	u8_t insert_head;
+	u32_t ticks_elapsed;
+	u32_t ticks_previous;
+	u8_t flag_elapsed;
+	u8_t pending;
+	u8_t flag_compare_update;
 
 	DEBUG_TICKER_JOB(1);
 
@@ -1088,7 +1088,7 @@ static inline void ticker_job(struct ticker_instance *instance)
 
 	/* Update current tick with the elapsed value from queue, and dequeue */
 	if (instance->ticks_elapsed_first != instance->ticks_elapsed_last) {
-		uint8_t first;
+		u8_t first;
 
 		first = instance->ticks_elapsed_first + 1;
 		if (first == DOUBLE_BUFFER_SIZE) {
@@ -1178,7 +1178,7 @@ static inline void ticker_job(struct ticker_instance *instance)
  ****************************************************************************/
 #include "util/mayfly.h"
 
-static uint8_t ticker_instance0_caller_id_get(uint8_t user_id)
+static u8_t ticker_instance0_caller_id_get(u8_t user_id)
 {
 	switch (user_id) {
 	case MAYFLY_CALL_ID_0:
@@ -1199,7 +1199,7 @@ static uint8_t ticker_instance0_caller_id_get(uint8_t user_id)
 	return 0;
 }
 
-static uint8_t ticker_instance1_caller_id_get(uint8_t user_id)
+static u8_t ticker_instance1_caller_id_get(u8_t user_id)
 {
 	switch (user_id) {
 	case MAYFLY_CALL_ID_2:
@@ -1218,8 +1218,8 @@ static uint8_t ticker_instance1_caller_id_get(uint8_t user_id)
 	return 0;
 }
 
-static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
-				   uint8_t chain)
+static void ticker_instance0_sched(u8_t caller_id, u8_t callee_id,
+				   u8_t chain)
 {
 	/* return value not checked as we allow multiple calls to schedule
 	 * before being actually needing the work to complete before new
@@ -1345,8 +1345,8 @@ static void ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id,
 	}
 }
 
-static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
-				   uint8_t chain)
+static void ticker_instance1_sched(u8_t caller_id, u8_t callee_id,
+				   u8_t chain)
 {
 	/* return value not checked as we allow multiple calls to schedule
 	 * before being actually needing the work to complete before new
@@ -1472,12 +1472,12 @@ static void ticker_instance1_sched(uint8_t caller_id, uint8_t callee_id,
 	}
 }
 
-static void ticker_instance0_cmp_set(uint32_t value)
+static void ticker_instance0_cmp_set(u32_t value)
 {
 	cntr_cmp_set(0, value);
 }
 
-static void ticker_instance1_cmp_set(uint32_t value)
+static void ticker_instance1_cmp_set(u32_t value)
 {
 	cntr_cmp_set(1, value);
 }
@@ -1485,8 +1485,8 @@ static void ticker_instance1_cmp_set(uint32_t value)
 /*****************************************************************************
  * Public Interface
  ****************************************************************************/
-uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
-		    uint8_t count_user, void *user, uint8_t count_op,
+u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
+		    u8_t count_user, void *user, u8_t count_op,
 		    void *user_op)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
@@ -1547,7 +1547,7 @@ uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 	return TICKER_STATUS_SUCCESS;
 }
 
-void ticker_trigger(uint8_t instance_index)
+void ticker_trigger(u8_t instance_index)
 {
 	DEBUG_TICKER_ISR(1);
 
@@ -1559,15 +1559,15 @@ void ticker_trigger(uint8_t instance_index)
 	DEBUG_TICKER_ISR(0);
 }
 
-uint32_t ticker_start(uint8_t instance_index, uint8_t user_id,
-		     uint8_t _ticker_id, uint32_t ticks_anchor,
-		     uint32_t ticks_first, uint32_t ticks_periodic,
-		     uint32_t remainder_periodic, uint16_t lazy,
-		     uint16_t ticks_slot,
+u32_t ticker_start(u8_t instance_index, u8_t user_id,
+		     u8_t _ticker_id, u32_t ticks_anchor,
+		     u32_t ticks_first, u32_t ticks_periodic,
+		     u32_t remainder_periodic, u16_t lazy,
+		     u16_t ticks_slot,
 		     ticker_timeout_func ticker_timeout_func, void *context,
 		     ticker_op_func fp_op_func, void *op_context)
 {
-	uint8_t last;
+	u8_t last;
 	struct ticker_instance *instance = &_instance[instance_index];
 	struct ticker_user *user;
 	struct ticker_user_op *user_op;
@@ -1605,14 +1605,14 @@ uint32_t ticker_start(uint8_t instance_index, uint8_t user_id,
 	return user_op->status;
 }
 
-uint32_t ticker_update(uint8_t instance_index, uint8_t user_id,
-		      uint8_t _ticker_id, uint16_t ticks_drift_plus,
-		      uint16_t ticks_drift_minus, uint16_t ticks_slot_plus,
-		      uint16_t ticks_slot_minus, uint16_t lazy, uint8_t force,
+u32_t ticker_update(u8_t instance_index, u8_t user_id,
+		      u8_t _ticker_id, u16_t ticks_drift_plus,
+		      u16_t ticks_drift_minus, u16_t ticks_slot_plus,
+		      u16_t ticks_slot_minus, u16_t lazy, u8_t force,
 		      ticker_op_func fp_op_func, void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
-	uint8_t last;
+	u8_t last;
 	struct ticker_user *user;
 	struct ticker_user_op *user_op;
 
@@ -1647,12 +1647,12 @@ uint32_t ticker_update(uint8_t instance_index, uint8_t user_id,
 	return user_op->status;
 }
 
-uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id,
-		    uint8_t _ticker_id, ticker_op_func fp_op_func,
+u32_t ticker_stop(u8_t instance_index, u8_t user_id,
+		    u8_t _ticker_id, ticker_op_func fp_op_func,
 		    void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
-	uint8_t last;
+	u8_t last;
 	struct ticker_user *user;
 	struct ticker_user_op *user_op;
 
@@ -1681,14 +1681,14 @@ uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id,
 	return user_op->status;
 }
 
-uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
-			     uint8_t *_ticker_id,
-			     uint32_t *ticks_current,
-			     uint32_t *ticks_to_expire,
+u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id,
+			     u8_t *_ticker_id,
+			     u32_t *ticks_current,
+			     u32_t *ticks_to_expire,
 			     ticker_op_func fp_op_func, void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
-	uint8_t last;
+	u8_t last;
 	struct ticker_user *user;
 	struct ticker_user_op *user_op;
 
@@ -1720,11 +1720,11 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 	return user_op->status;
 }
 
-uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
+u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
 			    ticker_op_func fp_op_func, void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
-	uint8_t last;
+	u8_t last;
 	struct ticker_user *user;
 	struct ticker_user_op *user_op;
 
@@ -1753,19 +1753,19 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 	return user_op->status;
 }
 
-void ticker_job_sched(uint8_t instance_index, uint8_t user_id)
+void ticker_job_sched(u8_t instance_index, u8_t user_id)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
 
 	instance->fp_sched(instance->fp_caller_id_get(user_id), CALL_ID_JOB, 0);
 }
 
-uint32_t ticker_ticks_now_get(void)
+u32_t ticker_ticks_now_get(void)
 {
 	return cntr_cnt_get();
 }
 
-uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old)
+u32_t ticker_ticks_diff_get(u32_t ticks_now, u32_t ticks_old)
 {
 	return ((ticks_now - ticks_old) & 0x00FFFFFF);
 }

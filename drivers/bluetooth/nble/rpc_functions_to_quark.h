@@ -73,35 +73,35 @@
 
 #define LIST_FN_SIG_S_B						\
 	FN_SIG_S_B(nble_log, const struct nble_log_s *, char *,	\
-		   uint8_t)					\
+		   u8_t)					\
 	FN_SIG_S_B(on_nble_gattc_value_evt,			\
 		   const struct nble_gattc_value_evt *,		\
-		   uint8_t *, uint8_t)				\
+		   u8_t *, u8_t)				\
 	FN_SIG_S_B(on_nble_gatts_write_evt,			\
 		   const struct nble_gatts_write_evt *,		\
-		   const uint8_t *, uint8_t)			\
+		   const u8_t *, u8_t)			\
 	FN_SIG_S_B(on_nble_gatts_register_rsp,			\
 		   const struct nble_gatts_register_rsp *,	\
 		   const struct nble_gatt_attr_handles *,	\
-		   uint8_t)					\
+		   u8_t)					\
 	FN_SIG_S_B(on_nble_gattc_discover_rsp,			\
 		   const struct nble_gattc_discover_rsp *,	\
-		   const uint8_t *, uint8_t)			\
+		   const u8_t *, u8_t)			\
 	FN_SIG_S_B(on_nble_gap_adv_report_evt,			\
 		   const struct nble_gap_adv_report_evt *,	\
-		   const uint8_t *, uint8_t)			\
+		   const u8_t *, u8_t)			\
 	FN_SIG_S_B(on_nble_sm_bond_info_rsp,			\
 		   const struct nble_sm_bond_info_rsp *,	\
-		   const bt_addr_le_t *, uint16_t)		\
+		   const bt_addr_le_t *, u16_t)		\
 	FN_SIG_S_B(on_nble_gattc_read_rsp,			\
 		   const struct nble_gattc_read_rsp *,		\
-		   uint8_t *, uint8_t)				\
+		   u8_t *, u8_t)				\
 	FN_SIG_S_B(on_nble_gattc_read_multi_rsp,		\
 		   const struct nble_gattc_read_rsp *,		\
-		   uint8_t *, uint8_t)				\
+		   u8_t *, u8_t)				\
 	FN_SIG_S_B(on_nble_uart_test_evt,			\
 		   const struct nble_uart_test_evt *,		\
-		   const uint8_t *, uint8_t)
+		   const u8_t *, u8_t)
 
 #define LIST_FN_SIG_B_B_P
 

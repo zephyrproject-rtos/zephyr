@@ -81,9 +81,9 @@ struct bt_l2cap_chan {
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */
-	uint16_t			psm;
+	u16_t			psm;
 	/** Helps match request context during CoC */
-	uint8_t				ident;
+	u8_t				ident;
 	bt_security_t			required_sec_level;
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 };
@@ -91,13 +91,13 @@ struct bt_l2cap_chan {
 /** @brief LE L2CAP Endpoint structure. */
 struct bt_l2cap_le_endpoint {
 	/** Endpoint CID */
-	uint16_t			cid;
+	u16_t			cid;
 	/** Endpoint Maximum Transmission Unit */
-	uint16_t			mtu;
+	u16_t			mtu;
 	/** Endpoint Maximum PDU payload Size */
-	uint16_t			mps;
+	u16_t			mps;
 	/** Endpoint initial credits */
-	uint16_t			init_credits;
+	u16_t			init_credits;
 	/** Endpoint credits */
 	struct k_sem			credits;
 };
@@ -116,7 +116,7 @@ struct bt_l2cap_le_chan {
 	struct net_buf                  *tx_buf;
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
-	uint16_t			_sdu_len;
+	u16_t			_sdu_len;
 };
 
 /** @def BT_L2CAP_LE_CHAN(_ch)
@@ -133,9 +133,9 @@ struct bt_l2cap_le_chan {
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
 	/** Endpoint CID */
-	uint16_t			cid;
+	u16_t			cid;
 	/** Endpoint Maximum Transmission Unit */
-	uint16_t			mtu;
+	u16_t			mtu;
 };
 
 /** @brief BREDR L2CAP Channel structure. */
@@ -186,7 +186,7 @@ struct bt_l2cap_chan_ops {
 	 *  by HCI layer and set to 0 when success and to non-zero (reference to
 	 *  HCI Error Codes) when security/authentication failed.
 	 */
-	void (*encrypt_change)(struct bt_l2cap_chan *chan, uint8_t hci_status);
+	void (*encrypt_change)(struct bt_l2cap_chan *chan, u8_t hci_status);
 
 	/** Channel alloc_buf callback
 	 *
@@ -215,7 +215,7 @@ struct bt_l2cap_chan_ops {
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
 	/** Server PSM */
-	uint16_t		psm;
+	u16_t		psm;
 
 	/** Required minimim security level */
 	bt_security_t		sec_level;
@@ -278,7 +278,7 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
-			  uint16_t psm);
+			  u16_t psm);
 
 /** @brief Disconnect L2CAP channel
  *

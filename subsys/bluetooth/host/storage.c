@@ -38,7 +38,7 @@ enum storage_access {
 	STORAGE_WRITE
 };
 
-static int storage_open(const bt_addr_le_t *addr, uint16_t key,
+static int storage_open(const bt_addr_le_t *addr, u16_t key,
 			enum storage_access access, fs_file_t *file)
 {
 	char path[STORAGE_PATH_MAX];
@@ -78,7 +78,7 @@ static int storage_open(const bt_addr_le_t *addr, uint16_t key,
 	return fs_open(file, path);
 }
 
-static ssize_t storage_read(const bt_addr_le_t *addr, uint16_t key, void *data,
+static ssize_t storage_read(const bt_addr_le_t *addr, u16_t key, void *data,
 			    size_t length)
 {
 	fs_file_t file;
@@ -95,7 +95,7 @@ static ssize_t storage_read(const bt_addr_le_t *addr, uint16_t key, void *data,
 	return ret;
 }
 
-static ssize_t storage_write(const bt_addr_le_t *addr, uint16_t key,
+static ssize_t storage_write(const bt_addr_le_t *addr, u16_t key,
 			     const void *data, size_t length)
 {
 	fs_file_t file;

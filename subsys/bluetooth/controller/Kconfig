@@ -68,7 +68,7 @@ config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
 	  then controller will perform fragmentation before transmitting on the
 	  the packet on air.
 	  Maximum is set to 16384 due to implementation limitations (use of
-	  uint16_t for size/length variables).
+	  u16_t for size/length variables).
 
 config BLUETOOTH_CONTROLLER_COMPANY_ID
 	prompt "Company Id"

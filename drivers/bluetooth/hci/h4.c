@@ -42,26 +42,26 @@ static struct {
 	struct net_buf *buf;
 	struct k_fifo   fifo;
 
-	uint16_t remaining;
-	uint16_t discard;
+	u16_t remaining;
+	u16_t discard;
 
 	bool     have_hdr;
 	bool     discardable;
 
-	uint8_t  hdr_len;
+	u8_t  hdr_len;
 
-	uint8_t  type;
+	u8_t  type;
 	union {
 		struct bt_hci_evt_hdr evt;
 		struct bt_hci_acl_hdr acl;
-		uint8_t hdr[4];
+		u8_t hdr[4];
 	};
 } rx = {
 	.fifo = K_FIFO_INITIALIZER(rx.fifo),
 };
 
 static struct {
-	uint8_t type;
+	u8_t type;
 	struct net_buf *buf;
 	struct k_fifo   fifo;
 } tx = {
@@ -99,7 +99,7 @@ static inline void get_acl_hdr(void)
 	struct bt_hci_acl_hdr *hdr = &rx.acl;
 	int to_read = sizeof(*hdr) - rx.remaining;
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
+	rx.remaining -= uart_fifo_read(h4_dev, (u8_t *)hdr + to_read,
 				       rx.remaining);
 	if (!rx.remaining) {
 		rx.remaining = sys_le16_to_cpu(hdr->len);
@@ -113,7 +113,7 @@ static inline void get_evt_hdr(void)
 	struct bt_hci_evt_hdr *hdr = &rx.evt;
 	int to_read = rx.hdr_len - rx.remaining;
 
-	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
+	rx.remaining -= uart_fifo_read(h4_dev, (u8_t *)hdr + to_read,
 				       rx.remaining);
 	if (rx.hdr_len == sizeof(*hdr) && rx.remaining < sizeof(*hdr)) {
 		switch (rx.evt.evt) {
@@ -223,7 +223,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 static size_t h4_discard(struct device *uart, size_t len)
 {
-	uint8_t buf[33];
+	u8_t buf[33];
 
 	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }

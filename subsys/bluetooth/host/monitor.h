@@ -48,32 +48,32 @@
 #endif
 
 struct bt_monitor_hdr {
-	uint16_t  data_len;
-	uint16_t  opcode;
-	uint8_t   flags;
-	uint8_t   hdr_len;
+	u16_t  data_len;
+	u16_t  opcode;
+	u8_t   flags;
+	u8_t   hdr_len;
 
-	uint8_t   ext[BT_MONITOR_EXT_HDR_MAX];
+	u8_t   ext[BT_MONITOR_EXT_HDR_MAX];
 } __packed;
 
 struct bt_monitor_ts32 {
-	uint8_t   type;
-	uint32_t  ts32;
+	u8_t   type;
+	u32_t  ts32;
 } __packed;
 
 struct bt_monitor_new_index {
-	uint8_t  type;
-	uint8_t  bus;
-	uint8_t  bdaddr[6];
+	u8_t  type;
+	u8_t  bus;
+	u8_t  bdaddr[6];
 	char     name[8];
 } __packed;
 
 struct bt_monitor_user_logging {
-	uint8_t  priority;
-	uint8_t  ident_len;
+	u8_t  priority;
+	u8_t  ident_len;
 } __packed;
 
-static inline uint8_t bt_monitor_opcode(struct net_buf *buf)
+static inline u8_t bt_monitor_opcode(struct net_buf *buf)
 {
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_CMD:
@@ -89,9 +89,9 @@ static inline uint8_t bt_monitor_opcode(struct net_buf *buf)
 	}
 }
 
-void bt_monitor_send(uint16_t opcode, const void *data, size_t len);
+void bt_monitor_send(u16_t opcode, const void *data, size_t len);
 
-void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
+void bt_monitor_new_index(u8_t type, u8_t bus, bt_addr_t *addr,
 			  const char *name);
 
 #else /* !CONFIG_BLUETOOTH_DEBUG_MONITOR */

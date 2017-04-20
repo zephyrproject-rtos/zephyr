@@ -16,16 +16,16 @@
 #include "hal/debug.h"
 
 struct ecb_param {
-	uint8_t key[16];
-	uint8_t clear_text[16];
-	uint8_t cipher_text[16];
+	u8_t key[16];
+	u8_t clear_text[16];
+	u8_t cipher_text[16];
 } __packed;
 
 static void do_ecb(struct ecb_param *ecb)
 {
 	do {
 		NRF_ECB->TASKS_STOPECB = 1;
-		NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+		NRF_ECB->ECBDATAPTR = (u32_t)ecb;
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
 		NRF_ECB->TASKS_STARTECB = 1;
@@ -40,9 +40,9 @@ static void do_ecb(struct ecb_param *ecb)
 	NRF_ECB->ECBDATAPTR = 0;
 }
 
-void ecb_encrypt_be(uint8_t const *const key_be,
-		    uint8_t const *const clear_text_be,
-		    uint8_t * const cipher_text_be)
+void ecb_encrypt_be(u8_t const *const key_be,
+		    u8_t const *const clear_text_be,
+		    u8_t * const cipher_text_be)
 {
 	struct ecb_param ecb;
 
@@ -54,10 +54,10 @@ void ecb_encrypt_be(uint8_t const *const key_be,
 	memcpy(cipher_text_be, &ecb.cipher_text[0], sizeof(ecb.cipher_text));
 }
 
-void ecb_encrypt(uint8_t const *const key_le,
-		 uint8_t const *const clear_text_le,
-		 uint8_t * const cipher_text_le,
-		 uint8_t * const cipher_text_be)
+void ecb_encrypt(u8_t const *const key_le,
+		 u8_t const *const clear_text_le,
+		 u8_t * const cipher_text_le,
+		 u8_t * const cipher_text_be)
 {
 	struct ecb_param ecb;
 
@@ -77,7 +77,7 @@ void ecb_encrypt(uint8_t const *const key_le,
 	}
 }
 
-uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
+u32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 {
 	/* prepare to be used in a BE AES h/w */
 	if (ecb->in_key_le) {
@@ -91,7 +91,7 @@ uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 	}
 
 	/* setup the encryption h/w */
-	NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+	NRF_ECB->ECBDATAPTR = (u32_t)ecb;
 	NRF_ECB->EVENTS_ENDECB = 0;
 	NRF_ECB->EVENTS_ERRORECB = 0;
 	NRF_ECB->INTENSET = ECB_INTENSET_ERRORECB_Msk | ECB_INTENSET_ENDECB_Msk;
@@ -142,12 +142,12 @@ void isr_ecb(void *param)
 }
 
 struct ecb_ut_context {
-	uint32_t volatile done;
-	uint32_t status;
-	uint8_t cipher_text[16];
+	u32_t volatile done;
+	u32_t status;
+	u8_t cipher_text[16];
 };
 
-static void ecb_cb(uint32_t status, uint8_t *cipher_be, void *context)
+static void ecb_cb(u32_t status, u8_t *cipher_be, void *context)
 {
 	struct ecb_ut_context *ecb_ut_context =
 		(struct ecb_ut_context *)context;
@@ -160,16 +160,16 @@ static void ecb_cb(uint32_t status, uint8_t *cipher_be, void *context)
 	}
 }
 
-uint32_t ecb_ut(void)
+u32_t ecb_ut(void)
 {
-	uint8_t key[16] = {
+	u8_t key[16] = {
 	    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00,
 	0x11, 0x22, 0x33, 0x44, 0x55 };
-	uint8_t clear_text[16] = {
+	u8_t clear_text[16] = {
 	    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00,
 	0x11, 0x22, 0x33, 0x44, 0x55 };
-	uint8_t cipher_text[16];
-	uint32_t status = 0;
+	u8_t cipher_text[16];
+	u32_t status = 0;
 	struct ecb ecb;
 	struct ecb_ut_context context;
 

@@ -16,6 +16,6 @@
 #define TRIPLE_BUFFER_SIZE 3
 #endif
 
-uint8_t util_ones_count_get(uint8_t *octets, uint8_t octets_len);
+u8_t util_ones_count_get(u8_t *octets, u8_t octets_len);
 
 #endif

@@ -16,23 +16,23 @@
 #define MAYFLY_CALLEE_COUNT    4
 
 struct mayfly {
-	uint8_t volatile _req;
-	uint8_t _ack;
+	u8_t volatile _req;
+	u8_t _ack;
 	void *_link;
 	void *param;
 	void (*fp)(void *);
 };
 
 void mayfly_init(void);
-void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable);
-uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
+void mayfly_enable(u8_t caller_id, u8_t callee_id, u8_t enable);
+u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 			struct mayfly *m);
-void mayfly_run(uint8_t callee_id);
+void mayfly_run(u8_t callee_id);
 
-extern void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id,
-			     uint8_t enable);
-extern uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id);
-extern uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id);
-extern void mayfly_pend(uint8_t caller_id, uint8_t callee_id);
+extern void mayfly_enable_cb(u8_t caller_id, u8_t callee_id,
+			     u8_t enable);
+extern u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id);
+extern u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id);
+extern void mayfly_pend(u8_t caller_id, u8_t callee_id);
 
 #endif /* _MAYFLY_H_ */

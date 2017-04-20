@@ -65,7 +65,7 @@ struct bt_smp {
 	atomic_t flags;
 
 	/* Type of method used for pairing */
-	uint8_t method;
+	u8_t method;
 };
 
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -121,7 +121,7 @@ void bt_smp_disconnected(struct bt_conn *conn)
 }
 
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
-static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
+static const u8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
 	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
 	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
 	{ PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS,
@@ -131,7 +131,7 @@ static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
 	  PASSKEY_ROLE },
 };
 
-static uint8_t get_io_capa(void)
+static u8_t get_io_capa(void)
 {
 	if (!nble.auth) {
 		return BT_SMP_IO_NO_INPUT_OUTPUT;
@@ -160,10 +160,10 @@ static uint8_t get_io_capa(void)
 	return BT_SMP_IO_NO_INPUT_OUTPUT;
 }
 
-static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)
+static u8_t legacy_get_pair_method(struct bt_smp *smp, u8_t remote_io)
 {
-	uint8_t local_io = get_io_capa();
-	uint8_t method;
+	u8_t local_io = get_io_capa();
+	u8_t method;
 
 	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
 		return JUST_WORKS;
@@ -187,7 +187,7 @@ static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 	return method;
 }
 
-static uint8_t get_auth(uint8_t auth)
+static u8_t get_auth(u8_t auth)
 {
 	if (get_io_capa() == BT_SMP_IO_NO_INPUT_OUTPUT) {
 		auth &= ~(BT_SMP_AUTH_MITM);
@@ -198,7 +198,7 @@ static uint8_t get_auth(uint8_t auth)
 	return auth;
 }
 
-static uint8_t legacy_pairing_req(struct bt_smp *smp,
+static u8_t legacy_pairing_req(struct bt_smp *smp,
 				  const struct nble_sec_param *par)
 {
 	struct nble_sm_pairing_response_req req;
@@ -490,7 +490,7 @@ static void nble_security_reply(struct bt_conn *conn,
 	nble_sm_passkey_reply_req(&rsp);
 }
 
-static int sm_error(struct bt_conn *conn, uint8_t reason)
+static int sm_error(struct bt_conn *conn, u8_t reason)
 {
 	struct nble_sm_passkey params;
 

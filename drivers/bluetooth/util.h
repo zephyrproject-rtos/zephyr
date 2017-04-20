@@ -8,7 +8,7 @@
 
 static inline void bt_uart_drain(struct device *dev)
 {
-	uint8_t c;
+	u8_t c;
 
 	while (uart_fifo_read(dev, &c, 1)) {
 		continue;

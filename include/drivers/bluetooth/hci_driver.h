@@ -39,7 +39,7 @@ extern "C" {
  * @return true if the event can be processed in the RX thread, false
  *         if it cannot.
  */
-static inline bool bt_hci_evt_is_prio(uint8_t evt)
+static inline bool bt_hci_evt_is_prio(u8_t evt)
 {
 	switch (evt) {
 	case BT_HCI_EVT_CMD_COMPLETE:

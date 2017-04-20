@@ -32,7 +32,7 @@ int nrf51_allow_sleep(void)
 
 int nrf51_init(struct device *dev)
 {
-	uint8_t c;
+	u8_t c;
 	int ret;
 
 	nrf51_gpio = device_get_binding("GPIO_0");

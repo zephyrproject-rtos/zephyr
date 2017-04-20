@@ -177,9 +177,9 @@ LIST_FN_SIG_S_B_B_P
 		hash = DJB2_HASH(hash, sizeof(*((__s)0)));		\
 	} while (0);
 
-uint32_t rpc_serialize_hash(void)
+u32_t rpc_serialize_hash(void)
 {
-	uint32_t hash = 5381;
+	u32_t hash = 5381;
 
 	LIST_FN_SIG_NONE;
 	LIST_FN_SIG_S;
@@ -202,19 +202,19 @@ static void _send(struct net_buf *buf)
 	rpc_transmit_cb(buf);
 }
 
-static uint16_t encoded_structlen(uint8_t structlen)
+static u16_t encoded_structlen(u8_t structlen)
 {
 	return 1 + structlen;
 }
 
-static void serialize_struct(struct net_buf *buf, const uint8_t *struct_data,
-			     uint8_t struct_length)
+static void serialize_struct(struct net_buf *buf, const u8_t *struct_data,
+			     u8_t struct_length)
 {
 	net_buf_add_u8(buf, struct_length);
 	net_buf_add_mem(buf, struct_data, struct_length);
 }
 
-static uint16_t encoded_buflen(const uint8_t *buf, uint16_t buflen)
+static u16_t encoded_buflen(const u8_t *buf, u16_t buflen)
 {
 	if (!buf) {
 		return 1;
@@ -227,11 +227,11 @@ static uint16_t encoded_buflen(const uint8_t *buf, uint16_t buflen)
 	}
 }
 
-static void serialize_buf(struct net_buf *buf, const uint8_t *data,
-			  uint16_t len)
+static void serialize_buf(struct net_buf *buf, const u8_t *data,
+			  u16_t len)
 {
-	uint16_t varint;
-	uint8_t *p;
+	u16_t varint;
+	u8_t *p;
 
 	if (!data) {
 		len = 0;
@@ -255,7 +255,7 @@ static void serialize_p(struct net_buf *buf, void *ptr)
 	net_buf_add_mem(buf, &val, sizeof(val));
 }
 
-void rpc_serialize_none(uint8_t fn_index)
+void rpc_serialize_none(u8_t fn_index)
 {
 	struct net_buf *buf;
 
@@ -267,8 +267,8 @@ void rpc_serialize_none(uint8_t fn_index)
 	_send(buf);
 }
 
-void rpc_serialize_s(uint8_t fn_index, const void *struct_data,
-		     uint8_t struct_length)
+void rpc_serialize_s(u8_t fn_index, const void *struct_data,
+		     u8_t struct_length)
 {
 	struct net_buf *buf;
 
@@ -283,7 +283,7 @@ void rpc_serialize_s(uint8_t fn_index, const void *struct_data,
 	_send(buf);
 }
 
-void rpc_serialize_p(uint8_t fn_index, void *priv)
+void rpc_serialize_p(u8_t fn_index, void *priv)
 {
 	struct net_buf *buf;
 
@@ -296,9 +296,9 @@ void rpc_serialize_p(uint8_t fn_index, void *priv)
 	_send(buf);
 }
 
-void rpc_serialize_s_b(uint8_t fn_index, const void *struct_data,
-		       uint8_t struct_length, const void *vbuf,
-		       uint16_t vbuf_length)
+void rpc_serialize_s_b(u8_t fn_index, const void *struct_data,
+		       u8_t struct_length, const void *vbuf,
+		       u16_t vbuf_length)
 {
 	struct net_buf *buf;
 
@@ -315,9 +315,9 @@ void rpc_serialize_s_b(uint8_t fn_index, const void *struct_data,
 	_send(buf);
 }
 
-void rpc_serialize_b_b_p(uint8_t fn_index, const void *vbuf1,
-			 uint16_t vbuf1_length, const void *vbuf2,
-			 uint16_t vbuf2_length, void *priv)
+void rpc_serialize_b_b_p(u8_t fn_index, const void *vbuf1,
+			 u16_t vbuf1_length, const void *vbuf2,
+			 u16_t vbuf2_length, void *priv)
 {
 	struct net_buf *buf;
 
@@ -335,8 +335,8 @@ void rpc_serialize_b_b_p(uint8_t fn_index, const void *vbuf1,
 	_send(buf);
 }
 
-void rpc_serialize_s_p(uint8_t fn_index, const void *struct_data,
-		       uint8_t struct_length, void *priv)
+void rpc_serialize_s_p(u8_t fn_index, const void *struct_data,
+		       u8_t struct_length, void *priv)
 {
 	struct net_buf *buf;
 
@@ -352,9 +352,9 @@ void rpc_serialize_s_p(uint8_t fn_index, const void *struct_data,
 	_send(buf);
 }
 
-void rpc_serialize_s_b_p(uint8_t fn_index, const void *struct_data,
-			 uint8_t struct_length, const void *vbuf,
-			 uint16_t vbuf_length, void *priv)
+void rpc_serialize_s_b_p(u8_t fn_index, const void *struct_data,
+			 u8_t struct_length, const void *vbuf,
+			 u16_t vbuf_length, void *priv)
 {
 	struct net_buf *buf;
 
@@ -372,10 +372,10 @@ void rpc_serialize_s_b_p(uint8_t fn_index, const void *struct_data,
 	_send(buf);
 }
 
-void rpc_serialize_s_b_b_p(uint8_t fn_index, const void *struct_data,
-			   uint8_t struct_length, const void *vbuf1,
-			   uint16_t vbuf1_length, const void *vbuf2,
-			   uint16_t vbuf2_length, void *priv)
+void rpc_serialize_s_b_b_p(u8_t fn_index, const void *struct_data,
+			   u8_t struct_length, const void *vbuf1,
+			   u16_t vbuf1_length, const void *vbuf2,
+			   u16_t vbuf2_length, void *priv)
 {
 	struct net_buf *buf;
 
@@ -395,13 +395,13 @@ void rpc_serialize_s_b_b_p(uint8_t fn_index, const void *struct_data,
 	_send(buf);
 }
 
-void rpc_init(uint32_t version)
+void rpc_init(u32_t version)
 {
 	struct net_buf *buf;
 	struct {
-		uint32_t version;
-		uint32_t ser_hash;
-		uint32_t des_hash;
+		u32_t version;
+		u32_t ser_hash;
+		u32_t des_hash;
 	} struct_data;
 
 	struct_data.version = version;
@@ -412,6 +412,6 @@ void rpc_init(uint32_t version)
 
 	net_buf_add_u8(buf, SIG_TYPE_CONTROL);
 	net_buf_add_u8(buf, 0);
-	serialize_struct(buf, (uint8_t *)&struct_data, sizeof(struct_data));
+	serialize_struct(buf, (u8_t *)&struct_data, sizeof(struct_data));
 	_send(buf);
 }

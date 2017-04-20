@@ -13,21 +13,21 @@
 #endif
 
 #ifndef MROUND
-#define MROUND(x) (((uint32_t)(x)+3) & (~((uint32_t)3)))
+#define MROUND(x) (((u32_t)(x)+3) & (~((u32_t)3)))
 #endif
 
-void mem_init(void *mem_pool, uint16_t mem_size, uint16_t mem_count,
+void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 	      void **mem_head);
 void *mem_acquire(void **mem_head);
 void mem_release(void *mem, void **mem_head);
 
-uint16_t mem_free_count_get(void *mem_head);
-void *mem_get(void *mem_pool, uint16_t mem_size, uint16_t index);
-uint16_t mem_index_get(void *mem, void *mem_pool, uint16_t mem_size);
+u16_t mem_free_count_get(void *mem_head);
+void *mem_get(void *mem_pool, u16_t mem_size, u16_t index);
+u16_t mem_index_get(void *mem, void *mem_pool, u16_t mem_size);
 
-void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len);
-uint8_t mem_is_zero(uint8_t *src, uint16_t len);
+void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len);
+u8_t mem_is_zero(u8_t *src, u16_t len);
 
-uint32_t mem_ut(void);
+u32_t mem_ut(void);
 
 #endif /* _MEM_H_ */

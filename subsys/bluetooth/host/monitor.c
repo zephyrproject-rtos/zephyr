@@ -54,14 +54,14 @@ extern int _prf(int (*func)(), void *dest,
 
 static void monitor_send(const void *data, size_t len)
 {
-	const uint8_t *buf = data;
+	const u8_t *buf = data;
 
 	while (len--) {
 		uart_poll_out(monitor_dev, *buf++);
 	}
 }
 
-static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
+static void encode_drops(struct bt_monitor_hdr *hdr, u8_t type,
 			 atomic_t *val)
 {
 	atomic_val_t count;
@@ -73,8 +73,8 @@ static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
 	}
 }
 
-static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint16_t opcode,
-			      uint16_t len)
+static inline void encode_hdr(struct bt_monitor_hdr *hdr, u16_t opcode,
+			      u16_t len)
 {
 	struct bt_monitor_ts32 *ts;
 
@@ -105,7 +105,7 @@ static int log_out(int c, void *unused)
 	return 0;
 }
 
-static void drop_add(uint16_t opcode)
+static void drop_add(u16_t opcode)
 {
 	switch (opcode) {
 	case BT_MONITOR_COMMAND_PKT:
@@ -175,7 +175,7 @@ void bt_log(int prio, const char *fmt, ...)
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
-void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
+void bt_monitor_send(u16_t opcode, const void *data, size_t len)
 {
 	struct bt_monitor_hdr hdr;
 
@@ -192,7 +192,7 @@ void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
 
-void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
+void bt_monitor_new_index(u8_t type, u8_t bus, bt_addr_t *addr,
 			  const char *name)
 {
 	struct bt_monitor_new_index pkt;

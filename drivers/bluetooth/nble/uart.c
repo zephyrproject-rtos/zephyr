@@ -33,9 +33,9 @@
  * @note this structure must be self-aligned and self-packed
  */
 struct ipc_uart_header {
-	uint16_t len;		/**< Length of IPC message. */
-	uint8_t channel;	/**< Channel number of IPC message. */
-	uint8_t src_cpu_id;	/**< CPU id of IPC sender. */
+	u16_t len;		/**< Length of IPC message. */
+	u8_t channel;	/**< Channel number of IPC message. */
+	u8_t src_cpu_id;	/**< CPU id of IPC sender. */
 } __packed;
 
 /* TODO: check size */
@@ -73,7 +73,7 @@ static void rx_thread(void)
 	}
 }
 
-struct net_buf *rpc_alloc_cb(uint16_t length)
+struct net_buf *rpc_alloc_cb(u16_t length)
 {
 	struct net_buf *buf;
 
@@ -125,7 +125,7 @@ void rpc_transmit_cb(struct net_buf *buf)
 static size_t nble_discard(struct device *uart, size_t len)
 {
 	/* FIXME: correct size for nble */
-	uint8_t buf[33];
+	u8_t buf[33];
 
 	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }
@@ -138,7 +138,7 @@ static void bt_uart_isr(struct device *unused)
 
 	while (uart_irq_update(nble_dev) && uart_irq_is_pending(nble_dev)) {
 		static struct ipc_uart_header hdr;
-		static uint8_t hdr_bytes;
+		static u8_t hdr_bytes;
 		int read;
 
 		if (!uart_irq_rx_ready(nble_dev)) {
@@ -160,7 +160,7 @@ static void bt_uart_isr(struct device *unused)
 		if (hdr_bytes < sizeof(hdr)) {
 			/* Get packet type */
 			hdr_bytes += uart_fifo_read(nble_dev,
-						    (uint8_t *)&hdr + hdr_bytes,
+						    (u8_t *)&hdr + hdr_bytes,
 						    sizeof(hdr) - hdr_bytes);
 			if (hdr_bytes < sizeof(hdr)) {
 				continue;

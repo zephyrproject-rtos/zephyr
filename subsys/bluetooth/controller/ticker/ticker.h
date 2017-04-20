@@ -14,7 +14,7 @@
 */
 #define TICKER_US_TO_TICKS(x) \
 	( \
-		((uint32_t)(((uint64_t) (x) * 1000000000UL) / 30517578125UL)) \
+		((u32_t)(((u64_t) (x) * 1000000000UL) / 30517578125UL)) \
 		& 0x00FFFFFF \
 	)
 
@@ -23,8 +23,8 @@
 #define TICKER_REMAINDER(x) \
 	( \
 		( \
-			((uint64_t) (x) * 1000000000UL) \
-			- ((uint64_t) TICKER_US_TO_TICKS(x) * 30517578125UL) \
+			((u64_t) (x) * 1000000000UL) \
+			- ((u64_t) TICKER_US_TO_TICKS(x) * 30517578125UL) \
 		) \
 		/ 1000UL \
 	)
@@ -32,7 +32,7 @@
 /** \brief Macro to translate tick units to microseconds.
 */
 #define TICKER_TICKS_TO_US(x) \
-	((uint32_t)(((uint64_t) (x) * 30517578125UL) / 1000000000UL))
+	((u32_t)(((u64_t) (x) * 30517578125UL) / 1000000000UL))
 
 /** \defgroup Timer API return codes.
 *
@@ -53,7 +53,7 @@
 *
 * @{
 */
-#define TICKER_NULL		((uint8_t)((uint8_t)0 - 1))
+#define TICKER_NULL		((u8_t)((u8_t)0 - 1))
 #define TICKER_NULL_REMAINDER	0
 #define TICKER_NULL_PERIOD	0
 #define TICKER_NULL_SLOT	0
@@ -76,13 +76,13 @@
 
 /** \brief Timer timeout function type.
 */
-typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire,
-				      uint32_t remainder, uint16_t lazy,
+typedef void (*ticker_timeout_func) (u32_t ticks_at_expire,
+				      u32_t remainder, u16_t lazy,
 				      void *context);
 
 /** \brief Timer operation complete function type.
 */
-typedef void (*ticker_op_func) (uint32_t status, void *op_context);
+typedef void (*ticker_op_func) (u32_t status, void *op_context);
 
 /** \brief Timer module initialization.
 *
@@ -95,34 +95,34 @@ typedef void (*ticker_op_func) (uint32_t status, void *op_context);
 * \param[in]  count_op
 * \param[in]  user_op
 */
-uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
-		    uint8_t count_user, void *user, uint8_t count_op,
+u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
+		    u8_t count_user, void *user, u8_t count_op,
 		    void *user_op);
-void ticker_trigger(uint8_t instance_index);
-uint32_t ticker_start(uint8_t instance_index, uint8_t user_id,
-		     uint8_t ticker_id, uint32_t ticks_anchor,
-		     uint32_t ticks_first, uint32_t ticks_periodic,
-		     uint32_t remainder_periodic, uint16_t lazy,
-		     uint16_t ticks_slot,
+void ticker_trigger(u8_t instance_index);
+u32_t ticker_start(u8_t instance_index, u8_t user_id,
+		     u8_t ticker_id, u32_t ticks_anchor,
+		     u32_t ticks_first, u32_t ticks_periodic,
+		     u32_t remainder_periodic, u16_t lazy,
+		     u16_t ticks_slot,
 		     ticker_timeout_func ticker_timeout_func, void *context,
 		     ticker_op_func fp_op_func, void *op_context);
-uint32_t ticker_update(uint8_t instance_index, uint8_t user_id,
-		      uint8_t ticker_id, uint16_t ticks_drift_plus,
-		      uint16_t ticks_drift_minus, uint16_t ticks_slot_plus,
-		      uint16_t ticks_slot_minus, uint16_t lazy, uint8_t force,
+u32_t ticker_update(u8_t instance_index, u8_t user_id,
+		      u8_t ticker_id, u16_t ticks_drift_plus,
+		      u16_t ticks_drift_minus, u16_t ticks_slot_plus,
+		      u16_t ticks_slot_minus, u16_t lazy, u8_t force,
 		      ticker_op_func fp_op_func, void *op_context);
-uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id,
-		    uint8_t ticker_id, ticker_op_func fp_op_func,
+u32_t ticker_stop(u8_t instance_index, u8_t user_id,
+		    u8_t ticker_id, ticker_op_func fp_op_func,
 		    void *op_context);
-uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
-			     uint8_t *ticker_id_head,
-			     uint32_t *ticks_current,
-			     uint32_t *ticks_to_expire,
+u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id,
+			     u8_t *ticker_id_head,
+			     u32_t *ticks_current,
+			     u32_t *ticks_to_expire,
 			     ticker_op_func fp_op_func, void *op_context);
-uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
+u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
 			    ticker_op_func fp_op_func, void *op_context);
-void ticker_job_sched(uint8_t instance_index, uint8_t user_id);
-uint32_t ticker_ticks_now_get(void);
-uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old);
+void ticker_job_sched(u8_t instance_index, u8_t user_id);
+u32_t ticker_ticks_now_get(void);
+u32_t ticker_ticks_diff_get(u32_t ticks_now, u32_t ticks_old);
 
 #endif

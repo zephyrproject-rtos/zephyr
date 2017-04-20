@@ -12,21 +12,21 @@
 static struct {
 	void *head;
 	void *tail;
-	uint8_t enable_req;
-	uint8_t enable_ack;
-	uint8_t disable_req;
-	uint8_t disable_ack;
+	u8_t enable_req;
+	u8_t enable_ack;
+	u8_t disable_req;
+	u8_t disable_ack;
 } mft[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
 
 static void *mfl[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT][2];
 
 void mayfly_init(void)
 {
-	uint8_t callee_id;
+	u8_t callee_id;
 
 	callee_id = MAYFLY_CALLEE_COUNT;
 	while (callee_id--) {
-		uint8_t caller_id;
+		u8_t caller_id;
 
 		caller_id = MAYFLY_CALLER_COUNT;
 		while (caller_id--) {
@@ -37,7 +37,7 @@ void mayfly_init(void)
 	}
 }
 
-void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
+void mayfly_enable(u8_t caller_id, u8_t callee_id, u8_t enable)
 {
 	if (enable) {
 		if (mft[callee_id][caller_id].enable_req ==
@@ -56,11 +56,11 @@ void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 	}
 }
 
-uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
+u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 			struct mayfly *m)
 {
-	uint8_t state;
-	uint8_t ack;
+	u8_t state;
+	u8_t ack;
 
 	chain = chain || !mayfly_prio_is_equal(caller_id, callee_id) ||
 		!mayfly_is_enabled(caller_id, callee_id) ||
@@ -110,11 +110,11 @@ uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
 	return 0;
 }
 
-void mayfly_run(uint8_t callee_id)
+void mayfly_run(u8_t callee_id)
 {
-	uint8_t disable = 0;
-	uint8_t enable = 0;
-	uint8_t caller_id;
+	u8_t disable = 0;
+	u8_t enable = 0;
+	u8_t caller_id;
 
 	/* iterate through each caller queue to this callee_id */
 	caller_id = MAYFLY_CALLER_COUNT;
@@ -127,8 +127,8 @@ void mayfly_run(uint8_t callee_id)
 				 mft[callee_id][caller_id].head,
 				 (void **)&m);
 		while (link) {
-			uint8_t state;
-			uint8_t req;
+			u8_t state;
+			u8_t req;
 
 			/* execute work if ready */
 			req = m->_req;

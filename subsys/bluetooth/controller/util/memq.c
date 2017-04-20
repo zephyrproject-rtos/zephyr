@@ -65,7 +65,7 @@ void *memq_dequeue(void *tail, void **head, void **mem)
 	return link;
 }
 
-uint32_t memq_ut(void)
+u32_t memq_ut(void)
 {
 	void *head;
 	void *tail;

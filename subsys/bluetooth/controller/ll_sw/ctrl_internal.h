@@ -21,99 +21,99 @@ enum llcp {
 
 
 struct shdr {
-	uint32_t ticks_xtal_to_start;
-	uint32_t ticks_active_to_start;
-	uint32_t ticks_preempt_to_start;
-	uint32_t ticks_slot;
+	u32_t ticks_xtal_to_start;
+	u32_t ticks_active_to_start;
+	u32_t ticks_preempt_to_start;
+	u32_t ticks_slot;
 };
 
 struct connection {
 	struct shdr hdr;
 
-	uint8_t access_addr[4];
-	uint8_t crc_init[3];
-	uint8_t data_chan_map[5];
+	u8_t access_addr[4];
+	u8_t crc_init[3];
+	u8_t data_chan_map[5];
 
-	uint8_t data_chan_count:6;
-	uint8_t data_chan_sel:1;
-	uint8_t rfu:1;
+	u8_t data_chan_count:6;
+	u8_t data_chan_sel:1;
+	u8_t rfu:1;
 
 	union {
 		struct {
-			uint8_t data_chan_hop;
-			uint8_t data_chan_use;
+			u8_t data_chan_hop;
+			u8_t data_chan_use;
 		};
 
-		uint16_t data_chan_id;
+		u16_t data_chan_id;
 	};
 
-	uint16_t handle;
-	uint16_t event_counter;
-	uint16_t conn_interval;
-	uint16_t latency;
-	uint16_t latency_prepare;
-	uint16_t latency_event;
+	u16_t handle;
+	u16_t event_counter;
+	u16_t conn_interval;
+	u16_t latency;
+	u16_t latency_prepare;
+	u16_t latency_event;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
-	uint16_t default_tx_octets;
-	uint16_t max_tx_octets;
-	uint16_t max_rx_octets;
+	u16_t default_tx_octets;
+	u16_t max_tx_octets;
+	u16_t max_rx_octets;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
-	uint16_t supervision_reload;
-	uint16_t supervision_expire;
-	uint16_t procedure_reload;
-	uint16_t procedure_expire;
+	u16_t supervision_reload;
+	u16_t supervision_expire;
+	u16_t procedure_reload;
+	u16_t procedure_expire;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
-	uint16_t appto_reload;
-	uint16_t appto_expire;
-	uint16_t apto_reload;
-	uint16_t apto_expire;
+	u16_t appto_reload;
+	u16_t appto_expire;
+	u16_t apto_reload;
+	u16_t apto_expire;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 	union {
 		struct {
-			uint8_t role:1;
-			uint8_t connect_expire;
+			u8_t role:1;
+			u8_t connect_expire;
 		} master;
 		struct {
-			uint8_t role:1;
-			uint8_t sca:3;
-			uint8_t latency_cancel:1;
-			uint32_t window_widening_periodic_us;
-			uint32_t window_widening_max_us;
-			uint32_t window_widening_prepare_us;
-			uint32_t window_widening_event_us;
-			uint32_t window_size_prepare_us;
-			uint32_t window_size_event_us;
-			uint32_t force;
-			uint32_t ticks_to_offset;
+			u8_t role:1;
+			u8_t sca:3;
+			u8_t latency_cancel:1;
+			u32_t window_widening_periodic_us;
+			u32_t window_widening_max_us;
+			u32_t window_widening_prepare_us;
+			u32_t window_widening_event_us;
+			u32_t window_size_prepare_us;
+			u32_t window_size_event_us;
+			u32_t force;
+			u32_t ticks_to_offset;
 		} slave;
 	} role;
 
-	uint8_t llcp_req;
-	uint8_t llcp_ack;
+	u8_t llcp_req;
+	u8_t llcp_ack;
 	enum llcp llcp_type;
 	union {
 		struct {
-			uint16_t interval;
-			uint16_t latency;
-			uint16_t timeout;
-			uint8_t preferred_periodicity;
-			uint16_t instant;
-			uint16_t offset0;
-			uint16_t offset1;
-			uint16_t offset2;
-			uint16_t offset3;
-			uint16_t offset4;
-			uint16_t offset5;
-			uint32_t ticks_ref;
-			uint32_t ticks_to_offset_next;
-			uint32_t win_offset_us;
-			uint16_t *pdu_win_offset;
-			uint8_t win_size;
-			uint8_t state:3;
+			u16_t interval;
+			u16_t latency;
+			u16_t timeout;
+			u8_t preferred_periodicity;
+			u16_t instant;
+			u16_t offset0;
+			u16_t offset1;
+			u16_t offset2;
+			u16_t offset3;
+			u16_t offset4;
+			u16_t offset5;
+			u32_t ticks_ref;
+			u32_t ticks_to_offset_next;
+			u32_t win_offset_us;
+			u16_t *pdu_win_offset;
+			u8_t win_size;
+			u8_t state:3;
 #define LLCP_CONN_STATE_INPROG    0	/* master + slave proc in progress
 					 * until instant
 					 */
@@ -124,65 +124,65 @@ struct connection {
 #define LLCP_CONN_STATE_RSP_WAIT  5	/* master rsp or slave conn_update
 					 * or rej
 					 */
-			uint8_t is_internal:2;
+			u8_t is_internal:2;
 		} connection_update;
 		struct {
-			uint8_t initiate;
-			uint8_t chm[5];
-			uint16_t instant;
+			u8_t initiate;
+			u8_t chm[5];
+			u16_t instant;
 		} chan_map;
 		struct {
-			uint8_t error_code;
-			uint8_t rand[8];
-			uint8_t ediv[2];
-			uint8_t ltk[16];
-			uint8_t skd[16];
+			u8_t error_code;
+			u8_t rand[8];
+			u8_t ediv[2];
+			u8_t ltk[16];
+			u8_t skd[16];
 		} encryption;
 	} llcp;
 
-	uint32_t llcp_features;
+	u32_t llcp_features;
 
 	struct {
-		uint8_t tx:1;
-		uint8_t rx:1;
-		uint8_t version_number;
-		uint16_t company_id;
-		uint16_t sub_version_number;
+		u8_t tx:1;
+		u8_t rx:1;
+		u8_t version_number;
+		u16_t company_id;
+		u16_t sub_version_number;
 	} llcp_version;
 
 	struct {
-		uint8_t req;
-		uint8_t ack;
-		uint8_t reason_own;
-		uint8_t reason_peer;
+		u8_t req;
+		u8_t ack;
+		u8_t reason_own;
+		u8_t reason_peer;
 		struct {
 			struct radio_pdu_node_rx_hdr hdr;
-			uint8_t reason;
+			u8_t reason;
 		} radio_pdu_node_rx;
 	} llcp_terminate;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	struct {
-		uint8_t req;
-		uint8_t ack;
-		uint8_t state:2;
+		u8_t req;
+		u8_t ack;
+		u8_t state:2;
 #define LLCP_LENGTH_STATE_REQ        0
 #define LLCP_LENGTH_STATE_ACK_WAIT   1
 #define LLCP_LENGTH_STATE_RSP_WAIT   2
 #define LLCP_LENGTH_STATE_RESIZE     3
-		uint16_t rx_octets;
-		uint16_t tx_octets;
+		u16_t rx_octets;
+		u16_t tx_octets;
 	} llcp_length;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
-	uint8_t sn:1;
-	uint8_t nesn:1;
-	uint8_t pause_rx:1;
-	uint8_t pause_tx:1;
-	uint8_t enc_rx:1;
-	uint8_t enc_tx:1;
-	uint8_t refresh:1;
-	uint8_t empty:1;
+	u8_t sn:1;
+	u8_t nesn:1;
+	u8_t pause_rx:1;
+	u8_t pause_tx:1;
+	u8_t enc_rx:1;
+	u8_t enc_tx:1;
+	u8_t refresh:1;
+	u8_t empty:1;
 
 	struct ccm ccm_rx;
 	struct ccm ccm_tx;
@@ -191,19 +191,19 @@ struct connection {
 	struct radio_pdu_node_tx *pkt_tx_ctrl;
 	struct radio_pdu_node_tx *pkt_tx_data;
 	struct radio_pdu_node_tx *pkt_tx_last;
-	uint8_t packet_tx_head_len;
-	uint8_t packet_tx_head_offset;
+	u8_t packet_tx_head_len;
+	u8_t packet_tx_head_offset;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
-	uint8_t rssi_latest;
-	uint8_t rssi_reported;
-	uint8_t rssi_sample_count;
+	u8_t rssi_latest;
+	u8_t rssi_reported;
+	u8_t rssi_sample_count;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 };
 #define CONNECTION_T_SIZE MROUND(sizeof(struct connection))
 
 struct pdu_data_q_tx {
-	uint16_t handle;
+	u16_t handle;
 	struct radio_pdu_node_tx *node_tx;
 };
 

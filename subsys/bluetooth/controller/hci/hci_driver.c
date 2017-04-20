@@ -47,8 +47,8 @@ static BT_STACK_NOINIT(prio_recv_thread_stack,
 static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 #if defined(CONFIG_INIT_STACKS)
-static uint32_t prio_ts;
-static uint32_t rx_ts;
+static u32_t prio_ts;
+static u32_t rx_ts;
 #endif
 
 static void prio_recv_thread(void *p1, void *p2, void *p3)
@@ -56,8 +56,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		struct radio_pdu_node_rx *node_rx;
 		struct net_buf *buf;
-		uint8_t num_cmplt;
-		uint16_t handle;
+		u8_t num_cmplt;
+		u16_t handle;
 
 		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
 
@@ -173,7 +173,7 @@ static int cmd_handle(struct net_buf *buf)
 
 static int hci_driver_send(struct net_buf *buf)
 {
-	uint8_t type;
+	u8_t type;
 	int err;
 
 	BT_DBG("enter");
@@ -207,7 +207,7 @@ static int hci_driver_send(struct net_buf *buf)
 
 static int hci_driver_open(void)
 {
-	uint32_t err;
+	u32_t err;
 
 	DEBUG_INIT();
 
