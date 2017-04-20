@@ -951,9 +951,9 @@ try_send:
 		return NULL;
 	}
 
-	NET_DBG("Pkt %p (frag %p) will be sent later", pkt, pkt->frags);
+	NET_DBG("pkt %p (frag %p) will be sent later", pkt, pkt->frags);
 #else
-	NET_DBG("Pkt %p (frag %p) cannot be sent, dropping it.", pkt,
+	NET_DBG("pkt %p (frag %p) cannot be sent, dropping it.", pkt,
 		pkt->frags);
 
 	net_pkt_unref(pkt);

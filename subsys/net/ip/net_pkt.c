@@ -256,11 +256,11 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 	int count = -1, frag_size = 0, ll_overhead = 0;
 
 	if (!pkt) {
-		NET_INFO("Pkt %p", pkt);
+		NET_INFO("pkt %p", pkt);
 		return;
 	}
 
-	NET_INFO("Pkt %p frags %p", pkt, pkt->frags);
+	NET_INFO("pkt %p frags %p", pkt, pkt->frags);
 
 	NET_ASSERT(pkt->frags);
 
@@ -825,7 +825,7 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 #endif
 {
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-	NET_DBG("Pkt %p parent %p frag %p ref %u (%s:%d)",
+	NET_DBG("pkt %p parent %p frag %p ref %u (%s:%d)",
 		pkt, parent, frag, frag->ref, caller, line);
 
 	if (frag->ref == 1) {
@@ -852,7 +852,7 @@ void net_pkt_frag_add_debug(struct net_pkt *pkt, struct net_buf *frag,
 void net_pkt_frag_add(struct net_pkt *pkt, struct net_buf *frag)
 #endif
 {
-	NET_DBG("Pkt %p frag %p (%s:%d)", pkt, frag, caller, line);
+	NET_DBG("pkt %p frag %p (%s:%d)", pkt, frag, caller, line);
 
 	/* We do not use net_buf_frag_add() as this one will refcount
 	 * the frag once more if !pkt->frags
@@ -872,7 +872,7 @@ void net_pkt_frag_insert_debug(struct net_pkt *pkt, struct net_buf *frag,
 void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag)
 #endif
 {
-	NET_DBG("Pkt %p frag %p (%s:%d)", pkt, frag, caller, line);
+	NET_DBG("pkt %p frag %p (%s:%d)", pkt, frag, caller, line);
 
 	net_buf_frag_last(frag)->frags = pkt->frags;
 	pkt->frags = frag;

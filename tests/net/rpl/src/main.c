@@ -145,7 +145,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		return 0;
 	}
 
-	DBG("Pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
+	DBG("pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
 
 #if 0
 	net_hexdump_frags("recv", pkt);

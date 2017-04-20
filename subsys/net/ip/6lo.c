@@ -1439,7 +1439,7 @@ bool net_6lo_uncompress(struct net_pkt *pkt)
 		return uncompress_ipv6_header(pkt);
 	}
 
-	NET_DBG("Pkt is not compressed");
+	NET_DBG("pkt %p is not compressed", pkt);
 
 	return true;
 }
