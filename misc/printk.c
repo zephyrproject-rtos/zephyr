@@ -203,6 +203,14 @@ static int char_out(int c, struct out_context *ctx)
 	return _char_out(c);
 }
 
+int vprintk(const char *fmt, va_list ap)
+{
+	struct out_context ctx = { 0 };
+
+	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
+	return ctx.count;
+}
+
 /**
  * @brief Output a string
  *
@@ -223,14 +231,14 @@ static int char_out(int c, struct out_context *ctx)
  */
 int printk(const char *fmt, ...)
 {
-	struct out_context ctx = { 0 };
+	int ret;
 	va_list ap;
 
 	va_start(ap, fmt);
-	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
+	ret = vprintk(fmt, ap);
 	va_end(ap);
 
-	return ctx.count;
+	return ret;
 }
 
 /**

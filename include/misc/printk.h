@@ -43,6 +43,7 @@ extern "C" {
  */
 #ifdef CONFIG_PRINTK
 extern __printf_like(1, 2) int printk(const char *fmt, ...);
+extern __printf_like(1, 0) int vprintk(const char *fmt, va_list ap);
 extern __printf_like(3, 4) int snprintk(char *str, size_t size,
 					const char *fmt, ...);
 extern __printf_like(3, 0) int vsnprintk(char *str, size_t size,
@@ -54,6 +55,13 @@ extern __printf_like(3, 0) void _vprintk(int (*out)(int, void *), void *ctx,
 static inline __printf_like(1, 2) int printk(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
+	return 0;
+}
+
+static inline __printf_like(1, 0) int vprintk(const char *fmt, va_list ap)
+{
+	ARG_UNUSED(fmt);
+	ARG_UNUSED(ap);
 	return 0;
 }
 
