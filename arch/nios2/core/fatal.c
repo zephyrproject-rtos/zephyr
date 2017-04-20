@@ -100,7 +100,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_PRINTK) \
 	&& defined(ALT_CPU_HAS_EXTRA_EXCEPTION_INFO)
-static char *cause_str(uint32_t cause_code)
+static char *cause_str(u32_t cause_code)
 {
 	switch (cause_code) {
 	case 0:
@@ -164,7 +164,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 #ifdef CONFIG_PRINTK
 	/* Unfortunately, completely unavailable on Nios II/e cores */
 #ifdef ALT_CPU_HAS_EXTRA_EXCEPTION_INFO
-	uint32_t exc_reg, badaddr_reg, eccftl;
+	u32_t exc_reg, badaddr_reg, eccftl;
 	enum nios2_exception_cause cause;
 
 	exc_reg = _nios2_creg_read(NIOS2_CR_EXCEPTION);
@@ -176,13 +176,13 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
 
-	printk("Exception cause: %d ECCFTL: 0x%" PRIu32 "\n", cause, eccftl);
+	printk("Exception cause: %d ECCFTL: 0x%x\n", cause, eccftl);
 #if CONFIG_EXTRA_EXCEPTION_INFO
 	printk("reason: %s\n", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
 		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
-		printk("Badaddr: 0x%" PRIx32 "\n", badaddr_reg);
+		printk("Badaddr: 0x%x\n", badaddr_reg);
 	}
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
 #endif /* CONFIG_PRINTK */

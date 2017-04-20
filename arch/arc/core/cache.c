@@ -56,7 +56,7 @@ static int dcache_available(void)
 	return (val == 0)?0:1;
 }
 
-static void dcache_dc_ctrl(uint32_t dcache_en_mask)
+static void dcache_dc_ctrl(u32_t dcache_en_mask)
 {
 	if (!dcache_available())
 		return;
@@ -85,9 +85,9 @@ static void dcache_enable(void)
  *
  * @return N/A
  */
-static void dcache_flush_mlines(uint32_t start_addr, uint32_t size)
+static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 {
-	uint32_t end_addr;
+	u32_t end_addr;
 	unsigned int key;
 
 	if (!dcache_available() || (size == 0)) {
@@ -95,7 +95,7 @@ static void dcache_flush_mlines(uint32_t start_addr, uint32_t size)
 	}
 
 	end_addr = start_addr + size - 1;
-	start_addr &= (uint32_t)(~(DCACHE_LINE_SIZE - 1));
+	start_addr &= (u32_t)(~(DCACHE_LINE_SIZE - 1));
 
 	key = irq_lock(); /* --enter critical section-- */
 
@@ -137,7 +137,7 @@ static void dcache_flush_mlines(uint32_t start_addr, uint32_t size)
 
 void sys_cache_flush(vaddr_t start_addr, size_t size)
 {
-	dcache_flush_mlines((uint32_t)start_addr, (uint32_t)size);
+	dcache_flush_mlines((u32_t)start_addr, (u32_t)size);
 }
 
 
@@ -145,7 +145,7 @@ void sys_cache_flush(vaddr_t start_addr, size_t size)
 size_t sys_cache_line_size;
 static void init_dcache_line_size(void)
 {
-	uint32_t val;
+	u32_t val;
 
 	val = _arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
 	__ASSERT((val&0xff) != 0, "d-cache is not present");

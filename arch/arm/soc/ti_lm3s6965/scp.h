@@ -57,99 +57,99 @@ extern "C" {
 #define _SCP_CRYSTAL_8_192MHZ 15
 
 union __rcc {
-	uint32_t value;
+	u32_t value;
 	struct {
-		uint32_t moscdis : 1 __packed;
-		uint32_t ioscdis : 1 __packed;
-		uint32_t rsvd__2_3 : 2 __packed;
-		uint32_t oscsrc : 2 __packed;
-		uint32_t xtal : 4 __packed;
-		uint32_t rsvd__10 : 1 __packed;
-		uint32_t bypass : 1 __packed;
-		uint32_t rsvd__12 : 1 __packed;
-		uint32_t pwrdn : 1 __packed;
-		uint32_t rsvd__14_16 : 3 __packed;
-		uint32_t pwmdiv : 3 __packed; /* 2**(n+1) */
-		uint32_t usepwmdiv : 1 __packed;
-		uint32_t rsvd__21 : 1 __packed;
-		uint32_t usesysdiv : 1 __packed;
-		uint32_t sysdiv : 4 __packed;
-		uint32_t acg : 1 __packed;
-		uint32_t rsvd__28_31 : 4 __packed;
+		u32_t moscdis : 1 __packed;
+		u32_t ioscdis : 1 __packed;
+		u32_t rsvd__2_3 : 2 __packed;
+		u32_t oscsrc : 2 __packed;
+		u32_t xtal : 4 __packed;
+		u32_t rsvd__10 : 1 __packed;
+		u32_t bypass : 1 __packed;
+		u32_t rsvd__12 : 1 __packed;
+		u32_t pwrdn : 1 __packed;
+		u32_t rsvd__14_16 : 3 __packed;
+		u32_t pwmdiv : 3 __packed; /* 2**(n+1) */
+		u32_t usepwmdiv : 1 __packed;
+		u32_t rsvd__21 : 1 __packed;
+		u32_t usesysdiv : 1 __packed;
+		u32_t sysdiv : 4 __packed;
+		u32_t acg : 1 __packed;
+		u32_t rsvd__28_31 : 4 __packed;
 	} bit;
 };
 
 union __rcc2 {
-	uint32_t value;
+	u32_t value;
 	struct {
-		uint8_t rsvd__0_3 : 4 __packed;
-		uint8_t oscsrc2 : 3 __packed;
-		uint16_t rsvd__7_10 : 4 __packed;
-		uint8_t bypass2 : 1 __packed;
-		uint8_t rsvd__12 : 1 __packed;
-		uint8_t pwrdn2 : 1 __packed;
-		uint16_t rsvd__14_22 : 9 __packed;
-		uint16_t sysdiv2 : 6 __packed;
-		uint8_t rsvd__29_30 : 2 __packed;
-		uint8_t usercc2 : 1 __packed;
+		u8_t rsvd__0_3 : 4 __packed;
+		u8_t oscsrc2 : 3 __packed;
+		u16_t rsvd__7_10 : 4 __packed;
+		u8_t bypass2 : 1 __packed;
+		u8_t rsvd__12 : 1 __packed;
+		u8_t pwrdn2 : 1 __packed;
+		u16_t rsvd__14_22 : 9 __packed;
+		u16_t sysdiv2 : 6 __packed;
+		u8_t rsvd__29_30 : 2 __packed;
+		u8_t usercc2 : 1 __packed;
 	} bit;
 };
 
 struct __scp {
-	uint32_t did0; /* 0x000 RO Device ID*/
-	uint32_t did1; /* 0x004 RO Device ID*/
-	uint32_t dc0;  /* 0x008 RO Device Capabilities */
-	uint32_t dc1;  /* 0x00c RO Device Capabilities */
-	uint32_t dc2;  /* 0x010 RO Device Capabilities */
-	uint32_t dc3;  /* 0x014 RO Device Capabilities */
-	uint32_t dc4;  /* 0x018 RO Device capabilities */
+	u32_t did0; /* 0x000 RO Device ID*/
+	u32_t did1; /* 0x004 RO Device ID*/
+	u32_t dc0;  /* 0x008 RO Device Capabilities */
+	u32_t dc1;  /* 0x00c RO Device Capabilities */
+	u32_t dc2;  /* 0x010 RO Device Capabilities */
+	u32_t dc3;  /* 0x014 RO Device Capabilities */
+	u32_t dc4;  /* 0x018 RO Device capabilities */
 
-	uint32_t rsvd__01c_02f[(0x30 - 0x1c) / 4];
+	u32_t rsvd__01c_02f[(0x30 - 0x1c) / 4];
 
-	uint32_t pborctl; /* 0x030 RW Brown-Out Reset ConTroL */
-	uint32_t ldopctl; /* 0x034 RW LDO Power ConTroL */
+	u32_t pborctl; /* 0x030 RW Brown-Out Reset ConTroL */
+	u32_t ldopctl; /* 0x034 RW LDO Power ConTroL */
 
-	uint32_t rsvd__038_03f[(0x40 - 0x38) / 4];
+	u32_t rsvd__038_03f[(0x40 - 0x38) / 4];
 
-	uint32_t srcr0; /* 0x040 RW Software Reset Control Register */
-	uint32_t srcr1; /* 0x044 RW Software Reset Control Register */
-	uint32_t srcr2; /* 0x048 RW Software Reset Control Register */
+	u32_t srcr0; /* 0x040 RW Software Reset Control Register */
+	u32_t srcr1; /* 0x044 RW Software Reset Control Register */
+	u32_t srcr2; /* 0x048 RW Software Reset Control Register */
 
-	uint32_t rsvd__04c_04f;
+	u32_t rsvd__04c_04f;
 
-	uint32_t ris;  /* 0x050 RO Raw Interrupt Status */
-	uint32_t imc;  /* 0x054 RW Interrupt Mask Control */
-	uint32_t misc; /* 0x058 RW1C Masked Int. Status & Clear */
-	uint32_t resc; /* 0x05C RW RESet Cause */
+	u32_t ris;  /* 0x050 RO Raw Interrupt Status */
+	u32_t imc;  /* 0x054 RW Interrupt Mask Control */
+	u32_t misc; /* 0x058 RW1C Masked Int. Status & Clear */
+	u32_t resc; /* 0x05C RW RESet Cause */
 	struct {
 		union __rcc rcc; /* 0x060 RW Run-mode Clock Configuration */
-		uint32_t pllcfg; /* 0x064 RW xtal-to-pll translation */
+		u32_t pllcfg; /* 0x064 RW xtal-to-pll translation */
 
-		uint32_t rsvd__068_06f[(0x70 - 0x068) / 4];
+		u32_t rsvd__068_06f[(0x70 - 0x068) / 4];
 
 		union __rcc2 rcc2; /* 0x070 RW Run-mode Clock Configuration */
 
-		uint32_t rsvd__074_0ff[(0x100 - 0x074) / 4];
+		u32_t rsvd__074_0ff[(0x100 - 0x074) / 4];
 
-		uint32_t rcgc0; /* 0x100 RW Run-mode Clock Gating */
-		uint32_t rcgc1; /* 0x104 RW Run-mode Clock Gating */
-		uint32_t rcgc2; /* 0x108 RW Run-mode Clock Gating */
+		u32_t rcgc0; /* 0x100 RW Run-mode Clock Gating */
+		u32_t rcgc1; /* 0x104 RW Run-mode Clock Gating */
+		u32_t rcgc2; /* 0x108 RW Run-mode Clock Gating */
 
-		uint32_t rsvd__10c_10f;
+		u32_t rsvd__10c_10f;
 
-		uint32_t scgc0; /* 0x110 RW Sleep-mode Clock Gating */
-		uint32_t scgc1; /* 0x114 RW Sleep-mode Clock Gating */
-		uint32_t scgc2; /* 0x118 RW Sleep-mode Clock Gating */
+		u32_t scgc0; /* 0x110 RW Sleep-mode Clock Gating */
+		u32_t scgc1; /* 0x114 RW Sleep-mode Clock Gating */
+		u32_t scgc2; /* 0x118 RW Sleep-mode Clock Gating */
 
-		uint32_t rsvd__11c_11f;
+		u32_t rsvd__11c_11f;
 
-		uint32_t dcgc0; /* 0x120 RW Deep sleep mode Clock Gating */
-		uint32_t dcgc1; /* 0x124 RW Deep sleep mode Clock Gating */
-		uint32_t dcgc2; /* 0x128 RW Deep sleep mode Clock Gating */
+		u32_t dcgc0; /* 0x120 RW Deep sleep mode Clock Gating */
+		u32_t dcgc1; /* 0x124 RW Deep sleep mode Clock Gating */
+		u32_t dcgc2; /* 0x128 RW Deep sleep mode Clock Gating */
 
-		uint32_t rsvd__12c_143[(0x144 - 0x12c) / 4];
+		u32_t rsvd__12c_143[(0x144 - 0x12c) / 4];
 
-		uint32_t
+		u32_t
 			dslpclkcfg; /* 0x144 RW Deep SLeeP CLocK ConFiGuration
 				       */
 	} clock;

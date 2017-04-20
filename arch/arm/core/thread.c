@@ -75,7 +75,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 {
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
-	__ASSERT(!((uint32_t)pStackMem & (STACK_ALIGN - 1)),
+	__ASSERT(!((u32_t)pStackMem & (STACK_ALIGN - 1)),
 		 "stack is not aligned properly\n"
 		 "%d-byte alignment required\n", STACK_ALIGN);
 
@@ -92,11 +92,11 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd) -
 				    sizeof(struct __esf));
 
-	pInitCtx->pc = ((uint32_t)_thread_entry) & 0xfffffffe;
-	pInitCtx->a1 = (uint32_t)pEntry;
-	pInitCtx->a2 = (uint32_t)parameter1;
-	pInitCtx->a3 = (uint32_t)parameter2;
-	pInitCtx->a4 = (uint32_t)parameter3;
+	pInitCtx->pc = ((u32_t)_thread_entry) & 0xfffffffe;
+	pInitCtx->a1 = (u32_t)pEntry;
+	pInitCtx->a2 = (u32_t)parameter1;
+	pInitCtx->a3 = (u32_t)parameter2;
+	pInitCtx->a4 = (u32_t)parameter3;
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
@@ -120,7 +120,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	thread->entry = (struct __thread_entry *)(pInitCtx);
 #endif
 
-	thread->callee_saved.psp = (uint32_t)pInitCtx;
+	thread->callee_saved.psp = (u32_t)pInitCtx;
 	thread->arch.basepri = 0;
 
 	/* swap_return_value can contain garbage */

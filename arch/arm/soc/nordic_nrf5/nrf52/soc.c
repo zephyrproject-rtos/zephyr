@@ -32,10 +32,10 @@ extern void _NmiInit(void);
 #ifdef CONFIG_SOC_NRF52832
 static bool ftpan_32(void)
 {
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
-		(((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
-			(((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+	if ((((*(u32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
+		(((*(u32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
+			(((*(u32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
 			return true;
 		}
 	}
@@ -45,10 +45,10 @@ static bool ftpan_32(void)
 
 static bool ftpan_37(void)
 {
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
-		(((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
-			(((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+	if ((((*(u32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
+		(((*(u32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
+			(((*(u32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
 			return true;
 		}
 	}
@@ -58,10 +58,10 @@ static bool ftpan_37(void)
 
 static bool ftpan_36(void)
 {
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
-		(((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
-			(((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+	if ((((*(u32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
+		(((*(u32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
+			(((*(u32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
 			return true;
 		}
 	}
@@ -84,7 +84,7 @@ static void nordicsemi_nrf52832_init(void)
 	* for your device located at https://www.nordicsemi.com/
 	*/
 	if (ftpan_37()) {
-		*(volatile uint32_t *)0x400005A0 = 0x3;
+		*(volatile u32_t *)0x400005A0 = 0x3;
 	}
 
 	/* Workaround for FTPAN-36 "CLOCK: Some registers are not
@@ -152,8 +152,8 @@ static void nordicsemi_nrf52832_init(void)
 #ifdef CONFIG_SOC_NRF52840
 static bool errata_36(void)
 {
-	if ((*(uint32_t *)0x10000130ul == 0x8ul) &&
-	    (*(uint32_t *)0x10000134ul == 0x0ul)) {
+	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
+	    (*(u32_t *)0x10000134ul == 0x0ul)) {
 		return true;
 	}
 
@@ -163,8 +163,8 @@ static bool errata_36(void)
 
 static bool errata_98(void)
 {
-	if ((*(uint32_t *)0x10000130ul == 0x8ul) &&
-	    (*(uint32_t *)0x10000134ul == 0x0ul)) {
+	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
+	    (*(u32_t *)0x10000134ul == 0x0ul)) {
 		return true;
 	}
 
@@ -174,8 +174,8 @@ static bool errata_98(void)
 
 static bool errata_103(void)
 {
-	if ((*(uint32_t *)0x10000130ul == 0x8ul) &&
-	    (*(uint32_t *)0x10000134ul == 0x0ul)) {
+	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
+	    (*(u32_t *)0x10000134ul == 0x0ul)) {
 		return true;
 	}
 
@@ -185,8 +185,8 @@ static bool errata_103(void)
 
 static bool errata_115(void)
 {
-	if ((*(uint32_t *)0x10000130ul == 0x8ul) &&
-	    (*(uint32_t *)0x10000134ul == 0x0ul)) {
+	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
+	    (*(u32_t *)0x10000134ul == 0x0ul)) {
 		return true;
 	}
 
@@ -196,8 +196,8 @@ static bool errata_115(void)
 
 static bool errata_120(void)
 {
-	if ((*(uint32_t *)0x10000130ul == 0x8ul) &&
-	    (*(uint32_t *)0x10000134ul == 0x0ul)) {
+	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
+	    (*(u32_t *)0x10000134ul == 0x0ul)) {
 		return true;
 	}
 
@@ -221,7 +221,7 @@ static void nordicsemi_nrf52840_init(void)
 	 * https://infocenter.nordicsemi.com/
 	 */
 	if (errata_98()) {
-		*(volatile uint32_t *)0x4000568Cul = 0x00038148ul;
+		*(volatile u32_t *)0x4000568Cul = 0x00038148ul;
 	}
 
 	/* Workaround for Errata 103 "CCM: Wrong reset value of CCM
@@ -238,9 +238,9 @@ static void nordicsemi_nrf52840_init(void)
 	 * https://infocenter.nordicsemi.com/
 	 */
 	if (errata_115()) {
-		*(volatile uint32_t *)0x40000EE4 =
-			(*(volatile uint32_t *) 0x40000EE4 & 0xFFFFFFF0) |
-			(*(uint32_t *)0x10000258 & 0x0000000F);
+		*(volatile u32_t *)0x40000EE4 =
+			(*(volatile u32_t *) 0x40000EE4 & 0xFFFFFFF0) |
+			(*(u32_t *)0x10000258 & 0x0000000F);
 	}
 
 	/* Workaround for Errata 120 "QSPI: Data read or written is corrupted"
@@ -248,7 +248,7 @@ static void nordicsemi_nrf52840_init(void)
 	 * https://infocenter.nordicsemi.com/
 	 */
 	if (errata_120()) {
-		*(volatile uint32_t *)0x40029640ul = 0x200ul;
+		*(volatile u32_t *)0x40029640ul = 0x200ul;
 	}
 
 	/* Configure GPIO pads as pPin Reset pin if Pin Reset capabilities
@@ -329,7 +329,7 @@ static void clock_init(void)
 
 static int nordicsemi_nrf52_init(struct device *arg)
 {
-	uint32_t key;
+	u32_t key;
 
 	ARG_UNUSED(arg);
 

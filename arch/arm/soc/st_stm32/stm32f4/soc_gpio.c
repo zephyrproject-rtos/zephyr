@@ -25,7 +25,7 @@
 /**
  * @brief map pin function to MODE register value
  */
-static uint32_t __func_to_mode(int func)
+static u32_t __func_to_mode(int func)
 {
 	switch (func) {
 	case STM32F4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE:
@@ -56,7 +56,7 @@ static uint32_t __func_to_mode(int func)
 /**
  * @brief map pin function to OTYPE register value
  */
-static uint32_t __func_to_otype(int func)
+static u32_t __func_to_otype(int func)
 {
 	switch (func) {
 	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DRAIN:
@@ -74,7 +74,7 @@ static uint32_t __func_to_otype(int func)
 /**
  * @brief map pin function to OSPEED register value
  */
-static uint32_t __func_to_ospeed(int func)
+static u32_t __func_to_ospeed(int func)
 {
 	switch (func) {
 	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_PULL:
@@ -99,7 +99,7 @@ static uint32_t __func_to_ospeed(int func)
 /**
  * @brief map pin function to PUPD register value
  */
-static uint32_t __func_to_pupd(int func)
+static u32_t __func_to_pupd(int func)
 {
 	switch (func) {
 	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_PULL:
@@ -159,15 +159,15 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 	return 0;
 }
 
-int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
+int stm32_gpio_configure(u32_t *base_addr, int pin, int conf, int altf)
 {
 	volatile struct stm32f4x_gpio *gpio =
 		(struct stm32f4x_gpio *)(base_addr);
-	uint32_t mode = __func_to_mode(conf);
-	uint32_t otype = __func_to_otype(conf);
-	uint32_t ospeed = __func_to_ospeed(conf);
-	uint32_t pupd = __func_to_pupd(conf);
-	uint32_t tmpreg = 0;
+	u32_t mode = __func_to_mode(conf);
+	u32_t otype = __func_to_otype(conf);
+	u32_t ospeed = __func_to_ospeed(conf);
+	u32_t pupd = __func_to_pupd(conf);
+	u32_t tmpreg = 0;
 
 	/* TODO: validate if indeed alternate */
 	if (altf) {
@@ -206,7 +206,7 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
 	return 0;
 }
 
-int stm32_gpio_set(uint32_t *base, int pin, int value)
+int stm32_gpio_set(u32_t *base, int pin, int value)
 {
 	struct stm32f4x_gpio *gpio = (struct stm32f4x_gpio *)base;
 
@@ -221,7 +221,7 @@ int stm32_gpio_set(uint32_t *base, int pin, int value)
 	return 0;
 }
 
-int stm32_gpio_get(uint32_t *base, int pin)
+int stm32_gpio_get(u32_t *base, int pin)
 {
 	struct stm32f4x_gpio *gpio = (struct stm32f4x_gpio *)base;
 

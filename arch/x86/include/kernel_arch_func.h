@@ -84,8 +84,8 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int imask);
 
-extern void _MsrWrite(unsigned int msr, uint64_t msrData);
-extern uint64_t _MsrRead(unsigned int msr);
+extern void _MsrWrite(unsigned int msr, u64_t msrData);
+extern u64_t _MsrRead(unsigned int msr);
 
 /*
  * _IntLibInit() is called from the non-arch specific function,

@@ -28,7 +28,7 @@ extern "C" {
  */
 static inline int _sys_current_irq_key_get(void)
 {
-	uint32_t ipending;
+	u32_t ipending;
 
 	ipending = _nios2_creg_read(NIOS2_CR_IPENDING);
 	return find_lsb_set(ipending) - 1;

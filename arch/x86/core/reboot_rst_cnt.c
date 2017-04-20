@@ -15,7 +15,7 @@
 
 static inline void cold_reboot(void)
 {
-	uint8_t reset_value = SYS_X86_RST_CNT_CPU_RST | SYS_X86_RST_CNT_SYS_RST |
+	u8_t reset_value = SYS_X86_RST_CNT_CPU_RST | SYS_X86_RST_CNT_SYS_RST |
 							SYS_X86_RST_CNT_FULL_RST;
 	sys_out8(reset_value, SYS_X86_RST_CNT_REG);
 }

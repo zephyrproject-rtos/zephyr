@@ -21,12 +21,12 @@
 #endif /* CONFIG_INIT_STACKS */
 /*  initial stack frame */
 struct init_stack_frame {
-	uint32_t pc;
-	uint32_t status32;
-	uint32_t r3;
-	uint32_t r2;
-	uint32_t r1;
-	uint32_t r0;
+	u32_t pc;
+	u32_t status32;
+	u32_t r3;
+	u32_t r2;
+	u32_t r1;
+	u32_t r0;
 };
 
 #if defined(CONFIG_THREAD_MONITOR)
@@ -94,11 +94,11 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackEnd) -
 				       sizeof(struct init_stack_frame));
 
-	pInitCtx->pc = ((uint32_t)_thread_entry_wrapper);
-	pInitCtx->r0 = (uint32_t)pEntry;
-	pInitCtx->r1 = (uint32_t)parameter1;
-	pInitCtx->r2 = (uint32_t)parameter2;
-	pInitCtx->r3 = (uint32_t)parameter3;
+	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
+	pInitCtx->r0 = (u32_t)pEntry;
+	pInitCtx->r1 = (u32_t)parameter1;
+	pInitCtx->r2 = (u32_t)parameter2;
+	pInitCtx->r3 = (u32_t)parameter3;
 	/*
 	 * For now set the interrupt priority to 15
 	 * we can leave interrupt enable flag set to 0 as
@@ -108,7 +108,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	pInitCtx->status32 = _ARC_V2_STATUS32_SC | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-	thread->arch.stack_top = (uint32_t) stackEnd;
+	thread->arch.stack_top = (u32_t) stackEnd;
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif
@@ -142,7 +142,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	thread->arch.intlock_key = 0x3F;
 	thread->arch.relinquish_cause = _CAUSE_COOP;
 	thread->callee_saved.sp =
-		(uint32_t)pInitCtx - ___callee_saved_stack_t_SIZEOF;
+		(u32_t)pInitCtx - ___callee_saved_stack_t_SIZEOF;
 
 	/* initial values in all other regs/k_thread entries are irrelevant */
 

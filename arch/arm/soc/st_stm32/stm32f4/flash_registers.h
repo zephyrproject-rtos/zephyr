@@ -25,27 +25,27 @@ enum {
 };
 
 union __flash_acr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t latency :4 __packed;
-		uint32_t rsvd__4_7 :4 __packed;
-		uint32_t prften :1 __packed;
-		uint32_t icen :1 __packed;
-		uint32_t dcen :1 __packed;
-		uint32_t icrst :1 __packed;
-		uint32_t dcrst :1 __packed;
-		uint32_t rsvd__13_31 :19 __packed;
+		u32_t latency :4 __packed;
+		u32_t rsvd__4_7 :4 __packed;
+		u32_t prften :1 __packed;
+		u32_t icen :1 __packed;
+		u32_t dcen :1 __packed;
+		u32_t icrst :1 __packed;
+		u32_t dcrst :1 __packed;
+		u32_t rsvd__13_31 :19 __packed;
 	} bit;
 };
 
 /* 3.8.7 Embedded flash registers */
 struct stm32f4x_flash {
 	volatile union __flash_acr acr;
-	volatile uint32_t key;
-	volatile uint32_t optkey;
-	volatile uint32_t status;
-	volatile uint32_t ctrl;
-	volatile uint32_t optctrl;
+	volatile u32_t key;
+	volatile u32_t optkey;
+	volatile u32_t status;
+	volatile u32_t ctrl;
+	volatile u32_t optctrl;
 };
 
 /**
@@ -56,7 +56,7 @@ struct stm32f4x_flash {
 static inline void __setup_flash(void)
 {
 	volatile struct stm32f4x_flash *regs;
-	uint32_t tmpreg = 0;
+	u32_t tmpreg = 0;
 
 	regs = (struct stm32f4x_flash *) FLASH_R_BASE;
 

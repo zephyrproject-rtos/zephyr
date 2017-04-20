@@ -79,7 +79,7 @@ struct _callee_saved {
 	 * callee-saved, but their values are pushed onto the stack rather than
 	 * stored in the k_thread structure:
 	 */
-	uint32_t retval; /* a2 */
+	u32_t retval; /* a2 */
 	XtExcFrame *topOfStack; /* a1 = sp */
 };
 
@@ -129,7 +129,7 @@ struct _thread_arch {
 	 * before any #ifdef'ed fields since the host tools currently use a
 	 * fixed offset to read the 'flags' field.
 	 */
-	uint32_t flags;
+	u32_t flags;
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	void *custom_data;     /* available for custom use */
 #endif

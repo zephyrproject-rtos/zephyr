@@ -10,7 +10,7 @@
 
 void _irq_spurious(void *unused)
 {
-	uint32_t mcause;
+	u32_t mcause;
 
 	ARG_UNUSED(unused);
 

@@ -18,7 +18,7 @@
 #ifdef CONFIG_UART_STELLARIS
 #include <uart.h>
 
-#define RCGC1 (*((volatile uint32_t *)0x400FE104))
+#define RCGC1 (*((volatile u32_t *)0x400FE104))
 
 #define RCGC1_UART0_EN 0x00000001
 #define RCGC1_UART1_EN 0x00000002

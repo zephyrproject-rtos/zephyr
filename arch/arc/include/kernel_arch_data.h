@@ -49,65 +49,65 @@ struct _caller_saved {
 typedef struct _caller_saved _caller_saved_t;
 
 struct _irq_stack_frame {
-	uint32_t r0;
-	uint32_t r1;
-	uint32_t r2;
-	uint32_t r3;
-	uint32_t r4;
-	uint32_t r5;
-	uint32_t r6;
-	uint32_t r7;
-	uint32_t r8;
-	uint32_t r9;
-	uint32_t r10;
-	uint32_t r11;
-	uint32_t r12;
-	uint32_t r13;
-	uint32_t blink;
-	uint32_t lp_end;
-	uint32_t lp_start;
-	uint32_t lp_count;
+	u32_t r0;
+	u32_t r1;
+	u32_t r2;
+	u32_t r3;
+	u32_t r4;
+	u32_t r5;
+	u32_t r6;
+	u32_t r7;
+	u32_t r8;
+	u32_t r9;
+	u32_t r10;
+	u32_t r11;
+	u32_t r12;
+	u32_t r13;
+	u32_t blink;
+	u32_t lp_end;
+	u32_t lp_start;
+	u32_t lp_count;
 #ifdef CONFIG_CODE_DENSITY
 	/*
 	 * Currently unsupported. This is where those registers are
 	 * automatically pushed on the stack by the CPU when taking a regular
 	 * IRQ.
 	 */
-	uint32_t ei_base;
-	uint32_t ldi_base;
-	uint32_t jli_base;
+	u32_t ei_base;
+	u32_t ldi_base;
+	u32_t jli_base;
 #endif
-	uint32_t pc;
-	uint32_t status32;
+	u32_t pc;
+	u32_t status32;
 };
 
 typedef struct _irq_stack_frame _isf_t;
 
 struct _callee_saved {
-	uint32_t sp; /* r28 */
+	u32_t sp; /* r28 */
 };
 typedef struct _callee_saved _callee_saved_t;
 
 /* callee-saved registers pushed on the stack, not in k_thread */
 struct _callee_saved_stack {
-	uint32_t r13;
-	uint32_t r14;
-	uint32_t r15;
-	uint32_t r16;
-	uint32_t r17;
-	uint32_t r18;
-	uint32_t r19;
-	uint32_t r20;
-	uint32_t r21;
-	uint32_t r22;
-	uint32_t r23;
-	uint32_t r24;
-	uint32_t r25;
-	uint32_t r26;
-	uint32_t fp; /* r27 */
+	u32_t r13;
+	u32_t r14;
+	u32_t r15;
+	u32_t r16;
+	u32_t r17;
+	u32_t r18;
+	u32_t r19;
+	u32_t r20;
+	u32_t r21;
+	u32_t r22;
+	u32_t r23;
+	u32_t r24;
+	u32_t r25;
+	u32_t r26;
+	u32_t fp; /* r27 */
 	/* r28 is the stack pointer and saved separately */
 	/* r29 is ILINK and does not need to be saved */
-	uint32_t r30;
+	u32_t r30;
 	/*
 	 * No need to save r31 (blink), it's either alread pushed as the pc or
 	 * blink on an irq stack frame.
@@ -139,7 +139,7 @@ typedef struct _callee_saved_stack _callee_saved_stack_t;
 struct _thread_arch {
 
 	/* interrupt key when relinquishing control */
-	uint32_t intlock_key;
+	u32_t intlock_key;
 
 	/* one of the _CAUSE_xxxx definitions above */
 	int relinquish_cause;
@@ -149,7 +149,7 @@ struct _thread_arch {
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* top of stack for hardware stack checking */
-	uint32_t stack_top;
+	u32_t stack_top;
 #endif
 };
 

@@ -57,31 +57,31 @@ typedef struct _caller_saved _caller_saved_t;
 
 struct _callee_saved {
 	/* General purpose callee-saved registers */
-	uint32_t r16;
-	uint32_t r17;
-	uint32_t r18;
-	uint32_t r19;
-	uint32_t r20;
-	uint32_t r21;
-	uint32_t r22;
-	uint32_t r23;
+	u32_t r16;
+	u32_t r17;
+	u32_t r18;
+	u32_t r19;
+	u32_t r20;
+	u32_t r21;
+	u32_t r22;
+	u32_t r23;
 
 	 /* Normally used for the frame pointer but also a general purpose
 	  * register if frame pointers omitted
 	  */
-	uint32_t r28;
+	u32_t r28;
 
 	/* Return address */
-	uint32_t ra;
+	u32_t ra;
 
 	/* Stack pointer */
-	uint32_t sp;
+	u32_t sp;
 
 	/* IRQ status before irq_lock() and call to _Swap() */
-	uint32_t key;
+	u32_t key;
 
 	/* Return value of _Swap() */
-	uint32_t retval;
+	u32_t retval;
 };
 
 typedef struct _callee_saved _callee_saved_t;

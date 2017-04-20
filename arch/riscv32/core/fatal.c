@@ -164,7 +164,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
 
 
 #ifdef CONFIG_PRINTK
-static char *cause_str(uint32_t cause)
+static char *cause_str(u32_t cause)
 {
 	switch (cause) {
 	case 0:
@@ -188,7 +188,7 @@ static char *cause_str(uint32_t cause)
 
 FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 {
-	uint32_t mcause;
+	u32_t mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 

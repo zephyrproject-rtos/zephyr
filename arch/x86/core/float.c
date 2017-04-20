@@ -48,7 +48,7 @@
 #ifdef CONFIG_FP_SHARING
 
 /* SSE control/status register default value (used by assembler code) */
-extern uint32_t _sse_mxcsr_default_value;
+extern u32_t _sse_mxcsr_default_value;
 
 /*
  * Save a thread's floating point context information.
@@ -104,7 +104,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	/* Indicate thread requires floating point context saving */
 
-	tcs->base.user_options |= (uint8_t)options;
+	tcs->base.user_options |= (u8_t)options;
 
 	/*
 	 * The current thread might not allow FP instructions, so clear CR0[TS]

@@ -44,7 +44,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 static ALWAYS_INLINE int _is_in_isr(void)
 {
-	uint32_t act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
+	u32_t act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
 #if CONFIG_IRQ_OFFLOAD
 	/* Check if we're in a TRAP_S exception as well */
 	if (_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_AE &&
@@ -65,7 +65,7 @@ static ALWAYS_INLINE int _is_in_isr(void)
  */
 static ALWAYS_INLINE int _INTERRUPT_CAUSE(void)
 {
-	uint32_t irq_num = _arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
+	u32_t irq_num = _arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
 
 	return irq_num;
 }

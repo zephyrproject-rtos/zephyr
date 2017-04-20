@@ -34,8 +34,8 @@ struct stm32f4x_flash_sector stm32f4xx_sectors[] = {
 #endif
 };
 
-#define STM32F4X_FLASH_TIMEOUT		((uint32_t) 0x000B0000)
-#define STM32F4X_SECTOR_MASK		((uint32_t) 0xFFFFFF07)
+#define STM32F4X_FLASH_TIMEOUT		((u32_t) 0x000B0000)
+#define STM32F4X_SECTOR_MASK		((u32_t) 0xFFFFFF07)
 #define STM32F4X_SECTORS		ARRAY_SIZE(stm32f4xx_sectors)
 
 #define STM32F4X_FLASH_END	\

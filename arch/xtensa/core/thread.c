@@ -88,7 +88,7 @@ void _new_thread(char *pStack, size_t stackSize,
 	 */
 	struct k_thread *thread = (struct k_thread *)(pStack);
 #if XCHAL_CP_NUM > 0
-	uint32_t *cpSA;
+	u32_t *cpSA;
 	char *cpStack;
 #endif
 
@@ -104,7 +104,7 @@ void _new_thread(char *pStack, size_t stackSize,
 	cpStack = thread->arch.preempCoprocReg.cpStack; /* short hand alias */
 	memset(cpStack, 0, XT_CP_ASA); /* Set to zero to avoid bad surprises */
 	/* Coprocessor's stack is allocated just after the k_thread */
-	cpSA = (uint32_t *)(thread->arch.preempCoprocReg.cpStack + XT_CP_ASA);
+	cpSA = (u32_t *)(thread->arch.preempCoprocReg.cpStack + XT_CP_ASA);
 	/* Coprocessor's save area alignment is at leat 16 bytes */
 	*cpSA = ROUND_UP(cpSA + 1,
 		(XCHAL_TOTAL_SA_ALIGN < 16 ? 16 : XCHAL_TOTAL_SA_ALIGN));
@@ -125,31 +125,31 @@ void _new_thread(char *pStack, size_t stackSize,
 	/* Explicitly initialize certain saved registers */
 
 	 /* task entrypoint */
-	pInitCtx->pc   = (uint32_t)_thread_entry;
+	pInitCtx->pc   = (u32_t)_thread_entry;
 
 	/* physical top of stack frame */
-	pInitCtx->a1   = (uint32_t)pInitCtx + XT_STK_FRMSZ;
+	pInitCtx->a1   = (u32_t)pInitCtx + XT_STK_FRMSZ;
 
 	/* user exception exit dispatcher */
-	pInitCtx->exit = (uint32_t)_xt_user_exit;
+	pInitCtx->exit = (u32_t)_xt_user_exit;
 
 	/* Set initial PS to int level 0, EXCM disabled, user mode.
 	 * Also set entry point argument arg.
 	 */
 #ifdef __XTENSA_CALL0_ABI__
-	pInitCtx->a2 = (uint32_t)pEntry;
-	pInitCtx->a3 = (uint32_t)p1;
-	pInitCtx->a4 = (uint32_t)p2;
-	pInitCtx->a5 = (uint32_t)p3;
+	pInitCtx->a2 = (u32_t)pEntry;
+	pInitCtx->a3 = (u32_t)p1;
+	pInitCtx->a4 = (u32_t)p2;
+	pInitCtx->a5 = (u32_t)p3;
 	pInitCtx->ps = PS_UM | PS_EXCM;
 #else
 	/* For windowed ABI set also WOE and CALLINC
 	 * (pretend task is 'call4')
 	 */
-	pInitCtx->a6 = (uint32_t)pEntry;
-	pInitCtx->a7 = (uint32_t)p1;
-	pInitCtx->a8 = (uint32_t)p2;
-	pInitCtx->a9 = (uint32_t)p3;
+	pInitCtx->a6 = (u32_t)pEntry;
+	pInitCtx->a7 = (u32_t)p1;
+	pInitCtx->a8 = (u32_t)p2;
+	pInitCtx->a9 = (u32_t)p3;
 	pInitCtx->ps = PS_UM | PS_EXCM | PS_WOE | PS_CALLINC(1);
 #endif
 	thread->callee_saved.topOfStack = pInitCtx;

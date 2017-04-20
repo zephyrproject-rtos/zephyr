@@ -31,7 +31,7 @@
  */
 static ALWAYS_INLINE void clock_init(void)
 {
-	uint32_t tmp;
+	u32_t tmp;
 
 	/* Note:
 	 * Magic numbers below are obtained by reading the registers
@@ -141,7 +141,7 @@ static ALWAYS_INLINE void clock_init(void)
  */
 static int atmel_sam3_init(struct device *arg)
 {
-	uint32_t key;
+	u32_t key;
 
 	ARG_UNUSED(arg);
 

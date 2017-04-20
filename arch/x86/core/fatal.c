@@ -184,13 +184,13 @@ EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 
 FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
 {
-	uint32_t err, cr2;
+	u32_t err, cr2;
 
 	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
 	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
 
 	err = pEsf->errorCode;
-	printk("***** CPU Page Fault (error code 0x%08" PRIx32 ")\n", err);
+	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
 
 	printk("%s thread %s address 0x%08" PRIx32 "\n",
 	       err & US ? "User" : "Supervisor",

@@ -28,7 +28,7 @@ extern "C" {
  */
 static inline int _sys_current_irq_key_get(void)
 {
-	uint32_t mcause;
+	u32_t mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 

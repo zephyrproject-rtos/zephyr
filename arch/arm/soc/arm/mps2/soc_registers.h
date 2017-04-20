@@ -18,41 +18,41 @@
 /* System Control Register (SYSCON) */
 struct mps2_syscon {
 	/* Offset: 0x000 (r/w) remap control register */
-	volatile uint32_t remap;
+	volatile u32_t remap;
 	/* Offset: 0x004 (r/w) pmu control register */
-	volatile uint32_t pmuctrl;
+	volatile u32_t pmuctrl;
 	/* Offset: 0x008 (r/w) reset option register */
-	volatile uint32_t resetop;
+	volatile u32_t resetop;
 	/* Offset: 0x00c (r/w) emi control register */
-	volatile uint32_t emictrl;
+	volatile u32_t emictrl;
 	/* Offset: 0x010 (r/w) reset information register */
-	volatile uint32_t rstinfo;
+	volatile u32_t rstinfo;
 };
 
 /* Registers in the FPGA system control block */
 struct mps2_fpgaio {
 	/* Offset: 0x000 LED connections */
-	volatile uint32_t led0;
+	volatile u32_t led0;
 	/* Offset: 0x004 RESERVED */
-	volatile uint32_t reserved1;
+	volatile u32_t reserved1;
 	/* Offset: 0x008 Buttons */
-	volatile uint32_t button;
+	volatile u32_t button;
 	/* Offset: 0x00c RESERVED */
-	volatile uint32_t reserved2;
+	volatile u32_t reserved2;
 	/* Offset: 0x010 1Hz up counter */
-	volatile uint32_t clk1hz;
+	volatile u32_t clk1hz;
 	/* Offset: 0x014 100Hz up counter */
-	volatile uint32_t clk100hz;
+	volatile u32_t clk100hz;
 	/* Offset: 0x018 Cycle up counter */
-	volatile uint32_t counter;
+	volatile u32_t counter;
 	/* Offset: 0x01c Reload value for prescale counter */
-	volatile uint32_t prescale;
+	volatile u32_t prescale;
 	/* Offset: 0x020 32-bit Prescale counter */
-	volatile uint32_t pscntr;
+	volatile u32_t pscntr;
 	/* Offset: 0x024 RESERVED */
-	volatile uint32_t reserved3[10];
+	volatile u32_t reserved3[10];
 	/* Offset: 0x04c Misc control */
-	volatile uint32_t misc;
+	volatile u32_t misc;
 };
 
 /* Defines for bits in fpgaio led0 register */

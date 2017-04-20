@@ -32,7 +32,7 @@
  * -Reserved, 1 byte, (EEPROM protection byte for FlexNVM)
  *
  */
-uint8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
+u8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
 	/* Backdoor Comparison Key (unused) */
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 	/* Program flash protection; 1 bit/region - 0=protected, 1=unprotected

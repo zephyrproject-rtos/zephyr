@@ -149,27 +149,27 @@ void gdb_arch_regs_to_isf(struct gdb_reg_set *regs, NANO_ISF *isf)
 
 void gdb_arch_regs_get(struct gdb_reg_set *regs, char *buffer)
 {
-	*((uint32_t *) buffer) = regs->regs.eax;
+	*((u32_t *) buffer) = regs->regs.eax;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.ecx;
+	*((u32_t *) buffer) = regs->regs.ecx;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.edx;
+	*((u32_t *) buffer) = regs->regs.edx;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.ebx;
+	*((u32_t *) buffer) = regs->regs.ebx;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.esp;
+	*((u32_t *) buffer) = regs->regs.esp;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.ebp;
+	*((u32_t *) buffer) = regs->regs.ebp;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.esi;
+	*((u32_t *) buffer) = regs->regs.esi;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.edi;
+	*((u32_t *) buffer) = regs->regs.edi;
 	buffer += 4;
-	*((uint32_t *) buffer) = (uint32_t) regs->regs.eip;
+	*((u32_t *) buffer) = (u32_t) regs->regs.eip;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.eflags;
+	*((u32_t *) buffer) = regs->regs.eflags;
 	buffer += 4;
-	*((uint32_t *) buffer) = regs->regs.cs;
+	*((u32_t *) buffer) = regs->regs.cs;
 }
 
 /**
@@ -187,27 +187,27 @@ void gdb_arch_regs_get(struct gdb_reg_set *regs, char *buffer)
 
 void gdb_arch_regs_set(struct gdb_reg_set *regs, char *buffer)
 {
-	regs->regs.eax = *((uint32_t *)buffer);
+	regs->regs.eax = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.ecx = *((uint32_t *)buffer);
+	regs->regs.ecx = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.edx = *((uint32_t *)buffer);
+	regs->regs.edx = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.ebx = *((uint32_t *)buffer);
+	regs->regs.ebx = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.esp = *((uint32_t *)buffer);
+	regs->regs.esp = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.ebp = *((uint32_t *)buffer);
+	regs->regs.ebp = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.esi = *((uint32_t *)buffer);
+	regs->regs.esi = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.edi = *((uint32_t *)buffer);
+	regs->regs.edi = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.eip = *((uint32_t *)buffer);
+	regs->regs.eip = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.eflags = *((uint32_t *)buffer);
+	regs->regs.eflags = *((u32_t *)buffer);
 	buffer += 4;
-	regs->regs.cs = *((uint32_t *)buffer);
+	regs->regs.cs = *((u32_t *)buffer);
 }
 
 /**

@@ -57,23 +57,23 @@ enum {
 
 /* GPIO registers - each GPIO port controls 16 pins */
 struct stm32l4x_gpio {
-	uint32_t moder;
-	uint32_t otyper;
-	uint32_t ospeedr;
-	uint32_t pupdr;
-	uint32_t idr;
-	uint32_t odr;
-	uint32_t bsrr;
-	uint32_t lckr;
-	uint32_t afr[2];
-	uint32_t brr;
-	uint32_t ascr; /* Only present on STM32L4x1, STM32L4x5, STM32L4x6 */
+	u32_t moder;
+	u32_t otyper;
+	u32_t ospeedr;
+	u32_t pupdr;
+	u32_t idr;
+	u32_t odr;
+	u32_t bsrr;
+	u32_t lckr;
+	u32_t afr[2];
+	u32_t brr;
+	u32_t ascr; /* Only present on STM32L4x1, STM32L4x5, STM32L4x6 */
 };
 
 /**
  * @brief map pin function to MODE register value
  */
-static uint32_t func_to_mode(int conf, unsigned int afnum)
+static u32_t func_to_mode(int conf, unsigned int afnum)
 {
 	/* If an alternate function is specified */
 	if (afnum) {
@@ -94,7 +94,7 @@ static uint32_t func_to_mode(int conf, unsigned int afnum)
 	return STM32L4X_MODER_INPUT_MODE;
 }
 
-static uint32_t func_to_otype(int conf)
+static u32_t func_to_otype(int conf)
 {
 	switch (conf) {
 	case STM32L4X_PIN_CONFIG_OPEN_DRAIN:
@@ -108,7 +108,7 @@ static uint32_t func_to_otype(int conf)
 	return STM32L4X_OTYPER_PUSH_PULL;
 }
 
-static uint32_t func_to_pupd(int conf)
+static u32_t func_to_pupd(int conf)
 {
 	switch (conf) {
 	case STM32L4X_PIN_CONFIG_ANALOG:
@@ -158,7 +158,7 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 	return 0;
 }
 
-int stm32_gpio_configure(uint32_t *base_addr, int pin, int pinconf, int afnum)
+int stm32_gpio_configure(u32_t *base_addr, int pin, int pinconf, int afnum)
 {
 	volatile struct stm32l4x_gpio *gpio =
 		(struct stm32l4x_gpio *)(base_addr);
@@ -166,7 +166,7 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int pinconf, int afnum)
 	unsigned int pin_shift = pin << 1;
 	unsigned int afr_bank = pin / 8;
 	unsigned int afr_shift = (pin % 8) << 2;
-	uint32_t scratch;
+	u32_t scratch;
 
 	mode = func_to_mode(pinconf, afnum);
 	otype = func_to_otype(pinconf);
@@ -187,7 +187,7 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int pinconf, int afnum)
 	return 0;
 }
 
-int stm32_gpio_set(uint32_t *base, int pin, int value)
+int stm32_gpio_set(u32_t *base, int pin, int value)
 {
 	struct stm32l4x_gpio *gpio = (struct stm32l4x_gpio *)base;
 	int pval = 1 << (pin & 0xf);
@@ -201,7 +201,7 @@ int stm32_gpio_set(uint32_t *base, int pin, int value)
 	return 0;
 }
 
-int stm32_gpio_get(uint32_t *base, int pin)
+int stm32_gpio_get(u32_t *base, int pin)
 {
 	struct stm32l4x_gpio *gpio = (struct stm32l4x_gpio *)base;
 
@@ -212,7 +212,7 @@ int stm32_gpio_enable_int(int port, int pin)
 {
 	struct stm32l4x_syscfg *syscfg = (struct stm32l4x_syscfg *)SYSCFG_BASE;
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	uint32_t *reg;
+	u32_t *reg;
 
 	/* Enable SYSCFG clock */
 	struct stm32_pclken pclken = {

@@ -95,78 +95,78 @@ enum {
   */
 
 union __rcc_cr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t hsion :1 __packed;
-		uint32_t hsirdy :1 __packed;
-		uint32_t rsvd__2 :1 __packed;
-		uint32_t hsitrim :5 __packed;
-		uint32_t hsical :8 __packed;
-		uint32_t hseon :1 __packed;
-		uint32_t hserdy :1 __packed;
-		uint32_t hsebyp :1 __packed;
-		uint32_t csson :1 __packed;
-		uint32_t rsvd__20_23 :4 __packed;
-		uint32_t pllon :1 __packed;
-		uint32_t pllrdy :1 __packed;
+		u32_t hsion :1 __packed;
+		u32_t hsirdy :1 __packed;
+		u32_t rsvd__2 :1 __packed;
+		u32_t hsitrim :5 __packed;
+		u32_t hsical :8 __packed;
+		u32_t hseon :1 __packed;
+		u32_t hserdy :1 __packed;
+		u32_t hsebyp :1 __packed;
+		u32_t csson :1 __packed;
+		u32_t rsvd__20_23 :4 __packed;
+		u32_t pllon :1 __packed;
+		u32_t pllrdy :1 __packed;
 #if CONFIG_SOC_STM32F10X_DENSITY_DEVICE
-		uint32_t rsvd__26_31 :6 __packed;
+		u32_t rsvd__26_31 :6 __packed;
 #elif CONFIG_SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
-		uint32_t pll2on :1 __packed;
-		uint32_t pll2rdy :1 __packed;
-		uint32_t pll3on :1 __packed;
-		uint32_t pll3rdy :1 __packed;
-		uint32_t rsvd__30_31 :2 __packed;
+		u32_t pll2on :1 __packed;
+		u32_t pll2rdy :1 __packed;
+		u32_t pll3on :1 __packed;
+		u32_t pll3rdy :1 __packed;
+		u32_t rsvd__30_31 :2 __packed;
 #endif
 	} bit;
 };
 
 union __rcc_cfgr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t sw :2 __packed;
-		uint32_t sws :2 __packed;
-		uint32_t hpre :4 __packed;
-		uint32_t ppre1 :3 __packed;
-		uint32_t ppre2 :3 __packed;
-		uint32_t adcpre :2 __packed;
-		uint32_t pllsrc :1 __packed;
-		uint32_t pllxtpre :1 __packed;
-		uint32_t pllmul :4 __packed;
-		uint32_t usbpre :1 __packed;
-		uint32_t rsvd__23 :1 __packed;
-		uint32_t mco :3 __packed;
-		uint32_t rsvd__27_31 :5 __packed;
+		u32_t sw :2 __packed;
+		u32_t sws :2 __packed;
+		u32_t hpre :4 __packed;
+		u32_t ppre1 :3 __packed;
+		u32_t ppre2 :3 __packed;
+		u32_t adcpre :2 __packed;
+		u32_t pllsrc :1 __packed;
+		u32_t pllxtpre :1 __packed;
+		u32_t pllmul :4 __packed;
+		u32_t usbpre :1 __packed;
+		u32_t rsvd__23 :1 __packed;
+		u32_t mco :3 __packed;
+		u32_t rsvd__27_31 :5 __packed;
 	} bit;
 };
 
 union __rcc_cfgr2 {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t prediv1 :4 __packed;
-		uint32_t prediv2 :4 __packed;
-		uint32_t pll2mul :4 __packed;
-		uint32_t pll3mul :4 __packed;
-		uint32_t prediv1src :1 __packed;
-		uint32_t i2s2sr :1 __packed;
-		uint32_t i2s3sr :1 __packed;
-		uint32_t rsvd__19_31 :13 __packed;
+		u32_t prediv1 :4 __packed;
+		u32_t prediv2 :4 __packed;
+		u32_t pll2mul :4 __packed;
+		u32_t pll3mul :4 __packed;
+		u32_t prediv1src :1 __packed;
+		u32_t i2s2sr :1 __packed;
+		u32_t i2s3sr :1 __packed;
+		u32_t rsvd__19_31 :13 __packed;
 	} bit;
 };
 
 struct stm32f10x_rcc {
 	union __rcc_cr cr;
 	union __rcc_cfgr cfgr;
-	uint32_t cir;
-	uint32_t apb2rstr;
-	uint32_t apb1rstr;
-	uint32_t ahbenr;
-	uint32_t apb2enr;
-	uint32_t apb1enr;
-	uint32_t bdcr;
-	uint32_t csr;
+	u32_t cir;
+	u32_t apb2rstr;
+	u32_t apb1rstr;
+	u32_t ahbenr;
+	u32_t apb2enr;
+	u32_t apb1enr;
+	u32_t bdcr;
+	u32_t csr;
 #ifdef CONFIG_SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
-	uint32_t ahbrstr;
+	u32_t ahbrstr;
 	union __rcc_cfgr2 cfgr2;
 #endif
 };

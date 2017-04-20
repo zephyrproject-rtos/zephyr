@@ -62,7 +62,7 @@ void *__attribute__((section(".spurNoErrIsr")))
 void _arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
-		int32_t idle_val = _kernel.idle;
+		s32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
 		_sys_power_save_idle_exit(idle_val);

@@ -34,8 +34,8 @@ def read_intlist(intlist_path):
      struct {
        void * spurious_irq_handler;
        void * sw_irq_handler;
-       uint32_t num_isrs;
-       uint32_t num_vectors; <- typically CONFIG_NUM_IRQS
+       u32_t num_isrs;
+       u32_t num_vectors; <- typically CONFIG_NUM_IRQS
        struct _isr_list isrs[];  <- of size num_isrs
     }
 
@@ -44,9 +44,9 @@ def read_intlist(intlist_path):
 
     struct _isr_list {
         /** IRQ line number */
-        int32_t irq;
+        s32_t irq;
         /** Flags for this IRQ, see ISR_FLAG_* definitions */
-        int32_t flags;
+        s32_t flags;
         /** ISR to call */
         void *func;
         /** Parameter for non-direct IRQs */
@@ -129,7 +129,7 @@ def write_source_file(fp, vt, swt, intlist):
     nv = intlist["num_vectors"]
 
     if vt:
-        fp.write("uint32_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
+        fp.write("u32_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
         for i in range(nv):
             fp.write("\t0x%x,\n" % vt[i])
         fp.write("};\n")

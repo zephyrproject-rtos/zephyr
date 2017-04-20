@@ -41,7 +41,7 @@ extern char _interrupt_stack[];
  */
 static ALWAYS_INLINE void _irq_setup(void)
 {
-	uint32_t aux_irq_ctrl_value = (
+	u32_t aux_irq_ctrl_value = (
 		_ARC_V2_AUX_IRQ_CTRL_LOOP_REGS | /* save lp_xxx registers */
 		_ARC_V2_AUX_IRQ_CTRL_BLINK     | /* save blink */
 		_ARC_V2_AUX_IRQ_CTRL_14_REGS     /* save r0 -> r13 (caller-saved) */

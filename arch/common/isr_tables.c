@@ -21,8 +21,8 @@
 struct int_list_header {
 	void *spurious_ptr;
 	void *handler_ptr;
-	uint32_t table_size;
-	uint32_t offset;
+	u32_t table_size;
+	u32_t offset;
 };
 
 /* These values are not included in the resulting binary, but instead form the
@@ -44,7 +44,7 @@ _GENERIC_SECTION(.irq_info) struct int_list_header _iheader = {
  * point for all interrupts. Don't generate a table in this case.
  */
 #ifdef CONFIG_GEN_IRQ_VECTOR_TABLE
-uint32_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
+u32_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
 	[0 ...(IRQ_TABLE_SIZE - 1)] = 0xabababab,
 };
 #endif

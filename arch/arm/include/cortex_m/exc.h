@@ -42,7 +42,7 @@ extern "C" {
  */
 static ALWAYS_INLINE int _IsInIsr(void)
 {
-	uint32_t vector = _IpsrGet();
+	u32_t vector = _IpsrGet();
 
 	/*
 	 * IRQs + PendSV (14) + SVC (11) + SYSTICK (15) are interrupts.

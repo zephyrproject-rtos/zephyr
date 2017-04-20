@@ -36,7 +36,7 @@ uint32_t SystemCoreClock __used = __SYSTEM_CLOCK;
 
 static int nordicsemi_nrf51_init(struct device *arg)
 {
-	uint32_t key;
+	u32_t key;
 
 	ARG_UNUSED(arg);
 
@@ -57,8 +57,8 @@ static int nordicsemi_nrf51_init(struct device *arg)
 	 * will not be available.
 	 */
 	if (ftpan_26()) {
-		*(volatile uint32_t *)0x40000504 = 0xC007FFDF;
-		*(volatile uint32_t *)0x40006C18 = 0x00008000;
+		*(volatile u32_t *)0x40000504 = 0xC007FFDF;
+		*(volatile u32_t *)0x40006C18 = 0x00008000;
 	}
 
 	/* Disable PROTENSET registers under debug, as indicated by PAN 59
@@ -84,18 +84,18 @@ static int nordicsemi_nrf51_init(struct device *arg)
 
 static bool ftpan_26(void)
 {
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x1) &&
-	    (((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x00) &&
-		    (((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+	if ((((*(u32_t *)0xF0000FE0) & 0x000000FF) == 0x1) &&
+	    (((*(u32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x00) &&
+		    (((*(u32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
 			return true;
 		}
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x10) &&
-		    (((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+		if ((((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x10) &&
+		    (((*(u32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
 			return true;
 		}
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
-		    (((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+		if ((((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x30) &&
+		    (((*(u32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
 			return true;
 		}
 	}
@@ -105,10 +105,10 @@ static bool ftpan_26(void)
 
 static bool ftpan_59(void)
 {
-	if ((((*(uint32_t *)0xF0000FE0) & 0x000000FF) == 0x1) &&
-	    (((*(uint32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
-		if ((((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x40) &&
-		    (((*(uint32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
+	if ((((*(u32_t *)0xF0000FE0) & 0x000000FF) == 0x1) &&
+	    (((*(u32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if ((((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x40) &&
+		    (((*(u32_t *)0xF0000FEC) & 0x000000F0) == 0x0)) {
 			return true;
 		}
 	}

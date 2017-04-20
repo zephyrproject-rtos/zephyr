@@ -38,7 +38,7 @@ uint32_t HAL_GetTick(void)
  */
 static int st_stm32f4_init(struct device *arg)
 {
-	uint32_t key;
+	u32_t key;
 
 	ARG_UNUSED(arg);
 

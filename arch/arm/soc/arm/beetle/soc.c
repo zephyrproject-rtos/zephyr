@@ -32,7 +32,7 @@
  */
 static int arm_beetle_init(struct device *arg)
 {
-	uint32_t key;
+	u32_t key;
 
 	ARG_UNUSED(arg);
 

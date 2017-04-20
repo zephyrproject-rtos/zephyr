@@ -26,7 +26,7 @@
 /**
  * @brief map pin function to MODE register value
  */
-static uint32_t __func_to_mode(int func)
+static u32_t __func_to_mode(int func)
 {
 	switch (func) {
 	case STM32F10X_PIN_CONFIG_ANALOG:
@@ -46,7 +46,7 @@ static uint32_t __func_to_mode(int func)
 /**
  * @brief map pin function to CNF register value
  */
-static uint32_t __func_to_cnf(int func)
+static u32_t __func_to_cnf(int func)
 {
 	switch (func) {
 	case STM32F10X_PIN_CONFIG_ANALOG:
@@ -97,7 +97,7 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 	return 0;
 }
 
-int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
+int stm32_gpio_configure(u32_t *base_addr, int pin, int conf, int altf)
 {
 	volatile struct stm32f10x_gpio *gpio =
 		(struct stm32f10x_gpio *)(base_addr);
@@ -107,7 +107,7 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
 	/* pins are configured in CRL (0-7) and CRH (8-15)
 	 * registers
 	 */
-	volatile uint32_t *reg = &gpio->crl;
+	volatile u32_t *reg = &gpio->crl;
 
 	ARG_UNUSED(altf);
 
@@ -144,7 +144,7 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int conf, int altf)
 	return 0;
 }
 
-int stm32_gpio_set(uint32_t *base, int pin, int value)
+int stm32_gpio_set(u32_t *base, int pin, int value)
 {
 	struct stm32f10x_gpio *gpio = (struct stm32f10x_gpio *)base;
 
@@ -159,7 +159,7 @@ int stm32_gpio_set(uint32_t *base, int pin, int value)
 	return 0;
 }
 
-int stm32_gpio_get(uint32_t *base, int pin)
+int stm32_gpio_get(u32_t *base, int pin)
 {
 	struct stm32f10x_gpio *gpio = (struct stm32f10x_gpio *)base;
 

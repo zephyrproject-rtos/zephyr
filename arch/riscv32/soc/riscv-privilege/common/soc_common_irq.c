@@ -13,7 +13,7 @@
 
 void _arch_irq_enable(unsigned int irq)
 {
-	uint32_t mie;
+	u32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (irq > RISCV_MAX_GENERIC_IRQ) {
@@ -33,7 +33,7 @@ void _arch_irq_enable(unsigned int irq)
 
 void _arch_irq_disable(unsigned int irq)
 {
-	uint32_t mie;
+	u32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (irq > RISCV_MAX_GENERIC_IRQ) {
@@ -53,7 +53,7 @@ void _arch_irq_disable(unsigned int irq)
 
 int _arch_irq_is_enabled(unsigned int irq)
 {
-	uint32_t mie;
+	u32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (irq > RISCV_MAX_GENERIC_IRQ)

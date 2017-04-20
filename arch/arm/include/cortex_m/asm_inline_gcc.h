@@ -28,9 +28,9 @@ extern "C" {
  *
  * @return the contents of the IPSR register
  */
-static ALWAYS_INLINE uint32_t _IpsrGet(void)
+static ALWAYS_INLINE u32_t _IpsrGet(void)
 {
-	uint32_t vector;
+	u32_t vector;
 
 	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(vector));
 	return vector;
@@ -44,7 +44,7 @@ static ALWAYS_INLINE uint32_t _IpsrGet(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _MspSet(uint32_t msp /* value to store in MSP */
+static ALWAYS_INLINE void _MspSet(u32_t msp /* value to store in MSP */
 				  )
 {
 	__asm__ volatile("msr MSP, %0\n\t" :  : "r"(msp));

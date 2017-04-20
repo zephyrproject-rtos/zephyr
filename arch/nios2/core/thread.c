@@ -86,8 +86,8 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	/* Initialize custom data field (value is opaque to kernel) */
 	thread->custom_data = NULL;
 #endif
-	thread->callee_saved.sp = (uint32_t)iframe;
-	thread->callee_saved.ra = (uint32_t)_thread_entry_wrapper;
+	thread->callee_saved.sp = (u32_t)iframe;
+	thread->callee_saved.ra = (u32_t)_thread_entry_wrapper;
 	thread->callee_saved.key = NIOS2_STATUS_PIE_MSK;
 	/* Leave the rest of thread->callee_saved junk */
 

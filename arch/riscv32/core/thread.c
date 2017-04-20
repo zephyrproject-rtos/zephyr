@@ -53,10 +53,10 @@ void _new_thread(char *stack_memory, size_t stack_size,
 				 stack_size - sizeof(struct __esf));
 
 	/* Setup the initial stack frame */
-	stack_init->a0 = (uint32_t)thread_func;
-	stack_init->a1 = (uint32_t)arg1;
-	stack_init->a2 = (uint32_t)arg2;
-	stack_init->a3 = (uint32_t)arg3;
+	stack_init->a0 = (u32_t)thread_func;
+	stack_init->a1 = (u32_t)arg1;
+	stack_init->a2 = (u32_t)arg2;
+	stack_init->a3 = (u32_t)arg3;
 	/*
 	 * Following the RISC-V architecture,
 	 * the MSTATUS register (used to globally enable/disable interrupt),
@@ -81,7 +81,7 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	 *    thread stack.
 	 */
 	stack_init->mstatus = SOC_MSTATUS_DEF_RESTORE;
-	stack_init->mepc = (uint32_t)_thread_entry_wrapper;
+	stack_init->mepc = (u32_t)_thread_entry_wrapper;
 
 	/* Initialize various struct k_thread members */
 	thread = (struct k_thread *)stack_memory;
@@ -97,7 +97,7 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	thread->custom_data = NULL;
 #endif
 
-	thread->callee_saved.sp = (uint32_t)stack_init;
+	thread->callee_saved.sp = (u32_t)stack_init;
 
 	thread_monitor_init(thread);
 }

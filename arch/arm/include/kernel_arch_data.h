@@ -45,29 +45,29 @@ struct _caller_saved {
 	 *
 	 * For Cortex-A, this may be:
 	 *
-	 * uint32_t a1;    // r0
-	 * uint32_t a2;    // r1
-	 * uint32_t a3;    // r2
-	 * uint32_t a4;    // r3
-	 * uint32_t ip;    // r12
-	 * uint32_t lr;    // r14
-	 * uint32_t pc;    // r15
-	 * uint32_t xpsr;
+	 * u32_t a1;    // r0
+	 * u32_t a2;    // r1
+	 * u32_t a3;    // r2
+	 * u32_t a4;    // r3
+	 * u32_t ip;    // r12
+	 * u32_t lr;    // r14
+	 * u32_t pc;    // r15
+	 * u32_t xpsr;
 	 */
 };
 
 typedef struct _caller_saved _caller_saved_t;
 
 struct _callee_saved {
-	uint32_t v1;  /* r4 */
-	uint32_t v2;  /* r5 */
-	uint32_t v3;  /* r6 */
-	uint32_t v4;  /* r7 */
-	uint32_t v5;  /* r8 */
-	uint32_t v6;  /* r9 */
-	uint32_t v7;  /* r10 */
-	uint32_t v8;  /* r11 */
-	uint32_t psp; /* r13 */
+	u32_t v1;  /* r4 */
+	u32_t v2;  /* r5 */
+	u32_t v3;  /* r6 */
+	u32_t v4;  /* r7 */
+	u32_t v5;  /* r8 */
+	u32_t v6;  /* r9 */
+	u32_t v7;  /* r10 */
+	u32_t v8;  /* r11 */
+	u32_t psp; /* r13 */
 };
 
 typedef struct _callee_saved _callee_saved_t;
@@ -112,10 +112,10 @@ struct _preempt_float {
 struct _thread_arch {
 
 	/* interrupt locking key */
-	uint32_t basepri;
+	u32_t basepri;
 
 	/* r0 in stack frame cannot be written to reliably */
-	uint32_t swap_return_value;
+	u32_t swap_return_value;
 
 #ifdef CONFIG_FLOAT
 	/*

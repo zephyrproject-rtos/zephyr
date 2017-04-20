@@ -30,7 +30,7 @@ void _irq_spurious(void *unused)
 
 void _arch_irq_enable(unsigned int irq)
 {
-	uint32_t ienable;
+	u32_t ienable;
 	int key;
 
 	key = irq_lock();
@@ -46,7 +46,7 @@ void _arch_irq_enable(unsigned int irq)
 
 void _arch_irq_disable(unsigned int irq)
 {
-	uint32_t ienable;
+	u32_t ienable;
 	int key;
 
 	key = irq_lock();
@@ -66,7 +66,7 @@ void _arch_irq_disable(unsigned int irq)
  *
  * @param ipending Bitfield of interrupts
  */
-void _enter_irq(uint32_t ipending)
+void _enter_irq(u32_t ipending)
 {
 	int index;
 

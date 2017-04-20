@@ -11,8 +11,8 @@
 #define SHARED_ADDR_START 0xA8000000
 
 struct shared_mem {
-	uint32_t arc_start;
-	uint32_t flags;
+	u32_t arc_start;
+	u32_t flags;
 };
 
 #define ARC_READY	(1 << 0)

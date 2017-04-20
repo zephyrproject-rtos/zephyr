@@ -46,7 +46,7 @@ extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
  */
 static ALWAYS_INLINE void _InterruptStackSetup(void)
 {
-	uint32_t msp = (uint32_t)(_interrupt_stack + CONFIG_ISR_STACK_SIZE);
+	u32_t msp = (u32_t)(_interrupt_stack + CONFIG_ISR_STACK_SIZE);
 
 	_MspSet(msp);
 }

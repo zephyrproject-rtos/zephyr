@@ -25,27 +25,27 @@ enum {
 
 /* 3.3.3 FLASH_ACR */
 union __ef_acr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t latency :3 __packed;
-		uint32_t hlfcya :1 __packed;
-		uint32_t prftbe :1 __packed;
-		uint32_t prftbs :1 __packed;
-		uint32_t rsvd__6_31 :26 __packed;
+		u32_t latency :3 __packed;
+		u32_t hlfcya :1 __packed;
+		u32_t prftbe :1 __packed;
+		u32_t prftbs :1 __packed;
+		u32_t rsvd__6_31 :26 __packed;
 	} bit;
 };
 
 /* 3.3.3 Embedded flash registers */
 struct stm32f10x_flash {
 	union __ef_acr acr;
-	uint32_t keyr;
-	uint32_t optkeyr;
-	uint32_t sr;
-	uint32_t cr;
-	uint32_t ar;
-	uint32_t rsvd;
-	uint32_t obr;
-	uint32_t wrpr;
+	u32_t keyr;
+	u32_t optkeyr;
+	u32_t sr;
+	u32_t cr;
+	u32_t ar;
+	u32_t rsvd;
+	u32_t obr;
+	u32_t wrpr;
 };
 
 #endif	/* _STM32F10X_FLASHREGISTERS_H_ */

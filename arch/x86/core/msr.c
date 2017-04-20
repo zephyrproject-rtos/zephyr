@@ -29,7 +29,7 @@
  *
  * @return N/A
  */
-void _MsrWrite(unsigned int msr, uint64_t msr_data)
+void _MsrWrite(unsigned int msr, u64_t msr_data)
 {
 	__asm__ volatile (
 	    "movl %[msr], %%ecx\n\t"
@@ -38,8 +38,8 @@ void _MsrWrite(unsigned int msr, uint64_t msr_data)
 	    "wrmsr"
 	    :
 	    : [msr] "m" (msr),
-	      [data_lo] "rm" ((uint32_t)(msr_data & 0xFFFFFFFF)),
-	      [data_hi] "rm" ((uint32_t)(msr_data >> 32))
+	      [data_lo] "rm" ((u32_t)(msr_data & 0xFFFFFFFF)),
+	      [data_hi] "rm" ((u32_t)(msr_data >> 32))
 	    : "eax", "ecx", "edx");
 }
 
@@ -62,9 +62,9 @@ void _MsrWrite(unsigned int msr, uint64_t msr_data)
  *
  * @return N/A
  */
-uint64_t _MsrRead(unsigned int msr)
+u64_t _MsrRead(unsigned int msr)
 {
-	uint64_t ret;
+	u64_t ret;
 
 	__asm__ volatile (
 	    "movl %[msr], %%ecx\n\t"

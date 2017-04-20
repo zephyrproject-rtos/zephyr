@@ -24,7 +24,7 @@
 
 #ifdef CONFIG_ARC_INIT
 #define SCSS_REG_VAL(offset) \
-	(*((volatile uint32_t *)(SCSS_REGISTER_BASE+offset)))
+	(*((volatile u32_t *)(SCSS_REGISTER_BASE+offset)))
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ARC_INIT_LEVEL
 #include <logging/sys_log.h>
@@ -40,7 +40,7 @@
 /* This function is also called at deep sleep resume. */
 int _arc_init(struct device *arg)
 {
-	uint32_t *reset_vector;
+	u32_t *reset_vector;
 
 	ARG_UNUSED(arg);
 
@@ -53,7 +53,7 @@ int _arc_init(struct device *arg)
 	/* Address of ARC side __reset stored in the first 4 bytes of arc.bin,
 	 * we read the value and stick it in shared_mem->arc_start which is
 	 * the beginning of the address space at 0xA8000000 */
-	reset_vector = (uint32_t *)RESET_VECTOR;
+	reset_vector = (u32_t *)RESET_VECTOR;
 	SYS_LOG_DBG("Reset vector address: %x", *reset_vector);
 	shared_data->arc_start = *reset_vector;
 	shared_data->flags = 0;

@@ -70,7 +70,7 @@ void _sys_soc_set_power_state(enum power_states state)
 
 void _sys_soc_power_state_post_ops(enum power_states state)
 {
-	uint32_t limit;
+	u32_t limit;
 
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:

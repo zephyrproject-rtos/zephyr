@@ -50,15 +50,14 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	ARG_UNUSED(fault);
 
 #ifdef CONFIG_PRINTK
-	uint32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
-	uint32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
+	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
+	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
 
-	PR_EXC("Exception vector: 0x%" PRIx32 ", cause code: 0x%" PRIx32
-	       ", parameter 0x%" PRIx32 "\n",
+	PR_EXC("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%xn",
 	       _ARC_V2_ECR_VECTOR(ecr),
 	       _ARC_V2_ECR_CODE(ecr),
 	       _ARC_V2_ECR_PARAMETER(ecr));
-	PR_EXC("Address 0x%" PRIx32 "\n", exc_addr);
+	PR_EXC("Address 0x%x\n", exc_addr);
 #endif
 }
 #endif /* CONFIG_FAULT_DUMP */
@@ -75,7 +74,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  */
 void _Fault(void)
 {
-	uint32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
+	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
 
 	FAULT_DUMP(&_default_esf, ecr);
 

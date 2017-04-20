@@ -67,7 +67,7 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
  *
  * C function prototype:
  *
- * int32_t _NanoIdleValGet (void);
+ * s32_t _NanoIdleValGet (void);
  */
 
 SECTION_FUNC(TEXT, _NanoIdleValGet)

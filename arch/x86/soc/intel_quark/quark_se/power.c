@@ -13,21 +13,21 @@
 
 #include "power_states.h"
 
-#define _REG_TIMER_ICR ((volatile uint32_t *) \
+#define _REG_TIMER_ICR ((volatile u32_t *) \
 			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR))
 
 /* Variables used to save CPU state */
-uint64_t _pm_save_gdtr;
-uint64_t _pm_save_idtr;
-uint32_t _pm_save_esp;
+u64_t _pm_save_gdtr;
+u64_t _pm_save_idtr;
+u32_t _pm_save_esp;
 
 extern void _power_soc_sleep(void);
 extern void _power_restore_cpu_context(void);
 extern void _power_soc_deep_sleep(void);
 
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
-static uint32_t  *__x86_restore_info =
-	(uint32_t *)CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR;
+static u32_t  *__x86_restore_info =
+	(u32_t *)CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR;
 
 static void _deep_sleep(enum power_states state)
 {
