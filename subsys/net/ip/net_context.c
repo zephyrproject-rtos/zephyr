@@ -1173,10 +1173,20 @@ int net_context_connect(struct net_context *context,
 
 #define ACK_TIMEOUT MSEC_PER_SEC
 
+static void ack_timer_cancel(struct net_tcp *tcp)
+{
+	tcp->ack_timer_cancelled = true;
+	k_delayed_work_cancel(&tcp->ack_timer);
+}
+
 static void ack_timeout(struct k_work *work)
 {
 	/* This means that we did not receive ACK response in time. */
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
+
+	if (tcp->ack_timer_cancelled) {
+		return;
+	}
 
 	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
 
@@ -1281,9 +1291,12 @@ NET_CONN_CB(tcp_syn_rcvd)
 		 * if the SYN is sent more than once. So we need to cancel
 		 * any pending timers.
 		 */
-		k_delayed_work_cancel(&tcp->ack_timer);
+		ack_timer_cancel(tcp);
+
 		k_delayed_work_init(&tcp->ack_timer, ack_timeout);
 		k_delayed_work_submit(&tcp->ack_timer, ACK_TIMEOUT);
+
+		tcp->ack_timer_cancelled = false;
 
 		return NET_DROP;
 	}
@@ -1292,7 +1305,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 * If we receive RST, we go back to LISTEN state.
 	 */
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_RST) {
-		k_delayed_work_cancel(&tcp->ack_timer);
+		ack_timer_cancel(tcp);
 
 		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
 
@@ -1316,7 +1329,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		 * So if we are not in SYN_RCVD state, then it is an error.
 		 */
 		if (net_tcp_get_state(tcp) != NET_TCP_SYN_RCVD) {
-			k_delayed_work_cancel(&tcp->ack_timer);
+			ack_timer_cancel(tcp);
 			NET_DBG("Not in SYN_RCVD state, sending RST");
 			goto reset;
 		}
@@ -1438,7 +1451,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		net_tcp_change_state(new_context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(new_context, NET_CONTEXT_CONNECTED);
 
-		k_delayed_work_cancel(&tcp->ack_timer);
+		ack_timer_cancel(tcp);
 
 		context->tcp->accept_cb(new_context,
 					&new_context->remote,

@@ -134,8 +134,13 @@ struct net_tcp {
 	uint32_t fin_sent : 1;
 	/* An inbound FIN packet has been received */
 	uint32_t fin_rcvd : 1;
+	/* Tells if ack timer has been already cancelled. It might happen
+	 * that the timer is executed even if it is cancelled, this is because
+	 * of various timing issues when timer is scheduled to run.
+	 */
+	uint32_t ack_timer_cancelled : 1;
 	/** Remaining bits in this uint32_t */
-	uint32_t _padding : 12;
+	uint32_t _padding : 11;
 
 	/** Accept callback to be called when the connection has been
 	 * established.
