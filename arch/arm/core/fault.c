@@ -355,8 +355,6 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  *
  * @param esf ESF on the stack, either MSP or PSP depending at what processor
  *            state the exception was taken.
- *
- * @return This function does not return.
  */
 void _Fault(const NANO_ESF *esf)
 {

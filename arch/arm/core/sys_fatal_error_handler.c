@@ -38,7 +38,7 @@
  *
  * @return N/A
  */
-FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(reason);
@@ -53,12 +53,9 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 	}
 	printk("Fatal fault in thread %p! Aborting.\n", _current);
 	k_thread_abort(_current);
-
 #else
 	for (;;) {
 		k_cpu_idle();
 	}
 #endif
-
-	CODE_UNREACHABLE;
 }

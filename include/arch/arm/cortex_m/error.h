@@ -21,9 +21,8 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
-						 const NANO_ESF*);
-extern void _SysFatalErrorHandler(unsigned int, const NANO_ESF*);
+extern void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
+extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 #endif
 
 #define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */

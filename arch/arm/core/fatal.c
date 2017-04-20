@@ -61,12 +61,16 @@ const NANO_ESF _default_esf = {
  * fatal error does not have a hardware generated ESF, the caller should either
  * create its own or use a pointer to the global default ESF <_default_esf>.
  *
+ * Unlike other arches, this function may return if _SysFatalErrorHandler
+ * determines that only the current thread should be aborted and the CPU
+ * was in handler mode. PendSV will be asserted in this case and the current
+ * thread taken off the run queue. Leaving the exception will immediately
+ * trigger a context switch.
+ *
  * @param reason the reason that the handler was called
  * @param pEsf pointer to the exception stack frame
- *
- * @return This function does not return.
  */
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
 	switch (reason) {
@@ -101,7 +105,4 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	 */
 
 	_SysFatalErrorHandler(reason, pEsf);
-
-	for (;;)
-		;
 }

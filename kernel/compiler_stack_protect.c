@@ -36,6 +36,7 @@ void FUNC_NORETURN _StackCheckHandler(void)
 	 */
 
 	_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, &_default_esf);
+	CODE_UNREACHABLE;
 }
 
 /* Global variable */
