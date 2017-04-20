@@ -1921,8 +1921,7 @@ static void att_reset(struct bt_att *att)
 static void att_timeout(struct k_work *work)
 {
 	struct bt_att *att = CONTAINER_OF(work, struct bt_att, timeout_work);
-	struct bt_l2cap_le_chan *ch =
-			CONTAINER_OF(att, struct bt_l2cap_le_chan, chan);
+	struct bt_l2cap_le_chan *ch = &att->chan;
 
 	BT_ERR("ATT Timeout");
 
