@@ -19,6 +19,6 @@
 };
 
 &usart1 {
-	baud-rate = <115200>;
+	current-speed = <115200>;
 	status = "ok";
 };
