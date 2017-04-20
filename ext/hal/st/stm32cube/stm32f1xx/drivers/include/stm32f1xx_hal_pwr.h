@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_pwr.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Header file of PWR HAL module.
   ******************************************************************************
   * @attention
@@ -116,13 +116,13 @@ typedef struct
 /** @defgroup PWR_PVD_Mode PWR PVD Mode
   * @{
   */
-#define PWR_PVD_MODE_NORMAL                 ((uint32_t)0x00000000)   /*!< basic mode is used */
-#define PWR_PVD_MODE_IT_RISING              ((uint32_t)0x00010001)   /*!< External Interrupt Mode with Rising edge trigger detection */
-#define PWR_PVD_MODE_IT_FALLING             ((uint32_t)0x00010002)   /*!< External Interrupt Mode with Falling edge trigger detection */
-#define PWR_PVD_MODE_IT_RISING_FALLING      ((uint32_t)0x00010003)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection */
-#define PWR_PVD_MODE_EVENT_RISING           ((uint32_t)0x00020001)   /*!< Event Mode with Rising edge trigger detection */
-#define PWR_PVD_MODE_EVENT_FALLING          ((uint32_t)0x00020002)   /*!< Event Mode with Falling edge trigger detection */
-#define PWR_PVD_MODE_EVENT_RISING_FALLING   ((uint32_t)0x00020003)   /*!< Event Mode with Rising/Falling edge trigger detection */
+#define PWR_PVD_MODE_NORMAL                 0x00000000U   /*!< basic mode is used */
+#define PWR_PVD_MODE_IT_RISING              0x00010001U   /*!< External Interrupt Mode with Rising edge trigger detection */
+#define PWR_PVD_MODE_IT_FALLING             0x00010002U   /*!< External Interrupt Mode with Falling edge trigger detection */
+#define PWR_PVD_MODE_IT_RISING_FALLING      0x00010003U   /*!< External Interrupt Mode with Rising/Falling edge trigger detection */
+#define PWR_PVD_MODE_EVENT_RISING           0x00020001U   /*!< Event Mode with Rising edge trigger detection */
+#define PWR_PVD_MODE_EVENT_FALLING          0x00020002U   /*!< Event Mode with Falling edge trigger detection */
+#define PWR_PVD_MODE_EVENT_RISING_FALLING   0x00020003U   /*!< Event Mode with Rising/Falling edge trigger detection */
 
 /**
   * @}
@@ -142,7 +142,7 @@ typedef struct
 /** @defgroup PWR_Regulator_state_in_SLEEP_STOP_mode PWR Regulator state in SLEEP/STOP mode
   * @{
   */
-#define PWR_MAINREGULATOR_ON                        ((uint32_t)0x00000000)
+#define PWR_MAINREGULATOR_ON                        0x00000000U
 #define PWR_LOWPOWERREGULATOR_ON                    PWR_CR_LPDS
 
 /**

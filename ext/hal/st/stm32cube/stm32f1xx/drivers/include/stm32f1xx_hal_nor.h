@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_nor.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Header file of NOR HAL module.
   ******************************************************************************
   * @attention
@@ -101,7 +101,7 @@
   */
 #define NOR_ADDR_SHIFT(__NOR_ADDRESS, __NOR_MEMORY_WIDTH_, __ADDRESS__)       \
             ((uint32_t)(((__NOR_MEMORY_WIDTH_) == NOR_MEMORY_16B)?              \
-              ((uint32_t)((__NOR_ADDRESS) + (2 * (__ADDRESS__)))):              \
+              ((uint32_t)((__NOR_ADDRESS) + (2U * (__ADDRESS__)))):              \
               ((uint32_t)((__NOR_ADDRESS) + (__ADDRESS__)))))
 
 /**
@@ -126,11 +126,11 @@
   */ 
 typedef enum
 {  
-  HAL_NOR_STATE_RESET             = 0x00,  /*!< NOR not yet initialized or disabled  */
-  HAL_NOR_STATE_READY             = 0x01,  /*!< NOR initialized and ready for use    */
-  HAL_NOR_STATE_BUSY              = 0x02,  /*!< NOR internal processing is ongoing   */
-  HAL_NOR_STATE_ERROR             = 0x03,  /*!< NOR error state                      */ 
-  HAL_NOR_STATE_PROTECTED         = 0x04   /*!< NOR NORSRAM device write protected  */
+  HAL_NOR_STATE_RESET             = 0x00U,  /*!< NOR not yet initialized or disabled  */
+  HAL_NOR_STATE_READY             = 0x01U,  /*!< NOR initialized and ready for use    */
+  HAL_NOR_STATE_BUSY              = 0x02U,  /*!< NOR internal processing is ongoing   */
+  HAL_NOR_STATE_ERROR             = 0x03U,  /*!< NOR error state                      */ 
+  HAL_NOR_STATE_PROTECTED         = 0x04U   /*!< NOR NORSRAM device write protected  */
 }HAL_NOR_StateTypeDef;    
 
 /**
@@ -138,7 +138,7 @@ typedef enum
   */
 typedef enum
 {
-  HAL_NOR_STATUS_SUCCESS = 0,
+  HAL_NOR_STATUS_SUCCESS = 0U,
   HAL_NOR_STATUS_ONGOING,
   HAL_NOR_STATUS_ERROR,
   HAL_NOR_STATUS_TIMEOUT

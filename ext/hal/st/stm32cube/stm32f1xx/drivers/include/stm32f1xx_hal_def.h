@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_def.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   This file contains HAL common defines, enumeration, macros and 
   *          structures definitions. 
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -46,7 +46,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx.h"
+#if defined(USE_HAL_LEGACY)
 #include "Legacy/stm32_hal_legacy.h"
+#endif
 #include <stdio.h>
 
 /* Exported types ------------------------------------------------------------*/
@@ -56,10 +58,10 @@
   */  
 typedef enum 
 {
-  HAL_OK       = 0x00,
-  HAL_ERROR    = 0x01,
-  HAL_BUSY     = 0x02,
-  HAL_TIMEOUT  = 0x03
+  HAL_OK       = 0x00U,
+  HAL_ERROR    = 0x01U,
+  HAL_BUSY     = 0x02U,
+  HAL_TIMEOUT  = 0x03U
 } HAL_StatusTypeDef;
 
 /** 
@@ -67,22 +69,21 @@ typedef enum
   */
 typedef enum 
 {
-  HAL_UNLOCKED = 0x00,
-  HAL_LOCKED   = 0x01  
+  HAL_UNLOCKED = 0x00U,
+  HAL_LOCKED   = 0x01U  
 } HAL_LockTypeDef;
 
 /* Exported macro ------------------------------------------------------------*/
-
-#define HAL_MAX_DELAY      0xFFFFFFFF
+#define HAL_MAX_DELAY      0xFFFFFFFFU
 
 #define HAL_IS_BIT_SET(REG, BIT)         (((REG) & (BIT)) != RESET)
 #define HAL_IS_BIT_CLR(REG, BIT)         (((REG) & (BIT)) == RESET)
 
-#define __HAL_LINKDMA(__HANDLE__, __PPP_DMA_FIELD_, __DMA_HANDLE_)           \
-                        do{                                                  \
-                              (__HANDLE__)->__PPP_DMA_FIELD_ = &(__DMA_HANDLE_); \
-                              (__DMA_HANDLE_).Parent = (__HANDLE__);             \
-                          } while(0)
+#define __HAL_LINKDMA(__HANDLE__, __PPP_DMA_FIELD__, __DMA_HANDLE__)               \
+                        do{                                                      \
+                              (__HANDLE__)->__PPP_DMA_FIELD__ = &(__DMA_HANDLE__); \
+                              (__DMA_HANDLE__).Parent = (__HANDLE__);             \
+                          } while(0U)
 
 #define UNUSED(x) ((void)(x))
 
@@ -101,14 +102,15 @@ typedef enum
   *            HAL_PPP_MspInit() which will reconfigure the low level hardware.
   * @retval None
   */
-#define __HAL_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = 0)
+#define __HAL_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = 0U)
 
-#if (USE_RTOS == 1)
-  #error " USE_RTOS should be 0 in the current HAL release "
+#if (USE_RTOS == 1U)
+  /* Reserved for future use */
+  #error "USE_RTOS should be 0 in the current HAL release"
 #else
   #define __HAL_LOCK(__HANDLE__)                                           \
                                 do{                                        \
-                                    if((__HANDLE__)->Lock == HAL_LOCKED)  \
+                                    if((__HANDLE__)->Lock == HAL_LOCKED)   \
                                     {                                      \
                                        return HAL_BUSY;                    \
                                     }                                      \
@@ -116,12 +118,12 @@ typedef enum
                                     {                                      \
                                        (__HANDLE__)->Lock = HAL_LOCKED;    \
                                     }                                      \
-                                  }while (0)
+                                  }while (0U)
 
   #define __HAL_UNLOCK(__HANDLE__)                                          \
                                   do{                                       \
-                                      (__HANDLE__)->Lock = HAL_UNLOCKED;   \
-                                    }while (0)
+                                      (__HANDLE__)->Lock = HAL_UNLOCKED;    \
+                                    }while (0U)
 #endif /* USE_RTOS */
 
 #if  defined ( __GNUC__ )
@@ -148,12 +150,13 @@ typedef enum
   #endif /* __ALIGN_END */
   #ifndef __ALIGN_BEGIN      
     #if defined   (__CC_ARM)      /* ARM Compiler */
-      #define __ALIGN_BEGIN    __align(4)  
+      #define __ALIGN_BEGIN    __align(4)
     #elif defined (__ICCARM__)    /* IAR Compiler */
       #define __ALIGN_BEGIN 
     #endif /* __CC_ARM */
   #endif /* __ALIGN_BEGIN */
 #endif /* __GNUC__ */
+
 
 /** 
   * @brief  __RAM_FUNC definition
@@ -194,7 +197,7 @@ typedef enum
 /* ARM & GNUCompiler 
    ---------------- 
 */
-#define __NOINLINE __attribute__ ( (noinline) )  
+#define __NOINLINE __attribute__ ( (noinline) )
 
 #elif defined ( __ICCARM__ )
 /* ICCARM Compiler
@@ -203,7 +206,6 @@ typedef enum
 #define __NOINLINE _Pragma("optimize = no_inline")
 
 #endif
-
 
 #ifdef __cplusplus
 }

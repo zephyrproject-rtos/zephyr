@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_pcd_ex.c
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Extended PCD HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the USB Peripheral Controller:
@@ -97,7 +97,7 @@
 HAL_StatusTypeDef HAL_PCDEx_SetTxFiFo(PCD_HandleTypeDef *hpcd, uint8_t fifo, uint16_t size)
 {
   uint8_t index = 0;
-  uint32_t Tx_Offset = 0;
+  uint32_t Tx_Offset = 0U;
   
   /*  TXn min size = 16 words. (n  : Transmit FIFO index)
       When a TxFIFO is not used, the Configuration should be as follows: 
@@ -111,20 +111,20 @@ HAL_StatusTypeDef HAL_PCDEx_SetTxFiFo(PCD_HandleTypeDef *hpcd, uint8_t fifo, uin
   
   Tx_Offset = hpcd->Instance->GRXFSIZ;
   
-  if(fifo == 0)
+  if(fifo == 0U)
   {
-    hpcd->Instance->DIEPTXF0_HNPTXFSIZ = (size << 16) | Tx_Offset;
+    hpcd->Instance->DIEPTXF0_HNPTXFSIZ = (size << 16U) | Tx_Offset;
   }
   else
   {
-    Tx_Offset += (hpcd->Instance->DIEPTXF0_HNPTXFSIZ) >> 16;
-    for (index = 0; index < (fifo - 1); index++)
+    Tx_Offset += (hpcd->Instance->DIEPTXF0_HNPTXFSIZ) >> 16U;
+    for(index = 0; index < (fifo - 1); index++)
     {
-      Tx_Offset += (hpcd->Instance->DIEPTXF[index] >> 16);
+      Tx_Offset += (hpcd->Instance->DIEPTXF[index] >> 16U);
     }
     
     /* Multiply Tx_Size by 2 to get higher performance */
-    hpcd->Instance->DIEPTXF[fifo - 1] = (size << 16) | Tx_Offset;
+    hpcd->Instance->DIEPTXF[fifo - 1U] = (size << 16U) | Tx_Offset;
     
   }
   
@@ -171,9 +171,9 @@ HAL_StatusTypeDef  HAL_PCDEx_PMAConfig(PCD_HandleTypeDef *hpcd,
   PCD_EPTypeDef *ep = NULL;
   
   /* initialize ep structure*/
-  if ((0x80 & ep_addr) == 0x80)
+  if ((ep_addr & 0x80U) == 0x80U)
   {
-    ep = &hpcd->IN_ep[ep_addr & 0x7F];
+    ep = &hpcd->IN_ep[ep_addr & 0x7FU];
   }
   else
   {
@@ -184,17 +184,17 @@ HAL_StatusTypeDef  HAL_PCDEx_PMAConfig(PCD_HandleTypeDef *hpcd,
   if (ep_kind == PCD_SNG_BUF)
   {
     /*Single Buffer*/
-    ep->doublebuffer = 0;
+    ep->doublebuffer = 0U;
     /*Configure te PMA*/
     ep->pmaadress = (uint16_t)pmaadress;
   }
   else /*USB_DBL_BUF*/
   {
     /*Double Buffer Endpoint*/
-    ep->doublebuffer = 1;
+    ep->doublebuffer = 1U;
     /*Configure the PMA*/
-    ep->pmaaddr0 =  pmaadress & 0xFFFF;
-    ep->pmaaddr1 =  (pmaadress & 0xFFFF0000) >> 16;
+    ep->pmaaddr0 =  pmaadress & 0x0000FFFFU;
+    ep->pmaaddr1 =  (pmaadress & 0xFFFF0000U) >> 16U;
   }
   
   return HAL_OK; 

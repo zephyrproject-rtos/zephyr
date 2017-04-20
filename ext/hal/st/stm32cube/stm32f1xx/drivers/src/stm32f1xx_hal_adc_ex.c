@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_adc_ex.c
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Analog to Digital Convertor (ADC)
   *          peripheral:
@@ -77,7 +77,7 @@
   /* Hardware prerequisite before starting a calibration: the ADC must have   */
   /* been in power-on state for at least two ADC clock cycles.                */
   /* Unit: ADC clock cycles                                                   */
-  #define ADC_PRECALIBRATION_DELAY_ADCCLOCKCYCLES       ((uint32_t) 2)
+  #define ADC_PRECALIBRATION_DELAY_ADCCLOCKCYCLES       2U
 
   /* Timeout value for ADC calibration                                        */
   /* Value defined to be higher than worst cases: low clocks freq,            */
@@ -85,12 +85,12 @@
   /* Ex of profile low frequency : Clock source at 0.1 MHz, ADC clock         */
   /* prescaler 4, sampling time 12.5 ADC clock cycles, resolution 12 bits.    */
   /* Unit: ms                                                                 */
-  #define ADC_CALIBRATION_TIMEOUT         ((uint32_t) 10)
+  #define ADC_CALIBRATION_TIMEOUT          10U
 
   /* Delay for temperature sensor stabilization time.                         */
   /* Maximum delay is 10us (refer to device datasheet, parameter tSTART).     */
   /* Unit: us                                                                 */
-  #define ADC_TEMPSENSOR_DELAY_US         ((uint32_t) 10)
+  #define ADC_TEMPSENSOR_DELAY_US         10U
 
 /**
   * @}
@@ -145,7 +145,7 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc)
 {
   HAL_StatusTypeDef tmp_hal_status = HAL_OK;
   uint32_t tickstart;
-  __IO uint32_t wait_loop_index = 0;
+  __IO uint32_t wait_loop_index = 0U;
   
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
@@ -175,7 +175,7 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc)
                         / HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_ADC))
                        * ADC_PRECALIBRATION_DELAY_ADCCLOCKCYCLES        );
 
-    while(wait_loop_index != 0)
+    while(wait_loop_index != 0U)
     {
       wait_loop_index--;
     }
@@ -405,8 +405,8 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* hadc, u
 
   /* Variables for polling in case of scan mode enabled and polling for each  */
   /* conversion.                                                              */
-  __IO uint32_t Conversion_Timeout_CPU_cycles = 0;
-  uint32_t Conversion_Timeout_CPU_cycles_max = 0;
+  __IO uint32_t Conversion_Timeout_CPU_cycles = 0U;
+  uint32_t Conversion_Timeout_CPU_cycles_max = 0U;
   
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
@@ -438,7 +438,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* hadc, u
       /* Check if timeout is disabled (set to infinite wait) */
       if(Timeout != HAL_MAX_DELAY)
       {
-        if((Timeout == 0) || ((HAL_GetTick() - tickstart ) > Timeout))
+        if((Timeout == 0U) || ((HAL_GetTick() - tickstart ) > Timeout))
         {
           /* Update ADC state machine to timeout */
           SET_BIT(hadc->State, HAL_ADC_STATE_TIMEOUT);
@@ -666,7 +666,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef* hadc)
   return tmp_hal_status;
 }
 
-#if defined (STM32F101xG) || defined (STM32F103x6) || defined (STM32F103xB) || defined (STM32F105xC) || defined (STM32F107xC) || defined (STM32F103xE) || defined (STM32F103xG)
+#if defined (STM32F103x6) || defined (STM32F103xB) || defined (STM32F105xC) || defined (STM32F107xC) || defined (STM32F103xE) || defined (STM32F103xG)
 /**
   * @brief  Enables ADC, starts conversion of regular group and transfers result
   *         through DMA.
@@ -704,8 +704,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t
   /* conversion trigger ADC_SOFTWARE_START.                                   */
   /* Note: External trigger of ADC slave must be enabled, it is already done  */
   /*       into function "HAL_ADC_Init()".                                    */
-  if ((tmphadcSlave.Instance == NULL)                 ||
-      (! ADC_IS_SOFTWARE_START_REGULAR(&tmphadcSlave))  )
+  if(!ADC_IS_SOFTWARE_START_REGULAR(&tmphadcSlave))  
   {
     /* Update ADC state machine to error */
     SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_CONFIG);
@@ -829,39 +828,26 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
   tmp_hal_status = ADC_ConversionStop_Disable(hadc);
   
   /* Check if ADC is effectively disabled */
-  if (tmp_hal_status == HAL_OK)
+  if(tmp_hal_status == HAL_OK)
   {
     /* Set a temporary handle of the ADC slave associated to the ADC master   */
     ADC_MULTI_SLAVE(hadc, &tmphadcSlave);
 
-    if (tmphadcSlave.Instance == NULL)
+    /* Disable ADC slave peripheral */
+    tmp_hal_status = ADC_ConversionStop_Disable(&tmphadcSlave);
+
+    /* Check if ADC is effectively disabled */
+    if(tmp_hal_status != HAL_OK)
     {
       /* Update ADC state machine to error */
-      SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_DMA);
-      
+      SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL);
+
       /* Process unlocked */
       __HAL_UNLOCK(hadc);
-      
+
       return HAL_ERROR;
     }
-    else
-    {
-      /* Disable ADC slave peripheral */
-      tmp_hal_status = ADC_ConversionStop_Disable(&tmphadcSlave);
-      
-      /* Check if ADC is effectively disabled */
-      if (tmp_hal_status != HAL_OK)
-      {
-        /* Update ADC state machine to error */
-        SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL);
-        
-        /* Process unlocked */
-        __HAL_UNLOCK(hadc);
-        
-        return HAL_ERROR;
-      }
-    }
-    
+
     /* Disable ADC DMA mode */
     CLEAR_BIT(hadc->Instance->CR2, ADC_CR2_DMA);
     
@@ -871,21 +857,11 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
     /* Disable the DMA channel (in case of DMA in circular mode or stop while */
     /* while DMA transfer is on going)                                        */
     tmp_hal_status = HAL_DMA_Abort(hadc->DMA_Handle);
-    
-    
-    /* Check if DMA channel effectively disabled */
-    if (tmp_hal_status == HAL_OK)
-    {
-      /* Change ADC state (ADC master) */
-      ADC_STATE_CLR_SET(hadc->State,
-                        HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
-                        HAL_ADC_STATE_READY);
-    }
-    else
-    {
-      /* Update ADC state machine to error */
-      SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_DMA);    
-    }
+
+    /* Change ADC state (ADC master) */
+    ADC_STATE_CLR_SET(hadc->State,
+                      HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+                      HAL_ADC_STATE_READY);
   }
   
   /* Process unlocked */
@@ -894,7 +870,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
   /* Return function status */
   return tmp_hal_status;
 }
-#endif /* STM32F101xG || defined STM32F103x6 || defined STM32F103xB || defined STM32F105xC || defined STM32F107xC || defined STM32F103xE || defined STM32F103xG */
+#endif /* defined STM32F103x6 || defined STM32F103xB || defined STM32F105xC || defined STM32F107xC || defined STM32F103xE || defined STM32F103xG */
 
 /**
   * @brief  Get ADC injected group conversion result.
@@ -926,7 +902,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
   */
 uint32_t HAL_ADCEx_InjectedGetValue(ADC_HandleTypeDef* hadc, uint32_t InjectedRank)
 {
-  uint32_t tmp_jdr = 0;
+  uint32_t tmp_jdr = 0U;
   
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
@@ -954,7 +930,7 @@ uint32_t HAL_ADCEx_InjectedGetValue(ADC_HandleTypeDef* hadc, uint32_t InjectedRa
   return tmp_jdr;
 }
 
-#if defined (STM32F101xG) || defined (STM32F103x6) || defined (STM32F103xB) || defined (STM32F105xC) || defined (STM32F107xC) || defined (STM32F103xE) || defined (STM32F103xG)
+#if defined (STM32F103x6) || defined (STM32F103xB) || defined (STM32F105xC) || defined (STM32F107xC) || defined (STM32F103xE) || defined (STM32F103xG)
 /**
   * @brief  Returns the last ADC Master&Slave regular conversions results data
   *         in the selected multi mode.
@@ -963,7 +939,7 @@ uint32_t HAL_ADCEx_InjectedGetValue(ADC_HandleTypeDef* hadc, uint32_t InjectedRa
   */
 uint32_t HAL_ADCEx_MultiModeGetValue(ADC_HandleTypeDef* hadc)
 {
-  uint32_t tmpDR = 0;
+  uint32_t tmpDR = 0U;
   
   /* Check the parameters */
   assert_param(IS_ADC_MULTIMODE_MASTER_INSTANCE(hadc->Instance));
@@ -980,13 +956,13 @@ uint32_t HAL_ADCEx_MultiModeGetValue(ADC_HandleTypeDef* hadc)
 
   if (HAL_IS_BIT_CLR(ADC1->CR2, ADC_CR2_DMA))
   {
-    tmpDR |= (ADC2->DR << 16);
+    tmpDR |= (ADC2->DR << 16U);
   }
     
   /* Return ADC converted value */ 
   return tmpDR;
 }
-#endif /* STM32F101xG || defined STM32F103x6 || defined STM32F103xB || defined STM32F105xC || defined STM32F107xC || defined STM32F103xE || defined STM32F103xG */
+#endif /* defined STM32F103x6 || defined STM32F103xB || defined STM32F105xC || defined STM32F107xC || defined STM32F103xE || defined STM32F103xG */
 
 /**
   * @brief  Injected conversion complete callback in non blocking mode 
@@ -1038,7 +1014,7 @@ __weak void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
 HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_InjectionConfTypeDef* sConfigInjected)
 {
   HAL_StatusTypeDef tmp_hal_status = HAL_OK;
-  __IO uint32_t wait_loop_index = 0;
+  __IO uint32_t wait_loop_index = 0U;
   
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
@@ -1080,7 +1056,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
                  ADC_JSQR_JSQ1                                    ,
                  ADC_JSQR_RK_JL(sConfigInjected->InjectedChannel,
                                   ADC_INJECTED_RANK_1,
-                                  0x01)                            );
+                                  0x01U));
     }
     /* If another injected rank than rank1 was intended to be set, and could  */
     /* not due to ScanConvMode disabled, error is reported.                   */
@@ -1123,7 +1099,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
                                   sConfigInjected->InjectedRank,         
                                   sConfigInjected->InjectedNbrOfConversion) ,
                  
-                 0x00000000                                                  );
+                 0x00000000U);
     }
   } 
     
@@ -1255,8 +1231,8 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
         {
           /* Delay for temperature sensor stabilization time */
           /* Compute number of CPU cycles to wait for */
-          wait_loop_index = (ADC_TEMPSENSOR_DELAY_US * (SystemCoreClock / 1000000));
-          while(wait_loop_index != 0)
+          wait_loop_index = (ADC_TEMPSENSOR_DELAY_US * (SystemCoreClock / 1000000U));
+          while(wait_loop_index != 0U)
           {
             wait_loop_index--;
           }
@@ -1279,7 +1255,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
   return tmp_hal_status;
 }
 
-#if defined (STM32F101xG) || defined (STM32F103x6) || defined (STM32F103xB) || defined (STM32F105xC) || defined (STM32F107xC) || defined (STM32F103xE) || defined (STM32F103xG)
+#if defined (STM32F103x6) || defined (STM32F103xB) || defined (STM32F105xC) || defined (STM32F107xC) || defined (STM32F103xE) || defined (STM32F103xG)
 /**
   * @brief  Enable ADC multimode and configure multimode parameters
   * @note   Possibility to update parameters on the fly:
@@ -1344,7 +1320,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
   /* Return function status */
   return tmp_hal_status;
 } 
-#endif /* STM32F101xG || defined STM32F103x6 || defined STM32F103xB || defined STM32F105xC || defined STM32F107xC || defined STM32F103xE || defined STM32F103xG */
+#endif /* defined STM32F103x6 || defined STM32F103xB || defined STM32F105xC || defined STM32F107xC || defined STM32F103xE || defined STM32F103xG */
 /**
   * @}
   */  

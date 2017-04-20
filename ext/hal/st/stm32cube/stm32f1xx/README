@@ -1,2 +1,6 @@
-The current version supported in Zephyr for STM32F1 Cube is V1.4.0
+The current version supported in Zephyr for STM32F1 Cube is V1.5.0
 
+This version contains following patch vs the official version:
+drivers/include/stm32f1_hal_conf.h: l355
+- #include "stm32f4xx_hal_mmc.h"
++ #include "stm32f1xx_hal_mmc.h"

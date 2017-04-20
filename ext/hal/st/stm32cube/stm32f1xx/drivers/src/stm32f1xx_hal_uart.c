@@ -2,29 +2,28 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_uart.c
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   UART HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Universal Asynchronous Receiver Transmitter (UART) peripheral:
   *           + Initialization and de-initialization functions
   *           + IO operation functions
-  *           + Peripheral Control functions 
-  *           + Peripheral State and Errors functions  
+  *           + Peripheral Control functions
+  *           + Peripheral State and Errors functions
   @verbatim
   ==============================================================================
                         ##### How to use this driver #####
   ==============================================================================
   [..]
     The UART HAL driver can be used as follows:
-    
-    (#) Declare a UART_HandleTypeDef handle structure.
 
+    (#) Declare a UART_HandleTypeDef handle structure.
     (#) Initialize the UART low level resources by implementing the HAL_UART_MspInit() API:
         (##) Enable the USARTx interface clock.
         (##) UART pins configuration:
             (+++) Enable the clock for the UART GPIOs.
-             (+++) Configure the USART pins (TX as alternate function pull-up, RX as alternate function Input).
+            (+++) Configure the UART pins (TX as alternate function pull-up, RX as alternate function Input).
         (##) NVIC configuration if you need to use interrupt process (HAL_UART_Transmit_IT()
              and HAL_UART_Receive_IT() APIs):
             (+++) Configure the USARTx interrupt priority.
@@ -64,18 +63,18 @@
 
      [..] 
        (@) These APIs (HAL_UART_Init() and HAL_HalfDuplex_Init()) configure also the 
-            low level Hardware GPIO, CLOCK, CORTEX...etc) by calling the customed 
+            low level Hardware GPIO, CLOCK, CORTEX...etc) by calling the customized
             HAL_UART_MspInit() API.
 
-     [..] 
-        Three operation modes are available within this driver :
+     [..]
+        Three operation modes are available within this driver:
 
      *** Polling mode IO operation ***
      =================================
-     [..]    
-       (+) Send an amount of data in blocking mode using HAL_UART_Transmit() 
+     [..]
+       (+) Send an amount of data in blocking mode using HAL_UART_Transmit()
        (+) Receive an amount of data in blocking mode using HAL_UART_Receive()
-       
+
      *** Interrupt mode IO operation ***
      ===================================
      [..]
@@ -122,12 +121,27 @@
 
      [..]
        (@) You can refer to the UART HAL driver header file for more useful macros 
-      
   @endverbatim
+     [..]
+       (@) Additionnal remark: If the parity is enabled, then the MSB bit of the data written
+           in the data register is transmitted but is changed by the parity bit.
+           Depending on the frame length defined by the M bit (8-bits or 9-bits),
+           the possible UART frame formats are as listed in the following table:
+    +-------------------------------------------------------------+
+    |   M bit |  PCE bit  |            UART frame                 |
+    |---------------------|---------------------------------------|
+    |    0    |    0      |    | SB | 8 bit data | STB |          |
+    |---------|-----------|---------------------------------------|
+    |    0    |    1      |    | SB | 7 bit data | PB | STB |     |
+    |---------|-----------|---------------------------------------|
+    |    1    |    0      |    | SB | 9 bit data | STB |          |
+    |---------|-----------|---------------------------------------|
+    |    1    |    1      |    | SB | 8 bit data | PB | STB |     |
+    +-------------------------------------------------------------+
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -166,31 +180,42 @@
   * @{
   */
 #ifdef HAL_UART_MODULE_ENABLED
-    
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-/* Private macros ------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
-/** @addtogroup UART_Private_Functions   UART Private Functions
+/** @addtogroup UART_Private_Constants
   * @{
   */
-static void UART_SetConfig (UART_HandleTypeDef *huart);
-static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart);
-static HAL_StatusTypeDef UART_EndTransmit_IT(UART_HandleTypeDef *huart);
-static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart);
-static void UART_DMATransmitCplt(DMA_HandleTypeDef *hdma);
-static void UART_DMATxHalfCplt(DMA_HandleTypeDef *hdma);
-static void UART_DMAReceiveCplt(DMA_HandleTypeDef *hdma);
-static void UART_DMARxHalfCplt(DMA_HandleTypeDef *hdma);
-static void UART_DMAError(DMA_HandleTypeDef *hdma); 
-static HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, uint32_t Flag, FlagStatus Status, uint32_t Timeout);
 /**
   * @}
   */
-
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/** @addtogroup UART_Private_Functions
+  * @{
+  */
+static void UART_EndTxTransfer(UART_HandleTypeDef *huart);
+static void UART_EndRxTransfer(UART_HandleTypeDef *huart);
+static void UART_DMATransmitCplt(DMA_HandleTypeDef *hdma);
+static void UART_DMAReceiveCplt(DMA_HandleTypeDef *hdma);
+static void UART_DMATxHalfCplt(DMA_HandleTypeDef *hdma);
+static void UART_DMARxHalfCplt(DMA_HandleTypeDef *hdma);
+static void UART_DMAError(DMA_HandleTypeDef *hdma);
+static void UART_DMAAbortOnError(DMA_HandleTypeDef *hdma);
+static void UART_DMATxAbortCallback(DMA_HandleTypeDef *hdma);
+static void UART_DMARxAbortCallback(DMA_HandleTypeDef *hdma);
+static void UART_DMATxOnlyAbortCallback(DMA_HandleTypeDef *hdma);
+static void UART_DMARxOnlyAbortCallback(DMA_HandleTypeDef *hdma);
+static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart);
+static HAL_StatusTypeDef UART_EndTransmit_IT(UART_HandleTypeDef *huart);
+static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart);
+static HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, uint32_t Flag, FlagStatus Status, uint32_t Tickstart, uint32_t Timeout);
+static void UART_SetConfig (UART_HandleTypeDef *huart);
+/**
+  * @}
+  */
 /* Exported functions ---------------------------------------------------------*/
-
 /** @defgroup UART_Exported_Functions UART Exported Functions
   * @{
   */
@@ -199,9 +224,9 @@ static HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, 
   *  @brief    Initialization and Configuration functions 
   *
 @verbatim
-===============================================================================
+  ==============================================================================
             ##### Initialization and Configuration functions #####
- ===============================================================================  
+  ==============================================================================
     [..]
     This subsection provides a set of functions allowing to initialize the USARTx or the UARTy 
     in asynchronous mode.
@@ -209,42 +234,27 @@ static HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, 
         (++) Baud Rate
         (++) Word Length 
         (++) Stop Bit
-        (++) Parity
+        (++) Parity: If the parity is enabled, then the MSB bit of the data written
+             in the data register is transmitted but is changed by the parity bit.
+             Depending on the frame length defined by the M bit (8-bits or 9-bits),
+             please refer to Reference manual for possible UART frame formats.
         (++) Hardware flow control
         (++) Receiver/transmitter modes
+        (++) Over Sampling Method
     [..]
     The HAL_UART_Init(), HAL_HalfDuplex_Init(), HAL_LIN_Init() and HAL_MultiProcessor_Init() APIs 
     follow respectively the UART asynchronous, UART Half duplex, LIN and Multi-Processor
     configuration procedures (details for the procedures are available in reference manuals 
     (RM0008 for STM32F10Xxx MCUs and RM0041 for STM32F100xx MCUs)).
 
-
 @endverbatim
   * @{
   */
 
-/*
-  Additionnal remark: If the parity is enabled, then the MSB bit of the data written
-                      in the data register is transmitted but is changed by the parity bit.
-                      Depending on the frame length defined by the M bit (8-bits or 9-bits),
-                      the possible UART frame formats are as listed in the following table:
-    +-------------------------------------------------------------+
-    |   M bit |  PCE bit  |            UART frame                 |
-    |---------------------|---------------------------------------|
-    |    0    |    0      |    | SB | 8 bit data | STB |          |
-    |---------|-----------|---------------------------------------|
-    |    0    |    1      |    | SB | 7 bit data | PB | STB |     |
-    |---------|-----------|---------------------------------------|
-    |    1    |    0      |    | SB | 9 bit data | STB |          |
-    |---------|-----------|---------------------------------------|
-    |    1    |    1      |    | SB | 8 bit data | PB | STB |     |
-    +-------------------------------------------------------------+
-*/
-
 /**
   * @brief  Initializes the UART mode according to the specified parameters in
   *         the UART_InitTypeDef and create the associated handle.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
@@ -268,18 +278,20 @@ HAL_StatusTypeDef HAL_UART_Init(UART_HandleTypeDef *huart)
     assert_param(IS_UART_INSTANCE(huart->Instance));
   }
   assert_param(IS_UART_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CR1_OVER8)
   assert_param(IS_UART_OVERSAMPLING(huart->Init.OverSampling));
+#endif /* USART_CR1_OVER8 */
   
-  if(huart->State == HAL_UART_STATE_RESET)
+  if(huart->gState == HAL_UART_STATE_RESET)
   {  
     /* Allocate lock resource and initialize it */
     huart->Lock = HAL_UNLOCKED;
-    
+
     /* Init the low level hardware */
     HAL_UART_MspInit(huart);
   }
 
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
 
   /* Disable the peripheral */
   __HAL_UART_DISABLE(huart);
@@ -298,7 +310,8 @@ HAL_StatusTypeDef HAL_UART_Init(UART_HandleTypeDef *huart)
   
   /* Initialize the UART state */
   huart->ErrorCode = HAL_UART_ERROR_NONE;
-  huart->State= HAL_UART_STATE_READY;
+  huart->gState= HAL_UART_STATE_READY;
+  huart->RxState= HAL_UART_STATE_READY;
   
   return HAL_OK;
 }
@@ -306,7 +319,7 @@ HAL_StatusTypeDef HAL_UART_Init(UART_HandleTypeDef *huart)
 /**
   * @brief  Initializes the half-duplex mode according to the specified
   *         parameters in the UART_InitTypeDef and create the associated handle.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
@@ -317,22 +330,22 @@ HAL_StatusTypeDef HAL_HalfDuplex_Init(UART_HandleTypeDef *huart)
   {
     return HAL_ERROR;
   }
-  
-  /* Check UART instance */
+ 
+  /* Check the parameters */ 
   assert_param(IS_UART_HALFDUPLEX_INSTANCE(huart->Instance));
   assert_param(IS_UART_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CR1_OVER8)
   assert_param(IS_UART_OVERSAMPLING(huart->Init.OverSampling));
-
-  if(huart->State == HAL_UART_STATE_RESET)
-  {   
+#endif /* USART_CR1_OVER8 */
+  if(huart->gState == HAL_UART_STATE_RESET)
+  {
     /* Allocate lock resource and initialize it */
     huart->Lock = HAL_UNLOCKED;
-
     /* Init the low level hardware */
     HAL_UART_MspInit(huart);
   }
 
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
 
   /* Disable the peripheral */
   __HAL_UART_DISABLE(huart);
@@ -340,7 +353,7 @@ HAL_StatusTypeDef HAL_HalfDuplex_Init(UART_HandleTypeDef *huart)
   /* Set the UART Communication parameters */
   UART_SetConfig(huart);
   
-  /* In half-duplex mode, the following bits must be kept cleared: 
+  /* In half-duplex mode, the following bits must be kept cleared:
      - LINEN and CLKEN bits in the USART_CR2 register,
      - SCEN and IREN bits in the USART_CR3 register.*/
   CLEAR_BIT(huart->Instance->CR2, (USART_CR2_LINEN | USART_CR2_CLKEN));
@@ -354,7 +367,8 @@ HAL_StatusTypeDef HAL_HalfDuplex_Init(UART_HandleTypeDef *huart)
   
   /* Initialize the UART state*/
   huart->ErrorCode = HAL_UART_ERROR_NONE;
-  huart->State= HAL_UART_STATE_READY;
+  huart->gState= HAL_UART_STATE_READY;
+  huart->RxState= HAL_UART_STATE_READY;
   
   return HAL_OK;
 }
@@ -362,7 +376,7 @@ HAL_StatusTypeDef HAL_HalfDuplex_Init(UART_HandleTypeDef *huart)
 /**
   * @brief  Initializes the LIN mode according to the specified
   *         parameters in the UART_InitTypeDef and create the associated handle.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  BreakDetectLength: Specifies the LIN break detection length.
   *         This parameter can be one of the following values:
@@ -383,18 +397,19 @@ HAL_StatusTypeDef HAL_LIN_Init(UART_HandleTypeDef *huart, uint32_t BreakDetectLe
   /* Check the Break detection length parameter */
   assert_param(IS_UART_LIN_BREAK_DETECT_LENGTH(BreakDetectLength));
   assert_param(IS_UART_LIN_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CR1_OVER8)
   assert_param(IS_UART_LIN_OVERSAMPLING(huart->Init.OverSampling));
+#endif /* USART_CR1_OVER8 */
   
-  if(huart->State == HAL_UART_STATE_RESET)
-  {   
+  if(huart->gState == HAL_UART_STATE_RESET)
+  {
     /* Allocate lock resource and initialize it */
-    huart->Lock = HAL_UNLOCKED;  
-
+    huart->Lock = HAL_UNLOCKED;
     /* Init the low level hardware */
     HAL_UART_MspInit(huart);
   }
 
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
 
   /* Disable the peripheral */
   __HAL_UART_DISABLE(huart);
@@ -419,7 +434,8 @@ HAL_StatusTypeDef HAL_LIN_Init(UART_HandleTypeDef *huart, uint32_t BreakDetectLe
   
   /* Initialize the UART state*/
   huart->ErrorCode = HAL_UART_ERROR_NONE;
-  huart->State= HAL_UART_STATE_READY;
+  huart->gState= HAL_UART_STATE_READY;
+  huart->RxState= HAL_UART_STATE_READY;
   
   return HAL_OK;
 }
@@ -427,13 +443,13 @@ HAL_StatusTypeDef HAL_LIN_Init(UART_HandleTypeDef *huart, uint32_t BreakDetectLe
 /**
   * @brief  Initializes the Multi-Processor mode according to the specified
   *         parameters in the UART_InitTypeDef and create the associated handle.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
-  * @param  Address: UART node address
-  * @param  WakeUpMethod: specifies the UART wakeup method.
+  * @param  Address: USART address
+  * @param  WakeUpMethod: specifies the USART wake-up method.
   *         This parameter can be one of the following values:
-  *            @arg UART_WAKEUPMETHOD_IDLELINE: Wakeup by an idle line detection
-  *            @arg UART_WAKEUPMETHOD_ADDRESSMARK: Wakeup by an address mark
+  *            @arg UART_WAKEUPMETHOD_IDLELINE: Wake-up by an idle line detection
+  *            @arg UART_WAKEUPMETHOD_ADDRESSMARK: Wake-up by an address mark
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MultiProcessor_Init(UART_HandleTypeDef *huart, uint8_t Address, uint32_t WakeUpMethod)
@@ -451,18 +467,19 @@ HAL_StatusTypeDef HAL_MultiProcessor_Init(UART_HandleTypeDef *huart, uint8_t Add
   assert_param(IS_UART_WAKEUPMETHOD(WakeUpMethod));
   assert_param(IS_UART_ADDRESS(Address));
   assert_param(IS_UART_WORD_LENGTH(huart->Init.WordLength));
+#if defined(USART_CR1_OVER8)
   assert_param(IS_UART_OVERSAMPLING(huart->Init.OverSampling));
+#endif /* USART_CR1_OVER8 */
 
-  if(huart->State == HAL_UART_STATE_RESET)
-  {   
+  if(huart->gState == HAL_UART_STATE_RESET)
+  {
     /* Allocate lock resource and initialize it */
     huart->Lock = HAL_UNLOCKED;
-
     /* Init the low level hardware */
     HAL_UART_MspInit(huart);
   }
 
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
 
   /* Disable the peripheral */
   __HAL_UART_DISABLE(huart);
@@ -487,14 +504,15 @@ HAL_StatusTypeDef HAL_MultiProcessor_Init(UART_HandleTypeDef *huart, uint8_t Add
   
   /* Initialize the UART state */
   huart->ErrorCode = HAL_UART_ERROR_NONE;
-  huart->State= HAL_UART_STATE_READY;
+  huart->gState = HAL_UART_STATE_READY;
+  huart->RxState = HAL_UART_STATE_READY;
   
   return HAL_OK;
 }
 
 /**
   * @brief  DeInitializes the UART peripheral. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
@@ -505,24 +523,18 @@ HAL_StatusTypeDef HAL_UART_DeInit(UART_HandleTypeDef *huart)
   {
     return HAL_ERROR;
   }
-  
+
   /* Check the parameters */
   assert_param(IS_UART_INSTANCE(huart->Instance));
 
-  huart->State = HAL_UART_STATE_BUSY;
-  
-  /* Disable the Peripheral */
-  __HAL_UART_DISABLE(huart);
-  
-  huart->Instance->CR1 = 0x0;
-  huart->Instance->CR2 = 0x0;
-  huart->Instance->CR3 = 0x0;
-  
+  huart->gState = HAL_UART_STATE_BUSY;
+
   /* DeInit the low level hardware */
   HAL_UART_MspDeInit(huart);
 
   huart->ErrorCode = HAL_UART_ERROR_NONE;
-  huart->State = HAL_UART_STATE_RESET;
+  huart->gState = HAL_UART_STATE_RESET;
+  huart->RxState = HAL_UART_STATE_RESET;
 
   /* Process Unlock */
   __HAL_UNLOCK(huart);
@@ -532,32 +544,32 @@ HAL_StatusTypeDef HAL_UART_DeInit(UART_HandleTypeDef *huart)
 
 /**
   * @brief  UART MSP Init.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
- __weak void HAL_UART_MspInit(UART_HandleTypeDef *huart)
+__weak void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
   /* NOTE: This function should not be modified, when the callback is needed,
-           the HAL_UART_MspInit can be implemented in the user file
-   */ 
+           the HAL_UART_MspInit could be implemented in the user file
+   */
 }
 
 /**
   * @brief  UART MSP DeInit.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
- __weak void HAL_UART_MspDeInit(UART_HandleTypeDef *huart)
+__weak void HAL_UART_MspDeInit(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
   /* NOTE: This function should not be modified, when the callback is needed,
-           the HAL_UART_MspDeInit can be implemented in the user file
-   */ 
+           the HAL_UART_MspDeInit could be implemented in the user file
+   */
 }
 
 /**
@@ -570,7 +582,7 @@ HAL_StatusTypeDef HAL_UART_DeInit(UART_HandleTypeDef *huart)
 @verbatim
   ==============================================================================
                       ##### IO operation functions #####
-  ==============================================================================  
+  ==============================================================================
   [..]
     This subsection provides a set of functions allowing to manage the UART asynchronous
     and Half duplex data transfers.
@@ -612,18 +624,18 @@ HAL_StatusTypeDef HAL_UART_DeInit(UART_HandleTypeDef *huart)
         (++) HAL_UART_RxCpltCallback()
         (++) HAL_UART_ErrorCallback()
 
-    [..] 
+    [..]
       (@) In the Half duplex communication, it is forbidden to run the transmit 
-          and receive process in parallel, the UART state HAL_UART_STATE_BUSY_TX_RX 
+          and receive process in parallel, the UART state HAL_UART_STATE_BUSY_TX_RX
           can't be useful.
-      
+
 @endverbatim
   * @{
   */
 
 /**
-  * @brief  Sends an amount of data in blocking mode. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @brief  Sends an amount of data in blocking mode.
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  pData: Pointer to data buffer
   * @param  Size: Amount of data to be sent
@@ -633,12 +645,12 @@ HAL_StatusTypeDef HAL_UART_DeInit(UART_HandleTypeDef *huart)
 HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 {
   uint16_t* tmp;
-  uint32_t tmp_state = 0;
+  uint32_t tickstart = 0U;
   
-  tmp_state = huart->State;
-  if((tmp_state == HAL_UART_STATE_READY) || (tmp_state == HAL_UART_STATE_BUSY_RX))
+  /* Check that a Tx process is not already ongoing */
+  if(huart->gState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL) || (Size == 0))
+    if((pData == NULL) || (Size == 0U))
     {
       return  HAL_ERROR;
     }
@@ -647,24 +659,19 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
     __HAL_LOCK(huart);
 
     huart->ErrorCode = HAL_UART_ERROR_NONE;
-    /* Check if a non-blocking receive process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_RX) 
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX_RX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX;
-    }
+    huart->gState = HAL_UART_STATE_BUSY_TX;
+
+    /* Init tickstart for timeout managment */
+    tickstart = HAL_GetTick();
 
     huart->TxXferSize = Size;
     huart->TxXferCount = Size;
-    while(huart->TxXferCount > 0)
+    while(huart->TxXferCount > 0U)
     {
       huart->TxXferCount--;
       if(huart->Init.WordLength == UART_WORDLENGTH_9B)
       {
-        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TXE, RESET, Timeout) != HAL_OK)
+        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TXE, RESET, tickstart, Timeout) != HAL_OK)
         {
           return HAL_TIMEOUT;
         }
@@ -672,16 +679,16 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
         huart->Instance->DR = (*tmp & (uint16_t)0x01FF);
         if(huart->Init.Parity == UART_PARITY_NONE)
         {
-          pData +=2;
+          pData +=2U;
         }
         else
-        { 
-          pData +=1;
+        {
+          pData +=1U;
         }
-      } 
+      }
       else
       {
-        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TXE, RESET, Timeout) != HAL_OK)
+        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TXE, RESET, tickstart, Timeout) != HAL_OK)
         {
           return HAL_TIMEOUT;
         }
@@ -689,20 +696,13 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
       }
     }
 
-    if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TC, RESET, Timeout) != HAL_OK)
-    { 
+    if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TC, RESET, tickstart, Timeout) != HAL_OK)
+    {
       return HAL_TIMEOUT;
     }
 
-    /* Check if a non-blocking receive process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_TX_RX) 
-    {
-      huart->State = HAL_UART_STATE_BUSY_RX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_READY;
-    }
+    /* At end of Tx process, restore huart->gState to Ready */
+    huart->gState = HAL_UART_STATE_READY;
 
     /* Process Unlocked */
     __HAL_UNLOCK(huart);
@@ -716,8 +716,8 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
 }
 
 /**
-  * @brief  Receives an amount of data in blocking mode. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @brief  Receive an amount of data in blocking mode. 
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  pData: Pointer to data buffer
   * @param  Size: Amount of data to be received
@@ -727,59 +727,54 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
 HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 {
   uint16_t* tmp;
-  uint32_t  tmp_state = 0;
-
-  tmp_state = huart->State;
-  if((tmp_state == HAL_UART_STATE_READY) || (tmp_state == HAL_UART_STATE_BUSY_TX))
+  uint32_t tickstart = 0U;
+  
+  /* Check that a Rx process is not already ongoing */
+  if(huart->RxState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL ) || (Size == 0))
+    if((pData == NULL) || (Size == 0U))
     {
       return  HAL_ERROR;
     }
 
     /* Process Locked */
     __HAL_LOCK(huart);
-
+    
     huart->ErrorCode = HAL_UART_ERROR_NONE;
-    /* Check if a non-blocking transmit process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_TX)
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX_RX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_BUSY_RX;
-    }
+    huart->RxState = HAL_UART_STATE_BUSY_RX;
+
+    /* Init tickstart for timeout managment */
+    tickstart = HAL_GetTick();
 
     huart->RxXferSize = Size;
     huart->RxXferCount = Size;
 
     /* Check the remain data to be received */
-    while(huart->RxXferCount > 0)
+    while(huart->RxXferCount > 0U)
     {
       huart->RxXferCount--;
       if(huart->Init.WordLength == UART_WORDLENGTH_9B)
       {
-        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_RXNE, RESET, Timeout) != HAL_OK)
+        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_RXNE, RESET, tickstart, Timeout) != HAL_OK)
         {
           return HAL_TIMEOUT;
         }
-        tmp = (uint16_t*) pData ;
+        tmp = (uint16_t*)pData;
         if(huart->Init.Parity == UART_PARITY_NONE)
         {
           *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x01FF);
-          pData +=2;
+          pData +=2U;
         }
         else
         {
           *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x00FF);
-          pData +=1;
+          pData +=1U;
         }
 
-      }
+      } 
       else
       {
-        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_RXNE, RESET, Timeout) != HAL_OK)
+        if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_RXNE, RESET, tickstart, Timeout) != HAL_OK)
         {
           return HAL_TIMEOUT;
         }
@@ -795,15 +790,9 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
       }
     }
 
-    /* Check if a non-blocking transmit process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_TX_RX) 
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_READY;
-    }
+    /* At end of Rx process, restore huart->RxState to Ready */
+    huart->RxState = HAL_UART_STATE_READY;
+    
     /* Process Unlocked */
     __HAL_UNLOCK(huart);
 
@@ -817,7 +806,7 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
 
 /**
   * @brief  Sends an amount of data in non blocking mode.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  pData: Pointer to data buffer
   * @param  Size: Amount of data to be sent
@@ -825,40 +814,29 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
   */
 HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
 {
-  uint32_t tmp_state = 0;
-
-  tmp_state = huart->State;
-  if((tmp_state == HAL_UART_STATE_READY) || (tmp_state == HAL_UART_STATE_BUSY_RX))
+  /* Check that a Tx process is not already ongoing */
+  if(huart->gState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL ) || (Size == 0))
+    if((pData == NULL) || (Size == 0U)) 
     {
       return HAL_ERROR;
     }
-    
     /* Process Locked */
     __HAL_LOCK(huart);
-    
+
     huart->pTxBuffPtr = pData;
     huart->TxXferSize = Size;
     huart->TxXferCount = Size;
 
     huart->ErrorCode = HAL_UART_ERROR_NONE;
-    /* Check if a receive process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_RX) 
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX_RX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX;
-    }
+    huart->gState = HAL_UART_STATE_BUSY_TX;
 
     /* Process Unlocked */
     __HAL_UNLOCK(huart);
 
     /* Enable the UART Transmit data register empty Interrupt */
     __HAL_UART_ENABLE_IT(huart, UART_IT_TXE);
-    
+
     return HAL_OK;
   }
   else
@@ -868,8 +846,8 @@ HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef *huart, uint8_t *pData
 }
 
 /**
-  * @brief  Receives an amount of data in non blocking mode 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @brief  Receives an amount of data in non blocking mode. 
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  pData: Pointer to data buffer
   * @param  Size: Amount of data to be received
@@ -877,12 +855,10 @@ HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef *huart, uint8_t *pData
   */
 HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
 {
-  uint32_t tmp_state = 0;
-  
-  tmp_state = huart->State;
-  if((tmp_state == HAL_UART_STATE_READY) || (tmp_state == HAL_UART_STATE_BUSY_TX))
+  /* Check that a Rx process is not already ongoing */
+  if(huart->RxState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL ) || (Size == 0))
+    if((pData == NULL) || (Size == 0U))
     {
       return HAL_ERROR;
     }
@@ -895,16 +871,8 @@ HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t *pData,
     huart->RxXferCount = Size;
 
     huart->ErrorCode = HAL_UART_ERROR_NONE;
-    /* Check if a transmit process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_TX)
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX_RX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_BUSY_RX;
-    }
-
+    huart->RxState = HAL_UART_STATE_BUSY_RX;
+    
     /* Process Unlocked */
     __HAL_UNLOCK(huart);
 
@@ -927,7 +895,7 @@ HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t *pData,
 
 /**
   * @brief  Sends an amount of data in non blocking mode. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  pData: Pointer to data buffer
   * @param  Size: Amount of data to be sent
@@ -936,12 +904,11 @@ HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef *huart, uint8_t *pData,
 HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
 {
   uint32_t *tmp;
-  uint32_t tmp_state = 0;
-
-  tmp_state = huart->State;
-  if((tmp_state == HAL_UART_STATE_READY) || (tmp_state == HAL_UART_STATE_BUSY_RX))
+  
+  /* Check that a Tx process is not already ongoing */
+  if(huart->gState == HAL_UART_STATE_READY)
   {
-    if((pData == NULL ) || (Size == 0)) 
+    if((pData == NULL) || (Size == 0U))
     {
       return HAL_ERROR;
     }
@@ -954,15 +921,7 @@ HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pDat
     huart->TxXferCount = Size;
 
     huart->ErrorCode = HAL_UART_ERROR_NONE;
-    /* Check if a receive process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_RX)
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX_RX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX;
-    }
+    huart->gState = HAL_UART_STATE_BUSY_TX;
 
     /* Set the UART DMA transfer complete callback */
     huart->hdmatx->XferCpltCallback = UART_DMATransmitCplt;
@@ -973,6 +932,9 @@ HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pDat
     /* Set the DMA error callback */
     huart->hdmatx->XferErrorCallback = UART_DMAError;
 
+    /* Set the DMA abort callback */
+    huart->hdmatx->XferAbortCallback = NULL;
+
     /* Enable the UART transmit DMA channel */
     tmp = (uint32_t*)&pData;
     HAL_DMA_Start_IT(huart->hdmatx, *(uint32_t*)tmp, (uint32_t)&huart->Instance->DR, Size);
@@ -980,12 +942,12 @@ HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pDat
     /* Clear the TC flag in the SR register by writing 0 to it */
     __HAL_UART_CLEAR_FLAG(huart, UART_FLAG_TC);
 
+    /* Process Unlocked */
+    __HAL_UNLOCK(huart);
+
     /* Enable the DMA transfer for transmit request by setting the DMAT bit
        in the UART CR3 register */
     SET_BIT(huart->Instance->CR3, USART_CR3_DMAT);
-
-    /* Process Unlocked */
-    __HAL_UNLOCK(huart);
 
     return HAL_OK;
   }
@@ -997,23 +959,21 @@ HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pDat
 
 /**
   * @brief  Receives an amount of data in non blocking mode. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  pData: Pointer to data buffer
   * @param  Size: Amount of data to be received
-  * @note   When the UART parity is enabled (PCE = 1), the received data contain 
-  *         the parity bit (MSB position)     
+  * @note   When the UART parity is enabled (PCE = 1) the data received contain the parity bit.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
 {
   uint32_t *tmp;
-  uint32_t tmp_state = 0;
-
-  tmp_state = huart->State;
-  if((tmp_state == HAL_UART_STATE_READY) || (tmp_state == HAL_UART_STATE_BUSY_TX))
+  
+  /* Check that a Rx process is not already ongoing */
+  if(huart->RxState == HAL_UART_STATE_READY) 
   {
-    if((pData == NULL ) || (Size == 0))
+    if((pData == NULL) || (Size == 0U))
     {
       return HAL_ERROR;
     }
@@ -1025,15 +985,7 @@ HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData
     huart->RxXferSize = Size;
 
     huart->ErrorCode = HAL_UART_ERROR_NONE;
-    /* Check if a transmit process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_TX)
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX_RX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_BUSY_RX;
-    }
+    huart->RxState = HAL_UART_STATE_BUSY_RX;
 
     /* Set the UART DMA transfer complete callback */
     huart->hdmarx->XferCpltCallback = UART_DMAReceiveCplt;
@@ -1044,16 +996,28 @@ HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData
     /* Set the DMA error callback */
     huart->hdmarx->XferErrorCallback = UART_DMAError;
 
+    /* Set the DMA abort callback */
+    huart->hdmarx->XferAbortCallback = NULL;
+
     /* Enable the DMA channel */
     tmp = (uint32_t*)&pData;
     HAL_DMA_Start_IT(huart->hdmarx, (uint32_t)&huart->Instance->DR, *(uint32_t*)tmp, Size);
 
-    /* Enable the DMA transfer for the receiver request by setting the DMAR bit 
-       in the UART CR3 register */
-    SET_BIT(huart->Instance->CR3, USART_CR3_DMAR);
+    /* Clear the Overrun flag just before enabling the DMA Rx request: can be mandatory for the second transfer */
+    __HAL_UART_CLEAR_OREFLAG(huart);
 
     /* Process Unlocked */
     __HAL_UNLOCK(huart);
+
+    /* Enable the UART Parity Error Interrupt */
+    SET_BIT(huart->Instance->CR1, USART_CR1_PEIE);
+
+    /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
+    SET_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
+    /* Enable the DMA transfer for the receiver request by setting the DMAR bit 
+    in the UART CR3 register */
+    SET_BIT(huart->Instance->CR3, USART_CR3_DMAR);
 
     return HAL_OK;
   }
@@ -1062,50 +1026,47 @@ HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData
     return HAL_BUSY;
   }
 }
-    
+
 /**
   * @brief Pauses the DMA Transfer.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_UART_DMAPause(UART_HandleTypeDef *huart)
 {
+  uint32_t dmarequest = 0x00U;
+
   /* Process Locked */
   __HAL_LOCK(huart);
-  
-  if(huart->State == HAL_UART_STATE_BUSY_TX)
+
+  dmarequest = HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT);
+  if((huart->gState == HAL_UART_STATE_BUSY_TX) && dmarequest)
   {
     /* Disable the UART DMA Tx request */
     CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAT);
   }
-  else if(huart->State == HAL_UART_STATE_BUSY_RX)
+
+  dmarequest = HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR);
+  if((huart->RxState == HAL_UART_STATE_BUSY_RX) && dmarequest)
   {
+    /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
+    CLEAR_BIT(huart->Instance->CR1, USART_CR1_PEIE);
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
     /* Disable the UART DMA Rx request */
     CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
   }
-  else if (huart->State == HAL_UART_STATE_BUSY_TX_RX)
-  {
-    /* Disable the UART DMA Tx & Rx requests */
-    CLEAR_BIT(huart->Instance->CR3, (USART_CR3_DMAT | USART_CR3_DMAR));
-  }
-  else
-  {
-    /* Process Unlocked */
-    __HAL_UNLOCK(huart);
-  
-    return HAL_ERROR; 
-  }
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
-
-  return HAL_OK; 
+  
+  return HAL_OK;
 }
 
 /**
   * @brief Resumes the DMA Transfer.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
@@ -1113,152 +1074,610 @@ HAL_StatusTypeDef HAL_UART_DMAResume(UART_HandleTypeDef *huart)
 {
   /* Process Locked */
   __HAL_LOCK(huart);
-
-  if(huart->State == HAL_UART_STATE_BUSY_TX)
+  
+  if(huart->gState == HAL_UART_STATE_BUSY_TX)
   {
     /* Enable the UART DMA Tx request */
     SET_BIT(huart->Instance->CR3, USART_CR3_DMAT);
   }
-  else if(huart->State == HAL_UART_STATE_BUSY_RX)
+
+  if(huart->RxState == HAL_UART_STATE_BUSY_RX)
   {
-    /* Clear the Overrun flag before resumming the Rx transfer*/
+    /* Clear the Overrun flag before resuming the Rx transfer*/
     __HAL_UART_CLEAR_OREFLAG(huart);
+    
+    /* Reenable PE and ERR (Frame error, noise error, overrun error) interrupts */
+    SET_BIT(huart->Instance->CR1, USART_CR1_PEIE);
+    SET_BIT(huart->Instance->CR3, USART_CR3_EIE);
+    
     /* Enable the UART DMA Rx request */
     SET_BIT(huart->Instance->CR3, USART_CR3_DMAR);
-  }
-  else if(huart->State == HAL_UART_STATE_BUSY_TX_RX)
-  {
-    /* Clear the Overrun flag before resumming the Rx transfer*/
-    __HAL_UART_CLEAR_OREFLAG(huart);
-    /* Enable the UART DMA Tx & Rx request */
-    SET_BIT(huart->Instance->CR3, (USART_CR3_DMAT | USART_CR3_DMAR));
-  }
-  else
-  {
-    /* Process Unlocked */
-    __HAL_UNLOCK(huart);
-
-    return HAL_ERROR; 
   }
 
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
-
+  
   return HAL_OK;
 }
 
 /**
   * @brief Stops the DMA Transfer.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_UART_DMAStop(UART_HandleTypeDef *huart)
 {
+  uint32_t dmarequest = 0x00U;
   /* The Lock is not implemented on this API to allow the user application
      to call the HAL UART API under callbacks HAL_UART_TxCpltCallback() / HAL_UART_RxCpltCallback():
      when calling HAL_DMA_Abort() API the DMA TX/RX Transfer complete interrupt is generated
      and the correspond call back is executed HAL_UART_TxCpltCallback() / HAL_UART_RxCpltCallback()
      */
+
+  /* Stop UART DMA Tx request if ongoing */
+  dmarequest = HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT);
+  if((huart->gState == HAL_UART_STATE_BUSY_TX) && dmarequest)
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAT);
+
+    /* Abort the UART DMA Tx channel */
+    if(huart->hdmatx != NULL)
+    {
+      HAL_DMA_Abort(huart->hdmatx);
+    }
+    UART_EndTxTransfer(huart);
+  }
+
+  /* Stop UART DMA Rx request if ongoing */
+  dmarequest = HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR);
+  if((huart->RxState == HAL_UART_STATE_BUSY_RX) && dmarequest)
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
+
+    /* Abort the UART DMA Rx channel */
+    if(huart->hdmarx != NULL)
+    {
+      HAL_DMA_Abort(huart->hdmarx);
+    }
+    UART_EndRxTransfer(huart);
+  }
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Abort ongoing transfers (blocking mode).
+  * @param  huart UART handle.
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  *         This procedure performs following operations :
+  *           - Disable PPP Interrupts
+  *           - Disable the DMA transfer in the peripheral register (if enabled)
+  *           - Abort DMA transfer by calling HAL_DMA_Abort (in case of transfer in DMA mode)
+  *           - Set handle State to READY
+  * @note   This procedure is executed in blocking mode : when exiting function, Abort is considered as completed.
+  * @retval HAL status
+*/
+HAL_StatusTypeDef HAL_UART_Abort(UART_HandleTypeDef *huart)
+{
+  /* Disable TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE));
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
   
-  /* Disable the UART Tx/Rx DMA requests */
-  CLEAR_BIT(huart->Instance->CR3, (USART_CR3_DMAT | USART_CR3_DMAR));
-  
-  /* Abort the UART DMA tx channel */
+  /* Disable the UART DMA Tx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT))
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAT);
+
+    /* Abort the UART DMA Tx channel: use blocking DMA Abort API (no callback) */
+    if(huart->hdmatx != NULL)
+    {
+      /* Set the UART DMA Abort callback to Null. 
+         No call back execution at end of DMA abort procedure */
+      huart->hdmatx->XferAbortCallback = NULL;
+
+      HAL_DMA_Abort(huart->hdmatx);
+    }
+  }
+
+  /* Disable the UART DMA Rx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR))
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
+
+    /* Abort the UART DMA Rx channel: use blocking DMA Abort API (no callback) */
+    if(huart->hdmarx != NULL)
+    {
+      /* Set the UART DMA Abort callback to Null. 
+         No call back execution at end of DMA abort procedure */
+      huart->hdmarx->XferAbortCallback = NULL;
+
+      HAL_DMA_Abort(huart->hdmarx);
+    }
+  }
+
+  /* Reset Tx and Rx transfer counters */
+  huart->TxXferCount = 0x00U;
+  huart->RxXferCount = 0x00U;
+
+  /* Reset ErrorCode */
+  huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+  /* Restore huart->RxState and huart->gState to Ready */
+  huart->RxState = HAL_UART_STATE_READY;
+  huart->gState = HAL_UART_STATE_READY;
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Abort ongoing Transmit transfer (blocking mode).
+  * @param  huart UART handle.
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  *         This procedure performs following operations :
+  *           - Disable PPP Interrupts
+  *           - Disable the DMA transfer in the peripheral register (if enabled)
+  *           - Abort DMA transfer by calling HAL_DMA_Abort (in case of transfer in DMA mode)
+  *           - Set handle State to READY
+  * @note   This procedure is executed in blocking mode : when exiting function, Abort is considered as completed.
+  * @retval HAL status
+*/
+HAL_StatusTypeDef HAL_UART_AbortTransmit(UART_HandleTypeDef *huart)
+{
+  /* Disable TXEIE and TCIE interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_TXEIE | USART_CR1_TCIE));
+
+  /* Disable the UART DMA Tx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT))
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAT);
+
+    /* Abort the UART DMA Tx channel : use blocking DMA Abort API (no callback) */
+    if(huart->hdmatx != NULL)
+    {
+      /* Set the UART DMA Abort callback to Null. 
+         No call back execution at end of DMA abort procedure */
+      huart->hdmatx->XferAbortCallback = NULL;
+
+      HAL_DMA_Abort(huart->hdmatx);
+    }
+  }
+
+  /* Reset Tx transfer counter */
+  huart->TxXferCount = 0x00U;
+
+  /* Restore huart->gState to Ready */
+  huart->gState = HAL_UART_STATE_READY;
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Abort ongoing Receive transfer (blocking mode).
+  * @param  huart UART handle.
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  *         This procedure performs following operations :
+  *           - Disable PPP Interrupts
+  *           - Disable the DMA transfer in the peripheral register (if enabled)
+  *           - Abort DMA transfer by calling HAL_DMA_Abort (in case of transfer in DMA mode)
+  *           - Set handle State to READY
+  * @note   This procedure is executed in blocking mode : when exiting function, Abort is considered as completed.
+  * @retval HAL status
+*/
+HAL_StatusTypeDef HAL_UART_AbortReceive(UART_HandleTypeDef *huart)
+{
+  /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE));
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
+  /* Disable the UART DMA Rx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR))
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
+
+    /* Abort the UART DMA Rx channel : use blocking DMA Abort API (no callback) */
+    if(huart->hdmarx != NULL)
+    {
+      /* Set the UART DMA Abort callback to Null. 
+         No call back execution at end of DMA abort procedure */
+      huart->hdmarx->XferAbortCallback = NULL;
+
+      HAL_DMA_Abort(huart->hdmarx);
+    }
+  }
+
+  /* Reset Rx transfer counter */
+  huart->RxXferCount = 0x00U;
+
+  /* Restore huart->RxState to Ready */
+  huart->RxState = HAL_UART_STATE_READY;
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Abort ongoing transfers (Interrupt mode).
+  * @param  huart UART handle.
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  *         This procedure performs following operations :
+  *           - Disable PPP Interrupts
+  *           - Disable the DMA transfer in the peripheral register (if enabled)
+  *           - Abort DMA transfer by calling HAL_DMA_Abort_IT (in case of transfer in DMA mode)
+  *           - Set handle State to READY
+  *           - At abort completion, call user abort complete callback
+  * @note   This procedure is executed in Interrupt mode, meaning that abort procedure could be
+  *         considered as completed only when user abort complete callback is executed (not when exiting function).
+  * @retval HAL status
+*/
+HAL_StatusTypeDef HAL_UART_Abort_IT(UART_HandleTypeDef *huart)
+{
+  uint32_t AbortCplt = 0x01U;
+
+  /* Disable TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE));
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
+  /* If DMA Tx and/or DMA Rx Handles are associated to UART Handle, DMA Abort complete callbacks should be initialised
+     before any call to DMA Abort functions */
+  /* DMA Tx Handle is valid */
   if(huart->hdmatx != NULL)
   {
-    HAL_DMA_Abort(huart->hdmatx);
+    /* Set DMA Abort Complete callback if UART DMA Tx request if enabled.
+       Otherwise, set it to NULL */
+    if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT))
+    {
+      huart->hdmatx->XferAbortCallback = UART_DMATxAbortCallback;
+    }
+    else
+    {
+      huart->hdmatx->XferAbortCallback = NULL;
+    }
   }
-  /* Abort the UART DMA rx channel */
+  /* DMA Rx Handle is valid */
   if(huart->hdmarx != NULL)
   {
-    HAL_DMA_Abort(huart->hdmarx);
+    /* Set DMA Abort Complete callback if UART DMA Rx request if enabled.
+       Otherwise, set it to NULL */
+    if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR))
+    {
+      huart->hdmarx->XferAbortCallback = UART_DMARxAbortCallback;
+    }
+    else
+    {
+      huart->hdmarx->XferAbortCallback = NULL;
+    }
   }
-  
-  huart->State = HAL_UART_STATE_READY;
-  
+
+  /* Disable the UART DMA Tx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT))
+  {
+    /* Disable DMA Tx at UART level */
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAT);
+
+    /* Abort the UART DMA Tx channel : use non blocking DMA Abort API (callback) */
+    if(huart->hdmatx != NULL)
+    {
+      /* UART Tx DMA Abort callback has already been initialised : 
+         will lead to call HAL_UART_AbortCpltCallback() at end of DMA abort procedure */
+
+      /* Abort DMA TX */
+      if(HAL_DMA_Abort_IT(huart->hdmatx) != HAL_OK)
+      {
+        huart->hdmatx->XferAbortCallback = NULL;
+      }
+      else
+      {
+        AbortCplt = 0x00U;
+      }
+    }
+  }
+
+  /* Disable the UART DMA Rx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR))
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
+
+    /* Abort the UART DMA Rx channel : use non blocking DMA Abort API (callback) */
+    if(huart->hdmarx != NULL)
+    {
+      /* UART Rx DMA Abort callback has already been initialised : 
+         will lead to call HAL_UART_AbortCpltCallback() at end of DMA abort procedure */
+
+      /* Abort DMA RX */
+      if(HAL_DMA_Abort_IT(huart->hdmarx) != HAL_OK)
+      {
+        huart->hdmarx->XferAbortCallback = NULL;
+        AbortCplt = 0x01U;
+      }
+      else
+      {
+        AbortCplt = 0x00U;
+      }
+    }
+  }
+
+  /* if no DMA abort complete callback execution is required => call user Abort Complete callback */
+  if(AbortCplt == 0x01U)
+  {
+    /* Reset Tx and Rx transfer counters */
+    huart->TxXferCount = 0x00U; 
+    huart->RxXferCount = 0x00U;
+
+    /* Reset ErrorCode */
+    huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+    /* Restore huart->gState and huart->RxState to Ready */
+    huart->gState  = HAL_UART_STATE_READY;
+    huart->RxState = HAL_UART_STATE_READY;
+
+    /* As no DMA to be aborted, call directly user Abort complete callback */
+    HAL_UART_AbortCpltCallback(huart);
+  }
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Abort ongoing Transmit transfer (Interrupt mode).
+  * @param  huart UART handle.
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  *         This procedure performs following operations :
+  *           - Disable PPP Interrupts
+  *           - Disable the DMA transfer in the peripheral register (if enabled)
+  *           - Abort DMA transfer by calling HAL_DMA_Abort_IT (in case of transfer in DMA mode)
+  *           - Set handle State to READY
+  *           - At abort completion, call user abort complete callback
+  * @note   This procedure is executed in Interrupt mode, meaning that abort procedure could be
+  *         considered as completed only when user abort complete callback is executed (not when exiting function).
+  * @retval HAL status
+*/
+HAL_StatusTypeDef HAL_UART_AbortTransmit_IT(UART_HandleTypeDef *huart)
+{
+  /* Disable TXEIE and TCIE interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_TXEIE | USART_CR1_TCIE));
+
+  /* Disable the UART DMA Tx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT))
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAT);
+
+    /* Abort the UART DMA Tx channel : use blocking DMA Abort API (no callback) */
+    if(huart->hdmatx != NULL)
+    {
+      /* Set the UART DMA Abort callback : 
+         will lead to call HAL_UART_AbortCpltCallback() at end of DMA abort procedure */
+      huart->hdmatx->XferAbortCallback = UART_DMATxOnlyAbortCallback;
+
+      /* Abort DMA TX */
+      if(HAL_DMA_Abort_IT(huart->hdmatx) != HAL_OK)
+      {
+        /* Call Directly huart->hdmatx->XferAbortCallback function in case of error */
+        huart->hdmatx->XferAbortCallback(huart->hdmatx);
+      }
+    }
+    else
+    {
+      /* Reset Tx transfer counter */
+      huart->TxXferCount = 0x00U;
+
+      /* Restore huart->gState to Ready */
+      huart->gState = HAL_UART_STATE_READY;
+
+      /* As no DMA to be aborted, call directly user Abort complete callback */
+      HAL_UART_AbortTransmitCpltCallback(huart);
+    }
+  }
+  else
+  {
+    /* Reset Tx transfer counter */
+    huart->TxXferCount = 0x00U;
+
+    /* Restore huart->gState to Ready */
+    huart->gState = HAL_UART_STATE_READY;
+
+    /* As no DMA to be aborted, call directly user Abort complete callback */
+    HAL_UART_AbortTransmitCpltCallback(huart);
+  }
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Abort ongoing Receive transfer (Interrupt mode).
+  * @param  huart UART handle.
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  *         This procedure performs following operations :
+  *           - Disable PPP Interrupts
+  *           - Disable the DMA transfer in the peripheral register (if enabled)
+  *           - Abort DMA transfer by calling HAL_DMA_Abort_IT (in case of transfer in DMA mode)
+  *           - Set handle State to READY
+  *           - At abort completion, call user abort complete callback
+  * @note   This procedure is executed in Interrupt mode, meaning that abort procedure could be
+  *         considered as completed only when user abort complete callback is executed (not when exiting function).
+  * @retval HAL status
+*/
+HAL_StatusTypeDef HAL_UART_AbortReceive_IT(UART_HandleTypeDef *huart)
+{
+  /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE));
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
+  /* Disable the UART DMA Rx request if enabled */
+  if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR))
+  {
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
+
+    /* Abort the UART DMA Rx channel : use blocking DMA Abort API (no callback) */
+    if(huart->hdmarx != NULL)
+    {
+      /* Set the UART DMA Abort callback : 
+         will lead to call HAL_UART_AbortCpltCallback() at end of DMA abort procedure */
+      huart->hdmarx->XferAbortCallback = UART_DMARxOnlyAbortCallback;
+
+      /* Abort DMA RX */
+      if(HAL_DMA_Abort_IT(huart->hdmarx) != HAL_OK)
+      {
+        /* Call Directly huart->hdmarx->XferAbortCallback function in case of error */
+        huart->hdmarx->XferAbortCallback(huart->hdmarx);
+      }
+    }
+    else
+    {
+      /* Reset Rx transfer counter */
+      huart->RxXferCount = 0x00U;
+
+      /* Restore huart->RxState to Ready */
+      huart->RxState = HAL_UART_STATE_READY;
+
+      /* As no DMA to be aborted, call directly user Abort complete callback */
+      HAL_UART_AbortReceiveCpltCallback(huart);
+    }
+  }
+  else
+  {
+    /* Reset Rx transfer counter */
+    huart->RxXferCount = 0x00U;
+
+    /* Restore huart->RxState to Ready */
+    huart->RxState = HAL_UART_STATE_READY;
+
+    /* As no DMA to be aborted, call directly user Abort complete callback */
+    HAL_UART_AbortReceiveCpltCallback(huart);
+  }
+
   return HAL_OK;
 }
 
 /**
   * @brief  This function handles UART interrupt request.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
 void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
 {
-  uint32_t tmp_flag = 0, tmp_it_source = 0;
+   uint32_t isrflags   = READ_REG(huart->Instance->SR);
+   uint32_t cr1its     = READ_REG(huart->Instance->CR1);
+   uint32_t cr3its     = READ_REG(huart->Instance->CR3);
+   uint32_t errorflags = 0x00U;
+   uint32_t dmarequest = 0x00U;
 
-  tmp_flag = __HAL_UART_GET_FLAG(huart, UART_FLAG_PE);
-  tmp_it_source = __HAL_UART_GET_IT_SOURCE(huart, UART_IT_PE);  
-  /* UART parity error interrupt occurred ------------------------------------*/
-  if((tmp_flag != RESET) && (tmp_it_source != RESET))
-  { 
-    huart->ErrorCode |= HAL_UART_ERROR_PE;
+  /* If no error occurs */
+  errorflags = (isrflags & (uint32_t)(USART_SR_PE | USART_SR_FE | USART_SR_ORE | USART_SR_NE));
+  if(errorflags == RESET)
+  {
+    /* UART in mode Receiver -------------------------------------------------*/
+    if(((isrflags & USART_SR_RXNE) != RESET) && ((cr1its & USART_CR1_RXNEIE) != RESET))
+    {
+      UART_Receive_IT(huart);
+      return;
+    }
   }
-  
-  tmp_flag = __HAL_UART_GET_FLAG(huart, UART_FLAG_FE);
-  tmp_it_source = __HAL_UART_GET_IT_SOURCE(huart, UART_IT_ERR);
-  /* UART frame error interrupt occurred -------------------------------------*/
-  if((tmp_flag != RESET) && (tmp_it_source != RESET))
-  { 
-    huart->ErrorCode |= HAL_UART_ERROR_FE;
-  }
-  
-  tmp_flag = __HAL_UART_GET_FLAG(huart, UART_FLAG_NE);
-  /* UART noise error interrupt occurred -------------------------------------*/
-  if((tmp_flag != RESET) && (tmp_it_source != RESET))
-  { 
-    huart->ErrorCode |= HAL_UART_ERROR_NE;
-  }
-  
-  tmp_flag = __HAL_UART_GET_FLAG(huart, UART_FLAG_ORE);
-  /* UART Over-Run interrupt occurred ----------------------------------------*/
-  if((tmp_flag != RESET) && (tmp_it_source != RESET))
-  { 
-    huart->ErrorCode |= HAL_UART_ERROR_ORE;
-  }
-  
-  tmp_flag = __HAL_UART_GET_FLAG(huart, UART_FLAG_RXNE);
-  tmp_it_source = __HAL_UART_GET_IT_SOURCE(huart, UART_IT_RXNE);
-  /* UART in mode Receiver ---------------------------------------------------*/
-  if((tmp_flag != RESET) && (tmp_it_source != RESET))
-  { 
-    UART_Receive_IT(huart);
-  }
-  
-  tmp_flag = __HAL_UART_GET_FLAG(huart, UART_FLAG_TXE);
-  tmp_it_source = __HAL_UART_GET_IT_SOURCE(huart, UART_IT_TXE);
+
+  /* If some errors occur */
+  if((errorflags != RESET) && (((cr3its & USART_CR3_EIE) != RESET) || ((cr1its & (USART_CR1_RXNEIE | USART_CR1_PEIE)) != RESET)))
+  {
+    /* UART parity error interrupt occurred ----------------------------------*/
+    if(((isrflags & USART_SR_PE) != RESET) && ((cr1its & USART_CR1_PEIE) != RESET))
+    {
+      huart->ErrorCode |= HAL_UART_ERROR_PE;
+    }
+
+    /* UART noise error interrupt occurred -----------------------------------*/
+    if(((isrflags & USART_SR_NE) != RESET) && ((cr3its & USART_CR3_EIE) != RESET))
+    {
+      huart->ErrorCode |= HAL_UART_ERROR_NE;
+    }
+
+    /* UART frame error interrupt occurred -----------------------------------*/
+    if(((isrflags & USART_SR_FE) != RESET) && ((cr3its & USART_CR3_EIE) != RESET))
+    {
+      huart->ErrorCode |= HAL_UART_ERROR_FE;
+    }
+
+    /* UART Over-Run interrupt occurred --------------------------------------*/
+    if(((isrflags & USART_SR_ORE) != RESET) && ((cr3its & USART_CR3_EIE) != RESET))
+    { 
+      huart->ErrorCode |= HAL_UART_ERROR_ORE;
+    }
+
+    /* Call UART Error Call back function if need be --------------------------*/
+    if(huart->ErrorCode != HAL_UART_ERROR_NONE)
+    {
+      /* UART in mode Receiver -----------------------------------------------*/
+      if(((isrflags & USART_SR_RXNE) != RESET) && ((cr1its & USART_CR1_RXNEIE) != RESET))
+      {
+        UART_Receive_IT(huart);
+      }
+
+      /* If Overrun error occurs, or if any error occurs in DMA mode reception,
+         consider error as blocking */
+      dmarequest = HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR);
+      if(((huart->ErrorCode & HAL_UART_ERROR_ORE) != RESET) || dmarequest)
+      {
+        /* Blocking error : transfer is aborted
+           Set the UART state ready to be able to start again the process,
+           Disable Rx Interrupts, and disable Rx DMA request, if ongoing */
+        UART_EndRxTransfer(huart);
+
+        /* Disable the UART DMA Rx request if enabled */
+        if(HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR))
+        {
+          CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
+
+          /* Abort the UART DMA Rx channel */
+          if(huart->hdmarx != NULL)
+          {
+            /* Set the UART DMA Abort callback : 
+               will lead to call HAL_UART_ErrorCallback() at end of DMA abort procedure */
+            huart->hdmarx->XferAbortCallback = UART_DMAAbortOnError;
+            if(HAL_DMA_Abort_IT(huart->hdmarx) != HAL_OK)
+            {
+              /* Call Directly XferAbortCallback function in case of error */
+              huart->hdmarx->XferAbortCallback(huart->hdmarx);
+            }
+          }
+          else
+          {
+            /* Call user error callback */
+            HAL_UART_ErrorCallback(huart);
+          }
+        }
+        else
+        {
+          /* Call user error callback */
+          HAL_UART_ErrorCallback(huart);
+        }
+      }
+      else
+      {
+        /* Non Blocking error : transfer could go on. 
+           Error is notified to user through user error callback */
+        HAL_UART_ErrorCallback(huart);
+        huart->ErrorCode = HAL_UART_ERROR_NONE;
+      }
+    }
+    return;
+  } /* End if some error occurs */
+
   /* UART in mode Transmitter ------------------------------------------------*/
-  if((tmp_flag != RESET) && (tmp_it_source != RESET))
+  if(((isrflags & USART_SR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
   {
     UART_Transmit_IT(huart);
+    return;
   }
-
-  tmp_flag = __HAL_UART_GET_FLAG(huart, UART_FLAG_TC);
-  tmp_it_source = __HAL_UART_GET_IT_SOURCE(huart, UART_IT_TC);
+  
   /* UART in mode Transmitter end --------------------------------------------*/
-  if((tmp_flag != RESET) && (tmp_it_source != RESET))
+  if(((isrflags & USART_SR_TC) != RESET) && ((cr1its & USART_CR1_TCIE) != RESET))
   {
     UART_EndTransmit_IT(huart);
-  }  
-
-  if(huart->ErrorCode != HAL_UART_ERROR_NONE)
-  {
-    /* Clear all the error flag at once */
-    __HAL_UART_CLEAR_PEFLAG(huart);
-    
-    /* Set the UART state ready to be able to start again the process */
-    huart->State = HAL_UART_STATE_READY;
-    
-    HAL_UART_ErrorCallback(huart);
-  }  
+    return;
+  }
 }
 
 /**
   * @brief  Tx Transfer completed callbacks.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
@@ -1266,14 +1685,14 @@ void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
-  /* NOTE: This function should not be modified, when the callback is needed,
-           the HAL_UART_TxCpltCallback can be implemented in the user file
+  /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_UART_TxCpltCallback could be implemented in the user file
    */ 
 }
 
 /**
   * @brief  Tx Half Transfer completed callbacks.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
@@ -1281,14 +1700,14 @@ void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
-  /* NOTE: This function should not be modified, when the callback is needed,
-           the HAL_UART_TxHalfCpltCallback can be implemented in the user file
+  /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_UART_TxHalfCpltCallback could be implemented in the user file
    */ 
 }
 
 /**
   * @brief  Rx Transfer completed callbacks.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
@@ -1296,14 +1715,14 @@ __weak void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
-  /* NOTE: This function should not be modified, when the callback is needed,
-           the HAL_UART_RxCpltCallback can be implemented in the user file
+  /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_UART_RxCpltCallback could be implemented in the user file
    */
 }
 
 /**
   * @brief  Rx Half Transfer completed callbacks.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
@@ -1311,24 +1730,68 @@ __weak void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
-  /* NOTE: This function should not be modified, when the callback is needed,
-           the HAL_UART_RxHalfCpltCallback can be implemented in the user file
+  /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_UART_RxHalfCpltCallback could be implemented in the user file
    */
 }
 
 /**
   * @brief  UART error callbacks.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
  __weak void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
-  UNUSED(huart);
-  /* NOTE: This function should not be modified, when the callback is needed,
-           the HAL_UART_ErrorCallback can be implemented in the user file
+  UNUSED(huart); 
+  /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_UART_ErrorCallback could be implemented in the user file
    */ 
+}
+
+/**
+  * @brief  UART Abort Complete callback.
+  * @param  huart UART handle.
+  * @retval None
+  */
+__weak void HAL_UART_AbortCpltCallback (UART_HandleTypeDef *huart)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(huart);
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+            the HAL_UART_AbortCpltCallback can be implemented in the user file.
+   */
+}
+/**
+  * @brief  UART Abort Complete callback.
+  * @param  huart UART handle.
+  * @retval None
+  */
+__weak void HAL_UART_AbortTransmitCpltCallback (UART_HandleTypeDef *huart)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(huart);
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+            the HAL_UART_AbortTransmitCpltCallback can be implemented in the user file.
+   */
+}
+
+/**
+  * @brief  UART Abort Receive Complete callback.
+  * @param  huart UART handle.
+  * @retval None
+  */
+__weak void HAL_UART_AbortReceiveCpltCallback (UART_HandleTypeDef *huart)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(huart);
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+            the HAL_UART_AbortReceiveCpltCallback can be implemented in the user file.
+   */
 }
 
 /**
@@ -1356,7 +1819,7 @@ __weak void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 
 /**
   * @brief  Transmits break characters.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
@@ -1368,12 +1831,12 @@ HAL_StatusTypeDef HAL_LIN_SendBreak(UART_HandleTypeDef *huart)
   /* Process Locked */
   __HAL_LOCK(huart);
   
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
   
   /* Send break characters */
   SET_BIT(huart->Instance->CR1, USART_CR1_SBK);
  
-  huart->State = HAL_UART_STATE_READY;
+  huart->gState = HAL_UART_STATE_READY;
   
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
@@ -1383,7 +1846,7 @@ HAL_StatusTypeDef HAL_LIN_SendBreak(UART_HandleTypeDef *huart)
 
 /**
   * @brief  Enters the UART in mute mode. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
@@ -1395,12 +1858,12 @@ HAL_StatusTypeDef HAL_MultiProcessor_EnterMuteMode(UART_HandleTypeDef *huart)
   /* Process Locked */
   __HAL_LOCK(huart);
   
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
   
   /* Enable the USART mute mode  by setting the RWU bit in the CR1 register */
   SET_BIT(huart->Instance->CR1, USART_CR1_RWU);
   
-  huart->State = HAL_UART_STATE_READY;
+  huart->gState = HAL_UART_STATE_READY;
   
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
@@ -1410,7 +1873,7 @@ HAL_StatusTypeDef HAL_MultiProcessor_EnterMuteMode(UART_HandleTypeDef *huart)
 
 /**
   * @brief  Exits the UART mute mode: wake up software. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
@@ -1422,12 +1885,12 @@ HAL_StatusTypeDef HAL_MultiProcessor_ExitMuteMode(UART_HandleTypeDef *huart)
   /* Process Locked */
   __HAL_LOCK(huart);
   
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
   
   /* Disable the USART mute mode by clearing the RWU bit in the CR1 register */
   CLEAR_BIT(huart->Instance->CR1, USART_CR1_RWU);
   
-  huart->State = HAL_UART_STATE_READY;
+  huart->gState = HAL_UART_STATE_READY;
   
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
@@ -1437,23 +1900,32 @@ HAL_StatusTypeDef HAL_MultiProcessor_ExitMuteMode(UART_HandleTypeDef *huart)
 
 /**
   * @brief  Enables the UART transmitter and disables the UART receiver.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_HalfDuplex_EnableTransmitter(UART_HandleTypeDef *huart)
 {
+  uint32_t tmpreg = 0x00U;
+
   /* Process Locked */
   __HAL_LOCK(huart);
   
-  huart->State = HAL_UART_STATE_BUSY;
+  huart->gState = HAL_UART_STATE_BUSY;
 
   /*-------------------------- USART CR1 Configuration -----------------------*/
+  tmpreg = huart->Instance->CR1;
+
   /* Clear TE and RE bits */
+  tmpreg &= (uint32_t)~((uint32_t)(USART_CR1_TE | USART_CR1_RE));
+
   /* Enable the USART's transmit interface by setting the TE bit in the USART CR1 register */
-  MODIFY_REG(huart->Instance->CR1, (uint32_t)(USART_CR1_TE | USART_CR1_RE), USART_CR1_TE);
- 
-  huart->State = HAL_UART_STATE_READY;
+  tmpreg |= (uint32_t)USART_CR1_TE;
+
+  /* Write to USART CR1 */
+  WRITE_REG(huart->Instance->CR1, (uint32_t)tmpreg);
+
+  huart->gState = HAL_UART_STATE_READY;
   
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
@@ -1463,24 +1935,33 @@ HAL_StatusTypeDef HAL_HalfDuplex_EnableTransmitter(UART_HandleTypeDef *huart)
 
 /**
   * @brief  Enables the UART receiver and disables the UART transmitter.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_HalfDuplex_EnableReceiver(UART_HandleTypeDef *huart)
 {
+  uint32_t tmpreg = 0x00U;
+
   /* Process Locked */
   __HAL_LOCK(huart);
-  
-  huart->State = HAL_UART_STATE_BUSY;
+
+  huart->gState = HAL_UART_STATE_BUSY;
 
   /*-------------------------- USART CR1 Configuration -----------------------*/
+  tmpreg = huart->Instance->CR1;
+
   /* Clear TE and RE bits */
+  tmpreg &= (uint32_t)~((uint32_t)(USART_CR1_TE | USART_CR1_RE));
+
   /* Enable the USART's receive interface by setting the RE bit in the USART CR1 register */
-  MODIFY_REG(huart->Instance->CR1, (uint32_t)(USART_CR1_TE | USART_CR1_RE), USART_CR1_RE);
-  
-  huart->State = HAL_UART_STATE_READY;
-  
+  tmpreg |= (uint32_t)USART_CR1_RE;
+
+  /* Write to USART CR1 */
+  WRITE_REG(huart->Instance->CR1, (uint32_t)tmpreg);
+
+  huart->gState = HAL_UART_STATE_READY;
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
   
@@ -1511,21 +1992,25 @@ HAL_StatusTypeDef HAL_HalfDuplex_EnableReceiver(UART_HandleTypeDef *huart)
   
 /**
   * @brief  Returns the UART state.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL state
   */
 HAL_UART_StateTypeDef HAL_UART_GetState(UART_HandleTypeDef *huart)
 {
-  return huart->State;
+  uint32_t temp1= 0x00U, temp2 = 0x00U;
+  temp1 = huart->gState;
+  temp2 = huart->RxState;
+  
+  return (HAL_UART_StateTypeDef)(temp1 | temp2);
 }
 
 /**
-* @brief  Return the UART error code
-* @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @brief  Return the UART error code
+  * @param  huart : pointer to a UART_HandleTypeDef structure that contains
   *              the configuration information for the specified UART.
-* @retval UART Error Code
-*/
+  * @retval UART Error Code
+  */
 uint32_t HAL_UART_GetError(UART_HandleTypeDef *huart)
 {
   return huart->ErrorCode;
@@ -1536,33 +2021,25 @@ uint32_t HAL_UART_GetError(UART_HandleTypeDef *huart)
   */
 
 /**
-  * @}
-  */
-
-/** @defgroup UART_Private_Functions   UART Private Functions
-  *  @brief   UART Private functions 
-  * @{
-  */
-/**
   * @brief  DMA UART transmit process complete callback. 
-  * @param  hdma: Pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA module.
+  * @param  hdma: DMA handle
   * @retval None
   */
-static void UART_DMATransmitCplt(DMA_HandleTypeDef *hdma)     
+static void UART_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 {
   UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
   /* DMA Normal mode*/
-  if ( HAL_IS_BIT_CLR(hdma->Instance->CCR, DMA_CCR_CIRC) )
+  if((hdma->Instance->CCR & DMA_CCR_CIRC) == 0U)
   {
-    huart->TxXferCount = 0;
+    huart->TxXferCount = 0U;
 
     /* Disable the DMA transfer for transmit request by setting the DMAT bit
        in the UART CR3 register */
     CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAT);
 
-    /* Enable the UART Transmit Complete Interrupt */    
-    __HAL_UART_ENABLE_IT(huart, UART_IT_TC);
+    /* Enable the UART Transmit Complete Interrupt */
+    SET_BIT(huart->Instance->CR1, USART_CR1_TCIE);
+
   }
   /* DMA Circular mode */
   else
@@ -1573,8 +2050,8 @@ static void UART_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA UART transmit process half complete callback 
-  * @param  hdma: Pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA module.
+  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
+  *                the configuration information for the specified DMA module.
   * @retval None
   */
 static void UART_DMATxHalfCplt(DMA_HandleTypeDef *hdma)
@@ -1586,132 +2063,271 @@ static void UART_DMATxHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA UART receive process complete callback. 
-  * @param  hdma: Pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA module.
+  * @param  hdma: DMA handle
   * @retval None
   */
-static void UART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)  
+static void UART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 {
   UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
   /* DMA Normal mode*/
-  if ( HAL_IS_BIT_CLR(hdma->Instance->CCR, DMA_CCR_CIRC) )
+  if((hdma->Instance->CCR & DMA_CCR_CIRC) == 0U)
   {
-    huart->RxXferCount = 0;
+    huart->RxXferCount = 0U;
   
+    /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
+    CLEAR_BIT(huart->Instance->CR1, USART_CR1_PEIE);
+    CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+    
     /* Disable the DMA transfer for the receiver request by setting the DMAR bit 
        in the UART CR3 register */
     CLEAR_BIT(huart->Instance->CR3, USART_CR3_DMAR);
 
-    /* Check if a transmit process is ongoing or not */
-    if(huart->State == HAL_UART_STATE_BUSY_TX_RX) 
-    {
-      huart->State = HAL_UART_STATE_BUSY_TX;
-    }
-    else
-    {
-      huart->State = HAL_UART_STATE_READY;
-    }
+    /* At end of Rx process, restore huart->RxState to Ready */
+    huart->RxState = HAL_UART_STATE_READY;
   }
   HAL_UART_RxCpltCallback(huart);
 }
 
 /**
   * @brief DMA UART receive process half complete callback 
-  * @param  hdma: Pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA module.
+  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
+  *                the configuration information for the specified DMA module.
   * @retval None
   */
 static void UART_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
 {
   UART_HandleTypeDef* huart = (UART_HandleTypeDef*)((DMA_HandleTypeDef*)hdma)->Parent;
-
   HAL_UART_RxHalfCpltCallback(huart); 
 }
 
 /**
   * @brief  DMA UART communication error callback.
-  * @param  hdma: Pointer to a DMA_HandleTypeDef structure that contains
-  *               the configuration information for the specified DMA module.
+  * @param  hdma: DMA handle
   * @retval None
   */
-static void UART_DMAError(DMA_HandleTypeDef *hdma)   
+static void UART_DMAError(DMA_HandleTypeDef *hdma)
 {
+  uint32_t dmarequest = 0x00U;
   UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  huart->RxXferCount = 0;
-  huart->TxXferCount = 0;
-  huart->State= HAL_UART_STATE_READY;
+
+  /* Stop UART DMA Tx request if ongoing */
+  dmarequest = HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAT);
+  if((huart->gState == HAL_UART_STATE_BUSY_TX) && dmarequest)
+  {
+    huart->TxXferCount = 0U;
+    UART_EndTxTransfer(huart);
+  }
+
+  /* Stop UART DMA Rx request if ongoing */
+  dmarequest = HAL_IS_BIT_SET(huart->Instance->CR3, USART_CR3_DMAR); 
+  if((huart->RxState == HAL_UART_STATE_BUSY_RX) && dmarequest)
+  {
+    huart->RxXferCount = 0U;
+    UART_EndRxTransfer(huart);
+  }
+
   huart->ErrorCode |= HAL_UART_ERROR_DMA;
   HAL_UART_ErrorCallback(huart);
 }
 
 /**
   * @brief  This function handles UART Communication Timeout.
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @param  Flag: specifies the UART flag to check.
   * @param  Status: The new Flag status (SET or RESET).
+  * @param  Tickstart Tick start value
   * @param  Timeout: Timeout duration
   * @retval HAL status
   */
-static HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, uint32_t Flag, FlagStatus Status, uint32_t Timeout)
+static HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, uint32_t Flag, FlagStatus Status, uint32_t Tickstart, uint32_t Timeout)
 {
-  uint32_t tickstart = 0;
-
-  /* Get tick */ 
-  tickstart = HAL_GetTick();
-
   /* Wait until flag is set */
-  if(Status == RESET)
+  while((__HAL_UART_GET_FLAG(huart, Flag) ? SET : RESET) == Status) 
   {
-    while(__HAL_UART_GET_FLAG(huart, Flag) == RESET)
+    /* Check for the Timeout */
+    if(Timeout != HAL_MAX_DELAY)
     {
-      /* Check for the Timeout */
-      if(Timeout != HAL_MAX_DELAY)
+      if((Timeout == 0U)||((HAL_GetTick() - Tickstart ) > Timeout))
       {
-        if((Timeout == 0)||((HAL_GetTick() - tickstart ) > Timeout))
-        {
-          /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
-          __HAL_UART_DISABLE_IT(huart, UART_IT_TXE);
-          __HAL_UART_DISABLE_IT(huart, UART_IT_RXNE);
-          __HAL_UART_DISABLE_IT(huart, UART_IT_PE);
-          __HAL_UART_DISABLE_IT(huart, UART_IT_ERR);
-
-          huart->State= HAL_UART_STATE_READY;
-
-          /* Process Unlocked */
-          __HAL_UNLOCK(huart);
-
-          return HAL_TIMEOUT;
-        }
+        /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
+        CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE));
+        CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+        
+        huart->gState  = HAL_UART_STATE_READY;
+        huart->RxState = HAL_UART_STATE_READY;
+        
+        /* Process Unlocked */
+        __HAL_UNLOCK(huart);
+        
+        return HAL_TIMEOUT;
       }
     }
   }
-  else
-  {
-    while(__HAL_UART_GET_FLAG(huart, Flag) != RESET)
-    {
-      /* Check for the Timeout */
-      if(Timeout != HAL_MAX_DELAY)
-      {
-        if((Timeout == 0)||((HAL_GetTick() - tickstart ) > Timeout))
-        {
-          /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
-          __HAL_UART_DISABLE_IT(huart, UART_IT_TXE);
-          __HAL_UART_DISABLE_IT(huart, UART_IT_RXNE);
-          __HAL_UART_DISABLE_IT(huart, UART_IT_PE);
-          __HAL_UART_DISABLE_IT(huart, UART_IT_ERR);
-
-          huart->State= HAL_UART_STATE_READY;
-
-          /* Process Unlocked */
-          __HAL_UNLOCK(huart);
-
-          return HAL_TIMEOUT;
-        }
-      }
-    }
-  }
+  
   return HAL_OK;
+}
+
+/**
+  * @brief  End ongoing Tx transfer on UART peripheral (following error detection or Transmit completion).
+  * @param  huart: UART handle.
+  * @retval None
+  */
+static void UART_EndTxTransfer(UART_HandleTypeDef *huart)
+{
+  /* Disable TXEIE and TCIE interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_TXEIE | USART_CR1_TCIE));
+
+  /* At end of Tx process, restore huart->gState to Ready */
+  huart->gState = HAL_UART_STATE_READY;
+}
+
+/**
+  * @brief  End ongoing Rx transfer on UART peripheral (following error detection or Reception completion).
+  * @param  huart: UART handle.
+  * @retval None
+  */
+static void UART_EndRxTransfer(UART_HandleTypeDef *huart)
+{
+  /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
+  CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE));
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
+  /* At end of Rx process, restore huart->RxState to Ready */
+  huart->RxState = HAL_UART_STATE_READY;
+}
+
+/**
+  * @brief  DMA UART communication abort callback, when initiated by HAL services on Error
+  *         (To be called at end of DMA Abort procedure following error occurrence).
+  * @param  hdma DMA handle.
+  * @retval None
+  */
+static void UART_DMAAbortOnError(DMA_HandleTypeDef *hdma)
+{
+  UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+  huart->RxXferCount = 0x00U;
+  huart->TxXferCount = 0x00U;
+
+  HAL_UART_ErrorCallback(huart);
+}
+
+/**
+  * @brief  DMA UART Tx communication abort callback, when initiated by user
+  *         (To be called at end of DMA Tx Abort procedure following user abort request).
+  * @note   When this callback is executed, User Abort complete call back is called only if no
+  *         Abort still ongoing for Rx DMA Handle.
+  * @param  hdma DMA handle.
+  * @retval None
+  */
+static void UART_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
+{
+  UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+  
+  huart->hdmatx->XferAbortCallback = NULL;
+
+  /* Check if an Abort process is still ongoing */
+  if(huart->hdmarx != NULL)
+  {
+    if(huart->hdmarx->XferAbortCallback != NULL)
+    {
+      return;
+    }
+  }
+
+  /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
+  huart->TxXferCount = 0x00U;
+  huart->RxXferCount = 0x00U;
+
+  /* Reset ErrorCode */
+  huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+  /* Restore huart->gState and huart->RxState to Ready */
+  huart->gState  = HAL_UART_STATE_READY;
+  huart->RxState = HAL_UART_STATE_READY;
+
+  /* Call user Abort complete callback */
+  HAL_UART_AbortCpltCallback(huart);
+}
+
+/**
+  * @brief  DMA UART Rx communication abort callback, when initiated by user
+  *         (To be called at end of DMA Rx Abort procedure following user abort request).
+  * @note   When this callback is executed, User Abort complete call back is called only if no
+  *         Abort still ongoing for Tx DMA Handle.
+  * @param  hdma DMA handle.
+  * @retval None
+  */
+static void UART_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
+{
+  UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+  
+  huart->hdmarx->XferAbortCallback = NULL;
+
+  /* Check if an Abort process is still ongoing */
+  if(huart->hdmatx != NULL)
+  {
+    if(huart->hdmatx->XferAbortCallback != NULL)
+    {
+      return;
+    }
+  }
+  
+  /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
+  huart->TxXferCount = 0x00U;
+  huart->RxXferCount = 0x00U;
+
+  /* Reset ErrorCode */
+  huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+  /* Restore huart->gState and huart->RxState to Ready */
+  huart->gState  = HAL_UART_STATE_READY;
+  huart->RxState = HAL_UART_STATE_READY;
+
+  /* Call user Abort complete callback */
+  HAL_UART_AbortCpltCallback(huart);
+}
+
+/**
+  * @brief  DMA UART Tx communication abort callback, when initiated by user by a call to
+  *         HAL_UART_AbortTransmit_IT API (Abort only Tx transfer)
+  *         (This callback is executed at end of DMA Tx Abort procedure following user abort request,
+  *         and leads to user Tx Abort Complete callback execution).
+  * @param  hdma DMA handle.
+  * @retval None
+  */
+static void UART_DMATxOnlyAbortCallback(DMA_HandleTypeDef *hdma)
+{
+  UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+
+  huart->TxXferCount = 0x00U;
+
+  /* Restore huart->gState to Ready */
+  huart->gState = HAL_UART_STATE_READY;
+
+  /* Call user Abort complete callback */
+  HAL_UART_AbortTransmitCpltCallback(huart);
+}
+
+/**
+  * @brief  DMA UART Rx communication abort callback, when initiated by user by a call to
+  *         HAL_UART_AbortReceive_IT API (Abort only Rx transfer)
+  *         (This callback is executed at end of DMA Rx Abort procedure following user abort request,
+  *         and leads to user Rx Abort Complete callback execution).
+  * @param  hdma DMA handle.
+  * @retval None
+  */
+static void UART_DMARxOnlyAbortCallback(DMA_HandleTypeDef *hdma)
+{
+  UART_HandleTypeDef* huart = ( UART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
+
+  huart->RxXferCount = 0x00U;
+
+  /* Restore huart->RxState to Ready */
+  huart->RxState = HAL_UART_STATE_READY;
+
+  /* Call user Abort complete callback */
+  HAL_UART_AbortReceiveCpltCallback(huart);
 }
 
 /**
@@ -1723,10 +2339,9 @@ static HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, 
 static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart)
 {
   uint16_t* tmp;
-  uint32_t tmp_state = 0;
   
-  tmp_state = huart->State;
-  if((tmp_state == HAL_UART_STATE_BUSY_TX) || (tmp_state == HAL_UART_STATE_BUSY_TX_RX))
+  /* Check that a Tx process is ongoing */
+  if(huart->gState == HAL_UART_STATE_BUSY_TX)
   {
     if(huart->Init.WordLength == UART_WORDLENGTH_9B)
     {
@@ -1734,11 +2349,11 @@ static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart)
       huart->Instance->DR = (uint16_t)(*tmp & (uint16_t)0x01FF);
       if(huart->Init.Parity == UART_PARITY_NONE)
       {
-        huart->pTxBuffPtr += 2;
+        huart->pTxBuffPtr += 2U;
       }
       else
       {
-        huart->pTxBuffPtr += 1;
+        huart->pTxBuffPtr += 1U;
       }
     } 
     else
@@ -1746,7 +2361,7 @@ static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart)
       huart->Instance->DR = (uint8_t)(*huart->pTxBuffPtr++ & (uint8_t)0x00FF);
     }
 
-    if(--huart->TxXferCount == 0)
+    if(--huart->TxXferCount == 0U)
     {
       /* Disable the UART Transmit Complete Interrupt */
       __HAL_UART_DISABLE_IT(huart, UART_IT_TXE);
@@ -1762,7 +2377,6 @@ static HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef *huart)
   }
 }
 
-
 /**
   * @brief  Wraps up transmission in non blocking mode.
   * @param  huart: pointer to a UART_HandleTypeDef structure that contains
@@ -1774,16 +2388,8 @@ static HAL_StatusTypeDef UART_EndTransmit_IT(UART_HandleTypeDef *huart)
   /* Disable the UART Transmit Complete Interrupt */    
   __HAL_UART_DISABLE_IT(huart, UART_IT_TC);
   
-  /* Check if a receive process is ongoing or not */
-  if(huart->State == HAL_UART_STATE_BUSY_TX_RX) 
-  {
-    huart->State = HAL_UART_STATE_BUSY_RX;
-  }
-  else
-  {
-    huart->State = HAL_UART_STATE_READY;
-  }
-  
+  /* Tx process is ended, restore huart->gState to Ready */
+  huart->gState = HAL_UART_STATE_READY;
   HAL_UART_TxCpltCallback(huart);
   
   return HAL_OK;
@@ -1791,17 +2397,16 @@ static HAL_StatusTypeDef UART_EndTransmit_IT(UART_HandleTypeDef *huart)
 
 /**
   * @brief  Receives an amount of data in non blocking mode 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval HAL status
   */
 static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
 {
   uint16_t* tmp;
-  uint32_t tmp_state = 0;
   
-  tmp_state = huart->State; 
-  if((tmp_state == HAL_UART_STATE_BUSY_RX) || (tmp_state == HAL_UART_STATE_BUSY_TX_RX))
+  /* Check that a Rx process is ongoing */
+  if(huart->RxState == HAL_UART_STATE_BUSY_RX) 
   {
     if(huart->Init.WordLength == UART_WORDLENGTH_9B)
     {
@@ -1809,12 +2414,12 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
       if(huart->Init.Parity == UART_PARITY_NONE)
       {
         *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x01FF);
-        huart->pRxBuffPtr += 2;
+        huart->pRxBuffPtr += 2U;
       }
       else
       {
         *tmp = (uint16_t)(huart->Instance->DR & (uint16_t)0x00FF);
-        huart->pRxBuffPtr += 1;
+        huart->pRxBuffPtr += 1U;
       }
     }
     else
@@ -1829,25 +2434,19 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
       }
     }
 
-    if(--huart->RxXferCount == 0)
+    if(--huart->RxXferCount == 0U)
     {
+      /* Disable the IRDA Data Register not empty Interrupt */
       __HAL_UART_DISABLE_IT(huart, UART_IT_RXNE);
 
-      /* Check if a transmit process is ongoing or not */
-      if(huart->State == HAL_UART_STATE_BUSY_TX_RX) 
-      {
-        huart->State = HAL_UART_STATE_BUSY_TX;
-      }
-      else
-      {
-        /* Disable the UART Parity Error Interrupt */
-        __HAL_UART_DISABLE_IT(huart, UART_IT_PE);
-
+      /* Disable the UART Parity Error Interrupt */
+      __HAL_UART_DISABLE_IT(huart, UART_IT_PE);
         /* Disable the UART Error Interrupt: (Frame error, noise error, overrun error) */
         __HAL_UART_DISABLE_IT(huart, UART_IT_ERR);
 
-        huart->State = HAL_UART_STATE_READY;
-      }
+      /* Rx process is completed, restore huart->RxState to Ready */
+      huart->RxState = HAL_UART_STATE_READY;
+
       HAL_UART_RxCpltCallback(huart);
 
       return HAL_OK;
@@ -1856,22 +2455,22 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
   }
   else
   {
-    return HAL_BUSY; 
+    return HAL_BUSY;
   }
 }
 
 /**
   * @brief  Configures the UART peripheral. 
-  * @param  huart: Pointer to a UART_HandleTypeDef structure that contains
+  * @param  huart: pointer to a UART_HandleTypeDef structure that contains
   *                the configuration information for the specified UART module.
   * @retval None
   */
 static void UART_SetConfig(UART_HandleTypeDef *huart)
 {
-  uint32_t tmpreg = 0x00;
-  
+  uint32_t tmpreg = 0x00U;
+
   /* Check the parameters */
-  assert_param(IS_UART_BAUDRATE(huart->Init.BaudRate));  
+  assert_param(IS_UART_BAUDRATE(huart->Init.BaudRate));
   assert_param(IS_UART_STOPBITS(huart->Init.StopBits));
   assert_param(IS_UART_PARITY(huart->Init.Parity));
   assert_param(IS_UART_MODE(huart->Init.Mode));
@@ -1885,18 +2484,54 @@ static void UART_SetConfig(UART_HandleTypeDef *huart)
   /* Configure the UART Word Length, Parity and mode: 
      Set the M bits according to huart->Init.WordLength value 
      Set PCE and PS bits according to huart->Init.Parity value
-     Set TE and RE bits according to huart->Init.Mode value */
-  tmpreg = (uint32_t)huart->Init.WordLength | huart->Init.Parity | huart->Init.Mode ;
+     Set TE and RE bits according to huart->Init.Mode value
+     Set OVER8 bit according to huart->Init.OverSampling value */
+
+#if defined(USART_CR1_OVER8)
+  tmpreg |= (uint32_t)huart->Init.WordLength | huart->Init.Parity | huart->Init.Mode | huart->Init.OverSampling;
+  MODIFY_REG(huart->Instance->CR1, 
+             (uint32_t)(USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8), 
+             tmpreg);
+#else
+  tmpreg |= (uint32_t)huart->Init.WordLength | huart->Init.Parity | huart->Init.Mode;
   MODIFY_REG(huart->Instance->CR1, 
              (uint32_t)(USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE), 
              tmpreg);
-  
+#endif /* USART_CR1_OVER8 */
+
   /*------- UART-associated USART registers setting : CR3 Configuration ------*/
   /* Configure the UART HFC: Set CTSE and RTSE bits according to huart->Init.HwFlowCtl value */
   MODIFY_REG(huart->Instance->CR3, (USART_CR3_RTSE | USART_CR3_CTSE), huart->Init.HwFlowCtl);
-  
-  /*------- UART-associated USART registers setting : BRR Configuration ------*/
-  if((huart->Instance == USART1))
+
+#if defined(USART_CR1_OVER8)
+  /* Check the Over Sampling */
+  if(huart->Init.OverSampling == UART_OVERSAMPLING_8)
+  {
+    /*-------------------------- USART BRR Configuration ---------------------*/
+    if(huart->Instance == USART1)
+    {
+      huart->Instance->BRR = UART_BRR_SAMPLING8(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate);
+    }
+    else
+    {
+      huart->Instance->BRR = UART_BRR_SAMPLING8(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate);
+    }
+  }
+  else
+  {
+    /*-------------------------- USART BRR Configuration ---------------------*/
+    if(huart->Instance == USART1)
+    {
+      huart->Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate);
+    }
+    else
+    {
+      huart->Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate);
+    }
+  }
+#else
+  /*-------------------------- USART BRR Configuration ---------------------*/
+  if(huart->Instance == USART1)
   {
     huart->Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate);
   }
@@ -1904,7 +2539,9 @@ static void UART_SetConfig(UART_HandleTypeDef *huart)
   {
     huart->Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate);
   }
+#endif /* USART_CR1_OVER8 */
 }
+
 /**
   * @}
   */
