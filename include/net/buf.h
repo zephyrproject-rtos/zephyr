@@ -599,6 +599,15 @@ static inline void net_buf_destroy(struct net_buf *buf)
 }
 
 /**
+ *  @brief Reset buffer
+ *
+ *  Reset buffer data and flags so it can be reused for other purposes.
+ *
+ *  @param buf Buffer to reset.
+ */
+void net_buf_reset(struct net_buf *buf);
+
+/**
  *  @brief Initialize buffer with the given headroom.
  *
  *  Initializes a buffer with a given headroom. The buffer is not expected to

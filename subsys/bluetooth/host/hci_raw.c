@@ -109,6 +109,10 @@ int bt_send(struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
+	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+		return bt_hci_ecc_send(buf);
+	}
+
 	return bt_dev.drv->send(buf);
 }
 

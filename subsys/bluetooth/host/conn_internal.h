@@ -72,6 +72,13 @@ struct bt_conn_sco {
 };
 #endif
 
+typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn);
+
+struct bt_conn_tx {
+	sys_snode_t node;
+	bt_conn_tx_cb_t cb;
+};
+
 struct bt_conn {
 	uint16_t		handle;
 	uint8_t			type;
@@ -85,10 +92,13 @@ struct bt_conn {
 	uint8_t			encrypt;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-	uint8_t			pending_pkts;
-
 	uint16_t		rx_len;
 	struct net_buf		*rx;
+
+	/* Sent but not acknowledged TX packets */
+	sys_slist_t		tx_pending;
+	/* Acknowledged but not yet notified TX packets */
+	struct k_fifo		tx_notify;
 
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
@@ -116,7 +126,13 @@ struct bt_conn {
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 
 /* Send data over a connection */
-int bt_conn_send(struct bt_conn *conn, struct net_buf *buf);
+int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
+		    bt_conn_tx_cb_t cb);
+
+static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
+{
+	return bt_conn_send_cb(conn, buf, NULL);
+}
 
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer);
@@ -191,3 +207,4 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 /* k_poll related helpers for the TX thread */
 int bt_conn_prepare_events(struct k_poll_event events[]);
 void bt_conn_process_tx(struct bt_conn *conn);
+void bt_conn_notify_tx(struct bt_conn *conn);

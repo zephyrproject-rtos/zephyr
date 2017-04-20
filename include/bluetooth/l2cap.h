@@ -210,7 +210,7 @@ struct bt_l2cap_chan_ops {
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
  *  @brief Headroom needed for outgoing buffers
  */
-#define BT_L2CAP_CHAN_SEND_RESERVE (CONFIG_BLUETOOTH_HCI_RESERVE + 4 + 4 + 2)
+#define BT_L2CAP_CHAN_SEND_RESERVE (CONFIG_BLUETOOTH_HCI_RESERVE + 4 + 4)
 
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {

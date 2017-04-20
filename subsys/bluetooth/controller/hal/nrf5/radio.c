@@ -73,9 +73,9 @@ void radio_tx_power_set(uint32_t power)
 	NRF_RADIO->TXPOWER = power;
 }
 
-void radio_freq_chnl_set(uint32_t chnl)
+void radio_freq_chan_set(uint32_t chan)
 {
-	NRF_RADIO->FREQUENCY = chnl;
+	NRF_RADIO->FREQUENCY = chan;
 }
 
 void radio_whiten_iv_set(uint32_t iv)
