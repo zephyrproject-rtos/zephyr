@@ -266,8 +266,6 @@ M:	Andrew Boie <andrew.p.boie@intel.com>
 M:	Andy Ross <andrew.j.ross@intel.com>
 S:	Supported
 F:	kernel/
-F:	include/nanokernel.h
-F:	include/microkernel.h
 F:	include/misc/
 F:	include/toolchain/
 F:	include/atomic.h
