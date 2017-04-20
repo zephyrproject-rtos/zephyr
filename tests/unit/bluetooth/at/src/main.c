@@ -10,7 +10,7 @@
 
 #include <net/buf.h>
 
-#include "../../../../subsys/bluetooth/host/at.h"
+#include "subsys/bluetooth/host/at.h"
 
 #include <ztest.h>
 

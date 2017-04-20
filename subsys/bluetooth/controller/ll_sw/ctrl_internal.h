@@ -8,7 +8,7 @@
 enum llcp {
 	LLCP_NONE,
 	LLCP_CONNECTION_UPDATE,
-	LLCP_CHANNEL_MAP,
+	LLCP_CHAN_MAP,
 	LLCP_ENCRYPTION,
 	LLCP_FEATURE_EXCHANGE,
 	LLCP_VERSION_EXCHANGE,
@@ -32,10 +32,21 @@ struct connection {
 
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
-	uint8_t data_channel_map[5];
-	uint8_t data_channel_count;
-	uint8_t data_channel_hop;
-	uint8_t data_channel_use;
+	uint8_t data_chan_map[5];
+
+	uint8_t data_chan_count:6;
+	uint8_t data_chan_sel:1;
+	uint8_t rfu:1;
+
+	union {
+		struct {
+			uint8_t data_chan_hop;
+			uint8_t data_chan_use;
+		};
+
+		uint16_t data_chan_id;
+	};
+
 	uint16_t handle;
 	uint16_t event_counter;
 	uint16_t conn_interval;
@@ -119,7 +130,7 @@ struct connection {
 			uint8_t initiate;
 			uint8_t chm[5];
 			uint16_t instant;
-		} channel_map;
+		} chan_map;
 		struct {
 			uint8_t error_code;
 			uint8_t rand[8];
@@ -129,7 +140,7 @@ struct connection {
 		} encryption;
 	} llcp;
 
-	uint8_t llcp_features;
+	uint32_t llcp_features;
 
 	struct {
 		uint8_t tx:1;

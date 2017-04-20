@@ -46,7 +46,6 @@ static int32_t dup_count;
 static uint32_t dup_curr;
 #endif
 
-#define BIT64(n) (1ULL << (n))
 #define DEFAULT_EVENT_MASK    0x1fffffffffff
 #define DEFAULT_LE_EVENT_MASK 0x1f
 
@@ -336,7 +335,9 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 
 	memset(&rp->features[0], 0x00, sizeof(rp->features));
-	rp->features[0] = RADIO_BLE_FEATURES;
+	rp->features[0] = RADIO_BLE_FEAT & 0xFF;
+	rp->features[1] = (RADIO_BLE_FEAT >> 8)  & 0xFF;
+	rp->features[2] = (RADIO_BLE_FEAT >> 16)  & 0xFF;
 }
 
 static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
@@ -370,9 +371,9 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = 0x00;
 }
 
-static void le_read_adv_ch_tx_power(struct net_buf *buf, struct net_buf **evt)
+static void le_read_adv_chan_tx_power(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_rp_le_read_ch_tx_power *rp;
+	struct bt_hci_rp_le_read_chan_tx_power *rp;
 
 	rp = cmd_complete(evt, sizeof(*rp));
 
@@ -415,9 +416,9 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-static void le_set_scan_params(struct net_buf *buf, struct net_buf **evt)
+static void le_set_scan_param(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_cp_le_set_scan_params *cmd = (void *)buf->data;
+	struct bt_hci_cp_le_set_scan_param *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	uint16_t interval;
 	uint16_t window;
@@ -557,9 +558,9 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
 
-static void le_set_host_ch_classif(struct net_buf *buf, struct net_buf **evt)
+static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_cp_le_set_host_ch_classif *cmd = (void *)buf->data;
+	struct bt_hci_cp_le_set_host_chan_classif *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	uint32_t status;
 
@@ -740,7 +741,7 @@ static void le_write_default_data_len(struct net_buf *buf,
 	status = ll_length_default_set(cmd->max_tx_octets, cmd->max_tx_time);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_INVALID_LL_PARAMS;
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_INVALID_LL_PARAM;
 }
 
 static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
@@ -779,8 +780,8 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_set_adv_param(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_READ_ADV_CH_TX_POWER):
-		le_read_adv_ch_tx_power(cmd, evt);
+	case BT_OCF(BT_HCI_OP_LE_READ_ADV_CHAN_TX_POWER):
+		le_read_adv_chan_tx_power(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_DATA):
@@ -795,8 +796,8 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_set_adv_enable(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_PARAMS):
-		le_set_scan_params(cmd, evt);
+	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_PARAM):
+		le_set_scan_param(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_ENABLE):
@@ -831,8 +832,8 @@ static int controller_cmd_handle(uint8_t ocf, struct net_buf *cmd,
 		le_conn_update(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CH_CLASSIF):
-		le_set_host_ch_classif(cmd, evt);
+	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF):
+		le_set_host_chan_classif(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
@@ -1010,8 +1011,8 @@ static void le_advertising_report(struct pdu_data *pdu_data, uint8_t *b,
 	uint8_t *rssi;
 	uint8_t info_len;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_ADVERTISING_REPORT))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
 		return;
 	}
 
@@ -1090,8 +1091,8 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_conn_complete *sep;
 	struct radio_le_conn_cmplt *radio_cc;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CONN_COMPLETE)) {
 		return;
 	}
 
@@ -1115,7 +1116,7 @@ static void disconn_complete(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_disconn_complete *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_DISCONN_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_DISCONN_COMPLETE)) {
 		return;
 	}
 
@@ -1133,8 +1134,8 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 	struct bt_hci_evt_le_conn_update_complete *sep;
 	struct radio_le_conn_update_cmplt *radio_cu;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_UPDATE_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CONN_UPDATE_COMPLETE)) {
 		return;
 	}
 
@@ -1155,7 +1156,7 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_encrypt_key_refresh_complete *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_ENCRYPT_KEY_REFRESH_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_ENCRYPT_KEY_REFRESH_COMPLETE)) {
 		return;
 	}
 
@@ -1178,6 +1179,28 @@ static void auth_payload_timeout_exp(struct pdu_data *pdu_data, uint16_t handle,
 	ep->handle = sys_cpu_to_le16(handle);
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
+static void le_chan_sel_algo(struct pdu_data *pdu_data, uint16_t handle,
+			     struct net_buf *buf)
+{
+	struct bt_hci_evt_le_chan_sel_algo *sep;
+	struct radio_le_chan_sel_algo *radio_le_chan_sel_algo;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CHAN_SEL_ALGO)) {
+		return;
+	}
+
+	radio_le_chan_sel_algo = (struct radio_le_chan_sel_algo *)
+					pdu_data->payload.lldata;
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CHAN_SEL_ALGO, sizeof(*sep));
+
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->chan_sel_algo = radio_le_chan_sel_algo->chan_sel_algo;
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
 
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
@@ -1213,6 +1236,12 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		auth_payload_timeout_exp(pdu_data, handle, buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
+	case NODE_RX_TYPE_CHAN_SEL_ALGO:
+		le_chan_sel_algo(pdu_data, handle, buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
@@ -1250,8 +1279,8 @@ static void le_ltk_request(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_ltk_request *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_LTK_REQUEST))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_LTK_REQUEST)) {
 		return;
 	}
 
@@ -1269,7 +1298,7 @@ static void encrypt_change(uint8_t err, uint16_t handle,
 {
 	struct bt_hci_evt_encrypt_change *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_ENCRYPT_CHANGE))) {
+	if (!(event_mask & BT_EVT_MASK_ENCRYPT_CHANGE)) {
 		return;
 	}
 
@@ -1286,8 +1315,8 @@ static void le_remote_feat_complete(uint8_t status, struct pdu_data *pdu_data,
 {
 	struct bt_hci_ev_le_remote_feat_complete *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_REMOTE_FEAT_COMPLETE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_REMOTE_FEAT_COMPLETE)) {
 		return;
 	}
 
@@ -1326,7 +1355,7 @@ static void remote_version_info(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_remote_version_info *ep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_REMOTE_VERSION_INFO))) {
+	if (!(event_mask & BT_EVT_MASK_REMOTE_VERSION_INFO)) {
 		return;
 	}
 
@@ -1348,8 +1377,8 @@ static void le_conn_param_req(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_conn_param_req *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_CONN_PARAM_REQ))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CONN_PARAM_REQ)) {
 		return;
 	}
 
@@ -1369,8 +1398,8 @@ static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
 {
 	struct bt_hci_evt_le_data_len_change *sep;
 
-	if (!(event_mask & BIT64(BT_EVT_BIT_LE_META_EVENT)) ||
-	    !(le_event_mask & BIT64(BT_EVT_BIT_LE_DATA_LEN_CHANGE))) {
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_DATA_LEN_CHANGE)) {
 		return;
 	}
 

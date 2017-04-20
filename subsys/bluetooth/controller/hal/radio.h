@@ -28,7 +28,7 @@ void radio_isr_set(radio_isr_fp fp_radio_isr);
 void radio_reset(void);
 void radio_phy_set(uint8_t phy);
 void radio_tx_power_set(uint32_t power);
-void radio_freq_chnl_set(uint32_t chnl);
+void radio_freq_chan_set(uint32_t chan);
 void radio_whiten_iv_set(uint32_t iv);
 void radio_aa_set(uint8_t *aa);
 void radio_pkt_configure(uint8_t preamble16, uint8_t bits_len, uint8_t max_len);

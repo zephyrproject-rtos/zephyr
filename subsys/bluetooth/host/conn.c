@@ -13,6 +13,7 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
+#include <misc/slist.h>
 #include <misc/stack.h>
 #include <misc/__assert.h>
 
@@ -44,6 +45,16 @@ const struct bt_conn_auth_cb *bt_auth;
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 static struct bt_conn_cb *callback_list;
+
+struct conn_tx_cb {
+	bt_conn_tx_cb_t cb;
+};
+
+#define conn_tx(buf) ((struct conn_tx_cb *)net_buf_user_data(buf))
+
+static struct bt_conn_tx conn_tx[CONFIG_BLUETOOTH_CONN_TX_MAX];
+static sys_slist_t free_tx = SYS_SLIST_STATIC_INIT(&free_tx);
+
 #if defined(CONFIG_BLUETOOTH_BREDR)
 static struct bt_conn sco_conns[CONFIG_BLUETOOTH_MAX_SCO_CONN];
 
@@ -1040,9 +1051,10 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	bt_l2cap_recv(conn, buf);
 }
 
-int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
+int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
+		    bt_conn_tx_cb_t cb)
 {
-	BT_DBG("conn handle %u buf len %u", conn->handle, buf->len);
+	BT_DBG("conn handle %u buf len %u cb %p", conn->handle, buf->len, cb);
 
 	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
 		BT_ERR("Too small user data size");
@@ -1056,14 +1068,55 @@ int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
+	conn_tx(buf)->cb = cb;
+
 	net_buf_put(&conn->tx_queue, buf);
 	return 0;
+}
+
+static void tx_free(struct bt_conn_tx *tx)
+{
+	tx->cb = NULL;
+	sys_slist_prepend(&free_tx, &tx->node);
+}
+
+void bt_conn_notify_tx(struct bt_conn *conn)
+{
+	struct bt_conn_tx *tx;
+
+	BT_DBG("conn %p", conn);
+
+	while ((tx = k_fifo_get(&conn->tx_notify, K_NO_WAIT))) {
+		if (tx->cb) {
+			tx->cb(conn);
+		}
+
+		tx_free(tx);
+	}
+}
+
+static void add_pending_tx(struct bt_conn *conn, bt_conn_tx_cb_t cb)
+{
+	sys_snode_t *node;
+	unsigned int key;
+
+	BT_DBG("conn %p cb %p", conn, cb);
+
+	__ASSERT(!sys_slist_is_empty(&free_tx), "No free conn TX contexts");
+
+	node = sys_slist_get_not_empty(&free_tx);
+	CONTAINER_OF(node, struct bt_conn_tx, node)->cb = cb;
+
+	key = irq_lock();
+	sys_slist_append(&conn->tx_pending, node);
+	irq_unlock(key);
 }
 
 static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 		      bool always_consume)
 {
 	struct bt_hci_acl_hdr *hdr;
+	bt_conn_tx_cb_t cb;
 	int err;
 
 	BT_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
@@ -1071,6 +1124,9 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 
 	/* Wait until the controller can accept ACL packets */
 	k_sem_take(bt_conn_get_pkts(conn), K_FOREVER);
+
+	/* Make sure we notify and free up any pending tx contexts */
+	bt_conn_notify_tx(conn);
 
 	/* Check for disconnection while waiting for pkts_sem */
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -1081,6 +1137,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
+	cb = conn_tx(buf)->cb;
 	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
 	err = bt_send(buf);
@@ -1089,7 +1146,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 		goto fail;
 	}
 
-	conn->pending_pkts++;
+	add_pending_tx(conn, cb);
 	return true;
 
 fail:
@@ -1122,6 +1179,9 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 		net_buf_unref(frag);
 		return NULL;
 	}
+
+	/* Fragments never have a TX completion callback */
+	conn_tx(frag)->cb = NULL;
 
 	frag_len = min(conn_mtu(conn), net_buf_tailroom(frag));
 
@@ -1181,7 +1241,7 @@ static void conn_cleanup(struct bt_conn *conn)
 		net_buf_unref(buf);
 	}
 
-	BT_ASSERT(!conn->pending_pkts);
+	__ASSERT(sys_slist_is_empty(&conn->tx_pending), "Pending TX packets");
 
 	bt_conn_reset_rx_state(conn);
 
@@ -1224,7 +1284,13 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
 				  &conn->tx_queue);
-		events[ev_count++].tag = BT_EVENT_CONN_TX;
+		events[ev_count++].tag = BT_EVENT_CONN_TX_QUEUE;
+
+		k_poll_event_init(&events[ev_count],
+				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &conn->tx_notify);
+		events[ev_count++].tag = BT_EVENT_CONN_TX_NOTIFY;
 	}
 
 	return ev_count;
@@ -1272,6 +1338,27 @@ struct bt_conn *bt_conn_add_le(const bt_addr_le_t *peer)
 	return conn;
 }
 
+static void process_unack_tx(struct bt_conn *conn)
+{
+	/* Return any unacknowledged packets */
+	while (1) {
+		sys_snode_t *node;
+		unsigned int key;
+
+		key = irq_lock();
+		node = sys_slist_get(&conn->tx_pending);
+		irq_unlock(key);
+
+		if (!node) {
+			break;
+		}
+
+		tx_free(CONTAINER_OF(node, struct bt_conn_tx, node));
+
+		k_sem_give(bt_conn_get_pkts(conn));
+	}
+}
+
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
@@ -1313,6 +1400,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			break;
 		}
 		k_fifo_init(&conn->tx_queue);
+		k_fifo_init(&conn->tx_notify);
 		k_poll_signal(&conn_change, 0);
 
 		sys_slist_init(&conn->channels);
@@ -1334,12 +1422,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		    old_state == BT_CONN_DISCONNECT) {
 			bt_l2cap_disconnected(conn);
 			notify_disconnected(conn);
-
-			/* Return any unacknowledged packets */
-			while (conn->pending_pkts) {
-				k_sem_give(bt_conn_get_pkts(conn));
-				conn->pending_pkts--;
-			}
+			process_unack_tx(conn);
 
 			/* Cancel Connection Update if it is pending */
 			if (conn->type == BT_CONN_TYPE_LE) {
@@ -1944,7 +2027,11 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 
 int bt_conn_init(void)
 {
-	int err;
+	int err, i;
+
+	for (i = 0; i < ARRAY_SIZE(conn_tx); i++) {
+		sys_slist_prepend(&free_tx, &conn_tx[i].node);
+	}
 
 	bt_att_init();
 

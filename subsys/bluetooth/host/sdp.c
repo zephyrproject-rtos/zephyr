@@ -17,6 +17,8 @@
 #include <bluetooth/log.h>
 #include <bluetooth/sdp.h>
 
+#include "hci_core.h"
+#include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "sdp_internal.h"
 

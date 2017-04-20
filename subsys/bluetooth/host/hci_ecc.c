@@ -244,7 +244,7 @@ static void le_gen_dhkey(struct net_buf *buf)
 	}
 
 	if (buf->len < sizeof(struct bt_hci_cp_le_generate_dhkey)) {
-		status = BT_HCI_ERR_INVALID_PARAMS;
+		status = BT_HCI_ERR_INVALID_PARAM;
 		goto send_status;
 	}
 

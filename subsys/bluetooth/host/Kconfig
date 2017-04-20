@@ -161,12 +161,33 @@ config BLUETOOTH_L2CAP_TX_MTU
 	help
 	  Maximum L2CAP MTU for L2CAP TX buffers.
 
+config BLUETOOTH_CONN_TX_MAX
+	int "Maximum number of pending TX buffers"
+	default 7
+	default BLUETOOTH_CONTROLLER_TX_BUFFERS if BLUETOOTH_CONTROLLER
+	range 1 128
+	help
+	  Maximum number of pending TX buffers that have not yet
+	  been acknowledged by the controller.
+
 config BLUETOOTH_L2CAP_TX_USER_DATA_SIZE
 	int "Maximum supported user data size for L2CAP TX buffers"
 	default 4
 	range 4 65535
 	help
 	  Maximum supported user data size for L2CAP TX buffers.
+
+config BLUETOOTH_ATT_ENFORCE_FLOW
+	bool "Enforce strict flow control semantics for incoming PDUs"
+	default y
+	default n if BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86
+	help
+	  Enforce flow control rules on incoming PDUs, preventing a peer
+	  from sending new requests until a previous one has been responded
+	  or sending a new indication until a previous one has been
+	  confirmed. This may need to be disabled to avoid potential race
+	  conditions arising from a USB based HCI transport that splits
+	  HCI events and ACL data to separate endpoints.
 
 config BLUETOOTH_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
@@ -175,6 +196,16 @@ config BLUETOOTH_ATT_PREPARE_COUNT
 	help
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
+
+config BLUETOOTH_ATT_TX_MAX
+	int "Maximum number of queued outgoing ATT PDUs"
+	default 2
+	range 1 BLUETOOTH_L2CAP_TX_BUF_COUNT
+	help
+	  Number of ATT PDUs that can be at a single moment queued for
+	  transmission. If the application tries to send more than this
+	  amount the calls will block until an existing queued PDU gets
+	  sent.
 
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"

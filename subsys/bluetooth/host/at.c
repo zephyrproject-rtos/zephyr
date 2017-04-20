@@ -267,7 +267,7 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 int cme_handle(struct at_client *at)
 {
 	enum at_cme cme_err;
-	int val;
+	uint32_t val;
 
 	if (!at_get_number(at, &val) && val <= CME_ERROR_NETWORK_NOT_ALLOWED) {
 		cme_err = val;

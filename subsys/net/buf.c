@@ -64,6 +64,15 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 	return buf;
 }
 
+void net_buf_reset(struct net_buf *buf)
+{
+	NET_BUF_ASSERT(buf->flags == 0);
+	NET_BUF_ASSERT(buf->frags == NULL);
+
+	buf->len   = 0;
+	buf->data  = buf->__buf;
+}
+
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, int32_t timeout,
 				    const char *func, int line)
@@ -148,10 +157,9 @@ success:
 	NET_BUF_DBG("allocated buf %p", buf);
 
 	buf->ref   = 1;
-	buf->len   = 0;
-	buf->data  = buf->__buf;
 	buf->flags = 0;
 	buf->frags = NULL;
+	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	buf->pool->avail_count--;
