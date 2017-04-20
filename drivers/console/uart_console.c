@@ -490,7 +490,7 @@ static int uart_console_init(struct device *arg)
 
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 
-#ifdef CONFIG_USB_UART_CONSOLE
+#if defined(CONFIG_USB_UART_CONSOLE) && defined(CONFIG_USB_UART_DTR_WAIT)
 	while (1) {
 		u32_t dtr = 0;
 
