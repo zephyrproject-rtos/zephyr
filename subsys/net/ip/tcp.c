@@ -62,7 +62,7 @@ struct tcp_segment {
 	const struct sockaddr *dst_addr;
 };
 
-#if defined(CONFIG_NET_DEBUG_TCP)
+#if defined(CONFIG_NET_DEBUG_TCP) && (CONFIG_SYS_LOG_NET_BUF_LEVEL > 2)
 static char upper_if_set(char chr, bool set)
 {
 	if (set) {
