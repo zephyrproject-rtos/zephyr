@@ -39,10 +39,10 @@ char __noinit __stack thread_stack[STACKSIZE];
 
 #define MAX_DBG_PRINT 64
 
-NET_NBUF_TX_POOL_DEFINE(echo_tx_tcp, 15);
-NET_NBUF_DATA_POOL_DEFINE(echo_data_tcp, 30);
+NET_PKT_TX_SLAB_DEFINE(echo_tx_tcp, 15);
+NET_PKT_DATA_POOL_DEFINE(echo_data_tcp, 30);
 
-static struct net_buf_pool *tx_tcp_pool(void)
+static struct k_mem_slab *tx_tcp_pool(void)
 {
 	return &echo_tx_tcp;
 }
