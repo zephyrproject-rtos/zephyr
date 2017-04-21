@@ -38,8 +38,8 @@ static u16_t _opcode;
 #if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
 /* Scan duplicate filter */
 struct dup {
-		u8_t mask;
-		bt_addr_le_t addr;
+	u8_t         mask;
+	bt_addr_le_t addr;
 };
 static struct dup dup_filter[CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN];
 static s32_t dup_count;
@@ -1003,7 +1003,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 				  struct net_buf *buf)
 {
 	const u8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
-				       0xff, 0x02 };
+				    0xff, 0x02 };
 	struct bt_hci_ev_le_advertising_report *sep;
 	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
 	struct bt_hci_ev_le_advertising_info *adv_info;
@@ -1275,7 +1275,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 }
 
 static void le_ltk_request(struct pdu_data *pdu_data, u16_t handle,
-				    struct net_buf *buf)
+			   struct net_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *sep;
 

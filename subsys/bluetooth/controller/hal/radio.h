@@ -59,9 +59,8 @@ u32_t radio_rssi_get(void);
 void radio_rssi_status_reset(void);
 u32_t radio_rssi_is_ready(void);
 
-void radio_filter_configure(u8_t bitmask_enable,
-				u8_t bitmask_addr_type,
-				u8_t *bdaddr);
+void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
+			    u8_t *bdaddr);
 void radio_filter_disable(void);
 void radio_filter_status_reset(void);
 u32_t radio_filter_has_match(void);

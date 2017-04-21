@@ -97,20 +97,20 @@ struct advertiser {
 struct observer {
 	struct shdr hdr;
 
-	u8_t scan_type:1;
-	u8_t scan_state:1;
-	u8_t scan_chan:2;
-	u8_t filter_policy:2;
-	u8_t adv_addr_type:1;
-	u8_t init_addr_type:1;
+	u8_t  scan_type:1;
+	u8_t  scan_state:1;
+	u8_t  scan_chan:2;
+	u8_t  filter_policy:2;
+	u8_t  adv_addr_type:1;
+	u8_t  init_addr_type:1;
 
-	u8_t adv_addr[BDADDR_SIZE];
-	u8_t init_addr[BDADDR_SIZE];
+	u8_t  adv_addr[BDADDR_SIZE];
+	u8_t  init_addr[BDADDR_SIZE];
 	u32_t ticks_window;
 
-	u8_t filter_enable_bitmask;
-	u8_t filter_addr_type_bitmask;
-	u8_t filter_bdaddr[8][BDADDR_SIZE];
+	u8_t  filter_enable_bitmask;
+	u8_t  filter_addr_type_bitmask;
+	u8_t  filter_bdaddr[8][BDADDR_SIZE];
 
 	u16_t conn_interval;
 	u16_t conn_latency;
@@ -127,34 +127,34 @@ static struct {
 	u32_t ticks_anchor;
 	u32_t remainder_anchor;
 
-	u8_t volatile ticker_id_prepare;
-	u8_t volatile ticker_id_event;
-	u8_t volatile ticker_id_stop;
+	u8_t  volatile ticker_id_prepare;
+	u8_t  volatile ticker_id_event;
+	u8_t  volatile ticker_id_stop;
 
-	enum role volatile role;
-	enum state state;
+	enum  role volatile role;
+	enum  state state;
 
-	u8_t filter_enable_bitmask;
-	u8_t filter_addr_type_bitmask;
-	u8_t filter_bdaddr[8][BDADDR_SIZE];
+	u8_t  filter_enable_bitmask;
+	u8_t  filter_addr_type_bitmask;
+	u8_t  filter_bdaddr[8][BDADDR_SIZE];
 
-	u8_t nirk;
-	u8_t irk[RADIO_IRK_COUNT_MAX][16];
+	u8_t  nirk;
+	u8_t  irk[RADIO_IRK_COUNT_MAX][16];
 
 	struct advertiser advertiser;
 	struct observer observer;
 
-	void *conn_pool;
-	void *conn_free;
-	u8_t connection_count;
+	void  *conn_pool;
+	void  *conn_free;
+	u8_t  connection_count;
 	struct connection *conn_curr;
 
-	u8_t packet_counter;
-	u8_t crc_expire;
+	u8_t  packet_counter;
+	u8_t  crc_expire;
 
-	u8_t data_chan_map[5];
-	u8_t data_chan_count;
-	u8_t sca;
+	u8_t  data_chan_map[5];
+	u8_t  data_chan_count;
+	u8_t  sca;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	/* DLE global settings */
@@ -166,46 +166,46 @@ static struct {
 	 * Rx-es.
 	 */
 	/* Advertiser, Observer, and Connections Rx data pool */
-	void *pkt_rx_data_pool;
-	void *pkt_rx_data_free;
+	void  *pkt_rx_data_pool;
+	void  *pkt_rx_data_free;
 	u16_t packet_data_octets_max;
 	u16_t packet_rx_data_pool_size;
 	u16_t packet_rx_data_size;
-	u8_t packet_rx_data_count;
+	u8_t  packet_rx_data_count;
 	/* Free queue Rx data buffers */
 	struct radio_pdu_node_rx **packet_rx;
-	u8_t packet_rx_count;
-	u8_t volatile packet_rx_last;
-	u8_t packet_rx_acquire;
+	u8_t  packet_rx_count;
+	u8_t  volatile packet_rx_last;
+	u8_t  packet_rx_acquire;
 
 	/* Controller to Host event-cum-data queue */
-	void *link_rx_pool;
-	void *link_rx_free;
-	void *link_rx_head;
+	void  *link_rx_pool;
+	void  *link_rx_free;
+	void  *link_rx_head;
 
-	void *volatile link_rx_tail;
-	u8_t link_rx_data_quota;
+	void  *volatile link_rx_tail;
+	u8_t  link_rx_data_quota;
 
 	/* Connections common Tx ctrl and data pool */
-	void *pkt_tx_ctrl_pool;
-	void *pkt_tx_ctrl_free;
-	void *pkt_tx_data_pool;
-	void *pkt_tx_data_free;
+	void  *pkt_tx_ctrl_pool;
+	void  *pkt_tx_ctrl_free;
+	void  *pkt_tx_data_pool;
+	void  *pkt_tx_data_free;
 	u16_t packet_tx_data_size;
 
 	/* Host to Controller Tx, and Controller to Host Num complete queue */
 	struct pdu_data_q_tx *pkt_tx;
 	struct pdu_data_q_tx *pkt_release;
-	u8_t packet_tx_count;
-	u8_t volatile packet_tx_first;
-	u8_t packet_tx_last;
-	u8_t packet_release_first;
-	u8_t volatile packet_release_last;
+	u8_t  packet_tx_count;
+	u8_t  volatile packet_tx_first;
+	u8_t  packet_tx_last;
+	u8_t  packet_release_first;
+	u8_t  volatile packet_release_last;
 
 	u16_t fc_handle[TRIPLE_BUFFER_SIZE];
-	u8_t volatile fc_req;
-	u8_t fc_ack;
-	u8_t fc_ena;
+	u8_t  volatile fc_req;
+	u8_t  fc_ack;
+	u8_t  fc_ena;
 
 	u32_t ticks_active_to_start;
 
@@ -229,24 +229,22 @@ static void chan_sel_2_ut(void);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
 
 static void adv_setup(void);
-static void event_adv(u32_t ticks_at_expire, u32_t remainder,
-		      u16_t lazy, void *context);
-static void event_obs(u32_t ticks_at_expire, u32_t remainder,
-		      u16_t lazy, void *context);
-static void event_slave_prepare(u32_t ticks_at_expire,
-				u32_t remainder, u16_t lazy,
-				void *context);
-static void event_slave(u32_t ticks_at_expire, u32_t remainder,
-			u16_t lazy, void *context);
-static void event_master_prepare(u32_t ticks_at_expire,
-				 u32_t remainder, u16_t lazy,
-				 void *context);
-static void event_master(u32_t ticks_at_expire, u32_t remainder,
-			 u16_t lazy, void *context);
+static void event_adv(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		      void *context);
+static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		      void *context);
+static void event_slave_prepare(u32_t ticks_at_expire, u32_t remainder,
+				u16_t lazy, void *context);
+static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+			void *context);
+static void event_master_prepare(u32_t ticks_at_expire, u32_t remainder,
+				 u16_t lazy, void *context);
+static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+			 void *context);
 static void rx_packet_set(struct connection *conn,
 			  struct pdu_data *pdu_data_rx);
 static void tx_packet_set(struct connection *conn,
-				struct pdu_data *pdu_data_tx);
+			  struct pdu_data *pdu_data_tx);
 static void prepare_pdu_data_tx(struct connection *conn,
 				struct pdu_data **pdu_data_tx);
 static void packet_rx_allocate(u8_t max);
@@ -264,12 +262,11 @@ static void ctrl_tx_enqueue(struct connection *conn,
 static void pdu_node_tx_release(u16_t handle,
 				struct radio_pdu_node_tx *node_tx);
 static void connection_release(struct connection *conn);
-static u32_t conn_update(struct connection *conn,
-			    struct pdu_data *pdu_data_rx);
+static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
 static u32_t is_peer_compatible(struct connection *conn);
 static u32_t conn_update_req(struct connection *conn);
 static u32_t chan_map_update(struct connection *conn,
-				struct pdu_data *pdu_data_rx);
+			     struct pdu_data *pdu_data_rx);
 static void enc_req_reused_send(struct connection *conn,
 				struct radio_pdu_node_tx *node_tx);
 static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason);
@@ -285,28 +282,25 @@ static void version_ind_send(struct connection *conn);
 static void ping_resp_send(struct connection *conn);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
-static void reject_ind_ext_send(struct connection *conn,
-				u8_t reject_opcode,
+static void reject_ind_ext_send(struct connection *conn, u8_t reject_opcode,
 				u8_t error_code);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
-static void length_resp_send(struct connection *conn,
-				u16_t eff_rx_octets,
-				u16_t eff_tx_octets);
+static void length_resp_send(struct connection *conn, u16_t eff_rx_octets,
+			     u16_t eff_tx_octets);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
-static u32_t role_disable(u8_t ticker_id_primary,
-			     u8_t ticker_id_stop);
+static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop);
 static void rx_fc_lock(u16_t handle);
 
 /*****************************************************************************
  *RADIO
  ****************************************************************************/
 u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
-		    u8_t rx_count_max, u8_t tx_count_max,
-		    u16_t packet_data_octets_max,
-		    u16_t packet_tx_data_size, u8_t *mem_radio,
-		    u16_t mem_size)
+		 u8_t rx_count_max, u8_t tx_count_max,
+		 u16_t packet_data_octets_max,
+		 u16_t packet_tx_data_size, u8_t *mem_radio,
+		 u16_t mem_size)
 {
 	u32_t retcode;
 	u8_t *mem_radio_end;
@@ -583,7 +577,7 @@ static inline void isr_radio_state_tx(void)
 }
 
 static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
-				u8_t irkmatch_id, u8_t rssi_ready)
+			       u8_t irkmatch_id, u8_t rssi_ready)
 {
 	struct pdu_adv *pdu_adv, *_pdu_adv;
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
@@ -1173,7 +1167,7 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 }
 
 static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
-					  struct radio_pdu_node_tx **node_tx)
+				       struct radio_pdu_node_tx **node_tx)
 {
 	u8_t terminate = 0;
 
@@ -1394,7 +1388,7 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
-		u8_t *rx_enqueue)
+					    u8_t *rx_enqueue)
 {
 	u16_t eff_rx_octets;
 	u16_t eff_tx_octets;
@@ -2433,8 +2427,7 @@ static inline u32_t isr_close_adv(void)
 
 		radio_filter_disable();
 
-		pdu_adv =
-			(struct pdu_adv *)
+		pdu_adv = (struct pdu_adv *)
 			&_radio.advertiser.adv_data.data[_radio.advertiser.adv_data.first][0];
 		if ((_radio.state == STATE_CLOSE) &&
 		    (pdu_adv->type != PDU_ADV_TYPE_DIRECT_IND)) {
@@ -3101,7 +3094,7 @@ static void mayfly_xtal_start(void *params)
 }
 
 static void event_xtal(u32_t ticks_at_expire, u32_t remainder,
-				 u16_t lazy, void *context)
+		       u16_t lazy, void *context)
 {
 	static void *s_link[2];
 	static struct mayfly s_mfy_xtal_start = {0, 0, s_link, NULL,
@@ -3210,9 +3203,8 @@ static void prepare_normal(u32_t status, void *op_context)
 	}
 }
 
-static void prepare_normal_set(struct shdr *hdr,
-					 u8_t ticker_user_id,
-					 u8_t ticker_id)
+static void prepare_normal_set(struct shdr *hdr, u8_t ticker_user_id,
+			       u8_t ticker_id)
 {
 	if (hdr->ticks_xtal_to_start & ((u32_t)1 << 31)) {
 		u32_t ticker_status;
@@ -3237,7 +3229,7 @@ static void prepare_normal_set(struct shdr *hdr,
 
 #if (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US)
 static u32_t preempt_calc(struct shdr *hdr, u8_t ticker_id,
-			     u32_t ticks_at_expire)
+			  u32_t ticks_at_expire)
 {
 	u32_t diff =
 		ticker_ticks_diff_get(ticker_ticks_now_get(), ticks_at_expire);
@@ -3581,11 +3573,11 @@ static void mayfly_sched_win_offset_use(void *params)
 }
 
 static void sched_free_win_offset_calc(struct connection *conn_curr,
-					   u8_t is_select,
-					   u32_t *ticks_to_offset_next,
-					   u16_t conn_interval,
-					   u8_t *offset_max,
-					   u8_t *win_offset)
+				       u8_t is_select,
+				       u32_t *ticks_to_offset_next,
+				       u16_t conn_interval,
+				       u8_t *offset_max,
+				       u8_t *win_offset)
 {
 	u32_t ticks_prepare_reduced = 0;
 	u32_t ticks_anchor;
@@ -4082,9 +4074,8 @@ static u8_t chan_sel_remap(u8_t *chan_map, u8_t chan_index)
 	return chan_next;
 }
 
-static u8_t chan_sel_1(u8_t *chan_use, u8_t hop,
-			  u16_t latency, u8_t *chan_map,
-			  u8_t chan_count)
+static u8_t chan_sel_1(u8_t *chan_use, u8_t hop, u16_t latency, u8_t *chan_map,
+		       u8_t chan_count)
 {
 	u8_t chan_next;
 
@@ -4147,8 +4138,8 @@ static u16_t chan_prn(u16_t counter, u16_t chan_id)
 	return prn_e;
 }
 
-static u8_t chan_sel_2(u16_t counter, u16_t chan_id,
-			  u8_t *chan_map, u8_t chan_count)
+static u8_t chan_sel_2(u16_t counter, u16_t chan_id, u8_t *chan_map,
+		       u8_t chan_count)
 {
 	u8_t chan_next;
 	u16_t prn_e;
@@ -4443,8 +4434,8 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_START_A(0);
 }
 
-void event_adv_stop(u32_t ticks_at_expire, u32_t remainder,
-		    u16_t lazy, void *context)
+void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		    void *context)
 {
 	u32_t ticker_status;
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
@@ -4553,8 +4544,8 @@ static void event_obs_prepare(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_PREPARE_O(0);
 }
 
-static void event_obs(u32_t ticks_at_expire, u32_t remainder,
-		      u16_t lazy, void *context)
+static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		      void *context)
 {
 	u32_t ticker_status;
 
@@ -4836,8 +4827,8 @@ static inline void event_conn_update_st_rsp(struct connection *conn,
 }
 
 static inline u32_t event_conn_update_prep(struct connection *conn,
-					      u16_t event_counter,
-					      u32_t ticks_at_expire)
+					   u16_t event_counter,
+					   u32_t ticks_at_expire)
 {
 	struct connection *conn_upd;
 	u16_t instant_latency;
@@ -5843,8 +5834,8 @@ static void event_slave_prepare(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_PREPARE_S(0);
 }
 
-static void event_slave(u32_t ticks_at_expire, u32_t remainder,
-			u16_t lazy, void *context)
+static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+			void *context)
 {
 	u8_t data_chan_use = 0;
 	struct connection *conn;
@@ -5973,8 +5964,8 @@ static void event_master_prepare(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_PREPARE_M(0);
 }
 
-static void event_master(u32_t ticks_at_expire, u32_t remainder,
-			 u16_t lazy, void *context)
+static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+			 void *context)
 {
 	u8_t data_chan_use = 0;
 	struct pdu_data *pdu_data_tx;
@@ -6132,8 +6123,7 @@ static void rx_packet_set(struct connection *conn, struct pdu_data *pdu_data_rx)
 	}
 }
 
-static void tx_packet_set(struct connection *conn,
-			  struct pdu_data *pdu_data_tx)
+static void tx_packet_set(struct connection *conn, struct pdu_data *pdu_data_tx)
 {
 	u8_t phy;
 	u16_t max_tx_octets;
@@ -6658,8 +6648,7 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 	packet_rx_callback();
 }
 
-static u32_t conn_update(struct connection *conn,
-			    struct pdu_data *pdu_data_rx)
+static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 {
 	if (((pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.instant -
 	      conn->event_counter) & 0xFFFF) > 0x7FFF) {
@@ -6740,7 +6729,7 @@ static u32_t conn_update_req(struct connection *conn)
 }
 
 static u32_t chan_map_update(struct connection *conn,
-				struct pdu_data *pdu_data_rx)
+			     struct pdu_data *pdu_data_rx)
 {
 	if (((pdu_data_rx->payload.llctrl.ctrldata.chan_map_ind.instant -
 	      conn->event_counter) & 0xffff) > 0x7fff) {
@@ -7236,8 +7225,7 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 	}
 }
 
-static u32_t role_disable(u8_t ticker_id_primary,
-			     u8_t ticker_id_stop)
+static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 {
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ticks_active_to_start = 0;
@@ -7324,8 +7312,7 @@ role_disable_cleanup:
 	return ret_cb;
 }
 
-u32_t radio_adv_enable(u16_t interval, u8_t chl_map,
-			  u8_t filter_policy)
+u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 {
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ticks_slot_offset;
@@ -7543,9 +7530,8 @@ u32_t radio_adv_disable(void)
 	return status;
 }
 
-u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type,
-			   u8_t *init_addr, u16_t interval,
-			   u16_t window, u8_t filter_policy)
+u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
+			u16_t interval, u16_t window, u8_t filter_policy)
 {
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ticks_slot_offset;
@@ -7652,9 +7638,8 @@ u32_t radio_scan_disable(void)
 	return status;
 }
 
-u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr,
-			      u16_t interval, u16_t latency,
-			      u16_t timeout)
+u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
+			   u16_t latency, u16_t timeout)
 {
 	void *link;
 	struct connection *conn;
@@ -7791,9 +7776,8 @@ u32_t ll_connect_disable(void)
 	return status;
 }
 
-u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status,
-			u16_t interval, u16_t latency,
-			u16_t timeout)
+u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
+		     u16_t latency, u16_t timeout)
 {
 	struct connection *conn;
 
@@ -7878,8 +7862,7 @@ u32_t ll_chm_get(u16_t handle, u8_t *chm)
 	return 0;
 }
 
-u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv,
-			 u8_t *ltk)
+u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 {
 	struct connection *conn;
 	struct radio_pdu_node_tx *node_tx;
@@ -7954,7 +7937,7 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv,
 }
 
 u32_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
-			       u8_t const *const ltk)
+			    u8_t const *const ltk)
 {
 	struct connection *conn;
 
@@ -8148,8 +8131,7 @@ static u8_t tx_cmplt_get(u16_t *handle, u8_t *first, u8_t last)
 	return cmplt;
 }
 
-u8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx,
-		     u16_t *handle)
+u8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx, u16_t *handle)
 {
 	u8_t cmplt;
 
@@ -8316,8 +8298,7 @@ static void rx_fc_lock(u16_t handle)
 	}
 }
 
-u8_t do_radio_rx_fc_set(u16_t handle, u8_t req,
-				u8_t ack)
+u8_t do_radio_rx_fc_set(u16_t handle, u8_t req, u8_t ack)
 {
 	if (req == ack) {
 		if (_radio.link_rx_head == _radio.link_rx_tail) {
@@ -8397,8 +8378,7 @@ void radio_tx_mem_release(struct radio_pdu_node_tx *node_tx)
 	mem_release(node_tx, &_radio.pkt_tx_data_free);
 }
 
-static void ticker_op_latency_cancelled(u32_t ticker_status,
-					   void *params)
+static void ticker_op_latency_cancelled(u32_t ticker_status, void *params)
 {
 	struct connection *conn;
 
@@ -8408,8 +8388,7 @@ static void ticker_op_latency_cancelled(u32_t ticker_status,
 	conn->role.slave.latency_cancel = 0;
 }
 
-u32_t radio_tx_mem_enqueue(u16_t handle,
-			      struct radio_pdu_node_tx *node_tx)
+u32_t radio_tx_mem_enqueue(u16_t handle, struct radio_pdu_node_tx *node_tx)
 {
 	u8_t last;
 	struct connection *conn;
