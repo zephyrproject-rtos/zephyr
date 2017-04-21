@@ -21,6 +21,8 @@
 #include <net/zoap_link_format.h>
 
 #define PKT_WAIT_TIME K_SECONDS(1)
+/* CoAP End Of Options Marker */
+#define COAP_MARKER	0xFF
 
 static int format_uri(const char * const *path, struct net_buf *buf)
 {
@@ -348,7 +350,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 		if (!response.start) {
 			temp = response.pkt->frags;
 			str = net_buf_add(temp, 1);
-			*str = 0xFF;
+			*str = COAP_MARKER;
 			response.start = str + 1;
 		} else {
 			temp = net_pkt_get_data(context, PKT_WAIT_TIME);
