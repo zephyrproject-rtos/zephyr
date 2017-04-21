@@ -30,8 +30,8 @@
 /* in micro second */
 #define STEPSIZE	2000
 
-static int write_pin(struct device *pwm_dev, uint32_t pwm_pin,
-		     uint32_t pulse_width)
+static int write_pin(struct device *pwm_dev, u32_t pwm_pin,
+		     u32_t pulse_width)
 {
 	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD, pulse_width);
 }
@@ -39,7 +39,7 @@ static int write_pin(struct device *pwm_dev, uint32_t pwm_pin,
 void main(void)
 {
 	struct device *pwm_dev;
-	uint32_t pulse_width0, pulse_width1, pulse_width2;
+	u32_t pulse_width0, pulse_width1, pulse_width2;
 
 	printk("PWM demo app-RGB LED\n");
 

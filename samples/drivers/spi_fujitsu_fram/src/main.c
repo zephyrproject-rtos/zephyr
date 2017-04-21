@@ -17,8 +17,8 @@
 #define MB85RS64V_MANUFACTURER_ID_CMD 0x9f
 #define MAX_USER_DATA_LENGTH 1024
 
-static uint8_t spi_buffer[MAX_USER_DATA_LENGTH + 3];
-static uint8_t data[MAX_USER_DATA_LENGTH], cmp_data[MAX_USER_DATA_LENGTH];
+static u8_t spi_buffer[MAX_USER_DATA_LENGTH + 3];
+static u8_t data[MAX_USER_DATA_LENGTH], cmp_data[MAX_USER_DATA_LENGTH];
 
 static int mb85rs64v_read_id(struct device *dev)
 {
@@ -51,8 +51,8 @@ static int mb85rs64v_read_id(struct device *dev)
 	return 0;
 }
 
-static int write_bytes(struct device *dev, uint16_t addr,
-		       uint8_t *data, uint32_t num_bytes)
+static int write_bytes(struct device *dev, u16_t addr,
+		       u8_t *data, u32_t num_bytes)
 {
 	int err;
 
@@ -71,7 +71,7 @@ static int write_bytes(struct device *dev, uint16_t addr,
 	spi_buffer[1] = (addr >> 8) & 0xFF;
 	spi_buffer[2] = addr & 0xFF;
 
-	for (uint32_t i = 0; i < num_bytes; i++) {
+	for (u32_t i = 0; i < num_bytes; i++) {
 		spi_buffer[i + 3] = data[i];
 	}
 
@@ -84,8 +84,8 @@ static int write_bytes(struct device *dev, uint16_t addr,
 	return 0;
 }
 
-static int read_bytes(struct device *dev, uint16_t addr,
-		      uint8_t *data, uint32_t num_bytes)
+static int read_bytes(struct device *dev, u16_t addr,
+		      u8_t *data, u32_t num_bytes)
 {
 	int err;
 
@@ -101,7 +101,7 @@ static int read_bytes(struct device *dev, uint16_t addr,
 		return -EIO;
 	}
 
-	for (uint32_t i = 0; i < num_bytes; i++) {
+	for (u32_t i = 0; i < num_bytes; i++) {
 		data[i] = spi_buffer[i + 3];
 	}
 
@@ -181,7 +181,7 @@ void main(void)
 
 	/* Do multi-byte read/write */
 	/* get some random data, and clear out data[] */
-	for (uint32_t i = 0; i < sizeof(cmp_data); i++) {
+	for (u32_t i = 0; i < sizeof(cmp_data); i++) {
 		cmp_data[i] = k_cycle_get_32() & 0xFF;
 		data[i] = 0x00;
 	}
@@ -193,7 +193,7 @@ void main(void)
 		return;
 	} else {
 		printk("Wrote %d bytes to address 0x00.\n",
-		       (uint32_t) sizeof(cmp_data));
+		       (u32_t) sizeof(cmp_data));
 	}
 
 	err = read_bytes(spi_mst_1, 0x00, data, sizeof(data));
@@ -202,11 +202,11 @@ void main(void)
 		return;
 	} else {
 		printk("Read %d bytes from address 0x00.\n",
-		       (uint32_t) sizeof(data));
+		       (u32_t) sizeof(data));
 	}
 
 	err = 0;
-	for (uint32_t i = 0; i < sizeof(cmp_data); i++) {
+	for (u32_t i = 0; i < sizeof(cmp_data); i++) {
 		if (cmp_data[i] != data[i]) {
 			printk("Data comparison failed @ %d.\n", i);
 			err = -EIO;

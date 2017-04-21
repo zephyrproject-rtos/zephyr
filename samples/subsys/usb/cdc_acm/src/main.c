@@ -44,7 +44,7 @@ static void write_data(struct device *dev, const char *buf, int len)
 	uart_irq_tx_enable(dev);
 
 	data_transmitted = false;
-	uart_fifo_fill(dev, (const uint8_t *)buf, len);
+	uart_fifo_fill(dev, (const u8_t *)buf, len);
 	while (data_transmitted == false)
 		;
 
@@ -60,7 +60,7 @@ static void read_and_echo_data(struct device *dev, int *bytes_read)
 
 	/* Read all data and echo it back */
 	while ((*bytes_read = uart_fifo_read(dev,
-	    (uint8_t *)data_buf, sizeof(data_buf)))) {
+	    (u8_t *)data_buf, sizeof(data_buf)))) {
 		write_data(dev, data_buf, *bytes_read);
 	}
 }
@@ -68,7 +68,7 @@ static void read_and_echo_data(struct device *dev, int *bytes_read)
 void main(void)
 {
 	struct device *dev;
-	uint32_t baudrate, bytes_read, dtr = 0;
+	u32_t baudrate, bytes_read, dtr = 0;
 	int ret;
 
 	dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);

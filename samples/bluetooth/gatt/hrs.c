@@ -23,18 +23,18 @@
 #include <bluetooth/gatt.h>
 
 static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static uint8_t simulate_hrm;
-static uint8_t heartrate = 90;
-static uint8_t hrs_blsc;
+static u8_t simulate_hrm;
+static u8_t heartrate = 90;
+static u8_t hrs_blsc;
 
 static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
-				 uint16_t value)
+				 u16_t value)
 {
 	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
 static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+			 void *buf, u16_t len, u16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &hrs_blsc,
 				 sizeof(hrs_blsc));
@@ -56,7 +56,7 @@ static struct bt_gatt_attr attrs[] = {
 			   NULL, NULL),
 };
 
-void hrs_init(uint8_t blsc)
+void hrs_init(u8_t blsc)
 {
 	hrs_blsc = blsc;
 
@@ -65,7 +65,7 @@ void hrs_init(uint8_t blsc)
 
 void hrs_notify(void)
 {
-	static uint8_t hrm[2];
+	static u8_t hrm[2];
 
 	/* Heartrate measurements simulation */
 	if (!simulate_hrm) {

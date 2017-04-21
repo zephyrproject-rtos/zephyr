@@ -44,7 +44,7 @@
  * brightness is set very low, and RGB values are
  * set low too.
  */
-uint32_t rgb[] = {
+u32_t rgb[] = {
 	0xE1000010,
 	0xE1001000,
 	0xE1100000,
@@ -55,7 +55,7 @@ uint32_t rgb[] = {
 /* Number of LEDS linked together */
 #define NUM_LEDS	1
 
-void send_rgb(struct device *gpio_dev, uint32_t rgb)
+void send_rgb(struct device *gpio_dev, u32_t rgb)
 {
 	int i;
 

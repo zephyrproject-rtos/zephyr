@@ -65,7 +65,7 @@ static K_FIFO_DEFINE(tx_queue);
  */
 #define H4_DISCARD_LEN 33
 
-static int h4_read(struct device *uart, uint8_t *buf,
+static int h4_read(struct device *uart, u8_t *buf,
 		   size_t len, size_t min)
 {
 	int total = 0;
@@ -93,7 +93,7 @@ static int h4_read(struct device *uart, uint8_t *buf,
 
 static size_t h4_discard(struct device *uart, size_t len)
 {
-	uint8_t buf[H4_DISCARD_LEN];
+	u8_t buf[H4_DISCARD_LEN];
 
 	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
 }
@@ -167,7 +167,7 @@ static void bt_uart_isr(struct device *unused)
 
 		/* Beginning of a new packet */
 		if (!remaining) {
-			uint8_t type;
+			u8_t type;
 
 			/* Get packet type */
 			read = h4_read(hci_uart_dev, &type, sizeof(type), 0);
@@ -266,9 +266,9 @@ static int h4_send(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER)
-void bt_controller_assert_handle(char *file, uint32_t line)
+void bt_controller_assert_handle(char *file, u32_t line)
 {
-	uint32_t len = 0, pos = 0;
+	u32_t len = 0, pos = 0;
 
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();

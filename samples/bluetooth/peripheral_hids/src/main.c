@@ -40,7 +40,7 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
+static void connected(struct bt_conn *conn, u8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -58,7 +58,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 

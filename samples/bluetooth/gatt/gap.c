@@ -23,10 +23,10 @@
 #include <bluetooth/gatt.h>
 
 static const char *gap_name;
-static uint16_t gap_appearance;
+static u16_t gap_appearance;
 
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+			 void *buf, u16_t len, u16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, gap_name,
 				 strlen(gap_name));
@@ -34,9 +34,9 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static ssize_t read_appearance(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
+			       u16_t len, u16_t offset)
 {
-	uint16_t appearance = sys_cpu_to_le16(gap_appearance);
+	u16_t appearance = sys_cpu_to_le16(gap_appearance);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
 				 sizeof(appearance));
@@ -52,7 +52,7 @@ static struct bt_gatt_attr attrs[] = {
 			   read_appearance, NULL, NULL),
 };
 
-void gap_init(const char *name, uint16_t appearance)
+void gap_init(const char *name, u16_t appearance)
 {
 	gap_name = name;
 	gap_appearance = appearance;

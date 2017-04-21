@@ -31,9 +31,9 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_OUTBOUND);
 
 char thread_stacks[2][STACKSIZE];
 
-uint32_t scss_reg(uint32_t offset)
+u32_t scss_reg(u32_t offset)
 {
-	volatile uint32_t *ret = (volatile uint32_t *)(SCSS_REGISTER_BASE +
+	volatile u32_t *ret = (volatile u32_t *)(SCSS_REGISTER_BASE +
 						       offset);
 
 	return *ret;
@@ -45,7 +45,7 @@ static const char dat2[] = "pqrstuvwxyz0123";
 
 void message_source(struct device *ipm)
 {
-	uint8_t counter = 0;
+	u8_t counter = 0;
 
 	printk("sending messages for IPM device %p\n", ipm);
 
@@ -92,7 +92,7 @@ void main_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	int ctr = 0;
-	uint32_t ss_sts;
+	u32_t ss_sts;
 
 	while (1) {
 		/* say "hello" */

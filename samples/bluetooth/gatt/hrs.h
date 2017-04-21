@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-void hrs_init(uint8_t blsc);
+void hrs_init(u8_t blsc);
 void hrs_notify(void);
 
 #ifdef __cplusplus

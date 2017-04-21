@@ -24,25 +24,25 @@
 
 QUARK_SE_IPM_DEFINE(ess_ipm, 0, QUARK_SE_IPM_INBOUND);
 
-static int16_t temp_value;
-static uint16_t humidity_value;
-static uint32_t pressure_value;
+static s16_t temp_value;
+static u16_t humidity_value;
+static u32_t pressure_value;
 
 static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
+			void *buf, u16_t len, u16_t offset)
 {
-	const uint16_t *u16 = attr->user_data;
-	uint16_t value = sys_cpu_to_le16(*u16);
+	const u16_t *u16 = attr->user_data;
+	u16_t value = sys_cpu_to_le16(*u16);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
 				 sizeof(value));
 }
 
 static ssize_t read_u32(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
+			void *buf, u16_t len, u16_t offset)
 {
-	const uint32_t *u32 = attr->user_data;
-	uint16_t value = sys_cpu_to_le32(*u32);
+	const u32_t *u32 = attr->user_data;
+	u16_t value = sys_cpu_to_le32(*u32);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
 				 sizeof(value));
@@ -92,7 +92,7 @@ static void bt_ready(int err)
 	}
 }
 
-static void sensor_ipm_callback(void *context, uint32_t id, volatile void *data)
+static void sensor_ipm_callback(void *context, u32_t id, volatile void *data)
 {
 	volatile struct sensor_value *val = data;
 

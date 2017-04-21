@@ -127,12 +127,12 @@ enum {
 };
 
 struct eds_capabilities {
-	uint8_t version;
-	uint8_t slots;
-	uint8_t uids;
-	uint8_t adv_types;
-	uint16_t slot_types;
-	uint8_t tx_power;
+	u8_t version;
+	u8_t slots;
+	u8_t uids;
+	u8_t adv_types;
+	u16_t slot_types;
+	u8_t tx_power;
 } __packed;
 
 static struct eds_capabilities eds_caps = {
@@ -141,7 +141,7 @@ static struct eds_capabilities eds_caps = {
 	.slot_types = EDS_SLOT_URL, /* TODO: Add support for other slot types */
 };
 
-uint8_t eds_active_slot;
+u8_t eds_active_slot;
 
 enum {
 	EDS_LOCKED = 0x00,
@@ -150,14 +150,14 @@ enum {
 };
 
 struct eds_slot {
-	uint8_t type;
-	uint8_t state;
-	uint8_t connectable;
-	uint16_t interval;
-	uint8_t tx_power;
-	uint8_t adv_tx_power;
-	uint8_t lock[16];
-	uint8_t challenge[16];
+	u8_t type;
+	u8_t state;
+	u8_t connectable;
+	u16_t interval;
+	u8_t tx_power;
+	u8_t adv_tx_power;
+	u8_t lock[16];
+	u8_t challenge[16];
 	struct bt_data ad[3];
 };
 
@@ -185,7 +185,7 @@ static struct eds_slot eds_slots[NUMBER_OF_SLOTS] = {
 };
 
 static ssize_t read_caps(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+			 void *buf, u16_t len, u16_t offset)
 {
 	const struct eds_capabilities *caps = attr->user_data;
 
@@ -194,7 +194,7 @@ static ssize_t read_caps(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static ssize_t read_slot(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+			 void *buf, u16_t len, u16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &eds_active_slot, sizeof(eds_active_slot));
@@ -202,9 +202,9 @@ static ssize_t read_slot(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static ssize_t write_slot(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, const void *buf,
-			  uint16_t len, uint16_t offset, uint8_t flags)
+			  u16_t len, u16_t offset, u8_t flags)
 {
-	uint8_t value;
+	u8_t value;
 
 	if (offset + len > sizeof(value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -223,7 +223,7 @@ static ssize_t write_slot(struct bt_conn *conn,
 
 static ssize_t read_tx_power(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
-			     void *buf, uint16_t len, uint16_t offset)
+			     void *buf, u16_t len, u16_t offset)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -237,8 +237,8 @@ static ssize_t read_tx_power(struct bt_conn *conn,
 
 static ssize_t write_tx_power(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
-			      const void *buf, uint16_t len, uint16_t offset,
-			      uint8_t flags)
+			      const void *buf, u16_t len, u16_t offset,
+			      u8_t flags)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -257,7 +257,7 @@ static ssize_t write_tx_power(struct bt_conn *conn,
 
 static ssize_t read_adv_tx_power(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
-				 void *buf, uint16_t len, uint16_t offset)
+				 void *buf, u16_t len, u16_t offset)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -271,9 +271,9 @@ static ssize_t read_adv_tx_power(struct bt_conn *conn,
 
 static ssize_t write_adv_tx_power(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
-				  const void *buf, uint16_t len,
-				  uint16_t offset,
-				  uint8_t flags)
+				  const void *buf, u16_t len,
+				  u16_t offset,
+				  u8_t flags)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -292,7 +292,7 @@ static ssize_t write_adv_tx_power(struct bt_conn *conn,
 
 static ssize_t read_interval(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
-			     void *buf, uint16_t len, uint16_t offset)
+			     void *buf, u16_t len, u16_t offset)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -305,7 +305,7 @@ static ssize_t read_interval(struct bt_conn *conn,
 }
 
 static ssize_t read_lock(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+			 void *buf, u16_t len, u16_t offset)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -315,10 +315,10 @@ static ssize_t read_lock(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static ssize_t write_lock(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, const void *buf,
-			  uint16_t len, uint16_t offset, uint8_t flags)
+			  u16_t len, u16_t offset, u8_t flags)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
-	uint8_t value;
+	u8_t value;
 
 	if (slot->state == EDS_LOCKED) {
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
@@ -350,7 +350,7 @@ static ssize_t write_lock(struct bt_conn *conn,
 
 static ssize_t read_unlock(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr,
-			   void *buf, uint16_t len, uint16_t offset)
+			   void *buf, u16_t len, u16_t offset)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -375,7 +375,7 @@ static ssize_t read_unlock(struct bt_conn *conn,
 
 static ssize_t write_unlock(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, const void *buf,
-			    uint16_t len, uint16_t offset, uint8_t flags)
+			    u16_t len, u16_t offset, u8_t flags)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -390,23 +390,23 @@ static ssize_t write_unlock(struct bt_conn *conn,
 	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 }
 
-static uint8_t eds_ecdh[32] = {}; /* TODO: Add ECDH key */
+static u8_t eds_ecdh[32] = {}; /* TODO: Add ECDH key */
 
 static ssize_t read_ecdh(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+			 void *buf, u16_t len, u16_t offset)
 {
-	uint8_t *value = attr->user_data;
+	u8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(eds_ecdh));
 }
 
-static uint8_t eds_eid[16] = {}; /* TODO: Add EID key */
+static u8_t eds_eid[16] = {}; /* TODO: Add EID key */
 
 static ssize_t read_eid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
+			void *buf, u16_t len, u16_t offset)
 {
-	uint8_t *value = attr->user_data;
+	u8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(eds_eid));
@@ -414,7 +414,7 @@ static ssize_t read_eid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static ssize_t read_adv_data(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     uint16_t len, uint16_t offset)
+			     u16_t len, u16_t offset)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -434,7 +434,7 @@ static ssize_t read_adv_data(struct bt_conn *conn,
 				 slot->ad[2].data_len - EDS_URL_READ_OFFSET);
 }
 
-static int eds_slot_restart(struct eds_slot *slot, uint8_t type)
+static int eds_slot_restart(struct eds_slot *slot, u8_t type)
 {
 	int err;
 
@@ -462,11 +462,11 @@ static int eds_slot_restart(struct eds_slot *slot, uint8_t type)
 
 static ssize_t write_adv_data(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
-			      const void *buf, uint16_t len, uint16_t offset,
-			      uint8_t flags)
+			      const void *buf, u16_t len, u16_t offset,
+			      u8_t flags)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
-	uint8_t type;
+	u8_t type;
 
 	if (slot->state == EDS_LOCKED) {
 		return BT_GATT_ERR(BT_ATT_ERR_READ_NOT_PERMITTED);
@@ -520,8 +520,8 @@ static ssize_t write_adv_data(struct bt_conn *conn,
 
 static ssize_t write_reset(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr,
-			   const void *buf, uint16_t len, uint16_t offset,
-			   uint8_t flags)
+			   const void *buf, u16_t len, u16_t offset,
+			   u8_t flags)
 {
 	/* TODO: Power cycle or reload for storage the values */
 	return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
@@ -529,9 +529,9 @@ static ssize_t write_reset(struct bt_conn *conn,
 
 static ssize_t read_connectable(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     uint16_t len, uint16_t offset)
+			     u16_t len, u16_t offset)
 {
-	uint8_t connectable = 0x01;
+	u8_t connectable = 0x01;
 
 	/* Returning a non-zero value indicates that the beacon is capable
 	 * of becoming non-connectable
@@ -542,8 +542,8 @@ static ssize_t read_connectable(struct bt_conn *conn,
 
 static ssize_t write_connectable(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
-				 const void *buf, uint16_t len, uint16_t offset,
-				 uint8_t flags)
+				 const void *buf, u16_t len, u16_t offset,
+				 u8_t flags)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 
@@ -683,7 +683,7 @@ static void idle_timeout(struct k_work *work)
 	}
 }
 
-static void connected(struct bt_conn *conn, uint8_t err)
+static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
 		printk("Connection failed (err %u)\n", err);
@@ -693,7 +693,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	struct eds_slot *slot = &eds_slots[eds_active_slot];
 

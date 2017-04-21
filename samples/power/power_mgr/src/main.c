@@ -33,7 +33,7 @@ static char device_ordered_list[DEVICE_POLICY_MAX];
 static char device_retval[DEVICE_POLICY_MAX];
 
 static struct device *rtc_dev;
-static uint32_t start_time, end_time;
+static u32_t start_time, end_time;
 static void setup_rtc(void);
 static void enable_wake_event(void);
 
@@ -53,7 +53,7 @@ void main(void)
 	}
 }
 
-static int check_pm_policy(int32_t ticks)
+static int check_pm_policy(s32_t ticks)
 {
 	static int policy;
 	int power_states[] = {SYS_POWER_STATE_MAX, SYS_POWER_STATE_CPU_LPS,
@@ -113,7 +113,7 @@ static void deep_sleep_exit(void)
 			end_time - start_time);
 }
 
-static int low_power_state_entry(int32_t ticks)
+static int low_power_state_entry(s32_t ticks)
 {
 	printk("\nLow power state entry!\n");
 
@@ -128,7 +128,7 @@ static int low_power_state_entry(int32_t ticks)
 	return SYS_PM_LOW_POWER_STATE;
 }
 
-static int deep_sleep_entry(int32_t ticks)
+static int deep_sleep_entry(s32_t ticks)
 {
 	printk("\nDeep sleep entry!\n");
 
@@ -154,7 +154,7 @@ static int deep_sleep_entry(int32_t ticks)
 	return SYS_PM_DEEP_SLEEP;
 }
 
-int _sys_soc_suspend(int32_t ticks)
+int _sys_soc_suspend(s32_t ticks)
 {
 	int ret = SYS_PM_NOT_HANDLED;
 
@@ -337,8 +337,8 @@ static void setup_rtc(void)
 
 static void enable_wake_event(void)
 {
-	uint32_t now = rtc_read(rtc_dev);
-	uint32_t alarm;
+	u32_t now = rtc_read(rtc_dev);
+	u32_t alarm;
 
 	alarm = (rtc_read(rtc_dev) + ALARM);
 	rtc_set_alarm(rtc_dev, alarm);

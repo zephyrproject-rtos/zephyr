@@ -25,9 +25,9 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
-static uint8_t notify_func(struct bt_conn *conn,
+static u8_t notify_func(struct bt_conn *conn,
 			   struct bt_gatt_subscribe_params *params,
-			   const void *data, uint16_t length)
+			   const void *data, u16_t length)
 {
 	if (!data) {
 		printk("[UNSUBSCRIBED]\n");
@@ -40,7 +40,7 @@ static uint8_t notify_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint8_t discover_func(struct bt_conn *conn,
+static u8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
@@ -94,7 +94,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_STOP;
 }
 
-static void connected(struct bt_conn *conn, uint8_t conn_err)
+static void connected(struct bt_conn *conn, u8_t conn_err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
@@ -124,7 +124,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	}
 }
 
-static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
+static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 		      void *user_data)
 {
 	bt_addr_le_t *addr = user_data;
@@ -135,13 +135,13 @@ static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 	switch (type) {
 	case BT_DATA_UUID16_SOME:
 	case BT_DATA_UUID16_ALL:
-		if (data_len % sizeof(uint16_t) != 0) {
+		if (data_len % sizeof(u16_t) != 0) {
 			printk("AD malformed\n");
 			return true;
 		}
 
-		for (i = 0; i < data_len; i += sizeof(uint16_t)) {
-			uint16_t u16;
+		for (i = 0; i < data_len; i += sizeof(u16_t)) {
+			u16_t u16;
 			int err;
 
 			memcpy(&u16, &data[i], sizeof(u16));
@@ -165,13 +165,13 @@ static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 }
 
 static void ad_parse(struct net_buf_simple *ad,
-		     bool (*func)(uint8_t type, const uint8_t *data,
-				  uint8_t data_len, void *user_data),
+		     bool (*func)(u8_t type, const u8_t *data,
+				  u8_t data_len, void *user_data),
 		     void *user_data)
 {
 	while (ad->len > 1) {
-		uint8_t len = net_buf_simple_pull_u8(ad);
-		uint8_t type;
+		u8_t len = net_buf_simple_pull_u8(ad);
+		u8_t type;
 
 		/* Check for early termination */
 		if (len == 0) {
@@ -193,7 +193,7 @@ static void ad_parse(struct net_buf_simple *ad,
 	}
 }
 
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
+static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			 struct net_buf_simple *ad)
 {
 	char dev[BT_ADDR_LE_STR_LEN];
@@ -209,7 +209,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	}
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;

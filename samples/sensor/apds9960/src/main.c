@@ -29,20 +29,20 @@
 #define APDS9960_ADDR		0x39
 
 union rgbc_t {
-	uint8_t		raw[8];
+	u8_t		raw[8];
 	struct {
-		uint8_t		cdatal;
-		uint8_t		cdatah;
-		uint8_t		rdatal;
-		uint8_t		rdatah;
-		uint8_t		gdatal;
-		uint8_t		gdatah;
-		uint8_t		bdatal;
-		uint8_t		bdatah;
+		u8_t		cdatal;
+		u8_t		cdatah;
+		u8_t		rdatal;
+		u8_t		rdatah;
+		u8_t		gdatal;
+		u8_t		gdatah;
+		u8_t		bdatal;
+		u8_t		bdatah;
 	} ch;
 };
 
-void apa102c_rgb_send(struct device *gpio_dev, uint32_t rgb)
+void apa102c_rgb_send(struct device *gpio_dev, u32_t rgb)
 {
 	int i;
 
@@ -58,7 +58,7 @@ void apa102c_rgb_send(struct device *gpio_dev, uint32_t rgb)
 	}
 }
 
-void apa102c_led_program(struct device *gpio_dev, uint32_t rgb)
+void apa102c_led_program(struct device *gpio_dev, u32_t rgb)
 {
 	apa102c_rgb_send(gpio_dev, APA102C_START_FRAME);
 	apa102c_rgb_send(gpio_dev, rgb);
@@ -66,10 +66,10 @@ void apa102c_led_program(struct device *gpio_dev, uint32_t rgb)
 }
 
 int apds9960_reg_write(struct device *i2c_dev,
-			uint8_t reg_addr, uint8_t reg_val)
+			u8_t reg_addr, u8_t reg_val)
 {
 	struct i2c_msg msg;
-	uint8_t data[2];
+	u8_t data[2];
 	int ret;
 
 	msg.buf = data;
@@ -89,11 +89,11 @@ int apds9960_reg_write(struct device *i2c_dev,
 	return ret;
 }
 
-int apds9960_reg_read(struct device *i2c_dev, uint8_t reg_addr,
-		       uint8_t *data, uint8_t data_len)
+int apds9960_reg_read(struct device *i2c_dev, u8_t reg_addr,
+		       u8_t *data, u8_t data_len)
 {
 	struct i2c_msg msgs[2];
-	uint8_t reg_data;
+	u8_t reg_data;
 	int ret;
 
 	/* Access RGBC data register */
@@ -135,7 +135,7 @@ void apds9960_setup(struct device *i2c_dev, int gain)
 
 void apds9960_als_valid_wait(struct device *i2c_dev)
 {
-	uint8_t status;
+	u8_t status;
 
 	while (1) {
 		apds9960_reg_read(i2c_dev, 0x93, &status, 1);
@@ -189,7 +189,7 @@ void main(void)
 	while (1) {
 		apds9960_als_valid_wait(i2c_dev);
 
-		apds9960_reg_read(i2c_dev, 0x94, (uint8_t *)&rgbc, 8);
+		apds9960_reg_read(i2c_dev, 0x94, (u8_t *)&rgbc, 8);
 
 		/* Change the gain if it is too bright or too dark.
 		 * Note there is no logic to prevent it from

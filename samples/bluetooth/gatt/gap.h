@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-void gap_init(const char *name, uint16_t appearance);
+void gap_init(const char *name, u16_t appearance);
 
 #ifdef __cplusplus
 }

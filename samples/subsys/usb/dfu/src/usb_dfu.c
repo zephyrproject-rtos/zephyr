@@ -62,20 +62,20 @@ struct dfu_data_t {
 	/* Flash device to read/write data from/to */
 	struct device *flash_dev;
 	/* Flash base address to write/read to/from */
-	uint32_t flash_base_addr;
+	u32_t flash_base_addr;
 	/* Flash page size */
-	uint32_t flash_page_size;
+	u32_t flash_page_size;
 	/* Size of the upload transfer */
-	uint32_t flash_upload_size;
+	u32_t flash_upload_size;
 	/* Number of bytes sent during upload */
-	uint32_t bytes_sent;
+	u32_t bytes_sent;
 	/* Number of bytes received during download */
-	uint32_t bytes_rcvd;
-	uint32_t alt_setting;              /* DFU alternate setting */
-	uint8_t buffer[DFU_MAX_XFER_SIZE]; /* DFU data buffer */
+	u32_t bytes_rcvd;
+	u32_t alt_setting;              /* DFU alternate setting */
+	u8_t buffer[DFU_MAX_XFER_SIZE]; /* DFU data buffer */
 	enum dfu_state state;              /* State of the DFU device */
 	enum dfu_status status;            /* Status of the DFU device */
-	uint16_t block_nr;                 /* DFU block number */
+	u16_t block_nr;                 /* DFU block number */
 };
 
 static struct dfu_data_t dfu_data = {
@@ -84,7 +84,7 @@ static struct dfu_data_t dfu_data = {
 };
 
 /* Structure representing the DFU runtime USB description */
-static const uint8_t dfu_runtime_usb_description[] = {
+static const u8_t dfu_runtime_usb_description[] = {
 	/* Device descriptor */
 	USB_DEVICE_DESC_SIZE,           /* Descriptor size */
 	USB_DEVICE_DESC,                /* Descriptor type */
@@ -169,7 +169,7 @@ static const uint8_t dfu_runtime_usb_description[] = {
 };
 
 /* Structure representing the DFU mode USB description */
-static const uint8_t dfu_mode_usb_description[] = {
+static const u8_t dfu_mode_usb_description[] = {
 	/* Device descriptor */
 	USB_DEVICE_DESC_SIZE,           /* Descriptor size */
 	USB_DEVICE_DESC,                /* Descriptor type */
@@ -328,10 +328,10 @@ static void dfu_reset_counters(void)
  * @return  0 on success, negative errno code on fail.
  */
 static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *data_len, uint8_t **data)
+		s32_t *data_len, u8_t **data)
 {
 	int ret;
-	uint32_t len, bytes_left;
+	u32_t len, bytes_left;
 
 	switch (pSetup->bRequest) {
 	case DFU_GETSTATUS:
@@ -587,7 +587,7 @@ static void dfu_status_cb(enum usb_dc_status_code status)
  */
 
 static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *data_len, uint8_t **data)
+		s32_t *data_len, u8_t **data)
 {
 	ARG_UNUSED(data);
 
@@ -633,8 +633,8 @@ static struct usb_cfg_data dfu_config = {
  *
  * @return  N/A.
  */
-int dfu_start(struct device *flash_dev, uint32_t flash_base_addr,
-		uint32_t flash_page_size, uint32_t flash_upload_size)
+int dfu_start(struct device *flash_dev, u32_t flash_base_addr,
+		u32_t flash_page_size, u32_t flash_upload_size)
 {
 	int ret;
 

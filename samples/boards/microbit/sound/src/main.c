@@ -25,7 +25,7 @@
 
 static struct device *pwm;
 static struct device *gpio;
-static uint32_t period = PERIOD_INIT;
+static u32_t period = PERIOD_INIT;
 static struct k_work beep_work;
 static volatile bool beep_active;
 
@@ -46,7 +46,7 @@ static void beep(struct k_work *work)
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   uint32_t pins)
+			   u32_t pins)
 {
 	struct mb_display *disp;
 

@@ -34,7 +34,7 @@
 #define SLEEPTIME  5000
 
 struct cb_data_t {
-	uint8_t ain_idx;
+	u8_t ain_idx;
 	enum aio_cmp_ref ref;
 	enum aio_cmp_polarity pol;
 	char name[50];

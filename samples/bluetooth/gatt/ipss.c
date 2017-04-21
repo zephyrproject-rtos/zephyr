@@ -28,7 +28,7 @@
 
 #if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 void *buf, uint16_t len, uint16_t offset)
+			 void *buf, u16_t len, u16_t offset)
 {
 	const char *name = attr->user_data;
 
@@ -38,16 +38,16 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 static ssize_t read_appearance(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
-			       uint16_t len, uint16_t offset)
+			       u16_t len, u16_t offset)
 {
-	uint16_t appearance = sys_cpu_to_le16(UNKNOWN_APPEARANCE);
+	u16_t appearance = sys_cpu_to_le16(UNKNOWN_APPEARANCE);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
 				 sizeof(appearance));
 }
 
 static ssize_t read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  void *buf, uint16_t len, uint16_t offset)
+			  void *buf, u16_t len, u16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -56,7 +56,7 @@ static ssize_t read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static ssize_t read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  void *buf, uint16_t len, uint16_t offset)
+			  void *buf, u16_t len, u16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -97,7 +97,7 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
+static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
 		printk("Connection failed (err %u)\n", err);
@@ -106,7 +106,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	printk("Disconnected (reason %u)\n", reason);
 }

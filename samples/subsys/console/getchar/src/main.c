@@ -7,7 +7,7 @@ void main(void)
 	console_getchar_init();
 
 	while (1) {
-		uint8_t c = console_getchar();
+		u8_t c = console_getchar();
 
 		printk("char: [0x%x] %c\n", c, c);
 	}

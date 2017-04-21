@@ -22,10 +22,10 @@
 
 static volatile bool data_transmitted;
 static volatile bool data_arrived;
-static uint8_t data_buf[64];
+static u8_t data_buf[64];
 
 /* WebUSB Platform Capability Descriptor */
-static const uint8_t webusb_bos_descriptor[] = {
+static const u8_t webusb_bos_descriptor[] = {
 	/* Binary Object Store descriptor */
 	0x05, 0x0F, 0x1D, 0x00, 0x01,
 
@@ -43,7 +43,7 @@ static const uint8_t webusb_bos_descriptor[] = {
 };
 
 /* WebUSB Device Requests */
-static const uint8_t webusb_allowed_origins[] = {
+static const u8_t webusb_allowed_origins[] = {
 	/* Allowed Origins Header:
 	 * https://wicg.github.io/webusb/#get-allowed-origins
 	 */
@@ -64,7 +64,7 @@ static const uint8_t webusb_allowed_origins[] = {
 #define NUMBER_OF_ALLOWED_ORIGINS   1
 
 /* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
-static const uint8_t webusb_origin_url[] = {
+static const u8_t webusb_origin_url[] = {
 	/* Length, DescriptorType, Scheme */
 	0x11, 0x03, 0x00,
 	'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
@@ -82,10 +82,10 @@ static const uint8_t webusb_origin_url[] = {
  * @return  0 on success, negative errno code on fail
  */
 int custom_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *len, uint8_t **data)
+		s32_t *len, u8_t **data)
 {
 	if (GET_DESC_TYPE(pSetup->wValue) == DESCRIPTOR_TYPE_BOS) {
-		*data = (uint8_t *)(&webusb_bos_descriptor);
+		*data = (u8_t *)(&webusb_bos_descriptor);
 		*len = sizeof(webusb_bos_descriptor);
 
 		return 0;
@@ -104,22 +104,22 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
  * @return  0 on success, negative errno code on fail.
  */
 int vendor_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *len, uint8_t **data)
+		s32_t *len, u8_t **data)
 {
 	/* Get Allowed origins request */
 	if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {
-		*data = (uint8_t *)(&webusb_allowed_origins);
+		*data = (u8_t *)(&webusb_allowed_origins);
 		*len = sizeof(webusb_allowed_origins);
 
 		return 0;
 	} else if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
 		/* Get URL request */
-		uint8_t index = GET_DESC_INDEX(pSetup->wValue);
+		u8_t index = GET_DESC_INDEX(pSetup->wValue);
 
 		if (index == 0 || index > NUMBER_OF_ALLOWED_ORIGINS)
 			return -ENOTSUP;
 
-		*data = (uint8_t *)(&webusb_origin_url);
+		*data = (u8_t *)(&webusb_origin_url);
 		*len = sizeof(webusb_origin_url);
 
 		return 0;
@@ -141,7 +141,7 @@ static void interrupt_handler(struct device *dev)
 	}
 }
 
-static void write_data(struct device *dev, const uint8_t *buf, int len)
+static void write_data(struct device *dev, const u8_t *buf, int len)
 {
 	uart_irq_tx_enable(dev);
 
@@ -176,7 +176,7 @@ static struct webusb_req_handlers req_handlers = {
 void main(void)
 {
 	struct device *dev;
-	uint32_t baudrate, dtr = 0;
+	u32_t baudrate, dtr = 0;
 	int ret, bytes_read;
 
 	dev = device_get_binding(WEBUSB_SERIAL_PORT_NAME);

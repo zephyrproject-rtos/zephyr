@@ -122,7 +122,7 @@ static int auto_calibration(struct device *bmi160)
 static inline int sensor_value_snprintf(char *buf, size_t len,
 					const struct sensor_value *val)
 {
-	int32_t val1, val2;
+	s32_t val1, val2;
 
 	if (val->val2 == 0) {
 		return snprintf(buf, len, "%d", val->val1);
@@ -203,7 +203,7 @@ static void print_temp_data(struct device *bmi160)
 
 static void test_polling_mode(struct device *bmi160)
 {
-	int32_t remaining_test_time = MAX_TEST_TIME;
+	s32_t remaining_test_time = MAX_TEST_TIME;
 	struct sensor_value attr;
 
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
@@ -283,7 +283,7 @@ static void trigger_hdlr(struct device *bmi160,
 
 static void test_anymotion_trigger(struct device *bmi160)
 {
-	int32_t remaining_test_time = MAX_TEST_TIME;
+	s32_t remaining_test_time = MAX_TEST_TIME;
 	struct sensor_value attr;
 	struct sensor_trigger trig;
 
@@ -344,7 +344,7 @@ static void test_anymotion_trigger(struct device *bmi160)
 
 static void test_data_ready_trigger(struct device *bmi160)
 {
-	int32_t remaining_test_time = MAX_TEST_TIME;
+	s32_t remaining_test_time = MAX_TEST_TIME;
 	struct sensor_trigger trig;
 
 	/* enable data ready trigger */
@@ -406,8 +406,8 @@ static void test_trigger_mode(struct device *bmi160)
 }
 #endif /* CONFIG_BMI160_TRIGGER */
 
-extern uint8_t pbuf[1024];
-extern uint8_t *pos;
+extern u8_t pbuf[1024];
+extern u8_t *pos;
 void main(void)
 {
 	struct device *bmi160;

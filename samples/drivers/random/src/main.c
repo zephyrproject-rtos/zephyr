@@ -25,7 +25,7 @@ void main(void)
 
 	while (1) {
 #define BUFFER_LENGTH 10
-		uint8_t buffer[BUFFER_LENGTH];
+		u8_t buffer[BUFFER_LENGTH];
 		int r;
 
 		r = random_get_entropy(dev, buffer, BUFFER_LENGTH);

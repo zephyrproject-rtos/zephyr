@@ -24,9 +24,9 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_INBOUND);
 
 #define STACKSIZE 2000
 
-uint8_t counters[3];
+u8_t counters[3];
 
-void ping_ipm_callback(void *context, uint32_t id, volatile void *data)
+void ping_ipm_callback(void *context, u32_t id, volatile void *data)
 {
 	printk("counters: %d %d %d\n", counters[0], counters[1], counters[2]);
 }
@@ -35,9 +35,9 @@ static const char dat1[] = "abcdefghijklmno";
 static const char dat2[] = "pqrstuvwxyz0123";
 
 
-void message_ipm_callback(void *context, uint32_t id, volatile void *data)
+void message_ipm_callback(void *context, u32_t id, volatile void *data)
 {
-	uint8_t *counter = (uint8_t *)context;
+	u8_t *counter = (u8_t *)context;
 	char *datac = (char *)data;
 	const char *expected;
 

@@ -27,7 +27,7 @@ static const char *dis_manuf;
 
 static ssize_t read_model(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+			  u16_t len, u16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, dis_model,
 				 strlen(dis_model));
@@ -35,7 +35,7 @@ static ssize_t read_model(struct bt_conn *conn,
 
 static ssize_t read_manuf(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
-			  uint16_t len, uint16_t offset)
+			  u16_t len, u16_t offset)
 {
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, dis_manuf,
 				 strlen(dis_manuf));

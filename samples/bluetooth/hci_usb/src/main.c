@@ -77,26 +77,26 @@ static K_FIFO_DEFINE(rx_queue);
 /* HCI command buffers */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
 NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
-		    sizeof(uint8_t), NULL);
+		    sizeof(u8_t), NULL);
 
 #define BT_L2CAP_MTU 64
 /** Data size needed for ACL buffers */
 #define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
 
-NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(uint8_t), NULL);
+NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(u8_t), NULL);
 
 /* Device data structure */
 struct btusb_dev_data_t {
 	/* USB device status code */
 	enum usb_dc_status_code usb_status;
-	uint8_t interface_data[BTUSB_CLASS_MAX_DATA_SIZE];
-	uint8_t notification_sent;
+	u8_t interface_data[BTUSB_CLASS_MAX_DATA_SIZE];
+	u8_t notification_sent;
 };
 
 /**
  * Bluetooth USB descriptors configuration
  */
-static const uint8_t btusb_desc[] = {
+static const u8_t btusb_desc[] = {
 	/* Device descriptor */
 	USB_DEVICE_DESC_SIZE,		/* Descriptor size */
 	USB_DEVICE_DESC,		/* Descriptor type */
@@ -376,7 +376,7 @@ static const uint8_t btusb_desc[] = {
 };
 
 /* TODO: move to standard utils */
-static void hexdump(const char *str, const uint8_t *packet, size_t length)
+static void hexdump(const char *str, const u8_t *packet, size_t length)
 {
 	int n = 0;
 
@@ -407,17 +407,17 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 	}
 }
 
-static void btusb_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void btusb_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	SYS_LOG_DBG("ep %x status %d", ep, ep_status);
 }
 
 /* EP Bulk OUT handler, used to read the data received from the Host */
-static void btusb_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void btusb_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct net_buf *buf;
-	uint32_t len, read = 0;
-	uint8_t tmp[4];
+	u32_t len, read = 0;
+	u8_t tmp[4];
 
 	SYS_LOG_DBG("ep %x status %d", ep, ep_status);
 
@@ -446,7 +446,7 @@ static void btusb_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		if (len > read) {
 			net_buf_add_mem(buf, tmp, 4);
 		} else {
-			uint8_t remains = 4 - (read - len);
+			u8_t remains = 4 - (read - len);
 
 			net_buf_add_mem(buf, tmp, remains);
 		}
@@ -460,19 +460,19 @@ static void btusb_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 }
 
 /* EP Bulk IN handler, used to send data to the Host */
-static void btusb_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void btusb_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	SYS_LOG_ERR("Not implemented");
 }
 
 /* EP ISO OUT handler, used to read the data received from the Host */
-static void btusb_iso_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void btusb_iso_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	SYS_LOG_ERR("Not implemented");
 }
 
 /* EP ISO IN handler, used to send data to the Host */
-static void btusb_iso_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void btusb_iso_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	SYS_LOG_ERR("Not implemented");
 }
@@ -587,7 +587,7 @@ static void btusb_status_cb(enum usb_dc_status_code status)
 }
 
 static int btusb_class_handler(struct usb_setup_packet *setup,
-			       int32_t *len, uint8_t **data)
+			       s32_t *len, u8_t **data)
 {
 	struct net_buf *buf;
 
@@ -657,7 +657,7 @@ DEVICE_INIT(btusb, "btusb", &btusb_init,
 	    &btusb_dev_data, NULL,
 	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-static int try_write(uint8_t ep, struct net_buf *buf)
+static int try_write(u8_t ep, struct net_buf *buf)
 {
 	while (1) {
 		int ret = usb_write(ep, buf->data, buf->len, NULL);

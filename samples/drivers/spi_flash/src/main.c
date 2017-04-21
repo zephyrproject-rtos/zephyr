@@ -18,7 +18,7 @@
 void main(void)
 {
 	struct device *flash_dev;
-	uint8_t buf[TEST_DATA_LEN];
+	u8_t buf[TEST_DATA_LEN];
 
 	printf("\nW25QXXDV SPI flash testing\n");
 	printf("==========================\n");

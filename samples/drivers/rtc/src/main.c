@@ -14,7 +14,7 @@
 
 void test_rtc_interrupt_fn(struct device *rtc_dev)
 {
-	uint32_t now = rtc_read(rtc_dev);
+	u32_t now = rtc_read(rtc_dev);
 
 	printk("Alarm\n");
 	rtc_set_alarm(rtc_dev, now + ALARM);

@@ -84,29 +84,29 @@
 
 static struct bt_gatt_ccc_cfg csc_meas_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
 static struct bt_gatt_ccc_cfg ctrl_point_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
-static uint32_t cwr; /* Cumulative Wheel Revolutions */
-static uint8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
-static uint8_t sensor_location; /* Current Sensor Location */
+static u32_t cwr; /* Cumulative Wheel Revolutions */
+static u8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
+static u8_t sensor_location; /* Current Sensor Location */
 static bool csc_simulate;
 static bool ctrl_point_configured;
 
 static void csc_meas_ccc_cfg_changed(const struct bt_gatt_attr *attr,
-				     uint16_t value)
+				     u16_t value)
 {
 	csc_simulate = value == BT_GATT_CCC_NOTIFY;
 }
 
 static void ctrl_point_ccc_cfg_changed(const struct bt_gatt_attr *attr,
-				       uint16_t value)
+				       u16_t value)
 {
 	ctrl_point_configured = value == BT_GATT_CCC_INDICATE;
 }
 
 static ssize_t read_location(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     uint16_t len, uint16_t offset)
+			     u16_t len, u16_t offset)
 {
-	uint8_t *value = attr->user_data;
+	u8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(*value));
@@ -114,32 +114,32 @@ static ssize_t read_location(struct bt_conn *conn,
 
 static ssize_t read_csc_feature(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
-				uint16_t len, uint16_t offset)
+				u16_t len, u16_t offset)
 {
-	uint16_t csc_feature = CSC_FEATURE;
+	u16_t csc_feature = CSC_FEATURE;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &csc_feature, sizeof(csc_feature));
 }
 
-static void ctrl_point_ind(struct bt_conn *conn, uint8_t req_op, uint8_t status,
-			   const void *data, uint16_t data_len);
+static void ctrl_point_ind(struct bt_conn *conn, u8_t req_op, u8_t status,
+			   const void *data, u16_t data_len);
 
 struct write_sc_ctrl_point_req {
-	uint8_t op;
+	u8_t op;
 	union {
-		uint32_t cwr;
-		uint8_t location;
+		u32_t cwr;
+		u8_t location;
 	};
 } __packed;
 
 static ssize_t write_ctrl_point(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, uint16_t len, uint16_t offset,
-				uint8_t flags)
+				const void *buf, u16_t len, u16_t offset,
+				u8_t flags)
 {
 	const struct write_sc_ctrl_point_req *req = buf;
-	uint8_t status;
+	u8_t status;
 	int i;
 
 	if (!ctrl_point_configured) {
@@ -225,17 +225,17 @@ static struct bt_gatt_attr csc_attrs[] = {
 };
 
 struct sc_ctrl_point_ind {
-	uint8_t op;
-	uint8_t req_op;
-	uint8_t status;
-	uint8_t data[];
+	u8_t op;
+	u8_t req_op;
+	u8_t status;
+	u8_t data[];
 } __packed;
 
-static void ctrl_point_ind(struct bt_conn *conn, uint8_t req_op, uint8_t status,
-			   const void *data, uint16_t data_len)
+static void ctrl_point_ind(struct bt_conn *conn, u8_t req_op, u8_t status,
+			   const void *data, u16_t data_len)
 {
 	struct sc_ctrl_point_ind *ind;
-	uint8_t buf[sizeof(*ind) + data_len];
+	u8_t buf[sizeof(*ind) + data_len];
 
 	ind = (void *) buf;
 	ind->op = SC_CP_OP_RESPONSE;
@@ -251,28 +251,28 @@ static void ctrl_point_ind(struct bt_conn *conn, uint8_t req_op, uint8_t status,
 }
 
 struct csc_measurement_nfy {
-	uint8_t flags;
-	uint8_t data[];
+	u8_t flags;
+	u8_t data[];
 } __packed;
 
 struct wheel_rev_data_nfy {
-	uint32_t cwr;
-	uint16_t lwet;
+	u32_t cwr;
+	u16_t lwet;
 } __packed;
 
 struct crank_rev_data_nfy {
-	uint16_t ccr;
-	uint16_t lcet;
+	u16_t ccr;
+	u16_t lcet;
 } __packed;
 
-static void measurement_nfy(struct bt_conn *conn, uint32_t cwr, uint16_t lwet,
-			    uint16_t ccr, uint16_t lcet)
+static void measurement_nfy(struct bt_conn *conn, u32_t cwr, u16_t lwet,
+			    u16_t ccr, u16_t lcet)
 {
 	struct csc_measurement_nfy *nfy;
-	uint8_t buf[sizeof(*nfy) +
+	u8_t buf[sizeof(*nfy) +
 		    (cwr ? sizeof(struct wheel_rev_data_nfy) : 0) +
 		    (ccr ? sizeof(struct crank_rev_data_nfy) : 0)];
-	uint16_t len = 0;
+	u16_t len = 0;
 
 	nfy = (void *) buf;
 	nfy->flags = 0;
@@ -303,14 +303,14 @@ static void measurement_nfy(struct bt_conn *conn, uint32_t cwr, uint16_t lwet,
 	bt_gatt_notify(NULL, &csc_attrs[2], buf, sizeof(buf));
 }
 
-static uint16_t lwet; /* Last Wheel Event Time */
-static uint16_t ccr;  /* Cumulative Crank Revolutions */
-static uint16_t lcet; /* Last Crank Event Time */
+static u16_t lwet; /* Last Wheel Event Time */
+static u16_t ccr;  /* Cumulative Crank Revolutions */
+static u16_t lcet; /* Last Crank Event Time */
 
 static void csc_simulation(void)
 {
-	static uint8_t i;
-	uint32_t rand = sys_rand32_get();
+	static u8_t i;
+	u32_t rand = sys_rand32_get();
 	bool nfy_crank = false, nfy_wheel = false;
 
 	/* Measurements don't have to be updated every second */
@@ -348,7 +348,7 @@ static void csc_simulation(void)
 	i++;
 }
 
-static void connected(struct bt_conn *conn, uint8_t err)
+static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
 		printk("Connection failed (err %u)\n", err);
@@ -357,7 +357,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	printk("Disconnected (reason %u)\n", reason);
 }

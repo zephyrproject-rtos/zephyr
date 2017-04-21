@@ -138,7 +138,7 @@ enum dfu_state {
  *
  * @return  N/A.
  */
-int dfu_start(struct device *flash_dev, uint32_t flash_base_addr,
-		uint32_t flash_page_size, uint32_t flash_upload_size);
+int dfu_start(struct device *flash_dev, u32_t flash_base_addr,
+		u32_t flash_page_size, u32_t flash_upload_size);
 
 #endif /* __USB_DFU_H__ */
