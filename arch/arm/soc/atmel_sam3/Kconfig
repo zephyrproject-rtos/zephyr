@@ -23,7 +23,7 @@ config SOC_ATMEL_SAM3_EXT_SLCK
 	adds a few seconds to boot time, as the crystal
 	needs to stabilize after power-up.
 
-	Says n if you do not need accraute and precise timers.
+	Says n if you do not need accurate and precise timers.
 	The slow clock will be driven by the internal fast
 	RC oscillator running at 32 kHz.
 

@@ -42,11 +42,11 @@ config SYS_LOG_ARC_INIT_LEVEL
 
 	- 1 ERROR, only write SYS_LOG_ERR
 
-	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+	- 3 INFO, write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config ARC_GDB_ENABLE
 	bool "Allows the usage of GDB with the ARC processor."
@@ -70,7 +70,7 @@ config QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32
 	int "IPM Console Ring Buffer Size"
 	default 256
 	help
-	Size of the buffer for the console reciever, for incoming
+	Size of the buffer for the console receiver, for incoming
 	console messages from the ARC side. Must be a power of 2.
 endif
 endif

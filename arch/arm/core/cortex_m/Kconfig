@@ -28,7 +28,7 @@ config ISA_THUMB2
 	the Thumb instructions set. This allows more of the application to
 	benefit from the best in class code density of Thumb.
 
-	For performance optimised code Thumb-2 technology uses 31 percent
+	For performance optimized code Thumb-2 technology uses 31 percent
 	less memory to reduce system cost, while providing up to 38 percent
 	higher performance than existing high density code, which can be used
 	to prolong battery-life or to enrich the product feature set. Thumb-2

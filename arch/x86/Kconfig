@@ -119,7 +119,7 @@ config SSE_FP_MATH
 	performing floating point math. This can greatly improve performance
 	when exactly the same operations are to be performed on multiple
 	data objects; however, it can also significantly reduce performance
-	when pre-emptive task switches occur because of the larger register
+	when preemptive task switches occur because of the larger register
 	set that must be saved and restored.
 
 	Disabling this option means that the compiler utilizes only the

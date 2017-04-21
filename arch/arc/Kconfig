@@ -97,7 +97,7 @@ config	RGF_NUM_BANKS
 	register bank, in the set, will be used by FIRQ interrupts.
 	If fast interrupts are supported but there is only 1
 	register bank, the fast interrupt handler must save
-	and restore general purpose regsiters.
+	and restore general purpose registers.
 
 config	FIRQ_STACK_SIZE
 	int
