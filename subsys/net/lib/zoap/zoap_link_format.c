@@ -20,6 +20,8 @@
 #include <net/zoap.h>
 #include <net/zoap_link_format.h>
 
+#define PKT_WAIT_TIME K_SECONDS(1)
+
 static int format_uri(const char * const *path, struct net_buf *buf)
 {
 	static const char prefix[] = "</";
@@ -232,12 +234,12 @@ static int send_error_response(struct zoap_resource *resource,
 
 	context = net_pkt_context(request->pkt);
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_pkt_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
 	if (!frag) {
 		net_pkt_unref(pkt);
 		return -ENOMEM;
@@ -297,12 +299,12 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 	context = net_pkt_context(request->pkt);
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_pkt_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
 	if (!frag) {
 		net_pkt_unref(pkt);
 		return -ENOMEM;
@@ -349,7 +351,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 			*str = 0xFF;
 			response.start = str + 1;
 		} else {
-			temp = net_pkt_get_data(context, K_FOREVER);
+			temp = net_pkt_get_data(context, PKT_WAIT_TIME);
 			if (!temp) {
 				net_pkt_unref(pkt);
 				return -ENOMEM;
