@@ -131,7 +131,7 @@ config NET_MAX_6LO_CONTEXTS
 	range 1 16
 	help
 	6lowpan context options table size. The value depends on your
-	network and memory connsuption. More size occupies more memory.
+	network and memory consumption. More 6CO options uses more memory.
 
 config NET_DEBUG_6LO
 	bool "Enable 6lowpan debug"
@@ -152,10 +152,10 @@ config NET_DEBUG_ICMPV6
 	Enables ICMPv6 code part to output debug messages
 
 config NET_DEBUG_IPV6_NBR_CACHE
-	bool "Debug IPv6 neighbour cache"
+	bool "Debug IPv6 neighbor cache"
 	default n
 	help
-	Enables Neighbour Cache code part to output debug messages
+	Enables Neighbor Cache code to output debug messages
 
 endif # NET_LOG
 

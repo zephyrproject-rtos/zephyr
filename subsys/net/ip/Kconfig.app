@@ -73,7 +73,7 @@ config NET_APP_IEEE802154_RADIO_TX_POWER
 	int "IEEE 802.15.4 TX power in dbm"
 	default 0
 	help
-	  The tx power to use by defaulte in the sample application.
+	  The TX power to use by default in the sample application.
 	  See NET_L2_IEEE802154_RADIO_DFLT_TX_POWER for more info.
 
 config NET_APP_IEEE802154_SECURITY_KEY

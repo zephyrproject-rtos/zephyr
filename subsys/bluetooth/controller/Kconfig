@@ -24,7 +24,7 @@ choice
 config BLUETOOTH_LL_SW
 	bool "Use the software-based BLE Link Layer"
 	help
-	  Use Zephyr's software BLE Link Layer implementation.
+	  Use Zephyr software BLE Link Layer implementation.
 
 endchoice
 

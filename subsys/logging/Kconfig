@@ -43,9 +43,9 @@ config SYS_LOG_DEFAULT_LEVEL
 	  Levels are:
 	  0 OFF, do not write by default
 	  1 ERROR, default to only write SYS_LOG_ERR
-	  2 WARNING, default to write SYS_LOG_WRN in adition to previous level
-	  3 INFO, default to write SYS_LOG_INF in adition to previous levels
-	  4 DEBUG, default to write SYS_LOG_DBG in adition to previous levels
+	  2 WARNING, default to write SYS_LOG_WRN in addition to previous level
+	  3 INFO, default to write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, default to write SYS_LOG_DBG in addition to previous levels
 
 config SYS_LOG_OVERRIDE_LEVEL
 	int
@@ -61,9 +61,9 @@ config SYS_LOG_OVERRIDE_LEVEL
 	  Levels are:
 	  0 OFF, do not override
 	  1 ERROR, override to write SYS_LOG_ERR
-	  2 WARNING, override to write SYS_LOG_WRN in adition to previous level
-	  3 INFO, override to write SYS_LOG_INF in adition to previous levels
-	  4 DEBUG, override to write SYS_LOG_DBG in adition to previous levels
+	  2 WARNING, override to write SYS_LOG_WRN in addition to previous level
+	  3 INFO, override to write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, override to write SYS_LOG_DBG in addition to previous levels
 
 config SYS_LOG_EXT_HOOK
 	bool

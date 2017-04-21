@@ -417,7 +417,7 @@ config BLUETOOTH_SMP_FORCE_BREDR
 	depends on BLUETOOTH_DEBUG_SMP
 	help
 	  This option enables SMP over BR/EDR even if controller is not
-	  supporting BR/EDR Secure Connections. This optino is solely for
+	  supporting BR/EDR Secure Connections. This option is solely for
 	  testing and should never be enabled on production devices.
 
 config BLUETOOTH_DEBUG_ATT

@@ -115,7 +115,7 @@ config COMPILER_OPT
 	This option is a free-form string that is passed to the compiler
 	when building all parts of a project (i.e. kernel).
 	The compiler options specified by this string supplement the
-	pre-defined set of compiler supplied by the build system,
+	predefined set of compiler supplied by the build system,
 	and can be used to change compiler optimization, warning and error
 	messages, and so on.
 
@@ -251,7 +251,7 @@ config OVERRIDE_FRAME_POINTER_DEFAULT
 	automatically but only if the architecture does not require if for
 	effective debugging.
 
-	Choose Y is you want to override the default frame pointer behaviour
+	Choose Y if you want to override the default frame pointer behavior
 	of your compiler, otherwise choose N.
 
 config OMIT_FRAME_POINTER
@@ -261,7 +261,7 @@ config OMIT_FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	Choose Y for best performance. On some architectures (including x86)
-	this will favour code size and performance over debugability.
+	this will favor code size and performance over debugability.
 
 	Choose N in you wish to retain the frame pointer. This option may
 	be useful if your application uses runtime backtracing and does not

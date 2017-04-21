@@ -73,7 +73,7 @@ config NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
 	depends on NET_L2_IEEE802154_FRAGMENT
 	default 1
 	help
-	  Simultaneoulsy reassemble 802.15.4 fragments depending on
+	  Simultaneously reassemble 802.15.4 fragments depending on
 	  cache size.
 
 config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT

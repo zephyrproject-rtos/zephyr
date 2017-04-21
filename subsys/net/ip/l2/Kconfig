@@ -15,12 +15,12 @@ config NET_L2_DUMMY
 	TUN mode.
 
 config NET_L2_ETHERNET
-	bool "Enable ethernet support"
+	bool "Enable Ethernet support"
 	default n
 	help
 	Add support for Ethernet, enabling selecting relevant hardware drivers.
 	If SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully simulate
-	ethernet through SLIP.
+	Ethernet through SLIP.
 
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"

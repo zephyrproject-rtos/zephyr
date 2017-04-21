@@ -111,7 +111,7 @@ config MAIN_STACK_SIZE
 	prompt "Size of stack for initialization and main thread"
 	default 1024
 	help
-	When the intitialization is complete, the thread executing it then
+	When the initialization is complete, the thread executing it then
 	executes the main() routine, so as to reuse the stack used by the
 	initialization, which would be wasted RAM otherwise.
 
@@ -334,7 +334,7 @@ config MEM_POOL_SPLIT_BEFORE_DEFRAG
 	block if an unused block of the required size is not available; only
 	if no such blocks exist will the memory pool try merging smaller unused
 	blocks. This policy attempts to limit the cost of performing automatic
-	partial defragmention of the memory pool, at the cost of fragmenting
+	partial defragmentation of the memory pool, at the cost of fragmenting
 	the memory pool's larger blocks.
 
 config MEM_POOL_DEFRAG_BEFORE_SPLIT
@@ -469,7 +469,7 @@ config KERNEL_INIT_PRIORITY_DEFAULT
 	prompt "Default init priority"
 	default 40
 	help
-	Defaut minimal init priority for each init level.
+	Default minimal init priority for each init level.
 
 config KERNEL_INIT_PRIORITY_DEVICE
 	int
