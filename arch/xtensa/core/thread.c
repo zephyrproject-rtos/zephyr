@@ -86,18 +86,17 @@ void _new_thread(char *pStack, size_t stackSize,
 	/* k_thread is located at top of stack while frames are located at end
 	 * of it
 	 */
-	struct k_thread *thread = (struct k_thread *)(pStack);
+	struct k_thread *thread;
 #if XCHAL_CP_NUM > 0
 	u32_t *cpSA;
 	char *cpStack;
 #endif
 
+	thread = _new_thread_init(pStack, stackSize, priority, options);
+
 #ifdef CONFIG_DEBUG
 	printk("\nstackPtr = %p, stackSize = %d\n", pStack, stackSize);
 	printk("stackEnd = %p\n", stackEnd);
-#endif
-#ifdef CONFIG_INIT_STACKS
-	memset(pStack, 0xaa, stackSize);
 #endif
 #if XCHAL_CP_NUM > 0
 	/* Ensure CP state descriptor is correctly initialized */
@@ -154,14 +153,6 @@ void _new_thread(char *pStack, size_t stackSize,
 #endif
 	thread->callee_saved.topOfStack = pInitCtx;
 	thread->arch.flags = 0;
-	_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
-	/* static threads overwrite it afterwards with real value */
-	thread->init_data = NULL;
-	thread->fn_abort = NULL;
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	/* Initialize custom data field (value is opaque to kernel) */
-	thread->custom_data = NULL;
-#endif
 #ifdef CONFIG_THREAD_MONITOR
 	/*
 	 * In debug mode thread->entry give direct access to the thread entry

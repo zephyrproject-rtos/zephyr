@@ -83,11 +83,9 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	char *stackEnd = pStackMem + stackSize;
 	struct init_stack_frame *pInitCtx;
 
-	struct k_thread *thread = (struct k_thread *) pStackMem;
+	struct k_thread *thread;
 
-#ifdef CONFIG_INIT_STACKS
-	memset(pStackMem, 0xaa, stackSize);
-#endif
+	thread = _new_thread_init(pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 
@@ -111,18 +109,6 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	thread->arch.stack_top = (u32_t) stackEnd;
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-#endif
-
-	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
-
-	/* static threads overwrite them afterwards with real values */
-	thread->init_data = NULL;
-	thread->fn_abort = NULL;
-
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	/* Initialize custom data field (value is opaque to kernel) */
-
-	thread->custom_data = NULL;
 #endif
 
 #ifdef CONFIG_THREAD_MONITOR

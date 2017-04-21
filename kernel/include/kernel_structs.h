@@ -12,6 +12,7 @@
 #if !defined(_ASMLANGUAGE)
 #include <atomic.h>
 #include <misc/dlist.h>
+#include <string.h>
 #endif
 
 /*
@@ -238,6 +239,34 @@ _set_thread_return_value_with_data(struct k_thread *thread,
 extern void _init_thread_base(struct _thread_base *thread_base,
 			      int priority, u32_t initial_state,
 			      unsigned int options);
+
+static ALWAYS_INLINE struct k_thread *_new_thread_init(char *pStack,
+						       size_t stackSize,
+						       int prio,
+						       unsigned int options)
+{
+	struct k_thread *thread;
+
+#ifdef CONFIG_INIT_STACKS
+	memset(pStack, 0xaa, stackSize);
+#endif
+
+	/* Initialize various struct k_thread members */
+	thread = (struct k_thread *)pStack;
+
+	_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
+
+	/* static threads overwrite it afterwards with real value */
+	thread->init_data = NULL;
+	thread->fn_abort = NULL;
+
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	/* Initialize custom data field (value is opaque to kernel) */
+	thread->custom_data = NULL;
+#endif
+
+	return thread;
+}
 
 #endif /* _ASMLANGUAGE */
 

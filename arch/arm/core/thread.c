@@ -83,9 +83,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	struct __esf *pInitCtx;
 	struct k_thread *thread = (struct k_thread *) pStackMem;
 
-#ifdef CONFIG_INIT_STACKS
-	memset(pStackMem, 0xaa, stackSize);
-#endif
+	thread = _new_thread_init(pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 
@@ -99,18 +97,6 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	pInitCtx->a4 = (u32_t)parameter3;
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
-
-	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
-
-	/* static threads overwrite it afterwards with real value */
-	thread->init_data = NULL;
-	thread->fn_abort = NULL;
-
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	/* Initialize custom data field (value is opaque to kernel) */
-
-	thread->custom_data = NULL;
-#endif
 
 #ifdef CONFIG_THREAD_MONITOR
 	/*

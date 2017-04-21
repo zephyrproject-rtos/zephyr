@@ -44,9 +44,8 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	struct k_thread *thread;
 	struct __esf *stack_init;
 
-#ifdef CONFIG_INIT_STACKS
-	memset(stack_memory, 0xaa, stack_size);
-#endif
+	thread = _new_thread_init(stack_memory, stack_size, priority, options);
+
 	/* Initial stack frame for thread */
 	stack_init = (struct __esf *)
 		STACK_ROUND_DOWN(stack_memory +
@@ -82,20 +81,6 @@ void _new_thread(char *stack_memory, size_t stack_size,
 	 */
 	stack_init->mstatus = SOC_MSTATUS_DEF_RESTORE;
 	stack_init->mepc = (u32_t)_thread_entry_wrapper;
-
-	/* Initialize various struct k_thread members */
-	thread = (struct k_thread *)stack_memory;
-
-	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
-
-	/* static threads overwrite it afterwards with real value */
-	thread->init_data = NULL;
-	thread->fn_abort = NULL;
-
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	/* Initialize custom data field (value is opaque to kernel) */
-	thread->custom_data = NULL;
-#endif
 
 	thread->callee_saved.sp = (u32_t)stack_init;
 
