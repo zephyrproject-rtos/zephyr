@@ -28,19 +28,19 @@ struct ieee802154_radio_api {
 	int (*cca)(struct device *dev);
 
 	/** Set current channel */
-	int (*set_channel)(struct device *dev, uint16_t channel);
+	int (*set_channel)(struct device *dev, u16_t channel);
 
 	/** Set current PAN id */
-	int (*set_pan_id)(struct device *dev, uint16_t pan_id);
+	int (*set_pan_id)(struct device *dev, u16_t pan_id);
 
 	/** Set current device's short address */
-	int (*set_short_addr)(struct device *dev, uint16_t short_addr);
+	int (*set_short_addr)(struct device *dev, u16_t short_addr);
 
 	/** Set current devices's full length address */
-	int (*set_ieee_addr)(struct device *dev, const uint8_t *ieee_addr);
+	int (*set_ieee_addr)(struct device *dev, const u8_t *ieee_addr);
 
 	/** Set TX power level in dbm */
-	int (*set_txpower)(struct device *dev, int16_t dbm);
+	int (*set_txpower)(struct device *dev, s16_t dbm);
 
 	/** Transmit a packet fragment */
 	int (*tx)(struct device *dev,
@@ -54,7 +54,7 @@ struct ieee802154_radio_api {
 	int (*stop)(struct device *dev);
 
 	/** Get latest Link Quality Information */
-	uint8_t (*get_lqi)(struct device *dev);
+	u8_t (*get_lqi)(struct device *dev);
 } __packed;
 
 /**

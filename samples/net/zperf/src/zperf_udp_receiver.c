@@ -128,10 +128,10 @@ static void udp_received(struct net_context *context,
 	struct net_buf *frag = pkt->frags;
 	struct zperf_udp_datagram hdr;
 	struct session *session;
-	uint16_t offset, pos;
-	int32_t transit_time;
-	uint32_t time;
-	int32_t id;
+	u16_t offset, pos;
+	s32_t transit_time;
+	u32_t time;
+	s32_t id;
 
 	if (!pkt) {
 		return;
@@ -152,7 +152,7 @@ static void udp_received(struct net_context *context,
 
 	offset = net_pkt_appdata(pkt) - net_pkt_ip_data(pkt);
 
-	frag = net_frag_read_be32(frag, offset, &pos, (uint32_t *)&hdr.id);
+	frag = net_frag_read_be32(frag, offset, &pos, (u32_t *)&hdr.id);
 	frag = net_frag_read_be32(frag, pos, &pos, &hdr.tv_sec);
 	frag = net_frag_read_be32(frag, pos, &pos, &hdr.tv_usec);
 
@@ -208,7 +208,7 @@ static void udp_received(struct net_context *context,
 				  hdr.tv_sec * USEC_PER_SEC +
 				  hdr.tv_usec);
 	if (session->last_transit_time != 0) {
-		int32_t delta_transit = transit_time -
+		s32_t delta_transit = transit_time -
 			session->last_transit_time;
 
 		delta_transit =
@@ -221,8 +221,8 @@ static void udp_received(struct net_context *context,
 
 	/* If necessary send statistics */
 	if (session->state == STATE_LAST_PACKET_RECEIVED) {
-		uint32_t rate_in_kbps;
-		uint32_t duration = HW_CYCLES_TO_USEC(
+		u32_t rate_in_kbps;
+		u32_t duration = HW_CYCLES_TO_USEC(
 			time_delta(session->start_time, time));
 
 		/* Update state machine */
@@ -230,10 +230,10 @@ static void udp_received(struct net_context *context,
 
 		/* Compute baud rate */
 		if (duration != 0) {
-			rate_in_kbps = (uint32_t)
-				(((uint64_t)session->length * (uint64_t)8 *
-				  (uint64_t)USEC_PER_SEC) /
-				 ((uint64_t)duration * 1024));
+			rate_in_kbps = (u32_t)
+				(((u64_t)session->length * (u64_t)8 *
+				  (u64_t)USEC_PER_SEC) /
+				 ((u64_t)duration * 1024));
 		} else {
 			rate_in_kbps = 0;
 

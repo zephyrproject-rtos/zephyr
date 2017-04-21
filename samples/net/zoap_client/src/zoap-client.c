@@ -46,7 +46,7 @@ static struct net_mgmt_event_callback cb;
 
 static const char * const test_path[] = { "test", NULL };
 
-static void msg_dump(const char *s, uint8_t *data, unsigned len)
+static void msg_dump(const char *s, u8_t *data, unsigned len)
 {
 	unsigned i;
 
@@ -134,7 +134,7 @@ static void retransmit_request(struct k_work *work)
 }
 
 static void event_iface_up(struct net_mgmt_event_callback *cb,
-			   uint32_t mgmt_event, struct net_if *iface)
+			   u32_t mgmt_event, struct net_if *iface)
 {
 	static struct sockaddr_in6 any_addr = { .sin6_addr = IN6ADDR_ANY_INIT,
 						.sin6_family = AF_INET6 };
@@ -145,7 +145,7 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	int r;
-	uint8_t observe = 0;
+	u8_t observe = 0;
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {

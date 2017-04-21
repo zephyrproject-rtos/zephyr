@@ -530,7 +530,7 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 static void tcp_cb(struct net_tcp *tcp, void *user_data)
 {
 	int *count = user_data;
-	uint16_t recv_mss = net_tcp_get_recv_mss(tcp);
+	u16_t recv_mss = net_tcp_get_recv_mss(tcp);
 
 	printk("%p    %5u     %5u %10u %10u %5u   %s\n",
 	       tcp,
@@ -769,7 +769,7 @@ static void print_dns_info(struct dns_resolve_context *ctx)
 	printk("Pending queries:\n");
 
 	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-		int32_t remaining;
+		s32_t remaining;
 
 		if (!ctx->queries[i].cb) {
 			continue;
@@ -1446,7 +1446,7 @@ static void print_connect_info(int family,
 	}
 }
 
-static int tcp_connect(char *host, uint16_t port, struct net_context **ctx)
+static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 {
 	struct sockaddr addr;
 	struct sockaddr myaddr;
@@ -1542,7 +1542,7 @@ static int shell_cmd_tcp(int argc, char *argv[])
 		if (!strcmp(argv[arg], "connect")) {
 			/* tcp connect <ip> port */
 			char *ip;
-			uint16_t port;
+			u16_t port;
 
 			if (tcp_ctx && net_context_is_used(tcp_ctx)) {
 				printk("Already connected\n");

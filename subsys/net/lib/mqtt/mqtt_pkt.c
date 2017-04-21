@@ -68,10 +68,10 @@
  * @retval strlen otherwise
  */
 static inline
-uint16_t mqtt_strlen(const char *str)
+u16_t mqtt_strlen(const char *str)
 {
 	if (str) {
-		return (uint16_t)strlen(str);
+		return (u16_t)strlen(str);
 	}
 
 	return 0;
@@ -87,7 +87,7 @@ uint16_t mqtt_strlen(const char *str)
  * @retval -EINVAL
  */
 static
-int compute_rlen_size(uint16_t *size, uint32_t len)
+int compute_rlen_size(u16_t *size, u32_t len)
 {
 	if (len <= 127) {
 		*size = 1;
@@ -112,10 +112,10 @@ int compute_rlen_size(uint16_t *size, uint32_t len)
  *
  * @retval 0 always
  */
-static int rlen_encode(uint8_t *buf, uint32_t len)
+static int rlen_encode(u8_t *buf, u32_t len)
 {
-	uint8_t encoded;
-	uint8_t i;
+	u8_t encoded;
+	u8_t i;
 
 	i = 0;
 	do {
@@ -144,13 +144,13 @@ static int rlen_encode(uint8_t *buf, uint32_t len)
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-static int rlen_decode(uint32_t *rlen, uint16_t *rlen_size,
-		       uint8_t *buf, uint16_t size)
+static int rlen_decode(u32_t *rlen, u16_t *rlen_size,
+		       u8_t *buf, u16_t size)
 {
-	uint32_t value = 0;
-	uint32_t mult = 1;
-	uint16_t i = 0;
-	uint8_t encoded;
+	u32_t value = 0;
+	u32_t mult = 1;
+	u16_t i = 0;
+	u8_t encoded;
 
 	do {
 		if (i >= ENCLENBUF_MAX_SIZE || i >= size) {
@@ -168,8 +168,8 @@ static int rlen_decode(uint32_t *rlen, uint16_t *rlen_size,
 	return 0;
 }
 
-int mqtt_pack_connack(uint8_t *buf, uint16_t *length, uint16_t size,
-		      uint8_t session_present, uint8_t ret_code)
+int mqtt_pack_connack(u8_t *buf, u16_t *length, u16_t size,
+		      u8_t session_present, u8_t ret_code)
 {
 	if (size < CONNACK_SIZE) {
 		return -ENOMEM;
@@ -203,8 +203,8 @@ int mqtt_pack_connack(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval -ENOMEM if size < 4
  */
 static
-int pack_pkt_id(uint8_t *buf, uint16_t *length, uint16_t size,
-		enum mqtt_packet type, uint8_t reserved, uint16_t pkt_id)
+int pack_pkt_id(u8_t *buf, u16_t *length, u16_t size,
+		enum mqtt_packet type, u8_t reserved, u16_t pkt_id)
 {
 	if (size < MSG_PKTID_ONLY_SIZE) {
 		return -ENOMEM;
@@ -212,51 +212,51 @@ int pack_pkt_id(uint8_t *buf, uint16_t *length, uint16_t size,
 
 	buf[0] = (type << 4) + (reserved & 0x0F);
 	buf[1] = PACKET_ID_SIZE;
-	UNALIGNED_PUT(htons(pkt_id), (uint16_t *)(buf + PACKET_ID_SIZE));
+	UNALIGNED_PUT(htons(pkt_id), (u16_t *)(buf + PACKET_ID_SIZE));
 	*length = MSG_PKTID_ONLY_SIZE;
 
 	return 0;
 }
 
-int mqtt_pack_puback(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id)
+int mqtt_pack_puback(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id)
 {
 	return pack_pkt_id(buf, length, size, MQTT_PUBACK, 0, pkt_id);
 }
 
-int mqtt_pack_pubrec(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id)
+int mqtt_pack_pubrec(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id)
 {
 	return pack_pkt_id(buf, length, size, MQTT_PUBREC, 0, pkt_id);
 }
 
-int mqtt_pack_pubrel(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id)
+int mqtt_pack_pubrel(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id)
 {
 	return pack_pkt_id(buf, length, size, MQTT_PUBREL, PUBREL_RESERVED,
 			   pkt_id);
 }
 
-int mqtt_pack_pubcomp(uint8_t *buf, uint16_t *length, uint16_t size,
-		      uint16_t pkt_id)
+int mqtt_pack_pubcomp(u8_t *buf, u16_t *length, u16_t size,
+		      u16_t pkt_id)
 {
 	return pack_pkt_id(buf, length, size, MQTT_PUBCOMP, 0, pkt_id);
 }
 
-int mqtt_pack_unsuback(uint8_t *buf, uint16_t *length, uint16_t size,
-		       uint16_t pkt_id)
+int mqtt_pack_unsuback(u8_t *buf, u16_t *length, u16_t size,
+		       u16_t pkt_id)
 {
 	return pack_pkt_id(buf, length, size, MQTT_UNSUBACK, 0, pkt_id);
 }
 
-int mqtt_pack_suback(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id, uint8_t elements,
+int mqtt_pack_suback(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id, u8_t elements,
 		     enum mqtt_qos granted_qos[])
 {
-	uint16_t rlen_size;
-	uint16_t offset;
-	uint16_t rlen;
-	uint8_t i;
+	u16_t rlen_size;
+	u16_t offset;
+	u16_t rlen;
+	u8_t i;
 	int rc;
 
 
@@ -276,7 +276,7 @@ int mqtt_pack_suback(uint8_t *buf, uint16_t *length, uint16_t size,
 	rlen_encode(buf + PACKET_TYPE_SIZE, rlen);
 	offset = PACKET_TYPE_SIZE + rlen_size;
 
-	UNALIGNED_PUT(htons(pkt_id), (uint16_t *)(buf + offset));
+	UNALIGNED_PUT(htons(pkt_id), (u16_t *)(buf + offset));
 	offset += PACKET_ID_SIZE;
 
 	for (i = 0; i < elements; i++) {
@@ -286,13 +286,13 @@ int mqtt_pack_suback(uint8_t *buf, uint16_t *length, uint16_t size,
 	return 0;
 }
 
-int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
+int mqtt_pack_connect(u8_t *buf, u16_t *length, u16_t size,
 		      struct mqtt_connect_msg *msg)
 {
-	uint16_t total_buf_size;
-	uint16_t rlen_size;
-	uint16_t pkt_size;
-	uint16_t offset;
+	u16_t total_buf_size;
+	u16_t rlen_size;
+	u16_t pkt_size;
+	u16_t offset;
 	int rc;
 
 	/* ----------- Payload size ----------- */
@@ -364,27 +364,27 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
 			  (msg->will_flag ? 1 << 2 : 0) |
 			  (msg->clean_session ? 1 << 1 : 0);
 
-	UNALIGNED_PUT(htons(msg->keep_alive), (uint16_t *)(buf + offset + 8));
+	UNALIGNED_PUT(htons(msg->keep_alive), (u16_t *)(buf + offset + 8));
 	offset += 8 + INT_SIZE;
 	/* end of the CONNECT's Variable Header */
 
 	/* Payload */
 	UNALIGNED_PUT(htons(msg->client_id_len),
-		      (uint16_t *)(buf + offset));
+		      (u16_t *)(buf + offset));
 	offset += INT_SIZE;
 	memcpy(buf + offset, msg->client_id, msg->client_id_len);
 	offset += msg->client_id_len;
 
 	if (msg->will_flag) {
 		UNALIGNED_PUT(htons(msg->will_topic_len),
-			      (uint16_t *)(buf + offset));
+			      (u16_t *)(buf + offset));
 		offset += INT_SIZE;
 		memcpy(buf + offset, msg->will_topic,
 		       msg->will_topic_len);
 		offset += msg->will_topic_len;
 
 		UNALIGNED_PUT(htons(msg->will_msg_len),
-			      (uint16_t *)(buf + offset));
+			      (u16_t *)(buf + offset));
 		offset += INT_SIZE;
 		memcpy(buf + offset, msg->will_msg, msg->will_msg_len);
 		offset += msg->will_msg_len;
@@ -392,7 +392,7 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
 
 	if (msg->user_name) {
 		UNALIGNED_PUT(htons(msg->user_name_len),
-			      (uint16_t *)(buf + offset));
+			      (u16_t *)(buf + offset));
 		offset += INT_SIZE;
 		memcpy(buf + offset, msg->user_name, msg->user_name_len);
 		offset += msg->user_name_len;
@@ -400,7 +400,7 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
 
 	if (msg->password) {
 		UNALIGNED_PUT(htons(msg->password_len),
-			      (uint16_t *)(buf + offset));
+			      (u16_t *)(buf + offset));
 		offset += INT_SIZE;
 		memcpy(buf + offset, msg->password, msg->password_len);
 		offset += msg->password_len;
@@ -423,16 +423,16 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval -EINVAL
  */
 static
-int recover_value_len(uint8_t *buf, uint16_t length, uint8_t **val,
-		      uint16_t *val_len)
+int recover_value_len(u8_t *buf, u16_t length, u8_t **val,
+		      u16_t *val_len)
 {
-	uint16_t val_u16;
+	u16_t val_u16;
 
 	if (length < INT_SIZE) {
 		return -EINVAL;
 	}
 
-	val_u16 = UNALIGNED_GET((uint16_t *)buf);
+	val_u16 = UNALIGNED_GET((u16_t *)buf);
 	*val_len = ntohs(val_u16);
 
 	/* malformed packet: avoid buffer overflows */
@@ -444,15 +444,15 @@ int recover_value_len(uint8_t *buf, uint16_t length, uint8_t **val,
 	return 0;
 }
 
-int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
+int mqtt_unpack_connect(u8_t *buf, u16_t length,
 			struct mqtt_connect_msg *msg)
 {
-	uint8_t user_name_flag;
-	uint8_t password_flag;
-	uint16_t rlen_size;
-	uint16_t val_u16;
-	uint32_t rlen;
-	uint8_t offset;
+	u8_t user_name_flag;
+	u8_t password_flag;
+	u16_t rlen_size;
+	u16_t val_u16;
+	u32_t rlen;
+	u8_t offset;
 	int rc;
 
 	memset(msg, 0x00, sizeof(struct mqtt_connect_msg));
@@ -514,12 +514,12 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 
 	offset += FLAGS_SIZE;
 
-	val_u16 = UNALIGNED_GET((uint16_t *)(buf + offset));
+	val_u16 = UNALIGNED_GET((u16_t *)(buf + offset));
 	msg->keep_alive = ntohs(val_u16);
 	offset += KEEP_ALIVE_SIZE;
 
 	rc = recover_value_len(buf + offset, length - offset,
-			       (uint8_t **)&msg->client_id,
+			       (u8_t **)&msg->client_id,
 			       &msg->client_id_len);
 	if (rc != 0) {
 		return -EINVAL;
@@ -529,7 +529,7 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 
 	if (msg->will_flag) {
 		rc = recover_value_len(buf + offset, length - offset,
-				       (uint8_t **)&msg->will_topic,
+				       (u8_t **)&msg->will_topic,
 				       &msg->will_topic_len);
 		if (rc != 0) {
 			return -EINVAL;
@@ -549,7 +549,7 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
 
 	if (user_name_flag) {
 		rc = recover_value_len(buf + offset, length - offset,
-				       (uint8_t **)&msg->user_name,
+				       (u8_t **)&msg->user_name,
 				       &msg->user_name_len);
 		if (rc != 0) {
 			return -EINVAL;
@@ -584,10 +584,10 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
  * @retval -EINVAL on error
  */
 static
-int subscribe_size(uint16_t *rlen_size, uint16_t *payload_size, uint8_t items,
+int subscribe_size(u16_t *rlen_size, u16_t *payload_size, u8_t items,
 		   const char *topics[], enum mqtt_qos with_qos)
 {
-	uint8_t i;
+	u8_t i;
 	int rc;
 
 	*payload_size = PACKET_ID_SIZE;
@@ -623,16 +623,16 @@ int subscribe_size(uint16_t *rlen_size, uint16_t *payload_size, uint8_t items,
  * @retval -EINVAL
  * @retval -ENOMEM
  */
-static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
-					   uint16_t size, uint16_t pkt_id,
-					   uint8_t items, const char *topics[],
+static int mqtt_pack_subscribe_unsubscribe(u8_t *buf, u16_t *length,
+					   u16_t size, u16_t pkt_id,
+					   u8_t items, const char *topics[],
 					   const enum mqtt_qos qos[],
 					   enum mqtt_packet type)
 {
-	uint16_t rlen_size;
-	uint16_t payload;
-	uint16_t offset;
-	uint8_t i;
+	u16_t rlen_size;
+	u16_t payload;
+	u16_t offset;
+	u8_t i;
 	int rc;
 
 	if (items <= 0) {
@@ -666,13 +666,13 @@ static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
 
 	offset = PACKET_TYPE_SIZE + rlen_size;
 
-	UNALIGNED_PUT(htons(pkt_id), (uint16_t *)(buf + offset));
+	UNALIGNED_PUT(htons(pkt_id), (u16_t *)(buf + offset));
 	offset += PACKET_ID_SIZE;
 
 	for (i = 0; i < items; i++) {
-		uint16_t topic_len = mqtt_strlen(topics[i]);
+		u16_t topic_len = mqtt_strlen(topics[i]);
 
-		UNALIGNED_PUT(htons(topic_len), (uint16_t *)(buf + offset));
+		UNALIGNED_PUT(htons(topic_len), (u16_t *)(buf + offset));
 		offset += INT_SIZE;
 
 		memcpy(buf + offset, topics[i], topic_len);
@@ -689,8 +689,8 @@ static int mqtt_pack_subscribe_unsubscribe(uint8_t *buf, uint16_t *length,
 	return 0;
 }
 
-int mqtt_pack_subscribe(uint8_t *buf, uint16_t *length, uint16_t size,
-			uint16_t pkt_id, uint8_t items, const char *topics[],
+int mqtt_pack_subscribe(u8_t *buf, u16_t *length, u16_t size,
+			u16_t pkt_id, u8_t items, const char *topics[],
 			const enum mqtt_qos qos[])
 {
 
@@ -699,23 +699,23 @@ int mqtt_pack_subscribe(uint8_t *buf, uint16_t *length, uint16_t size,
 					       MQTT_SUBSCRIBE);
 }
 
-int mqtt_pack_unsubscribe(uint8_t *buf, uint16_t *length, uint16_t size,
-			  uint16_t pkt_id, uint8_t items, const char *topics[])
+int mqtt_pack_unsubscribe(u8_t *buf, u16_t *length, u16_t size,
+			  u16_t pkt_id, u8_t items, const char *topics[])
 {
 	return mqtt_pack_subscribe_unsubscribe(buf, length, size, pkt_id,
 					       items, topics, NULL,
 					       MQTT_UNSUBSCRIBE);
 }
 
-int mqtt_unpack_subscribe(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
-			  uint8_t *items, uint8_t elements, char *topics[],
-			  uint16_t topic_len[], enum mqtt_qos qos[])
+int mqtt_unpack_subscribe(u8_t *buf, u16_t length, u16_t *pkt_id,
+			  u8_t *items, u8_t elements, char *topics[],
+			  u16_t topic_len[], enum mqtt_qos qos[])
 {
-	uint16_t rmlen_size;
-	uint16_t val_u16;
-	uint32_t rmlen;
-	uint16_t offset;
-	uint8_t i;
+	u16_t rmlen_size;
+	u16_t val_u16;
+	u32_t rmlen;
+	u16_t offset;
+	u8_t i;
 	int rc;
 
 	rc = rlen_decode(&rmlen, &rmlen_size, buf + PACKET_TYPE_SIZE,
@@ -742,7 +742,7 @@ int mqtt_unpack_subscribe(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 
 	offset = PACKET_TYPE_SIZE + rmlen_size;
 
-	val_u16 = UNALIGNED_GET((uint16_t *)(buf + offset));
+	val_u16 = UNALIGNED_GET((u16_t *)(buf + offset));
 	*pkt_id = ntohs(val_u16);
 	offset += PACKET_ID_SIZE;
 
@@ -752,7 +752,7 @@ int mqtt_unpack_subscribe(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 			return -EINVAL;
 		}
 
-		val_u16 = UNALIGNED_GET((uint16_t *)(buf + offset));
+		val_u16 = UNALIGNED_GET((u16_t *)(buf + offset));
 		topic_len[i] = ntohs(val_u16);
 		offset += INT_SIZE;
 		/* invalid topic length found: malformed message	*/
@@ -775,16 +775,16 @@ int mqtt_unpack_subscribe(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 	return 0;
 }
 
-int mqtt_unpack_suback(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
-		       uint8_t *items, uint8_t elements,
+int mqtt_unpack_suback(u8_t *buf, u16_t length, u16_t *pkt_id,
+		       u8_t *items, u8_t elements,
 		       enum mqtt_qos granted_qos[])
 {
-	uint16_t rlen_size;
+	u16_t rlen_size;
 	enum mqtt_qos qos;
-	uint16_t val_u16;
-	uint32_t rlen;
-	uint16_t offset;
-	uint8_t i;
+	u16_t val_u16;
+	u32_t rlen;
+	u16_t offset;
+	u8_t i;
 	int rc;
 
 	*pkt_id = 0;
@@ -811,7 +811,7 @@ int mqtt_unpack_suback(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 
 	offset = PACKET_TYPE_SIZE + rlen_size;
 
-	val_u16 = UNALIGNED_GET((uint16_t *)(buf + offset));
+	val_u16 = UNALIGNED_GET((u16_t *)(buf + offset));
 	*pkt_id = ntohs(val_u16);
 	offset += PACKET_ID_SIZE;
 
@@ -835,12 +835,12 @@ int mqtt_unpack_suback(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 	return 0;
 }
 
-int mqtt_pack_publish(uint8_t *buf, uint16_t *length, uint16_t size,
+int mqtt_pack_publish(u8_t *buf, u16_t *length, u16_t size,
 		      struct mqtt_publish_msg *msg)
 {
-	uint16_t offset;
-	uint16_t rlen_size;
-	uint16_t payload;
+	u16_t offset;
+	u16_t rlen_size;
+	u16_t payload;
 	int rc;
 
 	if (msg->qos < MQTT_QoS0 || msg->qos > MQTT_QoS2) {
@@ -875,7 +875,7 @@ int mqtt_pack_publish(uint8_t *buf, uint16_t *length, uint16_t size,
 	rlen_encode(buf + PACKET_TYPE_SIZE, payload);
 
 	offset = PACKET_TYPE_SIZE + rlen_size;
-	UNALIGNED_PUT(htons(msg->topic_len), (uint16_t *)(buf + offset));
+	UNALIGNED_PUT(htons(msg->topic_len), (u16_t *)(buf + offset));
 	offset += INT_SIZE;
 
 	memcpy(buf + offset, msg->topic, msg->topic_len);
@@ -883,7 +883,7 @@ int mqtt_pack_publish(uint8_t *buf, uint16_t *length, uint16_t size,
 
 	/* packet id is only present for QoS 1 and 2			*/
 	if (msg->qos > MQTT_QoS0) {
-		UNALIGNED_PUT(htons(msg->pkt_id), (uint16_t *)(buf + offset));
+		UNALIGNED_PUT(htons(msg->pkt_id), (u16_t *)(buf + offset));
 		offset += PACKET_ID_SIZE;
 	}
 
@@ -895,13 +895,13 @@ int mqtt_pack_publish(uint8_t *buf, uint16_t *length, uint16_t size,
 	return 0;
 }
 
-int mqtt_unpack_publish(uint8_t *buf, uint16_t length,
+int mqtt_unpack_publish(u8_t *buf, u16_t length,
 			struct mqtt_publish_msg *msg)
 {
-	uint16_t rmlen_size;
-	uint16_t val_u16;
-	uint16_t offset;
-	uint32_t rmlen;
+	u16_t rmlen_size;
+	u16_t val_u16;
+	u16_t offset;
+	u32_t rmlen;
 	int rc;
 
 	if (buf[0] >> 4 != MQTT_PUBLISH) {
@@ -923,7 +923,7 @@ int mqtt_unpack_publish(uint8_t *buf, uint16_t length,
 	}
 
 	offset = PACKET_TYPE_SIZE + rmlen_size;
-	val_u16 = UNALIGNED_GET((uint16_t *)(buf + offset));
+	val_u16 = UNALIGNED_GET((u16_t *)(buf + offset));
 	msg->topic_len = ntohs(val_u16);
 
 	offset += INT_SIZE;
@@ -934,7 +934,7 @@ int mqtt_unpack_publish(uint8_t *buf, uint16_t length,
 	msg->topic = (char *)(buf + offset);
 	offset += msg->topic_len;
 
-	val_u16 = UNALIGNED_GET((uint16_t *)(buf + offset));
+	val_u16 = UNALIGNED_GET((u16_t *)(buf + offset));
 	if (msg->qos == MQTT_QoS1 || msg->qos == MQTT_QoS2) {
 		msg->pkt_id = ntohs(val_u16);
 		offset += PACKET_ID_SIZE;
@@ -948,8 +948,8 @@ int mqtt_unpack_publish(uint8_t *buf, uint16_t length,
 	return 0;
 }
 
-int mqtt_unpack_connack(uint8_t *buf, uint16_t length, uint8_t *session,
-			uint8_t *connect_rc)
+int mqtt_unpack_connack(u8_t *buf, u16_t length, u8_t *session,
+			u8_t *connect_rc)
 {
 	if (length < CONNACK_SIZE) {
 		return -EINVAL;
@@ -986,8 +986,8 @@ int mqtt_unpack_connack(uint8_t *buf, uint16_t length, uint8_t *session,
  * @retval -ENOMEM
  */
 static
-int pack_zerolen(uint8_t *buf, uint16_t *length, uint16_t size,
-		 enum mqtt_packet pkt_type, uint8_t reserved)
+int pack_zerolen(u8_t *buf, u16_t *length, u16_t size,
+		 enum mqtt_packet pkt_type, u8_t reserved)
 {
 	if (size < MSG_ZEROLEN_SIZE) {
 		return -ENOMEM;
@@ -1000,17 +1000,17 @@ int pack_zerolen(uint8_t *buf, uint16_t *length, uint16_t size,
 	return 0;
 }
 
-int mqtt_pack_pingreq(uint8_t *buf, uint16_t *length, uint16_t size)
+int mqtt_pack_pingreq(u8_t *buf, u16_t *length, u16_t size)
 {
 	return pack_zerolen(buf, length, size, MQTT_PINGREQ, 0x00);
 }
 
-int mqtt_pack_pingresp(uint8_t *buf, uint16_t *length, uint16_t size)
+int mqtt_pack_pingresp(u8_t *buf, u16_t *length, u16_t size)
 {
 	return pack_zerolen(buf, length, size, MQTT_PINGRESP, 0x00);
 }
 
-int mqtt_pack_disconnect(uint8_t *buf, uint16_t *length, uint16_t size)
+int mqtt_pack_disconnect(u8_t *buf, u16_t *length, u16_t size)
 {
 	return pack_zerolen(buf, length, size, MQTT_DISCONNECT, 0x00);
 }
@@ -1028,8 +1028,8 @@ int mqtt_pack_disconnect(uint8_t *buf, uint16_t *length, uint16_t size)
  * @retval -EINVAL
  */
 static
-int unpack_pktid(uint8_t *buf, uint16_t length, enum mqtt_packet *type,
-		 uint8_t *reserved, uint16_t *pkt_id)
+int unpack_pktid(u8_t *buf, u16_t length, enum mqtt_packet *type,
+		 u8_t *reserved, u16_t *pkt_id)
 {
 	if (length < MSG_PKTID_ONLY_SIZE) {
 		return -EINVAL;
@@ -1041,7 +1041,7 @@ int unpack_pktid(uint8_t *buf, uint16_t length, enum mqtt_packet *type,
 
 	*type = buf[0] >> 4;
 	*reserved = buf[0] & 0x0F;
-	*pkt_id = ntohs(*(uint16_t *)(buf + 2));
+	*pkt_id = ntohs(*(u16_t *)(buf + 2));
 
 	return 0;
 }
@@ -1065,11 +1065,11 @@ int unpack_pktid(uint8_t *buf, uint16_t length, enum mqtt_packet *type,
  * @retval -EINVAL
  */
 static
-int unpack_pktid_validate(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
-			  uint8_t expected_type, uint8_t expected_reserv)
+int unpack_pktid_validate(u8_t *buf, u16_t length, u16_t *pkt_id,
+			  u8_t expected_type, u8_t expected_reserv)
 {
 	enum mqtt_packet type;
-	uint8_t reserved;
+	u8_t reserved;
 	int rc;
 
 	rc = unpack_pktid(buf, length, &type, &reserved, pkt_id);
@@ -1084,31 +1084,31 @@ int unpack_pktid_validate(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
 	return 0;
 }
 
-int mqtt_unpack_puback(uint8_t *buf, uint16_t length, uint16_t *pkt_id)
+int mqtt_unpack_puback(u8_t *buf, u16_t length, u16_t *pkt_id)
 {
 	return unpack_pktid_validate(buf, length, pkt_id, MQTT_PUBACK,
 				     PUBACK_RESERVED);
 }
 
-int mqtt_unpack_pubrec(uint8_t *buf, uint16_t length, uint16_t *pkt_id)
+int mqtt_unpack_pubrec(u8_t *buf, u16_t length, u16_t *pkt_id)
 {
 	return unpack_pktid_validate(buf, length, pkt_id, MQTT_PUBREC,
 				     PUBREC_RESERVED);
 }
 
-int mqtt_unpack_pubrel(uint8_t *buf, uint16_t length, uint16_t *pkt_id)
+int mqtt_unpack_pubrel(u8_t *buf, u16_t length, u16_t *pkt_id)
 {
 	return unpack_pktid_validate(buf, length, pkt_id, MQTT_PUBREL,
 				     PUBREL_RESERVED);
 }
 
-int mqtt_unpack_pubcomp(uint8_t *buf, uint16_t length, uint16_t *pkt_id)
+int mqtt_unpack_pubcomp(u8_t *buf, u16_t length, u16_t *pkt_id)
 {
 	return unpack_pktid_validate(buf, length, pkt_id, MQTT_PUBCOMP,
 				     PUBCOMP_RESERVED);
 }
 
-int mqtt_unpack_unsuback(uint8_t *buf, uint16_t length, uint16_t *pkt_id)
+int mqtt_unpack_unsuback(u8_t *buf, u16_t length, u16_t *pkt_id)
 {
 	return unpack_pktid_validate(buf, length, pkt_id, MQTT_UNSUBACK,
 				     UNSUBACK_RESERVED);
@@ -1126,8 +1126,8 @@ int mqtt_unpack_unsuback(uint8_t *buf, uint16_t length, uint16_t *pkt_id)
  * @retval -EINVAL
  */
 static
-int unpack_zerolen(uint8_t *buf, uint16_t length, enum mqtt_packet *pkt_type,
-		   uint8_t *reserved)
+int unpack_zerolen(u8_t *buf, u16_t length, enum mqtt_packet *pkt_type,
+		   u8_t *reserved)
 {
 	if (length < MSG_ZEROLEN_SIZE) {
 		return -EINVAL;
@@ -1155,12 +1155,12 @@ int unpack_zerolen(uint8_t *buf, uint16_t length, enum mqtt_packet *pkt_type,
  * @retval -EINVAL
  */
 static
-int unpack_zerolen_validate(uint8_t *buf, uint16_t length,
+int unpack_zerolen_validate(u8_t *buf, u16_t length,
 			    enum mqtt_packet expected_type,
-			    uint8_t expected_reserved)
+			    u8_t expected_reserved)
 {
 	enum mqtt_packet pkt_type;
-	uint8_t reserved;
+	u8_t reserved;
 	int rc;
 
 	rc = unpack_zerolen(buf, length, &pkt_type, &reserved);
@@ -1175,17 +1175,17 @@ int unpack_zerolen_validate(uint8_t *buf, uint16_t length,
 	return 0;
 }
 
-int mqtt_unpack_pingreq(uint8_t *buf, uint16_t length)
+int mqtt_unpack_pingreq(u8_t *buf, u16_t length)
 {
 	return unpack_zerolen_validate(buf, length, MQTT_PINGREQ, 0x00);
 }
 
-int mqtt_unpack_pingresp(uint8_t *buf, uint16_t length)
+int mqtt_unpack_pingresp(u8_t *buf, u16_t length)
 {
 	return unpack_zerolen_validate(buf, length, MQTT_PINGRESP, 0x00);
 }
 
-int mqtt_unpack_disconnect(uint8_t *buf, uint16_t length)
+int mqtt_unpack_disconnect(u8_t *buf, u16_t length)
 {
 	return unpack_zerolen_validate(buf, length, MQTT_DISCONNECT, 0x00);
 }

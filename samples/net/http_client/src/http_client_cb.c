@@ -24,7 +24,7 @@ int on_url(struct http_parser *parser, const char *at, size_t length)
 int on_status(struct http_parser *parser, const char *at, size_t length)
 {
 	struct http_client_ctx *ctx;
-	uint16_t len;
+	u16_t len;
 
 	ARG_UNUSED(parser);
 
@@ -40,7 +40,7 @@ int on_header_field(struct http_parser *parser, const char *at, size_t length)
 {
 	char *content_len = "Content-Length";
 	struct http_client_ctx *ctx;
-	uint16_t len;
+	u16_t len;
 
 	ctx = CONTAINER_OF(parser, struct http_client_ctx, parser);
 

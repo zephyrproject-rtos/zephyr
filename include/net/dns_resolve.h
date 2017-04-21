@@ -51,10 +51,10 @@ struct dns_addrinfo {
 	struct sockaddr ai_addr;
 	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
 	socklen_t       ai_addrlen;
-	uint16_t        ai_flags;
-	uint8_t         ai_family;
-	uint8_t         ai_socktype;
-	uint8_t         ai_protocol;
+	u16_t        ai_flags;
+	u8_t         ai_family;
+	u8_t         ai_socktype;
+	u8_t         ai_protocol;
 };
 
 /**
@@ -118,7 +118,7 @@ struct dns_resolve_context {
 	/** This timeout is also used when a buffer is required from the
 	 * buffer pools.
 	 */
-	int32_t buf_timeout;
+	s32_t buf_timeout;
 
 	/** Result callbacks. We have multiple callbacks here so that it is
 	 * possible to do multiple queries at the same time.
@@ -137,7 +137,7 @@ struct dns_resolve_context {
 		void *user_data;
 
 		/** TX timeout */
-		int32_t timeout;
+		s32_t timeout;
 
 		/** String containing the thing to resolve like www.example.com
 		 */
@@ -147,7 +147,7 @@ struct dns_resolve_context {
 		enum dns_query_type query_type;
 
 		/** DNS id of this query */
-		uint16_t id;
+		u16_t id;
 	} queries[CONFIG_DNS_NUM_CONCUR_QUERIES];
 
 	/** Is this context in use */
@@ -203,7 +203,7 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_cancel(struct dns_resolve_context *ctx,
-		       uint16_t dns_id);
+		       u16_t dns_id);
 
 /**
  * @brief Resolve DNS name.
@@ -235,10 +235,10 @@ int dns_resolve_cancel(struct dns_resolve_context *ctx,
 int dns_resolve_name(struct dns_resolve_context *ctx,
 		     const char *query,
 		     enum dns_query_type type,
-		     uint16_t *dns_id,
+		     u16_t *dns_id,
 		     dns_resolve_cb_t cb,
 		     void *user_data,
-		     int32_t timeout);
+		     s32_t timeout);
 
 /**
  * @brief Get default DNS context.
@@ -281,10 +281,10 @@ struct dns_resolve_context *dns_resolve_get_default(void);
  */
 static inline int dns_get_addr_info(const char *query,
 				    enum dns_query_type type,
-				    uint16_t *dns_id,
+				    u16_t *dns_id,
 				    dns_resolve_cb_t cb,
 				    void *user_data,
-				    int32_t timeout)
+				    s32_t timeout)
 {
 	return dns_resolve_name(dns_resolve_get_default(),
 				query,
@@ -304,7 +304,7 @@ static inline int dns_get_addr_info(const char *query,
  *
  * @return 0 if ok, <0 if error.
  */
-static inline int dns_cancel_addr_info(uint16_t dns_id)
+static inline int dns_cancel_addr_info(u16_t dns_id)
 {
 	return dns_resolve_cancel(dns_resolve_get_default(), dns_id);
 }

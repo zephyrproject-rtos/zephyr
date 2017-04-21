@@ -23,7 +23,7 @@
 
 #define BT_SHELL_MODULE "net_bt"
 
-static int char2hex(const char *c, uint8_t *x)
+static int char2hex(const char *c, u8_t *x)
 {
 	if (*c >= '0' && *c <= '9') {
 		*x = *c - '0';
@@ -41,7 +41,7 @@ static int char2hex(const char *c, uint8_t *x)
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;
-	uint8_t tmp;
+	u8_t tmp;
 
 	if (strlen(str) != 17) {
 		return -EINVAL;

@@ -19,13 +19,13 @@ struct nrf5_802154_data {
 	/* Pointer to the network interface. */
 	struct net_if *iface;
 	/* Pointer to a received frame. */
-	uint8_t *rx_psdu;
+	u8_t *rx_psdu;
 	/* TX buffer. First byte is PHR (length), remaining bytes are
 	 * MPDU data.
 	 */
-	uint8_t tx_psdu[NRF5_PHR_LENGTH + NRF5_PSDU_LENGTH];
+	u8_t tx_psdu[NRF5_PHR_LENGTH + NRF5_PSDU_LENGTH];
 	/* 802.15.4 HW address. */
-	uint8_t mac[8];
+	u8_t mac[8];
 	/* RX thread stack. */
 	char __stack rx_stack[CONFIG_IEEE802154_NRF5_RX_STACK_SIZE];
 
@@ -43,17 +43,17 @@ struct nrf5_802154_data {
 	bool tx_success;
 
 	/* CCA channel energy. Unit as per 802.15.4-2006 specification. */
-	int8_t channel_ed;
+	s8_t channel_ed;
 
 	/* TX power, in dBm, to be used when sending a frame. */
-	int8_t txpower;
+	s8_t txpower;
 	/* 802.15.4 channel to be used when sending a frame. */
-	uint8_t channel;
+	u8_t channel;
 
 	/* Last received frame LQI value. */
-	uint8_t lqi;
+	u8_t lqi;
 	/* Last received frame RSSI value. */
-	int8_t rssi;
+	s8_t rssi;
 };
 
 #endif /* __IEEE802154_NRF5_H__ */

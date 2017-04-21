@@ -55,7 +55,7 @@ int tcp_tx(void *context, const unsigned char *buf, size_t size)
 		return -EIO;
 	}
 
-	rc = net_pkt_append(send_pkt, size, (uint8_t *) buf, K_FOREVER);
+	rc = net_pkt_append(send_pkt, size, (u8_t *) buf, K_FOREVER);
 	if (!rc) {
 		printk("cannot write buf\n");
 		return -EIO;
@@ -79,9 +79,9 @@ int tcp_rx(void *context, unsigned char *buf, size_t size)
 	struct net_buf *data = NULL;
 	struct tcp_context *ctx = context;
 	int rc;
-	uint8_t *ptr;
+	u8_t *ptr;
 	int read_bytes;
-	uint16_t offset;
+	u16_t offset;
 
 	rc = net_context_recv(ctx->net_ctx, tcp_received, K_FOREVER, ctx);
 	if (rc != 0) {
@@ -109,7 +109,7 @@ int tcp_rx(void *context, unsigned char *buf, size_t size)
 }
 
 static int set_addr(struct sockaddr *sock_addr, const char *addr,
-		    uint16_t server_port)
+		    u16_t server_port)
 {
 	void *ptr = NULL;
 	int rc;
@@ -174,7 +174,7 @@ lb_exit:
 }
 
 int tcp_init(struct tcp_context *ctx, const char *server_addr,
-	     uint16_t server_port)
+	     u16_t server_port)
 {
 	struct sockaddr server_sock;
 	int rc;

@@ -21,8 +21,8 @@
 
 /* MQTT messages in this test are under 256 bytes */
 #define BUF_SIZE	256
-static uint8_t buf[BUF_SIZE];
-static uint16_t buf_len;
+static u8_t buf[BUF_SIZE];
+static u16_t buf_len;
 
 /**
  * @brief MQTT test structure
@@ -42,10 +42,10 @@ struct mqtt_test {
 	int (*eval_fcn)(struct mqtt_test *);
 
 	/* expected result */
-	uint8_t *expected;
+	u8_t *expected;
 
 	/* length of 'expected' */
-	uint16_t expected_len;
+	u16_t expected_len;
 };
 
 #define MAX_TOPICS	4
@@ -54,7 +54,7 @@ struct mqtt_test {
  * @brief MQTT SUBSCRIBE msg
  */
 struct msg_subscribe {
-	uint16_t pkt_id;
+	u16_t pkt_id;
 	int items;
 	const char *topics[MAX_TOPICS];
 	enum mqtt_qos qos[MAX_TOPICS];
@@ -64,7 +64,7 @@ struct msg_subscribe {
  * @brief MQTT SUBACK msg
  */
 struct msg_suback {
-	uint16_t pkt_id;
+	u16_t pkt_id;
 	int elements;
 	enum mqtt_qos qos[MAX_TOPICS];
 };
@@ -74,7 +74,7 @@ struct msg_suback {
  *	  PUBACK, PUBREC, PUBREL, PUBCOMP, UNSUBACK
  */
 struct msg_pkt_id {
-	uint16_t pkt_id;
+	u16_t pkt_id;
 };
 
 /**
@@ -195,15 +195,15 @@ static int eval_msg_disconnect(struct mqtt_test *mqtt_test);
  * @return			TC_PASS on success
  * @return			TC_FAIL on error and prints both buffers
  */
-static int eval_buffers(uint8_t *buf, uint16_t buf_len,
-			uint8_t *expected, uint16_t len);
+static int eval_buffers(u8_t *buf, u16_t buf_len,
+			u8_t *expected, u16_t len);
 
 /**
  * @brief print_array		Prints the array 'a' of 'size' elements
  * @param a			The array
  * @param size			Array's size
  */
-static void print_array(uint8_t *a, uint16_t size);
+static void print_array(u8_t *a, u16_t size);
 
 /**
  * @brief test_strlen		Computes the C string length allowing NULL as
@@ -224,7 +224,7 @@ static size_t test_strlen(const char *str);
  * mosquitto_sub -V mqttv311 -i zephyr -k 0 -t sensors
  */
 static
-uint8_t connect1[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+u8_t connect1[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x04, 0x02, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65,
 		      0x70, 0x68, 0x79, 0x72};
 
@@ -246,7 +246,7 @@ static struct mqtt_connect_msg msg_connect1 = {
  * mosquitto_sub -V mqttv311 -i zephyr -k 365 -t sensors
  */
 static
-uint8_t connect2[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+u8_t connect2[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x04, 0x02, 0x01, 0x6d, 0x00, 0x06, 0x7a, 0x65,
 		      0x70, 0x68, 0x79, 0x72};
 
@@ -271,7 +271,7 @@ static struct mqtt_connect_msg msg_connect2 = {
  * --will-qos 0 --will-payload bye
  */
 static
-uint8_t connect3[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+u8_t connect3[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x04, 0x06, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65,
 		      0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		      0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
@@ -283,7 +283,7 @@ static struct mqtt_connect_msg msg_connect3 = {
 	.will_flag = 1,
 	.will_qos = 0, .will_retain = 0, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = (uint8_t *)"bye",
+	.will_msg = (u8_t *)"bye",
 	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -298,7 +298,7 @@ static struct mqtt_connect_msg msg_connect3 = {
  * --will-qos 0 --will-payload bye  --will-retain
  */
 static
-uint8_t connect4[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+u8_t connect4[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x04, 0x26, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65,
 		      0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		      0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
@@ -310,7 +310,7 @@ static struct mqtt_connect_msg msg_connect4 = {
 	.will_flag = 1,
 	.will_qos = 0, .will_retain = 1, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = (uint8_t *)"bye",
+	.will_msg = (u8_t *)"bye",
 	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -325,7 +325,7 @@ static struct mqtt_connect_msg msg_connect4 = {
  * --will-qos 1 --will-payload bye
  */
 static
-uint8_t connect5[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+u8_t connect5[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x04, 0x0e, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65,
 		      0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		      0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
@@ -337,7 +337,7 @@ static struct mqtt_connect_msg msg_connect5 = {
 	.will_flag = 1,
 	.will_qos = 1, .will_retain = 0, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = (uint8_t *)"bye",
+	.will_msg = (u8_t *)"bye",
 	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -352,7 +352,7 @@ static struct mqtt_connect_msg msg_connect5 = {
  * --will-qos 1 --will-payload bye --will-retain
  */
 static
-uint8_t connect6[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+u8_t connect6[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x04, 0x2e, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65,
 		      0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		      0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
@@ -364,7 +364,7 @@ static struct mqtt_connect_msg msg_connect6 = {
 	.will_flag = 1,
 	.will_qos = 1, .will_retain = 1, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = (uint8_t *)"bye",
+	.will_msg = (u8_t *)"bye",
 	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = NULL,
 	.password = NULL, .password_len = 0
@@ -380,7 +380,7 @@ static struct mqtt_connect_msg msg_connect6 = {
  * --will-qos 1 --will-payload bye --will-retain -u zephyr1 -P password
  */
 static
-uint8_t connect7[] = {0x10, 0x34, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+u8_t connect7[] = {0x10, 0x34, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		      0x04, 0xee, 0x00, 0x00, 0x00, 0x06, 0x7a, 0x65,
 		      0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		      0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
@@ -394,16 +394,16 @@ static struct mqtt_connect_msg msg_connect7 = {
 	.will_flag = 1,
 	.will_qos = 1, .will_retain = 1, .will_topic = WILL_TOPIC,
 	.will_topic_len = WILL_TOPIC_LEN,
-	.will_msg = (uint8_t *)"bye",
+	.will_msg = (u8_t *)"bye",
 	.will_msg_len = 3,
 	.keep_alive = 0, .user_name = USERNAME,
 	.user_name_len = USERNAME_LEN,
-	.password = (uint8_t *)"password",
+	.password = (u8_t *)"password",
 	.password_len = 8
 };
 
 static
-uint8_t disconnect1[] = {0xe0, 0x00};
+u8_t disconnect1[] = {0xe0, 0x00};
 
 /*
  * MQTT PUBLISH msg:
@@ -413,14 +413,14 @@ uint8_t disconnect1[] = {0xe0, 0x00};
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 0 -m "OK"
  */
 static
-uint8_t publish1[] = {0x30, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+u8_t publish1[] = {0x30, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x4f, 0x4b};
 
 static struct mqtt_publish_msg msg_publish1 = {
 	.dup = 0, .qos = 0, .retain = 0, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
 	.pkt_id = 0,
-	.msg = (uint8_t *)"OK",
+	.msg = (u8_t *)"OK",
 	.msg_len = 2,
 };
 
@@ -432,14 +432,14 @@ static struct mqtt_publish_msg msg_publish1 = {
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 0 -m "OK" -r
  */
 static
-uint8_t publish2[] = {0x31, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+u8_t publish2[] = {0x31, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x4f, 0x4b};
 
 static struct mqtt_publish_msg msg_publish2 = {
 	.dup = 0, .qos = 0, .retain = 1, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
 	.pkt_id = 0,
-	.msg = (uint8_t *)"OK",
+	.msg = (u8_t *)"OK",
 	.msg_len = 2
 };
 
@@ -451,14 +451,14 @@ static struct mqtt_publish_msg msg_publish2 = {
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 1 -m "OK" -r
  */
 static
-uint8_t publish3[] = {0x33, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+u8_t publish3[] = {0x33, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
 
 static struct mqtt_publish_msg msg_publish3 = {
 	.dup = 0, .qos = 1, .retain = 1, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
 	.pkt_id = 1,
-	.msg = (uint8_t *)"OK",
+	.msg = (u8_t *)"OK",
 	.msg_len = 2
 };
 
@@ -470,13 +470,13 @@ static struct mqtt_publish_msg msg_publish3 = {
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 2 -m "OK"
  */
 static
-uint8_t publish4[] = {0x34, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+u8_t publish4[] = {0x34, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		      0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
 static struct mqtt_publish_msg msg_publish4 = {
 	.dup = 0, .qos = 2, .retain = 0, .topic = TOPIC,
 	.topic_len = TOPIC_LEN,
 	.pkt_id = 1,
-	.msg = (uint8_t *)"OK",
+	.msg = (u8_t *)"OK",
 	.msg_len = 2
 };
 
@@ -488,7 +488,7 @@ static struct mqtt_publish_msg msg_publish4 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 0
  */
 static
-uint8_t subscribe1[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
+u8_t subscribe1[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
 			0x6e, 0x73, 0x6f, 0x72, 0x73, 0x00};
 static struct msg_subscribe msg_subscribe1 = {
 	 .pkt_id = 1, .items = 1,
@@ -503,7 +503,7 @@ static struct msg_subscribe msg_subscribe1 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 1
  */
 static
-uint8_t subscribe2[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
+u8_t subscribe2[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
 			0x6e, 0x73, 0x6f, 0x72, 0x73, 0x01};
 static struct msg_subscribe msg_subscribe2 = {
 	 .pkt_id = 1, .items = 1,
@@ -518,7 +518,7 @@ static struct msg_subscribe msg_subscribe2 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 2
  */
 static
-uint8_t subscribe3[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
+u8_t subscribe3[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
 			0x6e, 0x73, 0x6f, 0x72, 0x73, 0x02};
 static struct msg_subscribe msg_subscribe3 = {
 	 .pkt_id = 1, .items = 1,
@@ -533,7 +533,7 @@ static struct msg_subscribe msg_subscribe3 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 0
  */
 static
-uint8_t suback1[] = {0x90, 0x03, 0x00, 0x01, 0x00};
+u8_t suback1[] = {0x90, 0x03, 0x00, 0x01, 0x00};
 static struct msg_suback msg_suback1 = {
 	.pkt_id = 1, .elements = 1, .qos = {MQTT_QoS0}
 };
@@ -546,7 +546,7 @@ static struct msg_suback msg_suback1 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 1
  */
 static
-uint8_t suback2[] = {0x90, 0x03, 0x00, 0x01, 0x01};
+u8_t suback2[] = {0x90, 0x03, 0x00, 0x01, 0x01};
 static struct msg_suback msg_suback2 = {
 	.pkt_id = 1, .elements = 1, .qos = {MQTT_QoS1}
 };
@@ -559,35 +559,35 @@ static struct msg_suback msg_suback2 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 2
  */
 static
-uint8_t suback3[] = {0x90, 0x03, 0x00, 0x01, 0x02};
+u8_t suback3[] = {0x90, 0x03, 0x00, 0x01, 0x02};
 static struct msg_suback msg_suback3 = {
 	.pkt_id = 1, .elements = 1, .qos = {MQTT_QoS2}
 };
 
 static
-uint8_t pingreq1[] = {0xc0, 0x00};
+u8_t pingreq1[] = {0xc0, 0x00};
 
 static
-uint8_t pingresp1[] = {0xd0, 0x00};
+u8_t pingresp1[] = {0xd0, 0x00};
 
 static
-uint8_t puback1[] = {0x40, 0x02, 0x00, 0x01};
+u8_t puback1[] = {0x40, 0x02, 0x00, 0x01};
 static struct msg_pkt_id msg_puback1 = {.pkt_id = 1};
 
 static
-uint8_t pubrec1[] = {0x50, 0x02, 0x00, 0x01};
+u8_t pubrec1[] = {0x50, 0x02, 0x00, 0x01};
 static struct msg_pkt_id msg_pubrec1 = {.pkt_id = 1};
 
 static
-uint8_t pubrel1[] = {0x62, 0x02, 0x00, 0x01};
+u8_t pubrel1[] = {0x62, 0x02, 0x00, 0x01};
 static struct msg_pkt_id msg_pubrel1 = {.pkt_id = 1};
 
 static
-uint8_t pubcomp1[] = {0x70, 0x02, 0x00, 0x01};
+u8_t pubcomp1[] = {0x70, 0x02, 0x00, 0x01};
 static struct msg_pkt_id msg_pubcomp1 = {.pkt_id = 1};
 
 static
-uint8_t unsuback1[] = {0xb0, 0x02, 0x00, 0x01};
+u8_t unsuback1[] = {0xb0, 0x02, 0x00, 0x01};
 static struct msg_pkt_id msg_unsuback1 = {.pkt_id = 1};
 
 static
@@ -696,9 +696,9 @@ struct mqtt_test mqtt_tests[] = {
 	{.test_name = NULL}
 };
 
-static void print_array(uint8_t *a, uint16_t size)
+static void print_array(u8_t *a, u16_t size)
 {
-	uint16_t i;
+	u16_t i;
 
 	TC_PRINT("\n");
 	for (i = 0; i < size; i++) {
@@ -720,8 +720,8 @@ static size_t test_strlen(const char *str)
 }
 
 static
-int eval_buffers(uint8_t *buf, uint16_t buf_len, uint8_t *expected,
-		 uint16_t len)
+int eval_buffers(u8_t *buf, u16_t buf_len, u8_t *expected,
+		 u16_t len)
 {
 	if (buf_len != len) {
 		goto exit_eval;
@@ -950,10 +950,10 @@ static int eval_msg_pingresp(struct mqtt_test *mqtt_test)
 static
 int eval_msg_packet_id(struct mqtt_test *mqtt_test, enum mqtt_packet type)
 {
-	int (*pack)(uint8_t *, uint16_t *, uint16_t, uint16_t) = NULL;
-	int (*unpack)(uint8_t *, uint16_t, uint16_t *) = NULL;
+	int (*pack)(u8_t *, u16_t *, u16_t, u16_t) = NULL;
+	int (*unpack)(u8_t *, u16_t, u16_t *) = NULL;
 	struct msg_pkt_id *msg = (struct msg_pkt_id *)mqtt_test->msg;
-	uint16_t pkt_id;
+	u16_t pkt_id;
 	int rc;
 
 	switch (type) {

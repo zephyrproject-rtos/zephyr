@@ -74,9 +74,9 @@ void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler)
 	sys_slist_find_and_remove(&handlers, &handler->node);
 }
 
-static inline void setup_ipv6_header(struct net_pkt *pkt, uint16_t extra_len,
-				     uint8_t hop_limit, uint8_t icmp_type,
-				     uint8_t icmp_code)
+static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
+				     u8_t hop_limit, u8_t icmp_type,
+				     u8_t icmp_code)
 {
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
@@ -129,7 +129,7 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_if *iface;
-	uint16_t payload_len;
+	u16_t payload_len;
 
 	echo_request_debug(orig);
 
@@ -189,7 +189,7 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 
 	if (NET_IPV6_HDR(pkt)->nexthdr == NET_IPV6_NEXTHDR_HBHO) {
 #if defined(CONFIG_NET_RPL)
-		uint16_t offset = NET_IPV6H_LEN;
+		u16_t offset = NET_IPV6H_LEN;
 
 		if (net_rpl_revert_header(pkt, offset, &offset) < 0) {
 			/* TODO: Handle error cases */
@@ -229,8 +229,8 @@ drop_no_pkt:
 	return NET_DROP;
 }
 
-int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
-			  uint32_t param)
+int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
+			  u32_t param)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -354,8 +354,8 @@ drop_no_pkt:
 
 int net_icmpv6_send_echo_request(struct net_if *iface,
 				 struct in6_addr *dst,
-				 uint16_t identifier,
-				 uint16_t sequence)
+				 u16_t identifier,
+				 u16_t sequence)
 {
 	const struct in6_addr *src;
 	struct net_pkt *pkt;
@@ -411,7 +411,7 @@ drop:
 }
 
 enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
-				  uint8_t type, uint8_t code)
+				  u8_t type, u8_t code)
 {
 	struct net_icmpv6_handler *cb;
 

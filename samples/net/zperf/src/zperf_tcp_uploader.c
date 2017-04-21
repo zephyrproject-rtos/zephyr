@@ -25,10 +25,10 @@ void zperf_tcp_upload(struct net_context *ctx,
 		      unsigned int packet_size,
 		      struct zperf_results *results)
 {
-	uint32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
-	uint32_t nb_packets = 0, nb_errors = 0;
-	uint32_t start_time, last_print_time, last_loop_time, end_time;
-	uint8_t time_elapsed = 0, finished = 0;
+	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
+	u32_t nb_packets = 0, nb_errors = 0;
+	u32_t start_time, last_print_time, last_loop_time, end_time;
+	u8_t time_elapsed = 0, finished = 0;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		printk(TAG "WARNING! packet size too large! max size: %u\n",
@@ -48,7 +48,7 @@ void zperf_tcp_upload(struct net_context *ctx,
 		int ret = 0;
 		struct net_pkt *pkt;
 		struct net_buf *frag;
-		uint32_t loop_time;
+		u32_t loop_time;
 		bool st;
 
 		/* Timestamps */

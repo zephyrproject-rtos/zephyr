@@ -17,8 +17,8 @@ struct http_client_ctx {
 
 	struct tcp_client_ctx tcp_ctx;
 
-	uint32_t content_length;
-	uint32_t processed;
+	u32_t content_length;
+	u32_t processed;
 
 	/* https://tools.ietf.org/html/rfc7230#section-3.1.2
 	 * The status-code element is a 3-digit integer code
@@ -30,8 +30,8 @@ struct http_client_ctx {
 	 */
 	char http_status[HTTP_STATUS_STR_SIZE];
 
-	uint8_t cl_present:1;
-	uint8_t body_found:1;
+	u8_t cl_present:1;
+	u8_t body_found:1;
 };
 
 #endif

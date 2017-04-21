@@ -129,7 +129,7 @@ static struct k_sem wait_data;
 #define PEER_PORT 16233
 
 struct net_test_ipv6 {
-	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	u8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -138,7 +138,7 @@ int net_test_dev_init(struct device *dev)
 	return 0;
 }
 
-static uint8_t *net_test_get_mac(struct device *dev)
+static u8_t *net_test_get_mac(struct device *dev)
 {
 	struct net_test_ipv6 *context = dev->driver_data;
 
@@ -157,7 +157,7 @@ static uint8_t *net_test_get_mac(struct device *dev)
 
 static void net_test_iface_init(struct net_if *iface)
 {
-	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	u8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -281,13 +281,13 @@ static bool net_test_cmp_prefix(void)
 	struct in6_addr prefix2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
-	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 64);
+	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
 	if (!st) {
 		TC_ERROR("Prefix /64  compare failed\n");
 		return false;
 	}
 
-	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	if (!st) {
 		TC_ERROR("Prefix /65 compare failed\n");
 		return false;
@@ -296,7 +296,7 @@ static bool net_test_cmp_prefix(void)
 	/* Set one extra bit in the other prefix for testing /65 */
 	prefix1.s6_addr[8] = 0x80;
 
-	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	if (st) {
 		TC_ERROR("Prefix /65 compare should have failed\n");
 		return false;
@@ -305,7 +305,7 @@ static bool net_test_cmp_prefix(void)
 	/* Set two bits in prefix2, it is now /66 */
 	prefix2.s6_addr[8] = 0xc0;
 
-	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	if (!st) {
 		TC_ERROR("Prefix /65 compare failed\n");
 		return false;
@@ -314,21 +314,21 @@ static bool net_test_cmp_prefix(void)
 	/* Set all remaining bits in prefix2, it is now /128 */
 	memset(&prefix2.s6_addr[8], 0xff, 8);
 
-	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 65);
+	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	if (!st) {
 		TC_ERROR("Prefix /65 compare failed\n");
 		return false;
 	}
 
 	/* Comparing /64 should be still ok */
-	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 64);
+	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
 	if (!st) {
 		TC_ERROR("Prefix /64 compare failed\n");
 		return false;
 	}
 
 	/* But comparing /66 should should fail */
-	st = net_is_ipv6_prefix((uint8_t *)&prefix1, (uint8_t *)&prefix2, 66);
+	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
 	if (st) {
 		TC_ERROR("Prefix /66 compare should have failed\n");
 		return false;
@@ -479,7 +479,7 @@ static bool net_test_prefix_timeout(void)
 	struct net_if_ipv6_prefix *prefix;
 	struct in6_addr addr = { { { 0x20, 1, 0x0d, 0xb8, 42, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0 } } };
-	uint32_t lifetime = 1;
+	u32_t lifetime = 1;
 	int len = 64;
 
 	prefix = net_if_ipv6_prefix_add(net_if_get_default(),
@@ -594,7 +594,7 @@ static bool net_test_hbho_message(void)
 
 static bool net_test_change_ll_addr(void)
 {
-	uint8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
+	u8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
 	struct net_linkaddr_storage *ll;
 	struct net_linkaddr *ll_iface;
 	struct net_pkt *pkt;
@@ -602,7 +602,7 @@ static bool net_test_change_ll_addr(void)
 	struct in6_addr dst;
 	struct net_if *iface;
 	struct net_nbr *nbr;
-	uint32_t flags;
+	u32_t flags;
 	int ret;
 
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 1);

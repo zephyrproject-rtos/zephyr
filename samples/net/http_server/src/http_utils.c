@@ -21,13 +21,13 @@ void print_ipaddr(const struct sockaddr *ip_addr)
 #ifdef CONFIG_NET_IPV6
 	struct sockaddr_in6 *addr = (struct sockaddr_in6 *)ip_addr;
 	void *raw = (void *)&addr->sin6_addr;
-	uint16_t port = addr->sin6_port;
+	u16_t port = addr->sin6_port;
 	sa_family_t family = AF_INET6;
 	char str[STR_IP6_ADDR];
 #else
 	struct sockaddr_in *addr = (struct sockaddr_in *)ip_addr;
 	void *raw = (void *)&addr->sin_addr;
-	uint16_t port = addr->sin_port;
+	u16_t port = addr->sin_port;
 	sa_family_t family = AF_INET;
 	char str[STR_IP4_ADDR];
 #endif

@@ -25,41 +25,41 @@ extern void net_ipv6_init(void);
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
-				 uint16_t pkt_len);
+				 u16_t pkt_len);
 #endif
 
 extern const char *net_proto2str(enum net_ip_protocol proto);
-extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
-extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+extern char *net_byte_to_hex(char *ptr, u8_t byte, char base, bool pad);
+extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 				    char *buf, int buflen);
-extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
+extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
 
 #if defined(CONFIG_NET_IPV4)
-extern uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
+extern u16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */
 
-static inline uint16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)
+static inline u16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_ICMPV6);
 }
 
-static inline uint16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
+static inline u16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_ICMP);
 }
 
-static inline uint16_t net_calc_chksum_udp(struct net_pkt *pkt)
+static inline u16_t net_calc_chksum_udp(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_UDP);
 }
 
-static inline uint16_t net_calc_chksum_tcp(struct net_pkt *pkt)
+static inline u16_t net_calc_chksum_tcp(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_TCP);
 }
 
 #if NET_LOG_ENABLED > 0
-static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
+static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
 {
 	static char buf[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
@@ -110,7 +110,7 @@ static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 	return NULL;
 }
 
-static inline void net_hexdump(const char *str, const uint8_t *packet,
+static inline void net_hexdump(const char *str, const u8_t *packet,
 			       size_t length)
 {
 	int n = 0;
@@ -182,7 +182,7 @@ static inline void net_print_frags(const char *str, struct net_pkt *pkt)
 
 #else /* NET_LOG_ENABLED */
 
-static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
+static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
 {
 	ARG_UNUSED(ll);
 	ARG_UNUSED(ll_len);

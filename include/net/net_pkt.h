@@ -56,56 +56,56 @@ struct net_pkt {
 
 	/** @cond ignore */
 
-	uint8_t *appdata;	/* application data starts here */
-	uint8_t *next_hdr;	/* where is the next header */
+	u8_t *appdata;	/* application data starts here */
+	u8_t *next_hdr;	/* where is the next header */
 
 	/* Filled by layer 2 when network packet is received. */
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-	uint16_t appdatalen;
-	uint8_t ll_reserve;	/* link layer header length */
-	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
+	u16_t appdatalen;
+	u8_t ll_reserve;	/* link layer header length */
+	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 
 #if defined(CONFIG_NET_TCP)
 	sys_snode_t sent_list;
 #endif
 
-	uint8_t sent       : 1;	/* Is this sent or not
+	u8_t sent       : 1;	/* Is this sent or not
 				 * Used only if defined(CONFIG_NET_TCP)
 				 */
-	uint8_t forwarding : 1;	/* Are we forwarding this pkt
+	u8_t forwarding : 1;	/* Are we forwarding this pkt
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
-	uint8_t family     : 4;	/* IPv4 vs IPv6 */
-	uint8_t _unused    : 4;
+	u8_t family     : 4;	/* IPv4 vs IPv6 */
+	u8_t _unused    : 4;
 
 #if defined(CONFIG_NET_IPV6)
-	uint8_t ipv6_hop_limit;	/* IPv6 hop limit for this network packet. */
-	uint8_t ipv6_ext_len;	/* length of extension headers */
-	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
+	u8_t ipv6_hop_limit;	/* IPv6 hop limit for this network packet. */
+	u8_t ipv6_ext_len;	/* length of extension headers */
+	u8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 
 	/* Where is the start of the last header before payload data
 	 * in IPv6 packet. This is offset value from start of the IPv6
 	 * packet. Note that this value should be updated by who ever
 	 * adds IPv6 extension headers to the network packet.
 	 */
-	uint16_t ipv6_prev_hdr_start;
+	u16_t ipv6_prev_hdr_start;
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-	uint16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
-	uint32_t ipv6_fragment_id;	/* Fragment id */
-	uint8_t *ipv6_frag_hdr_start;	/* Where starts the fragment header */
+	u16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
+	u32_t ipv6_fragment_id;	/* Fragment id */
+	u8_t *ipv6_frag_hdr_start;	/* Where starts the fragment header */
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_L2_IEEE802154)
-	uint8_t ieee802154_rssi;
+	u8_t ieee802154_rssi;
 #endif
 	/* @endcond */
 
 	/** Reference counter */
-	uint8_t ref;
+	u8_t ref;
 };
 
 /** @cond ignore */
@@ -155,38 +155,38 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 	pkt->lladdr_dst.type = iface->link_addr.type;
 }
 
-static inline uint8_t net_pkt_family(struct net_pkt *pkt)
+static inline u8_t net_pkt_family(struct net_pkt *pkt)
 {
 	return pkt->family;
 }
 
-static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
+static inline void net_pkt_set_family(struct net_pkt *pkt, u8_t family)
 {
 	pkt->family = family;
 }
 
-static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
+static inline u8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
 {
 	return pkt->ip_hdr_len;
 }
 
-static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, uint8_t len)
+static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, u8_t len)
 {
 	pkt->ip_hdr_len = len;
 }
 
-static inline uint8_t *net_pkt_next_hdr(struct net_pkt *pkt)
+static inline u8_t *net_pkt_next_hdr(struct net_pkt *pkt)
 {
 	return pkt->next_hdr;
 }
 
-static inline void net_pkt_set_next_hdr(struct net_pkt *pkt, uint8_t *hdr)
+static inline void net_pkt_set_next_hdr(struct net_pkt *pkt, u8_t *hdr)
 {
 	pkt->next_hdr = hdr;
 }
 
 #if defined(CONFIG_NET_TCP)
-static inline uint8_t net_pkt_sent(struct net_pkt *pkt)
+static inline u8_t net_pkt_sent(struct net_pkt *pkt)
 {
 	return pkt->sent;
 }
@@ -215,79 +215,79 @@ static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-static inline uint8_t net_pkt_ipv6_ext_opt_len(struct net_pkt *pkt)
+static inline u8_t net_pkt_ipv6_ext_opt_len(struct net_pkt *pkt)
 {
 	return pkt->ipv6_ext_opt_len;
 }
 
 static inline void net_pkt_set_ipv6_ext_opt_len(struct net_pkt *pkt,
-						uint8_t len)
+						u8_t len)
 {
 	pkt->ipv6_ext_opt_len = len;
 }
 
-static inline uint8_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
+static inline u8_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
 {
 	return pkt->ipv6_ext_len;
 }
 
-static inline void net_pkt_set_ipv6_ext_len(struct net_pkt *pkt, uint8_t len)
+static inline void net_pkt_set_ipv6_ext_len(struct net_pkt *pkt, u8_t len)
 {
 	pkt->ipv6_ext_len = len;
 }
 
-static inline uint16_t net_pkt_ipv6_hdr_prev(struct net_pkt *pkt)
+static inline u16_t net_pkt_ipv6_hdr_prev(struct net_pkt *pkt)
 {
 	return pkt->ipv6_prev_hdr_start;
 }
 
 static inline void net_pkt_set_ipv6_hdr_prev(struct net_pkt *pkt,
-					     uint16_t offset)
+					     u16_t offset)
 {
 	pkt->ipv6_prev_hdr_start = offset;
 }
 
-static inline uint8_t net_pkt_ipv6_hop_limit(struct net_pkt *pkt)
+static inline u8_t net_pkt_ipv6_hop_limit(struct net_pkt *pkt)
 {
 	return pkt->ipv6_hop_limit;
 }
 
 static inline void net_pkt_set_ipv6_hop_limit(struct net_pkt *pkt,
-					      uint8_t hop_limit)
+					      u8_t hop_limit)
 {
 	pkt->ipv6_hop_limit = hop_limit;
 }
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-static inline uint8_t *net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
+static inline u8_t *net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
 {
 	return pkt->ipv6_frag_hdr_start;
 }
 
 static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
-						   uint8_t *start)
+						   u8_t *start)
 {
 	pkt->ipv6_frag_hdr_start = start;
 }
 
-static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
+static inline u16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 {
 	return pkt->ipv6_fragment_offset;
 }
 
 static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
+						    u16_t offset)
 {
 	pkt->ipv6_fragment_offset = offset;
 }
 
-static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
+static inline u32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
 {
 	return pkt->ipv6_fragment_id;
 }
 
 static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
-						uint32_t id)
+						u32_t id)
 {
 	pkt->ipv6_fragment_id = id;
 }
@@ -302,60 +302,60 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 	return net_buf_frags_len(pkt->frags);
 }
 
-static inline uint8_t *net_pkt_ip_data(struct net_pkt *pkt)
+static inline u8_t *net_pkt_ip_data(struct net_pkt *pkt)
 {
 	return pkt->frags->data;
 }
 
-static inline uint8_t *net_pkt_udp_data(struct net_pkt *pkt)
+static inline u8_t *net_pkt_udp_data(struct net_pkt *pkt)
 {
 	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
 				 net_pkt_ipv6_ext_len(pkt)];
 }
 
-static inline uint8_t *net_pkt_tcp_data(struct net_pkt *pkt)
+static inline u8_t *net_pkt_tcp_data(struct net_pkt *pkt)
 {
 	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
 				 net_pkt_ipv6_ext_len(pkt)];
 }
 
-static inline uint8_t *net_pkt_icmp_data(struct net_pkt *pkt)
+static inline u8_t *net_pkt_icmp_data(struct net_pkt *pkt)
 {
 	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
 				 net_pkt_ipv6_ext_len(pkt)];
 }
 
-static inline uint8_t *net_pkt_appdata(struct net_pkt *pkt)
+static inline u8_t *net_pkt_appdata(struct net_pkt *pkt)
 {
 	return pkt->appdata;
 }
 
-static inline void net_pkt_set_appdata(struct net_pkt *pkt, uint8_t *data)
+static inline void net_pkt_set_appdata(struct net_pkt *pkt, u8_t *data)
 {
 	pkt->appdata = data;
 }
 
-static inline uint16_t net_pkt_appdatalen(struct net_pkt *pkt)
+static inline u16_t net_pkt_appdatalen(struct net_pkt *pkt)
 {
 	return pkt->appdatalen;
 }
 
-static inline void net_pkt_set_appdatalen(struct net_pkt *pkt, uint16_t len)
+static inline void net_pkt_set_appdatalen(struct net_pkt *pkt, u16_t len)
 {
 	pkt->appdatalen = len;
 }
 
-static inline uint8_t net_pkt_ll_reserve(struct net_pkt *pkt)
+static inline u8_t net_pkt_ll_reserve(struct net_pkt *pkt)
 {
 	return pkt->ll_reserve;
 }
 
-static inline void net_pkt_set_ll_reserve(struct net_pkt *pkt, uint8_t len)
+static inline void net_pkt_set_ll_reserve(struct net_pkt *pkt, u8_t len)
 {
 	pkt->ll_reserve = len;
 }
 
-static inline uint8_t *net_pkt_ll(struct net_pkt *pkt)
+static inline u8_t *net_pkt_ll(struct net_pkt *pkt)
 {
 	return net_pkt_ip_data(pkt) - net_pkt_ll_reserve(pkt);
 }
@@ -379,20 +379,20 @@ static inline void net_pkt_ll_clear(struct net_pkt *pkt)
 
 static inline void net_pkt_ll_swap(struct net_pkt *pkt)
 {
-	uint8_t *addr = net_pkt_ll_src(pkt)->addr;
+	u8_t *addr = net_pkt_ll_src(pkt)->addr;
 
 	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(pkt)->addr;
 	net_pkt_ll_dst(pkt)->addr = addr;
 }
 
 #if defined(CONFIG_NET_L2_IEEE802154)
-static inline uint8_t net_pkt_ieee802154_rssi(struct net_pkt *pkt)
+static inline u8_t net_pkt_ieee802154_rssi(struct net_pkt *pkt)
 {
 	return pkt->ieee802154_rssi;
 }
 
 static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
-						uint8_t rssi)
+						u8_t rssi)
 {
 	pkt->ieee802154_rssi = rssi;
 }
@@ -441,8 +441,8 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
  */
 
 struct net_pkt *net_pkt_get_reserve_debug(struct k_mem_slab *slab,
-					  uint16_t reserve_head,
-					  int32_t timeout,
+					  u16_t reserve_head,
+					  s32_t timeout,
 					  const char *caller,
 					  int line);
 #define net_pkt_get_reserve(slab, reserve_head, timeout)		\
@@ -450,8 +450,8 @@ struct net_pkt *net_pkt_get_reserve_debug(struct k_mem_slab *slab,
 				  __func__, __LINE__)
 
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
-					       uint16_t reserve_head,
-					       int32_t timeout,
+					       u16_t reserve_head,
+					       s32_t timeout,
 					       const char *caller,
 					       int line);
 
@@ -460,51 +460,51 @@ struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
 				  __func__, __LINE__)
 
 struct net_pkt *net_pkt_get_rx_debug(struct net_context *context,
-				     int32_t timeout,
+				     s32_t timeout,
 				     const char *caller, int line);
 #define net_pkt_get_rx(context, timeout)				\
 	net_pkt_get_rx_debug(context, timeout, __func__, __LINE__)
 
 struct net_pkt *net_pkt_get_tx_debug(struct net_context *context,
-				     int32_t timeout,
+				     s32_t timeout,
 				     const char *caller, int line);
 #define net_pkt_get_tx(context, timeout)				\
 	net_pkt_get_tx_debug(context, timeout, __func__, __LINE__)
 
 struct net_buf *net_pkt_get_data_debug(struct net_context *context,
-				       int32_t timeout,
+				       s32_t timeout,
 				       const char *caller, int line);
 #define net_pkt_get_data(context, timeout)				\
 	net_pkt_get_data_debug(context, timeout, __func__, __LINE__)
 
-struct net_pkt *net_pkt_get_reserve_rx_debug(uint16_t reserve_head,
-					     int32_t timeout,
+struct net_pkt *net_pkt_get_reserve_rx_debug(u16_t reserve_head,
+					     s32_t timeout,
 					     const char *caller, int line);
 #define net_pkt_get_reserve_rx(res, timeout)				\
 	net_pkt_get_reserve_rx_debug(res, timeout, __func__, __LINE__)
 
-struct net_pkt *net_pkt_get_reserve_tx_debug(uint16_t reserve_head,
-					     int32_t timeout,
+struct net_pkt *net_pkt_get_reserve_tx_debug(u16_t reserve_head,
+					     s32_t timeout,
 					     const char *caller, int line);
 #define net_pkt_get_reserve_tx(res, timeout)				\
 	net_pkt_get_reserve_tx_debug(res, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_rx_data_debug(uint16_t reserve_head,
-						  int32_t timeout,
+struct net_buf *net_pkt_get_reserve_rx_data_debug(u16_t reserve_head,
+						  s32_t timeout,
 						  const char *caller,
 						  int line);
 #define net_pkt_get_reserve_rx_data(res, timeout)			\
 	net_pkt_get_reserve_rx_data_debug(res, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_tx_data_debug(uint16_t reserve_head,
-						  int32_t timeout,
+struct net_buf *net_pkt_get_reserve_tx_data_debug(u16_t reserve_head,
+						  s32_t timeout,
 						  const char *caller,
 						  int line);
 #define net_pkt_get_reserve_tx_data(res, timeout)			\
 	net_pkt_get_reserve_tx_data_debug(res, timeout, __func__, __LINE__)
 
 struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt,
-				       int32_t timeout,
+				       s32_t timeout,
 				       const char *caller, int line);
 #define net_pkt_get_frag(pkt, timeout)					\
 	net_pkt_get_frag_debug(pkt, timeout, __func__, __LINE__)
@@ -570,8 +570,8 @@ void net_pkt_print_frags(struct net_pkt *pkt);
  * @return Network packet if successful, NULL otherwise.
  */
 struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
-				    uint16_t reserve_head,
-				    int32_t timeout);
+				    u16_t reserve_head,
+				    s32_t timeout);
 
 /**
  * @brief Get packet from the RX packet slab.
@@ -588,7 +588,7 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
  * @return Network packet if successful, NULL otherwise.
  */
 struct net_pkt *net_pkt_get_rx(struct net_context *context,
-			       int32_t timeout);
+			       s32_t timeout);
 
 /**
  * @brief Get packet from the TX packets slab.
@@ -606,7 +606,7 @@ struct net_pkt *net_pkt_get_rx(struct net_context *context,
  * @return Network packet if successful, NULL otherwise.
  */
 struct net_pkt *net_pkt_get_tx(struct net_context *context,
-			       int32_t timeout);
+			       s32_t timeout);
 
 /**
  * @brief Get buffer from the DATA buffers pool.
@@ -624,7 +624,7 @@ struct net_pkt *net_pkt_get_tx(struct net_context *context,
  * @return Network buffer if successful, NULL otherwise.
  */
 struct net_buf *net_pkt_get_data(struct net_context *context,
-				 int32_t timeout);
+				 s32_t timeout);
 
 /**
  * @brief Get RX packet from slab but also reserve headroom for
@@ -641,8 +641,8 @@ struct net_buf *net_pkt_get_data(struct net_context *context,
  *
  * @return Network packet if successful, NULL otherwise.
  */
-struct net_pkt *net_pkt_get_reserve_rx(uint16_t reserve_head,
-				       int32_t timeout);
+struct net_pkt *net_pkt_get_reserve_rx(u16_t reserve_head,
+				       s32_t timeout);
 
 /**
  * @brief Get TX packet from slab but also reserve headroom for
@@ -659,8 +659,8 @@ struct net_pkt *net_pkt_get_reserve_rx(uint16_t reserve_head,
  *
  * @return Network packet if successful, NULL otherwise.
  */
-struct net_pkt *net_pkt_get_reserve_tx(uint16_t reserve_head,
-				       int32_t timeout);
+struct net_pkt *net_pkt_get_reserve_tx(u16_t reserve_head,
+				       s32_t timeout);
 
 /**
  * @brief Get RX DATA buffer from pool but also reserve headroom for
@@ -677,8 +677,8 @@ struct net_pkt *net_pkt_get_reserve_tx(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_pkt_get_reserve_rx_data(uint16_t reserve_head,
-					    int32_t timeout);
+struct net_buf *net_pkt_get_reserve_rx_data(u16_t reserve_head,
+					    s32_t timeout);
 
 /**
  * @brief Get TX DATA buffer from pool but also reserve headroom for
@@ -695,8 +695,8 @@ struct net_buf *net_pkt_get_reserve_rx_data(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_pkt_get_reserve_tx_data(uint16_t reserve_head,
-					    int32_t timeout);
+struct net_buf *net_pkt_get_reserve_tx_data(u16_t reserve_head,
+					    s32_t timeout);
 
 /**
  * @brief Get a data fragment that might be from user specific
@@ -710,7 +710,7 @@ struct net_buf *net_pkt_get_reserve_tx_data(uint16_t reserve_head,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, int32_t timeout);
+struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, s32_t timeout);
 
 /**
  * @brief Place packet back into the available packets slab
@@ -801,7 +801,7 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
  * @return New fragment list if successful, NULL otherwise.
  */
 struct net_buf *net_pkt_copy(struct net_pkt *pkt, size_t amount,
-			     size_t reserve, int32_t timeout);
+			     size_t reserve, s32_t timeout);
 
 /**
  * @brief Copy a packet fragment list while reserving some extra space
@@ -820,7 +820,7 @@ struct net_buf *net_pkt_copy(struct net_pkt *pkt, size_t amount,
  */
 static inline struct net_buf *net_pkt_copy_all(struct net_pkt *pkt,
 					       size_t reserve,
-					       int32_t timeout)
+					       s32_t timeout)
 {
 	return net_pkt_copy(pkt, net_buf_frags_len(pkt->frags),
 			    reserve, timeout);
@@ -840,7 +840,7 @@ static inline struct net_buf *net_pkt_copy_all(struct net_pkt *pkt,
  * @return -ENOMEM on error
  */
 int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
-			 uint16_t offset, uint16_t len);
+			 u16_t offset, u16_t len);
 
 /**
  * @brief Compact the fragment list of a packet.
@@ -871,11 +871,11 @@ bool net_pkt_compact(struct net_pkt *pkt);
  *         False otherwise (In-case of false pkt might contain input
  *         data in the process of placing into fragments).
  */
-bool net_pkt_append(struct net_pkt *pkt, uint16_t len, const uint8_t *data,
-		    int32_t timeout);
+bool net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
+		    s32_t timeout);
 
 /**
- * @brief Append uint8_t data to last fragment in fragment list of a packet
+ * @brief Append u8_t data to last fragment in fragment list of a packet
  *
  * @details Append data to last fragment. If there is not enough space in last
  * fragment then new data fragment will be created and will be added to
@@ -888,13 +888,13 @@ bool net_pkt_append(struct net_pkt *pkt, uint16_t len, const uint8_t *data,
  *         False otherwise (In-case of false pkt might contain input
  *         data in the process of placing into fragments).
  */
-static inline bool net_pkt_append_u8(struct net_pkt *pkt, uint8_t data)
+static inline bool net_pkt_append_u8(struct net_pkt *pkt, u8_t data)
 {
 	return net_pkt_append(pkt, 1, &data, K_FOREVER);
 }
 
 /**
- * @brief Append uint16_t data to last fragment in fragment list of a packet
+ * @brief Append u16_t data to last fragment in fragment list of a packet
  *
  * @details Append data to last fragment. If there is not enough space in last
  * fragment then new data fragment will be created and will be added to
@@ -907,16 +907,16 @@ static inline bool net_pkt_append_u8(struct net_pkt *pkt, uint8_t data)
  *         False otherwise (In-case of false pkt might contain input data
  *         in the process of placing into fragments).
  */
-static inline bool net_pkt_append_be16(struct net_pkt *pkt, uint16_t data)
+static inline bool net_pkt_append_be16(struct net_pkt *pkt, u16_t data)
 {
-	uint16_t value = sys_cpu_to_be16(data);
+	u16_t value = sys_cpu_to_be16(data);
 
-	return net_pkt_append(pkt, sizeof(uint16_t), (uint8_t *)&value,
+	return net_pkt_append(pkt, sizeof(u16_t), (u8_t *)&value,
 			      K_FOREVER);
 }
 
 /**
- * @brief Append uint32_t data to last fragment in fragment list of a packet
+ * @brief Append u32_t data to last fragment in fragment list of a packet
  *
  * @details Append data to last fragment. If there is not enough space in last
  * fragment then new data fragment will be created and will be added to
@@ -929,16 +929,16 @@ static inline bool net_pkt_append_be16(struct net_pkt *pkt, uint16_t data)
  *         False otherwise (In-case of false pkt might contain input data
  *         in the process of placing into fragments).
  */
-static inline bool net_pkt_append_be32(struct net_pkt *pkt, uint32_t data)
+static inline bool net_pkt_append_be32(struct net_pkt *pkt, u32_t data)
 {
-	uint32_t value = sys_cpu_to_be32(data);
+	u32_t value = sys_cpu_to_be32(data);
 
-	return net_pkt_append(pkt, sizeof(uint32_t), (uint8_t *)&value,
+	return net_pkt_append(pkt, sizeof(u32_t), (u8_t *)&value,
 			      K_FOREVER);
 }
 
 /**
- * @brief Append uint32_t data to last fragment in fragment list
+ * @brief Append u32_t data to last fragment in fragment list
  *
  * @details Append data to last fragment. If there is not enough space in last
  * fragment then new data fragment will be created and will be added to
@@ -951,11 +951,11 @@ static inline bool net_pkt_append_be32(struct net_pkt *pkt, uint32_t data)
  *         False otherwise (In-case of false pkt might contain input data
  *         in the process of placing into fragments).
  */
-static inline bool net_pkt_append_le32(struct net_pkt *pkt, uint32_t data)
+static inline bool net_pkt_append_le32(struct net_pkt *pkt, u32_t data)
 {
-	uint32_t value = sys_cpu_to_le32(data);
+	u32_t value = sys_cpu_to_le32(data);
 
-	return net_pkt_append(pkt, sizeof(uint32_t), (uint8_t *)&value,
+	return net_pkt_append(pkt, sizeof(u32_t), (u8_t *)&value,
 			      K_FOREVER);
 }
 
@@ -978,8 +978,8 @@ static inline bool net_pkt_append_le32(struct net_pkt *pkt, uint32_t data)
  *         NULL and pos is 0 after successful read,
  *         NULL and pos is 0xffff otherwise.
  */
-struct net_buf *net_frag_read(struct net_buf *frag, uint16_t offset,
-			      uint16_t *pos, uint16_t len, uint8_t *data);
+struct net_buf *net_frag_read(struct net_buf *frag, u16_t offset,
+			      u16_t *pos, u16_t len, u8_t *data);
 
 /**
  * @brief Skip N number of bytes while reading buffer
@@ -1001,8 +1001,8 @@ struct net_buf *net_frag_read(struct net_buf *frag, uint16_t offset,
  *         NULL and pos is 0xffff otherwise.
  */
 static inline struct net_buf *net_frag_skip(struct net_buf *frag,
-					    uint16_t offset,
-					    uint16_t *pos, uint16_t len)
+					    u16_t offset,
+					    u16_t *pos, u16_t len)
 {
 	return net_frag_read(frag, offset, pos, len, NULL);
 }
@@ -1020,9 +1020,9 @@ static inline struct net_buf *net_frag_skip(struct net_buf *frag,
  *         NULL otherwise (if pos is 0, NULL is not a failure case).
  */
 static inline struct net_buf *net_frag_read_u8(struct net_buf *frag,
-					      uint16_t offset,
-					      uint16_t *pos,
-					      uint8_t *value)
+					      u16_t offset,
+					      u16_t *pos,
+					      u8_t *value)
 {
 	return net_frag_read(frag, offset, pos, 1, value);
 }
@@ -1039,8 +1039,8 @@ static inline struct net_buf *net_frag_read_u8(struct net_buf *frag,
  * @return Pointer to fragment after successful read,
  *         NULL otherwise (if pos is 0, NULL is not a failure case).
  */
-struct net_buf *net_frag_read_be16(struct net_buf *frag, uint16_t offset,
-				   uint16_t *pos, uint16_t *value);
+struct net_buf *net_frag_read_be16(struct net_buf *frag, u16_t offset,
+				   u16_t *pos, u16_t *value);
 
 /**
  * @brief Get 32 bit big endian value from fragmented buffer
@@ -1054,8 +1054,8 @@ struct net_buf *net_frag_read_be16(struct net_buf *frag, uint16_t offset,
  * @return Pointer to fragment after successful read,
  *         NULL otherwise (if pos is 0, NULL is not a failure case).
  */
-struct net_buf *net_frag_read_be32(struct net_buf *frag, uint16_t offset,
-				   uint16_t *pos, uint32_t *value);
+struct net_buf *net_frag_read_be32(struct net_buf *frag, u16_t offset,
+				   u16_t *pos, u32_t *value);
 
 /**
  * @brief Write data to an arbitrary offset in fragments list of a packet.
@@ -1118,44 +1118,44 @@ struct net_buf *net_frag_read_be32(struct net_buf *frag, uint16_t offset,
  *         NULL and pos is 0xffff otherwise.
  */
 struct net_buf *net_pkt_write(struct net_pkt *pkt, struct net_buf *frag,
-			      uint16_t offset, uint16_t *pos, uint16_t len,
-			      uint8_t *data, int32_t timeout);
+			      u16_t offset, u16_t *pos, u16_t len,
+			      u8_t *data, s32_t timeout);
 
-/* Write uint8_t data to an arbitrary offset in fragment. */
+/* Write u8_t data to an arbitrary offset in fragment. */
 static inline struct net_buf *net_pkt_write_u8(struct net_pkt *pkt,
 					       struct net_buf *frag,
-					       uint16_t offset,
-					       uint16_t *pos,
-					       uint8_t data)
+					       u16_t offset,
+					       u16_t *pos,
+					       u8_t data)
 {
-	return net_pkt_write(pkt, frag, offset, pos, sizeof(uint8_t),
+	return net_pkt_write(pkt, frag, offset, pos, sizeof(u8_t),
 			     &data, K_FOREVER);
 }
 
-/* Write uint16_t big endian value to an arbitrary offset in fragment. */
+/* Write u16_t big endian value to an arbitrary offset in fragment. */
 static inline struct net_buf *net_pkt_write_be16(struct net_pkt *pkt,
 						 struct net_buf *frag,
-						 uint16_t offset,
-						 uint16_t *pos,
-						 uint16_t data)
+						 u16_t offset,
+						 u16_t *pos,
+						 u16_t data)
 {
-	uint16_t value = htons(data);
+	u16_t value = htons(data);
 
-	return net_pkt_write(pkt, frag, offset, pos, sizeof(uint16_t),
-			     (uint8_t *)&value, K_FOREVER);
+	return net_pkt_write(pkt, frag, offset, pos, sizeof(u16_t),
+			     (u8_t *)&value, K_FOREVER);
 }
 
-/* Write uint32_t big endian value to an arbitrary offset in fragment. */
+/* Write u32_t big endian value to an arbitrary offset in fragment. */
 static inline struct net_buf *net_pkt_write_be32(struct net_pkt *pkt,
 						 struct net_buf *frag,
-						 uint16_t offset,
-						 uint16_t *pos,
-						 uint32_t data)
+						 u16_t offset,
+						 u16_t *pos,
+						 u32_t data)
 {
-	uint32_t value = htonl(data);
+	u32_t value = htonl(data);
 
-	return net_pkt_write(pkt, frag, offset, pos, sizeof(uint32_t),
-			     (uint8_t *)&value, K_FOREVER);
+	return net_pkt_write(pkt, frag, offset, pos, sizeof(u32_t),
+			     (u8_t *)&value, K_FOREVER);
 }
 
 /**
@@ -1183,45 +1183,45 @@ static inline struct net_buf *net_pkt_write_be32(struct net_pkt *pkt,
  * @return True on success, False otherwise.
  */
 bool net_pkt_insert(struct net_pkt *pkt, struct net_buf *frag,
-		    uint16_t offset, uint16_t len, uint8_t *data,
-		    int32_t timeout);
+		    u16_t offset, u16_t len, u8_t *data,
+		    s32_t timeout);
 
-/* Insert uint8_t data at an arbitrary offset in a series of fragments. */
+/* Insert u8_t data at an arbitrary offset in a series of fragments. */
 static inline bool net_pkt_insert_u8(struct net_pkt *pkt,
 				     struct net_buf *frag,
-				     uint16_t offset,
-				     uint8_t data)
+				     u16_t offset,
+				     u8_t data)
 {
-	return net_pkt_insert(pkt, frag, offset, sizeof(uint8_t), &data,
+	return net_pkt_insert(pkt, frag, offset, sizeof(u8_t), &data,
 			      K_FOREVER);
 }
 
-/* Insert uint16_t big endian value at an arbitrary offset in a series of
+/* Insert u16_t big endian value at an arbitrary offset in a series of
  * fragments.
  */
 static inline bool net_pkt_insert_be16(struct net_pkt *pkt,
 				       struct net_buf *frag,
-				       uint16_t offset,
-				       uint16_t data)
+				       u16_t offset,
+				       u16_t data)
 {
-	uint16_t value = htons(data);
+	u16_t value = htons(data);
 
-	return net_pkt_insert(pkt, frag, offset, sizeof(uint16_t),
-			      (uint8_t *)&value, K_FOREVER);
+	return net_pkt_insert(pkt, frag, offset, sizeof(u16_t),
+			      (u8_t *)&value, K_FOREVER);
 }
 
-/* Insert uint32_t big endian value at an arbitrary offset in a series of
+/* Insert u32_t big endian value at an arbitrary offset in a series of
  * fragments.
  */
 static inline bool net_pkt_insert_be32(struct net_pkt *pkt,
 				       struct net_buf *frag,
-				       uint16_t offset,
-				       uint32_t data)
+				       u16_t offset,
+				       u32_t data)
 {
-	uint32_t value = htonl(data);
+	u32_t value = htonl(data);
 
-	return net_pkt_insert(pkt, frag, offset, sizeof(uint32_t),
-			      (uint8_t *)&value, K_FOREVER);
+	return net_pkt_insert(pkt, frag, offset, sizeof(u32_t),
+			      (u8_t *)&value, K_FOREVER);
 }
 
 /**
@@ -1250,8 +1250,8 @@ static inline bool net_pkt_insert_be32(struct net_pkt *pkt,
  * @return 0 on success, <0 otherwise.
  */
 int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
-		  uint16_t len, struct net_buf **fragA,
-		  struct net_buf **fragB, int32_t timeout);
+		  u16_t len, struct net_buf **fragA,
+		  struct net_buf **fragB, s32_t timeout);
 
 /**
  * @brief Get information about pre-defined RX, TX and DATA pools.

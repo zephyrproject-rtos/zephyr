@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef uint32_t net_stats_t;
+typedef u32_t net_stats_t;
 
 struct net_stats_ip {
 	/** Number of received packets at the IP layer. */
@@ -179,16 +179,16 @@ struct net_stats_rpl_dao_ack {
 };
 
 struct net_stats_rpl {
-	uint16_t mem_overflows;
-	uint16_t local_repairs;
-	uint16_t global_repairs;
-	uint16_t malformed_msgs;
-	uint16_t resets;
-	uint16_t parent_switch;
-	uint16_t forward_errors;
-	uint16_t loop_errors;
-	uint16_t loop_warnings;
-	uint16_t root_repairs;
+	u16_t mem_overflows;
+	u16_t local_repairs;
+	u16_t global_repairs;
+	u16_t malformed_msgs;
+	u16_t resets;
+	u16_t parent_switch;
+	u16_t forward_errors;
+	u16_t loop_errors;
+	u16_t loop_warnings;
+	u16_t root_repairs;
 
 	struct net_stats_rpl_dis dis;
 	struct net_stats_rpl_dio dio;
@@ -208,8 +208,8 @@ struct net_stats_ipv6_mld {
 };
 
 struct net_stats_bytes {
-	uint32_t sent;
-	uint32_t received;
+	u32_t sent;
+	u32_t received;
 };
 
 struct net_stats {

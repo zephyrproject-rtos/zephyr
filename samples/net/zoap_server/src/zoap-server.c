@@ -52,7 +52,7 @@
 
 static struct net_context *context;
 
-static const uint8_t plain_text_format;
+static const u8_t plain_text_format;
 
 static struct zoap_observer observers[NUM_OBSERVERS];
 
@@ -75,9 +75,9 @@ static int test_del(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	uint8_t tkl, code, type;
-	const uint8_t *token;
-	uint16_t id;
+	u8_t tkl, code, type;
+	const u8_t *token;
+	u16_t id;
 	int r;
 
 	code = zoap_header_get_code(request);
@@ -123,9 +123,9 @@ static int test_put(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type, tkl;
-	const uint8_t *token;
-	uint16_t len, id;
+	u8_t *payload, code, type, tkl;
+	const u8_t *token;
+	u16_t len, id;
 	int r;
 
 	payload = zoap_packet_get_payload(request, &len);
@@ -181,9 +181,9 @@ static int test_post(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type, tkl;
-	const uint8_t *token;
-	uint16_t len, id;
+	u8_t *payload, code, type, tkl;
+	const u8_t *token;
+	u16_t len, id;
 	int r;
 
 	payload = zoap_packet_get_payload(request, &len);
@@ -244,9 +244,9 @@ static int location_query_post(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type, tkl;
-	const uint8_t *token;
-	uint16_t len, id;
+	u8_t *payload, code, type, tkl;
+	const u8_t *token;
+	u16_t len, id;
 	int r;
 
 	payload = zoap_packet_get_payload(request, &len);
@@ -303,10 +303,10 @@ static int piggyback_get(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	const uint8_t *token;
-	uint8_t *payload, code, type;
-	uint16_t len, id;
-	uint8_t tkl;
+	const u8_t *token;
+	u8_t *payload, code, type;
+	u16_t len, id;
+	u8_t tkl;
 	int r;
 
 	code = zoap_header_get_code(request);
@@ -377,9 +377,9 @@ static int query_get(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	uint8_t *payload, code, type, tkl;
-	const uint8_t *token;
-	uint16_t len, id;
+	u8_t *payload, code, type, tkl;
+	const u8_t *token;
+	u16_t len, id;
 	int i, r;
 
 	code = zoap_header_get_code(request);
@@ -466,9 +466,9 @@ static int separate_get(struct zoap_resource *resource,
 	struct net_buf *frag;
 	struct zoap_packet response;
 	struct zoap_pending *pending;
-	uint8_t *payload, code, type, tkl;
-	const uint8_t *token;
-	uint16_t len, id;
+	u8_t *payload, code, type, tkl;
+	const u8_t *token;
+	u16_t len, id;
 	int r;
 
 	code = zoap_header_get_code(request);
@@ -583,10 +583,10 @@ static int large_get(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	const uint8_t *token;
-	uint8_t *payload, code, type;
-	uint16_t len, id, size;
-	uint8_t tkl;
+	const u8_t *token;
+	u8_t *payload, code, type;
+	u16_t len, id, size;
+	u8_t tkl;
 	int r;
 
 	if (ctx.total_size == 0) {
@@ -673,10 +673,10 @@ static int large_update_put(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	const uint8_t *token;
-	uint8_t *payload, code, type;
-	uint16_t len, id;
-	uint8_t tkl;
+	const u8_t *token;
+	u8_t *payload, code, type;
+	u16_t len, id;
+	u8_t tkl;
 	int r;
 
 	if (ctx.total_size == 0) {
@@ -753,10 +753,10 @@ static int large_create_post(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	const uint8_t *token;
-	uint8_t *payload, code, type;
-	uint16_t len, id;
-	uint8_t tkl;
+	const u8_t *token;
+	u8_t *payload, code, type;
+	u16_t len, id;
+	u8_t tkl;
 	int r;
 
 	if (ctx.total_size == 0) {
@@ -827,17 +827,17 @@ static void update_counter(struct k_work *work)
 	k_delayed_work_submit(&observer_work, 5 * MSEC_PER_SEC);
 }
 
-static int send_notification_packet(const struct sockaddr *addr, uint16_t age,
-				    socklen_t addrlen, uint16_t id,
-				    const uint8_t *token, uint8_t tkl,
+static int send_notification_packet(const struct sockaddr *addr, u16_t age,
+				    socklen_t addrlen, u16_t id,
+				    const u8_t *token, u8_t tkl,
 				    bool is_response)
 {
 	struct zoap_packet response;
 	struct zoap_pending *pending;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint8_t *payload, type = ZOAP_TYPE_CON;
-	uint16_t len;
+	u8_t *payload, type = ZOAP_TYPE_CON;
+	u16_t len;
 	int r;
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
@@ -918,10 +918,10 @@ static int obs_get(struct zoap_resource *resource,
 		   const struct sockaddr *from)
 {
 	struct zoap_observer *observer;
-	const uint8_t *token;
-	uint8_t code, type;
-	uint16_t id;
-	uint8_t tkl;
+	const u8_t *token;
+	u8_t code, type;
+	u16_t id;
+	u8_t tkl;
 	bool observe = true;
 
 	if (!zoap_request_is_observe(request)) {
@@ -971,9 +971,9 @@ static int core_get(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	uint8_t *payload, tkl;
-	const uint8_t *token;
-	uint16_t len, id;
+	u8_t *payload, tkl;
+	const u8_t *token;
+	u16_t len, id;
 	int r;
 
 	id = zoap_header_get_id(request);

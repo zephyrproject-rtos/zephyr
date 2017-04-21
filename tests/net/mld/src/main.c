@@ -57,7 +57,7 @@ static struct k_sem wait_data;
 #define PEER_PORT 13856
 
 struct net_test_mld {
-	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	u8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -66,7 +66,7 @@ int net_test_dev_init(struct device *dev)
 	return 0;
 }
 
-static uint8_t *net_test_get_mac(struct device *dev)
+static u8_t *net_test_get_mac(struct device *dev)
 {
 	struct net_test_mld *context = dev->driver_data;
 
@@ -85,7 +85,7 @@ static uint8_t *net_test_get_mac(struct device *dev)
 
 static void net_test_iface_init(struct net_if *iface)
 {
-	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	u8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -133,7 +133,7 @@ NET_DEVICE_INIT(net_test_mld, "net_test_mld",
 		127);
 
 static void group_joined(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+			 u32_t nm_event, struct net_if *iface)
 {
 	is_group_joined = true;
 
@@ -141,7 +141,7 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 }
 
 static void group_left(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+			 u32_t nm_event, struct net_if *iface)
 {
 	is_group_left = true;
 
@@ -149,7 +149,7 @@ static void group_left(struct net_mgmt_event_callback *cb,
 }
 
 static struct mgmt_events {
-	uint32_t event;
+	u32_t event;
 	net_mgmt_event_handler_t handler;
 	struct net_mgmt_event_callback cb;
 } mgmt_events[] = {
@@ -288,7 +288,7 @@ static void send_query(struct net_if *iface)
 {
 	struct net_pkt *pkt;
 	struct in6_addr dst;
-	uint16_t pos;
+	u16_t pos;
 
 	/* Sent to all MLDv2-capable routers */
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
@@ -326,7 +326,7 @@ static void send_query(struct net_if *iface)
 	net_pkt_append_be16(pkt, 0); /* reserved field */
 
 	net_pkt_append(pkt, sizeof(struct in6_addr),
-		       (const uint8_t *)net_ipv6_unspecified_address(),
+		       (const u8_t *)net_ipv6_unspecified_address(),
 		       K_FOREVER); /* multicast address */
 
 	net_pkt_append_be16(pkt, 0); /* Resv, S, QRV and QQIC */

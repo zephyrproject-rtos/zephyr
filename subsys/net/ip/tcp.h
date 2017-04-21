@@ -111,36 +111,36 @@ struct net_tcp {
 	sys_slist_t sent_list;
 
 	/** Max acknowledgment. */
-	uint32_t recv_max_ack;
+	u32_t recv_max_ack;
 
 	/** Current sequence number. */
-	uint32_t send_seq;
+	u32_t send_seq;
 
 	/** Acknowledgment number to send in next packet. */
-	uint32_t send_ack;
+	u32_t send_ack;
 
 	/** Last ACK value sent */
-	uint32_t sent_ack;
+	u32_t sent_ack;
 
 	/** Current retransmit period */
-	uint32_t retry_timeout_shift : 5;
+	u32_t retry_timeout_shift : 5;
 	/** Flags for the TCP */
-	uint32_t flags : 8;
+	u32_t flags : 8;
 	/** Current TCP state */
-	uint32_t state : 4;
+	u32_t state : 4;
 	/* A FIN packet has been queued for transmission */
-	uint32_t fin_queued : 1;
+	u32_t fin_queued : 1;
 	/* An outbound FIN packet has been sent */
-	uint32_t fin_sent : 1;
+	u32_t fin_sent : 1;
 	/* An inbound FIN packet has been received */
-	uint32_t fin_rcvd : 1;
+	u32_t fin_rcvd : 1;
 	/* Tells if ack timer has been already cancelled. It might happen
 	 * that the timer is executed even if it is cancelled, this is because
 	 * of various timing issues when timer is scheduled to run.
 	 */
-	uint32_t ack_timer_cancelled : 1;
-	/** Remaining bits in this uint32_t */
-	uint32_t _padding : 11;
+	u32_t ack_timer_cancelled : 1;
+	/** Remaining bits in this u32_t */
+	u32_t _padding : 11;
 
 	/** Accept callback to be called when the connection has been
 	 * established.
@@ -176,8 +176,8 @@ static inline bool net_tcp_is_used(struct net_tcp *tcp)
  */
 static inline int net_tcp_register(const struct sockaddr *remote_addr,
 				   const struct sockaddr *local_addr,
-				   uint16_t remote_port,
-				   uint16_t local_port,
+				   u16_t remote_port,
+				   u16_t local_port,
 				   net_conn_cb_t cb,
 				   void *user_data,
 				   struct net_conn_handle **handle)
@@ -243,7 +243,7 @@ int net_tcp_release(struct net_tcp *tcp);
  *
  * @return 0 if ok, < 0 if error
  */
-int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
+int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
@@ -317,7 +317,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt);
  * @param cts Context
  * @param seq Received ACK sequence number
  */
-void net_tcp_ack_received(struct net_context *ctx, uint32_t ack);
+void net_tcp_ack_received(struct net_context *ctx, u32_t ack);
 
 /**
  * @brief Calculates and returns the MSS for a given TCP context
@@ -326,7 +326,7 @@ void net_tcp_ack_received(struct net_context *ctx, uint32_t ack);
  *
  * @return Maximum Segment Size
  */
-uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
+u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
 
 /**
  * @brief Obtains the state for a TCP context

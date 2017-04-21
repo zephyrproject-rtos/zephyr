@@ -91,8 +91,8 @@
 		{ { { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 		      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa } } }
 
-uint8_t src_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb };
-uint8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
+u8_t src_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb };
+u8_t dst_mac[8] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbb, 0xaa };
 
 /* Source and Destination addresses are contect related addresses. */
 #if defined(CONFIG_NET_6LO_CONTEXT)
@@ -217,10 +217,10 @@ NET_DEVICE_INIT(net_6lo_test, "net_6lo_test",
 static bool compare_data(struct net_pkt *pkt, struct net_6lo_data *data)
 {
 	struct net_buf *frag;
-	uint8_t bytes;
-	uint8_t compare;
-	uint8_t pos = 0;
-	uint8_t offset = 0;
+	u8_t bytes;
+	u8_t compare;
+	u8_t pos = 0;
+	u8_t offset = 0;
 	int remaining = data->small ? SIZE_OF_SMALL_DATA : SIZE_OF_LARGE_DATA;
 
 	if (data->nh_udp) {
@@ -258,17 +258,17 @@ static bool compare_data(struct net_pkt *pkt, struct net_6lo_data *data)
 	frag = pkt->frags;
 
 	if (data->nh_udp) {
-		if (memcmp(frag->data, (uint8_t *)data, NET_IPV6UDPH_LEN)) {
+		if (memcmp(frag->data, (u8_t *)data, NET_IPV6UDPH_LEN)) {
 			TC_PRINT("mismatch headers\n");
 			return false;
 		}
 	} else	if (data->nh_icmp) {
-		if (memcmp(frag->data, (uint8_t *)data, NET_IPV6ICMPH_LEN)) {
+		if (memcmp(frag->data, (u8_t *)data, NET_IPV6ICMPH_LEN)) {
 			TC_PRINT("mismatch headers\n");
 			return false;
 		}
 	} else {
-		if (memcmp(frag->data, (uint8_t *)data, NET_IPV6H_LEN)) {
+		if (memcmp(frag->data, (u8_t *)data, NET_IPV6H_LEN)) {
 			TC_PRINT("mismatch headers\n");
 			return false;
 		}
@@ -305,8 +305,8 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint8_t bytes, pos;
-	uint16_t len;
+	u8_t bytes, pos;
+	u16_t len;
 	int remaining;
 
 	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
@@ -330,14 +330,14 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	}
 
 	if (data->nh_udp) {
-		memcpy(frag->data, (uint8_t *) data, NET_IPV6UDPH_LEN);
+		memcpy(frag->data, (u8_t *) data, NET_IPV6UDPH_LEN);
 		net_buf_add(frag, NET_IPV6UDPH_LEN);
 	} else if (data->nh_icmp) {
-		memcpy(frag->data, (uint8_t *) data, NET_IPV6ICMPH_LEN);
+		memcpy(frag->data, (u8_t *) data, NET_IPV6ICMPH_LEN);
 		net_buf_add(frag, NET_IPV6ICMPH_LEN);
 
 	} else {
-		memcpy(frag->data, (uint8_t *) data, NET_IPV6H_LEN);
+		memcpy(frag->data, (u8_t *) data, NET_IPV6H_LEN);
 		net_buf_add(frag, NET_IPV6H_LEN);
 	}
 
@@ -355,20 +355,20 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	/* length is not set in net_6lo_data data pointer, calculate and set
 	 * in ipv6, udp and in data pointer too (it's required in comparison) */
 	frag->data[4] = len >> 8;
-	frag->data[5] = (uint8_t) len;
+	frag->data[5] = (u8_t) len;
 
 	data->ipv6.len[0] = len >> 8;
-	data->ipv6.len[1] = (uint8_t) len;
+	data->ipv6.len[1] = (u8_t) len;
 
 	if (data->nh_udp) {
 		frag->data[44] = len >> 8;
-		frag->data[45] = (uint8_t) len;
+		frag->data[45] = (u8_t) len;
 
 		data->nh.udp.len = htons(len);
 	}
 
 	while (remaining > 0) {
-		uint8_t copy;
+		u8_t copy;
 
 		bytes = net_buf_tailroom(frag);
 		copy = remaining > bytes ? bytes : remaining;

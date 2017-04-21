@@ -16,7 +16,7 @@
 #define HTTP_CONTENT_TYPE  "Content-Type: "
 #define HTTP_CONT_LEN_SIZE 64
 
-int http_request(struct net_context *net_ctx, int32_t timeout,
+int http_request(struct net_context *net_ctx, s32_t timeout,
 		 struct http_client_request *req)
 {
 	struct net_pkt *tx;
@@ -27,36 +27,36 @@ int http_request(struct net_context *net_ctx, int32_t timeout,
 		return -ENOMEM;
 	}
 
-	if (!net_pkt_append(tx, strlen(req->method), (uint8_t *)req->method,
+	if (!net_pkt_append(tx, strlen(req->method), (u8_t *)req->method,
 			    timeout)) {
 		goto lb_exit;
 	}
 
-	if (!net_pkt_append(tx, strlen(req->url), (uint8_t *)req->url,
+	if (!net_pkt_append(tx, strlen(req->url), (u8_t *)req->url,
 			    timeout)) {
 		goto lb_exit;
 	}
 
 	if (!net_pkt_append(tx, strlen(req->protocol),
-			    (uint8_t *)req->protocol, timeout)) {
+			    (u8_t *)req->protocol, timeout)) {
 		goto lb_exit;
 	}
 
 	if (!net_pkt_append(tx, strlen(req->header_fields),
-			    (uint8_t *)req->header_fields,
+			    (u8_t *)req->header_fields,
 			    timeout)) {
 		goto lb_exit;
 	}
 
 	if (req->content_type_value) {
 		if (!net_pkt_append(tx, strlen(HTTP_CONTENT_TYPE),
-				    (uint8_t *)HTTP_CONTENT_TYPE,
+				    (u8_t *)HTTP_CONTENT_TYPE,
 				    timeout)) {
 			goto lb_exit;
 		}
 
 		if (!net_pkt_append(tx, strlen(req->content_type_value),
-				    (uint8_t *)req->content_type_value,
+				    (u8_t *)req->content_type_value,
 				    timeout)) {
 			goto lb_exit;
 		}
@@ -73,14 +73,14 @@ int http_request(struct net_context *net_ctx, int32_t timeout,
 			goto lb_exit;
 		}
 
-		if (!net_pkt_append(tx, rc, (uint8_t *)content_len_str,
+		if (!net_pkt_append(tx, rc, (u8_t *)content_len_str,
 				    timeout)) {
 			rc = -ENOMEM;
 			goto lb_exit;
 		}
 
 		if (!net_pkt_append(tx, req->payload_size,
-				    (uint8_t *)req->payload,
+				    (u8_t *)req->payload,
 				    timeout)) {
 			rc = -ENOMEM;
 			goto lb_exit;
@@ -88,7 +88,7 @@ int http_request(struct net_context *net_ctx, int32_t timeout,
 
 	} else {
 		if (!net_pkt_append(tx, strlen(HTTP_EOF),
-				    (uint8_t *)HTTP_EOF,
+				    (u8_t *)HTTP_EOF,
 				    timeout)) {
 			goto lb_exit;
 		}
@@ -102,7 +102,7 @@ lb_exit:
 	return rc;
 }
 
-int http_request_get(struct net_context *net_ctx, int32_t timeout, char *url,
+int http_request_get(struct net_context *net_ctx, s32_t timeout, char *url,
 		     char *header_fields)
 {
 	struct http_client_request req = {
@@ -114,7 +114,7 @@ int http_request_get(struct net_context *net_ctx, int32_t timeout, char *url,
 	return http_request(net_ctx, timeout, &req);
 }
 
-int http_request_head(struct net_context *net_ctx, int32_t timeout, char *url,
+int http_request_head(struct net_context *net_ctx, s32_t timeout, char *url,
 		      char *header_fields)
 {
 	struct http_client_request req = {
@@ -126,7 +126,7 @@ int http_request_head(struct net_context *net_ctx, int32_t timeout, char *url,
 	return http_request(net_ctx, timeout, &req);
 }
 
-int http_request_options(struct net_context *net_ctx, int32_t timeout,
+int http_request_options(struct net_context *net_ctx, s32_t timeout,
 			 char *url, char *header_fields)
 {
 	struct http_client_request req = {
@@ -138,7 +138,7 @@ int http_request_options(struct net_context *net_ctx, int32_t timeout,
 	return http_request(net_ctx, timeout, &req);
 }
 
-int http_request_post(struct net_context *net_ctx, int32_t timeout, char *url,
+int http_request_post(struct net_context *net_ctx, s32_t timeout, char *url,
 		      char *header_fields, char *content_type_value,
 		      char *payload)
 {

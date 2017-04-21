@@ -29,10 +29,10 @@
 
 /* Prints the received HTTP header fields as an HTML list */
 static void print_http_headers(struct http_server_ctx *ctx,
-			       char *str, uint16_t size)
+			       char *str, u16_t size)
 {
 	struct http_parser *parser = &ctx->parser;
-	uint16_t offset = 0;
+	u16_t offset = 0;
 
 	offset = snprintf(str, size,
 			  HTML_HEADER
@@ -41,7 +41,7 @@ static void print_http_headers(struct http_server_ctx *ctx,
 		return;
 	}
 
-	for (uint8_t i = 0; i < ctx->field_values_ctr; i++) {
+	for (u8_t i = 0; i < ctx->field_values_ctr; i++) {
 		struct http_field_value *kv = &ctx->field_values[i];
 
 		offset += snprintf(str + offset, size - offset,

@@ -14,19 +14,19 @@
 
 #include "shell_utils.h"
 
-const uint32_t TIME_US[] = { 60 * 1000 * 1000, 1000 * 1000, 1000, 0 };
+const u32_t TIME_US[] = { 60 * 1000 * 1000, 1000 * 1000, 1000, 0 };
 const char *TIME_US_UNIT[] = { "m", "s", "ms", "us" };
-const uint32_t KBPS[] = { 1024, 0 };
+const u32_t KBPS[] = { 1024, 0 };
 const char *KBPS_UNIT[] = { "Mbps", "Kbps" };
-const uint32_t K[] = { 1024 * 1024, 1024, 0 };
+const u32_t K[] = { 1024 * 1024, 1024, 0 };
 const char *K_UNIT[] = { "M", "K", "" };
 
-void print_number(uint32_t value, const uint32_t *divisor,
+void print_number(u32_t value, const u32_t *divisor,
 	const char **units)
 {
 	const char **unit;
-	const uint32_t *div;
-	uint32_t dec, radix;
+	const u32_t *div;
+	u32_t dec, radix;
 
 	unit = units;
 	div = divisor;
@@ -45,11 +45,11 @@ void print_number(uint32_t value, const uint32_t *divisor,
 	}
 }
 
-long parse_number(const char *string, const uint32_t *divisor,
+long parse_number(const char *string, const u32_t *divisor,
 		const char **units)
 {
 	const char **unit;
-	const uint32_t *div;
+	const u32_t *div;
 	char *suffix;
 	long dec;
 	int cmp;

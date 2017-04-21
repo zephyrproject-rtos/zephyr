@@ -118,7 +118,7 @@ static inline struct net_nbr *get_nbr_from_data(struct net_ipv6_nbr_data *data)
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 
-		if (nbr->data == (uint8_t *)data) {
+		if (nbr->data == (u8_t *)data) {
 			return nbr;
 		}
 	}
@@ -194,7 +194,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 	return NULL;
 }
 
-struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(uint8_t idx)
+struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(u8_t idx)
 {
 	struct net_nbr *nbr = get_nbr(idx);
 
@@ -334,7 +334,7 @@ static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
 		out);
 }
 
-static inline void dbg_update_neighbor_lladdr_raw(uint8_t *new_lladdr,
+static inline void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
 				struct net_linkaddr_storage *old_lladdr,
 				struct in6_addr *addr)
 {
@@ -471,7 +471,7 @@ void net_neighbor_table_clear(struct net_nbr_table *table)
 }
 
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
-					      uint8_t idx)
+					      u8_t idx)
 {
 	int i;
 
@@ -504,10 +504,10 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt)
 	struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
 	struct net_buf *frag = pkt->frags;
 	int pos = 6; /* Initial value if no extension fragments were found */
-	uint16_t offset;
-	uint8_t next_hdr;
-	uint8_t length;
-	uint8_t next;
+	u16_t offset;
+	u8_t next_hdr;
+	u8_t length;
+	u8_t next;
 
 	offset = sizeof(struct net_ipv6_hdr);
 	next = hdr->nexthdr;
@@ -573,7 +573,7 @@ struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
 				    const struct in6_addr *src,
 				    const struct in6_addr *dst,
 				    struct net_if *iface,
-				    uint8_t next_header)
+				    u8_t next_header)
 {
 	struct net_buf *header;
 
@@ -632,7 +632,7 @@ struct net_pkt *net_ipv6_create(struct net_context *context,
 				   net_context_get_ip_proto(context));
 }
 
-int net_ipv6_finalize_raw(struct net_pkt *pkt, uint8_t next_header)
+int net_ipv6_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 {
 	/* Set the length of the IPv6 header */
 	size_t total_len;
@@ -718,7 +718,7 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 	/* We need to go through all the fragments and adjust the
 	 * fragment data size.
 	 */
-	uint16_t reserve, room_len, copy_len, pos;
+	u16_t reserve, room_len, copy_len, pos;
 	struct net_buf *orig_frag, *frag;
 
 	/* No need to do anything if we are forwarding the packet
@@ -968,7 +968,7 @@ struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 	return nbr_lookup(&net_neighbor.table, iface, addr);
 }
 
-struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx)
+struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
 {
 	int i;
 
@@ -993,7 +993,7 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx)
 	return NULL;
 }
 
-static inline uint8_t get_llao_len(struct net_if *iface)
+static inline u8_t get_llao_len(struct net_if *iface)
 {
 	if (iface->link_addr.len == 6) {
 		return 8;
@@ -1009,7 +1009,7 @@ static inline uint8_t get_llao_len(struct net_if *iface)
 }
 
 static inline void set_llao(struct net_linkaddr *lladdr,
-			    uint8_t *llao, uint8_t llao_len, uint8_t type)
+			    u8_t *llao, u8_t llao_len, u8_t type)
 {
 	llao[NET_ICMPV6_OPT_TYPE_OFFSET] = type;
 	llao[NET_ICMPV6_OPT_LEN_OFFSET] = llao_len >> 3;
@@ -1020,8 +1020,8 @@ static inline void set_llao(struct net_linkaddr *lladdr,
 	       llao_len - lladdr->len - 2);
 }
 
-static void setup_headers(struct net_pkt *pkt, uint8_t nd6_len,
-			  uint8_t icmp_type)
+static void setup_headers(struct net_pkt *pkt, u8_t nd6_len,
+			  u8_t icmp_type)
 {
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
@@ -1041,7 +1041,7 @@ static inline void handle_ns_neighbor(struct net_pkt *pkt,
 {
 	struct net_linkaddr lladdr = {
 		.len = 8 * hdr->len - 2,
-		.addr = (uint8_t *)hdr + 2,
+		.addr = (u8_t *)hdr + 2,
 	};
 
 	/**
@@ -1058,11 +1058,11 @@ static inline void handle_ns_neighbor(struct net_pkt *pkt,
 
 int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 		     struct in6_addr *dst, struct in6_addr *tgt,
-		     uint8_t flags)
+		     u8_t flags)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint8_t llao_len;
+	u8_t llao_len;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				      K_FOREVER);
@@ -1127,10 +1127,10 @@ drop:
 
 static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 {
-	uint16_t total_len = net_pkt_get_len(pkt);
+	u16_t total_len = net_pkt_get_len(pkt);
 	struct net_icmpv6_nd_opt_hdr *hdr;
 	struct net_if_addr *ifaddr;
-	uint8_t flags = 0, prev_opt_len = 0;
+	u8_t flags = 0, prev_opt_len = 0;
 	int ret;
 	size_t left_len;
 
@@ -1161,7 +1161,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 	/* The parsing gets tricky if the ND struct is split
 	 * between two fragments. FIXME later.
 	 */
-	if (pkt->frags->len < ((uint8_t *)hdr - pkt->frags->data)) {
+	if (pkt->frags->len < ((u8_t *)hdr - pkt->frags->data)) {
 		NET_DBG("NS struct split between fragments");
 		goto drop;
 	}
@@ -1387,7 +1387,7 @@ static void nd_reachable_timeout(struct k_work *work)
 
 void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 {
-	uint32_t time;
+	u32_t time;
 
 	time = net_if_ipv6_get_reachable_time(iface);
 
@@ -1403,7 +1403,7 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static inline bool handle_na_neighbor(struct net_pkt *pkt,
 				      struct net_icmpv6_nd_opt_hdr *hdr,
-				      uint8_t *tllao)
+				      u8_t *tllao)
 {
 	bool lladdr_changed = false;
 	struct net_nbr *nbr;
@@ -1572,11 +1572,11 @@ send_pending:
 
 static enum net_verdict handle_na_input(struct net_pkt *pkt)
 {
-	uint16_t total_len = net_pkt_get_len(pkt);
+	u16_t total_len = net_pkt_get_len(pkt);
 	struct net_icmpv6_nd_opt_hdr *hdr;
 	struct net_if_addr *ifaddr;
-	uint8_t *tllao = NULL;
-	uint8_t prev_opt_len = 0;
+	u8_t *tllao = NULL;
+	u8_t prev_opt_len = 0;
 	size_t left_len;
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
@@ -1604,7 +1604,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 	/* The parsing gets tricky if the ND struct is split
 	 * between two fragments. FIXME later.
 	 */
-	if (pkt->frags->len < ((uint8_t *)hdr - pkt->frags->data)) {
+	if (pkt->frags->len < ((u8_t *)hdr - pkt->frags->data)) {
 		NET_DBG("NA struct split between fragments");
 		goto drop;
 	}
@@ -1621,7 +1621,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 
 		switch (hdr->type) {
 		case NET_ICMPV6_ND_OPT_TLLAO:
-			tllao = (uint8_t *)hdr;
+			tllao = (u8_t *)hdr;
 			break;
 
 		default:
@@ -1686,7 +1686,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_nbr *nbr;
-	uint8_t llao_len;
+	u8_t llao_len;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				      K_FOREVER);
@@ -1828,7 +1828,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	bool unspec_src;
-	uint8_t llao_len = 0;
+	u8_t llao_len = 0;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				      K_FOREVER);
@@ -1903,14 +1903,14 @@ int net_ipv6_start_rs(struct net_if *iface)
 
 static inline struct net_buf *handle_ra_neighbor(struct net_pkt *pkt,
 						 struct net_buf *frag,
-						 uint8_t len,
-						 uint16_t offset, uint16_t *pos,
+						 u8_t len,
+						 u16_t offset, u16_t *pos,
 						 struct net_nbr **nbr)
 
 {
 	struct net_linkaddr lladdr;
 	struct net_linkaddr_storage llstorage;
-	uint8_t padding;
+	u8_t padding;
 
 	if (!nbr) {
 		return NULL;
@@ -2011,7 +2011,7 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 
 #define TWO_HOURS (2 * 60 * 60)
 
-static inline uint32_t remaining(struct k_delayed_work *work)
+static inline u32_t remaining(struct k_delayed_work *work)
 {
 	return k_delayed_work_remaining_get(work) / MSEC_PER_SEC;
 }
@@ -2073,8 +2073,8 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 
 static inline struct net_buf *handle_ra_prefix(struct net_pkt *pkt,
 					       struct net_buf *frag,
-					       uint8_t len,
-					       uint16_t offset, uint16_t *pos)
+					       u8_t len,
+					       u16_t offset, u16_t *pos)
 {
 	struct net_icmpv6_nd_opt_prefix_info prefix_info;
 
@@ -2115,8 +2115,8 @@ static inline struct net_buf *handle_ra_prefix(struct net_pkt *pkt,
 /* 6lowpan Context Option RFC 6775, 4.2 */
 static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
 					    struct net_buf *frag,
-					    uint8_t len,
-					    uint16_t offset, uint16_t *pos)
+					    u8_t len,
+					    u16_t offset, u16_t *pos)
 {
 	struct net_icmpv6_nd_opt_6co context;
 
@@ -2179,18 +2179,18 @@ static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
 
 static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 {
-	uint16_t total_len = net_pkt_get_len(pkt);
+	u16_t total_len = net_pkt_get_len(pkt);
 	struct net_nbr *nbr = NULL;
 	struct net_if_router *router;
 	struct net_buf *frag;
-	uint16_t router_lifetime;
-	uint32_t reachable_time;
-	uint32_t retrans_timer;
-	uint8_t hop_limit;
-	uint16_t offset;
-	uint8_t length;
-	uint8_t type;
-	uint32_t mtu;
+	u16_t router_lifetime;
+	u32_t reachable_time;
+	u32_t retrans_timer;
+	u8_t hop_limit;
+	u16_t offset;
+	u8_t length;
+	u8_t type;
+	u32_t mtu;
 
 	dbg_addr_recv("Router Advertisement",
 		      &NET_IPV6_HDR(pkt)->src,
@@ -2382,8 +2382,8 @@ drop:
 
 static struct net_pkt *create_mldv2(struct net_pkt *pkt,
 				    const struct in6_addr *addr,
-				    uint16_t record_type,
-				    uint8_t num_sources)
+				    u16_t record_type,
+				    u8_t num_sources)
 {
 	net_pkt_append_u8(pkt, record_type);
 	net_pkt_append_u8(pkt, 0); /* aux data len */
@@ -2405,7 +2405,7 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 {
 	struct net_pkt *pkt;
 	struct in6_addr dst;
-	uint16_t pos;
+	u16_t pos;
 	int ret;
 
 	/* Sent to all MLDv2-capable routers */
@@ -2480,7 +2480,7 @@ drop:
 }
 
 static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
-		      uint8_t mode)
+		      u8_t mode)
 {
 	struct net_pkt *pkt;
 	int ret;
@@ -2570,7 +2570,7 @@ static void send_mld_report(struct net_if *iface)
 	}
 
 	if (count > 0) {
-		uint16_t pos;
+		u16_t pos;
 
 		/* Write back the record count */
 		net_pkt_write_u8(pkt, pkt->frags, 0, &pos, count);
@@ -2585,10 +2585,10 @@ static void send_mld_report(struct net_if *iface)
 
 static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 {
-	uint16_t total_len = net_pkt_get_len(pkt);
+	u16_t total_len = net_pkt_get_len(pkt);
 	struct in6_addr mcast;
-	uint16_t max_rsp_code, num_src, pkt_len;
-	uint16_t offset, pos;
+	u16_t max_rsp_code, num_src, pkt_len;
+	u16_t offset, pos;
 	struct net_buf *frag;
 
 	dbg_addr_recv("Multicast Listener Query",
@@ -2687,7 +2687,7 @@ reassembly[CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT] = {
 	},
 };
 
-static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
+static struct net_ipv6_reassembly *reassembly_get(u32_t id,
 						  struct in6_addr *src,
 						  struct in6_addr *dst)
 {
@@ -2726,14 +2726,14 @@ static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 	return &reassembly[avail];
 }
 
-static bool reassembly_cancel(uint32_t id,
+static bool reassembly_cancel(u32_t id,
 			      struct in6_addr *src,
 			      struct in6_addr *dst)
 {
 	int i, j;
 
 	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
-		int32_t remaining;
+		s32_t remaining;
 
 		if (!k_work_pending(&reassembly[i].timer.work) ||
 		    reassembly[i].id != id ||
@@ -2801,9 +2801,9 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 {
 	struct net_pkt *pkt;
 	struct net_buf *last;
-	uint8_t next_hdr;
+	u8_t next_hdr;
 	int i, len;
-	uint16_t pos;
+	u16_t pos;
 
 	k_delayed_work_cancel(&reass->timer);
 
@@ -2925,7 +2925,7 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
  */
 static bool fragment_verify(struct net_ipv6_reassembly *reass)
 {
-	uint16_t offset;
+	u16_t offset;
 	int i, prev_len;
 
 	prev_len = net_pkt_get_len(reass->pkt[0]);
@@ -2957,15 +2957,15 @@ static bool fragment_verify(struct net_ipv6_reassembly *reass)
 static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 					    struct net_buf *frag,
 					    int total_len,
-					    uint16_t buf_offset)
+					    u16_t buf_offset)
 {
 	struct net_ipv6_reassembly *reass;
-	uint32_t id;
-	uint16_t loc;
-	uint16_t offset;
-	uint16_t flag;
-	uint8_t nexthdr;
-	uint8_t more;
+	u32_t id;
+	u16_t loc;
+	u16_t offset;
+	u16_t flag;
+	u8_t nexthdr;
+	u8_t more;
 	bool found;
 	int i;
 
@@ -3090,16 +3090,16 @@ static int send_ipv6_fragment(struct net_if *iface,
 			      struct net_buf *orig,
 			      struct net_buf *prev,
 			      struct net_buf *frag,
-			      uint16_t ipv6_len,
-			      uint16_t offset,
+			      u16_t ipv6_len,
+			      u16_t offset,
 			      int len,
 			      bool final)
 {
 	struct net_pkt *ipv6;
 	struct net_buf *rest = NULL, *end = NULL, *orig_copy = NULL;
 	struct net_ipv6_frag_hdr hdr;
-	uint16_t pos, ext_len;
-	uint8_t prev_hdr;
+	u16_t pos, ext_len;
+	u8_t prev_hdr;
 	int ret;
 
 	/* Prepare the pkt so that the IPv6 packet will be sent properly
@@ -3196,7 +3196,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 			 NET_IPV6_NEXTHDR_FRAG);
 
 	/* Then just add the fragmentation header. */
-	ret = net_pkt_append(ipv6, sizeof(hdr), (uint8_t *)&hdr,
+	ret = net_pkt_append(ipv6, sizeof(hdr), (u8_t *)&hdr,
 			     FRAG_BUF_WAIT);
 	if (!ret) {
 		ret = -ENOMEM;
@@ -3247,15 +3247,15 @@ free_pkts:
 }
 
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
-				 uint16_t pkt_len)
+				 u16_t pkt_len)
 {
 	struct net_buf *frag = pkt->frags;
 	struct net_buf *prev = NULL;
 	struct net_buf *orig_ipv6, *rest;
 	int curr_len = 0;
 	int status = false;
-	uint16_t ipv6_len = 0, offset = 0;
-	uint32_t id = sys_rand32_get();
+	u16_t ipv6_len = 0, offset = 0;
+	u32_t id = sys_rand32_get();
 	int ret;
 
 	/* Split the first fragment that contains the IPv6 header into
@@ -3341,8 +3341,8 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_pkt *pkt,
 }
 
 static inline struct net_pkt *check_unknown_option(struct net_pkt *pkt,
-						   uint8_t opt_type,
-						   uint16_t length)
+						   u8_t opt_type,
+						   u16_t length)
 {
 	/* RFC 2460 chapter 4.2 tells how to handle the unknown
 	 * options by the two highest order bits of the option:
@@ -3373,7 +3373,7 @@ static inline struct net_pkt *check_unknown_option(struct net_pkt *pkt,
 	case 0x80:
 		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
 				      NET_ICMPV6_PARAM_PROB_OPTION,
-				      (uint32_t)length);
+				      (u32_t)length);
 		return NULL;
 	}
 
@@ -3383,13 +3383,13 @@ static inline struct net_pkt *check_unknown_option(struct net_pkt *pkt,
 static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 						     struct net_buf *frag,
 						     int total_len,
-						     uint16_t len,
-						     uint16_t offset,
-						     uint16_t *pos,
+						     u16_t len,
+						     u16_t offset,
+						     u16_t *pos,
 						     enum net_verdict *verdict)
 {
-	uint8_t opt_type, opt_len;
-	uint16_t length = 0, loc;
+	u8_t opt_type, opt_len;
+	u16_t length = 0, loc;
 #if defined(CONFIG_NET_RPL)
 	bool result;
 #endif
@@ -3479,7 +3479,7 @@ drop:
 	return NULL;
 }
 
-static inline bool is_upper_layer_protocol_header(uint8_t proto)
+static inline bool is_upper_layer_protocol_header(u8_t proto)
 {
 	return (proto == IPPROTO_ICMPV6 || proto == IPPROTO_UDP ||
 		proto == IPPROTO_TCP);
@@ -3491,11 +3491,11 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	int real_len = net_pkt_get_len(pkt);
 	int pkt_len = (hdr->len[0] << 8) + hdr->len[1] + sizeof(*hdr);
 	struct net_buf *frag;
-	uint8_t start_of_ext, prev_hdr;
-	uint8_t next, next_hdr, length;
-	uint8_t first_option;
-	uint16_t offset, total_len = 0;
-	uint8_t ext_bitmap;
+	u8_t start_of_ext, prev_hdr;
+	u8_t next, next_hdr, length;
+	u8_t first_option;
+	u16_t offset, total_len = 0;
+	u8_t ext_bitmap;
 
 	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d pkt len %d", pkt_len, real_len);

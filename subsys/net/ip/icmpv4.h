@@ -26,8 +26,8 @@
 #define NET_ICMPV4_DST_UNREACH_NO_PORT   3 /* Port unreachable */
 
 struct net_icmpv4_echo_req {
-	uint16_t identifier;
-	uint16_t sequence;
+	u16_t identifier;
+	u16_t sequence;
 } __packed;
 
 #define NET_ICMPV4_ECHO_REQ(pkt)					\
@@ -38,8 +38,8 @@ typedef enum net_verdict (*icmpv4_callback_handler_t)(struct net_pkt *pkt);
 
 struct net_icmpv4_handler {
 	sys_snode_t node;
-	uint8_t type;
-	uint8_t code;
+	u8_t type;
+	u8_t code;
 	icmpv4_callback_handler_t handler;
 };
 
@@ -50,7 +50,7 @@ struct net_icmpv4_handler {
  * @param code Code of the type of the error message.
  * @return Return 0 if the sending succeed, <0 otherwise.
  */
-int net_icmpv4_send_error(struct net_pkt *pkt, uint8_t type, uint8_t code);
+int net_icmpv4_send_error(struct net_pkt *pkt, u8_t type, u8_t code);
 
 /**
  * @brief Send ICMPv4 echo request message.
@@ -66,15 +66,15 @@ int net_icmpv4_send_error(struct net_pkt *pkt, uint8_t type, uint8_t code);
  */
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
-				 uint16_t identifier,
-				 uint16_t sequence);
+				 u16_t identifier,
+				 u16_t sequence);
 
 void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
 
 void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
 
 enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
-				  uint8_t type, uint8_t code);
+				  u8_t type, u8_t code);
 
 #if defined(CONFIG_NET_IPV4)
 void net_icmpv4_init(void);

@@ -24,27 +24,27 @@
 #define FRAG_COUNT 7
 
 struct ipv6_hdr {
-	uint8_t vtc;
-	uint8_t tcflow;
-	uint16_t flow;
-	uint8_t len[2];
-	uint8_t nexthdr;
-	uint8_t hop_limit;
+	u8_t vtc;
+	u8_t tcflow;
+	u16_t flow;
+	u8_t len[2];
+	u8_t nexthdr;
+	u8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
 } __packed;
 
 struct udp_hdr {
-	uint16_t src_port;
-	uint16_t dst_port;
-	uint16_t len;
-	uint16_t chksum;
+	u16_t src_port;
+	u16_t dst_port;
+	u16_t len;
+	u16_t chksum;
 } __packed;
 
 struct icmp_hdr {
-	uint8_t type;
-	uint8_t code;
-	uint16_t chksum;
+	u8_t type;
+	u8_t code;
+	u16_t chksum;
 } __packed;
 
 static const char example_data[] =
@@ -286,7 +286,7 @@ static const char test_data[] = { '0', '1', '2', '3', '4',
 				  '5', '6', '7' };
 
 #if HEXDUMP
-static void hexdump(const char *str, const uint8_t *packet, size_t length)
+static void hexdump(const char *str, const u8_t *packet, size_t length)
 {
 	int n = 0;
 
@@ -348,19 +348,19 @@ static char test_rw_long[] =
 static int test_pkt_read_append(void)
 {
 	int remaining = strlen(sample_data);
-	uint8_t verify_rw_short[sizeof(test_rw_short)];
-	uint8_t verify_rw_long[sizeof(test_rw_long)];
+	u8_t verify_rw_short[sizeof(test_rw_short)];
+	u8_t verify_rw_long[sizeof(test_rw_long)];
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_buf *tfrag;
 	struct ipv6_hdr *ipv6;
 	struct udp_hdr *udp;
-	uint8_t data[10];
+	u8_t data[10];
 	int pos = 0;
 	int bytes;
-	uint16_t off;
-	uint16_t tpos;
-	uint16_t fail_pos;
+	u16_t off;
+	u16_t tpos;
+	u16_t fail_pos;
 
 	/* Example of multi fragment read, append and skip APS's */
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
@@ -508,27 +508,27 @@ static int test_pkt_read_append(void)
 	tfrag = net_buf_frag_last(pkt->frags);
 	off = tfrag->len;
 
-	if (!net_pkt_append(pkt, (uint16_t)sizeof(test_rw_short),
+	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_short),
 			    test_rw_short, K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_pkt_append(pkt, (uint16_t)sizeof(test_rw_short),
+	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_short),
 			    test_rw_short, K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
 	}
 
 	tfrag = net_frag_skip(tfrag, off, &tpos,
-			     (uint16_t)sizeof(test_rw_short));
+			     (u16_t)sizeof(test_rw_short));
 	if (!tfrag) {
 		printk("net_frag_skip failed\n");
 		return -EINVAL;
 	}
 
 	tfrag = net_frag_read(tfrag, tpos, &tpos,
-			     (uint16_t)sizeof(test_rw_short),
+			     (u16_t)sizeof(test_rw_short),
 			     verify_rw_short);
 	if (memcmp(test_rw_short, verify_rw_short, sizeof(test_rw_short))) {
 		printk("net_frag_read failed with mismatch data");
@@ -546,27 +546,27 @@ static int test_pkt_read_append(void)
 	tfrag = net_buf_frag_last(pkt->frags);
 	off = tfrag->len;
 
-	if (!net_pkt_append(pkt, (uint16_t)sizeof(test_rw_long), test_rw_long,
+	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_long), test_rw_long,
 			    K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_pkt_append(pkt, (uint16_t)sizeof(test_rw_long), test_rw_long,
+	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_long), test_rw_long,
 			    K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
 	}
 
 	tfrag = net_frag_skip(tfrag, off, &tpos,
-			      (uint16_t)sizeof(test_rw_long));
+			      (u16_t)sizeof(test_rw_long));
 	if (!tfrag) {
 		printk("net_frag_skip failed\n");
 		return -EINVAL;
 	}
 
 	tfrag = net_frag_read(tfrag, tpos, &tpos,
-			     (uint16_t)sizeof(test_rw_long),
+			     (u16_t)sizeof(test_rw_long),
 			     verify_rw_long);
 	if (memcmp(test_rw_long, verify_rw_long, sizeof(test_rw_long))) {
 		printk("net_frag_read failed with mismatch data");
@@ -586,10 +586,10 @@ static int test_pkt_read_write_insert(void)
 	struct net_buf *temp_frag;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint8_t read_data[100];
-	uint16_t read_pos;
-	uint16_t len;
-	uint16_t pos;
+	u8_t read_data[100];
+	u16_t read_pos;
+	u16_t len;
+	u16_t pos;
 
 	/* Example of multi fragment read, append and skip APS's */
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
@@ -605,7 +605,7 @@ static int test_pkt_read_write_insert(void)
 	 * and write data).
 	 */
 	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			     (uint8_t *)sample_data, K_FOREVER);
+			     (u8_t *)sample_data, K_FOREVER);
 	if (!frag || pos != 58) {
 		printk("Usecase 1: Write failed\n");
 		return -EINVAL;
@@ -628,7 +628,7 @@ static int test_pkt_read_write_insert(void)
 	 * there shouldn't be any length change).
 	 */
 	frag = net_pkt_write(pkt, frag, 0, &pos, NET_IPV6UDPH_LEN,
-			     (uint8_t *)sample_data, K_FOREVER);
+			     (u8_t *)sample_data, K_FOREVER);
 	if (!frag || pos != 48) {
 		printk("Usecase 2: Write failed\n");
 		return -EINVAL;
@@ -657,7 +657,7 @@ static int test_pkt_read_write_insert(void)
 	 * create empty fragments(space) till offset and write data).
 	 */
 	frag = net_pkt_write(pkt, pkt->frags, 200, &pos, 10,
-			     (uint8_t *)sample_data + 10, K_FOREVER);
+			     (u8_t *)sample_data + 10, K_FOREVER);
 	if (!frag) {
 		printk("Usecase 3: Write failed");
 	}
@@ -680,7 +680,7 @@ static int test_pkt_read_write_insert(void)
 	 * the existing data.
 	 */
 	frag = net_pkt_write(pkt, pkt->frags, 190, &pos, 10,
-			     (uint8_t *)sample_data, K_FOREVER);
+			     (u8_t *)sample_data, K_FOREVER);
 	if (!frag) {
 		printk("Usecase 4: Write failed\n");
 		return -EINVAL;
@@ -715,7 +715,7 @@ static int test_pkt_read_write_insert(void)
 	/* Create 10 bytes space. */
 	net_buf_add(frag, 10);
 
-	frag = net_pkt_write(pkt, frag, 0, &pos, 20, (uint8_t *)sample_data,
+	frag = net_pkt_write(pkt, frag, 0, &pos, 20, (u8_t *)sample_data,
 			     K_FOREVER);
 	if (!frag && pos != 20) {
 		printk("Usecase 5: Write failed\n");
@@ -773,7 +773,7 @@ static int test_pkt_read_write_insert(void)
 	net_buf_add(frag, 5);
 
 	temp_frag = net_pkt_write(pkt, temp_frag, temp_frag->len - 10, &pos,
-				  30, (uint8_t *) sample_data, K_FOREVER);
+				  30, (u8_t *) sample_data, K_FOREVER);
 	if (!temp_frag) {
 		printk("Use case 6: Write failed\n");
 		return -EINVAL;
@@ -810,7 +810,7 @@ static int test_pkt_read_write_insert(void)
 	net_pkt_frag_add(pkt, frag);
 
 	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			     (uint8_t *)sample_data + 10, K_FOREVER);
+			     (u8_t *)sample_data + 10, K_FOREVER);
 	if (!frag || pos != 58) {
 		printk("Usecase 7: Write failed\n");
 		return -EINVAL;
@@ -829,7 +829,7 @@ static int test_pkt_read_write_insert(void)
 	}
 
 	if (!net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 10,
-			    (uint8_t *)sample_data, K_FOREVER)) {
+			    (u8_t *)sample_data, K_FOREVER)) {
 		printk("Usecase 7: Insert failed\n");
 		return -EINVAL;
 	}
@@ -847,7 +847,7 @@ static int test_pkt_read_write_insert(void)
 	}
 
 	/* Insert data outside input fragment length, error case. */
-	if (net_pkt_insert(pkt, frag, 70, 10, (uint8_t *)sample_data,
+	if (net_pkt_insert(pkt, frag, 70, 10, (u8_t *)sample_data,
 			   K_FOREVER)) {
 		printk("Usecase 7: False insert failed\n");
 		return -EINVAL;
@@ -872,7 +872,7 @@ static int test_pkt_read_write_insert(void)
 	net_pkt_frag_add(pkt, frag);
 
 	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
-			     (uint8_t *)sample_data + 60, K_FOREVER);
+			     (u8_t *)sample_data + 60, K_FOREVER);
 	if (!frag || pos != 58) {
 		printk("Usecase 8: Write failed\n");
 		return -EINVAL;
@@ -891,7 +891,7 @@ static int test_pkt_read_write_insert(void)
 	}
 
 	if (!net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 60,
-			    (uint8_t *)sample_data, K_FOREVER)) {
+			    (u8_t *)sample_data, K_FOREVER)) {
 		printk("Usecase 8: Insert failed\n");
 		return -EINVAL;
 	}

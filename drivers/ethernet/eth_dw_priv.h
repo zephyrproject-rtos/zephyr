@@ -23,7 +23,7 @@ extern "C" {
 typedef void (*eth_config_irq_t)(struct device *port);
 
 struct eth_config {
-	uint32_t irq_num;
+	u32_t irq_num;
 	eth_config_irq_t config_func;
 
 #ifdef CONFIG_ETH_DW_SHARED_IRQ
@@ -46,54 +46,54 @@ struct eth_tx_desc {
 	union {
 		struct {
 			/* Only valid in half-duplex mode. */
-			uint32_t deferred_bit      : 1;
-			uint32_t err_underflow     : 1;
-			uint32_t err_excess_defer  : 1;
-			uint32_t coll_cnt_slot_num : 4;
-			uint32_t vlan_frm          : 1;
-			uint32_t err_excess_coll   : 1;
-			uint32_t err_late_coll     : 1;
-			uint32_t err_no_carrier    : 1;
-			uint32_t err_carrier_loss  : 1;
-			uint32_t err_ip_payload    : 1;
-			uint32_t err_frm_flushed   : 1;
-			uint32_t err_jabber_tout   : 1;
+			u32_t deferred_bit      : 1;
+			u32_t err_underflow     : 1;
+			u32_t err_excess_defer  : 1;
+			u32_t coll_cnt_slot_num : 4;
+			u32_t vlan_frm          : 1;
+			u32_t err_excess_coll   : 1;
+			u32_t err_late_coll     : 1;
+			u32_t err_no_carrier    : 1;
+			u32_t err_carrier_loss  : 1;
+			u32_t err_ip_payload    : 1;
+			u32_t err_frm_flushed   : 1;
+			u32_t err_jabber_tout   : 1;
 			/* OR of all other error bits. */
-			uint32_t err_summary       : 1;
-			uint32_t err_ip_hdr        : 1;
-			uint32_t tx_timestamp_stat : 1;
-			uint32_t vlan_ins_ctrl     : 2;
-			uint32_t addr2_chained     : 1;
-			uint32_t tx_end_of_ring    : 1;
-			uint32_t chksum_ins_ctrl   : 2;
-			uint32_t replace_crc       : 1;
-			uint32_t tx_timestamp_en   : 1;
-			uint32_t dis_pad           : 1;
-			uint32_t dis_crc           : 1;
-			uint32_t first_seg_in_frm  : 1;
-			uint32_t last_seg_in_frm   : 1;
-			uint32_t intr_on_complete  : 1;
+			u32_t err_summary       : 1;
+			u32_t err_ip_hdr        : 1;
+			u32_t tx_timestamp_stat : 1;
+			u32_t vlan_ins_ctrl     : 2;
+			u32_t addr2_chained     : 1;
+			u32_t tx_end_of_ring    : 1;
+			u32_t chksum_ins_ctrl   : 2;
+			u32_t replace_crc       : 1;
+			u32_t tx_timestamp_en   : 1;
+			u32_t dis_pad           : 1;
+			u32_t dis_crc           : 1;
+			u32_t first_seg_in_frm  : 1;
+			u32_t last_seg_in_frm   : 1;
+			u32_t intr_on_complete  : 1;
 			/* When set, descriptor is owned by DMA. */
-			uint32_t own               : 1;
+			u32_t own               : 1;
 		};
-		uint32_t tdes0;
+		u32_t tdes0;
 	};
 	/* Second word of transmit descriptor */
 	union {
 		struct {
-			uint32_t tx_buf1_sz        : 13;
-			uint32_t                   : 3;
-			uint32_t tx_buf2_sz        : 13;
-			uint32_t src_addr_ins_ctrl : 3;
+			u32_t tx_buf1_sz        : 13;
+			u32_t                   : 3;
+			u32_t tx_buf2_sz        : 13;
+			u32_t src_addr_ins_ctrl : 3;
 		};
-		uint32_t tdes1;
+		u32_t tdes1;
 	};
 	/* Pointer to frame data buffer */
-	uint8_t *buf1_ptr;
+	u8_t *buf1_ptr;
 	/* Unused, since this driver initializes only a single descriptor for each
 	 * direction.
 	 */
-	uint8_t *buf2_ptr;
+	u8_t *buf2_ptr;
 };
 
 /* Transmit descriptor */
@@ -101,63 +101,63 @@ struct eth_rx_desc {
 	/* First word of receive descriptor */
 	union {
 		struct {
-			uint32_t ext_stat          : 1;
-			uint32_t err_crc           : 1;
-			uint32_t err_dribble_bit   : 1;
-			uint32_t err_rx_mii        : 1;
-			uint32_t err_rx_wdt        : 1;
-			uint32_t frm_type          : 1;
-			uint32_t err_late_coll     : 1;
-			uint32_t giant_frm         : 1;
-			uint32_t last_desc         : 1;
-			uint32_t first_desc        : 1;
-			uint32_t vlan_tag          : 1;
-			uint32_t err_overflow      : 1;
-			uint32_t length_err        : 1;
-			uint32_t s_addr_filt_fail  : 1;
-			uint32_t err_desc          : 1;
-			uint32_t err_summary       : 1;
-			uint32_t frm_len           : 14;
-			uint32_t d_addr_filt_fail  : 1;
-			uint32_t own               : 1;
+			u32_t ext_stat          : 1;
+			u32_t err_crc           : 1;
+			u32_t err_dribble_bit   : 1;
+			u32_t err_rx_mii        : 1;
+			u32_t err_rx_wdt        : 1;
+			u32_t frm_type          : 1;
+			u32_t err_late_coll     : 1;
+			u32_t giant_frm         : 1;
+			u32_t last_desc         : 1;
+			u32_t first_desc        : 1;
+			u32_t vlan_tag          : 1;
+			u32_t err_overflow      : 1;
+			u32_t length_err        : 1;
+			u32_t s_addr_filt_fail  : 1;
+			u32_t err_desc          : 1;
+			u32_t err_summary       : 1;
+			u32_t frm_len           : 14;
+			u32_t d_addr_filt_fail  : 1;
+			u32_t own               : 1;
 		};
-		uint32_t rdes0;
+		u32_t rdes0;
 	};
 	/* Second word of receive descriptor */
 	union {
 		struct {
-			uint32_t rx_buf1_sz        : 13;
-			uint32_t                   : 1;
-			uint32_t addr2_chained     : 1;
-			uint32_t rx_end_of_ring    : 1;
-			uint32_t rx_buf2_sz        : 13;
-			uint32_t                   : 2;
-			uint32_t dis_int_compl     : 1;
+			u32_t rx_buf1_sz        : 13;
+			u32_t                   : 1;
+			u32_t addr2_chained     : 1;
+			u32_t rx_end_of_ring    : 1;
+			u32_t rx_buf2_sz        : 13;
+			u32_t                   : 2;
+			u32_t dis_int_compl     : 1;
 		};
-		uint32_t rdes1;
+		u32_t rdes1;
 	};
 	/* Pointer to frame data buffer */
-	uint8_t *buf1_ptr;
+	u8_t *buf1_ptr;
 	/* Unused, since this driver initializes only a single descriptor for each
 	 * direction.
 	 */
-	uint8_t *buf2_ptr;
+	u8_t *buf2_ptr;
 };
 
 /* Driver metadata associated with each Ethernet device */
 struct eth_runtime {
-	uint32_t base_addr;
+	u32_t base_addr;
 #ifdef CONFIG_PCI
 	struct pci_dev_info pci_dev;
 #endif  /* CONFIG_PCI */
 	/* Transmit descriptor */
 	volatile struct eth_tx_desc tx_desc;
 	/* Transmit DMA packet buffer */
-	volatile uint8_t tx_buf[UIP_BUFSIZE];
+	volatile u8_t tx_buf[UIP_BUFSIZE];
 	/* Receive descriptor */
 	volatile struct eth_rx_desc rx_desc;
 	/* Receive DMA packet buffer */
-	volatile uint8_t rx_buf[UIP_BUFSIZE];
+	volatile u8_t rx_buf[UIP_BUFSIZE];
 };
 
 #define MMC_DEFAULT_MASK               0xffffffff

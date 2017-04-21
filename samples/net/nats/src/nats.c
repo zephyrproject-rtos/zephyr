@@ -30,7 +30,7 @@ struct nats_info {
 	const char *go;
 	const char *host;
 	size_t max_payload;
-	uint16_t port;
+	u16_t port;
 	bool ssl_required;
 	bool auth_required;
 };
@@ -132,7 +132,7 @@ static inline int transmit(struct net_context *conn, const char buffer[],
 	.type = type_ \
 }
 static int handle_server_info(struct nats *nats, char *payload, size_t len,
-			      struct net_buf *buf, uint16_t offset)
+			      struct net_buf *buf, u16_t offset)
 {
 	static const struct json_obj_descr descr[] = {
 		FIELD(struct nats_info, server_id, JSON_TOK_STRING),
@@ -231,11 +231,11 @@ static char *strsep(char *strp, const char *delims)
 	return NULL;
 }
 
-static int copy_pkt_to_buf(struct net_buf *src, uint16_t offset,
+static int copy_pkt_to_buf(struct net_buf *src, u16_t offset,
 			    char *dst, size_t dst_size, size_t n_bytes)
 {
-	uint16_t to_copy;
-	uint16_t copied;
+	u16_t to_copy;
+	u16_t copied;
 
 	if (dst_size < n_bytes) {
 		return -ENOMEM;
@@ -264,7 +264,7 @@ static int copy_pkt_to_buf(struct net_buf *src, uint16_t offset,
 }
 
 static int handle_server_msg(struct nats *nats, char *payload, size_t len,
-			     struct net_buf *buf, uint16_t offset)
+			     struct net_buf *buf, u16_t offset)
 {
 	char *subject, *sid, *reply_to, *bytes, *end_ptr;
 	char prev_end = payload[len];
@@ -320,7 +320,7 @@ static int handle_server_msg(struct nats *nats, char *payload, size_t len,
 }
 
 static int handle_server_ping(struct nats *nats, char *payload, size_t len,
-			      struct net_buf *buf, uint16_t offset)
+			      struct net_buf *buf, u16_t offset)
 {
 	static const char pong[] = "PONG\r\n";
 
@@ -328,7 +328,7 @@ static int handle_server_ping(struct nats *nats, char *payload, size_t len,
 }
 
 static int ignore(struct nats *nats, char *payload, size_t len,
-		  struct net_buf *buf, uint16_t offset)
+		  struct net_buf *buf, u16_t offset)
 {
 	/* FIXME: Notify user of success/errors.  This would require
 	 * maintaining information of what was the last sent command in
@@ -345,13 +345,13 @@ static int ignore(struct nats *nats, char *payload, size_t len,
 	.handle = handler_ \
 }
 static int handle_server_cmd(struct nats *nats, char *cmd, size_t len,
-			     struct net_buf *buf, uint16_t offset)
+			     struct net_buf *buf, u16_t offset)
 {
 	static const struct {
 		const char *op;
 		size_t len;
 		int (*handle)(struct nats *nats, char *payload, size_t len,
-			      struct net_buf *buf, uint16_t offset);
+			      struct net_buf *buf, u16_t offset);
 	} cmds[] = {
 		CMD("INFO", handle_server_info),
 		CMD("MSG", handle_server_msg),
@@ -537,9 +537,9 @@ static void receive_cb(struct net_context *ctx, struct net_pkt *pkt, int status,
 	struct nats *nats = user_data;
 	char cmd_buf[CMD_BUF_LEN];
 	struct net_buf *tmp;
-	uint16_t pos = 0, cmd_len = 0;
+	u16_t pos = 0, cmd_len = 0;
 	size_t len;
-	uint8_t *end_of_line;
+	u8_t *end_of_line;
 
 	if (!pkt) {
 		/* FIXME: How to handle disconnection? */
@@ -558,9 +558,9 @@ static void receive_cb(struct net_context *ctx, struct net_pkt *pkt, int status,
 	while (tmp) {
 		len = tmp->len - pos;
 
-		end_of_line = memchr((uint8_t *)tmp->data + pos, '\n', len);
+		end_of_line = memchr((u8_t *)tmp->data + pos, '\n', len);
 		if (end_of_line) {
-			len = end_of_line - ((uint8_t *)tmp->data + pos);
+			len = end_of_line - ((u8_t *)tmp->data + pos);
 		}
 
 		if (cmd_len + len > sizeof(cmd_buf)) {

@@ -30,7 +30,7 @@
 #include "ieee802154_security.h"
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
-const uint8_t level_2_tag_size[4] = {
+const u8_t level_2_tag_size[4] = {
 	0,
 	IEEE8021254_AUTH_TAG_LENGTH_32,
 	IEEE8021254_AUTH_TAG_LENGTH_64,
@@ -39,7 +39,7 @@ const uint8_t level_2_tag_size[4] = {
 #endif
 
 static inline struct ieee802154_fcf_seq *
-validate_fc_seq(uint8_t *buf, uint8_t **p_buf)
+validate_fc_seq(u8_t *buf, u8_t **p_buf)
 {
 	struct ieee802154_fcf_seq *fs = (struct ieee802154_fcf_seq *)buf;
 
@@ -87,7 +87,7 @@ validate_fc_seq(uint8_t *buf, uint8_t **p_buf)
 }
 
 static inline struct ieee802154_address_field *
-validate_addr(uint8_t *buf, uint8_t **p_buf,
+validate_addr(u8_t *buf, u8_t **p_buf,
 	      enum ieee802154_addressing_mode mode,
 	      bool pan_id_compression)
 {
@@ -116,7 +116,7 @@ validate_addr(uint8_t *buf, uint8_t **p_buf,
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 struct ieee802154_aux_security_hdr *
-ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf)
+ieee802154_validate_aux_security_hdr(u8_t *buf, u8_t **p_buf)
 {
 	struct ieee802154_aux_security_hdr *ash =
 		(struct ieee802154_aux_security_hdr *)buf;
@@ -130,7 +130,7 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf)
 
 	/* At least the asf is sized of: control field + frame counter */
 	*p_buf += sizeof(struct ieee802154_security_control_field) +
-		sizeof(uint32_t);
+		sizeof(u32_t);
 
 	/* Explicit key must have a key index != 0x00, see Section 7.4.3.2 */
 	switch (ash->control.key_id_mode) {
@@ -167,10 +167,10 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf)
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
 static inline bool
-validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
+validate_beacon(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 {
 	struct ieee802154_beacon *b = (struct ieee802154_beacon *)buf;
-	uint8_t *p_buf = buf;
+	u8_t *p_buf = buf;
 	struct ieee802154_pas_spec *pas;
 
 	if (length < IEEE802154_BEACON_MIN_SIZE) {
@@ -207,9 +207,9 @@ validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
 
 static inline bool
 validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
-				uint8_t ar, uint8_t comp,
-				uint8_t src, bool src_pan_brdcst_chk,
-				uint8_t dst, bool dst_brdcst_chk)
+				u8_t ar, u8_t comp,
+				u8_t src, bool src_pan_brdcst_chk,
+				u8_t dst, bool dst_brdcst_chk)
 {
 	if (mhr->fs->fc.ar != ar || mhr->fs->fc.pan_id_comp != comp) {
 		return false;
@@ -240,14 +240,14 @@ validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
 }
 
 static inline bool
-validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
+validate_mac_command(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 {
 	struct ieee802154_command *c = (struct ieee802154_command *)buf;
 	bool src_pan_brdcst_chk = false;
 	bool dst_brdcst_chk = false;
-	uint8_t comp = 0;
-	uint8_t ar = 0;
-	uint8_t src, dst;
+	u8_t comp = 0;
+	u8_t ar = 0;
+	u8_t src, dst;
 
 	switch (c->cfi) {
 	case IEEE802154_CFI_UNKNOWN:
@@ -329,15 +329,15 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
 
 static inline bool
 validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
-			 uint8_t *buf, uint8_t *p_buf, uint8_t length)
+			 u8_t *buf, u8_t *p_buf, u8_t length)
 {
-	uint8_t type = mpdu->mhr.fs->fc.frame_type;
-	uint8_t payload_length;
+	u8_t type = mpdu->mhr.fs->fc.frame_type;
+	u8_t payload_length;
 
 	payload_length = length - (p_buf - buf);
 
 	NET_DBG("Header size: %u, vs total length %u: payload size %u",
-		(uint32_t)(p_buf - buf), length, payload_length);
+		(u32_t)(p_buf - buf), length, payload_length);
 
 	if (type == IEEE802154_FRAME_TYPE_BEACON) {
 		if (!validate_beacon(mpdu, p_buf, payload_length)) {
@@ -368,10 +368,10 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 	return true;
 }
 
-bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
+bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 			       struct ieee802154_mpdu *mpdu)
 {
-	uint8_t *p_buf = NULL;
+	u8_t *p_buf = NULL;
 
 	if (length > IEEE802154_MTU || length < IEEE802154_MIN_LENGTH) {
 		NET_DBG("Wrong packet length: %d", length);
@@ -409,10 +409,10 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }
 
-uint16_t ieee802154_compute_header_size(struct net_if *iface,
+u16_t ieee802154_compute_header_size(struct net_if *iface,
 					struct in6_addr *dst)
 {
-	uint16_t hdr_len = sizeof(struct ieee802154_fcf_seq);
+	u16_t hdr_len = sizeof(struct ieee802154_fcf_seq);
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_ctx *sec_ctx =
 		&((struct ieee802154_context *)net_if_l2_data(iface))->sec_ctx;
@@ -494,7 +494,7 @@ done:
 	return hdr_len;
 }
 
-static inline struct ieee802154_fcf_seq *generate_fcf_grounds(uint8_t **p_buf,
+static inline struct ieee802154_fcf_seq *generate_fcf_grounds(u8_t **p_buf,
 							      bool ack)
 {
 	struct ieee802154_fcf_seq *fs;
@@ -570,10 +570,10 @@ bool data_addr_to_fs_settings(struct net_linkaddr *dst,
 }
 
 static
-uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
+u8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 				    struct ieee802154_fcf_seq *fs,
 				    struct ieee802154_frame_params *params,
-				    uint8_t *p_buf)
+				    u8_t *p_buf)
 {
 	struct ieee802154_address_field *af;
 	struct ieee802154_address *src_addr;
@@ -624,8 +624,8 @@ uint8_t *generate_addressing_fields(struct ieee802154_context *ctx,
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 static
-uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
-				   uint8_t *p_buf)
+u8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
+				   u8_t *p_buf)
 {
 	struct ieee802154_aux_security_hdr *aux_sec;
 
@@ -654,12 +654,12 @@ uint8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
 				  struct net_buf *frag,
-				  uint8_t reserved_len)
+				  u8_t reserved_len)
 {
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
-	uint8_t *p_buf = frag->data - reserved_len;
-	uint8_t *frag_start = p_buf;
+	u8_t *p_buf = frag->data - reserved_len;
+	u8_t *frag_start = p_buf;
 	bool broadcast;
 
 	fs = generate_fcf_grounds(&p_buf, ctx->ack_requested);
@@ -690,7 +690,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 	 */
 	if (ctx->sec_ctx.level != IEEE802154_SECURITY_LEVEL_NONE &&
 	    ctx->sec_ctx.level != IEEE802154_SECURITY_LEVEL_ENC) {
-		uint8_t level;
+		u8_t level;
 
 		level = ctx->sec_ctx.level;
 		if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
@@ -785,9 +785,9 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 	return true;
 }
 
-static inline uint8_t mac_command_length(enum ieee802154_cfi cfi)
+static inline u8_t mac_command_length(enum ieee802154_cfi cfi)
 {
-	uint8_t reserve = 1; /* cfi is at least present */
+	u8_t reserve = 1; /* cfi is at least present */
 
 	switch (cfi) {
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
@@ -816,7 +816,7 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	struct ieee802154_fcf_seq *fs;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint8_t *p_buf;
+	u8_t *p_buf;
 
 	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 	if (!pkt) {
@@ -873,9 +873,9 @@ error:
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,
-				 struct net_pkt *pkt, uint8_t seq)
+				 struct net_pkt *pkt, u8_t seq)
 {
-	uint8_t *p_buf = net_pkt_ll(pkt);
+	u8_t *p_buf = net_pkt_ll(pkt);
 	struct ieee802154_fcf_seq *fs;
 
 	if (!p_buf) {
@@ -899,7 +899,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 				    struct ieee802154_mpdu *mpdu)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	uint8_t level;
+	u8_t level;
 
 	if (!mpdu->mhr.fs->fc.security_enabled) {
 		return true;

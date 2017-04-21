@@ -83,7 +83,7 @@ static enum net_verdict net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 	return NET_OK;
 }
 
-static inline uint16_t net_bt_reserve(struct net_if *iface, void *unused)
+static inline u16_t net_bt_reserve(struct net_if *iface, void *unused)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(unused);
@@ -280,7 +280,7 @@ static struct bt_l2cap_server server = {
 
 #if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
 
-static int bt_connect(uint32_t mgmt_request, struct net_if *iface, void *data,
+static int bt_connect(u32_t mgmt_request, struct net_if *iface, void *data,
 		      size_t len)
 {
 	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
@@ -307,7 +307,7 @@ static int bt_connect(uint32_t mgmt_request, struct net_if *iface, void *data,
 	return 0;
 }
 
-static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
+static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 		      void *user_data)
 {
 	int i;
@@ -319,13 +319,13 @@ static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 		return false;
 	}
 
-	if (data_len % sizeof(uint16_t) != 0) {
+	if (data_len % sizeof(u16_t) != 0) {
 		NET_ERR("AD malformed\n");
 		return false;
 	}
 
-	for (i = 0; i < data_len; i += sizeof(uint16_t)) {
-		uint16_t u16;
+	for (i = 0; i < data_len; i += sizeof(u16_t)) {
+		u16_t u16;
 
 		memcpy(&u16, &data[i], sizeof(u16));
 		if (sys_le16_to_cpu(u16) != BT_UUID_IPSS_VAL) {
@@ -348,13 +348,13 @@ static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 }
 
 static bool ad_parse(struct net_buf_simple *ad,
-		     bool (*func)(uint8_t type, const uint8_t *data,
-				  uint8_t data_len, void *user_data),
+		     bool (*func)(u8_t type, const u8_t *data,
+				  u8_t data_len, void *user_data),
 		     void *user_data)
 {
 	while (ad->len > 1) {
-		uint8_t len = net_buf_simple_pull_u8(ad);
-		uint8_t type;
+		u8_t len = net_buf_simple_pull_u8(ad);
+		u8_t type;
 
 		/* Check for early termination */
 		if (len == 0) {
@@ -378,7 +378,7 @@ static bool ad_parse(struct net_buf_simple *ad,
 	return false;
 }
 
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
+static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			 struct net_buf_simple *ad)
 {
 	/* We're only interested in connectable events */
@@ -417,7 +417,7 @@ static void bt_scan_off(void)
 	}
 }
 
-static int bt_scan(uint32_t mgmt_request, struct net_if *iface, void *data,
+static int bt_scan(u32_t mgmt_request, struct net_if *iface, void *data,
 		   size_t len)
 {
 	if (!strcmp(data, "on") || !strcmp(data, "active")) {
@@ -433,7 +433,7 @@ static int bt_scan(uint32_t mgmt_request, struct net_if *iface, void *data,
 	return 0;
 }
 
-static int bt_disconnect(uint32_t mgmt_request, struct net_if *iface,
+static int bt_disconnect(u32_t mgmt_request, struct net_if *iface,
 			 void *data, size_t len)
 {
 	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
@@ -452,7 +452,7 @@ static int bt_disconnect(uint32_t mgmt_request, struct net_if *iface,
 	return bt_l2cap_chan_disconnect(&ctxt->ipsp_chan.chan);
 }
 
-static void connected(struct bt_conn *conn, uint8_t err)
+static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
@@ -473,7 +473,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 			      L2CAP_IPSP_PSM);
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
 	char addr[BT_ADDR_LE_STR_LEN];

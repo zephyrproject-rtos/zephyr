@@ -28,7 +28,7 @@ struct net_pkt *net_ipv4_create_raw(struct net_pkt *pkt,
 				    const struct in_addr *src,
 				    const struct in_addr *dst,
 				    struct net_if *iface,
-				    uint8_t next_header)
+				    u8_t next_header)
 {
 	struct net_buf *header;
 
@@ -80,7 +80,7 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
 				   net_context_get_ip_proto(context));
 }
 
-int net_ipv4_finalize_raw(struct net_pkt *pkt, uint8_t next_header)
+int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 {
 	/* Set the length of the IPv4 header */
 	size_t total_len;

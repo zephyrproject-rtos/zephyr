@@ -63,9 +63,9 @@ enum net_sock_type {
 /** IPv6 address structure */
 struct in6_addr {
 	union {
-		uint8_t		u6_addr8[16];
-		uint16_t	u6_addr16[8]; /* In big endian */
-		uint32_t	u6_addr32[4]; /* In big endian */
+		u8_t		u6_addr8[16];
+		u16_t	u6_addr16[8]; /* In big endian */
+		u32_t	u6_addr32[4]; /* In big endian */
 	} in6_u;
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
@@ -75,9 +75,9 @@ struct in6_addr {
 /** IPv4 address */
 struct in_addr {
 	union {
-		uint8_t		u4_addr8[4];
-		uint16_t	u4_addr16[2]; /* In big endian */
-		uint32_t	u4_addr32[1]; /* In big endian */
+		u8_t		u4_addr8[4];
+		u16_t	u4_addr16[2]; /* In big endian */
+		u32_t	u4_addr32[1]; /* In big endian */
 	} in4_u;
 #define s4_addr			in4_u.u4_addr8
 #define s4_addr16		in4_u.u4_addr16
@@ -95,27 +95,27 @@ typedef size_t socklen_t;
  */
 struct sockaddr_in6 {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	uint16_t		sin6_port;     /* Port number            */
+	u16_t		sin6_port;     /* Port number            */
 	struct in6_addr		sin6_addr;     /* IPv6 address           */
-	uint8_t			sin6_scope_id; /* interfaces for a scope */
+	u8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 struct sockaddr_in6_ptr {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	uint16_t		sin6_port;     /* Port number            */
+	u16_t		sin6_port;     /* Port number            */
 	struct in6_addr		*sin6_addr;    /* IPv6 address           */
-	uint8_t			sin6_scope_id; /* interfaces for a scope */
+	u8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 struct sockaddr_in {
 	sa_family_t		sin_family;    /* AF_INET      */
-	uint16_t		sin_port;      /* Port number  */
+	u16_t		sin_port;      /* Port number  */
 	struct in_addr		sin_addr;      /* IPv4 address */
 };
 
 struct sockaddr_in_ptr {
 	sa_family_t		sin_family;    /* AF_INET      */
-	uint16_t		sin_port;      /* Port number  */
+	u16_t		sin_port;      /* Port number  */
 	struct in_addr		*sin_addr;     /* IPv4 address */
 };
 
@@ -184,9 +184,9 @@ struct net_tuple {
 	/** IPv6/IPv4 local address */
 	struct net_addr *local_addr;
 	/** UDP/TCP remote port */
-	uint16_t remote_port;
+	u16_t remote_port;
 	/** UDP/TCP local port */
-	uint16_t local_port;
+	u16_t local_port;
 	/** IP protocol */
 	enum net_ip_protocol ip_proto;
 };
@@ -234,60 +234,60 @@ enum net_addr_state {
 };
 
 struct net_ipv6_hdr {
-	uint8_t vtc;
-	uint8_t tcflow;
-	uint16_t flow;
-	uint8_t len[2];
-	uint8_t nexthdr;
-	uint8_t hop_limit;
+	u8_t vtc;
+	u8_t tcflow;
+	u16_t flow;
+	u8_t len[2];
+	u8_t nexthdr;
+	u8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
 } __packed;
 
 struct net_ipv6_frag_hdr {
-	uint8_t nexthdr;
-	uint8_t reserved;
-	uint16_t offset;
-	uint32_t id;
+	u8_t nexthdr;
+	u8_t reserved;
+	u16_t offset;
+	u32_t id;
 } __packed;
 
 struct net_ipv4_hdr {
-	uint8_t vhl;
-	uint8_t tos;
-	uint8_t len[2];
-	uint8_t id[2];
-	uint8_t offset[2];
-	uint8_t ttl;
-	uint8_t proto;
-	uint16_t chksum;
+	u8_t vhl;
+	u8_t tos;
+	u8_t len[2];
+	u8_t id[2];
+	u8_t offset[2];
+	u8_t ttl;
+	u8_t proto;
+	u16_t chksum;
 	struct in_addr src;
 	struct in_addr dst;
 } __packed;
 
 struct net_icmp_hdr {
-	uint8_t type;
-	uint8_t code;
-	uint16_t chksum;
+	u8_t type;
+	u8_t code;
+	u16_t chksum;
 } __packed;
 
 struct net_udp_hdr {
-	uint16_t src_port;
-	uint16_t dst_port;
-	uint16_t len;
-	uint16_t chksum;
+	u16_t src_port;
+	u16_t dst_port;
+	u16_t len;
+	u16_t chksum;
 } __packed;
 
 struct net_tcp_hdr {
-	uint16_t src_port;
-	uint16_t dst_port;
-	uint8_t seq[4];
-	uint8_t ack[4];
-	uint8_t offset;
-	uint8_t flags;
-	uint8_t wnd[2];
-	uint16_t chksum;
-	uint8_t urg[2];
-	uint8_t optdata[0];
+	u16_t src_port;
+	u16_t dst_port;
+	u8_t seq[4];
+	u8_t ack[4];
+	u8_t offset;
+	u8_t flags;
+	u8_t wnd[2];
+	u16_t chksum;
+	u8_t urg[2];
+	u8_t optdata[0];
 } __packed;
 
 #define NET_UDPH_LEN	8			/* Size of UDP header */
@@ -376,14 +376,14 @@ static inline bool net_is_my_ipv6_maddr(struct in6_addr *maddr)
  *
  * @return True if IPv6 prefixes are the same, False otherwise.
  */
-static inline bool net_is_ipv6_prefix(const uint8_t *addr1,
-				      const uint8_t *addr2,
-				      uint8_t length)
+static inline bool net_is_ipv6_prefix(const u8_t *addr1,
+				      const u8_t *addr2,
+				      u8_t length)
 {
-	uint8_t bits = 128 - length;
-	uint8_t bytes = length / 8;
-	uint8_t remain = bits % 8;
-	uint8_t mask;
+	u8_t bits = 128 - length;
+	u8_t bytes = length / 8;
+	u8_t remain = bits % 8;
+	u8_t mask;
 
 	if (length > 128) {
 		return false;
@@ -633,10 +633,10 @@ void net_ipv6_addr_create_solicited_node(const struct in6_addr *src,
  *  @param addr7 16-bit word which is part of the address
  */
 static inline void net_ipv6_addr_create(struct in6_addr *addr,
-					uint16_t addr0, uint16_t addr1,
-					uint16_t addr2, uint16_t addr3,
-					uint16_t addr4, uint16_t addr5,
-					uint16_t addr6, uint16_t addr7)
+					u16_t addr0, u16_t addr1,
+					u16_t addr2, u16_t addr3,
+					u16_t addr4, u16_t addr5,
+					u16_t addr6, u16_t addr7)
 {
 	UNALIGNED_PUT(htons(addr0), &addr->s6_addr16[0]);
 	UNALIGNED_PUT(htons(addr1), &addr->s6_addr16[1]);

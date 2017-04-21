@@ -29,10 +29,10 @@
 #endif
 
 #define STACK_SIZE	2048
-uint8_t stack[STACK_SIZE];
+u8_t stack[STACK_SIZE];
 
 #define CMD_BUFFER_SIZE 256
-static uint8_t cmd_buf[CMD_BUFFER_SIZE];
+static u8_t cmd_buf[CMD_BUFFER_SIZE];
 
 /* LED */
 #if defined(LED0_GPIO_PORT)
@@ -276,9 +276,9 @@ on_context_recv(struct net_context *ctx, struct net_pkt *pkt,
 {
 	struct zirc *irc = data;
 	struct net_buf *tmp;
-	uint8_t *end_of_line;
+	u8_t *end_of_line;
 	size_t len;
-	uint16_t pos = 0, cmd_len = 0;
+	u16_t pos = 0, cmd_len = 0;
 
 	if (!pkt) {
 		/* TODO: notify of disconnection, maybe reconnect? */
@@ -678,7 +678,7 @@ static void
 on_cmd_random(struct zirc_chan *chan, const char *nick, const char *msg)
 {
 	char buf[128];
-	int32_t num = sys_rand32_get();
+	s32_t num = sys_rand32_get();
 	int ret;
 
 	switch (num & 3) {
@@ -714,7 +714,7 @@ on_cmd_random(struct zirc_chan *chan, const char *nick, const char *msg)
 static bool
 read_led(void)
 {
-	uint32_t led = 0;
+	u32_t led = 0;
 	int r;
 
 	if (!led0) {
@@ -851,7 +851,7 @@ static struct net_mgmt_event_callback mgmt4_cb;
 static struct k_sem dhcpv4_ok = K_SEM_INITIALIZER(dhcpv4_ok, 0, UINT_MAX);
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t mgmt_event,
+				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
 	char hr_addr[NET_IPV4_ADDR_LEN];
@@ -948,7 +948,7 @@ static struct k_sem dad_ok = K_SEM_INITIALIZER(dad_ok, 0, UINT_MAX);
 static struct in6_addr laddr;
 
 static void ipv6_dad_ok_handler(struct net_mgmt_event_callback *cb,
-				uint32_t mgmt_event,
+				u32_t mgmt_event,
 				struct net_if *iface)
 {
 	struct net_if_addr *ifaddr;

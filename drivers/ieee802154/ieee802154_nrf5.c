@@ -46,9 +46,9 @@ static struct nrf5_802154_data nrf5_data;
 #define NRF5_802154_CFG(dev) \
 	((struct nrf5_802154_config * const)(dev)->config->config_info)
 
-static void nrf5_get_eui64(uint8_t *mac)
+static void nrf5_get_eui64(u8_t *mac)
 {
-	memcpy(mac, (const uint32_t *)&NRF_FICR->DEVICEID, 8);
+	memcpy(mac, (const u32_t *)&NRF_FICR->DEVICEID, 8);
 }
 
 static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
@@ -58,7 +58,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 	struct net_buf *frag = NULL;
 	enum net_verdict ack_result;
 	struct net_pkt *pkt;
-	uint8_t pkt_len;
+	u8_t pkt_len;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -162,7 +162,7 @@ static int nrf5_cca(struct device *dev)
 	return 0;
 }
 
-static int nrf5_set_channel(struct device *dev, uint16_t channel)
+static int nrf5_set_channel(struct device *dev, u16_t channel)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
@@ -180,9 +180,9 @@ static int nrf5_set_channel(struct device *dev, uint16_t channel)
 	return 0;
 }
 
-static int nrf5_set_pan_id(struct device *dev, uint16_t pan_id)
+static int nrf5_set_pan_id(struct device *dev, u16_t pan_id)
 {
-	uint8_t pan_id_le[2];
+	u8_t pan_id_le[2];
 
 	ARG_UNUSED(dev);
 
@@ -193,9 +193,9 @@ static int nrf5_set_pan_id(struct device *dev, uint16_t pan_id)
 	return 0;
 }
 
-static int nrf5_set_short_addr(struct device *dev, uint16_t short_addr)
+static int nrf5_set_short_addr(struct device *dev, u16_t short_addr)
 {
-	uint8_t short_addr_le[2];
+	u8_t short_addr_le[2];
 
 	ARG_UNUSED(dev);
 
@@ -206,7 +206,7 @@ static int nrf5_set_short_addr(struct device *dev, uint16_t short_addr)
 	return 0;
 }
 
-static int nrf5_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
+static int nrf5_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	ARG_UNUSED(dev);
 
@@ -219,7 +219,7 @@ static int nrf5_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	return 0;
 }
 
-static int nrf5_set_txpower(struct device *dev, int16_t dbm)
+static int nrf5_set_txpower(struct device *dev, s16_t dbm)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
@@ -234,8 +234,8 @@ static int nrf5_tx(struct device *dev,
 		   struct net_buf *frag)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	uint8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
-	uint8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
+	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
+	u8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
 
 	SYS_LOG_DBG("%p (%u)", payload, payload_len);
 
@@ -292,7 +292,7 @@ static int nrf5_stop(struct device *dev)
 	return 0;
 }
 
-static uint8_t nrf5_get_lqi(struct device *dev)
+static u8_t nrf5_get_lqi(struct device *dev)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
@@ -365,7 +365,7 @@ static void nrf5_iface_init(struct net_if *iface)
 
 /* nRF5 radio driver callbacks */
 
-void nrf_drv_radio802154_received(uint8_t *p_data, int8_t power, int8_t lqi)
+void nrf_drv_radio802154_received(u8_t *p_data, s8_t power, s8_t lqi)
 {
 	nrf5_data.rx_psdu = p_data;
 	nrf5_data.rssi = power;
@@ -387,7 +387,7 @@ void nrf_drv_radio802154_busy_channel(void)
 	k_sem_give(&nrf5_data.tx_wait);
 }
 
-void nrf_drv_radio802154_energy_detected(int8_t result)
+void nrf_drv_radio802154_energy_detected(s8_t result)
 {
 	nrf5_data.channel_ed = result;
 	k_sem_give(&nrf5_data.cca_wait);

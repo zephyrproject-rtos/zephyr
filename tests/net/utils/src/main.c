@@ -151,7 +151,7 @@ static bool run_tests(void)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint16_t chksum, orig_chksum;
+	u16_t chksum, orig_chksum;
 	int hdr_len, i, chunk, datalen, total = 0;
 
 	/* Packet fits to one fragment */

@@ -111,7 +111,7 @@ static struct net_rpl_instance rpl_instances[CONFIG_NET_RPL_MAX_INSTANCES];
 static struct net_rpl_instance *rpl_default_instance;
 static enum net_rpl_mode rpl_mode = NET_RPL_MODE_MESH;
 static net_rpl_join_callback_t rpl_join_callback;
-static uint8_t rpl_dao_sequence;
+static u8_t rpl_dao_sequence;
 
 #if NET_RPL_MULTICAST
 static void send_mcast_dao(struct net_rpl_instance *instance);
@@ -127,7 +127,7 @@ struct k_delayed_work dis_timer;
 /* This is set to true if we are able and ready to send any DIOs */
 static bool rpl_dio_send_ok;
 
-static int dao_send(struct net_rpl_parent *parent, uint8_t lifetime,
+static int dao_send(struct net_rpl_parent *parent, u8_t lifetime,
 		    struct net_if *iface);
 static void dao_send_timer(struct k_work *work);
 static void set_dao_lifetime_timer(struct net_rpl_instance *instance);
@@ -137,7 +137,7 @@ static struct net_rpl_parent *find_parent(struct net_if *iface,
 					  struct in6_addr *addr);
 static void remove_parents(struct net_if *iface,
 			   struct net_rpl_dag *dag,
-			   uint16_t minimum_rank);
+			   u16_t minimum_rank);
 
 static void net_rpl_schedule_dao_now(struct net_rpl_instance *instance);
 static void net_rpl_local_repair(struct net_if *iface,
@@ -192,10 +192,10 @@ void net_rpl_set_mode(enum net_rpl_mode new_mode)
 	}
 }
 
-static inline uint32_t net_rpl_lifetime(struct net_rpl_instance *instance,
-					uint8_t lifetime)
+static inline u32_t net_rpl_lifetime(struct net_rpl_instance *instance,
+					u8_t lifetime)
 {
-	return (uint32_t)instance->lifetime_unit * (uint32_t)lifetime;
+	return (u32_t)instance->lifetime_unit * (u32_t)lifetime;
 }
 
 static void net_rpl_neighbor_data_remove(struct net_nbr *nbr)
@@ -273,7 +273,7 @@ struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data)
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 
-		if (nbr->data == (uint8_t *)data) {
+		if (nbr->data == (u8_t *)data) {
 			return nbr;
 		}
 	}
@@ -333,7 +333,7 @@ static void net_rpl_print_neighbors(void)
 	if (rpl_default_instance && rpl_default_instance->current_dag) {
 		int curr_interval = rpl_default_instance->dio_interval_current;
 		int curr_rank = rpl_default_instance->current_dag->rank;
-		uint32_t now = k_uptime_get_32();
+		u32_t now = k_uptime_get_32();
 		struct net_rpl_parent *parent;
 		int i;
 
@@ -418,8 +418,8 @@ struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 	return route;
 }
 
-static inline void setup_icmpv6_hdr(struct net_pkt *pkt, uint8_t type,
-				    uint8_t code)
+static inline void setup_icmpv6_hdr(struct net_pkt *pkt, u8_t type,
+				    u8_t code)
 {
 	net_pkt_append_u8(pkt, type);
 	net_pkt_append_u8(pkt, code);
@@ -434,7 +434,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	struct net_rpl_dag *dag = instance->current_dag;
 	struct in6_addr addr, *dst_addr;
 	struct net_pkt *pkt;
-	uint16_t value;
+	u16_t value;
 	int ret;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
@@ -641,7 +641,7 @@ static void dio_timer(struct k_work *work)
 
 static void new_dio_interval(struct net_rpl_instance *instance)
 {
-	uint32_t time;
+	u32_t time;
 
 	time = 1 << instance->dio_interval_current;
 
@@ -704,7 +704,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 	struct in6_addr addr, *dst_addr;
 	const struct in6_addr *src;
 	struct net_pkt *pkt;
-	uint16_t pos;
+	u16_t pos;
 	int ret;
 
 	if (!iface) {
@@ -790,7 +790,7 @@ static enum net_verdict handle_dis(struct net_pkt *pkt)
 	return NET_OK;
 }
 
-static struct net_rpl_instance *net_rpl_get_instance(uint8_t instance_id)
+static struct net_rpl_instance *net_rpl_get_instance(u8_t instance_id)
 {
 	int i;
 
@@ -827,12 +827,12 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 	 * (2) selecting the least recently updated parent
 	 */
 	struct net_rpl_parent *probing_target = NULL;
-	uint16_t probing_target_rank = NET_RPL_INFINITE_RANK;
+	u16_t probing_target_rank = NET_RPL_INFINITE_RANK;
 
 	/* min_last_tx is the clock time NET_RPL_PROBING_EXPIRATION_TIME in
 	 * the past
 	 */
-	uint32_t min_last_tx = k_uptime_get_32();
+	u32_t min_last_tx = k_uptime_get_32();
 	struct net_rpl_parent *parent;
 	int i;
 
@@ -860,7 +860,7 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 			if (parent->dag == dag &&
 			    parent->last_tx_time < min_last_tx) {
 				/* parent is in our dag and needs probing */
-				uint16_t parent_rank =
+				u16_t parent_rank =
 					net_rpl_of_calc_rank(parent, 0);
 
 				if (!probing_target ||
@@ -1016,7 +1016,7 @@ static void dao_retransmit_timer(struct k_work *work)
 #endif
 
 static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
-					 uint8_t id)
+					 u8_t id)
 {
 	memset(instance, 0, sizeof(struct net_rpl_instance));
 
@@ -1036,7 +1036,7 @@ static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 #endif
 }
 
-static struct net_rpl_instance *net_rpl_alloc_instance(uint8_t instance_id)
+static struct net_rpl_instance *net_rpl_alloc_instance(u8_t instance_id)
 {
 	int i;
 
@@ -1056,7 +1056,7 @@ static struct net_rpl_instance *net_rpl_alloc_instance(uint8_t instance_id)
 	return NULL;
 }
 
-static struct net_rpl_dag *alloc_dag(uint8_t instance_id,
+static struct net_rpl_dag *alloc_dag(u8_t instance_id,
 				     struct in6_addr *dag_id)
 {
 	struct net_rpl_instance *instance;
@@ -1094,7 +1094,7 @@ static struct net_rpl_dag *alloc_dag(uint8_t instance_id,
 	return NULL;
 }
 
-static struct net_rpl_dag *get_dag(uint8_t instance_id,
+static struct net_rpl_dag *get_dag(u8_t instance_id,
 				   struct in6_addr *dag_id)
 {
 	struct net_rpl_instance *instance;
@@ -1264,9 +1264,9 @@ static void net_rpl_reset_dio_timer(struct net_rpl_instance *instance)
 
 static
 struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
-						  uint8_t instance_id,
+						  u8_t instance_id,
 						  struct in6_addr *dag_id,
-						  uint8_t version)
+						  u8_t version)
 {
 	struct net_rpl_dag *dag;
 	struct net_rpl_instance *instance;
@@ -1372,7 +1372,7 @@ struct net_rpl_dag *net_rpl_get_any_dag(void)
 }
 
 struct net_rpl_dag *net_rpl_set_root(struct net_if *iface,
-				     uint8_t instance_id,
+				     u8_t instance_id,
 				     struct in6_addr *dag_id)
 {
 	return net_rpl_set_root_with_version(iface, instance_id, dag_id,
@@ -1399,9 +1399,9 @@ static int lollipop_greater_than(int a, int b)
 bool net_rpl_set_prefix(struct net_if *iface,
 			struct net_rpl_dag *dag,
 			struct in6_addr *prefix,
-			uint8_t prefix_len)
+			u8_t prefix_len)
 {
-	uint8_t last_len = dag->prefix_info.length;
+	u8_t last_len = dag->prefix_info.length;
 	struct net_rpl_prefix last_prefix;
 
 	if (prefix_len > 128) {
@@ -1503,7 +1503,7 @@ static void net_rpl_remove_parent(struct net_if *iface,
  */
 static void remove_parents(struct net_if *iface,
 			   struct net_rpl_dag *dag,
-			   uint16_t minimum_rank)
+			   u16_t minimum_rank)
 {
 	int i;
 
@@ -1599,10 +1599,10 @@ static void set_dao_lifetime_timer(struct net_rpl_instance *instance)
 	 */
 	if (instance && instance->lifetime_unit != 0xffff &&
 	    instance->default_lifetime != 0xff) {
-		uint32_t expiration_time;
+		u32_t expiration_time;
 
-		expiration_time = (uint32_t)instance->default_lifetime *
-			(uint32_t)instance->lifetime_unit *
+		expiration_time = (u32_t)instance->default_lifetime *
+			(u32_t)instance->lifetime_unit *
 			MSEC_PER_SEC / 2;
 
 		instance->dao_lifetime_timer_active = true;
@@ -1779,7 +1779,7 @@ static struct net_rpl_parent *net_rpl_select_parent(struct net_if *iface,
 	return best;
 }
 
-static int acceptable_rank(struct net_rpl_dag *dag, uint16_t rank)
+static int acceptable_rank(struct net_rpl_dag *dag, u16_t rank)
 {
 	return rank != NET_RPL_INFINITE_RANK &&
 		(dag->instance->max_rank_inc == 0 ||
@@ -1795,7 +1795,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 {
 	struct net_rpl_parent *last_parent;
 	struct net_rpl_dag *best_dag;
-	uint16_t old_rank;
+	u16_t old_rank;
 
 	old_rank = instance->current_dag->rank;
 	last_parent = instance->current_dag->preferred_parent;
@@ -1911,7 +1911,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 
 static void nullify_parents(struct net_if *iface,
 			    struct net_rpl_dag *dag,
-			    uint16_t minimum_rank)
+			    u16_t minimum_rank)
 {
 	int i;
 
@@ -1962,7 +1962,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 	bool ret = true;
 
 #if defined(CONFIG_NET_DEBUG_RPL)
-	uint16_t old_rank = instance->current_dag->rank;
+	u16_t old_rank = instance->current_dag->rank;
 #endif
 
 	if (!acceptable_rank(parent->dag, parent->rank)) {
@@ -2017,7 +2017,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 	return ret;
 }
 
-static bool net_rpl_repair_root(uint8_t instance_id)
+static bool net_rpl_repair_root(u8_t instance_id)
 {
 	struct net_rpl_instance *instance;
 
@@ -2147,7 +2147,7 @@ static void send_mcast_dao_cb(struct net_route_entry_mcast *route,
 static void send_mcast_dao(struct net_rpl_instance *instance)
 {
 	struct in6_addr *addr = NULL;
-	uint8_t i;
+	u8_t i;
 
 	/* Send a DAO for own multicast addresses */
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
@@ -2533,7 +2533,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 	if (dag && instance) {
 		if (lollipop_greater_than(dio->version, dag->version)) {
 			if (dag->rank == NET_RPL_ROOT_RANK(instance)) {
-				uint8_t version;
+				u8_t version;
 
 				NET_DBG("Root received inconsistent DIO "
 					"version number %d rank %d",
@@ -2715,9 +2715,9 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 	struct net_rpl_dio dio = { 0 };
 	struct net_buf *frag;
 	struct net_nbr *nbr;
-	uint16_t offset, pos;
-	uint8_t subopt_type;
-	uint8_t flags, len, tmp;
+	u16_t offset, pos;
+	u8_t subopt_type;
+	u8_t flags, len, tmp;
 
 	net_rpl_info(pkt, "DODAG Information Object");
 
@@ -2977,16 +2977,16 @@ out:
 int net_rpl_dao_send(struct net_if *iface,
 		     struct net_rpl_parent *parent,
 		     struct in6_addr *prefix,
-		     uint8_t lifetime)
+		     u8_t lifetime)
 {
-	uint16_t value = 0;
+	u16_t value = 0;
 	struct net_rpl_instance *instance;
 	const struct in6_addr *src;
 	struct net_rpl_dag *dag;
 	struct in6_addr *dst;
 	struct net_pkt *pkt;
-	uint8_t prefix_bytes;
-	uint8_t prefixlen;
+	u8_t prefix_bytes;
+	u8_t prefixlen;
 	int ret;
 
 	/* No DAOs in feather mode. */
@@ -3090,7 +3090,7 @@ int net_rpl_dao_send(struct net_if *iface,
 }
 
 static int dao_send(struct net_rpl_parent *parent,
-		    uint8_t lifetime,
+		    u8_t lifetime,
 		    struct net_if *iface)
 {
 	struct in6_addr *prefix;
@@ -3147,8 +3147,8 @@ static int dao_ack_send(struct in6_addr *src,
 			struct in6_addr *dst,
 			struct net_if *iface,
 			struct net_rpl_instance *instance,
-			uint8_t sequence,
-			uint8_t status)
+			u8_t sequence,
+			u8_t status)
 {
 	struct net_pkt *pkt;
 	int ret;
@@ -3196,8 +3196,8 @@ static int dao_ack_send(struct in6_addr *src,
 static int forwarding_dao(struct net_rpl_instance *instance,
 			  struct net_rpl_dag *dag,
 			  struct net_pkt *pkt,
-			  uint8_t sequence,
-			  uint8_t flags,
+			  u8_t sequence,
+			  u8_t flags,
 			  char *str)
 {
 	struct in6_addr *paddr;
@@ -3242,15 +3242,15 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	struct net_buf *frag;
 	struct in6_addr addr;
 	struct net_nbr *nbr;
-	uint16_t offset;
-	uint16_t pos;
-	uint8_t sequence;
-	uint8_t instance_id;
-	uint8_t lifetime;
-	uint8_t target_len;
-	uint8_t flags;
-	uint8_t subopt_type;
-	uint8_t len;
+	u16_t offset;
+	u16_t pos;
+	u8_t sequence;
+	u8_t instance_id;
+	u8_t lifetime;
+	u8_t target_len;
+	u8_t flags;
+	u8_t subopt_type;
+	u8_t len;
 	int r = -EINVAL;
 
 	net_rpl_info(pkt, "Destination Advertisement Object");
@@ -3511,11 +3511,11 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 {
 	struct net_rpl_instance *instance;
 	struct net_buf *frag;
-	uint16_t offset;
-	uint16_t pos;
-	uint8_t instance_id;
-	uint8_t sequence;
-	uint8_t status;
+	u16_t offset;
+	u16_t pos;
+	u8_t instance_id;
+	u8_t sequence;
+	u8_t status;
 
 	net_rpl_info(pkt, "Destination Advertisement Object Ack");
 
@@ -3601,13 +3601,13 @@ static struct net_icmpv6_handler dao_ack_handler = {
 
 int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 {
-	uint16_t pos = 0;
+	u16_t pos = 0;
 	struct net_rpl_parent *parent;
 	struct net_buf *frag;
-	uint16_t sender_rank;
-	uint16_t offset;
-	uint8_t opt;
-	uint8_t len;
+	u16_t sender_rank;
+	u16_t offset;
+	u8_t opt;
+	u8_t len;
 
 	if (NET_IPV6_HDR(pkt)->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
 		return 0;
@@ -3644,7 +3644,7 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 	offset = pos;
 	frag = net_frag_skip(frag, pos, &pos, 1); /* flags */
 	frag = net_frag_skip(frag, pos, &pos, 1); /* instance */
-	frag = net_frag_read(frag, pos, &pos, 2, (uint8_t *)&sender_rank);
+	frag = net_frag_read(frag, pos, &pos, 2, (u8_t *)&sender_rank);
 	if (!frag && pos) {
 		return -EMSGSIZE;
 	}
@@ -3678,12 +3678,12 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 }
 
 struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
-				      uint16_t offset, uint16_t *pos,
+				      u16_t offset, u16_t *pos,
 				      bool *result)
 {
 	struct net_rpl_instance *instance;
-	uint16_t sender_rank;
-	uint8_t instance_id, flags;
+	u16_t sender_rank;
+	u8_t instance_id, flags;
 	bool down, sender_closer;
 
 	frag = net_frag_read_u8(frag, offset, pos, &flags);
@@ -3781,7 +3781,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 	return frag;
 }
 
-static inline int add_rpl_opt(struct net_pkt *pkt, uint16_t offset)
+static inline int add_rpl_opt(struct net_pkt *pkt, u16_t offset)
 {
 	int ext_len = net_pkt_ipv6_ext_len(pkt);
 	bool ret;
@@ -3843,16 +3843,16 @@ static inline int add_rpl_opt(struct net_pkt *pkt, uint16_t offset)
 
 static int net_rpl_update_header_empty(struct net_pkt *pkt)
 {
-	uint16_t offset = sizeof(struct net_ipv6_hdr);
-	uint8_t next = NET_IPV6_HDR(pkt)->nexthdr;
+	u16_t offset = sizeof(struct net_ipv6_hdr);
+	u8_t next = NET_IPV6_HDR(pkt)->nexthdr;
 	struct net_buf *frag = pkt->frags;
 	struct net_rpl_instance *instance;
 	struct net_rpl_parent *parent;
 	struct net_route_entry *route;
-	uint8_t next_hdr, len, length;
-	uint8_t opt_type = 0, opt_len;
-	uint8_t instance_id, flags;
-	uint16_t pos;
+	u8_t next_hdr, len, length;
+	u8_t opt_type = 0, opt_len;
+	u8_t instance_id, flags;
+	u16_t pos;
 
 	NET_DBG("Verifying the presence of the RPL header option");
 
@@ -3998,16 +3998,16 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 	return 0;
 }
 
-int net_rpl_revert_header(struct net_pkt *pkt, uint16_t offset, uint16_t *pos)
+int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos)
 {
 	struct net_rpl_instance *instance;
 	struct net_buf *frag;
-	uint16_t sender_rank;
-	uint16_t revert_pos;
-	uint8_t instance_id;
-	uint8_t opt_len;
-	uint8_t flags;
-	uint8_t opt;
+	u16_t sender_rank;
+	u16_t revert_pos;
+	u8_t instance_id;
+	u8_t opt_len;
+	u8_t flags;
+	u8_t opt;
 
 	/* Skip HBHO next header and length */
 	frag = net_frag_skip(pkt->frags, offset, pos, 2);
@@ -4075,7 +4075,7 @@ static inline void create_linklocal_rplnodes_mcast(struct in6_addr *addr)
 #if defined(CONFIG_NET_RPL_DIS_SEND)
 static void dis_timeout(struct k_work *work)
 {
-	uint32_t dis_interval;
+	u32_t dis_interval;
 
 	NET_DBG("DIS Timer triggered at %u", k_uptime_get_32());
 
@@ -4091,11 +4091,11 @@ static inline void net_rpl_init_timers(void)
 {
 #if defined(CONFIG_NET_RPL_DIS_SEND)
 	/* Randomize the first DIS sending*/
-	uint32_t dis_interval;
+	u32_t dis_interval;
 
 	dis_interval = (CONFIG_NET_RPL_DIS_INTERVAL / 2 +
-			((uint32_t)CONFIG_NET_RPL_DIS_INTERVAL *
-			 (uint32_t)sys_rand32_get()) / UINT_MAX -
+			((u32_t)CONFIG_NET_RPL_DIS_INTERVAL *
+			 (u32_t)sys_rand32_get()) / UINT_MAX -
 			NET_RPL_DIS_START_DELAY) * MSEC_PER_SEC;
 
 	k_delayed_work_init(&dis_timer, dis_timeout);

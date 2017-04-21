@@ -58,10 +58,10 @@ struct net_conn {
 	void *user_data;
 
 	/** Connection protocol */
-	uint8_t proto;
+	u8_t proto;
 
 	/** Flags for the connection */
-	uint8_t flags;
+	u8_t flags;
 
 	/** Rank of this connection. Higher rank means more specific
 	 * connection.
@@ -73,7 +73,7 @@ struct net_conn {
 	 *   bit 4  local address, bit set if specific address
 	 *   bit 5  remote address, bit set if specific address
 	 */
-	uint8_t rank;
+	u8_t rank;
 };
 
 /**
@@ -94,8 +94,8 @@ struct net_conn {
 int net_conn_register(enum net_ip_protocol proto,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
-		      uint16_t remote_port,
-		      uint16_t local_port,
+		      u16_t remote_port,
+		      u16_t local_port,
 		      net_conn_cb_t cb,
 		      void *user_data,
 		      struct net_conn_handle **handle);

@@ -34,7 +34,7 @@ static int format_uri(const char * const *path, struct net_buf *buf)
 	strncpy(str, prefix, sizeof(prefix) - 1);
 
 	for (p = path; p && *p; ) {
-		uint16_t path_len = strlen(*p);
+		u16_t path_len = strlen(*p);
 
 		str = net_buf_add(buf, path_len);
 		strncpy(str, *p, path_len);
@@ -109,7 +109,7 @@ static int format_resource(const struct zoap_resource *resource,
 }
 
 static bool match_path_uri(const char * const *path,
-			   const char *uri, uint16_t len)
+			   const char *uri, u16_t len)
 {
 	const char * const *p = NULL;
 	int i, j, plen;
@@ -171,7 +171,7 @@ static bool match_attributes(const char * const *attributes,
 	 * resources with resource type lux or temperature.
 	 */
 	for (attr = attributes; attr && *attr; attr++) {
-		uint16_t attr_len = strlen(*attr);
+		u16_t attr_len = strlen(*attr);
 
 		if (query->len != attr_len) {
 			continue;
@@ -209,7 +209,7 @@ static bool match_queries_resource(const struct zoap_resource *resource,
 	    !strncmp((char *) query->value, "href", href_len)) {
 		/* The stuff after 'href=' */
 		const char *uri = (char *) query->value + href_len + 1;
-		uint16_t uri_len  = query->len - (href_len + 1);
+		u16_t uri_len  = query->len - (href_len + 1);
 
 		return match_path_uri(resource->path, uri, uri_len);
 	}
@@ -225,7 +225,7 @@ static int send_error_response(struct zoap_resource *resource,
 	struct zoap_packet response;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint16_t id;
+	u16_t id;
 	int r;
 
 	id = zoap_header_get_id(request);
@@ -275,10 +275,10 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	struct zoap_option query;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	const uint8_t *token;
+	const u8_t *token;
 	unsigned int num_queries;
-	uint16_t id;
-	uint8_t tkl, format = 40; /* application/link-format */
+	u16_t id;
+	u8_t tkl, format = 40; /* application/link-format */
 	int r;
 
 	id = zoap_header_get_id(request);
@@ -337,7 +337,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	 */
 	while (resource++ && resource->path) {
 		struct net_buf *temp;
-		uint8_t *str;
+		u8_t *str;
 
 		if (!match_queries_resource(resource, &query, num_queries)) {
 			continue;

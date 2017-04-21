@@ -55,7 +55,7 @@ struct net_offload {
 		       const struct sockaddr *addr,
 		       socklen_t addrlen,
 		       net_context_connect_cb_t cb,
-		       int32_t timeout,
+		       s32_t timeout,
 		       void *user_data);
 
 	/**
@@ -64,7 +64,7 @@ struct net_offload {
 	 */
 	int (*accept)(struct net_context *context,
 		      net_tcp_accept_cb_t cb,
-		      int32_t timeout,
+		      s32_t timeout,
 		      void *user_data);
 
 	/**
@@ -72,7 +72,7 @@ struct net_offload {
 	 */
 	int (*send)(struct net_pkt *pkt,
 		    net_context_send_cb_t cb,
-		    int32_t timeout,
+		    s32_t timeout,
 		    void *token,
 		    void *user_data);
 
@@ -83,7 +83,7 @@ struct net_offload {
 		      const struct sockaddr *dst_addr,
 		      socklen_t addrlen,
 		      net_context_send_cb_t cb,
-		      int32_t timeout,
+		      s32_t timeout,
 		      void *token,
 		      void *user_data);
 
@@ -93,7 +93,7 @@ struct net_offload {
 	 */
 	int (*recv)(struct net_context *context,
 		    net_context_recv_cb_t cb,
-		    int32_t timeout,
+		    s32_t timeout,
 		    void *user_data);
 
 	/**
@@ -214,7 +214,7 @@ static inline int net_offload_connect(struct net_if *iface,
 					    const struct sockaddr *addr,
 					    socklen_t addrlen,
 					    net_context_connect_cb_t cb,
-					    int32_t timeout,
+					    s32_t timeout,
 					    void *user_data)
 {
 	NET_ASSERT(iface);
@@ -255,7 +255,7 @@ static inline int net_offload_connect(struct net_if *iface,
 static inline int net_offload_accept(struct net_if *iface,
 					   struct net_context *context,
 					   net_tcp_accept_cb_t cb,
-					   int32_t timeout,
+					   s32_t timeout,
 					   void *user_data)
 {
 	NET_ASSERT(iface);
@@ -295,7 +295,7 @@ static inline int net_offload_accept(struct net_if *iface,
 static inline int net_offload_send(struct net_if *iface,
 					 struct net_pkt *pkt,
 					 net_context_send_cb_t cb,
-					 int32_t timeout,
+					 s32_t timeout,
 					 void *token,
 					 void *user_data)
 {
@@ -340,7 +340,7 @@ static inline int net_offload_sendto(struct net_if *iface,
 					   const struct sockaddr *dst_addr,
 					   socklen_t addrlen,
 					   net_context_send_cb_t cb,
-					   int32_t timeout,
+					   s32_t timeout,
 					   void *token,
 					   void *user_data)
 {
@@ -388,7 +388,7 @@ static inline int net_offload_sendto(struct net_if *iface,
 static inline int net_offload_recv(struct net_if *iface,
 					 struct net_context *context,
 					 net_context_recv_cb_t cb,
-					 int32_t timeout,
+					 s32_t timeout,
 					 void *user_data)
 {
 	NET_ASSERT(iface);

@@ -23,7 +23,7 @@
 /* Sets the network parameters */
 static
 int network_setup(struct net_context **net_ctx, net_tcp_accept_cb_t accept_cb,
-		  const char *addr, uint16_t port);
+		  const char *addr, u16_t port);
 
 #if defined(CONFIG_MBEDTLS)
 #include "ssl_utils.h"
@@ -68,7 +68,7 @@ void main(void)
 
 static
 int network_setup(struct net_context **net_ctx, net_tcp_accept_cb_t accept_cb,
-		  const char *addr, uint16_t port)
+		  const char *addr, u16_t port)
 {
 	struct sockaddr local_sock;
 	void *ptr;

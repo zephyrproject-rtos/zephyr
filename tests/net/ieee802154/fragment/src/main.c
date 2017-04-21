@@ -150,7 +150,7 @@ int net_fragment_dev_init(struct device *dev)
 
 static void net_fragment_iface_init(struct net_if *iface)
 {
-	uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb};
+	u8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb};
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
@@ -175,7 +175,7 @@ NET_DEVICE_INIT(net_fragment_test, "net_fragment_test",
 static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 {
 	struct net_buf *frag;
-	uint8_t bytes, pos, compare, offset = 0;
+	u8_t bytes, pos, compare, offset = 0;
 	int remaining = data->len;
 
 	if (net_pkt_get_len(pkt) != (NET_IPV6UDPH_LEN + remaining)) {
@@ -187,7 +187,7 @@ static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 
 	frag = pkt->frags;
 
-	if (memcmp(frag->data, (uint8_t *)data, NET_IPV6UDPH_LEN)) {
+	if (memcmp(frag->data, (u8_t *)data, NET_IPV6UDPH_LEN)) {
 		printk("mismatch headers\n");
 		return false;
 	}
@@ -218,8 +218,8 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint8_t bytes, pos;
-	uint16_t len;
+	u8_t bytes, pos;
+	u16_t len;
 	int remaining;
 
 	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
@@ -237,7 +237,7 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 		return NULL;
 	}
 
-	memcpy(frag->data, (uint8_t *) data, NET_IPV6UDPH_LEN);
+	memcpy(frag->data, (u8_t *) data, NET_IPV6UDPH_LEN);
 	net_buf_add(frag, NET_IPV6UDPH_LEN);
 
 	pos = 0;
@@ -247,16 +247,16 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	/* length is not set in net_fragment_data data pointer, calculate and set
 	 * in ipv6, udp and in data pointer too (it's required in comparison) */
 	frag->data[4] = len >> 8;
-	frag->data[5] = (uint8_t) len;
+	frag->data[5] = (u8_t) len;
 	frag->data[44] = len >> 8;
-	frag->data[45] = (uint8_t) len;
+	frag->data[45] = (u8_t) len;
 
 	data->ipv6.len[0] = len >> 8;
-	data->ipv6.len[1] = (uint8_t) len;
+	data->ipv6.len[1] = (u8_t) len;
 	data->udp.len = htons(len);
 
 	while (remaining > 0) {
-		uint8_t copy;
+		u8_t copy;
 		bytes = net_buf_tailroom(frag);
 		copy = remaining > bytes ? bytes : remaining;
 		memcpy(net_buf_add(frag, copy), &user_data[pos], copy);

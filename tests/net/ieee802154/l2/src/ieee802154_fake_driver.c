@@ -24,28 +24,28 @@ static int fake_cca(struct device *dev)
 	return 0;
 }
 
-static int fake_set_channel(struct device *dev, uint16_t channel)
+static int fake_set_channel(struct device *dev, u16_t channel)
 {
 	NET_INFO("Channel %u\n", channel);
 
 	return 0;
 }
 
-static int fake_set_pan_id(struct device *dev, uint16_t pan_id)
+static int fake_set_pan_id(struct device *dev, u16_t pan_id)
 {
 	NET_INFO("PAN id 0x%x\n", pan_id);
 
 	return 0;
 }
 
-static int fake_set_short_addr(struct device *dev, uint16_t short_addr)
+static int fake_set_short_addr(struct device *dev, u16_t short_addr)
 {
 	NET_INFO("Short address: 0x%x\n", short_addr);
 
 	return 0;
 }
 
-static int fake_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
+static int fake_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	NET_INFO("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
 		 ieee_addr[0], ieee_addr[1], ieee_addr[2], ieee_addr[3],
@@ -54,7 +54,7 @@ static int fake_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	return 0;
 }
 
-static int fake_set_txpower(struct device *dev, int16_t dbm)
+static int fake_set_txpower(struct device *dev, s16_t dbm)
 {
 	NET_INFO("TX power %d dbm\n", dbm);
 
@@ -112,7 +112,7 @@ static int fake_stop(struct device *dev)
 static void fake_iface_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	static uint8_t mac[8] = { 0x00, 0x12, 0x4b, 0x00,
+	static u8_t mac[8] = { 0x00, 0x12, 0x4b, 0x00,
 				  0x00, 0x9e, 0xa3, 0xc2 };
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);

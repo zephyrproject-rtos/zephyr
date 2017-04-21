@@ -28,15 +28,15 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2);
 static int eth_enc28j60_soft_reset(struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t tx_buf[2] = {ENC28J60_SPI_SC, 0xFF};
+	u8_t tx_buf[2] = {ENC28J60_SPI_SC, 0xFF};
 
 	return spi_write(context->spi, tx_buf, 2);
 }
 
-static void eth_enc28j60_set_bank(struct device *dev, uint16_t reg_addr)
+static void eth_enc28j60_set_bank(struct device *dev, u16_t reg_addr)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t tx_buf[2];
+	u8_t tx_buf[2];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
@@ -53,11 +53,11 @@ static void eth_enc28j60_set_bank(struct device *dev, uint16_t reg_addr)
 	k_sem_give(&context->spi_sem);
 }
 
-static void eth_enc28j60_write_reg(struct device *dev, uint16_t reg_addr,
-				   uint8_t value)
+static void eth_enc28j60_write_reg(struct device *dev, u16_t reg_addr,
+				   u8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t tx_buf[2];
+	u8_t tx_buf[2];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
@@ -69,12 +69,12 @@ static void eth_enc28j60_write_reg(struct device *dev, uint16_t reg_addr,
 	k_sem_give(&context->spi_sem);
 }
 
-static void eth_enc28j60_read_reg(struct device *dev, uint16_t reg_addr,
-				  uint8_t *value)
+static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
+				  u8_t *value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t tx_size = 2;
-	uint8_t tx_buf[3];
+	u8_t tx_size = 2;
+	u8_t tx_buf[3];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
@@ -92,11 +92,11 @@ static void eth_enc28j60_read_reg(struct device *dev, uint16_t reg_addr,
 	k_sem_give(&context->spi_sem);
 }
 
-static void eth_enc28j60_set_eth_reg(struct device *dev, uint16_t reg_addr,
-				     uint8_t value)
+static void eth_enc28j60_set_eth_reg(struct device *dev, u16_t reg_addr,
+				     u8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t tx_buf[2];
+	u8_t tx_buf[2];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
@@ -109,11 +109,11 @@ static void eth_enc28j60_set_eth_reg(struct device *dev, uint16_t reg_addr,
 }
 
 
-static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
-				       uint8_t value)
+static void eth_enc28j60_clear_eth_reg(struct device *dev, u16_t reg_addr,
+				       u8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t tx_buf[2];
+	u8_t tx_buf[2];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
@@ -125,13 +125,13 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
 	k_sem_give(&context->spi_sem);
 }
 
-static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
-				   uint16_t buf_len)
+static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
+				   u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint8_t *index_buf;
-	uint16_t num_segments;
-	uint16_t num_remaining;
+	u8_t *index_buf;
+	u16_t num_segments;
+	u16_t num_remaining;
 
 	index_buf = data_buffer;
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
@@ -156,12 +156,12 @@ static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 	k_sem_give(&context->spi_sem);
 }
 
-static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
-				  uint16_t buf_len)
+static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
+				  u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint16_t num_segments;
-	uint16_t num_remaining;
+	u16_t num_segments;
+	u16_t num_remaining;
 
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
@@ -194,10 +194,10 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 	k_sem_give(&context->spi_sem);
 }
 
-static void eth_enc28j60_write_phy(struct device *dev, uint16_t reg_addr,
-				   int16_t data)
+static void eth_enc28j60_write_phy(struct device *dev, u16_t reg_addr,
+				   s16_t data)
 {
-	uint8_t data_mistat;
+	u8_t data_mistat;
 
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_MIREGADR);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_MIREGADR, reg_addr);
@@ -215,7 +215,7 @@ static void eth_enc28j60_write_phy(struct device *dev, uint16_t reg_addr,
 
 static void eth_enc28j60_gpio_callback(struct device *dev,
 				       struct gpio_callback *cb,
-				       uint32_t pins)
+				       u32_t pins)
 {
 	struct eth_enc28j60_runtime *context =
 		CONTAINER_OF(cb, struct eth_enc28j60_runtime, gpio_cb);
@@ -225,7 +225,7 @@ static void eth_enc28j60_gpio_callback(struct device *dev,
 
 static void eth_enc28j60_init_buffers(struct device *dev)
 {
-	uint8_t data_estat;
+	u8_t data_estat;
 
 	/* Reception buffers initialization */
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXSTL);
@@ -273,7 +273,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 static void eth_enc28j60_init_mac(struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config->config_info;
-	uint8_t data_macon;
+	u8_t data_macon;
 
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_MACON1);
 
@@ -425,15 +425,15 @@ static int eth_enc28j60_init(struct device *dev)
 }
 
 static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt,
-			   uint16_t len)
+			   u16_t len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint16_t tx_bufaddr = ENC28J60_TXSTART;
+	u16_t tx_bufaddr = ENC28J60_TXSTART;
 	bool first_frag = true;
-	uint8_t per_packet_control;
-	uint16_t tx_bufaddr_end;
+	u8_t per_packet_control;
+	u16_t tx_bufaddr_end;
 	struct net_buf *frag;
-	uint8_t tx_end;
+	u8_t tx_end;
 
 	k_sem_take(&context->tx_rx_sem, K_FOREVER);
 
@@ -462,8 +462,8 @@ static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt,
 	eth_enc28j60_write_mem(dev, &per_packet_control, 1);
 
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-		uint8_t *data_ptr;
-		uint16_t data_len;
+		u8_t *data_ptr;
+		u16_t data_len;
 
 		if (first_frag) {
 			data_ptr = net_pkt_ll(pkt);
@@ -509,8 +509,8 @@ static int eth_enc28j60_rx(struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	uint16_t lengthfr;
-	uint8_t counter;
+	u16_t lengthfr;
+	u8_t counter;
 
 	/* Errata 6. The Receive Packet Pending Interrupt Flag (EIR.PKTIF)
 	 * does not reliably/accurately report the status of pending packet.
@@ -523,14 +523,14 @@ static int eth_enc28j60_rx(struct device *dev)
 
 	do {
 		struct net_buf *pkt_buf = NULL;
-		uint16_t frm_len = 0;
+		u16_t frm_len = 0;
 		struct net_pkt *pkt;
-		uint16_t next_packet;
-		uint8_t np[2];
+		u16_t next_packet;
+		u8_t np[2];
 
 		/* Read address for next packet */
 		eth_enc28j60_read_mem(dev, np, 2);
-		next_packet = np[0] | (uint16_t)np[1] << 8;
+		next_packet = np[0] | (u16_t)np[1] << 8;
 
 		/* Errata 14. Even values in ERXRDPT
 		 * may corrupt receive buffer.
@@ -559,7 +559,7 @@ static int eth_enc28j60_rx(struct device *dev)
 
 		do {
 			size_t frag_len;
-			uint8_t *data_ptr;
+			u8_t *data_ptr;
 			size_t spi_frame_len;
 
 			/* Reserve a data frag to receive the frame */
@@ -629,7 +629,7 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2)
 {
 	struct device *dev = (struct device *) arg1;
 	struct eth_enc28j60_runtime *context;
-	uint8_t int_stat;
+	u8_t int_stat;
 
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
@@ -652,7 +652,7 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2)
 
 static int eth_net_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	uint16_t len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
+	u16_t len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 	int ret;
 
 	SYS_LOG_DBG("pkt %p (len %u)", pkt, len);
@@ -667,7 +667,7 @@ static int eth_net_tx(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_ETH_ENC28J60_0
 
-static uint8_t mac_address_0[6] = { MICROCHIP_OUI_B0,
+static u8_t mac_address_0[6] = { MICROCHIP_OUI_B0,
 				    MICROCHIP_OUI_B1,
 				    MICROCHIP_OUI_B2,
 				    CONFIG_ETH_ENC28J60_0_MAC3,

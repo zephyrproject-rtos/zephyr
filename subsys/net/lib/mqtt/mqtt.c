@@ -71,8 +71,8 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 {
 	struct net_pkt *tx = NULL;
 	/* DISCONNECT is a zero length message: 2 bytes required, no payload */
-	uint8_t msg[2];
-	uint16_t len;
+	u8_t msg[2];
+	u16_t len;
 	int rc;
 
 	rc = mqtt_pack_disconnect(msg, &len, sizeof(msg));
@@ -125,12 +125,12 @@ exit_disconnect:
  * @retval -EIO on network error
  */
 static
-int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
+int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 		     enum mqtt_packet pkt_type)
 {
 	struct net_pkt *tx = NULL;
-	uint8_t msg[4];
-	uint16_t len;
+	u8_t msg[4];
+	u16_t len;
 	int rc;
 
 	switch (pkt_type) {
@@ -180,22 +180,22 @@ exit_send:
 	return rc;
 }
 
-int mqtt_tx_puback(struct mqtt_ctx *ctx, uint16_t id)
+int mqtt_tx_puback(struct mqtt_ctx *ctx, u16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBACK);
 }
 
-int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, uint16_t id)
+int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, u16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBCOMP);
 }
 
-int mqtt_tx_pubrec(struct mqtt_ctx *ctx, uint16_t id)
+int mqtt_tx_pubrec(struct mqtt_ctx *ctx, u16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBREC);
 }
 
-int mqtt_tx_pubrel(struct mqtt_ctx *ctx, uint16_t id)
+int mqtt_tx_pubrel(struct mqtt_ctx *ctx, u16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBREL);
 }
@@ -245,8 +245,8 @@ exit_publish:
 int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 {
 	struct net_pkt *tx = NULL;
-	uint8_t msg[2];
-	uint16_t len;
+	u8_t msg[2];
+	u16_t len;
 	int rc;
 
 	rc = mqtt_pack_pingreq(msg, &len, sizeof(msg));
@@ -281,7 +281,7 @@ exit_pingreq:
 	return rc;
 }
 
-int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
+int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 		      const char *topics[], const enum mqtt_qos qos[])
 {
 	struct net_buf *data = NULL;
@@ -326,7 +326,7 @@ exit_subs:
 	return rc;
 }
 
-int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
+int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 			const char *topics[])
 {
 	struct net_buf *data = NULL;
@@ -372,10 +372,10 @@ exit_unsub:
 
 int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx, int clean_session)
 {
-	uint16_t len;
-	uint8_t connect_rc;
-	uint8_t session;
-	uint8_t *data;
+	u16_t len;
+	u8_t connect_rc;
+	u8_t session;
+	u8_t *data;
 	int rc;
 
 	data = rx->data;
@@ -439,11 +439,11 @@ static
 int mqtt_rx_pub_msgs(struct mqtt_ctx *ctx, struct net_buf *rx,
 		     enum mqtt_packet type)
 {
-	int (*unpack)(uint8_t *, uint16_t, uint16_t *) = NULL;
-	int (*response)(struct mqtt_ctx *, uint16_t) = NULL;
-	uint16_t pkt_id;
-	uint16_t len;
-	uint8_t *data;
+	int (*unpack)(u8_t *, u16_t, u16_t *) = NULL;
+	int (*response)(struct mqtt_ctx *, u16_t) = NULL;
+	u16_t pkt_id;
+	u16_t len;
+	u8_t *data;
 	int rc;
 
 	switch (type) {
@@ -542,10 +542,10 @@ int mqtt_rx_pingresp(struct mqtt_ctx *ctx, struct net_buf *rx)
 int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx)
 {
 	enum mqtt_qos suback_qos[CONFIG_MQTT_SUBSCRIBE_MAX_TOPICS];
-	uint16_t pkt_id;
-	uint16_t len;
-	uint8_t items;
-	uint8_t *data;
+	u16_t pkt_id;
+	u16_t len;
+	u8_t items;
+	u8_t *data;
 	int rc;
 
 	data = rx->data;
@@ -571,9 +571,9 @@ int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx)
 
 int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx)
 {
-	uint16_t pkt_id;
-	uint16_t len;
-	uint8_t *data;
+	u16_t pkt_id;
+	u16_t len;
+	u8_t *data;
 	int rc;
 
 	data = rx->data;
@@ -641,11 +641,11 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx)
  */
 static
 struct net_buf *mqtt_linearize_packet(struct mqtt_ctx *ctx, struct net_pkt *rx,
-				      uint16_t min_size)
+				      u16_t min_size)
 {
 	struct net_buf *data = NULL;
-	uint16_t data_len;
-	uint16_t offset;
+	u16_t data_len;
+	u16_t offset;
 	int rc;
 
 	/* CONFIG_MQTT_MSG_MAX_SIZE is defined via Kconfig. So here it's
@@ -694,7 +694,7 @@ exit_error:
 static
 int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 {
-	uint16_t pkt_type = MQTT_INVALID;
+	u16_t pkt_type = MQTT_INVALID;
 	struct net_buf *data = NULL;
 	int rc = -EINVAL;
 
@@ -760,7 +760,7 @@ exit_parser:
 static
 int mqtt_subscriber_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 {
-	uint16_t pkt_type = MQTT_INVALID;
+	u16_t pkt_type = MQTT_INVALID;
 	struct net_buf *data = NULL;
 	int rc = 0;
 

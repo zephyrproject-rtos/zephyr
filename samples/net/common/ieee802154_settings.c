@@ -16,9 +16,9 @@
 
 int ieee802154_sample_setup(void)
 {
-	uint16_t channel = CONFIG_NET_APP_IEEE802154_CHANNEL;
-	uint16_t pan_id = CONFIG_NET_APP_IEEE802154_PAN_ID;
-	int16_t tx_power = CONFIG_NET_APP_IEEE802154_RADIO_TX_POWER;
+	u16_t channel = CONFIG_NET_APP_IEEE802154_CHANNEL;
+	u16_t pan_id = CONFIG_NET_APP_IEEE802154_PAN_ID;
+	s16_t tx_power = CONFIG_NET_APP_IEEE802154_RADIO_TX_POWER;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_params sec_params = {
@@ -43,11 +43,11 @@ int ieee802154_sample_setup(void)
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID,
-		     iface, &pan_id, sizeof(uint16_t)) ||
+		     iface, &pan_id, sizeof(u16_t)) ||
 	    net_mgmt(NET_REQUEST_IEEE802154_SET_CHANNEL,
-		     iface, &channel, sizeof(uint16_t)) ||
+		     iface, &channel, sizeof(u16_t)) ||
 	    net_mgmt(NET_REQUEST_IEEE802154_SET_TX_POWER,
-		     iface, &tx_power, sizeof(int16_t))) {
+		     iface, &tx_power, sizeof(s16_t))) {
 		return -EINVAL;
 	}
 

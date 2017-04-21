@@ -29,13 +29,13 @@
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
 struct net_eth_addr {
-	uint8_t addr[6];
+	u8_t addr[6];
 };
 
 struct net_eth_hdr {
 	struct net_eth_addr dst;
 	struct net_eth_addr src;
-	uint16_t type;
+	u16_t type;
 } __packed;
 
 static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)

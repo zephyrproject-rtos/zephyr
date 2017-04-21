@@ -39,7 +39,7 @@ struct net_l2 {
 	 * reserve as headroom in a net packet. Such space is relevant to L2
 	 * layer only.
 	 */
-	uint16_t (*reserve)(struct net_if *iface, void *data);
+	u16_t (*reserve)(struct net_if *iface, void *data);
 
 	/**
 	 * This function is used to enable/disable traffic over a network

@@ -26,14 +26,14 @@ static inline int csma_ca_tx_fragment(struct net_if *iface,
 				      struct net_pkt *pkt,
 				      struct net_buf *frag)
 {
-	const uint8_t max_bo = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO;
-	const uint8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
-	uint8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
+	const u8_t max_bo = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO;
+	const u8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
+	u8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	bool ack_required = prepare_for_ack(ctx, pkt);
-	uint8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
-	uint8_t nb = 0;
+	u8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
+	u8_t nb = 0;
 	int ret = -EIO;
 
 	NET_DBG("frag %p", frag);
@@ -43,7 +43,7 @@ loop:
 		retries--;
 
 		if (be) {
-			uint8_t bo_n = sys_rand32_get() & (2 << (be + 1));
+			u8_t bo_n = sys_rand32_get() & (2 << (be + 1));
 
 			k_busy_wait(bo_n * 20);
 		}

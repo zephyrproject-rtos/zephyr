@@ -23,13 +23,13 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
 #include <logging/sys_log.h>
 
-static inline uint32_t eth_read(uint32_t base_addr, uint32_t offset)
+static inline u32_t eth_read(u32_t base_addr, u32_t offset)
 {
 	return sys_read32(base_addr + offset);
 }
 
-static inline void eth_write(uint32_t base_addr, uint32_t offset,
-			     uint32_t val)
+static inline void eth_write(u32_t base_addr, u32_t offset,
+			     u32_t val)
 {
 	sys_write32(val, base_addr + offset);
 }
@@ -37,9 +37,9 @@ static inline void eth_write(uint32_t base_addr, uint32_t offset,
 static void eth_rx(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
-	uint32_t base_addr = context->base_addr;
+	u32_t base_addr = context->base_addr;
 	struct net_buf *buf;
-	uint32_t frm_len = 0;
+	u32_t frm_len = 0;
 
 	/* Check whether the RX descriptor is still owned by the device.  If not,
 	 * process the received frame or an error that may have occurred.
@@ -97,7 +97,7 @@ release_desc:
 static int eth_tx(struct device *port, struct net_buf *buf)
 {
 	struct eth_runtime *context = port->driver_data;
-	uint32_t base_addr = context->base_addr;
+	u32_t base_addr = context->base_addr;
 
 	/* Wait until the TX descriptor is no longer owned by the device. */
 	while (context->tx_desc.own == 1) {
@@ -135,8 +135,8 @@ static int eth_tx(struct device *port, struct net_buf *buf)
 static void eth_dw_isr(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
-	uint32_t base_addr = context->base_addr;
-	uint32_t int_status;
+	u32_t base_addr = context->base_addr;
+	u32_t int_status;
 
 	int_status = eth_read(base_addr, REG_ADDR_STATUS);
 
@@ -186,14 +186,14 @@ static int eth_initialize(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
 	const struct eth_config *config = port->config->config_info;
-	uint32_t base_addr;
+	u32_t base_addr;
 
 	union {
 		struct {
-			uint8_t bytes[6];
-			uint8_t pad[2];
+			u8_t bytes[6];
+			u8_t pad[2];
 		} __attribute__((packed));
-		uint32_t words[2];
+		u32_t words[2];
 	} mac_addr;
 
 	if (!eth_setup(port))
@@ -214,7 +214,7 @@ static int eth_initialize(struct device *port)
 	context->tx_desc.tdes0 = 0;
 	context->tx_desc.tdes1 = 0;
 
-	context->tx_desc.buf1_ptr = (uint8_t *)context->tx_buf;
+	context->tx_desc.buf1_ptr = (u8_t *)context->tx_buf;
 	context->tx_desc.tx_end_of_ring = 1;
 	context->tx_desc.first_seg_in_frm = 1;
 	context->tx_desc.last_seg_in_frm = 1;
@@ -224,7 +224,7 @@ static int eth_initialize(struct device *port)
 	context->rx_desc.rdes0 = 0;
 	context->rx_desc.rdes1 = 0;
 
-	context->rx_desc.buf1_ptr = (uint8_t *)context->rx_buf;
+	context->rx_desc.buf1_ptr = (u8_t *)context->rx_buf;
 	context->rx_desc.own = 1;
 	context->rx_desc.first_desc = 1;
 	context->rx_desc.last_desc = 1;
@@ -232,8 +232,8 @@ static int eth_initialize(struct device *port)
 	context->rx_desc.rx_end_of_ring = 1;
 
 	/* Install transmit and receive descriptors. */
-	eth_write(base_addr, REG_ADDR_RX_DESC_LIST, (uint32_t)&context->rx_desc);
-	eth_write(base_addr, REG_ADDR_TX_DESC_LIST, (uint32_t)&context->tx_desc);
+	eth_write(base_addr, REG_ADDR_RX_DESC_LIST, (u32_t)&context->rx_desc);
+	eth_write(base_addr, REG_ADDR_TX_DESC_LIST, (u32_t)&context->tx_desc);
 
 	eth_write(base_addr, REG_ADDR_MAC_CONF,
 		  /* Set the RMII speed to 100Mbps */

@@ -19,7 +19,7 @@ enum cc2520_gpio_index {
 
 struct cc2520_gpio_configuration {
 	struct device *dev;
-	uint32_t pin;
+	u32_t pin;
 };
 
 struct cc2520_gpio_configuration *cc2520_configure_gpios(void);

@@ -70,7 +70,7 @@ static void send_http_method(enum http_method method, char *url,
 			     char *content_type, char *payload)
 {
 	struct net_context *net_ctx;
-	int32_t timeout;
+	s32_t timeout;
 	int rc;
 
 	print_banner(method);

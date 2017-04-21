@@ -26,7 +26,7 @@ char __noinit __stack thread_stack[STACKSIZE];
 static struct net_mgmt_event_callback mgmt_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t mgmt_event,
+				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
 	char hr_addr[NET_IPV4_ADDR_LEN];

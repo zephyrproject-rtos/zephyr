@@ -64,7 +64,7 @@ static struct mqtt_client_ctx client_ctx;
 
 /* This routine sets some basic properties for the network context variable */
 static int network_setup(struct net_context **net_ctx, const char *local_addr,
-		const char *server_addr, uint16_t server_port);
+		const char *server_addr, u16_t server_port);
 
 /* The signature of this routine must match the connect callback declared at
  * the mqtt.h header.
@@ -117,7 +117,7 @@ static void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
  * unknown pkt_id, this routine must return an error, for example -EINVAL or
  * any negative value.
  */
-static int publish_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
+static int publish_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_id,
 		enum mqtt_packet type)
 {
 	struct mqtt_client_ctx *client_ctx;
@@ -157,7 +157,7 @@ static int publish_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
  * The signature of this routine must match the malformed callback declared at
  * the mqtt.h header.
  */
-static void malformed_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_type)
+static void malformed_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_type)
 {
 	TC_PRINT("[%s:%d] pkt_type: %u\n", __func__, __LINE__, pkt_type);
 }
@@ -178,9 +178,9 @@ static void prepare_mqtt_publish_msg(struct mqtt_publish_msg *pub_msg,
 		enum mqtt_qos qos)
 {
 	/* MQTT message payload may be anything, we we use C strings */
-	pub_msg->msg = (uint8_t *)get_mqtt_payload(qos);
+	pub_msg->msg = (u8_t *)get_mqtt_payload(qos);
 	/* Payload's length */
-	pub_msg->msg_len = (uint16_t)strlen((char *)client_ctx.pub_msg.msg);
+	pub_msg->msg_len = (u16_t)strlen((char *)client_ctx.pub_msg.msg);
 	/* MQTT Quality of Service */
 	pub_msg->qos = qos;
 	/* Message's topic */
@@ -327,7 +327,7 @@ static int test_disconnect(void)
 	return TC_PASS;
 }
 
-static int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
+static int set_addr(struct sockaddr *sock_addr, const char *addr, u16_t port)
 {
 	void *ptr;
 	int rc;
@@ -352,7 +352,7 @@ static int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
 }
 
 static int network_setup(struct net_context **net_ctx, const char *local_addr,
-		const char *server_addr, uint16_t server_port)
+		const char *server_addr, u16_t server_port)
 {
 #ifdef CONFIG_NET_IPV6
 	socklen_t addr_len = sizeof(struct sockaddr_in6);

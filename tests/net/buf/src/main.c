@@ -21,18 +21,18 @@ struct bt_data {
 	void *hci_sync;
 
 	union {
-		uint16_t hci_opcode;
-		uint16_t acl_handle;
+		u16_t hci_opcode;
+		u16_t acl_handle;
 	};
 
-	uint8_t type;
+	u8_t type;
 };
 
 struct in6_addr {
 	union {
-		uint8_t		u6_addr8[16];
-		uint16_t	u6_addr16[8]; /* In big endian */
-		uint32_t	u6_addr32[4]; /* In big endian */
+		u8_t		u6_addr8[16];
+		u16_t	u6_addr16[8]; /* In big endian */
+		u32_t	u6_addr32[4]; /* In big endian */
 	} in6_u;
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
@@ -40,21 +40,21 @@ struct in6_addr {
 };
 
 struct ipv6_hdr {
-	uint8_t vtc;
-	uint8_t tcflow;
-	uint16_t flow;
-	uint8_t len[2];
-	uint8_t nexthdr;
-	uint8_t hop_limit;
+	u8_t vtc;
+	u8_t tcflow;
+	u16_t flow;
+	u8_t len[2];
+	u8_t nexthdr;
+	u8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
 } __attribute__((__packed__));
 
 struct udp_hdr {
-	uint16_t src_port;
-	uint16_t dst_port;
-	uint16_t len;
-	uint16_t chksum;
+	u16_t src_port;
+	u16_t dst_port;
+	u16_t len;
+	u16_t chksum;
 } __attribute__((__packed__));
 
 static int destroy_called;

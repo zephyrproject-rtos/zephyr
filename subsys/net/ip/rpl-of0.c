@@ -61,14 +61,14 @@
 #define MIN_DIFFERENCE (CONFIG_NET_RPL_MIN_HOP_RANK_INC + \
 			CONFIG_NET_RPL_MIN_HOP_RANK_INC / 2)
 
-static uint16_t net_rpl_of0_get(void)
+static u16_t net_rpl_of0_get(void)
 {
 	return 0;
 }
 
-uint16_t net_rpl_of_get(void) ALIAS_OF(net_rpl_of0_get);
+u16_t net_rpl_of_get(void) ALIAS_OF(net_rpl_of0_get);
 
-static bool net_rpl_of0_find(uint16_t ocp)
+static bool net_rpl_of0_find(u16_t ocp)
 {
 	if (ocp != 0) {
 		return false;
@@ -77,7 +77,7 @@ static bool net_rpl_of0_find(uint16_t ocp)
 	return true;
 }
 
-bool net_rpl_of_find(uint16_t ocp) ALIAS_OF(net_rpl_of0_find);
+bool net_rpl_of_find(u16_t ocp) ALIAS_OF(net_rpl_of0_find);
 
 static void net_rpl_of0_reset(struct net_rpl_dag *dag)
 {
@@ -103,7 +103,7 @@ net_rpl_of0_best_parent(struct net_if *iface,
 			struct net_rpl_parent *parent1,
 			struct net_rpl_parent *parent2)
 {
-	uint16_t rank1, rank2;
+	u16_t rank1, rank2;
 	struct net_rpl_dag *dag;
 	struct net_nbr *nbr1, *nbr2;
 
@@ -199,10 +199,10 @@ struct net_rpl_dag *net_rpl_of_best_dag(struct net_rpl_dag *dag1,
 					struct net_rpl_dag *dag2)
 	ALIAS_OF(net_rpl_of0_best_dag);
 
-static uint16_t net_rpl_of0_calc_rank(struct net_rpl_parent *parent,
-				      uint16_t base_rank)
+static u16_t net_rpl_of0_calc_rank(struct net_rpl_parent *parent,
+				      u16_t base_rank)
 {
-	uint16_t increment;
+	u16_t increment;
 
 	if (base_rank == 0) {
 		if (!parent) {
@@ -215,7 +215,7 @@ static uint16_t net_rpl_of0_calc_rank(struct net_rpl_parent *parent,
 	increment = parent ? parent->dag->instance->min_hop_rank_inc :
 		DEFAULT_RANK_INCREMENT;
 
-	if ((uint16_t)(base_rank + increment) < base_rank) {
+	if ((u16_t)(base_rank + increment) < base_rank) {
 		NET_DBG("OF0 rank %d incremented to infinite rank due to "
 			"wrapping", base_rank);
 
@@ -225,8 +225,8 @@ static uint16_t net_rpl_of0_calc_rank(struct net_rpl_parent *parent,
 	return base_rank + increment;
 }
 
-uint16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
-			      uint16_t base_rank)
+u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
+			      u16_t base_rank)
 	ALIAS_OF(net_rpl_of0_calc_rank);
 
 static int net_rpl_of0_update_mc(struct net_rpl_instance *instance)

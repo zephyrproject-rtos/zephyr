@@ -228,10 +228,10 @@ struct net_context {
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 	/** Network interface assigned to this context */
-	uint8_t iface;
+	u8_t iface;
 
 	/** Flags for the context */
-	uint8_t flags;
+	u8_t flags;
 
 #if defined(CONFIG_NET_TCP)
 	/** TCP connection information */
@@ -575,7 +575,7 @@ int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
 			socklen_t addrlen,
 			net_context_connect_cb_t cb,
-			int32_t timeout,
+			s32_t timeout,
 			void *user_data);
 
 /**
@@ -605,7 +605,7 @@ int net_context_connect(struct net_context *context,
  */
 int net_context_accept(struct net_context *context,
 		       net_tcp_accept_cb_t cb,
-		       int32_t timeout,
+		       s32_t timeout,
 		       void *user_data);
 
 /**
@@ -635,7 +635,7 @@ int net_context_accept(struct net_context *context,
  */
 int net_context_send(struct net_pkt *pkt,
 		     net_context_send_cb_t cb,
-		     int32_t timeout,
+		     s32_t timeout,
 		     void *token,
 		     void *user_data);
 
@@ -670,7 +670,7 @@ int net_context_sendto(struct net_pkt *pkt,
 		       const struct sockaddr *dst_addr,
 		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
-		       int32_t timeout,
+		       s32_t timeout,
 		       void *token,
 		       void *user_data);
 
@@ -712,7 +712,7 @@ int net_context_sendto(struct net_pkt *pkt,
  */
 int net_context_recv(struct net_context *context,
 		     net_context_recv_cb_t cb,
-		     int32_t timeout,
+		     s32_t timeout,
 		     void *user_data);
 
 /**

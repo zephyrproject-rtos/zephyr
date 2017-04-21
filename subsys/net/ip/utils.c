@@ -42,7 +42,7 @@ const char *net_proto2str(enum net_ip_protocol proto)
 	return "UNK_PROTO";
 }
 
-char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad)
+char *net_byte_to_hex(char *ptr, u8_t byte, char base, bool pad)
 {
 	int i, val;
 
@@ -62,10 +62,10 @@ char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad)
 	return ptr;
 }
 
-char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
+char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 			     char *buf, int buflen)
 {
-	uint8_t i, len, blen;
+	u8_t i, len, blen;
 	char *ptr = buf;
 
 	switch (ll_len) {
@@ -94,9 +94,9 @@ char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 	return buf;
 }
 
-static int net_value_to_udec(char *buf, uint32_t value, int precision)
+static int net_value_to_udec(char *buf, u32_t value, int precision)
 {
-	uint32_t divisor;
+	u32_t divisor;
 	int i;
 	int temp;
 	char *start = buf;
@@ -122,23 +122,23 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 {
 	struct in_addr *addr;
 	struct in6_addr *addr6;
-	uint16_t *w;
-	uint8_t i, bl, bh, longest = 1;
-	int8_t pos = -1;
+	u16_t *w;
+	u8_t i, bl, bh, longest = 1;
+	s8_t pos = -1;
 	char delim = ':';
 	unsigned char zeros[8] = { 0 };
 	char *ptr = dst;
 	int len = -1;
-	uint16_t value;
+	u16_t value;
 	bool needcolon = false;
 
 	if (family == AF_INET6) {
 		addr6 = (struct in6_addr *)src;
-		w = (uint16_t *)addr6->s6_addr16;
+		w = (u16_t *)addr6->s6_addr16;
 		len = 8;
 
 		for (i = 0; i < 8; i++) {
-			uint8_t j;
+			u8_t j;
 
 			for (j = i; j < 8; j++) {
 				if (UNALIGNED_GET(&w[j]) != 0) {
@@ -171,9 +171,9 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 	for (i = 0; i < len; i++) {
 		/* IPv4 address a.b.c.d */
 		if (len == 4) {
-			uint8_t l;
+			u8_t l;
 
-			value = (uint32_t)addr->s4_addr[i];
+			value = (u32_t)addr->s4_addr[i];
 
 			/* net_byte_to_udec() eats 0 */
 			if (value == 0) {
@@ -208,7 +208,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			needcolon = false;
 		}
 
-		value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
+		value = (u32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
 		bh = value >> 8;
 		bl = value & 0xff;
 
@@ -373,10 +373,10 @@ int net_addr_pton(sa_family_t family, const char *src,
 	return 0;
 }
 
-static uint16_t calc_chksum(uint16_t sum, const uint8_t *ptr, uint16_t len)
+static u16_t calc_chksum(u16_t sum, const u8_t *ptr, u16_t len)
 {
-	uint16_t tmp;
-	const uint8_t *end;
+	u16_t tmp;
+	const u8_t *end;
 
 	end = ptr + len - 1;
 
@@ -400,14 +400,14 @@ static uint16_t calc_chksum(uint16_t sum, const uint8_t *ptr, uint16_t len)
 	return sum;
 }
 
-static inline uint16_t calc_chksum_pkt(uint16_t sum, struct net_pkt *pkt,
-				       uint16_t upper_layer_len)
+static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
+				       u16_t upper_layer_len)
 {
 	struct net_buf *frag = pkt->frags;
-	uint16_t proto_len = net_pkt_ip_hdr_len(pkt) +
+	u16_t proto_len = net_pkt_ip_hdr_len(pkt) +
 		net_pkt_ipv6_ext_len(pkt);
-	int16_t len = frag->len - proto_len;
-	uint8_t *ptr = frag->data + proto_len;
+	s16_t len = frag->len - proto_len;
+	u8_t *ptr = frag->data + proto_len;
 
 	ARG_UNUSED(upper_layer_len);
 
@@ -428,7 +428,7 @@ static inline uint16_t calc_chksum_pkt(uint16_t sum, struct net_pkt *pkt,
 
 		/* Do we need to take first byte from next fragment */
 		if (len % 2) {
-			uint16_t tmp = *ptr;
+			u16_t tmp = *ptr;
 			sum += tmp;
 			if (sum < tmp) {
 				sum++;
@@ -443,10 +443,10 @@ static inline uint16_t calc_chksum_pkt(uint16_t sum, struct net_pkt *pkt,
 	return sum;
 }
 
-uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
+u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 {
-	uint16_t upper_layer_len;
-	uint16_t sum;
+	u16_t upper_layer_len;
+	u16_t sum;
 
 	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
@@ -462,7 +462,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 						 upper_layer_len));
 		} else {
 			sum = calc_chksum(upper_layer_len + proto,
-					  (uint8_t *)&NET_IPV4_HDR(pkt)->src,
+					  (u8_t *)&NET_IPV4_HDR(pkt)->src,
 					  2 * sizeof(struct in_addr));
 		}
 		break;
@@ -472,7 +472,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 		upper_layer_len = (NET_IPV6_HDR(pkt)->len[0] << 8) +
 			NET_IPV6_HDR(pkt)->len[1] - net_pkt_ipv6_ext_len(pkt);
 		sum = calc_chksum(upper_layer_len + proto,
-				  (uint8_t *)&NET_IPV6_HDR(pkt)->src,
+				  (u8_t *)&NET_IPV6_HDR(pkt)->src,
 				  2 * sizeof(struct in6_addr));
 		break;
 #endif
@@ -489,11 +489,11 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 }
 
 #if defined(CONFIG_NET_IPV4)
-uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
+u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
-	uint16_t sum;
+	u16_t sum;
 
-	sum = calc_chksum(0, (uint8_t *)NET_IPV4_HDR(pkt), NET_IPV4H_LEN);
+	sum = calc_chksum(0, (u8_t *)NET_IPV4_HDR(pkt), NET_IPV4H_LEN);
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 

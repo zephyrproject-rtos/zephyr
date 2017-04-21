@@ -79,7 +79,7 @@ static struct k_delayed_work ipv4_timer;
 
 static void do_ipv4_lookup(struct k_work *work)
 {
-	uint16_t dns_id;
+	u16_t dns_id;
 	int ret;
 
 	ret = dns_get_addr_info("www.zephyrproject.org",
@@ -97,7 +97,7 @@ static void do_ipv4_lookup(struct k_work *work)
 }
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t mgmt_event,
+				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
 	char hr_addr[NET_IPV4_ADDR_LEN];
@@ -160,7 +160,7 @@ static void setup_ipv4(struct net_if *iface)
 {
 	char hr_addr[NET_IPV4_ADDR_LEN];
 	struct in_addr addr;
-	uint16_t dns_id;
+	u16_t dns_id;
 	int ret;
 
 	if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_ADDR, &addr)) {
@@ -202,7 +202,7 @@ static struct k_delayed_work ipv6_timer;
 
 static void do_ipv6_lookup(struct k_work *work)
 {
-	uint16_t dns_id;
+	u16_t dns_id;
 	int ret;
 
 	ret = dns_get_addr_info("www.zephyrproject.org",
@@ -224,7 +224,7 @@ static void do_ipv6_lookup(struct k_work *work)
  * network. So wait for that before continuing.
  */
 static void ipv6_router_add_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event,
+				    u32_t mgmt_event,
 				    struct net_if *iface)
 {
 	if (mgmt_event != NET_EVENT_IPV6_ROUTER_ADD) {

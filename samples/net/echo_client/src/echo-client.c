@@ -111,9 +111,9 @@ static struct net_buf_pool *data_udp_pool(void)
 #define PEER_PORT 4242
 
 struct data {
-	uint32_t expecting_udp;
-	uint32_t expecting_tcp;
-	uint32_t received_tcp;
+	u32_t expecting_udp;
+	u32_t expecting_tcp;
+	u32_t received_tcp;
 };
 
 static struct {
@@ -455,7 +455,7 @@ static inline void set_dst_addr(sa_family_t family,
 #if defined(CONFIG_NET_UDP)
 static bool compare_udp_data(struct net_pkt *pkt, int expecting_len)
 {
-	uint8_t *ptr = net_pkt_appdata(pkt);
+	u8_t *ptr = net_pkt_appdata(pkt);
 	struct net_buf *frag;
 	int pos = 0;
 	int len;
@@ -617,7 +617,7 @@ static void send_udp(struct net_context *udp,
 static bool compare_tcp_data(struct net_pkt *pkt, int expecting_len,
 			     int received_len)
 {
-	uint8_t *ptr = net_pkt_appdata(pkt), *start;
+	u8_t *ptr = net_pkt_appdata(pkt), *start;
 	int pos = 0;
 	struct net_buf *frag;
 	int len;
@@ -714,7 +714,7 @@ static void tcp_sent(struct net_context *context,
 		     void *token,
 		     void *user_data)
 {
-	uint32_t len = POINTER_TO_UINT(token);
+	u32_t len = POINTER_TO_UINT(token);
 
 	if (len) {
 		if (status) {
@@ -854,7 +854,7 @@ static void send_tcp_ipv6(struct net_context *tcp)
 #endif
 
 static void event_iface_up(struct net_mgmt_event_callback *cb,
-			   uint32_t mgmt_event, struct net_if *iface)
+			   u32_t mgmt_event, struct net_if *iface)
 {
 	struct net_context *udp_send4 = { 0 };
 	struct net_context *udp_send6 = { 0 };

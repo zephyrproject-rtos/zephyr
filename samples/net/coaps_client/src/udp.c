@@ -63,7 +63,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 	}
 
-	rc = net_pkt_append(send_pkt, size, (uint8_t *) buf, K_FOREVER);
+	rc = net_pkt_append(send_pkt, size, (u8_t *) buf, K_FOREVER);
 	if (!rc) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
@@ -82,12 +82,12 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 	}
 }
 
-int udp_rx(void *context, unsigned char *buf, size_t size, uint32_t timeout)
+int udp_rx(void *context, unsigned char *buf, size_t size, u32_t timeout)
 {
 	struct udp_context *ctx = context;
 	struct net_buf *rx_buf = NULL;
-	uint16_t read_bytes;
-	uint8_t *ptr;
+	u16_t read_bytes;
+	u8_t *ptr;
 	int pos;
 	int len;
 	int rc;

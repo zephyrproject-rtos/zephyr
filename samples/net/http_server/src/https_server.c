@@ -68,7 +68,7 @@ static struct in_addr server_addr;
 
 struct parsed_url {
 	const char *url;
-	uint16_t url_len;
+	u16_t url_len;
 };
 
 #define HTTP_RESPONSE \
@@ -102,7 +102,7 @@ static void my_debug(void *ctx, int level,
 static int entropy_source(void *data, unsigned char *output, size_t len,
 			  size_t *olen)
 {
-	uint32_t seed;
+	u32_t seed;
 
 	ARG_UNUSED(data);
 
@@ -366,7 +366,7 @@ exit:
 }
 
 #define STACK_SIZE		8192
-uint8_t stack[STACK_SIZE];
+u8_t stack[STACK_SIZE];
 
 static inline int init_app(void)
 {

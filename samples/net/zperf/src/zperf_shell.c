@@ -442,20 +442,20 @@ static void shell_udp_upload_print_stats(struct zperf_results *results)
 	printk("[%s] Upload completed!\n", CMD_STR_UDP_UPLOAD);
 
 	if (results->time_in_us != 0) {
-		rate_in_kbps = (uint32_t)
-			(((uint64_t)results->nb_bytes_sent *
-			  (uint64_t)8 * (uint64_t)USEC_PER_SEC) /
-			 ((uint64_t)results->time_in_us * 1024));
+		rate_in_kbps = (u32_t)
+			(((u64_t)results->nb_bytes_sent *
+			  (u64_t)8 * (u64_t)USEC_PER_SEC) /
+			 ((u64_t)results->time_in_us * 1024));
 	} else {
 		rate_in_kbps = 0;
 	}
 
 	if (results->client_time_in_us != 0) {
-		client_rate_in_kbps = (uint32_t)
-			(((uint64_t)results->nb_packets_sent *
-			  (uint64_t)results->packet_size * (uint64_t)8 *
-			  (uint64_t)USEC_PER_SEC) /
-			 ((uint64_t)results->client_time_in_us * 1024));
+		client_rate_in_kbps = (u32_t)
+			(((u64_t)results->nb_packets_sent *
+			  (u64_t)results->packet_size * (u64_t)8 *
+			  (u64_t)USEC_PER_SEC) /
+			 ((u64_t)results->client_time_in_us * 1024));
 	} else {
 		client_rate_in_kbps = 0;
 	}
@@ -501,11 +501,11 @@ static void shell_tcp_upload_print_stats(struct zperf_results *results)
 	printk("[%s] Upload completed!\n", CMD_STR_TCP_UPLOAD);
 
 	if (results->client_time_in_us != 0) {
-		client_rate_in_kbps = (uint32_t)
-			(((uint64_t)results->nb_packets_sent *
-			  (uint64_t)results->packet_size * (uint64_t)8 *
-			  (uint64_t)USEC_PER_SEC) /
-			 ((uint64_t)results->client_time_in_us * 1024));
+		client_rate_in_kbps = (u32_t)
+			(((u64_t)results->nb_packets_sent *
+			  (u64_t)results->packet_size * (u64_t)8 *
+			  (u64_t)USEC_PER_SEC) /
+			 ((u64_t)results->client_time_in_us * 1024));
 	} else {
 		client_rate_in_kbps = 0;
 	}
@@ -741,7 +741,7 @@ static int shell_cmd_upload(int argc, char *argv[])
 	struct net_context *context6 = NULL, *context4 = NULL;
 	sa_family_t family = AF_UNSPEC;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
-	uint16_t port;
+	u16_t port;
 	bool is_udp;
 	int start = 0;
 
@@ -857,10 +857,10 @@ static int shell_cmd_upload(int argc, char *argv[])
 static int shell_cmd_upload2(int argc, char *argv[])
 {
 	struct net_context *context6 = NULL, *context4 = NULL;
-	uint16_t port = DEF_PORT;
+	u16_t port = DEF_PORT;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
 	sa_family_t family;
-	uint8_t is_udp;
+	u8_t is_udp;
 	int start = 0;
 
 	if (!strcmp(argv[0], "zperf")) {

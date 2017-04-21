@@ -543,7 +543,7 @@ static void ipv6_addr_expired(struct k_work *work)
 }
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
-				      uint32_t vlifetime)
+				      u32_t vlifetime)
 {
 	NET_DBG("Updating expire time of %s by %u secs",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
@@ -575,7 +575,7 @@ static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
 static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 				    struct in6_addr *addr,
 				    enum net_addr_type addr_type,
-				    uint32_t vlifetime)
+				    u32_t vlifetime)
 {
 	ifaddr->is_used = true;
 	ifaddr->address.family = AF_INET6;
@@ -605,7 +605,7 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 struct in6_addr *addr,
 					 enum net_addr_type addr_type,
-					 uint32_t vlifetime)
+					 u32_t vlifetime)
 {
 	struct net_if_addr *ifaddr;
 	int i;
@@ -770,7 +770,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 
 static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 						   struct in6_addr *prefix,
-						   uint8_t prefix_len)
+						   u8_t prefix_len)
 {
 	int i;
 
@@ -800,8 +800,8 @@ static inline void prefix_lf_timeout(struct k_work *work)
 }
 
 static void net_if_ipv6_prefix_init(struct net_if_ipv6_prefix *prefix,
-				    struct in6_addr *addr, uint8_t len,
-				    uint32_t lifetime)
+				    struct in6_addr *addr, u8_t len,
+				    u32_t lifetime)
 {
 	prefix->is_used = true;
 	prefix->len = len;
@@ -817,8 +817,8 @@ static void net_if_ipv6_prefix_init(struct net_if_ipv6_prefix *prefix,
 
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 						  struct in6_addr *prefix,
-						  uint8_t len,
-						  uint32_t lifetime)
+						  u8_t len,
+						  u32_t lifetime)
 {
 	struct net_if_ipv6_prefix *if_prefix;
 	int i;
@@ -848,7 +848,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 }
 
 bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
-			   uint8_t len)
+			   u8_t len)
 {
 	int i;
 
@@ -876,7 +876,7 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 						     struct in6_addr *addr,
-						     uint8_t len)
+						     u8_t len)
 {
 	int i;
 
@@ -924,7 +924,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 }
 
 void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
-				  uint32_t lifetime)
+				  u32_t lifetime)
 {
 	/* The maximum lifetime might be shorter than expected
 	 * because we have only 32-bit int to store the value and
@@ -932,7 +932,7 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 	 * all bits set means infinite and that value is never set
 	 * to timer.
 	 */
-	uint32_t timeout = lifetime * MSEC_PER_SEC;
+	u32_t timeout = lifetime * MSEC_PER_SEC;
 
 	NET_ASSERT(lifetime != 0xffffffff);
 
@@ -1015,7 +1015,7 @@ static void ipv6_router_expired(struct k_work *work)
 }
 
 void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
-					uint32_t lifetime)
+					u32_t lifetime)
 {
 	NET_DBG("Updating expire time of %s by %u secs",
 		net_sprint_ipv6_addr(&router->address.in6_addr),
@@ -1027,7 +1027,7 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 
 static inline void net_if_router_init(struct net_if_router *router,
 				      struct net_if *iface,
-				      struct in6_addr *addr, uint16_t lifetime)
+				      struct in6_addr *addr, u16_t lifetime)
 {
 	router->is_used = true;
 	router->iface = iface;
@@ -1055,7 +1055,7 @@ static inline void net_if_router_init(struct net_if_router *router,
 
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     struct in6_addr *addr,
-					     uint16_t lifetime)
+					     u16_t lifetime)
 {
 	int i;
 
@@ -1194,10 +1194,10 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface)
 	return NULL;
 }
 
-static inline uint8_t get_length(struct in6_addr *src, struct in6_addr *dst)
+static inline u8_t get_length(struct in6_addr *src, struct in6_addr *dst)
 {
-	uint8_t j, k, xor;
-	uint8_t len = 0;
+	u8_t j, k, xor;
+	u8_t len = 0;
 
 	for (j = 0; j < 16; j++) {
 		if (src->s6_addr[j] == dst->s6_addr[j]) {
@@ -1232,10 +1232,10 @@ static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 
 static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 							  struct in6_addr *dst,
-							  uint8_t *best_so_far)
+							  u8_t *best_so_far)
 {
 	struct in6_addr *src = NULL;
-	uint8_t i, len;
+	u8_t i, len;
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (!is_proper_ipv6_address(&iface->ipv6.unicast[i])) {
@@ -1257,7 +1257,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 						   struct in6_addr *dst)
 {
 	struct in6_addr *src = NULL;
-	uint8_t best_match = 0;
+	u8_t best_match = 0;
 	struct net_if *iface;
 
 	if (!net_is_ipv6_ll_addr(dst) && !net_is_ipv6_addr_mcast(dst)) {
@@ -1305,7 +1305,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	return src;
 }
 
-uint32_t net_if_ipv6_calc_reachable_time(struct net_if *iface)
+u32_t net_if_ipv6_calc_reachable_time(struct net_if *iface)
 {
 	return MIN_RANDOM_FACTOR * iface->ipv6.base_reachable_time +
 		sys_rand32_get() %
@@ -1342,7 +1342,7 @@ struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
 struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 					     struct in_addr *addr,
 					     bool is_default,
-					     uint16_t lifetime)
+					     u16_t lifetime)
 {
 	int i;
 
@@ -1382,7 +1382,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			       struct in_addr *addr)
 {
-	uint32_t subnet = ntohl(addr->s_addr[0]) &
+	u32_t subnet = ntohl(addr->s_addr[0]) &
 			ntohl(iface->ipv4.netmask.s_addr[0]);
 	int i;
 
@@ -1451,7 +1451,7 @@ static struct net_if_addr *ipv4_addr_find(struct net_if *iface,
 struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 					 struct in_addr *addr,
 					 enum net_addr_type addr_type,
-					 uint32_t vlifetime)
+					 u32_t vlifetime)
 {
 	struct net_if_addr *ifaddr;
 	int i;
@@ -1550,7 +1550,7 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 	}
 }
 
-struct net_if *net_if_get_by_index(uint8_t index)
+struct net_if *net_if_get_by_index(u8_t index)
 {
 	if (&__net_if_start[index] >= __net_if_end) {
 		NET_DBG("Index %d is too large", index);
@@ -1560,7 +1560,7 @@ struct net_if *net_if_get_by_index(uint8_t index)
 	return &__net_if_start[index];
 }
 
-uint8_t net_if_get_by_iface(struct net_if *iface)
+u8_t net_if_get_by_iface(struct net_if *iface)
 {
 	NET_ASSERT(iface >= __net_if_start && iface < __net_if_end);
 

@@ -68,7 +68,7 @@ static struct mqtt_client_ctx client_ctx;
 
 /* This routine sets some basic properties for the network context variable */
 static int network_setup(struct net_context **net_ctx, const char *local_addr,
-			 const char *server_addr, uint16_t server_port);
+			 const char *server_addr, u16_t server_port);
 
 /* The signature of this routine must match the connect callback declared at
  * the mqtt.h header.
@@ -122,7 +122,7 @@ static void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
  * any negative value.
  */
 static int publish_rx_cb(struct mqtt_ctx *mqtt_ctx, struct mqtt_publish_msg
-		*msg, uint16_t pkt_id, enum mqtt_packet type)
+		*msg, u16_t pkt_id, enum mqtt_packet type)
 {
 	struct mqtt_client_ctx *client_ctx;
 	const char *str;
@@ -160,8 +160,8 @@ static int publish_rx_cb(struct mqtt_ctx *mqtt_ctx, struct mqtt_publish_msg
  * The signature of this routine must match the subscribe callback declared at
  * the mqtt.h header.
  */
-static int subscriber_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
-		uint8_t items, enum mqtt_qos qos[])
+static int subscriber_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_id,
+		u8_t items, enum mqtt_qos qos[])
 {
 	struct mqtt_client_ctx *client_ctx;
 
@@ -184,7 +184,7 @@ static int subscriber_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
  * The signature of this routine must match the unsubscribe callback declared at
  * the mqtt.h header.
  */
-static int unsubscribe_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id)
+static int unsubscribe_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_id)
 {
 	struct mqtt_client_ctx *client_ctx;
 
@@ -206,7 +206,7 @@ static int unsubscribe_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id)
  * The signature of this routine must match the malformed callback declared at
  * the mqtt.h header.
  */
-static void malformed_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_type)
+static void malformed_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_type)
 {
 	printk("[%s:%d] pkt_type: %u\n", __func__, __LINE__, pkt_type);
 }
@@ -323,7 +323,7 @@ static int test_subscribe(void)
 {
 	int rc;
 	const char *topic_sub = get_mqtt_topic();
-	uint16_t pkt_id_sub = sys_rand32_get();
+	u16_t pkt_id_sub = sys_rand32_get();
 	static enum mqtt_qos  mqtt_qos_sub[1];
 
 	rc = mqtt_tx_subscribe(&client_ctx.mqtt_ctx, pkt_id_sub, 1,
@@ -340,7 +340,7 @@ static int test_unsubscribe(void)
 {
 	int rc;
 	const char *topic_sub = get_mqtt_topic();
-	uint16_t pkt_id_unsub = sys_rand32_get();
+	u16_t pkt_id_unsub = sys_rand32_get();
 
 	rc = mqtt_tx_unsubscribe(&client_ctx.mqtt_ctx, pkt_id_unsub,
 			1, &topic_sub);
@@ -364,7 +364,7 @@ static int test_disconnect(void)
 	return TC_PASS;
 }
 
-static int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
+static int set_addr(struct sockaddr *sock_addr, const char *addr, u16_t port)
 {
 	void *ptr;
 	int rc;
@@ -389,7 +389,7 @@ static int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t port)
 }
 
 static int network_setup(struct net_context **net_ctx, const char *local_addr,
-		const char *server_addr, uint16_t server_port)
+		const char *server_addr, u16_t server_port)
 {
 #ifdef CONFIG_NET_IPV6
 	socklen_t addr_len = sizeof(struct sockaddr_in6);

@@ -22,7 +22,7 @@
 #include "net_private.h"
 
 struct arp_entry {
-	uint32_t time;	/* FIXME - implement timeout functionality */
+	u32_t time;	/* FIXME - implement timeout functionality */
 	struct net_if *iface;
 	struct net_pkt *pending;
 	struct in_addr ip;
@@ -44,7 +44,7 @@ static inline struct arp_entry *find_entry(struct net_if *iface,
 
 		NET_DBG("[%d] iface %p dst %s ll %s pending %p", i, iface,
 			net_sprint_ipv4_addr(&arp_table[i].ip),
-			net_sprint_ll_addr((uint8_t *)&arp_table[i].eth.addr,
+			net_sprint_ll_addr((u8_t *)&arp_table[i].eth.addr,
 					   sizeof(struct net_eth_addr)),
 			arp_table[i].pending);
 
@@ -56,7 +56,7 @@ static inline struct arp_entry *find_entry(struct net_if *iface,
 			if (arp_table[i].pending) {
 				NET_DBG("ARP already pending to %s ll %s",
 					net_sprint_ipv4_addr(dst),
-					net_sprint_ll_addr((uint8_t *)
+					net_sprint_ll_addr((u8_t *)
 						&arp_table[i].eth.addr,
 						sizeof(struct net_eth_addr)));
 				*free_entry = NULL;
@@ -337,7 +337,7 @@ static inline void arp_update(struct net_if *iface,
 
 		NET_DBG("[%d] iface %p dst %s ll %s pending %p", i, iface,
 			net_sprint_ipv4_addr(&arp_table[i].ip),
-			net_sprint_ll_addr((uint8_t *)&arp_table[i].eth.addr,
+			net_sprint_ll_addr((u8_t *)&arp_table[i].eth.addr,
 					   sizeof(struct net_eth_addr)),
 			arp_table[i].pending);
 
@@ -357,7 +357,7 @@ static inline void arp_update(struct net_if *iface,
 			net_pkt_ll_dst(arp_table[i].pending)->len =
 				sizeof(struct net_eth_addr);
 			net_pkt_ll_dst(arp_table[i].pending)->addr =
-				(uint8_t *)
+				(u8_t *)
 				&NET_ETH_HDR(arp_table[i].pending)->dst.addr;
 
 			send_pending(iface, &arp_table[i].pending);
@@ -457,7 +457,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 			NET_DBG("ARP request from %s [%s] for %s",
 				out,
 				net_sprint_ll_addr(
-					(uint8_t *)&arp_hdr->src_hwaddr,
+					(u8_t *)&arp_hdr->src_hwaddr,
 					arp_hdr->hwlen),
 				net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		} while (0);

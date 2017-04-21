@@ -52,11 +52,11 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 #endif
 
 struct tcp_segment {
-	uint32_t seq;
-	uint32_t ack;
-	uint16_t wnd;
-	uint8_t flags;
-	uint8_t optlen;
+	u32_t seq;
+	u32_t ack;
+	u16_t wnd;
+	u8_t flags;
+	u8_t optlen;
 	void *options;
 	struct sockaddr_ptr *src_addr;
 	const struct sockaddr *dst_addr;
@@ -74,8 +74,8 @@ static char upper_if_set(char chr, bool set)
 
 static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 {
-	uint8_t flags = NET_TCP_FLAGS(pkt);
-	uint32_t rel_ack, ack;
+	u8_t flags = NET_TCP_FLAGS(pkt);
+	u32_t rel_ack, ack;
 
 	ack = sys_get_be32(NET_TCP_HDR(pkt)->ack);
 
@@ -107,15 +107,15 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 #define net_tcp_trace(...)
 #endif /* CONFIG_NET_DEBUG_TCP */
 
-static inline uint32_t init_isn(void)
+static inline u32_t init_isn(void)
 {
 	/* Randomise initial seq number */
 	return sys_rand32_get();
 }
 
-static inline uint32_t retry_timeout(const struct net_tcp *tcp)
+static inline u32_t retry_timeout(const struct net_tcp *tcp)
 {
-	return ((uint32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
+	return ((u32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
 }
 
 #define is_6lo_technology(pkt)						    \
@@ -230,10 +230,10 @@ int net_tcp_release(struct net_tcp *tcp)
 	return 0;
 }
 
-static inline uint8_t net_tcp_add_options(struct net_buf *header, size_t len,
+static inline u8_t net_tcp_add_options(struct net_buf *header, size_t len,
 					  void *data)
 {
-	uint8_t optlen;
+	u8_t optlen;
 
 	memcpy(net_buf_add(header, len), data, len);
 
@@ -272,8 +272,8 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	struct net_buf *header, *tail = NULL;
 	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
-	uint16_t dst_port, src_port;
-	uint8_t optlen = 0;
+	u16_t dst_port, src_port;
+	u8_t optlen = 0;
 
 	NET_ASSERT(context);
 
@@ -353,7 +353,7 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	return pkt;
 }
 
-static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
+static inline u32_t get_recv_wnd(struct net_tcp *tcp)
 {
 	ARG_UNUSED(tcp);
 
@@ -369,20 +369,20 @@ static inline uint32_t get_recv_wnd(struct net_tcp *tcp)
 /* True if the (signed!) difference "seq1 - seq2" is positive and less
  * than 2^29.  That is, seq1 is "after" seq2.
  */
-static inline bool seq_greater(uint32_t seq1, uint32_t seq2)
+static inline bool seq_greater(u32_t seq1, u32_t seq2)
 {
 	int d = (int)(seq1 - seq2);
 	return d > 0 && d < 0x20000000;
 }
 
-int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
+int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
 			    const struct sockaddr *remote,
 			    struct net_pkt **send_pkt)
 {
-	uint32_t seq;
-	uint16_t wnd;
+	u32_t seq;
+	u16_t wnd;
 	struct tcp_segment segment = { 0 };
 
 	if (!local) {
@@ -451,9 +451,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, uint8_t flags,
 	return 0;
 }
 
-static inline uint32_t get_size(uint32_t pos1, uint32_t pos2)
+static inline u32_t get_size(u32_t pos1, u32_t pos2)
 {
-	uint32_t size;
+	u32_t size;
 
 	if (pos1 <= pos2) {
 		size = pos2 - pos1;
@@ -482,7 +482,7 @@ static inline size_t ip_max_packet_len(struct in_addr *dest_ip)
 #define ip_max_packet_len(...) 0
 #endif /* CONFIG_NET_IPV4 */
 
-uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
+u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 {
 	sa_family_t family = net_context_get_family(tcp->context);
 
@@ -509,10 +509,10 @@ uint16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 	return 0;
 }
 
-static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
-				uint8_t *optionlen)
+static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
+				u8_t *optionlen)
 {
-	uint16_t recv_mss;
+	u16_t recv_mss;
 
 	*optionlen = 0;
 
@@ -523,8 +523,8 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 		recv_mss = 0;
 	}
 
-	UNALIGNED_PUT(htonl((uint32_t)recv_mss | NET_TCP_MSS_HEADER),
-		      (uint32_t *)(options + *optionlen));
+	UNALIGNED_PUT(htonl((u32_t)recv_mss | NET_TCP_MSS_HEADER),
+		      (u32_t *)(options + *optionlen));
 
 	*optionlen += NET_TCP_MSS_SIZE;
 }
@@ -532,8 +532,8 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, uint8_t *options,
 int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 			struct net_pkt **pkt)
 {
-	uint8_t options[NET_TCP_MAX_OPT_SIZE];
-	uint8_t optionlen;
+	u8_t options[NET_TCP_MAX_OPT_SIZE];
+	u8_t optionlen;
 
 	switch (net_tcp_get_state(tcp)) {
 	case NET_TCP_SYN_RCVD:
@@ -776,14 +776,14 @@ int net_tcp_send_data(struct net_context *context)
 	return 0;
 }
 
-void net_tcp_ack_received(struct net_context *ctx, uint32_t ack)
+void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 {
 	struct net_tcp *tcp = ctx->tcp;
 	sys_slist_t *list = &ctx->tcp->sent_list;
 	sys_snode_t *head;
 	struct net_pkt *pkt;
 	struct net_tcp_hdr *tcphdr;
-	uint32_t seq;
+	u32_t seq;
 	bool valid_ack = false;
 
 	while (!sys_slist_is_empty(list)) {
@@ -850,7 +850,7 @@ void net_tcp_init(void)
 static void validate_state_transition(enum net_tcp_state current,
 				      enum net_tcp_state new)
 {
-	static const uint16_t valid_transitions[] = {
+	static const u16_t valid_transitions[] = {
 		[NET_TCP_CLOSED] = 1 << NET_TCP_LISTEN |
 			1 << NET_TCP_SYN_SENT,
 		[NET_TCP_LISTEN] = 1 << NET_TCP_SYN_RCVD |

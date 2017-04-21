@@ -95,10 +95,10 @@ struct net_ipv6_nbr_data {
 	enum net_ipv6_nbr_state state;
 
 	/** Link metric for the neighbor */
-	uint16_t link_metric;
+	u16_t link_metric;
 
 	/** How many times we have sent NS */
-	uint8_t ns_count;
+	u8_t ns_count;
 
 	/** Is the neighbor a router */
 	bool is_router;
@@ -116,7 +116,7 @@ static inline struct net_ipv6_nbr_data *net_ipv6_nbr_data(struct net_nbr *nbr)
  *
  * @return Return IPv6 neighbor information.
  */
-struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(uint8_t idx);
+struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(u8_t idx);
 
 #if defined(CONFIG_NET_IPV6_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);
@@ -131,7 +131,7 @@ int net_ipv6_start_rs(struct net_if *iface);
 
 int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
 		     struct in6_addr *dst, struct in6_addr *tgt,
-		     uint8_t flags);
+		     u8_t flags);
 
 /**
  * @brief Create IPv6 packet in provided net_pkt.
@@ -148,7 +148,7 @@ struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
 				    const struct in6_addr *src,
 				    const struct in6_addr *dst,
 				    struct net_if *iface,
-				    uint8_t next_header);
+				    u8_t next_header);
 
 /**
  * @brief Create IPv6 packet in provided net_pkt.
@@ -176,7 +176,7 @@ struct net_pkt *net_ipv6_create(struct net_context *context,
  *
  * @return Return 0 on Success, < 0 on Failure.
  */
-int net_ipv6_finalize_raw(struct net_pkt *pkt, uint8_t next_header);
+int net_ipv6_finalize_raw(struct net_pkt *pkt, u8_t next_header);
 
 /**
  * @brief Finalize IPv6 packet. It should be called right before
@@ -260,7 +260,7 @@ struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
  *
  * @return A valid pointer on a neighbor on success, NULL otherwise
  */
-struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx);
+struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx);
 
 /**
  * @brief Look for a neighbor from it's link local address index
@@ -272,7 +272,7 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx);
  * @return A valid pointer on a neighbor on success, NULL otherwise
  */
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
-					      uint8_t idx);
+					      u8_t idx);
 
 /**
  * @brief Add a neighbor to neighbor cache
@@ -327,7 +327,7 @@ static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
 
 static inline
 struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
-					      uint8_t idx)
+					      u8_t idx)
 {
 	return NULL;
 }
@@ -394,7 +394,7 @@ struct net_ipv6_reassembly {
 	struct net_pkt *pkt[NET_IPV6_FRAGMENTS_MAX_PKT];
 
 	/** IPv6 fragment identification */
-	uint32_t id;
+	u32_t id;
 };
 
 /**

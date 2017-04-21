@@ -32,9 +32,9 @@
  */
 #if 0
 #define DCACHE_INVALIDATE(addr, size) \
-		SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
+		SCB_InvalidateDCache_by_Addr((u32_t *)addr, size)
 #define DCACHE_CLEAN(addr, size) \
-		SCB_CleanDCache_by_Addr((uint32_t *)addr, size)
+		SCB_CleanDCache_by_Addr((u32_t *)addr, size)
 #else
 #define DCACHE_INVALIDATE(addr, size) { ; }
 #define DCACHE_CLEAN(addr, size) { ; }
@@ -126,24 +126,24 @@ enum queue_idx {
 
 /** Minimal ring buffer implementation */
 struct ring_buf {
-	uint32_t *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
+	u32_t *buf;
+	u16_t len;
+	u16_t head;
+	u16_t tail;
 };
 
 /** Receive/transmit buffer descriptor */
 struct gmac_desc {
-	uint32_t w0;
-	uint32_t w1;
+	u32_t w0;
+	u32_t w1;
 };
 
 /** Ring list of receive/transmit buffer descriptors */
 struct gmac_desc_list {
 	struct gmac_desc *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
+	u16_t len;
+	u16_t head;
+	u16_t tail;
 };
 
 /** GMAC Queue data */
@@ -156,11 +156,11 @@ struct gmac_queue {
 	struct ring_buf tx_frames;
 
 	/** Number of RX frames dropped by the driver */
-	volatile uint32_t err_rx_frames_dropped;
+	volatile u32_t err_rx_frames_dropped;
 	/** Number of times receive queue was flushed */
-	volatile uint32_t err_rx_flushed_count;
+	volatile u32_t err_rx_flushed_count;
 	/** Number of times transmit queue was flushed */
-	volatile uint32_t err_tx_flushed_count;
+	volatile u32_t err_tx_flushed_count;
 
 	enum queue_idx que_idx;
 };
@@ -168,9 +168,9 @@ struct gmac_queue {
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
 	Gmac *regs;
-	uint32_t periph_id;
+	u32_t periph_id;
 	const struct soc_gpio_pin *pin_list;
-	uint32_t pin_list_size;
+	u32_t pin_list_size;
 	void (*config_func)(void);
 	struct phy_sam_gmac_dev phy;
 };
@@ -178,7 +178,7 @@ struct eth_sam_dev_cfg {
 /* Device run time data */
 struct eth_sam_dev_data {
 	struct net_if *iface;
-	uint8_t mac_addr[6];
+	u8_t mac_addr[6];
 	struct gmac_queue queue_list[GMAC_QUEUE_NO];
 };
 

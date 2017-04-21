@@ -62,7 +62,7 @@ static struct sockaddr_in6 dummy_addr = {
 
 static int test_build_empty_pdu(void)
 {
-	uint8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
+	u8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
 	struct zoap_packet zpkt;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -116,16 +116,16 @@ done:
 
 static int test_build_simple_pdu(void)
 {
-	uint8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
+	u8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
 				 'n', 0xC1, 0x00, 0xFF, 'p', 'a', 'y', 'l',
 				 'o', 'a', 'd', 0x00 };
 	struct zoap_packet zpkt;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	const char token[] = "token";
-	uint8_t *appdata, payload[] = "payload";
-	uint16_t buflen;
-	uint8_t format = 0;
+	u8_t *appdata, payload[] = "payload";
+	u16_t buflen;
+	u8_t format = 0;
 	int result = TC_FAIL;
 	int r;
 
@@ -155,7 +155,7 @@ static int test_build_simple_pdu(void)
 			      ZOAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED);
 	zoap_header_set_id(&zpkt, 0x1234);
 
-	r = zoap_header_set_token(&zpkt, (uint8_t *)token, strlen(token));
+	r = zoap_header_set_token(&zpkt, (u8_t *)token, strlen(token));
 	if (r) {
 		TC_PRINT("Could not set token\n");
 		goto done;
@@ -220,7 +220,7 @@ static int test_build_no_size_for_options(void)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	const char token[] = "token";
-	uint8_t format = 0;
+	u8_t format = 0;
 	int result = TC_FAIL;
 	int r;
 
@@ -250,7 +250,7 @@ static int test_build_no_size_for_options(void)
 			      ZOAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED);
 	zoap_header_set_id(&zpkt, 0x1234);
 
-	r = zoap_header_set_token(&zpkt, (uint8_t *)token, strlen(token));
+	r = zoap_header_set_token(&zpkt, (u8_t *)token, strlen(token));
 	if (r) {
 		TC_PRINT("Could not set token\n");
 		goto done;
@@ -276,12 +276,12 @@ done:
 
 static int test_parse_empty_pdu(void)
 {
-	uint8_t pdu[] = { 0x40, 0x01, 0, 0 };
+	u8_t pdu[] = { 0x40, 0x01, 0, 0 };
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet zpkt;
-	uint8_t ver, type, code;
-	uint16_t id;
+	u8_t ver, type, code;
+	u16_t id;
 	int result = TC_FAIL;
 	int r;
 
@@ -345,16 +345,16 @@ done:
 
 static int test_parse_simple_pdu(void)
 {
-	uint8_t pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
+	u8_t pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
 			  'n',  0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y',
 			  'l', 'o', 'a', 'd', 0x00 };
 	struct zoap_packet zpkt;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_option options[16];
-	uint8_t ver, type, code, tkl;
-	const uint8_t *token, *payload;
-	uint16_t id, len;
+	u8_t ver, type, code, tkl;
+	const u8_t *token, *payload;
+	u16_t id, len;
 	int result = TC_FAIL;
 	int r, count = 16;
 
@@ -435,7 +435,7 @@ static int test_parse_simple_pdu(void)
 		goto done;
 	}
 
-	if (((uint8_t *)options[0].value)[0] != 0) {
+	if (((u8_t *)options[0].value)[0] != 0) {
 		TC_PRINT("Option value doesn't match the reference\n");
 		goto done;
 	}
@@ -476,7 +476,7 @@ static int test_retransmit_second_round(void)
 	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
-	uint16_t id;
+	u16_t id;
 
 	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
@@ -621,9 +621,9 @@ static int server_resource_1_get(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	char payload[] = "This is the payload";
-	const uint8_t *token;
-	uint8_t tkl, *p;
-	uint16_t id, len;
+	const u8_t *token;
+	u8_t tkl, *p;
+	u16_t id, len;
 	int r;
 
 	if (!zoap_request_is_observe(request)) {
@@ -689,13 +689,13 @@ static int server_resource_1_get(struct zoap_resource *resource,
 
 static int test_observer_server(void)
 {
-	uint8_t valid_request_pdu[] = {
+	u8_t valid_request_pdu[] = {
 		0x45, 0x01, 0x12, 0x34,
 		't', 'o', 'k', 'e', 'n',
 		0x60, /* enable observe option */
 		0x51, 's', 0x01, '1', /* path */
 	};
-	uint8_t not_found_request_pdu[] = {
+	u8_t not_found_request_pdu[] = {
 		0x45, 0x01, 0x12, 0x34,
 		't', 'o', 'k', 'e', 'n',
 		0x60, /* enable observe option */
@@ -835,7 +835,7 @@ static int test_observer_client(void)
 	zoap_header_set_code(&req, ZOAP_METHOD_GET);
 	zoap_header_set_id(&req, zoap_next_id());
 	zoap_header_set_token(&req,
-			      (const uint8_t *) token, strlen(token));
+			      (const u8_t *) token, strlen(token));
 
 	/* Enable observing the resource. */
 	r = zoap_add_option_int(&req, ZOAP_OPTION_OBSERVE,
@@ -918,8 +918,8 @@ static int test_block_size(void)
 	struct net_pkt *pkt = NULL;
 	struct net_buf *frag;
 	const char token[] = "rndtoken";
-	uint8_t *payload;
-	uint16_t len;
+	u8_t *payload;
+	u16_t len;
 	int result = TC_FAIL;
 	int r;
 
@@ -951,7 +951,7 @@ static int test_block_size(void)
 	zoap_header_set_code(&req, ZOAP_METHOD_POST);
 	zoap_header_set_id(&req, zoap_next_id());
 	zoap_header_set_token(&req,
-			      (const uint8_t *) token, strlen(token));
+			      (const u8_t *) token, strlen(token));
 
 	zoap_add_block1_option(&req, &req_ctx);
 	zoap_add_size1_option(&req, &req_ctx);
@@ -1021,7 +1021,7 @@ static int test_block_size(void)
 	zoap_header_set_code(&req, ZOAP_METHOD_POST);
 	zoap_header_set_id(&req, zoap_next_id());
 	zoap_header_set_token(&req,
-			      (const uint8_t *) token, strlen(token));
+			      (const u8_t *) token, strlen(token));
 
 	zoap_add_block1_option(&req, &req_ctx);
 

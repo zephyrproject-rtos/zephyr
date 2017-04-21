@@ -27,24 +27,24 @@
 #include <net/dhcpv4.h>
 
 struct dhcp_msg {
-	uint8_t op;		/* Message type, 1:BOOTREQUEST, 2:BOOTREPLY */
-	uint8_t htype;		/* Hardware Address Type */
-	uint8_t hlen;		/* Hardware Address length */
-	uint8_t hops;		/* used by relay agents when booting via relay
+	u8_t op;		/* Message type, 1:BOOTREQUEST, 2:BOOTREPLY */
+	u8_t htype;		/* Hardware Address Type */
+	u8_t hlen;		/* Hardware Address length */
+	u8_t hops;		/* used by relay agents when booting via relay
 				 * agent, client sets zero
 				 */
-	uint32_t xid;		/* Transaction ID, random number */
-	uint16_t secs;		/* Seconds elapsed since client began address
+	u32_t xid;		/* Transaction ID, random number */
+	u16_t secs;		/* Seconds elapsed since client began address
 				 * acquisition or renewal process
 				 */
-	uint16_t flags;		/* Broadcast or Unicast */
-	uint8_t ciaddr[4];	/* Client IP Address */
-	uint8_t yiaddr[4];	/* your (client) IP address */
-	uint8_t siaddr[4];	/* IP address of next server to use in bootstrap
+	u16_t flags;		/* Broadcast or Unicast */
+	u8_t ciaddr[4];	/* Client IP Address */
+	u8_t yiaddr[4];	/* your (client) IP address */
+	u8_t siaddr[4];	/* IP address of next server to use in bootstrap
 				 * returned in DHCPOFFER, DHCPACK by server
 				 */
-	uint8_t giaddr[4];	/* Relat agent IP address */
-	uint8_t chaddr[16];	/* Client hardware address */
+	u8_t giaddr[4];	/* Relat agent IP address */
+	u8_t chaddr[16];	/* Client hardware address */
 } __packed;
 
 #define SIZE_OF_SNAME	64
@@ -113,7 +113,7 @@ enum dhcpv4_msg_type {
 #define DHCPV4_INITIAL_DELAY_MAX 10
 
 /* RFC 1497 [17] */
-static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
+static const u8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
 
 static void dhcpv4_timeout(struct k_work *work);
 
@@ -162,8 +162,8 @@ static inline bool add_cookie(struct net_pkt *pkt)
 }
 
 /* Add a an option with the form OPTION LENGTH VALUE.  */
-static bool add_option_length_value(struct net_pkt *pkt, uint8_t option,
-				    uint8_t size, const uint8_t *value)
+static bool add_option_length_value(struct net_pkt *pkt, u8_t option,
+				    u8_t size, const u8_t *value)
 {
 	if (!net_pkt_append_u8(pkt, option)) {
 		return false;
@@ -181,7 +181,7 @@ static bool add_option_length_value(struct net_pkt *pkt, uint8_t option,
 }
 
 /* Add DHCPv4 message type */
-static bool add_msg_type(struct net_pkt *pkt, uint8_t type)
+static bool add_msg_type(struct net_pkt *pkt, u8_t type)
 {
 	return add_option_length_value(pkt, DHCPV4_OPTIONS_MSG_TYPE, 1, &type);
 }
@@ -191,7 +191,7 @@ static bool add_msg_type(struct net_pkt *pkt, uint8_t type)
  */
 static bool add_req_options(struct net_pkt *pkt)
 {
-	static const uint8_t data[5] = { DHCPV4_OPTIONS_REQ_LIST,
+	static const u8_t data[5] = { DHCPV4_OPTIONS_REQ_LIST,
 					 3, /* Length */
 					 DHCPV4_OPTIONS_SUBNET_MASK,
 					 DHCPV4_OPTIONS_ROUTER,
@@ -221,7 +221,7 @@ static inline bool add_end(struct net_pkt *pkt)
 /* File is empty ATM */
 static inline bool add_file(struct net_pkt *pkt)
 {
-	uint8_t len = SIZE_OF_FILE;
+	u8_t len = SIZE_OF_FILE;
 
 	while (len-- > 0) {
 		if (!net_pkt_append_u8(pkt, 0)) {
@@ -235,7 +235,7 @@ static inline bool add_file(struct net_pkt *pkt)
 /* SNAME is empty ATM */
 static inline bool add_sname(struct net_pkt *pkt)
 {
-	uint8_t len = SIZE_OF_SNAME;
+	u8_t len = SIZE_OF_SNAME;
 
 	while (len-- > 0) {
 		if (!net_pkt_append_u8(pkt, 0)) {
@@ -251,7 +251,7 @@ static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 {
 	struct net_ipv4_hdr *ipv4;
 	struct net_udp_hdr *udp;
-	uint16_t len;
+	u16_t len;
 
 	ipv4 = NET_IPV4_HDR(pkt);
 	udp = NET_UDP_HDR(pkt);
@@ -265,7 +265,7 @@ static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 	ipv4->ttl = 0xFF;
 	ipv4->proto = IPPROTO_UDP;
 	ipv4->len[0] = len >> 8;
-	ipv4->len[1] = (uint8_t)len;
+	ipv4->len[1] = (u8_t)len;
 	ipv4->chksum = ~net_calc_chksum_ipv4(pkt);
 
 	net_ipaddr_copy(&ipv4->dst, server_addr);
@@ -280,7 +280,7 @@ static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 }
 
 /* Prepare initial DHCPv4 message and add options as per message type */
-static struct net_pkt *prepare_message(struct net_if *iface, uint8_t type,
+static struct net_pkt *prepare_message(struct net_if *iface, u8_t type,
 				       const struct in_addr *ciaddr)
 {
 	struct net_pkt *pkt;
@@ -346,7 +346,7 @@ fail:
 static void send_request(struct net_if *iface)
 {
 	struct net_pkt *pkt;
-	uint32_t timeout;
+	u32_t timeout;
 	const struct in_addr *server_addr = net_ipv4_broadcast_address();
 	const struct in_addr *ciaddr = NULL;
 	bool with_server_id = false;
@@ -450,7 +450,7 @@ fail:
 static void send_discover(struct net_if *iface)
 {
 	struct net_pkt *pkt;
-	uint32_t timeout;
+	u32_t timeout;
 
 	iface->dhcpv4.xid++;
 
@@ -576,8 +576,8 @@ static void dhcpv4_t2_timeout(struct k_work *work)
 
 static void enter_bound(struct net_if *iface)
 {
-	uint32_t renewal_time;
-	uint32_t rebinding_time;
+	u32_t renewal_time;
+	u32_t rebinding_time;
 
 	k_delayed_work_cancel(&iface->dhcpv4.timer);
 
@@ -664,16 +664,16 @@ static void dhcpv4_timeout(struct k_work *work)
  */
 static enum net_verdict parse_options(struct net_if *iface,
 				      struct net_buf *frag,
-				      uint16_t offset,
+				      u16_t offset,
 				      enum dhcpv4_msg_type *msg_type)
 {
-	uint8_t cookie[4];
-	uint8_t length;
-	uint8_t type;
-	uint16_t pos;
+	u8_t cookie[4];
+	u8_t length;
+	u8_t type;
+	u16_t pos;
 
 	frag = net_frag_read(frag, offset, &pos, sizeof(magic_cookie),
-			     (uint8_t *)cookie);
+			     (u8_t *)cookie);
 	if (!frag || memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
 
 		NET_DBG("Incorrect magic cookie");
@@ -797,7 +797,7 @@ static enum net_verdict parse_options(struct net_if *iface,
 				net_sprint_ipv4_addr(&iface->dhcpv4.server_id));
 			break;
 		case DHCPV4_OPTIONS_MSG_TYPE: {
-			uint8_t v;
+			u8_t v;
 
 			if (length != 1) {
 				NET_DBG("options_msg_type, bad length");
@@ -925,8 +925,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	struct net_buf *frag;
 	struct net_if *iface;
 	enum dhcpv4_msg_type msg_type = 0;
-	uint8_t min;
-	uint16_t pos;
+	u8_t min;
+	u16_t pos;
 
 	if (!conn) {
 		NET_DBG("Invalid connection");
@@ -1006,8 +1006,8 @@ drop:
 
 void net_dhcpv4_start(struct net_if *iface)
 {
-	uint32_t timeout;
-	uint32_t entropy;
+	u32_t timeout;
+	u32_t entropy;
 
 	switch (iface->dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:

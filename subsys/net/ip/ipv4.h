@@ -37,7 +37,7 @@ struct net_pkt *net_ipv4_create_raw(struct net_pkt *pkt,
 				    const struct in_addr *src,
 				    const struct in_addr *dst,
 				    struct net_if *iface,
-				    uint8_t next_header);
+				    u8_t next_header);
 
 /**
  * @brief Create IPv4 packet in provided net_pkt.
@@ -65,7 +65,7 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
  *
  * @return Return 0 on Success, < 0 on Failure.
  */
-int net_ipv4_finalize_raw(struct net_pkt *pkt, uint8_t next_header);
+int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header);
 
 /**
  * @brief Finalize IPv4 packet. It should be called right before

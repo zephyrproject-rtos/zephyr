@@ -28,9 +28,9 @@ enum HTTP_URL_FLAGS {
  */
 struct http_root_url {
 	const char *root;
-	uint16_t root_len;
+	u16_t root_len;
 
-	uint8_t flags;
+	u8_t flags;
 	int (*write_cb)(struct http_server_ctx *http_ctx);
 };
 
@@ -39,7 +39,7 @@ struct http_root_url {
  */
 struct http_url_ctx {
 	struct http_root_url urls[HTTP_MAX_NUMBER_URL];
-	uint8_t urls_ctr;
+	u8_t urls_ctr;
 };
 
 #endif

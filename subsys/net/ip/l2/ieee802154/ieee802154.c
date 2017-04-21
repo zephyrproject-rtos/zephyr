@@ -34,7 +34,7 @@
 
 #include <misc/printk.h>
 
-static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
+static inline void hexdump(u8_t *pkt, u16_t length, u8_t reserve)
 {
 	int i;
 
@@ -65,7 +65,7 @@ static inline void hexdump(uint8_t *pkt, uint16_t length, uint8_t reserve)
 
 static void pkt_hexdump(struct net_pkt *pkt, bool each_frag_reserve)
 {
-	uint16_t reserve = each_frag_reserve ? net_pkt_ll_reserve(pkt) : 0;
+	u16_t reserve = each_frag_reserve ? net_pkt_ll_reserve(pkt) : 0;
 	struct net_buf *frag;
 
 	printk("IEEE 802.15.4 packet content:\n");
@@ -151,8 +151,8 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 					       struct net_pkt *pkt)
 {
 	enum net_verdict verdict = NET_CONTINUE;
-	uint32_t src;
-	uint32_t dst;
+	u32_t src;
+	u32_t dst;
 
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
@@ -270,7 +270,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 					struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	uint8_t reserved_space = net_pkt_ll_reserve(pkt);
+	u8_t reserved_space = net_pkt_ll_reserve(pkt);
 	struct net_buf *frag;
 
 	if (net_pkt_family(pkt) != AF_INET6) {
@@ -304,7 +304,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 	return NET_OK;
 }
 
-static uint16_t ieee802154_reserve(struct net_if *iface, void *data)
+static u16_t ieee802154_reserve(struct net_if *iface, void *data)
 {
 	return ieee802154_compute_header_size(iface, (struct in6_addr *)data);
 }
@@ -317,8 +317,8 @@ void ieee802154_init(struct net_if *iface)
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	const struct ieee802154_radio_api *radio =
 		iface->dev->driver_api;
-	const uint8_t *mac = iface->link_addr.addr;
-	uint8_t long_addr[8];
+	const u8_t *mac = iface->link_addr.addr;
+	u8_t long_addr[8];
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 

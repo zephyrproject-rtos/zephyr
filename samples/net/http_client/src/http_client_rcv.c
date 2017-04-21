@@ -18,8 +18,8 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_pkt *rx)
 {
 	struct http_client_ctx *http_ctx;
 	struct net_buf *data_buf = NULL;
-	uint16_t data_len;
-	uint16_t offset;
+	u16_t data_len;
+	u16_t offset;
 	int rc;
 
 	if (!rx) {
@@ -59,7 +59,7 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_pkt *rx)
 {
 	struct http_client_ctx *http_ctx;
 	struct net_buf *frag = rx->frags;
-	uint16_t offset;
+	u16_t offset;
 
 	if (!rx) {
 		return;

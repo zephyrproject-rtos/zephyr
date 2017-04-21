@@ -37,8 +37,8 @@
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-int mqtt_pack_connack(uint8_t *buf, uint16_t *length, uint16_t size,
-		      uint8_t session_present, uint8_t ret_code);
+int mqtt_pack_connack(u8_t *buf, u16_t *length, u16_t size,
+		      u8_t session_present, u8_t ret_code);
 
 /**
  * Packs the MQTT PUBACK message
@@ -51,8 +51,8 @@ int mqtt_pack_connack(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-int mqtt_pack_puback(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id);
+int mqtt_pack_puback(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id);
 
 /**
  * Packs the MQTT PUBREC message
@@ -65,8 +65,8 @@ int mqtt_pack_puback(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-int mqtt_pack_pubrec(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id);
+int mqtt_pack_pubrec(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id);
 
 /**
  * Packs the MQTT PUBREL message
@@ -79,8 +79,8 @@ int mqtt_pack_pubrec(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-int mqtt_pack_pubrel(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id);
+int mqtt_pack_pubrel(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id);
 
 /**
  * Packs the MQTT PUBCOMP message
@@ -93,8 +93,8 @@ int mqtt_pack_pubrel(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-int mqtt_pack_pubcomp(uint8_t *buf, uint16_t *length, uint16_t size,
-		      uint16_t pkt_id);
+int mqtt_pack_pubcomp(u8_t *buf, u16_t *length, u16_t size,
+		      u16_t pkt_id);
 
 /**
  * Packs the MQTT SUBACK message
@@ -110,8 +110,8 @@ int mqtt_pack_pubcomp(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval -EINVAL
  * @retval -ENOMEM
  */
-int mqtt_pack_suback(uint8_t *buf, uint16_t *length, uint16_t size,
-		     uint16_t pkt_id, uint8_t elements,
+int mqtt_pack_suback(u8_t *buf, u16_t *length, u16_t size,
+		     u16_t pkt_id, u8_t elements,
 		     enum mqtt_qos granted_qos[]);
 
 /**
@@ -126,7 +126,7 @@ int mqtt_pack_suback(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval -EINVAL
  * @retval -ENOMEM
  */
-int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
+int mqtt_pack_connect(u8_t *buf, u16_t *length, u16_t size,
 		      struct mqtt_connect_msg *msg);
 
 /**
@@ -139,7 +139,7 @@ int mqtt_pack_connect(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
+int mqtt_unpack_connect(u8_t *buf, u16_t length,
 			struct mqtt_connect_msg *msg);
 
 /**
@@ -161,8 +161,8 @@ int mqtt_unpack_connect(uint8_t *buf, uint16_t length,
  * @retval -EINVAL
  * @retval -ENOMEM
  */
-int mqtt_pack_subscribe(uint8_t *buf, uint16_t *length, uint16_t size,
-			uint16_t pkt_id, uint8_t items, const char *topics[],
+int mqtt_pack_subscribe(u8_t *buf, u16_t *length, u16_t size,
+			u16_t pkt_id, u8_t items, const char *topics[],
 			const enum mqtt_qos qos[]);
 
 /**
@@ -180,8 +180,8 @@ int mqtt_pack_subscribe(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval -EINVAL
  * @retval -ENOMEM
  */
-int mqtt_pack_unsubscribe(uint8_t *buf, uint16_t *length, uint16_t size,
-			  uint16_t pkt_id, uint8_t items, const char *topics[]);
+int mqtt_pack_unsubscribe(u8_t *buf, u16_t *length, u16_t size,
+			  u16_t pkt_id, u8_t items, const char *topics[]);
 
 /**
  * Unpacks the MQTT SUBSCRIBE message
@@ -199,9 +199,9 @@ int mqtt_pack_unsubscribe(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_subscribe(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
-			  uint8_t *items, uint8_t elements, char *topics[],
-			  uint16_t topic_len[], enum mqtt_qos qos[]);
+int mqtt_unpack_subscribe(u8_t *buf, u16_t length, u16_t *pkt_id,
+			  u8_t *items, u8_t elements, char *topics[],
+			  u16_t topic_len[], enum mqtt_qos qos[]);
 
 /**
  * Unpacks the MQTT SUBACK message
@@ -216,8 +216,8 @@ int mqtt_unpack_subscribe(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_suback(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
-		       uint8_t *items, uint8_t elements,
+int mqtt_unpack_suback(u8_t *buf, u16_t length, u16_t *pkt_id,
+		       u8_t *items, u8_t elements,
 		       enum mqtt_qos granted_qos[]);
 
 /**
@@ -232,7 +232,7 @@ int mqtt_unpack_suback(uint8_t *buf, uint16_t length, uint16_t *pkt_id,
  * @retval -EINVAL
  * @retval -ENOMEM
  */
-int mqtt_pack_publish(uint8_t *buf, uint16_t *length, uint16_t size,
+int mqtt_pack_publish(u8_t *buf, u16_t *length, u16_t size,
 		      struct mqtt_publish_msg *msg);
 
 /**
@@ -245,7 +245,7 @@ int mqtt_pack_publish(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_publish(uint8_t *buf, uint16_t length,
+int mqtt_unpack_publish(u8_t *buf, u16_t length,
 			struct mqtt_publish_msg *msg);
 
 /**
@@ -259,8 +259,8 @@ int mqtt_unpack_publish(uint8_t *buf, uint16_t length,
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_connack(uint8_t *buf, uint16_t length, uint8_t *session,
-			uint8_t *connect_rc);
+int mqtt_unpack_connack(u8_t *buf, u16_t length, u8_t *session,
+			u8_t *connect_rc);
 
 /**
  * Packs the MQTT PINGREQ message
@@ -272,7 +272,7 @@ int mqtt_unpack_connack(uint8_t *buf, uint16_t length, uint8_t *session,
  * @retval 0 on success
  * @retval -ENOMEM
  */
-int mqtt_pack_pingreq(uint8_t *buf, uint16_t *length, uint16_t size);
+int mqtt_pack_pingreq(u8_t *buf, u16_t *length, u16_t size);
 
 /**
  * Packs the MQTT PINGRESP message
@@ -284,7 +284,7 @@ int mqtt_pack_pingreq(uint8_t *buf, uint16_t *length, uint16_t size);
  * @retval 0 on success
  * @retval -ENOMEM
  */
-int mqtt_pack_pingresp(uint8_t *buf, uint16_t *length, uint16_t size);
+int mqtt_pack_pingresp(u8_t *buf, u16_t *length, u16_t size);
 
 /**
  * Packs the MQTT DISCONNECT message
@@ -296,7 +296,7 @@ int mqtt_pack_pingresp(uint8_t *buf, uint16_t *length, uint16_t size);
  * @retval 0 on success
  * @retval -ENOMEM
  */
-int mqtt_pack_disconnect(uint8_t *buf, uint16_t *length, uint16_t size);
+int mqtt_pack_disconnect(u8_t *buf, u16_t *length, u16_t size);
 
 /**
  * Packs the MQTT UNSUBACK message
@@ -309,8 +309,8 @@ int mqtt_pack_disconnect(uint8_t *buf, uint16_t *length, uint16_t size);
  * @retval 0 on success
  * @retval -ENOMEM if size < 4
  */
-int mqtt_pack_unsuback(uint8_t *buf, uint16_t *length, uint16_t size,
-		       uint16_t pkt_id);
+int mqtt_pack_unsuback(u8_t *buf, u16_t *length, u16_t size,
+		       u16_t pkt_id);
 
 /**
  * Unpacks the MQTT PUBACK message
@@ -322,7 +322,7 @@ int mqtt_pack_unsuback(uint8_t *buf, uint16_t *length, uint16_t size,
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_puback(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
+int mqtt_unpack_puback(u8_t *buf, u16_t length, u16_t *pkt_id);
 
 /**
  * Unpacks the MQTT PUBREC message
@@ -334,7 +334,7 @@ int mqtt_unpack_puback(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_pubrec(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
+int mqtt_unpack_pubrec(u8_t *buf, u16_t length, u16_t *pkt_id);
 
 /**
  * Unpacks the MQTT PUBREL message
@@ -346,7 +346,7 @@ int mqtt_unpack_pubrec(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_pubrel(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
+int mqtt_unpack_pubrel(u8_t *buf, u16_t length, u16_t *pkt_id);
 
 /**
  * Unpacks the MQTT PUBCOMP message
@@ -358,7 +358,7 @@ int mqtt_unpack_pubrel(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_pubcomp(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
+int mqtt_unpack_pubcomp(u8_t *buf, u16_t length, u16_t *pkt_id);
 
 /**
  * Unpacks the MQTT UNSUBACK message
@@ -370,7 +370,7 @@ int mqtt_unpack_pubcomp(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_unsuback(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
+int mqtt_unpack_unsuback(u8_t *buf, u16_t length, u16_t *pkt_id);
 
 /**
  * Unpacks the MQTT PINGREQ message
@@ -381,7 +381,7 @@ int mqtt_unpack_unsuback(uint8_t *buf, uint16_t length, uint16_t *pkt_id);
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_pingreq(uint8_t *buf, uint16_t length);
+int mqtt_unpack_pingreq(u8_t *buf, u16_t length);
 
 /**
  * Unpacks the MQTT PINGRESP message
@@ -392,7 +392,7 @@ int mqtt_unpack_pingreq(uint8_t *buf, uint16_t length);
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_pingresp(uint8_t *buf, uint16_t length);
+int mqtt_unpack_pingresp(u8_t *buf, u16_t length);
 
 /**
  * Unpacks the MQTT DISCONNECT message
@@ -403,6 +403,6 @@ int mqtt_unpack_pingresp(uint8_t *buf, uint16_t length);
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_unpack_disconnect(uint8_t *buf, uint16_t length);
+int mqtt_unpack_disconnect(u8_t *buf, u16_t length);
 
 #endif

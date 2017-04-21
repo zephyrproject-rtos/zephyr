@@ -104,7 +104,7 @@ static struct sockaddr *create_sockaddr(struct net_pkt *pkt,
 #endif
 
 static int check_used_port(enum net_ip_protocol ip_proto,
-			   uint16_t local_port,
+			   u16_t local_port,
 			   const struct sockaddr *local_addr)
 
 {
@@ -143,11 +143,11 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 	return 0;
 }
 
-static uint16_t find_available_port(struct net_context *context,
+static u16_t find_available_port(struct net_context *context,
 				    const struct sockaddr *addr)
 {
 	if (!net_sin(addr)->sin_port) {
-		uint16_t local_port;
+		u16_t local_port;
 
 		do {
 			local_port = sys_rand32_get() | 0x8000;
@@ -798,7 +798,7 @@ NET_CONN_CB(tcp_established)
 {
 	struct net_context *context = (struct net_context *)user_data;
 	enum net_verdict ret;
-	uint8_t tcp_flags;
+	u8_t tcp_flags;
 
 	NET_ASSERT(context && context->tcp);
 
@@ -986,13 +986,13 @@ int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
 			socklen_t addrlen,
 			net_context_connect_cb_t cb,
-			int32_t timeout,
+			s32_t timeout,
 			void *user_data)
 {
 #if defined(CONFIG_NET_TCP)
 	struct sockaddr *laddr = NULL;
 	struct sockaddr local_addr;
-	uint16_t lport, rport;
+	u16_t lport, rport;
 	int ret;
 #endif
 
@@ -1477,13 +1477,13 @@ reset:
 
 int net_context_accept(struct net_context *context,
 		       net_tcp_accept_cb_t cb,
-		       int32_t timeout,
+		       s32_t timeout,
 		       void *user_data)
 {
 #if defined(CONFIG_NET_TCP)
 	struct sockaddr local_addr;
 	struct sockaddr *laddr = NULL;
-	uint16_t lport = 0;
+	u16_t lport = 0;
 	int ret;
 #endif /* CONFIG_NET_TCP */
 
@@ -1579,7 +1579,7 @@ int net_context_accept(struct net_context *context,
 static int send_data(struct net_context *context,
 		     struct net_pkt *pkt,
 		     net_context_send_cb_t cb,
-		     int32_t timeout,
+		     s32_t timeout,
 		     void *token,
 		     void *user_data)
 {
@@ -1653,7 +1653,7 @@ static int sendto(struct net_pkt *pkt,
 		  const struct sockaddr *dst_addr,
 		  socklen_t addrlen,
 		  net_context_send_cb_t cb,
-		  int32_t timeout,
+		  s32_t timeout,
 		  void *token,
 		  void *user_data)
 {
@@ -1749,7 +1749,7 @@ static int sendto(struct net_pkt *pkt,
 
 int net_context_send(struct net_pkt *pkt,
 		     net_context_send_cb_t cb,
-		     int32_t timeout,
+		     s32_t timeout,
 		     void *token,
 		     void *user_data)
 {
@@ -1795,7 +1795,7 @@ int net_context_sendto(struct net_pkt *pkt,
 		       const struct sockaddr *dst_addr,
 		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
-		       int32_t timeout,
+		       s32_t timeout,
 		       void *token,
 		       void *user_data)
 {
@@ -1892,14 +1892,14 @@ static enum net_verdict packet_received(struct net_conn *conn,
 #if defined(CONFIG_NET_UDP)
 static int recv_udp(struct net_context *context,
 		    net_context_recv_cb_t cb,
-		    int32_t timeout,
+		    s32_t timeout,
 		    void *user_data)
 {
 	struct sockaddr local_addr = {
 		.family = net_context_get_family(context),
 	};
 	struct sockaddr *laddr = NULL;
-	uint16_t lport = 0;
+	u16_t lport = 0;
 	int ret;
 
 	ARG_UNUSED(timeout);
@@ -1955,7 +1955,7 @@ static int recv_udp(struct net_context *context,
 
 int net_context_recv(struct net_context *context,
 		     net_context_recv_cb_t cb,
-		     int32_t timeout,
+		     s32_t timeout,
 		     void *user_data)
 {
 	NET_ASSERT(context);

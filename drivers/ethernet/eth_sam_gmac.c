@@ -93,9 +93,9 @@ static void ring_buf_reset(struct ring_buf *rb)
 /*
  * Get one 32 bit item from the ring buffer
  */
-static uint32_t ring_buf_get(struct ring_buf *rb)
+static u32_t ring_buf_get(struct ring_buf *rb)
 {
-	uint32_t val;
+	u32_t val;
 
 	__ASSERT(rb->tail != rb->head,
 		 "retrieving data from empty ring buffer");
@@ -109,7 +109,7 @@ static uint32_t ring_buf_get(struct ring_buf *rb)
 /*
  * Put one 32 bit item into the ring buffer
  */
-static void ring_buf_put(struct ring_buf *rb, uint32_t val)
+static void ring_buf_put(struct ring_buf *rb, u32_t val)
 {
 	rb->buf[rb->head] = val;
 	MODULO_INC(rb->head, rb->len);
@@ -136,8 +136,8 @@ static void free_rx_bufs(struct ring_buf *rx_pkt_list)
 /*
  * Set MAC Address for frame filtering logic
  */
-static void mac_addr_set(Gmac *gmac, uint8_t index,
-				 uint8_t mac_addr[6])
+static void mac_addr_set(Gmac *gmac, u8_t index,
+				 u8_t mac_addr[6])
 {
 	__ASSERT(index < 4, "index has to be in the range 0..3");
 
@@ -157,7 +157,7 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
 	struct ring_buf *rx_pkt_list = &queue->rx_pkt_list;
 	struct net_buf *rx_buf;
-	uint8_t *rx_buf_addr;
+	u8_t *rx_buf_addr;
 
 	__ASSERT_NO_MSG(rx_pkt_list->buf);
 
@@ -172,15 +172,15 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 			return -ENOBUFS;
 		}
 
-		rx_pkt_list->buf[i] = (uint32_t)rx_buf;
+		rx_pkt_list->buf[i] = (u32_t)rx_buf;
 
 		rx_buf_addr = rx_buf->data;
-		__ASSERT(!((uint32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
+		__ASSERT(!((u32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
 			 "Misaligned RX buffer address");
 		__ASSERT(rx_buf->size == CONFIG_NET_BUF_DATA_SIZE,
 			 "Incorrect length of RX data buffer");
 		/* Give ownership to GMAC and remove the wrap bit */
-		rx_desc_list->buf[i].w0 = (uint32_t)rx_buf_addr & GMAC_RXW0_ADDR;
+		rx_desc_list->buf[i].w0 = (u32_t)rx_buf_addr & GMAC_RXW0_ADDR;
 		rx_desc_list->buf[i].w1 = 0;
 	}
 
@@ -293,7 +293,7 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 	}
 
 	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
+	gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
 
 	/* Restart reception */
 	gmac->GMAC_NCR |=  GMAC_NCR_RXEN;
@@ -304,9 +304,9 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
  *
  * According to 802.3 MDC should be less then 2.5 MHz.
  */
-static int get_mck_clock_divisor(uint32_t mck)
+static int get_mck_clock_divisor(u32_t mck)
 {
-	uint32_t mck_divisor;
+	u32_t mck_divisor;
 
 	if (mck <= 20000000) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_8;
@@ -328,7 +328,7 @@ static int get_mck_clock_divisor(uint32_t mck)
 	return mck_divisor;
 }
 
-static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
+static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 {
 	int mck_divisor;
 
@@ -364,9 +364,9 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	return 0;
 }
 
-static void link_configure(Gmac *gmac, uint32_t flags)
+static void link_configure(Gmac *gmac, u32_t flags)
 {
-	uint32_t val;
+	u32_t val;
 
 	gmac->GMAC_NCR &= ~(GMAC_NCR_RXEN | GMAC_NCR_TXEN);
 
@@ -387,9 +387,9 @@ static int queue_init(Gmac *gmac, struct gmac_queue *queue)
 
 	__ASSERT_NO_MSG(queue->rx_desc_list.len > 0);
 	__ASSERT_NO_MSG(queue->tx_desc_list.len > 0);
-	__ASSERT(!((uint32_t)queue->rx_desc_list.buf & ~GMAC_RBQB_ADDR_Msk),
+	__ASSERT(!((u32_t)queue->rx_desc_list.buf & ~GMAC_RBQB_ADDR_Msk),
 		 "RX descriptors have to be word aligned");
-	__ASSERT(!((uint32_t)queue->tx_desc_list.buf & ~GMAC_TBQB_ADDR_Msk),
+	__ASSERT(!((u32_t)queue->tx_desc_list.buf & ~GMAC_TBQB_ADDR_Msk),
 		 "TX descriptors have to be word aligned");
 
 	/* Setup descriptor lists */
@@ -408,9 +408,9 @@ static int queue_init(Gmac *gmac, struct gmac_queue *queue)
 		   queue->tx_desc_list.len - 1);
 
 	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQB = (uint32_t)queue->rx_desc_list.buf;
+	gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
 	/* Set Transmit Buffer Queue Pointer Register */
-	gmac->GMAC_TBQB = (uint32_t)queue->tx_desc_list.buf;
+	gmac->GMAC_TBQB = (u32_t)queue->tx_desc_list.buf;
 
 	/* Configure GMAC DMA transfer */
 	gmac->GMAC_DCFGR =
@@ -442,9 +442,9 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 
-	__ASSERT(!((uint32_t)rx_desc_list->buf & ~GMAC_RBQB_ADDR_Msk),
+	__ASSERT(!((u32_t)rx_desc_list->buf & ~GMAC_RBQB_ADDR_Msk),
 		 "RX descriptors have to be word aligned");
-	__ASSERT(!((uint32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
+	__ASSERT(!((u32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
 		 "TX descriptors have to be word aligned");
 	__ASSERT((rx_desc_list->len == 1) && (tx_desc_list->len == 1),
 		 "Priority queues are currently not supported, descriptor "
@@ -460,9 +460,9 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
 
 	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (uint32_t)rx_desc_list->buf;
+	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
 	/* Set Transmit Buffer Queue Pointer Register */
-	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (uint32_t)tx_desc_list->buf;
+	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (u32_t)tx_desc_list->buf;
 
 	return 0;
 }
@@ -476,10 +476,10 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 	bool frame_is_complete;
 	struct net_buf *frag;
 	struct net_buf *new_frag;
-	uint8_t *frag_data;
-	uint32_t frag_len;
-	uint32_t frame_len = 0;
-	uint16_t tail;
+	u8_t *frag_data;
+	u32_t frag_len;
+	u32_t frame_len = 0;
+	u16_t tail;
 
 	/* Check if there exists a complete frame in RX descriptor list */
 	tail = rx_desc_list->tail;
@@ -517,7 +517,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 	 */
 	while ((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) && !frame_is_complete) {
 		frag = (struct net_buf *)rx_pkt_list->buf[tail];
-		frag_data = (uint8_t *)(rx_desc->w0 & GMAC_RXW0_ADDR);
+		frag_data = (u8_t *)(rx_desc->w0 & GMAC_RXW0_ADDR);
 		__ASSERT(frag->data == frag_data,
 			 "RX descriptor and buffer list desynchronized");
 		frame_is_complete = (bool)(rx_desc->w1 & GMAC_RXW1_EOF);
@@ -544,7 +544,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 				net_buf_add(frag, frag_len);
 				net_pkt_frag_insert(rx_frame, frag);
 				frag = new_frag;
-				rx_pkt_list->buf[tail] = (uint32_t)frag;
+				rx_pkt_list->buf[tail] = (u32_t)frag;
 			}
 		}
 
@@ -556,7 +556,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 		__DMB();  /* data memory barrier */
 		/* Update buffer descriptor address word */
 		rx_desc->w0 =
-			  ((uint32_t)frag->data & GMAC_RXW0_ADDR)
+			  ((u32_t)frag->data & GMAC_RXW0_ADDR)
 			| (tail == rx_desc_list->len-1 ? GMAC_RXW0_WRAP : 0);
 
 		MODULO_INC(tail, rx_desc_list->len);
@@ -601,9 +601,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tx_desc;
 	struct net_buf *frag;
-	uint8_t *frag_data;
-	uint16_t frag_len;
-	uint32_t err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
+	u8_t *frag_data;
+	u16_t frag_len;
+	u32_t err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
 	unsigned int key;
 
 	__ASSERT(pkt, "buf pointer is NULL");
@@ -642,7 +642,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		tx_desc = &tx_desc_list->buf[tx_desc_list->head];
 
 		/* Update buffer descriptor address word */
-		tx_desc->w0 = (uint32_t)frag_data;
+		tx_desc->w0 = (u32_t)frag_data;
 		/* Guarantee that address word is written before the status
 		 * word to avoid race condition.
 		 */
@@ -696,7 +696,7 @@ static void queue0_isr(void *arg)
 	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Gmac *gmac = cfg->regs;
 	struct gmac_queue *queue = &dev_data->queue_list[0];
-	uint32_t isr;
+	u32_t isr;
 
 	/* Interrupt Status Register is cleared on read */
 	isr = gmac->GMAC_ISR;
@@ -747,8 +747,8 @@ static void eth0_iface_init(struct net_if *iface)
 	struct device *const dev = net_if_get_device(iface);
 	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
-	uint32_t gmac_ncfgr_val;
-	uint32_t link_status;
+	u32_t gmac_ncfgr_val;
+	u32_t link_status;
 	int result;
 
 	dev_data->iface = iface;
@@ -845,11 +845,11 @@ static struct eth_sam_dev_data eth0_data = {
 				.len = ARRAY_SIZE(tx_desc_que0),
 			},
 			.rx_pkt_list = {
-				.buf = (uint32_t *)rx_buf_list_que0,
+				.buf = (u32_t *)rx_buf_list_que0,
 				.len = ARRAY_SIZE(rx_buf_list_que0),
 			},
 			.tx_frames = {
-				.buf = (uint32_t *)tx_frame_list_que0,
+				.buf = (u32_t *)tx_frame_list_que0,
 				.len = ARRAY_SIZE(tx_frame_list_que0),
 			},
 		}, {

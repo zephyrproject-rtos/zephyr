@@ -71,9 +71,9 @@ static inline enum net_verdict handle_echo_request(struct net_pkt *pkt)
 
 #define NET_ICMPV4_UNUSED_LEN 4
 
-static inline void setup_ipv4_header(struct net_pkt *pkt, uint8_t extra_len,
-				     uint8_t ttl, uint8_t icmp_type,
-				     uint8_t icmp_code)
+static inline void setup_ipv4_header(struct net_pkt *pkt, u8_t extra_len,
+				     u8_t ttl, u8_t icmp_type,
+				     u8_t icmp_code)
 {
 	NET_IPV4_HDR(pkt)->vhl = 0x45;
 	NET_IPV4_HDR(pkt)->tos = 0x00;
@@ -100,8 +100,8 @@ static inline void setup_ipv4_header(struct net_pkt *pkt, uint8_t extra_len,
 
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
-				 uint16_t identifier,
-				 uint16_t sequence)
+				 u16_t identifier,
+				 u16_t sequence)
 {
 	const struct in_addr *src;
 	struct net_pkt *pkt;
@@ -164,7 +164,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	return -EIO;
 }
 
-int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
+int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -281,7 +281,7 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
 }
 
 enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
-				  uint8_t type, uint8_t code)
+				  u8_t type, u8_t code)
 {
 	struct net_icmpv4_handler *cb;
 

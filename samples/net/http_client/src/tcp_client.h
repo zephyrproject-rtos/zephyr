@@ -16,7 +16,7 @@ struct tcp_client_ctx {
 	/* Local sock address */
 	struct sockaddr local_sock;
 	/* Network timeout */
-	int32_t timeout;
+	s32_t timeout;
 	/* User defined call back*/
 	void (*receive_cb)(struct tcp_client_ctx *ctx, struct net_pkt *rx);
 };
@@ -24,7 +24,7 @@ struct tcp_client_ctx {
 int tcp_set_local_addr(struct tcp_client_ctx *ctx, const char *local_addr);
 
 int tcp_connect(struct tcp_client_ctx *ctx, const char *server_addr,
-		uint16_t server_port);
+		u16_t server_port);
 
 int tcp_disconnect(struct tcp_client_ctx *ctx);
 

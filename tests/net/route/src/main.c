@@ -83,7 +83,7 @@ static struct k_sem wait_data;
 #define WAIT_TIME 250
 
 struct net_route_test {
-	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	u8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -92,7 +92,7 @@ int net_route_dev_init(struct device *dev)
 	return 0;
 }
 
-static uint8_t *net_route_get_mac(struct device *dev)
+static u8_t *net_route_get_mac(struct device *dev)
 {
 	struct net_route_test *route = dev->driver_data;
 
@@ -114,7 +114,7 @@ static uint8_t *net_route_get_mac(struct device *dev)
 
 static void net_route_iface_init(struct net_if *iface)
 {
-	uint8_t *mac = net_route_get_mac(net_if_get_device(iface));
+	u8_t *mac = net_route_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);

@@ -38,7 +38,7 @@ static bool fail = true;
 static struct k_sem recv_lock;
 
 struct net_udp_context {
-	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	u8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -51,7 +51,7 @@ int net_udp_dev_init(struct device *dev)
 	return 0;
 }
 
-static uint8_t *net_udp_get_mac(struct device *dev)
+static u8_t *net_udp_get_mac(struct device *dev)
 {
 	struct net_udp_context *context = dev->driver_data;
 
@@ -70,7 +70,7 @@ static uint8_t *net_udp_get_mac(struct device *dev)
 
 static void net_udp_iface_init(struct net_if *iface)
 {
-	uint8_t *mac = net_udp_get_mac(net_if_get_device(iface));
+	u8_t *mac = net_udp_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
@@ -126,8 +126,8 @@ NET_DEVICE_INIT(net_udp_test, "net_udp_test",
 struct ud {
 	const struct sockaddr *remote_addr;
 	const struct sockaddr *local_addr;
-	uint16_t remote_port;
-	uint16_t local_port;
+	u16_t remote_port;
+	u16_t local_port;
 	char *test;
 	void *handle;
 };
@@ -174,8 +174,8 @@ static enum net_verdict test_fail(struct net_conn *conn,
 static void setup_ipv6_udp(struct net_pkt *pkt,
 			   struct in6_addr *remote_addr,
 			   struct in6_addr *local_addr,
-			   uint16_t remote_port,
-			   uint16_t local_port)
+			   u16_t remote_port,
+			   u16_t local_port)
 {
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
@@ -203,8 +203,8 @@ static void setup_ipv6_udp(struct net_pkt *pkt,
 static void setup_ipv4_udp(struct net_pkt *pkt,
 			   struct in_addr *remote_addr,
 			   struct in_addr *local_addr,
-			   uint16_t remote_port,
-			   uint16_t local_port)
+			   u16_t remote_port,
+			   u16_t local_port)
 {
 	NET_IPV4_HDR(pkt)->vhl = 0x45;
 	NET_IPV4_HDR(pkt)->tos = 0;
@@ -233,8 +233,8 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 static bool send_ipv6_udp_msg(struct net_if *iface,
 			      struct in6_addr *src,
 			      struct in6_addr *dst,
-			      uint16_t src_port,
-			      uint16_t dst_port,
+			      u16_t src_port,
+			      u16_t dst_port,
 			      struct ud *ud,
 			      bool expect_failure)
 {
@@ -281,8 +281,8 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 static bool send_ipv4_udp_msg(struct net_if *iface,
 			      struct in_addr *src,
 			      struct in_addr *dst,
-			      uint16_t src_port,
-			      uint16_t dst_port,
+			      u16_t src_port,
+			      u16_t dst_port,
 			      struct ud *ud,
 			      bool expect_failure)
 {
@@ -327,8 +327,8 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 }
 
 static void set_port(sa_family_t family, struct sockaddr *raddr,
-		     struct sockaddr *laddr, uint16_t rport,
-		     uint16_t lport)
+		     struct sockaddr *laddr, u16_t rport,
+		     u16_t lport)
 {
 	if (family == AF_INET6) {
 		if (raddr) {

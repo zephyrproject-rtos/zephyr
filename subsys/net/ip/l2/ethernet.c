@@ -52,7 +52,7 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 static inline void ethernet_update_length(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
-	uint16_t len;
+	u16_t len;
 
 	/* Let's check IP payload's length. If it's smaller than 46 bytes,
 	 * i.e. smaller than minimal Ethernet frame size minus ethernet
@@ -137,7 +137,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 #ifdef CONFIG_NET_ARP
 	if (family == AF_INET && hdr->type == htons(NET_ETH_PTYPE_ARP)) {
 		NET_DBG("ARP packet from %s received",
-			net_sprint_ll_addr((uint8_t *)hdr->src.addr,
+			net_sprint_ll_addr((u8_t *)hdr->src.addr,
 					   sizeof(struct net_eth_addr)));
 		return net_arp_input(pkt);
 	}
@@ -155,7 +155,7 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 	if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
 			      net_ipv4_broadcast_address())) {
 		/* Broadcast address */
-		net_pkt_ll_dst(pkt)->addr = (uint8_t *)broadcast_eth_addr.addr;
+		net_pkt_ll_dst(pkt)->addr = (u8_t *)broadcast_eth_addr.addr;
 		net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_ll_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
@@ -185,7 +185,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 {
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	struct net_buf *frag;
-	uint16_t ptype;
+	u16_t ptype;
 
 #ifdef CONFIG_NET_ARP
 	if (net_pkt_family(pkt) == AF_INET) {
@@ -205,9 +205,9 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 
 		pkt = arp_pkt;
 
-		net_pkt_ll_src(pkt)->addr = (uint8_t *)&NET_ETH_HDR(pkt)->src;
+		net_pkt_ll_src(pkt)->addr = (u8_t *)&NET_ETH_HDR(pkt)->src;
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
-		net_pkt_ll_dst(pkt)->addr = (uint8_t *)&NET_ETH_HDR(pkt)->dst;
+		net_pkt_ll_dst(pkt)->addr = (u8_t *)&NET_ETH_HDR(pkt)->dst;
 		net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 		/* For ARP message, we do not touch the packet further but will
@@ -242,18 +242,18 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		    net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 			struct net_eth_addr *dst = &NET_ETH_HDR(pkt)->dst;
 
-			memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
+			memcpy(dst, (u8_t *)multicast_eth_addr.addr,
 			       sizeof(struct net_eth_addr) - 4);
-			memcpy((uint8_t *)dst + 2,
-			       (uint8_t *)(&NET_IPV6_HDR(pkt)->dst) + 12,
+			memcpy((u8_t *)dst + 2,
+			       (u8_t *)(&NET_IPV6_HDR(pkt)->dst) + 12,
 				sizeof(struct net_eth_addr) - 2);
 
-			net_pkt_ll_dst(pkt)->addr = (uint8_t *)dst->addr;
+			net_pkt_ll_dst(pkt)->addr = (u8_t *)dst->addr;
 		} else
 #endif
 		{
 			net_pkt_ll_dst(pkt)->addr =
-				(uint8_t *)broadcast_eth_addr.addr;
+				(u8_t *)broadcast_eth_addr.addr;
 		}
 
 		net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
@@ -302,7 +302,7 @@ send:
 	return NET_OK;
 }
 
-static inline uint16_t ethernet_reserve(struct net_if *iface, void *unused)
+static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(unused);

@@ -70,7 +70,7 @@ static bool fake_led;
 /* Default server */
 #define DEFAULT_PORT		4222
 
-static uint8_t stack[2048];
+static u8_t stack[2048];
 
 static void panic(const char *msg)
 {
@@ -172,7 +172,7 @@ static void initialize_network(void)
 
 static bool read_led(void)
 {
-	uint32_t led = 0;
+	u32_t led = 0;
 	int r;
 
 	if (!led0) {
@@ -241,7 +241,7 @@ static void initialize_hardware(void)
 	}
 }
 
-static int connect(struct nats *nats, uint16_t port)
+static int connect(struct nats *nats, u16_t port)
 {
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
 	struct net_if *iface;

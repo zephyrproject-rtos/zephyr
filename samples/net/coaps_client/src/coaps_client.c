@@ -78,12 +78,12 @@ static const char *const test_path[] = { "test", NULL };
 static struct in6_addr mcast_addr = MCAST_IP_ADDR;
 
 struct dtls_timing_context {
-	uint32_t snapshot;
-	uint32_t int_ms;
-	uint32_t fin_ms;
+	u32_t snapshot;
+	u32_t int_ms;
+	u32_t fin_ms;
 };
 
-static void msg_dump(const char *s, uint8_t *data, unsigned int len)
+static void msg_dump(const char *s, u8_t *data, unsigned int len)
 {
 	unsigned int i;
 
@@ -125,7 +125,7 @@ static void my_debug(void *ctx, int level,
 	mbedtls_printf("%s:%04d: |%d| %s", basename, line, level, str);
 }
 
-void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
+void dtls_timing_set_delay(void *data, u32_t int_ms, u32_t fin_ms)
 {
 	struct dtls_timing_context *ctx = (struct dtls_timing_context *)data;
 
@@ -162,7 +162,7 @@ int dtls_timing_get_delay(void *data)
 static int entropy_source(void *data, unsigned char *output, size_t len,
 			  size_t *olen)
 {
-	uint32_t seed;
+	u32_t seed;
 
 	ARG_UNUSED(data);
 
@@ -188,9 +188,9 @@ void dtls_client(void)
 	struct zoap_reply *reply;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	uint8_t observe = 0;
+	u8_t observe = 0;
 	const char *const *p;
-	uint16_t len;
+	u16_t len;
 
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context ctr_drbg;
@@ -411,7 +411,7 @@ exit:
 }
 
 #define STACK_SIZE		4096
-uint8_t stack[STACK_SIZE];
+u8_t stack[STACK_SIZE];
 
 static inline int init_app(void)
 {

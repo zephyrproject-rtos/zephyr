@@ -67,7 +67,7 @@ struct eth_context {
 	bool link_up;
 	phy_duplex_t phy_duplex;
 	phy_speed_t phy_speed;
-	uint8_t mac_addr[6];
+	u8_t mac_addr[6];
 	struct k_work phy_work;
 	struct k_delayed_work delayed_phy_work;
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
@@ -82,7 +82,7 @@ struct eth_context {
 	 * bypassing it and writing a more complex driver working
 	 * directly with hardware).
 	 */
-	uint8_t frame_buf[1500];
+	u8_t frame_buf[1500];
 };
 
 static void eth_0_config_func(void);
@@ -99,13 +99,13 @@ tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
 #define ETH_MCUX_BUFFER_SIZE \
 	ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
 
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
+static u8_t __aligned(ENET_BUFF_ALIGNMENT)
 rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
+static u8_t __aligned(ENET_BUFF_ALIGNMENT)
 tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
-static void eth_mcux_decode_duplex_and_speed(uint32_t status,
+static void eth_mcux_decode_duplex_and_speed(u32_t status,
 					     phy_duplex_t *p_phy_duplex,
 					     phy_speed_t *p_phy_speed)
 {
@@ -131,7 +131,7 @@ static void eth_mcux_decode_duplex_and_speed(uint32_t status,
 
 static void eth_mcux_phy_enter_reset(struct eth_context *context)
 {
-	const uint32_t phy_addr = 0;
+	const u32_t phy_addr = 0;
 
 	/* Reset the PHY. */
 	ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
@@ -197,11 +197,11 @@ void eth_mcux_phy_stop(struct eth_context *context)
 
 static void eth_mcux_phy_event(struct eth_context *context)
 {
-	uint32_t status;
+	u32_t status;
 	bool link_up;
 	phy_duplex_t phy_duplex = kPHY_FullDuplex;
 	phy_speed_t phy_speed = kPHY_Speed100M;
-	const uint32_t phy_addr = 0;
+	const u32_t phy_addr = 0;
 
 #ifdef CONFIG_ETH_MCUX_PHY_DETAILED_DEBUG
 	SYS_LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
@@ -310,11 +310,11 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct eth_context *context = iface->dev->driver_data;
 	const struct net_buf *frag;
-	uint8_t *dst;
+	u8_t *dst;
 	status_t status;
 	unsigned int imask;
 
-	uint16_t total_len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
+	u16_t total_len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 
 	k_sem_take(&context->tx_buf_sem, K_FOREVER);
 
@@ -359,8 +359,8 @@ static void eth_rx(struct device *iface)
 {
 	struct eth_context *context = iface->driver_data;
 	struct net_pkt *pkt;
-	const uint8_t *src;
-	uint32_t frame_length = 0;
+	const u8_t *src;
+	u32_t frame_length = 0;
 	status_t status;
 	unsigned int imask;
 
@@ -481,9 +481,9 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 }
 
 #if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
-static void generate_mac(uint8_t *mac_addr)
+static void generate_mac(u8_t *mac_addr)
 {
-	uint32_t entropy;
+	u32_t entropy;
 
 	entropy = sys_rand32_get();
 
@@ -498,7 +498,7 @@ static int eth_0_init(struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 	enet_config_t enet_config;
-	uint32_t sys_clock;
+	u32_t sys_clock;
 	enet_buffer_config_t buffer_config = {
 		.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
 		.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
@@ -596,7 +596,7 @@ static void eth_mcux_error_isr(void *p)
 {
 	struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
-	uint32_t pending = ENET_GetInterruptStatus(ENET);
+	u32_t pending = ENET_GetInterruptStatus(ENET);
 
 	if (pending & ENET_EIR_MII_MASK) {
 		k_work_submit(&context->phy_work);

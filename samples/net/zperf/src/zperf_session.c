@@ -22,7 +22,7 @@ struct session *get_session(struct net_pkt *pkt, enum session_proto proto)
 	struct in6_addr ipv6 = { };
 	struct in_addr ipv4 = { };
 	int i = 0;
-	uint16_t port;
+	u16_t port;
 
 	if (!pkt) {
 		printk("Error! null pkt detected.\n");

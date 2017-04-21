@@ -25,12 +25,12 @@ struct net_stats net_stats;
 
 void net_print_statistics(void)
 {
-	static int64_t next_print;
-	int64_t curr = k_uptime_get();
+	static s64_t next_print;
+	s64_t curr = k_uptime_get();
 
 	if (!next_print || (next_print < curr &&
 	    (!((curr - next_print) > PRINT_STATISTICS_INTERVAL)))) {
-		int64_t new_print;
+		s64_t new_print;
 
 #if defined(CONFIG_NET_STATISTICS_IPV6)
 		NET_INFO("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
@@ -133,7 +133,7 @@ void net_print_statistics(void)
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 
-static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
+static int net_stats_get(u32_t mgmt_request, struct net_if *iface,
 			 void *data, size_t len)
 {
 	size_t len_chk = 0;

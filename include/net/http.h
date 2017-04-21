@@ -30,22 +30,22 @@ struct http_client_request {
 	/** Payload, may be NULL */
 	char *payload;
 	/** Payload size, may be 0 */
-	uint16_t payload_size;
+	u16_t payload_size;
 };
 
-int http_request(struct net_context *net_ctx, int32_t timeout,
+int http_request(struct net_context *net_ctx, s32_t timeout,
 		 struct http_client_request *req);
 
-int http_request_get(struct net_context *net_ctx, int32_t timeout, char *url,
+int http_request_get(struct net_context *net_ctx, s32_t timeout, char *url,
 		     char *header_fields);
 
-int http_request_head(struct net_context *net_ctx, int32_t timeout, char *url,
+int http_request_head(struct net_context *net_ctx, s32_t timeout, char *url,
 		      char *header_fields);
 
-int http_request_options(struct net_context *net_ctx, int32_t timeout,
+int http_request_options(struct net_context *net_ctx, s32_t timeout,
 			 char *url, char *header_fields);
 
-int http_request_post(struct net_context *net_ctx, int32_t timeout, char *url,
+int http_request_post(struct net_context *net_ctx, s32_t timeout, char *url,
 		      char *header_fields, char *content_type_value,
 		      char *payload);
 #endif
@@ -71,35 +71,35 @@ struct http_field_value {
 	 */
 	const char *key;
 	/** Length of the field name */
-	uint16_t key_len;
+	u16_t key_len;
 
 	/** Value, this variable will point to the beginning of the string
 	 *  containing the field value
 	 */
 	const char *value;
 	/** Length of the field value */
-	uint16_t value_len;
+	u16_t value_len;
 };
 
 /* The HTTP server context struct */
 struct http_server_ctx {
-	uint8_t state;
+	u8_t state;
 
 	/** Collection of header fields */
 	struct http_field_value field_values[CONFIG_HTTP_HEADER_FIELD_ITEMS];
 	/** Number of header field elements */
-	uint16_t field_values_ctr;
+	u16_t field_values_ctr;
 
 	/** HTTP Request URL */
 	const char *url;
 	/** URL's length */
-	uint16_t url_len;
+	u16_t url_len;
 
 	/**IP stack network context */
 	struct net_context *net_ctx;
 
 	/** Network timeout */
-	int32_t timeout;
+	s32_t timeout;
 
 #if defined(CONFIG_HTTP_PARSER)
 	/** HTTP parser */

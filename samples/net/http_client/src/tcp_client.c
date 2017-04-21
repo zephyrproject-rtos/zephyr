@@ -14,7 +14,7 @@
 #include <misc/printk.h>
 
 static
-int set_addr(struct sockaddr *sock_addr, const char *addr, uint16_t server_port)
+int set_addr(struct sockaddr *sock_addr, const char *addr, u16_t server_port)
 {
 	void *ptr = NULL;
 	int rc;
@@ -104,7 +104,7 @@ lb_exit:
 }
 
 int tcp_connect(struct tcp_client_ctx *ctx, const char *server_addr,
-		uint16_t server_port)
+		u16_t server_port)
 {
 #if CONFIG_NET_IPV6
 	socklen_t addr_len = sizeof(struct sockaddr_in6);

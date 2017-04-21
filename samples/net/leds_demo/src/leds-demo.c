@@ -66,7 +66,7 @@ static bool fake_led;
 
 static bool read_led(void)
 {
-	uint32_t led = 0;
+	u32_t led = 0;
 	int r;
 
 	if (!led0) {
@@ -99,8 +99,8 @@ static int led_get(struct zoap_resource *resource,
 	struct net_buf *frag;
 	struct zoap_packet response;
 	const char *str;
-	uint8_t *payload;
-	uint16_t len, id;
+	u8_t *payload;
+	u16_t len, id;
 	int r;
 
 	id = zoap_header_get_id(request);
@@ -165,9 +165,9 @@ static int led_post(struct zoap_resource *resource,
 	struct net_buf *frag;
 	struct zoap_packet response;
 	const char *str;
-	uint8_t *payload;
-	uint16_t len, id;
-	uint32_t led;
+	u8_t *payload;
+	u16_t len, id;
+	u32_t led;
 	int r;
 
 	payload = zoap_packet_get_payload(request, &len);
@@ -244,9 +244,9 @@ static int led_put(struct zoap_resource *resource,
 	struct net_buf *frag;
 	struct zoap_packet response;
 	const char *str;
-	uint8_t *payload;
-	uint16_t len, id;
-	uint32_t led;
+	u8_t *payload;
+	u16_t len, id;
+	u32_t led;
 	int r;
 
 	payload = zoap_packet_get_payload(request, &len);
@@ -324,8 +324,8 @@ static int dummy_get(struct zoap_resource *resource,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct zoap_packet response;
-	uint8_t *payload;
-	uint16_t len, id;
+	u8_t *payload;
+	u16_t len, id;
 	int r;
 
 	id = zoap_header_get_id(request);

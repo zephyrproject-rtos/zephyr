@@ -29,7 +29,7 @@ char __noinit __stack thread_stack[STACKSIZE];
 static struct net_mgmt_event_callback mgmt_cb;
 
 static void handler(struct net_mgmt_event_callback *cb,
-		    uint32_t mgmt_event,
+		    u32_t mgmt_event,
 		    struct net_if *iface)
 {
 	int i = 0;

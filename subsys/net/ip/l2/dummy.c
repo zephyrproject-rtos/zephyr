@@ -30,7 +30,7 @@ static inline enum net_verdict dummy_send(struct net_if *iface,
 	return NET_OK;
 }
 
-static inline uint16_t dummy_reserve(struct net_if *iface, void *unused)
+static inline u16_t dummy_reserve(struct net_if *iface, void *unused)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(unused);

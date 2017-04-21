@@ -27,7 +27,7 @@
 /** Singleton device used in uart pipe callback */
 static struct device *upipe_dev;
 
-static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
+static u8_t *upipe_rx(u8_t *buf, size_t *off)
 {
 	struct upipe_context *upipe = upipe_dev->driver_data;
 	struct net_pkt *pkt = NULL;
@@ -107,7 +107,7 @@ static int upipe_cca(struct device *dev)
 	return 0;
 }
 
-static int upipe_set_channel(struct device *dev, uint16_t channel)
+static int upipe_set_channel(struct device *dev, u16_t channel)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
@@ -118,7 +118,7 @@ static int upipe_set_channel(struct device *dev, uint16_t channel)
 	return 0;
 }
 
-static int upipe_set_pan_id(struct device *dev, uint16_t pan_id)
+static int upipe_set_pan_id(struct device *dev, u16_t pan_id)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
@@ -129,7 +129,7 @@ static int upipe_set_pan_id(struct device *dev, uint16_t pan_id)
 	return 0;
 }
 
-static int upipe_set_short_addr(struct device *dev, uint16_t short_addr)
+static int upipe_set_short_addr(struct device *dev, u16_t short_addr)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
@@ -140,7 +140,7 @@ static int upipe_set_short_addr(struct device *dev, uint16_t short_addr)
 	return 0;
 }
 
-static int upipe_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
+static int upipe_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
@@ -151,7 +151,7 @@ static int upipe_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	return 0;
 }
 
-static int upipe_set_txpower(struct device *dev, int16_t dbm)
+static int upipe_set_txpower(struct device *dev, s16_t dbm)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
@@ -166,10 +166,10 @@ static int upipe_tx(struct device *dev,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
-	uint8_t *pkt_buf = frag->data - net_pkt_ll_reserve(pkt);
-	uint8_t len = net_pkt_ll_reserve(pkt) + frag->len;
+	u8_t *pkt_buf = frag->data - net_pkt_ll_reserve(pkt);
+	u8_t len = net_pkt_ll_reserve(pkt) + frag->len;
 	struct upipe_context *upipe = dev->driver_data;
-	uint8_t i, data;
+	u8_t i, data;
 
 	SYS_LOG_DBG("%p (%u)", frag, len);
 
@@ -234,7 +234,7 @@ static int upipe_init(struct device *dev)
 	return 0;
 }
 
-static inline uint8_t *get_mac(struct device *dev)
+static inline u8_t *get_mac(struct device *dev)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
@@ -244,7 +244,7 @@ static inline uint8_t *get_mac(struct device *dev)
 	upipe->mac_addr[3] = 0x30;
 
 	UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
-		      (uint32_t *) ((void *)upipe->mac_addr+4));
+		      (u32_t *) ((void *)upipe->mac_addr+4));
 
 	return upipe->mac_addr;
 }
@@ -253,7 +253,7 @@ static void upipe_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
 	struct upipe_context *upipe = dev->driver_data;
-	uint8_t *mac = get_mac(dev);
+	u8_t *mac = get_mac(dev);
 
 	SYS_LOG_DBG("");
 

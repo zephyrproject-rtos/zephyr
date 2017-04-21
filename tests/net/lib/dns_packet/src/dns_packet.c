@@ -13,11 +13,11 @@
 /* RFC 1035, 4.1.1. Header section format */
 #define DNS_HEADER_SIZE	12
 
-static uint8_t buf[MAX_BUF_SIZE];
-static uint16_t buf_len;
+static u8_t buf[MAX_BUF_SIZE];
+static u16_t buf_len;
 
-static uint8_t qname[MAX_BUF_SIZE];
-static uint16_t qname_len;
+static u8_t qname[MAX_BUF_SIZE];
+static u16_t qname_len;
 
 
 /* Domain: www.zephyrproject.org
@@ -25,19 +25,19 @@ static uint16_t qname_len;
  * Transaction ID: 0xda0f
  * Recursion desired
  */
-static uint8_t query_ipv4[] = { 0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
+static u8_t query_ipv4[] = { 0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77,
 				0x0d, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x70,
 				0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x03, 0x6f,
 				0x72, 0x67, 0x00, 0x00, 0x01, 0x00, 0x01 };
 
 #define DNAME1 "www.zephyrproject.org"
-static uint16_t tid1 = 0xda0f;
+static u16_t tid1 = 0xda0f;
 
-static int eval_query(const char *dname, uint16_t tid, enum dns_rr_type type,
-		      uint8_t *expected, uint16_t expected_len)
+static int eval_query(const char *dname, u16_t tid, enum dns_rr_type type,
+		      u8_t *expected, u16_t expected_len)
 {
-	uint8_t *question;
+	u8_t *question;
 	int rc;
 
 	rc = dns_msg_pack_qname(&qname_len, qname, MAX_BUF_SIZE, dname);
@@ -174,24 +174,24 @@ struct dns_response_test {
 	const char *dname;
 
 	/* expected result */
-	uint8_t *res;
+	u8_t *res;
 	/* expected result length */
-	uint16_t res_len;
+	u16_t res_len;
 
 	/* transaction id */
-	uint16_t tid;
+	u16_t tid;
 	/* A, AAAA */
-	uint8_t answer_type;
+	u8_t answer_type;
 	/* answer counter */
-	uint8_t ancount;
+	u8_t ancount;
 	/* answer TTL */
-	uint32_t ttl;
+	u32_t ttl;
 	/* recursion available */
-	uint8_t ra;
+	u8_t ra;
 	/* data len */
-	uint8_t rdlen;
+	u8_t rdlen;
 	/* data */
-	const uint8_t *rdata;
+	const u8_t *rdata;
 };
 
 /* This routine evaluates DNS responses with one RR, and assumes that the
@@ -199,8 +199,8 @@ struct dns_response_test {
  */
 static int eval_response1(struct dns_response_test *resp)
 {
-	uint8_t *ptr = resp->res;
-	uint16_t offset;
+	u8_t *ptr = resp->res;
+	u16_t offset;
 	int  rc;
 
 	if (resp->res_len < RESPONSE_MIN_SIZE) {
@@ -405,7 +405,7 @@ void test_dns_query(void)
  * RD len: 4 (IPv4 Address)
  * RData: 140.211.169.8
  */
-static uint8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
+static u8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
 			       0x00, 0x00, 0x00, 0x00, 0x03, 0x77, 0x77, 0x77,
 			       0x0d, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x70,
 			       0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x03, 0x6f,
@@ -413,7 +413,7 @@ static uint8_t resp_ipv4[] = { 0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
 			       0x0c, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x0b,
 			       0xd4, 0x00, 0x04, 0x8c, 0xd3, 0xa9, 0x08 };
 
-static const uint8_t resp_ipv4_addr[] = {140, 211, 169, 8};
+static const u8_t resp_ipv4_addr[] = {140, 211, 169, 8};
 
 void test_dns_response(void)
 {

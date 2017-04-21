@@ -185,8 +185,8 @@ struct zoap_resource {
 struct zoap_observer {
 	sys_snode_t list;
 	struct sockaddr addr;
-	uint8_t token[8];
-	uint8_t tkl;
+	u8_t token[8];
+	u8_t tkl;
 };
 
 /**
@@ -194,8 +194,8 @@ struct zoap_observer {
  */
 struct zoap_packet {
 	struct net_pkt *pkt;
-	uint8_t *start; /* Start of the payload */
-	uint16_t total_size;
+	u8_t *start; /* Start of the payload */
+	u16_t total_size;
 };
 
 /**
@@ -213,8 +213,8 @@ typedef int (*zoap_reply_t)(const struct zoap_packet *response,
 struct zoap_pending {
 	struct net_pkt *pkt;
 	struct sockaddr addr;
-	int32_t timeout;
-	uint16_t id;
+	s32_t timeout;
+	u16_t id;
 };
 
 /**
@@ -225,8 +225,8 @@ struct zoap_reply {
 	zoap_reply_t reply;
 	void *user_data;
 	int age;
-	uint8_t token[8];
-	uint8_t tkl;
+	u8_t token[8];
+	u8_t tkl;
 };
 
 /**
@@ -304,8 +304,8 @@ void zoap_reply_init(struct zoap_reply *reply,
  * To be used with zoap_find_options().
  */
 struct zoap_option {
-	uint8_t *value;
-	uint16_t len;
+	u8_t *value;
+	u16_t len;
 };
 
 /**
@@ -492,7 +492,7 @@ bool zoap_request_is_observe(const struct zoap_packet *request);
  *
  * @return pointer to the start of the payload, NULL in case of error.
  */
-uint8_t *zoap_packet_get_payload(struct zoap_packet *zpkt, uint16_t *len);
+u8_t *zoap_packet_get_payload(struct zoap_packet *zpkt, u16_t *len);
 
 /**
  * @brief Sets how much space was used by the payload.
@@ -506,7 +506,7 @@ uint8_t *zoap_packet_get_payload(struct zoap_packet *zpkt, uint16_t *len);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_packet_set_used(struct zoap_packet *zpkt, uint16_t len);
+int zoap_packet_set_used(struct zoap_packet *zpkt, u16_t len);
 
 /**
  * @brief Adds an option to the packet.
@@ -520,8 +520,8 @@ int zoap_packet_set_used(struct zoap_packet *zpkt, uint16_t len);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_option(struct zoap_packet *zpkt, uint16_t code,
-		    const void *value, uint16_t len);
+int zoap_add_option(struct zoap_packet *zpkt, u16_t code,
+		    const void *value, u16_t len);
 
 /**
  * @brief Converts an option to its integer representation.
@@ -548,7 +548,7 @@ unsigned int zoap_option_value_to_int(const struct zoap_option *option);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_option_int(struct zoap_packet *zpkt, uint16_t code,
+int zoap_add_option_int(struct zoap_packet *zpkt, u16_t code,
 			unsigned int val);
 
 /**
@@ -564,8 +564,8 @@ int zoap_add_option_int(struct zoap_packet *zpkt, uint16_t code,
  * @return The number of options found in packet matching code,
  * negative on error.
  */
-int zoap_find_options(const struct zoap_packet *zpkt, uint16_t code,
-		      struct zoap_option *options, uint16_t veclen);
+int zoap_find_options(const struct zoap_packet *zpkt, u16_t code,
+		      struct zoap_option *options, u16_t veclen);
 
 /**
  * Represents the size of each block that will be transferred using
@@ -593,7 +593,7 @@ enum zoap_block_size {
  *
  * @return The size in bytes that the block_size represents
  */
-static inline uint16_t zoap_block_size_to_bytes(
+static inline u16_t zoap_block_size_to_bytes(
 	enum zoap_block_size block_size)
 {
 	return (1 << (block_size + 4));
@@ -700,7 +700,7 @@ size_t zoap_next_block(struct zoap_block_context *ctx);
  *
  * @return the CoAP version in packet
  */
-uint8_t zoap_header_get_version(const struct zoap_packet *zpkt);
+u8_t zoap_header_get_version(const struct zoap_packet *zpkt);
 
 /**
  * @brief Returns the type of the CoAP packet.
@@ -709,7 +709,7 @@ uint8_t zoap_header_get_version(const struct zoap_packet *zpkt);
  *
  * @return the type of the packet
  */
-uint8_t zoap_header_get_type(const struct zoap_packet *zpkt);
+u8_t zoap_header_get_type(const struct zoap_packet *zpkt);
 
 /**
  * @brief Returns the token (if any) in the CoAP packet.
@@ -719,8 +719,8 @@ uint8_t zoap_header_get_type(const struct zoap_packet *zpkt);
  *
  * @return pointer to the start of the token in the CoAP packet.
  */
-const uint8_t *zoap_header_get_token(const struct zoap_packet *zpkt,
-				     uint8_t *len);
+const u8_t *zoap_header_get_token(const struct zoap_packet *zpkt,
+				     u8_t *len);
 
 /**
  * @brief Returns the code of the CoAP packet.
@@ -729,7 +729,7 @@ const uint8_t *zoap_header_get_token(const struct zoap_packet *zpkt,
  *
  * @return the code present in the packet
  */
-uint8_t zoap_header_get_code(const struct zoap_packet *zpkt);
+u8_t zoap_header_get_code(const struct zoap_packet *zpkt);
 
 /**
  * @brief Returns the message id associated with the CoAP packet.
@@ -738,7 +738,7 @@ uint8_t zoap_header_get_code(const struct zoap_packet *zpkt);
  *
  * @return the message id present in the packet
  */
-uint16_t zoap_header_get_id(const struct zoap_packet *zpkt);
+u16_t zoap_header_get_id(const struct zoap_packet *zpkt);
 
 /**
  * @brief Sets the version of the CoAP packet.
@@ -746,7 +746,7 @@ uint16_t zoap_header_get_id(const struct zoap_packet *zpkt);
  * @param zpkt CoAP packet representation
  * @param ver The CoAP version to set in the packet
  */
-void zoap_header_set_version(struct zoap_packet *zpkt, uint8_t ver);
+void zoap_header_set_version(struct zoap_packet *zpkt, u8_t ver);
 
 /**
  * @brief Sets the type of the CoAP packet.
@@ -754,7 +754,7 @@ void zoap_header_set_version(struct zoap_packet *zpkt, uint8_t ver);
  * @param zpkt CoAP packet representation
  * @param type The packet type to set
  */
-void zoap_header_set_type(struct zoap_packet *zpkt, uint8_t type);
+void zoap_header_set_type(struct zoap_packet *zpkt, u8_t type);
 
 /**
  * @brief Sets the token in the CoAP packet.
@@ -765,8 +765,8 @@ void zoap_header_set_type(struct zoap_packet *zpkt, uint8_t type);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_header_set_token(struct zoap_packet *zpkt, const uint8_t *token,
-			  uint8_t tokenlen);
+int zoap_header_set_token(struct zoap_packet *zpkt, const u8_t *token,
+			  u8_t tokenlen);
 
 /**
  * @brief Sets the code present in the CoAP packet.
@@ -774,7 +774,7 @@ int zoap_header_set_token(struct zoap_packet *zpkt, const uint8_t *token,
  * @param zpkt CoAP packet representation
  * @param code The code set in the packet
  */
-void zoap_header_set_code(struct zoap_packet *zpkt, uint8_t code);
+void zoap_header_set_code(struct zoap_packet *zpkt, u8_t code);
 
 /**
  * @brief Sets the message id present in the CoAP packet.
@@ -782,16 +782,16 @@ void zoap_header_set_code(struct zoap_packet *zpkt, uint8_t code);
  * @param zpkt CoAP packet representation
  * @param id The message id to set in the packet
  */
-void zoap_header_set_id(struct zoap_packet *zpkt, uint16_t id);
+void zoap_header_set_id(struct zoap_packet *zpkt, u16_t id);
 
 /**
  * @brief Helper to generate message ids
  *
  * @return a new message id
  */
-static inline uint16_t zoap_next_id(void)
+static inline u16_t zoap_next_id(void)
 {
-	static uint16_t message_id;
+	static u16_t message_id;
 
 	return ++message_id;
 }
@@ -802,7 +802,7 @@ static inline uint16_t zoap_next_id(void)
  *
  * @return a 8-byte pseudo-random token.
  */
-uint8_t *zoap_next_token(void);
+u8_t *zoap_next_token(void);
 
 /**
  * @}

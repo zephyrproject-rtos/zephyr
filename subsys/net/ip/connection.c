@@ -68,12 +68,12 @@ static struct net_conn conns[CONFIG_NET_MAX_CONN];
  *   31       protocol
  */
 struct conn_hash {
-	uint32_t value;
-	int32_t idx;
+	u32_t value;
+	s32_t idx;
 };
 
 struct conn_hash_neg {
-	uint32_t value;
+	u32_t value;
 };
 
 /** Connection cache */
@@ -87,8 +87,8 @@ static struct conn_hash_neg conn_cache_neg[CONFIG_NET_MAX_CONN];
 #define TAKE_BIT(val, bit, max, used)				\
 	(((val & BIT(bit)) >> bit) << (max - used))
 
-static inline uint8_t ports_to_hash(uint16_t remote_port,
-				    uint16_t local_port)
+static inline u8_t ports_to_hash(u16_t remote_port,
+				    u16_t local_port)
 {
 	/* Note that we do not convert port value to network byte order */
 	return (remote_port & BIT(0)) |
@@ -101,7 +101,7 @@ static inline uint8_t ports_to_hash(uint16_t remote_port,
 		  ((local_port & BIT(15)) >> 12)) << 4);
 }
 
-static inline uint16_t ipv6_to_hash(struct in6_addr *addr)
+static inline u16_t ipv6_to_hash(struct in6_addr *addr)
 {
 	/* There is 11 bits available for IPv6 address */
 	/* Use more bits from the lower part of address space */
@@ -126,7 +126,7 @@ static inline uint16_t ipv6_to_hash(struct in6_addr *addr)
 		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 0, 11, 11);
 }
 
-static inline uint16_t ipv4_to_hash(struct in_addr *addr)
+static inline u16_t ipv4_to_hash(struct in_addr *addr)
 {
 	/* There is 11 bits available for IPv4 address */
 	/* Use more bits from the lower part of address space */
@@ -147,16 +147,16 @@ static inline uint16_t ipv4_to_hash(struct in_addr *addr)
 /* Return either the first free position in the cache (idx < 0) or
  * the existing cached position (idx >= 0)
  */
-static int32_t check_hash(enum net_ip_protocol proto,
+static s32_t check_hash(enum net_ip_protocol proto,
 			  sa_family_t family,
 			  void *remote_addr,
 			  void *local_addr,
-			  uint16_t remote_port,
-			  uint16_t local_port,
-			  uint32_t *cache_value)
+			  u16_t remote_port,
+			  u16_t local_port,
+			  u32_t *cache_value)
 {
 	int i, free_pos = -1;
-	uint32_t value = 0;
+	u32_t value = 0;
 
 	value = ports_to_hash(remote_port, local_port);
 
@@ -208,10 +208,10 @@ static int32_t check_hash(enum net_ip_protocol proto,
 	return -ENOENT;
 }
 
-static inline int32_t get_conn(enum net_ip_protocol proto,
+static inline s32_t get_conn(enum net_ip_protocol proto,
 			       sa_family_t family,
 			       struct net_pkt *pkt,
-			       uint32_t *cache_value)
+			       u32_t *cache_value)
 {
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
@@ -238,7 +238,7 @@ static inline int32_t get_conn(enum net_ip_protocol proto,
 	return -1;
 }
 
-static inline void cache_add_neg(uint32_t cache_value)
+static inline void cache_add_neg(u32_t cache_value)
 {
 	int i;
 
@@ -254,7 +254,7 @@ static inline void cache_add_neg(uint32_t cache_value)
 	}
 }
 
-static inline bool cache_check_neg(uint32_t cache_value)
+static inline bool cache_check_neg(u32_t cache_value)
 {
 	int i;
 
@@ -281,8 +281,8 @@ static void cache_clear(void)
 
 static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 					   struct net_pkt *pkt,
-					   uint32_t *cache_value,
-					   int32_t *pos)
+					   u32_t *cache_value,
+					   s32_t *pos)
 {
 	*pos = get_conn(proto, net_pkt_family(pkt), pkt, cache_value);
 	if (*pos >= 0) {
@@ -415,14 +415,14 @@ void prepare_register_debug_print(char *dst, int dst_len,
 int net_conn_register(enum net_ip_protocol proto,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
-		      uint16_t remote_port,
-		      uint16_t local_port,
+		      u16_t remote_port,
+		      u16_t local_port,
 		      net_conn_cb_t cb,
 		      void *user_data,
 		      struct net_conn_handle **handle)
 {
 	int i;
-	uint8_t rank = 0;
+	u8_t rank = 0;
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
 		if (conns[i].flags & NET_CONN_IN_USE) {
@@ -629,12 +629,12 @@ static inline void send_icmp_error(struct net_pkt *pkt)
 enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 {
 	int i, best_match = -1;
-	int16_t best_rank = -1;
+	s16_t best_rank = -1;
 
 #if defined(CONFIG_NET_CONN_CACHE)
 	enum net_verdict verdict;
-	uint32_t cache_value = 0;
-	int32_t pos;
+	u32_t cache_value = 0;
+	s32_t pos;
 
 	verdict = cache_check(proto, pkt, &cache_value, &pos);
 	if (verdict != NET_CONTINUE) {
@@ -643,7 +643,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 #endif
 
 	if (IS_ENABLED(CONFIG_NET_DEBUG_CONN)) {
-		uint16_t chksum;
+		u16_t chksum;
 
 		if (proto == IPPROTO_TCP) {
 			chksum = NET_TCP_HDR(pkt)->chksum;

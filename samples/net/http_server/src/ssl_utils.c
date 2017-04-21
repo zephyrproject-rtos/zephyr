@@ -76,7 +76,7 @@ int ssl_tx(void *context, const unsigned char *buf, size_t size)
 		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 	}
 
-	rc = net_pkt_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
+	rc = net_pkt_append(send_buf, size, (u8_t *) buf, K_FOREVER);
 	if (!rc) {
 		net_pkt_unref(send_buf);
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
@@ -98,9 +98,9 @@ int ssl_tx(void *context, const unsigned char *buf, size_t size)
 int ssl_rx(void *context, unsigned char *buf, size_t size)
 {
 	struct ssl_context *ctx = context;
-	uint16_t read_bytes;
+	u16_t read_bytes;
 	struct rx_fifo_block *rx_data;
-	uint8_t *ptr;
+	u8_t *ptr;
 	int pos;
 	int len;
 	int rc = 0;

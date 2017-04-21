@@ -45,7 +45,7 @@
 
 #define TEST_LL_6(a, b, c, d, e, f, expected)				\
 	do {								\
-		uint8_t ll[] = { a, b, c, d, e, f };			\
+		u8_t ll[] = { a, b, c, d, e, f };			\
 		if (strcmp(net_sprint_ll_addr(ll, sizeof(ll)),		\
 			   expected)) {					\
 			printk("Test %s failed.\n", expected);		\
@@ -55,7 +55,7 @@
 
 #define TEST_LL_8(a, b, c, d, e, f, g, h, expected)			\
 	do {								\
-		uint8_t ll[] = { a, b, c, d, e, f, g, h };		\
+		u8_t ll[] = { a, b, c, d, e, f, g, h };		\
 		if (strcmp(net_sprint_ll_addr(ll, sizeof(ll)),		\
 			   expected)) {					\
 			printk("Test %s failed.\n", expected);		\
@@ -65,8 +65,8 @@
 
 #define TEST_LL_6_TWO(a, b, c, d, e, f, expected)			\
 	do {								\
-		uint8_t ll1[] = { a, b, c, d, e, f };			\
-		uint8_t ll2[] = { f, e, d, c, b, a };			\
+		u8_t ll1[] = { a, b, c, d, e, f };			\
+		u8_t ll2[] = { f, e, d, c, b, a };			\
 		char out[2 * sizeof("xx:xx:xx:xx:xx:xx") + 1 + 1];	\
 		snprintk(out, sizeof(out), "%s ",			\
 			 net_sprint_ll_addr(ll1, sizeof(ll1)));		\
@@ -101,7 +101,7 @@
 	} while (0)
 
 struct net_test_context {
-	uint8_t mac_addr[6];
+	u8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 };
 
@@ -114,7 +114,7 @@ int net_test_init(struct device *dev)
 	return 0;
 }
 
-static uint8_t *net_test_get_mac(struct device *dev)
+static u8_t *net_test_get_mac(struct device *dev)
 {
 	struct net_test_context *context = dev->driver_data;
 
@@ -133,7 +133,7 @@ static uint8_t *net_test_get_mac(struct device *dev)
 
 static void net_test_iface_init(struct net_if *iface)
 {
-	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	u8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
@@ -258,29 +258,29 @@ static bool run_tests(void)
 		return false;
 	}
 
-	if (!net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
-				(uint8_t *)&addr6_pref2,
+	if (!net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+				(u8_t *)&addr6_pref2,
 				64)) {
 		printk("Same IPv6 prefix test failed\n");
 		return false;
 	}
 
-	if (net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
-			       (uint8_t *)&addr6_pref3,
+	if (net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+			       (u8_t *)&addr6_pref3,
 			       64)) {
 		printk("Different IPv6 prefix test failed\n");
 		return false;
 	}
 
-	if (net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
-			       (uint8_t *)&addr6_pref2,
+	if (net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+			       (u8_t *)&addr6_pref2,
 			       128)) {
 		printk("Different full IPv6 prefix test failed\n");
 		return false;
 	}
 
-	if (net_is_ipv6_prefix((uint8_t *)&addr6_pref1,
-			       (uint8_t *)&addr6_pref3,
+	if (net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+			       (u8_t *)&addr6_pref3,
 			       255)) {
 		printk("Too long prefix test failed\n");
 		return false;

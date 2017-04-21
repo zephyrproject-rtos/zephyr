@@ -24,8 +24,8 @@ static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 {
 	struct net_buf *frag = pkt->frags;
 	struct zperf_server_hdr hdr;
-	uint16_t offset;
-	uint16_t pos;
+	u16_t offset;
+	u16_t pos;
 
 	offset = net_pkt_udp_data(pkt) - net_pkt_ip_data(pkt);
 	offset += sizeof(struct net_udp_hdr) +
@@ -42,17 +42,17 @@ static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 		return;
 	}
 
-	frag = net_frag_read_be32(frag, offset, &pos, (uint32_t *)&hdr.flags);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.total_len1);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.total_len2);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.stop_sec);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.stop_usec);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.error_cnt);
+	frag = net_frag_read_be32(frag, offset, &pos, (u32_t *)&hdr.flags);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.total_len1);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.total_len2);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.stop_sec);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.stop_usec);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.error_cnt);
 	frag = net_frag_read_be32(frag, pos, &pos,
-				  (uint32_t *)&hdr.outorder_cnt);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.datagrams);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.jitter1);
-	frag = net_frag_read_be32(frag, pos, &pos, (uint32_t *)&hdr.jitter2);
+				  (u32_t *)&hdr.outorder_cnt);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.datagrams);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.jitter1);
+	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.jitter2);
 
 	results->nb_packets_rcvd = hdr.datagrams;
 	results->nb_packets_lost = hdr.error_cnt;
@@ -73,9 +73,9 @@ static void stat_received(struct net_context *context,
 }
 
 static inline void zperf_upload_fin(struct net_context *context,
-				    uint32_t nb_packets,
-				    uint32_t end_time,
-				    uint32_t packet_size,
+				    u32_t nb_packets,
+				    u32_t end_time,
+				    u32_t packet_size,
 				    struct zperf_results *results)
 {
 	struct net_pkt *stat = NULL;
@@ -109,7 +109,7 @@ static inline void zperf_upload_fin(struct net_context *context,
 					    USEC_PER_SEC);
 
 		status = net_pkt_append(pkt, sizeof(datagram),
-					(uint8_t *)&datagram, K_FOREVER);
+					(u8_t *)&datagram, K_FOREVER);
 		if (!status) {
 			printk(TAG "ERROR! Cannot append datagram data\n");
 			break;
@@ -119,12 +119,12 @@ static inline void zperf_upload_fin(struct net_context *context,
 		if (packet_size > sizeof(struct zperf_udp_datagram)) {
 			int size = packet_size -
 				sizeof(struct zperf_udp_datagram);
-			uint16_t pos;
+			u16_t pos;
 
 			frag = net_pkt_write(pkt, net_buf_frag_last(pkt->frags),
 					     sizeof(struct zperf_udp_datagram),
 					     &pos, size,
-					     (uint8_t *)sample_packet,
+					     (u8_t *)sample_packet,
 					     K_FOREVER);
 		}
 
@@ -178,14 +178,14 @@ void zperf_udp_upload(struct net_context *context,
 		      unsigned int rate_in_kbps,
 		      struct zperf_results *results)
 {
-	uint32_t packet_duration = (uint32_t)(((uint64_t) packet_size *
+	u32_t packet_duration = (u32_t)(((u64_t) packet_size *
 					       SEC_TO_HW_CYCLES(1) * 8) /
-					      (uint64_t)(rate_in_kbps * 1024));
-	uint32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
-	uint32_t print_interval = SEC_TO_HW_CYCLES(1);
-	uint32_t delay = packet_duration;
-	uint32_t nb_packets = 0;
-	uint32_t start_time, last_print_time, last_loop_time, end_time;
+					      (u64_t)(rate_in_kbps * 1024));
+	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
+	u32_t print_interval = SEC_TO_HW_CYCLES(1);
+	u32_t delay = packet_duration;
+	u32_t nb_packets = 0;
+	u32_t start_time, last_print_time, last_loop_time, end_time;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		printk(TAG "WARNING! packet size too large! max size: %u\n",
@@ -208,8 +208,8 @@ void zperf_udp_upload(struct net_context *context,
 		struct zperf_udp_datagram datagram;
 		struct net_pkt *pkt;
 		struct net_buf *frag;
-		uint32_t loop_time;
-		int32_t adjust;
+		u32_t loop_time;
+		s32_t adjust;
 		bool status;
 		int ret;
 
@@ -255,7 +255,7 @@ void zperf_udp_upload(struct net_context *context,
 			htonl(HW_CYCLES_TO_USEC(loop_time) % USEC_PER_SEC);
 
 		status = net_pkt_append(pkt, sizeof(datagram),
-					(uint8_t *)&datagram, K_FOREVER);
+					(u8_t *)&datagram, K_FOREVER);
 		if (!status) {
 			printk(TAG "ERROR! Cannot append datagram data\n");
 			break;
@@ -265,7 +265,7 @@ void zperf_udp_upload(struct net_context *context,
 		if (packet_size > sizeof(struct zperf_udp_datagram)) {
 			int size = packet_size -
 				sizeof(struct zperf_udp_datagram);
-			uint16_t pos;
+			u16_t pos;
 
 			frag = net_pkt_write(pkt, net_buf_frag_last(pkt->frags),
 					     sizeof(struct zperf_udp_datagram),

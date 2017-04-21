@@ -84,14 +84,14 @@ static char __noinit __stack tx_stack[1024];
 struct wpanusb_dev_data_t {
 	/* USB device status code */
 	enum usb_dc_status_code usb_status;
-	uint8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
-	uint8_t notification_sent;
+	u8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
+	u8_t notification_sent;
 };
 
 /**
  * ieee802.15.4 USB descriptors configuration
  */
-static const uint8_t wpanusb_desc[] = {
+static const u8_t wpanusb_desc[] = {
 	/* Device descriptor */
 	USB_DEVICE_DESC_SIZE,		/* Descriptor size */
 	USB_DEVICE_DESC,		/* Descriptor type */
@@ -176,7 +176,7 @@ static const uint8_t wpanusb_desc[] = {
 
 #ifdef VERBOSE_DEBUG
 /* TODO: move to standard utils */
-static void hexdump(const char *str, const uint8_t *packet, size_t length)
+static void hexdump(const char *str, const u8_t *packet, size_t length)
 {
 	int n = 0;
 
@@ -211,7 +211,7 @@ static void hexdump(const char *str, const uint8_t *packet, size_t length)
 #endif
 
 /* EP Bulk IN handler, used to send data to the Host */
-static void wpanusb_bulk_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void wpanusb_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 }
 
@@ -261,7 +261,7 @@ static void wpanusb_status_cb(enum usb_dc_status_code status)
 }
 
 static int wpanusb_class_handler(struct usb_setup_packet *setup,
-				 int32_t *len, uint8_t **data)
+				 s32_t *len, u8_t **data)
 {
 	SYS_LOG_DBG("len %d", *len);
 
@@ -271,7 +271,7 @@ static int wpanusb_class_handler(struct usb_setup_packet *setup,
 }
 
 static int wpanusb_custom_handler(struct usb_setup_packet *setup,
-				  int32_t *len, uint8_t **data)
+				  s32_t *len, u8_t **data)
 {
 	/**
 	 * FIXME:
@@ -281,7 +281,7 @@ static int wpanusb_custom_handler(struct usb_setup_packet *setup,
 	return -ENOTSUP;
 }
 
-static int try_write(uint8_t ep, uint8_t *data, uint16_t len)
+static int try_write(u8_t ep, u8_t *data, u16_t len)
 {
 	while (1) {
 		int ret = usb_write(ep, data, len, NULL);
@@ -314,7 +314,7 @@ static int set_ieee_addr(void *data, int len)
 	SYS_LOG_DBG("len %u", len);
 
 	return radio_api->set_ieee_addr(ieee802154_dev,
-					(uint8_t *)&req->ieee_addr);
+					(u8_t *)&req->ieee_addr);
 }
 
 static int set_short_addr(void *data, int len)
@@ -352,7 +352,7 @@ static int stop(void)
 static int tx(struct net_pkt *pkt)
 {
 	struct net_buf *buf = net_buf_frag_last(pkt->frags);
-	uint8_t seq = net_buf_pull_u8(buf);
+	u8_t seq = net_buf_pull_u8(buf);
 	int retries = 3;
 	int ret;
 
@@ -378,7 +378,7 @@ static int tx(struct net_pkt *pkt)
  * later processing
  */
 static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
-				  int32_t *len, uint8_t **data)
+				  s32_t *len, u8_t **data)
 {
 	struct net_pkt *pkt;
 	struct net_buf *buf;
@@ -417,7 +417,7 @@ static void tx_thread(void)
 	SYS_LOG_DBG("Tx thread started");
 
 	while (1) {
-		uint8_t cmd;
+		u8_t cmd;
 		struct net_pkt *pkt;
 		struct net_buf *buf;
 
@@ -464,7 +464,7 @@ static void tx_thread(void)
 }
 
 /* TODO: FIXME: correct buffer size */
-static uint8_t buffer[300];
+static u8_t buffer[300];
 
 static struct usb_cfg_data wpanusb_config = {
 	.usb_device_description = wpanusb_desc,

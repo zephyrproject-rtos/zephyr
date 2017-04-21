@@ -60,7 +60,7 @@ struct mqtt_ctx {
 	/** IP stack context structure */
 	struct net_context *net_ctx;
 	/** Network timeout for tx and rx routines */
-	int32_t net_timeout;
+	s32_t net_timeout;
 
 	/** Callback executed when a MQTT CONNACK msg is received and validated.
 	 * If this function pointer is not used, must be set to NULL.
@@ -88,7 +88,7 @@ struct mqtt_ctx {
 	 * @param [in] pkt_id Packet Identifier for the input MQTT msg
 	 * @param [in] type Packet type
 	 */
-	int (*publish_tx)(struct mqtt_ctx *ctx, uint16_t pkt_id,
+	int (*publish_tx)(struct mqtt_ctx *ctx, u16_t pkt_id,
 			  enum mqtt_packet type);
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER,
@@ -108,7 +108,7 @@ struct mqtt_ctx {
 	 * @param [in] type Packet type
 	 */
 	int (*publish_rx)(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg,
-			  uint16_t pkt_id, enum mqtt_packet type);
+			  u16_t pkt_id, enum mqtt_packet type);
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER or
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER receives the MQTT SUBACK message
@@ -122,8 +122,8 @@ struct mqtt_ctx {
 	 * @param [in] items Number of elements in the qos array
 	 * @param [in] qos Array of QoS values
 	 */
-	int (*subscribe)(struct mqtt_ctx *ctx, uint16_t pkt_id,
-			 uint8_t items, enum mqtt_qos qos[]);
+	int (*subscribe)(struct mqtt_ctx *ctx, u16_t pkt_id,
+			 u8_t items, enum mqtt_qos qos[]);
 
 	/** Callback executed when a MQTT_APP_SUBSCRIBER or
 	 * MQTT_APP_PUBLISHER_SUBSCRIBER receives the MQTT UNSUBACK message
@@ -135,7 +135,7 @@ struct mqtt_ctx {
 	 * @param [in] ctx	MQTT context
 	 * @param [in] pkt_id	Packet Identifier for the MQTT SUBACK msg
 	 */
-	int (*unsubscribe)(struct mqtt_ctx *ctx, uint16_t pkt_id);
+	int (*unsubscribe)(struct mqtt_ctx *ctx, u16_t pkt_id);
 
 	/** Callback executed when an incoming message doesn't pass the
 	 * validation stage. This callback may be NULL.
@@ -145,22 +145,22 @@ struct mqtt_ctx {
 	 * @param [in] ctx	MQTT context
 	 * @param [in] pkt_type	MQTT Packet type
 	 */
-	void (*malformed)(struct mqtt_ctx *ctx, uint16_t pkt_type);
+	void (*malformed)(struct mqtt_ctx *ctx, u16_t pkt_type);
 
 	/* Internal use only */
 	int (*rcv)(struct mqtt_ctx *ctx, struct net_pkt *);
 
 	/** Application type, see: enum mqtt_app */
-	uint8_t app_type;
+	u8_t app_type;
 
 	/* Clean session is also part of the MQTT CONNECT msg, however app
 	 * behavior is influenced by this parameter, so we keep a copy here
 	 */
 	/** MQTT Clean Session parameter */
-	uint8_t clean_session:1;
+	u8_t clean_session:1;
 
 	/** 1 if the MQTT application is connected and 0 otherwise */
-	uint8_t connected:1;
+	u8_t connected:1;
 };
 
 /**
@@ -208,7 +208,7 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx);
  * @retval -ENOMEM
  * @retval -EIO
  */
-int mqtt_tx_puback(struct mqtt_ctx *ctx, uint16_t id);
+int mqtt_tx_puback(struct mqtt_ctx *ctx, u16_t id);
 
 /**
  * Sends the MQTT PUBCOMP message with the given packet id
@@ -221,7 +221,7 @@ int mqtt_tx_puback(struct mqtt_ctx *ctx, uint16_t id);
  * @retval -ENOMEM
  * @retval -EIO
  */
-int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, uint16_t id);
+int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, u16_t id);
 
 /**
  * Sends the MQTT PUBREC message with the given packet id
@@ -233,7 +233,7 @@ int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, uint16_t id);
  * @retval -ENOMEM
  * @retval -EIO
  */
-int mqtt_tx_pubrec(struct mqtt_ctx *ctx, uint16_t id);
+int mqtt_tx_pubrec(struct mqtt_ctx *ctx, u16_t id);
 
 /**
  * Sends the MQTT PUBREL message with the given packet id
@@ -246,7 +246,7 @@ int mqtt_tx_pubrec(struct mqtt_ctx *ctx, uint16_t id);
  * @retval -ENOMEM
  * @retval -EIO
  */
-int mqtt_tx_pubrel(struct mqtt_ctx *ctx, uint16_t id);
+int mqtt_tx_pubrel(struct mqtt_ctx *ctx, u16_t id);
 
 /**
  * Sends the MQTT PUBLISH message
@@ -292,7 +292,7 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx);
  * @retval -ENOMEM
  * @retval -EIO
  */
-int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
+int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 		      const char *topics[], const enum mqtt_qos qos[]);
 
 /**
@@ -308,7 +308,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
  * @retval -ENOMEM
  * @retval -EIO
  */
-int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
+int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 			const char *topics[]);
 
 

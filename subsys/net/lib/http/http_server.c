@@ -23,7 +23,7 @@
 #define HTTP_STATUS_404_NF	"HTTP/1.1 404 Not Found\r\n" \
 				"\r\n"
 
-static inline uint16_t http_strlen(const char *str)
+static inline u16_t http_strlen(const char *str)
 {
 	if (str) {
 		return strlen(str);
@@ -32,20 +32,20 @@ static inline uint16_t http_strlen(const char *str)
 	return 0;
 }
 
-static int http_add_header(struct net_pkt *tx, int32_t timeout, const char *str)
+static int http_add_header(struct net_pkt *tx, s32_t timeout, const char *str)
 {
-	if (net_pkt_append(tx, strlen(str), (uint8_t *)str, timeout)) {
+	if (net_pkt_append(tx, strlen(str), (u8_t *)str, timeout)) {
 		return 0;
 	}
 
 	return -ENOMEM;
 }
 
-static int http_add_chunk(struct net_pkt *tx, int32_t timeout, const char *str)
+static int http_add_chunk(struct net_pkt *tx, s32_t timeout, const char *str)
 {
 	char chunk_header[16];
 	char *rn = "\r\n";
-	uint16_t str_len;
+	u16_t str_len;
 
 	str_len = http_strlen(str);
 
@@ -56,7 +56,7 @@ static int http_add_chunk(struct net_pkt *tx, int32_t timeout, const char *str)
 	}
 
 	if (str_len > 0) {
-		if (!net_pkt_append(tx, str_len, (uint8_t *)str, timeout)) {
+		if (!net_pkt_append(tx, str_len, (u8_t *)str, timeout)) {
 			return -ENOMEM;
 		}
 	}

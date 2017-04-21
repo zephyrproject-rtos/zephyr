@@ -30,7 +30,7 @@ static bool req_test;
 static char *app_data = "0123456789";
 
 struct net_arp_context {
-	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	u8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -43,7 +43,7 @@ int net_arp_dev_init(struct device *dev)
 	return 0;
 }
 
-static uint8_t *net_arp_get_mac(struct device *dev)
+static u8_t *net_arp_get_mac(struct device *dev)
 {
 	struct net_arp_context *context = dev->driver_data;
 
@@ -62,7 +62,7 @@ static uint8_t *net_arp_get_mac(struct device *dev)
 
 static void net_arp_iface_init(struct net_if *iface)
 {
-	uint8_t *mac = net_arp_get_mac(net_if_get_device(iface));
+	u8_t *mac = net_arp_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
@@ -107,12 +107,12 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
 				snprintk(out, sizeof(out), "%s",
 					 net_sprint_ll_addr(
-						 (uint8_t *)&hdr->dst,
+						 (u8_t *)&hdr->dst,
 						 sizeof(struct net_eth_addr)));
 				printk("Invalid hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
-					       (uint8_t *)&hwaddr,
+					       (u8_t *)&hwaddr,
 					       sizeof(struct net_eth_addr)));
 				send_status = -EINVAL;
 				return send_status;
@@ -124,12 +124,12 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 				char out[sizeof("xx:xx:xx:xx:xx:xx")];
 				snprintk(out, sizeof(out), "%s",
 					 net_sprint_ll_addr(
-						 (uint8_t *)&hdr->src,
+						 (u8_t *)&hdr->src,
 						 sizeof(struct net_eth_addr)));
 				printk("Invalid hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
-					       (uint8_t *)&hwaddr,
+					       (u8_t *)&hwaddr,
 					       sizeof(struct net_eth_addr)));
 				send_status = -EINVAL;
 				return send_status;
@@ -270,7 +270,7 @@ fail:
 }
 
 static void setup_eth_header(struct net_if *iface, struct net_pkt *pkt,
-			     struct net_eth_addr *hwaddr, uint16_t type)
+			     struct net_eth_addr *hwaddr, u16_t type)
 {
 	struct net_eth_hdr *hdr = (struct net_eth_hdr *)net_pkt_ll(pkt);
 
@@ -402,7 +402,7 @@ static bool run_tests(void)
 		net_hexdump("ETH dest wrong  ", net_pkt_ll(pkt2),
 			    sizeof(struct net_eth_addr));
 		net_hexdump("ETH dest correct",
-			    (uint8_t *)net_eth_broadcast_addr(),
+			    (u8_t *)net_eth_broadcast_addr(),
 			    sizeof(struct net_eth_addr));
 		return false;
 	}

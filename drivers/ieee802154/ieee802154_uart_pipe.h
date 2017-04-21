@@ -13,14 +13,14 @@
 
 struct upipe_context {
 	struct net_if *iface;
-	uint8_t mac_addr[8];
+	u8_t mac_addr[8];
 	bool stopped;
 	/** RX specific attributes */
-	uint8_t uart_pipe_buf[1];
+	u8_t uart_pipe_buf[1];
 	bool rx;
-	uint8_t rx_len;
-	uint8_t rx_off;
-	uint8_t rx_buf[127];
+	u8_t rx_len;
+	u8_t rx_off;
+	u8_t rx_buf[127];
 };
 
 #endif /* __IEEE802154_UART_PIPE_H__ */

@@ -134,7 +134,7 @@ struct net_nbr *net_route_get_nbr(struct net_route_entry *route)
 			continue;
 		}
 
-		if (nbr->data == (uint8_t *)route) {
+		if (nbr->data == (u8_t *)route) {
 			if (!nbr->ref) {
 				return NULL;
 			}
@@ -183,7 +183,7 @@ static inline void nbr_free(struct net_nbr *nbr)
 
 static struct net_nbr *nbr_new(struct net_if *iface,
 			       struct in6_addr *addr,
-			       uint8_t prefix_len)
+			       u8_t prefix_len)
 {
 	struct net_nbr *nbr = net_nbr_get(&net_nbr_routes.table);
 
@@ -264,7 +264,7 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 					 struct in6_addr *dst)
 {
 	struct net_route_entry *route, *found = NULL;
-	uint8_t longest_match = 0;
+	u8_t longest_match = 0;
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES && longest_match < 128; i++) {
@@ -281,8 +281,8 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 		route = net_route_data(nbr);
 
 		if (route->prefix_len >= longest_match &&
-		    net_is_ipv6_prefix((uint8_t *)dst,
-				       (uint8_t *)&route->addr,
+		    net_is_ipv6_prefix((u8_t *)dst,
+				       (u8_t *)&route->addr,
 				       route->prefix_len)) {
 			found = route;
 			longest_match = route->prefix_len;
@@ -300,7 +300,7 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 
 struct net_route_entry *net_route_add(struct net_if *iface,
 				      struct in6_addr *addr,
-				      uint8_t prefix_len,
+				      u8_t prefix_len,
 				      struct in6_addr *nexthop)
 {
 	struct net_linkaddr_storage *nexthop_lladdr;
