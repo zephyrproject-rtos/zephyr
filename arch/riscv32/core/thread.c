@@ -37,7 +37,7 @@ void _thread_entry_wrapper(_thread_entry_t thread,
 void _new_thread(char *stack_memory, size_t stack_size,
 		 _thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
-		 int priority, unsigned options)
+		 int priority, unsigned int options)
 {
 	_ASSERT_VALID_PRIO(priority, thread_func);
 

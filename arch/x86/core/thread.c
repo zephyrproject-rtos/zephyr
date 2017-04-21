@@ -65,9 +65,9 @@ static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
  *
  * @return N/A
  */
-static void _new_thread_internal(char *pStackMem, unsigned stackSize,
+static void _new_thread_internal(char *pStackMem, unsigned int stackSize,
 				 int priority,
-				 unsigned options)
+				 unsigned int options)
 {
 	unsigned long *pInitialCtx;
 	/* ptr to the new task's k_thread */
@@ -230,7 +230,7 @@ __asm__("\t.globl _thread_entry\n"
 void _new_thread(char *pStackMem, size_t stackSize,
 		 _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
-		 int priority, unsigned options)
+		 int priority, unsigned int options)
 {
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
