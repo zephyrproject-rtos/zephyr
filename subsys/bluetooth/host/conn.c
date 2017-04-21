@@ -412,14 +412,14 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 
 	if (link_type == BT_HCI_SCO) {
 		if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
-			sco_conn->sco.pkt_type = (bt_dev.esco.pkt_type &
+			sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
 						  ESCO_PKT_MASK);
 		} else {
-			sco_conn->sco.pkt_type = (bt_dev.esco.pkt_type &
+			sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
 						  SCO_PKT_MASK);
 		}
 	} else if (link_type == BT_HCI_ESCO) {
-		sco_conn->sco.pkt_type = (bt_dev.esco.pkt_type &
+		sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
 					  ~EDR_ESCO_PKT_MASK);
 	}
 
