@@ -6,8 +6,18 @@
 
 /**
  * @file
- * @brief Public API for SPI drivers
+ * @brief Public API for SPI drivers and applications
  */
+
+#if defined(CONFIG_SPI_LEGACY_API)
+
+/*
+ * This is the default, and will be the way until the new API below
+ * will be enforced everywhere.
+ */
+#include <spi_legacy.h>
+
+#else
 
 #ifndef __SPI_H__
 #define __SPI_H__
@@ -27,173 +37,209 @@
 extern "C" {
 #endif
 
+/**x
+ * @brief SPI operational mode
+ */
+#define SPI_OP_MODE_MASTER	0
+#define SPI_OP_MODE_SLAVE	1
+
 /**
  * @brief SPI Polarity & Phase Modes
  */
-#define SPI_MODE_CPOL		0x1
-#define SPI_MODE_CPHA		0x2
-#define SPI_MODE_LOOP		0x4
 
-#define SPI_MODE_MASK		(0x7)
-#define SPI_MODE(_in_)		((_in_) & SPI_MODE_MASK)
+/**
+ * Clock Polarity: if set, clock idle state will be 1
+ * and active state will be 0. If untouched, the inverse will be true
+ * which is the default.
+ */
+#define SPI_MODE_CPOL		BIT(1)
+
+/**
+ * Clock Phase: this dictates when is the data captured, and depends
+ * clock's polarity. When SPI_MODE_CPOL is set and this bit as well,
+ * capture will occure on low to high transition and high to low if
+ * this bit is not set (default). This is fully reversed if CPOL is
+ * not set.
+ */
+#define SPI_MODE_CPHA		BIT(2)
+
+/**
+ * Whatever data is transmitted is looped-back to the receiving buffer of
+ * the controller. This is fully controller dependent as some may not
+ * support this, and can be used for testing purposes only.
+ */
+#define SPI_MODE_LOOP		BIT(3)
+
+#define SPI_MODE_MASK		(0xE)
+#define SPI_MODE_GET(_mode_)			\
+	((_mode_) & SPI_MODE_MASK)
 
 /**
  * @brief SPI Transfer modes (host controller dependent)
  */
-#define SPI_TRANSFER_MSB	(0 << 3)
-#define SPI_TRANSFER_LSB	(1 << 3)
-
-#define SPI_TRANSFER_MASK	(0x8)
-
-#define SPI_WORD_SIZE_MASK	(0xFF << 4)
-#define SPI_WORD_SIZE_GET(_in_) (((_in_) & SPI_WORD_SIZE_MASK) >> 4)
-#define SPI_WORD(_in_) ((_in_) << 4)
+#define SPI_TRANSFER_MSB	(0)
+#define SPI_TRANSFER_LSB	BIT(4)
 
 /**
- * @brief SPI configuration structure.
+ * @brief SPI word size
+ */
+#define SPI_WORD_SIZE_SHIFT	(5)
+#define SPI_WORD_SIZE_MASK	(0x3F << SPI_WORD_SIZE_SHIFT)
+#define SPI_WORD_SIZE_GET(_operation_)					\
+	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
+
+#define SPI_WORD_SET(_word_size_)		\
+	((_word_size_) << SPI_WORD_SIZE_SHIFT)
+
+/**
+ * @brief SPI MISO lines
  *
- * config is a bit field with the following parts:
- *    mode           [ 0 : 2 ]   - Polarity, phase and loop mode.
- *    transfer_mode  [ 3 ]       - LSB or MSB first transfer mode.
- *    word_size      [ 4 : 11 ]  - Size of a data frame in bits.
- *    RESERVED       [ 12 : 31 ] - Undefined or device-specific usage.
+ * Some controllers support dual or quad MISO lines connected to slaves.
+ * Default is single, which is the case most of the time.
+ */
+#define SPI_LINES_SINGLE	(0)
+#define SPI_LINES_DUAL		BIT(11)
+#define SPI_LINES_QUAD		BIT(12)
+
+#define SPI_LINES_MASK		(0x3 << 11)
+
+/**
+ * @brief SPI Chip Select control structure
  *
- * max_sys_freq is the clock divider supported by the the host
- * spi controller.
+ * This can be used to control a CS line via a GPIO line, instead of
+ * using the controller inner CS logic.
+ *
+ * gpio_dev is a valid pointer to an actual GPIO device
+ * gpio_pin is a number representing the gpio PIN that will be used
+ *    to act as a CS line
+ * delay is a delay in microseconds to wait before starting the
+ *    transmission and before releasing the CS line
+ */
+struct spi_cs_control {
+	struct device	*gpio_dev;
+	u32_t		gpio_pin;
+	u32_t		delay;
+};
+
+/**
+ * @brief SPI controller configuration structure
+ *
+ * frequency is the bus frequency in Hertz
+ * operation is a bit field with the following parts:
+ *    operational mode    [ 0 ]       - master or slave.
+ *    mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
+ *    transfer            [ 4 ]       - LSB or MSB first.
+ *    word_size           [ 5 : 10 ]  - Size of a data frame in bits.
+ *    lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
+ *    RESERVED            [ 13 : 15 ] - Unused yet
+ *
+ * slave is the slave number from 0 to host constoller slave limit.
+ *
+ * cs is a valid pointer on a struct spi_cs_control is CS line is
+ *    emulated through a gpio line, or NULL otherwise.
  */
 struct spi_config {
-	u32_t	config;
-	u32_t	max_sys_freq;
+	u32_t		frequency;
+	u16_t		operation;
+	u16_t		slave;
+	struct spi_cs_control *cs;
 };
 
+/**
+ * @brief SPI buffer structure
+ *
+ * buf is a valid pointer on a data buffer, or NULL otherwise.
+ * len is the length of the buffer or, if buf is NULL, will be the
+ *     length which as to be sent as dummy bytes (as TX buffer) or
+ *     the length of bytes that should be skipped (as RX buffer).
+ */
 struct spi_buf {
-
+	void *buf;
+	size_t len;
 };
 
-/**
- * @typedef spi_api_configure
- * @brief Callback API upon configuring the const controller
- * See spi_configure() for argument description
- */
-typedef int (*spi_api_configure)(struct device *dev,
-				 struct spi_config *config);
-/**
- * @typedef spi_api_slave_select
- * @brief Callback API upon selecting a slave
- * See spi_slave_select() for argument description
- */
-typedef int (*spi_api_slave_select)(struct device *dev, u32_t slave);
 /**
  * @typedef spi_api_io
  * @brief Callback API for I/O
- * See spi_read() and spi_write() for argument descriptions
+ * See spi_transceive() for argument descriptions
  */
-typedef int (*spi_api_io)(struct device *dev,
-			  const void *tx_buf, u32_t tx_buf_len,
-			  void *rx_buf, u32_t rx_buf_len);
+typedef int (*spi_api_io)(struct device	*dev,
+			  struct spi_config *config,
+			  const struct spi_buf **tx_bufs,
+			  struct spi_buf **rx_bufs);
 
+/**
+ * @brief SPI driver API
+ * This is the mandatory API any SPI driver needs to expose.
+ */
 struct spi_driver_api {
-	spi_api_configure configure;
-	spi_api_slave_select slave_select;
 	spi_api_io transceive;
 };
 
 /**
- * @brief Configure a host controller for operating against slaves.
- * @param dev Pointer to the device structure for the driver instance.
- * @param config Pointer to the configuration provided by the application.
+ * @brief Read/write the specified amount of data from the SPI driver.
  *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * Note: This function is synchronous.
+ *
+ * @param dev is a valid pointer to an actual SPI device
+ * @param config Pointer to a valid spi_config structure instance.
+ * @param tx_bufs NULL terminated buffer array where data to be sent
+ *        originates from, or NULL if none.
+ * @param rx_bufs NULL terminated buffer array where data to be read
+ *        will be written to, or NULL if none.
+ *
+ * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_configure(struct device *dev,
-				struct spi_config *config)
+static inline int spi_transceive(struct device *dev,
+				 struct spi_config *config,
+				 const struct spi_buf **tx_bufs,
+				 struct spi_buf **rx_bufs)
 {
 	const struct spi_driver_api *api = dev->driver_api;
 
-	return api->configure(dev, config);
-}
-
-/**
- * @brief Select a slave to deal with.
- *
- * This routine is meaningful only if the controller supports per-slave
- * addressing: One SS line per-slave. If not, this routine has no effect
- * and daisy-chaining should be considered to deal with multiple slaves
- * on the same line.
- *
- * @param dev Pointer to the device structure for the driver instance
- * @param slave An integer identifying the slave. It starts from 1 which
- *		corresponds to cs0.
- *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
- */
-static inline int spi_slave_select(struct device *dev, u32_t slave)
-{
-	const struct spi_driver_api *api = dev->driver_api;
-
-	if (!api->slave_select) {
-		return 0;
-	}
-
-	return api->slave_select(dev, slave);
+	return api->transceive(dev, config, tx_bufs, rx_bufs);
 }
 
 /**
  * @brief Read the specified amount of data from the SPI driver.
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Memory buffer where data will be transferred.
- * @param len Size of the memory buffer available for writing.
  *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * Note: This function is synchronous.
+ *
+ * @param dev is a valid pointer to an actual SPI device
+ * @param config Pointer to a valid spi_config structure instance.
+ * @param rx_bufs NULL terminated buffer array where data to be read
+ *        will be written to.
+ *
+ * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_read(struct device *dev, void *buf, u32_t len)
+static inline int spi_read(struct device *dev,
+			   struct spi_config *config,
+			   struct spi_buf **rx_bufs)
 {
 	const struct spi_driver_api *api = dev->driver_api;
 
-	return api->transceive(dev, NULL, 0, buf, len);
+	return api->transceive(dev, config, NULL, rx_bufs);
 }
 
 /**
  * @brief Write the specified amount of data from the SPI driver.
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Memory buffer from where data is transferred.
- * @param len Size of the memory buffer available for reading.
  *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * Note: This function is synchronous.
+ *
+ * @param dev is a valid pointer to an actual SPI device
+ * @param config Pointer to a valid spi_config structure instance.
+ * @param tx_bufs NULL terminated buffer array where data to be sent
+ *        originates from.
+ *
+ * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_write(struct device *dev, const void *buf, u32_t len)
+static inline int spi_write(struct device *dev,
+			    struct spi_config *config,
+			    const struct spi_buf **tx_bufs)
 {
 	const struct spi_driver_api *api = dev->driver_api;
 
-	return api->transceive(dev, buf, len, NULL, 0);
-}
-
-/**
- * @brief Read and write the specified amount of data from the SPI driver.
- *
- * This routine is meant for full-duplex transmission.
- * Only equal length is supported(tx_buf_len must be equal to rx_buf_len).
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param tx_buf Memory buffer where data originates
- * @param tx_buf_len Size of the memory buffer available for reading.
- * @param rx_buf Memory buffer where data is transferred.
- * @param rx_buf_len Size of the memory buffer available for writing.
- *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
- */
-static inline int spi_transceive(struct device *dev,
-			  const void *tx_buf, u32_t tx_buf_len,
-			  void *rx_buf, u32_t rx_buf_len)
-{
-	const struct spi_driver_api *api = dev->driver_api;
-
-	return api->transceive(dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
+	return api->transceive(dev, config, tx_bufs, NULL);
 }
 
 #ifdef __cplusplus
@@ -205,3 +251,5 @@ static inline int spi_transceive(struct device *dev,
  */
 
 #endif /* __SPI_H__ */
+
+#endif /* CONFIG_SPI_LEGACY_API */
