@@ -31,8 +31,8 @@
  *
  * @return N/A
  */
-void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
-						 uint32_t offset, uint32_t data)
+void pci_config_out_long(u32_t bus_no, u32_t device_no, u32_t func_no,
+						 u32_t offset, u32_t data)
 {
 	union pci_addr_reg pci_addr;
 
@@ -46,7 +46,7 @@ void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 	/* write to the PCI controller */
 
-	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint32_t), data);
+	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(u32_t), data);
 }
 
 /**
@@ -61,8 +61,8 @@ void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  *
  * @return N/A
  */
-void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
-						 uint32_t offset, uint16_t data)
+void pci_config_out_word(u32_t bus_no, u32_t device_no, u32_t func_no,
+						 u32_t offset, u16_t data)
 {
 	union pci_addr_reg pci_addr;
 
@@ -76,7 +76,7 @@ void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 	/* write to the PCI controller */
 
-	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint16_t), data);
+	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(u16_t), data);
 }
 
 /**
@@ -91,8 +91,8 @@ void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  *
  * @return N/A
  */
-void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
-						 uint32_t offset, uint8_t data)
+void pci_config_out_byte(u32_t bus_no, u32_t device_no, u32_t func_no,
+						 u32_t offset, u8_t data)
 {
 	union pci_addr_reg pci_addr;
 
@@ -106,7 +106,7 @@ void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 	/* write to the PCI controller */
 
-	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint8_t), data);
+	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(u8_t), data);
 }
 
 /**
@@ -122,8 +122,8 @@ void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  * @return N/A
  *
  */
-void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
-						uint32_t offset, uint32_t *data)
+void pci_config_in_long(u32_t bus_no, u32_t device_no, u32_t func_no,
+						u32_t offset, u32_t *data)
 {
 	union pci_addr_reg pci_addr;
 
@@ -137,7 +137,7 @@ void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 	/* read from the PCI controller */
 
-	pci_read(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint32_t), data);
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(u32_t), data);
 }
 
 /**
@@ -154,11 +154,11 @@ void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  *
  */
 
-void pci_config_in_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
-						uint32_t offset, uint16_t *data)
+void pci_config_in_word(u32_t bus_no, u32_t device_no, u32_t func_no,
+						u32_t offset, u16_t *data)
 {
 	union pci_addr_reg pci_addr;
-	uint32_t pci_data;
+	u32_t pci_data;
 
 	/* create the PCI address we're going to access */
 
@@ -170,11 +170,11 @@ void pci_config_in_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 	/* read from the PCI controller */
 
-	pci_read(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint16_t), &pci_data);
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(u16_t), &pci_data);
 
 	/* return the data */
 
-	*data = (uint16_t)pci_data;
+	*data = (u16_t)pci_data;
 }
 
 /**
@@ -191,11 +191,11 @@ void pci_config_in_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  *
  */
 
-void pci_config_in_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
-						uint32_t offset, uint8_t *data)
+void pci_config_in_byte(u32_t bus_no, u32_t device_no, u32_t func_no,
+						u32_t offset, u8_t *data)
 {
 	union pci_addr_reg pci_addr;
-	uint32_t pci_data;
+	u32_t pci_data;
 
 	/* create the PCI address we're going to access */
 
@@ -207,11 +207,11 @@ void pci_config_in_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 	/* read from the PCI controller */
 
-	pci_read(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint8_t), &pci_data);
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(u8_t), &pci_data);
 
 	/* return the data */
 
-	*data = (uint8_t)pci_data;
+	*data = (u8_t)pci_data;
 }
 
 /**
@@ -232,14 +232,14 @@ void pci_config_in_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  *
  */
 
-int pci_config_ext_cap_ptr_find(uint8_t ext_cap_find_id, uint32_t bus,
-								uint32_t device, uint32_t function,
-								uint8_t *p_offset)
+int pci_config_ext_cap_ptr_find(u8_t ext_cap_find_id, u32_t bus,
+								u32_t device, u32_t function,
+								u8_t *p_offset)
 {
-	uint16_t tmp_stat;
-	uint8_t tmp_offset;
-	uint8_t cap_offset = 0x00;
-	uint8_t cap_id = 0x00;
+	u16_t tmp_stat;
+	u8_t tmp_offset;
+	u8_t cap_offset = 0x00;
+	u8_t cap_id = 0x00;
 
 	/* Check to see if the device has any extended capabilities */
 
@@ -274,7 +274,7 @@ int pci_config_ext_cap_ptr_find(uint8_t ext_cap_find_id, uint32_t bus,
 
 		/* Get the offset to the next New Capabilities item */
 
-		tmp_offset = cap_offset + (uint8_t)0x01;
+		tmp_offset = cap_offset + (u8_t)0x01;
 		pci_config_in_byte(bus, device, function, (int)tmp_offset, &cap_offset);
 	}
 

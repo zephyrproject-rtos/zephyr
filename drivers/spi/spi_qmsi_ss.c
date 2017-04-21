@@ -26,7 +26,7 @@ struct ss_spi_qmsi_config {
 	qm_ss_spi_t spi;
 #ifdef CONFIG_SPI_SS_CS_GPIO
 	char *cs_port;
-	uint32_t cs_pin;
+	u32_t cs_pin;
 #endif
 };
 
@@ -40,12 +40,12 @@ struct ss_spi_qmsi_runtime {
 	int rc;
 	bool loopback;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 	qm_ss_spi_context_t spi_ctx;
 #endif
 };
 
-static inline qm_ss_spi_bmode_t config_to_bmode(uint8_t mode)
+static inline qm_ss_spi_bmode_t config_to_bmode(u8_t mode)
 {
 	switch (mode) {
 	case SPI_MODE_CPHA:
@@ -92,7 +92,7 @@ static int ss_spi_qmsi_configure(struct device *dev,
 }
 
 static void spi_qmsi_callback(void *data, int error, qm_ss_spi_status_t status,
-			      uint16_t len)
+			      u16_t len)
 {
 	const struct ss_spi_qmsi_config *spi_config =
 			       ((struct device *)data)->config->config_info;
@@ -115,7 +115,7 @@ static void spi_qmsi_callback(void *data, int error, qm_ss_spi_status_t status,
 	k_sem_give(&context->device_sync_sem);
 }
 
-static int ss_spi_qmsi_slave_select(struct device *dev, uint32_t slave)
+static int ss_spi_qmsi_slave_select(struct device *dev, u32_t slave)
 {
 	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_ss_spi_t spi_id = spi_config->spi;
@@ -123,7 +123,7 @@ static int ss_spi_qmsi_slave_select(struct device *dev, uint32_t slave)
 	return qm_ss_spi_slave_select(spi_id, 1 << (slave - 1)) ? -EIO : 0;
 }
 
-static inline uint8_t frame_size_to_dfs(qm_ss_spi_frame_size_t frame_size)
+static inline u8_t frame_size_to_dfs(qm_ss_spi_frame_size_t frame_size)
 {
 	if (frame_size <= QM_SS_SPI_FRAME_SIZE_8_BIT) {
 		return 1;
@@ -138,14 +138,14 @@ static inline uint8_t frame_size_to_dfs(qm_ss_spi_frame_size_t frame_size)
 }
 
 static int ss_spi_qmsi_transceive(struct device *dev,
-				  const void *tx_buf, uint32_t tx_buf_len,
-				  void *rx_buf, uint32_t rx_buf_len)
+				  const void *tx_buf, u32_t tx_buf_len,
+				  void *rx_buf, u32_t rx_buf_len)
 {
 	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 	qm_ss_spi_t spi_id = spi_config->spi;
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
 	qm_ss_spi_config_t *cfg = &context->cfg;
-	uint8_t dfs = frame_size_to_dfs(cfg->frame_size);
+	u8_t dfs = frame_size_to_dfs(cfg->frame_size);
 	qm_ss_spi_async_transfer_t *xfer;
 	int rc;
 
@@ -163,7 +163,7 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 
 	xfer->rx = rx_buf;
 	xfer->rx_len = rx_buf_len / dfs;
-	xfer->tx = (uint8_t *)tx_buf;
+	xfer->tx = (u8_t *)tx_buf;
 	xfer->tx_len = tx_buf_len / dfs;
 	xfer->callback_data = dev;
 	xfer->callback = spi_qmsi_callback;
@@ -177,7 +177,7 @@ static int ss_spi_qmsi_transceive(struct device *dev,
 	}
 
 	if (context->loopback) {
-		uint32_t ctrl;
+		u32_t ctrl;
 
 		if (spi_id == 0) {
 			ctrl = __builtin_arc_lr(QM_SS_SPI_0_BASE +
@@ -249,14 +249,14 @@ static int ss_spi_qmsi_init(struct device *dev);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static void ss_spi_master_set_power_state(struct device *dev,
-					  uint32_t power_state)
+					  u32_t power_state)
 {
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
 
 	context->device_power_state = power_state;
 }
 
-static uint32_t ss_spi_master_get_power_state(struct device *dev)
+static u32_t ss_spi_master_get_power_state(struct device *dev)
 {
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
 
@@ -296,16 +296,16 @@ static int ss_spi_master_resume_device_from_suspend(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int ss_spi_master_qmsi_device_ctrl(struct device *port,
-				       uint32_t ctrl_command, void *context)
+				       u32_t ctrl_command, void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return ss_spi_master_suspend_device(port);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return ss_spi_master_resume_device_from_suspend(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = ss_spi_master_get_power_state(port);
+		*((u32_t *)context) = ss_spi_master_get_power_state(port);
 	}
 	return 0;
 }
@@ -387,7 +387,7 @@ static int ss_spi_qmsi_init(struct device *dev)
 {
 	const struct ss_spi_qmsi_config *spi_config = dev->config->config_info;
 	struct ss_spi_qmsi_runtime *context = dev->driver_data;
-	uint32_t *scss_intmask = NULL;
+	u32_t *scss_intmask = NULL;
 
 	switch (spi_config->spi) {
 #ifdef CONFIG_SPI_SS_0
@@ -407,7 +407,7 @@ static int ss_spi_qmsi_init(struct device *dev)
 		ss_clk_spi_enable(0);
 
 		/* Route SPI interrupts to Sensor Subsystem */
-		scss_intmask = (uint32_t *)&QM_INTERRUPT_ROUTER->ss_spi_0_int;
+		scss_intmask = (u32_t *)&QM_INTERRUPT_ROUTER->ss_spi_0_int;
 		*scss_intmask &= ~BIT(8);
 		scss_intmask++;
 		*scss_intmask &= ~BIT(8);
@@ -433,7 +433,7 @@ static int ss_spi_qmsi_init(struct device *dev)
 		ss_clk_spi_enable(1);
 
 		/* Route SPI interrupts to Sensor Subsystem */
-		scss_intmask = (uint32_t *)&QM_INTERRUPT_ROUTER->ss_spi_1_int;
+		scss_intmask = (u32_t *)&QM_INTERRUPT_ROUTER->ss_spi_1_int;
 		*scss_intmask &= ~BIT(8);
 		scss_intmask++;
 		*scss_intmask &= ~BIT(8);

@@ -13,12 +13,12 @@
 
 #include "hmc5883l.h"
 
-static void hmc5883l_convert(struct sensor_value *val, int16_t raw_val,
-			     uint16_t divider)
+static void hmc5883l_convert(struct sensor_value *val, s16_t raw_val,
+			     u16_t divider)
 {
 	/* val = raw_val / divider */
 	val->val1 = raw_val / divider;
-	val->val2 = (((int64_t)raw_val % divider) * 1000000L) / divider;
+	val->val2 = (((s64_t)raw_val % divider) * 1000000L) / divider;
 }
 
 static int hmc5883l_channel_get(struct device *dev,
@@ -51,13 +51,13 @@ static int hmc5883l_channel_get(struct device *dev,
 static int hmc5883l_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct hmc5883l_data *drv_data = dev->driver_data;
-	int16_t buf[3];
+	s16_t buf[3];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c, HMC5883L_I2C_ADDR,
-			   HMC5883L_REG_DATA_START, (uint8_t *)buf, 6) < 0) {
+			   HMC5883L_REG_DATA_START, (u8_t *)buf, 6) < 0) {
 		SYS_LOG_ERR("Failed to fetch megnetometer sample.");
 		return -EIO;
 	}
@@ -80,7 +80,7 @@ static const struct sensor_driver_api hmc5883l_driver_api = {
 int hmc5883l_init(struct device *dev)
 {
 	struct hmc5883l_data *drv_data = dev->driver_data;
-	uint8_t chip_cfg[3], id[3], idx;
+	u8_t chip_cfg[3], id[3], idx;
 
 	drv_data->i2c = device_get_binding(CONFIG_HMC5883L_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {

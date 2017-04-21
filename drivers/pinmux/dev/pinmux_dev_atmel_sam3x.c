@@ -13,9 +13,9 @@
 #include <soc.h>
 #include <misc/util.h>
 
-static volatile struct __pio *_get_port(uint32_t pin)
+static volatile struct __pio *_get_port(u32_t pin)
 {
-	uint32_t port_num = pin / 32;
+	u32_t port_num = pin / 32;
 
 	switch (port_num) {
 	case 0:
@@ -32,10 +32,10 @@ static volatile struct __pio *_get_port(uint32_t pin)
 	}
 }
 
-static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
 {
 	volatile struct __pio *port = _get_port(pin);
-	uint32_t tmp;
+	u32_t tmp;
 
 	ARG_UNUSED(dev);
 
@@ -54,7 +54,7 @@ static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 	return 0;
 }
 
-static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
 {
 	volatile struct __pio *port = _get_port(pin);
 
@@ -69,7 +69,7 @@ static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
 {
 	volatile struct __pio *port = _get_port(pin);
 
@@ -87,7 +87,7 @@ static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
 
 	return 0;
 }
-static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
 {
 	volatile struct __pio *port = _get_port(pin);
 

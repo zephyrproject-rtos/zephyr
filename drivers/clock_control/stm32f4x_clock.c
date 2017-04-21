@@ -23,7 +23,7 @@
 #include <clock_control/stm32_clock_control.h>
 
 struct stm32f4x_rcc_data {
-	uint8_t *base;
+	u8_t *base;
 };
 
 static inline int stm32f4x_clock_control_on(struct device *dev,
@@ -32,7 +32,7 @@ static inline int stm32f4x_clock_control_on(struct device *dev,
 	struct stm32f4x_rcc_data *data = dev->driver_data;
 	volatile struct stm32f4x_rcc *rcc = (struct stm32f4x_rcc *)(data->base);
 	struct stm32f4x_pclken *pclken = (struct stm32f4x_pclken *)(sub_system);
-	uint32_t tmpreg = 0;	/* Register delay helper */
+	u32_t tmpreg = 0;	/* Register delay helper */
 
 	switch (pclken->bus) {
 	case STM32F4X_CLOCK_BUS_AHB1:
@@ -62,7 +62,7 @@ static inline int stm32f4x_clock_control_off(struct device *dev,
 	struct stm32f4x_rcc_data *data = dev->driver_data;
 	volatile struct stm32f4x_rcc *rcc = (struct stm32f4x_rcc *)(data->base);
 	struct stm32f4x_pclken *pclken = (struct stm32f4x_pclken *)(sub_system);
-	uint32_t tmpreg = 0;	/* Register delay helper */
+	u32_t tmpreg = 0;	/* Register delay helper */
 
 	switch (pclken->bus) {
 	case STM32F4X_CLOCK_BUS_AHB1:
@@ -170,10 +170,10 @@ static int __pllp_div(int div)
 }
 #endif	/* CONFIG_CLOCK_STM32F4X_SYSCLK_SRC_PLL */
 
-static uint32_t __get_ahb_clock(uint32_t sysclk)
+static u32_t __get_ahb_clock(u32_t sysclk)
 {
 	/* AHB clock is generated based on SYSCLK */
-	uint32_t sysclk_div = CONFIG_CLOCK_STM32F4X_AHB_PRESCALER;
+	u32_t sysclk_div = CONFIG_CLOCK_STM32F4X_AHB_PRESCALER;
 
 	if (sysclk_div == 0) {
 		sysclk_div = 1;
@@ -182,7 +182,7 @@ static uint32_t __get_ahb_clock(uint32_t sysclk)
 	return sysclk / sysclk_div;
 }
 
-static uint32_t __get_apb_clock(uint32_t ahb_clock, uint32_t prescaler)
+static u32_t __get_apb_clock(u32_t ahb_clock, u32_t prescaler)
 {
 	if (prescaler == 0) {
 		prescaler = 1;
@@ -193,15 +193,15 @@ static uint32_t __get_apb_clock(uint32_t ahb_clock, uint32_t prescaler)
 
 static int stm32f4x_clock_control_get_subsys_rate(struct device *clock,
 						  clock_control_subsys_t sub_system,
-						  uint32_t *rate)
+						  u32_t *rate)
 {
 	struct stm32f4x_pclken *pclken = (struct stm32f4x_pclken *)(sub_system);
 	/* assumes SYSCLK is SYS_CLOCK_HW_CYCLES_PER_SEC */
-	uint32_t ahb_clock =
+	u32_t ahb_clock =
 		__get_ahb_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
-	uint32_t apb1_clock = __get_apb_clock(ahb_clock,
+	u32_t apb1_clock = __get_apb_clock(ahb_clock,
 				CONFIG_CLOCK_STM32F4X_APB1_PRESCALER);
-	uint32_t apb2_clock = __get_apb_clock(ahb_clock,
+	u32_t apb2_clock = __get_apb_clock(ahb_clock,
 				CONFIG_CLOCK_STM32F4X_APB2_PRESCALER);
 	ARG_UNUSED(clock);
 
@@ -234,17 +234,17 @@ static int stm32f4x_clock_control_init(struct device *dev)
 		(struct stm32f4x_rcc *)(data->base);
 	/* SYSCLK source defaults to HSI */
 	int sysclk_src = STM32F4X_RCC_CFG_SYSCLK_SRC_HSI;
-	uint32_t hpre = __ahb_prescaler(CONFIG_CLOCK_STM32F4X_AHB_PRESCALER);
-	uint32_t ppre1 = __apb_prescaler(CONFIG_CLOCK_STM32F4X_APB1_PRESCALER);
-	uint32_t ppre2 = __apb_prescaler(CONFIG_CLOCK_STM32F4X_APB2_PRESCALER);
+	u32_t hpre = __ahb_prescaler(CONFIG_CLOCK_STM32F4X_AHB_PRESCALER);
+	u32_t ppre1 = __apb_prescaler(CONFIG_CLOCK_STM32F4X_APB1_PRESCALER);
+	u32_t ppre2 = __apb_prescaler(CONFIG_CLOCK_STM32F4X_APB2_PRESCALER);
 #ifdef CONFIG_CLOCK_STM32F4X_SYSCLK_SRC_PLL
-	uint32_t pllmdiv = CONFIG_CLOCK_STM32F4X_PLLM_DIV_FACTOR;
-	uint32_t pllnmul = CONFIG_CLOCK_STM32F4X_PLLN_MULTIPLIER;
-	uint32_t pllpdiv = __pllp_div(CONFIG_CLOCK_STM32F4X_PLLP_DIV_FACTOR);
-	uint32_t pllqdiv = CONFIG_CLOCK_STM32F4X_PLLQ_DIV_FACTOR;
+	u32_t pllmdiv = CONFIG_CLOCK_STM32F4X_PLLM_DIV_FACTOR;
+	u32_t pllnmul = CONFIG_CLOCK_STM32F4X_PLLN_MULTIPLIER;
+	u32_t pllpdiv = __pllp_div(CONFIG_CLOCK_STM32F4X_PLLP_DIV_FACTOR);
+	u32_t pllqdiv = CONFIG_CLOCK_STM32F4X_PLLQ_DIV_FACTOR;
 #endif	/* CONFIG_CLOCK_STM32F4X_SYSCLK_SRC_PLL */
 	/* Register delay helper */
-	uint32_t tmpreg = 0;
+	u32_t tmpreg = 0;
 
 	/* Enable power control clock */
 	rcc->apb1enr |= STM32F4X_RCC_APB1ENR_PWREN;
@@ -333,7 +333,7 @@ static int stm32f4x_clock_control_init(struct device *dev)
 }
 
 static struct stm32f4x_rcc_data stm32f4x_rcc_data = {
-	.base = (uint8_t *)RCC_BASE,
+	.base = (u8_t *)RCC_BASE,
 };
 
 /* FIXME: move prescaler/multiplier defines into device config */

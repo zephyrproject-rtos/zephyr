@@ -184,8 +184,8 @@
 #define LOPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power.h>
-uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
-static uint32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
+u32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
+static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 
@@ -202,7 +202,7 @@ static uint32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 static int _loapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
-	int32_t loApicMaxLvt; /* local APIC Max LVT */
+	s32_t loApicMaxLvt; /* local APIC Max LVT */
 
 	/* enable the Local APIC */
 	sys_write32(sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR)
@@ -282,7 +282,7 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 				  )
 {
 	volatile int *pLvt; /* pointer to local vector table */
-	int32_t oldLevel;   /* previous interrupt lock level */
+	s32_t oldLevel;   /* previous interrupt lock level */
 
 	/*
 	 * The following mappings are used:
@@ -321,7 +321,7 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 void _loapic_irq_enable(unsigned int irq)
 {
 	volatile int *pLvt; /* pointer to local vector table */
-	int32_t oldLevel;   /* previous interrupt lock level */
+	s32_t oldLevel;   /* previous interrupt lock level */
 
 	/*
 	 * See the comments in _LoApicLvtVecSet() regarding IRQ to LVT mappings
@@ -352,7 +352,7 @@ void _loapic_irq_enable(unsigned int irq)
 void _loapic_irq_disable(unsigned int irq)
 {
 	volatile int *pLvt; /* pointer to local vector table */
-	int32_t oldLevel;   /* previous interrupt lock level */
+	s32_t oldLevel;   /* previous interrupt lock level */
 
 	/*
 	 * See the comments in _LoApicLvtVecSet() regarding IRQ to LVT mappings
@@ -479,17 +479,17 @@ int loapic_resume(struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int loapic_device_ctrl(struct device *port, uint32_t ctrl_command,
+static int loapic_device_ctrl(struct device *port, u32_t ctrl_command,
 			      void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return loapic_suspend(port);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return loapic_resume(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = loapic_device_power_state;
+		*((u32_t *)context) = loapic_device_power_state;
 		return 0;
 	}
 

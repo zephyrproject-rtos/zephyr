@@ -28,34 +28,34 @@
  * representation as a large positive value).
  */
 #define RTC_HALF               (RTC_MASK / 2)
-#define RTC_TICKS_PER_SYS_TICK ((uint32_t)((((uint64_t)1000000UL / \
+#define RTC_TICKS_PER_SYS_TICK ((u32_t)((((u64_t)1000000UL / \
 				 CONFIG_SYS_CLOCK_TICKS_PER_SEC) * \
 				1000000000UL) / 30517578125UL) & RTC_MASK)
 
-extern int64_t _sys_clock_tick_count;
-extern int32_t _sys_idle_elapsed_ticks;
+extern s64_t _sys_clock_tick_count;
+extern s32_t _sys_idle_elapsed_ticks;
 
 /*
  * rtc_past holds the value of RTC_COUNTER at the time the last sys tick was
  * announced, in RTC ticks. It is therefore always a multiple of
  * RTC_TICKS_PER_SYS_TICK.
  */
-static uint32_t rtc_past;
+static u32_t rtc_past;
 
 #ifdef CONFIG_TICKLESS_IDLE
 /*
  * Holds the maximum sys ticks the kernel expects to see in the next
  * _sys_clock_tick_announce().
  */
-static uint32_t expected_sys_ticks;
+static u32_t expected_sys_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 /*
  * Set RTC Counter Compare (CC) register to a given value in RTC ticks.
  */
-static void rtc_compare_set(uint32_t rtc_ticks)
+static void rtc_compare_set(u32_t rtc_ticks)
 {
-	uint32_t rtc_now;
+	u32_t rtc_now;
 
 	/* Try to set CC value. We assume the procedure is always successful. */
 	RTC_CC_VALUE = rtc_ticks;
@@ -96,7 +96,7 @@ static void rtc_compare_set(uint32_t rtc_ticks)
  */
 static void rtc_announce_set_next(void)
 {
-	uint32_t rtc_now, rtc_elapsed, sys_elapsed;
+	u32_t rtc_now, rtc_elapsed, sys_elapsed;
 
 	/* Read the RTC counter one single time in the beginning, so that an
 	 * increase in the counter during this procedure leads to no race
@@ -175,7 +175,7 @@ static void rtc_announce_set_next(void)
  *
  * @return N/A
  */
-void _timer_idle_enter(int32_t sys_ticks)
+void _timer_idle_enter(s32_t sys_ticks)
 {
 	/* Restrict ticks to max supported by RTC without risking overflow. */
 	if ((sys_ticks < 0) ||
@@ -307,7 +307,7 @@ int _sys_clock_driver_init(struct device *device)
 
 uint32_t _timer_cycle_get_32(void)
 {
-	uint32_t elapsed_cycles;
+	u32_t elapsed_cycles;
 
 	elapsed_cycles = (RTC_COUNTER -
 			  (_sys_clock_tick_count * RTC_TICKS_PER_SYS_TICK))

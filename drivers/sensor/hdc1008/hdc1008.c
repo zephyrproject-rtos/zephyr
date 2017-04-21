@@ -15,7 +15,7 @@
 #include "hdc1008.h"
 
 static void hdc1008_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+				  struct gpio_callback *cb, u32_t pins)
 {
 	struct hdc1008_data *drv_data =
 		CONTAINER_OF(cb, struct hdc1008_data, gpio_cb);
@@ -29,7 +29,7 @@ static void hdc1008_gpio_callback(struct device *dev,
 static int hdc1008_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct hdc1008_data *drv_data = dev->driver_data;
-	uint8_t buf[4];
+	u8_t buf[4];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -60,7 +60,7 @@ static int hdc1008_channel_get(struct device *dev,
 			       struct sensor_value *val)
 {
 	struct hdc1008_data *drv_data = dev->driver_data;
-	uint64_t tmp;
+	u64_t tmp;
 
 	/*
 	 * See datasheet "Temperature Register" and "Humidity
@@ -69,12 +69,12 @@ static int hdc1008_channel_get(struct device *dev,
 	 */
 	if (chan == SENSOR_CHAN_TEMP) {
 		/* val = -40 + 165 * sample / 2^16 */
-		tmp = 165 * (uint64_t)drv_data->t_sample;
-		val->val1 = (int32_t)(tmp >> 16) - 40;
+		tmp = 165 * (u64_t)drv_data->t_sample;
+		val->val1 = (s32_t)(tmp >> 16) - 40;
 		val->val2 = (1000000 * (tmp & 0xFFFF)) >> 16;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		/* val = 100000 * sample / 2^16 */
-		tmp = 100000 * (uint64_t)drv_data->rh_sample;
+		tmp = 100000 * (u64_t)drv_data->rh_sample;
 		val->val1 = tmp >> 16;
 		val->val2 = (1000000 * (tmp & 0xFFFF)) >> 16;
 	} else {
@@ -89,10 +89,10 @@ static const struct sensor_driver_api hdc1008_driver_api = {
 	.channel_get = hdc1008_channel_get,
 };
 
-static uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
+static u16_t read16(struct device *dev, u8_t a, u8_t d)
 {
-	uint8_t buf[2];
-	if (i2c_burst_read(dev, a, d, (uint8_t *)buf, 2) < 0) {
+	u8_t buf[2];
+	if (i2c_burst_read(dev, a, d, (u8_t *)buf, 2) < 0) {
 		SYS_LOG_ERR("Error reading register.");
 	}
 	return (buf[0] << 8 | buf[1]);

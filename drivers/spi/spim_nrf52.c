@@ -30,26 +30,26 @@ struct spim_nrf52_config {
 	void (*irq_config_func)(struct device *dev);
 	struct spi_config default_cfg;
 	struct {
-		uint8_t sck;
-		uint8_t mosi;
-		uint8_t miso;
+		u8_t sck;
+		u8_t mosi;
+		u8_t miso;
 #define SS_UNUSED              255
 		/* Pin number of up to 4 slave devices */
-		uint8_t ss[4];
+		u8_t ss[4];
 	} psel;
-	uint8_t orc;
+	u8_t orc;
 };
 
 struct spim_nrf52_data {
 	struct k_sem sem;
 	struct device *gpio_port;
-	uint8_t slave;
-	uint8_t stopped:1;
-	uint8_t txd:1;
-	uint8_t rxd:1;
+	u8_t slave;
+	u8_t stopped:1;
+	u8_t txd:1;
+	u8_t rxd:1;
 #if (SYS_LOG_LEVEL > SYS_LOG_LEVEL_INFO)
-	uint32_t tx_cnt;
-	uint32_t rx_cnt;
+	u32_t tx_cnt;
+	u32_t rx_cnt;
 #endif
 };
 
@@ -84,7 +84,7 @@ static int spim_nrf52_configure(struct device *dev,
 	const struct spim_nrf52_config *config = dev->config->config_info;
 	struct spim_nrf52_data *data = dev->driver_data;
 	volatile NRF_SPIM_Type *spim = config->base;
-	uint32_t flags;
+	u32_t flags;
 
 	SYS_LOG_DBG("config=0x%x max_sys_freq=%d", spi_config->config,
 		    spi_config->max_sys_freq);
@@ -172,7 +172,7 @@ static int spim_nrf52_configure(struct device *dev,
 	return 0;
 }
 
-static int spim_nrf52_slave_select(struct device *dev, uint32_t slave)
+static int spim_nrf52_slave_select(struct device *dev, u32_t slave)
 {
 	struct spim_nrf52_data *data = dev->driver_data;
 	const struct spim_nrf52_config *config = dev->config->config_info;
@@ -191,7 +191,7 @@ static int spim_nrf52_slave_select(struct device *dev, uint32_t slave)
 	return 0;
 }
 
-static inline void spim_nrf52_csn(struct device *gpio_port, uint32_t pin,
+static inline void spim_nrf52_csn(struct device *gpio_port, u32_t pin,
 				  bool select)
 {
 	int status;
@@ -201,8 +201,8 @@ static inline void spim_nrf52_csn(struct device *gpio_port, uint32_t pin,
 }
 
 static int spim_nrf52_transceive(struct device *dev, const void *tx_buf,
-				 uint32_t tx_buf_len, void *rx_buf,
-				 uint32_t rx_buf_len)
+				 u32_t tx_buf_len, void *rx_buf,
+				 u32_t rx_buf_len)
 {
 	const struct spim_nrf52_config *config = dev->config->config_info;
 	struct spim_nrf52_data *data = dev->driver_data;
@@ -222,7 +222,7 @@ static int spim_nrf52_transceive(struct device *dev, const void *tx_buf,
 	if (tx_buf_len) {
 		__ASSERT_NO_MSG(tx_buf);
 		spim->TXD.MAXCNT = tx_buf_len;
-		spim->TXD.PTR = (uint32_t)tx_buf;
+		spim->TXD.PTR = (u32_t)tx_buf;
 		data->txd = 0;
 #if (SYS_LOG_LEVEL > SYS_LOG_LEVEL_INFO)
 		data->tx_cnt = 0;
@@ -234,7 +234,7 @@ static int spim_nrf52_transceive(struct device *dev, const void *tx_buf,
 	if (rx_buf_len) {
 		__ASSERT_NO_MSG(rx_buf);
 		spim->RXD.MAXCNT = rx_buf_len;
-		spim->RXD.PTR = (uint32_t)rx_buf;
+		spim->RXD.PTR = (u32_t)rx_buf;
 		data->rxd = 0;
 #if (SYS_LOG_LEVEL > SYS_LOG_LEVEL_INFO)
 		data->rx_cnt = 0;

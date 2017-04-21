@@ -11,10 +11,10 @@
 
 #include "fsl_rnga.h"
 
-static uint8_t random_mcux_rnga_get_uint8(void)
+static u8_t random_mcux_rnga_get_uint8(void)
 {
-	uint32_t random;
-	uint8_t output = 0;
+	u32_t random;
+	u8_t output = 0;
 	int i;
 
 	RNGA_SetMode(RNG, kRNGA_ModeNormal);
@@ -36,8 +36,8 @@ static uint8_t random_mcux_rnga_get_uint8(void)
 	return output;
 }
 
-static int random_mcux_rnga_get_entropy(struct device *dev, uint8_t *buffer,
-					uint16_t length)
+static int random_mcux_rnga_get_entropy(struct device *dev, u8_t *buffer,
+					u16_t length)
 {
 	int i;
 
@@ -63,7 +63,7 @@ DEVICE_AND_API_INIT(random_mcux_rnga, CONFIG_RANDOM_NAME,
 
 static int random_mcux_rnga_init(struct device *dev)
 {
-	uint32_t seed = k_cycle_get_32();
+	u32_t seed = k_cycle_get_32();
 
 	ARG_UNUSED(dev);
 
@@ -80,13 +80,13 @@ static int random_mcux_rnga_init(struct device *dev)
 	return 0;
 }
 
-uint32_t sys_rand32_get(void)
+u32_t sys_rand32_get(void)
 {
-	uint32_t output;
+	u32_t output;
 	int r;
 
 	r = random_mcux_rnga_get_entropy(DEVICE_GET(random_mcux_rnga),
-					 (uint8_t *) &output, sizeof(output));
+					 (u8_t *) &output, sizeof(output));
 	__ASSERT_NO_MSG(!r);
 
 	return output;

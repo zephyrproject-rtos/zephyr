@@ -56,7 +56,7 @@ static inline int _has_i2c_master(struct device *dev)
 }
 
 static int pwm_pca9685_configure(struct device *dev, int access_op,
-				 uint32_t pwm, int flags)
+				 u32_t pwm, int flags)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(access_op);
@@ -67,15 +67,15 @@ static int pwm_pca9685_configure(struct device *dev, int access_op,
 }
 
 static int pwm_pca9685_set_values(struct device *dev, int access_op,
-				  uint32_t pwm, uint32_t on, uint32_t off)
+				  u32_t pwm, u32_t on, u32_t off)
 {
 	const struct pwm_pca9685_config * const config =
 		dev->config->config_info;
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
-	uint16_t i2c_addr = config->i2c_slave_addr;
-	uint8_t buf[] = { 0, 0, 0, 0, 0};
+	u16_t i2c_addr = config->i2c_slave_addr;
+	u8_t buf[] = { 0, 0, 0, 0, 0};
 
 	if (!_has_i2c_master(dev)) {
 		return -EINVAL;
@@ -124,9 +124,9 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
  * to the ON state.
  */
 static int pwm_pca9685_set_duty_cycle(struct device *dev, int access_op,
-				      uint32_t pwm, uint8_t duty)
+				      u32_t pwm, u8_t duty)
 {
-	uint32_t on, off, phase;
+	u32_t on, off, phase;
 
 	phase = 0;     /* Hard coded until API changes */
 
@@ -165,7 +165,7 @@ int pwm_pca9685_init(struct device *dev)
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
 	struct device *i2c_master;
-	uint8_t buf[] = {0, 0};
+	u8_t buf[] = {0, 0};
 	int ret;
 
 	/* Find out the device struct of the I2C master */

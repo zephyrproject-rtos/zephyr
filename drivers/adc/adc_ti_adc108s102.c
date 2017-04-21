@@ -24,7 +24,7 @@ static inline int _ti_adc108s102_sampling(struct device *dev)
 
 	SYS_LOG_DBG("Sampling!\n");
 
-	/* SPI deals with uint8_t buffers so multiplying by 2 the length */
+	/* SPI deals with u8_t buffers so multiplying by 2 the length */
 	return spi_transceive(adc->spi, adc->cmd_buffer,
 			      adc->cmd_buf_len * 2,
 			      adc->sampling_buffer,
@@ -37,7 +37,7 @@ static inline void _ti_adc108s102_handle_result(struct device *dev)
 	struct adc_seq_table *seq_table = adc->seq_table;
 	struct ti_adc108s102_chan *chan;
 	struct adc_seq_entry *entry;
-	uint32_t s_i, i;
+	u32_t s_i, i;
 
 	SYS_LOG_DBG("_ti_adc108s102_handle_result()");
 
@@ -49,20 +49,20 @@ static inline void _ti_adc108s102_handle_result(struct device *dev)
 			continue;
 		}
 
-		*((uint16_t *)(entry->buffer+chan->buf_idx)) =
+		*((u16_t *)(entry->buffer+chan->buf_idx)) =
 				ADC108S102_RESULT(adc->sampling_buffer[s_i]);
 
 		chan->buf_idx += 2;
 	}
 }
 
-static inline int32_t _ti_adc108s102_prepare(struct device *dev)
+static inline s32_t _ti_adc108s102_prepare(struct device *dev)
 {
 	struct ti_adc108s102_data *adc = dev->driver_data;
 	struct adc_seq_table *seq_table = adc->seq_table;
 	struct ti_adc108s102_chan *chan;
-	int32_t sampling_delay = 0;
-	uint32_t i;
+	s32_t sampling_delay = 0;
+	u32_t i;
 
 	adc->cmd_buf_len = 0;
 	adc->sampling_buf_len = 1; /* Counting the dummy byte */
@@ -120,7 +120,7 @@ static void ti_adc108s102_disable(struct device *dev)
 static inline int _verify_entries(struct adc_seq_table *seq_table)
 {
 	struct adc_seq_entry *entry;
-	uint32_t chans_set = 0;
+	u32_t chans_set = 0;
 	int i;
 
 	for (i = 0; i < seq_table->num_entries; i++) {
@@ -148,7 +148,7 @@ static int ti_adc108s102_read(struct device *dev,
 	struct ti_adc108s102_data *adc = dev->driver_data;
 	struct spi_config spi_conf;
 	int ret = 0;
-	int32_t delay;
+	s32_t delay;
 
 	spi_conf.config = config->spi_config_flags;
 	spi_conf.max_sys_freq = config->spi_freq;
@@ -178,7 +178,7 @@ static int ti_adc108s102_read(struct device *dev,
 		}
 
 		/* convert to milliseconds */
-		delay = (int32_t)((MSEC_PER_SEC * (uint64_t)delay) /
+		delay = (s32_t)((MSEC_PER_SEC * (u64_t)delay) /
 			sys_clock_ticks_per_sec);
 
 		k_sleep(delay);

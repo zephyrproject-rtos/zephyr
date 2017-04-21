@@ -16,25 +16,25 @@
 
 struct wdog_cmsdk_apb {
 	/* offset: 0x000 (r/w) watchdog load register */
-	volatile uint32_t  load;
+	volatile u32_t  load;
 	/* offset: 0x004 (r/ ) watchdog value register */
-	volatile uint32_t  value;
+	volatile u32_t  value;
 	/* offset: 0x008 (r/w) watchdog control register */
-	volatile uint32_t  ctrl;
+	volatile u32_t  ctrl;
 	/* offset: 0x00c ( /w) watchdog clear interrupt register */
-	volatile uint32_t  intclr;
+	volatile u32_t  intclr;
 	/* offset: 0x010 (r/ ) watchdog raw interrupt status register */
-	volatile uint32_t  rawintstat;
+	volatile u32_t  rawintstat;
 	/* offset: 0x014 (r/ ) watchdog interrupt status register */
-	volatile uint32_t  maskintstat;
-	volatile uint32_t  reserved0[762];
+	volatile u32_t  maskintstat;
+	volatile u32_t  reserved0[762];
 	/* offset: 0xc00 (r/w) watchdog lock register */
-	volatile uint32_t  lock;
-	volatile uint32_t  reserved1[191];
+	volatile u32_t  lock;
+	volatile u32_t  reserved1[191];
 	/* offset: 0xf00 (r/w) watchdog integration test control register */
-	volatile uint32_t  itcr;
+	volatile u32_t  itcr;
 	/* offset: 0xf04 ( /w) watchdog integration test output set register */
-	volatile uint32_t  itop;
+	volatile u32_t  itop;
 };
 
 #define CMSDK_APB_WDOG_LOAD		(0xFFFFFFFF << 0)

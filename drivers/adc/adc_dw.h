@@ -160,24 +160,24 @@ typedef void (*adc_dw_config_t)(void);
  */
 struct adc_config {
 	/**Register base address for hardware registers.*/
-	uint32_t reg_base;
+	u32_t reg_base;
 	/**IIO address for the IRQ mask register.*/
-	uint32_t reg_irq_mask;
+	u32_t reg_irq_mask;
 	/**IIO address for the error mask register.*/
-	uint32_t reg_err_mask;
+	u32_t reg_err_mask;
 	/**Output mode*/
-	uint8_t  out_mode;
+	u8_t  out_mode;
 	/**Capture mode*/
-	uint8_t  capture_mode;
+	u8_t  capture_mode;
 	/**Sequence mode*/
-	uint8_t  seq_mode;
+	u8_t  seq_mode;
 	/**Serial delay*/
-	uint8_t  serial_dly;
+	u8_t  serial_dly;
 	/**Sample width*/
-	uint8_t  sample_width;
-	uint8_t  padding[3];
+	u8_t  sample_width;
+	u8_t  padding[3];
 	/**Clock ratio*/
-	uint32_t clock_ratio;
+	u32_t clock_ratio;
 	/**Config handler*/
 	adc_dw_config_t config_func;
 };
@@ -191,20 +191,20 @@ struct adc_info {
 	struct k_sem device_sync_sem;
 #ifdef CONFIG_ADC_DW_REPETITIVE
 	/**Current reception buffer index*/
-	uint8_t  index[BUFS_NUM];
+	u8_t  index[BUFS_NUM];
 #endif
 	/**Sequence entries' array*/
 	struct adc_seq_entry *entries;
 	/**State of execution of the driver*/
-	uint8_t  state;
+	u8_t  state;
 	/**Sequence size*/
-	uint8_t seq_size;
+	u8_t seq_size;
 #ifdef CONFIG_ADC_DW_CALIBRATION
 	/**Calibration value*/
-	uint8_t calibration_value;
+	u8_t calibration_value;
 #endif
 #ifdef CONFIG_ADC_DW_DUMMY_CONVERSION
-	uint8_t dummy_conversion;
+	u8_t dummy_conversion;
 #endif
 
 };

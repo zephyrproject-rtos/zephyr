@@ -14,9 +14,9 @@
 
 #include "th02.h"
 
-static uint8_t read8(struct device *dev, uint8_t d)
+static u8_t read8(struct device *dev, u8_t d)
 {
-	uint8_t buf;
+	u8_t buf;
 
 	if (i2c_reg_read_byte(dev, TH02_I2C_DEV_ID, d, &buf) < 0) {
 		SYS_LOG_ERR("Error reading register.");
@@ -27,7 +27,7 @@ static uint8_t read8(struct device *dev, uint8_t d)
 static int is_ready(struct device *dev)
 {
 
-	uint8_t status;
+	u8_t status;
 
 	if (i2c_reg_read_byte(dev, TH02_I2C_DEV_ID,
 			      TH02_REG_STATUS, &status) < 0) {
@@ -41,9 +41,9 @@ static int is_ready(struct device *dev)
 	}
 }
 
-static uint16_t get_humi(struct device *dev)
+static u16_t get_humi(struct device *dev)
 {
-	uint16_t humidity = 0;
+	u16_t humidity = 0;
 
 	if (i2c_reg_write_byte(dev, TH02_I2C_DEV_ID,
 			       TH02_REG_CONFIG, TH02_CMD_MEASURE_HUMI) < 0) {
@@ -61,9 +61,9 @@ static uint16_t get_humi(struct device *dev)
 	return humidity;
 }
 
-uint16_t get_temp(struct device *dev)
+u16_t get_temp(struct device *dev)
 {
-	uint16_t temperature = 0;
+	u16_t temperature = 0;
 
 	if (i2c_reg_write_byte(dev, TH02_I2C_DEV_ID,
 			       TH02_REG_CONFIG, TH02_CMD_MEASURE_TEMP) < 0) {

@@ -132,7 +132,7 @@ extern void __printk_hook_install(int (*fn)(int));
 #if defined(CONFIG_CONSOLE_HANDLER)
 static struct k_fifo *avail_queue;
 static struct k_fifo *lines_queue;
-static uint8_t (*completion_cb)(char *line, uint8_t len);
+static u8_t (*completion_cb)(char *line, u8_t len);
 
 /* Control characters */
 #define ESC                0x1b
@@ -148,7 +148,7 @@ static uint8_t (*completion_cb)(char *line, uint8_t len);
 #define ANSI_HOME          'H'
 #define ANSI_DEL           '~'
 
-static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
+static int read_uart(struct device *uart, u8_t *buf, unsigned int size)
 {
 	int rx;
 
@@ -183,7 +183,7 @@ static inline void cursor_restore(void)
 	printk("\x1b[u");
 }
 
-static void insert_char(char *pos, char c, uint8_t end)
+static void insert_char(char *pos, char c, u8_t end)
 {
 	char tmp;
 
@@ -211,7 +211,7 @@ static void insert_char(char *pos, char c, uint8_t end)
 	cursor_restore();
 }
 
-static void del_char(char *pos, uint8_t end)
+static void del_char(char *pos, u8_t end)
 {
 	uart_poll_out(uart_console_dev, '\b');
 
@@ -244,9 +244,9 @@ enum {
 
 static atomic_t esc_state;
 static unsigned int ansi_val, ansi_val_2;
-static uint8_t cur, end;
+static u8_t cur, end;
 
-static void handle_ansi(uint8_t byte, char *line)
+static void handle_ansi(u8_t byte, char *line)
 {
 	if (atomic_test_and_clear_bit(&esc_state, ESC_ANSI_FIRST)) {
 		if (!isdigit(byte)) {
@@ -342,7 +342,7 @@ void uart_console_isr(struct device *unused)
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
 		static struct console_input *cmd;
-		uint8_t byte;
+		u8_t byte;
 		int rx;
 
 		if (!uart_irq_rx_ready(uart_console_dev)) {
@@ -430,7 +430,7 @@ void uart_console_isr(struct device *unused)
 
 static void console_input_init(void)
 {
-	uint8_t c;
+	u8_t c;
 
 	uart_irq_rx_disable(uart_console_dev);
 	uart_irq_tx_disable(uart_console_dev);
@@ -446,7 +446,7 @@ static void console_input_init(void)
 }
 
 void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
-			 uint8_t (*completion)(char *str, uint8_t len))
+			 u8_t (*completion)(char *str, u8_t len))
 {
 	avail_queue = avail;
 	lines_queue = lines;
@@ -492,7 +492,7 @@ static int uart_console_init(struct device *arg)
 
 #ifdef CONFIG_USB_UART_CONSOLE
 	while (1) {
-		uint32_t dtr = 0;
+		u32_t dtr = 0;
 
 		uart_line_ctrl_get(uart_console_dev, LINE_CTRL_DTR, &dtr);
 		if (dtr) {

@@ -29,34 +29,34 @@
 /* UART registers struct */
 struct _uart {
 	/* UART registers */
-	uint32_t	cr;	/* 0x00 Control Register */
-	uint32_t	mr;	/* 0x04 Mode Register */
-	uint32_t	ier;	/* 0x08 Interrupt Enable Register */
-	uint32_t	idr;	/* 0x0C Interrupt Disable Register */
-	uint32_t	imr;	/* 0x10 Interrupt Mask Register */
-	uint32_t	sr;	/* 0x14 Status Register */
-	uint32_t	rhr;	/* 0x18 Receive Holding Register */
-	uint32_t	thr;	/* 0x1C Transmit Holding Register */
-	uint32_t	brgr;	/* 0x20 Baud Rate Generator Register */
+	u32_t	cr;	/* 0x00 Control Register */
+	u32_t	mr;	/* 0x04 Mode Register */
+	u32_t	ier;	/* 0x08 Interrupt Enable Register */
+	u32_t	idr;	/* 0x0C Interrupt Disable Register */
+	u32_t	imr;	/* 0x10 Interrupt Mask Register */
+	u32_t	sr;	/* 0x14 Status Register */
+	u32_t	rhr;	/* 0x18 Receive Holding Register */
+	u32_t	thr;	/* 0x1C Transmit Holding Register */
+	u32_t	brgr;	/* 0x20 Baud Rate Generator Register */
 
-	uint32_t	reserved[55];	/* 0x24 - 0xFF */
+	u32_t	reserved[55];	/* 0x24 - 0xFF */
 
 	/* PDC related registers */
-	uint32_t	pdc_rpr;	/* 0x100 Receive Pointer Reg */
-	uint32_t	pdc_rcr;	/* 0x104 Receive Counter Reg */
-	uint32_t	pdc_tpr;	/* 0x108 Transmit Pointer Reg */
-	uint32_t	pdc_tcr;	/* 0x10C Transmit Counter Reg */
-	uint32_t	pdc_rnpr;	/* 0x110 Receive Next Pointer */
-	uint32_t	pdc_rncr;	/* 0x114 Receive Next Counter */
-	uint32_t	pdc_tnpr;	/* 0x118 Transmit Next Pointer */
-	uint32_t	pdc_tncr;	/* 0x11C Transmit Next Counter */
-	uint32_t	pdc_ptcr;	/* 0x120 Transfer Control Reg */
-	uint32_t	pdc_ptsr;	/* 0x124 Transfer Status Reg */
+	u32_t	pdc_rpr;	/* 0x100 Receive Pointer Reg */
+	u32_t	pdc_rcr;	/* 0x104 Receive Counter Reg */
+	u32_t	pdc_tpr;	/* 0x108 Transmit Pointer Reg */
+	u32_t	pdc_tcr;	/* 0x10C Transmit Counter Reg */
+	u32_t	pdc_rnpr;	/* 0x110 Receive Next Pointer */
+	u32_t	pdc_rncr;	/* 0x114 Receive Next Counter */
+	u32_t	pdc_tnpr;	/* 0x118 Transmit Next Pointer */
+	u32_t	pdc_tncr;	/* 0x11C Transmit Next Counter */
+	u32_t	pdc_ptcr;	/* 0x120 Transfer Control Reg */
+	u32_t	pdc_ptsr;	/* 0x124 Transfer Status Reg */
 };
 
 /* Device data structure */
 struct uart_sam3_dev_data_t {
-	uint32_t baud_rate;	/* Baud rate */
+	u32_t baud_rate;	/* Baud rate */
 };
 
 /* convenience defines */
@@ -68,15 +68,15 @@ struct uart_sam3_dev_data_t {
 	((volatile struct _uart *)(DEV_CFG(dev))->base)
 
 /* Registers */
-#define UART_CR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x00)))
-#define UART_MR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x04)))
-#define UART_IER(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x08)))
-#define UART_IDR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x0C)))
-#define UART_IMR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x10)))
-#define UART_SR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x14)))
-#define UART_RHR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x18)))
-#define UART_THR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x1C)))
-#define UART_BRGR(dev)	(*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x20)))
+#define UART_CR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x00)))
+#define UART_MR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x04)))
+#define UART_IER(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x08)))
+#define UART_IDR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x0C)))
+#define UART_IMR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x10)))
+#define UART_SR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x14)))
+#define UART_RHR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x18)))
+#define UART_THR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x1C)))
+#define UART_BRGR(dev)	(*((volatile u32_t *)(DEV_CFG(dev)->base + 0x20)))
 
 /* bits */
 #define UART_CR_RSTRX	(1 << 2)
@@ -128,12 +128,12 @@ static const struct uart_driver_api uart_sam3_driver_api;
  * @return N/A
  */
 static void baudrate_set(struct device *dev,
-			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
+			 u32_t baudrate, u32_t sys_clk_freq_hz)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 	const struct uart_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_sam3_dev_data_t * const dev_data = DEV_DATA(dev);
-	uint32_t divisor; /* baud rate divisor */
+	u32_t divisor; /* baud rate divisor */
 
 	ARG_UNUSED(sys_clk_freq_hz);
 
@@ -231,7 +231,7 @@ static unsigned char uart_sam3_poll_out(struct device *dev,
 		;
 
 	/* send a character */
-	uart->thr = (uint32_t)c;
+	uart->thr = (u32_t)c;
 	return c;
 }
 
@@ -241,7 +241,7 @@ static const struct uart_driver_api uart_sam3_driver_api = {
 };
 
 static const struct uart_device_config uart_sam3_dev_cfg_0 = {
-	.base = (uint8_t *)UART_ADDR,
+	.base = (u8_t *)UART_ADDR,
 	.sys_clk_freq = CONFIG_UART_ATMEL_SAM3_CLK_FREQ,
 };
 

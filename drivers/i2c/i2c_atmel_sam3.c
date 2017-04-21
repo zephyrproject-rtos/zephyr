@@ -62,11 +62,11 @@ struct i2c_sam3_dev_data {
 	struct k_sem		device_sync_sem;
 	union dev_config	dev_config;
 
-	volatile uint32_t	state;
+	volatile u32_t	state;
 
-	uint8_t			*xfr_buf;
-	uint32_t		xfr_len;
-	uint32_t		xfr_flags;
+	u8_t			*xfr_buf;
+	u32_t		xfr_len;
+	u32_t		xfr_flags;
 };
 
 
@@ -76,7 +76,7 @@ struct i2c_sam3_dev_data {
  * @param dev Device struct
  * @return Value used for TWI_CWGR register.
  */
-static uint32_t clk_div_calc(struct device *dev)
+static u32_t clk_div_calc(struct device *dev)
 {
 #if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 84000000)
 
@@ -109,11 +109,11 @@ static uint32_t clk_div_calc(struct device *dev)
 	 */
 
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
-	uint32_t i2c_clk;
-	uint32_t cldiv, chdiv, ckdiv;
-	uint32_t i2c_h_min_time, i2c_l_min_time;
-	uint32_t cldiv_min, chdiv_min;
-	uint32_t mck;
+	u32_t i2c_clk;
+	u32_t cldiv, chdiv, ckdiv;
+	u32_t i2c_h_min_time, i2c_l_min_time;
+	u32_t cldiv_min, chdiv_min;
+	u32_t mck;
 
 	/* The T(low) and T(high) are used to calculate CLDIV and CHDIV.
 	 * Since we treat both clock low and clock high to have same period,
@@ -188,8 +188,8 @@ static int i2c_sam3_runtime_configure(struct device *dev, uint32_t config)
 {
 	const struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
-	uint32_t reg;
-	uint32_t clk;
+	u32_t reg;
+	u32_t clk;
 
 	dev_data->dev_config.raw = config;
 	reg = 0;
@@ -232,7 +232,7 @@ static void i2c_sam3_isr(void *arg)
  * This is because reading from status register will clear certain
  * bits, and thus status might be ignored afterwards.
  */
-static inline void sr_bits_set_wait(struct device *dev, uint32_t bits)
+static inline void sr_bits_set_wait(struct device *dev, u32_t bits)
 {
 	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 
@@ -245,7 +245,7 @@ static inline void sr_bits_set_wait(struct device *dev, uint32_t bits)
 static inline void status_reg_clear(struct device *dev)
 {
 	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
-	uint32_t stat_reg;
+	u32_t stat_reg;
 
 	do {
 		stat_reg = cfg->port->sr;
@@ -268,12 +268,12 @@ static inline void status_reg_clear(struct device *dev)
 	} while (stat_reg);
 }
 
-static inline void transfer_setup(struct device *dev, uint16_t slave_address)
+static inline void transfer_setup(struct device *dev, u16_t slave_address)
 {
 	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
-	uint32_t mmr;
-	uint32_t iadr;
+	u32_t mmr;
+	u32_t iadr;
 
 	/* Set slave address */
 	if (dev_data->dev_config.bits.use_10_bit_addr) {
@@ -308,7 +308,7 @@ static inline int msg_write(struct device *dev)
 
 	/* Setup PDC to do DMA transfer */
 	cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS | PDC_PTCR_RXTDIS;
-	cfg->port->pdc.tpr = (uint32_t)dev_data->xfr_buf;
+	cfg->port->pdc.tpr = (u32_t)dev_data->xfr_buf;
 	cfg->port->pdc.tcr = dev_data->xfr_len;
 
 	/* Enable TX related interrupts.
@@ -353,9 +353,9 @@ static inline int msg_read(struct device *dev)
 {
 	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
-	uint32_t stat_reg;
-	uint32_t ctrl_reg;
-	uint32_t last_len;
+	u32_t stat_reg;
+	u32_t ctrl_reg;
+	u32_t last_len;
 
 	/* To read from slave */
 	cfg->port->mmr |= TWI_MMR_MREAD;
@@ -384,7 +384,7 @@ static inline int msg_read(struct device *dev)
 	while (dev_data->xfr_len > 0) {
 		/* Setup PDC to do DMA transfer. */
 		cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS | PDC_PTCR_RXTDIS;
-		cfg->port->pdc.rpr = (uint32_t)dev_data->xfr_buf;
+		cfg->port->pdc.rpr = (u32_t)dev_data->xfr_buf;
 
 		/* Note that we need to set the STOP bit before reading
 		 * last byte from RHR. So we need to process the last byte
@@ -449,14 +449,14 @@ static inline int msg_read(struct device *dev)
 }
 
 static int i2c_sam3_transfer(struct device *dev,
-			     struct i2c_msg *msgs, uint8_t num_msgs,
-			     uint16_t slave_address)
+			     struct i2c_msg *msgs, u8_t num_msgs,
+			     u16_t slave_address)
 {
 	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 	struct i2c_msg *cur_msg = msgs;
-	uint8_t msg_left = num_msgs;
-	uint32_t pflags = 0;
+	u8_t msg_left = num_msgs;
+	u32_t pflags = 0;
 	int ret = 0;
 	int xfr_ret;
 

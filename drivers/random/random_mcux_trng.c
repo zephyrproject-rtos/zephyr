@@ -11,8 +11,8 @@
 
 #include "fsl_trng.h"
 
-static int random_mcux_trng_get_entropy(struct device *dev, uint8_t *buffer,
-					uint16_t length)
+static int random_mcux_trng_get_entropy(struct device *dev, u8_t *buffer,
+					u16_t length)
 {
 	status_t status;
 
@@ -51,13 +51,13 @@ static int random_mcux_trng_init(struct device *dev)
 	return 0;
 }
 
-uint32_t sys_rand32_get(void)
+u32_t sys_rand32_get(void)
 {
-	uint32_t output;
+	u32_t output;
 	int rc;
 
 	rc = random_mcux_trng_get_entropy(DEVICE_GET(random_mcux_trng),
-					  (uint8_t *) &output, sizeof(output));
+					  (u8_t *) &output, sizeof(output));
 	__ASSERT_NO_MSG(!rc);
 
 	return output;

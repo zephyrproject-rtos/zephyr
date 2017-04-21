@@ -20,8 +20,8 @@ int tmp007_attr_set(struct device *dev,
 		    const struct sensor_value *val)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
-	int64_t value;
-	uint8_t reg;
+	s64_t value;
+	u8_t reg;
 
 	if (chan != SENSOR_CHAN_TEMP) {
 		return -ENOTSUP;
@@ -35,7 +35,7 @@ int tmp007_attr_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	value = (int64_t)val->val1 * 1000000 + val->val2;
+	value = (s64_t)val->val1 * 1000000 + val->val2;
 	value = (value / TMP007_TEMP_TH_SCALE) << 6;
 
 	if (tmp007_reg_write(drv_data, reg, value) < 0) {
@@ -47,7 +47,7 @@ int tmp007_attr_set(struct device *dev,
 }
 
 static void tmp007_gpio_callback(struct device *dev,
-				 struct gpio_callback *cb, uint32_t pins)
+				 struct gpio_callback *cb, u32_t pins)
 {
 	struct tmp007_data *drv_data =
 		CONTAINER_OF(cb, struct tmp007_data, gpio_cb);
@@ -65,7 +65,7 @@ static void tmp007_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct tmp007_data *drv_data = dev->driver_data;
-	uint16_t status;
+	u16_t status;
 
 	if (tmp007_reg_read(drv_data, TMP007_REG_STATUS, &status) < 0) {
 		return;

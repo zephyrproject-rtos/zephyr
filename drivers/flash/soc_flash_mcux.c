@@ -32,7 +32,7 @@ struct flash_priv {
 static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
-	uint32_t addr;
+	u32_t addr;
 	status_t rc;
 	int key;
 
@@ -49,7 +49,7 @@ static int flash_mcux_read(struct device *dev, off_t offset,
 				void *data, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
-	uint32_t addr;
+	u32_t addr;
 
 	/*
 	 * The MCUX supports different flash chips whose valid ranges are
@@ -67,14 +67,14 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
-	uint32_t addr;
+	u32_t addr;
 	status_t rc;
 	int key;
 
 	addr = offset + priv->config.PFlashBlockBase;
 
 	key = irq_lock();
-	rc = FLASH_Program(&priv->config, addr, (uint32_t *) data, len);
+	rc = FLASH_Program(&priv->config, addr, (u32_t *) data, len);
 	irq_unlock(key);
 
 	return (rc == kStatus_Success) ? 0 : -EINVAL;

@@ -10,26 +10,26 @@
 
 struct pwm_config {
 	NRF_TIMER_Type *timer;
-	uint8_t gpiote_base;
-	uint8_t ppi_base;
-	uint8_t map_size;
+	u8_t gpiote_base;
+	u8_t ppi_base;
+	u8_t map_size;
 };
 
 struct chan_map {
-	uint32_t pwm;
-	uint32_t pulse_cycles;
+	u32_t pwm;
+	u32_t pulse_cycles;
 };
 
 struct pwm_data {
-	uint32_t period_cycles;
+	u32_t period_cycles;
 	struct chan_map map[];
 };
 
-static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size,
-				 uint32_t pwm, uint32_t period_cycles,
-				 uint32_t pulse_cycles)
+static u32_t pwm_period_check(struct pwm_data *data, u8_t map_size,
+				 u32_t pwm, u32_t period_cycles,
+				 u32_t pulse_cycles)
 {
-	uint8_t i;
+	u8_t i;
 
 	/* allow 0% and 100% duty cycle, as it does not use PWM. */
 	if ((pulse_cycles == 0) || (pulse_cycles == period_cycles)) {
@@ -48,10 +48,10 @@ static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size,
 	return 0;
 }
 
-static uint8_t pwm_channel_map(struct pwm_data *data, uint8_t map_size,
-			       uint32_t pwm)
+static u8_t pwm_channel_map(struct pwm_data *data, u8_t map_size,
+			       u32_t pwm)
 {
-	uint8_t i;
+	u8_t i;
 
 	/* find pin, if already present */
 	for (i = 0; i < map_size; i++) {
@@ -71,16 +71,16 @@ static uint8_t pwm_channel_map(struct pwm_data *data, uint8_t map_size,
 	return i;
 }
 
-static int pwm_nrf5_sw_pin_set(struct device *dev, uint32_t pwm,
-			       uint32_t period_cycles, uint32_t pulse_cycles)
+static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
+			       u32_t period_cycles, u32_t pulse_cycles)
 {
 	struct pwm_config *config;
 	NRF_TIMER_Type *timer;
 	struct pwm_data *data;
-	uint8_t ppi_index;
-	uint8_t channel;
-	uint16_t div;
-	uint32_t ret;
+	u8_t ppi_index;
+	u8_t channel;
+	u16_t div;
+	u32_t ret;
 
 	config = (struct pwm_config *)dev->config->config_info;
 	timer = config->timer;
@@ -154,13 +154,13 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, uint32_t pwm,
 							    (pwm << 8);
 
 	/* setup PPI */
-	NRF_PPI->CH[ppi_index].EEP = (uint32_t)
+	NRF_PPI->CH[ppi_index].EEP = (u32_t)
 				     &(timer->EVENTS_COMPARE[channel]);
-	NRF_PPI->CH[ppi_index].TEP = (uint32_t)
+	NRF_PPI->CH[ppi_index].TEP = (u32_t)
 				     &(NRF_GPIOTE->TASKS_OUT[channel]);
-	NRF_PPI->CH[ppi_index + 1].EEP = (uint32_t)
+	NRF_PPI->CH[ppi_index + 1].EEP = (u32_t)
 					 &(timer->EVENTS_COMPARE[3]);
-	NRF_PPI->CH[ppi_index + 1].TEP = (uint32_t)
+	NRF_PPI->CH[ppi_index + 1].TEP = (u32_t)
 					 &(NRF_GPIOTE->TASKS_OUT[channel]);
 	NRF_PPI->CHENSET = BIT(ppi_index) | BIT(ppi_index + 1);
 
@@ -180,8 +180,8 @@ pin_set_pwm_off:
 	return 0;
 }
 
-static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, uint32_t pwm,
-					  uint64_t *cycles)
+static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
+					  u64_t *cycles)
 {
 	struct pwm_config *config;
 
@@ -213,7 +213,7 @@ static const struct pwm_config pwm_nrf5_sw_0_config = {
 
 #define PWM_0_DATA_SIZE (offsetof(struct pwm_data, map) + \
 			 sizeof(struct chan_map) * PWM_0_MAP_SIZE)
-static uint8_t pwm_nrf5_sw_0_data[PWM_0_DATA_SIZE];
+static u8_t pwm_nrf5_sw_0_data[PWM_0_DATA_SIZE];
 
 DEVICE_AND_API_INIT(pwm_nrf5_sw_0, CONFIG_PWM_NRF5_SW_0_DEV_NAME,
 		    pwm_nrf5_sw_init, pwm_nrf5_sw_0_data, &pwm_nrf5_sw_0_config,

@@ -23,17 +23,17 @@
  * @return duration in usec of signal being measured,
  *         -1 if duration exceeds DHT_SIGNAL_MAX_WAIT_DURATION
  */
-static int8_t dht_measure_signal_duration(struct dht_data *drv_data,
-					  uint32_t signal_val)
+static s8_t dht_measure_signal_duration(struct dht_data *drv_data,
+					  u32_t signal_val)
 {
-	uint32_t val;
-	uint32_t elapsed_cycles;
-	uint32_t max_wait_cycles = (uint32_t)(
-		(uint64_t)DHT_SIGNAL_MAX_WAIT_DURATION *
-		(uint64_t)sys_clock_hw_cycles_per_sec /
-		(uint64_t)USEC_PER_SEC
+	u32_t val;
+	u32_t elapsed_cycles;
+	u32_t max_wait_cycles = (u32_t)(
+		(u64_t)DHT_SIGNAL_MAX_WAIT_DURATION *
+		(u64_t)sys_clock_hw_cycles_per_sec /
+		(u64_t)USEC_PER_SEC
 	);
-	uint32_t start_cycles = k_cycle_get_32();
+	u32_t start_cycles = k_cycle_get_32();
 
 	do {
 		gpio_pin_read(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, &val);
@@ -44,18 +44,18 @@ static int8_t dht_measure_signal_duration(struct dht_data *drv_data,
 		}
 	} while (val == signal_val);
 
-	return (uint64_t)elapsed_cycles *
-	       (uint64_t)USEC_PER_SEC /
-	       (uint64_t)sys_clock_hw_cycles_per_sec;
+	return (u64_t)elapsed_cycles *
+	       (u64_t)USEC_PER_SEC /
+	       (u64_t)sys_clock_hw_cycles_per_sec;
 }
 
 static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct dht_data *drv_data = dev->driver_data;
 	int ret = 0;
-	int8_t signal_duration[DHT_DATA_BITS_NUM];
-	int8_t max_duration, min_duration, avg_duration;
-	uint8_t buf[5];
+	s8_t signal_duration[DHT_DATA_BITS_NUM];
+	s8_t max_duration, min_duration, avg_duration;
+	u8_t buf[5];
 	unsigned int i, j;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -122,7 +122,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 			max_duration = signal_duration[i];
 		}
 	}
-	avg_duration = ((int16_t)min_duration + (int16_t)max_duration) / 2;
+	avg_duration = ((s16_t)min_duration + (s16_t)max_duration) / 2;
 
 	/* store bits in buf */
 	j = 0;
@@ -179,7 +179,7 @@ static int dht_channel_get(struct device *dev,
 	 * use both integral and decimal data bytes; resulted 16bit data has
 	 * a resolution of 0.1 units
 	 */
-	int16_t raw_val, sign;
+	s16_t raw_val, sign;
 
 	if (chan == SENSOR_CHAN_HUMIDITY) {
 		raw_val = (drv_data->sample[0] << 8) | drv_data->sample[1];

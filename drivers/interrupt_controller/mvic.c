@@ -40,7 +40,7 @@
 #include <arch/x86/irq_controller.h>
 #include <inttypes.h>
 
-static inline uint32_t compute_ioregsel(unsigned int irq)
+static inline u32_t compute_ioregsel(unsigned int irq)
 {
 	unsigned int low_nibble;
 	unsigned int high_nibble;
@@ -62,10 +62,10 @@ static inline uint32_t compute_ioregsel(unsigned int irq)
  *
  * @returns N/A
  */
-static void _mvic_rte_set(unsigned int irq, uint32_t value)
+static void _mvic_rte_set(unsigned int irq, u32_t value)
 {
 	int key; /* interrupt lock level */
-	uint32_t regsel;
+	u32_t regsel;
 
 	__ASSERT(!(value & ~MVIC_IOWIN_SUPPORTED_BITS_MASK),
 		 "invalid IRQ flags %" PRIx32 " for irq %d", value, irq);
@@ -92,10 +92,10 @@ static void _mvic_rte_set(unsigned int irq, uint32_t value)
  *
  * @returns N/A
  */
-static void _mvic_rte_update(unsigned int irq, uint32_t value, uint32_t mask)
+static void _mvic_rte_update(unsigned int irq, u32_t value, u32_t mask)
 {
 	int key;
-	uint32_t regsel, old_value, updated_value;
+	u32_t regsel, old_value, updated_value;
 
 	__ASSERT(!(value & ~MVIC_IOWIN_SUPPORTED_BITS_MASK),
 		 "invalid IRQ flags %" PRIx32 " for irq %d", value, irq);
@@ -177,7 +177,7 @@ void _arch_irq_disable(unsigned int irq)
 
 
 void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
-				 uint32_t flags)
+				 u32_t flags)
 {
 	ARG_UNUSED(vector);
 

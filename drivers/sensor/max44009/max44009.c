@@ -11,8 +11,8 @@
 
 #include "max44009.h"
 
-static int max44009_reg_read(struct max44009_data *drv_data, uint8_t reg,
-			     uint8_t *val, bool send_stop)
+static int max44009_reg_read(struct max44009_data *drv_data, u8_t reg,
+			     u8_t *val, bool send_stop)
 {
 	struct i2c_msg msgs[2] = {
 		{
@@ -38,20 +38,20 @@ static int max44009_reg_read(struct max44009_data *drv_data, uint8_t reg,
 	return 0;
 }
 
-static int max44009_reg_write(struct max44009_data *drv_data, uint8_t reg,
-			      uint8_t val)
+static int max44009_reg_write(struct max44009_data *drv_data, u8_t reg,
+			      u8_t val)
 {
-	uint8_t tx_buf[2] = {reg, val};
+	u8_t tx_buf[2] = {reg, val};
 
 	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
 			 MAX44009_I2C_ADDRESS);
 }
 
-static int max44009_reg_update(struct max44009_data *drv_data, uint8_t reg,
-			       uint8_t mask, uint8_t val)
+static int max44009_reg_update(struct max44009_data *drv_data, u8_t reg,
+			       u8_t mask, u8_t val)
 {
-	uint8_t old_val = 0;
-	uint8_t new_val = 0;
+	u8_t old_val = 0;
+	u8_t new_val = 0;
 
 	if (max44009_reg_read(drv_data, reg, &old_val, true) != 0) {
 		return -EIO;
@@ -68,8 +68,8 @@ static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
 			     const struct sensor_value *val)
 {
 	struct max44009_data *drv_data = dev->driver_data;
-	uint8_t value;
-	uint32_t cr;
+	u8_t value;
+	u32_t cr;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
 		return -ENOTSUP;
@@ -108,7 +108,7 @@ static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
 static int max44009_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct max44009_data *drv_data = dev->driver_data;
-	uint8_t val_h, val_l;
+	u8_t val_h, val_l;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT);
 
@@ -124,7 +124,7 @@ static int max44009_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -EIO;
 	}
 
-	drv_data->sample = ((uint16_t)val_h) << 8;
+	drv_data->sample = ((u16_t)val_h) << 8;
 	drv_data->sample += val_l;
 
 	return 0;
@@ -134,7 +134,7 @@ static int max44009_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct max44009_data *drv_data = dev->driver_data;
-	uint32_t uval;
+	u32_t uval;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
 		return -ENOTSUP;

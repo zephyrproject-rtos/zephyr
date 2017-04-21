@@ -13,16 +13,16 @@
 
 #define MASK_2_BITS	0x3
 
-static int pinmux_set(struct device *dev, uint32_t pin,
-			  uint32_t func)
+static int pinmux_set(struct device *dev, u32_t pin,
+			  u32_t func)
 {
 	ARG_UNUSED(dev);
 
 	return qm_pmux_select(pin, func) == 0 ? 0 : -EIO;
 }
 
-static int pinmux_get(struct device *dev, uint32_t pin,
-			  uint32_t *func)
+static int pinmux_get(struct device *dev, u32_t pin,
+			  u32_t *func)
 {
 	ARG_UNUSED(dev);
 
@@ -31,40 +31,40 @@ static int pinmux_get(struct device *dev, uint32_t pin,
 	 * 2 bits to set the mode (A, B, C, or D).  As such we only get 16
 	 * pins per register.
 	 */
-	uint32_t reg_offset = pin >> 4;
+	u32_t reg_offset = pin >> 4;
 
 	/* The pin offset within the register */
-	uint32_t pin_no = pin % 16;
+	u32_t pin_no = pin % 16;
 
 	/*
 	 * Now figure out what is the full address for the register
 	 * we are looking for.
 	 */
-	volatile uint32_t *mux_register = &QM_SCSS_PMUX->pmux_sel[reg_offset];
+	volatile u32_t *mux_register = &QM_SCSS_PMUX->pmux_sel[reg_offset];
 
 	/*
 	 * MASK_2_BITS (the value of which is 3) is used because there are
 	 * 2 bits for the mode of each pin.
 	 */
-	uint32_t pin_mask = MASK_2_BITS << (pin_no << 1);
-	uint32_t mode_mask = *mux_register & pin_mask;
-	uint32_t mode = mode_mask >> (pin_no << 1);
+	u32_t pin_mask = MASK_2_BITS << (pin_no << 1);
+	u32_t mode_mask = *mux_register & pin_mask;
+	u32_t mode = mode_mask >> (pin_no << 1);
 
 	*func = mode;
 
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, uint32_t pin,
-			     uint8_t func)
+static int pinmux_pullup(struct device *dev, u32_t pin,
+			     u8_t func)
 {
 	ARG_UNUSED(dev);
 
 	return qm_pmux_pullup_en(pin, func) == 0 ? 0 : -EIO;
 }
 
-static int pinmux_input(struct device *dev, uint32_t pin,
-			    uint8_t func)
+static int pinmux_input(struct device *dev, u32_t pin,
+			    u8_t func)
 {
 	ARG_UNUSED(dev);
 

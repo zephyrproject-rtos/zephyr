@@ -55,13 +55,13 @@
  */
 struct line_buf {
 	char buf[TELNET_LINE_SIZE];
-	uint16_t len;
+	u16_t len;
 };
 
 struct line_buf_rb {
 	struct line_buf l_bufs[TELNET_LINES];
-	uint16_t line_in;
-	uint16_t line_out;
+	u16_t line_in;
+	u16_t line_out;
 };
 
 static struct line_buf_rb telnet_rb;
@@ -160,7 +160,7 @@ static void telnet_rb_switch(void)
 
 static inline struct line_buf *telnet_rb_get_line_out(void)
 {
-	uint16_t out = telnet_rb.line_out;
+	u16_t out = telnet_rb.line_out;
 
 	telnet_rb.line_out++;
 	if (telnet_rb.line_out == TELNET_LINES) {
@@ -256,7 +256,7 @@ static int telnet_console_out_nothing(int c)
 	return c;
 }
 
-static inline void telnet_command_send_reply(uint8_t *msg, uint16_t len)
+static inline void telnet_command_send_reply(u8_t *msg, u16_t len)
 {
 	net_pkt_append(out_pkt, len, msg, K_FOREVER);
 
@@ -270,7 +270,7 @@ static inline void telnet_reply_ay_command(void)
 {
 	static const char alive[24] = "Zephyr at your service\r\n";
 
-	telnet_command_send_reply((uint8_t *)alive, 24);
+	telnet_command_send_reply((u8_t *)alive, 24);
 }
 
 static inline void telnet_reply_do_command(void)
@@ -284,7 +284,7 @@ static inline void telnet_reply_do_command(void)
 		break;
 	}
 
-	telnet_command_send_reply((uint8_t *)&telnet_cmd,
+	telnet_command_send_reply((u8_t *)&telnet_cmd,
 				  sizeof(struct telnet_simple_command));
 }
 
@@ -354,7 +354,7 @@ static inline bool telnet_handle_command(struct net_pkt *pkt)
 static inline void telnet_handle_input(struct net_pkt *pkt)
 {
 	struct console_input *input;
-	uint16_t len, offset, pos;
+	u16_t len, offset, pos;
 
 	len = net_pkt_appdatalen(pkt);
 	if (len > CONSOLE_MAX_LINE_LEN || len < TELNET_MIN_MSG) {
@@ -503,7 +503,7 @@ error:
 }
 
 void telnet_register_input(struct k_fifo *avail, struct k_fifo *lines,
-			   uint8_t (*completion)(char *str, uint8_t len))
+			   u8_t (*completion)(char *str, u8_t len))
 {
 	ARG_UNUSED(completion);
 

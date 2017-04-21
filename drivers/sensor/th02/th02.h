@@ -27,8 +27,8 @@
 
 struct th02_data {
 	struct device *i2c;
-	uint16_t t_sample;
-	uint16_t rh_sample;
+	u16_t t_sample;
+	u16_t rh_sample;
 };
 
 #define SYS_LOG_DOMAIN "TH02"

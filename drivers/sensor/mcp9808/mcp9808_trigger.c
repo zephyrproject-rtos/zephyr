@@ -14,9 +14,9 @@
 
 #include "mcp9808.h"
 
-static int mcp9808_reg_write(struct mcp9808_data *data, uint8_t reg, uint16_t val)
+static int mcp9808_reg_write(struct mcp9808_data *data, u8_t reg, u16_t val)
 {
-	uint16_t be_val = sys_cpu_to_be16(val);
+	u16_t be_val = sys_cpu_to_be16(val);
 
 	struct i2c_msg msgs[2] = {
 		{
@@ -25,7 +25,7 @@ static int mcp9808_reg_write(struct mcp9808_data *data, uint8_t reg, uint16_t va
 			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
 		},
 		{
-			.buf = (uint8_t *) &be_val,
+			.buf = (u8_t *) &be_val,
 			.len = 2,
 			.flags = I2C_MSG_WRITE | I2C_MSG_STOP,
 		},
@@ -34,10 +34,10 @@ static int mcp9808_reg_write(struct mcp9808_data *data, uint8_t reg, uint16_t va
 	return i2c_transfer(data->i2c_master, msgs, 2, data->i2c_slave_addr);
 }
 
-static int mcp9808_reg_update(struct mcp9808_data *data, uint8_t reg,
-			      uint16_t mask, uint16_t val)
+static int mcp9808_reg_update(struct mcp9808_data *data, u8_t reg,
+			      u16_t mask, u16_t val)
 {
-	uint16_t old_val, new_val;
+	u16_t old_val, new_val;
 
 	if (mcp9808_reg_read(data, reg, &old_val) < 0) {
 		return -EIO;
@@ -58,9 +58,9 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 		     const struct sensor_value *val)
 {
 	struct mcp9808_data *data = dev->driver_data;
-	uint16_t reg_val = 0;
-	uint8_t reg_addr;
-	int32_t val2;
+	u16_t reg_val = 0;
+	u8_t reg_addr;
+	s32_t val2;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_TEMP);
 
@@ -101,7 +101,7 @@ int mcp9808_trigger_set(struct device *dev,
 #ifdef CONFIG_MCP9808_TRIGGER_OWN_THREAD
 
 static void mcp9808_gpio_cb(struct device *dev,
-			    struct gpio_callback *cb, uint32_t pins)
+			    struct gpio_callback *cb, u32_t pins)
 {
 	struct mcp9808_data *data =
 		CONTAINER_OF(cb, struct mcp9808_data, gpio_cb);
@@ -131,7 +131,7 @@ static char __stack mcp9808_thread_stack[CONFIG_MCP9808_THREAD_STACK_SIZE];
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 
 static void mcp9808_gpio_cb(struct device *dev,
-			    struct gpio_callback *cb, uint32_t pins)
+			    struct gpio_callback *cb, u32_t pins)
 {
 	struct mcp9808_data *data =
 		CONTAINER_OF(cb, struct mcp9808_data, gpio_cb);

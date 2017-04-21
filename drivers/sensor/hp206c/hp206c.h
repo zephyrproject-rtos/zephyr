@@ -78,7 +78,7 @@ struct hp206c_device_data {
 #error "driver needs millisecond tick granularity"
 #endif
 	struct k_timer tmr;
-	uint8_t osr;
+	u8_t osr;
 };
 
 #define SYS_LOG_DOMAIN "HP206C"

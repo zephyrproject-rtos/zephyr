@@ -50,13 +50,13 @@ static int counter_dtmr_cmsdk_apb_stop(struct device *dev)
 	return 0;
 }
 
-static uint32_t counter_dtmr_cmsdk_apb_read(struct device *dev)
+static u32_t counter_dtmr_cmsdk_apb_read(struct device *dev)
 {
 	const struct counter_dtmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;
 
 	/* Return Counter Value */
-	uint32_t value = 0;
+	u32_t value = 0;
 
 	value = DUALTIMER_MAX_RELOAD - cfg->dtimer->timer1value;
 
@@ -65,7 +65,7 @@ static uint32_t counter_dtmr_cmsdk_apb_read(struct device *dev)
 
 static int counter_dtmr_cmsdk_apb_set_alarm(struct device *dev,
 					   counter_callback_t callback,
-					   uint32_t count, void *user_data)
+					   u32_t count, void *user_data)
 {
 	return -ENODEV;
 }

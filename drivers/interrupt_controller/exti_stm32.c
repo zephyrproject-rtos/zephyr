@@ -38,17 +38,17 @@
 /* 10.3.7 EXTI register map */
 struct stm32_exti {
 	/* EXTI_IMR */
-	uint32_t imr;
+	u32_t imr;
 	/* EXTI_EMR */
-	uint32_t emr;
+	u32_t emr;
 	/* EXTI_RTSR */
-	uint32_t rtsr;
+	u32_t rtsr;
 	/* EXTI_FTSR */
-	uint32_t ftsr;
+	u32_t ftsr;
 	/* EXTI_SWIER */
-	uint32_t swier;
+	u32_t swier;
 	/* EXTI_PR */
-	uint32_t pr;
+	u32_t pr;
 };
 
 /* wrapper for user callback */

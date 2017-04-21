@@ -20,11 +20,11 @@
 
 static struct adxl362_data adxl362_data;
 
-static int adxl362_set_reg(struct device *dev, uint16_t register_value,
-			   uint8_t register_address, uint8_t count)
+static int adxl362_set_reg(struct device *dev, u16_t register_value,
+			   u8_t register_address, u8_t count)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
-	uint8_t buffer[4];
+	u8_t buffer[4];
 	int ret;
 
 	buffer[0] = ADXL362_WRITE_REG;
@@ -49,12 +49,12 @@ static int adxl362_set_reg(struct device *dev, uint16_t register_value,
 	return 0;
 }
 
-static int adxl362_get_reg(struct device *dev, uint8_t *read_buf,
-			   uint8_t register_address, uint8_t count)
+static int adxl362_get_reg(struct device *dev, u8_t *read_buf,
+			   u8_t register_address, u8_t count)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
-	uint8_t buffer[4];
-	uint8_t index;
+	u8_t buffer[4];
+	u8_t index;
 	int ret;
 
 	buffer[0] = ADXL362_READ_REG;
@@ -90,10 +90,10 @@ static int adxl362_software_reset(struct device *dev)
 			       ADXL362_REG_SOFT_RESET, 1);
 }
 
-static int adxl362_set_power_mode(struct device *dev, uint8_t mode)
+static int adxl362_set_power_mode(struct device *dev, u8_t mode)
 {
-	uint8_t old_power_ctl;
-	uint8_t new_power_ctl;
+	u8_t old_power_ctl;
+	u8_t new_power_ctl;
 	int ret;
 
 	ret = adxl362_get_reg(dev, &old_power_ctl, ADXL362_REG_POWER_CTL, 1);
@@ -112,12 +112,12 @@ static int adxl362_set_power_mode(struct device *dev, uint8_t mode)
  * Output data rate map with allowed frequencies:
  * freq = freq_int + freq_milli / 1000
  *
- * Since we don't need a finer frequency resolution than milliHz, use uint16_t
+ * Since we don't need a finer frequency resolution than milliHz, use u16_t
  * to save some flash.
  */
 static const struct {
-	uint16_t freq_int;
-	uint16_t freq_milli; /* User should convert to uHz before setting the
+	u16_t freq_int;
+	u16_t freq_milli; /* User should convert to uHz before setting the
 			      * SENSOR_ATTR_SAMPLING_FREQUENCY attribute.
 			      */
 } adxl362_odr_map[] = {
@@ -129,7 +129,7 @@ static const struct {
 	{ 400, 0 },
 };
 
-static int adxl362_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
+static int adxl362_freq_to_odr_val(u16_t freq_int, u16_t freq_milli)
 {
 	size_t i;
 
@@ -150,15 +150,15 @@ static int adxl362_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 }
 
 static const struct adxl362_range {
-	uint16_t range;
-	uint8_t reg_val;
+	u16_t range;
+	u8_t reg_val;
 } adxl362_acc_range_map[] = {
 	{2,	ADXL362_RANGE_2G},
 	{4,	ADXL362_RANGE_4G},
 	{8,	ADXL362_RANGE_8G},
 };
 
-static int32_t adxl362_range_to_reg_val(uint16_t range)
+static s32_t adxl362_range_to_reg_val(u16_t range)
 {
 	int i;
 
@@ -171,11 +171,11 @@ static int32_t adxl362_range_to_reg_val(uint16_t range)
 	return -EINVAL;
 }
 
-static int adxl362_set_range(struct device *dev, uint8_t range)
+static int adxl362_set_range(struct device *dev, u8_t range)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
-	uint8_t old_filter_ctl;
-	uint8_t new_filter_ctl;
+	u8_t old_filter_ctl;
+	u8_t new_filter_ctl;
 	int ret;
 
 	ret = adxl362_get_reg(dev, &old_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
@@ -194,10 +194,10 @@ static int adxl362_set_range(struct device *dev, uint8_t range)
 	return 0;
 }
 
-static int adxl362_set_output_rate(struct device *dev, uint8_t out_rate)
+static int adxl362_set_output_rate(struct device *dev, u8_t out_rate)
 {
-	uint8_t old_filter_ctl;
-	uint8_t new_filter_ctl;
+	u8_t old_filter_ctl;
+	u8_t new_filter_ctl;
 
 	adxl362_get_reg(dev, &old_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
 	new_filter_ctl = old_filter_ctl & ~ADXL362_FILTER_CTL_ODR(0x7);
@@ -271,9 +271,9 @@ static int adxl362_attr_set(struct device *dev, enum sensor_channel chan,
 }
 
 
-static int adxl362_read_temperature(struct device *dev, int32_t *temp_celsius)
+static int adxl362_read_temperature(struct device *dev, s32_t *temp_celsius)
 {
-	uint8_t raw_temp_data[2];
+	u8_t raw_temp_data[2];
 	int ret;
 
 	/* Reads the temperature of the device. */
@@ -282,16 +282,16 @@ static int adxl362_read_temperature(struct device *dev, int32_t *temp_celsius)
 		return ret;
 	}
 
-	*temp_celsius = (int32_t)(raw_temp_data[1] << 8) + raw_temp_data[0];
+	*temp_celsius = (s32_t)(raw_temp_data[1] << 8) + raw_temp_data[0];
 	*temp_celsius *= 65;
 
 	return ret;
 }
 
-static int adxl362_fifo_setup(struct device *dev, uint8_t mode,
-			      uint16_t water_mark_lvl, uint8_t en_temp_read)
+static int adxl362_fifo_setup(struct device *dev, u8_t mode,
+			      u16_t water_mark_lvl, u8_t en_temp_read)
 {
-	uint8_t write_val;
+	u8_t write_val;
 	int ret;
 
 	write_val = ADXL362_FIFO_CTL_FIFO_MODE(mode) |
@@ -311,12 +311,12 @@ static int adxl362_fifo_setup(struct device *dev, uint8_t mode,
 }
 
 static int adxl362_setup_activity_detection(struct device *dev,
-					    uint8_t ref_or_abs,
-					    uint16_t threshold,
-					    uint8_t time)
+					    u8_t ref_or_abs,
+					    u16_t threshold,
+					    u8_t time)
 {
-	uint8_t old_act_inact_reg;
-	uint8_t new_act_inact_reg;
+	u8_t old_act_inact_reg;
+	u8_t new_act_inact_reg;
 	int ret;
 
 	/**
@@ -369,12 +369,12 @@ static int adxl362_setup_activity_detection(struct device *dev,
 }
 
 static int adxl362_setup_inactivity_detection(struct device *dev,
-					      uint8_t ref_or_abs,
-					      uint16_t threshold,
-					      uint16_t time)
+					      u8_t ref_or_abs,
+					      u16_t threshold,
+					      u16_t time)
 {
-	uint8_t old_act_inact_reg;
-	uint8_t new_act_inact_reg;
+	u8_t old_act_inact_reg;
+	u8_t new_act_inact_reg;
 	int ret;
 
 	/* Configure motion threshold and inactivity timer. */
@@ -414,8 +414,8 @@ static int adxl362_setup_inactivity_detection(struct device *dev,
 static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct adxl362_data *data = dev->driver_data;
-	uint8_t buf[2];
-	int16_t x, y, z;
+	u8_t buf[2];
+	s16_t x, y, z;
 	int ret;
 
 	ret = adxl362_get_reg(dev, buf, ADXL362_REG_XDATA_L, 2);
@@ -437,9 +437,9 @@ static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	z = (buf[1] << 8) + buf[0];
 
-	data->acc_x = (int32_t)x * (adxl362_data.selected_range / 2);
-	data->acc_y = (int32_t)y * (adxl362_data.selected_range / 2);
-	data->acc_z = (int32_t)z * (adxl362_data.selected_range / 2);
+	data->acc_x = (s32_t)x * (adxl362_data.selected_range / 2);
+	data->acc_y = (s32_t)y * (adxl362_data.selected_range / 2);
+	data->acc_z = (s32_t)z * (adxl362_data.selected_range / 2);
 
 	ret = adxl362_read_temperature(dev, &data->temp);
 	if (ret) {
@@ -577,7 +577,7 @@ static int adxl362_init(struct device *dev)
 {
 	struct adxl362_data *data = dev->driver_data;
 	struct spi_config spi_config;
-	uint8_t value;
+	u8_t value;
 	int ret;
 
 	data->spi = device_get_binding(CONFIG_ADXL362_SPI_DEV_NAME);

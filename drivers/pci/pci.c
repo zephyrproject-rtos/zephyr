@@ -105,12 +105,12 @@
 
 struct lookup_data {
 	struct pci_dev_info info;
-	uint32_t bus:9;
-	uint32_t dev:6;
-	uint32_t func:4;
-	uint32_t baridx:3;
-	uint32_t barofs:3;
-	uint32_t unused:7;
+	u32_t bus:9;
+	u32_t dev:6;
+	u32_t func:4;
+	u32_t baridx:3;
+	u32_t barofs:3;
+	u32_t unused:7;
 };
 
 static struct lookup_data __noinit lookup;
@@ -123,9 +123,9 @@ static struct lookup_data __noinit lookup;
  */
 
 static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
-							uint32_t *config)
+							u32_t *config)
 {
-	uint32_t old_value;
+	u32_t old_value;
 
 	/* save the current setting */
 	pci_read(DEFAULT_PCI_CONTROLLER,
@@ -136,7 +136,7 @@ static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
 	/* write to the BAR to see how large it is */
 	pci_write(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
-			sizeof(uint32_t),
+			sizeof(u32_t),
 			0xffffffff);
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
@@ -172,11 +172,11 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 				     struct pci_dev_info *dev_info,
 				     int max_bars)
 {
-	uint32_t bar_value;
-	uint32_t bar_config;
-	uint32_t bar_hival;
-	uint32_t addr;
-	uint32_t mask;
+	u32_t bar_value;
+	u32_t bar_config;
+	u32_t bar_hival;
+	u32_t addr;
+	u32_t mask;
 
 	pci_ctrl_addr.field.reg = 4 + lookup.barofs;
 
@@ -231,7 +231,7 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 					struct pci_dev_info *dev_info)
 {
 	static union pci_dev pci_dev_header;
-	uint32_t pci_data;
+	u32_t pci_data;
 	int max_bars;
 
 	/* verify first if there is a valid device at this point */
@@ -408,10 +408,10 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 }
 #endif /* CONFIG_PCI_ENUMERATION */
 
-static void pci_set_command_bits(struct pci_dev_info *dev_info, uint32_t bits)
+static void pci_set_command_bits(struct pci_dev_info *dev_info, u32_t bits)
 {
 	union pci_addr_reg pci_ctrl_addr;
-	uint32_t pci_data;
+	u32_t pci_data;
 
 	pci_ctrl_addr.value = 0;
 	pci_ctrl_addr.field.func = dev_info->function;
@@ -425,14 +425,14 @@ static void pci_set_command_bits(struct pci_dev_info *dev_info, uint32_t bits)
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
-			sizeof(uint16_t),
+			sizeof(u16_t),
 			&pci_data);
 
 	pci_data = pci_data | bits;
 
 	pci_write(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
-			sizeof(uint16_t),
+			sizeof(u16_t),
 			pci_data);
 }
 
@@ -469,8 +469,8 @@ void pci_show(struct pci_dev_info *dev_info)
 		dev_info->function,
 		dev_info->bar,
 		(dev_info->mem_type == BAR_SPACE_MEM) ? "MEM" : "I/O",
-		(uint32_t)dev_info->addr,
-		(uint32_t)(dev_info->addr + dev_info->size - 1),
+		(u32_t)dev_info->addr,
+		(u32_t)(dev_info->addr + dev_info->size - 1),
 		dev_info->irq);
 }
 #endif /* CONFIG_PCI_DEBUG */

@@ -11,7 +11,7 @@
 
 #include "lis3dh.h"
 
-static void lis3dh_convert(struct sensor_value *val, int64_t raw_val)
+static void lis3dh_convert(struct sensor_value *val, s64_t raw_val)
 {
 	/* val = raw_val * LIS3DH_ACCEL_SCALE / (10^6 * (2^16 - 1)) */
 	raw_val = raw_val * LIS3DH_ACCEL_SCALE / 1000000;
@@ -51,7 +51,7 @@ static int lis3dh_channel_get(struct device *dev,
 int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct lis3dh_data *drv_data = dev->driver_data;
-	uint8_t buf[6];
+	u8_t buf[6];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
 			chan == SENSOR_CHAN_ACCEL_XYZ);

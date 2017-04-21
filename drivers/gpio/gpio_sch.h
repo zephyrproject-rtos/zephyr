@@ -24,9 +24,9 @@
 #define GPIO_SCH_REG_GTS		(0x1C)
 
 struct gpio_sch_config {
-	uint32_t regs;
-	uint8_t bits;
-	uint8_t stride[3];
+	u32_t regs;
+	u8_t bits;
+	u8_t stride[3];
 };
 
 #define GPIO_SCH_POLLING_STACK_SIZE 	1024
@@ -38,13 +38,13 @@ struct gpio_sch_data {
 	struct k_timer poll_timer;
 
 	struct {
-		uint32_t gtpe;
-		uint32_t gtne;
+		u32_t gtpe;
+		u32_t gtne;
 	} int_regs;
 
-	uint32_t cb_enabled;
-	uint8_t poll;
-	uint8_t stride[3];
+	u32_t cb_enabled;
+	u8_t poll;
+	u8_t stride[3];
 };
 
 #endif /* __GPIO_SCH_H__ */

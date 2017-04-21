@@ -24,19 +24,19 @@ struct gpio_mcux_data {
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
-	uint32_t pin_callback_enables;
+	u32_t pin_callback_enables;
 };
 
 static int gpio_mcux_configure(struct device *dev,
-			       int access_op, uint32_t pin, int flags)
+			       int access_op, u32_t pin, int flags)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
 	port_interrupt_t port_interrupt = 0;
-	uint32_t mask = 0;
-	uint32_t pcr = 0;
-	uint8_t i;
+	u32_t mask = 0;
+	u32_t pcr = 0;
+	u8_t i;
 
 	/* Check for an invalid pin configuration */
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
@@ -125,7 +125,7 @@ static int gpio_mcux_configure(struct device *dev,
 }
 
 static int gpio_mcux_write(struct device *dev,
-			   int access_op, uint32_t pin, uint32_t value)
+			   int access_op, u32_t pin, u32_t value)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
@@ -153,7 +153,7 @@ static int gpio_mcux_write(struct device *dev,
 }
 
 static int gpio_mcux_read(struct device *dev,
-			  int access_op, uint32_t pin, uint32_t *value)
+			  int access_op, u32_t pin, u32_t *value)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
@@ -180,7 +180,7 @@ static int gpio_mcux_manage_callback(struct device *dev,
 }
 
 static int gpio_mcux_enable_callback(struct device *dev,
-				     int access_op, uint32_t pin)
+				     int access_op, u32_t pin)
 {
 	struct gpio_mcux_data *data = dev->driver_data;
 
@@ -194,7 +194,7 @@ static int gpio_mcux_enable_callback(struct device *dev,
 }
 
 static int gpio_mcux_disable_callback(struct device *dev,
-				      int access_op, uint32_t pin)
+				      int access_op, u32_t pin)
 {
 	struct gpio_mcux_data *data = dev->driver_data;
 
@@ -212,7 +212,7 @@ static void gpio_mcux_port_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct gpio_mcux_config *config = dev->config->config_info;
 	struct gpio_mcux_data *data = dev->driver_data;
-	uint32_t enabled_int, int_status;
+	u32_t enabled_int, int_status;
 
 	int_status = config->port_base->ISFR;
 	enabled_int = int_status & data->pin_callback_enables;

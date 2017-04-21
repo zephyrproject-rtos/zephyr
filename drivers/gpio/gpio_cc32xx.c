@@ -42,7 +42,7 @@ struct gpio_cc32xx_data {
 	/* list of registered callbacks */
 	sys_slist_t callbacks;
 	/* callback enable pin bitmask */
-	uint32_t pin_callback_enables;
+	u32_t pin_callback_enables;
 };
 
 #define DEV_CFG(dev) \
@@ -51,7 +51,7 @@ struct gpio_cc32xx_data {
 	((struct gpio_cc32xx_data *)(dev)->driver_data)
 
 static inline int gpio_cc32xx_config(struct device *port,
-				   int access_op, uint32_t pin, int flags)
+				   int access_op, u32_t pin, int flags)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
 	unsigned long port_base = gpio_config->port_base;
@@ -92,7 +92,7 @@ static inline int gpio_cc32xx_config(struct device *port,
 }
 
 static inline int gpio_cc32xx_write(struct device *port,
-				    int access_op, uint32_t pin, uint32_t value)
+				    int access_op, u32_t pin, u32_t value)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
 	unsigned long port_base = gpio_config->port_base;
@@ -111,7 +111,7 @@ static inline int gpio_cc32xx_write(struct device *port,
 }
 
 static inline int gpio_cc32xx_read(struct device *port,
-				   int access_op, uint32_t pin, uint32_t *value)
+				   int access_op, u32_t pin, u32_t *value)
 {
 	const struct gpio_cc32xx_config *gpio_config = DEV_CFG(port);
 	unsigned long port_base = gpio_config->port_base;
@@ -142,7 +142,7 @@ static int gpio_cc32xx_manage_callback(struct device *dev,
 
 
 static int gpio_cc32xx_enable_callback(struct device *dev,
-				    int access_op, uint32_t pin)
+				    int access_op, u32_t pin)
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
@@ -157,7 +157,7 @@ static int gpio_cc32xx_enable_callback(struct device *dev,
 
 
 static int gpio_cc32xx_disable_callback(struct device *dev,
-				     int access_op, uint32_t pin)
+				     int access_op, u32_t pin)
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
@@ -175,10 +175,10 @@ static void gpio_cc32xx_port_isr(void *arg)
 	struct device *dev = arg;
 	const struct gpio_cc32xx_config *config = DEV_CFG(dev);
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
-	uint32_t enabled_int, int_status;
+	u32_t enabled_int, int_status;
 
 	/* See which interrupts triggered: */
-	int_status  = (uint32_t)MAP_GPIOIntStatus(config->port_base, 1);
+	int_status  = (u32_t)MAP_GPIOIntStatus(config->port_base, 1);
 
 	enabled_int = int_status & data->pin_callback_enables;
 

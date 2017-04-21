@@ -41,7 +41,7 @@ static void gpio_stm32_isr(int line, void *arg)
  * @brief Configure pin or port
  */
 static int gpio_stm32_config(struct device *dev, int access_op,
-			     uint32_t pin, int flags)
+			     u32_t pin, int flags)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 	int pincfg;
@@ -93,7 +93,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
  * @brief Set the pin or port output
  */
 static int gpio_stm32_write(struct device *dev, int access_op,
-			    uint32_t pin, uint32_t value)
+			    u32_t pin, u32_t value)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 
@@ -108,7 +108,7 @@ static int gpio_stm32_write(struct device *dev, int access_op,
  * @brief Read the pin or port status
  */
 static int gpio_stm32_read(struct device *dev, int access_op,
-			   uint32_t pin, uint32_t *value)
+			   u32_t pin, u32_t *value)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
 
@@ -133,7 +133,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 }
 
 static int gpio_stm32_enable_callback(struct device *dev,
-				      int access_op, uint32_t pin)
+				      int access_op, u32_t pin)
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
@@ -147,7 +147,7 @@ static int gpio_stm32_enable_callback(struct device *dev,
 }
 
 static int gpio_stm32_disable_callback(struct device *dev,
-				       int access_op, uint32_t pin)
+				       int access_op, u32_t pin)
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
@@ -203,7 +203,7 @@ static int gpio_stm32_init(struct device *device)
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
 static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-	.base = (uint32_t *)__base_addr,				\
+	.base = (u32_t *)__base_addr,				\
 	.port = __port,							\
 	.pclken = { .bus = __bus, .enr = __cenr }			\
 };									\
@@ -224,7 +224,7 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 /* TODO: Change F1 to work similarly to F4 */
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __clock) \
 static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-	.base = (uint32_t *)__base_addr,				\
+	.base = (u32_t *)__base_addr,				\
 	.port = __port,							\
 	.clock_subsys = UINT_TO_POINTER(__clock)			\
 };									\
@@ -242,7 +242,7 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr)	\
 static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-	.base = (uint32_t *)__base_addr,				\
+	.base = (u32_t *)__base_addr,				\
 	.port = __port,							\
 	.pclken = { .bus = STM32F4X_CLOCK_BUS_AHB1, .enr = __cenr },	\
 };									\

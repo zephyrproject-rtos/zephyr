@@ -17,7 +17,7 @@
 static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
-	uint8_t msb, lsb;
+	u8_t msb, lsb;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -41,11 +41,11 @@ static int isl29035_channel_get(struct device *dev,
 				struct sensor_value *val)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
-	uint64_t tmp;
+	u64_t tmp;
 
 #if CONFIG_ISL29035_MODE_ALS
 	/* val = sample_val * lux_range / (2 ^ adc_data_bits) */
-	tmp = (uint64_t)drv_data->data_sample * ISL29035_LUX_RANGE;
+	tmp = (u64_t)drv_data->data_sample * ISL29035_LUX_RANGE;
 	val->val1 = tmp >> ISL29035_ADC_DATA_BITS;
 	tmp = (tmp & ISL29035_ADC_DATA_MASK) * 1000000;
 	val->val2 = tmp >> ISL29035_ADC_DATA_BITS;

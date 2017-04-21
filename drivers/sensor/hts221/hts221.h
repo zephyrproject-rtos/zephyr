@@ -39,17 +39,17 @@ static const char * const hts221_odr_strings[] = {
 
 struct hts221_data {
 	struct device *i2c;
-	int16_t rh_sample;
-	int16_t t_sample;
+	s16_t rh_sample;
+	s16_t t_sample;
 
-	uint8_t h0_rh_x2;
-	uint8_t h1_rh_x2;
-	uint16_t t0_degc_x8;
-	uint16_t t1_degc_x8;
-	int16_t h0_t0_out;
-	int16_t h1_t0_out;
-	int16_t t0_out;
-	int16_t t1_out;
+	u8_t h0_rh_x2;
+	u8_t h1_rh_x2;
+	u16_t t0_degc_x8;
+	u16_t t1_degc_x8;
+	s16_t h0_t0_out;
+	s16_t h1_t0_out;
+	s16_t t0_out;
+	s16_t t1_out;
 
 #ifdef CONFIG_HTS221_TRIGGER
 	struct device *gpio;

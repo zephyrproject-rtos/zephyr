@@ -13,12 +13,12 @@
 #include <misc/__assert.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-static uint8_t m16src_ref;
-static uint8_t m16src_grd;
+static u8_t m16src_ref;
+static u8_t m16src_grd;
 
 static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
-	uint32_t imask;
+	u32_t imask;
 	bool blocking;
 
 	/* If the clock is already started then just increment refcount.
@@ -48,7 +48,7 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 	/* If blocking then spin-wait in CPU sleep until 16MHz clock settles. */
 	blocking = POINTER_TO_UINT(sub_system);
 	if (blocking) {
-		uint32_t intenset;
+		u32_t intenset;
 
 		irq_disable(POWER_CLOCK_IRQn);
 
@@ -98,7 +98,7 @@ hf_already_started:
 
 static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 {
-	uint32_t imask;
+	u32_t imask;
 
 	ARG_UNUSED(sub_system);
 
@@ -139,8 +139,8 @@ static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 
 static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
-	uint32_t lf_clk_src;
-	uint32_t intenset;
+	u32_t lf_clk_src;
+	u32_t intenset;
 
 	/* TODO: implement the ref count and re-entrancy guard, if a use-case
 	 * needs it.
@@ -217,7 +217,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 static void _power_clock_isr(void *arg)
 {
-	uint8_t pof, hf_intenset, hf_stat, hf, lf, done, ctto;
+	u8_t pof, hf_intenset, hf_stat, hf, lf, done, ctto;
 	struct device *dev = arg;
 
 	pof = (NRF_POWER->EVENTS_POFWARN != 0);

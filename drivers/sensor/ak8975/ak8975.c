@@ -17,7 +17,7 @@
 static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ak8975_data *drv_data = dev->driver_data;
-	uint8_t buf[6];
+	u8_t buf[6];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -42,13 +42,13 @@ static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static void ak8975_convert(struct sensor_value *val, int16_t sample,
-			   uint8_t adjustment)
+static void ak8975_convert(struct sensor_value *val, s16_t sample,
+			   u8_t adjustment)
 {
-	int32_t conv_val;
+	s32_t conv_val;
 
 	conv_val = sample * AK8975_MICRO_GAUSS_PER_BIT *
-		   ((uint16_t)adjustment + 128) / 256;
+		   ((u16_t)adjustment + 128) / 256;
 	val->val1 = conv_val / 1000000;
 	val->val2 = conv_val % 1000000;
 }
@@ -86,7 +86,7 @@ static const struct sensor_driver_api ak8975_driver_api = {
 
 static int ak8975_read_adjustment_data(struct ak8975_data *drv_data)
 {
-	uint8_t buf[3];
+	u8_t buf[3];
 
 	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			       AK8975_REG_CNTL, AK8975_MODE_FUSE_ACCESS) < 0) {
@@ -110,7 +110,7 @@ static int ak8975_read_adjustment_data(struct ak8975_data *drv_data)
 int ak8975_init(struct device *dev)
 {
 	struct ak8975_data *drv_data = dev->driver_data;
-	uint8_t id;
+	u8_t id;
 
 	drv_data->i2c = device_get_binding(CONFIG_AK8975_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {

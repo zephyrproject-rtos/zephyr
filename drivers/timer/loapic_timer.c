@@ -95,21 +95,21 @@
  */
 
 #if defined(CONFIG_LOAPIC)
-#define _REG_TIMER ((volatile uint32_t *) \
+#define _REG_TIMER ((volatile u32_t *) \
 			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER))
-#define _REG_TIMER_ICR ((volatile uint32_t *) \
+#define _REG_TIMER_ICR ((volatile u32_t *) \
 			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR))
-#define _REG_TIMER_CCR ((volatile uint32_t *) \
+#define _REG_TIMER_CCR ((volatile u32_t *) \
 			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CCR))
-#define _REG_TIMER_CFG ((volatile uint32_t *) \
+#define _REG_TIMER_CFG ((volatile u32_t *) \
 			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG))
 #define TIMER_IRQ		CONFIG_LOAPIC_TIMER_IRQ
 #define TIMER_IRQ_PRIORITY	CONFIG_LOAPIC_TIMER_IRQ_PRIORITY
 #elif defined(CONFIG_MVIC)
 
-#define _REG_TIMER	((volatile uint32_t *)MVIC_LVTTIMER)
-#define _REG_TIMER_ICR	((volatile uint32_t *)MVIC_ICR)
-#define _REG_TIMER_CCR	((volatile uint32_t *)MVIC_CCR)
+#define _REG_TIMER	((volatile u32_t *)MVIC_LVTTIMER)
+#define _REG_TIMER_ICR	((volatile u32_t *)MVIC_ICR)
+#define _REG_TIMER_CCR	((volatile u32_t *)MVIC_CCR)
 /* MVIC has no TIMER_CFG register */
 #define TIMER_IRQ		CONFIG_MVIC_TIMER_IRQ
 #define TIMER_IRQ_PRIORITY	-1
@@ -124,26 +124,26 @@
 	} while (0)
 #endif /* !CONFIG_TICKLESS_IDLE */
 #if defined(CONFIG_TICKLESS_IDLE)
-extern int32_t _sys_idle_elapsed_ticks;
+extern s32_t _sys_idle_elapsed_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 /* computed counter 0 initial count value */
-static uint32_t __noinit cycles_per_tick;
+static u32_t __noinit cycles_per_tick;
 
 #if defined(CONFIG_TICKLESS_IDLE)
-static uint32_t programmed_cycles;
-static uint32_t programmed_full_ticks;
-static uint32_t __noinit max_system_ticks;
-static uint32_t __noinit cycles_per_max_ticks;
+static u32_t programmed_cycles;
+static u32_t programmed_full_ticks;
+static u32_t __noinit max_system_ticks;
+static u32_t __noinit cycles_per_max_ticks;
 static bool timer_known_to_have_expired;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static uint32_t loapic_timer_device_power_state;
-static uint32_t reg_timer_save;
+static u32_t loapic_timer_device_power_state;
+static u32_t reg_timer_save;
 #ifndef CONFIG_MVIC
-static uint32_t reg_timer_cfg_save;
+static u32_t reg_timer_cfg_save;
 #endif
 #endif
 
@@ -171,7 +171,7 @@ static inline void periodic_mode_set(void)
  * @param count Count from which timer is to count down
  * @return N/A
  */
-static inline void initial_count_register_set(uint32_t count)
+static inline void initial_count_register_set(u32_t count)
 {
 	*_REG_TIMER_ICR = count;
 }
@@ -218,7 +218,7 @@ static inline void divide_configuration_register_set(void)
  *
  * @return N/A
  */
-static inline uint32_t current_count_register_get(void)
+static inline u32_t current_count_register_get(void)
 {
 	return *_REG_TIMER_CCR;
 }
@@ -232,7 +232,7 @@ static inline uint32_t current_count_register_get(void)
  *
  * @return N/A
  */
-static inline uint32_t initial_count_register_get(void)
+static inline u32_t initial_count_register_get(void)
 {
 	return *_REG_TIMER_ICR;
 }
@@ -246,7 +246,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 #ifdef CONFIG_TICKLESS_IDLE
 	if (timer_mode == TIMER_MODE_ONE_SHOT) {
 		if (!timer_known_to_have_expired) {
-			uint32_t  cycles;
+			u32_t  cycles;
 
 			/*
 			 * The timer fired unexpectedly. This is due to one of two cases:
@@ -319,10 +319,10 @@ static void tickless_idle_init(void)
  *
  * @return N/A
  */
-void _timer_idle_enter(int32_t ticks /* system ticks */
+void _timer_idle_enter(s32_t ticks /* system ticks */
 				)
 {
-	uint32_t  cycles;
+	u32_t  cycles;
 
 	/*
 	 * Although interrupts are disabled, the LOAPIC timer is still counting
@@ -374,8 +374,8 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  */
 void _timer_idle_exit(void)
 {
-	uint32_t remaining_cycles;
-	uint32_t remaining_full_ticks;
+	u32_t remaining_cycles;
+	u32_t remaining_full_ticks;
 
 	/*
 	 * Interrupts are locked and idling has ceased. The cause of the cessation
@@ -553,17 +553,17 @@ static int sys_clock_resume(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
+int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 			  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return sys_clock_suspend(port);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return sys_clock_resume(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = loapic_timer_device_power_state;
+		*((u32_t *)context) = loapic_timer_device_power_state;
 		return 0;
 	}
 
@@ -584,12 +584,12 @@ int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
 uint32_t _timer_cycle_get_32(void)
 {
 #if CONFIG_TSC_CYCLES_PER_SEC != 0
-	uint64_t tsc;
+	u64_t tsc;
 
 	/* 64-bit math to avoid overflows */
-	tsc = _tsc_read() * (uint64_t)sys_clock_hw_cycles_per_sec /
-		(uint64_t) CONFIG_TSC_CYCLES_PER_SEC;
-	return (uint32_t)tsc;
+	tsc = _tsc_read() * (u64_t)sys_clock_hw_cycles_per_sec /
+		(u64_t) CONFIG_TSC_CYCLES_PER_SEC;
+	return (u32_t)tsc;
 #else
 	/* TSC runs same as the bus speed, nothing to do but return the TSC
 	 * value

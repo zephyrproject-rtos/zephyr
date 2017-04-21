@@ -57,10 +57,10 @@
 
 struct pwm_dw_config {
 	/** Base address of registers */
-	uint32_t	addr;
+	u32_t	addr;
 
 	/** Number of ports */
-	uint32_t	num_ports;
+	u32_t	num_ports;
 };
 
 /**
@@ -71,7 +71,7 @@ struct pwm_dw_config {
  *
  * @return The base address of that particular timer
  */
-static inline int pwm_dw_timer_base_addr(struct device *dev, uint32_t timer)
+static inline int pwm_dw_timer_base_addr(struct device *dev, u32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
 	    (struct pwm_dw_config *)dev->config->config_info;
@@ -87,7 +87,7 @@ static inline int pwm_dw_timer_base_addr(struct device *dev, uint32_t timer)
  *
  * @return The load count 2 address of that particular timer
  */
-static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, uint32_t timer)
+static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, u32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
 	    (struct pwm_dw_config *)dev->config->config_info;
@@ -97,7 +97,7 @@ static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, uint32_t timer)
 
 
 static int pwm_dw_configure(struct device *dev, int access_op,
-				 uint32_t pwm, int flags)
+				 u32_t pwm, int flags)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(access_op);
@@ -107,10 +107,10 @@ static int pwm_dw_configure(struct device *dev, int access_op,
 	return 0;
 }
 
-static int __set_one_port(struct device *dev, uint32_t pwm,
-			  uint32_t on, uint32_t off)
+static int __set_one_port(struct device *dev, u32_t pwm,
+			  u32_t on, u32_t off)
 {
-	uint32_t reg_addr;
+	u32_t reg_addr;
 
 	reg_addr = pwm_dw_timer_base_addr(dev, pwm);
 
@@ -153,7 +153,7 @@ static int __set_one_port(struct device *dev, uint32_t pwm,
  * @return 0
  */
 static int pwm_dw_set_values(struct device *dev, int access_op,
-			     uint32_t pwm, uint32_t on, uint32_t off)
+			     u32_t pwm, u32_t on, u32_t off)
 {
 	const struct pwm_dw_config * const cfg =
 	    (struct pwm_dw_config *)dev->config->config_info;
@@ -179,7 +179,7 @@ static int pwm_dw_set_values(struct device *dev, int access_op,
 }
 
 static int pwm_dw_set_duty_cycle(struct device *dev, int access_op,
-				 uint32_t pwm, uint8_t duty)
+				 u32_t pwm, u8_t duty)
 {
 	/* The IP block does not natively support duty cycle settings.
 	 * So need to use set_values().

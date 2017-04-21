@@ -182,10 +182,10 @@ struct bmg160_device_config {
 #ifdef CONFIG_BMG160_TRIGGER
 	const char *gpio_port;
 #endif
-	uint16_t i2c_addr;
-	uint8_t i2c_speed;
+	u16_t i2c_addr;
+	u8_t i2c_speed;
 #ifdef CONFIG_BMG160_TRIGGER
-	uint8_t int_pin;
+	u8_t int_pin;
 #endif
 };
 
@@ -207,23 +207,23 @@ struct bmg160_device_data {
 	sensor_trigger_handler_t anymotion_handler;
 	sensor_trigger_handler_t drdy_handler;
 #endif
-	int16_t raw_gyro_xyz[3];
-	uint16_t scale;
-	uint8_t range_idx;
+	s16_t raw_gyro_xyz[3];
+	u16_t scale;
+	u8_t range_idx;
 
-	int8_t raw_temp;
+	s8_t raw_temp;
 };
 
 int bmg160_trigger_init(struct device *dev);
 int bmg160_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
-int bmg160_read(struct device *dev, uint8_t reg_addr, uint8_t *data,
-		uint8_t len);
-int bmg160_read_byte(struct device *dev, uint8_t reg_addr, uint8_t *byte);
-int bmg160_update_byte(struct device *dev, uint8_t reg_addr, uint8_t mask,
-		       uint8_t value);
-int bmg160_write_byte(struct device *dev, uint8_t reg_addr, uint8_t data);
+int bmg160_read(struct device *dev, u8_t reg_addr, u8_t *data,
+		u8_t len);
+int bmg160_read_byte(struct device *dev, u8_t reg_addr, u8_t *byte);
+int bmg160_update_byte(struct device *dev, u8_t reg_addr, u8_t mask,
+		       u8_t value);
+int bmg160_write_byte(struct device *dev, u8_t reg_addr, u8_t data);
 int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 			const struct sensor_value *val);
 

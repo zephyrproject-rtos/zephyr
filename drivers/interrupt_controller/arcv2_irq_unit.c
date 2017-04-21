@@ -28,11 +28,11 @@ extern void *_VectorTable;
 #include <kernel_structs.h>
 #include <v2/irq.h>
 
-static uint32_t _arc_v2_irq_unit_device_power_state = DEVICE_PM_ACTIVE_STATE;
-uint32_t _saved_firq_stack;
+static u32_t _arc_v2_irq_unit_device_power_state = DEVICE_PM_ACTIVE_STATE;
+u32_t _saved_firq_stack;
 struct arc_v2_irq_unit_ctx {
-	uint32_t irq_ctrl; /* Interrupt Context Saving Control Register. */
-	uint32_t irq_vect_base; /* Interrupt Vector Base. */
+	u32_t irq_ctrl; /* Interrupt Context Saving Control Register. */
+	u32_t irq_vect_base; /* Interrupt Vector Base. */
 
 	/*
 	 * IRQ configuration:
@@ -40,7 +40,7 @@ struct arc_v2_irq_unit_ctx {
 	 * - IRQ Trigger:BIT(1)
 	 * - IRQ Enable:BIT(0)
 	 */
-	uint8_t irq_config[CONFIG_NUM_IRQS - 16];
+	u8_t irq_config[CONFIG_NUM_IRQS - 16];
 };
 static struct arc_v2_irq_unit_ctx ctx;
 #endif
@@ -102,7 +102,7 @@ extern void _firq_stack_resume(void);
 
 static int _arc_v2_irq_unit_suspend(struct device *dev)
 {
-	uint8_t irq;
+	u8_t irq;
 
 	ARG_UNUSED(dev);
 
@@ -132,8 +132,8 @@ static int _arc_v2_irq_unit_suspend(struct device *dev)
 
 static int _arc_v2_irq_unit_resume(struct device *dev)
 {
-	uint8_t irq;
-	uint32_t status32;
+	u8_t irq;
+	u32_t status32;
 
 	ARG_UNUSED(dev);
 
@@ -178,16 +178,16 @@ static int _arc_v2_irq_unit_get_state(struct device *dev)
  * the *context may include IN data or/and OUT data
  */
 static int _arc_v2_irq_unit_device_ctrl(struct device *device,
-		uint32_t ctrl_command, void *context)
+		u32_t ctrl_command, void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return _arc_v2_irq_unit_suspend(device);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return _arc_v2_irq_unit_resume(device);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = _arc_v2_irq_unit_get_state(device);
+		*((u32_t *)context) = _arc_v2_irq_unit_get_state(device);
 		return 0;
 	}
 	return 0;

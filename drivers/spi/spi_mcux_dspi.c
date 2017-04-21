@@ -25,7 +25,7 @@ struct spi_mcux_data {
 	dspi_master_handle_t handle;
 	struct k_sem sync;
 	status_t callback_status;
-	uint32_t slave;
+	u32_t slave;
 };
 
 static void spi_mcux_master_transfer_callback(SPI_Type *base,
@@ -44,9 +44,9 @@ static int spi_mcux_configure(struct device *dev, struct spi_config *spi_config)
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	dspi_master_config_t master_config;
-	uint32_t flags = spi_config->config;
-	uint32_t clock_freq;
-	uint32_t word_size;
+	u32_t flags = spi_config->config;
+	u32_t clock_freq;
+	u32_t word_size;
 
 	DSPI_MasterGetDefaultConfig(&master_config);
 
@@ -85,7 +85,7 @@ static int spi_mcux_configure(struct device *dev, struct spi_config *spi_config)
 	return 0;
 }
 
-static int spi_mcux_slave_select(struct device *dev, uint32_t slave)
+static int spi_mcux_slave_select(struct device *dev, u32_t slave)
 {
 	struct spi_mcux_data *data = dev->driver_data;
 
@@ -101,13 +101,13 @@ static int spi_mcux_slave_select(struct device *dev, uint32_t slave)
 }
 
 static int spi_mcux_transceive(struct device *dev,
-		const void *tx_buf, uint32_t tx_buf_len,
-		void *rx_buf, uint32_t rx_buf_len)
+		const void *tx_buf, u32_t tx_buf_len,
+		void *rx_buf, u32_t rx_buf_len)
 {
 	const struct spi_mcux_config *config = dev->config->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
-	uint8_t buf[CONFIG_SPI_MCUX_BUF_SIZE];
+	u8_t buf[CONFIG_SPI_MCUX_BUF_SIZE];
 	dspi_transfer_t transfer;
 	status_t status;
 
@@ -120,7 +120,7 @@ static int spi_mcux_transceive(struct device *dev,
 		/* The tx and rx buffers are the same length, so we can use
 		 * them directly.
 		 */
-		transfer.txData = (uint8_t *)tx_buf;
+		transfer.txData = (u8_t *)tx_buf;
 		transfer.rxData = rx_buf;
 		transfer.dataSize = rx_buf_len;
 		SYS_LOG_DBG("Using tx and rx buffers directly");
@@ -136,7 +136,7 @@ static int spi_mcux_transceive(struct device *dev,
 		/* The rx buffer length is zero, so this is a one-way spi write
 		 * operation.
 		 */
-		transfer.txData = (uint8_t *)tx_buf;
+		transfer.txData = (u8_t *)tx_buf;
 		transfer.rxData = NULL;
 		transfer.dataSize = tx_buf_len;
 		SYS_LOG_DBG("Using tx buffer directly, rx buffer is null");
@@ -156,7 +156,7 @@ static int spi_mcux_transceive(struct device *dev,
 		 * longer local buffer for rx. After the transfer is complete,
 		 * we'll need to copy the local buffer back to the rx buffer.
 		 */
-		transfer.txData = (uint8_t *)tx_buf;
+		transfer.txData = (u8_t *)tx_buf;
 		transfer.rxData = buf;
 		transfer.dataSize = tx_buf_len;
 		SYS_LOG_DBG("Using local buffer for rx");

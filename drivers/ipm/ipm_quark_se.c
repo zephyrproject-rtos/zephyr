@@ -24,9 +24,9 @@
  * in incoming channel
  */
 static struct device *device_by_channel[QUARK_SE_IPM_CHANNELS];
-static uint32_t inbound_channels;
+static u32_t inbound_channels;
 
-static uint32_t quark_se_ipm_sts_get(void)
+static u32_t quark_se_ipm_sts_get(void)
 {
 	return sys_read32(QUARK_SE_IPM_CHALL_STS) & inbound_channels;
 }
@@ -87,12 +87,12 @@ void quark_se_ipm_isr(void *param)
 }
 
 
-static int quark_se_ipm_send(struct device *d, int wait, uint32_t id,
+static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 			const void *data, int size)
 {
 	const struct quark_se_ipm_config_info *config = d->config->config_info;
 	volatile struct quark_se_ipm *ipm = config->ipm;
-	const uint8_t *data8;
+	const u8_t *data8;
 	int i;
 	int flags;
 
@@ -116,7 +116,7 @@ static int quark_se_ipm_send(struct device *d, int wait, uint32_t id,
 	}
 
 	/* Populate the data, memcpy doesn't take volatiles */
-	data8 = (const uint8_t *)data;
+	data8 = (const u8_t *)data;
 
 	for (i = 0; i < size; ++i) {
 		ipm->data[i] = data8[i];
@@ -148,7 +148,7 @@ static int quark_se_ipm_max_data_size_get(struct device *d)
 }
 
 
-static uint32_t quark_se_ipm_max_id_val_get(struct device *d)
+static u32_t quark_se_ipm_max_id_val_get(struct device *d)
 {
 	ARG_UNUSED(d);
 

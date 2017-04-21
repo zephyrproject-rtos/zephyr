@@ -21,17 +21,17 @@ typedef void (*pulpino_cfg_func_t)(void);
 
 /* pulpino GPIO register-set structure */
 struct gpio_pulpino_t {
-	uint32_t paddir;
-	uint32_t padin;
-	uint32_t padout;
-	uint32_t inten;
-	uint32_t inttype0;
-	uint32_t inttype1;
-	uint32_t intstatus;
+	u32_t paddir;
+	u32_t padin;
+	u32_t padout;
+	u32_t inten;
+	u32_t inttype0;
+	u32_t inttype1;
+	u32_t intstatus;
 };
 
 struct gpio_pulpino_config {
-	uint32_t              gpio_base_addr;
+	u32_t              gpio_base_addr;
 	pulpino_cfg_func_t    gpio_cfg_func;
 };
 
@@ -69,7 +69,7 @@ static void gpio_pulpino_irq_handler(void *arg)
  */
 static int gpio_pulpino_config(struct device *dev,
 			       int access_op,
-			       uint32_t pin,
+			       u32_t pin,
 			       int flags)
 {
 	volatile struct gpio_pulpino_t *gpio = DEV_GPIO(dev);
@@ -138,8 +138,8 @@ static int gpio_pulpino_config(struct device *dev,
  */
 static int gpio_pulpino_write(struct device *dev,
 			      int access_op,
-			      uint32_t pin,
-			      uint32_t value)
+			      u32_t pin,
+			      u32_t value)
 {
 	volatile struct gpio_pulpino_t *gpio = DEV_GPIO(dev);
 
@@ -166,8 +166,8 @@ static int gpio_pulpino_write(struct device *dev,
  */
 static int gpio_pulpino_read(struct device *dev,
 			     int access_op,
-			     uint32_t pin,
-			     uint32_t *value)
+			     u32_t pin,
+			     u32_t *value)
 {
 	volatile struct gpio_pulpino_t *gpio = DEV_GPIO(dev);
 
@@ -200,7 +200,7 @@ static int gpio_pulpino_manage_callback(struct device *dev,
 
 static int gpio_pulpino_enable_callback(struct device *dev,
 					int access_op,
-					uint32_t pin)
+					u32_t pin)
 {
 	volatile struct gpio_pulpino_t *gpio = DEV_GPIO(dev);
 
@@ -215,7 +215,7 @@ static int gpio_pulpino_enable_callback(struct device *dev,
 
 static int gpio_pulpino_disable_callback(struct device *dev,
 					 int access_op,
-					 uint32_t pin)
+					 u32_t pin)
 {
 	volatile struct gpio_pulpino_t *gpio = DEV_GPIO(dev);
 

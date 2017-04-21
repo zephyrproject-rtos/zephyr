@@ -70,7 +70,7 @@
  * @return 0 if successful, failed otherwise
  */
 
-static int pwm_ftm_clk_enable(uint8_t ftm_num)
+static int pwm_ftm_clk_enable(u8_t ftm_num)
 {
 
 	volatile struct K20_SIM *sim =
@@ -105,15 +105,15 @@ static int pwm_ftm_clk_enable(uint8_t ftm_num)
  */
 
 static int pwm_ftm_configure(struct device *dev, int access_op,
-			     uint32_t channel, int flags)
+			     u32_t channel, int flags)
 {
 	int return_val = 0;
 
-	uint32_t clock_source;
-	uint32_t prescale;
-	uint32_t polarity;
+	u32_t clock_source;
+	u32_t prescale;
+	u32_t polarity;
 
-	uint32_t reg_val;
+	u32_t reg_val;
 
 
 	SYS_LOG_DBG("...");
@@ -265,7 +265,7 @@ static int pwm_ftm_configure(struct device *dev, int access_op,
  */
 
 static int pwm_ftm_set_values(struct device *dev, int access_op,
-			      uint32_t channel, uint32_t on, uint32_t off)
+			      u32_t channel, u32_t on, u32_t off)
 {
 	const struct pwm_ftm_config * const config =
 		dev->config->config_info;
@@ -274,8 +274,8 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
 
 	SYS_LOG_DBG("(on=%d, off=%d)", on, off);
 
-	uint32_t pwm_pair;
-	uint32_t combine;
+	u32_t pwm_pair;
+	u32_t combine;
 
 	switch (access_op) {
 	case PWM_ACCESS_BY_PIN:
@@ -451,9 +451,9 @@ static int pwm_ftm_set_values(struct device *dev, int access_op,
  */
 
 static int pwm_ftm_set_duty_cycle(struct device *dev, int access_op,
-				  uint32_t channel, uint8_t duty)
+				  u32_t channel, u8_t duty)
 {
-	uint32_t on, off;
+	u32_t on, off;
 
 	const struct pwm_ftm_config * const config =
 		dev->config->config_info;
@@ -546,7 +546,7 @@ static int pwm_ftm_set_duty_cycle(struct device *dev, int access_op,
  */
 
 static int pwm_ftm_set_phase(struct device *dev, int access_op,
-			     uint32_t channel, uint8_t phase)
+			     u32_t channel, u8_t phase)
 {
 
 #ifdef COMBINE_MODE_SUPPORT
@@ -618,7 +618,7 @@ static int pwm_ftm_set_phase(struct device *dev, int access_op,
  * @param power_state device power state to be saved
  * @return N/A
  */
-static void pwm_ftm_set_power_state(struct device *dev, uint32_t power_state)
+static void pwm_ftm_set_power_state(struct device *dev, u32_t power_state)
 {
 	struct pwm_ftm_drv_data *context = dev->driver_data;
 
@@ -634,7 +634,7 @@ static void pwm_ftm_set_power_state(struct device *dev, uint32_t power_state)
  * @param dev Device struct
  * @return device power state
  */
-static uint32_t pwm_ftm_get_power_state(struct device *dev)
+static u32_t pwm_ftm_get_power_state(struct device *dev)
 {
 	struct pwm_ftm_drv_data *context = dev->driver_data;
 
@@ -653,7 +653,7 @@ static uint32_t pwm_ftm_get_power_state(struct device *dev)
 
 static int pwm_ftm_suspend(struct device *dev)
 {
-	uint32_t reg_val;
+	u32_t reg_val;
 
 	const struct pwm_ftm_config * const config =
 		dev->config->config_info;
@@ -689,8 +689,8 @@ static int pwm_ftm_suspend(struct device *dev)
  */
 static int pwm_ftm_resume_from_suspend(struct device *dev)
 {
-	uint32_t clock_source;
-	uint32_t reg_val;
+	u32_t clock_source;
+	u32_t reg_val;
 
 	/* set clock source to config value */
 
@@ -721,17 +721,17 @@ static int pwm_ftm_resume_from_suspend(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int pwm_ftm_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int pwm_ftm_device_ctrl(struct device *dev, u32_t ctrl_command,
 			       void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return pwm_ftm_suspend(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return pwm_ftm_resume_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = pwm_ftm_get_power_state(dev);
+		*((u32_t *)context) = pwm_ftm_get_power_state(dev);
 		return 0;
 	}
 

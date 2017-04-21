@@ -30,7 +30,7 @@ struct aio_qmsi_cmp_cb {
 
 struct aio_qmsi_cmp_dev_data_t {
 	/** Number of total comparators */
-	uint8_t num_cmp;
+	u8_t num_cmp;
 	/** Callback for each comparator */
 	struct aio_qmsi_cmp_cb cb[AIO_QMSI_CMP_COUNT];
 };
@@ -40,7 +40,7 @@ static qm_ac_config_t config;
 
 static int aio_cmp_config(struct device *dev);
 
-static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
+static int aio_qmsi_cmp_disable(struct device *dev, u8_t index)
 {
 	if (index >= AIO_QMSI_CMP_COUNT) {
 		return -EINVAL;
@@ -62,7 +62,7 @@ static int aio_qmsi_cmp_disable(struct device *dev, uint8_t index)
 	return 0;
 }
 
-static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
+static int aio_qmsi_cmp_configure(struct device *dev, u8_t index,
 			 enum aio_cmp_polarity polarity,
 			 enum aio_cmp_ref refsel,
 			 aio_cmp_cb cb, void *param)
@@ -106,7 +106,7 @@ static int aio_qmsi_cmp_configure(struct device *dev, uint8_t index,
 	return 0;
 }
 
-static uint32_t aio_cmp_qmsi_get_pending_int(struct device *dev)
+static u32_t aio_cmp_qmsi_get_pending_int(struct device *dev)
 {
 	return QM_SCSS_CMP->cmp_stat_clr;
 }
@@ -119,7 +119,7 @@ static const struct aio_cmp_driver_api aio_cmp_funcs = {
 
 static int aio_qmsi_cmp_init(struct device *dev)
 {
-	uint8_t i;
+	u8_t i;
 	struct aio_qmsi_cmp_dev_data_t *dev_data =
 		(struct aio_qmsi_cmp_dev_data_t *)dev->driver_data;
 
@@ -154,12 +154,12 @@ static int aio_qmsi_cmp_init(struct device *dev)
 
 static void aio_qmsi_cmp_isr(void *data)
 {
-	uint8_t i;
+	u8_t i;
 	struct device *dev = data;
 	struct aio_qmsi_cmp_dev_data_t *dev_data =
 		(struct aio_qmsi_cmp_dev_data_t *)dev->driver_data;
 
-	uint32_t int_status = QM_SCSS_CMP->cmp_stat_clr;
+	u32_t int_status = QM_SCSS_CMP->cmp_stat_clr;
 
 	for (i = 0; i < dev_data->num_cmp; i++) {
 		if (int_status & (1 << i)) {

@@ -156,12 +156,12 @@
 
 struct adxl362_data {
 	struct device *spi;
-	int32_t acc_x;
-	int32_t acc_y;
-	int32_t acc_z;
-	int32_t temp;
-	uint8_t spi_slave;
-	uint8_t selected_range;
+	s32_t acc_x;
+	s32_t acc_y;
+	s32_t acc_z;
+	s32_t temp;
+	u8_t spi_slave;
+	u8_t selected_range;
 };
 
 #if defined(CONFIG_ADXL362_ACCEL_RANGE_RUNTIME) ||\

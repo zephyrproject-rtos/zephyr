@@ -32,11 +32,11 @@ void flash_stm32_lock(struct device *flash)
 	reg->cr |= FLASH_CR_LOCK;
 }
 
-uint8_t flash_stm32_program_halfword(struct device *flash,
-				     uint32_t address,
-				     uint16_t data)
+u8_t flash_stm32_program_halfword(struct device *flash,
+				     u32_t address,
+				     u16_t data)
 {
-	uint8_t status = FLASH_COMPLETE;
+	u8_t status = FLASH_COMPLETE;
 
 	const struct flash_stm32_dev_config *config = FLASH_CFG(flash);
 
@@ -50,7 +50,7 @@ uint8_t flash_stm32_program_halfword(struct device *flash,
 	if (status == FLASH_COMPLETE) {
 		reg->cr |= FLASH_CR_PG;
 
-		*(volatile uint16_t *)address = data;
+		*(volatile u16_t *)address = data;
 
 		status = flash_stm32_wait_for_last_operation(flash,
 				FLASH_ER_PRG_TIMEOUT);
@@ -61,11 +61,11 @@ uint8_t flash_stm32_program_halfword(struct device *flash,
 	return status;
 }
 
-uint8_t flash_stm32_program_word(struct device *flash,
-				 uint32_t address,
-				 uint32_t data)
+u8_t flash_stm32_program_word(struct device *flash,
+				 u32_t address,
+				 u32_t data)
 {
-	uint8_t status = FLASH_COMPLETE;
+	u8_t status = FLASH_COMPLETE;
 
 	const struct flash_stm32_dev_config *config = FLASH_CFG(flash);
 
@@ -79,7 +79,7 @@ uint8_t flash_stm32_program_word(struct device *flash,
 	if (status == FLASH_COMPLETE) {
 		reg->cr |= FLASH_CR_PG;
 
-		*(volatile uint16_t *)address = (uint16_t)data;
+		*(volatile u16_t *)address = (u16_t)data;
 
 		status = flash_stm32_wait_for_last_operation(flash,
 				FLASH_ER_PRG_TIMEOUT);
@@ -87,7 +87,7 @@ uint8_t flash_stm32_program_word(struct device *flash,
 		if (status == FLASH_COMPLETE) {
 			address += 2;
 
-			*(volatile uint16_t *)address = data >> 16;
+			*(volatile u16_t *)address = data >> 16;
 
 			status = flash_stm32_wait_for_last_operation(flash,
 					FLASH_ER_PRG_TIMEOUT);
@@ -99,10 +99,10 @@ uint8_t flash_stm32_program_word(struct device *flash,
 	return status;
 }
 
-uint8_t flash_stm32_wait_for_last_operation(struct device *flash,
-					    uint32_t timeout)
+u8_t flash_stm32_wait_for_last_operation(struct device *flash,
+					    u32_t timeout)
 {
-	uint8_t status = FLASH_COMPLETE;
+	u8_t status = FLASH_COMPLETE;
 
 	/* Check for the FLASH Status */
 	status = flash_stm32_get_status(flash);
@@ -120,9 +120,9 @@ uint8_t flash_stm32_wait_for_last_operation(struct device *flash,
 	return status;
 }
 
-uint8_t flash_stm32_get_status(struct device *flash)
+u8_t flash_stm32_get_status(struct device *flash)
 {
-	uint8_t status = FLASH_COMPLETE;
+	u8_t status = FLASH_COMPLETE;
 
 	const struct flash_stm32_dev_config *config = FLASH_CFG(flash);
 
@@ -134,12 +134,12 @@ uint8_t flash_stm32_get_status(struct device *flash)
 			break;
 		}
 
-		if ((reg->sr & FLASH_SR_WRPERR) != (uint32_t)0x00) {
+		if ((reg->sr & FLASH_SR_WRPERR) != (u32_t)0x00) {
 			status = FLASH_ERROR_WRITE_PROTECTION;
 			break;
 		}
 
-		if ((reg->sr & FLASH_SR_PGERR) != (uint32_t)0x00) {
+		if ((reg->sr & FLASH_SR_PGERR) != (u32_t)0x00) {
 			status = FLASH_ERROR_PROGRAM;
 			break;
 		}
@@ -148,10 +148,10 @@ uint8_t flash_stm32_get_status(struct device *flash)
 	return status;
 }
 
-uint8_t flash_stm32_erase_page(struct device *flash,
-			       uint32_t page_address)
+u8_t flash_stm32_erase_page(struct device *flash,
+			       u32_t page_address)
 {
-	uint8_t status = FLASH_COMPLETE;
+	u8_t status = FLASH_COMPLETE;
 
 	const struct flash_stm32_dev_config *config = FLASH_CFG(flash);
 
@@ -176,9 +176,9 @@ uint8_t flash_stm32_erase_page(struct device *flash,
 	return status;
 }
 
-uint8_t flash_stm32_erase_all_pages(struct device *flash)
+u8_t flash_stm32_erase_all_pages(struct device *flash)
 {
-	uint8_t status = FLASH_COMPLETE;
+	u8_t status = FLASH_COMPLETE;
 
 	const struct flash_stm32_dev_config *config = FLASH_CFG(flash);
 
@@ -200,9 +200,9 @@ uint8_t flash_stm32_erase_all_pages(struct device *flash)
 	return status;
 }
 
-void flash_stm32_read_data(void *data, uint32_t address, size_t len)
+void flash_stm32_read_data(void *data, u32_t address, size_t len)
 {
-	uint8_t *addr = INT_TO_POINTER(address);
+	u8_t *addr = INT_TO_POINTER(address);
 
 	memcpy(data, addr, len);
 }

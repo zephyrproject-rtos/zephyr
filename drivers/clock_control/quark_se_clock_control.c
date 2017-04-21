@@ -23,14 +23,14 @@
 #include <logging/sys_log.h>
 
 struct quark_se_clock_control_config {
-	uint32_t base_address;
+	u32_t base_address;
 };
 
 static inline int quark_se_clock_control_on(struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
 	const struct quark_se_clock_control_config *info = dev->config->config_info;
-	uint32_t subsys = POINTER_TO_INT(sub_system);
+	u32_t subsys = POINTER_TO_INT(sub_system);
 
 	if (sub_system == CLOCK_CONTROL_SUBSYS_ALL) {
 		SYS_LOG_DBG("Enabling all clock gates on dev %p", dev);
@@ -48,7 +48,7 @@ static inline int quark_se_clock_control_off(struct device *dev,
 					     clock_control_subsys_t sub_system)
 {
 	const struct quark_se_clock_control_config *info = dev->config->config_info;
-	uint32_t subsys = POINTER_TO_INT(sub_system);
+	u32_t subsys = POINTER_TO_INT(sub_system);
 
 	if (sub_system == CLOCK_CONTROL_SUBSYS_ALL) {
 		SYS_LOG_DBG("Disabling all clock gates on dev %p", dev);

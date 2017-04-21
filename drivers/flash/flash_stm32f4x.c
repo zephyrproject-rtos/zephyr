@@ -19,14 +19,14 @@ struct flash_priv {
 	struct k_sem sem;
 };
 
-static bool valid_range(off_t offset, uint32_t len)
+static bool valid_range(off_t offset, u32_t len)
 {
 	return offset >= 0 && (offset + len - 1 <= STM32F4X_FLASH_END);
 }
 
 static int check_status(struct stm32f4x_flash *regs)
 {
-	uint32_t const error =
+	u32_t const error =
 		FLASH_FLAG_WRPERR |
 		FLASH_FLAG_PGAERR |
 		FLASH_FLAG_RDERR  |
@@ -43,7 +43,7 @@ static int check_status(struct stm32f4x_flash *regs)
 
 static int wait_flash_idle(struct stm32f4x_flash *regs)
 {
-	uint32_t timeout = STM32F4X_FLASH_TIMEOUT;
+	u32_t timeout = STM32F4X_FLASH_TIMEOUT;
 	int rc;
 
 	rc = check_status(regs);
@@ -62,9 +62,9 @@ static int wait_flash_idle(struct stm32f4x_flash *regs)
 	return 0;
 }
 
-static int write_byte(off_t offset, uint8_t val, struct stm32f4x_flash *regs)
+static int write_byte(off_t offset, u8_t val, struct stm32f4x_flash *regs)
 {
-	uint32_t tmp;
+	u32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
@@ -84,7 +84,7 @@ static int write_byte(off_t offset, uint8_t val, struct stm32f4x_flash *regs)
 	/* flush the register write */
 	tmp = regs->ctrl;
 
-	*((uint8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
+	*((u8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
 
 	rc = wait_flash_idle(regs);
 	regs->ctrl &= (~FLASH_CR_PG);
@@ -92,9 +92,9 @@ static int write_byte(off_t offset, uint8_t val, struct stm32f4x_flash *regs)
 	return rc;
 }
 
-static int erase_sector(uint16_t sector, struct stm32f4x_flash *regs)
+static int erase_sector(u16_t sector, struct stm32f4x_flash *regs)
 {
-	uint32_t tmp;
+	u32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
@@ -199,7 +199,7 @@ static int flash_stm32f4x_write(struct device *dev, off_t offset,
 	k_sem_take(&p->sem, K_FOREVER);
 
 	for (i = 0; i < len; i++, offset++) {
-		rc = write_byte(offset, ((const uint8_t *) data)[i], p->regs);
+		rc = write_byte(offset, ((const u8_t *) data)[i], p->regs);
 		if (rc < 0) {
 			k_sem_give(&p->sem);
 			return rc;

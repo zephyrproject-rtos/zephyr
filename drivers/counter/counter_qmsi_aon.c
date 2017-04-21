@@ -29,9 +29,9 @@ static int aon_counter_qmsi_stop(struct device *dev)
 	return 0;
 }
 
-static uint32_t aon_counter_qmsi_read(struct device *dev)
+static u32_t aon_counter_qmsi_read(struct device *dev)
 {
-	uint32_t value;
+	u32_t value;
 
 	qm_aonc_get_value(QM_AONC_0, &value);
 
@@ -40,7 +40,7 @@ static uint32_t aon_counter_qmsi_read(struct device *dev)
 
 static int aon_counter_qmsi_set_alarm(struct device *dev,
 				      counter_callback_t callback,
-				      uint32_t count, void *user_data)
+				      u32_t count, void *user_data)
 {
 	return -ENODEV;
 }

@@ -81,9 +81,9 @@
 
 struct lis3dh_data {
 	struct device *i2c;
-	int16_t x_sample;
-	int16_t y_sample;
-	int16_t z_sample;
+	s16_t x_sample;
+	s16_t y_sample;
+	s16_t z_sample;
 
 #ifdef CONFIG_LIS3DH_TRIGGER
 	struct device *gpio;

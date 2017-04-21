@@ -31,13 +31,13 @@ struct i2c_mcux_data {
 	status_t callback_status;
 };
 
-static int i2c_mcux_configure(struct device *dev, uint32_t dev_config_raw)
+static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
 	union dev_config dev_config = (union dev_config)dev_config_raw;
-	uint32_t clock_freq;
-	uint32_t baudrate;
+	u32_t clock_freq;
+	u32_t baudrate;
 
 	if (!dev_config.bits.is_master_device) {
 		return -EINVAL;
@@ -81,9 +81,9 @@ static void i2c_mcux_master_transfer_callback(I2C_Type *base,
 	k_sem_give(&data->device_sync_sem);
 }
 
-static uint32_t i2c_mcux_convert_flags(int msg_flags)
+static u32_t i2c_mcux_convert_flags(int msg_flags)
 {
-	uint32_t flags = 0;
+	u32_t flags = 0;
 
 	if (!(msg_flags & I2C_MSG_STOP)) {
 		flags |= kI2C_TransferNoStopFlag;
@@ -97,7 +97,7 @@ static uint32_t i2c_mcux_convert_flags(int msg_flags)
 }
 
 static int i2c_mcux_transfer(struct device *dev, struct i2c_msg *msgs,
-		uint8_t num_msgs, uint16_t addr)
+		u8_t num_msgs, u16_t addr)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
@@ -159,7 +159,7 @@ static int i2c_mcux_init(struct device *dev)
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
-	uint32_t clock_freq;
+	u32_t clock_freq;
 	i2c_master_config_t master_config;
 	int error;
 

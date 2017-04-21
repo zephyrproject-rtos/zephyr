@@ -41,8 +41,8 @@ struct gpio_fe310_t {
 };
 
 struct gpio_fe310_config {
-	uint32_t            gpio_base_addr;
-	uint32_t            gpio_irq_base;
+	u32_t            gpio_base_addr;
+	u32_t            gpio_irq_base;
 	fe310_cfg_func_t    gpio_cfg_func;
 };
 
@@ -101,7 +101,7 @@ static void gpio_fe310_irq_handler(void *arg)
  */
 static int gpio_fe310_config(struct device *dev,
 			     int access_op,
-			     uint32_t pin,
+			     u32_t pin,
 			     int flags)
 {
 	volatile struct gpio_fe310_t *gpio = DEV_GPIO(dev);
@@ -209,8 +209,8 @@ static int gpio_fe310_config(struct device *dev,
  */
 static int gpio_fe310_write(struct device *dev,
 			    int access_op,
-			    uint32_t pin,
-			    uint32_t value)
+			    u32_t pin,
+			    u32_t value)
 {
 	volatile struct gpio_fe310_t *gpio = DEV_GPIO(dev);
 
@@ -244,8 +244,8 @@ static int gpio_fe310_write(struct device *dev,
  */
 static int gpio_fe310_read(struct device *dev,
 			   int access_op,
-			   uint32_t pin,
-			   uint32_t *value)
+			   u32_t pin,
+			   u32_t *value)
 {
 	volatile struct gpio_fe310_t *gpio = DEV_GPIO(dev);
 
@@ -281,7 +281,7 @@ static int gpio_fe310_manage_callback(struct device *dev,
 
 static int gpio_fe310_enable_callback(struct device *dev,
 				      int access_op,
-				      uint32_t pin)
+				      u32_t pin)
 {
 	const struct gpio_fe310_config *cfg = DEV_GPIO_CFG(dev);
 
@@ -299,7 +299,7 @@ static int gpio_fe310_enable_callback(struct device *dev,
 
 static int gpio_fe310_disable_callback(struct device *dev,
 				       int access_op,
-				       uint32_t pin)
+				       u32_t pin)
 {
 	const struct gpio_fe310_config *cfg = DEV_GPIO_CFG(dev);
 

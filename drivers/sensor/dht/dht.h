@@ -19,7 +19,7 @@
 
 struct dht_data {
 	struct device *gpio;
-	uint8_t sample[4];
+	u8_t sample[4];
 };
 
 #endif

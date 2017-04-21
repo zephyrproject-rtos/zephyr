@@ -41,9 +41,9 @@
  */
 
 static int pci_rcba_mask_get(union pci_addr_reg pci_ctrl_addr,
-			     uint32_t *mask)
+			     u32_t *mask)
 {
-	uint32_t old_value;
+	u32_t old_value;
 
 	/* save the current setting */
 	pci_read(DEFAULT_PCI_CONTROLLER,
@@ -54,7 +54,7 @@ static int pci_rcba_mask_get(union pci_addr_reg pci_ctrl_addr,
 	/* write to the RCBA to see how large it is */
 	pci_write(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
-			sizeof(uint32_t),
+			sizeof(u32_t),
 			0xffffffff);
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
@@ -94,9 +94,9 @@ int pci_legacy_bridge_detect(struct pci_dev_info *dev_info)
 {
 	union pci_addr_reg pci_ctrl_addr;
 	static union pci_dev pci_dev_header;
-	uint32_t pci_data; /* temporary data to read */
-	uint32_t rcba; /* root complex base address */
-	uint32_t rcba_mask; /* bits set for RCBA */
+	u32_t pci_data; /* temporary data to read */
+	u32_t rcba; /* root complex base address */
+	u32_t rcba_mask; /* bits set for RCBA */
 
 	/* initialise the PCI controller address register value */
 	pci_ctrl_addr.value = 0;
@@ -176,7 +176,7 @@ void pci_legacy_bridge_configure(struct pci_dev_info *dev_info,
 				 int pci_interrupt_pin,
 				 int irq_number)
 {
-	uint32_t addr = (io_block_num == 0) ? PCI_ADDR_IRQAGENT1 :
+	u32_t addr = (io_block_num == 0) ? PCI_ADDR_IRQAGENT1 :
 		PCI_ADDR_IRQAGENT3;
 	/*
 	 * Each interrupt queue agent register in PCI legacy
@@ -188,7 +188,7 @@ void pci_legacy_bridge_configure(struct pci_dev_info *dev_info,
 	 * Bits 3:0   indicates which IRQ is used for INTA.
 	 */
 	int offset = (pci_interrupt_pin - 1) * 4;
-	uint16_t irq_routing = sys_read16(dev_info->addr + addr);
+	u16_t irq_routing = sys_read16(dev_info->addr + addr);
 
 	irq_routing &= ~(0x0f << offset);
 	irq_routing |= (irq_number - NUM_STD_IRQS) << offset;

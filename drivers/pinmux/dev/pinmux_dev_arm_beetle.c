@@ -22,9 +22,9 @@
 #define CMSDK_AHB_GPIO1_DEV \
 	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO1)
 
-static volatile struct gpio_cmsdk_ahb *_get_port(uint32_t pin)
+static volatile struct gpio_cmsdk_ahb *_get_port(u32_t pin)
 {
-	uint32_t port_num = pin / PINS_PER_PORT;
+	u32_t port_num = pin / PINS_PER_PORT;
 
 	/* Port 2 and 3 are reserved therefore not handled in this driver */
 	switch (port_num) {
@@ -38,11 +38,11 @@ static volatile struct gpio_cmsdk_ahb *_get_port(uint32_t pin)
 	}
 }
 
-static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
 {
 	volatile struct gpio_cmsdk_ahb *port = _get_port(pin);
-	uint32_t tmp;
-	uint32_t key;
+	u32_t tmp;
+	u32_t key;
 
 	ARG_UNUSED(dev);
 
@@ -79,7 +79,7 @@ static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 	return 0;
 }
 
-static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
 {
 	volatile struct gpio_cmsdk_ahb *port = _get_port(pin);
 
@@ -94,7 +94,7 @@ static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -106,7 +106,7 @@ static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
 	return 0;
 }
 
-static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
 {
 	volatile struct gpio_cmsdk_ahb *port = _get_port(pin);
 

@@ -23,7 +23,7 @@
 
 struct temp_nrf5_data {
 	struct k_sem device_sync_sem;
-	int32_t sample;
+	s32_t sample;
 	struct device *clk_m16_dev;
 };
 
@@ -65,7 +65,7 @@ static int temp_nrf5_channel_get(struct device *dev,
 				struct sensor_value *val)
 {
 	struct temp_nrf5_data *data = dev->driver_data;
-	int32_t uval;
+	s32_t uval;
 
 	SYS_LOG_DBG("");
 

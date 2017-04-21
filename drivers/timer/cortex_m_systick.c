@@ -28,7 +28,7 @@
 #include <arch/arm/cortex_m/cmsis.h>
 
 /* running total of timer count */
-static volatile uint32_t clock_accumulated_count;
+static volatile u32_t clock_accumulated_count;
 
 /*
  * A board support package's board.h header must provide definitions for the
@@ -50,22 +50,22 @@ static volatile uint32_t clock_accumulated_count;
 #endif			    /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-extern int32_t _NanoIdleValGet(void);
+extern s32_t _NanoIdleValGet(void);
 extern void _NanoIdleValClear(void);
-extern void _sys_power_save_idle_exit(int32_t ticks);
+extern void _sys_power_save_idle_exit(s32_t ticks);
 #endif
 
 #ifdef CONFIG_TICKLESS_IDLE
-extern int32_t _sys_idle_elapsed_ticks;
+extern s32_t _sys_idle_elapsed_ticks;
 #endif
 
 #ifdef CONFIG_TICKLESS_IDLE
-static uint32_t __noinit default_load_value; /* default count */
-static uint32_t idle_original_count;
-static uint32_t __noinit max_system_ticks;
-static uint32_t idle_original_ticks;
-static uint32_t __noinit max_load_value;
-static uint32_t __noinit timer_idle_skew;
+static u32_t __noinit default_load_value; /* default count */
+static u32_t idle_original_count;
+static u32_t __noinit max_system_ticks;
+static u32_t idle_original_ticks;
+static u32_t __noinit max_load_value;
+static u32_t __noinit timer_idle_skew;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 static unsigned char idle_mode = IDLE_NOT_TICKLESS;
 #endif /* CONFIG_TICKLESS_IDLE */
@@ -83,7 +83,7 @@ static unsigned char idle_mode = IDLE_NOT_TICKLESS;
  */
 static ALWAYS_INLINE void sysTickStop(void)
 {
-	uint32_t reg;
+	u32_t reg;
 
 	/*
 	 * Disable the counter and its interrupt while preserving the
@@ -108,7 +108,7 @@ static ALWAYS_INLINE void sysTickStop(void)
  */
 static ALWAYS_INLINE void sysTickStart(void)
 {
-	uint32_t reg;
+	u32_t reg;
 
 	/*
 	 * Enable the counter, its interrupt and set the clock source to be
@@ -131,7 +131,7 @@ static ALWAYS_INLINE void sysTickStart(void)
  *
  * @return the current counter value
  */
-static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
+static ALWAYS_INLINE u32_t sysTickCurrentGet(void)
 {
 	return SysTick->VAL;
 }
@@ -144,7 +144,7 @@ static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
  *
  * @return the counter's initial count/wraparound value
  */
-static ALWAYS_INLINE uint32_t sysTickReloadGet(void)
+static ALWAYS_INLINE u32_t sysTickReloadGet(void)
 {
 	return SysTick->LOAD;
 }
@@ -162,7 +162,7 @@ static ALWAYS_INLINE uint32_t sysTickReloadGet(void)
  * @return N/A
  */
 static ALWAYS_INLINE void sysTickReloadSet(
-	uint32_t count /* count from which timer is to count down */
+	u32_t count /* count from which timer is to count down */
 	)
 {
 	/*
@@ -196,7 +196,7 @@ void _timer_int_handler(void *unused)
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-	int32_t numIdleTicks;
+	s32_t numIdleTicks;
 
 	/*
 	 * All interrupts are disabled when handling idle wakeup.
@@ -301,9 +301,9 @@ static void sysTickTicklessIdleInit(void)
 {
 	/* enable counter, disable interrupt and set clock src to system clock
 	 */
-	uint32_t ctrl = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk;
+	u32_t ctrl = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk;
 
-	volatile uint32_t dummy; /* used to help determine the 'skew time' */
+	volatile u32_t dummy; /* used to help determine the 'skew time' */
 
 	/* store the default reload value (which has already been set) */
 	default_load_value = sysTickReloadGet();
@@ -372,7 +372,7 @@ static void sysTickTicklessIdleInit(void)
  *
  * @return N/A
  */
-void _timer_idle_enter(int32_t ticks /* system ticks */
+void _timer_idle_enter(s32_t ticks /* system ticks */
 				)
 {
 	sysTickStop();
@@ -431,7 +431,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  */
 void _timer_idle_exit(void)
 {
-	uint32_t count; /* timer's current count register value */
+	u32_t count; /* timer's current count register value */
 
 	if (timer_mode == TIMER_MODE_PERIODIC) {
 		/*
@@ -465,8 +465,8 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
 		_sys_clock_tick_announce();
 	} else {
-		uint32_t elapsed;   /* elapsed "counter time" */
-		uint32_t remaining; /* remaining "counter time" */
+		u32_t elapsed;   /* elapsed "counter time" */
+		u32_t remaining; /* remaining "counter time" */
 
 		elapsed = idle_original_count - count;
 
@@ -515,7 +515,7 @@ void _timer_idle_exit(void)
 int _sys_clock_driver_init(struct device *device)
 {
 	/* enable counter, interrupt and set clock src to system clock */
-	uint32_t ctrl = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk |
+	u32_t ctrl = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk |
 			SysTick_CTRL_CLKSOURCE_Msk;
 
 	ARG_UNUSED(device);
@@ -559,7 +559,7 @@ int _sys_clock_driver_init(struct device *device)
  */
 uint32_t _timer_cycle_get_32(void)
 {
-	uint32_t cac, count;
+	u32_t cac, count;
 
 	do {
 		cac = clock_accumulated_count;

@@ -32,11 +32,11 @@
 #define CHANNEL_LENGTH 4
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-static uint32_t __get_tim_clk(uint32_t bus_clk,
+static u32_t __get_tim_clk(u32_t bus_clk,
 			      clock_control_subsys_t *sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
-	uint32_t tim_clk, apb_psc;
+	u32_t tim_clk, apb_psc;
 
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
@@ -54,11 +54,11 @@ static uint32_t __get_tim_clk(uint32_t bus_clk,
 }
 #else
 #ifdef CONFIG_SOC_SERIES_STM32F4X
-static uint32_t __get_tim_clk(uint32_t bus_clk,
+static u32_t __get_tim_clk(u32_t bus_clk,
 			      clock_control_subsys_t *sub_system)
 {
 	struct stm32f4x_pclken *pclken = (struct stm32f4x_pclken *)(sub_system);
-	uint32_t tim_clk, apb_psc;
+	u32_t tim_clk, apb_psc;
 
 	if (pclken->bus == STM32F4X_CLOCK_BUS_APB1) {
 		apb_psc = CONFIG_CLOCK_STM32F4X_APB1_PRESCALER;
@@ -77,11 +77,11 @@ static uint32_t __get_tim_clk(uint32_t bus_clk,
 
 #else
 
-static uint32_t __get_tim_clk(uint32_t bus_clk,
+static u32_t __get_tim_clk(u32_t bus_clk,
 			      clock_control_subsys_t sub_system)
 {
-	uint32_t tim_clk, apb_psc;
-	uint32_t subsys = POINTER_TO_UINT(sub_system);
+	u32_t tim_clk, apb_psc;
+	u32_t subsys = POINTER_TO_UINT(sub_system);
 
 	if (subsys > STM32F10X_CLOCK_APB2_BASE) {
 		apb_psc = CONFIG_CLOCK_STM32F10X_APB2_PRESCALER;
@@ -111,13 +111,13 @@ static uint32_t __get_tim_clk(uint32_t bus_clk,
  *
  * return 0, or negative errno code
  */
-static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
-			     uint32_t period_cycles, uint32_t pulse_cycles)
+static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
+			     u32_t period_cycles, u32_t pulse_cycles)
 {
 	struct pwm_stm32_data *data = DEV_DATA(dev);
 	TIM_HandleTypeDef *TimerHandle = &data->hpwm;
 	TIM_OC_InitTypeDef sConfig;
-	uint32_t channel;
+	u32_t channel;
 	bool counter_32b;
 
 	if (period_cycles == 0 || pulse_cycles > period_cycles) {
@@ -188,12 +188,12 @@ static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
  *
  * return 0, or negative errno code
  */
-static int pwm_stm32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
-					uint64_t *cycles)
+static int pwm_stm32_get_cycles_per_sec(struct device *dev, u32_t pwm,
+					u64_t *cycles)
 {
 	const struct pwm_stm32_config *cfg = DEV_CFG(dev);
 	struct pwm_stm32_data *data = DEV_DATA(dev);
-	uint32_t bus_clk, tim_clk;
+	u32_t bus_clk, tim_clk;
 
 	if (cycles == NULL) {
 		return -EINVAL;
@@ -213,7 +213,7 @@ static int pwm_stm32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 	tim_clk = __get_tim_clk(bus_clk, cfg->clock_subsys);
 #endif
 
-	*cycles = (uint64_t)(tim_clk / (data->pwm_prescaler + 1));
+	*cycles = (u64_t)(tim_clk / (data->pwm_prescaler + 1));
 
 	return 0;
 }

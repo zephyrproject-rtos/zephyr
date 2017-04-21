@@ -34,9 +34,9 @@
 
 struct mcp9808_data {
 	struct device *i2c_master;
-	uint16_t i2c_slave_addr;
+	u16_t i2c_slave_addr;
 
-	uint16_t reg_val;
+	u16_t reg_val;
 
 	struct gpio_callback gpio_cb;
 
@@ -55,7 +55,7 @@ struct mcp9808_data {
 #endif
 };
 
-int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val);
+int mcp9808_reg_read(struct mcp9808_data *data, u8_t reg, u16_t *val);
 
 #ifdef CONFIG_MCP9808_TRIGGER
 int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,

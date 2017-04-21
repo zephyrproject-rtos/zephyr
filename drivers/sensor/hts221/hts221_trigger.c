@@ -36,7 +36,7 @@ int hts221_trigger_set(struct device *dev,
 }
 
 static void hts221_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+				  struct gpio_callback *cb, u32_t pins)
 {
 	struct hts221_data *drv_data =
 		CONTAINER_OF(cb, struct hts221_data, gpio_cb);

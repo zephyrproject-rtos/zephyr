@@ -61,12 +61,12 @@
 #define IDLE_NOT_TICKLESS 0 /* non-tickless idle mode */
 #define IDLE_TICKLESS 1     /* tickless idle  mode */
 
-extern int32_t _sys_idle_elapsed_ticks;
+extern s32_t _sys_idle_elapsed_ticks;
 
-static uint32_t __noinit cycles_per_tick;
-static uint32_t __noinit max_system_ticks;
-static uint32_t idle_original_ticks;
-static uint32_t __noinit max_load_value;
+static u32_t __noinit cycles_per_tick;
+static u32_t __noinit max_system_ticks;
+static u32_t idle_original_ticks;
+static u32_t __noinit max_load_value;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 static unsigned char idle_mode = IDLE_NOT_TICKLESS;
 
@@ -88,11 +88,11 @@ static ALWAYS_INLINE void tickless_idle_init(void)
  * @return N/A
  */
 
-void _timer_idle_enter(int32_t ticks)
+void _timer_idle_enter(s32_t ticks)
 {
-	uint32_t P; /* Programming (current) time */
-	uint32_t F; /* Idle timer fire time */
-	uint32_t f; /* Last programmed timer fire time */
+	u32_t P; /* Programming (current) time */
+	u32_t F; /* Idle timer fire time */
+	u32_t f; /* Last programmed timer fire time */
 
 	if ((ticks == K_FOREVER) || (ticks > max_system_ticks)) {
 		/*
@@ -146,11 +146,11 @@ void _timer_idle_enter(int32_t ticks)
  */
 void _timer_idle_exit(void)
 {
-	uint32_t C; /* Current time (time within this function execution) */
-	uint32_t F; /* Idle timer programmed fire time */
-	uint32_t s; /* Requested idle timer sleep time */
-	uint32_t e; /* elapsed "Cer time" */
-	uint32_t r; /*reamining time to the timer to expire */
+	u32_t C; /* Current time (time within this function execution) */
+	u32_t F; /* Idle timer programmed fire time */
+	u32_t s; /* Requested idle timer sleep time */
+	u32_t e; /* elapsed "Cer time" */
+	u32_t r; /*reamining time to the timer to expire */
 
 	if (timer_mode == TIMER_MODE_PERIODIC) {
 		/*
@@ -314,8 +314,8 @@ int _sys_clock_driver_init(struct device *device)
 	 * for sure modify this code in order to initialize their HW.
 	 */
 	/* TODO: Implement this case: remove below code and write yours */
-	volatile uint32_t *p_mmio = (uint32_t *) 0xC0000000; /* start HW reg */
-	uint32_t interrupt = 0x00000000;
+	volatile u32_t *p_mmio = (u32_t *) 0xC0000000; /* start HW reg */
+	u32_t interrupt = 0x00000000;
 	/* Start the timer: Trigger the interrupt source drivers */
 	*p_mmio = 0xFFFFFFFF;
 	*p_mmio = interrupt;
@@ -345,7 +345,7 @@ int _sys_clock_driver_init(struct device *device)
  *
  * @return up counter of elapsed clock cycles
  */
-uint32_t _timer_cycle_get_32(void)
+u32_t _timer_cycle_get_32(void)
 {
 	return GET_TIMER_CURRENT_TIME();
 }

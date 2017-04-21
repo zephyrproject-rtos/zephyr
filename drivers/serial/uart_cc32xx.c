@@ -127,7 +127,7 @@ static int uart_cc32xx_err_check(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_cc32xx_fifo_fill(struct device *dev, const uint8_t *tx_data,
+static int uart_cc32xx_fifo_fill(struct device *dev, const u8_t *tx_data,
 				 int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
@@ -146,7 +146,7 @@ static int uart_cc32xx_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	return (int)num_tx;
 }
 
-static int uart_cc32xx_fifo_read(struct device *dev, uint8_t *rx_data,
+static int uart_cc32xx_fifo_read(struct device *dev, u8_t *rx_data,
 				 const int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);

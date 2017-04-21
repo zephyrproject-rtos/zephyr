@@ -29,7 +29,7 @@ struct dma_qmsi_config_info {
 };
 
 struct dma_qmsi_context {
-	uint32_t index;
+	u32_t index;
 	struct device *dev;
 };
 
@@ -38,11 +38,11 @@ struct dma_qmsi_driver_data {
 	void (*error[QM_DMA_CHANNEL_NUM])(struct device *dev, void *data);
 	void *callback_data[QM_DMA_CHANNEL_NUM];
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 	qm_dma_context_t saved_ctx;
 #endif
 	void (*dma_user_callback[QM_DMA_CHANNEL_NUM])(struct device *dev,
-						      uint32_t channel_id,
+						      u32_t channel_id,
 						      int error_code);
 };
 
@@ -50,11 +50,11 @@ struct dma_qmsi_driver_data {
 static struct dma_qmsi_context dma_context[QM_DMA_CHANNEL_NUM];
 static void dma_qmsi_config(struct device *dev);
 
-static void dma_callback(void *callback_context, uint32_t len,
+static void dma_callback(void *callback_context, u32_t len,
 						 int error_code)
 {
 	struct dma_qmsi_driver_data *data;
-	uint32_t channel;
+	u32_t channel;
 	struct dma_qmsi_context *context = callback_context;
 
 	channel = context->index;
@@ -68,12 +68,12 @@ static void dma_callback(void *callback_context, uint32_t len,
 	data->transfer[channel](context->dev, data->callback_data[channel]);
 }
 
-static void dma_drv_callback(void *callback_context, uint32_t len,
+static void dma_drv_callback(void *callback_context, u32_t len,
 			     int error_code)
 {
 	struct dma_qmsi_context *context = callback_context;
 	struct dma_qmsi_driver_data *data;
-	uint32_t channel;
+	u32_t channel;
 
 	channel = context->index;
 	data = context->dev->driver_data;
@@ -81,7 +81,7 @@ static void dma_drv_callback(void *callback_context, uint32_t len,
 	data->dma_user_callback[channel](context->dev, channel, error_code);
 }
 
-static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
+static int dma_qmsi_channel_config(struct device *dev, u32_t channel,
 				   struct dma_channel_config *config)
 {
 	qm_dma_channel_config_t qmsi_cfg;
@@ -119,7 +119,7 @@ static int dma_qmsi_channel_config(struct device *dev, uint32_t channel,
 	return qm_dma_channel_set_config(info->instance, channel, &qmsi_cfg);
 }
 
-static int dma_qmsi_transfer_config(struct device *dev, uint32_t channel,
+static int dma_qmsi_transfer_config(struct device *dev, u32_t channel,
 				    struct dma_transfer_config *config)
 {
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
@@ -128,7 +128,7 @@ static int dma_qmsi_transfer_config(struct device *dev, uint32_t channel,
 					 (qm_dma_transfer_t *)config);
 }
 
-static int width_index(uint32_t num_bytes, uint32_t *index)
+static int width_index(u32_t num_bytes, u32_t *index)
 {
 	switch (num_bytes) {
 	case 1:
@@ -156,7 +156,7 @@ static int width_index(uint32_t num_bytes, uint32_t *index)
 	return 0;
 }
 
-static int bst_index(uint32_t num_units, uint32_t *index)
+static int bst_index(u32_t num_units, u32_t *index)
 {
 	switch (num_units) {
 	case 1:
@@ -190,14 +190,14 @@ static int bst_index(uint32_t num_units, uint32_t *index)
 	return 0;
 }
 
-static int dma_qmsi_chan_config(struct device *dev, uint32_t channel,
+static int dma_qmsi_chan_config(struct device *dev, u32_t channel,
 				struct dma_config *config)
 {
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
 	struct dma_qmsi_driver_data *data = dev->driver_data;
 	qm_dma_transfer_t qmsi_transfer_cfg = { 0 };
 	qm_dma_channel_config_t qmsi_cfg = { 0 };
-	uint32_t temp = 0;
+	u32_t temp = 0;
 	int ret = 0;
 
 	if (config->block_count != 1) {
@@ -250,16 +250,16 @@ static int dma_qmsi_chan_config(struct device *dev, uint32_t channel,
 	}
 
 	qmsi_transfer_cfg.block_size = config->head_block->block_size;
-	qmsi_transfer_cfg.source_address = (uint32_t *)
+	qmsi_transfer_cfg.source_address = (u32_t *)
 					   config->head_block->source_address;
-	qmsi_transfer_cfg.destination_address = (uint32_t *)
+	qmsi_transfer_cfg.destination_address = (u32_t *)
 					      config->head_block->dest_address;
 
 	return qm_dma_transfer_set_config(info->instance, channel,
 					  &qmsi_transfer_cfg);
 }
 
-static int dma_qmsi_transfer_start(struct device *dev, uint32_t channel)
+static int dma_qmsi_transfer_start(struct device *dev, u32_t channel)
 {
 	int ret;
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
@@ -271,7 +271,7 @@ static int dma_qmsi_transfer_start(struct device *dev, uint32_t channel)
 	return ret;
 }
 
-static int dma_qmsi_start(struct device *dev, uint32_t channel)
+static int dma_qmsi_start(struct device *dev, u32_t channel)
 {
 	int ret;
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
@@ -283,14 +283,14 @@ static int dma_qmsi_start(struct device *dev, uint32_t channel)
 	return ret;
 }
 
-static int dma_qmsi_transfer_stop(struct device *dev, uint32_t channel)
+static int dma_qmsi_transfer_stop(struct device *dev, u32_t channel)
 {
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
 	return qm_dma_transfer_terminate(info->instance, channel);
 }
 
-static int dma_qmsi_stop(struct device *dev, uint32_t channel)
+static int dma_qmsi_stop(struct device *dev, u32_t channel)
 {
 	const struct dma_qmsi_config_info *info = dev->config->config_info;
 
@@ -308,14 +308,14 @@ static const struct dma_driver_api dma_funcs = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void dma_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+static void dma_qmsi_set_power_state(struct device *dev, u32_t power_state)
 {
 	struct dma_qmsi_driver_data *ctx = dev->driver_data;
 
 	ctx->device_power_state = power_state;
 }
 
-static uint32_t dma_qmsi_get_power_state(struct device *dev)
+static u32_t dma_qmsi_get_power_state(struct device *dev)
 {
 	struct dma_qmsi_driver_data *ctx = dev->driver_data;
 
@@ -364,17 +364,17 @@ static int dma_resume_device(struct device *dev)
 	return 0;
 }
 
-static int dma_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int dma_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return dma_suspend_device(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return dma_resume_device(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = dma_qmsi_get_power_state(dev);
+		*((u32_t *)context) = dma_qmsi_get_power_state(dev);
 	}
 
 	return 0;

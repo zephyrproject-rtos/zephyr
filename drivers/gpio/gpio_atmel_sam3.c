@@ -34,7 +34,7 @@ struct gpio_sam3_runtime {
 	sys_slist_t		cb;
 };
 
-static void _config(struct device *dev, uint32_t mask, int flags)
+static void _config(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
 
@@ -107,7 +107,7 @@ static void _config(struct device *dev, uint32_t mask, int flags)
  * @return 0 if successful, failed otherwise
  */
 static int gpio_sam3_config(struct device *dev, int access_op,
-			    uint32_t pin, int flags)
+			    u32_t pin, int flags)
 {
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
@@ -134,7 +134,7 @@ static int gpio_sam3_config(struct device *dev, int access_op,
  * @return 0 if successful, failed otherwise
  */
 static int gpio_sam3_write(struct device *dev, int access_op,
-			   uint32_t pin, uint32_t value)
+			   u32_t pin, u32_t value)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
 
@@ -175,7 +175,7 @@ static int gpio_sam3_write(struct device *dev, int access_op,
  * @return 0 if successful, failed otherwise
  */
 static int gpio_sam3_read(struct device *dev, int access_op,
-				       uint32_t pin, uint32_t *value)
+				       u32_t pin, u32_t *value)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
 
@@ -199,7 +199,7 @@ static void gpio_sam3_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
 	struct gpio_sam3_runtime *context = dev->driver_data;
-	uint32_t int_stat;
+	u32_t int_stat;
 
 	int_stat = cfg->port->isr;
 
@@ -218,10 +218,10 @@ static int gpio_sam3_manage_callback(struct device *dev,
 }
 
 static int gpio_sam3_enable_callback(struct device *dev,
-				     int access_op, uint32_t pin)
+				     int access_op, u32_t pin)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
-	uint32_t mask;
+	u32_t mask;
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
@@ -240,10 +240,10 @@ static int gpio_sam3_enable_callback(struct device *dev,
 }
 
 static int gpio_sam3_disable_callback(struct device *dev,
-				      int access_op, uint32_t pin)
+				      int access_op, u32_t pin)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
-	uint32_t mask;
+	u32_t mask;
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:

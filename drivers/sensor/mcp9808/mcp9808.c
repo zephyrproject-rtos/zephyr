@@ -17,7 +17,7 @@
 #include "mcp9808.h"
 
 
-int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
+int mcp9808_reg_read(struct mcp9808_data *data, u8_t reg, u16_t *val)
 {
 	struct i2c_msg msgs[2] = {
 		{
@@ -26,7 +26,7 @@ int mcp9808_reg_read(struct mcp9808_data *data, uint8_t reg, uint16_t *val)
 			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
 		},
 		{
-			.buf = (uint8_t *)val,
+			.buf = (u8_t *)val,
 			.len = 2,
 			.flags = I2C_MSG_READ | I2C_MSG_STOP,
 		},

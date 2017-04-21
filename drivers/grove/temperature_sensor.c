@@ -25,7 +25,7 @@ struct gts_data {
 	struct device *adc;
 	struct adc_seq_entry sample;
 	struct adc_seq_table adc_table;
-	uint8_t adc_buffer[4];
+	u8_t adc_buffer[4];
 };
 
 static int gts_sample_fetch(struct device *dev, enum sensor_channel chan)
@@ -40,11 +40,11 @@ static int gts_channel_get(struct device *dev,
 			   struct sensor_value *val)
 {
 	struct gts_data *drv_data = dev->driver_data;
-	uint16_t analog_val;
+	u16_t analog_val;
 	double dval;
 
 	/* rescale sample from 12bit (Zephyr) to 10bit (Grove) */
-	analog_val = ((uint16_t)drv_data->adc_buffer[1] << 8) |
+	analog_val = ((u16_t)drv_data->adc_buffer[1] << 8) |
 		     drv_data->adc_buffer[0];
 	analog_val = analog_val >> 2;
 
@@ -56,8 +56,8 @@ static int gts_channel_get(struct device *dev,
 	dval = 1 / (log(1023.0 / analog_val - 1.0) / B_CONST +
 		    1 / 298.15) - 273.15;
 
-	val->val1 = (int32_t)dval;
-	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
+	val->val1 = (s32_t)dval;
+	val->val2 = ((s32_t)(dval * 1000000)) % 1000000;
 
 	return 0;
 }

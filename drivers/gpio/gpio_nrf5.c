@@ -30,59 +30,59 @@
 
 /* GPIO structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
 struct _gpio {
-	__I  uint32_t RESERVED0[321];
-	__IO uint32_t OUT;
-	__IO uint32_t OUTSET;
-	__IO uint32_t OUTCLR;
+	__I  u32_t RESERVED0[321];
+	__IO u32_t OUT;
+	__IO u32_t OUTSET;
+	__IO u32_t OUTCLR;
 
-	__I uint32_t  IN;
-	__IO uint32_t DIR;
-	__IO uint32_t DIRSET;
-	__IO uint32_t DIRCLR;
-	__IO uint32_t LATCH;
-	__IO uint32_t DETECTMODE;
-	__I uint32_t  RESERVED1[118];
-	__IO uint32_t PIN_CNF[32];
+	__I u32_t  IN;
+	__IO u32_t DIR;
+	__IO u32_t DIRSET;
+	__IO u32_t DIRCLR;
+	__IO u32_t LATCH;
+	__IO u32_t DETECTMODE;
+	__I u32_t  RESERVED1[118];
+	__IO u32_t PIN_CNF[32];
 };
 
 /* GPIOTE structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
 struct _gpiote {
-	__O uint32_t  TASKS_OUT[8];
-	__I uint32_t  RESERVED0[4];
+	__O u32_t  TASKS_OUT[8];
+	__I u32_t  RESERVED0[4];
 
-	__O uint32_t  TASKS_SET[8];
-	__I uint32_t  RESERVED1[4];
+	__O u32_t  TASKS_SET[8];
+	__I u32_t  RESERVED1[4];
 
-	__O uint32_t  TASKS_CLR[8];
-	__I uint32_t  RESERVED2[32];
-	__IO uint32_t EVENTS_IN[8];
-	__I uint32_t  RESERVED3[23];
-	__IO uint32_t EVENTS_PORT;
-	__I uint32_t  RESERVED4[97];
-	__IO uint32_t INTENSET;
-	__IO uint32_t INTENCLR;
-	__I uint32_t  RESERVED5[129];
-	__IO uint32_t CONFIG[8];
+	__O u32_t  TASKS_CLR[8];
+	__I u32_t  RESERVED2[32];
+	__IO u32_t EVENTS_IN[8];
+	__I u32_t  RESERVED3[23];
+	__IO u32_t EVENTS_PORT;
+	__I u32_t  RESERVED4[97];
+	__IO u32_t INTENSET;
+	__IO u32_t INTENCLR;
+	__I u32_t  RESERVED5[129];
+	__IO u32_t CONFIG[8];
 };
 
 /** Configuration data */
 struct gpio_nrf5_config {
 	/* GPIO module base address */
-	uint32_t gpio_base_addr;
+	u32_t gpio_base_addr;
 	/* Port Control module base address */
-	uint32_t port_base_addr;
+	u32_t port_base_addr;
 	/* GPIO Task Event base address */
-	uint32_t gpiote_base_addr;
+	u32_t gpiote_base_addr;
 };
 
 struct gpio_nrf5_data {
 	/* list of registered callbacks */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
-	uint32_t pin_callback_enables;
+	u32_t pin_callback_enables;
 
 	/*@todo: move GPIOTE channel management to a separate module */
-	uint32_t gpiote_chan_mask;
+	u32_t gpiote_chan_mask;
 };
 
 /* convenience defines for GPIO */
@@ -126,7 +126,7 @@ struct gpio_nrf5_data {
 #define GPIOTE_CFG_PIN_GET(config) ((config & GPIOTE_CONFIG_PSEL_Msk) >> \
 				GPIOTE_CONFIG_PSEL_Pos)
 
-static int gpiote_find_channel(struct device *dev, uint32_t pin)
+static int gpiote_find_channel(struct device *dev, u32_t pin)
 {
 	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
 	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
@@ -146,10 +146,10 @@ static int gpiote_find_channel(struct device *dev, uint32_t pin)
  * @brief Configure pin or port
  */
 static int gpio_nrf5_config(struct device *dev,
-			    int access_op, uint32_t pin, int flags)
+			    int access_op, u32_t pin, int flags)
 {
 	/* Note D0D1 is not supported so we switch to S0S1.  */
-	static const uint32_t drive_strength[4][4] = {
+	static const u32_t drive_strength[4][4] = {
 		{GPIO_DRIVE_S0S1, GPIO_DRIVE_S0H1, 0, GPIO_DRIVE_S0D1},
 		{GPIO_DRIVE_H0S1, GPIO_DRIVE_H0H1, 0, GPIO_DRIVE_H0D1},
 		{0, 0, 0, 0},
@@ -162,7 +162,7 @@ static int gpio_nrf5_config(struct device *dev,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 
 		/* Check pull */
-		uint8_t pull = GPIO_PULL_DISABLE;
+		u8_t pull = GPIO_PULL_DISABLE;
 		int ds_low = (flags & GPIO_DS_LOW_MASK) >> GPIO_DS_LOW_POS;
 		int ds_high = (flags & GPIO_DS_HIGH_MASK) >> GPIO_DS_HIGH_POS;
 
@@ -201,7 +201,7 @@ static int gpio_nrf5_config(struct device *dev,
 	}
 
 	if (flags & GPIO_INT) {
-		uint32_t config = 0;
+		u32_t config = 0;
 
 		if (flags & GPIO_INT_EDGE) {
 			if (flags & GPIO_INT_DOUBLE_EDGE) {
@@ -242,7 +242,7 @@ static int gpio_nrf5_config(struct device *dev,
 }
 
 static int gpio_nrf5_read(struct device *dev,
-			  int access_op, uint32_t pin, uint32_t *value)
+			  int access_op, u32_t pin, u32_t *value)
 {
 	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
 
@@ -255,7 +255,7 @@ static int gpio_nrf5_read(struct device *dev,
 }
 
 static int gpio_nrf5_write(struct device *dev,
-			   int access_op, uint32_t pin, uint32_t value)
+			   int access_op, u32_t pin, u32_t value)
 {
 	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
 
@@ -283,7 +283,7 @@ static int gpio_nrf5_manage_callback(struct device *dev,
 
 
 static int gpio_nrf5_enable_callback(struct device *dev,
-				    int access_op, uint32_t pin)
+				    int access_op, u32_t pin)
 {
 	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
 	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
@@ -310,7 +310,7 @@ static int gpio_nrf5_enable_callback(struct device *dev,
 
 
 static int gpio_nrf5_disable_callback(struct device *dev,
-				     int access_op, uint32_t pin)
+				     int access_op, u32_t pin)
 {
 	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
 	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
@@ -345,7 +345,7 @@ static void gpio_nrf5_port_isr(void *arg)
 	struct device *dev = arg;
 	volatile struct _gpiote *gpiote = GPIOTE_STRUCT(dev);
 	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
-	uint32_t enabled_int, int_status = 0;
+	u32_t enabled_int, int_status = 0;
 	int i;
 
 	for (i = 0; i < GPIOTE_CHAN_COUNT; i++) {

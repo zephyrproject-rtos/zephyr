@@ -35,7 +35,7 @@ static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 					CONFIG_CLOCK_STM32_APB2_PRESCALER);
 }
 
-static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
+static u32_t get_bus_clock(u32_t clock, u32_t prescaler)
 {
 	return clock / prescaler;
 }
@@ -108,7 +108,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 
 static int stm32_clock_control_get_subsys_rate(struct device *clock,
 						clock_control_subsys_t sub_system,
-						uint32_t *rate)
+						u32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	/*
@@ -117,10 +117,10 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	 * since it will be updated after clock configuration and hence
 	 * more likely to contain actual clock speed
 	 */
-	uint32_t ahb_clock = SystemCoreClock;
-	uint32_t apb1_clock = get_bus_clock(ahb_clock,
+	u32_t ahb_clock = SystemCoreClock;
+	u32_t apb1_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB1_PRESCALER);
-	uint32_t apb2_clock = get_bus_clock(ahb_clock,
+	u32_t apb2_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB2_PRESCALER);
 
 	ARG_UNUSED(clock);

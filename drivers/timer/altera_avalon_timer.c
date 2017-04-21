@@ -49,7 +49,7 @@
 #define ALTERA_AVALON_TIMER_SNAPH_MSK               (0xFFFF)
 #define ALTERA_AVALON_TIMER_SNAPH_OFST              (0)
 
-static uint32_t accumulated_cycle_count;
+static u32_t accumulated_cycle_count;
 
 static void timer_irq_handler(void *unused)
 {

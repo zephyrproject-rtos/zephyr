@@ -11,8 +11,8 @@
 #include <board.h>
 
 typedef struct {
-	uint32_t val_low;
-	uint32_t val_high;
+	u32_t val_low;
+	u32_t val_high;
 } riscv_machine_timer_t;
 
 static volatile riscv_machine_timer_t *mtime =
@@ -29,7 +29,7 @@ static volatile riscv_machine_timer_t *mtimecmp =
  */
 static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 {
-	uint64_t rtc;
+	u64_t rtc;
 
 	/*
 	 * Disable timer interrupt while rearming the timer
@@ -47,15 +47,15 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 	 * This also works for other implementations.
 	 */
 	rtc = mtime->val_low;
-	rtc |= ((uint64_t)mtime->val_high << 32);
+	rtc |= ((u64_t)mtime->val_high << 32);
 
 	/*
 	 * Rearm timer to generate an interrupt after
 	 * sys_clock_hw_cycles_per_tick
 	 */
 	rtc += sys_clock_hw_cycles_per_tick;
-	mtimecmp->val_low = (uint32_t)(rtc & 0xffffffff);
-	mtimecmp->val_high = (uint32_t)((rtc >> 32) & 0xffffffff);
+	mtimecmp->val_low = (u32_t)(rtc & 0xffffffff);
+	mtimecmp->val_high = (u32_t)((rtc >> 32) & 0xffffffff);
 
 	/* Enable timer interrupt */
 	irq_enable(RISCV_MACHINE_TIMER_IRQ);

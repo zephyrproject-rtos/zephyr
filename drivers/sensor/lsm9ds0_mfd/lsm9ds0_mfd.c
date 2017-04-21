@@ -38,7 +38,7 @@ static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)
 }
 
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
-static inline int lsm9ds0_mfd_accel_set_odr_raw(struct device *dev, uint8_t odr)
+static inline int lsm9ds0_mfd_accel_set_odr_raw(struct device *dev, u8_t odr)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
@@ -68,7 +68,7 @@ static const struct {
 static int lsm9ds0_mfd_accel_set_odr(struct device *dev,
 				     const struct sensor_value *val)
 {
-	uint8_t i;
+	u8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
 		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
@@ -82,7 +82,7 @@ static int lsm9ds0_mfd_accel_set_odr(struct device *dev,
 }
 #endif
 
-static inline int lsm9ds0_mfd_accel_set_fs_raw(struct device *dev, uint8_t fs)
+static inline int lsm9ds0_mfd_accel_set_fs_raw(struct device *dev, u8_t fs)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
@@ -113,7 +113,7 @@ static const struct {
 
 static int lsm9ds0_mfd_accel_set_fs(struct device *dev, int val)
 {
-	uint8_t i;
+	u8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_fs_map); ++i) {
 		if (val <= lsm9ds0_mfd_accel_fs_map[i].fs) {
@@ -127,7 +127,7 @@ static int lsm9ds0_mfd_accel_set_fs(struct device *dev, int val)
 #endif
 
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
-static inline int lsm9ds0_mfd_magn_set_odr_raw(struct device *dev, uint8_t odr)
+static inline int lsm9ds0_mfd_magn_set_odr_raw(struct device *dev, u8_t odr)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
@@ -153,7 +153,7 @@ static const struct {
 static int lsm9ds0_mfd_magn_set_odr(struct device *dev,
 				    const struct sensor_value *val)
 {
-	uint8_t i;
+	u8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
 		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
@@ -167,7 +167,7 @@ static int lsm9ds0_mfd_magn_set_odr(struct device *dev,
 }
 #endif
 
-static inline int lsm9ds0_mfd_magn_set_fs_raw(struct device *dev, uint8_t fs)
+static inline int lsm9ds0_mfd_magn_set_fs_raw(struct device *dev, u8_t fs)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
@@ -198,7 +198,7 @@ static const struct {
 static int lsm9ds0_mfd_magn_set_fs(struct device *dev,
 				   const struct sensor_value *val)
 {
-	uint8_t i;
+	u8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_magn_fs_map); ++i) {
 		if (val->val1 <= lsm9ds0_mfd_magn_fs_map[i].fs) {
@@ -216,7 +216,7 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
-	uint8_t out_l, out_h;
+	u8_t out_l, out_h;
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_ENABLE_X)
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -227,8 +227,8 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_accel_x = (int16_t)((uint16_t)(out_l) |
-			       ((uint16_t)(out_h) << 8));
+	data->sample_accel_x = (s16_t)((u16_t)(out_l) |
+			       ((u16_t)(out_h) << 8));
 #endif
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_ENABLE_Y)
@@ -240,8 +240,8 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_accel_y = (int16_t)((uint16_t)(out_l) |
-			       ((uint16_t)(out_h) << 8));
+	data->sample_accel_y = (s16_t)((u16_t)(out_l) |
+			       ((u16_t)(out_h) << 8));
 #endif
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_ENABLE_Z)
@@ -253,8 +253,8 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_accel_z = (int16_t)((uint16_t)(out_l) |
-			       ((uint16_t)(out_h) << 8));
+	data->sample_accel_z = (s16_t)((u16_t)(out_l) |
+			       ((u16_t)(out_h) << 8));
 #endif
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
@@ -270,7 +270,7 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
-	uint8_t out_l, out_h;
+	u8_t out_l, out_h;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_X_L_M, &out_l) < 0 ||
@@ -280,8 +280,8 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_magn_x = (int16_t)((uint16_t)(out_l) |
-			      ((uint16_t)(out_h) << 8));
+	data->sample_magn_x = (s16_t)((u16_t)(out_l) |
+			      ((u16_t)(out_h) << 8));
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_Y_L_M, &out_l) < 0 ||
@@ -291,8 +291,8 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_magn_y = (int16_t)((uint16_t)(out_l) |
-			      ((uint16_t)(out_h) << 8));
+	data->sample_magn_y = (s16_t)((u16_t)(out_l) |
+			      ((u16_t)(out_h) << 8));
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_Z_L_M, &out_l) < 0 ||
@@ -302,8 +302,8 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_magn_z = (int16_t)((uint16_t)(out_l) |
-			      ((uint16_t)(out_h) << 8));
+	data->sample_magn_z = (s16_t)((u16_t)(out_l) |
+			      ((u16_t)(out_h) << 8));
 
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
 	data->sample_magn_fs = data->magn_fs;
@@ -318,7 +318,7 @@ static inline int lsm9ds0_mfd_sample_fetch_temp(struct device *dev)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
-	uint8_t out_l, out_h;
+	u8_t out_l, out_h;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_TEMP_L_XM, &out_l) < 0 ||
@@ -328,8 +328,8 @@ static inline int lsm9ds0_mfd_sample_fetch_temp(struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_temp = (int16_t)((uint16_t)(out_l) |
-			    ((uint16_t)(out_h) << 8));
+	data->sample_temp = (s16_t)((u16_t)(out_l) |
+			    ((u16_t)(out_h) << 8));
 
 	return 0;
 }
@@ -391,8 +391,8 @@ static inline void lsm9ds0_mfd_convert_accel(struct sensor_value *val,
 	double dval;
 
 	dval = (double)(raw_val) * scale;
-	val->val1 = (int32_t)dval;
-	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
+	val->val1 = (s32_t)dval;
+	val->val2 = ((s32_t)(dval * 1000000)) % 1000000;
 }
 
 static inline int lsm9ds0_mfd_get_accel_channel(enum sensor_channel chan,
@@ -477,8 +477,8 @@ static inline void lsm9ds0_mfd_convert_magn(struct sensor_value *val,
 	double dval;
 
 	dval = (double)(raw_val) * scale;
-	val->val1 = (int32_t)dval;
-	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
+	val->val1 = (s32_t)dval;
+	val->val2 = ((s32_t)(dval * 1000000)) % 1000000;
 }
 
 static inline int lsm9ds0_mfd_get_magn_channel(enum sensor_channel chan,
@@ -665,7 +665,7 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 {
 	struct lsm9ds0_mfd_data *data = dev->driver_data;
 	const struct lsm9ds0_mfd_config *config = dev->config->config_info;
-	uint8_t chip_id;
+	u8_t chip_id;
 
 	if (lsm9ds0_mfd_reboot_memory(dev) < 0) {
 		SYS_LOG_DBG("failed to reset device");

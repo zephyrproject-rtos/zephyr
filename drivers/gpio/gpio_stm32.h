@@ -48,7 +48,7 @@
  */
 struct gpio_stm32_config {
 	/* port base address */
-	uint32_t *base;
+	u32_t *base;
 	/* IO port */
 	enum stm32_pin_port port;
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
@@ -66,7 +66,7 @@ struct gpio_stm32_config {
  */
 struct gpio_stm32_data {
 	/* Enabled INT pins generating a cb */
-	uint32_t cb_pins;
+	u32_t cb_pins;
 	/* user ISR cb */
 	sys_slist_t cb;
 };
@@ -89,7 +89,7 @@ int stm32_gpio_flags_to_conf(int flags, int *conf);
  * @param func GPIO mode
  * @param altf Alternate function
  */
-int stm32_gpio_configure(uint32_t *base_addr, int pin, int func, int altf);
+int stm32_gpio_configure(u32_t *base_addr, int pin, int func, int altf);
 
 /**
  * @brief helper for setting of GPIO pin output
@@ -98,7 +98,7 @@ int stm32_gpio_configure(uint32_t *base_addr, int pin, int func, int altf);
  * @param pin IO pin
  * @param value 1, 0
  */
-int stm32_gpio_set(uint32_t *base, int pin, int value);
+int stm32_gpio_set(u32_t *base, int pin, int value);
 
 /**
  * @brief helper for reading of GPIO pin value
@@ -107,7 +107,7 @@ int stm32_gpio_set(uint32_t *base, int pin, int value);
  * @param pin IO pin
  * @return pin value
  */
-int stm32_gpio_get(uint32_t *base, int pin);
+int stm32_gpio_get(u32_t *base, int pin);
 
 /**
  * @brief enable interrupt source for GPIO pin

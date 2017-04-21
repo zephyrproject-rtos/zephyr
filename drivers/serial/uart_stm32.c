@@ -43,7 +43,7 @@ static int uart_stm32_poll_in(struct device *dev, unsigned char *c)
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	UART_HandleTypeDef *UartHandle = &data->huart;
 
-	if (HAL_UART_Receive(UartHandle, (uint8_t *)c, 1, TIMEOUT) == HAL_OK) {
+	if (HAL_UART_Receive(UartHandle, (u8_t *)c, 1, TIMEOUT) == HAL_OK) {
 		return 0;
 	} else {
 		return -1;
@@ -56,7 +56,7 @@ static unsigned char uart_stm32_poll_out(struct device *dev,
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	UART_HandleTypeDef *UartHandle = &data->huart;
 
-	HAL_UART_Transmit(UartHandle, (uint8_t *)&c, 1, TIMEOUT);
+	HAL_UART_Transmit(UartHandle, (u8_t *)&c, 1, TIMEOUT);
 
 	return c;
 }
@@ -74,12 +74,12 @@ static inline void __uart_stm32_get_clock(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_stm32_fifo_fill(struct device *dev, const uint8_t *tx_data,
+static int uart_stm32_fifo_fill(struct device *dev, const u8_t *tx_data,
 				  int size)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	UART_HandleTypeDef *UartHandle = &data->huart;
-	uint8_t num_tx = 0;
+	u8_t num_tx = 0;
 
 	while ((size - num_tx > 0) && __HAL_UART_GET_FLAG(UartHandle,
 		UART_FLAG_TXE)) {
@@ -91,7 +91,7 @@ static int uart_stm32_fifo_fill(struct device *dev, const uint8_t *tx_data,
 		 * Once it is we can remove the if/else
 		 */
 		UartHandle->Instance->DR = (tx_data[num_tx++] &
-					(uint8_t)0x00FF);
+					(u8_t)0x00FF);
 #else
 		LL_USART_TransmitData8(UartHandle->Instance, tx_data[num_tx++]);
 #endif
@@ -107,12 +107,12 @@ static int uart_stm32_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	return num_tx;
 }
 
-static int uart_stm32_fifo_read(struct device *dev, uint8_t *rx_data,
+static int uart_stm32_fifo_read(struct device *dev, u8_t *rx_data,
 				  const int size)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	UART_HandleTypeDef *UartHandle = &data->huart;
-	uint8_t num_rx = 0;
+	u8_t num_rx = 0;
 
 	while ((size - num_rx > 0) && __HAL_UART_GET_FLAG(UartHandle,
 		UART_FLAG_RXNE)) {
@@ -124,8 +124,8 @@ static int uart_stm32_fifo_read(struct device *dev, uint8_t *rx_data,
 		/* Use direct access for F1, F4 until Low Level API is available
 		 * Once it is we can remove the if/else
 		 */
-		rx_data[num_rx++] = (uint8_t)(UartHandle->Instance->DR &
-					(uint8_t)0x00FF);
+		rx_data[num_rx++] = (u8_t)(UartHandle->Instance->DR &
+					(u8_t)0x00FF);
 #else
 		rx_data[num_rx++] = LL_USART_ReceiveData8(UartHandle->Instance);
 #endif
@@ -325,7 +325,7 @@ static void uart_stm32_irq_config_func_1(struct device *dev);
 
 static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
 	.uconf = {
-		.base = (uint8_t *)CONFIG_UART_STM32_PORT_1_BASE_ADDRESS,
+		.base = (u8_t *)CONFIG_UART_STM32_PORT_1_BASE_ADDRESS,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		.irq_config_func = uart_stm32_irq_config_func_1,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -379,7 +379,7 @@ static void uart_stm32_irq_config_func_2(struct device *dev);
 
 static const struct uart_stm32_config uart_stm32_dev_cfg_2 = {
 	.uconf = {
-		.base = (uint8_t *)CONFIG_UART_STM32_PORT_2_BASE_ADDRESS,
+		.base = (u8_t *)CONFIG_UART_STM32_PORT_2_BASE_ADDRESS,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		.irq_config_func = uart_stm32_irq_config_func_2,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -431,7 +431,7 @@ static void uart_stm32_irq_config_func_3(struct device *dev);
 
 static const struct uart_stm32_config uart_stm32_dev_cfg_3 = {
 	.uconf = {
-		.base = (uint8_t *)CONFIG_UART_STM32_PORT_3_BASE_ADDRESS,
+		.base = (u8_t *)CONFIG_UART_STM32_PORT_3_BASE_ADDRESS,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		.irq_config_func = uart_stm32_irq_config_func_3,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */

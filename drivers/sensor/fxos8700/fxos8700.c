@@ -12,9 +12,9 @@ static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
 	struct fxos8700_data *data = dev->driver_data;
-	uint8_t buffer[FXOS8700_MAX_NUM_BYTES];
-	uint8_t num_bytes;
-	int16_t *raw;
+	u8_t buffer[FXOS8700_MAX_NUM_BYTES];
+	u8_t num_bytes;
+	s16_t *raw;
 	int ret = 0;
 	int i;
 
@@ -69,11 +69,11 @@ exit:
 	return ret;
 }
 
-static void fxos8700_accel_convert(struct sensor_value *val, int16_t raw,
+static void fxos8700_accel_convert(struct sensor_value *val, s16_t raw,
 				   enum fxos8700_range range)
 {
-	uint8_t frac_bits;
-	int64_t micro_ms2;
+	u8_t frac_bits;
+	s64_t micro_ms2;
 
 	/* The range encoding is convenient to compute the number of fractional
 	 * bits:
@@ -89,16 +89,16 @@ static void fxos8700_accel_convert(struct sensor_value *val, int16_t raw,
 	micro_ms2 = (raw * SENSOR_G) >> frac_bits;
 
 	/* The maximum possible value is 8g, which in units of micro m/s^2
-	 * always fits into 32-bits. Cast down to int32_t so we can use a
+	 * always fits into 32-bits. Cast down to s32_t so we can use a
 	 * faster divide.
 	 */
-	val->val1 = (int32_t) micro_ms2 / 1000000;
-	val->val2 = (int32_t) micro_ms2 % 1000000;
+	val->val1 = (s32_t) micro_ms2 / 1000000;
+	val->val2 = (s32_t) micro_ms2 % 1000000;
 }
 
-static void fxos8700_magn_convert(struct sensor_value *val, int16_t raw)
+static void fxos8700_magn_convert(struct sensor_value *val, s16_t raw)
 {
-	int32_t micro_g;
+	s32_t micro_g;
 
 	/* Convert units to micro Gauss. Raw magnetic data always has a
 	 * resolution of 0.1 uT/LSB, which is equivalent to 0.001 G/LSB.
@@ -110,9 +110,9 @@ static void fxos8700_magn_convert(struct sensor_value *val, int16_t raw)
 }
 
 #ifdef CONFIG_FXOS8700_TEMP
-static void fxos8700_temp_convert(struct sensor_value *val, int8_t raw)
+static void fxos8700_temp_convert(struct sensor_value *val, s8_t raw)
 {
-	int32_t micro_c;
+	s32_t micro_c;
 
 	/* Convert units to micro Celsius. Raw temperature data always has a
 	 * resolution of 0.96 deg C/LSB.
@@ -131,7 +131,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 	struct fxos8700_data *data = dev->driver_data;
 	int start_channel;
 	int num_channels;
-	int16_t *raw;
+	s16_t *raw;
 	int ret;
 	int i;
 
@@ -236,7 +236,7 @@ int fxos8700_get_power(struct device *dev, enum fxos8700_power *power)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
 	struct fxos8700_data *data = dev->driver_data;
-	uint8_t val = *power;
+	u8_t val = *power;
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      FXOS8700_REG_CTRLREG1,
@@ -265,7 +265,7 @@ static int fxos8700_init(struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
 	struct fxos8700_data *data = dev->driver_data;
-	uint8_t whoami;
+	u8_t whoami;
 
 	/* Get the I2C device */
 	data->i2c = device_get_binding(config->i2c_name);

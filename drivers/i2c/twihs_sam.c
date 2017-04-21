@@ -32,23 +32,23 @@
 struct twihs_sam_dev_cfg {
 	Twihs *regs;
 	void (*irq_config)(void);
-	uint8_t periph_id;
-	uint8_t irq_id;
+	u8_t periph_id;
+	u8_t irq_id;
 	const struct soc_gpio_pin *pin_list;
-	uint8_t pin_list_size;
+	u8_t pin_list_size;
 };
 
 struct twihs_msg {
 	/* Buffer containing data to read or write */
-	uint8_t *buf;
+	u8_t *buf;
 	/* Length of the buffer */
-	uint32_t len;
+	u32_t len;
 	/* Index of the next byte to be read/written from/to the buffer */
-	uint32_t idx;
+	u32_t idx;
 	/* Value of TWIHS_SR at the end of the message */
-	uint32_t twihs_sr;
+	u32_t twihs_sr;
 	/* Transfer flags as defined in the i2c.h file */
-	uint8_t flags;
+	u8_t flags;
 };
 
 /* Device run time data */
@@ -63,11 +63,11 @@ struct twihs_sam_dev_data {
 #define DEV_DATA(dev) \
 	((struct twihs_sam_dev_data *const)(dev)->driver_data)
 
-static uint32_t clk_div_calc(uint32_t speed)
+static u32_t clk_div_calc(u32_t speed)
 {
-	uint32_t ck_div = 0;
-	uint32_t cl_div;
-	uint32_t div_completed = 0;
+	u32_t ck_div = 0;
+	u32_t cl_div;
+	u32_t div_completed = 0;
 
 	while (!div_completed) {
 		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (2 * speed)) - 4)
@@ -84,13 +84,13 @@ static uint32_t clk_div_calc(uint32_t speed)
 	return (ck_div << 16) | (cl_div << 8) | cl_div;
 }
 
-static int twihs_sam_configure(struct device *dev, uint32_t config)
+static int twihs_sam_configure(struct device *dev, u32_t config)
 {
 	const struct twihs_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct twihs_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Twihs *const twihs = dev_cfg->regs;
-	uint32_t i2c_speed;
-	uint32_t clk;
+	u32_t i2c_speed;
+	u32_t clk;
 
 	if (!(config & (I2C_MODE_MASTER | I2C_MODE_SLAVE_READ))) {
 		SYS_LOG_ERR("Neither Master nor Slave I2C Mode is enabled");
@@ -137,7 +137,7 @@ static int twihs_sam_configure(struct device *dev, uint32_t config)
 }
 
 static void write_msg_start(Twihs *const twihs, struct twihs_msg *msg,
-			    uint8_t daddr)
+			    u8_t daddr)
 {
 	/* Set slave address and number of internal address bytes. */
 	twihs->TWIHS_MMR = TWIHS_MMR_DADR(daddr);
@@ -151,9 +151,9 @@ static void write_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 }
 
 static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
-			   uint8_t daddr)
+			   u8_t daddr)
 {
-	uint32_t twihs_cr_stop;
+	u32_t twihs_cr_stop;
 
 	/* Set slave address and number of internal address bytes */
 	twihs->TWIHS_MMR = TWIHS_MMR_MREAD | TWIHS_MMR_DADR(daddr);
@@ -170,7 +170,7 @@ static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 }
 
 static int twihs_sam_transfer(struct device *dev, struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr)
+			      u8_t num_msgs, u16_t addr)
 {
 	const struct twihs_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct twihs_sam_dev_data *const dev_data = DEV_DATA(dev);
@@ -212,7 +212,7 @@ static void twihs_sam_isr(void *arg)
 	struct twihs_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Twihs *const twihs = dev_cfg->regs;
 	struct twihs_msg *msg = &dev_data->msg;
-	uint32_t isr_status;
+	u32_t isr_status;
 
 	/* Retrieve interrupt status */
 	isr_status = twihs->TWIHS_SR & twihs->TWIHS_IMR;

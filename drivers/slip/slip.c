@@ -44,20 +44,20 @@ struct slip_context {
 	bool first;		/* SLIP received it's byte or not after
 				 * driver initialization or SLIP_END byte.
 				 */
-	uint8_t buf[1];		/* SLIP data is read into this buf */
+	u8_t buf[1];		/* SLIP data is read into this buf */
 	struct net_pkt *rx;	/* and then placed into this net_pkt */
 	struct net_buf *last;	/* Pointer to last fragment in the list */
-	uint8_t *ptr;		/* Where in net_pkt to add data */
+	u8_t *ptr;		/* Where in net_pkt to add data */
 	struct net_if *iface;
-	uint8_t state;
+	u8_t state;
 
-	uint8_t mac_addr[6];
+	u8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 
 #if defined(CONFIG_SLIP_STATISTICS)
 #define SLIP_STATS(statement)
 #else
-	uint16_t garbage;
+	u16_t garbage;
 #define SLIP_STATS(statement) statement
 #endif
 };
@@ -71,7 +71,7 @@ struct slip_context {
 #define COLOR_YELLOW  ""
 #endif
 
-static void hexdump(const char *str, const uint8_t *packet,
+static void hexdump(const char *str, const u8_t *packet,
 		    size_t length, size_t ll_reserve)
 {
 	int n = 0;
@@ -120,7 +120,7 @@ static void hexdump(const char *str, const uint8_t *packet,
 
 static inline void slip_writeb(unsigned char c)
 {
-	uint8_t buf[1] = { c };
+	u8_t buf[1] = { c };
 
 	uart_pipe_send(&buf[0], 1);
 }
@@ -129,12 +129,12 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 #if defined(CONFIG_SLIP_TAP)
-	uint16_t ll_reserve = net_pkt_ll_reserve(pkt);
+	u16_t ll_reserve = net_pkt_ll_reserve(pkt);
 	bool send_header_once = false;
 #endif
-	uint8_t *ptr;
-	uint16_t i;
-	uint8_t c;
+	u8_t *ptr;
+	u16_t i;
+	u8_t c;
 
 	if (!pkt->frags) {
 		/* No data? */
@@ -356,7 +356,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 	return 0;
 }
 
-static uint8_t *recv_cb(uint8_t *buf, size_t *off)
+static u8_t *recv_cb(u8_t *buf, size_t *off)
 {
 	struct slip_context *slip =
 		CONTAINER_OF(buf, struct slip_context, buf);

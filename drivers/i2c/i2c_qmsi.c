@@ -36,20 +36,20 @@ struct i2c_qmsi_driver_data {
 	int transfer_status;
 	struct k_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 	qm_i2c_context_t i2c_ctx;
 #endif
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void i2c_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+static void i2c_qmsi_set_power_state(struct device *dev, u32_t power_state)
 {
 	struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
 
 	drv_data->device_power_state = power_state;
 }
 
-static uint32_t i2c_qmsi_get_power_state(struct device *dev)
+static u32_t i2c_qmsi_get_power_state(struct device *dev)
 {
 	struct i2c_qmsi_driver_data *drv_data = dev->driver_data;
 
@@ -87,17 +87,17 @@ static int i2c_resume_device_from_suspend(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int i2c_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int i2c_device_ctrl(struct device *dev, u32_t ctrl_command,
 			   void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return i2c_suspend_device(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return i2c_resume_device_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = i2c_qmsi_get_power_state(dev);
+		*((u32_t *)context) = i2c_qmsi_get_power_state(dev);
 		return 0;
 	}
 
@@ -139,7 +139,7 @@ DEVICE_DEFINE(i2c_1, CONFIG_I2C_1_NAME, &i2c_qmsi_init,
 
 #endif /* CONFIG_I2C_1 */
 
-static int i2c_qmsi_configure(struct device *dev, uint32_t config)
+static int i2c_qmsi_configure(struct device *dev, u32_t config)
 {
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
@@ -185,7 +185,7 @@ static int i2c_qmsi_configure(struct device *dev, uint32_t config)
 }
 
 static void transfer_complete(void *data, int rc, qm_i2c_status_t status,
-			 uint32_t len)
+			 u32_t len)
 {
 	struct device *dev = (struct device *) data;
 	struct i2c_qmsi_driver_data *driver_data;
@@ -196,7 +196,7 @@ static void transfer_complete(void *data, int rc, qm_i2c_status_t status,
 }
 
 static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
-			     uint8_t num_msgs, uint16_t addr)
+			     u8_t num_msgs, u16_t addr)
 {
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
@@ -210,7 +210,7 @@ static int i2c_qmsi_transfer(struct device *dev, struct i2c_msg *msgs,
 	device_busy_set(dev);
 
 	for (int i = 0; i < num_msgs; i++) {
-		uint8_t op =  msgs[i].flags & I2C_MSG_RW_MASK;
+		u8_t op =  msgs[i].flags & I2C_MSG_RW_MASK;
 		bool stop = (msgs[i].flags & I2C_MSG_STOP) == I2C_MSG_STOP;
 		qm_i2c_transfer_t xfer = { 0 };
 		if (op == I2C_MSG_WRITE) {

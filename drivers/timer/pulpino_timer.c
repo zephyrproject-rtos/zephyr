@@ -15,14 +15,14 @@
 #define TIMER_CTRL_PRE(x)          (((x) & 0x07) << 3) /* Prescaler Value */
 
 typedef struct {
-	uint32_t val;
-	uint32_t ctrl;
-	uint32_t cmp;
+	u32_t val;
+	u32_t ctrl;
+	u32_t cmp;
 } pulpino_timer_t;
 
 static volatile pulpino_timer_t *timer = (pulpino_timer_t *)PULP_TIMER_A_BASE;
 
-static uint32_t accumulated_cycle_count;
+static u32_t accumulated_cycle_count;
 
 static void pulpino_timer_irq_handler(void *unused)
 {

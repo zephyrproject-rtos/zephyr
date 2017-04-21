@@ -36,19 +36,19 @@
 #define DEV_CFG(dev) \
 	((const struct uart_device_config * const)(dev)->config->config_info)
 
-static uint32_t control_reg_read(void *base)
+static u32_t control_reg_read(void *base)
 {
 	return _nios2_reg_read(base, UART_ALTERA_JTAG_CONTROL_REG);
 }
 
 
-static void control_reg_write(void *base, uint32_t data)
+static void control_reg_write(void *base, u32_t data)
 {
 	return _nios2_reg_write(base, UART_ALTERA_JTAG_CONTROL_REG, data);
 }
 
 
-static void data_reg_write(void *base, uint32_t data)
+static void data_reg_write(void *base, u32_t data)
 {
 	return _nios2_reg_write(base, UART_ALTERA_JTAG_DATA_REG, data);
 }

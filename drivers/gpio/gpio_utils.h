@@ -42,7 +42,7 @@ static inline void _gpio_manage_callback(sys_slist_t *callbacks,
  */
 static inline void _gpio_fire_callbacks(sys_slist_t *list,
 					struct device *port,
-					uint32_t pins)
+					u32_t pins)
 {
 	struct gpio_callback *cb;
 

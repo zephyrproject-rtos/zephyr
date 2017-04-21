@@ -30,38 +30,38 @@
 
 /* 19.4.1 IWDG_KR */
 union __iwdg_kr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint16_t key;
-		uint16_t rsvd;
+		u16_t key;
+		u16_t rsvd;
 	} bit;
 };
 
 /* 19.4.2 IWDG_PR */
 union __iwdg_pr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t pr :3 __packed;
-		uint32_t rsvd__3_31 :29 __packed;
+		u32_t pr :3 __packed;
+		u32_t rsvd__3_31 :29 __packed;
 	} bit;
 };
 
 /* 19.4.3 IWDG_RLR */
 union __iwdg_rlr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t rl :12 __packed;
-		uint32_t rsvd__12_31 :20 __packed;
+		u32_t rl :12 __packed;
+		u32_t rsvd__12_31 :20 __packed;
 	} bit;
 };
 
 /* 19.4.4 IWDG_SR */
 union __iwdg_sr {
-	uint32_t val;
+	u32_t val;
 	struct {
-		uint32_t pvu :1 __packed;
-		uint32_t rvu :1 __packed;
-		uint32_t rsvd__2_31 :30 __packed;
+		u32_t pvu :1 __packed;
+		u32_t rvu :1 __packed;
+		u32_t rsvd__2_31 :30 __packed;
 	} bit;
 };
 

@@ -65,21 +65,21 @@
 #define _ARC_V2_TMR_CTRL_IP 0x8 /* interrupt pending flag */
 
 /* running total of timer count */
-static uint32_t __noinit cycles_per_tick;
-static volatile uint32_t accumulated_cycle_count;
+static u32_t __noinit cycles_per_tick;
+static volatile u32_t accumulated_cycle_count;
 
 #ifdef CONFIG_TICKLESS_IDLE
-static uint32_t __noinit max_system_ticks;
-static uint32_t __noinit programmed_limit;
-static uint32_t __noinit programmed_ticks;
+static u32_t __noinit max_system_ticks;
+static u32_t __noinit programmed_limit;
+static u32_t __noinit programmed_ticks;
 static int straddled_tick_on_idle_enter;
-extern int32_t _sys_idle_elapsed_ticks;
+extern s32_t _sys_idle_elapsed_ticks;
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static uint32_t arcv2_timer0_device_power_state;
-static uint32_t saved_limit;
-static uint32_t saved_control;
+static u32_t arcv2_timer0_device_power_state;
+static u32_t saved_limit;
+static u32_t saved_control;
 #endif
 
 /**
@@ -88,7 +88,7 @@ static uint32_t saved_control;
  *
  * @return Current Timer0 count
  */
-static ALWAYS_INLINE uint32_t timer0_count_register_get(void)
+static ALWAYS_INLINE u32_t timer0_count_register_get(void)
 {
 	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
 }
@@ -99,7 +99,7 @@ static ALWAYS_INLINE uint32_t timer0_count_register_get(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void timer0_count_register_set(uint32_t value)
+static ALWAYS_INLINE void timer0_count_register_set(u32_t value)
 {
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, value);
 }
@@ -110,7 +110,7 @@ static ALWAYS_INLINE void timer0_count_register_set(uint32_t value)
  *
  * @return N/A
  */
-static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
+static ALWAYS_INLINE u32_t timer0_control_register_get(void)
 {
 	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_CONTROL);
 }
@@ -121,7 +121,7 @@ static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
+static ALWAYS_INLINE void timer0_control_register_set(u32_t value)
 {
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, value);
 }
@@ -132,7 +132,7 @@ static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
  *
  * @return N/A
  */
-static ALWAYS_INLINE uint32_t timer0_limit_register_get(void)
+static ALWAYS_INLINE u32_t timer0_limit_register_get(void)
 {
 	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
 }
@@ -143,7 +143,7 @@ static ALWAYS_INLINE uint32_t timer0_limit_register_get(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void timer0_limit_register_set(uint32_t count)
+static ALWAYS_INLINE void timer0_limit_register_set(u32_t count)
 {
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_LIMIT, count);
 }
@@ -179,7 +179,7 @@ void _timer_int_handler(void *unused)
 #if defined(CONFIG_TICKLESS_IDLE)
 	timer0_limit_register_set(cycles_per_tick - 1);
 	__ASSERT_EVAL({},
-		      uint32_t timer_count = timer0_count_register_get(),
+		      u32_t timer_count = timer0_count_register_get(),
 		      timer_count <= (cycles_per_tick - 1),
 		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick - 1);
 
@@ -216,9 +216,9 @@ static void tickless_idle_init(void)
  * @return N/A
  */
 
-void _timer_idle_enter(int32_t ticks)
+void _timer_idle_enter(s32_t ticks)
 {
-	uint32_t  status;
+	u32_t  status;
 
 	if ((ticks == K_FOREVER) || (ticks > max_system_ticks)) {
 		/*
@@ -244,7 +244,7 @@ void _timer_idle_enter(int32_t ticks)
 		straddled_tick_on_idle_enter = 1;
 	}
 	__ASSERT_EVAL({},
-		      uint32_t timer_count = timer0_count_register_get(),
+		      u32_t timer_count = timer0_count_register_get(),
 		      timer_count <= programmed_limit,
 		      "timer_count: %d, limit %d\n", timer_count, programmed_limit);
 }
@@ -265,14 +265,14 @@ void _timer_idle_exit(void)
 		/* Aborting the tickless idle due to a straddled tick. */
 		straddled_tick_on_idle_enter = 0;
 		__ASSERT_EVAL({},
-			      uint32_t timer_count = timer0_count_register_get(),
+			      u32_t timer_count = timer0_count_register_get(),
 			      timer_count <= programmed_limit,
 			      "timer_count: %d, limit %d\n", timer_count, programmed_limit);
 		return;
 	}
 
-	uint32_t  control;
-	uint32_t  current_count;
+	u32_t  control;
+	u32_t  current_count;
 
 	current_count = timer0_count_register_get();
 	control = timer0_control_register_get();
@@ -288,7 +288,7 @@ void _timer_idle_exit(void)
 		_sys_clock_tick_announce();
 
 		__ASSERT_EVAL({},
-			      uint32_t timer_count = timer0_count_register_get(),
+			      u32_t timer_count = timer0_count_register_get(),
 			      timer_count <= programmed_limit,
 			      "timer_count: %d, limit %d\n", timer_count, programmed_limit);
 		return;
@@ -312,7 +312,7 @@ void _timer_idle_exit(void)
 	timer0_count_register_set(current_count % cycles_per_tick);
 
 	__ASSERT_EVAL({},
-		      uint32_t timer_count = timer0_count_register_get(),
+		      u32_t timer_count = timer0_count_register_get(),
 		      timer_count <= (cycles_per_tick - 1),
 		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick-1);
 }
@@ -395,17 +395,17 @@ static int sys_clock_resume(struct device *dev)
  * Implements the driver control management functionality
  * the *context may include IN data or/and OUT data
  */
-int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
+int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 			  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return sys_clock_suspend(port);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return sys_clock_resume(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = arcv2_timer0_device_power_state;
+		*((u32_t *)context) = arcv2_timer0_device_power_state;
 		return 0;
 	}
 
@@ -415,7 +415,7 @@ int sys_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
 
 uint32_t _timer_cycle_get_32(void)
 {
-	uint32_t acc, count;
+	u32_t acc, count;
 
 	do {
 		acc = accumulated_cycle_count;
@@ -438,7 +438,7 @@ uint32_t _timer_cycle_get_32(void)
 void sys_clock_disable(void)
 {
 	unsigned int key;  /* interrupt lock level */
-	uint32_t control; /* timer control register value */
+	u32_t control; /* timer control register value */
 
 	key = irq_lock();
 

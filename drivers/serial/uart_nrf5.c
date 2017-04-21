@@ -35,51 +35,51 @@
 
 /* UART structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
 struct _uart {
-	__O uint32_t  TASKS_STARTRX;
-	__O uint32_t  TASKS_STOPRX;
-	__O uint32_t  TASKS_STARTTX;
-	__O uint32_t  TASKS_STOPTX;
+	__O u32_t  TASKS_STARTRX;
+	__O u32_t  TASKS_STOPRX;
+	__O u32_t  TASKS_STARTTX;
+	__O u32_t  TASKS_STOPTX;
 
-	__I uint32_t  RESERVED0[3];
-	__O uint32_t  TASKS_SUSPEND;
+	__I u32_t  RESERVED0[3];
+	__O u32_t  TASKS_SUSPEND;
 
-	__I uint32_t  RESERVED1[56];
-	__IO uint32_t EVENTS_CTS;
-	__IO uint32_t EVENTS_NCTS;
-	__IO uint32_t EVENTS_RXDRDY;
+	__I u32_t  RESERVED1[56];
+	__IO u32_t EVENTS_CTS;
+	__IO u32_t EVENTS_NCTS;
+	__IO u32_t EVENTS_RXDRDY;
 
-	__I uint32_t  RESERVED2[4];
-	__IO uint32_t EVENTS_TXDRDY;
+	__I u32_t  RESERVED2[4];
+	__IO u32_t EVENTS_TXDRDY;
 
-	__I uint32_t  RESERVED3;
-	__IO uint32_t EVENTS_ERROR;
-	__I uint32_t  RESERVED4[7];
-	__IO uint32_t EVENTS_RXTO;
-	__I uint32_t  RESERVED5[46];
-	__IO uint32_t SHORTS;
-	__I uint32_t  RESERVED6[64];
-	__IO uint32_t INTENSET;
-	__IO uint32_t INTENCLR;
-	__I uint32_t  RESERVED7[93];
-	__IO uint32_t ERRORSRC;
-	__I uint32_t  RESERVED8[31];
-	__IO uint32_t ENABLE;
-	__I uint32_t  RESERVED9;
-	__IO uint32_t PSELRTS;
-	__IO uint32_t PSELTXD;
-	__IO uint32_t PSELCTS;
-	__IO uint32_t PSELRXD;
-	__I uint32_t  RXD;
-	__O uint32_t  TXD;
-	__I uint32_t  RESERVED10;
-	__IO uint32_t BAUDRATE;
-	__I uint32_t  RESERVED11[17];
-	__IO uint32_t CONFIG;
+	__I u32_t  RESERVED3;
+	__IO u32_t EVENTS_ERROR;
+	__I u32_t  RESERVED4[7];
+	__IO u32_t EVENTS_RXTO;
+	__I u32_t  RESERVED5[46];
+	__IO u32_t SHORTS;
+	__I u32_t  RESERVED6[64];
+	__IO u32_t INTENSET;
+	__IO u32_t INTENCLR;
+	__I u32_t  RESERVED7[93];
+	__IO u32_t ERRORSRC;
+	__I u32_t  RESERVED8[31];
+	__IO u32_t ENABLE;
+	__I u32_t  RESERVED9;
+	__IO u32_t PSELRTS;
+	__IO u32_t PSELTXD;
+	__IO u32_t PSELCTS;
+	__IO u32_t PSELRXD;
+	__I u32_t  RXD;
+	__O u32_t  TXD;
+	__I u32_t  RESERVED10;
+	__IO u32_t BAUDRATE;
+	__I u32_t  RESERVED11[17];
+	__IO u32_t CONFIG;
 };
 
 /* Device data structure */
 struct uart_nrf5_dev_data_t {
-	uint32_t baud_rate;	        /**< Baud rate */
+	u32_t baud_rate;	        /**< Baud rate */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_t     cb;     /**< Callback function pointer */
@@ -113,11 +113,11 @@ static const struct uart_driver_api uart_nrf5_driver_api;
  */
 
 static int baudrate_set(struct device *dev,
-			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
+			 u32_t baudrate, u32_t sys_clk_freq_hz)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uint32_t divisor; /* baud rate divisor */
+	u32_t divisor; /* baud rate divisor */
 
 	/* Use the common nRF5 macros */
 	switch (baudrate) {
@@ -291,7 +291,7 @@ static unsigned char uart_nrf5_poll_out(struct device *dev,
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
 	/* send a character */
-	uart->TXD = (uint8_t)c;
+	uart->TXD = (u8_t)c;
 
 	/* Wait for transmitter to be ready */
 	while (!uart->EVENTS_TXDRDY) {
@@ -306,7 +306,7 @@ static unsigned char uart_nrf5_poll_out(struct device *dev,
 static int uart_nrf5_err_check(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
-	uint32_t error = 0;
+	u32_t error = 0;
 
 	if (uart->EVENTS_ERROR) {
 		/* register bitfields maps to the defines in uart.h */
@@ -324,34 +324,34 @@ static int uart_nrf5_err_check(struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 /** Interrupt driven FIFO fill function */
-static int uart_nrf5_fifo_fill(struct device *dev, const uint8_t *tx_data, int len)
+static int uart_nrf5_fifo_fill(struct device *dev, const u8_t *tx_data, int len)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
-	uint8_t num_tx = 0;
+	u8_t num_tx = 0;
 
 	while ((len - num_tx > 0) && uart->EVENTS_TXDRDY) {
 		/* Clear the interrupt */
 		uart->EVENTS_TXDRDY = 0;
 
 		/* Send a character */
-		uart->TXD = (uint8_t)tx_data[num_tx++];
+		uart->TXD = (u8_t)tx_data[num_tx++];
 	}
 
 	return (int)num_tx;
 }
 
 /** Interrupt driven FIFO read function */
-static int uart_nrf5_fifo_read(struct device *dev, uint8_t *rx_data, const int size)
+static int uart_nrf5_fifo_read(struct device *dev, u8_t *rx_data, const int size)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
-	uint8_t num_rx = 0;
+	u8_t num_rx = 0;
 
 	while ((size - num_rx > 0) && uart->EVENTS_RXDRDY) {
 		/* Clear the interrupt */
 		uart->EVENTS_RXDRDY = 0;
 
 		/* Receive a character */
-		rx_data[num_rx++] = (uint8_t)uart->RXD;
+		rx_data[num_rx++] = (u8_t)uart->RXD;
 	}
 
 	return num_rx;
@@ -497,7 +497,7 @@ static void uart_nrf5_irq_config(struct device *port);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static const struct uart_device_config uart_nrf5_dev_cfg_0 = {
-	.base = (uint8_t *)NRF_UART0_BASE,
+	.base = (u8_t *)NRF_UART0_BASE,
 	.sys_clk_freq = CONFIG_UART_NRF5_CLK_FREQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_nrf5_irq_config,

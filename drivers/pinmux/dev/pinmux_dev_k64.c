@@ -14,16 +14,16 @@
 #include <sys_io.h>
 #include <pinmux/k64/pinmux.h>
 
-static int fsl_k64_dev_set(struct device *dev, uint32_t pin,
-				uint32_t func)
+static int fsl_k64_dev_set(struct device *dev, u32_t pin,
+				u32_t func)
 {
 	ARG_UNUSED(dev);
 
 	return _fsl_k64_set_pin(pin, func);
 }
 
-static int fsl_k64_dev_get(struct device *dev, uint32_t pin,
-				uint32_t *func)
+static int fsl_k64_dev_get(struct device *dev, u32_t pin,
+				u32_t *func)
 {
 	ARG_UNUSED(dev);
 

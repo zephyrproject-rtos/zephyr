@@ -32,12 +32,12 @@
 
 
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
-	static inline uint32_t read_##__reg(uint32_t addr)		\
+	static inline u32_t read_##__reg(u32_t addr)		\
 	{								\
 		return sys_read##__sz(addr + __off);			\
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off, __sz)				\
-	static inline void write_##__reg(uint32_t data, uint32_t addr)	\
+	static inline void write_##__reg(u32_t data, u32_t addr)	\
 	{								\
 		sys_write##__sz(data, addr + __off);			\
 	}
@@ -50,19 +50,19 @@ DEFINE_MM_REG_WRITE(ssdr, INTEL_SPI_REG_SSDR, 32)
 DEFINE_MM_REG_WRITE(dds_rate, INTEL_SPI_REG_DDS_RATE, 32)
 
 #define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)			\
-	static inline void set_bit_##__reg_bit(uint32_t addr)		\
+	static inline void set_bit_##__reg_bit(u32_t addr)		\
 	{								\
 		sys_set_bit(addr + __reg_off, __bit);			\
 	}
 
 #define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)		\
-	static inline void clear_bit_##__reg_bit(uint32_t addr)		\
+	static inline void clear_bit_##__reg_bit(u32_t addr)		\
 	{								\
 		sys_clear_bit(addr + __reg_off, __bit);			\
 	}
 
 #define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)			\
-	static inline int test_bit_##__reg_bit(uint32_t addr)		\
+	static inline int test_bit_##__reg_bit(u32_t addr)		\
 	{								\
 		return sys_test_bit(addr + __reg_off, __bit);		\
 	}
@@ -114,7 +114,7 @@ static inline void _spi_control_cs(struct device *dev, int on)
 #define _spi_config_cs(...) { ; }
 #endif /* CONFIG_SPI_CS_GPIO */
 
-static void completed(struct device *dev, uint32_t error)
+static void completed(struct device *dev, u32_t error)
 {
 	struct spi_intel_data *spi = dev->driver_data;
 
@@ -136,16 +136,16 @@ static void completed(struct device *dev, uint32_t error)
 static void pull_data(struct device *dev)
 {
 	struct spi_intel_data *spi = dev->driver_data;
-	uint32_t cnt = 0;
-	uint8_t data = 0;
+	u32_t cnt = 0;
+	u8_t data = 0;
 
 	while (read_sssr(spi->regs) & INTEL_SPI_SSSR_RNE) {
-		data = (uint8_t) read_ssdr(spi->regs);
+		data = (u8_t) read_ssdr(spi->regs);
 		cnt++;
 		spi->received++;
 
 		if ((spi->received - 1) < spi->r_buf_len) {
-			*(uint8_t *)(spi->rx_buf) = data;
+			*(u8_t *)(spi->rx_buf) = data;
 			spi->rx_buf++;
 		}
 	}
@@ -156,16 +156,16 @@ static void pull_data(struct device *dev)
 static void push_data(struct device *dev)
 {
 	struct spi_intel_data *spi = dev->driver_data;
-	uint32_t cnt = 0;
-	uint8_t data;
-	uint32_t status;
+	u32_t cnt = 0;
+	u8_t data;
+	u32_t status;
 
 	while ((status = read_sssr(spi->regs)) & INTEL_SPI_SSSR_TNF) {
 		if (status & INTEL_SPI_SSSR_RFS) {
 			break;
 		}
 		if (spi->tx_buf && (spi->transmitted < spi->t_buf_len)) {
-			data = *(uint8_t *)(spi->tx_buf);
+			data = *(u8_t *)(spi->tx_buf);
 			spi->tx_buf++;
 		} else if (spi->transmitted < spi->trans_len) {
 			data = 0;
@@ -191,8 +191,8 @@ static int spi_intel_configure(struct device *dev,
 				struct spi_config *config)
 {
 	struct spi_intel_data *spi = dev->driver_data;
-	uint32_t flags = config->config;
-	uint32_t mode;
+	u32_t flags = config->config;
+	u32_t mode;
 
 	SYS_LOG_DBG("spi_intel_configure: %p (0x%x), %p", dev, spi->regs,
 		    config);
@@ -246,8 +246,8 @@ static int spi_intel_configure(struct device *dev,
 }
 
 static int spi_intel_transceive(struct device *dev,
-				const void *tx_buf, uint32_t tx_buf_len,
-				void *rx_buf, uint32_t rx_buf_len)
+				const void *tx_buf, u32_t tx_buf_len,
+				void *rx_buf, u32_t rx_buf_len)
 {
 	struct spi_intel_data *spi = dev->driver_data;
 
@@ -292,8 +292,8 @@ void spi_intel_isr(void *arg)
 {
 	struct device *dev = arg;
 	struct spi_intel_data *spi = dev->driver_data;
-	uint32_t error = 0;
-	uint32_t status;
+	u32_t error = 0;
+	u32_t status;
 
 	SYS_LOG_DBG("spi_intel_isr: %p", dev);
 
@@ -352,7 +352,7 @@ static inline int spi_intel_setup(struct device *dev)
 #endif /* CONFIG_PCI */
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
-static void spi_intel_set_power_state(struct device *dev, uint32_t power_state)
+static void spi_intel_set_power_state(struct device *dev, u32_t power_state)
 {
 	struct spi_intel_data *context = dev->driver_data;
 
@@ -390,7 +390,7 @@ int spi_intel_init(struct device *dev)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
-static uint32_t spi_intel_get_power_state(struct device *dev)
+static u32_t spi_intel_get_power_state(struct device *dev)
 {
 	struct spi_intel_data *context = dev->driver_data;
 
@@ -431,17 +431,17 @@ static int spi_intel_resume_from_suspend(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int spi_intel_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int spi_intel_device_ctrl(struct device *dev, u32_t ctrl_command,
 				 void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return spi_intel_suspend(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return spi_intel_resume_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = spi_intel_get_power_state(dev);
+		*((u32_t *)context) = spi_intel_get_power_state(dev);
 		return 0;
 	}
 

@@ -45,7 +45,7 @@
 
 #define SHT3XD_CLEAR_STATUS_WAIT_USEC	1000
 
-static const uint16_t sht3xd_measure_cmd[5][3] = {
+static const u16_t sht3xd_measure_cmd[5][3] = {
 	{0x202F, 0x2024, 0x2032},
 	{0x212D, 0x2126, 0x2130},
 	{0x222B, 0x2220, 0x2236},
@@ -59,17 +59,17 @@ static const int sht3xd_measure_wait[3] = {
 
 struct sht3xd_data {
 	struct device *i2c;
-	uint16_t t_sample;
-	uint16_t rh_sample;
+	u16_t t_sample;
+	u16_t rh_sample;
 
 #ifdef CONFIG_SHT3XD_TRIGGER
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
 
-	uint16_t t_low;
-	uint16_t t_high;
-	uint16_t rh_low;
-	uint16_t rh_high;
+	u16_t t_low;
+	u16_t t_high;
+	u16_t rh_low;
+	u16_t rh_high;
 
 	sensor_trigger_handler_t handler;
 	struct sensor_trigger trigger;
@@ -86,10 +86,10 @@ struct sht3xd_data {
 };
 
 #ifdef CONFIG_SHT3XD_TRIGGER
-int sht3xd_write_command(struct sht3xd_data *drv_data, uint16_t cmd);
+int sht3xd_write_command(struct sht3xd_data *drv_data, u16_t cmd);
 
-int sht3xd_write_reg(struct sht3xd_data *drv_data, uint16_t cmd,
-		     uint16_t val);
+int sht3xd_write_reg(struct sht3xd_data *drv_data, u16_t cmd,
+		     u16_t val);
 
 int sht3xd_attr_set(struct device *dev,
 		    enum sensor_channel chan,

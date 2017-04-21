@@ -23,7 +23,7 @@ struct rtc_data {
 	struct k_sem sem;
 #endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 #endif
 };
 
@@ -45,14 +45,14 @@ static struct rtc_data rtc_context;
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
-static void rtc_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+static void rtc_qmsi_set_power_state(struct device *dev, u32_t power_state)
 {
 	struct rtc_data *context = dev->driver_data;
 
 	context->device_power_state = power_state;
 }
 
-static uint32_t rtc_qmsi_get_power_state(struct device *dev)
+static u32_t rtc_qmsi_get_power_state(struct device *dev)
 {
 	struct rtc_data *context = dev->driver_data;
 
@@ -112,17 +112,17 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	return result;
 }
 
-static int rtc_qmsi_set_alarm(struct device *dev, const uint32_t alarm_val)
+static int rtc_qmsi_set_alarm(struct device *dev, const u32_t alarm_val)
 {
 	return qm_rtc_set_alarm(QM_RTC_0, alarm_val);
 }
 
-static uint32_t rtc_qmsi_read(struct device *dev)
+static u32_t rtc_qmsi_read(struct device *dev)
 {
 	return QM_RTC[QM_RTC_0]->rtc_ccvr;
 }
 
-static uint32_t rtc_qmsi_get_pending_int(struct device *dev)
+static u32_t rtc_qmsi_get_pending_int(struct device *dev)
 {
 	return QM_RTC[QM_RTC_0]->rtc_stat;
 }
@@ -183,17 +183,17 @@ static int rtc_resume_device(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int rtc_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int rtc_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return rtc_suspend_device(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return rtc_resume_device(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = rtc_qmsi_get_power_state(dev);
+		*((u32_t *)context) = rtc_qmsi_get_power_state(dev);
 		return 0;
 	}
 

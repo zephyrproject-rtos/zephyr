@@ -36,7 +36,7 @@ int lis3dh_trigger_set(struct device *dev,
 }
 
 static void lis3dh_gpio_callback(struct device *dev,
-				 struct gpio_callback *cb, uint32_t pins)
+				 struct gpio_callback *cb, u32_t pins)
 {
 	struct lis3dh_data *drv_data =
 		CONTAINER_OF(cb, struct lis3dh_data, gpio_cb);

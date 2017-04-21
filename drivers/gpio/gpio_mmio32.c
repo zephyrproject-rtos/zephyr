@@ -30,7 +30,7 @@
 #include <errno.h>
 
 static int gpio_mmio32_config(struct device *dev, int access_op,
-					uint32_t pin, int flags)
+					u32_t pin, int flags)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
@@ -58,13 +58,13 @@ static int gpio_mmio32_config(struct device *dev, int access_op,
 }
 
 static int gpio_mmio32_write(struct device *dev, int access_op,
-					uint32_t pin, uint32_t value)
+					u32_t pin, u32_t value)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
-	volatile uint32_t *reg = config->reg;
-	uint32_t mask = config->mask;
-	uint32_t invert = context->invert;
+	volatile u32_t *reg = config->reg;
+	u32_t mask = config->mask;
+	u32_t invert = context->invert;
 	unsigned int key;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
@@ -86,11 +86,11 @@ static int gpio_mmio32_write(struct device *dev, int access_op,
 }
 
 static int gpio_mmio32_read(struct device *dev, int access_op,
-					uint32_t pin, uint32_t *value)
+					u32_t pin, u32_t *value)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
-	uint32_t bits;
+	u32_t bits;
 
 	bits = (*config->reg ^ context->invert) & config->mask;
 	if (access_op == GPIO_ACCESS_BY_PIN) {

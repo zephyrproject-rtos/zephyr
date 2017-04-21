@@ -14,8 +14,8 @@
 static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bma280_data *drv_data = dev->driver_data;
-	uint8_t buf[6];
-	uint8_t lsb;
+	u8_t buf[6];
+	u8_t lsb;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -30,17 +30,17 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	lsb = (buf[0] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
-	drv_data->x_sample = (((int8_t)buf[1]) << BMA280_ACCEL_LSB_BITS) | lsb;
+	drv_data->x_sample = (((s8_t)buf[1]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
 	lsb = (buf[2] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
-	drv_data->y_sample = (((int8_t)buf[3]) << BMA280_ACCEL_LSB_BITS) | lsb;
+	drv_data->y_sample = (((s8_t)buf[3]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
 	lsb = (buf[4] & BMA280_ACCEL_LSB_MASK) >> BMA280_ACCEL_LSB_SHIFT;
-	drv_data->z_sample = (((int8_t)buf[5]) << BMA280_ACCEL_LSB_BITS) | lsb;
+	drv_data->z_sample = (((s8_t)buf[5]) << BMA280_ACCEL_LSB_BITS) | lsb;
 
 	if (i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
 			      BMA280_REG_TEMP,
-			      (uint8_t *)&drv_data->temp_sample) < 0) {
+			      (u8_t *)&drv_data->temp_sample) < 0) {
 		SYS_LOG_DBG("Could not read temperature data");
 		return -EIO;
 	}
@@ -49,7 +49,7 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 }
 
 static void bma280_channel_accel_convert(struct sensor_value *val,
-					int64_t raw_val)
+					s64_t raw_val)
 {
 	/*
 	 * accel_val = (sample * BMA280_PMU_FULL_RAGE) /
@@ -111,7 +111,7 @@ static const struct sensor_driver_api bma280_driver_api = {
 int bma280_init(struct device *dev)
 {
 	struct bma280_data *drv_data = dev->driver_data;
-	uint8_t id = 0;
+	u8_t id = 0;
 
 	drv_data->i2c = device_get_binding(CONFIG_BMA280_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {

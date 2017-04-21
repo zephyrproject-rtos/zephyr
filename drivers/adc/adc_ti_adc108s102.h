@@ -25,7 +25,7 @@ extern "C" {
 #define ADC108S102_SAMPLING_BUFFER_SIZE		9
 #define ADC108S102_CHANNELS			8
 #define ADC108S102_CHANNELS_SIZE		\
-			(ADC108S102_CHANNELS * sizeof(uint32_t))
+			(ADC108S102_CHANNELS * sizeof(u32_t))
 #define ADC108S102_CHANNEL_CMD(_channel_)	\
 			sys_cpu_to_be16((_channel_ << 8) << 3)
 #define ADC108S102_RESULT_MASK			0xfff /* 12 bits resolution */
@@ -34,25 +34,25 @@ extern "C" {
 
 struct ti_adc108s102_config {
 	const char *spi_port;
-	uint32_t spi_config_flags;
-	uint32_t spi_freq;
-	uint32_t spi_slave;
+	u32_t spi_config_flags;
+	u32_t spi_freq;
+	u32_t spi_slave;
 };
 
 struct ti_adc108s102_chan {
-	uint32_t buf_idx;
+	u32_t buf_idx;
 };
 
 struct ti_adc108s102_data {
-	uint16_t cmd_buffer[ADC108S102_CMD_BUFFER_SIZE];
-	uint16_t sampling_buffer[ADC108S102_SAMPLING_BUFFER_SIZE];
+	u16_t cmd_buffer[ADC108S102_CMD_BUFFER_SIZE];
+	u16_t sampling_buffer[ADC108S102_SAMPLING_BUFFER_SIZE];
 	struct device *spi;
 	struct ti_adc108s102_chan chans[ADC108S102_CHANNELS];
 	struct adc_seq_table *seq_table;
 
-	uint8_t cmd_buf_len;
-	uint8_t sampling_buf_len;
-	uint8_t stride[2];
+	u8_t cmd_buf_len;
+	u8_t sampling_buf_len;
+	u8_t stride[2];
 };
 
 #ifdef __cplusplus

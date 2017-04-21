@@ -107,11 +107,11 @@
 /** Describes a telnet command */
 struct telnet_simple_command {
 	/** Mandatory IAC code */
-	uint8_t iac;
+	u8_t iac;
 	/** Type of operation (see Telnet commands above) */
-	uint8_t op;
+	u8_t op;
 	/** Option code */
-	uint8_t opt;
+	u8_t opt;
 };
 
 static inline void telnet_command_cpy(struct telnet_simple_command *dst,

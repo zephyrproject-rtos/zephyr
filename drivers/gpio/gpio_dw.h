@@ -23,8 +23,8 @@ extern "C" {
 typedef void (*gpio_config_irq_t)(struct device *port);
 
 struct gpio_dw_config {
-	uint32_t bits;
-	uint32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
+	u32_t bits;
+	u32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
 	gpio_config_irq_t config_func;
 
 #ifdef CONFIG_GPIO_DW_SHARED_IRQ
@@ -37,7 +37,7 @@ struct gpio_dw_config {
 };
 
 struct gpio_dw_runtime {
-	uint32_t base_addr;
+	u32_t base_addr;
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */
@@ -47,7 +47,7 @@ struct gpio_dw_runtime {
 #endif
 	sys_slist_t callbacks;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 #endif
 };
 

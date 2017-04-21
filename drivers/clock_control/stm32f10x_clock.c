@@ -22,7 +22,7 @@
 #include <clock_control/stm32_clock_control.h>
 
 struct stm32f10x_rcc_data {
-	uint8_t *base;
+	u8_t *base;
 };
 
 static inline int stm32f10x_clock_control_on(struct device *dev,
@@ -32,7 +32,7 @@ static inline int stm32f10x_clock_control_on(struct device *dev,
 
 	volatile struct stm32f10x_rcc *rcc = (struct stm32f10x_rcc *)(data->base);
 
-	uint32_t subsys = POINTER_TO_UINT(sub_system);
+	u32_t subsys = POINTER_TO_UINT(sub_system);
 
 	if (subsys > STM32F10X_CLOCK_APB2_BASE) {
 		subsys &=  ~(STM32F10X_CLOCK_APB2_BASE);
@@ -49,7 +49,7 @@ static inline int stm32f10x_clock_control_off(struct device *dev,
 	struct stm32f10x_rcc_data *data = dev->driver_data;
 	volatile struct stm32f10x_rcc *rcc =
 		(struct stm32f10x_rcc *)(data->base);
-	uint32_t subsys = POINTER_TO_UINT(sub_system);
+	u32_t subsys = POINTER_TO_UINT(sub_system);
 
 	if (subsys > STM32F10X_CLOCK_APB2_BASE) {
 		subsys &= ~(STM32F10X_CLOCK_APB2_BASE);
@@ -139,10 +139,10 @@ static int __pllmul(int mul)
 #endif	/* CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER */
 
 
-static uint32_t __get_ahb_clock(uint32_t sysclk)
+static u32_t __get_ahb_clock(u32_t sysclk)
 {
 	/* AHB clock is generated based on SYSCLK  */
-	uint32_t sysclk_div = CONFIG_CLOCK_STM32F10X_AHB_PRESCALER;
+	u32_t sysclk_div = CONFIG_CLOCK_STM32F10X_AHB_PRESCALER;
 
 	if (sysclk_div == 0) {
 		sysclk_div = 1;
@@ -150,7 +150,7 @@ static uint32_t __get_ahb_clock(uint32_t sysclk)
 	return sysclk / sysclk_div;
 }
 
-static uint32_t __get_apb_clock(uint32_t ahb_clock, uint32_t prescaler)
+static u32_t __get_apb_clock(u32_t ahb_clock, u32_t prescaler)
 {
 	if (prescaler == 0) {
 		prescaler = 1;
@@ -160,20 +160,20 @@ static uint32_t __get_apb_clock(uint32_t ahb_clock, uint32_t prescaler)
 
 static int stm32f10x_clock_control_get_subsys_rate(struct device *clock,
 						   clock_control_subsys_t sub_system,
-						   uint32_t *rate)
+						   u32_t *rate)
 {
 	ARG_UNUSED(clock);
 
-	uint32_t subsys = POINTER_TO_UINT(sub_system);
+	u32_t subsys = POINTER_TO_UINT(sub_system);
 
-	uint32_t prescaler = CONFIG_CLOCK_STM32F10X_APB1_PRESCALER;
+	u32_t prescaler = CONFIG_CLOCK_STM32F10X_APB1_PRESCALER;
 
 	if (subsys > STM32F10X_CLOCK_APB2_BASE) {
 		prescaler = CONFIG_CLOCK_STM32F10X_APB2_PRESCALER;
 	}
 
 	/* assumes SYSCLK is SYS_CLOCK_HW_CYCLES_PER_SEC */
-	uint32_t ahb_clock =
+	u32_t ahb_clock =
 		__get_ahb_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	*rate = __get_apb_clock(ahb_clock, prescaler);
@@ -213,11 +213,11 @@ static int stm32f10x_clock_control_init(struct device *dev)
 		(struct stm32f10x_rcc *)(data->base);
 	/* SYSCLK source defaults to HSI */
 	int sysclk_src = STM32F10X_RCC_CFG_SYSCLK_SRC_HSI;
-	uint32_t hpre = __ahb_prescaler(CONFIG_CLOCK_STM32F10X_AHB_PRESCALER);
-	uint32_t ppre1 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB1_PRESCALER);
-	uint32_t ppre2 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB2_PRESCALER);
+	u32_t hpre = __ahb_prescaler(CONFIG_CLOCK_STM32F10X_AHB_PRESCALER);
+	u32_t ppre1 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB1_PRESCALER);
+	u32_t ppre2 = __apb_prescaler(CONFIG_CLOCK_STM32F10X_APB2_PRESCALER);
 #ifdef CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER
-	uint32_t pllmul = __pllmul(CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER);
+	u32_t pllmul = __pllmul(CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER);
 #endif	/* CONFIG_CLOCK_STM32F10X_PLL_MULTIPLIER */
 
 	/* disable PLL */
@@ -303,7 +303,7 @@ static int stm32f10x_clock_control_init(struct device *dev)
 }
 
 static struct stm32f10x_rcc_data stm32f10x_rcc_data = {
-	.base = (uint8_t *)RCC_BASE,
+	.base = (u8_t *)RCC_BASE,
 };
 
 /* FIXME: move prescaler/multiplier defines into device config */

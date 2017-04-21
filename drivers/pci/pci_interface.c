@@ -42,7 +42,7 @@
  *
  */
 
-static void pci_ctrl_read(uint32_t reg, uint32_t *data, uint32_t size)
+static void pci_ctrl_read(u32_t reg, u32_t *data, u32_t size)
 {
 	/* read based on the size requested */
 
@@ -77,7 +77,7 @@ static void pci_ctrl_read(uint32_t reg, uint32_t *data, uint32_t size)
  *
  */
 
-static void pci_ctrl_write(uint32_t reg, uint32_t data, uint32_t size)
+static void pci_ctrl_write(u32_t reg, u32_t data, u32_t size)
 {
 	/* write based on the size requested */
 
@@ -112,8 +112,8 @@ static void pci_ctrl_write(uint32_t reg, uint32_t data, uint32_t size)
  *
  */
 
-static int pci_ctrl_data_read(uint32_t controller, uint32_t offset,
-				uint32_t *data, uint32_t size)
+static int pci_ctrl_data_read(u32_t controller, u32_t offset,
+				u32_t *data, u32_t size)
 {
 	/* we only support one controller */
 
@@ -142,8 +142,8 @@ static int pci_ctrl_data_read(uint32_t controller, uint32_t offset,
  *
  */
 
-static int pci_ctrl_data_write(uint32_t controller, uint32_t offset,
-			       uint32_t data, uint32_t size)
+static int pci_ctrl_data_write(u32_t controller, u32_t offset,
+			       u32_t data, u32_t size)
 {
 	/* we only support one controller */
 
@@ -172,8 +172,8 @@ static int pci_ctrl_data_write(uint32_t controller, uint32_t offset,
  *
  */
 
-static int pci_ctrl_addr_write(uint32_t controller, uint32_t offset,
-			       uint32_t data, uint32_t size)
+static int pci_ctrl_addr_write(u32_t controller, u32_t offset,
+			       u32_t data, u32_t size)
 {
 	/* we only support one controller */
 
@@ -213,7 +213,7 @@ static int pci_ctrl_addr_write(uint32_t controller, uint32_t offset,
  * Example:
  *
  *  union pci_addr_reg addr;
- *  uint32_t status;
+ *  u32_t status;
  *
  *  addr.field.bus    = 0;    /@ PCI bus zero        @/
  *  addr.field.device = 1;    /@ PCI device one      @/
@@ -221,7 +221,7 @@ static int pci_ctrl_addr_write(uint32_t controller, uint32_t offset,
  *  addr.field.reg    = 4;    /@ PCI register 4      @/
  *  addr.field.offset = 0;    /@ PCI register offset @/
  *
- *  pci_read (DEFAULT_PCI_CONTROLLER, addr, sizeof(uint16_t), &status);
+ *  pci_read (DEFAULT_PCI_CONTROLLER, addr, sizeof(u16_t), &status);
  *
  *
  * NOTE:
@@ -237,11 +237,11 @@ static int pci_ctrl_addr_write(uint32_t controller, uint32_t offset,
  *
  */
 
-void pci_read(uint32_t controller, union pci_addr_reg addr,
-	      uint32_t size, uint32_t *data)
+void pci_read(u32_t controller, union pci_addr_reg addr,
+	      u32_t size, u32_t *data)
 {
-	uint32_t access_size;
-	uint32_t access_offset;
+	u32_t access_size;
+	u32_t access_offset;
 
 	/* validate the access size */
 
@@ -305,7 +305,7 @@ void pci_read(uint32_t controller, union pci_addr_reg addr,
  * Example:
  *
  *  pci_addr_t addr;
- *  uint32_t bar0 = 0xE0000000;
+ *  u32_t bar0 = 0xE0000000;
  *
  *  addr.field.bus    = 0;    /@ PCI bus zero        @/
  *  addr.field.device = 1;    /@ PCI device one      @/
@@ -313,7 +313,7 @@ void pci_read(uint32_t controller, union pci_addr_reg addr,
  *  addr.field.reg    = 16;   /@ PCI register 16     @/
  *  addr.field.offset = 0;    /@ PCI register offset @/
  *
- *  pci_write (DEFAULT_PCI_CONTROLLER, addr, sizeof(uint32_t), bar0);
+ *  pci_write (DEFAULT_PCI_CONTROLLER, addr, sizeof(u32_t), bar0);
  *
  * NOTE:
  *   Writing of PCI data must be performed as an atomic operation. It is up to
@@ -328,11 +328,11 @@ void pci_read(uint32_t controller, union pci_addr_reg addr,
  *
  */
 
-void pci_write(uint32_t controller, union pci_addr_reg addr,
-	       uint32_t size, uint32_t data)
+void pci_write(u32_t controller, union pci_addr_reg addr,
+	       u32_t size, u32_t data)
 {
-	uint32_t access_size;
-	uint32_t access_offset;
+	u32_t access_size;
+	u32_t access_offset;
 
 	/* validate the access size */
 
@@ -377,11 +377,11 @@ void pci_write(uint32_t controller, union pci_addr_reg addr,
  * @return N/A
  */
 
-void pci_header_get(uint32_t controller,
+void pci_header_get(u32_t controller,
 		    union pci_addr_reg pci_ctrl_addr,
 		    union pci_dev *pci_dev_header)
 {
-	uint32_t i;
+	u32_t i;
 
 	/* clear out the header */
 
@@ -393,7 +393,7 @@ void pci_header_get(uint32_t controller,
 		pci_ctrl_addr.field.reg = i;
 		pci_read(controller,
 			pci_ctrl_addr,
-			sizeof(uint32_t),
+			sizeof(u32_t),
 			&pci_dev_header->words.word[i]);
 	}
 }

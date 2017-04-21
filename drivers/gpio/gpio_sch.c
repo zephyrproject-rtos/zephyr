@@ -38,12 +38,12 @@
 #endif /* GPIO_SCH_LEGACY_IO_PORTS_ACCESS */
 
 #define DEFINE_MM_REG_READ(__reg, __off)                                \
-	static inline uint32_t _read_##__reg(uint32_t addr)             \
+	static inline u32_t _read_##__reg(u32_t addr)             \
 	{                                                               \
 		return _REG_READ(addr + __off);                         \
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off)                               \
-	static inline void _write_##__reg(uint32_t data, uint32_t addr) \
+	static inline void _write_##__reg(u32_t data, u32_t addr) \
 	{                                                               \
 		_REG_WRITE(data, addr + __off);                         \
 	}
@@ -55,8 +55,8 @@ DEFINE_MM_REG_WRITE(gtne, GPIO_SCH_REG_GTNE)
 DEFINE_MM_REG_READ(gts, GPIO_SCH_REG_GTS)
 DEFINE_MM_REG_WRITE(gts, GPIO_SCH_REG_GTS)
 
-static void _set_bit(uint32_t base_addr,
-		     uint32_t bit, uint8_t set)
+static void _set_bit(u32_t base_addr,
+		     u32_t bit, u8_t set)
 {
 	if (!set) {
 		_REG_CLEAR_BIT(base_addr, bit);
@@ -66,8 +66,8 @@ static void _set_bit(uint32_t base_addr,
 }
 
 #define DEFINE_MM_REG_SET_BIT(__reg, __off)                             \
-	static inline void _set_bit_##__reg(uint32_t addr,              \
-					    uint32_t bit, uint8_t set)  \
+	static inline void _set_bit_##__reg(u32_t addr,              \
+					    u32_t bit, u8_t set)  \
 	{                                                               \
 		_set_bit(addr + __off, bit, set);                       \
 	}
@@ -78,18 +78,18 @@ DEFINE_MM_REG_SET_BIT(glvl, GPIO_SCH_REG_GLVL)
 DEFINE_MM_REG_SET_BIT(gtpe, GPIO_SCH_REG_GTPE)
 DEFINE_MM_REG_SET_BIT(gtne, GPIO_SCH_REG_GTNE)
 
-static inline void _set_data_reg(uint32_t *reg, uint8_t pin, uint8_t set)
+static inline void _set_data_reg(u32_t *reg, u8_t pin, u8_t set)
 {
 	*reg &= ~(BIT(pin));
 	*reg |= (set << pin) & BIT(pin);
 }
 
-static void _gpio_pin_config(struct device *dev, uint32_t pin, int flags)
+static void _gpio_pin_config(struct device *dev, u32_t pin, int flags)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
-	uint8_t active_high = 0;
-	uint8_t active_low = 0;
+	u8_t active_high = 0;
+	u8_t active_low = 0;
 
 	_set_bit_gen(info->regs, pin, 1);
 	_set_bit_gio(info->regs, pin, !(flags & GPIO_DIR_MASK));
@@ -123,7 +123,7 @@ static inline void _gpio_port_config(struct device *dev, int flags)
 }
 
 static int gpio_sch_config(struct device *dev,
-			   int access_op, uint32_t pin, int flags)
+			   int access_op, u32_t pin, int flags)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 
@@ -141,7 +141,7 @@ static int gpio_sch_config(struct device *dev,
 }
 
 static int gpio_sch_write(struct device *dev,
-			  int access_op, uint32_t pin, uint32_t value)
+			  int access_op, u32_t pin, u32_t value)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 
@@ -159,7 +159,7 @@ static int gpio_sch_write(struct device *dev,
 }
 
 static int gpio_sch_read(struct device *dev,
-			 int access_op, uint32_t pin, uint32_t *value)
+			 int access_op, u32_t pin, u32_t *value)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 
@@ -189,7 +189,7 @@ static void _gpio_sch_poll_status(void *arg1, void *unused1, void *unused2)
 	_write_gts(_read_gts(info->regs), info->regs);
 
 	while (gpio->poll) {
-		uint32_t status;
+		u32_t status;
 
 		status = _read_gts(info->regs);
 		if (!status) {
@@ -241,13 +241,13 @@ static int gpio_sch_manage_callback(struct device *dev,
 }
 
 static int gpio_sch_enable_callback(struct device *dev,
-				    int access_op, uint32_t pin)
+				    int access_op, u32_t pin)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		uint32_t bits = BIT(pin);
+		u32_t bits = BIT(pin);
 
 		if (pin >= info->bits) {
 			return -ENOTSUP;
@@ -270,7 +270,7 @@ static int gpio_sch_enable_callback(struct device *dev,
 }
 
 static int gpio_sch_disable_callback(struct device *dev,
-				     int access_op, uint32_t pin)
+				     int access_op, u32_t pin)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
 	struct gpio_sch_data *gpio = dev->driver_data;

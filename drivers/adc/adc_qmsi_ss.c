@@ -31,7 +31,7 @@ struct adc_info  {
 	struct k_sem device_sync_sem;
 	struct k_sem sem;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 	qm_ss_adc_context_t adc_ctx;
 #endif
 };
@@ -239,14 +239,14 @@ static const struct adc_driver_api api_funcs = {
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static void adc_qmsi_ss_set_power_state(struct device *dev,
-					uint32_t power_state)
+					u32_t power_state)
 {
 	struct adc_info *context = dev->driver_data;
 
 	context->device_power_state = power_state;
 }
 
-static uint32_t adc_qmsi_ss_get_power_state(struct device *dev)
+static u32_t adc_qmsi_ss_get_power_state(struct device *dev)
 {
 	struct adc_info *context = dev->driver_data;
 
@@ -275,17 +275,17 @@ static int adc_qmsi_ss_resume_device_from_suspend(struct device *dev)
 	return 0;
 }
 
-static int adc_qmsi_ss_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int adc_qmsi_ss_device_ctrl(struct device *dev, u32_t ctrl_command,
 				   void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return adc_qmsi_ss_suspend_device(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return adc_qmsi_ss_resume_device_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = adc_qmsi_ss_get_power_state(dev);
+		*((u32_t *)context) = adc_qmsi_ss_get_power_state(dev);
 	}
 
 	return 0;
@@ -327,7 +327,7 @@ DEVICE_DEFINE(adc_qmsi_ss, CONFIG_ADC_0_NAME, &adc_qmsi_ss_init,
 
 static void adc_config_irq(void)
 {
-	uint32_t *scss_intmask;
+	u32_t *scss_intmask;
 
 	IRQ_CONNECT(IRQ_ADC_IRQ, CONFIG_ADC_0_IRQ_PRI,
 				adc_qmsi_ss_rx_isr, DEVICE_GET(adc_qmsi_ss), 0);
@@ -338,9 +338,9 @@ static void adc_config_irq(void)
 	irq_enable(IRQ_ADC_ERR);
 
 	scss_intmask =
-		(uint32_t *)&QM_INTERRUPT_ROUTER->ss_adc_0_error_int_mask;
+		(u32_t *)&QM_INTERRUPT_ROUTER->ss_adc_0_error_int_mask;
 	*scss_intmask &= ~BIT(8);
 
-	scss_intmask = (uint32_t *)&QM_INTERRUPT_ROUTER->ss_adc_0_int_mask;
+	scss_intmask = (u32_t *)&QM_INTERRUPT_ROUTER->ss_adc_0_int_mask;
 	*scss_intmask &= ~BIT(8);
 }

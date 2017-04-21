@@ -17,7 +17,7 @@
 
 #include "sx9500.h"
 
-static uint8_t sx9500_reg_defaults[] = {
+static u8_t sx9500_reg_defaults[] = {
 	/*
 	 * First number is register address to write to.  The chip
 	 * auto-increments the address for subsequent values in a single
@@ -76,7 +76,7 @@ static const struct sensor_driver_api sx9500_api_funcs = {
 static int sx9500_init_chip(struct device *dev)
 {
 	struct sx9500_data *data = (struct sx9500_data *) dev->driver_data;
-	uint8_t val;
+	u8_t val;
 
 	if (i2c_write(data->i2c_master, sx9500_reg_defaults,
 		      sizeof(sx9500_reg_defaults), data->i2c_slave_addr)

@@ -148,14 +148,14 @@
 
 struct lps25hb_config {
 	char *i2c_master_dev_name;
-	uint16_t i2c_slave_addr;
+	u16_t i2c_slave_addr;
 };
 
 struct lps25hb_data {
 	struct device *i2c_master;
 
-	int32_t sample_press;
-	int16_t sample_temp;
+	s32_t sample_press;
+	s16_t sample_temp;
 };
 
 #define SYS_LOG_DOMAIN "LPS25HB"

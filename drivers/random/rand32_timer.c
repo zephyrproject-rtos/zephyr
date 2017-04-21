@@ -40,7 +40,7 @@ static atomic_val_t _rand32_counter;
  * @return a 32-bit number
  */
 
-uint32_t sys_rand32_get(void)
+u32_t sys_rand32_get(void)
 {
 	return k_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
 }

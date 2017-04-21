@@ -19,8 +19,8 @@
 #define PLIC_FE310_EN_SIZE     ((PLIC_FE310_IRQS >> 5) + 1)
 
 struct plic_fe310_regs_t {
-	uint32_t threshold_prio;
-	uint32_t claim_complete;
+	u32_t threshold_prio;
+	u32_t claim_complete;
 };
 
 static int save_irq;
@@ -38,12 +38,12 @@ static int save_irq;
  *
  * @return N/A
  */
-void riscv_plic_irq_enable(uint32_t irq)
+void riscv_plic_irq_enable(u32_t irq)
 {
-	uint32_t key;
-	uint32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
-	volatile uint32_t *en =
-		(volatile uint32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
+	u32_t key;
+	u32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
+	volatile u32_t *en =
+		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
 
 	key = irq_lock();
 	en += (fe310_irq >> 5);
@@ -64,12 +64,12 @@ void riscv_plic_irq_enable(uint32_t irq)
  *
  * @return N/A
  */
-void riscv_plic_irq_disable(uint32_t irq)
+void riscv_plic_irq_disable(u32_t irq)
 {
-	uint32_t key;
-	uint32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
-	volatile uint32_t *en =
-		(volatile uint32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
+	u32_t key;
+	u32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
+	volatile u32_t *en =
+		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
 
 	key = irq_lock();
 	en += (fe310_irq >> 5);
@@ -86,11 +86,11 @@ void riscv_plic_irq_disable(uint32_t irq)
  *
  * @return 1 or 0
  */
-int riscv_plic_irq_is_enabled(uint32_t irq)
+int riscv_plic_irq_is_enabled(u32_t irq)
 {
-	volatile uint32_t *en =
-		(volatile uint32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
-	uint32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
+	volatile u32_t *en =
+		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
+	u32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
 
 	en += (fe310_irq >> 5);
 	return !!(*en & (1 << (fe310_irq & 31)));
@@ -107,10 +107,10 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
  *
  * @return N/A
  */
-void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
+void riscv_plic_set_priority(u32_t irq, u32_t priority)
 {
-	volatile uint32_t *prio =
-		(volatile uint32_t *)FE310_PLIC_PRIO_BASE_ADDR;
+	volatile u32_t *prio =
+		(volatile u32_t *)FE310_PLIC_PRIO_BASE_ADDR;
 
 	/* Can set priority only for PLIC-specific interrupt line */
 	if (irq <= RISCV_MAX_GENERIC_IRQ)
@@ -143,7 +143,7 @@ static void plic_fe310_irq_handler(void *arg)
 	volatile struct plic_fe310_regs_t *regs =
 		(volatile struct plic_fe310_regs_t *)FE310_PLIC_REG_BASE_ADDR;
 
-	uint32_t irq;
+	u32_t irq;
 	struct _isr_table_entry *ite;
 
 	/* Get the IRQ number generating the interrupt */
@@ -186,10 +186,10 @@ static int plic_fe310_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	volatile uint32_t *en =
-		(volatile uint32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
-	volatile uint32_t *prio =
-		(volatile uint32_t *)FE310_PLIC_PRIO_BASE_ADDR;
+	volatile u32_t *en =
+		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
+	volatile u32_t *prio =
+		(volatile u32_t *)FE310_PLIC_PRIO_BASE_ADDR;
 	volatile struct plic_fe310_regs_t *regs =
 		(volatile struct plic_fe310_regs_t *)FE310_PLIC_REG_BASE_ADDR;
 	int i;

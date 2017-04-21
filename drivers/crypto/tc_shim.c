@@ -26,7 +26,7 @@
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
 
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
-			  uint8_t *iv)
+			  u8_t *iv)
 {
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
 
@@ -44,7 +44,7 @@ static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 }
 
 static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
-			  uint8_t *iv)
+			  u8_t *iv)
 {
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
 
@@ -71,10 +71,10 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 
 
 static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
-		     uint8_t *iv)
+		     u8_t *iv)
 {
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
-	uint8_t ctr[16] = {0};	/* CTR mode Counter =  iv:ctr */
+	u8_t ctr[16] = {0};	/* CTR mode Counter =  iv:ctr */
 	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	/* Tinycrypt takes the last 4 bytes of the counter parameter as the
@@ -93,7 +93,7 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 }
 
 static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
-			     struct cipher_aead_pkt *aead_op, uint8_t *nonce)
+			     struct cipher_aead_pkt *aead_op, u8_t *nonce)
 {
 	struct tc_ccm_mode_struct ccm;
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
@@ -125,7 +125,7 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 }
 
 static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
-			       struct cipher_aead_pkt *aead_op, uint8_t *nonce)
+			       struct cipher_aead_pkt *aead_op, u8_t *nonce)
 {
 	struct tc_ccm_mode_struct ccm;
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;

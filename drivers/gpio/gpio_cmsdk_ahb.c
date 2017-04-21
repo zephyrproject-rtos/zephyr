@@ -38,7 +38,7 @@ struct gpio_cmsdk_ahb_dev_data {
 	sys_slist_t gpio_cb;
 };
 
-static void cmsdk_ahb_gpio_config(struct device *dev, uint32_t mask, int flags)
+static void cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
 
@@ -105,7 +105,7 @@ static void cmsdk_ahb_gpio_config(struct device *dev, uint32_t mask, int flags)
  * @return 0 if successful, failed otherwise
  */
 static int gpio_cmsdk_ahb_config(struct device *dev, int access_op,
-				 uint32_t pin, int flags)
+				 u32_t pin, int flags)
 {
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
@@ -132,10 +132,10 @@ static int gpio_cmsdk_ahb_config(struct device *dev, int access_op,
  * @return 0 if successful, failed otherwise
  */
 static int gpio_cmsdk_ahb_write(struct device *dev, int access_op,
-				uint32_t pin, uint32_t value)
+				u32_t pin, u32_t value)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
-	uint32_t key;
+	u32_t key;
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
@@ -186,7 +186,7 @@ static int gpio_cmsdk_ahb_write(struct device *dev, int access_op,
  * @return 0 if successful, failed otherwise
  */
 static int gpio_cmsdk_ahb_read(struct device *dev, int access_op,
-			       uint32_t pin, uint32_t *value)
+			       u32_t pin, u32_t *value)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
 
@@ -210,7 +210,7 @@ static void gpio_cmsdk_ahb_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
 	struct gpio_cmsdk_ahb_dev_data *data = dev->driver_data;
-	uint32_t int_stat;
+	u32_t int_stat;
 
 	int_stat = cfg->port->intstatus;
 
@@ -232,10 +232,10 @@ static int gpio_cmsdk_ahb_manage_callback(struct device *dev,
 }
 
 static int gpio_cmsdk_ahb_enable_callback(struct device *dev,
-					  int access_op, uint32_t pin)
+					  int access_op, u32_t pin)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
-	uint32_t mask;
+	u32_t mask;
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
@@ -254,10 +254,10 @@ static int gpio_cmsdk_ahb_enable_callback(struct device *dev,
 }
 
 static int gpio_cmsdk_ahb_disable_callback(struct device *dev,
-					   int access_op, uint32_t pin)
+					   int access_op, u32_t pin)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
-	uint32_t mask;
+	u32_t mask;
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:

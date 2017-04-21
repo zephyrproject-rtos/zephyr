@@ -16,11 +16,11 @@
  * CRC algorithm parameters were taken from the
  * "Checksum Calculation" section of the datasheet.
  */
-static uint8_t sht3xd_compute_crc(uint16_t value)
+static u8_t sht3xd_compute_crc(u16_t value)
 {
-	uint8_t buf[2] = {value >> 8, value & 0xFF};
-	uint8_t crc = 0xFF;
-	uint8_t polynom = 0x31;
+	u8_t buf[2] = {value >> 8, value & 0xFF};
+	u8_t crc = 0xFF;
+	u8_t polynom = 0x31;
 	int i, j;
 
 	for (i = 0; i < 2; ++i) {
@@ -37,18 +37,18 @@ static uint8_t sht3xd_compute_crc(uint16_t value)
 	return crc;
 }
 
-int sht3xd_write_command(struct sht3xd_data *drv_data, uint16_t cmd)
+int sht3xd_write_command(struct sht3xd_data *drv_data, u16_t cmd)
 {
-	uint8_t tx_buf[2] = {cmd >> 8, cmd & 0xFF};
+	u8_t tx_buf[2] = {cmd >> 8, cmd & 0xFF};
 
 	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
 			 SHT3XD_I2C_ADDRESS);
 }
 
-int sht3xd_write_reg(struct sht3xd_data *drv_data, uint16_t cmd,
-		     uint16_t val)
+int sht3xd_write_reg(struct sht3xd_data *drv_data, u16_t cmd,
+		     u16_t val)
 {
-	uint8_t tx_buf[5];
+	u8_t tx_buf[5];
 
 	tx_buf[0] = cmd >> 8;
 	tx_buf[1] = cmd & 0xFF;
@@ -63,12 +63,12 @@ int sht3xd_write_reg(struct sht3xd_data *drv_data, uint16_t cmd,
 static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct sht3xd_data *drv_data = dev->driver_data;
-	uint8_t rx_buf[6];
-	uint16_t t_sample, rh_sample;
+	u8_t rx_buf[6];
+	u16_t t_sample, rh_sample;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	uint8_t tx_buf[2] = {
+	u8_t tx_buf[2] = {
 		SHT3XD_CMD_FETCH >> 8,
 		SHT3XD_CMD_FETCH & 0xFF
 	};
@@ -114,7 +114,7 @@ static int sht3xd_channel_get(struct device *dev,
 			      struct sensor_value *val)
 {
 	struct sht3xd_data *drv_data = dev->driver_data;
-	uint64_t tmp;
+	u64_t tmp;
 
 	/*
 	 * See datasheet "Conversion of Signal Output" section
@@ -122,12 +122,12 @@ static int sht3xd_channel_get(struct device *dev,
 	 */
 	if (chan == SENSOR_CHAN_TEMP) {
 		/* val = -45 + 175 * sample / (2^16 -1) */
-		tmp = 175 * (uint64_t)drv_data->t_sample;
-		val->val1 = (int32_t)(tmp / 0xFFFF) - 45;
+		tmp = 175 * (u64_t)drv_data->t_sample;
+		val->val1 = (s32_t)(tmp / 0xFFFF) - 45;
 		val->val2 = (1000000 * (tmp % 0xFFFF)) / 0xFFFF;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		/* val = 100000 * sample / (2^16 -1) */
-		tmp = 100000 * (uint64_t)drv_data->rh_sample;
+		tmp = 100000 * (u64_t)drv_data->rh_sample;
 		val->val1 = tmp / 0xFFFF;
 		val->val2 = (1000000 * (tmp % 0xFFFF)) / 0xFFFF;
 	} else {

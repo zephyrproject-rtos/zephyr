@@ -20,7 +20,7 @@ struct soc_flash_data {
 	struct k_sem sem;
 #endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 	qm_flash_context_t saved_ctx[QM_FLASH_NUM];
 #endif
 };
@@ -41,12 +41,12 @@ static struct soc_flash_data soc_flash_context;
 #define RP_GET(dev) (NULL)
 #endif
 
-static inline bool is_aligned_32(uint32_t data)
+static inline bool is_aligned_32(u32_t data)
 {
 	return (data & 0x3) ? false : true;
 }
 
-static qm_flash_region_t flash_region(uint32_t addr)
+static qm_flash_region_t flash_region(u32_t addr)
 {
 	if ((addr >= QM_FLASH_REGION_SYS_0_BASE) && (addr <
 	    (QM_FLASH_REGION_SYS_0_BASE + CONFIG_SOC_FLASH_QMSI_SYS_SIZE))) {
@@ -65,7 +65,7 @@ static qm_flash_region_t flash_region(uint32_t addr)
 	return QM_FLASH_REGION_NUM;
 }
 
-static uint32_t get_page_num(uint32_t addr)
+static u32_t get_page_num(u32_t addr)
 {
 	switch (flash_region(addr)) {
 	case QM_FLASH_REGION_SYS:
@@ -101,9 +101,9 @@ static int flash_qmsi_read(struct device *dev, off_t addr,
 		return -EIO;
 	}
 
-	for (uint32_t i = 0; i < (len >> 2); i++) {
+	for (u32_t i = 0; i < (len >> 2); i++) {
 		UNALIGNED_PUT(sys_read32(addr + (i << 2)),
-			      (uint32_t *)data + i);
+			      (u32_t *)data + i);
 	}
 
 	return 0;
@@ -114,7 +114,7 @@ static int flash_qmsi_write(struct device *dev, off_t addr,
 {
 	qm_flash_t flash = QM_FLASH_0;
 	qm_flash_region_t reg;
-	uint32_t data_word = 0, offset = 0, f_addr = 0;
+	u32_t data_word = 0, offset = 0, f_addr = 0;
 
 	if ((!is_aligned_32(len)) || (!is_aligned_32(addr))) {
 		return -EINVAL;
@@ -129,8 +129,8 @@ static int flash_qmsi_write(struct device *dev, off_t addr,
 		return -EIO;
 	}
 
-	for (uint32_t i = 0; i < (len >> 2); i++) {
-		data_word = UNALIGNED_GET((uint32_t *)data + i);
+	for (u32_t i = 0; i < (len >> 2); i++) {
+		data_word = UNALIGNED_GET((u32_t *)data + i);
 		reg = flash_region(addr + (i << 2));
 		f_addr = addr + (i << 2);
 
@@ -172,7 +172,7 @@ static int flash_qmsi_erase(struct device *dev, off_t addr, size_t size)
 {
 	qm_flash_t flash = QM_FLASH_0;
 	qm_flash_region_t reg;
-	uint32_t page = 0;
+	u32_t page = 0;
 
 	/* starting address needs to be a 2KB aligned address */
 	if (addr & QM_FLASH_ADDRESS_MASK) {
@@ -194,7 +194,7 @@ static int flash_qmsi_erase(struct device *dev, off_t addr, size_t size)
 		return -EIO;
 	}
 
-	for (uint32_t i = 0; i < (size >> QM_FLASH_PAGE_SIZE_BITS); i++) {
+	for (u32_t i = 0; i < (size >> QM_FLASH_PAGE_SIZE_BITS); i++) {
 		page = get_page_num(addr) + i;
 #if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 		if (page >= (CONFIG_SOC_FLASH_QMSI_SYS_SIZE >>
@@ -256,14 +256,14 @@ static const struct flash_driver_api flash_qmsi_api = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static void flash_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+static void flash_qmsi_set_power_state(struct device *dev, u32_t power_state)
 {
 	struct soc_flash_data *ctx = dev->driver_data;
 
 	ctx->device_power_state = power_state;
 }
 
-static uint32_t flash_qmsi_get_power_state(struct device *dev)
+static u32_t flash_qmsi_get_power_state(struct device *dev)
 {
 	struct soc_flash_data *ctx = dev->driver_data;
 
@@ -296,17 +296,17 @@ static int flash_qmsi_resume_device(struct device *dev)
 	return 0;
 }
 
-static int flash_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int flash_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 				  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return flash_qmsi_suspend_device(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return flash_qmsi_resume_device(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = flash_qmsi_get_power_state(dev);
+		*((u32_t *)context) = flash_qmsi_get_power_state(dev);
 	}
 
 	return 0;

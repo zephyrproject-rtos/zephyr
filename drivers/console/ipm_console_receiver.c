@@ -18,8 +18,8 @@
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {
-	uint8_t size32;
-	uint16_t type;
+	u8_t size32;
+	u16_t type;
 	int ret, key;
 	struct device *d;
 	const struct ipm_console_receiver_config_info *config_info;
@@ -37,7 +37,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 		k_sem_take(&driver_data->sem, K_FOREVER);
 
 		ret = sys_ring_buf_get(&driver_data->rb, &type,
-				       (uint8_t *)&config_info->line_buf[pos],
+				       (u8_t *)&config_info->line_buf[pos],
 				       NULL, &size32);
 		if (ret) {
 			/* Shouldn't ever happen... */
@@ -84,7 +84,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static void ipm_console_receive_callback(void *context, uint32_t id,
+static void ipm_console_receive_callback(void *context, u32_t id,
 					 volatile void *data)
 {
 	struct device *d;

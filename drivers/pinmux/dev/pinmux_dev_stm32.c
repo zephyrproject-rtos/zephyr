@@ -21,7 +21,7 @@
 #include <pinmux/stm32/pinmux_stm32.h>
 
 static int pinmux_stm32_set(struct device *dev,
-				 uint32_t pin, uint32_t func)
+				 u32_t pin, u32_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -29,7 +29,7 @@ static int pinmux_stm32_set(struct device *dev,
 }
 
 static int pinmux_stm32_get(struct device *dev,
-				 uint32_t pin, uint32_t *func)
+				 u32_t pin, u32_t *func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -39,8 +39,8 @@ static int pinmux_stm32_get(struct device *dev,
 }
 
 static int pinmux_stm32_input(struct device *dev,
-				uint32_t pin,
-				uint8_t func)
+				u32_t pin,
+				u8_t func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -50,8 +50,8 @@ static int pinmux_stm32_input(struct device *dev,
 }
 
 static int pinmux_stm32_pullup(struct device *dev,
-				uint32_t pin,
-				uint8_t func)
+				u32_t pin,
+				u8_t func)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);

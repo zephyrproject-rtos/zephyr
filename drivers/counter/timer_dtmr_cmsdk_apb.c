@@ -36,7 +36,7 @@ struct timer_dtmr_cmsdk_apb_cfg {
 };
 
 struct timer_dtmr_cmsdk_apb_dev_data {
-	uint32_t load;
+	u32_t load;
 	enum dtimer_status_t status;
 };
 
@@ -73,14 +73,14 @@ static int timer_dtmr_cmsdk_apb_stop(struct device *dev)
 	return 0;
 }
 
-static uint32_t timer_dtmr_cmsdk_apb_read(struct device *dev)
+static u32_t timer_dtmr_cmsdk_apb_read(struct device *dev)
 {
 	const struct timer_dtmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;
 	struct timer_dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
 	/* Return Timer Value */
-	uint32_t value = 0;
+	u32_t value = 0;
 
 	value = data->load - cfg->dtimer->timer1value;
 
@@ -89,7 +89,7 @@ static uint32_t timer_dtmr_cmsdk_apb_read(struct device *dev)
 
 static int timer_dtmr_cmsdk_apb_set_alarm(struct device *dev,
 					   counter_callback_t callback,
-					   uint32_t count, void *user_data)
+					   u32_t count, void *user_data)
 {
 	const struct timer_dtmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;
@@ -115,7 +115,7 @@ static int timer_dtmr_cmsdk_apb_set_alarm(struct device *dev,
 	return 0;
 }
 
-static uint32_t timer_dtmr_cmsdk_apb_get_pending_int(struct device *dev)
+static u32_t timer_dtmr_cmsdk_apb_get_pending_int(struct device *dev)
 {
 	const struct timer_dtmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;

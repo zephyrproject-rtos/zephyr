@@ -213,7 +213,7 @@ typedef int stm32_pin_func_t;
  * in @funcs array
  */
 struct stm32_pinmux_conf {
-	uint32_t pin;		 /* pin ID */
+	u32_t pin;		 /* pin ID */
 	const stm32_pin_func_t *funcs; /* functions array, indexed with
 					* (stm32_pin_alt_func - 1)
 					*/
@@ -310,7 +310,7 @@ clock_control_subsys_t stm32_get_port_clock(int port);
  * @param clk clock control device, for enabling/disabling clock gate
  * for the port
  */
-int _pinmux_stm32_set(uint32_t pin, uint32_t func,
+int _pinmux_stm32_set(u32_t pin, u32_t func,
 		      struct device *clk);
 
 /**

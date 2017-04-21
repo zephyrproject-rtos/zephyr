@@ -42,24 +42,24 @@ extern "C" {
 #endif
 
 #define QUARK_SE_IPM_CHANNELS	8
-#define QUARK_SE_IPM_DATA_BYTES	(4 * sizeof(uint32_t))
+#define QUARK_SE_IPM_DATA_BYTES	(4 * sizeof(u32_t))
 #define QUARK_SE_IPM_MAX_ID_VAL	0x7FFFFFFF
 
 /* QUARK_SE EAS section 28.5.1.123 */
 struct __packed quark_se_ipm_ch_ctrl {
-	uint32_t ctrl : 31;
-	uint32_t irq : 1;
+	u32_t ctrl : 31;
+	u32_t irq : 1;
 };
 
 struct __packed quark_se_ipm_ch_sts {
-	uint32_t sts : 1;
-	uint32_t irq : 1;
-	uint32_t reserved : 30;
+	u32_t sts : 1;
+	u32_t irq : 1;
+	u32_t reserved : 30;
 };
 
 struct __packed quark_se_ipm {
 	struct quark_se_ipm_ch_ctrl ctrl;
-	uint8_t data[QUARK_SE_IPM_DATA_BYTES]; /* contiguous 32-bit registers */
+	u8_t data[QUARK_SE_IPM_DATA_BYTES]; /* contiguous 32-bit registers */
 	struct quark_se_ipm_ch_sts sts;
 };
 

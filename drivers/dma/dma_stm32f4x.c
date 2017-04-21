@@ -32,37 +32,37 @@
 
 struct dma_stm32_stream_reg {
 	/* Shared registers */
-	uint32_t lisr;
-	uint32_t hisr;
-	uint32_t lifcr;
-	uint32_t hifcr;
+	u32_t lisr;
+	u32_t hisr;
+	u32_t lifcr;
+	u32_t hifcr;
 
 	/* Per stream registers */
-	uint32_t scr;
-	uint32_t sndtr;
-	uint32_t spar;
-	uint32_t sm0ar;
-	uint32_t sm1ar;
-	uint32_t sfcr;
+	u32_t scr;
+	u32_t sndtr;
+	u32_t spar;
+	u32_t sm0ar;
+	u32_t sm1ar;
+	u32_t sfcr;
 };
 
 struct dma_stm32_stream {
-	uint32_t direction;
+	u32_t direction;
 	struct device *dev;
 	struct dma_stm32_stream_reg regs;
 	bool busy;
 
-	void (*dma_callback)(struct device *dev, uint32_t id,
+	void (*dma_callback)(struct device *dev, u32_t id,
 			     int error_code);
 };
 
 static struct dma_stm32_device {
-	uint32_t base;
+	u32_t base;
 	struct device *clk;
 	struct dma_stm32_stream stream[DMA_STM32_MAX_STREAMS];
 	bool mem2mem;
-	uint8_t channel_rx;
-	uint8_t channel_tx;
+	u8_t channel_rx;
+	u8_t channel_tx;
 } device_data[DMA_STM32_MAX_DEVS];
 
 struct dma_stm32_config {
@@ -170,23 +170,23 @@ struct dma_stm32_config {
 #define   DMA_STM32_SFCR_MASK		(DMA_STM32_SFCR_FEIE \
 					 | DMA_STM32_SFCR_DMDIS)
 
-#define SYS_LOG_U32			__attribute((__unused__)) uint32_t
+#define SYS_LOG_U32			__attribute((__unused__)) u32_t
 
 static void dma_stm32_1_config(struct dma_stm32_device *ddata);
 static void dma_stm32_2_config(struct dma_stm32_device *ddata);
 
-static uint32_t dma_stm32_read(struct dma_stm32_device *ddata, uint32_t reg)
+static u32_t dma_stm32_read(struct dma_stm32_device *ddata, u32_t reg)
 {
 	return sys_read32(ddata->base + reg);
 }
 
 static void dma_stm32_write(struct dma_stm32_device *ddata,
-			    uint32_t reg, uint32_t val)
+			    u32_t reg, u32_t val)
 {
 	sys_write32(val, ddata->base + reg);
 }
 
-static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, uint32_t id)
+static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, u32_t id)
 {
 	SYS_LOG_INF("Using stream: %d\n", id);
 	SYS_LOG_INF("SCR:   0x%x \t(config)\n",
@@ -203,10 +203,10 @@ static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, uint32_t id)
 		    dma_stm32_read(ddata, DMA_STM32_SFCR(id)));
 }
 
-static uint32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
-				     uint32_t id)
+static u32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
+				     u32_t id)
 {
-	uint32_t irqs;
+	u32_t irqs;
 
 	if (id & 4) {
 		irqs = dma_stm32_read(ddata, DMA_STM32_HISR);
@@ -218,7 +218,7 @@ static uint32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
 }
 
 static void dma_stm32_irq_clear(struct dma_stm32_device *ddata,
-				uint32_t id, uint32_t irqs)
+				u32_t id, u32_t irqs)
 {
 	irqs = irqs << (((id & 2) << 3) | ((id & 1) * 6));
 
@@ -229,12 +229,12 @@ static void dma_stm32_irq_clear(struct dma_stm32_device *ddata,
 	}
 }
 
-static void dma_stm32_irq_handler(void *arg, uint32_t id)
+static void dma_stm32_irq_handler(void *arg, u32_t id)
 {
 	struct device *dev = arg;
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream *stream = &ddata->stream[id];
-	uint32_t irqstatus, config, sfcr;
+	u32_t irqstatus, config, sfcr;
 
 	irqstatus = dma_stm32_irq_status(ddata, id);
 	config = dma_stm32_read(ddata, DMA_STM32_SCR(id));
@@ -261,9 +261,9 @@ static void dma_stm32_irq_handler(void *arg, uint32_t id)
 }
 
 static int dma_stm32_disable_stream(struct dma_stm32_device *ddata,
-				  uint32_t id)
+				  u32_t id)
 {
-	uint32_t config;
+	u32_t config;
 	int count = 0;
 	int ret = 0;
 
@@ -289,16 +289,16 @@ static int dma_stm32_disable_stream(struct dma_stm32_device *ddata,
 	return ret;
 }
 
-static int dma_stm32_config_devcpy(struct device *dev, uint32_t id,
+static int dma_stm32_config_devcpy(struct device *dev, u32_t id,
 				   struct dma_config *config)
 
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
-	uint32_t src_bus_width  = dma_width_index(config->source_data_size);
-	uint32_t dst_bus_width  = dma_width_index(config->dest_data_size);
-	uint32_t src_burst_size = dma_burst_index(config->source_burst_length);
-	uint32_t dst_burst_size = dma_burst_index(config->dest_burst_length);
+	u32_t src_bus_width  = dma_width_index(config->source_data_size);
+	u32_t dst_bus_width  = dma_width_index(config->dest_data_size);
+	u32_t src_burst_size = dma_burst_index(config->source_burst_length);
+	u32_t dst_burst_size = dma_burst_index(config->dest_burst_length);
 	enum dma_channel_direction direction = config->channel_direction;
 
 	switch (direction) {
@@ -339,7 +339,7 @@ static int dma_stm32_config_devcpy(struct device *dev, uint32_t id,
 	return 0;
 }
 
-static int dma_stm32_config_memcpy(struct device *dev, uint32_t id)
+static int dma_stm32_config_memcpy(struct device *dev, u32_t id)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
@@ -357,7 +357,7 @@ static int dma_stm32_config_memcpy(struct device *dev, uint32_t id)
 	return 0;
 }
 
-static int dma_stm32_config(struct device *dev, uint32_t id,
+static int dma_stm32_config(struct device *dev, u32_t id,
 			    struct dma_config *config)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
@@ -380,11 +380,11 @@ static int dma_stm32_config(struct device *dev, uint32_t id,
 	stream->direction	= config->channel_direction;
 
 	if (stream->direction == MEMORY_TO_PERIPHERAL) {
-		regs->sm0ar = (uint32_t)config->head_block->source_address;
-		regs->spar = (uint32_t)config->head_block->dest_address;
+		regs->sm0ar = (u32_t)config->head_block->source_address;
+		regs->spar = (u32_t)config->head_block->dest_address;
 	} else {
-		regs->spar = (uint32_t)config->head_block->source_address;
-		regs->sm0ar = (uint32_t)config->head_block->dest_address;
+		regs->spar = (u32_t)config->head_block->source_address;
+		regs->sm0ar = (u32_t)config->head_block->dest_address;
 	}
 
 	if (stream->direction == MEMORY_TO_MEMORY) {
@@ -398,11 +398,11 @@ static int dma_stm32_config(struct device *dev, uint32_t id,
 	return ret;
 }
 
-static int dma_stm32_start(struct device *dev, uint32_t id)
+static int dma_stm32_start(struct device *dev, u32_t id)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
-	uint32_t irqstatus;
+	u32_t irqstatus;
 	int ret;
 
 	ret = dma_stm32_disable_stream(ddata, id);
@@ -432,11 +432,11 @@ static int dma_stm32_start(struct device *dev, uint32_t id)
 	return 0;
 }
 
-static int dma_stm32_stop(struct device *dev, uint32_t id)
+static int dma_stm32_stop(struct device *dev, u32_t id)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream *stream = &ddata->stream[id];
-	uint32_t scr, sfcr, irqstatus;
+	u32_t scr, sfcr, irqstatus;
 	int ret;
 
 	/* Disable all IRQs */

@@ -27,7 +27,7 @@
 
 struct max44009_data {
 	struct device *i2c;
-	uint16_t sample;
+	u16_t sample;
 };
 
 #endif /* _SENSOR_MAX44009_ */

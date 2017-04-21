@@ -12,10 +12,10 @@
 
 static int flash_stm32_erase(struct device *dev, off_t offset, size_t size)
 {
-	uint32_t first_page_addr = 0;
-	uint32_t last_page_addr = 0;
-	uint16_t no_of_pages = size / CONFIG_FLASH_PAGE_SIZE;
-	uint16_t page_index = 0;
+	u32_t first_page_addr = 0;
+	u32_t last_page_addr = 0;
+	u16_t no_of_pages = size / CONFIG_FLASH_PAGE_SIZE;
+	u16_t page_index = 0;
 
 	/* Check offset and size alignment. */
 	if (((offset % CONFIG_FLASH_PAGE_SIZE) != 0) ||
@@ -55,7 +55,7 @@ static int flash_stm32_erase(struct device *dev, off_t offset, size_t size)
 static int flash_stm32_read(struct device *dev, off_t offset,
 			    void *data, size_t len)
 {
-	uint32_t address = CONFIG_FLASH_BASE_ADDRESS + offset;
+	u32_t address = CONFIG_FLASH_BASE_ADDRESS + offset;
 
 	__ASSERT_NO_MSG(IS_FLASH_PROGRAM_ADDRESS(address));
 
@@ -67,12 +67,12 @@ static int flash_stm32_read(struct device *dev, off_t offset,
 static int flash_stm32_write(struct device *dev, off_t offset,
 			     const void *data, size_t len)
 {
-	uint16_t halfword = 0;
+	u16_t halfword = 0;
 
-	uint32_t address =
+	u32_t address =
 		CONFIG_FLASH_BASE_ADDRESS + offset;
 
-	uint8_t remainder = 0;
+	u8_t remainder = 0;
 
 	if ((len % 2) != 0) {
 		remainder = 1;
@@ -81,8 +81,8 @@ static int flash_stm32_write(struct device *dev, off_t offset,
 	len = len / 2;
 
 	while (len--) {
-		halfword = *((uint8_t *)data++);
-		halfword |= *((uint8_t *)data++) << 8;
+		halfword = *((u8_t *)data++);
+		halfword |= *((u8_t *)data++) << 8;
 		if (flash_stm32_program_halfword(dev, address, halfword)
 				!= FLASH_COMPLETE) {
 			return -EINVAL;
@@ -91,7 +91,7 @@ static int flash_stm32_write(struct device *dev, off_t offset,
 	}
 
 	if (remainder) {
-		halfword = (*((uint16_t *)data)) & 0x00FF;
+		halfword = (*((u16_t *)data)) & 0x00FF;
 		if (flash_stm32_program_halfword(dev, address, halfword)
 				!= FLASH_COMPLETE) {
 			return -EINVAL;
@@ -132,7 +132,7 @@ static const struct flash_driver_api flash_stm32_api = {
 };
 
 static const struct flash_stm32_dev_config flash_device_config = {
-	.base = (uint32_t *)FLASH_R_BASE,
+	.base = (u32_t *)FLASH_R_BASE,
 	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
 		    .enr =  LL_AHB1_GRP1_PERIPH_FLASH},
 };

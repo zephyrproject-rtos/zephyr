@@ -21,7 +21,7 @@ struct wdt_data {
 	struct k_sem sem;
 #endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 #endif
 };
 
@@ -110,14 +110,14 @@ static const struct wdt_driver_api api = {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static qm_wdt_context_t wdt_ctx;
 
-static void wdt_qmsi_set_power_state(struct device *dev, uint32_t power_state)
+static void wdt_qmsi_set_power_state(struct device *dev, u32_t power_state)
 {
 	struct wdt_data *context = dev->driver_data;
 
 	context->device_power_state = power_state;
 }
 
-static uint32_t wdt_qmsi_get_power_state(struct device *dev)
+static u32_t wdt_qmsi_get_power_state(struct device *dev)
 {
 	struct wdt_data *context = dev->driver_data;
 
@@ -146,17 +146,17 @@ static int wdt_resume_device_from_suspend(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int wdt_qmsi_device_ctrl(struct device *dev, uint32_t ctrl_command,
+static int wdt_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 				void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
 			return wdt_suspend_device(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			return wdt_resume_device_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = wdt_qmsi_get_power_state(dev);
+		*((u32_t *)context) = wdt_qmsi_get_power_state(dev);
 		return 0;
 	}
 

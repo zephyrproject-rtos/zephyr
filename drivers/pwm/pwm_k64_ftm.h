@@ -145,16 +145,16 @@ extern int pwm_ftm_init(struct device *dev);
 struct pwm_ftm_config {
 
 	/* FTM register base address */
-	uint32_t ftm_num;
+	u32_t ftm_num;
 
 	/* FTM register base address */
-	uint32_t reg_base;
+	u32_t reg_base;
 
 	/* FTM prescale (1,2,4,8,16,32,64,128) */
-	uint32_t prescale;
+	u32_t prescale;
 
 	/* FTM clock source  */
-	uint32_t clock_source;
+	u32_t clock_source;
 
 	/* If phase is not 0, the odd-numbered channel is not available */
 	bool phase_enable0;  /* combine pwm0, pwm1 for phase capability */
@@ -163,15 +163,15 @@ struct pwm_ftm_config {
 	bool phase_enable6;  /* combine pwm6, pwm5 for phase capability */
 
 	/* FTM period (clock ticks) */
-	uint32_t period;
+	u32_t period;
 
 };
 
 /** Runtime driver data */
 struct pwm_ftm_drv_data {
-	uint32_t phase[4];
+	u32_t phase[4];
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
+	u32_t device_power_state;
 #endif
 };
 
