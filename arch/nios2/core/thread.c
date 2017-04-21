@@ -10,25 +10,6 @@
 #include <wait_q.h>
 #include <string.h>
 
-#if defined(CONFIG_THREAD_MONITOR)
-/*
- * Add a thread to the kernel's list of active threads.
- */
-static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
-{
-	unsigned int key;
-
-	key = irq_lock();
-	thread->next_thread = _kernel.threads;
-	_kernel.threads = thread;
-	irq_unlock(key);
-}
-#else
-#define thread_monitor_init(thread) \
-	do {/* do nothing */     \
-	} while ((0))
-#endif /* CONFIG_THREAD_MONITOR */
-
 /* forward declaration to asm function to adjust setup the arguments
  * to _thread_entry() since this arch puts the first four arguments
  * in r4-r7 and not on the stack

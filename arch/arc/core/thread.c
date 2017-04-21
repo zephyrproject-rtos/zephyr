@@ -29,25 +29,6 @@ struct init_stack_frame {
 	u32_t r0;
 };
 
-#if defined(CONFIG_THREAD_MONITOR)
-/*
- * Add a thread to the kernel's list of active threads.
- */
-static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
-{
-	unsigned int key;
-
-	key = irq_lock();
-	thread->next_thread = _kernel.threads;
-	_kernel.threads = thread;
-	irq_unlock(key);
-}
-#else
-#define thread_monitor_init(thread) \
-	do {/* do nothing */     \
-	} while ((0))
-#endif /* CONFIG_THREAD_MONITOR */
-
 /*
  * @brief Initialize a new thread from its stack space
  *

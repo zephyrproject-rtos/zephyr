@@ -15,41 +15,6 @@
 
 extern void _xt_user_exit(void);
 
-#if defined(CONFIG_THREAD_MONITOR)
-#define THREAD_MONITOR_INIT(thread) _thread_monitor_init(thread)
-#else
-#define THREAD_MONITOR_INIT(thread) \
-	do {/* do nothing */     \
-	} while ((0))
-#endif
-
-#if defined(CONFIG_THREAD_MONITOR)
-/**
- *
- * @brief Initialize thread monitoring support
- *
- * Currently only inserts the new thread in the list of active threads.
- *
- * @return N/A
- */
-
-static inline void _thread_monitor_init(struct k_thread *thread)
-{
-	unsigned int key;
-
-	/*
-	 * Add the newly initialized thread to head of the list of threads.
-	 * This singly linked list of threads maintains ALL the threads in the
-	 * system regardless of whether they are runnable.
-	 */
-
-	key = irq_lock();
-	thread->next_thread = _nanokernel.threads;
-	_nanokernel.threads = thread;
-	irq_unlock(key);
-}
-#endif /* CONFIG_THREAD_MONITOR */
-
 /*
  * @brief Initialize a new thread from its stack space
  *
@@ -164,6 +129,6 @@ void _new_thread(char *pStack, size_t stackSize,
 	 * irrelevant
 	 */
 
-	THREAD_MONITOR_INIT(thread);
+	thread_monitor_init(thread);
 }
 
