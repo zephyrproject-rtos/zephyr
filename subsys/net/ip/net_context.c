@@ -1153,12 +1153,13 @@ int net_context_connect(struct net_context *context,
 		return ret;
 	}
 
+	context->connect_cb = cb;
+	context->user_data = user_data;
+
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
 	send_syn(context, addr);
 
-	context->connect_cb = cb;
-	context->user_data = user_data;
 
 	/* in tcp_synack_received() we give back this semaphore */
 	if (timeout != 0 && k_sem_take(&context->tcp->connect_wait, timeout)) {
