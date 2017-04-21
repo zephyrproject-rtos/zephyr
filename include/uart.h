@@ -90,12 +90,12 @@ typedef void (*uart_irq_config_func_t)(struct device *port);
  */
 struct uart_device_config {
 	union {
-		uint32_t port;
-		uint8_t *base;
-		uint32_t regs;
+		u32_t port;
+		u8_t *base;
+		u32_t regs;
 	};
 
-	uint32_t sys_clk_freq;
+	u32_t sys_clk_freq;
 
 #ifdef CONFIG_PCI
 	struct pci_dev_info  pci_dev;
@@ -118,10 +118,10 @@ struct uart_driver_api {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 	/** Interrupt driven FIFO fill function */
-	int (*fifo_fill)(struct device *dev, const uint8_t *tx_data, int len);
+	int (*fifo_fill)(struct device *dev, const u8_t *tx_data, int len);
 
 	/** Interrupt driven FIFO read function */
-	int (*fifo_read)(struct device *dev, uint8_t *rx_data, const int size);
+	int (*fifo_read)(struct device *dev, u8_t *rx_data, const int size);
 
 	/** Interrupt driven transfer enabling function */
 	void (*irq_tx_enable)(struct device *dev);
@@ -162,12 +162,12 @@ struct uart_driver_api {
 #endif
 
 #ifdef CONFIG_UART_LINE_CTRL
-	int (*line_ctrl_set)(struct device *dev, uint32_t ctrl, uint32_t val);
-	int (*line_ctrl_get)(struct device *dev, uint32_t ctrl, uint32_t *val);
+	int (*line_ctrl_set)(struct device *dev, u32_t ctrl, u32_t val);
+	int (*line_ctrl_get)(struct device *dev, u32_t ctrl, u32_t *val);
 #endif
 
 #ifdef CONFIG_UART_DRV_CMD
-	int (*drv_cmd)(struct device *dev, uint32_t cmd, uint32_t p);
+	int (*drv_cmd)(struct device *dev, u32_t cmd, u32_t p);
 #endif
 
 };
@@ -247,7 +247,7 @@ static inline unsigned char uart_poll_out(struct device *dev,
  *
  * @return Number of bytes sent.
  */
-static inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
+static inline int uart_fifo_fill(struct device *dev, const u8_t *tx_data,
 				 int size)
 {
 	const struct uart_driver_api *api = dev->driver_api;
@@ -268,7 +268,7 @@ static inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
  *
  * @return Number of bytes read.
  */
-static inline int uart_fifo_read(struct device *dev, uint8_t *rx_data,
+static inline int uart_fifo_read(struct device *dev, u8_t *rx_data,
 				 const int size)
 {
 	const struct uart_driver_api *api = dev->driver_api;
@@ -506,7 +506,7 @@ static inline void uart_irq_callback_set(struct device *dev,
  * @retval failed Otherwise.
  */
 static inline int uart_line_ctrl_set(struct device *dev,
-				     uint32_t ctrl, uint32_t val)
+				     u32_t ctrl, u32_t val)
 {
 	const struct uart_driver_api *api = dev->driver_api;
 
@@ -528,7 +528,7 @@ static inline int uart_line_ctrl_set(struct device *dev,
  * @retval failed Otherwise.
  */
 static inline int uart_line_ctrl_get(struct device *dev,
-				     uint32_t ctrl, uint32_t *val)
+				     u32_t ctrl, u32_t *val)
 {
 	const struct uart_driver_api *api = dev->driver_api;
 
@@ -556,7 +556,7 @@ static inline int uart_line_ctrl_get(struct device *dev,
  * @retval 0 If successful.
  * @retval failed Otherwise.
  */
-static inline int uart_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
+static inline int uart_drv_cmd(struct device *dev, u32_t cmd, u32_t p)
 {
 	const struct uart_driver_api *api = dev->driver_api;
 

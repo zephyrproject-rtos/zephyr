@@ -58,7 +58,7 @@ static inline void _sys_k_event_logger_interrupt(void) {};
  *
  * @return Timestamp value (application-defined).
  */
-typedef uint32_t (*sys_k_timer_func_t)(void);
+typedef u32_t (*sys_k_timer_func_t)(void);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -173,9 +173,9 @@ static inline int sys_k_must_log_event(int event_type)
  *
  * @return N/A
  */
-static inline void sys_k_event_logger_put(uint16_t event_id,
-					  uint32_t *event_data,
-					  uint8_t data_size)
+static inline void sys_k_event_logger_put(u16_t event_id,
+					  u32_t *event_data,
+					  u8_t data_size)
 {
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
 	sys_event_logger_put(&sys_k_event_logger, event_id,
@@ -198,9 +198,9 @@ static inline void sys_k_event_logger_put(uint16_t event_id,
  * @return N/A
  */
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
-extern void sys_k_event_logger_put_timed(uint16_t event_id);
+extern void sys_k_event_logger_put_timed(u16_t event_id);
 #else
-static inline void sys_k_event_logger_put_timed(uint16_t event_id)
+static inline void sys_k_event_logger_put_timed(u16_t event_id)
 {
 	ARG_UNUSED(event_id);
 };
@@ -225,8 +225,8 @@ static inline void sys_k_event_logger_put_timed(uint16_t event_id)
  *         the size of the event to be retrieved.
  */
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
-static inline int sys_k_event_logger_get(uint16_t *event_id, uint8_t *dropped,
-				     uint32_t *event_data, uint8_t *data_size)
+static inline int sys_k_event_logger_get(u16_t *event_id, u8_t *dropped,
+				     u32_t *event_data, u8_t *data_size)
 {
 	return sys_event_logger_get(&sys_k_event_logger, event_id, dropped,
 				    event_data, data_size);
@@ -251,8 +251,8 @@ static inline int sys_k_event_logger_get(uint16_t *event_id, uint8_t *dropped,
  *         the size of the event to be retrieved.
  */
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
-static inline int sys_k_event_logger_get_wait(uint16_t *event_id,
-		uint8_t *dropped, uint32_t *event_data, uint8_t *data_size)
+static inline int sys_k_event_logger_get_wait(u16_t *event_id,
+		u8_t *dropped, u32_t *event_data, u8_t *data_size)
 {
 	return sys_event_logger_get_wait(&sys_k_event_logger, event_id, dropped,
 					 event_data, data_size);
@@ -281,9 +281,9 @@ static inline int sys_k_event_logger_get_wait(uint16_t *event_id,
  *         the size of the event to be retrieved.
  */
 #if defined(CONFIG_KERNEL_EVENT_LOGGER)
-static inline int sys_k_event_logger_get_wait_timeout(uint16_t *event_id,
-			uint8_t *dropped, uint32_t *event_data,
-			uint8_t *data_size, uint32_t timeout)
+static inline int sys_k_event_logger_get_wait_timeout(u16_t *event_id,
+			u8_t *dropped, u32_t *event_data,
+			u8_t *data_size, u32_t timeout)
 {
 	return sys_event_logger_get_wait_timeout(&sys_k_event_logger, event_id,
 						 dropped, event_data,

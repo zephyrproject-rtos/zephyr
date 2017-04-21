@@ -66,7 +66,7 @@ enum dma_channel_direction {
  */
 struct dma_channel_config {
 	/* Hardware Interface handshake for peripheral (I2C, SPI, etc) */
-	uint32_t handshake_interface;
+	u32_t handshake_interface;
 	/* Select active  polarity for handshake (low/high) */
 	enum dma_handshake_polarity handshake_polarity;
 	/* DMA transfer direction from mem/peripheral to mem/peripheral */
@@ -95,11 +95,11 @@ struct dma_channel_config {
  */
 struct dma_transfer_config {
 	/* Total amount of data in bytes to transfer */
-	uint32_t block_size;
+	u32_t block_size;
 	/* Source address for the transaction */
-	uint32_t *source_address;
+	u32_t *source_address;
 	/* Destination address */
-	uint32_t *destination_address;
+	u32_t *destination_address;
 };
 
 /**
@@ -137,23 +137,23 @@ struct dma_transfer_config {
  *     reserved           [ 13 : 15 ]
  */
 struct dma_block_config {
-	uint32_t source_address;
-	uint32_t source_gather_interval;
-	uint32_t dest_address;
-	uint32_t dest_scatter_interval;
-	uint16_t dest_scatter_count;
-	uint16_t source_gather_count;
-	uint32_t block_size;
+	u32_t source_address;
+	u32_t source_gather_interval;
+	u32_t dest_address;
+	u32_t dest_scatter_interval;
+	u16_t dest_scatter_count;
+	u16_t source_gather_count;
+	u32_t block_size;
 	struct dma_block_config *next_block;
-	uint16_t  source_gather_en :  1;
-	uint16_t  dest_scatter_en :   1;
-	uint16_t  source_addr_adj :   2;
-	uint16_t  dest_addr_adj :     2;
-	uint16_t  source_reload_en :  1;
-	uint16_t  dest_reload_en :    1;
-	uint16_t  fifo_mode_control : 4;
-	uint16_t  flow_control_mode : 1;
-	uint16_t  reserved :          3;
+	u16_t  source_gather_en :  1;
+	u16_t  dest_scatter_en :   1;
+	u16_t  source_addr_adj :   2;
+	u16_t  dest_addr_adj :     2;
+	u16_t  source_reload_en :  1;
+	u16_t  dest_reload_en :    1;
+	u16_t  fifo_mode_control : 4;
+	u16_t  flow_control_mode : 1;
+	u16_t  reserved :          3;
 };
 
 /**
@@ -192,23 +192,23 @@ struct dma_block_config {
  *              (error_code: zero-transfer success, non zero-error happens).
  */
 struct dma_config {
-	uint32_t  dma_slot :             6;
-	uint32_t  channel_direction :    3;
-	uint32_t  complete_callback_en : 1;
-	uint32_t  error_callback_en :    1;
-	uint32_t  source_handshake :     1;
-	uint32_t  dest_handshake :       1;
-	uint32_t  channel_priority :     4;
-	uint32_t  source_chaining_en :   1;
-	uint32_t  dest_chaining_en :     1;
-	uint32_t  reserved :            13;
-	uint32_t  source_data_size :    16;
-	uint32_t  dest_data_size :      16;
-	uint32_t  source_burst_length : 16;
-	uint32_t  dest_burst_length :   16;
-	uint32_t block_count;
+	u32_t  dma_slot :             6;
+	u32_t  channel_direction :    3;
+	u32_t  complete_callback_en : 1;
+	u32_t  error_callback_en :    1;
+	u32_t  source_handshake :     1;
+	u32_t  dest_handshake :       1;
+	u32_t  channel_priority :     4;
+	u32_t  source_chaining_en :   1;
+	u32_t  dest_chaining_en :     1;
+	u32_t  reserved :            13;
+	u32_t  source_data_size :    16;
+	u32_t  dest_data_size :      16;
+	u32_t  source_burst_length : 16;
+	u32_t  dest_burst_length :   16;
+	u32_t block_count;
 	struct dma_block_config *head_block;
-	void (*dma_callback)(struct device *dev, uint32_t channel,
+	void (*dma_callback)(struct device *dev, u32_t channel,
 			     int error_code);
 };
 
@@ -219,22 +219,22 @@ struct dma_config {
  * public documentation.
  */
 
-typedef int (*dma_api_channel_config)(struct device *dev, uint32_t channel,
+typedef int (*dma_api_channel_config)(struct device *dev, u32_t channel,
 				      struct dma_channel_config *config);
 
-typedef int (*dma_api_transfer_config)(struct device *dev, uint32_t channel,
+typedef int (*dma_api_transfer_config)(struct device *dev, u32_t channel,
 				       struct dma_transfer_config *config);
 
-typedef int (*dma_api_transfer_start)(struct device *dev, uint32_t channel);
+typedef int (*dma_api_transfer_start)(struct device *dev, u32_t channel);
 
-typedef int (*dma_api_transfer_stop)(struct device *dev, uint32_t channel);
+typedef int (*dma_api_transfer_stop)(struct device *dev, u32_t channel);
 
-typedef int (*dma_api_config)(struct device *dev, uint32_t channel,
+typedef int (*dma_api_config)(struct device *dev, u32_t channel,
 			      struct dma_config *config);
 
-typedef int (*dma_api_start)(struct device *dev, uint32_t channel);
+typedef int (*dma_api_start)(struct device *dev, u32_t channel);
 
-typedef int (*dma_api_stop)(struct device *dev, uint32_t channel);
+typedef int (*dma_api_stop)(struct device *dev, u32_t channel);
 
 struct dma_driver_api {
 	dma_api_channel_config channel_config;
@@ -260,7 +260,7 @@ struct dma_driver_api {
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_config(struct device *dev, uint32_t channel,
+static inline int dma_config(struct device *dev, u32_t channel,
 			     struct dma_config *config)
 {
 	const struct dma_driver_api *api = dev->driver_api;
@@ -279,7 +279,7 @@ static inline int dma_config(struct device *dev, uint32_t channel,
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_start(struct device *dev, uint32_t channel)
+static inline int dma_start(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -296,7 +296,7 @@ static inline int dma_start(struct device *dev, uint32_t channel)
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_stop(struct device *dev, uint32_t channel)
+static inline int dma_stop(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -315,7 +315,7 @@ static inline int dma_stop(struct device *dev, uint32_t channel)
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated dma_channel_config(struct device *dev,
-			uint32_t channel, struct dma_channel_config *config)
+			u32_t channel, struct dma_channel_config *config)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -335,7 +335,7 @@ static inline int __deprecated dma_channel_config(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated dma_transfer_config(struct device *dev,
-			uint32_t channel, struct dma_transfer_config *config)
+			u32_t channel, struct dma_transfer_config *config)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -354,7 +354,7 @@ static inline int __deprecated dma_transfer_config(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated dma_transfer_start(struct device *dev,
-						  uint32_t channel)
+						  u32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -372,7 +372,7 @@ static inline int __deprecated dma_transfer_start(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated dma_transfer_stop(struct device *dev,
-						 uint32_t channel)
+						 u32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -392,7 +392,7 @@ static inline int __deprecated dma_transfer_stop(struct device *dev,
  *
  * @retval common DMA index to be placed into registers.
  */
-static inline enum dma_burst_length dma_width_index(uint32_t size)
+static inline enum dma_burst_length dma_width_index(u32_t size)
 {
 	/* Check boundaries (max supported width is 32 Bytes) */
 	if (size < 1 || size > 32) {
@@ -421,7 +421,7 @@ static inline enum dma_burst_length dma_width_index(uint32_t size)
  *
  * @retval common DMA index to be placed into registers.
  */
-static inline enum dma_burst_length dma_burst_index(uint32_t burst)
+static inline enum dma_burst_length dma_burst_index(u32_t burst)
 {
 	/* Check boundaries (max supported burst length is 256) */
 	if (burst < 1 || burst > 256) {

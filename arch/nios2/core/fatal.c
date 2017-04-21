@@ -78,16 +78,12 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	 * registers, at the expense of some stack space.
 	 */
 	printk("Current thread ID: %p\n"
-	       "Faulting instruction: 0x%" PRIx32 "\n"
-	       "  r1: 0x%" PRIx32 "  r2: 0x%" PRIx32
-	       "  r3: 0x%" PRIx32 "  r4: 0x%" PRIx32 "\n"
-	       "  r5: 0x%" PRIx32 "  r6: 0x%" PRIx32
-	       "  r7: 0x%" PRIx32 "  r8: 0x%" PRIx32 "\n"
-	       "  r9: 0x%" PRIx32 " r10: 0x%" PRIx32
-	       " r11: 0x%" PRIx32 " r12: 0x%" PRIx32 "\n"
-	       " r13: 0x%" PRIx32 " r14: 0x%" PRIx32
-	       " r15: 0x%" PRIx32 "  ra: 0x%" PRIx32 "\n"
-	       "estatus: %" PRIx32 "\n", k_current_get(), esf->instr - 4,
+	       "Faulting instruction: 0x%x\n"
+	       "  r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
+	       "  r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
+	       "  r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
+	       " r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
+	       "estatus: %x\n", k_current_get(), esf->instr - 4,
 	       esf->r1, esf->r2, esf->r3, esf->r4,
 	       esf->r5, esf->r6, esf->r7, esf->r8,
 	       esf->r9, esf->r10, esf->r11, esf->r12,

@@ -17,15 +17,15 @@
 
 /* Memory mapped registers I/O functions */
 
-static inline uint32_t sys_read32(mem_addr_t addr)
+static inline u32_t sys_read32(mem_addr_t addr)
 {
-	return *(volatile uint32_t *)addr;
+	return *(volatile u32_t *)addr;
 }
 
 
-static inline void sys_write32(uint32_t data, mem_addr_t addr)
+static inline void sys_write32(u32_t data, mem_addr_t addr)
 {
-	*(volatile uint32_t *)addr = data;
+	*(volatile u32_t *)addr = data;
 }
 
 
@@ -33,16 +33,16 @@ static inline void sys_write32(uint32_t data, mem_addr_t addr)
 
 static inline void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
-	uint32_t temp = *(volatile uint32_t *)addr;
+	u32_t temp = *(volatile u32_t *)addr;
 
-	*(volatile uint32_t *)addr = temp | (1 << bit);
+	*(volatile u32_t *)addr = temp | (1 << bit);
 }
 
 static inline void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
-	uint32_t temp = *(volatile uint32_t *)addr;
+	u32_t temp = *(volatile u32_t *)addr;
 
-	*(volatile uint32_t *)addr = temp & ~(1 << bit);
+	*(volatile u32_t *)addr = temp & ~(1 << bit);
 }
 
 #endif /* !_ASMLANGUAGE */

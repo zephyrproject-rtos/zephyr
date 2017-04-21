@@ -198,7 +198,7 @@ struct gpio_callback;
  * @param "struct device *port" Device struct for the GPIO device.
  * @param "struct gpio_callback *cb" Original struct gpio_callback
  *        owning this handler
- * @param "uint32_t pins" Mask of pins that triggers the callback handler
+ * @param "u32_t pins" Mask of pins that triggers the callback handler
  *
  * Note: cb pointer can be used to retrieve private data through
  * CONTAINER_OF() if original struct gpio_callback is stored in
@@ -206,7 +206,7 @@ struct gpio_callback;
  */
 typedef void (*gpio_callback_handler_t)(struct device *port,
 					struct gpio_callback *cb,
-					uint32_t pins);
+					u32_t pins);
 
 /**
  * @brief GPIO callback structure
@@ -233,7 +233,7 @@ struct gpio_callback {
 	 * called or not. The selected pins must be configured to trigger
 	 * an interrupt.
 	 */
-	uint32_t pin_mask;
+	u32_t pin_mask;
 };
 
 /**
@@ -244,21 +244,21 @@ struct gpio_callback {
  * (Internal use only.)
  */
 typedef int (*gpio_config_t)(struct device *port, int access_op,
-			     uint32_t pin, int flags);
+			     u32_t pin, int flags);
 typedef int (*gpio_write_t)(struct device *port, int access_op,
-			    uint32_t pin, uint32_t value);
+			    u32_t pin, u32_t value);
 typedef int (*gpio_read_t)(struct device *port, int access_op,
-			   uint32_t pin, uint32_t *value);
+			   u32_t pin, u32_t *value);
 typedef int (*gpio_manage_callback_t)(struct device *port,
 				      struct gpio_callback *callback,
 				      bool set);
 typedef int (*gpio_enable_callback_t)(struct device *port,
 				      int access_op,
-				      uint32_t pin);
+				      u32_t pin);
 typedef int (*gpio_disable_callback_t)(struct device *port,
 				       int access_op,
-				       uint32_t pin);
-typedef uint32_t (*gpio_api_get_pending_int)(struct device *dev);
+				       u32_t pin);
+typedef u32_t (*gpio_api_get_pending_int)(struct device *dev);
 
 struct gpio_driver_api {
 	gpio_config_t config;
@@ -280,7 +280,7 @@ struct gpio_driver_api {
  * @param flags Flags for pin configuration. IN/OUT, interrupt ...
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_pin_configure(struct device *port, uint32_t pin,
+static inline int gpio_pin_configure(struct device *port, u32_t pin,
 				     int flags)
 {
 	const struct gpio_driver_api *api = port->driver_api;
@@ -295,8 +295,8 @@ static inline int gpio_pin_configure(struct device *port, uint32_t pin,
  * @param value Value set on the pin.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_pin_write(struct device *port, uint32_t pin,
-				 uint32_t value)
+static inline int gpio_pin_write(struct device *port, u32_t pin,
+				 u32_t value)
 {
 	const struct gpio_driver_api *api = port->driver_api;
 
@@ -313,8 +313,8 @@ static inline int gpio_pin_write(struct device *port, uint32_t pin,
  * @param value Integer pointer to receive the data values from the pin.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_pin_read(struct device *port, uint32_t pin,
-				uint32_t *value)
+static inline int gpio_pin_read(struct device *port, u32_t pin,
+				u32_t *value)
 {
 	const struct gpio_driver_api *api = port->driver_api;
 
@@ -329,7 +329,7 @@ static inline int gpio_pin_read(struct device *port, uint32_t pin,
  */
 static inline void gpio_init_callback(struct gpio_callback *callback,
 				      gpio_callback_handler_t handler,
-				      uint32_t pin_mask)
+				      u32_t pin_mask)
 {
 	__ASSERT(callback, "Callback pointer should not be NULL");
 	__ASSERT(handler, "Callback handler pointer should not be NULL");
@@ -385,7 +385,7 @@ static inline int gpio_remove_callback(struct device *port,
  *       the pin to trigger an interruption. So as a semantic detail, if no
  *       callback is registered, of course none will be called.
  */
-static inline int gpio_pin_enable_callback(struct device *port, uint32_t pin)
+static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
 {
 	const struct gpio_driver_api *api = port->driver_api;
 
@@ -398,7 +398,7 @@ static inline int gpio_pin_enable_callback(struct device *port, uint32_t pin)
  * @param pin Pin number where the callback function is disabled.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_pin_disable_callback(struct device *port, uint32_t pin)
+static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
 {
 	const struct gpio_driver_api *api = port->driver_api;
 
@@ -433,7 +433,7 @@ static inline int gpio_port_configure(struct device *port, int flags)
  * @param value Value to set on the port.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_port_write(struct device *port, uint32_t value)
+static inline int gpio_port_write(struct device *port, u32_t value)
 {
 	const struct gpio_driver_api *api = port->driver_api;
 
@@ -453,7 +453,7 @@ static inline int gpio_port_write(struct device *port, uint32_t value)
  * @param value Integer pointer to receive the data value from the port.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_port_read(struct device *port, uint32_t *value)
+static inline int gpio_port_read(struct device *port, u32_t *value)
 {
 	const struct gpio_driver_api *api = port->driver_api;
 
@@ -512,7 +512,7 @@ static inline int gpio_get_pending_int(struct device *dev)
 
 struct gpio_pin_config {
 	char *gpio_controller;
-	uint32_t gpio_pin;
+	u32_t gpio_pin;
 };
 
 #define GPIO_DECLARE_PIN_CONFIG_IDX(_idx)	\

@@ -26,7 +26,7 @@ static ALWAYS_INLINE void _init_thread_timeout(struct _thread_base *thread_base)
 }
 
 static ALWAYS_INLINE void
-_add_thread_timeout(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
+_add_thread_timeout(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
 	ARG_UNUSED(thread);
 	ARG_UNUSED(wait_q);

@@ -32,8 +32,8 @@ enum {
 };
 
 struct stm32_pclken {
-	uint32_t bus;
-	uint32_t enr;
+	u32_t bus;
+	u32_t enr;
 };
 
 #endif /* _STM32_CLOCK_CONTROL_H_ */

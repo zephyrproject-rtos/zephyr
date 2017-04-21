@@ -91,24 +91,24 @@ extern "C" {
 union pci_addr_reg {
 	struct {
 #ifdef _BIG_ENDIAN
-		uint32_t enable : 1; /* access enabled */
-		uint32_t reserved1 : 7;
-		uint32_t bus : 8;    /* PCI bus number */
-		uint32_t device : 5; /* PCI device number */
-		uint32_t func : 3;   /* device function number */
-		uint32_t reg : 6;    /* config space register number */
-		uint32_t offset : 2; /* offset for access data */
+		u32_t enable : 1; /* access enabled */
+		u32_t reserved1 : 7;
+		u32_t bus : 8;    /* PCI bus number */
+		u32_t device : 5; /* PCI device number */
+		u32_t func : 3;   /* device function number */
+		u32_t reg : 6;    /* config space register number */
+		u32_t offset : 2; /* offset for access data */
 #else
-		uint32_t offset : 2; /* offset for access data */
-		uint32_t reg : 6;    /* config space register number */
-		uint32_t func : 3;   /* device function number */
-		uint32_t device : 5; /* PCI device number */
-		uint32_t bus : 8;    /* PCI bus number */
-		uint32_t reserved1 : 7;
-		uint32_t enable : 1; /* access enabled */
+		u32_t offset : 2; /* offset for access data */
+		u32_t reg : 6;    /* config space register number */
+		u32_t func : 3;   /* device function number */
+		u32_t device : 5; /* PCI device number */
+		u32_t bus : 8;    /* PCI bus number */
+		u32_t reserved1 : 7;
+		u32_t enable : 1; /* access enabled */
 #endif
 	} field;
-	uint32_t value;
+	u32_t value;
 };
 
 
@@ -141,22 +141,22 @@ union pci_addr_reg {
 union pcie_addr_reg {
 	struct {
 #ifdef _BIG_ENDIAN
-		uint32_t reserved1 : 4;
-		uint32_t bus : 8;    /* PCI bus number */
-		uint32_t device : 5; /* PCI device number */
-		uint32_t func : 3;   /* device function number */
-		uint32_t reg : 10;   /* config space register number */
-		uint32_t reserved0 : 2;
+		u32_t reserved1 : 4;
+		u32_t bus : 8;    /* PCI bus number */
+		u32_t device : 5; /* PCI device number */
+		u32_t func : 3;   /* device function number */
+		u32_t reg : 10;   /* config space register number */
+		u32_t reserved0 : 2;
 #else
-		uint32_t reserved0 : 2;
-		uint32_t reg : 10;   /* config space register number */
-		uint32_t func : 3;   /* device function number */
-		uint32_t device : 5; /* PCI device number */
-		uint32_t bus : 8;    /* PCI bus number */
-		uint32_t reserved1 : 4;
+		u32_t reserved0 : 2;
+		u32_t reg : 10;   /* config space register number */
+		u32_t func : 3;   /* device function number */
+		u32_t device : 5; /* PCI device number */
+		u32_t bus : 8;    /* PCI bus number */
+		u32_t reserved1 : 4;
 #endif
 	} field;
-	uint32_t value;
+	u32_t value;
 };
 
 /*
@@ -259,104 +259,104 @@ union pci_dev {
 	struct {
 /* offset 00:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t device_id
+		u32_t device_id
 			: 16; /*   device identification		*/
-		uint32_t vendor_id
+		u32_t vendor_id
 			: 16; /*   vendor identification		*/
 #else
-		uint32_t vendor_id
+		u32_t vendor_id
 			: 16; /*   vendor identification		*/
-		uint32_t device_id
+		u32_t device_id
 			: 16; /*   device identification		*/
 #endif
 
 /* offset 04:				*/
 
 #ifdef _BIG_ENDIAN
-		uint32_t status : 16;  /*   device status */
-		uint32_t command : 16; /*   device command register	*/
+		u32_t status : 16;  /*   device status */
+		u32_t command : 16; /*   device command register	*/
 #else
-		uint32_t command : 16; /*   device command register	*/
-		uint32_t status : 16;  /*   device status */
+		u32_t command : 16; /*   device command register	*/
+		u32_t status : 16;  /*   device status */
 #endif
 
 /* offset 08:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t class : 8;
-		uint32_t subclass : 8;
-		uint32_t reg_if : 8;
-		uint32_t revision : 8;
+		u32_t class : 8;
+		u32_t subclass : 8;
+		u32_t reg_if : 8;
+		u32_t revision : 8;
 #else
-		uint32_t revision : 8;
-		uint32_t reg_if : 8;
-		uint32_t subclass : 8;
-		uint32_t class : 8;
+		u32_t revision : 8;
+		u32_t reg_if : 8;
+		u32_t subclass : 8;
+		u32_t class : 8;
 #endif
 
 /* offset 0C:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t bist : 8;
-		uint32_t hdr_type : 8;
-		uint32_t latency_timer : 8;
-		uint32_t cache_line : 8;
+		u32_t bist : 8;
+		u32_t hdr_type : 8;
+		u32_t latency_timer : 8;
+		u32_t cache_line : 8;
 #else
-		uint32_t cache_line : 8;
-		uint32_t latency_timer : 8;
-		uint32_t hdr_type : 8;
-		uint32_t bist : 8;
+		u32_t cache_line : 8;
+		u32_t latency_timer : 8;
+		u32_t hdr_type : 8;
+		u32_t bist : 8;
 #endif
 
-		uint32_t bar0;    /* offset 10: base address register 0	*/
-		uint32_t bar1;    /* offset 14: base address register 0	*/
-		uint32_t bar2;    /* offset 18: base address register 0	*/
-		uint32_t bar3;    /* offset 1C: base address register 0	*/
-		uint32_t bar4;    /* offset 20: base address register 0	*/
-		uint32_t bar5;    /* offset 24: base address register 0	*/
-		uint32_t cardbus; /* offset 28: base address register 0	*/
+		u32_t bar0;    /* offset 10: base address register 0	*/
+		u32_t bar1;    /* offset 14: base address register 0	*/
+		u32_t bar2;    /* offset 18: base address register 0	*/
+		u32_t bar3;    /* offset 1C: base address register 0	*/
+		u32_t bar4;    /* offset 20: base address register 0	*/
+		u32_t bar5;    /* offset 24: base address register 0	*/
+		u32_t cardbus; /* offset 28: base address register 0	*/
 
 /* offset 2C:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t subsys_id
+		u32_t subsys_id
 			: 16; /*   subsystem identifier		*/
-		uint32_t subvendor_id
+		u32_t subvendor_id
 			: 16; /*   subsystem vendor identifier	*/
 #else
-		uint32_t subvendor_id
+		u32_t subvendor_id
 			: 16; /*   subsystem vendor identifier	*/
-		uint32_t subsys_id
+		u32_t subsys_id
 			: 16; /*   subsystem identifier		*/
 #endif
 
 		/* offset 30:				*/
-		uint32_t rom_address;
+		u32_t rom_address;
 
 /* offset 34:				*/
 
 #ifdef _BIG_ENDIAN
-		uint32_t reserved1 : 24;
-		uint32_t capability_ptr : 8;
+		u32_t reserved1 : 24;
+		u32_t capability_ptr : 8;
 #else
-		uint32_t capability_ptr : 8;
-		uint32_t reserved1 : 24;
+		u32_t capability_ptr : 8;
+		u32_t reserved1 : 24;
 #endif
 
-		uint32_t reserved2; /* offset 38: */
+		u32_t reserved2; /* offset 38: */
 
 /* offset 3C:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t max_latency : 8;
-		uint32_t min_grant : 8;
-		uint32_t interrupt_pin
+		u32_t max_latency : 8;
+		u32_t min_grant : 8;
+		u32_t interrupt_pin
 			: 8; /*   interrupt pin assignment		*/
-		uint32_t interrupt_line
+		u32_t interrupt_line
 			: 8; /*   interrupt line assignment		*/
 #else
-		uint32_t interrupt_line
+		u32_t interrupt_line
 			: 8; /*   interrupt line assignment		*/
-		uint32_t interrupt_pin
+		u32_t interrupt_pin
 			: 8; /*   interrupt pin assignment		*/
-		uint32_t min_grant : 8;
-		uint32_t max_latency : 8;
+		u32_t min_grant : 8;
+		u32_t max_latency : 8;
 #endif
 	} field;
 
@@ -365,140 +365,140 @@ union pci_dev {
 	struct {
 /* offset 00:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t device_id
+		u32_t device_id
 			: 16; /*   device identification		*/
-		uint32_t vendor_id
+		u32_t vendor_id
 			: 16; /*   vendor identification		*/
 #else
-		uint32_t vendor_id
+		u32_t vendor_id
 			: 16; /*   vendor identification		*/
-		uint32_t device_id
+		u32_t device_id
 			: 16; /*   device identification		*/
 #endif
 
 /* offset 04:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t status : 16; /*   device status */
-		uint32_t command
+		u32_t status : 16; /*   device status */
+		u32_t command
 			: 16; /*   device command register		*/
 #else
-		uint32_t command
+		u32_t command
 			: 16; /*   device command register		*/
-		uint32_t status : 16; /*   device status */
+		u32_t status : 16; /*   device status */
 #endif
 
 /* offset 08:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t class : 8;
-		uint32_t subclass : 8;
-		uint32_t reg_if : 8;
-		uint32_t revision : 8;
+		u32_t class : 8;
+		u32_t subclass : 8;
+		u32_t reg_if : 8;
+		u32_t revision : 8;
 #else
-		uint32_t revision : 8;
-		uint32_t reg_if : 8;
-		uint32_t subclass : 8;
-		uint32_t class : 8;
+		u32_t revision : 8;
+		u32_t reg_if : 8;
+		u32_t subclass : 8;
+		u32_t class : 8;
 #endif
 
 /* offset 0C:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t bist : 8;
-		uint32_t hdr_type : 8;
-		uint32_t latency_timer : 8;
-		uint32_t cache_line : 8;
+		u32_t bist : 8;
+		u32_t hdr_type : 8;
+		u32_t latency_timer : 8;
+		u32_t cache_line : 8;
 #else
-		uint32_t cache_line : 8;
-		uint32_t latency_timer : 8;
-		uint32_t hdr_type : 8;
-		uint32_t bist : 8;
+		u32_t cache_line : 8;
+		u32_t latency_timer : 8;
+		u32_t hdr_type : 8;
+		u32_t bist : 8;
 #endif
 
-		uint32_t bar0; /* offset 10: base address register 0	*/
-		uint32_t bar1; /* offset 14: base address register 0	*/
+		u32_t bar0; /* offset 10: base address register 0	*/
+		u32_t bar1; /* offset 14: base address register 0	*/
 
 /* offset 18:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t secondary_latency : 8;
-		uint32_t subord_bus : 8;
-		uint32_t secondary_bus : 8;
-		uint32_t primary_bus : 8;
+		u32_t secondary_latency : 8;
+		u32_t subord_bus : 8;
+		u32_t secondary_bus : 8;
+		u32_t primary_bus : 8;
 #else
-		uint32_t primary_bus : 8;
-		uint32_t secondary_bus : 8;
-		uint32_t subord_bus : 8;
-		uint32_t secondary_latency : 8;
+		u32_t primary_bus : 8;
+		u32_t secondary_bus : 8;
+		u32_t subord_bus : 8;
+		u32_t secondary_latency : 8;
 
 #endif
 
 /* offset 1C:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t secondary_status : 16;
-		uint32_t io_limit : 8;
-		uint32_t io_base : 8;
+		u32_t secondary_status : 16;
+		u32_t io_limit : 8;
+		u32_t io_base : 8;
 #else
-		uint32_t io_base : 8;
-		uint32_t io_limit : 8;
-		uint32_t secondary_status : 16;
+		u32_t io_base : 8;
+		u32_t io_limit : 8;
+		u32_t secondary_status : 16;
 #endif
 
 /* offset 20:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t mem_limit : 16;
-		uint32_t mem_base : 16;
+		u32_t mem_limit : 16;
+		u32_t mem_base : 16;
 #else
-		uint32_t mem_base : 16;
-		uint32_t mem_limit : 16;
+		u32_t mem_base : 16;
+		u32_t mem_limit : 16;
 #endif
 
 /* offset 24:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t pre_mem_limit : 16;
-		uint32_t pre_mem_base : 16;
+		u32_t pre_mem_limit : 16;
+		u32_t pre_mem_base : 16;
 #else
-		uint32_t pre_mem_base : 16;
-		uint32_t pre_mem_limit : 16;
+		u32_t pre_mem_base : 16;
+		u32_t pre_mem_limit : 16;
 #endif
 
 		/* offset 28:				*/
-		uint32_t pre_mem_base_upper;
+		u32_t pre_mem_base_upper;
 
 		/* offset 2C:				*/
-		uint32_t pre_mem_limit_upper;
+		u32_t pre_mem_limit_upper;
 
 /* offset 30:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t io_limit_upper : 16;
-		uint32_t io_base_upper : 16;
+		u32_t io_limit_upper : 16;
+		u32_t io_base_upper : 16;
 #else
-		uint32_t io_base_upper : 16;
-		uint32_t io_limit_upper : 16;
+		u32_t io_base_upper : 16;
+		u32_t io_limit_upper : 16;
 #endif
 
 /* offset 34:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t reserved : 24;
-		uint32_t capability_ptr : 8;
+		u32_t reserved : 24;
+		u32_t capability_ptr : 8;
 #else
-		uint32_t capability_ptr : 8;
-		uint32_t reserved : 24;
+		u32_t capability_ptr : 8;
+		u32_t reserved : 24;
 #endif
 
 		/* offset 38:				*/
-		uint32_t rom_address;
+		u32_t rom_address;
 
 /* offset 3C:				*/
 #ifdef _BIG_ENDIAN
-		uint32_t bridge_control : 16;
-		uint32_t interrupt_pin
+		u32_t bridge_control : 16;
+		u32_t interrupt_pin
 			: 8; /*   interrupt pin assignment		*/
-		uint32_t interrupt_line
+		u32_t interrupt_line
 			: 8; /*   interrupt line assignment		*/
 #else
-		uint32_t interrupt_line
+		u32_t interrupt_line
 			: 8; /*   interrupt line assignment		*/
-		uint32_t interrupt_pin
+		u32_t interrupt_pin
 			: 8; /*   interrupt pin assignment		*/
-		uint32_t bridge_control : 16;
+		u32_t bridge_control : 16;
 #endif
 
 	} bridge_field;
@@ -506,27 +506,27 @@ union pci_dev {
 	/* direct access to each word in the PCI header */
 
 	struct {
-		uint32_t word0;  /* word  0: offset 00			*/
-		uint32_t word1;  /* word  1: offset 04			*/
-		uint32_t word2;  /* word  2: offset 08			*/
-		uint32_t word3;  /* word  3: offset 0C			*/
-		uint32_t word4;  /* word  4: offset 10			*/
-		uint32_t word5;  /* word  5: offset 14			*/
-		uint32_t word6;  /* word  6: offset 18			*/
-		uint32_t word7;  /* word  7: offset 1C			*/
-		uint32_t word8;  /* word  8: offset 20			*/
-		uint32_t word9;  /* word  9: offset 24			*/
-		uint32_t word10; /* word 10: offset 28			*/
-		uint32_t word11; /* word 11: offset 2C			*/
-		uint32_t word12; /* word 12: offset 30			*/
-		uint32_t word13; /* word 13: offset 34			*/
-		uint32_t word14; /* word 14: offset 38			*/
-		uint32_t word15; /* word 15: offset 3C			*/
+		u32_t word0;  /* word  0: offset 00			*/
+		u32_t word1;  /* word  1: offset 04			*/
+		u32_t word2;  /* word  2: offset 08			*/
+		u32_t word3;  /* word  3: offset 0C			*/
+		u32_t word4;  /* word  4: offset 10			*/
+		u32_t word5;  /* word  5: offset 14			*/
+		u32_t word6;  /* word  6: offset 18			*/
+		u32_t word7;  /* word  7: offset 1C			*/
+		u32_t word8;  /* word  8: offset 20			*/
+		u32_t word9;  /* word  9: offset 24			*/
+		u32_t word10; /* word 10: offset 28			*/
+		u32_t word11; /* word 11: offset 2C			*/
+		u32_t word12; /* word 12: offset 30			*/
+		u32_t word13; /* word 13: offset 34			*/
+		u32_t word14; /* word 14: offset 38			*/
+		u32_t word15; /* word 15: offset 3C			*/
 	} word;
 
 	struct {
 		/* array of words for the header */
-		uint32_t word[PCI_HEADER_WORDS];
+		u32_t word[PCI_HEADER_WORDS];
 	} words;
 
 };
@@ -544,26 +544,26 @@ union pci_dev {
 union pci_cap_hdr {
 	struct {
 		/* offset 00:				*/
-		uint32_t id : 8; /*   capability ID			*/
-		uint32_t next_ptr
+		u32_t id : 8; /*   capability ID			*/
+		u32_t next_ptr
 			: 8; /*   pointer to next capability		*/
-		uint32_t feature
+		u32_t feature
 			: 16; /*   capability specific field		*/
 	} field;
 
-	uint32_t word; /* array of words for the header	*/
+	u32_t word; /* array of words for the header	*/
 } pci_cap_hdr_t;
 
 union pcie_cap_hdr {
 	struct {
 		/* offset 00:				*/
-		uint32_t id : 16;     /*   capability ID			*/
-		uint32_t version : 4; /*   version		*/
-		uint32_t next_ptr
+		u32_t id : 16;     /*   capability ID			*/
+		u32_t version : 4; /*   version		*/
+		u32_t next_ptr
 			: 12; /*   pointer to next capability		*/
 	} field;
 
-	uint32_t word; /* array of words for the header	*/
+	u32_t word; /* array of words for the header	*/
 };
 
 /*
@@ -599,23 +599,23 @@ struct _pci_msi_hdr {
 	union {
 		struct {
 						/* offset 00:		      */
-			uint32_t id : 8;	/* capability ID              */
-			uint32_t next_ptr : 8;	/* pointer to next capability */
-			uint32_t enabled : 1;	/* MSI enabled		      */
-			uint32_t msg_req : 3;	/* requested message count    */
-			uint32_t msg_grant : 3; /* granted message count      */
-			uint32_t is_64_bit : 1; /* 64-bit capable             */
-			uint32_t reserved : 8;	/*			      */
+			u32_t id : 8;	/* capability ID              */
+			u32_t next_ptr : 8;	/* pointer to next capability */
+			u32_t enabled : 1;	/* MSI enabled		      */
+			u32_t msg_req : 3;	/* requested message count    */
+			u32_t msg_grant : 3; /* granted message count      */
+			u32_t is_64_bit : 1; /* 64-bit capable             */
+			u32_t reserved : 8;	/*			      */
 		} msi_cap;
 
 		struct {
 						/* offset 00:		      */
-			uint32_t id : 8;	/* capability ID              */
-			uint32_t next_ptr : 8;	/* pointer to next capability */
-			uint32_t table_size : 11; /* MSI-x table size         */
-			uint32_t reserved : 3;	/*		              */
-			uint32_t func_mask : 1; /* 1 for vectors masked	      */
-			uint32_t enabled : 1;	/* MSI-x enabled              */
+			u32_t id : 8;	/* capability ID              */
+			u32_t next_ptr : 8;	/* pointer to next capability */
+			u32_t table_size : 11; /* MSI-x table size         */
+			u32_t reserved : 3;	/*		              */
+			u32_t func_mask : 1; /* 1 for vectors masked	      */
+			u32_t enabled : 1;	/* MSI-x enabled              */
 		} msix_cap;
 	} cap;
 
@@ -623,135 +623,135 @@ struct _pci_msi_hdr {
 		/* 32-bit MSI header */
 		struct {
 						/* offset 04:		      */
-			uint32_t addr;          /* message address register   */
+			u32_t addr;          /* message address register   */
 						/* offset 08		      */
-			uint32_t data : 16;	/*   message data register    */
-			uint32_t spare : 16;	/*			      */
+			u32_t data : 16;	/*   message data register    */
+			u32_t spare : 16;	/*			      */
 		} regs32;
 		/* 64-bit MSI header */
 		struct {
 						/* offset 04:		      */
-			uint32_t addr_low;	/*  message address register
+			u32_t addr_low;	/*  message address register
 						 *  (lower)
 						 */
 						/* offset 08:		      */
-			uint32_t addr_high;	/*   message address register
+			u32_t addr_high;	/*   message address register
 						 * (upper)
 						 */
 						/* offset 0C:		      */
-			uint32_t data : 16;	/*  message data register     */
-			uint32_t spare : 16;	/*			      */
+			u32_t data : 16;	/*  message data register     */
+			u32_t spare : 16;	/*			      */
 		} regs64;
 	} regs;
 };
 
 union pci_msi_hdr {
 	struct _pci_msi_hdr field; /* MSI header fields		  */
-	uint32_t word[4];   /* array of words for the header	  */
+	u32_t word[4];   /* array of words for the header	  */
 };
 
 /*
  * number of pci controllers; initialized to 0 until the controllers have been
  * created
  */
-extern uint32_t pci_controller_cnt;
+extern u32_t pci_controller_cnt;
 
 struct pci_msix_table {
-	uint32_t msg_addr;
-	uint32_t msg_addr_high;
-	uint32_t msg_data;
-	uint32_t vec_ctrl;
+	u32_t msg_addr;
+	u32_t msg_addr_high;
+	u32_t msg_data;
+	u32_t vec_ctrl;
 };
 
 struct pci_msix_entry {
-	uint32_t vector; /* guest to write a vector */
-	uint16_t entry;  /* driver to specify entry, guest OS writes */
+	u32_t vector; /* guest to write a vector */
+	u16_t entry;  /* driver to specify entry, guest OS writes */
 };
 
 struct pci_msix_info {
-	uint32_t bus_no;
-	uint32_t dev_no;
-	uint32_t func_no;
-	uint32_t msix_vec;
+	u32_t bus_no;
+	u32_t dev_no;
+	u32_t func_no;
+	u32_t msix_vec;
 };
 
 /* manager interface API */
 
-extern void pci_read(uint32_t controller,
+extern void pci_read(u32_t controller,
 		    union pci_addr_reg addr,
-		    uint32_t size,
-		    uint32_t *data);
-extern void pci_write(uint32_t controller,
+		    u32_t size,
+		    u32_t *data);
+extern void pci_write(u32_t controller,
 		     union pci_addr_reg addr,
-		     uint32_t size,
-		     uint32_t data);
+		     u32_t size,
+		     u32_t data);
 
-extern void pci_header_get(uint32_t controller,
+extern void pci_header_get(u32_t controller,
 			 union pci_addr_reg pci_ctrl_addr,
 			 union pci_dev *pci_dev_header);
 
 /* General PCI configuration access routines */
 
-extern void pci_config_out_long(uint32_t bus,    /* bus number */
-			     uint32_t dev,    /* device number */
-			     uint32_t func,   /* function number */
-			     uint32_t offset, /* offset into the configuration
+extern void pci_config_out_long(u32_t bus,    /* bus number */
+			     u32_t dev,    /* device number */
+			     u32_t func,   /* function number */
+			     u32_t offset, /* offset into the configuration
 					       * space
 					       */
-			     uint32_t data /* data written to the offset */
+			     u32_t data /* data written to the offset */
 			     );
 
-extern void pci_config_out_word(uint32_t bus,    /* bus number */
-			     uint32_t dev,    /* device number */
-			     uint32_t func,   /* function number */
-			     uint32_t offset, /* offset into the configuration
+extern void pci_config_out_word(u32_t bus,    /* bus number */
+			     u32_t dev,    /* device number */
+			     u32_t func,   /* function number */
+			     u32_t offset, /* offset into the configuration
 					       * space
 					       */
-			     uint16_t data /* data written to the offset */
+			     u16_t data /* data written to the offset */
 			     );
 
-extern void pci_config_out_byte(uint32_t bus,    /* bus number */
-			     uint32_t dev,    /* device number */
-			     uint32_t func,   /* function number */
-			     uint32_t offset, /* offset into the configuration
+extern void pci_config_out_byte(u32_t bus,    /* bus number */
+			     u32_t dev,    /* device number */
+			     u32_t func,   /* function number */
+			     u32_t offset, /* offset into the configuration
 					       * space
 					       */
-			     uint8_t data /* data written to the offset */
+			     u8_t data /* data written to the offset */
 			     );
 
-extern void pci_config_in_long(uint32_t bus,    /* bus number */
-			    uint32_t dev,    /* device number */
-			    uint32_t func,   /* function number */
-			    uint32_t offset, /* offset into the configuration
+extern void pci_config_in_long(u32_t bus,    /* bus number */
+			    u32_t dev,    /* device number */
+			    u32_t func,   /* function number */
+			    u32_t offset, /* offset into the configuration
 					      * space
 					      */
-			    uint32_t *data /* return value address */
+			    u32_t *data /* return value address */
 			    );
 
-extern void pci_config_in_word(uint32_t bus,    /* bus number */
-			    uint32_t dev,    /* device number */
-			    uint32_t func,   /* function number */
-			    uint32_t offset, /* offset into the configuration
+extern void pci_config_in_word(u32_t bus,    /* bus number */
+			    u32_t dev,    /* device number */
+			    u32_t func,   /* function number */
+			    u32_t offset, /* offset into the configuration
 					      * space
 					      */
-			    uint16_t *data /* return value address */
+			    u16_t *data /* return value address */
 			    );
 
-extern void pci_config_in_byte(uint32_t bus,    /* bus number */
-			    uint32_t dev,    /* device number */
-			    uint32_t func,   /* function number */
-			    uint32_t offset, /* offset into the configuration
+extern void pci_config_in_byte(u32_t bus,    /* bus number */
+			    u32_t dev,    /* device number */
+			    u32_t func,   /* function number */
+			    u32_t offset, /* offset into the configuration
 					      * space
 					      */
-			    uint8_t *data /* return value address */
+			    u8_t *data /* return value address */
 			    );
 
 extern int pci_config_ext_cap_ptr_find(
-	uint8_t ext_cap_find_id, /* Extended capabilities ID to search for */
-	uint32_t bus,	 /* PCI bus number */
-	uint32_t device,      /* PCI device number */
-	uint32_t function,    /* PCI function number */
-	uint8_t *p_offset      /* returned config space offset */
+	u8_t ext_cap_find_id, /* Extended capabilities ID to search for */
+	u32_t bus,	 /* PCI bus number */
+	u32_t device,      /* PCI device number */
+	u32_t function,    /* PCI function number */
+	u8_t *p_offset      /* returned config space offset */
 	);
 
 #endif /* _ASMLANGUAGE */

@@ -19,7 +19,7 @@ struct _kernel _kernel = {0};
 static void _set_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
-	uint32_t *bmap = &_ready_q.prio_bmap[bmap_index];
+	u32_t *bmap = &_ready_q.prio_bmap[bmap_index];
 
 	*bmap |= _get_ready_q_prio_bit(prio);
 }
@@ -30,7 +30,7 @@ static void _set_ready_q_prio_bit(int prio)
 static void _clear_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
-	uint32_t *bmap = &_ready_q.prio_bmap[bmap_index];
+	u32_t *bmap = &_ready_q.prio_bmap[bmap_index];
 
 	*bmap &= ~_get_ready_q_prio_bit(prio);
 }
@@ -174,17 +174,17 @@ void k_sched_unlock(void)
 /* convert milliseconds to ticks */
 
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-int32_t _ms_to_ticks(int32_t ms)
+s32_t _ms_to_ticks(s32_t ms)
 {
-	int64_t ms_ticks_per_sec = (int64_t)ms * sys_clock_ticks_per_sec;
+	s64_t ms_ticks_per_sec = (s64_t)ms * sys_clock_ticks_per_sec;
 
-	return (int32_t)ceiling_fraction(ms_ticks_per_sec, MSEC_PER_SEC);
+	return (s32_t)ceiling_fraction(ms_ticks_per_sec, MSEC_PER_SEC);
 }
 #endif
 
 /* pend the specified thread: it must *not* be in the ready queue */
 /* must be called with interrupts locked */
-void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, int32_t timeout)
+void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
 #ifdef CONFIG_MULTITHREADING
 	sys_dlist_t *wait_q_list = (sys_dlist_t *)wait_q;
@@ -206,7 +206,7 @@ inserted:
 	_mark_thread_as_pending(thread);
 
 	if (timeout != K_FOREVER) {
-		int32_t ticks = _TICK_ALIGN + _ms_to_ticks(timeout);
+		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(timeout);
 
 		_add_thread_timeout(thread, wait_q, ticks);
 	}
@@ -215,7 +215,7 @@ inserted:
 
 /* pend the current thread */
 /* must be called with interrupts locked */
-void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout)
+void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout)
 {
 	_remove_thread_from_ready_q(_current);
 	_pend_thread(_current, wait_q, timeout);
@@ -302,13 +302,13 @@ void k_yield(void)
 	}
 }
 
-void k_sleep(int32_t duration)
+void k_sleep(s32_t duration)
 {
 #ifdef CONFIG_MULTITHREADING
 	/* volatile to guarantee that irq_lock() is executed after ticks is
 	 * populated
 	 */
-	volatile int32_t ticks;
+	volatile s32_t ticks;
 	unsigned int key;
 
 	__ASSERT(!_is_in_isr(), "");
@@ -377,11 +377,11 @@ void _dump_ready_q(void)
 }
 
 #ifdef CONFIG_TIMESLICING
-extern int32_t _time_slice_duration;    /* Measured in ms */
-extern int32_t _time_slice_elapsed;     /* Measured in ms */
+extern s32_t _time_slice_duration;    /* Measured in ms */
+extern s32_t _time_slice_elapsed;     /* Measured in ms */
 extern int _time_slice_prio_ceiling;
 
-void k_sched_time_slice_set(int32_t duration_in_ms, int prio)
+void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
 {
 	__ASSERT(duration_in_ms >= 0, "");
 	__ASSERT((prio >= 0) && (prio < CONFIG_NUM_PREEMPT_PRIORITIES), "");

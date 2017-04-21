@@ -25,9 +25,9 @@ extern "C" {
  * This structure holds all API function pointers.
  */
 struct eth_driver_api {
-	int (*send)(struct device *dev, uint8_t *buffer, uint16_t len);
+	int (*send)(struct device *dev, u8_t *buffer, u16_t len);
 	void (*register_callback)(struct device *dev,
-		void (*cb)(uint8_t *buffer, uint16_t len));
+		void (*cb)(u8_t *buffer, u16_t len));
 };
 
 /**
@@ -41,7 +41,7 @@ struct eth_driver_api {
  *
  * @return Error code
  */
-static inline int eth_send(struct device *dev, uint8_t *buffer, uint16_t len)
+static inline int eth_send(struct device *dev, u8_t *buffer, u16_t len)
 {
 	const struct eth_driver_api *api = dev->driver_api;
 
@@ -59,7 +59,7 @@ static inline int eth_send(struct device *dev, uint8_t *buffer, uint16_t len)
  * @return Error code
  */
 static inline void eth_register_callback(struct device *dev,
-		void (*cb)(uint8_t *buffer, uint16_t len))
+		void (*cb)(u8_t *buffer, u16_t len))
 {
 	const struct eth_driver_api *api = dev->driver_api;
 

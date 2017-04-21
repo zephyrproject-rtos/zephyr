@@ -71,10 +71,10 @@ struct _thread_base {
 	sys_dnode_t k_q_node;
 
 	/* user facing 'thread options'; values defined in include/kernel.h */
-	uint8_t user_options;
+	u8_t user_options;
 
 	/* thread state */
-	uint8_t thread_state;
+	u8_t thread_state;
 
 	/*
 	 * scheduler lock count and thread priority
@@ -93,14 +93,14 @@ struct _thread_base {
 	union {
 		struct {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-			uint8_t sched_locked;
-			int8_t prio;
+			u8_t sched_locked;
+			s8_t prio;
 #else /* LITTLE and PDP */
-			int8_t prio;
-			uint8_t sched_locked;
+			s8_t prio;
+			u8_t sched_locked;
 #endif
 		};
-		uint16_t preempt;
+		u16_t preempt;
 	};
 
 	/* data returned by APIs */
@@ -159,7 +159,7 @@ struct _ready_q {
 	struct k_thread *cache;
 
 	/* bitmap of priorities that contain at least one ready thread */
-	uint32_t prio_bmap[K_NUM_PRIO_BITMAPS];
+	u32_t prio_bmap[K_NUM_PRIO_BITMAPS];
 
 	/* ready queues, one per priority */
 	sys_dlist_t q[K_NUM_PRIORITIES];
@@ -170,7 +170,7 @@ typedef struct _ready_q _ready_q_t;
 struct _kernel {
 
 	/* nested interrupt count */
-	uint32_t nested;
+	u32_t nested;
 
 	/* interrupt stack pointer base */
 	char *irq_stack;
@@ -184,7 +184,7 @@ struct _kernel {
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-	int32_t idle; /* Number of ticks for kernel idling */
+	s32_t idle; /* Number of ticks for kernel idling */
 #endif
 
 	/*
@@ -236,7 +236,7 @@ _set_thread_return_value_with_data(struct k_thread *thread,
 }
 
 extern void _init_thread_base(struct _thread_base *thread_base,
-			      int priority, uint32_t initial_state,
+			      int priority, u32_t initial_state,
 			      unsigned int options);
 
 #endif /* _ASMLANGUAGE */

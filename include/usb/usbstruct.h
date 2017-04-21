@@ -85,8 +85,8 @@
 
 /** USB descriptor header */
 struct usb_desc_header {
-	uint8_t bLength;               /**< descriptor length */
-	uint8_t bDescriptorType;       /**< descriptor type */
+	u8_t bLength;               /**< descriptor length */
+	u8_t bDescriptorType;       /**< descriptor type */
 };
 
 #define DESC_DEVICE                 1

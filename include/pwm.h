@@ -37,7 +37,7 @@ extern "C" {
  * See @a pwm_pin_configure() for argument description
  */
 typedef int (*pwm_config_t)(struct device *dev, int access_op,
-			    uint32_t pwm, int flags);
+			    u32_t pwm, int flags);
 
 /**
  * @typedef pwm_set_values_t
@@ -45,7 +45,7 @@ typedef int (*pwm_config_t)(struct device *dev, int access_op,
  * See @a pwm_pin_set_values() for argument description
  */
 typedef int (*pwm_set_values_t)(struct device *dev, int access_op,
-				uint32_t pwm, uint32_t on, uint32_t off);
+				u32_t pwm, u32_t on, u32_t off);
 
 /**
  * @typedef pwm_set_duty_cycle_t
@@ -53,7 +53,7 @@ typedef int (*pwm_set_values_t)(struct device *dev, int access_op,
  * See @a pwm_pin_set_duty_cycle() for argument description
  */
 typedef int (*pwm_set_duty_cycle_t)(struct device *dev, int access_op,
-				    uint32_t pwm, uint8_t duty);
+				    u32_t pwm, u8_t duty);
 
 /**
  * @typedef pwm_set_phase_t
@@ -61,7 +61,7 @@ typedef int (*pwm_set_duty_cycle_t)(struct device *dev, int access_op,
  * See @a pwm_pin_set_phase() for argument description
  */
 typedef int (*pwm_set_phase_t)(struct device *dev, int access_op,
-			       uint32_t pwm, uint8_t phase);
+			       u32_t pwm, u8_t phase);
 
 /**
  * @typedef pwm_set_period_t
@@ -69,23 +69,23 @@ typedef int (*pwm_set_phase_t)(struct device *dev, int access_op,
  * See @a pwm_pin_set_period() for argument description
  */
 typedef int (*pwm_set_period_t)(struct device *dev, int access_op,
-				uint32_t pwm, uint32_t period);
+				u32_t pwm, u32_t period);
 
 /**
  * @typedef pwm_pin_set_t
  * @brief Callback API upon setting the pin
  * See @a pwm_pin_set_cycles() for argument description
  */
-typedef int (*pwm_pin_set_t)(struct device *dev, uint32_t pwm,
-			     uint32_t period_cycles, uint32_t pulse_cycles);
+typedef int (*pwm_pin_set_t)(struct device *dev, u32_t pwm,
+			     u32_t period_cycles, u32_t pulse_cycles);
 
 /**
  * @typedef pwm_get_cycles_per_sec_t
  * @brief Callback API upon getting cycles per second
  * See @a pwm_get_cycles_per_sec() for argument description
  */
-typedef int (*pwm_get_cycles_per_sec_t)(struct device *dev, uint32_t pwm,
-					uint64_t *cycles);
+typedef int (*pwm_get_cycles_per_sec_t)(struct device *dev, u32_t pwm,
+					u64_t *cycles);
 
 /** @brief PWM driver API definition. */
 struct pwm_driver_api {
@@ -109,8 +109,8 @@ struct pwm_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
-				     uint32_t period, uint32_t pulse)
+static inline int pwm_pin_set_cycles(struct device *dev, u32_t pwm,
+				     u32_t period, u32_t pulse)
 {
 	struct pwm_driver_api *api;
 
@@ -129,11 +129,11 @@ static inline int pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_pin_set_usec(struct device *dev, uint32_t pwm,
-				   uint32_t period, uint32_t pulse)
+static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
+				   u32_t period, u32_t pulse)
 {
 	struct pwm_driver_api *api;
-	uint64_t period_cycles, pulse_cycles, cycles_per_sec;
+	u64_t period_cycles, pulse_cycles, cycles_per_sec;
 
 	api = (struct pwm_driver_api *)dev->driver_api;
 
@@ -142,17 +142,17 @@ static inline int pwm_pin_set_usec(struct device *dev, uint32_t pwm,
 	}
 
 	period_cycles = (period * cycles_per_sec) / USEC_PER_SEC;
-	if (period_cycles >= ((uint64_t)1 << 32)) {
+	if (period_cycles >= ((u64_t)1 << 32)) {
 		return -ENOTSUP;
 	}
 
 	pulse_cycles = (pulse * cycles_per_sec) / USEC_PER_SEC;
-	if (pulse_cycles >= ((uint64_t)1 << 32)) {
+	if (pulse_cycles >= ((u64_t)1 << 32)) {
 		return -ENOTSUP;
 	}
 
-	return api->pin_set(dev, pwm, (uint32_t)period_cycles,
-			    (uint32_t)pulse_cycles);
+	return api->pin_set(dev, pwm, (u32_t)period_cycles,
+			    (u32_t)pulse_cycles);
 }
 
 /**
@@ -166,8 +166,8 @@ static inline int pwm_pin_set_usec(struct device *dev, uint32_t pwm,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
-					 uint64_t *cycles)
+static inline int pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
+					 u64_t *cycles)
 {
 	struct pwm_driver_api *api;
 
@@ -188,7 +188,7 @@ static inline int pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_pin_configure(struct device *dev,
-						 uint8_t pwm, int flags)
+						 u8_t pwm, int flags)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -212,8 +212,8 @@ static inline int __deprecated pwm_pin_configure(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_pin_set_values(struct device *dev,
-						  uint32_t pwm, uint32_t on,
-						  uint32_t off)
+						  u32_t pwm, u32_t on,
+						  u32_t off)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -237,8 +237,8 @@ static inline int __deprecated pwm_pin_set_values(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_pin_set_period(struct device *dev,
-						  uint32_t pwm,
-						  uint32_t period)
+						  u32_t pwm,
+						  u32_t period)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -262,8 +262,8 @@ static inline int __deprecated pwm_pin_set_period(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_pin_set_duty_cycle(struct device *dev,
-						      uint32_t pwm,
-						      uint8_t duty)
+						      u32_t pwm,
+						      u8_t duty)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -286,7 +286,7 @@ static inline int __deprecated pwm_pin_set_duty_cycle(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_pin_set_phase(struct device *dev,
-						 uint32_t pwm, uint8_t phase)
+						 u32_t pwm, u8_t phase)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -332,7 +332,7 @@ static inline int __deprecated pwm_all_configure(struct device *dev, int flags)
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_all_set_values(struct device *dev,
-						  uint32_t on, uint32_t off)
+						  u32_t on, u32_t off)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -356,7 +356,7 @@ static inline int __deprecated pwm_all_set_values(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_all_period(struct device *dev,
-					      uint32_t period)
+					      u32_t period)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -380,7 +380,7 @@ static inline int __deprecated pwm_all_period(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_all_set_duty_cycle(struct device *dev,
-						      uint8_t duty)
+						      u8_t duty)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 
@@ -402,7 +402,7 @@ static inline int __deprecated pwm_all_set_duty_cycle(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int __deprecated pwm_all_set_phase(struct device *dev,
-						 uint8_t phase)
+						 u8_t phase)
 {
 	const struct pwm_driver_api *api = dev->driver_api;
 

@@ -34,7 +34,7 @@ typedef int (*clock_control)(struct device *dev, clock_control_subsys_t sys);
 
 typedef int (*clock_control_get)(struct device *dev,
 				 clock_control_subsys_t sys,
-				 uint32_t *rate);
+				 u32_t *rate);
 
 struct clock_control_driver_api {
 	clock_control		on;
@@ -79,7 +79,7 @@ static inline int clock_control_off(struct device *dev,
  */
 static inline int clock_control_get_rate(struct device *dev,
 					 clock_control_subsys_t sys,
-					 uint32_t *rate)
+					 u32_t *rate)
 {
 	const struct clock_control_driver_api *api = dev->driver_api;
 

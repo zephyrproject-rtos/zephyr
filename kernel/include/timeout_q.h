@@ -194,7 +194,7 @@ static inline void _dump_timeout_q(void)
 static inline void _add_timeout(struct k_thread *thread,
 				struct _timeout *timeout,
 				_wait_q_t *wait_q,
-				int32_t timeout_in_ticks)
+				s32_t timeout_in_ticks)
 {
 	__ASSERT(timeout_in_ticks > 0, "");
 
@@ -206,7 +206,7 @@ static inline void _add_timeout(struct k_thread *thread,
 	_dump_timeout(timeout, 0);
 	_dump_timeout_q();
 
-	int32_t *delta = &timeout->delta_ticks_from_prev;
+	s32_t *delta = &timeout->delta_ticks_from_prev;
 	struct _timeout *in_q;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&_timeout_q, in_q, node) {
@@ -238,14 +238,14 @@ inserted:
 
 static inline void _add_thread_timeout(struct k_thread *thread,
 				       _wait_q_t *wait_q,
-				       int32_t timeout_in_ticks)
+				       s32_t timeout_in_ticks)
 {
 	_add_timeout(thread, &thread->base.timeout, wait_q, timeout_in_ticks);
 }
 
 /* find the closest deadline in the timeout queue */
 
-static inline int32_t _get_next_timeout_expiry(void)
+static inline s32_t _get_next_timeout_expiry(void)
 {
 	struct _timeout *t = (struct _timeout *)
 			     sys_dlist_peek_head(&_timeout_q);

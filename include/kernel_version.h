@@ -32,7 +32,7 @@ extern "C" {
 
 /* kernel version routines */
 
-extern uint32_t sys_kernel_version_get(void);
+extern u32_t sys_kernel_version_get(void);
 
 #ifdef __cplusplus
 }

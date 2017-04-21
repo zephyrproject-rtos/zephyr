@@ -27,8 +27,8 @@ static struct device *config_levels[] = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-extern uint32_t __device_busy_start[];
-extern uint32_t __device_busy_end[];
+extern u32_t __device_busy_start[];
+extern u32_t __device_busy_end[];
 #define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
 #endif
 
@@ -70,7 +70,7 @@ struct device *device_get_binding(const char *name)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 int device_pm_control_nop(struct device *unused_device,
-		       uint32_t unused_ctrl_command, void *unused_context)
+		       u32_t unused_ctrl_command, void *unused_context)
 {
 	return 0;
 }

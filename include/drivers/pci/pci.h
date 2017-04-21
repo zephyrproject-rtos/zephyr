@@ -30,20 +30,20 @@ extern "C" {
 /* PCI device information */
 
 struct pci_dev_info {
-	uint32_t addr; /* I/O or memory region address */
-	uint32_t size; /* memory region size */
+	u32_t addr; /* I/O or memory region address */
+	u32_t size; /* memory region size */
 	int irq;
 
-	uint32_t bus:8;
-	uint32_t dev:5;
-	uint32_t function:4;
-	uint32_t mem_type:1; /* memory type: BAR_SPACE_MEM/BAR_SPACE_IO */
-	uint32_t class_type:8;
-	uint32_t bar:3;
-	uint32_t _reserved:3;
+	u32_t bus:8;
+	u32_t dev:5;
+	u32_t function:4;
+	u32_t mem_type:1; /* memory type: BAR_SPACE_MEM/BAR_SPACE_IO */
+	u32_t class_type:8;
+	u32_t bar:3;
+	u32_t _reserved:3;
 
-	uint16_t vendor_id;
-	uint16_t device_id;
+	u16_t vendor_id;
+	u16_t device_id;
 };
 
 #ifdef CONFIG_PCI_ENUMERATION

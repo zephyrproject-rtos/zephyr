@@ -243,7 +243,7 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 extern k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
-			      int prio, uint32_t options, int32_t delay);
+			      int prio, u32_t options, s32_t delay);
 
 /**
  * @brief Put the current thread to sleep.
@@ -255,7 +255,7 @@ extern k_tid_t k_thread_spawn(char *stack, size_t stack_size,
  *
  * @return N/A
  */
-extern void k_sleep(int32_t duration);
+extern void k_sleep(s32_t duration);
 
 /**
  * @brief Cause the current thread to busy wait.
@@ -265,7 +265,7 @@ extern void k_sleep(int32_t duration);
  *
  * @return N/A
  */
-extern void k_busy_wait(uint32_t usec_to_wait);
+extern void k_busy_wait(u32_t usec_to_wait);
 
 /**
  * @brief Yield the current thread.
@@ -348,10 +348,10 @@ struct _static_thread_data {
 	void *init_p2;
 	void *init_p3;
 	int init_prio;
-	uint32_t init_options;
-	int32_t init_delay;
+	u32_t init_options;
+	s32_t init_delay;
 	void (*init_abort)(void);
-	uint32_t init_groups;
+	u32_t init_groups;
 };
 
 #define _THREAD_INITIALIZER(stack, stack_size,                   \
@@ -511,7 +511,7 @@ extern void k_thread_resume(k_tid_t thread);
  *
  * @return N/A
  */
-extern void k_sched_time_slice_set(int32_t slice, int prio);
+extern void k_sched_time_slice_set(s32_t slice, int prio);
 
 /**
  * @} end defgroup thread_apis
@@ -724,25 +724,25 @@ extern void *k_thread_custom_data_get(void);
 #endif
 
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-extern int32_t _ms_to_ticks(int32_t ms);
+extern s32_t _ms_to_ticks(s32_t ms);
 #else
-static ALWAYS_INLINE int32_t _ms_to_ticks(int32_t ms)
+static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 {
-	return (int32_t)ceiling_fraction((uint32_t)ms, _ms_per_tick);
+	return (s32_t)ceiling_fraction((u32_t)ms, _ms_per_tick);
 }
 #endif
 
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
-static inline int64_t __ticks_to_ms(int64_t ticks)
+static inline s64_t __ticks_to_ms(s64_t ticks)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-	return (MSEC_PER_SEC * (uint64_t)ticks) / sys_clock_ticks_per_sec;
+	return (MSEC_PER_SEC * (u64_t)ticks) / sys_clock_ticks_per_sec;
 #else
-	return (uint64_t)ticks * _ms_per_tick;
+	return (u64_t)ticks * _ms_per_tick;
 #endif
 
 #else
@@ -760,11 +760,11 @@ struct _timeout {
 	sys_dnode_t node;
 	struct k_thread *thread;
 	sys_dlist_t *wait_q;
-	int32_t delta_ticks_from_prev;
+	s32_t delta_ticks_from_prev;
 	_timeout_func_t func;
 };
 
-extern int32_t _timeout_remaining_get(struct _timeout *timeout);
+extern s32_t _timeout_remaining_get(struct _timeout *timeout);
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -792,10 +792,10 @@ struct k_timer {
 	void (*stop_fn)(struct k_timer *);
 
 	/* timer period */
-	int32_t period;
+	s32_t period;
 
 	/* timer status */
-	uint32_t status;
+	u32_t status;
 
 	/* user-specific data, also used to support legacy features */
 	void *user_data;
@@ -904,7 +904,7 @@ extern void k_timer_init(struct k_timer *timer,
  * @return N/A
  */
 extern void k_timer_start(struct k_timer *timer,
-			  int32_t duration, int32_t period);
+			  s32_t duration, s32_t period);
 
 /**
  * @brief Stop a timer.
@@ -936,7 +936,7 @@ extern void k_timer_stop(struct k_timer *timer);
  *
  * @return Timer status.
  */
-extern uint32_t k_timer_status_get(struct k_timer *timer);
+extern u32_t k_timer_status_get(struct k_timer *timer);
 
 /**
  * @brief Synchronize thread to timer expiration.
@@ -955,7 +955,7 @@ extern uint32_t k_timer_status_get(struct k_timer *timer);
  *
  * @return Timer status.
  */
-extern uint32_t k_timer_status_sync(struct k_timer *timer);
+extern u32_t k_timer_status_sync(struct k_timer *timer);
 
 /**
  * @brief Get time remaining before a timer next expires.
@@ -967,7 +967,7 @@ extern uint32_t k_timer_status_sync(struct k_timer *timer);
  *
  * @return Remaining time (in milliseconds).
  */
-static inline int32_t k_timer_remaining_get(struct k_timer *timer)
+static inline s32_t k_timer_remaining_get(struct k_timer *timer)
 {
 	return _timeout_remaining_get(&timer->timeout);
 }
@@ -1021,7 +1021,7 @@ static inline void *k_timer_user_data_get(struct k_timer *timer)
  *
  * @return Current uptime.
  */
-extern int64_t k_uptime_get(void);
+extern s64_t k_uptime_get(void);
 
 /**
  * @brief Get system uptime (32-bit version).
@@ -1036,7 +1036,7 @@ extern int64_t k_uptime_get(void);
  *
  * @return Current uptime.
  */
-extern uint32_t k_uptime_get_32(void);
+extern u32_t k_uptime_get_32(void);
 
 /**
  * @brief Get elapsed time.
@@ -1049,7 +1049,7 @@ extern uint32_t k_uptime_get_32(void);
  *
  * @return Elapsed time.
  */
-extern int64_t k_uptime_delta(int64_t *reftime);
+extern s64_t k_uptime_delta(s64_t *reftime);
 
 /**
  * @brief Get elapsed time (32-bit version).
@@ -1067,7 +1067,7 @@ extern int64_t k_uptime_delta(int64_t *reftime);
  *
  * @return Elapsed time.
  */
-extern uint32_t k_uptime_delta_32(int64_t *reftime);
+extern u32_t k_uptime_delta_32(s64_t *reftime);
 
 /**
  * @brief Read the hardware clock.
@@ -1222,7 +1222,7 @@ extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
  */
-extern void *k_queue_get(struct k_queue *queue, int32_t timeout);
+extern void *k_queue_get(struct k_queue *queue, s32_t timeout);
 
 /**
  * @brief Query a queue to see if it has data available.
@@ -1495,7 +1495,7 @@ struct k_lifo {
 
 struct k_stack {
 	_wait_q_t wait_q;
-	uint32_t *base, *next, *top;
+	u32_t *base, *next, *top;
 
 	_OBJECT_TRACING_NEXT_PTR(k_stack);
 };
@@ -1531,7 +1531,7 @@ struct k_stack {
  * @return N/A
  */
 extern void k_stack_init(struct k_stack *stack,
-			 uint32_t *buffer, int num_entries);
+			 u32_t *buffer, int num_entries);
 
 /**
  * @brief Push an element onto a stack.
@@ -1545,7 +1545,7 @@ extern void k_stack_init(struct k_stack *stack,
  *
  * @return N/A
  */
-extern void k_stack_push(struct k_stack *stack, uint32_t data);
+extern void k_stack_push(struct k_stack *stack, u32_t data);
 
 /**
  * @brief Pop an element from a stack.
@@ -1564,7 +1564,7 @@ extern void k_stack_push(struct k_stack *stack, uint32_t data);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
+extern int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
 
 /**
  * @brief Statically define and initialize a stack
@@ -1577,7 +1577,7 @@ extern int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout);
  * @param stack_num_entries Maximum number of values that can be stacked.
  */
 #define K_STACK_DEFINE(name, stack_num_entries)                \
-	uint32_t __noinit                                      \
+	u32_t __noinit                                      \
 		_k_stack_buf_##name[stack_num_entries];        \
 	struct k_stack name                                    \
 		__in_section(_k_stack, static, name) =    \
@@ -1782,7 +1782,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_delayed_work *work,
-					  int32_t delay);
+					  s32_t delay);
 
 /**
  * @brief Cancel a delayed work item.
@@ -1860,7 +1860,7 @@ static inline void k_work_submit(struct k_work *work)
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
-					int32_t delay)
+					s32_t delay)
 {
 	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, delay);
 }
@@ -1876,7 +1876,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  *
  * @return Remaining time (in milliseconds).
  */
-static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
+static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
 	return _timeout_remaining_get(&work->timeout);
 }
@@ -1892,7 +1892,7 @@ static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 struct k_mutex {
 	_wait_q_t wait_q;
 	struct k_thread *owner;
-	uint32_t lock_count;
+	u32_t lock_count;
 	int owner_orig_prio;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mutex);
@@ -1962,7 +1962,7 @@ extern void k_mutex_init(struct k_mutex *mutex);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_mutex_lock(struct k_mutex *mutex, int32_t timeout);
+extern int k_mutex_lock(struct k_mutex *mutex, s32_t timeout);
 
 /**
  * @brief Unlock a mutex.
@@ -2051,7 +2051,7 @@ extern void k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_sem_take(struct k_sem *sem, int32_t timeout);
+extern int k_sem_take(struct k_sem *sem, s32_t timeout);
 
 /**
  * @brief Give a semaphore.
@@ -2227,7 +2227,7 @@ extern void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_alert_recv(struct k_alert *alert, int32_t timeout);
+extern int k_alert_recv(struct k_alert *alert, s32_t timeout);
 
 /**
  * @brief Signal an alert.
@@ -2256,12 +2256,12 @@ extern void k_alert_send(struct k_alert *alert);
 struct k_msgq {
 	_wait_q_t wait_q;
 	size_t msg_size;
-	uint32_t max_msgs;
+	u32_t max_msgs;
 	char *buffer_start;
 	char *buffer_end;
 	char *read_ptr;
 	char *write_ptr;
-	uint32_t used_msgs;
+	u32_t used_msgs;
 
 	_OBJECT_TRACING_NEXT_PTR(k_msgq);
 };
@@ -2335,7 +2335,7 @@ struct k_msgq {
  * @return N/A
  */
 extern void k_msgq_init(struct k_msgq *q, char *buffer,
-			size_t msg_size, uint32_t max_msgs);
+			size_t msg_size, u32_t max_msgs);
 
 /**
  * @brief Send a message to a message queue.
@@ -2353,7 +2353,7 @@ extern void k_msgq_init(struct k_msgq *q, char *buffer,
  * @retval -ENOMSG Returned without waiting or queue purged.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
+extern int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout);
 
 /**
  * @brief Receive a message from a message queue.
@@ -2372,7 +2372,7 @@ extern int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout);
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout);
+extern int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout);
 
 /**
  * @brief Purge a message queue.
@@ -2397,7 +2397,7 @@ extern void k_msgq_purge(struct k_msgq *q);
  *
  * @return Number of unused ring buffer entries.
  */
-static inline uint32_t k_msgq_num_free_get(struct k_msgq *q)
+static inline u32_t k_msgq_num_free_get(struct k_msgq *q)
 {
 	return q->max_msgs - q->used_msgs;
 }
@@ -2411,7 +2411,7 @@ static inline uint32_t k_msgq_num_free_get(struct k_msgq *q)
  *
  * @return Number of messages.
  */
-static inline uint32_t k_msgq_num_used_get(struct k_msgq *q)
+static inline u32_t k_msgq_num_used_get(struct k_msgq *q)
 {
 	return q->used_msgs;
 }
@@ -2445,11 +2445,11 @@ struct k_mem_block {
 
 struct k_mbox_msg {
 	/** internal use only - needed for legacy API support */
-	uint32_t _mailbox;
+	u32_t _mailbox;
 	/** size of message (in bytes) */
 	size_t size;
 	/** application-defined information value */
-	uint32_t info;
+	u32_t info;
 	/** sender's message data buffer */
 	void *tx_data;
 	/** internal use only - needed for legacy API support */
@@ -2535,7 +2535,7 @@ extern void k_mbox_init(struct k_mbox *mbox);
  * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-		      int32_t timeout);
+		      s32_t timeout);
 
 /**
  * @brief Send a mailbox message in an asynchronous manner.
@@ -2574,7 +2574,7 @@ extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
-		      void *buffer, int32_t timeout);
+		      void *buffer, s32_t timeout);
 
 /**
  * @brief Retrieve mailbox message data into a buffer.
@@ -2625,7 +2625,7 @@ extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  */
 extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 				 struct k_mem_pool *pool,
-				 struct k_mem_block *block, int32_t timeout);
+				 struct k_mem_block *block, s32_t timeout);
 
 /**
  * @} end defgroup mailbox_apis
@@ -2728,7 +2728,7 @@ extern void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
  */
 extern int k_pipe_put(struct k_pipe *pipe, void *data,
 		      size_t bytes_to_write, size_t *bytes_written,
-		      size_t min_xfer, int32_t timeout);
+		      size_t min_xfer, s32_t timeout);
 
 /**
  * @brief Read data from a pipe.
@@ -2751,7 +2751,7 @@ extern int k_pipe_put(struct k_pipe *pipe, void *data,
  */
 extern int k_pipe_get(struct k_pipe *pipe, void *data,
 		      size_t bytes_to_read, size_t *bytes_read,
-		      size_t min_xfer, int32_t timeout);
+		      size_t min_xfer, s32_t timeout);
 
 /**
  * @brief Write memory block to a pipe.
@@ -2780,11 +2780,11 @@ extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 
 struct k_mem_slab {
 	_wait_q_t wait_q;
-	uint32_t num_blocks;
+	u32_t num_blocks;
 	size_t block_size;
 	char *buffer;
 	char *free_list;
-	uint32_t num_used;
+	u32_t num_used;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mem_slab);
 };
@@ -2857,7 +2857,7 @@ struct k_mem_slab {
  * @return N/A
  */
 extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
-			   size_t block_size, uint32_t num_blocks);
+			   size_t block_size, u32_t num_blocks);
 
 /**
  * @brief Allocate memory from a memory slab.
@@ -2876,7 +2876,7 @@ extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
-			    int32_t timeout);
+			    s32_t timeout);
 
 /**
  * @brief Free memory allocated from a memory slab.
@@ -2901,7 +2901,7 @@ extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
  *
  * @return Number of allocated memory blocks.
  */
-static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
+static inline u32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
 	return slab->num_used;
 }
@@ -2916,7 +2916,7 @@ static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
  *
  * @return Number of unallocated memory blocks.
  */
-static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
+static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
 	return slab->num_blocks - slab->num_used;
 }
@@ -2937,7 +2937,7 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  */
 struct k_mem_pool_quad_block {
 	char *mem_blocks; /* pointer to the first of four memory blocks */
-	uint32_t mem_status; /* four bits. If bit is set, memory block is
+	u32_t mem_status; /* four bits. If bit is set, memory block is
 				allocated */
 };
 /*
@@ -2954,7 +2954,7 @@ struct k_mem_pool_quad_block {
  */
 struct k_mem_pool_block_set {
 	size_t block_size; /* memory block size */
-	uint32_t nr_of_entries; /* nr of quad block structures in the array */
+	u32_t nr_of_entries; /* nr of quad block structures in the array */
 	struct k_mem_pool_quad_block *quad_block;
 	int count;
 };
@@ -2963,8 +2963,8 @@ struct k_mem_pool_block_set {
 struct k_mem_pool {
 	size_t max_block_size;
 	size_t min_block_size;
-	uint32_t nr_of_maxblocks;
-	uint32_t nr_of_block_sets;
+	u32_t nr_of_maxblocks;
+	u32_t nr_of_block_sets;
 	struct k_mem_pool_block_set *block_set;
 	char *bufblock;
 	_wait_q_t wait_q;
@@ -3098,7 +3098,7 @@ __asm__(".macro _build_mem_pool name, min_size, max_size, n_max\n\t"
 	__asm__("_mem_pool_block_set_count_" STRINGIFY(name) ":\n\t");	\
 	__asm__(".int __memory_pool_block_set_count\n\t");		\
 	__asm__(".popsection\n\t");					\
-	extern uint32_t _mem_pool_block_set_count_##name;		\
+	extern u32_t _mem_pool_block_set_count_##name;		\
 	extern struct k_mem_pool_block_set _mem_pool_block_sets_##name[]
 
 #define _MEMORY_POOL_BUFFER_DEFINE(name, max_size, n_max, align)	\
@@ -3179,7 +3179,7 @@ static void __attribute__ ((used)) __k_mem_pool_quad_block_size_define(void)
  * @retval -EAGAIN Waiting period timed out.
  */
 extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
-			    size_t size, int32_t timeout);
+			    size_t size, s32_t timeout);
 
 /**
  * @brief Free memory allocated from a memory pool.
@@ -3374,19 +3374,19 @@ struct k_poll_event {
 	struct _poller *poller;
 
 	/* optional user-specified tag, opaque, untouched by the API */
-	uint32_t tag:8;
+	u32_t tag:8;
 
 	/* bitfield of event types (bitwise-ORed K_POLL_TYPE_xxx values) */
-	uint32_t type:_POLL_NUM_TYPES;
+	u32_t type:_POLL_NUM_TYPES;
 
 	/* bitfield of event states (bitwise-ORed K_POLL_STATE_xxx values) */
-	uint32_t state:_POLL_NUM_STATES;
+	u32_t state:_POLL_NUM_STATES;
 
 	/* mode of operation, from enum k_poll_modes */
-	uint32_t mode:1;
+	u32_t mode:1;
 
 	/* unused bits in 32-bit word */
-	uint32_t unused:_POLL_EVENT_NUM_UNUSED_BITS;
+	u32_t unused:_POLL_EVENT_NUM_UNUSED_BITS;
 
 	/* per-type data */
 	union {
@@ -3436,7 +3436,7 @@ struct k_poll_event {
  * @return N/A
  */
 
-extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
+extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
 			      int mode, void *obj);
 
 /**
@@ -3481,7 +3481,7 @@ extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
  */
 
 extern int k_poll(struct k_poll_event *events, int num_events,
-		  int32_t timeout);
+		  s32_t timeout);
 
 /**
  * @brief Initialize a poll signal object.
@@ -3518,7 +3518,7 @@ extern int k_poll_signal(struct k_poll_signal *signal, int result);
 
 /* private internal function */
 extern int _handle_obj_poll_event(struct k_poll_event **obj_poll_event,
-				  uint32_t state);
+				  u32_t state);
 
 /**
  * @} end defgroup poll_apis
@@ -3550,7 +3550,7 @@ extern void k_cpu_idle(void);
  */
 extern void k_cpu_atomic_idle(unsigned int key);
 
-extern void _sys_power_save_idle_exit(int32_t ticks);
+extern void _sys_power_save_idle_exit(s32_t ticks);
 
 #include <arch/cpu.h>
 

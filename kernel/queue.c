@@ -68,7 +68,7 @@ static void prepare_thread_to_run(struct k_thread *thread, void *data)
 static inline int handle_poll_event(struct k_queue *queue)
 {
 #ifdef CONFIG_POLL
-	uint32_t state = K_POLL_STATE_DATA_AVAILABLE;
+	u32_t state = K_POLL_STATE_DATA_AVAILABLE;
 
 	return queue->poll_event ?
 	       _handle_obj_poll_event(&queue->poll_event, state) : 0;
@@ -161,7 +161,7 @@ void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	sys_slist_init(list);
 }
 
-void *k_queue_get(struct k_queue *queue, int32_t timeout)
+void *k_queue_get(struct k_queue *queue, s32_t timeout)
 {
 	unsigned int key;
 	void *data;

@@ -581,7 +581,7 @@ int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
  *
  * @return up counter of elapsed clock cycles
  */
-uint32_t _timer_cycle_get_32(void)
+u32_t _timer_cycle_get_32(void)
 {
 #if CONFIG_TSC_CYCLES_PER_SEC != 0
 	u64_t tsc;

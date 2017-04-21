@@ -305,7 +305,7 @@ int _sys_clock_driver_init(struct device *device)
 	return 0;
 }
 
-uint32_t _timer_cycle_get_32(void)
+u32_t _timer_cycle_get_32(void)
 {
 	u32_t elapsed_cycles;
 

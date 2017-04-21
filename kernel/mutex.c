@@ -101,7 +101,7 @@ static void adjust_owner_prio(struct k_mutex *mutex, int new_prio)
 	}
 }
 
-int k_mutex_lock(struct k_mutex *mutex, int32_t timeout)
+int k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 {
 	int new_prio, key;
 

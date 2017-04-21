@@ -47,7 +47,7 @@ struct event_logger {
  * @return N/A
  */
 void sys_event_logger_init(struct event_logger *logger,
-			   uint32_t *logger_buffer, uint32_t buffer_size);
+			   u32_t *logger_buffer, u32_t buffer_size);
 
 
 /**
@@ -63,8 +63,8 @@ void sys_event_logger_init(struct event_logger *logger,
  *
  * @return N/A
  */
-void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
-			  uint32_t *event_data, uint8_t data_size);
+void sys_event_logger_put(struct event_logger *logger, u16_t event_id,
+			  u32_t *event_data, u8_t data_size);
 
 
 /**
@@ -88,9 +88,9 @@ void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
  * @retval Number of 32-bit words copied.
  * @retval 0 If no message was already available.
  */
-int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
-			 uint8_t *dropped_event_count, uint32_t *buffer,
-			 uint8_t *buffer_size);
+int sys_event_logger_get(struct event_logger *logger, u16_t *event_id,
+			 u8_t *dropped_event_count, u32_t *buffer,
+			 u8_t *buffer_size);
 
 /**
  * @brief Retrieve an event message from the logger, wait if empty.
@@ -113,9 +113,9 @@ int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
  * @retval EMSGSIZE If the buffer size is smaller than the message size.
  * @retval Number of DWORDs copied, otherwise.
  */
-int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
-			      uint8_t *dropped_event_count, uint32_t *buffer,
-			      uint8_t *buffer_size);
+int sys_event_logger_get_wait(struct event_logger *logger,  u16_t *event_id,
+			      u8_t *dropped_event_count, u32_t *buffer,
+			      u8_t *buffer_size);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 /**
@@ -144,10 +144,10 @@ int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
  *           available.
  */
 int sys_event_logger_get_wait_timeout(struct event_logger *logger,
-				      uint16_t *event_id,
-				      uint8_t *dropped_event_count,
-				      uint32_t *buffer, uint8_t *buffer_size,
-				      uint32_t timeout);
+				      u16_t *event_id,
+				      u8_t *dropped_event_count,
+				      u32_t *buffer, u8_t *buffer_size,
+				      u32_t timeout);
 /**
  * @}
  */

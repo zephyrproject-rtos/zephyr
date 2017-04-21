@@ -71,15 +71,15 @@ struct usb_dc_ep_cfg_data {
 	 *       IN  EP = 0x80 | \<endpoint number\>
 	 *       OUT EP = 0x00 | \<endpoint number\>
 	 */
-	uint8_t ep_addr;
-	uint16_t ep_mps;             /** Endpoint max packet size */
+	u8_t ep_addr;
+	u16_t ep_mps;             /** Endpoint max packet size */
 	enum usb_dc_ep_type ep_type; /** Endpoint type */
 };
 
 /**
  * Callback function signature for the USB Endpoint status
  */
-typedef void (*usb_dc_ep_callback)(uint8_t ep,
+typedef void (*usb_dc_ep_callback)(u8_t ep,
 	enum usb_dc_ep_cb_status_code cb_status);
 
 /**
@@ -125,7 +125,7 @@ int usb_dc_reset(void);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_set_address(const uint8_t addr);
+int usb_dc_set_address(const u8_t addr);
 
 /**
  * @brief set USB device controller status callback
@@ -160,7 +160,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_set_stall(const uint8_t ep);
+int usb_dc_ep_set_stall(const u8_t ep);
 
 /**
  * @brief clear stall condition for the selected endpoint
@@ -170,7 +170,7 @@ int usb_dc_ep_set_stall(const uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_clear_stall(const uint8_t ep);
+int usb_dc_ep_clear_stall(const u8_t ep);
 
 /**
  * @brief check if selected endpoint is stalled
@@ -181,7 +181,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled);
+int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled);
 
 /**
  * @brief halt the selected endpoint
@@ -191,7 +191,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_halt(const uint8_t ep);
+int usb_dc_ep_halt(const u8_t ep);
 
 /**
  * @brief enable the selected endpoint
@@ -205,7 +205,7 @@ int usb_dc_ep_halt(const uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_enable(const uint8_t ep);
+int usb_dc_ep_enable(const u8_t ep);
 
 /**
  * @brief disable the selected endpoint
@@ -219,7 +219,7 @@ int usb_dc_ep_enable(const uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_disable(const uint8_t ep);
+int usb_dc_ep_disable(const u8_t ep);
 
 /**
  * @brief flush the selected endpoint
@@ -229,7 +229,7 @@ int usb_dc_ep_disable(const uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_flush(const uint8_t ep);
+int usb_dc_ep_flush(const u8_t ep);
 
 /**
  * @brief write data to the specified endpoint
@@ -248,8 +248,8 @@ int usb_dc_ep_flush(const uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
-		const uint32_t data_len, uint32_t * const ret_bytes);
+int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
+		const u32_t data_len, u32_t * const ret_bytes);
 
 /**
  * @brief read data from the specified endpoint
@@ -270,8 +270,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
-		const uint32_t max_data_len, uint32_t *const read_bytes);
+int usb_dc_ep_read(const u8_t ep, u8_t *const data,
+		const u32_t max_data_len, u32_t *const read_bytes);
 
 /**
  * @brief set callback function for the specified endpoint
@@ -286,7 +286,7 @@ int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb);
+int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb);
 
 /**
  * @brief read data from the specified endpoint
@@ -306,8 +306,8 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-			uint32_t *read_bytes);
+int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
+			u32_t *read_bytes);
 
 
 /**
@@ -323,6 +323,6 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_read_continue(uint8_t ep);
+int usb_dc_ep_read_continue(u8_t ep);
 
 #endif /* __USB_DC_H__ */

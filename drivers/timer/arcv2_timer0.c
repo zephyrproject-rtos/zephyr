@@ -413,7 +413,7 @@ int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-uint32_t _timer_cycle_get_32(void)
+u32_t _timer_cycle_get_32(void)
 {
 	u32_t acc, count;
 

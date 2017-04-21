@@ -31,11 +31,11 @@ typedef void (*counter_callback_t)(struct device *dev, void *user_data);
 
 typedef int (*counter_api_start)(struct device *dev);
 typedef int (*counter_api_stop)(struct device *dev);
-typedef uint32_t (*counter_api_read)(struct device *dev);
+typedef u32_t (*counter_api_read)(struct device *dev);
 typedef int (*counter_api_set_alarm)(struct device *dev,
 				     counter_callback_t callback,
-				     uint32_t count, void *user_data);
-typedef uint32_t (*counter_api_get_pending_int)(struct device *dev);
+				     u32_t count, void *user_data);
+typedef u32_t (*counter_api_get_pending_int)(struct device *dev);
 
 struct counter_driver_api {
 	counter_api_start start;
@@ -85,7 +85,7 @@ static inline int counter_stop(struct device *dev)
  *
  * @return  32-bit value
  */
-static inline uint32_t counter_read(struct device *dev)
+static inline u32_t counter_read(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -108,7 +108,7 @@ static inline uint32_t counter_read(struct device *dev)
  */
 static inline int counter_set_alarm(struct device *dev,
 				    counter_callback_t callback,
-				    uint32_t count, void *user_data)
+				    u32_t count, void *user_data)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 

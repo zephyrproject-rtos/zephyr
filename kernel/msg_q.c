@@ -47,7 +47,7 @@ SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJECT_TRACING */
 
 void k_msgq_init(struct k_msgq *q, char *buffer,
-		 size_t msg_size, uint32_t max_msgs)
+		 size_t msg_size, u32_t max_msgs)
 {
 	q->msg_size = msg_size;
 	q->max_msgs = max_msgs;
@@ -60,7 +60,7 @@ void k_msgq_init(struct k_msgq *q, char *buffer,
 	SYS_TRACING_OBJ_INIT(k_msgq, q);
 }
 
-int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
+int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
@@ -108,7 +108,7 @@ int k_msgq_put(struct k_msgq *q, void *data, int32_t timeout)
 	return result;
 }
 
-int k_msgq_get(struct k_msgq *q, void *data, int32_t timeout)
+int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 

@@ -105,7 +105,7 @@ static inline int cipher_begin_session(struct device *dev,
 				       enum cipher_op optype)
 {
 	struct crypto_driver_api *api;
-	uint32_t flags;
+	u32_t flags;
 
 	api = (struct crypto_driver_api *) dev->driver_api;
 	ctx->device = dev;
@@ -210,7 +210,7 @@ static inline int cipher_block_op(struct cipher_ctx *ctx,
  * @return 0 on success, negative errno code on fail.
  */
 static inline int cipher_cbc_op(struct cipher_ctx *ctx,
-				struct cipher_pkt *pkt, uint8_t *iv)
+				struct cipher_pkt *pkt, u8_t *iv)
 {
 	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CBC, "CBC mode "
 		 "session invoking a different mode handler");
@@ -237,7 +237,7 @@ static inline int cipher_cbc_op(struct cipher_ctx *ctx,
  * @return 0 on success, negative errno code on fail.
  */
 static inline int cipher_ctr_op(struct cipher_ctx *ctx,
-				struct cipher_pkt *pkt, uint8_t *iv)
+				struct cipher_pkt *pkt, u8_t *iv)
 {
 	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CTR, "CTR mode "
 		 "session invoking a different mode handler");
@@ -259,7 +259,7 @@ static inline int cipher_ctr_op(struct cipher_ctx *ctx,
  * @return 0 on success, negative errno code on fail.
  */
 static inline int cipher_ccm_op(struct cipher_ctx *ctx,
-				struct cipher_aead_pkt *pkt, uint8_t *nonce)
+				struct cipher_aead_pkt *pkt, u8_t *nonce)
 {
 	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CCM, "CCM mode "
 		 "session invoking a different mode handler");

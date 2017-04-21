@@ -36,13 +36,13 @@ K_STACK_DEFINE(async_msg_free, CONFIG_NUM_MBOX_ASYNC_MSGS);
 /* allocate an asynchronous message descriptor */
 static inline void _mbox_async_alloc(struct k_mbox_async **async)
 {
-	k_stack_pop(&async_msg_free, (uint32_t *)async, K_FOREVER);
+	k_stack_pop(&async_msg_free, (u32_t *)async, K_FOREVER);
 }
 
 /* free an asynchronous message descriptor */
 static inline void _mbox_async_free(struct k_mbox_async *async)
 {
-	k_stack_push(&async_msg_free, (uint32_t)async);
+	k_stack_push(&async_msg_free, (u32_t)async);
 }
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
@@ -79,7 +79,7 @@ static int init_mbox_module(struct device *dev)
 
 	for (i = 0; i < CONFIG_NUM_MBOX_ASYNC_MSGS; i++) {
 		_init_thread_base(&async_msg[i].thread, 0, _THREAD_DUMMY, 0);
-		k_stack_push(&async_msg_free, (uint32_t)&async_msg[i]);
+		k_stack_push(&async_msg_free, (u32_t)&async_msg[i]);
 	}
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
@@ -122,7 +122,7 @@ void k_mbox_init(struct k_mbox *mbox_ptr)
 static int _mbox_message_match(struct k_mbox_msg *tx_msg,
 			       struct k_mbox_msg *rx_msg)
 {
-	uint32_t temp_info;
+	u32_t temp_info;
 
 	if (((tx_msg->tx_target_thread == (k_tid_t)K_ANY) ||
 	     (tx_msg->tx_target_thread == rx_msg->tx_target_thread)) &&
@@ -235,7 +235,7 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
  * @return 0 if successful, -ENOMSG if failed immediately, -EAGAIN if timed out
  */
 static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-			     int32_t timeout)
+			     s32_t timeout)
 {
 	struct k_thread *sending_thread;
 	struct k_thread *receiving_thread;
@@ -312,7 +312,7 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	return _Swap(key);
 }
 
-int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, int32_t timeout)
+int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, s32_t timeout)
 {
 	/* configure things for a synchronous send, then send the message */
 	tx_msg->_syncing_thread = _current;
@@ -359,7 +359,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 }
 
 int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
-			  struct k_mem_block *block, int32_t timeout)
+			  struct k_mem_block *block, s32_t timeout)
 {
 	int result;
 
@@ -424,7 +424,7 @@ static int _mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 }
 
 int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
-	       int32_t timeout)
+	       s32_t timeout)
 {
 	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;

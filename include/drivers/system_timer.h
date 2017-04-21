@@ -36,14 +36,14 @@ extern void sys_clock_disable(void);
 #endif
 
 #ifdef CONFIG_TICKLESS_IDLE
-extern void _timer_idle_enter(int32_t ticks);
+extern void _timer_idle_enter(s32_t ticks);
 extern void _timer_idle_exit(void);
 #endif /* CONFIG_TICKLESS_IDLE */
 
-extern void _nano_sys_clock_tick_announce(int32_t ticks);
+extern void _nano_sys_clock_tick_announce(s32_t ticks);
 
 extern int sys_clock_device_ctrl(struct device *device,
-				 uint32_t ctrl_command, void *context);
+				 u32_t ctrl_command, void *context);
 
 /*
  * Currently regarding timers, only loapic timer and arcv2_timer0 implements
@@ -54,7 +54,7 @@ extern int sys_clock_device_ctrl(struct device *device,
 #define sys_clock_device_ctrl device_pm_control_nop
 #endif
 
-extern int32_t _sys_idle_elapsed_ticks;
+extern s32_t _sys_idle_elapsed_ticks;
 #define _sys_clock_tick_announce() \
 		_nano_sys_clock_tick_announce(_sys_idle_elapsed_ticks)
 

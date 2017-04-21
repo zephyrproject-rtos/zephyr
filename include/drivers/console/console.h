@@ -40,7 +40,7 @@ struct console_input {
  *  @return N/A
  */
 typedef void (*console_input_fn)(struct k_fifo *avail, struct k_fifo *lines,
-				 uint8_t (*completion)(char *str, uint8_t len));
+				 u8_t (*completion)(char *str, u8_t len));
 
 #ifdef __cplusplus
 }

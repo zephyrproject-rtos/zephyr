@@ -137,7 +137,7 @@ static void free_existing_block(char *ptr, struct k_mem_pool *pool, int index)
 	struct k_mem_pool_quad_block *quad_block =
 		pool->block_set[index].quad_block;
 	char *block_ptr;
-	uint32_t i, j;
+	u32_t i, j;
 
 	/*
 	 * search block set's quad-blocks until the block is located,
@@ -180,8 +180,8 @@ static void free_existing_block(char *ptr, struct k_mem_pool *pool, int index)
 static void defrag(struct k_mem_pool *pool,
 		   int start_block_set_index, int last_block_set_index)
 {
-	uint32_t i;
-	uint32_t k;
+	u32_t i;
+	u32_t k;
 	int j;
 	struct k_mem_pool_quad_block *quad_block;
 
@@ -260,7 +260,7 @@ static char *get_existing_block(struct k_mem_pool_block_set *block_set,
 				int *unused_block_index)
 {
 	char *found = NULL;
-	uint32_t i = 0;
+	u32_t i = 0;
 	int status;
 	int free_bit;
 
@@ -421,7 +421,7 @@ static void block_waiters_check(struct k_mem_pool *pool)
 
 	/* loop all waiters */
 	while (waiter != NULL) {
-		uint32_t req_size = (uint32_t)(waiter->base.swap_data);
+		u32_t req_size = (u32_t)(waiter->base.swap_data);
 
 		/* locate block set to try allocating from */
 		offset = compute_block_set_index(pool, req_size);
@@ -465,7 +465,7 @@ void k_mem_pool_defrag(struct k_mem_pool *pool)
 }
 
 int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
-		     size_t size, int32_t timeout)
+		     size_t size, s32_t timeout)
 {
 	char *found_block;
 	int offset;

@@ -109,7 +109,7 @@ void _sys_soc_resume(void);
  * @retval SYS_PM_LOW_POWER_STATE If CPU low power state was entered.
  * @retval SYS_PM_DEEP_SLEEP If SOC low power state was entered.
  */
-extern int _sys_soc_suspend(int32_t ticks);
+extern int _sys_soc_suspend(s32_t ticks);
 
 /**
  * @}

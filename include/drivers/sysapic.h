@@ -23,7 +23,7 @@
 
 /* irq_controller.h interface */
 void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
-				 uint32_t flags);
+				 u32_t flags);
 
 int __irq_controller_isr_vector_get(void);
 

@@ -48,9 +48,9 @@ extern struct _isr_table_entry _sw_isr_table[];
  */
 struct _isr_list {
 	/** IRQ line number */
-	int32_t irq;
+	s32_t irq;
 	/** Flags for this IRQ, see ISR_FLAG_* definitions */
-	int32_t flags;
+	s32_t flags;
 	/** ISR to call */
 	void *func;
 	/** Parameter for non-direct IRQs */

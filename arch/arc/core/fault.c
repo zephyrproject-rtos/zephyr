@@ -53,7 +53,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
 	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
 
-	PR_EXC("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%xn",
+	PR_EXC("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x\n",
 	       _ARC_V2_ECR_VECTOR(ecr),
 	       _ARC_V2_ECR_CODE(ecr),
 	       _ARC_V2_ECR_PARAMETER(ecr));

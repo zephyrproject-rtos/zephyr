@@ -63,7 +63,7 @@
  * @returns: N/A
  */
 static inline void _irq_controller_irq_config(unsigned int vector,
-					      unsigned int irq, uint32_t flags)
+					      unsigned int irq, u32_t flags)
 {
 	__irq_controller_irq_config(vector, irq, flags);
 }

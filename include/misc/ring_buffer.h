@@ -19,20 +19,20 @@
 extern "C" {
 #endif
 
-#define SIZE32_OF(x) (sizeof((x))/sizeof(uint32_t))
+#define SIZE32_OF(x) (sizeof((x))/sizeof(u32_t))
 
 /**
  * @brief A structure to represent a ring buffer
  */
 struct ring_buf {
-	uint32_t head;	 /**< Index in buf for the head element */
-	uint32_t tail;	 /**< Index in buf for the tail element */
-	uint32_t dropped_put_count; /**< Running tally of the number of failed
+	u32_t head;	 /**< Index in buf for the head element */
+	u32_t tail;	 /**< Index in buf for the tail element */
+	u32_t dropped_put_count; /**< Running tally of the number of failed
 				     * put attempts
 				     */
-	uint32_t size;   /**< Size of buf in 32-bit chunks */
-	uint32_t *buf;	 /**< Memory region for stored entries */
-	uint32_t mask;   /**< Modulo mask if size is a power of 2 */
+	u32_t size;   /**< Size of buf in 32-bit chunks */
+	u32_t *buf;	 /**< Memory region for stored entries */
+	u32_t mask;   /**< Modulo mask if size is a power of 2 */
 #ifdef CONFIG_OBJECT_TRACING
 	struct ring_buf *__next;
 #endif
@@ -61,7 +61,7 @@ struct ring_buf {
  * @param pow Ring buffer size exponent.
  */
 #define SYS_RING_BUF_DECLARE_POW2(name, pow) \
-	static uint32_t _ring_buffer_data_##name[1 << (pow)]; \
+	static u32_t _ring_buffer_data_##name[1 << (pow)]; \
 	struct ring_buf name = { \
 		.size = (1 << (pow)), \
 		.mask = (1 << (pow)) - 1, \
@@ -83,7 +83,7 @@ struct ring_buf {
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define SYS_RING_BUF_DECLARE_SIZE(name, size32) \
-	static uint32_t _ring_buffer_data_##name[size32]; \
+	static u32_t _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
 		.size = size32, \
 		.buf = _ring_buffer_data_##name \
@@ -102,10 +102,10 @@ struct ring_buf {
  *
  * @param buf Address of ring buffer.
  * @param size Ring buffer size (in 32-bit words).
- * @param data Ring buffer data area (typically uint32_t data[size]).
+ * @param data Ring buffer data area (typically u32_t data[size]).
  */
-static inline void sys_ring_buf_init(struct ring_buf *buf, uint32_t size,
-				     uint32_t *data)
+static inline void sys_ring_buf_init(struct ring_buf *buf, u32_t size,
+				     u32_t *data)
 {
 	buf->head = 0;
 	buf->tail = 0;
@@ -175,8 +175,8 @@ static inline int sys_ring_buf_space_get(struct ring_buf *buf)
  * @retval 0 Data item was written.
  * @retval -EMSGSIZE Ring buffer has insufficient free space.
  */
-int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
-		     uint32_t *data, uint8_t size32);
+int sys_ring_buf_put(struct ring_buf *buf, u16_t type, u8_t value,
+		     u32_t *data, u8_t size32);
 
 /**
  * @brief Read a data item from a ring buffer.
@@ -202,8 +202,8 @@ int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
  * @retval -EMSGSIZE Data area @a data is too small; @a size32 now contains
  *         the number of 32-bit words needed.
  */
-int sys_ring_buf_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
-		     uint32_t *data, uint8_t *size32);
+int sys_ring_buf_get(struct ring_buf *buf, u16_t *type, u8_t *value,
+		     u32_t *data, u8_t *size32);
 
 /**
  * @}

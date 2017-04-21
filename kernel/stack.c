@@ -44,7 +44,7 @@ SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void k_stack_init(struct k_stack *stack, uint32_t *buffer, int num_entries)
+void k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
 {
 	sys_dlist_init(&stack->wait_q);
 	stack->next = stack->base = buffer;
@@ -53,7 +53,7 @@ void k_stack_init(struct k_stack *stack, uint32_t *buffer, int num_entries)
 	SYS_TRACING_OBJ_INIT(k_stack, stack);
 }
 
-void k_stack_push(struct k_stack *stack, uint32_t data)
+void k_stack_push(struct k_stack *stack, u32_t data)
 {
 	struct k_thread *first_pending_thread;
 	unsigned int key;
@@ -83,7 +83,7 @@ void k_stack_push(struct k_stack *stack, uint32_t data)
 	irq_unlock(key);
 }
 
-int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout)
+int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 {
 	unsigned int key;
 	int result;
@@ -106,7 +106,7 @@ int k_stack_pop(struct k_stack *stack, uint32_t *data, int32_t timeout)
 
 	result = _Swap(key);
 	if (result == 0) {
-		*data = (uint32_t)_current->base.swap_data;
+		*data = (u32_t)_current->base.swap_data;
 	}
 	return result;
 }

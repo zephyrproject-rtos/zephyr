@@ -19,7 +19,7 @@
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _arch_irq_enable(uint32_t irq)
+static ALWAYS_INLINE void _arch_irq_enable(u32_t irq)
 {
 	_xt_ints_on(1 << irq);
 }
@@ -33,7 +33,7 @@ static ALWAYS_INLINE void _arch_irq_enable(uint32_t irq)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _arch_irq_disable(uint32_t irq)
+static ALWAYS_INLINE void _arch_irq_disable(u32_t irq)
 {
 	_xt_ints_off(1 << irq);
 }

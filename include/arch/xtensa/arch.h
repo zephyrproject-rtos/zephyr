@@ -52,7 +52,7 @@ extern "C" {
 #define _NANO_ERR_RESERVED_IRQ (4)	/* Reserved interrupt */
 
 /* Xtensa GPRs are often designated by two different names */
-#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
+#define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
 #include <arch/xtensa/exc.h>
 
@@ -68,7 +68,7 @@ extern "C" {
  * @return most significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
+static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
 {
 	if (!op)
 		return 0;
@@ -87,13 +87,13 @@ static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
  * @return least significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
+static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
 {
 	return __builtin_ffs(op);
 }
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void _irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
+extern void _irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 
 
 /**
@@ -142,7 +142,7 @@ extern void _irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *esf);
 
-extern uint32_t _timer_cycle_get_32(void);
+extern u32_t _timer_cycle_get_32(void);
 #define _arch_k_cycle_get_32()	_timer_cycle_get_32()
 
 #endif /* !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)  */

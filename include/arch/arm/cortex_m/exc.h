@@ -53,11 +53,11 @@ struct __esf {
 	sys_define_gpr_with_alias(ip, r12);
 	sys_define_gpr_with_alias(lr, r14);
 	sys_define_gpr_with_alias(pc, r15);
-	uint32_t xpsr;
+	u32_t xpsr;
 #ifdef CONFIG_FLOAT
 	float s[16];
-	uint32_t fpscr;
-	uint32_t undefined;
+	u32_t fpscr;
+	u32_t undefined;
 #endif
 };
 

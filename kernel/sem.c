@@ -71,7 +71,7 @@ void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 static inline int handle_poll_event(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
-	uint32_t state = K_POLL_STATE_SEM_AVAILABLE;
+	u32_t state = K_POLL_STATE_SEM_AVAILABLE;
 
 	return sem->poll_event ?
 	       _handle_obj_poll_event(&sem->poll_event, state) : 0;
@@ -140,7 +140,7 @@ void k_sem_give(struct k_sem *sem)
 	}
 }
 
-int k_sem_take(struct k_sem *sem, int32_t timeout)
+int k_sem_take(struct k_sem *sem, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 

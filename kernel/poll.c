@@ -22,7 +22,7 @@
 #include <misc/dlist.h>
 #include <misc/__assert.h>
 
-void k_poll_event_init(struct k_poll_event *event, uint32_t type,
+void k_poll_event_init(struct k_poll_event *event, u32_t type,
 		       int mode, void *obj)
 {
 	__ASSERT(mode == K_POLL_MODE_NOTIFY_ONLY,
@@ -58,7 +58,7 @@ static inline int is_polling(void)
 }
 
 /* must be called with interrupts locked */
-static inline int is_condition_met(struct k_poll_event *event, uint32_t *state)
+static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
@@ -164,13 +164,13 @@ static inline void clear_event_registrations(struct k_poll_event *events,
 	}
 }
 
-static inline void set_event_ready(struct k_poll_event *event, uint32_t state)
+static inline void set_event_ready(struct k_poll_event *event, u32_t state)
 {
 	event->poller = NULL;
 	event->state |= state;
 }
 
-int k_poll(struct k_poll_event *events, int num_events, int32_t timeout)
+int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr(), "");
 	__ASSERT(events, "NULL events\n");
@@ -192,7 +192,7 @@ int k_poll(struct k_poll_event *events, int num_events, int32_t timeout)
 
 	/* find events whose condition is already fulfilled */
 	for (int ii = 0; ii < num_events; ii++) {
-		uint32_t state;
+		u32_t state;
 
 		key = irq_lock();
 		if (is_condition_met(&events[ii], &state)) {
@@ -266,7 +266,7 @@ int k_poll(struct k_poll_event *events, int num_events, int32_t timeout)
 }
 
 /* must be called with interrupts locked */
-static int _signal_poll_event(struct k_poll_event *event, uint32_t state,
+static int _signal_poll_event(struct k_poll_event *event, u32_t state,
 			      int *must_reschedule)
 {
 	*must_reschedule = 0;
@@ -307,7 +307,7 @@ ready_event:
 
 /* returns 1 if a reschedule must take place, 0 otherwise */
 /* *obj_poll_event is guaranteed to not be NULL */
-int _handle_obj_poll_event(struct k_poll_event **obj_poll_event, uint32_t state)
+int _handle_obj_poll_event(struct k_poll_event **obj_poll_event, u32_t state)
 {
 	struct k_poll_event *poll_event = *obj_poll_event;
 	int must_reschedule;

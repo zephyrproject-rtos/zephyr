@@ -35,9 +35,9 @@ extern "C" {
  */
 struct sensor_value {
 	/** Integer part of the value. */
-	int32_t val1;
+	s32_t val1;
 	/** Fractional part of the value. */
-	int32_t val2;
+	s32_t val2;
 };
 
 /**
@@ -403,9 +403,9 @@ static inline int sensor_channel_get(struct device *dev,
  *
  * @return The converted value, in Gs.
  */
-static inline int32_t sensor_ms2_to_g(const struct sensor_value *ms2)
+static inline s32_t sensor_ms2_to_g(const struct sensor_value *ms2)
 {
-	int64_t micro_ms2 = ms2->val1 * 1000000LL + ms2->val2;
+	s64_t micro_ms2 = ms2->val1 * 1000000LL + ms2->val2;
 
 	if (micro_ms2 > 0) {
 		return (micro_ms2 + SENSOR_G / 2) / SENSOR_G;
@@ -420,10 +420,10 @@ static inline int32_t sensor_ms2_to_g(const struct sensor_value *ms2)
  * @param g The G value to be converted.
  * @param ms2 A pointer to a sensor_value struct, where the result is stored.
  */
-static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
+static inline void sensor_g_to_ms2(s32_t g, struct sensor_value *ms2)
 {
-	ms2->val1 = ((int64_t)g * SENSOR_G) / 1000000LL;
-	ms2->val2 = ((int64_t)g * SENSOR_G) % 1000000LL;
+	ms2->val1 = ((s64_t)g * SENSOR_G) / 1000000LL;
+	ms2->val2 = ((s64_t)g * SENSOR_G) % 1000000LL;
 }
 
 /**
@@ -433,9 +433,9 @@ static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
  *
  * @return The converted value, in degrees.
  */
-static inline int32_t sensor_rad_to_degrees(const struct sensor_value *rad)
+static inline s32_t sensor_rad_to_degrees(const struct sensor_value *rad)
 {
-	int64_t micro_rad_s = rad->val1 * 1000000LL + rad->val2;
+	s64_t micro_rad_s = rad->val1 * 1000000LL + rad->val2;
 
 	if (micro_rad_s > 0) {
 		return (micro_rad_s * 180LL + SENSOR_PI / 2) / SENSOR_PI;
@@ -450,10 +450,10 @@ static inline int32_t sensor_rad_to_degrees(const struct sensor_value *rad)
  * @param d The value (in degrees) to be converted.
  * @param rad A pointer to a sensor_value struct, where the result is stored.
  */
-static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
+static inline void sensor_degrees_to_rad(s32_t d, struct sensor_value *rad)
 {
-	rad->val1 = ((int64_t)d * SENSOR_PI / 180LL) / 1000000LL;
-	rad->val2 = ((int64_t)d * SENSOR_PI / 180LL) % 1000000LL;
+	rad->val1 = ((s64_t)d * SENSOR_PI / 180LL) / 1000000LL;
+	rad->val2 = ((s64_t)d * SENSOR_PI / 180LL) % 1000000LL;
 }
 
 /**

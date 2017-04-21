@@ -51,11 +51,11 @@
 
 /** setup packet definitions */
 struct usb_setup_packet {
-	uint8_t bmRequestType;  /**< characteristics of the specific request */
-	uint8_t bRequest;       /**< specific request */
-	uint16_t wValue;        /**< request specific parameter */
-	uint16_t wIndex;        /**< request specific parameter */
-	uint16_t wLength;       /**< length of data transferred in data phase */
+	u8_t bmRequestType;  /**< characteristics of the specific request */
+	u8_t bRequest;       /**< specific request */
+	u16_t wValue;        /**< request specific parameter */
+	u16_t wIndex;        /**< request specific parameter */
+	u16_t wLength;       /**< length of data transferred in data phase */
 };
 
 /**
@@ -66,7 +66,7 @@ typedef void (*usb_status_callback)(enum usb_dc_status_code status_code);
 /**
  * Callback function signature for the USB Endpoint status
  */
-typedef void (*usb_ep_callback)(uint8_t ep,
+typedef void (*usb_ep_callback)(u8_t ep,
 		enum usb_dc_ep_cb_status_code cb_status);
 
 /**
@@ -74,7 +74,7 @@ typedef void (*usb_ep_callback)(uint8_t ep,
  * interface number specified in the device descriptor table
  */
 typedef int (*usb_request_handler) (struct usb_setup_packet *detup,
-		int32_t *transfer_len, uint8_t **payload_data);
+		s32_t *transfer_len, u8_t **payload_data);
 
 /*
  * USB Endpoint Configuration
@@ -92,7 +92,7 @@ struct usb_ep_cfg_data {
 	 *   IN  EP = 0x80 | \<endpoint number\>
 	 *   OUT EP = 0x00 | \<endpoint number\>
 	 */
-	uint8_t ep_addr;
+	u8_t ep_addr;
 };
 
 /**
@@ -116,12 +116,12 @@ struct usb_interface_cfg_data {
 	 * command set. This data area may be used for USB IN or OUT
 	 * communications
 	 */
-	uint8_t *payload_data;
+	u8_t *payload_data;
 	/**
 	 * This data area, allocated by the application, is used to store
 	 * Vendor specific payload
 	 */
-	uint8_t *vendor_data;
+	u8_t *vendor_data;
 };
 
 /*
@@ -137,13 +137,13 @@ struct usb_cfg_data {
 	 * USB device description, see
 	 * http://www.beyondlogic.org/usbnutshell/usb5.shtml#DeviceDescriptors
 	 */
-	const uint8_t *usb_device_description;
+	const u8_t *usb_device_description;
 	/** Callback to be notified on USB connection status change */
 	usb_status_callback cb_usb_status;
 	/** USB interface (Class) handler and storage space */
 	struct usb_interface_cfg_data interface;
 	/** Number of individual endpoints in the device configuration */
-	uint8_t num_endpoints;
+	u8_t num_endpoints;
 	/**
 	 * Pointer to an array of endpoint structs of length equal to the
 	 * number of EP associated with the device description,
@@ -210,8 +210,8 @@ int usb_disable(void);
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len,
-		uint32_t *bytes_ret);
+int usb_write(u8_t ep, const u8_t *data, u32_t data_len,
+		u32_t *bytes_ret);
 
 /*
  * @brief read data from the specified endpoint
@@ -230,8 +230,8 @@ int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len,
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-		uint32_t *ret_bytes);
+int usb_read(u8_t ep, u8_t *data, u32_t max_data_len,
+		u32_t *ret_bytes);
 
 /*
  * @brief set STALL condition on the specified endpoint
@@ -244,7 +244,7 @@ int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len,
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_ep_set_stall(uint8_t ep);
+int usb_ep_set_stall(u8_t ep);
 
 
 /*
@@ -258,7 +258,7 @@ int usb_ep_set_stall(uint8_t ep);
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_ep_clear_stall(uint8_t ep);
+int usb_ep_clear_stall(u8_t ep);
 
 /**
  * @brief read data from the specified endpoint
@@ -278,8 +278,8 @@ int usb_ep_clear_stall(uint8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-		     uint32_t *read_bytes);
+int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
+		     u32_t *read_bytes);
 
 
 /**
@@ -295,6 +295,6 @@ int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_ep_read_continue(uint8_t ep);
+int usb_ep_read_continue(u8_t ep);
 
 #endif /* USB_DEVICE_H_ */

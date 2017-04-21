@@ -30,7 +30,7 @@ extern "C" {
 struct __esf {
 	/* XXX - not finished yet */
 	sys_define_gpr_with_alias(a1, sp);
-	uint32_t pc;
+	u32_t pc;
 };
 
 typedef struct __esf NANO_ESF;

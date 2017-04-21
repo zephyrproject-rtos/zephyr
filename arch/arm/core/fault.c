@@ -54,7 +54,7 @@
  */
 void _FaultDump(const NANO_ESF *esf, int fault)
 {
-	PR_EXC("Fault! EXC #%d, Thread: %p, instr @ 0x%" PRIx32 "\n",
+	PR_EXC("Fault! EXC #%d, Thread: %p, instr @ 0x%x\n",
 	       fault,
 	       k_current_get(),
 	       esf->pc);
@@ -70,18 +70,18 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 				  : "Bus fault on vector table read\n");
 	}
 
-	PR_EXC("MMFSR: 0x%" PRIx32 ", BFSR: 0x%" PRIx32 ", UFSR: 0x%"
-	       PRIx32 "\n", SCB_MMFSR, SCB_BFSR, SCB_MMFSR);
+	PR_EXC("MMFSR: 0x%x, BFSR: 0x%x, UFSR: 0x%x\n",
+	       SCB_MMFSR, SCB_BFSR, SCB_MMFSR);
 
 	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
-		PR_EXC("MMFAR: 0x%" PRIx32 "\n", SCB->MMFAR);
+		PR_EXC("MMFAR: 0x%x\n", SCB->MMFAR);
 		if (escalation) {
 			/* clear MMAR[VALID] to reset */
 			SCB->CFSR &= ~CFSR_MMARVALID_Msk;
 		}
 	}
 	if (SCB->CFSR & CFSR_BFARVALID_Msk) {
-		PR_EXC("BFAR: 0x%" PRIx32 "\n", SCB->BFAR);
+		PR_EXC("BFAR: 0x%x\n", SCB->BFAR);
 		if (escalation) {
 			/* clear CFSR_BFAR[VALID] to reset */
 			SCB->CFSR &= ~CFSR_BFARVALID_Msk;
@@ -108,7 +108,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 static void _FaultThreadShow(const NANO_ESF *esf)
 {
 	PR_EXC("  Executing thread ID (thread): %p\n"
-	       "  Faulting instruction address:  0x%" PRIx32 "\n",
+	       "  Faulting instruction address:  0x%x\n",
 	       k_current_get(), esf->pc);
 }
 
@@ -136,7 +136,7 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 	} else if (SCB->CFSR & CFSR_DACCVIOL_Msk) {
 		PR_EXC("  Data Access Violation\n");
 		if (SCB->CFSR & CFSR_MMARVALID_Msk) {
-			PR_EXC("  Address: 0x%" PRIx32 "\n", SCB->MMFAR);
+			PR_EXC("  Address: 0x%x\n", (u32_t)SCB->MMFAR);
 			if (fromHardFault) {
 				/* clear MMAR[VALID] to reset */
 				SCB->CFSR &= ~CFSR_MMARVALID_Msk;
@@ -168,7 +168,7 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 	} else if (SCB->CFSR & CFSR_PRECISERR_Msk) {
 		PR_EXC("  Precise data bus error\n");
 		if (SCB->CFSR & CFSR_BFARVALID_Msk) {
-			PR_EXC("  Address: 0x%" PRIx32 "\n", SCB->BFAR);
+			PR_EXC("  Address: 0x%x\n", (u32_t)SCB->BFAR);
 			if (fromHardFault) {
 				/* clear CFSR_BFAR[VALID] to reset */
 				SCB->CFSR &= ~CFSR_BFARVALID_Msk;

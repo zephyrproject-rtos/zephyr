@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-extern uint32_t sys_rand32_get(void);
+extern u32_t sys_rand32_get(void);
 
 #ifdef __cplusplus
 }

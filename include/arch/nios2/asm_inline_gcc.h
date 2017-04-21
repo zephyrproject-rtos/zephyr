@@ -32,7 +32,7 @@ extern "C" {
  * @return most significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
+static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
 {
 	if (!op)
 		return 0;
@@ -51,7 +51,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
  * @return least significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
+static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
 {
 	return __builtin_ffs(op);
 }
@@ -61,37 +61,37 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
  */
 
 static ALWAYS_INLINE
-	void sys_write32(uint32_t data, mm_reg_t addr)
+	void sys_write32(u32_t data, mm_reg_t addr)
 {
 	__builtin_stwio((void *)addr, data);
 }
 
 static ALWAYS_INLINE
-	uint32_t sys_read32(mm_reg_t addr)
+	u32_t sys_read32(mm_reg_t addr)
 {
 	return __builtin_ldwio((void *)addr);
 }
 
 static ALWAYS_INLINE
-	void sys_write8(uint8_t data, mm_reg_t addr)
+	void sys_write8(u8_t data, mm_reg_t addr)
 {
 	sys_write32(data, addr);
 }
 
 static ALWAYS_INLINE
-	uint8_t sys_read8(mm_reg_t addr)
+	u8_t sys_read8(mm_reg_t addr)
 {
 	return __builtin_ldbuio((void *)addr);
 }
 
 static ALWAYS_INLINE
-	void sys_write16(uint16_t data, mm_reg_t addr)
+	void sys_write16(u16_t data, mm_reg_t addr)
 {
 	sys_write32(data, addr);
 }
 
 static ALWAYS_INLINE
-	uint16_t sys_read16(mm_reg_t addr)
+	u16_t sys_read16(mm_reg_t addr)
 {
 	return __builtin_ldhuio((void *)addr);
 }

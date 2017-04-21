@@ -17,12 +17,12 @@ extern void _remove_thread_from_ready_q(struct k_thread *thread);
 extern void _reschedule_threads(int key);
 extern void k_sched_unlock(void);
 extern void _pend_thread(struct k_thread *thread,
-			 _wait_q_t *wait_q, int32_t timeout);
-extern void _pend_current_thread(_wait_q_t *wait_q, int32_t timeout);
+			 _wait_q_t *wait_q, s32_t timeout);
+extern void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 extern int __must_switch_threads(void);
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-extern int32_t _ms_to_ticks(int32_t ms);
+extern s32_t _ms_to_ticks(s32_t ms);
 #endif
 extern void idle(void *, void *, void *);
 
@@ -191,7 +191,7 @@ static inline int _get_ready_q_q_index(int prio)
 static inline int _get_highest_ready_prio(void)
 {
 	int bitmap = 0;
-	uint32_t ready_range;
+	u32_t ready_range;
 
 #if (K_NUM_PRIORITIES <= 32)
 	ready_range = _ready_q.prio_bmap[0];
@@ -264,18 +264,18 @@ static ALWAYS_INLINE void _sched_unlock_no_reschedule(void)
 #endif
 }
 
-static inline void _set_thread_states(struct k_thread *thread, uint32_t states)
+static inline void _set_thread_states(struct k_thread *thread, u32_t states)
 {
 	thread->base.thread_state |= states;
 }
 
 static inline void _reset_thread_states(struct k_thread *thread,
-					uint32_t states)
+					u32_t states)
 {
 	thread->base.thread_state &= ~states;
 }
 
-static inline int _is_thread_state_set(struct k_thread *thread, uint32_t state)
+static inline int _is_thread_state_set(struct k_thread *thread, u32_t state)
 {
 	return !!(thread->base.thread_state & state);
 }
@@ -318,7 +318,7 @@ static inline int _has_thread_started(struct k_thread *thread)
 
 static inline int _is_thread_prevented_from_running(struct k_thread *thread)
 {
-	uint8_t state = thread->base.thread_state;
+	u8_t state = thread->base.thread_state;
 
 	return state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
 			_THREAD_DUMMY | _THREAD_SUSPENDED);

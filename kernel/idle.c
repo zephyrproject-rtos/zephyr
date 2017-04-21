@@ -17,7 +17,7 @@
  * Idle time must be this value or higher for timer to go into tickless idle
  * state.
  */
-int32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
+s32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -46,7 +46,7 @@ void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
  *
  * @return N/A
  */
-static void set_kernel_idle_time_in_ticks(int32_t ticks)
+static void set_kernel_idle_time_in_ticks(s32_t ticks)
 {
 	_kernel.idle = ticks;
 }
@@ -54,7 +54,7 @@ static void set_kernel_idle_time_in_ticks(int32_t ticks)
 #define set_kernel_idle_time_in_ticks(x) do { } while (0)
 #endif
 
-static void _sys_power_save_idle(int32_t ticks __unused)
+static void _sys_power_save_idle(s32_t ticks __unused)
 {
 #if defined(CONFIG_TICKLESS_IDLE)
 	if ((ticks == K_FOREVER) || ticks >= _sys_idle_threshold_ticks) {
@@ -95,7 +95,7 @@ static void _sys_power_save_idle(int32_t ticks __unused)
 #endif
 }
 
-void _sys_power_save_idle_exit(int32_t ticks)
+void _sys_power_save_idle_exit(s32_t ticks)
 {
 #if defined(CONFIG_SYS_POWER_LOW_POWER_STATE)
 	/* Some CPU low power states require notification at the ISR
@@ -135,7 +135,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */
 
-	extern uint64_t __idle_tsc;
+	extern u64_t __idle_tsc;
 
 	__idle_tsc = _tsc_read();
 #endif

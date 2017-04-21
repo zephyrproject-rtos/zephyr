@@ -82,7 +82,7 @@ int _arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	/* Hardware priority levels 0 and 1 reserved for Kernel use.
 	 * So we add 2 to the requested priority level. If we support

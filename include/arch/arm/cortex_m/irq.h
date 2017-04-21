@@ -43,7 +43,7 @@ extern void _IntExit(void);
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void _irq_priority_set(unsigned int irq, unsigned int prio,
-			      uint32_t flags);
+			      u32_t flags);
 
 
 /* Flags for use with IRQ_CONNECT() */

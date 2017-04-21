@@ -34,18 +34,18 @@ extern "C" {
  */
 struct adc_seq_entry {
 	/** Clock ticks delay before sampling the ADC. */
-	int32_t sampling_delay;
+	s32_t sampling_delay;
 
 	/** Buffer pointer where the sample is written.*/
-	uint8_t *buffer;
+	u8_t *buffer;
 
 	/** Length of the sampling buffer.*/
-	uint32_t buffer_length;
+	u32_t buffer_length;
 
 	/** Channel ID that should be sampled from the ADC */
-	uint8_t channel_id;
+	u8_t channel_id;
 
-	uint8_t stride[3];
+	u8_t stride[3];
 };
 
 /**
@@ -59,8 +59,8 @@ struct adc_seq_table {
 	struct adc_seq_entry *entries;
 
 	/* Number of entries in the sequence entry array. */
-	uint8_t num_entries;
-	uint8_t stride[3];
+	u8_t num_entries;
+	u8_t stride[3];
 };
 
 /**

@@ -25,9 +25,9 @@ extern "C" {
 /* Helper to pass a int as a pointer or vice-versa.
  * Those are available for 32 bits architectures:
  */
-#define POINTER_TO_UINT(x) ((uint32_t) (x))
+#define POINTER_TO_UINT(x) ((u32_t) (x))
 #define UINT_TO_POINTER(x) ((void *) (x))
-#define POINTER_TO_INT(x)  ((int32_t) (x))
+#define POINTER_TO_INT(x)  ((s32_t) (x))
 #define INT_TO_POINTER(x)  ((void *) (x))
 
 /* Evaluates to 0 if cond is true-ish; compile error otherwise */
@@ -85,9 +85,9 @@ static inline int is_power_of_two(unsigned int x)
 	return (x != 0) && !(x & (x - 1));
 }
 
-static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
+static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 {
-	int64_t sign_ext;
+	s64_t sign_ext;
 
 	if (shift == 0) {
 		return value;

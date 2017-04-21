@@ -60,22 +60,22 @@ extern "C"
  */
 
 /* ET (Exception Temporary) register */ 
-static inline uint32_t _nios2_read_et(void)
+static inline u32_t _nios2_read_et(void)
 {
-	uint32_t et;
+	u32_t et;
 
 	__asm__("mov %0, et" : "=r" (et));
 	return et;
 }
 
-static inline void _nios2_write_et(uint32_t et)
+static inline void _nios2_write_et(u32_t et)
 {
 	__asm__ volatile("mov et, %z0" : : "rM" (et));
 }
 
-static inline uint32_t _nios2_read_sp(void)
+static inline u32_t _nios2_read_sp(void)
 {
-	uint32_t sp;
+	u32_t sp;
 
 	__asm__("mov %0, sp" : "=r" (sp));
 	return sp;
@@ -102,12 +102,12 @@ static inline void _nios2_dcache_addr_flush(void *addr)
 	__asm__ volatile ("flushda (%0)" :: "r" (addr));
 }
 
-static inline void _nios2_dcache_flush(uint32_t offset)
+static inline void _nios2_dcache_flush(u32_t offset)
 {
 	__asm__ volatile ("flushd (%0)" :: "r" (offset));
 }
 
-static inline void _nios2_icache_flush(uint32_t offset)
+static inline void _nios2_icache_flush(u32_t offset)
 {
 	__asm__ volatile ("flushi %0" :: "r" (offset));
 }
@@ -145,7 +145,7 @@ enum nios2_creg {
  * we get errors "Control register number must be in range 0-31 for
  * __builtin_rdctl" with the following code:
  *
- * static inline uint32_t _nios2_creg_read(enum nios2_creg reg)
+ * static inline u32_t _nios2_creg_read(enum nios2_creg reg)
  * {
  *          return __builtin_rdctl(reg);
  * }
@@ -156,14 +156,14 @@ enum nios2_creg {
 #define _nios2_creg_write(reg, val) __builtin_wrctl(reg, val)
 
 #define _nios2_get_register_address(base, regnum) \
-	((void *)(((uint8_t *)base) + ((regnum) * (SYSTEM_BUS_WIDTH / 8))))
+	((void *)(((u8_t *)base) + ((regnum) * (SYSTEM_BUS_WIDTH / 8))))
 
-static inline void _nios2_reg_write(void *base, int regnum, uint32_t data)
+static inline void _nios2_reg_write(void *base, int regnum, u32_t data)
 {
 	sys_write32(data, (mm_reg_t)_nios2_get_register_address(base, regnum));
 }
 
-static inline uint32_t _nios2_reg_read(void *base, int regnum)
+static inline u32_t _nios2_reg_read(void *base, int regnum)
 {
 	return sys_read32((mm_reg_t)_nios2_get_register_address(base, regnum));
 }

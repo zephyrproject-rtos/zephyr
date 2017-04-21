@@ -29,7 +29,7 @@ extern "C" {
  *
  *  @return Buffer to be used on next receive.
  */
-typedef uint8_t *(*uart_pipe_recv_cb)(uint8_t *buf, size_t *off);
+typedef u8_t *(*uart_pipe_recv_cb)(u8_t *buf, size_t *off);
 
 /** @brief Register UART application.
  *
@@ -39,7 +39,7 @@ typedef uint8_t *(*uart_pipe_recv_cb)(uint8_t *buf, size_t *off);
  *  @param len Size of buffer.
  *  @param cb Callback to be called on data reception.
  */
-void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb);
+void uart_pipe_register(u8_t *buf, size_t len, uart_pipe_recv_cb cb);
 
 /** @brief Send data over UART.
  *
@@ -50,7 +50,7 @@ void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb);
  *
  *  @return 0 on success or negative error
  */
-int uart_pipe_send(const uint8_t *data, int len);
+int uart_pipe_send(const u8_t *data, int len);
 
 #ifdef __cplusplus
 }

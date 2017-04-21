@@ -28,8 +28,8 @@
  *
  * @return The computed CRC16 value
  */
-uint16_t crc16(const uint8_t *src, size_t len, uint16_t polynomial,
-	       uint16_t initial_value);
+u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
+	       u16_t initial_value);
 
 /**
  * @brief Compute CCITT variant of CRC 16
@@ -42,7 +42,7 @@ uint16_t crc16(const uint8_t *src, size_t len, uint16_t polynomial,
  *
  * @return The computed CRC16 value
  */
-static inline uint16_t crc16_ccitt(const uint8_t *src, size_t len)
+static inline u16_t crc16_ccitt(const u8_t *src, size_t len)
 {
 	return crc16(src, len, 0x1021, 0xffff);
 }
@@ -58,7 +58,7 @@ static inline uint16_t crc16_ccitt(const uint8_t *src, size_t len)
  *
  * @return The computed CRC16 value
  */
-static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
+static inline u16_t crc16_ansi(const u8_t *src, size_t len)
 {
 	return crc16(src, len, 0x8005, 0xffff);
 }

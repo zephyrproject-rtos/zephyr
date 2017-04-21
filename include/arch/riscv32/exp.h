@@ -23,38 +23,38 @@ extern "C" {
 #include <toolchain.h>
 
 struct __esf {
-	uint32_t ra;       /* return address */
-	uint32_t gp;       /* global pointer */
-	uint32_t tp;       /* thread pointer */
+	u32_t ra;       /* return address */
+	u32_t gp;       /* global pointer */
+	u32_t tp;       /* thread pointer */
 
-	uint32_t t0;       /* Caller-saved temporary register */
-	uint32_t t1;       /* Caller-saved temporary register */
-	uint32_t t2;       /* Caller-saved temporary register */
-	uint32_t t3;       /* Caller-saved temporary register */
-	uint32_t t4;       /* Caller-saved temporary register */
-	uint32_t t5;       /* Caller-saved temporary register */
-	uint32_t t6;       /* Caller-saved temporary register */
+	u32_t t0;       /* Caller-saved temporary register */
+	u32_t t1;       /* Caller-saved temporary register */
+	u32_t t2;       /* Caller-saved temporary register */
+	u32_t t3;       /* Caller-saved temporary register */
+	u32_t t4;       /* Caller-saved temporary register */
+	u32_t t5;       /* Caller-saved temporary register */
+	u32_t t6;       /* Caller-saved temporary register */
 
-	uint32_t a0;       /* function argument/return value */
-	uint32_t a1;       /* function argument */
-	uint32_t a2;       /* function argument */
-	uint32_t a3;       /* function argument */
-	uint32_t a4;       /* function argument */
-	uint32_t a5;       /* function argument */
-	uint32_t a6;       /* function argument */
-	uint32_t a7;       /* function argument */
+	u32_t a0;       /* function argument/return value */
+	u32_t a1;       /* function argument */
+	u32_t a2;       /* function argument */
+	u32_t a3;       /* function argument */
+	u32_t a4;       /* function argument */
+	u32_t a5;       /* function argument */
+	u32_t a6;       /* function argument */
+	u32_t a7;       /* function argument */
 
-	uint32_t mepc;      /* machine exception program counter */
-	uint32_t mstatus;   /* machine status register */
+	u32_t mepc;      /* machine exception program counter */
+	u32_t mstatus;   /* machine status register */
 
 #if defined(CONFIG_SOC_RISCV32_PULPINO)
 	/* pulpino hardware loop registers */
-	uint32_t lpstart0;
-	uint32_t lpend0;
-	uint32_t lpcount0;
-	uint32_t lpstart1;
-	uint32_t lpend1;
-	uint32_t lpcount1;
+	u32_t lpstart0;
+	u32_t lpend0;
+	u32_t lpcount0;
+	u32_t lpstart1;
+	u32_t lpend1;
+	u32_t lpcount1;
 #endif
 };
 

@@ -184,7 +184,7 @@ static u32_t clk_div_calc(struct device *dev)
 #endif /* CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 84000000 */
 }
 
-static int i2c_sam3_runtime_configure(struct device *dev, uint32_t config)
+static int i2c_sam3_runtime_configure(struct device *dev, u32_t config)
 {
 	const struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;

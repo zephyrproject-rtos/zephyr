@@ -50,11 +50,11 @@ enum clk_rtc_div {
 
 
 struct rtc_config {
-	uint32_t init_val;
+	u32_t init_val;
 	/*!< enable/disable alarm  */
-	uint8_t alarm_enable;
+	u8_t alarm_enable;
 	/*!< initial configuration value for the 32bit RTC alarm value  */
-	uint32_t alarm_val;
+	u32_t alarm_val;
 	/*!< Pointer to function to call when alarm value
 	 * matches current RTC value */
 	void (*cb_fn)(struct device *dev);
@@ -65,9 +65,9 @@ typedef void (*rtc_api_disable)(struct device *dev);
 typedef int (*rtc_api_set_config)(struct device *dev,
 				  struct rtc_config *config);
 typedef int (*rtc_api_set_alarm)(struct device *dev,
-				 const uint32_t alarm_val);
-typedef uint32_t (*rtc_api_read)(struct device *dev);
-typedef uint32_t (*rtc_api_get_pending_int)(struct device *dev);
+				 const u32_t alarm_val);
+typedef u32_t (*rtc_api_read)(struct device *dev);
+typedef u32_t (*rtc_api_get_pending_int)(struct device *dev);
 
 struct rtc_driver_api {
 	rtc_api_enable enable;
@@ -78,7 +78,7 @@ struct rtc_driver_api {
 	rtc_api_get_pending_int get_pending_int;
 };
 
-static inline uint32_t rtc_read(struct device *dev)
+static inline u32_t rtc_read(struct device *dev)
 {
 	const struct rtc_driver_api *api = dev->driver_api;
 
@@ -109,7 +109,7 @@ static inline int rtc_set_config(struct device *dev,
 }
 
 static inline int rtc_set_alarm(struct device *dev,
-				const uint32_t alarm_val)
+				const u32_t alarm_val)
 {
 	const struct rtc_driver_api *api = dev->driver_api;
 

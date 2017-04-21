@@ -34,7 +34,7 @@ struct arm_clock_control_t {
 	/* Clock can be configured for 3 states: Active, Sleep, Deep Sleep */
 	enum arm_soc_state_t state;
 	/* Identifies the device on the bus */
-	uint32_t device;
+	u32_t device;
 };
 
 #endif /* _ARM_CLOCK_CONTROL_H_ */

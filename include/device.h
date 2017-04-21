@@ -274,7 +274,7 @@ struct device_config {
 	char	*name;
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	int (*device_pm_control)(struct device *device, uint32_t command,
+	int (*device_pm_control)(struct device *device, u32_t command,
 			      void *context);
 #endif
 	const void *config_info;
@@ -353,7 +353,7 @@ void device_busy_clear(struct device *busy_dev);
  * @retval 0 Always returns 0
  */
 int device_pm_control_nop(struct device *unused_device,
-		       uint32_t unused_ctrl_command, void *unused_context);
+		       u32_t unused_ctrl_command, void *unused_context);
 /**
  * @brief Call the set power state function of a device
  *
@@ -367,7 +367,7 @@ int device_pm_control_nop(struct device *unused_device,
  * @retval Errno Negative errno code if failure.
  */
 static inline int device_set_power_state(struct device *device,
-					 uint32_t device_power_state)
+					 u32_t device_power_state)
 {
 	return device->config->device_pm_control(device,
 			DEVICE_PM_SET_POWER_STATE, &device_power_state);
@@ -387,7 +387,7 @@ static inline int device_set_power_state(struct device *device,
  * @retval Errno Negative errno code if failure.
  */
 static inline int device_get_power_state(struct device *device,
-					 uint32_t *device_power_state)
+					 u32_t *device_power_state)
 {
 	return device->config->device_pm_control(device,
 				DEVICE_PM_GET_POWER_STATE, device_power_state);

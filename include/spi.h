@@ -62,8 +62,8 @@ extern "C" {
  * spi controller.
  */
 struct spi_config {
-	uint32_t	config;
-	uint32_t	max_sys_freq;
+	u32_t	config;
+	u32_t	max_sys_freq;
 };
 
 /**
@@ -78,15 +78,15 @@ typedef int (*spi_api_configure)(struct device *dev,
  * @brief Callback API upon selecting a slave
  * See spi_slave_select() for argument description
  */
-typedef int (*spi_api_slave_select)(struct device *dev, uint32_t slave);
+typedef int (*spi_api_slave_select)(struct device *dev, u32_t slave);
 /**
  * @typedef spi_api_io
  * @brief Callback API for I/O
  * See spi_read() and spi_write() for argument descriptions
  */
 typedef int (*spi_api_io)(struct device *dev,
-			  const void *tx_buf, uint32_t tx_buf_len,
-			  void *rx_buf, uint32_t rx_buf_len);
+			  const void *tx_buf, u32_t tx_buf_len,
+			  void *rx_buf, u32_t rx_buf_len);
 
 struct spi_driver_api {
 	spi_api_configure configure;
@@ -125,7 +125,7 @@ static inline int spi_configure(struct device *dev,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int spi_slave_select(struct device *dev, uint32_t slave)
+static inline int spi_slave_select(struct device *dev, u32_t slave)
 {
 	const struct spi_driver_api *api = dev->driver_api;
 
@@ -145,7 +145,7 @@ static inline int spi_slave_select(struct device *dev, uint32_t slave)
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int spi_read(struct device *dev, void *buf, uint32_t len)
+static inline int spi_read(struct device *dev, void *buf, u32_t len)
 {
 	const struct spi_driver_api *api = dev->driver_api;
 
@@ -161,7 +161,7 @@ static inline int spi_read(struct device *dev, void *buf, uint32_t len)
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int spi_write(struct device *dev, const void *buf, uint32_t len)
+static inline int spi_write(struct device *dev, const void *buf, u32_t len)
 {
 	const struct spi_driver_api *api = dev->driver_api;
 
@@ -184,8 +184,8 @@ static inline int spi_write(struct device *dev, const void *buf, uint32_t len)
  * @retval Negative errno code if failure.
  */
 static inline int spi_transceive(struct device *dev,
-			  const void *tx_buf, uint32_t tx_buf_len,
-			  void *rx_buf, uint32_t rx_buf_len)
+			  const void *tx_buf, u32_t tx_buf_len,
+			  void *rx_buf, u32_t rx_buf_len)
 {
 	const struct spi_driver_api *api = dev->driver_api;
 

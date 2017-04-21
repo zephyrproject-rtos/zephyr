@@ -72,8 +72,8 @@ int disk_access_status(void);
  *
  * @return 0 on success, negative errno code on fail
  */
-int disk_access_read(uint8_t *data_buf, uint32_t start_sector,
-		     uint32_t num_sector);
+int disk_access_read(u8_t *data_buf, u32_t start_sector,
+		     u32_t num_sector);
 
 /*
  * @brief write data to disk
@@ -86,8 +86,8 @@ int disk_access_read(uint8_t *data_buf, uint32_t start_sector,
  *
  * @return 0 on success, negative errno code on fail
  */
-int disk_access_write(const uint8_t *data_buf, uint32_t start_sector,
-		      uint32_t num_sector);
+int disk_access_write(const u8_t *data_buf, u32_t start_sector,
+		      u32_t num_sector);
 
 /*
  * @brief Get/Configure disk parameters
@@ -98,7 +98,7 @@ int disk_access_write(const uint8_t *data_buf, uint32_t start_sector,
  *
  * @return 0 on success, negative errno code on fail
  */
-int disk_access_ioctl(uint8_t cmd, void *buff);
+int disk_access_ioctl(u8_t cmd, void *buff);
 
 
 #ifdef __cplusplus

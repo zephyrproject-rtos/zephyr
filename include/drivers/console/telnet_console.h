@@ -28,7 +28,7 @@ extern "C" {
  *  @return N/A
  */
 void telnet_register_input(struct k_fifo *avail, struct k_fifo *lines,
-			   uint8_t (*completion)(char *str, uint8_t len));
+			   u8_t (*completion)(char *str, u8_t len));
 
 #ifdef __cplusplus
 }

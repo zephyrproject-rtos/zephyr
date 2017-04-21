@@ -33,8 +33,8 @@ extern "C" {
  * See random_get_entropy() for argument description
  */
 typedef int (*random_get_entropy_t)(struct device *dev,
-				    uint8_t *buffer,
-				    uint16_t length);
+				    u8_t *buffer,
+				    u16_t length);
 
 struct random_driver_api {
 	random_get_entropy_t get_entropy;
@@ -52,8 +52,8 @@ struct random_driver_api {
  * @retval -ERRNO errno code on error.
  */
 static inline int random_get_entropy(struct device *dev,
-				     uint8_t *buffer,
-				     uint16_t length)
+				     u8_t *buffer,
+				     u16_t length)
 {
 	const struct random_driver_api *api = dev->driver_api;
 

@@ -86,23 +86,23 @@ extern "C" {
  */
 struct i2c_msg {
 	/** Data buffer in bytes */
-	uint8_t		*buf;
+	u8_t		*buf;
 
 	/** Length of buffer in bytes */
-	uint32_t	len;
+	u32_t	len;
 
 	/** Flags for this message */
-	uint8_t		flags;
+	u8_t		flags;
 };
 
 union dev_config {
-	uint32_t raw;
+	u32_t raw;
 	struct __bits {
-		uint32_t        use_10_bit_addr : 1;
-		uint32_t        speed : 3;
-		uint32_t        is_master_device : 1;
-		uint32_t        is_slave_read : 1;
-		uint32_t        reserved : 26;
+		u32_t        use_10_bit_addr : 1;
+		u32_t        speed : 3;
+		u32_t        is_master_device : 1;
+		u32_t        is_slave_read : 1;
+		u32_t        reserved : 26;
 	} bits;
 };
 
@@ -113,11 +113,11 @@ union dev_config {
  * public documentation.
  */
 typedef int (*i2c_api_configure_t)(struct device *dev,
-				   uint32_t dev_config);
+				   u32_t dev_config);
 typedef int (*i2c_api_full_io_t)(struct device *dev,
 				 struct i2c_msg *msgs,
-				 uint8_t num_msgs,
-				 uint16_t addr);
+				 u8_t num_msgs,
+				 u16_t addr);
 
 struct i2c_driver_api {
 	i2c_api_configure_t configure;
@@ -137,7 +137,7 @@ struct i2c_driver_api {
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
  */
-static inline int i2c_configure(struct device *dev, uint32_t dev_config)
+static inline int i2c_configure(struct device *dev, u32_t dev_config)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 
@@ -157,8 +157,8 @@ static inline int i2c_configure(struct device *dev, uint32_t dev_config)
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_write(struct device *dev, uint8_t *buf,
-			    uint32_t num_bytes, uint16_t addr)
+static inline int i2c_write(struct device *dev, u8_t *buf,
+			    u32_t num_bytes, u16_t addr)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg;
@@ -183,8 +183,8 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_read(struct device *dev, uint8_t *buf,
-			   uint32_t num_bytes, uint16_t addr)
+static inline int i2c_read(struct device *dev, u8_t *buf,
+			   u32_t num_bytes, u16_t addr)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg;
@@ -215,8 +215,8 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
  * @retval -EIO General input / output error.
  */
 static inline int i2c_transfer(struct device *dev,
-			       struct i2c_msg *msgs, uint8_t num_msgs,
-			       uint16_t addr)
+			       struct i2c_msg *msgs, u8_t num_msgs,
+			       u16_t addr)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 
@@ -238,9 +238,9 @@ static inline int i2c_transfer(struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_burst_read(struct device *dev, uint16_t dev_addr,
-				 uint8_t start_addr, uint8_t *buf,
-				 uint8_t num_bytes)
+static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
+				 u8_t start_addr, u8_t *buf,
+				 u8_t num_bytes)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
@@ -271,9 +271,9 @@ static inline int i2c_burst_read(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_burst_write(struct device *dev, uint16_t dev_addr,
-				  uint8_t start_addr, uint8_t *buf,
-				  uint8_t num_bytes)
+static inline int i2c_burst_write(struct device *dev, u16_t dev_addr,
+				  u8_t start_addr, u8_t *buf,
+				  u8_t num_bytes)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
@@ -303,8 +303,8 @@ static inline int i2c_burst_write(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_read_byte(struct device *dev, uint16_t dev_addr,
-				    uint8_t reg_addr, uint8_t *value)
+static inline int i2c_reg_read_byte(struct device *dev, u16_t dev_addr,
+				    u8_t reg_addr, u8_t *value)
 {
 	return i2c_burst_read(dev, dev_addr, reg_addr, value, 1);
 }
@@ -323,10 +323,10 @@ static inline int i2c_reg_read_byte(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_write_byte(struct device *dev, uint16_t dev_addr,
-				     uint8_t reg_addr, uint8_t value)
+static inline int i2c_reg_write_byte(struct device *dev, u16_t dev_addr,
+				     u8_t reg_addr, u8_t value)
 {
-	uint8_t tx_buf[2] = {reg_addr, value};
+	u8_t tx_buf[2] = {reg_addr, value};
 
 	return i2c_write(dev, tx_buf, 2, dev_addr);
 }
@@ -346,11 +346,11 @@ static inline int i2c_reg_write_byte(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
-				      uint8_t reg_addr, uint8_t mask,
-				      uint8_t value)
+static inline int i2c_reg_update_byte(struct device *dev, u8_t dev_addr,
+				      u8_t reg_addr, u8_t mask,
+				      u8_t value)
 {
-	uint8_t old_value, new_value;
+	u8_t old_value, new_value;
 	int rc;
 
 	rc = i2c_reg_read_byte(dev, dev_addr, reg_addr, &old_value);
@@ -381,12 +381,12 @@ static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_read16(struct device *dev, uint16_t dev_addr,
-				   uint16_t start_addr, uint8_t *buf,
-				   uint8_t num_bytes)
+static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
+				   u16_t start_addr, u8_t *buf,
+				   u8_t num_bytes)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
-	uint8_t addr_buffer[2];
+	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
 	addr_buffer[1] = start_addr & 0xFF;
@@ -417,12 +417,12 @@ static inline int i2c_burst_read16(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_write16(struct device *dev, uint16_t dev_addr,
-				    uint16_t start_addr, uint8_t *buf,
-				    uint8_t num_bytes)
+static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
+				    u16_t start_addr, u8_t *buf,
+				    u8_t num_bytes)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
-	uint8_t addr_buffer[2];
+	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
 	addr_buffer[1] = start_addr & 0xFF;
@@ -452,8 +452,8 @@ static inline int i2c_burst_write16(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_read16(struct device *dev, uint16_t dev_addr,
-				 uint16_t reg_addr, uint8_t *value)
+static inline int i2c_reg_read16(struct device *dev, u16_t dev_addr,
+				 u16_t reg_addr, u8_t *value)
 {
 	return i2c_burst_read16(dev, dev_addr, reg_addr, value, 1);
 }
@@ -472,8 +472,8 @@ static inline int i2c_reg_read16(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_write16(struct device *dev, uint16_t dev_addr,
-				  uint16_t reg_addr, uint8_t value)
+static inline int i2c_reg_write16(struct device *dev, u16_t dev_addr,
+				  u16_t reg_addr, u8_t value)
 {
 	return i2c_burst_write16(dev, dev_addr, reg_addr, &value, 1);
 }
@@ -493,11 +493,11 @@ static inline int i2c_reg_write16(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_update16(struct device *dev, uint16_t dev_addr,
-				   uint16_t reg_addr, uint8_t mask,
-				   uint8_t value)
+static inline int i2c_reg_update16(struct device *dev, u16_t dev_addr,
+				   u16_t reg_addr, u8_t mask,
+				   u8_t value)
 {
-	uint8_t old_value, new_value;
+	u8_t old_value, new_value;
 	int rc;
 
 	rc = i2c_reg_read16(dev, dev_addr, reg_addr, &old_value);
@@ -531,10 +531,10 @@ static inline int i2c_reg_update16(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_read_addr(struct device *dev, uint16_t dev_addr,
-				      uint8_t *start_addr,
-				      const uint8_t addr_size,
-				      uint8_t *buf, uint8_t num_bytes)
+static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
+				      u8_t *start_addr,
+				      const u8_t addr_size,
+				      u8_t *buf, u8_t num_bytes)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
@@ -567,10 +567,10 @@ static inline int i2c_burst_read_addr(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_write_addr(struct device *dev, uint16_t dev_addr,
-				       uint8_t *start_addr,
-				       const uint8_t addr_size,
-				       uint8_t *buf, uint8_t num_bytes)
+static inline int i2c_burst_write_addr(struct device *dev, u16_t dev_addr,
+				       u8_t *start_addr,
+				       const u8_t addr_size,
+				       u8_t *buf, u8_t num_bytes)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
@@ -604,10 +604,10 @@ static inline int i2c_burst_write_addr(struct device *dev, uint16_t dev_addr,
  * @retval Negative errno code if failure.
  */
 static inline int i2c_reg_read_addr(struct device *dev,
-				    uint16_t dev_addr,
-				    uint8_t *reg_addr,
-				    const uint8_t addr_size,
-				    uint8_t *value)
+				    u16_t dev_addr,
+				    u8_t *reg_addr,
+				    const u8_t addr_size,
+				    u8_t *value)
 {
 	return i2c_burst_read_addr(dev, dev_addr, reg_addr,
 				   addr_size, value, 1);
@@ -631,10 +631,10 @@ static inline int i2c_reg_read_addr(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int i2c_reg_write_addr(struct device *dev,
-				     uint16_t dev_addr,
-				     uint8_t *reg_addr,
-				     const uint8_t addr_size,
-				     uint8_t value)
+				     u16_t dev_addr,
+				     u8_t *reg_addr,
+				     const u8_t addr_size,
+				     u8_t value)
 {
 	return i2c_burst_write_addr(dev, dev_addr, reg_addr,
 				    addr_size, &value, 1);
@@ -659,13 +659,13 @@ static inline int i2c_reg_write_addr(struct device *dev,
  * @retval Negative errno code if failure.
  */
 static inline int i2c_reg_update_addr(struct device *dev,
-				      uint16_t dev_addr,
-				      uint8_t *reg_addr,
-				      uint8_t addr_size,
-				      uint8_t mask,
-				      uint8_t value)
+				      u16_t dev_addr,
+				      u8_t *reg_addr,
+				      u8_t addr_size,
+				      u8_t mask,
+				      u8_t value)
 {
-	uint8_t old_value, new_value;
+	u8_t old_value, new_value;
 	int rc;
 
 	rc = i2c_reg_read_addr(dev, dev_addr, reg_addr,
@@ -685,7 +685,7 @@ static inline int i2c_reg_update_addr(struct device *dev,
 
 struct i2c_client_config {
 	char *i2c_master;
-	uint16_t i2c_addr;
+	u16_t i2c_addr;
 };
 
 #define I2C_DECLARE_CLIENT_CONFIG	struct i2c_client_config i2c_client

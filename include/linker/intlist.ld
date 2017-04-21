@@ -12,8 +12,8 @@
  * struct {
  *	void *spurious_irq_handler;
  *	void *sw_irq_handler;
- *	uint32_t num_isrs;
- *	uint32_t num_vectors;
+ *	u32_t num_isrs;
+ *	u32_t num_vectors;
  *	struct _isr_list isrs[];  <- of size num_isrs
  * }
  *

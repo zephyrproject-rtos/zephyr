@@ -51,7 +51,7 @@ extern "C" {
  * SOC-specific function to get the IRQ number generating the interrupt.
  * __soc_get_irq returns a bitfield of pending IRQs.
  */
-extern uint32_t __soc_get_irq(void);
+extern u32_t __soc_get_irq(void);
 
 void _arch_irq_enable(unsigned int irq);
 void _arch_irq_disable(unsigned int irq);
@@ -118,7 +118,7 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 			  : "memory");
 }
 
-extern uint32_t _timer_cycle_get_32(void);
+extern u32_t _timer_cycle_get_32(void);
 #define _arch_k_cycle_get_32()	_timer_cycle_get_32()
 
 #endif /*_ASMLANGUAGE */

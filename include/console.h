@@ -34,7 +34,7 @@ void console_getchar_init(void);
  *
  *  @return A character read, including control characters.
  */
-uint8_t console_getchar(void);
+u8_t console_getchar(void);
 
 /** @brief Initialize console_getline() call.
  *

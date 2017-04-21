@@ -29,7 +29,7 @@ struct k_mem_slab *_trace_list_k_mem_slab;
  */
 static void create_free_list(struct k_mem_slab *slab)
 {
-	uint32_t j;
+	u32_t j;
 	char *p;
 
 	slab->free_list = NULL;
@@ -68,7 +68,7 @@ SYS_INIT(init_mem_slab_module, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
-		    size_t block_size, uint32_t num_blocks)
+		    size_t block_size, u32_t num_blocks)
 {
 	slab->num_blocks = num_blocks;
 	slab->block_size = block_size;
@@ -79,7 +79,7 @@ void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
 }
 
-int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, int32_t timeout)
+int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 {
 	unsigned int key = irq_lock();
 	int result;

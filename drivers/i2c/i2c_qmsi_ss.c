@@ -219,7 +219,7 @@ static void i2c_qmsi_ss_config_irq_1(void)
 }
 #endif /* CONFIG_I2C_SS_1 */
 
-static int i2c_qmsi_ss_configure(struct device *dev, uint32_t config)
+static int i2c_qmsi_ss_configure(struct device *dev, u32_t config)
 {
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);

@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 /* ARM GPRs are often designated by two different names */
-#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
+#define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
 /* APIs need to support non-byte addressable architectures */
 

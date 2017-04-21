@@ -91,16 +91,12 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	}
 
 	PRINTK("Current thread ID = %p\n"
-	       "Faulting instruction address = 0x%" PRIx32 "\n"
-	       "  ra: 0x%" PRIx32 "  gp: 0x%" PRIx32
-	       "  tp: 0x%" PRIx32 "  t0: 0x%" PRIx32 "\n"
-	       "  t1: 0x%" PRIx32 "  t2: 0x%" PRIx32
-	       "  t3: 0x%" PRIx32 "  t4: 0x%" PRIx32 "\n"
-	       "  t5: 0x%" PRIx32 "  t6: 0x%" PRIx32
-	       "  a0: 0x%" PRIx32 "  a1: 0x%" PRIx32 "\n"
-	       "  a2: 0x%" PRIx32 "  a3: 0x%" PRIx32
-	       "  a4: 0x%" PRIx32 "  a5: 0x%" PRIx32 "\n"
-	       "  a6: 0x%" PRIx32 "  a7: 0x%" PRIx32 "\n",
+	       "Faulting instruction address = 0x%x\n"
+	       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
+	       "  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x\n"
+	       "  t5: 0x%x  t6: 0x%x  a0: 0x%x  a1: 0x%x\n"
+	       "  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x\n"
+	       "  a6: 0x%x  a7: 0x%x\n",
 	       k_current_get(),
 	       (esf->mepc == 0xdeadbaad) ? 0xdeadbaad : esf->mepc - 4,
 	       esf->ra, esf->gp, esf->tp, esf->t0,

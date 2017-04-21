@@ -67,18 +67,18 @@ int _is_thread_essential(void)
 	return _current->base.user_options & K_ESSENTIAL;
 }
 
-void k_busy_wait(uint32_t usec_to_wait)
+void k_busy_wait(u32_t usec_to_wait)
 {
 	/* use 64-bit math to prevent overflow when multiplying */
-	uint32_t cycles_to_wait = (uint32_t)(
-		(uint64_t)usec_to_wait *
-		(uint64_t)sys_clock_hw_cycles_per_sec /
-		(uint64_t)USEC_PER_SEC
+	u32_t cycles_to_wait = (u32_t)(
+		(u64_t)usec_to_wait *
+		(u64_t)sys_clock_hw_cycles_per_sec /
+		(u64_t)USEC_PER_SEC
 	);
-	uint32_t start_cycles = k_cycle_get_32();
+	u32_t start_cycles = k_cycle_get_32();
 
 	for (;;) {
-		uint32_t current_cycles = k_cycle_get_32();
+		u32_t current_cycles = k_cycle_get_32();
 
 		/* this handles the rollover on an unsigned 32-bit value */
 		if ((current_cycles - start_cycles) >= cycles_to_wait) {
@@ -181,13 +181,13 @@ static void start_thread(struct k_thread *thread)
 #endif
 
 #ifdef CONFIG_MULTITHREADING
-static void schedule_new_thread(struct k_thread *thread, int32_t delay)
+static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (delay == 0) {
 		start_thread(thread);
 	} else {
-		int32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
+		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
 		int key = irq_lock();
 
 		_add_thread_timeout(thread, NULL, ticks);
@@ -204,7 +204,7 @@ static void schedule_new_thread(struct k_thread *thread, int32_t delay)
 k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 			void (*entry)(void *, void *, void*),
 			void *p1, void *p2, void *p3,
-			int prio, uint32_t options, int32_t delay)
+			int prio, u32_t options, s32_t delay)
 {
 	__ASSERT(!_is_in_isr(), "");
 
@@ -239,12 +239,12 @@ int k_thread_cancel(k_tid_t tid)
 }
 
 static inline int is_in_any_group(struct _static_thread_data *thread_data,
-				  uint32_t groups)
+				  u32_t groups)
 {
 	return !!(thread_data->init_groups & groups);
 }
 
-void _k_thread_group_op(uint32_t groups, void (*func)(struct k_thread *))
+void _k_thread_group_op(u32_t groups, void (*func)(struct k_thread *))
 {
 	unsigned int  key;
 
@@ -388,12 +388,12 @@ void _init_static_threads(void)
 #endif
 
 void _init_thread_base(struct _thread_base *thread_base, int priority,
-		       uint32_t initial_state, unsigned int options)
+		       u32_t initial_state, unsigned int options)
 {
 	/* k_q_node is initialized upon first insertion in a list */
 
-	thread_base->user_options = (uint8_t)options;
-	thread_base->thread_state = (uint8_t)initial_state;
+	thread_base->user_options = (u8_t)options;
+	thread_base->thread_state = (u8_t)initial_state;
 
 	thread_base->prio = priority;
 
@@ -404,21 +404,21 @@ void _init_thread_base(struct _thread_base *thread_base, int priority,
 	_init_thread_timeout(thread_base);
 }
 
-uint32_t _k_thread_group_mask_get(struct k_thread *thread)
+u32_t _k_thread_group_mask_get(struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
 
 	return thread_data->init_groups;
 }
 
-void _k_thread_group_join(uint32_t groups, struct k_thread *thread)
+void _k_thread_group_join(u32_t groups, struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
 
 	thread_data->init_groups |= groups;
 }
 
-void _k_thread_group_leave(uint32_t groups, struct k_thread *thread)
+void _k_thread_group_leave(u32_t groups, struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
 

@@ -41,7 +41,7 @@ extern "C" {
 void _ioapic_irq_enable(unsigned int irq);
 void _ioapic_irq_disable(unsigned int irq);
 void _ioapic_int_vec_set(unsigned int irq, unsigned int vector);
-void _ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags);
+void _ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags);
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

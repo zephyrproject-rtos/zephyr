@@ -106,12 +106,12 @@ void k_timer_init(struct k_timer *timer,
 }
 
 
-void k_timer_start(struct k_timer *timer, int32_t duration, int32_t period)
+void k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 {
 	__ASSERT(duration >= 0 && period >= 0 &&
 		 (duration != 0 || period != 0), "invalid parameters\n");
 
-	volatile int32_t period_in_ticks, duration_in_ticks;
+	volatile s32_t period_in_ticks, duration_in_ticks;
 
 	period_in_ticks = _ms_to_ticks(period);
 	duration_in_ticks = _TICK_ALIGN + _ms_to_ticks(duration);
@@ -159,10 +159,10 @@ void k_timer_stop(struct k_timer *timer)
 }
 
 
-uint32_t k_timer_status_get(struct k_timer *timer)
+u32_t k_timer_status_get(struct k_timer *timer)
 {
 	unsigned int key = irq_lock();
-	uint32_t result = timer->status;
+	u32_t result = timer->status;
 
 	timer->status = 0;
 	irq_unlock(key);
@@ -171,12 +171,12 @@ uint32_t k_timer_status_get(struct k_timer *timer)
 }
 
 
-uint32_t k_timer_status_sync(struct k_timer *timer)
+u32_t k_timer_status_sync(struct k_timer *timer)
 {
 	__ASSERT(!_is_in_isr(), "");
 
 	unsigned int key = irq_lock();
-	uint32_t result = timer->status;
+	u32_t result = timer->status;
 
 	if (result == 0) {
 		if (timer->timeout.delta_ticks_from_prev != _INACTIVE) {
@@ -200,10 +200,10 @@ uint32_t k_timer_status_sync(struct k_timer *timer)
 	return result;
 }
 
-int32_t _timeout_remaining_get(struct _timeout *timeout)
+s32_t _timeout_remaining_get(struct _timeout *timeout)
 {
 	unsigned int key = irq_lock();
-	int32_t remaining_ticks;
+	s32_t remaining_ticks;
 
 	if (timeout->delta_ticks_from_prev == _INACTIVE) {
 		remaining_ticks = 0;

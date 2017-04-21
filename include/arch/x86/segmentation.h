@@ -69,56 +69,56 @@ extern "C" {
 
 /* Section 7.2.1 of IA architecture SW developer manual, Vol 3. */
 struct __packed task_state_segment {
-	uint16_t backlink;
-	uint16_t reserved_1;
-	uint32_t esp0;
-	uint16_t ss0;
-	uint16_t reserved_2;
-	uint32_t esp1;
-	uint16_t ss1;
-	uint16_t reserved_3;
-	uint32_t esp2;
-	uint16_t ss2;
-	uint16_t reserved_4;
-	uint32_t cr3;
-	uint32_t eip;
-	uint32_t eflags;
-	uint32_t eax;
-	uint32_t ecx;
-	uint32_t edx;
-	uint32_t ebx;
-	uint32_t esp;
-	uint32_t ebp;
-	uint32_t esi;
-	uint32_t edi;
-	uint16_t es;
-	uint16_t reserved_5;
-	uint16_t cs;
-	uint16_t reserved_6;
-	uint16_t ss;
-	uint16_t reserved_7;
-	uint16_t ds;
-	uint16_t reserved_8;
-	uint16_t fs;
-	uint16_t reserved_9;
-	uint16_t gs;
-	uint16_t reserved_10;
-	uint16_t ldt_ss;
-	uint16_t reserved_11;
-	uint8_t t:1;		/* Trap bit */
-	uint16_t reserved_12:15;
-	uint16_t iomap;
+	u16_t backlink;
+	u16_t reserved_1;
+	u32_t esp0;
+	u16_t ss0;
+	u16_t reserved_2;
+	u32_t esp1;
+	u16_t ss1;
+	u16_t reserved_3;
+	u32_t esp2;
+	u16_t ss2;
+	u16_t reserved_4;
+	u32_t cr3;
+	u32_t eip;
+	u32_t eflags;
+	u32_t eax;
+	u32_t ecx;
+	u32_t edx;
+	u32_t ebx;
+	u32_t esp;
+	u32_t ebp;
+	u32_t esi;
+	u32_t edi;
+	u16_t es;
+	u16_t reserved_5;
+	u16_t cs;
+	u16_t reserved_6;
+	u16_t ss;
+	u16_t reserved_7;
+	u16_t ds;
+	u16_t reserved_8;
+	u16_t fs;
+	u16_t reserved_9;
+	u16_t gs;
+	u16_t reserved_10;
+	u16_t ldt_ss;
+	u16_t reserved_11;
+	u8_t t:1;		/* Trap bit */
+	u16_t reserved_12:15;
+	u16_t iomap;
 };
 
 /* Section 3.4.2 of IA architecture SW developer manual, Vol 3. */
 struct __packed segment_selector {
 	union {
 		struct {
-			uint8_t rpl:2;
-			uint8_t table:1; /* 0=gdt 1=ldt */
-			uint16_t index:13;
+			u8_t rpl:2;
+			u8_t table:1; /* 0=gdt 1=ldt */
+			u16_t index:13;
 		};
-		uint16_t val;
+		u16_t val;
 	};
 };
 
@@ -138,39 +138,39 @@ struct __packed segment_descriptor {
 	/* First DWORD: 0-15 */
 	union {
 		/* IRQ, call, trap gates */
-		uint16_t limit_low;
+		u16_t limit_low;
 
 		/* Task gates */
-		uint16_t reserved_task_gate_0;
+		u16_t reserved_task_gate_0;
 
 		/* Everything else */
-		uint16_t offset_low;
+		u16_t offset_low;
 	};
 
 	/* First DWORD: 16-31 */
 	union {
 		/* Call/Task/Interrupt/Trap gates */
-		uint16_t segment_selector;
+		u16_t segment_selector;
 
 		/* TSS/LDT/Segments */
-		uint16_t base_low;	/* Bits 0-15 */
+		u16_t base_low;	/* Bits 0-15 */
 	};
 
 	/* Second DWORD: 0-7 */
 	union {
 		/* TSS/LDT/Segments */
-		uint8_t base_mid;	/* Bits 16-23 */
+		u8_t base_mid;	/* Bits 16-23 */
 
 		/* Task gates */
-		uint8_t reserved_task_gate_1;
+		u8_t reserved_task_gate_1;
 
 		/* IRQ/Trap/Call Gates */
 		struct {
 			/* Reserved except in case of call gates */
-			uint8_t reserved_or_param:5;
+			u8_t reserved_or_param:5;
 
 			/* Bits 5-7 0 0 0 per CPU manual */
-			uint8_t always_0_0:3;
+			u8_t always_0_0:3;
 		};
 	};
 
@@ -179,59 +179,59 @@ struct __packed segment_descriptor {
 		/* Code or data Segments */
 		struct {
 			/* Set by the processor, init to 0 */
-			uint8_t accessed:1;
+			u8_t accessed:1;
 
 			/* executable ? readable : writable */
-			uint8_t rw:1;
+			u8_t rw:1;
 			/* executable ? conforming : direction */
-			uint8_t cd:1;
+			u8_t cd:1;
 			/* 1=code 0=data */
-			uint8_t executable:1;
+			u8_t executable:1;
 
 			/* Next 3 fields actually common to all */
 
 			/* 1=code or data, 0=system type */
-			uint8_t descriptor_type:1;
+			u8_t descriptor_type:1;
 
-			uint8_t dpl:2;
-			uint8_t present:1;
+			u8_t dpl:2;
+			u8_t present:1;
 		};
 
 		/* System types */
 		struct {
 			/* One of the SEG_TYPE_* macros above */
-			uint8_t type:4;
+			u8_t type:4;
 
 			/* Alas, C doesn't let you do a union of the first
 			 * 4 bits of a bitfield and put the rest outside of it,
 			 * it ends up getting padded.
 			 */
-			uint8_t use_other_union:4;
+			u8_t use_other_union:4;
 		};
 	};
 
 	/* Second DWORD: 16-31 */
 	union {
 		/* Call/IRQ/trap gates */
-		uint16_t offset_hi;
+		u16_t offset_hi;
 
 		/* Task Gates */
-		uint16_t reserved_task_gate_2;
+		u16_t reserved_task_gate_2;
 
 		/* segment/LDT/TSS */
 		struct {
-			uint8_t limit_hi:4;
+			u8_t limit_hi:4;
 
 			/* flags */
-			uint8_t avl:1;		/* CPU ignores this */
+			u8_t avl:1;		/* CPU ignores this */
 
 			/* 1=Indicates 64-bit code segment in IA-32e mode */
-			uint8_t flags_l:1; /* L field */
+			u8_t flags_l:1; /* L field */
 
-			uint8_t db:1; /* D/B field 1=32-bit 0=16-bit*/
-			uint8_t granularity:1;
+			u8_t db:1; /* D/B field 1=32-bit 0=16-bit*/
+			u8_t granularity:1;
 
-			uint8_t base_hi;	/* Bits 24-31 */
+			u8_t base_hi;	/* Bits 24-31 */
 		};
 	};
 
@@ -242,7 +242,7 @@ struct __packed segment_descriptor {
  * IA manual calls this a 'pseudo descriptor'.
  */
 struct __packed pseudo_descriptor {
-	uint16_t size;
+	u16_t size;
 	struct segment_descriptor *entries;
 };
 
@@ -254,7 +254,7 @@ struct __packed far_ptr {
 	/** Far pointer offset, unused when invoking a task. */
 	void *offset;
 	/** Far pointer segment/gate selector. */
-	uint16_t sel;
+	u16_t sel;
 };
 
 
@@ -270,7 +270,7 @@ struct __packed far_ptr {
  * or implement some tool to populate values post-link like gen_idt does.
  */
 #define _LIMIT_AND_BASE(base_p, limit_p, granularity_p) \
-	.base_low = (((uint32_t)base_p) & 0xFFFF), \
+	.base_low = (((u32_t)base_p) & 0xFFFF), \
 	.base_mid = (((base_p) >> 16) & 0xFF), \
 	.base_hi = (((base_p) >> 24) & 0xFF), \
 	.limit_low = ((limit_p) & 0xFFFF), \
@@ -399,8 +399,8 @@ extern struct pseudo_descriptor _gdt;
  * @param segment_selector Segment selector
  */
 static inline void _sd_set_seg_offset(struct segment_descriptor *sd,
-				      uint16_t segment_selector,
-				      uint32_t offset)
+				      u16_t segment_selector,
+				      u32_t offset)
 {
 	sd->offset_low = offset & 0xFFFF;
 	sd->offset_hi = offset >> 16;
@@ -418,8 +418,8 @@ static inline void _sd_set_seg_offset(struct segment_descriptor *sd,
  * @param dpl descriptor privilege level
  */
 static inline void _init_irq_gate(struct segment_descriptor *sd,
-				  uint16_t seg_selector, uint32_t offset,
-				  uint32_t dpl)
+				  u16_t seg_selector, u32_t offset,
+				  u32_t dpl)
 {
 	_sd_set_seg_offset(sd, seg_selector, offset);
 	sd->dpl = dpl;
@@ -434,7 +434,7 @@ static inline void _init_irq_gate(struct segment_descriptor *sd,
  * @param sel Segment selector
  * @param offset Offset within that selector
  */
-static inline void _far_jump(uint16_t sel, void *offset)
+static inline void _far_jump(u16_t sel, void *offset)
 {
 	struct far_ptr ptr = {
 		.sel = sel,
@@ -451,7 +451,7 @@ static inline void _far_jump(uint16_t sel, void *offset)
  * @param sel Segment selector
  * @param offset Offset within that selector
  */
-static inline void _far_call(uint16_t sel, void *offset)
+static inline void _far_call(u16_t sel, void *offset)
 {
 	struct far_ptr ptr = {
 		.sel = sel,
@@ -467,7 +467,7 @@ static inline void _far_call(uint16_t sel, void *offset)
  *
  * @param sel Segment selector in GDT for desired TSS
  */
-static inline void _set_tss(uint16_t sel)
+static inline void _set_tss(u16_t sel)
 {
 	__asm__ __volatile__ ("ltr %0" :: "r" (sel));
 }
@@ -478,9 +478,9 @@ static inline void _set_tss(uint16_t sel)
  *
  * @return Segment selector for current IA task
  */
-static inline uint16_t _get_tss(void)
+static inline u16_t _get_tss(void)
 {
-	uint16_t sel;
+	u16_t sel;
 
 	__asm__ __volatile__ ("str %0" : "=r" (sel));
 	return sel;
@@ -514,9 +514,9 @@ static inline void _get_idt(struct pseudo_descriptor *idt)
  *
  * @return Segment selector in the GDT for the current LDT
  */
-static inline uint16_t _get_ldt(void)
+static inline u16_t _get_ldt(void)
 {
-	uint16_t ret;
+	u16_t ret;
 
 	__asm__ __volatile__ ("sldt %0" : "=m" (ret));
 	return ret;
@@ -528,7 +528,7 @@ static inline uint16_t _get_ldt(void)
  *
  * @param ldt Segment selector in the GDT for an LDT
  */
-static inline void _set_ldt(uint16_t ldt)
+static inline void _set_ldt(u16_t ldt)
 {
 	__asm__ __volatile__ ("lldt %0" :: "m" (ldt));
 
@@ -564,9 +564,9 @@ static inline void _set_idt(const struct pseudo_descriptor *idt)
  *
  * @return Segment selector
  */
-static inline uint16_t _get_cs(void)
+static inline u16_t _get_cs(void)
 {
-	uint16_t cs = 0;
+	u16_t cs = 0;
 
 	__asm__ __volatile__ ("mov %%cs, %0" : "=r" (cs));
 	return cs;
@@ -578,9 +578,9 @@ static inline uint16_t _get_cs(void)
  *
  * @return Segment selector
  */
-static inline uint16_t _get_ds(void)
+static inline u16_t _get_ds(void)
 {
-	uint16_t ds = 0;
+	u16_t ds = 0;
 
 	__asm__ __volatile__ ("mov %%ds, %0" : "=r" (ds));
 	return ds;

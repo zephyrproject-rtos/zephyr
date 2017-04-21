@@ -51,9 +51,9 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-uint64_t __noinit __start_tsc; /* timestamp when kernel starts */
-uint64_t __noinit __main_tsc;  /* timestamp when main task starts */
-uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
+u64_t __noinit __start_tsc; /* timestamp when kernel starts */
+u64_t __noinit __main_tsc;  /* timestamp when main task starts */
+u64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 #endif
 
 /* init/main and idle threads */
@@ -133,7 +133,7 @@ void k_call_stacks_analyze(void)
 void _bss_zero(void)
 {
 	memset(&__bss_start, 0,
-		 ((uint32_t) &__bss_end - (uint32_t) &__bss_start));
+		 ((u32_t) &__bss_end - (u32_t) &__bss_start));
 }
 
 
@@ -149,7 +149,7 @@ void _bss_zero(void)
 void _data_copy(void)
 {
 	memcpy(&__data_ram_start, &__data_rom_start,
-		 ((uint32_t) &__data_ram_end - (uint32_t) &__data_ram_start));
+		 ((u32_t) &__data_ram_end - (u32_t) &__data_ram_start));
 }
 #endif
 
@@ -185,7 +185,7 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp for kernel's _main() function */
-	extern uint64_t __main_tsc;
+	extern u64_t __main_tsc;
 
 	__main_tsc = _tsc_read();
 #endif

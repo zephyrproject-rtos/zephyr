@@ -88,7 +88,7 @@ void k_alert_send(struct k_alert *alert)
 	}
 }
 
-int k_alert_recv(struct k_alert *alert, int32_t timeout)
+int k_alert_recv(struct k_alert *alert, s32_t timeout)
 {
 	return k_sem_take(&alert->sem, timeout);
 }

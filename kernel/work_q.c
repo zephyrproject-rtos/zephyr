@@ -74,7 +74,7 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 
 int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 				   struct k_delayed_work *work,
-				   int32_t delay)
+				   s32_t delay)
 {
 	int key = irq_lock();
 	int err;

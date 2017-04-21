@@ -36,13 +36,13 @@ extern "C" {
 struct mb_image {
 	union {
 		struct {
-			uint8_t c1:1,
+			u8_t c1:1,
 				c2:1,
 				c3:1,
 				c4:1,
 				c5:1;
 		} r[5];
-		uint8_t row[5];
+		u8_t row[5];
 	};
 };
 
@@ -127,8 +127,8 @@ struct mb_display *mb_display_get(void);
  * @param img       Array of image bitmaps (struct mb_image objects).
  * @param img_count Number of images in 'img' array.
  */
-void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
-		      const struct mb_image *img, uint8_t img_count);
+void mb_display_image(struct mb_display *disp, u32_t mode, s32_t duration,
+		      const struct mb_image *img, u8_t img_count);
 
 /**
  * @brief Print a string of characters on the BBC micro:bit LED display.
@@ -147,7 +147,7 @@ void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
  * @param ...      Optional list of format arguments.
  */
 __printf_like(4, 5) void mb_display_print(struct mb_display *disp,
-					  uint32_t mode, int32_t duration,
+					  u32_t mode, s32_t duration,
 					  const char *fmt, ...);
 
 /**

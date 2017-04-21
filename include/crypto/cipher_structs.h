@@ -51,13 +51,13 @@ typedef int (*block_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt);
  * like  CBC, CTR, CCM.
  */
 typedef int (*cbc_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
-			uint8_t *iv);
+			u8_t *iv);
 
 typedef int (*ctr_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
-			uint8_t *ctr);
+			u8_t *ctr);
 
 typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce);
+			 u8_t *nonce);
 
 struct cipher_ops {
 
@@ -72,15 +72,15 @@ struct cipher_ops {
 };
 
 struct ccm_params {
-	uint16_t tag_len;
-	uint16_t nonce_len;
+	u16_t tag_len;
+	u16_t nonce_len;
 };
 
 struct ctr_params {
 	/* CTR mode counter is a split counter composed of iv and counter
 	 * such that ivlen + ctr_len = keylen
 	 */
-	uint32_t ctr_len;
+	u32_t ctr_len;
 };
 
 /* Structure encoding session parameters. Refer to comments for individual
@@ -98,7 +98,7 @@ struct cipher_ctx {
 	/* To be populated by the app before calling begin_session() */
 	union {
 		/* Cryptographic key to be used in this session */
-		uint8_t *bit_stream;
+		u8_t *bit_stream;
 		/* For cases where  key is protected and is not
 		 * available to caller
 		 */
@@ -140,7 +140,7 @@ struct cipher_ctx {
 	/* Cryptographic keylength in bytes. To be populated by the app
 	 * before calling begin_session()
 	 */
-	uint16_t  keylen;
+	u16_t  keylen;
 
 
 	/* How certain fields are to be interpreted for this sesssion.
@@ -148,7 +148,7 @@ struct cipher_ctx {
 	 * An app can obtain the capability flags supported by a hw/driver
 	 * by calling cipher_query_hwcaps(). (A bitmask of CAP_* below)
 	 */
-	uint16_t flags;
+	u16_t flags;
 };
 
 /* Various cipher_ctx.flags options. Not all drivers support all flags.
@@ -186,7 +186,7 @@ struct cipher_ctx {
 struct cipher_pkt {
 
 	/* Start address of Input buffer */
-	uint8_t *in_buf;
+	u8_t *in_buf;
 
 	/* Bytes to be operated upon */
 	int  in_len;
@@ -195,7 +195,7 @@ struct cipher_pkt {
 	 * the application. Can be NULL for in place ops. To be populated
 	 * with contents by the driver on return from op / async_callback
 	 */
-	uint8_t *out_buf;
+	u8_t *out_buf;
 
 	/* Size of the out_buf area allocated by the application. Drivers should
 	 * not write past the size of output buffer
@@ -212,7 +212,7 @@ struct cipher_pkt {
 	 * returns a first level success / failure status. To be populated
 	 * by the driver on return from op / async_callback.
 	 */
-	uint8_t status;
+	u8_t status;
 
 	/* Context this packet relates to. This can be useful to get the
 	 * session details esp for async ops. Will be populated by the
@@ -230,16 +230,16 @@ struct cipher_aead_pkt {
 	struct cipher_pkt *pkt;
 
 	/* Start address for Associated data. This has to be supplied by app */
-	uint8_t *ad;
+	u8_t *ad;
 
 	/* Size of  Associated data. This has to be supplied by the app */
-	uint32_t ad_len;
+	u32_t ad_len;
 
 	/* Start address for the Auth hash. For an Encryption op this will
 	 * be populated by the driver when it returns from cipher_ccm_op call.
 	 * For a decryption op this has to be  supplied by the app.
 	 */
-	uint8_t *tag;
+	u8_t *tag;
 };
 
 /* Prototype for the application function to be invoked by the crypto driver

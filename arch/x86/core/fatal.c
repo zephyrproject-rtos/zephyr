@@ -192,7 +192,7 @@ FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
 	err = pEsf->errorCode;
 	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
 
-	printk("%s thread %s address 0x%08" PRIx32 "\n",
+	printk("%s thread %s address 0x%08x\n",
 	       err & US ? "User" : "Supervisor",
 	       err & ID ? "executed" : (err & WR ? "wrote" : "read"),
 	       cr2);

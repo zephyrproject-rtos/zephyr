@@ -23,12 +23,12 @@ enum aio_cmp_polarity {
 
 typedef void (*aio_cmp_cb)(void *);
 
-typedef int (*aio_cmp_api_disable)(struct device *dev, uint8_t index);
+typedef int (*aio_cmp_api_disable)(struct device *dev, u8_t index);
 
-typedef int (*aio_cmp_api_configure)(struct device *dev, uint8_t index,
+typedef int (*aio_cmp_api_configure)(struct device *dev, u8_t index,
     enum aio_cmp_polarity polarity, enum aio_cmp_ref refsel,
     aio_cmp_cb cb, void *param);
-typedef uint32_t (*aio_cmp_api_get_pending_int)(struct device *dev);
+typedef u32_t (*aio_cmp_api_get_pending_int)(struct device *dev);
 
 struct aio_cmp_driver_api {
 	aio_cmp_api_disable disable;
@@ -46,7 +46,7 @@ struct aio_cmp_driver_api {
  *
  * @return 0 if successful, otherwise failed.
  */
-static inline int aio_cmp_disable(struct device *dev, uint8_t index)
+static inline int aio_cmp_disable(struct device *dev, u8_t index)
 {
 	const struct aio_cmp_driver_api *api = dev->driver_api;
 
@@ -68,7 +68,7 @@ static inline int aio_cmp_disable(struct device *dev, uint8_t index)
  *
  * @return 0 if successful, otherwise failed.
  */
-static inline int aio_cmp_configure(struct device *dev, uint8_t index,
+static inline int aio_cmp_configure(struct device *dev, u8_t index,
 				    enum aio_cmp_polarity polarity,
 				    enum aio_cmp_ref refsel,
 				    aio_cmp_cb cb, void *param)
