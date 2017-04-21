@@ -280,7 +280,7 @@ struct gpio_driver_api {
  * @param flags Flags for pin configuration. IN/OUT, interrupt ...
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_pin_configure(struct device *port, uint8_t pin,
+static inline int gpio_pin_configure(struct device *port, uint32_t pin,
 				     int flags)
 {
 	const struct gpio_driver_api *api = port->driver_api;
