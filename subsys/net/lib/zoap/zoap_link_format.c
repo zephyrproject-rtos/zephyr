@@ -169,8 +169,7 @@ static bool match_attributes(const char * const *attributes,
 {
 	const char * const *attr;
 
-	/*
-	 * FIXME: deal with the case when there are multiple options in a
+	/* FIXME: deal with the case when there are multiple options in a
 	 * query, for example: 'rt=lux temperature', if I want to list
 	 * resources with resource type lux or temperature.
 	 */
@@ -288,8 +287,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	id = zoap_header_get_id(request);
 	token = zoap_header_get_token(request, &tkl);
 
-	/*
-	 * Per RFC 6690, Section 4.1, only one (or none) query parameter may be
+	/* Per RFC 6690, Section 4.1, only one (or none) query parameter may be
 	 * provided, use the first if multiple.
 	 */
 	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, &query, 1);
