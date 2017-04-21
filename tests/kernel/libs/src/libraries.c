@@ -83,8 +83,8 @@ void stddef_test(void)
  * to prevent compiler from computing results at compile time
  */
 
-volatile uint8_t unsigned_byte = 0xff;
-volatile uint32_t unsigned_int = 0xffffff00;
+volatile u8_t unsigned_byte = 0xff;
+volatile u32_t unsigned_int = 0xffffff00;
 
 /**
  *

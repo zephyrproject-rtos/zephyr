@@ -82,8 +82,8 @@
 
 
 
-extern uint32_t _tick_get_32(void);
-extern int64_t _tick_get(void);
+extern u32_t _tick_get_32(void);
+extern s64_t _tick_get(void);
 
 typedef struct {
 	int command;            /* command to process   */
@@ -603,7 +603,7 @@ static void thread_entry(void *task_thread_id, void *arg1, void *arg2)
 
 struct timeout_order {
 	void *link_in_fifo;
-	int32_t timeout;
+	s32_t timeout;
 	int timeout_order;
 	int q_order;
 };
@@ -624,7 +624,7 @@ static char __stack timeout_stacks[NUM_TIMEOUT_THREADS][THREAD_STACKSIZE];
 /* a thread busy waits, then reports through a fifo */
 static void test_busy_wait(void *mseconds, void *arg2, void *arg3)
 {
-	uint32_t usecs;
+	u32_t usecs;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -654,7 +654,7 @@ static void test_busy_wait(void *mseconds, void *arg2, void *arg3)
 /* a thread sleeps and times out, then reports through a fifo */
 static void test_thread_sleep(void *delta, void *arg2, void *arg3)
 {
-	int64_t timestamp;
+	s64_t timestamp;
 	int timeout = (int)delta;
 
 	ARG_UNUSED(arg2);
@@ -690,7 +690,7 @@ static void delayed_thread(void *num, void *arg2, void *arg3)
 static int test_timeout(void)
 {
 	struct timeout_order *data;
-	int32_t timeout;
+	s32_t timeout;
 	int rv;
 	int i;
 

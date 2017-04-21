@@ -9,12 +9,12 @@
 #include <kernel_structs.h>
 #include <irq_offload.h>
 
-volatile uint32_t sentinel;
+volatile u32_t sentinel;
 #define SENTINEL_VALUE 0xDEADBEEF
 
 void offload_function(void *param)
 {
-	uint32_t x = (uint32_t)param;
+	u32_t x = (u32_t)param;
 
 	TC_PRINT("offload_function running\n");
 

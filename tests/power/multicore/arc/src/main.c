@@ -42,7 +42,7 @@ static void resume_devices(void)
 	}
 }
 
-int _sys_soc_suspend(int32_t ticks)
+int _sys_soc_suspend(s32_t ticks)
 {
 	post_ops_done = 0;
 
@@ -93,7 +93,7 @@ static void build_suspend_device_list(void)
 	}
 }
 
-void alarm_notification_handler(void *context, uint32_t id,
+void alarm_notification_handler(void *context, u32_t id,
 				volatile void *data)
 {
 	/* Unblock ARC application thread. */

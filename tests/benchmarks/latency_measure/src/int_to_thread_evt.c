@@ -21,7 +21,7 @@
 
 #include <arch/cpu.h>
 
-static uint32_t timestamp;
+static u32_t timestamp;
 
 
 K_SEM_DEFINE(INTSEMA, 0, 1);

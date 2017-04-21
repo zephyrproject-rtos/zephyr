@@ -42,7 +42,7 @@ static struct k_mbox_msg Message;
 
 #define PRINT_ONE_RESULT()                                                   \
 	PRINT_F(output_file, "|%11u|%32u|%32u|\n", putsize, puttime,	     \
-	     (uint32_t)((1000000 * (uint64_t)putsize) / puttime))
+	     (u32_t)((1000000 * (u64_t)putsize) / puttime))
 
 #define PRINT_OVERHEAD()                                                     \
 	PRINT_F(output_file,						\
@@ -52,7 +52,7 @@ static struct k_mbox_msg Message;
 #define PRINT_XFER_RATE()                                                    \
 	PRINT_F(output_file, "| raw transfer rate:     %10u KB/sec (without" \
 	     " overhead)                 |\n",                               \
-	     (uint32_t)(1000000 * (uint64_t)(putsize >> 1)                   \
+	     (u32_t)(1000000 * (u64_t)(putsize >> 1)                   \
 	     / (puttime - EmptyMsgPutTime)))
 
 #endif
@@ -61,7 +61,7 @@ static struct k_mbox_msg Message;
 /*
  * Function prototypes.
  */
-void mailbox_put(uint32_t size, int count, uint32_t *time);
+void mailbox_put(u32_t size, int count, u32_t *time);
 
 /*
  * Function declarations.
@@ -75,8 +75,8 @@ void mailbox_put(uint32_t size, int count, uint32_t *time);
  */
 void mailbox_test(void)
 {
-	uint32_t putsize;
-	uint32_t puttime;
+	u32_t putsize;
+	u32_t puttime;
 	int putcount;
 	unsigned int EmptyMsgPutTime;
 	GetInfo getinfo;
@@ -127,7 +127,7 @@ void mailbox_test(void)
  *
  * @return N/A
  */
-void mailbox_put(uint32_t size, int count, uint32_t *time)
+void mailbox_put(u32_t size, int count, u32_t *time)
 {
 	int i;
 	unsigned int t;

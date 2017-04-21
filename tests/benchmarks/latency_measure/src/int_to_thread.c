@@ -20,7 +20,7 @@
 
 static volatile int flag_var;
 
-static uint32_t timestamp;
+static u32_t timestamp;
 
 /**
  *

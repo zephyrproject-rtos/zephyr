@@ -6,6 +6,6 @@
 
 typedef struct ldata {
 	sys_snode_t snode;
-	uint32_t data;
+	u32_t data;
 } ldata_t;
 #endif

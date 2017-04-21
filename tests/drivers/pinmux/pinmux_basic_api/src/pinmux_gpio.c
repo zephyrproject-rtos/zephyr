@@ -62,7 +62,7 @@
 static bool cb_triggered;
 
 static void callback(struct device *dev,
-		     struct gpio_callback *gpio_cb, uint32_t pins)
+		     struct gpio_callback *gpio_cb, u32_t pins)
 {
 	static int cb_cnt;
 
@@ -74,9 +74,9 @@ static void callback(struct device *dev,
 	}
 }
 
-static int test_gpio(uint32_t pin, uint32_t func)
+static int test_gpio(u32_t pin, u32_t func)
 {
-	uint32_t function;
+	u32_t function;
 	struct gpio_callback gpio_cb;
 	struct device *pinmux = device_get_binding(PINMUX_NAME);
 

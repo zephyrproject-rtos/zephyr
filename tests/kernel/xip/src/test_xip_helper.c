@@ -19,5 +19,5 @@ test.
  * This array is deliberately defined outside of the scope of the main test
  * module to avoid optimization issues.
  */
-uint32_t xip_array[XIP_TEST_ARRAY_SZ] = {
+u32_t xip_array[XIP_TEST_ARRAY_SZ] = {
 	TEST_VAL_1, TEST_VAL_2, TEST_VAL_3, TEST_VAL_4};

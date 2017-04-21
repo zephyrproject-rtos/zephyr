@@ -16,7 +16,7 @@
 #include "test_msgq.h"
 
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static uint32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 
 /*test cases*/
 void test_msgq_put_fail(void *p1, void *p2, void *p3)
@@ -43,7 +43,7 @@ void test_msgq_put_fail(void *p1, void *p2, void *p3)
 void test_msgq_get_fail(void *p1, void *p2, void *p3)
 {
 	struct k_msgq msgq;
-	uint32_t rx_data;
+	u32_t rx_data;
 
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 	/**TESTPOINT: msgq get returns -ENOMSG*/

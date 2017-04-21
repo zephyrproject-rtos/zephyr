@@ -45,9 +45,9 @@ int ecdh_vectors(char **qx_vec, char **qy_vec, char **d_vec, char **z_vec,
 		 int tests, int verbose)
 {
 	EccPoint Q;
-	uint32_t prv[NUM_ECC_DIGITS];
-	uint32_t z[NUM_ECC_DIGITS];
-	uint32_t exp_z[NUM_ECC_DIGITS];
+	u32_t prv[NUM_ECC_DIGITS];
+	u32_t z[NUM_ECC_DIGITS];
+	u32_t exp_z[NUM_ECC_DIGITS];
 
 	int rc = TC_FAIL;
 
@@ -353,20 +353,20 @@ int cavp_pkv(int verbose)
 	return rc;
 }
 
-int montecarlo_ecdh(uint32_t num, int verbose)
+int montecarlo_ecdh(u32_t num, int verbose)
 {
 	EccPoint l_Q1, l_Q2; /* public keys */
-	uint32_t l_random1[2 * NUM_ECC_DIGITS];
-	uint32_t l_random2[2 * NUM_ECC_DIGITS];
-	uint32_t l_secret1[NUM_ECC_DIGITS];
-	uint32_t l_secret2[NUM_ECC_DIGITS];
+	u32_t l_random1[2 * NUM_ECC_DIGITS];
+	u32_t l_random2[2 * NUM_ECC_DIGITS];
+	u32_t l_secret1[NUM_ECC_DIGITS];
+	u32_t l_secret2[NUM_ECC_DIGITS];
 
-	uint32_t l_shared1[NUM_ECC_DIGITS];
-	uint32_t l_shared2[NUM_ECC_DIGITS];
+	u32_t l_shared1[NUM_ECC_DIGITS];
+	u32_t l_shared2[NUM_ECC_DIGITS];
 
 	int rc = TC_FAIL;
 
-	for (uint32_t i = 0; i < num; ++i) {
+	for (u32_t i = 0; i < num; ++i) {
 		random_bytes(l_random1, 2 * NUM_ECC_DIGITS);
 		random_bytes(l_random2, 2 * NUM_ECC_DIGITS);
 

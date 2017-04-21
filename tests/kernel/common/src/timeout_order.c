@@ -46,7 +46,7 @@ void timeout_order_test(void)
 	}
 
 
-	uint32_t uptime = k_uptime_get_32();
+	u32_t uptime = k_uptime_get_32();
 
 	/* sync on tick */
 	while (uptime == k_uptime_get_32())

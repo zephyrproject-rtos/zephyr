@@ -33,7 +33,7 @@ static void tprofiling_stack(void *p)
 }
 
 /*power hook functions*/
-int _sys_soc_suspend(int32_t ticks)
+int _sys_soc_suspend(s32_t ticks)
 {
 	tprofiling_stack(NULL);
 	return 0;

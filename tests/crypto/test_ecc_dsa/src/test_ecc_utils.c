@@ -58,7 +58,7 @@ int random_end(void)
 	return 0;
 }
 
-int random_bytes(uint32_t *out, size_t len)
+int random_bytes(u32_t *out, size_t len)
 {
 	size_t i;
 
@@ -71,7 +71,7 @@ int random_bytes(uint32_t *out, size_t len)
 
 int hex_to_num(char hex)
 {
-	uint8_t dec;
+	u8_t dec;
 
 	if ('0' <= hex && hex <= '9') {
 		dec = hex - '0';
@@ -90,7 +90,7 @@ int hex_to_num(char hex)
  * Convert hex string to byte string
  * Return number of bytes written to buf, or 0 on error
  */
-int hex_to_num_str(uint8_t *buf, const size_t buflen, const char *hex,
+int hex_to_num_str(u8_t *buf, const size_t buflen, const char *hex,
 		   const size_t hexlen)
 {
 	int dec;
@@ -130,10 +130,10 @@ int hex_to_num_str(uint8_t *buf, const size_t buflen, const char *hex,
 /*
  * Convert hex string to zero-padded nanoECC scalar
  */
-int str_to_scalar(uint32_t *scalar, uint32_t num_word32, char *str)
+int str_to_scalar(u32_t *scalar, u32_t num_word32, char *str)
 {
-	uint32_t num_bytes = 4 * num_word32;
-	uint8_t tmp[num_bytes];
+	u32_t num_bytes = 4 * num_word32;
+	u8_t tmp[num_bytes];
 	size_t hexlen = strlen(str);
 	int padding;
 	int rc;
@@ -157,7 +157,7 @@ int str_to_scalar(uint32_t *scalar, uint32_t num_word32, char *str)
 	return TC_PASS;
 }
 
-void vli_print(uint32_t *p_vli, unsigned int p_size)
+void vli_print(u32_t *p_vli, unsigned int p_size)
 {
 	while (p_size) {
 		TC_PRINT("%08X ", (unsigned)p_vli[p_size - 1]);
@@ -183,11 +183,11 @@ int check_code(const int num, const char *name, const int expected,
 	return TC_PASS;
 }
 
-int check_ecc_result(const int num, const char *name, const uint32_t *expected,
-		     const uint32_t *computed, const uint32_t num_word32,
+int check_ecc_result(const int num, const char *name, const u32_t *expected,
+		     const u32_t *computed, const u32_t num_word32,
 		     int verbose)
 {
-	uint32_t num_bytes = 4 * num_word32;
+	u32_t num_bytes = 4 * num_word32;
 
 	if (memcmp(computed, expected, num_bytes)) {
 		TC_PRINT("\n  Vector #%02d check %s - FAILURE\n", num, name);
@@ -204,12 +204,12 @@ int check_ecc_result(const int num, const char *name, const uint32_t *expected,
 int keygen_vectors(EccPoint *pub, char **d_vec, char **qx_vec, char **qy_vec,
 		   int tests, int verbose)
 {
-	uint32_t seed[2 * NUM_ECC_DIGITS];
-	uint32_t prv[NUM_ECC_DIGITS];
+	u32_t seed[2 * NUM_ECC_DIGITS];
+	u32_t prv[NUM_ECC_DIGITS];
 
 	/* expected outputs (converted input vectors) */
 	EccPoint exp_pub;
-	uint32_t exp_prv[NUM_ECC_DIGITS];
+	u32_t exp_prv[NUM_ECC_DIGITS];
 
 	int rc;
 

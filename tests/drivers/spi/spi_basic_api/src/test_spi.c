@@ -37,10 +37,10 @@ static struct spi_config spi_conf = {
 static char *wbuf = "Hello world";
 static char rbuf[16] = {};
 
-static int test_spi(uint32_t mode)
+static int test_spi(u32_t mode)
 {
 	struct device *spi_dev = device_get_binding(SPI_DEV_NAME);
-	uint32_t len = strlen(wbuf);
+	u32_t len = strlen(wbuf);
 
 	if (!spi_dev) {
 		TC_PRINT("Cannot get SPI device\n");

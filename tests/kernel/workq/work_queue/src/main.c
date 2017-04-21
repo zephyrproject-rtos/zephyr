@@ -296,7 +296,7 @@ static void coop_delayed_work_resubmit(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
-		volatile uint32_t uptime;
+		volatile u32_t uptime;
 
 		TC_PRINT(" - Resubmitting delayed work with 1 ms\n");
 		k_delayed_work_submit(&tests[0].work, 1);

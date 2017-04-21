@@ -49,7 +49,7 @@ static void tqueue_append(struct k_queue *pqueue)
 
 	head->snode.next = (sys_snode_t *)tail;
 	tail->snode.next = NULL;
-	k_queue_append_list(pqueue, (uint32_t *)head, (uint32_t *)tail);
+	k_queue_append_list(pqueue, (u32_t *)head, (u32_t *)tail);
 
 	/**TESTPOINT: queue merge slist*/
 	sys_slist_t slist;

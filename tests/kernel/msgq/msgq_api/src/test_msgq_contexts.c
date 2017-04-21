@@ -19,7 +19,7 @@ K_MSGQ_DEFINE(kmsgq, MSG_SIZE, MSGQ_LEN, 4);
 
 static char __noinit __stack tstack[STACK_SIZE];
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static uint32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 static struct k_sem end_sema;
 
 static void put_msgq(struct k_msgq *pmsgq)
@@ -38,7 +38,7 @@ static void put_msgq(struct k_msgq *pmsgq)
 
 static void get_msgq(struct k_msgq *pmsgq)
 {
-	uint32_t rx_data;
+	u32_t rx_data;
 	int ret;
 
 	for (int i = 0; i < MSGQ_LEN; i++) {

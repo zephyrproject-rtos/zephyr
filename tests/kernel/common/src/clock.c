@@ -8,15 +8,15 @@
 
 #define ALIGN_MS_BOUNDARY \
 	do {\
-		uint32_t t = k_uptime_get_32();\
+		u32_t t = k_uptime_get_32();\
 		while (t == k_uptime_get_32())\
 			;\
 	} while (0)
 
 static void tclock_uptime(void)
 {
-	uint64_t t64, t32;
-	int64_t d64;
+	u64_t t64, t32;
+	s64_t d64;
 
 	/**TESTPOINT: uptime elapse*/
 	t64 = k_uptime_get();
@@ -51,7 +51,7 @@ static void tclock_uptime(void)
 
 static void tclock_cycle(void)
 {
-	uint32_t c32, c0, c1, t32;
+	u32_t c32, c0, c1, t32;
 
 	/**TESTPOINT: cycle elapse*/
 	ALIGN_MS_BOUNDARY;

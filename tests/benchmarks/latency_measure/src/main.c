@@ -15,7 +15,7 @@
 
 #define STACK_SIZE 1024
 
-uint32_t tm_off;        /* time necessary to read the time */
+u32_t tm_off;        /* time necessary to read the time */
 int error_count;        /* track number of errors */
 
 

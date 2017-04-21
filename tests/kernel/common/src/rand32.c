@@ -8,7 +8,7 @@
 
 /*
  * This module tests the following random number routines:
- * uint32_t sys_rand32_get(void);
+ * u32_t sys_rand32_get(void);
  */
 
 #include <ztest.h>
@@ -26,7 +26,7 @@
 
 void rand32_test(void)
 {
-	uint32_t rnd_values[N_VALUES];
+	u32_t rnd_values[N_VALUES];
 	int i;
 
 	/*

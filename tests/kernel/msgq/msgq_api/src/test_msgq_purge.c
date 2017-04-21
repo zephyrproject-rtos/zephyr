@@ -17,7 +17,7 @@
 
 static char __noinit __stack tstack[STACK_SIZE];
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static uint32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 
 static void tThread_entry(void *p1, void *p2, void *p3)
 {

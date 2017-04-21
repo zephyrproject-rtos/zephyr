@@ -19,7 +19,7 @@
  */
 void sema_test(void)
 {
-	uint32_t et; /* elapsed Time */
+	u32_t et; /* elapsed Time */
 	int i;
 
 	PRINT_STRING(dashline, output_file);

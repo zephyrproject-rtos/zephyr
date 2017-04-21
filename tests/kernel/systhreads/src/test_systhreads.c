@@ -9,7 +9,7 @@
 static int main_prio;
 
 /* power hook functions if support */
-int _sys_soc_suspend(int32_t ticks)
+int _sys_soc_suspend(s32_t ticks)
 {
 	/** TESTPOINT: check idle thread priority */
 	zassert_true(k_thread_priority_get(k_current_get()) ==

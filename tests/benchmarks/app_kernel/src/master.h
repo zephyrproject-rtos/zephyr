@@ -180,9 +180,9 @@ extern struct k_mem_pool DEMOPOOL;
 #define PRINT_OVERFLOW_ERROR()						\
 	PRINT_F(output_file, __FILE__":%d Error: tick occurred\n", __LINE__)
 
-static inline uint32_t BENCH_START(void)
+static inline u32_t BENCH_START(void)
 {
-	uint32_t et;
+	u32_t et;
 
 	bench_test_start();
 	et = TIME_STAMP_DELTA_GET(0);

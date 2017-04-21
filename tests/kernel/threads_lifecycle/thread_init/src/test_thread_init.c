@@ -56,10 +56,10 @@ K_SEM_DEFINE(end_sema, 0, 1);
 /*local variables*/
 static char __noinit __stack stack_coop[INIT_COOP_STACK_SIZE];
 static char __noinit __stack stack_preempt[INIT_PREEMPT_STACK_SIZE];
-static uint64_t t_create;
+static u64_t t_create;
 static struct thread_data{
 	int init_prio;
-	int32_t init_delay;
+	s32_t init_delay;
 	void *init_p1;
 	void *init_p2;
 	void *init_p3;
@@ -69,7 +69,7 @@ static struct thread_data{
 static void thread_entry(void *p1, void *p2, void *p3)
 {
 	if (t_create) {
-		uint64_t t_delay = k_uptime_get() - t_create;
+		u64_t t_delay = k_uptime_get() - t_create;
 		/**TESTPOINT: check delay start*/
 		zassert_true(t_delay >= expected.init_delay,
 			"k_thread_spawn delay start failed\n");

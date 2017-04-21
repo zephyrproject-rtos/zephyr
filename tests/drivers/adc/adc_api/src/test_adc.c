@@ -31,7 +31,7 @@
 #define ADC_DEV_NAME CONFIG_ADC_0_NAME
 #define BUFFER_SIZE 5
 
-static uint16_t seq_buffer[BUFFER_SIZE];
+static u16_t seq_buffer[BUFFER_SIZE];
 
 static struct adc_seq_entry entry = {
 	.sampling_delay = 30,

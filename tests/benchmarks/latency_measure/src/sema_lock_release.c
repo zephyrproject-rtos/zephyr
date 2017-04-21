@@ -26,7 +26,7 @@
 /* the number of mutex lock/unlock cycles */
 #define N_TEST_MUTEX 1000
 
-static uint32_t timestamp;
+static u32_t timestamp;
 
 K_SEM_DEFINE(lock_unlock_sema, 0, N_TEST_SEMA);
 K_MUTEX_DEFINE(TEST_MUTEX);

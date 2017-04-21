@@ -35,19 +35,19 @@
 #include <tc_util.h>
 #include <tinycrypt/constants.h>
 
-static inline void show_str(const char *label, const uint8_t *s, size_t len)
+static inline void show_str(const char *label, const u8_t *s, size_t len)
 {
-	uint32_t i;
+	u32_t i;
 
 	TC_PRINT("%s = ", label);
-	for (i = 0; i < (uint32_t)len; ++i) {
+	for (i = 0; i < (u32_t)len; ++i) {
 		TC_PRINT("%02x", s[i]);
 	}
 	TC_PRINT("\n");
 }
 
 static inline
-void fatal(uint32_t testnum, const void *expected, size_t expectedlen,
+void fatal(u32_t testnum, const void *expected, size_t expectedlen,
 	   const void *computed, size_t computedlen)
 {
 	TC_ERROR("\tTest #%d Failed!\n", testnum);
@@ -57,11 +57,11 @@ void fatal(uint32_t testnum, const void *expected, size_t expectedlen,
 }
 
 static inline
-uint32_t check_result(uint32_t testnum, const void *expected,
+u32_t check_result(u32_t testnum, const void *expected,
 		      size_t expectedlen, const void *computed,
-		      size_t computedlen, uint32_t verbose)
+		      size_t computedlen, u32_t verbose)
 {
-	uint32_t result = TC_PASS;
+	u32_t result = TC_PASS;
 
 	ARG_UNUSED(verbose);
 

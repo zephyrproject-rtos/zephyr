@@ -25,7 +25,7 @@ int k_is_in_isr(void)
 	return 0;
 }
 
-void *k_queue_get(struct k_queue *queue, int32_t timeout)
+void *k_queue_get(struct k_queue *queue, s32_t timeout)
 {
 	return NULL;
 }

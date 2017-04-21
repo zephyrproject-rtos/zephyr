@@ -88,7 +88,7 @@ void test_mpool_alloc_size(void)
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 			K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
-		zassert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		zassert_true((u32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size >> 2;
 	}
@@ -106,7 +106,7 @@ void test_mpool_alloc_size(void)
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 			K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
-		zassert_true((uint32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		zassert_true((u32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size << 2;
 	}
@@ -119,7 +119,7 @@ void test_mpool_alloc_size(void)
 void test_mpool_alloc_timeout(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN], fblock;
-	int64_t tms;
+	s64_t tms;
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		zassert_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,

@@ -26,10 +26,10 @@ char __aligned(4) buffer[MY_DATA_SIZE+1];
   #error never verified with values other than 16!
 #endif
 
-#define ROM_START ((uint32_t)&_image_rom_start)
-#define ROM_END   ((uint32_t)&_image_rom_end)
-#define RAM_START ((uint32_t)&_image_ram_start)
-#define RAM_END   ((uint32_t)&_image_ram_end)
+#define ROM_START ((u32_t)&_image_rom_start)
+#define ROM_END   ((u32_t)&_image_rom_end)
+#define RAM_START ((u32_t)&_image_ram_start)
+#define RAM_END   ((u32_t)&_image_ram_end)
 
 char * const p_image_rom_start = (char *)ROM_START;
 char * const p_image_rom_end   = (char *)ROM_END;
@@ -62,7 +62,7 @@ static void update_rv(int *rv, int last_result)
 #define INVALID -1
 static int mem_range_check(const void *p)
 {
-	uint32_t addr = (uint32_t)p;
+	u32_t addr = (u32_t)p;
 
 	if (addr >= ROM_START && addr < ROM_END) {
 		return RO;

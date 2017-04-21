@@ -68,16 +68,16 @@
 	     puttime[0],                                             \
 	     puttime[1],                                             \
 	     puttime[2],                                             \
-	     (uint32_t)((1000000 * (uint64_t)putsize) / puttime[0]), \
-	     (uint32_t)((1000000 * (uint64_t)putsize) / puttime[1]), \
-	     (uint32_t)((1000000 * (uint64_t)putsize) / puttime[2]));
+	     (u32_t)((1000000 * (u64_t)putsize) / puttime[0]), \
+	     (u32_t)((1000000 * (u64_t)putsize) / puttime[1]), \
+	     (u32_t)((1000000 * (u64_t)putsize) / puttime[2]));
 #endif /* FLOAT */
 
 /*
  * Function prototypes.
  */
 int pipeput(struct k_pipe *pipe, pipe_options
-		 option, int size, int count, uint32_t *time);
+		 option, int size, int count, u32_t *time);
 
 /*
  * Function declarations.
@@ -91,12 +91,12 @@ int pipeput(struct k_pipe *pipe, pipe_options
  */
 void pipe_test(void)
 {
-	uint32_t	putsize;
+	u32_t	putsize;
 	int         getsize;
-	uint32_t	puttime[3];
+	u32_t	puttime[3];
 	int		putcount;
 	int		pipe;
-	uint32_t	TaskPrio = UINT32_MAX;
+	u32_t	TaskPrio = UINT32_MAX;
 	int		prio;
 	GetInfo	getinfo;
 
@@ -193,7 +193,7 @@ int pipeput(struct k_pipe *pipe,
 	    pipe_options option,
 	    int size,
 	    int count,
-	    uint32_t *time)
+	    u32_t *time)
 {
 	int i;
 	unsigned int t;

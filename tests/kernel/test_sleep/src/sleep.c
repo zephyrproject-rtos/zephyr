@@ -59,7 +59,7 @@ static void test_objects_init(void)
 
 static void align_to_tick_boundary(void)
 {
-	uint32_t tick;
+	u32_t tick;
 
 	tick = k_uptime_get_32();
 	while (k_uptime_get_32() == tick) {
@@ -73,17 +73,17 @@ static void align_to_tick_boundary(void)
  * measurement. Qemu at least will leak the external world's clock
  * rate into the simulator when the host is under load.
  */
-static int sleep_time_valid(uint32_t start, uint32_t end, uint32_t dur)
+static int sleep_time_valid(u32_t start, u32_t end, u32_t dur)
 {
-	uint32_t dt = end - start;
+	u32_t dt = end - start;
 
 	return dt >= dur && dt <= (dur + 1);
 }
 
 static void test_thread(int arg1, int arg2)
 {
-	uint32_t start_tick;
-	uint32_t end_tick;
+	u32_t start_tick;
+	u32_t end_tick;
 
 	k_sem_take(&test_thread_sem, K_FOREVER);
 
@@ -178,8 +178,8 @@ static void helper_thread(int arg1, int arg2)
 void main(void)
 {
 	int       status = TC_FAIL;
-	uint32_t  start_tick;
-	uint32_t  end_tick;
+	u32_t  start_tick;
+	u32_t  end_tick;
 
 	TC_START("Test kernel Sleep and Wakeup APIs\n");
 

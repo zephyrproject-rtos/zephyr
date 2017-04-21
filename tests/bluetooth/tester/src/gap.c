@@ -29,7 +29,7 @@
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
 
-static void le_connected(struct bt_conn *conn, uint8_t err)
+static void le_connected(struct bt_conn *conn, u8_t err)
 {
 	struct gap_device_connected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
@@ -42,10 +42,10 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 	ev.address_type = addr->type;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_CONNECTED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
-static void le_disconnected(struct bt_conn *conn, uint8_t reason)
+static void le_disconnected(struct bt_conn *conn, u8_t reason)
 {
 	struct gap_device_disconnected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
@@ -54,7 +54,7 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 	ev.address_type = addr->type;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_DISCONNECTED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
 static void le_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
@@ -70,7 +70,7 @@ static void le_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	       sizeof(ev.identity_address));
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_IDENTITY_RESOLVED,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -79,9 +79,9 @@ static struct bt_conn_cb conn_callbacks = {
 	.identity_resolved = le_identity_resolved,
 };
 
-static void supported_commands(uint8_t *data, uint16_t len)
+static void supported_commands(u8_t *data, u16_t len)
 {
-	uint8_t cmds[3];
+	u8_t cmds[3];
 	struct gap_read_supported_commands_rp *rp = (void *) &cmds;
 
 	memset(cmds, 0, sizeof(cmds));
@@ -102,13 +102,13 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, GAP_PASSKEY_ENTRY);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
-		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
+		    CONTROLLER_INDEX, (u8_t *) rp, sizeof(cmds));
 }
 
-static void controller_index_list(uint8_t *data,  uint16_t len)
+static void controller_index_list(u8_t *data,  u16_t len)
 {
 	struct gap_read_controller_index_list_rp *rp;
-	uint8_t buf[sizeof(*rp) + 1];
+	u8_t buf[sizeof(*rp) + 1];
 
 	rp = (void *) buf;
 
@@ -116,14 +116,14 @@ static void controller_index_list(uint8_t *data,  uint16_t len)
 	rp->index[0] = CONTROLLER_INDEX;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_CONTROLLER_INDEX_LIST,
-		    BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
+		    BTP_INDEX_NONE, (u8_t *) rp, sizeof(buf));
 }
 
-static void controller_info(uint8_t *data, uint16_t len)
+static void controller_info(u8_t *data, u16_t len)
 {
 	struct gap_read_controller_info_rp rp;
 	struct bt_le_oob oob;
-	uint32_t supported_settings;
+	u32_t supported_settings;
 
 	memset(&rp, 0, sizeof(rp));
 
@@ -151,10 +151,10 @@ static void controller_info(uint8_t *data, uint16_t len)
 	memcpy(rp.name, CONTROLLER_NAME, sizeof(CONTROLLER_NAME));
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_CONTROLLER_INFO,
-		    CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+		    CONTROLLER_INDEX, (u8_t *) &rp, sizeof(rp));
 }
 
-static void set_connectable(uint8_t *data, uint16_t len)
+static void set_connectable(u8_t *data, u16_t len)
 {
 	const struct gap_set_connectable_cmd *cmd = (void *) data;
 	struct gap_set_connectable_rp rp;
@@ -168,16 +168,16 @@ static void set_connectable(uint8_t *data, uint16_t len)
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_SET_CONNECTABLE, CONTROLLER_INDEX,
-		    (uint8_t *) &rp, sizeof(rp));
+		    (u8_t *) &rp, sizeof(rp));
 }
 
-static uint8_t ad_flags = BT_LE_AD_NO_BREDR;
+static u8_t ad_flags = BT_LE_AD_NO_BREDR;
 static struct bt_data ad[10] = {
 	BT_DATA(BT_DATA_FLAGS, &ad_flags, sizeof(ad_flags)),
 };
 static struct bt_data sd[10];
 
-static void set_discoverable(uint8_t *data, uint16_t len)
+static void set_discoverable(u8_t *data, u16_t len)
 {
 	const struct gap_set_discoverable_cmd *cmd = (void *) data;
 	struct gap_set_discoverable_rp rp;
@@ -206,14 +206,14 @@ static void set_discoverable(uint8_t *data, uint16_t len)
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_SET_DISCOVERABLE, CONTROLLER_INDEX,
-		    (uint8_t *) &rp, sizeof(rp));
+		    (u8_t *) &rp, sizeof(rp));
 }
 
-static void start_advertising(const uint8_t *data, uint16_t len)
+static void start_advertising(const u8_t *data, u16_t len)
 {
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
 	struct gap_start_advertising_rp rp;
-	uint8_t adv_len, sd_len;
+	u8_t adv_len, sd_len;
 	bool adv_conn;
 	int i;
 
@@ -254,14 +254,14 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING, CONTROLLER_INDEX,
-		    (uint8_t *) &rp, sizeof(rp));
+		    (u8_t *) &rp, sizeof(rp));
 	return;
 fail:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
-static void stop_advertising(const uint8_t *data, uint16_t len)
+static void stop_advertising(const u8_t *data, u16_t len)
 {
 	struct gap_stop_advertising_rp rp;
 
@@ -275,12 +275,12 @@ static void stop_advertising(const uint8_t *data, uint16_t len)
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING, CONTROLLER_INDEX,
-		    (uint8_t *) &rp, sizeof(rp));
+		    (u8_t *) &rp, sizeof(rp));
 }
 
-static uint8_t get_ad_flags(struct net_buf_simple *ad)
+static u8_t get_ad_flags(struct net_buf_simple *ad)
 {
-	uint8_t len, i;
+	u8_t len, i;
 
 	/* Parse advertisement to get flags */
 	for (i = 0; i < ad->len; i += len - 1) {
@@ -305,10 +305,10 @@ static uint8_t get_ad_flags(struct net_buf_simple *ad)
 	return 0;
 }
 
-static uint8_t discovery_flags;
+static u8_t discovery_flags;
 static struct net_buf_simple *adv_buf = NET_BUF_SIMPLE(ADV_BUF_LEN);
 
-static void store_adv(const bt_addr_le_t *addr, int8_t rssi,
+static void store_adv(const bt_addr_le_t *addr, s8_t rssi,
 		      struct net_buf_simple *ad)
 {
 	struct gap_device_found_ev *ev;
@@ -326,13 +326,13 @@ static void store_adv(const bt_addr_le_t *addr, int8_t rssi,
 	memcpy(net_buf_simple_add(adv_buf, ad->len), ad->data, ad->len);
 }
 
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
+static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 			 struct net_buf_simple *ad)
 {
 	/* if General/Limited Discovery - parse Advertising data to get flags */
 	if (!(discovery_flags & GAP_DISCOVERY_FLAG_LE_OBSERVE) &&
 	    (evtype != BT_LE_ADV_SCAN_RSP)) {
-		uint8_t flags = get_ad_flags(ad);
+		u8_t flags = get_ad_flags(ad);
 
 		/* ignore non-discoverable devices */
 		if (!(flags & BT_LE_AD_DISCOV_MASK)) {
@@ -403,10 +403,10 @@ done:
 		    CONTROLLER_INDEX, adv_buf->data, adv_buf->len);
 }
 
-static void start_discovery(const uint8_t *data, uint16_t len)
+static void start_discovery(const u8_t *data, u16_t len)
 {
 	const struct gap_start_discovery_cmd *cmd = (void *) data;
-	uint8_t status;
+	u8_t status;
 
 	/* only LE scan is supported */
 	if (cmd->flags & GAP_DISCOVERY_FLAG_BREDR) {
@@ -430,9 +430,9 @@ reply:
 		   status);
 }
 
-static void stop_discovery(const uint8_t *data, uint16_t len)
+static void stop_discovery(const u8_t *data, u16_t len)
 {
-	uint8_t status = BTP_STATUS_SUCCESS;
+	u8_t status = BTP_STATUS_SUCCESS;
 
 	if (bt_le_scan_stop() < 0) {
 		status = BTP_STATUS_FAILED;
@@ -442,10 +442,10 @@ static void stop_discovery(const uint8_t *data, uint16_t len)
 		   status);
 }
 
-static void connect(const uint8_t *data, uint16_t len)
+static void connect(const u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
-	uint8_t status;
+	u8_t status;
 
 	conn = bt_conn_create_le((bt_addr_le_t *) data,
 				 BT_LE_CONN_PARAM_DEFAULT);
@@ -461,10 +461,10 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_CONNECT, CONTROLLER_INDEX, status);
 }
 
-static void disconnect(const uint8_t *data, uint16_t len)
+static void disconnect(const u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
-	uint8_t status;
+	u8_t status;
 
 	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
 	if (!conn) {
@@ -495,7 +495,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	ev.passkey = sys_cpu_to_le32(passkey);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PASSKEY_DISPLAY,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
 static void auth_passkey_entry(struct bt_conn *conn)
@@ -507,7 +507,7 @@ static void auth_passkey_entry(struct bt_conn *conn)
 	ev.address_type = addr->type;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PASSKEY_ENTRY_REQ,
-		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
 static void auth_cancel(struct bt_conn *conn)
@@ -515,10 +515,10 @@ static void auth_cancel(struct bt_conn *conn)
 	/* TODO */
 }
 
-static void set_io_cap(const uint8_t *data, uint16_t len)
+static void set_io_cap(const u8_t *data, u16_t len)
 {
 	const struct gap_set_io_cap_cmd *cmd = (void *) data;
-	uint8_t status;
+	u8_t status;
 
 	/* Reset io cap requirements */
 	memset(&cb, 0, sizeof(cb));
@@ -559,10 +559,10 @@ rsp:
 		   status);
 }
 
-static void pair(const uint8_t *data, uint16_t len)
+static void pair(const u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
-	uint8_t status;
+	u8_t status;
 
 	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
 	if (!conn) {
@@ -583,12 +583,12 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_PAIR, CONTROLLER_INDEX, status);
 }
 
-static void unpair(const uint8_t *data, uint16_t len)
+static void unpair(const u8_t *data, u16_t len)
 {
 	struct gap_unpair_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 	bt_addr_le_t addr;
-	uint8_t status;
+	u8_t status;
 	int err;
 
 	addr.type = cmd->address_type;
@@ -615,11 +615,11 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_UNPAIR, CONTROLLER_INDEX, status);
 }
 
-static void passkey_entry(const uint8_t *data, uint16_t len)
+static void passkey_entry(const u8_t *data, u16_t len)
 {
 	const struct gap_passkey_entry_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
-	uint8_t status;
+	u8_t status;
 
 	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
 	if (!conn) {
@@ -637,8 +637,8 @@ rsp:
 		   status);
 }
 
-void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
-		       uint16_t len)
+void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
+		       u16_t len)
 {
 	switch (opcode) {
 	case GAP_READ_SUPPORTED_COMMANDS:
@@ -734,7 +734,7 @@ static void tester_init_gap_cb(int err)
 		   BTP_STATUS_SUCCESS);
 }
 
-uint8_t tester_init_gap(void)
+u8_t tester_init_gap(void)
 {
 	if (bt_enable(tester_init_gap_cb) < 0) {
 		return BTP_STATUS_FAILED;

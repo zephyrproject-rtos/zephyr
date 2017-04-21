@@ -24,7 +24,7 @@ static int abs(int i)
 /* context switch enough time so our measurement is precise */
 #define NB_OF_YIELD     1000
 
-static uint32_t helper_thread_iterations;
+static u32_t helper_thread_iterations;
 
 #define Y_STACK_SIZE    512
 #define Y_PRIORITY      10
@@ -53,9 +53,9 @@ void yielding_thread(void *arg1, void *arg2, void *arg3)
  */
 void thread_switch_yield(void)
 {
-	uint32_t iterations = 0;
-	int32_t delta;
-	uint32_t timestamp;
+	u32_t iterations = 0;
+	s32_t delta;
+	u32_t timestamp;
 
 	PRINT_FORMAT(" 5 - Measure average context switch time between threads"
 		     " using (k_yield)");

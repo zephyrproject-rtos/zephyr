@@ -67,7 +67,7 @@ static void tmslab_alloc_align(void *data)
 		 * TESTPOINT: To ensure that each memory block is similarly
 		 * aligned to this boundary
 		 */
-		zassert_true((uint32_t)block[i] % BLK_ALIGN == 0, NULL);
+		zassert_true((u32_t)block[i] % BLK_ALIGN == 0, NULL);
 	}
 	for (int i = 0; i < BLK_NUM; i++) {
 		k_mem_slab_free(pslab, &block[i]);
@@ -78,7 +78,7 @@ static void tmslab_alloc_timeout(void *data)
 {
 	struct k_mem_slab *pslab = (struct k_mem_slab *)data;
 	void *block[BLK_NUM], *block_fail;
-	int64_t tms;
+	s64_t tms;
 
 	for (int i = 0; i < BLK_NUM; i++) {
 		zassert_true(k_mem_slab_alloc(pslab, &block[i], K_NO_WAIT) == 0,

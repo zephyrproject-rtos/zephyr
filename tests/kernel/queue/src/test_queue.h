@@ -6,6 +6,6 @@
 
 typedef struct qdata {
 	sys_snode_t snode;
-	uint32_t data;
+	u32_t data;
 } qdata_t;
 #endif

@@ -11,7 +11,7 @@
 struct timer_data {
 	int expire_cnt;
 	int stop_cnt;
-	int64_t timestamp;
+	s64_t timestamp;
 };
 
 void test_timer_duration_period(void);

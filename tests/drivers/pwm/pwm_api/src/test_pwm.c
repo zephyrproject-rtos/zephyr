@@ -48,7 +48,7 @@
 #define DEFAULT_PWM_PORT 0
 #endif
 
-static int test_task(uint32_t port, uint32_t period, uint32_t pulse, bool cycle)
+static int test_task(u32_t port, u32_t period, u32_t pulse, bool cycle)
 {
 	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
 		port, period, pulse);
@@ -62,7 +62,7 @@ static int test_task(uint32_t port, uint32_t period, uint32_t pulse, bool cycle)
 
 #ifdef CONFIG_BOARD_QUARK_D2000_CRB
 	struct device *pinmux = device_get_binding(PINMUX_NAME);
-	uint32_t function;
+	u32_t function;
 
 	if (!pinmux) {
 		TC_PRINT("Cannot get PINMUX\n");

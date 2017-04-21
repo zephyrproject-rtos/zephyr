@@ -57,20 +57,20 @@ void main(void)
 	 * (replace by appropriate values)
 	 * e.g.: hostname+timestamp
 	 */
-	uint8_t additional_input[] = "additional input";
-	uint8_t personalization[] = "HOSTNAME";
-	uint32_t size = (1 << 15);
-	uint32_t result = TC_PASS;
+	u8_t additional_input[] = "additional input";
+	u8_t personalization[] = "HOSTNAME";
+	u32_t size = (1 << 15);
+	u32_t result = TC_PASS;
 	struct tc_hmac_prng_struct h;
-	uint8_t random[size];
-	uint8_t seed[128];
-	uint32_t i;
+	u8_t random[size];
+	u8_t seed[128];
+	u32_t i;
 
 	TC_START("Performing HMAC-PRNG tests:");
 	TC_PRINT("HMAC-PRNG test#1 (init, reseed, generate):\n");
 
 	/* Fake seed (replace by a a truly random seed): */
-	for (i = 0; i < (uint32_t)sizeof(seed); ++i) {
+	for (i = 0; i < (u32_t)sizeof(seed); ++i) {
 		seed[i] = i;
 	}
 

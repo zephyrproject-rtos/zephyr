@@ -23,29 +23,29 @@
 
 #define _TIMESTAMP_NUM 0  /* set to timer # for use by timestamp (0-3) */
 
-#define _CLKGATECTRL *((volatile uint32_t *)0x400FE104)
+#define _CLKGATECTRL *((volatile u32_t *)0x400FE104)
 #define _CLKGATECTRL_TIMESTAMP_EN (1 << (16 + _TIMESTAMP_NUM))
 
 #define _TIMESTAMP_BASE 0x40030000
 #define _TIMESTAMP_OFFSET (0x1000 * _TIMESTAMP_NUM)
 #define _TIMESTAMP_ADDR (_TIMESTAMP_BASE + _TIMESTAMP_OFFSET)
 
-#define _TIMESTAMP_CFG *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0))
-#define _TIMESTAMP_CTRL *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0xC))
-#define _TIMESTAMP_MODE *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x4))
-#define _TIMESTAMP_LOAD *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x28))
-#define _TIMESTAMP_IMASK *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x18))
-#define _TIMESTAMP_ISTATUS *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x1C))
-#define _TIMESTAMP_ICLEAR *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x24))
-#define _TIMESTAMP_VAL *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x48))
+#define _TIMESTAMP_CFG *((volatile u32_t *)(_TIMESTAMP_ADDR + 0))
+#define _TIMESTAMP_CTRL *((volatile u32_t *)(_TIMESTAMP_ADDR + 0xC))
+#define _TIMESTAMP_MODE *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x4))
+#define _TIMESTAMP_LOAD *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x28))
+#define _TIMESTAMP_IMASK *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x18))
+#define _TIMESTAMP_ISTATUS *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x1C))
+#define _TIMESTAMP_ICLEAR *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x24))
+#define _TIMESTAMP_VAL *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x48))
 
 /*
  * Set the rollover value such that it leaves the most significant bit of
  * the returned timestamp value unused.  This allows room for extended values
  * when handling rollovers when converting to an up-counter value.
  */
-#define _TIMESTAMP_MAX ((uint32_t)0x7FFFFFFF)
-#define _TIMESTAMP_EXT ((uint32_t)0x80000000)
+#define _TIMESTAMP_MAX ((u32_t)0x7FFFFFFF)
+#define _TIMESTAMP_EXT ((u32_t)0x80000000)
 
 #define TICKS_TO_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
@@ -86,11 +86,11 @@ void _TimestampOpen(void)
  *
  * @return timestamp value
  */
-uint32_t _TimestampRead(void)
+u32_t _TimestampRead(void)
 {
-	static uint32_t lastTimerVal;
-	static uint32_t cnt;
-	uint32_t timerVal = _TIMESTAMP_VAL;
+	static u32_t lastTimerVal;
+	static u32_t cnt;
+	u32_t timerVal = _TIMESTAMP_VAL;
 
 	/* handle rollover for every other read (end of sleep) */
 
@@ -135,25 +135,25 @@ void _TimestampClose(void)
 
 #define _COUNTDOWN_TIMER false
 
-#define _CLKGATECTRL *((volatile uint32_t *)0x4004803C)
+#define _CLKGATECTRL *((volatile u32_t *)0x4004803C)
 #define _CLKGATECTRL_TIMESTAMP_EN (1 << 29)
 
-#define _SYSOPTCTRL2 *((volatile uint32_t *)0x40048004)
+#define _SYSOPTCTRL2 *((volatile u32_t *)0x40048004)
 #define _SYSOPTCTRL2_32KHZRTCCLK (1 << 4)
 
 #define _TIMESTAMP_ADDR (0x4003D000)
 
-#define _TIMESTAMP_ICLEAR *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x24))
+#define _TIMESTAMP_ICLEAR *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x24))
 
-#define _TIMESTAMP_VAL *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0))
-#define _TIMESTAMP_PRESCALE *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x4))
-#define _TIMESTAMP_COMP *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0xC))
-#define _TIMESTAMP_CTRL *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x10))
-#define _TIMESTAMP_STATUS *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x14))
-#define _TIMESTAMP_LOCK *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x18))
-#define _TIMESTAMP_IMASK *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x1C))
-#define _TIMESTAMP_RACCESS *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x800))
-#define _TIMESTAMP_WACCESS *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x804))
+#define _TIMESTAMP_VAL *((volatile u32_t *)(_TIMESTAMP_ADDR + 0))
+#define _TIMESTAMP_PRESCALE *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x4))
+#define _TIMESTAMP_COMP *((volatile u32_t *)(_TIMESTAMP_ADDR + 0xC))
+#define _TIMESTAMP_CTRL *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x10))
+#define _TIMESTAMP_STATUS *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x14))
+#define _TIMESTAMP_LOCK *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x18))
+#define _TIMESTAMP_IMASK *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x1C))
+#define _TIMESTAMP_RACCESS *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x800))
+#define _TIMESTAMP_WACCESS *((volatile u32_t *)(_TIMESTAMP_ADDR + 0x804))
 
 /**
  *
@@ -197,12 +197,12 @@ void _TimestampOpen(void)
  *
  * @return timestamp value
  */
-uint32_t _TimestampRead(void)
+u32_t _TimestampRead(void)
 {
-	static uint32_t lastPrescale;
-	static uint32_t cnt;
-	uint32_t prescale1 = _TIMESTAMP_PRESCALE;
-	uint32_t prescale2 = _TIMESTAMP_PRESCALE;
+	static u32_t lastPrescale;
+	static u32_t cnt;
+	u32_t prescale1 = _TIMESTAMP_PRESCALE;
+	u32_t prescale2 = _TIMESTAMP_PRESCALE;
 
 	/* ensure a valid reading */
 
@@ -244,8 +244,8 @@ void _TimestampClose(void)
 
 #define _TIMESTAMP_ADDR (0x400E1A30)
 
-#define _TIMESTAMP_MODE (*((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x00)))
-#define _TIMESTAMP_VAL (*((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x08)))
+#define _TIMESTAMP_MODE (*((volatile u32_t *)(_TIMESTAMP_ADDR + 0x00)))
+#define _TIMESTAMP_VAL (*((volatile u32_t *)(_TIMESTAMP_ADDR + 0x08)))
 
 /**
  *
@@ -272,11 +272,11 @@ void _TimestampOpen(void)
  *
  * @return timestamp value
  */
-uint32_t _TimestampRead(void)
+u32_t _TimestampRead(void)
 {
-	static uint32_t last_val;
-	uint32_t tmr_val = _TIMESTAMP_VAL;
-	uint32_t ticks;
+	static u32_t last_val;
+	u32_t tmr_val = _TIMESTAMP_VAL;
+	u32_t ticks;
 
 	/* handle rollover */
 	if (tmr_val < last_val) {

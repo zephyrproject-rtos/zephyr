@@ -49,7 +49,7 @@ static void resume_devices(void)
 	}
 }
 
-int _sys_soc_suspend(int32_t ticks)
+int _sys_soc_suspend(s32_t ticks)
 {
 	printk("LMT: Try to put the system in SYS_POWER_STATE_DEEP_SLEEP_2"
 	       " state\n");
@@ -115,7 +115,7 @@ void main(void)
 {
 	struct device *rtc_dev;
 	struct rtc_config config;
-	uint32_t now;
+	u32_t now;
 
 	printk("LMT: Quark SE PM Multicore Demo\n");
 

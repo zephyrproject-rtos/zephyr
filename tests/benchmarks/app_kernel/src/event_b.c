@@ -39,7 +39,7 @@ void event_test(void)
 {
 	int nReturn = 0;
 	int nCounter;
-	uint32_t et; /* elapsed time */
+	u32_t et; /* elapsed time */
 
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();

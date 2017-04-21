@@ -12,7 +12,7 @@
 
 void bitfield_test(void)
 {
-	uint32_t b1 = 0;
+	u32_t b1 = 0;
 	unsigned char b2[BITFIELD_SIZE >> 3] = { 0 };
 	int test_rv;
 	unsigned int bit;

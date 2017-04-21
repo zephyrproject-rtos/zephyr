@@ -42,9 +42,9 @@
 #define MAX_EXPECTED_STRING	128
 #define MAX_BIN_SIZE		(MAX_EXPECTED_STRING / 2)
 
-uint8_t per[MAX_BIN_SIZE];
-uint8_t ai1[MAX_BIN_SIZE];
-uint8_t ai2[MAX_BIN_SIZE];
+u8_t per[MAX_BIN_SIZE];
+u8_t ai1[MAX_BIN_SIZE];
+u8_t ai2[MAX_BIN_SIZE];
 
 struct prng_vector {
 	char *entropy;
@@ -247,7 +247,7 @@ struct prng_vector vectors[] = {
  * to their nibble (4 bit) values
  */
 static
-uint8_t char_to_nibble(char c)
+u8_t char_to_nibble(char c)
 {
 	if (c >= '0' && c <= '9') {
 		return c - '0';
@@ -266,7 +266,7 @@ uint8_t char_to_nibble(char c)
  * bytes of that real value
  */
 static
-void hex_str_to_num(uint8_t *buf, char *in)
+void hex_str_to_num(u8_t *buf, char *in)
 {
 	int len;
 	int i;
@@ -283,12 +283,12 @@ int test_prng_vector(struct prng_vector *v)
 {
 	TCCtrPrng_t ctx;
 
-	uint8_t entropy[MAX_BIN_SIZE];
-	uint8_t expected[MAX_BIN_SIZE];
-	uint8_t output[MAX_BIN_SIZE];
-	uint8_t *personal   = NULL;
-	uint8_t *extra1 = NULL;
-	uint8_t *extra2 = NULL;
+	u8_t entropy[MAX_BIN_SIZE];
+	u8_t expected[MAX_BIN_SIZE];
+	u8_t output[MAX_BIN_SIZE];
+	u8_t *personal   = NULL;
+	u8_t *extra1 = NULL;
+	u8_t *extra2 = NULL;
 
 	int extra1_len = 0;
 	int extra2_len = 0;
@@ -354,15 +354,15 @@ exit_test:
 static
 int test_reseed(void)
 {
-	uint8_t expectedV1[] = {0x7E, 0xE3, 0xA0, 0xCB, 0x6D, 0x5C, 0x4B, 0xC2,
+	u8_t expectedV1[] = {0x7E, 0xE3, 0xA0, 0xCB, 0x6D, 0x5C, 0x4B, 0xC2,
 				0x4B, 0x7E, 0x3C, 0x48, 0x88, 0xC3, 0x69, 0x70};
-	uint8_t expectedV2[] = {0x5E, 0xC1, 0x84, 0xED, 0x45, 0x76, 0x67, 0xEC,
+	u8_t expectedV2[] = {0x5E, 0xC1, 0x84, 0xED, 0x45, 0x76, 0x67, 0xEC,
 				0x7B, 0x4C, 0x08, 0x7E, 0xB0, 0xF9, 0x55, 0x4E};
-	uint8_t extra_input[32] = {0};
-	uint8_t entropy[32] = {0}; /* value not important */
-	uint8_t output[32];
+	u8_t extra_input[32] = {0};
+	u8_t entropy[32] = {0}; /* value not important */
+	u8_t output[32];
 	TCCtrPrng_t ctx;
-	uint32_t i;
+	u32_t i;
 	int rc;
 
 	rc = tc_ctr_prng_init(&ctx, entropy, sizeof(entropy), 0, 0U);
@@ -451,7 +451,7 @@ exit_test:
 static
 int test_uninstantiate(void)
 {
-	uint8_t entropy[32] = {0}; /* value not important */
+	u8_t entropy[32] = {0}; /* value not important */
 	TCCtrPrng_t ctx;
 	size_t words;
 	size_t i;
@@ -494,8 +494,8 @@ exit_test:
 static
 int test_robustness(void)
 {
-	uint8_t entropy[32] = {0}; /* value not important */
-	uint8_t output[32];
+	u8_t entropy[32] = {0}; /* value not important */
+	u8_t output[32];
 	TCCtrPrng_t ctx;
 	int rc;
 

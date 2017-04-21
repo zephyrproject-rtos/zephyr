@@ -25,7 +25,7 @@ const char sz_partial[] = "PARTIAL";
 const char sz_fail[] = "FAILED";
 
 /* time necessary to read the time */
-uint32_t tm_off;
+u32_t tm_off;
 
 /**
  *
@@ -53,7 +53,7 @@ void begin_test(void)
  * @param i   Number of tests.
  * @param t   Time in ticks for the whole test.
  */
-int check_result(int i, uint32_t t)
+int check_result(int i, u32_t t)
 {
 	/*
 	 * bench_test_end checks tCheck static variable.

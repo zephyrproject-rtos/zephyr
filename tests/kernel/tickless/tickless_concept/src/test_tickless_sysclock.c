@@ -35,16 +35,16 @@ static char __noinit __stack tstack[NUM_THREAD][STACK_SIZE];
 /*align to millisecond boundary*/
 #define ALIGN_MS_BOUNDARY() \
 	do {\
-		uint32_t t = k_uptime_get_32();\
+		u32_t t = k_uptime_get_32();\
 		while (t == k_uptime_get_32())\
 			;\
 	} while (0)
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
-static int64_t elapsed_slice;
+static s64_t elapsed_slice;
 
 static void thread_tslice(void *p1, void *p2, void *p3)
 {
-	int64_t t = k_uptime_delta(&elapsed_slice);
+	s64_t t = k_uptime_delta(&elapsed_slice);
 
 	TC_PRINT("elapsed slice %lld\n", t);
 	/**TESTPOINT: verify slicing scheduler behaves as expected*/
@@ -52,7 +52,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	/*less than one tick delay*/
 	zassert_true(t <= (SLICE_SIZE + MSEC_PER_TICK), NULL);
 
-	uint32_t t32 = k_uptime_get_32();
+	u32_t t32 = k_uptime_get_32();
 
 	/*keep the current thread busy for more than one slice*/
 	while (k_uptime_get_32() - t32 < SLEEP_TICKLESS)
@@ -63,7 +63,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 /*test cases*/
 void test_tickless_sysclock(void)
 {
-	volatile uint32_t t0, t1;
+	volatile u32_t t0, t1;
 
 	ALIGN_MS_BOUNDARY();
 	t0 = k_uptime_get_32();

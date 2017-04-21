@@ -51,18 +51,18 @@ int sign_vectors(TCSha256State_t hash, char **d_vec, char **k_vec,
 {
 	EccPoint point;
 
-	uint32_t seed[2 * NUM_ECC_DIGITS];
-	uint32_t prv[NUM_ECC_DIGITS];
-	uint32_t r[NUM_ECC_DIGITS];
-	uint32_t s[NUM_ECC_DIGITS];
-	uint8_t  digest[TC_SHA256_DIGEST_SIZE];
-	uint32_t dig32[NUM_ECC_DIGITS];
+	u32_t seed[2 * NUM_ECC_DIGITS];
+	u32_t prv[NUM_ECC_DIGITS];
+	u32_t r[NUM_ECC_DIGITS];
+	u32_t s[NUM_ECC_DIGITS];
+	u8_t  digest[TC_SHA256_DIGEST_SIZE];
+	u32_t dig32[NUM_ECC_DIGITS];
 
 	/* expected outputs (converted input vectors) */
-	uint32_t exp_r[NUM_ECC_DIGITS];
-	uint32_t exp_s[NUM_ECC_DIGITS];
+	u32_t exp_r[NUM_ECC_DIGITS];
+	u32_t exp_s[NUM_ECC_DIGITS];
 
-	uint8_t msg[BUF_SIZE];
+	u8_t msg[BUF_SIZE];
 	size_t msglen;
 
 	int rc = TC_FAIL;
@@ -324,11 +324,11 @@ int verify_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec,
 		   int verbose)
 {
 	EccPoint pub;
-	uint32_t r[NUM_ECC_DIGITS];
-	uint32_t s[NUM_ECC_DIGITS];
-	uint8_t  digest[TC_SHA256_DIGEST_SIZE];
-	uint32_t dig32[NUM_ECC_DIGITS];
-	uint8_t msg[BUF_SIZE];
+	u32_t r[NUM_ECC_DIGITS];
+	u32_t s[NUM_ECC_DIGITS];
+	u8_t  digest[TC_SHA256_DIGEST_SIZE];
+	u32_t dig32[NUM_ECC_DIGITS];
+	u8_t msg[BUF_SIZE];
 	size_t msglen;
 	int exp_rc;
 	int rc = TC_FAIL;
@@ -556,21 +556,21 @@ int cavp_verify(int verbose)
 	return rc;
 }
 
-int montecarlo_signverify(uint32_t num, int verbose)
+int montecarlo_signverify(u32_t num, int verbose)
 {
 	EccPoint l_public;
-	uint32_t l_private[NUM_ECC_DIGITS];
+	u32_t l_private[NUM_ECC_DIGITS];
 
-	uint32_t l_hash[NUM_ECC_DIGITS];
-	uint32_t l_random[2 * NUM_ECC_DIGITS];
+	u32_t l_hash[NUM_ECC_DIGITS];
+	u32_t l_random[2 * NUM_ECC_DIGITS];
 
-	uint32_t r[NUM_ECC_DIGITS];
-	uint32_t s[NUM_ECC_DIGITS];
+	u32_t r[NUM_ECC_DIGITS];
+	u32_t s[NUM_ECC_DIGITS];
 	int rc = TC_FAIL;
 
 	ARG_UNUSED(verbose);
 
-	for (uint32_t i = 0; i < num; ++i) {
+	for (u32_t i = 0; i < num; ++i) {
 		random_bytes(l_random, 2 * NUM_ECC_DIGITS);
 		ecc_make_key(&l_public, l_private, l_random);
 

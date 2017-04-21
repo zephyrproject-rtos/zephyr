@@ -33,7 +33,7 @@
 #define CHANNEL 10
 #define BUFFER_SIZE 10
 
-static uint32_t seq_buffer[2][BUFFER_SIZE];
+static u32_t seq_buffer[2][BUFFER_SIZE];
 
 static struct adc_seq_entry sample = {
 	.sampling_delay = 12,
@@ -46,9 +46,9 @@ static struct adc_seq_table table = {
 	.num_entries = 1,
 };
 
-static void _print_sample_in_hex(const uint32_t *buf, uint32_t length)
+static void _print_sample_in_hex(const u32_t *buf, u32_t length)
 {
-	const uint32_t *top;
+	const u32_t *top;
 
 	printk("Buffer content:\n");
 	for (top = buf + length; buf < top; buf++)

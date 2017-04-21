@@ -138,7 +138,7 @@ void fifo_thread3(void *par1, void *par2, void *par3)
  */
 int fifo_test(void)
 {
-	uint32_t t;
+	u32_t t;
 	int i = 0;
 	int return_value = 0;
 	int element[2];

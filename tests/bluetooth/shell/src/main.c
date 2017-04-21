@@ -150,7 +150,7 @@ static const char *current_prompt(void)
 	return str;
 }
 
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
+static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 			 struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
@@ -159,7 +159,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 	memset(name, 0, sizeof(name));
 
 	while (buf->len > 1) {
-		uint8_t len, type;
+		u8_t len, type;
 
 		len = net_buf_simple_pull_u8(buf);
 		if (!len) {
@@ -215,12 +215,12 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
+static u8_t sdp_hfp_ag_user(struct bt_conn *conn,
 			       struct bt_sdp_client_result *result)
 {
 	char addr[BT_ADDR_STR_LEN];
-	uint16_t param, version;
-	uint16_t features;
+	u16_t param, version;
+	u16_t features;
 	int res;
 
 	conn_addr_str(conn, addr, sizeof(addr));
@@ -268,12 +268,12 @@ done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
 }
 
-static uint8_t sdp_a2src_user(struct bt_conn *conn,
+static u8_t sdp_a2src_user(struct bt_conn *conn,
 			      struct bt_sdp_client_result *result)
 {
 	char addr[BT_ADDR_STR_LEN];
-	uint16_t param, version;
-	uint16_t features;
+	u16_t param, version;
+	u16_t features;
 	int res;
 
 	conn_addr_str(conn, addr, sizeof(addr));
@@ -340,7 +340,7 @@ static struct bt_sdp_discover_params discov_a2src = {
 static struct bt_sdp_discover_params discov;
 #endif
 
-static void connected(struct bt_conn *conn, uint8_t err)
+static void connected(struct bt_conn *conn, u8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -365,7 +365,7 @@ done:
 	}
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -387,8 +387,8 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 	return true;
 }
 
-static void le_param_updated(struct bt_conn *conn, uint16_t interval,
-			     uint16_t latency, uint16_t timeout)
+static void le_param_updated(struct bt_conn *conn, u16_t interval,
+			     u16_t latency, u16_t timeout)
 {
 	printk("LE conn param updated: int 0x%04x lat %d to %d\n", interval,
 	       latency, timeout);
@@ -431,9 +431,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 };
 
-static uint16_t appearance_value = 0x0001;
+static u16_t appearance_value = 0x0001;
 
-static int char2hex(const char *c, uint8_t *x)
+static int char2hex(const char *c, u8_t *x)
 {
 	if (*c >= '0' && *c <= '9') {
 		*x = *c - '0';
@@ -451,7 +451,7 @@ static int char2hex(const char *c, uint8_t *x)
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;
-	uint8_t tmp;
+	u8_t tmp;
 
 	if (strlen(str) != 17) {
 		return -EINVAL;
@@ -485,7 +485,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 	return 0;
 }
 
-static ssize_t storage_read(const bt_addr_le_t *addr, uint16_t key, void *data,
+static ssize_t storage_read(const bt_addr_le_t *addr, u16_t key, void *data,
 			    size_t length)
 {
 	if (addr) {
@@ -501,7 +501,7 @@ static ssize_t storage_read(const bt_addr_le_t *addr, uint16_t key, void *data,
 	return -EIO;
 }
 
-static ssize_t storage_write(const bt_addr_le_t *addr, uint16_t key,
+static ssize_t storage_write(const bt_addr_le_t *addr, u16_t key,
 			     const void *data, size_t length)
 {
 	if (addr) {
@@ -833,7 +833,7 @@ static int cmd_security(int argc, char *argv[])
 }
 #endif
 
-static void exchange_func(struct bt_conn *conn, uint8_t err,
+static void exchange_func(struct bt_conn *conn, u8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
 	printk("Exchange %s\n", err == 0 ? "successful" : "failed");
@@ -965,7 +965,7 @@ static int cmd_oob(int argc, char *argv[])
 static struct bt_gatt_discover_params discover_params;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
-static void print_chrc_props(uint8_t properties)
+static void print_chrc_props(u8_t properties)
 {
 	printk("Properties: ");
 
@@ -1004,7 +1004,7 @@ static void print_chrc_props(uint8_t properties)
 	printk("\n");
 }
 
-static uint8_t discover_func(struct bt_conn *conn,
+static u8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
@@ -1109,9 +1109,9 @@ done:
 
 static struct bt_gatt_read_params read_params;
 
-static uint8_t read_func(struct bt_conn *conn, uint8_t err,
+static u8_t read_func(struct bt_conn *conn, u8_t err,
 			 struct bt_gatt_read_params *params,
-			 const void *data, uint16_t length)
+			 const void *data, u16_t length)
 {
 	printk("Read complete: err %u length %u\n", err, length);
 
@@ -1157,7 +1157,7 @@ static int cmd_gatt_read(int argc, char *argv[])
 
 static int cmd_gatt_mread(int argc, char *argv[])
 {
-	uint16_t h[8];
+	u16_t h[8];
 	int i, err;
 
 	if (!default_conn) {
@@ -1191,9 +1191,9 @@ static int cmd_gatt_mread(int argc, char *argv[])
 }
 
 static struct bt_gatt_write_params write_params;
-static uint8_t gatt_write_buf[512]; /* max value size */
+static u8_t gatt_write_buf[512]; /* max value size */
 
-static void write_func(struct bt_conn *conn, uint8_t err,
+static void write_func(struct bt_conn *conn, u8_t err,
 		       struct bt_gatt_write_params *params)
 {
 	printk("Write complete: err %u\n", err);
@@ -1204,7 +1204,7 @@ static void write_func(struct bt_conn *conn, uint8_t err,
 static int cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
-	uint16_t handle, offset;
+	u16_t handle, offset;
 
 	if (!default_conn) {
 		printk("Not connected\n");
@@ -1256,8 +1256,8 @@ static int cmd_gatt_write(int argc, char *argv[])
 static int cmd_gatt_write_without_rsp(int argc, char *argv[])
 {
 	int err;
-	uint16_t handle;
-	uint8_t data;
+	u16_t handle;
+	u8_t data;
 
 	if (!default_conn) {
 		printk("Not connected\n");
@@ -1281,8 +1281,8 @@ static int cmd_gatt_write_without_rsp(int argc, char *argv[])
 static int cmd_gatt_write_signed(int argc, char *argv[])
 {
 	int err;
-	uint16_t handle;
-	uint8_t data;
+	u16_t handle;
+	u8_t data;
 
 	if (!default_conn) {
 		printk("Not connected\n");
@@ -1305,9 +1305,9 @@ static int cmd_gatt_write_signed(int argc, char *argv[])
 
 static struct bt_gatt_subscribe_params subscribe_params;
 
-static uint8_t notify_func(struct bt_conn *conn,
+static u8_t notify_func(struct bt_conn *conn,
 			   struct bt_gatt_subscribe_params *params,
-			   const void *data, uint16_t length)
+			   const void *data, u16_t length)
 {
 	if (!data) {
 		printk("Ubsubscribed\n");
@@ -1399,10 +1399,10 @@ static const struct bt_uuid_128 vnd_long_uuid2 = BT_UUID_INIT_128(
 	0xde, 0xad, 0xfa, 0xce, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+static u8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
 static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
+			void *buf, u16_t len, u16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -1411,10 +1411,10 @@ static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, uint16_t len, uint16_t offset,
-			 uint8_t flags)
+			 const void *buf, u16_t len, u16_t offset,
+			 u8_t flags)
 {
-	uint8_t *value = attr->user_data;
+	u8_t *value = attr->user_data;
 
 	if (offset + len > sizeof(vnd_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -1426,14 +1426,14 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 #define MAX_DATA 30
-static uint8_t vnd_long_value1[MAX_DATA] = { 'V', 'e', 'n', 'd', 'o', 'r' };
-static uint8_t vnd_long_value2[MAX_DATA] = { 'S', 't', 'r', 'i', 'n', 'g' };
+static u8_t vnd_long_value1[MAX_DATA] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+static u8_t vnd_long_value2[MAX_DATA] = { 'S', 't', 'r', 'i', 'n', 'g' };
 
 static ssize_t read_long_vnd(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     uint16_t len, uint16_t offset)
+			     u16_t len, u16_t offset)
 {
-	uint8_t *value = attr->user_data;
+	u8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(vnd_long_value1));
@@ -1441,9 +1441,9 @@ static ssize_t read_long_vnd(struct bt_conn *conn,
 
 static ssize_t write_long_vnd(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      uint16_t len, uint16_t offset, uint8_t flags)
+			      u16_t len, u16_t offset, u8_t flags)
 {
-	uint8_t *value = attr->user_data;
+	u8_t *value = attr->user_data;
 
 	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
 		return 0;
@@ -1758,7 +1758,7 @@ static int cmd_auth_passkey(int argc, char *argv[])
 static int cmd_auth_pincode(int argc, char *argv[])
 {
 	struct bt_conn *conn;
-	uint8_t max = 16;
+	u8_t max = 16;
 
 	if (default_conn) {
 		conn = default_conn;
@@ -1792,7 +1792,7 @@ static int cmd_auth_pincode(int argc, char *argv[])
 static int str2bt_addr(const char *str, bt_addr_t *addr)
 {
 	int i, j;
-	uint8_t tmp;
+	u8_t tmp;
 
 	if (strlen(str) != 17) {
 		return -EINVAL;
@@ -1848,8 +1848,8 @@ static int cmd_connect_bredr(int argc, char *argv[])
 	return 0;
 }
 
-static void br_device_found(const bt_addr_t *addr, int8_t rssi,
-				  const uint8_t cod[3], const uint8_t eir[240])
+static void br_device_found(const bt_addr_t *addr, s8_t rssi,
+				  const u8_t cod[3], const u8_t eir[240])
 {
 	char br_addr[BT_ADDR_STR_LEN];
 	char name[239];
@@ -2006,7 +2006,7 @@ static int cmd_clear(int argc, char *argv[])
 }
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-static void hexdump(const uint8_t *data, size_t len)
+static void hexdump(const u8_t *data, size_t len)
 {
 	int n = 0;
 
@@ -2118,7 +2118,7 @@ static int cmd_l2cap_register(int argc, char *argv[])
 
 static int cmd_l2cap_connect(int argc, char *argv[])
 {
-	uint16_t psm;
+	u16_t psm;
 	int err;
 
 	if (!default_conn) {
@@ -2156,7 +2156,7 @@ static int cmd_l2cap_disconnect(int argc, char *argv[])
 
 static int cmd_l2cap_send(int argc, char *argv[])
 {
-	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	static u8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 	int ret, len, count = 1;
 	struct net_buf *buf;
 
@@ -2330,7 +2330,7 @@ static int cmd_bredr_rfcomm_register(int argc, char *argv[])
 
 static int cmd_rfcomm_connect(int argc, char *argv[])
 {
-	uint8_t channel;
+	u8_t channel;
 	int err;
 
 	if (!default_conn) {
@@ -2357,7 +2357,7 @@ static int cmd_rfcomm_connect(int argc, char *argv[])
 
 static int cmd_rfcomm_send(int argc, char *argv[])
 {
-	uint8_t buf_data[DATA_BREDR_MTU] = { [0 ... (DATA_BREDR_MTU - 1)] =
+	u8_t buf_data[DATA_BREDR_MTU] = { [0 ... (DATA_BREDR_MTU - 1)] =
 					    0xff };
 	int ret, len, count = 1;
 	struct net_buf *buf;

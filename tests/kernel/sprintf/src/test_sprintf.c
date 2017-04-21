@@ -44,8 +44,8 @@ This module contains the code for testing sprintf() functionality.
 typedef union {
 	double  d;
 	struct {
-		uint32_t  u1;    /* This part contains the exponent */
-		uint32_t  u2;    /* This part contains the fraction */
+		u32_t  u1;    /* This part contains the exponent */
+		u32_t  u2;    /* This part contains the fraction */
 	};
 } raw_double_u;
 

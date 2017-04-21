@@ -101,12 +101,12 @@ extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
 int idt_stub_test(void)
 {
 	struct segment_descriptor *p_idt_entry;
-	uint32_t offset;
+	u32_t offset;
 
 	/* Check for the interrupt stub */
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (TEST_SOFT_INT << 3));
-	offset = (uint32_t)(&int_stub);
+	offset = (u32_t)(&int_stub);
 	if (DTE_OFFSET(p_idt_entry) != offset) {
 		TC_ERROR("Failed to find offset of int_stub (0x%x) at vector %d\n",
 			 offset, TEST_SOFT_INT);
@@ -116,7 +116,7 @@ int idt_stub_test(void)
 	/* Check for the exception stub */
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (IV_DIVIDE_ERROR << 3));
-	offset = (uint32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
+	offset = (u32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
 	if (DTE_OFFSET(p_idt_entry) != offset) {
 		TC_ERROR("Failed to find offset of exc stub (0x%x) at vector %d\n",
 			 offset, IV_DIVIDE_ERROR);

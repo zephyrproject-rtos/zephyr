@@ -93,7 +93,7 @@ int fpu_sharing_error;
 static volatile unsigned int load_store_low_count;
 static volatile unsigned int load_store_high_count;
 
-extern uint32_t _tick_get_32(void);
+extern u32_t _tick_get_32(void);
 extern void calculate_pi_low(void);
 extern void calculate_pi_high(void);
 

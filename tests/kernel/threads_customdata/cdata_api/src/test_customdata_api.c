@@ -19,7 +19,7 @@ static char __stack tstack[STACK_SIZE];
 
 static void customdata_entry(void *p1, void *p2, void *p3)
 {
-	uint32_t data = 1;
+	u32_t data = 1;
 
 	zassert_is_null(k_thread_custom_data_get(), NULL);
 	while (1) {
@@ -27,7 +27,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 		/* relinguish cpu for a while */
 		k_sleep(50);
 		/** TESTPOINT: custom data comparison */
-		zassert_equal(data, (uint32_t)k_thread_custom_data_get(), NULL);
+		zassert_equal(data, (u32_t)k_thread_custom_data_get(), NULL);
 		data++;
 	}
 }

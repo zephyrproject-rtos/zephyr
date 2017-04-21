@@ -30,10 +30,10 @@
 static char __stack thread_one_stack[STACKSIZE];
 static char __stack thread_two_stack[STACKSIZE];
 
-static uint32_t timestamp;
+static u32_t timestamp;
 
 /* context switches counter */
-static volatile uint32_t ctx_switch_counter;
+static volatile u32_t ctx_switch_counter;
 
 /* context switch balancer. Incremented by one thread, decremented by another*/
 static volatile int ctx_switch_balancer;

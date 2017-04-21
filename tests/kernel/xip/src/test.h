@@ -22,4 +22,4 @@ regression test.
 
 #define XIP_TEST_ARRAY_SZ 4
 
-extern uint32_t xip_array[XIP_TEST_ARRAY_SZ];
+extern u32_t xip_array[XIP_TEST_ARRAY_SZ];

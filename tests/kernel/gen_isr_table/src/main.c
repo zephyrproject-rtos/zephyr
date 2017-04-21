@@ -9,7 +9,7 @@
 #include <tc_util.h>
 #include <sw_isr_table.h>
 
-extern uint32_t _irq_vector_table[];
+extern u32_t _irq_vector_table[];
 
 #if defined(_ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
 #define HAS_DIRECT_IRQS
@@ -53,7 +53,7 @@ void trigger_irq(int irq)
 #elif defined(CONFIG_RISCV32) && !defined(CONFIG_SOC_RISCV32_PULPINO)
 void trigger_irq(int irq)
 {
-	uint32_t mip;
+	u32_t mip;
 
 	__asm__ volatile ("csrrs %0, mip, %1\n"
 			  : "=r" (mip)
@@ -119,7 +119,7 @@ static int check_vector(void *isr, int offset)
 	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n",
 		 TABLE_INDEX(offset), IRQ_LINE(offset));
 
-	if (_irq_vector_table[TABLE_INDEX(offset)] != (uint32_t)isr) {
+	if (_irq_vector_table[TABLE_INDEX(offset)] != (u32_t)isr) {
 		TC_PRINT("bad entry %d in vector table\n", TABLE_INDEX(offset));
 		return -1;
 	}
@@ -133,7 +133,7 @@ static int check_vector(void *isr, int offset)
 #endif
 
 #ifdef CONFIG_GEN_SW_ISR_TABLE
-static int check_sw_isr(void *isr, uint32_t arg, int offset)
+static int check_sw_isr(void *isr, u32_t arg, int offset)
 {
 	struct _isr_table_entry *e = &_sw_isr_table[TABLE_INDEX(offset)];
 #ifdef CONFIG_GEN_IRQ_VECTOR_TABLE

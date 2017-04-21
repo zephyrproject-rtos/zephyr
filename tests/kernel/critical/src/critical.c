@@ -18,8 +18,8 @@
 #define NUM_MILLISECONDS        5000
 #define TEST_TIMEOUT            20000
 
-static uint32_t criticalVar;
-static uint32_t altTaskIterations;
+static u32_t criticalVar;
+static u32_t altTaskIterations;
 
 static struct k_work_q offload_work_q;
 static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];
@@ -43,7 +43,7 @@ K_SEM_DEFINE(TEST_SEM, 0, UINT_MAX);
 
 void criticalRtn(struct k_work *unused)
 {
-	volatile uint32_t x;
+	volatile u32_t x;
 
 	ARG_UNUSED(unused);
 
@@ -61,9 +61,9 @@ void criticalRtn(struct k_work *unused)
  * @return number of critical section calls made by task
  */
 
-uint32_t criticalLoop(uint32_t count)
+u32_t criticalLoop(u32_t count)
 {
-	int64_t mseconds;
+	s64_t mseconds;
 
 	mseconds = k_uptime_get();
 	while (k_uptime_get() < mseconds + NUM_MILLISECONDS) {
@@ -118,7 +118,7 @@ void AlternateTask(void *arg1, void *arg2, void *arg3)
 
 void RegressionTask(void *arg1, void *arg2, void *arg3)
 {
-	uint32_t nCalls = 0;
+	u32_t nCalls = 0;
 
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);

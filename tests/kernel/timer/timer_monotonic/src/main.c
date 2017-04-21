@@ -10,7 +10,7 @@
 
 int test_frequency(void)
 {
-	uint32_t start, end, delta, pct;
+	u32_t start, end, delta, pct;
 
 	TC_PRINT("Testing system tick frequency\n");
 
@@ -19,7 +19,7 @@ int test_frequency(void)
 	end = k_cycle_get_32();
 
 	delta = end - start;
-	pct = (uint64_t)delta * 100 / sys_clock_hw_cycles_per_sec;
+	pct = (u64_t)delta * 100 / sys_clock_hw_cycles_per_sec;
 
 	printk("delta: %u  expected: %u  %u%%\n", delta,
 	       sys_clock_hw_cycles_per_sec, pct);
@@ -36,8 +36,8 @@ int test_frequency(void)
 
 void main(void)
 {
-	uint32_t t_last, t_now, i, errors;
-	int32_t diff;
+	u32_t t_last, t_now, i, errors;
+	s32_t diff;
 	int rv = TC_PASS;
 
 	errors = 0;

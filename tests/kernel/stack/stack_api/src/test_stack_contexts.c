@@ -27,7 +27,7 @@ K_STACK_DEFINE(kstack, STACK_LEN);
 static struct k_stack stack;
 
 static char __noinit __stack threadstack[STACK_SIZE];
-static uint32_t data[STACK_LEN] = { 0xABCD, 0x1234 };
+static u32_t data[STACK_LEN] = { 0xABCD, 0x1234 };
 static struct k_sem end_sema;
 
 static void tstack_push(struct k_stack *pstack)
@@ -40,7 +40,7 @@ static void tstack_push(struct k_stack *pstack)
 
 static void tstack_pop(struct k_stack *pstack)
 {
-	uint32_t rx_data;
+	u32_t rx_data;
 
 	for (int i = STACK_LEN - 1; i >= 0; i--) {
 		/**TESTPOINT: stack pop*/

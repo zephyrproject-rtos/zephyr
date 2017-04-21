@@ -82,8 +82,8 @@ static void setup_rtc(void)
 
 static void set_rtc_alarm(void)
 {
-	uint32_t now = rtc_read(rtc_dev);
-	uint32_t alarm = now + (RTC_ALARM_SECOND * (TIMEOUT - 1));
+	u32_t now = rtc_read(rtc_dev);
+	u32_t alarm = now + (RTC_ALARM_SECOND * (TIMEOUT - 1));
 
 	rtc_set_alarm(rtc_dev, alarm);
 
@@ -99,7 +99,7 @@ static struct device *counter_dev;
 
 static void setup_counter(void)
 {
-	volatile uint32_t delay = 0;
+	volatile u32_t delay = 0;
 
 	counter_dev = device_get_binding("AON_TIMER");
 
@@ -120,7 +120,7 @@ static void setup_counter(void)
 
 static void set_counter_alarm(void)
 {
-	uint32_t timer_initial_value = (RTC_ALARM_SECOND * (TIMEOUT - 1));
+	u32_t timer_initial_value = (RTC_ALARM_SECOND * (TIMEOUT - 1));
 
 	if (counter_set_alarm(counter_dev, NULL,
 			      timer_initial_value, NULL)
@@ -150,7 +150,7 @@ static struct device *cmp_dev;
 
 static void setup_aon_comparator(void)
 {
-	volatile uint32_t delay = 0;
+	volatile u32_t delay = 0;
 
 	cmp_dev = device_get_binding("AIO_CMP_0");
 	if (!cmp_dev) {
@@ -228,7 +228,7 @@ static void do_soc_sleep(enum power_states state)
 	}
 }
 
-int _sys_soc_suspend(int32_t ticks)
+int _sys_soc_suspend(s32_t ticks)
 {
 	enum power_states state;
 	int pm_operation = SYS_PM_NOT_HANDLED;

@@ -21,15 +21,15 @@ char data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
 void ring_buffer_test(void)
 {
 	int ret, put_count, i;
-	uint32_t getdata[6];
-	uint8_t getsize, getval;
-	uint16_t gettype;
+	u32_t getdata[6];
+	u8_t getsize, getval;
+	u16_t gettype;
 	int dsize = INITIAL_SIZE;
 
 	put_count = 0;
 	while (1) {
 		ret = sys_ring_buf_put(&ring_buf, TYPE, VALUE,
-				       (uint32_t *)data, dsize);
+				       (u32_t *)data, dsize);
 		if (ret == -EMSGSIZE) {
 			SYS_LOG_DBG("ring buffer is full");
 			break;
@@ -56,7 +56,7 @@ void ring_buffer_test(void)
 		       getsize, gettype, getval,
 		       sys_ring_buf_space_get(&ring_buf));
 
-		zassert_true((memcmp((char *)getdata, data, getsize * sizeof(uint32_t)) == 0),
+		zassert_true((memcmp((char *)getdata, data, getsize * sizeof(u32_t)) == 0),
 			     "data corrupted");
 		zassert_true((gettype == TYPE), "type information corrupted");
 		zassert_true((getval == VALUE), "value information corrupted");

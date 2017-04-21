@@ -72,11 +72,11 @@ static void status_expire(struct k_timer *timer)
 	}
 }
 
-static void busy_wait_ms(int32_t ms)
+static void busy_wait_ms(s32_t ms)
 {
-	int32_t deadline = k_uptime_get() + ms;
+	s32_t deadline = k_uptime_get() + ms;
 
-	volatile int32_t now = k_uptime_get();
+	volatile s32_t now = k_uptime_get();
 
 	while (now < deadline) {
 		now = k_uptime_get();

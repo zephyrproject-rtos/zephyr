@@ -36,6 +36,7 @@
 #define __TEST_ECC_UTILS_H__
 
 #include <stdlib.h>
+#include <zephyr/types.h>
 #include <tinycrypt/constants.h>
 
 int keygen_vectors(EccPoint  *point, char **d_vec, char **qx_vec, char **qy_vec,
@@ -43,24 +44,24 @@ int keygen_vectors(EccPoint  *point, char **d_vec, char **qx_vec, char **qy_vec,
 
 int random_start(const char *fn);
 int random_end(void);
-int random_bytes(uint32_t *out, size_t len);
+int random_bytes(u32_t *out, size_t len);
 
-void string2host(uint32_t *native, const uint8_t *bytes, size_t len);
+void string2host(u32_t *native, const u8_t *bytes, size_t len);
 
 int hex_to_num(char hex);
 
-int hex_to_num_str(uint8_t *buf, const size_t buflen, const char *hex,
+int hex_to_num_str(u8_t *buf, const size_t buflen, const char *hex,
 		   const size_t hexlen);
 
-int str_to_scalar(uint32_t *scalar, uint32_t num_word32, char *str);
+int str_to_scalar(u32_t *scalar, u32_t num_word32, char *str);
 
-void vli_print(uint32_t *p_vli, unsigned int p_size);
+void vli_print(u32_t *p_vli, unsigned int p_size);
 
 int check_code(const int num, const char *name, const int expected,
 	       const int computed, const int verbose);
 
-int check_ecc_result(const int num, const char *name, const uint32_t *expected,
-		     const uint32_t *computed, const uint32_t num_word32,
+int check_ecc_result(const int num, const char *name, const u32_t *expected,
+		     const u32_t *computed, const u32_t num_word32,
 		     int verbose);
 
 #endif

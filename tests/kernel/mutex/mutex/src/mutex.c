@@ -79,7 +79,7 @@ void Task05(void)
 	if (rv != -EAGAIN) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to timeout on mutex 0x%x\n",
-				 (uint32_t)&Mutex4);
+				 (u32_t)&Mutex4);
 		return;
 	}
 }
@@ -110,7 +110,7 @@ void Task06(void)
 	rv = k_mutex_lock(&Mutex4, K_SECONDS(2));
 	if (rv != 0) {
 		tcRC = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (uint32_t)&Mutex4);
+		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&Mutex4);
 		return;
 	}
 
@@ -142,7 +142,7 @@ void Task07(void)
 	if (rv != -EAGAIN) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to timeout on mutex 0x%x\n",
-			 (uint32_t)&Mutex3);
+			 (u32_t)&Mutex3);
 		return;
 	}
 
@@ -165,7 +165,7 @@ void Task08(void)
 	rv = k_mutex_lock(&Mutex2, K_FOREVER);
 	if (rv != 0) {
 		tcRC = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (uint32_t)&Mutex2);
+		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&Mutex2);
 		return;
 	}
 
@@ -190,7 +190,7 @@ void Task09(void)
 		/* should not succeed. */
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to NOT take locked mutex 0x%x\n",
-			 (uint32_t)&Mutex1);
+			 (u32_t)&Mutex1);
 		return;
 	}
 
@@ -198,7 +198,7 @@ void Task09(void)
 	rv = k_mutex_lock(&Mutex1, K_FOREVER);
 	if (rv != 0) {
 		tcRC = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (uint32_t)&Mutex1);
+		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&Mutex1);
 		return;
 	}
 
@@ -220,7 +220,7 @@ void Task11(void)
 	rv = k_mutex_lock(&Mutex3, K_FOREVER);
 	if (rv != 0) {
 		tcRC = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (uint32_t)&Mutex2);
+		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&Mutex2);
 		return;
 	}
 	k_mutex_unlock(&Mutex3);
@@ -263,7 +263,7 @@ void RegressionTask(void)
 		rv = k_mutex_lock(mutexes[i], K_NO_WAIT);
 		if (rv != 0) {
 			TC_ERROR("Failed to lock mutex 0x%x\n",
-				 (uint32_t)mutexes[i]);
+				 (u32_t)mutexes[i]);
 			tcRC = TC_FAIL;
 			goto errorReturn;
 		}

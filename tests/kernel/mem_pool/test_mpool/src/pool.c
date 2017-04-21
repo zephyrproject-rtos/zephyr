@@ -41,12 +41,12 @@ struct TEST_CASE {
 	struct k_mem_block *block;      /* pointer to block data */
 	struct k_mem_pool *pool_id;     /* pool ID */
 	int size;                       /* request size in bytes */
-	int32_t timeout;                /* # of ticks to wait */
+	s32_t timeout;                /* # of ticks to wait */
 	int rcode;                      /* expected return code */
 };
 
 typedef int (*pool_block_get_func_t)(struct k_mem_block *, struct k_mem_pool *,
-				     int, int32_t);
+				     int, s32_t);
 typedef int (*pool_move_block_func_t)(struct k_mem_block *, struct k_mem_pool *);
 
 static volatile int evidence;
@@ -128,7 +128,7 @@ int block_compare(struct k_mem_block *b1, struct k_mem_block *b2)
  */
 
 int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			int size, int32_t unused)
+			int size, s32_t unused)
 {
 	ARG_UNUSED(unused);
 
@@ -143,7 +143,7 @@ int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
  */
 
 int pool_block_get_w_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			  int size, int32_t unused)
+			  int size, s32_t unused)
 {
 	ARG_UNUSED(unused);
 
@@ -158,7 +158,7 @@ int pool_block_get_w_func(struct k_mem_block *block, struct k_mem_pool *pool,
  */
 
 int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			   int size, int32_t timeout)
+			   int size, s32_t timeout)
 {
 	return k_mem_pool_alloc(pool, block, size, timeout);
 }

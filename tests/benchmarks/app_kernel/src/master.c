@@ -32,7 +32,7 @@ FILE *output_file;
  * Time in timer cycles necessary to read time.
  * Used for correction in time measurements.
  */
-uint32_t tm_off;
+u32_t tm_off;
 
 
 /********************************************************************/

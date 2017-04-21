@@ -21,9 +21,9 @@ void soc_watch_data_collector(void)
 {
 #ifdef CONFIG_SOC_WATCH
 	int res;
-	uint32_t data[4];
-	uint8_t dropped_count;
-	uint16_t event_id;
+	u32_t data[4];
+	u8_t dropped_count;
+	u16_t event_id;
 
 	/* We register the thread as collector to avoid this thread generating a
 	 * context switch event every time it collects the data
@@ -32,7 +32,7 @@ void soc_watch_data_collector(void)
 
 	while (1) {
 		/* collect the data */
-		uint8_t data_length = SIZE32_OF(data);
+		u8_t data_length = SIZE32_OF(data);
 
 		res = sys_k_event_logger_get_wait(&event_id, &dropped_count,
 				data, &data_length);
