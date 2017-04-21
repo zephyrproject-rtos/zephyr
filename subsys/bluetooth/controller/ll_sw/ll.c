@@ -54,21 +54,21 @@ static struct {
 
 static struct {
 	u16_t interval;
-	u8_t adv_type:4;
-	u8_t tx_addr:1;
-	u8_t rx_addr:1;
-	u8_t filter_policy:2;
-	u8_t chl_map:3;
-	u8_t adv_addr[BDADDR_SIZE];
-	u8_t direct_addr[BDADDR_SIZE];
+	u8_t  adv_type:4;
+	u8_t  tx_addr:1;
+	u8_t  rx_addr:1;
+	u8_t  filter_policy:2;
+	u8_t  chl_map:3;
+	u8_t  adv_addr[BDADDR_SIZE];
+	u8_t  direct_addr[BDADDR_SIZE];
 } _ll_adv_params;
 
 static struct {
 	u16_t interval;
 	u16_t window;
-	u8_t scan_type:1;
-	u8_t tx_addr:1;
-	u8_t filter_policy:1;
+	u8_t  scan_type:1;
+	u8_t  tx_addr:1;
+	u8_t  filter_policy:1;
 } _ll_scan_params;
 
 void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
@@ -405,8 +405,8 @@ void ll_scan_data_set(u8_t len, u8_t const *const data)
 	pdu->tx_addr = _ll_adv_params.tx_addr;
 	pdu->rx_addr = 0;
 	pdu->len = BDADDR_SIZE + len;
-	memcpy(&pdu->payload.scan_rsp.addr[0],
-		 &_ll_adv_params.adv_addr[0], BDADDR_SIZE);
+	memcpy(&pdu->payload.scan_rsp.addr[0], &_ll_adv_params.adv_addr[0],
+	       BDADDR_SIZE);
 	memcpy(&pdu->payload.scan_rsp.data[0], data, len);
 	pdu->resv = 0;
 
@@ -440,23 +440,23 @@ u32_t ll_adv_enable(u8_t enable)
 				[radio_scan_data->last][0];
 		if (_ll_adv_params.tx_addr) {
 			memcpy(&_ll_adv_params.adv_addr[0],
-				 &_ll_context.rnd_addr[0], BDADDR_SIZE);
+			       &_ll_context.rnd_addr[0], BDADDR_SIZE);
 			memcpy(&pdu_adv->payload.adv_ind.addr[0],
-				 &_ll_context.rnd_addr[0], BDADDR_SIZE);
+			       &_ll_context.rnd_addr[0], BDADDR_SIZE);
 			memcpy(&pdu_scan->payload.scan_rsp.addr[0],
-				 &_ll_context.rnd_addr[0], BDADDR_SIZE);
+			       &_ll_context.rnd_addr[0], BDADDR_SIZE);
 		} else {
 			memcpy(&_ll_adv_params.adv_addr[0],
-				 &_ll_context.pub_addr[0], BDADDR_SIZE);
+			       &_ll_context.pub_addr[0], BDADDR_SIZE);
 			memcpy(&pdu_adv->payload.adv_ind.addr[0],
-				 &_ll_context.pub_addr[0], BDADDR_SIZE);
+			       &_ll_context.pub_addr[0], BDADDR_SIZE);
 			memcpy(&pdu_scan->payload.scan_rsp.addr[0],
-				 &_ll_context.pub_addr[0], BDADDR_SIZE);
+			       &_ll_context.pub_addr[0], BDADDR_SIZE);
 		}
 
 		status = radio_adv_enable(_ll_adv_params.interval,
-						_ll_adv_params.chl_map,
-						_ll_adv_params.filter_policy);
+					  _ll_adv_params.chl_map,
+					  _ll_adv_params.filter_policy);
 	} else {
 		status = radio_adv_disable();
 	}
@@ -480,13 +480,13 @@ u32_t ll_scan_enable(u8_t enable)
 
 	if (enable) {
 		status = radio_scan_enable(_ll_scan_params.scan_type,
-				_ll_scan_params.tx_addr,
-				(_ll_scan_params.tx_addr) ?
-					&_ll_context.rnd_addr[0] :
-					&_ll_context.pub_addr[0],
-				_ll_scan_params.interval,
-				_ll_scan_params.window,
-				_ll_scan_params.filter_policy);
+					   _ll_scan_params.tx_addr,
+					   (_ll_scan_params.tx_addr) ?
+					   &_ll_context.rnd_addr[0] :
+					   &_ll_context.pub_addr[0],
+					   _ll_scan_params.interval,
+					   _ll_scan_params.window,
+					   _ll_scan_params.filter_policy);
 	} else {
 		status = radio_scan_disable();
 	}
@@ -495,22 +495,22 @@ u32_t ll_scan_enable(u8_t enable)
 }
 
 u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
-			      u8_t filter_policy, u8_t peer_addr_type,
-			      u8_t *peer_addr, u8_t own_addr_type,
-			      u16_t interval, u16_t latency,
-			      u16_t timeout)
+			   u8_t filter_policy, u8_t peer_addr_type,
+			   u8_t *peer_addr, u8_t own_addr_type,
+			   u16_t interval, u16_t latency,
+			   u16_t timeout)
 {
 	u32_t status;
 
 	status = radio_connect_enable(peer_addr_type, peer_addr, interval,
-					latency, timeout);
+				      latency, timeout);
 
 	if (status) {
 		return status;
 	}
 
 	return radio_scan_enable(0, own_addr_type, (own_addr_type) ?
-			&_ll_context.rnd_addr[0] :
-			&_ll_context.pub_addr[0],
-		scan_interval, scan_window, filter_policy);
+				 &_ll_context.rnd_addr[0] :
+				 &_ll_context.pub_addr[0],
+				 scan_interval, scan_window, filter_policy);
 }

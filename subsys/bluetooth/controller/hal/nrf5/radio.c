@@ -261,9 +261,8 @@ u32_t radio_rssi_is_ready(void)
 	return NRF_RADIO->EVENTS_RSSIEND;
 }
 
-void radio_filter_configure(u8_t bitmask_enable,
-				u8_t bitmask_addr_type,
-				u8_t *bdaddr)
+void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
+			    u8_t *bdaddr)
 {
 	u8_t index;
 
