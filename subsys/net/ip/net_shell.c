@@ -21,6 +21,7 @@
 #include "route.h"
 #include "icmpv6.h"
 #include "icmpv4.h"
+#include "connection.h"
 
 #if defined(CONFIG_NET_TCP)
 #include "tcp.h"
