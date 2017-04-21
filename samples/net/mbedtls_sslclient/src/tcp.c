@@ -13,7 +13,7 @@
 
 #include <net/net_core.h>
 #include <net/net_context.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
@@ -32,42 +32,42 @@
 NET_BUF_POOL_DEFINE(tcp_msg_pool, TCP_BUF_CTR, TCP_BUF_SIZE, 0, NULL);
 
 static void tcp_received(struct net_context *context,
-			 struct net_buf *buf, int status, void *user_data)
+			 struct net_pkt *pkt, int status, void *user_data)
 {
 	ARG_UNUSED(context);
 	struct tcp_context *ctx = user_data;
 
-	ctx->rx_nbuf = buf;
+	ctx->rx_pkt = pkt;
 }
 
 int tcp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct tcp_context *ctx = context;
 	struct net_context *tcp_ctx;
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 	int rc, len;
 
 	tcp_ctx = ctx->net_ctx;
 
-	send_buf = net_nbuf_get_tx(tcp_ctx, K_FOREVER);
-	if (!send_buf) {
-		printk("cannot create buf\n");
+	send_pkt = net_pkt_get_tx(tcp_ctx, K_FOREVER);
+	if (!send_pkt) {
+		printk("cannot create pkt\n");
 		return -EIO;
 	}
 
-	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
+	rc = net_pkt_append(send_pkt, size, (uint8_t *) buf, K_FOREVER);
 	if (!rc) {
 		printk("cannot write buf\n");
 		return -EIO;
 	}
 
-	len = net_buf_frags_len(send_buf);
+	len = net_pkt_get_len(send_pkt);
 
-	rc = net_context_send(send_buf, NULL, ctx->timeout, NULL, NULL);
+	rc = net_context_send(send_pkt, NULL, ctx->timeout, NULL, NULL);
 
 	if (rc < 0) {
 		printk("Cannot send IPv4 data to peer (%d)\n", rc);
-		net_nbuf_unref(send_buf);
+		net_pkt_unref(send_pkt);
 		return -EIO;
 	} else {
 		return len;
@@ -88,22 +88,22 @@ int tcp_rx(void *context, unsigned char *buf, size_t size)
 		printk("net_context_recv failed with code:%d\n", rc);
 		return 0;
 	}
-	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
+	read_bytes = net_pkt_appdatalen(ctx->rx_pkt);
 
 	data = net_buf_alloc(&tcp_msg_pool, APP_SLEEP_MSECS);
 	if (data == NULL) {
-		net_nbuf_unref(ctx->rx_nbuf);
+		net_pkt_unref(ctx->rx_pkt);
 		printk("net_buf_alloc failed\n");
 		return -EIO;
 	}
 
-	offset = net_buf_frags_len(ctx->rx_nbuf) - read_bytes;
-	rc = net_nbuf_linear_copy(data, ctx->rx_nbuf, offset, read_bytes);
-	ptr = net_nbuf_appdata(data);
+	offset = net_pkt_get_len(ctx->rx_pkt) - read_bytes;
+	rc = net_frag_linear_copy(data, ctx->rx_pkt->frags, offset, read_bytes);
+	ptr = net_pkt_appdata(ctx->rx_pkt);
 	memcpy(buf, ptr, read_bytes);
 
-	net_nbuf_unref(ctx->rx_nbuf);
-	net_nbuf_unref(data);
+	net_pkt_unref(ctx->rx_pkt);
+	net_buf_unref(data);
 
 	return read_bytes;
 }

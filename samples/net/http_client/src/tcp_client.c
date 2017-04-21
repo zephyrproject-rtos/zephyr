@@ -9,7 +9,7 @@
 
 #include <net/net_core.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/printk.h>
 
@@ -78,7 +78,7 @@ lb_exit:
 }
 
 static
-void recv_cb(struct net_context *net_ctx, struct net_buf *rx, int status,
+void recv_cb(struct net_context *net_ctx, struct net_pkt *rx, int status,
 	     void *data)
 {
 	struct tcp_client_ctx *ctx = (struct tcp_client_ctx *)data;
@@ -89,18 +89,18 @@ void recv_cb(struct net_context *net_ctx, struct net_buf *rx, int status,
 		return;
 	}
 
-	if (rx == NULL || net_nbuf_appdatalen(rx) == 0) {
+	if (rx == NULL || net_pkt_appdatalen(rx) == 0) {
 		goto lb_exit;
 	}
 
-	/* receive_cb must take ownership of the rx buffer */
+	/* receive_cb must take ownership of the rx packet */
 	if (ctx->receive_cb) {
 		ctx->receive_cb(ctx, rx);
 		return;
 	}
 
 lb_exit:
-	net_buf_unref(rx);
+	net_pkt_unref(rx);
 }
 
 int tcp_connect(struct tcp_client_ctx *ctx, const char *server_addr,

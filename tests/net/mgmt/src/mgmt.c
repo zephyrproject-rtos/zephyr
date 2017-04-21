@@ -11,7 +11,7 @@
 #include <sections.h>
 
 #include <net/net_mgmt.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #define TEST_MGMT_REQUEST		0x17AB1234
 #define TEST_MGMT_EVENT			0x97AB1234
@@ -64,9 +64,9 @@ static void fake_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
 }
 
-static int fake_iface_send(struct net_if *iface, struct net_buf *buf)
+static int fake_iface_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
 	return NET_OK;
 }

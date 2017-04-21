@@ -13,7 +13,7 @@
 
 #include <misc/byteorder.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/printk.h>
 
@@ -217,6 +217,55 @@ static bool match_queries_resource(const struct zoap_resource *resource,
 	return match_attributes(attributes, query);
 }
 
+static int send_error_response(struct zoap_resource *resource,
+			       struct zoap_packet *request,
+			       const struct sockaddr *from)
+{
+	struct net_context *context;
+	struct zoap_packet response;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	uint16_t id;
+	int r;
+
+	id = zoap_header_get_id(request);
+
+	context = net_pkt_context(request->pkt);
+
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	if (!pkt) {
+		return -ENOMEM;
+	}
+
+	frag = net_pkt_get_data(context, K_FOREVER);
+	if (!frag) {
+		net_pkt_unref(pkt);
+		return -ENOMEM;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+
+	r = zoap_packet_init(&response, pkt);
+	if (r < 0) {
+		net_pkt_unref(pkt);
+		return r;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_BAD_REQUEST);
+	zoap_header_set_id(&response, id);
+
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return r;
+}
+
 int _zoap_well_known_core_get(struct zoap_resource *resource,
 			      struct zoap_packet *request,
 			      const struct sockaddr *from)
@@ -224,7 +273,8 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	struct net_context *context;
 	struct zoap_packet response;
 	struct zoap_option query;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	const uint8_t *token;
 	unsigned int num_queries;
 	uint16_t id;
@@ -235,7 +285,7 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	token = zoap_header_get_token(request, &tkl);
 
 	/*
-	 * Per RFC 6690, Section 4.1, only one (or none) query parameter may me
+	 * Per RFC 6690, Section 4.1, only one (or none) query parameter may be
 	 * provided, use the first if multiple.
 	 */
 	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, &query, 1);
@@ -245,22 +295,22 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 	num_queries = r;
 
-	context = net_nbuf_context(request->buf);
+	context = net_pkt_context(request->pkt);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		goto done;
 	}
@@ -275,34 +325,57 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
 			    &format, sizeof(format));
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	r = -ENOENT;
 
+	/* FIXME: In mesh kind of scenarios sending bulk (multiple fragments)
+	 * response to farthest node (over multiple hops) is not a good idea.
+	 * Send discovery response block by block.
+	 */
 	while (resource++ && resource->path) {
+		struct net_buf *temp;
+		uint8_t *str;
+
 		if (!match_queries_resource(resource, &query, num_queries)) {
 			continue;
 		}
 
-		frag = zoap_packet_get_buf(&response);
+		if (!response.start) {
+			temp = response.pkt->frags;
+			str = net_buf_add(temp, 1);
+			*str = 0xFF;
+			response.start = str + 1;
+		} else {
+			temp = net_pkt_get_data(context, K_FOREVER);
+			if (!temp) {
+				net_pkt_unref(pkt);
+				return -ENOMEM;
+			}
 
-		r = format_resource(resource, frag);
+			net_pkt_frag_add(pkt, temp);
+		}
+
+		r = format_resource(resource, temp);
 		if (r < 0) {
 			goto done;
 		}
 	}
 
+	net_pkt_compact(pkt);
+
 done:
 	if (r < 0) {
-		zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_BAD_REQUEST);
+		net_pkt_unref(pkt);
+		return send_error_response(resource, request, from);
 	}
 
-	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	}
 
 	return r;

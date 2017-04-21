@@ -47,7 +47,6 @@
 #include <limits.h>
 #include <zephyr/types.h>
 
-#include <net/nbuf.h>
 #include <net/net_core.h>
 #include <net/net_stats.h>
 

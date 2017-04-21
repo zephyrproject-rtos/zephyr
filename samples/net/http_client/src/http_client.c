@@ -10,7 +10,6 @@
 #include "config.h"
 
 #include <misc/printk.h>
-#include <net/nbuf.h>
 
 int http_init(struct http_client_ctx *http_ctx)
 {

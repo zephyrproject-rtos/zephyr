@@ -14,7 +14,7 @@
 #include <sections.h>
 #include <string.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/arp.h>
 #include <net/net_mgmt.h>
@@ -46,14 +46,14 @@ NET_STACK_DEFINE(TX, tx_stack, CONFIG_NET_TX_STACK_SIZE,
 		 CONFIG_NET_TX_STACK_SIZE);
 
 #if defined(CONFIG_NET_DEBUG_IF)
-#define debug_check_packet(buf)						    \
+#define debug_check_packet(pkt)						    \
 	{								    \
-		size_t len = net_buf_frags_len(buf->frags);		    \
+		size_t len = net_pkt_get_len(pkt);			    \
 									    \
-		NET_DBG("Processing (buf %p, data len %zu) network packet", \
-			buf, len);					    \
+		NET_DBG("Processing (pkt %p, data len %zu) network packet", \
+			pkt, len);					    \
 									    \
-		NET_ASSERT(buf->frags && len);				    \
+		NET_ASSERT(pkt->frags && len);				    \
 	} while (0)
 #else
 #define debug_check_packet(...)
@@ -78,29 +78,29 @@ static bool net_if_tx(struct net_if *iface)
 	const struct net_if_api *api = iface->dev->driver_api;
 	struct net_linkaddr *dst;
 	struct net_context *context;
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	void *context_token;
 	int status;
 #if defined(CONFIG_NET_STATISTICS)
 	size_t pkt_len;
 #endif
 
-	buf = net_buf_get(&iface->tx_queue, K_NO_WAIT);
-	if (!buf) {
+	pkt = k_fifo_get(&iface->tx_queue, K_NO_WAIT);
+	if (!pkt) {
 		return false;
 	}
 
-	debug_check_packet(buf);
+	debug_check_packet(pkt);
 
-	dst = net_nbuf_ll_dst(buf);
-	context = net_nbuf_context(buf);
-	context_token = net_nbuf_token(buf);
+	dst = net_pkt_ll_dst(pkt);
+	context = net_pkt_context(pkt);
+	context_token = net_pkt_token(pkt);
 
 	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
 #if defined(CONFIG_NET_STATISTICS)
-		pkt_len = net_buf_frags_len(buf);
+		pkt_len = net_pkt_get_len(pkt);
 #endif
-		status = api->send(iface, buf);
+		status = api->send(iface, pkt);
 	} else {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
@@ -108,7 +108,7 @@ static bool net_if_tx(struct net_if *iface)
 	}
 
 	if (status < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	} else {
 		net_stats_update_bytes_sent(pkt_len);
 	}
@@ -133,8 +133,8 @@ static void net_if_flush_tx(struct net_if *iface)
 		return;
 	}
 
-	/* Without this, the net_buf_get() can return a buf which
-	 * has buf->frags set to NULL. This is not allowed as we
+	/* Without this, the k_fifo_get() can return a pkt which
+	 * has pkt->frags set to NULL. This is not allowed as we
 	 * cannot send a packet that has no data in it.
 	 * The k_yield() fixes the issue and packets are flushed
 	 * correctly.
@@ -222,11 +222,11 @@ static inline void init_iface(struct net_if *iface)
 	api->init(iface);
 }
 
-enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
+enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_context *context = net_nbuf_context(buf);
-	struct net_linkaddr *dst = net_nbuf_ll_dst(buf);
-	void *token = net_nbuf_token(buf);
+	struct net_context *context = net_pkt_context(pkt);
+	struct net_linkaddr *dst = net_pkt_ll_dst(pkt);
+	void *token = net_pkt_token(pkt);
 	enum net_verdict verdict;
 	int status = -EIO;
 
@@ -244,25 +244,25 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf)
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
 	if (!atomic_test_bit(iface->flags, NET_IF_POINTOPOINT) &&
-	    !net_nbuf_ll_src(buf)->addr) {
-		net_nbuf_ll_src(buf)->addr = net_nbuf_ll_if(buf)->addr;
-		net_nbuf_ll_src(buf)->len = net_nbuf_ll_if(buf)->len;
+	    !net_pkt_ll_src(pkt)->addr) {
+		net_pkt_ll_src(pkt)->addr = net_pkt_ll_if(pkt)->addr;
+		net_pkt_ll_src(pkt)->len = net_pkt_ll_if(pkt)->len;
 	}
 
 #if defined(CONFIG_NET_IPV6)
 	/* If the ll dst address is not set check if it is present in the nbr
 	 * cache.
 	 */
-	if (net_nbuf_family(buf) == AF_INET6) {
-		buf = net_ipv6_prepare_for_send(buf);
-		if (!buf) {
+	if (net_pkt_family(pkt) == AF_INET6) {
+		pkt = net_ipv6_prepare_for_send(pkt);
+		if (!pkt) {
 			verdict = NET_CONTINUE;
 			goto done;
 		}
 	}
 #endif
 
-	verdict = iface->l2->send(iface, buf);
+	verdict = iface->l2->send(iface, pkt);
 
 done:
 	/* The L2 send() function can return

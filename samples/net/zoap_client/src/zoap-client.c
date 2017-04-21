@@ -11,7 +11,7 @@
 
 #include <misc/byteorder.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_mgmt.h>
 #include <net/net_ip.h>
 #include <net/zoap.h>
@@ -60,15 +60,15 @@ static int resource_reply_cb(const struct zoap_packet *response,
 			     struct zoap_reply *reply,
 			     const struct sockaddr *from)
 {
-	struct net_buf *buf = response->buf;
+	struct net_pkt *pkt = response->pkt;
 
-	msg_dump("reply", buf->data, buf->len);
+	msg_dump("reply", pkt->frags->data, pkt->frags->len);
 
 	return 0;
 }
 
 static void udp_receive(struct net_context *context,
-			struct net_buf *buf,
+			struct net_pkt *pkt,
 			int status,
 			void *user_data)
 {
@@ -82,10 +82,10 @@ static void udp_receive(struct net_context *context,
 	 * zoap expects that buffer->data starts at the
 	 * beginning of the CoAP header
 	 */
-	header_len = net_nbuf_appdata(buf) - buf->frags->data;
-	net_buf_pull(buf->frags, header_len);
+	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
+	net_buf_pull(pkt->frags, header_len);
 
-	r = zoap_packet_parse(&response, buf);
+	r = zoap_packet_parse(&response, pkt);
 	if (r < 0) {
 		printk("Invalid data received (%d)\n", r);
 		return;
@@ -97,8 +97,8 @@ static void udp_receive(struct net_context *context,
 		/* If necessary cancel retransmissions */
 	}
 
-	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_BUF(buf)->src);
-	from.sin6_port = NET_UDP_BUF(buf)->src_port;
+	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
+	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
 
 	reply = zoap_response_received(&response,
 				       (const struct sockaddr *) &from,
@@ -119,7 +119,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	r = net_context_sendto(pending->buf, (struct sockaddr *) &mcast_addr,
+	r = net_context_sendto(pending->pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr), NULL, 0, NULL, NULL);
 	if (r < 0) {
 		return;
@@ -142,7 +142,8 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	struct zoap_pending *pending;
 	struct zoap_reply *reply;
 	const char * const *p;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	int r;
 	uint8_t observe = 0;
 
@@ -167,21 +168,21 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 	k_delayed_work_init(&retransmit_work, retransmit_request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
-		printk("Unable to get TX buffer, not enough memory.\n");
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	if (!pkt) {
+		printk("Unable to get TX packet, not enough memory.\n");
 		return;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		printk("Unable to get DATA buffer, not enough memory.\n");
 		return;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&request, frag);
+	r = zoap_packet_init(&request, pkt);
 	if (r < 0) {
 		return;
 	}
@@ -233,7 +234,7 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	zoap_reply_init(reply, &request);
 	reply->reply = resource_reply_cb;
 
-	r = net_context_sendto(buf, (struct sockaddr *) &mcast_addr,
+	r = net_context_sendto(pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {

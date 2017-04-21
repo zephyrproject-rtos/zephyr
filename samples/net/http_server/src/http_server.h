@@ -18,11 +18,11 @@ void http_accept_cb(struct net_context *net_ctx, struct sockaddr *addr,
  *			and writes an HTTP 1.1 200 OK response with client
  *			header fields or an error message
  * @param ctx		The network context
- * @param rx		The reception buffer
+ * @param rx		The received packet
  * @param status	Connection status, see `net_context_recv_cb_t`
  * @param user_data	User-provided data
  */
-void http_rx_tx(struct net_context *ctx, struct net_buf *rx, int status,
+void http_rx_tx(struct net_context *ctx, struct net_pkt *rx, int status,
 		void *user_data);
 
 /**

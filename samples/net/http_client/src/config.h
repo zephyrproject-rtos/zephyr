@@ -62,13 +62,13 @@
  * - Linearize the buffer, it works better but consumes more memory
  *
  * Comment the following define to test the first case, set the
- * CONFIG_NET_NBUF_DATA_SIZE variable to 384 or 512. See the
+ * CONFIG_NET_BUF_DATA_SIZE variable to 384 or 512. See the
  * prj_frdm_k64f.conf file.
  */
 #define LINEARIZE_BUFFER
 
 #ifndef LINEARIZE_BUFFER
-#if CONFIG_NET_NBUF_DATA_SIZE <= 256
-#error set CONFIG_NET_NBUF_DATA_SIZE to 384 or 512
+#if CONFIG_NET_BUF_DATA_SIZE <= 256
+#error set CONFIG_NET_BUF_DATA_SIZE to 384 or 512
 #endif
 #endif

@@ -5,7 +5,7 @@
 
 #include <zephyr.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
 
@@ -93,9 +93,9 @@ static struct net_buf *udp_recv(const char *name,
 	int header_len, recv_len, reply_len;
 
 	NET_INFO("%s received %u bytes", name,
-	      net_nbuf_appdatalen(buf));
+	      net_pkt_appdatalen(buf));
 
-	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
+	reply_buf = net_pkt_get_tx(context, K_FOREVER);
 
 	NET_ASSERT(reply_buf);
 
@@ -106,14 +106,14 @@ static struct net_buf *udp_recv(const char *name,
 	/* First fragment will contain IP header so move the data
 	 * down in order to get rid of it.
 	 */
-	header_len = net_nbuf_appdata(buf) - tmp->data;
+	header_len = net_pkt_appdata(buf) - tmp->data;
 
-	NET_ASSERT(header_len < CONFIG_NET_NBUF_DATA_SIZE);
+	NET_ASSERT(header_len < CONFIG_NET_BUF_DATA_SIZE);
 
 	net_buf_pull(tmp, header_len);
 
 	while (tmp) {
-		frag = net_nbuf_get_data(context, K_FOREVER);
+		frag = net_pkt_get_data(context, K_FOREVER);
 
 		memcpy(net_buf_add(frag, tmp->len), tmp->data, tmp->len);
 
@@ -149,9 +149,9 @@ static inline void set_dst_addr(sa_family_t family,
 {
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-				&NET_IPV6_BUF(buf)->src);
+				&NET_IPV6_HDR(buf)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
-		net_sin6(dst_addr)->sin6_port = NET_UDP_BUF(buf)->src_port;
+		net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(buf)->src_port;
 	}
 }
 
@@ -162,7 +162,7 @@ static void udp_received(struct net_context *context,
 {
 	struct net_buf *reply_buf;
 	struct sockaddr dst_addr;
-	sa_family_t family = net_nbuf_family(buf);
+	sa_family_t family = net_pkt_family(buf);
 	static char dbg[MAX_DBG_PRINT + 1];
 	int ret;
 
@@ -173,7 +173,7 @@ static void udp_received(struct net_context *context,
 
 	reply_buf = udp_recv(dbg, context, buf);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(buf);
 
 	ret = net_context_sendto(reply_buf, &dst_addr, udp_sent, 0,
 				 UINT_TO_POINTER(net_buf_frags_len(reply_buf)),
@@ -181,7 +181,7 @@ static void udp_received(struct net_context *context,
 	if (ret < 0) {
 		NET_ERR("Cannot send data to peer (%d)", ret);
 
-		net_nbuf_unref(reply_buf);
+		net_pkt_unref(reply_buf);
 
 		quit();
 	}

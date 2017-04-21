@@ -159,15 +159,15 @@ config NET_MAX_CONTEXTS
 	is used when listening or sending network traffic. This is very
 	similar as one could call a network socket in some other systems.
 
-config NET_CONTEXT_NBUF_POOL
+config NET_CONTEXT_NET_PKT_POOL
 	bool "Enable net_buf TX pool / context"
 	default n
 	default y if NET_TCP && NET_6LO
 	help
-	If enabled, then it is possible to fine-tune network buffer pool
+	If enabled, then it is possible to fine-tune network packet pool
 	for each context when sending network data. If this setting is
 	enabled, then you should define the context pools in your application
-	using NET_NBUF_TX_POOL_DEFINE() and NET_NBUF_DATA_POOL_DEFINE()
+	using NET_PKT_TX_POOL_DEFINE() and NET_PKT_DATA_POOL_DEFINE()
 	macros and tie these pools to desired context using the
 	net_context_setup_pools() function.
 
@@ -240,35 +240,35 @@ config NET_DEBUG_TRICKLE
 
 endif # NET_L2_RAW_CHANNEL
 
-config NET_NBUF_RX_COUNT
-	int "How many network receives can be pending at the same time"
+config NET_PKT_RX_COUNT
+	int "How many packet receives can be pending at the same time"
 	default 4
 	help
 	Each RX buffer will occupy smallish amount of memory.
-	See include/net/nbuf.h and the sizeof(struct nbuf)
+	See include/net/net_pkt.h and the sizeof(struct net_pkt)
 
-config NET_NBUF_TX_COUNT
-	int "How many network sends can be pending at the same time"
+config NET_PKT_TX_COUNT
+	int "How many packet sends can be pending at the same time"
 	default 2
 	help
 	Each TX buffer will occupy smallish amount of memory.
-	See include/net/nbuf.h and the sizeof(struct nbuf)
+	See include/net/net_pkt.h and the sizeof(struct net_pkt)
 
-config NET_NBUF_RX_DATA_COUNT
-	int "How many network data buffers are allocated for receiving data"
+config NET_BUF_RX_COUNT
+	int "How many network buffers are allocated for receiving data"
 	default 16
 	help
-	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
+	Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	header (sizeof(struct net_buf)) amount of data.
 
-config NET_NBUF_TX_DATA_COUNT
-	int "How many network data buffers are allocated for sending data"
+config NET_BUF_TX_COUNT
+	int "How many network buffers are allocated for sending data"
 	default 16
 	help
-	Each data buffer will occupy CONFIG_NBUF_DATA_SIZE + smallish
+	Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	header (sizeof(struct net_buf)) amount of data.
 
-config NET_NBUF_DATA_SIZE
+config NET_BUF_DATA_SIZE
 	int "Size of each network data fragment"
 	default 128
 	default 125 if NET_L2_IEEE802154
@@ -280,7 +280,7 @@ config NET_NBUF_DATA_SIZE
 	In order to be able to receive at least full IPv6 packet which
 	has a size of 1280 bytes, the one should allocate 16 fragments here.
 
-config NET_NBUF_USER_DATA_SIZE
+config NET_BUF_USER_DATA_SIZE
 	int "Size of user_data reserved"
 	default 0
 	default 4 if NET_L2_BLUETOOTH

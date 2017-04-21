@@ -17,7 +17,7 @@
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 
 #include "connection.h"
@@ -28,53 +28,53 @@ extern "C" {
 
 #if defined(CONFIG_NET_UDP)
 /**
- * @brief Append UDP packet into net_buf
+ * @brief Append UDP packet into net_pkt
  *
- * @param buf Network buffer
+ * @param pkt Network packet
  * @param src_port Source port in host byte order.
  * @param dst_port Destination port in host byte order.
  *
- * @return Return network buffer that contains the UDP packet.
+ * @return Return network packet that contains the UDP packet.
  */
-static inline struct net_buf *net_udp_append_raw(struct net_buf *buf,
+static inline struct net_pkt *net_udp_append_raw(struct net_pkt *pkt,
 						 uint16_t src_port,
 						 uint16_t dst_port)
 {
-	NET_UDP_BUF(buf)->src_port = htons(src_port);
-	NET_UDP_BUF(buf)->dst_port = htons(dst_port);
+	NET_UDP_HDR(pkt)->src_port = htons(src_port);
+	NET_UDP_HDR(pkt)->dst_port = htons(dst_port);
 
-	net_buf_add(buf->frags, sizeof(struct net_udp_hdr));
+	net_buf_add(pkt->frags, sizeof(struct net_udp_hdr));
 
-	NET_UDP_BUF(buf)->len = htons(net_buf_frags_len(buf) -
-				      net_nbuf_ip_hdr_len(buf));
+	NET_UDP_HDR(pkt)->len = htons(net_pkt_get_len(pkt) -
+				      net_pkt_ip_hdr_len(pkt));
 
-	net_nbuf_set_appdata(buf, net_nbuf_udp_data(buf) +
-			     sizeof(struct net_udp_hdr));
+	net_pkt_set_appdata(pkt, net_pkt_udp_data(pkt) +
+			    sizeof(struct net_udp_hdr));
 
-	return buf;
+	return pkt;
 }
 
 /**
- * @brief Append UDP packet into net_buf
+ * @brief Append UDP packet into net_pkt
  *
  * @param context Network context for a connection
- * @param buf Network buffer
+ * @param pkt Network packet
  * @param port Destination port in host byte order.
  *
- * @return Return network buffer that contains the UDP packet.
+ * @return Return network packet that contains the UDP packet.
  */
-static inline struct net_buf *net_udp_append(struct net_context *context,
-					     struct net_buf *buf,
+static inline struct net_pkt *net_udp_append(struct net_context *context,
+					     struct net_pkt *pkt,
 					     uint16_t port)
 {
-	return net_udp_append_raw(buf,
+	return net_udp_append_raw(pkt,
 				  ntohs(net_sin((struct sockaddr *)
 						&context->local)->sin_port),
 				  port);
 }
 #else
-#define net_udp_append_raw(buf, src_port, dst_port) (buf)
-#define net_udp_append(context, buf, port) (buf)
+#define net_udp_append_raw(pkt, src_port, dst_port) (pkt)
+#define net_udp_append(context, pkt, port) (pkt)
 #endif /* CONFIG_NET_UDP */
 
 /**

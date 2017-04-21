@@ -8,13 +8,13 @@
 #define __IEEE802154_RADIO_UTILS_H__
 
 typedef int (ieee802154_radio_tx_frag_t)(struct net_if *iface,
-					 struct net_buf *buf,
+					 struct net_pkt *pkt,
 					 struct net_buf *frag);
 
 static inline bool prepare_for_ack(struct ieee802154_context *ctx,
-				   struct net_buf *buf)
+				   struct net_pkt *pkt)
 {
-	if (ieee802154_ack_required(buf)) {
+	if (ieee802154_ack_required(pkt)) {
 		ctx->ack_received = false;
 		k_sem_init(&ctx->ack_lock, 0, UINT_MAX);
 
@@ -43,9 +43,9 @@ static inline int wait_for_ack(struct ieee802154_context *ctx,
 }
 
 static inline int handle_ack(struct ieee802154_context *ctx,
-			     struct net_buf *buf)
+			     struct net_pkt *pkt)
 {
-	if (buf->len == IEEE802154_ACK_PKT_LENGTH) {
+	if (pkt->frags->len == IEEE802154_ACK_PKT_LENGTH) {
 		ctx->ack_received = true;
 		k_sem_give(&ctx->ack_lock);
 
@@ -55,16 +55,16 @@ static inline int handle_ack(struct ieee802154_context *ctx,
 	return NET_CONTINUE;
 }
 
-static inline int tx_buffer_fragments(struct net_if *iface,
-				      struct net_buf *buf,
+static inline int tx_packet_fragments(struct net_if *iface,
+				      struct net_pkt *pkt,
 				      ieee802154_radio_tx_frag_t *tx_func)
 {
 	int ret = 0;
 	struct net_buf *frag;
 
-	frag = buf->frags;
+	frag = pkt->frags;
 	while (frag) {
-		ret = tx_func(iface, buf, frag);
+		ret = tx_func(iface, pkt, frag);
 		if (ret) {
 			break;
 		}
@@ -73,7 +73,7 @@ static inline int tx_buffer_fragments(struct net_if *iface,
 	}
 
 	if (!ret) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	}
 
 	return ret;

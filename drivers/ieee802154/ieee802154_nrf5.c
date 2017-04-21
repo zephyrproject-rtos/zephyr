@@ -19,7 +19,7 @@
 #include <device.h>
 #include <init.h>
 #include <net/net_if.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include <misc/byteorder.h>
 #include <string.h>
@@ -55,25 +55,25 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *)arg1;
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	struct net_buf *pkt_buf = NULL;
+	struct net_buf *frag = NULL;
 	enum net_verdict ack_result;
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 	uint8_t pkt_len;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 
 	while (1) {
-		buf = NULL;
+		pkt = NULL;
 
 		SYS_LOG_DBG("Waiting for frame");
 		k_sem_take(&nrf5_radio->rx_wait, K_FOREVER);
 
 		SYS_LOG_DBG("Frame received");
 
-		buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
-		if (!buf) {
-			SYS_LOG_ERR("No buf available");
+		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		if (!pkt) {
+			SYS_LOG_ERR("No pkt available");
 			goto out;
 		}
 
@@ -81,16 +81,16 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		/**
 		 * Reserve 1 byte for length
 		 */
-		net_nbuf_set_ll_reserve(buf, 1);
+		net_pkt_set_ll_reserve(pkt, 1);
 #endif
 
-		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
-		if (!pkt_buf) {
-			SYS_LOG_ERR("No pkt_buf available");
+		frag = net_pkt_get_frag(pkt, K_NO_WAIT);
+		if (!frag) {
+			SYS_LOG_ERR("No frag available");
 			goto out;
 		}
 
-		net_buf_frag_insert(buf, pkt_buf);
+		net_pkt_frag_insert(pkt, frag);
 
 		/* rx_mpdu contains length, psdu, fcs|lqi
 		 * The last 2 bytes contain LQI or FCS, depending if
@@ -103,13 +103,13 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 #endif
 
 		/* Skip length (first byte) and copy the payload */
-		memcpy(pkt_buf->data, nrf5_radio->rx_psdu + 1, pkt_len);
-		net_buf_add(pkt_buf, pkt_len);
+		memcpy(frag->data, nrf5_radio->rx_psdu + 1, pkt_len);
+		net_buf_add(frag, pkt_len);
 
 		nrf_drv_radio802154_buffer_free(nrf5_radio->rx_psdu);
 
 		ack_result = ieee802154_radio_handle_ack(nrf5_radio->iface,
-							 buf);
+							 pkt);
 		if (ack_result == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled");
 			goto out;
@@ -118,7 +118,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)",
 			    pkt_len, nrf5_radio->lqi);
 
-		if (net_recv_data(nrf5_radio->iface, buf) < 0) {
+		if (net_recv_data(nrf5_radio->iface, pkt) < 0) {
 			SYS_LOG_DBG("Packet dropped by NET stack");
 			goto out;
 		}
@@ -129,8 +129,8 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		continue;
 
 out:
-		if (buf) {
-			net_buf_unref(buf);
+		if (pkt) {
+			net_pkt_unref(pkt);
 		}
 	}
 }
@@ -230,12 +230,12 @@ static int nrf5_set_txpower(struct device *dev, int16_t dbm)
 }
 
 static int nrf5_tx(struct device *dev,
-		   struct net_buf *buf,
+		   struct net_pkt *pkt,
 		   struct net_buf *frag)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	uint8_t payload_len = net_nbuf_ll_reserve(buf) + frag->len;
-	uint8_t *payload = frag->data - net_nbuf_ll_reserve(buf);
+	uint8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
+	uint8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
 
 	SYS_LOG_DBG("%p (%u)", payload, payload_len);
 

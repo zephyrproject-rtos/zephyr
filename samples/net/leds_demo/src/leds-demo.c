@@ -18,7 +18,7 @@
 #include <misc/byteorder.h>
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 
 #include <net_private.h>
@@ -95,7 +95,8 @@ static int led_get(struct zoap_resource *resource,
 		   struct zoap_packet *request,
 		   const struct sockaddr *from)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	const char *str;
 	uint8_t *payload;
@@ -104,19 +105,19 @@ static int led_get(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -147,10 +148,10 @@ static int led_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	}
 
 	return r;
@@ -160,7 +161,8 @@ static int led_post(struct zoap_resource *resource,
 		    struct zoap_packet *request,
 		    const struct sockaddr *from)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	const char *str;
 	uint8_t *payload;
@@ -176,19 +178,19 @@ static int led_post(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -225,10 +227,10 @@ static int led_post(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	}
 
 	return r;
@@ -238,7 +240,8 @@ static int led_put(struct zoap_resource *resource,
 		   struct zoap_packet *request,
 		   const struct sockaddr *from)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	const char *str;
 	uint8_t *payload;
@@ -259,19 +262,19 @@ static int led_put(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -304,10 +307,10 @@ static int led_put(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	}
 
 	return r;
@@ -318,7 +321,8 @@ static int dummy_get(struct zoap_resource *resource,
 		     const struct sockaddr *from)
 {
 	static const char dummy_str[] = "Just a test\n";
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	uint8_t *payload;
 	uint16_t len, id;
@@ -326,19 +330,19 @@ static int dummy_get(struct zoap_resource *resource,
 
 	id = zoap_header_get_id(request);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 	if (!frag) {
 		return -ENOMEM;
 	}
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -361,10 +365,10 @@ static int dummy_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	}
 
 	return r;
@@ -402,7 +406,7 @@ static struct zoap_resource resources[] = {
 };
 
 static void udp_receive(struct net_context *context,
-			struct net_buf *buf,
+			struct net_pkt *pkt,
 			int status,
 			void *user_data)
 {
@@ -410,28 +414,28 @@ static void udp_receive(struct net_context *context,
 	struct sockaddr_in6 from;
 	int r, header_len;
 
-	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_BUF(buf)->src);
-	from.sin6_port = NET_UDP_BUF(buf)->src_port;
+	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
+	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
 	from.sin6_family = AF_INET6;
 
 	/*
 	 * zoap expects that buffer->data starts at the
 	 * beginning of the CoAP header
 	 */
-	header_len = net_nbuf_appdata(buf) - buf->frags->data;
-	net_buf_pull(buf->frags, header_len);
+	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
+	net_buf_pull(pkt->frags, header_len);
 
-	r = zoap_packet_parse(&request, buf);
+	r = zoap_packet_parse(&request, pkt);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return;
 	}
 
 	r = zoap_handle_request(&request, resources,
 				(const struct sockaddr *) &from);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
 	if (r < 0) {
 		NET_ERR("No handler for such request (%d)\n", r);

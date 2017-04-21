@@ -16,7 +16,7 @@
 #include <sections.h>
 #include <errno.h>
 
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
@@ -54,12 +54,12 @@ static struct in_addr in4addr_my = MY_IP4ADDR;
 /* Note that both tcp and udp can share the same pool but in this
  * example the UDP context and TCP context have separate pools.
  */
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 #if defined(CONFIG_NET_TCP)
-NET_NBUF_TX_POOL_DEFINE(echo_tx_tcp, 15);
-NET_NBUF_DATA_POOL_DEFINE(echo_data_tcp, 30);
+NET_PKT_TX_SLAB_DEFINE(echo_tx_tcp, 15);
+NET_PKT_DATA_POOL_DEFINE(echo_data_tcp, 30);
 
-static struct net_buf_pool *tx_tcp_pool(void)
+static struct k_mem_slab *tx_tcp_slab(void)
 {
 	return &echo_tx_tcp;
 }
@@ -71,10 +71,10 @@ static struct net_buf_pool *data_tcp_pool(void)
 #endif
 
 #if defined(CONFIG_NET_UDP)
-NET_NBUF_TX_POOL_DEFINE(echo_tx_udp, 5);
-NET_NBUF_DATA_POOL_DEFINE(echo_data_udp, 20);
+NET_PKT_TX_SLAB_DEFINE(echo_tx_udp, 5);
+NET_PKT_DATA_POOL_DEFINE(echo_data_udp, 20);
 
-static struct net_buf_pool *tx_udp_pool(void)
+static struct k_mem_slab *tx_udp_slab(void)
 {
 	return &echo_tx_udp;
 }
@@ -84,7 +84,7 @@ static struct net_buf_pool *data_udp_pool(void)
 	return &echo_data_udp;
 }
 #endif
-#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #define MY_PORT 4242
 
@@ -184,7 +184,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
-	net_context_setup_pools(*udp_recv6, tx_udp_pool, data_udp_pool);
+	net_context_setup_pools(*udp_recv6, tx_udp_slab, data_udp_pool);
 
 	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
@@ -203,7 +203,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 		return false;
 	}
 
-	net_context_setup_pools(*udp_recv4, tx_udp_pool, data_udp_pool);
+	net_context_setup_pools(*udp_recv4, tx_udp_slab, data_udp_pool);
 
 	ret = net_context_bind(*udp_recv4, (struct sockaddr *)&my_addr4,
 			       sizeof(struct sockaddr_in));
@@ -224,7 +224,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 			return false;
 		}
 
-		net_context_setup_pools(*tcp_recv6, tx_tcp_pool, data_tcp_pool);
+		net_context_setup_pools(*tcp_recv6, tx_tcp_slab, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv6,
 				       (struct sockaddr *)&my_addr6,
@@ -252,7 +252,7 @@ static inline bool get_context(struct net_context **udp_recv4,
 			return false;
 		}
 
-		net_context_setup_pools(*tcp_recv4, tx_tcp_pool, data_tcp_pool);
+		net_context_setup_pools(*tcp_recv4, tx_tcp_slab, data_tcp_pool);
 
 		ret = net_context_bind(*tcp_recv4,
 				       (struct sockaddr *)&my_addr4,
@@ -274,34 +274,35 @@ static inline bool get_context(struct net_context **udp_recv4,
 	return true;
 }
 
-static struct net_buf *build_reply_buf(const char *name,
+static struct net_pkt *build_reply_pkt(const char *name,
 				       struct net_context *context,
-				       struct net_buf *buf)
+				       struct net_pkt *pkt)
 {
-	struct net_buf *reply_buf, *frag, *tmp;
+	struct net_pkt *reply_pkt;
+	struct net_buf *frag, *tmp;
 	int header_len, recv_len, reply_len;
 
 	NET_INFO("%s received %d bytes", name,
-	      net_nbuf_appdatalen(buf));
+		 net_pkt_appdatalen(pkt));
 
-	if (net_nbuf_appdatalen(buf) == 0) {
+	if (net_pkt_appdatalen(pkt) == 0) {
 		return NULL;
 	}
 
-	reply_buf = net_nbuf_get_tx(context, K_FOREVER);
+	reply_pkt = net_pkt_get_tx(context, K_FOREVER);
 
-	NET_ASSERT(reply_buf);
+	NET_ASSERT(reply_pkt);
 
-	recv_len = net_buf_frags_len(buf->frags);
+	recv_len = net_pkt_get_len(pkt);
 
-	tmp = buf->frags;
+	tmp = pkt->frags;
 
 	/* First fragment will contain IP header so move the data
 	 * down in order to get rid of it.
 	 */
-	header_len = net_nbuf_appdata(buf) - tmp->data;
+	header_len = net_pkt_appdata(pkt) - tmp->data;
 
-	NET_ASSERT(header_len < CONFIG_NET_NBUF_DATA_SIZE);
+	NET_ASSERT(header_len < CONFIG_NET_BUF_DATA_SIZE);
 
 	/* After this pull, the tmp->data points directly to application
 	 * data.
@@ -309,7 +310,7 @@ static struct net_buf *build_reply_buf(const char *name,
 	net_buf_pull(tmp, header_len);
 
 	while (tmp) {
-		frag = net_nbuf_get_data(context, K_FOREVER);
+		frag = net_pkt_get_data(context, K_FOREVER);
 
 		if (!net_buf_headroom(tmp)) {
 			/* If there is no link layer headers in the
@@ -326,25 +327,25 @@ static struct net_buf *build_reply_buf(const char *name,
 			 * in sending side we add the link layer
 			 * header if needed.
 			 */
-			net_nbuf_set_ll_reserve(reply_buf, 0);
+			net_pkt_set_ll_reserve(reply_pkt, 0);
 		}
 
 		NET_ASSERT(net_buf_tailroom(frag) >= tmp->len);
 
 		memcpy(net_buf_add(frag, tmp->len), tmp->data, tmp->len);
 
-		net_buf_frag_add(reply_buf, frag);
+		net_pkt_frag_add(reply_pkt, frag);
 
-		tmp = net_nbuf_frag_del(buf, tmp);
+		tmp = net_pkt_frag_del(pkt, NULL, tmp);
 	}
 
-	reply_len = net_buf_frags_len(reply_buf->frags);
+	reply_len = net_pkt_get_len(reply_pkt);
 
 	NET_ASSERT_INFO((recv_len - header_len) == reply_len,
 			"Received %d bytes, sending %d bytes",
 			recv_len - header_len, reply_len);
 
-	return reply_buf;
+	return reply_pkt;
 }
 
 static inline void pkt_sent(struct net_context *context,
@@ -359,62 +360,62 @@ static inline void pkt_sent(struct net_context *context,
 
 #if defined(CONFIG_NET_UDP)
 static inline void set_dst_addr(sa_family_t family,
-				struct net_buf *buf,
+				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
 {
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-				&NET_IPV6_BUF(buf)->src);
+				&NET_IPV6_HDR(pkt)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
-		net_sin6(dst_addr)->sin6_port = NET_UDP_BUF(buf)->src_port;
+		net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(pkt)->src_port;
 	}
 #endif /* CONFIG_NET_IPV6) */
 
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
 		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
-				&NET_IPV4_BUF(buf)->src);
+				&NET_IPV4_HDR(pkt)->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
-		net_sin(dst_addr)->sin_port = NET_UDP_BUF(buf)->src_port;
+		net_sin(dst_addr)->sin_port = NET_UDP_HDR(pkt)->src_port;
 	}
 #endif /* CONFIG_NET_IPV6) */
 }
 
 static void udp_received(struct net_context *context,
-			 struct net_buf *buf,
+			 struct net_pkt *pkt,
 			 int status,
 			 void *user_data)
 {
-	struct net_buf *reply_buf;
+	struct net_pkt *reply_pkt;
 	struct sockaddr dst_addr;
-	sa_family_t family = net_nbuf_family(buf);
+	sa_family_t family = net_pkt_family(pkt);
 	static char dbg[MAX_DBG_PRINT + 1];
 	int ret;
 
 	snprintk(dbg, MAX_DBG_PRINT, "UDP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
 
-	set_dst_addr(family, buf, &dst_addr);
+	set_dst_addr(family, pkt, &dst_addr);
 
-	reply_buf = build_reply_buf(dbg, context, buf);
+	reply_pkt = build_reply_pkt(dbg, context, pkt);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
-	if (!reply_buf) {
+	if (!reply_pkt) {
 		return;
 	}
 
-	ret = net_context_sendto(reply_buf, &dst_addr,
+	ret = net_context_sendto(reply_pkt, &dst_addr,
 				 family == AF_INET6 ?
 				 sizeof(struct sockaddr_in6) :
 				 sizeof(struct sockaddr_in),
 				 pkt_sent, 0,
-				 UINT_TO_POINTER(net_buf_frags_len(reply_buf)),
+				 UINT_TO_POINTER(net_pkt_get_len(reply_pkt)),
 				 user_data);
 	if (ret < 0) {
 		NET_ERR("Cannot send data to peer (%d)", ret);
-		net_nbuf_unref(reply_buf);
+		net_pkt_unref(reply_pkt);
 	}
 }
 
@@ -441,39 +442,39 @@ static void setup_udp_recv(struct net_context *udp_recv4,
 
 #if defined(CONFIG_NET_TCP)
 static void tcp_received(struct net_context *context,
-			 struct net_buf *buf,
+			 struct net_pkt *pkt,
 			 int status,
 			 void *user_data)
 {
 	static char dbg[MAX_DBG_PRINT + 1];
-	struct net_buf *reply_buf;
+	struct net_pkt *reply_pkt;
 	sa_family_t family;
 	int ret;
 
-	if (!buf) {
+	if (!pkt) {
 		/* EOF condition */
 		return;
 	}
 
-	family = net_nbuf_family(buf);
+	family = net_pkt_family(pkt);
 
 	snprintk(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
 
-	reply_buf = build_reply_buf(dbg, context, buf);
+	reply_pkt = build_reply_pkt(dbg, context, pkt);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
-	if (!reply_buf) {
+	if (!reply_pkt) {
 		return;
 	}
 
-	ret = net_context_send(reply_buf, pkt_sent, K_NO_WAIT,
-			       UINT_TO_POINTER(net_buf_frags_len(reply_buf)),
+	ret = net_context_send(reply_pkt, pkt_sent, K_NO_WAIT,
+			       UINT_TO_POINTER(net_pkt_get_len(reply_pkt)),
 			       NULL);
 	if (ret < 0) {
 		NET_ERR("Cannot send data to peer (%d)", ret);
-		net_nbuf_unref(reply_buf);
+		net_pkt_unref(reply_pkt);
 
 		quit();
 	}

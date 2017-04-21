@@ -909,17 +909,17 @@ void net_rpl_global_repair(struct net_route_entry *route);
 /**
  * @brief Update RPL headers in IPv6 packet.
  *
- * @param buf Network buffer.
+ * @param pkt Network packet.
  * @param addr IPv6 address of next hop host.
  *
  * @return 0 if ok, < 0 if error
  */
-int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr);
+int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr);
 
 /**
  * @brief Verify RPL header in IPv6 packet.
  *
- * @param buf Network buffer fragment list.
+ * @param pkt Network packet fragment list.
  * @param frag Current network buffer fragment.
  * @param offset Where the RPL header starts in the packet
  * @param pos How long the RPL header was, this is returned to the caller.
@@ -927,30 +927,30 @@ int net_rpl_update_header(struct net_buf *buf, struct in6_addr *addr);
  *
  * @return frag Returns the fragment where this call finished reading.
  */
-struct net_buf *net_rpl_verify_header(struct net_buf *buf, struct net_buf *frag,
+struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 				      uint16_t offset, uint16_t *pos,
 				      bool *result);
 
 /**
  * @brief Insert RPL extension header to IPv6 packet.
  *
- * @param buf Network buffer.
+ * @param pkt Network packet.
  *
  * @return 0 if ok, <0 if error.
  */
-int net_rpl_insert_header(struct net_buf *buf);
+int net_rpl_insert_header(struct net_pkt *pkt);
 
 /**
  * @brief Revert RPL extension header to IPv6 packet.
  *        Revert flags, instance ID and sender rank in the packet.
  *
- * @param buf Network buffer.
+ * @param pkt Network packet.
  * @param offset Where the HBH header starts in the packet
  * @param pos How long the RPL header was, this is returned to the caller.
  *
  * @return 0 if ok, <0 if error.
  */
-int net_rpl_revert_header(struct net_buf *buf, uint16_t offset, uint16_t *pos);
+int net_rpl_revert_header(struct net_pkt *pkt, uint16_t offset, uint16_t *pos);
 
 /**
  * @brief Get parent IPv6 address.

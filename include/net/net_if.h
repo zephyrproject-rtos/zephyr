@@ -22,7 +22,6 @@
 #include <misc/slist.h>
 
 #include <net/net_core.h>
-#include <net/buf.h>
 #include <net/net_linkaddr.h>
 #include <net/net_ip.h>
 #include <net/net_l2.h>
@@ -315,27 +314,27 @@ struct net_if {
 } __net_if_align;
 
 /**
- * @brief Send a buffer through a net iface
+ * @brief Send a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
- * @param buf Pointer on a net buffer to send
+ * @param pkt Pointer on a net packet to send
  *
  * return verdict about the packet
  */
-enum net_verdict net_if_send_data(struct net_if *iface, struct net_buf *buf);
+enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
 
 /**
- * @brief Input a buffer through a net iface
+ * @brief Input a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
- * @param buf Pointer on a net buffer to input
+ * @param pkt Pointer on a net packet to input
  *
  * @return verdict about the packet
  */
 static inline enum net_verdict net_if_recv_data(struct net_if *iface,
-						struct net_buf *buf)
+						struct net_pkt *pkt)
 {
-	return iface->l2->recv(iface, buf);
+	return iface->l2->recv(iface, pkt);
 }
 
 /**
@@ -380,11 +379,11 @@ static inline struct device *net_if_get_device(struct net_if *iface)
  * @brief Queue a packet into net if's TX queue
  *
  * @param iface Pointer to a network interface structure
- * @param buf Pointer on a net buffer to queue
+ * @param pkt Pointer on a net pktfer to queue
  */
-static inline void net_if_queue_tx(struct net_if *iface, struct net_buf *buf)
+static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	net_buf_put(&iface->tx_queue, buf);
+	k_fifo_put(&iface->tx_queue, pkt);
 }
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -1087,7 +1086,7 @@ static inline void net_if_ipv4_set_gw(struct net_if *iface,
  * @brief Define callback that is called after a network packet
  *        has been sent.
  * @param "struct net_if *iface" A pointer on a struct net_if to which the
- *        the net_buf was sent to.
+ *        the net_pkt was sent to.
  * @param "struct net_linkaddr *dst" Link layer address of the destination
  *        where the network packet was sent.
  * @param "int status" Send status, 0 is ok, < 0 error.
@@ -1194,7 +1193,7 @@ int net_if_down(struct net_if *iface);
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);
-	int (*send)(struct net_if *iface, struct net_buf *buf);
+	int (*send)(struct net_if *iface, struct net_pkt *pkt);
 };
 
 #if defined(CONFIG_NET_DHCPV4)

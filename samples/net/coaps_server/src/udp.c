@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <string.h>
 #include <errno.h>
@@ -18,22 +18,22 @@
 
 static const socklen_t addrlen = sizeof(struct sockaddr_in6);
 
-static void set_client_address(struct sockaddr *addr, struct net_buf *rx_buf)
+static void set_client_address(struct sockaddr *addr, struct net_pkt *rx_pkt)
 {
-	net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &NET_IPV6_BUF(rx_buf)->src);
+	net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &NET_IPV6_HDR(rx_pkt)->src);
 	net_sin6(addr)->sin6_family = AF_INET6;
-	net_sin6(addr)->sin6_port = NET_UDP_BUF(rx_buf)->src_port;
+	net_sin6(addr)->sin6_port = NET_UDP_HDR(rx_pkt)->src_port;
 }
 
 static void udp_received(struct net_context *context,
-			 struct net_buf *buf, int status, void *user_data)
+			 struct net_pkt *pkt, int status, void *user_data)
 {
 	struct udp_context *ctx = user_data;
 
 	ARG_UNUSED(context);
 	ARG_UNUSED(status);
 
-	ctx->rx_nbuf = buf;
+	ctx->rx_pkt = pkt;
 	k_sem_give(&ctx->rx_sem);
 }
 
@@ -41,32 +41,32 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
 	struct net_context *net_ctx;
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 
 	int rc, len;
 
 	net_ctx = ctx->net_ctx;
 
-	send_buf = net_nbuf_get_tx(net_ctx, K_FOREVER);
-	if (!send_buf) {
-		printk("cannot create buf\n");
+	send_pkt = net_pkt_get_tx(net_ctx, K_FOREVER);
+	if (!send_pkt) {
+		printk("cannot create pkt\n");
 		return -EIO;
 	}
 
-	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
+	rc = net_pkt_append(send_pkt, size, (uint8_t *) buf, K_FOREVER);
 	if (!rc) {
 		printk("cannot write buf\n");
 		return -EIO;
 	}
 
-	len = net_buf_frags_len(send_buf);
+	len = net_pkt_frags_len(send_pkt);
 
-	rc = net_context_sendto(send_buf, &net_ctx->remote,
+	rc = net_context_sendto(send_pkt, &net_ctx->remote,
 				addrlen, NULL, K_FOREVER, NULL, NULL);
 
 	if (rc < 0) {
 		printk("Cannot send data to peer (%d)\n", rc);
-		net_nbuf_unref(send_buf);
+		net_pkt_unref(send_pkt);
 		return -EIO;
 	} else {
 		return len;
@@ -77,7 +77,8 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
 	struct net_context *net_ctx = ctx->net_ctx;
-	struct net_buf *rx_buf = NULL;
+	struct net_pkt *rx_pkt = NULL;
+	struct net_buf *rx_buf;
 	uint16_t read_bytes;
 	uint8_t *ptr;
 	int pos;
@@ -86,17 +87,17 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 
 	k_sem_take(&ctx->rx_sem, K_FOREVER);
 
-	read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
+	read_bytes = net_pkt_appdatalen(ctx->rx_pkt);
 	if (read_bytes > size) {
 		return -ENOMEM;
 	}
 
-	rx_buf = ctx->rx_nbuf;
+	rx_pkt = ctx->rx_pkt;
 
-	set_client_address(&net_ctx->remote, rx_buf);
+	set_client_address(&net_ctx->remote, rx_pkt);
 
-	ptr = net_nbuf_appdata(rx_buf);
-	rx_buf = rx_buf->frags;
+	ptr = net_pkt_appdata(rx_pkt);
+	rx_buf = rx_pkt->frags;
 	len = rx_buf->len - (ptr - rx_buf->data);
 	pos = 0;
 
@@ -113,8 +114,8 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 		len = rx_buf->len;
 	}
 
-	net_nbuf_unref(ctx->rx_nbuf);
-	ctx->rx_nbuf = NULL;
+	net_pkt_unref(ctx->rx_pkt);
+	ctx->rx_pkt = NULL;
 
 	if (read_bytes != pos) {
 		return -EIO;
@@ -169,7 +170,7 @@ int udp_init(struct udp_context *ctx)
 		goto error;
 	}
 
-	ctx->rx_nbuf = NULL;
+	ctx->rx_pkt = NULL;
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
 

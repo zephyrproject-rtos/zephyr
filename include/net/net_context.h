@@ -70,16 +70,16 @@ struct net_context;
  * received.
  *
  * @param context The context to use.
- * @param buf Network buffer that is received. If the buf is not NULL,
- * then the callback will own the buffer and it needs to to unref the buf
- * as soon as it has finished working with it.  On EOF, buf will be NULL.
+ * @param pkt Network buffer that is received. If the pkt is not NULL,
+ * then the callback will own the buffer and it needs to to unref the pkt
+ * as soon as it has finished working with it.  On EOF, pkt will be NULL.
  * @param status Value is set to 0 if some data or the connection is
  * at EOF, <0 if there was an error receiving data, in this case the
- * buf parameter is set to NULL.
+ * pkt parameter is set to NULL.
  * @param user_data The user data given in net_recv() call.
  */
 typedef void (*net_context_recv_cb_t)(struct net_context *context,
-				      struct net_buf *buf,
+				      struct net_pkt *pkt,
 				      int status,
 				      void *user_data);
 
@@ -139,18 +139,31 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
 					 int status,
 					 void *user_data);
 
-/* The net_nbuf_get_pool_func_t is here in order to avoid circular
- * dependency between nbuf.h and net_context.h
+/* The net_pkt_get_slab_func_t is here in order to avoid circular
+ * dependency between net_pkt.h and net_context.h
  */
 /**
- * @typedef net_nbuf_get_pool_func_t
+ * @typedef net_pkt_get_slab_func_t
+ *
+ * @brief Function that is called to get the slab that is used
+ * for net_pkt allocations.
+ *
+ * @return Pointer to valid struct k_mem_slab instance.
+ */
+typedef struct k_mem_slab *(*net_pkt_get_slab_func_t)(void);
+
+/* The net_pkt_get_pool_func_t is here in order to avoid circular
+ * dependency between net_pkt.h and net_context.h
+ */
+/**
+ * @typedef net_pkt_get_pool_func_t
  *
  * @brief Function that is called to get the pool that is used
  * for net_buf allocations.
  *
  * @return Pointer to valid struct net_buf_pool instance.
  */
-typedef struct net_buf_pool *(*net_nbuf_get_pool_func_t)(void);
+typedef struct net_buf_pool *(*net_pkt_get_pool_func_t)(void);
 
 struct net_tcp;
 
@@ -197,15 +210,15 @@ struct net_context {
 	 */
 	void *user_data;
 
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	/** Get TX net_buf pool for this context.
 	 */
-	net_nbuf_get_pool_func_t tx_pool;
+	net_pkt_get_slab_func_t tx_slab;
 
 	/** Get DATA net_buf pool for this context.
 	 */
-	net_nbuf_get_pool_func_t data_pool;
-#endif /* CONFIG_NET_CONTEXT_NBUF_POOL */
+	net_pkt_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	/**
@@ -611,7 +624,7 @@ int net_context_accept(struct net_context *context,
  * net_context_connect().
  * This is similar as BSD send() function.
  *
- * @param buf The network buffer to send.
+ * @param pkt The network buffer to send.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
@@ -620,7 +633,7 @@ int net_context_accept(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_send(struct net_buf *buf,
+int net_context_send(struct net_pkt *pkt,
 		     net_context_send_cb_t cb,
 		     int32_t timeout,
 		     void *token,
@@ -641,7 +654,7 @@ int net_context_send(struct net_buf *buf,
  * timeout expires.
  * This is similar as BSD sendto() function.
  *
- * @param buf The network buffer to send.
+ * @param pkt The network buffer to send.
  * @param dst_addr Destination address. This will override the address
  * already set in network buffer.
  * @param addrlen Length of the address.
@@ -653,7 +666,7 @@ int net_context_send(struct net_buf *buf,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_sendto(struct net_buf *buf,
+int net_context_sendto(struct net_pkt *pkt,
 		       const struct sockaddr *dst_addr,
 		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
@@ -728,21 +741,21 @@ void net_context_foreach(net_context_cb_t cb, void *user_data);
  * @param context Context that will use the given net_buf pools.
  * @param tx_pool Pointer to the function that will return TX pool
  * to the caller. The TX pool is used when sending data to network.
- * There is one TX net_buf for each network packet that is sent.
+ * There is one TX net_pkt for each network packet that is sent.
  * @param data_pool Pointer to the function that will return DATA pool
  * to the caller. The DATA pool is used to store data that is sent to
  * the network.
  */
-#if defined(CONFIG_NET_CONTEXT_NBUF_POOL)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static inline void net_context_setup_pools(struct net_context *context,
-					   net_nbuf_get_pool_func_t tx_pool,
-					   net_nbuf_get_pool_func_t data_pool)
+					   net_pkt_get_slab_func_t tx_slab,
+					   net_pkt_get_pool_func_t data_pool)
 {
 	NET_ASSERT(context);
-	NET_ASSERT(tx_pool);
+	NET_ASSERT(tx_slab);
 	NET_ASSERT(data_pool);
 
-	context->tx_pool = tx_pool;
+	context->tx_slab = tx_slab;
 	context->data_pool = data_pool;
 }
 #else

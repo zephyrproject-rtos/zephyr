@@ -20,7 +20,7 @@
 #include <device.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 
 #include "fsl_enet.h"
@@ -306,7 +306,7 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 	eth_mcux_phy_event(context);
 }
 
-static int eth_tx(struct net_if *iface, struct net_buf *buf)
+static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct eth_context *context = iface->dev->driver_data;
 	const struct net_buf *frag;
@@ -314,7 +314,7 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	status_t status;
 	unsigned int imask;
 
-	uint16_t total_len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
+	uint16_t total_len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 
 	k_sem_take(&context->tx_buf_sem, K_FOREVER);
 
@@ -329,12 +329,12 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 	 * in our case) headers and must be treated specially.
 	 */
 	dst = context->frame_buf;
-	memcpy(dst, net_nbuf_ll(buf),
-	       net_nbuf_ll_reserve(buf) + buf->frags->len);
-	dst += net_nbuf_ll_reserve(buf) + buf->frags->len;
+	memcpy(dst, net_pkt_ll(pkt),
+	       net_pkt_ll_reserve(pkt) + pkt->frags->len);
+	dst += net_pkt_ll_reserve(pkt) + pkt->frags->len;
 
 	/* Continue with the rest of fragments (which contain only data) */
-	frag = buf->frags->frags;
+	frag = pkt->frags->frags;
 	while (frag) {
 		memcpy(dst, frag->data, frag->len);
 		dst += frag->len;
@@ -351,14 +351,14 @@ static int eth_tx(struct net_if *iface, struct net_buf *buf)
 		return -1;
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 	return 0;
 }
 
 static void eth_rx(struct device *iface)
 {
 	struct eth_context *context = iface->driver_data;
-	struct net_buf *buf, *prev_frag;
+	struct net_pkt *pkt;
 	const uint8_t *src;
 	uint32_t frame_length = 0;
 	status_t status;
@@ -381,8 +381,8 @@ static void eth_rx(struct device *iface)
 		return;
 	}
 
-	buf = net_nbuf_get_reserve_rx(0, K_NO_WAIT);
-	if (!buf) {
+	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	if (!pkt) {
 		/* We failed to get a receive buffer.  We don't add
 		 * any further logging here because the allocator
 		 * issued a diagnostic when it failed to allocate.
@@ -398,7 +398,7 @@ static void eth_rx(struct device *iface)
 
 	if (sizeof(context->frame_buf) < frame_length) {
 		SYS_LOG_ERR("frame too large (%d)\n", frame_length);
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		status = ENET_ReadFrame(ENET, &context->enet_handle, NULL, 0);
 		assert(status == kStatus_Success);
 		return;
@@ -414,27 +414,25 @@ static void eth_rx(struct device *iface)
 	if (status) {
 		irq_unlock(imask);
 		SYS_LOG_ERR("ENET_ReadFrame failed: %d\n", status);
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return;
 	}
 
 	src = context->frame_buf;
-	prev_frag = buf;
 	do {
 		struct net_buf *pkt_buf;
 		size_t frag_len;
 
-		pkt_buf = net_nbuf_get_frag(buf, K_NO_WAIT);
+		pkt_buf = net_pkt_get_frag(pkt, K_NO_WAIT);
 		if (!pkt_buf) {
 			irq_unlock(imask);
 			SYS_LOG_ERR("Failed to get fragment buf\n");
-			net_nbuf_unref(buf);
+			net_pkt_unref(pkt);
 			assert(status == kStatus_Success);
 			return;
 		}
 
-		net_buf_frag_insert(prev_frag, pkt_buf);
-		prev_frag = pkt_buf;
+		net_pkt_frag_insert(pkt, pkt_buf);
 		frag_len = net_buf_tailroom(pkt_buf);
 		if (frag_len > frame_length) {
 			frag_len = frame_length;
@@ -448,8 +446,8 @@ static void eth_rx(struct device *iface)
 
 	irq_unlock(imask);
 
-	if (net_recv_data(context->iface, buf) < 0) {
-		net_nbuf_unref(buf);
+	if (net_recv_data(context->iface, pkt) < 0) {
+		net_pkt_unref(pkt);
 	}
 }
 

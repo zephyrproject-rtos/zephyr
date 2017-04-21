@@ -19,7 +19,7 @@
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,7 @@ struct net_conn_handle;
  * and port.
  */
 typedef enum net_verdict (*net_conn_cb_t)(struct net_conn *conn,
-					  struct net_buf *buf,
+					  struct net_pkt *pkt,
 					  void *user_data);
 
 /**
@@ -125,7 +125,7 @@ int net_conn_change_callback(struct net_conn_handle *handle,
 /**
  * @brief Called by net_core.c when a network packet is received.
  *
- * @param buf Network buffer holding received data
+ * @param pkt Network packet holding received data
  *
  * @return NET_OK if the packet was consumed, NET_DROP if
  * the packet parsing failed and the caller should handle
@@ -134,14 +134,33 @@ int net_conn_change_callback(struct net_conn_handle *handle,
  */
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 enum net_verdict net_conn_input(enum net_ip_protocol proto,
-				struct net_buf *buf);
+				struct net_pkt *pkt);
 #else
 static inline enum net_verdict net_conn_input(enum net_ip_protocol proto,
-					      struct net_buf *buf)
+					      struct net_pkt *pkt)
 {
 	return NET_DROP;
 }
 #endif /* CONFIG_NET_UDP || CONFIG_NET_TCP */
+
+/**
+ * @typedef net_conn_foreach_cb_t
+ * @brief Callback used while iterating over network connection
+ * handlers.
+ *
+ * @param conn A valid pointer on current network connection handler.
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*net_conn_foreach_cb_t)(struct net_conn *conn, void *user_data);
+
+/**
+ * @brief Go through all the network connection handlers and call callback
+ * for each network connection handler.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ */
+void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data);
 
 void net_conn_init(void);
 

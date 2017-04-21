@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <gpio.h>
 #include <spi.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
 
@@ -424,7 +424,7 @@ static int eth_enc28j60_init(struct device *dev)
 	return 0;
 }
 
-static int eth_enc28j60_tx(struct device *dev, struct net_buf *buf,
+static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt,
 			   uint16_t len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
@@ -461,13 +461,13 @@ static int eth_enc28j60_tx(struct device *dev, struct net_buf *buf,
 	per_packet_control = ENC28J60_PPCTL_BYTE;
 	eth_enc28j60_write_mem(dev, &per_packet_control, 1);
 
-	for (frag = buf->frags; frag; frag = frag->frags) {
+	for (frag = pkt->frags; frag; frag = frag->frags) {
 		uint8_t *data_ptr;
 		uint16_t data_len;
 
 		if (first_frag) {
-			data_ptr = net_nbuf_ll(buf);
-			data_len = net_nbuf_ll_reserve(buf) + frag->len;
+			data_ptr = net_pkt_ll(pkt);
+			data_len = net_pkt_ll_reserve(pkt) + frag->len;
 			first_frag = false;
 		} else {
 			data_ptr = frag->data;
@@ -522,10 +522,9 @@ static int eth_enc28j60_rx(struct device *dev)
 	k_sem_take(&context->tx_rx_sem, K_FOREVER);
 
 	do {
-		struct net_buf *last_frag;
 		struct net_buf *pkt_buf = NULL;
 		uint16_t frm_len = 0;
-		struct net_buf *buf;
+		struct net_pkt *pkt;
 		uint16_t next_packet;
 		uint8_t np[2];
 
@@ -552,13 +551,11 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		buf = net_nbuf_get_reserve_rx(0, config->timeout);
-		if (!buf) {
+		pkt = net_pkt_get_reserve_rx(0, config->timeout);
+		if (!pkt) {
 			SYS_LOG_ERR("Could not allocate rx buffer");
 			goto done;
 		}
-
-		last_frag = buf;
 
 		do {
 			size_t frag_len;
@@ -566,18 +563,17 @@ static int eth_enc28j60_rx(struct device *dev)
 			size_t spi_frame_len;
 
 			/* Reserve a data frag to receive the frame */
-			pkt_buf = net_nbuf_get_frag(buf, config->timeout);
+			pkt_buf = net_pkt_get_frag(pkt, config->timeout);
 			if (!pkt_buf) {
 				SYS_LOG_ERR("Could not allocate data buffer");
-				net_buf_unref(buf);
+				net_pkt_unref(pkt);
 
 				goto done;
 			}
 
-			net_buf_frag_insert(last_frag, pkt_buf);
-			data_ptr = pkt_buf->data;
+			net_pkt_frag_insert(pkt, pkt_buf);
 
-			last_frag = pkt_buf;
+			data_ptr = pkt_buf->data;
 
 			/* Review the space available for the new frag */
 			frag_len = net_buf_tailroom(pkt_buf);
@@ -608,7 +604,7 @@ static int eth_enc28j60_rx(struct device *dev)
 
 		/* Feed buffer frame to IP stack */
 		SYS_LOG_DBG("Received packet of length %u", lengthfr);
-		net_recv_data(context->iface, buf);
+		net_recv_data(context->iface, pkt);
 done:
 		/* Free buffer memory and decrement rx counter */
 		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);
@@ -654,16 +650,16 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static int eth_net_tx(struct net_if *iface, struct net_buf *buf)
+static int eth_net_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	uint16_t len = net_nbuf_ll_reserve(buf) + net_buf_frags_len(buf);
+	uint16_t len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 	int ret;
 
-	SYS_LOG_DBG("buf %p (len %u)", buf, len);
+	SYS_LOG_DBG("pkt %p (len %u)", pkt, len);
 
-	ret = eth_enc28j60_tx(iface->dev, buf, len);
+	ret = eth_enc28j60_tx(iface->dev, pkt, len);
 	if (ret == 0) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 	}
 
 	return ret;

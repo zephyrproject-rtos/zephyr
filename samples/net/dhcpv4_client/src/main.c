@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/nbuf.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/net_context.h>

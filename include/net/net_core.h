@@ -57,6 +57,7 @@ extern "C" {
 #include <kernel.h>
 
 struct net_buf;
+struct net_pkt;
 struct net_context;
 struct net_if;
 
@@ -71,21 +72,21 @@ enum net_verdict {
 };
 
 /* Called by lower network stack when a network packet has been received */
-int net_recv_data(struct net_if *iface, struct net_buf *buf);
+int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
 
 /**
  * @brief Send data to network.
  *
  * @details Send data to network. This should not be used normally by
- * applications as it requires that the buffer and fragments are properly
+ * applications as it requires that the pktfer and fragments are properly
  * constructed.
  *
- * @param buf Network buffer.
+ * @param pkt Network packet.
  *
  * @return 0 if ok, <0 if error. If <0 is returned, then the caller needs
- * to unref the buf in order to avoid buffer leak.
+ * to unref the pkt in order to avoid memory leak.
  */
-int net_send_data(struct net_buf *buf);
+int net_send_data(struct net_pkt *pkt);
 
 struct net_stack_info {
 	char *stack;

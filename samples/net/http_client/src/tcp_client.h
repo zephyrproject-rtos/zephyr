@@ -18,7 +18,7 @@ struct tcp_client_ctx {
 	/* Network timeout */
 	int32_t timeout;
 	/* User defined call back*/
-	void (*receive_cb)(struct tcp_client_ctx *ctx, struct net_buf *rx);
+	void (*receive_cb)(struct tcp_client_ctx *ctx, struct net_pkt *rx);
 };
 
 int tcp_set_local_addr(struct tcp_client_ctx *ctx, const char *local_addr);

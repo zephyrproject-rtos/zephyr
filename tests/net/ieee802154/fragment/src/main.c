@@ -18,7 +18,7 @@
 #include <init.h>
 #include <misc/printk.h>
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #include <tc_util.h>
@@ -155,9 +155,9 @@ static void net_fragment_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
 
-static int tester_send(struct net_if *iface, struct net_buf *buf)
+static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 	return NET_OK;
 }
 
@@ -172,20 +172,20 @@ NET_DEVICE_INIT(net_fragment_test, "net_fragment_test",
 		&net_fragment_if_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
-static bool compare_data(struct net_buf *buf, struct net_fragment_data *data)
+static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 {
 	struct net_buf *frag;
 	uint8_t bytes, pos, compare, offset = 0;
 	int remaining = data->len;
 
-	if (net_buf_frags_len(buf->frags) != (NET_IPV6UDPH_LEN + remaining)) {
+	if (net_pkt_get_len(pkt) != (NET_IPV6UDPH_LEN + remaining)) {
 		printk("mismatch lengths, expected %d received %zd\n",
 			NET_IPV6UDPH_LEN + remaining,
-			net_buf_frags_len(buf->frags));
+			net_pkt_get_len(pkt));
 		return false;
 	}
 
-	frag = buf->frags;
+	frag = pkt->frags;
 
 	if (memcmp(frag->data, (uint8_t *)data, NET_IPV6UDPH_LEN)) {
 		printk("mismatch headers\n");
@@ -214,25 +214,26 @@ static bool compare_data(struct net_buf *buf, struct net_fragment_data *data)
 	return true;
 }
 
-static struct net_buf *create_buf(struct net_fragment_data *data)
+static struct net_pkt *create_pkt(struct net_fragment_data *data)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	uint8_t bytes, pos;
 	uint16_t len;
 	int remaining;
 
-	buf = net_nbuf_get_reserve_tx(0, K_FOREVER);
-	if (!buf) {
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	if (!pkt) {
 		return NULL;
 	}
 
-	net_nbuf_set_ll_reserve(buf, 0);
-	net_nbuf_set_iface(buf, net_if_get_default());
-	net_nbuf_set_ip_hdr_len(buf, NET_IPV6H_LEN);
+	net_pkt_set_ll_reserve(pkt, 0);
+	net_pkt_set_iface(pkt, net_if_get_default());
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
-	frag = net_nbuf_get_frag(buf, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return NULL;
 	}
 
@@ -264,18 +265,18 @@ static struct net_buf *create_buf(struct net_fragment_data *data)
 		remaining -= bytes;
 
 		if (net_buf_tailroom(frag) - (bytes - copy)) {
-			net_nbuf_unref(buf);
+			net_pkt_unref(pkt);
 			return NULL;
 		}
 
-		net_buf_frag_add(buf, frag);
+		net_pkt_frag_add(pkt, frag);
 
 		if (remaining > 0) {
-			frag = net_nbuf_get_frag(buf, K_FOREVER);
+			frag = net_pkt_get_frag(pkt, K_FOREVER);
 		}
 	}
 
-	return buf;
+	return pkt;
 }
 
 static struct net_fragment_data test_data_1 = {
@@ -416,22 +417,23 @@ static struct net_fragment_data test_data_8 = {
 
 static int test_fragment(struct net_fragment_data *data)
 {
-	struct net_buf *rxbuf = NULL;
+	struct net_pkt *rxpkt = NULL;
 	int result = TC_FAIL;
-	struct net_buf *buf, *frag, *dfrag;
+	struct net_pkt *pkt;
+	struct net_buf *frag, *dfrag;
 
-	buf = create_buf(data);
-	if (!buf) {
+	pkt = create_pkt(data);
+	if (!pkt) {
 		TC_PRINT("%s: failed to create buffer\n", __func__);
 		goto end;
 	}
 
 #if DEBUG > 0
-	printk("length before compression %zd\n", net_buf_frags_len(buf->frags));
-	net_hexdump_frags("before-compression", buf);
+	printk("length before compression %zd\n", net_pkt_get_len(pkt));
+	net_hexdump_frags("before-compression", pkt);
 #endif
 
-	if (!net_6lo_compress(buf, data->iphc,
+	if (!net_6lo_compress(pkt, data->iphc,
 			      ieee802154_fragment)) {
 		TC_PRINT("compression failed\n");
 		goto end;
@@ -439,21 +441,21 @@ static int test_fragment(struct net_fragment_data *data)
 
 #if DEBUG > 0
 	printk("length after compression and fragmentation %zd\n",
-	       net_buf_frags_len(buf->frags));
-	net_hexdump_frags("after-compression", buf);
+	       net_pkt_get_len(pkt));
+	net_hexdump_frags("after-compression", pkt);
 #endif
 
-	frag = buf->frags;
+	frag = pkt->frags;
 
 	while (frag) {
-		rxbuf = net_nbuf_get_reserve_rx(0, K_FOREVER);
-		if (!rxbuf) {
+		rxpkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+		if (!rxpkt) {
 			goto end;
 		}
 
-		net_nbuf_set_ll_reserve(rxbuf, 0);
+		net_pkt_set_ll_reserve(rxpkt, 0);
 
-		dfrag = net_nbuf_get_frag(rxbuf, K_FOREVER);
+		dfrag = net_pkt_get_frag(rxpkt, K_FOREVER);
 		if (!dfrag) {
 			goto end;
 		}
@@ -461,16 +463,16 @@ static int test_fragment(struct net_fragment_data *data)
 		memcpy(dfrag->data, frag->data, frag->len);
 		dfrag->len = frag->len;
 
-		net_buf_frag_add(rxbuf, dfrag);
+		net_pkt_frag_add(rxpkt, dfrag);
 
-		switch (ieee802154_reassemble(rxbuf)) {
+		switch (ieee802154_reassemble(rxpkt)) {
 		case NET_OK:
 			frag = frag->frags;
 			break;
 		case NET_CONTINUE:
 			goto compare;
 		case NET_DROP:
-			net_nbuf_unref(rxbuf);
+			net_pkt_unref(rxpkt);
 			goto end;
 		}
 	}
@@ -478,17 +480,17 @@ static int test_fragment(struct net_fragment_data *data)
 compare:
 #if DEBUG > 0
 	printk("length after reassembly and uncompression %zd\n",
-	       net_buf_frags_len(rxbuf->frags));
-	net_hexdump_frags("after-uncompression", rxbuf);
+	       net_pkt_get_len(rxpkt));
+	net_hexdump_frags("after-uncompression", rxpkt);
 #endif
 
-	if (compare_data(rxbuf, data)) {
+	if (compare_data(rxpkt, data)) {
 		result = TC_PASS;
 	}
 
 end:
-	net_nbuf_unref(rxbuf);
-	net_nbuf_unref(buf);
+	net_pkt_unref(rxpkt);
+	net_pkt_unref(pkt);
 
 	return result;
 }

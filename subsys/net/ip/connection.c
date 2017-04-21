@@ -17,7 +17,7 @@
 #include <misc/util.h>
 
 #include <net/net_core.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
@@ -48,7 +48,7 @@ static struct net_conn conns[CONFIG_NET_MAX_CONN];
  * both TCP and UDP header have these in the same location, we can check
  * them both using the UDP struct.
  */
-#define NET_CONN_BUF(buf) ((struct net_udp_hdr *)(net_nbuf_udp_data(buf)))
+#define NET_CONN_HDR(pkt) ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
 
 #if defined(CONFIG_NET_CONN_CACHE)
 
@@ -210,16 +210,16 @@ static int32_t check_hash(enum net_ip_protocol proto,
 
 static inline int32_t get_conn(enum net_ip_protocol proto,
 			       sa_family_t family,
-			       struct net_buf *buf,
+			       struct net_pkt *pkt,
 			       uint32_t *cache_value)
 {
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
 		return check_hash(proto, family,
-				  &NET_IPV4_BUF(buf)->src,
-				  &NET_IPV4_BUF(buf)->dst,
-				  NET_UDP_BUF(buf)->src_port,
-				  NET_UDP_BUF(buf)->dst_port,
+				  &NET_IPV4_HDR(pkt)->src,
+				  &NET_IPV4_HDR(pkt)->dst,
+				  NET_UDP_HDR(pkt)->src_port,
+				  NET_UDP_HDR(pkt)->dst_port,
 				  cache_value);
 	}
 #endif
@@ -227,10 +227,10 @@ static inline int32_t get_conn(enum net_ip_protocol proto,
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		return check_hash(proto, family,
-				  &NET_IPV6_BUF(buf)->src,
-				  &NET_IPV6_BUF(buf)->dst,
-				  NET_UDP_BUF(buf)->src_port,
-				  NET_UDP_BUF(buf)->dst_port,
+				  &NET_IPV6_HDR(pkt)->src,
+				  &NET_IPV6_HDR(pkt)->dst,
+				  NET_UDP_HDR(pkt)->src_port,
+				  NET_UDP_HDR(pkt)->dst_port,
 				  cache_value);
 	}
 #endif
@@ -280,11 +280,11 @@ static void cache_clear(void)
 }
 
 static inline enum net_verdict cache_check(enum net_ip_protocol proto,
-					   struct net_buf *buf,
+					   struct net_pkt *pkt,
 					   uint32_t *cache_value,
 					   int32_t *pos)
 {
-	*pos = get_conn(proto, net_nbuf_family(buf), buf, cache_value);
+	*pos = get_conn(proto, net_pkt_family(pkt), pkt, cache_value);
 	if (*pos >= 0) {
 		if (conn_cache[*pos].idx >= 0) {
 			/* Connection is in the cache */
@@ -292,15 +292,15 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 
 			conn = &conns[conn_cache[*pos].idx];
 
-			NET_DBG("Cache %s listener for buf %p src port %u "
+			NET_DBG("Cache %s listener for pkt %p src port %u "
 				"dst port %u family %d cache[%d] 0x%x",
-				net_proto2str(proto), buf,
-				ntohs(NET_CONN_BUF(buf)->src_port),
-				ntohs(NET_CONN_BUF(buf)->dst_port),
-				net_nbuf_family(buf), *pos,
+				net_proto2str(proto), pkt,
+				ntohs(NET_CONN_HDR(pkt)->src_port),
+				ntohs(NET_CONN_HDR(pkt)->dst_port),
+				net_pkt_family(pkt), *pos,
 				conn_cache[*pos].value);
 
-			return conn->cb(conn, buf, conn->user_data);
+			return conn->cb(conn, pkt, conn->user_data);
 		}
 	} else if (*cache_value > 0) {
 		if (cache_check_neg(*cache_value)) {
@@ -557,22 +557,22 @@ int net_conn_register(enum net_ip_protocol proto,
 	return -ENOENT;
 }
 
-static bool check_addr(struct net_buf *buf,
+static bool check_addr(struct net_pkt *pkt,
 		       struct sockaddr *addr,
 		       bool is_remote)
 {
-	if (addr->family != net_nbuf_family(buf)) {
+	if (addr->family != net_pkt_family(pkt)) {
 		return false;
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6 && addr->family == AF_INET6) {
+	if (net_pkt_family(pkt) == AF_INET6 && addr->family == AF_INET6) {
 		struct in6_addr *addr6;
 
 		if (is_remote) {
-			addr6 = &NET_IPV6_BUF(buf)->src;
+			addr6 = &NET_IPV6_HDR(pkt)->src;
 		} else {
-			addr6 = &NET_IPV6_BUF(buf)->dst;
+			addr6 = &NET_IPV6_HDR(pkt)->dst;
 		}
 
 		if (!net_is_ipv6_addr_unspecified(
@@ -588,13 +588,13 @@ static bool check_addr(struct net_buf *buf,
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET && addr->family == AF_INET) {
+	if (net_pkt_family(pkt) == AF_INET && addr->family == AF_INET) {
 		struct in_addr *addr4;
 
 		if (is_remote) {
-			addr4 = &NET_IPV4_BUF(buf)->src;
+			addr4 = &NET_IPV4_HDR(pkt)->src;
 		} else {
-			addr4 = &NET_IPV4_BUF(buf)->dst;
+			addr4 = &NET_IPV4_HDR(pkt)->dst;
 		}
 
 		if (net_sin(addr)->sin_addr.s_addr[0]) {
@@ -609,24 +609,24 @@ static bool check_addr(struct net_buf *buf,
 	return true;
 }
 
-static inline void send_icmp_error(struct net_buf *buf)
+static inline void send_icmp_error(struct net_pkt *pkt)
 {
-	if (net_nbuf_family(buf) == AF_INET6) {
+	if (net_pkt_family(pkt) == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-		net_icmpv6_send_error(buf, NET_ICMPV6_DST_UNREACH,
+		net_icmpv6_send_error(pkt, NET_ICMPV6_DST_UNREACH,
 				      NET_ICMPV6_DST_UNREACH_NO_PORT, 0);
 #endif /* CONFIG_NET_IPV6 */
 
 	} else {
 
 #if defined(CONFIG_NET_IPV4)
-		net_icmpv4_send_error(buf, NET_ICMPV4_DST_UNREACH,
+		net_icmpv4_send_error(pkt, NET_ICMPV4_DST_UNREACH,
 				      NET_ICMPV4_DST_UNREACH_NO_PORT);
 #endif /* CONFIG_NET_IPV4 */
 	}
 }
 
-enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
+enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 {
 	int i, best_match = -1;
 	int16_t best_rank = -1;
@@ -636,7 +636,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 	uint32_t cache_value = 0;
 	int32_t pos;
 
-	verdict = cache_check(proto, buf, &cache_value, &pos);
+	verdict = cache_check(proto, pkt, &cache_value, &pos);
 	if (verdict != NET_CONTINUE) {
 		return verdict;
 	}
@@ -646,16 +646,16 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 		uint16_t chksum;
 
 		if (proto == IPPROTO_TCP) {
-			chksum = NET_TCP_BUF(buf)->chksum;
+			chksum = NET_TCP_HDR(pkt)->chksum;
 		} else {
-			chksum = NET_UDP_BUF(buf)->chksum;
+			chksum = NET_UDP_HDR(pkt)->chksum;
 		}
 
-		NET_DBG("Check %s listener for buf %p src port %u dst port %u "
-			"family %d chksum 0x%04x", net_proto2str(proto), buf,
-			ntohs(NET_CONN_BUF(buf)->src_port),
-			ntohs(NET_CONN_BUF(buf)->dst_port),
-			net_nbuf_family(buf), ntohs(chksum));
+		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "
+			"family %d chksum 0x%04x", net_proto2str(proto), pkt,
+			ntohs(NET_CONN_HDR(pkt)->src_port),
+			ntohs(NET_CONN_HDR(pkt)->dst_port),
+			net_pkt_family(pkt), ntohs(chksum));
 	}
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
@@ -669,26 +669,26 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 
 		if (net_sin(&conns[i].remote_addr)->sin_port) {
 			if (net_sin(&conns[i].remote_addr)->sin_port !=
-			    NET_CONN_BUF(buf)->src_port) {
+			    NET_CONN_HDR(pkt)->src_port) {
 				continue;
 			}
 		}
 
 		if (net_sin(&conns[i].local_addr)->sin_port) {
 			if (net_sin(&conns[i].local_addr)->sin_port !=
-			    NET_CONN_BUF(buf)->dst_port) {
+			    NET_CONN_HDR(pkt)->dst_port) {
 				continue;
 			}
 		}
 
 		if (conns[i].flags & NET_CONN_REMOTE_ADDR_SET) {
-			if (!check_addr(buf, &conns[i].remote_addr, true)) {
+			if (!check_addr(pkt, &conns[i].remote_addr, true)) {
 				continue;
 			}
 		}
 
 		if (conns[i].flags & NET_CONN_LOCAL_ADDR_SET) {
-			if (!check_addr(buf, &conns[i].local_addr, false)) {
+			if (!check_addr(pkt, &conns[i].local_addr, false)) {
 				continue;
 			}
 		}
@@ -728,7 +728,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 			conns[best_match].rank);
 #endif /* CONFIG_NET_CONN_CACHE */
 
-		if (conns[best_match].cb(&conns[best_match], buf,
+		if (conns[best_match].cb(&conns[best_match], pkt,
 			     conns[best_match].user_data) == NET_DROP) {
 			goto drop;
 		}
@@ -748,19 +748,19 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_buf *buf)
 	/* If the destination address is multicast address,
 	 * we do not send ICMP error as that makes no sense.
 	 */
-	if (net_nbuf_family(buf) == AF_INET6 &&
-	    net_is_ipv6_addr_mcast(&NET_IPV6_BUF(buf)->dst)) {
+	if (net_pkt_family(pkt) == AF_INET6 &&
+	    net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET &&
-	    net_is_ipv4_addr_mcast(&NET_IPV4_BUF(buf)->dst)) {
+	if (net_pkt_family(pkt) == AF_INET &&
+	    net_is_ipv4_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
 		;
 	} else
 #endif
 	{
-		send_icmp_error(buf);
+		send_icmp_error(pkt);
 	}
 
 drop:
@@ -769,6 +769,19 @@ drop:
 	}
 
 	return NET_DROP;
+}
+
+void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
+		if (!(conns[i].flags & NET_CONN_IN_USE)) {
+			continue;
+		}
+
+		cb(&conns[i], user_data);
+	}
 }
 
 void net_conn_init(void)

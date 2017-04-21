@@ -9,7 +9,6 @@
 #include "http_utils.h"
 #include "config.h"
 
-#include <net/nbuf.h>
 #include <stdio.h>
 
 #define HTTP_STATUS_200_OK	"HTTP/1.1 200 OK\r\n" \

@@ -18,7 +18,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 #include <net/buf.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_ip.h>
 
 #include <net/zoap.h>
@@ -72,7 +72,8 @@ static int test_del(struct zoap_resource *resource,
 		    struct zoap_packet *request,
 		    const struct sockaddr *from)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	uint8_t tkl, code, type;
 	const uint8_t *token;
@@ -88,12 +89,12 @@ static int test_del(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -111,7 +112,7 @@ static int test_del(struct zoap_resource *resource,
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -119,7 +120,8 @@ static int test_put(struct zoap_resource *resource,
 		    struct zoap_packet *request,
 		    const struct sockaddr *from)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	uint8_t *payload, code, type, tkl;
 	const uint8_t *token;
@@ -140,12 +142,12 @@ static int test_put(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -163,7 +165,7 @@ static int test_put(struct zoap_resource *resource,
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -176,7 +178,8 @@ static int test_post(struct zoap_resource *resource,
 						      "location3",
 						      NULL };
 	const char * const *p;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	uint8_t *payload, code, type, tkl;
 	const uint8_t *token;
@@ -198,12 +201,12 @@ static int test_post(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -226,7 +229,7 @@ static int test_post(struct zoap_resource *resource,
 				*p, strlen(*p));
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -238,7 +241,8 @@ static int location_query_post(struct zoap_resource *resource,
 						      "second=2",
 						      NULL };
 	const char * const *p;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	uint8_t *payload, code, type, tkl;
 	const uint8_t *token;
@@ -260,12 +264,12 @@ static int location_query_post(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -288,7 +292,7 @@ static int location_query_post(struct zoap_resource *resource,
 				*p, strlen(*p));
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -296,7 +300,8 @@ static int piggyback_get(struct zoap_resource *resource,
 			 struct zoap_packet *request,
 			 const struct sockaddr *from)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	const uint8_t *token;
 	uint8_t *payload, code, type;
@@ -313,12 +318,12 @@ static int piggyback_get(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -360,7 +365,7 @@ static int piggyback_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -369,7 +374,8 @@ static int query_get(struct zoap_resource *resource,
 		     const struct sockaddr *from)
 {
 	struct zoap_option options[4];
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	uint8_t *payload, code, type, tkl;
 	const uint8_t *token;
@@ -408,12 +414,12 @@ static int query_get(struct zoap_resource *resource,
 
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -448,7 +454,7 @@ static int query_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -456,7 +462,8 @@ static int separate_get(struct zoap_resource *resource,
 			struct zoap_packet *request,
 			const struct sockaddr *from)
 {
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	struct zoap_pending *pending;
 	uint8_t *payload, code, type, tkl;
@@ -477,12 +484,12 @@ static int separate_get(struct zoap_resource *resource,
 		goto done;
 	}
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -494,19 +501,19 @@ static int separate_get(struct zoap_resource *resource,
 	zoap_header_set_id(&response, id);
 	zoap_header_set_token(&response, token, tkl);
 
-	r = net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 	if (r < 0) {
 		return -EINVAL;
 	}
 
 done:
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -564,7 +571,7 @@ done:
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -573,7 +580,8 @@ static int large_get(struct zoap_resource *resource,
 		     const struct sockaddr *from)
 {
 	static struct zoap_block_context ctx;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	const uint8_t *token;
 	uint8_t *payload, code, type;
@@ -600,12 +608,12 @@ static int large_get(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -653,7 +661,7 @@ static int large_get(struct zoap_resource *resource,
 		memset(&ctx, 0, sizeof(ctx));
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -662,7 +670,8 @@ static int large_update_put(struct zoap_resource *resource,
 			    const struct sockaddr *from)
 {
 	static struct zoap_block_context ctx;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	const uint8_t *token;
 	uint8_t *payload, code, type;
@@ -703,12 +712,12 @@ static int large_update_put(struct zoap_resource *resource,
 
 	/* Do something with the payload */
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -732,7 +741,7 @@ static int large_update_put(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -741,7 +750,8 @@ static int large_create_post(struct zoap_resource *resource,
 			     const struct sockaddr *from)
 {
 	static struct zoap_block_context ctx;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	const uint8_t *token;
 	uint8_t *payload, code, type;
@@ -773,12 +783,12 @@ static int large_create_post(struct zoap_resource *resource,
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -802,7 +812,7 @@ static int large_create_post(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -824,17 +834,18 @@ static int send_notification_packet(const struct sockaddr *addr, uint16_t age,
 {
 	struct zoap_packet response;
 	struct zoap_pending *pending;
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	uint8_t *payload, type = ZOAP_TYPE_CON;
 	uint16_t len;
 	int r;
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -899,7 +910,7 @@ static int send_notification_packet(const struct sockaddr *addr, uint16_t age,
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
-	return net_context_sendto(buf, addr, addrlen, NULL, 0, NULL, NULL);
+	return net_context_sendto(pkt, addr, addrlen, NULL, 0, NULL, NULL);
 }
 
 static int obs_get(struct zoap_resource *resource,
@@ -957,7 +968,8 @@ static int core_get(struct zoap_resource *resource,
 		     const struct sockaddr *from)
 {
 	static const char dummy_str[] = "Just a test\n";
-	struct net_buf *buf, *frag;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
 	struct zoap_packet response;
 	uint8_t *payload, tkl;
 	const uint8_t *token;
@@ -967,12 +979,12 @@ static int core_get(struct zoap_resource *resource,
 	id = zoap_header_get_id(request);
 	token = zoap_header_get_token(request, &tkl);
 
-	buf = net_nbuf_get_tx(context, K_FOREVER);
-	frag = net_nbuf_get_data(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
 
-	net_buf_frag_add(buf, frag);
+	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, buf);
+	r = zoap_packet_init(&response, pkt);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -996,7 +1008,7 @@ static int core_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(buf, from, sizeof(struct sockaddr_in6),
+	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
 }
 
@@ -1096,7 +1108,7 @@ static struct zoap_resource *find_resouce_by_observer(
 }
 
 static void udp_receive(struct net_context *context,
-			struct net_buf *buf,
+			struct net_pkt *pkt,
 			int status,
 			void *user_data)
 {
@@ -1105,28 +1117,28 @@ static void udp_receive(struct net_context *context,
 	struct sockaddr_in6 from;
 	int r, header_len;
 
-	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_BUF(buf)->src);
-	from.sin6_port = NET_UDP_BUF(buf)->src_port;
+	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
+	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
 	from.sin6_family = AF_INET6;
 
 	/*
 	 * zoap expects that buffer->data starts at the
 	 * beginning of the CoAP header
 	 */
-	header_len = net_nbuf_appdata(buf) - buf->frags->data;
-	net_buf_pull(buf->frags, header_len);
+	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
+	net_buf_pull(pkt->frags, header_len);
 
-	r = zoap_packet_parse(&request, buf);
+	r = zoap_packet_parse(&request, pkt);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return;
 	}
 
 	pending = zoap_pending_received(&request, pendings,
 					NUM_PENDINGS);
 	if (pending) {
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return;
 	}
 
@@ -1152,7 +1164,7 @@ not_found:
 	r = zoap_handle_request(&request, resources,
 				(const struct sockaddr *) &from);
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
 	if (r < 0) {
 		NET_ERR("No handler for such request (%d)\n", r);
@@ -1208,7 +1220,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	r = net_context_sendto(pending->buf, &pending->addr,
+	r = net_context_sendto(pending->pkt, &pending->addr,
 			       sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {

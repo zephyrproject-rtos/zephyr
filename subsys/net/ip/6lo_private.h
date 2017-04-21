@@ -85,7 +85,7 @@
 #define NET_6LO_NHC_UDP_4_BIT_PORT	0xF0B
 
 #define IPHC ((frag)->data)
-#define CIPHC ((buf->frags)->data)
+#define CIPHC ((pkt->frags)->data)
 
 #define NET_6LO_FRAG1_HDR_LEN		4
 #define NET_6LO_FRAGN_HDR_LEN		5
@@ -97,4 +97,4 @@
  * that can cause the stack to deadlock. This can happen if RX side is flooding
  * incoming data and we cannot get process the packet in 6lo side.
  */
-#define NET_6LO_RX_NBUF_TIMEOUT 100 /* in ms */
+#define NET_6LO_RX_PKT_TIMEOUT 100 /* in ms */

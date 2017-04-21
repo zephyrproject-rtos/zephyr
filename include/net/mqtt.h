@@ -148,7 +148,7 @@ struct mqtt_ctx {
 	void (*malformed)(struct mqtt_ctx *ctx, uint16_t pkt_type);
 
 	/* Internal use only */
-	int (*rcv)(struct mqtt_ctx *ctx, struct net_buf *);
+	int (*rcv)(struct mqtt_ctx *ctx, struct net_pkt *);
 
 	/** Application type, see: enum mqtt_app */
 	uint8_t app_type;

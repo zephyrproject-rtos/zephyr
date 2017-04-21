@@ -70,7 +70,7 @@ struct net_offload {
 	/**
 	 * This function is called when user wants to send data to peer host.
 	 */
-	int (*send)(struct net_buf *buf,
+	int (*send)(struct net_pkt *pkt,
 		    net_context_send_cb_t cb,
 		    int32_t timeout,
 		    void *token,
@@ -79,7 +79,7 @@ struct net_offload {
 	/**
 	 * This function is called when user wants to send data to peer host.
 	 */
-	int (*sendto)(struct net_buf *buf,
+	int (*sendto)(struct net_pkt *pkt,
 		      const struct sockaddr *dst_addr,
 		      socklen_t addrlen,
 		      net_context_send_cb_t cb,
@@ -266,13 +266,13 @@ static inline int net_offload_accept(struct net_if *iface,
 }
 
 /**
- * @brief Send a network buffer to a peer.
+ * @brief Send a network packet to a peer.
  *
  * @details This function can be used to send network data to a peer
  * connection. This function will return immediately if the timeout
  * is set to K_NO_WAIT. If the timeout is set to K_FOREVER, the function
- * will wait until the network buffer is sent. Timeout value > 0 will
- * wait as many ms. After the network buffer is sent,
+ * will wait until the network packet is sent. Timeout value > 0 will
+ * wait as many ms. After the network packet is sent,
  * a caller supplied callback is called. The callback is called even
  * if timeout was set to K_FOREVER, the callback is called
  * before this function will return in this case. The callback is not
@@ -283,7 +283,7 @@ static inline int net_offload_accept(struct net_if *iface,
  *
  * @param iface Network interface where the offloaded IP stack can be
  * reached.
- * @param buf The network buffer to send.
+ * @param pkt The network packet to send.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
@@ -293,7 +293,7 @@ static inline int net_offload_accept(struct net_if *iface,
  * @return 0 if ok, < 0 if error
  */
 static inline int net_offload_send(struct net_if *iface,
-					 struct net_buf *buf,
+					 struct net_pkt *pkt,
 					 net_context_send_cb_t cb,
 					 int32_t timeout,
 					 void *token,
@@ -303,18 +303,18 @@ static inline int net_offload_send(struct net_if *iface,
 	NET_ASSERT(iface->offload);
 	NET_ASSERT(iface->offload->send);
 
-	return iface->offload->send(buf, cb, timeout, token, user_data);
+	return iface->offload->send(pkt, cb, timeout, token, user_data);
 }
 
 /**
- * @brief Send a network buffer to a peer specified by address.
+ * @brief Send a network packet to a peer specified by address.
  *
  * @details This function can be used to send network data to a peer
  * specified by address. This variant can only be used for datagram
  * connections of type SOCK_DGRAM. This function will return immediately
  * if the timeout is set to K_NO_WAIT. If the timeout is set to K_FOREVER,
- * the function will wait until the network buffer is sent. Timeout
- * value > 0 will wait as many ms. After the network buffer
+ * the function will wait until the network packet is sent. Timeout
+ * value > 0 will wait as many ms. After the network packet
  * is sent, a caller supplied callback is called. The callback is called
  * even if timeout was set to K_FOREVER, the callback is called
  * before this function will return. The callback is not called if the
@@ -323,9 +323,9 @@ static inline int net_offload_send(struct net_if *iface,
  *
  * @param iface Network interface where the offloaded IP stack can be
  * reached.
- * @param buf The network buffer to send.
+ * @param pkt The network packet to send.
  * @param dst_addr Destination address. This will override the address
- * already set in network buffer.
+ * already set in network packet.
  * @param addrlen Length of the address.
  * @param cb Caller supplied callback function.
  * @param timeout Timeout for the connection. Possible values
@@ -336,7 +336,7 @@ static inline int net_offload_send(struct net_if *iface,
  * @return 0 if ok, < 0 if error
  */
 static inline int net_offload_sendto(struct net_if *iface,
-					   struct net_buf *buf,
+					   struct net_pkt *pkt,
 					   const struct sockaddr *dst_addr,
 					   socklen_t addrlen,
 					   net_context_send_cb_t cb,
@@ -348,7 +348,7 @@ static inline int net_offload_sendto(struct net_if *iface,
 	NET_ASSERT(iface->offload);
 	NET_ASSERT(iface->offload->sendto);
 
-	return iface->offload->sendto(buf, dst_addr, addrlen, cb,
+	return iface->offload->sendto(pkt, dst_addr, addrlen, cb,
 					     timeout, token, user_data);
 }
 
@@ -364,8 +364,8 @@ static inline int net_offload_sendto(struct net_if *iface,
  * multiple times to register new values.
  * This function will return immediately if the timeout is set to K_NO_WAIT.
  * If the timeout is set to K_FOREVER, the function will wait until the
- * network buffer is received. Timeout value > 0 will wait as many ms.
- * After the network buffer is received, a caller supplied callback is
+ * network packet is received. Timeout value > 0 will wait as many ms.
+ * After the network packet is received, a caller supplied callback is
  * called. The callback is called even if timeout was set to K_FOREVER,
  * the callback is called before this function will return in this case.
  * The callback is not called if the timeout expires. The timeout functionality

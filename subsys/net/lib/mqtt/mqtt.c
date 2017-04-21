@@ -8,7 +8,7 @@
 #include "mqtt_pkt.h"
 
 #include <net/net_ip.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/buf.h>
 #include <errno.h>
 
@@ -26,7 +26,7 @@ NET_BUF_POOL_DEFINE(mqtt_msg_pool, MQTT_BUF_CTR, MSG_SIZE, 0, NULL);
 int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 {
 	struct net_buf *data = NULL;
-	struct net_buf *tx = NULL;
+	struct net_pkt *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -43,13 +43,13 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 		goto exit_connect;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_connect;
 	}
 
-	net_buf_frag_add(tx, data);
+	net_pkt_frag_add(tx, data);
 	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
@@ -61,15 +61,15 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 	tx = NULL;
 
 exit_connect:
-	net_nbuf_unref(data);
-	net_nbuf_unref(tx);
+	net_pkt_frag_unref(data);
+	net_pkt_unref(tx);
 
 	return rc;
 }
 
 int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 {
-	struct net_buf *tx = NULL;
+	struct net_pkt *tx = NULL;
 	/* DISCONNECT is a zero length message: 2 bytes required, no payload */
 	uint8_t msg[2];
 	uint16_t len;
@@ -81,13 +81,13 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 		goto exit_disconnect;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_disconnect;
 	}
 
-	rc = net_nbuf_append(tx, len, msg, ctx->net_timeout);
+	rc = net_pkt_append(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_disconnect;
@@ -107,7 +107,7 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 	}
 
 exit_disconnect:
-	net_nbuf_unref(tx);
+	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -121,14 +121,14 @@ exit_disconnect:
  *
  * @retval 0 on success
  * @retval -EINVAL
- * @retval -ENOMEM if a tx buffer is not available
+ * @retval -ENOMEM if a tx pktfer is not available
  * @retval -EIO on network error
  */
 static
 int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
 		     enum mqtt_packet pkt_type)
 {
-	struct net_buf *tx = NULL;
+	struct net_pkt *tx = NULL;
 	uint8_t msg[4];
 	uint16_t len;
 	int rc;
@@ -154,13 +154,13 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
 		return -EINVAL;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_send;
 	}
 
-	rc = net_nbuf_append(tx, len, msg, ctx->net_timeout);
+	rc = net_pkt_append(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_send;
@@ -175,7 +175,7 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
 	tx = NULL;
 
 exit_send:
-	net_nbuf_unref(tx);
+	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -203,7 +203,7 @@ int mqtt_tx_pubrel(struct mqtt_ctx *ctx, uint16_t id)
 int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 {
 	struct net_buf *data = NULL;
-	struct net_buf *tx = NULL;
+	struct net_pkt *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -218,13 +218,13 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 		goto exit_publish;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_publish;
 	}
 
-	net_buf_frag_add(tx, data);
+	net_pkt_frag_add(tx, data);
 	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
@@ -236,15 +236,15 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 	tx = NULL;
 
 exit_publish:
-	net_nbuf_unref(data);
-	net_nbuf_unref(tx);
+	net_pkt_frag_unref(data);
+	net_pkt_unref(tx);
 
 	return rc;
 }
 
 int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 {
-	struct net_buf *tx = NULL;
+	struct net_pkt *tx = NULL;
 	uint8_t msg[2];
 	uint16_t len;
 	int rc;
@@ -255,13 +255,13 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		goto exit_pingreq;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_pingreq;
 	}
 
-	rc = net_nbuf_append(tx, len, msg, ctx->net_timeout);
+	rc = net_pkt_append(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_pingreq;
@@ -276,7 +276,7 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 	tx = NULL;
 
 exit_pingreq:
-	net_nbuf_unref(tx);
+	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -285,7 +285,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		      const char *topics[], const enum mqtt_qos qos[])
 {
 	struct net_buf *data = NULL;
-	struct net_buf *tx = NULL;
+	struct net_pkt *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -297,18 +297,18 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 	rc = mqtt_pack_subscribe(data->data, &data->len, data->size,
 				 pkt_id, items, topics, qos);
 	if (rc != 0) {
-		net_nbuf_unref(data);
+		net_pkt_frag_unref(data);
 		rc = -EINVAL;
 		goto exit_subs;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_subs;
 	}
 
-	net_buf_frag_add(tx, data);
+	net_pkt_frag_add(tx, data);
 	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
@@ -320,8 +320,8 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 	tx = NULL;
 
 exit_subs:
-	net_nbuf_unref(data);
-	net_nbuf_unref(tx);
+	net_pkt_frag_unref(data);
+	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -330,7 +330,7 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 			const char *topics[])
 {
 	struct net_buf *data = NULL;
-	struct net_buf *tx = NULL;
+	struct net_pkt *tx = NULL;
 	int rc;
 
 	data = net_buf_alloc(&mqtt_msg_pool, ctx->net_timeout);
@@ -346,13 +346,13 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		goto exit_unsub;
 	}
 
-	tx = net_nbuf_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_unsub;
 	}
 
-	net_buf_frag_add(tx, data);
+	net_pkt_frag_add(tx, data);
 	data = NULL;
 
 	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
@@ -364,8 +364,8 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 	tx = NULL;
 
 exit_unsub:
-	net_buf_unref(data);
-	net_buf_unref(tx);
+	net_pkt_frag_unref(data);
+	net_pkt_unref(tx);
 
 	return rc;
 }
@@ -421,7 +421,7 @@ exit_connect:
 }
 
 /**
- * Parses and validates the MQTT PUBxxxx message contained in the rx buffer.
+ * Parses and validates the MQTT PUBxxxx message contained in the rx packet.
  *
  *
  * @details It validates against message structure and Packet Identifier.
@@ -429,7 +429,7 @@ exit_connect:
  * corresponding MQTT PUB msg.
  *
  * @param ctx MQTT context
- * @param rx RX buffer
+ * @param rx RX packet
  * @param type MQTT Packet type
  *
  * @retval 0 on success
@@ -629,18 +629,18 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx)
 }
 
 /**
- * Linearizes an IP fragmented buffer
+ * Linearizes an IP fragmented packet
  *
  * @param [in] ctx MQTT context structure
- * @param [in] rx RX IP stack buffer
+ * @param [in] rx RX IP stack packet
  * @param [in] min_size Min message size allowed. This allows us to exit if the
- * rx buffer is shorter than the expected msg size
+ * rx packet is shorter than the expected msg size
  *
  * @retval Data buffer
  * @retval NULL on error
  */
 static
-struct net_buf *mqtt_linearize_buffer(struct mqtt_ctx *ctx, struct net_buf *rx,
+struct net_buf *mqtt_linearize_packet(struct mqtt_ctx *ctx, struct net_pkt *rx,
 				      uint16_t min_size)
 {
 	struct net_buf *data = NULL;
@@ -649,10 +649,10 @@ struct net_buf *mqtt_linearize_buffer(struct mqtt_ctx *ctx, struct net_buf *rx,
 	int rc;
 
 	/* CONFIG_MQTT_MSG_MAX_SIZE is defined via Kconfig. So here it's
-	 * determined if the input buffer could fit our data buffer or if
+	 * determined if the input packet could fit our data buffer or if
 	 * it has the expected size.
 	 */
-	data_len = net_nbuf_appdatalen(rx);
+	data_len = net_pkt_appdatalen(rx);
 	if (data_len < min_size || data_len > CONFIG_MQTT_MSG_MAX_SIZE) {
 		return NULL;
 	}
@@ -662,8 +662,8 @@ struct net_buf *mqtt_linearize_buffer(struct mqtt_ctx *ctx, struct net_buf *rx,
 		return NULL;
 	}
 
-	offset = net_buf_frags_len(rx) - data_len;
-	rc = net_nbuf_linear_copy(data, rx, offset, data_len);
+	offset = net_pkt_get_len(rx) - data_len;
+	rc = net_frag_linear_copy(data, rx->frags, offset, data_len);
 	if (rc != 0) {
 		goto exit_error;
 	}
@@ -671,7 +671,7 @@ struct net_buf *mqtt_linearize_buffer(struct mqtt_ctx *ctx, struct net_buf *rx,
 	return data;
 
 exit_error:
-	net_nbuf_unref(data);
+	net_pkt_frag_unref(data);
 
 	return NULL;
 }
@@ -683,7 +683,7 @@ exit_error:
  * (if defined)
  *
  * @param ctx MQTT context
- * @param rx RX buffer
+ * @param rx RX packet
  *
  * @retval 0 on success
  * @retval -EINVAL if an unknown message is received
@@ -692,13 +692,13 @@ exit_error:
  *         and mqtt_rx_pingresp return codes
  */
 static
-int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
+int mqtt_publisher_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 {
 	uint16_t pkt_type = MQTT_INVALID;
 	struct net_buf *data = NULL;
 	int rc = -EINVAL;
 
-	data = mqtt_linearize_buffer(ctx, rx, MQTT_PUBLISHER_MIN_MSG_SIZE);
+	data = mqtt_linearize_packet(ctx, rx, MQTT_PUBLISHER_MIN_MSG_SIZE);
 	if (!data) {
 		rc = -ENOMEM;
 		goto exit_parser;
@@ -736,7 +736,7 @@ exit_parser:
 		ctx->malformed(ctx, pkt_type);
 	}
 
-	net_nbuf_unref(data);
+	net_pkt_frag_unref(data);
 
 	return rc;
 }
@@ -749,7 +749,7 @@ exit_parser:
  * (if defined)
  *
  * @param ctx MQTT context
- * @param rx RX buffer
+ * @param rx RX packet
  *
  * @retval 0 on success
  * @retval -EINVAL if an unknown message is received
@@ -758,13 +758,13 @@ exit_parser:
  *         return codes
  */
 static
-int mqtt_subscriber_parser(struct mqtt_ctx *ctx, struct net_buf *rx)
+int mqtt_subscriber_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 {
 	uint16_t pkt_type = MQTT_INVALID;
 	struct net_buf *data = NULL;
 	int rc = 0;
 
-	data = mqtt_linearize_buffer(ctx, rx, MQTT_PUBLISHER_MIN_MSG_SIZE);
+	data = mqtt_linearize_packet(ctx, rx, MQTT_PUBLISHER_MIN_MSG_SIZE);
 	if (!data) {
 		rc = -EINVAL;
 		goto exit_parser;
@@ -803,13 +803,13 @@ exit_parser:
 		ctx->malformed(ctx, pkt_type);
 	}
 
-	net_nbuf_unref(data);
+	net_pkt_frag_unref(data);
 
 	return rc;
 }
 
 static
-void mqtt_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
+void mqtt_recv(struct net_context *net_ctx, struct net_pkt *pkt, int status,
 	       void *data)
 {
 	struct mqtt_ctx *mqtt = (struct mqtt_ctx *)data;
@@ -817,18 +817,18 @@ void mqtt_recv(struct net_context *net_ctx, struct net_buf *buf, int status,
 	/* net_ctx is already referenced to by the mqtt_ctx struct */
 	ARG_UNUSED(net_ctx);
 
-	if (status || !buf) {
+	if (status || !pkt) {
 		return;
 	}
 
-	if (net_nbuf_appdatalen(buf) == 0) {
+	if (net_pkt_appdatalen(pkt) == 0) {
 		goto lb_exit;
 	}
 
-	mqtt->rcv(mqtt, buf);
+	mqtt->rcv(mqtt, pkt);
 
 lb_exit:
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 }
 
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)

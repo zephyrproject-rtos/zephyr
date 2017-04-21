@@ -120,9 +120,9 @@ static void net_route_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct net_if *iface, struct net_buf *buf)
+static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	if (!buf->frags) {
+	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
@@ -134,9 +134,9 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		DBG("Received at iface %p and feeding it into iface %p\n",
 		    iface, recipient);
 
-		if (net_recv_data(recipient, buf) < 0) {
+		if (net_recv_data(recipient, pkt) < 0) {
 			TC_ERROR("Data receive failed.");
-			net_nbuf_unref(buf);
+			net_pkt_unref(pkt);
 			test_failed = true;
 		}
 
@@ -145,9 +145,9 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 		return 0;
 	}
 
-	DBG("Buf %p to be sent len %lu\n", buf, net_buf_frags_len(buf));
+	DBG("pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
 	if (data_failure) {
 		test_failed = true;
@@ -160,9 +160,9 @@ static int tester_send(struct net_if *iface, struct net_buf *buf)
 	return 0;
 }
 
-static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
+static int tester_send_peer(struct net_if *iface, struct net_pkt *pkt)
 {
-	if (!buf->frags) {
+	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
@@ -174,9 +174,9 @@ static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
 		DBG("Received at iface %p and feeding it into iface %p\n",
 		    iface, recipient);
 
-		if (net_recv_data(recipient, buf) < 0) {
+		if (net_recv_data(recipient, pkt) < 0) {
 			TC_ERROR("Data receive failed.");
-			net_nbuf_unref(buf);
+			net_pkt_unref(pkt);
 			test_failed = true;
 		}
 
@@ -185,9 +185,9 @@ static int tester_send_peer(struct net_if *iface, struct net_buf *buf)
 		return 0;
 	}
 
-	DBG("Buf %p to be sent len %lu\n", buf, net_buf_frags_len(buf));
+	DBG("pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
 	if (data_failure) {
 		test_failed = true;
@@ -311,43 +311,6 @@ static bool net_ctx_create(void)
 	}
 
 	return true;
-}
-
-static inline uint8_t get_llao_len(struct net_if *iface)
-{
-	if (iface->link_addr.len == 6) {
-		return 8;
-	} else if (iface->link_addr.len == 8) {
-		return 16;
-	}
-
-	/* What else could it be? */
-	NET_ASSERT_INFO(0, "Invalid link address length %d",
-			iface->link_addr.len);
-
-	return 0;
-}
-
-static inline void set_llao(struct net_linkaddr *lladdr,
-			    uint8_t *llao, uint8_t llao_len, uint8_t type)
-{
-	llao[NET_ICMPV6_OPT_TYPE_OFFSET] = type;
-	llao[NET_ICMPV6_OPT_LEN_OFFSET] = llao_len >> 3;
-
-	memcpy(&llao[NET_ICMPV6_OPT_DATA_OFFSET], lladdr->addr, lladdr->len);
-
-	memset(&llao[NET_ICMPV6_OPT_DATA_OFFSET + lladdr->len], 0,
-	       llao_len - lladdr->len - 2);
-}
-
-static inline void setup_icmpv6_hdr(struct net_buf *buf, uint8_t type,
-				    uint8_t code)
-{
-	net_buf_add_u8(buf, type);
-	net_buf_add_u8(buf, code);
-
-	memset(net_buf_add(buf, NET_ICMPV6_UNUSED_LEN), 0,
-	       NET_ICMPV6_UNUSED_LEN);
 }
 
 static bool net_test_send_ns(struct net_if *iface,

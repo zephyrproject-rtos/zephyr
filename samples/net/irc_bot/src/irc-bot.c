@@ -14,7 +14,7 @@
 #include <drivers/rand32.h>
 #include <errno.h>
 #include <gpio.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_if.h>
@@ -138,18 +138,18 @@ panic(const char *msg)
 static int
 transmit(struct net_context *ctx, char buffer[], size_t len)
 {
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 
-	send_buf = net_nbuf_get_tx(ctx, K_FOREVER);
-	if (!send_buf) {
+	send_pkt = net_pkt_get_tx(ctx, K_FOREVER);
+	if (!send_pkt) {
 		return -ENOMEM;
 	}
 
-	if (!net_nbuf_append(send_buf, len, buffer, K_FOREVER)) {
+	if (!net_pkt_append(send_pkt, len, buffer, K_FOREVER)) {
 		return -EINVAL;
 	}
 
-	return net_context_send(send_buf, NULL, K_NO_WAIT, NULL, NULL);
+	return net_context_send(send_pkt, NULL, K_NO_WAIT, NULL, NULL);
 }
 
 static void
@@ -271,7 +271,7 @@ process_command(struct zirc *irc, char *cmd, size_t len)
 #undef CMD
 
 static void
-on_context_recv(struct net_context *ctx, struct net_buf *buf,
+on_context_recv(struct net_context *ctx, struct net_pkt *pkt,
 				int status, void *data)
 {
 	struct zirc *irc = data;
@@ -280,7 +280,7 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	size_t len;
 	uint16_t pos = 0, cmd_len = 0;
 
-	if (!buf) {
+	if (!pkt) {
 		/* TODO: notify of disconnection, maybe reconnect? */
 		NET_ERR("Disconnected\n");
 		return;
@@ -289,14 +289,14 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 	if (status) {
 		/* TODO: handle connection error */
 		NET_ERR("Connection error: %d\n", -status);
-		net_nbuf_unref(buf);
+		net_pkt_unref(pkt);
 		return;
 	}
 
 	/* tmp points to fragment containing IP header */
-	tmp = buf->frags;
+	tmp = pkt->frags;
 	/* skip pos to the first TCP payload */
-	pos = net_nbuf_appdata(buf) - tmp->data;
+	pos = net_pkt_appdata(pkt) - tmp->data;
 
 	while (tmp) {
 		len = tmp->len - pos;
@@ -314,13 +314,13 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 			break;
 		}
 
-		tmp = net_nbuf_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
+		tmp = net_frag_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
 		cmd_len += len;
 
 		if (end_of_line) {
 			/* skip the /n char after /r */
 			if (tmp) {
-				tmp = net_nbuf_read(tmp, pos, &pos, 1, NULL);
+				tmp = net_frag_read(tmp, pos, &pos, 1, NULL);
 			}
 
 			cmd_buf[cmd_len] = '\0';
@@ -329,7 +329,7 @@ on_context_recv(struct net_context *ctx, struct net_buf *buf,
 		}
 	}
 
-	net_nbuf_unref(buf);
+	net_pkt_unref(pkt);
 
 	/* TODO: handle messages that spans multiple packets? */
 }

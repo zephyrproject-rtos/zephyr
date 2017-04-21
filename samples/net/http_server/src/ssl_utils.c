@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <string.h>
 #include <errno.h>
@@ -38,8 +38,8 @@ static void ssl_received(struct net_context *context,
 	ARG_UNUSED(context);
 	ARG_UNUSED(status);
 
-	if (!net_nbuf_appdatalen(buf)) {
-		net_nbuf_unref(buf);
+	if (!net_pkt_appdatalen(buf)) {
+		net_pkt_unref(buf);
 		return;
 	}
 
@@ -71,14 +71,14 @@ int ssl_tx(void *context, const unsigned char *buf, size_t size)
 
 	net_ctx = ctx->net_ctx;
 
-	send_buf = net_nbuf_get_tx(net_ctx, K_NO_WAIT);
+	send_buf = net_pkt_get_tx(net_ctx, K_NO_WAIT);
 	if (!send_buf) {
 		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 	}
 
-	rc = net_nbuf_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
+	rc = net_pkt_append(send_buf, size, (uint8_t *) buf, K_FOREVER);
 	if (!rc) {
-		net_nbuf_unref(send_buf);
+		net_pkt_unref(send_buf);
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
 
@@ -87,7 +87,7 @@ int ssl_tx(void *context, const unsigned char *buf, size_t size)
 	rc = net_context_send(send_buf, ssl_sent, K_NO_WAIT, NULL, ctx);
 
 	if (rc < 0) {
-		net_nbuf_unref(send_buf);
+		net_pkt_unref(send_buf);
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
 
@@ -107,14 +107,14 @@ int ssl_rx(void *context, unsigned char *buf, size_t size)
 
 	if (ctx->frag == NULL) {
 		rx_data = k_fifo_get(&ctx->rx_fifo, K_FOREVER);
-		ctx->rx_nbuf = rx_data->buf;
+		ctx->rx_pkt = rx_data->buf;
 		k_mem_pool_free(&rx_data->block);
 
-		read_bytes = net_nbuf_appdatalen(ctx->rx_nbuf);
+		read_bytes = net_pkt_appdatalen(ctx->rx_pkt);
 
 		ctx->remaining = read_bytes;
-		ctx->frag = ctx->rx_nbuf->frags;
-		ptr = net_nbuf_appdata(ctx->rx_nbuf);
+		ctx->frag = ctx->rx_pkt->frags;
+		ptr = net_pkt_appdata(ctx->rx_pkt);
 
 		len = ptr - ctx->frag->data;
 		net_buf_pull(ctx->frag, len);
@@ -158,8 +158,8 @@ int ssl_rx(void *context, unsigned char *buf, size_t size)
 			len = ctx->frag->len;
 		}
 
-		net_nbuf_unref(ctx->rx_nbuf);
-		ctx->rx_nbuf = NULL;
+		net_pkt_unref(ctx->rx_pkt);
+		ctx->rx_pkt = NULL;
 		ctx->frag = NULL;
 		ctx->remaining = 0;
 
@@ -219,7 +219,7 @@ int ssl_init(struct ssl_context *ctx, void *addr)
 		goto error;
 	}
 
-	ctx->rx_nbuf = NULL;
+	ctx->rx_pkt = NULL;
 	ctx->remaining = 0;
 	ctx->net_ctx = tcp_ctx;
 
@@ -270,7 +270,7 @@ int ssl_init(struct ssl_context *ctx, void *addr)
 		goto error;
 	}
 
-	ctx->rx_nbuf = NULL;
+	ctx->rx_pkt = NULL;
 	ctx->remaining = 0;
 	ctx->net_ctx = tcp_ctx;
 

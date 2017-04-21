@@ -26,7 +26,7 @@
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
 #include <net/arp.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/dns_resolve.h>
 
@@ -64,7 +64,7 @@ static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
 static K_SEM_DEFINE(startup_sync, 0, UINT_MAX);
 
-static inline enum net_verdict process_data(struct net_buf *buf,
+static inline enum net_verdict process_data(struct net_pkt *pkt,
 					    bool is_loopback)
 {
 	int ret;
@@ -75,30 +75,24 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	 * an IPv6 packet, then do not pass it to L2 as the packet does
 	 * not have link layer headers in it.
 	 */
-	if (net_nbuf_ipv6_fragment_start(buf)) {
+	if (net_pkt_ipv6_fragment_start(pkt)) {
 		locally_routed = true;
 	}
 #endif
 
-	/* If there is no data, then drop the packet. Also if
-	 * the buffer is wrong type, then also drop the packet.
-	 * The first buffer needs to have user data part that
-	 * contains user data. The rest of the fragments should
-	 * be data fragments without user data.
-	 */
-	if (!buf->frags || !buf->pool->user_data_size) {
-		NET_DBG("Corrupted buffer (frags %p, data size %u)",
-			buf->frags, buf->pool->user_data_size);
+	/* If there is no data, then drop the packet. */
+	if (!pkt->frags) {
+		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
 		net_stats_update_processing_error();
 
 		return NET_DROP;
 	}
 
 	if (!is_loopback && !locally_routed) {
-		ret = net_if_recv_data(net_nbuf_iface(buf), buf);
+		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
-				NET_DBG("Buffer %p discarded by L2", buf);
+				NET_DBG("Packet %p discarded by L2", pkt);
 				net_stats_update_processing_error();
 			}
 
@@ -107,46 +101,46 @@ static inline enum net_verdict process_data(struct net_buf *buf,
 	}
 
 	/* IP version and header length. */
-	switch (NET_IPV6_BUF(buf)->vtc & 0xf0) {
+	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
 		net_stats_update_ipv6_recv();
-		net_nbuf_set_family(buf, PF_INET6);
-		return net_ipv6_process_pkt(buf);
+		net_pkt_set_family(pkt, PF_INET6);
+		return net_ipv6_process_pkt(pkt);
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
 		net_stats_update_ipv4_recv();
-		net_nbuf_set_family(buf, PF_INET);
-		return net_ipv4_process_pkt(buf);
+		net_pkt_set_family(pkt, PF_INET);
+		return net_ipv4_process_pkt(pkt);
 #endif
 	}
 
 	NET_DBG("Unknown IP family packet (0x%x)",
-		NET_IPV6_BUF(buf)->vtc & 0xf0);
+		NET_IPV6_HDR(pkt)->vtc & 0xf0);
 	net_stats_update_ip_errors_protoerr();
 	net_stats_update_ip_errors_vhlerr();
 
 	return NET_DROP;
 }
 
-static void processing_data(struct net_buf *buf, bool is_loopback)
+static void processing_data(struct net_pkt *pkt, bool is_loopback)
 {
-	switch (process_data(buf, is_loopback)) {
+	switch (process_data(pkt, is_loopback)) {
 	case NET_OK:
-		NET_DBG("Consumed buf %p", buf);
+		NET_DBG("Consumed pkt %p", pkt);
 		break;
 	case NET_DROP:
 	default:
-		NET_DBG("Dropping buf %p", buf);
-		net_nbuf_unref(buf);
+		NET_DBG("Dropping pkt %p", pkt);
+		net_pkt_unref(pkt);
 		break;
 	}
 }
 
 static void net_rx_thread(void)
 {
-	struct net_buf *buf;
+	struct net_pkt *pkt;
 
 	NET_DBG("Starting RX thread (stack %zu bytes)", sizeof(rx_stack));
 
@@ -168,21 +162,21 @@ static void net_rx_thread(void)
 		size_t pkt_len;
 #endif
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		pkt = k_fifo_get(&rx_queue, K_FOREVER);
 
 		net_analyze_stack("RX thread", rx_stack, sizeof(rx_stack));
 
 #if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
-		pkt_len = net_buf_frags_len(buf);
+		pkt_len = net_pkt_get_len(pkt);
 #endif
-		NET_DBG("Received buf %p len %zu", buf, pkt_len);
+		NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
 
 		net_stats_update_bytes_recv(pkt_len);
 
-		processing_data(buf, false);
+		processing_data(pkt, false);
 
 		net_print_statistics();
-		net_nbuf_print();
+		net_pkt_print();
 
 		k_yield();
 	}
@@ -202,11 +196,11 @@ static void init_rx_queue(void)
 /* Check if the IPv{4|6} addresses are proper. As this can be expensive,
  * make this optional.
  */
-static inline int check_ip_addr(struct net_buf *buf)
+static inline int check_ip_addr(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_IPV6)
-	if (net_nbuf_family(buf) == AF_INET6) {
-		if (net_ipv6_addr_cmp(&NET_IPV6_BUF(buf)->dst,
+	if (net_pkt_family(pkt) == AF_INET6) {
+		if (net_ipv6_addr_cmp(&NET_IPV6_HDR(pkt)->dst,
 				      net_ipv6_unspecified_address())) {
 			NET_DBG("IPv6 dst address missing");
 			return -EADDRNOTAVAIL;
@@ -215,17 +209,17 @@ static inline int check_ip_addr(struct net_buf *buf)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(buf)->dst) ||
-		    net_is_my_ipv6_addr(&NET_IPV6_BUF(buf)->dst)) {
+		if (net_is_ipv6_addr_loopback(&NET_IPV6_HDR(pkt)->dst) ||
+		    net_is_my_ipv6_addr(&NET_IPV6_HDR(pkt)->dst)) {
 			struct in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
 			 */
-			net_ipaddr_copy(&addr, &NET_IPV6_BUF(buf)->src);
-			net_ipaddr_copy(&NET_IPV6_BUF(buf)->src,
-					&NET_IPV6_BUF(buf)->dst);
-			net_ipaddr_copy(&NET_IPV6_BUF(buf)->dst, &addr);
+			net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
+			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
+					&NET_IPV6_HDR(pkt)->dst);
+			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
 
 			return 1;
 		}
@@ -233,7 +227,7 @@ static inline int check_ip_addr(struct net_buf *buf)
 		/* The source check must be done after the destination check
 		 * as having src ::1 is perfectly ok if dst is ::1 too.
 		 */
-		if (net_is_ipv6_addr_loopback(&NET_IPV6_BUF(buf)->src)) {
+		if (net_is_ipv6_addr_loopback(&NET_IPV6_HDR(pkt)->src)) {
 			NET_DBG("IPv6 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
@@ -241,8 +235,8 @@ static inline int check_ip_addr(struct net_buf *buf)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_nbuf_family(buf) == AF_INET) {
-		if (net_ipv4_addr_cmp(&NET_IPV4_BUF(buf)->dst,
+	if (net_pkt_family(pkt) == AF_INET) {
+		if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
 			return -EADDRNOTAVAIL;
 		}
@@ -250,17 +244,17 @@ static inline int check_ip_addr(struct net_buf *buf)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(buf)->dst) ||
-		    net_is_my_ipv4_addr(&NET_IPV4_BUF(buf)->dst)) {
+		if (net_is_ipv4_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
+		    net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)) {
 			struct in_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
 			 */
-			net_ipaddr_copy(&addr, &NET_IPV4_BUF(buf)->src);
-			net_ipaddr_copy(&NET_IPV4_BUF(buf)->src,
-					&NET_IPV4_BUF(buf)->dst);
-			net_ipaddr_copy(&NET_IPV4_BUF(buf)->dst, &addr);
+			net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
+			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
+					&NET_IPV4_HDR(pkt)->dst);
+			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
 			return 1;
 		}
@@ -269,7 +263,7 @@ static inline int check_ip_addr(struct net_buf *buf)
 		 * as having src 127.0.0.0/8 is perfectly ok if dst is in
 		 * localhost subnet too.
 		 */
-		if (net_is_ipv4_addr_loopback(&NET_IPV4_BUF(buf)->src)) {
+		if (net_is_ipv4_addr_loopback(&NET_IPV4_HDR(pkt)->src)) {
 			NET_DBG("IPv4 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
@@ -283,24 +277,24 @@ static inline int check_ip_addr(struct net_buf *buf)
 	return 0;
 }
 #else
-#define check_ip_addr(buf) 0
+#define check_ip_addr(pkt) 0
 #endif
 
 /* Called when data needs to be sent to network */
-int net_send_data(struct net_buf *buf)
+int net_send_data(struct net_pkt *pkt)
 {
 	int status;
 
-	if (!buf || !buf->frags) {
+	if (!pkt || !pkt->frags) {
 		return -ENODATA;
 	}
 
-	if (!net_nbuf_iface(buf)) {
+	if (!net_pkt_iface(pkt)) {
 		return -EINVAL;
 	}
 
 #if defined(CONFIG_NET_STATISTICS)
-	switch (net_nbuf_family(buf)) {
+	switch (net_pkt_family(pkt)) {
 	case AF_INET:
 		net_stats_update_ipv4_sent();
 		break;
@@ -310,18 +304,19 @@ int net_send_data(struct net_buf *buf)
 	}
 #endif
 
-	status = check_ip_addr(buf);
+	status = check_ip_addr(pkt);
 	if (status < 0) {
 		return status;
 	} else if (status > 0) {
 		/* Packet is destined back to us so send it directly
 		 * to RX processing.
 		 */
-		processing_data(buf, true);
+		NET_DBG("Loopback pkt %p back to us", pkt);
+		processing_data(pkt, true);
 		return 0;
 	}
 
-	if (net_if_send_data(net_nbuf_iface(buf), buf) == NET_DROP) {
+	if (net_if_send_data(net_pkt_iface(pkt), pkt) == NET_DROP) {
 		return -EIO;
 	}
 
@@ -329,12 +324,12 @@ int net_send_data(struct net_buf *buf)
 }
 
 /* Called by driver when an IP packet has been received */
-int net_recv_data(struct net_if *iface, struct net_buf *buf)
+int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	NET_ASSERT(buf && buf->frags);
+	NET_ASSERT(pkt && pkt->frags);
 	NET_ASSERT(iface);
 
-	if (!buf->frags) {
+	if (!pkt->frags) {
 		return -ENODATA;
 	}
 
@@ -342,12 +337,12 @@ int net_recv_data(struct net_if *iface, struct net_buf *buf)
 		return -ENETDOWN;
 	}
 
-	NET_DBG("fifo %p iface %p buf %p len %zu", &rx_queue, iface, buf,
-		net_buf_frags_len(buf));
+	NET_DBG("fifo %p iface %p pkt %p len %zu", &rx_queue, iface, pkt,
+		net_pkt_get_len(pkt));
 
-	net_nbuf_set_iface(buf, iface);
+	net_pkt_set_iface(pkt, iface);
 
-	net_buf_put(&rx_queue, buf);
+	k_fifo_put(&rx_queue, pkt);
 
 	return 0;
 }
@@ -386,7 +381,7 @@ static int net_init(struct device *unused)
 
 	net_shell_init();
 
-	net_nbuf_init();
+	net_pkt_init();
 
 	net_context_init();
 
