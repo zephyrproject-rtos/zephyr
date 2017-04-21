@@ -2388,12 +2388,12 @@ static struct net_pkt *create_mldv2(struct net_pkt *pkt,
 	net_pkt_append_u8(pkt, record_type);
 	net_pkt_append_u8(pkt, 0); /* aux data len */
 	net_pkt_append_be16(pkt, num_sources); /* number of addresses */
-	net_pkt_append(pkt, sizeof(struct in6_addr), addr->s6_addr,
+	net_pkt_append_all(pkt, sizeof(struct in6_addr), addr->s6_addr,
 			K_FOREVER);
 
 	if (num_sources > 0) {
 		/* All source addresses, RFC 3810 ch 3 */
-		net_pkt_append(pkt, sizeof(struct in6_addr),
+		net_pkt_append_all(pkt, sizeof(struct in6_addr),
 				net_ipv6_unspecified_address()->s6_addr,
 				K_FOREVER);
 	}
@@ -3196,7 +3196,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 			 NET_IPV6_NEXTHDR_FRAG);
 
 	/* Then just add the fragmentation header. */
-	ret = net_pkt_append(ipv6, sizeof(hdr), (u8_t *)&hdr,
+	ret = net_pkt_append_all(ipv6, sizeof(hdr), (u8_t *)&hdr,
 			     FRAG_BUF_WAIT);
 	if (!ret) {
 		ret = -ENOMEM;

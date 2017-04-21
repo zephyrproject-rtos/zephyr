@@ -108,7 +108,7 @@ static inline void zperf_upload_fin(struct net_context *context,
 		datagram.tv_usec = htonl(HW_CYCLES_TO_USEC(end_time) %
 					    USEC_PER_SEC);
 
-		status = net_pkt_append(pkt, sizeof(datagram),
+		status = net_pkt_append_all(pkt, sizeof(datagram),
 					(u8_t *)&datagram, K_FOREVER);
 		if (!status) {
 			printk(TAG "ERROR! Cannot append datagram data\n");
@@ -254,7 +254,7 @@ void zperf_udp_upload(struct net_context *context,
 		datagram.tv_usec =
 			htonl(HW_CYCLES_TO_USEC(loop_time) % USEC_PER_SEC);
 
-		status = net_pkt_append(pkt, sizeof(datagram),
+		status = net_pkt_append_all(pkt, sizeof(datagram),
 					(u8_t *)&datagram, K_FOREVER);
 		if (!status) {
 			printk(TAG "ERROR! Cannot append datagram data\n");

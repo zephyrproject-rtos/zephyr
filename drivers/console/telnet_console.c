@@ -234,7 +234,7 @@ static inline bool telnet_send(void)
 	struct line_buf *lb = telnet_rb_get_line_out();
 
 	if (lb) {
-		net_pkt_append(out_pkt, lb->len, lb->buf, K_FOREVER);
+		net_pkt_append_all(out_pkt, lb->len, lb->buf, K_FOREVER);
 
 		/* We reinitialize the line buffer */
 		lb->len = 0;
@@ -258,7 +258,7 @@ static int telnet_console_out_nothing(int c)
 
 static inline void telnet_command_send_reply(u8_t *msg, u16_t len)
 {
-	net_pkt_append(out_pkt, len, msg, K_FOREVER);
+	net_pkt_append_all(out_pkt, len, msg, K_FOREVER);
 
 	net_context_send(out_pkt, telnet_sent_cb,
 			 K_NO_WAIT, NULL, NULL);

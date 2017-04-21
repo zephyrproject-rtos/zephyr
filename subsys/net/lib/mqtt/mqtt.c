@@ -87,7 +87,7 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 		goto exit_disconnect;
 	}
 
-	rc = net_pkt_append(tx, len, msg, ctx->net_timeout);
+	rc = net_pkt_append_all(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_disconnect;
@@ -160,7 +160,7 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 		goto exit_send;
 	}
 
-	rc = net_pkt_append(tx, len, msg, ctx->net_timeout);
+	rc = net_pkt_append_all(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_send;
@@ -261,7 +261,7 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		goto exit_pingreq;
 	}
 
-	rc = net_pkt_append(tx, len, msg, ctx->net_timeout);
+	rc = net_pkt_append_all(tx, len, msg, ctx->net_timeout);
 	if (rc != true) {
 		rc = -ENOMEM;
 		goto exit_pingreq;

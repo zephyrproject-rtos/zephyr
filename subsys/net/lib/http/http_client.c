@@ -27,35 +27,35 @@ int http_request(struct net_context *net_ctx, s32_t timeout,
 		return -ENOMEM;
 	}
 
-	if (!net_pkt_append(tx, strlen(req->method), (u8_t *)req->method,
+	if (!net_pkt_append_all(tx, strlen(req->method), (u8_t *)req->method,
 			    timeout)) {
 		goto lb_exit;
 	}
 
-	if (!net_pkt_append(tx, strlen(req->url), (u8_t *)req->url,
+	if (!net_pkt_append_all(tx, strlen(req->url), (u8_t *)req->url,
 			    timeout)) {
 		goto lb_exit;
 	}
 
-	if (!net_pkt_append(tx, strlen(req->protocol),
+	if (!net_pkt_append_all(tx, strlen(req->protocol),
 			    (u8_t *)req->protocol, timeout)) {
 		goto lb_exit;
 	}
 
-	if (!net_pkt_append(tx, strlen(req->header_fields),
+	if (!net_pkt_append_all(tx, strlen(req->header_fields),
 			    (u8_t *)req->header_fields,
 			    timeout)) {
 		goto lb_exit;
 	}
 
 	if (req->content_type_value) {
-		if (!net_pkt_append(tx, strlen(HTTP_CONTENT_TYPE),
+		if (!net_pkt_append_all(tx, strlen(HTTP_CONTENT_TYPE),
 				    (u8_t *)HTTP_CONTENT_TYPE,
 				    timeout)) {
 			goto lb_exit;
 		}
 
-		if (!net_pkt_append(tx, strlen(req->content_type_value),
+		if (!net_pkt_append_all(tx, strlen(req->content_type_value),
 				    (u8_t *)req->content_type_value,
 				    timeout)) {
 			goto lb_exit;
@@ -73,13 +73,13 @@ int http_request(struct net_context *net_ctx, s32_t timeout,
 			goto lb_exit;
 		}
 
-		if (!net_pkt_append(tx, rc, (u8_t *)content_len_str,
+		if (!net_pkt_append_all(tx, rc, (u8_t *)content_len_str,
 				    timeout)) {
 			rc = -ENOMEM;
 			goto lb_exit;
 		}
 
-		if (!net_pkt_append(tx, req->payload_size,
+		if (!net_pkt_append_all(tx, req->payload_size,
 				    (u8_t *)req->payload,
 				    timeout)) {
 			rc = -ENOMEM;
@@ -87,7 +87,7 @@ int http_request(struct net_context *net_ctx, s32_t timeout,
 		}
 
 	} else {
-		if (!net_pkt_append(tx, strlen(HTTP_EOF),
+		if (!net_pkt_append_all(tx, strlen(HTTP_EOF),
 				    (u8_t *)HTTP_EOF,
 				    timeout)) {
 			goto lb_exit;

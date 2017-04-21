@@ -63,7 +63,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 	}
 
-	rc = net_pkt_append(send_pkt, size, (u8_t *) buf, K_FOREVER);
+	rc = net_pkt_append_all(send_pkt, size, (u8_t *) buf, K_FOREVER);
 	if (!rc) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}

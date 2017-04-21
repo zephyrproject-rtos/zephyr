@@ -1586,7 +1586,7 @@ static int shell_cmd_tcp(int argc, char *argv[])
 				return 0;
 			}
 
-			ret = net_pkt_append(pkt, strlen(argv[arg]),
+			ret = net_pkt_append_all(pkt, strlen(argv[arg]),
 					      argv[arg], TCP_TIMEOUT);
 			if (!ret) {
 				printk("Cannot build msg (out of pkts)\n");
