@@ -43,9 +43,9 @@ config BLUETOOTH_SPI
 	select SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
-	  HCI packets are sent and received as single Byte transferrs,
+	  HCI packets are sent and received as single Byte transfers,
 	  prepended after a known header.  Headers may vary per device, so
-	  additional platform specific knowlege may need to be added as
+	  additional platform specific knowledge may need to be added as
 	  devices are.
 
 config BLUETOOTH_NO_DRIVER

@@ -134,7 +134,7 @@ choice
 	depends on BME280
 	default BME280_STANDBY_1000MS
 	help
-	  Select standby time between measeurements for the BME280 sensor.
+	  Select standby time between measurements for the BME280 sensor.
 	  Higher values lead to lower power consumption.
 config BME280_STANDBY_05MS
 	bool "0.5ms"

@@ -9,7 +9,7 @@ config PINMUX_STM32
 	bool "Pinmux driver for STM32 MCUs"
 	depends on PINMUX && SOC_FAMILY_STM32
 	help
-	 Enable pin multiplexter for STM32 MCUs
+	 Enable pin multiplexer for STM32 MCUs
 
 config PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY
 	int "Device initialization priority STM32 pinmux"

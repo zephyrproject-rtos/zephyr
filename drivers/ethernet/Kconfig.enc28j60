@@ -38,7 +38,7 @@ config ETH_EN28J60_TIMEOUT
 	help
 	Given timeout in milliseconds. Maximum amount of time
 	that the driver will wait from the IP stack to get
-	a memory buffer before the ethernet frame is dropped.
+	a memory buffer before the Ethernet frame is dropped.
 
 config ETH_ENC28J60_0
 	bool "ENC28J60C Ethernet port 0"

@@ -95,7 +95,7 @@ config BMG160_GPIO_PORT_NAME
 	depends on BMG160 && BMG160_TRIGGER
 	default "GPIO_0"
 	help
-	  The gpio controller the interrupt pin is atteched to.
+	  The gpio controller the interrupt pin is attached to.
 
 config BMG160_INT_PIN
 	hex "BMG160 INT PIN"

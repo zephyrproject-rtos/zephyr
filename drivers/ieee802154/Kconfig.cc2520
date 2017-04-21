@@ -42,7 +42,7 @@ config IEEE802154_CC2520_RX_STACK_SIZE
 	default 800
 	help
 	This option sets the driver's stack size for its internal rx thread.
-	The default value should be sufficient, but in case it prooves to be
+	The default value should be sufficient, but in case it proves to be
 	a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_CC2520_INIT_PRIO

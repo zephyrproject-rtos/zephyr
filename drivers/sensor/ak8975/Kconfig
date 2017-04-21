@@ -31,10 +31,10 @@ config AK8975_I2C_ADDR
 	help
 	  I2C address of the AK8975 sensor. Choose:
 
-	  - 0x0C if CAD1 connected to GND nad CAD0 is connected to GND
-	  - 0x0D if CAD1 connected to GND nad CAD0 is connected to VDD
-	  - 0x0E if CAD1 connected to VDD nad CAD0 is connected to GND
-	  - 0x0F if CAD1 connected to VDD nad CAD0 is connected to VDD
+	  - 0x0C if CAD1 connected to GND and CAD0 is connected to GND
+	  - 0x0D if CAD1 connected to GND and CAD0 is connected to VDD
+	  - 0x0E if CAD1 connected to VDD and CAD0 is connected to GND
+	  - 0x0F if CAD1 connected to VDD and CAD0 is connected to VDD
 
 	  If the AK8975 sensor is part of a MPU9159 chip, the I2C address
 	  needs to be 0x0C.

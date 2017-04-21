@@ -11,14 +11,14 @@ config ATAES132A_DRV_NAME
 	depends on ATAES132A
 	default "ataes132a"
 	help
-	 Name for the ATAES132A driver wich will be used for binding.
+	 Name for the ATAES132A driver which will be used for binding.
 
 config ATAES132A_I2C_PORT_NAME
 	string "I2C master controller port name"
 	depends on ATAES132A
 	default "I2C_0"
 	help
-	 Master I2C port name through wich ATAES132A chip is accessed.
+	 Master I2C port name through which ATAES132A chip is accessed.
 
 config ATAES132A_I2C_ADDR
 	hex "ATAES132A I2C addess"

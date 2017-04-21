@@ -85,6 +85,6 @@ config IEEE802154_NRF5_CCA_CORR_LIMIT
 	default 2
 	help
 	Limit for occurrences above correlator threshold. When not equal to zero the
-	corrolator based signal detect is enabled.
+	correlator based signal detect is enabled.
 
 endif

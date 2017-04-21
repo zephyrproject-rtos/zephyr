@@ -15,8 +15,8 @@ menuconfig TELNET_CONSOLE
 	This option enables telnet as a network console service. It is for
 	now a very basic implementation of the telnet protocol. Currently,
 	it is basically just a redirection of the Zephyr console through TCP.
-	It nicely works along with anothe console driver (like uart), twist
-	being that it will take over the output if only a successul
+	It nicely works along with another console driver (like uart), twist
+	being that it will take over the output if only a successful
 	connection to its port is done.
 
 if TELNET_CONSOLE
@@ -98,18 +98,18 @@ config SYS_LOG_TELNET_CONSOLE_LEVEL
 
 	- 1 ERROR, only write SYS_LOG_ERR
 
-	- 2 WARNING, write SYS_LOG_WRN in adition to previous level
+	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO, write SYS_LOG_INF in adition to previous levels
+	- 3 INFO, write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG, write SYS_LOG_DBG in adition to previous levels
+	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config TELNET_CONSOLE_DEBUG_DEEP
 	bool "Forward output to original console handler"
 	depends on UART_CONSOLE
 	default n
 	help
-	For telnet developpers only, this will forward each output to
+	For telnet developers only, this will forward each output to
 	original console handler. So if by chance telnet seems silent,
 	at least things will be printed to original handler, usually
 	UART console.

@@ -97,7 +97,7 @@ choice
 	default ISL29035_MODE_ALS
 	help
 	  Sensing mode in which the ISL29035 will function. The chip can be
-	  configured either for either ambinet light or infrared sensing.
+	  configured either for either ambient light or infrared sensing.
 
 config ISL29035_MODE_ALS
 	bool
@@ -182,7 +182,7 @@ choice
 	depends on ISL29035 && ISL29035_TRIGGER
 	default ISL29035_INT_PERSIST_1
 	help
-	  Number of consecutive intergration cycles for which the data samples
+	  Number of consecutive integration cycles for which the data samples
 	  need to remain outside the threshold window in order for the interrupt
 	  to be triggered.
 

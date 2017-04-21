@@ -13,7 +13,7 @@ menuconfig SPI_NRF5
 	default n
 	help
 	  Enable support for nRF52 MCU series EasyDMA SPI driver. Peripherals
-	  with the same instance id can not be used together. eg SPIM0 and I2C_0
+	  with the same instance id can not be used together, e.g., SPIM0 and I2C_0
 	  (TWIM0) and SPIS0. You may need to disable I2C_0 or I2C_1.
 
 if SPI_NRF5

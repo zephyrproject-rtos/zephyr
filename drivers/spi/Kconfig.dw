@@ -57,7 +57,7 @@ config SPI_DW_FIFO_DEPTH
 	int "Rx and Tx FIFO Depth"
 	help
 	  Corresponds to the SSI_TX_FIFO_DEPTH and
-	  SSI_RX_FIFO_DEPTH of the DesignWare Syncrhonous
+	  SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
 	  Serial Interface. Depth ranges from 2-256.
 
 config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS

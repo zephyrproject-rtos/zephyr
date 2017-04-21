@@ -60,7 +60,7 @@ config PCI_DEBUG
 	prompt "Enable PCI debugging"
 	default n
 	help
-	This options enables PCI debigging functions
+	This options enables PCI debugging functions
 
 endif
 

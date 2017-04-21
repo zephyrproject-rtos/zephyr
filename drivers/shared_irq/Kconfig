@@ -20,7 +20,7 @@ config SHARED_IRQ_NUM_CLIENTS
 	prompt "The number of clients per instance"
 	default 5
 	help
-	 Configures the maximum nuber of clients allowed per shared
+	 Configures the maximum number of clients allowed per shared
 	 instance of the shared interrupt driver. To conserve RAM set
 	 this value to the lowest practical value.
 
@@ -56,7 +56,7 @@ config SHARED_IRQ_0_PRI
 	default 2
 	depends on SHARED_IRQ_0
 	help
-	 Prioity of shared interrupt handler for the configured interrupt
+	 Priority of shared interrupt handler for the configured interrupt
 
 choice
 	depends on SHARED_IRQ_0
@@ -108,7 +108,7 @@ config SHARED_IRQ_1_PRI
 	default 2
 	depends on SHARED_IRQ_1
 	help
-	 Prioity of shared interrupt handler for the configured interrupt
+	 Priority of shared interrupt handler for the configured interrupt
 
 choice
 	depends on SHARED_IRQ_1

@@ -191,7 +191,7 @@ config FXOS8700_PULSE_TMLT
 	  acceleration on the selected channel exceeding the specified
 	  threshold and the end when the channel acceleration goes back below
 	  the specified threshold. The resolution depends upon the sample rate
-	  (ODR) and the highpass filter configuration
+	  (ODR) and the high-pass filter configuration
 	  (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and pls_hpf_en=0, the
 	  resolution is 0.625 ms/LSB.
 
@@ -202,7 +202,7 @@ config FXOS8700_PULSE_LTCY
 	help
 	  The time interval that starts after the first pulse detection where
 	  the pulse-detection function ignores the start of a new pulse. The
-	  resolution depends upon the sample rate (ODR) and the highpass filter
+	  resolution depends upon the sample rate (ODR) and the high-pass filter
 	  configuration (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and
 	  pls_hpf_en=0, the resolution is 1.25 ms/LSB.
 
@@ -218,7 +218,7 @@ config FXOS8700_PULSE_WIND
 	  time limit constraint specified by the PULSE_TMLT register, but the
 	  end of the double pulse need not finish within the time specified by
 	  the PULSE_WIND register. The resolution depends upon the sample rate
-	  (ODR) and the highpass filter configuration
+	  (ODR) and the high-pass filter configuration
 	  (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and pls_hpf_en=0, the
 	  resolution is 1.25 ms/LSB.
 

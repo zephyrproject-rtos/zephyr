@@ -46,7 +46,7 @@ config DMA_0_RX_SUB_CHANNEL_ID
 	default 0
 	depends on DMA_STM32F4X
 	help
-	This configuartion is required to choose a valid sub-channel
+	This configuration is required to choose a valid sub-channel
 	for communication from a peripheral/device.  Not required
 	for memory to memory comms.
 
@@ -55,7 +55,7 @@ config DMA_0_TX_SUB_CHANNEL_ID
 	default 0
 	depends on DMA_STM32F4X
 	help
-	This configuartion is required to choose a valid sub-channel
+	This configuration is required to choose a valid sub-channel
 	for communication to a peripheral/device.  Not required
 	for memory to memory comms.
 
@@ -76,7 +76,7 @@ config DMA_1_RX_SUB_CHANNEL_ID
 	default 0
 	depends on DMA_STM32F4X
 	help
-	This configuartion is required to choose a valid sub-channel
+	This configuration is required to choose a valid sub-channel
 	for communication from a peripheral/device.  Not required
 	for memory to memory comms.
 
@@ -85,7 +85,7 @@ config DMA_1_TX_SUB_CHANNEL_ID
 	default 0
 	depends on DMA_STM32F4X
 	help
-	This configuartion is required to choose a valid sub-channel
+	This configuration is required to choose a valid sub-channel
 	for communication to a peripheral/device.  Not required
 	for memory to memory comms.
 
@@ -106,7 +106,7 @@ config DMA_2_RX_SUB_CHANNEL_ID
 	default 0
 	depends on DMA_STM32F4X
 	help
-	This configuartion is required to choose a valid sub-channel
+	This configuration is required to choose a valid sub-channel
 	for communication from a peripheral/device.  Not required
 	for memory to memory comms.
 
@@ -115,7 +115,7 @@ config DMA_2_TX_SUB_CHANNEL_ID
 	default 0
 	depends on DMA_STM32F4X
 	help
-	This configuartion is required to choose a valid sub-channel
+	This configuration is required to choose a valid sub-channel
 	for communication to a peripheral/device.  Not required
 	for memory to memory comms.
 

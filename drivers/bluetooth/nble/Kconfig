@@ -22,7 +22,7 @@ config NBLE
 
 	  A fundamental assumption that the driver makes is that it is
 	  run on an architecture with the same ABI (e.g. struct packing
-	  & endianess) as the nRF51 chip. The driver cannot be used on
+	  & endianness) as the nRF51 chip. The driver cannot be used on
 	  any architecture that doesn't fulfill this requirement.
 
 if NBLE
@@ -68,7 +68,7 @@ config BLUETOOTH_RX_STACK_SIZE
 	  default value is sufficient for basic operation, but if the
 	  application needs to do advanced things in its callbacks that
 	  require extra stack space, this value can be increased to
-	  accomodate for that.
+	  accommodate for that.
 
 config BLUETOOTH_DEVICE_NAME
 	string "Bluetooth device name"

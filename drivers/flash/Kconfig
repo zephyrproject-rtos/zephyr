@@ -79,7 +79,7 @@ config SOC_FLASH_QMSI
 	depends on QMSI && FLASH
 	default n
 	help
-	  Enable QMSI quark flash driver.
+	  Enable QMSI Quark flash driver.
 
 config SOC_FLASH_QMSI_DEV_NAME
 	string "QMSI flash device name"
@@ -100,13 +100,13 @@ config SOC_FLASH_QMSI_WAIT_STATES
 	depends on SOC_FLASH_QMSI
 	default 1
 	help
-	  Specify the number of wait states for quark flash.
+	  Specify the number of wait states for Quark flash.
 
 config SOC_FLASH_QMSI_SYS_SIZE
 	hex "SOC system flash size"
 	depends on SOC_FLASH_QMSI
 	help
-	  Specify system flash size on the quark SOC.
+	  Specify system flash size on the Quark SOC.
 
 config SOC_FLASH_QMSI_API_REENTRANCY
 	bool
