@@ -415,7 +415,7 @@ our $typeOtherOSTypedefs = qr{(?x:
 	u(?:nchar|short|int|long)            # sysv
 )};
 our $typeKernelTypedefs = qr{(?x:
-	(?:__)?(?:u|s|be|le)(?:8|16|32|64)|
+	(?:__)?(?:u|s|be|le)(?:8|16|32|64)_t|
 	atomic_t
 )};
 our $typeTypedefs = qr{(?x:
@@ -5547,21 +5547,17 @@ sub process {
 			      "Using weak declarations can have unintended link defects\n" . $herecurr);
 		}
 
-# check for c99 types like uint8_t used outside of uapi/
-		if ($realfile !~ m@\binclude/uapi/@ &&
-		    $line =~ /\b($Declare)\s*$Ident\s*[=;,\[]/) {
+# check for c99 types like uint8_t
+		if ($line =~ /\b($Declare)\s*$Ident\s*[=;,\[]/) {
 			my $type = $1;
 			if ($type =~ /\b($typeC99Typedefs)\b/) {
 				$type = $1;
 				my $kernel_type = 'u';
 				$kernel_type = 's' if ($type =~ /^_*[si]/);
 				$type =~ /(\d+)/;
-				$kernel_type .= $1;
-				if (CHK("PREFER_KERNEL_TYPES",
-					"Prefer kernel type '$kernel_type' over '$type'\n" . $herecurr) &&
-				    $fix) {
-					$fixed[$fixlinenr] =~ s/\b$type\b/$kernel_type/;
-				}
+				$kernel_type .= $1.'_t';
+				WARN("PREFER_KERNEL_TYPES",
+					"Prefer kernel type '$kernel_type' over '$type'\n" . $herecurr)
 			}
 		}
 
