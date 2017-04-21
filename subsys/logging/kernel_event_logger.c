@@ -19,14 +19,14 @@
 
 struct event_logger sys_k_event_logger;
 
-uint32_t _sys_k_event_logger_buffer[CONFIG_KERNEL_EVENT_LOGGER_BUFFER_SIZE];
+u32_t _sys_k_event_logger_buffer[CONFIG_KERNEL_EVENT_LOGGER_BUFFER_SIZE];
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 void *_collector_coop_thread;
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
-uint32_t _sys_k_event_logger_sleep_start_time;
+u32_t _sys_k_event_logger_sleep_start_time;
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
@@ -64,9 +64,9 @@ SYS_INIT(_sys_k_event_logger_init,
 sys_k_timer_func_t _sys_k_get_time = k_cycle_get_32;
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
-void sys_k_event_logger_put_timed(uint16_t event_id)
+void sys_k_event_logger_put_timed(u16_t event_id)
 {
-	uint32_t data[1];
+	u32_t data[1];
 
 	data[0] = _sys_k_get_time();
 
@@ -78,13 +78,13 @@ void sys_k_event_logger_put_timed(uint16_t event_id)
 void _sys_k_event_logger_context_switch(void)
 {
 	extern struct _kernel _kernel;
-	uint32_t data[2];
+	u32_t data[2];
 
 	extern void _sys_event_logger_put_non_preemptible(
 		struct event_logger *logger,
-		uint16_t event_id,
-		uint32_t *event_data,
-		uint8_t data_size);
+		u16_t event_id,
+		u32_t *event_data,
+		u8_t data_size);
 
 	const int event_id = KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID;
 
@@ -102,7 +102,7 @@ void _sys_k_event_logger_context_switch(void)
 	}
 
 	data[0] = _sys_k_get_time();
-	data[1] = (uint32_t)_kernel.current;
+	data[1] = (u32_t)_kernel.current;
 
 	/*
 	 * The mechanism we use to log the kernel events uses a sync semaphore
@@ -141,7 +141,7 @@ void sys_k_event_logger_register_as_collector(void)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 void _sys_k_event_logger_interrupt(void)
 {
-	uint32_t data[2];
+	u32_t data[2];
 
 	if (!sys_k_must_log_event(KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID)) {
 		return;
@@ -173,7 +173,7 @@ void _sys_k_event_logger_enter_sleep(void)
 
 void _sys_k_event_logger_exit_sleep(void)
 {
-	uint32_t data[3];
+	u32_t data[3];
 
 	if (!sys_k_must_log_event(KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID)) {
 		return;

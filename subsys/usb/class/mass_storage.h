@@ -35,21 +35,21 @@
 
 /* Bulk-only Command Block Wrapper (CBW) */
 struct CBW {
-	uint32_t Signature;
-	uint32_t Tag;
-	uint32_t DataLength;
-	uint8_t  Flags;
-	uint8_t  LUN;
-	uint8_t  CBLength;
-	uint8_t  CB[16];
+	u32_t Signature;
+	u32_t Tag;
+	u32_t DataLength;
+	u8_t  Flags;
+	u8_t  LUN;
+	u8_t  CBLength;
+	u8_t  CB[16];
 } __packed;
 
 /* Bulk-only Command Status Wrapper (CSW) */
 struct CSW {
-	uint32_t Signature;
-	uint32_t Tag;
-	uint32_t DataResidue;
-	uint8_t  Status;
+	u32_t Signature;
+	u32_t Tag;
+	u32_t DataResidue;
+	u8_t  Status;
 } __packed;
 
 /* Intel vendor ID */

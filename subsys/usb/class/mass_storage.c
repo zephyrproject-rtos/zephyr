@@ -59,13 +59,13 @@
 static volatile int thread_op;
 static char __stack mass_thread_stack[DISK_THREAD_STACK_SZ];
 static struct k_sem disk_wait_sem;
-static volatile uint32_t defered_wr_sz;
+static volatile u32_t defered_wr_sz;
 
-static uint8_t page[BLOCK_SIZE];
+static u8_t page[BLOCK_SIZE];
 
 /* Initialized during mass_storage_init() */
-static uint32_t memory_size;
-static uint32_t block_count;
+static u32_t memory_size;
+static u32_t block_count;
 
 /* CSW Status */
 enum Status {
@@ -93,18 +93,18 @@ static struct CBW cbw;
 static struct CSW csw;
 
 /*addr where will be read or written data*/
-static uint32_t addr;
+static u32_t addr;
 
 /*length of a reading or writing*/
-static uint32_t length;
+static u32_t length;
 
-static uint8_t max_lun_count;
+static u8_t max_lun_count;
 
 /*memory OK (after a memoryVerify)*/
 static bool memOK;
 
 /* Structure representing the global USB description */
-static const uint8_t mass_usb_description[] = {
+static const u8_t mass_usb_description[] = {
 	/* Device descriptor */
 	USB_DEVICE_DESC_SIZE,           /* Descriptor size */
 	USB_DEVICE_DESC,                /* Descriptor type */
@@ -211,14 +211,14 @@ static void msd_init(void)
 static void sendCSW(void)
 {
 	csw.Signature = CSW_Signature;
-	if (usb_write(EPBULK_IN, (uint8_t *)&csw,
+	if (usb_write(EPBULK_IN, (u8_t *)&csw,
 		      sizeof(struct CSW), NULL) != 0) {
 		SYS_LOG_ERR("usb write failure");
 	}
 	stage = WAIT_CSW;
 }
 
-static bool write(uint8_t *buf, uint16_t size)
+static bool write(u8_t *buf, u16_t size)
 {
 	if (size >= cbw.DataLength) {
 		size = cbw.DataLength;
@@ -248,7 +248,7 @@ static bool write(uint8_t *buf, uint16_t size)
  * @return  0 on success, negative errno code on fail.
  */
 static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *len, uint8_t **data)
+		s32_t *len, u8_t **data)
 {
 
 	switch (pSetup->bRequest) {
@@ -260,7 +260,7 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 	case MSC_REQUEST_GET_MAX_LUN:
 		SYS_LOG_DBG("\nMSC_REQUEST_GET_MAX_LUN ");
 		max_lun_count = 0;
-		*data = (uint8_t *)(&max_lun_count);
+		*data = (u8_t *)(&max_lun_count);
 		*len = 1;
 		break;
 
@@ -291,7 +291,7 @@ static void testUnitReady(void)
 
 static bool requestSense(void)
 {
-	uint8_t request_sense[] = {
+	u8_t request_sense[] = {
 		0x70,
 		0x00,
 		0x05,   /* Sense Key: illegal request */
@@ -321,7 +321,7 @@ static bool requestSense(void)
 
 static bool inquiryRequest(void)
 {
-	uint8_t inquiry[] = { 0x00, 0x80, 0x00, 0x01,
+	u8_t inquiry[] = { 0x00, 0x80, 0x00, 0x01,
 	36 - 4, 0x80, 0x00, 0x00,
 	'Z', 'E', 'P', 'H', 'Y', 'R', ' ', ' ',
 	'Z', 'E', 'P', 'H', 'Y', 'R', ' ', 'U', 'S', 'B', ' ', 'D', 'I', 'S', 'K', ' ',
@@ -336,7 +336,7 @@ static bool inquiryRequest(void)
 
 static bool modeSense6(void)
 {
-	uint8_t sense6[] = { 0x03, 0x00, 0x00, 0x00 };
+	u8_t sense6[] = { 0x03, 0x00, 0x00, 0x00 };
 
 	if (!write(sense6, sizeof(sense6))) {
 		return false;
@@ -346,16 +346,16 @@ static bool modeSense6(void)
 
 static bool readFormatCapacity(void)
 {
-	uint8_t capacity[] = { 0x00, 0x00, 0x00, 0x08,
-			(uint8_t)((block_count >> 24) & 0xff),
-			(uint8_t)((block_count >> 16) & 0xff),
-			(uint8_t)((block_count >> 8) & 0xff),
-			(uint8_t)((block_count >> 0) & 0xff),
+	u8_t capacity[] = { 0x00, 0x00, 0x00, 0x08,
+			(u8_t)((block_count >> 24) & 0xff),
+			(u8_t)((block_count >> 16) & 0xff),
+			(u8_t)((block_count >> 8) & 0xff),
+			(u8_t)((block_count >> 0) & 0xff),
 
 			0x02,
-			(uint8_t)((BLOCK_SIZE >> 16) & 0xff),
-			(uint8_t)((BLOCK_SIZE >> 8) & 0xff),
-			(uint8_t)((BLOCK_SIZE >> 0) & 0xff),
+			(u8_t)((BLOCK_SIZE >> 16) & 0xff),
+			(u8_t)((BLOCK_SIZE >> 8) & 0xff),
+			(u8_t)((BLOCK_SIZE >> 0) & 0xff),
 			 };
 	if (!write(capacity, sizeof(capacity))) {
 		return false;
@@ -365,16 +365,16 @@ static bool readFormatCapacity(void)
 
 static bool readCapacity(void)
 {
-	uint8_t capacity[] = {
-		(uint8_t)(((block_count - 1) >> 24) & 0xff),
-		(uint8_t)(((block_count - 1) >> 16) & 0xff),
-		(uint8_t)(((block_count - 1) >> 8) & 0xff),
-		(uint8_t)(((block_count - 1) >> 0) & 0xff),
+	u8_t capacity[] = {
+		(u8_t)(((block_count - 1) >> 24) & 0xff),
+		(u8_t)(((block_count - 1) >> 16) & 0xff),
+		(u8_t)(((block_count - 1) >> 8) & 0xff),
+		(u8_t)(((block_count - 1) >> 0) & 0xff),
 
-		(uint8_t)((BLOCK_SIZE >> 24) & 0xff),
-		(uint8_t)((BLOCK_SIZE >> 16) & 0xff),
-		(uint8_t)((BLOCK_SIZE >> 8) & 0xff),
-		(uint8_t)((BLOCK_SIZE >> 0) & 0xff),
+		(u8_t)((BLOCK_SIZE >> 24) & 0xff),
+		(u8_t)((BLOCK_SIZE >> 16) & 0xff),
+		(u8_t)((BLOCK_SIZE >> 8) & 0xff),
+		(u8_t)((BLOCK_SIZE >> 0) & 0xff),
 	};
 	if (!write(capacity, sizeof(capacity))) {
 		return false;
@@ -384,7 +384,7 @@ static bool readCapacity(void)
 
 static void thread_memory_read_done(void)
 {
-	uint32_t n;
+	u32_t n;
 
 	n = (length > MAX_PACKET) ? MAX_PACKET : length;
 	if ((addr + n) > memory_size) {
@@ -409,7 +409,7 @@ static void thread_memory_read_done(void)
 
 static void memoryRead(void)
 {
-	uint32_t n;
+	u32_t n;
 
 	n = (length > MAX_PACKET) ? MAX_PACKET : length;
 	if ((addr + n) > memory_size) {
@@ -438,7 +438,7 @@ static void memoryRead(void)
 
 static bool infoTransfer(void)
 {
-	uint32_t n;
+	u32_t n;
 
 	/* Logical Block Address of First Block */
 	n = (cbw.CB[2] << 24) | (cbw.CB[3] << 16) | (cbw.CB[4] <<  8) |
@@ -496,14 +496,14 @@ static void fail(void)
 	sendCSW();
 }
 
-static void CBWDecode(uint8_t *buf, uint16_t size)
+static void CBWDecode(u8_t *buf, u16_t size)
 {
 	if (size != sizeof(cbw)) {
 		SYS_LOG_ERR("size != sizeof(cbw)");
 		return;
 	}
 
-	memcpy((uint8_t *)&cbw, buf, size);
+	memcpy((u8_t *)&cbw, buf, size);
 	if (cbw.Signature != CBW_Signature) {
 		SYS_LOG_ERR("CBW Signature Mismatch");
 		return;
@@ -603,9 +603,9 @@ static void CBWDecode(uint8_t *buf, uint16_t size)
 
 }
 
-static void memoryVerify(uint8_t *buf, uint16_t size)
+static void memoryVerify(u8_t *buf, u16_t size)
 {
-	uint32_t n;
+	u32_t n;
 
 	if ((addr + size) > memory_size) {
 		size = memory_size - addr;
@@ -643,7 +643,7 @@ static void memoryVerify(uint8_t *buf, uint16_t size)
 	}
 }
 
-static void memoryWrite(uint8_t *buf, uint16_t size)
+static void memoryWrite(u8_t *buf, u16_t size)
 {
 	if ((addr + size) > memory_size) {
 		size = memory_size - addr;
@@ -679,11 +679,11 @@ static void memoryWrite(uint8_t *buf, uint16_t size)
 }
 
 
-static void mass_storage_bulk_out(uint8_t ep,
+static void mass_storage_bulk_out(u8_t ep,
 		enum usb_dc_ep_cb_status_code ep_status)
 {
-	uint32_t bytes_read = 0;
-	uint8_t bo_buf[MASS_STORAGE_BULK_EP_MPS];
+	u32_t bytes_read = 0;
+	u8_t bo_buf[MASS_STORAGE_BULK_EP_MPS];
 
 	ARG_UNUSED(ep_status);
 
@@ -734,7 +734,7 @@ static void mass_storage_bulk_out(uint8_t ep,
 
 static void thread_memory_write_done(void)
 {
-	uint32_t size = defered_wr_sz;
+	u32_t size = defered_wr_sz;
 
 	addr += size;
 	length -= size;
@@ -759,7 +759,7 @@ static void thread_memory_write_done(void)
  *
  * @return  N/A.
  */
-static void mass_storage_bulk_in(uint8_t ep,
+static void mass_storage_bulk_in(u8_t ep,
 				 enum usb_dc_ep_cb_status_code ep_status)
 {
 	ARG_UNUSED(ep_status);
@@ -901,7 +901,7 @@ static void mass_thread_main(int arg1, int unused)
 	}
 }
 
-static uint8_t interface_data[64];
+static u8_t interface_data[64];
 /**
  * @brief Initialize USB mass storage setup
  *
@@ -916,7 +916,7 @@ static uint8_t interface_data[64];
 static int mass_storage_init(struct device *dev)
 {
 	int ret;
-	uint32_t block_size = 0;
+	u32_t block_size = 0;
 
 	ARG_UNUSED(dev);
 

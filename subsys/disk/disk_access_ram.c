@@ -22,10 +22,10 @@
  * qemu testing (as it may exceed target's RAM limits).
  */
 #define RAMDISK_VOLUME_SIZE (192 * RAMDISK_SECTOR_SIZE)
-static uint8_t ramdisk_buf[RAMDISK_VOLUME_SIZE];
+static u8_t ramdisk_buf[RAMDISK_VOLUME_SIZE];
 #endif
 
-static void *lba_to_address(uint32_t lba)
+static void *lba_to_address(u32_t lba)
 {
 	__ASSERT(((lba * RAMDISK_SECTOR_SIZE) < RAMDISK_VOLUME_SIZE),
 		 "FS bound error");
@@ -43,36 +43,36 @@ int disk_access_init(void)
 	return 0;
 }
 
-int disk_access_read(uint8_t *buff, uint32_t sector, uint32_t count)
+int disk_access_read(u8_t *buff, u32_t sector, u32_t count)
 {
 	memcpy(buff, lba_to_address(sector), count * RAMDISK_SECTOR_SIZE);
 
 	return 0;
 }
 
-int disk_access_write(const uint8_t *buff, uint32_t sector, uint32_t count)
+int disk_access_write(const u8_t *buff, u32_t sector, u32_t count)
 {
 	memcpy(lba_to_address(sector), buff, count * RAMDISK_SECTOR_SIZE);
 
 	return 0;
 }
 
-int disk_access_ioctl(uint8_t cmd, void *buff)
+int disk_access_ioctl(u8_t cmd, void *buff)
 {
 	switch (cmd) {
 	case DISK_IOCTL_CTRL_SYNC:
 		break;
 	case DISK_IOCTL_GET_SECTOR_COUNT:
-		*(uint32_t *)buff = RAMDISK_VOLUME_SIZE / RAMDISK_SECTOR_SIZE;
+		*(u32_t *)buff = RAMDISK_VOLUME_SIZE / RAMDISK_SECTOR_SIZE;
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
-		*(uint32_t *)buff = RAMDISK_SECTOR_SIZE;
+		*(u32_t *)buff = RAMDISK_SECTOR_SIZE;
 		break;
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
-		*(uint32_t *)buff  = 1;
+		*(u32_t *)buff  = 1;
 		break;
 	case DISK_IOCTL_GET_DISK_SIZE:
-		*(uint32_t *)buff  = RAMDISK_VOLUME_SIZE;
+		*(u32_t *)buff  = RAMDISK_VOLUME_SIZE;
 		break;
 	default:
 		return -EINVAL;

@@ -42,19 +42,19 @@
 
 /* Data structure for GET_LINE_CODING / SET_LINE_CODING class requests */
 struct cdc_acm_line_coding {
-	uint32_t dwDTERate;
-	uint8_t bCharFormat;
-	uint8_t bParityType;
-	uint8_t bDataBits;
+	u32_t dwDTERate;
+	u8_t bCharFormat;
+	u8_t bParityType;
+	u8_t bDataBits;
 } __packed;
 
 struct cdc_acm_notification {
-	uint8_t bmRequestType;
-	uint8_t bNotificationType;
-	uint16_t wValue;
-	uint16_t wIndex;
-	uint16_t wLength;
-	uint16_t data;
+	u8_t bmRequestType;
+	u8_t bNotificationType;
+	u16_t wValue;
+	u16_t wIndex;
+	u16_t wLength;
+	u16_t data;
 } __packed;
 
 /* Intel vendor ID */

@@ -18,8 +18,8 @@
 static struct device *flash_dev;
 
 /* flash read-copy-erase-write operation */
-static uint8_t read_copy_buf[CONFIG_DISK_ERASE_BLOCK_SIZE];
-static uint8_t *fs_buff = read_copy_buf;
+static u8_t read_copy_buf[CONFIG_DISK_ERASE_BLOCK_SIZE];
+static u8_t *fs_buff = read_copy_buf;
 
 /* calculate number of blocks required for a given size */
 #define GET_NUM_BLOCK(total_size, block_size) \
@@ -28,7 +28,7 @@ static uint8_t *fs_buff = read_copy_buf;
 #define GET_SIZE_TO_BOUNDARY(start, block_size) \
 	(block_size - (start & (block_size - 1)))
 
-static off_t lba_to_address(uint32_t sector_num)
+static off_t lba_to_address(u32_t sector_num)
 {
 	off_t flash_addr;
 
@@ -63,13 +63,13 @@ int disk_access_init(void)
 	return 0;
 }
 
-int disk_access_read(uint8_t *buff, uint32_t start_sector,
-		     uint32_t sector_count)
+int disk_access_read(u8_t *buff, u32_t start_sector,
+		     u32_t sector_count)
 {
 	off_t fl_addr;
-	uint32_t remaining;
-	uint32_t len;
-	uint32_t num_read;
+	u32_t remaining;
+	u32_t len;
+	u32_t num_read;
 
 	fl_addr = lba_to_address(start_sector);
 	remaining = (sector_count * SECTOR_SIZE);
@@ -77,7 +77,7 @@ int disk_access_read(uint8_t *buff, uint32_t start_sector,
 
 	num_read = GET_NUM_BLOCK(remaining, CONFIG_DISK_FLASH_MAX_RW_SIZE);
 
-	for (uint32_t i = 0; i < num_read; i++) {
+	for (u32_t i = 0; i < num_read; i++) {
 		if (remaining < CONFIG_DISK_FLASH_MAX_RW_SIZE) {
 			len = remaining;
 		}
@@ -95,13 +95,13 @@ int disk_access_read(uint8_t *buff, uint32_t start_sector,
 }
 
 /* This performs read-copy into an output buffer */
-static int read_copy_flash_block(off_t start_addr, uint32_t size,
+static int read_copy_flash_block(off_t start_addr, u32_t size,
 				 const void *src_buff,
-				 uint8_t *dest_buff)
+				 u8_t *dest_buff)
 {
 	off_t fl_addr;
-	uint32_t num_read;
-	uint32_t offset = 0;
+	u32_t num_read;
+	u32_t offset = 0;
 
 	/* adjust offset if starting address is not erase-aligned address */
 	if (start_addr & (CONFIG_DISK_FLASH_ERASE_ALIGNMENT - 1)) {
@@ -115,7 +115,7 @@ static int read_copy_flash_block(off_t start_addr, uint32_t size,
 				 CONFIG_DISK_FLASH_MAX_RW_SIZE);
 
 	/* read one block from flash */
-	for (uint32_t i = 0; i < num_read; i++) {
+	for (u32_t i = 0; i < num_read; i++) {
 		int rc;
 
 		rc = flash_read(flash_dev,
@@ -136,11 +136,11 @@ static int read_copy_flash_block(off_t start_addr, uint32_t size,
 /* input size is either less or equal to a block size,
  * CONFIG_DISK_ERASE_BLOCK_SIZE.
  */
-static int update_flash_block(off_t start_addr, uint32_t size, const void *buff)
+static int update_flash_block(off_t start_addr, u32_t size, const void *buff)
 {
 	off_t fl_addr;
-	uint8_t *src = (uint8_t *)buff;
-	uint32_t num_write;
+	u8_t *src = (u8_t *)buff;
+	u32_t num_write;
 
 	/* if size is a partial block, perform read-copy with user data */
 	if (size < CONFIG_DISK_ERASE_BLOCK_SIZE) {
@@ -152,7 +152,7 @@ static int update_flash_block(off_t start_addr, uint32_t size, const void *buff)
 		}
 
 		/* now use the local buffer as the source */
-		src = (uint8_t *)fs_buff;
+		src = (u8_t *)fs_buff;
 	}
 
 	/* always align starting address for flash write operation */
@@ -169,7 +169,7 @@ static int update_flash_block(off_t start_addr, uint32_t size, const void *buff)
 	num_write = GET_NUM_BLOCK(CONFIG_DISK_ERASE_BLOCK_SIZE,
 				  CONFIG_DISK_FLASH_MAX_RW_SIZE);
 
-	for (uint32_t i = 0; i < num_write; i++) {
+	for (u32_t i = 0; i < num_write; i++) {
 		/* flash_write reenabled write-protection so disable it again */
 		flash_write_protection_set(flash_dev, false);
 
@@ -185,12 +185,12 @@ static int update_flash_block(off_t start_addr, uint32_t size, const void *buff)
 	return 0;
 }
 
-int disk_access_write(const uint8_t *buff, uint32_t start_sector,
-		      uint32_t sector_count)
+int disk_access_write(const u8_t *buff, u32_t start_sector,
+		      u32_t sector_count)
 {
 	off_t fl_addr;
-	uint32_t remaining;
-	uint32_t size;
+	u32_t remaining;
+	u32_t size;
 
 	fl_addr = lba_to_address(start_sector);
 	remaining = (sector_count * SECTOR_SIZE);
@@ -254,22 +254,22 @@ int disk_access_write(const uint8_t *buff, uint32_t start_sector,
 	return 0;
 }
 
-int disk_access_ioctl(uint8_t cmd, void *buff)
+int disk_access_ioctl(u8_t cmd, void *buff)
 {
 	switch (cmd) {
 	case DISK_IOCTL_CTRL_SYNC:
 		return 0;
 	case DISK_IOCTL_GET_SECTOR_COUNT:
-		*(uint32_t *)buff = CONFIG_DISK_VOLUME_SIZE / SECTOR_SIZE;
+		*(u32_t *)buff = CONFIG_DISK_VOLUME_SIZE / SECTOR_SIZE;
 		return 0;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
-		*(uint32_t *) buff = SECTOR_SIZE;
+		*(u32_t *) buff = SECTOR_SIZE;
 		return 0;
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ: /* in sectors */
-		*(uint32_t *)buff = CONFIG_DISK_ERASE_BLOCK_SIZE / SECTOR_SIZE;
+		*(u32_t *)buff = CONFIG_DISK_ERASE_BLOCK_SIZE / SECTOR_SIZE;
 		return 0;
 	case DISK_IOCTL_GET_DISK_SIZE:
-		*(uint32_t *)buff = CONFIG_DISK_VOLUME_SIZE;
+		*(u32_t *)buff = CONFIG_DISK_VOLUME_SIZE;
 		return 0;
 	default:
 		break;

@@ -63,5 +63,5 @@ size_t _kernel_openocd_offsets[] = {
 };
 
 __attribute__((used, section(".openocd_dbg")))
-uint8_t _kernel_openocd_size_t_size = (uint8_t)sizeof(size_t);
+u8_t _kernel_openocd_size_t_size = (u8_t)sizeof(size_t);
 #endif

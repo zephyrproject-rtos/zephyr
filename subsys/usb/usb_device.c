@@ -100,27 +100,27 @@ static struct usb_dev_priv {
 	/** Setup packet */
 	struct usb_setup_packet setup;
 	/** Pointer to data buffer */
-	uint8_t *data_buf;
+	u8_t *data_buf;
 	/** Eemaining bytes in buffer */
-	int32_t data_buf_residue;
+	s32_t data_buf_residue;
 	/** Total length of control transfer */
-	int32_t data_buf_len;
+	s32_t data_buf_len;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
 	/** USB stack status clalback */
 	usb_status_callback status_callback;
 	/** Pointer to registered descriptors */
-	const uint8_t *descriptors;
+	const u8_t *descriptors;
 	/** Array of installed request handler callbacks */
 	usb_request_handler req_handlers[MAX_NUM_REQ_HANDLERS];
 	/** Array of installed request data pointers */
-	uint8_t *data_store[MAX_NUM_REQ_HANDLERS];
+	u8_t *data_store[MAX_NUM_REQ_HANDLERS];
 	/* Buffer used for storing standard usb request data */
-	uint8_t std_req_data[MAX_STD_REQ_MSG_SIZE];
+	u8_t std_req_data[MAX_STD_REQ_MSG_SIZE];
 	/** Variable to check whether the usb has been enabled */
 	bool enabled;
 	/** Currently selected configuration */
-	uint8_t configuration;
+	u8_t configuration;
 } usb_dev;
 
 /*
@@ -158,9 +158,9 @@ static void usb_print_setup(struct usb_setup_packet *setup)
  * @return true if the request was handles successfully
  */
 static bool usb_handle_request(struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data)
+		s32_t *len, u8_t **data)
 {
-	uint32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
+	u32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
 	usb_request_handler handler = usb_dev.req_handlers[type];
 
 	SYS_LOG_DBG("** %d **\n", type);
@@ -191,7 +191,7 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
  */
 static void usb_data_to_host(void)
 {
-	uint32_t chunk = min(MAX_PACKET_SIZE0, usb_dev.data_buf_residue);
+	u32_t chunk = min(MAX_PACKET_SIZE0, usb_dev.data_buf_residue);
 
 	/*Always EP0 for control*/
 	usb_dc_ep_write(0x80, usb_dev.data_buf, chunk, &chunk);
@@ -207,11 +207,11 @@ static void usb_data_to_host(void)
  *
  * @return N/A
  */
-static void usb_handle_control_transfer(uint8_t ep,
+static void usb_handle_control_transfer(u8_t ep,
 		enum usb_dc_ep_cb_status_code ep_status)
 {
-	uint32_t chunk = 0;
-	uint32_t type = 0;
+	u32_t chunk = 0;
+	u32_t type = 0;
 	struct usb_setup_packet *setup = &usb_dev.setup;
 
 	SYS_LOG_DBG("usb_handle_control_transfer ep %x, status %x\n", ep,
@@ -222,7 +222,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 		 * reset request message state machine
 		 */
 		if (usb_dc_ep_read(ep,
-		    (uint8_t *)setup, sizeof(*setup), NULL) < 0) {
+		    (u8_t *)setup, sizeof(*setup), NULL) < 0) {
 			SYS_LOG_DBG("Read Setup Packet failed\n");
 			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 			return;
@@ -310,8 +310,8 @@ static void usb_handle_control_transfer(uint8_t ep,
  *
  * @return N/A
  */
-static void usb_register_request_handler(int32_t type,
-		usb_request_handler handler, uint8_t *data_store)
+static void usb_register_request_handler(s32_t type,
+		usb_request_handler handler, u8_t *data_store)
 {
 	usb_dev.req_handlers[type] = handler;
 	usb_dev.data_store[type] = data_store;
@@ -325,7 +325,7 @@ static void usb_register_request_handler(int32_t type,
  *
  * @param [in] usb_descriptors The descriptor byte array
  */
-static void usb_register_descriptors(const uint8_t *usb_descriptors)
+static void usb_register_descriptors(const u8_t *usb_descriptors)
 {
 	usb_dev.descriptors = usb_descriptors;
 }
@@ -343,13 +343,13 @@ static void usb_register_descriptors(const uint8_t *usb_descriptors)
  *
  * @return true if the descriptor was found, false otherwise
  */
-static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
-		int32_t *len, uint8_t **data)
+static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
+		s32_t *len, u8_t **data)
 {
-	uint8_t type = 0;
-	uint8_t index = 0;
-	uint8_t *p = NULL;
-	int32_t cur_index = 0;
+	u8_t type = 0;
+	u8_t index = 0;
+	u8_t *p = NULL;
+	s32_t cur_index = 0;
 	bool found = false;
 
 	/*Avoid compiler warning until this is used for something*/
@@ -358,7 +358,7 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 	type = GET_DESC_TYPE(type_index);
 	index = GET_DESC_INDEX(type_index);
 
-	p = (uint8_t *)usb_dev.descriptors;
+	p = (u8_t *)usb_dev.descriptors;
 	cur_index = 0;
 
 	while (p[DESC_bLength] != 0) {
@@ -407,11 +407,11 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
  *
  * @return true if successfully configured false if error or unconfigured
  */
-static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
+static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 {
-	uint8_t *p = NULL;
-	uint8_t cur_config = 0;
-	uint8_t cur_alt_setting = 0;
+	u8_t *p = NULL;
+	u8_t cur_config = 0;
+	u8_t cur_alt_setting = 0;
 
 	if (config_index == 0) {
 		/* unconfigure device */
@@ -421,7 +421,7 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 	}
 
 	/* configure endpoints for this configuration/altsetting */
-	p = (uint8_t *)usb_dev.descriptors;
+	p = (u8_t *)usb_dev.descriptors;
 	cur_config = 0xFF;
 	cur_alt_setting = 0xFF;
 
@@ -480,10 +480,10 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
  * @return true if the request was handled successfully
  */
 static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data_buf)
+		s32_t *len, u8_t **data_buf)
 {
 	bool ret = true;
-	uint8_t *data = *data_buf;
+	u8_t *data = *data_buf;
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
@@ -566,9 +566,9 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
  * @return true if the request was handled successfully
  */
 static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data_buf)
+		s32_t *len, u8_t **data_buf)
 {
-	uint8_t *data = *data_buf;
+	u8_t *data = *data_buf;
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
@@ -612,9 +612,9 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
  * @return true if the request was handled successfully
  */
 static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data_buf)
+		s32_t *len, u8_t **data_buf)
 {
-	uint8_t *data = *data_buf;
+	u8_t *data = *data_buf;
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
@@ -669,7 +669,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
  * @return true if the request was handled successfully
  */
 static int usb_handle_standard_request(struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data_buf)
+		s32_t *len, u8_t **data_buf)
 {
 	int rc = 0;
 	/* try the custom request handler first */
@@ -824,7 +824,7 @@ int usb_deconfig(void)
 int usb_enable(struct usb_cfg_data *config)
 {
 	int ret;
-	uint32_t i;
+	u32_t i;
 	struct usb_dc_ep_cfg_data ep0_cfg;
 
 	if (true == usb_dev.enabled) {
@@ -911,35 +911,35 @@ int usb_disable(void)
 	return 0;
 }
 
-int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len,
-		uint32_t *bytes_ret)
+int usb_write(u8_t ep, const u8_t *data, u32_t data_len,
+		u32_t *bytes_ret)
 {
 	return usb_dc_ep_write(ep, data, data_len, bytes_ret);
 }
 
-int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-		uint32_t *ret_bytes)
+int usb_read(u8_t ep, u8_t *data, u32_t max_data_len,
+		u32_t *ret_bytes)
 {
 	return usb_dc_ep_read(ep, data, max_data_len, ret_bytes);
 }
 
-int usb_ep_set_stall(uint8_t ep)
+int usb_ep_set_stall(u8_t ep)
 {
 	return usb_dc_ep_set_stall(ep);
 }
 
-int usb_ep_clear_stall(uint8_t ep)
+int usb_ep_clear_stall(u8_t ep)
 {
 	return usb_dc_ep_clear_stall(ep);
 }
 
-int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-			uint32_t *ret_bytes)
+int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
+			u32_t *ret_bytes)
 {
 	return usb_dc_ep_read_wait(ep, data, max_data_len, ret_bytes);
 }
 
-int usb_ep_read_continue(uint8_t ep)
+int usb_ep_read_continue(u8_t ep)
 {
 	return usb_dc_ep_read_continue(ep);
 }

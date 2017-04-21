@@ -15,10 +15,10 @@
 #endif
 
 static K_SEM_DEFINE(uart_sem, 0, UINT_MAX);
-static uint8_t uart_ringbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
-static uint8_t i_get, i_put;
+static u8_t uart_ringbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
+static u8_t i_get, i_put;
 
-static int console_irq_input_hook(uint8_t c)
+static int console_irq_input_hook(u8_t c)
 {
 	int i_next = (i_put + 1) & (CONFIG_CONSOLE_GETCHAR_BUFSIZE - 1);
 
@@ -34,10 +34,10 @@ static int console_irq_input_hook(uint8_t c)
 	return 1;
 }
 
-uint8_t console_getchar(void)
+u8_t console_getchar(void)
 {
 	unsigned int key;
-	uint8_t c;
+	u8_t c;
 
 	k_sem_take(&uart_sem, K_FOREVER);
 	key = irq_lock();

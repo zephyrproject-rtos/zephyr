@@ -474,11 +474,11 @@ static void remove_all_installed_breakpoints(void);
 #ifdef GDB_ARCH_HAS_REMOTE_SERIAL_EXT_USING_NOTIF_PACKETS
 static void handle_notification(void);
 static void request_notification_packet_flush(void);
-static uint32_t write_to_console(char *buf, uint32_t len);
+static u32_t write_to_console(char *buf, u32_t len);
 #endif
 
 #ifdef CONFIG_GDB_SERVER_INTERRUPT_DRIVEN
-static int console_irq_input_hook(uint8_t ch);
+static int console_irq_input_hook(u8_t ch);
 #endif
 
 static int get_hex_char_value(unsigned char ch)
@@ -853,9 +853,9 @@ static inline int must_flush_notification_buffer(unsigned char ch)
  *
  * The buffer is also automatically flushed when system is stopped.
  */
-static uint32_t write_to_console(char *buf, uint32_t len)
+static u32_t write_to_console(char *buf, u32_t len)
 {
-	uint32_t ix;
+	u32_t ix;
 	unsigned char ch;
 
 	int key = irq_lock();
@@ -887,8 +887,8 @@ static void handle_notification(void)
 	int ix = 0;
 	unsigned char ch;
 	int more_data = 0;
-	uint32_t max_packet_size;
-	uint32_t data_size;
+	u32_t max_packet_size;
+	u32_t data_size;
 	unsigned char *ptr = notif_data;
 
 	/* First, check if there is pending data */
@@ -2381,7 +2381,7 @@ static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(gdb_console_out)
 }
 
 #ifdef CONFIG_GDB_SERVER_INTERRUPT_DRIVEN
-static int console_irq_input_hook(uint8_t ch)
+static int console_irq_input_hook(u8_t ch)
 {
 	if (ch == GDB_STOP_CHAR) {
 		(void)irq_lock();

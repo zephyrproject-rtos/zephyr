@@ -426,7 +426,7 @@ static int get_command_to_complete(char *str, char **command_prefix)
 	return (str == NULL) ? dest : -1;
 }
 
-static uint8_t completion(char *line, uint8_t len)
+static u8_t completion(char *line, u8_t len)
 {
 	const char *first_match = NULL;
 	int common_chars = -1, space = 0;

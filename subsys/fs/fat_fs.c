@@ -57,7 +57,7 @@ static int translate_error(int error)
 int fs_open(fs_file_t *zfp, const char *file_name)
 {
 	FRESULT res;
-	uint8_t fs_mode;
+	u8_t fs_mode;
 
 	fs_mode = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
 
@@ -171,7 +171,7 @@ int fs_truncate(fs_file_t *zfp, off_t length)
 		 * optimization.
 		 */
 		unsigned int bw;
-		uint8_t c = 0;
+		u8_t c = 0;
 
 		for (int i = cur_length; i < length; i++) {
 			res = f_write(&zfp->fp, &c, 1, &bw);
@@ -283,7 +283,7 @@ static int fs_init(struct device *dev)
 
 	/* If no file system found then create one */
 	if (res == FR_NO_FILESYSTEM) {
-		uint8_t work[_MAX_SS];
+		u8_t work[_MAX_SS];
 
 		res = f_mkfs("", (FM_FAT | FM_SFD), 0, work, sizeof(work));
 		if (res == FR_OK) {

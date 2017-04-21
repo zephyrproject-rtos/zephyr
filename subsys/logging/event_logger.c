@@ -13,15 +13,15 @@
 #include <misc/ring_buffer.h>
 
 void sys_event_logger_init(struct event_logger *logger,
-			   uint32_t *logger_buffer, uint32_t buffer_size)
+			   u32_t *logger_buffer, u32_t buffer_size)
 {
 	sys_ring_buf_init(&logger->ring_buf, buffer_size, logger_buffer);
 	k_sem_init(&(logger->sync_sema), 0, UINT_MAX);
 }
 
 
-static void event_logger_put(struct event_logger *logger, uint16_t event_id,
-			     uint32_t *event_data, uint8_t data_size,
+static void event_logger_put(struct event_logger *logger, u16_t event_id,
+			     u32_t *event_data, u8_t data_size,
 			     void (*sem_give_fn)(struct k_sem *))
 {
 	int ret;
@@ -41,8 +41,8 @@ static void event_logger_put(struct event_logger *logger, uint16_t event_id,
 }
 
 
-void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
-			  uint32_t *event_data, uint8_t data_size)
+void sys_event_logger_put(struct event_logger *logger, u16_t event_id,
+			  u32_t *event_data, u8_t data_size)
 {
 	event_logger_put(logger, event_id, event_data, data_size, k_sem_give);
 }
@@ -67,7 +67,7 @@ void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
  * @return No return value.
  */
 void _sys_event_logger_put_non_preemptible(struct event_logger *logger,
-					   uint16_t event_id, uint32_t *event_data, uint8_t data_size)
+					   u16_t event_id, u32_t *event_data, u8_t data_size)
 {
 	extern void _sem_give_non_preemptible(struct k_sem *sem);
 
@@ -77,8 +77,8 @@ void _sys_event_logger_put_non_preemptible(struct event_logger *logger,
 
 
 static int event_logger_get(struct event_logger *logger,
-			    uint16_t *event_id, uint8_t *dropped_event_count,
-			    uint32_t *buffer, uint8_t *buffer_size)
+			    u16_t *event_id, u8_t *dropped_event_count,
+			    u32_t *buffer, u8_t *buffer_size)
 {
 	int ret;
 
@@ -102,9 +102,9 @@ static int event_logger_get(struct event_logger *logger,
 }
 
 
-int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
-			 uint8_t *dropped_event_count, uint32_t *buffer,
-			 uint8_t *buffer_size)
+int sys_event_logger_get(struct event_logger *logger, u16_t *event_id,
+			 u8_t *dropped_event_count, u32_t *buffer,
+			 u8_t *buffer_size)
 {
 	if (k_sem_take(&(logger->sync_sema), K_NO_WAIT) == 0) {
 		return event_logger_get(logger, event_id, dropped_event_count,
@@ -114,9 +114,9 @@ int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
 }
 
 
-int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
-			      uint8_t *dropped_event_count, uint32_t *buffer,
-			      uint8_t *buffer_size)
+int sys_event_logger_get_wait(struct event_logger *logger,  u16_t *event_id,
+			      u8_t *dropped_event_count, u32_t *buffer,
+			      u8_t *buffer_size)
 {
 	k_sem_take(&(logger->sync_sema), K_FOREVER);
 
@@ -127,10 +127,10 @@ int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 int sys_event_logger_get_wait_timeout(struct event_logger *logger,
-				      uint16_t *event_id,
-				      uint8_t *dropped_event_count,
-				      uint32_t *buffer, uint8_t *buffer_size,
-				      uint32_t timeout)
+				      u16_t *event_id,
+				      u8_t *dropped_event_count,
+				      u32_t *buffer, u8_t *buffer_size,
+				      u32_t timeout)
 {
 	if (k_sem_take(&(logger->sync_sema), __ticks_to_ms(timeout))) {
 		return event_logger_get(logger, event_id, dropped_event_count,

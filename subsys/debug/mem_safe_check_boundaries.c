@@ -57,7 +57,7 @@ static inline void write_to_mem(void *dest, void *src, int width)
 		*((vaddr_t *)dest) = *((const vaddr_t *)src);
 		break;
 	case 2:
-		*((uint16_t *)dest) = *((const uint16_t *)src);
+		*((u16_t *)dest) = *((const u16_t *)src);
 		break;
 	case 1:
 		*((char *)dest) = *((const char *)src);
@@ -169,7 +169,7 @@ static inline int mem_access(void *p, void *buf, size_t num_bytes,
 	return 0;
 }
 
-static inline int get_align(const uint32_t value)
+static inline int get_align(const u32_t value)
 {
 	return (value & 1) ? 1 : (value & 2) ? 2 : 4;
 }
@@ -180,7 +180,7 @@ static inline int get_width(const void *p1, const void *p2,
 	vaddr_t p1_addr = (vaddr_t)p1, p2_addr = (vaddr_t)p2;
 
 	if (width == 0) {
-		uint32_t align_check = num_bytes | p1_addr | p2_addr;
+		u32_t align_check = num_bytes | p1_addr | p2_addr;
 
 		return get_align(align_check);
 	}

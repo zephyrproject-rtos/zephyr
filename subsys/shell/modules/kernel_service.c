@@ -13,7 +13,7 @@
 
 static int shell_cmd_version(int argc, char *argv[])
 {
-	uint32_t version = sys_kernel_version_get();
+	u32_t version = sys_kernel_version_get();
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
