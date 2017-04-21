@@ -35,12 +35,12 @@ struct bt_conn_le {
 	bt_addr_le_t		init_addr;
 	bt_addr_le_t		resp_addr;
 
-	u16_t		interval;
-	u16_t		interval_min;
-	u16_t		interval_max;
+	u16_t			interval;
+	u16_t			interval_min;
+	u16_t			interval_max;
 
-	u16_t		latency;
-	u16_t		timeout;
+	u16_t			latency;
+	u16_t			timeout;
 
 	u8_t			features[1][8];
 
@@ -80,7 +80,7 @@ struct bt_conn_tx {
 };
 
 struct bt_conn {
-	u16_t		handle;
+	u16_t			handle;
 	u8_t			type;
 	u8_t			role;
 

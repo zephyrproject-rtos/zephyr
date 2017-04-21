@@ -990,8 +990,8 @@ static int read_included_uuid(struct bt_conn *conn,
 }
 
 static u16_t parse_include(struct bt_conn *conn, const void *pdu,
-			      struct bt_gatt_discover_params *params,
-			      u16_t length)
+			   struct bt_gatt_discover_params *params,
+			   u16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
 	u16_t handle = 0;
@@ -1082,8 +1082,8 @@ done:
 }
 
 static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
-				     struct bt_gatt_discover_params *params,
-				     u16_t length)
+				  struct bt_gatt_discover_params *params,
+				  u16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
 	u16_t handle = 0;

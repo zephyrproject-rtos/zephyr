@@ -116,7 +116,7 @@ struct bt_l2cap_le_chan {
 	struct net_buf                  *tx_buf;
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
-	u16_t			_sdu_len;
+	u16_t				_sdu_len;
 };
 
 /** @def BT_L2CAP_LE_CHAN(_ch)
@@ -215,7 +215,7 @@ struct bt_l2cap_chan_ops {
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
 	/** Server PSM */
-	u16_t		psm;
+	u16_t			psm;
 
 	/** Required minimim security level */
 	bt_security_t		sec_level;
