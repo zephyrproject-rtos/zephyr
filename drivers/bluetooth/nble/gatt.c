@@ -814,8 +814,8 @@ static u16_t parse_service(struct bt_conn *conn,
 }
 
 static u16_t parse_characteristic(struct bt_conn *conn,
-				     struct bt_gatt_discover_params *params,
-				     const u8_t *data, u8_t len)
+				  struct bt_gatt_discover_params *params,
+				  const u8_t *data, u8_t len)
 {
 	u16_t end_handle = 0;
 	int i;
@@ -847,8 +847,8 @@ static u16_t parse_characteristic(struct bt_conn *conn,
 }
 
 static u16_t parse_descriptor(struct bt_conn *conn,
-				 struct bt_gatt_discover_params *params,
-				 const u8_t *data, u8_t len)
+			      struct bt_gatt_discover_params *params,
+			      const u8_t *data, u8_t len)
 {
 	u16_t end_handle = 0;
 	int i;
@@ -1404,7 +1404,7 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 }
 
 static s32_t prep_write_evt(const struct nble_gatts_write_evt *ev,
-			      const u8_t *data, u8_t len)
+			    const u8_t *data, u8_t len)
 {
 #if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
 	const struct bt_gatt_attr *attr = ev->attr;
