@@ -13,6 +13,7 @@ menuconfig ETH_SAM_GMAC
 	  Enable Atmel SAM MCU Family Ethernet driver.
 
 if ETH_SAM_GMAC
+
 config ETH_SAM_GMAC_NAME
 	string "Device name"
 	default "ETH_0"
@@ -41,47 +42,87 @@ config ETH_SAM_GMAC_IRQ_PRI
 	help
 	  IRQ priority of Ethernet device
 
+choice ETH_SAM_GMAC_MAC_SELECT
+	prompt "MAC address"
+	help
+	  Choose how to configure MAC address.
+
+	config ETH_SAM_GMAC_MAC_MANUAL
+		bool "Manual"
+		help
+		  Assign an arbitrary MAC address.
+
+	config ETH_SAM_GMAC_MAC_I2C_EEPROM
+		bool "Read from an I2C EEPROM"
+		help
+		  Read MAC address from an I2C EEPROM.
+
+endchoice
+
+if ETH_SAM_GMAC_MAC_MANUAL
+
 config ETH_SAM_GMAC_MAC0
 	hex "MAC Address Byte 0"
 	default 0
 	range 0 0xff
-	help
-	  Byte 0 of the MAC address.
 
 config ETH_SAM_GMAC_MAC1
 	hex "MAC Address Byte 1"
 	default 0
 	range 0 0xff
-	help
-	  Byte 1 of the MAC address.
 
 config ETH_SAM_GMAC_MAC2
 	hex "MAC Address Byte 2"
 	default 0
 	range 0 0xff
-	help
-	  Byte 2 of the MAC address.
 
 config ETH_SAM_GMAC_MAC3
 	hex "MAC Address Byte 3"
 	default 0
 	range 0 0xff
-	help
-	  Byte 3 of the MAC address.
 
 config ETH_SAM_GMAC_MAC4
 	hex "MAC Address Byte 4"
 	default 0
 	range 0 0xff
-	help
-	  Byte 4 of the MAC address.
 
 config ETH_SAM_GMAC_MAC5
 	hex "MAC Address Byte 5"
 	default 0
 	range 0 0xff
+
+endif # ETH_SAM_GMAC_MAC_MANUAL
+
+if ETH_SAM_GMAC_MAC_I2C_EEPROM
+
+config ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS
+	hex "I2C 7-bit EEPROM chip address"
+	range 0 0xff
 	help
-	  Byte 5 of the MAC address.
+	  I2C 7-bit address of the EEPROM chip.
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS
+	hex "I2C EEPROM internal address"
+	range 0 0xffffffff
+	help
+	  Internal address of the EEPROM chip where the MAC address is stored.
+	  Chips with 1 to 4 byte internal address size are supported. Address
+	  size has to be configured in a separate Kconfig option.
+
+config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
+	int "I2C EEPROM internal address size"
+	default 1
+	range 1 4
+	help
+	  Size (in bytes) of the internal EEPROM address.
+
+config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
+	string "I2C bus driver device name"
+	help
+	  Device name, e.g. I2C_0, of an I2C bus driver device. It is requied to
+	  obtain handle to the I2C device object.
+
+endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
 
 choice
 	prompt "MII/RMII Interface to the Physical Layer"

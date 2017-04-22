@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
+#include <i2c.h>
 #include <soc.h>
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
@@ -742,6 +743,25 @@ static int eth_initialize(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
+void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
+{
+	struct device *dev;
+	u32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
+
+	dev = device_get_binding(CONFIG_ETH_SAM_GMAC_MAC_I2C_DEV_NAME);
+	if (!dev) {
+		SYS_LOG_ERR("I2C: Device not found");
+		return;
+	}
+
+	i2c_burst_read_addr(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
+			    (u8_t *)&iaddr,
+			    CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
+			    mac_addr, 6);
+}
+#endif
+
 static void eth0_iface_init(struct net_if *iface)
 {
 	struct device *const dev = net_if_get_device(iface);
@@ -764,6 +784,16 @@ static void eth0_iface_init(struct net_if *iface)
 		SYS_LOG_ERR("Unable to initialize ETH driver");
 		return;
 	}
+
+#ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
+	/* Read MAC address from an external EEPROM */
+	get_mac_addr_from_i2c_eeprom(dev_data->mac_addr);
+#endif
+
+	SYS_LOG_INF("MAC: %x:%x:%x:%x:%x:%x",
+		    dev_data->mac_addr[0], dev_data->mac_addr[1],
+		    dev_data->mac_addr[2], dev_data->mac_addr[3],
+		    dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 	/* Set MAC Address for frame filtering logic */
 	mac_addr_set(cfg->regs, 0, dev_data->mac_addr);
@@ -826,6 +856,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 };
 
 static struct eth_sam_dev_data eth0_data = {
+#ifdef CONFIG_ETH_SAM_GMAC_MAC_MANUAL
 	.mac_addr = {
 		CONFIG_ETH_SAM_GMAC_MAC0,
 		CONFIG_ETH_SAM_GMAC_MAC1,
@@ -834,6 +865,7 @@ static struct eth_sam_dev_data eth0_data = {
 		CONFIG_ETH_SAM_GMAC_MAC4,
 		CONFIG_ETH_SAM_GMAC_MAC5,
 	},
+#endif
 	.queue_list = {{
 			.que_idx = GMAC_QUE_0,
 			.rx_desc_list = {
