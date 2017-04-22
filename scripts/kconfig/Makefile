@@ -34,6 +34,8 @@ gconfig: $(KCONFIG_BIN_PATH)/gconf
 menuconfig: $(KCONFIG_BIN_PATH)/mconf
 	$< $(Kconfig)
 
+standalone: $(obj)/conf
+
 config: $(KCONFIG_BIN_PATH)/conf
 	$< --oldaskconfig $(Kconfig)
 

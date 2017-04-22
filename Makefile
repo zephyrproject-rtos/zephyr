@@ -478,7 +478,7 @@ endif
 
 version_h := include/generated/version.h
 
-no-dot-config-targets := pristine distclean clean mrproper help kconfig-help \
+no-dot-config-targets := pristine distclean clean mrproper help kconfig-help host-tools \
 			 cscope gtags TAGS tags help% %docs check% \
 			 $(version_h) headers_% kernelversion %src-pkg
 
@@ -1065,7 +1065,7 @@ CLEAN_FILES += 	include/generated/generated_dts_board.h \
 		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd
 
 # Directories & files removed with 'make mrproper'
-MRPROPER_DIRS  += include/config usr/include include/generated          \
+MRPROPER_DIRS  += bin include/config usr/include include/generated          \
 		  arch/*/include/generated .tmp_objdiff
 MRPROPER_FILES += .config .config.old .version $(version_h) \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS \
@@ -1191,6 +1191,17 @@ $(help-board-dirs): help-%:
 		$(foreach b, $(boards-per-dir), \
 		printf "  %-24s - Build for %s\\n" $*/$(b) $(subst _defconfig,,$(b));) \
 		echo '')
+
+
+
+host-tools:
+	$(Q)$(MAKE) $(build)=scripts/kconfig standalone
+	$(Q)$(MAKE) $(build)=scripts/basic
+	$(Q)$(MAKE) $(build)=scripts/gen_idt
+	$(Q)$(MAKE) $(build)=scripts/gen_offset_header
+	@mkdir -p ${ZEPHYR_BASE}/bin
+	@cp scripts/basic/fixdep scripts/gen_idt/gen_idt scripts/kconfig/conf \
+		scripts/gen_offset_header/gen_offset_header ${ZEPHYR_BASE}/bin
 
 
 # Documentation targets
