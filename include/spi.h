@@ -66,6 +66,10 @@ struct spi_config {
 	u32_t	max_sys_freq;
 };
 
+struct spi_buf {
+
+};
+
 /**
  * @typedef spi_api_configure
  * @brief Callback API upon configuring the const controller

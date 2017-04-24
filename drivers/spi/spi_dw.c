@@ -69,14 +69,17 @@ static void completed(struct device *dev, int error)
 	* 3. spi_read - need rx_buf_len zero.
 	*/
 	if (spi->tx_buf && spi->rx_buf) {
-		if (!spi->last_tx || spi->rx_buf_len)
+		if (!spi->last_tx || spi->rx_buf_len) {
 			return;
+		}
 	} else if (spi->tx_buf) {
-		if (!spi->last_tx)
+		if (!spi->last_tx) {
 			return;
+		}
 	} else { /* or, spi->rx_buf!=0 */
-		if (spi->rx_buf_len)
+		if (spi->rx_buf_len) {
 			return;
+		}
 	}
 
 out:
@@ -94,7 +97,7 @@ out:
 	_spi_control_cs(dev, 0);
 
 	SYS_LOG_DBG("SPI transaction completed %s error",
-	    error ? "with" : "without");
+		    error ? "with" : "without");
 
 	k_sem_give(&spi->device_sync_sem);
 }
@@ -116,10 +119,12 @@ static void push_data(struct device *dev)
 	} else {
 		f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs);
 	}
+
 	if (f_tx && (spi->tx_buf_len == 0)) {
 		/* room in fifo, yet nothing to send */
 		spi->last_tx = 1; /* setting last_tx indicates TX is done */
 	}
+
 	while (f_tx) {
 		if (spi->tx_buf && spi->tx_buf_len > 0) {
 			switch (spi->dfs) {
@@ -218,7 +223,7 @@ static inline bool _spi_dw_is_controller_ready(struct device *dev)
 }
 
 static int spi_dw_configure(struct device *dev,
-				struct spi_config *config)
+			    struct spi_config *config)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
@@ -226,11 +231,11 @@ static int spi_dw_configure(struct device *dev,
 	u32_t ctrlr0 = 0;
 	u32_t mode;
 
-	SYS_LOG_DBG("%s: %p (0x%x), %p", __func__, dev, info->regs, config);
+	SYS_LOG_DBG("%p (0x%x), %p", dev, info->regs, config);
 
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
-		SYS_LOG_DBG("%s: Controller is busy", __func__);
+		SYS_LOG_DBG("Controller is busy");
 		return -EBUSY;
 	}
 
@@ -280,7 +285,7 @@ static int spi_dw_slave_select(struct device *dev, u32_t slave)
 {
 	struct spi_dw_data *spi = dev->driver_data;
 
-	SYS_LOG_DBG("%s: %p %d", __func__, dev, slave);
+	SYS_LOG_DBG("%p %d", dev, slave);
 
 	if (slave == 0 || slave > 16) {
 		return -EINVAL;
@@ -300,12 +305,12 @@ static int spi_dw_transceive(struct device *dev,
 	u32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
 	u32_t imask;
 
-	SYS_LOG_DBG("%s: %p, %p, %u, %p, %u",
-	    __func__, dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
+	SYS_LOG_DBG("%p, %p, %u, %p, %u",
+		    dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 
 	/* Check status */
 	if (!_spi_dw_is_controller_ready(dev)) {
-		SYS_LOG_DBG("%s: Controller is busy", __func__);
+		SYS_LOG_DBG("Controller is busy");
 		return -EBUSY;
 	}
 
@@ -371,7 +376,7 @@ void spi_dw_isr(void *arg)
 	int_status = read_isr(info->regs);
 
 	SYS_LOG_DBG("SPI int_status 0x%x - (tx: %d, rx: %d)",
-	    int_status, read_txflr(info->regs), read_rxflr(info->regs));
+		    int_status, read_txflr(info->regs), read_rxflr(info->regs));
 
 	if (int_status & DW_SPI_ISR_ERRORS_MASK) {
 		error = 1;
