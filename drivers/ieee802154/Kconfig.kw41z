@@ -1,0 +1,26 @@
+# Kconfig.kw41z - NXP KW41Z configuration options
+#
+
+menuconfig  IEEE802154_KW41Z
+	bool "NXP KW41Z Driver support"
+	depends on NETWORKING
+	select NET_L2_IEEE802154
+	select NEWLIB_LIBC
+	default n
+
+if IEEE802154_KW41Z
+
+config IEEE802154_KW41Z_DRV_NAME
+	string "NXP KW41Z Driver's name"
+	default "KW41Z"
+	help
+	  This option sets the driver name
+
+config IEEE802154_KW41Z_INIT_PRIO
+	int "KW41Z intialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. It has to start before the net stack.
+
+endif
