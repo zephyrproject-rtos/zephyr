@@ -111,6 +111,8 @@ config I2C_BITBANG
 	help
 	  Enable library used for software driven (bit banging) I2C support
 
+source "drivers/i2c/Kconfig.sbcon"
+
 source "drivers/i2c/Kconfig.gpio"
 
 config I2C_INIT_PRIORITY
