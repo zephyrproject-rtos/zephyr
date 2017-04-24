@@ -95,13 +95,6 @@ static int uart_stm32_fifo_fill(struct device *dev, const u8_t *tx_data,
 #else
 		LL_USART_TransmitData8(UartHandle->Instance, tx_data[num_tx++]);
 #endif
-		/*
-		 * Wait for H/W to set TXE flag, or else it will be evaluated
-		 * again at the top of this loop *before* H/W has chance to
-		 * initially detect that data is being processed.
-		 */
-		while (!__HAL_UART_GET_FLAG(UartHandle, UART_FLAG_TXE))
-			;
 	}
 
 	return num_tx;
