@@ -54,7 +54,7 @@ config	SPI_DW_CLOCK_GATE_DRV_NAME
 	default ""
 
 config SPI_DW_FIFO_DEPTH
-	int "Rx and Tx FIFO Depth"
+	int "RX and TX FIFO Depth"
 	help
 	  Corresponds to the SSI_TX_FIFO_DEPTH and
 	  SSI_RX_FIFO_DEPTH of the DesignWare Synchronous

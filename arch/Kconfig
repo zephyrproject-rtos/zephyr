@@ -108,7 +108,7 @@ config SOC_FAMILY
 config BOARD
 	string
 	help
-	This option holds the name of the board and is used to located the files
+	This option holds the name of the board and is used to locate the files
 	related to the board in the source tree (under boards/).
 	The Board is the first location where we search for a linker.ld file,
 	if not found we look for the linker file in
@@ -160,7 +160,7 @@ config GEN_IRQ_START_VECTOR
 	system exceptions and is declared separately from the tables
 	created by gen_isr_tables.py. When creating these tables, this value
 	will be subtracted from CONFIG_NUM_IRQS to properly size them.
-	This is a hidden option which needs to be set-per architecture and
+	This is a hidden option which needs to be set per architecture and
 	left alone.
 
 source "arch/*/Kconfig"

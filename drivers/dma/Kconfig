@@ -42,7 +42,7 @@ config DMA_0_IRQ_PRI
 	IRQ Priority for the DMA Controller.
 
 config DMA_0_RX_SUB_CHANNEL_ID
-	int "Requested Rx sub-channel ID"
+	int "Requested RX sub-channel ID"
 	default 0
 	depends on DMA_STM32F4X
 	help
@@ -51,7 +51,7 @@ config DMA_0_RX_SUB_CHANNEL_ID
 	for memory to memory comms.
 
 config DMA_0_TX_SUB_CHANNEL_ID
-	int "Requested Tx sub-channel ID"
+	int "Requested TX sub-channel ID"
 	default 0
 	depends on DMA_STM32F4X
 	help
@@ -72,7 +72,7 @@ config DMA_1_IRQ_PRI
 	IRQ Priority for DMA Controller 1.
 
 config DMA_1_RX_SUB_CHANNEL_ID
-	int "Requested Rx sub-channel ID"
+	int "Requested RX sub-channel ID"
 	default 0
 	depends on DMA_STM32F4X
 	help
@@ -81,7 +81,7 @@ config DMA_1_RX_SUB_CHANNEL_ID
 	for memory to memory comms.
 
 config DMA_1_TX_SUB_CHANNEL_ID
-	int "Requested Tx sub-channel ID"
+	int "Requested TX sub-channel ID"
 	default 0
 	depends on DMA_STM32F4X
 	help
@@ -102,7 +102,7 @@ config DMA_2_IRQ_PRI
 	IRQ Priority for DMA Controller 2.
 
 config DMA_2_RX_SUB_CHANNEL_ID
-	int "Requested Rx sub-channel ID"
+	int "Requested RX sub-channel ID"
 	default 0
 	depends on DMA_STM32F4X
 	help
@@ -111,7 +111,7 @@ config DMA_2_RX_SUB_CHANNEL_ID
 	for memory to memory comms.
 
 config DMA_2_TX_SUB_CHANNEL_ID
-	int "Requested Tx sub-channel ID"
+	int "Requested TX sub-channel ID"
 	default 0
 	depends on DMA_STM32F4X
 	help

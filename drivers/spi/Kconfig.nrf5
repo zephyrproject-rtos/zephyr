@@ -90,8 +90,8 @@ config SPIM0_NRF52_ORC
 	default 0x00
 	range 0x00 0xff
 	help
-	  This option configures what value to send when the tx char count is
-	  less than the rx count.
+	  This option configures what value to send when the TX char count is
+	  less than the RX count.
 
 endif # SPIM0_NRF52
 
@@ -169,8 +169,8 @@ config SPIM1_NRF52_ORC
 	default 0x00
 	range 0x00 0xff
 	help
-	  This option configures what value to send when the tx char count is
-	  less than the rx count.
+	  This option configures what value to send when the TX char count is
+	  less than the RX count.
 
 endif # SPIM1_NRF52
 

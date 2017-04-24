@@ -100,10 +100,10 @@ config MCR20A_CLK_OUT_32768HZ
 endchoice
 
 config IEEE802154_MCR20A_RX_STACK_SIZE
-	int "Driver's internal rx thread stack size"
+	int "Driver's internal RX thread stack size"
 	default 800
 	help
-	This option sets the driver's stack size for its internal rx thread.
+	This option sets the driver's stack size for its internal RX thread.
 	The default value should be sufficient, but in case it proves to be
 	a too little one, this option makes it easy to play with the size.
 
