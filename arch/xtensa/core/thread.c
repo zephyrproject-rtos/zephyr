@@ -35,7 +35,7 @@ extern void _xt_user_exit(void);
  * @param p1 first param to entry point
  * @param p2 second param to entry point
  * @param p3 third param to entry point
- * @param prio thread priority
+ * @param priority thread priority
  * @param options is unused (saved for future expansion)
  *
  * @return N/A
@@ -44,7 +44,7 @@ extern void _xt_user_exit(void);
 void _new_thread(char *pStack, size_t stackSize,
 		void (*pEntry)(void *, void *, void *),
 		void *p1, void *p2, void *p3,
-		int prio, unsigned int options)
+		int priority, unsigned int options)
 {
 	/* Align stack end to maximum alignment requirement. */
 	char *stackEnd = (char *)ROUND_DOWN(pStack + stackSize, 16);
