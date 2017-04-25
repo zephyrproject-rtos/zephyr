@@ -49,12 +49,9 @@ enum dns_query_type {
  */
 struct dns_addrinfo {
 	struct sockaddr ai_addr;
-	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
 	socklen_t       ai_addrlen;
-	u16_t        ai_flags;
-	u8_t         ai_family;
-	u8_t         ai_socktype;
-	u8_t         ai_protocol;
+	u8_t            ai_family;
+	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
 };
 
 /**
