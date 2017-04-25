@@ -84,7 +84,7 @@ void cbc_mode(void)
 
 	SYS_LOG_INF("CBC Mode\n");
 
-	dev = device_get_binding(CONFIG_CRYPTO_0_NAME);
+	dev = device_get_binding(CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME);
 	if (!dev) {
 		SYS_LOG_ERR("TinyCrypt pseudo device not found\n");
 		return;
@@ -164,7 +164,7 @@ void ctr_mode(void)
 
 	SYS_LOG_INF("CTR Mode\n");
 
-	dev = device_get_binding(CONFIG_CRYPTO_0_NAME);
+	dev = device_get_binding(CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME);
 	if (!dev) {
 		SYS_LOG_ERR("TinyCrypt pseudo device not found\n");
 		return;
@@ -254,7 +254,7 @@ void ccm_mode(void)
 
 	SYS_LOG_INF("CCM Mode\n");
 
-	dev = device_get_binding(CONFIG_CRYPTO_0_NAME);
+	dev = device_get_binding(CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME);
 	if (!dev) {
 		SYS_LOG_ERR("TinyCrypt pseudo device not found\n");
 		return;

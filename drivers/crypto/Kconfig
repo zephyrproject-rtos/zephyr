@@ -46,9 +46,9 @@ config CRYPTO_TINYCRYPT_SHIM
 	help
 	Enable TinyCrypt shim layer compliant with crypto APIs.
 
-config CRYPTO_0_NAME
+config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
 	string "Device name for TinyCrypt Pseudo device"
-	default "CRYPTO_TC_0"
+	default "CRYPTO_TC"
 	depends on CRYPTO_TINYCRYPT_SHIM
 	help
 	Device name for TinyCrypt Pseudo device.
