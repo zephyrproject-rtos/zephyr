@@ -21,7 +21,8 @@
 #include <logging/sys_log.h>
 
 
-#define CRYPTO_MAX_SESSION 5
+#define CRYPTO_MAX_SESSION CONFIG_CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
+
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
 
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
