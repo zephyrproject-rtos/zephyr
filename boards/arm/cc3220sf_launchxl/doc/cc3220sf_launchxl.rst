@@ -91,15 +91,16 @@ The default configuration can be found in the Kconfig file at
 Programming and Debugging
 *************************
 
-TI offically supports development on the CC3220SF using the TI
-`CC3220 SDK`_ on Windows using TI tools: Code Composer Studio for
-debugging and `UniFlash`_ for flashing.
+TI officially supports development on the CC3220SF using the TI
+`CC3220 SDK`_ on Windows and Linux using TI tools: Code Composer
+Studio for debugging and `UniFlash`_ for flashing.
 
 For Windows developers, see the `CC3220 Getting Started Guide`_ for
 instructions on installation of tools, and how to flash the board using
 UniFlash.
 
-The following instructions are geared towards Linux developers.
+The following instructions are geared towards Linux developers who
+prefer command line tools to an IDE.
 
 Flashing
 ========
