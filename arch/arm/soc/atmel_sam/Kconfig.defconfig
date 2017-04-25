@@ -16,7 +16,7 @@ config SOC_FAMILY
 	default atmel_sam
 
 config WATCHDOG
-	def_bool y
+	def_bool y if !SOC_ATMEL_SAM3X8E
 
 endif #SOC_FAMILY_SAM
 

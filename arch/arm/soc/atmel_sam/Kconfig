@@ -4,5 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config SOC_ATMEL_SAM3
+	bool
+	depends on ARM
+	default n
+
 # Select SoC Part No. and configuration options
 source "arch/arm/soc/atmel_sam/*/Kconfig.soc"
