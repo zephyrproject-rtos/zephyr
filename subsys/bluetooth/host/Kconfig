@@ -267,6 +267,15 @@ config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
+config BLUETOOTH_L2CAP_DYN_CHAN_BUF_SIZE
+	int "L2CAP Dynamic channel segment buffer size"
+	depends on BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
+	range 23 BLUETOOTH_L2CAP_TX_MTU
+	default 23
+	help
+	  Size of the buffer used for segmentation of SDU when application
+	  supplied buffer does not have sufficient headroom.
+
 config BLUETOOTH_GATT_DYNAMIC_DB
 	bool "GATT dynamic database support"
 	help
