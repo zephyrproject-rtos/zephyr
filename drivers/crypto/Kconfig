@@ -61,6 +61,29 @@ config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
 	help
 	Device name for TinyCrypt Pseudo device.
 
+config CRYPTO_MBEDTLS_SHIM
+	bool "Enable mbedTLS shim driver [EXPERIMENTAL] "
+	default n
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	help
+	Enable mbedTLS shim layer compliant with crypto APIs. You will need
+	to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
+
+config CRYPTO_MBEDTLS_SHIM_DRV_NAME
+	string "Device name for mbedTLS Pseudo device"
+	default "CRYPTO_MTLS"
+	depends on CRYPTO_MBEDTLS_SHIM
+	help
+	Device name for mbedTLS Pseudo device.
+
+config CRYPTO_MBEDTLS_SHIM_MAX_SESSION
+	int "Maximum of sessions mbedTLS shim driver can handle"
+	default 2
+	help
+	This can be used to tweak the amount of sessions the driver
+	can handle in parallel.
+
 source "drivers/crypto/Kconfig.ataes132a"
 
 endif # CRYPTO
