@@ -13,32 +13,32 @@
 #include "SEGGER_SYSVIEW.h"
 #include "SEGGER_RTT.h"
 
-static uint8_t printer_stack[1024];
-static uint8_t calc_stack[1024];
+static u8_t printer_stack[1024];
+static u8_t calc_stack[1024];
 
-static uint8_t sysview_stack[2048];
-static uint32_t timestamp, interrupt;
+static u8_t sysview_stack[2048];
+static u32_t timestamp, interrupt;
 
 extern SEGGER_RTT_CB _SEGGER_RTT;
 
-uint32_t sysview_get_timestamp(void)
+u32_t sysview_get_timestamp(void)
 {
 	return timestamp;
 }
 
-uint32_t sysview_get_interrupt(void)
+u32_t sysview_get_interrupt(void)
 {
 	return interrupt;
 }
 
-static void publish_context_switch(uint32_t *event_data)
+static void publish_context_switch(u32_t *event_data)
 {
 #if defined(CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH)
 	SEGGER_SYSVIEW_OnTaskStartExec(event_data[1]);
 #endif
 }
 
-static void publish_interrupt(uint32_t *event_data)
+static void publish_interrupt(u32_t *event_data)
 {
 #if defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT)
 	interrupt = event_data[1];
@@ -52,17 +52,17 @@ static void publish_interrupt(uint32_t *event_data)
 #endif
 }
 
-static void publish_sleep(uint32_t *event_data)
+static void publish_sleep(u32_t *event_data)
 {
 #if defined(CONFIG_KERNEL_EVENT_LOGGER_SLEEP)
 	SEGGER_SYSVIEW_OnIdle();
 #endif
 }
 
-static void publish_task(uint32_t *event_data)
+static void publish_task(u32_t *event_data)
 {
 #if defined(CONFIG_KERNEL_EVENT_LOGGER_THREAD)
-	uint32_t thread_id;
+	u32_t thread_id;
 
 	thread_id = event_data[1];
 
@@ -106,16 +106,16 @@ static void sysview_api_send_task_list(void)
 		 * these could be stored as part of the kernel event.
 		 */
 		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
-			.TaskID = (uint32_t)(uintptr_t)thr,
+			.TaskID = (u32_t)(uintptr_t)thr,
 			.sName = name,
 			.Prio = thr->base.prio,
 		});
 	}
 }
 
-static uint32_t zephyr_to_sysview(int event_type)
+static u32_t zephyr_to_sysview(int event_type)
 {
-	static const uint32_t lut[] = {
+	static const u32_t lut[] = {
 		[KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID] =
 			SYSVIEW_EVTMASK_TASK_START_EXEC,
 		[KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID] =
@@ -146,7 +146,7 @@ static void sysview_setup(void)
 		.pfGetTime = NULL, /* sysview_get_timestamp() used instead */
 		.pfSendTaskList = sysview_api_send_task_list,
 	};
-	uint32_t evs;
+	u32_t evs;
 
 	printk("RTT block address is %p\n", &_SEGGER_RTT);
 
@@ -182,10 +182,10 @@ static void sysview_thread(void)
 	sysview_setup();
 
 	for (;;) {
-		uint32_t event_data[4];
-		uint16_t event_id;
-		uint8_t dropped;
-		uint8_t event_data_size = (uint8_t)ARRAY_SIZE(event_data);
+		u32_t event_data[4];
+		u16_t event_id;
+		u8_t dropped;
+		u8_t event_data_size = (u8_t)ARRAY_SIZE(event_data);
 		int ret;
 
 		ret = sys_k_event_logger_get_wait(&event_id,
