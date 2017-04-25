@@ -1275,6 +1275,20 @@ struct k_queue {
 extern void k_queue_init(struct k_queue *queue);
 
 /**
+ * @brief Cancel waiting on a queue.
+ *
+ * This routine causes first thread pending on @a queue, if any, to
+ * return from k_queue_get() call with NULL value (as if timeout expired).
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ *
+ * @return N/A
+ */
+extern void k_queue_cancel_wait(struct k_queue *queue);
+
+/**
  * @brief Append an element to the end of a queue.
  *
  * This routine appends a data item to @a queue. A queue data item must be
@@ -1444,6 +1458,22 @@ struct k_fifo {
  */
 #define k_fifo_init(fifo) \
 	k_queue_init((struct k_queue *) fifo)
+
+/**
+ * @brief Cancel waiting on a fifo.
+ *
+ * This routine causes first thread pending on @a fifo, if any, to
+ * return from k_fifo_get() call with NULL value (as if timeout
+ * expired).
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param fifo Address of the fifo.
+ *
+ * @return N/A
+ */
+#define k_fifo_cancel_wait(fifo) \
+	k_queue_cancel_wait((struct k_queue *) fifo)
 
 /**
  * @brief Add an element to a fifo.
