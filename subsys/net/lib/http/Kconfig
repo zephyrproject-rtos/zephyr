@@ -4,23 +4,20 @@
 #
 
 config HTTP
-	bool
-	prompt "HTTP support"
+	bool "HTTP support"
 	default n
 	help
 	This option enables the HTTP library
 
 config HTTP_SERVER
-	bool
-	prompt "HTTP server support"
+	bool "HTTP server support"
 	default n
 	select HTTP
 	help
 	Enables HTTP server routines
 
 config HTTP_HEADER_FIELD_ITEMS
-	int
-	prompt "HTTP header field max number of items"
+	int "HTTP header field max number of items"
 	depends on HTTP_SERVER
 	default 8
 	help
@@ -28,16 +25,15 @@ config HTTP_HEADER_FIELD_ITEMS
 	application will handle
 
 config HTTP_CLIENT
-	bool
-	prompt "HTTP client support"
+	bool "HTTP client support"
 	default n
+	select HTTP_PARSER
 	select HTTP
 	help
 	Enables HTTP client routines
 
 config HTTP_PARSER
-	bool
-	prompt "HTTP Parser support"
+	bool "HTTP Parser support"
 	default n
 	select HTTP
 	help
@@ -46,9 +42,15 @@ config HTTP_PARSER
 	provided by a libc implementation.
 
 config HTTP_PARSER_STRICT
-	bool
-	prompt "HTTP strict parsing"
+	bool "HTTP strict parsing"
 	default n
 	depends on HTTP_PARSER
 	help
 	This option enables the strict parsing option
+
+config  NET_DEBUG_HTTP
+	bool "Debug HTTP"
+	default n
+	depends on HTTP && NET_LOG
+	help
+	Enables HTTP output debug messages

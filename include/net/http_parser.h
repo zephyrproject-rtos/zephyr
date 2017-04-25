@@ -285,9 +285,9 @@ void http_parser_settings_init(struct http_parser_settings *settings);
  * `parser->http_errno` on error.
  */
 
-int http_parser_execute(struct http_parser *parser,
-			const struct http_parser_settings *settings,
-			const char *data, size_t len);
+size_t http_parser_execute(struct http_parser *parser,
+			   const struct http_parser_settings *settings,
+			   const char *data, size_t len);
 
 /* If http_should_keep_alive() in the on_headers_complete or
  * on_message_complete callback returns 0, then this should be
