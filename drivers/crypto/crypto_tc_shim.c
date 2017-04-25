@@ -15,7 +15,7 @@
 #include <tinycrypt/utils.h>
 #include <string.h>
 #include <crypto/cipher.h>
-#include "tc_shim_priv.h"
+#include "crypto_tc_shim_priv.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
 #define SYS_LOG_NO_NEWLINE
