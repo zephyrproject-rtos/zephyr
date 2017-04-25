@@ -41,6 +41,9 @@
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(1)
 
+static sys_slist_t le_channels;
+
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
@@ -48,20 +51,14 @@
 /* For now use MPS - SDU length to disable segmentation */
 #define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - 2)
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-static sys_slist_t le_channels;
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static sys_slist_t servers;
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
-NET_BUF_POOL_DEFINE(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_MAX_LE_MPS),
+NET_BUF_POOL_DEFINE(le_l2cap_dyn_chan_pool, CONFIG_BLUETOOTH_MAX_CONN,
+		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_DYN_CHAN_BUF_SIZE),
 		    BT_BUF_USER_DATA_MIN, NULL);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
@@ -1016,7 +1013,7 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
 		}
 	}
 
-	return bt_l2cap_create_pdu(&le_data_pool, 0);
+	return bt_l2cap_create_pdu(&le_l2cap_dyn_chan_pool, 0);
 }
 
 static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
