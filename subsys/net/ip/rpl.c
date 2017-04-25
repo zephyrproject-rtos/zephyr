@@ -2966,7 +2966,10 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 		}
 	}
 
-	NET_ASSERT_INFO(!pos && !frag, "DIO reading failure");
+	if (pos == 0xffff && !frag) {
+		NET_DBG("DIO reading failure");
+		goto out;
+	}
 
 	net_rpl_process_dio(net_pkt_iface(pkt), &NET_IPV6_HDR(pkt)->src, &dio);
 
