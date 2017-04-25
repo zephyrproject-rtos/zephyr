@@ -2533,9 +2533,9 @@ error:
 	return -HTTP_PARSER_ERRNO(parser);
 }
 
-int http_parser_execute(struct http_parser *parser,
-			const struct http_parser_settings *settings,
-			const char *data, size_t len)
+size_t http_parser_execute(struct http_parser *parser,
+			   const struct http_parser_settings *settings,
+			   const char *data, size_t len)
 {
 	size_t parsed;
 
