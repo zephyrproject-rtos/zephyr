@@ -203,15 +203,15 @@ void _sys_k_event_logger_exit_sleep(void)
 static void log_thread_event(enum sys_k_event_logger_thread_event event,
 			     struct k_thread *thread)
 {
-	uint32_t data[3];
+	u32_t data[3];
 
 	if (!sys_k_must_log_event(KERNEL_EVENT_LOGGER_THREAD_EVENT_ID)) {
 		return;
 	}
 
 	data[0] = _sys_k_get_time();
-	data[1] = (uint32_t)(thread ? thread : _kernel.current);
-	data[2] = (uint32_t)event;
+	data[1] = (u32_t)(thread ? thread : _kernel.current);
+	data[2] = (u32_t)event;
 
 	sys_k_event_logger_put(KERNEL_EVENT_LOGGER_THREAD_EVENT_ID, data,
 			       ARRAY_SIZE(data));
