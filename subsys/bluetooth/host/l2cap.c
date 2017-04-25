@@ -44,9 +44,9 @@
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
-#define BT_L2CAP_MAX_LE_MPS	BT_L2CAP_RX_MTU
+#define L2CAP_MAX_LE_MPS	BT_L2CAP_RX_MTU
 /* For now use MPS - SDU length to disable segmentation */
-#define BT_L2CAP_MAX_LE_MTU	(BT_L2CAP_MAX_LE_MPS - 2)
+#define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - 2)
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
@@ -61,7 +61,7 @@ static sys_slist_t servers;
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 /* Pool for outgoing LE data packets, MTU is 23 */
 NET_BUF_POOL_DEFINE(le_data_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS),
+		    BT_L2CAP_BUF_SIZE(L2CAP_MAX_LE_MPS),
 		    BT_BUF_USER_DATA_MIN, NULL);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
@@ -634,7 +634,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 
 	/* Use existing MTU if defined */
 	if (!chan->rx.mtu) {
-		chan->rx.mtu = BT_L2CAP_MAX_LE_MTU;
+		chan->rx.mtu = L2CAP_MAX_LE_MTU;
 	}
 
 	/* Use existing credits if defined */
@@ -642,13 +642,13 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		if (chan->chan.ops->alloc_buf) {
 			/* Auto tune credits to receive a full packet */
 			chan->rx.init_credits = chan->rx.mtu /
-						BT_L2CAP_MAX_LE_MPS;
+						L2CAP_MAX_LE_MPS;
 		} else {
 			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
 		}
 	}
 
-	chan->rx.mps = BT_L2CAP_MAX_LE_MPS;
+	chan->rx.mps = L2CAP_MAX_LE_MPS;
 	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
 }
 
@@ -1008,7 +1008,7 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
 
 	/* Try to use original pool if possible */
 	if (buf->pool->user_data_size >= BT_BUF_USER_DATA_MIN &&
-	    buf->pool->buf_size >= BT_L2CAP_BUF_SIZE(BT_L2CAP_MAX_LE_MPS)) {
+	    buf->pool->buf_size >= BT_L2CAP_BUF_SIZE(L2CAP_MAX_LE_MPS)) {
 		seg = net_buf_alloc(buf->pool, K_NO_WAIT);
 		if (seg) {
 			net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
