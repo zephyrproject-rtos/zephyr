@@ -24,9 +24,11 @@
 		reg = <0x0 DT_SFLASH_SIZE>;
 	};
 
+#if defined(CONFIG_SOC_CC3220SF)
 	flash1: flash {
 		reg = <0x01000000 DT_FLASH_SIZE>;
 	};
+#endif
 
 	soc {
 		uart0: uart@4000C000 {
