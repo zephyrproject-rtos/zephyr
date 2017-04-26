@@ -51,8 +51,8 @@ enum net_ip_protocol {
 
 /** Socket type */
 enum net_sock_type {
-	SOCK_DGRAM = 1,
-	SOCK_STREAM,
+	SOCK_STREAM = 1,
+	SOCK_DGRAM,
 };
 
 #define ntohs(x) sys_be16_to_cpu(x)
