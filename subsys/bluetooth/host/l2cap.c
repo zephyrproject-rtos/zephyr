@@ -1080,11 +1080,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	}
 
 	buf = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
-	if (!buf) {
-		return -ENOMEM;
-	}
 
-	/* Channel may have been disconnected while waiting for credits */
+	/* Channel may have been disconnected while waiting for a buffer */
 	if (!ch->chan.conn) {
 		net_buf_unref(buf);
 		return -ECONNRESET;
