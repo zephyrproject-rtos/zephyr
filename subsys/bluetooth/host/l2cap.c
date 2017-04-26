@@ -56,10 +56,6 @@ static sys_slist_t le_channels;
 
 static sys_slist_t servers;
 
-/* Pool for outgoing LE data packets, MTU is 23 */
-NET_BUF_POOL_DEFINE(le_l2cap_dyn_chan_pool, CONFIG_BLUETOOTH_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_DYN_CHAN_BUF_SIZE),
-		    BT_BUF_USER_DATA_MIN, NULL);
 #endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -1013,7 +1009,8 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
 		}
 	}
 
-	return bt_l2cap_create_pdu(&le_l2cap_dyn_chan_pool, 0);
+	/* Fallback to using global connection tx pool */
+	return bt_l2cap_create_pdu(NULL, 0);
 }
 
 static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
