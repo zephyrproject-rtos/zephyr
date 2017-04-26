@@ -2044,8 +2044,6 @@ int bt_conn_init(void)
 
 	/* Initialize background scan */
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CENTRAL)) {
-		int i;
-
 		for (i = 0; i < ARRAY_SIZE(conns); i++) {
 			struct bt_conn *conn = &conns[i];
 
