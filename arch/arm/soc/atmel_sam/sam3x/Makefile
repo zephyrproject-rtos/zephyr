@@ -1,4 +1,4 @@
-# Makefile - Atmel SAM3 MCU series
+# Makefile - Atmel SAM3X MCU series
 #
 # Copyright (c) 2017 Justin Watson
 # SPDX-License-Identifier: Apache-2.0

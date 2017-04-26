@@ -1,4 +1,4 @@
-# Kconfig - Atmel SAM3 MCU series configuration options
+# Kconfig - Atmel SAM3X MCU series configuration options
 #
 # Copyright (c) 2017 Justin Watson
 # Copyright (c) 2016 Intel Corporation.
@@ -6,11 +6,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_SERIES_SAM3 || SOC_ATMEL_SAM3X8E
+if SOC_SERIES_SAM3X || SOC_ATMEL_SAM3X8E
 
 config SOC_SERIES
 	string
-	default sam3
+	default sam3x
 
 config SOC_PART_NUMBER
 	string
@@ -49,7 +49,7 @@ config SRAM_BASE_ADDRESS
 	default 0x20070000 if SOC_PART_NUMBER_SAM3X8E || SOC_ATMEL_SAM3X8E
 
 #
-# Atmel SAM3 family has flash starting @ 0x00080000.
+# Atmel SAM3X family has flash starting @ 0x00080000.
 #
 config FLASH_SIZE
 	default 512 if SOC_PART_NUMBER_SAM3X8E || SOC_ATMEL_SAM3X8E
@@ -104,4 +104,4 @@ config I2C_1_IRQ_PRI
 
 endif # I2C
 
-endif # SOC_SERIES_SAM3
+endif # SOC_SERIES_SAM3X
