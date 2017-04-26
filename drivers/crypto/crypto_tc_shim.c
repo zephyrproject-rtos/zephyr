@@ -180,16 +180,6 @@ int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	ARG_UNUSED(dev);
 
-	idx = get_unused_session();
-
-	if (idx == CRYPTO_MAX_SESSION) {
-		SYS_LOG_ERR("Max sessions in progress");
-		return -ENOSPC;
-	}
-
-	ctx->drv_sessn_state = &tc_driver_state[idx];
-	data = &tc_driver_state[idx];
-
 	/* The shim currently supports only CBC or CTR mode for AES */
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		SYS_LOG_ERR("TC Shim Unsupported algo");
@@ -256,11 +246,23 @@ int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	ctx->ops.cipher_mode = mode;
 
+	idx = get_unused_session();
+	if (idx == CRYPTO_MAX_SESSION) {
+		SYS_LOG_ERR("Max sessions in progress");
+		return -ENOSPC;
+	}
+
+	data = &tc_driver_state[idx];
+
 	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream)
 			 == TC_CRYPTO_FAIL) {
 		SYS_LOG_ERR("TC internal error in setting key");
+		tc_driver_state[idx].in_use = 0;
+
 		return -EIO;
 	}
+
+	ctx->drv_sessn_state = data;
 
 	return 0;
 }
