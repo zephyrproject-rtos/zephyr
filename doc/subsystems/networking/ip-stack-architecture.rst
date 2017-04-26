@@ -96,8 +96,9 @@ connectivity APIs, following things will happen.
    to the application, that means the packet was not sent correctly and the
    application needs to free the packet.
 
-2) Each network interface has a TX thread associated with it and the TX thread
-   will send the packet to the correct device driver.
+2) Each network interface has a dedicated TX queue used to send data to that
+   interface. A TX thread in the system reads all the TX queues and passes
+   that data to the correct L2 driver, for sending via the device driver.
 
 3) If the device driver is able to inject the network packet into the
    network, then it will release the packet. Typically there are no
