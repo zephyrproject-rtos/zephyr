@@ -1,0 +1,92 @@
+language: c
+
+compiler: gcc
+
+env:
+    global:
+        - SDK=0.9
+        - SANITYCHECK_OPTIONS=" --inline-logs"
+        - SANITYCHECK_OPTIONS_RETRY=" --inline-logs --only-failed --outdir=out-2nd-pass"
+        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9
+        - ZEPHYR_GCC_VARIANT=zephyr
+        - USE_CCACHE=1
+        - secure: CaE0YOxMfS71yTJsLOUMAXyvrOfgPbT6NLakwXShPHFF+aqqu9UyrmwFE1UfNxDrFOa3h0gxmbMRJAdGPLdKeLmGlLiL96XMhpaZIWYmAD2/Kfx9wb+1zfYISrh9k11QIifbB5JpeiFzNrrwYLOv5Gqn2fkAgvSe0BEKoh6weCvMXHgxwJR/I5gtQYwZXI6arvOTWlVgRpXeqURcJbthsmp7/Bc4MctgiRXmBxeyvi+OTVe1u/sNPVf51ZYcNdaqw+xRp9xFeg09EP87QPlDHV+g9dPWuGvGHAwQ86TD8hkpjurLO3O8GHCXena7Ft0/t9iL4RBecUIBplISNuaK6Q==
+    matrix:
+        - ARCH="" RUN_COMPLIANCE="1"
+        #- ARCH="-a x86" RUN_COMPLIANCE="1"
+        #- ARCH="-a arm"
+        #- ARCH="-a arc -a riscv32 -a nios2"
+
+build:
+    cache: true
+    cache_dir_list:
+        - ${SHIPPABLE_BUILD_DIR}/ccache
+    pre_ci_boot:
+        image_name: nashif/zephyr
+        image_tag: master.6
+        pull: true
+        options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
+
+    ci:
+      - env
+      - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
+      - export COMMIT_RANGE=${SHIPPABLE_COMMIT_RANGE}
+      - source zephyr-env.sh
+      - ccache -s --max-size=2000M
+      - make host-tools
+      - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
+      - >
+          if [ "$RUN_COMPLIANCE" = "1" -a "$IS_PULL_REQUEST" = "true"]; then
+            errors=$(./scripts/ci/check-compliance.py);
+            cat compliance.xml
+          fi;
+      - >
+          if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify-asserts" ]; then
+            COVERAGE="--all --enable-slow -R";
+          fi;
+      - >
+          if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify" ]; then
+            COVERAGE="--all --enable-slow";
+          fi;
+      - >
+          if [ "$JOB_TRIGGERED_BY_NAME" = "code-scan" ]; then
+            wget https://scan.coverity.com/download/linux64 --post-data "token=${COVERITY_TOKEN}&project=Zephyr" -O coverity_tool.tgz;
+            tar xvf coverity_tool.tgz;
+            rm -f coverity_tool.tgz;
+            mv cov-*  cov-analysis;
+            ./scripts/ci/run-coverity.sh
+          fi;
+      - >
+          if [ "$JOB_TRIGGERED_BY_NAME" != "code-scan" ]; then
+            ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
+          fi
+      - ccache -s
+    post_ci:
+      - rm -rf sanity-out out-2nd-pass
+      - mkdir -p shippable/testresults
+      - >
+          if [ -e compliance.xml ]; then
+            cp compliance.xml shippable/testresults/;
+          fi;
+    on_failure:
+      - >
+          if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
+            cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
+          fi;
+    on_success:
+      - cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/
+
+integrations:
+  notifications:
+    - integrationName: email
+      type: email
+      recipients:
+        - builds@zephyrproject.org
+      branches:
+        only:
+          - master
+          - net
+          - bluetooth
+          - arm
+      on_success: never
+      on_failure: never
