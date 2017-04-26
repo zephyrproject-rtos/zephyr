@@ -31,7 +31,7 @@ void radio_tx_power_set(u32_t power);
 void radio_freq_chan_set(u32_t chan);
 void radio_whiten_iv_set(u32_t iv);
 void radio_aa_set(u8_t *aa);
-void radio_pkt_configure(u8_t preamble16, u8_t bits_len, u8_t max_len);
+void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags);
 void radio_pkt_rx_set(void *rx_packet);
 void radio_pkt_tx_set(void *tx_packet);
 void radio_rx_enable(void);

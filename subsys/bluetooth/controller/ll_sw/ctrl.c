@@ -4309,7 +4309,7 @@ static void adv_obs_configure(u8_t phy)
 
 	adv_obs_conn_configure(phy);
 	radio_aa_set((u8_t *)&aa);
-	radio_pkt_configure(phy, 6, 37);
+	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy << 1));
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
 }
@@ -6112,12 +6112,12 @@ static void rx_packet_set(struct connection *conn, struct pdu_data *pdu_data_rx)
 
 	phy = RADIO_PHY_CONN;
 	if (conn->enc_rx) {
-		radio_pkt_configure(phy, 8, (max_rx_octets + 4));
+		radio_pkt_configure(8, (max_rx_octets + 4), (phy << 1) | 0x01);
 
 		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&conn->ccm_rx,
 						      pdu_data_rx));
 	} else {
-		radio_pkt_configure(phy, 8, max_rx_octets);
+		radio_pkt_configure(8, max_rx_octets, (phy << 1) | 0x01);
 
 		radio_pkt_rx_set(pdu_data_rx);
 	}
@@ -6136,12 +6136,12 @@ static void tx_packet_set(struct connection *conn, struct pdu_data *pdu_data_tx)
 
 	phy = RADIO_PHY_CONN;
 	if (conn->enc_tx) {
-		radio_pkt_configure(phy, 8, (max_tx_octets + 4));
+		radio_pkt_configure(8, (max_tx_octets + 4), (phy << 1) | 0x01);
 
 		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&conn->ccm_tx,
 						      pdu_data_tx));
 	} else {
-		radio_pkt_configure(phy, 8, max_tx_octets);
+		radio_pkt_configure(8, max_tx_octets, (phy << 1) | 0x01);
 
 		radio_pkt_tx_set(pdu_data_tx);
 	}

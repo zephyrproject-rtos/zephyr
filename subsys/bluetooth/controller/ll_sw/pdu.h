@@ -12,8 +12,9 @@
 
 /* PDU Sizes */
 #define PDU_EM_SIZE_MAX 3
-#define PDU_AC_SIZE_OVERHEAD 3
-#define PDU_AC_SIZE_MAX (37 + PDU_AC_SIZE_OVERHEAD)
+#define PDU_AC_SIZE_OVERHEAD 2
+#define PDU_AC_PAYLOAD_SIZE_MAX 37
+#define PDU_AC_SIZE_MAX (PDU_AC_PAYLOAD_SIZE_MAX + PDU_AC_SIZE_OVERHEAD)
 
 struct pdu_adv_payload_adv_ind {
 	u8_t addr[BDADDR_SIZE];
@@ -78,8 +79,6 @@ struct pdu_adv {
 	u8_t rx_addr:1;
 
 	u8_t len:8;
-
-	u8_t resv:8; /* TODO: remove nRF specific code */
 
 	union {
 		struct pdu_adv_payload_adv_ind adv_ind;
