@@ -225,11 +225,18 @@ static struct bt_context bt_context_data = {
 static int bt_iface_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	struct net_buf *frags;
 	int ret;
 
 	NET_DBG("iface %p pkt %p len %zu", iface, pkt, net_pkt_get_len(pkt));
 
-	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, pkt->frags);
+	/* Dettach data fragments for packet */
+	frags = pkt->frags;
+	pkt->frags = NULL;
+
+	net_pkt_unref(pkt);
+
+	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, frags);
 	if (ret < 0) {
 		return ret;
 	}
