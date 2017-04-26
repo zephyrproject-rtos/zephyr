@@ -164,7 +164,7 @@
 #ifdef __XTENSA_CALL0_ABI__
     call0 _sys_k_event_logger_interrupt
 #else
-    call8 _sys_k_event_logger_interrupt
+    call4 _sys_k_event_logger_interrupt
 #endif
 #endif
 
@@ -176,7 +176,7 @@
 #ifdef __XTENSA_CALL0_ABI__
     call0 _sys_k_event_logger_exit_sleep
 #else
-    call8 _sys_k_event_logger_exit_sleep
+    call4 _sys_k_event_logger_exit_sleep
 #endif
 #endif
     #ifdef XT_INTEXC_HOOKS
