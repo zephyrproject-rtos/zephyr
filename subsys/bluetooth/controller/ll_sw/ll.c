@@ -324,7 +324,6 @@ void ll_adv_params_set(u16_t interval, u8_t adv_type,
 		pdu->len = BDADDR_SIZE;
 	}
 	pdu->rx_addr = _ll_adv_params.rx_addr;
-	pdu->resv = 0;
 
 	/* update the current scan data */
 	radio_adv_data = radio_scan_data_get();
@@ -337,7 +336,6 @@ void ll_adv_params_set(u16_t interval, u8_t adv_type,
 	if (pdu->len == 0) {
 		pdu->len = BDADDR_SIZE;
 	}
-	pdu->resv = 0;
 }
 
 void ll_adv_data_set(u8_t len, u8_t const *const data)
@@ -384,7 +382,6 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 		memcpy(&pdu->payload.adv_ind.data[0], data, len);
 		pdu->len = BDADDR_SIZE + len;
 	}
-	pdu->resv = 0;
 
 	/* commit the update so controller picks it. */
 	radio_adv_data->last = last;
@@ -418,7 +415,6 @@ void ll_scan_data_set(u8_t len, u8_t const *const data)
 	memcpy(&pdu->payload.scan_rsp.addr[0], &_ll_adv_params.adv_addr[0],
 	       BDADDR_SIZE);
 	memcpy(&pdu->payload.scan_rsp.data[0], data, len);
-	pdu->resv = 0;
 
 	/* commit the update so controller picks it. */
 	radio_scan_data->last = last;
