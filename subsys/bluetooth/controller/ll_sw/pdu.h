@@ -53,6 +53,71 @@ struct pdu_adv_payload_connect_ind {
 	} __packed lldata;
 } __packed;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+struct pdu_adv_payload_com_ext_adv {
+	u8_t ext_hdr_len:6;
+	u8_t adv_mode:2;
+	u8_t ext_hdr_adi_adv_data[254];
+} __packed;
+
+enum ext_adv_mode {
+	EXT_ADV_MODE_NON_CONN_NON_SCAN = 0x00,
+	EXT_ADV_MODE_CONN_NON_SCAN = 0x01,
+	EXT_ADV_MODE_NON_CONN_SCAN = 0x02,
+};
+
+struct ext_adv_hdr {
+	u8_t adv_addr:1;
+	u8_t tgt_addr:1;
+	u8_t rfu0:1;
+	u8_t adi:1;
+	u8_t aux_ptr:1;
+	u8_t sync_info:1;
+	u8_t tx_pwr:1;
+	u8_t rfu1:1;
+} __packed;
+
+struct ext_adv_adi {
+	u16_t did:12;
+	u16_t sid:4;
+} __packed;
+
+struct ext_adv_aux_ptr {
+	u8_t  chan_idx:6;
+	u8_t  ca:1;
+	u8_t  offs_units:1;
+	u16_t offs:13;
+	u16_t phy:3;
+} __packed;
+
+enum ext_adv_aux_ptr_ca {
+	EXT_ADV_AUX_PTR_CA_500_PPM = 0x00,
+	EXT_ADV_AUX_PTR_CA_50_PPM  = 0x01,
+};
+
+enum ext_adv_offs_units {
+	EXT_ADV_AUX_PTR_OFFS_UNITS_30  = 0x00,
+	EXT_ADV_AUX_PTR_OFFS_UNITS_300 = 0x01,
+};
+
+enum ext_adv_aux_phy {
+	EXT_ADV_AUX_PHY_LE_1M  = 0x00,
+	EXT_ADV_AUX_PHY_LE_2M  = 0x01,
+	EXT_ADV_AUX_PHY_LE_COD = 0x02,
+};
+
+struct ext_adv_sync_info {
+	u16_t sync_pkt_offs:13;
+	u16_t offs_units:1;
+	u16_t rfu:2;
+	u16_t interval;
+	u8_t  sca_chm[5];
+	u32_t aa;
+	u8_t  crc_init[3];
+	u16_t evt_cntr;
+} __packed;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 enum pdu_adv_type {
 	PDU_ADV_TYPE_ADV_IND = 0x00,
 	PDU_ADV_TYPE_DIRECT_IND = 0x01,
@@ -86,6 +151,10 @@ struct pdu_adv {
 		struct pdu_adv_payload_scan_req scan_req;
 		struct pdu_adv_payload_scan_rsp scan_rsp;
 		struct pdu_adv_payload_connect_ind connect_ind;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+		struct pdu_adv_payload_com_ext_adv adv_ext_ind;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 	} __packed payload;
 } __packed;
 
