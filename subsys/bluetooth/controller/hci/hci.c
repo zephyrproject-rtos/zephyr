@@ -355,14 +355,11 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_adv_param *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
-	u8_t const c_adv_type[] = {
-		PDU_ADV_TYPE_ADV_IND, PDU_ADV_TYPE_DIRECT_IND,
-		PDU_ADV_TYPE_SCAN_IND, PDU_ADV_TYPE_NONCONN_IND };
 	u16_t min_interval;
 
 	min_interval = sys_le16_to_cpu(cmd->min_interval);
 
-	ll_adv_params_set(min_interval, c_adv_type[cmd->type],
+	ll_adv_params_set(min_interval, cmd->type,
 			  cmd->own_addr_type, cmd->direct_addr.type,
 			  &cmd->direct_addr.a.val[0], cmd->channel_map,
 			  cmd->filter_policy);
