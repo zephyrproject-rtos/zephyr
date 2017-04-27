@@ -1455,7 +1455,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 			NET_DBG("Removing default route %s",
 				net_sprint_ipv6_addr(addr));
 
-			net_if_router_rm(dag->instance->default_route);
+			net_if_ipv6_router_rm(dag->instance->default_route);
 			dag->instance->default_route = NULL;
 		}
 
@@ -1685,7 +1685,7 @@ static int net_rpl_set_default_route(struct net_if *iface,
 		NET_DBG("Removing default route through %s",
 			net_sprint_ipv6_addr(&instance->default_route->address.
 					     in6_addr));
-		net_if_router_rm(instance->default_route);
+		net_if_ipv6_router_rm(instance->default_route);
 		instance->default_route = NULL;
 	}
 
@@ -1706,7 +1706,7 @@ static int net_rpl_set_default_route(struct net_if *iface,
 				net_sprint_ipv6_addr(&instance->
 						     default_route->address.
 						     in6_addr));
-			net_if_router_rm(instance->default_route);
+			net_if_ipv6_router_rm(instance->default_route);
 			instance->default_route = NULL;
 		} else {
 			NET_DBG("Not removing default route because it is "
@@ -2361,7 +2361,7 @@ static void net_rpl_move_parent(struct net_if *iface,
 			NET_DBG("Removing default route %s",
 				net_sprint_ipv6_addr(addr));
 
-			net_if_router_rm(dag_src->instance->default_route);
+			net_if_ipv6_router_rm(dag_src->instance->default_route);
 			dag_src->instance->default_route = NULL;
 		}
 

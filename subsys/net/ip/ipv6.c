@@ -1365,7 +1365,7 @@ static void nd_reachable_timeout(struct k_work *work)
 					nbr, net_sprint_ipv6_addr(&data->addr),
 					data->state);
 
-				net_if_router_rm(router);
+				net_if_ipv6_router_rm(router);
 				nbr_free(nbr);
 			}
 		} else {
@@ -2332,10 +2332,10 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 					   &NET_IPV6_HDR(pkt)->src);
 	if (router) {
 		if (!router_lifetime) {
-			/*TODO: Start rs_timer on iface if no routers
+			/* TODO: Start rs_timer on iface if no routers
 			 * at all available on iface.
 			 */
-			net_if_router_rm(router);
+			net_if_ipv6_router_rm(router);
 		} else {
 			if (nbr) {
 				net_ipv6_nbr_data(nbr)->is_router = true;
