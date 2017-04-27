@@ -2714,9 +2714,12 @@ static void net_rpl_process_dio(struct net_if *iface,
 		 * Add default route to set a fresh value for the lifetime
 		 * counter.
 		 */
-		net_if_ipv6_router_add(iface, from,
-				       net_rpl_lifetime(instance,
+		instance->default_route = net_if_ipv6_router_add(iface, from,
+						net_rpl_lifetime(instance,
 						instance->default_lifetime));
+		if (!instance->default_route) {
+			return;
+		}
 	}
 
 	parent->dtsn = dio->dtsn;
