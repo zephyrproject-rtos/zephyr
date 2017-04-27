@@ -1366,7 +1366,7 @@ struct bt_hci_evt_link_key_req {
 #define BT_LK_AUTH_COMBINATION_P256             0x08
 
 #define BT_HCI_EVT_LINK_KEY_NOTIFY              0x18
-struct bt_hci_ev_link_key_notify {
+struct bt_hci_evt_link_key_notify {
 	bt_addr_t bdaddr;
 	u8_t      link_key[16];
 	u8_t      key_type;
@@ -1484,15 +1484,15 @@ struct bt_hci_evt_le_conn_complete {
 } __packed;
 
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT        0x02
-struct bt_hci_ev_le_advertising_info {
+struct bt_hci_evt_le_advertising_info {
 	u8_t         evt_type;
 	bt_addr_le_t addr;
 	u8_t         length;
 	u8_t         data[0];
 } __packed;
-struct bt_hci_ev_le_advertising_report {
+struct bt_hci_evt_le_advertising_report {
 	u8_t num_reports;
-	struct bt_hci_ev_le_advertising_info adv_info[0];
+	struct bt_hci_evt_le_advertising_info adv_info[0];
 } __packed;
 
 #define BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE      0x03
@@ -1505,7 +1505,7 @@ struct bt_hci_evt_le_conn_update_complete {
 } __packed;
 
 #define BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE       0x04
-struct bt_hci_ev_le_remote_feat_complete {
+struct bt_hci_evt_le_remote_feat_complete {
 	u8_t  status;
 	u16_t handle;
 	u8_t  features[8];
@@ -1563,15 +1563,15 @@ struct bt_hci_evt_le_enh_conn_complete {
 } __packed;
 
 #define BT_HCI_EVT_LE_DIRECT_ADV_REPORT         0x0b
-struct bt_hci_ev_le_direct_adv_info {
+struct bt_hci_evt_le_direct_adv_info {
 	u8_t         evt_type;
 	bt_addr_le_t dir_addr;
 	bt_addr_le_t addr;
 	s8_t         rssi;
 } __packed;
-struct bt_hci_ev_le_direct_adv_report {
+struct bt_hci_evt_le_direct_adv_report {
 	u8_t num_reports;
-	struct bt_hci_ev_le_direct_adv_info direct_adv_info[0];
+	struct bt_hci_evt_le_direct_adv_info direct_adv_info[0];
 } __packed;
 
 #define BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE       0x0c
@@ -1583,7 +1583,7 @@ struct bt_hci_evt_le_phy_update_complete {
 } __packed;
 
 #define BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT    0x0d
-struct bt_hci_ev_le_ext_advertising_info {
+struct bt_hci_evt_le_ext_advertising_info {
 	u8_t         evt_type;
 	bt_addr_le_t addr;
 	u8_t         prim_phy;
@@ -1596,9 +1596,9 @@ struct bt_hci_ev_le_ext_advertising_info {
 	u8_t         length;
 	u8_t         data[0];
 } __packed;
-struct bt_hci_ev_le_ext_advertising_report {
+struct bt_hci_evt_le_ext_advertising_report {
 	u8_t num_reports;
-	struct bt_hci_ev_le_ext_advertising_info adv_info[0];
+	struct bt_hci_evt_le_ext_advertising_info adv_info[0];
 } __packed;
 
 #define BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED  0x0e
@@ -1613,7 +1613,7 @@ struct bt_hci_evt_le_per_adv_sync_established {
 } __packed;
 
 #define BT_HCI_EVT_LE_PER_ADVERTISING_REPORT    0x0f
-struct bt_hci_ev_le_per_advertising_report {
+struct bt_hci_evt_le_per_advertising_report {
 	u16_t handle;
 	s8_t  tx_power;
 	s8_t  rssi;

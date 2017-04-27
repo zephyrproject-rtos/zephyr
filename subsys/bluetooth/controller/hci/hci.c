@@ -1001,9 +1001,9 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 {
 	const u8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
 				    0xff, 0x02 };
-	struct bt_hci_ev_le_advertising_report *sep;
+	struct bt_hci_evt_le_advertising_report *sep;
 	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
-	struct bt_hci_ev_le_advertising_info *adv_info;
+	struct bt_hci_evt_le_advertising_info *adv_info;
 	u8_t data_len;
 	u8_t *rssi;
 	u8_t info_len;
@@ -1060,7 +1060,7 @@ fill_report:
 		data_len = 0;
 	}
 
-	info_len = sizeof(struct bt_hci_ev_le_advertising_info) + data_len +
+	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
 		   sizeof(*rssi);
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADVERTISING_REPORT,
 		       sizeof(*sep) + info_len);
@@ -1310,7 +1310,7 @@ static void encrypt_change(u8_t err, u16_t handle,
 static void le_remote_feat_complete(u8_t status, struct pdu_data *pdu_data,
 				    u16_t handle, struct net_buf *buf)
 {
-	struct bt_hci_ev_le_remote_feat_complete *sep;
+	struct bt_hci_evt_le_remote_feat_complete *sep;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_REMOTE_FEAT_COMPLETE)) {
