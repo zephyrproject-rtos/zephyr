@@ -262,6 +262,17 @@ config BLUETOOTH_CONTROLLER_ADV_INDICATION
 	help
 	  Generate events indicating on air advertisement events.
 
+config BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
+	bool "Scan Request Notifications"
+	help
+	  Generate events notifying the on air scan requests received.
+
+config BLUETOOTH_CONTROLLER_SCAN_REQ_RSSI
+	bool "Measure Scan Request RSSI"
+	depends on BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
+	help
+	  Measure RSSI of the on air scan requests received.
+
 endmenu
 
 comment "BLE Controller debug configuration"
