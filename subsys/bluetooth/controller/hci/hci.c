@@ -1236,6 +1236,45 @@ fill_report:
 
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
+static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
+				 struct net_buf *buf)
+{
+	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
+	struct bt_hci_evt_le_scan_req_received *sep;
+
+	/* TODO: fill handle when Adv Ext. feature is implemented. */
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_SCAN_REQ_RECEIVED)) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+		bt_addr_le_t addr;
+		u8_t handle;
+		u8_t rssi;
+
+		handle = 0;
+		addr.type = adv->tx_addr;
+		memcpy(&addr.a.val[0], &adv->payload.scan_req.scan_addr[0],
+		       sizeof(bt_addr_t));
+		rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+			 offsetof(struct pdu_adv, payload) + adv->len];
+
+		bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+
+		BT_WARN("handle: %d, addr: %s, rssi: -%d dB.",
+			handle, addr_str, rssi);
+
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_SCAN_REQ_RECEIVED, sizeof(*sep));
+	sep->handle = 0;
+	sep->addr.type = adv->tx_addr;
+	memcpy(&sep->addr.a.val[0], &adv->payload.scan_req.scan_addr[0],
+	       sizeof(bt_addr_t));
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
+
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 			     struct net_buf *buf)
@@ -1371,6 +1410,12 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 	case NODE_RX_TYPE_REPORT:
 		le_advertising_report(pdu_data, b, buf);
 		break;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
+	case NODE_RX_TYPE_SCAN_REQ:
+		le_scan_req_received(pdu_data, b, buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case NODE_RX_TYPE_CONNECTION:
@@ -1706,6 +1751,9 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 
 		switch (node_rx->hdr.type) {
 		case NODE_RX_TYPE_REPORT:
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
+		case NODE_RX_TYPE_SCAN_REQ:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
 		case NODE_RX_TYPE_ADV_INDICATION:
 #endif
