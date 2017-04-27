@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include <ti/lm3s6965.dtsi>
+
+/ {
+	model = "QEMU Cortex-M3";
+	compatible = "ti,lm3s6965evb-qemu", "ti,lm3s6965";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};

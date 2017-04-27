@@ -11,16 +11,6 @@ if SOC_TI_LM3S6965
 config SOC
 	default ti_lm3s6965
 
-config SRAM_BASE_ADDRESS
-	default 0x20000000
-
-config FLASH_BASE_ADDRESS
-	default 0x00000000
-
-config NUM_IRQ_PRIO_BITS
-	int
-	default 3
-
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
