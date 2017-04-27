@@ -2625,6 +2625,18 @@ static void net_rpl_process_dio(struct net_if *iface,
 		}
 	}
 
+	if (instance->default_route && !instance->default_route->is_used) {
+		/* Maybe router timer expired or removed and RPL doesn't
+		 * know about it. Verify router is in "used" state or not.
+		 */
+		instance->default_route = net_if_ipv6_router_add(iface, from,
+						net_rpl_lifetime(instance,
+						instance->default_lifetime));
+		if (!instance->default_route) {
+			return;
+		}
+	}
+
 	if (dag->rank == NET_RPL_ROOT_RANK(instance)) {
 		if (dio->rank != NET_RPL_INFINITE_RANK) {
 			instance->dio_counter++;
