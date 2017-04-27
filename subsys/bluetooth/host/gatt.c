@@ -560,7 +560,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	struct notify_data nfy;
 
-	__ASSERT(attr && attr->handler, "invalid parameters\n");
+	__ASSERT(attr && attr->handle, "invalid parameters\n");
 
 	if (conn) {
 		return gatt_notify(conn, attr->handle, data, len);
