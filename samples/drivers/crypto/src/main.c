@@ -16,6 +16,14 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
 #include <logging/sys_log.h>
 
+#ifdef CONFIG_CRYPTO_TINYCRYPT_SHIM
+#define CRYPTO_DRV_NAME CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME
+#elif CONFIG_CRYPTO_MBEDTLS_SHIM
+#define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
+#else
+#error "You need to enable one crypto device"
+#endif
+
 u8_t key[16] = {
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88,
 	0x09, 0xcf, 0x4f, 0x3c
@@ -43,6 +51,36 @@ u8_t ciphertext[80] = {
 };
 
 u32_t cap_flags;
+
+static void print_buffer_comparison(u8_t *wanted_result,
+				    u8_t *result, size_t length)
+{
+	int i, j;
+
+	printk("Was waiting for: \n");
+
+	for (i = 0, j = 1; i < length; i++, j++) {
+		printk("0x%02x ", wanted_result[i]);
+
+		if (j == 10) {
+			printk("\n");
+			j = 0;
+		}
+	}
+
+	printk("\n But got:\n");
+
+	for (i = 0, j = 1; i < length; i++, j++) {
+		printk("0x%02x ", result[i]);
+
+		if (j == 10) {
+			printk("\n");
+			j = 0;
+		}
+	}
+
+	printk("\n");
+}
 
 int validate_hw_compatibility(struct device *dev)
 {
@@ -77,16 +115,16 @@ void cbc_mode(void)
 {
 	struct device *dev;
 	struct cipher_ctx ini;
-	struct cipher_pkt  encrpt;
+	struct cipher_pkt encrypt;
 	struct cipher_pkt decrypt;
 	u8_t encrypted[80];
 	u8_t decrypted[64];
 
 	SYS_LOG_INF("CBC Mode");
 
-	dev = device_get_binding(CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME);
+	dev = device_get_binding(CRYPTO_DRV_NAME);
 	if (!dev) {
-		SYS_LOG_ERR("TinyCrypt pseudo device not found");
+		SYS_LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
 		return;
 	}
 
@@ -105,19 +143,21 @@ void cbc_mode(void)
 		return;
 	}
 
-	encrpt.in_buf = plaintext;
-	encrpt.in_len = sizeof(plaintext);
-	encrpt.out_buf_max = sizeof(encrypted);
-	encrpt.out_buf = encrypted;
+	encrypt.in_buf = plaintext;
+	encrypt.in_len = sizeof(plaintext);
+	encrypt.out_buf_max = sizeof(encrypted);
+	encrypt.out_buf = encrypted;
 
-	if (cipher_cbc_op(&ini, &encrpt, iv)) {
+	if (cipher_cbc_op(&ini, &encrypt, iv)) {
 		SYS_LOG_ERR("CBC mode ENCRYPT - Failed");
 		goto out;
 	}
 
-	if (memcmp(encrpt.out_buf, ciphertext, sizeof(ciphertext))) {
+	if (memcmp(encrypt.out_buf, ciphertext, sizeof(ciphertext))) {
 		SYS_LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
 			    "returned cipher text");
+		print_buffer_comparison(ciphertext,
+					encrypt.out_buf, sizeof(ciphertext));
 		goto out;
 	}
 
@@ -130,7 +170,7 @@ void cbc_mode(void)
 		return;
 	}
 
-	decrypt.in_buf = encrpt.out_buf;	/* encrypted */
+	decrypt.in_buf = encrypt.out_buf;	/* encrypted */
 	decrypt.in_len = sizeof(encrypted);
 	decrypt.out_buf = decrypted;
 	decrypt.out_buf_max = sizeof(decrypted);
@@ -144,6 +184,8 @@ void cbc_mode(void)
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
 		SYS_LOG_ERR("CBC mode DECRYPT - Mismatch between plaintext and "
 			    "decrypted cipher text");
+		print_buffer_comparison(plaintext,
+					decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
@@ -167,7 +209,7 @@ void ctr_mode(void)
 {
 	struct device *dev;
 	struct cipher_ctx ini;
-	struct cipher_pkt  encrpt;
+	struct cipher_pkt  encrypt;
 	struct cipher_pkt decrypt;
 	u8_t encrypted[64] = {0};
 	u8_t decrypted[64] = {0};
@@ -178,9 +220,9 @@ void ctr_mode(void)
 
 	SYS_LOG_INF("CTR Mode");
 
-	dev = device_get_binding(CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME);
+	dev = device_get_binding(CRYPTO_DRV_NAME);
 	if (!dev) {
-		SYS_LOG_ERR("TinyCrypt pseudo device not found");
+		SYS_LOG_ERR("%s crypto device not found", CRYPTO_DRV_NAME);
 		return;
 	}
 
@@ -201,20 +243,22 @@ void ctr_mode(void)
 		return;
 	}
 
-	encrpt.in_buf = plaintext;
+	encrypt.in_buf = plaintext;
 
-	encrpt.in_len = sizeof(plaintext);
-	encrpt.out_buf_max = sizeof(encrypted);
-	encrpt.out_buf = encrypted;
+	encrypt.in_len = sizeof(plaintext);
+	encrypt.out_buf_max = sizeof(encrypted);
+	encrypt.out_buf = encrypted;
 
-	if (cipher_ctr_op(&ini, &encrpt, iv)) {
+	if (cipher_ctr_op(&ini, &encrypt, iv)) {
 		SYS_LOG_ERR("CTR mode ENCRYPT - Failed");
 		goto out;
 	}
 
-	if (memcmp(encrpt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
+	if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
 		SYS_LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
 			    "and returned cipher text");
+		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
+					sizeof(ctr_ciphertext));
 		goto out;
 	}
 
@@ -240,6 +284,8 @@ void ctr_mode(void)
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
 		SYS_LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
 			    "and decypted cipher text");
+		print_buffer_comparison(plaintext,
+					encrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
@@ -274,7 +320,7 @@ void ccm_mode(void)
 {
 	struct device *dev;
 	struct cipher_ctx ini;
-	struct cipher_pkt  encrpt;
+	struct cipher_pkt encrypt;
 	struct cipher_aead_pkt ccm_op;
 	struct cipher_pkt decrypt;
 	u8_t encrypted[50];
@@ -282,9 +328,9 @@ void ccm_mode(void)
 
 	SYS_LOG_INF("CCM Mode");
 
-	dev = device_get_binding(CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME);
+	dev = device_get_binding(CRYPTO_DRV_NAME);
 	if (!dev) {
-		SYS_LOG_ERR("TinyCrypt pseudo device not found");
+		SYS_LOG_ERR("%s crypto device not found", CRYPTO_DRV_NAME);
 		return;
 	}
 
@@ -297,7 +343,7 @@ void ccm_mode(void)
 	ini.key.bit_stream = ccm_key;
 	ini.mode_params.ccm_info.nonce_len = sizeof(ccm_nonce);
 	ini.mode_params.ccm_info.tag_len = 8;
-	ini.flags =  cap_flags;
+	ini.flags = cap_flags;
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CCM,
@@ -305,23 +351,32 @@ void ccm_mode(void)
 		return;
 	}
 
-	encrpt.in_buf = ccm_data;
-	encrpt.in_len = sizeof(ccm_data);
-	encrpt.out_buf_max = sizeof(encrypted);
-	encrpt.out_buf = encrypted;
+	encrypt.in_buf = ccm_data;
+	encrypt.in_len = sizeof(ccm_data);
+	encrypt.out_buf_max = sizeof(encrypted);
+	encrypt.out_buf = encrypted;
 
 	ccm_op.ad = ccm_hdr;
 	ccm_op.ad_len = sizeof(ccm_hdr);
-	ccm_op.pkt = &encrpt;
+	ccm_op.pkt = &encrypt;
+
+	/* TinyCrypt always puts the tag at the end of the ciphered text,
+	 * but other library such as mbedtls might be more flexible and can
+	 * take a different buffer for it. So to make sure test passes on
+	 * all backends: enforcing the tag buffer to be after the ciphered
+	 * text. */
+	ccm_op.tag = encrypted + sizeof(ccm_data);
 
 	if (cipher_ccm_op(&ini, &ccm_op, ccm_nonce)) {
 		SYS_LOG_ERR("CCM mode ENCRYPT - Failed");
 		goto out;
 	}
 
-	if (memcmp(encrpt.out_buf, ccm_expected, sizeof(ccm_expected))) {
+	if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
 		SYS_LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
 			    "and returned cipher text");
+		print_buffer_comparison(ccm_expected,
+					encrypt.out_buf, sizeof(ccm_expected));
 		goto out;
 	}
 
@@ -349,6 +404,8 @@ void ccm_mode(void)
 	if (memcmp(decrypt.out_buf, ccm_data, sizeof(ccm_data))) {
 		SYS_LOG_ERR("CCM mode DECRYPT - Mismatch between plaintext "
 			"and decrypted cipher text");
+		print_buffer_comparison(ccm_data,
+					decrypt.out_buf, sizeof(ccm_data));
 		goto out;
 	}
 
