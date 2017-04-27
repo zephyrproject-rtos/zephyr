@@ -54,7 +54,7 @@ static struct {
 
 static struct {
 	u16_t interval;
-	u8_t  adv_type:4;
+	u8_t  pdu_adv_type:4;
 	u8_t  tx_addr:1;
 	u8_t  rx_addr:1;
 	u8_t  filter_policy:2;
@@ -269,6 +269,11 @@ void ll_adv_params_set(u16_t interval, u8_t adv_type,
 		       u8_t const *const direct_addr, u8_t chl_map,
 		       u8_t filter_policy)
 {
+	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
+				     PDU_ADV_TYPE_DIRECT_IND,
+				     PDU_ADV_TYPE_SCAN_IND,
+				     PDU_ADV_TYPE_NONCONN_IND,
+				     PDU_ADV_TYPE_DIRECT_IND};
 	struct radio_adv_data *radio_adv_data;
 	struct pdu_adv *pdu;
 
@@ -281,29 +286,34 @@ void ll_adv_params_set(u16_t interval, u8_t adv_type,
 	 * interface can correctly update adv/scan data in the
 	 * double buffer between caller and controller context.
 	 */
-	_ll_adv_params.interval = interval;
+	/* Set interval for Undirected or Low Duty Cycle Directed Advertising */
+	if (adv_type != 0x01) {
+		_ll_adv_params.interval = interval;
+	} else {
+		_ll_adv_params.interval = 0;
+	}
 	_ll_adv_params.chl_map = chl_map;
 	_ll_adv_params.filter_policy = filter_policy;
-	_ll_adv_params.adv_type = adv_type;
+	_ll_adv_params.pdu_adv_type = pdu_adv_type[adv_type];
 	_ll_adv_params.tx_addr = own_addr_type;
 	_ll_adv_params.rx_addr = 0;
 
 	/* update the current adv data */
 	radio_adv_data = radio_adv_data_get();
 	pdu = (struct pdu_adv *)&radio_adv_data->data[radio_adv_data->last][0];
-	pdu->type = _ll_adv_params.adv_type;
+	pdu->type = _ll_adv_params.pdu_adv_type;
 	pdu->rfu = 0;
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
-	    ((adv_type == PDU_ADV_TYPE_ADV_IND) ||
-	     (adv_type == PDU_ADV_TYPE_DIRECT_IND))) {
+	    ((_ll_adv_params.pdu_adv_type == PDU_ADV_TYPE_ADV_IND) ||
+	     (_ll_adv_params.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND))) {
 		pdu->chan_sel = 1;
 	} else {
 		pdu->chan_sel = 0;
 	}
 
 	pdu->tx_addr = _ll_adv_params.tx_addr;
-	if (adv_type == PDU_ADV_TYPE_DIRECT_IND) {
+	if (_ll_adv_params.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND) {
 		_ll_adv_params.rx_addr = direct_addr_type;
 		memcpy(&_ll_adv_params.direct_addr[0], direct_addr,
 			 BDADDR_SIZE);
@@ -351,12 +361,12 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 
 	/* update adv pdu fields. */
 	pdu = (struct pdu_adv *)&radio_adv_data->data[last][0];
-	pdu->type = _ll_adv_params.adv_type;
+	pdu->type = _ll_adv_params.pdu_adv_type;
 	pdu->rfu = 0;
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
-	    ((_ll_adv_params.adv_type == PDU_ADV_TYPE_ADV_IND) ||
-	     (_ll_adv_params.adv_type == PDU_ADV_TYPE_DIRECT_IND))) {
+	    ((_ll_adv_params.pdu_adv_type == PDU_ADV_TYPE_ADV_IND) ||
+	     (_ll_adv_params.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND))) {
 		pdu->chan_sel = 1;
 	} else {
 		pdu->chan_sel = 0;
@@ -366,7 +376,7 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 	pdu->rx_addr = _ll_adv_params.rx_addr;
 	memcpy(&pdu->payload.adv_ind.addr[0],
 		 &_ll_adv_params.adv_addr[0], BDADDR_SIZE);
-	if (_ll_adv_params.adv_type == PDU_ADV_TYPE_DIRECT_IND) {
+	if (_ll_adv_params.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND) {
 		memcpy(&pdu->payload.direct_ind.tgt_addr[0],
 			 &_ll_adv_params.direct_addr[0], BDADDR_SIZE);
 		pdu->len = sizeof(struct pdu_adv_payload_direct_ind);

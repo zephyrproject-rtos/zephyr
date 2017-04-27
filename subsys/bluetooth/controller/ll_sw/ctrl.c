@@ -7439,7 +7439,9 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 		_radio.advertiser.hdr.ticks_xtal_to_start :
 		_radio.advertiser.hdr.ticks_active_to_start;
 
-	if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+	/* High Duty Cycle Directed Advertising if interval is 0. */
+	if ((pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) &&
+	    !interval) {
 		u32_t ticks_now = ticker_ticks_now_get();
 
 		ret = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
