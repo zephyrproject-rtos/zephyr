@@ -774,7 +774,7 @@ done:
 
 static void le_remote_feat_complete(struct net_buf *buf)
 {
-	struct bt_hci_ev_le_remote_feat_complete *evt = (void *)buf->data;
+	struct bt_hci_evt_le_remote_feat_complete *evt = (void *)buf->data;
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
@@ -1223,7 +1223,7 @@ static void pin_code_req(struct net_buf *buf)
 
 static void link_key_notify(struct net_buf *buf)
 {
-	struct bt_hci_ev_link_key_notify *evt = (void *)buf->data;
+	struct bt_hci_evt_link_key_notify *evt = (void *)buf->data;
 	struct bt_conn *conn;
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
@@ -2502,7 +2502,7 @@ int bt_le_scan_update(bool fast_scan)
 static void le_adv_report(struct net_buf *buf)
 {
 	u8_t num_reports = net_buf_pull_u8(buf);
-	struct bt_hci_ev_le_advertising_info *info;
+	struct bt_hci_evt_le_advertising_info *info;
 
 	BT_DBG("Adv number of reports %u",  num_reports);
 
