@@ -50,7 +50,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Wait for oscillator to be stablized */
 	while (!(__SUPC->sr & SUPC_SR_OSCSEL))
 		;
-#endif /* CONFIG_SOC_ATMEL_SAM3_EXT_SLCK */
+#endif /* CONFIG_SOC_ATMEL_SAM3X_EXT_SLCK */
 
 #ifdef CONFIG_SOC_ATMEL_SAM3X_EXT_MAINCK
 	/* Start the external main oscillator */
@@ -88,7 +88,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Wait for main fast RC oscillator to be stablized */
 	while (!(__PMC->sr & PMC_INT_MOSCRCS))
 		;
-#endif /* CONFIG_SOC_ATMEL_SAM3_EXT_MAINCK */
+#endif /* CONFIG_SOC_ATMEL_SAM3X_EXT_MAINCK */
 
 	/* Use PLLA as master clock.
 	 * According to datasheet, PMC_MCKR must not be programmed in
