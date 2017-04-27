@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2017 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,6 @@
 #endif /* CONFIG_PCI */
 
 #include <misc/util.h>
-
-#include "contiki/ip/uip.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,20 +142,29 @@ struct eth_rx_desc {
 	u8_t *buf2_ptr;
 };
 
+#define ETH_DW_MTU 1500
+
 /* Driver metadata associated with each Ethernet device */
 struct eth_runtime {
 	u32_t base_addr;
+	struct net_if *iface;
 #ifdef CONFIG_PCI
 	struct pci_dev_info pci_dev;
 #endif  /* CONFIG_PCI */
 	/* Transmit descriptor */
 	volatile struct eth_tx_desc tx_desc;
-	/* Transmit DMA packet buffer */
-	volatile u8_t tx_buf[UIP_BUFSIZE];
 	/* Receive descriptor */
 	volatile struct eth_rx_desc rx_desc;
 	/* Receive DMA packet buffer */
-	volatile u8_t rx_buf[UIP_BUFSIZE];
+	volatile u8_t rx_buf[ETH_DW_MTU];
+
+	union {
+		struct {
+			u8_t bytes[6];
+			u8_t pad[2];
+		} __packed;
+		u32_t words[2];
+	} mac_addr;
 };
 
 #define MMC_DEFAULT_MASK               0xffffffff
