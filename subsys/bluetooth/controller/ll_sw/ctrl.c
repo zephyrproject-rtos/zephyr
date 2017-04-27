@@ -529,6 +529,11 @@ static inline void isr_radio_state_tx(void)
 		}
 
 		radio_tmr_end_capture();
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_RSSI)
+		radio_rssi_measure();
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_RSSI */
+
 		break;
 
 	case ROLE_OBS:
@@ -576,6 +581,37 @@ static inline void isr_radio_state_tx(void)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
+static u32_t isr_rx_adv_sr_report(struct pdu_adv *pdu_adv_rx, u8_t rssi_ready)
+{
+	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct pdu_adv *pdu_adv;
+	u8_t pdu_len;
+
+	radio_pdu_node_rx = packet_rx_reserve_get(3);
+	if (radio_pdu_node_rx == 0) {
+		return 1;
+	}
+
+	/* Prepare the report (scan req) */
+	radio_pdu_node_rx->hdr.handle = 0xffff;
+	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
+
+	/* Make a copy of PDU into Rx node (as the received PDU is in the
+	 * scratch buffer), and save the RSSI value.
+	 */
+	pdu_adv = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
+	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
+	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
+	((u8_t *)pdu_adv)[pdu_len] =
+		(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+
+	packet_rx_enqueue();
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
+
 static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 			       u8_t irkmatch_id, u8_t rssi_ready)
 {
@@ -589,12 +625,21 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 	    (((_radio.advertiser.filter_policy & 0x01) == 0) ||
 	     (devmatch_ok) || (irkmatch_ok)) &&
 	    (1 /** @todo own addr match check */)) {
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
+		u32_t err;
+
+		/* Generate the scan request event */
+		err = isr_rx_adv_sr_report(pdu_adv, rssi_ready);
+		if (err) {
+			/* Scan Response will not be transmitted */
+			return err;
+		}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
+
 		_radio.state = STATE_CLOSE;
 
 		radio_switch_complete_and_disable();
-
-		/* TODO use rssi_ready to generate proprietary scan_req event */
-		ARG_UNUSED(rssi_ready);
 
 		/* use the latest scan data, if any */
 		if (_radio.advertiser.scan_data.first != _radio.
@@ -825,6 +870,31 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 	}
 
 	return 1;
+}
+
+static u32_t isr_rx_obs_report(u8_t rssi_ready)
+{
+	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct pdu_adv *pdu_adv_rx;
+
+	radio_pdu_node_rx = packet_rx_reserve_get(3);
+	if (radio_pdu_node_rx == 0) {
+		return 1;
+	}
+
+	/* Prepare the report (adv or scan resp) */
+	radio_pdu_node_rx->hdr.handle = 0xffff;
+	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
+
+	/* save the RSSI value */
+	pdu_adv_rx = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
+	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
+			     pdu_adv_rx->len] =
+		(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+
+	packet_rx_enqueue();
+
+	return 0;
 }
 
 static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
@@ -1082,23 +1152,14 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND)) &&
 		 (_radio.observer.scan_type != 0) &&
 		 (_radio.observer.conn == 0)) {
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
 		struct pdu_adv *pdu_adv_tx;
-
-		radio_pdu_node_rx = packet_rx_reserve_get(3);
-		if (radio_pdu_node_rx == 0) {
-			return 1;
-		}
-
-		/* save the RSSI value */
-		((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
-			pdu_adv_rx->len] =
-			(rssi_ready) ? (radio_rssi_get() & 0x7F) : 0x7F;
+		u32_t err;
 
 		/* save the adv packet */
-		radio_pdu_node_rx->hdr.handle = 0xffff;
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
-		packet_rx_enqueue();
+		err = isr_rx_obs_report(rssi_ready);
+		if (err) {
+			return err;
+		}
 
 		/* prepare the scan request packet */
 		pdu_adv_tx = (struct pdu_adv *)radio_pkt_scratch_get();
@@ -1140,22 +1201,13 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (_radio.observer.scan_state != 0))) &&
 		 (pdu_adv_rx->len != 0) && (!_radio.observer.conn)) {
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
-
-		radio_pdu_node_rx = packet_rx_reserve_get(3);
-		if (radio_pdu_node_rx == 0) {
-			return 1;
-		}
-
-		/* save the RSSI value */
-		((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
-			pdu_adv_rx->len] =
-			(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+		u32_t err;
 
 		/* save the scan response packet */
-		radio_pdu_node_rx->hdr.handle = 0xffff;
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
-		packet_rx_enqueue();
+		err = isr_rx_obs_report(rssi_ready);
+		if (err) {
+			return err;
+		}
 	}
 	/* invalid PDU */
 	else {
@@ -8188,6 +8240,11 @@ void radio_rx_dequeue(void)
 	switch (radio_pdu_node_rx->hdr.type) {
 	case NODE_RX_TYPE_DC_PDU:
 	case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
+	case NODE_RX_TYPE_SCAN_REQ:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
+
 	case NODE_RX_TYPE_CONNECTION:
 	case NODE_RX_TYPE_CONN_UPDATE:
 	case NODE_RX_TYPE_ENC_REFRESH:
@@ -8242,6 +8299,11 @@ void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
 		switch (_radio_pdu_node_rx_free->hdr.type) {
 		case NODE_RX_TYPE_DC_PDU:
 		case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
+		case NODE_RX_TYPE_SCAN_REQ:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
+
 		case NODE_RX_TYPE_CONNECTION:
 		case NODE_RX_TYPE_CONN_UPDATE:
 		case NODE_RX_TYPE_ENC_REFRESH:
