@@ -1,6 +1,15 @@
 Release Notes
 #############
 
+.. _zephyr_1.7.1:
+
+Zephyr Kernel 1.7.1
+********************
+
+* [ZEP-1800] Updated TinyCrypt to latest version: 0.2.6
+* [ZEP-749] Updated mbedTLS to 2.4.2
+* [ZEP-1470] ARM: Increase idle stack size to fix corruption by FP_SHARING
+
 .. _zephyr_1.7:
 
 Zephyr Kernel 1.7.0
