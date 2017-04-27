@@ -69,7 +69,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 	}
 
 	set_destination(&dst_addr);
-	len = net_pkt_frags_len(send_pkt);
+	len = net_pkt_get_len(send_pkt);
 	k_sleep(UDP_TX_TIMEOUT);
 
 	rc = net_context_sendto(send_pkt, &dst_addr,

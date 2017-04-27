@@ -59,7 +59,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 		return -EIO;
 	}
 
-	len = net_pkt_frags_len(send_pkt);
+	len = net_pkt_get_len(send_pkt);
 
 	rc = net_context_sendto(send_pkt, &net_ctx->remote,
 				addrlen, NULL, K_FOREVER, NULL, NULL);
