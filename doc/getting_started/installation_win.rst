@@ -86,7 +86,7 @@ up:
    .. code-block:: console
 
       $ cd ~
-      $ git clone https://gerrit.zephyrproject.org/r/zephyr
+      $ git clone https://github.com/zephyrproject-rtos/zephyr.git
 
 #. Also within the MSYS console, set up environment variables for the installed
    tools and for the Zephyr environment (using the provided shell script):
@@ -211,7 +211,7 @@ Windows, you will need to build or install a toolchain:
    .. code-block:: console
 
       $ cd ~
-      $ git clone https://gerrit.zephyrproject.org/r/zephyr
+      $ git clone https://github.com/zephyrproject-rtos/zephyr.git
 
 9. Also within the MSYS console, set up environment variables for installed
    tools and for the Zephyr environment (using the provided shell script):

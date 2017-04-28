@@ -19,7 +19,7 @@ in a separate git repository:
 
 .. code-block:: console
 
-   $ git clone https://gerrit.zephyrproject.org/r/net-tools
+   $ git clone https://github.com/zephyrproject-rtos/net-tools
    $ cd net-tools
    $ make
 

@@ -14,7 +14,7 @@ defined in :file:`include/net/buf.h` and BSD socket API uses linear memory buffe
 
 This example creates a simple server that listens to incoming UDP connections
 and sends the received data back. You can download the example application
-source file here `connectivity-example-app.c <https://gerrit.zephyrproject.org/r/gitweb?p=zephyr.git;a=blob;f=doc/subsystems/networking/connectivity-example-app.c>`_
+source file here `connectivity-example-app.c <https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/master/doc/subsystems/networking/connectivity-example-app.c>`_
 
 This example application begins with some initialization. (Use this as an
 example; you may need to do things differently in your own application.)

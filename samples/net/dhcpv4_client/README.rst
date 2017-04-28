@@ -29,7 +29,7 @@ Follow readme from:
 
     Run 'loop_socat' and 'loop-slip-tap' scripts from net-tools.
 
-    https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=blob;f=README
+    https://github.com/zephyrproject-rtos/net-tools
 
 .. code-block:: console
 
