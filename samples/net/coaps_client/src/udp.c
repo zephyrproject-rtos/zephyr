@@ -63,13 +63,13 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 	}
 
-	rc = net_pkt_append(send_pkt, size, (u8_t *) buf, K_FOREVER);
+	rc = net_pkt_append_all(send_pkt, size, (u8_t *) buf, K_FOREVER);
 	if (!rc) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
 
 	set_destination(&dst_addr);
-	len = net_pkt_frags_len(send_pkt);
+	len = net_pkt_get_len(send_pkt);
 	k_sleep(UDP_TX_TIMEOUT);
 
 	rc = net_context_sendto(send_pkt, &dst_addr,

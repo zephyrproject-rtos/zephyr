@@ -853,11 +853,34 @@ int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
 bool net_pkt_compact(struct net_pkt *pkt);
 
 /**
- * @brief Append data to last fragment in fragment list of a packet
+ * @brief Append data to fragment list of a packet
  *
  * @details Append data to last fragment. If there is not enough space in
- * last fragment then new data fragment will be created and will be added to
- * fragment list. Caller has to take care of endianness if needed.
+ * last fragment then more data fragments will be added, unless there are
+ * no free fragments and timeout occurs.
+ *
+ * @param pkt Network packet.
+ * @param len Total length of input data
+ * @param data Data to be added
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return Length of data actually added. This may be less than input
+ *         length if other timeout than K_FOREVER was used, and there
+ *         were no free fragments in a pool to accommodate all data.
+ */
+u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
+		     s32_t timeout);
+
+/**
+ * @brief Append all data to fragment list of a packet (or fail)
+ *
+ * @details Append data to last fragment. If there is not enough space in
+ * last fragment then more data fragments will be added. Return unsuccessful
+ * status if there are no free fragments to accommodate all data and timeout
+ * occurs.
  *
  * @param pkt Network packet.
  * @param len Total length of input data
@@ -868,11 +891,14 @@ bool net_pkt_compact(struct net_pkt *pkt);
  *        number of milliseconds before timing out.
  *
  * @return True if all the data is placed at end of fragment list,
- *         False otherwise (In-case of false pkt might contain input
- *         data in the process of placing into fragments).
+ *         false otherwise (in which case packet may contain incomplete
+ *         input data).
  */
-bool net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
-		    s32_t timeout);
+static inline bool net_pkt_append_all(struct net_pkt *pkt, u16_t len,
+				      const u8_t *data, int32_t timeout)
+{
+	return net_pkt_append(pkt, len, data, timeout) == len;
+}
 
 /**
  * @brief Append u8_t data to last fragment in fragment list of a packet
@@ -890,7 +916,7 @@ bool net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
  */
 static inline bool net_pkt_append_u8(struct net_pkt *pkt, u8_t data)
 {
-	return net_pkt_append(pkt, 1, &data, K_FOREVER);
+	return net_pkt_append_all(pkt, 1, &data, K_FOREVER);
 }
 
 /**
@@ -911,7 +937,7 @@ static inline bool net_pkt_append_be16(struct net_pkt *pkt, u16_t data)
 {
 	u16_t value = sys_cpu_to_be16(data);
 
-	return net_pkt_append(pkt, sizeof(u16_t), (u8_t *)&value,
+	return net_pkt_append_all(pkt, sizeof(u16_t), (u8_t *)&value,
 			      K_FOREVER);
 }
 
@@ -933,7 +959,7 @@ static inline bool net_pkt_append_be32(struct net_pkt *pkt, u32_t data)
 {
 	u32_t value = sys_cpu_to_be32(data);
 
-	return net_pkt_append(pkt, sizeof(u32_t), (u8_t *)&value,
+	return net_pkt_append_all(pkt, sizeof(u32_t), (u8_t *)&value,
 			      K_FOREVER);
 }
 
@@ -955,7 +981,7 @@ static inline bool net_pkt_append_le32(struct net_pkt *pkt, u32_t data)
 {
 	u32_t value = sys_cpu_to_le32(data);
 
-	return net_pkt_append(pkt, sizeof(u32_t), (u8_t *)&value,
+	return net_pkt_append_all(pkt, sizeof(u32_t), (u8_t *)&value,
 			      K_FOREVER);
 }
 

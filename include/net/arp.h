@@ -39,10 +39,12 @@ struct net_arp_hdr {
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt);
 enum net_verdict net_arp_input(struct net_pkt *pkt);
 
+void net_arp_clear_cache(void);
 void net_arp_init(void);
 
 #else /* CONFIG_NET_ARP */
 
+#define net_arp_clear_cache(...)
 #define net_arp_init(...)
 
 #endif /* CONFIG_NET_ARP */

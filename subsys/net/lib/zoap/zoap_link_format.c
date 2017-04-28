@@ -20,93 +20,9 @@
 #include <net/zoap.h>
 #include <net/zoap_link_format.h>
 
-static int format_uri(const char * const *path, struct net_buf *buf)
-{
-	static const char prefix[] = "</";
-	const char * const *p;
-	char *str;
-
-	if (!path) {
-		return -EINVAL;
-	}
-
-	str = net_buf_add(buf, sizeof(prefix) - 1);
-	strncpy(str, prefix, sizeof(prefix) - 1);
-
-	for (p = path; p && *p; ) {
-		u16_t path_len = strlen(*p);
-
-		str = net_buf_add(buf, path_len);
-		strncpy(str, *p, path_len);
-
-		p++;
-
-		if (*p) {
-			str = net_buf_add(buf, 1);
-			*str = '/';
-		}
-	}
-
-	str = net_buf_add(buf, 1);
-	*str = '>';
-
-	return 0;
-}
-
-static int format_attributes(const char * const *attributes,
-			     struct net_buf *buf)
-{
-	const char * const *attr;
-	char *str;
-
-	if (!attributes) {
-		goto terminator;
-	}
-
-	for (attr = attributes; attr && *attr; ) {
-		int attr_len = strlen(*attr);
-
-		str = net_buf_add(buf, attr_len);
-		strncpy(str, *attr, attr_len);
-
-		attr++;
-
-		if (*attr) {
-			str = net_buf_add(buf, 1);
-			*str = ';';
-		}
-	}
-
-terminator:
-	str = net_buf_add(buf, 1);
-	*str = ';';
-
-	return 0;
-}
-
-static int format_resource(const struct zoap_resource *resource,
-			   struct net_buf *buf)
-{
-	struct zoap_core_metadata *meta = resource->user_data;
-	const char * const *attributes = NULL;
-	int r;
-
-	r = format_uri(resource->path, buf);
-	if (r < 0) {
-		return r;
-	}
-
-	if (meta && meta->attributes) {
-		attributes = meta->attributes;
-	}
-
-	r = format_attributes(attributes, buf);
-	if (r < 0) {
-		return r;
-	}
-
-	return r;
-}
+#define PKT_WAIT_TIME K_SECONDS(1)
+/* CoAP End Of Options Marker */
+#define COAP_MARKER	0xFF
 
 static bool match_path_uri(const char * const *path,
 			   const char *uri, u16_t len)
@@ -165,8 +81,7 @@ static bool match_attributes(const char * const *attributes,
 {
 	const char * const *attr;
 
-	/*
-	 * FIXME: deal with the case when there are multiple options in a
+	/* FIXME: deal with the case when there are multiple options in a
 	 * query, for example: 'rt=lux temperature', if I want to list
 	 * resources with resource type lux or temperature.
 	 */
@@ -232,12 +147,12 @@ static int send_error_response(struct zoap_resource *resource,
 
 	context = net_pkt_context(request->pkt);
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_pkt_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
 	if (!frag) {
 		net_pkt_unref(pkt);
 		return -ENOMEM;
@@ -266,6 +181,420 @@ static int send_error_response(struct zoap_resource *resource,
 	return r;
 }
 
+#if defined(CONFIG_ZOAP_WELL_KNOWN_BLOCK_WISE)
+
+#define MAX_BLOCK_WISE_TRANSFER_SIZE 2048
+
+enum zoap_block_size default_block_size(void)
+{
+	switch (CONFIG_ZOAP_WELL_KNOWN_BLOCK_WISE_SIZE) {
+	case 16:
+		return ZOAP_BLOCK_16;
+	case 32:
+		return ZOAP_BLOCK_32;
+	case 64:
+		return ZOAP_BLOCK_64;
+	case 128:
+		return ZOAP_BLOCK_128;
+	case 256:
+		return ZOAP_BLOCK_256;
+	case 512:
+		return ZOAP_BLOCK_512;
+	case 1024:
+		return ZOAP_BLOCK_1024;
+	}
+
+	return ZOAP_BLOCK_64;
+}
+
+static void add_to_net_buf(struct net_buf *buf, const char *str, u16_t len,
+			   u16_t *remaining, size_t *offset, size_t current)
+{
+	uint16_t pos;
+	char *ptr;
+
+	if (!*remaining) {
+		return;
+	}
+
+	pos = 0;
+
+	if (*offset < current) {
+		pos = current - *offset;
+
+		if (len >= pos) {
+			len -= pos;
+			*offset += pos;
+		} else {
+			*offset += len;
+			return;
+		}
+	}
+
+	if (len > *remaining) {
+		len = *remaining;
+	}
+
+	ptr = net_buf_add(buf, len);
+	strncpy(ptr, str + pos, len);
+
+	*remaining -= len;
+	*offset += len;
+}
+
+static int format_uri(const char * const *path, struct net_buf *buf,
+		      u16_t *remaining, size_t *offset,
+		      size_t current, bool *more)
+{
+	static const char prefix[] = "</";
+	const char * const *p;
+
+	if (!path) {
+		return -EINVAL;
+	}
+
+	add_to_net_buf(buf, &prefix[0], sizeof(prefix) - 1,
+		       remaining, offset, current);
+	if (!*remaining) {
+		*more = true;
+		return 0;
+	}
+
+	for (p = path; p && *p; ) {
+		u16_t path_len = strlen(*p);
+
+		add_to_net_buf(buf, *p, path_len,
+			       remaining, offset, current);
+		if (!*remaining) {
+			*more = true;
+			return 0;
+		}
+
+		p++;
+		if (!*p) {
+			continue;
+		}
+
+		add_to_net_buf(buf, "/", 1,
+			       remaining, offset, current);
+		if (!*remaining) {
+			*more = true;
+			return 0;
+		}
+
+	}
+
+	add_to_net_buf(buf, ">", 1, remaining, offset, current);
+	*more = false;
+
+	return 0;
+}
+
+static int format_attributes(const char * const *attributes,
+			     struct net_buf *buf,
+			     u16_t *remaining, size_t *offset,
+			     size_t current, bool *more)
+{
+	const char * const *attr;
+
+	if (!attributes) {
+		goto terminator;
+	}
+
+	for (attr = attributes; attr && *attr; ) {
+		int attr_len = strlen(*attr);
+
+		add_to_net_buf(buf, *attr, attr_len,
+			       remaining, offset, current);
+		if (!*remaining) {
+			*more = true;
+			return 0;
+		}
+
+		attr++;
+		if (!*attr) {
+			continue;
+		}
+
+		add_to_net_buf(buf, ";", 1,
+			       remaining, offset, current);
+		if (!*remaining) {
+			*more = true;
+			return 0;
+		}
+	}
+
+terminator:
+	add_to_net_buf(buf, ";", 1, remaining, offset, current);
+	*more = false;
+
+	return 0;
+}
+
+static int format_resource(const struct zoap_resource *resource,
+			   struct net_buf *buf,
+			   u16_t *remaining, size_t *offset,
+			   size_t current, bool *more)
+{
+	struct zoap_core_metadata *meta = resource->user_data;
+	const char * const *attributes = NULL;
+	int r;
+
+	r = format_uri(resource->path, buf, remaining, offset, current, more);
+	if (r < 0) {
+		return r;
+	}
+
+	if (!*remaining) {
+		*more = true;
+		return 0;
+	}
+
+	if (meta && meta->attributes) {
+		attributes = meta->attributes;
+	}
+
+	return format_attributes(attributes, buf, remaining, offset, current,
+				 more);
+}
+
+int _zoap_well_known_core_get(struct zoap_resource *resource,
+			      struct zoap_packet *request,
+			      const struct sockaddr *from)
+{
+	/* FIXME: Add support for concurrent connections at same time,
+	 * Maintain separate Context for each client (from addr) through slist
+	 * and match it with 'from' address.
+	 */
+	static struct zoap_block_context ctx;
+	struct net_context *context;
+	struct zoap_packet response;
+	struct zoap_option query;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	unsigned int num_queries;
+	size_t offset;
+	const u8_t *token;
+	bool more;
+	u16_t remaining;
+	u16_t id;
+	u8_t tkl;
+	u8_t format = 40; /* application/link-format */
+	u8_t *str;
+	int r;
+
+	if (ctx.total_size == 0) {
+		zoap_block_transfer_init(&ctx, default_block_size(),
+					 MAX_BLOCK_WISE_TRANSFER_SIZE);
+	}
+
+	r = zoap_update_from_block(request, &ctx);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	id = zoap_header_get_id(request);
+	token = zoap_header_get_token(request, &tkl);
+
+	/* Per RFC 6690, Section 4.1, only one (or none) query parameter may be
+	 * provided, use the first if multiple.
+	 */
+	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, &query, 1);
+	if (r < 0) {
+		return r;
+	}
+
+	num_queries = r;
+
+	context = net_pkt_context(request->pkt);
+
+	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
+	if (!pkt) {
+		return -ENOMEM;
+	}
+
+	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
+	if (!frag) {
+		net_pkt_unref(pkt);
+		return -ENOMEM;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+
+	r = zoap_packet_init(&response, pkt);
+	if (r < 0) {
+		goto done;
+	}
+
+	/* FIXME: Could be that zoap_packet_init() sets some defaults */
+	zoap_header_set_version(&response, 1);
+	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
+	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
+	zoap_header_set_id(&response, id);
+	zoap_header_set_token(&response, token, tkl);
+
+	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
+			    &format, sizeof(format));
+	if (r < 0) {
+		net_pkt_unref(pkt);
+		return -EINVAL;
+	}
+
+	offset = 0;
+	more = false;
+	remaining = zoap_block_size_to_bytes(ctx.block_size);
+
+	while (resource++ && resource->path) {
+		struct net_buf *temp;
+
+		if (!match_queries_resource(resource, &query, num_queries)) {
+			continue;
+		}
+
+		if (!remaining) {
+			more = true;
+			break;
+		}
+
+		temp = net_pkt_get_data(context, PKT_WAIT_TIME);
+		if (!temp) {
+			net_pkt_unref(pkt);
+			return -ENOMEM;
+		}
+
+		net_pkt_frag_add(pkt, temp);
+
+		r = format_resource(resource, temp, &remaining, &offset,
+				    ctx.current, &more);
+		if (r < 0) {
+			goto done;
+		}
+	}
+
+	if (!response.pkt->frags->frags) {
+		r = -ENOENT;
+		goto done;
+	}
+
+	if (!more) {
+		ctx.total_size = offset;
+	}
+
+	r = zoap_add_block2_option(&response, &ctx);
+	if (r < 0) {
+		net_pkt_unref(pkt);
+		return -EINVAL;
+	}
+
+	str = net_buf_add(response.pkt->frags, 1);
+	*str = COAP_MARKER;
+	response.start = str + 1;
+
+	net_pkt_compact(pkt);
+
+done:
+	if (r < 0) {
+		net_pkt_unref(pkt);
+		return send_error_response(resource, request, from);
+	}
+
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	if (!more) {
+		/* So it's a last block, reset context */
+		memset(&ctx, 0, sizeof(ctx));
+	}
+
+	return r;
+}
+
+#else
+
+static int format_uri(const char * const *path, struct net_buf *buf)
+{
+	static const char prefix[] = "</";
+	const char * const *p;
+	char *str;
+
+	if (!path) {
+		return -EINVAL;
+	}
+
+	str = net_buf_add(buf, sizeof(prefix) - 1);
+	strncpy(str, prefix, sizeof(prefix) - 1);
+
+	for (p = path; p && *p; ) {
+		u16_t path_len = strlen(*p);
+
+		str = net_buf_add(buf, path_len);
+		strncpy(str, *p, path_len);
+
+		p++;
+		if (*p) {
+			str = net_buf_add(buf, 1);
+			*str = '/';
+		}
+	}
+
+	str = net_buf_add(buf, 1);
+	*str = '>';
+
+	return 0;
+}
+
+static int format_attributes(const char * const *attributes,
+			     struct net_buf *buf)
+{
+	const char * const *attr;
+	char *str;
+
+	if (!attributes) {
+		goto terminator;
+	}
+
+	for (attr = attributes; attr && *attr; ) {
+		int attr_len = strlen(*attr);
+
+		str = net_buf_add(buf, attr_len);
+		strncpy(str, *attr, attr_len);
+
+		attr++;
+		if (*attr) {
+			str = net_buf_add(buf, 1);
+			*str = ';';
+		}
+	}
+
+terminator:
+	str = net_buf_add(buf, 1);
+	*str = ';';
+
+	return 0;
+}
+
+static int format_resource(const struct zoap_resource *resource,
+			   struct net_buf *buf)
+{
+	struct zoap_core_metadata *meta = resource->user_data;
+	const char * const *attributes = NULL;
+	int r;
+
+	r = format_uri(resource->path, buf);
+	if (r < 0) {
+		return r;
+	}
+
+	if (meta && meta->attributes) {
+		attributes = meta->attributes;
+	}
+
+	return format_attributes(attributes, buf);
+}
+
 int _zoap_well_known_core_get(struct zoap_resource *resource,
 			      struct zoap_packet *request,
 			      const struct sockaddr *from)
@@ -278,14 +607,15 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 	const u8_t *token;
 	unsigned int num_queries;
 	u16_t id;
-	u8_t tkl, format = 40; /* application/link-format */
+	u8_t tkl;
+	u8_t format = 40; /* application/link-format */
+	u8_t *str;
 	int r;
 
 	id = zoap_header_get_id(request);
 	token = zoap_header_get_token(request, &tkl);
 
-	/*
-	 * Per RFC 6690, Section 4.1, only one (or none) query parameter may be
+	/* Per RFC 6690, Section 4.1, only one (or none) query parameter may be
 	 * provided, use the first if multiple.
 	 */
 	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, &query, 1);
@@ -297,12 +627,12 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 	context = net_pkt_context(request->pkt);
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
+	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_pkt_get_data(context, K_FOREVER);
+	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
 	if (!frag) {
 		net_pkt_unref(pkt);
 		return -ENOMEM;
@@ -331,32 +661,24 @@ int _zoap_well_known_core_get(struct zoap_resource *resource,
 
 	r = -ENOENT;
 
-	/* FIXME: In mesh kind of scenarios sending bulk (multiple fragments)
-	 * response to farthest node (over multiple hops) is not a good idea.
-	 * Send discovery response block by block.
-	 */
+	str = net_buf_add(response.pkt->frags, 1);
+	*str = COAP_MARKER;
+	response.start = str + 1;
+
 	while (resource++ && resource->path) {
 		struct net_buf *temp;
-		u8_t *str;
 
 		if (!match_queries_resource(resource, &query, num_queries)) {
 			continue;
 		}
 
-		if (!response.start) {
-			temp = response.pkt->frags;
-			str = net_buf_add(temp, 1);
-			*str = 0xFF;
-			response.start = str + 1;
-		} else {
-			temp = net_pkt_get_data(context, K_FOREVER);
-			if (!temp) {
-				net_pkt_unref(pkt);
-				return -ENOMEM;
-			}
-
-			net_pkt_frag_add(pkt, temp);
+		temp = net_pkt_get_data(context, PKT_WAIT_TIME);
+		if (!temp) {
+			net_pkt_unref(pkt);
+			return -ENOMEM;
 		}
+
+		net_pkt_frag_add(pkt, temp);
 
 		r = format_resource(resource, temp);
 		if (r < 0) {
@@ -380,3 +702,4 @@ done:
 
 	return r;
 }
+#endif

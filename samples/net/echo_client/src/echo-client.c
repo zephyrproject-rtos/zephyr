@@ -400,7 +400,7 @@ static struct net_pkt *prepare_send_pkt(const char *name,
 
 	NET_ASSERT(send_pkt);
 
-	status = net_pkt_append(send_pkt, expecting_len, lorem_ipsum,
+	status = net_pkt_append_all(send_pkt, expecting_len, lorem_ipsum,
 				K_FOREVER);
 	if (!status) {
 		NET_ERR("%s: cannot create send pkt", name);

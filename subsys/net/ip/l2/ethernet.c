@@ -310,4 +310,16 @@ static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
 	return sizeof(struct net_eth_hdr);
 }
 
-NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve, NULL);
+static inline int ethernet_enable(struct net_if *iface, bool state)
+{
+	ARG_UNUSED(iface);
+
+	if (!state) {
+		net_arp_clear_cache();
+	}
+
+	return 0;
+}
+
+NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve,
+		ethernet_enable);

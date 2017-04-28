@@ -86,7 +86,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 		return -EIO;
 	}
 
-	rc = net_pkt_append(send_buf, size, (u8_t *) buf, K_FOREVER);
+	rc = net_pkt_append_all(send_buf, size, (u8_t *) buf, K_FOREVER);
 	if (!rc) {
 		printk("cannot write buf\n");
 		net_pkt_unref(send_buf);

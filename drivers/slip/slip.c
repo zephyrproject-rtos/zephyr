@@ -125,6 +125,37 @@ static inline void slip_writeb(unsigned char c)
 	uart_pipe_send(&buf[0], 1);
 }
 
+/**
+ *  @brief Write byte to SLIP, escape if it is END or ESC character
+ *
+ *  @param c  a byte to write
+ */
+static void slip_writeb_esc(unsigned char c)
+{
+	switch (c) {
+	case SLIP_END:
+		/* If it's the same code as an END character,
+		 * we send a special two character code so as
+		 * not to make the receiver think we sent
+		 * an END.
+		 */
+		slip_writeb(SLIP_ESC);
+		slip_writeb(SLIP_ESC_END);
+		break;
+	case SLIP_ESC:
+		/* If it's the same code as an ESC character,
+		 * we send a special two character code so as
+		 * not to make the receiver think we sent
+		 * an ESC.
+		 */
+		slip_writeb(SLIP_ESC);
+		slip_writeb(SLIP_ESC_ESC);
+		break;
+	default:
+		slip_writeb(c);
+	}
+}
+
 static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
@@ -154,7 +185,7 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 		/* This writes ethernet header */
 		if (!send_header_once && ll_reserve) {
 			for (i = 0; i < ll_reserve; i++) {
-				slip_writeb(*ptr++);
+				slip_writeb_esc(*ptr++);
 			}
 		}
 
@@ -174,29 +205,7 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 
 		for (i = 0; i < frag->len; ++i) {
 			c = *ptr++;
-
-			switch (c) {
-			case SLIP_END:
-				/* If it's the same code as an END character,
-				 * we send a special two character code so as
-				 * not to make the receiver think we sent
-				 * an END.
-				 */
-				slip_writeb(SLIP_ESC);
-				slip_writeb(SLIP_ESC_END);
-				break;
-			case SLIP_ESC:
-				/* If it's the same code as an ESC character,
-				 * we send a special two character code so as
-				 * not to make the receiver think we sent
-				 * an ESC.
-				 */
-				slip_writeb(SLIP_ESC);
-				slip_writeb(SLIP_ESC_ESC);
-				break;
-			default:
-				slip_writeb(c);
-			}
+			slip_writeb_esc(c);
 		}
 
 #if defined(CONFIG_SLIP_DEBUG)

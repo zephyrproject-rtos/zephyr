@@ -67,7 +67,7 @@ void http_receive_cb(struct tcp_client_ctx *tcp_ctx, struct net_pkt *rx)
 
 	http_ctx = CONTAINER_OF(tcp_ctx, struct http_client_ctx, tcp_ctx);
 
-	offset = net_pkt_frags_len(rx) - net_pkt_appdatalen(rx);
+	offset = net_pkt_get_len(rx) - net_pkt_appdatalen(rx);
 
 	/* find the fragment */
 	while (frag && offset >= frag->len) {

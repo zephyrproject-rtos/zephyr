@@ -1145,12 +1145,6 @@ int zoap_add_size2_option(struct zoap_packet *zpkt,
 	return zoap_add_option_int(zpkt, ZOAP_OPTION_SIZE2, ctx->total_size);
 }
 
-struct block_transfer {
-	int num;
-	int block_size;
-	bool more;
-};
-
 static int get_block_option(const struct zoap_packet *zpkt, u16_t code)
 {
 	struct zoap_option option;

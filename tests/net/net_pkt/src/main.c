@@ -508,13 +508,13 @@ static int test_pkt_read_append(void)
 	tfrag = net_buf_frag_last(pkt->frags);
 	off = tfrag->len;
 
-	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_short),
+	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
 			    test_rw_short, K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_short),
+	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
 			    test_rw_short, K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
@@ -546,14 +546,14 @@ static int test_pkt_read_append(void)
 	tfrag = net_buf_frag_last(pkt->frags);
 	off = tfrag->len;
 
-	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_long), test_rw_long,
-			    K_FOREVER)) {
+	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
+				test_rw_long, K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
 	}
 
-	if (!net_pkt_append(pkt, (u16_t)sizeof(test_rw_long), test_rw_long,
-			    K_FOREVER)) {
+	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
+				test_rw_long, K_FOREVER)) {
 		printk("net_pkt_append failed\n");
 		return -EINVAL;
 	}

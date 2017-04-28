@@ -157,7 +157,7 @@ net_dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type)
 /* Add magic cookie to DCHPv4 messages */
 static inline bool add_cookie(struct net_pkt *pkt)
 {
-	return net_pkt_append(pkt, sizeof(magic_cookie),
+	return net_pkt_append_all(pkt, sizeof(magic_cookie),
 			      magic_cookie, K_FOREVER);
 }
 
@@ -173,7 +173,7 @@ static bool add_option_length_value(struct net_pkt *pkt, u8_t option,
 		return false;
 	}
 
-	if (!net_pkt_append(pkt, size, value, K_FOREVER)) {
+	if (!net_pkt_append_all(pkt, size, value, K_FOREVER)) {
 		return false;
 	}
 
@@ -197,7 +197,7 @@ static bool add_req_options(struct net_pkt *pkt)
 					 DHCPV4_OPTIONS_ROUTER,
 					 DHCPV4_OPTIONS_DNS_SERVER };
 
-	return net_pkt_append(pkt, sizeof(data), data, K_FOREVER);
+	return net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
 }
 
 static bool add_server_id(struct net_pkt *pkt, const struct in_addr *addr)
