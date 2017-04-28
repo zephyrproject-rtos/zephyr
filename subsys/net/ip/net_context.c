@@ -1118,6 +1118,7 @@ NET_CONN_CB(tcp_established)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	enum net_verdict ret;
 	u8_t tcp_flags;
+	u16_t data_len;
 
 	NET_ASSERT(context && context->tcp);
 
@@ -1187,9 +1188,17 @@ NET_CONN_CB(tcp_established)
 	}
 
 	set_appdata_values(pkt, IPPROTO_TCP);
-	context->tcp->send_ack += net_pkt_appdatalen(pkt);
+
+	data_len = net_pkt_appdatalen(pkt);
+	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
+		NET_ERR("Context %p: overflow of recv window (%d vs %d), pkt dropped",
+			context, net_tcp_get_recv_wnd(context->tcp), data_len);
+		return NET_DROP;
+	}
 
 	ret = packet_received(conn, pkt, context->tcp->recv_user_data);
+
+	context->tcp->send_ack += data_len;
 
 	if (tcp_flags & NET_TCP_FIN) {
 		/* Sending an ACK in the CLOSE_WAIT state will transition to
@@ -2426,6 +2435,29 @@ int net_context_recv(struct net_context *context,
 	return 0;
 }
 
+int net_context_update_recv_wnd(struct net_context *context,
+				s32_t delta)
+{
+#if defined(CONFIG_NET_TCP)
+	s32_t new_win;
+
+	if (!context->tcp) {
+		NET_ERR("context->tcp == NULL");
+		return -EPROTOTYPE;
+	}
+
+	new_win = context->tcp->recv_wnd + delta;
+	if (new_win < 0 || new_win > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	context->tcp->recv_wnd = new_win;
+
+	return 0;
+#else
+	return -EPROTOTYPE;
+#endif
+}
 void net_context_foreach(net_context_cb_t cb, void *user_data)
 {
 	int i;

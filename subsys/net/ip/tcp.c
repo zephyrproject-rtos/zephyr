@@ -220,6 +220,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 	tcp_context[i].send_seq = tcp_init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
+	tcp_context[i].recv_wnd = min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 
 	tcp_context[i].accept_cb = NULL;
 
@@ -406,17 +407,9 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	return pkt;
 }
 
-static inline u32_t get_recv_wnd(struct net_tcp *tcp)
+u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
 {
-	ARG_UNUSED(tcp);
-
-	/* We don't queue received data inside the stack, we hand off
-	 * packets to synchronous callbacks (who can queue if they
-	 * want, but it's not our business).  So the available window
-	 * size is always the same.  There are two configurables to
-	 * check though.
-	 */
-	return min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
+	return tcp->recv_wnd;
 }
 
 int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
@@ -482,7 +475,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 		seq++;
 	}
 
-	wnd = get_recv_wnd(tcp);
+	wnd = net_tcp_get_recv_wnd(tcp);
 
 	segment.src_addr = (struct sockaddr_ptr *)local;
 	segment.dst_addr = remote;
@@ -1054,7 +1047,8 @@ bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt)
 	return (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
 				tcp->send_ack) >= 0) &&
 		(net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
-				 tcp->send_ack + get_recv_wnd(tcp)) < 0);
+				 tcp->send_ack
+					+ net_tcp_get_recv_wnd(tcp)) < 0);
 }
 
 struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
