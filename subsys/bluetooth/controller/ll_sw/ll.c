@@ -246,21 +246,29 @@ int ll_init(struct k_sem *sem_rx)
 	return 0;
 }
 
-void ll_address_get(u8_t addr_type, u8_t *bdaddr)
+u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 {
 	if (addr_type) {
-		memcpy(bdaddr, &_ll_context.rnd_addr[0], BDADDR_SIZE);
-	} else {
-		memcpy(bdaddr, &_ll_context.pub_addr[0], BDADDR_SIZE);
+		if (bdaddr) {
+			memcpy(bdaddr, _ll_context.rnd_addr, BDADDR_SIZE);
+		}
+
+		return _ll_context.rnd_addr;
 	}
+
+	if (bdaddr) {
+		memcpy(bdaddr, _ll_context.pub_addr, BDADDR_SIZE);
+	}
+
+	return _ll_context.pub_addr;
 }
 
-void ll_address_set(u8_t addr_type, u8_t const *const bdaddr)
+void ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
 	if (addr_type) {
-		memcpy(&_ll_context.rnd_addr[0], bdaddr, BDADDR_SIZE);
+		memcpy(_ll_context.rnd_addr, bdaddr, BDADDR_SIZE);
 	} else {
-		memcpy(&_ll_context.pub_addr[0], bdaddr, BDADDR_SIZE);
+		memcpy(_ll_context.pub_addr, bdaddr, BDADDR_SIZE);
 	}
 }
 
