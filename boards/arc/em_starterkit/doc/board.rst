@@ -120,7 +120,7 @@ pieces of hardware are required.
   http://www.putty.org.
 
 * (optional) A collection of Pmods.
-  See http://store.digilentinc.com/pmod-peripheral-modules or develop your
+  See http://store.digilentinc.com/pmod-modules or develop your
   custom interfaces to attach to the Pmod connector.
 
 Building Sample Applications

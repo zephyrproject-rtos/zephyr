@@ -6,39 +6,46 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config ATAES132A_DRV_NAME
+menuconfig CRYPTO_ATAES132A
+	bool "Atmel ATAES132A 32k AES Serial EEPROM support"
+	depends on I2C
+	default n
+	help
+	  Enable Atmel ATAES132A 32k AES Serial EEPROM support.
+
+if CRYPTO_ATAES132A
+
+config CRYPTO_ATAES132A_DRV_NAME
 	string "Driver's name"
-	depends on ATAES132A
 	default "ataes132a"
 	help
-	 Name for the ATAES132A driver which will be used for binding.
+	  Name for the ATAES132A driver which will be used for binding.
 
-config ATAES132A_I2C_PORT_NAME
+config CRYPTO_ATAES132A_I2C_PORT_NAME
 	string "I2C master controller port name"
-	depends on ATAES132A
 	default "I2C_0"
 	help
-	 Master I2C port name through which ATAES132A chip is accessed.
+	  Master I2C port name through which ATAES132A chip is accessed.
 
-config ATAES132A_I2C_ADDR
+config CRYPTO_ATAES132A_I2C_ADDR
 	hex "ATAES132A I2C addess"
-	depends on ATAES132A
 	default 0x50
 	help
 	  ATAES132A chip's I2C address.
 
 choice
 	prompt "ATAES132A I2C bus speed"
-	default ATAES132A_I2C_SPEED_STANDARD
-	depends on ATAES132A
+	default CRYPTO_ATAES132A_I2C_SPEED_STANDARD
 
-config ATAES132A_I2C_SPEED_STANDARD
+config CRYPTO_ATAES132A_I2C_SPEED_STANDARD
 	bool "Standard"
 	help
 	  Standard bis speed of up to 100KHz.
 
-config ATAES132A_I2C_SPEED_FAST
+config CRYPTO_ATAES132A_I2C_SPEED_FAST
 	bool "Fast"
 	help
 	  Fast bus speed of up to 400KHz.
 endchoice
+
+endif # CRYPTO_ATAES132A

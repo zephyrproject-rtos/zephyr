@@ -184,7 +184,7 @@ Then follow instructions in README.md
 Flashing an application to Nucleo L476RG
 ----------------------------------------
 
-The sample application :ref:'hello_world` is being used in this tutorial:
+The sample application :ref:`hello_world` is being used in this tutorial:
 
 To build the Zephyr kernel and application, enter:
 

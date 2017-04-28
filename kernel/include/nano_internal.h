@@ -14,6 +14,8 @@
 #ifndef _NANO_INTERNAL__H_
 #define _NANO_INTERNAL__H_
 
+#include <kernel.h>
+
 #define K_NUM_PRIORITIES \
 	(CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES + 1)
 
@@ -38,10 +40,6 @@ static inline void _data_copy(void)
 #endif
 FUNC_NORETURN void _Cstart(void);
 
-/* helper type alias for thread control structure */
-
-typedef void (*_thread_entry_t)(void *, void *, void *);
-
 extern void _thread_entry(void (*)(void *, void *, void *),
 			  void *, void *, void *);
 
@@ -52,8 +50,21 @@ extern void _new_thread(char *pStack, size_t stackSize,
 
 /* context switching and scheduling-related routines */
 
-extern unsigned int _Swap(unsigned int);
+extern unsigned int __swap(unsigned int key);
 
+#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+extern void _update_time_slice_before_swap(void);
+
+static inline unsigned int _time_slice_swap(unsigned int key)
+{
+	_update_time_slice_before_swap();
+	return __swap(key);
+}
+
+#define _Swap(x)  _time_slice_swap(x)
+#else
+#define _Swap(x)  __swap(x)
+#endif
 /* set and clear essential fiber/task flag */
 
 extern void _thread_essential_set(void);

@@ -29,7 +29,10 @@
 
 	/* externs */
 
-	GTEXT(_Swap)
+	GTEXT(__swap)
+#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+	GTEXT(_update_time_slice_before_swap)
+#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	GTEXT(_sys_power_save_idle_exit)
@@ -123,7 +126,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 	/* Push EDI as we will use it for scratch space.
 	 * Rest of the callee-saved regs get saved by invocation of C
-	 * functions (isr handler, _Swap(), etc)
+	 * functions (isr handler, __swap(), etc)
 	 */
 	pushl	%edi
 
@@ -289,7 +292,7 @@ alreadyOnIntStack:
 
 	/*
 	 * Set the _INT_ACTIVE bit in the k_thread to allow the upcoming call to
-	 * _Swap() to determine whether non-floating registers need to be
+	 * __swap() to determine whether non-floating registers need to be
 	 * preserved using the lazy save/restore algorithm, or to indicate to
 	 * debug tools that a preemptive context switch has occurred.
 	 */
@@ -301,7 +304,7 @@ alreadyOnIntStack:
 	/*
 	 * A context reschedule is required: keep the volatile registers of
 	 * the interrupted thread on the context's stack.  Utilize
-	 * the existing _Swap() primitive to save the remaining
+	 * the existing __swap() primitive to save the remaining
 	 * thread's registers (including floating point) and perform
 	 * a switch to the new thread.
 	 */
@@ -315,20 +318,23 @@ alreadyOnIntStack:
 	popl	%esi
 #endif
 
+#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+	call	_update_time_slice_before_swap
+#endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
 #ifdef CONFIG_X86_IAMCU
 	/* IAMCU first argument goes into a register, not the stack.
 	 */
 	popl	%eax
 #endif
-	call	_Swap
+	call	__swap
 
 #ifndef CONFIG_X86_IAMCU
 	addl 	$4, %esp	/* pop KERNEL_LOCK_KEY argument */
 #endif
 	/*
 	 * The interrupted thread has now been scheduled,
-	 * as the result of a _later_ invocation of _Swap().
+	 * as the result of a _later_ invocation of __swap().
 	 *
 	 * Now need to restore the interrupted thread's environment before
 	 * returning control to it at the point where it was interrupted ...
@@ -337,7 +343,7 @@ alreadyOnIntStack:
 #if ( defined(CONFIG_FP_SHARING) ||  \
       defined(CONFIG_GDB_INFO) )
 	/*
-	 * _Swap() has restored the floating point registers, if needed.
+	 * __swap() has restored the floating point registers, if needed.
 	 * Clear the _INT_ACTIVE bit in the interrupted thread's state
 	 * since it has served its purpose.
 	 */

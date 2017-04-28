@@ -11,13 +11,19 @@
 #
 menuconfig CRYPTO
 	bool
-	prompt "Crypto Drivers  [EXPERIMENTAL]"
+	prompt "Crypto Drivers [EXPERIMENTAL]"
 	default n
 
 if CRYPTO
+
+config CRYPTO_INIT_PRIORITY
+	int "Crypto devices init priority"
+	default 90
+	help
+	Crypto devices initialization priority.
+
 config SYS_LOG_CRYPTO_LEVEL
-	int
-	prompt "Crypto drivers log level"
+	int "Crypto drivers log level"
 	default 0
 	help
 	Sets log level for crypto drivers
@@ -37,31 +43,23 @@ config SYS_LOG_CRYPTO_LEVEL
 config CRYPTO_TINYCRYPT_SHIM
 	bool "Enable TinyCrypt shim driver [EXPERIMENTAL] "
 	default n
-	depends on CRYPTO
 	help
 	Enable TinyCrypt shim layer compliant with crypto APIs.
 
-config CRYPTO_0_NAME
+config CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
+	int "Maximum of sessions TinyCrypt shim driver can handle"
+	default 2
+	help
+	This can be used to tweak the amount of sessions the driver
+	can handle in parallel.
+
+config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
 	string "Device name for TinyCrypt Pseudo device"
-	default "CRYPTO_TC_0"
+	default "CRYPTO_TC"
 	depends on CRYPTO_TINYCRYPT_SHIM
 	help
 	Device name for TinyCrypt Pseudo device.
 
-menuconfig ATAES132A
-	bool "Atmel ATAES132A 32k AES Serial EEPROM support"
-	depends on I2C && CRYPTO
-	default n
-	help
-	Enable Atmel ATAES132A 32k AES Serial EEPROM support.
-
-config CRYPTO_INIT_PRIORITY
-	int
-	depends on CRYPTO
-	prompt "Sensor init priority"
-	default 90
-	help
-	 Crypto devices initialization priority.
-
 source "drivers/crypto/Kconfig.ataes132a"
+
 endif # CRYPTO

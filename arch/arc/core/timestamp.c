@@ -15,7 +15,7 @@
 #include <toolchain.h>
 #include <kernel_structs.h>
 
-extern s64_t _sys_clock_tick_count;
+extern volatile u64_t _sys_clock_tick_count;
 extern int sys_clock_hw_cycles_per_tick;
 
 /*

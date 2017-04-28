@@ -25,6 +25,8 @@ extern void _pend_thread(struct k_thread *thread,
 extern void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 extern int __must_switch_threads(void);
+extern int _is_thread_time_slicing(struct k_thread *thread);
+extern void _update_time_slice_before_swap(void);
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
 extern s32_t _ms_to_ticks(s32_t ms);
 #endif
@@ -40,6 +42,11 @@ static ALWAYS_INLINE struct k_thread *_get_next_ready_thread(void)
 static inline int _is_idle_thread(void *entry_point)
 {
 	return entry_point == idle;
+}
+
+static inline int _is_idle_thread_ptr(k_tid_t thread)
+{
+	return thread == _idle_thread;
 }
 
 #ifdef CONFIG_MULTITHREADING

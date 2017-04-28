@@ -51,9 +51,6 @@ config hifi_mini_4swIrq
 config hifi2_std
 	bool "hifi2_std core"
 
-config XRC_D2PM
-	bool "XRC_D2PM core"
-
 config XRC_D2PM_5swIrq
 	bool "XRC_D2PM_5swIrq (XRC_D2PM core with 4 additional SW IRQs)"
 

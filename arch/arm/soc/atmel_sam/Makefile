@@ -5,4 +5,4 @@
 #
 
 obj-y += $(SOC_SERIES)/
-obj-y += common/
+obj-$(CONFIG_ASF) += common/

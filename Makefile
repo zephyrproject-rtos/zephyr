@@ -323,7 +323,11 @@ GENOFFSET_H	= scripts/gen_offset_header/gen_offset_header
 FIXDEP		= scripts/basic/fixdep
 else
 GENOFFSET_H	= $(PREBUILT_HOST_TOOLS)/gen_offset_header
+ifneq ($(filter host-tools, $(MAKECMDGOALS)),)
+FIXDEP		= scripts/basic/fixdep
+else
 FIXDEP		= $(PREBUILT_HOST_TOOLS)/fixdep
+endif
 endif
 PERL		= perl
 PYTHON		= python
@@ -1195,8 +1199,8 @@ $(help-board-dirs): help-%:
 
 
 host-tools:
-	$(Q)$(MAKE) $(build)=scripts/kconfig standalone
 	$(Q)$(MAKE) $(build)=scripts/basic
+	$(Q)$(MAKE) $(build)=scripts/kconfig standalone
 	$(Q)$(MAKE) $(build)=scripts/gen_idt
 	$(Q)$(MAKE) $(build)=scripts/gen_offset_header
 	@mkdir -p ${ZEPHYR_BASE}/bin

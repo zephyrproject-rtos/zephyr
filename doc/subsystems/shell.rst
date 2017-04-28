@@ -86,7 +86,7 @@ Writing a shell module
 In order to support shell in your subsystem, the application must do the following:
 
 #. Module configuration flag: Declare a new flag in your subsystem Kconfig file.
-   It should depend on `:option:`CONFIG_CONSOLE_SHELL`` flag.
+   It should depend on :option:`CONFIG_CONSOLE_SHELL` flag.
 
 #. Module registration to shell: Add your shell identifier and register its
    callback functions in the shell database using :c:macro:`SHELL_REGISTER`.

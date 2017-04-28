@@ -6,11 +6,11 @@
  */
 
 /**
- * @file SoC configuration macros for the Atmel SAM3 family processors.
+ * @file SoC configuration macros for the Atmel SAM3X family processors.
  */
 
-#ifndef _ATMEL_SAM3_SOC_H_
-#define _ATMEL_SAM3_SOC_H_
+#ifndef _ATMEL_SAM3X_SOC_H_
+#define _ATMEL_SAM3X_SOC_H_
 
 /* IRQ numbers (from section 9.1, Peripheral Identifiers). */
 #define IRQ_SUPC	0	/* Supply Controller                    */
@@ -131,9 +131,9 @@
  * the processor clock is at 84 MHz.
  */
 #define PMC_CKGR_PLLAR_MULA	\
-	((CONFIG_SOC_ATMEL_SAM3_PLLA_MULA) << 16)
+	((CONFIG_SOC_ATMEL_SAM3X_PLLA_MULA) << 16)
 #define PMC_CKGR_PLLAR_DIVA	\
-	((CONFIG_SOC_ATMEL_SAM3_PLLA_DIVA) << 0)
+	((CONFIG_SOC_ATMEL_SAM3X_PLLA_DIVA) << 0)
 
 #define PMC_MCKR_CSS_MASK		(0x3)
 #define PMC_MCKR_CSS_SLOW		(0 << 0)
@@ -244,4 +244,4 @@
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* _ATMEL_SAM3_SOC_H_ */
+#endif /* _ATMEL_SAM3X_SOC_H_ */

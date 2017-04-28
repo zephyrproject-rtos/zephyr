@@ -43,7 +43,6 @@ do_flash() {
             ${OPENOCD_POST_CMD:+-c $OPENOCD_POST_CMD} \
             -c 'reset run' \
             -c 'shutdown'"
-    echo 'Done flashing'
 }
 
 
@@ -90,6 +89,11 @@ do_debugserver() {
 
 CMD="$1"
 shift
+
+if [ "$KBUILD_VERBOSE" -eq 1 ]
+then
+	set -x
+fi
 
 case "${CMD}" in
   flash)

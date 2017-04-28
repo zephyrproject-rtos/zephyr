@@ -18,6 +18,15 @@
  * state.
  */
 s32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
+
+#if defined(CONFIG_TICKLESS_KERNEL)
+#define _must_enter_tickless_idle(ticks) (1)
+#else
+#define _must_enter_tickless_idle(ticks) \
+		((ticks == K_FOREVER) || (ticks >= _sys_idle_threshold_ticks))
+#endif
+#else
+#define _must_enter_tickless_idle(ticks) ((void)ticks, (0))
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -54,18 +63,37 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 #define set_kernel_idle_time_in_ticks(x) do { } while (0)
 #endif
 
-static void _sys_power_save_idle(s32_t ticks __unused)
+static void _sys_power_save_idle(s32_t ticks)
 {
-#if defined(CONFIG_TICKLESS_IDLE)
-	if ((ticks == K_FOREVER) || ticks >= _sys_idle_threshold_ticks) {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (ticks != K_FOREVER) {
+		ticks -= _get_elapsed_program_time();
+		if (!ticks) {
+			/*
+			 * Timer has expired or about to expire
+			 * No time for power saving operations
+			 *
+			 * Note that it will never be zero unless some time
+			 * had elapsed since timer was last programmed.
+			 */
+			k_cpu_idle();
+			return;
+		}
+	}
+#endif
+	if (_must_enter_tickless_idle(ticks)) {
 		/*
 		 * Stop generating system timer interrupts until it's time for
 		 * the next scheduled kernel timer to expire.
 		 */
 
+		/*
+		 * In the case of tickless kernel, timer driver should
+		 * reprogram timer only if the currently programmed time
+		 * duration is smaller than the idle time.
+		 */
 		_timer_idle_enter(ticks);
 	}
-#endif /* CONFIG_TICKLESS_IDLE */
 
 	set_kernel_idle_time_in_ticks(ticks);
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
@@ -108,15 +136,11 @@ void _sys_power_save_idle_exit(s32_t ticks)
 		_sys_soc_resume();
 	}
 #endif
-#ifdef CONFIG_TICKLESS_IDLE
-	if ((ticks == K_FOREVER) || ticks >= _sys_idle_threshold_ticks) {
-		/* Resume normal periodic system timer interrupts */
 
+	if (_must_enter_tickless_idle(ticks)) {
+		/* Resume normal periodic system timer interrupts */
 		_timer_idle_exit();
 	}
-#else
-	ARG_UNUSED(ticks);
-#endif /* CONFIG_TICKLESS_IDLE */
 }
 
 

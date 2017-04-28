@@ -26,6 +26,7 @@
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
 #include <arch/arm/cortex_m/cmsis.h>
+#include <kernel_structs.h>
 
 /* running total of timer count */
 static volatile u32_t clock_accumulated_count;
@@ -49,6 +50,7 @@ static volatile u32_t clock_accumulated_count;
 #define IDLE_TICKLESS 1     /* tickless idle  mode */
 #endif			    /* CONFIG_TICKLESS_IDLE */
 
+extern void _ExcExit(void);
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern s32_t _NanoIdleValGet(void);
 extern void _NanoIdleValClear(void);
@@ -61,7 +63,9 @@ extern s32_t _sys_idle_elapsed_ticks;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static u32_t __noinit default_load_value; /* default count */
+#ifndef CONFIG_TICKLESS_KERNEL
 static u32_t idle_original_count;
+#endif
 static u32_t __noinit max_system_ticks;
 static u32_t idle_original_ticks;
 static u32_t __noinit max_load_value;
@@ -133,8 +137,25 @@ static ALWAYS_INLINE void sysTickStart(void)
  */
 static ALWAYS_INLINE u32_t sysTickCurrentGet(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	/*
+	 * Counter can rollover if irqs are locked for too long.
+	 * Return 0 to indicate programmed cycles have expired.
+	 */
+	if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+		return 0;
+	}
+#endif
 	return SysTick->VAL;
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+static ALWAYS_INLINE void sys_tick_reload(void)
+{
+	/* Triggers immediate reload of count when clock is already running */
+	SysTick->VAL = 0;
+}
+#endif
 
 /**
  *
@@ -212,6 +233,45 @@ void _timer_int_handler(void *unused)
 	__asm__(" cpsid i"); /* PRIMASK = 1 */
 
 #ifdef CONFIG_TICKLESS_IDLE
+#if defined(CONFIG_TICKLESS_KERNEL)
+
+	sysTickStop();
+
+	if (!idle_original_ticks) {
+		if (_sys_clock_always_on) {
+			_sys_clock_tick_count = _get_elapsed_clock_time();
+
+			sysTickReloadSet(max_load_value);
+			sysTickStart();
+			sys_tick_reload();
+		}
+		__asm__(" cpsie i"); /* re-enable interrupts (PRIMASK = 0) */
+
+		_ExcExit();
+		return;
+	}
+
+	idle_mode = IDLE_NOT_TICKLESS;
+
+	_sys_idle_elapsed_ticks = idle_original_ticks;
+
+	/*
+	 * Clear programmed ticks before announcing elapsed time so
+	 * that recursive calls to _update_elapsed_time() will not
+	 * announce already consumed elapsed time
+	 */
+	idle_original_ticks = 0;
+
+	_sys_clock_tick_announce();
+
+	/* _sys_clock_tick_announce() could cause new programming */
+	if (!idle_original_ticks && _sys_clock_always_on) {
+		_sys_clock_tick_count = _get_elapsed_clock_time();
+		sysTickReloadSet(max_load_value);
+		sysTickStart();
+		sys_tick_reload();
+	}
+#else
 	/*
 	 * If this a wakeup from a completed tickless idle or after
 	 *  _timer_idle_exit has processed a partial idle, return
@@ -238,6 +298,7 @@ void _timer_int_handler(void *unused)
 
 	/* accumulate total counter value */
 	clock_accumulated_count += default_load_value * _sys_idle_elapsed_ticks;
+#endif
 #else  /* !CONFIG_TICKLESS_IDLE */
 	/*
 	 * No tickless idle:
@@ -279,6 +340,78 @@ void _timer_int_handler(void *unused)
 	extern void _ExcExit(void);
 	_ExcExit();
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+u32_t _get_program_time(void)
+{
+	return idle_original_ticks;
+}
+
+u32_t _get_remaining_program_time(void)
+{
+	if (idle_original_ticks == 0) {
+		return 0;
+	}
+
+	return sysTickCurrentGet() / default_load_value;
+}
+
+u32_t _get_elapsed_program_time(void)
+{
+	if (idle_original_ticks == 0) {
+		return 0;
+	}
+
+	return idle_original_ticks - (sysTickCurrentGet() / default_load_value);
+}
+
+void _set_time(u32_t time)
+{
+	sysTickStop();
+
+	if (!time) {
+		idle_original_ticks = 0;
+		return;
+	}
+
+	idle_original_ticks = time > max_system_ticks ? max_system_ticks : time;
+
+	_sys_clock_tick_count = _get_elapsed_clock_time();
+
+	sysTickReloadSet(idle_original_ticks * default_load_value);
+
+	sysTickStart();
+	sys_tick_reload();
+}
+
+void _enable_sys_clock(void)
+{
+	if (!(SysTick->CTRL & SysTick_CTRL_ENABLE_Msk)) {
+		sysTickStart();
+		sys_tick_reload();
+	}
+}
+
+static inline u64_t get_elapsed_count(void)
+{
+	u64_t elapsed;
+
+	if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+		elapsed = SysTick->LOAD;
+	} else {
+		elapsed = (SysTick->LOAD - SysTick->VAL);
+	}
+
+	elapsed += (_sys_clock_tick_count * default_load_value);
+
+	return elapsed;
+}
+
+u64_t _get_elapsed_clock_time(void)
+{
+	return get_elapsed_count() / default_load_value;
+}
+#endif
 
 #ifdef CONFIG_TICKLESS_IDLE
 
@@ -359,6 +492,9 @@ static void sysTickTicklessIdleInit(void)
 	/* restore the previous sysTick state */
 	sysTickStop();
 	sysTickReloadSet(default_load_value);
+#ifdef CONFIG_TICKLESS_KERNEL
+	idle_original_ticks = 0;
+#endif
 }
 
 /**
@@ -375,6 +511,18 @@ static void sysTickTicklessIdleInit(void)
 void _timer_idle_enter(s32_t ticks /* system ticks */
 				)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (ticks != K_FOREVER) {
+		/* Need to reprogram only if current program is smaller */
+		if (ticks > idle_original_ticks) {
+			_set_time(ticks);
+		}
+	} else {
+		sysTickStop();
+		idle_original_ticks = 0;
+	}
+	idle_mode = IDLE_TICKLESS;
+#else
 	sysTickStop();
 
 	/*
@@ -413,6 +561,7 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
 	idle_mode = IDLE_TICKLESS;
 	sysTickReloadSet(idle_original_count);
 	sysTickStart();
+#endif
 }
 
 /**
@@ -431,6 +580,16 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
  */
 void _timer_idle_exit(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (idle_mode == IDLE_TICKLESS) {
+		idle_mode = IDLE_NOT_TICKLESS;
+		if (!idle_original_ticks && _sys_clock_always_on) {
+			sysTickReloadSet(max_load_value);
+			sysTickStart();
+			sys_tick_reload();
+		}
+	}
+#else
 	u32_t count; /* timer's current count register value */
 
 	if (timer_mode == TIMER_MODE_PERIODIC) {
@@ -499,6 +658,7 @@ void _timer_idle_exit(void)
 
 	idle_mode = IDLE_NOT_TICKLESS;
 	sysTickStart();
+#endif
 }
 
 #endif /* CONFIG_TICKLESS_IDLE */
@@ -541,6 +701,8 @@ int _sys_clock_driver_init(struct device *device)
 
 	SysTick->CTRL = ctrl;
 
+	SysTick->VAL = 0; /* triggers immediate reload of count */
+
 	return 0;
 }
 
@@ -559,6 +721,9 @@ int _sys_clock_driver_init(struct device *device)
  */
 u32_t _timer_cycle_get_32(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+return (u32_t) get_elapsed_count();
+#else
 	u32_t cac, count;
 
 	do {
@@ -567,6 +732,7 @@ u32_t _timer_cycle_get_32(void)
 	} while (cac != clock_accumulated_count);
 
 	return cac + count;
+#endif
 }
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE

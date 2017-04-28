@@ -5,7 +5,7 @@
  */
 
 /**
- * @file SoC configuration macros for the Atmel SAM3 family processors.
+ * @file SoC configuration macros for the Atmel SAM3X family processors.
  *
  * Refer to the datasheet for more information about these registers.
  */

@@ -7,7 +7,7 @@
  * @file
  * @brief kernel swapper code for Xtensa
  *
- * This module implements the _Swap() routine for the Xtensa architecture.
+ * This module implements the __swap() routine for the Xtensa architecture.
  */
 
 #include <xtensa_context.h>
@@ -15,11 +15,11 @@
 #include <offsets_short.h>
 
 	.extern _kernel
-/* unsigned int _Swap (unsigned int basepri); */
-	.globl  _Swap
-	.type   _Swap,@function
+/* unsigned int __swap (unsigned int basepri); */
+	.globl  __swap
+	.type   __swap,@function
 	.align  4
-_Swap:
+__swap:
 #ifdef __XTENSA_CALL0_ABI__
 	addi    sp,  sp, -XT_SOL_FRMSZ
 #else
@@ -61,7 +61,7 @@ _Swap:
 	s32i a3,  sp, XT_SOL_exit       /* 0 to flag as solicited frame */
 	s32i sp,  a4, THREAD_OFFSET(sp) /* current->arch.topOfStack := sp */
 	/*
-	 * Set _Swap()'s default return code to -EAGAIN. This eliminates the
+	 * Set __swap()'s default return code to -EAGAIN. This eliminates the
 	 * need for the timeout code to set it itself.
 	 */
 	movi a3, -11 /* a3 := -EAGAIN. TODO: Use a macro here insted of 11 */

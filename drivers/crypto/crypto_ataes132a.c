@@ -898,6 +898,6 @@ static struct crypto_driver_api crypto_enc_funcs = {
 
 struct ataes132a_device_data ataes132a_data;
 
-DEVICE_AND_API_INIT(ataes132a, CONFIG_ATAES132A_DRV_NAME, ataes132a_init,
+DEVICE_AND_API_INIT(ataes132a, CONFIG_CRYPTO_ATAES132A_DRV_NAME, ataes132a_init,
 		    &ataes132a_data, &ataes132a_config, POST_KERNEL,
 		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);

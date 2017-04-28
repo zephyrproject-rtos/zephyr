@@ -38,9 +38,19 @@ extern void sys_clock_disable(void);
 #ifdef CONFIG_TICKLESS_IDLE
 extern void _timer_idle_enter(s32_t ticks);
 extern void _timer_idle_exit(void);
+#else
+#define _timer_idle_enter(ticks) do { } while ((0))
+#define _timer_idle_exit() do { } while ((0))
 #endif /* CONFIG_TICKLESS_IDLE */
 
 extern void _nano_sys_clock_tick_announce(s32_t ticks);
+#ifdef CONFIG_TICKLESS_KERNEL
+extern void _set_time(u32_t time);
+extern u32_t _get_program_time(void);
+extern u32_t _get_remaining_program_time(void);
+extern u32_t _get_elapsed_program_time(void);
+extern u64_t _get_elapsed_clock_time(void);
+#endif
 
 extern int sys_clock_device_ctrl(struct device *device,
 				 u32_t ctrl_command, void *context);

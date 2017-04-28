@@ -70,10 +70,16 @@ static volatile u32_t accumulated_cycle_count;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static u32_t __noinit max_system_ticks;
-static u32_t __noinit programmed_limit;
 static u32_t __noinit programmed_ticks;
-static int straddled_tick_on_idle_enter;
 extern s32_t _sys_idle_elapsed_ticks;
+#ifndef CONFIG_TICKLESS_KERNEL
+static u32_t __noinit programmed_limit;
+static int straddled_tick_on_idle_enter;
+#endif
+#endif
+
+#ifdef CONFIG_TICKLESS_KERNEL
+static volatile int timer_expired;
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -160,6 +166,14 @@ static ALWAYS_INLINE void update_accumulated_count(void)
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
+#ifdef CONFIG_TICKLESS_KERNEL
+static inline void program_max_cycles(void)
+{
+	timer0_limit_register_set(max_system_ticks * cycles_per_tick);
+	timer_expired = 0;
+}
+#endif
+
 /**
  *
  * @brief System clock periodic tick handler
@@ -172,10 +186,36 @@ static ALWAYS_INLINE void update_accumulated_count(void)
 void _timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);
-
 	/* clear the interrupt by writing 0 to IP bit of the control register */
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (!programmed_ticks) {
+		if (_sys_clock_always_on) {
+			_sys_clock_tick_count = _get_elapsed_clock_time();
+			program_max_cycles();
+		}
+		return;
+	}
+
+	_sys_idle_elapsed_ticks = programmed_ticks;
+
+	/*
+	 * Clear programmed ticks before announcing elapsed time so
+	 * that recursive calls to _update_elapsed_time() will not
+	 * announce already consumed elapsed time
+	 */
+	programmed_ticks = 0;
+	timer_expired = 1;
+
+	_sys_clock_tick_announce();
+
+	/* _sys_clock_tick_announce() could cause new programming */
+	if (!programmed_ticks && _sys_clock_always_on) {
+		_sys_clock_tick_count = _get_elapsed_clock_time();
+		program_max_cycles();
+	}
+#else
 #if defined(CONFIG_TICKLESS_IDLE)
 	timer0_limit_register_set(cycles_per_tick - 1);
 	__ASSERT_EVAL({},
@@ -189,7 +229,85 @@ void _timer_int_handler(void *unused)
 #endif
 
 	update_accumulated_count();
+#endif
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+u32_t _get_program_time(void)
+{
+	return programmed_ticks;
+}
+
+u32_t _get_remaining_program_time(void)
+{
+	if (programmed_ticks == 0) {
+		return 0;
+	}
+
+	if (timer0_control_register_get() & _ARC_V2_TMR_CTRL_IP) {
+		return 0;
+	}
+	return programmed_ticks -
+	    (timer0_count_register_get() / cycles_per_tick);
+}
+
+u32_t _get_elapsed_program_time(void)
+{
+	if (programmed_ticks == 0) {
+		return 0;
+	}
+
+	if (timer0_control_register_get() & _ARC_V2_TMR_CTRL_IP) {
+		return programmed_ticks;
+	}
+	return timer0_count_register_get() / cycles_per_tick;
+}
+
+void _set_time(u32_t time)
+{
+	if (!time) {
+		programmed_ticks = 0;
+		return;
+	}
+
+	programmed_ticks = time > max_system_ticks ? max_system_ticks : time;
+
+	_sys_clock_tick_count = _get_elapsed_clock_time();
+
+	timer0_limit_register_set(programmed_ticks * cycles_per_tick);
+	timer0_count_register_set(0);
+
+	timer_expired = 0;
+}
+
+void _enable_sys_clock(void)
+{
+	if (!programmed_ticks) {
+		program_max_cycles();
+	}
+}
+
+static inline u64_t get_elapsed_count(void)
+{
+	u64_t elapsed;
+
+	if (timer_expired
+	    || (timer0_control_register_get() & _ARC_V2_TMR_CTRL_IP)) {
+		elapsed = timer0_limit_register_get();
+	} else {
+		elapsed = timer0_count_register_get();
+	}
+
+	elapsed += _sys_clock_tick_count * cycles_per_tick;
+
+	return elapsed;
+}
+
+u64_t _get_elapsed_clock_time(void)
+{
+	return get_elapsed_count() / cycles_per_tick;
+}
+#endif
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /*
@@ -218,6 +336,18 @@ static void tickless_idle_init(void)
 
 void _timer_idle_enter(s32_t ticks)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (ticks != K_FOREVER) {
+		/* Need to reprogram only if current program is smaller */
+		if (ticks > programmed_ticks) {
+			_set_time(ticks);
+		}
+	} else {
+		programmed_ticks = 0;
+		timer0_control_register_set(timer0_control_register_get() &
+					    ~_ARC_V2_TMR_CTRL_IE);
+	}
+#else
 	u32_t  status;
 
 	if ((ticks == K_FOREVER) || (ticks > max_system_ticks)) {
@@ -247,6 +377,7 @@ void _timer_idle_enter(s32_t ticks)
 		      u32_t timer_count = timer0_count_register_get(),
 		      timer_count <= programmed_limit,
 		      "timer_count: %d, limit %d\n", timer_count, programmed_limit);
+#endif
 }
 
 /*
@@ -261,6 +392,15 @@ void _timer_idle_enter(s32_t ticks)
 
 void _timer_idle_exit(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (!programmed_ticks && _sys_clock_always_on) {
+		if (!(timer0_control_register_get() & _ARC_V2_TMR_CTRL_IE)) {
+			timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
+						    _ARC_V2_TMR_CTRL_IE);
+		}
+		program_max_cycles();
+	}
+#else
 	if (straddled_tick_on_idle_enter) {
 		/* Aborting the tickless idle due to a straddled tick. */
 		straddled_tick_on_idle_enter = 0;
@@ -315,6 +455,7 @@ void _timer_idle_exit(void)
 		      u32_t timer_count = timer0_count_register_get(),
 		      timer_count <= (cycles_per_tick - 1),
 		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick-1);
+#endif
 }
 #else
 static void tickless_idle_init(void) {}
@@ -415,6 +556,9 @@ int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 
 u32_t _timer_cycle_get_32(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+return (u32_t) get_elapsed_count();
+#else
 	u32_t acc, count;
 
 	do {
@@ -423,6 +567,7 @@ u32_t _timer_cycle_get_32(void)
 	} while (acc != accumulated_cycle_count);
 
 	return acc + count;
+#endif
 }
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)

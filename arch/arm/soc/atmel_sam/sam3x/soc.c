@@ -7,10 +7,10 @@
 
 /**
  * @file
- * @brief System/hardware module for Atmel SAM3 family processor
+ * @brief System/hardware module for Atmel SAM3X series processor
  *
  * This module provides routines to initialize and support board-level hardware
- * for the Atmel SAM3 family processor.
+ * for the Atmel SAM3X series processor.
  */
 
 #include <kernel.h>
@@ -39,7 +39,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 * (with reserved bits set to 0).
 	 */
 
-#ifdef CONFIG_SOC_ATMEL_SAM3_EXT_SLCK
+#ifdef CONFIG_SOC_ATMEL_SAM3X_EXT_SLCK
 	/* This part is to switch the slow clock to using
 	 * the external 32 kHz crystal oscillator.
 	 */
@@ -52,7 +52,7 @@ static ALWAYS_INLINE void clock_init(void)
 		;
 #endif /* CONFIG_SOC_ATMEL_SAM3_EXT_SLCK */
 
-#ifdef CONFIG_SOC_ATMEL_SAM3_EXT_MAINCK
+#ifdef CONFIG_SOC_ATMEL_SAM3X_EXT_MAINCK
 	/* Start the external main oscillator */
 	__PMC->ckgr_mor = PMC_CKGR_MOR_KEY | PMC_CKGR_MOR_MOSCRCF_4MHZ
 			  | PMC_CKGR_MOR_MOSCRCEN | PMC_CKGR_MOR_MOSCXTEN
@@ -72,7 +72,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Wait for main oscillator to be selected */
 	while (!(__PMC->sr & PMC_INT_MOSCSELS))
 		;
-#ifdef CONFIG_SOC_ATMEL_SAM3_WAIT_MODE
+#ifdef CONFIG_SOC_ATMEL_SAM3X_WAIT_MODE
 	/*
 	 * Instruct CPU enter Wait mode instead of Sleep mode to
 	 * keep Processor Clock (HCLK) and thus be able to debug
@@ -139,7 +139,7 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-static int atmel_sam3_init(struct device *arg)
+static int atmel_sam3x_init(struct device *arg)
 {
 	u32_t key;
 
@@ -181,4 +181,4 @@ static int atmel_sam3_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(atmel_sam3_init, PRE_KERNEL_1, 0);
+SYS_INIT(atmel_sam3x_init, PRE_KERNEL_1, 0);

@@ -27,6 +27,7 @@
 #include <misc/util.h>
 #include <kernel_version.h>
 #include <drivers/rand32.h>
+#include <kernel_arch_thread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,7 +106,6 @@ typedef sys_dlist_t _wait_q_t;
 #define _POLL_EVENT
 #endif
 
-#define tcs k_thread
 struct k_thread;
 struct k_mutex;
 struct k_sem;
@@ -123,7 +123,138 @@ struct k_timer;
 struct k_poll_event;
 struct k_poll_signal;
 
+/* timeouts */
+
+struct _timeout;
+typedef void (*_timeout_func_t)(struct _timeout *t);
+
+struct _timeout {
+	sys_dnode_t node;
+	struct k_thread *thread;
+	sys_dlist_t *wait_q;
+	s32_t delta_ticks_from_prev;
+	_timeout_func_t func;
+};
+
+extern s32_t _timeout_remaining_get(struct _timeout *timeout);
+
+/* Threads */
+typedef void (*_thread_entry_t)(void *, void *, void *);
+
+#ifdef CONFIG_THREAD_MONITOR
+struct __thread_entry {
+	_thread_entry_t pEntry;
+	void *parameter1;
+	void *parameter2;
+	void *parameter3;
+};
+#endif
+
+/* can be used for creating 'dummy' threads, e.g. for pending on objects */
+struct _thread_base {
+
+	/* this thread's entry in a ready/wait queue */
+	sys_dnode_t k_q_node;
+
+	/* user facing 'thread options'; values defined in include/kernel.h */
+	u8_t user_options;
+
+	/* thread state */
+	u8_t thread_state;
+
+	/*
+	 * scheduler lock count and thread priority
+	 *
+	 * These two fields control the preemptibility of a thread.
+	 *
+	 * When the scheduler is locked, sched_locked is decremented, which
+	 * means that the scheduler is locked for values from 0xff to 0x01. A
+	 * thread is coop if its prio is negative, thus 0x80 to 0xff when
+	 * looked at the value as unsigned.
+	 *
+	 * By putting them end-to-end, this means that a thread is
+	 * non-preemptible if the bundled value is greater than or equal to
+	 * 0x0080.
+	 */
+	union {
+		struct {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			u8_t sched_locked;
+			s8_t prio;
+#else /* LITTLE and PDP */
+			s8_t prio;
+			u8_t sched_locked;
+#endif
+		};
+		u16_t preempt;
+	};
+
+	/* data returned by APIs */
+	void *swap_data;
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	/* this thread's entry in a timeout queue */
+	struct _timeout timeout;
+#endif
+
+};
+
+typedef struct _thread_base _thread_base_t;
+
+#if defined(CONFIG_THREAD_STACK_INFO)
+/* Contains the stack information of a thread */
+struct _thread_stack_info {
+	/* Stack Start */
+	u32_t start;
+	/* Stack Size */
+	u32_t size;
+};
+#endif /* CONFIG_THREAD_STACK_INFO */
+
+struct k_thread {
+
+	struct _thread_base base;
+
+	/* defined by the architecture, but all archs need these */
+	struct _caller_saved caller_saved;
+	struct _callee_saved callee_saved;
+
+	/* static thread init data */
+	void *init_data;
+
+	/* abort function */
+	void (*fn_abort)(void);
+
+#if defined(CONFIG_THREAD_MONITOR)
+	/* thread entry and parameters description */
+	struct __thread_entry *entry;
+
+	/* next item in list of all threads */
+	struct k_thread *next_thread;
+#endif
+
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	/* crude thread-local storage */
+	void *custom_data;
+#endif
+
+#ifdef CONFIG_ERRNO
+	/* per-thread errno variable */
+	int errno_var;
+#endif
+
+#if defined(CONFIG_THREAD_STACK_INFO)
+	/* Stack Info */
+	struct _thread_stack_info stack_info;
+#endif /* CONFIG_THREAD_STACK_INFO */
+
+	/* arch-specifics: must always be at the end */
+	struct _thread_arch arch;
+};
+
+typedef struct k_thread _thread_t;
 typedef struct k_thread *k_tid_t;
+#define tcs k_thread
 
 enum execution_context_types {
 	K_ISR = 0,
@@ -733,7 +864,11 @@ static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 #endif
 
 /* added tick needed to account for tick in progress */
+#ifdef CONFIG_TICKLESS_KERNEL
+#define _TICK_ALIGN 0
+#else
 #define _TICK_ALIGN 1
+#endif
 
 static inline s64_t __ticks_to_ms(s64_t ticks)
 {
@@ -750,29 +885,6 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 	return 0;
 #endif
 }
-
-/* timeouts */
-
-struct _timeout;
-typedef void (*_timeout_func_t)(struct _timeout *t);
-
-struct _timeout {
-	sys_dnode_t node;
-	struct k_thread *thread;
-	sys_dlist_t *wait_q;
-	s32_t delta_ticks_from_prev;
-	_timeout_func_t func;
-};
-
-extern s32_t _timeout_remaining_get(struct _timeout *timeout);
-
-/**
- * INTERNAL_HIDDEN @endcond
- */
-
-/**
- * @cond INTERNAL_HIDDEN
- */
 
 struct k_timer {
 	/*
@@ -1022,6 +1134,44 @@ static inline void *k_timer_user_data_get(struct k_timer *timer)
  * @return Current uptime.
  */
 extern s64_t k_uptime_get(void);
+
+#ifdef CONFIG_TICKLESS_KERNEL
+/**
+ * @brief Enable clock always on in tickless kernel
+ *
+ * This routine enables keepng the clock running when
+ * there are no timer events programmed in tickless kernel
+ * scheduling. This is necessary if the clock is used to track
+ * passage of time.
+ *
+ * @retval prev_status Previous status of always on flag
+ */
+static inline int k_enable_sys_clock_always_on(void)
+{
+	int prev_status = _sys_clock_always_on;
+
+	_sys_clock_always_on = 1;
+	_enable_sys_clock();
+
+	return prev_status;
+}
+
+/**
+ * @brief Disable clock always on in tickless kernel
+ *
+ * This routine disables keepng the clock running when
+ * there are no timer events programmed in tickless kernel
+ * scheduling. To save power, this routine should be called
+ * immediately when clock is not used to track time.
+ */
+static inline void k_disable_sys_clock_always_on(void)
+{
+	_sys_clock_always_on = 0;
+}
+#else
+#define k_enable_sys_clock_always_on() do { } while ((0))
+#define k_disable_sys_clock_always_on() do { } while ((0))
+#endif
 
 /**
  * @brief Get system uptime (32-bit version).

@@ -335,5 +335,17 @@ html_context = {
 
 extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', '')}
 
+# some configuration for linkcheck builder
+#   noticed that we're getting false-positive link errors on JIRA, I suspect
+#   because it's taking too long for the server to respond so bump up the
+#   timeout (default=5) and turn off anchor checks (so only a HEAD request is
+#   done - much faster) Leave the ignore commented in case we want to remove
+#   jira link checks later...
+
+linkcheck_timeout = 30
+linkcheck_workers = 10
+# linkcheck_ignore = [r'https://jira\.zephyrproject\.org/']
+linkcheck_anchors = False
+
 def setup(app):
    app.add_stylesheet("zephyr-custom.css")

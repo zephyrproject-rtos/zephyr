@@ -21,7 +21,7 @@
 #include <v2/irq.h>
 #include <swap_macros.h>
 
-GTEXT(_Swap)
+GTEXT(__swap)
 GDATA(_k_neg_eagain)
 GDATA(_kernel)
 
@@ -29,25 +29,25 @@ GDATA(_kernel)
  *
  * @brief Initiate a cooperative context switch
  *
- * The _Swap() routine is invoked by various kernel services to effect
- * a cooperative context switch.  Prior to invoking _Swap(), the caller
+ * The __swap() routine is invoked by various kernel services to effect
+ * a cooperative context switch.  Prior to invoking __swap(), the caller
  * disables interrupts via irq_lock() and the return 'key' is passed as a
- * parameter to _Swap(). The key is in fact the value stored in the register
+ * parameter to __swap(). The key is in fact the value stored in the register
  * operand of a CLRI instruction.
  *
  * It stores the intlock key parameter into current->intlock_key.
 
- * Given that _Swap() is called to effect a cooperative context switch,
+ * Given that __swap() is called to effect a cooperative context switch,
  * the caller-saved integer registers are saved on the stack by the function
- * call preamble to _Swap(). This creates a custom stack frame that will be
- * popped when returning from _Swap(), but is not suitable for handling a return
- * from an exception. Thus, the fact that the thread is pending because of a
- * cooperative call to _Swap() has to be recorded via the _CAUSE_COOP code in
- * the relinquish_cause of the thread's k_thread structure. The
+ * call preamble to __swap(). This creates a custom stack frame that will be
+ * popped when returning from __swap(), but is not suitable for handling a
+ * return from an exception. Thus, the fact that the thread is pending because
+ * of a cooperative call to __swap() has to be recorded via the _CAUSE_COOP code
+ * in the relinquish_cause of the thread's k_thread structure. The
  * _IrqExit()/_FirqExit() code will take care of doing the right thing to
  * restore the thread status.
  *
- * When _Swap() is invoked, we know the decision to perform a context switch or
+ * When __swap() is invoked, we know the decision to perform a context switch or
  * not has already been taken and a context switch must happen.
  *
  * @return may contain a return value setup by a call to
@@ -55,11 +55,11 @@ GDATA(_kernel)
  *
  * C function prototype:
  *
- * unsigned int _Swap (unsigned int key);
+ * unsigned int __swap (unsigned int key);
  *
  */
 
-SECTION_FUNC(TEXT, _Swap)
+SECTION_FUNC(TEXT, __swap)
 
 	/* interrupts are locked, interrupt key is in r0 */
 

@@ -7,6 +7,8 @@
 #ifndef __CONSOLE_H__
 #define __CONSOLE_H__
 
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

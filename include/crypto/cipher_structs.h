@@ -207,13 +207,6 @@ struct cipher_pkt {
 	 */
 	int out_len;
 
-	/* This this field contains additional crypto specific error code,
-	 * in the event of a failure. The cipher_xxx_op()/ async_callback
-	 * returns a first level success / failure status. To be populated
-	 * by the driver on return from op / async_callback.
-	 */
-	u8_t status;
-
 	/* Context this packet relates to. This can be useful to get the
 	 * session details esp for async ops. Will be populated by the
 	 * cipher_xxx_op() API based on the ctx parameter
