@@ -24,8 +24,6 @@
 #include <uart.h>
 #include <sections.h>
 
-#include "uart_stellaris.h"
-
 /* definitions */
 
 /* Stellaris UART module */
@@ -588,7 +586,7 @@ static void uart_stellaris_irq_callback_set(struct device *dev,
  *
  * @return N/A
  */
-void uart_stellaris_isr(void *arg)
+static void uart_stellaris_isr(void *arg)
 {
 	struct device *dev = arg;
 	struct uart_stellaris_dev_data_t * const dev_data = DEV_DATA(dev);
