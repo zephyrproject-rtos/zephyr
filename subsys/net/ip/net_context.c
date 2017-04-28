@@ -825,9 +825,18 @@ NET_CONN_CB(tcp_established)
 	}
 
 	set_appdata_values(pkt, IPPROTO_TCP);
-	context->tcp->send_ack += net_pkt_appdatalen(pkt);
+
+	uint16_t data_len = net_pkt_appdatalen(pkt);
+	if (data_len > get_recv_wnd(context->tcp)) {
+		NET_ERR("Context %p: overflow of recv window (%d vs %d), pkt dropped",
+			context, get_recv_wnd(context->tcp), data_len);
+		return NET_DROP;
+	}
+	context->tcp->recv_wnd -= data_len;
 
 	ret = packet_received(conn, pkt, context->tcp->recv_user_data);
+
+	context->tcp->send_ack += data_len;
 
 	if (tcp_flags & NET_TCP_FIN) {
 		/* Sending an ACK in the CLOSE_WAIT state will transition to
@@ -2042,4 +2051,9 @@ void net_context_init(void)
 	k_sem_init(&contexts_lock, 0, UINT_MAX);
 
 	k_sem_give(&contexts_lock);
+}
+
+void net_context_tcp_recved(struct net_context *context, unsigned int len)
+{
+	context->tcp->recv_wnd += len;
 }
