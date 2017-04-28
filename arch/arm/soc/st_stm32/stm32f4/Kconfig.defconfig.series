@@ -26,18 +26,6 @@ config UART_CONSOLE
 config UART_STM32
 	def_bool y
 
-config UART_STM32_PORT_1
-	def_bool y
-
-config UART_STM32_PORT_1_NAME
-	default UART_1
-
-config UART_STM32_PORT_2
-	def_bool y
-
-config UART_STM32_PORT_2_NAME
-	default UART_2
-
 endif #SERIAL
 
 if CLOCK_CONTROL
