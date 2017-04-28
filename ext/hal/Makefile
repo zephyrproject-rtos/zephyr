@@ -15,4 +15,4 @@ include $(srctree)/ext/hal/st/stm32cube/Makefile
 
 include $(srctree)/ext/hal/ti/cc3200sdk/Makefile
 
-include $(srctree)/ext/hal/ti/cc3220sdk/Makefile
+include $(srctree)/ext/hal/ti/simplelink/Makefile
