@@ -273,7 +273,7 @@ static void read_bd_addr(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	ll_address_get(0, &rp->bdaddr.val[0]);
+	ll_addr_get(0, &rp->bdaddr.val[0]);
 }
 
 static int info_cmd_handle(u8_t ocf, struct net_buf *cmd,
@@ -345,7 +345,7 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_set_random_address *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 
-	ll_address_set(1, &cmd->bdaddr.val[0]);
+	ll_addr_set(1, &cmd->bdaddr.val[0]);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
