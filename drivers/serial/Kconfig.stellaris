@@ -25,22 +25,6 @@ config UART_STELLARIS_PORT_0_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
-config UART_STELLARIS_PORT_0_IRQ_PRI
-	int "Port 0 Interrupt Priority"
-	default 0
-	depends on UART_STELLARIS_PORT_0
-	help
-	  The interrupt priority for UART port.
-
-config UART_STELLARIS_PORT_0_BAUD_RATE
-	int "Port 0 Baud Rate"
-	default 0
-	depends on UART_STELLARIS_PORT_0
-	help
-	  The baud rate for UART port to be set to at boot.
-
-	  Leave at 0 to skip initialization.
-
 # ---------- Port 1 ----------
 
 menuconfig UART_STELLARIS_PORT_1
@@ -59,22 +43,6 @@ config UART_STELLARIS_PORT_1_NAME
 	  This is the device name for UART, and is included in the device
 	  struct.
 
-config UART_STELLARIS_PORT_1_IRQ_PRI
-	int "Port 1 Interrupt Priority"
-	default 0
-	depends on UART_STELLARIS_PORT_1
-	help
-	  The interrupt priority for UART port.
-
-config UART_STELLARIS_PORT_1_BAUD_RATE
-	int "Port 1 Baud Rate"
-	default 0
-	depends on UART_STELLARIS_PORT_1
-	help
-	  The baud rate for UART port to be set to at boot.
-
-	  Leave at 0 to skip initialization.
-
 # ---------- Port 2 ----------
 
 menuconfig UART_STELLARIS_PORT_2
@@ -92,19 +60,3 @@ config UART_STELLARIS_PORT_2_NAME
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
-
-config UART_STELLARIS_PORT_2_IRQ_PRI
-	int "Port 2 Interrupt Priority"
-	default 0
-	depends on UART_STELLARIS_PORT_2
-	help
-	  The interrupt priority for UART port.
-
-config UART_STELLARIS_PORT_2_BAUD_RATE
-	int "Port 2 Baud Rate"
-	default 0
-	depends on UART_STELLARIS_PORT_2
-	help
-	  The baud rate for UART port to be set to at boot.
-
-	  Leave at 0 to skip initialization.
