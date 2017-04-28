@@ -12,10 +12,4 @@ config SOC
 	string
 	default nRF51822_QFAC
 
-config SRAM_SIZE
-	default 32
-
-config FLASH_SIZE
-	default 256
-
 endif # SOC_NRF51822_QFAC

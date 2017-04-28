@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_rtc_ex.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Header file of RTC HAL Extension module.
   ******************************************************************************
   * @attention
@@ -73,14 +73,14 @@
 #define IS_RTC_TAMPER(__TAMPER__) ((__TAMPER__) == RTC_TAMPER_1)
 
 #define IS_RTC_TAMPER_TRIGGER(__TRIGGER__)  (((__TRIGGER__) == RTC_TAMPERTRIGGER_LOWLEVEL) || \
-                                         ((__TRIGGER__) == RTC_TAMPERTRIGGER_HIGHLEVEL)) 
+                                             ((__TRIGGER__) == RTC_TAMPERTRIGGER_HIGHLEVEL)) 
 
-#if RTC_BKP_NUMBER > 10
-#define IS_RTC_BKP(BKP)                   (((BKP) <= (uint32_t) RTC_BKP_DR10) || (((BKP) >= (uint32_t) RTC_BKP_DR11) && ((BKP) <= (uint32_t) RTC_BKP_DR42)))
+#if RTC_BKP_NUMBER > 10U
+#define IS_RTC_BKP(BKP)                   (((BKP) <= (uint32_t)RTC_BKP_DR10) || (((BKP) >= (uint32_t)RTC_BKP_DR11) && ((BKP) <= (uint32_t)RTC_BKP_DR42)))
 #else
-#define IS_RTC_BKP(BKP)                   ((BKP) <= (uint32_t) RTC_BKP_NUMBER)
+#define IS_RTC_BKP(BKP)                   ((BKP) <= (uint32_t)RTC_BKP_NUMBER)
 #endif
-#define IS_RTC_SMOOTH_CALIB_MINUS(__VALUE__) ((__VALUE__) <= 0x0000007F)
+#define IS_RTC_SMOOTH_CALIB_MINUS(__VALUE__) ((__VALUE__) <= 0x0000007FU)
 
 /**
   * @}
@@ -129,7 +129,7 @@ typedef struct
   * @{
   */ 
 #define RTC_TAMPERTRIGGER_LOWLEVEL          BKP_CR_TPAL           /*!< A high level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
-#define RTC_TAMPERTRIGGER_HIGHLEVEL        ((uint32_t)0x00000000) /*!< A low level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
+#define RTC_TAMPERTRIGGER_HIGHLEVEL         0x00000000U           /*!< A low level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
 
 /**
   * @}
@@ -138,52 +138,52 @@ typedef struct
 /** @defgroup RTCEx_Backup_Registers_Definitions Backup Registers Definitions 
   * @{
   */
-#if RTC_BKP_NUMBER > 0
-#define RTC_BKP_DR1                       ((uint32_t)0x00000001)
-#define RTC_BKP_DR2                       ((uint32_t)0x00000002)
-#define RTC_BKP_DR3                       ((uint32_t)0x00000003)
-#define RTC_BKP_DR4                       ((uint32_t)0x00000004)
-#define RTC_BKP_DR5                       ((uint32_t)0x00000005)
-#define RTC_BKP_DR6                       ((uint32_t)0x00000006)
-#define RTC_BKP_DR7                       ((uint32_t)0x00000007)
-#define RTC_BKP_DR8                       ((uint32_t)0x00000008)
-#define RTC_BKP_DR9                       ((uint32_t)0x00000009)
-#define RTC_BKP_DR10                      ((uint32_t)0x0000000A)
+#if RTC_BKP_NUMBER > 0U
+#define RTC_BKP_DR1                         0x00000001U
+#define RTC_BKP_DR2                         0x00000002U
+#define RTC_BKP_DR3                         0x00000003U
+#define RTC_BKP_DR4                         0x00000004U
+#define RTC_BKP_DR5                         0x00000005U
+#define RTC_BKP_DR6                         0x00000006U
+#define RTC_BKP_DR7                         0x00000007U
+#define RTC_BKP_DR8                         0x00000008U
+#define RTC_BKP_DR9                         0x00000009U
+#define RTC_BKP_DR10                        0x0000000AU
 #endif /* RTC_BKP_NUMBER > 0 */
    
-#if RTC_BKP_NUMBER > 10
-#define RTC_BKP_DR11                      ((uint32_t)0x00000010)
-#define RTC_BKP_DR12                      ((uint32_t)0x00000011)
-#define RTC_BKP_DR13                      ((uint32_t)0x00000012)
-#define RTC_BKP_DR14                      ((uint32_t)0x00000013)
-#define RTC_BKP_DR15                      ((uint32_t)0x00000014)
-#define RTC_BKP_DR16                      ((uint32_t)0x00000015)
-#define RTC_BKP_DR17                      ((uint32_t)0x00000016)
-#define RTC_BKP_DR18                      ((uint32_t)0x00000017)
-#define RTC_BKP_DR19                      ((uint32_t)0x00000018)
-#define RTC_BKP_DR20                      ((uint32_t)0x00000019)
-#define RTC_BKP_DR21                      ((uint32_t)0x0000001A)
-#define RTC_BKP_DR22                      ((uint32_t)0x0000001B)
-#define RTC_BKP_DR23                      ((uint32_t)0x0000001C)
-#define RTC_BKP_DR24                      ((uint32_t)0x0000001D)
-#define RTC_BKP_DR25                      ((uint32_t)0x0000001E)
-#define RTC_BKP_DR26                      ((uint32_t)0x0000001F)
-#define RTC_BKP_DR27                      ((uint32_t)0x00000020)
-#define RTC_BKP_DR28                      ((uint32_t)0x00000021)
-#define RTC_BKP_DR29                      ((uint32_t)0x00000022)
-#define RTC_BKP_DR30                      ((uint32_t)0x00000023)
-#define RTC_BKP_DR31                      ((uint32_t)0x00000024)
-#define RTC_BKP_DR32                      ((uint32_t)0x00000025)
-#define RTC_BKP_DR33                      ((uint32_t)0x00000026)
-#define RTC_BKP_DR34                      ((uint32_t)0x00000027)
-#define RTC_BKP_DR35                      ((uint32_t)0x00000028)
-#define RTC_BKP_DR36                      ((uint32_t)0x00000029)
-#define RTC_BKP_DR37                      ((uint32_t)0x0000002A)
-#define RTC_BKP_DR38                      ((uint32_t)0x0000002B)
-#define RTC_BKP_DR39                      ((uint32_t)0x0000002C)
-#define RTC_BKP_DR40                      ((uint32_t)0x0000002D)
-#define RTC_BKP_DR41                      ((uint32_t)0x0000002E)
-#define RTC_BKP_DR42                      ((uint32_t)0x0000002F)
+#if RTC_BKP_NUMBER > 10U
+#define RTC_BKP_DR11                        0x00000010U
+#define RTC_BKP_DR12                        0x00000011U
+#define RTC_BKP_DR13                        0x00000012U
+#define RTC_BKP_DR14                        0x00000013U
+#define RTC_BKP_DR15                        0x00000014U
+#define RTC_BKP_DR16                        0x00000015U
+#define RTC_BKP_DR17                        0x00000016U
+#define RTC_BKP_DR18                        0x00000017U
+#define RTC_BKP_DR19                        0x00000018U
+#define RTC_BKP_DR20                        0x00000019U
+#define RTC_BKP_DR21                        0x0000001AU
+#define RTC_BKP_DR22                        0x0000001BU
+#define RTC_BKP_DR23                        0x0000001CU
+#define RTC_BKP_DR24                        0x0000001DU
+#define RTC_BKP_DR25                        0x0000001EU
+#define RTC_BKP_DR26                        0x0000001FU
+#define RTC_BKP_DR27                        0x00000020U
+#define RTC_BKP_DR28                        0x00000021U
+#define RTC_BKP_DR29                        0x00000022U
+#define RTC_BKP_DR30                        0x00000023U
+#define RTC_BKP_DR31                        0x00000024U
+#define RTC_BKP_DR32                        0x00000025U
+#define RTC_BKP_DR33                        0x00000026U
+#define RTC_BKP_DR34                        0x00000027U
+#define RTC_BKP_DR35                        0x00000028U
+#define RTC_BKP_DR36                        0x00000029U
+#define RTC_BKP_DR37                        0x0000002AU
+#define RTC_BKP_DR38                        0x0000002BU
+#define RTC_BKP_DR39                        0x0000002CU
+#define RTC_BKP_DR40                        0x0000002DU
+#define RTC_BKP_DR41                        0x0000002EU
+#define RTC_BKP_DR42                        0x0000002FU
 #endif /* RTC_BKP_NUMBER > 10 */
 
 /**

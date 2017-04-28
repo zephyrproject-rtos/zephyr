@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_rtc_ex.c
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Extended RTC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Real Time Clock (RTC) Extension peripheral:
@@ -197,7 +197,9 @@ HAL_StatusTypeDef HAL_RTCEx_DeactivateTamper(RTC_HandleTypeDef *hrtc, uint32_t T
   {
      return HAL_ERROR;
   }
-  
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(Tamper);
+
   assert_param(IS_RTC_TAMPER(Tamper));
 
   /* Process Locked */
@@ -287,7 +289,7 @@ HAL_StatusTypeDef HAL_RTCEx_PollForTamper1Event(RTC_HandleTypeDef *hrtc, uint32_
   {
     if(Timeout != HAL_MAX_DELAY)
     {
-      if((Timeout == 0)||((HAL_GetTick() - tickstart ) > Timeout))
+      if((Timeout == 0U)||((HAL_GetTick() - tickstart ) > Timeout))
       {
         hrtc->State = HAL_RTC_STATE_TIMEOUT;
         return HAL_TIMEOUT;
@@ -485,13 +487,16 @@ __weak void HAL_RTCEx_RTCEventErrorCallback(RTC_HandleTypeDef *hrtc)
   */
 void HAL_RTCEx_BKUPWrite(RTC_HandleTypeDef *hrtc, uint32_t BackupRegister, uint32_t Data)
 {
-  uint32_t tmp = 0;
+  uint32_t tmp = 0U;
+
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hrtc);
 
   /* Check the parameters */
   assert_param(IS_RTC_BKP(BackupRegister));
   
   tmp = (uint32_t)BKP_BASE; 
-  tmp += (BackupRegister * 4);
+  tmp += (BackupRegister * 4U);
 
   *(__IO uint32_t *) tmp = (Data & BKP_DR1_D);
 }
@@ -507,14 +512,17 @@ void HAL_RTCEx_BKUPWrite(RTC_HandleTypeDef *hrtc, uint32_t BackupRegister, uint3
   */
 uint32_t HAL_RTCEx_BKUPRead(RTC_HandleTypeDef *hrtc, uint32_t BackupRegister)
 {
-  uint32_t backupregister = 0;
-  uint32_t pvalue = 0;
+  uint32_t backupregister = 0U;
+  uint32_t pvalue = 0U;
+
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hrtc);
 
   /* Check the parameters */
   assert_param(IS_RTC_BKP(BackupRegister));
 
   backupregister = (uint32_t)BKP_BASE; 
-  backupregister += (BackupRegister * 4);
+  backupregister += (BackupRegister * 4U);
   
   pvalue = (*(__IO uint32_t *)(backupregister)) & BKP_DR1_D;
 
@@ -539,7 +547,10 @@ HAL_StatusTypeDef HAL_RTCEx_SetSmoothCalib(RTC_HandleTypeDef* hrtc, uint32_t Smo
   {
      return HAL_ERROR;
   }
-  
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(SmoothCalibPeriod);
+  UNUSED(SmoothCalibPlusPulses);
+
   /* Check the parameters */
   assert_param(IS_RTC_SMOOTH_CALIB_MINUS(SmouthCalibMinusPulsesValue));
   

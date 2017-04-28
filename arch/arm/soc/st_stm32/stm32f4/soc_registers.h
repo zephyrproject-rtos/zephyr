@@ -8,7 +8,6 @@
 #define _STM32F4_SOC_REGISTERS_H_
 
 /* include register mapping headers */
-#include "rcc_registers.h"
 #include "flash_registers.h"
 #include "gpio_registers.h"
 

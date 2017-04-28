@@ -106,6 +106,14 @@ config I2C_STM32LX_INTERRUPT
 	help
 	Enable Interrupt support for the I2C Driver of STM32Lxx family.
 
+config I2C_BITBANG
+	bool
+	default n
+	help
+	  Enable library used for software driven (bit banging) I2C support
+
+source "drivers/i2c/Kconfig.gpio"
+
 config I2C_INIT_PRIORITY
 	int
 	depends on I2C

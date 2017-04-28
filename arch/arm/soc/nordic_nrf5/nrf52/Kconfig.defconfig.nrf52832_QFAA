@@ -12,14 +12,6 @@ config SOC
 	string
 	default nRF52832_QFAA
 
-if !HAS_DTS
-config SRAM_SIZE
-	default 64
-
-config FLASH_SIZE
-	default 512
-endif
-
 config NUM_IRQS
 	int
 	default 39

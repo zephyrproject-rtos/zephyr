@@ -19,16 +19,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_POWER_MANAGEMENT
 	default y
 
-if !HAS_DTS
-config SRAM_BASE_ADDRESS
-	default 0x20000000
-
-config FLASH_BASE_ADDRESS
-	default 0x00000000
-
-config NUM_IRQ_PRIO_BITS
-	int
-	default 3
-endif
-
 endif # SOC_SERIES_NRF52X

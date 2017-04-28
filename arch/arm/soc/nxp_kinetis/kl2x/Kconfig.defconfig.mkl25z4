@@ -31,7 +31,7 @@ endif # GPIO
 
 if SERIAL
 
-config UART_MCUX
+config UART_MCUX_LPSCI
 	def_bool y
 
 endif # SERIAL

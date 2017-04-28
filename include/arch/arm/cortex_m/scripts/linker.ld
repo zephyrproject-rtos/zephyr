@@ -65,8 +65,6 @@ MEMORY
     {
     FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-    SYSTEM_CONTROL_SPACE  (wx) : ORIGIN = 0xE000E000,  LENGTH = 4K
-    SYSTEM_CONTROL_PERIPH (wx) : ORIGIN = 0x400FE000,  LENGTH = 4K
 
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
@@ -80,6 +78,13 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
+#ifdef CONFIG_CC3220SF_DEBUG
+	/* Add CC3220SF flash header to disable flash verification */
+	. = 0x0;
+	KEEP(*(.dbghdr))
+	KEEP(*(".dbghdr.*"))
+#endif
+
 	. = CONFIG_TEXT_SECTION_OFFSET;
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
@@ -209,32 +214,6 @@ SECTIONS
     _end = .; /* end of image */
 
     GROUP_END(RAMABLE_REGION)
-
-    GROUP_START(SYSTEM_CONTROL_PERIPH)
-    SECTION_PROLOGUE(.scp,(NOLOAD),)
-	{
-	/*
-	 * The leading '.' in the ".scp" section name indicates that section is
-	 * mapped to neither a normal ROM nor a normal RAM area.
-	 */
-
-	*(.scp)
-	*(".scp.*")
-	 } GROUP_LINK_IN(SYSTEM_CONTROL_PERIPH)
-    GROUP_END(SYSTEM_CONTROL_PERIPH)
-
-    GROUP_START(SYSTEM_CONTROL_SPACE)
-    SECTION_PROLOGUE(.scs,(NOLOAD),)
-	{
-	/*
-	 * The leading '.' in the ".scs" section name indicates that section is
-	 * mapped to neither normal ROM nor normal RAM space.
-	 */
-
-	*(.scs)
-	*(".scs.*")
-	 } GROUP_LINK_IN(SYSTEM_CONTROL_SPACE)
-    GROUP_END(SYSTEM_CONTROL_SPACE)
 
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */

@@ -58,6 +58,12 @@ config HAS_LPUART
 	help
 	  Set if the low power uart (LPUART) module is present in the SoC.
 
+config HAS_LPSCI
+	bool
+	default n
+	help
+	  Set if the low power uart (LPSCI) module is present in the SoC.
+
 if HAS_OSC
 
 choice

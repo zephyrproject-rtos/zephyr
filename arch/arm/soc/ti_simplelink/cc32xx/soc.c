@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Texas Instruments Incorporated
+ * Copyright (c) 2016-2017, Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include <driverlib/rom_map.h>
 #include <driverlib/prcm.h>
 
-static int ti_cc3200_init(struct device *arg)
+static int ti_cc32xx_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -30,4 +30,4 @@ static int ti_cc3200_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(ti_cc3200_init, PRE_KERNEL_1, 0);
+SYS_INIT(ti_cc32xx_init, PRE_KERNEL_1, 0);

@@ -1,0 +1,32 @@
+# Kconfig - MCUXpresso SDK LPSCI
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_MCUX_LPSCI
+	bool "MCUX LPSCI driver"
+	depends on HAS_MCUX && HAS_LPSCI
+	default n
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the MCUX LPSCI driver.
+
+if UART_MCUX_LPSCI
+
+menuconfig UART_MCUX_LPSCI_0
+	bool "UART 0"
+	default n
+	help
+	  Enable UART 0.
+
+if UART_MCUX_LPSCI_0
+
+config UART_MCUX_LPSCI_0_NAME
+	string "UART 0 driver name"
+	default "UART_0"
+
+endif # UART_MCUX_LPSCI_0
+
+endif # UART_MCUX_LPSCI

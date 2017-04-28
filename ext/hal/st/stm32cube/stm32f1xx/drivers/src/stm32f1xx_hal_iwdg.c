@@ -2,66 +2,73 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_iwdg.c
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   IWDG HAL module driver.
-  *          This file provides firmware functions to manage the following 
+  *          This file provides firmware functions to manage the following
   *          functionalities of the Independent Watchdog (IWDG) peripheral:
-  *           + Initialization and Configuration functions
+  *           + Initialization and Start functions
   *           + IO operation functions
-  *           + Peripheral State functions
-  @verbatim 
-================================================================================
-                    ##### IWDG specific features #####
-================================================================================
-    [..] 
+  *
+  @verbatim
+  ==============================================================================
+                    ##### IWDG Generic features #####
+  ==============================================================================
+  [..]
     (+) The IWDG can be started by either software or hardware (configurable
         through option byte).
-    (+) The IWDG is clocked by its own dedicated Low-Speed clock (LSI) and
-        thus stays active even if the main clock fails.
-    (+) Once the IWDG is started, the LSI is forced ON and cannot be disabled
-        (LSI cannot be disabled too), and the counter starts counting down from 
-        the reset value of 0xFFF. When it reaches the end of count value (0x000)
-        a system reset is generated.
-    (+) The IWDG counter should be refreshed at regular intervals, otherwise the
-        watchdog generates an MCU reset when the counter reaches 0.          
+
+    (+) The IWDG is clocked by Low-Speed clock (LSI) and thus stays active even
+        if the main clock fails.
+
+    (+) Once the IWDG is started, the LSI is forced ON and both can not be 
+        disabled. The counter starts counting down from the reset value (0xFFF).
+        When it reaches the end of count value (0x000) a reset signal is 
+        generated (IWDG reset).
+
+    (+) Whenever the key value 0x0000 AAAA is written in the IWDG_KR register,
+        the IWDG_RLR value is reloaded in the counter and the watchdog reset is
+        prevented.
+
     (+) The IWDG is implemented in the VDD voltage domain that is still functional
         in STOP and STANDBY mode (IWDG reset can wake-up from STANDBY).
-    (+) IWDGRST flag in RCC_CSR register can be used to inform when an IWDG
+        IWDGRST flag in RCC_CSR register can be used to inform when an IWDG
         reset occurs.
 
-    (+) Min-max timeout value at 40KHz (LSI): 0.1us / 26.2s .
-        The IWDG timeout may vary due to LSI frequency dispersion. STM32F1xx
-        devices provide the capability to measure the LSI frequency (LSI clock
-        connected internally to TIM5 CH4 input capture). The measured value
-        can be used to have an IWDG timeout with an acceptable accuracy.
-        For more information, please refer to the STM32F1xx Reference manual.
-        Note: LSI Calibration is only available on: High density, XL-density and Connectivity line devices.
+    (+) Debug mode : When the microcontroller enters debug mode (core halted),
+        the IWDG counter either continues to work normally or stops, depending
+        on DBG_IWDG_STOP configuration bit in DBG module, accessible through
+        __HAL_DBGMCU_FREEZE_IWDG() and __HAL_DBGMCU_UNFREEZE_IWDG() macros
+
+    [..] Min-max timeout value @32KHz (LSI): ~125us / ~32.7s
+         The IWDG timeout may vary due to LSI frequency dispersion. STM32F1xx
+         devices provide the capability to measure the LSI frequency (LSI clock
+         connected internally to TIM5 CH4 input capture). The measured value
+         can be used to have an IWDG timeout with an acceptable accuracy.
 
                      ##### How to use this driver #####
   ==============================================================================
-    [..]
-    (+) Use IWDG using HAL_IWDG_Init() function to :
-        (++) Enable write access to IWDG_PR, IWDG_RLR.   
-        (++) Configure the IWDG prescaler, counter reload value.
-             This reload value will be loaded in the IWDG counter each time the counter
-             is reloaded, then the IWDG will start counting down from this value.
-    (+) Use IWDG using HAL_IWDG_Start() function to :
-        (++) Reload IWDG counter with value defined in the IWDG_RLR register.
-        (++) Start the IWDG, when the IWDG is used in software mode (no need 
-             to enable the LSI, it will be enabled by hardware).
-    (+) Then the application program must refresh the IWDG counter at regular
+  [..]
+    (#) Use IWDG using HAL_IWDG_Init() function to :
+      (++) Enable instance by writing Start keyword in IWDG_KEY register. LSI
+           clock is forced ON and IWDG counter starts downcounting.
+      (++) Enable write access to configuration register: IWDG_PR & IWDG_RLR.
+      (++) Configure the IWDG prescaler and counter reload value. This reload
+           value will be loaded in the IWDG counter each time the watchdog is
+           reloaded, then the IWDG will start counting down from this value.
+      (++) wait for status flags to be reset"
+
+    (#) Then the application program must refresh the IWDG counter at regular
         intervals during normal operation to prevent an MCU reset, using
-        HAL_IWDG_Refresh() function.    
-    
+        HAL_IWDG_Refresh() function.
+
      *** IWDG HAL driver macros list ***
      ====================================
      [..]
-       Below the list of most used macros in IWDG HAL driver.
-       
+       Below the list of most used macros in IWDG HAL driver:
       (+) __HAL_IWDG_START: Enable the IWDG peripheral
-      (+) __HAL_IWDG_RELOAD_COUNTER: Reloads IWDG counter with value defined in the reload register    
-      (+) __HAL_IWDG_GET_FLAG: Get the selected IWDG's flag status
+      (+) __HAL_IWDG_RELOAD_COUNTER: Reloads IWDG counter with value defined in
+          the reload register
 
   @endverbatim
   ******************************************************************************
@@ -75,7 +82,7 @@
   *      this list of conditions and the following disclaimer.
   *   2. Redistributions in binary form must reproduce the above copyright notice,
   *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
+  *      and/or other materials provided with the distribution
   *   3. Neither the name of STMicroelectronics nor the names of its contributors
   *      may be used to endorse or promote products derived from this software
   *      without specific prior written permission.
@@ -92,7 +99,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
@@ -101,22 +108,21 @@
   * @{
   */
 
+#ifdef HAL_IWDG_MODULE_ENABLED
 /** @defgroup IWDG IWDG
   * @brief IWDG HAL module driver.
   * @{
   */
 
-#ifdef HAL_IWDG_MODULE_ENABLED
-
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-
-/** @defgroup IWDG_Private_Constants IWDG Private Constants
+/** @defgroup IWDG_Private_Defines IWDG Private Defines
   * @{
   */
-
-#define IWDG_DEFAULT_TIMEOUT (uint32_t)1000
-
+/* Status register need 5 RC LSI divided by prescaler clock to be updated. With 
+   higher prescaler (256), and according to HSI variation, we need to wait at
+   least 6 cycles so 48 ms. */
+#define HAL_IWDG_DEFAULT_TIMEOUT            48U
 /**
   * @}
   */
@@ -124,38 +130,41 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-/* Private functions ---------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 
-/** @defgroup IWDG_Exported_Functions IWDG Exported Functions
+/** @addtogroup IWDG_Exported_Functions
   * @{
   */
 
-/** @defgroup IWDG_Exported_Functions_Group1 Initialization and de-initialization functions 
- *  @brief    Initialization and Configuration functions. 
- *
-@verbatim    
+/** @addtogroup IWDG_Exported_Functions_Group1
+  *  @brief    Initialization and Start functions.
+  *
+@verbatim
  ===============================================================================
-          ##### Initialization and de-initialization functions #####
+          ##### Initialization and Start functions #####
  ===============================================================================
-    [..]  This section provides functions allowing to:
-      (+) Initialize the IWDG according to the specified parameters 
-          in the IWDG_InitTypeDef and create the associated handle
-      (+) Initialize the IWDG MSP
-      (+) DeInitialize IWDG MSP 
- 
+ [..]  This section provides functions allowing to:
+      (+) Initialize the IWDG according to the specified parameters in the
+          IWDG_InitTypeDef of associated handle.
+      (+) Once initialization is performed in HAL_IWDG_Init function, Watchdog
+          is reloaded in order to exit function with correct time base.
+
 @endverbatim
   * @{
   */
 
 /**
-  * @brief  Initializes the IWDG according to the specified
-  *         parameters in the IWDG_InitTypeDef and creates the associated handle.
-  * @param  hiwdg: pointer to a IWDG_HandleTypeDef structure that contains
+  * @brief  Initialize the IWDG according to the specified parameters in the
+  *         IWDG_InitTypeDef and start watchdog. Before exiting function,
+  *         watchdog is refreshed in order to have correct time base.
+  * @param  hiwdg  pointer to a IWDG_HandleTypeDef structure that contains
   *                the configuration information for the specified IWDG module.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
 {
+  uint32_t tickstart;
+
   /* Check the IWDG handle allocation */
   if(hiwdg == NULL)
   {
@@ -165,69 +174,49 @@ HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
   /* Check the parameters */
   assert_param(IS_IWDG_ALL_INSTANCE(hiwdg->Instance));
   assert_param(IS_IWDG_PRESCALER(hiwdg->Init.Prescaler));
-  assert_param(IS_IWDG_RELOAD(hiwdg->Init.Reload)); 
-  
-  /* Check pending flag, if previous update not done, return error */
-  if((__HAL_IWDG_GET_FLAG(hiwdg, IWDG_FLAG_PVU) != RESET)
-     &&(__HAL_IWDG_GET_FLAG(hiwdg, IWDG_FLAG_RVU) != RESET))
-  {
-    return HAL_ERROR;
-  }
-    
-  if(hiwdg->State == HAL_IWDG_STATE_RESET)
-  {  
-    /* Allocate lock resource and initialize it */
-    hiwdg->Lock = HAL_UNLOCKED;
-    
-    /* Init the low level hardware */
-    HAL_IWDG_MspInit(hiwdg);
-  }
-  
-  /* Change IWDG peripheral state */
-  hiwdg->State = HAL_IWDG_STATE_BUSY;  
-  
-  /* Enable write access to IWDG_PR and IWDG_RLR registers */  
+  assert_param(IS_IWDG_RELOAD(hiwdg->Init.Reload));
+
+  /* Enable IWDG. LSI is turned on automaticaly */
+  __HAL_IWDG_START(hiwdg);
+
+  /* Enable write access to IWDG_PR and IWDG_RLR registers by writing 0x5555 in KR */
   IWDG_ENABLE_WRITE_ACCESS(hiwdg);
-  
-  /* Write to IWDG registers the IWDG_Prescaler & IWDG_Reload values to work with */
-  MODIFY_REG(hiwdg->Instance->PR, IWDG_PR_PR, hiwdg->Init.Prescaler);
-  MODIFY_REG(hiwdg->Instance->RLR, IWDG_RLR_RL, hiwdg->Init.Reload);
- 
-  /* Change IWDG peripheral state */
-  hiwdg->State = HAL_IWDG_STATE_READY;
-  
+
+  /* Write to IWDG registers the Prescaler & Reload values to work with */
+  hiwdg->Instance->PR = hiwdg->Init.Prescaler;
+  hiwdg->Instance->RLR = hiwdg->Init.Reload;
+
+  /* Check pending flag, if previous update not done, return timeout */
+  tickstart = HAL_GetTick();
+
+  /* Wait for register to be updated */
+  while(hiwdg->Instance->SR != RESET)
+  {
+    if((HAL_GetTick() - tickstart ) > HAL_IWDG_DEFAULT_TIMEOUT)
+    {
+      return HAL_TIMEOUT;
+    }
+  }
+
+  /* Reload IWDG counter with value defined in the reload register */
+  __HAL_IWDG_RELOAD_COUNTER(hiwdg);
+
   /* Return function status */
   return HAL_OK;
-}
-
-/**
-  * @brief  Initializes the IWDG MSP.
-  * @param  hiwdg: pointer to a IWDG_HandleTypeDef structure that contains
-  *                the configuration information for the specified IWDG module.
-  * @retval None
-  */
-__weak void HAL_IWDG_MspInit(IWDG_HandleTypeDef *hiwdg)
-{
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(hiwdg);
-  /* NOTE : This function Should not be modified, when the callback is needed,
-            the HAL_IWDG_MspInit could be implemented in the user file
-   */
 }
 
 /**
   * @}
   */
 
-/** @defgroup IWDG_Exported_Functions_Group2 IO operation functions  
- *  @brief   IO operation functions  
- *
-@verbatim   
+/** @addtogroup IWDG_Exported_Functions_Group2
+  *  @brief   IO operation functions
+  *
+@verbatim
  ===============================================================================
                       ##### IO operation functions #####
- ===============================================================================  
-    [..]  This section provides functions allowing to:
-      (+) Start the IWDG.
+ ===============================================================================
+ [..]  This section provides functions allowing to:
       (+) Refresh the IWDG.
 
 @endverbatim
@@ -235,109 +224,18 @@ __weak void HAL_IWDG_MspInit(IWDG_HandleTypeDef *hiwdg)
   */
 
 /**
-  * @brief  Starts the IWDG.
-  * @param  hiwdg: pointer to a IWDG_HandleTypeDef structure that contains
-  *                the configuration information for the specified IWDG module.
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_IWDG_Start(IWDG_HandleTypeDef *hiwdg)
-{
-  /* Process Locked */
-  __HAL_LOCK(hiwdg); 
-  
-    /* Change IWDG peripheral state */  
-  hiwdg->State = HAL_IWDG_STATE_BUSY;
-
-  /* Start the IWDG peripheral */
-  __HAL_IWDG_START(hiwdg);
-  
-    /* Reload IWDG counter with value defined in the RLR register */
-  __HAL_IWDG_RELOAD_COUNTER(hiwdg);
-  
-  /* Change IWDG peripheral state */    
-  hiwdg->State = HAL_IWDG_STATE_READY; 
-  
-  /* Process Unlocked */
-  __HAL_UNLOCK(hiwdg);
-  
-  /* Return function status */
-  return HAL_OK;
-}
-
-/**
-  * @brief  Refreshes the IWDG.
-  * @param  hiwdg: pointer to a IWDG_HandleTypeDef structure that contains
+  * @brief  Refresh the IWDG.
+  * @param  hiwdg  pointer to a IWDG_HandleTypeDef structure that contains
   *                the configuration information for the specified IWDG module.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IWDG_Refresh(IWDG_HandleTypeDef *hiwdg)
 {
-  uint32_t tickstart = 0;
-
-  /* Process Locked */
-  __HAL_LOCK(hiwdg);
-
-    /* Change IWDG peripheral state */
-  hiwdg->State = HAL_IWDG_STATE_BUSY;
-
-  tickstart = HAL_GetTick();
-
-  /* Wait until RVU flag is RESET */
-  while(__HAL_IWDG_GET_FLAG(hiwdg, IWDG_FLAG_RVU) != RESET)
-  {
-    if((HAL_GetTick() - tickstart ) > IWDG_DEFAULT_TIMEOUT)
-    {
-      /* Set IWDG state */
-      hiwdg->State = HAL_IWDG_STATE_TIMEOUT;
-
-       /* Process unlocked */
-      __HAL_UNLOCK(hiwdg);
-
-      return HAL_TIMEOUT;
-    }
-  }
-  
   /* Reload IWDG counter with value defined in the reload register */
   __HAL_IWDG_RELOAD_COUNTER(hiwdg);
-    
-  /* Change IWDG peripheral state */    
-  hiwdg->State = HAL_IWDG_STATE_READY; 
-  
-  /* Process Unlocked */
-  __HAL_UNLOCK(hiwdg);
-  
+
   /* Return function status */
   return HAL_OK;
-}
-
-/**
-  * @}
-  */
-
-/** @defgroup IWDG_Exported_Functions_Group3 Peripheral State functions 
- *  @brief    Peripheral State functions. 
- *
-@verbatim   
- ===============================================================================
-                      ##### Peripheral State functions #####
- ===============================================================================  
-    [..]
-    This subsection permits to get in run-time the status of the peripheral 
-    and the data flow.
-
-@endverbatim
-  * @{
-  */
-
-/**
-  * @brief  Returns the IWDG state.
-  * @param  hiwdg: pointer to a IWDG_HandleTypeDef structure that contains
-  *                the configuration information for the specified IWDG module.
-  * @retval HAL state
-  */
-HAL_IWDG_StateTypeDef HAL_IWDG_GetState(IWDG_HandleTypeDef *hiwdg)
-{
-  return hiwdg->State;
 }
 
 /**
