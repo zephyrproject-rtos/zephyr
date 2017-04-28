@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2017 Justin Watson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m4";
+		};
+	};
+
+	sram0: memory {
+		compatible = "sram";
+		reg = <0x20070000 0x18000>;
+	};
+
+	flash0: flash {
+		compatible = "flash";
+		reg = <0x00080000 0x80000>;
+	};
+
+	soc {
+		uart0: uart@400E0800 {
+			compatible = "atmel,sam3x-uart";
+			reg = <0x400E0800 0x124>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

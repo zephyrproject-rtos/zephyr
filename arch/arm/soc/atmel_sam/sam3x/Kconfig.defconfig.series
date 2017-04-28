@@ -16,10 +16,6 @@ config SOC_PART_NUMBER
 	string
 	default sam3x8e if SOC_PART_NUMBER_SAM3X8E
 
-config NUM_IRQ_PRIO_BITS
-	int
-	default 3
-
 #
 # SAM3 family has total 45 peripherals capable of
 # generating interrupts.
@@ -31,30 +27,5 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 84000000
-
-#
-# SRAM address depends on the processor.
-#
-# SAM3X8E has two SRAM banks:
-#   64K @ 0x20000000
-#   32K @ 0x20080000
-# The first 64K is mirrored at 0x20070000
-# to provide one continuous 96K block.
-#
-config SRAM_SIZE
-	default 96 if SOC_PART_NUMBER_SAM3X8E
-
-config SRAM_BASE_ADDRESS
-	default 0x20000000 if !SOC_PART_NUMBER_SAM3X8E
-	default 0x20070000 if SOC_PART_NUMBER_SAM3X8E
-
-#
-# Atmel SAM3X family has flash starting @ 0x00080000.
-#
-config FLASH_SIZE
-	default 512 if SOC_PART_NUMBER_SAM3X8E
-
-config FLASH_BASE_ADDRESS
-	default 0x00080000
 
 endif # SOC_SERIES_SAM3X
