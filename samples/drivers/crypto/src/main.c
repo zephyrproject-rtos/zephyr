@@ -110,15 +110,18 @@ void cbc_mode(void)
 	encrpt.out_buf_max = sizeof(encrypted);
 	encrpt.out_buf = encrypted;
 
-	cipher_cbc_op(&ini, &encrpt, iv);
+	if (cipher_cbc_op(&ini, &encrpt, iv)) {
+		SYS_LOG_ERR("CBC mode ENCRYPT - Failed");
+		goto out;
+	}
 
 	if (memcmp(encrpt.out_buf, ciphertext, sizeof(ciphertext))) {
-		SYS_LOG_ERR("cbc mode ENCRYPT - Mismatch between expected and "
+		SYS_LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
 			    "returned cipher text");
 		goto out;
 	}
 
-	SYS_LOG_INF("cbc mode ENCRYPT - Match");
+	SYS_LOG_INF("CBC mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -133,15 +136,18 @@ void cbc_mode(void)
 	decrypt.out_buf_max = sizeof(decrypted);
 
 	/* TinyCrypt keeps IV at the start of encrypted buffer */
-	cipher_cbc_op(&ini, &decrypt, encrypted);
+	if (cipher_cbc_op(&ini, &decrypt, encrypted)) {
+		SYS_LOG_ERR("CBC mode DECRYPT - Failed");
+		goto out;
+	}
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
-		SYS_LOG_ERR("cbc mode DECRYPT - Mismatch between plaintext and "
+		SYS_LOG_ERR("CBC mode DECRYPT - Mismatch between plaintext and "
 			    "decrypted cipher text");
 		goto out;
 	}
 
-	SYS_LOG_INF("cbc mode DECRYPT - Match");
+	SYS_LOG_INF("CBC mode DECRYPT - Match");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -201,15 +207,18 @@ void ctr_mode(void)
 	encrpt.out_buf_max = sizeof(encrypted);
 	encrpt.out_buf = encrypted;
 
-	cipher_ctr_op(&ini, &encrpt, iv);
+	if (cipher_ctr_op(&ini, &encrpt, iv)) {
+		SYS_LOG_ERR("CTR mode ENCRYPT - Failed");
+		goto out;
+	}
 
 	if (memcmp(encrpt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
-		SYS_LOG_ERR("ctr mode ENCRYPT - Mismatch between expected "
+		SYS_LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
 			    "and returned cipher text");
 		goto out;
 	}
 
-	SYS_LOG_INF("ctr mode ENCRYPT - Match");
+	SYS_LOG_INF("CTR mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -218,21 +227,23 @@ void ctr_mode(void)
 		return;
 	}
 
-
 	decrypt.in_buf = encrypted;
 	decrypt.in_len = sizeof(encrypted);
 	decrypt.out_buf = decrypted;
 	decrypt.out_buf_max = sizeof(decrypted);
 
-	cipher_ctr_op(&ini, &decrypt, iv);
+	if (cipher_ctr_op(&ini, &decrypt, iv)) {
+		SYS_LOG_ERR("CTR mode DECRYPT - Failed");
+		goto out;
+	}
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
-		SYS_LOG_ERR("ctr mode DECRYPT - Mismatch between plaintext "
+		SYS_LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
 			    "and decypted cipher text");
 		goto out;
 	}
 
-	SYS_LOG_INF("ctr mode DECRYPT - Match");
+	SYS_LOG_INF("CTR mode DECRYPT - Match");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -303,7 +314,10 @@ void ccm_mode(void)
 	ccm_op.ad_len = sizeof(ccm_hdr);
 	ccm_op.pkt = &encrpt;
 
-	cipher_ccm_op(&ini, &ccm_op, ccm_nonce);
+	if (cipher_ccm_op(&ini, &ccm_op, ccm_nonce)) {
+		SYS_LOG_ERR("CCM mode ENCRYPT - Failed");
+		goto out;
+	}
 
 	if (memcmp(encrpt.out_buf, ccm_expected, sizeof(ccm_expected))) {
 		SYS_LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
