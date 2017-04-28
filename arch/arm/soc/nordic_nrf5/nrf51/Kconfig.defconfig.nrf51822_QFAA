@@ -12,12 +12,6 @@ config SOC
 	string
 	default nRF51822_QFAA
 
-config SRAM_SIZE
-	default 16
-
-config FLASH_SIZE
-	default 256
-
 config ISR_STACK_SIZE
 	default 640
 

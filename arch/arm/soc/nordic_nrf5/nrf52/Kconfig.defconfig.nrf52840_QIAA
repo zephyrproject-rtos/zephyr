@@ -12,12 +12,6 @@ config SOC
 	string
 	default nRF52840_QIAA
 
-config SRAM_SIZE
-	default 256
-
-config FLASH_SIZE
-	default 1024
-
 config NUM_IRQS
 	int
 	default 46

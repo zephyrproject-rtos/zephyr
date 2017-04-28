@@ -45,8 +45,6 @@
 
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)
-#define SCS_SECTION scs
-#define SCP_SECTION scp
 #define KINETIS_FLASH_CONFIG  kinetis_flash_config
 #endif
 

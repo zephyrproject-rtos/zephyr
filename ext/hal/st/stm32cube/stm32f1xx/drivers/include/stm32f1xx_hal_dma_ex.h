@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_dma_ex.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Header file of DMA HAL extension module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
 
 /** @defgroup DMAEx DMAEx
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/ 
 /* Exported constants --------------------------------------------------------*/
@@ -125,6 +125,25 @@
    DMA_FLAG_TE5)
 
 /**
+  * @brief  Return the current DMA Channel Global interrupt flag.
+  * @param  __HANDLE__: DMA handle
+  * @retval The specified transfer error flag index.
+  */
+#define __HAL_DMA_GET_GI_FLAG_INDEX(__HANDLE__)\
+(((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel1))? DMA_FLAG_GL1 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel2))? DMA_FLAG_GL2 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel3))? DMA_FLAG_GL3 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel4))? DMA_FLAG_GL4 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel5))? DMA_FLAG_GL5 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel6))? DMA_FLAG_GL6 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel7))? DMA_FLAG_GL7 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA2_Channel1))? DMA_FLAG_GL1 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA2_Channel2))? DMA_FLAG_GL2 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA2_Channel3))? DMA_FLAG_GL3 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA2_Channel4))? DMA_FLAG_GL4 :\
+   DMA_FLAG_GL5)
+   
+/**
   * @brief  Get the DMA Channel pending flags.
   * @param  __HANDLE__: DMA handle
   * @param  __FLAG__: Get the specified flag.
@@ -178,10 +197,10 @@
    DMA_FLAG_TC7)
 
 /**
-  * @brief  Returns the current DMA Channel half transfer complete flag.
+  * @brief  Return the current DMA Channel half transfer complete flag.
   * @param  __HANDLE__: DMA handle
   * @retval The specified half transfer complete flag index.
-  */      
+  */
 #define __HAL_DMA_GET_HT_FLAG_INDEX(__HANDLE__)\
 (((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel1))? DMA_FLAG_HT1 :\
  ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel2))? DMA_FLAG_HT2 :\
@@ -192,7 +211,7 @@
    DMA_FLAG_HT7)
 
 /**
-  * @brief  Returns the current DMA Channel transfer error flag.
+  * @brief  Return the current DMA Channel transfer error flag.
   * @param  __HANDLE__: DMA handle
   * @retval The specified transfer error flag index.
   */
@@ -206,6 +225,20 @@
    DMA_FLAG_TE7)
 
 /**
+  * @brief  Return the current DMA Channel Global interrupt flag.
+  * @param  __HANDLE__: DMA handle
+  * @retval The specified transfer error flag index.
+  */
+#define __HAL_DMA_GET_GI_FLAG_INDEX(__HANDLE__)\
+(((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel1))? DMA_FLAG_GL1 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel2))? DMA_FLAG_GL2 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel3))? DMA_FLAG_GL3 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel4))? DMA_FLAG_GL4 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel5))? DMA_FLAG_GL5 :\
+ ((uint32_t)((__HANDLE__)->Instance) == ((uint32_t)DMA1_Channel6))? DMA_FLAG_GL6 :\
+   DMA_FLAG_GL7)
+
+/**
   * @brief  Get the DMA Channel pending flags.
   * @param  __HANDLE__: DMA handle
   * @param  __FLAG__: Get the specified flag.
@@ -213,6 +246,7 @@
   *            @arg DMA_FLAG_TCx:  Transfer complete flag
   *            @arg DMA_FLAG_HTx:  Half transfer complete flag
   *            @arg DMA_FLAG_TEx:  Transfer error flag
+  *            @arg DMA_FLAG_GLx:  Global interrupt flag
   *         Where x can be 1_7 to select the DMA Channel flag.   
   * @retval The state of FLAG (SET or RESET).
   */
@@ -220,13 +254,14 @@
 #define __HAL_DMA_GET_FLAG(__HANDLE__, __FLAG__)   (DMA1->ISR & (__FLAG__))
 
 /**
-  * @brief  Clears the DMA Channel pending flags.
+  * @brief  Clear the DMA Channel pending flags.
   * @param  __HANDLE__: DMA handle
   * @param  __FLAG__: specifies the flag to clear.
   *          This parameter can be any combination of the following values:
   *            @arg DMA_FLAG_TCx:  Transfer complete flag
   *            @arg DMA_FLAG_HTx:  Half transfer complete flag
   *            @arg DMA_FLAG_TEx:  Transfer error flag
+  *            @arg DMA_FLAG_GLx:  Global interrupt flag
   *         Where x can be 1_7 to select the DMA Channel flag.   
   * @retval None
   */

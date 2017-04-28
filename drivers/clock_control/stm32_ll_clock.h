@@ -9,6 +9,7 @@
 #define _STM32_LL_CLOCK_H_
 
 void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit);
+void config_enable_default_clocks(void);
 
 /* Section for functions not available in every Cube packages */
 void LL_RCC_MSI_Disable(void);

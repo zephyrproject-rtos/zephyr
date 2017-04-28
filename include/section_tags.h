@@ -18,7 +18,6 @@
 #define __sw_isr_table		_GENERIC_SECTION(SW_ISR_TABLE)
 
 #if defined(CONFIG_ARM)
-#define __scp_section		__in_section_unique(SCP_SECTION)
 #define __kinetis_flash_config_section __in_section_unique(KINETIS_FLASH_CONFIG)
 #endif /* CONFIG_ARM */
 

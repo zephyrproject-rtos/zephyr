@@ -9,4 +9,19 @@ config SOC_CC3200
 	bool "CC3200"
 	select HAS_CC3200SDK
 
+config SOC_CC3220SF
+	bool "CC3220SF"
+	select HAS_CC3220SDK
+
 endchoice
+
+
+if SOC_CC3220SF
+
+config CC3220SF_DEBUG
+	bool "Prepend debug header, disabling flash verification"
+	depends on XIP
+	default y if XIP
+	default n if !XIP
+
+endif # SOC_CC3220SF

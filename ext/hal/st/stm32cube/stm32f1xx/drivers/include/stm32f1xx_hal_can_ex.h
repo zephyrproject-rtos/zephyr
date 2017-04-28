@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_can_ex.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Header file of CAN HAL Extension module.
   ******************************************************************************
   * @attention
@@ -58,7 +58,7 @@
   */ 
 
 /* Exported types ------------------------------------------------------------*/
-      
+
 /** 
   * @brief  CAN filter configuration structure definition
   */
@@ -117,9 +117,9 @@ typedef struct
   * @{
   */
 #if defined(STM32F105xC) || defined(STM32F107xC)
-#define IS_CAN_FILTER_NUMBER(NUMBER) ((NUMBER) <= 27)
+#define IS_CAN_FILTER_NUMBER(NUMBER) ((NUMBER) <= 27U)
 #else
-#define IS_CAN_FILTER_NUMBER(NUMBER) ((NUMBER) <= 13)
+#define IS_CAN_FILTER_NUMBER(NUMBER) ((NUMBER) <= 13U)
 #endif /* STM32F105xC || STM32F107xC */
 
 /**
@@ -135,8 +135,7 @@ typedef struct
   * @}
   */
 
-#endif /* STM32F103x6) || STM32F103xB || STM32F103xE || */
-       /* STM32F103xG) || STM32F105xC || STM32F107xC    */
+#endif /* STM32F103x6) || STM32F103xB || STM32F103xE || STM32F103xG) || STM32F105xC || STM32F107xC    */
 
 #ifdef __cplusplus
 }

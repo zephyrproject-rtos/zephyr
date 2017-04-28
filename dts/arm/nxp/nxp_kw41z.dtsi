@@ -49,7 +49,6 @@
 			reg = <0x40054000 0x18>;
 			interrupts = <12 0>;
 
-			baud-rate = <115200>;
 			pinctrl-0 = <&lpuart0_default>;
 			pinctrl-names = "default";
 

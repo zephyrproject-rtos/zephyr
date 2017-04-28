@@ -33,3 +33,11 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	pllinit->PLLR = pllr(CONFIG_CLOCK_STM32_PLL_R_DIVISOR);
 }
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
+
+/**
+ * @brief Activate default clocks
+ */
+void config_enable_default_clocks(void)
+{
+	/* Nothing for now */
+}

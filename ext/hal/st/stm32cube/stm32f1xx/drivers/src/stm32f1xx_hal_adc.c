@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_adc.c
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Analog to Digital Convertor (ADC)
   *          peripheral:
@@ -300,18 +300,18 @@
   /* Ex of profile low frequency : Clock source at 0.1 MHz, ADC clock         */
   /* prescaler 4, sampling time 12.5 ADC clock cycles, resolution 12 bits.    */
   /* Unit: ms                                                                 */
-  #define ADC_ENABLE_TIMEOUT              ((uint32_t) 2)
-  #define ADC_DISABLE_TIMEOUT             ((uint32_t) 2)
+  #define ADC_ENABLE_TIMEOUT              2U
+  #define ADC_DISABLE_TIMEOUT             2U
 
   /* Delay for ADC stabilization time.                                        */
   /* Maximum delay is 1us (refer to device datasheet, parameter tSTAB).       */
   /* Unit: us                                                                 */
-  #define ADC_STAB_DELAY_US               ((uint32_t) 1)
+  #define ADC_STAB_DELAY_US               1U
 
   /* Delay for temperature sensor stabilization time.                         */
   /* Maximum delay is 10us (refer to device datasheet, parameter tSTART).     */
   /* Unit: us                                                                 */
-  #define ADC_TEMPSENSOR_DELAY_US         ((uint32_t) 10)
+  #define ADC_TEMPSENSOR_DELAY_US         10U
 
 /**
   * @}
@@ -374,9 +374,9 @@
 HAL_StatusTypeDef HAL_ADC_Init(ADC_HandleTypeDef* hadc)
 {
   HAL_StatusTypeDef tmp_hal_status = HAL_OK;
-  uint32_t tmp_cr1 = 0;
-  uint32_t tmp_cr2 = 0;
-  uint32_t tmp_sqr1 = 0;
+  uint32_t tmp_cr1 = 0U;
+  uint32_t tmp_cr2 = 0U;
+  uint32_t tmp_sqr1 = 0U;
   
   /* Check ADC handle */
   if(hadc == NULL)
@@ -924,12 +924,12 @@ HAL_StatusTypeDef HAL_ADC_Stop(ADC_HandleTypeDef* hadc)
   */
 HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef* hadc, uint32_t Timeout)
 {
-  uint32_t tickstart = 0;
+  uint32_t tickstart = 0U;
   
   /* Variables for polling in case of scan mode enabled and polling for each  */
   /* conversion.                                                              */
-  __IO uint32_t Conversion_Timeout_CPU_cycles = 0;
-  uint32_t Conversion_Timeout_CPU_cycles_max = 0;
+  __IO uint32_t Conversion_Timeout_CPU_cycles = 0U;
+  uint32_t Conversion_Timeout_CPU_cycles_max = 0U;
  
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
@@ -974,7 +974,7 @@ HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef* hadc, uint32_t Ti
       /* Check if timeout is disabled (set to infinite wait) */
       if(Timeout != HAL_MAX_DELAY)
       {
-        if((Timeout == 0) || ((HAL_GetTick() - tickstart ) > Timeout))
+        if((Timeout == 0U) || ((HAL_GetTick() - tickstart ) > Timeout))
         {
           /* Update ADC state machine to timeout */
           SET_BIT(hadc->State, HAL_ADC_STATE_TIMEOUT);
@@ -1002,7 +1002,7 @@ HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef* hadc, uint32_t Ti
       /* Check if timeout is disabled (set to infinite wait) */
       if(Timeout != HAL_MAX_DELAY)
       {
-        if((Timeout == 0) || ((HAL_GetTick() - tickstart) > Timeout))
+        if((Timeout == 0U) || ((HAL_GetTick() - tickstart) > Timeout))
         {
           /* Update ADC state machine to timeout */
           SET_BIT(hadc->State, HAL_ADC_STATE_TIMEOUT);
@@ -1055,7 +1055,7 @@ HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef* hadc, uint32_t Ti
   */
 HAL_StatusTypeDef HAL_ADC_PollForEvent(ADC_HandleTypeDef* hadc, uint32_t EventType, uint32_t Timeout)
 {
-  uint32_t tickstart = 0; 
+  uint32_t tickstart = 0U; 
 
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
@@ -1070,7 +1070,7 @@ HAL_StatusTypeDef HAL_ADC_PollForEvent(ADC_HandleTypeDef* hadc, uint32_t EventTy
     /* Check if timeout is disabled (set to infinite wait) */
     if(Timeout != HAL_MAX_DELAY)
     {
-      if((Timeout == 0) || ((HAL_GetTick() - tickstart ) > Timeout))
+      if((Timeout == 0U) || ((HAL_GetTick() - tickstart ) > Timeout))
       {
         /* Update ADC state machine to timeout */
         SET_BIT(hadc->State, HAL_ADC_STATE_TIMEOUT);
@@ -1702,7 +1702,7 @@ __weak void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 HAL_StatusTypeDef HAL_ADC_ConfigChannel(ADC_HandleTypeDef* hadc, ADC_ChannelConfTypeDef* sConfig)
 { 
   HAL_StatusTypeDef tmp_hal_status = HAL_OK;
-  __IO uint32_t wait_loop_index = 0;
+  __IO uint32_t wait_loop_index = 0U;
   
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
@@ -1716,14 +1716,14 @@ HAL_StatusTypeDef HAL_ADC_ConfigChannel(ADC_HandleTypeDef* hadc, ADC_ChannelConf
   
   /* Regular sequence configuration */
   /* For Rank 1 to 6 */
-  if (sConfig->Rank < 7)
+  if (sConfig->Rank < 7U)
   {
     MODIFY_REG(hadc->Instance->SQR3                        ,
                ADC_SQR3_RK(ADC_SQR3_SQ1, sConfig->Rank)    ,
                ADC_SQR3_RK(sConfig->Channel, sConfig->Rank) );
   }
   /* For Rank 7 to 12 */
-  else if (sConfig->Rank < 13)
+  else if (sConfig->Rank < 13U)
   {
     MODIFY_REG(hadc->Instance->SQR2                        ,
                ADC_SQR2_RK(ADC_SQR2_SQ7, sConfig->Rank)    ,
@@ -1771,8 +1771,8 @@ HAL_StatusTypeDef HAL_ADC_ConfigChannel(ADC_HandleTypeDef* hadc, ADC_ChannelConf
         {
           /* Delay for temperature sensor stabilization time */
           /* Compute number of CPU cycles to wait for */
-          wait_loop_index = (ADC_TEMPSENSOR_DELAY_US * (SystemCoreClock / 1000000));
-          while(wait_loop_index != 0)
+          wait_loop_index = (ADC_TEMPSENSOR_DELAY_US * (SystemCoreClock / 1000000U));
+          while(wait_loop_index != 0U)
           {
             wait_loop_index--;
           }
@@ -1933,8 +1933,8 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc)
   */
 HAL_StatusTypeDef ADC_Enable(ADC_HandleTypeDef* hadc)
 {
-  uint32_t tickstart = 0;
-  __IO uint32_t wait_loop_index = 0;
+  uint32_t tickstart = 0U;
+  __IO uint32_t wait_loop_index = 0U;
   
   /* ADC enable and wait for ADC ready (in case of ADC is disabled or         */
   /* enabling phase not yet completed: flag ADC ready not yet set).           */
@@ -1947,8 +1947,8 @@ HAL_StatusTypeDef ADC_Enable(ADC_HandleTypeDef* hadc)
     
     /* Delay for ADC stabilization time */
     /* Compute number of CPU cycles to wait for */
-    wait_loop_index = (ADC_STAB_DELAY_US * (SystemCoreClock / 1000000));
-    while(wait_loop_index != 0)
+    wait_loop_index = (ADC_STAB_DELAY_US * (SystemCoreClock / 1000000U));
+    while(wait_loop_index != 0U)
     {
       wait_loop_index--;
     }
@@ -1988,7 +1988,7 @@ HAL_StatusTypeDef ADC_Enable(ADC_HandleTypeDef* hadc)
   */
 HAL_StatusTypeDef ADC_ConversionStop_Disable(ADC_HandleTypeDef* hadc)
 {
-  uint32_t tickstart = 0;
+  uint32_t tickstart = 0U;
   
   /* Verification if ADC is not already disabled */
   if (ADC_IS_ENABLE(hadc) != RESET)

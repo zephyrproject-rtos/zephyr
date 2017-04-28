@@ -62,7 +62,7 @@ static int uart_cc32xx_init(struct device *dev)
 	/* This also calls MAP_UARTEnable() to enable the FIFOs: */
 	MAP_UARTConfigSetExpClk((unsigned long)config->base,
 				MAP_PRCMPeripheralClockGet(PRCM_UARTA0),
-				TI_CC32XX_UART_4000C000_BAUD_RATE,
+				TI_CC32XX_UART_4000C000_CURRENT_SPEED,
 				(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE
 				 | UART_CONFIG_PAR_NONE));
 	MAP_UARTFlowControlSet((unsigned long)config->base,
