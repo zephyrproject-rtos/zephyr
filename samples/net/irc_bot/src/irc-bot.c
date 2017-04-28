@@ -145,7 +145,7 @@ transmit(struct net_context *ctx, char buffer[], size_t len)
 		return -ENOMEM;
 	}
 
-	if (!net_pkt_append(send_pkt, len, buffer, K_FOREVER)) {
+	if (!net_pkt_append_all(send_pkt, len, buffer, K_FOREVER)) {
 		return -EINVAL;
 	}
 

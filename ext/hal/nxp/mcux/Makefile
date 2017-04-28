@@ -21,6 +21,12 @@ endif
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/devices/$(MCUX_DEVICE)
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/drivers
 
+ifdef CONFIG_IEEE802154_KW41Z
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.2/Common/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.2/OSAbstraction/Interface
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.2/XCVR/MKW41Z4/
+endif
+
 # The mcux uses the cpu name to expose SoC-specific features of a given
 # peripheral. For example, the UART peripheral may be instantiated with/without
 # a hardware FIFO, and the size of that FIFO may be different for each instance
@@ -35,5 +41,9 @@ obj-y += devices/$(MCUX_DEVICE)/fsl_clock.o
 # Build mcux drivers that can be used for multiple SoC's.
 obj-y += components/
 obj-y += drivers/
+
+ifdef CONFIG_IEEE802154_KW41Z
+obj-y += middleware/
+endif
 
 endif

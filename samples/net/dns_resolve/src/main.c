@@ -137,7 +137,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 
 static void setup_dhcpv4(struct net_if *iface)
 {
-	NET_INFO("Running dhcpv4 client...");
+	NET_INFO("Getting IPv4 address via DHCP before issuing DNS query");
 
 	net_mgmt_init_event_callback(&mgmt4_cb, ipv4_addr_add_handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
@@ -257,6 +257,9 @@ static void setup_ipv6(struct net_if *iface)
 
 	NET_INFO("IPv6 address: %s",
 		 net_addr_ntop(AF_INET6, &addr, hr_addr, NET_IPV6_ADDR_LEN));
+
+	NET_INFO("Waiting for IPv6 default router notification "
+		 "before issuing DNS query");
 }
 
 #else

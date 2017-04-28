@@ -62,7 +62,7 @@ struct tcp_segment {
 	const struct sockaddr *dst_addr;
 };
 
-#if defined(CONFIG_NET_DEBUG_TCP) && (CONFIG_SYS_LOG_NET_BUF_LEVEL > 2)
+#if defined(CONFIG_NET_DEBUG_TCP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
 static char upper_if_set(char chr, bool set)
 {
 	if (set) {
@@ -85,12 +85,14 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 		rel_ack = ack ? ack - tcp->sent_ack : 0;
 	}
 
-	NET_DBG("pkt %p src %u dst %u seq 0x%04x ack 0x%04x (%u) "
+	NET_DBG("pkt %p src %u dst %u seq 0x%04x (%u) ack 0x%04x (%u/%u) "
 		"flags %c%c%c%c%c%c win %u chk 0x%04x",
 		pkt,
 		ntohs(NET_TCP_HDR(pkt)->src_port),
 		ntohs(NET_TCP_HDR(pkt)->dst_port),
 		sys_get_be32(NET_TCP_HDR(pkt)->seq),
+		sys_get_be32(NET_TCP_HDR(pkt)->seq),
+		ack,
 		ack,
 		/* This tells how many bytes we are acking now */
 		rel_ack,

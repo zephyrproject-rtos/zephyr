@@ -107,7 +107,8 @@ static int transmitv(struct net_context *conn, int iovcnt,
 	}
 
 	for (i = 0; i < iovcnt; i++) {
-		if (!net_pkt_append(pkt, iov[i].len, iov[i].base, K_FOREVER)) {
+		if (!net_pkt_append_all(pkt, iov[i].len, iov[i].base,
+					K_FOREVER)) {
 			net_pkt_unref(pkt);
 
 			return -ENOMEM;

@@ -620,7 +620,7 @@ buf:
 
 /* Put the actual shell commands after this */
 
-static int shell_cmd_allocs(int argc, char *argv[])
+int net_shell_cmd_allocs(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -636,7 +636,7 @@ static int shell_cmd_allocs(int argc, char *argv[])
 	return 0;
 }
 
-static int shell_cmd_conn(int argc, char *argv[])
+int net_shell_cmd_conn(int argc, char *argv[])
 {
 	int count = 0;
 
@@ -793,7 +793,7 @@ static void print_dns_info(struct dns_resolve_context *ctx)
 }
 #endif
 
-static int shell_cmd_dns(int argc, char *argv[])
+int net_shell_cmd_dns(int argc, char *argv[])
 {
 #if defined(CONFIG_DNS_RESOLVER)
 #define DNS_TIMEOUT 2000 /* ms */
@@ -881,7 +881,7 @@ static int shell_cmd_dns(int argc, char *argv[])
 	return 0;
 }
 
-static int shell_cmd_iface(int argc, char *argv[])
+int net_shell_cmd_iface(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -972,7 +972,7 @@ static void context_info(struct net_context *context, void *user_data)
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 }
 
-static int shell_cmd_mem(int argc, char *argv[])
+int net_shell_cmd_mem(int argc, char *argv[])
 {
 	struct k_mem_slab *rx, *tx;
 	struct net_buf_pool *rx_data, *tx_data;
@@ -1059,7 +1059,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 }
 #endif
 
-static int shell_cmd_nbr(int argc, char *argv[])
+int net_shell_cmd_nbr(int argc, char *argv[])
 {
 #if defined(CONFIG_NET_IPV6)
 	int count = 0;
@@ -1233,7 +1233,7 @@ static int _ping_ipv4(char *host)
 #endif /* CONFIG_NET_IPV4 */
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
 
-static int shell_cmd_ping(int argc, char *argv[])
+int net_shell_cmd_ping(int argc, char *argv[])
 {
 	char *host;
 	int ret;
@@ -1276,7 +1276,7 @@ wait_reply:
 	return 0;
 }
 
-static int shell_cmd_route(int argc, char *argv[])
+int net_shell_cmd_route(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -1299,7 +1299,7 @@ extern char _main_stack[];
 extern char _interrupt_stack[];
 #endif
 
-static int shell_cmd_stacks(int argc, char *argv[])
+int net_shell_cmd_stacks(int argc, char *argv[])
 {
 #if defined(CONFIG_INIT_STACKS)
 	unsigned int stack_offset, pcnt, unused;
@@ -1346,7 +1346,7 @@ static int shell_cmd_stacks(int argc, char *argv[])
 	return 0;
 }
 
-static int shell_cmd_stats(int argc, char *argv[])
+int net_shell_cmd_stats(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -1528,7 +1528,7 @@ static void tcp_sent_cb(struct net_context *context,
 }
 #endif
 
-static int shell_cmd_tcp(int argc, char *argv[])
+int net_shell_cmd_tcp(int argc, char *argv[])
 {
 #if defined(CONFIG_NET_TCP)
 	int arg = 1;
@@ -1586,7 +1586,7 @@ static int shell_cmd_tcp(int argc, char *argv[])
 				return 0;
 			}
 
-			ret = net_pkt_append(pkt, strlen(argv[arg]),
+			ret = net_pkt_append_all(pkt, strlen(argv[arg]),
 					      argv[arg], TCP_TIMEOUT);
 			if (!ret) {
 				printk("Cannot build msg (out of pkts)\n");
@@ -1642,7 +1642,7 @@ static int shell_cmd_tcp(int argc, char *argv[])
 	return 0;
 }
 
-static int shell_cmd_help(int argc, char *argv[])
+int net_shell_cmd_help(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -1670,18 +1670,18 @@ static int shell_cmd_help(int argc, char *argv[])
 
 static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
-	{ "allocs", shell_cmd_allocs, NULL },
-	{ "conn", shell_cmd_conn, NULL },
-	{ "dns", shell_cmd_dns, NULL },
-	{ "help", shell_cmd_help, NULL },
-	{ "iface", shell_cmd_iface, NULL },
-	{ "mem", shell_cmd_mem, NULL },
-	{ "nbr", shell_cmd_nbr, NULL },
-	{ "ping", shell_cmd_ping, NULL },
-	{ "route", shell_cmd_route, NULL },
-	{ "stacks", shell_cmd_stacks, NULL },
-	{ "stats", shell_cmd_stats, NULL },
-	{ "tcp", shell_cmd_tcp, NULL },
+	{ "allocs", net_shell_cmd_allocs, NULL },
+	{ "conn", net_shell_cmd_conn, NULL },
+	{ "dns", net_shell_cmd_dns, NULL },
+	{ "help", net_shell_cmd_help, NULL },
+	{ "iface", net_shell_cmd_iface, NULL },
+	{ "mem", net_shell_cmd_mem, NULL },
+	{ "nbr", net_shell_cmd_nbr, NULL },
+	{ "ping", net_shell_cmd_ping, NULL },
+	{ "route", net_shell_cmd_route, NULL },
+	{ "stacks", net_shell_cmd_stacks, NULL },
+	{ "stats", net_shell_cmd_stats, NULL },
+	{ "tcp", net_shell_cmd_tcp, NULL },
 	{ NULL, NULL, NULL }
 };
 

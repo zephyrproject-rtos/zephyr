@@ -71,7 +71,7 @@ void zperf_tcp_upload(struct net_context *ctx,
 		net_pkt_frag_add(pkt, frag);
 
 		/* Fill in the TCP payload */
-		st = net_pkt_append(pkt, sizeof(sample_packet),
+		st = net_pkt_append_all(pkt, sizeof(sample_packet),
 				     sample_packet, K_FOREVER);
 		if (!st) {
 			printk(TAG "ERROR! Failed to fill packet\n");

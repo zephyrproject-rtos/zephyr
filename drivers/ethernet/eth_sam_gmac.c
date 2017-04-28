@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
+#include <i2c.h>
 #include <soc.h>
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
@@ -75,7 +76,7 @@ static struct gmac_desc tx_desc_que12[PRIORITY_QUEUE_DESC_COUNT]
 	__aligned(GMAC_DESC_ALIGNMENT);
 
 /* RX buffer accounting list */
-static struct net_buf *rx_buf_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
+static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
 /* TX frames accounting list */
 static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
 
@@ -121,12 +122,12 @@ static void ring_buf_put(struct ring_buf *rb, u32_t val)
 /*
  * Free pre-reserved RX buffers
  */
-static void free_rx_bufs(struct ring_buf *rx_pkt_list)
+static void free_rx_bufs(struct ring_buf *rx_frag_list)
 {
 	struct net_buf *buf;
 
-	for (int i = 0; i < rx_pkt_list->len; i++) {
-		buf = (struct net_buf *)rx_pkt_list->buf;
+	for (int i = 0; i < rx_frag_list->len; i++) {
+		buf = (struct net_buf *)rx_frag_list->buf;
 		if (buf) {
 			net_buf_unref(buf);
 		}
@@ -155,24 +156,24 @@ static void mac_addr_set(Gmac *gmac, u8_t index,
 static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 {
 	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
-	struct ring_buf *rx_pkt_list = &queue->rx_pkt_list;
+	struct ring_buf *rx_frag_list = &queue->rx_frag_list;
 	struct net_buf *rx_buf;
 	u8_t *rx_buf_addr;
 
-	__ASSERT_NO_MSG(rx_pkt_list->buf);
+	__ASSERT_NO_MSG(rx_frag_list->buf);
 
 	rx_desc_list->tail = 0;
-	rx_pkt_list->tail = 0;
+	rx_frag_list->tail = 0;
 
 	for (int i = 0; i < rx_desc_list->len; i++) {
 		rx_buf = net_pkt_get_reserve_rx_data(0, K_NO_WAIT);
 		if (rx_buf == NULL) {
-			free_rx_bufs(rx_pkt_list);
+			free_rx_bufs(rx_frag_list);
 			SYS_LOG_ERR("Failed to reserve data net buffers");
 			return -ENOBUFS;
 		}
 
-		rx_pkt_list->buf[i] = (u32_t)rx_buf;
+		rx_frag_list->buf[i] = (u32_t)rx_buf;
 
 		rx_buf_addr = rx_buf->data;
 		__ASSERT(!((u32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
@@ -285,7 +286,7 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 	gmac->GMAC_NCR &= ~GMAC_NCR_RXEN;
 
 	queue->rx_desc_list.tail = 0;
-	queue->rx_pkt_list.tail = 0;
+	queue->rx_frag_list.tail = 0;
 
 	for (int i = 0; i < queue->rx_desc_list.len; i++) {
 		queue->rx_desc_list.buf[i].w1 = 0;
@@ -467,11 +468,11 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 	return 0;
 }
 
-static struct net_buf *frame_get(struct gmac_queue *queue)
+static struct net_pkt *frame_get(struct gmac_queue *queue)
 {
 	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
 	struct gmac_desc *rx_desc;
-	struct ring_buf *rx_pkt_list = &queue->rx_pkt_list;
+	struct ring_buf *rx_frag_list = &queue->rx_frag_list;
 	struct net_pkt *rx_frame;
 	bool frame_is_complete;
 	struct net_buf *frag;
@@ -516,7 +517,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 	 * again.
 	 */
 	while ((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) && !frame_is_complete) {
-		frag = (struct net_buf *)rx_pkt_list->buf[tail];
+		frag = (struct net_buf *)rx_frag_list->buf[tail];
 		frag_data = (u8_t *)(rx_desc->w0 & GMAC_RXW0_ADDR);
 		__ASSERT(frag->data == frag_data,
 			 "RX descriptor and buffer list desynchronized");
@@ -544,7 +545,7 @@ static struct net_buf *frame_get(struct gmac_queue *queue)
 				net_buf_add(frag, frag_len);
 				net_pkt_frag_insert(rx_frame, frag);
 				frag = new_frag;
-				rx_pkt_list->buf[tail] = (u32_t)frag;
+				rx_frag_list->buf[tail] = (u32_t)frag;
 			}
 		}
 
@@ -742,6 +743,25 @@ static int eth_initialize(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
+void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
+{
+	struct device *dev;
+	u32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
+
+	dev = device_get_binding(CONFIG_ETH_SAM_GMAC_MAC_I2C_DEV_NAME);
+	if (!dev) {
+		SYS_LOG_ERR("I2C: Device not found");
+		return;
+	}
+
+	i2c_burst_read_addr(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
+			    (u8_t *)&iaddr,
+			    CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
+			    mac_addr, 6);
+}
+#endif
+
 static void eth0_iface_init(struct net_if *iface)
 {
 	struct device *const dev = net_if_get_device(iface);
@@ -764,6 +784,16 @@ static void eth0_iface_init(struct net_if *iface)
 		SYS_LOG_ERR("Unable to initialize ETH driver");
 		return;
 	}
+
+#ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
+	/* Read MAC address from an external EEPROM */
+	get_mac_addr_from_i2c_eeprom(dev_data->mac_addr);
+#endif
+
+	SYS_LOG_INF("MAC: %x:%x:%x:%x:%x:%x",
+		    dev_data->mac_addr[0], dev_data->mac_addr[1],
+		    dev_data->mac_addr[2], dev_data->mac_addr[3],
+		    dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 	/* Set MAC Address for frame filtering logic */
 	mac_addr_set(cfg->regs, 0, dev_data->mac_addr);
@@ -826,6 +856,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 };
 
 static struct eth_sam_dev_data eth0_data = {
+#ifdef CONFIG_ETH_SAM_GMAC_MAC_MANUAL
 	.mac_addr = {
 		CONFIG_ETH_SAM_GMAC_MAC0,
 		CONFIG_ETH_SAM_GMAC_MAC1,
@@ -834,6 +865,7 @@ static struct eth_sam_dev_data eth0_data = {
 		CONFIG_ETH_SAM_GMAC_MAC4,
 		CONFIG_ETH_SAM_GMAC_MAC5,
 	},
+#endif
 	.queue_list = {{
 			.que_idx = GMAC_QUE_0,
 			.rx_desc_list = {
@@ -844,9 +876,9 @@ static struct eth_sam_dev_data eth0_data = {
 				.buf = tx_desc_que0,
 				.len = ARRAY_SIZE(tx_desc_que0),
 			},
-			.rx_pkt_list = {
-				.buf = (u32_t *)rx_buf_list_que0,
-				.len = ARRAY_SIZE(rx_buf_list_que0),
+			.rx_frag_list = {
+				.buf = (u32_t *)rx_frag_list_que0,
+				.len = ARRAY_SIZE(rx_frag_list_que0),
 			},
 			.tx_frames = {
 				.buf = (u32_t *)tx_frame_list_que0,
