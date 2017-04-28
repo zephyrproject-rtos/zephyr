@@ -29,6 +29,7 @@ dtb-$(CONFIG_BOARD_NRF51_BLENANO)	=	nrf51_blenano.dts_compiled
 dtb-$(CONFIG_BOARD_NRF51_PCA10028)	=	nrf51_pca10028.dts_compiled
 dtb-$(CONFIG_BOARD_QUARK_SE_C1000_BLE)	=	quark_se_c1000_ble.dts_compiled
 dtb-$(CONFIG_BOARD_QEMU_CORTEX_M3)	=	qemu_cortex_m3.dts_compiled
+dtb-$(CONFIG_BOARD_ARDUINO_DUE)		=	arduino_due.dts_compiled
 
 always	:= $(dtb-y)
 endif

@@ -1,0 +1,22 @@
+/dts-v1/;
+
+#include <atmel/sam3x.dtsi>
+
+/ {
+	model = "Arduino Due with an Atmel SAM3X8E SoC";
+	compatible = "arduino,due", "atmel,sam3x8e", "atmel,sam3x";
+
+	aliases {
+		uart_0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
