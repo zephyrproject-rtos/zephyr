@@ -741,6 +741,29 @@ int net_context_recv(struct net_context *context,
 		     void *user_data);
 
 /**
+ * @brief Update TCP receive window for context.
+ *
+ * @details This function should be used by an application which
+ * doesn't fully process incoming data in its receive callback,
+ * but for example, queues it. In this case, receive callback
+ * should decrease the window (call this function with a negative
+ * value) by the size of queued data, and function(s) which dequeue
+ * data - with positive value corresponding to the dequeued size.
+ * For example, if receive callback gets a packet with the data
+ * size of 256 and queues it, it should call this function with
+ * delta of -256. If a function extracts 10 bytes of the queued
+ * data, it should call it with delta of 10.
+ *
+ * @param context The TCP network context to use.
+ * @param delta Size, in bytes, by which to increase TCP receive
+ * window (negative value to decrease).
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_context_update_recv_wnd(struct net_context *context,
+				s32_t delta);
+
+/**
  * @typedef net_context_cb_t
  * @brief Callback used while iterating over network contexts
  *

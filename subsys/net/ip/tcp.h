@@ -154,6 +154,8 @@ struct net_tcp {
 	 * Semaphore to signal TCP connection completion
 	 */
 	struct k_sem connect_wait;
+
+	u16_t recv_wnd;
 };
 
 static inline bool net_tcp_is_used(struct net_tcp *tcp)
@@ -341,6 +343,15 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack);
  * @return Maximum Segment Size
  */
 u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
+
+/**
+ * @brief Returns the receive window for a given TCP context
+ *
+ * @param tcp TCP context
+ *
+ * @return Current TCP receive window
+ */
+u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp);
 
 /**
  * @brief Obtains the state for a TCP context
