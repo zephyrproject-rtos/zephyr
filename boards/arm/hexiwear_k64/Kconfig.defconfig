@@ -10,6 +10,21 @@ if BOARD_HEXIWEAR_K64
 config BOARD
 	default hexiwear_k64
 
+config HEXIWEAR_DOCKING_STATION
+        bool "Docking Station"
+        default n
+        help
+          Has Hexiwear docking station
+	select GPIO
+	select SPI
+
+config HAPTIC_FEEDBACK
+	bool "Enable haptic feedback motor"
+	default y
+	select GPIO
+	help
+	  Enables haptic feedback motor 
+
 config OSC_XTAL0_FREQ
 	default 12000000
 
@@ -41,7 +56,7 @@ config PINMUX
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
-	def_bool y if MAX30101
+	def_bool y if (MAX30101 || HEXIWEAR_DOCKING_STATION)
 
 config PINMUX_MCUX_PORTB
 	def_bool y if UART_MCUX_0
@@ -60,7 +75,7 @@ endif # PINMUX_MCUX
 if GPIO_MCUX
 
 config GPIO_MCUX_PORTA
-	def_bool y if MAX30101
+	def_bool y if (MAX30101 || HEXIWEAR_DOCKING_STATION)
 
 config GPIO_MCUX_PORTB
 	def_bool y

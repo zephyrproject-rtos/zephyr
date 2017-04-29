@@ -30,7 +30,7 @@ capacitive buttons with haptic feedback.
 Hardware
 ********
 
-- Main MCU: NXP Kinetis K64x (ARM Cortex-M4, 120 MHz, 1M Flash, 256K SRAM)
+- Main MCU: NXP Kinetis K64x (ARM Cortex-M4, 120 MHz, 1M Flash, 256K SRAM) MK64FN1M0VDC12
 - Wireless MCU: NXP Kinetis KW4x (ARM Cortex-M0+, Bluetooth Low Energy &
   802.15.4 radio)
 - 6-axis combo Accelerometer and Magnetometer NXP FXOS8700
@@ -38,8 +38,9 @@ Hardware
 - Absolute Pressure sensor NXP MPL3115
 - Li-Ion/Li-Po Battery Charger NXP MC34671
 - Optical heart rate sensor Maxim MAX30101
-- Ambient Light sensor, Humidity and Temperature sensor
-- 1.1" full color OLED display
+- Ambient Light sensor AMS TSL2561
+  Humidity and Temperature sensor AMSYS HTU21D
+- 1.1” full color OLED display   PSP27801
 - Haptic feedback engine
 - 190 mAh 2C Li-Po battery
 - Capacitive touch interface
@@ -72,6 +73,8 @@ The hexiwear_k64 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -95,39 +98,63 @@ Connections and IOs
 
 The K64F SoC has five pairs of pinmux/gpio controllers.
 
-+-------+-----------------+---------------------------+
-| Name  | Function        | Usage                     |
-+=======+=================+===========================+
-| PTA29 | GPIO            | LDO_EN                    |
-+-------+-----------------+---------------------------+
-| PTB0  | I2C0_SCL        | I2C / MAX30101            |
-+-------+-----------------+---------------------------+
-| PTB1  | I2C0_SDA        | I2C / MAX30101            |
-+-------+-----------------+---------------------------+
-| PTB12 | GPIO            | 3V3B EN                   |
-+-------+-----------------+---------------------------+
-| PTB16 | UART0_RX        | UART Console              |
-+-------+-----------------+---------------------------+
-| PTB17 | UART0_TX        | UART Console              |
-+-------+-----------------+---------------------------+
-| PTC8  | GPIO            | Red LED                   |
-+-------+-----------------+---------------------------+
-| PTC9  | GPIO            | Green LED                 |
-+-------+-----------------+---------------------------+
-| PTC10 | I2C1_SCL        | I2C / FXOS8700 / FXAS21002|
-+-------+-----------------+---------------------------+
-| PTC11 | I2C1_SDA        | I2C / FXOS8700 / FXAS21002|
-+-------+-----------------+---------------------------+
-| PTC18 | GPIO            | FXAS21002 INT2            |
-+-------+-----------------+---------------------------+
-| PTD0  | GPIO            | Blue LED                  |
-+-------+-----------------+---------------------------+
-| PTD13 | GPIO            | FXOS8700 INT2             |
-+-------+-----------------+---------------------------+
-| PTE24 | UART4_RX        | UART BT HCI               |
-+-------+-----------------+---------------------------+
-| PTE25 | UART4_TX        | UART BT HCI               |
-+-------+-----------------+---------------------------+
++-------+-----------------+----------------------------------+
+| Name  | Function        | Usage                            |
++=======+=================+==================================+
+| PTA13 | GPIO            | Docking station button/LED 2     |
++-------+-----------------+----------------------------------+
+| PTA14 | GPIO            | Docking station button/LED 3     |
++-------+-----------------+----------------------------------+
+| PTA29 | GPIO            | LDO_EN                           |
++-------+-----------------+----------------------------------+
+| PTB0  | I2C0_SCL        | I2C / MAX30101                   |
++-------+-----------------+----------------------------------+
+| PTB1  | I2C0_SDA        | I2C / MAX30101                   |
++-------+-----------------+----------------------------------+
+| PTB9  | GPIO            | Haptic motor feedback            |
++-------+-----------------+----------------------------------+
+| PTB12 | GPIO            | 3V3B EN                          |
++-------+-----------------+----------------------------------+
+| PTB16 | UART0_RX        | UART Console                     |
++-------+-----------------+----------------------------------+
+| PTB17 | UART0_TX        | UART Console                     |
++-------+-----------------+----------------------------------+
+| PTC8  | GPIO            | Red LED                          |
++-------+-----------------+----------------------------------+
+| PTC9  | GPIO            | Green LED                        |
++-------+-----------------+----------------------------------+
+| PTC10 | I2C1_SCL        | I2C / FXOS8700 / FXAS21002       |
++-------+-----------------+----------------------------------+
+| PTC11 | I2C1_SDA        | I2C / FXOS8700 / FXAS21002       |
++-------+-----------------+----------------------------------+
+| PTC18 | GPIO            | FXAS21002 INT2                   |
++-------+-----------------+----------------------------------+
+| PTD0  | GPIO            | Blue LED                         |
++-------+-----------------+----------------------------------+
+| PTD13 | GPIO            | FXOS8700 INT2                    |
++-------+-----------------+----------------------------------+
+| PTE24 | UART4_RX        | UART BT HCI                      |
++-------+-----------------+----------------------------------+
+| PTE25 | UART4_TX        | UART BT HCI                      |
++-------+-----------------+----------------------------------+
+
+
+GPIO lines for the Click board interfaces on the docking station are
+also defined.   Each interface (numbered 1-3) defines the following
+
+   .. code-block:: console
+
+      CLICKn_AN_{NAME, PIN}
+      CLICKn_PWM_{NAME, PIN}
+      CLICKn_INT_{NAME, PIN}
+      CLICKn_CS_{NAME, PIN}
+      CLICKn_RX_{NAME, PIN}
+      CLICKn_TX_{NAME, PIN}
+
+The Click interfaces are on the SPI_0 device.  Use the CLICKn_SPI_SELECT
+values with spi_slave_select().
+
+
 
 System Clock
 ============
@@ -139,7 +166,7 @@ Serial Port
 ===========
 
 The K64F SoC has six UARTs. One is configured for the console, another for BT
-HCI, and the remaining are not used.
+HCI, and three of the remaining are used for the Click board interfaces.
 
 Programming and Debugging
 *************************
@@ -299,3 +326,33 @@ will then see a plot of the heart rate data that updates once per second.
 
 .. _Kinetis BLE Toolbox for Android:
    https://play.google.com/store/apps/details?id=com.freescale.kinetisbletoolbox
+
+.. _FXOS8700CQ 3D Accelerometer + 3D Magnetometer:
+   http://www.nxp.com/products/sensors/6-axis-sensors/digital-sensor-3d-accelerometer-2g-4g-8g-plus-3d-magnetometer:FXOS8700CQ
+
+.. _FXOS8700CQ 3D Accelerometer + 3D Magnetometer Datasheet:
+   http://www.nxp.com/assets/documents/data/en/data-sheets/FXOS8700CQ.pdf
+
+.. _FXAS21002 3-Axis Gyroscope:
+   http://www.nxp.com/products/sensors/gyroscopes/3-axis-digital-gyroscope:FXAS21002C
+
+.. _FXAS21002 3-Axis Gyroscope Datasheet:
+   http://www.nxp.com/assets/documents/data/en/data-sheets/FXAS21002.pdf
+
+.. _TSL2561 Ambient Light Sensor Datasheet:
+   http://ams.com/eng/content/download/250094/975485/file/TSL2560-61_DS000110_2-00.pdf
+
+.. _AMSYS HTU21D Humidity + Temperature Sensor:
+   http://www.amsys.info/products/htu21d.htm
+
+.. _AMSYS HTU21D Humidity + Temperature Sensor Datasheet:
+   http://www.amsys.info/sheets/amsys.en.htu21d.pdf
+
+.. _MAXIM MAX30101 Heart Rate Sensor:
+   https://www.maximintegrated.com/en/products/analog/sensors-and-sensor-interface/MAX30101.html
+
+.. _MAXIM MAX30101 Heart Rate Sensor Datasheet:
+   https://datasheets.maximintegrated.com/en/ds/MAX30101.pdf
+
+.. _WINBOND W25Q64FV Serial Flash Memory:
+   https://www.winbond.com/resource-files/w25q64fv%20revq%2006142016.pdf
