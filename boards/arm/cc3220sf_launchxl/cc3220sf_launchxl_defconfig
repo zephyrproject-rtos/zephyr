@@ -23,3 +23,8 @@ CONFIG_UART_CONSOLE=y
 
 # Enable SimpleLink CC3220 SDK
 CONFIG_HAS_CC3220SDK=y
+
+# Enable SimpleLink host driver,
+CONFIG_SIMPLELINK_HOST_DRIVER=y
+# Zephyr's __errno definition conflicts with SimpleLink's
+CONFIG_ERRNO=n
