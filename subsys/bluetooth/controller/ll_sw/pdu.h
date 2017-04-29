@@ -121,7 +121,7 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_LENGTH_RSP = 0x15,
 	PDU_DATA_LLCTRL_TYPE_PHY_REQ = 0x16,
 	PDU_DATA_LLCTRL_TYPE_PHY_RSP = 0x17,
-	PDU_DATA_LLCTRL_TYPE_PHY_UPDATE_IND = 0x18,
+	PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND = 0x18,
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
 };
 
@@ -224,7 +224,7 @@ struct pdu_data_llctrl_phy_req_rsp {
 	u8_t rx_phys;
 } __packed;
 
-struct pdu_data_llctrl_phy_update_ind {
+struct pdu_data_llctrl_phy_upd_ind {
 	u8_t  m_to_s_phy;
 	u8_t  s_to_m_phy;
 	u16_t instant;
@@ -256,7 +256,7 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_length_req_rsp length_rsp;
 		struct pdu_data_llctrl_phy_req_rsp phy_req;
 		struct pdu_data_llctrl_phy_req_rsp phy_rsp;
-		struct pdu_data_llctrl_phy_update_ind phy_update_ind;
+		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
 	} __packed ctrldata;
 } __packed;

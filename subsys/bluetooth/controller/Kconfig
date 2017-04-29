@@ -147,6 +147,13 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
+config BLUETOOTH_CONTROLLER_PHY
+	bool "PHY Update"
+	default y
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
+	  Controller.
+
 config BLUETOOTH_CONTROLLER_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
 	default y
@@ -161,6 +168,32 @@ config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 
 menu "Advanced features"
 	visible if BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+
+if BLUETOOTH_CONTROLLER_PHY
+
+config BLUETOOTH_CONTROLLER_PHY_2M
+	bool "2Mbps PHY Support"
+	depends on !SOC_SERIES_NRF51X || BLUETOOTH_CONTROLLER_PHY_2M_NRF
+	default y
+	help
+	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
+
+config BLUETOOTH_CONTROLLER_PHY_2M_NRF
+	bool "2Mbps Nordic Semiconductor PHY Support (Open Text)"
+	depends on SOC_SERIES_NRF51X
+	select BLUETOOTH_CONTROLLER_PHY_2M
+	help
+	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
+	  Controller. Encrypted connections are not supported.
+
+config BLUETOOTH_CONTROLLER_PHY_CODED
+	bool "Coded PHY Support"
+	depends on SOC_NRF52840
+	default y
+	help
+	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
+
+endif # BLUETOOTH_CONTROLLER_PHY
 
 config BLUETOOTH_CONTROLLER_WORKER_PRIO
 	prompt "Radio and Ticker's Worker IRQ priority"
