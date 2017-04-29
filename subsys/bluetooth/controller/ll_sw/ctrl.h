@@ -210,6 +210,10 @@ enum radio_pdu_node_rx_type {
 
 	NODE_RX_TYPE_CHAN_SEL_ALGO,
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	NODE_RX_TYPE_PHY_UPDATE,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	NODE_RX_TYPE_RSSI,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
@@ -246,6 +250,11 @@ struct radio_le_conn_update_cmplt {
 
 struct radio_le_chan_sel_algo {
 	u8_t chan_sel_algo;
+} __packed;
+
+struct radio_le_phy_upd_cmplt {
+	u8_t tx;
+	u8_t rx;
 } __packed;
 
 struct radio_pdu_node_rx_hdr {

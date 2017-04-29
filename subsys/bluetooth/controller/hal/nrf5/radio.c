@@ -60,11 +60,42 @@ void radio_reset(void)
 	     RADIO_POWER_POWER_Msk);
 }
 
-void radio_phy_set(u8_t phy)
+void radio_phy_set(u8_t phy, u8_t flags)
 {
-	NRF_RADIO->MODE =
-	    (((phy) ? (u32_t)phy : RADIO_MODE_MODE_Ble_1Mbit) <<
-	     RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
+	u32_t mode;
+
+	switch (phy) {
+	case BIT(0):
+	default:
+		mode = RADIO_MODE_MODE_Ble_1Mbit;
+		break;
+
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+	case BIT(1):
+		mode = RADIO_MODE_MODE_Nrf_2Mbit;
+		break;
+
+#elif defined(CONFIG_SOC_SERIES_NRF52X)
+	case BIT(1):
+		mode = RADIO_MODE_MODE_Ble_2Mbit;
+		break;
+
+#else /* !CONFIG_SOC_SERIES_NRF52X */
+	case BIT(1):
+		mode = RADIO_MODE_MODE_Ble_2Mbit;
+		break;
+
+	case BIT(2):
+		if (flags & 0x01) {
+			mode = RADIO_MODE_MODE_Ble_LR500Kbit;
+		} else {
+			mode = RADIO_MODE_MODE_Ble_LR125Kbit;
+		}
+		break;
+#endif /* !CONFIG_SOC_SERIES_NRF52X */
+	}
+
+	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
 }
 
 void radio_tx_power_set(u32_t power)
@@ -96,12 +127,12 @@ void radio_aa_set(u8_t *aa)
 
 void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 {
-	u8_t p16 = (flags >> 1) & 0x01; /* 16-bit preamble */
 	u8_t dc = flags & 0x01; /* Adv or Data channel */
 	u32_t extra;
+	u8_t phy;
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
-	ARG_UNUSED(p16);
+	ARG_UNUSED(phy);
 
 	extra = 0;
 
@@ -110,8 +141,28 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 		bits_len = 5;
 	}
 #else /* !CONFIG_SOC_SERIES_NRF51X */
-	extra = (((p16) ? RADIO_PCNF0_PLEN_16bit : RADIO_PCNF0_PLEN_8bit) <<
-		 RADIO_PCNF0_PLEN_Pos) & RADIO_PCNF0_PLEN_Msk;
+	extra = 0;
+
+	phy = (flags >> 1) & 0x07; /* phy */
+	switch (phy) {
+	case BIT(0):
+	default:
+		extra |= (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos) &
+			 RADIO_PCNF0_PLEN_Msk;
+		break;
+
+	case BIT(1):
+		extra |= (RADIO_PCNF0_PLEN_16bit << RADIO_PCNF0_PLEN_Pos) &
+			 RADIO_PCNF0_PLEN_Msk;
+		break;
+
+#if !defined(CONFIG_SOC_SERIES_NRF52X)
+	case BIT(2):
+		extra |= (RADIO_PCNF0_PLEN_LongRange << RADIO_PCNF0_PLEN_Pos) &
+			 RADIO_PCNF0_PLEN_Msk;
+		break;
+#endif
+	}
 
 	/* To use same Data Channel PDU structure with nRF5 specific overhead
 	 * byte, include the S1 field in radio packet configuration.
@@ -555,28 +606,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
 
-#if defined(CONFIG_SOC_SERIES_NRF51X)
-	/* set up PPI to enable CCM */
-	NRF_PPI->CH[6].EEP = (u32_t)&(NRF_RADIO->EVENTS_READY);
-	NRF_PPI->CH[6].TEP = (u32_t)&(NRF_CCM->TASKS_KSGEN);
-	NRF_PPI->CHENSET = PPI_CHEN_CH6_Msk;
-#elif 0
-	/* encrypt tx packet */
-	NRF_CCM->INTENSET = CCM_INTENSET_ENDCRYPT_Msk;
 	NRF_CCM->TASKS_KSGEN = 1;
-	while (NRF_CCM->EVENTS_ENDCRYPT == 0) {
-		__WFE();
-		__SEV();
-		__WFE();
-	}
-	NRF_CCM->INTENCLR = CCM_INTENCLR_ENDCRYPT_Msk;
-	NVIC_ClearPendingIRQ(CCM_AAR_IRQn);
-
-	LL_ASSERT(NRF_CCM->EVENTS_ERROR == 0);
-#else
-	/* start KSGEN early, but dont wait for ENDCRYPT */
-	NRF_CCM->TASKS_KSGEN = 1;
-#endif
 
 	return _pkt_scratch;
 }
