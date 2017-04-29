@@ -121,6 +121,13 @@ config BLUETOOTH_CONTROLLER_CHAN_SEL_2
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
 	  the Controller.
 
+config BLUETOOTH_CONTROLLER_PHY
+	bool "PHY Update"
+	default y
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
+	  Controller.
+
 config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 	bool "Show advanced features"
 	help
@@ -202,6 +209,7 @@ config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
 
 config BLUETOOTH_CONTROLLER_TIFS_HW
 	bool "H/w Accelerated tIFS Trx switching"
+	depends on !BLUETOOTH_CONTROLLER_PHY
 	default y
 	help
 	  Enable use of hardware accelerated tIFS Trx switching.
