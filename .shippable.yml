@@ -33,7 +33,7 @@ build:
       - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
       - >
           if [ "$IS_PULL_REQUEST" = "true" ]; then
-            S3_PATH="s3://zephyr-logs/pull-requests/${PULL_REQUEST}"
+            S3_PATH="s3://zephyr-logs/pull-requests/${REPO_FULL_NAME}/${PULL_REQUEST}"
           else
             if [ "$JOB_TRIGGERED_BY_NAME" = "undefined" ]; then
               LOG_TYPE="manual";
@@ -41,7 +41,7 @@ build:
               LOG_TYPE=${JOB_TRIGGERED_BY_NAME};
             fi;
 
-            S3_PATH="s3://zephyr-logs/${LOG_TYPE}/${BUILD_NUMBER}";
+            S3_PATH="s3://zephyr-logs/${LOG_TYPE}/${REPO_FULL_NAME}/${BUILD_NUMBER}";
           fi;
       - >
           if [ "$RUN_COMPLIANCE" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
