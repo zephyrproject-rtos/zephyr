@@ -1,20 +1,19 @@
 #!/bin/bash
 set -e
 
-sudo pip install pygithub
-echo "- Checkpatch"
-cd ${ZEPHYRREPO_STATE}
-source zephyr-env.sh
-git diff ${ZEPHYR_CIREPO_VERSIONNAME} | ${ZEPHYR_BASE}/scripts/checkpatch.pl --mailback --no-tree
-
 echo "- Install dependencies"
 sudo apt-get install doxygen make
-sudo pip install breathe sphinx
+sudo pip install breathe sphinx awscli sphinx_rtd_theme
+
+cd ${TESTING_REPO_STATE}
+source zephyr-env.sh
+
+cp -a /build/IN/docs-theme-repo/gitRepo doc/themes/zephyr-docs-theme
+ls -la doc/themes
 
 echo "- Building docs..."
-make htmldocs > doc.log 2>&1
-echo "- Look for new warnings..."
-#./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings
-#cat doc.warnings
-#test -s doc.warnings && exit 0 # FIXME
+make DOC_TAG=daily htmldocs > doc.log 2>&1
+echo "- Uploading to AWS S3..."
+aws s3 sync --quiet --delete doc/_build/html s3://zephyr-docs/online/dev
 
+echo "Done"
