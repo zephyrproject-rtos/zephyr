@@ -15,7 +15,7 @@ choice
 		bool "SAM3X8E"
 endchoice
 
-if SOC_SERIES_SAM3X || SOC_ATMEL_SAM3X8E
+if SOC_SERIES_SAM3X
 
 config SOC_ATMEL_SAM3X_EXT_SLCK
 	bool "Atmel SAM3 to use external crystal oscillator for slow clock"
@@ -75,7 +75,7 @@ config SOC_ATMEL_SAM3X_PLLA_DIVA
 
 config SOC_ATMEL_SAM3X_WAIT_MODE
 	bool "Atmel SAM3 goes to Wait mode instead of Sleep mode"
-	depends on SOC_ATMEL_SAM3_EXT_MAINCK
+	depends on SOC_ATMEL_SAM3X_EXT_MAINCK
 	default y if DEBUG
 	help
 	For JTAG debugging CPU clock (HCLK) should not stop. In order
