@@ -1605,6 +1605,9 @@ class TestSuite:
                 failure = ET.SubElement(eleTestcase, 'failure', type="failure", message=goal.reason)
                 p = ("%s/%s/%s" %(args.outdir, i.platform.name, i.test.name))
                 bl = os.path.join(p, "build.log")
+                if goal.reason != 'build_error':
+                    bl = os.path.join(p, "qemu.log")
+
                 if os.path.exists(bl):
                     with open(bl, "r") as f:
                         log = f.read()
