@@ -23,6 +23,7 @@ char *expected = "22 113 10000 32768 40000 22\n"
 		 "-42 -42 -042 -0000042\n"
 		 "42 42   42       42\n"
 		 "42 42 0042 00000042\n"
+		 "255     42    abcdef  0x0000002a      42\n"
 ;
 
 
@@ -71,6 +72,7 @@ void printk_test(void)
 	printk("%d %02d %04d %08d\n", -42, -42, -42, -42);
 	printk("%u %2u %4u %8u\n", 42, 42, 42, 42);
 	printk("%u %02u %04u %08u\n", 42, 42, 42, 42);
+	printk("%-8u%-6d%-4x%-2p%8d\n", 0xFF, 42, 0xABCDEF, (char *)42, 42);
 
 	ram_console[pos] = '\0';
 	zassert_true((strcmp(ram_console, expected) == 0), "printk failed");
@@ -97,7 +99,9 @@ void printk_test(void)
 			  "%u %2u %4u %8u\n", 42, 42, 42, 42);
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,
 			  "%u %02u %04u %08u\n", 42, 42, 42, 42);
-
+	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+			  "%-8u%-6d%-4x%-2p%8d\n",
+			  0xFF, 42, 0xABCDEF, (char *)42, 42);
 	ram_console[count] = '\0';
 	zassert_true((strcmp(ram_console, expected) == 0), "snprintk failed");
 }
