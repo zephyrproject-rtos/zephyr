@@ -308,145 +308,72 @@ static int uart_stm32_init(struct device *dev)
 	return 0;
 }
 
+/* Define clocks */
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	#define STM32Fxxx_CLOCK_UART(type, apb, n)			\
+		.pclken = { .bus = STM32_CLOCK_BUS_ ## apb,		\
+			    .enr = LL_##apb##_GRP1_PERIPH_##type##n }
+#else
+	#define STM32Fxxx_CLOCK_UART(type, apb, n)			\
+		.clock_subsys = UINT_TO_POINTER(			\
+					STM32F10X_CLOCK_SUBSYS_##type##n)
+#endif /* CLOCK_CONTROL_STM32_CUBE */
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#define STM32Fxxx_UART_IRQ_HANDLER_DECL(n)				\
+	static void uart_stm32_irq_config_func_##n(struct device *dev)
+#define STM32Fxxx_UART_IRQ_HANDLER_FUNC(n)				\
+	.irq_config_func = uart_stm32_irq_config_func_##n,
+#define STM32Fxxx_UART_IRQ_HANDLER(n)					\
+static void uart_stm32_irq_config_func_##n(struct device *dev)		\
+{									\
+	IRQ_CONNECT(PORT_ ## n ## _IRQ,			\
+		CONFIG_UART_STM32_PORT_ ## n ## _IRQ_PRI,		\
+		uart_stm32_isr, DEVICE_GET(uart_stm32_ ## n),		\
+		0);							\
+	irq_enable(PORT_ ## n ## _IRQ);					\
+}
+#else
+#define STM32Fxxx_UART_IRQ_HANDLER_DECL(n)
+#define STM32Fxxx_UART_IRQ_HANDLER_FUNC(n)
+#define STM32Fxxx_UART_IRQ_HANDLER(n)
+#endif
+
+#define UART_DEVICE_INIT_STM32(type, n, apb)				\
+STM32Fxxx_UART_IRQ_HANDLER_DECL(n);					\
+									\
+static const struct uart_stm32_config uart_stm32_dev_cfg_##n = {	\
+	.uconf = {							\
+		.base = (u8_t *)CONFIG_UART_STM32_PORT_ ## n ## _BASE_ADDRESS, \
+		STM32Fxxx_UART_IRQ_HANDLER_FUNC(n)			\
+	},								\
+	STM32Fxxx_CLOCK_UART(type, apb, n),				\
+};									\
+									\
+static struct uart_stm32_data uart_stm32_dev_data_##n = {		\
+	.huart = {							\
+		.Init = {						\
+			.BaudRate = CONFIG_UART_STM32_PORT_##n##_BAUD_RATE     \
+		}							\
+	}								\
+};									\
+									\
+DEVICE_AND_API_INIT(uart_stm32_##n, CONFIG_UART_STM32_PORT_##n##_NAME,	\
+		    &uart_stm32_init,					\
+		    &uart_stm32_dev_data_##n, &uart_stm32_dev_cfg_##n,	\
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    &uart_stm32_driver_api);				\
+									\
+STM32Fxxx_UART_IRQ_HANDLER(n)
 
 #ifdef CONFIG_UART_STM32_PORT_1
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_stm32_irq_config_func_1(struct device *dev);
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-
-static const struct uart_stm32_config uart_stm32_dev_cfg_1 = {
-	.uconf = {
-		.base = (u8_t *)CONFIG_UART_STM32_PORT_1_BASE_ADDRESS,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-		.irq_config_func = uart_stm32_irq_config_func_1,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-	},
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-	.pclken = { .bus = STM32_CLOCK_BUS_APB2,
-		    .enr = LL_APB2_GRP1_PERIPH_USART1 },
-#else
-	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART1),
-#endif /* CLOCK_CONTROL_STM32_CUBE */
-};
-
-static struct uart_stm32_data uart_stm32_dev_data_1 = {
-	.huart = {
-		.Init = {
-			.BaudRate = CONFIG_UART_STM32_PORT_1_BAUD_RATE
-		}
-	}
-};
-
-DEVICE_AND_API_INIT(uart_stm32_1, CONFIG_UART_STM32_PORT_1_NAME,
-		    &uart_stm32_init,
-		    &uart_stm32_dev_data_1, &uart_stm32_dev_cfg_1,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_stm32_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_stm32_irq_config_func_1(struct device *dev)
-{
-	IRQ_CONNECT(PORT_1_IRQ,
-		CONFIG_UART_STM32_PORT_1_IRQ_PRI,
-		uart_stm32_isr, DEVICE_GET(uart_stm32_1),
-		0);
-	irq_enable(PORT_1_IRQ);
-}
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-
+UART_DEVICE_INIT_STM32(USART, 1, APB2)
 #endif	/* CONFIG_UART_STM32_PORT_1 */
 
-
 #ifdef CONFIG_UART_STM32_PORT_2
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_stm32_irq_config_func_2(struct device *dev);
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-
-static const struct uart_stm32_config uart_stm32_dev_cfg_2 = {
-	.uconf = {
-		.base = (u8_t *)CONFIG_UART_STM32_PORT_2_BASE_ADDRESS,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-		.irq_config_func = uart_stm32_irq_config_func_2,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-	},
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
-		    .enr = LL_APB1_GRP1_PERIPH_USART2 },
-#else
-	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART2),
-#endif /* CLOCK_CONTROL_STM32_CUBE */
-};
-
-static struct uart_stm32_data uart_stm32_dev_data_2 = {
-	.huart = {
-		.Init = {
-			.BaudRate = CONFIG_UART_STM32_PORT_2_BAUD_RATE} }
-};
-
-DEVICE_AND_API_INIT(uart_stm32_2, CONFIG_UART_STM32_PORT_2_NAME,
-		    &uart_stm32_init,
-		    &uart_stm32_dev_data_2, &uart_stm32_dev_cfg_2,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_stm32_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_stm32_irq_config_func_2(struct device *dev)
-{
-	IRQ_CONNECT(PORT_2_IRQ,
-		CONFIG_UART_STM32_PORT_2_IRQ_PRI,
-		uart_stm32_isr, DEVICE_GET(uart_stm32_2),
-		0);
-	irq_enable(PORT_2_IRQ);
-}
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-
+UART_DEVICE_INIT_STM32(USART, 2, APB1)
 #endif	/* CONFIG_UART_STM32_PORT_2 */
 
-
 #ifdef CONFIG_UART_STM32_PORT_3
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_stm32_irq_config_func_3(struct device *dev);
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-
-static const struct uart_stm32_config uart_stm32_dev_cfg_3 = {
-	.uconf = {
-		.base = (u8_t *)CONFIG_UART_STM32_PORT_3_BASE_ADDRESS,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-		.irq_config_func = uart_stm32_irq_config_func_3,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-	},
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
-		    .enr = LL_APB1_GRP1_PERIPH_USART3 },
-#else
-	.clock_subsys = UINT_TO_POINTER(STM32F10X_CLOCK_SUBSYS_USART3),
-#endif /* CLOCK_CONTROL_STM32_CUBE */
-};
-
-static struct uart_stm32_data uart_stm32_dev_data_3 = {
-	.huart = {
-		.Init = {
-			.BaudRate = CONFIG_UART_STM32_PORT_3_BAUD_RATE} }
-};
-
-DEVICE_AND_API_INIT(uart_stm32_3, CONFIG_UART_STM32_PORT_3_NAME,
-		    &uart_stm32_init,
-		    &uart_stm32_dev_data_3, &uart_stm32_dev_cfg_3,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_stm32_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_stm32_irq_config_func_3(struct device *dev)
-{
-	IRQ_CONNECT(PORT_3_IRQ,
-		CONFIG_UART_STM32_PORT_3_IRQ_PRI,
-		uart_stm32_isr, DEVICE_GET(uart_stm32_3),
-		0);
-	irq_enable(PORT_3_IRQ);
-}
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-
+UART_DEVICE_INIT_STM32(USART, 3, APB1)
 #endif	/* CONFIG_UART_STM32_PORT_3 */
