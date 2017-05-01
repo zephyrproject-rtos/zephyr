@@ -15,32 +15,63 @@
 #define PAD(AF, func)				\
 				[AF - 1] = func
 
+#define PINMUX_PWM(port, chan, pin)		\
+	PAD(STM32F4_PINMUX_FUNC_##pin##_PWM##port##_CH##chan,\
+	    STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+
+#define PINMUX_UART(port, dir, pin)		\
+	PAD(STM32F4_PINMUX_FUNC_##pin##_##port##_##dir, \
+	    STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+
+/* Blank pinmux by default */
+#define PINMUX_PWM2(pin, chan)
+#define PINMUX_UART1(dir, pin)
+#define PINMUX_UART2(dir, pin)
+
+#ifdef CONFIG_PWM_STM32_2
+	#undef PINMUX_PWM2
+	#define PINMUX_PWM2(pin, chan)		PINMUX_PWM(2, chan, pin)
+#endif
+
+#ifdef CONFIG_UART_STM32_PORT_1
+	#undef PINMUX_UART1
+	#define PINMUX_UART1(dir, pin)		PINMUX_UART(USART1, dir, pin)
+#endif
+
+#ifdef CONFIG_UART_STM32_PORT_2
+	#undef PINMUX_UART2
+	#define PINMUX_UART2(dir, pin)		PINMUX_UART(USART2, dir, pin)
+#endif
+
+#define PINMUX_UART_TX(pin, port)		PINMUX_UART##port(TX, pin)
+#define PINMUX_UART_RX(pin, port)		PINMUX_UART##port(RX, pin)
+
 static const stm32_pin_func_t pin_pa0_funcs[] = {
-	PAD(STM32F4_PINMUX_FUNC_PA0_PWM2_CH1, STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+	PINMUX_PWM2(PA0, 1)
 };
 
 static const stm32_pin_func_t pin_pa2_funcs[] = {
-	PAD(STM32F4_PINMUX_FUNC_PA2_USART2_TX, STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+	PINMUX_UART_TX(PA2, 2)
 };
 
 static const stm32_pin_func_t pin_pa3_funcs[] = {
-	PAD(STM32F4_PINMUX_FUNC_PA3_USART2_RX, STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+	PINMUX_UART_RX(PA3, 2)
 };
 
 static const stm32_pin_func_t pin_pa9_funcs[] = {
-	PAD(STM32F4_PINMUX_FUNC_PA9_USART1_TX, STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+	PINMUX_UART_TX(PA9, 1)
 };
 
 static const stm32_pin_func_t pin_pa10_funcs[] = {
-	PAD(STM32F4_PINMUX_FUNC_PA10_USART1_RX, STM32F4X_PIN_CONFIG_AF_PUSH_UP)
+	PINMUX_UART_RX(PA10, 1)
 };
 
 static const stm32_pin_func_t pin_pb6_funcs[] = {
-	PAD(STM32F4_PINMUX_FUNC_PB6_USART1_TX, STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+	PINMUX_UART_TX(PB6, 1)
 };
 
 static const stm32_pin_func_t pin_pb7_funcs[] = {
-	PAD(STM32F4_PINMUX_FUNC_PB7_USART1_RX, STM32F4X_PIN_CONFIG_AF_PUSH_UP),
+	PINMUX_UART_RX(PB7, 1)
 };
 
 /**
