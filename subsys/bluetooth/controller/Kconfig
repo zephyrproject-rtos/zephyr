@@ -200,6 +200,12 @@ config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
+config BLUETOOTH_CONTROLLER_TIFS_HW
+	bool "H/w Accelerated tIFS Trx switching"
+	default y
+	help
+	  Enable use of hardware accelerated tIFS Trx switching.
+
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
 	help
