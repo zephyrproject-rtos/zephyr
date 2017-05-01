@@ -1,0 +1,5 @@
+DEBUG_SCRIPT = jlink.sh
+
+JLINK_DEVICE = MKW40Z160xxx4
+
+export JLINK_DEVICE
