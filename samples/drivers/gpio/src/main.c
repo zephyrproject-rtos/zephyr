@@ -114,7 +114,7 @@
 #define GPIO_OUT_PIN	16
 #define GPIO_INT_PIN	19
 #define GPIO_NAME	"GPIO_"
-#elif defined(CONFIG_SOC_ATMEL_SAM3)
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM3X8E)
 #define GPIO_OUT_PIN	25
 #define GPIO_INT_PIN	27
 #define GPIO_NAME	"GPIO_"
