@@ -45,4 +45,4 @@ Sample output
 
 .. note: The values shown above might differ.
 
-.. _`net-tools`: https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=tree
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

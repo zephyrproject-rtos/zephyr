@@ -119,31 +119,31 @@ extern "C" {
  * Possible values for attribute-id are listed below.
  * See SDP Spec, section "Service Attribute Definitions" for more details.
  */
-#define BT_SDP_ATTR_RECORD_HANDLE          0x0000
-#define BT_SDP_ATTR_SVCLASS_ID_LIST        0x0001
-#define BT_SDP_ATTR_RECORD_STATE           0x0002
-#define BT_SDP_ATTR_SERVICE_ID             0x0003
-#define BT_SDP_ATTR_PROTO_DESC_LIST        0x0004
-#define BT_SDP_ATTR_BROWSE_GRP_LIST        0x0005
-#define BT_SDP_ATTR_LANG_BASE_ATTR_ID_LIST 0x0006
-#define BT_SDP_ATTR_SVCINFO_TTL            0x0007
-#define BT_SDP_ATTR_SERVICE_AVAILABILITY   0x0008
-#define BT_SDP_ATTR_PROFILE_DESC_LIST      0x0009
-#define BT_SDP_ATTR_DOC_URL                0x000a
-#define BT_SDP_ATTR_CLNT_EXEC_URL          0x000b
-#define BT_SDP_ATTR_ICON_URL               0x000c
-#define BT_SDP_ATTR_ADD_PROTO_DESC_LIST    0x000d
+#define BT_SDP_ATTR_RECORD_HANDLE               0x0000
+#define BT_SDP_ATTR_SVCLASS_ID_LIST             0x0001
+#define BT_SDP_ATTR_RECORD_STATE                0x0002
+#define BT_SDP_ATTR_SERVICE_ID                  0x0003
+#define BT_SDP_ATTR_PROTO_DESC_LIST             0x0004
+#define BT_SDP_ATTR_BROWSE_GRP_LIST             0x0005
+#define BT_SDP_ATTR_LANG_BASE_ATTR_ID_LIST      0x0006
+#define BT_SDP_ATTR_SVCINFO_TTL                 0x0007
+#define BT_SDP_ATTR_SERVICE_AVAILABILITY        0x0008
+#define BT_SDP_ATTR_PROFILE_DESC_LIST           0x0009
+#define BT_SDP_ATTR_DOC_URL                     0x000a
+#define BT_SDP_ATTR_CLNT_EXEC_URL               0x000b
+#define BT_SDP_ATTR_ICON_URL                    0x000c
+#define BT_SDP_ATTR_ADD_PROTO_DESC_LIST         0x000d
 
-#define BT_SDP_ATTR_GROUP_ID                0x0200
-#define BT_SDP_ATTR_IP_SUBNET               0x0200
-#define BT_SDP_ATTR_VERSION_NUM_LIST        0x0200
-#define BT_SDP_ATTR_SUPPORTED_FEATURES_LIST 0x0200
-#define BT_SDP_ATTR_GOEP_L2CAP_PSM          0x0200
-#define BT_SDP_ATTR_SVCDB_STATE             0x0201
+#define BT_SDP_ATTR_GROUP_ID                    0x0200
+#define BT_SDP_ATTR_IP_SUBNET                   0x0200
+#define BT_SDP_ATTR_VERSION_NUM_LIST            0x0200
+#define BT_SDP_ATTR_SUPPORTED_FEATURES_LIST     0x0200
+#define BT_SDP_ATTR_GOEP_L2CAP_PSM              0x0200
+#define BT_SDP_ATTR_SVCDB_STATE                 0x0201
 
-#define BT_SDP_ATTR_MPSD_SCENARIOS   0x0200
-#define BT_SDP_ATTR_MPMD_SCENARIOS   0x0201
-#define BT_SDP_ATTR_MPS_DEPENDENCIES 0x0202
+#define BT_SDP_ATTR_MPSD_SCENARIOS              0x0200
+#define BT_SDP_ATTR_MPMD_SCENARIOS              0x0201
+#define BT_SDP_ATTR_MPS_DEPENDENCIES            0x0202
 
 #define BT_SDP_ATTR_SERVICE_VERSION             0x0300
 #define BT_SDP_ATTR_EXTERNAL_NETWORK            0x0301
@@ -176,28 +176,28 @@ extern "C" {
 #define BT_SDP_ATTR_PBAP_SUPPORTED_FEATURES     0x0317
 #define BT_SDP_ATTR_MAP_SUPPORTED_FEATURES      0x0317
 
-#define BT_SDP_ATTR_SPECIFICATION_ID 0x0200
-#define BT_SDP_ATTR_VENDOR_ID        0x0201
-#define BT_SDP_ATTR_PRODUCT_ID       0x0202
-#define BT_SDP_ATTR_VERSION          0x0203
-#define BT_SDP_ATTR_PRIMARY_RECORD   0x0204
-#define BT_SDP_ATTR_VENDOR_ID_SOURCE 0x0205
+#define BT_SDP_ATTR_SPECIFICATION_ID            0x0200
+#define BT_SDP_ATTR_VENDOR_ID                   0x0201
+#define BT_SDP_ATTR_PRODUCT_ID                  0x0202
+#define BT_SDP_ATTR_VERSION                     0x0203
+#define BT_SDP_ATTR_PRIMARY_RECORD              0x0204
+#define BT_SDP_ATTR_VENDOR_ID_SOURCE            0x0205
 
-#define BT_SDP_ATTR_HID_DEVICE_RELEASE_NUMBER 0x0200
-#define BT_SDP_ATTR_HID_PARSER_VERSION        0x0201
-#define BT_SDP_ATTR_HID_DEVICE_SUBCLASS       0x0202
-#define BT_SDP_ATTR_HID_COUNTRY_CODE          0x0203
-#define BT_SDP_ATTR_HID_VIRTUAL_CABLE         0x0204
-#define BT_SDP_ATTR_HID_RECONNECT_INITIATE    0x0205
-#define BT_SDP_ATTR_HID_DESCRIPTOR_LIST       0x0206
-#define BT_SDP_ATTR_HID_LANG_ID_BASE_LIST     0x0207
-#define BT_SDP_ATTR_HID_SDP_DISABLE           0x0208
-#define BT_SDP_ATTR_HID_BATTERY_POWER         0x0209
-#define BT_SDP_ATTR_HID_REMOTE_WAKEUP         0x020a
-#define BT_SDP_ATTR_HID_PROFILE_VERSION       0x020b
-#define BT_SDP_ATTR_HID_SUPERVISION_TIMEOUT   0x020c
-#define BT_SDP_ATTR_HID_NORMALLY_CONNECTABLE  0x020d
-#define BT_SDP_ATTR_HID_BOOT_DEVICE           0x020e
+#define BT_SDP_ATTR_HID_DEVICE_RELEASE_NUMBER   0x0200
+#define BT_SDP_ATTR_HID_PARSER_VERSION          0x0201
+#define BT_SDP_ATTR_HID_DEVICE_SUBCLASS         0x0202
+#define BT_SDP_ATTR_HID_COUNTRY_CODE            0x0203
+#define BT_SDP_ATTR_HID_VIRTUAL_CABLE           0x0204
+#define BT_SDP_ATTR_HID_RECONNECT_INITIATE      0x0205
+#define BT_SDP_ATTR_HID_DESCRIPTOR_LIST         0x0206
+#define BT_SDP_ATTR_HID_LANG_ID_BASE_LIST       0x0207
+#define BT_SDP_ATTR_HID_SDP_DISABLE             0x0208
+#define BT_SDP_ATTR_HID_BATTERY_POWER           0x0209
+#define BT_SDP_ATTR_HID_REMOTE_WAKEUP           0x020a
+#define BT_SDP_ATTR_HID_PROFILE_VERSION         0x020b
+#define BT_SDP_ATTR_HID_SUPERVISION_TIMEOUT     0x020c
+#define BT_SDP_ATTR_HID_NORMALLY_CONNECTABLE    0x020d
+#define BT_SDP_ATTR_HID_BOOT_DEVICE             0x020e
 
 /*
  * These identifiers are based on the SDP spec stating that
@@ -271,9 +271,9 @@ extern "C" {
 
 /** @brief SDP Generic Data Element Value. */
 struct bt_sdp_data_elem {
-	u8_t     type;
-	u32_t    data_size;
-	u32_t    total_size;
+	u8_t        type;
+	u32_t       data_size;
+	u32_t       total_size;
 	const void *data;
 };
 
@@ -285,10 +285,10 @@ struct bt_sdp_attribute {
 
 /** @brief SDP Service Record Value. */
 struct bt_sdp_record {
-	u32_t                 handle;     /* Redundant, for quick ref */
+	u32_t                    handle;     /* Redundant, for quick ref */
 	struct bt_sdp_attribute *attrs;      /* Base addr of attr array */
 	size_t                   attr_count; /* Number of attributes */
-	u8_t                  index;      /* Index of the record in LL */
+	u8_t                     index;      /* Index of the record in LL */
 	struct bt_sdp_record    *next;
 };
 

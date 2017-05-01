@@ -2130,6 +2130,11 @@ static int cmd_l2cap_connect(int argc, char *argv[])
 		return -EINVAL;
 	}
 
+	if (l2cap_chan.chan.conn) {
+		printk("Channel already in use\n");
+		return -EINVAL;
+	}
+
 	psm = strtoul(argv[1], NULL, 16);
 
 	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan.chan, psm);

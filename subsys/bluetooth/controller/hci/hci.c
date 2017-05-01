@@ -38,8 +38,8 @@ static u16_t _opcode;
 #if CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN > 0
 /* Scan duplicate filter */
 struct dup {
-		u8_t mask;
-		bt_addr_le_t addr;
+	u8_t         mask;
+	bt_addr_le_t addr;
 };
 static struct dup dup_filter[CONFIG_BLUETOOTH_CONTROLLER_DUP_FILTER_LEN];
 static s32_t dup_count;
@@ -273,7 +273,7 @@ static void read_bd_addr(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	ll_address_get(0, &rp->bdaddr.val[0]);
+	ll_addr_get(0, &rp->bdaddr.val[0]);
 }
 
 static int info_cmd_handle(u8_t ocf, struct net_buf *cmd,
@@ -345,7 +345,7 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_set_random_address *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 
-	ll_address_set(1, &cmd->bdaddr.val[0]);
+	ll_addr_set(1, &cmd->bdaddr.val[0]);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
@@ -355,14 +355,11 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_adv_param *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
-	u8_t const c_adv_type[] = {
-		PDU_ADV_TYPE_ADV_IND, PDU_ADV_TYPE_DIRECT_IND,
-		PDU_ADV_TYPE_SCAN_IND, PDU_ADV_TYPE_NONCONN_IND };
 	u16_t min_interval;
 
 	min_interval = sys_le16_to_cpu(cmd->min_interval);
 
-	ll_adv_params_set(min_interval, c_adv_type[cmd->type],
+	ll_adv_params_set(min_interval, cmd->type,
 			  cmd->own_addr_type, cmd->direct_addr.type,
 			  &cmd->direct_addr.a.val[0], cmd->channel_map,
 			  cmd->filter_policy);
@@ -1003,10 +1000,10 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 				  struct net_buf *buf)
 {
 	const u8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
-				       0xff, 0x02 };
-	struct bt_hci_ev_le_advertising_report *sep;
+				    0xff, 0x02 };
+	struct bt_hci_evt_le_advertising_report *sep;
 	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
-	struct bt_hci_ev_le_advertising_info *adv_info;
+	struct bt_hci_evt_le_advertising_info *adv_info;
 	u8_t data_len;
 	u8_t *rssi;
 	u8_t info_len;
@@ -1063,7 +1060,7 @@ fill_report:
 		data_len = 0;
 	}
 
-	info_len = sizeof(struct bt_hci_ev_le_advertising_info) + data_len +
+	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
 		   sizeof(*rssi);
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADVERTISING_REPORT,
 		       sizeof(*sep) + info_len);
@@ -1275,7 +1272,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 }
 
 static void le_ltk_request(struct pdu_data *pdu_data, u16_t handle,
-				    struct net_buf *buf)
+			   struct net_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *sep;
 
@@ -1313,7 +1310,7 @@ static void encrypt_change(u8_t err, u16_t handle,
 static void le_remote_feat_complete(u8_t status, struct pdu_data *pdu_data,
 				    u16_t handle, struct net_buf *buf)
 {
-	struct bt_hci_ev_le_remote_feat_complete *sep;
+	struct bt_hci_evt_le_remote_feat_complete *sep;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_REMOTE_FEAT_COMPLETE)) {

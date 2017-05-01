@@ -19,19 +19,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_POWER_MANAGEMENT
 	default y
 
-config SRAM_BASE_ADDRESS
-	default 0x20000000
-
-config FLASH_BASE_ADDRESS
-	default 0x00000000
-
 config NUM_IRQS
 	int
 	default 26
-
-config NUM_IRQ_PRIO_BITS
-	int
-	default 2
 
 if SENSOR
 

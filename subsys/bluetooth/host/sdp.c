@@ -75,7 +75,7 @@ struct bt_sdp_client {
 	/* list of waiting to be resolved UUID params */
 	sys_slist_t                          reqs;
 	/* required SDP transaction ID */
-	u16_t                             tid;
+	u16_t                                tid;
 	/* UUID params holder being now resolved */
 	const struct bt_sdp_discover_params *param;
 	/* PDU continuation state object */
@@ -104,11 +104,11 @@ struct select_attrs_data {
 	struct bt_sdp               *sdp;
 	struct bt_sdp_data_elem_seq *seq;
 	struct search_state         *state;
-	u32_t                    *filter;
-	u16_t                     max_att_len;
-	u16_t                     att_list_len;
-	u8_t                      cont_state_size;
-	u8_t                      num_filters;
+	u32_t                       *filter;
+	u16_t                        max_att_len;
+	u16_t                        att_list_len;
+	u8_t                         cont_state_size;
+	u8_t                         num_filters;
 	bool                         new_service;
 };
 
@@ -123,7 +123,7 @@ struct select_attrs_data {
  *  or BT_SDP_ITER_STOP to stop.
  */
 typedef u8_t (*bt_sdp_attr_func_t)(struct bt_sdp_attribute *attr,
-				      u8_t att_idx, void *user_data);
+				   u8_t att_idx, void *user_data);
 
 /* @typedef bt_sdp_svc_func_t
  * @brief SDP service record iterator callback.
@@ -135,7 +135,7 @@ typedef u8_t (*bt_sdp_attr_func_t)(struct bt_sdp_attribute *attr,
  *  or BT_SDP_ITER_STOP to stop.
  */
 typedef u8_t (*bt_sdp_svc_func_t)(struct bt_sdp_record *rec,
-				     void *user_data);
+				  void *user_data);
 
 /* @brief Callback for SDP connection
  *
@@ -329,7 +329,7 @@ static u16_t parse_data_elem(struct net_buf *buf,
  *  (used in recursion)
  */
 static u32_t search_uuid(struct bt_sdp_data_elem *elem, struct bt_uuid *uuid,
-			    bool *found, u8_t nest_level)
+			 bool *found, u8_t nest_level)
 {
 	const u8_t *cur_elem;
 	u32_t seq_size, size;
@@ -565,7 +565,7 @@ static u16_t find_services(struct net_buf *buf,
  * @return 0 for success, or relevant error code
  */
 static u16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
-				   u16_t tid)
+				u16_t tid)
 {
 	struct bt_sdp_svc_rsp *rsp;
 	struct net_buf *resp_buf;
@@ -701,7 +701,7 @@ static u16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
  *  (used in recursion)
  */
 static u32_t copy_attribute(struct bt_sdp_data_elem *elem,
-			       struct net_buf *buf, u8_t nest_level)
+			    struct net_buf *buf, u8_t nest_level)
 {
 	const u8_t *cur_elem;
 	u32_t size, seq_size, total_size;
@@ -773,7 +773,7 @@ static u32_t copy_attribute(struct bt_sdp_data_elem *elem,
  *  @return Index of the attribute where the iterator stopped
  */
 static u8_t bt_sdp_foreach_attr(struct bt_sdp_record *record, u8_t idx,
-			    bt_sdp_attr_func_t func, void *user_data)
+				bt_sdp_attr_func_t func, void *user_data)
 {
 	for (; idx < record->attr_count; idx++) {
 		if (func(&record->attrs[idx], idx, user_data) ==
@@ -799,7 +799,7 @@ static u8_t bt_sdp_foreach_attr(struct bt_sdp_record *record, u8_t idx,
  *   or BT_SDP_ITER_STOP to stop.
  */
 static u8_t select_attrs(struct bt_sdp_attribute *attr, u8_t att_idx,
-			    void *user_data)
+			 void *user_data)
 {
 	struct select_attrs_data *sad = user_data;
 	u16_t att_id_lower, att_id_upper, att_id_cur, space;
@@ -928,12 +928,11 @@ static u8_t select_attrs(struct bt_sdp_attribute *attr, u8_t att_idx,
  *
  *  @return len Length of the attribute list created
  */
-static u16_t create_attr_list(struct bt_sdp *sdp,
-				 struct bt_sdp_record *record,
-				 u32_t *filter, u8_t num_filters,
-				 u16_t max_att_len, u8_t cont_state_size,
-				 u8_t next_att, struct search_state *state,
-				 struct net_buf *rsp_buf)
+static u16_t create_attr_list(struct bt_sdp *sdp, struct bt_sdp_record *record,
+			      u32_t *filter, u8_t num_filters,
+			      u16_t max_att_len, u8_t cont_state_size,
+			      u8_t next_att, struct search_state *state,
+			      struct net_buf *rsp_buf)
 {
 	struct select_attrs_data sad;
 	u8_t idx_att;
@@ -974,7 +973,7 @@ static u16_t create_attr_list(struct bt_sdp *sdp,
  *  @return 0 for success, or relevant error code
  */
 static u16_t get_att_search_list(struct net_buf *buf, u32_t *filter,
-				    u8_t *num_filters)
+				 u8_t *num_filters)
 {
 	struct bt_sdp_data_elem data_elem;
 	u16_t res;
@@ -1054,7 +1053,7 @@ static u8_t find_handle(struct bt_sdp_record *rec, void *user_data)
  *  @return 0 for success, or relevant error code
  */
 static u16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
-				u16_t tid)
+			     u16_t tid)
 {
 	u32_t filter[MAX_NUM_ATT_ID_FILTER];
 	struct search_state state = {
@@ -1168,7 +1167,7 @@ static u16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
  *  @return 0 for success, or relevant error code
  */
 static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
-				       u16_t tid)
+				    u16_t tid)
 {
 	u32_t filter[MAX_NUM_ATT_ID_FILTER];
 	struct bt_sdp_record *matching_recs[BT_SDP_MAX_SERVICES];
@@ -1313,8 +1312,7 @@ static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 
 static const struct {
 	u8_t  op_code;
-	u16_t  (*func)(struct bt_sdp *sdp, struct net_buf *buf,
-			  u16_t tid);
+	u16_t  (*func)(struct bt_sdp *sdp, struct net_buf *buf, u16_t tid);
 } handlers[] = {
 	{ BT_SDP_SVC_SEARCH_REQ, sdp_svc_search_req },
 	{ BT_SDP_SVC_ATTR_REQ, sdp_svc_att_req },
@@ -1588,7 +1586,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 }
 
 static u16_t sdp_client_get_total(struct bt_sdp_client *session,
-				     struct net_buf *buf, u16_t *total)
+				  struct net_buf *buf, u16_t *total)
 {
 	u16_t pulled;
 	u8_t seq;
@@ -2170,9 +2168,9 @@ struct bt_sdp_uuid_desc {
 		struct bt_uuid_16 uuid16;
 		struct bt_uuid_32 uuid32;
 	      };
-	u16_t                  attr_id;
-	u8_t                  *params;
-	u16_t                  params_len;
+	u16_t                     attr_id;
+	u8_t                     *params;
+	u16_t                     params_len;
 };
 
 /* Generic attribute item collector. */

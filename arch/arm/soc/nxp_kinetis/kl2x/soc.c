@@ -13,6 +13,8 @@
 #include <fsl_clock.h>
 #include <arch/cpu.h>
 
+#define LPSCI0SRC_MCGFLLCLK	(1)
+
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -93,8 +95,8 @@ static ALWAYS_INLINE void clkInit(void)
 	CLOCK_SetInternalRefClkConfig(kMCG_IrclkEnable, kMCG_IrcSlow, 0);
 	CLOCK_SetSimConfig(&simConfig);
 
-#ifdef CONFIG_UART_MCUX_0
-	CLOCK_SetLpsci0Clock(1);
+#ifdef CONFIG_UART_MCUX_LPSCI_0
+	CLOCK_SetLpsci0Clock(LPSCI0SRC_MCGFLLCLK);
 #endif
 }
 

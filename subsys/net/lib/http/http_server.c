@@ -34,7 +34,7 @@ static inline u16_t http_strlen(const char *str)
 
 static int http_add_header(struct net_pkt *tx, s32_t timeout, const char *str)
 {
-	if (net_pkt_append(tx, strlen(str), (u8_t *)str, timeout)) {
+	if (net_pkt_append_all(tx, strlen(str), (u8_t *)str, timeout)) {
 		return 0;
 	}
 
@@ -51,17 +51,18 @@ static int http_add_chunk(struct net_pkt *tx, s32_t timeout, const char *str)
 
 	snprintk(chunk_header, sizeof(chunk_header), "%x\r\n", str_len);
 
-	if (!net_pkt_append(tx, strlen(chunk_header), chunk_header, timeout)) {
+	if (!net_pkt_append_all(tx, strlen(chunk_header), chunk_header,
+				timeout)) {
 		return -ENOMEM;
 	}
 
 	if (str_len > 0) {
-		if (!net_pkt_append(tx, str_len, (u8_t *)str, timeout)) {
+		if (!net_pkt_append_all(tx, str_len, (u8_t *)str, timeout)) {
 			return -ENOMEM;
 		}
 	}
 
-	if (!net_pkt_append(tx, strlen(rn), rn, timeout)) {
+	if (!net_pkt_append_all(tx, strlen(rn), rn, timeout)) {
 		return -ENOMEM;
 	}
 

@@ -57,7 +57,7 @@ my $codespell = 0;
 my $codespellfile = "/usr/share/codespell/dictionary.txt";
 my $conststructsfile = "$D/const_structs.checkpatch";
 my $color = 1;
-my $allow_c99_comments = 1;
+my $allow_c99_comments = 0;
 
 sub help {
 	my ($exitcode) = @_;

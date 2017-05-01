@@ -483,7 +483,20 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 	return NET_OK;
 }
 
+void net_arp_clear_cache(void)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		if (arp_table[i].pending) {
+			net_pkt_unref(arp_table[i].pending);
+		}
+	}
+
+	memset(&arp_table, 0, sizeof(arp_table));
+}
+
 void net_arp_init(void)
 {
-	memset(&arp_table, 0, sizeof(arp_table));
+	net_arp_clear_cache();
 }

@@ -66,7 +66,7 @@ static struct dma_stm32_device {
 } device_data[DMA_STM32_MAX_DEVS];
 
 struct dma_stm32_config {
-	struct stm32f4x_pclken pclken;
+	struct stm32_pclken pclken;
 	void (*config)(struct dma_stm32_device *);
 };
 
@@ -496,8 +496,8 @@ static const struct dma_driver_api dma_funcs = {
 };
 
 const struct dma_stm32_config dma_stm32_1_cdata = {
-	.pclken = { .bus = STM32F4X_CLOCK_BUS_AHB1,
-		    .enr = STM32F4X_CLOCK_ENABLE_DMA1 },
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
+		    .enr = LL_AHB1_GRP1_PERIPH_DMA1 },
 	.config = dma_stm32_1_config,
 };
 
@@ -507,8 +507,8 @@ DEVICE_AND_API_INIT(dma_stm32_1, CONFIG_DMA_1_NAME, &dma_stm32_init,
 		    (void *)&dma_funcs);
 
 static const struct dma_stm32_config dma_stm32_2_cdata = {
-	.pclken = { .bus = STM32F4X_CLOCK_BUS_AHB1,
-		    .enr = STM32F4X_CLOCK_ENABLE_DMA2 },
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
+		    .enr = LL_AHB1_GRP1_PERIPH_DMA2 },
 	.config = dma_stm32_2_config,
 };
 
@@ -604,4 +604,3 @@ static void dma_stm32_2_config(struct dma_stm32_device *ddata)
 		    dma_stm32_irq_7, DEVICE_GET(dma_stm32_2), 0);
 	irq_enable(STM32F4_IRQ_DMA2_STREAM7);
 }
-

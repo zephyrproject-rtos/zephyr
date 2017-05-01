@@ -117,7 +117,7 @@ BOARDS/ARM - CC32XX LAUNCHXL
 M:      Gil Pitney <gil.pitney@linaro.org>
 S:      Supported
 F:      boards/arm/cc3200_launchxl/
-F:      boards/arm/cc3220s_launchxl/
+F:      boards/arm/cc3220sf_launchxl/
 
 BOARDS/ARM - NXP FRDM-K64F
 M:	Maureen Helm <maureen.helm@nxp.com>
@@ -502,7 +502,7 @@ THE REST
 M:	Anas Nashif <anas.nashif@intel.com>
 M:	Kumar Gala <kumar.gala@linaro.org>
 L:	devel@lists.zephyrproject.com
-T:	git https://gerrit.zephyrproject.org/r/a/zephyr
+T:	git https://github.com/zephyrproject-rtos/zephyr
 S:	Buried alive in reporters
 F:	*
 F:	*/

@@ -55,13 +55,7 @@ int tcp_tx(void *context, const unsigned char *buf, size_t size)
 		return -EIO;
 	}
 
-	rc = net_pkt_append(send_pkt, size, (u8_t *) buf, K_FOREVER);
-	if (!rc) {
-		printk("cannot write buf\n");
-		return -EIO;
-	}
-
-	len = net_pkt_get_len(send_pkt);
+	len = net_pkt_append(send_pkt, size, (u8_t *) buf, K_FOREVER);
 
 	rc = net_context_send(send_pkt, NULL, ctx->timeout, NULL, NULL);
 

@@ -127,7 +127,8 @@ typedef struct _dnode sys_dnode_t;
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n) \
-	SYS_DLIST_CONTAINER(sys_dlist_peek_next(__dl, &(__cn->__n)), __cn, __n)
+	((__cn) ? SYS_DLIST_CONTAINER(sys_dlist_peek_next(__dl, &(__cn->__n)), \
+				      __cn, __n) : NULL)
 
 /**
  * @brief Provide the primitive to iterate on a list under a container

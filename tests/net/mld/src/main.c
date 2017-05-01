@@ -325,7 +325,7 @@ static void send_query(struct net_if *iface)
 	net_pkt_append_be16(pkt, 3); /* maximum response code */
 	net_pkt_append_be16(pkt, 0); /* reserved field */
 
-	net_pkt_append(pkt, sizeof(struct in6_addr),
+	net_pkt_append_all(pkt, sizeof(struct in6_addr),
 		       (const u8_t *)net_ipv6_unspecified_address(),
 		       K_FOREVER); /* multicast address */
 

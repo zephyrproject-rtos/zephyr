@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32f1xx_hal.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   This file contains all the functions prototypes for the HAL 
   *          module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -59,7 +59,6 @@
 /* Exported constants --------------------------------------------------------*/
 
 /* Exported macro ------------------------------------------------------------*/
-
 /** @defgroup HAL_Exported_Macros HAL Exported Macros
   * @{
   */
@@ -262,22 +261,18 @@
   */
 
 /* Exported functions --------------------------------------------------------*/
-
 /** @addtogroup HAL_Exported_Functions
   * @{
   */
-
 /** @addtogroup HAL_Exported_Functions_Group1
   * @{
   */
-
 /* Initialization and de-initialization functions  ******************************/
 HAL_StatusTypeDef HAL_Init(void);
 HAL_StatusTypeDef HAL_DeInit(void);
-void              HAL_MspInit(void);
-void              HAL_MspDeInit(void);
+void HAL_MspInit(void);
+void HAL_MspDeInit(void);
 HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority);
-
 /**
   * @}
   */
@@ -285,23 +280,22 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority);
 /** @addtogroup HAL_Exported_Functions_Group2
   * @{
   */
-
 /* Peripheral Control functions  ************************************************/
-void              HAL_IncTick(void);
-void              HAL_Delay(__IO uint32_t Delay);
-uint32_t          HAL_GetTick(void);
-void              HAL_SuspendTick(void);
-void              HAL_ResumeTick(void);
-uint32_t          HAL_GetHalVersion(void);
-uint32_t          HAL_GetREVID(void);
-uint32_t          HAL_GetDEVID(void);
-void              HAL_DBGMCU_EnableDBGSleepMode(void);
-void              HAL_DBGMCU_DisableDBGSleepMode(void);
-void              HAL_DBGMCU_EnableDBGStopMode(void);
-void              HAL_DBGMCU_DisableDBGStopMode(void);
-void              HAL_DBGMCU_EnableDBGStandbyMode(void);
-void              HAL_DBGMCU_DisableDBGStandbyMode(void);
-
+void HAL_IncTick(void);
+void HAL_Delay(__IO uint32_t Delay);
+uint32_t HAL_GetTick(void);
+void HAL_SuspendTick(void);
+void HAL_ResumeTick(void);
+uint32_t HAL_GetHalVersion(void);
+uint32_t HAL_GetREVID(void);
+uint32_t HAL_GetDEVID(void);
+void HAL_DBGMCU_EnableDBGSleepMode(void);
+void HAL_DBGMCU_DisableDBGSleepMode(void);
+void HAL_DBGMCU_EnableDBGStopMode(void);
+void HAL_DBGMCU_DisableDBGStopMode(void);
+void HAL_DBGMCU_EnableDBGStandbyMode(void);
+void HAL_DBGMCU_DisableDBGStandbyMode(void);
+void HAL_GetUID(uint32_t *UID);
 /**
   * @}
   */
@@ -309,11 +303,26 @@ void              HAL_DBGMCU_DisableDBGStandbyMode(void);
 /**
   * @}
   */
-
-
+/* Private types -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/** @defgroup HAL_Private_Variables HAL Private Variables
+  * @{
+  */
 /**
   * @}
-  */ 
+  */
+/* Private constants ---------------------------------------------------------*/
+/** @defgroup HAL_Private_Constants HAL Private Constants
+  * @{
+  */
+/**
+  * @}
+  */
+/* Private macros ------------------------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
+/**
+  * @}
+  */
 
 /**
   * @}

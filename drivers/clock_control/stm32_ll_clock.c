@@ -159,6 +159,9 @@ static int stm32_clock_control_init(struct device *dev)
 	/* configure clock for AHB/APB buses */
 	config_bus_clk_init((LL_UTILS_ClkInitTypeDef *)&s_ClkInitStruct);
 
+	/* Some clocks would be activated by default */
+	config_enable_default_clocks();
+
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
 	LL_UTILS_PLLInitTypeDef s_PLLInitStruct;
 
@@ -167,6 +170,12 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Disable PLL before configuration */
 	LL_RCC_PLL_Disable();
+
+#ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
+	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
+		   CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
+		   << POSITION_VAL(RCC_PLLCFGR_PLLQ));
+#endif /* CONFIG_CLOCK_STM32_PLL_Q_DIVISOR */
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_MSI
 	/* Switch to PLL with MSI as clock source */

@@ -208,7 +208,7 @@ References
 
 .. _Segger SAM3U Wiki: https://wiki.segger.com/index.php?title=J-Link-OB_SAM3U
 .. _Real-Time Tracing (RTT): https://www.segger.com/jlink-rtt.html
-.. _Segger Ozone: https://www.segger.com/ozone.htm
+.. _Segger Ozone: https://www.segger.com/ozone.html
 .. _Segger Ozone Download: https://www.segger.com/downloads/jlink#Ozone
 
 .. _nRF52 DK website: http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK

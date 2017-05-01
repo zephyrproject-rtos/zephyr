@@ -473,7 +473,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	/* Flags and reserved are set to 0 */
 	net_pkt_append_be16(pkt, 0);
 
-	net_pkt_append(pkt, sizeof(struct in6_addr), dag->dag_id.s6_addr,
+	net_pkt_append_all(pkt, sizeof(struct in6_addr), dag->dag_id.s6_addr,
 		       K_FOREVER);
 
 	if (instance->mc.type != NET_RPL_MC_NONE) {
@@ -533,7 +533,7 @@ int net_rpl_dio_send(struct net_if *iface,
 		net_pkt_append_be32(pkt, dag->prefix_info.lifetime);
 
 		net_pkt_append_be32(pkt, 0); /* reserved */
-		net_pkt_append(pkt, sizeof(struct in6_addr),
+		net_pkt_append_all(pkt, sizeof(struct in6_addr),
 			       dag->prefix_info.prefix.s6_addr,
 			       K_FOREVER);
 
@@ -1455,7 +1455,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 			NET_DBG("Removing default route %s",
 				net_sprint_ipv6_addr(addr));
 
-			net_if_router_rm(dag->instance->default_route);
+			net_if_ipv6_router_rm(dag->instance->default_route);
 			dag->instance->default_route = NULL;
 		}
 
@@ -1685,7 +1685,7 @@ static int net_rpl_set_default_route(struct net_if *iface,
 		NET_DBG("Removing default route through %s",
 			net_sprint_ipv6_addr(&instance->default_route->address.
 					     in6_addr));
-		net_if_router_rm(instance->default_route);
+		net_if_ipv6_router_rm(instance->default_route);
 		instance->default_route = NULL;
 	}
 
@@ -1706,7 +1706,7 @@ static int net_rpl_set_default_route(struct net_if *iface,
 				net_sprint_ipv6_addr(&instance->
 						     default_route->address.
 						     in6_addr));
-			net_if_router_rm(instance->default_route);
+			net_if_ipv6_router_rm(instance->default_route);
 			instance->default_route = NULL;
 		} else {
 			NET_DBG("Not removing default route because it is "
@@ -2361,7 +2361,7 @@ static void net_rpl_move_parent(struct net_if *iface,
 			NET_DBG("Removing default route %s",
 				net_sprint_ipv6_addr(addr));
 
-			net_if_router_rm(dag_src->instance->default_route);
+			net_if_ipv6_router_rm(dag_src->instance->default_route);
 			dag_src->instance->default_route = NULL;
 		}
 
@@ -2625,6 +2625,18 @@ static void net_rpl_process_dio(struct net_if *iface,
 		}
 	}
 
+	if (instance->default_route && !instance->default_route->is_used) {
+		/* Maybe router timer expired or removed and RPL doesn't
+		 * know about it. Verify router is in "used" state or not.
+		 */
+		instance->default_route = net_if_ipv6_router_add(iface, from,
+						net_rpl_lifetime(instance,
+						instance->default_lifetime));
+		if (!instance->default_route) {
+			return;
+		}
+	}
+
 	if (dag->rank == NET_RPL_ROOT_RANK(instance)) {
 		if (dio->rank != NET_RPL_INFINITE_RANK) {
 			instance->dio_counter++;
@@ -2702,9 +2714,12 @@ static void net_rpl_process_dio(struct net_if *iface,
 		 * Add default route to set a fresh value for the lifetime
 		 * counter.
 		 */
-		net_if_ipv6_router_add(iface, from,
-				       net_rpl_lifetime(instance,
+		instance->default_route = net_if_ipv6_router_add(iface, from,
+						net_rpl_lifetime(instance,
 						instance->default_lifetime));
+		if (!instance->default_route) {
+			return;
+		}
 	}
 
 	parent->dtsn = dio->dtsn;
@@ -2966,7 +2981,10 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 		}
 	}
 
-	NET_ASSERT_INFO(!pos && !frag, "DIO reading failure");
+	if (pos == 0xffff && !frag) {
+		NET_DBG("DIO reading failure");
+		goto out;
+	}
 
 	net_rpl_process_dio(net_pkt_iface(pkt), &NET_IPV6_HDR(pkt)->src, &dio);
 
@@ -3050,7 +3068,7 @@ int net_rpl_dao_send(struct net_if *iface,
 	net_pkt_append_u8(pkt, rpl_dao_sequence);
 
 #if defined(CONFIG_NET_RPL_DAO_SPECIFY_DAG)
-	net_pkt_append(pkt, sizeof(dag->dag_id), dag->dag_id.s6_addr,
+	net_pkt_append_all(pkt, sizeof(dag->dag_id), dag->dag_id.s6_addr,
 			K_FOREVER);
 #endif
 
@@ -3061,7 +3079,7 @@ int net_rpl_dao_send(struct net_if *iface,
 	net_pkt_append_u8(pkt, 2 + prefix_bytes);
 	net_pkt_append_u8(pkt, 0); /* reserved */
 	net_pkt_append_u8(pkt, prefixlen);
-	net_pkt_append(pkt, prefix_bytes, prefix->s6_addr, K_FOREVER);
+	net_pkt_append_all(pkt, prefix_bytes, prefix->s6_addr, K_FOREVER);
 
 	net_pkt_append_u8(pkt, NET_RPL_OPTION_TRANSIT);
 	net_pkt_append_u8(pkt, 4); /* length */

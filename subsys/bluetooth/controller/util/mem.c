@@ -20,8 +20,7 @@ void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 	/* Store free mem_count after the list's next pointer at an aligned
 	 * memory location to ensure atomic read/write (in ARM for now).
 	 */
-	*((u16_t *)MROUND((u8_t *)mem_pool + sizeof(mem_pool))) =
-		mem_count;
+	*((u16_t *)MROUND((u8_t *)mem_pool + sizeof(mem_pool))) = mem_count;
 
 	/* Initialize next pointers to form a free list,
 	 * next pointer is stored in the first 32-bit of each block
@@ -32,9 +31,9 @@ void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 		u32_t next;
 
 		next = (u32_t)((u8_t *) mem_pool +
-				(mem_size * (mem_count + 1)));
+			       (mem_size * (mem_count + 1)));
 		memcpy(((u8_t *)mem_pool + (mem_size * mem_count)),
-			 (void *)&next, sizeof(next));
+		       (void *)&next, sizeof(next));
 	}
 }
 
@@ -47,7 +46,7 @@ void *mem_acquire(void **mem_head)
 
 		/* Get the free count from the list and decrement it */
 		free_count = *((u16_t *)MROUND((u8_t *)*mem_head +
-						  sizeof(mem_head)));
+					       sizeof(mem_head)));
 		free_count--;
 
 		mem = *mem_head;
@@ -73,7 +72,7 @@ void mem_release(void *mem, void **mem_head)
 	/* Get the free count from the list and increment it */
 	if (*mem_head) {
 		free_count = *((u16_t *)MROUND((u8_t *)*mem_head +
-						  sizeof(mem_head)));
+					       sizeof(mem_head)));
 	}
 	free_count++;
 
@@ -92,7 +91,7 @@ u16_t mem_free_count_get(void *mem_head)
 	/* Get the free count from the list */
 	if (mem_head) {
 		free_count = *((u16_t *)MROUND((u8_t *)mem_head +
-						  sizeof(mem_head)));
+					       sizeof(mem_head)));
 	}
 
 	return free_count;
@@ -105,8 +104,7 @@ void *mem_get(void *mem_pool, u16_t mem_size, u16_t index)
 
 u16_t mem_index_get(void *mem, void *mem_pool, u16_t mem_size)
 {
-	return ((u16_t)((u8_t *)mem - (u8_t *)mem_pool) /
-		mem_size);
+	return ((u16_t)((u8_t *)mem - (u8_t *)mem_pool) / mem_size);
 }
 
 void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len)

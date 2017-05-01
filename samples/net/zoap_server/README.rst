@@ -60,6 +60,6 @@ configuration file enabling IEEE 802.15.4:
     make CONF_FILE=prj_cc2520.conf run
 
 
-.. _`net-tools`: https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=tree
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
 .. _`libcoap`: https://github.com/obgm/libcoap

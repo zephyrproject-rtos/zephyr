@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
-<svg width="36cm" height="29cm" viewBox="50 16 703 568" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="32cm" height="29cm" viewBox="50 16 628 568" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <g>
     <rect style="fill: #ffffff" x="70.825" y="471.5" width="136.85" height="54"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="70.825" y="471.5" width="136.85" height="54"/>
@@ -36,46 +36,29 @@
     <rect style="fill: #ffffff" x="101" y="204" width="145" height="58"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="101" y="204" width="145" height="58"/>
     <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="173.5" y="236.9">
-      <tspan x="173.5" y="236.9">RX Fiber</tspan>
+      <tspan x="173.5" y="236.9">RX thread</tspan>
     </text>
   </g>
   <g>
     <rect style="fill: #ffffff" x="101" y="261" width="145.025" height="38"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="101" y="261" width="145.025" height="38"/>
     <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="173.512" y="283.9">
-      <tspan x="173.512" y="283.9">RX FIFO</tspan>
+      <tspan x="173.512" y="283.9">RX queue</tspan>
     </text>
   </g>
   <g>
-    <g>
-      <rect style="fill: #ffffff" x="577.126" y="239.8" width="175.35" height="58"/>
-      <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="577.126" y="239.8" width="175.35" height="58"/>
-      <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="664.801" y="264.7">
-        <tspan x="664.801" y="264.7">TX Fiber,</tspan>
-        <tspan x="664.801" y="280.7">One / Network Interface</tspan>
-      </text>
-    </g>
-    <g>
-      <rect style="fill: #ffffff" x="577" y="202" width="175" height="38"/>
-      <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="577" y="202" width="175" height="38"/>
-      <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="664.5" y="224.9">
-        <tspan x="664.5" y="224.9">TX FIFO</tspan>
-      </text>
-    </g>
-  </g>
-  <g>
-    <rect style="fill: #ffffff" x="357.424" y="237.6" width="175.35" height="58"/>
-    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="357.424" y="237.6" width="175.35" height="58"/>
-    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="445.099" y="262.5">
-      <tspan x="445.099" y="262.5">TX Fiber,</tspan>
-      <tspan x="445.099" y="278.5">One / Network Interface</tspan>
+    <rect style="fill: #ffffff" x="416.424" y="242.6" width="175.35" height="58"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="416.424" y="242.6" width="175.35" height="58"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="504.099" y="275.5">
+      <tspan x="504.099" y="275.5">TX thread</tspan>
     </text>
   </g>
   <g>
-    <rect style="fill: #ffffff" x="357.3" y="199.8" width="175" height="38"/>
-    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="357.3" y="199.8" width="175" height="38"/>
-    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="444.8" y="222.7">
-      <tspan x="444.8" y="222.7">TX FIFO</tspan>
+    <rect style="fill: #ffffff" x="416.3" y="196.8" width="175" height="54"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="416.3" y="196.8" width="175" height="54"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="503.8" y="219.7">
+      <tspan x="503.8" y="219.7">TX queues,</tspan>
+      <tspan x="503.8" y="235.7">one / network interface</tspan>
     </text>
   </g>
   <g>
@@ -84,42 +67,22 @@
     <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="210.784,300.992 219.781,307.63 214.191,307.674 210.872,312.172 "/>
   </g>
   <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 249.526 130.8 C 258.526,171.8 325.66,228.3 347.564,228.3"/>
-    <polygon style="fill: #000000" points="355.064,228.3 345.064,233.3 347.564,228.3 345.064,223.3 "/>
-    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="355.064,228.3 345.064,233.3 347.564,228.3 345.064,223.3 "/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 249.525 130.8 C 258.525,171.8 384.66,237.3 406.564,237.3"/>
+    <polygon style="fill: #000000" points="414.064,237.3 404.064,242.3 406.564,237.3 404.064,232.3 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="414.064,237.3 404.064,242.3 406.564,237.3 404.064,232.3 "/>
   </g>
   <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 315.526 130.8 C 409.226,186 584.478,161.477 614.257,194.746"/>
-    <polygon style="fill: #000000" points="619.259,200.334 608.864,196.217 614.257,194.746 616.315,189.548 "/>
-    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="619.259,200.334 608.864,196.217 614.257,194.746 616.315,189.548 "/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 587 129 C 571,148 507,161 504.667,187.103"/>
+    <polygon style="fill: #000000" points="503.999,194.573 499.909,184.167 504.667,187.103 509.87,185.058 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="503.999,194.573 499.909,184.167 504.667,187.103 509.87,185.058 "/>
   </g>
   <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 587 129 C 571,148 448,164 445.667,190.103"/>
-    <polygon style="fill: #000000" points="444.999,197.573 440.909,187.167 445.667,190.103 450.87,188.058 "/>
-    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="444.999,197.573 440.909,187.167 445.667,190.103 450.87,188.058 "/>
-  </g>
-  <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 653 129 C 720,154 707.478,171.477 708.004,192.267"/>
-    <polygon style="fill: #000000" points="708.193,199.765 702.942,189.894 708.004,192.267 712.939,189.641 "/>
-    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="708.193,199.765 702.942,189.894 708.004,192.267 712.939,189.641 "/>
-  </g>
-  <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 708.638 297.8 C 710,517 373.994,512 217.41,512"/>
-    <polygon style="fill: #000000" points="209.91,512 219.91,507 217.41,512 219.91,517 "/>
-    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="209.91,512 219.91,507 217.41,512 219.91,517 "/>
-  </g>
-  <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 620.962 297.8 C 637,341 593,397 549.883,398.061"/>
-    <polygon style="fill: #000000" points="542.385,398.245 552.259,393.001 549.883,398.061 552.505,402.998 "/>
-    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="542.385,398.245 552.259,393.001 549.883,398.061 552.505,402.998 "/>
-  </g>
-  <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 445.1 295.6 C 471,337 472,362 471.843,375.065"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 547.936 300.6 C 490,329 472,362 471.843,375.065"/>
     <polygon style="fill: #000000" points="471.753,382.564 466.873,372.505 471.843,375.065 476.873,372.625 "/>
     <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="471.753,382.564 466.873,372.505 471.843,375.065 476.873,372.625 "/>
   </g>
   <g>
-    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 401.262 295.6 C 370,341 200,411 177.373,462.584"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 4; stroke: #000000" d="M 460.261 300.6 C 428.999,346 200,411 177.373,462.584"/>
     <polygon style="fill: #000000" points="174.361,469.452 173.799,458.286 177.373,462.584 182.956,462.303 "/>
     <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="174.361,469.452 173.799,458.286 177.373,462.584 182.956,462.303 "/>
   </g>
@@ -127,21 +90,21 @@
     <rect style="fill: #ffffff" x="389" y="18" width="264" height="111"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="389" y="18" width="264" height="111"/>
     <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="521" y="77.4">
-      <tspan x="521" y="77.4">Task</tspan>
+      <tspan x="521" y="77.4">Task B</tspan>
     </text>
   </g>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="613" y="122.5">
-    <tspan x="613" y="122.5">TX</tspan>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="579" y="123.5">
+    <tspan x="579" y="123.5">TX</tspan>
   </text>
   <g>
     <rect style="fill: #ffffff" x="51.525" y="19.8" width="264" height="111"/>
     <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="51.525" y="19.8" width="264" height="111"/>
     <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="183.525" y="79.2">
-      <tspan x="183.525" y="79.2">Task</tspan>
+      <tspan x="183.525" y="79.2">Task A</tspan>
     </text>
   </g>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="275.526" y="124.3">
-    <tspan x="275.526" y="124.3">TX</tspan>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="241.526" y="123.3">
+    <tspan x="241.526" y="123.3">TX</tspan>
   </text>
   <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="347,464 347,463 437.512,463 437.512,438.8 "/>
   <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="105.038,525.5 105.038,565 191.03,565 191.03,561.838 "/>
@@ -173,8 +136,8 @@
   <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="85" y="179">
     <tspan x="85" y="179">callback</tspan>
   </text>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="317" y="183">
-    <tspan x="317" y="183">callback</tspan>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="325" y="173">
+    <tspan x="325" y="173">callback</tspan>
   </text>
   <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="128" y="374">
     <tspan x="128" y="374">fifo</tspan>
@@ -185,30 +148,16 @@
   <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="498.6" y="151.5">
     <tspan x="498.6" y="151.5">fifo</tspan>
   </text>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="692.9" y="151.3">
-    <tspan x="692.9" y="151.3">fifo</tspan>
-  </text>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="273.2" y="172.1">
-    <tspan x="273.2" y="172.1">fifo</tspan>
-  </text>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="340.5" y="142.9">
-    <tspan x="340.5" y="142.9">fifo</tspan>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="284.2" y="162.1">
+    <tspan x="284.2" y="162.1">fifo</tspan>
   </text>
   <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="200" y="398">
     <tspan x="200" y="398">function</tspan>
     <tspan x="200" y="414">call</tspan>
   </text>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="470.3" y="332.7">
-    <tspan x="470.3" y="332.7">function</tspan>
-    <tspan x="470.3" y="348.7">call</tspan>
-  </text>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="582.6" y="340.5">
-    <tspan x="582.6" y="340.5">function</tspan>
-    <tspan x="582.6" y="356.5">call</tspan>
-  </text>
-  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="609.9" y="418.3">
-    <tspan x="609.9" y="418.3">function</tspan>
-    <tspan x="609.9" y="434.3">call</tspan>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="514.3" y="335.7">
+    <tspan x="514.3" y="335.7">function</tspan>
+    <tspan x="514.3" y="351.7">call</tspan>
   </text>
   <g>
     <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="347.001" y1="464" x2="347.001" y2="437.333"/>

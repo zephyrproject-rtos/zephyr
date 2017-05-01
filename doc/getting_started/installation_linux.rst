@@ -55,7 +55,7 @@ Install the required packages in a Ubuntu host system with:
 .. code-block:: console
 
    $ sudo apt-get install git make gcc g++ python3-ply ncurses-dev \
-	 python-yaml python2 dfu-util
+	 python3-yaml python2.7 dfu-util
 
 Install the required packages in a Fedora host system with:
 
@@ -100,7 +100,7 @@ Follow these steps to install the SDK on your Linux host system.
 
    .. code-block:: console
 
-      $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.9/zephyr-sdk-0.9-setup.run
+      $ wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9/zephyr-sdk-0.9-setup.run
 
 #. Run the installation binary, follow this example:
 

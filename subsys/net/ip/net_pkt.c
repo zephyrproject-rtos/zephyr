@@ -1079,11 +1079,12 @@ bool net_pkt_compact(struct net_pkt *pkt)
  * the data in current fragment then create new fragment and add it to
  * the buffer. It assumes that the buffer has at least one fragment.
  */
-static inline bool net_pkt_append_bytes(struct net_pkt *pkt,
+static inline u16_t net_pkt_append_bytes(struct net_pkt *pkt,
 					const u8_t *value,
 					u16_t len, s32_t timeout)
 {
 	struct net_buf *frag = net_buf_frag_last(pkt->frags);
+	u16_t added_len = 0;
 
 	do {
 		u16_t count = min(len, net_buf_tailroom(frag));
@@ -1091,36 +1092,38 @@ static inline bool net_pkt_append_bytes(struct net_pkt *pkt,
 
 		memcpy(data, value, count);
 		len -= count;
+		added_len += count;
 		value += count;
 
 		if (len == 0) {
-			return true;
+			return added_len;
 		}
 
 		frag = net_pkt_get_frag(pkt, timeout);
 		if (!frag) {
-			return false;
+			return added_len;
 		}
 
 		net_pkt_frag_add(pkt, frag);
 	} while (1);
 
-	return false;
+	/* Unreachable */
+	return 0;
 }
 
-bool net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
+u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		    s32_t timeout)
 {
 	struct net_buf *frag;
 
 	if (!pkt || !data) {
-		return false;
+		return 0;
 	}
 
 	if (!pkt->frags) {
 		frag = net_pkt_get_frag(pkt, timeout);
 		if (!frag) {
-			return false;
+			return 0;
 		}
 
 		net_pkt_frag_add(pkt, frag);

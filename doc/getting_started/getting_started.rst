@@ -28,22 +28,17 @@ Use the following procedures to create a new development environment.
 Checking Out the Source Code Anonymously
 ========================================
 
-The code is hosted at the Linux Foundation with a Gerrit backend that supports
+The code is hosted in a GitHub repo that supports
 anonymous cloning via git.
 
 To clone the repository anonymously, enter:
 
 .. code-block:: console
 
-   $ git clone https://gerrit.zephyrproject.org/r/zephyr zephyr-project
+   $ git clone https://github.com/zephyrproject-rtos/zephyr.git
 
 You have successfully checked out a copy of the source code to your local
 machine.
-
-Once you're ready to start contributing, follow the steps to make yourself
-a Linux Foundation account at `Gerrit Accounts`_.
-
-.. _Gerrit Accounts: https://wiki.zephyrproject.org/view/Gerrit_accounts
 
 Building and Running an Application
 ***********************************
@@ -206,9 +201,5 @@ QEMU is not supported on all boards and SoCs. When developing for a specific
 hardware target you should always test on the actual hardware and should not
 rely on testing in the QEMU emulation environment only.
 
-
-.. _Linux Foundation ID website: https://identity.linuxfoundation.org
-
-.. _Gerrit: https://gerrit.zephyrproject.org/
 
 .. _GCC ARM Embedded: https://launchpad.net/gcc-arm-embedded

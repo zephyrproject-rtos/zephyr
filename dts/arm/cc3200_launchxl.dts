@@ -1,10 +1,10 @@
 /dts-v1/;
 
-#include <ti/cc32xx_launchxl.dtsi>
+#include <ti/cc32xx.dtsi>
 
 / {
 	model = "TI CC3200 LaunchXL";
-	compatible = "ti,cc32xx";
+	compatible = "ti,cc3200-launchxl","ti,cc3200","ti,cc32xx";
 
 	aliases {
 		uart_0 = &uart0;
@@ -19,4 +19,5 @@
 
 &uart0 {
 	status = "ok";
+	current-speed = <115200>;
 };

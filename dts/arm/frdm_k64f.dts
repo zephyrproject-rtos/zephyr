@@ -30,12 +30,12 @@
 
 &uart0 {
 	status = "ok";
-	baud-rate = <115200>;
+	current-speed = <115200>;
 };
 
 #ifdef CONFIG_BLUETOOTH
 &uart3 {
 	status = "ok";
-	baud-rate = <115200>;
+	current-speed = <115200>;
 };
 #endif

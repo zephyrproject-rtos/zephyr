@@ -358,6 +358,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 static void eth_rx(struct device *iface)
 {
 	struct eth_context *context = iface->driver_data;
+	struct net_buf *prev_buf;
 	struct net_pkt *pkt;
 	const u8_t *src;
 	u32_t frame_length = 0;
@@ -419,6 +420,7 @@ static void eth_rx(struct device *iface)
 	}
 
 	src = context->frame_buf;
+	prev_buf = NULL;
 	do {
 		struct net_buf *pkt_buf;
 		size_t frag_len;
@@ -432,7 +434,14 @@ static void eth_rx(struct device *iface)
 			return;
 		}
 
-		net_pkt_frag_insert(pkt, pkt_buf);
+		if (!prev_buf) {
+			net_pkt_frag_insert(pkt, pkt_buf);
+		} else {
+			net_buf_frag_insert(prev_buf, pkt_buf);
+		}
+
+		prev_buf = pkt_buf;
+
 		frag_len = net_buf_tailroom(pkt_buf);
 		if (frag_len > frame_length) {
 			frag_len = frame_length;

@@ -124,10 +124,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 
 	/* See Section 7.3.2 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
-	nonce[8] = (u8_t)(sec_ctx->frame_counter >> 24);
-	nonce[9] = (u8_t)(sec_ctx->frame_counter >> 16);
-	nonce[10] = (u8_t)(sec_ctx->frame_counter >> 8);
-	nonce[11] = (u8_t)sec_ctx->frame_counter;
+	sys_put_be32(sec_ctx->frame_counter, &nonce[8]);
 	nonce[12] = sec_ctx->level;
 
 	pkt.in_buf = encrypt_payload_len ? frame + auth_payload_len : NULL;

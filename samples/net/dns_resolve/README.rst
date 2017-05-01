@@ -86,7 +86,7 @@ script can be found in net-tools project.
 
 The net-tools can be downloaded from
 
-    https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=blob;f=README
+    https://github.com/zephyrproject-rtos/net-tools
 
 
 Open a terminal window and type:
@@ -126,9 +126,10 @@ Open a terminal window and type:
     $ make
 
 
-Run 'loop_socat.sh' and 'loop-slip-tap.sh' as indicated at:
+Run 'loop_socat.sh' and 'loop-slip-tap.sh' as shown in the net-tools README
+at:
 
-    https://gerrit.zephyrproject.org/r/gitweb?p=net-tools.git;a=blob;f=README
+    https://github.com/zephyrproject-rtos/net-tools
 
 
 Open a terminal where the project was build (i.e. :file:`samples/net/dns_resolve`) and type:

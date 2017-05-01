@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_rtc.h
   * @author  MCD Application Team
-  * @version V1.0.4
-  * @date    29-April-2016
+  * @version V1.1.0
+  * @date    14-April-2017
   * @brief   Header file of RTC HAL module.
   ******************************************************************************
   * @attention
@@ -58,14 +58,14 @@
   * @{
   */
 
-#define IS_RTC_ASYNCH_PREDIV(PREDIV)  (((PREDIV) <= (uint32_t)0xFFFFF) || ((PREDIV) == RTC_AUTO_1_SECOND))
-#define IS_RTC_HOUR24(HOUR)           ((HOUR) <= (uint32_t)23)
-#define IS_RTC_MINUTES(MINUTES)       ((MINUTES) <= (uint32_t)59)
-#define IS_RTC_SECONDS(SECONDS)       ((SECONDS) <= (uint32_t)59)
+#define IS_RTC_ASYNCH_PREDIV(PREDIV)  (((PREDIV) <= 0xFFFFFU) || ((PREDIV) == RTC_AUTO_1_SECOND))
+#define IS_RTC_HOUR24(HOUR)           ((HOUR) <= 23U)
+#define IS_RTC_MINUTES(MINUTES)       ((MINUTES) <= 59U)
+#define IS_RTC_SECONDS(SECONDS)       ((SECONDS) <= 59U)
 #define IS_RTC_FORMAT(FORMAT)         (((FORMAT) == RTC_FORMAT_BIN) || ((FORMAT) == RTC_FORMAT_BCD))
-#define IS_RTC_YEAR(YEAR)             ((YEAR) <= (uint32_t)99)
-#define IS_RTC_MONTH(MONTH)           (((MONTH) >= (uint32_t)1) && ((MONTH) <= (uint32_t)12))
-#define IS_RTC_DATE(DATE)             (((DATE) >= (uint32_t)1) && ((DATE) <= (uint32_t)31))
+#define IS_RTC_YEAR(YEAR)             ((YEAR) <= 99U)
+#define IS_RTC_MONTH(MONTH)           (((MONTH) >= 1U) && ((MONTH) <= 12U))
+#define IS_RTC_DATE(DATE)             (((DATE) >= 1U) && ((DATE) <= 31U))
 #define IS_RTC_ALARM(ALARM)           ((ALARM) == RTC_ALARM_A)
 #define IS_RTC_CALIB_OUTPUT(__OUTPUT__) (((__OUTPUT__) == RTC_OUTPUTSOURCE_NONE) || \
                                          ((__OUTPUT__) == RTC_OUTPUTSOURCE_CALIBCLOCK) || \
@@ -83,7 +83,7 @@
 /** @defgroup RTC_Timeout_Value Default Timeout Value
   * @{
   */ 
-#define RTC_TIMEOUT_VALUE           1000
+#define RTC_TIMEOUT_VALUE           1000U
 /**
   * @}
   */  
@@ -137,11 +137,11 @@ typedef struct
   */ 
 typedef enum
 {
-  HAL_RTC_STATE_RESET             = 0x00,  /*!< RTC not yet initialized or disabled */
-  HAL_RTC_STATE_READY             = 0x01,  /*!< RTC initialized and ready for use   */
-  HAL_RTC_STATE_BUSY              = 0x02,  /*!< RTC process is ongoing              */     
-  HAL_RTC_STATE_TIMEOUT           = 0x03,  /*!< RTC timeout state                   */  
-  HAL_RTC_STATE_ERROR             = 0x04   /*!< RTC error state                     */      
+  HAL_RTC_STATE_RESET             = 0x00U,  /*!< RTC not yet initialized or disabled */
+  HAL_RTC_STATE_READY             = 0x01U,  /*!< RTC initialized and ready for use   */
+  HAL_RTC_STATE_BUSY              = 0x02U,  /*!< RTC process is ongoing              */     
+  HAL_RTC_STATE_TIMEOUT           = 0x03U,  /*!< RTC timeout state                   */  
+  HAL_RTC_STATE_ERROR             = 0x04U   /*!< RTC error state                     */      
                                                                         
 }HAL_RTCStateTypeDef;
 
@@ -207,7 +207,7 @@ typedef struct
 /** @defgroup RTC_Automatic_Prediv_1_Second Automatic calculation of prediv for 1sec timebase
   * @{
   */ 
-#define RTC_AUTO_1_SECOND                      ((uint32_t)0xFFFFFFFF)
+#define RTC_AUTO_1_SECOND                      0xFFFFFFFFU
 
 /**
   * @}
@@ -216,8 +216,8 @@ typedef struct
 /** @defgroup RTC_Input_parameter_format_definitions Input Parameter Format
   * @{
   */ 
-#define RTC_FORMAT_BIN                      ((uint32_t)0x000000000)
-#define RTC_FORMAT_BCD                      ((uint32_t)0x000000001)
+#define RTC_FORMAT_BIN                         0x000000000U
+#define RTC_FORMAT_BCD                         0x000000001U
 
 /**
   * @}
@@ -263,7 +263,7 @@ typedef struct
 /** @defgroup RTC_Alarms_Definitions Alarms Definitions 
   * @{
   */ 
-#define RTC_ALARM_A          0                  /*!< Specify alarm ID (mainly for legacy purposes) */
+#define RTC_ALARM_A                        0U                                 /*!< Specify alarm ID (mainly for legacy purposes) */
 
 /**
   * @}
@@ -274,7 +274,7 @@ typedef struct
   * @{
   */
 
-#define RTC_OUTPUTSOURCE_NONE               ((uint32_t)0x00000000)            /*!< No output on the TAMPER pin  */
+#define RTC_OUTPUTSOURCE_NONE               0x00000000U                       /*!< No output on the TAMPER pin  */
 #define RTC_OUTPUTSOURCE_CALIBCLOCK         BKP_RTCCR_CCO                     /*!< RTC clock with a frequency divided by 64 on the TAMPER pin  */
 #define RTC_OUTPUTSOURCE_ALARM              BKP_RTCCR_ASOE                    /*!< Alarm pulse signal on the TAMPER pin  */
 #define RTC_OUTPUTSOURCE_SECOND             (BKP_RTCCR_ASOS | BKP_RTCCR_ASOE) /*!< Second pulse signal on the TAMPER pin  */
@@ -453,14 +453,22 @@ typedef struct
   * @brief  ALARM EXTI line configuration: set rising & falling edge trigger.
   * @retval None.
   */
-#define __HAL_RTC_ALARM_EXTI_ENABLE_RISING_FALLING_EDGE() __HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();__HAL_RTC_ALARM_EXTI_ENABLE_FALLING_EDGE();
+#define __HAL_RTC_ALARM_EXTI_ENABLE_RISING_FALLING_EDGE()      \
+do{                                                            \
+    __HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();                 \
+    __HAL_RTC_ALARM_EXTI_ENABLE_FALLING_EDGE();                \
+  } while(0U)
 
 /**
   * @brief Disable the ALARM Extended Interrupt Rising & Falling Trigger.
   * This parameter can be:
   * @retval None.
   */
-#define __HAL_RTC_ALARM_EXTI_DISABLE_RISING_FALLING_EDGE() __HAL_RTC_ALARM_EXTI_DISABLE_RISING_EDGE();__HAL_RTC_ALARM_EXTI_DISABLE_FALLING_EDGE()();
+#define __HAL_RTC_ALARM_EXTI_DISABLE_RISING_FALLING_EDGE()      \
+do{                                                             \
+    __HAL_RTC_ALARM_EXTI_DISABLE_RISING_EDGE();                 \
+    __HAL_RTC_ALARM_EXTI_DISABLE_FALLING_EDGE();                \
+  } while(0U)
 
 /**
   * @brief Check whether the specified ALARM EXTI interrupt flag is set or not.

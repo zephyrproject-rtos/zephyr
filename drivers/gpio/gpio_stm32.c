@@ -189,8 +189,7 @@ static int gpio_stm32_init(struct device *device)
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 
-#if defined(CONFIG_SOC_SERIES_STM32F4X) ||  \
-	defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
 #else
 	clock_control_on(clk, cfg->clock_subsys);
@@ -199,7 +198,7 @@ static int gpio_stm32_init(struct device *device)
 }
 
 
-#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
 static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
@@ -219,9 +218,8 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 
 #else
 
-#ifndef CONFIG_SOC_SERIES_STM32F4X
-
-/* TODO: Change F1 to work similarly to F4 */
+/* TODO: This case only applies to F1 family */
+/* To be removed when migrated to LL clock control driver */
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __clock) \
 static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
 	.base = (u32_t *)__base_addr,				\
@@ -238,24 +236,7 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
 		    &gpio_stm32_driver);
 
-#else /* CONFIG_SOC_SERIES_STM32F4X */
 
-#define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr)	\
-static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-	.base = (u32_t *)__base_addr,				\
-	.port = __port,							\
-	.pclken = { .bus = STM32F4X_CLOCK_BUS_AHB1, .enr = __cenr },	\
-};									\
-static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
-DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
-		    __name,						\
-		    gpio_stm32_init,					\
-		    &gpio_stm32_data_## __suffix,			\
-		    &gpio_stm32_cfg_## __suffix,			\
-		    POST_KERNEL,					\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
-		    &gpio_stm32_driver);
-#endif
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
@@ -264,17 +245,13 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 			 GPIO##__SUFFIX##_BASE, STM32_PORT##__SUFFIX,	\
 			 STM32_PERIPH_GPIO##__SUFFIX,			\
 			 STM32_CLOCK_BUS_GPIO)
-#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+#else
+	/* TODO: Clean once F1 series moved to LL Clock control */
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
 	GPIO_DEVICE_INIT("GPIO" #__SUFFIX, __suffix,			\
 			 GPIO##__SUFFIX##_BASE, STM32_PORT##__SUFFIX,	\
 			 STM32F10X_CLOCK_SUBSYS_IOP##__SUFFIX |		\
 			 STM32F10X_CLOCK_SUBSYS_AFIO)
-#elif defined(CONFIG_SOC_SERIES_STM32F4X)
-#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
-	GPIO_DEVICE_INIT("GPIO" #__SUFFIX, __suffix,			\
-			 GPIO##__SUFFIX##_BASE, STM32_PORT##__SUFFIX,	\
-			 STM32F4X_CLOCK_ENABLE_GPIO##__SUFFIX)
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 #ifdef CONFIG_GPIO_STM32_PORTA

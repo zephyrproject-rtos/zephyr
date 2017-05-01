@@ -22,11 +22,7 @@ struct pwm_stm32_config {
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	struct stm32_pclken pclken;
 #else
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
 	clock_control_subsys_t clock_subsys;
-#elif defined(CONFIG_SOC_SERIES_STM32F4X)
-	struct stm32f4x_pclken pclken;
-#endif
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
