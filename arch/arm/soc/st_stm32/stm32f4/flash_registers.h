@@ -32,11 +32,11 @@ union __flash_acr {
 /* 3.8.7 Embedded flash registers */
 struct stm32f4x_flash {
 	volatile union __flash_acr acr;
-	volatile u32_t key;
-	volatile u32_t optkey;
-	volatile u32_t status;
-	volatile u32_t ctrl;
-	volatile u32_t optctrl;
+	volatile u32_t keyr;
+	volatile u32_t optkeyr;
+	volatile u32_t sr;
+	volatile u32_t cr;
+	volatile u32_t optcr;
 };
 
 #endif	/* _STM32F4X_FLASHREGISTERS_H_ */
