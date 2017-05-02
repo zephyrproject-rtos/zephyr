@@ -94,31 +94,41 @@ void radio_aa_set(u8_t *aa)
 	NRF_RADIO->BASE0 = (aa[2] << 24) | (aa[1] << 16) | (aa[0] << 8);
 }
 
-void radio_pkt_configure(u8_t preamble16, u8_t bits_len, u8_t max_len)
+void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 {
-#if defined(CONFIG_SOC_SERIES_NRF51X)
-	ARG_UNUSED(preamble16);
+	u8_t p16 = (flags >> 1) & 0x01; /* 16-bit preamble */
+	u8_t dc = flags & 0x01; /* Adv or Data channel */
+	u32_t extra;
 
-	if (bits_len == 8) {
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+	ARG_UNUSED(p16);
+
+	extra = 0;
+
+	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
+	if (dc) {
 		bits_len = 5;
 	}
-#endif
+#else /* !CONFIG_SOC_SERIES_NRF51X */
+	extra = (((p16) ? RADIO_PCNF0_PLEN_16bit : RADIO_PCNF0_PLEN_8bit) <<
+		 RADIO_PCNF0_PLEN_Pos) & RADIO_PCNF0_PLEN_Msk;
 
-	NRF_RADIO->PCNF0 = ((((1UL) << RADIO_PCNF0_S0LEN_Pos) &
-			     RADIO_PCNF0_S0LEN_Msk) |
-			     ((((u32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) &
-			       RADIO_PCNF0_LFLEN_Msk) |
-#if !defined(CONFIG_SOC_SERIES_NRF51X)
-			     (((RADIO_PCNF0_S1INCL_Include) <<
-			       RADIO_PCNF0_S1INCL_Pos) &
-			       RADIO_PCNF0_S1INCL_Msk) |
-			     ((((preamble16) ? RADIO_PCNF0_PLEN_16bit :
-			       RADIO_PCNF0_PLEN_8bit) << RADIO_PCNF0_PLEN_Pos) &
-			       RADIO_PCNF0_PLEN_Msk) |
-#endif
-			     ((((u32_t)8-bits_len) <<
-			       RADIO_PCNF0_S1LEN_Pos) &
-			       RADIO_PCNF0_S1LEN_Msk));
+	/* To use same Data Channel PDU structure with nRF5 specific overhead
+	 * byte, include the S1 field in radio packet configuration.
+	 */
+	if (dc) {
+		extra |= (RADIO_PCNF0_S1INCL_Include <<
+			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
+	}
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
+
+	NRF_RADIO->PCNF0 = (((1UL) << RADIO_PCNF0_S0LEN_Pos) &
+			    RADIO_PCNF0_S0LEN_Msk) |
+			   ((((u32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) &
+			    RADIO_PCNF0_LFLEN_Msk) |
+			   ((((u32_t)8-bits_len) << RADIO_PCNF0_S1LEN_Pos) &
+			    RADIO_PCNF0_S1LEN_Msk) |
+			   extra;
 
 	NRF_RADIO->PCNF1 = (((((u32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) &
 			     RADIO_PCNF1_MAXLEN_Msk) |
@@ -261,9 +271,8 @@ u32_t radio_rssi_is_ready(void)
 	return NRF_RADIO->EVENTS_RSSIEND;
 }
 
-void radio_filter_configure(u8_t bitmask_enable,
-				u8_t bitmask_addr_type,
-				u8_t *bdaddr)
+void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
+			    u8_t *bdaddr)
 {
 	u8_t index;
 

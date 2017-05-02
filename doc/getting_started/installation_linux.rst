@@ -100,7 +100,7 @@ Follow these steps to install the SDK on your Linux host system.
 
    .. code-block:: console
 
-      $ wget https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/0.9/zephyr-sdk-0.9-setup.run
+      $ wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9/zephyr-sdk-0.9-setup.run
 
 #. Run the installation binary, follow this example:
 

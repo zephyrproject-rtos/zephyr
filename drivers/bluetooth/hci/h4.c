@@ -42,15 +42,15 @@ static struct {
 	struct net_buf *buf;
 	struct k_fifo   fifo;
 
-	u16_t remaining;
-	u16_t discard;
+	u16_t    remaining;
+	u16_t    discard;
 
 	bool     have_hdr;
 	bool     discardable;
 
-	u8_t  hdr_len;
+	u8_t     hdr_len;
 
-	u8_t  type;
+	u8_t     type;
 	union {
 		struct bt_hci_evt_hdr evt;
 		struct bt_hci_acl_hdr acl;

@@ -16,8 +16,7 @@
 #define MROUND(x) (((u32_t)(x)+3) & (~((u32_t)3)))
 #endif
 
-void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
-	      void **mem_head);
+void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count, void **mem_head);
 void *mem_acquire(void **mem_head);
 void mem_release(void *mem, void **mem_head);
 

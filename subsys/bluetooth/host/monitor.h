@@ -65,7 +65,7 @@ struct bt_monitor_new_index {
 	u8_t  type;
 	u8_t  bus;
 	u8_t  bdaddr[6];
-	char     name[8];
+	char  name[8];
 } __packed;
 
 struct bt_monitor_user_logging {

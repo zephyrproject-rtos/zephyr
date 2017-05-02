@@ -30,13 +30,13 @@ struct shdr {
 struct connection {
 	struct shdr hdr;
 
-	u8_t access_addr[4];
-	u8_t crc_init[3];
-	u8_t data_chan_map[5];
+	u8_t  access_addr[4];
+	u8_t  crc_init[3];
+	u8_t  data_chan_map[5];
 
-	u8_t data_chan_count:6;
-	u8_t data_chan_sel:1;
-	u8_t rfu:1;
+	u8_t  data_chan_count:6;
+	u8_t  data_chan_sel:1;
+	u8_t  rfu:1;
 
 	union {
 		struct {
@@ -74,13 +74,13 @@ struct connection {
 
 	union {
 		struct {
-			u8_t role:1;
-			u8_t connect_expire;
+			u8_t  role:1;
+			u8_t  connect_expire;
 		} master;
 		struct {
-			u8_t role:1;
-			u8_t sca:3;
-			u8_t latency_cancel:1;
+			u8_t  role:1;
+			u8_t  sca:3;
+			u8_t  latency_cancel:1;
 			u32_t window_widening_periodic_us;
 			u32_t window_widening_max_us;
 			u32_t window_widening_prepare_us;
@@ -92,15 +92,15 @@ struct connection {
 		} slave;
 	} role;
 
-	u8_t llcp_req;
-	u8_t llcp_ack;
-	enum llcp llcp_type;
+	u8_t  llcp_req;
+	u8_t  llcp_ack;
+	enum  llcp llcp_type;
 	union {
 		struct {
 			u16_t interval;
 			u16_t latency;
 			u16_t timeout;
-			u8_t preferred_periodicity;
+			u8_t  preferred_periodicity;
 			u16_t instant;
 			u16_t offset0;
 			u16_t offset1;
@@ -112,8 +112,8 @@ struct connection {
 			u32_t ticks_to_offset_next;
 			u32_t win_offset_us;
 			u16_t *pdu_win_offset;
-			u8_t win_size;
-			u8_t state:3;
+			u8_t  win_size;
+			u8_t  state:3;
 #define LLCP_CONN_STATE_INPROG    0	/* master + slave proc in progress
 					 * until instant
 					 */
@@ -124,37 +124,37 @@ struct connection {
 #define LLCP_CONN_STATE_RSP_WAIT  5	/* master rsp or slave conn_update
 					 * or rej
 					 */
-			u8_t is_internal:2;
+			u8_t  is_internal:2;
 		} connection_update;
 		struct {
-			u8_t initiate;
-			u8_t chm[5];
+			u8_t  initiate;
+			u8_t  chm[5];
 			u16_t instant;
 		} chan_map;
 		struct {
-			u8_t error_code;
-			u8_t rand[8];
-			u8_t ediv[2];
-			u8_t ltk[16];
-			u8_t skd[16];
+			u8_t  error_code;
+			u8_t  rand[8];
+			u8_t  ediv[2];
+			u8_t  ltk[16];
+			u8_t  skd[16];
 		} encryption;
 	} llcp;
 
 	u32_t llcp_features;
 
 	struct {
-		u8_t tx:1;
-		u8_t rx:1;
-		u8_t version_number;
+		u8_t  tx:1;
+		u8_t  rx:1;
+		u8_t  version_number;
 		u16_t company_id;
 		u16_t sub_version_number;
 	} llcp_version;
 
 	struct {
-		u8_t req;
-		u8_t ack;
-		u8_t reason_own;
-		u8_t reason_peer;
+		u8_t  req;
+		u8_t  ack;
+		u8_t  reason_own;
+		u8_t  reason_peer;
 		struct {
 			struct radio_pdu_node_rx_hdr hdr;
 			u8_t reason;
@@ -163,9 +163,9 @@ struct connection {
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	struct {
-		u8_t req;
-		u8_t ack;
-		u8_t state:2;
+		u8_t  req;
+		u8_t  ack;
+		u8_t  state:2;
 #define LLCP_LENGTH_STATE_REQ        0
 #define LLCP_LENGTH_STATE_ACK_WAIT   1
 #define LLCP_LENGTH_STATE_RSP_WAIT   2
@@ -175,14 +175,14 @@ struct connection {
 	} llcp_length;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
-	u8_t sn:1;
-	u8_t nesn:1;
-	u8_t pause_rx:1;
-	u8_t pause_tx:1;
-	u8_t enc_rx:1;
-	u8_t enc_tx:1;
-	u8_t refresh:1;
-	u8_t empty:1;
+	u8_t  sn:1;
+	u8_t  nesn:1;
+	u8_t  pause_rx:1;
+	u8_t  pause_tx:1;
+	u8_t  enc_rx:1;
+	u8_t  enc_tx:1;
+	u8_t  refresh:1;
+	u8_t  empty:1;
 
 	struct ccm ccm_rx;
 	struct ccm ccm_tx;
@@ -191,19 +191,19 @@ struct connection {
 	struct radio_pdu_node_tx *pkt_tx_ctrl;
 	struct radio_pdu_node_tx *pkt_tx_data;
 	struct radio_pdu_node_tx *pkt_tx_last;
-	u8_t packet_tx_head_len;
-	u8_t packet_tx_head_offset;
+	u8_t  packet_tx_head_len;
+	u8_t  packet_tx_head_offset;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
-	u8_t rssi_latest;
-	u8_t rssi_reported;
-	u8_t rssi_sample_count;
+	u8_t  rssi_latest;
+	u8_t  rssi_reported;
+	u8_t  rssi_sample_count;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 };
 #define CONNECTION_T_SIZE MROUND(sizeof(struct connection))
 
 struct pdu_data_q_tx {
-	u16_t handle;
+	u16_t  handle;
 	struct radio_pdu_node_tx *node_tx;
 };
 
