@@ -42,6 +42,7 @@
 						BT_GATT_PERM_WRITE_ENCRYPT)
 #define BT_GATT_PERM_AUTHEN_MASK		(BT_GATT_PERM_READ_AUTHEN | \
 						BT_GATT_PERM_WRITE_AUTHEN)
+#define ATT_CMD_MASK				0x40
 
 #define ATT_TIMEOUT				K_SECONDS(30)
 
@@ -446,7 +447,7 @@ static u8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 static u8_t att_find_info_rsp(struct bt_att *att, u16_t start_handle,
-				 u16_t end_handle)
+			      u16_t end_handle)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct find_info_data data;
@@ -565,8 +566,8 @@ static u8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 static u8_t att_find_type_rsp(struct bt_att *att, u16_t start_handle,
-				 u16_t end_handle, const void *value,
-				 u8_t value_len)
+			      u16_t end_handle, const void *value,
+			      u8_t value_len)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct find_type_data data;
@@ -657,7 +658,7 @@ static bool uuid_create(struct bt_uuid *uuid, struct net_buf *buf)
 }
 
 static u8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			  u8_t mask)
+		       u8_t mask)
 {
 	if ((mask & BT_GATT_PERM_READ) &&
 	    (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read)) {
@@ -780,7 +781,7 @@ static u8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 static u8_t att_read_type_rsp(struct bt_att *att, struct bt_uuid *uuid,
-				 u16_t start_handle, u16_t end_handle)
+			      u16_t start_handle, u16_t end_handle)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct read_type_data data;
@@ -898,8 +899,8 @@ static u8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static u8_t att_read_rsp(struct bt_att *att, u8_t op, u8_t rsp,
-			    u16_t handle, u16_t offset)
+static u8_t att_read_rsp(struct bt_att *att, u8_t op, u8_t rsp, u16_t handle,
+			 u16_t offset)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct read_data data;
@@ -1082,7 +1083,7 @@ static u8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 static u8_t att_read_group_rsp(struct bt_att *att, struct bt_uuid *uuid,
-				  u16_t start_handle, u16_t end_handle)
+			       u16_t start_handle, u16_t end_handle)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct read_group_data data;
@@ -1205,8 +1206,8 @@ static u8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 static u8_t att_write_rsp(struct bt_conn *conn, u8_t op, u8_t rsp,
-			     u16_t handle, u16_t offset,
-			     const void *value, u8_t len)
+			  u16_t handle, u16_t offset, const void *value,
+			  u8_t len)
 {
 	struct write_data data;
 
@@ -1319,9 +1320,8 @@ static u8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static u8_t att_prep_write_rsp(struct bt_att *att, u16_t handle,
-				  u16_t offset, const void *value,
-				  u8_t len)
+static u8_t att_prep_write_rsp(struct bt_att *att, u16_t handle, u16_t offset,
+			       const void *value, u8_t len)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct prep_data data;
@@ -1592,56 +1592,49 @@ done:
 	return att_handle_rsp(att, NULL, 0, err);
 }
 
-static u8_t att_handle_find_info_rsp(struct bt_att *att,
-					struct net_buf *buf)
+static u8_t att_handle_find_info_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static u8_t att_handle_find_type_rsp(struct bt_att *att,
-					struct net_buf *buf)
+static u8_t att_handle_find_type_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static u8_t att_handle_read_type_rsp(struct bt_att *att,
-					struct net_buf *buf)
+static u8_t att_handle_read_type_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static u8_t att_handle_read_rsp(struct bt_att *att,
-				   struct net_buf *buf)
+static u8_t att_handle_read_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static u8_t att_handle_read_blob_rsp(struct bt_att *att,
-					struct net_buf *buf)
+static u8_t att_handle_read_blob_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static u8_t att_handle_read_mult_rsp(struct bt_att *att,
-					struct net_buf *buf)
+static u8_t att_handle_read_mult_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static u8_t att_handle_write_rsp(struct bt_att *att,
-				    struct net_buf *buf)
+static u8_t att_handle_write_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
@@ -1649,15 +1642,14 @@ static u8_t att_handle_write_rsp(struct bt_att *att,
 }
 
 static u8_t att_handle_prepare_write_rsp(struct bt_att *att,
-					    struct net_buf *buf)
+					 struct net_buf *buf)
 {
 	BT_DBG("");
 
 	return att_handle_rsp(att, buf->data, buf->len, 0);
 }
 
-static u8_t att_handle_exec_write_rsp(struct bt_att *att,
-					 struct net_buf *buf)
+static u8_t att_handle_exec_write_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
 
@@ -1707,10 +1699,10 @@ static u8_t att_confirm(struct bt_att *att, struct net_buf *buf)
 }
 
 static const struct att_handler {
-	u8_t    op;
-	u8_t    expect_len;
+	u8_t       op;
+	u8_t       expect_len;
 	att_type_t type;
-	u8_t    (*func)(struct bt_att *att, struct net_buf *buf);
+	u8_t       (*func)(struct bt_att *att, struct net_buf *buf);
 } handlers[] = {
 	{ BT_ATT_OP_ERROR_RSP,
 		sizeof(struct bt_att_error_rsp),
@@ -1834,6 +1826,10 @@ static att_type_t att_op_get_type(u8_t op)
 		}
 	}
 
+	if (op & ATT_CMD_MASK) {
+		return ATT_COMMAND;
+	}
+
 	return ATT_UNKNOWN;
 }
 
@@ -1863,6 +1859,10 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!handler) {
 		BT_WARN("Unknown ATT code 0x%02x", hdr->code);
+		if (att_op_get_type(hdr->code) != ATT_COMMAND) {
+			send_err_rsp(chan->conn, hdr->code, 0,
+				     BT_ATT_ERR_NOT_SUPPORTED);
+		}
 		return;
 	}
 

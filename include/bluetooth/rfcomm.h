@@ -90,10 +90,10 @@ struct bt_rfcomm_dlc {
 	bt_security_t              required_sec_level;
 	bt_rfcomm_role_t           role;
 
-	u16_t                   mtu;
-	u8_t                    dlci;
-	u8_t                    state;
-	u8_t                    rx_credit;
+	u16_t                      mtu;
+	u8_t                       dlci;
+	u8_t                       state;
+	u8_t                       rx_credit;
 
 	/* Stack for TX fiber */
 	BT_STACK(stack, 256);

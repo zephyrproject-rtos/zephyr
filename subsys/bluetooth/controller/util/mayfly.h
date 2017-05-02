@@ -26,11 +26,10 @@ struct mayfly {
 void mayfly_init(void);
 void mayfly_enable(u8_t caller_id, u8_t callee_id, u8_t enable);
 u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
-			struct mayfly *m);
+		     struct mayfly *m);
 void mayfly_run(u8_t callee_id);
 
-extern void mayfly_enable_cb(u8_t caller_id, u8_t callee_id,
-			     u8_t enable);
+extern void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable);
 extern u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id);
 extern u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id);
 extern void mayfly_pend(u8_t caller_id, u8_t callee_id);

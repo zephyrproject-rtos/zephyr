@@ -22,7 +22,7 @@ Much of this document comes from the `CII best practices`_ document.
 .. _CII best practices: https://github.com/linuxfoundation/cii-best-practices-badge
 
 Introduction and Scope
-======================
+**********************
 
 This document covers guidelines for the `Zephyr Project`_, from a
 security perspective.  Many of the ideas contained herein are captured
@@ -52,7 +52,7 @@ Finally, the document covers how changes are to be made to this
 document.
 
 Secure Coding Guidelines
-========================
+************************
 
 Designing an open software system such as Zephyr to be secure requires
 adhering to a defined set of design standards. In [SALT75]_, the following,
@@ -131,10 +131,10 @@ specific to the development of a secure RTOS:
   shall be denied.
 
 Secure development knowledge
-============================
+****************************
 
 Secure designer
----------------
+===============
 
 The Zephyr project must have at least one primary developer who knows
 how to design secure software.
@@ -186,7 +186,7 @@ including the 8 principles from `Saltzer and Schroeder`_:
   values), not blacklists (which attempt to list known-bad values)).
 
 Vulnerability Knowledge
------------------------
+=======================
 
 A "primary developer" in a project is anyone who is familiar with the
 project's code base, is comfortable making changes to it, and is
@@ -218,7 +218,7 @@ scripting, missing authentication, and missing authorization. See the
 .. _OWASP Top 10: https://www.owasp.org/index.php/Category:OWASP_Top_Ten_Project
 
 Security Subcommittee
----------------------
+=====================
 
 There shall be a “security subcommittee”, responsible for
 enforcing this guideline, monitoring reviews, and improving these
@@ -227,7 +227,7 @@ guidelines.
 This team will be established according to the Zephyr Project charter.
 
 Code Review
-===========
+***********
 
 The Zephyr project shall use a code review system that all changes are
 required to go through.  Each change shall be reviewed by at least one
@@ -240,7 +240,7 @@ shall have the ability to block the change from being merged into the
 mainline code until the security issues have been addressed.
 
 Issues and Bug Tracking
-=======================
+***********************
 
 The Zephyr project shall have an issue tracking system (such as JIRA_)
 that can be used to record and track defects that are found in the
@@ -270,7 +270,7 @@ the review team should avoid unnecessary delay in lifting issues that
 have been resolved.
 
 Modifications to This Document
-==============================
+******************************
 
 Changes to this document shall be reviewed by the security committee,
 and approved by consensus.

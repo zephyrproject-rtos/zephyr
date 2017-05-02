@@ -5,6 +5,8 @@ import re
 import os
 import xml.etree.ElementTree as ET
 
+DOCS_WARNING_FILE = "doc.warnings"
+
 commit_range = os.environ['COMMIT_RANGE']
 cwd = os.environ['ZEPHYR_BASE']
 
@@ -37,17 +39,28 @@ def run_checkpatch(tc):
     except subprocess.CalledProcessError as ex:
         m = re.search("([1-9][0-9]*) errors,", str(ex.output))
         if m:
-            failure = ET.SubElement(tc, 'failure', type="failure", message="check patch issues")
+            failure = ET.SubElement(tc, 'failure', type="failure", message="checkpatch issues")
             failure.text = (str(ex.output))
             return 1
 
     return 0
 
 
+def check_doc(tc):
+
+    if os.path.exists(DOCS_WARNING_FILE) and os.path.getsize(DOCS_WARNING_FILE) > 0:
+        with open(DOCS_WARNING_FILE, "r") as f:
+            log = f.read()
+            failure = ET.SubElement(tc, 'failure', type="failure",
+                        message="documentation issues")
+            failure.text = (str(log))
+        return 1
+
+    return 0
 
 
 
-tests = {"gitlint":run_gitlint, "checkpatch":run_checkpatch}
+tests = { "gitlint":run_gitlint, "checkpatch":run_checkpatch, "documentation":check_doc }
 
 def run_tests():
     run = "Commit"
