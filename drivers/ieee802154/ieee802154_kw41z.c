@@ -412,6 +412,7 @@ static void kw41z_isr(int unused)
 
 		if (state == KW41Z_STATE_CCA &&
 		    !(irqsts & ZLL_IRQSTS_CCA_MASK)) {
+			kw41z_set_seq_state(KW41Z_STATE_IDLE);
 			atomic_set(&kw41z_context_data.seq_retval, 0);
 			restart_rx = 0;
 		} else {
@@ -453,8 +454,7 @@ static void kw41z_isr(int unused)
 			kw41z_tmr2_disable();
 		case KW41Z_STATE_TX:
 			SYS_LOG_DBG("TX seq done");
-			if ((ZLL->PHY_CTRL & ZLL_PHY_CTRL_CCABFRTX_MASK) &&
-			    (irqsts & ZLL_IRQSTS_CCA_MASK)) {
+			if (irqsts & ZLL_IRQSTS_CCA_MASK) {
 				atomic_set(&kw41z_context_data.seq_retval,
 					   -EBUSY);
 			} else {
