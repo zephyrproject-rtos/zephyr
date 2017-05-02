@@ -35,29 +35,29 @@ union __ef_acr {
 
 /*  FLASH register map */
 struct stm32l4x_flash {
-	union __ef_acr acr;
-	u32_t pdkeyr;
-	u32_t keyr;
-	u32_t optkeyr;
-	u32_t sr;
-	u32_t cr;
-	u32_t eccr;
-	u32_t rsvd_0;
-	u32_t optr;
-	u32_t pcrop1sr;
-	u32_t pcrop1er;
-	u32_t wrp1ar;
-	u32_t wrp1br;
-	u32_t rsvd_2[4];
+	volatile union __ef_acr acr;
+	volatile u32_t pdkeyr;
+	volatile u32_t keyr;
+	volatile u32_t optkeyr;
+	volatile u32_t sr;
+	volatile u32_t cr;
+	volatile u32_t eccr;
+	volatile u32_t rsvd_0;
+	volatile u32_t optr;
+	volatile u32_t pcrop1sr;
+	volatile u32_t pcrop1er;
+	volatile u32_t wrp1ar;
+	volatile u32_t wrp1br;
+	volatile u32_t rsvd_2[4];
 
 	/*
 	 * The registers below are only present on STM32L4x2, STM32L4x5,
 	 * STM32L4x6.
 	 */
-	u32_t pcrop2sr;
-	u32_t pcrop2er;
-	u32_t wrp2ar;
-	u32_t wrp2br;
+	volatile u32_t pcrop2sr;
+	volatile u32_t pcrop2er;
+	volatile u32_t wrp2ar;
+	volatile u32_t wrp2br;
 };
 
 #endif	/* _STM32L4X_FLASH_REGISTERS_H_ */

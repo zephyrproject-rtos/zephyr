@@ -148,4 +148,4 @@ config SOC_FLASH_MCUX_DEV_NAME
 	help
 	  Specify the device name for the flash driver.
 
-source "drivers/flash/Kconfig.stm32fxx"
+source "drivers/flash/Kconfig.stm32"
