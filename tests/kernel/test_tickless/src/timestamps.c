@@ -237,7 +237,7 @@ void _TimestampClose(void)
 	_TIMESTAMP_CTRL = 0x0;  /* disable oscillator */
 }
 
-#elif defined(CONFIG_SOC_ATMEL_SAM3)
+#elif defined(CONFIG_SOC_SERIES_SAM3)
 /* Atmel SAM3 family processor - use RTT (Real-time Timer) */
 
 #include <soc.h>

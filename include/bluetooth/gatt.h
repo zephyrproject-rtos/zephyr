@@ -134,7 +134,7 @@ struct bt_gatt_attr {
 	/** Attribute user data */
 	void			*user_data;
 	/** Attribute handle */
-	u16_t		handle;
+	u16_t			handle;
 	/** Attribute permissions */
 	u8_t			perm;
 #if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
@@ -147,7 +147,7 @@ struct bt_gatt_service {
 	/** Service UUID. */
 	const struct bt_uuid	*uuid;
 	/** Service end handle. */
-	u16_t		end_handle;
+	u16_t			end_handle;
 };
 
 /** @brief Include Attribute Value. */
@@ -155,9 +155,9 @@ struct bt_gatt_include {
 	/** Service UUID. */
 	const struct bt_uuid	*uuid;
 	/** Service start handle. */
-	u16_t		start_handle;
+	u16_t			start_handle;
 	/** Service end handle. */
-	u16_t		end_handle;
+	u16_t			end_handle;
 };
 
 /* Characteristic Properties Bit field values */
@@ -783,8 +783,8 @@ struct bt_gatt_discover_params;
  *  or BT_GATT_ITER_STOP to stop discovery procedure.
  */
 typedef u8_t (*bt_gatt_discover_func_t)(struct bt_conn *conn,
-					   const struct bt_gatt_attr *attr,
-					   struct bt_gatt_discover_params *params);
+					const struct bt_gatt_attr *attr,
+					struct bt_gatt_discover_params *params);
 
 enum {
 	BT_GATT_DISCOVER_PRIMARY,
@@ -859,8 +859,8 @@ struct bt_gatt_read_params;
  *  @param length Attribute value length.
  */
 typedef u8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, u8_t err,
-				       struct bt_gatt_read_params *params,
-				       const void *data, u16_t length);
+				    struct bt_gatt_read_params *params,
+				    const void *data, u16_t length);
 
 /** @brief GATT Read parameters
  *  @param func Read attribute callback
@@ -908,7 +908,7 @@ struct bt_gatt_write_params;
  *  @param params Write parameters used.
  */
 typedef void (*bt_gatt_write_func_t)(struct bt_conn *conn, u8_t err,
-					struct bt_gatt_write_params *params);
+				     struct bt_gatt_write_params *params);
 
 /** @brief GATT Write parameters */
 struct bt_gatt_write_params {
@@ -968,8 +968,8 @@ struct bt_gatt_subscribe_params;
  *  @param length Attribute value length.
  */
 typedef u8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
-					 struct bt_gatt_subscribe_params *params,
-					 const void *data, u16_t length);
+				      struct bt_gatt_subscribe_params *params,
+				      const void *data, u16_t length);
 
 /* Subscription flags */
 enum {

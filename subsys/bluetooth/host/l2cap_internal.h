@@ -198,8 +198,7 @@ struct bt_l2cap_le_credits {
 struct bt_l2cap_fixed_chan {
 	u16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
-
-	sys_snode_t		node;
+	sys_snode_t	node;
 };
 
 /* Register a fixed L2CAP channel for L2CAP */
