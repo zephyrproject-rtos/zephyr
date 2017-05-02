@@ -8,7 +8,7 @@
 
 menuconfig GPIO_ATMEL_SAM3
 	bool "Atmel SAM3 PIO Controllers"
-	depends on GPIO && SOC_ATMEL_SAM3
+	depends on GPIO && SOC_SERIES_SAM3X
 	default n
 	help
 	  Enable config options to support the PIO controllers

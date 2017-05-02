@@ -56,24 +56,21 @@ struct bt_dev_le {
 	/* LE features */
 	u8_t			features[1][8];
 	/* LE states */
-	u64_t                states;
+	u64_t			states;
 
 #if defined(CONFIG_BLUETOOTH_CONN)
 	/* Controller buffer information */
-	u16_t		mtu;
+	u16_t			mtu;
 	struct k_sem		pkts;
 #endif /* CONFIG_BLUETOOTH_CONN */
 };
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
-struct bt_dev_esco {
-	u16_t                pkt_type;
-};
-
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
-	u16_t		mtu;
-	struct k_sem		pkts;
+	u16_t         mtu;
+	struct k_sem  pkts;
+	u16_t         esco_pkt_type;
 };
 #endif
 
@@ -88,9 +85,9 @@ struct bt_dev {
 	/* Controller version & manufacturer information */
 	u8_t			hci_version;
 	u8_t			lmp_version;
-	u16_t		hci_revision;
-	u16_t		lmp_subversion;
-	u16_t		manufacturer;
+	u16_t			hci_revision;
+	u16_t			lmp_subversion;
+	u16_t			manufacturer;
 
 	/* LMP features (pages 0, 1, 2) */
 	u8_t			features[LMP_FEAT_PAGES_COUNT][8];
@@ -108,7 +105,6 @@ struct bt_dev {
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	/* BR/EDR controller specific features */
 	struct bt_dev_br	br;
-	struct bt_dev_esco      esco;
 #endif
 
 	/* Number of commands controller can accept */
