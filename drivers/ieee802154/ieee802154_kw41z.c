@@ -254,7 +254,6 @@ static int kw41z_set_txpower(struct device *dev, int16_t dbm)
 
 static int kw41z_start(struct device *dev)
 {
-	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TRCV_MSK_MASK;
 	irq_enable(Radio_1_IRQn);
 
 	kw41z_set_seq_state(KW41Z_STATE_RX);
@@ -266,7 +265,6 @@ static int kw41z_start(struct device *dev)
 static int kw41z_stop(struct device *dev)
 {
 	irq_disable(Radio_1_IRQn);
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TRCV_MSK_MASK;
 
 	kw41z_disable_seq_irq();
 	kw41z_set_seq_state(KW41Z_STATE_IDLE);
@@ -526,8 +524,7 @@ static int kw41z_init(struct device *dev)
 			ZLL_PHY_CTRL_CCAMSK_MASK		|
 			ZLL_PHY_CTRL_RXMSK_MASK			|
 			ZLL_PHY_CTRL_TXMSK_MASK			|
-			ZLL_PHY_CTRL_SEQMSK_MASK		|
-			ZLL_PHY_CTRL_TRCV_MSK_MASK;
+			ZLL_PHY_CTRL_SEQMSK_MASK;
 #if KW41Z_AUTOACK_ENABLED
 	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_AUTOACK_MASK;
 #endif
@@ -592,6 +589,9 @@ static int kw41z_init(struct device *dev)
 
 	/* Set default channel to 2405 MHZ */
 	kw41z_set_channel(dev, KW41Z_DEFAULT_CHANNEL);
+
+	/* Unmask Transceiver Global Interrupts */
+	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TRCV_MSK_MASK;
 
 	/* Configre Radio IRQ */
 	NVIC_ClearPendingIRQ(Radio_1_IRQn);
