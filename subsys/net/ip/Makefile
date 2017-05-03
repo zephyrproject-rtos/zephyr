@@ -20,6 +20,7 @@ obj-$(CONFIG_NET_MGMT_EVENT) += net_mgmt.o
 obj-$(CONFIG_NET_TCP) += tcp.o
 obj-$(CONFIG_NET_SHELL) += net_shell.o
 obj-$(CONFIG_NET_STATISTICS) += net_stats.o
+obj-$(CONFIG_NET_MGMT_WIFI) += wifi_mgmt.o
 
 ifeq ($(CONFIG_NET_UDP),y)
 	obj-$(CONFIG_NET_UDP) += connection.o
