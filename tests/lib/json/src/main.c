@@ -171,6 +171,91 @@ static void test_json_key_not_in_descr(void)
 	zassert_equal(ret, 0, "No items should be decoded");
 }
 
+static void test_json_escape(void)
+{
+	char buf[42];
+	char string[] = "\"abc"
+			"\\1`23"
+			"\bf'oo"
+			"\fbar"
+			"\nbaz"
+			"\rquux"
+			"\tfred\"";
+	const char *expected = "\\\"abc"
+			       "\\\\1`23"
+			       "\\bf'oo"
+			       "\\fbar"
+			       "\\nbaz"
+			       "\\rquux"
+			       "\\tfred\\\"";
+	size_t len;
+	ssize_t ret;
+
+	strncpy(buf, string, sizeof(buf) - 1);
+	len = strlen(buf);
+
+	ret = json_escape(buf, &len, sizeof(buf));
+	zassert_equal(ret, 0, "Escape succeeded");
+	zassert_equal(len, sizeof(buf) - 1,
+		      "Escaped length computed correctly");
+	zassert_true(!strcmp(buf, expected),
+		     "Escaped value is correct");
+}
+
+/* Edge case: only one character, which must be escaped. */
+static void test_json_escape_one(void)
+{
+	char buf[3] = {'\t', '\0', '\0'};
+	const char *expected = "\\t";
+	size_t len = strlen(buf);
+	ssize_t ret;
+
+	ret = json_escape(buf, &len, sizeof(buf));
+	zassert_equal(ret, 0,
+		      "Escaping one character succeded");
+	zassert_equal(len, sizeof(buf) - 1,
+		      "Escaping one character length is correct");
+	zassert_true(!strcmp(buf, expected),
+		     "Escaped value is correct");
+}
+
+static void test_json_escape_empty(void)
+{
+	char empty[] = "";
+	size_t len = sizeof(empty) - 1;
+	ssize_t ret;
+
+	ret = json_escape(empty, &len, sizeof(empty));
+	zassert_equal(ret, 0, "Escaped empty string");
+	zassert_equal(len, 0, "Length of empty escaped string is zero");
+	zassert_equal(empty[0], '\0', "Empty string remains empty");
+}
+
+static void test_json_escape_no_op(void)
+{
+	char nothing_to_escape[] = "hello,world:!";
+	const char *expected = "hello,world:!";
+	size_t len = sizeof(nothing_to_escape) - 1;
+	ssize_t ret;
+
+	ret = json_escape(nothing_to_escape, &len, sizeof(nothing_to_escape));
+	zassert_equal(ret, 0, "Nothing to escape handled correctly");
+	zassert_equal(len, sizeof(nothing_to_escape) - 1,
+		      "Didn't change length of already escaped string");
+	zassert_true(!strcmp(nothing_to_escape, expected),
+		     "Didn't alter string with nothing to escape");
+}
+
+static void test_json_escape_bounds_check(void)
+{
+	char not_enough_memory[] = "\tfoo";
+	size_t len = sizeof(not_enough_memory) - 1;
+	ssize_t ret;
+
+	ret = json_escape(not_enough_memory, &len, sizeof(not_enough_memory));
+	zassert_equal(ret, -ENOMEM, "Bounds check OK");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(lib_json_test,
@@ -180,7 +265,12 @@ void test_main(void)
 			 ztest_unit_test(test_json_missing_quote),
 			 ztest_unit_test(test_json_wrong_token),
 			 ztest_unit_test(test_json_item_wrong_type),
-			 ztest_unit_test(test_json_key_not_in_descr)
+			 ztest_unit_test(test_json_key_not_in_descr),
+			 ztest_unit_test(test_json_escape),
+			 ztest_unit_test(test_json_escape_one),
+			 ztest_unit_test(test_json_escape_empty),
+			 ztest_unit_test(test_json_escape_no_op),
+			 ztest_unit_test(test_json_escape_bounds_check)
 			 );
 
 	ztest_run_test_suite(lib_json_test);
