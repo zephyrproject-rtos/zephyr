@@ -1163,6 +1163,8 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		    s32_t timeout)
 {
 	struct net_buf *frag;
+	struct net_context *ctx;
+	size_t max_len;
 
 	if (!pkt || !data) {
 		return 0;
@@ -1175,6 +1177,40 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		}
 
 		net_pkt_frag_add(pkt, frag);
+	}
+
+	/* Make sure we don't send more data in one packet than
+	 * MTU allows.
+	 * This check really belongs to net_pkt_append_bytes(),
+	 * but instead done here for efficiency, we assume
+	 * (at least for now) that that callers of
+	 * net_pkt_append_bytes() are smart enough to not
+	 * overflow MTU.
+	 */
+	max_len = 0x10000;
+
+	ctx = net_pkt_context(pkt);
+	if (ctx) {
+#if defined(CONFIG_NET_TCP)
+		if (ctx->tcp) {
+			max_len = ctx->tcp->send_mss;
+		} else
+#endif
+		{
+			struct net_if *iface = net_context_get_iface(ctx);
+			max_len = net_if_get_mtu(iface);
+			/* Optimize for number of jumps in the code ("if"
+			 * instead of "if/else").
+			 */
+			max_len -= NET_IPV4TCPH_LEN;
+			if (net_context_get_family(ctx) != AF_INET) {
+				max_len -= NET_IPV6TCPH_LEN - NET_IPV4TCPH_LEN;
+			}
+		}
+	}
+
+	if (len > max_len) {
+		len = max_len;
 	}
 
 	return net_pkt_append_bytes(pkt, data, len, timeout);
