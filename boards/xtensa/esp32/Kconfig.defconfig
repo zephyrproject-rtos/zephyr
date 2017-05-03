@@ -1,0 +1,11 @@
+# Kconfig - ESP32 board configuration
+#
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32
+
+config BOARD
+	default esp32
+
+endif # BOARD_ESP32
