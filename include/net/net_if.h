@@ -429,6 +429,12 @@ static inline enum net_verdict net_if_recv_data(struct net_if *iface,
 static inline u16_t net_if_get_ll_reserve(struct net_if *iface,
 					  const struct in6_addr *dst_ip6)
 {
+#if defined(CONFIG_NET_OFFLOAD)
+	if (iface->if_dev->offload) {
+		return 0;
+	}
+#endif
+
 	return net_if_l2(iface)->reserve(iface, (void *)dst_ip6);
 }
 
@@ -1598,6 +1604,21 @@ struct net_if_api {
 		}							\
 	}
 
+#define NET_IF_OFFLOAD_INIT(dev_name, sfx, _mtu)			\
+	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx)) __used \
+	__attribute__((__section__(".net_if_dev.data"))) = {		\
+		.dev = &(__device_##dev_name),				\
+		.mtu = _mtu,						\
+	};								\
+	static struct net_if						\
+	(NET_IF_GET_NAME(dev_name, sfx))[NET_IF_MAX_CONFIGS] __used	\
+	__attribute__((__section__(".net_if.data"))) = {		\
+		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
+			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
+			NET_IF_CONFIG_INIT				\
+		}							\
+	}
+
 /* Network device initialization macros */
 
 #define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
@@ -1607,6 +1628,13 @@ struct net_if_api {
 			    cfg_info, POST_KERNEL, prio, api);	\
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
+
+#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,	\
+				data, cfg_info, prio, api, mtu)	\
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
+			    cfg_info, POST_KERNEL, prio, api);	\
+	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
+
 
 /**
  * If your network device needs more than one instance of a network interface,
