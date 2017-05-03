@@ -77,7 +77,28 @@
  *
  */
 
+.macro read_tsc var_name
+	push %eax
+	push %edx
+	rdtsc
+	mov %eax,\var_name
+	mov %edx,\var_name+4
+	pop %edx
+	pop %eax
+.endm
 SECTION_FUNC(TEXT, __swap)
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	/* Save the eax and edx registers before reading the time stamp
+	* once done pop the values.
+	*/
+	push %eax
+	push %edx
+	rdtsc
+	mov %eax,__start_swap_tsc
+	mov %edx,__start_swap_tsc+4
+	pop %edx
+	pop %eax
+#endif
 #ifdef CONFIG_X86_IAMCU
 	/* save EFLAGS on stack right before return address, just as SYSV would
 	 * have done
@@ -335,5 +356,16 @@ skipIntLatencyStop:
 	 */
 	popl	%edx
 	movl	%edx, (%esp)
+#endif
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	/* Save the eax and edx registers before reading the time stamp
+	* once done pop the values.
+	*/
+	cmp $0x1,__read_swap_end_tsc_value
+	jne time_read_not_needed
+	movw $0x2,__read_swap_end_tsc_value
+	read_tsc __common_var_swap_end_tsc
+time_read_not_needed:
 #endif
 	ret

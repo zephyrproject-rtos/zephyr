@@ -691,7 +691,7 @@ int net_context_sendto(struct net_pkt *pkt,
  * called. The callback is called even if timeout was set to K_FOREVER,
  * the callback is called before this function will return in this case.
  * The callback is not called if the timeout expires. The timeout functionality
- * can be compiled out if synchronous behaviour is not needed. The sync call
+ * can be compiled out if synchronous behavior is not needed. The sync call
  * logic requires some memory that can be saved if only async way of call is
  * used. If CONFIG_NET_CONTEXT_SYNC_RECV is not set, then the timeout parameter
  * value is ignored.

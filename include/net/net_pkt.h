@@ -775,7 +775,7 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 void net_pkt_frag_add(struct net_pkt *pkt, struct net_buf *frag);
 
 /**
- * @brief Insert a fragment to a packet at the beginning of its framgment list
+ * @brief Insert a fragment to a packet at the beginning of its fragment list
  *
  * @param pkt pkt Network packet where to insert the fragment
  * @param frag Fragment to insert
@@ -989,7 +989,7 @@ static inline bool net_pkt_append_le32(struct net_pkt *pkt, u32_t data)
  * @brief Get data from buffer
  *
  * @details Get N number of bytes starting from fragment's offset. If the total
- * length of data is placed in multiple framgents, this function will read from
+ * length of data is placed in multiple fragments, this function will read from
  * all fragments until it reaches N number of bytes. Caller has to take care of
  * endianness if needed.
  *
@@ -1011,7 +1011,7 @@ struct net_buf *net_frag_read(struct net_buf *frag, u16_t offset,
  * @brief Skip N number of bytes while reading buffer
  *
  * @details Skip N number of bytes starting from fragment's offset. If the total
- * length of data is placed in multiple framgents, this function will skip from
+ * length of data is placed in multiple fragments, this function will skip from
  * all fragments until it reaches N number of bytes. This function is useful
  * when unwanted data (e.g. reserved or not supported data in message) is part
  * of fragment and want to skip it.
@@ -1280,7 +1280,7 @@ int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
 		  struct net_buf **fragB, s32_t timeout);
 
 /**
- * @brief Get information about pre-defined RX, TX and DATA pools.
+ * @brief Get information about predefined RX, TX and DATA pools.
  *
  * @param rx Pointer to RX pool is returned.
  * @param tx Pointer to TX pool is returned.

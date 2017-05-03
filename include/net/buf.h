@@ -226,7 +226,7 @@ void net_buf_simple_push_u8(struct net_buf_simple *buf, u8_t val);
 /**
  *  @brief Remove data from the beginning of the buffer.
  *
- *  Removes data from the beginnig of the buffer by modifying the data
+ *  Removes data from the beginning of the buffer by modifying the data
  *  pointer and buffer length.
  *
  *  @param buf Buffer to update.
@@ -826,7 +826,7 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @def net_buf_pull
  *  @brief Remove data from the beginning of the buffer.
  *
- *  Removes data from the beginnig of the buffer by modifying the data
+ *  Removes data from the beginning of the buffer by modifying the data
  *  pointer and buffer length.
  *
  *  @param buf Buffer to update.
