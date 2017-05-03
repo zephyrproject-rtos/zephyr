@@ -74,7 +74,7 @@ extern int ieee802154_radio_send(struct net_if *iface,
  * @brief Radio driver ACK handling function that hw drivers should use
  *
  * @details ACK handling requires fast handling and thus such function
- *          helps to hook direcly the hw drivers to the radio driver.
+ *          helps to hook directly the hw drivers to the radio driver.
  *
  * @param iface A valid pointer on a network interface that received the packet
  * @param pkt A valid pointer on a packet to check

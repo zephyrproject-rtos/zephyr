@@ -1139,7 +1139,7 @@ extern s64_t k_uptime_get(void);
 /**
  * @brief Enable clock always on in tickless kernel
  *
- * This routine enables keepng the clock running when
+ * This routine enables keeping the clock running when
  * there are no timer events programmed in tickless kernel
  * scheduling. This is necessary if the clock is used to track
  * passage of time.
@@ -1159,7 +1159,7 @@ static inline int k_enable_sys_clock_always_on(void)
 /**
  * @brief Disable clock always on in tickless kernel
  *
- * This routine disables keepng the clock running when
+ * This routine disables keeping the clock running when
  * there are no timer events programmed in tickless kernel
  * scheduling. To save power, this routine should be called
  * immediately when clock is not used to track time.
