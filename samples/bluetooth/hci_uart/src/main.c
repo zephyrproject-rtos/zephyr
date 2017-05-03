@@ -317,7 +317,7 @@ static int hci_uart_init(struct device *unused)
 	SYS_LOG_DBG("");
 
 	hci_uart_dev =
-		device_get_binding(CONFIG_BLUETOOTH_UART_TO_HOST_DEV_NAME);
+		device_get_binding(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME);
 	if (!hci_uart_dev) {
 		return -EINVAL;
 	}
