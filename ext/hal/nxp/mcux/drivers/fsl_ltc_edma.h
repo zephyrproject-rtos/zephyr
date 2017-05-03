@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -45,25 +45,25 @@
  * Definitions
  ******************************************************************************/
 
-/* @brief The LTC EDMA handle type. */
+/* @brief The LTC eDMA handle type. */
 typedef struct _ltc_edma_handle ltc_edma_handle_t;
 
-/*! @brief LTC EDMA callback function. */
+/*! @brief LTC eDMA callback function. */
 typedef void (*ltc_edma_callback_t)(LTC_Type *base, ltc_edma_handle_t *handle, status_t status, void *userData);
 
-/*! @brief LTC EDMA state machine function. It is defined only for private usage inside LTC EDMA driver. */
+/*! @brief LTC eDMA state machine function. It is defined only for private usage inside LTC eDMA driver. */
 typedef status_t (*ltc_edma_state_machine_t)(LTC_Type *base, ltc_edma_handle_t *handle);
 
 /*!
-* @brief LTC EDMA handle. It is defined only for private usage inside LTC EDMA driver.
+* @brief LTC eDMA handle. It is defined only for private usage inside LTC eDMA driver.
 */
 struct _ltc_edma_handle
 {
     ltc_edma_callback_t callback; /*!< Callback function. */
     void *userData;               /*!< LTC callback function parameter.*/
 
-    edma_handle_t *inputFifoEdmaHandle;  /*!< The EDMA TX channel used. */
-    edma_handle_t *outputFifoEdmaHandle; /*!< The EDMA RX channel used. */
+    edma_handle_t *inputFifoEdmaHandle;  /*!< The eDMA TX channel used. */
+    edma_handle_t *outputFifoEdmaHandle; /*!< The eDMA RX channel used. */
 
     ltc_edma_state_machine_t state_machine; /*!< State machine. */
     uint32_t state;                         /*!< Internal state. */
@@ -92,13 +92,13 @@ extern "C" {
 #endif
 
 /*!
- * @brief Init the LTC EDMA handle which is used in transcational functions
+ * @brief Init the LTC eDMA handle which is used in transcational functions
  * @param base      LTC module base address
  * @param handle    Pointer to ltc_edma_handle_t structure
  * @param callback  Callback function, NULL means no callback.
  * @param userData  Callback function parameter.
- * @param inputFifoEdmaHandle User requested EDMA handle for Input FIFO EDMA.
- * @param outputFifoEdmaHandle User requested EDMA handle for Output FIFO EDMA.
+ * @param inputFifoEdmaHandle User requested eDMA handle for Input FIFO eDMA.
+ * @param outputFifoEdmaHandle User requested eDMA handle for Output FIFO eDMA.
  */
 void LTC_CreateHandleEDMA(LTC_Type *base,
                           ltc_edma_handle_t *handle,
