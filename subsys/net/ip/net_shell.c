@@ -140,7 +140,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 #endif
 
 #ifdef CONFIG_NET_OFFLOAD
-	if (iface->l2 == &NET_L2_GET_NAME(OFFLOAD_IP)) {
+	if (iface->offload) {
 		if (extra) {
 			*extra = "==========";
 		}
