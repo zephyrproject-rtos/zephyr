@@ -79,11 +79,6 @@ NET_L2_DECLARE_PUBLIC(IEEE802154_L2);
 #define BLUETOOTH_L2_CTX_TYPE	void*
 #endif /* CONFIG_NET_L2_BLUETOOTH */
 
-#ifdef CONFIG_NET_OFFLOAD
-#define OFFLOAD_IP_L2		OFFLOAD_IP
-#define OFFLOAD_IP_L2_CTX_TYPE	void*
-#endif /* CONFIG_NET_OFFLOAD */
-
 extern struct net_l2 __net_l2_end[];
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn, _enable_fn)	\
