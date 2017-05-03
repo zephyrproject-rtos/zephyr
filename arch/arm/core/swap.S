@@ -177,6 +177,23 @@ _thread_irq_disabled:
 
     msr PSP, ip
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+#if defined(CONFIG_ARMV6_M)
+    push {r3}
+#endif
+    push {lr}
+
+    bl read_systick_end_of_swap
+
+#if defined(CONFIG_ARMV6_M)
+    pop {r3}
+    mov lr,r3
+    pop {r3}
+#else
+    pop {lr}
+#endif
+#endif
+
     /* exc return */
     bx lr
 
@@ -292,6 +309,20 @@ _oops:
 
 SECTION_FUNC(TEXT, __swap)
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+#if defined(CONFIG_ARMV6_M)
+    push {r3}
+#endif
+    push {lr}
+    bl read_systick_start_of_swap
+#if defined(CONFIG_ARMV6_M)
+    pop {r3}
+    mov lr,r3
+    pop {r3}
+#else
+    pop {lr}
+#endif
+#endif
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
     str r0, [r2, #_thread_offset_to_basepri]
