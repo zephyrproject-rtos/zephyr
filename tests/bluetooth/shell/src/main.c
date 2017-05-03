@@ -48,7 +48,8 @@ static bt_addr_le_t id_addr;
 static struct bt_conn *pairing_conn;
 
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-NET_BUF_POOL_DEFINE(data_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_DEFINE(data_tx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_DEFINE(data_rx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
 #endif
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -2055,7 +2056,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	printk("Channel %p requires buffer\n", chan);
 
-	return net_buf_alloc(&data_pool, K_FOREVER);
+	return net_buf_alloc(&data_rx_pool, K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops l2cap_ops = {
@@ -2172,7 +2173,7 @@ static int cmd_l2cap_send(int argc, char *argv[])
 	len = min(l2cap_chan.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
 
 	while (count--) {
-		buf = net_buf_alloc(&data_pool, K_FOREVER);
+		buf = net_buf_alloc(&data_tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
