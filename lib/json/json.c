@@ -640,49 +640,6 @@ static int json_escape_internal(const char *str,
 	return ret;
 }
 
-struct appender {
-	char *buffer;
-	size_t used;
-	size_t size;
-};
-
-static int append_bytes_to_buf(const u8_t *bytes, size_t len, void *data)
-{
-	struct appender *appender = data;
-
-	if (len > appender->size - appender->used) {
-		return -ENOMEM;
-	}
-
-	memcpy(appender->buffer + appender->used, bytes, len);
-	appender->used += len;
-	appender->buffer[appender->used] = '\0';
-
-	return 0;
-}
-
-static int json_escape_buf(char *str, size_t *len, size_t buf_size)
-{
-	char tmp_buf[buf_size + 1];
-	struct appender appender = { .buffer = tmp_buf, .size = buf_size };
-	int ret;
-
-	ret = json_escape_internal(str, append_bytes_to_buf, &appender);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = append_bytes_to_buf("", 1, &appender);
-	if (!ret) {
-		memcpy(str, tmp_buf, appender.size);
-		if (len) {
-			*len = appender.size;
-		}
-	}
-
-	return ret;
-}
-
 size_t json_calc_escaped_len(const char *str, size_t len)
 {
 	size_t escaped_len = len;
@@ -699,13 +656,13 @@ size_t json_calc_escaped_len(const char *str, size_t len)
 
 ssize_t json_escape(char *str, size_t *len, size_t buf_size)
 {
-	size_t escaped_len;
-
-	escaped_len = json_calc_escaped_len(str, *len);
+	char *next; /* Points after next character to escape. */
+	char *dest; /* Points after next place to write escaped character. */
+	size_t escaped_len = json_calc_escaped_len(str, *len);
 
 	if (escaped_len == *len) {
-		/* If no escape is necessary, don't bother using up temporary
-		 * stack space to copy the string.
+		/*
+		 * If no escape is necessary, there is nothing to do.
 		 */
 		return 0;
 	}
@@ -714,7 +671,27 @@ ssize_t json_escape(char *str, size_t *len, size_t buf_size)
 		return -ENOMEM;
 	}
 
-	return json_escape_buf(str, len, escaped_len);
+	/*
+	 * By walking backwards in the buffer from the end positions
+	 * of both the original and escaped strings, we avoid using
+	 * extra space. Characters in the original string are
+	 * overwritten only after they have already been escaped.
+	 */
+	str[escaped_len] = '\0';
+	for (next = &str[*len], dest = &str[escaped_len]; next != str;) {
+		char next_c = *(--next);
+		char escape = escape_as(next_c);
+
+		if (escape) {
+			*(--dest) = escape;
+			*(--dest) = '\\';
+		} else {
+			*(--dest) = next_c;
+		}
+	}
+	*len = escaped_len;
+
+	return 0;
 }
 
 static int encode(const struct json_obj_descr *descr, const void *val,
@@ -879,6 +856,27 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	}
 
 	return append_bytes("", 1, data);
+}
+
+struct appender {
+	char *buffer;
+	size_t used;
+	size_t size;
+};
+
+static int append_bytes_to_buf(const u8_t *bytes, size_t len, void *data)
+{
+	struct appender *appender = data;
+
+	if (len > appender->size - appender->used) {
+		return -ENOMEM;
+	}
+
+	memcpy(appender->buffer + appender->used, bytes, len);
+	appender->used += len;
+	appender->buffer[appender->used] = '\0';
+
+	return 0;
 }
 
 int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
