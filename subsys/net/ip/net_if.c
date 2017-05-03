@@ -344,7 +344,7 @@ struct net_if *net_if_get_default(void)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 #endif
 #if defined(CONFIG_NET_DEFAULT_IF_OFFLOAD)
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OFFLOAD_IP));
+	iface = net_if_get_first_by_type(NULL);
 #endif
 
 	return iface ? iface : __net_if_start;
@@ -355,6 +355,12 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+#if defined(CONFIG_NET_OFFLOAD)
+		if (!l2 && iface->if_dev->offload) {
+			return iface;
+		}
+#endif
+
 		if (net_if_l2(iface) == l2) {
 			return iface;
 		}
