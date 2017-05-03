@@ -30,8 +30,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef _NRF51822_PERIPHERALS_H
-#define _NRF51822_PERIPHERALS_H
+#ifndef _NRF51801_PERIPHERALS_H
+#define _NRF51801_PERIPHERALS_H
 
 
 /* Software Interrupts */
@@ -111,6 +111,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #define SPI_PRESENT
 #define SPI_COUNT 2
 
+/* Serial Peripheral Interface Master with DMA */
+#define SPIM_PRESENT
+#define SPIM_COUNT 1
+
 /* Serial Peripheral Interface Slave with DMA */
 #define SPIS_PRESENT
 #define SPIS_COUNT 1
@@ -144,4 +148,4 @@ POSSIBILITY OF SUCH DAMAGE.
 #define LPCOMP_REFSEL_RESOLUTION 8
 
 
-#endif      // _NRF51822_PERIPHERALS_H
+#endif      // _NRF51801_PERIPHERALS_H

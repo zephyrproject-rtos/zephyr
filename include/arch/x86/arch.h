@@ -440,7 +440,7 @@ extern void	_arch_irq_disable(unsigned int irq);
  * by _Swap() it will either inherit an FPU that is guaranteed to be in a "sane"
  * state (if the most recent user of the FPU was cooperatively swapped out)
  * or the thread's own floating point context will be loaded (if the most
- * recent user of the FPU was pre-empted, or if this thread is the first user
+ * recent user of the FPU was preempted, or if this thread is the first user
  * of the FPU). Thereafter, the kernel will protect the thread's FP context
  * so that it is not altered during a preemptive context switch.
  *

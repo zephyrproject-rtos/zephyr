@@ -277,7 +277,7 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data,
  * @brief set callback function for the specified endpoint
  *
  * Function to set callback function for notification of data received and
- * available to application or trasmit done on the selected endpoint,
+ * available to application or transmit done on the selected endpoint,
  * NULL if callback not required by application code.
  *
  * @param[in] ep Endpoint address corresponding to the one
@@ -291,7 +291,7 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb);
 /**
  * @brief read data from the specified endpoint
  *
- * This is similar to usb_dc_ep_read, the difference being that, it doesnt
+ * This is similar to usb_dc_ep_read, the difference being that, it doesn't
  * clear the endpoint NAKs so that the consumer is not bogged down by further
  * upcalls till he is done with the processing of the data. The caller should
  * reactivate ep by invoking usb_dc_ep_read_continue() do so.
@@ -316,7 +316,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
  * Clear the endpoint NAK and enable the endpoint to accept more data
  * from the host. Usually called after usb_dc_ep_read_wait() when the consumer
  * is fine to accept more data. Thus these calls together acts as flow control
- * meachanism.
+ * mechanism.
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table

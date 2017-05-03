@@ -472,7 +472,7 @@ struct bt_sdp_client_result {
 };
 
 /** @brief Helper enum to be used as return value of bt_sdp_discover_func_t.
- *  The value informs the caller to perform futher pending actions or stop them.
+ *  The value informs the caller to perform further pending actions or stop them.
  */
 enum {
 	BT_SDP_DISCOVER_UUID_STOP = 0,
@@ -483,7 +483,7 @@ enum {
  *
  *  @brief Callback type reporting to user that there is a resolved result
  *  on remote for given UUID and the result record buffer can be used by user
- *  for futher inspection.
+ *  for further inspection.
  *
  *  A function of this type is given by the user to the bt_sdp_discover_params
  *  object. It'll be called on each valid record discovery completion for given
