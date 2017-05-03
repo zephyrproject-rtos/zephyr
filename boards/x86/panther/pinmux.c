@@ -113,7 +113,7 @@ static void _pinmux_defaults(u32_t base)
 	PIN_CONFIG(mux_config,  9, PINMUX_FUNC_C);
 	PIN_CONFIG(mux_config, 16, PINMUX_FUNC_C);
 	PIN_CONFIG(mux_config, 17, PINMUX_FUNC_C);
-	PIN_CONFIG(mux_config, 33, PINMUX_FUNC_A);
+	PIN_CONFIG(mux_config, 33, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 40, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 41, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config, 42, PINMUX_FUNC_B);
