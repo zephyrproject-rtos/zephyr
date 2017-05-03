@@ -46,7 +46,7 @@ config I2C_QMSI
 
 config I2C_ATMEL_SAM3
 	bool "Atmel SAM3 I2C Driver"
-	depends on SOC_ATMEL_SAM3
+	depends on SOC_SERIES_SAM3X
 	default n
 	help
 	  Enable I2C support on the Atmel SAM3 family processor.

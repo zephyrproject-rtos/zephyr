@@ -2,7 +2,7 @@ menuconfig UART_ATMEL_SAM3
 	bool "Atmel SAM3 family processor UART driver"
 	default n
 	select SERIAL_HAS_DRIVER
-	depends on SOC_ATMEL_SAM3
+	depends on SOC_SERIES_SAM3
 	help
 	This option enables the UART driver for Atmel SAM3
 	family processors. Note that there is only one
