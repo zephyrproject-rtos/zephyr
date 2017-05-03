@@ -30,6 +30,15 @@ endchoice
 
 comment "BLE Controller configuration"
 
+config BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME
+	string "Device Name of UART Device to an external Bluetooth Host"
+	default "UART_0"
+	depends on BLUETOOTH_HCI_RAW
+	help
+	  This option specifies the name of UART device to be used
+	  to connect to an external Bluetooth Host when Zephyr is
+	  acting as a Bluetooth Controller.
+
 config BLUETOOTH_CONTROLLER_TO_HOST_FC
 	bool "Controller to Host Flow Control"
 	depends on BLUETOOTH_CONN
