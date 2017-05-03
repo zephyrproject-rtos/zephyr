@@ -6440,6 +6440,21 @@ static struct pdu_data *empty_tx_enqueue(struct connection *conn)
 	return pdu_data_tx;
 }
 
+static void ctrl_tx_enqueue_tail(struct connection *conn,
+			    struct radio_pdu_node_tx *node_tx)
+{
+	struct radio_pdu_node_tx *p;
+
+	/* TODO: optimise by having a ctrl_last member. */
+	p = conn->pkt_tx_ctrl;
+	while (p->next != conn->pkt_tx_data) {
+		p = p->next;
+	}
+
+	node_tx->next = p->next;
+	p->next = node_tx;
+}
+
 static void ctrl_tx_enqueue(struct connection *conn,
 			    struct radio_pdu_node_tx *node_tx)
 {
@@ -6468,16 +6483,12 @@ static void ctrl_tx_enqueue(struct connection *conn,
 		/* if no ctrl packet already queued, new ctrl added will be
 		 * the ctrl pointer and is inserted after head.
 		 */
-		if (conn->pkt_tx_ctrl == 0) {
+		if (!conn->pkt_tx_ctrl) {
 			node_tx->next = conn->pkt_tx_head->next;
 			conn->pkt_tx_head->next = node_tx;
 			conn->pkt_tx_ctrl = node_tx;
 		} else {
-			/* TODO support for more than 2 pending ctrl packets. */
-			LL_ASSERT(conn->pkt_tx_ctrl->next == conn->pkt_tx_data);
-
-			node_tx->next = conn->pkt_tx_ctrl->next;
-			conn->pkt_tx_ctrl->next = node_tx;
+			ctrl_tx_enqueue_tail(conn, node_tx);
 		}
 	} else {
 		/* No packet needing ACK. */
@@ -6490,11 +6501,7 @@ static void ctrl_tx_enqueue(struct connection *conn,
 			conn->pkt_tx_head = node_tx;
 			conn->pkt_tx_ctrl = node_tx;
 		} else {
-			/* TODO support for more than 2 pending ctrl packets. */
-			LL_ASSERT(conn->pkt_tx_ctrl->next == conn->pkt_tx_data);
-
-			node_tx->next = conn->pkt_tx_ctrl->next;
-			conn->pkt_tx_ctrl->next = node_tx;
+			ctrl_tx_enqueue_tail(conn, node_tx);
 		}
 	}
 
