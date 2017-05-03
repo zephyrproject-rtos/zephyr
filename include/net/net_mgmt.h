@@ -199,7 +199,7 @@ void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface);
  *        has bit NET_MGMT_IFACE_BIT set relevantly, depending on events
  *        the caller wants to listen to.
  * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
- *        undefinitely.
+ *        indefinitely.
  *
  * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
  *         be specifically returned if the timeout kick-in instead of an
@@ -220,7 +220,7 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
  *        the mask generated the event. Can be NULL if the caller is not
  *        interested in that information.
  * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
- *        undefinitely.
+ *        indefinitely.
  *
  * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
  *         be specifically returned if the timeout kick-in instead of an

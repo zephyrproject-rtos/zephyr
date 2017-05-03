@@ -118,7 +118,7 @@ struct bt_le_adv_param {
 	/** Maximum Advertising Interval (N * 0.625) */
 	u16_t interval_max;
 
-	/** Optional pre-defined (random) own address. Currently
+	/** Optional predefined (random) own address. Currently
 	 *  the only permitted use of this is for NRPA with
 	 *  non-connectable advertising.
 	 */
@@ -179,7 +179,7 @@ int bt_le_adv_stop(void);
  *  @param addr Advertiser LE address and type.
  *  @param rssi Strength of advertiser signal.
  *  @param adv_type Type of advertising response from advertiser.
- *  @param data Buffer containig advertiser data.
+ *  @param data Buffer containing advertiser data.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, s8_t rssi,
 			     u8_t adv_type, struct net_buf_simple *buf);
