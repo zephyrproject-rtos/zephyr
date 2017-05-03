@@ -1,0 +1,62 @@
+# Kconfig - Atmel WINC1500 WiFi driver options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WIFI_WINC1500
+	bool "WINC1500 driver support"
+	default n
+	select ATMEL_WINC1500
+
+if WIFI_WINC1500
+
+config WIFI_WINC1500_NAME
+	string "Driver name"
+	default "WINC1500"
+
+config WIFI_WINC1500_SPI_DRV_NAME
+	string "SPI device where WINC1500 is connected"
+	default "SPI_1"
+	help
+	 Specify the device name of the SPI device to which WINC1500 is
+	 connected.
+
+config WIFI_WINC1500_SPI_SLAVE
+	int "SPI Slave Select where WINC1500 is connected"
+	default 1
+	help
+	 Specify the slave select pin of the SPI to which WINC1500 is
+	 connected.
+
+config WIFI_WINC1500_SPI_FREQ
+	int "SPI frequency to use with WINC1500"
+	default 4
+	help
+	 SPI frequency to use with WINC1500
+
+# TODO GPIO
+
+config WIFI_WINC1500_SSID
+	string "SSID the chip shall try to connect to"
+	default ""
+	help
+	 Set the SSID you want the chip to connect to. Note: only WPA PSK
+	 based AP is supported. Test purpose only, a full featured interface
+	 will be used at some point for more flexible configuration.
+
+config WIFI_WINC1500_SSID_LENGTH
+	int "Length of the SSID (do not count the \0)"
+	default 0
+	help
+	 SSID length, without counting the terminal character '\0'
+
+config WIFI_WINC1500_PSK
+	string "Pre-Shared Key (human readable)"
+	default ""
+	help
+	 Set the PSK for the given SSID.
+
+endif # WIFI_WINC1500
