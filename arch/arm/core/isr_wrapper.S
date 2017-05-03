@@ -43,6 +43,10 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 
 	push {lr}		/* lr is now the first item on the stack */
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	bl read_systick_start_of_isr
+#endif
+
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 	bl _sys_k_event_logger_interrupt
 #endif
@@ -105,6 +109,20 @@ _idle_state_cleared:
 			 * in thumb mode */
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+#if defined(CONFIG_ARMV6_M)
+	push {r3}
+#endif
+	push {lr}
+	bl read_systick_end_of_isr
+#if defined(CONFIG_ARMV6_M)
+	pop {r3}
+	mov lr,r3
+	pop {r3}
+#else
+	pop {lr}
+#endif
+#endif
 	blx r3		/* call ISR */
 
 #if defined(CONFIG_ARMV6_M)

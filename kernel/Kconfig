@@ -204,6 +204,16 @@ config INT_LATENCY_BENCHMARK
 	The metrics are displayed (and a new sampling interval is started)
 	each time int_latency_show() is called thereafter.
 
+config EXECUTION_BENCHMARKING
+	bool
+	prompt "Timing metrics "
+	default n
+	help
+	This option enables the tracking of various times inside the kernel
+	the exact set of metrics being tracked is board-dependent.
+	All timing measurements are enabled for X86 and ARM based architectures.
+	In other architectures only a subset are enabled.
+
 config THREAD_MONITOR
 	bool
 	prompt "Thread monitoring [EXPERIMENTAL]"
