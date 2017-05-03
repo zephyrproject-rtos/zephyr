@@ -196,7 +196,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 /** @brief Automatically connect to remote device if it's in range.
  *
  *  This function enables/disables automatic connection initiation.
- *  Everytime the device looses the connection with peer, this connection
+ *  Every time the device looses the connection with peer, this connection
  *  will be re-established if connectable advertisement from peer is received.
  *
  *  @param addr Remote Bluetooth address.
@@ -219,7 +219,7 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
  *  In case of high duty cycle this will result in a callback with
  *  connected() with a new connection or with an error.
  *
- *  The advertising may be cancelled with bt_conn_disconnect().
+ *  The advertising may be canceled with bt_conn_disconnect().
  *
  *  Returns a new reference that the the caller is responsible for managing.
  *
@@ -282,7 +282,7 @@ u8_t bt_conn_enc_key_size(struct bt_conn *conn);
  *
  *  This structure is used for tracking the state of a connection.
  *  It is registered with the help of the bt_conn_cb_register() API.
- *  It's premissible to register multiple instances of this @ref bt_conn_cb
+ *  It's permissible to register multiple instances of this @ref bt_conn_cb
  *  type, in case different modules of an application are interested in
  *  tracking the connection state. If a callback is not of interest for
  *  an instance, it may be set to NULL and will as a consequence not be

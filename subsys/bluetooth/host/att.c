@@ -42,6 +42,7 @@
 						BT_GATT_PERM_WRITE_ENCRYPT)
 #define BT_GATT_PERM_AUTHEN_MASK		(BT_GATT_PERM_READ_AUTHEN | \
 						BT_GATT_PERM_WRITE_AUTHEN)
+#define ATT_CMD_MASK				0x40
 
 #define ATT_TIMEOUT				K_SECONDS(30)
 
@@ -1825,6 +1826,10 @@ static att_type_t att_op_get_type(u8_t op)
 		}
 	}
 
+	if (op & ATT_CMD_MASK) {
+		return ATT_COMMAND;
+	}
+
 	return ATT_UNKNOWN;
 }
 
@@ -1854,6 +1859,10 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (!handler) {
 		BT_WARN("Unknown ATT code 0x%02x", hdr->code);
+		if (att_op_get_type(hdr->code) != ATT_COMMAND) {
+			send_err_rsp(chan->conn, hdr->code, 0,
+				     BT_ATT_ERR_NOT_SUPPORTED);
+		}
 		return;
 	}
 

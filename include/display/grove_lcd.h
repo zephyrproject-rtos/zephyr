@@ -50,7 +50,7 @@ void glcd_clear(struct device *port);
  *  @brief Function to change the display state.
  *  @details This function provides the user the ability to change the state
  *  of the display as per needed. Controlling things like powering on or off
- *  the screen, the option to display the cusror or not, and the ability to
+ *  the screen, the option to display the cursor or not, and the ability to
  *  blink the cursor.
  *
  *  @param port Pointer to device structure for driver instance.
@@ -129,9 +129,9 @@ u8_t glcd_function_get(struct device *port);
 #define GROVE_RGB_GREEN		2
 #define GROVE_RGB_BLUE		3
 /**
- *  @brief Set LCD background to a predfined color
+ *  @brief Set LCD background to a predefined color
  *  @param port Pointer to device structure for driver instance.
- *  @param color One of the pre-defined color options
+ *  @param color One of the predefined color options
  */
 void glcd_color_select(struct device *port, u8_t color);
 

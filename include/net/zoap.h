@@ -443,7 +443,7 @@ void zoap_pending_clear(struct zoap_pending *pending);
  * @brief Cancels awaiting for this reply, so it becomes available
  * again.
  *
- * @param reply The reply to be cancelled
+ * @param reply The reply to be canceled
  */
 void zoap_reply_clear(struct zoap_reply *reply);
 
@@ -511,7 +511,7 @@ int zoap_packet_set_used(struct zoap_packet *zpkt, u16_t len);
 /**
  * @brief Adds an option to the packet.
  *
- * Note: ptions must be added in numeric order of their codes.
+ * Note: options must be added in numeric order of their codes.
  *
  * @param zpkt Packet to be updated
  * @param code Option code to add to the packet, see #zoap_option_num

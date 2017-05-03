@@ -156,7 +156,7 @@ void syslog_hook_install(void (*hook)(const char *, ...));
  *
  * @details available if SYS_LOG_LEVEL is SYS_LOG_LEVEL_WARNING or higher.
  * It's meant to register messages related to unusual situations that are
- * not necesarily errors.
+ * not necessarily errors.
  *
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
