@@ -109,7 +109,7 @@
 #endif
 
 /**
- *  @brief Put a 16-bit intger as big-endian to arbitrary location.
+ *  @brief Put a 16-bit integer as big-endian to arbitrary location.
  *
  *  Put a 16-bit integer, originally in host endianness, to a
  *  potentially unaligned memory location in big-endian format.
@@ -124,7 +124,7 @@ static inline void sys_put_be16(u16_t val, u8_t dst[2])
 }
 
 /**
- *  @brief Put a 32-bit intger as big-endian to arbitrary location.
+ *  @brief Put a 32-bit integer as big-endian to arbitrary location.
  *
  *  Put a 32-bit integer, originally in host endianness, to a
  *  potentially unaligned memory location in big-endian format.
@@ -139,7 +139,7 @@ static inline void sys_put_be32(u32_t val, u8_t dst[4])
 }
 
 /**
- *  @brief Put a 16-bit intger as little-endian to arbitrary location.
+ *  @brief Put a 16-bit integer as little-endian to arbitrary location.
  *
  *  Put a 16-bit integer, originally in host endianness, to a
  *  potentially unaligned memory location in little-endian format.
@@ -154,7 +154,7 @@ static inline void sys_put_le16(u16_t val, u8_t dst[2])
 }
 
 /**
- *  @brief Put a 32-bit intger as little-endian to arbitrary location.
+ *  @brief Put a 32-bit integer as little-endian to arbitrary location.
  *
  *  Put a 32-bit integer, originally in host endianness, to a
  *  potentially unaligned memory location in little-endian format.
@@ -184,7 +184,7 @@ static inline void sys_put_le64(u64_t val, u8_t dst[8])
 }
 
 /**
- *  @brief Get a 16-bit intger stored in big-endian format.
+ *  @brief Get a 16-bit integer stored in big-endian format.
  *
  *  Get a 16-bit integer, stored in big-endian format in a potentially
  *  unaligned memory location, and convert it to the host endianness.
@@ -199,7 +199,7 @@ static inline u16_t sys_get_be16(const u8_t src[2])
 }
 
 /**
- *  @brief Get a 32-bit intger stored in big-endian format.
+ *  @brief Get a 32-bit integer stored in big-endian format.
  *
  *  Get a 32-bit integer, stored in big-endian format in a potentially
  *  unaligned memory location, and convert it to the host endianness.
@@ -214,7 +214,7 @@ static inline u32_t sys_get_be32(const u8_t src[4])
 }
 
 /**
- *  @brief Get a 16-bit intger stored in little-endian format.
+ *  @brief Get a 16-bit integer stored in little-endian format.
  *
  *  Get a 16-bit integer, stored in little-endian format in a potentially
  *  unaligned memory location, and convert it to the host endianness.
@@ -229,7 +229,7 @@ static inline u16_t sys_get_le16(const u8_t src[2])
 }
 
 /**
- *  @brief Get a 32-bit intger stored in little-endian format.
+ *  @brief Get a 32-bit integer stored in little-endian format.
  *
  *  Get a 32-bit integer, stored in little-endian format in a potentially
  *  unaligned memory location, and convert it to the host endianness.

@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-/* pre-defined event types */
+/* predefined event types */
 
 #define KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID             0x0001
 #define KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID                  0x0002

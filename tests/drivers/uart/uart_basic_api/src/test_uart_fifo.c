@@ -37,13 +37,14 @@
 static volatile bool data_transmitted;
 static volatile bool data_received;
 static int char_sent;
-static const char *fifo_data = "This is a FIFO test.\r\n";
+static const char fifo_data[] = "This is a FIFO test.\r\n";
 
-#define DATA_SIZE	strlen(fifo_data)
+#define DATA_SIZE	(sizeof(fifo_data) - 1)
 
 static void uart_fifo_callback(struct device *dev)
 {
 	u8_t recvData;
+	static int tx_data_idx;
 
 	/* Verify uart_irq_update() */
 	if (!uart_irq_update(dev)) {
@@ -52,9 +53,27 @@ static void uart_fifo_callback(struct device *dev)
 	}
 
 	/* Verify uart_irq_tx_ready() */
-	if (uart_irq_tx_ready(dev)) {
-		data_transmitted = true;
-		char_sent++;
+	/* Note that TX IRQ may be disabled, but uart_irq_tx_ready() may
+	 * still return true when ISR is called for another UART interrupt,
+	 * hence additional check for i < DATA_SIZE.
+	 */
+	if (uart_irq_tx_ready(dev) && tx_data_idx < DATA_SIZE) {
+		/* We arrive here by "tx ready" interrupt, so should always
+		 * be able to put at least one byte into a FIFO. If not,
+		 * well, we'll fail test.
+		 */
+		if (uart_fifo_fill(dev,
+				   (u8_t *)&fifo_data[tx_data_idx++], 1) > 0) {
+			data_transmitted = true;
+			char_sent++;
+		}
+
+		if (tx_data_idx == DATA_SIZE) {
+			/* If we transmitted everything, stop IRQ stream,
+			 * otherwise main app might never run.
+			 */
+			uart_irq_tx_disable(dev);
+		}
 	}
 
 	/* Verify uart_irq_rx_ready() */
@@ -104,20 +123,16 @@ static int test_fifo_fill(void)
 	/* Verify uart_irq_tx_enable() */
 	uart_irq_tx_enable(uart_dev);
 
-	/* Verify uart_fifo_fill() */
-	for (int i = 0; i < DATA_SIZE; i++) {
-		data_transmitted = false;
-		while (!uart_fifo_fill(uart_dev, (u8_t *) &fifo_data[i], 1))
-			;
-		while (data_transmitted == false)
-			;
-	}
+	k_sleep(500);
 
 	/* Verify uart_irq_tx_disable() */
 	uart_irq_tx_disable(uart_dev);
 
-	/* strlen() doesn't include \r\n*/
-	if (char_sent - 1 == DATA_SIZE) {
+	if (!data_transmitted) {
+		return TC_FAIL;
+	}
+
+	if (char_sent == DATA_SIZE) {
 		return TC_PASS;
 	} else {
 		return TC_FAIL;

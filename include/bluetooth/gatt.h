@@ -343,7 +343,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 /** @brief Read Service Attribute helper.
  *
  *  Read service attribute value storing the result into buffer after
- *  enconding it.
+ *  encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_uuid.
  *
  *  @param conn Connection object.
@@ -408,7 +408,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 /** @brief Read Include Attribute helper.
  *
  *  Read include service attribute value storing the result into buffer after
- *  enconding it.
+ *  encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_include.
  *
  *  @param conn Connection object.
@@ -442,7 +442,7 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 /** @brief Read Characteristic Attribute helper.
  *
  *  Read characteristic attribute value storing the result into buffer after
- *  enconding it.
+ *  encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_chrc.
  *
  *  @param conn Connection object.
@@ -497,7 +497,7 @@ struct _bt_gatt_ccc {
 /** @brief Read Client Characteristic Configuration Attribute helper.
  *
  *  Read CCC attribute value storing the result into buffer after
- *  enconding it.
+ *  encoding it.
  *  NOTE: Only use this with attributes which user_data is a _bt_gatt_ccc.
  *
  *  @param conn Connection object.
@@ -943,7 +943,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
 /** @brief Write Attribute Value by handle without response
  *
  * This procedure write the attribute value without requiring an
- * acknowledgement that the write was successfully performed
+ * acknowledgment that the write was successfully performed
  *
  * @param conn Connection object.
  * @param handle Attribute handle.
