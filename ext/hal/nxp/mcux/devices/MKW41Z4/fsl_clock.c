@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016 - 2017 , NXP
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -12,7 +13,35 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Copyright (c) 2016, NXP Semiconductors, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * o Redistributions of source code must retain the above copyright notice, this list
+ *   of conditions and the following disclaimer.
+ *
+ * o Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ *
+ * o Neither the name of NXP Semiconductors, Inc. nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -119,6 +148,8 @@ uint32_t g_xtal0Freq;
 /* External XTAL32K clock frequency. */
 uint32_t g_xtal32Freq;
 
+
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -164,6 +195,7 @@ static uint32_t CLOCK_GetFllRefClkFreq(void);
  */
 static uint32_t CLOCK_GetInternalRefClkSelectFreq(void);
 
+
 /*!
  * @brief Calculate the RANGE value base on crystal frequency.
  *
@@ -176,17 +208,39 @@ static uint32_t CLOCK_GetInternalRefClkSelectFreq(void);
  */
 static uint8_t CLOCK_GetOscRangeFromFreq(uint32_t freq);
 
+
+
+
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
+
+#ifndef MCG_USER_CONFIG_FLL_STABLE_DELAY_EN
 /*!
  * @brief Delay function to wait FLL stable.
  *
  * Delay function to wait FLL stable in FEI mode or FEE mode, should wait at least
  * 1ms. Every time changes FLL setting, should wait this time for FLL stable.
  */
-static void CLOCK_FllStableDelay(void);
-
-/*******************************************************************************
- * Code
- ******************************************************************************/
+void CLOCK_FllStableDelay(void)
+{
+    /*
+       Should wait at least 1ms. Because in these modes, the core clock is 100MHz
+       at most, so this function could obtain the 1ms delay.
+     */
+    volatile uint32_t i = 30000U;
+    while (i--)
+    {
+        __NOP();
+    }
+}
+#else /* With MCG_USER_CONFIG_FLL_STABLE_DELAY_EN defined. */
+/* Once user defines the MCG_USER_CONFIG_FLL_STABLE_DELAY_EN to use their own delay function, he has to
+ * create his own CLOCK_FllStableDelay() function in application code. Since the clock functions in this
+ * file would call the CLOCK_FllStableDelay() regardness how it is defined.
+ */
+extern void CLOCK_FllStableDelay(void);
+#endif /* MCG_USER_CONFIG_FLL_STABLE_DELAY_EN */
 
 static uint32_t CLOCK_GetMcgExtClkFreq(void)
 {
@@ -237,7 +291,10 @@ static uint32_t CLOCK_GetFllExtRefClkFreq(void)
        1. MCG_C7[OSCSEL] selects IRC48M.
        2. MCG_C7[OSCSEL] selects OSC0 and MCG_C2[RANGE] is not 0.
     */
-    if (((0U != range) && (kMCG_OscselOsc == oscsel)))
+    if (((0U != range)
+         && (kMCG_OscselOsc == oscsel)
+             )
+            )
     {
         switch (frdiv)
         {
@@ -294,6 +351,7 @@ static uint32_t CLOCK_GetFllRefClkFreq(void)
     }
 }
 
+
 static uint8_t CLOCK_GetOscRangeFromFreq(uint32_t freq)
 {
     uint8_t range;
@@ -314,18 +372,6 @@ static uint8_t CLOCK_GetOscRangeFromFreq(uint32_t freq)
     return range;
 }
 
-static void CLOCK_FllStableDelay(void)
-{
-    /*
-       Should wait at least 1ms. Because in these modes, the core clock is 100MHz
-       at most, so this function could obtain the 1ms delay.
-     */
-    volatile uint32_t i = 30000U;
-    while (i--)
-    {
-        __NOP();
-    }
-}
 
 uint32_t CLOCK_GetEr32kClkFreq(void)
 {
@@ -334,8 +380,6 @@ uint32_t CLOCK_GetEr32kClkFreq(void)
     switch (SIM_SOPT1_OSC32KSEL_VAL)
     {
         case 0U: /* OSC 32k clock  */
-            freq = (g_xtal0Freq == 32768U) ? 32768U : 0U;
-            break;
         case 2U: /* RTC 32k clock  */
             /* Please call CLOCK_SetXtal32Freq base on board setting before using XTAL32K/RTC_CLKIN clock. */
             assert(g_xtal32Freq);
@@ -406,9 +450,6 @@ uint32_t CLOCK_GetFreq(clock_name_t clockName)
         case kCLOCK_Er32kClk:
             freq = CLOCK_GetEr32kClkFreq();
             break;
-        case kCLOCK_McgFixedFreqClk:
-            freq = CLOCK_GetFixedFreqClkFreq();
-            break;
         case kCLOCK_McgInternalRefClk:
             freq = CLOCK_GetInternalRefClkFreq();
             break;
@@ -468,7 +509,8 @@ uint32_t CLOCK_GetFllFreq(void)
     uint32_t freq;
 
     /* If FLL is not enabled currently, then return 0U. */
-    if ((MCG->C2 & MCG_C2_LP_MASK))
+    if ((MCG->C2 & MCG_C2_LP_MASK)
+            )
     {
         return 0U;
     }
@@ -512,6 +554,7 @@ uint32_t CLOCK_GetFixedFreqClkFreq(void)
     }
 }
 
+
 status_t CLOCK_SetExternalRefClkConfig(mcg_oscsel_t oscsel)
 {
     bool needDelay;
@@ -536,16 +579,6 @@ status_t CLOCK_SetExternalRefClkConfig(mcg_oscsel_t oscsel)
     }
 
     MCG->C7 = (MCG->C7 & ~MCG_C7_OSCSEL_MASK) | MCG_C7_OSCSEL(oscsel);
-    if (kMCG_OscselOsc == oscsel)
-    {
-        if (MCG->C2 & MCG_C2_EREFS_MASK)
-        {
-            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
-            {
-            }
-        }
-    }
-
     if (needDelay)
     {
         /* ERR009878 Delay at least 50 micro-seconds for external clock change valid. */
@@ -607,6 +640,8 @@ status_t CLOCK_SetInternalRefClkConfig(uint8_t enableMode, mcg_irc_mode_t ircs, 
     return kStatus_Success;
 }
 
+
+
 void CLOCK_SetOsc0MonitorMode(mcg_monitor_mode_t mode)
 {
     /* Clear the previous flag, MCG_SC[LOCS0]. */
@@ -630,6 +665,7 @@ void CLOCK_SetOsc0MonitorMode(mcg_monitor_mode_t mode)
     }
 }
 
+
 void CLOCK_SetRtcOscMonitorMode(mcg_monitor_mode_t mode)
 {
     uint8_t mcg_c8 = MCG->C8;
@@ -646,6 +682,7 @@ void CLOCK_SetRtcOscMonitorMode(mcg_monitor_mode_t mode)
     }
     MCG->C8 = mcg_c8;
 }
+
 
 uint32_t CLOCK_GetStatusFlags(void)
 {
@@ -673,9 +710,11 @@ void CLOCK_InitOsc0(osc_config_t const *config)
 {
     uint8_t range = CLOCK_GetOscRangeFromFreq(config->freq);
 
+
     MCG->C2 = ((MCG->C2 & ~OSC_MODE_MASK) | MCG_C2_RANGE(range) | (uint8_t)config->workMode);
 
-    if ((kOSC_ModeExt != config->workMode))
+    if ((kOSC_ModeExt != config->workMode)
+            )
     {
         /* Wait for stable. */
         while (!(MCG->S & MCG_S_OSCINIT0_MASK))
@@ -688,6 +727,7 @@ void CLOCK_DeinitOsc0(void)
 {
     MCG->C2 &= ~OSC_MODE_MASK;
 }
+
 
 status_t CLOCK_TrimInternalRefClk(uint32_t extFreq, uint32_t desireFreq, uint32_t *actualFreq, mcg_atm_select_t atms)
 {
@@ -947,6 +987,17 @@ status_t CLOCK_SetFeeMode(uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void 
                 | MCG_C1_FRDIV(frdiv)                  /* FRDIV */
                 | MCG_C1_IREFS(kMCG_FllSrcExternal))); /* IREFS = 0 */
 
+    /* If use external crystal as clock source, wait for it stable. */
+    if (MCG_C7_OSCSEL(kMCG_OscselOsc) == (MCG->C7 & MCG_C7_OSCSEL_MASK))
+    {
+        if (MCG->C2 & MCG_C2_EREFS_MASK)
+        {
+            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
+            {
+            }
+        }
+    }
+
     /* Wait and check status. */
     while (kMCG_FllSrcExternal != MCG_S_IREFST_VAL)
     {
@@ -1059,6 +1110,7 @@ status_t CLOCK_SetFbeMode(uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void 
     }
 #endif
 
+
     /* Set LP bit to enable the FLL */
     MCG->C2 &= ~MCG_C2_LP_MASK;
 
@@ -1082,6 +1134,17 @@ status_t CLOCK_SetFbeMode(uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void 
                (MCG_C1_CLKS(kMCG_ClkOutSrcExternal)    /* CLKS = 2 */
                 | MCG_C1_FRDIV(frdiv)                  /* FRDIV = frdiv */
                 | MCG_C1_IREFS(kMCG_FllSrcExternal))); /* IREFS = 0 */
+
+    /* If use external crystal as clock source, wait for it stable. */
+    if (MCG_C7_OSCSEL(kMCG_OscselOsc) == (MCG->C7 & MCG_C7_OSCSEL_MASK))
+    {
+        if (MCG->C2 & MCG_C2_EREFS_MASK)
+        {
+            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
+            {
+            }
+        }
+    }
 
     /* Wait for Reference clock Status bit to clear */
     while (kMCG_FllSrcExternal != MCG_S_IREFST_VAL)
@@ -1141,6 +1204,7 @@ status_t CLOCK_SetBlpeMode(void)
     return kStatus_Success;
 }
 
+
 status_t CLOCK_ExternalModeToFbeModeQuick(void)
 {
 #if (defined(MCG_CONFIG_CHECK_PARAM) && MCG_CONFIG_CHECK_PARAM)
@@ -1157,6 +1221,7 @@ status_t CLOCK_ExternalModeToFbeModeQuick(void)
     while (MCG_S_CLKST_VAL != kMCG_ClkOutStatExt)
     {
     }
+
 
     return kStatus_Success;
 }
@@ -1178,6 +1243,7 @@ status_t CLOCK_InternalModeToFbiModeQuick(void)
     {
     }
 
+
     return kStatus_Success;
 }
 
@@ -1189,6 +1255,7 @@ status_t CLOCK_BootToFeiMode(mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableD
 status_t CLOCK_BootToFeeMode(
     mcg_oscsel_t oscsel, uint8_t frdiv, mcg_dmx32_t dmx32, mcg_drs_t drs, void (*fllStableDelay)(void))
 {
+
     CLOCK_SetExternalRefClkConfig(oscsel);
 
     return CLOCK_SetFeeMode(frdiv, dmx32, drs, fllStableDelay);
@@ -1213,12 +1280,24 @@ status_t CLOCK_BootToBlpiMode(uint8_t fcrdiv, mcg_irc_mode_t ircs, uint8_t ircEn
 
 status_t CLOCK_BootToBlpeMode(mcg_oscsel_t oscsel)
 {
+
     CLOCK_SetExternalRefClkConfig(oscsel);
 
     /* Set to FBE mode. */
     MCG->C1 =
         ((MCG->C1 & ~(MCG_C1_CLKS_MASK | MCG_C1_IREFS_MASK)) | (MCG_C1_CLKS(kMCG_ClkOutSrcExternal)    /* CLKS = 2 */
                                                                 | MCG_C1_IREFS(kMCG_FllSrcExternal))); /* IREFS = 0 */
+
+    /* If use external crystal as clock source, wait for it stable. */
+    if (MCG_C7_OSCSEL(kMCG_OscselOsc) == (MCG->C7 & MCG_C7_OSCSEL_MASK))
+    {
+        if (MCG->C2 & MCG_C2_EREFS_MASK)
+        {
+            while (!(MCG->S & MCG_S_OSCINIT0_MASK))
+            {
+            }
+        }
+    }
 
     /* Wait for MCG_S[CLKST] and MCG_S[IREFST]. */
     while ((MCG->S & (MCG_S_IREFST_MASK | MCG_S_CLKST_MASK)) !=
@@ -1231,6 +1310,7 @@ status_t CLOCK_BootToBlpeMode(mcg_oscsel_t oscsel)
 
     return kStatus_Success;
 }
+
 
 /*
    The transaction matrix. It defines the path for mode switch, the row is for
@@ -1255,6 +1335,7 @@ status_t CLOCK_SetMcgConfig(const mcg_config_t *config)
 {
     mcg_mode_t next_mode;
     status_t status = kStatus_Success;
+
 
     /* If need to change external clock, MCG_C7[OSCSEL]. */
     if (MCG_C7_OSCSEL_VAL != config->oscsel)

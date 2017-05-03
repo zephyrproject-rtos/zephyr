@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016 - 2017 , NXP
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -12,7 +13,35 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Copyright (c) 2016, NXP Semiconductors, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * o Redistributions of source code must retain the above copyright notice, this list
+ *   of conditions and the following disclaimer.
+ *
+ * o Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ *
+ * o Neither the name of NXP Semiconductors, Inc. nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -38,14 +67,52 @@
 
 /*! @file */
 
+
+/*******************************************************************************
+ * Configurations
+ ******************************************************************************/
+
+/*! @brief Configures whether to check a parameter in a function.
+ *
+ * Some MCG settings must be changed with conditions, for example:
+ *  1. MCGIRCLK settings, such as the source, divider, and the trim value should not change when
+ *     MCGIRCLK is used as a system clock source.
+ *  2. MCG_C7[OSCSEL] should not be changed  when the external reference clock is used
+ *     as a system clock source. For example, in FBE/BLPE/PBE modes.
+ *  3. The users should only switch between the supported clock modes.
+ *
+ * MCG functions check the parameter and MCG status before setting, if not allowed
+ * to change, the functions return error. The parameter checking increases code size,
+ * if code size is a critical requirement, change #MCG_CONFIG_CHECK_PARAM to 0 to
+ * disable parameter checking.
+ */
+#ifndef MCG_CONFIG_CHECK_PARAM
+#define MCG_CONFIG_CHECK_PARAM 0U
+#endif
+
+/*! @brief Configure whether driver controls clock
+ *
+ * When set to 0, peripheral drivers will enable clock in initialize function
+ * and disable clock in de-initialize function. When set to 1, peripheral
+ * driver will not control the clock, application could contol the clock out of
+ * the driver.
+ *
+ * @note All drivers share this feature switcher. If it is set to 1, application
+ * should handle clock enable and disable for all drivers.
+ */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL))
+#define FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL 0
+#endif
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
 
+
 /*! @name Driver version */
 /*@{*/
-/*! @brief CLOCK driver version 2.2.0. */
-#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 2, 0))
+/*! @brief CLOCK driver version 2.2.1. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 2, 1))
 /*@}*/
 
 /*! @brief External XTAL0 (OSC0) clock frequency.
@@ -64,6 +131,7 @@
  */
 extern uint32_t g_xtal0Freq;
 
+
 /*! @brief External XTAL32/EXTAL32/RTC_CLKIN clock frequency.
  *
  * The XTAL32/EXTAL32/RTC_CLKIN clock frequency in Hz. When the clock is set up, use the
@@ -74,6 +142,7 @@ extern uint32_t g_xtal0Freq;
  * to get a valid clock frequency.
  */
 extern uint32_t g_xtal32Freq;
+
 
 #if (defined(OSC) && !(defined(OSC0)))
 #define OSC0 OSC
@@ -146,7 +215,7 @@ extern uint32_t g_xtal32Freq;
     }
 
 /*! @brief Clock ip name array for DMA. */
-#define EDMA_CLOCKS \
+#define EDMA_CLOCKS  \
     {               \
         kCLOCK_Dma0 \
     }
@@ -185,7 +254,7 @@ extern uint32_t g_xtal32Freq;
 #define VREF_CLOCKS  \
     {                \
         kCLOCK_Vref0 \
-    }
+    }    
 
 /*! @brief Clock ip name array for DCDC. */
 #define DCDC_CLOCKS  \
@@ -221,10 +290,8 @@ typedef enum _clock_name
     kCLOCK_Osc0ErClk, /*!< OSC0 external reference clock (OSC0ERCLK)                 */
 
     /* ----------------------------- MCG and MCG-Lite clock ---------------------------*/
-    kCLOCK_McgFixedFreqClk,   /*!< MCG fixed frequency clock (MCGFFCLK)                      */
     kCLOCK_McgInternalRefClk, /*!< MCG internal reference clock (MCGIRCLK)                   */
     kCLOCK_McgFllClk,         /*!< MCGFLLCLK                                                 */
-    kCLOCK_McgPeriphClk,      /*!< MCG peripheral clock (MCGPCLK)                            */
 
     /* --------------------------------- Other clock ----------------------------------*/
     kCLOCK_LpoClk, /*!< LPO clock                                                 */
@@ -337,6 +404,7 @@ typedef enum _osc_mode
 #endif
 } osc_mode_t;
 
+
 /*!
  * @brief OSC Initialization Configuration Structure
  *
@@ -348,7 +416,7 @@ typedef enum _osc_mode
  */
 typedef struct _osc_config
 {
-    uint32_t freq;       /*!< External clock frequency.    */
+    uint32_t freq; /*!< External clock frequency.    */
     osc_mode_t workMode; /*!< OSC work mode setting.       */
 } osc_config_t;
 
@@ -385,8 +453,8 @@ typedef enum _mcg_drs
 /*! @brief MCG PLL reference clock select */
 typedef enum _mcg_pll_ref_src
 {
-    kMCG_PllRefOsc0, /*!< Selects OSC0 as PLL reference clock                 */
-    kMCG_PllRefOsc1  /*!< Selects OSC1 as PLL reference clock                 */
+    kMCG_PllRefOsc0,  /*!< Selects OSC0 as PLL reference clock                 */
+    kMCG_PllRefOsc1   /*!< Selects OSC1 as PLL reference clock                 */
 } mcg_pll_ref_src_t;
 
 /*! @brief MCGOUT clock source. */
@@ -415,7 +483,7 @@ typedef enum _mcg_oscsel
 typedef enum _mcg_pll_clk_select
 {
     kMCG_PllClkSelPll0, /*!< PLL0 output clock is selected  */
-    kMCG_PllClkSelPll1  /* PLL1 output clock is selected    */
+    kMCG_PllClkSelPll1                       /* PLL1 output clock is selected    */
 } mcg_pll_clk_select_t;
 
 /*! @brief MCG clock monitor mode. */
@@ -453,6 +521,7 @@ enum _mcg_irclk_enable_mode
     kMCG_IrclkEnableInStop = MCG_C1_IREFSTEN_MASK /*!< MCGIRCLK enable in stop mode. */
 };
 
+
 /*! @brief MCG mode definitions */
 typedef enum _mcg_mode
 {
@@ -462,8 +531,9 @@ typedef enum _mcg_mode
     kMCG_ModeFEE,      /*!< FEE   - FLL Engaged External         */
     kMCG_ModeFBE,      /*!< FBE   - FLL Bypassed External        */
     kMCG_ModeBLPE,     /*!< BLPE  - Bypassed Low Power External  */
-    kMCG_ModeError     /*!< Unknown mode                         */
+    kMCG_ModeError /*!< Unknown mode                         */
 } mcg_mode_t;
+
 
 /*! @brief MCG mode change configuration structure
  *
@@ -486,12 +556,12 @@ typedef struct _mcg_config
     uint8_t fcrdiv;          /*!< Divider, MCG_SC[FCRDIV].    */
 
     /* ------------------------ MCG FLL settings ------------------------- */
-    uint8_t frdiv;       /*!< Divider MCG_C1[FRDIV].      */
-    mcg_drs_t drs;       /*!< DCO range MCG_C4[DRST_DRS]. */
-    mcg_dmx32_t dmx32;   /*!< MCG_C4[DMX32].              */
+    uint8_t frdiv;     /*!< Divider MCG_C1[FRDIV].      */
+    mcg_drs_t drs;     /*!< DCO range MCG_C4[DRST_DRS]. */
+    mcg_dmx32_t dmx32; /*!< MCG_C4[DMX32].              */
     mcg_oscsel_t oscsel; /*!< OSC select MCG_C7[OSCSEL].  */
 
-    /* ------------------------ MCG PLL settings ------------------------- */
+/* ------------------------ MCG PLL settings ------------------------- */
 } mcg_config_t;
 
 /*******************************************************************************
@@ -701,6 +771,7 @@ uint32_t CLOCK_GetInternalRefClkFreq(void);
  */
 uint32_t CLOCK_GetFixedFreqClkFreq(void);
 
+
 /*@}*/
 
 /*! @name MCG clock configuration. */
@@ -772,10 +843,13 @@ static inline void CLOCK_SetFllExtRefDiv(uint8_t frdiv)
     MCG->C1 = (MCG->C1 & ~MCG_C1_FRDIV_MASK) | MCG_C1_FRDIV(frdiv);
 }
 
+
+
 /*@}*/
 
 /*! @name MCG clock lock monitor functions. */
 /*@{*/
+
 
 /*!
  * @brief Sets the RTC OSC clock monitor mode.
@@ -785,6 +859,7 @@ static inline void CLOCK_SetFllExtRefDiv(uint8_t frdiv)
  * @param mode Monitor mode to set.
  */
 void CLOCK_SetRtcOscMonitorMode(mcg_monitor_mode_t mode);
+
 
 /*!
  * @brief Gets the MCG status flags.
@@ -839,6 +914,7 @@ void CLOCK_ClearStatusFlags(uint32_t mask);
  * @{
  */
 
+
 /*!
  * @brief Initializes the OSC0.
  *
@@ -871,6 +947,7 @@ static inline void CLOCK_SetXtal0Freq(uint32_t freq)
 {
     g_xtal0Freq = freq;
 }
+
 
 /*!
  * @brief Sets the XTAL32/RTC_CLKIN frequency based on board settings.
@@ -1012,6 +1089,7 @@ status_t CLOCK_SetBlpiMode(void);
  */
 status_t CLOCK_SetBlpeMode(void);
 
+
 /*!
  * @brief Switches the MCG to FBE mode from the external mode.
  *
@@ -1110,6 +1188,7 @@ status_t CLOCK_BootToBlpiMode(uint8_t fcrdiv, mcg_irc_mode_t ircs, uint8_t ircEn
  * @retval kStatus_Success Switched to the target mode successfully.
  */
 status_t CLOCK_BootToBlpeMode(mcg_oscsel_t oscsel);
+
 
 /*!
  * @brief Sets the MCG to a target mode.

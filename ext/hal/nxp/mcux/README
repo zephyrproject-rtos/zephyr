@@ -4,16 +4,13 @@ and peripheral drivers for Kinetis, LPC, and i.MX SoCs.
 It was previously called the Kinetis Software Development Kit (KSDK), then
 renamed to include support for LPC and i.MX SoCs.
 
-The K64F sources in this directory are imported from mcux.nxp.com.
+The K64F and KW41Z sources in this directory are imported from mcux.nxp.com.
 
-MCUX for KWxx is not yet deployed on mcux.nxp.com like most other devices,
-therefore the sources are imported from the KWxx product pages on nxp.com:
+MCUX for KW40Z is not yet deployed on mcux.nxp.com like most other devices,
+therefore the sources are imported from the KW40Z product pages on nxp.com:
 
 Kinetis KW40Z Connectivity Software(REV 1.0.1)
 https://www.nxp.com/webapp/Download?colCode=KW40Z-CONNECTIVITY-SOFTWARE&appType=license&Parent_nodeId=1432854896956716810497&Parent_pageType=product
-
-Kinetis KW41Z Connectivity Software Linux(REV 1.0.2)
-https://www.nxp.com/webapp/Download?colCode=KW41Z-CONNECTIVITY-SOFTWARE-LIN&appType=license&Parent_nodeId=1441226359347708902175&Parent_pageType=product
 
 
 The current version supported in Zephyr is MCUX 2.2. It currently supports the

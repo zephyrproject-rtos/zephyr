@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -37,21 +37,29 @@
  *******************************************************************************/
 
 /*!
- * @addtogroup ltc_driver
+ * @addtogroup ltc
  * @{
  */
-/*! @file */
 /*! @name Driver version */
 /*@{*/
-/*! @brief LTC driver version. Version 2.0.1. 
- * 
- * Current version: 2.0.1
+/*! @brief LTC driver version. Version 2.0.4.
+ *
+ * Current version: 2.0.4
  *
  * Change log:
  * - Version 2.0.1
  *   - fixed warning during g++ compilation
+ *
+ * - Version 2.0.2
+ *   - fixed [KPSDK-10932][LTC][SHA] LTC_HASH() blocks indefinitely when message size exceeds 4080 bytes
+ *
+ * - Version 2.0.3
+ *   - fixed LTC_PKHA_CompareBigNum() in case an integer argument is an array of all zeroes
+ *
+ * - Version 2.0.4
+ *   - constant LTC_PKHA_CompareBigNum() processing time
  */
-#define FSL_LTC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+#define FSL_LTC_DRIVER_VERSION (MAKE_VERSION(2, 0, 4))
 /*@}*/
 /*! @} */
 
@@ -176,7 +184,7 @@ extern "C" {
 #endif
 
 /*!
- * @addtogroup ltc_driver
+ * @addtogroup ltc
  * @{
  */
 

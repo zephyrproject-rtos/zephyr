@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -42,7 +42,34 @@
  * Definitions
  ******************************************************************************/
 /*! @brief DCDC driver version. */
-#define FSL_DCDC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0. */
+#define FSL_DCDC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
+
+/* These VDD1P5XCTRL bits are used to uniform the different namings for various chips. */
+#if defined(FSL_FEATURE_DCDC_REG3_HAS_VDD1P5_BITS) && (FSL_FEATURE_DCDC_REG3_HAS_VDD1P5_BITS == 1)
+
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_ADJTN DCDC_REG3_DCDC_VDD1P5CTRL_ADJTN
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_ADJTN_MASK DCDC_REG3_DCDC_VDD1P5CTRL_ADJTN_MASK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_DISABLE_STEP_MASK DCDC_REG3_DCDC_VDD1P5CTRL_DISABLE_STEP_MASK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BOOST DCDC_REG3_DCDC_VDD1P5CTRL_TRG_BOOST
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BOOST_MASK DCDC_REG3_DCDC_VDD1P5CTRL_TRG_BOOST_MASK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BUCK DCDC_REG3_DCDC_VDD1P5CTRL_TRG_BUCK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BUCK_MASK DCDC_REG3_DCDC_VDD1P5CTRL_TRG_BUCK_MASK
+
+#elif defined(FSL_FEATURE_DCDC_REG3_HAS_VDD1P45_BITS) && (FSL_FEATURE_DCDC_REG3_HAS_VDD1P45_BITS == 1)
+
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_ADJTN DCDC_REG3_DCDC_VDD1P45CTRL_ADJTN
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_ADJTN_MASK DCDC_REG3_DCDC_VDD1P45CTRL_ADJTN_MASK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_DISABLE_STEP_MASK DCDC_REG3_DCDC_VDD1P45CTRL_DISABLE_STEP_MASK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BOOST DCDC_REG3_DCDC_VDD1P45CTRL_TRG_BOOST
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BOOST_MASK DCDC_REG3_DCDC_VDD1P45CTRL_TRG_BOOST_MASK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BUCK DCDC_REG3_DCDC_VDD1P45CTRL_TRG_BUCK
+#define DCDC_REG3_DCDC_VDD1P5XCTRL_TRG_BUCK_MASK DCDC_REG3_DCDC_VDD1P45CTRL_TRG_BUCK_MASK
+
+#else
+
+#error "No available VDD1P5x bits defined in feature file."
+
+#endif
 
 /*!
  * @brief Status flags.
@@ -480,7 +507,7 @@ static inline void DCDC_SetUpperLimitDutyCycleBuck(DCDC_Type *base, uint32_t val
  */
 static inline void DCDC_AdjustDutyCycleSwitchingTargetOutput(DCDC_Type *base, uint32_t value)
 {
-    base->REG3 = (~DCDC_REG3_DCDC_VDD1P5CTRL_ADJTN_MASK & base->REG3) | DCDC_REG3_DCDC_VDD1P5CTRL_ADJTN(value);
+    base->REG3 = (~DCDC_REG3_DCDC_VDD1P5XCTRL_ADJTN_MASK & base->REG3) | DCDC_REG3_DCDC_VDD1P5XCTRL_ADJTN(value);
 }
 
 /*!
@@ -493,7 +520,7 @@ static inline void DCDC_AdjustDutyCycleSwitchingTargetOutput(DCDC_Type *base, ui
  */
 static inline void DCDC_LockTargetVoltage(DCDC_Type *base)
 {
-    base->REG3 |= (DCDC_REG3_DCDC_VDD1P8CTRL_DISABLE_STEP_MASK | DCDC_REG3_DCDC_VDD1P5CTRL_DISABLE_STEP_MASK);
+    base->REG3 |= (DCDC_REG3_DCDC_VDD1P8CTRL_DISABLE_STEP_MASK | DCDC_REG3_DCDC_VDD1P5XCTRL_DISABLE_STEP_MASK);
 }
 
 /*!
@@ -503,12 +530,12 @@ static inline void DCDC_LockTargetVoltage(DCDC_Type *base)
  * them and finally wait until the output is stabled.
  *
  * @param base DCDC peripheral base address.
- * @param vdd1p45Boost Target value of VDD1P45 in boost mode, 25 mV each step from 0x00 to 0x0F. 0x00 is for 1.275V.
- * @param vdd1p45Buck Target value of VDD1P45 in buck mode, 25 mV each step from 0x00 to 0x0F. 0x00 is for 1.275V.
+ * @param vdd1p5xBoost Target value of VDD1P5X in boost mode, 25 mV each step from 0x00 to 0x0F. 0x00 is for 1.275V.
+ * @param vdd1p5xBuck Target value of VDD1P5X in buck mode, 25 mV each step from 0x00 to 0x0F. 0x00 is for 1.275V.
  * @param vdd1p8 Target value of VDD1P8, 25 mV each step in two ranges, from 0x00 to 0x11 and 0x20 to 0x3F.
  *               0x00 is for 1.65V, 0x20 is for 2.8V.
  */
-void DCDC_AdjustTargetVoltage(DCDC_Type *base, uint32_t vdd1p45Boost, uint32_t vdd1p45Buck, uint32_t vdd1p8);
+void DCDC_AdjustTargetVoltage(DCDC_Type *base, uint32_t vdd1p5xBoost, uint32_t vdd1p5xBuck, uint32_t vdd1p8);
 
 /*!
  * @brief Get the default configuration for min power.
