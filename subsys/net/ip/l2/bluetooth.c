@@ -138,6 +138,7 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 
 	ll.addr = ctxt->dst.val;
 	ll.len = sizeof(ctxt->dst.val);
+	ll.type = NET_LINK_BLUETOOTH;
 
 	/* Add remote link-local address to the nbr cache to avoid sending ns:
 	 * https://tools.ietf.org/html/rfc7668#section-3.2.3
