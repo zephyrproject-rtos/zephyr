@@ -1673,6 +1673,11 @@ void net_if_init(struct k_sem *startup_sync)
 #endif
 	}
 
+	if (iface == __net_if_start) {
+		NET_WARN("There is no network interface to work with!");
+		return;
+	}
+
 	k_thread_spawn(tx_stack, sizeof(tx_stack),
 		       (k_thread_entry_t)net_if_tx_thread,
 		       startup_sync, NULL, NULL, K_PRIO_COOP(7),
