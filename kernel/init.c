@@ -56,6 +56,14 @@ u64_t __noinit __main_tsc;  /* timestamp when main task starts */
 u64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 #endif
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+u64_t __noinit __start_swap_tsc;
+u64_t __noinit __end_swap_tsc;
+u64_t __noinit __start_intr_tsc;
+u64_t __noinit __end_intr_tsc;
+u64_t __noinit __start_tick_tsc;
+u64_t __noinit __end_tick_tsc;
+#endif
 /* init/main and idle threads */
 
 #define IDLE_STACK_SIZE CONFIG_IDLE_STACK_SIZE
