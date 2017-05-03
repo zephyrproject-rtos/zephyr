@@ -30,6 +30,15 @@ endchoice
 
 comment "BLE Controller configuration"
 
+config BLUETOOTH_CONTROLLER_TO_HOST_FC
+	bool "Controller to Host Flow Control"
+	depends on BLUETOOTH_CONN
+	default n
+	default y if BLUETOOTH_HCI_RAW
+	select POLL
+	help
+	  Enable Controller to Host flow control.
+
 config BLUETOOTH_CONTROLLER_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
