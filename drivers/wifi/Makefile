@@ -1,0 +1,1 @@
+obj-$(CONFIG_WIFI_WINC1500) += winc1500/

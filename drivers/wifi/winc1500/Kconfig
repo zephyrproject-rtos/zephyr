@@ -1,0 +1,39 @@
+# Kconfig - Atmel WINC1500 BSP and BUS configuration options
+#
+# WINC1500 options
+#
+
+menuconfig WIFI_WINC1500
+	bool
+	prompt "WINC1500 driver HAL Configuration"
+	default n
+	depends on WIFI
+
+if WIFI_WINC1500
+
+config	WINC1500_SPI_DRV_NAME
+	string "SPI device where WINC1500 is connected"
+	depends on WIFI_WINC1500
+	default "SPI_1"
+	help
+	 Specify the device name of the SPI device to which WINC1500 is
+	 connected.
+
+config WINC1500_SPI_SLAVE
+	int "SPI Slave Select where WINC1500 is connected"
+	depends on WIFI_WINC1500
+	default 1
+	help
+	 Specify the slave select pin of the SPI to which WINC1500 is
+	 connected.
+
+config WINC1500_SPI_FREQ
+	int "SPI frequency to use with WINC1500"
+	depends on WIFI_WINC1500
+	default 4
+	help
+	 SPI frequency to use with WINC1500
+
+# TODO GPIO
+
+endif # WIFI_WINC1500
