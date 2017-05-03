@@ -24,28 +24,22 @@ struct test_struct {
 	size_t some_array_len;
 };
 
-#define FIELD(struct_, member_, type_) { \
-	.field_name = #member_, \
-	.field_name_len = sizeof(#member_) - 1, \
-	.offset = offsetof(struct_, member_), \
-	.type = type_ \
-}
 static const struct json_obj_descr nested_descr[] = {
-	FIELD(struct test_nested, nested_int, JSON_TOK_NUMBER),
-	FIELD(struct test_nested, nested_bool, JSON_TOK_TRUE),
-	FIELD(struct test_nested, nested_string, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_bool, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_string,
+			    JSON_TOK_STRING),
 };
 
 static const struct json_obj_descr test_descr[] = {
-	FIELD(struct test_struct, some_string, JSON_TOK_STRING),
-	FIELD(struct test_struct, some_int, JSON_TOK_NUMBER),
-	FIELD(struct test_struct, some_bool, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_bool, JSON_TOK_TRUE),
 	JSON_OBJ_DESCR_OBJECT(struct test_struct, some_nested_struct,
 			      nested_descr),
 	JSON_OBJ_DESCR_ARRAY(struct test_struct, some_array,
 			     16, some_array_len, JSON_TOK_NUMBER),
 };
-#undef FIELD
 
 static void test_json_encoding(void)
 {
