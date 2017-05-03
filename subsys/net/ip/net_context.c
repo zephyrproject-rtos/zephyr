@@ -1730,6 +1730,7 @@ static int sendto(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		net_pkt_set_appdatalen(pkt, net_pkt_get_len(pkt));
 		ret = net_tcp_queue_data(context, pkt);
 	} else
 #endif /* CONFIG_NET_TCP */
