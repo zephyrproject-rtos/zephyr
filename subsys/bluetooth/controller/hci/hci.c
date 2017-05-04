@@ -47,7 +47,7 @@ static s32_t dup_count;
 static u32_t dup_curr;
 #endif
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 s32_t    hci_hbuf_total;
 u32_t    hci_hbuf_sent;
 u32_t    hci_hbuf_acked;
@@ -184,7 +184,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 		ccst = cmd_complete(evt, sizeof(*ccst));
 		ccst->status = 0x00;
 	}
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	hci_hbuf_total = 0;
 	hci_hbuf_sent = 0;
 	hci_hbuf_acked = 0;
@@ -194,7 +194,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 #endif
 }
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_set_ctl_to_host_flow *cmd = (void *)buf->data;
@@ -298,7 +298,7 @@ static int ctrl_bb_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		reset(cmd, evt);
 		break;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	case BT_OCF(BT_HCI_OP_SET_CTL_TO_HOST_FLOW):
 		set_ctl_to_host_flow(cmd, evt);
 		break;
@@ -344,7 +344,7 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[0] = (1 << 5);
 	/* Set Event Mask, and Reset. */
 	rp->commands[5] = (1 << 6) | (1 << 7);
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	/* Set FC, Host Buffer Size and Host Num Completed */
 	rp->commands[10] = (1 << 5) | (1 << 6) | (1 << 7);
 #endif
@@ -1624,7 +1624,7 @@ void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 		acl->len = sys_cpu_to_le16(pdu_data->len);
 		data = (void *)net_buf_add(buf, pdu_data->len);
 		memcpy(data, &pdu_data->payload.lldata[0], pdu_data->len);
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 		if (hci_hbuf_total > 0) {
 			LL_ASSERT((hci_hbuf_sent - hci_hbuf_acked) <
 				  hci_hbuf_total);
@@ -1728,7 +1728,7 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 
 void hci_init(struct k_poll_signal *signal_host_buf)
 {
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	hbuf_signal = signal_host_buf;
 #endif
 	reset(NULL, NULL);
