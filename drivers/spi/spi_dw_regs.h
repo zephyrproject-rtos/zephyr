@@ -9,6 +9,10 @@
 #ifndef __SPI_DW_REGS_H__
 #define __SPI_DW_REGS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DW_SPI_REG_CTRLR0		(0x00)
 #define DW_SPI_REG_CTRLR1		(0x04)
 #define DW_SPI_REG_SSIENR		(0x08)
@@ -35,8 +39,6 @@
 #define DW_SPI_REG_SSI_COMP_VERSION	(0x5c)
 #define DW_SPI_REG_DR			(0x60)
 #define DW_SPI_REG_RX_SAMPLE_DLY	(0xf0)
-
-#define DW_SSI_COMP_VERSION		(0x3332332a)
 
 /* Register helpers */
 DEFINE_MM_REG_WRITE(ctrlr0, DW_SPI_REG_CTRLR0, 32)
@@ -87,5 +89,9 @@ static inline void _clock_off(struct device *dev)
 #define _clock_on(...)
 #define _clock_off(...)
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SPI_DW_REGS_H__ */
