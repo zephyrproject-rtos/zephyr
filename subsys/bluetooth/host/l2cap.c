@@ -27,7 +27,13 @@
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
 
 #define L2CAP_LE_MIN_MTU		23
+
+#if defined(CONFIG_BLUETOOTH_HOST_FLOW_CONTROL)
+#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_RX_COUNT - 1)
+#else
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_RX_BUF_COUNT - 1)
+#endif
+
 #define L2CAP_LE_CREDITS_THRESHOLD(_creds) (_creds / 2)
 
 #define L2CAP_LE_CID_DYN_START	0x0040

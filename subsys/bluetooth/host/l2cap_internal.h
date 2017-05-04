@@ -192,8 +192,12 @@ struct bt_l2cap_le_credits {
 
 #define BT_L2CAP_SDU_HDR_LEN		2
 
+#if defined(CONFIG_BLUETOOTH_HOST_FLOW_CONTROL)
+#define BT_L2CAP_RX_MTU CONFIG_BLUETOOTH_L2CAP_RX_MTU
+#else
 #define BT_L2CAP_RX_MTU (CONFIG_BLUETOOTH_RX_BUF_LEN - \
 			 BT_HCI_ACL_HDR_SIZE - BT_L2CAP_HDR_SIZE)
+#endif
 
 struct bt_l2cap_fixed_chan {
 	u16_t		cid;
