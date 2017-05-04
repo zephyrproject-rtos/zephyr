@@ -1,7 +1,7 @@
 .. _kernel:
 
-Zephyr Kernel Primer (version 2)
-################################
+Zephyr Kernel Primer
+####################
 
 This document provides a general introduction of the Zephyr kernel's
 key capabilities and services. Additional details can be found by consulting
