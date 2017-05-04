@@ -250,6 +250,7 @@ struct radio_le_chan_sel_algo {
 
 struct radio_pdu_node_rx_hdr {
 	union {
+		sys_snode_t node; /* used by slist */
 		void *next; /* used also by k_fifo once pulled */
 		void *link;
 		u8_t packet_release_last;
