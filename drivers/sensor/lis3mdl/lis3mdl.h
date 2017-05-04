@@ -16,56 +16,83 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
 
-#define LIS3MDL_I2C_ADDR_BASE		0x1C
-#define LIS3MDL_I2C_ADDR_MASK		(~BIT(1))
+#define LIS3MDL_I2C_ADDR_BASE           0x1C
+#define LIS3MDL_I2C_ADDR_MASK           (~BIT(1))
 
 /* guard against invalid CONFIG_I2C_ADDR values */
 #if (CONFIG_LIS3MDL_I2C_ADDR & LIS3MDL_I2C_ADDR_MASK) != LIS3MDL_I2C_ADDR_BASE
 #error "Invalid value for CONFIG_LIS3MDL_I2C_ADDR"
 #endif
 
-#define LIS3MDL_REG_WHO_AM_I		0x0F
-#define LIS3MDL_CHIP_ID			0x3D
+#define LIS3MDL_REG_WHO_AM_I            0x0F
+#define LIS3MDL_CHIP_ID                 0x3D
 
-#define LIS3MDL_REG_CTRL1		0x20
-#define LIS3MDL_OM_SHIFT		5
-#define LIS3MDL_OM_MASK			(BIT_MASK(2) << LIS3MDL_OM_SHIFT)
-#define LIS3MDL_DO_SHIFT		2
-#define LIS3MDL_FAST_ODR_SHIFT		1
-#define LIS3MDL_FAST_ODR_MASK		BIT(LIS3MDL_FAST_ODR_SHIFT)
-#define LIS3MDL_TEMP_EN			BIT(7)
+#define LIS3MDL_REG_CTRL1               0x20
+#define LIS3MDL_TEMP_EN_MASK            BIT(7)
+#define LIS3MDL_TEMP_EN_SHIFT           7
+#define LIS3MDL_OM_MASK                 (BIT(6) | BIT(5))
+#define LIS3MDL_OM_SHIFT                5
+#define LIS3MDL_MAG_DO_MASK             (BIT(4) | BIT(3) | BIT(2))
+#define LIS3MDL_DO_SHIFT                2
+#define LIS3MDL_FAST_ODR_MASK           BIT(1)
+#define LIS3MDL_FAST_ODR_SHIFT          1
+#define LIS3MDL_ST_MASK                 BIT(0)
+#define LIS3MDL_ST_SHIFT                0
 
 #define LIS3MDL_ODR_BITS(om_bits, do_bits, fast_odr)	\
 	(((om_bits) << LIS3MDL_OM_SHIFT) |		\
 	 ((do_bits) << LIS3MDL_DO_SHIFT) |		\
 	 ((fast_odr) << LIS3MDL_FAST_ODR_SHIFT))
 
-#define LIS3MDL_REG_CTRL2		0x21
-#define LIS3MDL_FS_SHIFT		5
-#define LIS3MDL_FS_IDX			((CONFIG_LIS3MDL_FS / 4) - 1)
+#define LIS3MDL_REG_CTRL2               0x21
+#define LIS3MDL_FS_MASK                 (BIT(6) | BIT(5))
+#define LIS3MDL_FS_SHIFT                5
+#define LIS3MDL_REBOOT_MASK             BIT(3)
+#define LIS3MDL_REBOOT_SHIFT            3
+#define LIS3MDL_SOFT_RST_MASK           BIT(2)
+#define LIS3MDL_SOFT_RST_SHIFT          2
+
+#define LIS3MDL_FS_IDX                  ((CONFIG_LIS3MDL_FS / 4) - 1)
 
 /* guard against invalid CONFIG_LIS3MDL_FS values */
 #if CONFIG_LIS3MDL_FS % 4 != 0 || LIS3MDL_FS_IDX < -1 || LIS3MDL_FS_IDX >= 4
 #error "Invalid value for CONFIG_LIS3MDL_FS"
 #endif
 
-#define LIS3MDL_REG_CTRL3		0x22
-#define LIS3MDL_MD_CONTINUOUS		0
-#define LIS3MDL_MD_SINGLE		1
+#define LIS3MDL_REG_CTRL3               0x22
+#define LIS3MDL_LP_MASK                 BIT(5)
+#define LIS3MDL_LP_SHIFT                5
+#define LIS3MDL_SIM_MASK                BIT(2)
+#define LIS3MDL_SIM_SHIFT               2
+#define LIS3MDL_MD_MASK                 (BIT(1) | BIT(0))
+#define LIS3MDL_MD_SHIFT                0
 
-#define LIS3MDL_REG_CTRL4		0x23
-#define LIS3MDL_OMZ_SHIFT		2
+#define LIS3MDL_MD_CONTINUOUS           0
+#define LIS3MDL_MD_SINGLE               1
+#define LIS3MDL_MD_POWER_DOWN           2
+#define LIS3MDL_MD_POWER_DOWN_AUTO      3
 
-#define LIS3MDL_REG_CTRL5		0x024
-#define LIS3MDL_BDU_EN			BIT(6)
+#define LIS3MDL_REG_CTRL4               0x23
+#define LIS3MDL_OMZ_MASK                (BIT(3) | BIT(2))
+#define LIS3MDL_OMZ_SHIFT               2
+#define LIS3MDL_BLE_MASK                BIT(1)
+#define LIS3MDL_BLE_SHIFT               1
 
-#define LIS3MDL_REG_SAMPLE_START	0x28
+#define LIS3MDL_REG_CTRL5               0x24
+#define LIS3MDL_FAST_READ_MASK          BIT(7)
+#define LIS3MDL_FAST_READ_SHIFT         7
+#define LIS3MDL_BDU_MASK                BIT(6)
+#define LIS3MDL_BDU_SHIFT               6
 
-#define LIS3MDL_REG_INT_CFG		0x30
-#define LIS3MDL_INT_X_EN		BIT(7)
-#define LIS3MDL_INT_Y_EN		BIT(6)
-#define LIS3MDL_INT_Z_EN		BIT(5)
-#define LIS3MDL_INT_XYZ_EN		\
+#define LIS3MDL_BDU_EN                  (1 << LIS3MDL_BDU_SHIFT)
+
+#define LIS3MDL_REG_SAMPLE_START        0x28
+
+#define LIS3MDL_REG_INT_CFG             0x30
+#define LIS3MDL_INT_X_EN                BIT(7)
+#define LIS3MDL_INT_Y_EN                BIT(6)
+#define LIS3MDL_INT_Z_EN                BIT(5)
+#define LIS3MDL_INT_XYZ_EN              \
 	(LIS3MDL_INT_X_EN | LIS3MDL_INT_Y_EN | LIS3MDL_INT_Z_EN)
 
 static const char * const lis3mdl_odr_strings[] = {
