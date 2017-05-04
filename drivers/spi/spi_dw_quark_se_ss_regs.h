@@ -9,6 +9,10 @@
 #ifndef __SPI_DW_QUARK_SE_SS_H__
 #define __SPI_DW_QUARK_SE_SS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Registers:
  * Some registers have been collapsed into one
  * - SER is part of SSIENR
@@ -131,5 +135,9 @@ static inline void _clock_off(struct device *dev)
 
 	clear_bit_clk_ena(info->regs);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __SPI_DW_QUARK_SE_SS_H__ */
