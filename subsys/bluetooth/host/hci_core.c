@@ -4101,13 +4101,17 @@ int bt_le_scan_stop(void)
 	return bt_le_scan_update(false);
 }
 
-struct net_buf *bt_buf_get_rx(s32_t timeout)
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
 	struct net_buf *buf;
+
+	__ASSERT(type == BT_BUF_EVT || type == BT_BUF_ACL_IN,
+		 "Invalid buffer type requested");
 
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
 		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
+		bt_buf_set_type(buf, type);
 	}
 
 	return buf;
@@ -4133,12 +4137,7 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 		return buf;
 	}
 
-	buf = bt_buf_get_rx(timeout);
-	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_EVT);
-	}
-
-	return buf;
+	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)

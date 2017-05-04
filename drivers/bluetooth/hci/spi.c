@@ -181,17 +181,15 @@ static void bt_spi_rx_thread(void)
 				buf = bt_buf_get_cmd_complete(K_FOREVER);
 				break;
 			default:
-				buf = bt_buf_get_rx(K_FOREVER);
+				buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 				break;
 			}
 
-			bt_buf_set_type(buf, BT_BUF_EVT);
 			net_buf_add_mem(buf, &rxmsg[1],
 					rxmsg[EVT_HEADER_SIZE] + 2);
 			break;
 		case HCI_ACL:
-			buf = bt_buf_get_rx(K_FOREVER);
-			bt_buf_set_type(buf, BT_BUF_ACL_IN);
+			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 			memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
 			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
 			net_buf_add_mem(buf, &rxmsg[5],

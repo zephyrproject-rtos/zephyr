@@ -72,8 +72,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 #if defined(CONFIG_BLUETOOTH_CONN)
 			struct net_buf *buf;
 
-			buf = bt_buf_get_rx(K_FOREVER);
-			bt_buf_set_type(buf, BT_BUF_EVT);
+			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 			hci_num_cmplt_encode(buf, handle, num_cmplt);
 			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
 			bt_recv_prio(buf);
@@ -117,20 +116,18 @@ static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
 	case HCI_CLASS_EVT_REQUIRED:
 	case HCI_CLASS_EVT_CONNECTION:
 		if (class == HCI_CLASS_EVT_DISCARDABLE) {
-			buf = bt_buf_get_rx(K_NO_WAIT);
+			buf = bt_buf_get_rx(BT_BUF_EVT, K_NO_WAIT);
 		} else {
-			buf = bt_buf_get_rx(K_FOREVER);
+			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 		}
 		if (buf) {
-			bt_buf_set_type(buf, BT_BUF_EVT);
 			hci_evt_encode(node_rx, buf);
 		}
 		break;
 #if defined(CONFIG_BLUETOOTH_CONN)
 	case HCI_CLASS_ACL_DATA:
 		/* generate ACL data */
-		buf = bt_buf_get_rx(K_FOREVER);
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
+		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 		hci_acl_encode(node_rx, buf);
 		break;
 #endif
