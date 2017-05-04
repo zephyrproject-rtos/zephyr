@@ -414,7 +414,19 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 
 	if (flags & NET_TCP_FIN) {
 		tcp->flags |= NET_TCP_FINAL_SENT;
-		seq++;
+		/* RFC793 says about ACK bit: "Once a connection is
+		 * established this is always sent." as teardown
+		 * happens when connection is established, it must
+		 * have ACK set.
+		 */
+		flags |= NET_TCP_ACK;
+		/* FIXME: We apparently miss increment in another
+		 * transition of the state machine, so have to
+		 * adjust seq no by 2 here. This is required for
+		 * Linux to detect active close on server side, and
+		 * to make Wireshark happy about sequence numbers.
+		 */
+		seq += 2;
 
 		if (net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED ||
 		    net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
