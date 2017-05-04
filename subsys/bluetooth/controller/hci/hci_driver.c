@@ -55,7 +55,7 @@ static u32_t prio_ts;
 static u32_t rx_ts;
 #endif
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 static struct k_poll_signal hbuf_signal = K_POLL_SIGNAL_INITIALIZER();
 static sys_slist_t hbuf_pend;
 static s32_t hbuf_count;
@@ -148,7 +148,7 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 	s8_t class = hci_get_class(node_rx);
 	struct net_buf *buf = NULL;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	if (hbuf_count != -1) {
 		bool pend = !sys_slist_is_empty(&hbuf_pend);
 
@@ -181,7 +181,7 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 	return buf;
 }
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 static inline struct net_buf *process_hbuf(void)
 {
 	/* shadow total count in case of preemption */
@@ -262,7 +262,7 @@ static inline struct net_buf *process_hbuf(void)
 
 static void recv_thread(void *p1, void *p2, void *p3)
 {
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	/* @todo: check if the events structure really needs to be static */
 	static struct k_poll_event events[2] = {
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -279,7 +279,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf = NULL;
 
 		BT_DBG("blocking");
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 		int err;
 
 		err = k_poll(events, 2, K_FOREVER);
@@ -390,7 +390,7 @@ static int hci_driver_open(void)
 		return err;
 	}
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	hci_init(&hbuf_signal);
 #else
 	hci_init(NULL);

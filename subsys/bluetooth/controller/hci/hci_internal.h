@@ -8,7 +8,7 @@
 #ifndef _HCI_CONTROLLER_H_
 #define _HCI_CONTROLLER_H_
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 extern s32_t    hci_hbuf_total;
 extern u32_t    hci_hbuf_sent;
 extern u32_t    hci_hbuf_acked;

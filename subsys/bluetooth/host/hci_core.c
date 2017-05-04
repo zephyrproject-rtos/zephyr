@@ -125,7 +125,7 @@ NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
 		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 
-#if defined(CONFIG_BLUETOOTH_HOST_FLOW_CONTROL)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 static void report_completed_packet(struct net_buf *buf)
 {
 
@@ -162,7 +162,7 @@ static void report_completed_packet(struct net_buf *buf)
 #define ACL_IN_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_RX_MTU)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_RX_COUNT, ACL_IN_SIZE,
 		    BT_BUF_USER_DATA_MIN, report_completed_packet);
-#endif /* CONFIG_BLUETOOTH_HOST_FLOW_CONTROL */
+#endif /* CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -1014,7 +1014,7 @@ failed:
 	bt_le_scan_update(false);
 }
 
-#if defined(CONFIG_BLUETOOTH_HOST_FLOW_CONTROL)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 static int set_flow_control(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
@@ -1052,7 +1052,7 @@ static int set_flow_control(void)
 	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
 }
-#endif /* CONFIG_BLUETOOTH_HOST_FLOW_CONTROL */
+#endif /* CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL */
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -3070,7 +3070,7 @@ static int common_init(void)
 	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
 
-#if defined(CONFIG_BLUETOOTH_HOST_FLOW_CONTROL)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	err = set_flow_control();
 	if (err) {
 		return err;
@@ -4195,7 +4195,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 	__ASSERT(type == BT_BUF_EVT || type == BT_BUF_ACL_IN,
 		 "Invalid buffer type requested");
 
-#if defined(CONFIG_BLUETOOTH_HOST_FLOW_CONTROL)
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	if (type == BT_BUF_EVT) {
 		buf = net_buf_alloc(&hci_rx_pool, timeout);
 	} else {
