@@ -22,9 +22,9 @@ ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/devices/$(MCUX_DEVICE)
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/drivers
 
 ifdef CONFIG_IEEE802154_KW41Z
-ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.2/Common/
-ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.2/OSAbstraction/Interface
-ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.2/XCVR/MKW41Z4/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.3/Common/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.3/OSAbstraction/Interface
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.3/XCVR/MKW41Z4/
 endif
 
 # The mcux uses the cpu name to expose SoC-specific features of a given
