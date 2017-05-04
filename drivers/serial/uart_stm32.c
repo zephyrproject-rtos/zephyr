@@ -218,11 +218,6 @@ static int uart_stm32_irq_is_pending(struct device *dev)
 
 static int uart_stm32_irq_update(struct device *dev)
 {
-	 struct uart_stm32_data *data = DEV_DATA(dev);
-	 UART_HandleTypeDef *UartHandle = &data->huart;
-
-	__HAL_UART_CLEAR_FLAG(UartHandle, UART_FLAG_TC);
-
 	return 1;
 }
 
