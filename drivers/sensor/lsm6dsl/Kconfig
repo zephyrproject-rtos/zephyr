@@ -1,0 +1,94 @@
+# Kconfig - LSM6DSL accelerometer and gyroscope sensor configuration
+# options
+
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LSM6DSL
+	bool "LSM6DSL I2C accelerometer and gyroscope Chip"
+	depends on SENSOR && I2C
+	default n
+	help
+	  Enable driver for LSM6DSL I2C-based accelerometer and gyroscope
+	  sensor.
+
+config LSM6DSL_DEV_NAME
+	string "LSM6DSL device name"
+	depends on LSM6DSL
+	default "LSM6DSL"
+
+config LSM6DSL_I2C_ADDR
+	hex
+	prompt "LSM6DSL I2C address"
+	depends on LSM6DSL
+	default 0x6A
+	range 0x6A 0x6B
+	help
+	  I2C address of the LSM6DSL sensor.
+	  Use 0x6A if the SA0 pin is pulled to GND or 0x6B if the SA0 pin
+	  is pulled to VCC.
+
+config LSM6DSL_I2C_MASTER_DEV_NAME
+	string "I2C master where LSM6DSL chip is connected"
+	depends on LSM6DSL
+	default I2C_0_NAME
+	help
+	  Specify the device name of the I2C master device to which LSM6DSL is
+	  connected.
+
+config LSM6DSL_ENABLE_TEMP
+	bool "Enable temperature"
+	depends on LSM6DSL
+	default n
+	help
+	  Enable/disable temperature
+
+menu "Attributes"
+	depends on LSM6DSL
+
+config LSM6DSL_GYRO_FULLSCALE
+	int
+	prompt "Gyroscope full-scale range"
+	depends on LSM6DSL
+	default 2000
+	help
+	  Specify the default gyroscope full-scale range.
+	  An X value for the config represents a range of +/- X degree per
+	  second. Valid values are 125, 245, 500, 1000 and 2000.
+
+config LSM6DSL_GYRO_SAMPLING_RATE
+	int
+	prompt "Output data rate"
+	depends on LSM6DSL
+	default 26
+	help
+	  Specify the default gyroscope output data rate expressed in samples
+	  per second (Hz).
+	  Data rates supported by the chip are 0, 13, 26, 52, 104, 208, 416,
+	  833, 1660, 3330, 6660.
+
+config LSM6DSL_ACCEL_FULLSCALE
+	int
+	prompt "Accelerometer full-scale range"
+	depends on LSM6DSL
+	default 2
+	help
+	  Specify the default accelerometer full-scale range.
+	  An X value for the config represents a range of +/- X G. Valid values
+	  are 2, 4, 8 and 16.
+
+config LSM6DSL_ACCEL_SAMPLING_RATE
+	int
+	prompt "Output data rate"
+	depends on LSM6DSL
+	default 26
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  Data rates supported by the chip are 0, 2, 13, 26, 52, 104, 208,
+	  416, 833, 1660, 3330, 6660.
+
+endmenu
