@@ -1,14 +1,13 @@
 /*
 ** ###################################################################
 **     Version:             rev. 1.0, 2015-09-23
-**     Build:               b160720
+**     Build:               b170228
 **
 **     Abstract:
 **         Chip specific module features.
 **
-**     Copyright (c) 2016 Freescale Semiconductor, Inc.
-**     All rights reserved.
-**
+**     Copyright 2016 Freescale Semiconductor, Inc.
+**     Copyright 2016-2017 NXP
 **     Redistribution and use in source and binary forms, with or without modification,
 **     are permitted provided that the following conditions are met:
 **
@@ -19,7 +18,7 @@
 **       list of conditions and the following disclaimer in the documentation and/or
 **       other materials provided with the distribution.
 **
-**     o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+**     o Neither the name of the copyright holder nor the names of its
 **       contributors may be used to endorse or promote products derived from this
 **       software without specific prior written permission.
 **
@@ -34,8 +33,8 @@
 **     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 **     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **
-**     http:                 www.freescale.com
-**     mail:                 support@freescale.com
+**     http:                 www.nxp.com
+**     mail:                 support@nxp.com
 **
 **     Revisions:
 **     - rev. 1.0 (2015-09-23)
@@ -183,8 +182,8 @@
 #define FSL_FEATURE_SOC_MMAU_COUNT (0)
 /* @brief MMDVSQ availability on the SoC. */
 #define FSL_FEATURE_SOC_MMDVSQ_COUNT (0)
-/* @brief MPU availability on the SoC. */
-#define FSL_FEATURE_SOC_MPU_COUNT (0)
+/* @brief SYSMPU availability on the SoC. */
+#define FSL_FEATURE_SOC_SYSMPU_COUNT (0)
 /* @brief MSCAN availability on the SoC. */
 #define FSL_FEATURE_SOC_MSCAN_COUNT (0)
 /* @brief MSCM availability on the SoC. */
@@ -275,6 +274,8 @@
 #define FSL_FEATURE_SOC_USB_COUNT (0)
 /* @brief USBDCD availability on the SoC. */
 #define FSL_FEATURE_SOC_USBDCD_COUNT (0)
+/* @brief USBHS availability on the SoC. */
+#define FSL_FEATURE_SOC_USBHS_COUNT (0)
 /* @brief USBHSDCD availability on the SoC. */
 #define FSL_FEATURE_SOC_USBHSDCD_COUNT (0)
 /* @brief USBPHY availability on the SoC. */
@@ -428,6 +429,8 @@
     #define FSL_FEATURE_FLASH_HAS_MCM_FLASH_CACHE_CONTROLS (1)
     /* @brief Has flash cache control in MSCM module. */
     #define FSL_FEATURE_FLASH_HAS_MSCM_FLASH_CACHE_CONTROLS (0)
+    /* @brief Has prefetch speculation control in flash, such as kv5x. */
+    #define FSL_FEATURE_FLASH_PREFETCH_SPECULATION_CONTROL_IN_FLASH (0)
     /* @brief P-Flash start address. */
     #define FSL_FEATURE_FLASH_PFLASH_START_ADDRESS (0x00000000)
     /* @brief P-Flash block count. */
@@ -613,6 +616,8 @@
     #define FSL_FEATURE_FLASH_HAS_MCM_FLASH_CACHE_CONTROLS (1)
     /* @brief Has flash cache control in MSCM module. */
     #define FSL_FEATURE_FLASH_HAS_MSCM_FLASH_CACHE_CONTROLS (0)
+    /* @brief Has prefetch speculation control in flash, such as kv5x. */
+    #define FSL_FEATURE_FLASH_PREFETCH_SPECULATION_CONTROL_IN_FLASH (0)
     /* @brief P-Flash start address. */
     #define FSL_FEATURE_FLASH_PFLASH_START_ADDRESS (0x00000000)
     /* @brief P-Flash block count. */
@@ -777,6 +782,10 @@
     #define FSL_FEATURE_FLASH_FLEX_NVM_EEPROM_SIZE_FOR_EEESIZE_1111 (0xFFFF)
 #endif /* defined(CPU_MKW21Z256VHT4) */
 
+/* GENFSK module features */
+
+/* No feature definitions */
+
 /* GPIO module features */
 
 /* @brief Has fast (single cycle) access capability via a dedicated memory region. */
@@ -827,6 +836,8 @@
 #define FSL_FEATURE_LLWU_HAS_PF (0)
 /* @brief Has possibility to enable reset in low leakage power mode and enable digital filter for RESET pin (register LLWU_RST). */
 #define FSL_FEATURE_LLWU_HAS_RESET_ENABLE (0)
+/* @brief Has no internal module wakeup flag register. */
+#define FSL_FEATURE_LLWU_HAS_NO_INTERNAL_MODULE_WAKEUP_FLAG_REG (0)
 /* @brief Has external pin 0 connected to LLWU device. */
 #define FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN0 (1)
 /* @brief Index of port of external pin. */
@@ -1048,9 +1059,15 @@
 
 /* @brief Has shared interrupt handler with another LPTMR module. */
 #define FSL_FEATURE_LPTMR_HAS_SHARED_IRQ_HANDLER (0)
+/* @brief Whether LPTMR counter is 32 bits width. */
+#define FSL_FEATURE_LPTMR_CNR_WIDTH_IS_32B (0)
+/* @brief Has timer DMA request enable (register bit CSR[TDRE]). */
+#define FSL_FEATURE_LPTMR_HAS_CSR_TDRE (0)
 
 /* LPUART module features */
 
+/* @brief LPUART0 and LPUART1 has shared interrupt vector. */
+#define FSL_FEATURE_LPUART_HAS_SHARED_IRQ0_IRQ1 (0)
 /* @brief Has receive FIFO overflow detection (bit field CFIFO[RXOFE]). */
 #define FSL_FEATURE_LPUART_HAS_IRQ_EXTENDED_FUNCTIONS (0)
 /* @brief Has low power features (can be enabled in wait mode via register bit C1[DOZEEN] or CTRL[DOZEEN] if the registers are 32-bit wide). */
@@ -1177,7 +1194,7 @@
 #define FSL_FEATURE_MCG_USE_PLLREFSEL (0)
 /* @brief TBD */
 #define FSL_FEATURE_MCG_USE_SYSTEM_CLOCK (0)
-/* @brief Has phase-locked loop (PLL) (register C5 and bits C6[VDIV], C6[PLLS], C6[LOLIE0], S[PLLST], S[LOCK0], S[LOLS]). */
+/* @brief Has phase-locked loop (PLL) (register C5 and bits C6[VDIV], C6[PLLS], C6[LOLIE0], S[PLLST], S[LOCK0], S[LOLS0]). */
 #define FSL_FEATURE_MCG_HAS_PLL (0)
 /* @brief Has phase-locked loop (PLL) PRDIV (register C5[PRDIV]. */
 #define FSL_FEATURE_MCG_HAS_PLL_PRDIV (0)
@@ -1283,6 +1300,8 @@
 #define FSL_FEATURE_PORT_PCR_MUX_WIDTH (3)
 /* @brief Has dedicated interrupt vector. */
 #define FSL_FEATURE_PORT_HAS_INTERRUPT_VECTOR (1)
+/* @brief Has multiple pin IRQ configuration (register GICLR and GICHR). */
+#define FSL_FEATURE_PORT_HAS_MULTIPLE_IRQ_CONFIG (0)
 /* @brief Defines whether PCR[IRQC] bit-field has flag states. */
 #define FSL_FEATURE_PORT_HAS_IRQC_FLAG (0)
 /* @brief Defines whether PCR[IRQC] bit-field has trigger states. */
@@ -1296,6 +1315,12 @@
 #define FSL_FEATURE_RADIO_HAS_BLE (0)
 /* @brief ANT availability */
 #define FSL_FEATURE_RADIO_HAS_ANT (1)
+/* @brief Generic FSK module availability */
+#define FSL_FEATURE_RADIO_HAS_GENFSK (1)
+/* @brief Major version of the radio submodule */
+#define FSL_FEATURE_RADIO_VERSION_MAJOR (2)
+/* @brief Minor version of the radio submodule */
+#define FSL_FEATURE_RADIO_VERSION_MINOR (0)
 
 /* RCM module features */
 
@@ -1327,6 +1352,10 @@
 #define FSL_FEATURE_RCM_HAS_MDM_AP (1)
 /* @brief Has wakeup reset feature. Register bit SRS[WAKEUP]. */
 #define FSL_FEATURE_RCM_HAS_WAKEUP (1)
+
+/* RSIM module features */
+
+/* No feature definitions */
 
 /* RTC module features */
 
@@ -1570,7 +1599,7 @@
 /* @brief Has FTFE disable (register bit FCFG1[FTFDIS]). */
 #define FSL_FEATURE_SIM_FCFG_HAS_FTFDIS (0)
 /* @brief Has FlexNVM size specifier (register bit field FCFG1[NVMSIZE]). */
-#define FSL_FEATURE_SIM_FCFG_HAS_NVMSIZE (0)
+#define FSL_FEATURE_SIM_FCFG_HAS_NVMSIZE (1)
 /* @brief Has EEPROM size specifier (register bit field FCFG1[EESIZE]). */
 #define FSL_FEATURE_SIM_FCFG_HAS_EESIZE (0)
 /* @brief Has FlexNVM partition (register bit field FCFG1[DEPART]). */
@@ -1584,9 +1613,9 @@
 /* @brief Maximum flash address block 2 or 3 address specifier (register bit field FCFG2[MAXADDR23]). */
 #define FSL_FEATURE_SIM_FCFG_HAS_MAXADDR23 (0)
 /* @brief Has program flash availability specifier (register bit FCFG2[PFLSH]). */
-#define FSL_FEATURE_SIM_FCFG_HAS_PFLSH (0)
+#define FSL_FEATURE_SIM_FCFG_HAS_PFLSH (1)
 /* @brief Has program flash swapping (register bit FCFG2[SWAPPFLSH]). */
-#define FSL_FEATURE_SIM_FCFG_HAS_PFLSH_SWAP (0)
+#define FSL_FEATURE_SIM_FCFG_HAS_PFLSH_SWAP (1)
 /* @brief Has miscellanious control register (register MCR). */
 #define FSL_FEATURE_SIM_HAS_MISC_CONTROLS (0)
 /* @brief Has COP watchdog (registers COPC and SRVCOP). */
@@ -1630,6 +1659,12 @@
 #define FSL_FEATURE_SMC_HAS_PARAM (0)
 /* @brief Has SMC_VERID. */
 #define FSL_FEATURE_SMC_HAS_VERID (0)
+/* @brief Has stop abort flag (register bit PMCTRL[STOPA]). */
+#define FSL_FEATURE_SMC_HAS_PMCTRL_STOPA (1)
+/* @brief Has tamper reset (register bit SRS[TAMPER]). */
+#define FSL_FEATURE_SMC_HAS_SRS_TAMPER (0)
+/* @brief Has security violation reset (register bit SRS[SECVIO]). */
+#define FSL_FEATURE_SMC_HAS_SRS_SECVIO (0)
 
 /* DSPI module features */
 
@@ -1680,16 +1715,31 @@
 #define FSL_FEATURE_TPM_HAS_PAUSE_COUNTER_ON_TRIGGER (1)
 /* @brief Has external trigger selection. */
 #define FSL_FEATURE_TPM_HAS_EXTERNAL_TRIGGER_SELECTION (1)
-/* @brief Has TPM_COMBINE. */
+/* @brief Has TPM_COMBINE register. */
 #define FSL_FEATURE_TPM_HAS_COMBINE (1)
+/* @brief Whether COMBINE register has effect. */
+#define FSL_FEATURE_TPM_COMBINE_HAS_EFFECTn(x) \
+    ((x) == TPM0 ? (0) : \
+    ((x) == TPM1 ? (1) : \
+    ((x) == TPM2 ? (1) : (-1))))
 /* @brief Has TPM_POL. */
 #define FSL_FEATURE_TPM_HAS_POL (1)
-/* @brief Has TPM_FILTER. */
+/* @brief Has TPM_FILTER register. */
 #define FSL_FEATURE_TPM_HAS_FILTER (1)
-/* @brief Has TPM_QDCTRL. */
+/* @brief Whether FILTER register has effect. */
+#define FSL_FEATURE_TPM_FILTER_HAS_EFFECTn(x) \
+    ((x) == TPM0 ? (0) : \
+    ((x) == TPM1 ? (1) : \
+    ((x) == TPM2 ? (1) : (-1))))
+/* @brief Has TPM_QDCTRL register. */
 #define FSL_FEATURE_TPM_HAS_QDCTRL (1)
+/* @brief Whether QDCTRL register has effect. */
+#define FSL_FEATURE_TPM_QDCTRL_HAS_EFFECTn(x) \
+    ((x) == TPM0 ? (0) : \
+    ((x) == TPM1 ? (1) : \
+    ((x) == TPM2 ? (1) : (-1))))
 
-/* TRNG0 module features */
+/* TRNG module features */
 
 /* No feature definitions */
 
@@ -1714,6 +1764,18 @@
 #define FSL_FEATURE_VREF_HAS_LOW_REFERENCE (0)
 /* @brief Has VREF_TRM4. */
 #define FSL_FEATURE_VREF_HAS_TRM4 (0)
+
+/* XCVR_ANALOG module features */
+
+/* No feature definitions */
+
+/* XCVR_PHY module features */
+
+/* No feature definitions */
+
+/* ZLL module features */
+
+/* No feature definitions */
 
 #endif /* _MKW21Z4_FEATURES_H_ */
 
