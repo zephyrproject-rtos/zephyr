@@ -344,6 +344,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[0] = (1 << 5);
 	/* Set Event Mask, and Reset. */
 	rp->commands[5] = (1 << 6) | (1 << 7);
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_FC)
+	/* Set FC, Host Buffer Size and Host Num Completed */
+	rp->commands[10] = (1 << 5) | (1 << 6) | (1 << 7);
+#endif
 	/* Read Local Version Info, Read Local Supported Features. */
 	rp->commands[14] = (1 << 3) | (1 << 5);
 	/* Read BD ADDR. */
