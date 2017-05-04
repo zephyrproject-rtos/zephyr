@@ -137,8 +137,7 @@ static void emulate_le_p256_public_key_cmd(void)
 
 	status = generate_keys();
 
-	buf = bt_buf_get_rx(K_FOREVER);
-	bt_buf_set_type(buf, BT_BUF_EVT);
+	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->evt = BT_HCI_EVT_LE_META_EVENT;
@@ -176,8 +175,7 @@ static void emulate_le_generate_dhkey(void)
 		ret = ecdh_shared_secret(ecc.dhkey, &ecc.pk, ecc.private_key);
 	}
 
-	buf = bt_buf_get_rx(K_FOREVER);
-	bt_buf_set_type(buf, BT_BUF_EVT);
+	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->evt = BT_HCI_EVT_LE_META_EVENT;

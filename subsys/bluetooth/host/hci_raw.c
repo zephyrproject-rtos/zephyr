@@ -45,7 +45,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 	return 0;
 }
 
-struct net_buf *bt_buf_get_rx(s32_t timeout)
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
 	return net_buf_alloc(&hci_rx_pool, timeout);
 }

@@ -167,7 +167,11 @@ static struct net_buf *get_rx(int timeout)
 		return bt_buf_get_cmd_complete(timeout);
 	}
 
-	return bt_buf_get_rx(timeout);
+	if (rx.type == H4_ACL) {
+		return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+	} else {
+		return bt_buf_get_rx(BT_BUF_EVT, timeout);
+	}
 }
 
 static void rx_thread(void *p1, void *p2, void *p3)
