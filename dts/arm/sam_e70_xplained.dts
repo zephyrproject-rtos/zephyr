@@ -1,0 +1,13 @@
+/dts-v1/;
+
+#include <atmel/same70.dtsi>
+
+/ {
+	model = "Atmel SAM E70 Xplained board";
+	compatible = "atmel,sam_e70_xplained", "atmel,same70q21", "atmel,same70";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <atmel/same70_mem.h>
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m7";
+		};
+	};
+
+	flash0: flash {
+		compatible = "flash";
+		reg = <0x00400000 DT_FLASH_SIZE>;
+	};
+
+	sram0: memory {
+		compatible = "sram";
+		reg = <0x20400000 DT_SRAM_SIZE>;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
