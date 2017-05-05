@@ -4,131 +4,332 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if 1
+#define SYS_LOG_DOMAIN "http-client"
+#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define NET_LOG_ENABLED 1
+#endif
+
 #include <zephyr.h>
 #include <errno.h>
-#include <misc/printk.h>
+
+#include <net/net_core.h>
+#include <net/net_ip.h>
 
 #include <net/http.h>
-#include "http_client.h"
-#include "http_client_types.h"
+
+#include <net_sample_app.h>
+
 #include "config.h"
 
-#define POST_CONTENT_TYPE "application/x-www-form-urlencoded"
-#define POST_PAYLOAD "os=ZephyrRTOS&arch="CONFIG_ARCH
+#define MAX_ITERATIONS	20
+#define WAIT_TIME (APP_REQ_TIMEOUT * 2)
 
-#define MAX_ITERATIONS	100
+#define RESULT_BUF_SIZE 1024
+static u8_t result[RESULT_BUF_SIZE];
 
+/*
+ * Note that the http_client_ctx is quite large so be careful if that is
+ * allocated from stack.
+ */
 static struct http_client_ctx http_ctx;
 
-static void send_http_method(enum http_method method, char *url,
-			     char *content_type, char *payload);
+struct waiter {
+	struct http_client_ctx *ctx;
+	struct k_sem wait;
+	size_t total_len;
+	size_t header_len;
+};
 
-void main(void)
+void panic(const char *msg)
 {
-	int i = MAX_ITERATIONS;
-	int rc;
-
-	http_init(&http_ctx);
-	http_ctx.tcp_ctx.receive_cb = http_receive_cb;
-	http_ctx.tcp_ctx.timeout = HTTP_NETWORK_TIMEOUT;
-
-	rc = tcp_set_local_addr(&http_ctx.tcp_ctx, LOCAL_ADDR);
-	if (rc) {
-		printk("tcp_set_local_addr error\n");
-		goto lb_exit;
+	if (msg) {
+		NET_ERR("%s", msg);
 	}
 
-	while (i-- > 0) {
-		send_http_method(HTTP_GET, "/index.html", NULL, NULL);
-		k_sleep(APP_NAP_TIME);
-
-		send_http_method(HTTP_HEAD, "/", NULL, NULL);
-		k_sleep(APP_NAP_TIME);
-
-		send_http_method(HTTP_OPTIONS, "/index.html", NULL, NULL);
-		k_sleep(APP_NAP_TIME);
-
-		send_http_method(HTTP_POST, "/post_test.php",
-				 POST_CONTENT_TYPE, POST_PAYLOAD);
-		k_sleep(APP_NAP_TIME);
+	for (;;) {
+		k_sleep(K_FOREVER);
 	}
-
-lb_exit:
-	printk("\nBye!\n");
 }
 
-void print_banner(enum http_method method)
+static int do_sync_http_req(struct http_client_ctx *ctx,
+			    enum http_method method,
+			    const char *url,
+			    const char *content_type,
+			    const char *payload)
 {
-	printk("\n*******************************************\n"
-	       "HTTP Client: %s\nConnecting to: %s port %d\n"
-	       "Hostname: %s\nHTTP Request: %s\n",
-	       LOCAL_ADDR, SERVER_ADDR, SERVER_PORT,
-	       HOST_NAME, http_method_str(method));
-}
+	struct http_client_request req = {};
+	int ret;
 
-static void send_http_method(enum http_method method, char *url,
-			     char *content_type, char *payload)
-{
-	struct net_context *net_ctx;
-	s32_t timeout;
-	int rc;
+	req.method = method;
+	req.url = url;
+	req.protocol = " " HTTP_PROTOCOL HTTP_CRLF;
 
-	print_banner(method);
-
-	http_reset_ctx(&http_ctx);
-
-	rc = tcp_connect(&http_ctx.tcp_ctx, SERVER_ADDR, SERVER_PORT);
-	if (rc) {
-		printk("tcp_connect error\n");
-		return;
+	ret = http_client_send_req(ctx, &req, NULL, result, sizeof(result),
+				   NULL, APP_REQ_TIMEOUT);
+	if (ret < 0) {
+		NET_ERR("Cannot send %s request (%d)", http_method_str(method),
+			ret);
+		goto out;
 	}
 
-	net_ctx = http_ctx.tcp_ctx.net_ctx;
-	timeout = http_ctx.tcp_ctx.timeout;
+	if (ctx->rsp.data_len > sizeof(result)) {
+		NET_ERR("Result buffer overflow by %zd bytes",
+		       ctx->rsp.data_len - sizeof(result));
 
-	switch (method) {
-	case HTTP_GET:
-		rc = http_request_get(net_ctx, timeout, url, HEADER_FIELDS);
-		break;
-	case HTTP_POST:
-		rc = http_request_post(net_ctx, timeout, url, HEADER_FIELDS,
-				       content_type, payload);
-		break;
-	case HTTP_HEAD:
-		rc = http_request_head(net_ctx, timeout, url, HEADER_FIELDS);
-		break;
-	case HTTP_OPTIONS:
-		rc = http_request_options(net_ctx, timeout, url, HEADER_FIELDS);
-		break;
-	default:
-		printk("Not yet implemented\n");
-		goto lb_exit;
-	}
+		ret = -E2BIG;
+	} else {
+		NET_INFO("HTTP server response status: %s",
+			 ctx->rsp.http_status);
 
-	if (rc) {
-		printk("Send error\n");
-		goto lb_exit;
-	}
+		if (ctx->parser.http_errno) {
+			if (method == HTTP_OPTIONS) {
+				/* Ignore error if OPTIONS is not found */
+				goto out;
+			}
 
-	/* this is async, so we wait until the reception callback
-	 * processes the server's response (if any)
-	 */
-	k_sleep(APP_NAP_TIME);
+			NET_INFO("HTTP parser status: %s",
+			       http_errno_description(ctx->parser.http_errno));
+			ret = -EINVAL;
+			goto out;
+		}
 
-	printk("\nHTTP server response status: %s\n", http_ctx.http_status);
-
-	printk("HTTP parser status: %s\n",
-	       http_errno_description(http_ctx.parser.http_errno));
-
-	if (method == HTTP_GET) {
-		if (http_ctx.body_found) {
-			printk("HTTP body: %u bytes, expected: %u bytes\n",
-			       http_ctx.processed, http_ctx.content_length);
-		} else {
-			printk("Error detected during HTTP msg processing\n");
+		if (method != HTTP_HEAD) {
+			if (ctx->rsp.body_found) {
+				NET_INFO("HTTP body: %zd bytes, "
+					 "expected: %zd bytes",
+					 ctx->rsp.processed,
+					 ctx->rsp.content_length);
+			} else {
+				NET_ERR("Error detected during HTTP msg "
+					"processing");
+			}
 		}
 	}
 
-lb_exit:
-	tcp_disconnect(&http_ctx.tcp_ctx);
+out:
+	return ret;
+}
+
+void response(struct http_client_ctx *ctx,
+	      u8_t *data, size_t buflen,
+	      size_t datalen,
+	      enum http_final_call data_end,
+	      void *user_data)
+{
+	struct waiter *waiter = user_data;
+	int ret;
+
+	if (data_end == HTTP_DATA_MORE) {
+		NET_INFO("Received %zd bytes piece of data", datalen);
+
+		/* Do something with the data here. For this example
+		 * we just ignore the received data.
+		 */
+		waiter->total_len += datalen;
+
+		if (ctx->rsp.body_start) {
+			/* This fragment contains the start of the body
+			 * Note that the header length is not proper if
+			 * the header is spanning over multiple recv
+			 * fragments.
+			 */
+			waiter->header_len = ctx->rsp.body_start -
+				ctx->rsp.response_buf;
+		}
+
+		return;
+	}
+
+	waiter->total_len += datalen;
+
+	NET_INFO("HTTP server response status: %s", ctx->rsp.http_status);
+
+	if (ctx->parser.http_errno) {
+		if (ctx->req.method == HTTP_OPTIONS) {
+			/* Ignore error if OPTIONS is not found */
+			goto out;
+		}
+
+		NET_INFO("HTTP parser status: %s",
+			 http_errno_description(ctx->parser.http_errno));
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (ctx->req.method != HTTP_HEAD && ctx->req.method != HTTP_OPTIONS) {
+		if (ctx->rsp.body_found) {
+			NET_INFO("HTTP body: %zd bytes, expected: %zd bytes",
+				 ctx->rsp.processed, ctx->rsp.content_length);
+		} else {
+			NET_ERR("Error detected during HTTP msg processing");
+		}
+
+		if (waiter->total_len !=
+		    waiter->header_len + ctx->rsp.content_length) {
+			NET_ERR("Error while receiving data, "
+				"received %zd expected %zd bytes",
+				waiter->total_len, waiter->header_len +
+				ctx->rsp.content_length);
+		}
+	}
+
+out:
+	k_sem_give(&waiter->wait);
+}
+
+static int do_async_http_req(struct http_client_ctx *ctx,
+			     enum http_method method,
+			     const char *url,
+			     const char *content_type,
+			     const char *payload)
+{
+	struct http_client_request req = {};
+	struct waiter waiter;
+	int ret;
+
+	req.method = method;
+	req.url = url;
+	req.protocol = " " HTTP_PROTOCOL HTTP_CRLF;
+
+	k_sem_init(&waiter.wait, 0, 1);
+
+	waiter.total_len = 0;
+
+	ret = http_client_send_req(ctx, &req, response, result, sizeof(result),
+				   &waiter, APP_REQ_TIMEOUT);
+	if (ret < 0 && ret != -EINPROGRESS) {
+		NET_ERR("Cannot send %s request (%d)", http_method_str(method),
+			ret);
+		goto out;
+	}
+
+	if (k_sem_take(&waiter.wait, WAIT_TIME)) {
+		NET_ERR("Timeout while waiting HTTP response");
+		http_client_release(ctx);
+		ret = -ETIMEDOUT;
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	return ret;
+}
+
+static inline int do_sync_reqs(struct http_client_ctx *ctx, int count)
+{
+	int ret;
+
+	/* These examples use the HTTP client API synchronously so they
+	 * do not set the callback parameter.
+	 */
+	while (count--) {
+		ret = do_sync_http_req(&http_ctx, HTTP_GET, "/index.html",
+				       NULL, NULL);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = do_sync_http_req(&http_ctx, HTTP_HEAD, "/",
+				       NULL, NULL);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = do_sync_http_req(&http_ctx, HTTP_OPTIONS, "/index.html",
+				       NULL, NULL);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = do_sync_http_req(&http_ctx, HTTP_POST, "/post_test.php",
+				       POST_CONTENT_TYPE, POST_PAYLOAD);
+		if (ret < 0) {
+			goto out;
+		}
+
+		/* Note that we cannot receive data bigger than RESULT_BUF_SIZE
+		 * if we wait the buffer synchronously. If you want to receive
+		 * bigger data, then you need to set the callback when sending
+		 * the HTTP request using http_client_send_req()
+		 */
+	}
+
+out:
+	return ret;
+}
+
+static inline int do_async_reqs(struct http_client_ctx *ctx, int count)
+{
+	int ret;
+
+	/* These examples use the HTTP client API asynchronously so they
+	 * do set the callback parameter.
+	 */
+	while (count--) {
+		ret = do_async_http_req(&http_ctx, HTTP_GET, "/index.html",
+					NULL, NULL);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = do_async_http_req(&http_ctx, HTTP_HEAD, "/",
+					NULL, NULL);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = do_async_http_req(&http_ctx, HTTP_OPTIONS, "/index.html",
+					NULL, NULL);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = do_async_http_req(&http_ctx, HTTP_POST, "/post_test.php",
+					POST_CONTENT_TYPE, POST_PAYLOAD);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = do_async_http_req(&http_ctx, HTTP_GET, "/big-file.html",
+					NULL, NULL);
+		if (ret < 0) {
+			goto out;
+		}
+	}
+
+out:
+	return ret;
+}
+
+void main(void)
+{
+	int ret;
+
+	ret = net_sample_app_init("Run HTTP client", 0, APP_STARTUP_TIME);
+	if (ret < 0) {
+		panic("Application init failed");
+	}
+
+	ret = http_client_init(&http_ctx, SERVER_ADDR, SERVER_PORT);
+	if (ret < 0) {
+		NET_ERR("HTTP init failed (%d)", ret);
+		panic(NULL);
+	}
+
+	ret = do_sync_reqs(&http_ctx, MAX_ITERATIONS);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = do_async_reqs(&http_ctx, MAX_ITERATIONS);
+	if (ret < 0) {
+		goto out;
+	}
+
+out:
+	http_client_release(&http_ctx);
+
+	NET_INFO("Done!");
 }
