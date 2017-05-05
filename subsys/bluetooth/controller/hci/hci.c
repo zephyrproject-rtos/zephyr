@@ -198,6 +198,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_set_ctl_to_host_flow *cmd = (void *)buf->data;
+	u8_t flow_enable = cmd->flow_enable;
 	struct bt_hci_evt_cc_status *ccst;
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
@@ -212,7 +213,7 @@ static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 		ccst->status = 0x00;
 	}
 
-	switch (cmd->flow_enable) {
+	switch (flow_enable) {
 	case BT_HCI_CTL_TO_HOST_FLOW_DISABLE:
 		if (hci_hbuf_total < 0) {
 			/* already disabled */
@@ -239,6 +240,8 @@ static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_host_buffer_size *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
+	u16_t acl_pkts = cmd->acl_pkts;
+	u16_t acl_mtu = cmd->acl_pkts;
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 
@@ -249,12 +252,12 @@ static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 	/* fragmentation from controller to host not supported, require
 	 * ACL MTU to be at least the LL MTU
 	 */
-	if (cmd->acl_mtu < RADIO_LL_LENGTH_OCTETS_RX_MAX) {
+	if (acl_mtu < RADIO_LL_LENGTH_OCTETS_RX_MAX) {
 		ccst->status = BT_HCI_ERR_INVALID_PARAM;
 		return;
 	}
 
-	hci_hbuf_total = -cmd->acl_pkts;
+	hci_hbuf_total = -acl_pkts;
 }
 
 static void host_num_completed_packets(struct net_buf *buf,
