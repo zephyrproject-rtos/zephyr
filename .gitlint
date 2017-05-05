@@ -19,6 +19,9 @@ max-line-count=200
 [title-max-length]
 line-length=72
 
+[title-starts-with-subsystem]
+regex = ^(([^:]+):)(\s([^:]+):)*\s(.+)$
+
 [title-must-not-contain-word]
 # Comma-separated list of words that should not occur in the title. Matching is case
 # insensitive. It's fine if the keyword occurs as part of a larger word (so "WIPING"
