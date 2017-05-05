@@ -23,6 +23,7 @@ struct spi_context {
 	struct spi_config *config;
 
 	struct k_sem lock;
+	struct k_sem sync;
 
 	const struct spi_buf **current_tx;
 	struct spi_buf **current_rx;
@@ -35,6 +36,9 @@ struct spi_context {
 
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
 	._ctx_name.lock = K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
+
+#define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
+	._ctx_name.sync = K_SEM_INITIALIZER(_data._ctx_name.sync, 0, UINT_MAX)
 
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  struct spi_config *config)
@@ -50,6 +54,16 @@ static inline void spi_context_lock(struct spi_context *ctx)
 static inline void spi_context_release(struct spi_context *ctx)
 {
 	k_sem_give(&ctx->lock);
+}
+
+static inline void spi_context_wait_for_completion(struct spi_context *ctx)
+{
+	k_sem_take(&ctx->sync, K_FOREVER);
+}
+
+static inline void spi_context_complete(struct spi_context *ctx)
+{
+	k_sem_give(&ctx->sync);
 }
 
 static inline void spi_context_cs_configure(struct spi_context *ctx)
