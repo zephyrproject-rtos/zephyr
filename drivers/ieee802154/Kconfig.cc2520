@@ -46,7 +46,7 @@ config IEEE802154_CC2520_RX_STACK_SIZE
 	a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_CC2520_INIT_PRIO
-	int "CC2520 intialization priority"
+	int "CC2520 initialization priority"
 	default 80
 	help
 	Set the initialization priority number. Do not mess with it unless

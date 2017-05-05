@@ -92,11 +92,11 @@ config TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS
 	default 1000
 	depends on TICKLESS_KERNEL
 	help
-	This option makes the system clock and scheduling granurality.
+	This option makes the system clock and scheduling granularity.
 	The default will be one mili second. This option also determines
 	the time unit passed in functions like _sys_soc_suspend. The
 	value should be determined based what the timer hardware and driver
-	can support. Spceficying too small a time unit than what the overall
+	can support. Specifying too small a time unit than what the overall
 	system speed can support would cause scheduling errors.
 
 config BUSY_WAIT_USES_ALTERNATE_CLOCK
@@ -106,7 +106,7 @@ config BUSY_WAIT_USES_ALTERNATE_CLOCK
 	help
 	In tickless kernel mode, the system clock will be stopped when
 	there are no timer events programmed. If the system clock is to
-	be used to keep time e.g. to get a delata of time cycles then it
+	be used to keep time e.g. to get a delta of time cycles then it
 	needs to be turned on using provided APIs. Some platforms have
 	alternate clocks which can be used instead. In that case this flag
 	would be set to true. This flag would be checked before turning

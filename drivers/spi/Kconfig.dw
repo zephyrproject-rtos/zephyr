@@ -43,7 +43,7 @@ config SPI_DW_INTERRUPT_SEPARATED_LINES
 endchoice
 
 config SPI_DW_CLOCK_GATE
-	bool "Enable glock gating"
+	bool "Enable clock gating"
 	depends on SPI_DW && SOC_QUARK_SE_C1000
 	select CLOCK_CONTROL
 	default n
