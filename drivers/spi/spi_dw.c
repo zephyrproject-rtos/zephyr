@@ -250,18 +250,17 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	return 0;
 }
 
-static int spi_dw_transceive(struct device *dev,
-			     struct spi_config *config,
+static int spi_dw_transceive(struct spi_config *config,
 			     const struct spi_buf **tx_bufs,
 			     struct spi_buf **rx_bufs)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
-	struct spi_dw_data *spi = dev->driver_data;
+	const struct spi_dw_config *info = config->dev->config->config_info;
+	struct spi_dw_data *spi = config->dev->driver_data;
 	u32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
 	u32_t imask = DW_SPI_IMR_UNMASK;
 	int ret = 0;
 
-	SYS_LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
+	SYS_LOG_DBG("%p, %p, %p", config->dev, tx_bufs, rx_bufs);
 
 	/* Check status */
 	if (test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
