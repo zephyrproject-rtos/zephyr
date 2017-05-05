@@ -22,6 +22,8 @@ extern "C" {
 struct spi_context {
 	struct spi_config *config;
 
+	struct k_sem lock;
+
 	const struct spi_buf **current_tx;
 	struct spi_buf **current_rx;
 
@@ -31,10 +33,23 @@ struct spi_context {
 	u32_t rx_len;
 };
 
+#define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
+	._ctx_name.lock = K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
+
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  struct spi_config *config)
 {
 	return !!(ctx->config == config);
+}
+
+static inline void spi_context_lock(struct spi_context *ctx)
+{
+	k_sem_take(&ctx->lock, K_FOREVER);
+}
+
+static inline void spi_context_release(struct spi_context *ctx)
+{
+	k_sem_give(&ctx->lock);
 }
 
 static inline void spi_context_cs_configure(struct spi_context *ctx)

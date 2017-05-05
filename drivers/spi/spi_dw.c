@@ -259,6 +259,7 @@ static int spi_dw_transceive(struct device *dev,
 	struct spi_dw_data *spi = dev->driver_data;
 	u32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
 	u32_t imask = DW_SPI_IMR_UNMASK;
+	int ret = 0;
 
 	SYS_LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
 
@@ -268,9 +269,12 @@ static int spi_dw_transceive(struct device *dev,
 		return -EBUSY;
 	}
 
+	spi_context_lock(&spi->ctx);
+
 	/* Configure */
-	if (spi_dw_configure(info, spi, config)) {
-		return -EINVAL;
+	ret = spi_dw_configure(info, spi, config);
+	if (ret) {
+		goto out;
 	}
 
 	/* Set buffers info */
@@ -305,11 +309,12 @@ static int spi_dw_transceive(struct device *dev,
 	k_sem_take(&spi->device_sync_sem, K_FOREVER);
 
 	if (spi->error) {
-		spi->error = 0;
-		return -EIO;
+		ret = -EIO;
 	}
+out:
+	spi_context_release(&spi->ctx);
 
-	return 0;
+	return ret;
 }
 
 void spi_dw_isr(struct device *dev)
@@ -365,6 +370,8 @@ int spi_dw_init(struct device *dev)
 
 	SYS_LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
+	spi_context_release(&spi->ctx);
+
 	return 0;
 }
 
@@ -372,7 +379,9 @@ int spi_dw_init(struct device *dev)
 #ifdef CONFIG_SPI_0
 void spi_config_0_irq(void);
 
-struct spi_dw_data spi_dw_data_port_0;
+struct spi_dw_data spi_dw_data_port_0 = {
+	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_0, ctx),
+};
 
 const struct spi_dw_config spi_dw_config_0 = {
 	.regs = SPI_DW_PORT_0_REGS,
@@ -415,7 +424,9 @@ void spi_config_0_irq(void)
 #ifdef CONFIG_SPI_1
 void spi_config_1_irq(void);
 
-struct spi_dw_data spi_dw_data_port_1;
+struct spi_dw_data spi_dw_data_port_1 = {
+	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_1, ctx),
+};
 
 static const struct spi_dw_config spi_dw_config_1 = {
 	.regs = SPI_DW_PORT_1_REGS,
