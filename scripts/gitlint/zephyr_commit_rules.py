@@ -1,5 +1,6 @@
 from gitlint.rules import CommitRule, RuleViolation
 from gitlint.options import IntOption
+import re
 
 """
 The classes below are examples of user-defined CommitRules. Commit rules are gitlint rules that
@@ -45,8 +46,12 @@ class SignedOffBy(CommitRule):
     id = "UC2"
 
     def validate(self, commit):
+        flags = re.UNICODE
+        flags |= re.IGNORECASE
         for line in commit.message.body:
             if line.lower().startswith("signed-off-by"):
-                return
-
+                if not re.search('(^)Signed-off-by: ([-\w.]+) ([-\w.]+) (.*)', line, flags=flags):
+                    return [RuleViolation(self.id, "Signed-off-by: must have a full name", line_nr=1)]
+                else:
+                    return
         return [RuleViolation(self.id, "Body does not contain a 'Signed-Off-By' line", line_nr=1)]
