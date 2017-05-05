@@ -66,11 +66,6 @@ build:
             export ARCH="-a arm -a arc -a nios2 -a riscv32";
           fi;
       - >
-          if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify-asserts" ]; then
-            echo "- Building with --all --enable-slow -R";
-            COVERAGE="--all --enable-slow -R";
-          fi;
-      - >
           if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify" ]; then
             echo "- Building with --all --enable-slow";
             COVERAGE="--all --enable-slow";
