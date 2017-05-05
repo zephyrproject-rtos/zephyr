@@ -43,14 +43,16 @@ enum bt_buf_type {
 
 /** Allocate a buffer for incoming data
  *
- *  This will not set the buffer type so bt_buf_set_type() needs to be called
- *  before bt_recv().
+ *  This will set the buffer type so bt_buf_set_type() does not need to
+ *  be explicitly called before bt_recv_prio().
  *
+ *  @param type    Type of buffer. Only BT_BUF_EVT and BT_BUF_ACL_IN are
+ *                 allowed.
  *  @param timeout Timeout in milliseconds, or one of the special values
  *                 K_NO_WAIT and K_FOREVER.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_rx(s32_t timeout);
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout);
 
 /** Allocate a buffer for an HCI Command Complete/Status Event
  *

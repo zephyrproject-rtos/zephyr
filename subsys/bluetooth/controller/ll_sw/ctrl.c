@@ -37,7 +37,8 @@
 #include <bluetooth/log.h>
 
 #define RADIO_PREAMBLE_TO_ADDRESS_US	40
-#define RADIO_HCTO_US			(150 + 2 + 2 + \
+#define RADIO_TIFS                      150
+#define RADIO_HCTO_US			(RADIO_TIFS + 2 + 2 + \
 					 RADIO_PREAMBLE_TO_ADDRESS_US)
 #define RADIO_CONN_EVENTS(x, y)		((u16_t)((x) / (y)))
 
@@ -511,6 +512,7 @@ static inline void isr_radio_state_tx(void)
 {
 	_radio.state = STATE_RX;
 
+	radio_tmr_tifs_set(RADIO_TIFS);
 	radio_switch_complete_and_tx();
 
 	radio_tmr_hcto_configure(radio_tmr_end_get() +
@@ -1116,6 +1118,7 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		_radio.state = STATE_TX;
 
 		radio_pkt_tx_set(pdu_adv_tx);
+		radio_tmr_tifs_set(RADIO_TIFS);
 		radio_switch_complete_and_rx();
 		radio_tmr_end_capture();
 
@@ -2245,7 +2248,7 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 			radio_switch_complete_and_disable();
 		}
 	} else {	/* if (_radio.state == STATE_TX) */
-
+		radio_tmr_tifs_set(RADIO_TIFS);
 		radio_switch_complete_and_rx();
 		radio_tmr_end_capture();
 	}
@@ -2470,6 +2473,7 @@ static inline u32_t isr_close_obs(void)
 		dont_close = 1;
 
 		radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
+		radio_tmr_tifs_set(RADIO_TIFS);
 		radio_switch_complete_and_tx();
 		radio_rssi_measure();
 
@@ -4299,7 +4303,6 @@ static void adv_obs_conn_configure(u8_t phy)
 	radio_reset();
 	radio_phy_set(phy);
 	radio_tx_power_set(0);
-	radio_tmr_tifs_set(150);
 	radio_isr_set(isr);
 }
 
@@ -4352,6 +4355,7 @@ static void adv_setup(void)
 
 	radio_pkt_tx_set(&_radio.advertiser.adv_data.data
 			 [_radio.advertiser.adv_data.first][0]);
+	radio_tmr_tifs_set(RADIO_TIFS);
 	radio_switch_complete_and_rx();
 
 	bitmap = _radio.advertiser.chl_map_current;
@@ -4576,6 +4580,7 @@ static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	}
 
 	radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
+	radio_tmr_tifs_set(RADIO_TIFS);
 	radio_switch_complete_and_tx();
 	radio_rssi_measure();
 
@@ -5871,6 +5876,7 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	rx_packet_set(conn, (struct pdu_data *)
 		      _radio.packet_rx[_radio.packet_rx_last]->pdu_data);
 
+	radio_tmr_tifs_set(RADIO_TIFS);
 	radio_switch_complete_and_tx();
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
@@ -6008,6 +6014,7 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	connection_configure(conn);
 
 	tx_packet_set(conn, pdu_data_tx);
+	radio_tmr_tifs_set(RADIO_TIFS);
 	radio_switch_complete_and_rx();
 
 	/* Setup Radio Channel */
@@ -6054,6 +6061,7 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 		rx_packet_set(conn, (struct pdu_data *)_radio.
 			      packet_rx[_radio.packet_rx_last]->pdu_data);
+		radio_tmr_tifs_set(RADIO_TIFS);
 		radio_switch_complete_and_tx();
 
 		/* setup pkticker and hcto */

@@ -196,7 +196,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 /** @brief Automatically connect to remote device if it's in range.
  *
  *  This function enables/disables automatic connection initiation.
- *  Every time the device looses the connection with peer, this connection
+ *  Every time the device loses the connection with peer, this connection
  *  will be re-established if connectable advertisement from peer is received.
  *
  *  @param addr Remote Bluetooth address.

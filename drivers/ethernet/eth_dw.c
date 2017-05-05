@@ -1,27 +1,32 @@
 /*
- * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2017 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <sys_io.h>
+#define SYS_LOG_DOMAIN "ETH DW"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
+#include <logging/sys_log.h>
+
 #include <board.h>
-#include <init.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "eth_dw_priv.h"
-#include <net/ip/net_driver_ethernet.h>
-#include <misc/__assert.h>
+#include <device.h>
 #include <errno.h>
+#include <init.h>
+#include <kernel.h>
+#include <misc/__assert.h>
+#include <net/net_core.h>
+#include <net/net_pkt.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys_io.h>
+
+#include "eth_dw_priv.h"
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
 #endif
 
-#define SYS_LOG_DOMAIN "ETH DW"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
-#include <logging/sys_log.h>
+#define TX_BUSY_LOOP_SPINS 20
 
 static inline u32_t eth_read(u32_t base_addr, u32_t offset)
 {
@@ -37,44 +42,64 @@ static inline void eth_write(u32_t base_addr, u32_t offset,
 static void eth_rx(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
-	u32_t base_addr = context->base_addr;
-	struct net_buf *buf;
-	u32_t frm_len = 0;
+	struct net_pkt *pkt;
+	u32_t frm_len;
+	int r;
 
 	/* Check whether the RX descriptor is still owned by the device.  If not,
 	 * process the received frame or an error that may have occurred.
 	 */
-	if (context->rx_desc.own == 1) {
-		SYS_LOG_ERR("Spurious receive interrupt from Ethernet MAC.\n");
+	if (context->rx_desc.own) {
+		SYS_LOG_ERR("Spurious receive interrupt from Ethernet MAC");
 		return;
 	}
 
-	if (!net_driver_ethernet_is_opened()) {
-		goto release_desc;
-	}
-
 	if (context->rx_desc.err_summary) {
-		SYS_LOG_ERR("Error receiving frame: RDES0 = %08x, RDES1 = %08x.\n",
+		SYS_LOG_ERR("Error receiving frame: RDES0 = %08x, RDES1 = %08x",
 			context->rx_desc.rdes0, context->rx_desc.rdes1);
 		goto release_desc;
 	}
 
 	frm_len = context->rx_desc.frm_len;
-	if (frm_len > UIP_BUFSIZE) {
-		SYS_LOG_ERR("Frame too large: %u.\n", frm_len);
+	if (frm_len > sizeof(context->rx_buf)) {
+		SYS_LOG_ERR("Frame too large: %u", frm_len);
 		goto release_desc;
 	}
 
-	buf = ip_buf_get_reserve_rx(0);
-	if (buf == NULL) {
-		SYS_LOG_ERR("Failed to obtain RX buffer.\n");
+	/* Throw away the last 4 bytes (CRC).  See Intel® Quark TM SoC X1000
+	 * datasheet, Table 95 (Receive Descriptor Fields (RDES0)), "frame
+	 * length":
+	 *    These bits indicate the byte length of the received frame that
+	 *    was transferred to host memory (including CRC).
+	 * If the CRC is not removed here, packet processing in upper layers
+	 * will fail since the packet length will be different from the
+	 * received frame length by exactly 4 bytes.
+	 */
+	if (frm_len < sizeof(u32_t)) {
+		SYS_LOG_ERR("Frame too small: %u", frm_len);
+		goto release_desc;
+	} else {
+		frm_len -= sizeof(u32_t);
+	}
+
+	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	if (!pkt) {
+		SYS_LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
-	memcpy(net_buf_add(buf, frm_len), (void *)context->rx_buf, frm_len);
-	uip_len(buf) = frm_len;
+	if (!net_pkt_append_all(pkt, frm_len, (uint8_t *)context->rx_buf,
+				K_NO_WAIT)) {
+		SYS_LOG_ERR("Failed to append RX buffer to context buffer");
+		net_pkt_unref(pkt);
+		goto release_desc;
+	}
 
-	net_driver_ethernet_recv(buf);
+	r = net_recv_data(context->iface, pkt);
+	if (r < 0) {
+		SYS_LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
+		net_pkt_unref(pkt);
+	}
 
 release_desc:
 	/* Return ownership of the RX descriptor to the device. */
@@ -83,64 +108,93 @@ release_desc:
 	/* Request that the device check for an available RX descriptor, since
 	 * ownership of the descriptor was just transferred to the device.
 	 */
-	eth_write(base_addr, REG_ADDR_RX_POLL_DEMAND, 1);
+	eth_write(context->base_addr, REG_ADDR_RX_POLL_DEMAND, 1);
 }
 
-/* @brief Transmit the current Ethernet frame.
- *
- *        This procedure will block indefinitely until the Ethernet device is
- *        ready to accept a new outgoing frame.  It then copies the current
- *        Ethernet frame from the global uip_buf buffer to the device DMA
- *        buffer and signals to the device that a new frame is available to be
- *        transmitted.
- */
-static int eth_tx(struct device *port, struct net_buf *buf)
+static void eth_tx_spin_wait(struct eth_runtime *context)
 {
-	struct eth_runtime *context = port->driver_data;
-	u32_t base_addr = context->base_addr;
+	int spins;
 
-	/* Wait until the TX descriptor is no longer owned by the device. */
-	while (context->tx_desc.own == 1) {
+	for (spins = 0; spins < TX_BUSY_LOOP_SPINS; spins++) {
+		if (!context->tx_desc.own) {
+			return;
+		}
 	}
 
+	while (context->tx_desc.own) {
+		k_yield();
+	}
+}
+
+static void eth_tx_data(struct eth_runtime *context, uint8_t *data,
+			uint16_t len)
+{
 #ifdef CONFIG_ETHERNET_DEBUG
 	/* Check whether an error occurred transmitting the previous frame. */
 	if (context->tx_desc.err_summary) {
-		SYS_LOG_ERR("Error transmitting frame: TDES0 = %08x, TDES1 = %08x.\n",
-			context->tx_desc.tdes0, context->tx_desc.tdes1);
+		SYS_LOG_ERR("Error transmitting frame: TDES0 = %08x,"
+			    "TDES1 = %08x", context->tx_desc.tdes0,
+			    context->tx_desc.tdes1);
 	}
 #endif
 
-	/* Transmit the next frame. */
-	if (uip_len(buf) > UIP_BUFSIZE) {
-		SYS_LOG_ERR("Frame too large to TX: %u\n", uip_len(buf));
-
-		return -1;
-	}
-
-	memcpy((void *)context->tx_buf, uip_buf(buf), uip_len(buf));
-
-	context->tx_desc.tx_buf1_sz = uip_len(buf);
+	/* Update transmit descriptor. */
+	context->tx_desc.buf1_ptr = data;
+	context->tx_desc.tx_buf1_sz = len;
+	eth_write(context->base_addr, REG_ADDR_TX_DESC_LIST,
+		  (u32_t)&context->tx_desc);
 
 	context->tx_desc.own = 1;
 
 	/* Request that the device check for an available TX descriptor, since
 	 * ownership of the descriptor was just transferred to the device.
 	 */
-	eth_write(base_addr, REG_ADDR_TX_POLL_DEMAND, 1);
+	eth_write(context->base_addr, REG_ADDR_TX_POLL_DEMAND, 1);
 
-	return 1;
+	/* Ensure DMA transfer has been completed. */
+	eth_tx_spin_wait(context);
+}
+
+/* @brief Transmit the current Ethernet frame.
+ *
+ *	This procedure will block indefinitely until all fragments from a
+ *	net_buf have been transmitted.  Data is copied using DMA directly
+ *	from each fragment's data pointer.  This procedure might yield to
+ *	other threads  while waiting for the DMA transfer to finish.
+ */
+static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+{
+	struct device *port = net_if_get_device(iface);
+	struct eth_runtime *context = port->driver_data;
+
+	/* Ensure we're clear to transmit. */
+	eth_tx_spin_wait(context);
+
+	if (!pkt->frags) {
+		eth_tx_data(context, net_pkt_ll(pkt),
+			    net_pkt_ll_reserve(pkt));
+	} else {
+		struct net_buf *frag;
+
+		eth_tx_data(context, net_pkt_ll(pkt),
+			    net_pkt_ll_reserve(pkt) + pkt->frags->len);
+		for (frag = pkt->frags->frags; frag; frag = frag->frags) {
+			eth_tx_data(context, frag->data, frag->len);
+		}
+	}
+
+	net_pkt_unref(pkt);
+	return 0;
 }
 
 static void eth_dw_isr(struct device *port)
 {
 	struct eth_runtime *context = port->driver_data;
-	u32_t base_addr = context->base_addr;
+#ifdef CONFIG_SHARED_IRQ
 	u32_t int_status;
 
-	int_status = eth_read(base_addr, REG_ADDR_STATUS);
+	int_status = eth_read(context->base_addr, REG_ADDR_STATUS);
 
-#ifdef CONFIG_SHARED_IRQ
 	/* If using with shared IRQ, this function will be called
 	 * by the shared IRQ driver. So check here if the interrupt
 	 * is coming from the GPIO controller (or somewhere else).
@@ -149,11 +203,11 @@ static void eth_dw_isr(struct device *port)
 		return;
 	}
 #endif
-
 	eth_rx(port);
 
 	/* Acknowledge the interrupt. */
-	eth_write(base_addr, REG_ADDR_STATUS, STATUS_NORMAL_INT | STATUS_RX_INT);
+	eth_write(context->base_addr, REG_ADDR_STATUS,
+		  STATUS_NORMAL_INT | STATUS_RX_INT);
 }
 
 #ifdef CONFIG_PCI
@@ -180,60 +234,54 @@ static inline int eth_setup(struct device *dev)
 #define eth_setup(_unused_) (1)
 #endif /* CONFIG_PCI */
 
-static int eth_net_tx(struct net_buf *buf);
-
-static int eth_initialize(struct device *port)
+static int eth_initialize_internal(struct net_if *iface)
 {
+	struct device *port = net_if_get_device(iface);
 	struct eth_runtime *context = port->driver_data;
 	const struct eth_config *config = port->config->config_info;
 	u32_t base_addr;
 
-	union {
-		struct {
-			u8_t bytes[6];
-			u8_t pad[2];
-		} __attribute__((packed));
-		u32_t words[2];
-	} mac_addr;
-
-	if (!eth_setup(port))
-		return -EPERM;
-
+	context->iface = iface;
 	base_addr = context->base_addr;
 
 	/* Read the MAC address from the device. */
-	mac_addr.words[1] = eth_read(base_addr, REG_ADDR_MACADDR_HI);
-	mac_addr.words[0] = eth_read(base_addr, REG_ADDR_MACADDR_LO);
+	context->mac_addr.words[1] = eth_read(base_addr, REG_ADDR_MACADDR_HI);
+	context->mac_addr.words[0] = eth_read(base_addr, REG_ADDR_MACADDR_LO);
 
-	net_set_mac(mac_addr.bytes, sizeof(mac_addr.bytes));
+	net_if_set_link_addr(context->iface, context->mac_addr.bytes,
+			     sizeof(context->mac_addr.bytes),
+			     NET_LINK_ETHERNET);
 
 	/* Initialize the frame filter enabling unicast messages */
 	eth_write(base_addr, REG_ADDR_MAC_FRAME_FILTER, MAC_FILTER_4_PM);
 
-	/* Initialize transmit descriptor. */
-	context->tx_desc.tdes0 = 0;
-	context->tx_desc.tdes1 = 0;
-
-	context->tx_desc.buf1_ptr = (u8_t *)context->tx_buf;
-	context->tx_desc.tx_end_of_ring = 1;
-	context->tx_desc.first_seg_in_frm = 1;
-	context->tx_desc.last_seg_in_frm = 1;
-	context->tx_desc.tx_end_of_ring = 1;
 
 	/* Initialize receive descriptor. */
 	context->rx_desc.rdes0 = 0;
 	context->rx_desc.rdes1 = 0;
 
 	context->rx_desc.buf1_ptr = (u8_t *)context->rx_buf;
-	context->rx_desc.own = 1;
 	context->rx_desc.first_desc = 1;
 	context->rx_desc.last_desc = 1;
-	context->rx_desc.rx_buf1_sz = UIP_BUFSIZE;
+	context->rx_desc.own = 1;
+	context->rx_desc.rx_buf1_sz = sizeof(context->rx_buf);
 	context->rx_desc.rx_end_of_ring = 1;
 
-	/* Install transmit and receive descriptors. */
+	/* Install receive descriptor. */
 	eth_write(base_addr, REG_ADDR_RX_DESC_LIST, (u32_t)&context->rx_desc);
-	eth_write(base_addr, REG_ADDR_TX_DESC_LIST, (u32_t)&context->tx_desc);
+
+	/* Initialize transmit descriptor. */
+	context->tx_desc.tdes0 = 0;
+	context->tx_desc.tdes1 = 0;
+	context->tx_desc.buf1_ptr = NULL;
+	context->tx_desc.tx_buf1_sz = 0;
+	context->tx_desc.first_seg_in_frm = 1;
+	context->tx_desc.last_seg_in_frm = 1;
+	context->tx_desc.tx_end_of_ring = 1;
+
+	/* Install transmit descriptor. */
+	eth_write(context->base_addr, REG_ADDR_TX_DESC_LIST,
+		  (u32_t)&context->tx_desc);
 
 	eth_write(base_addr, REG_ADDR_MAC_CONF,
 		  /* Set the RMII speed to 100Mbps */
@@ -265,18 +313,41 @@ static int eth_initialize(struct device *port)
 		  /* Place the receiver state machine in the Running state. */
 		  OP_MODE_1_START_RX);
 
-	SYS_LOG_INF("Enabled 100M full-duplex mode.");
-
-	net_driver_ethernet_register_tx(eth_net_tx);
+	SYS_LOG_INF("Enabled 100M full-duplex mode");
 
 	config->config_func(port);
 
 	return 0;
 }
 
+static void eth_initialize(struct net_if *iface)
+{
+	int r = eth_initialize_internal(iface);
+
+	if (r < 0) {
+		SYS_LOG_ERR("Could not initialize ethernet device: %d", r);
+	}
+}
+
 /* Bindings to the plaform */
 #if CONFIG_ETH_DW_0
-static void eth_config_0_irq(struct device *port);
+static void eth_config_0_irq(struct device *port)
+{
+	const struct eth_config *config = port->config->config_info;
+	struct device *shared_irq_dev;
+
+#ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
+	ARG_UNUSED(shared_irq_dev);
+	IRQ_CONNECT(ETH_DW_0_IRQ, CONFIG_ETH_DW_0_IRQ_PRI, eth_dw_isr,
+		    DEVICE_GET(eth_dw_0), 0);
+	irq_enable(ETH_DW_0_IRQ);
+#elif defined(CONFIG_ETH_DW_0_IRQ_SHARED)
+	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
+	__ASSERT(shared_irq_dev != NULL, "Failed to get eth_dw device binding");
+	shared_irq_isr_register(shared_irq_dev, (isr_t)eth_dw_isr, port);
+	shared_irq_enable(shared_irq_dev, port);
+#endif
+}
 
 static const struct eth_config eth_config_0 = {
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
@@ -302,30 +373,14 @@ static struct eth_runtime eth_0_runtime = {
 #endif
 };
 
-DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME, eth_initialize,
-				&eth_0_runtime, &eth_config_0,
-				NANOKERNEL, CONFIG_ETH_INIT_PRIORITY);
+static struct net_if_api api_funcs = {
+	.init = eth_initialize,
+	.send = eth_tx,
+};
 
-static int eth_net_tx(struct net_buf *buf)
-{
-	return eth_tx(DEVICE_GET(eth_dw_0), buf);
-}
-
-static void eth_config_0_irq(struct device *port)
-{
-	const struct eth_config *config = port->config->config_info;
-	struct device *shared_irq_dev;
-
-#ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
-	ARG_UNUSED(shared_irq_dev);
-	IRQ_CONNECT(ETH_DW_0_IRQ, CONFIG_ETH_DW_0_IRQ_PRI, eth_dw_isr,
-		    DEVICE_GET(eth_dw_0), 0);
-	irq_enable(ETH_DW_0_IRQ);
-#elif defined(CONFIG_ETH_DW_0_IRQ_SHARED)
-	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
-	__ASSERT(shared_irq_dev != NULL, "Failed to get eth_dw device binding");
-	shared_irq_isr_register(shared_irq_dev, (isr_t)eth_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
-#endif
-}
+NET_DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME,
+		eth_setup, &eth_0_runtime,
+		&eth_config_0, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),
+		ETH_DW_MTU);
 #endif  /* CONFIG_ETH_DW_0 */

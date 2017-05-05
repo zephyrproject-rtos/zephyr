@@ -5,7 +5,7 @@ compiler: gcc
 env:
     global:
         - SDK=0.9
-        - SANITYCHECK_OPTIONS=" --inline-logs"
+        - SANITYCHECK_OPTIONS=" --inline-logs -R"
         - SANITYCHECK_OPTIONS_RETRY=" --inline-logs --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9
         - ZEPHYR_GCC_VARIANT=zephyr
@@ -26,8 +26,6 @@ build:
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
-      - export COMMIT_RANGE=${SHIPPABLE_COMMIT_RANGE}
-      - echo ${SHIPPABLE_COMMIT_RANGE}
       - source zephyr-env.sh
       - ccache -s --max-size=2000M
       - make host-tools
@@ -46,8 +44,10 @@ build:
           fi;
       - >
           if [ "$RUN_COMPLIANCE" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
+            export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..${COMMIT}
             echo "Building a Pull Request";
             echo "- Building Documentation";
+            echo "Commit range:" ${COMMIT_RANGE}
             make htmldocs > doc.log 2>&1;
             ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
             if [ -s doc.warnings ]; then

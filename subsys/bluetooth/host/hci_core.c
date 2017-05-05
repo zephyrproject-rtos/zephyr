@@ -23,6 +23,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/l2cap.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/storage.h>
@@ -123,6 +124,45 @@ NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT,
 
 NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
 		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
+
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+static void report_completed_packet(struct net_buf *buf)
+{
+
+	struct bt_hci_cp_host_num_completed_packets *cp;
+	u16_t handle = acl(buf)->handle;
+	struct bt_hci_handle_count *hc;
+
+	net_buf_destroy(buf);
+
+	/* Do nothing if controller to host flow control is not supported */
+	if (!(bt_dev.supported_commands[10] & 0x20)) {
+		return;
+	}
+
+	BT_DBG("Reporting completed packet for handle %u", handle);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
+				sizeof(*cp) + sizeof(*hc));
+	if (!buf) {
+		BT_ERR("Unable to allocate new HCI command");
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->num_handles = sys_cpu_to_le16(1);
+
+	hc = net_buf_add(buf, sizeof(*hc));
+	hc->handle = sys_cpu_to_le16(handle);
+	hc->count  = sys_cpu_to_le16(1);
+
+	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
+}
+
+#define ACL_IN_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BLUETOOTH_L2CAP_RX_MTU)
+NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_RX_COUNT, ACL_IN_SIZE,
+		    BT_BUF_USER_DATA_MIN, report_completed_packet);
+#endif /* CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -973,6 +1013,46 @@ failed:
 	bt_conn_unref(conn);
 	bt_le_scan_update(false);
 }
+
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+static int set_flow_control(void)
+{
+	struct bt_hci_cp_host_buffer_size *hbs;
+	struct net_buf *buf;
+	int err;
+
+	/* Check if host flow control is actually supported */
+	if (!(bt_dev.supported_commands[10] & 0x20)) {
+		BT_WARN("Controller to host flow control not supported");
+		return 0;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE,
+				sizeof(*hbs));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	hbs = net_buf_add(buf, sizeof(*hbs));
+	memset(hbs, 0, sizeof(*hbs));
+	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BLUETOOTH_L2CAP_RX_MTU +
+				       sizeof(struct bt_l2cap_hdr));
+	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BLUETOOTH_ACL_RX_COUNT);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+}
+#endif /* CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL */
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -2990,6 +3070,13 @@ static int common_init(void)
 	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
 
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+	err = set_flow_control();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BLUETOOTH_CONN */
+
 	return 0;
 }
 
@@ -4101,13 +4188,26 @@ int bt_le_scan_stop(void)
 	return bt_le_scan_update(false);
 }
 
-struct net_buf *bt_buf_get_rx(s32_t timeout)
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
 	struct net_buf *buf;
 
+	__ASSERT(type == BT_BUF_EVT || type == BT_BUF_ACL_IN,
+		 "Invalid buffer type requested");
+
+#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+	if (type == BT_BUF_EVT) {
+		buf = net_buf_alloc(&hci_rx_pool, timeout);
+	} else {
+		buf = net_buf_alloc(&acl_in_pool, timeout);
+	}
+#else
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
+#endif
+
 	if (buf) {
 		net_buf_reserve(buf, CONFIG_BLUETOOTH_HCI_RESERVE);
+		bt_buf_set_type(buf, type);
 	}
 
 	return buf;
@@ -4133,12 +4233,7 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 		return buf;
 	}
 
-	buf = bt_buf_get_rx(timeout);
-	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_EVT);
-	}
-
-	return buf;
+	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
