@@ -10,6 +10,7 @@ soc-cflags += -DNRF52840_XXAA
 endif
 
 obj-y += soc.o
+obj-$(CONFIG_ARM_MPU_NRF52X) += mpu_regions.o
 
 zephyr: $(KERNEL_HEX_NAME)
 all: $(KERNEL_HEX_NAME)
