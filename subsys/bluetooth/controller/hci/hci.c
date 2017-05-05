@@ -239,9 +239,9 @@ static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_host_buffer_size *cmd = (void *)buf->data;
+	u16_t acl_pkts = sys_le16_to_cpu(cmd->acl_pkts);
+	u16_t acl_mtu = sys_le16_to_cpu(cmd->acl_mtu);
 	struct bt_hci_evt_cc_status *ccst;
-	u16_t acl_pkts = cmd->acl_pkts;
-	u16_t acl_mtu = cmd->acl_pkts;
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 
@@ -281,7 +281,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 
 	/* leave *evt == NULL so no event is generated */
 	for (i = 0; i < cmd->num_handles; i++) {
-		count += cmd->h[i].count;
+		count += sys_le16_to_cpu(cmd->h[i].count);
 	}
 
 	hci_hbuf_acked += count;
