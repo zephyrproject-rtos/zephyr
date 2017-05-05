@@ -51,7 +51,6 @@ struct spi_dw_data {
 #ifdef CONFIG_SPI_DW_CLOCK_GATE
 	struct device *clock;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
-	struct k_sem device_sync_sem;
 	struct spi_context ctx;
 	u8_t error;
 	u8_t dfs;	/* dfs in bytes: 1,2 or 4 */

@@ -75,7 +75,7 @@ out:
 	SYS_LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
 
-	k_sem_give(&spi->device_sync_sem);
+	spi_context_complete(&spi->ctx);
 }
 
 static void push_data(struct device *dev)
@@ -306,7 +306,7 @@ static int spi_dw_transceive(struct device *dev,
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);
 
-	k_sem_take(&spi->device_sync_sem, K_FOREVER);
+	spi_context_wait_for_completion(&spi->ctx);
 
 	if (spi->error) {
 		ret = -EIO;
@@ -362,8 +362,6 @@ int spi_dw_init(struct device *dev)
 
 	info->config_func();
 
-	k_sem_init(&spi->device_sync_sem, 0, UINT_MAX);
-
 	/* Masking interrupt and making sure controller is disabled */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	clear_bit_ssienr(info->regs);
@@ -381,6 +379,7 @@ void spi_config_0_irq(void);
 
 struct spi_dw_data spi_dw_data_port_0 = {
 	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_0, ctx),
+	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_0, ctx),
 };
 
 const struct spi_dw_config spi_dw_config_0 = {
@@ -426,6 +425,7 @@ void spi_config_1_irq(void);
 
 struct spi_dw_data spi_dw_data_port_1 = {
 	SPI_CONTEXT_INIT_LOCK(spi_dw_data_port_1, ctx),
+	SPI_CONTEXT_INIT_SYNC(spi_dw_data_port_1, ctx),
 };
 
 static const struct spi_dw_config spi_dw_config_1 = {
