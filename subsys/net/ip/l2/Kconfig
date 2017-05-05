@@ -89,7 +89,7 @@ config NET_DEBUG_L2_BLUETOOTH
 	Enables Bluetooth L2 output debug messages
 
 config NET_L2_BLUETOOTH_MGMT
-	bool "Enable Blueooth Network Management support"
+	bool "Enable Bluetooth Network Management support"
 	depends on NET_L2_BLUETOOTH
 	select NET_MGMT
 	select NET_MGMT_EVENT

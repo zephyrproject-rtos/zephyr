@@ -173,7 +173,7 @@ config BOOT_TIME_MEASUREMENT
 
 config CPU_CLOCK_FREQ_MHZ
 	int
-	prompt "CPU CLock Frequency in MHz"
+	prompt "CPU Clock Frequency in MHz"
 	default 20
 	depends on BOOT_TIME_MEASUREMENT
 	help

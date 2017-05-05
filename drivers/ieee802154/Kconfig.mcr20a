@@ -108,7 +108,7 @@ config IEEE802154_MCR20A_RX_STACK_SIZE
 	a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_MCR20A_INIT_PRIO
-	int "MCR20A intialization priority"
+	int "MCR20A initialization priority"
 	default 80
 	help
 	Set the initialization priority number. Do not mess with it unless

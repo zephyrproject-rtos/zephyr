@@ -43,7 +43,7 @@ config IEEE802154_NRF5_RX_STACK_SIZE
 	a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_NRF5_INIT_PRIO
-	int "nRF52 IEEE 802.15.4 intialization priority"
+	int "nRF52 IEEE 802.15.4 initialization priority"
 	default 80
 	help
 	Set the initialization priority number. Do not mess with it unless
@@ -56,7 +56,7 @@ choice IEEE802154_NRF5_CCA_MODE
 	CCA mode
 
 config IEEE802154_NRF5_CCA_MODE_ED
-	bool "Energy Above Threashold"
+	bool "Energy Above Threshold"
 
 config IEEE802154_NRF5_CCA_MODE_CARRIER
 	bool "Carrier Seen"

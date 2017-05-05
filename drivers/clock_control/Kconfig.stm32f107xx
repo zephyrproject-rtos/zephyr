@@ -85,7 +85,7 @@ config CLOCK_STM32F10X_CONN_LINE_HSE_BYPASS
 	 Enable this option to bypass external high-speed clock (HSE).
 
 config CLOCK_STM32F10X_CONN_LINE_PREDIV1
-	int "PREDIV1 Prescler"
+	int "PREDIV1 Prescaler"
 	depends on CLOCK_CONTROL_STM32F10X_CONN_LINE && CLOCK_STM32F10X_CONN_LINE_PLL_SRC_PREDIV1
 	default 0
 	range 0 16
@@ -110,7 +110,7 @@ config CLOCK_STM32F10X_CONN_LINE_PLL2_MULTIPLIER
 	 PLL2 multiplier, allowed values: 8 - 20. PLL2 output must not exceed 72MHz.
 
 config CLOCK_STM32F10X_CONN_LINE_PREDIV2
-	int "PREDIV2 Prescler"
+	int "PREDIV2 Prescaler"
 	depends on CLOCK_CONTROL_STM32F10X_CONN_LINE && CLOCK_STM32F10X_CONN_LINE_PREDIV1_SRC_PLL2CLK
 	default 0
 	range 0 16

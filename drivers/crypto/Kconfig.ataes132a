@@ -28,7 +28,7 @@ config CRYPTO_ATAES132A_I2C_PORT_NAME
 	  Master I2C port name through which ATAES132A chip is accessed.
 
 config CRYPTO_ATAES132A_I2C_ADDR
-	hex "ATAES132A I2C addess"
+	hex "ATAES132A I2C address"
 	default 0x50
 	help
 	  ATAES132A chip's I2C address.

@@ -196,7 +196,7 @@ choice
 	depends on LIS2DH
 	default LIS2DH_ODR_RUNTIME
 	help
-	  Initial data rate frequency of acceleration data at initialisation.
+	  Initial data rate frequency of acceleration data at initialization.
 	  Supported values:
 	  1Hz, 10Hz, 25Hz, 50Hz, 100Hz, 200Hz, 400Hz in all power modes
 	  1620Hz, 5376Hz in low power mode only

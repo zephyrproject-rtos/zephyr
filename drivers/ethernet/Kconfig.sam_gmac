@@ -119,7 +119,7 @@ config ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE
 config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
 	string "I2C bus driver device name"
 	help
-	  Device name, e.g. I2C_0, of an I2C bus driver device. It is requied to
+	  Device name, e.g. I2C_0, of an I2C bus driver device. It is required to
 	  obtain handle to the I2C device object.
 
 endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
