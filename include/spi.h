@@ -124,6 +124,7 @@ struct spi_cs_control {
 /**
  * @brief SPI controller configuration structure
  *
+ * dev is a valid pointer to an actual SPI device
  * frequency is the bus frequency in Hertz
  * operation is a bit field with the following parts:
  *    operational mode    [ 0 ]       - master or slave.
@@ -139,9 +140,12 @@ struct spi_cs_control {
  *    emulated through a gpio line, or NULL otherwise.
  */
 struct spi_config {
+	struct device	*dev;
+
 	u32_t		frequency;
 	u16_t		operation;
 	u16_t		slave;
+
 	struct spi_cs_control *cs;
 };
 
@@ -163,10 +167,19 @@ struct spi_buf {
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
  */
-typedef int (*spi_api_io)(struct device	*dev,
-			  struct spi_config *config,
+typedef int (*spi_api_io)(struct spi_config *config,
 			  const struct spi_buf **tx_bufs,
 			  struct spi_buf **rx_bufs);
+
+/**
+ * @typedef spi_api_io
+ * @brief Callback API for asynchronous I/O
+ * See spi_transceive_async() for argument descriptions
+ */
+typedef int (*spi_api_io_async)(struct spi_config *config,
+				const struct spi_buf **tx_bufs,
+				struct spi_buf **rx_bufs,
+				struct k_poll_signal *async);
 
 /**
  * @brief SPI driver API
@@ -174,6 +187,9 @@ typedef int (*spi_api_io)(struct device	*dev,
  */
 struct spi_driver_api {
 	spi_api_io transceive;
+#ifdef CONFIG_POLL
+	spi_api_io_async transceive_async;
+#endif
 };
 
 /**
@@ -181,7 +197,6 @@ struct spi_driver_api {
  *
  * Note: This function is synchronous.
  *
- * @param dev is a valid pointer to an actual SPI device
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs NULL terminated buffer array where data to be sent
  *        originates from, or NULL if none.
@@ -190,14 +205,13 @@ struct spi_driver_api {
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_transceive(struct device *dev,
-				 struct spi_config *config,
+static inline int spi_transceive(struct spi_config *config,
 				 const struct spi_buf **tx_bufs,
 				 struct spi_buf **rx_bufs)
 {
-	const struct spi_driver_api *api = dev->driver_api;
+	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive(dev, config, tx_bufs, rx_bufs);
+	return api->transceive(config, tx_bufs, rx_bufs);
 }
 
 /**
@@ -205,20 +219,18 @@ static inline int spi_transceive(struct device *dev,
  *
  * Note: This function is synchronous.
  *
- * @param dev is a valid pointer to an actual SPI device
  * @param config Pointer to a valid spi_config structure instance.
  * @param rx_bufs NULL terminated buffer array where data to be read
  *        will be written to.
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_read(struct device *dev,
-			   struct spi_config *config,
+static inline int spi_read(struct spi_config *config,
 			   struct spi_buf **rx_bufs)
 {
-	const struct spi_driver_api *api = dev->driver_api;
+	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive(dev, config, NULL, rx_bufs);
+	return api->transceive(config, NULL, rx_bufs);
 }
 
 /**
@@ -226,21 +238,96 @@ static inline int spi_read(struct device *dev,
  *
  * Note: This function is synchronous.
  *
- * @param dev is a valid pointer to an actual SPI device
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs NULL terminated buffer array where data to be sent
  *        originates from.
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_write(struct device *dev,
-			    struct spi_config *config,
+static inline int spi_write(struct spi_config *config,
 			    const struct spi_buf **tx_bufs)
 {
-	const struct spi_driver_api *api = dev->driver_api;
+	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive(dev, config, tx_bufs, NULL);
+	return api->transceive(config, tx_bufs, NULL);
 }
+
+#ifdef CONFIG_POLL
+/**
+ * @brief Read/write the specified amount of data from the SPI driver.
+ *
+ * Note: This function is asynchronous.
+ *
+ * @param config Pointer to a valid spi_config structure instance.
+ * @param tx_bufs NULL terminated buffer array where data to be sent
+ *        originates from, or NULL if none.
+ * @param rx_bufs NULL terminated buffer array where data to be read
+ *        will be written to, or NULL if none.
+ * @param async A pointer to a valid and ready to be signaled
+ *        struct k_poll_signal. (Note: if NULL this function will not
+ *        notify the end of the transaction, and whether it went
+ *        successfully or not).
+ *
+ * @retval 0 If successful, negative errno code otherwise.
+ */
+static inline int spi_transceive_async(struct spi_config *config,
+				       const struct spi_buf **tx_bufs,
+				       struct spi_buf **rx_bufs,
+				       struct k_poll_signal *async)
+{
+	const struct spi_driver_api *api = config->dev->driver_api;
+
+	return api->transceive_async(config, tx_bufs, rx_bufs, async);
+}
+
+/**
+ * @brief Read the specified amount of data from the SPI driver.
+ *
+ * Note: This function is asynchronous.
+ *
+ * @param config Pointer to a valid spi_config structure instance.
+ * @param rx_bufs NULL terminated buffer array where data to be read
+ *        will be written to.
+ * @param async A pointer to a valid and ready to be signaled
+ *        struct k_poll_signal. (Note: if NULL this function will not
+ *        notify the end of the transaction, and whether it went
+ *        successfully or not).
+ *
+ * @retval 0 If successful, negative errno code otherwise.
+ */
+static inline int spi_read_async(struct spi_config *config,
+				 struct spi_buf **rx_bufs,
+				 struct k_poll_signal *async)
+{
+	const struct spi_driver_api *api = config->dev->driver_api;
+
+	return api->transceive_async(config, NULL, rx_bufs, async);
+}
+
+/**
+ * @brief Write the specified amount of data from the SPI driver.
+ *
+ * Note: This function is asynchronous.
+ *
+ * @param config Pointer to a valid spi_config structure instance.
+ * @param tx_bufs NULL terminated buffer array where data to be sent
+ *        originates from.
+ * @param async A pointer to a valid and ready to be signaled
+ *        struct k_poll_signal. (Note: if NULL this function will not
+ *        notify the end of the transaction, and whether it went
+ *        successfully or not).
+ *
+ * @retval 0 If successful, negative errno code otherwise.
+ */
+static inline int spi_write_async(struct spi_config *config,
+				  const struct spi_buf **tx_bufs,
+				  struct k_poll_signal *async)
+{
+	const struct spi_driver_api *api = config->dev->driver_api;
+
+	return api->transceive_async(config, tx_bufs, NULL, async);
+}
+#endif /* CONFIG_POLL */
 
 #ifdef __cplusplus
 }

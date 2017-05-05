@@ -72,8 +72,6 @@ struct spi_config spi_fast = {
 	.cs = SPI_CS,
 };
 
-struct device *spi_dev;
-
 static int cs_ctrl_gpio_config(struct spi_cs_control *cs)
 {
 	if (cs) {
@@ -102,7 +100,7 @@ static int spi_complete_loop(struct spi_config *spi_conf)
 	struct spi_buf *rx_bufs[] = { &rx, NULL };
 	int ret;
 
-	ret = spi_transceive(spi_dev, spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -133,7 +131,7 @@ static int spi_rx_half_start(struct spi_config *spi_conf)
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_dev, spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -167,7 +165,7 @@ static int spi_rx_half_end(struct spi_config *spi_conf)
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_dev, spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -206,7 +204,7 @@ static int spi_rx_every_4(struct spi_config *spi_conf)
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_dev, spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -231,11 +229,13 @@ void main(void)
 		return;
 	}
 
-	spi_dev = device_get_binding(SPI_DRV_NAME);
-	if (!spi_dev) {
+	spi_slow.dev = device_get_binding(SPI_DRV_NAME);
+	if (!spi_slow.dev) {
 		SYS_LOG_ERR("Cannot find %s!\n", SPI_DRV_NAME);
 		return;
 	}
+
+	spi_fast.dev = spi_slow.dev;
 
 	if (spi_complete_loop(&spi_slow) ||
 	    spi_rx_half_start(&spi_slow) ||
