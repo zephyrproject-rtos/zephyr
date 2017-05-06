@@ -976,12 +976,12 @@ struct bt_hci_rp_le_read_phy {
 	u8_t  rx_phy;
 } __packed;
 
-#define BT_HCI_LE_PHY_TX_ANY                    0x00
-#define BT_HCI_LE_PHY_RX_ANY                    0x01
+#define BT_HCI_LE_PHY_TX_ANY                    BIT(0)
+#define BT_HCI_LE_PHY_RX_ANY                    BIT(1)
 
-#define BT_HCI_LE_PHY_PREFER_1M                 0x00
-#define BT_HCI_LE_PHY_PREFER_2M                 0x01
-#define BT_HCI_LE_PHY_PREFER_CODED              0x02
+#define BT_HCI_LE_PHY_PREFER_1M                 BIT(0)
+#define BT_HCI_LE_PHY_PREFER_2M                 BIT(1)
+#define BT_HCI_LE_PHY_PREFER_CODED              BIT(2)
 
 #define BT_HCI_OP_LE_SET_DEFAULT_PHY            BT_OP(BT_OGF_LE, 0x0031)
 struct bt_hci_cp_le_set_default_phy {
