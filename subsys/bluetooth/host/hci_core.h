@@ -54,7 +54,7 @@ enum {
 
 struct bt_dev_le {
 	/* LE features */
-	u8_t			features[1][8];
+	u8_t			features[8];
 	/* LE states */
 	u64_t			states;
 
