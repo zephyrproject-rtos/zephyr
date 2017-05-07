@@ -145,26 +145,26 @@ static void __pinmux_defaults(void)
 	/* Read defaults at boot, as the bootloader may have already
 	 * configured some pins.
 	 */
-	ab_select[N_PIOA] = __PIOA->absr;
-	ab_select[N_PIOB] = __PIOB->absr;
-	ab_select[N_PIOC] = __PIOC->absr;
-	ab_select[N_PIOD] = __PIOD->absr;
+	ab_select[N_PIOA] = PIOA->PIO_ABSR;
+	ab_select[N_PIOB] = PIOB->PIO_ABSR;
+	ab_select[N_PIOC] = PIOC->PIO_ABSR;
+	ab_select[N_PIOD] = PIOD->PIO_ABSR;
 
-	output_en[N_PIOA] = __PIOA->osr;
-	output_en[N_PIOB] = __PIOB->osr;
-	output_en[N_PIOC] = __PIOC->osr;
-	output_en[N_PIOD] = __PIOD->osr;
+	output_en[N_PIOA] = PIOA->PIO_OSR;
+	output_en[N_PIOB] = PIOB->PIO_OSR;
+	output_en[N_PIOC] = PIOC->PIO_OSR;
+	output_en[N_PIOD] = PIOD->PIO_OSR;
 
-	pio_ctrl[N_PIOA] = __PIOA->psr;
-	pio_ctrl[N_PIOB] = __PIOB->psr;
-	pio_ctrl[N_PIOC] = __PIOC->psr;
-	pio_ctrl[N_PIOD] = __PIOD->psr;
+	pio_ctrl[N_PIOA] = PIOA->PIO_PSR;
+	pio_ctrl[N_PIOB] = PIOB->PIO_PSR;
+	pio_ctrl[N_PIOC] = PIOC->PIO_PSR;
+	pio_ctrl[N_PIOD] = PIOD->PIO_PSR;
 
 	/* value 1 means pull-up disabled, so need to invert */
-	pull_up[N_PIOA] = ~(__PIOA->pusr);
-	pull_up[N_PIOB] = ~(__PIOB->pusr);
-	pull_up[N_PIOC] = ~(__PIOC->pusr);
-	pull_up[N_PIOD] = ~(__PIOD->pusr);
+	pull_up[N_PIOA] = ~(PIOA->PIO_PUSR);
+	pull_up[N_PIOB] = ~(PIOB->PIO_PUSR);
+	pull_up[N_PIOC] = ~(PIOC->PIO_PUSR);
+	pull_up[N_PIOD] = ~(PIOD->PIO_PUSR);
 
 	/*
 	 * Now modify as we wish
@@ -240,46 +240,46 @@ static void __pinmux_defaults(void)
 	 * Write modifications back to those registers
 	 */
 
-	__PIOA->absr = ab_select[N_PIOA];
-	__PIOB->absr = ab_select[N_PIOB];
-	__PIOC->absr = ab_select[N_PIOC];
-	__PIOD->absr = ab_select[N_PIOD];
+	PIOA->PIO_ABSR = ab_select[N_PIOA];
+	PIOB->PIO_ABSR = ab_select[N_PIOB];
+	PIOC->PIO_ABSR = ab_select[N_PIOC];
+	PIOD->PIO_ABSR = ab_select[N_PIOD];
 
 	/* set output enable */
-	__PIOA->oer = output_en[N_PIOA];
-	__PIOB->oer = output_en[N_PIOB];
-	__PIOC->oer = output_en[N_PIOC];
-	__PIOD->oer = output_en[N_PIOD];
+	PIOA->PIO_OER = output_en[N_PIOA];
+	PIOB->PIO_OER = output_en[N_PIOB];
+	PIOC->PIO_OER = output_en[N_PIOC];
+	PIOD->PIO_OER = output_en[N_PIOD];
 
 	/* set output disable */
-	__PIOA->odr = ~(output_en[N_PIOA]);
-	__PIOB->odr = ~(output_en[N_PIOB]);
-	__PIOC->odr = ~(output_en[N_PIOC]);
-	__PIOD->odr = ~(output_en[N_PIOD]);
+	PIOA->PIO_ODR = ~(output_en[N_PIOA]);
+	PIOB->PIO_ODR = ~(output_en[N_PIOB]);
+	PIOC->PIO_ODR = ~(output_en[N_PIOC]);
+	PIOD->PIO_ODR = ~(output_en[N_PIOD]);
 
 	/* set PIO enable */
-	__PIOA->per = pio_ctrl[N_PIOA];
-	__PIOB->per = pio_ctrl[N_PIOB];
-	__PIOC->per = pio_ctrl[N_PIOC];
-	__PIOD->per = pio_ctrl[N_PIOD];
+	PIOA->PIO_PER = pio_ctrl[N_PIOA];
+	PIOB->PIO_PER = pio_ctrl[N_PIOB];
+	PIOC->PIO_PER = pio_ctrl[N_PIOC];
+	PIOD->PIO_PER = pio_ctrl[N_PIOD];
 
 	/* set PIO disable */
-	__PIOA->pdr = ~(pio_ctrl[N_PIOA]);
-	__PIOB->pdr = ~(pio_ctrl[N_PIOB]);
-	__PIOC->pdr = ~(pio_ctrl[N_PIOC]);
-	__PIOD->pdr = ~(pio_ctrl[N_PIOD]);
+	PIOA->PIO_PDR = ~(pio_ctrl[N_PIOA]);
+	PIOB->PIO_PDR = ~(pio_ctrl[N_PIOB]);
+	PIOC->PIO_PDR = ~(pio_ctrl[N_PIOC]);
+	PIOD->PIO_PDR = ~(pio_ctrl[N_PIOD]);
 
 	/* set pull-up enable */
-	__PIOA->puer = pull_up[N_PIOA];
-	__PIOB->puer = pull_up[N_PIOB];
-	__PIOC->puer = pull_up[N_PIOC];
-	__PIOD->puer = pull_up[N_PIOD];
+	PIOA->PIO_PUER = pull_up[N_PIOA];
+	PIOB->PIO_PUER = pull_up[N_PIOB];
+	PIOC->PIO_PUER = pull_up[N_PIOC];
+	PIOD->PIO_PUER = pull_up[N_PIOD];
 
 	/* set pull-up disable */
-	__PIOA->pudr = ~(pull_up[N_PIOA]);
-	__PIOB->pudr = ~(pull_up[N_PIOB]);
-	__PIOC->pudr = ~(pull_up[N_PIOC]);
-	__PIOD->pudr = ~(pull_up[N_PIOD]);
+	PIOA->PIO_PUDR = ~(pull_up[N_PIOA]);
+	PIOB->PIO_PUDR = ~(pull_up[N_PIOB]);
+	PIOC->PIO_PUDR = ~(pull_up[N_PIOC]);
+	PIOD->PIO_PUDR = ~(pull_up[N_PIOD]);
 }
 
 static int pinmux_init(struct device *port)
