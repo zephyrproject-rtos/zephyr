@@ -1596,13 +1596,13 @@ class TestSuite:
             i = self.instances[name]
             if append:
                 for tc in eleTestsuite.findall('testcase'):
-                    if tc.get('name') == "%s:%s" %(i.platform.name, i.test.name):
+                    if tc.get('classname') == "%s:%s" %(i.platform.name, i.test.name):
                         eleTestsuite.remove(tc)
 
             if not goal.failed and goal.qemu:
                     qemu_time = "%s" %(goal.metrics["qemu_time"])
 
-            eleTestcase = ET.SubElement(eleTestsuite, 'testcase', name="%s:%s" %(i.platform.name, i.test.name), time=qemu_time)
+            eleTestcase = ET.SubElement(eleTestsuite, 'testcase', classname="%s:%s" %(i.platform.name, i.test.name), name="%s" %(name), time=qemu_time)
             if goal.failed:
                 failure = ET.SubElement(eleTestcase, 'failure', type="failure", message=goal.reason)
                 p = ("%s/%s/%s" %(args.outdir, i.platform.name, i.test.name))
