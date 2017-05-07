@@ -60,10 +60,23 @@ def check_doc(tc):
 
 
 
-tests = { "gitlint":run_gitlint, "checkpatch":run_checkpatch, "documentation":check_doc }
+tests = {
+        "gitlint": {
+            "call": run_gitlint,
+            "name": "Commit message style",
+            },
+        "checkpatch": {
+            "call": run_checkpatch,
+            "name": "Code style check using checkpatch",
+            },
+        "documentation": {
+            "call": check_doc,
+            "name": "New warnings and errors when building documentation",
+            }
+        }
 
 def run_tests():
-    run = "Commit"
+    run = "Commit Message / Documentation / Coding Style"
     eleTestsuite = None
     fails = 0
     passes = 0
@@ -72,16 +85,16 @@ def run_tests():
     filename = "compliance.xml"
 
     eleTestsuites = ET.Element('testsuites')
-    eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite', name=run,
+    eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite', name=run, time="0",
             tests="%d" %(errors + passes + fails),  failures="%d" %fails,  errors="%d" %errors, skip="0")
 
     for test in tests.keys():
 
         total += 1
-        eleTestcase = ET.SubElement(eleTestsuite, 'testcase', name="%s" %(test),
-                time="0")
+        eleTestcase = ET.SubElement(eleTestsuite, 'testcase', classname="%s"
+                %(test), name="%s" %(tests[test]['name']), time="0")
 
-        fails += tests[test](eleTestcase)
+        fails += tests[test]['call'](eleTestcase)
 
 
     eleTestsuite.set("tests", "%s" %total)
