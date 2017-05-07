@@ -1560,7 +1560,7 @@ class TestSuite:
                                 lower_better))
         return results
 
-    def testcase_xunit_report(self, filename, args):
+    def testcase_xunit_report(self, filename, duration, args):
         if self.goals == None:
             raise SanityRuntimeException("execute() hasn't been run!")
 
@@ -1581,13 +1581,13 @@ class TestSuite:
         eleTestsuite = None
         append = args.only_failed
 
-        if os.path.exists(filename) or append:
+        if os.path.exists(filename) and append:
             tree = ET.parse(filename)
             eleTestsuites = tree.getroot()
             eleTestsuite =  tree.findall('testsuite')[0];
         else:
             eleTestsuites = ET.Element('testsuites')
-            eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite', name=run,
+            eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite', name=run, time="%d" %duration,
                     tests="%d" %(errors + passes + fails),  failures="%d" %fails,  errors="%d" %errors, skip="0")
 
         qemu_time = "0"
@@ -2009,15 +2009,16 @@ def main():
         info("Generating coverage files...")
         generate_coverage(args.outdir, ["tests/*", "samples/*"])
 
+    duration = time.time() - start_time
     info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
           (COLOR_RED if failed else COLOR_GREEN, len(goals) - failed,
            len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
-           warnings, COLOR_NORMAL, time.time() - start_time))
+           warnings, COLOR_NORMAL, duration))
 
     if args.testcase_report:
         ts.testcase_report(args.testcase_report)
     if not args.no_update:
-        ts.testcase_xunit_report(LAST_SANITY_XUNIT, args)
+        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration, args)
         ts.testcase_report(LAST_SANITY)
     if args.release:
         ts.testcase_report(RELEASE_DATA)
