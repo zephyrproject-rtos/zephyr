@@ -32,10 +32,11 @@
 
 #include <misc/util.h>
 
-#include "i2c_atmel_sam3.h"
-
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
 #include <logging/sys_log.h>
+
+#define TWI_IRQ_PDC \
+	(TWI_SR_ENDRX | TWI_SR_ENDTX | TWI_SR_RXBUFF | TWI_SR_TXBUFE)
 
 /* for use with dev_data->state */
 #define STATE_READY		0
@@ -49,12 +50,11 @@
 #define RET_NACK		2
 
 
-typedef void (*config_func_t)(struct device *port);
+typedef void (*config_func_t)(struct device *dev);
 
 
 struct i2c_sam3_dev_config {
-	volatile struct __twi	*port;
-
+	Twi *regs;
 	config_func_t		config_func;
 };
 
@@ -178,8 +178,8 @@ static u32_t clk_div_calc(struct device *dev)
 	cldiv = max(cldiv, cldiv_min);
 	chdiv = max(chdiv, chdiv_min);
 
-	return ((ckdiv << TWI_CWGR_CKDIV_POS) + (chdiv << TWI_CWGR_CHDIV_POS)
-		+ (cldiv << TWI_CWGR_CLDIV_POS));
+	return TWI_CWGR_CKDIV(ckdiv) + TWI_CWGR_CHDIV(chdiv)
+	       + TWI_CWGR_CLDIV(cldiv);
 
 #endif /* CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 84000000 */
 }
@@ -206,10 +206,10 @@ static int i2c_sam3_runtime_configure(struct device *dev, u32_t config)
 	}
 
 	/* Disable controller first before changing anything */
-	cfg->port->cr = TWI_CR_MSDIS | TWI_CR_SVDIS;
+	cfg->regs->TWI_CR = TWI_CR_MSDIS | TWI_CR_SVDIS;
 
 	/* Setup clock wavefore generator */
-	cfg->port->cwgr = clk;
+	cfg->regs->TWI_CWGR = clk;
 
 	return 0;
 }
@@ -223,7 +223,7 @@ static void i2c_sam3_isr(void *arg)
 	/* Disable all interrupts so they can be processed
 	 * before ISR is called again.
 	 */
-	cfg->port->idr = TWI_IRQ_DISABLE;
+	cfg->regs->TWI_IDR = cfg->regs->TWI_IMR;
 
 	k_sem_give(&dev_data->device_sync_sem);
 }
@@ -236,7 +236,7 @@ static inline void sr_bits_set_wait(struct device *dev, u32_t bits)
 {
 	const struct i2c_sam3_dev_config *const cfg = dev->config->config_info;
 
-	while (!(cfg->port->sr & bits)) {
+	while (!(cfg->regs->TWI_SR & bits)) {
 		/* loop till <bits> are set */
 	};
 }
@@ -248,22 +248,22 @@ static inline void status_reg_clear(struct device *dev)
 	u32_t stat_reg;
 
 	do {
-		stat_reg = cfg->port->sr;
+		stat_reg = cfg->regs->TWI_SR;
 
 		/* ignore these */
-		stat_reg &= ~(TWI_IRQ_PDC | TWI_IRQ_TXRDY | TWI_IRQ_TXCOMP
-				| TWI_IRQ_SVREAD);
+		stat_reg &= ~(TWI_IRQ_PDC | TWI_SR_TXRDY | TWI_SR_TXCOMP
+				| TWI_SR_SVREAD);
 
-		if (stat_reg & TWI_IRQ_OVRE) {
+		if (stat_reg & TWI_SR_OVRE) {
 			continue;
 		}
 
-		if (stat_reg & TWI_IRQ_NACK) {
+		if (stat_reg & TWI_SR_NACK) {
 			continue;
 		}
 
-		if (stat_reg & TWI_IRQ_RXRDY) {
-			stat_reg = cfg->port->rhr;
+		if (stat_reg & TWI_SR_RXRDY) {
+			stat_reg = cfg->regs->TWI_RHR;
 		}
 	} while (stat_reg);
 }
@@ -282,20 +282,19 @@ static inline void transfer_setup(struct device *dev, u16_t slave_address)
 		 *
 		 * 0x78 is the 0b11110xx bit prefix.
 		 */
-		mmr = 0x78 | ((slave_address >> 8) & 0x03);
-		mmr <<= TWI_MMR_DADR_POS;
+		mmr = TWI_MMR_DADR(0x78 | ((slave_address >> 8) & 0x03));
 		mmr |= TWI_MMR_IADRSZ_1_BYTE;
 
 		iadr = slave_address & 0xFF;
 	} else {
 		/* 7-bit slave addressing */
-		mmr = (slave_address << TWI_MMR_DADR_POS) & TWI_MMR_DADR_MASK;
+		mmr = TWI_MMR_DADR(slave_address);
 
 		iadr = 0;
 	}
 
-	cfg->port->mmr = mmr;
-	cfg->port->iadr = iadr;
+	cfg->regs->TWI_MMR = mmr;
+	cfg->regs->TWI_IADR = iadr;
 }
 
 static inline int msg_write(struct device *dev)
@@ -304,47 +303,47 @@ static inline int msg_write(struct device *dev)
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
 	/* To write to slave */
-	cfg->port->mmr &= ~TWI_MMR_MREAD;
+	cfg->regs->TWI_MMR &= ~TWI_MMR_MREAD;
 
 	/* Setup PDC to do DMA transfer */
-	cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS | PDC_PTCR_RXTDIS;
-	cfg->port->pdc.tpr = (u32_t)dev_data->xfr_buf;
-	cfg->port->pdc.tcr = dev_data->xfr_len;
+	cfg->regs->TWI_PTCR = TWI_PTCR_TXTDIS | TWI_PTCR_RXTDIS;
+	cfg->regs->TWI_TPR = (u32_t)dev_data->xfr_buf;
+	cfg->regs->TWI_TCR = dev_data->xfr_len;
 
 	/* Enable TX related interrupts.
 	 * TXRDY is used by PDC so we don't want to interfere.
 	 */
-	cfg->port->ier = TWI_IRQ_ENDTX | TWI_IRQ_NACK;
+	cfg->regs->TWI_IER = TWI_SR_ENDTX | TWI_SR_NACK;
 
 	/* Start DMA transfer for TX */
-	cfg->port->pdc.ptcr = PDC_PTCR_TXTEN;
+	cfg->regs->TWI_PTCR = TWI_PTCR_TXTEN;
 
 	/* Wait till transfer is done or error occurs */
 	k_sem_take(&dev_data->device_sync_sem, K_FOREVER);
 
 	/* Check for error */
-	if (cfg->port->sr & TWI_IRQ_NACK) {
+	if (cfg->regs->TWI_SR & TWI_SR_NACK) {
 		return RET_NACK;
 	}
 
 	/* STOP if needed */
 	if (dev_data->xfr_flags & I2C_MSG_STOP) {
-		cfg->port->cr = TWI_CR_STOP;
+		cfg->regs->TWI_CR = TWI_CR_STOP;
 
 		/* Wait for TXCOMP if sending STOP.
 		 * The transfer is done and the controller just needs to
 		 * 'send' the STOP bit. So wait should be very short.
 		 */
-		sr_bits_set_wait(dev, TWI_IRQ_TXCOMP);
+		sr_bits_set_wait(dev, TWI_SR_TXCOMP);
 	} else {
 		/* If no STOP, just wait for TX buffer to clear.
 		 * At this point, this should take no time.
 		 */
-		sr_bits_set_wait(dev, TWI_IRQ_TXRDY);
+		sr_bits_set_wait(dev, TWI_SR_TXRDY);
 	}
 
 	/* Disable PDC */
-	cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS;
+	cfg->regs->TWI_PTCR = TWI_PTCR_TXTDIS;
 
 	return RET_OK;
 }
@@ -358,7 +357,7 @@ static inline int msg_read(struct device *dev)
 	u32_t last_len;
 
 	/* To read from slave */
-	cfg->port->mmr |= TWI_MMR_MREAD;
+	cfg->regs->TWI_MMR |= TWI_MMR_MREAD;
 
 	/* START bit in control register needs to be set to start
 	 * reading from slave. If the previous message is also read,
@@ -374,7 +373,7 @@ static inline int msg_read(struct device *dev)
 		ctrl_reg |= TWI_CR_STOP;
 		dev_data->xfr_flags &= ~I2C_MSG_STOP;
 	}
-	cfg->port->cr = ctrl_reg;
+	cfg->regs->TWI_CR = ctrl_reg;
 
 	/* Note that this is entirely possible to do the last byte without
 	 * going through DMA. But that requires another block of code to
@@ -383,8 +382,8 @@ static inline int msg_read(struct device *dev)
 	 */
 	while (dev_data->xfr_len > 0) {
 		/* Setup PDC to do DMA transfer. */
-		cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS | PDC_PTCR_RXTDIS;
-		cfg->port->pdc.rpr = (u32_t)dev_data->xfr_buf;
+		cfg->regs->TWI_PTCR = TWI_PTCR_TXTDIS | TWI_PTCR_RXTDIS;
+		cfg->regs->TWI_RPR = (u32_t)dev_data->xfr_buf;
 
 		/* Note that we need to set the STOP bit before reading
 		 * last byte from RHR. So we need to process the last byte
@@ -401,29 +400,29 @@ static inline int msg_read(struct device *dev)
 			 * is 1, as it is already set above.
 			 */
 			if (dev_data->xfr_flags & I2C_MSG_STOP) {
-				cfg->port->cr = TWI_CR_STOP;
+				cfg->regs->TWI_CR = TWI_CR_STOP;
 			}
 		}
-		cfg->port->pdc.rcr = last_len;
+		cfg->regs->TWI_RCR = last_len;
 
 		/* Start DMA transfer for RX */
-		cfg->port->pdc.ptcr = PDC_PTCR_RXTEN;
+		cfg->regs->TWI_PTCR = TWI_PTCR_RXTEN;
 
 		/* Enable RX related interrupts
 		 * RXRDY is used by PDC so we don't want to interfere.
 		 */
-		cfg->port->ier = TWI_IRQ_ENDRX | TWI_IRQ_NACK | TWI_IRQ_OVRE;
+		cfg->regs->TWI_IER = TWI_SR_ENDRX | TWI_SR_NACK | TWI_SR_OVRE;
 
 		/* Wait till transfer is done or error occurs */
 		k_sem_take(&dev_data->device_sync_sem, K_FOREVER);
 
 		/* Check for errors */
-		stat_reg = cfg->port->sr;
-		if (stat_reg & TWI_IRQ_NACK) {
+		stat_reg = cfg->regs->TWI_SR;
+		if (stat_reg & TWI_SR_NACK) {
 			return RET_NACK;
 		}
 
-		if (stat_reg & TWI_IRQ_OVRE) {
+		if (stat_reg & TWI_SR_OVRE) {
 			return RET_ERR;
 		}
 
@@ -437,13 +436,13 @@ static inline int msg_read(struct device *dev)
 	}
 
 	/* Disable PDC */
-	cfg->port->pdc.ptcr = PDC_PTCR_RXTDIS;
+	cfg->regs->TWI_PTCR = TWI_PTCR_RXTDIS;
 
 	/* TXCOMP is kind of misleading here. This bit is set when THR/RHR
 	 * and all shift registers are empty, and STOP (or NACK) is detected.
 	 * So we wait here.
 	 */
-	sr_bits_set_wait(dev, TWI_IRQ_TXCOMP);
+	sr_bits_set_wait(dev, TWI_SR_TXCOMP);
 
 	return RET_OK;
 }
@@ -476,7 +475,7 @@ static int i2c_sam3_transfer(struct device *dev,
 	status_reg_clear(dev);
 
 	/* Enable master */
-	cfg->port->cr = TWI_CR_MSEN | TWI_CR_SVDIS;
+	cfg->regs->TWI_CR = TWI_CR_MSEN | TWI_CR_SVDIS;
 
 	transfer_setup(dev, slave_address);
 
@@ -534,8 +533,8 @@ static int i2c_sam3_transfer(struct device *dev,
 
 		if (xfr_ret == RET_NACK) {
 			/* Disable PDC if NACK is received. */
-			cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS
-					      | PDC_PTCR_RXTDIS;
+			cfg->regs->TWI_PTCR = TWI_PTCR_TXTDIS
+					      | TWI_PTCR_RXTDIS;
 
 			ret = -EIO;
 			goto done;
@@ -545,10 +544,10 @@ static int i2c_sam3_transfer(struct device *dev,
 			/* Error encountered:
 			 * Reset the controller and configure it again.
 			 */
-			cfg->port->pdc.ptcr = PDC_PTCR_TXTDIS
-					      | PDC_PTCR_RXTDIS;
-			cfg->port->cr = TWI_CR_SWRST | TWI_CR_MSDIS
-					| TWI_CR_SVDIS;
+			cfg->regs->TWI_PTCR = TWI_PTCR_TXTDIS
+					      | TWI_PTCR_RXTDIS;
+			cfg->regs->TWI_CR = TWI_CR_SWRST | TWI_CR_MSDIS
+					    | TWI_CR_SVDIS;
 
 			i2c_sam3_runtime_configure(dev,
 						   dev_data->dev_config.raw);
@@ -566,7 +565,7 @@ done:
 	dev_data->state = STATE_READY;
 
 	/* Disable master and slave after transfer is done */
-	cfg->port->cr = TWI_CR_MSDIS | TWI_CR_SVDIS;
+	cfg->regs->TWI_CR = TWI_CR_MSDIS | TWI_CR_SVDIS;
 
 	return ret;
 }
@@ -584,7 +583,7 @@ static int i2c_sam3_init(struct device *dev)
 	k_sem_init(&dev_data->device_sync_sem, 0, UINT_MAX);
 
 	/* Disable all interrupts */
-	cfg->port->idr = TWI_IRQ_DISABLE;
+	cfg->regs->TWI_IDR = cfg->regs->TWI_IMR;
 
 	cfg->config_func(dev);
 
@@ -600,10 +599,10 @@ static int i2c_sam3_init(struct device *dev)
 
 #ifdef CONFIG_I2C_0
 
-static void config_func_0(struct device *port);
+static void config_func_0(struct device *dev);
 
 static const struct i2c_sam3_dev_config dev_config_0 = {
-	.port = __TWI0,
+	.regs = TWI0,
 	.config_func = config_func_0,
 };
 
@@ -619,21 +618,21 @@ DEVICE_AND_API_INIT(i2c_sam3_0, CONFIG_I2C_0_NAME, &i2c_sam3_init,
 static void config_func_0(struct device *dev)
 {
 	/* Enable clock for TWI0 controller */
-	__PMC->pcer0 = (1 << PID_TWI0);
+	PMC->PMC_PCER0 = (1 << ID_TWI0);
 
-	IRQ_CONNECT(IRQ_TWI0, CONFIG_I2C_0_IRQ_PRI,
+	IRQ_CONNECT(TWI0_IRQn, CONFIG_I2C_0_IRQ_PRI,
 		    i2c_sam3_isr, DEVICE_GET(i2c_sam3_0), 0);
-	irq_enable(IRQ_TWI0);
+	irq_enable(TWI0_IRQn);
 }
 
 #endif /* CONFIG_I2C_0 */
 
 #ifdef CONFIG_I2C_1
 
-static void config_func_1(struct device *port);
+static void config_func_1(struct device *dev);
 
 static const struct i2c_sam3_dev_config dev_config_1 = {
-	.port = __TWI1,
+	.regs = TWI1,
 	.config_func = config_func_1,
 };
 
@@ -649,11 +648,11 @@ DEVICE_AND_API_INIT(i2c_sam3_1, CONFIG_I2C_1_NAME, &i2c_sam3_init,
 static void config_func_1(struct device *dev)
 {
 	/* Enable clock for TWI0 controller */
-	__PMC->pcer0 = (1 << PID_TWI1);
+	PMC->PMC_PCER0 = (1 << ID_TWI1);
 
-	IRQ_CONNECT(IRQ_TWI1, CONFIG_I2C_1_IRQ_PRI,
+	IRQ_CONNECT(TWI1_IRQn, CONFIG_I2C_1_IRQ_PRI,
 		    i2c_sam3_isr, DEVICE_GET(i2c_sam3_1), 0);
-	irq_enable(IRQ_TWI1);
+	irq_enable(TWI1_IRQn);
 }
 
 #endif /* CONFIG_I2C_1 */
