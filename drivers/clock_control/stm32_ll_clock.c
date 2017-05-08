@@ -190,7 +190,17 @@ static int stm32_clock_control_init(struct device *dev)
 	/* configure PLL input settings */
 	config_pll_init(&s_PLLInitStruct);
 
-	/* Disable PLL before configuration */
+	/*
+	 * Switch to HSI and disable the PLL before configuration.
+	 * (Switching to HSI makes sure we have a SYSCLK source in
+	 * case we're currently running from the PLL we're about to
+	 * turn off and reconfigure.)
+	 *
+	 * Don't use s_ClkInitStruct.AHBCLKDivider as the AHB
+	 * prescaler here. In this configuration, that's the value to
+	 * use when the SYSCLK source is the PLL, not HSI.
+	 */
+	stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
 	LL_RCC_PLL_Disable();
 
 #ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
