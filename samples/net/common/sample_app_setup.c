@@ -31,7 +31,8 @@
 #include <ieee802154_settings.h>
 #endif
 
-struct k_sem waiter = K_SEM_INITIALIZER(waiter, 0, 1);
+static struct k_sem waiter = K_SEM_INITIALIZER(waiter, 0, 1);
+static struct k_sem counter;
 
 #if defined(CONFIG_NET_DHCPV4)
 static struct net_mgmt_event_callback mgmt4_cb;
@@ -67,6 +68,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		break;
 	}
 
+	k_sem_take(&counter, K_NO_WAIT);
 	k_sem_give(&waiter);
 }
 
@@ -93,8 +95,8 @@ static void setup_dhcpv4(struct net_if *iface)
 
 static void setup_ipv4(struct net_if *iface)
 {
+	char hr_addr[NET_IPV4_ADDR_LEN];
 	struct in_addr addr;
-	int ret;
 
 	if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_ADDR, &addr)) {
 		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV4_ADDR);
@@ -106,6 +108,7 @@ static void setup_ipv4(struct net_if *iface)
 	NET_INFO("IPv4 address: %s",
 		 net_addr_ntop(AF_INET, &addr, hr_addr, NET_IPV4_ADDR_LEN));
 
+	k_sem_take(&counter, K_NO_WAIT);
 	k_sem_give(&waiter);
 }
 
@@ -121,10 +124,6 @@ static void setup_ipv4(struct net_if *iface)
 static struct net_mgmt_event_callback mgmt6_cb;
 static struct in6_addr laddr;
 
-/* DNS query will most probably fail if we do not have a default
- * router configured because typically the DNS server is outside of local
- * network. So wait for that before continuing.
- */
 static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 			       u32_t mgmt_event, struct net_if *iface)
 {
@@ -144,10 +143,12 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 			 net_addr_ntop(AF_INET6, &laddr, hr_addr,
 				       NET_IPV6_ADDR_LEN));
 
+		k_sem_take(&counter, K_NO_WAIT);
 		k_sem_give(&waiter);
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ROUTER_ADD) {
+		k_sem_take(&counter, K_NO_WAIT);
 		k_sem_give(&waiter);
 	}
 }
@@ -183,7 +184,10 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 
 int net_sample_app_init(const char *app_info, u32_t flags, s32_t timeout)
 {
+#define LOOP_DEVIDER 10
 	struct net_if *iface = net_if_get_default();
+	int loop = timeout / LOOP_DEVIDER;
+	int count = 0;
 
 	if (app_info) {
 		NET_INFO("%s", app_info);
@@ -206,14 +210,42 @@ int net_sample_app_init(const char *app_info, u32_t flags, s32_t timeout)
 	}
 #endif
 
+	if (flags & NET_SAMPLE_NEED_IPV6) {
+		count++;
+	}
+
+	if (flags & NET_SAMPLE_NEED_IPV4) {
+		count++;
+	}
+
+	k_sem_init(&counter, count, count);
+
 	setup_ipv4(iface);
 
 	setup_dhcpv4(iface);
 
 	setup_ipv6(iface, flags);
 
-	/* Wait until we are ready to continue */
-	if (k_sem_take(&waiter, timeout)) {
+	if (timeout < 0) {
+		count = -1;
+	} else if (timeout == 0) {
+		count = 0;
+	} else {
+		count = timeout / 1000 + 1;
+	}
+
+	/* Loop here until until we are ready to continue. As we might need
+	 * to wait multiple events, sleep smaller amounts of data.
+	 */
+	while (count--) {
+		if (k_sem_take(&waiter, loop)) {
+			if (!k_sem_count_get(&counter)) {
+				break;
+			}
+		}
+	}
+
+	if (!count && timeout) {
 		NET_ERR("Timeout while waiting setup");
 		return -ETIMEDOUT;
 	}
