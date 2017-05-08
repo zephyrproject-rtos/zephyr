@@ -22,11 +22,6 @@ API Changes
 As described in the section :ref:`kernel_api_changes` the kernel now has one
 unified and consistent API with new naming.
 
-An application using the old APIs can still be compiled using a legacy interface
-that translates old APIs to the new APIs. This legacy interface maintained in
-:file:`include/legacy.h` can be used as a guide when porting a legacy
-application to the new kernel.
-
 Same Arguments
 ==============
 
@@ -67,7 +62,7 @@ Many kernel APIs now return 0 to indicate success and a non-zero error code
 to indicate the reason for failure. You should pay special attention to this
 change when checking for return codes from kernel APIs, for example:
 
-* :cpp:func:`k_sem_take()` now returns 0 on on success, in the legacy API
+* :cpp:func:`k_sem_take()` now returns 0 on success, in the legacy API
   :cpp:func:`nano_sem_take()` returned 1 when a semaphore is available.
 
 
