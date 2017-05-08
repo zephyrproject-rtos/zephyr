@@ -25,6 +25,10 @@ struct spi_context {
 	struct k_sem lock;
 	struct k_sem sync;
 
+#ifdef CONFIG_POLL
+	struct k_poll_signal *signal;
+	bool asynchronous;
+#endif
 	const struct spi_buf **current_tx;
 	struct spi_buf **current_rx;
 
@@ -46,24 +50,55 @@ static inline bool spi_context_configured(struct spi_context *ctx,
 	return !!(ctx->config == config);
 }
 
-static inline void spi_context_lock(struct spi_context *ctx)
+static inline void spi_context_lock(struct spi_context *ctx,
+				    bool asynchronous,
+				    struct k_poll_signal *signal)
 {
 	k_sem_take(&ctx->lock, K_FOREVER);
+
+#ifdef CONFIG_POLL
+	ctx->asynchronous = asynchronous;
+	ctx->signal = signal;
+#endif
 }
 
-static inline void spi_context_release(struct spi_context *ctx)
+static inline void spi_context_release(struct spi_context *ctx, int status)
 {
+#ifdef CONFIG_POLL
+	if (!ctx->asynchronous || status) {
+		k_sem_give(&ctx->lock);
+	}
+#else
 	k_sem_give(&ctx->lock);
+#endif
 }
 
 static inline void spi_context_wait_for_completion(struct spi_context *ctx)
 {
+#ifdef CONFIG_POLL
+	if (!ctx->asynchronous) {
+		k_sem_take(&ctx->sync, K_FOREVER);
+	}
+#else
 	k_sem_take(&ctx->sync, K_FOREVER);
+#endif
 }
 
-static inline void spi_context_complete(struct spi_context *ctx)
+static inline void spi_context_complete(struct spi_context *ctx, int status)
 {
+#ifdef CONFIG_POLL
+	if (!ctx->asynchronous) {
+		k_sem_give(&ctx->sync);
+	} else {
+		if (ctx->signal) {
+			k_poll_signal(ctx->signal, status);
+		}
+
+		k_sem_give(&ctx->lock);
+	}
+#else
 	k_sem_give(&ctx->sync);
+#endif
 }
 
 static inline void spi_context_cs_configure(struct spi_context *ctx)

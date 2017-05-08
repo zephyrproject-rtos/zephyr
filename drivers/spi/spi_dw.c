@@ -75,7 +75,7 @@ out:
 	SYS_LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
 
-	spi_context_complete(&spi->ctx);
+	spi_context_complete(&spi->ctx, error ? -EIO : 0);
 }
 
 static void push_data(struct device *dev)
@@ -250,9 +250,11 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	return 0;
 }
 
-static int spi_dw_transceive(struct spi_config *config,
-			     const struct spi_buf **tx_bufs,
-			     struct spi_buf **rx_bufs)
+static int transceive(struct spi_config *config,
+		      const struct spi_buf **tx_bufs,
+		      struct spi_buf **rx_bufs,
+		      bool asynchronous,
+		      struct k_poll_signal *signal)
 {
 	const struct spi_dw_config *info = config->dev->config->config_info;
 	struct spi_dw_data *spi = config->dev->driver_data;
@@ -260,15 +262,13 @@ static int spi_dw_transceive(struct spi_config *config,
 	u32_t imask = DW_SPI_IMR_UNMASK;
 	int ret = 0;
 
-	SYS_LOG_DBG("%p, %p, %p", config->dev, tx_bufs, rx_bufs);
-
 	/* Check status */
 	if (test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
 		SYS_LOG_DBG("Controller is busy");
 		return -EBUSY;
 	}
 
-	spi_context_lock(&spi->ctx);
+	spi_context_lock(&spi->ctx, asynchronous, signal);
 
 	/* Configure */
 	ret = spi_dw_configure(info, spi, config);
@@ -311,10 +311,31 @@ static int spi_dw_transceive(struct spi_config *config,
 		ret = -EIO;
 	}
 out:
-	spi_context_release(&spi->ctx);
+	spi_context_release(&spi->ctx, ret);
 
 	return ret;
 }
+
+static int spi_dw_transceive(struct spi_config *config,
+			     const struct spi_buf **tx_bufs,
+			     struct spi_buf **rx_bufs)
+{
+	SYS_LOG_DBG("%p, %p, %p", config->dev, tx_bufs, rx_bufs);
+
+	return transceive(config, tx_bufs, rx_bufs, false, NULL);
+}
+
+#ifdef CONFIG_POLL
+static int spi_dw_transceive_async(struct spi_config *config,
+				   const struct spi_buf **tx_bufs,
+				   struct spi_buf **rx_bufs,
+				   struct k_poll_signal *async)
+{
+	SYS_LOG_DBG("%p, %p, %p, %p", config->dev, tx_bufs, rx_bufs, async);
+
+	return transceive(config, tx_bufs, rx_bufs, true, async);
+}
+#endif /* CONFIG_POLL */
 
 void spi_dw_isr(struct device *dev)
 {
@@ -349,6 +370,9 @@ out:
 
 static const struct spi_driver_api dw_spi_api = {
 	.transceive = spi_dw_transceive,
+#ifdef CONFIG_POLL
+	.transceive_async = spi_dw_transceive_async,
+#endif
 };
 
 int spi_dw_init(struct device *dev)
@@ -367,7 +391,7 @@ int spi_dw_init(struct device *dev)
 
 	SYS_LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
-	spi_context_release(&spi->ctx);
+	spi_context_release(&spi->ctx, 0);
 
 	return 0;
 }
