@@ -11,6 +11,7 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <sys_clock.h>
 
+extern void youve_print(void);
 /*
  * Convenience defines.
  */
@@ -29,8 +30,9 @@
  * representation as a large positive value).
  */
 #define RTC_HALF               (RTC_MASK / 2)
+
 #define RTC_TICKS_PER_SYS_TICK ((u32_t)((((u64_t)1000000UL / \
-				 CONFIG_SYS_CLOCK_TICKS_PER_SEC) * \
+				 sys_clock_ticks_per_sec) * \
 				1000000000UL) / 30517578125UL) & RTC_MASK)
 
 extern s32_t _sys_idle_elapsed_ticks;
@@ -49,6 +51,10 @@ static u32_t rtc_past;
  */
 static u32_t expected_sys_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
+
+#ifdef CONFIG_TICKLESS_KERNEL
+int32_t _get_max_clock_time(void);
+#endif /* CONFIG_TICKLESS_KERNEL */
 
 /*
  * Set RTC Counter Compare (CC) register to a given value in RTC ticks.
@@ -77,7 +83,7 @@ static void rtc_compare_set(u32_t rtc_ticks)
 		NVIC_SetPendingIRQ(NRF5_IRQ_RTC1_IRQn);
 	}
 }
-
+#ifndef CONFIG_TICKLESS_KERNEL
 /*
  * @brief Announces the number of sys ticks, if any, that have passed since the
  * last announcement, and programs the RTC to trigger the interrupt on the next
@@ -147,6 +153,7 @@ static void rtc_announce_set_next(void)
 	/* Set the RTC to the next sys tick */
 	rtc_compare_set(rtc_past + RTC_TICKS_PER_SYS_TICK);
 }
+#endif
 
 #ifdef CONFIG_TICKLESS_IDLE
 /**
@@ -177,9 +184,21 @@ static void rtc_announce_set_next(void)
  */
 void _timer_idle_enter(s32_t sys_ticks)
 {
-	/* Restrict ticks to max supported by RTC without risking overflow. */
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (sys_ticks != K_FOREVER) {
+		/* Need to reprograme timer if current program is smaller*/
+		if (sys_ticks > expected_sys_ticks) {
+			_set_time(sys_ticks);
+		}
+	} else {
+		expected_sys_ticks = 0;
+		/* Set time to largest possile RTC Tick*/
+		_set_time(_get_max_clock_time());
+	}
+#else
+	/* Restrict ticks to max supported by RTC without risking overflow*/
 	if ((sys_ticks < 0) ||
-	    (sys_ticks > (RTC_HALF / RTC_TICKS_PER_SYS_TICK))) {
+		(sys_ticks > (RTC_HALF / RTC_TICKS_PER_SYS_TICK))) {
 		sys_ticks = RTC_HALF / RTC_TICKS_PER_SYS_TICK;
 	}
 
@@ -189,7 +208,175 @@ void _timer_idle_enter(s32_t sys_ticks)
 	 * immediately, meaning that we will not go to sleep.
 	 */
 	rtc_compare_set(rtc_past + (sys_ticks * RTC_TICKS_PER_SYS_TICK));
+#endif
 }
+
+
+#ifdef CONFIG_TICKLESS_KERNEL
+
+/**
+ * @brief provides total systicks programed.
+ *
+ * returns : total number of sys ticks programed.
+ */
+
+uint32_t _get_program_time(void)
+{
+	return expected_sys_ticks;
+}
+
+/**
+ * @brief provides total systicks remaining since last programing of RTC.
+ *
+ * returns : total number of sys ticks remaining since last RTC programing.
+ */
+
+uint32_t _get_remaining_program_time(void)
+{
+
+	if (!expected_sys_ticks) {
+		return 0;
+	}
+
+	return (expected_sys_ticks - _get_elapsed_program_time());
+}
+
+/**
+ * @brief provides total systicks passed since last programing of RTC.
+ *
+ * returns : total number of sys ticks passed since last RTC programing.
+ */
+
+uint32_t _get_elapsed_program_time(void)
+{
+	u32_t rtc_now, rtc_prev, rtc_elapsed;
+
+	if (!expected_sys_ticks) {
+		return 0;
+	}
+
+	rtc_now = RTC_COUNTER;
+
+	/* Discard value of  RTC_COUNTER read at LFCLK transition */
+	do {
+		/* Number of RTC cycles passed since last RTC Programing*/
+		rtc_elapsed = (rtc_now - rtc_past) & RTC_MASK;
+		rtc_prev = rtc_now;
+		rtc_now = RTC_COUNTER;
+	} while (rtc_prev != rtc_now);
+
+	/*Convert number of Machine cycles to SYS TICS*/
+	return (rtc_elapsed / RTC_TICKS_PER_SYS_TICK);
+}
+
+
+/**
+ * @brief Sets interrupt for rtc compare value for systick time.
+ *
+ * This Function does following:-
+ * 1. Updates expected_sys_ticks equal to time.
+ * 2. Update kernel book keeping for time passed since device bootup.
+ * 3. Calls routine to set rtc interrupt.
+ */
+
+void _set_time(uint32_t time)
+{
+	if (!time) {
+		expected_sys_ticks = 0;
+		return;
+	}
+
+	/* Update expected_sys_ticls to time to programe*/
+	expected_sys_ticks = time;
+	_sys_clock_tick_count = _get_elapsed_clock_time();
+	/* Update rtc_past to track rtc timer count*/
+	rtc_past = (_sys_clock_tick_count * RTC_TICKS_PER_SYS_TICK) & RTC_MASK;
+
+	expected_sys_ticks = expected_sys_ticks > _get_max_clock_time() ?
+				_get_max_clock_time() : expected_sys_ticks;
+
+	/* Programe RTC compare register to generate interrupt*/
+	rtc_compare_set(rtc_past +
+			(expected_sys_ticks * RTC_TICKS_PER_SYS_TICK));
+
+}
+
+/**
+ * @brief provides time remaining to reach rtc count overflow.
+ *
+ * This function returns how many sys RTC remaining for rtc to overflow.
+ * This will be required when we will programe RTC compare value to maximum
+ * possible value.
+ *
+ * returns : difference between current systick and Maximum possible systick.
+ */
+int32_t _get_max_clock_time(void)
+{
+	u32_t rtc_now, rtc_prev, rtc_away, sys_away = 0;
+
+	rtc_now = RTC_COUNTER;
+	/* Discard value of  RTC_COUNTER read at LFCLK transition */
+	do {
+		rtc_away = (RTC_MASK - rtc_now);
+		rtc_away = rtc_away > RTC_HALF ? RTC_HALF : rtc_away;
+		rtc_prev = rtc_now;
+		/* Calculate time to programe into RTC*/
+		rtc_now = RTC_COUNTER;
+	} while (rtc_now != rtc_prev);
+
+	/* Convert RTC Ticks to SYS TICKS*/
+	if (rtc_away >= RTC_TICKS_PER_SYS_TICK) {
+		sys_away = rtc_away / RTC_TICKS_PER_SYS_TICK;
+	}
+	return sys_away;
+}
+
+/**
+ * @brief Enable sys Clock.
+ *
+ * This is used to programe RTC clock to maximum Clock time incase Clock to
+ * remain On.
+ */
+void _enable_sys_clock(void)
+{
+	if (!expected_sys_ticks) {
+		/* Programe sys tick to Maximum possible value*/
+		_set_time(_get_max_clock_time());
+	}
+}
+
+/**
+ * @brief provides total systicks passed since device bootup.
+ *
+ * returns : total number of sys ticks passed since device bootup.
+ */
+
+uint64_t _get_elapsed_clock_time(void)
+{
+	u64_t elapsed;
+	u32_t rtc_now, rtc_elapsed, rtc_prev, sys_elapsed;
+
+	rtc_now = RTC_COUNTER;
+
+	/* Discard value of  RTC_COUNTER read at LFCLK transition */
+	do {
+		/* Calculate number of rtc cycles elapsed since RTC programing*/
+		rtc_elapsed = (rtc_now - rtc_past) & RTC_MASK;
+		elapsed = _sys_clock_tick_count;
+		rtc_prev = rtc_now;
+		rtc_now = RTC_COUNTER;
+	} while (rtc_now != rtc_prev);
+
+	if (rtc_elapsed >= RTC_TICKS_PER_SYS_TICK) {
+		/* Convert RTC cycles to SYS TICKS*/
+		sys_elapsed = rtc_elapsed / RTC_TICKS_PER_SYS_TICK;
+		/* Update total number of SYS_TICKS passed*/
+		elapsed += sys_elapsed;
+	}
+	return elapsed;
+}
+#endif
+
 
 /**
  *
@@ -219,6 +406,11 @@ void _timer_idle_enter(s32_t sys_ticks)
  */
 void _timer_idle_exit(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	if (!expected_sys_ticks && _sys_clock_always_on) {
+		_set_time(_get_max_clock_time());
+	}
+#else
 	/* Clear the event flag and interrupt in case we woke up on the RTC
 	 * interrupt. No need to run the RTC ISR since everything that needs
 	 * to run in the ISR will be done in this call.
@@ -232,6 +424,7 @@ void _timer_idle_exit(void)
 	 * ticks to have passed when _sys_clock_tick_announce() is called.
 	 */
 	expected_sys_ticks = 1;
+#endif
 }
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -261,10 +454,21 @@ void _timer_idle_exit(void)
  */
 static void rtc1_nrf5_isr(void *arg)
 {
-	ARG_UNUSED(arg);
 
+	ARG_UNUSED(arg);
 	RTC_CC_EVENT = 0;
+
+#ifdef CONFIG_TICKLESS_KERNEL
+	_sys_idle_elapsed_ticks = expected_sys_ticks;
+	/* Initialize expected sys tick,
+	 * It will be later updated based on next timeout.
+	 */
+	expected_sys_ticks = 0;
+	/* Anounce elapsed of _sys_idle_elapsed_ticks systicks*/
+	_sys_clock_tick_announce();
+#else
 	rtc_announce_set_next();
+#endif
 }
 
 int _sys_clock_driver_init(struct device *device)
@@ -313,6 +517,7 @@ u32_t _timer_cycle_get_32(void)
 	u32_t rtc_now;
 
 	rtc_now = RTC_COUNTER;
+	/* Discard value of  RTC_COUNTER read at LFCLK transition */
 	do {
 		sys_clock_tick_count = _sys_clock_tick_count;
 		elapsed_cycles = (rtc_now - (sys_clock_tick_count *
