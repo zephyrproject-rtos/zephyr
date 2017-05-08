@@ -996,11 +996,11 @@ struct bt_hci_cp_le_set_default_phy {
 
 #define BT_HCI_OP_LE_SET_PHY                    BT_OP(BT_OGF_LE, 0x0032)
 struct bt_hci_cp_le_set_phy {
-	u16_t handle;
-	u8_t  all_phys;
-	u8_t  tx_phys;
-	u8_t  rx_phys;
-	u8_t  phy_opts;
+	u16_t  handle;
+	u8_t   all_phys;
+	u8_t   tx_phys;
+	u8_t   rx_phys;
+	u16_t  phy_opts;
 } __packed;
 
 #define BT_HCI_LE_MOD_INDEX_STANDARD            0x00
