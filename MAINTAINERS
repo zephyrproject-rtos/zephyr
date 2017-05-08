@@ -286,7 +286,6 @@ F:	include/sys_io.h
 F:	include/toolchain.h
 F:	include/zephyr.h
 F:	include/kernel.h
-F:	include/legacy.h
 F:	tests/kernel/
 
 KNOWN ISSUES
