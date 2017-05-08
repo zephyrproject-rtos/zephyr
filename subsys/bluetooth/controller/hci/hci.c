@@ -1398,6 +1398,33 @@ static void le_chan_sel_algo(struct pdu_data *pdu_data, u16_t handle,
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
+				struct net_buf *buf)
+{
+	struct bt_hci_evt_le_phy_update_complete *sep;
+	struct radio_le_phy_upd_cmplt *radio_le_phy_upd_cmplt;
+
+	radio_le_phy_upd_cmplt = (struct radio_le_phy_upd_cmplt *)
+				 pdu_data->payload.lldata;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE)) {
+		BT_WARN("handle: 0x%04x, tx: %x, rx: %x.", handle,
+			radio_le_phy_upd_cmplt->tx,
+			radio_le_phy_upd_cmplt->rx);
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE, sizeof(*sep));
+
+	sep->status = 0x00;
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->tx_phy = radio_le_phy_upd_cmplt->tx;
+	sep->rx_phy = radio_le_phy_upd_cmplt->rx;
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
+
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
@@ -1446,6 +1473,12 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		le_chan_sel_algo(pdu_data, handle, buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	case NODE_RX_TYPE_PHY_UPDATE:
+		le_phy_upd_complete(pdu_data, handle, buf);
+		return;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
@@ -1775,6 +1808,9 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
 		case NODE_RX_TYPE_CHAN_SEL_ALGO:
 #endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+		case NODE_RX_TYPE_PHY_UPDATE:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 			return HCI_CLASS_EVT_CONNECTION;
 		default:
 			return -1;
