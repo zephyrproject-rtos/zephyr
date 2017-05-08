@@ -103,11 +103,13 @@ or at runtime
     struct k_poll_event events[2];
     void some_init(void)
     {
-        k_poll_event_init(K_POLL_TYPE_SEM_AVAILABLE,
+        k_poll_event_init(&events[0],
+                          K_POLL_TYPE_SEM_AVAILABLE,
                           K_POLL_MODE_NOTIFY_ONLY,
                           &my_sem);
 
-        k_poll_event_init(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+        k_poll_event_init(&events[1],
+                          K_POLL_TYPE_FIFO_DATA_AVAILABLE,
                           K_POLL_MODE_NOTIFY_ONLY,
                           &my_fifo);
 
