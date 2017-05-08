@@ -150,6 +150,28 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
+/*
+ * Unconditionally switch the system clock source to HSI.
+ */
+__unused
+static void stm32_clock_switch_to_hsi(uint32_t ahb_prescaler)
+{
+	/* Enable HSI if not enabled */
+	if (LL_RCC_HSI_IsReady() != 1) {
+		/* Enable HSI */
+		LL_RCC_HSI_Enable();
+		while (LL_RCC_HSI_IsReady() != 1) {
+		/* Wait for HSI ready */
+		}
+	}
+
+	/* Set HSI as SYSCLCK source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+	LL_RCC_SetAHBPrescaler(ahb_prescaler);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+	}
+}
+
 static int stm32_clock_control_init(struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
@@ -255,20 +277,7 @@ static int stm32_clock_control_init(struct device *dev)
 
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI
 
-	/* Enable HSI if not enabled */
-	if (LL_RCC_HSI_IsReady() != 1) {
-		/* Enable HSI */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
-		/* Wait for HSI ready */
-		}
-	}
-
-	/* Set HSI as SYSCLCK source */
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
-	}
+	stm32_clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
 
 	/* Update SystemCoreClock variable */
 	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(HSI_VALUE,
