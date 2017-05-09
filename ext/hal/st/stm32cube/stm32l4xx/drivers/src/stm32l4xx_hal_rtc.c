@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rtc.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   RTC HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Real-Time Clock (RTC) peripheral:
@@ -91,7 +91,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -240,6 +240,20 @@ HAL_StatusTypeDef HAL_RTC_Init(RTC_HandleTypeDef *hrtc)
 
     /* Exit Initialization mode */
     hrtc->Instance->ISR &= ((uint32_t)~RTC_ISR_INIT);
+
+    /* If  CR_BYPSHAD bit = 0, wait for synchro else this check is not needed */
+    if((hrtc->Instance->CR & RTC_CR_BYPSHAD) == RESET)
+    {
+      if(HAL_RTC_WaitForSynchro(hrtc) != HAL_OK)
+      {
+        /* Enable the write protection for RTC registers */
+        __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
+
+        hrtc->State = HAL_RTC_STATE_ERROR;
+
+        return HAL_ERROR;
+      }
+    }
 
     hrtc->Instance->OR &= (uint32_t)~(RTC_OR_ALARMOUTTYPE | RTC_OR_OUT_RMP);
     hrtc->Instance->OR |= (uint32_t)(hrtc->Init.OutPutType | hrtc->Init.OutPutRemap);

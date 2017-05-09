@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dfsdm.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Digital Filter for Sigma-Delta Modulators
   *          (DFSDM) peripherals:
@@ -161,7 +161,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -195,8 +195,10 @@
   * @{
   */
 #ifdef HAL_DFSDM_MODULE_ENABLED
+
 #if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || \
+    defined(STM32L496xx) || defined(STM32L4A6xx)
 /** @defgroup DFSDM DFSDM
   * @brief DFSDM HAL driver module
   * @{
@@ -1739,7 +1741,7 @@ int32_t HAL_DFSDM_FilterGetRegularValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filte
   
   /* Extract channel and regular conversion value */
   *Channel = (reg & DFSDM_FLTRDATAR_RDATACH);
-  value = ((reg & DFSDM_FLTRDATAR_RDATA) >> DFSDM_FLTRDATAR_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTRDATAR_RDATA) >> DFSDM_FLTRDATAR_DATA_OFFSET);
 
   /* return regular conversion value */
   return value;
@@ -2149,7 +2151,7 @@ int32_t HAL_DFSDM_FilterGetInjectedValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filt
   
   /* Extract channel and injected conversion value */
   *Channel = (reg & DFSDM_FLTJDATAR_JDATACH);
-  value = ((reg & DFSDM_FLTJDATAR_JDATA) >> DFSDM_FLTJDATAR_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTJDATAR_JDATA) >> DFSDM_FLTJDATAR_DATA_OFFSET);
 
   /* return regular conversion value */
   return value;
@@ -2334,7 +2336,7 @@ int32_t HAL_DFSDM_FilterGetExdMaxValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filter
   
   /* Extract channel and extreme detector maximum value */
   *Channel = (reg & DFSDM_FLTEXMAX_EXMAXCH);
-  value = ((reg & DFSDM_FLTEXMAX_EXMAX) >> DFSDM_FLTEXMAX_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTEXMAX_EXMAX) >> DFSDM_FLTEXMAX_DATA_OFFSET);
 
   /* return extreme detector maximum value */
   return value;
@@ -2362,7 +2364,7 @@ int32_t HAL_DFSDM_FilterGetExdMinValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filter
   
   /* Extract channel and extreme detector minimum value */
   *Channel = (reg & DFSDM_FLTEXMIN_EXMINCH);
-  value = ((reg & DFSDM_FLTEXMIN_EXMIN) >> DFSDM_FLTEXMIN_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTEXMIN_EXMIN) >> DFSDM_FLTEXMIN_DATA_OFFSET);
 
   /* return extreme detector minimum value */
   return value;
@@ -2825,7 +2827,8 @@ static uint32_t DFSDM_GetChannelFromInstance(DFSDM_Channel_TypeDef* Instance)
   {
     channel = 3;
   }
-#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || \
+    defined(STM32L496xx) || defined(STM32L4A6xx)
   else if(Instance == DFSDM1_Channel4)
   {
     channel = 4;
@@ -2842,7 +2845,7 @@ static uint32_t DFSDM_GetChannelFromInstance(DFSDM_Channel_TypeDef* Instance)
   {
     channel = 7;
   }
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || STM32L496xx || STM32L4A6xx */
 
   return channel;
 }
@@ -3016,8 +3019,9 @@ static void DFSDM_InjConvStop(DFSDM_Filter_HandleTypeDef* hdfsdm_filter)
 /**
   * @}
   */
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || STM32L496xx || STM32L4A6xx */
 #endif /* HAL_DFSDM_MODULE_ENABLED */
+
 /**
   * @}
   */

@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dfsdm.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of DFSDM HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -44,7 +44,8 @@
 #endif
 
 #if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || \
+    defined(STM32L496xx) || defined(STM32L4A6xx)
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
 
@@ -89,7 +90,8 @@ typedef struct
 typedef struct
 {
   uint32_t Multiplexer; /*!< Input is external serial inputs, internal register or ADC output.
-                             ADC output is available only on STM32L451xx, STM32L452xx, STM32L462xx products.
+                             ADC output is available only on STM32L451xx, STM32L452xx, STM32L462xx,
+                             STM32L496xx, STM32L4A6xx products.
                              This parameter can be a value of @ref DFSDM_Channel_InputMultiplexer */
   uint32_t DataPacking; /*!< Standard, interleaved or dual mode for internal register.
                              This parameter can be a value of @ref DFSDM_Channel_DataPacking */
@@ -268,9 +270,10 @@ typedef struct
   * @{
   */
 #define DFSDM_CHANNEL_EXTERNAL_INPUTS    ((uint32_t)0x00000000U) /*!< Data are taken from external inputs */
-#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx)
+#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
+    defined(STM32L496xx) || defined(STM32L4A6xx)
 #define DFSDM_CHANNEL_ADC_OUTPUT         DFSDM_CHCFGR1_DATMPX_0  /*!< Data are taken from ADC output */
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L496xx || STM32L4A6xx */
 #define DFSDM_CHANNEL_INTERNAL_REGISTER  DFSDM_CHCFGR1_DATMPX_1  /*!< Data are taken from internal register */
 /**
   * @}
@@ -640,14 +643,15 @@ uint32_t                      HAL_DFSDM_FilterGetError(DFSDM_Filter_HandleTypeDe
 #define IS_DFSDM_CHANNEL_OUTPUT_CLOCK(CLOCK)          (((CLOCK) == DFSDM_CHANNEL_OUTPUT_CLOCK_SYSTEM) || \
                                                        ((CLOCK) == DFSDM_CHANNEL_OUTPUT_CLOCK_AUDIO))
 #define IS_DFSDM_CHANNEL_OUTPUT_CLOCK_DIVIDER(DIVIDER) ((2 <= (DIVIDER)) && ((DIVIDER) <= 256))
-#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx)
+#if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
+    defined(STM32L496xx) || defined(STM32L4A6xx)
 #define IS_DFSDM_CHANNEL_INPUT(INPUT)                 (((INPUT) == DFSDM_CHANNEL_EXTERNAL_INPUTS) || \
                                                        ((INPUT) == DFSDM_CHANNEL_ADC_OUTPUT) || \
                                                        ((INPUT) == DFSDM_CHANNEL_INTERNAL_REGISTER))
 #else
 #define IS_DFSDM_CHANNEL_INPUT(INPUT)                 (((INPUT) == DFSDM_CHANNEL_EXTERNAL_INPUTS) || \
                                                        ((INPUT) == DFSDM_CHANNEL_INTERNAL_REGISTER))
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L496xx || STM32L4A6xx */
 #define IS_DFSDM_CHANNEL_DATA_PACKING(MODE)           (((MODE) == DFSDM_CHANNEL_STANDARD_MODE) || \
                                                        ((MODE) == DFSDM_CHANNEL_INTERLEAVED_MODE) || \
                                                        ((MODE) == DFSDM_CHANNEL_DUAL_MODE))
@@ -741,7 +745,7 @@ uint32_t                      HAL_DFSDM_FilterGetError(DFSDM_Filter_HandleTypeDe
 /**
   * @}
   */
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || STM32L496xx || STM32L4A6xx */
 #ifdef __cplusplus
 }
 #endif

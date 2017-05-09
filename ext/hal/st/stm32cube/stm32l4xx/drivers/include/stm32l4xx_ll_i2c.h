@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_i2c.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of I2C LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -63,16 +63,6 @@ extern "C" {
 /** @defgroup I2C_LL_Private_Constants I2C Private Constants
   * @{
   */
-/* Defines used for the bit position in the register and perform offsets */
-#define I2C_POSITION_CR1_DNF            (uint32_t)POSITION_VAL(I2C_CR1_DNF)
-#define I2C_POSITION_CR2_NBYTES         (uint32_t)POSITION_VAL(I2C_CR2_NBYTES)
-#define I2C_POSITION_TIMINGR_PRESC      (uint32_t)POSITION_VAL(I2C_TIMINGR_PRESC)
-#define I2C_POSITION_TIMINGR_SCLDEL     (uint32_t)POSITION_VAL(I2C_TIMINGR_SCLDEL)
-#define I2C_POSITION_TIMINGR_SDADEL     (uint32_t)POSITION_VAL(I2C_TIMINGR_SDADEL)
-#define I2C_POSITION_TIMINGR_SCLH       (uint32_t)POSITION_VAL(I2C_TIMINGR_SCLH)
-#define I2C_POSITION_TIMINGR_SCLL       (uint32_t)POSITION_VAL(I2C_TIMINGR_SCLL)
-#define I2C_POSITION_ISR_ADDCODE        (uint32_t)POSITION_VAL(I2C_ISR_ADDCODE)
-#define I2C_POSITION_TIMEOUTR_TIMEOUTB  (uint32_t)POSITION_VAL(I2C_TIMEOUTR_TIMEOUTB)
 /**
   * @}
   */
@@ -198,9 +188,9 @@ typedef struct
 /** @defgroup I2C_LL_EC_PERIPHERAL_MODE Peripheral Mode
   * @{
   */
-#define LL_I2C_MODE_I2C                    ((uint32_t)0x00000000U)  /*!< I2C Master or Slave mode                                    */
+#define LL_I2C_MODE_I2C                    0x00000000U              /*!< I2C Master or Slave mode                                    */
 #define LL_I2C_MODE_SMBUS_HOST             I2C_CR1_SMBHEN           /*!< SMBus Host address acknowledge                              */
-#define LL_I2C_MODE_SMBUS_DEVICE           ((uint32_t)0x00000000U)  /*!< SMBus Device default mode (Default address not acknowledge) */
+#define LL_I2C_MODE_SMBUS_DEVICE           0x00000000U              /*!< SMBus Device default mode (Default address not acknowledge) */
 #define LL_I2C_MODE_SMBUS_DEVICE_ARP       I2C_CR1_SMBDEN           /*!< SMBus Device Default address acknowledge                    */
 /**
   * @}
@@ -209,7 +199,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_ANALOGFILTER_SELECTION Analog Filter Selection
   * @{
   */
-#define LL_I2C_ANALOGFILTER_ENABLE          ((uint32_t)0x00000000U) /*!< Analog filter is enabled.  */
+#define LL_I2C_ANALOGFILTER_ENABLE          0x00000000U             /*!< Analog filter is enabled.  */
 #define LL_I2C_ANALOGFILTER_DISABLE         I2C_CR1_ANFOFF          /*!< Analog filter is disabled. */
 /**
   * @}
@@ -218,7 +208,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_ADDRESSING_MODE Master Addressing Mode
   * @{
   */
-#define LL_I2C_ADDRESSING_MODE_7BIT         ((uint32_t) 0x00000000U) /*!< Master operates in 7-bit addressing mode. */
+#define LL_I2C_ADDRESSING_MODE_7BIT         0x00000000U              /*!< Master operates in 7-bit addressing mode. */
 #define LL_I2C_ADDRESSING_MODE_10BIT        I2C_CR2_ADD10            /*!< Master operates in 10-bit addressing mode.*/
 /**
   * @}
@@ -227,7 +217,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_OWNADDRESS1 Own Address 1 Length
   * @{
   */
-#define LL_I2C_OWNADDRESS1_7BIT             ((uint32_t)0x00000000U) /*!< Own address 1 is a 7-bit address. */
+#define LL_I2C_OWNADDRESS1_7BIT             0x00000000U             /*!< Own address 1 is a 7-bit address. */
 #define LL_I2C_OWNADDRESS1_10BIT            I2C_OAR1_OA1MODE        /*!< Own address 1 is a 10-bit address.*/
 /**
   * @}
@@ -251,7 +241,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_I2C_ACKNOWLEDGE Acknowledge Generation
   * @{
   */
-#define LL_I2C_ACK                          ((uint32_t) 0x00000000U) /*!< ACK is sent after current received byte. */
+#define LL_I2C_ACK                          0x00000000U              /*!< ACK is sent after current received byte. */
 #define LL_I2C_NACK                         I2C_CR2_NACK             /*!< NACK is sent after current received byte.*/
 /**
   * @}
@@ -260,7 +250,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_ADDRSLAVE Slave Address Length
   * @{
   */
-#define LL_I2C_ADDRSLAVE_7BIT               ((uint32_t)0x00000000U)  /*!< Slave Address in 7-bit. */
+#define LL_I2C_ADDRSLAVE_7BIT               0x00000000U              /*!< Slave Address in 7-bit. */
 #define LL_I2C_ADDRSLAVE_10BIT              I2C_CR2_ADD10            /*!< Slave Address in 10-bit.*/
 /**
   * @}
@@ -269,7 +259,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_REQUEST Transfer Request Direction
   * @{
   */
-#define LL_I2C_REQUEST_WRITE                ((uint32_t)0x00000000U)  /*!< Master request a write transfer. */
+#define LL_I2C_REQUEST_WRITE                0x00000000U              /*!< Master request a write transfer. */
 #define LL_I2C_REQUEST_READ                 I2C_CR2_RD_WRN           /*!< Master request a read transfer.  */
 /**
   * @}
@@ -280,7 +270,7 @@ typedef struct
   */
 #define LL_I2C_MODE_RELOAD                  I2C_CR2_RELOAD                                      /*!< Enable I2C Reload mode.                                   */
 #define LL_I2C_MODE_AUTOEND                 I2C_CR2_AUTOEND                                     /*!< Enable I2C Automatic end mode with no HW PEC comparison.  */
-#define LL_I2C_MODE_SOFTEND                 ((uint32_t)0x00000000U)                             /*!< Enable I2C Software end mode with no HW PEC comparison.   */
+#define LL_I2C_MODE_SOFTEND                 0x00000000U                                         /*!< Enable I2C Software end mode with no HW PEC comparison.   */
 #define LL_I2C_MODE_SMBUS_RELOAD            LL_I2C_MODE_RELOAD                                  /*!< Enable SMBUS Automatic end mode with HW PEC comparison.   */
 #define LL_I2C_MODE_SMBUS_AUTOEND_NO_PEC    LL_I2C_MODE_AUTOEND                                 /*!< Enable SMBUS Automatic end mode with HW PEC comparison.   */
 #define LL_I2C_MODE_SMBUS_SOFTEND_NO_PEC    LL_I2C_MODE_SOFTEND                                 /*!< Enable SMBUS Software end mode with HW PEC comparison.    */
@@ -293,7 +283,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_GENERATE Start And Stop Generation
   * @{
   */
-#define LL_I2C_GENERATE_NOSTARTSTOP         ((uint32_t)0x00000000U)                                      /*!< Don't Generate Stop and Start condition.                */
+#define LL_I2C_GENERATE_NOSTARTSTOP         0x00000000U                                                  /*!< Don't Generate Stop and Start condition.                */
 #define LL_I2C_GENERATE_STOP                I2C_CR2_STOP                                                 /*!< Generate Stop condition (Size should be set to 0).      */
 #define LL_I2C_GENERATE_START_READ          (uint32_t)(I2C_CR2_START | I2C_CR2_RD_WRN)                   /*!< Generate Start for read request.                        */
 #define LL_I2C_GENERATE_START_WRITE         I2C_CR2_START                                                /*!< Generate Start for write request.                       */
@@ -308,7 +298,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_DIRECTION Read Write Direction
   * @{
   */
-#define LL_I2C_DIRECTION_WRITE              ((uint32_t)0x00000000U)  /*!< Write transfer request by master, slave enters receiver mode.  */
+#define LL_I2C_DIRECTION_WRITE              0x00000000U              /*!< Write transfer request by master, slave enters receiver mode.  */
 #define LL_I2C_DIRECTION_READ               I2C_ISR_DIR              /*!< Read transfer request by master, slave enters transmitter mode.*/
 /**
   * @}
@@ -317,8 +307,8 @@ typedef struct
 /** @defgroup I2C_LL_EC_DMA_REG_DATA DMA Register Data
   * @{
   */
-#define LL_I2C_DMA_REG_DATA_TRANSMIT        ((uint32_t)0x00000000U)  /*!< Get address of data register used for transmission */
-#define LL_I2C_DMA_REG_DATA_RECEIVE         ((uint32_t)0x00000001U)  /*!< Get address of data register used for reception */
+#define LL_I2C_DMA_REG_DATA_TRANSMIT        0x00000000U              /*!< Get address of data register used for transmission */
+#define LL_I2C_DMA_REG_DATA_RECEIVE         0x00000001U              /*!< Get address of data register used for reception */
 /**
   * @}
   */
@@ -326,7 +316,7 @@ typedef struct
 /** @defgroup I2C_LL_EC_SMBUS_TIMEOUTA_MODE SMBus TimeoutA Mode SCL SDA Timeout
   * @{
   */
-#define LL_I2C_SMBUS_TIMEOUTA_MODE_SCL_LOW  ((uint32_t) 0x00000000U) /*!< TimeoutA is used to detect SCL low level timeout.              */
+#define LL_I2C_SMBUS_TIMEOUTA_MODE_SCL_LOW      0x00000000U          /*!< TimeoutA is used to detect SCL low level timeout.              */
 #define LL_I2C_SMBUS_TIMEOUTA_MODE_SDA_SCL_HIGH I2C_TIMEOUTR_TIDLE   /*!< TimeoutA is used to detect both SCL and SDA high level timeout.*/
 /**
   * @}
@@ -388,11 +378,11 @@ typedef struct
   * @retval Value between Min_Data=0 and Max_Data=0xFFFFFFFF
   */
 #define __LL_I2C_CONVERT_TIMINGS(__PRESCALER__, __DATA_SETUP_TIME__, __DATA_HOLD_TIME__, __CLOCK_HIGH_PERIOD__, __CLOCK_LOW_PERIOD__)   \
-        ((((uint32_t)(__PRESCALER__)         << I2C_POSITION_TIMINGR_PRESC)  & I2C_TIMINGR_PRESC)   | \
-         (((uint32_t)(__DATA_SETUP_TIME__)   << I2C_POSITION_TIMINGR_SCLDEL) & I2C_TIMINGR_SCLDEL)  | \
-         (((uint32_t)(__DATA_HOLD_TIME__)    << I2C_POSITION_TIMINGR_SDADEL) & I2C_TIMINGR_SDADEL)  | \
-         (((uint32_t)(__CLOCK_HIGH_PERIOD__) << I2C_POSITION_TIMINGR_SCLH)   & I2C_TIMINGR_SCLH)    | \
-         (((uint32_t)(__CLOCK_LOW_PERIOD__)  << I2C_POSITION_TIMINGR_SCLL)   & I2C_TIMINGR_SCLL))
+        ((((uint32_t)(__PRESCALER__)         << I2C_TIMINGR_PRESC_Pos)  & I2C_TIMINGR_PRESC)   | \
+         (((uint32_t)(__DATA_SETUP_TIME__)   << I2C_TIMINGR_SCLDEL_Pos) & I2C_TIMINGR_SCLDEL)  | \
+         (((uint32_t)(__DATA_HOLD_TIME__)    << I2C_TIMINGR_SDADEL_Pos) & I2C_TIMINGR_SDADEL)  | \
+         (((uint32_t)(__CLOCK_HIGH_PERIOD__) << I2C_TIMINGR_SCLH_Pos)   & I2C_TIMINGR_SCLH)    | \
+         (((uint32_t)(__CLOCK_LOW_PERIOD__)  << I2C_TIMINGR_SCLL_Pos)   & I2C_TIMINGR_SCLL))
 /**
   * @}
   */
@@ -463,7 +453,7 @@ __STATIC_INLINE uint32_t LL_I2C_IsEnabled(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE void LL_I2C_ConfigFilters(I2C_TypeDef *I2Cx, uint32_t AnalogFilter, uint32_t DigitalFilter)
 {
-  MODIFY_REG(I2Cx->CR1, I2C_CR1_ANFOFF | I2C_CR1_DNF, AnalogFilter | (DigitalFilter << I2C_POSITION_CR1_DNF));
+  MODIFY_REG(I2Cx->CR1, I2C_CR1_ANFOFF | I2C_CR1_DNF, AnalogFilter | (DigitalFilter << I2C_CR1_DNF_Pos));
 }
 
 /**
@@ -479,7 +469,7 @@ __STATIC_INLINE void LL_I2C_ConfigFilters(I2C_TypeDef *I2Cx, uint32_t AnalogFilt
   */
 __STATIC_INLINE void LL_I2C_SetDigitalFilter(I2C_TypeDef *I2Cx, uint32_t DigitalFilter)
 {
-  MODIFY_REG(I2Cx->CR1, I2C_CR1_DNF, DigitalFilter << I2C_POSITION_CR1_DNF);
+  MODIFY_REG(I2Cx->CR1, I2C_CR1_DNF, DigitalFilter << I2C_CR1_DNF_Pos);
 }
 
 /**
@@ -490,7 +480,7 @@ __STATIC_INLINE void LL_I2C_SetDigitalFilter(I2C_TypeDef *I2Cx, uint32_t Digital
   */
 __STATIC_INLINE uint32_t LL_I2C_GetDigitalFilter(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->CR1, I2C_CR1_DNF) >> I2C_POSITION_CR1_DNF);
+  return (uint32_t)(READ_BIT(I2Cx->CR1, I2C_CR1_DNF) >> I2C_CR1_DNF_Pos);
 }
 
 /**
@@ -920,7 +910,7 @@ __STATIC_INLINE void LL_I2C_SetTiming(I2C_TypeDef *I2Cx, uint32_t Timing)
   */
 __STATIC_INLINE uint32_t LL_I2C_GetTimingPrescaler(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_PRESC) >> I2C_POSITION_TIMINGR_PRESC);
+  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_PRESC) >> I2C_TIMINGR_PRESC_Pos);
 }
 
 /**
@@ -931,7 +921,7 @@ __STATIC_INLINE uint32_t LL_I2C_GetTimingPrescaler(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE uint32_t LL_I2C_GetClockLowPeriod(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SCLL) >> I2C_POSITION_TIMINGR_SCLL);
+  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SCLL) >> I2C_TIMINGR_SCLL_Pos);
 }
 
 /**
@@ -942,7 +932,7 @@ __STATIC_INLINE uint32_t LL_I2C_GetClockLowPeriod(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE uint32_t LL_I2C_GetClockHighPeriod(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SCLH) >> I2C_POSITION_TIMINGR_SCLH);
+  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SCLH) >> I2C_TIMINGR_SCLH_Pos);
 }
 
 /**
@@ -953,7 +943,7 @@ __STATIC_INLINE uint32_t LL_I2C_GetClockHighPeriod(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE uint32_t LL_I2C_GetDataHoldTime(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SDADEL) >> I2C_POSITION_TIMINGR_SDADEL);
+  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SDADEL) >> I2C_TIMINGR_SDADEL_Pos);
 }
 
 /**
@@ -964,7 +954,7 @@ __STATIC_INLINE uint32_t LL_I2C_GetDataHoldTime(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE uint32_t LL_I2C_GetDataSetupTime(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SCLDEL) >> I2C_POSITION_TIMINGR_SCLDEL);
+  return (uint32_t)(READ_BIT(I2Cx->TIMINGR, I2C_TIMINGR_SCLDEL) >> I2C_TIMINGR_SCLDEL_Pos);
 }
 
 /**
@@ -1112,7 +1102,7 @@ __STATIC_INLINE void LL_I2C_ConfigSMBusTimeout(I2C_TypeDef *I2Cx, uint32_t Timeo
                                                uint32_t TimeoutB)
 {
   MODIFY_REG(I2Cx->TIMEOUTR, I2C_TIMEOUTR_TIMEOUTA | I2C_TIMEOUTR_TIDLE | I2C_TIMEOUTR_TIMEOUTB,
-             TimeoutA | TimeoutAMode | (TimeoutB << I2C_POSITION_TIMEOUTR_TIMEOUTB));
+             TimeoutA | TimeoutAMode | (TimeoutB << I2C_TIMEOUTR_TIMEOUTB_Pos));
 }
 
 /**
@@ -1187,7 +1177,7 @@ __STATIC_INLINE uint32_t LL_I2C_GetSMBusTimeoutAMode(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE void LL_I2C_SetSMBusTimeoutB(I2C_TypeDef *I2Cx, uint32_t TimeoutB)
 {
-  WRITE_REG(I2Cx->TIMEOUTR, TimeoutB << I2C_POSITION_TIMEOUTR_TIMEOUTB);
+  WRITE_REG(I2Cx->TIMEOUTR, TimeoutB << I2C_TIMEOUTR_TIMEOUTB_Pos);
 }
 
 /**
@@ -1200,7 +1190,7 @@ __STATIC_INLINE void LL_I2C_SetSMBusTimeoutB(I2C_TypeDef *I2Cx, uint32_t Timeout
   */
 __STATIC_INLINE uint32_t LL_I2C_GetSMBusTimeoutB(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->TIMEOUTR, I2C_TIMEOUTR_TIMEOUTB) >> I2C_POSITION_TIMEOUTR_TIMEOUTB);
+  return (uint32_t)(READ_BIT(I2Cx->TIMEOUTR, I2C_TIMEOUTR_TIMEOUTB) >> I2C_TIMEOUTR_TIMEOUTB_Pos);
 }
 
 /**
@@ -1936,7 +1926,7 @@ __STATIC_INLINE uint32_t LL_I2C_IsEnabledReloadMode(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE void LL_I2C_SetTransferSize(I2C_TypeDef *I2Cx, uint32_t TransferSize)
 {
-  MODIFY_REG(I2Cx->CR2, I2C_CR2_NBYTES, TransferSize << I2C_POSITION_CR2_NBYTES);
+  MODIFY_REG(I2Cx->CR2, I2C_CR2_NBYTES, TransferSize << I2C_CR2_NBYTES_Pos);
 }
 
 /**
@@ -1947,7 +1937,7 @@ __STATIC_INLINE void LL_I2C_SetTransferSize(I2C_TypeDef *I2Cx, uint32_t Transfer
   */
 __STATIC_INLINE uint32_t LL_I2C_GetTransferSize(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->CR2, I2C_CR2_NBYTES) >> I2C_POSITION_CR2_NBYTES);
+  return (uint32_t)(READ_BIT(I2Cx->CR2, I2C_CR2_NBYTES) >> I2C_CR2_NBYTES_Pos);
 }
 
 /**
@@ -2120,7 +2110,7 @@ __STATIC_INLINE void LL_I2C_HandleTransfer(I2C_TypeDef *I2Cx, uint32_t SlaveAddr
 {
   MODIFY_REG(I2Cx->CR2, I2C_CR2_SADD | I2C_CR2_ADD10 | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_STOP | I2C_CR2_RELOAD |
              I2C_CR2_NBYTES | I2C_CR2_AUTOEND | I2C_CR2_HEAD10R,
-             SlaveAddr | SlaveAddrSize | TransferSize << I2C_POSITION_CR2_NBYTES | EndMode | Request);
+             SlaveAddr | SlaveAddrSize | TransferSize << I2C_CR2_NBYTES_Pos | EndMode | Request);
 }
 
 /**
@@ -2146,7 +2136,7 @@ __STATIC_INLINE uint32_t LL_I2C_GetTransferDirection(I2C_TypeDef *I2Cx)
   */
 __STATIC_INLINE uint32_t LL_I2C_GetAddressMatchCode(I2C_TypeDef *I2Cx)
 {
-  return (uint32_t)(READ_BIT(I2Cx->ISR, I2C_ISR_ADDCODE) >> I2C_POSITION_ISR_ADDCODE << 1);
+  return (uint32_t)(READ_BIT(I2Cx->ISR, I2C_ISR_ADDCODE) >> I2C_ISR_ADDCODE_Pos << 1);
 }
 
 /**

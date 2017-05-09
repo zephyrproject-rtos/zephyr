@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_comp.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of COMP LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -230,7 +230,7 @@ typedef struct
 /** @defgroup COMP_LL_EC_OUTPUT_BLANKING_SOURCE Comparator output - Blanking source
   * @{
   */
-#define LL_COMP_BLANKINGSRC_NONE        ((uint32_t)0x00000000U) /*!<Comparator output without blanking */
+#define LL_COMP_BLANKINGSRC_NONE            ((uint32_t)0x00000000U) /*!<Comparator output without blanking */
 #define LL_COMP_BLANKINGSRC_TIM1_OC5_COMP1  (COMP_CSR_BLANKING_0)   /*!< Comparator output blanking source TIM1 OC5 (specific to COMP instance: COMP1) */
 #define LL_COMP_BLANKINGSRC_TIM2_OC3_COMP1  (COMP_CSR_BLANKING_1)   /*!< Comparator output blanking source TIM2 OC3 (specific to COMP instance: COMP1) */
 #define LL_COMP_BLANKINGSRC_TIM3_OC3_COMP1  (COMP_CSR_BLANKING_2)   /*!< Comparator output blanking source TIM3 OC3 (specific to COMP instance: COMP1) */

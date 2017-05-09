@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_uart_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of UART HAL Extended module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -155,7 +155,7 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
   * @param  __CLOCKSOURCE__: output variable.
   * @retval UART clocking source, written in __CLOCKSOURCE__.
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)    
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
 #define UART_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
   do {                                                        \
     if((__HANDLE__)->Instance == USART1)                      \
