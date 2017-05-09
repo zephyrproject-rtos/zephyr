@@ -86,7 +86,7 @@ is running.
     interrupted until it has explicitly unlocked its IRQ lock.
 
 Alternatively, a thread may temporarily **disable** a specified IRQ
-so its associated ISR does not execute when the IRQ is signalled.
+so its associated ISR does not execute when the IRQ is signaled.
 The IRQ must be subsequently **enabled** to permit the ISR to execute.
 
 .. important::
