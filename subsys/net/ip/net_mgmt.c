@@ -31,6 +31,7 @@ static K_SEM_DEFINE(network_event, 0, UINT_MAX);
 
 NET_STACK_DEFINE(MGMT, mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE,
 		 CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static u32_t global_event_mask;
 static sys_slist_t event_callbacks;
@@ -297,9 +298,9 @@ void net_mgmt_event_init(void)
 	       CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
 	       sizeof(struct mgmt_event_entry));
 
-	k_thread_spawn(mgmt_stack, sizeof(mgmt_stack),
-		       (k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
-		       K_PRIO_COOP(CONFIG_NET_MGMT_EVENT_THREAD_PRIO), 0, 0);
+	k_thread_create(&mgmt_thread_data, mgmt_stack, sizeof(mgmt_stack),
+			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_NET_MGMT_EVENT_THREAD_PRIO), 0, 0);
 
 	NET_DBG("Net MGMT initialized: queue of %u entries, stack size of %u",
 		CONFIG_NET_MGMT_EVENT_QUEUE_SIZE,
