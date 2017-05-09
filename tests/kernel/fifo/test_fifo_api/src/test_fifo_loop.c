@@ -35,6 +35,7 @@
 static fdata_t data[LIST_LEN];
 static struct k_fifo fifo;
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static struct k_sem end_sema;
 
 static void tfifo_put(struct k_fifo *pfifo)
@@ -81,7 +82,7 @@ static void tfifo_read_write(struct k_fifo *pfifo)
 {
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-isr-thread data passing via fifo*/
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tThread_entry, pfifo, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 0);
 

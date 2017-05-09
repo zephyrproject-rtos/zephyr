@@ -63,15 +63,15 @@ void threadB(void *dummy1, void *dummy2, void *dummy3)
 }
 
 char __noinit __stack threadB_stack_area[STACKSIZE];
-
+static struct k_thread threadB_data;
 
 /* threadA is a static thread that is spawned automatically */
 
 void threadA(void *dummy1, void *dummy2, void *dummy3)
 {
 	/* spawn threadB */
-	k_thread_spawn(threadB_stack_area, STACKSIZE, threadB, NULL, NULL, NULL,
-		       PRIORITY, 0, K_NO_WAIT);
+	k_thread_create(&threadB_data, threadB_stack_area, STACKSIZE, threadB,
+			NULL, NULL, NULL, PRIORITY, 0, K_NO_WAIT);
 
 	/* invoke routine to ping-pong hello messages with threadB */
 	helloLoop(__func__, &threadA_sem, &threadB_sem);

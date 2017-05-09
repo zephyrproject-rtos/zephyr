@@ -905,6 +905,7 @@ static bool net_ctx_recv_v4_reconfig(void)
 
 #define STACKSIZE 1024
 char __noinit __stack thread_stack[STACKSIZE];
+static struct k_thread thread_data;
 
 static void recv_cb_timeout(struct net_context *context,
 			    struct net_pkt *pkt,
@@ -940,18 +941,18 @@ void timeout_thread(struct net_context *ctx, sa_family_t *family)
 
 static void start_timeout_v6_thread(void)
 {
-	k_thread_spawn(&thread_stack[0], STACKSIZE,
-		       (k_thread_entry_t)timeout_thread,
-		       udp_v6_ctx, INT_TO_POINTER(AF_INET6), NULL,
-		       K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&thread_data, thread_stack, STACKSIZE,
+			(k_thread_entry_t)timeout_thread,
+			udp_v6_ctx, INT_TO_POINTER(AF_INET6), NULL,
+			K_PRIO_COOP(7), 0, 0);
 }
 
 static void start_timeout_v4_thread(void)
 {
-	k_thread_spawn(&thread_stack[0], STACKSIZE,
-		       (k_thread_entry_t)timeout_thread,
-		       udp_v4_ctx, INT_TO_POINTER(AF_INET), NULL,
-		       K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&thread_data, thread_stack, STACKSIZE,
+			(k_thread_entry_t)timeout_thread,
+			udp_v4_ctx, INT_TO_POINTER(AF_INET), NULL,
+			K_PRIO_COOP(7), 0, 0);
 }
 
 static bool net_ctx_recv_v6_timeout(void)

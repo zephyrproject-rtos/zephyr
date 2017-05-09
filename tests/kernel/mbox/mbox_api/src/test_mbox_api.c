@@ -37,6 +37,7 @@ static struct k_mbox mbox;
 static k_tid_t sender_tid, receiver_tid;
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 
 static struct k_sem end_sema, sync_sema;
 
@@ -214,7 +215,7 @@ static void tmbox(struct k_mbox *pmbox)
 
 	/**TESTPOINT: thread-thread data passing via mbox*/
 	sender_tid = k_current_get();
-	receiver_tid = k_thread_spawn(tstack, STACK_SIZE,
+	receiver_tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tmbox_entry, pmbox, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 0);
 	tmbox_put(pmbox);
