@@ -367,6 +367,7 @@ exit:
 
 #define STACK_SIZE		8192
 u8_t stack[STACK_SIZE];
+struct k_thread https_thread;
 
 static inline int init_app(void)
 {
@@ -400,7 +401,7 @@ void https_server_start(void)
 		return;
 	}
 
-	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t) https_server,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
-
+	k_thread_create(&https_thread, stack, STACK_SIZE,
+			(k_thread_entry_t) https_server,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

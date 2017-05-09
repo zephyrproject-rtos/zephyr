@@ -30,6 +30,7 @@
 
 static struct device *hci_uart_dev;
 static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
+static struct k_thread tx_thread_data;
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
@@ -348,8 +349,9 @@ void main(void)
 	/* Spawn the TX thread and start feeding commands and data to the
 	 * controller
 	 */
-	k_thread_spawn(tx_thread_stack, sizeof(tx_thread_stack), tx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&tx_thread_data, tx_thread_stack,
+			sizeof(tx_thread_stack), tx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	while (1) {
 		struct net_buf *buf;

@@ -15,8 +15,12 @@
 
 static u8_t printer_stack[1024];
 static u8_t calc_stack[1024];
-
 static u8_t sysview_stack[2048];
+
+static struct k_thread printer_thread_data;
+static struct k_thread calc_thread_data;
+static struct k_thread sysview_thread_data;
+
 static u32_t timestamp, interrupt;
 
 extern SEGGER_RTT_CB _SEGGER_RTT;
@@ -245,14 +249,18 @@ static void calc_thread(void)
 
 void main(void)
 {
-	k_thread_spawn(sysview_stack, sizeof(sysview_stack),
-		       (k_thread_entry_t)sysview_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
+	k_thread_create(&sysview_thread_data, sysview_stack,
+			sizeof(sysview_stack),
+			(k_thread_entry_t)sysview_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
 
-	k_thread_spawn(printer_stack, sizeof(printer_stack),
-		       (k_thread_entry_t)printer_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
-	k_thread_spawn(calc_stack, sizeof(calc_stack),
-		       (k_thread_entry_t)calc_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
+	k_thread_create(&printer_thread_data, printer_stack,
+			sizeof(printer_stack),
+			(k_thread_entry_t)printer_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
+
+	k_thread_create(&calc_thread_data, calc_stack,
+			sizeof(calc_stack),
+			(k_thread_entry_t)calc_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
 }
