@@ -164,6 +164,7 @@ static void bmg160_handle_int(void *arg)
 
 #ifdef CONFIG_BMG160_TRIGGER_OWN_THREAD
 static char __stack bmg160_thread_stack[CONFIG_BMG160_THREAD_STACK_SIZE];
+static struct k_thread bmg160_thread;
 
 static void bmg160_thread_main(void *arg1, void *arg2, void *arg3)
 {
@@ -228,8 +229,9 @@ int bmg160_trigger_init(struct device *dev)
 
 #if defined(CONFIG_BMG160_TRIGGER_OWN_THREAD)
 	k_sem_init(&bmg160->trig_sem, 0, UINT_MAX);
-	k_thread_spawn(bmg160_thread_stack, CONFIG_BMG160_THREAD_STACK_SIZE,
-		    bmg160_thread_main, dev, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+	k_thread_create(&bmg160_thread, bmg160_thread_stack,
+			CONFIG_BMG160_THREAD_STACK_SIZE, bmg160_thread_main,
+			dev, NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 #elif defined(CONFIG_BMG160_TRIGGER_GLOBAL_THREAD)
 	bmg160->work.handler = bmg160_work_cb;

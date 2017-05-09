@@ -171,9 +171,10 @@ int fxas21002_trigger_init(struct device *dev)
 
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, UINT_MAX);
-	k_thread_spawn(data->thread_stack, CONFIG_FXAS21002_THREAD_STACK_SIZE,
-		       fxas21002_thread_main, dev, 0, NULL,
-		       K_PRIO_COOP(CONFIG_FXAS21002_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&data->thread, data->thread_stack,
+			CONFIG_FXAS21002_THREAD_STACK_SIZE,
+			fxas21002_thread_main, dev, 0, NULL,
+			K_PRIO_COOP(CONFIG_FXAS21002_THREAD_PRIORITY), 0, 0);
 #elif defined(CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxas21002_work_handler;
 	data->dev = dev;
