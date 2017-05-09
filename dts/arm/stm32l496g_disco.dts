@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32l496.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32L496G-DISCO board";
+	compatible = "st,stm32l496g-disco", "st,stm32l496";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart2 {
+	current-speed = <115200>;
+	status = "ok";
+};
