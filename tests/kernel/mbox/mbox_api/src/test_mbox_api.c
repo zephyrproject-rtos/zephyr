@@ -29,8 +29,8 @@
 
 /**TESTPOINT: init via K_MBOX_DEFINE*/
 K_MBOX_DEFINE(kmbox);
-K_MEM_POOL_DEFINE(mpooltx, 4, MAIL_LEN, 1, 4);
-K_MEM_POOL_DEFINE(mpoolrx, 4, MAIL_LEN, 1, 4);
+K_MEM_POOL_DEFINE(mpooltx, 8, MAIL_LEN, 1, 4);
+K_MEM_POOL_DEFINE(mpoolrx, 8, MAIL_LEN, 1, 4);
 
 static struct k_mbox mbox;
 
@@ -71,7 +71,6 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.info = PUT_GET_NULL;
 		mmsg.size = 0;
 		mmsg.tx_data = NULL;
-		mmsg.tx_block.pool_id = NULL;
 		mmsg.tx_target_thread = K_ANY;
 		k_mbox_put(pmbox, &mmsg, K_FOREVER);
 		break;
@@ -117,7 +116,6 @@ static void tmbox_put(struct k_mbox *pmbox)
 		k_mbox_async_put(pmbox, &mmsg, &sync_sema);
 		/*wait for msg being taken*/
 		k_sem_take(&sync_sema, K_FOREVER);
-		k_mem_pool_free(&mmsg.tx_block);
 		break;
 	default:
 		break;
