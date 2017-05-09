@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_pwr_ex.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of PWR HAL Extended module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -222,6 +222,9 @@ typedef struct
 #define PWR_GPIO_G   0x00000006      /*!< GPIO port G */
 #endif
 #define PWR_GPIO_H   0x00000007      /*!< GPIO port H */
+#if defined(GPIOI_BASE) 
+#define PWR_GPIO_I   0x00000008      /*!< GPIO port I */
+#endif
 /**
   * @}
   */ 
@@ -713,7 +716,8 @@ typedef struct
                                 ((PIN) == PWR_WAKEUP_PIN4_LOW) || \
                                 ((PIN) == PWR_WAKEUP_PIN5_LOW))
                                 
-#if defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx)
 #define IS_PWR_PVM_TYPE(TYPE) (((TYPE) == PWR_PVM_1) ||\
                                ((TYPE) == PWR_PVM_2) ||\
                                ((TYPE) == PWR_PVM_3) ||\
@@ -775,6 +779,16 @@ typedef struct
                            ((GPIO) == PWR_GPIO_F) ||\
                            ((GPIO) == PWR_GPIO_G) ||\
                            ((GPIO) == PWR_GPIO_H))
+#elif defined (STM32L496xx) || defined (STM32L4A6xx)
+#define IS_PWR_GPIO(GPIO) (((GPIO) == PWR_GPIO_A) ||\
+                           ((GPIO) == PWR_GPIO_B) ||\
+                           ((GPIO) == PWR_GPIO_C) ||\
+                           ((GPIO) == PWR_GPIO_D) ||\
+                           ((GPIO) == PWR_GPIO_E) ||\
+                           ((GPIO) == PWR_GPIO_F) ||\
+                           ((GPIO) == PWR_GPIO_G) ||\
+                           ((GPIO) == PWR_GPIO_H) ||\
+                           ((GPIO) == PWR_GPIO_I))
 #endif
 
 

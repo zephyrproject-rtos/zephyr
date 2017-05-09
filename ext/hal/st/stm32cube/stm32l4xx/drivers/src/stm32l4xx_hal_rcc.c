@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rcc.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   RCC HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Reset and Clock Control (RCC) peripheral:
@@ -40,7 +40,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -228,10 +228,10 @@ static HAL_StatusTypeDef RCC_SetFlashLatencyFromMSIRange(uint32_t msirange);
            Table 1. HCLK clock frequency.             
            +-------------------------------------------------------+     
            | Latency         |    HCLK clock frequency (MHz)       |
-           |                 |-------------------------------------|     
+           |                 |-------------------------------------|
            |                 | voltage range 1  | voltage range 2  |
            |                 |      1.2 V       |     1.0 V        |
-           |-----------------|------------------|------------------|          
+           |-----------------|------------------|------------------|
            |0WS(1 CPU cycles)|  0 < HCLK <= 16  |  0 < HCLK <= 6   |
            |-----------------|------------------|------------------|
            |1WS(2 CPU cycles)| 16 < HCLK <= 32  |  6 < HCLK <= 12  |
@@ -241,7 +241,7 @@ static HAL_StatusTypeDef RCC_SetFlashLatencyFromMSIRange(uint32_t msirange);
            |3WS(4 CPU cycles)| 48 < HCLK <= 64  | 18 < HCLK <= 26  |
            |-----------------|------------------|------------------|
            |4WS(5 CPU cycles)| 64 < HCLK <= 80  | 18 < HCLK <= 26  |
-           +-------------------------------------------------------+   
+           +-------------------------------------------------------+
   * @{
   */
 
@@ -818,9 +818,9 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
   *          This parameter can be one of the following values:
   *            @arg FLASH_LATENCY_0   FLASH 0 Latency cycle
   *            @arg FLASH_LATENCY_1   FLASH 1 Latency cycle
-  *            @arg FLASH_LATENCY_2   FLASH 2 Latency cycle
-  *            @arg FLASH_LATENCY_3   FLASH 3 Latency cycle
-  *            @arg FLASH_LATENCY_4   FLASH 4 Latency cycle
+  *            @arg FLASH_LATENCY_2   FLASH 2 Latency cycles
+  *            @arg FLASH_LATENCY_3   FLASH 3 Latency cycles
+  *            @arg FLASH_LATENCY_4   FLASH 4 Latency cycles
   *
   * @note   The SystemCoreClock CMSIS variable is used to store System Clock Frequency
   *         and updated by HAL_RCC_GetHCLKFreq() function called within this function

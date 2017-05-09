@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_lpuart.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   LPUART LL module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -83,6 +83,9 @@
 /*              Baudrate specified by the user should belong to [8, 26000000].*/
 #define IS_LL_LPUART_BAUDRATE(__BAUDRATE__) (((__BAUDRATE__) <= 26000000U) && ((__BAUDRATE__) >= 8U))
 
+/* __VALUE__ BRR content must be greater than or equal to 0x300. */
+#define IS_LL_LPUART_BRR(__VALUE__) ((__VALUE__) >= 0x300U)
+
 #define IS_LL_LPUART_DIRECTION(__VALUE__) (((__VALUE__) == LL_LPUART_DIRECTION_NONE) \
                                         || ((__VALUE__) == LL_LPUART_DIRECTION_RX) \
                                         || ((__VALUE__) == LL_LPUART_DIRECTION_TX) \
@@ -133,11 +136,18 @@ ErrorStatus LL_LPUART_DeInit(USART_TypeDef *LPUARTx)
   /* Check the parameters */
   assert_param(IS_LPUART_INSTANCE(LPUARTx));
 
-  /* Force reset of LPUART peripheral */
-  LL_APB1_GRP2_ForceReset(LL_APB1_GRP2_PERIPH_LPUART1);
+  if (LPUARTx == LPUART1)
+  {
+    /* Force reset of LPUART peripheral */
+    LL_APB1_GRP2_ForceReset(LL_APB1_GRP2_PERIPH_LPUART1);
 
-  /* Release reset of LPUART peripheral */
-  LL_APB1_GRP2_ReleaseReset(LL_APB1_GRP2_PERIPH_LPUART1);
+    /* Release reset of LPUART peripheral */
+    LL_APB1_GRP2_ReleaseReset(LL_APB1_GRP2_PERIPH_LPUART1);
+  }
+  else
+  {
+    status = ERROR;
+  }
 
   return (status);
 }
@@ -211,6 +221,9 @@ ErrorStatus LL_LPUART_Init(USART_TypeDef *LPUARTx, LL_LPUART_InitTypeDef *LPUART
       LL_LPUART_SetBaudRate(LPUARTx,
                             periphclk,
                             LPUART_InitStruct->BaudRate);
+
+      /* Check BRR is greater than or equal to 0x300 */
+      assert_param(IS_LL_LPUART_BRR(LPUARTx->BRR));
     }
   }
 

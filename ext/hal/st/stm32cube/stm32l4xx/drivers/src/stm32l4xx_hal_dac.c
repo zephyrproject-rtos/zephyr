@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dac.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   DAC HAL module driver.
   *         This file provides firmware functions to manage the following 
   *         functionalities of the Digital to Analog Converter (DAC) peripheral:
@@ -25,7 +25,7 @@
     (i.e. one or 2 channel(s))
     1 channel : STM32L451xx STM32L452xx STM32L462xx
     2 channels: STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx
-                STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx
+                STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx 
 
     When 2 channels are available, the 2 converters (i.e. channel1 & channel2)
     can be used independently or simultaneously (dual mode):
@@ -233,7 +233,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -475,7 +475,7 @@ HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
   __HAL_DAC_ENABLE(hdac, Channel);
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
   if(Channel == DAC_CHANNEL_1)
   {
     /* Check if software trigger enabled */
@@ -495,10 +495,10 @@ HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel)
     }
   }
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */    
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */ 
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */ 
         
 
-#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
   /* Check if software trigger enabled */
   if((hdac->Instance->CR & (DAC_CR_TEN1 | DAC_CR_TSEL1)) == (DAC_CR_TEN1 | DAC_CR_TSEL1))
   {
@@ -541,7 +541,7 @@ HAL_StatusTypeDef HAL_DAC_Stop(DAC_HandleTypeDef* hdac, uint32_t Channel)
   return HAL_OK;
 }
 
-#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx) 
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) 
 /**
   * @brief  Enables DAC and starts conversion of channel.
   * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
@@ -622,7 +622,7 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
 #endif /* STM32L451xx STM32L452xx STM32L462xx */   
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
       
 /**
   * @brief  Enables DAC and starts conversion of channel.
@@ -750,7 +750,7 @@ HAL_StatusTypeDef HAL_DAC_Start_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel, u
   return HAL_OK;
 }
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 
 /**
   * @brief  Disables DAC and stop conversion of channel.
@@ -777,7 +777,7 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
   
   /* Disable the DMA channel */
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
   /* Channel1 is used */
   if (Channel == DAC_CHANNEL_1)
   {
@@ -796,9 +796,9 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
     __HAL_DAC_DISABLE_IT(hdac, DAC_IT_DMAUDR2);
   }
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 
-#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx) 
+#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx)
   /* Disable the DMA channel */
   status = HAL_DMA_Abort(hdac->DMA_Handle1);
     
@@ -823,8 +823,8 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
 }
 
 /* DAC channel 2 is available on top of DAC channel 1 in */
-/* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */    
-/* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+/* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
+/* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 
 /**
   * @brief  Handles DAC interrupt request
@@ -858,7 +858,7 @@ void HAL_DAC_IRQHandler(DAC_HandleTypeDef* hdac)
     }
   }
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
   if(__HAL_DAC_GET_IT_SOURCE(hdac, DAC_IT_DMAUDR2))
   {
     /* Check underrun flag of DAC channel 1 */
@@ -881,7 +881,7 @@ void HAL_DAC_IRQHandler(DAC_HandleTypeDef* hdac)
     }
   }
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 }
 
 /**
@@ -1025,12 +1025,12 @@ uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
   assert_param(IS_DAC_CHANNEL(Channel));
   
   /* Returns the DAC channel data output register value */
-#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx) 
+#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx)
   return hdac->Instance->DOR1;
 #endif /* STM32L451xx STM32L452xx STM32L462xx */   
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)  
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)  
   if(Channel == DAC_CHANNEL_1)
   {
     return hdac->Instance->DOR1;
@@ -1040,7 +1040,7 @@ uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
     return hdac->Instance->DOR2;
   }
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 }
 
 /**
@@ -1111,6 +1111,7 @@ HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef* hdac, DAC_ChannelConf
       HAL_Delay(1);
       hdac->Instance->SHSR1 = sConfig->DAC_SampleAndHoldConfig.DAC_SampleTime;
     }
+#if !defined (STM32L451xx) & !defined (STM32L452xx) & !defined (STM32L462xx) 
     else /* Channel 2 */
     {
       /* SHSR2 can be written when BWST2 equals RESET */
@@ -1132,10 +1133,12 @@ HAL_StatusTypeDef HAL_DAC_ConfigChannel(DAC_HandleTypeDef* hdac, DAC_ChannelConf
       HAL_Delay(1);
       hdac->Instance->SHSR2 = sConfig->DAC_SampleAndHoldConfig.DAC_SampleTime;
     }
+#endif /* STM32L451xx STM32L452xx STM32L462xx */   
+    
     /* HoldTime */
-    hdac->Instance->SHHR = (sConfig->DAC_SampleAndHoldConfig.DAC_HoldTime)<<Channel;
+    MODIFY_REG (hdac->Instance->SHHR, DAC_SHHR_THOLD1<<Channel, (sConfig->DAC_SampleAndHoldConfig.DAC_HoldTime)<<Channel);
     /* RefreshTime */
-    hdac->Instance->SHRR = (sConfig->DAC_SampleAndHoldConfig.DAC_RefreshTime)<<Channel;
+    MODIFY_REG (hdac->Instance->SHRR, DAC_SHRR_TREFRESH1<<Channel, (sConfig->DAC_SampleAndHoldConfig.DAC_RefreshTime)<<Channel);
   }
     
   if(sConfig->DAC_UserTrimming == DAC_TRIMMING_USER)

@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_usart.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   USART LL module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -76,6 +76,10 @@
 /* __BAUDRATE__ The maximum Baud Rate is derived from the maximum clock available
  *              divided by the smallest oversampling used on the USART (i.e. 8)    */
 #define IS_LL_USART_BAUDRATE(__BAUDRATE__) ((__BAUDRATE__) <= 10000000U)
+
+/* __VALUE__ In case of oversampling by 16 and 8, BRR content must be greater than or equal to 16d. */
+#define IS_LL_USART_BRR(__VALUE__) (((__VALUE__) >= 16U) \
+                                    && ((__VALUE__) <= 0x0000FFFFU))
 
 #define IS_LL_USART_DIRECTION(__VALUE__) (((__VALUE__) == LL_USART_DIRECTION_NONE) \
                                        || ((__VALUE__) == LL_USART_DIRECTION_RX) \
@@ -230,7 +234,7 @@ ErrorStatus LL_USART_Init(USART_TypeDef *USARTx, LL_USART_InitTypeDef *USART_Ini
      CRx registers */
   if (LL_USART_IsEnabled(USARTx) == 0U)
   {
-    /*---------------------------- USART CR1 Configuration -----------------------
+    /*---------------------------- USART CR1 Configuration ---------------------
      * Configure USARTx CR1 (USART Word Length, Parity, Mode and Oversampling bits) with parameters:
      * - DataWidth:          USART_CR1_M bits according to USART_InitStruct->DataWidth value
      * - Parity:             USART_CR1_PCE, USART_CR1_PS bits according to USART_InitStruct->Parity value
@@ -243,20 +247,20 @@ ErrorStatus LL_USART_Init(USART_TypeDef *USARTx, LL_USART_InitTypeDef *USART_Ini
                (USART_InitStruct->DataWidth | USART_InitStruct->Parity |
                 USART_InitStruct->TransferDirection | USART_InitStruct->OverSampling));
 
-    /*---------------------------- USART CR2 Configuration -----------------------
+    /*---------------------------- USART CR2 Configuration ---------------------
      * Configure USARTx CR2 (Stop bits) with parameters:
      * - Stop Bits:          USART_CR2_STOP bits according to USART_InitStruct->StopBits value.
      * - CLKEN, CPOL, CPHA and LBCL bits are to be configured using LL_USART_ClockInit().
      */
     LL_USART_SetStopBitsLength(USARTx, USART_InitStruct->StopBits);
 
-    /*---------------------------- USART CR3 Configuration -----------------------
+    /*---------------------------- USART CR3 Configuration ---------------------
      * Configure USARTx CR3 (Hardware Flow Control) with parameters:
      * - HardwareFlowControl: USART_CR3_RTSE, USART_CR3_CTSE bits according to USART_InitStruct->HardwareFlowControl value.
      */
     LL_USART_SetHWFlowCtrl(USARTx, USART_InitStruct->HardwareFlowControl);
 
-    /*---------------------------- USART BRR Configuration -----------------------
+    /*---------------------------- USART BRR Configuration ---------------------
      * Retrieve Clock frequency used for USART Peripheral
      */
     if (USARTx == USART1)
@@ -302,6 +306,9 @@ ErrorStatus LL_USART_Init(USART_TypeDef *USARTx, LL_USART_InitTypeDef *USART_Ini
                            periphclk,
                            USART_InitStruct->OverSampling,
                            USART_InitStruct->BaudRate);
+
+      /* Check BRR is greater than or equal to 16d */
+      assert_param(IS_LL_USART_BRR(USARTx->BRR));
     }
   }
   /* Endif (=> USART not in Disabled state => return ERROR) */

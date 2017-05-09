@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    28-October-2016
+  * @version V1.3.1
+  * @date    21-April-2017
   * @brief   CMSIS STM32L4xx Device Peripheral Access Layer Header File.
   *
   *          The file is the unique include file that the application programmer
@@ -18,7 +18,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -77,7 +77,8 @@
 
 #if !defined (STM32L431xx) && !defined (STM32L432xx) && !defined (STM32L433xx) && !defined (STM32L442xx) && !defined (STM32L443xx) && \
     !defined (STM32L451xx) && !defined (STM32L452xx) && !defined (STM32L462xx) && \
-    !defined (STM32L471xx) && !defined (STM32L475xx) && !defined (STM32L476xx) && !defined (STM32L485xx) && !defined (STM32L486xx)
+    !defined (STM32L471xx) && !defined (STM32L475xx) && !defined (STM32L476xx) && !defined (STM32L485xx) && !defined (STM32L486xx) && \
+    !defined (STM32L496xx) && !defined (STM32L4A6xx)
   /* #define STM32L431xx */   /*!< STM32L431xx Devices */
   /* #define STM32L432xx */   /*!< STM32L432xx Devices */
   /* #define STM32L433xx */   /*!< STM32L433xx Devices */
@@ -91,6 +92,8 @@
   /* #define STM32L476xx */   /*!< STM32L476xx Devices */
   /* #define STM32L485xx */   /*!< STM32L485xx Devices */
   /* #define STM32L486xx */   /*!< STM32L486xx Devices */
+  /* #define STM32L496xx */   /*!< STM32L496xx Devices */
+  /* #define STM32L4A6xx */   /*!< STM32L4A6xx Devices */
 #endif
 
 /*  Tip: To avoid modifying this file each time you need to switch between these
@@ -106,11 +109,11 @@
 #endif /* USE_HAL_DRIVER */
 
 /**
-  * @brief CMSIS Device version number V1.2.0
+  * @brief CMSIS Device version number V1.3.1
   */
 #define __STM32L4_CMSIS_VERSION_MAIN   (0x01) /*!< [31:24] main version */
-#define __STM32L4_CMSIS_VERSION_SUB1   (0x02) /*!< [23:16] sub1 version */
-#define __STM32L4_CMSIS_VERSION_SUB2   (0x00) /*!< [15:8]  sub2 version */
+#define __STM32L4_CMSIS_VERSION_SUB1   (0x03) /*!< [23:16] sub1 version */
+#define __STM32L4_CMSIS_VERSION_SUB2   (0x01) /*!< [15:8]  sub2 version */
 #define __STM32L4_CMSIS_VERSION_RC     (0x00) /*!< [7:0]  release candidate */
 #define __STM32L4_CMSIS_VERSION        ((__STM32L4_CMSIS_VERSION_MAIN << 24)\
                                        |(__STM32L4_CMSIS_VERSION_SUB1 << 16)\
@@ -151,6 +154,10 @@
   #include "stm32l485xx.h"
 #elif defined(STM32L486xx)
   #include "stm32l486xx.h"
+#elif defined(STM32L496xx)
+  #include "stm32l496xx.h"
+#elif defined(STM32L4A6xx)
+  #include "stm32l4a6xx.h"
 #else
  #error "Please select first the target STM32L4xx device used in your application (in stm32l4xx.h file)"
 #endif

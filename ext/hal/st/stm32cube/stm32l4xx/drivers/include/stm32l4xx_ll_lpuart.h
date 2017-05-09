@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_lpuart.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of LPUART LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -63,16 +63,10 @@ extern "C" {
 /** @defgroup LPUART_LL_Private_Constants LPUART Private Constants
   * @{
   */
-
-/* Defines used for the bit position in the register and perform offsets*/
-#define LPUART_POSITION_CR1_DEDT      (uint32_t)POSITION_VAL(USART_CR1_DEDT)
-#define LPUART_POSITION_CR1_DEAT      (uint32_t)POSITION_VAL(USART_CR1_DEAT)
-#define LPUART_POSITION_CR2_ADD       (uint32_t)POSITION_VAL(USART_CR2_ADD)
-
 /* Defines used in Baud Rate related macros and corresponding register setting computation */
-#define LPUART_LPUARTDIV_FREQ_MUL     (uint32_t)(256U)
-#define LPUART_BRR_MASK               (uint32_t)(0x000FFFFFU)
-#define LPUART_BRR_MIN_VALUE          (uint32_t)(0x00000300U)
+#define LPUART_LPUARTDIV_FREQ_MUL     256U
+#define LPUART_BRR_MASK               0x000FFFFFU
+#define LPUART_BRR_MIN_VALUE          0x00000300U
 /**
   * @}
   */
@@ -202,7 +196,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_DIRECTION Direction
   * @{
   */
-#define LL_LPUART_DIRECTION_NONE           (uint32_t)0x00000000U              /*!< Transmitter and Receiver are disabled */
+#define LL_LPUART_DIRECTION_NONE           0x00000000U                        /*!< Transmitter and Receiver are disabled */
 #define LL_LPUART_DIRECTION_RX             USART_CR1_RE                       /*!< Transmitter is disabled and Receiver is enabled */
 #define LL_LPUART_DIRECTION_TX             USART_CR1_TE                       /*!< Transmitter is enabled and Receiver is disabled */
 #define LL_LPUART_DIRECTION_TX_RX          (USART_CR1_TE |USART_CR1_RE)       /*!< Transmitter and Receiver are enabled */
@@ -213,7 +207,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_PARITY Parity Control
   * @{
   */
-#define LL_LPUART_PARITY_NONE              (uint32_t)0x00000000U              /*!< Parity control disabled */
+#define LL_LPUART_PARITY_NONE              0x00000000U                        /*!< Parity control disabled */
 #define LL_LPUART_PARITY_EVEN              USART_CR1_PCE                      /*!< Parity control enabled and Even Parity is selected */
 #define LL_LPUART_PARITY_ODD               (USART_CR1_PCE | USART_CR1_PS)     /*!< Parity control enabled and Odd Parity is selected */
 /**
@@ -223,7 +217,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_WAKEUP Wakeup
   * @{
   */
-#define LL_LPUART_WAKEUP_IDLELINE          (uint32_t)0x00000000U              /*!<  LPUART wake up from Mute mode on Idle Line */
+#define LL_LPUART_WAKEUP_IDLELINE          0x00000000U                        /*!<  LPUART wake up from Mute mode on Idle Line */
 #define LL_LPUART_WAKEUP_ADDRESSMARK       USART_CR1_WAKE                     /*!<  LPUART wake up from Mute mode on Address Mark */
 /**
   * @}
@@ -233,7 +227,7 @@ typedef struct
   * @{
   */
 #define LL_LPUART_DATAWIDTH_7B             USART_CR1_M1                       /*!< 7 bits word length : Start bit, 7 data bits, n stop bits */
-#define LL_LPUART_DATAWIDTH_8B             (uint32_t)0x00000000U              /*!< 8 bits word length : Start bit, 8 data bits, n stop bits */
+#define LL_LPUART_DATAWIDTH_8B             0x00000000U                        /*!< 8 bits word length : Start bit, 8 data bits, n stop bits */
 #define LL_LPUART_DATAWIDTH_9B             USART_CR1_M0                       /*!< 9 bits word length : Start bit, 9 data bits, n stop bits */
 /**
   * @}
@@ -242,7 +236,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_STOPBITS Stop Bits
   * @{
   */
-#define LL_LPUART_STOPBITS_1               (uint32_t)0x00000000U              /*!< 1 stop bit */
+#define LL_LPUART_STOPBITS_1               0x00000000U                        /*!< 1 stop bit */
 #define LL_LPUART_STOPBITS_2               USART_CR2_STOP_1                   /*!< 2 stop bits */
 /**
   * @}
@@ -251,7 +245,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_TXRX TX RX Pins Swap
   * @{
   */
-#define LL_LPUART_TXRX_STANDARD            (uint32_t)0x00000000U              /*!< TX/RX pins are used as defined in standard pinout */
+#define LL_LPUART_TXRX_STANDARD            0x00000000U                        /*!< TX/RX pins are used as defined in standard pinout */
 #define LL_LPUART_TXRX_SWAPPED             (USART_CR2_SWAP)                   /*!< TX and RX pins functions are swapped.             */
 /**
   * @}
@@ -260,7 +254,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_RXPIN_LEVEL RX Pin Active Level Inversion
   * @{
   */
-#define LL_LPUART_RXPIN_LEVEL_STANDARD     (uint32_t)0x00000000U              /*!< RX pin signal works using the standard logic levels */
+#define LL_LPUART_RXPIN_LEVEL_STANDARD     0x00000000U                        /*!< RX pin signal works using the standard logic levels */
 #define LL_LPUART_RXPIN_LEVEL_INVERTED     (USART_CR2_RXINV)                  /*!< RX pin signal values are inverted.                  */
 /**
   * @}
@@ -269,7 +263,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_TXPIN_LEVEL TX Pin Active Level Inversion
   * @{
   */
-#define LL_LPUART_TXPIN_LEVEL_STANDARD     (uint32_t)0x00000000U              /*!< TX pin signal works using the standard logic levels */
+#define LL_LPUART_TXPIN_LEVEL_STANDARD     0x00000000U                        /*!< TX pin signal works using the standard logic levels */
 #define LL_LPUART_TXPIN_LEVEL_INVERTED     (USART_CR2_TXINV)                  /*!< TX pin signal values are inverted.                  */
 /**
   * @}
@@ -278,7 +272,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_BINARY_LOGIC Binary Data Inversion
   * @{
   */
-#define LL_LPUART_BINARY_LOGIC_POSITIVE    (uint32_t)0x00000000U              /*!< Logical data from the data register are send/received in positive/direct logic. (1=H, 0=L) */
+#define LL_LPUART_BINARY_LOGIC_POSITIVE    0x00000000U                        /*!< Logical data from the data register are send/received in positive/direct logic. (1=H, 0=L) */
 #define LL_LPUART_BINARY_LOGIC_NEGATIVE    USART_CR2_DATAINV                  /*!< Logical data from the data register are send/received in negative/inverse logic. (1=L, 0=H). The parity bit is also inverted. */
 /**
   * @}
@@ -287,7 +281,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_BITORDER Bit Order
   * @{
   */
-#define LL_LPUART_BITORDER_LSBFIRST        (uint32_t)0x00000000U              /*!< data is transmitted/received with data bit 0 first, following the start bit */
+#define LL_LPUART_BITORDER_LSBFIRST        0x00000000U                        /*!< data is transmitted/received with data bit 0 first, following the start bit */
 #define LL_LPUART_BITORDER_MSBFIRST        USART_CR2_MSBFIRST                 /*!< data is transmitted/received with the MSB first, following the start bit */
 /**
   * @}
@@ -296,7 +290,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_ADDRESS_DETECT Address Length Detection
   * @{
   */
-#define LL_LPUART_ADDRESS_DETECT_4B        (uint32_t)0x00000000U              /*!< 4-bit address detection method selected */
+#define LL_LPUART_ADDRESS_DETECT_4B        0x00000000U                        /*!< 4-bit address detection method selected */
 #define LL_LPUART_ADDRESS_DETECT_7B        USART_CR2_ADDM7                    /*!< 7-bit address detection (in 8-bit data mode) method selected */
 /**
   * @}
@@ -305,7 +299,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_HWCONTROL Hardware Control
   * @{
   */
-#define LL_LPUART_HWCONTROL_NONE           (uint32_t)0x00000000U              /*!< CTS and RTS hardware flow control disabled */
+#define LL_LPUART_HWCONTROL_NONE           0x00000000U                        /*!< CTS and RTS hardware flow control disabled */
 #define LL_LPUART_HWCONTROL_RTS            USART_CR3_RTSE                     /*!< RTS output enabled, data is only requested when there is space in the receive buffer */
 #define LL_LPUART_HWCONTROL_CTS            USART_CR3_CTSE                     /*!< CTS mode enabled, data is only transmitted when the nCTS input is asserted (tied to 0) */
 #define LL_LPUART_HWCONTROL_RTS_CTS        (USART_CR3_RTSE | USART_CR3_CTSE)  /*!< CTS and RTS hardware flow control enabled */
@@ -316,7 +310,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_WAKEUP_ON Wakeup Activation
   * @{
   */
-#define LL_LPUART_WAKEUP_ON_ADDRESS        (uint32_t)0x00000000U                   /*!< Wake up active on address match */
+#define LL_LPUART_WAKEUP_ON_ADDRESS        0x00000000U                             /*!< Wake up active on address match */
 #define LL_LPUART_WAKEUP_ON_STARTBIT       USART_CR3_WUS_1                         /*!< Wake up active on Start bit detection */
 #define LL_LPUART_WAKEUP_ON_RXNE           (USART_CR3_WUS_0 | USART_CR3_WUS_1)     /*!< Wake up active on RXNE */
 /**
@@ -326,7 +320,7 @@ typedef struct
 /** @defgroup LPUART_LL_EC_DE_POLARITY Driver Enable Polarity
   * @{
   */
-#define LL_LPUART_DE_POLARITY_HIGH         (uint32_t)0x00000000U              /*!< DE signal is active high */
+#define LL_LPUART_DE_POLARITY_HIGH         0x00000000U                        /*!< DE signal is active high */
 #define LL_LPUART_DE_POLARITY_LOW          USART_CR3_DEP                      /*!< DE signal is active low */
 /**
   * @}
@@ -335,8 +329,8 @@ typedef struct
 /** @defgroup LPUART_LL_EC_DMA_REG_DATA DMA Register Data
   * @{
   */
-#define LL_LPUART_DMA_REG_DATA_TRANSMIT    (uint32_t)0U                       /*!< Get address of data register used for transmission */
-#define LL_LPUART_DMA_REG_DATA_RECEIVE     (uint32_t)1U                       /*!< Get address of data register used for reception */
+#define LL_LPUART_DMA_REG_DATA_TRANSMIT    0x00000000U                       /*!< Get address of data register used for transmission */
+#define LL_LPUART_DMA_REG_DATA_RECEIVE     0x00000001U                       /*!< Get address of data register used for reception */
 /**
   * @}
   */
@@ -909,7 +903,7 @@ __STATIC_INLINE uint32_t LL_LPUART_GetTransferBitOrder(USART_TypeDef *LPUARTx)
 __STATIC_INLINE void LL_LPUART_ConfigNodeAddress(USART_TypeDef *LPUARTx, uint32_t AddressLen, uint32_t NodeAddress)
 {
   MODIFY_REG(LPUARTx->CR2, USART_CR2_ADD | USART_CR2_ADDM7,
-             (uint32_t)(AddressLen | (NodeAddress << LPUART_POSITION_CR2_ADD)));
+             (uint32_t)(AddressLen | (NodeAddress << USART_CR2_ADD_Pos)));
 }
 
 /**
@@ -924,7 +918,7 @@ __STATIC_INLINE void LL_LPUART_ConfigNodeAddress(USART_TypeDef *LPUARTx, uint32_
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetNodeAddress(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_ADD) >> LPUART_POSITION_CR2_ADD);
+  return (uint32_t)(READ_BIT(LPUARTx->CR2, USART_CR2_ADD) >> USART_CR2_ADD_Pos);
 }
 
 /**
@@ -1182,7 +1176,7 @@ __STATIC_INLINE uint32_t LL_LPUART_IsEnabledHalfDuplex(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetDEDeassertionTime(USART_TypeDef *LPUARTx, uint32_t Time)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_DEDT, Time << LPUART_POSITION_CR1_DEDT);
+  MODIFY_REG(LPUARTx->CR1, USART_CR1_DEDT, Time << USART_CR1_DEDT_Pos);
 }
 
 /**
@@ -1193,7 +1187,7 @@ __STATIC_INLINE void LL_LPUART_SetDEDeassertionTime(USART_TypeDef *LPUARTx, uint
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetDEDeassertionTime(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_DEDT) >> LPUART_POSITION_CR1_DEDT);
+  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_DEDT) >> USART_CR1_DEDT_Pos);
 }
 
 /**
@@ -1205,7 +1199,7 @@ __STATIC_INLINE uint32_t LL_LPUART_GetDEDeassertionTime(USART_TypeDef *LPUARTx)
   */
 __STATIC_INLINE void LL_LPUART_SetDEAssertionTime(USART_TypeDef *LPUARTx, uint32_t Time)
 {
-  MODIFY_REG(LPUARTx->CR1, USART_CR1_DEAT, Time << LPUART_POSITION_CR1_DEAT);
+  MODIFY_REG(LPUARTx->CR1, USART_CR1_DEAT, Time << USART_CR1_DEAT_Pos);
 }
 
 /**
@@ -1216,7 +1210,7 @@ __STATIC_INLINE void LL_LPUART_SetDEAssertionTime(USART_TypeDef *LPUARTx, uint32
   */
 __STATIC_INLINE uint32_t LL_LPUART_GetDEAssertionTime(USART_TypeDef *LPUARTx)
 {
-  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_DEAT) >> LPUART_POSITION_CR1_DEAT);
+  return (uint32_t)(READ_BIT(LPUARTx->CR1, USART_CR1_DEAT) >> USART_CR1_DEAT_Pos);
 }
 
 /**
@@ -1310,7 +1304,7 @@ __STATIC_INLINE uint32_t LL_LPUART_IsActiveFlag_FE(USART_TypeDef *LPUARTx)
 }
 
 /**
-  * @brief  Check if the LPUART Noise detected Flag is set or not
+  * @brief  Check if the LPUART Noise error detected Flag is set or not
   * @rmtoll ISR          NE            LL_LPUART_IsActiveFlag_NE
   * @param  LPUARTx LPUART Instance
   * @retval State of bit (1 or 0).

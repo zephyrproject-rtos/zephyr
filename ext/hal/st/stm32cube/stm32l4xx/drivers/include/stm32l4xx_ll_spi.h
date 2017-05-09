@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_spi.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of SPI LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -141,7 +141,6 @@ typedef struct
 #define LL_SPI_SR_RXNE                     SPI_SR_RXNE               /*!< Rx buffer not empty flag         */
 #define LL_SPI_SR_TXE                      SPI_SR_TXE                /*!< Tx buffer empty flag             */
 #define LL_SPI_SR_BSY                      SPI_SR_BSY                /*!< Busy flag                        */
-#define LL_SPI_SR_UDR                      SPI_SR_UDR                /*!< Underrun flag                    */
 #define LL_SPI_SR_CRCERR                   SPI_SR_CRCERR             /*!< CRC error flag                   */
 #define LL_SPI_SR_MODF                     SPI_SR_MODF               /*!< Mode fault flag                  */
 #define LL_SPI_SR_OVR                      SPI_SR_OVR                /*!< Overrun flag                     */
@@ -165,7 +164,7 @@ typedef struct
   * @{
   */
 #define LL_SPI_MODE_MASTER                 (SPI_CR1_MSTR | SPI_CR1_SSI)    /*!< Master configuration  */
-#define LL_SPI_MODE_SLAVE                  ((uint32_t)0x00000000U)         /*!< Slave configuration   */
+#define LL_SPI_MODE_SLAVE                  0x00000000U                     /*!< Slave configuration   */
 /**
   * @}
   */
@@ -173,7 +172,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_PROTOCOL Serial Protocol
   * @{
   */
-#define LL_SPI_PROTOCOL_MOTOROLA           ((uint32_t)0x00000000U)   /*!< Motorola mode. Used as default value */
+#define LL_SPI_PROTOCOL_MOTOROLA           0x00000000U               /*!< Motorola mode. Used as default value */
 #define LL_SPI_PROTOCOL_TI                 (SPI_CR2_FRF)             /*!< TI mode                              */
 /**
   * @}
@@ -182,7 +181,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_PHASE Clock Phase
   * @{
   */
-#define LL_SPI_PHASE_1EDGE                 ((uint32_t)0x00000000U)   /*!< First clock transition is the first data capture edge  */
+#define LL_SPI_PHASE_1EDGE                 0x00000000U               /*!< First clock transition is the first data capture edge  */
 #define LL_SPI_PHASE_2EDGE                 (SPI_CR1_CPHA)            /*!< Second clock transition is the first data capture edge */
 /**
   * @}
@@ -191,7 +190,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_POLARITY Clock Polarity
   * @{
   */
-#define LL_SPI_POLARITY_LOW                ((uint32_t)0x00000000U)   /*!< Clock to 0 when idle */
+#define LL_SPI_POLARITY_LOW                0x00000000U               /*!< Clock to 0 when idle */
 #define LL_SPI_POLARITY_HIGH               (SPI_CR1_CPOL)            /*!< Clock to 1 when idle */
 /**
   * @}
@@ -200,7 +199,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_BAUDRATEPRESCALER Baud Rate Prescaler
   * @{
   */
-#define LL_SPI_BAUDRATEPRESCALER_DIV2      ((uint32_t)0x00000000U)                        /*!< BaudRate control equal to fPCLK/2   */
+#define LL_SPI_BAUDRATEPRESCALER_DIV2      0x00000000U                                    /*!< BaudRate control equal to fPCLK/2   */
 #define LL_SPI_BAUDRATEPRESCALER_DIV4      (SPI_CR1_BR_0)                                 /*!< BaudRate control equal to fPCLK/4   */
 #define LL_SPI_BAUDRATEPRESCALER_DIV8      (SPI_CR1_BR_1)                                 /*!< BaudRate control equal to fPCLK/8   */
 #define LL_SPI_BAUDRATEPRESCALER_DIV16     (SPI_CR1_BR_1 | SPI_CR1_BR_0)                  /*!< BaudRate control equal to fPCLK/16  */
@@ -216,7 +215,7 @@ typedef struct
   * @{
   */
 #define LL_SPI_LSB_FIRST                   (SPI_CR1_LSBFIRST)        /*!< Data is transmitted/received with the LSB first */
-#define LL_SPI_MSB_FIRST                   ((uint32_t)0x00000000U)   /*!< Data is transmitted/received with the MSB first */
+#define LL_SPI_MSB_FIRST                   0x00000000U               /*!< Data is transmitted/received with the MSB first */
 /**
   * @}
   */
@@ -224,7 +223,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_TRANSFER_MODE Transfer Mode
   * @{
   */
-#define LL_SPI_FULL_DUPLEX                 ((uint32_t)0x00000000U)              /*!< Full-Duplex mode. Rx and Tx transfer on 2 lines */
+#define LL_SPI_FULL_DUPLEX                 0x00000000U                          /*!< Full-Duplex mode. Rx and Tx transfer on 2 lines */
 #define LL_SPI_SIMPLEX_RX                  (SPI_CR1_RXONLY)                     /*!< Simplex Rx mode.  Rx transfer only on 1 line    */
 #define LL_SPI_HALF_DUPLEX_RX              (SPI_CR1_BIDIMODE)                   /*!< Half-Duplex Rx mode. Rx transfer on 1 line      */
 #define LL_SPI_HALF_DUPLEX_TX              (SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE)  /*!< Half-Duplex Tx mode. Tx transfer on 1 line      */
@@ -236,7 +235,7 @@ typedef struct
   * @{
   */
 #define LL_SPI_NSS_SOFT                    (SPI_CR1_SSM)                     /*!< NSS managed internally. NSS pin not used and free              */
-#define LL_SPI_NSS_HARD_INPUT              ((uint32_t)0x00000000U)           /*!< NSS pin used in Input. Only used in Master mode                */
+#define LL_SPI_NSS_HARD_INPUT              0x00000000U                       /*!< NSS pin used in Input. Only used in Master mode                */
 #define LL_SPI_NSS_HARD_OUTPUT             (((uint32_t)SPI_CR2_SSOE << 16U)) /*!< NSS pin used in Output. Only used in Slave mode as chip select */
 /**
   * @}
@@ -266,7 +265,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_CRC_CALCULATION CRC Calculation
   * @{
   */
-#define LL_SPI_CRCCALCULATION_DISABLE      ((uint32_t)0x00000000U)   /*!< CRC calculation disabled */
+#define LL_SPI_CRCCALCULATION_DISABLE      0x00000000U               /*!< CRC calculation disabled */
 #define LL_SPI_CRCCALCULATION_ENABLE       (SPI_CR1_CRCEN)           /*!< CRC calculation enabled  */
 /**
   * @}
@@ -276,7 +275,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_CRC_LENGTH CRC Length
   * @{
   */
-#define LL_SPI_CRC_8BIT                    ((uint32_t)0x00000000U)   /*!<  8-bit CRC length */
+#define LL_SPI_CRC_8BIT                    0x00000000U               /*!<  8-bit CRC length */
 #define LL_SPI_CRC_16BIT                   (SPI_CR1_CRCL)            /*!< 16-bit CRC length */
 /**
   * @}
@@ -285,7 +284,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_RX_FIFO_TH RX FIFO Threshold
   * @{
   */
-#define LL_SPI_RX_FIFO_TH_HALF             ((uint32_t)0x00000000U)   /*!< RXNE event is generated if FIFO level is greater than or equel to 1/2 (16-bit) */
+#define LL_SPI_RX_FIFO_TH_HALF             0x00000000U               /*!< RXNE event is generated if FIFO level is greater than or equel to 1/2 (16-bit) */
 #define LL_SPI_RX_FIFO_TH_QUARTER          (SPI_CR2_FRXTH)           /*!< RXNE event is generated if FIFO level is greater than or equel to 1/4 (8-bit)  */
 /**
   * @}
@@ -294,7 +293,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_RX_FIFO RX FIFO Level
   * @{
   */
-#define LL_SPI_RX_FIFO_EMPTY               ((uint32_t)0x00000000U)           /*!< FIFO reception empty */
+#define LL_SPI_RX_FIFO_EMPTY               0x00000000U                       /*!< FIFO reception empty */
 #define LL_SPI_RX_FIFO_QUARTER_FULL        (SPI_SR_FRLVL_0)                  /*!< FIFO reception 1/4   */
 #define LL_SPI_RX_FIFO_HALF_FULL           (SPI_SR_FRLVL_1)                  /*!< FIFO reception 1/2   */
 #define LL_SPI_RX_FIFO_FULL                (SPI_SR_FRLVL_1 | SPI_SR_FRLVL_0) /*!< FIFO reception full  */
@@ -305,7 +304,7 @@ typedef struct
 /** @defgroup SPI_LL_EC_TX_FIFO TX FIFO Level
   * @{
   */
-#define LL_SPI_TX_FIFO_EMPTY               ((uint32_t)0x00000000U)           /*!< FIFO transmission empty */
+#define LL_SPI_TX_FIFO_EMPTY               0x00000000U                       /*!< FIFO transmission empty */
 #define LL_SPI_TX_FIFO_QUARTER_FULL        (SPI_SR_FTLVL_0)                  /*!< FIFO transmission 1/4   */
 #define LL_SPI_TX_FIFO_HALF_FULL           (SPI_SR_FTLVL_1)                  /*!< FIFO transmission 1/2   */
 #define LL_SPI_TX_FIFO_FULL                (SPI_SR_FTLVL_1 | SPI_SR_FTLVL_0) /*!< FIFO transmission full  */
@@ -316,8 +315,8 @@ typedef struct
 /** @defgroup SPI_LL_EC_DMA_PARITY DMA Parity
   * @{
   */
-#define LL_SPI_DMA_PARITY_EVEN             ((uint32_t)0x00000000U)   /*!< Select DMA parity Even */
-#define LL_SPI_DMA_PARITY_ODD              ((uint32_t)0x00000001U)   /*!< Select DMA parity Odd  */
+#define LL_SPI_DMA_PARITY_EVEN             0x00000000U   /*!< Select DMA parity Even */
+#define LL_SPI_DMA_PARITY_ODD              0x00000001U   /*!< Select DMA parity Odd  */
 
 /**
   * @}
@@ -1283,7 +1282,7 @@ __STATIC_INLINE uint32_t LL_SPI_IsEnabledDMAReq_TX(SPI_TypeDef *SPIx)
   */
 __STATIC_INLINE void LL_SPI_SetDMAParity_RX(SPI_TypeDef *SPIx, uint32_t Parity)
 {
-  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMARX, (Parity << POSITION_VAL(SPI_CR2_LDMARX)));
+  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMARX, (Parity << SPI_CR2_LDMARX_Pos));
 }
 
 /**
@@ -1296,7 +1295,7 @@ __STATIC_INLINE void LL_SPI_SetDMAParity_RX(SPI_TypeDef *SPIx, uint32_t Parity)
   */
 __STATIC_INLINE uint32_t LL_SPI_GetDMAParity_RX(SPI_TypeDef *SPIx)
 {
-  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMARX) >> POSITION_VAL(SPI_CR2_LDMARX));
+  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMARX) >> SPI_CR2_LDMARX_Pos);
 }
 
 /**
@@ -1310,7 +1309,7 @@ __STATIC_INLINE uint32_t LL_SPI_GetDMAParity_RX(SPI_TypeDef *SPIx)
   */
 __STATIC_INLINE void LL_SPI_SetDMAParity_TX(SPI_TypeDef *SPIx, uint32_t Parity)
 {
-  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMATX, (Parity << POSITION_VAL(SPI_CR2_LDMATX)));
+  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMATX, (Parity << SPI_CR2_LDMATX_Pos));
 }
 
 /**
@@ -1323,7 +1322,7 @@ __STATIC_INLINE void LL_SPI_SetDMAParity_TX(SPI_TypeDef *SPIx, uint32_t Parity)
   */
 __STATIC_INLINE uint32_t LL_SPI_GetDMAParity_TX(SPI_TypeDef *SPIx)
 {
-  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMATX) >> POSITION_VAL(SPI_CR2_LDMATX));
+  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMATX) >> SPI_CR2_LDMATX_Pos);
 }
 
 /**

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_spi.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   SPI HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Serial Peripheral Interface (SPI) peripheral:
@@ -60,9 +60,15 @@
           (##) HAL_SPI_DeInit()
           (##) HAL_SPI_Init()
      [..]
-       Using the HAL it is not possible to reach all supported SPI frequency with the differents SPI Modes,
-       the following table resume the max SPI frequency reached with data size 8bits/16bits,
-       according to frequency used on APBx Peripheral Clock (fPCLK) used by the SPI instance :
+       The HAL drivers do not allow reaching all supported SPI frequencies in the different SPI
+       modes. Refer to the source code (stm32xxxx_hal_spi.c header) to get a summary of the
+       maximum SPI frequency that can be reached with a data size of 8 or 16 bits, depending on
+       the APBx peripheral clock frequency (fPCLK) used by the SPI instance.
+     
+
+  @endverbatim
+
+  Additional table :
 
        DataSize = SPI_DATASIZE_8BIT:
        +----------------------------------------------------------------------------------------------+
@@ -120,11 +126,10 @@
             (#) RX processes are HAL_SPI_Receive(), HAL_SPI_Receive_IT() and HAL_SPI_Receive_DMA()
             (#) TX processes are HAL_SPI_Transmit(), HAL_SPI_Transmit_IT() and HAL_SPI_Transmit_DMA()
 
-  @endverbatim
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -349,7 +354,7 @@ HAL_StatusTypeDef HAL_SPI_Init(SPI_HandleTypeDef *hspi)
 
   /*----------------------- SPIx CR1 & CR2 Configuration ---------------------*/
   /* Configure : SPI Mode, Communication Mode, Clock polarity and phase, NSS management,
-  Communication speed, First bit, CRC calculation state */
+  Communication speed, First bit and CRC calculation state */
   WRITE_REG(hspi->Instance->CR1, (hspi->Init.Mode | hspi->Init.Direction |
                                   hspi->Init.CLKPolarity | hspi->Init.CLKPhase | (hspi->Init.NSS & SPI_CR1_SSM) |
                                   hspi->Init.BaudRatePrescaler | hspi->Init.FirstBit  | hspi->Init.CRCCalculation));
@@ -361,8 +366,8 @@ HAL_StatusTypeDef HAL_SPI_Init(SPI_HandleTypeDef *hspi)
   }
 #endif /* USE_SPI_CRC */
 
-  /* Configure : NSS management, TI Mode and Rx Fifo Threshold */
-  WRITE_REG(hspi->Instance->CR2, (((hspi->Init.NSS >> 16) & SPI_CR2_SSOE) | hspi->Init.TIMode |
+  /* Configure : NSS management, TI Mode, NSS Pulse, Data size and Rx Fifo Threshold */
+  WRITE_REG(hspi->Instance->CR2, (((hspi->Init.NSS >> 16U) & SPI_CR2_SSOE) | hspi->Init.TIMode |
                                   hspi->Init.NSSPMode | hspi->Init.DataSize) | frxth);
 
 #if (USE_SPI_CRC != 0U)
@@ -502,6 +507,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
   uint32_t tickstart = 0U;
   HAL_StatusTypeDef errorcode = HAL_OK;
 
+
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES_OR_1LINE(hspi->Init.Direction));
 
@@ -561,7 +567,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
   /* Transmit data in 16 Bit mode */
   if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
   {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01))
+    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01U))
     {
       hspi->Instance->DR = *((uint16_t *)pData);
       pData += sizeof(uint16_t);
@@ -591,7 +597,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
   /* Transmit data in 8 Bit mode */
   else
   {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01))
+    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01U))
     {
       if (hspi->TxXferCount > 1U)
       {
@@ -683,6 +689,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
 #endif /* USE_SPI_CRC */
   uint32_t tickstart = 0U;
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
 
   if ((hspi->Init.Mode == SPI_MODE_MASTER) && (hspi->Init.Direction == SPI_DIRECTION_2LINES))
   {
@@ -733,7 +740,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
   }
 #endif /* USE_SPI_CRC */
 
-  /* Set the Rx Fido threshold */
+  /* Set the Rx Fifo threshold */
   if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
   {
     /* set fiforxthresold according the reception data length: 16bit */
@@ -918,6 +925,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   /* Variable used to alternate Rx and Tx during transfer */
   uint32_t txallowed = 1U;
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES(hspi->Init.Direction));
@@ -971,8 +979,8 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   }
 #endif /* USE_SPI_CRC */
 
-  /* Set the Rx Fido threshold */
-  if ((hspi->Init.DataSize > SPI_DATASIZE_8BIT) || (hspi->RxXferCount > 1))
+  /* Set the Rx Fifo threshold */
+  if ((hspi->Init.DataSize > SPI_DATASIZE_8BIT) || (hspi->RxXferCount > 1U))
   {
     /* set fiforxthreshold according the reception data length: 16bit */
     CLEAR_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
@@ -993,7 +1001,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   /* Transmit and Receive data in 16 Bit mode */
   if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
   {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01))
+    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01U))
     {
       hspi->Instance->DR = *((uint16_t *)pTxData);
       pTxData += sizeof(uint16_t);
@@ -1043,7 +1051,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   /* Transmit and Receive data in 8 Bit mode */
   else
   {
-    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01))
+    if ((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01U))
     {
       if (hspi->TxXferCount > 1U)
       {
@@ -1054,8 +1062,8 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
       else
       {
         *(__IO uint8_t *)&hspi->Instance->DR = (*pTxData++);
-      hspi->TxXferCount--;
-    }
+        hspi->TxXferCount--;
+      }
     }
     while ((hspi->TxXferCount > 0U) || (hspi->RxXferCount > 0U))
     {
@@ -1200,6 +1208,7 @@ error :
 HAL_StatusTypeDef HAL_SPI_Transmit_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES_OR_1LINE(hspi->Init.Direction));
@@ -1283,6 +1292,7 @@ error :
 HAL_StatusTypeDef HAL_SPI_Receive_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
 
   if ((hspi->Init.Direction == SPI_DIRECTION_2LINES) && (hspi->Init.Mode == SPI_MODE_MASTER))
   {
@@ -1319,16 +1329,16 @@ HAL_StatusTypeDef HAL_SPI_Receive_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, ui
   hspi->TxXferCount = 0U;
   hspi->TxISR       = NULL;
 
-  /* check the data size to adapt Rx threshold and the set the function for IT treatment */
+  /* Check the data size to adapt Rx threshold and the set the function for IT treatment */
   if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
   {
-    /* set fiforxthresold according the reception data length: 16 bit */
+    /* Set fiforxthresold according the reception data length: 16 bit */
     CLEAR_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
     hspi->RxISR = SPI_RxISR_16BIT;
   }
   else
   {
-    /* set fiforxthresold according the reception data length: 8 bit */
+    /* Set fiforxthresold according the reception data length: 8 bit */
     SET_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
     hspi->RxISR = SPI_RxISR_8BIT;
   }
@@ -1389,6 +1399,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *p
 {
   uint32_t tmp = 0U, tmp1 = 0U;
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES(hspi->Init.Direction));
@@ -1456,15 +1467,15 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *p
   }
 #endif /* USE_SPI_CRC */
 
-  /* check if packing mode is enabled and if there is more than 2 data to receive */
+  /* Check if packing mode is enabled and if there is more than 2 data to receive */
   if ((hspi->Init.DataSize > SPI_DATASIZE_8BIT) || (hspi->RxXferCount >= 2U))
   {
-    /* set fiforxthresold according the reception data length: 16 bit */
+    /* Set fiforxthresold according the reception data length: 16 bit */
     CLEAR_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
   }
   else
   {
-    /* set fiforxthresold according the reception data length: 8 bit */
+    /* Set fiforxthresold according the reception data length: 8 bit */
     SET_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
   }
 
@@ -1495,6 +1506,9 @@ error :
 HAL_StatusTypeDef HAL_SPI_Transmit_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
+  /* check tx dma handle */
+  assert_param(IS_SPI_DMA_HANDLE(hspi->hdmatx));
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES_OR_1LINE(hspi->Init.Direction));
@@ -1555,7 +1569,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, 
   hspi->hdmatx->XferAbortCallback = NULL;
 
   CLEAR_BIT(hspi->Instance->CR2, SPI_CR2_LDMATX);
-  /* packing mode is enabled only if the DMA setting is HALWORD */
+  /* Packing mode is enabled only if the DMA setting is HALWORD */
   if ((hspi->Init.DataSize <= SPI_DATASIZE_8BIT) && (hspi->hdmatx->Init.MemDataAlignment == DMA_MDATAALIGN_HALFWORD))
   {
     /* Check the even/odd of the data size + crc if enabled */
@@ -1595,6 +1609,7 @@ error :
 
 /**
   * @brief  Receive an amount of data in non-blocking mode with DMA.
+  * @note   In case of MASTER mode and SPI_DIRECTION_2LINES direction, hdmatx shall be defined.
   * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
   *               the configuration information for SPI module.
   * @param  pData: pointer to data buffer
@@ -1605,10 +1620,17 @@ error :
 HAL_StatusTypeDef HAL_SPI_Receive_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
+  /* check rx dma handle */
+  assert_param(IS_SPI_DMA_HANDLE(hspi->hdmarx));
 
   if ((hspi->Init.Direction == SPI_DIRECTION_2LINES) && (hspi->Init.Mode == SPI_MODE_MASTER))
   {
     hspi->State = HAL_SPI_STATE_BUSY_RX;
+    
+    /* check tx dma handle */
+    assert_param(IS_SPI_DMA_HANDLE(hspi->hdmatx));
+
     /* Call transmit-receive function to send Dummy data on Tx line and generate clock on CLK line */
     return HAL_SPI_TransmitReceive_DMA(hspi, pData, pData, Size);
   }
@@ -1655,24 +1677,34 @@ HAL_StatusTypeDef HAL_SPI_Receive_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, u
   }
 #endif /* USE_SPI_CRC */
 
-  /* packing mode management is enabled by the DMA settings */
-  if ((hspi->Init.DataSize <= SPI_DATASIZE_8BIT) && (hspi->hdmarx->Init.MemDataAlignment == DMA_MDATAALIGN_HALFWORD))
-  {
-    /* Restriction the DMA data received is not allowed in this mode */
-    errorcode = HAL_ERROR;
-    goto error;
-  }
 
   CLEAR_BIT(hspi->Instance->CR2, SPI_CR2_LDMARX);
   if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
   {
-    /* set fiforxthresold according the reception data length: 16bit */
+    /* Set fiforxthresold according the reception data length: 16bit */
     CLEAR_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
   }
   else
   {
-    /* set fiforxthresold according the reception data length: 8bit */
+    /* Set fiforxthresold according the reception data length: 8bit */
     SET_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
+
+    if (hspi->hdmarx->Init.MemDataAlignment == DMA_MDATAALIGN_HALFWORD)
+    {
+      /* set fiforxthresold according the reception data length: 16bit */
+      CLEAR_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
+
+      if ((hspi->RxXferCount & 0x1U) == 0x0U)
+      {
+        CLEAR_BIT(hspi->Instance->CR2, SPI_CR2_LDMARX);
+        hspi->RxXferCount = hspi->RxXferCount >> 1U;
+      }
+      else
+      {
+        SET_BIT(hspi->Instance->CR2, SPI_CR2_LDMARX);
+        hspi->RxXferCount = (hspi->RxXferCount >> 1U) + 1U;
+      }
+    }
   }
 
   /* Set the SPI RxDMA Half transfer complete callback */
@@ -1724,6 +1756,10 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_DMA(SPI_HandleTypeDef *hspi, uint8_t *
 {
   uint32_t tmp = 0U, tmp1 = 0U;
   HAL_StatusTypeDef errorcode = HAL_OK;
+  
+  /* check rx & tx dma handles */
+  assert_param(IS_SPI_DMA_HANDLE(hspi->hdmarx));
+  assert_param(IS_SPI_DMA_HANDLE(hspi->hdmatx));
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES(hspi->Init.Direction));
@@ -1773,18 +1809,20 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_DMA(SPI_HandleTypeDef *hspi, uint8_t *
   }
 #endif /* USE_SPI_CRC */
 
+
+
   /* Reset the threshold bit */
   CLEAR_BIT(hspi->Instance->CR2, SPI_CR2_LDMATX | SPI_CR2_LDMARX);
 
-  /* the packing mode management is enabled by the DMA settings according the spi data size */
+  /* The packing mode management is enabled by the DMA settings according the spi data size */
   if (hspi->Init.DataSize > SPI_DATASIZE_8BIT)
   {
-    /* set fiforxthreshold according the reception data length: 16bit */
+    /* Set fiforxthreshold according the reception data length: 16bit */
     CLEAR_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
   }
   else
   {
-    /* set fiforxthresold according the reception data length: 8bit */
+    /* Set fiforxthresold according the reception data length: 8bit */
     SET_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
 
     if (hspi->hdmatx->Init.MemDataAlignment == DMA_MDATAALIGN_HALFWORD)
@@ -1803,7 +1841,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_DMA(SPI_HandleTypeDef *hspi, uint8_t *
 
     if (hspi->hdmarx->Init.MemDataAlignment == DMA_MDATAALIGN_HALFWORD)
     {
-      /* set fiforxthresold according the reception data length: 16bit */
+      /* Set fiforxthresold according the reception data length: 16bit */
       CLEAR_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
 
       if ((hspi->RxXferCount & 0x1U) == 0x0U)
@@ -1889,21 +1927,46 @@ error :
 HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef *hspi)
 {
   HAL_StatusTypeDef errorcode;
+  __IO uint32_t count, resetcount;
 
   /* Initialized local variable  */
   errorcode = HAL_OK;
+  resetcount = SPI_DEFAULT_TIMEOUT * (SystemCoreClock / 24U / 1000U);
+  count = resetcount;
 
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXEIE))
   {
     hspi->TxISR = SPI_AbortTx_ISR;
+    /* Wait HAL_SPI_STATE_ABORT state */
+    do
+    {
+      if (count-- == 0U)
+      {
+        SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_ABORT);
+        break;
+      }
+    }
     while (hspi->State != HAL_SPI_STATE_ABORT);
+    /* Reset Timeout Counter */
+    count = resetcount;
   }
 
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXNEIE))
   {
     hspi->RxISR = SPI_AbortRx_ISR;
+    /* Wait HAL_SPI_STATE_ABORT state */
+    do
+    {
+      if (count-- == 0U)
+      {
+        SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_ABORT);
+        break;
+      }
+    }
     while (hspi->State != HAL_SPI_STATE_ABORT);
+    /* Reset Timeout Counter */
+    count = resetcount;
   }
 
   /* Clear ERRIE interrupts in case of DMA Mode */
@@ -2019,22 +2082,47 @@ HAL_StatusTypeDef HAL_SPI_Abort_IT(SPI_HandleTypeDef *hspi)
 {
   HAL_StatusTypeDef errorcode;
   uint32_t abortcplt ;
+  __IO uint32_t count, resetcount;
 
   /* Initialized local variable  */
   errorcode = HAL_OK;
   abortcplt = 1U;
+  resetcount = SPI_DEFAULT_TIMEOUT * (SystemCoreClock / 24U / 1000U);
+  count = resetcount;
 
   /* Change Rx and Tx Irq Handler to Disable TXEIE, RXNEIE and ERRIE interrupts */
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXEIE))
   {
     hspi->TxISR = SPI_AbortTx_ISR;
+    /* Wait HAL_SPI_STATE_ABORT state */
+    do
+    {
+      if (count-- == 0U)
+      {
+        SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_ABORT);
+        break;
+      }
+    }
     while (hspi->State != HAL_SPI_STATE_ABORT);
+    /* Reset Timeout Counter */
+    count = resetcount;
   }
 
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXNEIE))
   {
     hspi->RxISR = SPI_AbortRx_ISR;
+    /* Wait HAL_SPI_STATE_ABORT state */
+    do
+    {
+      if (count-- == 0U)
+      {
+        SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_ABORT);
+        break;
+      }
+    }
     while (hspi->State != HAL_SPI_STATE_ABORT);
+    /* Reset Timeout Counter */
+    count = resetcount;
   }
 
   /* Clear ERRIE interrupts in case of DMA Mode */
@@ -3413,7 +3501,7 @@ static HAL_StatusTypeDef SPI_WaitFifoStateUntilTimeout(SPI_HandleTypeDef *hspi, 
 
     if (Timeout != HAL_MAX_DELAY)
     {
-      if ((Timeout == 0) || ((HAL_GetTick() - Tickstart) >= Timeout))
+      if ((Timeout == 0U) || ((HAL_GetTick() - Tickstart) >= Timeout))
       {
         /* Disable the SPI and reset the CRC: the CRC value should be cleared
            on both master and slave sides in order to resynchronize the master
@@ -3454,7 +3542,7 @@ static HAL_StatusTypeDef SPI_WaitFifoStateUntilTimeout(SPI_HandleTypeDef *hspi, 
   *               the configuration information for SPI module.
   * @param  Timeout: Timeout duration
   * @param  Tickstart: tick start value
-  * @retval None.
+  * @retval HAL status
   */
 static HAL_StatusTypeDef SPI_EndRxTransaction(SPI_HandleTypeDef *hspi,  uint32_t Timeout, uint32_t Tickstart)
 {
@@ -3486,10 +3574,11 @@ static HAL_StatusTypeDef SPI_EndRxTransaction(SPI_HandleTypeDef *hspi,  uint32_t
 }
 
 /**
-  * @brief Handle the check of the RXTX or TX transaction complete.
-  * @param hspi: SPI handle
-  * @param Timeout: Timeout duration
+  * @brief  Handle the check of the RXTX or TX transaction complete.
+  * @param  hspi: SPI handle
+  * @param  Timeout: Timeout duration
   * @param  Tickstart: tick start value
+  * @retval HAL status
   */
 static HAL_StatusTypeDef SPI_EndRxTxTransaction(SPI_HandleTypeDef *hspi, uint32_t Timeout, uint32_t Tickstart)
 {
@@ -3501,6 +3590,13 @@ static HAL_StatusTypeDef SPI_EndRxTxTransaction(SPI_HandleTypeDef *hspi, uint32_
   }
   /* Control the BSY flag */
   if (SPI_WaitFlagStateUntilTimeout(hspi, SPI_FLAG_BSY, RESET, Timeout, Tickstart) != HAL_OK)
+  {
+    SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_FLAG);
+    return HAL_TIMEOUT;
+  }
+
+  /* Control if the RX fifo is empty */
+  if (SPI_WaitFifoStateUntilTimeout(hspi, SPI_FLAG_FRLVL, SPI_FRLVL_EMPTY, Timeout, Tickstart) != HAL_OK)
   {
     SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_FLAG);
     return HAL_TIMEOUT;
@@ -3654,12 +3750,25 @@ static void SPI_CloseTx_ISR(SPI_HandleTypeDef *hspi)
   */
 static void SPI_AbortRx_ISR(SPI_HandleTypeDef *hspi)
 {
+  __IO uint32_t count;
+  
   /* Disable SPI Peripheral */
   __HAL_SPI_DISABLE(hspi);
+  
+  count = SPI_DEFAULT_TIMEOUT * (SystemCoreClock / 24U / 1000U);
 
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_TXEIE | SPI_CR2_RXNEIE | SPI_CR2_ERRIE));
-
+  
+  /* Check RXNEIE is disabled */
+  do
+  {
+    if (count-- == 0U)
+    {
+      SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_ABORT);
+      break;
+    }
+  }
   while (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXNEIE));
 
   /* Control the BSY flag */
@@ -3685,9 +3794,22 @@ static void SPI_AbortRx_ISR(SPI_HandleTypeDef *hspi)
   */
 static void SPI_AbortTx_ISR(SPI_HandleTypeDef *hspi)
 {
+  __IO uint32_t count;
+  
+  count = SPI_DEFAULT_TIMEOUT * (SystemCoreClock / 24U / 1000U);
+  
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_TXEIE | SPI_CR2_RXNEIE | SPI_CR2_ERRIE));
-
+  
+  /* Check TXEIE is disabled */
+  do
+  {
+    if (count-- == 0U)
+    {
+      SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_ABORT);
+      break;
+    }
+  }
   while (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXEIE));
 
   if (SPI_EndRxTxTransaction(hspi, SPI_DEFAULT_TIMEOUT, HAL_GetTick()) != HAL_OK)

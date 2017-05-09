@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_tim.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   TIM LL module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -193,8 +193,6 @@
 
 #define IS_LL_TIM_AUTOMATIC_OUTPUT_STATE(__VALUE__) (((__VALUE__) == LL_TIM_AUTOMATICOUTPUT_DISABLE) \
                                                   || ((__VALUE__) == LL_TIM_AUTOMATICOUTPUT_ENABLE))
-
-
 /**
   * @}
   */
@@ -327,7 +325,7 @@ void LL_TIM_StructInit(LL_TIM_InitTypeDef *TIM_InitStruct)
   /* Set the default configuration */
   TIM_InitStruct->Prescaler         = (uint16_t)0x0000U;
   TIM_InitStruct->CounterMode       = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct->Autoreload        = (uint32_t)0xFFFFFFFFU;
+  TIM_InitStruct->Autoreload        = 0xFFFFFFFFU;
   TIM_InitStruct->ClockDivision     = LL_TIM_CLOCKDIVISION_DIV1;
   TIM_InitStruct->RepetitionCounter = (uint8_t)0x00U;
 }
@@ -397,7 +395,7 @@ void LL_TIM_OC_StructInit(LL_TIM_OC_InitTypeDef *TIM_OC_InitStruct)
   TIM_OC_InitStruct->OCMode       = LL_TIM_OCMODE_FROZEN;
   TIM_OC_InitStruct->OCState      = LL_TIM_OCSTATE_DISABLE;
   TIM_OC_InitStruct->OCNState     = LL_TIM_OCSTATE_DISABLE;
-  TIM_OC_InitStruct->CompareValue = (uint32_t)0x00000000U;
+  TIM_OC_InitStruct->CompareValue = 0x00000000U;
   TIM_OC_InitStruct->OCPolarity   = LL_TIM_OCPOLARITY_HIGH;
   TIM_OC_InitStruct->OCNPolarity  = LL_TIM_OCPOLARITY_HIGH;
   TIM_OC_InitStruct->OCIdleState  = LL_TIM_OCIDLESTATE_LOW;
@@ -598,7 +596,7 @@ void LL_TIM_HALLSENSOR_StructInit(LL_TIM_HALLSENSOR_InitTypeDef *TIM_HallSensorI
   TIM_HallSensorInitStruct->IC1Polarity       = LL_TIM_IC_POLARITY_RISING;
   TIM_HallSensorInitStruct->IC1Prescaler      = LL_TIM_ICPSC_DIV1;
   TIM_HallSensorInitStruct->IC1Filter         = LL_TIM_IC_FILTER_FDIV1;
-  TIM_HallSensorInitStruct->CommutationDelay  = (uint32_t)0U;
+  TIM_HallSensorInitStruct->CommutationDelay  = 0U;
 }
 
 /**
@@ -761,7 +759,7 @@ ErrorStatus LL_TIM_BDTR_Init(TIM_TypeDef *TIMx, LL_TIM_BDTR_InitTypeDef *TIM_BDT
     assert_param(IS_LL_TIM_BREAK_FILTER(TIM_BDTRInitStruct->BreakFilter));
     MODIFY_REG(tmpbdtr, TIM_BDTR_BKF, TIM_BDTRInitStruct->BreakFilter);
   }
-  
+
   if (IS_TIM_BKIN2_INSTANCE(TIMx))
   {
     assert_param(IS_LL_TIM_BREAK2_STATE(TIM_BDTRInitStruct->Break2State));
@@ -779,7 +777,6 @@ ErrorStatus LL_TIM_BDTR_Init(TIM_TypeDef *TIMx, LL_TIM_BDTR_InitTypeDef *TIM_BDT
   
   return SUCCESS;
 }
-
 /**
   * @}
   */

@@ -2,9 +2,9 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_smbus.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
-  * @brief   SMBUS HAL module driver. 
+  * @version V1.7.1
+  * @date    21-April-2017
+  * @brief   SMBUS HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the System Management Bus (SMBus) peripheral,
   *          based on I2C principles of operation :
@@ -42,7 +42,7 @@
     (#) To check if target device is ready for communication, use the function HAL_SMBUS_IsDeviceReady()
 
     (#) For SMBUS IO operations, only one mode of operations is available within this driver
-            
+
     *** Interrupt mode IO operation ***
     ===================================
     [..]
@@ -82,8 +82,8 @@
      [..]
        Below the list of most used macros in SMBUS HAL driver.
 
-      (+) __HAL_SMBUS_ENABLE: Enable the SMBUS peripheral
-      (+) __HAL_SMBUS_DISABLE: Disable the SMBUS peripheral
+      (+) __HAL_SMBUS_ENABLE:      Enable the SMBUS peripheral
+      (+) __HAL_SMBUS_DISABLE:     Disable the SMBUS peripheral
       (+) __HAL_SMBUS_GET_FLAG:    Check whether the specified SMBUS flag is set or not
       (+) __HAL_SMBUS_CLEAR_FLAG:  Clear the specified SMBUS pending flag
       (+) __HAL_SMBUS_ENABLE_IT:   Enable the specified SMBUS interrupt
@@ -97,7 +97,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -141,8 +141,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /** @defgroup SMBUS_Private_Define SMBUS Private Constants
- * @{
- */
+  * @{
+  */
 #define TIMING_CLEAR_MASK   (0xF0FFFFFFU)      /*!< SMBUS TIMING clear register Mask */
 #define HAL_TIMEOUT_ADDR    (10000U)           /*!< 10 s  */
 #define HAL_TIMEOUT_BUSY    (25U)              /*!< 25 ms */
@@ -156,7 +156,7 @@
 /**
   * @}
   */
-
+  
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -214,6 +214,9 @@ static void SMBUS_TransferConfig(SMBUS_HandleTypeDef *hsmbus,  uint16_t DevAddre
 
       (+) Call the function HAL_SMBUS_DeInit() to restore the default configuration 
           of the selected SMBUSx peripheral.       
+
+      (+) Enable/Disable Analog/Digital filters with HAL_SMBUS_ConfigAnalogFilter() and
+          HAL_SMBUS_ConfigDigitalFilter().  
 
 @endverbatim
   * @{
@@ -278,13 +281,13 @@ HAL_StatusTypeDef HAL_SMBUS_Init(SMBUS_HandleTypeDef *hsmbus)
   if(hsmbus->Init.OwnAddress1 != 0U)
   {
     if(hsmbus->Init.AddressingMode == SMBUS_ADDRESSINGMODE_7BIT)
-  {
-    hsmbus->Instance->OAR1 = (I2C_OAR1_OA1EN | hsmbus->Init.OwnAddress1);
-  }
+    {
+      hsmbus->Instance->OAR1 = (I2C_OAR1_OA1EN | hsmbus->Init.OwnAddress1);
+    }
     else /* SMBUS_ADDRESSINGMODE_10BIT */
-  {
-    hsmbus->Instance->OAR1 = (I2C_OAR1_OA1EN | I2C_OAR1_OA1MODE | hsmbus->Init.OwnAddress1);
-  }
+    {
+      hsmbus->Instance->OAR1 = (I2C_OAR1_OA1EN | I2C_OAR1_OA1MODE | hsmbus->Init.OwnAddress1);
+    }
   }
 
   /*---------------------------- SMBUSx CR2 Configuration ------------------------*/
@@ -388,6 +391,105 @@ __weak void HAL_SMBUS_MspDeInit(SMBUS_HandleTypeDef *hsmbus)
             the HAL_SMBUS_MspDeInit could be implemented in the user file
    */ 
 }
+
+/**
+  * @brief  Configure Analog noise filter.
+  * @param  hsmbus Pointer to a SMBUS_HandleTypeDef structure that contains
+  *                the configuration information for the specified SMBUS.
+  * @param  AnalogFilter This parameter can be one of the following values:
+  *         @arg @ref SMBUS_ANALOGFILTER_ENABLE
+  *         @arg @ref SMBUS_ANALOGFILTER_DISABLE
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_SMBUS_ConfigAnalogFilter(SMBUS_HandleTypeDef *hsmbus, uint32_t AnalogFilter)
+{
+  /* Check the parameters */
+  assert_param(IS_SMBUS_ALL_INSTANCE(hsmbus->Instance));
+  assert_param(IS_SMBUS_ANALOG_FILTER(AnalogFilter));
+
+  if(hsmbus->State == HAL_SMBUS_STATE_READY)
+  {
+    /* Process Locked */
+    __HAL_LOCK(hsmbus);
+
+    hsmbus->State = HAL_SMBUS_STATE_BUSY;
+
+    /* Disable the selected SMBUS peripheral */
+    __HAL_SMBUS_DISABLE(hsmbus);
+
+    /* Reset ANOFF bit */
+    hsmbus->Instance->CR1 &= ~(I2C_CR1_ANFOFF);
+
+    /* Set analog filter bit*/
+    hsmbus->Instance->CR1 |= AnalogFilter;
+
+    __HAL_SMBUS_ENABLE(hsmbus);
+
+    hsmbus->State = HAL_SMBUS_STATE_READY;
+
+    /* Process Unlocked */
+    __HAL_UNLOCK(hsmbus);
+
+    return HAL_OK;
+  }
+  else
+  {
+    return HAL_BUSY;
+  }
+}
+
+/**
+  * @brief  Configure Digital noise filter.
+  * @param  hsmbus Pointer to a SMBUS_HandleTypeDef structure that contains
+  *                the configuration information for the specified SMBUS.
+  * @param  DigitalFilter Coefficient of digital noise filter between Min_Data=0x00 and Max_Data=0x0F.
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_SMBUS_ConfigDigitalFilter(SMBUS_HandleTypeDef *hsmbus, uint32_t DigitalFilter)
+{
+  uint32_t tmpreg = 0U;
+
+  /* Check the parameters */
+  assert_param(IS_SMBUS_ALL_INSTANCE(hsmbus->Instance));
+  assert_param(IS_SMBUS_DIGITAL_FILTER(DigitalFilter));
+
+  if(hsmbus->State == HAL_SMBUS_STATE_READY)
+  {
+    /* Process Locked */
+    __HAL_LOCK(hsmbus);
+
+    hsmbus->State = HAL_SMBUS_STATE_BUSY;
+
+    /* Disable the selected SMBUS peripheral */
+    __HAL_SMBUS_DISABLE(hsmbus);
+
+    /* Get the old register value */
+    tmpreg = hsmbus->Instance->CR1;
+
+    /* Reset I2C DNF bits [11:8] */
+    tmpreg &= ~(I2C_CR1_DNF);
+
+    /* Set I2Cx DNF coefficient */
+    tmpreg |= DigitalFilter << I2C_CR1_DNF_Pos;
+
+    /* Store the new register value */
+    hsmbus->Instance->CR1 = tmpreg;
+
+    __HAL_SMBUS_ENABLE(hsmbus);
+
+    hsmbus->State = HAL_SMBUS_STATE_READY;
+
+    /* Process Unlocked */
+    __HAL_UNLOCK(hsmbus);
+
+    return HAL_OK;
+  }
+  else
+  {
+    return HAL_BUSY;
+  }
+}
+
 
 /**
   * @}
@@ -1584,7 +1686,7 @@ static HAL_StatusTypeDef SMBUS_Slave_ISR(SMBUS_HandleTypeDef *hsmbus)
   if(__HAL_SMBUS_GET_FLAG(hsmbus, SMBUS_FLAG_AF) != RESET)
   {
     /* Check that SMBUS transfer finished */
-    /* if yes, normal use case, a NACK is sent by the HOST when Transfer is finished */
+    /* if yes, normal usecase, a NACK is sent by the HOST when Transfer is finished */
     /* Mean XferCount == 0*/
     /* So clear Flag NACKF only */
     if(hsmbus->XferCount == 0U)
@@ -1597,7 +1699,7 @@ static HAL_StatusTypeDef SMBUS_Slave_ISR(SMBUS_HandleTypeDef *hsmbus)
     }
     else
     {
-      /* if no, error use case, a Non-Acknowledge of last Data is generated by the HOST*/
+      /* if no, error usecase, a Non-Acknowledge of last Data is generated by the HOST*/
       /* Clear NACK Flag */
       __HAL_SMBUS_CLEAR_FLAG(hsmbus, SMBUS_FLAG_AF);
 
@@ -1609,7 +1711,7 @@ static HAL_StatusTypeDef SMBUS_Slave_ISR(SMBUS_HandleTypeDef *hsmbus)
 
       /* Disable RX/TX Interrupts, keep only ADDR Interrupt */
       SMBUS_Disable_IRQ(hsmbus, SMBUS_IT_RX | SMBUS_IT_TX);
-
+      
       /* Set ErrorCode corresponding to a Non-Acknowledge */
       hsmbus->ErrorCode |= HAL_SMBUS_ERROR_ACKF;
 
@@ -1626,7 +1728,7 @@ static HAL_StatusTypeDef SMBUS_Slave_ISR(SMBUS_HandleTypeDef *hsmbus)
     SlaveAddrCode = SMBUS_GET_ADDR_MATCH(hsmbus);
       
     /* Disable ADDR interrupt to prevent multiple ADDRInterrupt*/
-    /* Other ADDRInterrupt will be treat in next Listen use case */
+    /* Other ADDRInterrupt will be treat in next Listen usecase */
     __HAL_SMBUS_DISABLE_IT(hsmbus, SMBUS_IT_ADDRI);
     
     /* Process Unlocked */
@@ -1773,7 +1875,7 @@ static HAL_StatusTypeDef SMBUS_Slave_ISR(SMBUS_HandleTypeDef *hsmbus)
       /* Process Unlocked */
       __HAL_UNLOCK(hsmbus);
 
-      /* Call the Listen Complete callback, to prevent upper layer of the end of Listen use case */
+      /* Call the Listen Complete callback, to prevent upper layer of the end of Listen usecase */
       HAL_SMBUS_ListenCpltCallback(hsmbus);
     }
   }

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_fmc.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   FMC Low Layer HAL module driver.
   *
   *          This file provides firmware functions to manage the following
@@ -42,7 +42,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -556,11 +556,11 @@ HAL_StatusTypeDef FMC_NAND_Init(FMC_NAND_TypeDef *Device, FMC_NAND_InitTypeDef *
   assert_param(IS_FMC_TAR_TIME(Init->TARSetupTime));
 
     /* NAND bank 3 registers configuration */
-    MODIFY_REG(Device->PCR, PCR_CLEAR_MASK, (Init->Waitfeature                                                       |
-                                              FMC_PCR_MEMORY_TYPE_NAND                                         |
-                                              Init->MemoryDataWidth                                                   |
-                                              Init->EccComputation                                                    |
-                                              Init->ECCPageSize                                                       |
+    MODIFY_REG(Device->PCR, PCR_CLEAR_MASK, (Init->Waitfeature                                      |
+                                              FMC_PCR_MEMORY_TYPE_NAND                              |
+                                              Init->MemoryDataWidth                                 |
+                                              Init->EccComputation                                  |
+                                              Init->ECCPageSize                                     |
                                               ((Init->TCLRSetupTime) << POSITION_VAL(FMC_PCR_TCLR)) |
                                               ((Init->TARSetupTime) << POSITION_VAL(FMC_PCR_TAR))));
 
@@ -587,10 +587,10 @@ HAL_StatusTypeDef FMC_NAND_CommonSpace_Timing_Init(FMC_NAND_TypeDef *Device, FMC
   assert_param(IS_FMC_NAND_BANK(Bank));
 
     /* NAND bank 3 registers configuration */
-    MODIFY_REG(Device->PMEM, PMEM_CLEAR_MASK, (Timing->SetupTime                      | \
-                                                ((Timing->WaitSetupTime) << POSITION_VAL(FMC_PMEM_MEMWAIT))      | \
-                                                ((Timing->HoldSetupTime) << POSITION_VAL(FMC_PMEM_MEMHOLD))      | \
-                                                ((Timing->HiZSetupTime) << POSITION_VAL(FMC_PMEM_MEMHIZ))));
+    MODIFY_REG(Device->PMEM, PMEM_CLEAR_MASK, (Timing->SetupTime                                           |
+                                               ((Timing->WaitSetupTime) << POSITION_VAL(FMC_PMEM_MEMWAIT)) |
+                                               ((Timing->HoldSetupTime) << POSITION_VAL(FMC_PMEM_MEMHOLD)) |
+                                               ((Timing->HiZSetupTime) << POSITION_VAL(FMC_PMEM_MEMHIZ))));
 
   return HAL_OK;
 }
@@ -614,10 +614,10 @@ HAL_StatusTypeDef FMC_NAND_AttributeSpace_Timing_Init(FMC_NAND_TypeDef *Device, 
   assert_param(IS_FMC_NAND_BANK(Bank));
 
     /* NAND bank 3 registers configuration */
-    MODIFY_REG(Device->PATT, PATT_CLEAR_MASK, (Timing->SetupTime                       | \
-                                                ((Timing->WaitSetupTime) << POSITION_VAL(FMC_PATT_ATTWAIT))       | \
-                                                ((Timing->HoldSetupTime) << POSITION_VAL(FMC_PATT_ATTHOLD))       | \
-                                                ((Timing->HiZSetupTime) << POSITION_VAL(FMC_PATT_ATTHIZ))));
+    MODIFY_REG(Device->PATT, PATT_CLEAR_MASK, (Timing->SetupTime                                           |
+                                               ((Timing->WaitSetupTime) << POSITION_VAL(FMC_PATT_ATTWAIT)) |
+                                               ((Timing->HoldSetupTime) << POSITION_VAL(FMC_PATT_ATTHOLD)) |
+                                               ((Timing->HiZSetupTime) << POSITION_VAL(FMC_PATT_ATTHIZ))));
 
   return HAL_OK;
 }

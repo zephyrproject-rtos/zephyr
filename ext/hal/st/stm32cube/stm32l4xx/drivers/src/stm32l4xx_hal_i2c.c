@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_i2c.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   I2C HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Inter Integrated Circuit (I2C) peripheral:
@@ -213,7 +213,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -755,7 +755,7 @@ HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAd
   uint32_t tickstart = 0U;
 
   if(hi2c->State == HAL_I2C_STATE_READY)
-  {    
+  {
     /* Process Locked */
     __HAL_LOCK(hi2c);
 
@@ -843,7 +843,7 @@ HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAd
         return HAL_TIMEOUT;
       }
     }
-    
+
     /* Clear STOP Flag */
     __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_STOPF);
 
@@ -885,7 +885,7 @@ HAL_StatusTypeDef HAL_I2C_Slave_Transmit(I2C_HandleTypeDef *hi2c, uint8_t *pData
     }
     /* Process Locked */
     __HAL_LOCK(hi2c);
-    
+
     /* Init tickstart for timeout management*/
     tickstart = HAL_GetTick();
 
@@ -966,9 +966,9 @@ HAL_StatusTypeDef HAL_I2C_Slave_Transmit(I2C_HandleTypeDef *hi2c, uint8_t *pData
 
       if(hi2c->ErrorCode == HAL_I2C_ERROR_AF)
       {
-	/* Normal use case for Transmitter mode */
-	/* A NACK is generated to confirm the end of transfer */
-	hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
+        /* Normal use case for Transmitter mode */
+        /* A NACK is generated to confirm the end of transfer */
+        hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
       }
       else
       {
@@ -1018,7 +1018,7 @@ HAL_StatusTypeDef HAL_I2C_Slave_Receive(I2C_HandleTypeDef *hi2c, uint8_t *pData,
   uint32_t tickstart = 0U;
 
   if(hi2c->State == HAL_I2C_STATE_READY)
-  {  
+  {
     if((pData == NULL) || (Size == 0U))
     {
       return  HAL_ERROR;
@@ -1667,7 +1667,7 @@ HAL_StatusTypeDef HAL_I2C_Slave_Receive_DMA(I2C_HandleTypeDef *hi2c, uint8_t *pD
     if((pData == NULL) || (Size == 0U)) 
     {
       return  HAL_ERROR;
-    }   
+    }
     /* Process Locked */
     __HAL_LOCK(hi2c);
 
@@ -2605,13 +2605,13 @@ HAL_StatusTypeDef HAL_I2C_Master_Sequential_Transmit_IT(I2C_HandleTypeDef *hi2c,
       hi2c->XferSize = hi2c->XferCount;
       xfermode = hi2c->XferOptions;
     }
-      
-      /* If transfer direction not change, do not generate Restart Condition */
-      /* Mean Previous state is same as current state */
+
+    /* If transfer direction not change, do not generate Restart Condition */
+    /* Mean Previous state is same as current state */
     if(hi2c->PreviousState == I2C_STATE_MASTER_BUSY_TX)
-      {
-        xferrequest = I2C_NO_STARTSTOP;
-      }
+    {
+      xferrequest = I2C_NO_STARTSTOP;
+    }
 
     /* Send Slave Address and set NBYTES to write */
     I2C_TransferConfig(hi2c, DevAddress, hi2c->XferSize, xfermode, xferrequest);
@@ -2679,11 +2679,11 @@ HAL_StatusTypeDef HAL_I2C_Master_Sequential_Receive_IT(I2C_HandleTypeDef *hi2c, 
       xfermode = hi2c->XferOptions;
     }
 
-      /* If transfer direction not change, do not generate Restart Condition */
-      /* Mean Previous state is same as current state */
-      if(hi2c->PreviousState == I2C_STATE_MASTER_BUSY_RX)
-      {
-        xferrequest = I2C_NO_STARTSTOP;
+    /* If transfer direction not change, do not generate Restart Condition */
+    /* Mean Previous state is same as current state */
+    if(hi2c->PreviousState == I2C_STATE_MASTER_BUSY_RX)
+    {
+      xferrequest = I2C_NO_STARTSTOP;
     }
 
     /* Send Slave Address and set NBYTES to read */
@@ -3292,7 +3292,7 @@ static HAL_StatusTypeDef I2C_Master_ISR_IT(struct __I2C_HandleTypeDef *hi2c, uin
     /* Write data to TXDR */
     hi2c->Instance->TXDR = (*hi2c->pBuffPtr++);
     hi2c->XferSize--;
-    hi2c->XferCount--;	
+    hi2c->XferCount--;
   }
   else if(((ITFlags & I2C_FLAG_TCR) != RESET) && ((ITSources & I2C_IT_TCI) != RESET))
   {

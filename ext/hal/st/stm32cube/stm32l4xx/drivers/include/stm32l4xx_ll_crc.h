@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_crc.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of CRC LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -70,7 +70,7 @@ extern "C" {
 /** @defgroup CRC_LL_EC_POLYLENGTH Polynomial length
   * @{
   */
-#define LL_CRC_POLYLENGTH_32B              (uint32_t)0x00000000U                    /*!< 32 bits Polynomial size */
+#define LL_CRC_POLYLENGTH_32B              0x00000000U                              /*!< 32 bits Polynomial size */
 #define LL_CRC_POLYLENGTH_16B              CRC_CR_POLYSIZE_0                        /*!< 16 bits Polynomial size */
 #define LL_CRC_POLYLENGTH_8B               CRC_CR_POLYSIZE_1                        /*!< 8 bits Polynomial size */
 #define LL_CRC_POLYLENGTH_7B               (CRC_CR_POLYSIZE_1 | CRC_CR_POLYSIZE_0)  /*!< 7 bits Polynomial size */
@@ -81,7 +81,7 @@ extern "C" {
 /** @defgroup CRC_LL_EC_INDATA_REVERSE Input Data Reverse
   * @{
   */
-#define LL_CRC_INDATA_REVERSE_NONE         (uint32_t)0x00000000U                    /*!< Input Data bit order not affected */
+#define LL_CRC_INDATA_REVERSE_NONE         0x00000000U                              /*!< Input Data bit order not affected */
 #define LL_CRC_INDATA_REVERSE_BYTE         CRC_CR_REV_IN_0                          /*!< Input Data bit reversal done by byte */
 #define LL_CRC_INDATA_REVERSE_HALFWORD     CRC_CR_REV_IN_1                          /*!< Input Data bit reversal done by half-word */
 #define LL_CRC_INDATA_REVERSE_WORD         (CRC_CR_REV_IN_1 | CRC_CR_REV_IN_0)      /*!< Input Data bit reversal done by word */
@@ -92,7 +92,7 @@ extern "C" {
 /** @defgroup CRC_LL_EC_OUTDATA_REVERSE Output Data Reverse
   * @{
   */
-#define LL_CRC_OUTDATA_REVERSE_NONE        (uint32_t)0x00000000U                     /*!< Output Data bit order not affected */
+#define LL_CRC_OUTDATA_REVERSE_NONE        0x00000000U                               /*!< Output Data bit order not affected */
 #define LL_CRC_OUTDATA_REVERSE_BIT         CRC_CR_REV_OUT                            /*!< Output Data bit reversal done by bit */
 /**
   * @}
@@ -103,7 +103,7 @@ extern "C" {
   *           X^32 + X^26 + X^23 + X^22 + X^16 + X^12 + X^11 + X^10 +X^8 + X^7 + X^5 + X^4 + X^2 + X + 1 .
   * @{
   */
-#define LL_CRC_DEFAULT_CRC32_POLY          (uint32_t)0x04C11DB7U                     /*!< Default CRC generating polynomial value */
+#define LL_CRC_DEFAULT_CRC32_POLY          0x04C11DB7U                               /*!< Default CRC generating polynomial value */
 /**
   * @}
   */
@@ -111,7 +111,7 @@ extern "C" {
 /** @defgroup CRC_LL_EC_Default_InitValue    Default CRC computation initialization value
   * @{
   */
-#define LL_CRC_DEFAULT_CRC_INITVALUE       (uint32_t)0xFFFFFFFFU                     /*!< Default CRC computation initialization value */
+#define LL_CRC_DEFAULT_CRC_INITVALUE       0xFFFFFFFFU                               /*!< Default CRC computation initialization value */
 /**
   * @}
   */
