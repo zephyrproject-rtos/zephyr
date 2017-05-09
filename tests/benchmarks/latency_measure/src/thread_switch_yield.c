@@ -30,6 +30,7 @@ static u32_t helper_thread_iterations;
 #define Y_PRIORITY      10
 
 char __noinit __stack y_stack_area[Y_STACK_SIZE];
+static struct k_thread y_thread;
 
 /**
  *
@@ -63,8 +64,9 @@ void thread_switch_yield(void)
 	bench_test_start();
 
 	/* launch helper thread of the same priority than this routine */
-	k_thread_spawn(y_stack_area, Y_STACK_SIZE, yielding_thread, NULL, NULL, NULL,
-		       Y_PRIORITY, 0, K_NO_WAIT);
+	k_thread_create(&y_thread, y_stack_area, Y_STACK_SIZE,
+			yielding_thread, NULL, NULL, NULL,
+			Y_PRIORITY, 0, K_NO_WAIT);
 
 	/* get initial timestamp */
 	timestamp = TIME_STAMP_DELTA_GET(0);

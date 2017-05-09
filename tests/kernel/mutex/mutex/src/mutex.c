@@ -227,6 +227,7 @@ void Task11(void)
 }
 
 char __noinit __stack task12_stack_area[STACKSIZE];
+struct k_thread task12_thread_data;
 extern void Task12(void);
 
 /**
@@ -360,9 +361,9 @@ void RegressionTask(void)
 	}
 
 		/* Start thread */
-	k_thread_spawn(task12_stack_area, STACKSIZE,
-		       (k_thread_entry_t)Task12, NULL, NULL, NULL,
-		       K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
+	k_thread_create(&task12_thread_data, task12_stack_area, STACKSIZE,
+			(k_thread_entry_t)Task12, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
 	k_sleep(1);	/* Give Task12 a chance to block on the mutex */
 
 	k_mutex_unlock(&private_mutex);

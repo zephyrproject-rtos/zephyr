@@ -7,7 +7,8 @@
 #include "soc_watch_logger.h"
 
 #define STSIZE 512
-char __stack soc_watch_event_logger_stack[1][STSIZE];
+static char __stack __noinit soc_watch_event_logger_stack[STSIZE];
+static struct k_thread soc_watch_event_logger_data;
 
 /**
  * @brief soc_watch data collector thread
@@ -91,7 +92,8 @@ void soc_watch_logger_thread_start(void)
 {
 	PRINTF("\x1b[2J\x1b[15;1H");
 
-	k_thread_spawn(&soc_watch_event_logger_stack[0][0], STSIZE,
+	k_thread_create(&soc_watch_event_logger_data,
+			soc_watch_event_logger_stack, STSIZE,
 			(k_thread_entry_t) soc_watch_data_collector, 0, 0, 0,
 			6, 0, 0);
 }

@@ -46,6 +46,9 @@ static char __stack helper_thread_stack[THREAD_STACK];
 static k_tid_t  test_thread_id;
 static k_tid_t  helper_thread_id;
 
+static struct k_thread test_thread_data;
+static struct k_thread helper_thread_data;
+
 static bool test_failure = true;     /* Assume the test will fail */
 
 static void test_objects_init(void)
@@ -185,15 +188,19 @@ void main(void)
 
 	test_objects_init();
 
-	test_thread_id = k_thread_spawn(test_thread_stack, THREAD_STACK,
-			 (k_thread_entry_t) test_thread, 0, 0, NULL,
-			 TEST_THREAD_PRIORITY, 0, 0);
+	test_thread_id = k_thread_create(&test_thread_data, test_thread_stack,
+					 THREAD_STACK,
+					 (k_thread_entry_t) test_thread,
+					 0, 0, NULL, TEST_THREAD_PRIORITY,
+					 0, 0);
 
 	TC_PRINT("Test thread started: id = %p\n", test_thread_id);
 
-	helper_thread_id = k_thread_spawn(helper_thread_stack, THREAD_STACK,
-			(k_thread_entry_t) helper_thread, 0, 0, NULL,
-			HELPER_THREAD_PRIORITY, 0, 0);
+	helper_thread_id = k_thread_create(&helper_thread_data,
+					   helper_thread_stack, THREAD_STACK,
+					   (k_thread_entry_t) helper_thread,
+					   0, 0, NULL, HELPER_THREAD_PRIORITY,
+					   0, 0);
 
 	TC_PRINT("Helper thread started: id = %p\n", helper_thread_id);
 

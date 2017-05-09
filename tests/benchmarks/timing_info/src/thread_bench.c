@@ -46,6 +46,8 @@ k_tid_t consumer_tid;
 #define STACK_SIZE 500
 char __noinit __stack my_stack_area[STACK_SIZE];
 char __noinit __stack my_stack_area_0[STACK_SIZE];
+struct k_thread my_thread;
+struct k_thread my_thread_0;
 
 u32_t __read_swap_end_tsc_value_test = 1;
 u64_t dummy_time;
@@ -171,11 +173,10 @@ void system_thread_bench(void)
 
 
 	/* to measure context switch time */
-	k_thread_spawn(my_stack_area_0,
-		       STACK_SIZE,
-		       thread_swap_test,
-		       NULL, NULL, NULL,
-		       -1 /*priority*/, 0, 0);
+	k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
+			thread_swap_test,
+			NULL, NULL, NULL,
+			-1 /*priority*/, 0, 0);
 
 	thread_abort_end_tsc = (__common_var_swap_end_tsc);
 	__end_swap_tsc = __common_var_swap_end_tsc;
@@ -196,11 +197,11 @@ void system_thread_bench(void)
 	/* thread create*/
 	thread_create_start_tsc = OS_GET_TIME();
 
-	k_tid_t my_tid = k_thread_spawn(my_stack_area,
-					STACK_SIZE,
-					thread_swap_test,
-					NULL, NULL, NULL,
-					5 /*priority*/, 0, 10);
+	k_tid_t my_tid = k_thread_create(&my_thread, my_stack_area,
+					 STACK_SIZE,
+					 thread_swap_test,
+					 NULL, NULL, NULL,
+					 5 /*priority*/, 0, 10);
 
 	thread_create_end_tsc = OS_GET_TIME();
 
@@ -212,11 +213,11 @@ void system_thread_bench(void)
 	ARG_UNUSED(ret_value_thread_cancel);
 
 	/* Thread suspend*/
-	k_tid_t sus_res_tid = k_thread_spawn(my_stack_area,
-					     STACK_SIZE,
-					     thread_suspend_test,
-					     NULL, NULL, NULL,
-					     -1 /*priority*/, 0, 0);
+	k_tid_t sus_res_tid = k_thread_create(&my_thread, my_stack_area,
+					      STACK_SIZE,
+					      thread_suspend_test,
+					      NULL, NULL, NULL,
+					      -1 /*priority*/, 0, 0);
 
 	thread_suspend_end_tsc = OS_GET_TIME();
 	/* At this point test for resume*/

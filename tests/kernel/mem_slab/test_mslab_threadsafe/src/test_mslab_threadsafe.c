@@ -27,6 +27,7 @@
 K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE1, BLK_NUM, BLK_ALIGN);
 static struct k_mem_slab mslab2, *slabs[SLAB_NUM] = {&mslab1, &mslab2};
 static char __noinit __stack tstack[THREAD_NUM][STACK_SIZE];
+static struct k_thread tdata[THREAD_NUM];
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE2 * BLK_NUM];
 static struct k_sem sync_sema;
 static atomic_t slab_id;
@@ -65,7 +66,7 @@ void test_mslab_threadsafe(void)
 
 	/* create multiple threads to invoke same memory slab APIs*/
 	for (int i = 0; i < THREAD_NUM; i++) {
-		tid[i] = k_thread_spawn(tstack[i], STACK_SIZE,
+		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 			tmslab_api, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), 0, 0);
 	}

@@ -14,6 +14,7 @@
 
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static int execute_flag;
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -41,9 +42,9 @@ void test_threads_cancel_undelayed(void)
 	/* spawn thread with lower priority */
 	int spawn_prio = cur_prio + 1;
 
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry, NULL, NULL, NULL,
-				     spawn_prio, 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      spawn_prio, 0, 0);
 
 	/**TESTPOINT: check cancel retcode when thread is not delayed*/
 	int cancel_ret = k_thread_cancel(tid);
@@ -59,9 +60,9 @@ void test_threads_cancel_started(void)
 	/* spawn thread with lower priority */
 	int spawn_prio = cur_prio + 1;
 
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry, NULL, NULL, NULL,
-				     spawn_prio, 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      spawn_prio, 0, 0);
 
 	k_sleep(50);
 	/**TESTPOINT: check cancel retcode when thread is started*/
@@ -78,9 +79,9 @@ void test_threads_cancel_delayed(void)
 	/* spawn thread with lower priority */
 	int spawn_prio = cur_prio + 1;
 
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry, NULL, NULL, NULL,
-				     spawn_prio, 0, 100);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      spawn_prio, 0, 100);
 
 	k_sleep(50);
 	/**TESTPOINT: check cancel retcode when thread is started*/
@@ -93,9 +94,9 @@ void test_threads_cancel_delayed(void)
 void test_threads_abort_self(void)
 {
 	execute_flag = 0;
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry_abort, NULL, NULL, NULL,
-				     0, 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry_abort, NULL, NULL, NULL,
+				      0, 0, 0);
 	k_sleep(100);
 	/**TESTPOINT: spawned thread executed but abort itself*/
 	zassert_true(execute_flag == 1, NULL);
@@ -105,18 +106,18 @@ void test_threads_abort_self(void)
 void test_threads_abort_others(void)
 {
 	execute_flag = 0;
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry, NULL, NULL, NULL,
-				     0, 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      0, 0, 0);
 
 	k_thread_abort(tid);
 	k_sleep(100);
 	/**TESTPOINT: check not-started thread is aborted*/
 	zassert_true(execute_flag == 0, NULL);
 
-	tid = k_thread_spawn(tstack, STACK_SIZE,
-			     thread_entry, NULL, NULL, NULL,
-			     0, 0, 0);
+	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			      thread_entry, NULL, NULL, NULL,
+			      0, 0, 0);
 	k_sleep(50);
 	k_thread_abort(tid);
 	/**TESTPOINT: check running thread is aborted*/
