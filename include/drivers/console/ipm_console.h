@@ -77,6 +77,9 @@ struct ipm_console_receiver_runtime_data {
 	 * full buffer
 	 */
 	int channel_disabled;
+
+	/** Receiver worker thread */
+	struct k_thread rx_thread;
 };
 
 struct ipm_console_sender_config_info {
