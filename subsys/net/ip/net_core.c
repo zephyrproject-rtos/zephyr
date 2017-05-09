@@ -59,7 +59,7 @@
 
 NET_STACK_DEFINE(RX, rx_stack, CONFIG_NET_RX_STACK_SIZE,
 		 CONFIG_NET_RX_STACK_SIZE + CONFIG_NET_RX_STACK_RPL);
-
+static struct k_thread rx_thread_data;
 static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
 static K_SEM_DEFINE(startup_sync, 0, UINT_MAX);
@@ -186,10 +186,10 @@ static void init_rx_queue(void)
 {
 	k_fifo_init(&rx_queue);
 
-	rx_tid = k_thread_spawn(rx_stack, sizeof(rx_stack),
-				(k_thread_entry_t)net_rx_thread,
-				NULL, NULL, NULL, K_PRIO_COOP(8),
-				K_ESSENTIAL, K_NO_WAIT);
+	rx_tid = k_thread_create(&rx_thread_data, rx_stack, sizeof(rx_stack),
+				 (k_thread_entry_t)net_rx_thread,
+				 NULL, NULL, NULL, K_PRIO_COOP(8),
+				 K_ESSENTIAL, K_NO_WAIT);
 }
 
 #if defined(CONFIG_NET_IP_ADDR_CHECK)
