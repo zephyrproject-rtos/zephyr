@@ -335,11 +335,10 @@ static int nrf5_init(struct device *dev)
 
 	nrf5_radio_cfg->irq_config_func(dev);
 
-	k_thread_spawn(nrf5_radio->rx_stack,
-		       CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
-		       nrf5_rx_thread,
-		       dev, NULL, NULL,
-		       K_PRIO_COOP(2), 0, 0);
+	k_thread_create(&nrf5_radio->rx_thread, nrf5_radio->rx_stack,
+			CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
+			nrf5_rx_thread, dev, NULL, NULL,
+			K_PRIO_COOP(2), 0, 0);
 
 	SYS_LOG_INF("nRF5 802154 radio initialized");
 

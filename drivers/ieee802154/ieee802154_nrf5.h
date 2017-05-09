@@ -28,6 +28,8 @@ struct nrf5_802154_data {
 	u8_t mac[8];
 	/* RX thread stack. */
 	char __stack rx_stack[CONFIG_IEEE802154_NRF5_RX_STACK_SIZE];
+	/* RX thread control block */
+	struct k_thread rx_thread;
 
 	/* CCA complete sempahore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
