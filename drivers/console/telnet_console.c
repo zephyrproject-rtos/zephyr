@@ -67,6 +67,7 @@ struct line_buf_rb {
 static struct line_buf_rb telnet_rb;
 
 static char __noinit __stack telnet_stack[TELNET_STACK_SIZE];
+static struct k_thread telnet_thread_data;
 static K_SEM_DEFINE(send_lock, 0, UINT_MAX);
 
 /* The timer is used to send non-lf terminated output that has
@@ -541,11 +542,11 @@ static int telnet_console_init(struct device *arg)
 			    sizeof(any_addr6));
 #endif
 
-	k_thread_spawn(&telnet_stack[0],
-		       TELNET_STACK_SIZE,
-		       (k_thread_entry_t)telnet_run,
-		       NULL, NULL, NULL,
-		       K_PRIO_COOP(TELNET_PRIORITY), 0, K_MSEC(10));
+	k_thread_create(&telnet_thread_data, telnet_stack,
+			TELNET_STACK_SIZE,
+			(k_thread_entry_t)telnet_run,
+			NULL, NULL, NULL,
+			K_PRIO_COOP(TELNET_PRIORITY), 0, K_MSEC(10));
 
 	SYS_LOG_INF("Telnet console initialized");
 
