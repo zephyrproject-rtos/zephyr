@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_wwdg.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of WWDG LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -82,7 +82,7 @@ extern "C" {
 /** @defgroup WWDG_LL_EC_PRESCALER  PRESCALER
 * @{
 */
-#define LL_WWDG_PRESCALER_1                (uint32_t)0x00000000U                                   /*!< WWDG counter clock = (PCLK1/4096)/1 */
+#define LL_WWDG_PRESCALER_1                0x00000000U                                             /*!< WWDG counter clock = (PCLK1/4096)/1 */
 #define LL_WWDG_PRESCALER_2                WWDG_CFR_WDGTB_0                                        /*!< WWDG counter clock = (PCLK1/4096)/2 */
 #define LL_WWDG_PRESCALER_4                WWDG_CFR_WDGTB_1                                        /*!< WWDG counter clock = (PCLK1/4096)/4 */
 #define LL_WWDG_PRESCALER_8                (WWDG_CFR_WDGTB_0 | WWDG_CFR_WDGTB_1)                   /*!< WWDG counter clock = (PCLK1/4096)/8 */

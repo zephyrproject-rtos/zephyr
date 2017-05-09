@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_pwr.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of PWR LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -136,7 +136,7 @@ extern "C" {
   * @}
   */
 
-/** @defgroup PWR_LL_EC_PVM_VDDUSB_1 PVM VDDUSB 1
+/** @defgroup PWR_LL_EC_PVM_VDDUSB_1 Peripheral voltage monitoring
   * @{
   */
 #if defined(PWR_CR2_PVME1)
@@ -207,6 +207,9 @@ extern "C" {
 #endif
 #if defined(GPIOH)
 #define LL_PWR_GPIO_H                      ((uint32_t)(&(PWR->PUCRH)))
+#endif
+#if defined(GPIOI)
+#define LL_PWR_GPIO_I                      ((uint32_t)(&(PWR->PUCRI)))
 #endif
 /**
   * @}
@@ -521,7 +524,7 @@ __STATIC_INLINE void LL_PWR_DisablePVM(uint32_t PeriphVoltage)
 }
 
 /**
-  * @brief  Check if Power Voltage Monitoring  is enabled on a peripheral
+  * @brief  Check if Power Voltage Monitoring is enabled on a peripheral
   * @rmtoll CR2          PVME1         LL_PWR_IsEnabledPVM\n
   *         CR2          PVME2         LL_PWR_IsEnabledPVM\n
   *         CR2          PVME3         LL_PWR_IsEnabledPVM\n
@@ -881,7 +884,8 @@ __STATIC_INLINE uint32_t LL_PWR_IsWakeUpPinPolarityLow(uint32_t WakeUpPin)
   *         PUCRE        PU0-15        LL_PWR_EnableGPIOPullUp\n
   *         PUCRF        PU0-15        LL_PWR_EnableGPIOPullUp\n
   *         PUCRG        PU0-15        LL_PWR_EnableGPIOPullUp\n
-  *         PUCRH        PU0-1         LL_PWR_EnableGPIOPullUp
+  *         PUCRH        PU0-15        LL_PWR_EnableGPIOPullUp\n
+  *         PUCRI        PU0-11        LL_PWR_EnableGPIOPullUp
   * @param  GPIO This parameter can be one of the following values:
   *         @arg @ref LL_PWR_GPIO_A
   *         @arg @ref LL_PWR_GPIO_B
@@ -891,6 +895,7 @@ __STATIC_INLINE uint32_t LL_PWR_IsWakeUpPinPolarityLow(uint32_t WakeUpPin)
   *         @arg @ref LL_PWR_GPIO_F (*)
   *         @arg @ref LL_PWR_GPIO_G (*)
   *         @arg @ref LL_PWR_GPIO_H
+  *         @arg @ref LL_PWR_GPIO_I (*)
   *
   *         (*) value not defined in all devices
   * @param  GPIONumber This parameter can be one of the following values:
@@ -926,7 +931,8 @@ __STATIC_INLINE void LL_PWR_EnableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber)
   *         PUCRE        PU0-15        LL_PWR_DisableGPIOPullUp\n
   *         PUCRF        PU0-15        LL_PWR_DisableGPIOPullUp\n
   *         PUCRG        PU0-15        LL_PWR_DisableGPIOPullUp\n
-  *         PUCRH        PU0-1         LL_PWR_DisableGPIOPullUp
+  *         PUCRH        PU0-15        LL_PWR_DisableGPIOPullUp\n
+  *         PUCRI        PU0-11        LL_PWR_DisableGPIOPullUp
   * @param  GPIO This parameter can be one of the following values:
   *         @arg @ref LL_PWR_GPIO_A
   *         @arg @ref LL_PWR_GPIO_B
@@ -936,6 +942,7 @@ __STATIC_INLINE void LL_PWR_EnableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber)
   *         @arg @ref LL_PWR_GPIO_F (*)
   *         @arg @ref LL_PWR_GPIO_G (*)
   *         @arg @ref LL_PWR_GPIO_H
+  *         @arg @ref LL_PWR_GPIO_I (*)
   *
   *         (*) value not defined in all devices
   * @param  GPIONumber This parameter can be one of the following values:
@@ -971,7 +978,8 @@ __STATIC_INLINE void LL_PWR_DisableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber
   *         PUCRE        PU0-15        LL_PWR_IsEnabledGPIOPullUp\n
   *         PUCRF        PU0-15        LL_PWR_IsEnabledGPIOPullUp\n
   *         PUCRG        PU0-15        LL_PWR_IsEnabledGPIOPullUp\n
-  *         PUCRH        PU0-1         LL_PWR_IsEnabledGPIOPullUp
+  *         PUCRH        PU0-15        LL_PWR_IsEnabledGPIOPullUp\n
+  *         PUCRI        PU0-11        LL_PWR_IsEnabledGPIOPullUp
   * @param  GPIO This parameter can be one of the following values:
   *         @arg @ref LL_PWR_GPIO_A
   *         @arg @ref LL_PWR_GPIO_B
@@ -981,6 +989,7 @@ __STATIC_INLINE void LL_PWR_DisableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber
   *         @arg @ref LL_PWR_GPIO_F (*)
   *         @arg @ref LL_PWR_GPIO_G (*)
   *         @arg @ref LL_PWR_GPIO_H
+  *         @arg @ref LL_PWR_GPIO_I (*)
   *
   *         (*) value not defined in all devices
   * @param  GPIONumber This parameter can be one of the following values:
@@ -1016,7 +1025,8 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledGPIOPullUp(uint32_t GPIO, uint32_t GPIO
   *         PDCRE        PD0-15        LL_PWR_EnableGPIOPullDown\n
   *         PDCRF        PD0-15        LL_PWR_EnableGPIOPullDown\n
   *         PDCRG        PD0-15        LL_PWR_EnableGPIOPullDown\n
-  *         PDCRH        PD0-1         LL_PWR_EnableGPIOPullDown
+  *         PDCRH        PD0-15        LL_PWR_EnableGPIOPullDown\n
+  *         PDCRI        PD0-11        LL_PWR_EnableGPIOPullDown
   * @param  GPIO This parameter can be one of the following values:
   *         @arg @ref LL_PWR_GPIO_A
   *         @arg @ref LL_PWR_GPIO_B
@@ -1026,6 +1036,7 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledGPIOPullUp(uint32_t GPIO, uint32_t GPIO
   *         @arg @ref LL_PWR_GPIO_F (*)
   *         @arg @ref LL_PWR_GPIO_G (*)
   *         @arg @ref LL_PWR_GPIO_H
+  *         @arg @ref LL_PWR_GPIO_I (*)
   *
   *         (*) value not defined in all devices
   * @param  GPIONumber This parameter can be one of the following values:
@@ -1062,7 +1073,8 @@ __STATIC_INLINE void LL_PWR_EnableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumbe
   *         PDCRE        PD0-15        LL_PWR_DisableGPIOPullDown\n
   *         PDCRF        PD0-15        LL_PWR_DisableGPIOPullDown\n
   *         PDCRG        PD0-15        LL_PWR_DisableGPIOPullDown\n
-  *         PDCRH        PD0-1         LL_PWR_DisableGPIOPullDown
+  *         PDCRH        PD0-15        LL_PWR_DisableGPIOPullDown\n
+  *         PDCRI        PD0-11        LL_PWR_DisableGPIOPullDown
   * @param  GPIO This parameter can be one of the following values:
   *         @arg @ref LL_PWR_GPIO_A
   *         @arg @ref LL_PWR_GPIO_B
@@ -1072,6 +1084,7 @@ __STATIC_INLINE void LL_PWR_EnableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumbe
   *         @arg @ref LL_PWR_GPIO_F (*)
   *         @arg @ref LL_PWR_GPIO_G (*)
   *         @arg @ref LL_PWR_GPIO_H
+  *         @arg @ref LL_PWR_GPIO_I (*)
   *
   *         (*) value not defined in all devices
   * @param  GPIONumber This parameter can be one of the following values:
@@ -1108,7 +1121,8 @@ __STATIC_INLINE void LL_PWR_DisableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumb
   *         PDCRE        PD0-15        LL_PWR_IsEnabledGPIOPullDown\n
   *         PDCRF        PD0-15        LL_PWR_IsEnabledGPIOPullDown\n
   *         PDCRG        PD0-15        LL_PWR_IsEnabledGPIOPullDown\n
-  *         PDCRH        PD0-1         LL_PWR_IsEnabledGPIOPullDown
+  *         PDCRH        PD0-15        LL_PWR_IsEnabledGPIOPullDown\n
+  *         PDCRI        PD0-11        LL_PWR_IsEnabledGPIOPullDown
   * @param  GPIO This parameter can be one of the following values:
   *         @arg @ref LL_PWR_GPIO_A
   *         @arg @ref LL_PWR_GPIO_B
@@ -1118,6 +1132,7 @@ __STATIC_INLINE void LL_PWR_DisableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumb
   *         @arg @ref LL_PWR_GPIO_F (*)
   *         @arg @ref LL_PWR_GPIO_G (*)
   *         @arg @ref LL_PWR_GPIO_H
+  *         @arg @ref LL_PWR_GPIO_I (*)
   *
   *         (*) value not defined in all devices
   * @param  GPIONumber This parameter can be one of the following values:
@@ -1349,10 +1364,10 @@ __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_PVDO(void)
 
 /**
   * @brief  Indicate whether the regulator is ready in the selected voltage range or if its output voltage is still changing to the required voltage level
-  * @rmtoll SR2          VOSF          LL_PWR_IsActiveFlag_VOSF
+  * @rmtoll SR2          VOSF          LL_PWR_IsActiveFlag_VOS
   * @retval State of bit (1 or 0).
   */
-__STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_VOSF(void)
+__STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_VOS(void)
 {
   return (READ_BIT(PWR->SR2, PWR_SR2_VOSF) == (PWR_SR2_VOSF));
 }
@@ -1378,6 +1393,10 @@ __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_REGLPS(void)
   return (READ_BIT(PWR->SR2, PWR_SR2_REGLPS) == (PWR_SR2_REGLPS));
 }
 
+/**
+  * @}
+  */
+
 #if defined(USE_FULL_LL_DRIVER)
 /** @defgroup PWR_LL_EF_Init De-initialization function
   * @{
@@ -1388,10 +1407,15 @@ ErrorStatus LL_PWR_DeInit(void);
   */
 #endif /* USE_FULL_LL_DRIVER */
 
+/** Legacy definitions for compatibility purpose
+@cond 0
+*/
+/* Old functions name kept for legacy purpose, to be replaced by the          */
+/* current functions name.                                                    */
+#define LL_PWR_IsActiveFlag_VOSF  LL_PWR_IsActiveFlag_VOS
 /**
-  * @}
+@endcond
   */
-
 
 /**
   * @}

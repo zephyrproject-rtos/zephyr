@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.6.0 
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of ADC HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -193,11 +193,11 @@ typedef struct
   ADC_OversamplingTypeDef Oversampling;   /*!< Specify the Oversampling parameters.
                                                Caution: this setting overwrites the previous oversampling configuration if oversampling is already enabled. */
 
-#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
   uint32_t DFSDMConfig;           /*!< Specify whether ADC conversion data is sent directly to DFSDM.
                                        This parameter can be a value of @ref ADCEx_DFSDM_Mode_Configuration.
                                        Note: This parameter can be modified only if there is no conversion is ongoing (both ADSTART and JADSTART cleared). */                                               
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx */                                                                                          
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L496xx || STM32L4A6xx */                                                                                          
 }ADC_InitTypeDef;
 
 /**

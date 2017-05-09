@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rtc_ex.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Extended RTC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Real Time Clock (RTC) Extended peripheral:
@@ -91,7 +91,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -719,11 +719,11 @@ void HAL_RTCEx_TamperTimeStampIRQHandler(RTC_HandleTypeDef *hrtc)
     /* Get the TimeStamp interrupt source enable status and pending flag status */
     if((__HAL_RTC_TIMESTAMP_GET_IT_SOURCE(hrtc, RTC_IT_TS) != RESET) && (__HAL_RTC_TIMESTAMP_GET_FLAG(hrtc, RTC_FLAG_TSF) != RESET))
     {
-      /* Clear the TIMESTAMP interrupt pending bit */
-      __HAL_RTC_TIMESTAMP_CLEAR_FLAG(hrtc, RTC_FLAG_TSF);
-      
       /* TIMESTAMP callback */ 
       HAL_RTCEx_TimeStampEventCallback(hrtc);
+      
+      /* Clear the TIMESTAMP interrupt pending bit (this will clear timestamp time and date registers) */
+      __HAL_RTC_TIMESTAMP_CLEAR_FLAG(hrtc, RTC_FLAG_TSF);
     }
 
 #if defined(RTC_TAMPER1_SUPPORT)
@@ -1122,8 +1122,11 @@ HAL_StatusTypeDef HAL_RTCEx_SetWakeUpTimer_IT(RTC_HandleTypeDef *hrtc, uint32_t 
       }
     }
   }
-
+  /* Disable the Wake-Up timer */
   __HAL_RTC_WAKEUPTIMER_DISABLE(hrtc);
+
+  /* Clear flag Wake-Up */
+  __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(hrtc, RTC_FLAG_WUTF);
 
   tickstart = HAL_GetTick();
 
