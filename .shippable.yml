@@ -56,7 +56,7 @@ build:
               echo " => New documentation warnings/errors";
             fi;
             echo "- Verify commit message and coding style";
-            ./scripts/ci/check-compliance.py || true;
+            ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
           if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify" ]; then
