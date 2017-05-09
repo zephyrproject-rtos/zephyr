@@ -46,8 +46,10 @@
 static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
 static K_FIFO_DEFINE(recv_fifo);
 
+struct k_thread prio_recv_thread_data;
 static BT_STACK_NOINIT(prio_recv_thread_stack,
 		       CONFIG_BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE);
+struct k_thread recv_thread_data;
 static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 
 #if defined(CONFIG_INIT_STACKS)
@@ -399,13 +401,13 @@ static int hci_driver_open(void)
 	hci_init(NULL);
 #endif
 
-	k_thread_spawn(prio_recv_thread_stack, sizeof(prio_recv_thread_stack),
-		       prio_recv_thread, NULL, NULL, NULL, K_PRIO_COOP(6), 0,
-		       K_NO_WAIT);
+	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
+			sizeof(prio_recv_thread_stack), prio_recv_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(6), 0, K_NO_WAIT);
 
-	k_thread_spawn(recv_thread_stack, sizeof(recv_thread_stack),
-		       recv_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
-		       K_NO_WAIT);
+	k_thread_create(&recv_thread_data, recv_thread_stack,
+			sizeof(recv_thread_stack), recv_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	BT_DBG("Success.");
 

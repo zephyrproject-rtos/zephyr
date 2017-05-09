@@ -74,6 +74,7 @@ static K_SEM_DEFINE(sem_request, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
 static BT_STACK_NOINIT(rx_stack, 448);
+static struct k_thread rx_thread_data;
 
 static struct spi_config spi_conf = {
 	.config = SPI_WORD(8),
@@ -323,9 +324,9 @@ static int bt_spi_open(void)
 	}
 
 	/* Start RX thread */
-	k_thread_spawn(rx_stack, sizeof(rx_stack),
-		       (k_thread_entry_t)bt_spi_rx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_stack, sizeof(rx_stack),
+			(k_thread_entry_t)bt_spi_rx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
 	gpio_pin_write(rst_dev, GPIO_RESET_PIN, 1);
