@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2017 RDA
+# Copyright (c) 2016-2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_5981A
+
+config SOC
+	string
+	default rda5981A
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 160000000
+
+config SRAM_SIZE
+	default 120
+
+config FLASH_SIZE
+	default 500
+
+config NUM_IRQS
+	int
+	default 16
+
+endif # SOC_5981A

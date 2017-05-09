@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2017 RDA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_RDA5981
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+if SOC_FAMILY_RDA5981
+config SOC_FAMILY
+	string
+	default rda_5981
+
+config SOC_RDA_DEBUG
+	bool
+	prompt "Use for RDA SOC DBG"
+	default n
+endif
+
+source "arch/arm/soc/rda_5981/*/Kconfig.soc"

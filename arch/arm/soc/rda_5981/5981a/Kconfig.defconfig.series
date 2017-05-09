@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2017 RDA
+# Copyright (c) 2016-2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_RDA5981
+
+source "arch/arm/soc/rda_5981/5981a/Kconfig.defconfig.5981a"
+
+config SOC_SERIES
+	default 5981a
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 4
+
+config SERIAL
+	def_bool y
+
+if SERIAL
+
+config CONSOLE
+	def_bool y
+
+config UART_CONSOLE
+	def_bool y
+
+config UART_RDA5981A
+	def_bool y
+
+config UART_RDA5981A_PORT_0
+	def_bool y
+
+config UART_RDA5981A_PORT_0_NAME
+	default UART_0
+
+endif #SERIAL
+
+
+endif # SOC_SERIES_RDA5981

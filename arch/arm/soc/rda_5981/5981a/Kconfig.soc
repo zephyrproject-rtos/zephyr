@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2017 RDA
+# Copyright (c) 2016-2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "RDA5981 MCU Selection"
+depends on SOC_SERIES_RDA5981
+
+config SOC_5981A
+	bool "5981a"
+
+endchoice
