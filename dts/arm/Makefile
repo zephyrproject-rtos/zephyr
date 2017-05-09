@@ -8,7 +8,9 @@ dtb-$(CONFIG_BOARD_HEXIWEAR_KW40Z)	=	hexiwear_kw40z.dts_compiled
 dtb-$(CONFIG_BOARD_CC3200_LAUNCHXL)	=	cc3200_launchxl.dts_compiled
 dtb-$(CONFIG_BOARD_CC3220SF_LAUNCHXL)	=	cc3220sf_launchxl.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_L476RG)	=	nucleo_l476rg.dts_compiled
+dtb-$(CONFIG_BOARD_NUCLEO_L432KC)	=	nucleo_l432kc.dts_compiled
 dtb-$(CONFIG_BOARD_V2M_BEETLE)		=	v2m_beetle.dts_compiled
+dtb-$(CONFIG_BOARD_MPS2_AN385)		=	mps2_an385.dts_compiled
 dtb-$(CONFIG_BOARD_OLIMEXINO_STM32)	=	olimexino_stm32.dts_compiled
 dtb-$(CONFIG_BOARD_96B_CARBON)		=	96b_carbon.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F401RE)	=	nucleo_f401re.dts_compiled
@@ -30,6 +32,7 @@ dtb-$(CONFIG_BOARD_NRF51_PCA10028)	=	nrf51_pca10028.dts_compiled
 dtb-$(CONFIG_BOARD_QUARK_SE_C1000_BLE)	=	quark_se_c1000_ble.dts_compiled
 dtb-$(CONFIG_BOARD_QEMU_CORTEX_M3)	=	qemu_cortex_m3.dts_compiled
 dtb-$(CONFIG_BOARD_SAM_E70_XPLAINED)	=	sam_e70_xplained.dts_compiled
+dtb-$(CONFIG_BOARD_ARDUINO_DUE)		=	arduino_due.dts_compiled
 
 always	:= $(dtb-y)
 endif

@@ -1,14 +1,18 @@
-The CC3220 SDK provides a peripheral driver library and hardware
-register access header files for the Texas Instruments SimpleLink
-CC3220S and CC3220SF SoCs.
+The SimpleLink SDKs provide peripheral driver and WiFi libraries
+and hardware register access header files for the Texas Instruments
+SimpleLink SoCs.
 
-The current version supported in Zephyr is CC3220 SDK 1.30.01.03,
-downloaded from:
+For an explanation of the SimpleLink family SDK directory structure, see:
+http://dev.ti.com/tirex/content/simplelink_cc13x0_sdk_1_30_00_06/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
+
+The current version supported in Zephyr is the SimpleLink CC3220 SDK
+1.30.01.03, downloaded from:
 
 	http://www.ti.com/tool/download/SIMPLELINK-CC3220-SDK
 
-A subset of the files in driverlib/ and inc/ are copied from a
-Linux CC3220 SDK installation without modification.
+A subset of the files in the source/ti/devices/cc32xx/driverlib/ and inc/
+directories are copied from a Linux CC3220 SDK installation without
+modification.
 
 TI provides the driver library functions burned into ROM at the factory,
 or updated via a service pack patch, thus saving application code space.

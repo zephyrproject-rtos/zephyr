@@ -45,5 +45,5 @@ http://www.st.com/en/ecosystems/stm32cube.html
 
 ti
 -------
-Texas Instruments CC3200 SDK provides a peripheral driver library for
-the SimpleLink WiFi family of SoCs.
+Texas Instruments SimpleLink SDKs provide peripheral and WiFi driver libraries
+for the SimpleLink family of SoCs.
