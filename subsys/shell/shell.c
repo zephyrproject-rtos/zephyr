@@ -44,7 +44,8 @@ static char default_module_prompt[PROMPT_MAX_LEN];
 static int default_module = -1;
 
 #define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
-static char __stack stack[STACKSIZE];
+static char __noinit __stack stack[STACKSIZE];
+static struct k_thread shell_thread;
 
 #define MAX_CMD_QUEUED CONFIG_CONSOLE_SHELL_MAX_CMD_QUEUED
 static struct console_input buf[MAX_CMD_QUEUED];
@@ -522,8 +523,8 @@ void shell_init(const char *str)
 
 	prompt = str ? str : "";
 
-	k_thread_spawn(stack, STACKSIZE, shell, NULL, NULL, NULL,
-		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&shell_thread, stack, STACKSIZE, shell, NULL, NULL,
+			NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Register serial console handler */
 #ifdef CONFIG_UART_CONSOLE
