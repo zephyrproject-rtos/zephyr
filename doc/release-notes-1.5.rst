@@ -83,9 +83,9 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-- Added “qemugdb” target to start a local GDB on port 1234.
+- Added "qemugdb" target to start a local GDB on port 1234.
 - Added script to filter known issues in the build output.
-- Sanity: Added “-R” option to build all test with assertions.
+- Sanity: Added "-R" option to build all test with assertions.
 
 Libraries
 *********
@@ -101,7 +101,7 @@ Documentation
 - Fixed several typos, trademarks and grammar.
 - Moved all the boards documentation to the wiki.
 - Moved Code Contribution documentation to the wiki.
-- Added package “ncurses” to the list of requirements.
+- Added package "ncurses" to the list of requirements.
 - Updated Mac OS X instructions.
 
 Test and Samples

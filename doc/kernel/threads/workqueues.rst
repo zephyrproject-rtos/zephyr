@@ -122,7 +122,7 @@ Attempting to cancel a delayed work item once its timeout has expired has
 no effect on the work item; the work item remains pending in the workqueue's
 queue, unless the work item has already been removed and processed by the
 workqueue's thread. Consequently, once a work item's timeout has expired
-the work item is always processed by the workqueue and cannot be cancelled.
+the work item is always processed by the workqueue and cannot be canceled.
 
 System Workqueue
 ================
@@ -224,7 +224,7 @@ A delayed work item is defined using a variable of type
 An initialized delayed work item can be submitted to the system workqueue by
 calling :cpp:func:`k_delayed_work_submit()`, or to a specified workqueue by
 calling :cpp:func:`k_delayed_work_submit_to_queue()`. A delayed work item
-that has been submitted but not yet consumed by its workqueue can be cancelled
+that has been submitted but not yet consumed by its workqueue can be canceled
 by calling :cpp:func:`k_delayed_work_cancel()`.
 
 Suggested Uses

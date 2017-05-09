@@ -103,7 +103,7 @@ in system clock ticks. This change makes things more intuitive for most
 developers. However, the kernel still implements timeouts using the
 tick-based system clock.
 
-The previous nanokernel timer and microkernel timer object types have beeni
+The previous nanokernel timer and microkernel timer object types have been
 merged into a single type.
 
 Memory Allocation
@@ -123,7 +123,7 @@ from a heap data pool.
 Synchronization
 ***************
 
-The prevous nanokernel semaphore and microkernel semaphore object types have been
+The previous nanokernel semaphore and microkernel semaphore object types have been
 merged into a single type. The new type can now be used as a binary semaphore,
 as well as a counting semaphore.
 
@@ -135,7 +135,7 @@ non-blocking manner or use an additional mechanism, such as an event object,
 to signal the application that one of the semaphores is available.
 
 The previous microkernel event object type is renamed to "alert" and is now presented as
-a relative to Unix-style signalling. Due to improvements to the implementation
+a relative to Unix-style signaling. Due to improvements to the implementation
 of semaphores, alerts are now less efficient to use for basic synchronization
 than semaphores; consequently, alerts should now be reserved for scenarios
 requiring the use of a callback function.

@@ -36,7 +36,7 @@ by another thread, the requesting thread may choose to wait for the mutex
 to be unlocked.
 
 After locking a mutex, the thread may safely use the associated resource
-for as long as needed; however, it is considered good practise to hold the lock
+for as long as needed; however, it is considered good practice to hold the lock
 for as short a time as possible to avoid negatively impacting other threads
 that want to use the resource. When the thread no longer needs the resource
 it must **unlock** the mutex to allow other threads to use the resource.

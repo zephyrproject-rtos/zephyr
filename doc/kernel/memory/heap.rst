@@ -3,7 +3,7 @@
 Heap Memory Pool
 ################
 
-The :dfn:`heap memory pool` is a pre-defined memory pool object that allows
+The :dfn:`heap memory pool` is a predefined memory pool object that allows
 threads to dynamically allocate memory from a common memory region
 in a :cpp:func:`malloc()`-like manner.
 
