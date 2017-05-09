@@ -95,7 +95,8 @@ struct bt_rfcomm_dlc {
 	u8_t                       state;
 	u8_t                       rx_credit;
 
-	/* Stack for TX fiber */
+	/* Stack & kernel data for TX thread */
+	struct k_thread            tx_thread;
 	BT_STACK(stack, 256);
 };
 

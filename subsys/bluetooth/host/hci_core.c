@@ -50,8 +50,10 @@
 
 /* Stacks for the threads */
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+static struct k_thread rx_thread_data;
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 #endif
+static struct k_thread tx_thread_data;
 static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
@@ -3944,15 +3946,16 @@ int bt_enable(bt_ready_cb_t cb)
 	ready_cb = cb;
 
 	/* TX thread */
-	k_thread_spawn(tx_thread_stack, sizeof(tx_thread_stack),
-		       hci_tx_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
-		       K_NO_WAIT);
+	k_thread_create(&tx_thread_data, tx_thread_stack,
+			sizeof(tx_thread_stack), hci_tx_thread, NULL, NULL,
+			NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* RX thread */
-	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
-		       (k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
-		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_thread_stack,
+			sizeof(rx_thread_stack),
+			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {

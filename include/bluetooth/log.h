@@ -89,11 +89,9 @@ static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
 			}
 
 #define BT_STACK(name, size) \
-		char __stack name[(size) + K_THREAD_SIZEOF + \
-				  BT_STACK_DEBUG_EXTRA]
+		char __stack name[(size) + BT_STACK_DEBUG_EXTRA]
 #define BT_STACK_NOINIT(name, size) \
-		char __noinit __stack name[(size) + K_THREAD_SIZEOF + \
-					   BT_STACK_DEBUG_EXTRA]
+		char __noinit __stack name[(size) + BT_STACK_DEBUG_EXTRA]
 
 /* This helper is only available when BLUETOOTH_DEBUG is enabled */
 const char *bt_hex(const void *buf, size_t len);
