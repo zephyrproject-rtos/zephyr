@@ -15,6 +15,7 @@
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 static char __stack sx9500_thread_stack[CONFIG_SX9500_THREAD_STACK_SIZE];
+static struct k_thread sx9500_thread;
 #endif
 
 int sx9500_trigger_set(struct device *dev,
@@ -171,9 +172,10 @@ int sx9500_setup_interrupt(struct device *dev)
 	gpio_pin_enable_callback(gpio, CONFIG_SX9500_GPIO_PIN);
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
-	k_thread_spawn(sx9500_thread_stack, CONFIG_SX9500_THREAD_STACK_SIZE,
-			  sx9500_thread_main, POINTER_TO_INT(dev), 0, NULL,
-			  K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&sx9500_thread, sx9500_thread_stack,
+			CONFIG_SX9500_THREAD_STACK_SIZE,
+			sx9500_thread_main, POINTER_TO_INT(dev), 0, NULL,
+			K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY), 0, 0);
 #endif
 
 	return 0;
