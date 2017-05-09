@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dac_ex.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   DAC HAL module driver.
   *          This file provides firmware functions to manage the extended 
   *          functionalities of the DAC peripheral.  
@@ -30,7 +30,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -199,7 +199,7 @@ HAL_StatusTypeDef HAL_DACEx_NoiseWaveGenerate(DAC_HandleTypeDef* hdac, uint32_t 
 }
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
 
 /**
   * @brief  Set the specified data holding register value for dual DAC channel.
@@ -309,7 +309,7 @@ __weak void HAL_DACEx_DMAUnderrunCallbackCh2(DAC_HandleTypeDef *hdac)
    */
 }
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 
 /**
   * @brief  Run the self calibration of one DAC channel.
@@ -363,20 +363,20 @@ HAL_StatusTypeDef HAL_DACEx_SelfCalibrate (DAC_HandleTypeDef* hdac, DAC_ChannelC
     tmp = (uint32_t)hdac->Instance; 
     
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
-  if(Channel == DAC_CHANNEL_1)
-  {
-    tmp += DAC_DHR12R1_ALIGNMENT(DAC_ALIGN_12B_R);
-  }
-  else
-  {
-    tmp += DAC_DHR12R2_ALIGNMENT(DAC_ALIGN_12B_R);
-  }
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
+    if(Channel == DAC_CHANNEL_1)
+    {
+      tmp += DAC_DHR12R1_ALIGNMENT(DAC_ALIGN_12B_R);
+    }
+    else
+    {
+      tmp += DAC_DHR12R2_ALIGNMENT(DAC_ALIGN_12B_R);
+    }
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 #if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) 
     tmp += DAC_DHR12R1_ALIGNMENT(DAC_ALIGN_12B_R);
-#endif /* STM32L451xx STM32L452xx STM32L462xx */  
+#endif /* STM32L451xx STM32L452xx STM32L462xx */
     *(__IO uint32_t *) tmp = 0x0800;
     
     /* Enable the selected DAC channel calibration */
@@ -524,7 +524,7 @@ uint32_t HAL_DACEx_GetTrimOffset (DAC_HandleTypeDef *hdac, uint32_t Channel)
   */
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)   
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)   
 
 /** @defgroup DACEx_Exported_Functions_Group3 Peripheral Control functions
  *  @brief    Extended Peripheral Control functions 
@@ -564,14 +564,14 @@ uint32_t HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac)
   */
 
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 
 /**
   * @}
   */
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)   
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)   
 
 /* Private functions ---------------------------------------------------------*/
 /** @defgroup DACEx_Private_Functions DACEx private functions
@@ -629,7 +629,7 @@ void DAC_DMAErrorCh2(DMA_HandleTypeDef *hdma)
   * @}
   */
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
-        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx */
+        /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 
 #endif /* HAL_DAC_MODULE_ENABLED */
 

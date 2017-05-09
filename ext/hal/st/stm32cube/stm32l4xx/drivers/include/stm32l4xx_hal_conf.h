@@ -2,15 +2,15 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_conf.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   HAL configuration template file.
   *          This file should be copied to the application folder and renamed
   *          to stm32l4xx_hal_conf.h.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -60,10 +60,13 @@
 #define HAL_CRC_MODULE_ENABLED
 #define HAL_CRYP_MODULE_ENABLED
 #define HAL_DAC_MODULE_ENABLED
+#define HAL_DCMI_MODULE_ENABLED
 #define HAL_DFSDM_MODULE_ENABLED
 #define HAL_DMA_MODULE_ENABLED
+#define HAL_DMA2D_MODULE_ENABLED
 #define HAL_FIREWALL_MODULE_ENABLED
 #define HAL_FLASH_MODULE_ENABLED
+#define HAL_HASH_MODULE_ENABLED
 #define HAL_HCD_MODULE_ENABLED
 #define HAL_NAND_MODULE_ENABLED
 #define HAL_NOR_MODULE_ENABLED
@@ -254,6 +257,14 @@
   #include "stm32l4xx_hal_dac.h"
 #endif /* HAL_DAC_MODULE_ENABLED */
 
+#ifdef HAL_DCMI_MODULE_ENABLED
+  #include "stm32l4xx_hal_dcmi.h"
+#endif /* HAL_DCMI_MODULE_ENABLED */
+
+#ifdef HAL_DMA2D_MODULE_ENABLED
+  #include "stm32l4xx_hal_dma2d.h"
+#endif /* HAL_DMA2D_MODULE_ENABLED */
+
 #ifdef HAL_FIREWALL_MODULE_ENABLED
   #include "stm32l4xx_hal_firewall.h"
 #endif /* HAL_FIREWALL_MODULE_ENABLED */
@@ -261,6 +272,10 @@
 #ifdef HAL_FLASH_MODULE_ENABLED
   #include "stm32l4xx_hal_flash.h"
 #endif /* HAL_FLASH_MODULE_ENABLED */
+
+#ifdef HAL_HASH_MODULE_ENABLED
+  #include "stm32l4xx_hal_hash.h"
+#endif /* HAL_HASH_MODULE_ENABLED */
 
 #ifdef HAL_SRAM_MODULE_ENABLED
   #include "stm32l4xx_hal_sram.h"
@@ -376,9 +391,9 @@
   *         If expr is true, it returns no value.
   * @retval None
   */
-  #define assert_param(expr) ((expr) ? (void)0U : assert_failed((uint8_t *)__FILE__, __LINE__))
+  #define assert_param(expr) ((expr) ? (void)0U : assert_failed((char *)__FILE__, __LINE__))
 /* Exported functions ------------------------------------------------------- */
-  void assert_failed(uint8_t* file, uint32_t line);
+  void assert_failed(char *file, uint32_t line);
 #else
   #define assert_param(expr) ((void)0U)
 #endif /* USE_FULL_ASSERT */

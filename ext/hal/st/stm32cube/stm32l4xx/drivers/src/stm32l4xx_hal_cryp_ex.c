@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_cryp_ex.c
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   CRYPEx HAL module driver.
   *          This file provides firmware functions to manage the extended
   *          functionalities of the Cryptography (CRYP) peripheral.  
@@ -11,7 +11,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@
 
 #ifdef HAL_CRYP_MODULE_ENABLED
 
-#if defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx)
+#if defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L4A6xx)
 
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
@@ -3109,7 +3109,7 @@ static void CRYP_Padding(CRYP_HandleTypeDef *hcryp, uint32_t difflength, uint32_
   * @}
   */
 
-#endif /* defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) */  
+#endif /* defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L4A6xx) */  
 
 #endif /* HAL_CRYP_MODULE_ENABLED */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

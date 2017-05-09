@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_irda.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of IRDA HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -363,15 +363,15 @@ typedef enum
   *           - ZZZZ  : Flag position in the ISR register(4bits)
   * @{
   */
-#define IRDA_IT_PE                          ((uint16_t)0x0028)      /*!< IRDA Parity error interruption                 */
-#define IRDA_IT_TXE                         ((uint16_t)0x0727)      /*!< IRDA Transmit data register empty interruption */
-#define IRDA_IT_TC                          ((uint16_t)0x0626)      /*!< IRDA Transmission complete interruption        */
-#define IRDA_IT_RXNE                        ((uint16_t)0x0525)      /*!< IRDA Read data register not empty interruption */
-#define IRDA_IT_IDLE                        ((uint16_t)0x0424)      /*!< IRDA Idle interruption                         */
-#define IRDA_IT_ERR                         ((uint16_t)0x0060)      /*!< IRDA Error interruption                        */
-#define IRDA_IT_ORE                         ((uint16_t)0x0300)      /*!< IRDA Overrun error interruption                */
-#define IRDA_IT_NE                          ((uint16_t)0x0200)      /*!< IRDA Noise error interruption                  */
-#define IRDA_IT_FE                          ((uint16_t)0x0100)      /*!< IRDA Frame error interruption                  */
+#define IRDA_IT_PE                          ((uint16_t)0x0028)     /*!< IRDA Parity error interruption                 */
+#define IRDA_IT_TXE                         ((uint16_t)0x0727)     /*!< IRDA Transmit data register empty interruption */
+#define IRDA_IT_TC                          ((uint16_t)0x0626)     /*!< IRDA Transmission complete interruption        */
+#define IRDA_IT_RXNE                        ((uint16_t)0x0525)     /*!< IRDA Read data register not empty interruption */
+#define IRDA_IT_IDLE                        ((uint16_t)0x0424)     /*!< IRDA Idle interruption                         */
+#define IRDA_IT_ERR                         ((uint16_t)0x0060)       /*!< IRDA Error interruption        */
+#define IRDA_IT_ORE                         ((uint16_t)0x0300)      /*!< IRDA Overrun error interruption */
+#define IRDA_IT_NE                          ((uint16_t)0x0200)      /*!< IRDA Noise error interruption   */
+#define IRDA_IT_FE                          ((uint16_t)0x0100)      /*!< IRDA Frame error interruption   */
 /**
   * @}
   */

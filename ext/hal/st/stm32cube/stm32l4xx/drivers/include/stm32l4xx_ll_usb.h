@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_usb.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of USB Core HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -45,7 +45,8 @@
 
 #if defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || defined(STM32L443xx) || \
     defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx)
+    defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || \
+    defined(STM32L496xx) || defined(STM32L4A6xx)
       
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
@@ -603,7 +604,8 @@ void USB_ReadPMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, ui
 
 #endif /* STM32L432xx || STM32L433xx || STM32L442xx || STM32L443xx || */
        /* STM32L452xx || STM32L462xx || */
-       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
+       /* STM32L496xx || STM32L4A6xx */
   
 #ifdef __cplusplus
 }

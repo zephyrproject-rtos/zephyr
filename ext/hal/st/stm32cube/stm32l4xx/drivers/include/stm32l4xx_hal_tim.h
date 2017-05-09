@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_tim.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of TIM HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -1050,6 +1050,14 @@ typedef struct
                             } \
                             } \
                         } while(0)
+
+/**
+  * @brief  Disable the TIM main Output.
+  * @param  __HANDLE__: TIM handle
+  * @retval None
+  * @note The Main Output Enable of a timer instance is disabled unconditionally
+  */
+#define __HAL_TIM_MOE_DISABLE_UNCONDITIONALLY(__HANDLE__)  (__HANDLE__)->Instance->BDTR &= ~(TIM_BDTR_MOE)
 
 /** @brief  Enable the specified TIM interrupt.
   * @param  __HANDLE__: specifies the TIM Handle.
