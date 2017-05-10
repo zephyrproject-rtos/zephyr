@@ -18,12 +18,13 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#include "common/log.h"
 
 #include "hci_ecc.h"
 #ifdef CONFIG_BLUETOOTH_HCI_RAW

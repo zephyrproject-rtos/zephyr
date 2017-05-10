@@ -14,13 +14,14 @@
 #include <misc/util.h>
 #include <misc/stack.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
-#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/l2cap.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
+/* FIXME: #include "common/log.h" */
 #include <bluetooth/rfcomm.h>
 
 #include "hci_core.h"

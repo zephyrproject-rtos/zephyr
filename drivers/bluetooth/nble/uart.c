@@ -20,7 +20,7 @@
 #include <net/buf.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
+#include "common/log.h"
 
 #include "../util.h"
 #include "rpc.h"
