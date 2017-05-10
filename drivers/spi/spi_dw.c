@@ -339,6 +339,16 @@ static int spi_dw_transceive_async(struct spi_config *config,
 
 static int spi_dw_release(struct spi_config *config)
 {
+	const struct spi_dw_config *info = config->dev->config->config_info;
+	struct spi_dw_data *spi = config->dev->driver_data;
+
+	if (!spi_context_configured(&spi->ctx, config) ||
+	    test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
+		return -EBUSY;
+	}
+
+	spi_context_unlock_unconditionally(&spi->ctx);
+
 	return 0;
 }
 
