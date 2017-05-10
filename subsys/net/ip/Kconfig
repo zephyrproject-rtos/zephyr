@@ -345,6 +345,4 @@ source "subsys/net/ip/Kconfig.rpl"
 
 source "subsys/net/ip/Kconfig.stats"
 
-source "subsys/net/ip/Kconfig.app"
-
 endmenu

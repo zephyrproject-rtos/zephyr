@@ -3,3 +3,4 @@ obj-$(CONFIG_ZOAP) += zoap/
 obj-$(CONFIG_DNS_RESOLVER) += dns/
 obj-$(CONFIG_MQTT_LIB) += mqtt/
 obj-$(CONFIG_HTTP) += http/
+obj-$(CONFIG_NET_APP_SETTINGS) += app/

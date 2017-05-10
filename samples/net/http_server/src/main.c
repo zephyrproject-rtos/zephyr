@@ -25,7 +25,7 @@
 #include <net/net_context.h>
 #include <net/http.h>
 
-#include <net_sample_app.h>
+#include <net/net_app.h>
 
 #include "config.h"
 
@@ -279,13 +279,13 @@ void main(void)
 	 * before continuing.
 	 */
 #if defined(CONFIG_NET_IPV6)
-	flags |= NET_SAMPLE_NEED_IPV6;
+	flags |= NET_APP_NEED_IPV6;
 #endif
 #if defined(CONFIG_NET_IPV4)
-	flags |= NET_SAMPLE_NEED_IPV4;
+	flags |= NET_APP_NEED_IPV4;
 #endif
 
-	ret = net_sample_app_init(APP_BANNER, flags, APP_STARTUP_TIME);
+	ret = net_app_init(APP_BANNER, flags, APP_STARTUP_TIME);
 	if (ret < 0) {
 		panic("Application init failed");
 	}
