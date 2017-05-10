@@ -104,6 +104,18 @@ extern "C" {
 #define SPI_LINES_MASK		(0x3 << 11)
 
 /**
+ * @brief Specific SPI devices control bits
+ */
+/* Requests - if possible - to keep CS asserted after the transaction */
+#define SPI_HOLD_ON_CS		BIT(13)
+/* Keep the device locked after the transaction for the current config.
+ * Use this with extreme caution (see spi_release() below) as it will
+ * prevent other callers to access the SPI device until spi_release() is
+ * properly called.
+ */
+#define SPI_LOCK_ON		BIT(14)
+
+/**
  * @brief SPI Chip Select control structure
  *
  * This can be used to control a CS line via a GPIO line, instead of
@@ -132,12 +144,17 @@ struct spi_cs_control {
  *    transfer            [ 4 ]       - LSB or MSB first.
  *    word_size           [ 5 : 10 ]  - Size of a data frame in bits.
  *    lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
- *    RESERVED            [ 13 : 15 ] - Unused yet
+ *    cs_hold             [ 13 ]      - Hold on the CS line if possible.
+ *    lock_on             [ 14 ]      - Keep ressource locked for the caller.
+ *    RESERVED            [ 15 ]      - Unused yet
  *
  * slave is the slave number from 0 to host constoller slave limit.
  *
  * cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
+ *
+ * Note: cs_hold and lock_on can be changed between consecutive transceive
+ *       call.
  */
 struct spi_config {
 	struct device	*dev;
@@ -182,6 +199,14 @@ typedef int (*spi_api_io_async)(struct spi_config *config,
 				struct k_poll_signal *async);
 
 /**
+ * @typedef spi_api_release
+ * @brief Callback API for unlocking SPI device.
+ * See spi_release() for argument descriptions
+ */
+typedef int (*spi_api_release)(struct spi_config *config);
+
+
+/**
  * @brief SPI driver API
  * This is the mandatory API any SPI driver needs to expose.
  */
@@ -190,6 +215,7 @@ struct spi_driver_api {
 #ifdef CONFIG_POLL
 	spi_api_io_async transceive_async;
 #endif
+	spi_api_release release;
 };
 
 /**
@@ -328,6 +354,25 @@ static inline int spi_write_async(struct spi_config *config,
 	return api->transceive_async(config, tx_bufs, NULL, async);
 }
 #endif /* CONFIG_POLL */
+
+/**
+ * @brief Release the SPI device locked on by the current config
+ *
+ * Note: This synchronous function is used to release the lock on the SPI
+ *       device that was kept if, and if only, given config parameter was
+ *       the last one to be used (in any of the above functions) and if
+ *       it has the SPI_LOCK_ON bit set into its operation bits field.
+ *       This can be used if the caller needs to keep its hand on the SPI
+ *       device for consecutive transactions.
+ *
+ * @param config Pointer to a valid spi_config structure instance.
+ */
+static inline int spi_release(struct spi_config *config)
+{
+	const struct spi_driver_api *api = config->dev->driver_api;
+
+	return api->release(config);
+}
 
 #ifdef __cplusplus
 }
