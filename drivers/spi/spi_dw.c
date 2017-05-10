@@ -337,6 +337,11 @@ static int spi_dw_transceive_async(struct spi_config *config,
 }
 #endif /* CONFIG_POLL */
 
+static int spi_dw_release(struct spi_config *config)
+{
+	return 0;
+}
+
 void spi_dw_isr(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
@@ -373,6 +378,7 @@ static const struct spi_driver_api dw_spi_api = {
 #ifdef CONFIG_POLL
 	.transceive_async = spi_dw_transceive_async,
 #endif
+	.release = spi_dw_release,
 };
 
 int spi_dw_init(struct device *dev)
