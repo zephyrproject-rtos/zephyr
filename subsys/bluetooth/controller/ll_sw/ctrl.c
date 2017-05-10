@@ -1615,14 +1615,18 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		/* use the minimal of our default_tx_octets and
 		 * peer max_rx_octets
 		 */
-		eff_tx_octets = min(lr->max_rx_octets,
-				    _radio.conn_curr->default_tx_octets);
+		if (lr->max_rx_octets >= RADIO_LL_LENGTH_OCTETS_RX_MIN) {
+			eff_tx_octets = min(lr->max_rx_octets,
+					    _radio.conn_curr->default_tx_octets);
+		}
 
 		/* use the minimal of our max supported and
 		 * peer max_tx_octets
 		 */
-		eff_rx_octets = min(lr->max_tx_octets,
-				    RADIO_LL_LENGTH_OCTETS_RX_MAX);
+		if (lr->max_tx_octets >= RADIO_LL_LENGTH_OCTETS_RX_MIN) {
+			eff_rx_octets = min(lr->max_tx_octets,
+					    RADIO_LL_LENGTH_OCTETS_RX_MAX);
+		}
 
 		/* check if change in rx octets */
 		if (eff_rx_octets != _radio.conn_curr->max_rx_octets) {
