@@ -6813,17 +6813,8 @@ static struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 
-	if (_radio.packet_rx_last > _radio.packet_rx_acquire) {
-		if (count >
-		    ((_radio.packet_rx_count - _radio.packet_rx_last) +
-		     _radio.packet_rx_acquire)) {
-			return 0;
-		}
-	} else {
-		if (count >
-		    (_radio.packet_rx_acquire - _radio.packet_rx_last)) {
-			return 0;
-		}
+	if (count > packet_rx_acquired_count_get()) {
+		return 0;
 	}
 
 	radio_pdu_node_rx = _radio.packet_rx[_radio.packet_rx_last];
