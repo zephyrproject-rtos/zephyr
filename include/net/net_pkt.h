@@ -895,7 +895,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
  *         input data).
  */
 static inline bool net_pkt_append_all(struct net_pkt *pkt, u16_t len,
-				      const u8_t *data, int32_t timeout)
+				      const u8_t *data, s32_t timeout)
 {
 	return net_pkt_append(pkt, len, data, timeout) == len;
 }

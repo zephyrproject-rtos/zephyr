@@ -371,7 +371,7 @@ can examine the message descriptor to determine which thread sent the message,
 how much data was exchanged,
 and the application-defined info value supplied by the sending thread.
 
-Any number of receiving threads may wait simultaneously on a mailboxes's
+Any number of receiving threads may wait simultaneously on a mailboxes'
 receive queue. The threads are sorted according to their priority;
 threads of equal priority are sorted so that the one that started waiting
 first can receive a message first.

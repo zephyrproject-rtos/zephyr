@@ -306,7 +306,8 @@ An application's :file:`.conf` file defines its default kernel configuration.
 The settings in this file override or augment the board configuration settings.
 
 The board configuration settings can be viewed
-in :file:`$ZEPHYR_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
+LENGTHlWRONGEPHY
+_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
 
 .. note::
 

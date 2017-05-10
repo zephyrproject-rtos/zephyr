@@ -9,15 +9,15 @@ Overview
 The B-L475E-IOT01A Discovery kit for IoT node allows users to develop
 applications with direct connection to cloud servers.
 The Discovery kit enables a wide diversity of applications by exploiting
-low-power communication, multiway sensing and ARM® Cortex® -M4 core-based
+low-power communication, multiway sensing and ARM |reg| Cortex |reg|-M4 core-based
 STM32L4 Series features.
 
 This kit provides:
 
 - 64-Mbit Quad-SPI (Macronix) Flash memory
-- Bluetooth® V4.1 module (SPBTLE-RF)
+- Bluetooth |reg| V4.1 module (SPBTLE-RF)
 - Sub-GHz (868 or 915 MHz) low-power-programmable RF module (SPSGRF-868 or SPSGRF-915)
-- Wi-Fi® module Inventek ISM43362-M3G-L44 (802.11 b/g/n compliant)
+- Wi-Fi |reg| module Inventek ISM43362-M3G-L44 (802.11 b/g/n compliant)
 - Dynamic NFC tag based on M24SR with its printed NFC antenna
 - 2 digital omni-directional microphones (MP34DT01)
 - Capacitive digital sensor for relative humidity and temperature (HTS221)
@@ -28,7 +28,7 @@ This kit provides:
 - 2 push-buttons (user and reset)
 - USB OTG FS with Micro-AB connector
 - Expansion connectors:
-        - Arduino™ Uno V3
+        - Arduino |trade| Uno V3
         - PMOD
 - Flexible power-supply options:
         - ST LINK USB VBUS or external sources
@@ -49,14 +49,15 @@ Hardware
 
 The STM32L475RG SoC provides the following hardware IPs:
 
-- Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode and 100 μA/MHz run mode)
-- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
+- Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode and 100 uA/MHz run mode)
+- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
         - 4 to 48 MHz crystal oscillator
         - 32 kHz crystal oscillator for RTC (LSE)
         - Internal 16 MHz factory-trimmed RC (±1%)
         - Internal low-power 32 kHz RC (±5%)
-        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by LSE (better than ±0.25 % accuracy)
+        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
+          LSE (better than ±0.25 % accuracy)
         - 3 PLLs for system clock, USB, audio, ADC
 - RTC with HW calendar, alarms and calibration
 - Up to 24 capacitive sensing channels: support touchkey, linear and rotary touch sensors
@@ -75,7 +76,7 @@ The STM32L475RG SoC provides the following hardware IPs:
         - Quad SPI memory interface
 - 4x digital filters for sigma delta modulator
 - Rich analog peripherals (independent supply)
-        - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 μA/MSPS
+        - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 uA/MSPS
         - 2x 12-bit DAC, low-power sample and hold
         - 2x operational amplifiers with built-in PGA
         - 2x ultra-low-power comparators
@@ -90,7 +91,7 @@ The STM32L475RG SoC provides the following hardware IPs:
 - 14-channel DMA controller
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
 
 
 More information about STM32L476RG can be found here:

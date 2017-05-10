@@ -1,6 +1,6 @@
 .. _networking_with_qemu:
 
-Networking with Qemu
+Networking with QEMU
 ####################
 
 This page describes how to set up a "virtual" networking between a (Linux) host
@@ -41,7 +41,7 @@ For the steps below, you will need at least 4 terminal windows:
 Step 1 - Create helper socket
 =============================
 
-Before starting QEMU with network emulation, a unix socket for the emulation
+Before starting QEMU with network emulation, a Unix socket for the emulation
 should be created.
 
 In terminal #2, type:

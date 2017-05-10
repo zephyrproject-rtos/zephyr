@@ -13,9 +13,9 @@ the Nios II Gen 2 soft CPU.
 .. figure:: img/max_10_dev_kit_top_photo.jpg
    :width: 442px
    :align: center
-   :alt: Altera’s MAX* 10
+   :alt: Altera's MAX* 10
 
-   Altera’s MAX* 10  (Credit: Altera)
+   Altera's MAX* 10  (Credit: Altera)
 
 Hardware
 ********
@@ -35,7 +35,7 @@ importance is SW2:
 .. image:: img/Altera_MAX10_switches.jpg
    :width: 442px
    :align: center
-   :alt: Altera’s MAX* 10 Switches
+   :alt: Altera's MAX* 10 Switches
 
 Other switches are user switches, their position is application-specific.
 
