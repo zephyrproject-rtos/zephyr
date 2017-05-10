@@ -18,8 +18,6 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_OUTBOUND);
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
 #define SLEEPTIME               1000
-#define SCSS_REGISTER_BASE      0xB0800000
-#define SCSS_SS_STS             0x0604
 
 #define PING_TIME               1000
 #define STACKSIZE               2000
