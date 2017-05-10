@@ -257,6 +257,7 @@ static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	BT_DBG("FC: host buf size: %d", acl_pkts);
 	hci_hbuf_total = -acl_pkts;
 }
 
@@ -284,6 +285,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 		count += sys_le16_to_cpu(cmd->h[i].count);
 	}
 
+	BT_DBG("FC: acked: %d", count);
 	hci_hbuf_acked += count;
 	k_poll_signal(hbuf_signal, 0x0);
 }

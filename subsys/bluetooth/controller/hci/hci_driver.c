@@ -165,6 +165,7 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 			if (pend || !hbuf_count) {
 				sys_slist_append(&hbuf_pend,
 						 &node_rx->hdr.onion.node);
+				BT_DBG("FC: Queuing item: %d", class);
 				return NULL;
 			}
 			break;
@@ -210,10 +211,12 @@ static inline struct net_buf *process_hbuf(void)
 			class = hci_get_class(node_rx);
 			switch (class) {
 			case HCI_CLASS_EVT_CONNECTION:
+				BT_DBG("FC: dequeueing event");
 				node = sys_slist_get(&hbuf_pend);
 				break;
 			case HCI_CLASS_ACL_DATA:
 				if (hbuf_count) {
+					BT_DBG("FC: dequeueing ACL data");
 					node = sys_slist_get(&hbuf_pend);
 					hbuf_count--;
 				} else {
@@ -247,7 +250,7 @@ static inline struct net_buf *process_hbuf(void)
 					/* more to process, schedule an
 					 * iteration
 					 */
-
+					BT_DBG("FC: signalling");
 					k_poll_signal(&hbuf_signal, 0x0);
 				}
 			}
