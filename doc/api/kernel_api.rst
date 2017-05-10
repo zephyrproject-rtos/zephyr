@@ -117,7 +117,7 @@ with basic priority inheritance.
 Alerts
 ******
 
-Alerts enable an application to perform asynchronous signalling,
+Alerts enable an application to perform asynchronous signaling,
 somewhat akin to Unix-style signals.
 (See :ref:`alerts_v2`.)
 

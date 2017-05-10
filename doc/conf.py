@@ -133,6 +133,12 @@ rst_epilog = """
    :ltrim:
 .. |reg|    unicode:: U+000AE .. REGISTERED TRADEMARK SIGN
    :ltrim:
+.. |deg|    unicode:: U+000B0 .. DEGREE SIGN
+   :ltrim:
+.. |plusminus|  unicode:: U+000B1 .. PLUS-MINUS SIGN
+   :trim:
+.. |micro|  unicode:: U+000B5 .. MICRO SIGN
+   :trim:
 """
 
 # -- Options for HTML output ----------------------------------------------

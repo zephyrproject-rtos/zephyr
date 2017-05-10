@@ -26,7 +26,7 @@ void isr_radio(void);
 void radio_isr_set(radio_isr_fp fp_radio_isr);
 
 void radio_reset(void);
-void radio_phy_set(u8_t phy);
+void radio_phy_set(u8_t phy, u8_t flags);
 void radio_tx_power_set(u32_t power);
 void radio_freq_chan_set(u32_t chan);
 void radio_whiten_iv_set(u32_t iv);

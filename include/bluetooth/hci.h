@@ -189,21 +189,28 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_PHY_2M                   8
 #define BT_LE_FEAT_BIT_SMI_TX                   9
 #define BT_LE_FEAT_BIT_SMI_RX                   10
-#define BT_LE_FEAT_BIT_COD_PHY                  11
-#define BT_LE_FEAT_BIT_EXT_ADV                  12
-#define BT_LE_FEAT_BIT_PER_ADV                  13
+#define BT_LE_FEAT_BIT_PHY_CODED                11
+#define BT_LE_FEAT_BIT_ADV_EXT                  12
+#define BT_LE_FEAT_BIT_ADV_PER                  13
 #define BT_LE_FEAT_BIT_CHAN_SEL_ALGO_2          14
 #define BT_LE_FEAT_BIT_PWR_CLASS_1              15
 #define BT_LE_FEAT_BIT_MIN_USED_CHAN_PROC       16
 
-#define BT_FEAT_LE_ENCR(feat)                   BT_FEAT_TEST(feat, 0, 0, \
+#define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
+						 BIT((n) & 7))
+
+#define BT_FEAT_LE_ENCR(feat)                   BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_ENC)
-#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_FEAT_TEST(feat, 0, 0, \
+#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_CONN_PARAM_REQ)
-#define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     BT_FEAT_TEST(feat, 0, 0, \
+#define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_SLAVE_FEAT_REQ)
-#define BT_FEAT_LE_DLE(feat)                    BT_FEAT_TEST(feat, 0, 0, \
+#define BT_FEAT_LE_DLE(feat)                    BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_DLE)
+#define BT_FEAT_LE_PHY_2M(feat)                 BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PHY_2M)
+#define BT_FEAT_LE_PHY_CODED(feat)              BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PHY_CODED)
 
 /* LE States */
 #define BT_LE_STATES_SLAVE_CONN_ADV(states)     (states & 0x0000004000000000)
@@ -964,17 +971,17 @@ struct bt_hci_cp_le_read_phy {
 } __packed;
 struct bt_hci_rp_le_read_phy {
 	u8_t  status;
-	u16_t conn_handle;
+	u16_t handle;
 	u8_t  tx_phy;
 	u8_t  rx_phy;
 } __packed;
 
-#define BT_HCI_LE_PHY_TX_ANY                    0x00
-#define BT_HCI_LE_PHY_RX_ANY                    0x01
+#define BT_HCI_LE_PHY_TX_ANY                    BIT(0)
+#define BT_HCI_LE_PHY_RX_ANY                    BIT(1)
 
-#define BT_HCI_LE_PHY_PREFER_1M                 0x00
-#define BT_HCI_LE_PHY_PREFER_2M                 0x01
-#define BT_HCI_LE_PHY_PREFER_CODED              0x02
+#define BT_HCI_LE_PHY_PREFER_1M                 BIT(0)
+#define BT_HCI_LE_PHY_PREFER_2M                 BIT(1)
+#define BT_HCI_LE_PHY_PREFER_CODED              BIT(2)
 
 #define BT_HCI_OP_LE_SET_DEFAULT_PHY            BT_OP(BT_OGF_LE, 0x0031)
 struct bt_hci_cp_le_set_default_phy {
@@ -989,11 +996,11 @@ struct bt_hci_cp_le_set_default_phy {
 
 #define BT_HCI_OP_LE_SET_PHY                    BT_OP(BT_OGF_LE, 0x0032)
 struct bt_hci_cp_le_set_phy {
-	u16_t conn_handle;
-	u8_t  all_phys;
-	u8_t  tx_phys;
-	u8_t  rx_phys;
-	u8_t  phy_opts;
+	u16_t  handle;
+	u8_t   all_phys;
+	u8_t   tx_phys;
+	u8_t   rx_phys;
+	u16_t  phy_opts;
 } __packed;
 
 #define BT_HCI_LE_MOD_INDEX_STANDARD            0x00

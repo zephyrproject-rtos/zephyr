@@ -4,7 +4,7 @@ Alerts
 ######
 
 An :dfn:`alert` is a kernel object that allows an application to perform
-asynchronous signalling when a condition of interest occurs.
+asynchronous signaling when a condition of interest occurs.
 
 .. contents::
     :local:
@@ -19,7 +19,7 @@ its memory address.
 An alert has the following key properties:
 
 * An **alert handler**, which specifies the action to be taken
-  when the alert is signalled. The action may instruct the system workqueue
+  when the alert is signaled. The action may instruct the system workqueue
   to execute a function to process the alert, mark the alert as pending
   so it can be processed later by a thread, or ignore the alert.
 
@@ -78,7 +78,7 @@ significant differences. The most notable of these are:
 * A Zephyr alert pends *after* it has been delivered to its alert handler,
   and only if an alert handler function does not consume the alert.
 
-* Zephyr has no pre-defined alerts or actions. All alerts are application
+* Zephyr has no predefined alerts or actions. All alerts are application
   defined, and all have a default action that pends the alert.
 
 Implementation
@@ -116,7 +116,7 @@ The following code has the same effect as the code segment above.
 Signaling an Alert
 ==================
 
-An alert is signalled by calling :cpp:func:`k_alert_send()`.
+An alert is signaled by calling :cpp:func:`k_alert_send()`.
 
 The following code illustrates how an ISR can signal an alert
 to indicate that a key press has occurred.
@@ -137,7 +137,7 @@ to indicate that a key press has occurred.
 Handling an Alert
 =================
 
-An alert handler function is used when a signalled alert should not be ignored
+An alert handler function is used when a signaled alert should not be ignored
 or immediately pended. It has the following form:
 
 .. code-block:: c
@@ -162,7 +162,7 @@ key presses detected by an ISR (as shown in the previous section).
         /* do complex processing of the keystroke */
 	...
 
-        /* signalled alert has been consumed */
+        /* signaled alert has been consumed */
         return 0;
     }
 
@@ -189,10 +189,10 @@ only when a numeric key is pressed.
         if ((c >= '0') && (c <= '9')) {
             /* save key press information */
             ...
-            /* signalled alert should be pended */
+            /* signaled alert should be pended */
             return 1;
         } else {
-            /* signalled alert has been consumed */
+            /* signaled alert has been consumed */
             return 0;
         }
     }
@@ -219,7 +219,7 @@ work to a thread to reduce the amount of time interrupts are locked.
 Use an alert to allow the kernel's system workqueue to handle an alert,
 rather than defining an application thread to handle it.
 
-Use an alert to allow the kernel's system workqueue to pre-process an alert,
+Use an alert to allow the kernel's system workqueue to preprocess an alert,
 prior to letting an application thread handle it.
 
 Configuration Options
