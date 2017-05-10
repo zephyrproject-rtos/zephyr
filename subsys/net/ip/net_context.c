@@ -734,8 +734,8 @@ static inline int send_syn_ack(struct net_context *context,
 				    "SYN_ACK");
 }
 
-static inline int send_ack(struct net_context *context,
-			   struct sockaddr *remote)
+static int send_ack(struct net_context *context,
+		    struct sockaddr *remote, bool force)
 {
 	struct net_pkt *pkt = NULL;
 	int ret;
@@ -743,7 +743,7 @@ static inline int send_ack(struct net_context *context,
 	/* Something (e.g. a data transmission under the user
 	 * callback) already sent the ACK, no need
 	 */
-	if (context->tcp->send_ack == context->tcp->sent_ack) {
+	if (!force && context->tcp->send_ack == context->tcp->sent_ack) {
 		return 0;
 	}
 
@@ -838,6 +838,18 @@ NET_CONN_CB(tcp_established)
 		return NET_DROP;
 	}
 
+	if (net_tcp_seq_cmp(sys_get_be32(NET_TCP_HDR(pkt)->seq), context->tcp->send_ack) < 0) {
+		/* Peer sent us packet we've already seen. Apparently,
+		 * our ack was lost.
+		 */
+
+		/* RFC793 specifies that "highest" (i.e. current from our PoV)
+		 * ack # value can/should be sent, so we just force resend.
+		 */
+		send_ack(context, &conn->remote_addr, true);
+		return NET_DROP;
+	}
+
 	if (sys_get_be32(NET_TCP_HDR(pkt)->seq) - context->tcp->send_ack) {
 		/* Don't try to reorder packets.  If it doesn't
 		 * match the next segment exactly, drop and wait for
@@ -869,7 +881,7 @@ NET_CONN_CB(tcp_established)
 		}
 	}
 
-	send_ack(context, &conn->remote_addr);
+	send_ack(context, &conn->remote_addr, false);
 
 	if (sys_slist_is_empty(&context->tcp->sent_list)
 	    && context->tcp->fin_rcvd
@@ -995,7 +1007,7 @@ NET_CONN_CB(tcp_synack_received)
 		net_tcp_change_state(context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(context, NET_CONTEXT_CONNECTED);
 
-		send_ack(context, raddr);
+		send_ack(context, raddr, false);
 
 		k_sem_give(&context->tcp->connect_wait);
 
