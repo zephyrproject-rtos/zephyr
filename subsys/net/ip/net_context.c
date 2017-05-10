@@ -816,6 +816,28 @@ NET_CONN_CB(tcp_established)
 				     sys_get_be32(NET_TCP_HDR(pkt)->ack));
 	}
 
+	/*
+	 * If we receive RST here, we close the socket. See RFC 793 chapter
+	 * called "Reset Processing" for details.
+	 */
+	if (tcp_flags & NET_TCP_RST) {
+		/* We only accept RST packet that has valid seq field. */
+		if (!net_tcp_validate_seq(context->tcp, pkt)) {
+			return NET_DROP;
+		}
+
+		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
+
+		if (context->recv_cb) {
+			context->recv_cb(context, NULL, -ECONNRESET,
+					 context->tcp->recv_user_data);
+		}
+
+		net_context_unref(context);
+
+		return NET_DROP;
+	}
+
 	if (sys_get_be32(NET_TCP_HDR(pkt)->seq) - context->tcp->send_ack) {
 		/* Don't try to reorder packets.  If it doesn't
 		 * match the next segment exactly, drop and wait for
@@ -881,6 +903,11 @@ NET_CONN_CB(tcp_synack_received)
 	NET_ASSERT(net_pkt_iface(pkt));
 
 	if (NET_TCP_FLAGS(pkt) & NET_TCP_RST) {
+		/* We only accept RST packet that has valid seq field. */
+		if (!net_tcp_validate_seq(context->tcp, pkt)) {
+			return NET_DROP;
+		}
+
 		if (context->connect_cb) {
 			context->connect_cb(context, -ECONNREFUSED,
 					    context->user_data);
@@ -1303,14 +1330,24 @@ NET_CONN_CB(tcp_syn_rcvd)
 	}
 
 	/*
-	 * If we receive RST, we go back to LISTEN state.
+	 * If we receive RST, we go back to LISTEN state if the previous state
+	 * was LISTEN, otherwise we go to CLOSED state.
+	 * See RFC 793 chapter 3.4 "Reset Processing" for more details.
 	 */
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_RST) {
+
+		/* We only accept RST packet that has valid seq field. */
+		if (!net_tcp_validate_seq(tcp, pkt)) {
+			return NET_DROP;
+		}
+
 		ack_timer_cancel(tcp);
 
 		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
 
-		net_tcp_change_state(tcp, NET_TCP_LISTEN);
+		if (net_tcp_get_state(tcp) != NET_TCP_LISTEN) {
+			net_tcp_change_state(tcp, NET_TCP_CLOSED);
+		}
 
 		return NET_DROP;
 	}

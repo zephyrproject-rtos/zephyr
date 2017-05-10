@@ -855,16 +855,22 @@ static void validate_state_transition(enum net_tcp_state current,
 			1 << NET_TCP_CLOSED,
 		[NET_TCP_SYN_SENT] = 1 << NET_TCP_CLOSED |
 			1 << NET_TCP_ESTABLISHED |
-			1 << NET_TCP_SYN_RCVD,
+			1 << NET_TCP_SYN_RCVD |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_ESTABLISHED] = 1 << NET_TCP_CLOSE_WAIT |
-			1 << NET_TCP_FIN_WAIT_1,
-		[NET_TCP_CLOSE_WAIT] = 1 << NET_TCP_LAST_ACK,
+			1 << NET_TCP_FIN_WAIT_1 |
+			1 << NET_TCP_CLOSED,
+		[NET_TCP_CLOSE_WAIT] = 1 << NET_TCP_LAST_ACK |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_LAST_ACK] = 1 << NET_TCP_CLOSED,
 		[NET_TCP_FIN_WAIT_1] = 1 << NET_TCP_CLOSING |
 			1 << NET_TCP_FIN_WAIT_2 |
-			1 << NET_TCP_TIME_WAIT,
-		[NET_TCP_FIN_WAIT_2] = 1 << NET_TCP_TIME_WAIT,
-		[NET_TCP_CLOSING] = 1 << NET_TCP_TIME_WAIT,
+			1 << NET_TCP_TIME_WAIT |
+			1 << NET_TCP_CLOSED,
+		[NET_TCP_FIN_WAIT_2] = 1 << NET_TCP_TIME_WAIT |
+			1 << NET_TCP_CLOSED,
+		[NET_TCP_CLOSING] = 1 << NET_TCP_TIME_WAIT |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_TIME_WAIT] = 1 << NET_TCP_CLOSED
 	};
 
@@ -940,4 +946,10 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	}
 
 	irq_unlock(key);
+}
+
+bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt)
+{
+	return !net_tcp_seq_greater(tcp->send_ack + get_recv_wnd(tcp),
+				    sys_get_be32(NET_TCP_HDR(pkt)->seq));
 }
