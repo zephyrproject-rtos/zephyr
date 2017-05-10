@@ -1,4 +1,4 @@
-# Kconfig - ST Microelectronics STM32L432KC MCU
+# Kconfig - ST Microelectronics STM32L432XX MCU
 #
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # Copyright (c) 2016 BayLibre, SAS
@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32L432XX
+if SOC_STM32L432XC
 
 config SOC
 	string
@@ -16,5 +16,5 @@ config NUM_IRQS
 	int
 	default 82
 
-endif # SOC_STM32L432XX
+endif # SOC_STM32L432XC
 
