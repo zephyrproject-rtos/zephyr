@@ -10,8 +10,8 @@ choice
 prompt "STM32L4x MCU Selection"
 depends on SOC_SERIES_STM32L4X
 
-config SOC_STM32L476XX
-	bool "STM32L476XX"
+config SOC_STM32L476XG
+	bool "STM32L476XG"
 	select HAS_STM32CUBE
 
 config SOC_STM32L432XC

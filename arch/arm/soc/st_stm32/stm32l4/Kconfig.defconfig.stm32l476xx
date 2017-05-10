@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32L476XX
+if SOC_STM32L476XG
 
 config SOC
 	string
@@ -16,5 +16,4 @@ config NUM_IRQS
 	int
 	default 82
 
-endif # SOC_STM32L476XX
-
+endif # SOC_STM32L476XG
