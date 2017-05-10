@@ -30,7 +30,7 @@
 #elif defined(CONFIG_SOC_STM32F411XE)
 #define DT_FLASH_SIZE		__SIZE_K(512)
 #define DT_SRAM_SIZE		__SIZE_K(128)
-#elif defined(CONFIG_SOC_STM32F429XX)
+#elif defined(CONFIG_SOC_STM32F429XI)
 #define DT_FLASH_SIZE		__SIZE_K(2048)
 #define DT_SRAM_SIZE		__SIZE_K(256)
 #elif defined(CONFIG_SOC_STM32L475XG)
