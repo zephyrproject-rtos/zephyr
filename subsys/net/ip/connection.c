@@ -412,6 +412,108 @@ void prepare_register_debug_print(char *dst, int dst_len,
 }
 #endif /* CONFIG_NET_DEBUG_CONN */
 
+/* Check if we already have identical connection handler installed. */
+static int find_conn_handler(enum net_ip_protocol proto,
+			     const struct sockaddr *remote_addr,
+			     const struct sockaddr *local_addr,
+			     u16_t remote_port,
+			     u16_t local_port)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
+		if (!(conns[i].flags & NET_CONN_IN_USE)) {
+			continue;
+		}
+
+		if (conns[i].proto != proto) {
+			continue;
+		}
+
+		if (remote_addr) {
+			if (!(conns[i].flags & NET_CONN_REMOTE_ADDR_SET)) {
+				continue;
+			}
+
+#if defined(CONFIG_NET_IPV6)
+			if (remote_addr->family == AF_INET6) {
+				if (!net_ipv6_addr_cmp(
+					    &net_sin6(remote_addr)->sin6_addr,
+					    &net_sin6(&conns[i].remote_addr)->
+								sin6_addr)) {
+					continue;
+				}
+			} else
+#endif
+#if defined(CONFIG_NET_IPV4)
+			if (remote_addr->family == AF_INET) {
+				if (!net_ipv4_addr_cmp(
+					    &net_sin(remote_addr)->sin_addr,
+					    &net_sin(&conns[i].remote_addr)->
+								sin_addr)) {
+					continue;
+				}
+			} else
+#endif
+			{
+				continue;
+			}
+		} else {
+			if (conns[i].flags & NET_CONN_REMOTE_ADDR_SET) {
+				continue;
+			}
+		}
+
+		if (local_addr) {
+			if (!(conns[i].flags & NET_CONN_LOCAL_ADDR_SET)) {
+				continue;
+			}
+
+#if defined(CONFIG_NET_IPV6)
+			if (local_addr->family == AF_INET6) {
+				if (!net_ipv6_addr_cmp(
+					    &net_sin6(local_addr)->sin6_addr,
+					    &net_sin6(&conns[i].local_addr)->
+								sin6_addr)) {
+					continue;
+				}
+			} else
+#endif
+#if defined(CONFIG_NET_IPV4)
+			if (local_addr->family == AF_INET) {
+				if (!net_ipv4_addr_cmp(
+					    &net_sin(local_addr)->sin_addr,
+					    &net_sin(&conns[i].local_addr)->
+								sin_addr)) {
+					continue;
+				}
+			} else
+#endif
+			{
+				continue;
+			}
+		} else {
+			if (conns[i].flags & NET_CONN_LOCAL_ADDR_SET) {
+				continue;
+			}
+		}
+
+		if (net_sin(&conns[i].remote_addr)->sin_port !=
+		    htons(remote_port)) {
+			continue;
+		}
+
+		if (net_sin(&conns[i].local_addr)->sin_port !=
+		    htons(local_port)) {
+			continue;
+		}
+
+		return i;
+	}
+
+	return -ENOENT;
+}
+
 int net_conn_register(enum net_ip_protocol proto,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
@@ -423,6 +525,14 @@ int net_conn_register(enum net_ip_protocol proto,
 {
 	int i;
 	u8_t rank = 0;
+
+	i = find_conn_handler(proto, remote_addr, local_addr, remote_port,
+			      local_port);
+	if (i != -ENOENT) {
+		NET_ERR("Identical connection handler %p already found.",
+			&conns[i]);
+		return -EALREADY;
+	}
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
 		if (conns[i].flags & NET_CONN_IN_USE) {
