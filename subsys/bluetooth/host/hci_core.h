@@ -152,12 +152,6 @@ int bt_hci_cmd_send(u16_t opcode, struct net_buf *buf);
 int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
 
-/* The helper is only safe to be called from internal threads as it's
- * not multi-threading safe
- */
-const char *bt_addr_str(const bt_addr_t *addr);
-const char *bt_addr_le_str(const bt_addr_le_t *addr);
-
 int bt_le_scan_update(bool fast_scan);
 
 bool bt_addr_le_is_bonded(const bt_addr_le_t *addr);

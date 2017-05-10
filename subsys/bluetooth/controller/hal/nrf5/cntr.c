@@ -8,7 +8,7 @@
 #include <soc.h>
 #include "hal/cntr.h"
 
-#include <bluetooth/log.h>
+#include "common/log.h"
 #include "hal/debug.h"
 
 #ifndef NRF_RTC

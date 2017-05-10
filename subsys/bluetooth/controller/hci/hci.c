@@ -27,7 +27,7 @@
 #include "hci_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
+#include "common/log.h"
 #include "hal/debug.h"
 
 /* opcode of the HCI command currently being processed. The opcode is stored

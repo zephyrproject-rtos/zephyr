@@ -21,7 +21,8 @@
 extern "C" {
 #endif
 
-#include <bluetooth/log.h>
+/* FIXME: temporary workaround until thread details are made internal */
+#include "../../subsys/bluetooth/common/log.h"
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 
