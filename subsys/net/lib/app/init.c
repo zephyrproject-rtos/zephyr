@@ -1,4 +1,4 @@
-/* sample_app_setup.c */
+/* init.c */
 
 /*
  * Copyright (c) 2017 Intel Corporation.
@@ -6,30 +6,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "sample/net"
+#if defined(CONFIG_NET_DEBUG_APP)
+#define SYS_LOG_DOMAIN "net/app"
 #define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #define NET_LOG_ENABLED 1
 #endif
 
 #include <zephyr.h>
+#include <init.h>
+#include <string.h>
+#include <errno.h>
+#include <stdlib.h>
 
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <net/dhcpv4.h>
 #include <net/net_mgmt.h>
+#include <net/dns_resolve.h>
 
-#include "net_sample_app.h"
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
-#endif
-
-#if defined(CONFIG_NET_L2_IEEE802154)
-#include <ieee802154_settings.h>
-#endif
+#include <net/net_app.h>
 
 static struct k_sem waiter = K_SEM_INITIALIZER(waiter, 0, 1);
 static struct k_sem counter;
@@ -41,7 +37,9 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
+#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 1
 	char hr_addr[NET_IPV4_ADDR_LEN];
+#endif
 	int i;
 
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
@@ -95,7 +93,9 @@ static void setup_dhcpv4(struct net_if *iface)
 
 static void setup_ipv4(struct net_if *iface)
 {
+#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 1
 	char hr_addr[NET_IPV4_ADDR_LEN];
+#endif
 	struct in_addr addr;
 
 	if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_ADDR, &addr)) {
@@ -128,7 +128,9 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 			       u32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IPV6_DAD_SUCCEED) {
+#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 1
 		char hr_addr[NET_IPV6_ADDR_LEN];
+#endif
 		struct net_if_addr *ifaddr;
 
 		ifaddr = net_if_ipv6_addr_lookup(&laddr, &iface);
@@ -163,7 +165,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 		return;
 	}
 
-	if (flags & NET_SAMPLE_NEED_ROUTER) {
+	if (flags & NET_APP_NEED_ROUTER) {
 		mask |= NET_EVENT_IPV6_ROUTER_ADD;
 	}
 
@@ -182,7 +184,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 #define setup_ipv6(...)
 #endif /* CONFIG_NET_IPV6 */
 
-int net_sample_app_init(const char *app_info, u32_t flags, s32_t timeout)
+int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 {
 #define LOOP_DEVIDER 10
 	struct net_if *iface = net_if_get_default();
@@ -193,28 +195,11 @@ int net_sample_app_init(const char *app_info, u32_t flags, s32_t timeout)
 		NET_INFO("%s", app_info);
 	}
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-	if (bt_enable(NULL)) {
-		NET_ERR("Bluetooth init failed");
-		return -EFAULT;
-	} else {
-		ipss_init();
-		ipss_advertise();
-	}
-#endif
-
-#if defined(CONFIG_NET_L2_IEEE802154)
-	if (ieee802154_sample_setup()) {
-		NET_ERR("IEEE 802.15.4 setup failed");
-		return -EFAULT;
-	}
-#endif
-
-	if (flags & NET_SAMPLE_NEED_IPV6) {
+	if (flags & NET_APP_NEED_IPV6) {
 		count++;
 	}
 
-	if (flags & NET_SAMPLE_NEED_IPV4) {
+	if (flags & NET_APP_NEED_IPV4) {
 		count++;
 	}
 
@@ -252,3 +237,36 @@ int net_sample_app_init(const char *app_info, u32_t flags, s32_t timeout)
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_APP_AUTO_INIT)
+static int init_net_app(struct device *device)
+{
+	u32_t flags = 0;
+	int ret;
+
+	ARG_UNUSED(device);
+
+	if (IS_ENABLED(CONFIG_NET_APP_NEED_IPV6)) {
+		flags |= NET_APP_NEED_IPV6;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_APP_NEED_IPV6_ROUTER)) {
+		flags |= NET_APP_NEED_ROUTER;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_APP_NEED_IPV4)) {
+		flags |= NET_APP_NEED_IPV4;
+	}
+
+	/* Initialize the application automatically if needed */
+	ret = net_app_init("Initializing network", flags,
+			   K_SECONDS(CONFIG_NET_APP_INIT_TIMEOUT));
+	if (ret < 0) {
+		NET_ERR("Network initialization failed (%d)", ret);
+	}
+
+	return ret;
+}
+
+SYS_INIT(init_net_app, APPLICATION, CONFIG_NET_APP_INIT_PRIO);
+#endif /* CONFIG_NET_APP_AUTO_INIT */
