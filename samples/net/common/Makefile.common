@@ -7,8 +7,8 @@
 # Common routines used in net samples
 
 ifeq ($(CONFIG_NET_L2_BLUETOOTH), y)
-CFLAGS +=-I${ZEPHYR_BASE}/samples/bluetooth/
-obj-y += ../bluetooth/gatt/ipss.o
+ccflags-y += -I${ZEPHYR_BASE}/samples/bluetooth/
+obj-y += ../../../bluetooth/gatt/ipss.o
 endif
 
 ifeq ($(CONFIG_NET_L2_IEEE802154), y)
