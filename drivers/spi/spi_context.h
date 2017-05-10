@@ -64,6 +64,10 @@ static inline void spi_context_lock(struct spi_context *ctx,
 
 static inline void spi_context_release(struct spi_context *ctx, int status)
 {
+	if (!status && (ctx->config->operation & SPI_LOCK_ON)) {
+		return;
+	}
+
 #ifdef CONFIG_POLL
 	if (!ctx->asynchronous || status) {
 		k_sem_give(&ctx->lock);
@@ -71,6 +75,13 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 #else
 	k_sem_give(&ctx->lock);
 #endif
+}
+
+static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
+{
+	if (!k_sem_count_get(&ctx->lock)) {
+		k_sem_give(&ctx->lock);
+	}
 }
 
 static inline void spi_context_wait_for_completion(struct spi_context *ctx)
@@ -94,7 +105,9 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 			k_poll_signal(ctx->signal, status);
 		}
 
-		k_sem_give(&ctx->lock);
+		if (!(ctx->config->operation & SPI_LOCK_ON)) {
+			k_sem_give(&ctx->lock);
+		}
 	}
 #else
 	k_sem_give(&ctx->sync);
