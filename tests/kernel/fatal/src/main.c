@@ -21,8 +21,10 @@ void alt_thread1(void)
 	__asm__ volatile ("ud2");
 #elif defined(CONFIG_NIOS2)
 	__asm__ volatile ("trap");
+#elif defined(CONFIG_ARC)
+	__asm__ volatile ("swi");
 #else
-	/* Triggers usage fault on ARM, illegal instruction on RISCV32, ARC,
+	/* Triggers usage fault on ARM, illegal instruction on RISCV32
 	 * and xtensa
 	 */
 	{
