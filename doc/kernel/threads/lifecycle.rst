@@ -52,9 +52,9 @@ instructed to delay execution of the thread by specifying a timeout
 value -- for example, to allow device hardware used by the thread
 to become available.
 
-The kernel allows a delayed start to be cancelled before the thread begins
+The kernel allows a delayed start to be canceled before the thread begins
 executing. A cancellation request has no effect if the thread has already
-started. A thread whose delayed start was successfully cancelled must be
+started. A thread whose delayed start was successfully canceled must be
 re-spawned before it can be used.
 
 Thread Termination

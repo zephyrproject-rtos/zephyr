@@ -20,8 +20,8 @@ See :ref:`arduino_101` for information how to use the tinyTILE board with Zephyr
 
 Features of the tinyTILE include:
 
-- Intel® Curie™ module dual-core (Intel® Quark* processor core and ARC* core)
-- Bluetooth® low energy, 6-axis combo sensor and pattern matching engine
+- Intel |reg| Curie |trade| module dual-core (Intel |reg| Quark* processor core and ARC* core)
+- Bluetooth |reg| low energy, 6-axis combo sensor and pattern matching engine
 - 14 digital input/output pins (four can be used as PWM output pins)
 - Four PWM output pins
 - Six analog input pins

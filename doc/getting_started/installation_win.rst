@@ -70,7 +70,7 @@ up:
 
      .. note::
 
-        The ISSM toolset only supports development for Intel® Quark™
+        The ISSM toolset only supports development for Intel |reg| Quark |trade|
         Microcontrollers, for example, the Arduino 101 board.  (Check out the
         "Zephyr Development Environment
         Setup" in this `Getting Started on Arduino 101 with ISSM`_ document.)
@@ -118,7 +118,7 @@ up:
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
 
-   To build for the Intel® Quark™ (x86-based) Arduino 101:
+   To build for the Intel |reg| Quark |trade| (x86-based) Arduino 101:
 
     .. code-block:: console
 
@@ -198,7 +198,7 @@ Windows, you will need to build or install a toolchain:
 
    .. note::
 
-      The ISSM toolset only supports development for Intel® Quark™
+      The ISSM toolset only supports development for Intel |reg| Quark |trade|
       Microcontrollers, for example, the Arduino 101 board.  (Check out the
       "Zephyr Development Environment
       Setup" in this `Getting Started on Arduino 101 with ISSM`_ document.)

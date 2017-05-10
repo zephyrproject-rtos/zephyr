@@ -17,6 +17,10 @@ enum llcp {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	LLCP_PING,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	LLCP_PHY_UPD,
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 };
 
 
@@ -59,6 +63,15 @@ struct connection {
 	u16_t max_tx_octets;
 	u16_t max_rx_octets;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	u8_t phy_pref_tx:3;
+	u8_t phy_tx:3;
+	u8_t phy_pref_flags:1;
+	u8_t phy_flags:1;
+	u8_t phy_pref_rx:3;
+	u8_t phy_rx:3;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 	u16_t supervision_reload;
 	u16_t supervision_expire;
@@ -131,6 +144,17 @@ struct connection {
 			u8_t  chm[5];
 			u16_t instant;
 		} chan_map;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+		struct {
+			u8_t initiate:1;
+			u8_t cmd:1;
+			u8_t tx:3;
+			u8_t rx:3;
+			u16_t instant;
+		} phy_upd_ind;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+
 		struct {
 			u8_t  error_code;
 			u8_t  rand[8];
@@ -174,6 +198,22 @@ struct connection {
 		u16_t tx_octets;
 	} llcp_length;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	struct {
+		u8_t req;
+		u8_t ack;
+		u8_t state:2;
+#define LLCP_PHY_STATE_REQ      0
+#define LLCP_PHY_STATE_ACK_WAIT 1
+#define LLCP_PHY_STATE_RSP_WAIT 2
+#define LLCP_PHY_STATE_UPD      3
+		u8_t tx:3;
+		u8_t rx:3;
+		u8_t flags:1;
+		u8_t cmd:1;
+	} llcp_phy;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 	u8_t  sn:1;
 	u8_t  nesn:1;
