@@ -249,9 +249,7 @@ static void prepare_pdu_data_tx(struct connection *conn,
 				struct pdu_data **pdu_data_tx);
 static void packet_rx_allocate(u8_t max);
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static u8_t packet_rx_acquired_count_get(void);
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count);
 static void packet_rx_enqueue(void);
@@ -6798,7 +6796,6 @@ static void packet_rx_allocate(u8_t max)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 static u8_t packet_rx_acquired_count_get(void)
 {
 	if (_radio.packet_rx_acquire >=
@@ -6811,7 +6808,6 @@ static u8_t packet_rx_acquired_count_get(void)
 			_radio.packet_rx_acquire);
 	}
 }
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 static struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count)
 {
