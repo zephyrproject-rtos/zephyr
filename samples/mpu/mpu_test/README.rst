@@ -46,6 +46,10 @@ single thread: :file:`prj_single.conf`:
 
    $ make BOARD=v2m_beetle CONF_FILE=prj_single.conf run
 
+To build a version that allows writes to the flash device, edit
+``prj.conf``, and follow the directions in the comments to enable the
+proper configs.
+
 Sample Output
 =============
 
