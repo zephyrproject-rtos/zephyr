@@ -103,7 +103,7 @@ static int spi_complete_loop(struct spi_config *spi_conf)
 	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
-		return -1;
+		return ret;
 	}
 
 	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
@@ -286,6 +286,27 @@ static int spi_async_call(struct spi_config *spi_conf)
 	return 0;
 }
 
+static int spi_ressource_lock_test(struct spi_config *spi_conf_lock,
+				   struct spi_config *spi_conf_try)
+{
+	spi_conf_lock->operation |= SPI_LOCK_ON;
+
+	if (spi_complete_loop(spi_conf_lock)) {
+		return -1;
+	}
+
+	if (spi_release(spi_conf_lock)) {
+		SYS_LOG_ERR("Deadlock now?");
+		return -1;
+	}
+
+	if (spi_complete_loop(spi_conf_try)) {
+		return -1;
+	}
+
+	return 0;
+}
+
 void main(void)
 {
 	struct k_thread async_thread;
@@ -324,6 +345,10 @@ void main(void)
 	    spi_rx_half_end(&spi_fast) ||
 	    spi_rx_every_4(&spi_fast) ||
 	    spi_async_call(&spi_fast)) {
+		goto end;
+	}
+
+	if (spi_ressource_lock_test(&spi_slow, &spi_fast)) {
 		goto end;
 	}
 
