@@ -338,6 +338,16 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
 	return (enum net_tcp_state)tcp->state;
 }
 
+/**
+ * @brief Check if the sequence number is valid i.e., it is inside the window.
+ *
+ * @param tcp TCP context
+ * @param pkt Network packet
+ *
+ * @return true if network packet sequence number is valid, false otherwise
+ */
+bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt);
+
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);
 #else
