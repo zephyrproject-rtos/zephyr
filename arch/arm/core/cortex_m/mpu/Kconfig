@@ -41,7 +41,7 @@ config NXP_MPU
 
 config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"
-	depends on NXP_MPU
+	depends on ARM_MPU || NXP_MPU
 	default n
 	help
 	  Enable this to allow MPU RWX access to flash memory
