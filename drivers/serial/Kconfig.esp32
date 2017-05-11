@@ -1,0 +1,7 @@
+menuconfig UART_ESP32
+	bool "ESP32 UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	help
+	Enable the ESP32 UART using ROM routines.
+
