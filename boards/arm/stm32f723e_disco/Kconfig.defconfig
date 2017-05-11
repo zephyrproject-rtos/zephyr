@@ -1,0 +1,14 @@
+# Kconfig - STM32F723E Discovery board configuration
+#
+# Copyright (c) 2016 Matthias Boesl
+# Copyright (c) 2017 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32F723E_DISCO
+
+config BOARD
+	default stm32f723e_disco
+
+endif # BOARD_STM32F723E_DISCO
