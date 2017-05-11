@@ -209,6 +209,8 @@ struct _thread_stack_info {
 	/* Stack Size */
 	u32_t size;
 };
+
+typedef struct _thread_stack_info _thread_stack_info_t;
 #endif /* CONFIG_THREAD_STACK_INFO */
 
 struct k_thread {
