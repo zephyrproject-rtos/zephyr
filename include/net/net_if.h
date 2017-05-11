@@ -317,7 +317,7 @@ struct net_if {
  * @brief Send a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
- * @param pkt Pointer on a net packet to send
+ * @param pkt Pointer to a net packet to send
  *
  * return verdict about the packet
  */
@@ -327,7 +327,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
  * @brief Input a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
- * @param pkt Pointer on a net packet to input
+ * @param pkt Pointer to a net packet to input
  *
  * @return verdict about the packet
  */
@@ -341,7 +341,8 @@ static inline enum net_verdict net_if_recv_data(struct net_if *iface,
  * @brief Get link layer header size for this network interface
  *
  * @param iface Pointer to a network interface structure
- * @param dst_ip6 Pointer on the distant IPv6 or NULL if not relevant
+ * @param dst_ip6 Pointer to the destination IPv6 address or NULL if not
+ * relevant
  *
  * @return Return the link layer header size
  */
@@ -352,11 +353,11 @@ static inline u16_t net_if_get_ll_reserve(struct net_if *iface,
 }
 
 /**
- * @brief Get a pointer on L2's private data
+ * @brief Get a pointer to the interface L2 private data
  *
  * @param iface a valid pointer to a network interface structure
  *
- * @return a pointer on the iface's l2 data
+ * @return a pointer to the iface L2 data
  */
 static inline void *net_if_l2_data(struct net_if *iface)
 {
@@ -368,7 +369,7 @@ static inline void *net_if_l2_data(struct net_if *iface)
  *
  * @param iface Pointer to a network interface structure
  *
- * @return a pointer on the device driver instance
+ * @return a pointer to the device driver instance
  */
 static inline struct device *net_if_get_device(struct net_if *iface)
 {
@@ -376,10 +377,10 @@ static inline struct device *net_if_get_device(struct net_if *iface)
 }
 
 /**
- * @brief Queue a packet into net if's TX queue
+ * @brief Queue a packet to the net interface TX queue
  *
  * @param iface Pointer to a network interface structure
- * @param pkt Pointer on a net pktfer to queue
+ * @param pkt Pointer to a net packet to queue
  */
 static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -388,7 +389,7 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_OFFLOAD)
 /**
- * @brief Return the IP offload status.
+ * @brief Return the IP offload status
  *
  * @param iface Network interface
  *
@@ -405,7 +406,7 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
  *
  * @param iface Pointer to a network interface structure
  *
- * @return a pointer on the network link address
+ * @return a pointer to the network link address
  */
 static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
 {
@@ -434,7 +435,7 @@ void net_if_start_rs(struct net_if *iface);
  * @brief Set a network interface's link address
  *
  * @param iface Pointer to a network interface structure
- * @param addr a pointer on a u8_t buffer representing the address
+ * @param addr a pointer to a u8_t buffer representing the address
  * @param len length of the address buffer
  * @param type network bearer type of this link address
  *
@@ -1085,7 +1086,7 @@ static inline void net_if_ipv4_set_gw(struct net_if *iface,
  * @typedef net_if_link_callback_t
  * @brief Define callback that is called after a network packet
  *        has been sent.
- * @param "struct net_if *iface" A pointer on a struct net_if to which the
+ * @param "struct net_if *iface" A pointer to a struct net_if to which the
  *        the net_pkt was sent to.
  * @param "struct net_linkaddr *dst" Link layer address of the destination
  *        where the network packet was sent.
@@ -1160,7 +1161,7 @@ u8_t net_if_get_by_iface(struct net_if *iface);
  * @brief Callback used while iterating over network interfaces
  *
  * @param iface Pointer to current network interface
- * @param user_data A valid pointer on some user data or NULL
+ * @param user_data A valid pointer to user data or NULL
  */
 typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
 
@@ -1168,8 +1169,8 @@ typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
  * @brief Go through all the network interfaces and call callback
  * for each interface.
  *
- * @param cb User supplied callback function to call.
- * @param user_data User specified data.
+ * @param cb User supplied callback function to call
+ * @param user_data User specified data
  */
 void net_if_foreach(net_if_cb_t cb, void *user_data);
 
