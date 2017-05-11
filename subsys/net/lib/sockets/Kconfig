@@ -1,0 +1,17 @@
+# Kconfig - BSD Sockets like API
+
+#
+# Copyright (c) 2017 Linaro Limited.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NET_SOCKETS
+	bool "BSD Sockets like API"
+	default n
+	help
+	Provide BSD Sockets like API on top of native Zephyr networking API.
+
+if NET_SOCKETS
+
+endif # NET_SOCKETS
