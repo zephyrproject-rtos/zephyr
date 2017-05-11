@@ -113,9 +113,6 @@
 /* CMSDK APB Dual Timer */
 #define CMSDK_APB_DTIMER _BEETLE_DTIMER_BASE
 
-/* CMSDK APB Watchdog */
-#define CMSDK_APB_WDOG _BEETLE_WDOG_BASE
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _ARM_BEETLE_SOC_H_ */

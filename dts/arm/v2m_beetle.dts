@@ -43,6 +43,11 @@
 			interrupts = <IRQ_UART1 3>;
 			current-speed = <115200>;
 		};
+
+		wdog0: wdog@40008000 {
+			compatible = "arm,cmsdk-watchdog";
+			reg = <0x40008000 0x1000>;
+		};
 	};
 };
 
