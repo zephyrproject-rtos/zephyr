@@ -150,7 +150,7 @@ static int uart_stm32_irq_tx_ready(struct device *dev)
 	return __HAL_UART_GET_FLAG(UartHandle, UART_FLAG_TXE);
 }
 
-static int uart_stm32_irq_tx_empty(struct device *dev)
+static int uart_stm32_irq_tx_complete(struct device *dev)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	UART_HandleTypeDef *UartHandle = &data->huart;
@@ -250,7 +250,7 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.irq_tx_enable = uart_stm32_irq_tx_enable,
 	.irq_tx_disable = uart_stm32_irq_tx_disable,
 	.irq_tx_ready = uart_stm32_irq_tx_ready,
-	.irq_tx_empty = uart_stm32_irq_tx_empty,
+	.irq_tx_complete = uart_stm32_irq_tx_complete,
 	.irq_rx_enable = uart_stm32_irq_rx_enable,
 	.irq_rx_disable = uart_stm32_irq_rx_disable,
 	.irq_rx_ready = uart_stm32_irq_rx_ready,
