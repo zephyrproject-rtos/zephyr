@@ -100,12 +100,6 @@
 /* System Control Register (SYSCON) */
 #define __BEETLE_SYSCON ((volatile struct syscon *)_BEETLE_SYSCON_BASE)
 
-/* CMSDK AHB General Purpose Input/Output (GPIO) */
-#define CMSDK_AHB_GPIO0 _BEETLE_GPIO0_BASE
-#define CMSDK_AHB_GPIO1 _BEETLE_GPIO1_BASE
-#define CMSDK_AHB_GPIO2 _BEETLE_GPIO2_BASE
-#define CMSDK_AHB_GPIO3 _BEETLE_GPIO3_BASE
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _ARM_BEETLE_SOC_H_ */
