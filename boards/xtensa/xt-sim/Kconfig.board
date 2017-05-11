@@ -5,4 +5,4 @@
 
 config  BOARD_SIMULATOR_XTENSA
 	bool "Xtensa Development ISS"
-	depends on XTENSA
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER
