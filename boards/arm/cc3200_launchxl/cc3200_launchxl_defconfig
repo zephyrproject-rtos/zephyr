@@ -23,6 +23,3 @@ CONFIG_UART_CONSOLE=y
 
 # Enable CC3200 SDK driver files
 CONFIG_CC3200SDK_ROM_DRIVERLIB=y
-
-# Enable DTS parsing
-CONFIG_HAS_DTS=y
