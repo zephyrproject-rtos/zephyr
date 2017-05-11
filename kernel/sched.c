@@ -297,6 +297,9 @@ void k_yield(void)
 
 	if (_current == _get_next_ready_thread()) {
 		irq_unlock(key);
+#ifdef CONFIG_STACK_SENTINEL
+		_check_stack_sentinel();
+#endif
 	} else {
 		_Swap(key);
 	}

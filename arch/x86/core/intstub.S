@@ -397,7 +397,9 @@ noReschedule:
 
 	popl	%esp		/* pop thread stack pointer */
 
-
+#ifdef CONFIG_STACK_SENTINEL
+	call _check_stack_sentinel
+#endif
 	/* fall through to 'nestedInterrupt' */
 
 
