@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f407.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F4DISCOVERY board";
+	compatible = "st,stm32f4discovery", "st,stm32f407";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	status = "ok";
+};
