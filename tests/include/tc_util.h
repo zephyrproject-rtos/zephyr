@@ -71,22 +71,19 @@
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 
 /* prints result and the function name */
-#define _TC_END_RESULT(result, func)					\
-	do {								\
-		PRINT_LINE;						\
-		TC_END(result, "%s - %s.\n",				\
-		       (result) == TC_PASS ? PASS : FAIL, func);	\
-	} while (0)
+#define _TC_END_RESULT(result, func)                                     \
+			TC_END(result, "%s\t\t%s\n",                     \
+				(result) == TC_PASS ? PASS : FAIL, func)
+
 #define TC_END_RESULT(result)                           \
 	_TC_END_RESULT((result), __func__)
 
 #define TC_END_REPORT(result)                               \
-	do {                                                    \
-		PRINT_LINE;                                         \
-		TC_PRINT_RUNID;                                         \
+	do {							\
+		TC_PRINT_RUNID;					\
 		TC_END(result,                                      \
 		       "PROJECT EXECUTION %s\n",               \
-		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED");	\
+		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED"); \
 	} while (0)
 
 #define TC_CMD_DEFINE(name)				\
