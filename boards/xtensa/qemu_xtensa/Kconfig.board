@@ -5,4 +5,4 @@
 
 config  BOARD_QEMU_XTENSA
 	bool "Xtensa emulation using Qemu"
-	depends on XTENSA
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER
