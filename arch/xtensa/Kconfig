@@ -15,6 +15,13 @@ menu "XTENSA Options"
 config ARCH
 	default "xtensa"
 
+config SIMULATOR_XTENSA
+        bool
+	prompt "Simulator Configuration"
+	default n
+	help
+	  Specify if the board configuration should be treated as a simulator.
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	prompt "Hardware clock cycles per second, 2000000 for ISS"
