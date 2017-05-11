@@ -223,7 +223,9 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Disable other clocks */
 	LL_RCC_HSE_Disable();
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_RCC_MSI_Disable();
+#endif
 
 #elif CONFIG_CLOCK_STM32_PLL_SRC_HSE
 	int hse_bypass = LL_UTILS_HSEBYPASS_OFF;
@@ -239,7 +241,9 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Disable other clocks */
 	LL_RCC_HSI_Disable();
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_RCC_MSI_Disable();
+#endif
 
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_... */
 
@@ -282,7 +286,9 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Disable other clocks */
 	LL_RCC_HSI_Disable();
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_RCC_MSI_Disable();
+#endif
 	LL_RCC_PLL_Disable();
 
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI
@@ -303,7 +309,9 @@ static int stm32_clock_control_init(struct device *dev)
 
 	/* Disable other clocks */
 	LL_RCC_HSE_Disable();
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_RCC_MSI_Disable();
+#endif
 	LL_RCC_PLL_Disable();
 
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_... */
