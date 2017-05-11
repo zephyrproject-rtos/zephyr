@@ -57,7 +57,4 @@
 #define IRQ_PORT3_ALL           43 /* GPIO Port 3 combined Interrupt        */
 #define IRQ_TRNG                44 /* Random number generator Interrupt     */
 
-/* CMSDK APB Dualtimer */
-#define CMSDK_APB_DUALTIMER_IRQ IRQ_DUALTIMER
-
 #endif /* _ARM_BEETLE_SOC_IRQ_H_ */
