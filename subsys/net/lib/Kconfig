@@ -6,6 +6,8 @@
 
 menu "Network Protocols"
 
+source "subsys/net/lib/sockets/Kconfig"
+
 source "subsys/net/lib/zoap/Kconfig"
 
 source "subsys/net/lib/dns/Kconfig"

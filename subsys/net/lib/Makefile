@@ -1,3 +1,7 @@
+ifdef CONFIG_NET_SOCKETS
+include $(srctree)/subsys/net/lib/sockets/Makefile
+endif
+
 ifdef CONFIG_ZOAP
 include $(srctree)/subsys/net/lib/zoap/Makefile
 endif
