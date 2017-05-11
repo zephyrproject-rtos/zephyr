@@ -71,7 +71,9 @@ struct net_pkt {
 	sys_snode_t sent_list;
 #endif
 
-	u8_t sent       : 1;	/* Is this sent or not
+	u8_t sent_or_eof: 1;	/* For outgoing packet: is this sent or not
+				 * For incoming packet of a socket: last
+				 * packet before EOF
 				 * Used only if defined(CONFIG_NET_TCP)
 				 */
 	u8_t forwarding : 1;	/* Are we forwarding this pkt
@@ -188,13 +190,25 @@ static inline void net_pkt_set_next_hdr(struct net_pkt *pkt, u8_t *hdr)
 #if defined(CONFIG_NET_TCP)
 static inline u8_t net_pkt_sent(struct net_pkt *pkt)
 {
-	return pkt->sent;
+	return pkt->sent_or_eof;
 }
 
 static inline void net_pkt_set_sent(struct net_pkt *pkt, bool sent)
 {
-	pkt->sent = sent;
+	pkt->sent_or_eof = sent;
 }
+
+#if defined(CONFIG_NET_SOCKETS)
+static inline u8_t net_pkt_eof(struct net_pkt *pkt)
+{
+	return pkt->sent_or_eof;
+}
+
+static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
+{
+	pkt->sent_or_eof = eof;
+}
+#endif
 #endif
 
 #if defined(CONFIG_NET_ROUTE)
