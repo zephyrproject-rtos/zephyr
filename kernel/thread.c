@@ -133,6 +133,44 @@ void _thread_monitor_exit(struct k_thread *thread)
 }
 #endif /* CONFIG_THREAD_MONITOR */
 
+#ifdef CONFIG_STACK_SENTINEL
+/* Check that the stack sentinel is still present
+ *
+ * The stack sentinel feature writes a magic value to the lowest 4 bytes of
+ * the thread's stack when the thread is initialized. This value gets checked
+ * in a few places:
+ *
+ * 1) In k_yield() if the current thread is not swapped out
+ * 2) In the interrupt code, after the interrupt has been serviced, and
+ *    a decision *not* to call _Swap() has been made.
+ * 3) In _Swap(), check the sentinel in the outgoing thread
+ * 4) When a thread returns from its entry function to cooperatively terminate
+ *
+ * Items 2 and 3 require support in arch/ code.
+ *
+ * If the check fails, the thread will be terminated appropriately through
+ * the system fatal error handler.
+ */
+void _check_stack_sentinel(void)
+{
+	u32_t *stack;
+
+	if (_is_thread_prevented_from_running(_current)) {
+		/* Filter out threads that are dummy threads or already
+		 * marked for termination (_THREAD_DEAD)
+		 */
+		return;
+	}
+
+	stack = (u32_t *)_current->stack_info.start;
+	if (*stack != STACK_SENTINEL) {
+		/* Restore it so further checks don't trigger this same error */
+		*stack = STACK_SENTINEL;
+		_k_except_reason(_NANO_ERR_STACK_CHK_FAIL);
+	}
+}
+#endif
+
 /*
  * Common thread entry point function (used by all threads)
  *
@@ -148,6 +186,9 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 {
 	entry(p1, p2, p3);
 
+#ifdef CONFIG_STACK_SENTINEL
+	_check_stack_sentinel();
+#endif
 #ifdef CONFIG_MULTITHREADING
 	if (_is_thread_essential()) {
 		_k_except_reason(_NANO_ERR_INVALID_TASK_EXIT);

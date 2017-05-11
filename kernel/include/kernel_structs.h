@@ -45,6 +45,10 @@
 
 /* end - states */
 
+#ifdef CONFIG_STACK_SENTINEL
+/* Magic value in lowest bytes of the stack */
+#define STACK_SENTINEL 0xF0F0F0F0
+#endif
 
 /* lowest value of _thread_base.preempt at which a thread is non-preemptible */
 #define _NON_PREEMPT_THRESHOLD 0x0080
@@ -154,6 +158,13 @@ static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
 #ifdef CONFIG_INIT_STACKS
 	memset(pStack, 0xaa, stackSize);
 #endif
+#ifdef CONFIG_STACK_SENTINEL
+	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
+	 * We periodically check that it's still present and kill the thread
+	 * if it isn't.
+	 */
+	*((u32_t *)pStack) = STACK_SENTINEL;
+#endif /* CONFIG_STACK_SENTINEL */
 	/* Initialize various struct k_thread members */
 	_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
 

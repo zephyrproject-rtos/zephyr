@@ -69,6 +69,13 @@ _zxt_dispatch:
 	l16ui a3, a3, THREAD_OFFSET(cpEnable) /* a3 := cp_state->cpenable */
 	wsr a3, CPENABLE
 #endif
+#ifdef CONFIG_STACK_SENTINEL
+#ifdef __XTENSA_CALL0_ABI__
+	call0 _check_stack_sentinel
+#else
+	call4 _check_stack_sentinel
+#endif
+#endif
 	/*
 	 * Interrupt stack frame.
 	 * Restore full context and return to exit dispatcher.

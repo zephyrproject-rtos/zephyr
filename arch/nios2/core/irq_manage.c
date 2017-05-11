@@ -18,6 +18,7 @@
 #include <misc/printk.h>
 #include <sw_isr_table.h>
 #include <logging/kernel_event_logger.h>
+#include <ksched.h>
 
 void _irq_spurious(void *unused)
 {
@@ -91,5 +92,8 @@ void _enter_irq(u32_t ipending)
 	}
 
 	_kernel.nested--;
+#ifdef CONFIG_STACK_SENTINEL
+	_check_stack_sentinel();
+#endif
 }
 
