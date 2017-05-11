@@ -204,6 +204,131 @@ void radio_pkt_tx_set(void *tx_packet)
 	NRF_RADIO->PACKETPTR = (u32_t)tx_packet;
 }
 
+u32_t radio_tx_ready_delay_get(u8_t phy, u8_t flags)
+{
+	/* Return TXEN->TXIDLE + TXIDLE->TX */
+
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+	return 140;
+#elif defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_SOC_NRF52840)
+	switch (phy) {
+	default:
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
+	case BIT(0):
+		return 141; /* floor(140.1 + 1.6) */
+	case BIT(1):
+		return 146; /* floor(145 + 1) */
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+	case BIT(0):
+	case BIT(1):
+		return 131; /* floor(129.5 + 1.6) */
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+	case BIT(2):
+		if (flags & 0x01) {
+			return 121; /* floor(119.6 + 2.2) */
+		} else {
+			return 132; /* floor(130 + 2.2) */
+		}
+	}
+#else /* !CONFIG_SOC_NRF52840 */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
+	return 140;
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+	return 131; /* floor(129.5 + 1.6) */
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+}
+
+u32_t radio_tx_chain_delay_get(u8_t phy, u8_t flags)
+{
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+	return 1; /* ceil(1) */
+#elif defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_SOC_NRF52840)
+	switch (phy) {
+	default:
+	case BIT(0):
+	case BIT(1):
+		return 1; /* ceil(0.6) */
+	case BIT(2):
+		if (flags & 0x01) {
+			return 1; /* TODO: different within packet */
+		} else {
+			return 1; /* TODO: different within packet */
+		}
+	}
+#else /* !CONFIG_SOC_NRF52840 */
+	return 1; /* ceil(0.6) */
+#endif /* !CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+}
+
+u32_t radio_rx_ready_delay_get(u8_t phy)
+{
+	/* Return RXEN->RXIDLE + RXIDLE->RX */
+
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+	return 138;
+#elif defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_SOC_NRF52840)
+	switch (phy) {
+	default:
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
+	case BIT(0):
+		return 141; /* ceil(140.1 + 0.2) */
+	case BIT(1):
+		return 145; /* ceil(144.6 + 0.2) */
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+	case BIT(0):
+	case BIT(1):
+		return 130; /* ceil(129.5 + 0.2) */
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+	case BIT(2):
+		return 121; /* ceil(120 + 0.2) */
+	}
+#else /* !CONFIG_SOC_NRF52840 */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
+	return 140;
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+	return 130; /* ceil(129.5 + 0.2) */
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+}
+
+u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
+{
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+	return 3; /* ceil(3) */
+#elif defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_SOC_NRF52840)
+	switch (phy) {
+	default:
+	case BIT(0):
+		return 10; /* ceil(9.4) */
+	case BIT(1):
+		return 5; /* ceil(5) */
+	case BIT(2):
+		if (flags & 0x01) {
+			return 30; /* ciel(29.6) */
+		} else {
+			return 20; /* ciel(19.6) */
+		}
+	}
+#else /* !CONFIG_SOC_NRF52840 */
+	switch (phy) {
+	default:
+	case BIT(0):
+		return 10; /* ceil(9.4) */
+	case BIT(1):
+		return 5; /* ceil(5) */
+	}
+#endif /* !CONFIG_SOC_NRF52840 */
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+}
+
 void radio_rx_enable(void)
 {
 	NRF_RADIO->TASKS_RXEN = 1;
@@ -216,6 +341,12 @@ void radio_tx_enable(void)
 
 void radio_disable(void)
 {
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
+	NRF_PPI->CHENCLR = PPI_CHEN_CH8_Msk | PPI_CHEN_CH11_Msk;
+	NRF_PPI->TASKS_CHG[0].DIS = 1;
+	NRF_PPI->TASKS_CHG[1].DIS = 1;
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
+
 	NRF_RADIO->SHORTS = 0;
 	NRF_RADIO->TASKS_DISABLE = 1;
 }
@@ -283,31 +414,46 @@ void *radio_pkt_scratch_get(void)
 #if !defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
 static u8_t sw_tifs_toggle;
 
-static void sw_switch(u8_t dir)
+static void sw_switch(u8_t dir, u8_t phy, u8_t flags)
 {
 	u8_t ppi = 12 + sw_tifs_toggle;
 
+	NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle] = 0;
+
 	NRF_PPI->CH[11].EEP = (u32_t)&(NRF_RADIO->EVENTS_END);
 	NRF_PPI->CH[11].TEP = (u32_t)&(NRF_PPI->TASKS_CHG[sw_tifs_toggle].EN);
-	NRF_PPI->CHENSET = PPI_CHEN_CH11_Msk;
 
 	NRF_PPI->CH[ppi].EEP = (u32_t)
 			       &(NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle]);
 	if (dir) {
-		NRF_TIMER1->CC[sw_tifs_toggle] -= RADIO_TX_READY_DELAY_US +
-						  RADIO_TX_CHAIN_DELAY_US;
+		u32_t delay = radio_tx_ready_delay_get(phy, flags) +
+				 radio_rx_chain_delay_get(phy, flags);
+
+		if (delay < NRF_TIMER1->CC[sw_tifs_toggle]) {
+			NRF_TIMER1->CC[sw_tifs_toggle] -= delay;
+		} else {
+			NRF_TIMER1->CC[sw_tifs_toggle] = 1;
+		}
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_TXEN);
 	} else {
-		NRF_TIMER1->CC[sw_tifs_toggle] -= RADIO_RX_READY_DELAY_US;
+		u32_t delay = radio_rx_ready_delay_get(phy);
+
+		if (delay < NRF_TIMER1->CC[sw_tifs_toggle]) {
+			NRF_TIMER1->CC[sw_tifs_toggle] -= delay;
+		} else {
+			NRF_TIMER1->CC[sw_tifs_toggle] = 1;
+		}
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_RXEN);
 	}
+
+	NRF_PPI->CHENSET = PPI_CHEN_CH8_Msk | PPI_CHEN_CH11_Msk;
 
 	sw_tifs_toggle += 1;
 	sw_tifs_toggle &= 1;
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 
-void radio_switch_complete_and_rx(void)
+void radio_switch_complete_and_rx(u8_t phy)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
@@ -316,11 +462,11 @@ void radio_switch_complete_and_rx(void)
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
-	sw_switch(0);
+	sw_switch(0, phy, 0);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 }
 
-void radio_switch_complete_and_tx(void)
+void radio_switch_complete_and_tx(u8_t phy, u8_t flags)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
@@ -329,7 +475,7 @@ void radio_switch_complete_and_tx(void)
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
-	sw_switch(1);
+	sw_switch(1, phy, flags);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 }
 
@@ -479,7 +625,6 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 
 	NRF_PPI->CH[8].EEP = (u32_t)&(NRF_RADIO->EVENTS_END);
 	NRF_PPI->CH[8].TEP = (u32_t)&(NRF_TIMER1->TASKS_CLEAR);
-	NRF_PPI->CHENSET = PPI_CHEN_CH8_Msk;
 
 	NRF_PPI->CH[9].EEP = (u32_t)
 			     &(NRF_TIMER1->EVENTS_COMPARE[0]);
