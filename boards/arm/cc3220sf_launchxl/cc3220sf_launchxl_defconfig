@@ -23,6 +23,3 @@ CONFIG_UART_CONSOLE=y
 
 # Enable SimpleLink CC3220 SDK
 CONFIG_HAS_CC3220SDK=y
-
-# Enable DTS parsing
-CONFIG_HAS_DTS=y
