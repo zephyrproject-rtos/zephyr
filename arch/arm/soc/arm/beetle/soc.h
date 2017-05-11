@@ -113,10 +113,6 @@
 /* CMSDK APB Dual Timer */
 #define CMSDK_APB_DTIMER _BEETLE_DTIMER_BASE
 
-/* CMSDK APB Universal Asynchronous Receiver-Transmitter (UART) */
-#define CMSDK_APB_UART0 _BEETLE_UART0_BASE
-#define CMSDK_APB_UART1 _BEETLE_UART1_BASE
-
 /* CMSDK APB Watchdog */
 #define CMSDK_APB_WDOG _BEETLE_WDOG_BASE
 
