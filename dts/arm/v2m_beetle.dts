@@ -66,6 +66,30 @@
 			compatible = "arm,cmsdk-watchdog";
 			reg = <0x40008000 0x1000>;
 		};
+
+		gpio0: gpio@40010000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40010000 0x1000>;
+			interrupts = <IRQ_PORT0_ALL 3>;
+		};
+
+		gpio1: gpio@40011000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40011000 0x1000>;
+			interrupts = <IRQ_PORT1_ALL 3>;
+		};
+
+		gpio2: gpio@40012000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40012000 0x1000>;
+			interrupts = <IRQ_PORT2_ALL 3>;
+		};
+
+		gpio3: gpio@40013000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40013000 0x1000>;
+			interrupts = <IRQ_PORT3_ALL 3>;
+		};
 	};
 };
 
