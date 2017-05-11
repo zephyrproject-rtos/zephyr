@@ -237,6 +237,14 @@ struct net_context {
 	/** TCP connection information */
 	struct net_tcp *tcp;
 #endif /* CONFIG_NET_TCP */
+
+#if defined(CONFIG_NET_SOCKETS)
+	/** Per-socket packet or connection queues */
+	union {
+		struct k_fifo recv_q;
+		struct k_fifo accept_q;
+	};
+#endif /* CONFIG_NET_SOCKETS */
 };
 
 static inline bool net_context_is_used(struct net_context *context)
