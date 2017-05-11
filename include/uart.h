@@ -138,8 +138,8 @@ struct uart_driver_api {
 	/** Interrupt driven receiver disabling function */
 	void (*irq_rx_disable)(struct device *dev);
 
-	/** Interrupt driven transfer empty function */
-	int (*irq_tx_empty)(struct device *dev);
+	/** Interrupt driven transfer complete function */
+	int (*irq_tx_complete)(struct device *dev);
 
 	/** Interrupt driven receiver ready function */
 	int (*irq_rx_ready)(struct device *dev);
@@ -312,11 +312,18 @@ static inline void uart_irq_tx_disable(struct device *dev)
 }
 
 /**
- * @brief Check if Tx IRQ has been raised.
+ * @brief Check if UART TX buffer can accept a new char
+ *
+ * @details Check if UART TX buffer can accept at least one character
+ * for transmission (i.e. uart_fifo_fill() will succeed and return
+ * non-zero). This function must be called in a UART interrupt
+ * handler, or its result is undefined. Before calling this function
+ * in the interrupt handler, uart_irq_update() must be called once per
+ * the handler invocation.
  *
  * @param dev UART device structure.
  *
- * @retval 1 If an IRQ is ready.
+ * @retval 1 If at least one char can be written to UART.
  * @retval 0 Otherwise.
  */
 static inline int uart_irq_tx_ready(struct device *dev)
@@ -363,30 +370,52 @@ static inline void uart_irq_rx_disable(struct device *dev)
 }
 
 /**
- * @brief Check if nothing remains to be transmitted
+ * @brief Check if UART TX block finished transmission
+ *
+ * @details Check if any outgoing data buffered in UART TX block was
+ * fully transmitted and TX block is idle. When this condition is
+ * true, UART device (or whole system) can be power off. Note that
+ * this function is *not* useful to check if UART TX can accept more
+ * data, use uart_irq_tx_ready() for that. This function must be called
+ * in a UART interrupt handler, or its result is undefined. Before
+ * calling this function in the interrupt handler, uart_irq_update()
+ * must be called once per the handler invocation.
  *
  * @param dev UART device structure.
  *
  * @retval 1 If nothing remains to be transmitted.
  * @retval 0 Otherwise.
  */
-static inline int uart_irq_tx_empty(struct device *dev)
+static inline int uart_irq_tx_complete(struct device *dev)
 {
 	const struct uart_driver_api *api = dev->driver_api;
 
-	if (api->irq_tx_empty) {
-		return api->irq_tx_empty(dev);
+	if (api->irq_tx_complete) {
+		return api->irq_tx_complete(dev);
 	}
 
 	return 0;
 }
 
 /**
- * @brief Check if Rx IRQ has been raised.
+ * @deprecated This API is deprecated.
+ */
+static inline int __deprecated uart_irq_tx_empty(struct device *dev)
+{
+	return uart_irq_tx_complete(dev);
+}
+
+/**
+ * @brief Check if UART RX buffer has a new char
+ *
+ * (i.e. uart_fifo_read() will succeed and return non-zero). This function
+ * must be called in a UART interrupt handler, or its result is undefined.
+ * Before calling this function in the interrupt handler, uart_irq_update()
+ * must be called once per the handler invocation.
  *
  * @param dev UART device structure.
  *
- * @retval 1 If an IRQ is ready.
+ * @retval 1 If a new received char is ready.
  * @retval 0 Otherwise.
  */
 static inline int uart_irq_rx_ready(struct device *dev)
