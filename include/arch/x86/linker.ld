@@ -194,6 +194,7 @@ SECTIONS
 
 	GROUP_END(RAMABLE_REGION)
 
+#ifndef LINKER_PASS2
 	/* static interrupts */
 	SECTION_PROLOGUE(intList, (OPTIONAL),)
 	{
@@ -205,6 +206,15 @@ SECTIONS
 	KEEP(*(.gnu.linkonce.intList.*))
 	__INT_LIST_END__ = .;
 	} > IDT_LIST
+#else
+	/DISCARD/ :
+	{
+	KEEP(*(.spurIsr))
+	KEEP(*(.spurNoErrIsr))
+	KEEP(*(.intList))
+	KEEP(*(.gnu.linkonce.intList.*))
+	}
+#endif
 
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
