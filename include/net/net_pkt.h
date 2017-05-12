@@ -69,6 +69,9 @@ struct net_pkt {
 
 #if defined(CONFIG_NET_TCP)
 	sys_snode_t sent_list;
+
+	/* Send callback timer, this is set in net_context when data is sent. */
+	struct k_delayed_work send_cb_timer;
 #endif
 
 	u8_t sent       : 1;	/* Is this sent or not
