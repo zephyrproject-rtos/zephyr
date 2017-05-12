@@ -32,33 +32,10 @@ extern "C" {
  */
 static inline void kernel_arch_init(void)
 {
-	extern void *__isr___SpuriousIntHandler;
-	extern void *_dummy_spurious_interrupt;
-	extern void *_dummy_exception_vector_stub;
 	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
-	extern void _exception_enter(void);
-
 	_kernel.nested = 0;
-
 	_kernel.irq_stack = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
-	/*
-	 * Forces the inclusion of the spurious interrupt handlers. If a
-	 * reference isn't made then intconnect.o is never pulled in by the
-	 * linker.
-	 */
-
-	_dummy_spurious_interrupt = &__isr___SpuriousIntHandler;
-
-	/*
-	 * Forces the inclusion of the exception vector stub code. If a
-	 * reference isn't made then excstubs.o is never pulled in by the
-	 * linker.
-	 */
-
-	_dummy_exception_vector_stub = &_exception_enter;
-
-
 }
 
 /**
