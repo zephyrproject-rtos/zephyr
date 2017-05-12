@@ -72,4 +72,6 @@ source "drivers/dma/Kconfig.stm32f4x"
 
 source "drivers/dma/Kconfig.sam_xdmac"
 
+source "drivers/dma/Kconfig.mcux"
+
 endif # DMA

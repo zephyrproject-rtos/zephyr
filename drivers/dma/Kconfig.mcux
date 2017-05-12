@@ -1,0 +1,114 @@
+# Kconfig - MCUXpresso SDK DMA
+#
+#
+#
+# Copyright (c) 2017, Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DMA_MCUX
+	bool "Enable MCUX DMA driver"
+	default n
+	depends on HAS_MCUX
+	help
+	  MCUX eDMA driver.
+
+if DMA_MCUX
+
+config DMA_MCUX_ENABLE_DEBUG_MODE
+	bool "Enable debug mode"
+	default y
+	help
+	  When the system is in debug mode and this option is enabled,
+	  the DMA controller stalls the start of a new channel.
+	  Channel execution resumes when the system exits debug mode.
+
+choice
+prompt "Channel Arbitration Mode"
+default DMA_MCUX_ROUND_ROBIN_ARBITRATION_MODE
+
+config DMA_MCUX_FIXED_PRIORITY_ARBITRATION_MODE
+	bool "Fixed priority arbitration mode"
+	help
+	  Fixed priority arbitration is used for channel selection.
+
+config DMA_MCUX_ROUND_ROBIN_ARBITRATION_MODE
+	bool "Round robin arbitration mode"
+	help
+	  Round robin arbitration is used for channel selection.
+
+endchoice
+
+config DMA_MCUX_NUMOF_DMA_CHANNELS
+	int "Number of enabled DMA channels"
+	default 2
+	range 1 8
+	help
+	  This option configures the number of enabled DMA channels.
+
+config DMA_MCUX_TCD0_QUEUE_SIZE
+	int "TCD0 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 0.
+
+config DMA_MCUX_TCD1_QUEUE_SIZE
+	int "TCD1 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 1.
+
+config DMA_MCUX_TCD2_QUEUE_SIZE
+	int "TCD2 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 2.
+
+config DMA_MCUX_TCD3_QUEUE_SIZE
+	int "TCD3 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 3.
+
+config DMA_MCUX_TCD4_QUEUE_SIZE
+	int "TCD4 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 4.
+
+config DMA_MCUX_TCD5_QUEUE_SIZE
+	int "TCD5 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 5.
+
+config DMA_MCUX_TCD6_QUEUE_SIZE
+	int "TCD6 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 6.
+
+config DMA_MCUX_TCD7_QUEUE_SIZE
+	int "TCD7 pool length"
+	default 0
+	range 0 8
+	help
+	  This option configures the size of the Transfer
+	  Control Descriptor (TCD) queue for the DMA channel 7.
+
+endif # DMA_MCUX
