@@ -10,12 +10,13 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(NBLE_DEBUG_GAP)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 
 #include <misc/util.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(NBLE_DEBUG_GAP)
+#include "common/log.h"
 
 #include "gap_internal.h"
 #include "conn_internal.h"

@@ -34,7 +34,7 @@
 #include "ctrl_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
+#include "common/log.h"
 
 #define RADIO_TIFS                      150
 #define RADIO_CONN_EVENTS(x, y)		((u16_t)((x) / (y)))

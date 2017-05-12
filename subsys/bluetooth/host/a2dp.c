@@ -17,12 +17,13 @@
 #include <misc/printk.h>
 #include <assert.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_A2DP)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/avdtp.h>
 #include <bluetooth/a2dp.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_A2DP)
+#include "common/log.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"

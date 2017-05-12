@@ -20,8 +20,6 @@
 #include <misc/stack.h>
 #include <misc/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
@@ -29,6 +27,9 @@
 #ifdef CONFIG_CLOCK_CONTROL_NRF5
 #include <drivers/clock_control/nrf5_clock_control.h>
 #endif
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#include "common/log.h"
 
 #include "util/util.h"
 #include "hal/ccm.h"

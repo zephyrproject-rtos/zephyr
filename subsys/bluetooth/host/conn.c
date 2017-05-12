@@ -17,13 +17,14 @@
 #include <misc/stack.h>
 #include <misc/__assert.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
-#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
+#include "common/log.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"

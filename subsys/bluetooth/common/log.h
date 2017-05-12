@@ -3,6 +3,7 @@
  */
 
 /*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -13,6 +14,9 @@
 #include <sections.h>
 #include <offsets.h>
 #include <zephyr.h>
+
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,8 +100,16 @@ static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
 /* This helper is only available when BLUETOOTH_DEBUG is enabled */
 const char *bt_hex(const void *buf, size_t len);
 
+/* These helpers are only safe to be called from internal threads as they're
+ * not multi-threading safe
+ */
+const char *bt_addr_str(const bt_addr_t *addr);
+const char *bt_addr_le_str(const bt_addr_le_t *addr);
+
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __BT_LOG_H */
+
