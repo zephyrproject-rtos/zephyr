@@ -99,7 +99,7 @@ static int set_aio_callback(int polarity, int disable)
 
 	/* config AIN callback */
 	zassert_true(aio_cmp_configure(aio_dev, PIN_IN,
-				      polarity, AIO_CMP_REF_A,
+				      polarity, AIO_CMP_REF_B,
 				      callback, (void *)aio_dev) == 0,
 		    "ERROR registering callback");
 	if (disable == 1) {
