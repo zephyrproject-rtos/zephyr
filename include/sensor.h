@@ -110,6 +110,12 @@ enum sensor_channel {
 	SENSOR_CHAN_GREEN,
 	/** Altitude, in meters */
 	SENSOR_CHAN_ALTITUDE,
+	/**
+	 * Touchscreen X, Y, and pressure (Z) samples, in device specific units.
+	 * Higher pressure is lower Z values and the maximum Z integer value
+	 * (0x7fffffff) indicates that the screen isn't being touched.
+	 */
+	SENSOR_CHAN_TOUCHSCREEN_XYZ,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
