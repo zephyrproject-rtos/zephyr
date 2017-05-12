@@ -14,6 +14,17 @@ menuconfig NET_SOCKETS
 
 if NET_SOCKETS
 
+config NET_SOCKETS_POSIX_NAMES
+	bool "Standard POSIX names for Sockets API"
+	default n
+	help
+	By default, Sockets API function are prefixed with `zsock_` to avoid
+	namespacing issues. If this option is enabled, they will be provided
+	with standard POSIX names like socket(), recv(), and close(), to help
+	with porting existing code. Note that close() may require a special
+	attention, as in POSIX it closes any file descriptor, while with this
+	option enaled, it will still apply only to sockets.
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets like API calls"
 	default n
