@@ -567,17 +567,10 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 	if ((net_context_get_state(tcp->context) != NET_CONTEXT_UNCONNECTED) &&
 	    (net_tcp_get_state(tcp) != NET_TCP_SYN_SENT) &&
 	    (net_tcp_get_state(tcp) != NET_TCP_TIME_WAIT)) {
-		if (net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
-			/* Send the reset segment with acknowledgment. */
-			segment.ack = tcp->send_ack;
-			segment.flags = NET_TCP_RST | NET_TCP_ACK;
-		} else {
-			/* Send the reset segment without acknowledgment. */
-			segment.ack = 0;
-			segment.flags = NET_TCP_RST;
-		}
-
-		segment.seq = 0;
+		/* Send the reset segment always with acknowledgment. */
+		segment.ack = tcp->send_ack;
+		segment.flags = NET_TCP_RST | NET_TCP_ACK;
+		segment.seq = tcp->send_seq;
 		segment.src_addr = &tcp->context->local;
 		segment.dst_addr = remote;
 		segment.wnd = 0;
