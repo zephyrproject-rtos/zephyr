@@ -132,50 +132,16 @@ struct net_stack_info {
 
 /** @cond ignore */
 #if defined(CONFIG_INIT_STACKS)
-#include <offsets.h>
+#include <misc/stack.h>
 
 static inline void net_analyze_stack_get_values(unsigned char *stack,
 						size_t size,
-						unsigned *stack_offset,
 						unsigned *pcnt,
 						unsigned *unused)
 {
-	unsigned i;
-
-	*unused = 0;
-
-	/* The TCS is always placed on a 4-byte aligned boundary - if
-	 * the stack beginning doesn't match that there will be some
-	 * unused bytes in the beginning.
-	 */
-	*stack_offset = K_THREAD_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
-
-/* TODO
- * Currently all supported platforms have stack growth down and there is no
- * Kconfig option to configure it so this always build "else" branch.
- * When support for platform with stack direction up (or configurable direction)
- * is added this check should be confirmed that correct Kconfig option is used.
- */
-#if defined(CONFIG_STACK_GROWS_UP)
-	for (i = size - 1; i >= *stack_offset; i--) {
-		if ((unsigned char)stack[i] == 0xaa) {
-			(*unused)++;
-		} else {
-			break;
-		}
-	}
-#else
-	for (i = *stack_offset; i < size; i++) {
-		if ((unsigned char)stack[i] == 0xaa) {
-			(*unused)++;
-		} else {
-			break;
-		}
-	}
-#endif
+	*unused = stack_unused_space_get(stack, size);
 
 	/* Calculate the real size reserved for the stack */
-	size -= *stack_offset;
 	*pcnt = ((size - *unused) * 100) / size;
 }
 
@@ -183,15 +149,14 @@ static inline void net_analyze_stack(const char *name,
 				     unsigned char *stack,
 				     size_t size)
 {
-	unsigned stack_offset, pcnt, unused;
+	unsigned int pcnt, unused;
 
-	net_analyze_stack_get_values(stack, size, &stack_offset,
-				     &pcnt, &unused);
+	net_analyze_stack_get_values(stack, size, &pcnt, &unused);
 
 	NET_INFO("net (%p): %s stack real size %zu "
 		 "unused %u usage %zu/%zu (%u %%)",
 		 k_current_get(), name,
-		 size + stack_offset, unused, size - unused, size, pcnt);
+		 size, unused, size - unused, size, pcnt);
 }
 #else
 #define net_analyze_stack(...)

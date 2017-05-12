@@ -118,6 +118,7 @@ struct bmc150_magn_data {
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER)
 	char __stack thread_stack[CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK];
+	struct k_thread thread;
 #endif
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)

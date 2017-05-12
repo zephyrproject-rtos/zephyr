@@ -102,6 +102,7 @@ void alternate_thread(void)
 
 
 char __noinit __stack alt_thread_stack_area[STACKSIZE];
+static struct k_thread alt_thread_data;
 
 /**
  *
@@ -118,9 +119,9 @@ void main(void)
 	TC_PRINT("Starts %s\n", __func__);
 
 	/* Start thread */
-	k_thread_spawn(alt_thread_stack_area, STACKSIZE,
-		       (k_thread_entry_t)alternate_thread, NULL, NULL, NULL,
-		       K_PRIO_PREEMPT(PRIORITY), 0, K_NO_WAIT);
+	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
+			(k_thread_entry_t)alternate_thread, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(PRIORITY), 0, K_NO_WAIT);
 
 	if (ret == TC_FAIL) {
 		goto errorExit;

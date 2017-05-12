@@ -413,11 +413,11 @@ static int eth_enc28j60_init(struct device *dev)
 	k_sem_give(&context->tx_rx_sem);
 
 	/* Start interruption-poll thread */
-	k_thread_spawn(context->thread_stack,
-		       CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE,
-		       enc28j60_thread_main, (void *) dev, NULL, NULL,
-		       K_PRIO_COOP(CONFIG_ETH_ENC28J60_RX_THREAD_PRIO),
-		       0, K_NO_WAIT);
+	k_thread_create(&context->thread, context->thread_stack,
+			CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE,
+			enc28j60_thread_main, (void *) dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_ENC28J60_RX_THREAD_PRIO),
+			0, K_NO_WAIT);
 
 	SYS_LOG_INF("ENC28J60 Initialized");
 

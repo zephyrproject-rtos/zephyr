@@ -83,6 +83,7 @@ struct fxas21002_data {
 #endif
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
 	char __stack thread_stack[CONFIG_FXAS21002_THREAD_STACK_SIZE];
+	struct k_thread thread;
 	struct k_sem trig_sem;
 #endif
 #ifdef CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD

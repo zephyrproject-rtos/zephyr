@@ -8,7 +8,7 @@ This test verifies that the kernel CPU and context APIs operate as expected.
 APIs tested in this test set
 ============================
 
-k_thread_spawn
+k_thread_create
   - start a helper fiber to help with k_yield() tests
   - start a fiber to test fiber related functionality
 
@@ -94,7 +94,7 @@ Thread busy waiting completed
 Testing k_sleep()
  thread sleeping for 50 milliseconds
  thread back from sleep
-Testing k_thread_spawn() without cancellation
+Testing k_thread_create() without cancellation
  thread (q order: 2, t/o: 500) is running
  got thread (q order: 2, t/o: 500) as expected
  thread (q order: 3, t/o: 750) is running
@@ -109,7 +109,7 @@ Testing k_thread_spawn() without cancellation
  got thread (q order: 4, t/o: 1750) as expected
  thread (q order: 5, t/o: 2000) is running
  got thread (q order: 5, t/o: 2000) as expected
-Testing k_thread_spawn() with cancellations
+Testing k_thread_create() with cancellations
  cancelling [q order: 0, t/o: 1000, t/o order: 0]
  thread (q order: 3, t/o: 750) is running
  got (q order: 3, t/o: 750, t/o order 1) as expected

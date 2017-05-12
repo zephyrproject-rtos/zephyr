@@ -37,6 +37,7 @@
 #define H4_EVT  0x04
 
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static struct k_thread rx_thread_data;
 
 static struct {
 	struct net_buf *buf;
@@ -437,8 +438,9 @@ static int h4_open(void)
 
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 
-	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack), rx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_thread_stack,
+			sizeof(rx_thread_stack), rx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	return 0;
 }

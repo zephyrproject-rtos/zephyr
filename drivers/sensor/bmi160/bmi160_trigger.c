@@ -78,6 +78,7 @@ static void bmi160_handle_interrupts(void *arg)
 
 #ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD
 static char __stack bmi160_thread_stack[CONFIG_BMI160_THREAD_STACK_SIZE];
+static struct k_thread bmi160_thread;
 
 static void bmi160_thread_main(void *arg1, void *unused1, void *unused2)
 {
@@ -281,9 +282,10 @@ int bmi160_trigger_mode_init(struct device *dev)
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_init(&bmi160->sem, 0, UINT_MAX);
 
-	k_thread_spawn(bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE,
-		    bmi160_thread_main, dev, NULL, NULL,
-		    K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&bmi160_thread, bmi160_thread_stack,
+			CONFIG_BMI160_THREAD_STACK_SIZE,
+			bmi160_thread_main, dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, 0);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	bmi160->work.handler = bmi160_work_handler;
 	bmi160->dev = dev;

@@ -10,6 +10,8 @@ K_SEM_DEFINE(yield_sem, 0, 1);
 #define STACK_SIZE 500
 extern char __noinit __stack my_stack_area[STACK_SIZE];
 extern char __noinit __stack my_stack_area_0[STACK_SIZE];
+extern struct k_thread my_thread;
+extern struct k_thread my_thread_0;
 
 /* u64_t thread_yield_start_tsc[1000]; */
 /* u64_t thread_yield_end_tsc[1000]; */
@@ -34,17 +36,17 @@ void yield_bench(void)
 
 	/* Thread yield*/
 
-	yield0_tid = k_thread_spawn(my_stack_area,
-				    STACK_SIZE,
-				    thread_yield0_test,
-				    NULL, NULL, NULL,
-				    0 /*priority*/, 0, 0);
+	yield0_tid = k_thread_create(&my_thread, my_stack_area,
+				     STACK_SIZE,
+				     thread_yield0_test,
+				     NULL, NULL, NULL,
+				     0 /*priority*/, 0, 0);
 
-	yield1_tid = k_thread_spawn(my_stack_area_0,
-				    STACK_SIZE,
-				    thread_yield1_test,
-				    NULL, NULL, NULL,
-				    0 /*priority*/, 0, 0);
+	yield1_tid = k_thread_create(&my_thread_0, my_stack_area_0,
+				     STACK_SIZE,
+				     thread_yield1_test,
+				     NULL, NULL, NULL,
+				     0 /*priority*/, 0, 0);
 
 	/*read the time of start of the sleep till the swap happens */
 	__read_swap_end_tsc_value = 1;

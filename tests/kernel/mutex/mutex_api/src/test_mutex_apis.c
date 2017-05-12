@@ -27,6 +27,7 @@ K_MUTEX_DEFINE(kmutex);
 static struct k_mutex mutex;
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 
 static void tThread_entry_lock_forever(void *p1, void *p2, void *p3)
 {
@@ -58,9 +59,9 @@ static void tmutex_test_lock(struct k_mutex *pmutex,
 			     void (*entry_fn)(void *, void *, void *))
 {
 	k_mutex_init(pmutex);
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     entry_fn, pmutex, NULL, NULL,
-				     K_PRIO_PREEMPT(0), 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      entry_fn, pmutex, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	k_mutex_lock(pmutex, K_FOREVER);
 	TC_PRINT("access resource from main thread\n");
 
@@ -76,9 +77,9 @@ static void tmutex_test_lock_timeout(struct k_mutex *pmutex,
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	k_mutex_init(pmutex);
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     entry_fn, pmutex, NULL, NULL,
-				     K_PRIO_PREEMPT(0), 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      entry_fn, pmutex, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	k_mutex_lock(pmutex, K_FOREVER);
 	TC_PRINT("access resource from main thread\n");
 

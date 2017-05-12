@@ -208,21 +208,32 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 #endif
 
 #ifdef CONFIG_MULTITHREADING
+
+k_tid_t k_thread_create(struct k_thread *new_thread, char *stack,
+			size_t stack_size, void (*entry)(void *, void *, void*),
+			void *p1, void *p2, void *p3,
+			int prio, u32_t options, s32_t delay)
+{
+	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
+	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3, prio,
+		    options);
+
+	schedule_new_thread(new_thread, delay);
+	return new_thread;
+}
+
+
 k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 			void (*entry)(void *, void *, void*),
 			void *p1, void *p2, void *p3,
 			int prio, u32_t options, s32_t delay)
 {
-	__ASSERT(!_is_in_isr(), "");
-
 	struct k_thread *new_thread = (struct k_thread *)stack;
 
-	_new_thread(stack, stack_size, entry, p1, p2, p3, prio, options);
-
-	schedule_new_thread(new_thread, delay);
-
-	return new_thread;
+	return k_thread_create(new_thread, stack, stack_size, entry, p1, p2,
+			       p3, prio, options, delay);
 }
+
 #endif
 
 int k_thread_cancel(k_tid_t tid)
@@ -264,7 +275,7 @@ void _k_thread_group_op(u32_t groups, void (*func)(struct k_thread *))
 	_FOREACH_STATIC_THREAD(thread_data) {
 		if (is_in_any_group(thread_data, groups)) {
 			key = irq_lock();
-			func(thread_data->thread);
+			func(thread_data->init_thread);
 			irq_unlock(key);
 		}
 	}
@@ -359,6 +370,7 @@ void _init_static_threads(void)
 
 	_FOREACH_STATIC_THREAD(thread_data) {
 		_new_thread(
+			thread_data->init_thread,
 			thread_data->init_stack,
 			thread_data->init_stack_size,
 			thread_data->init_entry,
@@ -368,7 +380,7 @@ void _init_static_threads(void)
 			thread_data->init_prio,
 			thread_data->init_options);
 
-		thread_data->thread->init_data = thread_data;
+		thread_data->init_thread->init_data = thread_data;
 	}
 
 	_sched_lock();
@@ -385,7 +397,7 @@ void _init_static_threads(void)
 	key = irq_lock();
 	_FOREACH_STATIC_THREAD(thread_data) {
 		if (thread_data->init_delay != K_FOREVER) {
-			schedule_new_thread(thread_data->thread,
+			schedule_new_thread(thread_data->init_thread,
 					    thread_data->init_delay);
 		}
 	}

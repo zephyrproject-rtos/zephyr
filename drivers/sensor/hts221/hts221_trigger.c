@@ -125,9 +125,11 @@ int hts221_init_interrupt(struct device *dev)
 #if defined(CONFIG_HTS221_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
-	k_thread_spawn(drv_data->thread_stack, CONFIG_HTS221_THREAD_STACK_SIZE,
-		    (k_thread_entry_t)hts221_thread, POINTER_TO_INT(dev),
-		    0, NULL, K_PRIO_COOP(CONFIG_HTS221_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack,
+			CONFIG_HTS221_THREAD_STACK_SIZE,
+			(k_thread_entry_t)hts221_thread, POINTER_TO_INT(dev),
+			0, NULL, K_PRIO_COOP(CONFIG_HTS221_THREAD_PRIORITY),
+			0, 0);
 #elif defined(CONFIG_HTS221_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = hts221_work_cb;
 	drv_data->dev = dev;

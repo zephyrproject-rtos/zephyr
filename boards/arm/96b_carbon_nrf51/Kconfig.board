@@ -1,0 +1,9 @@
+# Kconfig - 96Boards Carbon nRF51 board configuration
+#
+# Copyright (c) 2016, 2017 Linaro Limited.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_96B_CARBON_NRF51
+	bool "96Boards Carbon (nRF51)"
+	depends on SOC_NRF51822_QFAC
