@@ -144,7 +144,7 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 		} else {
 			*pincfg = STM32F4X_PIN_CONFIG_DRIVE_PUSH_PULL;
 		}
-	} else if (direction == GPIO_DIR_IN) {
+	} else {
 		if (pud == GPIO_PUD_PULL_UP) {
 			*pincfg = STM32F4X_PIN_CONFIG_BIAS_PULL_UP;
 		} else if (pud == GPIO_PUD_PULL_DOWN) {
@@ -152,8 +152,6 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 		} else {
 			*pincfg = STM32F4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE;
 		}
-	} else {
-		return -ENOTSUP;
 	}
 
 	return 0;
