@@ -139,7 +139,7 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 
 	if (direction == GPIO_DIR_OUT) {
 		*pincfg = STM32L4X_PIN_CONFIG_PUSH_PULL;
-	} else if (direction == GPIO_DIR_IN) {
+	} else {
 		int pud = flags & GPIO_PUD_MASK;
 
 		/* pull-{up,down} maybe? */
@@ -151,8 +151,6 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 			/* floating */
 			*pincfg = STM32L4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE;
 		}
-	} else {
-		return -ENOTSUP;
 	}
 
 	return 0;
