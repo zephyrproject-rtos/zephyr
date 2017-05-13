@@ -861,9 +861,8 @@ static void le_phy_update_complete(struct net_buf *buf)
 		return;
 	}
 
-	if (!evt->status) {
-		BT_DBG("PHY updated: tx: %u, rx: %u", evt->tx_phy, evt->rx_phy);
-	}
+	BT_DBG("PHY updated: status: 0x%x, tx: %u, rx: %u",
+	       evt->status, evt->tx_phy, evt->rx_phy);
 
 	update_conn_param(conn);
 
