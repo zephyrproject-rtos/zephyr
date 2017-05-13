@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig BLUETOOTH
+menu "Bluetooth"
+
+config BLUETOOTH
 	bool "Bluetooth support"
 	select NET_BUF
 	help
@@ -91,3 +93,5 @@ source "subsys/bluetooth/controller/Kconfig"
 endif # BLUETOOTH_HCI
 
 endif # BLUETOOTH
+
+endmenu
