@@ -43,7 +43,6 @@ config BLUETOOTH_HCI_RAW
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
-
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
 	select BLUETOOTH_CONN
@@ -86,6 +85,15 @@ config BLUETOOTH_HCI_ACL_FLOW_CONTROL
 	  controller are on separate cores since it ensures that we do
 	  not run out of incoming ACL buffers.
 endif # BLUETOOTH_CONN
+
+config BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME
+	string "Device Name of UART Device to an external Bluetooth Host"
+	default "UART_0"
+	depends on BLUETOOTH_HCI_RAW
+	help
+	  This option specifies the name of UART device to be used
+	  to connect to an external Bluetooth Host when Zephyr is
+	  acting as a Bluetooth Controller.
 
 source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
