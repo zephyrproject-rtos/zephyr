@@ -6,6 +6,7 @@
  */
 
 /*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -2033,6 +2034,30 @@ static void hexdump(const u8_t *data, size_t len)
 	}
 }
 
+static u32_t l2cap_rate;
+
+static void l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	static u32_t len;
+	static u32_t cycle_stamp;
+	u32_t delta;
+
+	delta = k_cycle_get_32() - cycle_stamp;
+	delta = SYS_CLOCK_HW_CYCLES_TO_NS(delta);
+
+	/* if last data rx-ed was greater than 1 second in the past,
+	 * reset the metrics.
+	 */
+	if (delta > 1000000000) {
+		len = 0;
+		l2cap_rate = 0;
+		cycle_stamp = k_cycle_get_32();
+	} else {
+		len += buf->len;
+		l2cap_rate = ((u64_t)len << 3) * 1000000000 / delta;
+	}
+}
+
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
@@ -2052,12 +2077,7 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 	printk("Channel %p disconnected\n", chan);
 }
 
-static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
-{
-	printk("Channel %p requires buffer\n", chan);
-
-	return net_buf_alloc(&data_rx_pool, K_FOREVER);
-}
+static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan);
 
 static struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= l2cap_alloc_buf,
@@ -2070,6 +2090,16 @@ static struct bt_l2cap_le_chan l2cap_chan = {
 	.chan.ops	= &l2cap_ops,
 	.rx.mtu		= DATA_MTU,
 };
+
+static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	/* print if metrics is disabled */
+	if (l2cap_ops.recv != l2cap_recv_metrics) {
+		printk("Channel %p requires buffer\n", chan);
+	}
+
+	return net_buf_alloc(&data_rx_pool, K_FOREVER);
+}
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
@@ -2187,6 +2217,32 @@ static int cmd_l2cap_send(int argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_l2cap_metrics(int argc, char *argv[])
+{
+	const char *action;
+
+	if (argc < 2) {
+		printk("l2cap rate: %u bps.\n", l2cap_rate);
+
+		return 0;
+	}
+
+	action = argv[1];
+
+	if (!strcmp(action, "on")) {
+		l2cap_ops.recv = l2cap_recv_metrics;
+	} else if (!strcmp(action, "off")) {
+		l2cap_ops.recv = l2cap_recv;
+	} else {
+		return -EINVAL;
+	}
+
+	printk("l2cap metrics %s.\n", action);
+
+	return 0;
+}
+
 #endif
 
 #if defined(CONFIG_BLUETOOTH_BREDR)
@@ -2579,6 +2635,7 @@ static const struct shell_cmd commands[] = {
 	{ "l2cap-connect", cmd_l2cap_connect, "<psm>" },
 	{ "l2cap-disconnect", cmd_l2cap_disconnect, HELP_NONE },
 	{ "l2cap-send", cmd_l2cap_send, "<number of packets>" },
+	{ "l2cap-metrics", cmd_l2cap_metrics, "<value on, off>" },
 #endif
 #if defined(CONFIG_BLUETOOTH_BREDR)
 	{ "br-iscan", cmd_bredr_discoverable, "<value: on, off>" },
