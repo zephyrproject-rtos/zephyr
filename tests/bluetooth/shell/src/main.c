@@ -37,6 +37,7 @@
 
 #define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
+#define CHAR_SIZE_MAX           512
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
 #define DATA_BREDR_MTU		48
@@ -1193,7 +1194,7 @@ static int cmd_gatt_mread(int argc, char *argv[])
 }
 
 static struct bt_gatt_write_params write_params;
-static u8_t gatt_write_buf[512]; /* max value size */
+static u8_t gatt_write_buf[CHAR_SIZE_MAX];
 
 static void write_func(struct bt_conn *conn, u8_t err,
 		       struct bt_gatt_write_params *params)
@@ -1276,6 +1277,50 @@ static int cmd_gatt_write_without_rsp(int argc, char *argv[])
 	err = bt_gatt_write_without_response(default_conn, handle, &data,
 					     sizeof(data), false);
 	printk("Write Complete (err %d)\n", err);
+
+	return 0;
+}
+
+static int cmd_gatt_write_without_rsp_repeated(int argc, char *argv[])
+{
+	int err = 0;
+	u16_t handle;
+	u16_t octets;
+	u16_t repeat;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return 0;
+	}
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	handle = strtoul(argv[1], NULL, 16);
+
+	if (argc > 2) {
+		octets = min(strtoul(argv[2], NULL, 16), CHAR_SIZE_MAX);
+	} else {
+		octets = 1;
+	}
+
+	if (argc > 3) {
+		repeat = strtoul(argv[3], NULL, 16);
+	} else {
+		repeat = 1;
+	}
+
+	while (repeat--) {
+		err = bt_gatt_write_without_response(default_conn, handle,
+						     gatt_write_buf, octets,
+						     false);
+		if (err) {
+			break;
+		}
+	}
+
+	printk("Repeated Write Complete (err %d).\n", err);
 
 	return 0;
 }
@@ -1526,6 +1571,112 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 	}
 
 	return 0;
+}
+
+static struct bt_uuid_128 met_svc_uuid = BT_UUID_INIT_128(
+	0x01, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static const struct bt_uuid_128 met_char_uuid = BT_UUID_INIT_128(
+	0x02, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static u8_t met_char_value[CHAR_SIZE_MAX] = {
+	'M', 'e', 't', 'r', 'i', 'c', 's' };
+
+static ssize_t read_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, u16_t len, u16_t offset)
+{
+	const char *value = attr->user_data;
+	u16_t value_len;
+
+	value_len = min(strlen(value), CHAR_SIZE_MAX);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 value_len);
+}
+
+static u32_t write_count;
+static u32_t write_len;
+static u32_t write_rate;
+
+static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, u16_t len, u16_t offset,
+			 u8_t flags)
+{
+	u8_t *value = attr->user_data;
+	static u32_t cycle_stamp;
+	u32_t delta;
+
+	if (offset + len > sizeof(met_char_value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	memcpy(value + offset, buf, len);
+
+	delta = k_cycle_get_32() - cycle_stamp;
+	delta = SYS_CLOCK_HW_CYCLES_TO_NS(delta);
+
+	/* if last data rx-ed was greater than 1 second in the past,
+	 * reset the metrics.
+	 */
+	if (delta > 1000000000) {
+		write_count = 0;
+		write_len = 0;
+		write_rate = 0;
+		cycle_stamp = k_cycle_get_32();
+	} else {
+		write_count++;
+		write_len += len;
+		write_rate = ((u64_t)write_len << 3) * 1000000000 / delta;
+	}
+
+	return len;
+}
+
+static struct bt_gatt_attr met_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&met_svc_uuid),
+
+	BT_GATT_CHARACTERISTIC(&met_char_uuid.uuid,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
+	BT_GATT_DESCRIPTOR(&met_char_uuid.uuid,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			   read_met, write_met, met_char_value),
+};
+
+static int cmd_gatt_write_cmd_metrics(int argc, char *argv[])
+{
+	int err = 0;
+
+	if (argc < 2) {
+		printk("Write: count= %u, len= %u, rate= %u bps.\n",
+		       write_count, write_len, write_rate);
+
+		return 0;
+	}
+
+	if (!strcmp(argv[1], "on")) {
+		static bool registered;
+
+		if (!registered) {
+			printk("Registering GATT metrics test Service.\n");
+			err = bt_gatt_register(met_attrs,
+					       ARRAY_SIZE(met_attrs));
+			registered = true;
+		}
+	} else if (!strcmp(argv[1], "off")) {
+		printk("Not supported.\n");
+		err = -EINVAL;
+	} else {
+		printk("Incorrect value: %s\n", argv[1]);
+		return -EINVAL;
+	}
+
+	if (!err) {
+		printk("GATT write cmd metrics %s.\n", argv[1]);
+	}
+
+	return err;
 }
 
 #if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
@@ -2619,6 +2770,9 @@ static const struct shell_cmd commands[] = {
 	{ "gatt-write", cmd_gatt_write, "<handle> <offset> <data> [length]" },
 	{ "gatt-write-without-response", cmd_gatt_write_without_rsp,
 	  "<handle> <offset> <data>" },
+	{ "gatt-write-without-response-repeated",
+	  cmd_gatt_write_without_rsp_repeated,
+	  "Send write without response <handle> <octets> [repeat]" },
 	{ "gatt-write-signed", cmd_gatt_write_signed,
 	  "<handle> <offset> <data>" },
 	{ "gatt-subscribe", cmd_gatt_subscribe,
@@ -2628,6 +2782,8 @@ static const struct shell_cmd commands[] = {
 	  "register pre-predefined test service" },
 	{ "hrs-simulate", cmd_hrs_simulate,
 	  "register and simulate Heart Rate Service <value: on, off>" },
+	{ "gatt-metrics", cmd_gatt_write_cmd_metrics,
+	  "register vendr char and measure rx [value on, off]" },
 #if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	{ "l2cap-register", cmd_l2cap_register, "<psm> [sec_level]" },
 	{ "l2cap-connect", cmd_l2cap_connect, "<psm>" },
