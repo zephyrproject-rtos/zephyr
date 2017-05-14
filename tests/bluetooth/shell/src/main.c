@@ -2077,7 +2077,15 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 	printk("Channel %p disconnected\n", chan);
 }
 
-static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan);
+static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	/* print if metrics is disabled */
+	if (chan->ops->recv != l2cap_recv_metrics) {
+		printk("Channel %p requires buffer\n", chan);
+	}
+
+	return net_buf_alloc(&data_rx_pool, K_FOREVER);
+}
 
 static struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= l2cap_alloc_buf,
@@ -2090,16 +2098,6 @@ static struct bt_l2cap_le_chan l2cap_chan = {
 	.chan.ops	= &l2cap_ops,
 	.rx.mtu		= DATA_MTU,
 };
-
-static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
-{
-	/* print if metrics is disabled */
-	if (l2cap_ops.recv != l2cap_recv_metrics) {
-		printk("Channel %p requires buffer\n", chan);
-	}
-
-	return net_buf_alloc(&data_rx_pool, K_FOREVER);
-}
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
