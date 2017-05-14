@@ -59,15 +59,16 @@ SECTION_FUNC(exception.other, __swap)
 
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
-	/* Restore caller-saved r10. We could have stuck its value
-	 * onto the stack, but less instructions to just use immediates
-	 */
+#endif
+#ifdef CONFIG_STACK_SENTINEL
+	call _check_stack_sentinel
+#endif
+#if defined(CONFIG_STACK_SENTINEL) || \
+		defined (CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH)
+	/* restore caller-saved r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
-#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
-
-	movhi r10, %hi(_kernel)
-	ori   r10, r10, %lo(_kernel)
+#endif
 
 	/* get cached thread to run */
 	ldw   r2, _kernel_offset_to_ready_q_cache(r10)

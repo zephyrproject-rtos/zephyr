@@ -147,8 +147,8 @@ static int _mbox_message_match(struct k_mbox_msg *tx_msg,
 		rx_msg->tx_data = tx_msg->tx_data;
 		rx_msg->tx_block = tx_msg->tx_block;
 		if (rx_msg->tx_data != NULL) {
-			rx_msg->tx_block.pool_id = NULL;
-		} else if (rx_msg->tx_block.pool_id != NULL) {
+			rx_msg->tx_block.data = NULL;
+		} else if (rx_msg->tx_block.data != NULL) {
 			rx_msg->tx_data = rx_msg->tx_block.data;
 		}
 
@@ -183,9 +183,9 @@ static void _mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	}
 
 	/* release sender's memory pool block */
-	if (rx_msg->tx_block.pool_id != NULL) {
+	if (rx_msg->tx_block.data != NULL) {
 		k_mem_pool_free(&rx_msg->tx_block);
-		rx_msg->tx_block.pool_id = NULL;
+		rx_msg->tx_block.data = NULL;
 	}
 
 	/* recover sender info */
@@ -371,10 +371,10 @@ int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
 	}
 
 	/* handle case where data is already in a memory pool block */
-	if (rx_msg->tx_block.pool_id != NULL) {
+	if (rx_msg->tx_block.data != NULL) {
 		/* give ownership of the block to receiver */
 		*block = rx_msg->tx_block;
-		rx_msg->tx_block.pool_id = NULL;
+		rx_msg->tx_block.data = NULL;
 
 		/* now dispose of message */
 		_mbox_message_dispose(rx_msg);

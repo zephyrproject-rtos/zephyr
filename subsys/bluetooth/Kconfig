@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig BLUETOOTH
+menu "Bluetooth"
+
+config BLUETOOTH
 	bool "Bluetooth support"
 	select NET_BUF
 	help
@@ -40,7 +42,6 @@ config BLUETOOTH_HCI_RAW
 	help
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
-
 
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
@@ -85,9 +86,20 @@ config BLUETOOTH_HCI_ACL_FLOW_CONTROL
 	  not run out of incoming ACL buffers.
 endif # BLUETOOTH_CONN
 
+config BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME
+	string "Device Name of UART Device to an external Bluetooth Host"
+	default "UART_0"
+	depends on BLUETOOTH_HCI_RAW
+	help
+	  This option specifies the name of UART device to be used
+	  to connect to an external Bluetooth Host when Zephyr is
+	  acting as a Bluetooth Controller.
+
 source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"
 endif # BLUETOOTH_HCI
 
 endif # BLUETOOTH
+
+endmenu

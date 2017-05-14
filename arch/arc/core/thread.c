@@ -84,7 +84,7 @@ void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	pInitCtx->status32 = _ARC_V2_STATUS32_SC | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-	thread->arch.stack_top = (u32_t) stackEnd;
+	thread->arch.stack_base = (u32_t) stackEnd;
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif

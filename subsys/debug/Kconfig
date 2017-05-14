@@ -23,6 +23,31 @@ config STACK_USAGE
 	Generate  an extra file that specifies the maximum amount of stack used,
 	on a per-function basis.
 
+config STACK_SENTINEL
+	bool "Enable stack sentinel"
+	select THREAD_STACK_INFO
+	default n
+	help
+	Store a magic value at the lowest addresses of a thread's stack.
+	Periodically check that this value is still present and kill the
+	thread gracefully if it isn't. This is currently checked in four
+	places:
+
+	1) Upon any context switch for the outgoing thread
+	2) Any hardware interrupt that doesn't context switch, the check is
+	   performed for the interrupted thread
+	3) When a thread returns from its entry point
+	4) When a thread calls k_yield() but doesn't context switch
+
+	This feature doesn't prevent corruption and the system may be
+	in an unusable state. However, given the bizarre behavior associated
+	with stack overflows, knowledge that this is happening is very
+	useful.
+
+	This feature is intended for those systems which lack hardware support
+	for stack overflow protection, or have insufficient system resources
+	to use that hardware support.
+
 config PRINTK
 	bool
 	prompt "Send printk() to console"
