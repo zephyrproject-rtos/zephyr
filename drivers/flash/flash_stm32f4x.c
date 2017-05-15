@@ -29,7 +29,9 @@ static int check_status(struct stm32f4x_flash *regs)
 	u32_t const error =
 		FLASH_FLAG_WRPERR |
 		FLASH_FLAG_PGAERR |
+#if defined(FLASH_FLAG_RDERR)
 		FLASH_FLAG_RDERR  |
+#endif
 		FLASH_FLAG_PGPERR |
 		FLASH_FLAG_PGSERR |
 		FLASH_FLAG_OPERR;
