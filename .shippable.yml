@@ -25,6 +25,7 @@ build:
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
+      - env
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - source zephyr-env.sh
       - ccache -s --max-size=2000M

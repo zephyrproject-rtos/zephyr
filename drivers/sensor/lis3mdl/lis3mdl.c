@@ -98,10 +98,11 @@ static const struct sensor_driver_api lis3mdl_driver_api = {
 int lis3mdl_init(struct device *dev)
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
-	u8_t chip_cfg[5];
+	u8_t chip_cfg[6];
 	u8_t id, idx;
 
 	drv_data->i2c = device_get_binding(CONFIG_LIS3MDL_I2C_MASTER_DEV_NAME);
+
 	if (drv_data->i2c == NULL) {
 		SYS_LOG_ERR("Could not get pointer to %s device.",
 			    CONFIG_LIS3MDL_I2C_MASTER_DEV_NAME);
@@ -132,17 +133,18 @@ int lis3mdl_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	/* write chip configuration CTRL1-CTRL5 regs */
-	chip_cfg[0] = LIS3MDL_TEMP_EN | lis3mdl_odr_bits[idx];
-	chip_cfg[1] = LIS3MDL_FS_IDX << LIS3MDL_FS_SHIFT;
-	chip_cfg[2] = lis3mdl_odr_bits[idx] & LIS3MDL_FAST_ODR_MASK ?
+	/* Configure sensor */
+	chip_cfg[0] = LIS3MDL_REG_CTRL1;
+	chip_cfg[1] = LIS3MDL_TEMP_EN_MASK | lis3mdl_odr_bits[idx];
+	chip_cfg[2] = LIS3MDL_FS_IDX << LIS3MDL_FS_SHIFT;
+	chip_cfg[3] = lis3mdl_odr_bits[idx] & LIS3MDL_FAST_ODR_MASK ?
 		      LIS3MDL_MD_SINGLE : LIS3MDL_MD_CONTINUOUS;
-	chip_cfg[3] = ((lis3mdl_odr_bits[idx] & LIS3MDL_OM_MASK) >>
+	chip_cfg[4] = ((lis3mdl_odr_bits[idx] & LIS3MDL_OM_MASK) >>
 		       LIS3MDL_OM_SHIFT) << LIS3MDL_OMZ_SHIFT;
-	chip_cfg[4] = LIS3MDL_BDU_EN;
+	chip_cfg[5] = LIS3MDL_BDU_EN;
 
-	if (i2c_burst_write(drv_data->i2c, CONFIG_LIS3MDL_I2C_ADDR,
-			    LIS3MDL_REG_CTRL1, chip_cfg, 5) < 0) {
+	if (i2c_write(drv_data->i2c,
+			    chip_cfg, 6, CONFIG_LIS3MDL_I2C_ADDR) < 0) {
 		SYS_LOG_DBG("Failed to configure chip.");
 		return -EIO;
 	}
