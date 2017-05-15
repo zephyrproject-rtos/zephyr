@@ -644,6 +644,41 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 	return 0;
 }
 
+static int hci_le_set_data_len(struct bt_conn *conn)
+{
+	struct bt_hci_rp_le_read_max_data_len *rp;
+	struct bt_hci_cp_le_set_data_len *cp;
+	struct net_buf *buf, *rsp;
+	u16_t tx_octets, tx_time;
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_DATA_LEN, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	tx_octets = sys_le16_to_cpu(rp->max_tx_octets);
+	tx_time = sys_le16_to_cpu(rp->max_tx_time);
+	net_buf_unref(rsp);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DATA_LEN, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->tx_octets = sys_cpu_to_le16(tx_octets);
+	cp->tx_time = sys_cpu_to_le16(tx_time);
+	err = bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
 static int hci_le_set_phy(struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_set_phy *cp;
@@ -810,6 +845,14 @@ static void le_conn_complete(struct net_buf *buf)
 		}
 	}
 
+	if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
+		err = hci_le_set_data_len(conn);
+		if (!err) {
+			atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN);
+			goto done;
+		}
+	}
+
 	update_conn_param(conn);
 
 done:
@@ -845,7 +888,48 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		}
 	}
 
+	if (BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	    BT_FEAT_LE_DLE(conn->le.features)) {
+		int err;
+
+		err = hci_le_set_data_len(conn);
+		if (!err) {
+			atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN);
+			goto done;
+		}
+	}
+
 	update_conn_param(conn);
+
+done:
+	bt_conn_unref(conn);
+}
+
+static void le_data_len_change(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_data_len_change *evt = (void *)buf->data;
+	u16_t max_tx_octets = sys_le16_to_cpu(evt->max_tx_octets);
+	u16_t max_rx_octets = sys_le16_to_cpu(evt->max_rx_octets);
+	u16_t max_tx_time = sys_le16_to_cpu(evt->max_tx_time);
+	u16_t max_rx_time = sys_le16_to_cpu(evt->max_rx_time);
+	u16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Unable to lookup conn for handle %u", handle);
+		return;
+	}
+
+	BT_DBG("max. tx: %u (%uus), max. rx: %u (%uus)", max_tx_octets,
+	       max_tx_time, max_rx_octets, max_rx_time);
+
+	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_DATA_LEN)) {
+		goto done;
+	}
+
+	update_conn_param(conn);
+
 done:
 	bt_conn_unref(conn);
 }
@@ -867,6 +951,17 @@ static void le_phy_update_complete(struct net_buf *buf)
 
 	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
 		goto done;
+	}
+
+	if (BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	    BT_FEAT_LE_DLE(conn->le.features)) {
+		int err;
+
+		err = hci_le_set_data_len(conn);
+		if (!err) {
+			atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN);
+			goto done;
+		}
 	}
 
 	update_conn_param(conn);
@@ -2686,6 +2781,9 @@ static void hci_le_meta_event(struct net_buf *buf)
 	case BT_HCI_EVT_LE_CONN_PARAM_REQ:
 		le_conn_param_req(buf);
 		break;
+	case BT_HCI_EVT_LE_DATA_LEN_CHANGE:
+		le_data_len_change(buf);
+		break;
 	case BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE:
 		le_phy_update_complete(buf);
 		break;
@@ -3149,6 +3247,9 @@ static int le_set_event_mask(void)
 		if (BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_CONN_PARAM_REQ;
 		}
+		if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
+			mask |= BT_EVT_MASK_LE_DATA_LEN_CHANGE;
+		}
 		if (BT_FEAT_LE_PHY_2M(bt_dev.le.features) ||
 		    BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE;
@@ -3235,6 +3336,40 @@ static int le_init(void)
 		}
 		le_read_supp_states_complete(rsp);
 		net_buf_unref(rsp);
+	}
+
+	if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
+		struct bt_hci_cp_le_write_default_data_len *cp;
+		struct bt_hci_rp_le_read_max_data_len *rp;
+		struct net_buf *buf, *rsp;
+		u16_t tx_octets, tx_time;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_DATA_LEN, NULL,
+					   &rsp);
+		if (err) {
+			return err;
+		}
+
+		rp = (void *)rsp->data;
+		tx_octets = sys_le16_to_cpu(rp->max_tx_octets);
+		tx_time = sys_le16_to_cpu(rp->max_tx_time);
+		net_buf_unref(rsp);
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
+					sizeof(*cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->max_tx_octets = sys_cpu_to_le16(tx_octets);
+		cp->max_tx_time = sys_cpu_to_le16(tx_time);
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
+					   buf, NULL);
+		if (err) {
+			return err;
+		}
 	}
 
 	return  le_set_event_mask();
