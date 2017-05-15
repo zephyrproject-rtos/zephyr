@@ -31,6 +31,7 @@ typedef void * (*pfunc) (void *);
 /* stack used by thread */
 #ifdef CONFIG_OBJECTS_THREAD
 static char __stack pStack[THREAD_STACK_SIZE];
+static struct k_thread objects_thread;
 #endif
 
 /* pointer array ensures specified functions are linked into the image */
@@ -116,8 +117,9 @@ void main(void)
 
 #ifdef CONFIG_OBJECTS_THREAD
 	/* start a trivial fiber */
-	k_thread_spawn(pStack, THREAD_STACK_SIZE, thread_entry, MESSAGE, (void *)func_array,
-		       NULL, 10, 0, K_NO_WAIT);
+	k_thread_create(&objects_thread, pStack, THREAD_STACK_SIZE,
+			thread_entry, MESSAGE, (void *)func_array,
+			NULL, 10, 0, K_NO_WAIT);
 #endif
 
 #ifdef CONFIG_OBJECTS_WHILELOOP

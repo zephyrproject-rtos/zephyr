@@ -17,7 +17,7 @@ config IEEE802154_KW41Z_DRV_NAME
 	  This option sets the driver name
 
 config IEEE802154_KW41Z_INIT_PRIO
-	int "KW41Z intialization priority"
+	int "KW41Z initialization priority"
 	default 80
 	help
 	  Set the initialization priority number. Do not mess with it unless

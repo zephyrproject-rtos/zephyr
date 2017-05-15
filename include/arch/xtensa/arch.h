@@ -26,21 +26,6 @@ extern "C" {
 #include <arch/xtensa/xtensa_irq.h>
 #include <xtensa/config/core.h>
 
-/*
- * XCC does not define the following macros with the expected names, but the
- * file machine/endian.h from XT_LIB defines similar ones. Thus we include it
- * and define the missing macros ourselves.
- */
-#ifndef __BYTE_ORDER__
-#define __BYTE_ORDER__ XCHAL_MEMORY_ORDER
-#endif
-#ifndef __ORDER_BIG_ENDIAN__
-#define __ORDER_BIG_ENDIAN__ XTHAL_BIGENDIAN
-#endif
-#ifndef __ORDER_LITTLE_ENDIAN__
-#define __ORDER_LITTLE_ENDIAN__ XTHAL_LITTLEENDIAN
-#endif
-
 #define STACK_ALIGN 16
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)

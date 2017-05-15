@@ -78,6 +78,15 @@
  */
 SECTION_FUNC(TEXT, _interrupt_enter)
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	pushl %eax
+	pushl %edx
+	rdtsc
+	mov %eax, __start_intr_tsc
+	mov %edx, __start_intr_tsc+4
+	pop %edx
+	pop %eax
+#endif
 	/*
 	 * The gen_idt tool creates an interrupt-gate descriptor for
 	 * all connections.  The processor will automatically clear the IF
@@ -246,6 +255,19 @@ alreadyOnIntStack:
 	 */
 	push	%eax
 #endif
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	/* Save the eax and edx registers before reading the time stamp
+	* once done pop the values
+	*/
+	pushl %eax
+	pushl %edx
+	rdtsc
+	mov %eax,__end_intr_tsc
+	mov %edx,__end_intr_tsc+4
+	pop %edx
+	pop %eax
+#endif
+
 #ifdef CONFIG_NESTED_INTERRUPTS
 	sti			/* re-enable interrupts */
 #endif
@@ -375,7 +397,9 @@ noReschedule:
 
 	popl	%esp		/* pop thread stack pointer */
 
-
+#ifdef CONFIG_STACK_SENTINEL
+	call _check_stack_sentinel
+#endif
 	/* fall through to 'nestedInterrupt' */
 
 

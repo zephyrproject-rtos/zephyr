@@ -12,7 +12,7 @@
 #include "util/mem.h"
 #include "hal/ecb.h"
 
-#include <bluetooth/log.h>
+#include "common/log.h"
 #include "hal/debug.h"
 
 struct ecb_param {

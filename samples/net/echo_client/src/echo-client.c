@@ -160,10 +160,12 @@ static struct sockaddr_in6 peer_addr6 = {
 
 #if defined(CONFIG_NET_UDP)
 static char __noinit __stack ipv6_udp_stack[STACKSIZE];
+static struct k_thread ipv6_udp_thread_data;
 #endif
 
 #if defined(CONFIG_NET_TCP)
 static char __noinit __stack ipv6_tcp_stack[STACKSIZE];
+static struct k_thread ipv6_tcp_thread_data;
 #endif
 
 #endif /* CONFIG_NET_IPV6 */
@@ -189,10 +191,12 @@ static struct sockaddr_in peer_addr4 = {
 
 #if defined(CONFIG_NET_UDP)
 static char __noinit __stack ipv4_udp_stack[STACKSIZE];
+static struct k_thread ipv4_udp_thread_data;
 #endif
 
 #if defined(CONFIG_NET_TCP)
 static char __noinit __stack ipv4_tcp_stack[STACKSIZE];
+static struct k_thread ipv4_tcp_thread_data;
 #endif
 
 #endif /* CONFIG_NET_IPV4 */
@@ -870,27 +874,27 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	}
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_UDP)
-	k_thread_spawn(ipv4_udp_stack, STACKSIZE,
-		       (k_thread_entry_t)send_udp_ipv4,
-		       udp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&ipv4_udp_thread_data, ipv4_udp_stack, STACKSIZE,
+			(k_thread_entry_t)send_udp_ipv4,
+			udp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_TCP)
-	k_thread_spawn(ipv4_tcp_stack, STACKSIZE,
-		       (k_thread_entry_t)send_tcp_ipv4,
-		       tcp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&ipv4_tcp_thread_data, ipv4_tcp_stack, STACKSIZE,
+			(k_thread_entry_t)send_tcp_ipv4,
+			tcp_send4, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_UDP)
-	k_thread_spawn(ipv6_udp_stack, STACKSIZE,
-		       (k_thread_entry_t)send_udp_ipv6,
-		       udp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&ipv6_udp_thread_data, ipv6_udp_stack, STACKSIZE,
+			(k_thread_entry_t)send_udp_ipv6,
+			udp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_TCP)
-	k_thread_spawn(ipv6_tcp_stack, STACKSIZE,
-		       (k_thread_entry_t)send_tcp_ipv6,
-		       tcp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&ipv6_tcp_thread_data, ipv6_tcp_stack, STACKSIZE,
+			(k_thread_entry_t)send_tcp_ipv6,
+			tcp_send6, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 #endif
 }
 

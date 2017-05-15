@@ -17,50 +17,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-
-#ifdef CONFIG_PRINTK
 #include <misc/printk.h>
-#define PR_EXC(...) printk(__VA_ARGS__)
-#else
-#define PR_EXC(...)
-#endif /* CONFIG_PRINTK */
-
-#if (CONFIG_FAULT_DUMP > 0)
-#define FAULT_DUMP(esf, fault) _FaultDump(esf, fault)
-#else
-#define FAULT_DUMP(esf, fault) \
-	do {                   \
-		(void) esf;    \
-		(void) fault;  \
-	} while ((0))
-#endif
-
-#if (CONFIG_FAULT_DUMP > 0)
-/*
- * @brief Dump information regarding fault (FAULT_DUMP > 0)
- *
- * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 1
- * (short form).
- *
- * @return N/A
- */
-void _FaultDump(const NANO_ESF *esf, int fault)
-{
-	ARG_UNUSED(esf);
-	ARG_UNUSED(fault);
-
-#ifdef CONFIG_PRINTK
-	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
-	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
-
-	PR_EXC("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x\n",
-	       _ARC_V2_ECR_VECTOR(ecr),
-	       _ARC_V2_ECR_CODE(ecr),
-	       _ARC_V2_ECR_PARAMETER(ecr));
-	PR_EXC("Address 0x%x\n", exc_addr);
-#endif
-}
-#endif /* CONFIG_FAULT_DUMP */
 
 /*
  * @brief Fault handler
@@ -74,9 +31,24 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  */
 void _Fault(void)
 {
+	u32_t vector, code, parameter;
+	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
 	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
 
-	FAULT_DUMP(&_default_esf, ecr);
+	vector = _ARC_V2_ECR_VECTOR(ecr);
+	code =  _ARC_V2_ECR_CODE(ecr);
+	parameter = _ARC_V2_ECR_PARAMETER(ecr);
 
-	_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+	printk("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x\n",
+	       vector, code, parameter);
+	printk("Address 0x%x\n", exc_addr);
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* Vector 6 = EV_ProV. Regardless of code, parameter 2 means stack
+	 * check violation
+	 */
+	if (vector == 6 && parameter == 2) {
+		_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, &_default_esf);
+	}
+#endif
+	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
 }

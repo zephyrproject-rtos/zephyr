@@ -6,7 +6,7 @@ Quark D2000 Development Board
 Overview
 ********
 
-The Intel® Quark ™ microcontroller D2000 package is shipped as a 40-pin QFN
+The Intel |reg| Quark |trade| microcontroller D2000 package is shipped as a 40-pin QFN
 component.
 
 .. image:: quark-d2000-developers-kit.png
@@ -14,7 +14,7 @@ component.
    :align: center
    :alt: Quark D2000 Development Board
 
-Intel™ Quark® microcontroller D2000 contains the following items:
+Intel |reg| Quark |trade| microcontroller D2000 contains the following items:
 
 - On-board components:
 
@@ -23,11 +23,11 @@ Intel™ Quark® microcontroller D2000 contains the following items:
 
 - Expansion options:
 
-  - “Arduino Uno” compatible SIL sockets ( 3.3V IO Only )
+  - "Arduino Uno" compatible SIL sockets ( 3.3V IO Only )
 
 - Other connectors:
 
-  - 1x USB 2.0 Device Port – micro Type B
+  - 1x USB 2.0 Device Port - micro Type B
   - On-board coin cell battery holder
   - 5V input a screw terminal/header (external power or Li-ion)
   - EEMBC power input header
@@ -38,7 +38,7 @@ Hardware
 General information for the board can be found at the `Intel Website`_,
 which includes both `schematics`_ and BRD files.
 
-The Intel® Quark™ Microcontroller D2000 Development Platform supports the
+The Intel |reg| Quark |trade| Microcontroller D2000 Development Platform supports the
 familiar open standard Arduino Uno Rev 3.0 physical interface and is
 mechanically compatible with Uno Rev 3.0. It does not support the 6 pin ICSP
 Header.

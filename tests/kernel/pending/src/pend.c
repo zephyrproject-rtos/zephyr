@@ -48,6 +48,7 @@ struct offload_work {
 };
 
 static char __stack coop_stack[2][COOP_STACKSIZE];
+static struct k_thread coop_thread[2];
 
 static struct k_fifo fifo;
 static struct k_lifo lifo;
@@ -247,11 +248,11 @@ void task_high(void)
 
 	counter = SEM_TEST_START;
 
-	k_thread_spawn(coop_stack[0], COOP_STACKSIZE,
-		       coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0, 0);
+	k_thread_create(&coop_thread[0], coop_stack[0], COOP_STACKSIZE,
+			coop_high, NULL, NULL, NULL, K_PRIO_COOP(3), 0, 0);
 
-	k_thread_spawn(coop_stack[1], COOP_STACKSIZE,
-		       coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&coop_thread[1], coop_stack[1], COOP_STACKSIZE,
+			coop_low, NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 
 	counter = FIFO_TEST_START;
 	fifo_tests(THIRD_SECOND, &task_high_state, my_fifo_get, k_sem_take);

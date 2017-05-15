@@ -31,17 +31,16 @@ struct init_stack_frame {
 };
 
 
-void _new_thread(char *stack_memory, size_t stack_size,
+void _new_thread(struct k_thread *thread, char *stack_memory, size_t stack_size,
 		 _thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {
 	_ASSERT_VALID_PRIO(priority, thread_func);
 
-	struct k_thread *thread;
 	struct init_stack_frame *iframe;
 
-	thread = _new_thread_init(stack_memory, stack_size, priority, options);
+	_new_thread_init(thread, stack_memory, stack_size, priority, options);
 
 	/* Initial stack frame data, stored at the base of the stack */
 	iframe = (struct init_stack_frame *)

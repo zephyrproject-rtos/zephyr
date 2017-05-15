@@ -14,6 +14,7 @@ obj-$(CONFIG_BOARD_NUCLEO_F401RE) += stm32/pinmux_board_nucleo_f401re.o
 obj-$(CONFIG_BOARD_NUCLEO_F411RE) += stm32/pinmux_board_nucleo_f411re.o
 obj-$(CONFIG_BOARD_96B_CARBON) += stm32/pinmux_board_carbon.o
 obj-$(CONFIG_BOARD_NUCLEO_L476RG) += stm32/pinmux_board_nucleo_l476rg.o
+obj-$(CONFIG_BOARD_NUCLEO_L432KC) += stm32/pinmux_board_nucleo_l432kc.o
 obj-$(CONFIG_BOARD_DISCO_L475_IOT1) += stm32/pinmux_board_disco_l475_iot1.o
 obj-$(CONFIG_BOARD_OLIMEXINO_STM32) += stm32/pinmux_board_olimexino_stm32.o
 obj-$(CONFIG_BOARD_STM32_MINI_A15) += stm32/pinmux_board_stm32_mini_a15.o

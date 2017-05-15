@@ -20,16 +20,20 @@
 #include <misc/printk.h>
 #include <string.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#include "common/log.h"
 
 #include "../util.h"
 
 static BT_STACK_NOINIT(tx_stack, 256);
 static BT_STACK_NOINIT(rx_stack, 256);
+
+static struct k_thread tx_thread_data;
+static struct k_thread rx_thread_data;
 
 static struct k_delayed_work ack_work;
 static struct k_delayed_work retx_work;
@@ -412,12 +416,11 @@ static inline struct net_buf *get_evt_buf(u8_t evt)
 		buf = bt_buf_get_cmd_complete(K_NO_WAIT);
 		break;
 	default:
-		buf = bt_buf_get_rx(K_NO_WAIT);
+		buf = bt_buf_get_rx(BT_BUF_EVT, K_NO_WAIT);
 		break;
 	}
 
 	if (buf) {
-		bt_buf_set_type(h5.rx_buf, BT_BUF_EVT);
 		net_buf_add_u8(h5.rx_buf, evt);
 	}
 
@@ -489,14 +492,14 @@ static void bt_uart_isr(struct device *unused)
 				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_ACLDATA_PKT:
-				h5.rx_buf = bt_buf_get_rx(K_NO_WAIT);
+				h5.rx_buf = bt_buf_get_rx(BT_BUF_ACL_IN,
+							  K_NO_WAIT);
 				if (!h5.rx_buf) {
 					BT_WARN("No available data buffers");
 					h5_reset_rx();
 					continue;
 				}
 
-				bt_buf_set_type(h5.rx_buf, BT_BUF_ACL_IN);
 				h5.rx_state = PAYLOAD;
 				break;
 			case HCI_3WIRE_LINK_PKT:
@@ -714,12 +717,14 @@ static void h5_init(void)
 
 	/* TX thread */
 	k_fifo_init(&h5.tx_queue);
-	k_thread_spawn(tx_stack, sizeof(tx_stack), (k_thread_entry_t)tx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&tx_thread_data, tx_stack, sizeof(tx_stack),
+			(k_thread_entry_t)tx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	k_fifo_init(&h5.rx_queue);
-	k_thread_spawn(rx_stack, sizeof(rx_stack), (k_thread_entry_t)rx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_stack, sizeof(rx_stack),
+			(k_thread_entry_t)rx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Unack queue */
 	k_fifo_init(&h5.unack_queue);

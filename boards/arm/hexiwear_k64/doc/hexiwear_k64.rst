@@ -9,7 +9,7 @@ Overview
 Hexiwear is powered by a Kinetis K64 microcontroller based on the ARM Cortex-M4
 core. Another Kinetis wireless MCU, the KW40Z, provides Bluetooth Low Energy
 connectivity. Hexiwear also integrates a wide variety of sensors, as well as a
-user interface consisting of a 1.1” 96px x 96px full color OLED display and six
+user interface consisting of a 1.1" 96px x 96px full color OLED display and six
 capacitive buttons with haptic feedback.
 
 - Eye-catching Smart Watch form factor with powerful, low power Kinetis K6x MCU
@@ -17,7 +17,7 @@ capacitive buttons with haptic feedback.
 - Designed for wearable applications with the onboard rechargeable battery,
   OLED screen and onboard sensors such as optical heart rate, accelerometer,
   magnetometer and gyroscope.
-- Designed for IoT end node applications with the onboard sensor’s such as
+- Designed for IoT end node applications with the onboard sensor's such as
   temperature, pressure, humidity and ambient light.
 - Flexibility to let you add the sensors of your choice nearly 200 additional
   sensors through click boards.
@@ -39,7 +39,7 @@ Hardware
 - Li-Ion/Li-Po Battery Charger NXP MC34671
 - Optical heart rate sensor Maxim MAX30101
 - Ambient Light sensor, Humidity and Temperature sensor
-- 1.1” full color OLED display
+- 1.1" full color OLED display
 - Haptic feedback engine
 - 190 mAh 2C Li-Po battery
 - Capacitive touch interface

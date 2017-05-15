@@ -700,9 +700,9 @@ Central Simultaneous BR/EDR and LE Transports
 ==============	==============	=======================================
 Parameter Name	Selected	Description
 ==============	==============	=======================================
-TSPC_GAP_44_1	False (*)	Simultaneous BR/EDR and LE Transports – BR/EDR
+TSPC_GAP_44_1	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 				Slave to the same device (C.1)
-TSPC_GAP_44_2	False (*)	Simultaneous BR/EDR and LE Transports – BR/EDR
+TSPC_GAP_44_2	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 				Master to the same device (C.1)
 ==============	==============	=======================================
 
@@ -713,9 +713,9 @@ Peripheral Simultaneous BR/EDR and LE Transports
 ==============	==============	=======================================
 Parameter Name	Selected	Description
 ==============	==============	=======================================
-TSPC_GAP_45_1	False (*)	Simultaneous BR/EDR and LE Transports – BR/EDR
+TSPC_GAP_45_1	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 				Slave to the same device (C.1)
-TSPC_GAP_45_2	False (*)	Simultaneous BR/EDR and LE Transports – BR/EDR
+TSPC_GAP_45_2	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 				Master to the same device (C.1)
 ==============	==============	=======================================
 

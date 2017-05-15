@@ -28,6 +28,7 @@ struct k_lifo lifo;
 static ldata_t data[LIST_LEN];
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static struct k_sem end_sema;
 
 static void tlifo_put(struct k_lifo *plifo)
@@ -71,7 +72,7 @@ static void tlifo_thread_thread(struct k_lifo *plifo)
 {
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-thread data passing via lifo*/
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tThread_entry, plifo, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 0);
 	tlifo_put(plifo);

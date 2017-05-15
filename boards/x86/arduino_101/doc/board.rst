@@ -7,7 +7,7 @@ Overview
 ********
 
 The Arduino/Genuino 101 is a learning and development board which contains an
-Intel® Curie™ Module. This board is designed to integrate the core's low
+Intel |reg| Curie |trade| Module. This board is designed to integrate the core's low
 power-consumption and high performance with the Arduino's ease-of-use. The
 Arduino 101 adds Bluetooth Low Energy capabilities and has an on-board 6-axis
 accelerometer/gyroscope, providing exciting opportunities for building creative
@@ -24,7 +24,7 @@ The Intel Quark* SE SoC in the Curie module contains a single core 32 MHz x86
 (Intel Quark* processor) and the 32 MHz Argonaut RISC Core (ARC)* EM processor.
 The two processors operate simultaneously and share memory. The ARC processor is
 also referenced as the digital signal processor (DSP) sensor hub or a sensor
-subsystem depending on what document you’re looking at. In theory, the DSP can
+subsystem depending on what document you're looking at. In theory, the DSP can
 run using a minimal amount of power, gathering and processing sensor data while
 the x86 processor waits in a low power mode, which would be ideal for always-on
 applications.

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -1112,14 +1112,18 @@ static status_t ltc_aes_process_tag(LTC_Type *base, uint8_t *tag, uint32_t tagSi
  ******************************************************************************/
 void LTC_Init(LTC_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* ungate clock */
     CLOCK_EnableClock(kCLOCK_Ltc0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 void LTC_Deinit(LTC_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* gate clock */
     CLOCK_DisableClock(kCLOCK_Ltc0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 #if defined(FSL_FEATURE_LTC_HAS_DPAMS) && FSL_FEATURE_LTC_HAS_DPAMS
@@ -2906,8 +2910,8 @@ static status_t ltc_hash_process_input_data(ltc_hash_ctx_internal_t *ctx,
     input += sz;
     inputSize -= sz;
 
-    /* if there is still more than or equal to 16 bytes, move each 16 bytes through LTC */
-    sz = LTC_FIFO_SZ_MAX_DOWN_ALGN;
+    /* if there is still more than or equal to 64 bytes, move each 64 bytes through LTC */
+    sz = LTC_DS_DS_MASK + 1u - LTC_HASH_BLOCK_SIZE;
     while (inputSize)
     {
         if (inputSize < sz)
@@ -3603,24 +3607,18 @@ static status_t ltc_pkha_modmul(LTC_Type *base,
  ******************************************************************************/
 int LTC_PKHA_CompareBigNum(const uint8_t *a, size_t sizeA, const uint8_t *b, size_t sizeB)
 {
-    int retval;
+    int retval = 0;
 
     /* skip zero msbytes - integer a */
-    if (sizeA)
+    while ((sizeA) && (0u == a[sizeA - 1]))
     {
-        while (0u == a[sizeA - 1])
-        {
-            sizeA--;
-        }
+        sizeA--;
     }
 
     /* skip zero msbytes - integer b */
-    if (sizeB)
+    while ((sizeB) && (0u == b[sizeB - 1]))
     {
-        while (0u == b[sizeB - 1])
-        {
-            sizeB--;
-        }
+        sizeB--;
     }
 
     if (sizeA > sizeB)
@@ -3638,20 +3636,46 @@ int LTC_PKHA_CompareBigNum(const uint8_t *a, size_t sizeA, const uint8_t *b, siz
     else
     {
         int n;
+        int i;
+        int val;
+        uint32_t equal;
 
         n = sizeA - 1;
-        /* skip all equal bytes */
-        while ((n >= 0) && (a[n] == b[n]))
+        i = 0;
+        equal = 0;
+
+        while (n >= 0)
         {
-            n--;
+            uint32_t chXor = a[i] ^ b[i];
+
+            equal |= chXor;
+            val = (int)chXor * (a[i] - b[i]);
+
+            if (val < 0)
+            {
+                retval = -1;
+            }
+
+            if (val > 0)
+            {
+                retval = 1;
+            }
+
+            if (val == 0)
+            {
+                val = 1;
+            }
+
+            if (val)
+            {
+                i++;
+                n--;
+            }
         }
-        if (n < 0)
+
+        if (0 == equal)
         {
             retval = 0;
-        }
-        else
-        {
-            retval = (a[n] > b[n]) ? 1 : -1;
         }
     }
     return (retval);

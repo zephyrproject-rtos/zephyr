@@ -47,13 +47,24 @@ GDATA(_kernel)
 
 SECTION_FUNC(TEXT, __pendsv)
 
+#if defined (CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH) || \
+		defined(CONFIG_STACK_SENTINEL)
+    /* Register the context switch */
+    push {lr}
+
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	/* Register the context switch */
-	push {lr}
-	bl _sys_k_event_logger_context_switch
-	pop {r0}
-	mov lr, r0
+    bl _sys_k_event_logger_context_switch
 #endif
+#ifdef CONFIG_STACK_SENTINEL
+    bl _check_stack_sentinel
+#endif
+#if defined(CONFIG_ARMV6_M)
+    pop {r0}
+    mov lr, r0
+#else
+    pop {lr}
+#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH || CONFIG_STACK_SENTINEL */
 
     /* load _kernel into r1 and current k_thread into r2 */
     ldr r1, =_kernel
@@ -177,6 +188,23 @@ _thread_irq_disabled:
 
     msr PSP, ip
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+#if defined(CONFIG_ARMV6_M)
+    push {r3}
+#endif
+    push {lr}
+
+    bl read_systick_end_of_swap
+
+#if defined(CONFIG_ARMV6_M)
+    pop {r3}
+    mov lr,r3
+    pop {r3}
+#else
+    pop {lr}
+#endif
+#endif
+
     /* exc return */
     bx lr
 
@@ -292,6 +320,20 @@ _oops:
 
 SECTION_FUNC(TEXT, __swap)
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+#if defined(CONFIG_ARMV6_M)
+    push {r3}
+#endif
+    push {lr}
+    bl read_systick_start_of_swap
+#if defined(CONFIG_ARMV6_M)
+    pop {r3}
+    mov lr,r3
+    pop {r3}
+#else
+    pop {lr}
+#endif
+#endif
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
     str r0, [r2, #_thread_offset_to_basepri]

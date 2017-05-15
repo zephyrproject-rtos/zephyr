@@ -19,7 +19,7 @@ def run_gitlint(tc):
         msg = proc.stdout.read()
 
     if msg != "":
-        failure = ET.SubElement(tc, 'failure', type="failure", message="commit message error")
+        failure = ET.SubElement(tc, 'failure', type="failure", message="commit message error on range: %s" %commit_range)
         failure.text = (str(msg))
         return 1
 

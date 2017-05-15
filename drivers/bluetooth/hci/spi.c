@@ -12,9 +12,10 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
 #include <bluetooth/hci_driver.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#include "common/log.h"
 
 #define HCI_CMD			0x01
 #define HCI_ACL			0x02
@@ -74,6 +75,7 @@ static K_SEM_DEFINE(sem_request, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
 static BT_STACK_NOINIT(rx_stack, 448);
+static struct k_thread rx_thread_data;
 
 static struct spi_config spi_conf = {
 	.config = SPI_WORD(8),
@@ -181,17 +183,15 @@ static void bt_spi_rx_thread(void)
 				buf = bt_buf_get_cmd_complete(K_FOREVER);
 				break;
 			default:
-				buf = bt_buf_get_rx(K_FOREVER);
+				buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 				break;
 			}
 
-			bt_buf_set_type(buf, BT_BUF_EVT);
 			net_buf_add_mem(buf, &rxmsg[1],
 					rxmsg[EVT_HEADER_SIZE] + 2);
 			break;
 		case HCI_ACL:
-			buf = bt_buf_get_rx(K_FOREVER);
-			bt_buf_set_type(buf, BT_BUF_ACL_IN);
+			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 			memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
 			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
 			net_buf_add_mem(buf, &rxmsg[5],
@@ -325,9 +325,9 @@ static int bt_spi_open(void)
 	}
 
 	/* Start RX thread */
-	k_thread_spawn(rx_stack, sizeof(rx_stack),
-		       (k_thread_entry_t)bt_spi_rx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_stack, sizeof(rx_stack),
+			(k_thread_entry_t)bt_spi_rx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
 	gpio_pin_write(rst_dev, GPIO_RESET_PIN, 1);

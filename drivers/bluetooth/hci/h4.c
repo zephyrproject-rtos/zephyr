@@ -18,11 +18,12 @@
 #include <misc/byteorder.h>
 #include <string.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#include "common/log.h"
 
 #include "../util.h"
 
@@ -37,6 +38,7 @@
 #define H4_EVT  0x04
 
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static struct k_thread rx_thread_data;
 
 static struct {
 	struct net_buf *buf;
@@ -167,7 +169,11 @@ static struct net_buf *get_rx(int timeout)
 		return bt_buf_get_cmd_complete(timeout);
 	}
 
-	return bt_buf_get_rx(timeout);
+	if (rx.type == H4_ACL) {
+		return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+	} else {
+		return bt_buf_get_rx(BT_BUF_EVT, timeout);
+	}
 }
 
 static void rx_thread(void *p1, void *p2, void *p3)
@@ -433,8 +439,9 @@ static int h4_open(void)
 
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 
-	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack), rx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_thread_stack,
+			sizeof(rx_thread_stack), rx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	return 0;
 }

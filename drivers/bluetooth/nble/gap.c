@@ -10,12 +10,13 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_NBLE_DEBUG_GAP)
-#include <bluetooth/log.h>
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_NBLE_DEBUG_GAP)
+#include "common/log.h"
 
 #include "gap_internal.h"
 #include "conn_internal.h"
@@ -41,22 +42,6 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 struct nble nble;
 
 static const struct bt_storage *storage;
-
-#if defined(CONFIG_NBLE_DEBUG_GAP)
-static const char *bt_addr_le_str(const bt_addr_le_t *addr)
-{
-	static char str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, str, sizeof(str));
-
-	return str;
-}
-#else
-static inline const char *bt_addr_le_str(const bt_addr_le_t *addr)
-{
-	return NULL;
-}
-#endif /* CONFIG_BLUETOOTH_DEBUG */
 
 static void clear_bonds(const bt_addr_le_t *addr)
 {

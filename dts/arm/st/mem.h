@@ -39,6 +39,9 @@
 #elif defined(CONFIG_SOC_STM32L476XX)
 #define DT_FLASH_SIZE		__SIZE_K(1024)
 #define DT_SRAM_SIZE		__SIZE_K(96)
+#elif defined(CONFIG_SOC_STM32L432XX)
+#define DT_FLASH_SIZE		__SIZE_K(256)
+#define DT_SRAM_SIZE		__SIZE_K(64)
 #else
 #error "Flash and RAM sizes not defined for this chip"
 #endif

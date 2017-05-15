@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -35,9 +35,10 @@
  * Definitions
  *******************************************************************************/
 /* Default values for user configuration structure.*/
-#if (defined(KW40Z4_SERIES) || defined(KW41Z4_SERIES) || defined(KW31Z4_SERIES) || defined(KW21Z4_SERIES))
+#if (defined(KW40Z4_SERIES) || defined(KW41Z4_SERIES) || defined(KW31Z4_SERIES) || defined(KW21Z4_SERIES) || \
+     defined(MCIMX7U5_M4_SERIES))
 #define TRNG_USER_CONFIG_DEFAULT_OSC_DIV kTRNG_RingOscDiv8
-#elif(defined(KV56F22_SERIES) || defined(KV58F22_SERIES) || defined(KL28Z7_SERIES) || defined(KL81Z7_SERIES) || \
+#elif(defined(KV56F24_SERIES) || defined(KV58F24_SERIES) || defined(KL28Z7_SERIES) || defined(KL81Z7_SERIES) || \
       defined(KL82Z7_SERIES))
 #define TRNG_USER_CONFIG_DEFAULT_OSC_DIV kTRNG_RingOscDiv4
 #elif defined(K81F25615_SERIES)
@@ -1188,6 +1189,14 @@ typedef enum _trng_statistical_check
     (TRNG_RMW_SEC_CFG(base, TRNG_SEC_CFG_NO_PRGM_MASK, TRNG_SEC_CFG_NO_PRGM(value)))
 /*@}*/
 
+/*! @brief Array to map TRNG instance number to base pointer. */
+static TRNG_Type *const s_trngBases[] = TRNG_BASE_PTRS;
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+/*! @brief Clock array name */
+static const clock_ip_name_t s_trngClock[] = TRNG_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
 /*******************************************************************************
  * Prototypes
  *******************************************************************************/
@@ -1197,10 +1206,29 @@ static status_t trng_SetStatisticalCheckLimit(TRNG_Type *base,
                                               trng_statistical_check_t statistical_check,
                                               const trng_statistical_check_limit_t *limit);
 static uint32_t trng_ReadEntropy(TRNG_Type *base, uint32_t index);
+static uint32_t trng_GetInstance(TRNG_Type *base);
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
+
+static uint32_t trng_GetInstance(TRNG_Type *base)
+{
+    uint32_t instance;
+
+    /* Find the instance index from base address mappings. */
+    for (instance = 0; instance < ARRAY_SIZE(s_trngBases); instance++)
+    {
+        if (s_trngBases[instance] == base)
+        {
+            break;
+        }
+    }
+
+    assert(instance < ARRAY_SIZE(s_trngBases));
+
+    return instance;
+}
 
 /*FUNCTION*********************************************************************
  *
@@ -1491,8 +1519,10 @@ status_t TRNG_Init(TRNG_Type *base, const trng_config_t *userConfig)
     /* Check input parameters.*/
     if ((base != 0) && (userConfig != 0))
     {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
         /* Enable the clock gate. */
-        CLOCK_EnableClock(kCLOCK_Trng0);
+        CLOCK_EnableClock(s_trngClock[trng_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
         /* Reset the registers of TRNG module to reset state. */
         /* Must be in program mode.*/
@@ -1544,8 +1574,10 @@ void TRNG_Deinit(TRNG_Type *base)
         {
         }
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
         /* Disable Clock*/
-        CLOCK_DisableClock(kCLOCK_Trng0);
+        CLOCK_DisableClock(s_trngClock[trng_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
     }
 }
 

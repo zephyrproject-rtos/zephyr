@@ -12,9 +12,10 @@
 #include <misc/util.h>
 #include <misc/printk.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HFP_HF)
-#include <bluetooth/log.h>
 #include <bluetooth/conn.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HFP_HF)
+/* FIXME: #include "common/log.h" */
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/hfp_hf.h>
 

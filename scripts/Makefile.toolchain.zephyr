@@ -87,6 +87,11 @@ CROSS_COMPILE_nios2=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_nios2)/$(CR
 CROSS_COMPILE_TARGET_xtensa = xtensa-$(TOOLCHAIN_VENDOR)-elf
 SYSROOT_TARGET_xtensa = xtensa-$(TOOLCHAIN_VENDOR)-elf
 CROSS_COMPILE_xtensa=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_xtensa)/$(CROSS_COMPILE_TARGET_xtensa)-
+ifeq ($(ARCH),xtensa)
+SYSROOT := ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/${SYSROOT_TARGET_${ARCH}}
+CFLAGS += --sysroot=$(SYSROOT) -I=/usr/include -I=/usr/include/arch/include
+endif
+TOOLCHAIN_LIBS_xtensa = hal
 
 # riscv32 (pass1)
 CROSS_COMPILE_TARGET_riscv32 = riscv32-$(TOOLCHAIN_VENDOR)-elf
@@ -117,7 +122,7 @@ endif
 QEMU_BIN_PATH ?= $(TOOLCHAIN_HOME)/usr/bin
 QEMU_BIOS=$(TOOLCHAIN_HOME)/usr/share/qemu
 
-TOOLCHAIN_LIBS = gcc
+TOOLCHAIN_LIBS = gcc ${TOOLCHAIN_LIBS_${ARCH}}
 
 DTC = ${TOOLCHAIN_HOME}/usr/bin/dtc
 OPENOCD ?= ${TOOLCHAIN_HOME}/usr/bin/openocd

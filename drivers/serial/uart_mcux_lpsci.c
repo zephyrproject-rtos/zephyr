@@ -127,7 +127,7 @@ static void mcux_lpsci_irq_tx_disable(struct device *dev)
 	LPSCI_DisableInterrupts(config->base, mask);
 }
 
-static int mcux_lpsci_irq_tx_empty(struct device *dev)
+static int mcux_lpsci_irq_tx_complete(struct device *dev)
 {
 	const struct mcux_lpsci_config *config = dev->config->config_info;
 	u32_t flags = LPSCI_GetStatusFlags(config->base);
@@ -141,7 +141,7 @@ static int mcux_lpsci_irq_tx_ready(struct device *dev)
 	u32_t mask = kLPSCI_TxDataRegEmptyInterruptEnable;
 
 	return (LPSCI_GetEnabledInterrupts(config->base) & mask)
-		&& mcux_lpsci_irq_tx_empty(dev);
+		&& mcux_lpsci_irq_tx_complete(dev);
 }
 
 static void mcux_lpsci_irq_rx_enable(struct device *dev)
@@ -258,7 +258,7 @@ static const struct uart_driver_api mcux_lpsci_driver_api = {
 	.fifo_read = mcux_lpsci_fifo_read,
 	.irq_tx_enable = mcux_lpsci_irq_tx_enable,
 	.irq_tx_disable = mcux_lpsci_irq_tx_disable,
-	.irq_tx_empty = mcux_lpsci_irq_tx_empty,
+	.irq_tx_complete = mcux_lpsci_irq_tx_complete,
 	.irq_tx_ready = mcux_lpsci_irq_tx_ready,
 	.irq_rx_enable = mcux_lpsci_irq_rx_enable,
 	.irq_rx_disable = mcux_lpsci_irq_rx_disable,

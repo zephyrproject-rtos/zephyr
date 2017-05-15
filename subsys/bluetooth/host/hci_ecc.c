@@ -18,12 +18,13 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#include "common/log.h"
 
 #include "hci_ecc.h"
 #ifdef CONFIG_BLUETOOTH_HCI_RAW
@@ -33,6 +34,7 @@
 #include "hci_core.h"
 #endif
 
+static struct k_thread ecc_thread_data;
 static BT_STACK_NOINIT(ecc_thread_stack, 1060);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
@@ -137,8 +139,7 @@ static void emulate_le_p256_public_key_cmd(void)
 
 	status = generate_keys();
 
-	buf = bt_buf_get_rx(K_FOREVER);
-	bt_buf_set_type(buf, BT_BUF_EVT);
+	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->evt = BT_HCI_EVT_LE_META_EVENT;
@@ -176,8 +177,7 @@ static void emulate_le_generate_dhkey(void)
 		ret = ecdh_shared_secret(ecc.dhkey, &ecc.pk, ecc.private_key);
 	}
 
-	buf = bt_buf_get_rx(K_FOREVER);
-	bt_buf_set_type(buf, BT_BUF_EVT);
+	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->evt = BT_HCI_EVT_LE_META_EVENT;
@@ -309,7 +309,7 @@ int bt_hci_ecc_send(struct net_buf *buf)
 
 void bt_hci_ecc_init(void)
 {
-	k_thread_spawn(ecc_thread_stack, sizeof(ecc_thread_stack),
-		       ecc_thread, NULL, NULL, NULL,
-		       K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+	k_thread_create(&ecc_thread_data, ecc_thread_stack,
+			sizeof(ecc_thread_stack), ecc_thread, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 }

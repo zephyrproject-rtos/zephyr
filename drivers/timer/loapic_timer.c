@@ -252,6 +252,16 @@ static inline void program_max_cycles(void)
 void _timer_int_handler(void *unused /* parameter is not used */
 				 )
 {
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	__asm__ __volatile__ (
+		"pushl %eax\n\t"
+		"pushl %edx\n\t"
+		"rdtsc\n\t"
+		"mov %eax, __start_tick_tsc\n\t"
+		"mov %edx, __start_tick_tsc+4\n\t"
+		"pop %edx\n\t"
+		"pop %eax\n\t");
+#endif
 	ARG_UNUSED(unused);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
@@ -324,7 +334,16 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	_sys_clock_tick_announce();
 #endif /*CONFIG_TICKLESS_IDLE*/
 #endif
-
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	__asm__ __volatile__ (
+		"pushl %eax\n\t"
+		"pushl %edx\n\t"
+		"rdtsc\n\t"
+		"mov %eax, __end_tick_tsc\n\t"
+		"mov %edx, __end_tick_tsc+4\n\t"
+		"pop %edx\n\t"
+		"pop %eax\n\t");
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
 }
 
 #ifdef CONFIG_TICKLESS_KERNEL

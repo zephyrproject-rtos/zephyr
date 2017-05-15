@@ -25,8 +25,10 @@
 #include "fsl_xcvr.h"
 
 #define KW41Z_DEFAULT_CHANNEL		26
-#define KW41Z_SEQ_SYNC_TIMEOUT		128
-#define KW41Z_ACK_WAIT_TIMEOUT		320
+#define KW41Z_CCA_TIME			8
+#define KW41Z_SHR_PHY_TIME		12
+#define KW41Z_PER_BYTE_TIME		2
+#define KW41Z_ACK_WAIT_TIME		54
 #define KW41Z_IDLE_WAIT_RETRIES		5
 #define RADIO_0_IRQ_PRIO		0x80
 #define KW41Z_FCS_LENGTH		2
@@ -70,6 +72,9 @@ struct kw41z_context {
 
 	struct k_sem seq_sync;
 	atomic_t seq_retval;
+
+	u32_t rx_warmup_time;
+	u32_t tx_warmup_time;
 
 	u8_t lqi;
 };
@@ -189,7 +194,7 @@ static int kw41z_cca(struct device *dev)
 			ZLL_PHY_CTRL_CCATYPE(KW41Z_CCA_MODE1);
 	kw41z_set_seq_state(KW41Z_STATE_CCA);
 
-	kw41z_tmr1_set_timeout(KW41Z_SEQ_SYNC_TIMEOUT);
+	kw41z_tmr1_set_timeout(kw41z->rx_warmup_time + KW41Z_CCA_TIME);
 	k_sem_take(&kw41z->seq_sync, K_FOREVER);
 
 	return kw41z->seq_retval;
@@ -234,7 +239,7 @@ static int kw41z_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	return 0;
 }
 
-static int kw41z_set_txpower(struct device *dev, int16_t dbm)
+static int kw41z_set_txpower(struct device *dev, s16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
 		ZLL->PA_PWR = 0;
@@ -249,7 +254,6 @@ static int kw41z_set_txpower(struct device *dev, int16_t dbm)
 
 static int kw41z_start(struct device *dev)
 {
-	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TRCV_MSK_MASK;
 	irq_enable(Radio_1_IRQn);
 
 	kw41z_set_seq_state(KW41Z_STATE_RX);
@@ -261,7 +265,6 @@ static int kw41z_start(struct device *dev)
 static int kw41z_stop(struct device *dev)
 {
 	irq_disable(Radio_1_IRQn);
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TRCV_MSK_MASK;
 
 	kw41z_disable_seq_irq();
 	kw41z_set_seq_state(KW41Z_STATE_IDLE);
@@ -347,6 +350,7 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 	struct kw41z_context *kw41z = dev->driver_data;
 	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
 	u8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
+	u32_t tx_timeout;
 
 	if (kw41z_prepare_for_new_state()) {
 		SYS_LOG_DBG("Can't initiate new SEQ state");
@@ -368,15 +372,19 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 	/* Clear all IRQ flags */
 	ZLL->IRQSTS = ZLL->IRQSTS;
 
+	tx_timeout = kw41z->tx_warmup_time + KW41Z_SHR_PHY_TIME +
+		     payload_len * KW41Z_PER_BYTE_TIME;
+
 	/* Perform automatic reception of ACK frame, if required */
 	if (KW41Z_AUTOACK_ENABLED) {
+		tx_timeout += KW41Z_ACK_WAIT_TIME;
 		ZLL->PHY_CTRL |= ZLL_PHY_CTRL_RXACKRQD_MASK;
 		kw41z_set_seq_state(KW41Z_STATE_TXRX);
-		kw41z_tmr2_set_timeout(KW41Z_ACK_WAIT_TIMEOUT);
+		kw41z_tmr2_set_timeout(tx_timeout);
 	} else {
 		ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_RXACKRQD_MASK;
 		kw41z_set_seq_state(KW41Z_STATE_TX);
-		kw41z_tmr1_set_timeout(KW41Z_SEQ_SYNC_TIMEOUT);
+		kw41z_tmr1_set_timeout(tx_timeout);
 	}
 
 	kw41z_enable_seq_irq();
@@ -402,6 +410,7 @@ static void kw41z_isr(int unused)
 
 		if (state == KW41Z_STATE_CCA &&
 		    !(irqsts & ZLL_IRQSTS_CCA_MASK)) {
+			kw41z_set_seq_state(KW41Z_STATE_IDLE);
 			atomic_set(&kw41z_context_data.seq_retval, 0);
 			restart_rx = 0;
 		} else {
@@ -443,8 +452,7 @@ static void kw41z_isr(int unused)
 			kw41z_tmr2_disable();
 		case KW41Z_STATE_TX:
 			SYS_LOG_DBG("TX seq done");
-			if ((ZLL->PHY_CTRL & ZLL_PHY_CTRL_CCABFRTX_MASK) &&
-			    (irqsts & ZLL_IRQSTS_CCA_MASK)) {
+			if (irqsts & ZLL_IRQSTS_CCA_MASK) {
 				atomic_set(&kw41z_context_data.seq_retval,
 					   -EBUSY);
 			} else {
@@ -499,6 +507,7 @@ static inline u8_t *get_mac(struct device *dev)
 
 static int kw41z_init(struct device *dev)
 {
+	struct kw41z_context *kw41z = dev->driver_data;
 	xcvrStatus_t xcvrStatus;
 
 	xcvrStatus = XCVR_Init(ZIGBEE_MODE, DR_500KBPS);
@@ -515,8 +524,7 @@ static int kw41z_init(struct device *dev)
 			ZLL_PHY_CTRL_CCAMSK_MASK		|
 			ZLL_PHY_CTRL_RXMSK_MASK			|
 			ZLL_PHY_CTRL_TXMSK_MASK			|
-			ZLL_PHY_CTRL_SEQMSK_MASK		|
-			ZLL_PHY_CTRL_TRCV_MSK_MASK;
+			ZLL_PHY_CTRL_SEQMSK_MASK;
 #if KW41Z_AUTOACK_ENABLED
 	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_AUTOACK_MASK;
 #endif
@@ -544,6 +552,26 @@ static int kw41z_init(struct device *dev)
 	kw41z_tmr2_disable();
 	kw41z_tmr1_disable();
 
+	/* Compute warmup times (scaled to 16us) */
+	kw41z->rx_warmup_time = (XCVR_TSM->END_OF_SEQ &
+				 XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_MASK) >>
+				XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_SHIFT;
+	kw41z->tx_warmup_time = (XCVR_TSM->END_OF_SEQ &
+				 XCVR_TSM_END_OF_SEQ_END_OF_TX_WU_MASK) >>
+				XCVR_TSM_END_OF_SEQ_END_OF_TX_WU_SHIFT;
+
+	if (kw41z->rx_warmup_time & 0x0F) {
+		kw41z->rx_warmup_time = 1 + (kw41z->rx_warmup_time >> 4);
+	} else {
+		kw41z->rx_warmup_time = kw41z->rx_warmup_time >> 4;
+	}
+
+	if (kw41z->tx_warmup_time & 0x0F) {
+		kw41z->tx_warmup_time = 1 + (kw41z->tx_warmup_time >> 4);
+	} else {
+		kw41z->tx_warmup_time = kw41z->tx_warmup_time >> 4;
+	}
+
 	/* Set CCA threshold to -75 dBm */
 	ZLL->CCA_LQI_CTRL &= ~ZLL_CCA_LQI_CTRL_CCA1_THRESH_MASK;
 	ZLL->CCA_LQI_CTRL |= ZLL_CCA_LQI_CTRL_CCA1_THRESH(0xB5);
@@ -561,6 +589,9 @@ static int kw41z_init(struct device *dev)
 
 	/* Set default channel to 2405 MHZ */
 	kw41z_set_channel(dev, KW41Z_DEFAULT_CHANNEL);
+
+	/* Unmask Transceiver Global Interrupts */
+	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TRCV_MSK_MASK;
 
 	/* Configre Radio IRQ */
 	NVIC_ClearPendingIRQ(Radio_1_IRQn);

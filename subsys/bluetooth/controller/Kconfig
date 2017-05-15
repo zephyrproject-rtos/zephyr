@@ -30,9 +30,33 @@ endchoice
 
 comment "BLE Controller configuration"
 
+menu "Advertiser"
+	visible if !BLUETOOTH_PERIPHERAL
+
+config BLUETOOTH_CONTROLLER_STATE_ADV
+	bool "Enable Advertiser"
+	default y if BLUETOOTH_PERIPHERAL
+	default y if !BLUETOOTH_CONTROLLER_STATE_SCAN
+	help
+	  Enable support for advertising state in the Controller.
+
+endmenu
+
+menu "Scanner"
+	visible if !BLUETOOTH_CENTRAL
+
+config BLUETOOTH_CONTROLLER_STATE_SCAN
+	bool "Enable Scanner"
+	default y if BLUETOOTH_CENTRAL
+	help
+	  Enable support for scanning state in the Controller.
+
+endmenu
+
 config BLUETOOTH_CONTROLLER_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
+	depends on BLUETOOTH_CONTROLLER_STATE_SCAN
 	default 16
 	help
 	  Set the number of unique BLE addresses that can be filtered as
@@ -114,6 +138,13 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
+config BLUETOOTH_CONTROLLER_PHY
+	bool "PHY Update"
+	default y
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
+	  Controller.
+
 config BLUETOOTH_CONTROLLER_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
 	default y
@@ -128,6 +159,32 @@ config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 
 menu "Advanced features"
 	visible if BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+
+if BLUETOOTH_CONTROLLER_PHY
+
+config BLUETOOTH_CONTROLLER_PHY_2M
+	bool "2Mbps PHY Support"
+	depends on !SOC_SERIES_NRF51X || BLUETOOTH_CONTROLLER_PHY_2M_NRF
+	default y
+	help
+	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
+
+config BLUETOOTH_CONTROLLER_PHY_2M_NRF
+	bool "2Mbps Nordic Semiconductor PHY Support (Open Text)"
+	depends on SOC_SERIES_NRF51X
+	select BLUETOOTH_CONTROLLER_PHY_2M
+	help
+	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
+	  Controller. Encrypted connections are not supported.
+
+config BLUETOOTH_CONTROLLER_PHY_CODED
+	bool "Coded PHY Support"
+	depends on SOC_NRF52840
+	default y
+	help
+	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
+
+endif # BLUETOOTH_CONTROLLER_PHY
 
 config BLUETOOTH_CONTROLLER_WORKER_PRIO
 	prompt "Radio and Ticker's Worker IRQ priority"
@@ -200,6 +257,12 @@ config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
+config BLUETOOTH_CONTROLLER_TIFS_HW
+	bool "H/w Accelerated tIFS Trx switching"
+	default y
+	help
+	  Enable use of hardware accelerated tIFS Trx switching.
+
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
 	help
@@ -222,6 +285,17 @@ config BLUETOOTH_CONTROLLER_ADV_INDICATION
 	bool "Advertisement indications"
 	help
 	  Generate events indicating on air advertisement events.
+
+config BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
+	bool "Scan Request Notifications"
+	help
+	  Generate events notifying the on air scan requests received.
+
+config BLUETOOTH_CONTROLLER_SCAN_REQ_RSSI
+	bool "Measure Scan Request RSSI"
+	depends on BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
+	help
+	  Measure RSSI of the on air scan requests received.
 
 endmenu
 

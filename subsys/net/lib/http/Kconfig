@@ -4,23 +4,36 @@
 #
 
 config HTTP
-	bool
-	prompt "HTTP support"
+	bool "HTTP support"
 	default n
 	help
 	This option enables the HTTP library
 
 config HTTP_SERVER
-	bool
-	prompt "HTTP server support"
+	bool "HTTP server support"
 	default n
 	select HTTP
+	select HTTP_PARSER
 	help
 	Enables HTTP server routines
 
+config HTTP_SERVER_CONNECTIONS
+	int "Max number of HTTP server connections"
+	default NET_MAX_CONTEXTS
+	depends on HTTP_SERVER
+	help
+	This value determines how many simultaneous HTTP connections the
+	HTTP server can serve.
+
+config HTTP_SERVER_NUM_URLS
+	int "Max number of URLs that the HTTP server will handle"
+	default 8
+	depends on HTTP_SERVER
+	help
+	This value determines how many URLs this HTTP server can handle.
+
 config HTTP_HEADER_FIELD_ITEMS
-	int
-	prompt "HTTP header field max number of items"
+	int "HTTP header field max number of items"
 	depends on HTTP_SERVER
 	default 8
 	help
@@ -28,16 +41,15 @@ config HTTP_HEADER_FIELD_ITEMS
 	application will handle
 
 config HTTP_CLIENT
-	bool
-	prompt "HTTP client support"
+	bool "HTTP client support"
 	default n
+	select HTTP_PARSER
 	select HTTP
 	help
 	Enables HTTP client routines
 
 config HTTP_PARSER
-	bool
-	prompt "HTTP Parser support"
+	bool "HTTP Parser support"
 	default n
 	select HTTP
 	help
@@ -46,9 +58,42 @@ config HTTP_PARSER
 	provided by a libc implementation.
 
 config HTTP_PARSER_STRICT
-	bool
-	prompt "HTTP strict parsing"
+	bool "HTTP strict parsing"
 	default n
 	depends on HTTP_PARSER
 	help
 	This option enables the strict parsing option
+
+config HTTPS
+	bool "HTTPS support"
+	default n
+	depends on HTTP
+	depends on MBEDTLS
+	help
+	Enables HTTPS support.
+
+config HTTPS_STACK_SIZE
+	int "HTTPS thread stack size"
+	default 8192
+	depends on HTTPS
+	help
+	HTTPS thread stack size. The mbedtls routines will use this stack
+	thus it is by default very large.
+
+config HTTPS_HEAP_SIZE
+	int "HTTPS heap size for mbedtls"
+	default 12000
+	depends on HTTPS
+	depends on MBEDTLS
+	help
+	HTTPS heap size. The mbedtls routines will use this heap if enabled.
+	See ext/lib/crypto/mbedtls/include/mbedtls/config.h and
+	MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details. This option is not
+	enabled by default.
+
+config  NET_DEBUG_HTTP
+	bool "Debug HTTP"
+	default n
+	depends on HTTP && NET_LOG
+	help
+	Enables HTTP output debug messages

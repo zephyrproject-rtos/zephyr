@@ -67,6 +67,37 @@ struct json_obj_descr {
 typedef int (*json_append_bytes_t)(const u8_t *bytes, size_t len,
 				   void *data);
 
+
+/**
+ * @brief Helper macro to declare a descriptor for supported primitive
+ * values.
+ *
+ * @param struct_ Struct packing the values
+ *
+ * @param field_name_ Field name in the struct
+ *
+ * @param type_ Token type for JSON value corresponding to a primitive
+ * type. Must be one of: JSON_TOK_STRING for strings, JSON_TOK_NUMBER
+ * for numbers, JSON_TOK_TRUE (or JSON_TOK_FALSE) for booleans.
+ *
+ * Here's an example of use:
+ *
+ *     struct foo {
+ *         int some_int;
+ *     };
+ *
+ *     struct json_obj_descr foo[] = {
+ *         JSON_OBJ_DESCR_PRIM(struct foo, some_int, JSON_TOK_NUMBER),
+ *     };
+ */
+#define JSON_OBJ_DESCR_PRIM(struct_, field_name_, type_) \
+	{ \
+		.field_name = (#field_name_), \
+		.field_name_len = sizeof(#field_name_) - 1, \
+		.offset = offsetof(struct_, field_name_), \
+		.type = type_, \
+	}
+
 /**
  * @brief Helper macro to declare a descriptor for an object value
  *
@@ -148,14 +179,8 @@ typedef int (*json_append_bytes_t)(const u8_t *bytes, size_t len,
  *
  *    struct s { int foo; char *bar; }
  *    struct json_obj_descr descr[] = {
- *       { .field_name = "foo",
- *         .field_name_len = 3,
- *         .offset = offsetof(struct s, foo),
- *         .type = JSON_TOK_NUMBER },
- *       { .field_name = "bar",
- *         .field_name_len = 3,
- *         .offset = offsetof(struct s, bar),
- *         .type = JSON_TOK_STRING }
+ *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
+ *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
  *    };
  *
  * Since this parser is designed for machine-to-machine communications, some

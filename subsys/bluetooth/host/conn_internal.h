@@ -42,7 +42,7 @@ struct bt_conn_le {
 	u16_t			latency;
 	u16_t			timeout;
 
-	u8_t			features[1][8];
+	u8_t			features[8];
 
 	struct bt_keys		*keys;
 

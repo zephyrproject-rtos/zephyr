@@ -9,53 +9,12 @@
 
 comment "Host Stack Configuration"
 
-config BLUETOOTH_HCI_RAW
-	bool "RAW HCI access"
-	help
-	  This option allows to access Bluetooth controller
-	  from the application with the RAW HCI protocol.
-
-config BLUETOOTH_UART_TO_HOST_DEV_NAME
-	string "Device Name of UART Device to an external Bluetooth Host"
-	default "UART_0"
-	depends on BLUETOOTH_HCI_RAW
-	help
-	  This option specifies the name of UART device to be used
-	  to connect to an external Bluetooth Host when Zephyr is
-	  acting as a Bluetooth Controller.
-
 config BLUETOOTH_HCI_HOST
 	# Virtual/hidden option to make the conditions more intuitive
 	bool
 	default y
 	depends on !BLUETOOTH_HCI_RAW
 	select POLL
-
-config BLUETOOTH_PERIPHERAL
-	bool "Peripheral Role support"
-	select BLUETOOTH_CONN
-	default y if BLUETOOTH_HCI_RAW
-	help
-	  Select this for LE Peripheral role support.
-
-config BLUETOOTH_CENTRAL
-	bool "Central Role support"
-	select BLUETOOTH_CONN
-	default y if BLUETOOTH_HCI_RAW
-	help
-	  Select this for LE Central role support.
-
-config BLUETOOTH_CONN
-	bool
-
-config BLUETOOTH_MAX_CONN
-	int "Maximum number of simultaneous connections"
-	depends on BLUETOOTH_CONN
-	range 1 64
-	default 1
-	help
-	  Maximum number of simultaneous Bluetooth connections
-	  supported.
 
 config BLUETOOTH_HCI_CMD_COUNT
 	int "Number of HCI command buffers"
@@ -144,6 +103,27 @@ config BLUETOOTH_INTERNAL_STORAGE
 	  an internal default handler is used for this.
 
 if BLUETOOTH_CONN
+
+if BLUETOOTH_HCI_ACL_FLOW_CONTROL
+config BLUETOOTH_ACL_RX_COUNT
+	int "Number of incoming ACL data buffers"
+	default 6
+	default BLUETOOTH_CONTROLLER_RX_BUFFERS if BLUETOOTH_CONTROLLER
+	range 2 64
+	help
+	  Number of buffers available for incoming ACL data.
+
+config BLUETOOTH_L2CAP_RX_MTU
+	int "Maximum supported L2CAP MTU for incoming data"
+	default 23
+	default 65 if BLUETOOTH_SMP
+	default 200 if BLUETOOTH_BREDR
+	range 23 1300
+	range 65 1300 if BLUETOOTH_SMP
+	help
+	  Maximum size of each incoming L2CAP PDU.
+endif # BLUETOOTH_HCI_ACL_FLOW_CONTROL
+
 config BLUETOOTH_L2CAP_TX_BUF_COUNT
 	int "Number of L2CAP TX buffers"
 	default 3
@@ -209,6 +189,7 @@ config BLUETOOTH_ATT_TX_MAX
 
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
+	select BLUETOOTH_RPA
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
@@ -310,63 +291,6 @@ config BLUETOOTH_TINYCRYPT_ECC
 	  In builds including the HCI Raw interface and the BLE Controller, this
 	  option injects support for the 2 HCI commands required for LE Secure
 	  Connections so that Hosts can make use of those.
-
-config BLUETOOTH_DEBUG
-	bool
-
-choice
-	prompt "Bluetooth debug type"
-	depends on BLUETOOTH
-	default BLUETOOTH_DEBUG_NONE
-
-config BLUETOOTH_DEBUG_NONE
-	bool "No debug log"
-	help
-	  Select this to disable all Bluetooth debug logs.
-
-config BLUETOOTH_DEBUG_LOG
-	bool "Normal printf-style to console"
-	select BLUETOOTH_DEBUG
-	select PRINTK
-	select SYS_LOG
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
-
-config BLUETOOTH_DEBUG_MONITOR
-	bool "Monitor protocol over UART"
-	select BLUETOOTH_DEBUG
-	select PRINTK
-	select CONSOLE_HAS_DRIVER
-	help
-	  Use a custom logging protocol over the console UART
-	  instead of plain-text output. Requires a special application
-	  on the host side that can decode this protocol. Currently
-	  the 'btmon' tool from BlueZ is capable of doing this.
-
-	  If the target board has two or more external UARTs it is
-	  possible to keep using UART_CONSOLE together with this option,
-	  however if there is only a single external UART then
-	  UART_CONSOLE needs to be disabled (in which case printk/printf
-	  will get encoded into the monitor protocol).
-
-endchoice
-
-config BLUETOOTH_DEBUG_COLOR
-	bool "Use colored logs"
-	depends on BLUETOOTH_DEBUG_LOG
-	select SYS_LOG_SHOW_COLOR
-	default y
-	help
-	  Use color in the logs. This requires an ANSI capable terminal.
-
-config BLUETOOTH_MONITOR_ON_DEV_NAME
-	string "Device Name of Bluetooth monitor logging UART"
-	depends on BLUETOOTH_DEBUG_MONITOR
-	default "UART_0"
-	help
-	 This option specifies the name of UART device to be used
-	 for the Bluetooth monitor logging.
 
 if BLUETOOTH_DEBUG
 config BLUETOOTH_DEBUG_HCI_CORE
@@ -497,8 +421,10 @@ config BLUETOOTH_RFCOMM
 config BLUETOOTH_RFCOMM_L2CAP_MTU
 	int "L2CAP MTU for RFCOMM frames"
 	default BLUETOOTH_RX_BUF_LEN
+	default BLUETOOTH_L2CAP_RX_MTU if BLUETOOTH_HCI_ACL_FLOW_CONTROL
 	depends on BLUETOOTH_RFCOMM
 	range BLUETOOTH_RX_BUF_LEN 32767
+	range BLUETOOTH_L2CAP_RX_MTU 32767 if BLUETOOTH_HCI_ACL_FLOW_CONTROL
 	help
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 

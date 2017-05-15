@@ -18,10 +18,12 @@ referenced by a :dfn:`thread id` that is assigned when the thread is spawned.
 
 A thread has the following key properties:
 
-* A **stack area**, which is a region of memory used for the thread's
-  control block (of type :c:type:`struct k_thread`) and for its stack.
+* A **stack area**, which is a region of memory used for the thread's stack.
   The **size** of the stack area can be tailored to conform to the actual needs
   of the thread's processing.
+
+* A **thread control block** for private kernel bookkeeping of the thread's
+  metadata. This is an instance of type :c:type:`struct k_thread`.
 
 * An **entry point function**, which is invoked when the thread is started.
   Up to 3 **argument values** can be passed to this function.
@@ -38,13 +40,12 @@ A thread has the following key properties:
 
 .. _spawning_thread:
 
-Thread Spawning
+Thread Creation
 ===============
 
-A thread must be spawned before it can be used. The kernel initializes
-the control block portion of the thread's stack area, as well as one
-end of the stack portion. The remainder of the thread's stack is typically
-left uninitialized.
+A thread must be created before it can be used. The kernel initializes
+the thread control block as well as one end of the stack portion. The remainder
+of the thread's stack is typically left uninitialized.
 
 Specifying a start delay of :c:macro:`K_NO_WAIT` instructs the kernel
 to start thread execution immediately. Alternatively, the kernel can be
@@ -52,9 +53,9 @@ instructed to delay execution of the thread by specifying a timeout
 value -- for example, to allow device hardware used by the thread
 to become available.
 
-The kernel allows a delayed start to be cancelled before the thread begins
+The kernel allows a delayed start to be canceled before the thread begins
 executing. A cancellation request has no effect if the thread has already
-started. A thread whose delayed start was successfully cancelled must be
+started. A thread whose delayed start was successfully canceled must be
 re-spawned before it can be used.
 
 Thread Termination
@@ -146,11 +147,9 @@ Implementation
 Spawning a Thread
 =================
 
-A thread is spawned by defining its stack area and then calling
-:cpp:func:`k_thread_spawn()`. The stack area is an array of bytes
-whose size must equal :c:macro:`K_THREAD_SIZEOF` plus the size
-of the thread's stack. The stack area must be defined using the
-:c:macro:`__stack` attribute to ensure it is properly aligned.
+A thread is spawned by defining its stack area and its thread control block,
+and then calling :cpp:func:`k_thread_create()`. The stack area must be defined
+using the :c:macro:`__stack` attribute to ensure it is properly aligned.
 
 The thread spawning function returns its thread id, which can be used
 to reference the thread.
@@ -165,14 +164,16 @@ The following code spawns a thread that starts immediately.
     extern void my_entry_point(void *, void *, void *);
 
     char __noinit __stack my_stack_area[MY_STACK_SIZE];
+    struct k_thread my_thread_data;
 
-    k_tid_t my_tid = k_thread_spawn(my_stack_area, MY_STACK_SIZE,
-                                    my_entry_point, NULL, NULL, NULL,
-                                    MY_PRIORITY, 0, K_NO_WAIT);
+    k_tid_t my_tid = k_thread_create(&my_thread_data, my_stack_area,
+                                     MY_STACK_SIZE, my_entry_point,
+                                     NULL, NULL, NULL,
+                                     MY_PRIORITY, 0, K_NO_WAIT);
 
 Alternatively, a thread can be spawned at compile time by calling
 :c:macro:`K_THREAD_DEFINE`. Observe that the macro defines
-the stack area and thread id variables automatically.
+the stack area, control block, and thread id variables automatically.
 
 The following code has the same effect as the code segment above.
 
@@ -231,7 +232,7 @@ APIs
 The following thread APIs are provided by :file:`kernel.h`:
 
 * :c:macro:`K_THREAD_DEFINE`
-* :cpp:func:`k_thread_spawn()`
+* :cpp:func:`k_thread_create()`
 * :cpp:func:`k_thread_cancel()`
 * :cpp:func:`k_thread_abort()`
 * :cpp:func:`k_thread_suspend()`

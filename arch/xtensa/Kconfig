@@ -15,6 +15,13 @@ menu "XTENSA Options"
 config ARCH
 	default "xtensa"
 
+config SIMULATOR_XTENSA
+        bool
+	prompt "Simulator Configuration"
+	default n
+	help
+	  Specify if the board configuration should be treated as a simulator.
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	prompt "Hardware clock cycles per second, 2000000 for ISS"
@@ -60,6 +67,15 @@ config SW_ISR_TABLE_DYNAMIC
 	This option enables irq_connect_dynamic(). It moves the ISR table to
 	SRAM so that it is writable. This has the side-effect of removing
 	write-protection on the ISR table.
+
+config XTENSA_RESET_VECTOR
+	bool
+	prompt "Build reset vector code"
+	default y
+	help
+	This option controls whether the initial reset vector code is built.
+	This is always needed for the simulator. Real boards may already
+	implement this in boot ROM.
 
 menu "Specific core configuration"
 

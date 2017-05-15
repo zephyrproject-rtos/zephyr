@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -37,36 +37,35 @@
  * @{
  */
 
-/*! @file*/
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief LPUART driver version 2.1.0. */
-#define FSL_LPUART_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
+/*! @brief LPUART driver version 2.2.3. */
+#define FSL_LPUART_DRIVER_VERSION (MAKE_VERSION(2, 2, 3))
 /*@}*/
 
 /*! @brief Error codes for the LPUART driver. */
 enum _lpuart_status
 {
-    kStatus_LPUART_TxBusy = MAKE_STATUS(kStatusGroup_LPUART, 0),              /*!< TX busy */
-    kStatus_LPUART_RxBusy = MAKE_STATUS(kStatusGroup_LPUART, 1),              /*!< RX busy */
-    kStatus_LPUART_TxIdle = MAKE_STATUS(kStatusGroup_LPUART, 2),              /*!< LPUART transmitter is idle. */
-    kStatus_LPUART_RxIdle = MAKE_STATUS(kStatusGroup_LPUART, 3),              /*!< LPUART receiver is idle. */
-    kStatus_LPUART_TxWatermarkTooLarge = MAKE_STATUS(kStatusGroup_LPUART, 4), /*!< TX FIFO watermark too large  */
-    kStatus_LPUART_RxWatermarkTooLarge = MAKE_STATUS(kStatusGroup_LPUART, 5), /*!< RX FIFO watermark too large  */
-    kStatus_LPUART_FlagCannotClearManually =
-        MAKE_STATUS(kStatusGroup_LPUART, 6),                    /*!< Some flag can't manually clear */
-    kStatus_LPUART_Error = MAKE_STATUS(kStatusGroup_LPUART, 7), /*!< Error happens on LPUART. */
+    kStatus_LPUART_TxBusy = MAKE_STATUS(kStatusGroup_LPUART, 0),                  /*!< TX busy */
+    kStatus_LPUART_RxBusy = MAKE_STATUS(kStatusGroup_LPUART, 1),                  /*!< RX busy */
+    kStatus_LPUART_TxIdle = MAKE_STATUS(kStatusGroup_LPUART, 2),                  /*!< LPUART transmitter is idle. */
+    kStatus_LPUART_RxIdle = MAKE_STATUS(kStatusGroup_LPUART, 3),                  /*!< LPUART receiver is idle. */
+    kStatus_LPUART_TxWatermarkTooLarge = MAKE_STATUS(kStatusGroup_LPUART, 4),     /*!< TX FIFO watermark too large  */
+    kStatus_LPUART_RxWatermarkTooLarge = MAKE_STATUS(kStatusGroup_LPUART, 5),     /*!< RX FIFO watermark too large  */
+    kStatus_LPUART_FlagCannotClearManually = MAKE_STATUS(kStatusGroup_LPUART, 6), /*!< Some flag can't manually clear */
+    kStatus_LPUART_Error = MAKE_STATUS(kStatusGroup_LPUART, 7),                   /*!< Error happens on LPUART. */
     kStatus_LPUART_RxRingBufferOverrun =
         MAKE_STATUS(kStatusGroup_LPUART, 8), /*!< LPUART RX software ring buffer overrun. */
     kStatus_LPUART_RxHardwareOverrun = MAKE_STATUS(kStatusGroup_LPUART, 9), /*!< LPUART RX receiver overrun. */
     kStatus_LPUART_NoiseError = MAKE_STATUS(kStatusGroup_LPUART, 10),       /*!< LPUART noise error. */
     kStatus_LPUART_FramingError = MAKE_STATUS(kStatusGroup_LPUART, 11),     /*!< LPUART framing error. */
     kStatus_LPUART_ParityError = MAKE_STATUS(kStatusGroup_LPUART, 12),      /*!< LPUART parity error. */
+    kStatus_LPUART_BaudrateNotSupport =
+        MAKE_STATUS(kStatusGroup_LPUART, 13), /*!< Baudrate is not support in current clock source */
 };
 
 /*! @brief LPUART parity mode. */
@@ -76,6 +75,15 @@ typedef enum _lpuart_parity_mode
     kLPUART_ParityEven = 0x2U,     /*!< Parity enabled, type even, bit setting: PE|PT = 10 */
     kLPUART_ParityOdd = 0x3U,      /*!< Parity enabled, type odd,  bit setting: PE|PT = 11 */
 } lpuart_parity_mode_t;
+
+/*! @brief LPUART data bits count. */
+typedef enum _lpuart_data_bits
+{
+    kLPUART_EightDataBits = 0x0U, /*!< Eight data bit */
+#if defined(FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT) && FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT
+    kLPUART_SevenDataBits = 0x1U, /*!< Seven data bit */
+#endif
+} lpuart_data_bits_t;
 
 /*! @brief LPUART stop bit count. */
 typedef enum _lpuart_stop_bit_count
@@ -158,11 +166,13 @@ enum _lpuart_flags
 #endif
 };
 
-/*! @brief LPUART configure structure. */
+/*! @brief LPUART configuration structure. */
 typedef struct _lpuart_config
 {
-    uint32_t baudRate_Bps;           /*!< LPUART baud rate  */
-    lpuart_parity_mode_t parityMode; /*!< Parity mode, disabled (default), even, odd */
+    uint32_t baudRate_Bps;            /*!< LPUART baud rate  */
+    lpuart_parity_mode_t parityMode;  /*!< Parity mode, disabled (default), even, odd */
+    lpuart_data_bits_t dataBitsCount; /*!< Data bits count, eight (default), seven */
+    bool isMsb;                       /*!< Data bits order, LSB (default), MSB */
 #if defined(FSL_FEATURE_LPUART_HAS_STOP_BIT_CONFIG_SUPPORT) && FSL_FEATURE_LPUART_HAS_STOP_BIT_CONFIG_SUPPORT
     lpuart_stop_bit_count_t stopBitCount; /*!< Number of stop bits, 1 stop bit (default) or 2 stop bits  */
 #endif
@@ -206,7 +216,11 @@ struct _lpuart_handle
     void *userData;                      /*!< LPUART callback function parameter.*/
 
     volatile uint8_t txState; /*!< TX transfer state. */
-    volatile uint8_t rxState; /*!< RX transfer state */
+    volatile uint8_t rxState; /*!< RX transfer state. */
+
+#if defined(FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT) && FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT
+    bool isSevenDataBits; /*!< Seven data bits flag. */
+#endif
 };
 
 /*******************************************************************************
@@ -217,32 +231,59 @@ struct _lpuart_handle
 extern "C" {
 #endif /* _cplusplus */
 
+#if defined(FSL_FEATURE_LPUART_HAS_GLOBAL) && FSL_FEATURE_LPUART_HAS_GLOBAL
+
+/*!
+ * @name Software Reset
+ * @{
+ */
+
+/*!
+ * @brief Resets the LPUART using software.
+ *
+ * This function resets all internal logic and registers except the Global Register.
+ * Remains set until cleared by software.
+ *
+ * @param base LPUART peripheral base address.
+ */
+static inline void LPUART_SoftwareReset(LPUART_Type *base)
+{
+    base->GLOBAL |= LPUART_GLOBAL_RST_MASK;
+    base->GLOBAL &= ~LPUART_GLOBAL_RST_MASK;
+}
+/* @} */
+#endif /*FSL_FEATURE_LPUART_HAS_GLOBAL*/
+
 /*!
  * @name Initialization and deinitialization
  * @{
  */
 
 /*!
-* @brief Initializes an LPUART instance with the user configuration structure and the peripheral clock.
-*
-* This function configures the LPUART module with  user-defined settings. Call the LPUART_GetDefaultConfig() function
-* to configure the configuration structure and get the default configuration.
-* The example below shows how to use this API to configure the LPUART.
-* @code
-*  lpuart_config_t lpuartConfig;
-*  lpuartConfig.baudRate_Bps = 115200U;
-*  lpuartConfig.parityMode = kLPUART_ParityDisabled;
-*  lpuartConfig.stopBitCount = kLPUART_OneStopBit;
-*  lpuartConfig.txFifoWatermark = 0;
-*  lpuartConfig.rxFifoWatermark = 1;
-*  LPUART_Init(LPUART1, &lpuartConfig, 20000000U);
-* @endcode
-*
-* @param base LPUART peripheral base address.
-* @param config Pointer to a user-defined configuration structure.
-* @param srcClock_Hz LPUART clock source frequency in HZ.
-*/
-void LPUART_Init(LPUART_Type *base, const lpuart_config_t *config, uint32_t srcClock_Hz);
+ * @brief Initializes an LPUART instance with the user configuration structure and the peripheral clock.
+ *
+ * This function configures the LPUART module with user-defined settings. Call the LPUART_GetDefaultConfig() function
+ * to configure the configuration structure and get the default configuration.
+ * The example below shows how to use this API to configure the LPUART.
+ * @code
+ *  lpuart_config_t lpuartConfig;
+ *  lpuartConfig.baudRate_Bps = 115200U;
+ *  lpuartConfig.parityMode = kLPUART_ParityDisabled;
+ *  lpuartConfig.dataBitsCount = kLPUART_EightDataBits;
+ *  lpuartConfig.isMsb = false;
+ *  lpuartConfig.stopBitCount = kLPUART_OneStopBit;
+ *  lpuartConfig.txFifoWatermark = 0;
+ *  lpuartConfig.rxFifoWatermark = 1;
+ *  LPUART_Init(LPUART1, &lpuartConfig, 20000000U);
+ * @endcode
+ *
+ * @param base LPUART peripheral base address.
+ * @param config Pointer to a user-defined configuration structure.
+ * @param srcClock_Hz LPUART clock source frequency in HZ.
+ * @retval kStatus_LPUART_BaudrateNotSupport Baudrate is not support in current clock source.
+ * @retval kStatus_Success LPUART initialize succeed
+ */
+status_t LPUART_Init(LPUART_Type *base, const lpuart_config_t *config, uint32_t srcClock_Hz);
 
 /*!
  * @brief Deinitializes a LPUART instance.
@@ -260,6 +301,8 @@ void LPUART_Deinit(LPUART_Type *base);
  * values are:
  *   lpuartConfig->baudRate_Bps = 115200U;
  *   lpuartConfig->parityMode = kLPUART_ParityDisabled;
+ *   lpuartConfig->dataBitsCount = kLPUART_EightDataBits;
+ *   lpuartConfig->isMsb = false;
  *   lpuartConfig->stopBitCount = kLPUART_OneStopBit;
  *   lpuartConfig->txFifoWatermark = 0;
  *   lpuartConfig->rxFifoWatermark = 1;
@@ -282,8 +325,10 @@ void LPUART_GetDefaultConfig(lpuart_config_t *config);
  * @param base LPUART peripheral base address.
  * @param baudRate_Bps LPUART baudrate to be set.
  * @param srcClock_Hz LPUART clock source frequency in HZ.
+ * @retval kStatus_LPUART_BaudrateNotSupport Baudrate is not supported in the current clock source.
+ * @retval kStatus_Success Set baudrate succeeded.
  */
-void LPUART_SetBaudRate(LPUART_Type *base, uint32_t baudRate_Bps, uint32_t srcClock_Hz);
+status_t LPUART_SetBaudRate(LPUART_Type *base, uint32_t baudRate_Bps, uint32_t srcClock_Hz);
 
 /* @} */
 
@@ -512,24 +557,40 @@ static inline void LPUART_WriteByte(LPUART_Type *base, uint8_t data)
 }
 
 /*!
- * @brief Reads the RX register.
+ * @brief Reads the receiver register.
  *
- * This function reads data from the TX register directly. The upper layer must
- * ensure that the RX register is full or that the TX FIFO has data before calling this function.
+ * This function reads data from the receiver register directly. The upper layer must
+ * ensure that the receiver register is full or that the RX FIFO has data before calling this function.
  *
  * @param base LPUART peripheral base address.
  * @return Data read from data register.
  */
 static inline uint8_t LPUART_ReadByte(LPUART_Type *base)
 {
+#if defined(FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT) && FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT
+    uint32_t ctrl = base->CTRL;
+    bool isSevenDataBits =
+        ((ctrl & LPUART_CTRL_M7_MASK) ||
+         ((!(ctrl & LPUART_CTRL_M7_MASK)) && (!(ctrl & LPUART_CTRL_M_MASK)) && (ctrl & LPUART_CTRL_PE_MASK)));
+
+    if (isSevenDataBits)
+    {
+        return (base->DATA & 0x7F);
+    }
+    else
+    {
+        return base->DATA;
+    }
+#else
     return base->DATA;
+#endif
 }
 
 /*!
- * @brief Writes to transmitter register using a blocking method.
+ * @brief Writes to the transmitter register using a blocking method.
  *
  * This function polls the transmitter register, waits for the register to be empty or  for TX FIFO to have
- * room and then writes data to the transmitter buffer.
+ * room, and writes data to the transmitter buffer.
  *
  * @note This function does not check whether all data has been sent out to the bus.
  * Before disabling the transmitter, check the kLPUART_TransmissionCompleteFlag to ensure that the transmit is
@@ -542,10 +603,10 @@ static inline uint8_t LPUART_ReadByte(LPUART_Type *base)
 void LPUART_WriteBlocking(LPUART_Type *base, const uint8_t *data, size_t length);
 
 /*!
-* @brief Reads the RX data register using a blocking method.
+* @brief Reads the receiver data register using a blocking method.
  *
- * This function polls the RX register, waits for the RX register full or RX FIFO
- * has data then reads data from the TX register.
+ * This function polls the receiver register, waits for the receiver register full or receiver FIFO
+ * has data, and reads data from the TX register.
  *
  * @param base LPUART peripheral base address.
  * @param data Start address of the buffer to store the received data.
@@ -601,7 +662,7 @@ void LPUART_TransferCreateHandle(LPUART_Type *base,
  *
  * @param base LPUART peripheral base address.
  * @param handle LPUART handle pointer.
- * @param xfer LPUART transfer structure, refer to #lpuart_transfer_t.
+ * @param xfer LPUART transfer structure, see #lpuart_transfer_t.
  * @retval kStatus_Success Successfully start the data transmission.
  * @retval kStatus_LPUART_TxBusy Previous transmission still not finished, data not all written to the TX register.
  * @retval kStatus_InvalidArgument Invalid argument.
@@ -631,7 +692,7 @@ void LPUART_TransferStartRingBuffer(LPUART_Type *base,
                                     size_t ringBufferSize);
 
 /*!
- * @brief Abort the background transfer and uninstall the ring buffer.
+ * @brief Aborts the background transfer and uninstalls the ring buffer.
  *
  * This function aborts the background transfer and uninstalls the ring buffer.
  *
@@ -644,7 +705,7 @@ void LPUART_TransferStopRingBuffer(LPUART_Type *base, lpuart_handle_t *handle);
  * @brief Aborts the interrupt-driven data transmit.
  *
  * This function aborts the interrupt driven data sending. The user can get the remainBtyes to find out
- * how many bytes are still not sent out.
+ * how many bytes are not sent out.
  *
  * @param base LPUART peripheral base address.
  * @param handle LPUART handle pointer.
@@ -652,10 +713,10 @@ void LPUART_TransferStopRingBuffer(LPUART_Type *base, lpuart_handle_t *handle);
 void LPUART_TransferAbortSend(LPUART_Type *base, lpuart_handle_t *handle);
 
 /*!
- * @brief Get the number of bytes that have been written to LPUART TX register.
+ * @brief Gets the number of bytes that have been written to the LPUART transmitter register.
  *
  * This function gets the number of bytes that have been written to LPUART TX
- * register by interrupt method.
+ * register by an interrupt method.
  *
  * @param base LPUART peripheral base address.
  * @param handle LPUART handle pointer.
@@ -686,7 +747,7 @@ status_t LPUART_TransferGetSendCount(LPUART_Type *base, lpuart_handle_t *handle,
  *
  * @param base LPUART peripheral base address.
  * @param handle LPUART handle pointer.
- * @param xfer LPUART transfer structure, refer to #uart_transfer_t.
+ * @param xfer LPUART transfer structure, see #uart_transfer_t.
  * @param receivedBytes Bytes received from the ring buffer directly.
  * @retval kStatus_Success Successfully queue the transfer into the transmit queue.
  * @retval kStatus_LPUART_RxBusy Previous receive request is not finished.
@@ -709,7 +770,7 @@ status_t LPUART_TransferReceiveNonBlocking(LPUART_Type *base,
 void LPUART_TransferAbortReceive(LPUART_Type *base, lpuart_handle_t *handle);
 
 /*!
- * @brief Get the number of bytes that have been received.
+ * @brief Gets the number of bytes that have been received.
  *
  * This function gets the number of bytes that have been received.
  *

@@ -775,7 +775,7 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 void net_pkt_frag_add(struct net_pkt *pkt, struct net_buf *frag);
 
 /**
- * @brief Insert a fragment to a packet at the beginning of its framgment list
+ * @brief Insert a fragment to a packet at the beginning of its fragment list
  *
  * @param pkt pkt Network packet where to insert the fragment
  * @param frag Fragment to insert
@@ -843,6 +843,23 @@ int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
 			 u16_t offset, u16_t len);
 
 /**
+ * @brief Copy len bytes from src starting from offset to dst buffer
+ *
+ * This routine assumes that dst is large enough to store @a len bytes
+ * starting from offset at src.
+ *
+ * @param dst Destination buffer
+ * @param dst_len Destination buffer max length
+ * @param src Source buffer that may be fragmented
+ * @param offset Starting point to copy from
+ * @param len Number of bytes to copy
+ * @return number of bytes copied if everything is ok
+ * @return -ENOMEM on error
+ */
+int net_frag_linearize(u8_t *dst, size_t dst_len,
+		       struct net_pkt *src, u16_t offset, u16_t len);
+
+/**
  * @brief Compact the fragment list of a packet.
  *
  * @details After this there is no more any free space in individual fragments.
@@ -895,7 +912,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
  *         input data).
  */
 static inline bool net_pkt_append_all(struct net_pkt *pkt, u16_t len,
-				      const u8_t *data, int32_t timeout)
+				      const u8_t *data, s32_t timeout)
 {
 	return net_pkt_append(pkt, len, data, timeout) == len;
 }
@@ -989,7 +1006,7 @@ static inline bool net_pkt_append_le32(struct net_pkt *pkt, u32_t data)
  * @brief Get data from buffer
  *
  * @details Get N number of bytes starting from fragment's offset. If the total
- * length of data is placed in multiple framgents, this function will read from
+ * length of data is placed in multiple fragments, this function will read from
  * all fragments until it reaches N number of bytes. Caller has to take care of
  * endianness if needed.
  *
@@ -1011,7 +1028,7 @@ struct net_buf *net_frag_read(struct net_buf *frag, u16_t offset,
  * @brief Skip N number of bytes while reading buffer
  *
  * @details Skip N number of bytes starting from fragment's offset. If the total
- * length of data is placed in multiple framgents, this function will skip from
+ * length of data is placed in multiple fragments, this function will skip from
  * all fragments until it reaches N number of bytes. This function is useful
  * when unwanted data (e.g. reserved or not supported data in message) is part
  * of fragment and want to skip it.
@@ -1280,7 +1297,7 @@ int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
 		  struct net_buf **fragB, s32_t timeout);
 
 /**
- * @brief Get information about pre-defined RX, TX and DATA pools.
+ * @brief Get information about predefined RX, TX and DATA pools.
  *
  * @param rx Pointer to RX pool is returned.
  * @param tx Pointer to TX pool is returned.

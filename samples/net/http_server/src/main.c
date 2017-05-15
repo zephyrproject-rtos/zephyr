@@ -4,144 +4,305 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <net/net_context.h>
-
-#include <misc/printk.h>
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
+#if 1
+#if defined(CONFIG_HTTPS)
+#define SYS_LOG_DOMAIN "https-server"
+#else
+#define SYS_LOG_DOMAIN "http-server"
+#endif
+#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define NET_LOG_ENABLED 1
 #endif
 
-#include "http_types.h"
-#include "http_server.h"
-#include "http_utils.h"
-#include "http_write_utils.h"
+#include <zephyr.h>
+#include <stdio.h>
+
+#include <net/net_context.h>
+#include <net/http.h>
+
+#include <net_sample_app.h>
+
 #include "config.h"
 
 /* Sets the network parameters */
-static
-int network_setup(struct net_context **net_ctx, net_tcp_accept_cb_t accept_cb,
-		  const char *addr, u16_t port);
 
-#if defined(CONFIG_MBEDTLS)
-#include "ssl_utils.h"
-#endif
+#define RESULT_BUF_SIZE 1024
+static u8_t http_result[RESULT_BUF_SIZE];
+
+#if defined(CONFIG_HTTPS)
+#if !defined(CONFIG_HTTPS_STACK_SIZE)
+#define CONFIG_HTTPS_STACK_SIZE		8192
+#endif /* CONFIG_HTTPS_STACK_SIZE */
+
+#define APP_BANNER "Run HTTPS server"
+#define INSTANCE_INFO "Zephyr HTTPS example server #1"
+
+/* Note that each HTTPS context needs its own stack as there will be
+ * a separate thread for each HTTPS context.
+ */
+NET_STACK_DEFINE(HTTPS, https_stack, CONFIG_HTTPS_STACK_SIZE,
+		 CONFIG_HTTPS_STACK_SIZE);
+
+#define RX_FIFO_DEPTH 4
+K_MEM_POOL_DEFINE(ssl_rx_pool, 4, 64, RX_FIFO_DEPTH, 4);
+
+static struct http_server_ctx https_ctx;
+
+static u8_t https_result[RESULT_BUF_SIZE];
+
+#else /* CONFIG_HTTPS */
+#define APP_BANNER "Run HTTP server"
+#endif /* CONFIG_HTTPS */
+
+/*
+ * Note that the http_server_ctx and http_server_urls are quite large so be
+ * careful if those are allocated from stack.
+ */
+static struct http_server_ctx http_ctx;
+static struct http_server_urls http_urls;
+
+void panic(const char *msg)
+{
+	if (msg) {
+		NET_ERR("%s", msg);
+	}
+
+	for (;;) {
+		k_sleep(K_FOREVER);
+	}
+}
+
+#define HTTP_STATUS_200_OK	"HTTP/1.1 200 OK\r\n" \
+				"Content-Type: text/html\r\n" \
+				"Transfer-Encoding: chunked\r\n" \
+				"\r\n"
+
+#define HTML_HEADER		"<html><head>" \
+				"<title>Zephyr HTTP Server</title>" \
+				"</head><body><h1>" \
+				"<center>Zephyr HTTP server</center></h1>\r\n"
+
+#define HTML_FOOTER		"</body></html>\r\n"
+
+/* Prints the received HTTP header fields as an HTML list */
+static void print_http_headers(struct http_server_ctx *ctx,
+			       char *str, int size)
+{
+	int offset;
+	int ret;
+
+	ret = snprintf(str, size,
+		       HTML_HEADER
+		       "<h2>HTTP Header Fields</h2>\r\n<ul>\r\n");
+	if (ret < 0 || ret >= size) {
+		return;
+	}
+
+	offset = ret;
+
+	for (u8_t i = 0; i < ctx->req.field_values_ctr; i++) {
+		struct http_field_value *kv = &ctx->req.field_values[i];
+
+		ret = snprintf(str + offset, size - offset,
+			       "<li>%.*s: %.*s</li>\r\n",
+			       kv->key_len, kv->key,
+			       kv->value_len, kv->value);
+		if (ret < 0 || ret >= size) {
+			return;
+		}
+
+		offset += ret;
+	}
+
+	ret = snprintf(str + offset, size - offset, "</ul>\r\n");
+	if (ret < 0 || ret >= size) {
+		return;
+	}
+
+	offset += ret;
+
+	ret = snprintf(str + offset, size - offset,
+		       "<h2>HTTP Method: %s</h2>\r\n",
+		       http_method_str(ctx->req.parser.method));
+	if (ret < 0 || ret >= size) {
+		return;
+	}
+
+	offset += ret;
+
+	ret = snprintf(str + offset, size - offset,
+		       "<h2>URL: %.*s</h2>\r\n",
+		       ctx->req.url_len, ctx->req.url);
+	if (ret < 0 || ret >= size) {
+		return;
+	}
+
+	offset += ret;
+
+	snprintf(str + offset, size - offset,
+		 "<h2>Server: %s</h2>"HTML_FOOTER, CONFIG_ARCH);
+}
+
+int http_response_header_fields(struct http_server_ctx *ctx)
+{
+#define HTTP_MAX_BODY_STR_SIZE		1024
+	static char html_body[HTTP_MAX_BODY_STR_SIZE];
+
+	print_http_headers(ctx, html_body, HTTP_MAX_BODY_STR_SIZE);
+
+	return http_response(ctx, HTTP_STATUS_200_OK, html_body);
+}
+
+static int http_response_it_works(struct http_server_ctx *ctx)
+{
+	return http_response(ctx, HTTP_STATUS_200_OK, HTML_HEADER
+			     "<body><h2><center>It Works!</center></h2>"
+			     HTML_FOOTER);
+}
+
+static int http_response_soft_404(struct http_server_ctx *ctx)
+{
+	return http_response(ctx, HTTP_STATUS_200_OK, HTML_HEADER
+			     "<h2><center>404 Not Found</center></h2>"
+			     HTML_FOOTER);
+}
+
+#if defined(CONFIG_HTTPS)
+/* Load the certificates and private RSA key. */
+
+#include "test_certs.h"
+
+static int setup_cert(struct http_server_ctx *ctx,
+		      mbedtls_x509_crt *cert,
+		      mbedtls_pk_context *pkey)
+{
+	int ret;
+
+	ret = mbedtls_x509_crt_parse(cert, rsa_example_cert_der,
+				     rsa_example_cert_der_len);
+	if (ret != 0) {
+		NET_ERR("mbedtls_x509_crt_parse returned %d", ret);
+		return ret;
+	}
+
+	ret = mbedtls_pk_parse_key(pkey, rsa_example_keypair_der,
+				   rsa_example_keypair_der_len, NULL, 0);
+	if (ret != 0) {
+		NET_ERR("mbedtls_pk_parse_key returned %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_HTTPS */
 
 void main(void)
 {
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-	int err;
+	struct sockaddr addr, *server_addr;
+	u32_t flags = 0;
+	int ret;
 
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	ipss_init();
-
-	err = ipss_advertise();
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
-#endif
-
-	struct net_context *net_ctx = NULL;
-
-	http_ctx_init();
-
-	http_url_default_handler(http_response_soft_404);
-	http_url_add(HTTP_AUTH_URL, HTTP_URL_STANDARD, http_auth);
-	http_url_add("/headers", HTTP_URL_STANDARD,
-		     http_response_header_fields);
-	http_url_add("/index.html", HTTP_URL_STANDARD, http_response_it_works);
-
-	network_setup(&net_ctx, http_accept_cb, ZEPHYR_ADDR, ZEPHYR_PORT);
-}
-
-static
-int network_setup(struct net_context **net_ctx, net_tcp_accept_cb_t accept_cb,
-		  const char *addr, u16_t port)
-{
-	struct sockaddr local_sock;
-	void *ptr;
-	int rc;
-
-	*net_ctx = NULL;
-
-#ifdef CONFIG_NET_IPV6
-	net_sin6(&local_sock)->sin6_port = htons(port);
-	local_sock.family = AF_INET6;
-	ptr = &(net_sin6(&local_sock)->sin6_addr);
-	rc = net_addr_pton(AF_INET6, addr, ptr);
-#else
-	net_sin(&local_sock)->sin_port = htons(port);
-	local_sock.family = AF_INET;
-	ptr = &(net_sin(&local_sock)->sin_addr);
-	rc = net_addr_pton(AF_INET, addr, ptr);
-#endif
-
-	if (rc) {
-		printk("Invalid IP address/Port: %s, %d\n", addr, port);
-		return rc;
-	}
-
-#ifdef CONFIG_NET_IPV6
-	ptr = net_if_ipv6_addr_add(net_if_get_default(),
-				   &net_sin6(&local_sock)->sin6_addr,
-				   NET_ADDR_MANUAL, 0);
-#else
-	ptr = net_if_ipv4_addr_add(net_if_get_default(),
-				   &net_sin(&local_sock)->sin_addr,
-				   NET_ADDR_MANUAL, 0);
-#endif
-
+	/*
+	 * If we have both IPv6 and IPv4 enabled, then set the
+	 * startup flags so that we wait until both are ready
+	 * before continuing.
+	 */
 #if defined(CONFIG_NET_IPV6)
-	rc = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, net_ctx);
+	flags |= NET_SAMPLE_NEED_IPV6;
+#endif
+#if defined(CONFIG_NET_IPV4)
+	flags |= NET_SAMPLE_NEED_IPV4;
+#endif
+
+	ret = net_sample_app_init(APP_BANNER, flags, APP_STARTUP_TIME);
+	if (ret < 0) {
+		panic("Application init failed");
+	}
+
+	/*
+	 * There are several options here for binding to local address.
+	 * 1) The server address can be left empty in which case the
+	 *    library will bind to both IPv4 and IPv6 addresses and to
+	 *    port 80 which is the default.
+	 * 2) The server address can be partially filled, meaning that
+	 *    the address can be left to 0 and port can be set if a value
+	 *    other than 80 is desired. If the protocol family in sockaddr
+	 *    is set to AF_UNSPEC, then both IPv4 and IPv6 socket is bound.
+	 * 3) The address can be set to some real value. There is a helper
+	 *    function that can be used to fill the socket address struct.
+	 */
+#define ADDR_OPTION 1
+
+#if ADDR_OPTION == 1
+	server_addr = NULL;
+
+	ARG_UNUSED(addr);
+
+#elif ADDR_OPTION == 2
+	/* Accept any local listening address */
+	memset(&addr, 0, sizeof(addr));
+
+	net_sin(&addr)->sin_port = htons(ZEPHYR_PORT);
+
+	/* In this example, listen only IPv4 */
+	addr.family = AF_INET;
+
+	server_addr = &addr;
+
+#elif ADDR_OPTION == 3
+	/* Set the bind address according to your configuration */
+	memset(&addr, 0, sizeof(addr));
+
+	/* In this example, listen only IPv6 */
+	addr.family = AF_INET6;
+
+	ret = http_server_set_local_addr(&addr, ZEPHYR_ADDR, ZEPHYR_PORT);
+	if (ret < 0) {
+		NET_ERR("Cannot set local address (%d)", ret);
+		panic(NULL);
+	}
+
+	server_addr = &addr;
+
 #else
-	rc = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, net_ctx);
+	server_addr = NULL;
+
+	ARG_UNUSED(addr);
 #endif
-	if (rc != 0) {
-		printk("net_context_get error\n");
-		return rc;
+
+	http_server_add_default(&http_urls, http_response_soft_404);
+	http_server_add_url(&http_urls, "/headers", HTTP_URL_STANDARD,
+			    http_response_header_fields);
+	http_server_add_url(&http_urls, "/index.html", HTTP_URL_STANDARD,
+			    http_response_it_works);
+
+#if defined(CONFIG_HTTPS)
+	ret = https_server_init(&https_ctx, &http_urls, server_addr,
+				https_result, sizeof(https_result),
+				"Zephyr HTTPS Server",
+				INSTANCE_INFO, strlen(INSTANCE_INFO),
+				setup_cert, NULL, &ssl_rx_pool,
+				https_stack, sizeof(https_stack));
+	if (ret < 0) {
+		NET_ERR("Cannot initialize HTTPS server (%d)", ret);
+		panic(NULL);
 	}
 
-	rc = net_context_bind(*net_ctx, (const struct sockaddr *)&local_sock,
-			      sizeof(local_sock));
-	if (rc != 0) {
-		printk("net_context_bind error\n");
-		goto lb_error;
-	}
-
-	rc = net_context_listen(*net_ctx, 0);
-	if (rc != 0) {
-		printk("net_context_listen error\n");
-		goto lb_error;
-	}
-
-	rc = net_context_accept(*net_ctx, accept_cb, 0, NULL);
-	if (rc != 0) {
-		printk("net_context_accept error\n");
-		goto lb_error;
-	}
-
-	print_server_banner(&local_sock);
-
-#if defined(CONFIG_MBEDTLS)
-	https_server_start();
+	http_server_enable(&https_ctx);
 #endif
-	return 0;
 
-lb_error:
-	net_context_put(*net_ctx);
-	*net_ctx = NULL;
+	ret = http_server_init(&http_ctx, &http_urls, server_addr, http_result,
+			       sizeof(http_result), "Zephyr HTTP Server");
+	if (ret < 0) {
+		NET_ERR("Cannot initialize HTTP server (%d)", ret);
+		panic(NULL);
+	}
 
-	return rc;
+	/*
+	 * If needed, the HTTP parser callbacks can be set according to
+	 * applications own needs before enabling the server. In this example
+	 * we use the default callbacks defined in HTTP server API.
+	 */
+
+	http_server_enable(&http_ctx);
 }

@@ -79,12 +79,6 @@ config BLUETOOTH_DEVICE_NAME
 
 if BLUETOOTH_DEBUG
 
-config	BLUETOOTH_DEBUG_HCI_DRIVER
-	bool "Bluetooth driver debug"
-	help
-	  This option enables debug support for the chosen
-	  Bluetooth UART driver to Nordic chip.
-
 config BLUETOOTH_DEBUG_GATT
 	bool "Bluetooth Generic Attribute Profile (GATT) debug"
 	help

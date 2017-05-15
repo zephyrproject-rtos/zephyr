@@ -138,7 +138,7 @@ typedef struct _slist sys_slist_t;
 
 /**
  * @brief Provide the primitive to iterate on a list under a container
- * Note: the loop is unsafe and thus __cn should not be dettached
+ * Note: the loop is unsafe and thus __cn should not be detached
  *
  * User _MUST_ add the loop statement curly braces enclosing its own code:
  *
@@ -156,7 +156,7 @@ typedef struct _slist sys_slist_t;
 
 /**
  * @brief Provide the primitive to safely iterate on a list under a container
- * Note: __cn can be dettached, it will not break the loop.
+ * Note: __cn can be detached, it will not break the loop.
  *
  * User _MUST_ add the loop statement curly braces enclosing its own code:
  *

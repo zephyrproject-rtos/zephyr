@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * All rights reserved.
+ * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
+ * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -12,7 +12,7 @@
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
  *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+ * o Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
@@ -35,11 +35,10 @@
 #if defined(FSL_FEATURE_SOC_TRNG_COUNT) && FSL_FEATURE_SOC_TRNG_COUNT
 
 /*!
- * @addtogroup trng_driver
+ * @addtogroup trng
  * @{
  */
 
-/*! @file */
 
 /*******************************************************************************
  * Definitions
@@ -47,17 +46,25 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief TRNG driver version 2.0.0. */
-#define FSL_TRNG_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief TRNG driver version 2.0.1. 
+ *
+ * Current version: 2.0.1
+ *
+ * Change log:
+ * - Version 2.0.1
+ *   - add support for KL8x and KL28Z
+ *   - update default OSCDIV for K81 to divide by 2
+ */
+#define FSL_TRNG_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 /*! @brief TRNG sample mode. Used by trng_config_t. */
 typedef enum _trng_sample_mode
 {
-    kTRNG_SampleModeVonNeumann = 0U, /*!< Use Von Neumann data into both Entropy shifter and Statistical Checker. */
+    kTRNG_SampleModeVonNeumann = 0U, /*!< Use von Neumann data in both Entropy shifter and Statistical Checker. */
     kTRNG_SampleModeRaw = 1U,        /*!< Use raw data into both Entropy shifter and Statistical Checker. */
     kTRNG_SampleModeVonNeumannRaw =
-        2U /*!< Use Von Neumann data into Entropy shifter. Use raw data into Statistical Checker. */
+        2U /*!< Use von Neumann data in Entropy shifter. Use raw data into Statistical Checker. */
 } trng_sample_mode_t;
 
 /*! @brief TRNG clock mode. Used by trng_config_t. */
@@ -104,7 +111,7 @@ typedef struct _trng_user_config
     uint16_t
         sparseBitLimit; /*!< @brief Sparse Bit Limit which defines the maximum number of
                         * consecutive samples that may be discarded before an error is generated.
-                        * This limit is used only for During Von Neumann sampling.
+                        * This limit is used only for during von Neumann sampling (enabled by TRNG_HAL_SetSampleMode()).
                         * Samples are discarded if two consecutive raw samples are both 0 or both 1. If
                         * this discarding occurs for a long period of time, it indicates that there is
                         * insufficient Entropy. */
@@ -150,14 +157,14 @@ extern "C" {
 #endif
 
 /*!
- * @brief Initializes user configuration structure to default.
+ * @brief Initializes the user configuration structure to default values.
  *
- * This function initializes the configure structure to default value. the default
- * value are:
+ * This function initializes the configuration structure to default values. The default
+ * values are as follows.
  * @code
  *     user_config->lock = 0;
  *     user_config->clockMode = kTRNG_ClockModeRingOscillator;
- *     user_config->ringOscDiv = kTRNG_RingOscDiv0;  Or  to other kTRNG_RingOscDiv[2|8] depending on platform.
+ *     user_config->ringOscDiv = kTRNG_RingOscDiv0;  Or  to other kTRNG_RingOscDiv[2|8] depending on the platform.
  *     user_config->sampleMode = kTRNG_SampleModeRaw;
  *     user_config->entropyDelay = 3200;
  *     user_config->sampleSize = 2500;
@@ -196,7 +203,7 @@ status_t TRNG_GetDefaultConfig(trng_config_t *userConfig);
  * When called, the TRNG entropy generation starts immediately.
  *
  * @param base  TRNG base address
- * @param userConfig    Pointer to initialize configuration structure.
+ * @param userConfig    Pointer to the initialization configuration structure.
  * @return If successful, returns the kStatus_TRNG_Success. Otherwise, it returns an error.
  */
 status_t TRNG_Init(TRNG_Type *base, const trng_config_t *userConfig);
@@ -206,7 +213,7 @@ status_t TRNG_Init(TRNG_Type *base, const trng_config_t *userConfig);
  *
  * This function shuts down the TRNG.
  *
- * @param base  TRNG base address
+ * @param base  TRNG base address.
  */
 void TRNG_Deinit(TRNG_Type *base);
 
@@ -215,9 +222,9 @@ void TRNG_Deinit(TRNG_Type *base);
  *
  * This function gets random data from the TRNG.
  *
- * @param base  TRNG base address
- * @param data  Pointer address used to store random data
- * @param dataSize  Size of the buffer pointed by the data parameter
+ * @param base  TRNG base address.
+ * @param data  Pointer address used to store random data.
+ * @param dataSize  Size of the buffer pointed by the data parameter.
  * @return random data
  */
 status_t TRNG_GetRandomData(TRNG_Type *base, void *data, size_t dataSize);

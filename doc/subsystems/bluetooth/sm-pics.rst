@@ -68,7 +68,7 @@ Parameter Name	Selected	Description
 TSPC_SM_5_1	True		Encryption Setup using STK (C.3)
 TSPC_SM_5_2	True		Encryption Setup using LTK (O)
 TSPC_SM_5_3	True		Slave Initiated Security (C.1)
-TSPC_SM_5_4	True		Slave Initiated Security – Master response(C.2)
+TSPC_SM_5_4	True		Slave Initiated Security - Master response(C.2)
 ===============	===========	=======================================
 
 

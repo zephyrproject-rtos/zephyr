@@ -9,10 +9,11 @@
 #include <errno.h>
 #include <atomic.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
-#include <bluetooth/log.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/hci_raw.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#include "common/log.h"
 
 #include "hci_ecc.h"
 #include "monitor.h"
@@ -45,9 +46,17 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 	return 0;
 }
 
-struct net_buf *bt_buf_get_rx(s32_t timeout)
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
-	return net_buf_alloc(&hci_rx_pool, timeout);
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&hci_rx_pool, timeout);
+
+	if (buf) {
+		bt_buf_set_type(buf, type);
+	}
+
+	return buf;
 }
 
 struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
@@ -57,30 +66,6 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
-	}
-
-	return buf;
-}
-
-struct net_buf *bt_buf_get_evt(u8_t opcode, int timeout)
-{
-	struct net_buf *buf;
-
-	buf = net_buf_alloc(&hci_rx_pool, timeout);
-	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_EVT);
-	}
-
-	return buf;
-}
-
-struct net_buf *bt_buf_get_acl(s32_t timeout)
-{
-	struct net_buf *buf;
-
-	buf = net_buf_alloc(&hci_rx_pool, timeout);
-	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 	}
 
 	return buf;
