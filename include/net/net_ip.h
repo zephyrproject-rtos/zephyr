@@ -863,6 +863,37 @@ int net_addr_pton(sa_family_t family, const char *src, void *dst);
 char *net_addr_ntop(sa_family_t family, const void *src,
 		    char *dst, size_t size);
 
+/**
+ * @brief Compare TCP sequence numbers.
+ *
+ * @details This function compares TCP sequence numbers,
+ *          accounting for wraparound effects.
+ *
+ * @param seq1 First sequence number
+ * @param seq2 Seconds sequence number
+ *
+ * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq > seq2
+ */
+static inline s32_t net_tcp_seq_cmp(u32_t seq1, u32_t seq2)
+{
+	return (s32_t)(seq1 - seq2);
+}
+
+/**
+ * @brief Check that one TCP sequence number is greater.
+ *
+ * @details This is convenience function on top of net_tcp_seq_cmp().
+ *
+ * @param seq1 First sequence number
+ * @param seq2 Seconds sequence number
+ *
+ * @return True if seq > seq2
+ */
+static inline bool net_tcp_seq_greater(u32_t seq1, u32_t seq2)
+{
+	return net_tcp_seq_cmp(seq1, seq2) > 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -369,15 +369,6 @@ static inline u32_t get_recv_wnd(struct net_tcp *tcp)
 	return min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 }
 
-/* True if the (signed!) difference "seq1 - seq2" is positive and less
- * than 2^29.  That is, seq1 is "after" seq2.
- */
-static inline bool seq_greater(u32_t seq1, u32_t seq2)
-{
-	int d = (int)(seq1 - seq2);
-	return d > 0 && d < 0x20000000;
-}
-
 int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 			    void *options, size_t optlen,
 			    const struct sockaddr_ptr *local,
@@ -447,7 +438,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 
 	tcp->send_seq = seq;
 
-	if (seq_greater(tcp->send_seq, tcp->recv_max_ack)) {
+	if (net_tcp_seq_greater(tcp->send_seq, tcp->recv_max_ack)) {
 		tcp->recv_max_ack = tcp->send_seq;
 	}
 
@@ -796,7 +787,7 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 
 		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
-		if (!seq_greater(ack, seq)) {
+		if (!net_tcp_seq_greater(ack, seq)) {
 			break;
 		}
 
