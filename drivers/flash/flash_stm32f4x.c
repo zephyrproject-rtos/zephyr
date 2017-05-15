@@ -79,7 +79,7 @@ static int write_byte(off_t offset, u8_t val, struct stm32f4x_flash *regs)
 		return rc;
 	}
 
-	regs->ctrl &= CR_PSIZE_MASK;
+	regs->ctrl &= ~CR_PSIZE_MASK;
 	regs->ctrl |= FLASH_PSIZE_BYTE;
 	regs->ctrl |= FLASH_CR_PG;
 
@@ -117,7 +117,7 @@ static int erase_sector(u16_t sector, struct stm32f4x_flash *regs)
 	tmp = regs->ctrl;
 
 	rc = wait_flash_idle(regs);
-	regs->ctrl &= (FLASH_CR_SER | FLASH_CR_SNB);
+	regs->ctrl &= ~(FLASH_CR_SER | FLASH_CR_SNB);
 
 	return rc;
 }
