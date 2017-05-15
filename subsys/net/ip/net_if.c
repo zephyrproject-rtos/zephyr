@@ -321,6 +321,10 @@ struct net_if *net_if_lookup_by_dev(struct device *dev)
 
 struct net_if *net_if_get_default(void)
 {
+	if (__net_if_start == __net_if_end) {
+		return NULL;
+	}
+
 	return __net_if_start;
 }
 
