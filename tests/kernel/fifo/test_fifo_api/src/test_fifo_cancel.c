@@ -40,8 +40,12 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
 	k_thread_abort(tid);
 	zassert_is_null(ret,
 		"k_fifo_get didn't get 'timeout expired' status");
-	/* 61 includes fuzz factor */
-	zassert_true(dur < 61,
+	/* 80 includes generous fuzz factor as k_sleep() will add an extra
+	 * tick for non-tickless systems, and we may cross another tick
+	 * boundary while doing this. We just want to ensure we didn't
+	 * hit the timeout anyway.
+	 */
+	zassert_true(dur < 80,
 		"k_fifo_get didn't get cancelled in expected timeframe");
 }
 
