@@ -50,6 +50,13 @@ GEN_OFFSET_SYM(_thread_t, caller_saved);
 GEN_OFFSET_SYM(_thread_t, callee_saved);
 GEN_OFFSET_SYM(_thread_t, arch);
 
+#ifdef CONFIG_THREAD_STACK_INFO
+GEN_OFFSET_SYM(_thread_stack_info_t, start);
+GEN_OFFSET_SYM(_thread_stack_info_t, size);
+
+GEN_OFFSET_SYM(_thread_t, stack_info);
+#endif
+
 #if defined(CONFIG_THREAD_MONITOR)
 GEN_OFFSET_SYM(_thread_t, next_thread);
 #endif

@@ -24,7 +24,7 @@ A shell interface exposing subsystem features is a shell module, multiple
 modules can be available at the same time.
 
 `MODULE_NAME COMMAND`
- One of the available modules is “KERNEL”, for the Kernel module.  More
+ One of the available modules is "KERNEL", for the Kernel module.  More
  information can be found in :c:macro:`SHELL_REGISTER`.
 
 Help commands
@@ -48,7 +48,7 @@ Select module commands
  command, you will not need to enter module name in further commands. If
  the selected module has set a default shell prompt during its initialization,
  the prompt will be changed to that one. Otherwise, the prompt will be
- changed to the selected module’s name to reflect the current module in use.
+ changed to the selected module's name to reflect the current module in use.
 
 `select`
  Clears selected module. Restores prompt as well.
@@ -71,7 +71,7 @@ Example:
 
 CONFIG_NET_SHELL=y
 
-In the subsystem’s code, the shell usage depends on this config parameter.
+In the subsystem's code, the shell usage depends on this config parameter.
 This subsystem specific flag should also depend on :option:`CONFIG_CONSOLE_SHELL` flag.
 
 Configuration steps to add shell functionality to a module
@@ -103,7 +103,7 @@ set a default module in code level. In this case, the function
 shell_register_default_module should be called after calling SHELL_REGISTER in
 application level.  If the function shell_register_prompt_handler was called as
 well, the prompt will be changed to that one.  Otherwise, the prompt will be
-changed to the selected module’s name, in order to reflect the current module in
+changed to the selected module's name, in order to reflect the current module in
 use.
 
 

@@ -6,7 +6,7 @@ CC3200 LaunchXL
 Overview
 ********
 The SimpleLink CC3200 LaunchXL is a development board for the CC3200
-wireless microcontroller (MCU), the industry’s first single-chip
+wireless microcontroller (MCU), the industry's first single-chip
 programmable MCU with built-in Wi-Fi connectivity.
 
 Features:
@@ -29,7 +29,7 @@ Hardware
 
 The CC3200 SoC has two MCUs:
 
-#. Applications MCU - an ARM® Cortex®-M4 Core at 80 MHz, with 256Kb RAM,
+#. Applications MCU - an ARM |reg| Cortex |reg|-M4 Core at 80 MHz, with 256Kb RAM,
    and access to external serial 1Mb flash with bootloader and peripheral
    drivers in ROM.
 

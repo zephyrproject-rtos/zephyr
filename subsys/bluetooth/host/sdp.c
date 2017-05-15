@@ -13,9 +13,10 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_SDP)
-#include <bluetooth/log.h>
 #include <bluetooth/sdp.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_SDP)
+#include "common/log.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"

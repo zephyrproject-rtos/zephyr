@@ -126,9 +126,11 @@ int mpu6050_init_interrupt(struct device *dev)
 #if defined(CONFIG_MPU6050_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
-	k_thread_spawn(drv_data->thread_stack, CONFIG_MPU6050_THREAD_STACK_SIZE,
-		    (k_thread_entry_t)mpu6050_thread, POINTER_TO_INT(dev),
-		    0, NULL, K_PRIO_COOP(CONFIG_MPU6050_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack,
+			CONFIG_MPU6050_THREAD_STACK_SIZE,
+			(k_thread_entry_t)mpu6050_thread, POINTER_TO_INT(dev),
+			0, NULL, K_PRIO_COOP(CONFIG_MPU6050_THREAD_PRIORITY),
+			0, 0);
 #elif defined(CONFIG_MPU6050_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = mpu6050_work_cb;
 	drv_data->dev = dev;

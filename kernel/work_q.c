@@ -48,9 +48,8 @@ void k_work_q_start(struct k_work_q *work_q, char *stack,
 {
 	k_fifo_init(&work_q->fifo);
 
-	k_thread_spawn(stack, stack_size,
-		       work_q_main, work_q, 0, 0,
-		       prio, 0, 0);
+	k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
+			work_q, 0, 0, prio, 0, 0);
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS

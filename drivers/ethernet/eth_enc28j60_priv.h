@@ -226,6 +226,7 @@ struct eth_enc28j60_config {
 struct eth_enc28j60_runtime {
 	struct net_if *iface;
 	char __stack thread_stack[CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE];
+	struct k_thread thread;
 	struct device *gpio;
 	struct device *spi;
 	struct gpio_callback gpio_cb;

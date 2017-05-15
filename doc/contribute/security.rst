@@ -78,8 +78,8 @@ help prevent security violations and limit their impact:
   and permitted only in specific conditions defined by the system
   protection scheme, e.g., after successful authentication.
   Furthermore, default settings for services shall be chosen in a way
-  to provide maximum security.  This corresponds to the “Secure by
-  Default” paradigm [MICRO12]_.
+  to provide maximum security.  This corresponds to the "Secure by
+  Default" paradigm [MICRO12]_.
 
 - **Separation of privilege** is the principle that two conditions or
   more need to be satisfied before access is granted. In the context
@@ -220,7 +220,7 @@ scripting, missing authentication, and missing authorization. See the
 Security Subcommittee
 =====================
 
-There shall be a “security subcommittee”, responsible for
+There shall be a "security subcommittee", responsible for
 enforcing this guideline, monitoring reviews, and improving these
 guidelines.
 
@@ -280,12 +280,12 @@ and approved by consensus.
 
 .. _attack: http://www.theverge.com/2016/10/21/13362354/dyn-dns-ddos-attack-cause-outage-status-explained
 
-.. [MICRO12] Microsoft Corporation, Security Development Lifecycle – SDL
+.. [MICRO12] Microsoft Corporation, Security Development Lifecycle - SDL
    Process Guidance Version 5.2, 2012.
 
 .. [PAUL09] M. Paul, "The Ten Best Practices for Secure Software
    Development," International Information Systems Security Certification
-   Consortium, Inc. [(ISC)2®], Palm Harbor, FL, USA, 2009.
+   Consortium, Inc. [(ISC)2], Palm Harbor, FL, USA, 2009.
 
 .. [SALT75] J. H. Saltzer and M. D. Schroeder, "The protection of
    information in computer systems," Proceedings of the IEEE,

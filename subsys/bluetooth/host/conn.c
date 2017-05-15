@@ -17,13 +17,14 @@
 #include <misc/stack.h>
 #include <misc/__assert.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
-#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_CONN)
+#include "common/log.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -1671,7 +1672,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {
 	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
-	       conn->le.features[0][0], param->interval_min,
+	       conn->le.features[0], param->interval_min,
 	       param->interval_max, param->latency, param->timeout);
 
 	/* Check if there's a need to update conn params */

@@ -262,9 +262,10 @@ int fxos8700_trigger_init(struct device *dev)
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, UINT_MAX);
-	k_thread_spawn(data->thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE,
-		       fxos8700_thread_main, dev, 0, NULL,
-		       K_PRIO_COOP(CONFIG_FXOS8700_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&data->thread, data->thread_stack,
+			CONFIG_FXOS8700_THREAD_STACK_SIZE,
+			fxos8700_thread_main, dev, 0, NULL,
+			K_PRIO_COOP(CONFIG_FXOS8700_THREAD_PRIORITY), 0, 0);
 #elif defined(CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxos8700_work_handler;
 	data->dev = dev;

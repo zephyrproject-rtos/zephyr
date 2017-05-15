@@ -29,14 +29,15 @@
 
 /**TESTPOINT: init via K_MBOX_DEFINE*/
 K_MBOX_DEFINE(kmbox);
-K_MEM_POOL_DEFINE(mpooltx, 4, MAIL_LEN, 1, 4);
-K_MEM_POOL_DEFINE(mpoolrx, 4, MAIL_LEN, 1, 4);
+K_MEM_POOL_DEFINE(mpooltx, 8, MAIL_LEN, 1, 4);
+K_MEM_POOL_DEFINE(mpoolrx, 8, MAIL_LEN, 1, 4);
 
 static struct k_mbox mbox;
 
 static k_tid_t sender_tid, receiver_tid;
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 
 static struct k_sem end_sema, sync_sema;
 
@@ -71,7 +72,6 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.info = PUT_GET_NULL;
 		mmsg.size = 0;
 		mmsg.tx_data = NULL;
-		mmsg.tx_block.pool_id = NULL;
 		mmsg.tx_target_thread = K_ANY;
 		k_mbox_put(pmbox, &mmsg, K_FOREVER);
 		break;
@@ -117,7 +117,6 @@ static void tmbox_put(struct k_mbox *pmbox)
 		k_mbox_async_put(pmbox, &mmsg, &sync_sema);
 		/*wait for msg being taken*/
 		k_sem_take(&sync_sema, K_FOREVER);
-		k_mem_pool_free(&mmsg.tx_block);
 		break;
 	default:
 		break;
@@ -214,7 +213,7 @@ static void tmbox(struct k_mbox *pmbox)
 
 	/**TESTPOINT: thread-thread data passing via mbox*/
 	sender_tid = k_current_get();
-	receiver_tid = k_thread_spawn(tstack, STACK_SIZE,
+	receiver_tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tmbox_entry, pmbox, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 0);
 	tmbox_put(pmbox);

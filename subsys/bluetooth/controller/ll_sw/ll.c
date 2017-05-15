@@ -16,7 +16,7 @@
 #endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
+#include "common/log.h"
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"

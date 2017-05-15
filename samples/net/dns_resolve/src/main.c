@@ -22,6 +22,7 @@
 
 #define STACKSIZE 2000
 char __noinit __stack thread_stack[STACKSIZE];
+static struct k_thread thread_data;
 
 #define DNS_TIMEOUT 2000 /* ms */
 
@@ -281,7 +282,7 @@ void main(void)
 {
 	NET_INFO("Starting DNS resolve sample");
 
-	k_thread_spawn(&thread_stack[0], STACKSIZE,
-		       (k_thread_entry_t)network_setup,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&thread_data, thread_stack, STACKSIZE,
+			(k_thread_entry_t)network_setup,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

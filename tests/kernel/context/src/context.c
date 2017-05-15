@@ -9,7 +9,7 @@
 /*
  * DESCRIPTION
  * This module tests the following CPU and thread related routines:
- * k_thread_spawn, k_yield(), k_is_in_isr(),
+ * k_thread_create, k_yield(), k_is_in_isr(),
  * k_current_get(), k_cpu_idle(), k_cpu_atomic_idle(),
  * irq_lock(), irq_unlock(),
  * irq_offload(), irq_enable(), irq_disable(),
@@ -107,6 +107,8 @@ static int thread_evidence;
 
 static char __stack thread_stack1[THREAD_STACKSIZE];
 static char __stack thread_stack2[THREAD_STACKSIZE];
+static struct k_thread thread_data1;
+static struct k_thread thread_data2;
 
 static ISR_INFO isr_info;
 
@@ -481,7 +483,7 @@ static void thread_helper(void *arg1, void *arg2, void *arg3)
  * @brief Test the k_yield() routine
  *
  * This routine tests the k_yield() routine.  It starts another thread
- * (thus also testing k_thread_spawn() and checks that behaviour of
+ * (thus also testing k_thread_create() and checks that behaviour of
  * k_yield() against the cases of there being a higher priority thread,
  * a lower priority thread, and another thread of equal priority.
  *
@@ -507,12 +509,12 @@ static int test_k_yield(void)
 	self_thread_id = k_current_get();
 	thread_evidence = 0;
 
-	k_thread_spawn(thread_stack2, THREAD_STACKSIZE, thread_helper,
-		       NULL, NULL, NULL,
-		       K_PRIO_COOP(THREAD_PRIORITY - 1), 0, 0);
+	k_thread_create(&thread_data2, thread_stack2, THREAD_STACKSIZE,
+			thread_helper, NULL, NULL, NULL,
+			K_PRIO_COOP(THREAD_PRIORITY - 1), 0, 0);
 
 	if (thread_evidence != 0) {
-		/* ERROR! Helper spawned at higher */
+		/* ERROR! Helper created at higher */
 		thread_detected_error = 10;     /* priority ran prematurely. */
 		return TC_FAIL;
 	}
@@ -598,7 +600,7 @@ static void thread_entry(void *task_thread_id, void *arg1, void *arg2)
 /*
  * Timeout tests
  *
- * Test the k_sleep() API, as well as the k_thread_spawn() ones.
+ * Test the k_sleep() API, as well as the k_thread_create() ones.
  */
 
 struct timeout_order {
@@ -620,6 +622,7 @@ struct timeout_order timeouts[] = {
 
 #define NUM_TIMEOUT_THREADS ARRAY_SIZE(timeouts)
 static char __stack timeout_stacks[NUM_TIMEOUT_THREADS][THREAD_STACKSIZE];
+static struct k_thread timeout_threads[NUM_TIMEOUT_THREADS];
 
 /* a thread busy waits, then reports through a fifo */
 static void test_busy_wait(void *mseconds, void *arg2, void *arg3)
@@ -698,9 +701,10 @@ static int test_timeout(void)
 	TC_PRINT("Testing k_busy_wait()\n");
 	timeout = 20;           /* in ms */
 
-	k_thread_spawn(timeout_stacks[0], THREAD_STACKSIZE, test_busy_wait,
-		       (void *)(intptr_t) timeout, NULL,
-		       NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
+	k_thread_create(&timeout_threads[0], timeout_stacks[0],
+			THREAD_STACKSIZE, test_busy_wait,
+			(void *)(intptr_t) timeout, NULL,
+			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 
@@ -714,9 +718,10 @@ static int test_timeout(void)
 	TC_PRINT("Testing k_sleep()\n");
 	timeout = 50;
 
-	k_thread_spawn(timeout_stacks[0], THREAD_STACKSIZE, test_thread_sleep,
-		       (void *)(intptr_t) timeout, NULL,
-		       NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
+	k_thread_create(&timeout_threads[0], timeout_stacks[0],
+			THREAD_STACKSIZE, test_thread_sleep,
+			(void *)(intptr_t) timeout, NULL,
+			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 	if (rv) {
@@ -725,15 +730,16 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	/* test k_thread_spawn() without cancellation */
-	TC_PRINT("Testing k_thread_spawn() without cancellation\n");
+	/* test k_thread_create() without cancellation */
+	TC_PRINT("Testing k_thread_create() without cancellation\n");
 
 	for (i = 0; i < NUM_TIMEOUT_THREADS; i++) {
-		k_thread_spawn(timeout_stacks[i], THREAD_STACKSIZE,
-			       delayed_thread,
-			       (void *)i,
-			       NULL, NULL,
-			       K_PRIO_COOP(5), 0, timeouts[i].timeout);
+		k_thread_create(&timeout_threads[i], timeout_stacks[i],
+				THREAD_STACKSIZE,
+				delayed_thread,
+				(void *)i,
+				NULL, NULL,
+				K_PRIO_COOP(5), 0, timeouts[i].timeout);
 	}
 	for (i = 0; i < NUM_TIMEOUT_THREADS; i++) {
 		data = k_fifo_get(&timeout_order_fifo, 750);
@@ -761,8 +767,8 @@ static int test_timeout(void)
 		return TC_FAIL;
 	}
 
-	/* test k_thread_spawn() with cancellation */
-	TC_PRINT("Testing k_thread_spawn() with cancellations\n");
+	/* test k_thread_create() with cancellation */
+	TC_PRINT("Testing k_thread_create() with cancellations\n");
 
 	int cancellations[] = { 0, 3, 4, 6 };
 	int num_cancellations = ARRAY_SIZE(cancellations);
@@ -773,10 +779,10 @@ static int test_timeout(void)
 	for (i = 0; i < NUM_TIMEOUT_THREADS; i++) {
 		k_tid_t id;
 
-		id = k_thread_spawn(timeout_stacks[i], THREAD_STACKSIZE,
-				    delayed_thread,
-				    (void *)i, NULL, NULL,
-				    K_PRIO_COOP(5), 0, timeouts[i].timeout);
+		id = k_thread_create(&timeout_threads[i], timeout_stacks[i],
+				     THREAD_STACKSIZE, delayed_thread,
+				     (void *)i, NULL, NULL,
+				     K_PRIO_COOP(5), 0, timeouts[i].timeout);
 
 		delayed_threads[i] = id;
 	}
@@ -898,9 +904,9 @@ void main(void)
 	TC_PRINT("Spawning a thread from a task\n");
 	thread_evidence = 0;
 
-	k_thread_spawn(thread_stack1, THREAD_STACKSIZE, thread_entry,
-		       k_current_get(), NULL,
-		       NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
+	k_thread_create(&thread_data1, thread_stack1, THREAD_STACKSIZE,
+			thread_entry, k_current_get(), NULL,
+			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
 	if (thread_evidence != 1) {
 		rv = TC_FAIL;

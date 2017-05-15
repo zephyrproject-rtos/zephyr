@@ -15,17 +15,16 @@ void _thread_entry_wrapper(_thread_entry_t thread,
 			   void *arg2,
 			   void *arg3);
 
-void _new_thread(char *stack_memory, size_t stack_size,
-		 _thread_entry_t thread_func,
+void _new_thread(struct k_thread *thread, char *stack_memory,
+		 size_t stack_size, _thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {
 	_ASSERT_VALID_PRIO(priority, thread_func);
 
-	struct k_thread *thread;
 	struct __esf *stack_init;
 
-	thread = _new_thread_init(stack_memory, stack_size, priority, options);
+	_new_thread_init(thread, stack_memory, stack_size, priority, options);
 
 	/* Initial stack frame for thread */
 	stack_init = (struct __esf *)

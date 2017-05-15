@@ -77,6 +77,31 @@ static inline int handle_poll_event(struct k_queue *queue)
 #endif
 }
 
+void k_queue_cancel_wait(struct k_queue *queue)
+{
+	struct k_thread *first_pending_thread;
+	unsigned int key;
+
+	key = irq_lock();
+
+	first_pending_thread = _unpend_first_thread(&queue->wait_q);
+
+	if (first_pending_thread) {
+		prepare_thread_to_run(first_pending_thread, NULL);
+		if (!_is_in_isr() && _must_switch_threads()) {
+			(void)_Swap(key);
+			return;
+		}
+	} else {
+		if (handle_poll_event(queue)) {
+			(void)_Swap(key);
+			return;
+		}
+	}
+
+	irq_unlock(key);
+}
+
 void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 {
 	struct k_thread *first_pending_thread;

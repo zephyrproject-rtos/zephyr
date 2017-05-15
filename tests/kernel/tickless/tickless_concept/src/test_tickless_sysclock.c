@@ -20,6 +20,7 @@ https://www.zephyrproject.org/doc/subsystems/power_management.html#tickless-idle
 #define STACK_SIZE 512
 #define NUM_THREAD 4
 static char __noinit __stack tstack[NUM_THREAD][STACK_SIZE];
+static struct k_thread tdata[NUM_THREAD];
 /*for those not supporting tickless idle*/
 #ifndef CONFIG_TICKLESS_IDLE
 #define CONFIG_TICKLESS_IDLE_THRESH 20
@@ -92,7 +93,7 @@ void test_tickless_slice(void)
 
 	/*create delayed threads with equal preemptive priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
-		tid[i] = k_thread_spawn(tstack[i], STACK_SIZE,
+		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 			thread_tslice, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(0), 0, SLICE_SIZE);
 	}

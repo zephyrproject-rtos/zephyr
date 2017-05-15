@@ -16,6 +16,7 @@
 #include "test_msgq.h"
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
 static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 
@@ -40,9 +41,9 @@ void test_msgq_purge_when_put(void)
 		zassert_equal(ret, 0, NULL);
 	}
 	/*create another thread waiting to put msg*/
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     tThread_entry, &msgq, NULL, NULL,
-				     K_PRIO_PREEMPT(0), 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_entry, &msgq, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	k_sleep(TIMEOUT >> 1);
 	/**TESTPOINT: msgq purge while another thread waiting to put msg*/
 	k_msgq_purge(&msgq);

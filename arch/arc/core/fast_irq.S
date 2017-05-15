@@ -227,11 +227,11 @@ _firq_reschedule:
 	st_s r2, [r1, _kernel_offset_to_current]
 
 #ifdef CONFIG_ARC_STACK_CHECKING
-	/* Use stack top and down registers from restored context */
-	add r3, r2, _K_THREAD_NO_FLOAT_SIZEOF
-	sr r3, [_ARC_V2_KSTACK_TOP]
-	ld_s r3, [r2, _thread_offset_to_stack_top]
+	/* Use stack top and base registers from restored context */
+	ld r3, [r2, _thread_offset_to_stack_base]
 	sr r3, [_ARC_V2_KSTACK_BASE]
+	ld r3, [r2, _thread_offset_to_stack_top]
+	sr r3, [_ARC_V2_KSTACK_TOP]
 #endif
 	/*
 	 * _load_callee_saved_regs expects incoming thread in r2.

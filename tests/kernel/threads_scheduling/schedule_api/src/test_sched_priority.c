@@ -15,6 +15,7 @@
 #include "test_sched.h"
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static int last_prio;
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -34,9 +35,9 @@ void test_priority_cooperative(void)
 	/* spawn thread with higher priority */
 	int spawn_prio = last_prio - 1;
 
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry, NULL, NULL, NULL,
-				     spawn_prio, 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      spawn_prio, 0, 0);
 	/* checkpoint: current thread shouldn't preempted by higher thread */
 	zassert_true(last_prio == k_thread_priority_get(k_current_get()), NULL);
 	k_sleep(100);
@@ -58,9 +59,9 @@ void test_priority_preemptible(void)
 
 	int spawn_prio = last_prio - 1;
 
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry, NULL, NULL, NULL,
-				     spawn_prio, 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      spawn_prio, 0, 0);
 	/* checkpoint: thread is preempted by higher thread */
 	zassert_true(last_prio == spawn_prio, NULL);
 
@@ -68,9 +69,9 @@ void test_priority_preemptible(void)
 	k_thread_abort(tid);
 
 	spawn_prio = last_prio + 1;
-	tid = k_thread_spawn(tstack, STACK_SIZE,
-			     thread_entry, NULL, NULL, NULL,
-			     spawn_prio, 0, 0);
+	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			      thread_entry, NULL, NULL, NULL,
+			      spawn_prio, 0, 0);
 	/* checkpoint: thread is not preempted by lower thread */
 	zassert_false(last_prio == spawn_prio, NULL);
 	k_thread_abort(tid);

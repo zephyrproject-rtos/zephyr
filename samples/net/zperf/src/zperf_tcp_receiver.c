@@ -29,6 +29,7 @@
 #define TCP_RX_FIBER_STACK_SIZE 1024
 
 static char __noinit __stack zperf_tcp_rx_stack[TCP_RX_FIBER_STACK_SIZE];
+static struct k_thread zperf_tcp_rx_thread_data;
 
 #if defined(CONFIG_NET_IPV6)
 static struct sockaddr_in6 *in6_addr_my;
@@ -240,8 +241,9 @@ void zperf_tcp_receiver_init(int port)
 	in4_addr_my = zperf_get_sin();
 #endif
 
-	k_thread_spawn(zperf_tcp_rx_stack, sizeof(zperf_tcp_rx_stack),
-		       (k_thread_entry_t)zperf_tcp_rx_thread,
-		       INT_TO_POINTER(port), 0, 0,
-		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&zperf_tcp_rx_thread_data, zperf_tcp_rx_stack,
+			sizeof(zperf_tcp_rx_stack),
+			(k_thread_entry_t)zperf_tcp_rx_thread,
+			INT_TO_POINTER(port), 0, 0,
+			K_PRIO_COOP(7), 0, K_NO_WAIT);
 }

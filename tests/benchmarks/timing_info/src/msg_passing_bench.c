@@ -73,6 +73,8 @@ k_tid_t thread_mbox_async_put_receive_tid;
 #define STACK_SIZE 500
 extern char __noinit __stack my_stack_area[STACK_SIZE];
 extern char __noinit __stack my_stack_area_0[STACK_SIZE];
+extern struct k_thread my_thread;
+extern struct k_thread my_thread_0;
 
 /* thread functions*/
 void thread_producer_msgq_w_cxt_switch(void *p1, void *p2, void *p3);
@@ -115,16 +117,16 @@ void msg_passing_bench(void)
 	int received_data = 0;
 
 	producer_w_cxt_switch_tid =
-		k_thread_spawn(my_stack_area, STACK_SIZE,
-			       thread_producer_msgq_w_cxt_switch, NULL,
-			       NULL, NULL, 2 /*priority*/, 0, 50);
+		k_thread_create(&my_thread, my_stack_area, STACK_SIZE,
+				thread_producer_msgq_w_cxt_switch, NULL,
+				NULL, NULL, 2 /*priority*/, 0, 50);
 
 	u32_t msg_status =  k_msgq_get(&benchmark_q, &received_data, 300);
 
 	producer_wo_cxt_switch_tid =
-		k_thread_spawn(my_stack_area_0, STACK_SIZE,
-			       thread_producer_msgq_wo_cxt_switch,
-			       NULL, NULL, NULL, -2 /*priority*/, 0, 0);
+		k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
+				thread_producer_msgq_wo_cxt_switch,
+				NULL, NULL, NULL, -2 /*priority*/, 0, 0);
 
 	k_thread_abort(producer_w_cxt_switch_tid);
 	k_thread_abort(producer_wo_cxt_switch_tid);
@@ -136,16 +138,16 @@ void msg_passing_bench(void)
 	/* Msg queue for get*/
 
 	producer_get_w_cxt_switch_tid =
-		k_thread_spawn(my_stack_area,
-			       STACK_SIZE,
-			       thread_producer_get_msgq_w_cxt_switch, NULL,
-			       NULL, NULL, 1 /*priority*/, 0, 50);
+		k_thread_create(&my_thread, my_stack_area,
+				STACK_SIZE,
+				thread_producer_get_msgq_w_cxt_switch, NULL,
+				NULL, NULL, 1 /*priority*/, 0, 50);
 	consumer_get_w_cxt_switch_tid =
-		k_thread_spawn(my_stack_area_0,
-			       STACK_SIZE,
-			       thread_consumer_get_msgq_w_cxt_switch,
-			       NULL, NULL, NULL,
-			       2 /*priority*/, 0, 50);
+		k_thread_create(&my_thread_0, my_stack_area_0,
+				STACK_SIZE,
+				thread_consumer_get_msgq_w_cxt_switch,
+				NULL, NULL, NULL,
+				2 /*priority*/, 0, 50);
 	k_sleep(2000);  /* make the main thread sleep */
 	k_thread_abort(producer_get_w_cxt_switch_tid);
 	__msg_q_get_w_cxt_end_tsc = (__common_var_swap_end_tsc);
@@ -168,17 +170,17 @@ void msg_passing_bench(void)
 	/* Msg box to benchmark sync put */
 
 	thread_mbox_sync_put_send_tid  =
-		k_thread_spawn(my_stack_area,
-			       STACK_SIZE,
-			       thread_mbox_sync_put_send,
-			       NULL, NULL, NULL,
-			       2 /*priority*/, 0, 0);
+		k_thread_create(&my_thread, my_stack_area,
+				STACK_SIZE,
+				thread_mbox_sync_put_send,
+				NULL, NULL, NULL,
+				2 /*priority*/, 0, 0);
 	thread_mbox_sync_put_receive_tid =
-		k_thread_spawn(my_stack_area_0,
-			       STACK_SIZE,
-			       thread_mbox_sync_put_receive,
-			       NULL, NULL, NULL,
-			       1 /*priority*/, 0, 0);
+		k_thread_create(&my_thread_0, my_stack_area_0,
+				STACK_SIZE,
+				thread_mbox_sync_put_receive,
+				NULL, NULL, NULL,
+				1 /*priority*/, 0, 0);
 	k_sleep(1000);  /* make the main thread sleep */
 	mbox_sync_put_end_tsc = (__common_var_swap_end_tsc);
 
@@ -187,16 +189,16 @@ void msg_passing_bench(void)
 	/* Msg box to benchmark sync get */
 
 	thread_mbox_sync_get_send_tid  =
-		k_thread_spawn(my_stack_area,
-			       STACK_SIZE,
-			       thread_mbox_sync_get_send,
-			       NULL, NULL, NULL,
-			       1 /*prio*/, 0, 0);
+		k_thread_create(&my_thread, my_stack_area,
+				STACK_SIZE,
+				thread_mbox_sync_get_send,
+				NULL, NULL, NULL,
+				1 /*prio*/, 0, 0);
 	thread_mbox_sync_get_receive_tid =
-		k_thread_spawn(my_stack_area_0,
-			       STACK_SIZE,
-			       thread_mbox_sync_get_receive, NULL,
-			       NULL, NULL, 2 /*priority*/, 0, 0);
+		k_thread_create(&my_thread_0, my_stack_area_0,
+				STACK_SIZE,
+				thread_mbox_sync_get_receive, NULL,
+				NULL, NULL, 2 /*priority*/, 0, 0);
 	k_sleep(1000); /* make the main thread sleep */
 	mbox_sync_get_end_tsc = (__common_var_swap_end_tsc);
 
@@ -205,17 +207,17 @@ void msg_passing_bench(void)
 	/* Msg box to benchmark async put */
 
 	thread_mbox_async_put_send_tid  =
-		k_thread_spawn(my_stack_area,
-			       STACK_SIZE,
-			       thread_mbox_async_put_send,
-			       NULL, NULL, NULL,
-			       2 /*prio*/, 0, 0);
+		k_thread_create(&my_thread, my_stack_area,
+				STACK_SIZE,
+				thread_mbox_async_put_send,
+				NULL, NULL, NULL,
+				2 /*prio*/, 0, 0);
 	thread_mbox_async_put_receive_tid =
-		k_thread_spawn(my_stack_area_0,
-			       STACK_SIZE,
-			       thread_mbox_async_put_receive,
-			       NULL, NULL, NULL,
-			       3 /*priority*/, 0, 0);
+		k_thread_create(&my_thread_0, my_stack_area_0,
+				STACK_SIZE,
+				thread_mbox_async_put_receive,
+				NULL, NULL, NULL,
+				3 /*priority*/, 0, 0);
 	k_sleep(1000); /* make the main thread sleep */
 
 	/*******************************************************************/

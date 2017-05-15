@@ -122,7 +122,7 @@ Attempting to cancel a delayed work item once its timeout has expired has
 no effect on the work item; the work item remains pending in the workqueue's
 queue, unless the work item has already been removed and processed by the
 workqueue's thread. Consequently, once a work item's timeout has expired
-the work item is always processed by the workqueue and cannot be cancelled.
+the work item is always processed by the workqueue and cannot be canceled.
 
 System Workqueue
 ================
@@ -149,16 +149,14 @@ Defining a Workqueue
 
 A workqueue is defined using a variable of type :c:type:`struct k_work_q`.
 The workqueue is initialized by defining the stack area used by its thread
-and then calling :cpp:func:`k_work_q_start()`. The stack area is an array
-of bytes whose size must equal :c:macro:`K_THREAD_SIZEOF` plus the size
-of the thread's stack. The stack area must be defined using the
-:c:macro:`__stack` attribute to ensure it is properly aligned.
+and then calling :cpp:func:`k_work_q_start()`. The stack area must be defined
+using the :c:macro:`__stack` attribute to ensure it is properly aligned.
 
 The following code defines and initializes a workqueue.
 
 .. code-block:: c
 
-    #define MY_STACK_SIZE (K_THREAD_SIZEOF + 500)
+    #define MY_STACK_SIZE 512
     #define MY_PRIORITY 5
 
     char __noinit __stack my_stack_area[MY_STACK_SIZE];
@@ -224,7 +222,7 @@ A delayed work item is defined using a variable of type
 An initialized delayed work item can be submitted to the system workqueue by
 calling :cpp:func:`k_delayed_work_submit()`, or to a specified workqueue by
 calling :cpp:func:`k_delayed_work_submit_to_queue()`. A delayed work item
-that has been submitted but not yet consumed by its workqueue can be cancelled
+that has been submitted but not yet consumed by its workqueue can be canceled
 by calling :cpp:func:`k_delayed_work_cancel()`.
 
 Suggested Uses

@@ -28,6 +28,9 @@ static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];
 static char __stack stack1[STACK_SIZE];
 static char __stack stack2[STACK_SIZE];
 
+static struct k_thread thread1;
+static struct k_thread thread2;
+
 K_SEM_DEFINE(ALT_SEM, 0, UINT_MAX);
 K_SEM_DEFINE(REGRESS_SEM, 0, UINT_MAX);
 K_SEM_DEFINE(TEST_SEM, 0, UINT_MAX);
@@ -164,13 +167,13 @@ static void init_objects(void)
 
 static void start_threads(void)
 {
-	k_thread_spawn(stack1, STACK_SIZE,
-		       AlternateTask, NULL, NULL, NULL,
-		       K_PRIO_PREEMPT(12), 0, 0);
+	k_thread_create(&thread1, stack1, STACK_SIZE,
+			AlternateTask, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(12), 0, 0);
 
-	k_thread_spawn(stack2, STACK_SIZE,
-		       RegressionTask, NULL, NULL, NULL,
-		       K_PRIO_PREEMPT(12), 0, 0);
+	k_thread_create(&thread2, stack2, STACK_SIZE,
+			RegressionTask, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(12), 0, 0);
 }
 
 void test_critical(void)

@@ -11,7 +11,7 @@
 #include "hal/cntr.h"
 #include "ticker.h"
 
-#include <bluetooth/log.h>
+#include "common/log.h"
 #include "hal/debug.h"
 
 /*****************************************************************************

@@ -25,6 +25,7 @@
 
 #define STACKSIZE 2000
 char __noinit __stack thread_stack[STACKSIZE];
+static struct k_thread thread_data;
 
 static struct net_mgmt_event_callback mgmt_cb;
 
@@ -78,7 +79,7 @@ void main(void)
 {
 	NET_INFO("In main");
 
-	k_thread_spawn(&thread_stack[0], STACKSIZE,
-		       (k_thread_entry_t)main_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&thread_data, &thread_stack[0], STACKSIZE,
+			(k_thread_entry_t)main_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

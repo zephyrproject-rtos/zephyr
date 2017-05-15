@@ -150,7 +150,7 @@ static int uart_stm32_irq_tx_ready(struct device *dev)
 	return __HAL_UART_GET_FLAG(UartHandle, UART_FLAG_TXE);
 }
 
-static int uart_stm32_irq_tx_empty(struct device *dev)
+static int uart_stm32_irq_tx_complete(struct device *dev)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	UART_HandleTypeDef *UartHandle = &data->huart;
@@ -250,7 +250,7 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.irq_tx_enable = uart_stm32_irq_tx_enable,
 	.irq_tx_disable = uart_stm32_irq_tx_disable,
 	.irq_tx_ready = uart_stm32_irq_tx_ready,
-	.irq_tx_empty = uart_stm32_irq_tx_empty,
+	.irq_tx_complete = uart_stm32_irq_tx_complete,
 	.irq_rx_enable = uart_stm32_irq_rx_enable,
 	.irq_rx_disable = uart_stm32_irq_rx_disable,
 	.irq_rx_ready = uart_stm32_irq_rx_ready,
@@ -445,3 +445,49 @@ static void uart_stm32_irq_config_func_3(struct device *dev)
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #endif	/* CONFIG_UART_STM32_PORT_3 */
+
+#ifdef CONFIG_UART_STM32_PORT_6
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_6(struct device *dev);
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+
+static const struct uart_stm32_config uart_stm32_dev_cfg_6 = {
+	.uconf = {
+		.base = (u8_t *)CONFIG_UART_STM32_PORT_6_BASE_ADDRESS,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		.irq_config_func = uart_stm32_irq_config_func_6,
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+	},
+#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+	.pclken = { .bus = STM32_CLOCK_BUS_APB2,
+		    .enr = LL_APB2_GRP1_PERIPH_USART6 },
+#endif /* CLOCK_CONTROL_STM32_CUBE */
+};
+
+static struct uart_stm32_data uart_stm32_dev_data_6 = {
+	.huart = {
+		.Init = {
+			.BaudRate = CONFIG_UART_STM32_PORT_6_BAUD_RATE,
+		},
+	},
+};
+
+DEVICE_AND_API_INIT(uart_stm32_6, CONFIG_UART_STM32_PORT_6_NAME,
+		    &uart_stm32_init,
+		    &uart_stm32_dev_data_6, &uart_stm32_dev_cfg_6,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_stm32_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_stm32_irq_config_func_6(struct device *dev)
+{
+	IRQ_CONNECT(PORT_6_IRQ,
+		CONFIG_UART_STM32_PORT_6_IRQ_PRI,
+		uart_stm32_isr, DEVICE_GET(uart_stm32_6),
+		0);
+	irq_enable(PORT_6_IRQ);
+}
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#endif	/* CONFIG_UART_STM32_PORT_6 */

@@ -73,6 +73,11 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		printk("***** Kernel Panic! *****\n");
 		break;
 
+#ifdef CONFIG_STACK_SENTINEL
+	case _NANO_ERR_STACK_CHK_FAIL:
+		printk("***** Stack overflow *****\n");
+		break;
+#endif
 	default:
 		printk("**** Unknown Fatal Error %u! ****\n", reason);
 		break;

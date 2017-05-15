@@ -25,6 +25,7 @@ K_ALERT_DEFINE(kalert_pending, alert_handler1, PENDING_MAX);
 K_ALERT_DEFINE(kalert_consumed, alert_handler0, PENDING_MAX);
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static struct k_alert *palert;
 static volatile int handler_executed;
 
@@ -88,7 +89,7 @@ static void thread_alert(void)
 {
 	handler_executed = 0;
 	/**TESTPOINT: thread-thread sync via alert*/
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tThread_entry, NULL, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 0);
 	alert_send();

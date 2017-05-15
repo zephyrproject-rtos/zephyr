@@ -35,17 +35,18 @@ Hardware
 
 The STM32L476RG SoC provides the following hardware IPs:
 
-- Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode and 100 μA/MHz run mode)
-- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
+- Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode and 100 uA/MHz run mode)
+- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
         - 4 to 48 MHz crystal oscillator
         - 32 kHz crystal oscillator for RTC (LSE)
         - Internal 16 MHz factory-trimmed RC (±1%)
         - Internal low-power 32 kHz RC (±5%)
-        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by LSE (better than ±0.25 % accuracy)
+        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
+          LSE (better than ±0.25 % accuracy)
         - 3 PLLs for system clock, USB, audio, ADC
 - RTC with HW calendar, alarms and calibration
-- LCD 8 × 40 or 4 × 44 with step-up converter
+- LCD 8 x 40 or 4 x 44 with step-up converter
 - Up to 24 capacitive sensing channels: support touchkey, linear and rotary touch sensors
 - 16x timers:
         - 2x 16-bit advanced motor-control
@@ -62,7 +63,7 @@ The STM32L476RG SoC provides the following hardware IPs:
         - Quad SPI memory interface
 - 4x digital filters for sigma delta modulator
 - Rich analog peripherals (independent supply)
-        - 3× 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 μA/MSPS
+        - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 uA/MSPS
         - 2x 12-bit DAC, low-power sample and hold
         - 2x operational amplifiers with built-in PGA
         - 2x ultra-low-power comparators
@@ -77,7 +78,7 @@ The STM32L476RG SoC provides the following hardware IPs:
 - 14-channel DMA controller
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
 
 
 More information about STM32L476RG can be found here:

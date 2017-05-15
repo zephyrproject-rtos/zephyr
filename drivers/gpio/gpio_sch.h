@@ -34,6 +34,7 @@ struct gpio_sch_config {
 
 struct gpio_sch_data {
 	char __stack polling_stack[GPIO_SCH_POLLING_STACK_SIZE];
+	struct k_thread polling_thread;
 	sys_slist_t callbacks;
 	struct k_timer poll_timer;
 

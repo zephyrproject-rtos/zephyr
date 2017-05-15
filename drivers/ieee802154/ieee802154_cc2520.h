@@ -41,6 +41,7 @@ struct cc2520_context {
 	atomic_t tx;
 	/************RX************/
 	char __stack cc2520_rx_stack[CONFIG_IEEE802154_CC2520_RX_STACK_SIZE];
+	struct k_thread cc2520_rx_thread;
 	struct k_sem rx_lock;
 #ifdef CONFIG_IEEE802154_CC2520_CRYPTO
 	struct k_sem access_lock;

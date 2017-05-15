@@ -34,20 +34,7 @@ $(GENIDT):
 staticIdt.o: $(PREBUILT_KERNEL) $(GENIDT)
 	$(call cmd,gen_idt)
 
-quiet_cmd_lnk_elf = LINK    $@
-      cmd_lnk_elf =								\
-(										\
-	$(CC) -T linker.cmd @$(KERNEL_NAME).lnk staticIdt.o			\
-		irq_int_vector_map.o -o $@;					\
-	${OBJCOPY} --change-section-address intList=${CONFIG_PHYS_LOAD_ADDR}	\
-		$@ elf.tmp;							\
-	$(OBJCOPY) -R intList elf.tmp $@;					\
-	rm elf.tmp								\
-)
+irq_int_vector_map.o: staticIdt.o
 
-$(KERNEL_ELF_NAME): staticIdt.o linker.cmd
-	$(call cmd,lnk_elf)
-	@$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
-	@$(WARN_ABOUT_ASSERT)
-	@$(WARN_ABOUT_DEPRECATION)
+GENERATED_KERNEL_OBJECT_FILES += staticIdt.o irq_int_vector_map.o
 

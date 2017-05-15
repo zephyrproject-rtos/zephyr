@@ -54,7 +54,7 @@ enum {
 
 struct bt_dev_le {
 	/* LE features */
-	u8_t			features[1][8];
+	u8_t			features[8];
 	/* LE states */
 	u64_t			states;
 
@@ -151,12 +151,6 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len);
 int bt_hci_cmd_send(u16_t opcode, struct net_buf *buf);
 int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
-
-/* The helper is only safe to be called from internal threads as it's
- * not multi-threading safe
- */
-const char *bt_addr_str(const bt_addr_t *addr);
-const char *bt_addr_le_str(const bt_addr_le_t *addr);
 
 int bt_le_scan_update(bool fast_scan);
 

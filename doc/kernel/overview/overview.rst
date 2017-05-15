@@ -14,7 +14,7 @@ features needed by your application, making it ideal for systems with limited
 amounts of memory (as little as 2 KB!) or with simple multi-threading
 requirements (such as a set of interrupt handlers and a single background task).
 Examples of such systems include: embedded sensor hubs, environmental sensors,
-simple LED wearables, and store inventory tags.
+simple LED wearable, and store inventory tags.
 
 Applications requiring more memory (50 to 900 KB), multiple communication
 devices (like WiFi and Bluetooth Low Energy), and complex multi-threading,

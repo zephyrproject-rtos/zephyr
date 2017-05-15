@@ -1302,7 +1302,7 @@ extern char _interrupt_stack[];
 int net_shell_cmd_stacks(int argc, char *argv[])
 {
 #if defined(CONFIG_INIT_STACKS)
-	unsigned int stack_offset, pcnt, unused;
+	unsigned int pcnt, unused;
 #endif
 	struct net_stack_info *info;
 
@@ -1311,13 +1311,13 @@ int net_shell_cmd_stacks(int argc, char *argv[])
 
 	for (info = __net_stack_start; info != __net_stack_end; info++) {
 		net_analyze_stack_get_values(info->stack, info->size,
-					     &stack_offset, &pcnt, &unused);
+					     &pcnt, &unused);
 
 #if defined(CONFIG_INIT_STACKS)
 		printk("%s [%s] stack size %zu/%zu bytes unused %u usage"
 		       " %zu/%zu (%u %%)\n",
 		       info->pretty_name, info->name, info->orig_size,
-		       info->size + stack_offset, unused,
+		       info->size, unused,
 		       info->size - unused, info->size, pcnt);
 #else
 		printk("%s [%s] stack size %zu usage not available\n",
@@ -1327,19 +1327,19 @@ int net_shell_cmd_stacks(int argc, char *argv[])
 
 #if defined(CONFIG_INIT_STACKS)
 	net_analyze_stack_get_values(_main_stack, CONFIG_MAIN_STACK_SIZE,
-				     &stack_offset, &pcnt, &unused);
+				     &pcnt, &unused);
 	printk("%s [%s] stack size %d/%d bytes unused %u usage"
 	       " %d/%d (%u %%)\n",
 	       "main", "_main_stack", CONFIG_MAIN_STACK_SIZE,
-	       CONFIG_MAIN_STACK_SIZE + stack_offset, unused,
+	       CONFIG_MAIN_STACK_SIZE, unused,
 	       CONFIG_MAIN_STACK_SIZE - unused, CONFIG_MAIN_STACK_SIZE, pcnt);
 
 	net_analyze_stack_get_values(_interrupt_stack, CONFIG_ISR_STACK_SIZE,
-				     &stack_offset, &pcnt, &unused);
+				     &pcnt, &unused);
 	printk("%s [%s] stack size %d/%d bytes unused %u usage"
 	       " %d/%d (%u %%)\n",
 	       "ISR", "_interrupt_stack", CONFIG_ISR_STACK_SIZE,
-	       CONFIG_ISR_STACK_SIZE + stack_offset, unused,
+	       CONFIG_ISR_STACK_SIZE, unused,
 	       CONFIG_ISR_STACK_SIZE - unused, CONFIG_ISR_STACK_SIZE, pcnt);
 #endif
 

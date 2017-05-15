@@ -1,2 +1,2 @@
 asflags-y := -c -xassembler-with-cpp $(XTENSA_INCLUDE) $(flagBoardType) -mtext-section-literals -mlongcalls
-obj-y = reset-vector.o
+obj-$(CONFIG_XTENSA_RESET_VECTOR) = reset-vector.o
