@@ -100,26 +100,6 @@
 /* System Control Register (SYSCON) */
 #define __BEETLE_SYSCON ((volatile struct syscon *)_BEETLE_SYSCON_BASE)
 
-/* CMSDK AHB General Purpose Input/Output (GPIO) */
-#define CMSDK_AHB_GPIO0 _BEETLE_GPIO0_BASE
-#define CMSDK_AHB_GPIO1 _BEETLE_GPIO1_BASE
-#define CMSDK_AHB_GPIO2 _BEETLE_GPIO2_BASE
-#define CMSDK_AHB_GPIO3 _BEETLE_GPIO3_BASE
-
-/* CMSDK APB Timers */
-#define CMSDK_APB_TIMER0 _BEETLE_TIMER0_BASE
-#define CMSDK_APB_TIMER1 _BEETLE_TIMER1_BASE
-
-/* CMSDK APB Dual Timer */
-#define CMSDK_APB_DTIMER _BEETLE_DTIMER_BASE
-
-/* CMSDK APB Universal Asynchronous Receiver-Transmitter (UART) */
-#define CMSDK_APB_UART0 _BEETLE_UART0_BASE
-#define CMSDK_APB_UART1 _BEETLE_UART1_BASE
-
-/* CMSDK APB Watchdog */
-#define CMSDK_APB_WDOG _BEETLE_WDOG_BASE
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _ARM_BEETLE_SOC_H_ */
