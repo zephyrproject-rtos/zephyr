@@ -132,6 +132,10 @@ static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 				       ctx->config->cs->gpio_pin, 0);
 			k_busy_wait(ctx->config->cs->delay);
 		} else {
+			if (ctx->config->operation & SPI_HOLD_ON_CS) {
+				return;
+			}
+
 			k_busy_wait(ctx->config->cs->delay);
 			gpio_pin_write(ctx->config->cs->gpio_dev,
 				       ctx->config->cs->gpio_pin, 1);
