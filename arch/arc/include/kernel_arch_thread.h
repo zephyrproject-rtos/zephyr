@@ -58,8 +58,10 @@ struct _thread_arch {
 	unsigned int return_value;
 
 #ifdef CONFIG_ARC_STACK_CHECKING
-	/* top of stack for hardware stack checking */
-	u32_t stack_top;
+	/* High address of stack region, stack grows downward from this
+	 * location. Usesd for hardware stack checking
+	 */
+	u32_t stack_base;
 #endif
 };
 

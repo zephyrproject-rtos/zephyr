@@ -392,9 +392,10 @@ int lis2dh_init_interrupt(struct device *dev)
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2dh->gpio_sem, 0, UINT_MAX);
 
-	k_thread_spawn(lis2dh->thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)lis2dh_thread, dev, NULL, NULL,
-		       K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&lis2dh->thread, lis2dh->thread_stack,
+			CONFIG_LIS2DH_THREAD_STACK_SIZE,
+			(k_thread_entry_t)lis2dh_thread, dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0, 0);
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	lis2dh->work.handler = lis2dh_work_cb;
 	lis2dh->dev = dev;

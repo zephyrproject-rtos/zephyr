@@ -19,8 +19,6 @@
 #include <misc/__assert.h>
 #include <soc.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/l2cap.h>
@@ -28,6 +26,10 @@
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/storage.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#include "common/log.h"
+
+#include "common/rpa.h"
 #include "keys.h"
 #include "monitor.h"
 #include "hci_core.h"
@@ -50,8 +52,10 @@
 
 /* Stacks for the threads */
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
+static struct k_thread rx_thread_data;
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
 #endif
+static struct k_thread tx_thread_data;
 static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
 
 static void init_work(struct k_work *work);
@@ -163,34 +167,6 @@ static void report_completed_packet(struct net_buf *buf)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BLUETOOTH_ACL_RX_COUNT, ACL_IN_SIZE,
 		    BT_BUF_USER_DATA_MIN, report_completed_packet);
 #endif /* CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL */
-
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-const char *bt_addr_str(const bt_addr_t *addr)
-{
-	static char bufs[2][18];
-	static u8_t cur;
-	char *str;
-
-	str = bufs[cur++];
-	cur %= ARRAY_SIZE(bufs);
-	bt_addr_to_str(addr, str, sizeof(bufs[cur]));
-
-	return str;
-}
-
-const char *bt_addr_le_str(const bt_addr_le_t *addr)
-{
-	static char bufs[2][27];
-	static u8_t cur;
-	char *str;
-
-	str = bufs[cur++];
-	cur %= ARRAY_SIZE(bufs);
-	bt_addr_le_to_str(addr, str, sizeof(bufs[cur]));
-
-	return str;
-}
-#endif /* CONFIG_BLUETOOTH_DEBUG */
 
 struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len)
 {
@@ -417,7 +393,7 @@ static int le_set_private_addr(void)
 		return 0;
 	}
 
-	err = bt_smp_create_rpa(bt_dev.irk, &rpa);
+	err = bt_rpa_create(bt_dev.irk, &rpa);
 	if (!err) {
 		err = set_random_address(&rpa);
 		if (!err) {
@@ -885,9 +861,8 @@ static void le_phy_update_complete(struct net_buf *buf)
 		return;
 	}
 
-	if (!evt->status) {
-		BT_DBG("PHY updated: tx: %u, rx: %u", evt->tx_phy, evt->rx_phy);
-	}
+	BT_DBG("PHY updated: status: 0x%x, tx: %u, rx: %u",
+	       evt->status, evt->tx_phy, evt->rx_phy);
 
 	update_conn_param(conn);
 
@@ -3944,15 +3919,16 @@ int bt_enable(bt_ready_cb_t cb)
 	ready_cb = cb;
 
 	/* TX thread */
-	k_thread_spawn(tx_thread_stack, sizeof(tx_thread_stack),
-		       hci_tx_thread, NULL, NULL, NULL, K_PRIO_COOP(7), 0,
-		       K_NO_WAIT);
+	k_thread_create(&tx_thread_data, tx_thread_stack,
+			sizeof(tx_thread_stack), hci_tx_thread, NULL, NULL,
+			NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* RX thread */
-	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
-		       (k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
-		       K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_thread_stack,
+			sizeof(rx_thread_stack),
+			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {

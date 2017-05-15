@@ -18,6 +18,7 @@
 K_MSGQ_DEFINE(kmsgq, MSG_SIZE, MSGQ_LEN, 4);
 
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
 static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 static struct k_sem end_sema;
@@ -74,9 +75,9 @@ static void msgq_thread(struct k_msgq *pmsgq)
 {
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-thread data passing via message queue*/
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     tThread_entry, pmsgq, NULL, NULL,
-				     K_PRIO_PREEMPT(0), 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_entry, pmsgq, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	put_msgq(pmsgq);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);

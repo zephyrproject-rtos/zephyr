@@ -14,13 +14,14 @@
 #include <misc/util.h>
 #include <misc/stack.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
-#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/l2cap.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
+/* FIXME: #include "common/log.h" */
 #include <bluetooth/rfcomm.h>
 
 #include "hci_core.h"
@@ -750,8 +751,9 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	k_delayed_work_cancel(&dlc->rtx_work);
 
 	k_fifo_init(&dlc->tx_queue);
-	k_thread_spawn(dlc->stack, sizeof(dlc->stack), rfcomm_dlc_tx_thread,
-		       dlc, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&dlc->tx_thread, dlc->stack, sizeof(dlc->stack),
+			rfcomm_dlc_tx_thread, dlc, NULL, NULL, K_PRIO_COOP(7),
+			0, K_NO_WAIT);
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);

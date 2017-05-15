@@ -398,7 +398,7 @@ static void uart_nrf5_irq_rx_disable(struct device *dev)
 }
 
 /** Interrupt driven transfer empty function */
-static int uart_nrf5_irq_tx_empty(struct device *dev)
+static int uart_nrf5_irq_tx_complete(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
@@ -481,7 +481,7 @@ static const struct uart_driver_api uart_nrf5_driver_api = {
 	.irq_tx_ready     = uart_nrf5_irq_tx_ready,     /** IRQ transfer ready function */
 	.irq_rx_enable    = uart_nrf5_irq_rx_enable,    /** IRQ receiver enabling function */
 	.irq_rx_disable   = uart_nrf5_irq_rx_disable,   /** IRQ receiver disabling function */
-	.irq_tx_empty     = uart_nrf5_irq_tx_empty,     /** IRQ transfer empty function */
+	.irq_tx_complete  = uart_nrf5_irq_tx_complete,  /** IRQ transfer complete function */
 	.irq_rx_ready     = uart_nrf5_irq_rx_ready,     /** IRQ receiver ready function */
 	.irq_err_enable   = uart_nrf5_irq_err_enable,   /** IRQ error enabling function */
 	.irq_err_disable  = uart_nrf5_irq_err_disable,  /** IRQ error disabling function */

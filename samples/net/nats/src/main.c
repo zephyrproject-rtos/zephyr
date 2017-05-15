@@ -71,6 +71,7 @@ static bool fake_led;
 #define DEFAULT_PORT		4222
 
 static u8_t stack[2048];
+static struct k_thread thread_data;
 
 static void panic(const char *msg)
 {
@@ -320,6 +321,7 @@ static void nats_client(void)
 
 void main(void)
 {
-	k_thread_spawn(stack, sizeof(stack), (k_thread_entry_t)nats_client,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&thread_data, stack, sizeof(stack),
+			(k_thread_entry_t)nats_client,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

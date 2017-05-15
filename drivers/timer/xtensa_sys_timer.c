@@ -39,6 +39,38 @@
 #define GET_TIMER_FIRE_TIME(void) XT_SR_CCOMPARE(R, XT_TIMER_INDEX)()
 #define SET_TIMER_FIRE_TIME(time) XT_SR_CCOMPARE(W, XT_TIMER_INDEX)(time)
 #define GET_TIMER_CURRENT_TIME(void) XT_RSR_CCOUNT()
+
+#define XTENSA_RSR(sr) \
+	({uint32_t v; \
+	 __asm__ volatile ("rsr." #sr " %0" : "=a"(v)); \
+	 v; })
+#define XTENSA_WSR(sr, v) \
+	({__asm__ volatile ("wsr." #sr " %0" :: "a"(v)); })
+
+#ifndef XT_RSR_CCOUNT
+#define XT_RSR_CCOUNT() XTENSA_RSR(ccount)
+#endif
+
+#ifndef XT_RSR_CCOMPARE0
+#define XT_RSR_CCOMPARE0() XTENSA_RSR(ccompare0)
+#endif
+#ifndef XT_RSR_CCOMPARE1
+#define XT_RSR_CCOMPARE1() XTENSA_RSR(ccompare1)
+#endif
+#ifndef XT_RSR_CCOMPARE2
+#define XT_RSR_CCOMPARE2() XTENSA_RSR(ccompare2)
+#endif
+
+#ifndef XT_WSR_CCOMPARE0
+#define XT_WSR_CCOMPARE0(v) XTENSA_WSR(ccompare0, v)
+#endif
+#ifndef XT_WSR_CCOMPARE1
+#define XT_WSR_CCOMPARE1(v) XTENSA_WSR(ccompare1, v)
+#endif
+#ifndef XT_WSR_CCOMPARE2
+#define XT_WSR_CCOMPARE2(v) XTENSA_WSR(ccompare2, v)
+#endif
+
 /* Value underwich, don't program next tick but trigger it immediately. */
 #define MIN_TIMER_PROG_DELAY 50
 #else /* Case of an external timer which is not emulated by internal timer */

@@ -1075,11 +1075,10 @@ static int cc2520_init(struct device *dev)
 		return -EIO;
 	}
 
-	k_thread_spawn(cc2520->cc2520_rx_stack,
-		       CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
-		       (k_thread_entry_t)cc2520_rx,
-		       dev, NULL, NULL,
-		       K_PRIO_COOP(2), 0, 0);
+	k_thread_create(&cc2520->cc2520_rx_thread, cc2520->cc2520_rx_stack,
+			CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
+			(k_thread_entry_t)cc2520_rx,
+			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
 
 	SYS_LOG_INF("CC2520 initialized");
 

@@ -14,6 +14,7 @@
 
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static int last_prio;
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -29,21 +30,21 @@ static void threads_suspend_resume(int prio)
 	last_prio = prio;
 	k_thread_priority_set(k_current_get(), last_prio);
 
-	/* spawn thread with lower priority */
-	int spawn_prio = last_prio + 1;
+	/* create thread with lower priority */
+	int create_prio = last_prio + 1;
 
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     thread_entry, NULL, NULL, NULL,
-				     spawn_prio, 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      create_prio, 0, 0);
 	/* checkpoint: suspend current thread */
 	k_thread_suspend(tid);
 	k_sleep(100);
-	/* checkpoint: spawned thread shouldn't be executed after suspend */
-	zassert_false(last_prio == spawn_prio, NULL);
+	/* checkpoint: created thread shouldn't be executed after suspend */
+	zassert_false(last_prio == create_prio, NULL);
 	k_thread_resume(tid);
 	k_sleep(100);
-	/* checkpoint: spawned thread should be executed after resume */
-	zassert_true(last_prio == spawn_prio, NULL);
+	/* checkpoint: created thread should be executed after resume */
+	zassert_true(last_prio == create_prio, NULL);
 
 	k_thread_abort(tid);
 

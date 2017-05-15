@@ -34,7 +34,7 @@
 #include "ctrl_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
+#include "common/log.h"
 
 #define RADIO_TIFS                      150
 #define RADIO_CONN_EVENTS(x, y)		((u16_t)((x) / (y)))
@@ -1498,6 +1498,7 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
 static inline void
 isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				 u8_t *rx_enqueue)
@@ -1541,6 +1542,7 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 	}
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 static inline void
 isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,

@@ -316,7 +316,7 @@ static void uart_cmsdk_apb_irq_rx_disable(struct device *dev)
  *
  * @return 1 if an interrupt is ready, 0 otherwise
  */
-static int uart_cmsdk_apb_irq_tx_empty(struct device *dev)
+static int uart_cmsdk_apb_irq_tx_complete(struct device *dev)
 {
 	return uart_cmsdk_apb_irq_tx_ready(dev);
 }
@@ -435,7 +435,7 @@ static const struct uart_driver_api uart_cmsdk_apb_driver_api = {
 	.irq_tx_ready = uart_cmsdk_apb_irq_tx_ready,
 	.irq_rx_enable = uart_cmsdk_apb_irq_rx_enable,
 	.irq_rx_disable = uart_cmsdk_apb_irq_rx_disable,
-	.irq_tx_empty = uart_cmsdk_apb_irq_tx_empty,
+	.irq_tx_complete = uart_cmsdk_apb_irq_tx_complete,
 	.irq_rx_ready = uart_cmsdk_apb_irq_rx_ready,
 	.irq_err_enable = uart_cmsdk_apb_irq_err_enable,
 	.irq_err_disable = uart_cmsdk_apb_irq_err_disable,

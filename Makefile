@@ -364,6 +364,7 @@ KERNEL_ELF_NAME = $(KERNEL_NAME).elf
 KERNEL_BIN_NAME = $(KERNEL_NAME).bin
 KERNEL_HEX_NAME = $(KERNEL_NAME).hex
 KERNEL_STAT_NAME = $(KERNEL_NAME).stat
+PREBUILT_KERNEL = $(KERNEL_NAME)_prebuilt.elf
 
 export SOC_FAMILY SOC_SERIES SOC_PATH SOC_NAME BOARD_NAME
 export ARCH KERNEL_NAME KERNEL_ELF_NAME KERNEL_BIN_NAME KERNEL_HEX_NAME
@@ -852,13 +853,14 @@ $(KERNEL_NAME).lnk: $(zephyr-deps)
 
 linker.cmd: $(zephyr-deps)
 	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
-	$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) -I$(srctree)/include \
-	-I$(SOURCE_DIR) \
-	-I$(objtree)/include/generated $(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
+		$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) \
+		-I$(srctree)/include -I$(SOURCE_DIR) \
+		-I$(objtree)/include/generated \
+		$(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
 
-PREBUILT_KERNEL = $(KERNEL_NAME)_prebuilt.elf
 
-$(PREBUILT_KERNEL): $(zephyr-deps) libzephyr.a $(KBUILD_ZEPHYR_APP) $(app-y) linker.cmd $(KERNEL_NAME).lnk
+$(PREBUILT_KERNEL): $(zephyr-deps) libzephyr.a $(KBUILD_ZEPHYR_APP) $(app-y) \
+		linker.cmd $(KERNEL_NAME).lnk
 	$(Q)$(CC) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
 ASSERT_WARNING_STR := \
@@ -878,15 +880,39 @@ WARN_ABOUT_DEPRECATION := $(if $(CONFIG_BOARD_DEPRECATED),echo -e \
 				-n $(DEPRECATION_WARNING_STR),true)
 
 ifeq ($(ARCH),x86)
-# X86 with its IDT has very special handling for interrupt tables
 include $(srctree)/arch/x86/Makefile.idt
-else ifeq ($(CONFIG_GEN_ISR_TABLES),y)
-# Logic for interrupt tables created by scripts/gen_isr_tables.py
+endif
+
+ifeq ($(CONFIG_GEN_ISR_TABLES),y)
 include $(srctree)/arch/common/Makefile.gen_isr_tables
-else
+endif
+
+ifneq ($(GENERATED_KERNEL_OBJECT_FILES),)
+
+# Identical rule to linker.cmd, but we also define preprocessor LINKER_PASS2.
+# For arches that place special metadata in $(PREBUILT_KERNEL) not intended
+# for the final binary, it can be #ifndef'd around this.
+linker-pass2.cmd: $(zephyr-deps)
+	$(Q)$(CC) -x assembler-with-cpp -nostdinc -undef -E -P \
+		-DLINKER_PASS2 \
+		$(LDFLAG_LINKERCMD) $(LD_TOOLCHAIN) \
+		-I$(srctree)/include -I$(SOURCE_DIR) \
+		-I$(objtree)/include/generated \
+		$(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
+
+$(KERNEL_ELF_NAME): $(GENERATED_KERNEL_OBJECT_FILES) linker-pass2.cmd
+	$(Q)$(CC) -T linker-pass2.cmd $(GENERATED_KERNEL_OBJECT_FILES) \
+		@$(KERNEL_NAME).lnk -o $@
+	$(Q)$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
+	@$(WARN_ABOUT_ASSERT)
+	@$(WARN_ABOUT_DEPRECATION)
+
+else # GENERATED_KERNEL_OBJECT_FILES
+
 # Otherwise, nothing to do, prebuilt kernel is the real one
 $(KERNEL_ELF_NAME): $(PREBUILT_KERNEL)
-	@cp $(PREBUILT_KERNEL) $(KERNEL_ELF_NAME)
+	$(Q)cp $(PREBUILT_KERNEL) $(KERNEL_ELF_NAME)
+	$(Q)$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
 	@$(WARN_ABOUT_ASSERT)
 	@$(WARN_ABOUT_DEPRECATION)
 endif
@@ -1066,7 +1092,8 @@ CLEAN_DIRS  += $(MODVERDIR)
 CLEAN_FILES += 	include/generated/generated_dts_board.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
-		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd
+		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd \
+		linker-pass2.cmd
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += bin include/config usr/include include/generated          \

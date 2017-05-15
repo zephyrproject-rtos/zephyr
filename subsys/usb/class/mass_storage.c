@@ -57,7 +57,8 @@
 #define DISK_THREAD_PRIO	-5
 
 static volatile int thread_op;
-static char __stack mass_thread_stack[DISK_THREAD_STACK_SZ];
+static char __noinit __stack mass_thread_stack[DISK_THREAD_STACK_SZ];
+static struct k_thread mass_thread_data;
 static struct k_sem disk_wait_sem;
 static volatile u32_t defered_wr_sz;
 
@@ -967,8 +968,9 @@ static int mass_storage_init(struct device *dev)
 	k_sem_init(&disk_wait_sem, 0, 1);
 
 	/* Start a thread to offload disk ops */
-	k_thread_spawn(mass_thread_stack, DISK_THREAD_STACK_SZ,
-		       (k_thread_entry_t)mass_thread_main, NULL, NULL, NULL,
+	k_thread_create(&mass_thread_data, mass_thread_stack,
+			DISK_THREAD_STACK_SZ,
+			(k_thread_entry_t)mass_thread_main, NULL, NULL, NULL,
 			DISK_THREAD_PRIO, 0, 0);
 
 	return 0;

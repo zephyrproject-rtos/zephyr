@@ -12,6 +12,7 @@
 
 #define STACK_SIZE 384
 static __stack char stacks[N_THREADS][STACK_SIZE];
+static struct k_thread threads[N_THREADS];
 
 static int errno_values[N_THREADS + 1] = {
 	0xbabef00d,
@@ -60,7 +61,7 @@ void main(void)
 	}
 
 	for (int ii = 0; ii < N_THREADS; ii++) {
-		k_thread_spawn(stacks[ii], STACK_SIZE,
+		k_thread_create(&threads[ii], stacks[ii], STACK_SIZE,
 				(k_thread_entry_t) errno_fiber,
 				(void *) ii, (void *) errno_values[ii], NULL,
 				K_PRIO_PREEMPT(ii + 5), 0, K_NO_WAIT);

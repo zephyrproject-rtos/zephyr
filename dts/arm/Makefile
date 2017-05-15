@@ -13,6 +13,7 @@ dtb-$(CONFIG_BOARD_V2M_BEETLE)		=	v2m_beetle.dts_compiled
 dtb-$(CONFIG_BOARD_MPS2_AN385)		=	mps2_an385.dts_compiled
 dtb-$(CONFIG_BOARD_OLIMEXINO_STM32)	=	olimexino_stm32.dts_compiled
 dtb-$(CONFIG_BOARD_96B_CARBON)		=	96b_carbon.dts_compiled
+dtb-$(CONFIG_BOARD_96B_CARBON_NRF51)	=	96b_carbon_nrf51.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F401RE)	=	nucleo_f401re.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F411RE)	=	nucleo_f411re.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F103RB)	=	nucleo_f103rb.dts_compiled

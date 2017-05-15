@@ -157,5 +157,6 @@ static fork_t forks[NUM_PHIL] = {
 };
 
 static char __stack __noinit stacks[NUM_PHIL][STACK_SIZE];
+static struct k_thread threads[NUM_PHIL];
 
 #endif /* phil_obj_abstract__h */

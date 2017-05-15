@@ -9,7 +9,7 @@
 
 #include "hal/rand.h"
 
-#include <bluetooth/log.h>
+#include "common/log.h"
 #include "hal/debug.h"
 
 #define RAND_RESERVED (4)

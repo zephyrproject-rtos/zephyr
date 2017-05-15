@@ -11,12 +11,14 @@
 #include <atomic.h>
 #include <misc/util.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_KEYS)
-#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_KEYS)
+#include "common/log.h"
+
+#include "common/rpa.h"
 #include "hci_core.h"
 #include "smp.h"
 #include "keys.h"
@@ -113,7 +115,7 @@ struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
 			continue;
 		}
 
-		if (bt_smp_irk_matches(key_pool[i].irk.val, &addr->a)) {
+		if (bt_rpa_irk_matches(key_pool[i].irk.val, &addr->a)) {
 			BT_DBG("RPA %s matches %s",
 			       bt_addr_str(&key_pool[i].irk.rpa),
 			       bt_addr_le_str(&key_pool[i].addr));

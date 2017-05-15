@@ -8,11 +8,12 @@
 #include <atomic.h>
 #include <misc/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_GATT)
-#include <bluetooth/log.h>
 #include <net/buf.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/att.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_GATT)
+#include "common/log.h"
 
 #include "conn.h"
 #include "conn_internal.h"

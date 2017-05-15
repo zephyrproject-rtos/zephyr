@@ -37,31 +37,4 @@ quiet_cmd_gen_irq = IRQ     $@
 $(OUTPUT_SRC): $(PREBUILT_KERNEL) $(GEN_ISR_TABLE)
 	$(call cmd,gen_irq)
 
-# Build system pattern rules will handle building $(OUTPUT_OBJ) from
-# $(OUTPUT_SRC), nothing we need to do here explicitly for its compilation.
-
-# Now link the kernel again, this time with the compiled interrupt tables
-# included, replacing the dummy tables defined in arch/common/isr_tables.c
-#
-# On x86, we just strip out the intList with objcopy -j. However this is not
-# very portable; for instance on ARM this results in a zero-sized program
-# header segment which produces a linker warning and gives QEMU fits.
-# Set to NOLOAD instead, now that we have extracted the information we need
-# from it.
-quiet_cmd_lnk_elf = LINK    $@
-      cmd_lnk_elf = \
-( \
-	$(CC) -T linker.cmd $(OUTPUT_OBJ) @$(KERNEL_NAME).lnk \
-		-o elf.tmp && \
-	$(OBJCOPY) -I $(OUTPUT_FORMAT) -O $(OUTPUT_FORMAT) \
-		--set-section-flags .intList=noload \
-		elf.tmp $@ && \
-	rm -f elf.tmp; \
-)
-
-$(KERNEL_ELF_NAME): $(OUTPUT_OBJ) linker.cmd
-	$(call cmd,lnk_elf)
-	@$(srctree)/scripts/check_link_map.py $(KERNEL_NAME).map
-	@$(WARN_ABOUT_ASSERT)
-	@$(WARN_ABOUT_DEPRECATION)
-
+GENERATED_KERNEL_OBJECT_FILES += $(OUTPUT_OBJ)

@@ -31,15 +31,18 @@ static void thread(void *p1, void *p2, void *p3)
 	k_sem_give(&sem[id]);
 }
 
-static __noinit __stack char stacks[NUM_TIMEOUTS][512];
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+static __noinit __stack char stacks[NUM_TIMEOUTS][STACKSIZE];
+static struct k_thread threads[NUM_TIMEOUTS];
 
 void timeout_order_test(void)
 {
 	int ii, prio = k_thread_priority_get(k_current_get()) + 1;
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
-		(void)k_thread_spawn(stacks[ii], 512, thread,
-				     (void *)ii, 0, 0, prio, 0, 0);
+		(void)k_thread_create(&threads[ii], stacks[ii], STACKSIZE,
+				      thread, (void *)ii, 0, 0, prio, 0, 0);
 		k_timer_init(&timer[ii], 0, 0);
 		k_sem_init(&sem[ii], 0, 1);
 		results[ii] = -1;

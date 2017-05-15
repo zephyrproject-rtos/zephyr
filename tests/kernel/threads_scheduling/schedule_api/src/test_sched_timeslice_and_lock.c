@@ -17,6 +17,7 @@
 static char __noinit __stack tstack[THREADS_NUM][STACK_SIZE];
 
 static struct thread_data tdata[THREADS_NUM];
+static struct k_thread tthread[THREADS_NUM];
 static int old_prio, init_prio;
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -54,9 +55,10 @@ static void setup_threads(void)
 static void spawn_threads(int sleep_sec)
 {
 	for (int i = 0; i < THREADS_NUM; i++) {
-		tdata[i].tid = k_thread_spawn(tstack[i], STACK_SIZE,
-					      thread_entry, (void *)i, (void *)sleep_sec, NULL,
-					      tdata[i].priority, 0, 0);
+		tdata[i].tid = k_thread_create(&tthread[i], tstack[i],
+					       STACK_SIZE, thread_entry,
+					       (void *)i, (void *)sleep_sec,
+					       NULL, tdata[i].priority, 0, 0);
 	}
 }
 

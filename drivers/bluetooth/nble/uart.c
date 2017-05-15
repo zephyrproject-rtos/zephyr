@@ -20,7 +20,7 @@
 #include <net/buf.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
+#include "common/log.h"
 
 #include "../util.h"
 #include "rpc.h"
@@ -47,6 +47,8 @@ NET_BUF_POOL_DEFINE(rx_pool, NBLE_RX_BUF_COUNT, NBLE_BUF_SIZE, 0, NULL);
 NET_BUF_POOL_DEFINE(tx_pool, NBLE_TX_BUF_COUNT, NBLE_BUF_SIZE, 0, NULL);
 
 static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+
+static struct k_thread rx_thread_data;
 
 static struct device *nble_dev;
 
@@ -204,9 +206,9 @@ int nble_open(void)
 	BT_DBG("");
 
 	/* Initialize receive queue and start rx_thread */
-	k_thread_spawn(rx_thread_stack, sizeof(rx_thread_stack),
-		       (k_thread_entry_t)rx_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_thread_stack,
+			sizeof(rx_thread_stack), (k_thread_entry_t)rx_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	uart_irq_rx_disable(nble_dev);
 	uart_irq_tx_disable(nble_dev);

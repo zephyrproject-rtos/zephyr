@@ -285,7 +285,7 @@ static int uart_qmsi_irq_tx_ready(struct device *dev)
 	return id == QM_UART_IIR_THR_EMPTY;
 }
 
-static int uart_qmsi_irq_tx_empty(struct device *dev)
+static int uart_qmsi_irq_tx_complete(struct device *dev)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	const u32_t mask = (QM_UART_LSR_TEMT | QM_UART_LSR_THRE);
@@ -433,7 +433,7 @@ static const struct uart_driver_api api = {
 	.irq_tx_enable = uart_qmsi_irq_tx_enable,
 	.irq_tx_disable = uart_qmsi_irq_tx_disable,
 	.irq_tx_ready = uart_qmsi_irq_tx_ready,
-	.irq_tx_empty = uart_qmsi_irq_tx_empty,
+	.irq_tx_complete = uart_qmsi_irq_tx_complete,
 	.irq_rx_enable = uart_qmsi_irq_rx_enable,
 	.irq_rx_disable = uart_qmsi_irq_rx_disable,
 	.irq_rx_ready = uart_qmsi_irq_rx_ready,
