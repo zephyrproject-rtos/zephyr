@@ -59,11 +59,23 @@ extern "C" {
  * *_b function only used for creating proper ser one
  */
 DEFINE_MM_REG_READ(ctrlr0_b, DW_SPI_REG_CTRLR0, 16)
+static inline u32_t read_ctrlr0(u32_t addr)
+{
+	return read_ctrlr0_b(addr);
+}
+
 DEFINE_MM_REG_WRITE(ctrlr0_b, DW_SPI_REG_CTRLR0, 16)
 static inline void write_ctrlr0(u32_t data, u32_t addr)
 {
 	write_ctrlr0_b((read_ctrlr0_b(addr) & DW_SPI_CTRLR0_CLK_ENA_MASK) |
 								data, addr);
+}
+
+DEFINE_MM_REG_READ(ctrlr1_b, DW_SPI_REG_CTRLR0, 32)
+DEFINE_MM_REG_WRITE(ctrlr1_b, DW_SPI_REG_CTRLR0, 32)
+static inline void write_ctrlr1(u32_t data, u32_s addr)
+{
+	write_ctrlr1_b((read_ctrlr1_b(addr) & (data << 16)), addr);
 }
 
 DEFINE_MM_REG_READ(ssienr_b, DW_SPI_REG_SSIENR, 8)
