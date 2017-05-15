@@ -633,6 +633,7 @@ exit:
 
 #define STACK_SIZE		4096
 u8_t stack[STACK_SIZE];
+static struct k_thread thread_data;
 
 static inline int init_app(void)
 {
@@ -660,7 +661,8 @@ void main(void)
 		return;
 	}
 
-	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t) dtls_server,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&thread_data, stack, STACK_SIZE,
+			(k_thread_entry_t) dtls_server,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 
 }

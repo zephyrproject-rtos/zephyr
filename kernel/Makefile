@@ -21,10 +21,9 @@ lib-y += $(strip \
 	queue.o \
 	stack.o \
 	mem_slab.o \
-	mem_pool.o \
+	mempool.o \
 	msg_q.o \
 	mailbox.o \
-	mem_pool.o \
 	alert.o \
 	pipes.o \
 	errno.o \

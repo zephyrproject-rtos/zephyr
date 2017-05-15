@@ -23,7 +23,7 @@ Hardware Configuration Hierarchy
 ********************************
 
 Hardware definitions in Zephyr follow a well-defined hierarchy of configurations
-and layers, below are thelayers from top to bottom:
+and layers, below are the layers from top to bottom:
 
 - Board
 - SoC
@@ -105,7 +105,7 @@ SoC Series
 ----------
 
 Moving closer to the SoC, the series is derived from an SoC family. A series is
-defined by a feautre set that serves the purpose of distinguishing different
+defined by a feature set that serves the purpose of distinguishing different
 SoCs belonging to the same family.
 
 SoC

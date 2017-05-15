@@ -20,14 +20,14 @@ application. The capacity of the kernel event logger is also configurable.
 By default, it has a ring buffer that can hold up to 128 32-bit words
 of event information.
 
-The kernel event logger is capable of recording the following pre-defined
+The kernel event logger is capable of recording the following predefined
 event types:
 
 * Interrupts.
 * Context switching of threads.
 * Kernel sleep events (i.e. entering and exiting a low power state).
 
-The kernel event logger only records the pre-defined event types it has been
+The kernel event logger only records the predefined event types it has been
 configured to record. Each event type can be enabled independently.
 
 An application can also define and record custom event types.
@@ -93,7 +93,7 @@ A **sleep event** has the following format:
     };
 
 A **custom event** must have a type ID that does not conflict with
-any existing pre-defined event type ID. The format of a custom event
+any existing predefined event type ID. The format of a custom event
 is application-defined, but must contain at least one 32-bit data word.
 A custom event may utilize a variable size, to allow different events
 of a single type to record differing amounts of information.
@@ -101,7 +101,7 @@ of a single type to record differing amounts of information.
 Timestamps
 ==========
 
-By default, the timestamp recorded with each pre-defined event is obtained from
+By default, the timestamp recorded with each predefined event is obtained from
 the kernel's :ref:`hardware clock <clocks_v2>`. This 32-bit clock counts up
 extremely rapidly, which means the timestamp value wraps around frequently.
 (For example, the Lakemont APIC timer for Quark SE wraps every 134 seconds.)
@@ -176,7 +176,7 @@ Adding a Custom Event Type
 ==========================
 
 A custom event type must use an integer type ID that does not duplicate
-an existing type ID. The type IDs for the pre-defined events can be found
+an existing type ID. The type IDs for the predefined events can be found
 in :file:`include/logging/kernel_event_logger.h`. If dynamic recording of
 events is enabled, the event type ID must not exceed 32.
 

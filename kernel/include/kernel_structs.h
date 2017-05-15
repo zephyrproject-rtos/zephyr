@@ -45,6 +45,10 @@
 
 /* end - states */
 
+#ifdef CONFIG_STACK_SENTINEL
+/* Magic value in lowest bytes of the stack */
+#define STACK_SENTINEL 0xF0F0F0F0
+#endif
 
 /* lowest value of _thread_base.preempt at which a thread is non-preemptible */
 #define _NON_PREEMPT_THRESHOLD 0x0080
@@ -142,20 +146,26 @@ extern void _init_thread_base(struct _thread_base *thread_base,
 			      int priority, u32_t initial_state,
 			      unsigned int options);
 
-static ALWAYS_INLINE struct k_thread *_new_thread_init(char *pStack,
-						       size_t stackSize,
-						       int prio,
-						       unsigned int options)
+static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
+					    char *pStack, size_t stackSize,
+					    int prio, unsigned int options)
 {
-	struct k_thread *thread;
+#if !defined(CONFIG_INIT_STACKS) && !defined(CONFIG_THREAD_STACK_INFO)
+	ARG_UNUSED(pStack);
+	ARG_UNUSED(stackSize);
+#endif
 
 #ifdef CONFIG_INIT_STACKS
 	memset(pStack, 0xaa, stackSize);
 #endif
-
+#ifdef CONFIG_STACK_SENTINEL
+	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
+	 * We periodically check that it's still present and kill the thread
+	 * if it isn't.
+	 */
+	*((u32_t *)pStack) = STACK_SENTINEL;
+#endif /* CONFIG_STACK_SENTINEL */
 	/* Initialize various struct k_thread members */
-	thread = (struct k_thread *)pStack;
-
 	_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
@@ -171,8 +181,6 @@ static ALWAYS_INLINE struct k_thread *_new_thread_init(char *pStack,
 	thread->stack_info.start = (u32_t)pStack;
 	thread->stack_info.size = (u32_t)stackSize;
 #endif /* CONFIG_THREAD_STACK_INFO */
-
-	return thread;
 }
 
 #if defined(CONFIG_THREAD_MONITOR)

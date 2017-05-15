@@ -843,6 +843,23 @@ int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
 			 u16_t offset, u16_t len);
 
 /**
+ * @brief Copy len bytes from src starting from offset to dst buffer
+ *
+ * This routine assumes that dst is large enough to store @a len bytes
+ * starting from offset at src.
+ *
+ * @param dst Destination buffer
+ * @param dst_len Destination buffer max length
+ * @param src Source buffer that may be fragmented
+ * @param offset Starting point to copy from
+ * @param len Number of bytes to copy
+ * @return number of bytes copied if everything is ok
+ * @return -ENOMEM on error
+ */
+int net_frag_linearize(u8_t *dst, size_t dst_len,
+		       struct net_pkt *src, u16_t offset, u16_t len);
+
+/**
  * @brief Compact the fragment list of a packet.
  *
  * @details After this there is no more any free space in individual fragments.
@@ -895,7 +912,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
  *         input data).
  */
 static inline bool net_pkt_append_all(struct net_pkt *pkt, u16_t len,
-				      const u8_t *data, int32_t timeout)
+				      const u8_t *data, s32_t timeout)
 {
 	return net_pkt_append(pkt, len, data, timeout) == len;
 }

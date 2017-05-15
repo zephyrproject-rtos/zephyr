@@ -51,11 +51,11 @@ static inline int stm32_clock_control_on(struct device *dev,
 	case STM32_CLOCK_BUS_AHB1:
 		LL_AHB1_GRP1_EnableClock(pclken->enr);
 		break;
-#ifdef CONFIG_SOC_SERIES_STM32L4X
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F4X)
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
+#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_EnableClock(pclken->enr);
 		break;
@@ -84,11 +84,11 @@ static inline int stm32_clock_control_off(struct device *dev,
 	case STM32_CLOCK_BUS_AHB1:
 		LL_AHB1_GRP1_DisableClock(pclken->enr);
 		break;
-#ifdef CONFIG_SOC_SERIES_STM32L4X
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F4X)
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
+#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_DisableClock(pclken->enr);
 		break;
@@ -150,6 +150,28 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
+/*
+ * Unconditionally switch the system clock source to HSI.
+ */
+__unused
+static void stm32_clock_switch_to_hsi(uint32_t ahb_prescaler)
+{
+	/* Enable HSI if not enabled */
+	if (LL_RCC_HSI_IsReady() != 1) {
+		/* Enable HSI */
+		LL_RCC_HSI_Enable();
+		while (LL_RCC_HSI_IsReady() != 1) {
+		/* Wait for HSI ready */
+		}
+	}
+
+	/* Set HSI as SYSCLCK source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+	LL_RCC_SetAHBPrescaler(ahb_prescaler);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+	}
+}
+
 static int stm32_clock_control_init(struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
@@ -168,7 +190,17 @@ static int stm32_clock_control_init(struct device *dev)
 	/* configure PLL input settings */
 	config_pll_init(&s_PLLInitStruct);
 
-	/* Disable PLL before configuration */
+	/*
+	 * Switch to HSI and disable the PLL before configuration.
+	 * (Switching to HSI makes sure we have a SYSCLK source in
+	 * case we're currently running from the PLL we're about to
+	 * turn off and reconfigure.)
+	 *
+	 * Don't use s_ClkInitStruct.AHBCLKDivider as the AHB
+	 * prescaler here. In this configuration, that's the value to
+	 * use when the SYSCLK source is the PLL, not HSI.
+	 */
+	stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
 	LL_RCC_PLL_Disable();
 
 #ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
@@ -255,20 +287,7 @@ static int stm32_clock_control_init(struct device *dev)
 
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI
 
-	/* Enable HSI if not enabled */
-	if (LL_RCC_HSI_IsReady() != 1) {
-		/* Enable HSI */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
-		/* Wait for HSI ready */
-		}
-	}
-
-	/* Set HSI as SYSCLCK source */
-	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
-	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
-	}
+	stm32_clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
 
 	/* Update SystemCoreClock variable */
 	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(HSI_VALUE,

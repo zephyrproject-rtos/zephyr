@@ -13,12 +13,13 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_AVDTP)
-#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/avdtp.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_AVDTP)
+#include "common/log.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"

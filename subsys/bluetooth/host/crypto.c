@@ -15,15 +15,15 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
-#include <bluetooth/log.h>
-
-#include "hci_core.h"
-
 #include <tinycrypt/constants.h>
 #include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#include "common/log.h"
+
+#include "hci_core.h"
 
 static struct tc_hmac_prng_struct prng;
 

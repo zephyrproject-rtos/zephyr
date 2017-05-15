@@ -54,7 +54,7 @@ struct init_stack_frame {
  *
  * @return N/A
  */
-void _new_thread(char *pStackMem, size_t stackSize,
+void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
 		 _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
@@ -64,12 +64,9 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	char *stackEnd = pStackMem + stackSize;
 	struct init_stack_frame *pInitCtx;
 
-	struct k_thread *thread;
-
-	thread = _new_thread_init(pStackMem, stackSize, priority, options);
+	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
-
 	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackEnd) -
 				       sizeof(struct init_stack_frame));
 
@@ -87,7 +84,7 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	pInitCtx->status32 = _ARC_V2_STATUS32_SC | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-	thread->arch.stack_top = (u32_t) stackEnd;
+	thread->arch.stack_base = (u32_t) stackEnd;
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif

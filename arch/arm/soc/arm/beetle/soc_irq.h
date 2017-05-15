@@ -57,17 +57,4 @@
 #define IRQ_PORT3_ALL           43 /* GPIO Port 3 combined Interrupt        */
 #define IRQ_TRNG                44 /* Random number generator Interrupt     */
 
-#ifndef CONFIG_HAS_DTS
-/* CMSDK APB Universal Asynchronous Receiver-Transmitter (UART) */
-#define CMSDK_APB_UART_0_IRQ IRQ_UART0
-#define CMSDK_APB_UART_1_IRQ IRQ_UART1
-#endif
-
-/* CMSDK APB Timers */
-#define CMSDK_APB_TIMER_0_IRQ IRQ_TIMER0
-#define CMSDK_APB_TIMER_1_IRQ IRQ_TIMER1
-
-/* CMSDK APB Dualtimer */
-#define CMSDK_APB_DUALTIMER_IRQ IRQ_DUALTIMER
-
 #endif /* _ARM_BEETLE_SOC_IRQ_H_ */

@@ -111,6 +111,7 @@ config	FIRQ_STACK_SIZE
 config	ARC_STACK_CHECKING
 	bool "Enable Stack Checking"
 	depends on CPU_ARCV2
+	select THREAD_STACK_INFO
 	default n
 	help
 	  ARCV2 has a special feature allowing to check stack overflows. This

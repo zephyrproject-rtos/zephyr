@@ -77,6 +77,7 @@ struct sht3xd_data {
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
 	char __stack thread_stack[CONFIG_SHT3XD_THREAD_STACK_SIZE];
 	struct k_sem gpio_sem;
+	struct k_thread thread;
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 	struct device *dev;

@@ -124,7 +124,7 @@ static void uart_mcux_irq_tx_disable(struct device *dev)
 	UART_DisableInterrupts(config->base, mask);
 }
 
-static int uart_mcux_irq_tx_empty(struct device *dev)
+static int uart_mcux_irq_tx_complete(struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config->config_info;
 	u32_t flags = UART_GetStatusFlags(config->base);
@@ -138,7 +138,7 @@ static int uart_mcux_irq_tx_ready(struct device *dev)
 	u32_t mask = kUART_TxDataRegEmptyInterruptEnable;
 
 	return (UART_GetEnabledInterrupts(config->base) & mask)
-		&& uart_mcux_irq_tx_empty(dev);
+		&& uart_mcux_irq_tx_complete(dev);
 }
 
 static void uart_mcux_irq_rx_enable(struct device *dev)
@@ -254,7 +254,7 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 	.fifo_read = uart_mcux_fifo_read,
 	.irq_tx_enable = uart_mcux_irq_tx_enable,
 	.irq_tx_disable = uart_mcux_irq_tx_disable,
-	.irq_tx_empty = uart_mcux_irq_tx_empty,
+	.irq_tx_complete = uart_mcux_irq_tx_complete,
 	.irq_tx_ready = uart_mcux_irq_tx_ready,
 	.irq_rx_enable = uart_mcux_irq_rx_enable,
 	.irq_rx_disable = uart_mcux_irq_rx_disable,

@@ -210,7 +210,7 @@ enum zoap_block_size default_block_size(void)
 static void add_to_net_buf(struct net_buf *buf, const char *str, u16_t len,
 			   u16_t *remaining, size_t *offset, size_t current)
 {
-	uint16_t pos;
+	u16_t pos;
 	char *ptr;
 
 	if (!*remaining) {

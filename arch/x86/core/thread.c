@@ -39,6 +39,7 @@ void _thread_entry_wrapper(_thread_entry_t, void *,
  *
  * This function is called by _new_thread() to initialize tasks.
  *
+ * @param thread pointer to thread struct memory
  * @param pStackMem pointer to thread stack memory
  * @param stackSize size of a stack in bytes
  * @param priority thread priority
@@ -180,9 +181,8 @@ __asm__("\t.globl _thread_entry\n"
  * This function is utilized to create execution threads for both fiber
  * threads and kernel tasks.
  *
- * The k_thread structure is carved from the "end" of the specified
- * thread stack memory.
- *
+ * @param thread pointer to thread struct memory, including any space needed
+ *		for extra coprocessor context
  * @param pStackmem the pointer to aligned stack memory
  * @param stackSize the stack size in bytes
  * @param pEntry thread entry point routine
@@ -195,7 +195,7 @@ __asm__("\t.globl _thread_entry\n"
  *
  * @return opaque pointer to initialized k_thread structure
  */
-void _new_thread(char *pStackMem, size_t stackSize,
+void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
 		 _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
@@ -203,9 +203,8 @@ void _new_thread(char *pStackMem, size_t stackSize,
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
 	unsigned long *pInitialThread;
-	struct k_thread *thread;
 
-	thread = _new_thread_init(pStackMem, stackSize, priority, options);
+	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 

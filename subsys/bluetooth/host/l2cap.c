@@ -13,12 +13,13 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_L2CAP)
-#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+#include "common/log.h"
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -640,7 +641,8 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	if (!chan->rx.init_credits) {
 		if (chan->chan.ops->alloc_buf) {
 			/* Auto tune credits to receive a full packet */
-			chan->rx.init_credits = chan->rx.mtu /
+			chan->rx.init_credits = (chan->rx.mtu +
+						 (L2CAP_MAX_LE_MPS - 1)) /
 						L2CAP_MAX_LE_MPS;
 		} else {
 			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;

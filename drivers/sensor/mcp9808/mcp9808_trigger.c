@@ -127,7 +127,7 @@ static void mcp9808_thread_main(int arg1, int arg2)
 }
 
 static char __stack mcp9808_thread_stack[CONFIG_MCP9808_THREAD_STACK_SIZE];
-
+static struct k_thread mcp9808_thread;
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 
 static void mcp9808_gpio_cb(struct device *dev,
@@ -168,10 +168,10 @@ void mcp9808_setup_interrupt(struct device *dev)
 #ifdef CONFIG_MCP9808_TRIGGER_OWN_THREAD
 	k_sem_init(&data->sem, 0, UINT_MAX);
 
-	k_thread_spawn(mcp9808_thread_stack,
-			  CONFIG_MCP9808_THREAD_STACK_SIZE,
-			  mcp9808_thread_main, POINTER_TO_INT(dev), 0, NULL,
-			  K_PRIO_COOP(CONFIG_MCP9808_THREAD_PRIORITY), 0, 0);
+	k_thread_create(&mcp9808_thread, mcp9808_thread_stack,
+			CONFIG_MCP9808_THREAD_STACK_SIZE,
+			mcp9808_thread_main, POINTER_TO_INT(dev), 0, NULL,
+			K_PRIO_COOP(CONFIG_MCP9808_THREAD_PRIORITY), 0, 0);
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 	data->work.handler = mcp9808_gpio_thread_cb;
 	data->dev = dev;

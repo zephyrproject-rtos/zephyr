@@ -1,7 +1,7 @@
-Zephyr™ Project
-###############
+Zephyr Project
+##############
 
-The Zephyr™ Project is a scalable real-time operating system (RTOS) supporting
+The Zephyr Project is a scalable real-time operating system (RTOS) supporting
 multiple hardware architectures, optimized for resource constrained devices,
 and built with security in mind.
 
@@ -29,11 +29,11 @@ Welcome to the Zephyr community!
 Resources
 *********
 
-Here’s a quick summary of resources to find your way around the Zephyr Project
+Here's a quick summary of resources to find your way around the Zephyr Project
 support systems:
 
 * **Zephyr Project Website**: The https://zephyrproject.org website is the
-  central source of information about the Zephyr Project. On this site, you’ll
+  central source of information about the Zephyr Project. On this site, you'll
   find background and current information about the project as well as all the
   relevant links to project material.  For a quick start, refer to the
   `Zephyr Introduction`_ and `Getting Started Guide`_.

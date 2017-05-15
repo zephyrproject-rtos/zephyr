@@ -47,6 +47,7 @@
 K_MEM_POOL_DEFINE(mpool1, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 K_MEM_POOL_DEFINE(mpool2, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 static char __noinit __stack tstack[THREAD_NUM][STACK_SIZE];
+static struct k_thread tdata[THREAD_NUM];
 static struct k_mem_pool *pools[POOL_NUM] = {&mpool1, &mpool2};
 static struct k_sem sync_sema;
 static atomic_t pool_id;
@@ -84,7 +85,7 @@ void test_mpool_threadsafe(void)
 
 	/* create multiple threads to invoke same memory pool APIs*/
 	for (int i = 0; i < THREAD_NUM; i++) {
-		tid[i] = k_thread_spawn(tstack[i], STACK_SIZE,
+		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 			tmpool_api, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), 0, 0);
 	}

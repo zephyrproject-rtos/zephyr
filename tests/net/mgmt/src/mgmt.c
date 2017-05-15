@@ -22,6 +22,7 @@ static u32_t event2throw;
 static u32_t throw_times;
 static int throw_sleep;
 static char __noinit __stack thrower_stack[512];
+static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 
 /* Receiver infra */
@@ -205,9 +206,10 @@ static void initialize_event_tests(void)
 
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb, TEST_MGMT_EVENT);
 
-	k_thread_spawn(thrower_stack, sizeof(thrower_stack),
-		       (k_thread_entry_t)thrower_thread,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&thrower_thread_data, thrower_stack,
+			sizeof(thrower_stack),
+			(k_thread_entry_t)thrower_thread,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
 
 static int test_core_event(u32_t event, bool (*func)(void))

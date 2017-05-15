@@ -29,6 +29,7 @@ struct test_item {
 };
 
 static char __stack co_op_stack[STACK_SIZE];
+static struct k_thread co_op_data;
 
 static struct test_item tests[NUM_TEST_ITEMS];
 
@@ -76,10 +77,9 @@ static void test_items_submit(void)
 {
 	int i;
 
-	k_thread_spawn(co_op_stack, STACK_SIZE,
+	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_work_main,
-				NULL, NULL,
-				NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
@@ -211,8 +211,8 @@ static int test_delayed_submit(void)
 {
 	int i;
 
-	k_thread_spawn(co_op_stack, STACK_SIZE,
-		       (k_thread_entry_t)coop_delayed_work_main,
+	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
+			(k_thread_entry_t)coop_delayed_work_main,
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
@@ -247,8 +247,8 @@ static int test_delayed_cancel(void)
 	TC_PRINT(" - Cancel delayed work from preempt thread\n");
 	k_delayed_work_cancel(&tests[0].work);
 
-	k_thread_spawn(co_op_stack, STACK_SIZE,
-		       (k_thread_entry_t)coop_delayed_work_cancel_main,
+	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
+			(k_thread_entry_t)coop_delayed_work_cancel_main,
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 	TC_PRINT(" - Waiting for work to finish\n");
@@ -315,8 +315,8 @@ static int test_delayed_resubmit_fiber(void)
 	tests[0].key = 1;
 	k_delayed_work_init(&tests[0].work, delayed_work_handler);
 
-	k_thread_spawn(co_op_stack, STACK_SIZE,
-		       (k_thread_entry_t)coop_delayed_work_resubmit,
+	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
+			(k_thread_entry_t)coop_delayed_work_resubmit,
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 	TC_PRINT(" - Waiting for work to finish\n");
