@@ -2662,6 +2662,8 @@ static void hci_le_meta_event(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_meta_event *evt = (void *)buf->data;
 
+	BT_DBG("subevent 0x%02x", evt->subevent);
+
 	net_buf_pull(buf, sizeof(*evt));
 
 	switch (evt->subevent) {
