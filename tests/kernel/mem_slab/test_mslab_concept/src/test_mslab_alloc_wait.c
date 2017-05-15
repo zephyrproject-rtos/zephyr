@@ -35,6 +35,7 @@
 K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 
 static char __noinit __stack tstack[THREAD_NUM][STACK_SIZE];
+static struct k_thread tdata[THREAD_NUM];
 static struct k_sem sync_sema;
 static void *block_ok;
 
@@ -77,15 +78,15 @@ void test_mslab_alloc_wait_prio(void)
 	 * optionally wait for one to become available.
 	 */
 	/*the low-priority thread*/
-	tid[0] = k_thread_spawn(tstack[0], STACK_SIZE,
+	tid[0] = k_thread_create(&tdata[0], tstack[0], STACK_SIZE,
 		tmslab_alloc_wait_timeout, NULL, NULL, NULL,
 		K_PRIO_PREEMPT(1), 0, 0);
 	/*the highest-priority thread that has waited the longest*/
-	tid[1] = k_thread_spawn(tstack[1], STACK_SIZE,
+	tid[1] = k_thread_create(&tdata[1], tstack[1], STACK_SIZE,
 		tmslab_alloc_wait_ok, NULL, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 10);
 	/*the highest-priority thread that has waited shorter*/
-	tid[2] = k_thread_spawn(tstack[2], STACK_SIZE,
+	tid[2] = k_thread_create(&tdata[2], tstack[2], STACK_SIZE,
 		tmslab_alloc_wait_timeout, NULL, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 20);
 	/*relinquish CPU for above threads to start */

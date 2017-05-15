@@ -43,6 +43,7 @@ struct mcr20a_context {
 	atomic_t seq_retval;
 	/************RX************/
 	char __stack mcr20a_rx_stack[CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE];
+	struct k_thread mcr20a_rx_thread;
 	u8_t lqi;
 };
 

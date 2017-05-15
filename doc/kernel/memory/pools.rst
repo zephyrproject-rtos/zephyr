@@ -91,25 +91,17 @@ the memory pool attempts to create one automatically by splitting a free block
 of a larger size or by merging free blocks of smaller sizes;
 if a suitable block can't be created, the allocation request fails.
 
-.. note::
-    By default, memory pools will attempt to split a larger block
-    before trying to merge smaller blocks. However, they can also
-    be configured to merge smaller blocks first, or to skip
-    the merging step entirely. In the latter case, merging of smaller
-    blocks only occurs when the application explicitly issues
-    a request to defragment the entire memory pool.
+The memory pool's merging algorithm cannot combine adjacent free
+blocks of different sizes, nor can it merge adjacent free blocks of
+the same size if they belong to different parent quad-blocks. As a
+consequence, memory fragmentation issues can still be encountered when
+using a memory pool.
 
-The memory pool's block merging and splitting process is done efficiently,
-but it is a recursive algorithm that may incur significant overhead.
-In addition, the merging algorithm cannot combine adjacent free blocks
-of different sizes, nor can it merge adjacent free blocks of the same size
-if they belong to different parent quad-blocks. As a consequence,
-memory fragmentation issues can still be encountered when using a memory pool.
-
-When an application releases a previously allocated memory block
-it is simply marked as a free block in its associated block set.
-The memory pool does not attempt to merge the newly freed block,
-allowing it to be easily reallocated in its existing form.
+When an application releases a previously allocated memory block it is
+combined synchronously with its three "partner" blocks if possible,
+and recursively so up through the levels.  This is done in constant
+time, and quickly, so no manual "defragmentation" management is
+needed.
 
 Implementation
 **************
@@ -176,19 +168,6 @@ memory block is actually used to satisfy the request.)
     ... /* use memory block */
     k_mem_pool_free(&block);
 
-Manually Defragmenting a Memory Pool
-====================================
-
-This code instructs the memory pool to concatenate unused memory blocks
-into their parent quad-blocks wherever possible. Doing a full defragmentation
-of the entire memory pool before allocating a number of memory blocks
-may be more efficient than relying on the partial defragmentation that can
-occur automatically each time a memory block allocation is requested.
-
-.. code-block:: c
-
-    k_mem_pool_defragment(&my_pool);
-
 Suggested Uses
 **************
 
@@ -196,16 +175,6 @@ Use a memory pool to allocate memory in variable-size blocks.
 
 Use memory pool blocks when sending large amounts of data from one thread
 to another, to avoid unnecessary copying of the data.
-
-Configuration Options
-*********************
-
-Related configuration options:
-
-* :option:`CONFIG_MEM_POOL_SPLIT_BEFORE_DEFRAG`
-* :option:`CONFIG_MEM_POOL_DEFRAG_BEFORE_SPLIT`
-* :option:`CONFIG_MEM_POOL_SPLIT_ONLY`
-
 
 APIs
 ****
@@ -215,4 +184,3 @@ The following memory pool APIs are provided by :file:`kernel.h`:
 * :c:macro:`K_MEM_POOL_DEFINE`
 * :cpp:func:`k_mem_pool_alloc()`
 * :cpp:func:`k_mem_pool_free()`
-* :cpp:func:`k_mem_pool_defrag()`

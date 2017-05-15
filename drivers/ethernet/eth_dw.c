@@ -88,7 +88,7 @@ static void eth_rx(struct device *port)
 		goto release_desc;
 	}
 
-	if (!net_pkt_append_all(pkt, frm_len, (uint8_t *)context->rx_buf,
+	if (!net_pkt_append_all(pkt, frm_len, (u8_t *)context->rx_buf,
 				K_NO_WAIT)) {
 		SYS_LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
@@ -126,8 +126,7 @@ static void eth_tx_spin_wait(struct eth_runtime *context)
 	}
 }
 
-static void eth_tx_data(struct eth_runtime *context, uint8_t *data,
-			uint16_t len)
+static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
 {
 #ifdef CONFIG_ETHERNET_DEBUG
 	/* Check whether an error occurred transmitting the previous frame. */

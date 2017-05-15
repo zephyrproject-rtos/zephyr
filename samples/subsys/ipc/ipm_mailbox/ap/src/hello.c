@@ -18,8 +18,6 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_OUTBOUND);
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
 #define SLEEPTIME               1000
-#define SCSS_REGISTER_BASE      0xB0800000
-#define SCSS_SS_STS             0x0604
 
 #define PING_TIME               1000
 #define STACKSIZE               2000
@@ -30,6 +28,7 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_OUTBOUND);
 #define TASK_PRIO               7
 
 char thread_stacks[2][STACKSIZE];
+static struct k_thread threads[2];
 
 u32_t scss_reg(u32_t offset)
 {
@@ -135,11 +134,12 @@ void main(void)
 {
 	printk("===== app started ========\n");
 
-	k_thread_spawn(&thread_stacks[0][0], STACKSIZE, main_thread,
-		       0, 0, 0, K_PRIO_COOP(MAIN_FIBER_PRI), 0, 0);
+	k_thread_create(&threads[0], &thread_stacks[0][0], STACKSIZE,
+			main_thread, 0, 0, 0,
+			K_PRIO_COOP(MAIN_FIBER_PRI), 0, 0);
 
-	k_thread_spawn(&thread_stacks[1][0], STACKSIZE, ping_source_thread,
-		       0, 0, 0, K_PRIO_COOP(PING_FIBER_PRI), 0, 0);
-
+	k_thread_create(&threads[0], &thread_stacks[1][0], STACKSIZE,
+			ping_source_thread, 0, 0, 0,
+			K_PRIO_COOP(PING_FIBER_PRI), 0, 0);
 }
 

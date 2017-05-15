@@ -29,6 +29,8 @@
 /* stack used by the fibers */
 static char __stack thread_one_stack[STACKSIZE];
 static char __stack thread_two_stack[STACKSIZE];
+static struct k_thread thread_one_data;
+static struct k_thread thread_two_data;
 
 static u32_t timestamp;
 
@@ -93,10 +95,12 @@ int coop_ctx_switch(void)
 	ctx_switch_balancer = 0;
 
 	bench_test_start();
-	k_thread_spawn(&thread_one_stack[0], STACKSIZE,
-		       (k_thread_entry_t) thread_one, NULL, NULL, NULL, 6, 0, K_NO_WAIT);
-	k_thread_spawn(&thread_two_stack[0], STACKSIZE,
-		       (k_thread_entry_t) thread_two, NULL, NULL, NULL, 6, 0, K_NO_WAIT);
+	k_thread_create(&thread_one_data, thread_one_stack, STACKSIZE,
+			(k_thread_entry_t) thread_one, NULL, NULL, NULL,
+			6, 0, K_NO_WAIT);
+	k_thread_create(&thread_two_data, thread_two_stack, STACKSIZE,
+			(k_thread_entry_t) thread_two, NULL, NULL, NULL,
+			6, 0, K_NO_WAIT);
 
 	if (ctx_switch_balancer > 3 || ctx_switch_balancer < -3) {
 		PRINT_FORMAT(" Balance is %d. FAILED", ctx_switch_balancer);

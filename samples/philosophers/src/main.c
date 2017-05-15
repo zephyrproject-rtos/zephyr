@@ -230,8 +230,8 @@ static void start_threads(void)
 	for (int i = 0; i < NUM_PHIL; i++) {
 		int prio = new_prio(i);
 
-		k_thread_spawn(&stacks[i][0], STACK_SIZE,
-			       philosopher, (void *)i, NULL, NULL, prio, 0, 0);
+		k_thread_create(&threads[i], &stacks[i][0], STACK_SIZE,
+				philosopher, (void *)i, NULL, NULL, prio, 0, 0);
 	}
 }
 

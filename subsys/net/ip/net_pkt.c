@@ -1015,6 +1015,48 @@ int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
 	return 0;
 }
 
+int net_frag_linearize(u8_t *dst, size_t dst_len, struct net_pkt *src,
+			 u16_t offset, u16_t len)
+{
+	struct net_buf *frag;
+	u16_t to_copy;
+	u16_t copied;
+
+	if (dst_len < (size_t)len) {
+		return -ENOMEM;
+	}
+
+	frag = src->frags;
+
+	/* find the right fragment to start copying from */
+	while (frag && offset >= frag->len) {
+		offset -= frag->len;
+		frag = frag->frags;
+	}
+
+	/* traverse the fragment chain until len bytes are copied */
+	copied = 0;
+	while (frag && len > 0) {
+		to_copy = min(len, frag->len - offset);
+		memcpy(dst + copied, frag->data + offset, to_copy);
+
+		copied += to_copy;
+
+		/* to_copy is always <= len */
+		len -= to_copy;
+		frag = frag->frags;
+
+		/* after the first iteration, this value will be 0 */
+		offset = 0;
+	}
+
+	if (len > 0) {
+		return -ENOMEM;
+	}
+
+	return copied;
+}
+
 bool net_pkt_compact(struct net_pkt *pkt)
 {
 	struct net_buf *frag, *prev;

@@ -189,6 +189,7 @@ config BLUETOOTH_ATT_TX_MAX
 
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
+	select BLUETOOTH_RPA
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC

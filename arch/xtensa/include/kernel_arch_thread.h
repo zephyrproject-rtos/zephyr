@@ -88,11 +88,10 @@ typedef struct s_coopCoprocReg {
  */
 typedef struct s_preempCoprocReg {
 	/*
-	 * This structure intentionally left blank, as for now coprocessor's
-	 * stack is positioned at top of the stack.
+	 * This structure reserved coprocessor control and save area memory.
 	 */
 #if XCHAL_CP_NUM > 0
-	char *cpStack;
+	char __aligned(4) cpStack[XT_CP_SIZE];
 #endif
 } tPreempCoprocReg;
 
@@ -133,9 +132,6 @@ struct _thread_arch {
 	 * that do not utilize floating point instruction can effectively
 	 * consume the memory occupied by the 'tCoopCoprocReg' and
 	 * 'tPreempCoprocReg' structures without ill effect.
-	 *
-	 * TODO: Move Xtensa coprocessor's stack here to get rid of extra
-	 * indirection
 	 */
 
 	 /* non-volatile coprocessor's register storage */

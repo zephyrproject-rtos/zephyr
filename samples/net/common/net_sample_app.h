@@ -17,6 +17,8 @@ extern "C" {
 
 /* What kind of functionality is needed by the application. */
 #define NET_SAMPLE_NEED_ROUTER 0x00000001
+#define NET_SAMPLE_NEED_IPV6   0x00000002
+#define NET_SAMPLE_NEED_IPV4   0x00000004
 
 int net_sample_app_init(const char *app_info, u32_t flags, s32_t timeout);
 

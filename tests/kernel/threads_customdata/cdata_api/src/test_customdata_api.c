@@ -16,6 +16,7 @@
 
 /*local variables*/
 static char __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 
 static void customdata_entry(void *p1, void *p2, void *p3)
 {
@@ -39,7 +40,7 @@ static void customdata_entry(void *p1, void *p2, void *p3)
  */
 void test_customdata_get_set_coop(void)
 {
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		customdata_entry, NULL, NULL, NULL,
 		K_PRIO_COOP(1), 0, 0);
 	k_sleep(500);
@@ -55,7 +56,7 @@ void test_customdata_get_set_coop(void)
 void test_customdata_get_set_preempt(void)
 {
 	/** TESTPOINT: custom data of preempt thread */
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		customdata_entry, NULL, NULL, NULL,
 		K_PRIO_PREEMPT(0), 0, 0);
 	k_sleep(500);

@@ -33,7 +33,7 @@ Hardware
 - RGB LED
 - FXOS8700CQ accelerometer and magnetometer
 - Two user push buttons
-- Flexible power supply option – OpenSDAv2 USB, Kinetis K64 USB, and external source
+- Flexible power supply option - OpenSDAv2 USB, Kinetis K64 USB, and external source
 - Easy access to MCU input/output through Arduino* R3 compatible I/O connectors
 - Programmable OpenSDAv2 debug circuit supporting the CMSIS-DAP Interface
   software that provides:

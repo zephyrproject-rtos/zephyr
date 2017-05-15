@@ -8,8 +8,6 @@
 #include <string.h>
 #include <atomic.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_NBLE_DEBUG_RPC)
-#include <bluetooth/log.h>
 #include <bluetooth/gatt.h>
 /* for bt_security_t */
 #include <bluetooth/conn.h>
@@ -20,6 +18,9 @@
 #else
 #define PRINTK(...)
 #endif /* CONFIG_PRINTK */
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_NBLE_DEBUG_RPC)
+#include "common/log.h"
 
 #include "rpc.h"
 #include "gap_internal.h"

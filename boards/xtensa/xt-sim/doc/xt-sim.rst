@@ -48,8 +48,8 @@ The frequency of the clock under simulation is set to 25MHz.
 System requirements
 *******************
 
-Pre-requisites
-==============
+Prerequisites
+=============
 A Linux host system is required for Xtensa development work.
 We recommend using a __``Debian 9.x (Stretch)``__ or recent __``Ubuntu``__
 releases (with multilib support).

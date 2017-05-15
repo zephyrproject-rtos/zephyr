@@ -69,7 +69,7 @@ will be found in the `include/net/net_mgmt.h` header file. But in case
 of an L2 technology, let's say Ethernet, these would be found in
 `include/net/ethernet.h`
 
-You define your handler modelled with this signature:
+You define your handler modeled with this signature:
 
 .. code-block:: c
 

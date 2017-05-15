@@ -316,9 +316,11 @@ exit:
 
 #define STACK_SIZE		8192
 u8_t stack[STACK_SIZE];
+static struct k_thread tls_thread;
 
 void main(void)
 {
-	k_thread_spawn(stack, STACK_SIZE, (k_thread_entry_t) tls_client,
-		       NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	k_thread_create(&tls_thread, stack, STACK_SIZE,
+			(k_thread_entry_t) tls_client,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

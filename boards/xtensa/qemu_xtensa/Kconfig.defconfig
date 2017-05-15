@@ -1,0 +1,13 @@
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_XTENSA
+
+config BOARD
+	default qemu_xtensa
+
+config SIMULATOR_XTENSA
+        def_bool y
+
+endif # BOARD_QEMU_XTENSA

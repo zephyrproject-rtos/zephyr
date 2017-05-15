@@ -217,11 +217,12 @@ static void _gpio_sch_manage_callback(struct device *dev)
 		if (!gpio->poll) {
 			SYS_LOG_DBG("Starting SCH GPIO polling fiber");
 			gpio->poll = 1;
-			k_thread_spawn(gpio->polling_stack,
-				       GPIO_SCH_POLLING_STACK_SIZE,
-				       (k_thread_entry_t)_gpio_sch_poll_status,
-				       dev, NULL, NULL,
-				       K_PRIO_COOP(1), 0, 0);
+			k_thread_create(&gpio->polling_thread,
+					gpio->polling_stack,
+					GPIO_SCH_POLLING_STACK_SIZE,
+					(k_thread_entry_t)_gpio_sch_poll_status,
+					dev, NULL, NULL,
+					K_PRIO_COOP(1), 0, 0);
 		}
 	} else {
 		gpio->poll = 0;

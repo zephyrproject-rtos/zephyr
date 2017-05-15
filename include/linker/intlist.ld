@@ -34,12 +34,7 @@
  * }
  */
 
-/* We don't set NOLOAD here, as objcopy will not let us extract the intList
- * section into a file if we do so; the resulting file is 0 bytes. We do so
- * with objcopy in Makefile.gen_isr_tables after we have extracted the
- * information we need.
- */
-
+#ifndef LINKER_PASS2
 SECTION_PROLOGUE(.intList,,)
 {
 	KEEP(*(.irq_info))
@@ -48,4 +43,10 @@ SECTION_PROLOGUE(.intList,,)
 	KEEP(*(.intList))
 	__INT_LIST_END__ = .;
 } GROUP_LINK_IN(IDT_LIST)
-
+#else
+/DISCARD/ :
+{
+	KEEP(*(.irq_info))
+	KEEP(*(.intList))
+}
+#endif

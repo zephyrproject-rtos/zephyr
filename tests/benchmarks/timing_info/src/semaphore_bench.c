@@ -14,6 +14,8 @@ K_SEM_DEFINE(sem_bench_1, 0, 1);
 #define STACK_SIZE 500
 extern char __noinit __stack my_stack_area[STACK_SIZE];
 extern char __noinit __stack my_stack_area_0[STACK_SIZE];
+extern struct k_thread my_thread;
+extern struct k_thread my_thread_0;
 
 /* u64_t thread_yield_start_tsc[1000]; */
 /* u64_t thread_yield_end_tsc[1000]; */
@@ -44,14 +46,14 @@ void semaphore_bench(void)
 
 	/* Thread yield*/
 
-	sem0_tid = k_thread_spawn(my_stack_area,
-				  STACK_SIZE,
-				  thread_sem0_test, NULL, NULL, NULL,
-				  2 /*priority*/, 0, 0);
-	sem1_tid = k_thread_spawn(my_stack_area_0,
-				  STACK_SIZE, thread_sem1_test,
-				  NULL, NULL, NULL,
-				  2 /*priority*/, 0, 0);
+	sem0_tid = k_thread_create(&my_thread, my_stack_area,
+				   STACK_SIZE,
+				   thread_sem0_test, NULL, NULL, NULL,
+				   2 /*priority*/, 0, 0);
+	sem1_tid = k_thread_create(&my_thread_0, my_stack_area_0,
+				   STACK_SIZE, thread_sem1_test,
+				   NULL, NULL, NULL,
+				   2 /*priority*/, 0, 0);
 
 	k_sleep(1000);
 
@@ -60,14 +62,14 @@ void semaphore_bench(void)
 	sem_end_time = (__common_var_swap_end_tsc);
 	u32_t sem_cycles = sem_end_time - sem_start_time;
 
-	sem0_tid = k_thread_spawn(my_stack_area,
-				  STACK_SIZE, thread_sem0_give_test,
-				  NULL, NULL, NULL,
-				  2 /*priority*/, 0, 0);
-	sem1_tid = k_thread_spawn(my_stack_area_0,
-				  STACK_SIZE, thread_sem1_give_test,
-				  NULL, NULL, NULL,
-				  2 /*priority*/, 0, 0);
+	sem0_tid = k_thread_create(&my_thread, my_stack_area,
+				   STACK_SIZE, thread_sem0_give_test,
+				   NULL, NULL, NULL,
+				   2 /*priority*/, 0, 0);
+	sem1_tid = k_thread_create(&my_thread_0, my_stack_area_0,
+				   STACK_SIZE, thread_sem1_give_test,
+				   NULL, NULL, NULL,
+				   2 /*priority*/, 0, 0);
 
 	k_sleep(1000);
 	sem_give_end_time = (__common_var_swap_end_tsc);

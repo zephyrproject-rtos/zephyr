@@ -94,6 +94,7 @@ struct lis3dh_data {
 
 #if defined(CONFIG_LIS3DH_TRIGGER_OWN_THREAD)
 	char __stack thread_stack[CONFIG_LIS3DH_THREAD_STACK_SIZE];
+	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS3DH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;

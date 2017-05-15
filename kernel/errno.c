@@ -22,7 +22,7 @@
 const int _k_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO
-int *_get_errno(void)
+int *__errno(void)
 {
 	return &_current->errno_var;
 }

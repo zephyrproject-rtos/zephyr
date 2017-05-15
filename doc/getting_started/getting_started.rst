@@ -179,7 +179,7 @@ Running a Sample Application in QEMU
 ====================================
 
 To perform rapid testing of an application in the development environment you
-can use the qemu emulation board configuration available for both X86 and ARM
+can use the QEMU emulation board configuration available for both X86 and ARM
 Cortex-M3 architectures. This can be easily accomplished by calling a special
 target when building an application that invokes QEMU once the build process is
 completed.

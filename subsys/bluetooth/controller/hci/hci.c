@@ -27,7 +27,7 @@
 #include "hci_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
-#include <bluetooth/log.h>
+#include "common/log.h"
 #include "hal/debug.h"
 
 /* opcode of the HCI command currently being processed. The opcode is stored
@@ -257,6 +257,7 @@ static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	BT_DBG("FC: host buf size: %d", acl_pkts);
 	hci_hbuf_total = -acl_pkts;
 }
 
@@ -284,6 +285,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 		count += sys_le16_to_cpu(cmd->h[i].count);
 	}
 
+	BT_DBG("FC: acked: %d", count);
 	hci_hbuf_acked += count;
 	k_poll_signal(hbuf_signal, 0x0);
 }
@@ -895,6 +897,89 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+static u8_t ffs(u8_t x)
+{
+	u8_t i;
+
+	if (!x) {
+		return 0;
+	}
+
+	for (i = 0; !(x & BIT(i)); i++) {
+	}
+
+	return i + 1;
+}
+
+static void le_read_phy(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_read_phy *cmd = (void *) buf->data;
+	struct bt_hci_rp_le_read_phy *rp;
+	u16_t handle;
+	u32_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	rp = cmd_complete(evt, sizeof(*rp));
+
+	status = ll_phy_get(handle, &rp->tx_phy, &rp->rx_phy);
+
+	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = sys_cpu_to_le16(handle);
+	rp->tx_phy = ffs(rp->tx_phy);
+	rp->rx_phy = ffs(rp->rx_phy);
+}
+
+static void le_set_default_phy(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_default_phy *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	u32_t status;
+
+	if (cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) {
+		cmd->tx_phys = 0x07;
+	}
+	if (cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) {
+		cmd->rx_phys = 0x07;
+	}
+
+	status = ll_phy_default_set(cmd->tx_phys, cmd->rx_phys);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_INVALID_LL_PARAM;
+}
+
+static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_phy *cmd = (void *)buf->data;
+	u32_t status;
+	u16_t handle;
+	u16_t phy_opts;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	phy_opts = sys_le16_to_cpu(cmd->phy_opts);
+
+	if (cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) {
+		cmd->tx_phys = 0x07;
+	}
+	if (cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) {
+		cmd->rx_phys = 0x07;
+	}
+	if (phy_opts & 0x03) {
+		phy_opts -= 1;
+		phy_opts &= 1;
+	} else {
+		phy_opts = 0;
+	}
+
+	status = ll_phy_req_send(handle, cmd->tx_phys, phy_opts,
+				 cmd->rx_phys);
+
+	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
@@ -1039,6 +1124,20 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_read_max_data_len(cmd, evt);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	case BT_OCF(BT_HCI_OP_LE_READ_PHY):
+		le_read_phy(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_DEFAULT_PHY):
+		le_set_default_phy(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_PHY):
+		le_set_phy(cmd, evt);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 #endif /* CONFIG_BLUETOOTH_CONN */
 
 	default:
@@ -1361,7 +1460,6 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, u16_t handle,
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 }
-#endif
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, u16_t handle,
@@ -1398,6 +1496,35 @@ static void le_chan_sel_algo(struct pdu_data *pdu_data, u16_t handle,
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
+				struct net_buf *buf)
+{
+	struct bt_hci_evt_le_phy_update_complete *sep;
+	struct radio_le_phy_upd_cmplt *radio_le_phy_upd_cmplt;
+
+	radio_le_phy_upd_cmplt = (struct radio_le_phy_upd_cmplt *)
+				 pdu_data->payload.lldata;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE)) {
+		BT_WARN("handle: 0x%04x, status: %x, tx: %x, rx: %x.", handle,
+			radio_le_phy_upd_cmplt->status,
+			ffs(radio_le_phy_upd_cmplt->tx),
+			ffs(radio_le_phy_upd_cmplt->rx));
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE, sizeof(*sep));
+
+	sep->status = radio_le_phy_upd_cmplt->status;
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->tx_phy = ffs(radio_le_phy_upd_cmplt->tx);
+	sep->rx_phy = ffs(radio_le_phy_upd_cmplt->rx);
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+#endif /* CONFIG_BLUETOOTH_CONN */
+
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
@@ -1433,7 +1560,6 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 	case NODE_RX_TYPE_ENC_REFRESH:
 		enc_refresh_complete(pdu_data, handle, buf);
 		break;
-#endif
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	case NODE_RX_TYPE_APTO:
@@ -1447,12 +1573,19 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2 */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	case NODE_RX_TYPE_PHY_UPDATE:
+		le_phy_upd_complete(pdu_data, handle, buf);
+		return;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
 		BT_INFO("handle: 0x%04x, rssi: -%d dB.", handle,
 			pdu_data->payload.rssi);
 		return;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_INDICATION)
 	case NODE_RX_TYPE_ADV_INDICATION:
@@ -1775,6 +1908,9 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)
 		case NODE_RX_TYPE_CHAN_SEL_ALGO:
 #endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+		case NODE_RX_TYPE_PHY_UPDATE:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 			return HCI_CLASS_EVT_CONNECTION;
 		default:
 			return -1;

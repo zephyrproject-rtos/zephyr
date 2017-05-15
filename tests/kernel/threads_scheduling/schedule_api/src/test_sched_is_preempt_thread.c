@@ -22,6 +22,7 @@
 
 /*local variables*/
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 static struct k_sem end_sema;
 
 static void tIsr(void *data)
@@ -68,14 +69,14 @@ void test_sched_is_preempt_thread(void)
 	k_sem_init(&end_sema, 0, 1);
 
 	/*create preempt thread*/
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tpreempt_ctx, NULL, NULL, NULL,
 		K_PRIO_PREEMPT(1), 0, 0);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
 
 	/*create coop thread*/
-	tid = k_thread_spawn(tstack, STACK_SIZE,
+	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 		tcoop_ctx, NULL, NULL, NULL,
 		K_PRIO_COOP(1), 0, 0);
 	k_sem_take(&end_sema, K_FOREVER);

@@ -239,7 +239,7 @@ static int kw41z_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	return 0;
 }
 
-static int kw41z_set_txpower(struct device *dev, int16_t dbm)
+static int kw41z_set_txpower(struct device *dev, s16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
 		ZLL->PA_PWR = 0;

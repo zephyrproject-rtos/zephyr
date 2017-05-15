@@ -27,6 +27,7 @@
 K_SEM_DEFINE(ksema, SEM_INITIAL, SEM_LIMIT);
 static struct k_sem sema;
 static char __noinit __stack tstack[STACK_SIZE];
+static struct k_thread tdata;
 
 /*entry of contexts*/
 static void tIsr_entry(void *p)
@@ -42,9 +43,9 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 static void tsema_thread_thread(struct k_sem *psem)
 {
 	/**TESTPOINT: thread-thread sync via sema*/
-	k_tid_t tid = k_thread_spawn(tstack, STACK_SIZE,
-				     tThread_entry, psem, NULL, NULL,
-				     K_PRIO_PREEMPT(0), 0, 0);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_entry, psem, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 
 	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
 	/*clean the spawn thread avoid side effect in next TC*/

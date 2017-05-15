@@ -21,12 +21,12 @@ ifneq ($(QEMU_PIPE),)
 	#    $(QEMU_PIPE).in and $(QEMU_PIPE).out. The extensions are implicit
 	#    in QEMU's -seral pipe:.... argument.
 	# 2) A PID file so that sanitycheck can kill the emulator
-	${Q} ${XTRUN} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS} ${KERNEL_ELF_NAME} \
+	${Q} ${XTRUN} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS} ${O}/${KERNEL_ELF_NAME} \
 		< ${QEMU_PIPE}.in > ${QEMU_PIPE}.out & echo $$! > qemu.pid
 	# Wait until the emulator terminates (for any reason)
 	$(Q) cat qemu.pid | xargs $(srctree)/scripts/waitpid
 else
-	${Q} ${XTRUN} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS} ${KERNEL_ELF_NAME}
+	${Q} ${XTRUN} ${XTRUN_FLAGS} ${XTRUN_EXTRA_FLAGS} ${O}/${KERNEL_ELF_NAME}
 endif
 
 .PHONY: run

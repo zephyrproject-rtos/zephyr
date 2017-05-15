@@ -19,6 +19,8 @@
 
 extern char thread_stack1[STACK_SIZE];
 extern char thread_stack2[STACK_SIZE];
+extern struct k_thread thread_data1;
+extern struct k_thread thread_data2;
 
 extern FILE *output_file;
 
