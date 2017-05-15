@@ -15,7 +15,7 @@
 #include <device.h>
 #include <pwm.h>
 
-#if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32L476XX)
+#if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32L476XG)
 #define PWM_DRIVER CONFIG_PWM_STM32_2_DEV_NAME
 #define PWM_CHANNEL 1
 #elif CONFIG_SOC_STM32F103XB
