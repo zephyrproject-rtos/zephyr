@@ -5,7 +5,7 @@ else
 endif
 
 ifeq ($(PREBUILT_HOST_TOOLS),)
-	GENIDT := $(ZEPHYR_BASE)/scripts/gen_idt/gen_idt
+	GENIDT := scripts/gen_idt/gen_idt
 else
 	GENIDT := $(PREBUILT_HOST_TOOLS)/gen_idt
 endif
@@ -28,10 +28,7 @@ quiet_cmd_gen_idt = SIDT    $@
 	rm staticIdt.bin irq_int_vector_map.bin isrList.bin			\
 )
 
-$(GENIDT):
-	$(Q)$(MAKE) $(build)=$(ZEPHYR_BASE)/scripts/gen_idt
-
-staticIdt.o: $(PREBUILT_KERNEL) $(GENIDT)
+staticIdt.o: $(PREBUILT_KERNEL)
 	$(call cmd,gen_idt)
 
 irq_int_vector_map.o: staticIdt.o
