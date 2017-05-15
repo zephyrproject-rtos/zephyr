@@ -207,7 +207,7 @@ void exit(int return_code)
 	    "movi a2, %[call]\n\t"
 	    "simcall\n\t"
 	    :
-	    : [code] "r" (return_code), [call] "I" (SYS_exit)
+	    : [code] "r" (return_code), [call] "i" (SYS_exit)
 	    : "a3", "a2");
 #else
 	printk("exit(%d)\n", return_code);
