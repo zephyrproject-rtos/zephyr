@@ -67,19 +67,23 @@ config BLUETOOTH_CONTROLLER_RX_BUFFERS
 	int
 	default 1
 	default 6 if BLUETOOTH_HCI_RAW
-	range 1 10
+	range 1 18
 	help
-	  Set the number of Rx PDUs to be buffered in the controller.
+	  Set the number of Rx PDUs to be buffered in the controller. In a 7.5ms
+	  connection interval and 2M PHY, maximum 18 packets with L2CAP payload
+	  size of 1 byte can be received.
 
 config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	prompt "Number of Tx buffers"
 	int
 	default 2
 	default 7 if BLUETOOTH_HCI_RAW
-	range 1 10
+	range 1 19
 	help
-	  Set the number of Tx PDUs to be queued for transmission
-	  in the controller.
+	  Set the number of Tx PDUs to be queued for transmission in the
+	  controller. In a 7.5ms connection interval and 2M PHY, maximum 19
+	  packets can be enqueued, with 18 packets with L2CAP payload size of 1
+	  byte can be acknowledged.
 
 config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
 	prompt "Tx buffer size"
