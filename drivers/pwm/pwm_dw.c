@@ -96,17 +96,6 @@ static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, u32_t timer)
 }
 
 
-static int pwm_dw_configure(struct device *dev, int access_op,
-				 u32_t pwm, int flags)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
-	ARG_UNUSED(pwm);
-	ARG_UNUSED(flags);
-
-	return 0;
-}
-
 static int __set_one_port(struct device *dev, u32_t pwm,
 			  u32_t on, u32_t off)
 {
@@ -135,9 +124,8 @@ static int __set_one_port(struct device *dev, u32_t pwm,
 }
 
 /**
- * Set the duration for on/off timer of PWM.
+ * Set the period and the pulse of PWM.
  *
- * This sets the duration for the pin to low or high.
  *
  * Assumes a nominal system clock of 32MHz, each count of on/off represents
  * 31.25ns (e.g. on == 2 means the pin stays high for 62.5ns).
@@ -145,58 +133,42 @@ static int __set_one_port(struct device *dev, u32_t pwm,
  * manual for more information.
  *
  * @param dev Device struct
- * @param access_op whether to set one pin or all
- * @param pwm Which PWM port to set, 0 if addressing all
- * @param on Duration for pin to stay high (must be >= 2)
- * @param off Duration for pin to stay low (must be >= 2)
+ * @param pwm Which PWM pin to set
+ * @param period_cycles Period in clock cycles of the pwm.
+ * @param pulse_cycles PWM width in clock cycles
  *
  * @return 0
  */
-static int pwm_dw_set_values(struct device *dev, int access_op,
-			     u32_t pwm, u32_t on, u32_t off)
+static int pwm_dw_pin_set_cycles(struct device *dev,
+			     u32_t pwm, u32_t period_cycles, u32_t pulse_cycles)
 {
 	const struct pwm_dw_config * const cfg =
 	    (struct pwm_dw_config *)dev->config->config_info;
 	int i;
+	u32_t on, off;
 
-	switch (access_op) {
-	case PWM_ACCESS_BY_PIN:
-		/* make sure the PWM port exists */
-		if (pwm >= cfg->num_ports) {
-			return -EIO;
-		}
-
-		return __set_one_port(dev, pwm, on, off);
-	case PWM_ACCESS_ALL:
-		for (i = 0; i < cfg->num_ports; i++) {
-			__set_one_port(dev, i, on, off);
-		}
-
-		return 0;
+	/* make sure the PWM port exists */
+	if (pwm >= cfg->num_ports) {
+		return -EIO;
 	}
 
-	return -ENOTSUP;
-}
+	if (period_cycles == 0 || pulse_cycles > period_cycles) {
+		return -EINVAL;
+	}
+	on = pulse_cycles;
+	off = period_cycles - pulse_cycles;
 
-static int pwm_dw_set_duty_cycle(struct device *dev, int access_op,
-				 u32_t pwm, u8_t duty)
-{
-	/* The IP block does not natively support duty cycle settings.
-	 * So need to use set_values().
-	 **/
+	if (off == 0) {
+		on--;
+		off++;
+	}
 
-	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
-	ARG_UNUSED(pwm);
-	ARG_UNUSED(duty);
+	return __set_one_port(dev, pwm, on, off);
 
-	return -ENOTSUP;
 }
 
 static struct pwm_driver_api pwm_dw_drv_api_funcs = {
-	.config = pwm_dw_configure,
-	.set_values = pwm_dw_set_values,
-	.set_duty_cycle = pwm_dw_set_duty_cycle,
+	.pin_set = pwm_dw_pin_set_cycles,
 };
 
 /**

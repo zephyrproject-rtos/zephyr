@@ -55,19 +55,12 @@ static inline int _has_i2c_master(struct device *dev)
 		return 0;
 }
 
-static int pwm_pca9685_configure(struct device *dev, int access_op,
-				 u32_t pwm, int flags)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
-	ARG_UNUSED(pwm);
-	ARG_UNUSED(flags);
-
-	return 0;
-}
-
-static int pwm_pca9685_set_values(struct device *dev, int access_op,
-				  u32_t pwm, u32_t on, u32_t off)
+/*
+ * period_count is always taken as 4095. To control the on period send
+ * value to pulse_count
+ */
+static int pwm_pca9685_pin_set_cycles(struct device *dev, u32_t pwm,
+				      u32_t period_count, u32_t pulse_count)
 {
 	const struct pwm_pca9685_config * const config =
 		dev->config->config_info;
@@ -77,79 +70,46 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 	u16_t i2c_addr = config->i2c_slave_addr;
 	u8_t buf[] = { 0, 0, 0, 0, 0};
 
+	ARG_UNUSED(period_count);
 	if (!_has_i2c_master(dev)) {
 		return -EINVAL;
 	}
 
-	switch (access_op) {
-	case PWM_ACCESS_BY_PIN:
-		if (pwm > MAX_PWM_OUT) {
-			return -EINVAL;
-		}
-		buf[0] = REG_LED_ON_L(pwm);
-		break;
-	case PWM_ACCESS_ALL:
-		buf[0] = REG_ALL_LED_ON_L;
-		break;
-	default:
-		return -ENOTSUP;
+	if (pwm > MAX_PWM_OUT) {
+		return -EINVAL;
 	}
+	buf[0] = REG_LED_ON_L(pwm);
 
-	/* If either ON and/or OFF > max ticks, treat PWM as 100%.
-	 * If OFF value == 0, treat it as 0%.
+	/* If either pulse_count > max ticks, treat PWM as 100%.
+	 * If pulse_count value == 0, treat it as 0%.
 	 * Otherwise, populate registers accordingly.
 	 */
-	if ((on >= PWM_ONE_PERIOD_TICKS) || (off >= PWM_ONE_PERIOD_TICKS)) {
+	if (pulse_count >= PWM_ONE_PERIOD_TICKS) {
 		buf[1] = 0x0;
 		buf[2] = (1 << 4);
 		buf[3] = 0x0;
 		buf[4] = 0x0;
-	} else if (off == 0) {
+	} else if (pulse_count == 0) {
 		buf[1] = 0x0;
 		buf[2] = 0x0;
 		buf[3] = 0x0;
 		buf[4] = (1 << 4);
 	} else {
-		buf[1] = (on & 0xFF);
-		buf[2] = ((on >> 8) & 0x0F);
-		buf[3] = (off & 0xFF);
-		buf[4] = ((off >> 8) & 0x0F);
+		/* No start delay given. When the count is 0 the
+		 * pwm will be high .
+		 */
+		buf[0] = 0x0;
+		buf[1] = 0x0;
+		buf[2] = (pulse_count & 0xFF);
+		buf[3] = ((pulse_count >> 8) & 0x0F);
 	}
 
 	return i2c_write(i2c_master, buf, sizeof(buf), i2c_addr);
 }
 
-/**
- * Duty cycle describes the percentage of time a signal is turned
- * to the ON state.
- */
-static int pwm_pca9685_set_duty_cycle(struct device *dev, int access_op,
-				      u32_t pwm, u8_t duty)
-{
-	u32_t on, off, phase;
-
-	phase = 0;     /* Hard coded until API changes */
-
-	if (duty == 0) {
-		/* Turn off PWM */
-		on = 0;
-		off = 0;
-	} else if (duty >= 100) {
-		/* Force PWM to be 100% */
-		on = PWM_ONE_PERIOD_TICKS + 1;
-		off = PWM_ONE_PERIOD_TICKS + 1;
-	} else {
-		off = PWM_ONE_PERIOD_TICKS * duty / 100;
-		on = phase;
-	}
-
-	return pwm_pca9685_set_values(dev, access_op, pwm, on, off);
-}
 
 static const struct pwm_driver_api pwm_pca9685_drv_api_funcs = {
-	.config = pwm_pca9685_configure,
-	.set_values = pwm_pca9685_set_values,
-	.set_duty_cycle = pwm_pca9685_set_duty_cycle,
+	.pin_set =  pwm_pca9685_pin_set_cycles
 };
 
 /**
