@@ -69,7 +69,7 @@ config NET_STATISTICS_UDP
 config NET_STATISTICS_TCP
 	bool "TCP statistics"
 	depends on NET_TCP
-	default n
+	default y
 	help
 	Keep track of TCP related statistics
 

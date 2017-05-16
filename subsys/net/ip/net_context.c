@@ -32,6 +32,7 @@
 #include "ipv4.h"
 #include "udp.h"
 #include "tcp.h"
+#include "net_stats.h"
 
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
@@ -823,8 +824,11 @@ NET_CONN_CB(tcp_established)
 	if (tcp_flags & NET_TCP_RST) {
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, pkt)) {
+			net_stats_update_tcp_seg_rsterr();
 			return NET_DROP;
 		}
+
+		net_stats_update_tcp_seg_rst();
 
 		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
 
@@ -917,8 +921,11 @@ NET_CONN_CB(tcp_synack_received)
 	if (NET_TCP_FLAGS(pkt) & NET_TCP_RST) {
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, pkt)) {
+			net_stats_update_tcp_seg_rsterr();
 			return NET_DROP;
 		}
+
+		net_stats_update_tcp_seg_rst();
 
 		if (context->connect_cb) {
 			context->connect_cb(context, -ECONNREFUSED,
@@ -1350,8 +1357,11 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(tcp, pkt)) {
+			net_stats_update_tcp_seg_rsterr();
 			return NET_DROP;
 		}
+
+		net_stats_update_tcp_seg_rst();
 
 		ack_timer_cancel(tcp);
 
@@ -1399,7 +1409,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		if (ret < 0) {
 			NET_DBG("Cannot get accepted context, "
 				"connection reset");
-			goto reset;
+			goto conndrop;
 		}
 
 		new_context->tcp->recv_max_ack = context->tcp->recv_max_ack;
@@ -1460,7 +1470,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 			NET_DBG("Cannot bind accepted context, "
 				"connection reset");
 			net_context_unref(new_context);
-			goto reset;
+			goto conndrop;
 		}
 
 		new_context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
@@ -1479,7 +1489,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 			NET_DBG("Cannot register accepted TCP handler (%d)",
 				ret);
 			net_context_unref(new_context);
-			goto reset;
+			goto conndrop;
 		}
 
 		/* Swap the newly-created TCP states with the one that
@@ -1511,6 +1521,9 @@ NET_CONN_CB(tcp_syn_rcvd)
 	}
 
 	return NET_DROP;
+
+conndrop:
+	net_stats_update_tcp_seg_conndrop();
 
 reset:
 	{
@@ -1929,6 +1942,8 @@ static enum net_verdict packet_received(struct net_conn *conn,
 	NET_DBG("Set appdata %p to len %u (total %zu)",
 		net_pkt_appdata(pkt), net_pkt_appdatalen(pkt),
 		net_pkt_get_len(pkt));
+
+	net_stats_update_tcp_recv(net_pkt_appdatalen(pkt));
 
 	context->recv_cb(context, pkt, 0, user_data);
 
