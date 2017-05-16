@@ -27,14 +27,6 @@ config UART_STM32_PORT_1
 	  Enable support for USART1 port in the driver. Say y here
 	  if you want to use USART1 device.
 
-config UART_STM32_PORT_1_NAME
-	string "Device Name for STM32 USART1 Port"
-	default "UART_1"
-	depends on UART_STM32_PORT_1
-	help
-	  This is the device name for USART1 port, and is
-	  included in the device struct.
-
 # --- port 2 ---
 
 config UART_STM32_PORT_2
@@ -44,14 +36,6 @@ config UART_STM32_PORT_2
 	help
 	  Enable support for USART2 port in the driver. Say y here
 	  if you want to use USART2 device.
-
-config UART_STM32_PORT_2_NAME
-	string "Device Name for STM32 USART2 Port"
-	default "UART_2"
-	depends on UART_STM32_PORT_2
-	help
-	  This is the device name for USART2 port, and is
-	  included in the device struct.
 
 # --- port 3 ---
 
@@ -63,14 +47,6 @@ config UART_STM32_PORT_3
 	  Enable support for USART3 port in the driver. Say y here
 	  if you want to use USART3 device.
 
-config UART_STM32_PORT_3_NAME
-	string "Device Name for STM32 USART3 Port"
-	default "UART_3"
-	depends on UART_STM32_PORT_3
-	help
-	  This is the device name for USART3 port, and is
-	  included in the device struct.
-
 # --- port 4 ---
 
 config UART_STM32_PORT_4
@@ -80,14 +56,6 @@ config UART_STM32_PORT_4
 	help
 	  Enable support for UART4 port in the driver. Say y here
 	  if you want to use UART4 device.
-
-config UART_STM32_PORT_4_NAME
-	string "Device Name for STM32 UART4 Port"
-	default "UART_4"
-	depends on UART_STM32_PORT_4
-	help
-	  This is the device name for UART4 port, and is
-	  included in the device struct.
 
 # --- port 5 ---
 
@@ -99,14 +67,6 @@ config UART_STM32_PORT_5
 	  Enable support for UART5 port in the driver. Say y here
 	  if you want to use UART5 device.
 
-config UART_STM32_PORT_5_NAME
-	string "Device Name for STM32 UART5 Port"
-	default "UART_5"
-	depends on UART_STM32_PORT_5
-	help
-	  This is the device name for UART5 port, and is
-	  included in the device struct.
-
 # --- port 6 ---
 
 config UART_STM32_PORT_6
@@ -116,14 +76,6 @@ config UART_STM32_PORT_6
 	help
 	  Enable support for USART6 port in the driver. Say y here
 	  if you want to use USART6 device.
-
-config UART_STM32_PORT_6_NAME
-	string "Device Name for STM32 USART6 Port"
-	default "UART_6"
-	depends on UART_STM32_PORT_6
-	help
-	  This is the device name for USART6 port, and is
-	  included in the device struct.
 
 # --- port 7 ---
 
@@ -135,14 +87,6 @@ config UART_STM32_PORT_7
 	  Enable support for UART7 port in the driver. Say y here
 	  if you want to use UART7 device.
 
-config UART_STM32_PORT_7_NAME
-	string "Device Name for STM32 UART7 Port"
-	default "UART_7"
-	depends on UART_STM32_PORT_7
-	help
-	  This is the device name for UART7 port, and is
-	  included in the device struct.
-
 # --- port 8 ---
 
 config UART_STM32_PORT_8
@@ -152,14 +96,6 @@ config UART_STM32_PORT_8
 	help
 	  Enable support for UART8 port in the driver. Say y here
 	  if you want to use UART8 device.
-
-config UART_STM32_PORT_8_NAME
-	string "Device Name for STM32 UART8 Port"
-	default "UART_8"
-	depends on UART_STM32_PORT_8
-	help
-	  This is the device name for UART8 port, and is
-	  included in the device struct.
 
 # --- port 9 ---
 
@@ -171,14 +107,6 @@ config UART_STM32_PORT_9
 	  Enable support for UART9 port in the driver. Say y here
 	  if you want to use UART9 device.
 
-config UART_STM32_PORT_9_NAME
-	string "Device Name for STM32 UART9 Port"
-	default "UART_9"
-	depends on UART_STM32_PORT_9
-	help
-	  This is the device name for UART9 port, and is
-	  included in the device struct.
-
 # --- port 10 ---
 
 config UART_STM32_PORT_10
@@ -188,13 +116,5 @@ config UART_STM32_PORT_10
 	help
 	  Enable support for UART10 port in the driver. Say y here
 	  if you want to use UART10 device.
-
-config UART_STM32_PORT_10_NAME
-	string "Device Name for STM32 UART10 Port"
-	default "UART_10"
-	depends on UART_STM32_PORT_10
-	help
-	  This is the device name for UART10 port, and is
-	  included in the device struct.
 
 endif # UART_STM32
