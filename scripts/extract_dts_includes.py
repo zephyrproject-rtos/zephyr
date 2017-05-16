@@ -380,10 +380,14 @@ def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
     for i, p in enumerate(prop):
       k = convert_string_to_label(key).upper()
       label = def_label + '_' + k
+      if isinstance(p, str):
+         p = "\"" + p + "\""
       prop_def[label + '_' + str(i)] = p
   else:
       k = convert_string_to_label(key).upper()
       label = def_label + '_' +  k
+      if isinstance(prop, str):
+         prop = "\"" + prop + "\""
       prop_def[label] = prop
 
   if node_address in defs:
