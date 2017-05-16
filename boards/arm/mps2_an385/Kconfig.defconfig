@@ -105,6 +105,52 @@ endif # TIMER_DTMR_CMSDK_APB
 
 endif # COUNTER
 
+if SPI
+
+config SPI_PL022
+	def_bool y
+
+config SPI_PL022_0
+	def_bool y
+
+config SPI_PL022_0_NAME
+	default SPI_J21
+
+config SPI_PL022_1
+	def_bool y
+
+config SPI_PL022_1_NAME
+	default SPI_LCD
+
+config MPS2_CLCD
+	def_bool y
+
+config GPIO
+	def_bool y
+
+config GPIO_SIMPLE32
+	def_bool y
+
+config SPI_PL022_2
+	def_bool y
+
+config SPI_PL022_2_NAME
+	default SPI_ADC
+
+config SPI_PL022_3
+	def_bool y
+
+config SPI_PL022_3_NAME
+	default SPI_SHIELD0
+
+config SPI_PL022_4
+	def_bool y
+
+config SPI_PL022_4_NAME
+	default SPI_SHIELD1
+
+endif # SPI
+
 if I2C
 
 config I2C_SBCON
