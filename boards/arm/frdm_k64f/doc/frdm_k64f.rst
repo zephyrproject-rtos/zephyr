@@ -181,33 +181,30 @@ HCI, and the remaining are not used.
 Programming and Debugging
 *************************
 
+The FRDM-K64F includes the :ref:`nxp_opensda` serial and debug adapter built
+into the board to provide debugging, flash programming, and serial
+communication over USB.
+
+To use the pyOCD tools with OpenSDA, follow the instructions in the
+:ref:`nxp_opensda_pyocd` page using the `DAPLink FRDM-K64F Firmware`_.
+
+To use the Segger J-Link tools with OpenSDA, follow the instructions in the
+:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
+
 Flashing
 ========
 
-The FRDM-K64F includes an `OpenSDA`_ serial and debug adaptor built into the
-board. The adaptor provides:
-
-- A USB connection to the host computer, which exposes a Mass Storage and an
-  USB Serial Port.
-- A Serial Flash device, which implements the USB flash disk file storage.
-- A physical UART connection which is relayed over interface USB Serial port.
-
-Flashing an application to FRDM-K64F
--------------------------------------
-
-The sample application :ref:`hello_world` is used for this example.
-Build the Zephyr kernel and application:
+This example uses the :ref:`hello_world` sample with the
+:ref:`nxp_opensda_pyocd` tools. Use the ``make flash`` build target to build
+your Zephyr application, invoke the pyOCD flash tool and program your Zephyr
+application to flash.
 
 .. code-block:: console
 
-   $ cd $ZEPHYR_BASE
+   $ cd <zephyr_root_path>
    $ . zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=frdm_k64f
-
-Connect the FRDM-K64F to your host computer using the USB port and you should
-see a USB connection which exposes a Mass Storage (MBED) and a USB Serial Port.
-Copy the generated zephyr.bin in the MBED drive.
+   $ cd samples/hello_world/
+   $ make BOARD=frdm_k64f FLASH_SCRIPT=pyocd.sh flash
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 
@@ -223,6 +220,21 @@ the following message:
 
    Hello World! arm
 
+Debugging
+=========
+
+This example uses the :ref:`hello_world` sample with the
+:ref:`nxp_opensda_pyocd` tools. Use the ``make debug`` build target to build
+your Zephyr application, invoke the pyOCD GDB server, attach a GDB client, and
+program your Zephyr application to flash. It will leave you at a gdb prompt.
+
+.. code-block:: console
+
+   $ cd <zephyr_root_path>
+   $ . zephyr-env.sh
+   $ cd samples/hello_world/
+   $ make BOARD=frdm_k64f DEBUG_SCRIPT=pyocd.sh debug
+
 
 .. _FRDM-K64F Website:
    http://www.nxp.com/products/software-and-tools/hardware-development-tools/freedom-development-boards/freedom-development-platform-for-kinetis-k64-k63-and-k24-mcus:FRDM-K64F
@@ -233,9 +245,6 @@ the following message:
 .. _FRDM-K64F Schematics:
    http://www.nxp.com/assets/downloads/data/en/schematics/FRDM-K64F-SCH-E4.pdf
 
-.. _OpenSDA:
-   http://www.nxp.com/products/software-and-tools/hardware-development-tools/startertrak-development-boards/opensda-serial-and-debug-adapter:OPENSDA#FRDM-K64F
-
 .. _K64F Website:
    http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/k-series-performance-m4/k6x-ethernet/kinetis-k64-120-mhz-256kb-sram-microcontrollers-mcus-based-on-arm-cortex-m4-core:K64_120
 
@@ -244,3 +253,9 @@ the following message:
 
 .. _K64F Reference Manual:
    http://www.nxp.com/assets/documents/data/en/reference-manuals/K64P144M120SF5RM.pdf
+
+.. _DAPLink FRDM-K64F Firmware:
+   http://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmk64f_rev0242.zip
+
+.. _Segger J-Link OpenSDA V2.1 Firmware:
+   https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
