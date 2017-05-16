@@ -48,6 +48,7 @@
 			compatible = "nxp,kw41z-lpuart";
 			reg = <0x40054000 0x18>;
 			interrupts = <12 0>;
+			label = "UART_0";
 
 			pinctrl-0 = <&lpuart0_default>;
 			pinctrl-names = "default";

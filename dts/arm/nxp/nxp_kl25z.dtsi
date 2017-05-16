@@ -21,6 +21,7 @@
 			compatible = "nxp,kinetis-lpsci";
 			reg = <0x4006A000 0xc>;
 			interrupts = <12 0>;
+			label = "UART_0";
 
 			status = "disabled";
 		};
