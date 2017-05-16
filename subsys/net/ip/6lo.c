@@ -918,6 +918,12 @@ static inline u8_t uncompress_sa_ctx(struct net_pkt *pkt,
 	}
 
 	switch (CIPHC[1] & NET_6LO_IPHC_SAM_11) {
+	case NET_6LO_IPHC_SAM_00:
+		NET_DBG("SAM_00 full src addr inlined");
+
+		memcpy(ipv6->src.s6_addr, &CIPHC[offset], 16);
+		offset += 16;
+		break;
 	case NET_6LO_IPHC_SAM_01:
 		NET_DBG("SAM_01 last 64 bits are inlined");
 
