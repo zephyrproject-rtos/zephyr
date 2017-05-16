@@ -78,6 +78,9 @@ build:
       - >
           if [ "$JOB_TRIGGERED_BY_NAME" != "code-scan" ]; then
             ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
+            if [ "$RUN_COMPLIANCE" = "1" ]; then
+              ./scripts/sanitycheck -l -b -s samples/hello_world/test || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} -l -b -s samples/hello_world/test
+            fi
           fi
       - ccache -s
     on_success:
