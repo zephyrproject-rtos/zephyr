@@ -115,40 +115,59 @@ The KL25Z UART0 is used for the console.
 Programming and Debugging
 *************************
 
+The FRDM-KL25Z includes the :ref:`nxp_opensda` serial and debug adapter built
+into the board to provide debugging, flash programming, and serial
+communication over USB.
+
+To use the pyOCD tools with OpenSDA, follow the instructions in the
+:ref:`nxp_opensda_pyocd` page using the `DAPLink FRDM-KL25Z Firmware`_.
+
+To use the Segger J-Link tools with OpenSDA, follow the instructions in the
+:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
+
 Flashing
 ========
 
-The FRDM-KL25Z includes an `OpenSDA`_ serial and debug adaptor built into the
-board. The adaptor provides:
-
-- A USB connection to the host computer, which exposes on-board Mass Storage and a
-  USB Serial Port.
-- A Serial Flash device, which implements the USB flash disk file storage.
-- A physical UART connection, which is relayed over interface USB Serial port.
-
-Flashing an application to FRDM-KL25Z
--------------------------------------
-
-The sample application :ref:`hello_world` is used for this example.
-Build the Zephyr kernel and application:
+This example uses the :ref:`hello_world` sample with the
+:ref:`nxp_opensda_pyocd` tools. Use the ``make flash`` build target to build
+your Zephyr application, invoke the pyOCD flash tool and program your Zephyr
+application to flash.
 
 .. code-block:: console
 
-   $ cd $ZEPHYR_BASE
+   $ cd <zephyr_root_path>
    $ . zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=frdm_kl25z
+   $ cd samples/hello_world/
+   $ make BOARD=frdm_kl25z FLASH_SCRIPT=pyocd.sh flash
 
-Connect the FRDM-KL25Z to your host computer using the USB port and you should
-see a USB connection which exposes on-board Mass Storage (FRDM-KL25ZJ) and a USB Serial
-Port. Copy the generated zephyr.bin to the FRDM-KL25ZJ drive.
+Open a serial terminal (minicom, putty, etc.) with the following settings:
 
-Run a serial console app on your host computer. Reset the board and you'll see the
-following message written to the serial port:
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and you should be able to see on the corresponding Serial Port
+the following message:
 
 .. code-block:: console
 
    Hello World! arm
+
+Debugging
+=========
+
+This example uses the :ref:`hello_world` sample with the
+:ref:`nxp_opensda_pyocd` tools. Use the ``make debug`` build target to build
+your Zephyr application, invoke the pyOCD GDB server, attach a GDB client, and
+program your Zephyr application to flash. It will leave you at a gdb prompt.
+
+.. code-block:: console
+
+   $ cd <zephyr_root_path>
+   $ . zephyr-env.sh
+   $ cd samples/hello_world/
+   $ make BOARD=frdm_kl25z DEBUG_SCRIPT=pyocd.sh debug
 
 
 .. _FRDM-KL25Z Website:
@@ -160,9 +179,6 @@ following message written to the serial port:
 .. _FRDM-KL25Z Schematics:
    http://www.nxp.com/assets/downloads/data/en/schematics/FRDM-KL25Z_SCH_REV_E.pdf
 
-.. _OpenSDA:
-   http://www.nxp.com/assets/documents/data/en/user-guides/OPENSDAUG.pdf
-
 .. _KL25Z Website:
    http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/l-series-ultra-low-power-m0-plus/kinetis-kl2x-48-mhz-usb-ultra-low-power-microcontrollers-mcus-based-on-arm-cortex-m0-plus-core:KL2x?lang_cd=en
 
@@ -171,3 +187,9 @@ following message written to the serial port:
 
 .. _KL25Z Reference Manual:
    http://www.nxp.com/assets/documents/data/en/reference-manuals/KL25P80M48SF0RM.pdf
+
+.. _DAPLink FRDM-KL25Z Firmware:
+   http://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmkl25z_rev0242.zip
+
+.. _Segger J-Link OpenSDA V2.1 Firmware:
+   https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
