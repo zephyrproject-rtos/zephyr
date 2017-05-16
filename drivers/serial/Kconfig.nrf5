@@ -16,14 +16,6 @@ menuconfig UART_NRF5
 	  family processors. Note that there is only one
 	  UART controller on nRF5 ICs.
 
-config UART_NRF5_NAME
-	string "Device Name for Nordic Semiconductor nRF5 UART"
-	default "UART_0"
-	depends on UART_NRF5
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 config UART_NRF5_CLK_FREQ
 	int
 	default 16000000
