@@ -243,4 +243,4 @@ Access gdb with the following make command:
    http://www.st.com/en/microcontrollers/stm32l475rg.html
 
 .. _STM32L475 reference manual:
-   http://www.st.com/resource/en/reference_manual/DM00031020.pdf
+   http://www.st.com/resource/en/reference_manual/dm00083560.pdf
