@@ -21,12 +21,4 @@ menuconfig UART_MCUX_LPUART_0
 	help
 	  Enable UART 0.
 
-if UART_MCUX_LPUART_0
-
-config UART_MCUX_LPUART_0_NAME
-	string "UART 0 driver name"
-	default "UART_0"
-
-endif # UART_MCUX_LPUART_0
-
 endif # UART_MCUX_LPUART

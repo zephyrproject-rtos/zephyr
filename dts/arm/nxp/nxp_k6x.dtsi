@@ -73,6 +73,7 @@
 			reg = <0x4006a000 0x1000>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "status", "error";
+			label = "UART_0";
 
 			pinctrl-0 = <&uart0_default>;
 			pinctrl-names = "default";
@@ -85,6 +86,7 @@
 			reg = <0x4006b000 0x1000>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "status", "error";
+			label = "UART_1";
 
 			status = "disabled";
 		};
@@ -94,6 +96,7 @@
 			reg = <0x4006c000 0x1000>;
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "status", "error";
+			label = "UART_2";
 
 			status = "disabled";
 		};
@@ -103,6 +106,7 @@
 			reg = <0x4006d000 0x1000>;
 			interrupts = <37 0>, <38 0>;
 			interrupt-names = "status", "error";
+			label = "UART_3";
 
 			status = "disabled";
 		};
@@ -112,6 +116,7 @@
 			reg = <0x400ea000 0x1000>;
 			interrupts = <66 0>, <67 0>;
 			interrupt-names = "status", "error";
+			label = "UART_4";
 
 			status = "disabled";
 		};
@@ -121,6 +126,7 @@
 			reg = <0x400eb000 0x1000>;
 			interrupts = <68 0>, <69 0>;
 			interrupt-names = "status", "error";
+			label = "UART_5";
 
 			status = "disabled";
 		};
