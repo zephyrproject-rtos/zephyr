@@ -816,6 +816,11 @@ NET_CONN_CB(tcp_established)
 				     sys_get_be32(NET_TCP_HDR(pkt)->ack));
 	}
 
+	if (tcp_flags & NET_TCP_RST) {
+		net_context_unref(context);
+		return NET_DROP;
+	}
+
 	if (sys_get_be32(NET_TCP_HDR(pkt)->seq) - context->tcp->send_ack) {
 		/* Don't try to reorder packets.  If it doesn't
 		 * match the next segment exactly, drop and wait for
