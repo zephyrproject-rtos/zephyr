@@ -12,6 +12,7 @@ config SOC_SERIES_SAM4S
 	select SOC_FAMILY_SAM
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
+	select ASF
 	help
 	  Enable support for Atmel SAM4S Cortex-M4 microcontrollers.
 	  Part No.: SAM4S16C
