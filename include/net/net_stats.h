@@ -22,6 +22,11 @@ extern "C" {
 
 typedef u32_t net_stats_t;
 
+struct net_stats_bytes {
+	u32_t sent;
+	u32_t received;
+};
+
 struct net_stats_ip {
 	/** Number of received packets at the IP layer. */
 	net_stats_t recv;
@@ -78,6 +83,12 @@ struct net_stats_icmp {
 };
 
 struct net_stats_tcp {
+	/** Amount of received and sent TCP application data. */
+	struct net_stats_bytes bytes;
+
+	/** Amount of retransmitted data. */
+	net_stats_t resent;
+
 	/** Number of recived TCP segments. */
 	net_stats_t recv;
 
@@ -90,8 +101,11 @@ struct net_stats_tcp {
 	/** Number of TCP segments with a bad checksum. */
 	net_stats_t chkerr;
 
-	/** Number of TCP segments with a bad ACK number. */
+	/** Number of received TCP segments with a bad ACK number. */
 	net_stats_t ackerr;
+
+	/** Number of received bad TCP RST (reset) segments. */
+	net_stats_t rsterr;
 
 	/** Number of received TCP RST (reset) segments. */
 	net_stats_t rst;
@@ -99,13 +113,13 @@ struct net_stats_tcp {
 	/** Number of retransmitted TCP segments. */
 	net_stats_t rexmit;
 
-	/** Number of dropped SYNs because too few connections were
-	 * available.
+	/** Number of dropped connection attempts because too few connections
+	 * were available.
 	 */
-	net_stats_t syndrop;
+	net_stats_t conndrop;
 
-	/** Number of SYNs for closed ports, triggering a RST. */
-	net_stats_t synrst;
+	/** Number of connection attempts for closed ports, triggering a RST. */
+	net_stats_t connrst;
 };
 
 struct net_stats_udp {
@@ -205,11 +219,6 @@ struct net_stats_ipv6_mld {
 
 	/** Number of dropped IPv6 MLD packets */
 	net_stats_t drop;
-};
-
-struct net_stats_bytes {
-	u32_t sent;
-	u32_t received;
 };
 
 struct net_stats {

@@ -843,9 +843,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			goto drop;
 		}
 
-		if (proto == IPPROTO_UDP) {
-			net_stats_update_udp_recv();
-		}
+		net_stats_update_per_proto_recv(proto);
 
 		return NET_OK;
 	}
@@ -871,12 +869,14 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 #endif
 	{
 		send_icmp_error(pkt);
+
+		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+			net_stats_update_tcp_seg_connrst();
+		}
 	}
 
 drop:
-	if (proto == IPPROTO_UDP) {
-		net_stats_update_udp_drop();
-	}
+	net_stats_update_per_proto_drop(proto);
 
 	return NET_DROP;
 }

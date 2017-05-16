@@ -373,6 +373,27 @@ static inline void net_shell_print_statistics(void)
 	       GET_STAT(udp.chkerr));
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_TCP)
+	printk("TCP bytes recv %u\tsent\t%d\n",
+	       GET_STAT(tcp.bytes.received),
+	       GET_STAT(tcp.bytes.sent));
+	printk("TCP seg recv   %d\tsent\t%d\tdrop\t%d\n",
+	       GET_STAT(tcp.recv),
+	       GET_STAT(tcp.sent),
+	       GET_STAT(tcp.drop));
+	printk("TCP seg resent %d\tchkerr\t%d\tackerr\t%d\n",
+	       GET_STAT(tcp.resent),
+	       GET_STAT(tcp.chkerr),
+	       GET_STAT(tcp.ackerr));
+	printk("TCP seg rsterr %d\trst\t%d\tre-xmit\t%d\n",
+	       GET_STAT(tcp.rsterr),
+	       GET_STAT(tcp.rst),
+	       GET_STAT(tcp.rexmit));
+	printk("TCP conn drop  %d\tconnrst\t%d\n",
+	       GET_STAT(tcp.conndrop),
+	       GET_STAT(tcp.connrst));
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_RPL)
 	printk("RPL DIS recv   %d\tsent\t%d\tdrop\t%d\n",
 	       GET_STAT(rpl.dis.recv),
