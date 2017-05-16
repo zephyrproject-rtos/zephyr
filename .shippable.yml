@@ -11,8 +11,8 @@ env:
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
     matrix:
-        - ARCH="-a x86 -a riscv32" RUN_COMPLIANCE="1"
-        - ARCH="-a arm -a arc -a nios2"
+        - MATRIX_BUILD="1"
+        - MATRIX_BUILD="2"
 
 build:
     cache: true
@@ -43,8 +43,15 @@ build:
             S3_PATH="s3://zephyr-logs/${LOG_TYPE}/${REPO_FULL_NAME}/${BUILD_NUMBER}";
           fi;
       - >
-          if [ "$RUN_COMPLIANCE" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
-            export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..${COMMIT}
+          if [ "$MATRIX_BUILD" = "1" ]; then
+              export ARCH="-a x86 -a arc -a nios2 -a riscv32"
+          else
+              export ARCH="-a arm"
+          fi;
+
+          if [ "$MATRIX_BUILD" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
+            export ARCH="-a x86";
+            export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..${COMMIT};
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
@@ -55,11 +62,8 @@ build:
             fi;
             echo "- Verify commit message and coding style";
             ./scripts/ci/check-compliance.py || true;
-          fi;
-      - >
-          if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify-asserts" ]; then
-            echo "- Building with --all --enable-slow -R";
-            COVERAGE="--all --enable-slow -R";
+          elif [ "$IS_PULL_REQUEST" = "true" ]; then
+            export ARCH="-a arm -a arc -a nios2 -a riscv32";
           fi;
       - >
           if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify" ]; then
@@ -77,6 +81,7 @@ build:
           fi;
       - >
           if [ "$JOB_TRIGGERED_BY_NAME" != "code-scan" ]; then
+            echo $ARCH;
             ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
           fi
       - ccache -s
