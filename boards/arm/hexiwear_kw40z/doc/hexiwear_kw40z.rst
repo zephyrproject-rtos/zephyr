@@ -75,64 +75,40 @@ using `Segger RTT`_.
 Programming and Debugging
 *************************
 
-The Hexiwear docking station includes an `OpenSDA`_ serial and debug adaptor
-built into the board. Different firmware options are available for the adaptor
-including Segger J-Link and DAPLink. Because `Segger RTT`_ is required for a
-console, the `Segger J-Link OpenSDA`_ firmware is recommended.
+The Hexiwear docking station includes the :ref:`nxp_opensda` serial and debug
+adapter built into the board to provide debugging, flash programming, and
+serial communication over USB.
 
-Segger J-Link
-=============
+To use the pyOCD tools with OpenSDA, follow the instructions in the
+:ref:`nxp_opensda_pyocd` page using the `DAPLink Hexiwear Firmware`_.
 
-Download and install the `Segger J-Link Software and Documentation Pack`_ to
-get the JLinkGDBServer for your host computer.
+To use the Segger J-Link tools with OpenSDA, follow the instructions in the
+:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
 
-Put the OpenSDA adapter into bootloader mode by holding the reset button while
-you power on the board. A USB mass storage device called MAINTENANCE will
-enumerate. Copy the `Segger J-Link OpenSDA V2.1 Bootloader`_ to the MAINTENANCE
-drive. Power cycle the board, this time without holding the reset button.
+Because `Segger RTT`_ is required for a console to KW40Z, the J-Link tools are
+recommended.
 
-Start the GDB Server:
+Flashing
+========
 
-  .. code-block:: console
+The Segger J-Link firmware does not support command line flashing, therefore
+the ``make flash`` build target is not supported.
 
-     $ JLinkGDBServer -if swd -device MKW40Z160xxx4
+Debugging
+=========
 
-     SEGGER J-Link GDB Server V6.14b Command Line Version
+This example uses the :ref:`hello_world` sample with the
+:ref:`nxp_opensda_jlink` tools. Use the ``make debug`` build target to build
+your Zephyr application, invoke the J-Link GDB server, attach a GDB client, and
+program your Zephyr application to flash. It will leave you at a gdb prompt.
 
-     JLinkARM.dll V6.14b (DLL compiled Mar  9 2017 08:48:20)
+.. code-block:: console
 
-     -----GDB Server start settings-----
-     GDBInit file:                  none
-     GDB Server Listening port:     2331
-     SWO raw output listening port: 2332
-     Terminal I/O port:             2333
-     Accept remote connection:      yes
-     Generate logfile:              off
-     Verify download:               off
-     Init regs on start:            off
-     Silent mode:                   off
-     Single run mode:               off
-     Target connection timeout:     0 ms
-     ------J-Link related settings------
-     J-Link Host interface:         USB
-     J-Link script:                 none
-     J-Link settings file:          none
-     ------Target related settings------
-     Target device:                 MKW40Z160xxx4
-     Target interface:              SWD
-     Target interface speed:        1000kHz
-     Target endian:                 little
+   $ cd <zephyr_root_path>
+   $ . zephyr-env.sh
+   $ cd samples/hello_world/
+   $ make BOARD=hexiwear_kw40z DEBUG_SCRIPT=jlink.sh debug
 
-     Connecting to J-Link...
-     J-Link is connected.
-     Firmware: J-Link OpenSDA 2 compiled Feb 28 2017 19:27:57
-     Hardware: V1.00
-     S/N: 621000000
-     Checking target voltage...
-     Target voltage: 3.30 V
-     Listening on TCP/IP port 2331
-     Connecting to target...Connected to target
-     Waiting for GDB connection...
 
 In a second terminal, open telnet:
 
@@ -146,31 +122,7 @@ In a second terminal, open telnet:
      J-Link OpenSDA 2 compiled Feb 28 2017 19:27:57 V1.0, SN=621000000
      Process: JLinkGDBServer
 
-In a third terminal, build the Zephyr kernel and application:
-
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE
-      $ . zephyr-env.sh
-      $ cd $ZEPHYR_BASE/samples/hello_world/
-      $ make BOARD=hexiwear_kw40z
-
-Start the GDB client:
-
-  .. code-block:: console
-
-     $ arm-zephyr-eabi-gdb outdir/hexiwear_kw40z/zephyr.elf
-
-Connect to the GDB server:
-
-  .. code-block:: console
-
-     (gdb) target remote localhost:2331
-     (gdb) load
-     (gdb) monitor reset
-     (gdb) continue
-
-Back in the second terminal where you opened telnet, you should see:
+Continue program execution in GDB, then in the telnet terminal you should see:
 
   .. code-block:: console
 
@@ -190,14 +142,8 @@ Back in the second terminal where you opened telnet, you should see:
 .. _Segger RTT:
     https://www.segger.com/jlink-rtt.html
 
-.. _OpenSDA:
-   http://www.nxp.com/products/software-and-tools/hardware-development-tools/startertrak-development-boards/opensda-serial-and-debug-adapter:OPENSDA
+.. _DAPLink Hexiwear Firmware:
+   https://github.com/MikroElektronika/HEXIWEAR/blob/master/HW/HEXIWEAR_DockingStation/HEXIWEAR_DockingStation_DAPLINK_FW.bin
 
-.. _Segger J-Link OpenSDA:
-   https://www.segger.com/opensda.html
-
-.. _Segger J-Link OpenSDA V2.1 Bootloader:
+.. _Segger J-Link OpenSDA V2.1 Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
-
-.. _Segger J-Link Software and Documentation Pack:
-   https://www.segger.com/downloads/jlink
