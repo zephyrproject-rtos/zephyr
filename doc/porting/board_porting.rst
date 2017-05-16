@@ -121,3 +121,6 @@ A board implements an SoC with all its features, together with peripherals
 available on the board that differentiates the board with additional interfaces
 and features not available in the SoC.
 
+While adding your board support, make sure to add it to the list of
+``platforms`` in the appropriate architecture ``.ini`` file in
+``scripts/sanity_chk/arches/``.
