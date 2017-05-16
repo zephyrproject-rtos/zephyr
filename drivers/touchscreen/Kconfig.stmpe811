@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2017 Linaro Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig TSC_STMPE811
+	bool "STMPE811 touchscreen driver"
+	depends on I2C
+
+if TSC_STMPE811
+
+config TSC_STMPE811_NAME
+	string "Device name for the STMPE811 touchscreen driver"
+	default "TOUCHSCREEN"
+
+config TSC_STMPE811_IRQ_PRI
+	int "Interrupt priority for the STMPE811"
+	default 0
+
+config TSC_STMPE811_I2C_DEVICE
+	string "Name of I2C device that the STMPE811 is attached to"
+
+config TSC_STMPE811_I2C_ADDR
+	int "I2C address of the STMPE811 device"
+	default 65
+
+config TSC_STMPE811_Z_SAMPLES
+	bool "Include Z coordinate (pressure) samples"
+
+config TSC_STMPE811_FRACTION_Z
+	int "Value for the TSC_FRACTION_Z register"
+	depends on TSC_STMPE811_Z_SAMPLES
+	range 0 7
+	default 4
+	help
+	  This value governs the range of the Z coordinate (pressure) and
+	  a suitable value depend on the resistance of the touchscreen.
+
+endif

@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2016 Linaro Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig TOUCHSCREEN
+	bool
+	prompt "Touchscreen Support"
+	default n
+	help
+	  Include support for touchscreens.
+
+if TOUCHSCREEN
+
+config TOUCHSCREEN_HELPERS
+	bool "Helper functions for using touchscreens"
+	default y
+	help
+	  Functions for setting up touchscreen calibration and converting
+	  samples to display coordinates.
+
+source "drivers/touchscreen/Kconfig.stmpe811"
+
+endif
