@@ -816,6 +816,23 @@ NET_CONN_CB(tcp_established)
 				     sys_get_be32(NET_TCP_HDR(pkt)->ack));
 	}
 
+	/*
+	 * If we receive RST here, we close the socket. See RFC 793 chapter
+	 * called "Reset Processing" for details.
+	 */
+	if (tcp_flags & NET_TCP_RST) {
+		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
+
+		if (context->recv_cb) {
+			context->recv_cb(context, NULL, 0,
+					 context->tcp->recv_user_data);
+		}
+
+		net_context_unref(context);
+
+		return NET_DROP;
+	}
+
 	if (sys_get_be32(NET_TCP_HDR(pkt)->seq) - context->tcp->send_ack) {
 		/* Don't try to reorder packets.  If it doesn't
 		 * match the next segment exactly, drop and wait for

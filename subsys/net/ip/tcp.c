@@ -857,7 +857,14 @@ static void validate_state_transition(enum net_tcp_state current,
 			1 << NET_TCP_ESTABLISHED |
 			1 << NET_TCP_SYN_RCVD,
 		[NET_TCP_ESTABLISHED] = 1 << NET_TCP_CLOSE_WAIT |
-			1 << NET_TCP_FIN_WAIT_1,
+			1 << NET_TCP_FIN_WAIT_1 |
+			/* Going into CLOSED state from ESTABLISHED is not
+			 * described in TCP state diagram but RFC 793 says in
+			 * chapter "Reset Processing" that if device receives
+			 * RST "...it aborts the connection and advises the
+			 * user and goes to the CLOSED state".
+			 */
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_CLOSE_WAIT] = 1 << NET_TCP_LAST_ACK,
 		[NET_TCP_LAST_ACK] = 1 << NET_TCP_CLOSED,
 		[NET_TCP_FIN_WAIT_1] = 1 << NET_TCP_CLOSING |
