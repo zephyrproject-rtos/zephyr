@@ -27,16 +27,21 @@ The simplest way to install a development environment on Windows is to use
 MSYS2, a modern UNIX environment for Windows. Follow the steps below to set it
 up:
 
-1. Download and install :program:`MSYS2`. Download the appropriate (32 or
+#. Download and install :program:`MSYS2`. Download the appropriate (32 or
    64-bit) MSYS2 installer from the `MSYS2 website`_ and execute it. On the
    final installation screen, check the "Run MSYS2 now." box to start up an
    MSYS2 shell when installation is complete.  Follow the rest of the
    installation instructions on the MSYS2 website to update the package
    database and core system packages.  You may be advised to "terminate MSYS2
    without returning to shell and check for updates again".  If so, simply
-   close the ``MSYS2 MSYS`` desktop app and run it again to complete the update.)
+   close the ``MSYS2 MSYS Shell`` desktop app and run it again to complete the update.)
 
-#. Launch the ``MSYS2 MSYS`` desktop app from your start menu (if it's not still open).
+#. Launch the ``MSYS2 MSYS Shell`` desktop app from your start menu (if it's not still open).
+
+     .. note::
+        There are multiple ``export`` statements in this tutorial. You can avoid
+        typing them every time by placing them at the bottom of your
+        ``~/.bash_profile`` file.
 
 #. If you're behind a corporate firewall, you'll likely need to specify a
    proxy to get access to internet resources::
@@ -48,7 +53,47 @@ up:
 
    .. code-block:: console
 
-      $ pacman -S git make gcc diffutils ncurses-devel python2 python3
+      $ pacman -S git make gcc diffutils ncurses-devel python3
+
+#. Install pip and the required Python modules::
+
+      $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
+      $ ./get-pip.py
+      $ rm get-pip.py
+
+      $ pip install pyaml
+
+#. Build the Device Tree Compiler (DTC)
+
+   For the architectures and boards listed in the ``dts/`` folder of the Zephyr
+   source tree, the DTC is required to be able to build Zephyr.
+   To set up the DTC follow the instructions below:
+
+   * Install the required build tools::
+
+        $ pacman -S bison
+        $ pacman -R flex
+        $ pacman -U http://repo.msys2.org/msys/x86_64/flex-2.6.0-1-x86_64.pkg.tar.xz
+
+   .. note::
+        At this time we need to pin the ``flex`` version to an older one due
+        to an issue with the latest available.
+
+   * Clone and build the DTC::
+
+        $ cd ~
+        $ git clone https://github.com/carlescufi/dtc.git
+        $ cd dtc
+        $ make
+
+   .. note::
+        The repository containing the DTC itself is currently not the standard
+        upstream one due to a required patch. This will be updated once the
+        patch has been accepted.
+
+   * Export the location of the DTC::
+
+        $ export DTC=~/dtc/dtc
 
 #. The build system should now be ready to work with any toolchain installed in
    your system. In the next step you'll find instructions for installing
