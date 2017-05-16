@@ -22,6 +22,7 @@
 			reg = <0x40002000 0x1000>;
 			interrupts = <2 1>;
 			status = "disabled";
+			label = "UART_0";
 		};
 
 		uart1: uart@40028000 {
@@ -29,6 +30,7 @@
 			reg = <0x40028000 0x1000>;
 			interrupts = <40 1>;
 			status = "disabled";
+			label = "UART_1";
 		};
 	};
 };
