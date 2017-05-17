@@ -53,6 +53,7 @@
 			reg = <0x40004000 0x1000>;
 			interrupts = <IRQ_UART_0_TX 3 IRQ_UART_0_RX 3>;
 			current-speed = <115200>;
+			label = "UART_0";
 		};
 
 		uart1: uart@40005000 {
@@ -60,6 +61,7 @@
 			reg = <0x40005000 0x1000>;
 			interrupts = <IRQ_UART_1_TX 3 IRQ_UART_1_RX 3>;
 			current-speed = <115200>;
+			label = "UART_1";
 		};
 
 		uart2: uart@40006000 {
@@ -67,6 +69,7 @@
 			reg = <0x40006000 0x1000>;
 			interrupts = <IRQ_UART_2_TX 3 IRQ_UART_2_RX 3>;
 			current-speed = <115200>;
+			label = "UART_2";
 		};
 
 		uart3: uart@40007000 {
@@ -74,6 +77,7 @@
 			reg = <0x40007000 0x1000>;
 			interrupts = <IRQ_UART_3_TX 3 IRQ_UART_3_RX 3>;
 			current-speed = <115200>;
+			label = "UART_3";
 		};
 
 		wdog0: wdog@40008000 {
@@ -86,6 +90,7 @@
 			reg = <0x40009000 0x1000>;
 			interrupts = <IRQ_UART_4_TX 3 IRQ_UART_4_RX 3>;
 			current-speed = <115200>;
+			label = "UART_4";
 		};
 
 		gpio0: gpio@40010000 {
