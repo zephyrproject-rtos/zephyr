@@ -173,6 +173,7 @@ import glob
 import concurrent
 import concurrent.futures
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
 
@@ -1613,7 +1614,9 @@ class TestSuite:
                 if os.path.exists(bl):
                     with open(bl, "r") as f:
                         log = f.read()
-                        failure.text = (str(log))
+                        ansi_escape = re.compile(r'\x1b[^m]*m')
+                        output = ansi_escape.sub('', str(log))
+                        failure.text = (escape(output))
 
         result = ET.tostring(eleTestsuites)
         f = open(filename, 'wb')
