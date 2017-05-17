@@ -337,6 +337,12 @@ static inline void net_shell_print_statistics(void)
 	       GET_STAT(ipv6_nd.sent),
 	       GET_STAT(ipv6_nd.drop));
 #endif /* CONFIG_NET_IPV6_ND */
+#if defined(CONFIG_NET_STATISTICS_MLD)
+	printk("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d\n",
+	       GET_STAT(ipv6_mld.recv),
+	       GET_STAT(ipv6_mld.sent),
+	       GET_STAT(ipv6_mld.drop));
+#endif /* CONFIG_NET_STATISTICS_MLD */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
