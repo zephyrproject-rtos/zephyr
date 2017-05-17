@@ -36,6 +36,8 @@
 
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
+#define ACK_TIMEOUT MSEC_PER_SEC
+
 /* Declares a wrapper function for a net_conn callback that refs the
  * context around the invocation (to protect it from premature
  * deletion).  Long term would be nice to see this feature be part of
@@ -884,6 +886,14 @@ NET_CONN_CB(tcp_established)
 			context->recv_cb(context, NULL, 0,
 					 context->tcp->recv_user_data);
 		}
+
+		/* We should receive ACK next in order to get rid of LAST_ACK
+		 * state that we are entering in a short while. But we need to
+		 * be prepared to NOT to receive it as otherwise the connection
+		 * would be stuck forever.
+		 */
+		k_delayed_work_submit(&context->tcp->ack_timer, ACK_TIMEOUT);
+		context->tcp->ack_timer_cancelled = false;
 	}
 
 	send_ack(context, &conn->remote_addr, false);
@@ -1219,8 +1229,6 @@ int net_context_connect(struct net_context *context,
 
 #if defined(CONFIG_NET_TCP)
 
-#define ACK_TIMEOUT MSEC_PER_SEC
-
 static void ack_timer_cancel(struct net_tcp *tcp)
 {
 	tcp->ack_timer_cancelled = true;
@@ -1238,9 +1246,19 @@ static void ack_timeout(struct k_work *work)
 
 	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
 
-	send_reset(tcp->context, &tcp->context->remote);
+	if (net_tcp_get_state(tcp) == NET_TCP_LAST_ACK) {
+		/* We did not receive the last ACK on time. We can only
+		 * close the connection at time point. We also do not send
+		 * anything in this last state but will go to to CLOSED state.
+		 */
+		net_tcp_change_state(tcp, NET_TCP_CLOSED);
 
-	net_tcp_change_state(tcp, NET_TCP_LISTEN);
+		net_context_unref(tcp->context);
+	} else {
+		send_reset(tcp->context, &tcp->context->remote);
+
+		net_tcp_change_state(tcp, NET_TCP_LISTEN);
+	}
 }
 
 static void pkt_get_sockaddr(sa_family_t family, struct net_pkt *pkt,
