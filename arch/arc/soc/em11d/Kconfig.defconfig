@@ -19,7 +19,7 @@ config NUM_IRQ_PRIO_LEVELS
 
 config NUM_IRQS
 	# must be > the highest interrupt number used
-	default 36
+	default 38
 
 config RGF_NUM_BANKS
 	default 2
@@ -56,6 +56,9 @@ config DCCM_SIZE
 	default 64
 
 config CACHE_FLUSHING
+	def_bool y
+
+config FP_FPU_DA
 	def_bool y
 
 if GPIO

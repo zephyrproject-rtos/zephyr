@@ -24,6 +24,21 @@ config ARCH_DEFCONFIG
 	string
 	default "arch/arc/defconfig"
 
+config CPU_HAS_MPU
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
+
+config CPU_HAS_FPU
+	# Hidden config selected by CPU family
+	bool
+	default n
+	help
+	This option is enabled when the CPU has hardware floating point
+	unit.
+
 menu "ARC EM4 processor options"
 
 config	CPU_ARCEM4
@@ -43,17 +58,6 @@ config	CPU_ARCV2
 	default y
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
-
-config NSIM
-	prompt "Running on the MetaWare nSIM simulator"
-	bool
-	default n
-	help
-	  For running on nSIM simulator.
-
-	  a) Uses non-XIP to run in RAM.
-	  b) Linked at address 0x4000 with 0x4000 of RAM so that it works with
-	     a pc_size of 16 (default).
 
 config	DATA_ENDIANNESS_LITTLE
 	bool
@@ -156,8 +160,40 @@ config HARVARD
 	bool
 	default n
 	help
-	  The ARC CPU can be configured to have two busses;
-	  one for instruction fetching and another that serves as a data bus.
+	The ARC CPU can be configured to have two busses;
+	one for instruction fetching and another that serves as a data bus.
+
+config CODE_DENSITY
+	prompt "Code Density Option"
+	bool
+	default n
+	help
+	Enbale code density option to get better code desntiy
+
+menu "Floating Point Options"
+depends on CPU_HAS_FPU
+
+config FLOAT
+	bool
+	prompt "Floating point registers"
+	default n
+	help
+	This option allows tasks and fibers to use the floating point registers.
+	By default, only a single task or fiber may use the registers.
+
+	Disabling this option means that any task or fiber that uses a
+	floating point register will get a fatal exception.
+
+config FP_SHARING
+	bool
+	prompt "Floating point register sharing"
+	depends on FLOAT
+	default n
+	help
+	This option allows multiple tasks and fibers to use the floating point
+	registers.
+
+endmenu
 
 config ICCM_SIZE
 	int "ICCM Size in kB"

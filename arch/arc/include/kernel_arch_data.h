@@ -74,6 +74,8 @@ struct _irq_stack_frame {
 
 typedef struct _irq_stack_frame _isf_t;
 
+
+
 /* callee-saved registers pushed on the stack, not in k_thread */
 struct _callee_saved_stack {
 	u32_t r13;
@@ -94,6 +96,19 @@ struct _callee_saved_stack {
 	/* r28 is the stack pointer and saved separately */
 	/* r29 is ILINK and does not need to be saved */
 	u32_t r30;
+#ifdef CONFIG_FP_SHARING
+	u32_t r58;
+	u32_t r59;
+	u32_t fpu_status;
+	u32_t fpu_ctrl;
+#ifdef CONFIG_FP_FPU_DA
+	u32_t dpfp2h;
+	u32_t dpfp2l;
+	u32_t dpfp1h;
+	u32_t dpfp1l;
+#endif
+
+#endif
 	/*
 	 * No need to save r31 (blink), it's either alread pushed as the pc or
 	 * blink on an irq stack frame.

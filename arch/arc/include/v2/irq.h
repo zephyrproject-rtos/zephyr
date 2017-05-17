@@ -26,6 +26,7 @@ extern "C" {
 #define _ARC_V2_AUX_IRQ_CTRL_16_REGS 8
 #define _ARC_V2_AUX_IRQ_CTRL_32_REGS 16
 
+
 #define _ARC_V2_DEF_IRQ_LEVEL (CONFIG_NUM_IRQ_PRIO_LEVELS-1)
 #define _ARC_V2_WAKE_IRQ_LEVEL _ARC_V2_DEF_IRQ_LEVEL
 
@@ -43,6 +44,9 @@ static ALWAYS_INLINE void _irq_setup(void)
 {
 	u32_t aux_irq_ctrl_value = (
 		_ARC_V2_AUX_IRQ_CTRL_LOOP_REGS | /* save lp_xxx registers */
+#ifdef CONFIG_CODE_DENSITY
+		_ARC_V2_AUX_IRQ_CTRL_LP | /* save code density registers */
+#endif
 		_ARC_V2_AUX_IRQ_CTRL_BLINK     | /* save blink */
 		_ARC_V2_AUX_IRQ_CTRL_14_REGS     /* save r0 -> r13 (caller-saved) */
 	);

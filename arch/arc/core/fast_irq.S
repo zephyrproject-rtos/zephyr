@@ -181,6 +181,14 @@ _firq_no_reschedule:
 	pop_s r0
 	mov lp_count,r0
 	ld r0,[saved_r0]
+#ifdef CONFIG_CODE_DENSITY
+	pop_s r0
+	sr r0, [_ARC_V2_EI_BASE]
+	pop_s r0
+	sr r0, [_ARC_V2_LDI_BASE]
+	pop_s r0
+	sr r0, [_ARC_V2_JLI_BASE]
+#endif
 	add sp,sp,8 /* don't need ilink & status32_po from stack */
 #endif
 	rtie

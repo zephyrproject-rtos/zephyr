@@ -1,3 +1,8 @@
+# Enable debug support in mdb
+# Dwarf version 2 can be recognized by mdb
+# The default dwarf version in gdb is not recognized by mdb
+cflags-y += $(call cc-option, -g3 -gdwarf-2)
+
 cflags-y += $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
 
 # Without this (poorly named) option, compiler may generate undefined
@@ -17,4 +22,3 @@ soc-aflags ?= $(soc-cflags)
 KBUILD_CFLAGS += $(soc-cflags)
 KBUILD_CXXFLAGS += $(soc-cxxflags)
 KBUILD_AFLAGS += $(soc-aflags)
-

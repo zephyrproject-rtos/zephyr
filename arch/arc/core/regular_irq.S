@@ -121,7 +121,8 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 */
 	ldh_s r0, [r2, _thread_offset_to_preempt]
 	mov r3, _NON_PREEMPT_THRESHOLD
-	brhs.d r0, r3, _rirq_no_reschedule
+	cmp_s r0, r3
+	bhs.d _rirq_no_reschedule
 
 	/*
 	 * Both (a)reschedule and (b)non-reschedule cases need to load the
@@ -137,7 +138,8 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 	/* check if the current thread needs to be rescheduled */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
-	breq r0, r2, _rirq_no_reschedule
+	cmp_s r0, r2
+	beq _rirq_no_reschedule
 
 	/* cached thread to run is in r0, fall through */
 
