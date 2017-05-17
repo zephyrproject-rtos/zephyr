@@ -42,6 +42,7 @@ extern "C" {
 	st r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
 	st fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
 	st r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
+
 #ifdef CONFIG_FP_SHARING
 	st r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
 	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
@@ -72,6 +73,28 @@ extern "C" {
 	/* restore stack pointer from struct tcs */
 	ld sp, [r2, _thread_offset_to_sp]
 
+#ifdef CONFIG_FP_SHARING
+	ld r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
+	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
+
+	ld_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
+	sr r13, [_ARC_V2_FPU_STATUS]
+	ld_s r13, [sp, ___callee_saved_stack_t_fpu_ctrl_OFFSET]
+	sr r13, [_ARC_V2_FPU_CTRL]
+
+#ifdef CONFIG_FP_FPU_DA
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp1l_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP1L]
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp1h_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP1H]
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2l_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP2L]
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP2H]
+#endif
+
+#endif
+
 	ld_s r13, [sp, ___callee_saved_stack_t_r13_OFFSET]
 	ld_s r14, [sp, ___callee_saved_stack_t_r14_OFFSET]
 	ld_s r15, [sp, ___callee_saved_stack_t_r15_OFFSET]
@@ -88,31 +111,6 @@ extern "C" {
 	ld r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
 	ld fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
 	ld r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
-
-#ifdef CONFIG_FP_SHARING
-	ld r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
-	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
-
-	ld_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
-	sr r13, [_ARC_V2_FPU_STATUS]
-
-	ld_s r13, [sp, ___callee_saved_stack_t_fpu_ctrl_OFFSET]
-	sr r13, [_ARC_V2_FPU_CTRL]
-
-
-#ifdef CONFIG_FP_FPU_DA
-	ld_s r13, [sp, ___callee_saved_stack_t_dpfp1l_OFFSET]
-	sr r13, [_ARC_V2_FPU_DPFP1L]
-	ld_s r13, [sp, ___callee_saved_stack_t_dpfp1h_OFFSET]
-	sr r13, [_ARC_V2_FPU_DPFP1H]
-	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2l_OFFSET]
-	sr r13, [_ARC_V2_FPU_DPFP2L]
-	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
-	sr r13, [_ARC_V2_FPU_DPFP2H]
-#endif
-
-#endif
-
 
 	add_s sp, sp, ___callee_saved_stack_t_SIZEOF
 
