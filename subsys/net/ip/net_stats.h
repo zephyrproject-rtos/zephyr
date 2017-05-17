@@ -157,10 +157,16 @@ static inline void net_stats_update_udp_drop(void)
 {
 	net_stats.udp.drop++;
 }
+
+static inline void net_stats_update_udp_chkerr(void)
+{
+	net_stats.udp.chkerr++;
+}
 #else
 #define net_stats_update_udp_sent()
 #define net_stats_update_udp_recv()
 #define net_stats_update_udp_drop()
+#define net_stats_update_udp_chkerr()
 #endif /* CONFIG_NET_STATISTICS_UDP */
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
