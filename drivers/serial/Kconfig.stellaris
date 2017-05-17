@@ -17,14 +17,6 @@ menuconfig UART_STELLARIS_PORT_0
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
 
-config UART_STELLARIS_PORT_0_NAME
-	string "Port 0 Device Name"
-	default "UART_0"
-	depends on UART_STELLARIS_PORT_0
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 # ---------- Port 1 ----------
 
 menuconfig UART_STELLARIS_PORT_1
@@ -35,14 +27,6 @@ menuconfig UART_STELLARIS_PORT_1
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
 
-config UART_STELLARIS_PORT_1_NAME
-	string "Port 1 Device Name"
-	default "UART_1"
-	depends on UART_STELLARIS_PORT_1
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 # ---------- Port 2 ----------
 
 menuconfig UART_STELLARIS_PORT_2
@@ -52,11 +36,3 @@ menuconfig UART_STELLARIS_PORT_2
 	help
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
-
-config UART_STELLARIS_PORT_2_NAME
-	string "Port 2 Device Name"
-	default "UART_2"
-	depends on UART_STELLARIS_PORT_2
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
