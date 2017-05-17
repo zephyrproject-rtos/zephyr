@@ -159,30 +159,6 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
-  /* Shared RAM */
-  SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
-  {
-    . = ALIGN (8);
-    _bss_start = ABSOLUTE(.);
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-    *(.bss)
-    *(.bss.*)
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
-    . = ALIGN (8);
-    _bss_end = ABSOLUTE(.);
-    _heap_start = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(4))
   {
     _rodata_start = ABSOLUTE(.);
@@ -219,5 +195,30 @@ SECTIONS
     LONG(_bss_end)
     _bss_table_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(ROMABLE_REGION)
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
+
+  /* Shared RAM */
+  SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+  {
+    . = ALIGN (8);
+    _bss_start = ABSOLUTE(.);
+    *(.dynsbss)
+    *(.sbss)
+    *(.sbss.*)
+    *(.gnu.linkonce.sb.*)
+    *(.scommon)
+    *(.sbss2)
+    *(.sbss2.*)
+    *(.gnu.linkonce.sb2.*)
+    *(.dynbss)
+    *(.bss)
+    *(.bss.*)
+    *(.share.mem)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    . = ALIGN (8);
+    _bss_end = ABSOLUTE(.);
+    _heap_start = ABSOLUTE(.);
+  } GROUP_LINK_IN(RAMABLE_REGION)
 }
