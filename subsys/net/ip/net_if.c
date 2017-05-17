@@ -60,20 +60,6 @@ static struct k_thread tx_thread_data;
 #define debug_check_packet(...)
 #endif /* CONFIG_NET_DEBUG_IF */
 
-static inline void net_context_send_cb(struct net_context *context,
-				       void *token, int status)
-{
-	if (context->send_cb) {
-		context->send_cb(context, status, token, context->user_data);
-	}
-
-#if defined(CONFIG_NET_UDP)
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		net_stats_update_udp_sent();
-	}
-#endif
-}
-
 static bool net_if_tx(struct net_if *iface)
 {
 	const struct net_if_api *api = iface->dev->driver_api;

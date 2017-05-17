@@ -88,6 +88,26 @@ NET_BUF_POOL_DEFINE(rx_bufs, NET_BUF_RX_COUNT, NET_BUF_DATA_LEN,
 NET_BUF_POOL_DEFINE(tx_bufs, NET_BUF_TX_COUNT, NET_BUF_DATA_LEN,
 		    NET_BUF_USER_DATA_LEN, NULL);
 
+#if defined(CONFIG_NET_TCP)
+static void send_cb_timeout(struct k_work *work)
+{
+	/* This means that we did not receive ACK response in time. */
+	struct net_pkt *pkt = CONTAINER_OF(work, struct net_pkt, send_cb_timer);
+	void *token;
+
+	token = net_pkt_token(pkt);
+
+	/* Clear the token so that we do not call the send callback
+	 * again. This must be done before we call the callback so that
+	 * any received ACK will not call the callback again while we
+	 * are running inside the send callback.
+	 */
+	net_pkt_set_token(pkt, NULL);
+
+	net_context_send_cb(net_pkt_context(pkt), token, -ETIMEDOUT);
+}
+#endif
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 
 #define NET_FRAG_CHECK_IF_NOT_IN_USE(frag, ref)				\
@@ -318,6 +338,10 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 
 	pkt->ref = 1;
 	pkt->slab = slab;
+
+#if defined(CONFIG_NET_TCP)
+	k_delayed_work_init(&pkt->send_cb_timer, send_cb_timeout);
+#endif
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	net_pkt_alloc_add(pkt, true, caller, line);
@@ -736,6 +760,17 @@ done:
 	if (--pkt->ref > 0) {
 		return;
 	}
+
+#if defined(CONFIG_NET_TCP)
+	net_pkt_set_token(pkt, NULL);
+
+	/* If we do not have context, then the send_cb timer cannot be
+	 * running.
+	 */
+	if (pkt->context) {
+		k_delayed_work_cancel(&pkt->send_cb_timer);
+	}
+#endif
 
 	if (pkt->frags) {
 		net_pkt_frag_unref(pkt->frags);

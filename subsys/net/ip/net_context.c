@@ -33,6 +33,8 @@
 #include "udp.h"
 #include "tcp.h"
 
+#include "net_stats.h"
+
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
 /* Declares a wrapper function for a net_conn callback that refs the
@@ -1632,14 +1634,18 @@ static int send_data(struct net_context *context,
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		int ret = net_tcp_send_data(context);
 
-		/* Just make the callback synchronously even if it didn't
-		 * go over the wire.  In theory it would be nice to track
-		 * specific ACK locations in the stream and make the
-		 * callback at that time, but there's nowhere to store the
-		 * potentially-separate token/user_data values right now.
+		/* If there is no timeout, then we can only call the send_cb
+		 * immediately, otherwise wait until we have received ACK
+		 * to the packet or timeout happens. If the timeout is
+		 * K_FOREVER, then do not install cancel worker but wait
+		 * until we have received the ACK.
 		 */
-		if (cb) {
-			cb(context, ret, token, user_data);
+		if (timeout > 0) {
+			k_delayed_work_submit(&pkt->send_cb_timer, timeout);
+		} else if (timeout == K_NO_WAIT) {
+			if (cb) {
+				cb(context, ret, token, user_data);
+			}
 		}
 
 		return ret;
@@ -1849,6 +1855,39 @@ int net_context_sendto(struct net_pkt *pkt,
 #endif /* CONFIG_NET_TCP */
 
 	return sendto(pkt, dst_addr, addrlen, cb, timeout, token, user_data);
+}
+
+void net_context_send_cb(struct net_context *context, void *token, int status)
+{
+	if (!context) {
+		return;
+	}
+
+	if (status < 0) {
+		/* If there was an error, then call the callback always.
+		 * For success call it only for UDP as TCP one will be called
+		 * after we have received ACK.
+		 */
+		if (context->send_cb) {
+			context->send_cb(context, status, token,
+					 context->user_data);
+		}
+	} else {
+#if defined(CONFIG_NET_UDP)
+		if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+			if (context->send_cb) {
+				context->send_cb(context, status, token,
+						 context->user_data);
+			}
+		}
+#endif
+	}
+
+#if defined(CONFIG_NET_UDP)
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		net_stats_update_udp_sent();
+	}
+#endif
 }
 
 static void set_appdata_values(struct net_pkt *pkt, enum net_ip_protocol proto)

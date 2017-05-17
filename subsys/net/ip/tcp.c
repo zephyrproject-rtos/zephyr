@@ -774,6 +774,8 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	bool valid_ack = false;
 
 	while (!sys_slist_is_empty(list)) {
+		void *token;
+
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
 		tcphdr = NET_TCP_HDR(pkt);
@@ -795,6 +797,17 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		}
 
 		sys_slist_remove(list, NULL, head);
+
+		/* Call the network context send callback after we have
+		 * received the ACK for it.
+		 */
+		token = net_pkt_token(pkt);
+		net_pkt_set_token(pkt, NULL);
+
+		k_delayed_work_cancel(&pkt->send_cb_timer);
+
+		net_context_send_cb(net_pkt_context(pkt), token, 0);
+
 		net_pkt_unref(pkt);
 		valid_ack = true;
 	}
