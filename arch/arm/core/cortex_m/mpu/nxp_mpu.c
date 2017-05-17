@@ -13,6 +13,29 @@
 #include <logging/sys_log.h>
 #include <misc/__assert.h>
 
+#define STACK_GUARD_REGION_SIZE 32
+
+/* NXP MPU Enabled state */
+static u8_t nxp_mpu_enabled;
+
+/**
+ * This internal function is utilized by the MPU driver to parse the intent
+ * type (i.e. THREAD_STACK_REGION) and return the correct parameter set.
+ */
+static inline u32_t _get_region_attr_by_type(u32_t type)
+{
+	switch (type) {
+	case THREAD_STACK_REGION:
+		return 0;
+	case THREAD_STACK_GUARD_REGION:
+		/* The stack guard region has to be not accessible */
+		return REGION_RO_ATTR;
+	default:
+		/* Size 0 region */
+		return 0;
+	}
+}
+
 static inline u8_t _get_num_regions(void)
 {
 	u32_t type = (SYSMPU->CESR & SYSMPU_CESR_NRGD_MASK)
@@ -48,6 +71,108 @@ static void _region_init(u32_t index, u32_t region_base,
 		    SYSMPU->WORD[index][3]);
 }
 
+/* ARM Core MPU Driver API Implementation for NXP MPU */
+
+/**
+ * @brief enable the MPU
+ */
+void arm_core_mpu_enable(void)
+{
+	if (nxp_mpu_enabled == 0) {
+		/* Enable MPU */
+		SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
+
+		nxp_mpu_enabled = 1;
+	}
+}
+
+/**
+ * @brief disable the MPU
+ */
+void arm_core_mpu_disable(void)
+{
+	if (nxp_mpu_enabled == 1) {
+		/* Disable MPU */
+		SYSMPU->CESR &= ~SYSMPU_CESR_VLD_MASK;
+		/* Clear Interrupts */
+		SYSMPU->CESR |=  SYSMPU_CESR_SPERR_MASK;
+
+		nxp_mpu_enabled = 0;
+	}
+}
+
+/**
+ * @brief configure the base address and size for an MPU region
+ *
+ * @param   type    MPU region type
+ * @param   base    base address in RAM
+ * @param   size    size of the region
+ */
+void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
+{
+	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
+	/*
+	 * The new MPU regions are are allocated per type after the statically
+	 * configured regions.
+	 */
+	u32_t region_index = mpu_config.num_regions + type;
+	u32_t region_attr = _get_region_attr_by_type(type);
+	u32_t last_region = _get_num_regions() - 1;
+
+	/*
+	 * The NXP MPU manages the permissions of the overlapping regions
+	 * doing the logic OR in between them, hence they can't be used
+	 * for stack/stack guard protection. For this reason the last region of
+	 * the MPU will be reserved.
+	 *
+	 * A consequence of this is that the SRAM is splitted in different
+	 * regions. In example if THREAD_STACK_GUARD_REGION is selected:
+	 * - SRAM before THREAD_STACK_GUARD_REGION: RW
+	 * - SRAM THREAD_STACK_GUARD_REGION: RO
+	 * - SRAM after THREAD_STACK_GUARD_REGION: RW
+	 */
+	/* NXP MPU supports up to 16 Regions */
+	if (region_index > _get_num_regions() - 2) {
+		return;
+	}
+
+	/* Configure SRAM_0 region */
+	/*
+	 * The mpu_config.sram_region contains the index of the region in
+	 * the mpu_config.mpu_regions array but the region 0 on the NXP MPU
+	 * is the background region, so on this MPU the regions are mapped
+	 * starting from 1, hence the mpu_config.sram_region on the data
+	 * structure is mapped on the mpu_config.sram_region + 1 region of
+	 * the MPU.
+	 */
+	_region_init(mpu_config.sram_region + 1,
+		     mpu_config.mpu_regions[mpu_config.sram_region].base,
+		     ENDADDR_ROUND(base),
+		     mpu_config.mpu_regions[mpu_config.sram_region].attr);
+
+	switch (type) {
+	case THREAD_STACK_REGION:
+		break;
+	case THREAD_STACK_GUARD_REGION:
+		_region_init(region_index, base,
+			     ENDADDR_ROUND(base + STACK_GUARD_REGION_SIZE),
+			     region_attr);
+		break;
+	default:
+		break;
+	}
+
+	/* Configure SRAM_1 region */
+	_region_init(last_region,
+		     base + STACK_GUARD_REGION_SIZE,
+		     ENDADDR_ROUND(
+			    mpu_config.mpu_regions[mpu_config.sram_region].end),
+		     mpu_config.mpu_regions[mpu_config.sram_region].attr);
+
+}
+
+/* NXP MPU Driver Initial Setup */
+
 /*
  * @brief MPU default configuration
  *
@@ -75,6 +200,12 @@ static void _nxp_mpu_config(void)
 	/* Disable Region 0 */
 	SYSMPU->WORD[0][2] = 0;
 
+	SYS_LOG_DBG("[0] 0x%08x 0x%08x 0x%08x 0x%08x",
+		    SYSMPU->WORD[0][0],
+		    SYSMPU->WORD[0][1],
+		    SYSMPU->WORD[0][2],
+		    SYSMPU->WORD[0][3]);
+
 	/*
 	 * Configure regions:
 	 * r_index starts from 0 but is passed to region_init as r_index + 1,
@@ -89,6 +220,8 @@ static void _nxp_mpu_config(void)
 
 	/* Enable MPU */
 	SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
+
+	nxp_mpu_enabled = 1;
 
 	/* Make sure that all the registers are set before proceeding */
 	__DSB();
