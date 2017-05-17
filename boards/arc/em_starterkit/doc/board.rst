@@ -25,6 +25,8 @@ https://www.embarc.org.
 See also this URL for details about the board:
 https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit
 
+The lastest version of EM Starter Kit is 2.3, developer can upgrade from
+2.0/2.1/2.2 to 2.3 using latest firmware.
 The default configuration for EM Starter Kit boards can be found in
 :file:`boards/arc/em_starterkit/em_starterkit_defconfig`.
 
@@ -37,6 +39,11 @@ If you have a larger program, you can select the EM7D or EM11D, which gives
 access to 128KB DRAM with i-cache and d-cache. The configuration file for EM7D
 is found in :file:`arch/arc/soc/em7d/Kconfig.defconfig` and EM11D is found in
 :file:`arch/arc/soc/em11d/Kconfig.defconfig`.
+
+.. note::
+
+   EM7D has secureshield feature, which is not supported in Zephyr currently.
+
 
 Hardware
 ********
@@ -174,122 +181,55 @@ Parity:    None
 Stopbits:  1
 ========= =====
 
+Using the latest version of Zephyr SDK(>=0.9), you can debug and flash
+EM Starterkit directly.
+
+Boot up the SOC by pressing the "C" button. Be sure the digilent cable
+is attached from your host to the EM Starter Kit board.
+
 Debugging
 ==========
-Before you can debug, you will need to download and install the
-Synopsys versions of ARC GNU tools. Unfortunately the Zephyr-SDK versions
-of openocd and gdb have some functionality limitations and don't yet
-work well with the ARC EM Starter Kit.
 
-The Synopsys tools are found on GITHUB here:
-
-https://github.com/foss-for-synopsys-dwc-arc-processors/toolchain/releases/tag/arc-2016.03
-
-For Linux, you will need:
-
-* arc_gnu_2016.03_ide_linux_install.tar.gz
-* arc_gnu_2016.03_prebuilt_elf32_be_linux_install.tar.gz
-
-You can untar these into any directory. Suggestion: /usr/local/arc.  Follow the
-instructions for how to set up to use these tools.  You will need your path
-changed to refer to the bin directories for these so that these cross
-development tools can be found.
-
-It is also useful to create a bash script to launch openocd, since if you are
-like me, you will find it hard to remember the arguments. Here is the one I use,
-placed in a file called ocd.
+Build and debug the application with the following commands:
 
 .. code-block:: console
 
-  #!/bin/bash
-  openocd -c 'gdb_port 3333' -s $ARCGNU_IDE/share/openocd/scripts -f board/snps_em_sk_v2.2.cfg
-
-  #where the environment variable ARCGNU_IDE refers to the install dir of the
-  #openocd IDE
-
-This command to openocd uses port 3333 with gdb client, and provides the board
-cfg file for the ARC EM Starter Kit.
-
-I have also found it useful to have a script, named debug.sh, to provide all the
-arguments to gdb:
-
-.. code-block:: console
-
-   #!/bin/bash
-   arc-elf32-gdb \
-    -ex "target remote :3333" \
-    -ex "load" \
-    -ex "break __memory_error" \
-    -ex "break _SysFatalErrorHandler" \
-    -ex "set remotetimeout 2000" \
-    outdir/em_starterkit/zephyr.elf
-
-The target remote and load will attach to openocd and load the elf file into
-memory. You can also set breakpoints on CPU exception handlers, or fatal
-error handlers.
-
-Now to use these two scripts is easy. Boot up the SOC by pressing the "C" button.
-Be sure the digilent cable is attached from your host to the EM Starter Kit
-board.
-
-In any terminal window, invoke the "ocd" script first. It should establish
-contact with the board and output many messages. For example:
-
-.. code-block:: console
-
-   Open On-Chip Debugger 0.9.0-dev-g90a4ff5 (2016-05-04-15:37)
-   Licensed under GNU GPL v2
-   For bug reports, read
-   http://openocd.sourceforge.net/doc/doxygen/bugs.html
-   adapter speed: 5000 kHz
-   Info : clock speed 5000 kHz
-   Info : JTAG tap: arc-em.cpu tap/device found: 0x200044b1 (mfg: 0x258, part: 0x0004, ver: 0x2)
-   Info : JTAG tap: arc-em.cpu tap/device found: 0x200044b1 (mfg: 0x258, part: 0x0004, ver: 0x2)
-   target state: halted
-   target state: halted
-
-In a second console window, navigate to the directory for your sample application,
-and invoke the debug.sh script:
-
-.. code-block:: console
-
-   GNU gdb (ARCompact/ARCv2 ISA elf32 toolchain 2016.03) 7.10
-   Copyright (C) 2015 Free Software Foundation, Inc.
-   License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-   This is free software: you are free to change and redistribute it.
-   There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-   and "show warranty" for details.
-   This GDB was configured as "--host=x86_64-unknown-linux-gnu --target=arc-elf32".
-   Type "show configuration" for configuration details.
-   For bug reporting instructions, please see:
-   <https://github.com/foss-for-synopsys-dwc-arc-processors/toolchain/issues>.
-   Find the GDB manual and other documentation resources online at:
-   <http://www.gnu.org/software/gdb/documentation/>.
-   For help, type "help".
-   Type "apropos word" to search for commands related to "word"...
-   Reading symbols from outdir/zephyr.elf...done.
-   Remote debugging using :3333
-   0x000077b4 in ?? ()
-   Loading section text, size 0x3714 lma 0x0
-   Loading section devconfig, size 0x78 lma 0x3714
-   Loading section gpio_compat, size 0x20 lma 0x378c
-   Loading section rodata, size 0x244 lma 0x37ac
-   Loading section datas, size 0x714 lma 0x80000000
-   Loading section initlevel, size 0x78 lma 0x80000714
-   Loading section _k_task_list, size 0x58 lma 0x8000078c
-   Loading section _k_task_ptr, size 0x8 lma 0x800007e4
-   Loading section _k_event_list, size 0x10 lma 0x800007ec
-   Start address 0x36f4, load size 16876
-   Transfer rate: 122 KB/sec, 1406 bytes/write.
-   Breakpoint 1 at 0x3264: file /home/johndoe/repository/zephyr/arch/arc/core/fault_s.S, line 81.
-   Breakpoint 2 at 0x3628: file /home/johndoe/repository/zephyr/arch/arc/core/sys_fatal_error_handler.c, line 73.
-   (gdb)
+   $ cd <my app>
+   $ make BOARD=em_starterkit debug
 
 At this point you can do your normal debug session. Set breakpoints and then
 'c' to continue into the program.
 
+Launch the debug server on the emsk:
+
+.. code-block:: console
+
+   $ make BOARD=em_starterkit debugserver
+
+Connect to the debug server at the emsk from a second console:
+
+.. code-block:: console
+
+   $ cd <my app>
+   $ $ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/arc-zephyr-elf/arc-zephyr-elf-gdb outdir/em_starterkit/zephyr.elf
+   (gdb) target remote localhost:3333
+   (gdb) load
+   (gdb) b main
+   (gdb) c
+
 Flashing
 ========
+
+If you just want to download the application to the emsk's CCM or DDR and run,
+you can also use this command to achieve this.
+
+.. code-block:: console
+
+   $ make BOARD=em_starterkit flash
+
+This command still use openocd and gdb to load application elf file to emsk,
+but it will load application and then run immediately. If power is lost,
+the application will also lost due to power loss.
 
 Most of the time you will not be flashing your program but will instead
 debug it using openocd and gdb. The program can be download via the USB
@@ -304,8 +244,6 @@ refer to the documentation on the ARC EM Starter Kit at the
 `embARC-website`_, which includes instructions for how to place an
 executable image onto the SPI-FLASH in such a way that it is understood
 by the bootloader.
-
-
 
 Release Notes
 *************
