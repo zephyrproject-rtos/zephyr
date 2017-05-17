@@ -1,65 +1,100 @@
-ifndef XTENSA_TOOLS_PATH
-    $(error Please set XTENSA_TOOLS_PATH first)
+# Path to base directory for installed Xtensa SDK. This should be
+# the parent directory of all the individual toolchain versions.
+ifndef XTENSA_SDK
+XTENSA_SDK := /opt/xtensa
+endif
+ifeq ($(wildcard $(XTENSA_SDK)),)
+$(error Please set XTENSA_SDK to correct location of SDK path, not found in $(XTENSA_SDK))
 endif
 
-ifndef XTENSA_BUILDS_PATH
-    $(error Please set XTENSA_BUILDS_PATH first)
+# List of paths to base directories for xtensa builds.  Can have multiple paths
+# here; for example the base path for the installed xtensa SDK plus paths to
+# vendor-supplied builds.  It's expected that each of these paths is a base
+# directory with children of the form <toolchain version>/<build name>/ where
+# the build name corresponds to CONFIG_SOC.  By default, we append all the
+# builds included in the SDK
+XTENSA_BUILD_PATHS += $(XTENSA_SDK)/XtDevTools/install/builds
+
+# Legacy; make sure this is un-set. The compiler actually uses this value
+# if set to find command line tools, and we would rather it automatically
+# derive this.
+ifneq ($(XTENSA_TOOLS_PATH),)
+$(error Please leave XTENSA_TOOLS_PATH unset)
 endif
 
-XTENSA_BUILD_DIR := $(patsubst "%",%,${XTENSA_BUILD_DIR})
+ifeq (${CONFIG_XTENSA},y)
 
-ifeq (${XTENSA_BUILD_DIR},)
-    XTENSA_BUILD=$(shell echo ${XTENSA_BUILDS_PATH}/${CONFIG_SOC})
-else
-    ifeq ($(patsubst /%,/,${XTENSA_BUILD_DIR}),/)
-        XTENSA_BUILD=${XTENSA_BUILD_DIR}
-    else
-        XTENSA_BUILD=$(shell echo ${CONFIG_XTENSA_BUILDS_PATH}/${XTENSA_BUILD_DIR})
-    endif
+# Every Zephyr Xtensa SOC configuration should have CONFIG_SOC match the name
+# of the build, and have CONFIG_TOOLCHAIN_VARIANT match the intended
+# toolchain release.
+TOOLCHAIN_VER = $(call unquote,$(CONFIG_TOOLCHAIN_VARIANT))
+BUILD_NAME = $(call unquote,$(CONFIG_SOC))
+
+# Attempt to find the canonical build directory using $(wildcard ..) to filter
+# out potential build directories that don't exist
+XCC_BUILD := $(strip $(foreach builddir,$(XTENSA_BUILD_PATHS),$(wildcard $(builddir)/$(TOOLCHAIN_VER)/$(BUILD_NAME))))
+
+ifeq ($(XCC_BUILD),)
+$(error Unable to find build $(BUILD_NAME) for $(TOOLCHAIN_VER) in $(XTENSA_BUILD_PATHS), you may need to set XTENSA_BUILD_PATHS)
+endif
+
+ifneq ($(words $(XCC_BUILD)),1)
+$(error Multiple build matches for $(BUILD_NAME) on $(TOOLCHAIN_VER) in $(XCC_BUILD))
 endif
 
 # Strip quotes from cross compiler anme prefix
-CROSS_COMPILE_xtensa=$(patsubst "%",%,${CONFIG_CROSS_COMPILE})
+CROSS_COMPILE_xtensa = $(call unquote,$(CONFIG_CROSS_COMPILE))
 
 ifeq (${CROSS_COMPILE_xtensa},)
     # Use default name prefix if no cross compiler name prefix is set
     CROSS_COMPILE_xtensa=xt-
 endif
 
-ifeq (${CONFIG_XTENSA},y)
-CROSS_COMPILE = ${XTENSA_TOOLS_PATH}/bin/$(CROSS_COMPILE_$(ARCH))
+
+XCC_TOOLS := $(XTENSA_SDK)/XtDevTools/install/tools/$(TOOLCHAIN_VER)/XtensaTools
+CROSS_COMPILE = ${XCC_TOOLS}/bin/$(CROSS_COMPILE_$(ARCH))
+
+ifeq ($(KBUILD_VERBOSE),1)
+$(info Using Xtensa tools located in $(XCC_TOOLS))
+$(info Using Xtensa core build in $(XCC_BUILD))
+endif
+
+XCC_FLAGS := --xtensa-core=$(CONFIG_SOC)
 
 ifeq ($(USE_CCACHE),1)
-    CC = $(CCACHE) ${CROSS_COMPILE}xcc --xtensa-core=$(CONFIG_SOC)
-    CXX = $(CCACHE) ${CROSS_COMPILE}xc++ --xtensa-core=$(CONFIG_SOC)
+    CC = $(CCACHE) ${CROSS_COMPILE}xcc $(XCC_FLAGS)
+    CXX = $(CCACHE) ${CROSS_COMPILE}xc++ $(XCC_FLAGS)
 else
-    CC = ${CROSS_COMPILE}xcc --xtensa-core=$(CONFIG_SOC)
-    CXX = ${CROSS_COMPILE}xc++ --xtensa-core=$(CONFIG_SOC)
+    CC = ${CROSS_COMPILE}xcc $(XCC_FLAGS)
+    CXX = ${CROSS_COMPILE}xc++ $(XCC_FLAGS)
 endif
-AS = ${CROSS_COMPILE}as --xtensa-core=$(CONFIG_SOC)
-LD = ${CROSS_COMPILE}ld --xtensa-core=$(CONFIG_SOC)
+AS = ${CROSS_COMPILE}as $(XCC_FLAGS)
+LD = ${CROSS_COMPILE}ld $(XCC_FLAGS)
 CROSS_COMPILE_TARGET = ${CROSS_COMPILE_TARGET_${ARCH}}
 
-XTENSA_SYSTEM=$(XTENSA_BUILD)/config
+# Can either pass --xtensa-system to every single tool in the toolchain (and
+# force redefinition of OBJCOPY, READELF, etc) or just export to environment
+# (simpler)
+XTENSA_SYSTEM := $(XCC_BUILD)/config
 
-XTSC_INC=$(realpath $(patsubst "%",%,${CONFIG_XTENSA_XTSC_INC}))
+XTSC_INC = $(realpath $(call unquote,${CONFIG_XTENSA_XTSC_INC}))
 ifeq (${XTSC_INC},)
-XTSC_INC=$(realpath ../$(patsubst "%",%,${CONFIG_XTENSA_XTSC_INC}))
+XTSC_INC = $(realpath ../$(call unquote,${CONFIG_XTENSA_XTSC_INC}))
 endif
-XTSC_WORK_DIR=$(dir ${XTSC_INC})
-XTSC_INC_FILE=$(notdir ${XTSC_INC})
+XTSC_WORK_DIR = $(dir ${XTSC_INC})
+XTSC_INC_FILE = $(notdir ${XTSC_INC})
 
 # Include XCC standard libraries so that users used to Xplorer IDE can port
 # their code easily
 TOOLCHAIN_LIBS += gcc hal
-LIB_INCLUDE_DIR += -L${XTENSA_BUILD}/xtensa-elf/lib/xcc \
-                   -L${XTENSA_BUILD}/xtensa-elf/lib \
-                   -L${XTENSA_BUILD}/xtensa-elf/arch/lib
+LIB_INCLUDE_DIR += -L${XCC_BUILD}/xtensa-elf/lib/xcc \
+                   -L${XCC_BUILD}/xtensa-elf/lib \
+                   -L${XCC_BUILD}/xtensa-elf/arch/lib
 
-KBUILD_CPPFLAGS += -I$(XTENSA_TOOLS_PATH)/lib/xcc/include \
-                   -I$(XTENSA_TOOLS_PATH)/xtensa-elf/include \
-                   -I${XTENSA_BUILD}/xtensa-elf/arch/include \
-                   -I${XTENSA_BUILD}/xtensa-elf/include \
+KBUILD_CPPFLAGS += -I$(XCC_TOOLS)/lib/xcc/include \
+                   -I$(XCC_TOOLS)/xtensa-elf/include \
+                   -I${XCC_BUILD}/xtensa-elf/arch/include \
+                   -I${XCC_BUILD}/xtensa-elf/include \
                    -D'__builtin_unreachable()=while(1);'
 
 # xt-xcc does not support -Og, replace with -O0
@@ -74,15 +109,9 @@ KBUILD_CXXFLAGS:=$(filter-out \
 			,${KBUILD_CXXFLAGS})
 
 # Support for Xtensa simulator from Cadence Design Systems, Inc.
-XTRUN=${CROSS_COMPILE}run
+XTRUN = ${CROSS_COMPILE}run
 XTRUN_FLAGS += --turbo --cc_none
 
 export CROSS_COMPILE XTENSA_SYSTEM LIB_INCLUDE_DIR
 endif # CONFIG_XTENSA
 
-prepare2:
-	${Q}test -d ${XTENSA_BUILD} || ( \
-		echo '*** Error: Invalid Xtensa core configuration path \
-			"${XTENSA_BUILD}"' && \
-		exit 1 \
-	)
