@@ -740,6 +740,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 {
 	int i, best_match = -1;
 	s16_t best_rank = -1;
+	u16_t chksum;
 
 #if defined(CONFIG_NET_CONN_CACHE)
 	enum net_verdict verdict;
@@ -752,15 +753,13 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	}
 #endif
 
+	if (proto == IPPROTO_TCP) {
+		chksum = NET_TCP_HDR(pkt)->chksum;
+	} else {
+		chksum = NET_UDP_HDR(pkt)->chksum;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_DEBUG_CONN)) {
-		u16_t chksum;
-
-		if (proto == IPPROTO_TCP) {
-			chksum = NET_TCP_HDR(pkt)->chksum;
-		} else {
-			chksum = NET_UDP_HDR(pkt)->chksum;
-		}
-
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "
 			"family %d chksum 0x%04x", net_proto2str(proto), pkt,
 			ntohs(NET_CONN_HDR(pkt)->src_port),
@@ -819,6 +818,40 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	}
 
 	if (best_match >= 0) {
+
+		/* If packet has a listener configured, then check also the
+		 * protocol checksum if that checking is enabled.
+		 * If the checksum calculation fails, then discard the message.
+		 */
+		if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
+		    proto == IPPROTO_UDP) {
+			u16_t chksum_calc;
+
+			NET_UDP_HDR(pkt)->chksum = 0;
+			chksum_calc = ~net_calc_chksum_udp(pkt);
+
+			if (chksum != chksum_calc) {
+				net_stats_update_udp_chkerr();
+				goto drop;
+			}
+
+			NET_UDP_HDR(pkt)->chksum = chksum;
+
+		} else if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
+			   proto == IPPROTO_TCP) {
+			u16_t chksum_calc;
+
+			NET_TCP_HDR(pkt)->chksum = 0;
+			chksum_calc = ~net_calc_chksum_tcp(pkt);
+
+			if (chksum != chksum_calc) {
+				net_stats_update_tcp_seg_chkerr();
+				goto drop;
+			}
+
+			NET_TCP_HDR(pkt)->chksum = chksum;
+		}
+
 #if defined(CONFIG_NET_CONN_CACHE)
 		NET_DBG("[%d] match found cb %p ud %p rank 0x%02x cache 0x%x",
 			best_match,

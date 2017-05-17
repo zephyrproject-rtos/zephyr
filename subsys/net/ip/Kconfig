@@ -94,6 +94,14 @@ config NET_TCP
 	help
 	The value depends on your network needs.
 
+config NET_TCP_CHECKSUM
+	bool "Check TCP checksum"
+	default y
+	depends on NET_TCP
+	help
+	Enables TCP handler to check TCP checksum. If the checksum is invalid,
+	then the packet is discarded.
+
 config NET_DEBUG_TCP
 	bool "Debug TCP"
 	default n
@@ -126,6 +134,14 @@ config NET_UDP
 	default y
 	help
 	The value depends on your network needs.
+
+config NET_UDP_CHECKSUM
+	bool "Check UDP checksum"
+	default y
+	depends on NET_UDP
+	help
+	Enables UDP handler to check UDP checksum. If the checksum is invalid,
+	then the packet is discarded.
 
 config NET_DEBUG_UDP
 	bool "Debug UDP"
