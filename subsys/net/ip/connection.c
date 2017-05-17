@@ -311,10 +311,28 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 
 	return NET_CONTINUE;
 }
+
+static inline void cache_remove(struct net_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
+		if (conn_cache[i].idx < 0 ||
+		    conn_cache[i].idx >= CONFIG_NET_MAX_CONN) {
+			continue;
+		}
+
+		if (&conns[conn_cache[i].idx] == conn) {
+			conn_cache[i].idx = -1;
+			break;
+		}
+	}
+}
 #else
 #define cache_clear(...)
 #define cache_add_neg(...)
 #define cache_check(...) NET_CONTINUE
+#define cache_remove(...)
 #endif /* CONFIG_NET_CONN_CACHE */
 
 int net_conn_unregister(struct net_conn_handle *handle)
@@ -328,6 +346,8 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	if (!(conn->flags & NET_CONN_IN_USE)) {
 		return -ENOENT;
 	}
+
+	cache_remove(conn);
 
 	NET_DBG("[%zu] connection handler %p removed",
 		(conn - conns) / sizeof(*conn), conn);
