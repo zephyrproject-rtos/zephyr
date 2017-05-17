@@ -26,6 +26,7 @@ PROVIDE ( __stack = 0x3ffe3f20 );
 
 PROVIDE ( uart_tx_one_char = 0x40009200 );
 PROVIDE ( uart_rx_one_char = 0x400092d0 );
+PROVIDE ( uartAttach = 0x40008fd0 );
 
 MEMORY
 {

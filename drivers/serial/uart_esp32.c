@@ -41,9 +41,10 @@ static int esp32_uart_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	uartAttach();
+
 	return 0;
 }
-
 
 static const struct uart_driver_api esp32_uart_api = {
 	.poll_in = &esp32_uart_rx,
