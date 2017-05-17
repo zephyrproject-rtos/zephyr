@@ -6,10 +6,3 @@ menuconfig UART_CC32XX
 	depends on SOC_FAMILY_TISIMPLELINK
 	help
 	  This option enables the CC32XX UART driver, for UART_0.
-
-config UART_CC32XX_NAME
-	string "Device Name for CC32XX UART"
-	default "UART_0"
-	depends on UART_CC32XX
-	help
-	  This is the UART's device name binding.
