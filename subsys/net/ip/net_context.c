@@ -842,7 +842,8 @@ NET_CONN_CB(tcp_established)
 		return NET_DROP;
 	}
 
-	if (net_tcp_seq_cmp(sys_get_be32(NET_TCP_HDR(pkt)->seq), context->tcp->send_ack) < 0) {
+	if (net_tcp_seq_cmp(sys_get_be32(NET_TCP_HDR(pkt)->seq),
+			    context->tcp->send_ack) < 0) {
 		/* Peer sent us packet we've already seen. Apparently,
 		 * our ack was lost.
 		 */
