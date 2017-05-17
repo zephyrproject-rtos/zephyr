@@ -67,15 +67,14 @@ export the environment variables ``ZEPHYR_GCC_VARIANT`` and
 Here are a set of commands to install the documentation generations tools on
 Ubuntu:
 
-
 .. code-block:: bash
 
-   $ sudo apt-get install python-pip
+   $ sudo -E apt-get install python-pip
    $ pip install --upgrade pip
-   $ sudo apt-get install doxygen
+   $ sudo -E apt-get install doxygen
    $ pip install sphinx==1.4.4
-   $ sudo -H pip install breathe
-   $ sudo -H pip install sphinx-rtd-theme
+   $ sudo -HE pip install breathe
+   $ sudo -HE pip install sphinx-rtd-theme
 
 There is a known issue that causes docutils version 0.13 to fail with sphinx
 1.4.4.  Verify the version of docutils using:
@@ -89,7 +88,7 @@ the working version of docutils with:
 
 .. code-block:: bash
 
-   $ sudo -H pip install docutils==0.12
+   $ sudo -HE  pip install docutils==0.12
 
 
 Running the Documentation Generators
