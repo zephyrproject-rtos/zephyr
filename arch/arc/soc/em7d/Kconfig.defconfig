@@ -19,13 +19,13 @@ config NUM_IRQ_PRIO_LEVELS
 
 config NUM_IRQS
 	# must be > the highest interrupt number used
-	default 36
+	default 38
 
 config RGF_NUM_BANKS
 	default 1
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 30000000
+	default 25000000
 
 config HARVARD
 	def_bool n

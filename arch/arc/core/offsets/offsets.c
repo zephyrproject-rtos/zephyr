@@ -52,6 +52,11 @@ GEN_OFFSET_SYM(_isf_t, blink);
 GEN_OFFSET_SYM(_isf_t, lp_end);
 GEN_OFFSET_SYM(_isf_t, lp_start);
 GEN_OFFSET_SYM(_isf_t, lp_count);
+#ifdef CONFIG_CODE_DENSITY
+GEN_OFFSET_SYM(_isf_t, ei_base);
+GEN_OFFSET_SYM(_isf_t, ldi_base);
+GEN_OFFSET_SYM(_isf_t, jli_base);
+#endif
 GEN_OFFSET_SYM(_isf_t, pc);
 GEN_OFFSET_SYM(_isf_t, status32);
 GEN_ABSOLUTE_SYM(___isf_t_SIZEOF, sizeof(_isf_t));
@@ -75,6 +80,19 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, r25);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r26);
 GEN_OFFSET_SYM(_callee_saved_stack_t, fp);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r30);
+#ifdef CONFIG_FP_SHARING
+GEN_OFFSET_SYM(_callee_saved_stack_t, r58);
+GEN_OFFSET_SYM(_callee_saved_stack_t, r59);
+GEN_OFFSET_SYM(_callee_saved_stack_t, fpu_status);
+GEN_OFFSET_SYM(_callee_saved_stack_t, fpu_ctrl);
+#ifdef CONFIG_FP_FPU_DA
+GEN_OFFSET_SYM(_callee_saved_stack_t, dpfp2h);
+GEN_OFFSET_SYM(_callee_saved_stack_t, dpfp2l);
+GEN_OFFSET_SYM(_callee_saved_stack_t, dpfp1h);
+GEN_OFFSET_SYM(_callee_saved_stack_t, dpfp1l);
+#endif
+
+#endif
 GEN_ABSOLUTE_SYM(___callee_saved_stack_t_SIZEOF, sizeof(_callee_saved_stack_t));
 
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));

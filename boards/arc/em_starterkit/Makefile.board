@@ -1,16 +1,7 @@
-#
-# TODO: This file is WRONG currently.
-#   The Zephyr-SDK tools don't yet support working with the ARC EM Starter Kit
-#   See doc/board/em_starterkit.rst for more details.
-#
-#FLASH_SCRIPT = openocd.sh
-#  ^^ Keep FLASH_SCRIPT undefined for now since flashing a self-boot image
-#     is not yet supported by Zephyr Makefile.
-OPENOCD_PRE_CMD = "targets 1"
-OPENOCD_LOAD_CMD = "load_image ${O}/${KERNEL_BIN_NAME} $(CONFIG_ICCM_BASE_ADDRESS)"
-OPENOCD_VERIFY_CMD = "verify_image ${O}/${KERNEL_BIN_NAME} $(CONFIG_ICCM_BASE_ADDRESS)"
+FLASH_SCRIPT = arc_debugger.sh
+DEBUG_SCRIPT = arc_debugger.sh
 
-GDB_PORT = 3333
+OPENOCD_LOAD_CMD = "load_image ${O}/${KERNEL_ELF_NAME}"
+OPENOCD_VERIFY_CMD = "verify_image ${O}/${KERNEL_ELF_NAME}"
 
-export OPENOCD_PRE_CMD FLASH_SCRIPT OPENOCD_VERIFY_CMD OPENOCD_LOAD_CMD GDB_PORT
-
+export FLASH_SCRIPT DEBUG_SCRIPT OPENOCD_VERIFY_CMD OPENOCD_LOAD_CMD

@@ -42,6 +42,26 @@ extern "C" {
 	st r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
 	st fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
 	st r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
+#ifdef CONFIG_FP_SHARING
+	st r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
+	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
+	lr r13, [_ARC_V2_FPU_STATUS]
+	st_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
+	lr r13, [_ARC_V2_FPU_CTRL]
+	st_s r13, [sp, ___callee_saved_stack_t_fpu_ctrl_OFFSET]
+
+#ifdef CONFIG_FP_FPU_DA
+	lr r13, [_ARC_V2_FPU_DPFP1L]
+	st_s r13, [sp, ___callee_saved_stack_t_dpfp1l_OFFSET]
+	lr r13, [_ARC_V2_FPU_DPFP1H]
+	st_s r13, [sp, ___callee_saved_stack_t_dpfp1h_OFFSET]
+	lr r13, [_ARC_V2_FPU_DPFP2L]
+	st_s r13, [sp, ___callee_saved_stack_t_dpfp2l_OFFSET]
+	lr r13, [_ARC_V2_FPU_DPFP2H]
+	st_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
+#endif
+
+#endif
 
 	/* save stack pointer in struct tcs */
 	st sp, [r2, _thread_offset_to_sp]
@@ -68,6 +88,31 @@ extern "C" {
 	ld r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
 	ld fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
 	ld r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
+
+#ifdef CONFIG_FP_SHARING
+	ld r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
+	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
+
+	ld_s r13, [sp, ___callee_saved_stack_t_fpu_status_OFFSET]
+	sr r13, [_ARC_V2_FPU_STATUS]
+
+	ld_s r13, [sp, ___callee_saved_stack_t_fpu_ctrl_OFFSET]
+	sr r13, [_ARC_V2_FPU_CTRL]
+
+
+#ifdef CONFIG_FP_FPU_DA
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp1l_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP1L]
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp1h_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP1H]
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2l_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP2L]
+	ld_s r13, [sp, ___callee_saved_stack_t_dpfp2h_OFFSET]
+	sr r13, [_ARC_V2_FPU_DPFP2H]
+#endif
+
+#endif
+
 
 	add_s sp, sp, ___callee_saved_stack_t_SIZEOF
 
@@ -111,6 +156,15 @@ extern "C" {
 	st_s r1, [sp, ___isf_t_lp_start_OFFSET]
 	st_s r0, [sp, ___isf_t_lp_end_OFFSET]
 
+#ifdef CONFIG_CODE_DENSITY
+	lr r1, [_ARC_V2_JLI_BASE]
+	lr r0, [_ARC_V2_LDI_BASE]
+	lr r2, [_ARC_V2_EI_BASE]
+	st_s r1, [sp, ___isf_t_jli_base_OFFSET]
+	st_s r0, [sp, ___isf_t_ldi_base_OFFSET]
+	st_s r2, [sp, ___isf_t_ei_base_OFFSET]
+#endif
+
 .endm
 
 /*
@@ -120,6 +174,15 @@ extern "C" {
 .macro _pop_irq_stack_frame
 
 	ld blink, [sp, ___isf_t_blink_OFFSET]
+
+#ifdef CONFIG_CODE_DENSITY
+	ld_s r1, [sp, ___isf_t_jli_base_OFFSET]
+	ld_s r0, [sp, ___isf_t_ldi_base_OFFSET]
+	ld_s r2, [sp, ___isf_t_ei_base_OFFSET]
+	sr r1, [_ARC_V2_JLI_BASE]
+	sr r0, [_ARC_V2_LDI_BASE]
+	sr r2, [_ARC_V2_EI_BASE]
+#endif
 
 	ld_s r0, [sp, ___isf_t_lp_count_OFFSET]
 	mov lp_count, r0
@@ -142,6 +205,7 @@ extern "C" {
 	ld_s r2,  [sp, ___isf_t_r2_OFFSET]
 	ld_s r1,  [sp, ___isf_t_r1_OFFSET]
 	ld_s r0,  [sp, ___isf_t_r0_OFFSET]
+
 
 	/*
 	 * All gprs have been reloaded, the only one that is still usable is

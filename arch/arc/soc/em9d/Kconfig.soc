@@ -1,3 +1,4 @@
 
 config SOC_EM9D
 	bool "Synopsys ARC EM9D"
+	select CPU_HAS_FPU
