@@ -29,6 +29,11 @@ baseprereq = $(basename $(notdir $<))
 # Escape single quote for use in echo statements
 escsq = $(subst $(squote),'\$(squote)',$1)
 
+
+###
+# Transform quoted string into a normal one
+unquote = $(subst $\",,$(1))
+
 ###
 # Easy method for doing a status message
        kecho := :
