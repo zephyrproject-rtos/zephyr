@@ -53,6 +53,7 @@
 			reg = <0x40004000 0x1000>;
 			interrupts = <IRQ_UART0 3>;
 			current-speed = <115200>;
+			label = "UART_0";
 		};
 
 		uart1: uart@40005000 {
@@ -60,6 +61,7 @@
 			reg = <0x40005000 0x1000>;
 			interrupts = <IRQ_UART1 3>;
 			current-speed = <115200>;
+			label = "UART_1";
 		};
 
 		wdog0: wdog@40008000 {

@@ -24,14 +24,6 @@ config UART_CMSDK_APB_PORT0
 	help
 	  Build the driver to utilize UART controller Port 0.
 
-config UART_CMSDK_APB_PORT0_NAME
-	string "Device Name for UART 0"
-	default "UART_0"
-	depends on UART_CMSDK_APB_PORT0
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 # ---------- Port 1 ----------
 
 config UART_CMSDK_APB_PORT1
@@ -39,14 +31,6 @@ config UART_CMSDK_APB_PORT1
 	default n
 	help
 	  Build the driver to utilize UART controller Port 1.
-
-config UART_CMSDK_APB_PORT1_NAME
-	string "Device Name for UART 1"
-	default "UART_1"
-	depends on UART_CMSDK_APB_PORT1
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
 
 # ---------- Port 2 ----------
 
@@ -56,14 +40,6 @@ config UART_CMSDK_APB_PORT2
 	help
 	  Build the driver to utilize UART controller Port 2.
 
-config UART_CMSDK_APB_PORT2_NAME
-	string "Device Name for UART 2"
-	default "UART_2"
-	depends on UART_CMSDK_APB_PORT2
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 # ---------- Port 3 ----------
 
 config UART_CMSDK_APB_PORT3
@@ -72,14 +48,6 @@ config UART_CMSDK_APB_PORT3
 	help
 	  Build the driver to utilize UART controller Port 3.
 
-config UART_CMSDK_APB_PORT3_NAME
-	string "Device Name for UART 3"
-	default "UART_3"
-	depends on UART_CMSDK_APB_PORT3
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 # ---------- Port 4 ----------
 
 config UART_CMSDK_APB_PORT4
@@ -87,13 +55,5 @@ config UART_CMSDK_APB_PORT4
 	default n
 	help
 	  Build the driver to utilize UART controller Port 4.
-
-config UART_CMSDK_APB_PORT4_NAME
-	string "Device Name for UART 4"
-	default "UART_4"
-	depends on UART_CMSDK_APB_PORT4
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
 
 endif # UART_CMSDK_APB
