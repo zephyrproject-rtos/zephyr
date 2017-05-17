@@ -76,14 +76,14 @@ config NET_STATISTICS_TCP
 config NET_STATISTICS_RPL
 	bool "RPL statistics"
 	depends on NET_RPL
-	default n
+	default y
 	help
 	Keep track of RPL related statistics
 
 config NET_STATISTICS_MLD
 	bool "Multicast Listener Discovery (MLD) statistics"
 	depends on NET_IPV6_MLD
-	default n
+	default y
 	help
 	Keep track of MLD related statistics
 
