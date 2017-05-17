@@ -44,6 +44,12 @@ static inline void stats(void)
 			 GET_STAT(ipv6_nd.sent),
 			 GET_STAT(ipv6_nd.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+#if defined(CONFIG_NET_STATISTICS_MLD)
+		NET_INFO("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d",
+			 GET_STAT(ipv6_mld.recv),
+			 GET_STAT(ipv6_mld.sent),
+			 GET_STAT(ipv6_mld.drop));
+#endif /* CONFIG_NET_STATISTICS_MLD */
 #endif /* CONFIG_NET_STATISTICS_IPV6 */
 
 #if defined(CONFIG_NET_STATISTICS_IPV4)
