@@ -129,6 +129,16 @@ config NET_TCP_2MSL_TIME
 	help
 	The value is in seconds.
 
+config NET_TCP_ACK_TIMEOUT
+	int "How long to wait for ACK (in milliseconds)"
+	depends on NET_TCP
+	default 1000
+	range 1 2147483647
+	help
+	This value affects the timeout when waiting ACK to arrive in
+	various TCP states. The value is in milliseconds. Note that
+	having a very low value here could prevent connectivity.
+
 config NET_UDP
 	bool "Enable UDP"
 	default y
