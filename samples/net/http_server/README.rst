@@ -217,6 +217,27 @@ and this is the HTML message that wget will save:
 	<body><h1><center>404 Not Found</center></h1></body>
 	</html>
 
+To test the HTTP Basic Authentication functionality, use the
+following command:
+
+.. code-block:: console
+
+	wget 192.168.1.120/auth -O index.html --user=zephyr --password=0123456789
+
+the :file:`index.html` file will contain the following information:
+
+.. code-block:: html
+
+	<html>
+	<head>
+	<title>Zephyr HTTP Server</title>
+	</head>
+	<body>
+	<h1><center>Zephyr HTTP server</center></h1>
+	<h2><center>user: zephyr, password: 0123456789</center></h2>
+	</body>
+	</html>
+
 HTTPS Server
 ============
 
@@ -274,4 +295,3 @@ Known Issues and Limitations
 
 - Currently, this sample application only generates HTTP responses in
   chunk transfer mode.
-- Basic authentication is not yet implemented.
