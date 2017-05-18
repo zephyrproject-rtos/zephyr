@@ -323,8 +323,10 @@ breathe_projects = {
 }
 breathe_default_project = "Zephyr"
 
+# docs_title is used in the breadcrumb title in the zephyr docs theme
 html_context = {
     'show_license': html_show_license,
+    'docs_title': 'Docs / ' + version,
 }
 
 extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', '')}
