@@ -11,7 +11,8 @@
 static int pos;
 char ram_console[BUF_SZ];
 
-extern int (*_char_out)(int);
+void __printk_hook_install(int (*fn)(int));
+void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
 char *expected = "22 113 10000 32768 40000 22\n"
@@ -60,8 +61,8 @@ void printk_test(void)
 {
 	int count;
 
-	_old_char_out = _char_out;
-	_char_out = ram_console_out;
+	_old_char_out = __printk_get_hook();
+	__printk_hook_install(ram_console_out);
 
 	printk("%zu %hhu %hu %u %lu %llu\n", stv, uc, usi, ui, ul, ull);
 	printk("%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
