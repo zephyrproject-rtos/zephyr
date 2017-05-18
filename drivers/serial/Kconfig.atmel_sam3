@@ -10,14 +10,6 @@ menuconfig UART_ATMEL_SAM3
 	for RX and TX, and does not have other pins
 	(such as CTS and RTS).
 
-config UART_ATMEL_SAM3_NAME
-	string "Device Name for Atmel SAM3 UART"
-	default "UART_0"
-	depends on UART_ATMEL_SAM3
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 config UART_ATMEL_SAM3_IRQ_PRI
 	int "Atmel SAM3 UART Interrupt Priority"
 	default 0

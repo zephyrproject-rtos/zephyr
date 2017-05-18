@@ -2,14 +2,14 @@
   ******************************************************************************
   * @file    stm32l4xx_hal.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   This file contains all the functions prototypes for the HAL
   *          module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -67,9 +67,11 @@
 #define SYSCFG_BOOT_MAINFLASH          ((uint32_t)0x00000000)
 #define SYSCFG_BOOT_SYSTEMFLASH        SYSCFG_MEMRMP_MEM_MODE_0
 
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx)
 #define SYSCFG_BOOT_FMC                SYSCFG_MEMRMP_MEM_MODE_1
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
+       /* STM32L496xx || STM32L4A6xx */
       
 #define SYSCFG_BOOT_SRAM               (SYSCFG_MEMRMP_MEM_MODE_1 | SYSCFG_MEMRMP_MEM_MODE_0)
 
@@ -93,7 +95,7 @@
   * @}
   */
 
-/** @defgroup SYSCFG_SRAM2WRP SRAM2 Write protection
+/** @defgroup SYSCFG_SRAM2WRP SRAM2 Page Write protection (0 to 31)
   * @{
   */
 #define SYSCFG_SRAM2WRP_PAGE0          SYSCFG_SWPR_PAGE0 /*!< SRAM2 Write protection page 0 */
@@ -112,6 +114,7 @@
 #define SYSCFG_SRAM2WRP_PAGE13         SYSCFG_SWPR_PAGE13 /*!< SRAM2 Write protection page 13 */
 #define SYSCFG_SRAM2WRP_PAGE14         SYSCFG_SWPR_PAGE14 /*!< SRAM2 Write protection page 14 */
 #define SYSCFG_SRAM2WRP_PAGE15         SYSCFG_SWPR_PAGE15 /*!< SRAM2 Write protection page 15 */
+#if defined(SYSCFG_SWPR_PAGE31)
 #define SYSCFG_SRAM2WRP_PAGE16         SYSCFG_SWPR_PAGE16 /*!< SRAM2 Write protection page 16 */
 #define SYSCFG_SRAM2WRP_PAGE17         SYSCFG_SWPR_PAGE17 /*!< SRAM2 Write protection page 17 */
 #define SYSCFG_SRAM2WRP_PAGE18         SYSCFG_SWPR_PAGE18 /*!< SRAM2 Write protection page 18 */
@@ -128,10 +131,53 @@
 #define SYSCFG_SRAM2WRP_PAGE29         SYSCFG_SWPR_PAGE29 /*!< SRAM2 Write protection page 29 */
 #define SYSCFG_SRAM2WRP_PAGE30         SYSCFG_SWPR_PAGE30 /*!< SRAM2 Write protection page 30 */
 #define SYSCFG_SRAM2WRP_PAGE31         SYSCFG_SWPR_PAGE31 /*!< SRAM2 Write protection page 31 */
+#endif /* SYSCFG_SWPR_PAGE31 */
 
 /**
   * @}
   */
+
+#if defined(SYSCFG_SWPR2_PAGE63)
+/** @defgroup SYSCFG_SRAM2WRP_32_63 SRAM2 Page Write protection (32 to 63)
+  * @{
+  */
+#define SYSCFG_SRAM2WRP_PAGE32         SYSCFG_SWPR2_PAGE32 /*!< SRAM2 Write protection page 32 */
+#define SYSCFG_SRAM2WRP_PAGE33         SYSCFG_SWPR2_PAGE33 /*!< SRAM2 Write protection page 33 */
+#define SYSCFG_SRAM2WRP_PAGE34         SYSCFG_SWPR2_PAGE34 /*!< SRAM2 Write protection page 34 */
+#define SYSCFG_SRAM2WRP_PAGE35         SYSCFG_SWPR2_PAGE35 /*!< SRAM2 Write protection page 35 */
+#define SYSCFG_SRAM2WRP_PAGE36         SYSCFG_SWPR2_PAGE36 /*!< SRAM2 Write protection page 36 */
+#define SYSCFG_SRAM2WRP_PAGE37         SYSCFG_SWPR2_PAGE37 /*!< SRAM2 Write protection page 37 */
+#define SYSCFG_SRAM2WRP_PAGE38         SYSCFG_SWPR2_PAGE38 /*!< SRAM2 Write protection page 38 */
+#define SYSCFG_SRAM2WRP_PAGE39         SYSCFG_SWPR2_PAGE39 /*!< SRAM2 Write protection page 39 */
+#define SYSCFG_SRAM2WRP_PAGE40         SYSCFG_SWPR2_PAGE40 /*!< SRAM2 Write protection page 40 */
+#define SYSCFG_SRAM2WRP_PAGE41         SYSCFG_SWPR2_PAGE41 /*!< SRAM2 Write protection page 41 */
+#define SYSCFG_SRAM2WRP_PAGE42         SYSCFG_SWPR2_PAGE42 /*!< SRAM2 Write protection page 42 */
+#define SYSCFG_SRAM2WRP_PAGE43         SYSCFG_SWPR2_PAGE43 /*!< SRAM2 Write protection page 43 */
+#define SYSCFG_SRAM2WRP_PAGE44         SYSCFG_SWPR2_PAGE44 /*!< SRAM2 Write protection page 44 */
+#define SYSCFG_SRAM2WRP_PAGE45         SYSCFG_SWPR2_PAGE45 /*!< SRAM2 Write protection page 45 */
+#define SYSCFG_SRAM2WRP_PAGE46         SYSCFG_SWPR2_PAGE46 /*!< SRAM2 Write protection page 46 */
+#define SYSCFG_SRAM2WRP_PAGE47         SYSCFG_SWPR2_PAGE47 /*!< SRAM2 Write protection page 47 */
+#define SYSCFG_SRAM2WRP_PAGE48         SYSCFG_SWPR2_PAGE48 /*!< SRAM2 Write protection page 48 */
+#define SYSCFG_SRAM2WRP_PAGE49         SYSCFG_SWPR2_PAGE49 /*!< SRAM2 Write protection page 49 */
+#define SYSCFG_SRAM2WRP_PAGE50         SYSCFG_SWPR2_PAGE50 /*!< SRAM2 Write protection page 50 */
+#define SYSCFG_SRAM2WRP_PAGE51         SYSCFG_SWPR2_PAGE51 /*!< SRAM2 Write protection page 51 */
+#define SYSCFG_SRAM2WRP_PAGE52         SYSCFG_SWPR2_PAGE52 /*!< SRAM2 Write protection page 52 */
+#define SYSCFG_SRAM2WRP_PAGE53         SYSCFG_SWPR2_PAGE53 /*!< SRAM2 Write protection page 53 */
+#define SYSCFG_SRAM2WRP_PAGE54         SYSCFG_SWPR2_PAGE54 /*!< SRAM2 Write protection page 54 */
+#define SYSCFG_SRAM2WRP_PAGE55         SYSCFG_SWPR2_PAGE55 /*!< SRAM2 Write protection page 55 */
+#define SYSCFG_SRAM2WRP_PAGE56         SYSCFG_SWPR2_PAGE56 /*!< SRAM2 Write protection page 56 */
+#define SYSCFG_SRAM2WRP_PAGE57         SYSCFG_SWPR2_PAGE57 /*!< SRAM2 Write protection page 57 */
+#define SYSCFG_SRAM2WRP_PAGE58         SYSCFG_SWPR2_PAGE58 /*!< SRAM2 Write protection page 58 */
+#define SYSCFG_SRAM2WRP_PAGE59         SYSCFG_SWPR2_PAGE59 /*!< SRAM2 Write protection page 59 */
+#define SYSCFG_SRAM2WRP_PAGE60         SYSCFG_SWPR2_PAGE60 /*!< SRAM2 Write protection page 60 */
+#define SYSCFG_SRAM2WRP_PAGE61         SYSCFG_SWPR2_PAGE61 /*!< SRAM2 Write protection page 61 */
+#define SYSCFG_SRAM2WRP_PAGE62         SYSCFG_SWPR2_PAGE62 /*!< SRAM2 Write protection page 62 */
+#define SYSCFG_SRAM2WRP_PAGE63         SYSCFG_SWPR2_PAGE63 /*!< SRAM2 Write protection page 63 */
+
+/**
+  * @}
+  */
+#endif /* SYSCFG_SWPR2_PAGE63 */
 
 #if defined(VREFBUF)
 /** @defgroup SYSCFG_VREFBUF_VoltageScale VREFBUF Voltage Scale
@@ -267,6 +313,11 @@
 #define __HAL_DBGMCU_UNFREEZE_CAN1()         CLEAR_BIT(DBGMCU->APB1FZR1, DBGMCU_APB1FZR1_DBG_CAN_STOP)
 #endif
 
+#if defined(DBGMCU_APB1FZR1_DBG_CAN2_STOP)
+#define __HAL_DBGMCU_FREEZE_CAN2()           SET_BIT(DBGMCU->APB1FZR1, DBGMCU_APB1FZR1_DBG_CAN2_STOP)
+#define __HAL_DBGMCU_UNFREEZE_CAN2()         CLEAR_BIT(DBGMCU->APB1FZR1, DBGMCU_APB1FZR1_DBG_CAN2_STOP)
+#endif
+
 #if defined(DBGMCU_APB1FZR1_DBG_LPTIM1_STOP)
 #define __HAL_DBGMCU_FREEZE_LPTIM1()         SET_BIT(DBGMCU->APB1FZR1, DBGMCU_APB1FZR1_DBG_LPTIM1_STOP)
 #define __HAL_DBGMCU_UNFREEZE_LPTIM1()       CLEAR_BIT(DBGMCU->APB1FZR1, DBGMCU_APB1FZR1_DBG_LPTIM1_STOP)
@@ -322,13 +373,15 @@
   */
 #define __HAL_SYSCFG_REMAPMEMORY_SRAM()        MODIFY_REG(SYSCFG->MEMRMP, SYSCFG_MEMRMP_MEM_MODE, (SYSCFG_MEMRMP_MEM_MODE_1|SYSCFG_MEMRMP_MEM_MODE_0))
 
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx)
 
 /** @brief  FMC Bank1 (NOR/PSRAM 1 and 2) mapped at 0x00000000.
   */
 #define __HAL_SYSCFG_REMAPMEMORY_FMC()         MODIFY_REG(SYSCFG->MEMRMP, SYSCFG_MEMRMP_MEM_MODE, SYSCFG_MEMRMP_MEM_MODE_1)
 
-#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
+       /* STM32L496xx || STM32L4A6xx */
 
 /** @brief  QUADSPI mapped at 0x00000000.
   */
@@ -348,13 +401,23 @@
   */
 #define __HAL_SYSCFG_GET_BOOT_MODE()           READ_BIT(SYSCFG->MEMRMP, SYSCFG_MEMRMP_MEM_MODE)
 
-/** @brief  SRAM2 page write protection enable macro
-  * @param __SRAM2WRP__: This parameter can be a value of @ref SYSCFG_SRAM2WRP
-  * @note   write protection can only be disabled by a system reset
+/** @brief  SRAM2 page 0 to 31 write protection enable macro
+  * @param  __SRAM2WRP__  This parameter can be a combination of values of @ref SYSCFG_SRAM2WRP
+  * @note   Write protection can only be disabled by a system reset
   */
-#define __HAL_SYSCFG_SRAM2_WRP_ENABLE(__SRAM2WRP__)   do {assert_param(IS_SYSCFG_SRAM2WRP_PAGE((__SRAM2WRP__)));\
+#define __HAL_SYSCFG_SRAM2_WRP_1_31_ENABLE(__SRAM2WRP__)    do {assert_param(IS_SYSCFG_SRAM2WRP_PAGE((__SRAM2WRP__)));\
                                                          SET_BIT(SYSCFG->SWPR, (__SRAM2WRP__));\
                                                         }while(0)
+
+#if defined(SYSCFG_SWPR2_PAGE63)
+/** @brief  SRAM2 page 32 to 63 write protection enable macro
+  * @param  __SRAM2WRP__  This parameter can be a combination of values of @ref SYSCFG_SRAM2WRP_32_63
+  * @note   Write protection can only be disabled by a system reset
+  */
+#define __HAL_SYSCFG_SRAM2_WRP_32_63_ENABLE(__SRAM2WRP__)   do {assert_param(IS_SYSCFG_SRAM2WRP_PAGE((__SRAM2WRP__)));\
+                                                                SET_BIT(SYSCFG->SWPR2, (__SRAM2WRP__));\
+                                                            }while(0)
+#endif /* SYSCFG_SWPR2_PAGE63 */
 
 /** @brief  SRAM2 page write protection unlock prior to erase
   * @note   Writing a wrong key reactivates the write protection
@@ -519,6 +582,9 @@ void HAL_ResumeTick(void);
 uint32_t HAL_GetHalVersion(void);
 uint32_t HAL_GetREVID(void);
 uint32_t HAL_GetDEVID(void);
+uint32_t HAL_GetUIDw0(void);
+uint32_t HAL_GetUIDw1(void);
+uint32_t HAL_GetUIDw2(void);
 
 /**
   * @}

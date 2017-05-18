@@ -24,33 +24,6 @@ config UART_CMSDK_APB_PORT0
 	help
 	  Build the driver to utilize UART controller Port 0.
 
-config UART_CMSDK_APB_PORT0_NAME
-	string "Device Name for UART 0"
-	default "UART_0"
-	depends on UART_CMSDK_APB_PORT0
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-if !HAS_DTS
-
-config UART_CMSDK_APB_PORT0_IRQ_PRI
-	int "UART Interrupt Priority (Interrupt support)"
-	default 2
-	depends on UART_CMSDK_APB_PORT0
-	depends on UART_INTERRUPT_DRIVEN
-	help
-	  The interrupt priority for UART port.
-
-config UART_CMSDK_APB_PORT0_BAUD_RATE
-	int "Baud Rate"
-	range 9600 115200
-	default 115200
-	depends on UART_CMSDK_APB_PORT0
-	help
-	  The baud rate for UART port to be set to at boot.
-
-endif # !HAS_DTS
 # ---------- Port 1 ----------
 
 config UART_CMSDK_APB_PORT1
@@ -59,33 +32,6 @@ config UART_CMSDK_APB_PORT1
 	help
 	  Build the driver to utilize UART controller Port 1.
 
-config UART_CMSDK_APB_PORT1_NAME
-	string "Device Name for UART 1"
-	default "UART_1"
-	depends on UART_CMSDK_APB_PORT1
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-if !HAS_DTS
-
-config UART_CMSDK_APB_PORT1_IRQ_PRI
-	int "UART Interrupt Priority (Interrupt support)"
-	default 2
-	depends on UART_CMSDK_APB_PORT1
-	depends on UART_INTERRUPT_DRIVEN
-	help
-	  The interrupt priority for UART port.
-
-config UART_CMSDK_APB_PORT1_BAUD_RATE
-	int "Baud Rate"
-	range 9600 115200
-	default 115200
-	depends on UART_CMSDK_APB_PORT1
-	help
-	  The baud rate for UART port to be set to at boot.
-
-endif # !HAS_DTS
 # ---------- Port 2 ----------
 
 config UART_CMSDK_APB_PORT2
@@ -94,33 +40,6 @@ config UART_CMSDK_APB_PORT2
 	help
 	  Build the driver to utilize UART controller Port 2.
 
-config UART_CMSDK_APB_PORT2_NAME
-	string "Device Name for UART 2"
-	default "UART_2"
-	depends on UART_CMSDK_APB_PORT2
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-if !HAS_DTS
-
-config UART_CMSDK_APB_PORT2_IRQ_PRI
-	int "UART Interrupt Priority (Interrupt support)"
-	default 2
-	depends on UART_CMSDK_APB_PORT2
-	depends on UART_INTERRUPT_DRIVEN
-	help
-	  The interrupt priority for UART port.
-
-config UART_CMSDK_APB_PORT2_BAUD_RATE
-	int "Baud Rate"
-	range 9600 115200
-	default 115200
-	depends on UART_CMSDK_APB_PORT2
-	help
-	  The baud rate for UART port to be set to at boot.
-
-endif # !HAS_DTS
 # ---------- Port 3 ----------
 
 config UART_CMSDK_APB_PORT3
@@ -129,33 +48,6 @@ config UART_CMSDK_APB_PORT3
 	help
 	  Build the driver to utilize UART controller Port 3.
 
-config UART_CMSDK_APB_PORT3_NAME
-	string "Device Name for UART 3"
-	default "UART_3"
-	depends on UART_CMSDK_APB_PORT3
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-if !HAS_DTS
-
-config UART_CMSDK_APB_PORT3_IRQ_PRI
-	int "UART Interrupt Priority (Interrupt support)"
-	default 2
-	depends on UART_CMSDK_APB_PORT3
-	depends on UART_INTERRUPT_DRIVEN
-	help
-	  The interrupt priority for UART port.
-
-config UART_CMSDK_APB_PORT3_BAUD_RATE
-	int "Baud Rate"
-	range 9600 115200
-	default 115200
-	depends on UART_CMSDK_APB_PORT3
-	help
-	  The baud rate for UART port to be set to at boot.
-
-endif # !HAS_DTS
 # ---------- Port 4 ----------
 
 config UART_CMSDK_APB_PORT4
@@ -164,31 +56,4 @@ config UART_CMSDK_APB_PORT4
 	help
 	  Build the driver to utilize UART controller Port 4.
 
-config UART_CMSDK_APB_PORT4_NAME
-	string "Device Name for UART 4"
-	default "UART_4"
-	depends on UART_CMSDK_APB_PORT4
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-if !HAS_DTS
-
-config UART_CMSDK_APB_PORT4_IRQ_PRI
-	int "UART Interrupt Priority (Interrupt support)"
-	default 2
-	depends on UART_CMSDK_APB_PORT4
-	depends on UART_INTERRUPT_DRIVEN
-	help
-	  The interrupt priority for UART port.
-
-config UART_CMSDK_APB_PORT4_BAUD_RATE
-	int "Baud Rate"
-	range 9600 115200
-	default 115200
-	depends on UART_CMSDK_APB_PORT4
-	help
-	  The baud rate for UART port to be set to at boot.
-
-endif # !HAS_DTS
 endif # UART_CMSDK_APB

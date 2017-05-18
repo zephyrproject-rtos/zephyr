@@ -16,34 +16,6 @@ menuconfig UART_NRF5
 	  family processors. Note that there is only one
 	  UART controller on nRF5 ICs.
 
-config UART_NRF5_NAME
-	string "Device Name for Nordic Semiconductor nRF5 UART"
-	default "UART_0"
-	depends on UART_NRF5
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-if !HAS_DTS
-config UART_NRF5_IRQ_PRI
-	int "UART Interrupt Priority (Interrupt support)"
-	range 0 1 if SOC_SERIES_NRF51X
-	range 0 5 if SOC_SERIES_NRF52X
-	default 1
-	depends on UART_NRF5
-	depends on UART_INTERRUPT_DRIVEN
-	help
-	  The interrupt priority for UART port.
-
-config UART_NRF5_BAUD_RATE
-	int "Baud Rate"
-	range 1200 1000000
-	default 115200
-	depends on UART_NRF5
-	help
-	  The baud rate for UART port to be set to at boot.
-endif
-
 config UART_NRF5_CLK_FREQ
 	int
 	default 16000000

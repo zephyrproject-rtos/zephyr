@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_system.h
   * @author  MCD Application Team
-  * @version V1.6.0
-  * @date    28-October-2016
+  * @version V1.7.1
+  * @date    21-April-2017
   * @brief   Header file of SYSTEM LL module.
   @verbatim
   ==============================================================================
@@ -21,7 +21,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -102,7 +102,7 @@ extern "C" {
 /** @defgroup SYSTEM_LL_EC_REMAP SYSCFG REMAP
 * @{
 */
-#define LL_SYSCFG_REMAP_FLASH              (uint32_t)0x00000000                                  /*!< Main Flash memory mapped at 0x00000000              */
+#define LL_SYSCFG_REMAP_FLASH              0x00000000U                                           /*!< Main Flash memory mapped at 0x00000000              */
 #define LL_SYSCFG_REMAP_SYSTEMFLASH        SYSCFG_MEMRMP_MEM_MODE_0                              /*!< System Flash memory mapped at 0x00000000            */
 #define LL_SYSCFG_REMAP_SRAM               (SYSCFG_MEMRMP_MEM_MODE_1 | SYSCFG_MEMRMP_MEM_MODE_0) /*!< SRAM1 mapped at 0x00000000                          */
 #if defined(FMC_Bank1_R)
@@ -117,7 +117,7 @@ extern "C" {
 /** @defgroup SYSTEM_LL_EC_BANKMODE SYSCFG BANK MODE
   * @{
   */
-#define LL_SYSCFG_BANKMODE_BANK1           (uint32_t)0x00000000      /*!< Flash Bank1 mapped at 0x08000000 (and aliased @0x00000000) 
+#define LL_SYSCFG_BANKMODE_BANK1           0x00000000U               /*!< Flash Bank1 mapped at 0x08000000 (and aliased @0x00000000) 
                                                                       and Flash Bank2 mapped at 0x08080000 (and aliased at 0x00080000) */
 #define LL_SYSCFG_BANKMODE_BANK2           SYSCFG_MEMRMP_FB_MODE     /*!< Flash Bank2 mapped at 0x08000000 (and aliased @0x00000000) 
                                                                       and Flash Bank1 mapped at 0x08080000 (and aliased at 0x00080000) */
@@ -152,18 +152,21 @@ extern "C" {
 /** @defgroup SYSTEM_LL_EC_EXTI_PORT SYSCFG EXTI PORT
   * @{
   */
-#define LL_SYSCFG_EXTI_PORTA               (uint32_t)0               /*!< EXTI PORT A                        */
-#define LL_SYSCFG_EXTI_PORTB               (uint32_t)1               /*!< EXTI PORT B                        */
-#define LL_SYSCFG_EXTI_PORTC               (uint32_t)2               /*!< EXTI PORT C                        */
-#define LL_SYSCFG_EXTI_PORTD               (uint32_t)3               /*!< EXTI PORT D                        */
-#define LL_SYSCFG_EXTI_PORTE               (uint32_t)4               /*!< EXTI PORT E                        */
+#define LL_SYSCFG_EXTI_PORTA               0U                        /*!< EXTI PORT A                        */
+#define LL_SYSCFG_EXTI_PORTB               1U                        /*!< EXTI PORT B                        */
+#define LL_SYSCFG_EXTI_PORTC               2U                        /*!< EXTI PORT C                        */
+#define LL_SYSCFG_EXTI_PORTD               3U                        /*!< EXTI PORT D                        */
+#define LL_SYSCFG_EXTI_PORTE               4U                        /*!< EXTI PORT E                        */
 #if defined(GPIOF)
-#define LL_SYSCFG_EXTI_PORTF               (uint32_t)5               /*!< EXTI PORT F                        */
+#define LL_SYSCFG_EXTI_PORTF               5U                        /*!< EXTI PORT F                        */
 #endif /* GPIOF */
 #if defined(GPIOG)
-#define LL_SYSCFG_EXTI_PORTG               (uint32_t)6               /*!< EXTI PORT G                        */
+#define LL_SYSCFG_EXTI_PORTG               6U                        /*!< EXTI PORT G                        */
 #endif /* GPIOG */
-#define LL_SYSCFG_EXTI_PORTH               (uint32_t)7               /*!< EXTI PORT H                        */
+#define LL_SYSCFG_EXTI_PORTH               7U                        /*!< EXTI PORT H                        */
+#if defined(GPIOI)
+#define LL_SYSCFG_EXTI_PORTI               8U                        /*!< EXTI PORT I                        */
+#endif /* GPIOI */
 /**
   * @}
   */
@@ -171,22 +174,22 @@ extern "C" {
 /** @defgroup SYSTEM_LL_EC_EXTI_LINE SYSCFG EXTI LINE
   * @{
   */
-#define LL_SYSCFG_EXTI_LINE0               (uint32_t)(0x000FU << 16 | 0)  /* !< EXTI_POSITION_0  | EXTICR[0] */
-#define LL_SYSCFG_EXTI_LINE1               (uint32_t)(0x00F0U << 16 | 0)  /* !< EXTI_POSITION_4  | EXTICR[0] */
-#define LL_SYSCFG_EXTI_LINE2               (uint32_t)(0x0F00U << 16 | 0)  /* !< EXTI_POSITION_8  | EXTICR[0] */
-#define LL_SYSCFG_EXTI_LINE3               (uint32_t)(0xF000U << 16 | 0)  /* !< EXTI_POSITION_12 | EXTICR[0] */
-#define LL_SYSCFG_EXTI_LINE4               (uint32_t)(0x000FU << 16 | 1)  /* !< EXTI_POSITION_0  | EXTICR[1] */
-#define LL_SYSCFG_EXTI_LINE5               (uint32_t)(0x00F0U << 16 | 1)  /* !< EXTI_POSITION_4  | EXTICR[1] */
-#define LL_SYSCFG_EXTI_LINE6               (uint32_t)(0x0F00U << 16 | 1)  /* !< EXTI_POSITION_8  | EXTICR[1] */
-#define LL_SYSCFG_EXTI_LINE7               (uint32_t)(0xF000U << 16 | 1)  /* !< EXTI_POSITION_12 | EXTICR[1] */
-#define LL_SYSCFG_EXTI_LINE8               (uint32_t)(0x000FU << 16 | 2)  /* !< EXTI_POSITION_0  | EXTICR[2] */
-#define LL_SYSCFG_EXTI_LINE9               (uint32_t)(0x00F0U << 16 | 2)  /* !< EXTI_POSITION_4  | EXTICR[2] */
-#define LL_SYSCFG_EXTI_LINE10              (uint32_t)(0x0F00U << 16 | 2)  /* !< EXTI_POSITION_8  | EXTICR[2] */
-#define LL_SYSCFG_EXTI_LINE11              (uint32_t)(0xF000U << 16 | 2)  /* !< EXTI_POSITION_12 | EXTICR[2] */
-#define LL_SYSCFG_EXTI_LINE12              (uint32_t)(0x000FU << 16 | 3)  /* !< EXTI_POSITION_0  | EXTICR[3] */
-#define LL_SYSCFG_EXTI_LINE13              (uint32_t)(0x00F0U << 16 | 3)  /* !< EXTI_POSITION_4  | EXTICR[3] */
-#define LL_SYSCFG_EXTI_LINE14              (uint32_t)(0x0F00U << 16 | 3)  /* !< EXTI_POSITION_8  | EXTICR[3] */
-#define LL_SYSCFG_EXTI_LINE15              (uint32_t)(0xF000U << 16 | 3)  /* !< EXTI_POSITION_12 | EXTICR[3] */
+#define LL_SYSCFG_EXTI_LINE0               (uint32_t)(0x000FU << 16U | 0U)  /* !< EXTI_POSITION_0  | EXTICR[0] */
+#define LL_SYSCFG_EXTI_LINE1               (uint32_t)(0x00F0U << 16U | 0U)  /* !< EXTI_POSITION_4  | EXTICR[0] */
+#define LL_SYSCFG_EXTI_LINE2               (uint32_t)(0x0F00U << 16U | 0U)  /* !< EXTI_POSITION_8  | EXTICR[0] */
+#define LL_SYSCFG_EXTI_LINE3               (uint32_t)(0xF000U << 16U | 0U)  /* !< EXTI_POSITION_12 | EXTICR[0] */
+#define LL_SYSCFG_EXTI_LINE4               (uint32_t)(0x000FU << 16U | 1U)  /* !< EXTI_POSITION_0  | EXTICR[1] */
+#define LL_SYSCFG_EXTI_LINE5               (uint32_t)(0x00F0U << 16U | 1U)  /* !< EXTI_POSITION_4  | EXTICR[1] */
+#define LL_SYSCFG_EXTI_LINE6               (uint32_t)(0x0F00U << 16U | 1U)  /* !< EXTI_POSITION_8  | EXTICR[1] */
+#define LL_SYSCFG_EXTI_LINE7               (uint32_t)(0xF000U << 16U | 1U)  /* !< EXTI_POSITION_12 | EXTICR[1] */
+#define LL_SYSCFG_EXTI_LINE8               (uint32_t)(0x000FU << 16U | 2U)  /* !< EXTI_POSITION_0  | EXTICR[2] */
+#define LL_SYSCFG_EXTI_LINE9               (uint32_t)(0x00F0U << 16U | 2U)  /* !< EXTI_POSITION_4  | EXTICR[2] */
+#define LL_SYSCFG_EXTI_LINE10              (uint32_t)(0x0F00U << 16U | 2U)  /* !< EXTI_POSITION_8  | EXTICR[2] */
+#define LL_SYSCFG_EXTI_LINE11              (uint32_t)(0xF000U << 16U | 2U)  /* !< EXTI_POSITION_12 | EXTICR[2] */
+#define LL_SYSCFG_EXTI_LINE12              (uint32_t)(0x000FU << 16U | 3U)  /* !< EXTI_POSITION_0  | EXTICR[3] */
+#define LL_SYSCFG_EXTI_LINE13              (uint32_t)(0x00F0U << 16U | 3U)  /* !< EXTI_POSITION_4  | EXTICR[3] */
+#define LL_SYSCFG_EXTI_LINE14              (uint32_t)(0x0F00U << 16U | 3U)  /* !< EXTI_POSITION_8  | EXTICR[3] */
+#define LL_SYSCFG_EXTI_LINE15              (uint32_t)(0xF000U << 16U | 3U)  /* !< EXTI_POSITION_12 | EXTICR[3] */
 /**
   * @}
   */
@@ -226,7 +229,7 @@ extern "C" {
 #define LL_SYSCFG_SRAM2WRP_PAGE13          SYSCFG_SWPR_PAGE13 /*!< SRAM2 Write protection page 13 */
 #define LL_SYSCFG_SRAM2WRP_PAGE14          SYSCFG_SWPR_PAGE14 /*!< SRAM2 Write protection page 14 */
 #define LL_SYSCFG_SRAM2WRP_PAGE15          SYSCFG_SWPR_PAGE15 /*!< SRAM2 Write protection page 15 */
-#if defined(SYSCFG_SWPR_PAGE16)
+#if defined(SYSCFG_SWPR_PAGE31)
 #define LL_SYSCFG_SRAM2WRP_PAGE16          SYSCFG_SWPR_PAGE16 /*!< SRAM2 Write protection page 16 */
 #define LL_SYSCFG_SRAM2WRP_PAGE17          SYSCFG_SWPR_PAGE17 /*!< SRAM2 Write protection page 17 */
 #define LL_SYSCFG_SRAM2WRP_PAGE18          SYSCFG_SWPR_PAGE18 /*!< SRAM2 Write protection page 18 */
@@ -243,7 +246,41 @@ extern "C" {
 #define LL_SYSCFG_SRAM2WRP_PAGE29          SYSCFG_SWPR_PAGE29 /*!< SRAM2 Write protection page 29 */
 #define LL_SYSCFG_SRAM2WRP_PAGE30          SYSCFG_SWPR_PAGE30 /*!< SRAM2 Write protection page 30 */
 #define LL_SYSCFG_SRAM2WRP_PAGE31          SYSCFG_SWPR_PAGE31 /*!< SRAM2 Write protection page 31 */
-#endif /* SYSCFG_SWPR_PAGE16 */
+#endif /* SYSCFG_SWPR_PAGE31 */
+#if defined(SYSCFG_SWPR2_PAGE63)
+#define LL_SYSCFG_SRAM2WRP_PAGE32          SYSCFG_SWPR2_PAGE32 /*!< SRAM2 Write protection page 32 */
+#define LL_SYSCFG_SRAM2WRP_PAGE33          SYSCFG_SWPR2_PAGE33 /*!< SRAM2 Write protection page 33 */
+#define LL_SYSCFG_SRAM2WRP_PAGE34          SYSCFG_SWPR2_PAGE34 /*!< SRAM2 Write protection page 34 */
+#define LL_SYSCFG_SRAM2WRP_PAGE35          SYSCFG_SWPR2_PAGE35 /*!< SRAM2 Write protection page 35 */
+#define LL_SYSCFG_SRAM2WRP_PAGE36          SYSCFG_SWPR2_PAGE36 /*!< SRAM2 Write protection page 36 */
+#define LL_SYSCFG_SRAM2WRP_PAGE37          SYSCFG_SWPR2_PAGE37 /*!< SRAM2 Write protection page 37 */
+#define LL_SYSCFG_SRAM2WRP_PAGE38          SYSCFG_SWPR2_PAGE38 /*!< SRAM2 Write protection page 38 */
+#define LL_SYSCFG_SRAM2WRP_PAGE39          SYSCFG_SWPR2_PAGE39 /*!< SRAM2 Write protection page 39 */
+#define LL_SYSCFG_SRAM2WRP_PAGE40          SYSCFG_SWPR2_PAGE40 /*!< SRAM2 Write protection page 40 */
+#define LL_SYSCFG_SRAM2WRP_PAGE41          SYSCFG_SWPR2_PAGE41 /*!< SRAM2 Write protection page 41 */
+#define LL_SYSCFG_SRAM2WRP_PAGE42          SYSCFG_SWPR2_PAGE42 /*!< SRAM2 Write protection page 42 */
+#define LL_SYSCFG_SRAM2WRP_PAGE43          SYSCFG_SWPR2_PAGE43 /*!< SRAM2 Write protection page 43 */
+#define LL_SYSCFG_SRAM2WRP_PAGE44          SYSCFG_SWPR2_PAGE44 /*!< SRAM2 Write protection page 44 */
+#define LL_SYSCFG_SRAM2WRP_PAGE45          SYSCFG_SWPR2_PAGE45 /*!< SRAM2 Write protection page 45 */
+#define LL_SYSCFG_SRAM2WRP_PAGE46          SYSCFG_SWPR2_PAGE46 /*!< SRAM2 Write protection page 46 */
+#define LL_SYSCFG_SRAM2WRP_PAGE47          SYSCFG_SWPR2_PAGE47 /*!< SRAM2 Write protection page 47 */
+#define LL_SYSCFG_SRAM2WRP_PAGE48          SYSCFG_SWPR2_PAGE48 /*!< SRAM2 Write protection page 48 */
+#define LL_SYSCFG_SRAM2WRP_PAGE49          SYSCFG_SWPR2_PAGE49 /*!< SRAM2 Write protection page 49 */
+#define LL_SYSCFG_SRAM2WRP_PAGE50          SYSCFG_SWPR2_PAGE50 /*!< SRAM2 Write protection page 50 */
+#define LL_SYSCFG_SRAM2WRP_PAGE51          SYSCFG_SWPR2_PAGE51 /*!< SRAM2 Write protection page 51 */
+#define LL_SYSCFG_SRAM2WRP_PAGE52          SYSCFG_SWPR2_PAGE52 /*!< SRAM2 Write protection page 52 */
+#define LL_SYSCFG_SRAM2WRP_PAGE53          SYSCFG_SWPR2_PAGE53 /*!< SRAM2 Write protection page 53 */
+#define LL_SYSCFG_SRAM2WRP_PAGE54          SYSCFG_SWPR2_PAGE54 /*!< SRAM2 Write protection page 54 */
+#define LL_SYSCFG_SRAM2WRP_PAGE55          SYSCFG_SWPR2_PAGE55 /*!< SRAM2 Write protection page 55 */
+#define LL_SYSCFG_SRAM2WRP_PAGE56          SYSCFG_SWPR2_PAGE56 /*!< SRAM2 Write protection page 56 */
+#define LL_SYSCFG_SRAM2WRP_PAGE57          SYSCFG_SWPR2_PAGE57 /*!< SRAM2 Write protection page 57 */
+#define LL_SYSCFG_SRAM2WRP_PAGE58          SYSCFG_SWPR2_PAGE58 /*!< SRAM2 Write protection page 58 */
+#define LL_SYSCFG_SRAM2WRP_PAGE59          SYSCFG_SWPR2_PAGE59 /*!< SRAM2 Write protection page 59 */
+#define LL_SYSCFG_SRAM2WRP_PAGE60          SYSCFG_SWPR2_PAGE60 /*!< SRAM2 Write protection page 60 */
+#define LL_SYSCFG_SRAM2WRP_PAGE61          SYSCFG_SWPR2_PAGE61 /*!< SRAM2 Write protection page 61 */
+#define LL_SYSCFG_SRAM2WRP_PAGE62          SYSCFG_SWPR2_PAGE62 /*!< SRAM2 Write protection page 62 */
+#define LL_SYSCFG_SRAM2WRP_PAGE63          SYSCFG_SWPR2_PAGE63 /*!< SRAM2 Write protection page 63 */
+#endif /* SYSCFG_SWPR2_PAGE63 */
 /**
   * @}
   */
@@ -251,7 +288,7 @@ extern "C" {
 /** @defgroup SYSTEM_LL_EC_TRACE DBGMCU TRACE Pin Assignment
   * @{
   */
-#define LL_DBGMCU_TRACE_NONE               (uint32_t)0x00000000U                           /*!< TRACE pins not assigned (default state) */
+#define LL_DBGMCU_TRACE_NONE               0x00000000U                                     /*!< TRACE pins not assigned (default state) */
 #define LL_DBGMCU_TRACE_ASYNCH             DBGMCU_CR_TRACE_IOEN                            /*!< TRACE pin assignment for Asynchronous Mode */
 #define LL_DBGMCU_TRACE_SYNCH_SIZE1        (DBGMCU_CR_TRACE_IOEN | DBGMCU_CR_TRACE_MODE_0) /*!< TRACE pin assignment for Synchronous Mode with a TRACEDATA size of 1 */
 #define LL_DBGMCU_TRACE_SYNCH_SIZE2        (DBGMCU_CR_TRACE_IOEN | DBGMCU_CR_TRACE_MODE_1) /*!< TRACE pin assignment for Synchronous Mode with a TRACEDATA size of 2 */
@@ -286,6 +323,9 @@ extern "C" {
 #endif /* I2C2 */
 #define LL_DBGMCU_APB1_GRP1_I2C3_STOP      DBGMCU_APB1FZR1_DBG_I2C3_STOP   /*!< The I2C3 SMBus timeout is frozen*/
 #define LL_DBGMCU_APB1_GRP1_CAN_STOP       DBGMCU_APB1FZR1_DBG_CAN_STOP    /*!< The bxCAN receive registers are frozen*/
+#if defined(CAN2)
+#define LL_DBGMCU_APB1_GRP1_CAN2_STOP      DBGMCU_APB1FZR1_DBG_CAN2_STOP   /*!< The bxCAN2 receive registers are frozen*/
+#endif /* CAN2 */
 #define LL_DBGMCU_APB1_GRP1_LPTIM1_STOP    DBGMCU_APB1FZR1_DBG_LPTIM1_STOP /*!< The counter clock of LPTIM1 is stopped when the core is halted*/
 /**
   * @}
@@ -488,6 +528,7 @@ __STATIC_INLINE void LL_SYSCFG_DisableAnalogBooster(void)
   *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C1
   *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C2 (*)
   *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C3
+  *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C4 (*)
   *
   *         (*) value not defined in all devices
   * @retval None
@@ -509,6 +550,7 @@ __STATIC_INLINE void LL_SYSCFG_EnableFastModePlus(uint32_t ConfigFastModePlus)
   *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C1
   *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C2 (*)
   *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C3
+  *         @arg @ref LL_SYSCFG_I2C_FASTMODEPLUS_I2C4 (*)
   *
   *         (*) value not defined in all devices
   * @retval None
@@ -713,6 +755,7 @@ __STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_IXC(void)
   *         @arg @ref LL_SYSCFG_EXTI_PORTF (*)
   *         @arg @ref LL_SYSCFG_EXTI_PORTG (*)
   *         @arg @ref LL_SYSCFG_EXTI_PORTH
+  *         @arg @ref LL_SYSCFG_EXTI_PORTI (*)
   *
   *         (*) value not defined in all devices
   * @param  Line This parameter can be one of the following values:
@@ -736,7 +779,7 @@ __STATIC_INLINE uint32_t LL_SYSCFG_IsEnabledIT_FPU_IXC(void)
   */
 __STATIC_INLINE void LL_SYSCFG_SetEXTISource(uint32_t Port, uint32_t Line)
 {
-  MODIFY_REG(SYSCFG->EXTICR[Line & 0xFF], (Line >> 16), Port << POSITION_VAL((Line >> 16)));
+  MODIFY_REG(SYSCFG->EXTICR[Line & 0xFFU], (Line >> 16U), Port << POSITION_VAL((Line >> 16U)));
 }
 
 /**
@@ -771,12 +814,13 @@ __STATIC_INLINE void LL_SYSCFG_SetEXTISource(uint32_t Port, uint32_t Line)
   *         @arg @ref LL_SYSCFG_EXTI_PORTF (*)
   *         @arg @ref LL_SYSCFG_EXTI_PORTG (*)
   *         @arg @ref LL_SYSCFG_EXTI_PORTH
+  *         @arg @ref LL_SYSCFG_EXTI_PORTI (*)
   *
   *         (*) value not defined in all devices
   */
 __STATIC_INLINE uint32_t LL_SYSCFG_GetEXTISource(uint32_t Line)
 {
-  return (uint32_t)(READ_BIT(SYSCFG->EXTICR[Line & 0xFF], (Line >> 16)) >> POSITION_VAL(Line >> 16));
+  return (uint32_t)(READ_BIT(SYSCFG->EXTICR[Line & 0xFFU], (Line >> 16U)) >> POSITION_VAL(Line >> 16U));
 }
 
 /**
@@ -860,9 +904,9 @@ __STATIC_INLINE void LL_SYSCFG_ClearFlag_SP(void)
 }
 
 /**
-  * @brief  Enable SRAM2 page write protection
+  * @brief  Enable SRAM2 page write protection for Pages in range 0 to 31
   * @note Write protection is cleared only by a system reset
-  * @rmtoll SYSCFG_SWPR  PAGEx         LL_SYSCFG_EnableSRAM2PageWRP
+  * @rmtoll SYSCFG_SWPR  PxWP         LL_SYSCFG_EnableSRAM2PageWRP_0_31
   * @param  SRAM2WRP This parameter can be a combination of the following values:
   *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE0
   *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE1
@@ -900,10 +944,60 @@ __STATIC_INLINE void LL_SYSCFG_ClearFlag_SP(void)
   *         (*) value not defined in all devices
   * @retval None
   */
-__STATIC_INLINE void LL_SYSCFG_EnableSRAM2PageWRP(uint32_t SRAM2WRP)
+/* Legacy define */
+#define LL_SYSCFG_EnableSRAM2PageWRP    LL_SYSCFG_EnableSRAM2PageWRP_0_31
+__STATIC_INLINE void LL_SYSCFG_EnableSRAM2PageWRP_0_31(uint32_t SRAM2WRP)
 {
   SET_BIT(SYSCFG->SWPR, SRAM2WRP);
 }
+
+#if defined(SYSCFG_SWPR2_PAGE63)
+/**
+  * @brief  Enable SRAM2 page write protection for Pages in range 32 to 63
+  * @note Write protection is cleared only by a system reset
+  * @rmtoll SYSCFG_SWPR2 PxWP          LL_SYSCFG_EnableSRAM2PageWRP_32_63
+  * @param  SRAM2WRP This parameter can be a combination of the following values:
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE32 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE33 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE34 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE35 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE36 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE37 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE38 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE39 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE40 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE41 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE42 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE43 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE44 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE45 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE46 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE47 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE48 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE49 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE50 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE51 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE52 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE53 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE54 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE55 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE56 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE57 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE58 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE59 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE60 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE61 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE62 (*)
+  *         @arg @ref LL_SYSCFG_SRAM2WRP_PAGE63 (*)
+  *
+  *         (*) value not defined in all devices
+  * @retval None
+  */
+__STATIC_INLINE void LL_SYSCFG_EnableSRAM2PageWRP_32_63(uint32_t SRAM2WRP)
+{
+  SET_BIT(SYSCFG->SWPR2, SRAM2WRP);
+}
+#endif /* SYSCFG_SWPR2_PAGE63 */
 
 /**
   * @brief  SRAM2 page write protection lock prior to erase
@@ -1068,6 +1162,7 @@ __STATIC_INLINE uint32_t LL_DBGMCU_GetTracePinAssignment(void)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C2_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C3_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN_STOP
+  *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN2_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_LPTIM1_STOP
   *
   *         (*) value not defined in all devices.
@@ -1110,6 +1205,7 @@ __STATIC_INLINE void LL_DBGMCU_APB1_GRP2_FreezePeriph(uint32_t Periphs)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C2_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C3_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN_STOP
+  *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN2_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_LPTIM1_STOP
   *
   *         (*) value not defined in all devices.

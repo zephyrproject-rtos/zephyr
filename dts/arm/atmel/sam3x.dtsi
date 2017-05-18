@@ -29,6 +29,7 @@
 			reg = <0x400E0800 0x124>;
 			interrupts = <8 0>;
 			status = "disabled";
+			label = "UART_0";
 		};
 	};
 };

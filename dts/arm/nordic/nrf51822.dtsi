@@ -22,6 +22,7 @@
 			reg = <0x40002000 0x1000>;
 			interrupts = <2 1>;
 			status = "disabled";
+			label = "UART_0";
 		};
 	};
 };

@@ -1,0 +1,14 @@
+# Kconfig - STM32L476G Nucleo board configuration
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2016 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32L496G_DISCO
+
+config BOARD
+	default stm32l496g_disco
+
+endif # BOARD_STM32L496G_DISCO

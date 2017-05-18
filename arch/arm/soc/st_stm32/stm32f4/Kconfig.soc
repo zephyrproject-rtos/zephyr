@@ -24,6 +24,9 @@ config SOC_STM32F413XH
 config SOC_STM32F429XI
 	bool "STM32F429XI"
 
+config SOC_STM32F469XI
+	bool "STM32F469XI"
+
 endchoice
 
 config STM32_ARM_MPU_ENABLE

@@ -22,6 +22,7 @@
 			reg = <0x4000C000 0x4c>;
 			interrupts = <5 3>;
 			status = "disabled";
+			label = "UART_0";
 		};
 
 		uart1: uart@4000D000 {
@@ -29,6 +30,7 @@
 			reg = <0x4000D000 0x4c>;
 			interrupts = <6 3>;
 			status = "disabled";
+			label = "UART_1";
 		};
 
 		uart2: uart@4000E000 {
@@ -36,6 +38,7 @@
 			reg = <0x4000E000 0x4c>;
 			interrupts = <33 3>;
 			status = "disabled";
+			label = "UART_2";
 		};
 	};
 };
