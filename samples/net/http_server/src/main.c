@@ -17,6 +17,11 @@
 #include <zephyr.h>
 #include <stdio.h>
 
+/* For Basic auth, we need base64 decoder which can be found
+ * in mbedtls library.
+ */
+#include <mbedtls/base64.h>
+
 #include <net/net_context.h>
 #include <net/http.h>
 
@@ -76,6 +81,10 @@ void panic(const char *msg)
 				"Content-Type: text/html\r\n" \
 				"Transfer-Encoding: chunked\r\n" \
 				"\r\n"
+
+#define HTTP_401_STATUS_US	"HTTP/1.1 401 Unauthorized status\r\n" \
+				"WWW-Authenticate: Basic realm=" \
+				"\""HTTP_AUTH_REALM"\"\r\n\r\n"
 
 #define HTML_HEADER		"<html><head>" \
 				"<title>Zephyr HTTP Server</title>" \
@@ -165,6 +174,65 @@ static int http_response_soft_404(struct http_server_ctx *ctx)
 	return http_response(ctx, HTTP_STATUS_200_OK, HTML_HEADER
 			     "<h2><center>404 Not Found</center></h2>"
 			     HTML_FOOTER);
+}
+
+static int http_response_auth(struct http_server_ctx *ctx)
+{
+	return http_response(ctx, HTTP_STATUS_200_OK, HTML_HEADER
+			     "<h2><center>user: "HTTP_AUTH_USERNAME
+			     ", password: "HTTP_AUTH_PASSWORD
+			     "</center></h2>" HTML_FOOTER);
+}
+
+int http_response_401(struct http_server_ctx *ctx, s32_t timeout)
+{
+	return http_response_wait(ctx, HTTP_401_STATUS_US, NULL, timeout);
+}
+
+static int http_basic_auth(struct http_server_ctx *ctx)
+{
+	const char auth_str[] = HTTP_CRLF "Authorization: Basic ";
+	char *ptr;
+
+	ptr = strstr(ctx->req.field_values[0].key, auth_str);
+	if (ptr) {
+		char output[sizeof(HTTP_AUTH_USERNAME) +
+			    sizeof(":") +
+			    sizeof(HTTP_AUTH_PASSWORD)];
+		size_t olen, ilen, alen;
+		char *end, *colon;
+		int ret;
+
+		memset(output, 0, sizeof(output));
+
+		end = strstr(ptr + 2, HTTP_CRLF);
+		if (!end) {
+			return http_response_401(ctx, K_NO_WAIT);
+		}
+
+		alen = sizeof(auth_str) - 1;
+		ilen = end - (ptr + alen);
+
+		ret = mbedtls_base64_decode(output, sizeof(output) - 1,
+					    &olen, ptr + alen, ilen);
+		if (ret) {
+			return http_response_401(ctx, K_NO_WAIT);
+		}
+
+		colon = memchr(output, ':', olen);
+
+		if (colon && colon > output && colon < (output + olen) &&
+		    memcmp(output, HTTP_AUTH_USERNAME, colon - output) == 0 &&
+		    memcmp(colon + 1, HTTP_AUTH_PASSWORD,
+			   output + olen - colon) == 0) {
+			return http_response_auth(ctx);
+		}
+
+		return http_response_401(ctx, K_NO_WAIT);
+	}
+
+	/* Wait 2 secs for the reply with proper credentials */
+	return http_response_401(ctx, K_SECONDS(2));
 }
 
 #if defined(CONFIG_HTTPS)
@@ -271,6 +339,8 @@ void main(void)
 #endif
 
 	http_server_add_default(&http_urls, http_response_soft_404);
+	http_server_add_url(&http_urls, HTTP_AUTH_URL, HTTP_URL_STANDARD,
+			    http_basic_auth);
 	http_server_add_url(&http_urls, "/headers", HTTP_URL_STANDARD,
 			    http_response_header_fields);
 	http_server_add_url(&http_urls, "/index.html", HTTP_URL_STANDARD,
