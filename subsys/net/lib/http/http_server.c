@@ -107,17 +107,57 @@ static int http_add_chunk(struct net_pkt *pkt, s32_t timeout, const char *str)
 	return 0;
 }
 
+static void req_timer_cancel(struct http_server_ctx *ctx)
+{
+	ctx->req.timer_cancelled = true;
+	k_delayed_work_cancel(&ctx->req.timer);
+
+	NET_DBG("Context %p request timer cancelled", ctx);
+}
+
+static void req_timeout(struct k_work *work)
+{
+	struct http_server_ctx *ctx = CONTAINER_OF(work,
+						   struct http_server_ctx,
+						   req.timer);
+
+	if (ctx->req.timer_cancelled) {
+		return;
+	}
+
+	NET_DBG("Context %p request timeout", ctx);
+
+	net_context_unref(ctx->req.net_ctx);
+}
+
 static void pkt_sent(struct net_context *context,
 		     int status,
 		     void *token,
 		     void *user_data)
 {
-	/* We can just close the context after the packet is sent. */
-	net_context_unref(context);
+	s32_t timeout = POINTER_TO_INT(token);
+	struct http_server_ctx *ctx = user_data;
+
+	req_timer_cancel(ctx);
+
+	if (timeout == K_NO_WAIT) {
+		/* We can just close the context after the packet is sent. */
+		net_context_unref(context);
+	} else if (timeout > 0) {
+		NET_DBG("Context %p starting timer", ctx);
+
+		k_delayed_work_submit(&ctx->req.timer, timeout);
+
+		ctx->req.timer_cancelled = false;
+	}
+
+	/* Note that if the timeout is K_FOREVER, we do not close
+	 * the connection.
+	 */
 }
 
-int http_response(struct http_server_ctx *ctx, const char *http_header,
-		  const char *html_payload)
+int http_response_wait(struct http_server_ctx *ctx, const char *http_header,
+		       const char *html_payload, s32_t timeout)
 {
 	struct net_pkt *pkt;
 	int ret = -EINVAL;
@@ -147,7 +187,7 @@ int http_response(struct http_server_ctx *ctx, const char *http_header,
 
 	net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
 
-	ret = ctx->send_data(pkt, pkt_sent, 0, NULL, ctx);
+	ret = ctx->send_data(pkt, pkt_sent, 0, INT_TO_POINTER(timeout), ctx);
 	if (ret != 0) {
 		goto exit_routine;
 	}
@@ -160,6 +200,12 @@ exit_routine:
 	}
 
 	return ret;
+}
+
+int http_response(struct http_server_ctx *ctx, const char *http_header,
+		  const char *html_payload)
+{
+	return http_response_wait(ctx, http_header, html_payload, K_NO_WAIT);
 }
 
 int http_response_400(struct http_server_ctx *ctx, const char *html_payload)
@@ -818,6 +864,8 @@ bool http_server_disable(struct http_server_ctx *http_ctx)
 
 	NET_ASSERT(http_ctx);
 
+	req_timer_cancel(http_ctx);
+
 	old = http_ctx->enabled;
 
 	http_ctx->enabled = false;
@@ -864,6 +912,8 @@ int http_server_init(struct http_server_ctx *http_ctx,
 	http_ctx->urls = urls;
 	http_ctx->recv_cb = http_recv;
 	http_ctx->send_data = net_context_send;
+
+	k_delayed_work_init(&http_ctx->req.timer, req_timeout);
 
 	parser_init(http_ctx);
 
@@ -1508,6 +1558,8 @@ int https_server_init(struct http_server_ctx *ctx,
 	ctx->https.mbedtls.personalization_data_len = personalization_data_len;
 	ctx->send_data = https_send;
 	ctx->recv_cb = ssl_received;
+
+	k_delayed_work_init(&ctx->req.timer, req_timeout);
 
 	parser_init(ctx);
 
