@@ -1253,8 +1253,9 @@ static void ack_timeout(struct k_work *work)
 
 	if (net_tcp_get_state(tcp) == NET_TCP_LAST_ACK) {
 		/* We did not receive the last ACK on time. We can only
-		 * close the connection at time point. We also do not send
-		 * anything in this last state but will go to to CLOSED state.
+		 * close the connection at this point. We will not send
+		 * anything to peer in this last state, but will go directly
+		 * to to CLOSED state.
 		 */
 		net_tcp_change_state(tcp, NET_TCP_CLOSED);
 
