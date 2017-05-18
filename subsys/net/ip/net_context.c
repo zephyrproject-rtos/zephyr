@@ -36,7 +36,11 @@
 
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
+#if defined(CONFIG_NET_TCP_ACK_TIMEOUT)
+#define ACK_TIMEOUT CONFIG_NET_TCP_ACK_TIMEOUT
+#else
 #define ACK_TIMEOUT MSEC_PER_SEC
+#endif
 
 /* Declares a wrapper function for a net_conn callback that refs the
  * context around the invocation (to protect it from premature
