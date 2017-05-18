@@ -43,9 +43,9 @@
 extern struct k_mutex _k_mutex_list_start[];
 extern struct k_mutex _k_mutex_list_end[];
 
-struct k_mutex *_trace_list_k_mutex;
-
 #ifdef CONFIG_OBJECT_TRACING
+
+struct k_mutex *_trace_list_k_mutex;
 
 /*
  * Complete initialization of statically defined mutexes.

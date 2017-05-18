@@ -21,9 +21,9 @@
 extern struct k_stack _k_stack_list_start[];
 extern struct k_stack _k_stack_list_end[];
 
-struct k_stack *_trace_list_k_stack;
-
 #ifdef CONFIG_OBJECT_TRACING
+
+struct k_stack *_trace_list_k_stack;
 
 /*
  * Complete initialization of statically defined stacks.
