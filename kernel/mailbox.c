@@ -50,7 +50,9 @@ static inline void _mbox_async_free(struct k_mbox_async *async)
 extern struct k_mbox _k_mbox_list_start[];
 extern struct k_mbox _k_mbox_list_end[];
 
+#ifdef CONFIG_OBJECT_TRACING
 struct k_mbox *_trace_list_k_mbox;
+#endif	/* CONFIG_OBJECT_TRACING */
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0) || \
 	defined(CONFIG_OBJECT_TRACING)

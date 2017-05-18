@@ -17,7 +17,9 @@
 extern struct k_mem_slab _k_mem_slab_list_start[];
 extern struct k_mem_slab _k_mem_slab_list_end[];
 
+#ifdef CONFIG_OBJECT_TRACING
 struct k_mem_slab *_trace_list_k_mem_slab;
+#endif	/* CONFIG_OBJECT_TRACING */
 
 /**
  * @brief Initialize kernel memory slab subsystem.
