@@ -102,7 +102,7 @@ void k_timer_init(struct k_timer *timer,
 	_init_timeout(&timer->timeout, _timer_expiration_handler);
 	SYS_TRACING_OBJ_INIT(k_timer, timer);
 
-	timer->user_data = 0;
+	timer->user_data = NULL;
 }
 
 
