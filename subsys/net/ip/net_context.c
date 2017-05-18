@@ -1248,7 +1248,8 @@ static void ack_timeout(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
+	NET_DBG("Did not receive ACK in %dms while in %s", ACK_TIMEOUT,
+		net_tcp_state_str(net_tcp_get_state(tcp)));
 
 	if (net_tcp_get_state(tcp) == NET_TCP_LAST_ACK) {
 		/* We did not receive the last ACK on time. We can only
