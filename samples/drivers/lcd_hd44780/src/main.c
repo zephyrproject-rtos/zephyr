@@ -530,6 +530,7 @@ void main(void)
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {
 		printk("Cannot find %s!\n", GPIO_DRV_NAME);
+		return;
 	}
 
 	/* Setup GPIO output */
