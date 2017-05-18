@@ -45,18 +45,9 @@ config SOC_ATMEL_SAM4S_EXT_MAINCK
 	Says n here will use the internal fast RC oscillator
 	running at 12 MHz.
 
-config SOC_ATMEL_SAM4S_MDIV
-	int "MDIV"
-	default 1
-	range 1 4
-	help
-	This divisor defines a ratio between processor clock (HCLK)
-	and master clock (MCK):
-	MCK = HCLK / MDIV
-
 config SOC_ATMEL_SAM4S_PLLA_MULA
 	hex "PLL MULA"
-	default 0x06
+	default 0x09
 	help
 	This is the multiplier (MULA) used by the PLL.
 	The processor clock is (MAINCK * (MULA + 1) / DIVA).
@@ -64,8 +55,8 @@ config SOC_ATMEL_SAM4S_PLLA_MULA
 	Board config file can override this settings
 	for a particular board.
 
-	With default of MULA == 6, and DIVA == 1,
-	PLL is running at 7 times of main clock.
+	With default of MULA == 9, and DIVA == 1,
+	PLL is running at 10 times of main clock.
 
 config SOC_ATMEL_SAM4S_PLLA_DIVA
 	hex "PLL DIVA"
@@ -77,8 +68,8 @@ config SOC_ATMEL_SAM4S_PLLA_DIVA
 	Board config file can override this settings
 	for a particular board.
 
-	With default of MULA == 6, and DIVA == 1,
-	PLL is running at 7 times of main clock.
+	With default of MULA == 9, and DIVA == 1,
+	PLL is running at 10 times of main clock.
 
 config SOC_ATMEL_SAM4S_WAIT_MODE
 	bool "Atmel SAM4S goes to Wait mode instead of Sleep mode"
@@ -88,31 +79,5 @@ config SOC_ATMEL_SAM4S_WAIT_MODE
 	For JTAG debugging CPU clock (HCLK) should not stop. In order
 	to achieve this, make CPU go to Wait mode instead of Sleep
 	mode while using external crystal oscillator for main clock.
-
-config SOC_ATMEL_SAM4S_PLLB_MULB
-	hex "PLL MULB"
-	default 0x03
-	help
-	This is the multiplier (MULA) used by the PLL.
-	The processor clock is (MAINCK * (MULA + 1) / DIVA).
-
-	Board config file can override this settings
-	for a particular board.
-
-	With default of MULA == 6, and DIVA == 1,
-	PLL is running at 7 times of main clock.
-
-config SOC_ATMEL_SAM4S_PLLB_DIVB
-	hex "PLL DIVB"
-	default 0x01
-	help
-	This is the divider (DIVB) used by the PLL.
-	The processor clock is (MAINCK * (MULB + 1) / DIVB).
-
-	Board config file can override this settings
-	for a particular board.
-
-	With default of MULB == 6, and DIVB == 1,
-	PLL is running at 7 times of main clock.
 
 endif # SOC_SERIES_SAM4S
