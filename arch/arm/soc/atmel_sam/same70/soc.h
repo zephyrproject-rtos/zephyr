@@ -13,6 +13,8 @@
 #ifndef _ATMEL_SAME70_SOC_H_
 #define _ATMEL_SAME70_SOC_H_
 
+#ifndef _ASMLANGUAGE
+
 #define DONT_USE_CMSIS_INIT
 #define DONT_USE_PREDEFINED_CORE_HANDLERS
 #define DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS
@@ -43,6 +45,8 @@
 
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
+
+#endif /* _ASMLANGUAGE */
 
 /** Processor Clock (HCLK) Frequency */
 #define SOC_ATMEL_SAM_HCLK_FREQ_HZ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
