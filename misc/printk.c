@@ -47,7 +47,7 @@ static int _nop_char_out(int c)
 	return 0;
 }
 
-int (*_char_out)(int) = _nop_char_out;
+static int (*_char_out)(int) = _nop_char_out;
 
 /**
  * @brief Install the character output routine for printk
