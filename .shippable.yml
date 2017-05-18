@@ -10,9 +10,10 @@ env:
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
+        - MATRIX_BUILDS="2"
     matrix:
-        - ARCH="-a x86 -a riscv32" RUN_COMPLIANCE="1"
-        - ARCH="-a arm -a arc -a nios2"
+        - MATRIX_BUILD="1"
+        - MATRIX_BUILD="2"
 
 build:
     cache: true
@@ -27,7 +28,7 @@ build:
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - source zephyr-env.sh
-      - ccache -s --max-size=2000M
+      - ccache -c -s --max-size=2000M
       - make host-tools
       - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
       - >
@@ -43,7 +44,7 @@ build:
             S3_PATH="s3://zephyr-logs/${LOG_TYPE}/${REPO_FULL_NAME}/${BUILD_NUMBER}";
           fi;
       - >
-          if [ "$RUN_COMPLIANCE" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
+          if [ "$MATRIX_BUILD" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
             export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..${COMMIT}
             echo "Building a Pull Request";
             echo "- Building Documentation";
@@ -57,28 +58,12 @@ build:
             ./scripts/ci/check-compliance.py || true;
           fi;
       - >
-          if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify-asserts" ]; then
-            echo "- Building with --all --enable-slow -R";
-            COVERAGE="--all --enable-slow -R";
-          fi;
-      - >
           if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify" ]; then
             echo "- Building with --all --enable-slow";
             COVERAGE="--all --enable-slow";
           fi;
       - >
-          if [ "$JOB_TRIGGERED_BY_NAME" = "code-scan" ]; then
-            echo "- Building basic sanitycheck";
-            wget https://scan.coverity.com/download/linux64 --post-data "token=${COVERITY_TOKEN}&project=Zephyr" -O coverity_tool.tgz;
-            tar xvf coverity_tool.tgz;
-            rm -f coverity_tool.tgz;
-            mv cov-*  cov-analysis;
-            ./scripts/ci/run-coverity.sh
-          fi;
-      - >
-          if [ "$JOB_TRIGGERED_BY_NAME" != "code-scan" ]; then
-            ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} ${ARCH} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
-          fi
+          ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS}  ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
       - ccache -s
     on_success:
       - rm -rf sanity-out out-2nd-pass
