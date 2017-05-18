@@ -567,6 +567,13 @@ struct http_server_ctx {
 		/** From which net_context the request came from */
 		struct net_context *net_ctx;
 
+		/** HTTP request timer. After sending a response to the
+		 * client, it is possible to wait for any request back via
+		 * the same socket. If no response is received, then this
+		 * timeout is activated and connection is tore down.
+		 */
+		struct k_delayed_work timer;
+
 		/** HTTP parser */
 		struct http_parser parser;
 
@@ -596,6 +603,9 @@ struct http_server_ctx {
 
 		/** URL's length */
 		u16_t url_len;
+
+		/** Has the request timer been cancelled. */
+		u8_t timer_cancelled;
 	} req;
 
 #if defined(CONFIG_HTTPS)
@@ -832,6 +842,25 @@ int http_server_del_default(struct http_server_urls *urls);
 
 /**
  * @brief Send HTTP response to client.
+ *
+ * @detail After sending a response, an optional timeout is started
+ * which will wait for any new requests from the peer.
+ *
+ * @param ctx HTTP context.
+ * @param http_header HTTP headers to send.
+ * @param html_payload HTML payload to send.
+ * @param timeout Timeout to wait until the connection is shutdown.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int http_response_wait(struct http_server_ctx *ctx, const char *http_header,
+		       const char *html_payload, s32_t timeout);
+
+/**
+ * @brief Send HTTP response to client.
+ *
+ * @detail The connection to peer is torn down right after the response
+ * is sent.
  *
  * @param ctx HTTP context.
  * @param http_header HTTP headers to send.
