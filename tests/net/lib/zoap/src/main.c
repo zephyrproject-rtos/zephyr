@@ -903,7 +903,7 @@ static int test_observer_client(void)
 done:
 	net_pkt_unref(pkt);
 	if (rsp_pkt) {
-		net_pkt_unref(pkt);
+		net_pkt_unref(rsp_pkt);
 	}
 
 	TC_END_RESULT(result);
