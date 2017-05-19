@@ -125,6 +125,11 @@ html_theme = 'zephyr'
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = ['./themes']
 
+if tags.has('release'):
+    docs_title = 'Docs / %s' %(version)
+else:
+    docs_title = 'Docs'
+
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
 html_title = "Zephyr Project Documentation"
@@ -306,5 +311,5 @@ breathe_default_project = "Zephyr"
 # docs_title is used in the breadcrumb title in the zephyr docs theme
 html_context = {
     'show_license': html_show_license,
-    'docs_title': 'Docs / ' + version,
+    'docs_title': docs_title,
 }
