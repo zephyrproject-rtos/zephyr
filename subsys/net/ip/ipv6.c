@@ -2671,7 +2671,7 @@ static struct net_icmpv6_handler ra_input_handler = {
 #if defined(CONFIG_NET_IPV6_FRAGMENT_TIMEOUT)
 #define IPV6_REASSEMBLY_TIMEOUT K_SECONDS(CONFIG_NET_IPV6_FRAGMENT_TIMEOUT)
 #else
-#define IPV6_REASSEMBLY_TIMEOUT K_SECONDS(60)
+#define IPV6_REASSEMBLY_TIMEOUT K_SECONDS(5)
 #endif /* CONFIG_NET_IPV6_FRAGMENT_TIMEOUT */
 
 #define FRAG_BUF_WAIT 10 /* how long to max wait for a buffer */
