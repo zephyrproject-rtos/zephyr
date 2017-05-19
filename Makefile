@@ -27,7 +27,6 @@ UNAME := $(shell uname)
 ifeq (MSYS, $(findstring MSYS, $(UNAME)))
 DISABLE_TRYRUN=y
 HOST_OS=MSYS
-PWD_OPT=-W
 else ifeq (MINGW, $(findstring MINGW, $(UNAME)))
 HOST_OS=MINGW
 PWD_OPT=-W
