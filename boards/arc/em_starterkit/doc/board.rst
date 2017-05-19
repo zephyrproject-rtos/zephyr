@@ -19,11 +19,10 @@ EM Starter Kit.
 
 The ARC EM Starter Kit consists of a hardware platform, including pre-installed
 FPGA images of different ARC EM processor configurations with peripherals.
-Documentation for this board can be found at the following URL:
-https://www.embarc.org.
+Documentation for this board can be found at `embARC website`_.
 
 See also this URL for details about the board:
-https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit
+`Designware ARC EM Starter Kit website`_ .
 
 The lastest version of EM Starter Kit is 2.3, developer can upgrade from
 2.0/2.1/2.2 to 2.3 using latest firmware.
@@ -62,7 +61,7 @@ The Xilinx Spartan(R)-6 LX150 FPGA can auto-load one of 3 FPGA SoC bit files
 which have the EM7D, EM9D, or EM11D SoC.
 
 Documentation and general information for the board can be found at the
-`embARC-website`_, which also includes some free sample software.
+`embARC website`_, which also includes some free sample software.
 
 Supported Features
 ==================
@@ -126,11 +125,11 @@ pieces of hardware are required.
 * :ref:`The Zephyr SDK <zephyr_sdk>`
 
 * Terminal emulator software for use with the USB-UART. Suggestion:
-  http://www.putty.org.
+  `Putty Website`_.
 
 * (optional) A collection of Pmods.
-  See http://store.digilentinc.com/pmod-modules or develop your
-  custom interfaces to attach to the Pmod connector.
+  See `Digilent Pmod Modules`_ or develop your custom interfaces to attach
+  to the Pmod connector.
 
 Set up the ARC EM Starter Kit
 =============================
@@ -150,7 +149,7 @@ setup the board correctly.
   can download and debug Zephyr application now.
 
 * If you want to know more about how to use this board, you can take a look
-  at the **ARC EM Starter Kit User Guide**.
+  at the `ARC EM Starter Kit User Guide`_.
 
 Building Sample Applications
 ==============================
@@ -261,7 +260,7 @@ SPI-FLASH.
 
 For instructions on how to write your program to SPI-FLASH,
 refer to the documentation on the ARC EM Starter Kit at the
-`embARC-website`_, which includes instructions for how to place an
+`embARC website`_, which includes instructions for how to place an
 executable image onto the SPI-FLASH in such a way that it is understood
 by the bootloader.
 
@@ -277,10 +276,12 @@ The following is a list of TODO items:
 References
 **********
 
-.. _embARC-website: https://www.embarc.org
+.. _embARC website: https://www.embarc.org
 
-.. _emstarterkit-website: https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit
+.. _Designware ARC EM Starter Kit website: https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit
 
-.. _digilent-website: http://store.digilentinc.com
+.. _Digilent Pmod Modules: http://store.digilentinc.com/pmod-modules
 
-.. _putty-website: http://www.putty.org
+.. _Putty website: http://www.putty.org
+
+.. _ARC EM Starter Kit User Guide: https://www.embarc.org/help.html#starterkit
