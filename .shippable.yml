@@ -6,7 +6,7 @@ env:
     global:
         - SDK=0.9
         - SANITYCHECK_OPTIONS=" --inline-logs -R"
-        - SANITYCHECK_OPTIONS_RETRY=" --inline-logs --only-failed --outdir=out-2nd-pass"
+        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
