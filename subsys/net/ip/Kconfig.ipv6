@@ -64,7 +64,7 @@ config NET_IPV6_FRAGMENT_MAX_COUNT
 config NET_IPV6_FRAGMENT_TIMEOUT
 	int "How long to wait the fragments to receive"
 	range 1 60
-	default 60
+	default 5
 	depends on NET_IPV6_FRAGMENT
 	help
 	How long to wait for IPv6 fragment to arrive before the reassembly
