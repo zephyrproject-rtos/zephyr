@@ -4,10 +4,10 @@ compiler: gcc
 
 env:
     global:
-        - SDK=0.9
+        - SDK=0.9.1
         - SANITYCHECK_OPTIONS=" --inline-logs -R"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
-        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9
+        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
         - MATRIX_BUILDS="2"
@@ -20,8 +20,8 @@ build:
     cache_dir_list:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
-        image_name: nashif/zephyr
-        image_tag: master.6
+        image_name: zephyrprojectrtos/ci
+        image_tag: master.15
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
@@ -49,6 +49,7 @@ build:
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
+            sudo pip install sphinx==1.5.5
             make htmldocs > doc.log 2>&1;
             ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
             if [ -s doc.warnings ]; then
