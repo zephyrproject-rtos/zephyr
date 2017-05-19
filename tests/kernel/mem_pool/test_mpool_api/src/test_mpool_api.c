@@ -19,6 +19,7 @@
  */
 
 #include <ztest.h>
+#include <irq_offload.h>
 #include "test_mpool.h"
 
 /** TESTPOINT: Statically define and initialize a memory pool*/
@@ -73,6 +74,11 @@ void tmpool_alloc_free(void *data)
 void test_mpool_alloc_free_thread(void)
 {
 	tmpool_alloc_free(NULL);
+}
+
+void test_mpool_alloc_free_isr(void)
+{
+	irq_offload(tmpool_alloc_free, NULL);
 }
 
 void test_mpool_alloc_size(void)
