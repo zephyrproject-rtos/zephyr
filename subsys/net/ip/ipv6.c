@@ -2695,14 +2695,14 @@ static struct net_ipv6_reassembly *reassembly_get(u32_t id,
 
 	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
 
-		if (k_work_pending(&reassembly[i].timer.work) &&
+		if (k_delayed_work_remaining_get(&reassembly[i].timer) &&
 		    reassembly[i].id == id &&
 		    net_ipv6_addr_cmp(src, &reassembly[i].src) &&
 		    net_ipv6_addr_cmp(dst, &reassembly[i].dst)) {
 			return &reassembly[i];
 		}
 
-		if (k_work_pending(&reassembly[i].timer.work)) {
+		if (k_delayed_work_remaining_get(&reassembly[i].timer)) {
 			continue;
 		}
 
@@ -2732,11 +2732,12 @@ static bool reassembly_cancel(u32_t id,
 {
 	int i, j;
 
+	NET_DBG("Cancel 0x%x", id);
+
 	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
 		s32_t remaining;
 
-		if (!k_work_pending(&reassembly[i].timer.work) ||
-		    reassembly[i].id != id ||
+		if (reassembly[i].id != id ||
 		    !net_ipv6_addr_cmp(src, &reassembly[i].src) ||
 		    !net_ipv6_addr_cmp(dst, &reassembly[i].dst)) {
 			continue;
@@ -2757,8 +2758,8 @@ static bool reassembly_cancel(u32_t id,
 				continue;
 			}
 
-			NET_DBG("IPv6 reassembly pkt %p %zd bytes data",
-				reassembly[i].pkt[j],
+			NET_DBG("[%d] IPv6 reassembly pkt %p %zd bytes data",
+				j, reassembly[i].pkt[j],
 				net_pkt_get_len(reassembly[i].pkt[j]));
 
 			net_pkt_unref(reassembly[i].pkt[j]);
@@ -2802,7 +2803,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	struct net_pkt *pkt;
 	struct net_buf *last;
 	u8_t next_hdr;
-	int i, len;
+	int i, len, ret;
 	u16_t pos;
 
 	k_delayed_work_cancel(&reass->timer);
@@ -2845,6 +2846,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	}
 
 	pkt = reass->pkt[0];
+	reass->pkt[0] = NULL;
 
 	/* Next we need to strip away the fragment header from the first packet
 	 * and set the various pointers and values in packet.
@@ -2870,7 +2872,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	if (!net_pkt_compact(pkt)) {
 		NET_ERR("Cannot compact reassembly packet %p", pkt);
-		reassembly_cancel(reass->id, &reass->src, &reass->dst);
+		net_pkt_unref(pkt);
 		return;
 	}
 
@@ -2895,16 +2897,9 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	 * MUST NOT pass it to L2 so there will be a special check for that
 	 * in process_data() when handling the packet.
 	 */
-	net_recv_data(net_pkt_iface(pkt), pkt);
-
-	/* Make room for new packet that can be reassembled */
-	k_delayed_work_cancel(&reass->timer);
-
-	/* We do not need to unref the net_pkt as that will be handled
-	 * by the receiving code in upper part of the IP stack.
-	 */
-	for (i = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
-		reass->pkt[i] = NULL;
+	ret = net_recv_data(net_pkt_iface(pkt), pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -2954,6 +2949,35 @@ static bool fragment_verify(struct net_ipv6_reassembly *reass)
 	return true;
 }
 
+static int shift_packets(struct net_ipv6_reassembly *reass, int pos)
+{
+	int i;
+
+	for (i = pos + 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+		if (!reass->pkt[i]) {
+			NET_DBG("Moving [%d] %p (offset 0x%x) to [%d]",
+				pos, reass->pkt[pos],
+				net_pkt_ipv6_fragment_offset(reass->pkt[pos]),
+				i);
+
+			/* Do we have enough space in packet array to make
+			 * the move?
+			 */
+			if (((i - pos) + 1) >
+			    (NET_IPV6_FRAGMENTS_MAX_PKT - i)) {
+				return -ENOMEM;
+			}
+
+			memmove(&reass->pkt[i], &reass->pkt[pos],
+				sizeof(void *) * (i - pos));
+
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
 static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 					    struct net_buf *frag,
 					    int total_len,
@@ -2993,7 +3017,8 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 	net_pkt_set_ipv6_fragment_offset(pkt, offset);
 
 	if (!reass->pkt[0]) {
-		NET_DBG("Storing pkt %p to slot %d", pkt, 0);
+		NET_DBG("Storing pkt %p to slot %d offset 0x%x", pkt, 0,
+			offset);
 		reass->pkt[0] = pkt;
 
 		reassembly_info("Reassembly 1st pkt", reass);
@@ -3006,11 +3031,9 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 	 * in reassembly chain in correct order.
 	 */
 	for (i = 0, found = false; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
-		bool move_done = false;
-		int j;
-
 		if (!reass->pkt[i]) {
-			NET_DBG("Storing pkt %p to slot %d", pkt, i);
+			NET_DBG("Storing pkt %p to slot %d offset 0x%x", pkt,
+				i, offset);
 			reass->pkt[i] = pkt;
 			found = true;
 			break;
@@ -3021,22 +3044,14 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 			continue;
 		}
 
-		for (j = i + 1; j < NET_IPV6_FRAGMENTS_MAX_PKT; j++) {
-			if (!reass->pkt[j]) {
-				memmove(reass->pkt[j], reass->pkt[i],
-					sizeof(void *));
-				move_done = true;
-				break;
-			}
-		}
-
-		/* If we do not have any free space in the pkt array,
-		 * then the fragment needs to be discarded.
+		/* Make room for this fragment, if there is no room, then
+		 * discard the whole reassembly.
 		 */
-		if (!move_done) {
+		if (shift_packets(reass, i)) {
 			break;
 		}
 
+		NET_DBG("Storing %p (offset 0x%x) to [%d]", pkt, offset, i);
 		reass->pkt[i] = pkt;
 		found = true;
 		break;
@@ -3046,6 +3061,7 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 		/* We could not add this fragment into our saved fragment
 		 * list. We must discard the whole packet at this point.
 		 */
+		NET_DBG("No slots available for 0x%x", reass->id);
 		reassembly_cancel(reass->id, &reass->src, &reass->dst);
 		goto drop;
 	}
