@@ -46,6 +46,15 @@ single thread: :file:`prj_single.conf`:
 
    $ make BOARD=v2m_beetle CONF_FILE=prj_single.conf run
 
+To build the version that allows flash write, use the supplied configuration
+file: :file:`prj_allow_flash_write_<x>.conf`:
+
+.. code-block:: console
+
+   $ make BOARD=v2m_beetle CONF_FILE=prj_allow_flash_write_<x>.conf run
+
+<x> = mcux or stm32
+
 Sample Output
 =============
 
