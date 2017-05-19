@@ -2,7 +2,7 @@
 KBUILD_CFLAGS += -mcpu=em4_fpus
 
 soc-cflags += $(call cc-option,-mcpu=em4_fpus -mno-sdata) \
-		$(call cc-option,-mdiv-rem -mswap -mnormm) \
+		$(call cc-option,-mdiv-rem -mswap -mnorm) \
 		$(call cc-option,-mmpy-option=6 -mbarrel-shifter) \
 
 ifeq ($(CONFIG_CODE_DENSITY), y)
