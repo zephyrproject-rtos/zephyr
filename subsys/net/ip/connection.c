@@ -456,7 +456,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			}
 
 #if defined(CONFIG_NET_IPV6)
-			if (remote_addr->family == AF_INET6) {
+			if (remote_addr->family == AF_INET6 &&
+			    remote_addr->family ==
+			    conns[i].remote_addr.family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(remote_addr)->sin6_addr,
 					    &net_sin6(&conns[i].remote_addr)->
@@ -466,7 +468,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-			if (remote_addr->family == AF_INET) {
+			if (remote_addr->family == AF_INET &&
+			    remote_addr->family ==
+			    conns[i].remote_addr.family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(remote_addr)->sin_addr,
 					    &net_sin(&conns[i].remote_addr)->
@@ -490,7 +494,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			}
 
 #if defined(CONFIG_NET_IPV6)
-			if (local_addr->family == AF_INET6) {
+			if (local_addr->family == AF_INET6 &&
+			    local_addr->family ==
+			    conns[i].local_addr.family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(local_addr)->sin6_addr,
 					    &net_sin6(&conns[i].local_addr)->
@@ -500,7 +506,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-			if (local_addr->family == AF_INET) {
+			if (local_addr->family == AF_INET &&
+			    local_addr->family ==
+			    conns[i].local_addr.family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(local_addr)->sin_addr,
 					    &net_sin(&conns[i].local_addr)->
