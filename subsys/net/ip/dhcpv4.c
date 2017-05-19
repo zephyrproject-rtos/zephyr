@@ -1091,15 +1091,20 @@ void net_dhcpv4_stop(struct net_if *iface)
 
 int dhcpv4_init(void)
 {
+	struct sockaddr local_addr;
 	int ret;
 
 	NET_DBG("");
+
+	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+			net_ipv4_unspecified_address());
+	local_addr.family = AF_INET;
 
 	/* Register UDP input callback on
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for
 	 * all dhcpv4 related incoming packets.
 	 */
-	ret = net_udp_register(NULL, NULL,
+	ret = net_udp_register(NULL, &local_addr,
 			       DHCPV4_SERVER_PORT,
 			       DHCPV4_CLIENT_PORT,
 			       net_dhcpv4_input, NULL, NULL);
