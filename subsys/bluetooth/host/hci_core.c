@@ -802,10 +802,10 @@ static void le_conn_complete(struct net_buf *buf)
 		}
 	}
 
-	if (BT_FEAT_LE_PHY_2M(bt_dev.le.features) ||
-	    BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
+	if (BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
 		err = hci_le_set_phy(conn);
 		if (!err) {
+			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
 			goto done;
 		}
 	}
@@ -834,12 +834,13 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		       sizeof(conn->le.features));
 	}
 
-	if (BT_FEAT_LE_PHY_2M(bt_dev.le.features) ||
-	    BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
+	if (BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
+	    BT_FEAT_LE_PHY_2M(conn->le.features)) {
 		int err;
 
 		err = hci_le_set_phy(conn);
 		if (!err) {
+			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
 			goto done;
 		}
 	}
@@ -864,8 +865,13 @@ static void le_phy_update_complete(struct net_buf *buf)
 	BT_DBG("PHY updated: status: 0x%x, tx: %u, rx: %u",
 	       evt->status, evt->tx_phy, evt->rx_phy);
 
+	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
+		goto done;
+	}
+
 	update_conn_param(conn);
 
+done:
 	bt_conn_unref(conn);
 }
 
