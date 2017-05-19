@@ -34,6 +34,7 @@
 #include "ipv6.h"
 #include "ipv4.h"
 #include "tcp.h"
+#include "net_stats.h"
 
 /*
  * Each TCP connection needs to be tracked by net_context, so
@@ -158,6 +159,11 @@ static void tcp_retry_expired(struct k_timer *timer)
 		do_ref_if_needed(pkt);
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
 			net_pkt_unref(pkt);
+		} else {
+			if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
+			    !is_6lo_technology(pkt)) {
+				net_stats_update_tcp_seg_rexmit();
+			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
@@ -567,17 +573,10 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 	if ((net_context_get_state(tcp->context) != NET_CONTEXT_UNCONNECTED) &&
 	    (net_tcp_get_state(tcp) != NET_TCP_SYN_SENT) &&
 	    (net_tcp_get_state(tcp) != NET_TCP_TIME_WAIT)) {
-		if (net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
-			/* Send the reset segment with acknowledgment. */
-			segment.ack = tcp->send_ack;
-			segment.flags = NET_TCP_RST | NET_TCP_ACK;
-		} else {
-			/* Send the reset segment without acknowledgment. */
-			segment.ack = 0;
-			segment.flags = NET_TCP_RST;
-		}
-
-		segment.seq = 0;
+		/* Send the reset segment always with acknowledgment. */
+		segment.ack = tcp->send_ack;
+		segment.flags = NET_TCP_RST | NET_TCP_ACK;
+		segment.seq = tcp->send_seq;
 		segment.src_addr = &tcp->context->local;
 		segment.dst_addr = remote;
 		segment.wnd = 0;
@@ -641,6 +640,8 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	}
 
 	context->tcp->send_seq += data_len;
+
+	net_stats_update_tcp_sent(data_len);
 
 	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
 
@@ -722,6 +723,8 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 			ret = net_send_data(new_pkt);
 			if (ret < 0) {
 				net_pkt_unref(new_pkt);
+			} else {
+				net_stats_update_tcp_seg_rexmit();
 			}
 
 			return ret;
@@ -780,6 +783,11 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	u32_t seq;
 	bool valid_ack = false;
 
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
+	    sys_slist_is_empty(list)) {
+		net_stats_update_tcp_seg_ackerr();
+	}
+
 	while (!sys_slist_is_empty(list)) {
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
@@ -788,6 +796,7 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
 		if (!net_tcp_seq_greater(ack, seq)) {
+			net_stats_update_tcp_seg_ackerr();
 			break;
 		}
 
@@ -855,16 +864,22 @@ static void validate_state_transition(enum net_tcp_state current,
 			1 << NET_TCP_CLOSED,
 		[NET_TCP_SYN_SENT] = 1 << NET_TCP_CLOSED |
 			1 << NET_TCP_ESTABLISHED |
-			1 << NET_TCP_SYN_RCVD,
+			1 << NET_TCP_SYN_RCVD |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_ESTABLISHED] = 1 << NET_TCP_CLOSE_WAIT |
-			1 << NET_TCP_FIN_WAIT_1,
-		[NET_TCP_CLOSE_WAIT] = 1 << NET_TCP_LAST_ACK,
+			1 << NET_TCP_FIN_WAIT_1 |
+			1 << NET_TCP_CLOSED,
+		[NET_TCP_CLOSE_WAIT] = 1 << NET_TCP_LAST_ACK |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_LAST_ACK] = 1 << NET_TCP_CLOSED,
 		[NET_TCP_FIN_WAIT_1] = 1 << NET_TCP_CLOSING |
 			1 << NET_TCP_FIN_WAIT_2 |
-			1 << NET_TCP_TIME_WAIT,
-		[NET_TCP_FIN_WAIT_2] = 1 << NET_TCP_TIME_WAIT,
-		[NET_TCP_CLOSING] = 1 << NET_TCP_TIME_WAIT,
+			1 << NET_TCP_TIME_WAIT |
+			1 << NET_TCP_CLOSED,
+		[NET_TCP_FIN_WAIT_2] = 1 << NET_TCP_TIME_WAIT |
+			1 << NET_TCP_CLOSED,
+		[NET_TCP_CLOSING] = 1 << NET_TCP_TIME_WAIT |
+			1 << NET_TCP_CLOSED,
 		[NET_TCP_TIME_WAIT] = 1 << NET_TCP_CLOSED
 	};
 
@@ -940,4 +955,10 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	}
 
 	irq_unlock(key);
+}
+
+bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt)
+{
+	return !net_tcp_seq_greater(tcp->send_ack + get_recv_wnd(tcp),
+				    sys_get_be32(NET_TCP_HDR(pkt)->seq));
 }

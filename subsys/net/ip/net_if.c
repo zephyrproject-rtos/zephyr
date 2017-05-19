@@ -70,8 +70,15 @@ static inline void net_context_send_cb(struct net_context *context,
 #if defined(CONFIG_NET_UDP)
 	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
 		net_stats_update_udp_sent();
-	}
+	} else
 #endif
+#if defined(CONFIG_NET_TCP)
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		net_stats_update_tcp_seg_sent();
+	} else
+#endif
+	{
+	}
 }
 
 static bool net_if_tx(struct net_if *iface)

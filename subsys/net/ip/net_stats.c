@@ -23,7 +23,7 @@ struct net_stats net_stats;
 
 #define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
 
-void net_print_statistics(void)
+static inline void stats(void)
 {
 	static s64_t next_print;
 	s64_t curr = k_uptime_get();
@@ -44,6 +44,12 @@ void net_print_statistics(void)
 			 GET_STAT(ipv6_nd.sent),
 			 GET_STAT(ipv6_nd.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+#if defined(CONFIG_NET_STATISTICS_MLD)
+		NET_INFO("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d",
+			 GET_STAT(ipv6_mld.recv),
+			 GET_STAT(ipv6_mld.sent),
+			 GET_STAT(ipv6_mld.drop));
+#endif /* CONFIG_NET_STATISTICS_MLD */
 #endif /* CONFIG_NET_STATISTICS_IPV6 */
 
 #if defined(CONFIG_NET_STATISTICS_IPV4)
@@ -78,6 +84,27 @@ void net_print_statistics(void)
 			 GET_STAT(udp.drop));
 		NET_INFO("UDP chkerr     %d",
 			 GET_STAT(udp.chkerr));
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_TCP)
+		NET_INFO("TCP bytes recv %u\tsent\t%d",
+			 GET_STAT(tcp.bytes.received),
+			 GET_STAT(tcp.bytes.sent));
+		NET_INFO("TCP seg recv   %d\tsent\t%d\tdrop\t%d",
+			 GET_STAT(tcp.recv),
+			 GET_STAT(tcp.sent),
+			 GET_STAT(tcp.drop));
+		NET_INFO("TCP seg resent %d\tchkerr\t%d\tackerr\t%d",
+			 GET_STAT(tcp.resent),
+			 GET_STAT(tcp.chkerr),
+			 GET_STAT(tcp.ackerr));
+		NET_INFO("TCP seg rsterr %d\trst\t%d\tre-xmit\t%d",
+			 GET_STAT(tcp.rsterr),
+			 GET_STAT(tcp.rst),
+			 GET_STAT(tcp.rexmit));
+		NET_INFO("TCP conn drop  %d\tconnrst\t%d",
+			 GET_STAT(tcp.conndrop),
+			 GET_STAT(tcp.connrst));
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
@@ -127,6 +154,14 @@ void net_print_statistics(void)
 				(LLONG_MAX - curr);
 		}
 	}
+}
+
+void net_print_statistics(void)
+{
+	/* In order to make the info print lines shorter, use shorter
+	 * function name.
+	 */
+	stats();
 }
 
 #endif /* CONFIG_NET_STATISTICS_PERIODIC_OUTPUT */

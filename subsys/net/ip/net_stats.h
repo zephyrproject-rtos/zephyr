@@ -9,6 +9,7 @@
 
 #if defined(CONFIG_NET_STATISTICS)
 
+#include <net/net_ip.h>
 #include <net/net_stats.h>
 
 extern struct net_stats net_stats;
@@ -156,11 +157,117 @@ static inline void net_stats_update_udp_drop(void)
 {
 	net_stats.udp.drop++;
 }
+
+static inline void net_stats_update_udp_chkerr(void)
+{
+	net_stats.udp.chkerr++;
+}
 #else
 #define net_stats_update_udp_sent()
 #define net_stats_update_udp_recv()
 #define net_stats_update_udp_drop()
+#define net_stats_update_udp_chkerr()
 #endif /* CONFIG_NET_STATISTICS_UDP */
+
+#if defined(CONFIG_NET_STATISTICS_TCP)
+/* TCP stats */
+static inline void net_stats_update_tcp_sent(u32_t bytes)
+{
+	net_stats.tcp.bytes.sent += bytes;
+}
+
+static inline void net_stats_update_tcp_recv(u32_t bytes)
+{
+	net_stats.tcp.bytes.received += bytes;
+}
+
+static inline void net_stats_update_tcp_resent(u32_t bytes)
+{
+	net_stats.tcp.resent += bytes;
+}
+
+static inline void net_stats_update_tcp_seg_sent(void)
+{
+	net_stats.tcp.sent++;
+}
+
+static inline void net_stats_update_tcp_seg_recv(void)
+{
+	net_stats.tcp.recv++;
+}
+
+static inline void net_stats_update_tcp_seg_drop(void)
+{
+	net_stats.tcp.drop++;
+}
+
+static inline void net_stats_update_tcp_seg_rst(void)
+{
+	net_stats.tcp.rst++;
+}
+
+static inline void net_stats_update_tcp_seg_conndrop(void)
+{
+	net_stats.tcp.conndrop++;
+}
+
+static inline void net_stats_update_tcp_seg_connrst(void)
+{
+	net_stats.tcp.connrst++;
+}
+
+static inline void net_stats_update_tcp_seg_chkerr(void)
+{
+	net_stats.tcp.chkerr++;
+}
+
+static inline void net_stats_update_tcp_seg_ackerr(void)
+{
+	net_stats.tcp.ackerr++;
+}
+
+static inline void net_stats_update_tcp_seg_rsterr(void)
+{
+	net_stats.tcp.rsterr++;
+}
+
+static inline void net_stats_update_tcp_seg_rexmit(void)
+{
+	net_stats.tcp.rexmit++;
+}
+#else
+#define net_stats_update_tcp_sent(...)
+#define net_stats_update_tcp_resent(...)
+#define net_stats_update_tcp_recv(...)
+#define net_stats_update_tcp_seg_sent()
+#define net_stats_update_tcp_seg_recv()
+#define net_stats_update_tcp_seg_drop()
+#define net_stats_update_tcp_seg_rst()
+#define net_stats_update_tcp_seg_conndrop()
+#define net_stats_update_tcp_seg_connrst()
+#define net_stats_update_tcp_seg_chkerr()
+#define net_stats_update_tcp_seg_ackerr()
+#define net_stats_update_tcp_seg_rsterr()
+#define net_stats_update_tcp_seg_rexmit()
+#endif /* CONFIG_NET_STATISTICS_TCP */
+
+static inline void net_stats_update_per_proto_recv(enum net_ip_protocol proto)
+{
+	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+		net_stats_update_udp_recv();
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+		net_stats_update_tcp_seg_recv();
+	}
+}
+
+static inline void net_stats_update_per_proto_drop(enum net_ip_protocol proto)
+{
+	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+		net_stats_update_udp_drop();
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+		net_stats_update_tcp_seg_drop();
+	}
+}
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
 /* RPL stats */
