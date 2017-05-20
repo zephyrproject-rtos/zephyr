@@ -43,4 +43,4 @@ Sample Output
    7D
    Wrote LED value 65
    D
-   Wrote LED value 64 		
+   Wrote LED value 64

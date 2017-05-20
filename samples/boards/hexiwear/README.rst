@@ -14,3 +14,10 @@ from MikroE.
 
 As additional features are available on this device, a corresponding
 test/example will be added here
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   **/*
+

@@ -11,10 +11,10 @@ config BOARD
 	default hexiwear_k64
 
 config HEXIWEAR_DOCKING_STATION
-        bool "Docking Station"
-        default n
-        help
-          Has Hexiwear docking station
+	bool "Docking Station"
+	default n
+	help
+	  Has Hexiwear docking station
 	select GPIO
 	select SPI
 

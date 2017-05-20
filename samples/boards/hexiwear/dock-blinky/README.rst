@@ -27,7 +27,7 @@ flashed to a board as follows:
 .. code-block:: console
 
    $ cd samples/boards/hexiwear/dock-blinky
-   $ make 
+   $ make
    $ cp outdir/hexiwear_k64/zephyr.bin /daplink
 
 
