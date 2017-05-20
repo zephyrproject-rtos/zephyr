@@ -10,6 +10,7 @@ from MikroE.
   feedback motor built into the Hexiwear
 - `rotary-leds <_hexiwear_rotary_led>`_ implements reading the rotary encoder and lighting LEDs
 - `dock-blink <_hexiwear-docking-station-sample>`_ uses the LEDs on the docking station
+- `4x4-buttons <_hexiwear-4x4-buttons>`_ reads the 16 button Click interface
 
 As additional features are available on this device, a corresponding
 test/example will be added here
