@@ -9,6 +9,8 @@
 #include <gpio.h>
 #include <fsl_port.h>
 
+#include "board.h"
+
 static int hexiwear_k64_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -35,9 +37,50 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 #endif
 
 	/* Red, green, blue LEDs */
-	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  RED_GPIO_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  BLUE_GPIO_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd,  GREEN_GPIO_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	/* Haptic feedback motor */
+	pinmux_pin_set(portb,  HAPTIC_MOTOR_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+
+#ifdef CONFIG_GPIO
+
+#ifdef CONFIG_GPIO_MCUX_PORTA_NAME
+	struct device *gpioa = device_get_binding(CONFIG_GPIO_MCUX_PORTA_NAME);
+#endif
+#ifdef CONFIG_GPIO_MCUX_PORTB_NAME
+	struct device *gpiob = device_get_binding(CONFIG_GPIO_MCUX_PORTB_NAME);
+#endif
+#ifdef CONFIG_GPIO_MCUX_PORTC_NAME
+	struct device *gpioc = device_get_binding(CONFIG_GPIO_MCUX_PORTC_NAME);
+#endif
+#ifdef CONFIG_GPIO_MCUX_PORTD_NAME
+	struct device *gpiod = device_get_binding(CONFIG_GPIO_MCUX_PORTD_NAME);
+#endif
+
+	/* These GPIO lines are hardwired inside the hexiwear device.
+	 * There's little point in not setting these up properly, except
+	 * that I suppose this is a handful of cycles spent at initialization
+	 * time that might not need to be spent quite yet.
+	 */
+	gpio_pin_configure(gpioc, RED_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpioc, RED_GPIO_PIN, 1);
+
+	gpio_pin_configure(gpiod, GREEN_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpiod, GREEN_GPIO_PIN, 1);
+
+	gpio_pin_configure(gpioc, BLUE_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpioc, BLUE_GPIO_PIN, 1);
+
+#ifdef CONFIG_HAPTIC_FEEDBACK
+	gpio_pin_configure(gpiob, HAPTIC_MOTOR_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpiob, HAPTIC_MOTOR_PIN, 0);
+#endif
+
+#endif /* CONFIG_GPIO */
+
 
 #if CONFIG_I2C_0
 	/* I2C0 SCL, SDA - heart rate, light, humidity */
@@ -84,7 +127,6 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	/* LDO - MAX30101 power supply */
 	pinmux_pin_set(porta, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-	struct device *gpioa = device_get_binding(CONFIG_GPIO_MCUX_PORTA_NAME);
 
 	gpio_pin_configure(gpioa, 29, GPIO_DIR_OUT);
 	gpio_pin_write(gpioa, 29, 1);

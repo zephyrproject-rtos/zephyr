@@ -10,6 +10,13 @@ if BOARD_HEXIWEAR_K64
 config BOARD
 	default hexiwear_k64
 
+config HAPTIC_FEEDBACK
+	bool "Enable haptic feedback motor"
+	default y
+	select GPIO
+	help
+	  Enables haptic feedback motor
+
 config OSC_XTAL0_FREQ
 	default 12000000
 
