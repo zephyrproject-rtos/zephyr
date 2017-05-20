@@ -48,14 +48,21 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 #ifdef CONFIG_GPIO
 
 #ifdef CONFIG_GPIO_MCUX_PORTA_NAME
+#if defined(CONFIG_MAX30101)
 	struct device *gpioa = device_get_binding(CONFIG_GPIO_MCUX_PORTA_NAME);
 #endif
+#endif
+
 #ifdef CONFIG_GPIO_MCUX_PORTB_NAME
+#if defined(CONFIG_HAPTIC_FEEDBACK) || defined(CONFIG_I2C_0)
 	struct device *gpiob = device_get_binding(CONFIG_GPIO_MCUX_PORTB_NAME);
 #endif
+#endif
+
 #ifdef CONFIG_GPIO_MCUX_PORTC_NAME
 	struct device *gpioc = device_get_binding(CONFIG_GPIO_MCUX_PORTC_NAME);
 #endif
+
 #ifdef CONFIG_GPIO_MCUX_PORTD_NAME
 	struct device *gpiod = device_get_binding(CONFIG_GPIO_MCUX_PORTD_NAME);
 #endif
@@ -65,14 +72,18 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	 * that I suppose this is a handful of cycles spent at initialization
 	 * time that might not need to be spent quite yet.
 	 */
+#ifdef CONFIG_GPIO_MCUX_PORTC_NAME
 	gpio_pin_configure(gpioc, RED_GPIO_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpioc, RED_GPIO_PIN, 1);
 
-	gpio_pin_configure(gpiod, GREEN_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(gpiod, GREEN_GPIO_PIN, 1);
-
 	gpio_pin_configure(gpioc, BLUE_GPIO_PIN, GPIO_DIR_OUT);
 	gpio_pin_write(gpioc, BLUE_GPIO_PIN, 1);
+#endif
+
+#ifdef CONFIG_GPIO_MCUX_PORTD_NAME
+	gpio_pin_configure(gpiod, GREEN_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpiod, GREEN_GPIO_PIN, 1);
+#endif
 
 #ifdef CONFIG_HAPTIC_FEEDBACK
 	gpio_pin_configure(gpiob, HAPTIC_MOTOR_PIN, GPIO_DIR_OUT);
@@ -144,8 +155,6 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 
 	/* 3V3B_EN */
 	pinmux_pin_set(portb, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
-	struct device *gpiob = device_get_binding(CONFIG_GPIO_MCUX_PORTB_NAME);
 
 	gpio_pin_configure(gpiob, 12, GPIO_DIR_OUT);
 	gpio_pin_write(gpiob, 12, 0);

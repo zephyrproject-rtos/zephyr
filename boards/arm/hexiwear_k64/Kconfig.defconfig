@@ -68,7 +68,7 @@ config PINMUX_MCUX_PORTD
 	def_bool y
 
 config PINMUX_MCUX_PORTE
-	def_bool y
+	def_bool n
 
 endif # PINMUX_MCUX
 
@@ -87,7 +87,7 @@ config GPIO_MCUX_PORTD
 	def_bool y
 
 config GPIO_MCUX_PORTE
-	def_bool y
+	def_bool n
 
 endif # GPIO_MCUX
 
