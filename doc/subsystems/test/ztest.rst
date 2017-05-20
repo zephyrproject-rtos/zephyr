@@ -27,10 +27,10 @@ Makefile
    :language: Make
    :linenos:
 
-testcase.ini
+sample.yaml
 
-.. literalinclude:: ../../../samples/testing/integration/testcase.ini
-   :language: ini
+.. literalinclude:: ../../../samples/testing/integration/sample.yaml
+   :language: yaml
    :linenos:
 
 prj.conf
@@ -83,10 +83,10 @@ Makefile
    :language: Make
    :linenos:
 
-testcase.ini
+sample.yaml
 
-.. literalinclude:: ../../../samples/testing/unit/testcase.ini
-   :language: ini
+.. literalinclude:: ../../../samples/testing/unit/sample.yaml
+   :language: yaml
    :linenos:
 
 main.c
