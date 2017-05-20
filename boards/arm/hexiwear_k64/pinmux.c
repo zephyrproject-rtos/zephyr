@@ -81,6 +81,59 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 
 #endif /* CONFIG_GPIO */
 
+#ifdef CONFIG_HEXIWEAR_DOCKING_STATION
+	/* these are not set up here with a gpio_pin_configure, because the
+	 * docking station has BOTH LEDs and buttons for each of these
+	 * pins.  It's really up to the developer to configure them based
+	 * on the specific needs of that application.
+	 */
+	pinmux_pin_set(porta, CLICK1_GPIO_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, CLICK2_GPIO_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, CLICK3_GPIO_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	pinmux_pin_set(portb, CLICK1_AN_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, CLICK1_PWM_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portb, CLICK1_INT_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	pinmux_pin_set(portb, CLICK2_AN_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, CLICK2_PWM_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portb, CLICK2_INT_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	pinmux_pin_set(portb, CLICK3_AN_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, CLICK3_PWM_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portb, CLICK3_INT_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
+#ifdef CONFIG_SPI_0
+	/* SPI0 SCK, MOSI, MISO */
+	pinmux_pin_set(portc, SPI_0_SCK_PIN,  PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portc, SPI_0_MOSI_PIN, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portc, SPI_0_MISO_PIN, PORT_PCR_MUX(kPORT_MuxAlt2));
+	/* Click slot Chip-select lines - SPI0_PCS0-2 */
+	pinmux_pin_set(portc, CLICK1_CS_PIN, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portc, CLICK2_CS_PIN, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portc, CLICK3_CS_PIN, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
+#ifdef CONFIG_SPI_1
+	/* SPI1 SCK, MOSI, MISO */
+	pinmux_pin_set(portd, SPI_1_SCK_PIN,  PORT_PCR_MUX(kPORT_MuxAlt7));
+	pinmux_pin_set(portd, SPI_1_MOSI_PIN, PORT_PCR_MUX(kPORT_MuxAlt7));
+	pinmux_pin_set(portd, SPI_1_MISO_PIN, PORT_PCR_MUX(kPORT_MuxAlt7));
+
+	/* SPI1 SPI1_PCSx */
+	pinmux_pin_set(portd, 4, PORT_PCR_MUX(kPORT_MuxAlt7));
+#endif
+
+#ifdef CONFIG_SPI_2
+	/* SPI2 SCK, MOSI, MISO */
+	pinmux_pin_set(portd, SPI_2_SCK_PIN,  PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portd, SPI_2_MOSI_PIN, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portd, SPI_2_MISO_PIN, PORT_PCR_MUX(kPORT_MuxAlt2));
+
+	/* SPI2 SPI2_PCSx */
+	pinmux_pin_set(portb, 20, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
 
 #if CONFIG_I2C_0
 	/* I2C0 SCL, SDA - heart rate, light, humidity */
@@ -125,11 +178,11 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 
 #ifdef CONFIG_MAX30101
 	/* LDO - MAX30101 power supply */
-	pinmux_pin_set(porta, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, MAX30101_GPIO_PIN, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 
-	gpio_pin_configure(gpioa, 29, GPIO_DIR_OUT);
-	gpio_pin_write(gpioa, 29, 1);
+	gpio_pin_configure(gpioa, MAX30101_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpioa, MAX30101_GPIO_PIN, 1);
 #endif
 
 	return 0;

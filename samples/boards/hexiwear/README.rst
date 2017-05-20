@@ -8,6 +8,7 @@ from MikroE.
 
 - `blinky <_hexiwear-blinky-sample>`_ uses the RGB LED and the haptic
   feedback motor built into the Hexiwear
+- `rotary-leds <_hexiwear_rotary_led>`_ implements reading the rotary encoder and lighting LEDs
 
 As additional features are available on this device, a corresponding
 test/example will be added here
