@@ -1,0 +1,14 @@
+# Kconfig - OLIMEX-STM32-E407 board configuration
+#
+# Copyright (c) 2017, Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_OLIMEX_STM32_E407
+
+config BOARD
+	default olimex_stm32_e407
+
+endif # BOARD_OLIMEX_STM32_E407
+
