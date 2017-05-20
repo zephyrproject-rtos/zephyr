@@ -950,12 +950,15 @@ zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 ifeq ($(CONFIG_HAS_DTS),y)
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */"; \
-		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py dts/$(ARCH)/$(BOARD_NAME).dts_compiled $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
 		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
-			echo; echo; \
-			echo "/* Following definitions fixup the generated include */"; \
-			echo; \
-			cat $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+			$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+				-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml \
+				-f $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+		else \
+			$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+				-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
 		fi; \
 		)
 endef

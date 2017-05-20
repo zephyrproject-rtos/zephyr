@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+
+# vim: ai:ts=4:sw=4
+
 import sys
 from os import walk
 import os
 import re
 import yaml
 import pprint
+import argparse
 
 from devicetree import parse_file
 
@@ -503,7 +507,7 @@ def print_key_value(k, v, tabstop):
 
   return
 
-def generate_include_file(defs):
+def generate_include_file(defs, fixup):
     compatible = reduced['/']['props']['compatible'][0]
 
     sys.stdout.write("/**************************************************\n")
@@ -539,18 +543,40 @@ def generate_include_file(defs):
            print_key_value(prop, defs[node].get(prop), maxtabstop)
        sys.stdout.write("\n")
 
-    sys.stdout.write("#endif\n");
+    if fixup and os.path.exists(fixup):
+        sys.stdout.write("\n")
+        sys.stdout.write("/* Following definitions fixup the generated include */\n")
+        try:
+            with open(fixup, "r") as fd:
+                for line in fd.readlines():
+                    sys.stdout.write(line)
+                sys.stdout.write("\n")
+        except:
+            raise Exception("Input file " + os.path.abspath(fixup) + " does not exist.")
 
-def main(args):
-  if len(args) < 2:
-    print('Usage: %s filename.dts path_to_yaml' % args[0])
+    sys.stdout.write("#endif\n")
+
+def parse_arguments():
+
+  parser = argparse.ArgumentParser(description = __doc__,
+                                     formatter_class = argparse.RawDescriptionHelpFormatter)
+  parser.add_argument("-d", "--dts", help="DTS file")
+  parser.add_argument("-y", "--yaml", help="YAML file")
+  parser.add_argument("-f", "--fixup", help="Fixup file")
+
+  return parser.parse_args()
+
+def main():
+  args = parse_arguments()
+  if not args.dts or not args.yaml:
+    print('Usage: %s -d filename.dts -y path_to_yaml' % sys.argv[0])
     return 1
 
   try:
-    with open(args[1], "r") as fd:
+    with open(args.dts, "r") as fd:
       d = parse_file(fd)
   except:
-     raise Exception("Input file " + os.path.abspath(args[1]) + " does not exist.")
+     raise Exception("Input file " + os.path.abspath(args.dts) + " does not exist.")
 
   # compress list to nodes w/ paths, add interrupt parent
   compress_nodes(d['/'], '/')
@@ -572,7 +598,7 @@ def main(args):
 
   # scan YAML files and find the ones we are interested in
   yaml_files = []
-  for (dirpath, dirnames, filenames) in walk(args[2]):
+  for (dirpath, dirnames, filenames) in walk(args.yaml):
     yaml_files.extend([f for f in filenames if re.match('.*\.yaml\Z', f)])
     yaml_files = [dirpath + '/' + t for t in yaml_files]
     break
@@ -628,9 +654,7 @@ def main(args):
     extract_reg_prop(chosen['zephyr,sram'], None, defs, "CONFIG_SRAM", 1024)
 
   # generate include file
-  generate_include_file(defs)
+  generate_include_file(defs, args.fixup)
 
 if __name__ == '__main__':
-  # test1.py executed as script
-  # do something
-  sys.exit(main(sys.argv))
+    main()
