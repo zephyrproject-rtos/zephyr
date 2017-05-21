@@ -11,11 +11,20 @@
 	model = "Atmel SAM4S Xplained Board with an Atmel SAM4S16C SoC";
 	compatible = "atmel,sam4s_xplained", "atmel,sam4s16c", "atmel,sam4s";
 
+	aliases {
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
+	};
+
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+};
+
+&i2c0 {
+	status = "ok";
 };
 
 &uart1 {
