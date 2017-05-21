@@ -23,6 +23,7 @@ obj-$(CONFIG_BOARD_DISCO_L475_IOT1) += stm32/pinmux_board_disco_l475_iot1.o
 obj-$(CONFIG_BOARD_STM32L496G_DISCO) += stm32/pinmux_board_stm32l496g_disco.o
 obj-$(CONFIG_BOARD_OLIMEXINO_STM32) += stm32/pinmux_board_olimexino_stm32.o
 obj-$(CONFIG_BOARD_STM32_MINI_A15) += stm32/pinmux_board_stm32_mini_a15.o
+obj-$(CONFIG_BOARD_STM32_MIN_DEV) += stm32/pinmux_board_stm32_min_dev.o
 obj-$(CONFIG_PINMUX_QMSI) += pinmux_qmsi.o
 obj-$(CONFIG_PINMUX_FE310) += pinmux_fe310.o
 obj-$(CONFIG_PINMUX_CC2650) += pinmux_cc2650.o
