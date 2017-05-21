@@ -149,7 +149,7 @@ failures, etc., should be handled by assertions.
 
 When it is appropriate to return error conditions for the caller to check, 0
 should be returned on success and a POSIX errno.h code returned on failure.
-See https://wiki.zephyrproject.org/view/Coding_conventions#Return_Codes for
+See https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes for
 details about this.
 
 A driver implementing a particular subsystem will define the real implementation
