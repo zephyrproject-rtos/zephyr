@@ -8,7 +8,10 @@
 
 #define __SIZE_K(x) (x * 1024)
 
-#if defined(CONFIG_SOC_STM32F103XB)
+#if defined(CONFIG_SOC_STM32F103X8)
+#define DT_FLASH_SIZE		__SIZE_K(64)
+#define DT_SRAM_SIZE		__SIZE_K(20)
+#elif defined(CONFIG_SOC_STM32F103XB)
 #define DT_FLASH_SIZE		__SIZE_K(128)
 #define DT_SRAM_SIZE		__SIZE_K(20)
 #elif defined(CONFIG_SOC_STM32F103XE)
