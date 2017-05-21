@@ -8,7 +8,7 @@ licenses, the naming conventions, the code submission infrastructure, the
 review process and the code documentation can be found on the
 Zephyr Project wiki.
 
-* https://wiki.zephyrproject.org/view/Collaboration_Guidelines
+* https://github.com/zephyrproject-rtos/zephyr/wiki/Contribution-Guide
 
 .. toctree::
    :maxdepth: 1
