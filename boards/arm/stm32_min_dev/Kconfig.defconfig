@@ -1,0 +1,13 @@
+# Kconfig - STM32 Minimum Development Board Configuration
+#
+# Copyright (c) 2017, embedjournal.com
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32_MIN_DEV
+
+config BOARD
+	default stm32_min_dev
+
+endif # BOARD_STM32_MIN_DEV
