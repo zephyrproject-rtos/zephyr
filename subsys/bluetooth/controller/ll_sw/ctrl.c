@@ -4635,6 +4635,7 @@ void radio_event_adv_prepare(u32_t ticks_at_expire, u32_t remainder,
 
 	DEBUG_RADIO_PREPARE_A(1);
 
+	LL_ASSERT(!_radio.ticker_id_prepare);
 	_radio.ticker_id_prepare = RADIO_TICKER_ID_ADV;
 
 	event_common_prepare(ticks_at_expire, remainder,
@@ -4812,6 +4813,7 @@ static void event_obs_prepare(u32_t ticks_at_expire, u32_t remainder,
 
 	DEBUG_RADIO_PREPARE_O(1);
 
+	LL_ASSERT(!_radio.ticker_id_prepare);
 	_radio.ticker_id_prepare = RADIO_TICKER_ID_OBS;
 
 	event_common_prepare(ticks_at_expire, remainder,
@@ -6186,6 +6188,7 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 {
 	u16_t event_counter;
 
+	LL_ASSERT(!_radio.ticker_id_prepare);
 	_radio.ticker_id_prepare =
 	    RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle;
 
@@ -7757,6 +7760,10 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 			mayfly_xtal_stop};
 		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		u32_t ret;
+
+		/* Reset the stored ticker id in prepare phase. */
+		LL_ASSERT(_radio.ticker_id_prepare);
+		_radio.ticker_id_prepare = 0;
 
 		/* Step 2.1: Is caller between Primary and Marker0?
 		 * Stop the Marker0 event
