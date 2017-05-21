@@ -13,7 +13,7 @@
 
 /* When I use the Rotary-G click board in slot 3, I find that the position
  * of the knob affects whether or not I can flash a new image in with my
- * JLink.  That's pretty odd, I know, but it's completely repeatable.  
+ * JLink.  That's pretty odd, I know, but it's completely repeatable.
  *
  * So I use slot #2 instead, and everything works as I expect.
  */
@@ -41,13 +41,17 @@ struct device *spi_dev;
 
 struct spi_config config = { 0 };
 
-volatile int speed = 0;
-volatile int direction = +1;
+volatile int speed;
+volatile int direction = 1;
 
-bool buttonPressed = false;
-s64_t lastButtonPress = 0;
+bool buttonPressed;
+s64_t lastButtonPress;
 
-void changeDirection()
+volatile int rotation;
+s64_t lastSpeedChange;
+
+
+void changeDirection(void)
 {
 	direction = -direction;
 }
@@ -73,11 +77,10 @@ void button_callback(struct device *port, struct gpio_callback *cb, u32_t pins)
 
 }
 
-s64_t lastSpeedChange = 0;
-
 int addSpeed(int currentSpeed, int delta)
 {
 	int newSpeed = currentSpeed + delta;
+
 	if (newSpeed < 0) {
 		newSpeed = 0;
 	}
@@ -88,35 +91,36 @@ int addSpeed(int currentSpeed, int delta)
 	return newSpeed;
 }
 
-volatile int rotation = 0;
-
 void read_rotary(bool aFirst)
 {
-	// I don't understand why but when this printk is removed, reading the encoder
-	// fails miserably (erratic behavior)
+	int encA, encB;
+	int deltaV = rotation;
+	u32_t deltaT = 0;
+	bool firstTick = (lastSpeedChange == 0);
+
+	/* I don't understand why but when this printk is removed, reading
+	 * the encoder fails miserably (erratic behavior)
+	 */
 
 	printk("Read encoder: trigger %c\n", aFirst ? 'A' : 'B');
 
-	int encA, encB;
 	gpio_pin_read(rotaryA, ROTARY_A_PIN, &encA);
 	gpio_pin_read(rotaryB, ROTARY_B_PIN, &encB);
 
 	if (encA != encB) {
-		// first time through, we don't know the direction yet
-		// but we know based on which GPIO triggered first
+		/* first time through, we don't know the direction yet
+		 * but we know based on which GPIO triggered first
+		 */
 		if (rotation == 0) {
-			rotation = aFirst ? +1 : -1;
+			rotation = aFirst ? (+1) : (-1);
 		}
 		return;
 	}
-	// this is now the second time around, and we effect the change
-	// the speed will be changed, by an amount that varies depending on
-	// how quickly the knob is rotated
 
-	u32_t deltaT = 0;
-	int deltaV = rotation;
-
-	bool firstTick = (lastSpeedChange == 0);
+	/* this is now the second time around, and we effect the change
+	 * the speed will be changed, by an amount that varies depending on
+	 * how quickly the knob is rotated
+	 */
 
 	if (firstTick) {
 		lastSpeedChange = k_uptime_get_32();
@@ -135,36 +139,34 @@ void read_rotary(bool aFirst)
 	speed = addSpeed(speed, deltaV);
 	printk("   speed:%d deltaT:%d deltaV:%d\n", speed, deltaT, deltaV);
 
-	// and now we reset back to the "normal" state
+	/* and now we reset back to the "normal" state */
 	rotation = 0;
 }
 
 void rotaryA_callback(struct device *port, struct gpio_callback *cb, u32_t pins)
 {
-	//printk("trigger A\n");
 	read_rotary(true);
 }
 
 void rotaryB_callback(struct device *port, struct gpio_callback *cb, u32_t pins)
 {
-	//printk("trigger \n");
 	read_rotary(false);
 }
 
 void write_leds(u16_t val)
 {
 	int err = 0;
-	err = spi_slave_select(spi_dev, ROTARY_SPI_SELECT);
+
+	spi_slave_select(spi_dev, ROTARY_SPI_SELECT);
 	err = spi_write(spi_dev, &val, 2);
 	if (err != 0) {
 		printk("Unable to perform SPI write: %d\n", err);
 	}
-
 }
 
-void tick_leds()
+void tick_leds(void)
 {
-	static u8_t count = 0;
+	static u8_t count;
 	static u16_t val = 1;
 
 	if (speed == 0) {
@@ -182,9 +184,10 @@ void tick_leds()
 	}
 }
 
-void init_rotary()
+void init_rotary(void)
 {
 	int ret;
+	u32_t rotary_mode, button_mode;
 
 	rotaryA = device_get_binding(ROTARY_A_NAME);
 	rotaryB = device_get_binding(ROTARY_B_NAME);
@@ -197,11 +200,13 @@ void init_rotary()
 		printk("Devices initialized\n");
 	}
 
-	uint32_t rotary_mode = GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE;
+	rotary_mode = GPIO_DIR_IN | GPIO_INT |
+		      GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE;
 	/* Setup GPIO input, and triggers on rising and falling edges. */
 	ret = gpio_pin_configure(rotaryA, ROTARY_A_PIN, rotary_mode);
 	if (ret) {
-		printk("Error configuring %s:%d!\n", ROTARY_A_NAME, ROTARY_A_PIN);
+		printk("Error configuring %s:%d!\n", ROTARY_A_NAME,
+						     ROTARY_A_PIN);
 	} else {
 		printk("Pin A configured\n");
 	}
@@ -209,17 +214,20 @@ void init_rotary()
 	/* Setup GPIO input, and triggers on rising and falling edges. */
 	ret = gpio_pin_configure(rotaryB, ROTARY_B_PIN, rotary_mode);
 	if (ret) {
-		printk("Error configuring %s:%d!\n", ROTARY_B_NAME, ROTARY_B_PIN);
+		printk("Error configuring %s:%d!\n", ROTARY_B_NAME,
+						     ROTARY_B_PIN);
 	} else {
 		printk("Pin B configured\n");
 	}
 
-	uint32_t button_mode =
-	    GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE | GPIO_PUD_PULL_DOWN |
-	    GPIO_INT_DEBOUNCE;
+	button_mode = GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+		      GPIO_INT_DOUBLE_EDGE | GPIO_PUD_PULL_DOWN |
+		      GPIO_INT_DEBOUNCE;
+
 	ret = gpio_pin_configure(button, ROTARY_BUTTON_PIN, button_mode);
 	if (ret) {
-		printk("Error configuring %s:%d!\n", ROTARY_BUTTON_NAME, ROTARY_BUTTON_PIN);
+		printk("Error configuring %s:%d!\n", ROTARY_BUTTON_NAME,
+						     ROTARY_BUTTON_PIN);
 	} else {
 		printk("Pin BUTTON configured\n");
 	}
@@ -256,9 +264,10 @@ void init_rotary()
 		printk("Callback B enabled\n");
 	}
 
-	// one callback for the push-to-activate knob on the click board
+	/* one callback for the push-to-activate knob on the click board */
 
-	gpio_init_callback(&rotaryButton_cb, button_callback, BIT(ROTARY_BUTTON_PIN));
+	gpio_init_callback(&rotaryButton_cb, button_callback,
+			   BIT(ROTARY_BUTTON_PIN));
 
 	ret = gpio_add_callback(button, &rotaryButton_cb);
 	if (ret) {
@@ -276,13 +285,15 @@ void init_rotary()
 
 }
 
-void init_spi()
+void init_spi(void)
 {
+	int ret;
+
 	spi_dev = device_get_binding(CONFIG_SPI_0_NAME);
 	config.config = SPI_WORD(8);
 	config.max_sys_freq = 256;
 
-	int ret = spi_configure(spi_dev, &config);
+	ret = spi_configure(spi_dev, &config);
 	if (ret) {
 		printk("SPI configuration failed\n");
 		return;
@@ -291,7 +302,7 @@ void init_spi()
 	}
 }
 
-void init_leds()
+void init_leds(void)
 {
 	write_leds(1);
 }
@@ -308,6 +319,7 @@ void main(void)
 
 		if (speed != 0) {
 			int delay = 1000 - speed * 10;
+
 			if (delay < 1) {
 				delay = 1;
 			}

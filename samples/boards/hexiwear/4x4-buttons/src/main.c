@@ -37,10 +37,11 @@ void write_leds(u16_t val)
 	}
 }
 
-u16_t read_buttons()
+u16_t read_buttons(void)
 {
 	int err = 0;
 	u16_t val = 0;
+
 	err = spi_slave_select(spi_dev, CLICK2_SPI_SELECT);
 	if (err) {
 		printk("Error selecting button slave\n");
@@ -56,18 +57,20 @@ u16_t read_buttons()
 
 }
 
-void init_leds()
+void init_leds(void)
 {
 	write_leds(0);
 }
 
-void init_spi()
+void init_spi(void)
 {
+	int ret;
+
 	spi_dev = device_get_binding(CONFIG_SPI_0_NAME);
 	config.config = SPI_WORD(8);
 	config.max_sys_freq = 256;
 
-	int ret = spi_configure(spi_dev, &config);
+	ret = spi_configure(spi_dev, &config);
 	if (ret) {
 		printk("SPI configuration failed\n");
 		return;
@@ -94,13 +97,15 @@ void print_buttons_pushed(u16_t value)
 
 void main(void)
 {
+	u16_t lastval = 0;
+
 	printk("Hello World! %s\n", CONFIG_ARCH);
 
 	init_spi();
 
-	u16_t lastval = 0;
 	while (true) {
 		int val = read_buttons();
+
 		if (val) {
 			if (val != lastval) {
 				print_buttons_pushed(val);

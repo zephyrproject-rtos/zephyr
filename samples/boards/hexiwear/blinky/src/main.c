@@ -26,6 +26,7 @@ void main(void)
 
 #ifdef CONFIG_HAPTIC_FEEDBACK
 	struct device *motor_dev;
+
 	motor_dev = device_get_binding(HAPTIC_MOTOR_NAME);
 #endif
 
@@ -46,7 +47,7 @@ void main(void)
 		/* however, turn ON the LED with value 0 */
 		gpio_pin_write(rdev, RED_GPIO_PIN, 0);
 		k_sleep(SLEEP_TIME);
-		/* and turn it OFF with value 1 */ 
+		/* and turn it OFF with value 1 */
 		gpio_pin_write(rdev, RED_GPIO_PIN, 1);
 
 		gpio_pin_write(gdev, GREEN_GPIO_PIN, 0);
