@@ -41,8 +41,6 @@ The project's documentation currently comprises the following items:
 * Script-generated material for kernel configuration options based on kconfig
   files found in the source code tree
 
-* Additional material on https://wiki.zephyrproject.org
-
 The reStructuredText files are processed by the Sphinx documentation system,
 and make use of the breathe extension for including the doxygen-generated API
 material.  Additional tools are required to generate the
