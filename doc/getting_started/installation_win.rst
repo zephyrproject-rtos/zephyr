@@ -78,14 +78,9 @@ environment for Windows. Follow the steps below to set it up:
    * Clone and build the DTC::
 
         $ cd ~
-        $ git clone https://github.com/carlescufi/dtc.git
+        $ git clone https://git.kernel.org/pub/scm/utils/dtc/dtc.git
         $ cd dtc
         $ make
-
-   .. note::
-        The repository containing the DTC itself is currently not the standard
-        upstream one due to a required patch. This will be updated once the
-        patch has been accepted.
 
    * Export the location of the DTC::
 
