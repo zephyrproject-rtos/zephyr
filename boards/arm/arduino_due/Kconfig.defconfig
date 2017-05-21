@@ -40,19 +40,14 @@ endif # GPIO
 
 if I2C
 
-config I2C_ATMEL_SAM3
+config I2C_SAM_TWI
 	def_bool y
 
 config I2C_0
 	default y
-config I2C_0_IRQ_PRI
-	default 0
 
 config I2C_1
 	default y
-
-config I2C_1_IRQ_PRI
-	default 0
 
 endif # I2C
 
