@@ -502,7 +502,8 @@ depth is needed. The developer must supply a :file:`Makefile` for the
 Application-specific source code should not use symbol name prefixes that have
 been reserved by the kernel for its own use. For more information, see
 
-`Naming Conventions <https://wiki.zephyrproject.org/view/Coding_conventions#Naming_Conventions>`_.
+`Naming Conventions
+<https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions>`_.
 
 
 The following requirements apply to all Makefiles in the :file:`src`
