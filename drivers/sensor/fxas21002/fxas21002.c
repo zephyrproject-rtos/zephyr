@@ -215,8 +215,12 @@ static int fxas21002_init(struct device *dev)
 	 * acknowledgment (ACK) of the written byte to the master. Therefore,
 	 * do not check the return code of the I2C transaction.
 	 */
-	i2c_reg_write_byte(data->i2c, config->i2c_address,
-			   FXAS21002_REG_CTRLREG1, FXAS21002_CTRLREG1_RST_MASK);
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXAS21002_REG_CTRLREG1,
+			       FXAS21002_CTRLREG1_RST_MASK) < 0) {
+		SYS_LOG_ERR("Could not reset sensor");
+		return -EIO;
+	}
 
 	/* Wait for the reset sequence to complete */
 	do {
