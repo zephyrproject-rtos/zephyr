@@ -538,8 +538,6 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	bt_conn_cb_register(&conn_callbacks);
-
-	shell_register_prompt_handler(current_prompt);
 }
 
 static int cmd_init(int argc, char *argv[])
@@ -2761,4 +2759,4 @@ static const struct shell_cmd bt_commands[] = {
 	{ NULL, NULL, NULL }
 };
 
-SHELL_REGISTER(BT_SHELL_MODULE, bt_commands);
+SHELL_REGISTER_WITH_PROMPT(BT_SHELL_MODULE, bt_commands, current_prompt);
