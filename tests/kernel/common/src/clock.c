@@ -16,7 +16,7 @@
 static void tclock_uptime(void)
 {
 	u64_t t64, t32;
-	s64_t d64;
+	s64_t d64 = 0;
 
 	/**TESTPOINT: uptime elapse*/
 	t64 = k_uptime_get();
