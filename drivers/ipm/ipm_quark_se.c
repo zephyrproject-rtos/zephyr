@@ -93,9 +93,9 @@ static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 {
 	const struct quark_se_ipm_config_info *config = d->config->config_info;
 	volatile struct quark_se_ipm *ipm = config->ipm;
-	const u8_t *data8;
-	int i;
+	u32_t data32[4];
 	int flags;
+	int i;
 
 	if (id > QUARK_SE_IPM_MAX_ID_VAL) {
 		return -EINVAL;
@@ -116,16 +116,14 @@ static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 		return -EBUSY;
 	}
 
-	/* Populate the data, memcpy doesn't take volatiles */
-	data8 = (const u8_t *)data;
+	/* Actual message is passing using 32 bits registers */
+	memcpy(data32, data, size);
 
-	for (i = 0; i < size; ++i) {
-		ipm->data[i] = data8[i];
+	for (i = 0; i < ARRAY_SIZE(data32); ++i) {
+		*((u32_t *)ipm->data + i) = data32[i];
 	}
-	ipm->ctrl.ctrl = id;
 
-	/* Cause the interrupt to assert on the remote side */
-	ipm->ctrl.irq = 1;
+	*((u32_t *)ipm) = id | BIT(31);
 
 	/* Wait for HW to set the sts bit */
 	while (ipm->sts.sts == 0) {
