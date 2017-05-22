@@ -1,0 +1,1 @@
+obj-$(CONFIG_BLUETOOTH_SHELL) += bt.o

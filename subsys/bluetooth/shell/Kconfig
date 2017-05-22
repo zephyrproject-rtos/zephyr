@@ -1,0 +1,15 @@
+# Kconfig - Shell configuration options
+
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BLUETOOTH_SHELL
+	bool "Enable Bluetooth shell"
+	default n
+	select CONSOLE_SHELL
+	help
+	Activate shell module that provides Bluetooth commands to the
+	console.
