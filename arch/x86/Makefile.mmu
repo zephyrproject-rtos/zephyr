@@ -1,0 +1,25 @@
+ifeq ($(KBUILD_VERBOSE),1)
+	GENMMU_EXTRA_ARGS := -v
+else
+	GENMMU_EXTRA_ARGS :=
+endif
+
+GENMMU := $(ZEPHYR_BASE)/scripts/gen_mmu.py
+
+OUTPUT_FORMAT ?= elf32-i386
+OUTPUT_ARCH ?= i386
+
+quiet_cmd_gen_mmu = GMMU    $@
+      cmd_gen_mmu =								\
+(										\
+	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j mmulist $< mmulist.bin &&	\
+	python $(GENMMU) -i mmulist.bin -o mmu_tables.bin $(GENMMU_EXTRA_ARGS)\
+)
+
+
+mmu_tables.o: $(PREBUILT_KERNEL) $(GENMMU)
+	$(call cmd,gen_mmu)
+	$(Q)$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) \
+		--rename-section .data=.mmu_data mmu_tables.bin $@
+
+GENERATED_KERNEL_OBJECT_FILES += mmu_tables.o

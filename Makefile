@@ -893,6 +893,9 @@ WARN_ABOUT_DEPRECATION := $(if $(CONFIG_BOARD_DEPRECATED),echo -e \
 
 ifeq ($(ARCH),x86)
 include $(srctree)/arch/x86/Makefile.idt
+ifeq ($(CONFIG_X86_MMU),y)
+include $(srctree)/arch/x86/Makefile.mmu
+endif
 endif
 
 ifeq ($(CONFIG_GEN_ISR_TABLES),y)
