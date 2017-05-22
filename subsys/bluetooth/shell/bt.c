@@ -842,6 +842,7 @@ static int cmd_security(int argc, char *argv[])
 }
 #endif
 
+#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 static void exchange_func(struct bt_conn *conn, u8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
@@ -870,6 +871,7 @@ static int cmd_gatt_exchange_mtu(int argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
 static const struct bt_data ad_discov[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -971,6 +973,7 @@ static int cmd_oob(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 static struct bt_gatt_discover_params discover_params;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
@@ -1437,6 +1440,7 @@ static int cmd_gatt_unsubscribe(int argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
@@ -2701,6 +2705,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "auth-pincode", cmd_auth_pincode, "<pincode>" },
 #endif /* CONFIG_BLUETOOTH_BREDR */
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR) */
+#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu, HELP_NONE },
 	{ "gatt-discover-primary", cmd_gatt_discover,
 	  "<UUID> [start handle] [end handle]" },
@@ -2725,6 +2730,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "gatt-subscribe", cmd_gatt_subscribe,
 	  "<CCC handle> <value handle> [ind]" },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe, HELP_NONE },
+#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 	{ "gatt-register-service", cmd_gatt_register_test_svc,
 	  "register pre-predefined test service" },
 	{ "gatt-metrics", cmd_gatt_write_cmd_metrics,
