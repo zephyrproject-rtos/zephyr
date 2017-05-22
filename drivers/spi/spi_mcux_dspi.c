@@ -77,6 +77,10 @@ static int spi_mcux_configure(struct device *dev, struct spi_config *spi_config)
 		    word_size, spi_config->max_sys_freq);
 
 	clock_freq = CLOCK_GetFreq(config->clock_source);
+	if (!clock_freq) {
+		SYS_LOG_ERR("Got frequency of 0");
+		return -EINVAL;
+	}
 	DSPI_MasterInit(base, &master_config, clock_freq);
 
 	DSPI_MasterTransferCreateHandle(base, &data->handle,
