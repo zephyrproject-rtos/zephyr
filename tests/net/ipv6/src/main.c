@@ -194,12 +194,14 @@ static struct net_pkt *prepare_ra_message(void)
 
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_icmp_hdr *icmp = NET_ICMP_HDR(pkt);
+	struct net_icmp_hdr *icmp;
 
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
+
+	icmp = NET_ICMP_HDR(pkt);
 
 	/* Reply with RA messge */
 	if (icmp->type == NET_ICMPV6_RS) {
