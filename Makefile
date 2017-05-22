@@ -577,6 +577,17 @@ ifeq ($(dot-config),1)
 # oldconfig if changes are detected.
 -include include/config/auto.conf.cmd
 
+# Read in DTS derived configuration, if it exists
+#
+# We check to see if the ARCH is correctly sourced before doing the -include
+# The reason for this is due to implicit rules kicking in to create this file.
+# If this occurs before the above auto.conf is sourced correctly, the build
+# will iterate over the dts conf file 2-3 times before settling down to the
+# correct output.
+ifneq ($(ARCH),)
+-include include/generated/generated_dts_board.conf
+endif
+
 # To avoid any implicit rule to kick in, define an empty command
 $(KCONFIG_CONFIG) include/config/auto.conf.cmd: ;
 
@@ -962,18 +973,33 @@ define filechk_generated_dts_board.h
 		fi; \
 		)
 endef
+define filechk_generated_dts_board.conf
+	(echo "# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!"; \
+		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+		-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+		-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml -k; \
+		)
+endef
 else
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */";)
 endef
+define filechk_generated_dts_board.conf
+	(echo "# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!";)
+endef
 endif
-
 
 include/generated/generated_dts_board.h: include/config/auto.conf FORCE
 ifeq ($(CONFIG_HAS_DTS),y)
 	$(Q)$(MAKE) $(build)=dts/$(ARCH)
 endif
 	$(call filechk,generated_dts_board.h)
+
+include/generated/generated_dts_board.conf: include/config/auto.conf FORCE
+ifeq ($(CONFIG_HAS_DTS),y)
+	$(Q)$(MAKE) $(build)=dts/$(ARCH)
+endif
+	$(call filechk,generated_dts_board.conf)
 
 dts: include/generated/generated_dts_board.h
 
@@ -1091,7 +1117,8 @@ depend dep:
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
 
-CLEAN_FILES += 	include/generated/generated_dts_board.h \
+CLEAN_FILES += 	include/generated/generated_dts_board.conf \
+		include/generated/generated_dts_board.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
 		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd \
