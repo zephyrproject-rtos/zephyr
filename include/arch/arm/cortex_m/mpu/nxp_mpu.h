@@ -25,11 +25,15 @@
 /* Super User Attributes */
 #define MPU_REGION_SU    ((3 << 3) | (3 << 9) | (3 << 15) | (3 << 21))
 
+/* The ENDADDR field has the last 5 bit reserved and set to 1 */
+#define ENDADDR_ROUND(x) (x - 0x1F)
+
 /* Some helper defines for common regions */
 #define REGION_RAM_ATTR	(MPU_REGION_READ | MPU_REGION_WRITE | MPU_REGION_SU)
 #define REGION_FLASH_ATTR (MPU_REGION_READ | MPU_REGION_EXEC | MPU_REGION_SU)
 #define REGION_IO_ATTR (MPU_REGION_READ | MPU_REGION_WRITE | \
 			MPU_REGION_EXEC |  MPU_REGION_SU)
+#define REGION_RO_ATTR (MPU_REGION_READ | MPU_REGION_SU)
 
 /* Region definition data structure */
 struct nxp_mpu_region {
@@ -57,6 +61,8 @@ struct nxp_mpu_config {
 	u32_t num_regions;
 	/* Regions */
 	struct nxp_mpu_region *mpu_regions;
+	/* SRAM Region */
+	u32_t sram_region;
 };
 
 /* Reference to the MPU configuration */
