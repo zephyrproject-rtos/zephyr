@@ -241,6 +241,15 @@ static inline unsigned char uart_poll_out(struct device *dev,
 /**
  * @brief Fill FIFO with data.
  *
+ * @details This function is expected to be called from UART
+ * interrupt handler (ISR), if uart_irq_tx_ready() returns true.
+ * Result of calling this function not from an ISR is undefined
+ * (hardware-dependent). Likewise, *not* calling this function
+ * from an ISR if uart_irq_tx_ready() returns true may lead to
+ * undefined behavior, e.g. infinite interrupt loops. It's
+ * mandatory to test return value of this function, as different
+ * hardware has different FIFO depth (oftentimes just 1).
+ *
  * @param dev UART device structure.
  * @param tx_data Data to transmit.
  * @param size Number of bytes to send.
@@ -261,6 +270,16 @@ static inline int uart_fifo_fill(struct device *dev, const u8_t *tx_data,
 
 /**
  * @brief Read data from FIFO.
+ *
+ * @details This function is expected to be called from UART
+ * interrupt handler (ISR), if uart_irq_rx_ready() returns true.
+ * Result of calling this function not from an ISR is undefined
+ * (hardware-dependent). It's unspecified whether "RX ready"
+ * condition as returned by uart_irq_rx_ready() is level- or
+ * edge- triggered. That means that once uart_irq_rx_ready() is
+ * detected, uart_fifo_read() must be called until it reads all
+ * available data in the FIFO (i.e. until it returns less data
+ * than was requested).
  *
  * @param dev UART device structure.
  * @param rx_data Data container.
@@ -406,16 +425,21 @@ static inline int __deprecated uart_irq_tx_empty(struct device *dev)
 }
 
 /**
- * @brief Check if UART RX buffer has a new char
+ * @brief Check if UART RX buffer has a received char
  *
+ * @details Check if UART RX buffer has at least one pending character
  * (i.e. uart_fifo_read() will succeed and return non-zero). This function
  * must be called in a UART interrupt handler, or its result is undefined.
  * Before calling this function in the interrupt handler, uart_irq_update()
- * must be called once per the handler invocation.
+ * must be called once per the handler invocation. It's unspecified whether
+ * condition as returned by this function is level- or edge- triggered (i.e.
+ * if this function returns true when RX FIFO is non-empty, or when a new
+ * char was received since last call to it). See description of
+ * uart_fifo_read() for implication of this.
  *
  * @param dev UART device structure.
  *
- * @retval 1 If a new received char is ready.
+ * @retval 1 If a received char is ready.
  * @retval 0 Otherwise.
  */
 static inline int uart_irq_rx_ready(struct device *dev)
