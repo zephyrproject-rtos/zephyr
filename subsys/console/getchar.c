@@ -36,7 +36,7 @@ static void uart_isr(struct device *dev)
 	uart_irq_update(dev);
 
 	if (uart_irq_rx_ready(dev)) {
-		char c;
+		u8_t c;
 
 		while (1) {
 			if (uart_fifo_read(dev, &c, 1) == 0) {
@@ -89,7 +89,7 @@ int console_putchar(char c)
 		return -1;
 	}
 
-	tx_ringbuf[tx_put] = c;
+	tx_ringbuf[tx_put] = (u8_t)c;
 	tx_put = tx_next;
 
 	irq_unlock(key);
