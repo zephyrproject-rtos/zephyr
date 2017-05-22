@@ -22,9 +22,14 @@
 #include <linker-defs.h>
 #include <nano_internal.h>
 #include <arch/arm/cortex_m/cmsis.h>
+#include <string.h>
 
 #ifdef CONFIG_ARMV6_M
-static inline void relocate_vector_table(void) { /* do nothing */ }
+#define VECTOR_ADDRESS 0
+static inline void relocate_vector_table(void)
+{
+	memcpy(VECTOR_ADDRESS, _vector_start, (size_t)_vector_end - (size_t)_vector_start);
+}
 #elif defined(CONFIG_ARMV7_M)
 #ifdef CONFIG_XIP
 #define VECTOR_ADDRESS ((uintptr_t)&_image_rom_start + \

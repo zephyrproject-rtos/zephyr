@@ -84,7 +84,7 @@ SECTIONS
 	KEEP(*(.dbghdr))
 	KEEP(*(".dbghdr.*"))
 #endif
-
+        _vector_start = .;
 	. = CONFIG_TEXT_SECTION_OFFSET;
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
@@ -102,7 +102,7 @@ SECTIONS
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	KEEP(*(SW_ISR_TABLE))
 #endif
-
+        _vector_end = .;
 	_image_text_start = .;
 	*(.text)
 	*(".text.*")

@@ -151,6 +151,9 @@ extern char _image_ram_end[];
 extern char _image_text_start[];
 extern char _image_text_end[];
 
+extern char _vector_start[];
+extern char _vector_end[];
+
 /* end address of image. */
 extern char _end[];
 
