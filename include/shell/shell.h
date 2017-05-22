@@ -28,10 +28,16 @@ struct shell_cmd {
 	const char *help;
 };
 
+/** @brief Callback to get the current prompt.
+ *
+ *  @returns Current prompt string.
+ */
+typedef const char *(*shell_prompt_function_t)(void);
 
 struct shell_module {
 	const char *module_name;
 	const struct shell_cmd *commands;
+	shell_prompt_function_t prompt;
 };
 
 
@@ -49,22 +55,41 @@ struct shell_module {
  * @details This macro defines a shell_module object that is automatically
  * configured by the kernel during system initialization.
  *
- * @param shell_name Module name to be entered in shell console.
- *
- * @param shell_commands Array of commands to register.
+ * @param _name Module name to be entered in shell console.
+ * @param _commands Array of commands to register.
  * Shell array entries must be packed to calculate array size correctly.
  */
-#ifdef CONFIG_CONSOLE_SHELL
-#define SHELL_REGISTER(shell_name, shell_commands) \
-	\
-	static struct shell_module (__shell_shell_name) __used \
-	__attribute__((__section__(".shell_"))) = { \
-		  .module_name = shell_name, \
-		  .commands = shell_commands \
-	}
 
+/**
+ * @def SHELL_REGISTER_WITH_PROMPT
+ *
+ * @brief Create shell_module object and set it up for boot time initialization.
+ *
+ * @details This macro defines a shell_module object that is automatically
+ * configured by the kernel during system initialization, in addition to that
+ * this also enables setting a custom prompt handler when the module is
+ * selected.
+ *
+ * @param _name Module name to be entered in shell console.
+ * @param _commands Array of commands to register.
+ * Shell array entries must be packed to calculate array size correctly.
+ * @param _prompt Optional prompt handler to be set when module is selected.
+ */
+#ifdef CONFIG_CONSOLE_SHELL
+#define SHELL_REGISTER(_name, _commands) \
+	SHELL_REGISTER_WITH_PROMPT(_name, _commands, NULL)
+
+#define SHELL_REGISTER_WITH_PROMPT(_name, _commands, _prompt) \
+	\
+	static struct shell_module (__shell__name) __used \
+	__attribute__((__section__(".shell_"))) = { \
+		  .module_name = _name, \
+		  .commands = _commands, \
+		  .prompt = _prompt \
+	}
 #else
-#define SHELL_REGISTER(shell_name, shell_commands)
+#define SHELL_REGISTER(_name, _commands)
+#define SHELL_REGISTER_WITH_PROMPT(_name, _commands, _prompt)
 #endif
 
 /** @brief Initialize shell with optional prompt, NULL in case no prompt is
@@ -80,12 +105,6 @@ void shell_init(const char *prompt);
  *  shell_init.
  */
 void shell_register_app_cmd_handler(shell_cmd_function_t handler);
-
-/** @brief Callback to get the current prompt.
- *
- *  @returns Current prompt string.
- */
-typedef const char *(*shell_prompt_function_t)(void);
 
 /** @brief Optionally register a custom prompt callback.
  *
