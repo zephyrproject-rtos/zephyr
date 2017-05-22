@@ -15,14 +15,15 @@
 
 #include <bluetooth/bluetooth.h>
 
-/* Define this to do a single-device game */
-#define SOLO 1
+#include "pong.h"
 
 /* The micro:bit has a 5x5 LED display, using (x, y) notation the top-left
  * corner has coordinates (0, 0) and the bottom-right has (4, 4). To make
  * the game dynamics more natural, the uses a virtual 50x50 coordinate
  * system where top-left is (0, 0) and bottom-right is (49, 49).
  */
+
+#define SCROLL_SPEED      K_MSEC(400)  /* Text scrolling speed */
 
 #define PIXEL_SIZE        10           /* Virtual coordinates per real pixel */
 
@@ -40,7 +41,7 @@
 #define BALL_POS_Y_MAX    39           /* Maximum ball Y coordinate */
 
 #define START_THRESHOLD   K_MSEC(100)  /* Max time between A & B press */
-#define RESTART_THRESHOLD K_SECONDS(3) /* Time before restart is allowed */
+#define RESTART_THRESHOLD K_SECONDS(2) /* Time before restart is allowed */
 
 #define REAL_TO_VIRT(r)  ((r) * 10)
 #define VIRT_TO_REAL(v)  ((v) / 10)
@@ -53,6 +54,35 @@ struct x_y {
 	int y;
 };
 
+enum pong_state {
+	INIT,
+	MULTI,
+	SINGLE,
+	CONNECTED,
+};
+
+static enum pong_state state = INIT;
+
+struct pong_choice {
+	int val;
+	const char *str;
+};
+
+struct pong_selection {
+	const struct pong_choice *choice;
+	size_t choice_count;
+	void (*complete)(int val);
+};
+
+static int select_idx;
+static const struct pong_selection *select;
+
+static const struct pong_choice mode_choice[] = {
+	{ SINGLE,   "Single" },
+	{ MULTI,    "Multi" },
+};
+
+static bool remote_lost;
 static bool started;
 static s64_t ended;
 
@@ -72,6 +102,88 @@ static struct x_y ball_vel = { 0, 0 };
 
 static s64_t a_timestamp;
 static s64_t b_timestamp;
+
+static void pong_select(const struct pong_selection *sel)
+{
+	struct mb_display *disp = mb_display_get();
+
+	if (select) {
+		printk("Other selection still busy\n");
+		return;
+	}
+
+	select = sel;
+	select_idx = 0;
+
+	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
+			 SCROLL_SPEED, "%s", select->choice[select_idx].str);
+}
+
+static void pong_select_change(void)
+{
+	struct mb_display *disp = mb_display_get();
+
+	select_idx = (select_idx + 1) % select->choice_count;
+	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
+			 SCROLL_SPEED, "%s", select->choice[select_idx].str);
+}
+
+static void pong_select_complete(void)
+{
+	struct mb_display *disp = mb_display_get();
+	void (*complete)(int val) = select->complete;
+	int val = select->choice[select_idx].val;
+
+	mb_display_stop(disp);
+
+	select = NULL;
+	complete(val);
+}
+
+static void game_init(bool initiator)
+{
+	started = false;
+	ended = 0;
+
+	ball_pos = BALL_START;
+	if (!initiator) {
+		ball_pos.y = -1;
+	}
+
+	paddle_x = PADDLE_MIN;
+
+	a_timestamp = 0;
+	b_timestamp = 0;
+}
+
+static void mode_selected(int val)
+{
+	struct mb_display *disp = mb_display_get();
+
+	state = val;
+
+	switch (state) {
+	case SINGLE:
+		game_init(true);
+		k_sem_give(&disp_update);
+		break;
+	case MULTI:
+		ble_connect();
+		mb_display_print(disp,
+				 MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
+				 SCROLL_SPEED, "Connecting...");
+		break;
+	default:
+		printk("Unknown state %d\n", state);
+		return;
+	};
+}
+
+static const struct pong_selection mode_selection = {
+	.choice = mode_choice,
+	.choice_count = ARRAY_SIZE(mode_choice),
+	.complete = mode_selected,
+};
 
 static bool ball_visible(void)
 {
@@ -111,43 +223,63 @@ static void check_start(void)
 	}
 
 	started = true;
+	remote_lost = false;
 	k_delayed_work_submit(&refresh, K_NO_WAIT);
 }
 
 static void game_ended(bool won)
 {
 	struct mb_display *disp = mb_display_get();
-	const char *str;
 
+	remote_lost = won;
 	ended = k_uptime_get();
 	started = false;
 
 	if (won) {
-		str = "You won!";
+		struct mb_image img = MB_IMAGE({ 0, 1, 0, 1, 0 },
+					       { 0, 1, 0, 1, 0 },
+					       { 0, 0, 0, 0, 0 },
+					       { 1, 0, 0, 0, 1 },
+					       { 0, 1, 1, 1, 0 });
+		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE,
+				 RESTART_THRESHOLD, &img, 1);
+		printk("You won!\n");
 	} else {
-		str = "You lost!";
+		struct mb_image img = MB_IMAGE({ 0, 1, 0, 1, 0 },
+					       { 0, 1, 0, 1, 0 },
+					       { 0, 0, 0, 0, 0 },
+					       { 0, 1, 1, 1, 0 },
+					       { 1, 0, 0, 0, 1 });
+		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE,
+				 RESTART_THRESHOLD, &img, 1);
+		printk("You lost!\n");
 	}
 
-	printk("%s\n", str);
-
-	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
-			 K_MSEC(500), "%s", str);
+	k_delayed_work_submit(&refresh, RESTART_THRESHOLD);
 }
 
 static void game_refresh(struct k_work *work)
 {
+	if (ended) {
+		game_init(state == SINGLE || remote_lost);
+		k_sem_give(&disp_update);
+		return;
+	}
+
 	ball_pos.x += ball_vel.x;
 	ball_pos.y += ball_vel.y;
 
 	/* Ball went over to the other side */
-	if (ball_pos.y < BALL_POS_Y_MIN) {
-#if defined(SOLO)
-		ball_pos.y = -ball_pos.y;
-		ball_vel.y = -ball_vel.y;
-#else
-		k_sem_give(&disp_update);
-		return;
-#endif
+	if (ball_vel.y < 0 && ball_pos.y < BALL_POS_Y_MIN) {
+		if (state == SINGLE) {
+			ball_pos.y = -ball_pos.y;
+			ball_vel.y = -ball_vel.y;
+		} else {
+			ble_send_ball(BALL_POS_X_MAX - ball_pos.x, ball_pos.y,
+				      -ball_vel.x, -ball_vel.y);
+			k_sem_give(&disp_update);
+			return;
+		}
 	}
 
 	/* Check for side-wall collision */
@@ -164,10 +296,19 @@ static void game_refresh(struct k_work *work)
 		if (ball_pos.x < REAL_TO_VIRT(paddle_x) ||
 		    ball_pos.x >= REAL_TO_VIRT(paddle_x + 2)) {
 			game_ended(false);
+			if (state == CONNECTED) {
+				ble_send_lost();
+			}
 			return;
 		}
 
 		ball_pos.y = (2 * BALL_POS_Y_MAX) - ball_pos.y;
+
+		/* Make the game play gradually harder */
+		if (ball_vel.y < PIXEL_SIZE) {
+			ball_vel.y++;
+		}
+
 		ball_vel.y = -ball_vel.y;
 	}
 
@@ -175,29 +316,42 @@ static void game_refresh(struct k_work *work)
 	k_sem_give(&disp_update);
 }
 
-static void game_init(void)
+void pong_ball_received(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
 {
-	ended = 0;
+	printk("ball_received(%d, %d, %d, %d)\n", x_pos, y_pos, x_vel, y_vel);
 
-	ball_pos = BALL_START;
-	paddle_x = PADDLE_MIN;
+	ball_pos.x = x_pos;
+	ball_pos.y = y_pos;
+	ball_vel.x = x_vel;
+	ball_vel.y = y_vel;
 
-	a_timestamp = 0;
-	b_timestamp = 0;
-
-	k_sem_give(&disp_update);
+	k_delayed_work_submit(&refresh, K_NO_WAIT);
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
 			   u32_t pins)
 {
 	if (ended && (k_uptime_get() - ended) > RESTART_THRESHOLD) {
-		game_init();
+		k_delayed_work_cancel(&refresh);
+		game_init(state == SINGLE || remote_lost);
+		k_sem_give(&disp_update);
+		return;
+	}
+
+	if (state == MULTI) {
+		ble_cancel_connect();
+		state = INIT;
+		pong_select(&mode_selection);
 		return;
 	}
 
 	if (pins & BIT(SW0_GPIO_PIN)) {
 		printk("A pressed\n");
+
+		if (select) {
+			pong_select_change();
+			return;
+		}
 
 		if (!started) {
 			a_timestamp = k_uptime_get();
@@ -215,6 +369,11 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 	} else {
 		printk("B pressed\n");
 
+		if (select) {
+			pong_select_complete();
+			return;
+		}
+
 		if (!started) {
 			b_timestamp = k_uptime_get();
 			check_start();
@@ -229,6 +388,25 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 			k_sem_give(&disp_update);
 		}
 	}
+}
+
+void pong_conn_ready(bool initiator)
+{
+	state = CONNECTED;
+	game_init(initiator);
+	k_sem_give(&disp_update);
+}
+
+void pong_remote_disconnected(void)
+{
+	state = INIT;
+	pong_select(&mode_selection);
+}
+
+void pong_remote_lost(void)
+{
+	printk("Remote lost!\n");
+	game_ended(true);
 }
 
 static void configure_buttons(void)
@@ -260,7 +438,9 @@ void main(void)
 
 	k_delayed_work_init(&refresh, game_refresh);
 
-	game_init();
+	ble_init();
+
+	pong_select(&mode_selection);
 
 	printk("Started\n");
 
