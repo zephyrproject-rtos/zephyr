@@ -56,36 +56,37 @@ void quark_se_ipm_isr(void *param)
 	unsigned int key;
 
 	ARG_UNUSED(param);
-	sts = quark_se_ipm_sts_get();
 
-	__ASSERT(sts, "spurious IPM interrupt");
-	bit = find_msb_set(sts) - 1;
-	channel = bit / 2;
-	d = device_by_channel[channel];
+	while ((sts = quark_se_ipm_sts_get())) {
+		__ASSERT(sts, "spurious IPM interrupt");
+		bit = find_msb_set(sts) - 1;
+		channel = bit / 2;
+		d = device_by_channel[channel];
 
-	__ASSERT(d, "got IRQ on channel with no IPM device");
-	config = d->config->config_info;
-	driver_data = d->driver_data;
-	ipm = config->ipm;
+		__ASSERT(d, "got IRQ on channel with no IPM device");
+		config = d->config->config_info;
+		driver_data = d->driver_data;
+		ipm = config->ipm;
 
-	__ASSERT(driver_data->callback, "enabled IPM channel with no callback");
-	driver_data->callback(driver_data->callback_ctx, ipm->ctrl.ctrl,
-			      &ipm->data);
+		__ASSERT(driver_data->callback,
+			 "enabled IPM channel with no callback");
+		driver_data->callback(driver_data->callback_ctx, ipm->ctrl.ctrl,
+				      &ipm->data);
 
-	key = irq_lock();
+		key = irq_lock();
 
-	ipm->sts.irq = 1; /* Clear the interrupt bit */
-	ipm->sts.sts = 1; /* Clear channel status bit */
+		ipm->sts.irq = 1; /* Clear the interrupt bit */
+		ipm->sts.sts = 1; /* Clear channel status bit */
 
-	/* Wait for the above register writes to clear the channel
-	 * to propagate to the global channel status register
-	 */
-	while (quark_se_ipm_sts_get() & (0x3 << (channel * 2))) {
-		/* Busy-wait */
+		/* Wait for the above register writes to clear the channel
+		 * to propagate to the global channel status register
+		 */
+		while (quark_se_ipm_sts_get() & (0x3 << (channel * 2))) {
+			/* Busy-wait */
+		}
+		irq_unlock(key);
 	}
-	irq_unlock(key);
 }
-
 
 static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 			const void *data, int size)
