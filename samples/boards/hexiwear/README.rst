@@ -1,5 +1,5 @@
 Hexiwear Demonstration Applications
-===================================
+###################################
 
 These are a set of small applications to demonstrate specific elements of
 the Hexiwear device.   Some of the applications are self-contained to the
