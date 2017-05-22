@@ -16,6 +16,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <net/net_ip.h>
 
 #include <misc/slist.h>
 
