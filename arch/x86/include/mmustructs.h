@@ -116,6 +116,30 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
+/* Structure used by gen_mmu.py to create page directories and page tables.
+ * In order to populate this structure use macro MMU_BOOT_REGION.
+ */
+struct mmu_region {
+	u32_t address; /*Start address of the memory region */
+	u32_t size; /* Size of the memory region*/
+	u32_t flags; /* Permissions needed for this region*/
+};
+
+/* permission_flags are calculated using the macros
+ * region_size has to be provided in bytes
+ * for read write access = MMU_ENTRY_READ/MMU_ENTRY_WRITE
+ * for supervisor/user mode access = MMU_ENTRY_SUPERVISOR/MMU_ENTRY_USER
+ */
+
+#define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
+	static struct mmu_region region_##addr				\
+	__attribute__((__section__(".mmulist"), used))  =		\
+	{								\
+		.address = addr,					\
+		.size = region_size,					\
+		.flags = permission_flags,				\
+	}
+
 /*
  * The following defines the format of a 32-bit page directory entry
  * that references a page table (as opposed to a 4 Mb page).

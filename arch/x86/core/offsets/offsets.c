@@ -28,7 +28,7 @@
 
 #include <kernel_structs.h>
 #include <swapstk.h>
-
+#include <mmustructs.h>
 
 #include <kernel_offsets.h>
 
@@ -88,6 +88,7 @@ GEN_OFFSET_SYM(NANO_ESF, eflags);
 /* size of the ISR_LIST structure. Used by linker scripts */
 
 GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(ISR_LIST));
+GEN_ABSOLUTE_SYM(__MMU_REGION_SIZEOF, sizeof(struct mmu_region));
 
 
 GEN_ABS_SYM_END
