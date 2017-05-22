@@ -70,6 +70,14 @@ config X86_IAMCU
 	assembly code will need to be updated to conform to the new calling
 	convention.  If in doubt say N
 
+config X86_MMU
+	bool
+	default n
+	prompt "Memory Management Unit"
+	help
+	This options enables the memory management unit present in x86. Enabling
+	this will create boot time page table structure.
+
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
 
