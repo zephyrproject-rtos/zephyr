@@ -68,6 +68,15 @@ static const char *get_prompt(void)
 	}
 
 	if (default_module != -1) {
+		if (__shell_cmd_start[default_module].prompt) {
+			const char *ret;
+
+			ret = __shell_cmd_start[default_module].prompt();
+			if (ret) {
+				return ret;
+			}
+		}
+
 		return default_module_prompt;
 	}
 
