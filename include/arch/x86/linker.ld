@@ -140,6 +140,13 @@ SECTIONS
 #include <custom-rwdata.ld>
 #endif
 
+#ifdef CONFIG_X86_MMU
+       /* Page Tables are located here if MMU is enabled.*/
+	. = ALIGN(4096);
+	__mmu_tables_start = .;
+	KEEP(*(.mmu_data));
+	__mmu_tables_end = .;
+#endif
 	. = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -214,6 +221,23 @@ SECTIONS
 	KEEP(*(.gnu.linkonce.intList.*))
 	__INT_LIST_END__ = .;
 	} > IDT_LIST
+
+#ifdef CONFIG_X86_MMU
+	/* Memory management unit*/
+	SECTION_PROLOGUE(mmulist, (OPTIONAL),)
+	{
+	/* get size of the mmu lists needed for gen_mmu.py*/
+	LONG((__MMU_LIST_END__ - __MMU_LIST_START__) / __MMU_REGION_SIZEOF)
+	/* Get the start of mmu tables in data section so that the address
+	 * of the page tables can be calculated.
+	 */
+	LONG(__mmu_tables_start)
+	__MMU_LIST_START__ = .;
+	KEEP(*(.mmulist))
+	__MMU_LIST_END__ = .;
+	} > MMU_LIST
+#endif /* CONFIG_X86_MMU */
+
 #else
 	/DISCARD/ :
 	{
@@ -221,8 +245,11 @@ SECTIONS
 	KEEP(*(.spurNoErrIsr))
 	KEEP(*(.intList))
 	KEEP(*(.gnu.linkonce.intList.*))
+	KEEP(*(.mmulist))
 	}
 #endif
+
+
 
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
