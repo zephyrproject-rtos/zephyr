@@ -98,6 +98,7 @@ config BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME
 source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"
+source "subsys/bluetooth/shell/Kconfig"
 endif # BLUETOOTH_HCI
 
 endif # BLUETOOTH
