@@ -1615,6 +1615,7 @@ int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
 	*fragB = net_pkt_get_frag(pkt, timeout);
 	if (!*fragB) {
 		net_pkt_frag_unref(*fragA);
+		*fragA = NULL;
 		return -ENOMEM;
 	}
 
