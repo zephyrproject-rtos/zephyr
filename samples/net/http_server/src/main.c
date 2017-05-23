@@ -164,9 +164,12 @@ int http_response_header_fields(struct http_server_ctx *ctx)
 
 static int http_response_it_works(struct http_server_ctx *ctx)
 {
-	return http_response(ctx, HTTP_STATUS_200_OK, HTML_HEADER
-			     "<body><h2><center>It Works!</center></h2>"
-			     HTML_FOOTER);
+	/* Let the peer close the connection but if it does not do it
+	 * close it ourselves after 1 sec.
+	 */
+	return http_response_wait(ctx, HTTP_STATUS_200_OK, HTML_HEADER
+				  "<body><h2><center>It Works!</center></h2>"
+				  HTML_FOOTER, K_SECONDS(1));
 }
 
 static int http_response_soft_404(struct http_server_ctx *ctx)

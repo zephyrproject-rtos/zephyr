@@ -1006,11 +1006,7 @@ static void ssl_received(struct net_context *context,
 	ARG_UNUSED(context);
 	ARG_UNUSED(status);
 
-	if (!pkt) {
-		return;
-	}
-
-	if (!net_pkt_appdatalen(pkt)) {
+	if (pkt && !net_pkt_appdatalen(pkt)) {
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -1047,6 +1043,11 @@ static int ssl_rx(void *context, unsigned char *buf, size_t size)
 	if (!ctx->https.mbedtls.ssl_ctx.frag) {
 		rx_data = k_fifo_get(&ctx->https.mbedtls.ssl_ctx.rx_fifo,
 				     K_FOREVER);
+		if (!rx_data->pkt) {
+			NET_DBG("Closing %p connection", ctx);
+			k_mem_pool_free(&rx_data->block);
+			return -EIO;
+		}
 
 		ctx->https.mbedtls.ssl_ctx.rx_pkt = rx_data->pkt;
 
@@ -1247,6 +1248,10 @@ static int https_send(struct net_pkt *pkt,
 	} while (ret <= 0);
 
 out:
+	if (cb) {
+		cb(net_pkt_context(pkt), ret, token, user_data);
+	}
+
 	return ret;
 }
 
@@ -1369,8 +1374,6 @@ reset:
 		if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
 		    ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 			if (ret < 0) {
-				print_error("mbedtls_ssl_handshake returned "
-					    "-0x%x", ret);
 				goto reset;
 			}
 		}
@@ -1424,7 +1427,10 @@ reset:
 	}
 
 close:
+	http_parser_init(&ctx->req.parser, HTTP_REQUEST);
+
 	mbedtls_ssl_close_notify(&ctx->https.mbedtls.ssl);
+
 	goto reset;
 
 exit:
