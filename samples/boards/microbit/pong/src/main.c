@@ -10,6 +10,7 @@
 #include <gpio.h>
 #include <device.h>
 #include <string.h>
+#include <pwm.h>
 
 #include <display/mb_display.h>
 
@@ -102,6 +103,40 @@ static struct x_y ball_vel = { 0, 0 };
 
 static s64_t a_timestamp;
 static s64_t b_timestamp;
+
+#define SOUND_PIN            EXT_P0_GPIO_PIN
+#define SOUND_PERIOD_PADDLE  200
+#define SOUND_PERIOD_WALL    1000
+
+static struct device *pwm;
+
+static enum sound_state {
+	SOUND_IDLE,    /* No sound */
+	SOUND_PADDLE,  /* Ball has hit the paddle */
+	SOUND_WALL,    /* Ball has hit a wall */
+} sound_state;
+
+static inline void beep(int period)
+{
+	pwm_pin_set_usec(pwm, SOUND_PIN, period, period / 2);
+}
+
+static void sound_set(enum sound_state state)
+{
+	switch (state) {
+	case SOUND_IDLE:
+		beep(0);
+		break;
+	case SOUND_PADDLE:
+		beep(SOUND_PERIOD_PADDLE);
+		break;
+	case SOUND_WALL:
+		beep(SOUND_PERIOD_WALL);
+		break;
+	}
+
+	sound_state = state;
+}
 
 static void pong_select(const struct pong_selection *sel)
 {
@@ -260,6 +295,10 @@ static void game_ended(bool won)
 
 static void game_refresh(struct k_work *work)
 {
+	if (sound_state != SOUND_IDLE) {
+		sound_set(SOUND_IDLE);
+	}
+
 	if (ended) {
 		game_init(state == SINGLE || remote_lost);
 		k_sem_give(&disp_update);
@@ -274,6 +313,7 @@ static void game_refresh(struct k_work *work)
 		if (state == SINGLE) {
 			ball_pos.y = -ball_pos.y;
 			ball_vel.y = -ball_vel.y;
+			sound_set(SOUND_WALL);
 		} else {
 			ble_send_ball(BALL_POS_X_MAX - ball_pos.x, ball_pos.y,
 				      -ball_vel.x, -ball_vel.y);
@@ -286,9 +326,11 @@ static void game_refresh(struct k_work *work)
 	if (ball_pos.x < BALL_POS_X_MIN) {
 		ball_pos.x = -ball_pos.x;
 		ball_vel.x = -ball_vel.x;
+		sound_set(SOUND_WALL);
 	} else if (ball_pos.x > BALL_POS_X_MAX) {
 		ball_pos.x = (2 * BALL_POS_X_MAX) - ball_pos.x;
 		ball_vel.x = -ball_vel.x;
+		sound_set(SOUND_WALL);
 	}
 
 	/* Ball approaching paddle */
@@ -310,6 +352,8 @@ static void game_refresh(struct k_work *work)
 		}
 
 		ball_vel.y = -ball_vel.y;
+
+		sound_set(SOUND_PADDLE);
 	}
 
 	k_delayed_work_submit(&refresh, GAME_REFRESH);
@@ -437,6 +481,8 @@ void main(void)
 	configure_buttons();
 
 	k_delayed_work_init(&refresh, game_refresh);
+
+	pwm = device_get_binding(CONFIG_PWM_NRF5_SW_0_DEV_NAME);
 
 	ble_init();
 
