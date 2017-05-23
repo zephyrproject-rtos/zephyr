@@ -39,11 +39,7 @@ static void https_disable(struct http_server_ctx *ctx);
 #define DEBUG_THRESHOLD 0
 #endif
 
-#if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
-#include <mbedtls/memory_buffer_alloc.h>
-static unsigned char heap[CONFIG_HTTPS_HEAP_SIZE];
-#endif
-#endif
+#endif /* CONFIG_HTTPS */
 
 #define HTTP_DEFAULT_PORT  80
 #define HTTPS_DEFAULT_PORT 443
@@ -1270,20 +1266,6 @@ out:
 	return ret;
 }
 
-#if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
-static void heap_init(struct http_server_ctx *ctx)
-{
-	static bool heap_init;
-
-	if (!heap_init) {
-		mbedtls_memory_buffer_alloc_init(heap, sizeof(heap));
-		heap_init = true;
-	}
-}
-#else
-#define heap_init(...)
-#endif
-
 static void https_handler(struct http_server_ctx *ctx)
 {
 	size_t len;
@@ -1293,7 +1275,7 @@ static void https_handler(struct http_server_ctx *ctx)
 
 	mbedtls_platform_set_printf(printk);
 
-	heap_init(ctx);
+	http_heap_init();
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt_init(&ctx->https.mbedtls.srvcert);

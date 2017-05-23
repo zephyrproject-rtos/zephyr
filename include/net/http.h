@@ -38,6 +38,12 @@
 
 #define HTTP_CRLF "\r\n"
 
+#if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
+void http_heap_init(void);
+#else
+#define http_heap_init()
+#endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
+
 #if defined(CONFIG_HTTP_CLIENT)
 
 #include <net/http_parser.h>
