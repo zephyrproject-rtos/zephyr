@@ -17,8 +17,8 @@ menuconfig ETH_MCUX
 if ETH_MCUX
 config ETH_MCUX_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode"
-	default false if !NET_IPV6
-	default true if NET_IPV6
+	default n if !NET_IPV6
+	default y if NET_IPV6
 	help
 	  Place the ethernet receiver in promiscuous mode.
 
