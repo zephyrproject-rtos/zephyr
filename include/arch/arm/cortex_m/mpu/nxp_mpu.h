@@ -21,6 +21,7 @@
 #define BM0_UM_SHIFT	0
 #define BM1_UM_SHIFT	6
 #define BM2_UM_SHIFT	12
+#define BM3_UM_SHIFT	18
 
 /* Bus Master Supervisor Mode Access */
 #define SM_RWX_ALLOW	0
@@ -36,17 +37,20 @@
 /* Read Attribute */
 #define MPU_REGION_READ  ((UM_READ << BM0_UM_SHIFT) | \
 			  (UM_READ << BM1_UM_SHIFT) | \
-			  (UM_READ << BM2_UM_SHIFT))
+			  (UM_READ << BM2_UM_SHIFT) | \
+			  (UM_READ << BM3_UM_SHIFT))
 
 /* Write Attribute */
 #define MPU_REGION_WRITE ((UM_WRITE << BM0_UM_SHIFT) | \
 			  (UM_WRITE << BM1_UM_SHIFT) | \
-			  (UM_WRITE << BM2_UM_SHIFT))
+			  (UM_WRITE << BM2_UM_SHIFT) | \
+			  (UM_WRITE << BM3_UM_SHIFT))
 
 /* Execute Attribute */
 #define MPU_REGION_EXEC  ((UM_EXEC << BM0_UM_SHIFT) | \
 			  (UM_EXEC << BM1_UM_SHIFT) | \
-			  (UM_EXEC << BM2_UM_SHIFT))
+			  (UM_EXEC << BM2_UM_SHIFT) | \
+			  (UM_EXEC << BM3_UM_SHIFT))
 
 /* Super User Attributes */
 #define MPU_REGION_SU	 ((SM_SAME_AS_UM << BM0_SM_SHIFT) | \
