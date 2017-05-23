@@ -14,7 +14,7 @@
 /*
  * Function prototypes.
  */
-int mailbox_get(struct k_mbox *mailbox,
+void mailbox_get(struct k_mbox *mailbox,
 		int size,
 		int count,
 		unsigned int *time);
@@ -70,10 +70,14 @@ void mailrecvtask(void)
  * @param count     Number of data portions.
  * @param time      Resulting time.
  */
-int mailbox_get(struct k_mbox *mailbox, int size, int count, unsigned int *time)
+void mailbox_get(struct k_mbox *mailbox,
+		 int size,
+		 int count,
+		 unsigned int *time)
 {
 	int i;
 	unsigned int t;
+	s32_t return_value = 0;
 	struct k_mbox_msg Message;
 
 	Message.rx_source_thread = K_ANY;
@@ -83,7 +87,10 @@ int mailbox_get(struct k_mbox *mailbox, int size, int count, unsigned int *time)
 	k_sem_take(&SEM0, K_FOREVER);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-		k_mbox_get(mailbox, &Message, &data_recv, K_FOREVER);
+		return_value |= k_mbox_get(mailbox,
+					  &Message,
+					  &data_recv,
+					  K_FOREVER);
 	}
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -91,7 +98,9 @@ int mailbox_get(struct k_mbox *mailbox, int size, int count, unsigned int *time)
 	if (bench_test_end() < 0) {
 		PRINT_OVERFLOW_ERROR();
 	}
-	return 0;
+	if (return_value != 0) {
+		k_panic();
+	}
 }
 
 #endif /* MAILBOX_BENCH */
