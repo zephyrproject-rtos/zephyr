@@ -260,7 +260,7 @@ static int format_uri(const char * const *path, struct net_buf *buf,
 		return 0;
 	}
 
-	for (p = path; p && *p; ) {
+	for (p = path; *p; ) {
 		u16_t path_len = strlen(*p);
 
 		add_to_net_buf(buf, *p, path_len,
@@ -301,7 +301,7 @@ static int format_attributes(const char * const *attributes,
 		goto terminator;
 	}
 
-	for (attr = attributes; attr && *attr; ) {
+	for (attr = attributes; *attr; ) {
 		int attr_len = strlen(*attr);
 
 		add_to_net_buf(buf, *attr, attr_len,
@@ -527,7 +527,7 @@ static int format_uri(const char * const *path, struct net_buf *buf)
 	str = net_buf_add(buf, sizeof(prefix) - 1);
 	strncpy(str, prefix, sizeof(prefix) - 1);
 
-	for (p = path; p && *p; ) {
+	for (p = path; *p; ) {
 		u16_t path_len = strlen(*p);
 
 		str = net_buf_add(buf, path_len);
@@ -556,7 +556,7 @@ static int format_attributes(const char * const *attributes,
 		goto terminator;
 	}
 
-	for (attr = attributes; attr && *attr; ) {
+	for (attr = attributes; *attr; ) {
 		int attr_len = strlen(*attr);
 
 		str = net_buf_add(buf, attr_len);
