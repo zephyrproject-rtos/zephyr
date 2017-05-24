@@ -13,6 +13,14 @@ config ZOAP
 	help
 	This option enables the Zoap implementation of CoAP.
 
+# This setting is only used by unit test. Do not enable it in applications
+config ZOAP_TEST_API_ENABLE
+	bool "Enable test API for ZoAP unit tests"
+	default n
+	depends on ZOAP
+	help
+	Do not enable this for normal use.
+
 config ZOAP_WELL_KNOWN_BLOCK_WISE
 	bool
 	prompt "CoAP ./well-known/core services block wise support"

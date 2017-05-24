@@ -39,6 +39,10 @@ static struct zoap_pending pendings[NUM_PENDINGS];
 static struct zoap_observer observers[NUM_OBSERVERS];
 static struct zoap_reply replies[NUM_REPLIES];
 
+/* This is exposed for this test in subsys/net/lib/zoap/zoap_link_format.c */
+bool _zoap_match_path_uri(const char * const *path,
+			  const char *uri, u16_t len);
+
 /* Some forward declarations */
 static void server_notify_callback(struct zoap_resource *resource,
 				   struct zoap_observer *observer);
@@ -1060,6 +1064,71 @@ done:
 	return result;
 }
 
+static int test_match_path_uri(void)
+{
+	int result = TC_FAIL;
+	const char * const resource_path[] = {
+		"s",
+		"1",
+		"foobar",
+		"foobar3a",
+		"foobar3",
+		"devnull",
+		NULL
+	};
+	const char *uri;
+
+	uri = "/k";
+	if (_zoap_match_path_uri(resource_path, uri, strlen(uri))) {
+		TC_PRINT("Matching %s failed\n", uri);
+		goto out;
+	}
+
+	uri = "/s";
+	if (!_zoap_match_path_uri(resource_path, uri, strlen(uri))) {
+		TC_PRINT("Matching %s failed\n", uri);
+		goto out;
+	}
+
+	uri = "/foobar";
+	if (!_zoap_match_path_uri(resource_path, uri, strlen(uri))) {
+		TC_PRINT("Matching %s failed\n", uri);
+		goto out;
+	}
+
+	uri = "/foobar2";
+	if (_zoap_match_path_uri(resource_path, uri, strlen(uri))) {
+		TC_PRINT("Matching %s failed\n", uri);
+		goto out;
+	}
+
+	uri = "/foobar*";
+	if (!_zoap_match_path_uri(resource_path, uri, strlen(uri))) {
+		TC_PRINT("Matching %s failed\n", uri);
+		goto out;
+	}
+
+	uri = "/foobar3*";
+	if (!_zoap_match_path_uri(resource_path, uri, strlen(uri))) {
+		TC_PRINT("Matching %s failed\n", uri);
+		goto out;
+	}
+
+	uri = "/devnull*";
+	if (_zoap_match_path_uri(resource_path, uri, strlen(uri))) {
+		TC_PRINT("Matching %s failed\n", uri);
+		goto out;
+	}
+
+	result = TC_PASS;
+
+out:
+	TC_END_RESULT(result);
+
+	return result;
+
+}
+
 static const struct {
 	const char *name;
 	int (*func)(void);
@@ -1073,6 +1142,7 @@ static const struct {
 	{ "Test observer server", test_observer_server, },
 	{ "Test observer client", test_observer_client, },
 	{ "Test block sized transfer", test_block_size, },
+	{ "Test match path uri", test_match_path_uri, },
 };
 
 int main(int argc, char *argv[])
