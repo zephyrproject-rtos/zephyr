@@ -40,6 +40,7 @@
 #include <stm32l4xx_ll_bus.h>
 #include <stm32l4xx_ll_rcc.h>
 #include <stm32l4xx_ll_system.h>
+#include <stm32l4xx_ll_spi.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 #ifdef CONFIG_I2C
