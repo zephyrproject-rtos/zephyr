@@ -35,6 +35,7 @@ Sections
    application/application.rst
    porting/porting.rst
    drivers/drivers.rst
+   dts/device_tree.rst
    subsystems/subsystems.rst
    api/api.rst
    samples/samples.rst
