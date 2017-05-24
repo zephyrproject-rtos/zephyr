@@ -206,6 +206,130 @@ The following code demonstrates a direct ISR:
        ...
     }
 
+Implementation Details
+======================
+
+Interrupt tables are set up at build time using some special build tools.  The
+details laid out here apply to all architectures except x86, which are
+covered in the `x86 Details`_ section below.
+
+Any invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
+struct _isr_list which is placed in a special .intList section:
+
+.. code-block:: c
+
+    struct _isr_list {
+        /** IRQ line number */
+        s32_t irq;
+        /** Flags for this IRQ, see ISR_FLAG_* definitions */
+        s32_t flags;
+        /** ISR to call */
+        void *func;
+        /** Parameter for non-direct IRQs */
+        void *param;
+    };
+
+Zephyr is built in two phases; the first phase of the build produces
+zephyr_prebuilt.elf which contains all the entries in the .intList section
+preceded by a header:
+
+.. code-block:: c
+
+    struct {
+        void *spurious_irq_handler;
+        void *sw_irq_handler;
+        u32_t num_isrs;
+        u32_t num_vectors;
+        struct _isr_list isrs[];  <- of size num_isrs
+    };
+
+This data consisting of the header and instances of struct _isr_list inside
+zephyr_prebuilt.elf is then used by the gen_isr_tables.py script to generate a
+C file defining a vector table and software ISR table that are then compiled
+and linked into the final application.
+
+The priority level of any interrupt is not encoded in these tables, instead
+:c:macro:`IRQ_CONNECT` also has a runtime component which programs the desired
+priority level of the interrupt to the interrupt controller. Some architectures
+do not support the notion of interrupt priority, in which case the priority
+argument is ignored.
+
+Vector Table
+------------
+A vector table is generated when CONFIG_GEN_IRQ_VECTOR_TABLE is enabled.  This
+data structure is used natively by the CPU and is simply an array of function
+pointers, where each element n corresponds to the IRQ handler for IRQ line n,
+and the function pointers are:
+
+#. For 'direct' interrupts declared with :c:macro:`IRQ_DIRECT_CONNECT`, the
+   handler function will be placed here.
+#. For regular interrupts declared with :c:macro:`IRQ_CONNECT`, the address
+   of the common software IRQ handler is placed here. This code does common
+   kernel interrupt bookkeeping and looks up the ISR and parameter from the
+   software ISR table.
+#. For interrupt lines that are not configured at all, the address of the
+   spurious IRQ handler will be placed here. The spurious IRQ handler
+   causes a system fatal error if encountered.
+
+Some architectures (such as the Nios II internal interrupt controller) have a
+common entry point for all interrupts and do not support a vector table, in
+which case the CONFIG_GEN_IRQ_VECTOR_TABLE option should be disabled.
+
+Some architectures may reserve some initial vectors for system exceptions
+and declare this in a table elsewhere, in which case
+CONFIG_GEN_IRQ_START_VECTOR needs to be set to properly offset the indicies
+in the table.
+
+SW ISR Table
+------------
+This is an array of struct _isr_table_entry:
+
+.. code-block:: c
+
+    struct _isr_table_entry {
+        void *arg;
+        void (*isr)(void *);
+    };
+
+This is used by the common software IRQ handler to look up the ISR and its
+argument and execute it. The active IRQ line is looked up in an interrupt
+controller register and used to index this table.
+
+x86 Details
+-----------
+
+The x86 architecture has a special type of vector table called the Interrupt
+Descriptor Table (IDT) which must be laid out in a certain way per the x86
+processor documentation.  It is still fundamentally a vector table, and the
+gen_idt tool uses the .intList section to create it. However, on APIC-based
+systems the indexes in the vector table do not correspond to the IRQ line. The
+first 32 vectors are reserved for CPU exceptions, and all remaining vectors (up
+to index 255) correspond to the priority level, in groups of 16. In this
+scheme, interrupts of priority level 0 will be placed in vectors 32-47, level 1
+48-63, and so forth. When the gen_idt tool is constructing the IDT, when it
+configures an interrupt it will look for a free vector in the appropriate range
+for the requested priority level and set the handler there.
+
+There are some APIC variants (such as MVIC) where priorities cannot be set
+by the user and the position in the vector table does correspond to the
+IRQ line. Systems like this will enable CONFIG_X86_FIXED_IRQ_MAPPING.
+
+On x86 when an interrupt or exception vector is executed by the CPU, there is
+no foolproof way to determine which vector was fired, so a software ISR table
+indexed by IRQ line is not used. Instead, the :c:macro:`IRQ_CONNECT` call
+creates a small assembly language function which calls the common interrupt
+code in :cpp:func:`_interrupt_enter` with the ISR and parameter as arguments.
+It is the address of this assembly interrupt stub which gets placed in the IDT.
+For interrupts declared with :c:macro:`IRQ_DIRECT_CONNECT` the parameterless
+ISR is placed directly in the IDT.
+
+On systems where the position in the vector table corresponds to the
+interrupt's priority level, the interrupt controller needs to know at
+runtime what vector is associated with an IRQ line. gen_idt additionally
+creates an _irq_to_interrupt_vector array which maps an IRQ line to its
+configured vector in the IDT. This is used at runtime by :c:macro:`IRQ_CONNECT`
+to program the IRQ-to-vector association in the interrupt controller.
+
 Suggested Uses
 **************
 
