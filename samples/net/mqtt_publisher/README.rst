@@ -78,7 +78,7 @@ MQTT Client Identifier:
 This sample application supports the IBM Bluemix Watson topic format that can
 be enabled by changing the default value of APP_BLUEMIX_TOPIC from 0 to 1:
 
-.. code block:: c
+.. code-block:: c
 
 	#define APP_BLUEMIX_TOPIC	1
 
@@ -86,7 +86,7 @@ The Bluemix topic may include some parameters like device type, device
 identifier, event type and message format. This application uses the
 following macros to specify those values:
 
-.. code block:: c
+.. code-block:: c
 
 	#define BLUEMIX_DEVTYPE		"sensor"
 	#define BLUEMIX_DEVID		"carbon"
