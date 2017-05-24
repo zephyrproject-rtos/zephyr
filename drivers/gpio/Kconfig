@@ -65,4 +65,6 @@ source "drivers/gpio/Kconfig.cc2650"
 
 source "drivers/gpio/Kconfig.esp32"
 
+source "drivers/gpio/Kconfig.rda5981a"
+
 endif # GPIO

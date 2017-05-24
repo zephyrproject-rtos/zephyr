@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2017 RDA
+# Copyright (c) 2016-2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_RDA5981A
+	bool "GPIO Driver for RDA5981 family of MCUs"
+	depends on GPIO && SOC_FAMILY_RDA5981
+	default n
+	help
+	Enable GPIO driver for RDA5981 line of MCUs
+
+if GPIO_RDA5981A
+
+config GPIO_RDA5981A_DEV_NAME
+	string "GPIO Device Name"
+	default "RDA_GPIO"
+	help
+	  Specify the device name to be used for the GPIO port.
+
+config GPIO_RDA5981A_PORT_PRI
+	int "GPIO interrupt priority"
+	default 1
+
+endif
