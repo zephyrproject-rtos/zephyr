@@ -112,6 +112,7 @@ static const stm32_pin_func_t pin_pa3_funcs[] = {
 	PINMUX_UART(PA3, UART2, RX)
 };
 
+/* SPI 1*/
 static const stm32_pin_func_t pin_pa4_funcs[] = {
 	[STM32F4_PINMUX_FUNC_PA4_SPI1_NSS - 1] =
 			STM32F4X_PIN_CONFIG_AF_PUSH_PULL,
@@ -200,10 +201,24 @@ static const stm32_pin_func_t pin_pb11_funcs[] = {
 
 static const stm32_pin_func_t pin_pb12_funcs[] = {
 	PINMUX_UART(PB12, UART5, RX)
+	[STM32F4_PINMUX_FUNC_PB12_SPI2_NSS - 1] =
+			STM32F4X_PIN_CONFIG_AF_PUSH_PULL,
 };
 
 static const stm32_pin_func_t pin_pb13_funcs[] = {
 	PINMUX_UART(PB13, UART5, TX)
+	[STM32F4_PINMUX_FUNC_PB13_SPI2_SCK - 1] =
+			STM32F4X_PIN_CONFIG_AF_PUSH_PULL,
+};
+
+static const stm32_pin_func_t pin_pb14_funcs[] = {
+	[STM32F4_PINMUX_FUNC_PB14_SPI2_MISO - 1] =
+			STM32F4X_PIN_CONFIG_AF_PUSH_PULL,
+};
+
+static const stm32_pin_func_t pin_pb15_funcs[] = {
+	[STM32F4_PINMUX_FUNC_PB15_SPI2_MOSI - 1] =
+			STM32F4X_PIN_CONFIG_AF_PUSH_PULL,
 };
 
 /* Port C */
@@ -368,6 +383,8 @@ static const struct stm32_pinmux_conf pins[] = {
 	STM32_PIN_CONF(STM32_PIN_PB11, pin_pb11_funcs),
 	STM32_PIN_CONF(STM32_PIN_PB12, pin_pb12_funcs),
 	STM32_PIN_CONF(STM32_PIN_PB13, pin_pb13_funcs),
+	STM32_PIN_CONF(STM32_PIN_PB14, pin_pb14_funcs),
+	STM32_PIN_CONF(STM32_PIN_PB15, pin_pb15_funcs),
 
 	/* Port C */
 	STM32_PIN_CONF(STM32_PIN_PC5, pin_pc5_funcs),
