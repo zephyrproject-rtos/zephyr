@@ -715,3 +715,12 @@ done:
 	return r;
 }
 #endif
+
+/* Exposing some of the APIs to ZoAP unit tests in tests/net/lib/zoap */
+#if defined(CONFIG_ZOAP_TEST_API_ENABLE)
+bool _zoap_match_path_uri(const char * const *path,
+			  const char *uri, u16_t len)
+{
+	return match_path_uri(path, uri, len);
+}
+#endif
