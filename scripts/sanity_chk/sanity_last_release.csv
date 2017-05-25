@@ -171,7 +171,6 @@ tests/legacy/kernel/test_stack/nanokernel/test,x86,qemu_x86_iamcu,True,,,True,1.
 tests/crypto/test_mbedtls/test,x86,quark_se_c1000_devboard,True,,,False,,23360,79568
 tests/ztest/test/base/test_verbose_1,x86,quark_d2000_crb,True,,CONF_FILE=prj_verbose_1.conf,False,,2540,8461
 tests/legacy/kernel/test_mem_safe/test,x86,qemu_x86,True,,,True,0.2202446460723877,18887,15079
-samples/bluetooth/peripheral/test_nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,13872,36645
 tests/drivers/build_all/test_build_ethernet,arm,nrf51_blenano,True,,CONF_FILE=ethernet.conf,False,,9896,50904
 samples/legacy/synchronization/microkernel/test,arm,nucleo_f401re,True,,,False,,6212,12474
 tests/legacy/kernel/test_stackprot/nanokernel/test,arm,nrf52_pca10040,True,,,False,,9628,55724
@@ -250,7 +249,6 @@ tests/legacy/benchmark/footprint/microkernel/footprint-min,arc,arduino_101_sss,T
 tests/legacy/kernel/test_map_priv/test,arm,arduino_101_ble,True,,,False,,14424,45558
 samples/bluetooth/eddystone/test,x86,qemu_x86,True,,,True,,60323,50403
 tests/legacy/kernel/test_context/test,arm,qemu_cortex_m3,True,,,True,6.080919981002808,7464,13334
-tests/bluetooth/shell/test_nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,16420,50000
 tests/legacy/kernel/test_sema_priv/test,x86,arduino_101,True,,,False,,14948,15475
 tests/legacy/benchmark/footprint/nanokernel/footprint-reg,nios2,qemu_nios2,True,,TEST=reg,True,,4972,16916
 tests/legacy/kernel/test_mutex/test,x86,quark_d2000_crb,True,,,False,,6028,11062
@@ -372,7 +370,6 @@ tests/crypto/test_ctr_prng/test,arc,em_starterkit,True,,,False,,26768,20804
 tests/legacy/benchmark/footprint/nanokernel/footprint-reg,arm,v2m_beetle,True,,TEST=reg,False,,2352,9726
 tests/ztest/test/base/test_verbose_0,x86,arduino_101,True,,CONF_FILE=prj_verbose_0.conf,False,,4876,10597
 samples/net/echo_server/test_bt,x86,minnowboard,True,,"CONF_FILE=""prj_bt.conf""",False,,140574,119582
-samples/bluetooth/peripheral_hids/test_nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,13072,34885
 samples/legacy/synchronization/nanokernel/test,arm,cc3200_launchxl,True,,,False,,18852,13172
 samples/legacy/philosophers/microkernel/test,arm,nucleo_f103rb,True,,,False,,11604,12138
 tests/kernel/test_build/test_newlib,x86,galileo,True,,CONF_FILE=newlib.conf,False,,43851,35155
@@ -381,7 +378,6 @@ tests/legacy/kernel/test_task_priv/test,arm,96b_carbon,True,,,False,,8308,15232
 samples/hello_world/test,arm,quark_se_c1000_ble,True,,,False,,8120,44590
 samples/drivers/gpio/test,arc,arduino_101_sss,True,,,False,,4988,13024
 tests/legacy/kernel/test_sema_priv/test,arm,stm32_mini_a15,True,,,False,,15044,16134
-samples/bluetooth/peripheral_hr/test_nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,12948,35027
 tests/legacy/kernel/test_fifo_priv/test,arm,hexiwear_k64,True,,,False,,8216,16250
 tests/legacy/benchmark/latency_measure/test,arm,v2m_beetle,True,,,False,,10460,19822
 tests/kernel/test_common/test,arm,cc3200_launchxl,True,,,False,,28954,22202
@@ -913,7 +909,6 @@ tests/net/zoap/test,arm,nrf52_pca10040,True,,,False,,10856,54910
 tests/legacy/kernel/test_pipe/test,arc,quark_se_c1000_ss_devboard,True,,,False,,13600,21916
 tests/legacy/kernel/test_errno/test,x86,galileo,True,,,False,,37666,30474
 tests/kernel/test_build/test_newlib,x86,quark_se_c1000_devboard,True,,CONF_FILE=newlib.conf,False,,5944,12075
-samples/bluetooth/beacon/test_nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,11824,27833
 tests/legacy/kernel/test_task_priv/test,arm,nucleo_f401re,True,,,False,,8288,15196
 tests/bluetooth/init/test_17,arm,qemu_cortex_m3,True,,CONF_FILE=prj_17.conf,True,,18580,110066
 tests/legacy/kernel/test_task/test,arm,nucleo_f401re,True,,,False,,8288,15196
@@ -1082,7 +1077,6 @@ tests/kernel/test_multilib/test,arm,frdm_k64f,True,,,False,,3936,13742
 tests/legacy/kernel/test_early_sleep/test,arm,arduino_due,True,,,False,,6488,10898
 tests/kernel/test_sprintf/test,x86,minnowboard,True,,,False,,26251,22571
 tests/legacy/kernel/test_nano_work/test,arm,nrf51_pca10028,True,,,False,,10508,49432
-samples/environmental_sensing/x86/test-nble,x86,quark_se_c1000_devboard,True,,"CONF_FILE=""prj_nble.conf""",False,,12384,29742
 tests/kernel/test_build/test_newlib,arc,arduino_101_sss,True,,CONF_FILE=newlib.conf,False,,6968,13512
 samples/legacy/philosophers/microkernel/test,arc,arduino_101_sss,True,,,False,,12464,11940
 tests/bluetooth/init/test_19,arm,qemu_cortex_m3,True,,CONF_FILE=prj_19.conf,True,,14436,57250
@@ -1226,7 +1220,6 @@ samples/logger-hook/test,x86,arduino_101,True,,,False,,6072,14740
 tests/legacy/kernel/test_stack/nanokernel/test,arm,stm32_mini_a15,True,,,False,,10272,15336
 tests/legacy/kernel/test_tickless/microkernel/test,arm,frdm_k64f,True,,,False,,8128,12878
 tests/crypto/test_mbedtls/test,arm,96b_nitrogen,True,,,False,,28104,104506
-samples/bluetooth/peripheral_esp/test_nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,13392,36305
 tests/legacy/kernel/test_libs/test,arm,nrf51_pca10028,True,,,False,,12400,48798
 tests/legacy/kernel/test_map/test,arc,em_starterkit,True,,,False,,26096,15204
 tests/kernel/test_build/test_runtime_nmi,arm,frdm_k64f,True,,CONF_FILE=runtime_nmi.conf,False,,6060,12386
@@ -1273,7 +1266,6 @@ tests/legacy/kernel/test_timer/nanokernel/test,arm,96b_carbon,True,,,False,,8324
 tests/legacy/kernel/test_pool/test,x86,minnowboard,True,,,False,,33378,17122
 tests/legacy/kernel/test_irq_offload/test,nios2,altera_max10,True,,,False,,4436,13516
 samples/synchronization/test,arm,frdm_k64f,True,,,False,,6060,12182
-samples/bluetooth/eddystone/test_nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,13144,31197
 tests/kernel/test_common/test,arm,v2m_beetle,True,,,False,,7044,19586
 samples/legacy/synchronization/nanokernel/test,arm,nrf51_pca10028,True,,,False,,10168,46944
 samples/legacy/task_profiler/nanokernel/test,x86,qemu_x86,True,,,True,,28932,20252
@@ -1404,7 +1396,6 @@ tests/drivers/build_all/test_build_sensor_triggers,arm,stm32_mini_a15,True,,CONF
 samples/basic/button/test,arm,nucleo_f103rb,True,,,False,,3992,10690
 tests/legacy/kernel/test_events/test,x86,arduino_101,True,,,False,,10240,13957
 samples/bluetooth/peripheral_sc_only/test,arm,qemu_cortex_m3,True,,,True,,12204,45206
-tests/bluetooth/shell/test_nble,x86,quark_se_c1000_devboard,True,,"CONF_FILE=""prj_nble.conf""",False,,16420,49891
 tests/drivers/build_all/test_build_ethernet,arm,nrf52_pca10040,True,,CONF_FILE=ethernet.conf,False,,10348,48906
 tests/legacy/kernel/test_sema/microkernel/test,arm,nrf51_pca10028,True,,,False,,12872,51110
 tests/crypto/test_ctr_prng/test,arc,arduino_101_sss,True,,,False,,6380,19840
@@ -1848,7 +1839,6 @@ tests/legacy/benchmark/footprint/nanokernel/footprint-min,arm,nrf51_blenano,True
 tests/legacy/benchmark/footprint/nanokernel/footprint-max,arc,quark_se_c1000_ss_devboard,True,,TEST=max,False,,5908,13852
 tests/legacy/kernel/test_critical/test,x86,qemu_x86_iamcu,True,,,True,15.53974986076355,18415,11667
 tests/legacy/kernel/test_mutex/test,arm,96b_carbon,True,,,False,,8616,15012
-tests/bluetooth/tester/test_nble,x86,arduino_101,True,,"CONF_FILE=""nble.conf""",False,,22244,40821
 samples/logger-hook/test,arm,96b_carbon,True,,,False,,6260,15560
 tests/legacy/kernel/test_arm_irq_vector_table/test,arm,hexiwear_k64,True,,,False,,3980,11422
 tests/kernel/test_bitfield/test,nios2,qemu_nios2,True,,,True,0.0020706653594970703,4404,15792
@@ -2372,7 +2362,6 @@ tests/drivers/build_all/test_build_sensors_a_m,x86,qemu_x86_iamcu,True,,CONF_FIL
 tests/kernel/test_multilib/test,arm,arduino_101_ble,True,,,False,,8120,44626
 tests/legacy/kernel/test_critical/test,arm,stm32_mini_a15,True,,,False,,7156,12846
 tests/crypto/test_aes/test,arm,quark_se_c1000_ble,True,,,False,,12216,56118
-samples/environmental_sensing/x86/test-nble,x86,arduino_101,True,,"CONF_FILE=""prj_nble.conf""",False,,12384,29851
 tests/legacy/kernel/test_mail_priv/test,arm,nucleo_f103rb,True,,,False,,11684,21386
 tests/kernel/test_build/test_newlib,arm,96b_carbon,True,,CONF_FILE=newlib.conf,False,,6196,15140
 tests/legacy/kernel/test_obj_tracing/microkernel/test,x86,minnowboard,True,,,False,,24252,12344
