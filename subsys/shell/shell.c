@@ -350,44 +350,51 @@ static inline void print_cmd_unknown(char *argv)
 	printk("Type 'help' for list of available commands\n");
 }
 
-static void shell(void *p1, void *p2, void *p3)
+int shell_exec(char *line)
 {
 	char *argv[ARGC_MAX + 1];
 	size_t argc;
+	int err;
+	shell_cmd_function_t cb;
 
+	argc = line2argv(line, argv, ARRAY_SIZE(argv));
+	if (!argc) {
+		return -EINVAL;
+	}
+
+	cb = get_cb(argc, argv);
+	if (!cb) {
+		if (app_cmd_handler != NULL) {
+			cb = app_cmd_handler;
+		} else {
+			print_cmd_unknown(argv[0]);
+			return -EINVAL;
+		}
+	}
+
+	/* Execute callback with arguments */
+	err = cb(argc, argv);
+	if (err < 0) {
+		show_cmd_help(argv);
+	}
+
+	return err;
+}
+
+static void shell(void *p1, void *p2, void *p3)
+{
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	while (1) {
 		struct console_input *cmd;
-		shell_cmd_function_t cb;
 
 		printk("%s", get_prompt());
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
-		argc = line2argv(cmd->line, argv, ARRAY_SIZE(argv));
-		if (!argc) {
-			k_fifo_put(&avail_queue, cmd);
-			continue;
-		}
-
-		cb = get_cb(argc, argv);
-		if (!cb) {
-			if (app_cmd_handler != NULL) {
-				cb = app_cmd_handler;
-			} else {
-				print_cmd_unknown(argv[0]);
-				k_fifo_put(&avail_queue, cmd);
-				continue;
-			}
-		}
-
-		/* Execute callback with arguments */
-		if (cb(argc, argv) < 0) {
-			show_cmd_help(argv);
-		}
+		shell_exec(cmd->line);
 
 		k_fifo_put(&avail_queue, cmd);
 	}
