@@ -64,7 +64,8 @@ static void _region_init(u32_t index, u32_t region_addr,
 	/* Select the region you want to access */
 	ARM_MPU_DEV->rnr = index;
 	/* Configure the region */
-	ARM_MPU_DEV->rbar = region_addr | REGION_VALID | index;
+	ARM_MPU_DEV->rbar = (region_addr & REGION_BASE_ADDR_MASK)
+				| REGION_VALID | index;
 	ARM_MPU_DEV->rasr = region_attr | REGION_ENABLE;
 }
 
