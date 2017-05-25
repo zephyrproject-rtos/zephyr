@@ -1,0 +1,19 @@
+# Kconfig - XTENSA board configuration
+#
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_INTEL_S1000
+
+config SOC
+	string
+	default intel_s1000
+
+config IRQ_OFFLOAD_INTNUM
+	default 0
+
+config TOOLCHAIN_VARIANT
+	string
+	default RF-2015.3-linux
+
+endif
