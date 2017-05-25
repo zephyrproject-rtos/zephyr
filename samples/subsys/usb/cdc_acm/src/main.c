@@ -41,25 +41,12 @@ static void interrupt_handler(struct device *dev)
 
 static void write_data(struct device *dev, const char *buf, int len)
 {
-	int sent;
 	uart_irq_tx_enable(dev);
 
-	while (len) {
-		data_transmitted = false;
-		sent = uart_fifo_fill(dev, (const u8_t *)buf, len);
-
-		if (!sent) {
-			printf("Unable to send Data !\n");
-			break;
-		}
-
-		/* Wait until Tx interrupr is generated*/
-		while (data_transmitted == false)
-			;
-		/* Update remainging Data length to transfer*/
-		len -= sent;
-		buf += sent;
-	}
+	data_transmitted = false;
+	uart_fifo_fill(dev, (const u8_t *)buf, len);
+	while (data_transmitted == false)
+		;
 
 	uart_irq_tx_disable(dev);
 }

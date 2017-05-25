@@ -538,18 +538,6 @@ static int cdc_acm_fifo_fill(struct device *dev,
 	}
 
 	dev_data->tx_ready = 0;
-
-	/* FIXME: On Quark SE Family processor, restrict writing more than
-	 * 4 bytes into TX USB Endpoint. When more than 4 bytes are written,
-	 * sometimes (freq ~1/3000) first 4 bytes are  repeated.
-	 * (example: abcdef prints as abcdabcdef) (refer Jira ZEP-2074).
-	 * Application should handle partial data transfer while writing
-	 * into USB TX Endpoint.
-	 */
-#ifdef CONFIG_SOC_SERIES_QUARK_SE
-	len = len > sizeof(u32_t) ? sizeof(u32_t) : len;
-#endif
-
 	usb_write(CDC_ENDP_IN, tx_data, len, &bytes_written);
 
 	return bytes_written;
