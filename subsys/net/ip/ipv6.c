@@ -2704,15 +2704,10 @@ static struct net_icmpv6_handler ra_input_handler = {
 #define FRAG_BUF_WAIT 10 /* how long to max wait for a buffer */
 
 static void reassembly_timeout(struct k_work *work);
+static bool reassembly_init_done;
 
 static struct net_ipv6_reassembly
-reassembly[CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT] = {
-	[0 ... (CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT - 1)] = {
-		.timer = {
-			.work = K_WORK_INITIALIZER(reassembly_timeout),
-		},
-	},
-};
+reassembly[CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT];
 
 static struct net_ipv6_reassembly *reassembly_get(u32_t id,
 						  struct in6_addr *src,
@@ -2934,8 +2929,9 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
-		if (!k_work_pending(&reassembly[i].timer.work)) {
+	for (i = 0; reassembly_init_done &&
+		     i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
+		if (!k_delayed_work_remaining_get(&reassembly[i].timer)) {
 			continue;
 		}
 
@@ -3010,7 +3006,7 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 					    int total_len,
 					    u16_t buf_offset)
 {
-	struct net_ipv6_reassembly *reass;
+	struct net_ipv6_reassembly *reass = NULL;
 	u32_t id;
 	u16_t loc;
 	u16_t offset;
@@ -3019,6 +3015,18 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 	u8_t more;
 	bool found;
 	int i;
+
+	if (!reassembly_init_done) {
+		/* Static initializing does not work here because of the array
+		 * so we must do it at runtime.
+		 */
+		for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
+			k_delayed_work_init(&reassembly[i].timer,
+					    reassembly_timeout);
+		}
+
+		reassembly_init_done = true;
+	}
 
 	net_pkt_set_ipv6_fragment_start(pkt, frag->data + buf_offset);
 
@@ -3066,8 +3074,7 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 			break;
 		}
 
-		if (net_pkt_ipv6_fragment_offset(reass->pkt[i]) <
-		    offset) {
+		if (net_pkt_ipv6_fragment_offset(reass->pkt[i]) < offset) {
 			continue;
 		}
 
@@ -3089,7 +3096,6 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 		 * list. We must discard the whole packet at this point.
 		 */
 		NET_DBG("No slots available for 0x%x", reass->id);
-		reassembly_cancel(reass->id, &reass->src, &reass->dst);
 		goto drop;
 	}
 
@@ -3120,8 +3126,6 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 			reass->pkt[i] = NULL;
 		}
 
-		reassembly_cancel(reass->id, &reass->src, &reass->dst);
-
 		goto drop;
 	}
 
@@ -3132,6 +3136,10 @@ accept:
 	return NET_OK;
 
 drop:
+	if (reass) {
+		reassembly_cancel(reass->id, &reass->src, &reass->dst);
+	}
+
 	return NET_DROP;
 }
 
