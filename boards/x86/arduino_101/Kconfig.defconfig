@@ -16,19 +16,6 @@ config ROM_SIZE
 config PHYS_LOAD_ADDR
 	default 0x40010000
 
-if NBLE
-
-config GPIO
-	def_bool y
-
-config BLUETOOTH_NRF51_PM
-	def_bool y
-
-config NBLE_UART_ON_DEV_NAME
-	default UART_QMSI_0_NAME
-
-endif
-
 if BLUETOOTH_H4
 
 config BLUETOOTH_UART_ON_DEV_NAME

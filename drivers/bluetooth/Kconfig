@@ -19,12 +19,12 @@ source "drivers/bluetooth/hci/Kconfig"
 endif
 
 if BLUETOOTH_CUSTOM
-source "drivers/bluetooth/nble/Kconfig"
+# Insert here any custom (non-HCI) offload drives
 endif
 
 config BLUETOOTH_NRF51_PM
 	bool "nRF51 Power Management [EXPERIMENTAL]"
-	depends on BLUETOOTH_H4 || NBLE
+	depends on BLUETOOTH_H4
 	help
 	  Power Management support for Nordic BLE nRF51 chip. Allows to enable,
 	  disable the chip and handle wakeups.

@@ -358,7 +358,6 @@ static ssize_t read_unlock(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_READ_NOT_PERMITTED);
 	}
 
-#if !defined(CONFIG_NBLE)
 	/* returns a 128-bit challenge token. This token is for one-time use
 	 * and cannot be replayed.
 	 */
@@ -368,9 +367,6 @@ static ssize_t read_unlock(struct bt_conn *conn,
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, slot->challenge,
 				 sizeof(slot->challenge));
-#else
-	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
-#endif /* CONFIG_NBLE */
 }
 
 static ssize_t write_unlock(struct bt_conn *conn,
