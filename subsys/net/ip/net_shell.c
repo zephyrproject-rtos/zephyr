@@ -1714,5 +1714,6 @@ static struct shell_cmd net_commands[] = {
 
 void net_shell_init(void)
 {
-	SHELL_REGISTER(NET_SHELL_MODULE, net_commands);
 }
+
+SHELL_REGISTER(NET_SHELL_MODULE, net_commands);
