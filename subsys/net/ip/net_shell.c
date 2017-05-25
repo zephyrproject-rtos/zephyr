@@ -576,16 +576,36 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 {
 	int *count = user_data;
 	char src[ADDR_LEN];
+	int i;
 
 	if (!*count) {
-		printk("\nIPv6 reassembly Id         Remain Src\t\t\t\tDst\n");
+		printk("\nIPv6 reassembly Id         Remain Src             \tDst\n");
 	}
 
 	snprintk(src, ADDR_LEN, "%s", net_sprint_ipv6_addr(&reass->src));
 
-	printk("%p      0x%08x  %5d %s\t%s\n",
+	printk("%p      0x%08x  %5d %16s\t%16s\n",
 	       reass, reass->id, k_delayed_work_remaining_get(&reass->timer),
 	       src, net_sprint_ipv6_addr(&reass->dst));
+
+	for (i = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+		if (reass->pkt[i]) {
+			struct net_buf *frag = reass->pkt[i]->frags;
+
+			printk("[%d] pkt %p->", i, reass->pkt[i]);
+
+			while (frag) {
+				printk("%p", frag);
+
+				frag = frag->frags;
+				if (frag) {
+					printk("->");
+				}
+			}
+
+			printk("\n");
+		}
+	}
 
 	(*count)++;
 }
