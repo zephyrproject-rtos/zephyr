@@ -120,6 +120,7 @@ struct usb_dw_reg {
 };
 
 /* USB register offsets and masks */
+#define USB_DW_HWCFG4_DEDFIFOMODE BIT(25)
 #define USB_DW_GRSTCTL_AHB_IDLE BIT(31)
 #define USB_DW_GRSTCTL_TX_FNUM_OFFSET (6)
 #define USB_DW_GRSTCTL_TX_FFLSH BIT(5)
@@ -147,6 +148,8 @@ struct usb_dw_reg {
 #define USB_DW_DEPCTL_SNAK BIT(27)
 #define USB_DW_DEPCTL_CNAK BIT(26)
 #define USB_DW_DEPCTL_STALL BIT(21)
+#define USB_DW_DEPCTL_TXFNUM_OFFSET (22)
+#define USB_DW_DEPCTL_TXFNUM_MASK (0xf << 22)
 #define USB_DW_DEPCTL_EP_TYPE_MASK (0x3 << 18)
 #define USB_DW_DEPCTL_EP_TYPE_OFFSET (18)
 #define USB_DW_DEPCTL_EP_TYPE_CONTROL (0)

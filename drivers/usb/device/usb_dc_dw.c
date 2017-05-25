@@ -52,6 +52,7 @@ struct usb_dw_ctrl_prv {
 	usb_dc_status_callback status_cb;
 	struct usb_ep_ctrl_prv in_ep_ctrl[USB_DW_IN_EP_NUM];
 	struct usb_ep_ctrl_prv out_ep_ctrl[USB_DW_OUT_EP_NUM];
+	int n_tx_fifos;
 	u8_t attached;
 };
 
@@ -212,6 +213,56 @@ static void usb_dw_clock_disable(void)
 #endif
 }
 
+static int usb_dw_num_dev_eps()
+{
+	return (USB_DW->ghwcfg2 >> 10) & 0xf;
+}
+
+/* Choose a FIFO number for an IN endpoint */
+static int usb_dw_set_fifo(u8_t ep)
+{
+	int ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	volatile u32_t *reg = &USB_DW->in_ep_reg[ep_idx].diepctl;
+	u32_t val;
+	int fifo;
+	int ded_fifo = !!(USB_DW->ghwcfg4 & USB_DW_HWCFG4_DEDFIFOMODE);
+
+	if (!ded_fifo) {
+		/* No support for shared-FIFO mode yet, existing
+		 * Zephyr hardware doesn't use it
+		 */
+		return -ENOTSUP;
+	}
+
+	/* In dedicated-FIFO mode, all IN endpoints must have a unique
+	 * FIFO number associated with them in the TXFNUM field of
+	 * DIEPCTLx, with EP0 always being assigned to FIFO zero (the
+	 * reset default, so we don't touch it).
+	 */
+
+	if (ep_idx == 0) {
+		return 0;
+	}
+
+	/* FIXME: would be better (c.f. the dwc2 driver in Linux) to
+	 * choose a FIFO based on the hardware depth: we want the
+	 * smallest one that fits our configured maximum packet size
+	 * for the endpoint.  This just picks the next available one.
+	 */
+	fifo = ++usb_dw_ctrl.n_tx_fifos;
+
+	if (fifo >= usb_dw_num_dev_eps()) {
+		return -EINVAL;
+	}
+
+	reg = &USB_DW->in_ep_reg[ep_idx].diepctl;
+	val = *reg & ~USB_DW_DEPCTL_TXFNUM_MASK;
+	val |= fifo << USB_DW_DEPCTL_TXFNUM_OFFSET;
+	*reg = val;
+
+	return 0;
+}
+
 static int usb_dw_ep_set(u8_t ep,
 	u32_t ep_mps, enum usb_dc_ep_type ep_type)
 {
@@ -284,6 +335,13 @@ static int usb_dw_ep_set(u8_t ep,
 
 		/* sets the Endpoint Data PID to DATA0 */
 		*p_depctl |= USB_DW_DEPCTL_SETDOPID;
+	}
+
+	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) {
+		int ret = usb_dw_set_fifo(ep);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	return 0;
@@ -419,8 +477,6 @@ static int usb_dw_init(void)
 
 	/* Set device speed to FS */
 	USB_DW->dcfg |= USB_DW_DCFG_DEV_SPD_FS;
-
-	/* No FIFO setup needed, the default values are used */
 
 	/* Set NAK for all OUT EPs */
 	for (ep = 0; ep < USB_DW_OUT_EP_NUM; ep++) {
