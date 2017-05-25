@@ -54,7 +54,12 @@ u64_t dummy_time;
 u64_t start_time;
 u64_t test_end_time;
 
-#if CONFIG_X86
+/* Disable the overhead calculations, this is needed to calculate
+ * the overhead created by the benchmarking code itself.
+ */
+#define DISABLE_OVERHEAD_MEASUREMENT
+
+#if defined(CONFIG_X86) && !defined(DISABLE_OVERHEAD_MEASUREMENT)
 u32_t benchmarking_overhead_swap(void)
 {
 
