@@ -116,7 +116,7 @@ config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
 
 config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
 	int
-	default 320
+	default 448
 
 comment "BLE Controller features"
 
