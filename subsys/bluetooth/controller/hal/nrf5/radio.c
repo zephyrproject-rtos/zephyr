@@ -93,6 +93,12 @@ void radio_phy_set(u8_t phy, u8_t flags)
 	}
 
 	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST)
+	NRF_RADIO->MODECNF0 |= (RADIO_MODECNF0_RU_Fast <<
+				RADIO_MODECNF0_RU_Pos) &
+			       RADIO_MODECNF0_RU_Msk;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST */
 }
 
 void radio_tx_power_set(u32_t power)
@@ -211,7 +217,9 @@ u32_t radio_tx_ready_delay_get(u8_t phy, u8_t flags)
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 	return 140;
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST)
+	return 40;
+#elif defined(CONFIG_SOC_NRF52840)
 	switch (phy) {
 	default:
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
@@ -272,7 +280,9 @@ u32_t radio_rx_ready_delay_get(u8_t phy)
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 	return 138;
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
-#if defined(CONFIG_SOC_NRF52840)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST)
+	return 40;
+#elif defined(CONFIG_SOC_NRF52840)
 	switch (phy) {
 	default:
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)

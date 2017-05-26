@@ -284,8 +284,16 @@ config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
+config BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST
+	bool "Use tTXEN/RXEN,FAST ramp-up"
+	depends on SOC_SERIES_NRF52X
+	default y if SOC_NRF52840
+	help
+	  Enable use of fast radio ramp-up mode.
+
 config BLUETOOTH_CONTROLLER_TIFS_HW
 	bool "H/w Accelerated tIFS Trx switching"
+	depends on !BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST
 	default y
 	help
 	  Enable use of hardware accelerated tIFS Trx switching.
