@@ -30,6 +30,5 @@ int net_shell_cmd_route(int argc, char *argv[]);
 int net_shell_cmd_stacks(int argc, char *argv[]);
 int net_shell_cmd_stats(int argc, char *argv[]);
 int net_shell_cmd_tcp(int argc, char *argv[]);
-int net_shell_cmd_help(int argc, char *argv[]);
 
 #endif /* __NET_SHELL_H */

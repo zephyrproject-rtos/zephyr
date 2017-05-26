@@ -1669,46 +1669,30 @@ int net_shell_cmd_tcp(int argc, char *argv[])
 	return 0;
 }
 
-int net_shell_cmd_help(int argc, char *argv[])
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	/* Keep the commands in alphabetical order */
-	printk("net allocs\n\tPrint network memory allocations\n");
-	printk("net conn\n\tPrint information about network connections\n");
-	printk("net dns\n\tShow how DNS is configured\n");
-	printk("net dns cancel\n\tCancel all pending requests\n");
-	printk("net dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default)"
-	       " or IPv6 address for a host name\n");
-	printk("net iface\n\tPrint information about network interfaces\n");
-	printk("net mem\n\tPrint network memory information\n");
-	printk("net nbr\n\tPrint neighbor information\n");
-	printk("net nbr rm <IPv6 address>\n\tRemove neighbor from cache\n");
-	printk("net ping <host>\n\tPing a network host\n");
-	printk("net route\n\tShow network routes\n");
-	printk("net stacks\n\tShow network stacks information\n");
-	printk("net stats\n\tShow network statistics\n");
-	printk("net tcp connect <ip> port\n\tConnect to TCP peer\n");
-	printk("net tcp send <data>\n\tSend data to peer using TCP\n");
-	printk("net tcp close\n\tClose TCP connection\n");
-	return 0;
-}
-
 static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
-	{ "allocs", net_shell_cmd_allocs, NULL },
-	{ "conn", net_shell_cmd_conn, NULL },
-	{ "dns", net_shell_cmd_dns, NULL },
-	{ "help", net_shell_cmd_help, NULL },
-	{ "iface", net_shell_cmd_iface, NULL },
-	{ "mem", net_shell_cmd_mem, NULL },
-	{ "nbr", net_shell_cmd_nbr, NULL },
-	{ "ping", net_shell_cmd_ping, NULL },
-	{ "route", net_shell_cmd_route, NULL },
-	{ "stacks", net_shell_cmd_stacks, NULL },
-	{ "stats", net_shell_cmd_stats, NULL },
-	{ "tcp", net_shell_cmd_tcp, NULL },
+	{ "allocs", net_shell_cmd_allocs,
+		"\n\tPrint network memory allocations" },
+	{ "conn", net_shell_cmd_conn,
+		"\n\tPrint information about network connections" },
+	{ "dns", net_shell_cmd_dns, "\n\tShow how DNS is configure\n"
+		"dns cancel\n\tCancel all pending requests\n"
+		"dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default) or "
+		"IPv6 address for a  host name" },
+	{ "iface", net_shell_cmd_iface,
+		"\n\tPrint information about network interfaces" },
+	{ "mem", net_shell_cmd_mem,
+		"\n\tPrint information about network interfaces" },
+	{ "nbr", net_shell_cmd_nbr, "\n\tPrint neighbor information\n"
+		"nbr rm <IPv6 address>\n\tRemove neighbor from cache" },
+	{ "ping", net_shell_cmd_ping, "<host>\n\tPing a network host" },
+	{ "route", net_shell_cmd_route, "\n\tShow network route" },
+	{ "stacks", net_shell_cmd_stacks,
+		"\n\tShow network stacks information" },
+	{ "stats", net_shell_cmd_stats, "\n\tShow network statistics" },
+	{ "tcp", net_shell_cmd_tcp, "connect <ip> port\n\tConnect to TCP peer\n"
+		"tcp send <data>\n\tSend data to peer using TCP\n"
+		"tcp close\n\tClose TCP connection" },
 	{ NULL, NULL, NULL }
 };
 
