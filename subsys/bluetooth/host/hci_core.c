@@ -3338,7 +3338,8 @@ static int le_init(void)
 		net_buf_unref(rsp);
 	}
 
-	if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CONN) &&
+	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
 		struct bt_hci_cp_le_write_default_data_len *cp;
 		struct bt_hci_rp_le_read_max_data_len *rp;
 		struct net_buf *buf, *rsp;
