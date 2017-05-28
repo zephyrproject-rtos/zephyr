@@ -577,7 +577,7 @@ static void cmd_active_scan_on(int dups)
 {
 	int err;
 	struct bt_le_scan_param param = {
-			.type       = BT_HCI_LE_SCAN_PASSIVE,
+			.type       = BT_HCI_LE_SCAN_ACTIVE,
 			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE,
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 			.window     = BT_GAP_SCAN_FAST_WINDOW };
@@ -2681,9 +2681,10 @@ static int cmd_bredr_sdp_find_record(int argc, char *argv[])
 
 static const struct shell_cmd bt_commands[] = {
 	{ "init", cmd_init, HELP_ADDR_LE },
-	{ "scan", cmd_scan, "<value: on, off> <dup filter: dups, nodups>" },
+	{ "scan", cmd_scan,
+	  "<value: on, passive, off> <dup filter: dups, nodups>" },
 	{ "advertise", cmd_advertise,
-	"<type: off, on, scan, nconn> <mode: discov, non_discov>"  },
+	  "<type: off, on, scan, nconn> <mode: discov, non_discov>" },
 	{ "connect", cmd_connect_le, HELP_ADDR_LE },
 	{ "disconnect", cmd_disconnect, HELP_NONE },
 	{ "auto-conn", cmd_auto_conn, HELP_ADDR_LE },
