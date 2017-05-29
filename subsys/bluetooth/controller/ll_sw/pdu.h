@@ -11,10 +11,10 @@
 #define BDADDR_SIZE 6
 
 /* PDU Sizes */
-#define PDU_EM_SIZE_MAX 3
-#define PDU_AC_SIZE_OVERHEAD 2
 #define PDU_AC_PAYLOAD_SIZE_MAX 37
-#define PDU_AC_SIZE_MAX (PDU_AC_PAYLOAD_SIZE_MAX + PDU_AC_SIZE_OVERHEAD)
+#define PDU_AC_SIZE_MAX (offsetof(struct pdu_adv, payload) + \
+			 PDU_AC_PAYLOAD_SIZE_MAX)
+#define PDU_EM_SIZE_MAX offsetof(struct pdu_data, payload)
 
 struct pdu_adv_payload_adv_ind {
 	u8_t addr[BDADDR_SIZE];
@@ -281,7 +281,9 @@ struct pdu_data {
 
 	u8_t len:8;
 
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR)
 	u8_t resv:8; /* TODO: remove nRF specific code */
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR */
 
 	union {
 		u8_t lldata[1];
