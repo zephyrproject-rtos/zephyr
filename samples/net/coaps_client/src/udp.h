@@ -18,6 +18,6 @@ struct udp_context {
 
 int udp_init(struct udp_context *ctx);
 int udp_tx(void *ctx, const unsigned char *buf, size_t size);
-int udp_rx(void *ctx, unsigned char *buf, size_t size, u32_t timeout);
+int udp_rx(void *ctx, unsigned char *buf, size_t size);
 
 #endif
