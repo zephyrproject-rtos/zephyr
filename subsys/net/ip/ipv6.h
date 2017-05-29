@@ -374,7 +374,9 @@ static inline void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
  * This means that we should receive everything within first two fragments.
  * The first one being 1280 bytes and the second one 220 bytes.
  */
+#if !defined(NET_IPV6_FRAGMENTS_MAX_PKT)
 #define NET_IPV6_FRAGMENTS_MAX_PKT 2
+#endif
 
 /** Store pending IPv6 fragment information that is needed for reassembly. */
 struct net_ipv6_reassembly {
