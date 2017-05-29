@@ -30,33 +30,10 @@ endchoice
 
 comment "BLE Controller configuration"
 
-menu "Advertiser"
-	visible if !BLUETOOTH_PERIPHERAL
-
-config BLUETOOTH_CONTROLLER_STATE_ADV
-	bool "Enable Advertiser"
-	default y if BLUETOOTH_PERIPHERAL
-	default y if !BLUETOOTH_CONTROLLER_STATE_SCAN
-	help
-	  Enable support for advertising state in the Controller.
-
-endmenu
-
-menu "Scanner"
-	visible if !BLUETOOTH_CENTRAL
-
-config BLUETOOTH_CONTROLLER_STATE_SCAN
-	bool "Enable Scanner"
-	default y if BLUETOOTH_CENTRAL
-	help
-	  Enable support for scanning state in the Controller.
-
-endmenu
-
 config BLUETOOTH_CONTROLLER_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
-	depends on BLUETOOTH_CONTROLLER_STATE_SCAN
+	depends on BLUETOOTH_OBSERVER
 	default 16
 	help
 	  Set the number of unique BLE addresses that can be filtered as
