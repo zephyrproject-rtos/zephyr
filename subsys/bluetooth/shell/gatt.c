@@ -352,7 +352,7 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[])
 {
 	int err;
 	u16_t handle;
-	u8_t data;
+	u16_t len;
 
 	if (!default_conn) {
 		printk("Not connected\n");
@@ -364,55 +364,22 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[])
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
-	data = strtoul(argv[2], NULL, 16);
-
-	err = bt_gatt_write_without_response(default_conn, handle, &data,
-					     sizeof(data), false);
-	printk("Write Complete (err %d)\n", err);
-
-	return 0;
-}
-
-int cmd_gatt_write_without_rsp_repeated(int argc, char *argv[])
-{
-	int err = 0;
-	u16_t handle;
-	u16_t octets;
-	u16_t repeat;
-
-	if (!default_conn) {
-		printk("Not connected\n");
-		return 0;
-	}
-
-	if (argc < 2) {
-		return -EINVAL;
-	}
-
-	handle = strtoul(argv[1], NULL, 16);
-
-	if (argc > 2) {
-		octets = min(strtoul(argv[2], NULL, 16), CHAR_SIZE_MAX);
-	} else {
-		octets = 1;
-	}
+	gatt_write_buf[0] = strtoul(argv[2], NULL, 16);
+	len = 1;
 
 	if (argc > 3) {
-		repeat = strtoul(argv[3], NULL, 16);
-	} else {
-		repeat = 1;
-	}
+		int i;
 
-	while (repeat--) {
-		err = bt_gatt_write_without_response(default_conn, handle,
-						     gatt_write_buf, octets,
-						     false);
-		if (err) {
-			break;
+		len = min(strtoul(argv[3], NULL, 16), sizeof(gatt_write_buf));
+
+		for (i = 1; i < len; i++) {
+			gatt_write_buf[i] = gatt_write_buf[0];
 		}
 	}
 
-	printk("Repeated Write Complete (err %d).\n", err);
+	err = bt_gatt_write_without_response(default_conn, handle,
+					     gatt_write_buf, len, false);
+	printk("Write Complete (err %d)\n", err);
 
 	return 0;
 }

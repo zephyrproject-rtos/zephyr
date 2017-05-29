@@ -19,7 +19,6 @@ int cmd_gatt_read(int argc, char *argv[]);
 int cmd_gatt_mread(int argc, char *argv[]);
 int cmd_gatt_write(int argc, char *argv[]);
 int cmd_gatt_write_without_rsp(int argc, char *argv[]);
-int cmd_gatt_write_without_rsp_repeated(int argc, char *argv[]);
 int cmd_gatt_write_signed(int argc, char *argv[]);
 int cmd_gatt_subscribe(int argc, char *argv[]);
 int cmd_gatt_unsubscribe(int argc, char *argv[]);
