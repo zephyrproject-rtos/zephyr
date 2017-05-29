@@ -2008,7 +2008,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "gatt-write-without-response", cmd_gatt_write_without_rsp,
 	  "<handle> <data> [length]" },
 	{ "gatt-write-signed", cmd_gatt_write_signed,
-	  "<handle> <offset> <data>" },
+	  "<handle> <data>" },
 	{ "gatt-subscribe", cmd_gatt_subscribe,
 	  "<CCC handle> <value handle> [ind]" },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe, HELP_NONE },
