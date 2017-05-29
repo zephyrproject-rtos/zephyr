@@ -300,6 +300,11 @@ static void game_refresh(struct k_work *work)
 		k_call_stacks_analyze();
 	}
 
+	if (state == INIT) {
+		pong_select(&mode_selection);
+		return;
+	}
+
 	if (ended) {
 		game_init(state == SINGLE || remote_lost);
 		k_sem_give(&disp_update);
@@ -454,7 +459,7 @@ void pong_conn_ready(bool initiator)
 void pong_remote_disconnected(void)
 {
 	state = INIT;
-	pong_select(&mode_selection);
+	k_delayed_work_submit(&refresh, K_SECONDS(1));
 }
 
 void pong_remote_lost(void)
