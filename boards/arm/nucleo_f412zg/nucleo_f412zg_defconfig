@@ -1,0 +1,41 @@
+CONFIG_ARM=y
+CONFIG_BOARD_NUCLEO_F412ZG=y
+CONFIG_SOC_SERIES_STM32F4X=y
+CONFIG_SOC_STM32F412ZG=y
+# 96MHz system clock (highest value to get a precise USB clock)
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=96000000
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+
+# Enable MPU
+CONFIG_STM32_ARM_MPU_ENABLE=y
+
+# enable USART3 - passthrough to STLINK v2 connector
+CONFIG_UART_STM32_PORT_3=y
+# enable console on this port by default
+CONFIG_UART_CONSOLE_ON_DEV_NAME="UART_3"
+
+# enable pinmux
+CONFIG_PINMUX=y
+
+# enable GPIO ports A, B, C
+CONFIG_GPIO=y
+
+# clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# Clock configuration for Cube Clock control driver
+CONFIG_CLOCK_STM32_HSE_CLOCK=8000000
+CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL=y
+# use HSE as PLL input
+CONFIG_CLOCK_STM32_PLL_SRC_HSE=y
+# however, the board does not have an external oscillator, so just use
+# the 8MHz clock signal coming from integrated STLink
+CONFIG_CLOCK_STM32_HSE_BYPASS=y
+# produce 96MHz clock at PLL output
+CONFIG_CLOCK_STM32_PLL_M_DIVISOR=8
+CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER=384
+CONFIG_CLOCK_STM32_PLL_P_DIVISOR=4
+CONFIG_CLOCK_STM32_PLL_Q_DIVISOR=8
+CONFIG_CLOCK_STM32_AHB_PRESCALER=1
+CONFIG_CLOCK_STM32_APB1_PRESCALER=2
+CONFIG_CLOCK_STM32_APB2_PRESCALER=1

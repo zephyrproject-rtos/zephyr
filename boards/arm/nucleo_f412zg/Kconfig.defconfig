@@ -1,0 +1,13 @@
+# Kconfig - NUCLEO-144 F412ZG board configuration
+#
+# Copyright (c) 2017 Florian Vaussard, HEIG-VD
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_F412ZG
+
+config BOARD
+	default nucleo_f412zg
+
+endif # BOARD_NUCLEO_F412ZG
