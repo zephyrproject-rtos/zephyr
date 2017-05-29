@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2017 Florian Vaussard, HEIG-VD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/stm32f411.dtsi>
+
+/ {
+	soc {
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			interrupts = <39 0>;
+			status = "disabled";
+			label = "UART_3";
+		};
+	};
+};
