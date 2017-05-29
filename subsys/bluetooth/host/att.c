@@ -293,12 +293,14 @@ static void att_process(struct bt_att *att)
 	att_send_req(att, ATT_REQ(node));
 }
 
-static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len,
-			      u8_t err)
+static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len, u8_t err)
 {
 	bt_att_func_t func;
 
+	BT_DBG("err %u len %u: %s", err, len, bt_hex(pdu, len));
+
 	if (!att->req) {
+		BT_WARN("No pending ATT request");
 		goto process;
 	}
 
