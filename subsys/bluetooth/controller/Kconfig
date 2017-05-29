@@ -120,6 +120,8 @@ config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
 
 comment "BLE Controller features"
 
+if BLUETOOTH_CONN
+
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
 	default y
@@ -155,6 +157,8 @@ config BLUETOOTH_CONTROLLER_CHAN_SEL_2
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
 	  the Controller.
+
+endif # BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 	bool "Show advanced features"
@@ -267,6 +271,8 @@ config BLUETOOTH_CONTROLLER_TIFS_HW
 	help
 	  Enable use of hardware accelerated tIFS Trx switching.
 
+if BLUETOOTH_CONN
+
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
 	help
@@ -284,6 +290,8 @@ config BLUETOOTH_CONTROLLER_CONN_RSSI
 	bool "Connection RSSI"
 	help
 	  Enable connection RSSI measurement.
+
+endif # BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_ADV_INDICATION
 	bool "Advertisement indications"
