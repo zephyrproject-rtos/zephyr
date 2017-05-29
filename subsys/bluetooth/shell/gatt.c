@@ -351,6 +351,7 @@ int cmd_gatt_write(int argc, char *argv[])
 int cmd_gatt_write_without_rsp(int argc, char *argv[])
 {
 	int err;
+	bool sign;
 	u16_t handle;
 	u16_t len;
 
@@ -363,6 +364,7 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[])
 		return -EINVAL;
 	}
 
+	sign = !strcmp(argv[0], "gatt-write-signed");
 	handle = strtoul(argv[1], NULL, 16);
 	gatt_write_buf[0] = strtoul(argv[2], NULL, 16);
 	len = 1;
@@ -378,32 +380,7 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[])
 	}
 
 	err = bt_gatt_write_without_response(default_conn, handle,
-					     gatt_write_buf, len, false);
-	printk("Write Complete (err %d)\n", err);
-
-	return 0;
-}
-
-int cmd_gatt_write_signed(int argc, char *argv[])
-{
-	int err;
-	u16_t handle;
-	u8_t data;
-
-	if (!default_conn) {
-		printk("Not connected\n");
-		return 0;
-	}
-
-	if (argc < 3) {
-		return -EINVAL;
-	}
-
-	handle = strtoul(argv[1], NULL, 16);
-	data = strtoul(argv[2], NULL, 16);
-
-	err = bt_gatt_write_without_response(default_conn, handle, &data,
-					     sizeof(data), true);
+					     gatt_write_buf, len, sign);
 	printk("Write Complete (err %d)\n", err);
 
 	return 0;
