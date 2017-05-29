@@ -580,6 +580,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn->err = evt->reason;
 
 	/* Check stacks usage (no-ops if not enabled) */
+	k_call_stacks_analyze();
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
 #endif
