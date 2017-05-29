@@ -184,7 +184,7 @@ void dtls_client(void)
 	int ret;
 	struct udp_context ctx;
 	struct dtls_timing_context timer;
-	struct zoap_packet request, zkt;
+	struct zoap_packet request, zpkt;
 	struct zoap_reply *reply;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
