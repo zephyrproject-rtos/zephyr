@@ -27,9 +27,11 @@ UNAME := $(shell uname)
 ifeq (MSYS, $(findstring MSYS, $(UNAME)))
 DISABLE_TRYRUN=y
 HOST_OS=MSYS
+NATIVE_PWD_OPT=-W
 else ifeq (MINGW, $(findstring MINGW, $(UNAME)))
 HOST_OS=MINGW
 PWD_OPT=-W
+NATIVE_PWD_OPT=-W
 DISABLE_TRYRUN=y
 CPATH ?= $(MIGW_DIR)/include
 LIBRARY_PATH ?= $(MINGW_DIR)/lib
@@ -39,7 +41,7 @@ HOST_OS=Linux
 else ifeq (Darwin, $(findstring Darwin, $(UNAME)))
 HOST_OS=Darwin
 endif
-export HOST_OS
+export HOST_OS NATIVE_PWD_OPT
 
 # Avoid funny character set dependencies
 unexport LC_ALL
