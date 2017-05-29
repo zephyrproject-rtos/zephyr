@@ -242,6 +242,10 @@ static void connected(struct bt_conn *conn, u8_t err)
 		return;
 	}
 
+	if (ble_state == BLE_ADVERTISING) {
+		bt_le_adv_stop();
+	}
+
 	if (!default_conn) {
 		default_conn = bt_conn_ref(conn);
 	}
