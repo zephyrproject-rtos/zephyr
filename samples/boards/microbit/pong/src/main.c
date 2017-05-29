@@ -297,6 +297,7 @@ static void game_refresh(struct k_work *work)
 {
 	if (sound_state != SOUND_IDLE) {
 		sound_set(SOUND_IDLE);
+		k_call_stacks_analyze();
 	}
 
 	if (ended) {
