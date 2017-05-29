@@ -6853,7 +6853,10 @@ static void prepare_pdu_data_tx(struct connection *conn,
 	}
 
 	_pdu_data_tx->rfu = 0;
+
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR)
 	_pdu_data_tx->resv = 0;
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR */
 
 	*pdu_data_tx = _pdu_data_tx;
 }
