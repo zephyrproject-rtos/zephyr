@@ -45,7 +45,7 @@ static void set_destination(struct sockaddr *addr)
 #endif
 
 static void udp_received(struct net_context *context,
-			 struct net_buf *buf, int status, void *user_data)
+			 struct net_pkt *pkt, int status, void *user_data)
 {
 	struct udp_context *ctx = user_data;
 
@@ -58,14 +58,14 @@ static void udp_received(struct net_context *context,
 
 		if (ctx->rx_pkt) {
 			printk("Packet %p is still being handled, "
-			       "dropping %p\n", ctx->rx_pkt, buf);
+			       "dropping %p\n", ctx->rx_pkt, pkt);
 
-			net_pkt_unref(buf);
+			net_pkt_unref(pkt);
 			return;
 		}
 	}
 
-	ctx->rx_pkt = buf;
+	ctx->rx_pkt = pkt;
 	k_sem_give(&ctx->rx_sem);
 	k_yield();
 }
@@ -74,34 +74,34 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
 	struct net_context *udp_ctx;
-	struct net_buf *send_buf;
+	struct net_pkt *send_pkt;
 	struct sockaddr dst_addr;
 	int rc, len;
 
 	udp_ctx = ctx->net_ctx;
 
-	send_buf = net_pkt_get_tx(udp_ctx, K_FOREVER);
-	if (!send_buf) {
+	send_pkt = net_pkt_get_tx(udp_ctx, K_FOREVER);
+	if (!send_pkt) {
 		printk("cannot create buf\n");
 		return -EIO;
 	}
 
-	rc = net_pkt_append_all(send_buf, size, (u8_t *) buf, K_FOREVER);
+	rc = net_pkt_append_all(send_pkt, size, (u8_t *) buf, K_FOREVER);
 	if (!rc) {
 		printk("cannot write buf\n");
-		net_pkt_unref(send_buf);
+		net_pkt_unref(send_pkt);
 		return -EIO;
 	}
 
 	set_destination(&dst_addr);
-	len = net_buf_frags_len(send_buf);
+	len = net_pkt_get_len(send_pkt);
 	k_sleep(UDP_TX_TIMEOUT);
 
-	rc = net_context_sendto(send_buf, &dst_addr,
+	rc = net_context_sendto(send_pkt, &dst_addr,
 				addrlen, NULL, K_FOREVER, NULL, NULL);
 	if (rc < 0) {
 		printk("Cannot send data to peer (%d)\n", rc);
-		net_pkt_unref(send_buf);
+		net_pkt_unref(send_pkt);
 		return -EIO;
 	} else {
 		return len;

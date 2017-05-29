@@ -11,7 +11,7 @@
 
 struct udp_context {
 	struct net_context *net_ctx;
-	struct net_buf *rx_pkt;
+	struct net_pkt *rx_pkt;
 	struct k_sem rx_sem;
 	int remaining;
 };
