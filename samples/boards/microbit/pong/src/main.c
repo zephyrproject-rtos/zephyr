@@ -266,6 +266,10 @@ static void game_ended(bool won)
 {
 	struct mb_display *disp = mb_display_get();
 
+	if (sound_state != SOUND_IDLE) {
+		sound_set(SOUND_IDLE);
+	}
+
 	remote_lost = won;
 	ended = k_uptime_get();
 	started = false;
