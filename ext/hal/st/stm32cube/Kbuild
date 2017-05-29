@@ -3,6 +3,7 @@ ifdef CONFIG_HAS_STM32CUBE
 ifdef CONFIG_SOC_SERIES_STM32F1X
 obj-y += stm32f1xx/drivers/src/stm32f1xx_hal.o
 obj-y += stm32f1xx/drivers/src/stm32f1xx_hal_rcc.o
+obj-$(CONFIG_CLOCK_CONTROL_STM32_CUBE) += stm32f1xx/drivers/src/stm32f1xx_ll_utils.o
 obj-$(CONFIG_PWM) += stm32f1xx/drivers/src/stm32f1xx_hal_tim.o
 obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f1xx/drivers/src/stm32f1xx_hal_uart.o
 obj-y += stm32f1xx/soc/system_stm32f1xx.o
