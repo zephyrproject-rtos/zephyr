@@ -99,6 +99,12 @@ comment "BLE Controller features"
 
 if BLUETOOTH_CONN
 
+config BLUETOOTH_CONTROLLER_LE_ENC
+	bool
+	default y
+	# Enable support for Bluetooth v4.0 LE Encryption feature in the
+	# Controller.
+
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
 	default y
@@ -252,6 +258,7 @@ if BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
+	depends on BLUETOOTH_CONTROLLER_LE_ENC
 	help
 	  Enable connection encryption setup in 3 connection intervals.
 	  Peripheral will respond to Encryption Request with Encryption Response
