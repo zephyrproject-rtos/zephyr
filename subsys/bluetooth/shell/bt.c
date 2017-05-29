@@ -2006,7 +2006,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "gatt-read-multiple", cmd_gatt_mread, "<handle 1> <handle 2> ..." },
 	{ "gatt-write", cmd_gatt_write, "<handle> <offset> <data> [length]" },
 	{ "gatt-write-without-response", cmd_gatt_write_without_rsp,
-	  "<handle> <offset> <data>" },
+	  "<handle> <data>" },
 	{ "gatt-write-without-response-repeated",
 	  cmd_gatt_write_without_rsp_repeated,
 	  "Send write without response <handle> <octets> [repeat]" },
