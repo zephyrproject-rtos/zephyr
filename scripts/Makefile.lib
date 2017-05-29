@@ -265,7 +265,9 @@ cmd_gzip = (cat $(filter-out FORCE,$^) | gzip -n -f -9 > $@) || \
 # ---------------------------------------------------------------------------
 
 DTC_OVERLAY_DIR ?= $(PROJECT_BASE)
-DTC_OVERLAY_FILE = $(abspath $(DTC_OVERLAY_DIR)/$(BOARD_NAME).overlay)
+# Since this goes into a file, use the native path
+DTC_ABS_OVERLAY_DIR = $(shell cd $(DTC_OVERLAY_DIR) && pwd $(NATIVE_PWD_OPT))
+DTC_OVERLAY_FILE = $(DTC_ABS_OVERLAY_DIR)/$(BOARD_NAME).overlay
 
 # Generate an assembly file to wrap the output of the device tree compiler
 quiet_cmd_dt_S_dtb= DTB     $@
