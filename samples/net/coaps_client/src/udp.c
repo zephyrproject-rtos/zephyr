@@ -82,7 +82,7 @@ int udp_tx(void *context, const unsigned char *buf, size_t size)
 	}
 }
 
-int udp_rx(void *context, unsigned char *buf, size_t size, u32_t timeout)
+int udp_rx(void *context, unsigned char *buf, size_t size)
 {
 	struct udp_context *ctx = context;
 	struct net_buf *rx_buf = NULL;
@@ -92,10 +92,7 @@ int udp_rx(void *context, unsigned char *buf, size_t size, u32_t timeout)
 	int len;
 	int rc;
 
-	rc = k_sem_take(&ctx->rx_sem, timeout == 0 ? K_FOREVER : timeout);
-	if (rc != 0) {
-		return MBEDTLS_ERR_SSL_TIMEOUT;
-	}
+	k_sem_take(&ctx->rx_sem, K_FOREVER);
 
 	read_bytes = net_pkt_appdatalen(ctx->rx_pkt);
 	if (read_bytes > size) {
