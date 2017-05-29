@@ -9,17 +9,17 @@ After completing these steps, you will be able to compile and run your Zephyr
 applications on the following Mac OS version:
 
 * Mac OS X 10.11 (El Capitan)
+* macOS Sierra 10.12
 
-Developing for Zephyr on OS X generally requires you to build the
-toolchain yourself. However, if there is already an OS X toolchain for your
+Developing for Zephyr on macOS generally requires you to build the
+toolchain yourself. However, if there is already an macOS toolchain for your
 target architecture you can use it directly.
 
 Using a 3rd Party toolchain
 ***************************
 
 If a toolchain is available for the architecture you plan to build for, then
-you can use it as explained in:
-:ref:`third_party_x_compilers`.
+you can use it as explained in: :ref:`third_party_x_compilers`.
 
 An example of an available 3rd party toolchain is GCC ARM Embedded for the
 Cortex-M family of cores.
@@ -40,8 +40,8 @@ build for and install tools that the build system requires.
 Before proceeding with the build, ensure your OS is up to date.
 
 First, install the :program:`Homebrew` (The missing package manager for
-OS X). Homebrew is a free and open-source software package management system
-that simplifies the installation of software on Apple's OS X operating
+macOS). Homebrew is a free and open-source software package management system
+that simplifies the installation of software on Apple's macOS operating
 system.
 
 To install :program:`Homebrew`, visit the `Homebrew site`_ and follow the
@@ -53,12 +53,28 @@ missing dependency. If so, follow please follow the instructions provided.
 After Homebrew was successfully installed, install the following tools using
 the brew command line.
 
+Install tools to build Zephyr binaries:
+
 .. code-block:: console
 
-   $ brew install gettext qemu help2man mpfr gmp coreutils wget python3 dfu-util
+   $ brew install dfu-util qemu dtc python3
+   $ pip3 install ply pyyaml
+
+Install tools needed for building the toolchain (if needed):
+
+.. code-block:: console
+
+   $ brew install gettext help2man mpfr gmp coreutils wget
    $ brew tap homebrew/dupes
    $ brew install grep --with-default-names
-   $ pip3 install ply
+
+
+To build the toolchain, you will need the latest version of crosstool-ng (1.23).
+This version was not available via brew when writing this documentation, you can
+however try and see if you get 1.23 installed:
+
+.. code-block:: console
+
    $ brew install crosstool-ng
 
 Alternatively you can install the latest version of :program:`crosstool-ng`
@@ -67,9 +83,9 @@ latest version usually supports the latest released compilers.
 
 .. code-block:: console
 
-   $ wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.22.0.tar.bz2
-   $ tar xvf crosstool-ng-1.22.0.tar.bz2
-   $ cd crosstool-ng/
+   $ wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.23.0.tar.bz2
+   $ tar xvf crosstool-ng-1.23.0.tar.bz2
+   $ cd crosstool-ng-1.23.0/
    $ ./configure
    $ make
    $ make install
@@ -92,7 +108,8 @@ Alternatively you can use the script below to create the image:
 .. code-block:: bash
 
    #!/bin/bash
-   ImageName=CrossToolNG ImageNameExt=${ImageName}.sparseimage
+   ImageName=CrossToolNG
+   ImageNameExt=${ImageName}.sparseimage
    diskutil umount force /Volumes/${ImageName} && true
    rm -f ${ImageNameExt} && true
    hdiutil create ${ImageName} -volname ${ImageName} -type SPARSE -size 8g -fs HFSX
@@ -116,15 +133,22 @@ both ARM and X86 that can be used to pre-select the options needed
 for building the toolchain.
 The configuration files can be found in :file:`${ZEPHYR_BASE}/scripts/cross_compiler/`.
 
+Currently the following configurations are provided:
+
+* i586.config: for standard ABI, for example for Galileo and qemu_x86
+* iamcu.config: for IAMCU ABI, for example for the Arduino 101
+* nios2.config: for Nios II boards
+
 .. code-block:: console
 
-   $ cp ${ZEPHYR_BASE}/scripts/cross_compiler/x86.config .config
+   $ cp ${ZEPHYR_BASE}/scripts/cross_compiler/i586.config .config
 
 You can create a toolchain configuration or customize an existing configuration
 yourself using the configuration menus:
 
 .. code-block:: console
 
+   $ export CT_PREFIX=/Volumes/CrossToolNG
    $ ct-ng menuconfig
 
 Verifying the Configuration of the Toolchain
