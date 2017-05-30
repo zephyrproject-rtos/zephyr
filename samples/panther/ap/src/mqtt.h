@@ -12,6 +12,7 @@
 struct mqtt_client_prm {
 	char *server_addr;
 	u16_t server_port;
+	char *device_hid;
 	char *client_id;
 	char *user_id;
 	char *password;

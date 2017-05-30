@@ -12,14 +12,6 @@
 #include <sensor.h>
 #include <zephyr.h>
 
-//#define DEBUG
-
-#ifdef DEBUG
-#define DBG_PRINT(...) printk(__VA_ARGS__)
-#else
-#define DBG_PRINT(...)
-#endif
-
 QUARK_SE_IPM_DEFINE(ess_ipm, 0, QUARK_SE_IPM_OUTBOUND);
 
 struct channel_info {
@@ -31,28 +23,28 @@ struct channel_info {
 };
 
 static struct channel_info info[] = {
+
 #ifdef CONFIG_BME280
-	{"BME280", NULL, SENSOR_CHAN_TEMP    , {0, 0}, SENSOR_CHAN_TEMP},//0x00},
-	{"BME280", NULL, SENSOR_CHAN_HUMIDITY, {0, 0}, SENSOR_CHAN_HUMIDITY},//0x01},
-	{"BME280", NULL, SENSOR_CHAN_PRESS   , {0, 0}, SENSOR_CHAN_PRESS},//0x02},
+	{"BME280", NULL, SENSOR_CHAN_TEMP    , {0, 0}, SENSOR_CHAN_TEMP},
+	{"BME280", NULL, SENSOR_CHAN_HUMIDITY, {0, 0}, SENSOR_CHAN_HUMIDITY},
+	{"BME280", NULL, SENSOR_CHAN_PRESS   , {0, 0}, SENSOR_CHAN_PRESS},
 #endif
 
 #ifdef CONFIG_ADXL362
-	{"ADXL362", NULL, SENSOR_CHAN_ACCEL_X, {0, 0}, SENSOR_CHAN_ACCEL_X},//0x10},
-	{"ADXL362", NULL, SENSOR_CHAN_ACCEL_Y, {0, 0}, SENSOR_CHAN_ACCEL_Y},//0x11},
-	{"ADXL362", NULL, SENSOR_CHAN_ACCEL_Z, {0, 0}, SENSOR_CHAN_ACCEL_Z},//0x12},
-//	{"ADXL362", NULL, SENSOR_CHAN_TEMP   , {0, 0}, 0x13},
+	{"ADXL362", NULL, SENSOR_CHAN_ACCEL_X, {0, 0}, SENSOR_CHAN_ACCEL_X},
+	{"ADXL362", NULL, SENSOR_CHAN_ACCEL_Y, {0, 0}, SENSOR_CHAN_ACCEL_Y},
+	{"ADXL362", NULL, SENSOR_CHAN_ACCEL_Z, {0, 0}, SENSOR_CHAN_ACCEL_Z},
 #endif
 
 #ifdef CONFIG_ADXRS290
-	{"ADXRS290", NULL, SENSOR_CHAN_GYRO_X, {0, 0}, SENSOR_CHAN_GYRO_X},//0x20},
-	{"ADXRS290", NULL, SENSOR_CHAN_GYRO_Y, {0, 0}, SENSOR_CHAN_GYRO_Y},//0x21},
-//	{"ADXRS290", NULL, SENSOR_CHAN_TEMP  , {0, 0}, 0x22},
+	{"ADXRS290", NULL, SENSOR_CHAN_GYRO_X, {0, 0}, SENSOR_CHAN_GYRO_X},
+	{"ADXRS290", NULL, SENSOR_CHAN_GYRO_Y, {0, 0}, SENSOR_CHAN_GYRO_Y},
 #endif
 
 #ifdef CONFIG_SI1153
-	{"SI1153", NULL, SENSOR_CHAN_GESTURE, {0, 0}, 0x30},
+	{"SI1153", NULL, SENSOR_CHAN_GESTURE, {0, 0}, SENSOR_CHAN_GESTURE},
 #endif
+
 };
 
 void main(void)
@@ -69,11 +61,9 @@ void main(void)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(info); i++) {
-		DBG_PRINT("get \"%s\" device\n", info[i].dev_name);
 		info[i].dev = device_get_binding(info[i].dev_name);
 		if (info[i].dev == NULL) {
 			printk("Failed to get \"%s\" device\n", info[i].dev_name);
-			//return;
 		}
 	}
 
@@ -94,14 +84,11 @@ void main(void)
 			}
 		}
 
-		/* send sensor data to x86 core via IPM */
+		/* get sensor data and send to x86 core via IPM */
 		for (i = 0; i < ARRAY_SIZE(info); i++) {
 			if (info[i].dev) {
 				/* get sensor channel */
 				rc = sensor_channel_get(info[i].dev, info[i].chan, &info[i].val);
-				DBG_PRINT("Get sample for device %s (%d) %d.%06d\n",
-					   info[i].dev_name, rc,
-					   info[i].val.val1, info[i].val.val2);
 				if (rc) {
 					printk("Failed to get data for device %s (%d)\n",
 						   info[i].dev_name, rc);
@@ -115,7 +102,6 @@ void main(void)
 					printk("Failed to send data for device %s (%d)\n",
 						   info[i].dev_name, rc);
 				}
-
 			}
 		}
 		k_sleep(K_MSEC(300));
