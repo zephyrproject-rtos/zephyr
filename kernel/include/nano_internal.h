@@ -52,7 +52,7 @@ extern void _new_thread(struct k_thread *thread, char *pStack, size_t stackSize,
 
 extern unsigned int __swap(unsigned int key);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+#if defined(CONFIG_TIMESLICING)
 extern void _update_time_slice_before_swap(void);
 
 static inline unsigned int _time_slice_swap(unsigned int key)
