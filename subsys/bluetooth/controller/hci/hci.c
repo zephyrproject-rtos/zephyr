@@ -572,17 +572,24 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_set_adv_param *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	u16_t min_interval;
-	u32_t status;
+	u8_t status;
 
 	min_interval = sys_le16_to_cpu(cmd->min_interval);
 
-	status = ll_adv_params_set(min_interval, cmd->type, cmd->own_addr_type,
-				   cmd->direct_addr.type,
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	status = ll_adv_params_set(0, 0, min_interval, cmd->type,
+				   cmd->own_addr_type, cmd->direct_addr.type,
+				   &cmd->direct_addr.a.val[0], cmd->channel_map,
+				   cmd->filter_policy, 0, 0, 0, 0, 0, 0);
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	status = ll_adv_params_set(min_interval, cmd->type,
+				   cmd->own_addr_type, cmd->direct_addr.type,
 				   &cmd->direct_addr.a.val[0], cmd->channel_map,
 				   cmd->filter_policy);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	ccst->status = status;
 }
 
 static void le_read_adv_chan_tx_power(struct net_buf *buf, struct net_buf **evt)
