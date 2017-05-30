@@ -315,8 +315,14 @@ void radio_ticks_active_to_start_set(u32_t ticks_active_to_start);
 /* Downstream - Advertiser */
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
-u32_t radio_adv_enable(u16_t interval, u8_t chl_map,
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chl_map,
 		       u8_t filter_policy);
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 u32_t radio_adv_disable(void);
 u32_t radio_adv_is_enabled(void);
 /* Downstream - Scanner */
