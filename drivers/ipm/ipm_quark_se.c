@@ -70,13 +70,16 @@ void quark_se_ipm_isr(void *param)
 
 		__ASSERT(driver_data->callback,
 			 "enabled IPM channel with no callback");
-		driver_data->callback(driver_data->callback_ctx, ipm->ctrl.ctrl,
+		driver_data->callback(driver_data->callback_ctx,
+				      ipm->ctrl & QUARK_SE_IPM_CTRL_CTRL_MASK,
 				      &ipm->data);
 
 		key = irq_lock();
 
-		ipm->sts.irq = 1; /* Clear the interrupt bit */
-		ipm->sts.sts = 1; /* Clear channel status bit */
+		/* Clear the interrupt bit */
+		ipm->sts = QUARK_SE_IPM_STS_IRQ_BIT;
+		/* Clear channel status bit */
+		ipm->sts = QUARK_SE_IPM_STS_STS_BIT;
 
 		/* Wait for the above register writes to clear the channel
 		 * to propagate to the global channel status register
@@ -93,7 +96,7 @@ static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 {
 	const struct quark_se_ipm_config_info *config = d->config->config_info;
 	volatile struct quark_se_ipm *ipm = config->ipm;
-	u32_t data32[4];
+	u32_t data32[4]; /* Until we change API to u32_t array */
 	int flags;
 	int i;
 
@@ -105,13 +108,13 @@ static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 		return -EINVAL;
 	}
 
-	if (size > QUARK_SE_IPM_DATA_BYTES) {
+	if (size > QUARK_SE_IPM_DATA_REGS * sizeof(u32_t)) {
 		return -EMSGSIZE;
 	}
 
 	flags = irq_lock();
 
-	if (ipm->sts.sts != 0) {
+	if (ipm->sts & QUARK_SE_IPM_STS_STS_BIT) {
 		irq_unlock(flags);
 		return -EBUSY;
 	}
@@ -120,21 +123,23 @@ static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 	memcpy(data32, data, size);
 
 	for (i = 0; i < ARRAY_SIZE(data32); ++i) {
-		*((u32_t *)ipm->data + i) = data32[i];
+		ipm->data[i] = data32[i];
 	}
 
-	*((u32_t *)ipm) = id | BIT(31);
+	ipm->ctrl = id | QUARK_SE_IPM_CTRL_IRQ_BIT;
 
 	/* Wait for HW to set the sts bit */
-	while (ipm->sts.sts == 0) {
+	while (!(ipm->sts & QUARK_SE_IPM_STS_STS_BIT)) {
 	}
+
 	irq_unlock(flags);
 
 	if (wait) {
 		/* Loop until remote clears the status bit */
-		while (ipm->sts.sts != 0) {
+		while (ipm->sts & QUARK_SE_IPM_STS_STS_BIT) {
 		}
 	}
+
 	return 0;
 }
 
@@ -143,7 +148,7 @@ static int quark_se_ipm_max_data_size_get(struct device *d)
 {
 	ARG_UNUSED(d);
 
-	return QUARK_SE_IPM_DATA_BYTES;
+	return QUARK_SE_IPM_DATA_REGS * sizeof(u32_t);
 }
 
 
@@ -198,8 +203,7 @@ int quark_se_ipm_controller_initialize(struct device *d)
 	for (i = 0; i < QUARK_SE_IPM_CHANNELS; ++i) {
 		volatile struct quark_se_ipm *ipm = QUARK_SE_IPM(i);
 
-		ipm->sts.sts = 0;
-		ipm->sts.irq = 0;
+		ipm->sts = 0;
 	}
 #endif
 
