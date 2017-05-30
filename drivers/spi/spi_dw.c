@@ -251,8 +251,10 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 }
 
 static int transceive(struct spi_config *config,
-		      const struct spi_buf **tx_bufs,
-		      struct spi_buf **rx_bufs,
+		      const struct spi_buf *tx_bufs,
+		      size_t tx_count,
+		      struct spi_buf *rx_bufs,
+		      size_t rx_count,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
@@ -277,7 +279,8 @@ static int transceive(struct spi_config *config,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
+	spi_context_buffers_setup(&spi->ctx, tx_bufs, tx_count,
+				  rx_bufs, rx_count, spi->dfs);
 
 	spi->fifo_diff = 0;
 
@@ -317,23 +320,31 @@ out:
 }
 
 static int spi_dw_transceive(struct spi_config *config,
-			     const struct spi_buf **tx_bufs,
-			     struct spi_buf **rx_bufs)
+			     const struct spi_buf *tx_bufs,
+			     size_t tx_count,
+			     struct spi_buf *rx_bufs,
+			     size_t rx_count)
 {
-	SYS_LOG_DBG("%p, %p, %p", config->dev, tx_bufs, rx_bufs);
+	SYS_LOG_DBG("%p, %p (%zu), %p (%zu)",
+		    config->dev, tx_bufs, tx_count, rx_bufs, rx_count);
 
-	return transceive(config, tx_bufs, rx_bufs, false, NULL);
+	return transceive(config, tx_bufs, tx_count,
+			  rx_bufs, rx_count, false, NULL);
 }
 
 #ifdef CONFIG_POLL
 static int spi_dw_transceive_async(struct spi_config *config,
-				   const struct spi_buf **tx_bufs,
-				   struct spi_buf **rx_bufs,
+				   const struct spi_buf *tx_bufs,
+				   size_t tx_count,
+				   struct spi_buf *rx_bufs,
+				   size_t rx_count,
 				   struct k_poll_signal *async)
 {
-	SYS_LOG_DBG("%p, %p, %p, %p", config->dev, tx_bufs, rx_bufs, async);
+	SYS_LOG_DBG("%p, %p (%zu), %p (%zu), %p",
+		    config->dev, tx_bufs, tx_count, rx_bufs, rx_count, async);
 
-	return transceive(config, tx_bufs, rx_bufs, true, async);
+	return transceive(config, tx_bufs, tx_count,
+			  rx_bufs, rx_count, true, async);
 }
 #endif /* CONFIG_POLL */
 

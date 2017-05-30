@@ -29,13 +29,15 @@ struct spi_context {
 	struct k_poll_signal *signal;
 	bool asynchronous;
 #endif
-	const struct spi_buf **current_tx;
-	struct spi_buf **current_rx;
+	const struct spi_buf *current_tx;
+	size_t tx_count;
+	struct spi_buf *current_rx;
+	size_t rx_count;
 
 	void *tx_buf;
-	u32_t tx_len;
+	size_t tx_len;
 	void *rx_buf;
-	u32_t rx_len;
+	size_t rx_len;
 };
 
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
@@ -144,36 +146,40 @@ static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 }
 
 static inline void spi_context_buffers_setup(struct spi_context *ctx,
-					     const struct spi_buf **tx_bufs,
-					     struct spi_buf **rx_bufs,
+					     const struct spi_buf *tx_bufs,
+					     size_t tx_count,
+					     struct spi_buf *rx_bufs,
+					     size_t rx_count,
 					     uint8_t dfs)
 {
-	SYS_LOG_DBG("tx_bufs %p (%p) - rx_bufs %p (%p) - %u",
-		    tx_bufs, tx_bufs ? *tx_bufs : NULL,
-		    rx_bufs, rx_bufs ? *rx_bufs : NULL, dfs);
+	SYS_LOG_DBG("tx_bufs %p (%zu) - rx_bufs %p (%zu) - %u",
+		    tx_bufs, tx_count, rx_bufs, rx_count, dfs);
 
 	ctx->current_tx = tx_bufs;
+	ctx->tx_count = tx_count;
 	ctx->current_rx = rx_bufs;
+	ctx->rx_count = rx_count;
 
-	if (*tx_bufs) {
-		ctx->tx_buf = (*tx_bufs)->buf;
-		ctx->tx_len = (*tx_bufs)->len/dfs;
+	if (tx_bufs) {
+		ctx->tx_buf = tx_bufs->buf;
+		ctx->tx_len = tx_bufs->len / dfs;
 	} else {
 		ctx->tx_buf = NULL;
 		ctx->tx_len = 0;
 	}
 
-	if (*rx_bufs) {
-		ctx->rx_buf = (*rx_bufs)->buf;
-		ctx->rx_len = (*rx_bufs)->len/dfs;
+	if (rx_bufs) {
+		ctx->rx_buf = rx_bufs->buf;
+		ctx->rx_len = rx_bufs->len / dfs;
 	} else {
 		ctx->rx_buf = NULL;
 		ctx->rx_len = 0;
 	}
 
-	SYS_LOG_DBG("current_tx %p, current_rx %p,"
-		    " tx buf/len %p/%u, rx buf/len %p/%u",
-		    ctx->current_tx, ctx->current_rx,
+	SYS_LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
+		    " tx buf/len %p/%zu, rx buf/len %p/%zu",
+		    ctx->current_tx, ctx->tx_count,
+		    ctx->current_rx, ctx->rx_count,
 		    ctx->tx_buf, ctx->tx_len, ctx->rx_buf, ctx->rx_len);
 }
 
@@ -187,9 +193,11 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs)
 	ctx->tx_len--;
 	if (!ctx->tx_len) {
 		ctx->current_tx++;
-		if (*ctx->current_tx) {
-			ctx->tx_buf = (*ctx->current_tx)->buf;
-			ctx->tx_len = (*ctx->current_tx)->len/dfs;
+		ctx->tx_count--;
+
+		if (ctx->tx_count) {
+			ctx->tx_buf = ctx->current_tx->buf;
+			ctx->tx_len = ctx->current_tx->len / dfs;
 		} else {
 			ctx->tx_buf = NULL;
 		}
@@ -197,7 +205,7 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs)
 		ctx->tx_buf += dfs;
 	}
 
-	SYS_LOG_DBG("tx buf/len %p/%u", ctx->tx_buf, ctx->tx_len);
+	SYS_LOG_DBG("tx buf/len %p/%zu", ctx->tx_buf, ctx->tx_len);
 }
 
 static ALWAYS_INLINE
@@ -216,9 +224,11 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs)
 	ctx->rx_len--;
 	if (!ctx->rx_len) {
 		ctx->current_rx++;
-		if (*ctx->current_rx) {
-			ctx->rx_buf = (*ctx->current_rx)->buf;
-			ctx->rx_len = (*ctx->current_rx)->len/dfs;
+		ctx->rx_count--;
+
+		if (ctx->rx_count) {
+			ctx->rx_buf = ctx->current_rx->buf;
+			ctx->rx_len = ctx->current_rx->len / dfs;
 		} else {
 			ctx->rx_buf = NULL;
 		}
@@ -226,7 +236,7 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs)
 		ctx->rx_buf += dfs;
 	}
 
-	SYS_LOG_DBG("rx buf/len %p/%u", ctx->rx_buf, ctx->rx_len);
+	SYS_LOG_DBG("rx buf/len %p/%zu", ctx->rx_buf, ctx->rx_len);
 }
 
 static ALWAYS_INLINE
