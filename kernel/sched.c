@@ -397,7 +397,6 @@ void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
 	_time_slice_prio_ceiling = prio;
 }
 
-#ifdef CONFIG_TICKLESS_KERNEL
 int _is_thread_time_slicing(struct k_thread *thread)
 {
 	/*
@@ -424,21 +423,20 @@ int _is_thread_time_slicing(struct k_thread *thread)
 /* Should be called only immediately before a thread switch */
 void _update_time_slice_before_swap(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
 	if (!_is_thread_time_slicing(_get_next_ready_thread())) {
 		return;
 	}
-
-	/* Restart time slice count at new thread switch */
-	_time_slice_elapsed = 0;
 
 	u32_t remaining = _get_remaining_program_time();
 
 	if (!remaining || (_time_slice_duration < remaining)) {
 		_set_time(_time_slice_duration);
 	}
-}
 #endif
-
+	/* Restart time slice count at new thread switch */
+	_time_slice_elapsed = 0;
+}
 #endif /* CONFIG_TIMESLICING */
 
 int k_is_preempt_thread(void)

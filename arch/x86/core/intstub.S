@@ -30,7 +30,7 @@
 	/* externs */
 
 	GTEXT(__swap)
-#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+#if defined(CONFIG_TIMESLICING)
 	GTEXT(_update_time_slice_before_swap)
 #endif
 
@@ -340,7 +340,7 @@ alreadyOnIntStack:
 	popl	%esi
 #endif
 
-#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+#if defined(CONFIG_TIMESLICING)
 	call	_update_time_slice_before_swap
 #endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
