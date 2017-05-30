@@ -90,6 +90,7 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 	int might_format = 0; /* 1 if encountered a '%' */
 	enum pad_type padding = PAD_NONE;
 	int min_width = -1;
+	int long_ctr = 0;
 
 	/* fmt has already been adjusted if needed */
 
@@ -101,6 +102,7 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				might_format = 1;
 				min_width = -1;
 				padding = PAD_NONE;
+				long_ctr = 0;
 			}
 		} else {
 			switch (*fmt) {
@@ -124,14 +126,21 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					padding = PAD_SPACE_BEFORE;
 				}
 				goto still_might_format;
-			case 'z':
 			case 'l':
+				long_ctr++;
+				/* Fall through */
+			case 'z':
 			case 'h':
 				/* FIXME: do nothing for these modifiers */
 				goto still_might_format;
 			case 'd':
 			case 'i': {
-				long d = va_arg(ap, long);
+				long d;
+				if (long_ctr < 2) {
+					d = va_arg(ap, long);
+				} else {
+					d = (long)va_arg(ap, long long);
+				}
 
 				if (d < 0) {
 					out((int)'-', ctx);
@@ -143,8 +152,14 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				break;
 			}
 			case 'u': {
-				unsigned long u = va_arg(
-					ap, unsigned long);
+				unsigned long u;
+
+				if (long_ctr < 2) {
+					u = va_arg(ap, unsigned long);
+				} else {
+					u = (unsigned long)va_arg(ap,
+							unsigned long long);
+				}
 				_printk_dec_ulong(out, ctx, u, padding,
 						  min_width);
 				break;
@@ -158,8 +173,15 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				  /* Fall through */
 			case 'x':
 			case 'X': {
-				unsigned long x = va_arg(
-					ap, unsigned long);
+				unsigned long x;
+
+				if (long_ctr < 2) {
+					x = va_arg(ap, unsigned long);
+				} else {
+					x = (unsigned long)va_arg(ap,
+							unsigned long long);
+				}
+
 				_printk_hex_ulong(out, ctx, x, padding,
 						  min_width);
 				break;
