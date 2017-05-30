@@ -28,6 +28,7 @@ obj-$(CONFIG_MCP9808) += mcp9808/
 obj-$(CONFIG_MPU6050) += mpu6050/
 obj-$(CONFIG_TEMP_NRF5) += nrf5/
 obj-$(CONFIG_SHT3XD) += sht3xd/
+obj-$(CONFIG_SI1153) += si1153/
 obj-$(CONFIG_SX9500) += sx9500/
 obj-$(CONFIG_TH02) += th02/
 obj-$(CONFIG_TMP007) += tmp007/
