@@ -76,8 +76,13 @@ struct advertiser {
 	struct shdr hdr;
 
 	u8_t is_enabled:1;
-	u8_t chl_map:3;
 	u8_t chl_map_current:3;
+	u8_t rfu:4;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	u8_t phy_p:3;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	u8_t chl_map:3;
 	u8_t filter_policy:2;
 
 	u8_t filter_enable_bitmask;
@@ -4745,7 +4750,9 @@ static void adv_setup(void)
 		_radio.advertiser.adv_data.data[
 			_radio.advertiser.adv_data.first];
 	radio_pkt_tx_set(pdu);
-	if (pdu->type != PDU_ADV_TYPE_NONCONN_IND) {
+	if ((pdu->type != PDU_ADV_TYPE_NONCONN_IND) &&
+	    (!IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT) ||
+	     (pdu->type != PDU_ADV_TYPE_EXT_IND))) {
 		_radio.state = STATE_TX;
 		radio_tmr_tifs_set(RADIO_TIFS);
 		radio_switch_complete_and_rx();
@@ -4788,7 +4795,12 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	_radio.ticker_id_event = RADIO_TICKER_ID_ADV;
 	_radio.ticks_anchor = ticks_at_expire;
 
-	adv_scan_configure(0, 0); /* TODO: Advertisement PHY */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	/* TODO: if coded we use S8? */
+	adv_scan_configure(_radio.advertiser.phy_p, 1);
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	adv_scan_configure(0, 0);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 	_radio.advertiser.chl_map_current = _radio.advertiser.chl_map;
 	adv_setup();
@@ -8054,7 +8066,12 @@ role_disable_cleanup:
 	return ret_cb;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chl_map,
+		       u8_t filter_policy)
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 {
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ticks_slot_offset;
@@ -8169,6 +8186,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 	} else {
 		conn = NULL;
 	}
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	_radio.advertiser.phy_p = phy_p;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 	_radio.advertiser.chl_map = chl_map;
 	_radio.advertiser.filter_policy = filter_policy;
