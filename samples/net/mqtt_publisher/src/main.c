@@ -21,6 +21,8 @@
 
 #include "config.h"
 
+#define CONN_TRIES 20
+
 /* Container for some structures used by the MQTT publisher app. */
 struct mqtt_client_ctx {
 	/**
@@ -243,12 +245,18 @@ static void publisher(void)
 
 	/* The net_ctx variable must be ready BEFORE passing it to the MQTT API.
 	 */
-	rc = network_setup(&net_ctx, ZEPHYR_ADDR, SERVER_ADDR, SERVER_PORT);
-	PRINT_RESULT("network_setup", rc);
-	if (rc != 0) {
-		goto exit_app;
+	for (i = 0; i < CONN_TRIES; i++) {
+		rc = network_setup(&net_ctx, ZEPHYR_ADDR, SERVER_ADDR,
+				   SERVER_PORT);
+		if (!rc) {
+			goto connected;
+		}
 	}
 
+	PRINT_RESULT("network_setup", rc);
+	goto exit_app;
+
+connected:
 	/* Set everything to 0 and later just assign the required fields. */
 	memset(&client_ctx, 0x00, sizeof(client_ctx));
 
@@ -453,8 +461,7 @@ static int network_setup(struct net_context **net_ctx, const char *local_addr,
 	rc = net_context_connect(*net_ctx, &server_sock, addr_len, NULL,
 				 APP_SLEEP_MSECS, NULL);
 	if (rc) {
-		printk("net_context_connect error\n"
-		       "Is the server (broker) up and running?\n");
+		printk("net_context_connect error\n");
 		goto lb_exit;
 	}
 
