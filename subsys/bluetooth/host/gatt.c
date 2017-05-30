@@ -1665,6 +1665,9 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, u8_t err,
 
 			prev = node;
 		}
+	} else if (!params->value) {
+		/* Notify with NULL data to complete unsubscribe */
+		params->notify(conn, params, NULL, 0);
 	}
 }
 
@@ -1725,7 +1728,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		int err;
 
 		err = gatt_write_ccc(conn, params->ccc_handle, params->value,
-				     gatt_write_ccc_rsp, NULL);
+				     gatt_write_ccc_rsp, params);
 		if (err) {
 			return err;
 		}
@@ -1777,10 +1780,15 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	}
 
 	if (has_subscription) {
+		/* Notify with NULL data to complete unsubscribe */
+		params->notify(conn, params, NULL, 0);
 		return 0;
 	}
 
-	return gatt_write_ccc(conn, params->ccc_handle, 0x0000, NULL, NULL);
+	params->value = 0x0000;
+
+	return gatt_write_ccc(conn, params->ccc_handle, params->value,
+			      gatt_write_ccc_rsp, params);
 }
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
@@ -1802,7 +1810,7 @@ static void add_subscriptions(struct bt_conn *conn)
 		 * it properly.
 		 */
 		gatt_write_ccc(conn, params->ccc_handle, params->value,
-			       NULL, NULL);
+			       NULL, params);
 	}
 }
 

@@ -1426,9 +1426,6 @@ static int cmd_gatt_unsubscribe(int argc, char *argv[])
 		printk("Unsubscribe success\n");
 	}
 
-	/* Clear subscribe_params to reuse it */
-	memset(&subscribe_params, 0, sizeof(subscribe_params));
-
 	return 0;
 }
 
