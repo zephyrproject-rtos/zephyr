@@ -106,6 +106,46 @@ typedef sys_dlist_t _wait_q_t;
 #define _POLL_EVENT
 #endif
 
+enum k_objects {
+	K_OBJ_ALERT,
+	K_OBJ_DELAYED_WORK,
+	K_OBJ_MEM_SLAB,
+	K_OBJ_MSGQ,
+	K_OBJ_MUTEX,
+	K_OBJ_PIPE,
+	K_OBJ_SEM,
+	K_OBJ_STACK,
+	K_OBJ_THREAD,
+	K_OBJ_TIMER,
+	K_OBJ_WORK,
+	K_OBJ_WORK_Q,
+
+	K_OBJ_LAST
+};
+
+#ifdef CONFIG_KERNEL_OBJECT_VERIFY
+struct k_object {
+	u32_t xor_ptr;
+};
+
+extern void _k_object_validate(void *obj, enum k_objects otype);
+extern void _k_object_init(void *obj, enum k_objects otype);
+#else
+struct k_object { };
+
+static inline void _k_object_validate(void *obj, enum k_objects otype)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(otype);
+}
+
+static inline void _k_object_init(void *obj, enum k_objects otype)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(otype);
+}
+#endif
+
 struct k_thread;
 struct k_mutex;
 struct k_sem;
@@ -249,6 +289,8 @@ struct k_thread {
 	/* Stack Info */
 	struct _thread_stack_info stack_info;
 #endif /* CONFIG_THREAD_STACK_INFO */
+
+	struct k_object obj;
 
 	/* arch-specifics: must always be at the end */
 	struct _thread_arch arch;
@@ -946,6 +988,9 @@ struct k_timer {
 	 */
 	struct _timeout timeout;
 
+	/* Common kernel object metadata */
+	struct k_object obj;
+
 	/* wait queue for the (single) thread waiting on this timer */
 	_wait_q_t wait_q;
 
@@ -1135,6 +1180,7 @@ extern u32_t k_timer_status_sync(struct k_timer *timer);
  */
 static inline s32_t k_timer_remaining_get(struct k_timer *timer)
 {
+	_k_object_validate(timer, K_OBJ_TIMER);
 	return _timeout_remaining_get(&timer->timeout);
 }
 
@@ -1155,6 +1201,7 @@ static inline s32_t k_timer_remaining_get(struct k_timer *timer)
 static inline void k_timer_user_data_set(struct k_timer *timer,
 					 void *user_data)
 {
+	_k_object_validate(timer, K_OBJ_TIMER);
 	timer->user_data = user_data;
 }
 
@@ -1292,6 +1339,7 @@ extern u32_t k_uptime_delta_32(s64_t *reftime);
  */
 
 struct k_queue {
+	struct k_object obj;
 	_wait_q_t wait_q;
 	sys_slist_t data_q;
 	_POLL_EVENT;
@@ -1792,6 +1840,7 @@ struct k_lifo {
  */
 
 struct k_stack {
+	struct k_object obj;
 	_wait_q_t wait_q;
 	u32_t *base, *next, *top;
 
@@ -1914,6 +1963,7 @@ typedef void (*k_work_handler_t)(struct k_work *work);
  */
 
 struct k_work_q {
+	struct k_object obj;
 	struct k_fifo fifo;
 	struct k_thread thread;
 };
@@ -1926,12 +1976,14 @@ struct k_work {
 	void *_reserved;		/* Used by k_fifo implementation. */
 	k_work_handler_t handler;
 	atomic_t flags[1];
+	struct k_object obj;
 };
 
 struct k_delayed_work {
 	struct k_work work;
 	struct _timeout timeout;
 	struct k_work_q *work_q;
+	struct k_object obj;
 };
 
 extern struct k_work_q k_sys_work_q;
@@ -1979,6 +2031,7 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
 	atomic_clear_bit(work->flags, K_WORK_STATE_PENDING);
 	work->handler = handler;
+	_k_object_init(work, K_OBJ_WORK);
 }
 
 /**
@@ -2005,6 +2058,7 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_work *work)
 {
+	_k_object_validate(work, K_OBJ_WORK);
 	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
 		k_fifo_put(&work_q->fifo, work);
 	}
@@ -2024,6 +2078,7 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
  */
 static inline int k_work_pending(struct k_work *work)
 {
+	_k_object_validate(work, K_OBJ_WORK);
 	return atomic_test_bit(work->flags, K_WORK_STATE_PENDING);
 }
 
@@ -2174,6 +2229,7 @@ static inline void k_work_submit(struct k_work *work)
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
 					s32_t delay)
 {
+	_k_object_validate(work, K_OBJ_WORK);
 	return k_delayed_work_submit_to_queue(&k_sys_work_q, work, delay);
 }
 
@@ -2190,6 +2246,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  */
 static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
+	_k_object_validate(work, K_OBJ_DELAYED_WORK);
 	return _timeout_remaining_get(&work->timeout);
 }
 
@@ -2202,6 +2259,7 @@ static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
  */
 
 struct k_mutex {
+	struct k_object obj;
 	_wait_q_t wait_q;
 	struct k_thread *owner;
 	u32_t lock_count;
@@ -2303,6 +2361,7 @@ extern void k_mutex_unlock(struct k_mutex *mutex);
  */
 
 struct k_sem {
+	struct k_object obj;
 	_wait_q_t wait_q;
 	unsigned int count;
 	unsigned int limit;
@@ -2394,6 +2453,7 @@ extern void k_sem_give(struct k_sem *sem);
  */
 static inline void k_sem_reset(struct k_sem *sem)
 {
+	_k_object_validate(sem, K_OBJ_SEM);
 	sem->count = 0;
 }
 
@@ -2408,6 +2468,7 @@ static inline void k_sem_reset(struct k_sem *sem)
  */
 static inline unsigned int k_sem_count_get(struct k_sem *sem)
 {
+	_k_object_validate(sem, K_OBJ_SEM);
 	return sem->count;
 }
 
@@ -2463,6 +2524,7 @@ typedef int (*k_alert_handler_t)(struct k_alert *alert);
 #define K_ALERT_IGNORE ((void *)(-1))
 
 struct k_alert {
+	struct k_object obj;
 	k_alert_handler_t handler;
 	atomic_t send_count;
 	struct k_work work_item;
@@ -2572,6 +2634,7 @@ extern void k_alert_send(struct k_alert *alert);
  */
 
 struct k_msgq {
+	struct k_object obj;
 	_wait_q_t wait_q;
 	size_t msg_size;
 	u32_t max_msgs;
@@ -2719,6 +2782,7 @@ extern void k_msgq_purge(struct k_msgq *q);
  */
 static inline u32_t k_msgq_num_free_get(struct k_msgq *q)
 {
+	_k_object_validate(q, K_OBJ_MSGQ);
 	return q->max_msgs - q->used_msgs;
 }
 
@@ -2733,6 +2797,7 @@ static inline u32_t k_msgq_num_free_get(struct k_msgq *q)
  */
 static inline u32_t k_msgq_num_used_get(struct k_msgq *q)
 {
+	_k_object_validate(q, K_OBJ_MSGQ);
 	return q->used_msgs;
 }
 
@@ -2802,6 +2867,7 @@ struct k_mbox_msg {
  */
 
 struct k_mbox {
+	struct k_object obj;
 	_wait_q_t tx_msg_queue;
 	_wait_q_t rx_msg_queue;
 
@@ -2967,6 +3033,7 @@ extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
  */
 
 struct k_pipe {
+	struct k_object obj;		/* Common object metadata */
 	unsigned char *buffer;          /* Pipe buffer: may be NULL */
 	size_t         size;            /* Buffer size */
 	size_t         bytes_used;      /* # bytes used in buffer */
@@ -3112,6 +3179,7 @@ extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
  */
 
 struct k_mem_slab {
+	struct k_object obj;
 	_wait_q_t wait_q;
 	u32_t num_blocks;
 	size_t block_size;
@@ -3239,6 +3307,7 @@ extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
  */
 static inline u32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
+	_k_object_validate(slab, K_OBJ_MEM_SLAB);
 	return slab->num_used;
 }
 
@@ -3254,6 +3323,7 @@ static inline u32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
  */
 static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
+	_k_object_validate(slab, K_OBJ_MEM_SLAB);
 	return slab->num_blocks - slab->num_used;
 }
 

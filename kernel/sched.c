@@ -355,7 +355,10 @@ void k_sleep(s32_t duration)
 
 void k_wakeup(k_tid_t thread)
 {
-	int key = irq_lock();
+	int key;
+
+	_k_object_validate(thread, K_OBJ_THREAD);
+	key = irq_lock();
 
 	/* verify first if thread is not waiting on an object */
 	if (_is_thread_pending(thread)) {

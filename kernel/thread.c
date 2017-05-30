@@ -257,7 +257,7 @@ k_tid_t k_thread_create(struct k_thread *new_thread, char *stack,
 	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3, prio,
 		    options);
-
+	_k_object_init(new_thread, K_OBJ_THREAD);
 	schedule_new_thread(new_thread, delay);
 	return new_thread;
 }
@@ -279,8 +279,11 @@ k_tid_t k_thread_spawn(char *stack, size_t stack_size,
 int k_thread_cancel(k_tid_t tid)
 {
 	struct k_thread *thread = tid;
+	int key;
 
-	int key = irq_lock();
+	_k_object_validate(thread, K_OBJ_THREAD);
+
+	key = irq_lock();
 
 	if (_has_thread_started(thread) ||
 	    !_is_thread_timeout_active(thread)) {
@@ -420,6 +423,7 @@ void _init_static_threads(void)
 			thread_data->init_prio,
 			thread_data->init_options);
 
+		_k_object_init(thread_data->init_thread, K_OBJ_THREAD);
 		thread_data->init_thread->init_data = thread_data;
 	}
 

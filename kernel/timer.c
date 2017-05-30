@@ -98,6 +98,7 @@ void k_timer_init(struct k_timer *timer,
 	timer->stop_fn = stop_fn;
 	timer->status = 0;
 
+	_k_object_init(timer, K_OBJ_TIMER);
 	sys_dlist_init(&timer->wait_q);
 	_init_timeout(&timer->timeout, _timer_expiration_handler);
 	SYS_TRACING_OBJ_INIT(k_timer, timer);
@@ -113,6 +114,7 @@ void k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 
 	volatile s32_t period_in_ticks, duration_in_ticks;
 
+	_k_object_validate(timer, K_OBJ_TIMER);
 	period_in_ticks = _ms_to_ticks(period);
 	duration_in_ticks = _TICK_ALIGN + _ms_to_ticks(duration);
 
@@ -131,8 +133,11 @@ void k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 
 void k_timer_stop(struct k_timer *timer)
 {
-	int key = irq_lock();
-	int inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
+	int key, inactive;
+
+	_k_object_validate(timer, K_OBJ_TIMER);
+	key = irq_lock();
+	inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
 
 	irq_unlock(key);
 
@@ -161,7 +166,10 @@ void k_timer_stop(struct k_timer *timer)
 
 u32_t k_timer_status_get(struct k_timer *timer)
 {
-	unsigned int key = irq_lock();
+	unsigned int key;
+
+	_k_object_validate(timer, K_OBJ_TIMER);
+	key = irq_lock();
 	u32_t result = timer->status;
 
 	timer->status = 0;
@@ -175,7 +183,10 @@ u32_t k_timer_status_sync(struct k_timer *timer)
 {
 	__ASSERT(!_is_in_isr(), "");
 
-	unsigned int key = irq_lock();
+	unsigned int key;
+
+	_k_object_validate(timer, K_OBJ_TIMER);
+	key = irq_lock();
 	u32_t result = timer->status;
 
 	if (result == 0) {

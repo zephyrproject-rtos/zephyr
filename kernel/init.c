@@ -370,6 +370,12 @@ FUNC_NORETURN void _Cstart(void)
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
+	/* Need to do this after the validation subsystem has come up */
+	_k_object_init(_main_thread, K_OBJ_THREAD);
+#ifdef CONFIG_MULTITHREADING
+	_k_object_init(_idle_thread, K_OBJ_THREAD);
+#endif
+
 	/* initialize stack canaries */
 #ifdef CONFIG_STACK_CANARIES
 	__stack_chk_guard = (void *)sys_rand32_get();

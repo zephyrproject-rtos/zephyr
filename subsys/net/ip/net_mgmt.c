@@ -211,6 +211,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 	if (iface) {
 		sync_data.iface = iface;
 	}
+	_k_object_init(&sync_data.sync_call, K_OBJ_SEM);
 
 	NET_DBG("Synchronous event 0x%08x wait %p", sync.event_mask, &sync);
 

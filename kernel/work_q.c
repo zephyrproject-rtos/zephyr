@@ -47,6 +47,7 @@ void k_work_q_start(struct k_work_q *work_q, char *stack,
 		    size_t stack_size, int prio)
 {
 	k_fifo_init(&work_q->fifo);
+	_k_object_init(work_q, K_OBJ_WORK_Q);
 
 	k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
 			work_q, 0, 0, prio, 0, 0);
@@ -68,6 +69,7 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 {
 	k_work_init(&work->work, handler);
 	_init_timeout(&work->timeout, work_timeout);
+	_k_object_init(work, K_OBJ_DELAYED_WORK);
 	work->work_q = NULL;
 }
 
@@ -75,8 +77,12 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 				   struct k_delayed_work *work,
 				   s32_t delay)
 {
-	int key = irq_lock();
+	int key;
 	int err;
+
+	_k_object_validate(work_q, K_OBJ_WORK_Q);
+	_k_object_validate(work, K_OBJ_DELAYED_WORK);
+	key = irq_lock();
 
 	/* Work cannot be active in multiple queues */
 	if (work->work_q && work->work_q != work_q) {
@@ -114,7 +120,10 @@ done:
 
 int k_delayed_work_cancel(struct k_delayed_work *work)
 {
-	int key = irq_lock();
+	int key;
+
+	_k_object_validate(work, K_OBJ_DELAYED_WORK);
+	key = irq_lock();
 
 	if (k_work_pending(&work->work)) {
 		irq_unlock(key);

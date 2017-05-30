@@ -68,6 +68,7 @@ SYS_INIT(init_mutex_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 void k_mutex_init(struct k_mutex *mutex)
 {
+	_k_object_init(mutex, K_OBJ_MUTEX);
 	mutex->owner = NULL;
 	mutex->lock_count = 0;
 
@@ -105,6 +106,7 @@ int k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 {
 	int new_prio, key;
 
+	_k_object_validate(mutex, K_OBJ_MUTEX);
 	_sched_lock();
 
 	if (likely(mutex->lock_count == 0 || mutex->owner == _current)) {
@@ -194,6 +196,7 @@ void k_mutex_unlock(struct k_mutex *mutex)
 	__ASSERT(mutex->lock_count > 0, "");
 	__ASSERT(mutex->owner == _current, "");
 
+	_k_object_validate(mutex, K_OBJ_MUTEX);
 	_sched_lock();
 
 	RECORD_STATE_CHANGE();
