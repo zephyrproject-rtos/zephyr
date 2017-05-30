@@ -88,19 +88,22 @@ static int cs_ctrl_gpio_config(struct spi_cs_control *cs)
 
 static int spi_complete_loop(struct spi_config *spi_conf)
 {
-	struct spi_buf tx = {
-		.buf = buffer_tx,
-		.len = BUF_SIZE,
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_tx,
+			.len = BUF_SIZE,
+		},
 	};
-	struct spi_buf rx = {
-		.buf = buffer_rx,
-		.len = BUF_SIZE,
+	struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = BUF_SIZE,
+		},
 	};
-	const struct spi_buf *tx_bufs[] = { &tx, NULL };
-	struct spi_buf *rx_bufs[] = { &rx, NULL };
 	int ret;
 
-	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
+			     rx_bufs, ARRAY_SIZE(rx_bufs));
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return ret;
@@ -119,21 +122,24 @@ static int spi_complete_loop(struct spi_config *spi_conf)
 
 static int spi_rx_half_start(struct spi_config *spi_conf)
 {
-	struct spi_buf tx = {
-		.buf = buffer_tx,
-		.len = BUF_SIZE,
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_tx,
+			.len = BUF_SIZE,
+		},
 	};
-	struct spi_buf rx = {
-		.buf = buffer_rx,
-		.len = 8,
+	struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = 8,
+		},
 	};
-	const struct spi_buf *tx_bufs[] = { &tx, NULL };
-	struct spi_buf *rx_bufs[] = { &rx, NULL };
 	int ret;
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
+			     rx_bufs, ARRAY_SIZE(rx_bufs));
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -151,25 +157,28 @@ static int spi_rx_half_start(struct spi_config *spi_conf)
 
 static int spi_rx_half_end(struct spi_config *spi_conf)
 {
-	struct spi_buf tx = {
-		.buf = buffer_tx,
-		.len = BUF_SIZE,
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_tx,
+			.len = BUF_SIZE,
+		},
 	};
-	struct spi_buf rx_1st_half = {
-		.buf = NULL,
-		.len = 8,
+	struct spi_buf rx_bufs[] = {
+		{
+			.buf = NULL,
+			.len = 8,
+		},
+		{
+			.buf = buffer_rx,
+			.len = 8,
+		},
 	};
-	struct spi_buf rx_last_half = {
-		.buf = buffer_rx,
-		.len = 8,
-	};
-	const struct spi_buf *tx_bufs[] = { &tx, NULL };
-	struct spi_buf *rx_bufs[] = { &rx_1st_half, &rx_last_half, NULL };
 	int ret;
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
+			     rx_bufs, ARRAY_SIZE(rx_bufs));
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -187,37 +196,43 @@ static int spi_rx_half_end(struct spi_config *spi_conf)
 
 static int spi_rx_every_4(struct spi_config *spi_conf)
 {
-	struct spi_buf tx = {
-		.buf = buffer_tx,
-		.len = BUF_SIZE,
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_tx,
+			.len = BUF_SIZE,
+		},
 	};
-	struct spi_buf rx_start = {
-		.buf = NULL,
-		.len = 4,
+	struct spi_buf rx_bufs[] = {
+		{
+			.buf = NULL,
+			.len = 4,
+		},
+		{
+			.buf = buffer_rx,
+			.len = 4,
+		},
+		{
+			.buf = NULL,
+			.len = 4,
+		},
+		{
+			.buf = buffer_rx + 4,
+			.len = 4,
+		},
 	};
-	struct spi_buf rx_1 = {
-		.buf = buffer_rx,
-		.len = 4,
-	};
-	struct spi_buf rx_2 = {
-		.buf = buffer_rx+4,
-		.len = 4,
-	};
-	const struct spi_buf *tx_bufs[] = { &tx, NULL };
-	struct spi_buf *rx_bufs[] = { &rx_start, &rx_1,
-				      &rx_start, &rx_2, NULL };
 	int ret;
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_conf, tx_bufs, rx_bufs);
+	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
+			     rx_bufs, ARRAY_SIZE(rx_bufs));
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
 	}
 
-	if (memcmp(buffer_tx+4, buffer_rx, 4) ||
-	    memcmp(buffer_tx+12, buffer_rx+4, 4)) {
+	if (memcmp(buffer_tx + 4, buffer_rx, 4) ||
+	    memcmp(buffer_tx + 12, buffer_rx + 4, 4)) {
 		SYS_LOG_ERR("Buffer contents are different");
 		return -1;
 	}
@@ -256,19 +271,22 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 
 static int spi_async_call(struct spi_config *spi_conf)
 {
-	struct spi_buf tx = {
-		.buf = buffer_tx,
-		.len = BUF_SIZE,
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_tx,
+			.len = BUF_SIZE,
+		},
 	};
-	struct spi_buf rx = {
-		.buf = buffer_rx,
-		.len = BUF_SIZE,
+	struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = BUF_SIZE,
+		},
 	};
-	const struct spi_buf *tx_bufs[] = { &tx, NULL };
-	struct spi_buf *rx_bufs[] = { &rx, NULL };
 	int ret;
 
-	ret = spi_transceive_async(spi_conf, tx_bufs, rx_bufs, &async_sig);
+	ret = spi_transceive_async(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
+				   rx_bufs, ARRAY_SIZE(rx_bufs), &async_sig);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
