@@ -1026,7 +1026,8 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  *
  * This procedure unsubscribe to value notification using the Client
  * Characteristic Configuration handle. Notification callback with NULL data
- * will not be called if subscription was removed by this call.
+ * will be called if subscription was removed by this call, until then the
+ * parameters cannot be reused.
  *
  * @param conn Connection object.
  * @param params Subscribe parameters.
