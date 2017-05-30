@@ -240,11 +240,21 @@ DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	/* On STM32F1 series, AFIO should be clocked to access GPIOs */
+#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
+	GPIO_DEVICE_INIT("GPIO" #__SUFFIX, __suffix,			\
+			 GPIO##__SUFFIX##_BASE, STM32_PORT##__SUFFIX,	\
+			 LL_APB2_GRP1_PERIPH_AFIO |			\
+			 STM32_PERIPH_GPIO##__SUFFIX,			\
+			 STM32_CLOCK_BUS_GPIO)
+#else
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
 	GPIO_DEVICE_INIT("GPIO" #__SUFFIX, __suffix,			\
 			 GPIO##__SUFFIX##_BASE, STM32_PORT##__SUFFIX,	\
 			 STM32_PERIPH_GPIO##__SUFFIX,			\
 			 STM32_CLOCK_BUS_GPIO)
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
 #else
 	/* TODO: Clean once F1 series moved to LL Clock control */
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
