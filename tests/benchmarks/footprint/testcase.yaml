@@ -23,6 +23,6 @@ tests:
         arch_whitelist: x86 arm
         build_only: true
         extra_args: TEST=float
-        filter: not CONFIG_CPU_MINUTEIA
+        filter: CONFIG_FLOAT
         platform_exclude: tinytile
         tags: footprint
