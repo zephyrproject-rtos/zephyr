@@ -19,27 +19,37 @@ int ipm_init(char *device_hid, char *topic);
 
 /**
  * definition for WiFi connection
+ *
+ *	ap_name 	SSID of your network access point
+ *	password 	password
+ *	security 	security see wifi_security_t
+ *
  */
 struct wifi_conn_params wifi_params = {
-	.ap_name = "iptronix",
-	.password = "000w1f101ptr0n1x0w1f1000",
-	.security = WIFI_SECURITY_WPA2_MIXED_PSK,
+	.ap_name = "SSID",
+	.password = "password",
+	.security = WIFI_SECURITY_OPEN,
 };
 
 /**
  * definitions for MQTT
+ *
+ *		server_addr 	server address
+ *		server_port 	server port
+ *		device_hid 		device identification
+ *		client_id 		client identification
+ *		user_id 		user identification
+ *		password 		password
+ *		topic 			publish topic
  */
-#define GW_HID "c1b93ec39295c3d127b7f554873be61fa842fa13"
-#define GW_PWD "7251ba7bf6f857059c32296a87ec37d71605d8598dfe0f2bfc82d97d665016d0"
-
 struct mqtt_client_prm client_prm = {
 	.server_addr = "104.214.111.120",
 	.server_port = 1883,
-	.device_hid = "2cc84c225273a8fff87a3fc4a7d00c98e91c4afd",
-	.client_id = "Panther Demo F8F005FCAB0A",
-	.user_id = "/pegasus:"GW_HID,
-	.password = GW_PWD,
-	.topic = "krs/tel/gts/"GW_HID,
+	.device_hid = "device_hid",
+	.client_id = "client_id",
+	.user_id = "user",
+	.password = "password",
+	.topic = "topic",
 };
 
 void main(void)
