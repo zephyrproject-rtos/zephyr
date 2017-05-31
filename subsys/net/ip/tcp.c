@@ -141,6 +141,20 @@ static inline void do_ref_if_needed(struct net_pkt *pkt)
 	}
 }
 
+static void abort_connection(struct net_tcp *tcp)
+{
+	struct net_context *ctx = tcp->context;
+
+	NET_DBG("Segment retransmission exceeds %d, resetting context %p",
+		CONFIG_NET_TCP_RETRY_COUNT, ctx);
+
+	if (ctx->recv_cb) {
+		ctx->recv_cb(ctx, NULL, -ECONNRESET, tcp->recv_user_data);
+	}
+
+	net_context_unref(ctx);
+}
+
 static void tcp_retry_expired(struct k_timer *timer)
 {
 	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
@@ -151,6 +165,12 @@ static void tcp_retry_expired(struct k_timer *timer)
 	 */
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->retry_timeout_shift++;
+
+		if (tcp->retry_timeout_shift > CONFIG_NET_TCP_RETRY_COUNT) {
+			abort_connection(tcp);
+			return;
+		}
+
 		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 
 		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
