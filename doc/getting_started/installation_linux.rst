@@ -55,7 +55,7 @@ Install the required packages in a Ubuntu host system with:
 .. code-block:: console
 
    $ sudo apt-get install git make gcc g++ python3-ply ncurses-dev \
-	 python3-yaml python2.7 dfu-util
+	 python3-yaml dfu-util dtc
 
 Install the required packages in a Fedora host system with:
 
@@ -64,7 +64,7 @@ Install the required packages in a Fedora host system with:
    $ sudo dnf group install "Development Tools"
    $ sudo dnf install git make gcc glibc-static \
 	 libstdc++-static python3-ply ncurses-devel \
-	 python-yaml python2 dfu-util
+	 python-yaml dfu-util dtc
 
 .. _zephyr_sdk:
 
@@ -86,6 +86,8 @@ following architectures:
 * :abbr:`ARC (Argonaut RISC Core)`
 
 * :abbr:`NIOS II`
+
+* :abbr:`Xtensa`
 
 Follow these steps to install the SDK on your Linux host system.
 
