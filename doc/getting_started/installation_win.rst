@@ -34,7 +34,11 @@ environment for Windows. Follow the steps below to set it up:
 
 #. Launch the ``MSYS2 MSYS Shell`` desktop app from your start menu (if it's not still open).
 
-     .. note::
+   .. note::
+
+        Make sure you start ``MSYS2 MSYS Shell``, not ``MSYS2 MinGW Shell``.
+
+   .. note::
         There are multiple ``export`` statements in this tutorial. You can avoid
         typing them every time by placing them at the bottom of your
         ``~/.bash_profile`` file.
