@@ -54,7 +54,9 @@ __printf_like(2, 3) void bt_log(int prio, const char *fmt, ...);
 
 #elif defined(CONFIG_BLUETOOTH_DEBUG_LOG)
 
+#if !defined(SYS_LOG_DOMAIN)
 #define SYS_LOG_DOMAIN "bt"
+#endif
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #include <logging/sys_log.h>
 
