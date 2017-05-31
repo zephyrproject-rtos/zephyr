@@ -670,6 +670,7 @@ fail:
 	}
 
 quit:
+	http_parser_init(&http_ctx->req.parser, HTTP_REQUEST);
 	http_ctx->req.data_len = 0;
 	net_pkt_unref(pkt);
 }
