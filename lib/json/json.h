@@ -154,7 +154,8 @@ typedef int (*json_append_bytes_t)(const u8_t *bytes, size_t len,
  *      };
  *
  *      struct json_obj_descr array[] = {
- *           JSON_OBJ_DESCR_ARRAY(struct example, foo, JSON_TOK_NUMBER)
+ *           JSON_OBJ_DESCR_ARRAY(struct example, foo, 10, foo_len,
+ *                                JSON_TOK_NUMBER)
  *      };
  */
 #define JSON_OBJ_DESCR_ARRAY(struct_, field_name_, max_len_, \
