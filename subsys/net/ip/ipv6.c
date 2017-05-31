@@ -1662,7 +1662,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 					     net_pkt_ipv6_ext_opt_len(pkt) +
 					     (hdr->len << 3));
 
-		if (prev_opt_len == net_pkt_ipv6_ext_opt_len(pkt)) {
+		if (prev_opt_len >= net_pkt_ipv6_ext_opt_len(pkt)) {
 			NET_ERR("Corrupted NA message");
 			goto drop;
 		}
