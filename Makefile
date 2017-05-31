@@ -569,9 +569,12 @@ app-y := $(SOURCE_DIR)
 endif
 
 
+
 ifeq ($(dot-config),1)
 # Read in config
 -include include/config/auto.conf
+-include include/generated/generated_dts_board.conf
+
 
 # Read in dependencies to all Kconfig* files, make sure to run
 # oldconfig if changes are detected.
@@ -950,18 +953,27 @@ zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 ifeq ($(CONFIG_HAS_DTS),y)
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */"; \
-		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py dts/$(ARCH)/$(BOARD_NAME).dts_compiled $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
-		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
-			echo; echo; \
-			echo "/* Following definitions fixup the generated include */"; \
-			echo; \
-			cat $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
-		fi; \
+		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+			-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+			-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml \
+			-f $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+		)
+endef
+define filechk_generated_dts_board.conf
+	(echo "# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! "; \
+		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+			-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+			-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml \
+			-f $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup -k; \
 		)
 endef
 else
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */";)
+endef
+
+define filechk_generated_dts_board.conf
+	(echo "# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!";)
 endef
 endif
 
@@ -972,7 +984,13 @@ ifeq ($(CONFIG_HAS_DTS),y)
 endif
 	$(call filechk,generated_dts_board.h)
 
-dts: include/generated/generated_dts_board.h
+include/generated/generated_dts_board.conf: include/config/auto.conf FORCE
+ifeq ($(CONFIG_HAS_DTS),y)
+	$(Q)$(MAKE) $(build)=dts/$(ARCH)
+endif
+	$(call filechk,generated_dts_board.conf)
+
+dts: include/generated/generated_dts_board.h include/generated/generated_dts_board.conf
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
