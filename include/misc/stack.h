@@ -9,6 +9,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef _MISC_STACK_H_
+#define _MISC_STACK_H_
+
 #include <misc/printk.h>
 
 #if defined(CONFIG_INIT_STACKS)
@@ -69,3 +72,5 @@ static inline void stack_analyze(const char *name, const char *stack,
 {
 }
 #endif
+
+#endif /* _MISC_STACK_H_ */
