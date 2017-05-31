@@ -56,6 +56,8 @@ source "drivers/sensor/bmg160/Kconfig"
 
 source "drivers/sensor/bmi160/Kconfig"
 
+source "drivers/sensor/bmm150/Kconfig"
+
 source "drivers/sensor/dht/Kconfig"
 
 source "drivers/sensor/fxas21002/Kconfig"
