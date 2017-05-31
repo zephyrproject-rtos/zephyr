@@ -113,7 +113,7 @@ static void test_json_decoding(void)
 	zassert_equal(ts.some_array_len, 5, "Array has correct number of items");
 	zassert_true(!memcmp(ts.some_array, expected_array,
 		    sizeof(expected_array)),
-		    "Array decoded with unexpected values");
+		    "Array decoded with expected values");
 }
 
 static void test_json_invalid_unicode(void)
