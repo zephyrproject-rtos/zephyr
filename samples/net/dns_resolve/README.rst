@@ -35,6 +35,7 @@ Requirements
     Dnsmasq version 2.76  Copyright (c) 2000-2016 Simon Kelley
 
 
+
 Wiring
 ******
 
@@ -74,7 +75,6 @@ for example:
 	CONFIG_NET_APP_MY_IPV6_ADDR="2001:db8::1"
 	CONFIG_NET_APP_PEER_IPV6_ADDR="2001:db8::2"
 
-
 are the IPv6 addresses for the DNS client running Zephyr and the DNS server,
 respectively.
 
@@ -88,7 +88,6 @@ The net-tools can be downloaded from
 
     https://github.com/zephyrproject-rtos/net-tools
 
-
 Open a terminal window and type:
 
 .. code-block:: console
@@ -96,15 +95,29 @@ Open a terminal window and type:
     $ cd net-tools
     $ ./dnsmasq.sh
 
+('su' or 'sudo' may be required.)
 
-NOTE: some systems may require root privileges to run dnsmaq, use sudo or su.
+The default project configurations settings for this sample uses the public
+Google DNS servers.  In order to use the local dnsmasq server, please edit
+the appropriate 'prj.conf' file and update the DNS server addresses.  For
+instance, if using the usual IP addresses assigned to testing, update them
+to the following values:
+
+.. code-block:: console
+
+    CONFIG_DNS_SERVER1="192.0.2.2:5353"
+    CONFIG_DNS_SERVER2="[2001:db8::2]:5353"
+
+.. note::
+    DNS uses port 53 by default, but the dnsmasq.conf file provided by
+    net-tools uses port 5353 to allow executing the daemon without
+    superuser privileges.
 
 If dnsmasq fails to start with an error like this:
 
 .. code-block:: console
 
     dnsmasq: failed to create listening socket for port 5353: Address already in use
-
 
 Open a terminal window and type:
 
@@ -114,7 +127,6 @@ Open a terminal window and type:
 
 
 Try to launch the dnsmasq application again.
-
 
 QEMU x86
 ========
