@@ -15,5 +15,6 @@ config SOC_SERIES_STM32F4X
 	select HAS_STM32CUBE
 	select CPU_HAS_MPU
 	select CPU_HAS_SYSTICK
+	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
 	help
 	 Enable support for STM32F4 MCU series

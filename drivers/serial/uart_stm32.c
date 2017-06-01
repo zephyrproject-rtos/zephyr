@@ -280,12 +280,8 @@ static int uart_stm32_init(struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	clock_control_on(data->clock,
 			(clock_control_subsys_t *)&config->pclken);
-#else
-	clock_control_on(data->clock, config->clock_subsys);
-#endif
 
 	UartHandle->Instance = UART_STRUCT(dev);
 	UartHandle->Init.WordLength = UART_WORDLENGTH_8B;
@@ -304,15 +300,9 @@ static int uart_stm32_init(struct device *dev)
 }
 
 /* Define clocks */
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	#define STM32_CLOCK_UART(type, apb, n)				\
 		.pclken = { .bus = STM32_CLOCK_BUS_ ## apb,		\
 			    .enr = LL_##apb##_GRP1_PERIPH_##type##n }
-#else
-	#define STM32_CLOCK_UART(type, apb, n)				\
-		.clock_subsys = UINT_TO_POINTER(			\
-					STM32F10X_CLOCK_SUBSYS_##type##n)
-#endif /* CLOCK_CONTROL_STM32_CUBE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define STM32_UART_IRQ_HANDLER_DECL(n)					\
