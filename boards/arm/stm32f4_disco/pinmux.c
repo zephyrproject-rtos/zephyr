@@ -12,8 +12,9 @@
 #include "pinmux/pinmux.h"
 
 #include "pinmux_stm32.h"
+#include "soc_pinmux.h"
 
-/* pin assignments for NUCLEO-F411RE board */
+/* pin assignments for STM32F4DISCOVERY board */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_STM32_PORT_1
 	{STM32_PIN_PB6, STM32F4_PINMUX_FUNC_PB6_USART1_TX},

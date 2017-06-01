@@ -12,12 +12,13 @@
 #include "pinmux/pinmux.h"
 
 #include "pinmux_stm32.h"
+#include "soc_pinmux.h"
 
-/* pin assignments for STM32F4DISCOVERY board */
+/* pin assignments for 96boards Carbon board */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_STM32_PORT_1
-	{STM32_PIN_PB6, STM32F4_PINMUX_FUNC_PB6_USART1_TX},
-	{STM32_PIN_PB7, STM32F4_PINMUX_FUNC_PB7_USART1_RX},
+	{STM32_PIN_PA9, STM32F4_PINMUX_FUNC_PA9_USART1_TX},
+	{STM32_PIN_PA10, STM32F4_PINMUX_FUNC_PA10_USART1_RX},
 #endif	/* CONFIG_UART_STM32_PORT_1 */
 #ifdef CONFIG_UART_STM32_PORT_2
 	{STM32_PIN_PA2, STM32F4_PINMUX_FUNC_PA2_USART2_TX},

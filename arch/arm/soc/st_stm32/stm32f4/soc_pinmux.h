@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32F4_PINMUX_H_
-#define _STM32F4_PINMUX_H_
+#ifndef _SOC_PINMUX_H_
+#define _SOC_PINMUX_H_
 
 /**
  * @file Header for STM32F4 pin multiplexing helper
@@ -129,4 +129,4 @@
 
 #define STM32F4_PINMUX_FUNC_PG14_USART6_TX	STM32_PINMUX_FUNC_ALT_8
 
-#endif /* _STM32F4_PINMUX_H_ */
+#endif /* _SOC_PINMUX_H_ */
