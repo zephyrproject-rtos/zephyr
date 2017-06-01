@@ -22,6 +22,11 @@ struct test_struct {
 	struct test_nested some_nested_struct;
 	int some_array[16];
 	size_t some_array_len;
+	bool another_bxxl;		 /* JSON field: "another_b!@l" */
+	bool if_;			 /* JSON: "if" */
+	int another_array[10];		 /* JSON: "another-array" */
+	size_t another_array_len;
+	struct test_nested xnother_nexx; /* JSON: "4nother_ne$+" */
 };
 
 static const struct json_obj_descr nested_descr[] = {
@@ -39,6 +44,15 @@ static const struct json_obj_descr test_descr[] = {
 			      nested_descr),
 	JSON_OBJ_DESCR_ARRAY(struct test_struct, some_array,
 			     16, some_array_len, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct test_struct, "another_b!@l",
+				  another_bxxl, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct test_struct, "if",
+				  if_, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_ARRAY_NAMED(struct test_struct, "another-array",
+				   another_array, 10, another_array_len,
+				   JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_OBJECT_NAMED(struct test_struct, "4nother_ne$+",
+				    xnother_nexx, nested_descr),
 };
 
 static void test_json_encoding(void)
@@ -57,14 +71,33 @@ static void test_json_encoding(void)
 		.some_array[2] = 8,
 		.some_array[3] = 16,
 		.some_array[4] = 32,
-		.some_array_len = 5
+		.some_array_len = 5,
+		.another_bxxl = true,
+		.if_ = false,
+		.another_array[0] = 2,
+		.another_array[1] = 3,
+		.another_array[2] = 5,
+		.another_array[3] = 7,
+		.another_array_len = 4,
+		.xnother_nexx = {
+			.nested_int = 1234,
+			.nested_bool = true,
+			.nested_string = "no escape necessary",
+		},
 	};
 	char encoded[] = "{\"some_string\":\"zephyr 123\","
 		"\"some_int\":42,\"some_bool\":true,"
 		"\"some_nested_struct\":{\"nested_int\":-1234,"
 		"\"nested_bool\":false,\"nested_string\":"
 		"\"this should be escaped: \\t\"},"
-		"\"some_array\":[1,4,8,16,32]}";
+		"\"some_array\":[1,4,8,16,32],"
+		"\"another_b!@l\":true,"
+		"\"if\":false,"
+		"\"another-array\":[2,3,5,7],"
+		"\"4nother_ne$+\":{\"nested_int\":1234,"
+		"\"nested_bool\":true,"
+		"\"nested_string\":\"no escape necessary\"}"
+		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
 
@@ -89,8 +122,15 @@ static void test_json_decoding(void)
 		"\"nested_bool\":false,\t"
 		"\"nested_string\":\"this should be escaped: \\t\"},"
 		"\"some_array\":[11,22, 33,\t45,\n299]"
+		"\"another_b!@l\":true,"
+		"\"if\":false,"
+		"\"another-array\":[2,3,5,7],"
+		"\"4nother_ne$+\":{\"nested_int\":1234,"
+		"\"nested_bool\":true,"
+		"\"nested_string\":\"no escape necessary\"}"
 		"}";
 	const int expected_array[] = { 11, 22, 33, 45, 299 };
+	const int expected_other_array[] = { 2, 3, 5, 7 };
 	int ret;
 
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
@@ -113,7 +153,23 @@ static void test_json_decoding(void)
 	zassert_equal(ts.some_array_len, 5, "Array has correct number of items");
 	zassert_true(!memcmp(ts.some_array, expected_array,
 		    sizeof(expected_array)),
-		    "Array decoded with unexpected values");
+		    "Array decoded with expected values");
+	zassert_true(ts.another_bxxl,
+		     "Named boolean (special chars) decoded correctly");
+	zassert_false(ts.if_,
+		      "Named boolean (reserved word) decoded correctly");
+	zassert_equal(ts.another_array_len, 4,
+		      "Named array has correct number of items");
+	zassert_true(!memcmp(ts.another_array, expected_other_array,
+			     sizeof(expected_other_array)),
+		     "Decoded named array with expected values");
+	zassert_equal(ts.xnother_nexx.nested_int, 1234,
+		      "Named nested integer decoded correctly");
+	zassert_equal(ts.xnother_nexx.nested_bool, true,
+		      "Named nested boolean decoded correctly");
+	zassert_true(!strcmp(ts.xnother_nexx.nested_string,
+			     "no escape necessary"),
+		     "Named nested string decoded correctly");
 }
 
 static void test_json_invalid_unicode(void)

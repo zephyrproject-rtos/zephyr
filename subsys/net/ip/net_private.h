@@ -113,7 +113,9 @@ static inline char *net_sprint_ip_addr(const struct net_addr *addr)
 static inline void net_hexdump(const char *str, const u8_t *packet,
 			       size_t length)
 {
-	int n = 0;
+	char output[sizeof("xxxxyyyy xxxxyyyy")];
+	int n = 0, k = 0;
+	u8_t byte;
 
 	if (!length) {
 		SYS_LOG_DBG("%s zero-length packet", str);
@@ -125,12 +127,22 @@ static inline void net_hexdump(const char *str, const u8_t *packet,
 			printk("%s %08X ", str, n);
 		}
 
-		printk("%02X ", *packet++);
+		byte = *packet++;
+
+		printk("%02X ", byte);
+
+		if (byte < 0x20 || byte > 0x7f) {
+			output[k++] = '.';
+		} else {
+			output[k++] = byte;
+		}
 
 		n++;
 		if (n % 8 == 0) {
 			if (n % 16 == 0) {
-				printk("\n");
+				output[k] = '\0';
+				printk(" [%s]\n", output);
+				k = 0;
 			} else {
 				printk(" ");
 			}
@@ -138,7 +150,18 @@ static inline void net_hexdump(const char *str, const u8_t *packet,
 	}
 
 	if (n % 16) {
-		printk("\n");
+		int i;
+
+		output[k] = '\0';
+
+		for (i = 0; i < (16 - (n % 16)); i++) {
+			printk("   ");
+		}
+		if ((n % 16) < 8) {
+			printk(" "); /* one extra delimiter after 8 chars */
+		}
+
+		printk(" [%s]\n", output);
 	}
 }
 

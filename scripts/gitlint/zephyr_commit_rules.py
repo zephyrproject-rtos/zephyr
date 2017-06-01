@@ -1,5 +1,5 @@
-from gitlint.rules import CommitRule, RuleViolation
-from gitlint.options import IntOption
+from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule
+from gitlint.options import IntOption, BoolOption, StrOption, ListOption
 import re
 
 """
@@ -33,7 +33,6 @@ class BodyMaxLineCount(CommitRule):
             message = "Body contains too many lines ({0} > {1})".format(line_count, max_line_count)
             return [RuleViolation(self.id, message, line_nr=1)]
 
-
 class SignedOffBy(CommitRule):
     """ This rule will enforce that each commit contains a "Signed-Off-By" line.
     We keep things simple here and just check whether the commit body contains a line that starts with "Signed-Off-By".
@@ -55,3 +54,17 @@ class SignedOffBy(CommitRule):
                 else:
                     return
         return [RuleViolation(self.id, "Body does not contain a 'Signed-Off-By' line", line_nr=1)]
+
+
+class TitleStartsWithSubsystem(LineRule):
+    name = "title-starts-with-subsystem"
+    id = "UC3"
+    target = CommitMessageTitle
+    options_spec = [StrOption('regex', ".*", "Regex the title should match")]
+
+    def validate(self, title, _commit):
+        regex = self.options['regex'].value
+        pattern = re.compile(regex, re.UNICODE)
+        violation_message = "Title does not follow <subsystem>: <subject>"
+        if not pattern.search(title):
+            return [RuleViolation(self.id, violation_message, title)]

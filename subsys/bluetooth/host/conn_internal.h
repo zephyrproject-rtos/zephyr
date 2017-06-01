@@ -25,6 +25,7 @@ enum {
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
 	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
 	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
+	BT_CONN_AUTO_DATA_LEN,          /* Auto data len change in progress */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,

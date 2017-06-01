@@ -738,8 +738,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 		struct connection *conn;
 		u32_t ticker_status;
 
-		if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
-		    pdu_adv->chan_sel) {
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)) {
 			radio_pdu_node_rx = packet_rx_reserve_get(4);
 		} else {
 			radio_pdu_node_rx = packet_rx_reserve_get(3);
@@ -1005,8 +1004,7 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		u32_t ticker_status;
 		u32_t conn_space_us;
 
-		if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
-		    pdu_adv_rx->chan_sel) {
+		if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)) {
 			radio_pdu_node_rx = packet_rx_reserve_get(4);
 		} else {
 			radio_pdu_node_rx = packet_rx_reserve_get(3);
@@ -1498,6 +1496,48 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+static inline void
+isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *radio_pdu_node_rx,
+			     u8_t *rx_enqueue)
+{
+	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+	struct pdu_data *pdu_data_rx;
+
+	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
+		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
+	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
+		struct pdu_data_llctrl_length_req_rsp *lr;
+
+		/* Procedure complete */
+		_radio.conn_curr->llcp_length.ack =
+			_radio.conn_curr->llcp_length.req;
+		_radio.conn_curr->procedure_expire = 0;
+
+		/* Resume data packet tx */
+		_radio.conn_curr->pause_tx = 0;
+
+		/* prepare length rsp structure */
+		pdu_data_rx->len = offsetof(struct pdu_data_llctrl,
+					    ctrldata) +
+			sizeof(struct pdu_data_llctrl_length_req_rsp);
+		pdu_data_rx->payload.llctrl.opcode =
+			PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+
+		lr = (struct pdu_data_llctrl_length_req_rsp *)
+			&pdu_data_rx->payload.llctrl.ctrldata.length_req;
+		lr->max_rx_octets = _radio.conn_curr->max_rx_octets;
+		lr->max_rx_time = ((_radio.conn_curr->max_rx_octets + 14) << 3);
+		lr->max_tx_octets = _radio.conn_curr->max_tx_octets;
+		lr->max_tx_time = ((_radio.conn_curr->max_tx_octets + 14) << 3);
+
+		/* enqueue a length rsp */
+		*rx_enqueue = 1;
+	}
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
 static inline void
 isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
@@ -1563,6 +1603,13 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			break;
 		}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+	} else if (_radio.conn_curr->llcp_length.ack !=
+		   _radio.conn_curr->llcp_length.req) {
+		isr_rx_conn_pkt_ctrl_rej_dle(radio_pdu_node_rx,
+					     rx_enqueue);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
 	} else if (_radio.conn_curr->llcp_phy.ack !=
 		   _radio.conn_curr->llcp_phy.req) {
@@ -1583,30 +1630,35 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	eff_rx_octets = _radio.conn_curr->max_rx_octets;
 	eff_tx_octets = _radio.conn_curr->max_tx_octets;
 
-	if (/* Local idle, and peer request; complete the peer procedure
+	if (/* Local idle, and Peer request then complete the Peer procedure
 	     * with response.
 	     */
 	    ((_radio.conn_curr->llcp_length.req ==
 	      _radio.conn_curr->llcp_length.ack) &&
-	     (PDU_DATA_LLCTRL_TYPE_LENGTH_REQ ==
-	      pdu_data_rx->payload.llctrl.opcode)) ||
-	    /* or Local has requested... */
+	     (pdu_data_rx->payload.llctrl.opcode ==
+	      PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+	    /* or Local has active... */
 	    ((_radio.conn_curr->llcp_length.req !=
 	      _radio.conn_curr->llcp_length.ack) &&
-	     /* and Local request, and peer request; override with peer
-	      * procedure, and complete the peer procedure with response.
+	     /* with Local requested and Peer request then complete the
+	      * Peer procedure with response.
 	      */
-	     (((LLCP_LENGTH_STATE_REQ == _radio.conn_curr->llcp_length.state) &&
-	       (PDU_DATA_LLCTRL_TYPE_LENGTH_REQ ==
-		pdu_data_rx->payload.llctrl.opcode)) ||
-	      /* and Local wait, and peer response; complete the
-	       * local procedure.
+	     ((((_radio.conn_curr->llcp_length.state ==
+		 LLCP_LENGTH_STATE_REQ) ||
+		(_radio.conn_curr->llcp_length.state ==
+		 LLCP_LENGTH_STATE_ACK_WAIT)) &&
+	       (pdu_data_rx->payload.llctrl.opcode ==
+		PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+	      /* with Local waiting for response, and Peer response then
+	       * complete the Local procedure or Peer request then complete the
+	       * Peer procedure with response.
 	       */
-	      ((LLCP_LENGTH_STATE_RSP_WAIT ==
-		_radio.conn_curr->llcp_length.state) &&
-	       (PDU_DATA_LLCTRL_TYPE_LENGTH_RSP ==
-		pdu_data_rx->payload.llctrl.opcode))))) {
-
+	      ((_radio.conn_curr->llcp_length.state ==
+		LLCP_LENGTH_STATE_RSP_WAIT) &&
+	       ((pdu_data_rx->payload.llctrl.opcode ==
+		 PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) ||
+		(pdu_data_rx->payload.llctrl.opcode ==
+		 PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)))))) {
 		struct pdu_data_llctrl_length_req_rsp *lr;
 
 		lr = (struct pdu_data_llctrl_length_req_rsp *)
@@ -1684,7 +1736,9 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			*rx_enqueue = 1;
 		}
 	} else {
-		LL_ASSERT(0);
+		/* Drop response with no Local initiated request. */
+		LL_ASSERT(pdu_data_rx->payload.llctrl.opcode ==
+			  PDU_DATA_LLCTRL_TYPE_LENGTH_RSP);
 	}
 
 	if ((PDU_DATA_LLCTRL_TYPE_LENGTH_REQ ==
@@ -4635,6 +4689,7 @@ void radio_event_adv_prepare(u32_t ticks_at_expire, u32_t remainder,
 
 	DEBUG_RADIO_PREPARE_A(1);
 
+	LL_ASSERT(!_radio.ticker_id_prepare);
 	_radio.ticker_id_prepare = RADIO_TICKER_ID_ADV;
 
 	event_common_prepare(ticks_at_expire, remainder,
@@ -4812,6 +4867,7 @@ static void event_obs_prepare(u32_t ticks_at_expire, u32_t remainder,
 
 	DEBUG_RADIO_PREPARE_O(1);
 
+	LL_ASSERT(!_radio.ticker_id_prepare);
 	_radio.ticker_id_prepare = RADIO_TICKER_ID_OBS;
 
 	event_common_prepare(ticks_at_expire, remainder,
@@ -5549,8 +5605,15 @@ static inline void event_enc_prep(struct connection *conn)
 			/* send enc start resp */
 			start_enc_rsp_send(conn, pdu_ctrl_tx);
 		}
+
 		/* slave send reject ind or start enc req at control priority */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC)
+		else {
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
 		else if (!conn->pause_tx || conn->refresh) {
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
+
 			/* ll ctrl packet */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 
@@ -5575,7 +5638,7 @@ static inline void event_enc_prep(struct connection *conn)
 				 * controller.
 				 */
 				enc_rsp_send(conn);
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
 
 				/* calc the Session Key */
 				ecb_encrypt(&conn->llcp.encryption.ltk[0],
@@ -5614,9 +5677,9 @@ static inline void event_enc_prep(struct connection *conn)
 				pdu_ctrl_tx->payload.llctrl.opcode =
 					PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 			}
-		} else {
 
 #if !defined(CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC)
+		} else {
 			/* enable transmit encryption */
 			_radio.conn_curr->enc_tx = 1;
 
@@ -5625,13 +5688,7 @@ static inline void event_enc_prep(struct connection *conn)
 			/* resume data packet rx and tx */
 			_radio.conn_curr->pause_rx = 0;
 			_radio.conn_curr->pause_tx = 0;
-#else /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
-			/* Fast Enc implementation shall have enqueued the
-			 * start enc rsp in the radio ISR itself, we should
-			 * not get here.
-			 */
-			LL_ASSERT(0);
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_FAST_ENC */
 
 		}
 
@@ -5963,7 +6020,7 @@ static inline void event_len_prep(struct connection *conn)
 		node_rx->hdr.handle = conn->handle;
 		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
 
-		/* prepare version ind structure */
+		/* prepare length rsp structure */
 		pdu_ctrl_rx = (struct pdu_data *) node_rx->pdu_data;
 		pdu_ctrl_rx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_rx->len = offsetof(struct pdu_data_llctrl,
@@ -6186,6 +6243,7 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 {
 	u16_t event_counter;
 
+	LL_ASSERT(!_radio.ticker_id_prepare);
 	_radio.ticker_id_prepare =
 	    RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle;
 
@@ -7757,6 +7815,10 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 			mayfly_xtal_stop};
 		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		u32_t ret;
+
+		/* Reset the stored ticker id in prepare phase. */
+		LL_ASSERT(_radio.ticker_id_prepare);
+		_radio.ticker_id_prepare = 0;
 
 		/* Step 2.1: Is caller between Primary and Marker0?
 		 * Stop the Marker0 event

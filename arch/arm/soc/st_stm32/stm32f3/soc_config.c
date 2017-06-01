@@ -7,7 +7,7 @@
 #include "soc.h"
 #include <errno.h>
 #include <device.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
 int stm32_get_pin_config(int pin, int func)

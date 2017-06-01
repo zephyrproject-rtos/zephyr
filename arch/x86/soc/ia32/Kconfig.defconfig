@@ -77,13 +77,6 @@ config BLUETOOTH_UART_ON_DEV_NAME
 
 endif
 
-if NBLE
-
-config NBLE_UART_ON_DEV_NAME
-	default "UART_1"
-
-endif
-
 if UART_PIPE
 
 config UART_PIPE_ON_DEV_NAME

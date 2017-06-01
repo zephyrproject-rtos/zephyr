@@ -57,6 +57,29 @@ config BLUETOOTH_CENTRAL
 	help
 	  Select this for LE Central role support.
 
+menu "Broadcaster"
+	visible if !BLUETOOTH_PERIPHERAL
+
+config BLUETOOTH_BROADCASTER
+	bool "Broadcaster Role support"
+	default y if BLUETOOTH_PERIPHERAL
+	default y if !BLUETOOTH_OBSERVER
+	help
+	  Select this for LE Broadcaster role support.
+
+endmenu
+
+menu "Observer"
+	visible if !BLUETOOTH_CENTRAL
+
+config BLUETOOTH_OBSERVER
+	bool "Observer Role support"
+	default y if BLUETOOTH_CENTRAL
+	help
+	  Select this for LE Observer role support.
+
+endmenu
+
 config BLUETOOTH_CONN
 	# Virtual/hidden option
 	bool
@@ -98,6 +121,7 @@ config BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME
 source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"
+source "subsys/bluetooth/shell/Kconfig"
 endif # BLUETOOTH_HCI
 
 endif # BLUETOOTH

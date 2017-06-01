@@ -27,10 +27,11 @@ UNAME := $(shell uname)
 ifeq (MSYS, $(findstring MSYS, $(UNAME)))
 DISABLE_TRYRUN=y
 HOST_OS=MSYS
-PWD_OPT=-W
+NATIVE_PWD_OPT=-W
 else ifeq (MINGW, $(findstring MINGW, $(UNAME)))
 HOST_OS=MINGW
 PWD_OPT=-W
+NATIVE_PWD_OPT=-W
 DISABLE_TRYRUN=y
 CPATH ?= $(MIGW_DIR)/include
 LIBRARY_PATH ?= $(MINGW_DIR)/lib
@@ -40,7 +41,7 @@ HOST_OS=Linux
 else ifeq (Darwin, $(findstring Darwin, $(UNAME)))
 HOST_OS=Darwin
 endif
-export HOST_OS
+export HOST_OS NATIVE_PWD_OPT
 
 # Avoid funny character set dependencies
 unexport LC_ALL
@@ -578,6 +579,17 @@ ifeq ($(dot-config),1)
 # oldconfig if changes are detected.
 -include include/config/auto.conf.cmd
 
+# Read in DTS derived configuration, if it exists
+#
+# We check to see if the ARCH is correctly sourced before doing the -include
+# The reason for this is due to implicit rules kicking in to create this file.
+# If this occurs before the above auto.conf is sourced correctly, the build
+# will iterate over the dts conf file 2-3 times before settling down to the
+# correct output.
+ifneq ($(ARCH),)
+-include include/generated/generated_dts_board.conf
+endif
+
 # To avoid any implicit rule to kick in, define an empty command
 $(KCONFIG_CONFIG) include/config/auto.conf.cmd: ;
 
@@ -951,27 +963,45 @@ zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 ifeq ($(CONFIG_HAS_DTS),y)
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */"; \
-		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py dts/$(ARCH)/$(BOARD_NAME).dts_compiled $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
 		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
-			echo; echo; \
-			echo "/* Following definitions fixup the generated include */"; \
-			echo; \
-			cat $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+			$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+				-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml \
+				-f $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+		else \
+			$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+				-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml; \
 		fi; \
+		)
+endef
+define filechk_generated_dts_board.conf
+	(echo "# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!"; \
+		$(ZEPHYR_BASE)/scripts/extract_dts_includes.py \
+		-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
+		-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml -k; \
 		)
 endef
 else
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */";)
 endef
+define filechk_generated_dts_board.conf
+	(echo "# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!";)
+endef
 endif
-
 
 include/generated/generated_dts_board.h: include/config/auto.conf FORCE
 ifeq ($(CONFIG_HAS_DTS),y)
 	$(Q)$(MAKE) $(build)=dts/$(ARCH)
 endif
 	$(call filechk,generated_dts_board.h)
+
+include/generated/generated_dts_board.conf: include/config/auto.conf FORCE
+ifeq ($(CONFIG_HAS_DTS),y)
+	$(Q)$(MAKE) $(build)=dts/$(ARCH)
+endif
+	$(call filechk,generated_dts_board.conf)
 
 dts: include/generated/generated_dts_board.h
 
@@ -1089,7 +1119,8 @@ depend dep:
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
 
-CLEAN_FILES += 	include/generated/generated_dts_board.h \
+CLEAN_FILES += 	include/generated/generated_dts_board.conf \
+		include/generated/generated_dts_board.h \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
 		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd \

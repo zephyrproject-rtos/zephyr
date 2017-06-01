@@ -161,10 +161,6 @@ void bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		msgtype, sigid, tid);
 	net_buf_pull(buf, sizeof(*hdr));
 
-	if (msgtype > BT_AVDTP_REJECT) {
-		return;
-	}
-
 	/* validate if there is an outstanding resp expected*/
 	if (msgtype != BT_AVDTP_CMD) {
 		if (session->req == NULL) {

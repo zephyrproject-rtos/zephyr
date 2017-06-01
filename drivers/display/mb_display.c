@@ -118,7 +118,7 @@ static void start_image(struct mb_display *disp, const struct mb_image *img)
 		disp->expiry = k_uptime_get() + disp->duration;
 	}
 
-	k_timer_start(&disp->timer, K_NO_WAIT, K_MSEC(5));
+	k_timer_start(&disp->timer, K_NO_WAIT, K_MSEC(4));
 }
 
 #define ROW_PIN(n) (LED_ROW1_GPIO_PIN + (n))

@@ -68,6 +68,15 @@ static const char *get_prompt(void)
 	}
 
 	if (default_module != -1) {
+		if (__shell_cmd_start[default_module].prompt) {
+			const char *ret;
+
+			ret = __shell_cmd_start[default_module].prompt();
+			if (ret) {
+				return ret;
+			}
+		}
+
 		return default_module_prompt;
 	}
 
@@ -233,6 +242,7 @@ static int show_help(int argc, char *argv[])
 		}
 
 		print_module_commands(module);
+		printk("\nEnter 'exit' to leave current module.\n");
 	} else { /* help for all entities */
 		printk("Available modules:\n");
 		for (module = 0; module < NUM_OF_SHELL_ENTITIES; module++) {
@@ -280,6 +290,15 @@ static int select_module(int argc, char *argv[])
 	return 0;
 }
 
+static int exit_module(int argc, char *argv[])
+{
+	if (argc == 1) {
+		default_module = -1;
+	}
+
+	return 0;
+}
+
 static shell_cmd_function_t get_cb(int argc, char *argv[])
 {
 	const char *first_string = argv[0];
@@ -299,6 +318,10 @@ static shell_cmd_function_t get_cb(int argc, char *argv[])
 
 	if (!strcmp(first_string, "select")) {
 		return select_module;
+	}
+
+	if (!strcmp(first_string, "exit")) {
+		return exit_module;
 	}
 
 	if ((argc == 1) && (default_module == -1)) {

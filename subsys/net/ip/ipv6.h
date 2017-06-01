@@ -374,7 +374,9 @@ static inline void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
  * This means that we should receive everything within first two fragments.
  * The first one being 1280 bytes and the second one 220 bytes.
  */
+#if !defined(NET_IPV6_FRAGMENTS_MAX_PKT)
 #define NET_IPV6_FRAGMENTS_MAX_PKT 2
+#endif
 
 /** Store pending IPv6 fragment information that is needed for reassembly. */
 struct net_ipv6_reassembly {
@@ -421,11 +423,15 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
  * @brief Find the last IPv6 extension header in the network packet.
  *
  * @param pkt Network head packet.
+ * @param next_hdr_idx Where is the index to next header field that points
+ * to last header. This is returned to caller.
+ * @param last_hdr_idx Where is the last header field in the packet.
+ * This is returned to caller.
  *
- * @return Offset to the extension header within the first fragment of net_pkt.
- * Return <0 if the packet is malformed.
+ * @return Return 0 if ok or <0 if the packet is malformed.
  */
-int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt);
+int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
+			       u16_t *last_hdr_idx);
 
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);

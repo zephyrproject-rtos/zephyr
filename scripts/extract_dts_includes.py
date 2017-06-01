@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+
+# vim: ai:ts=4:sw=4
+
 import sys
 from os import walk
 import os
 import re
 import yaml
 import pprint
+import argparse
 
 from devicetree import parse_file
 
@@ -503,7 +507,26 @@ def print_key_value(k, v, tabstop):
 
   return
 
-def generate_include_file(defs):
+def generate_keyvalue_file(defs, args):
+    compatible = reduced['/']['props']['compatible'][0]
+
+    node_keys = sorted(defs.keys())
+    for node in node_keys:
+       sys.stdout.write('# ' + node.split('/')[-1] )
+       sys.stdout.write("\n")
+
+       prop_keys = sorted(defs[node].keys())
+       for prop in prop_keys:
+         if prop == 'aliases':
+           for entry in sorted(defs[node][prop]):
+             a = defs[node][prop].get(entry)
+             sys.stdout.write("%s=%s\n" %(entry, defs[node].get(a)))
+         else:
+           sys.stdout.write("%s=%s\n" %(prop,defs[node].get(prop)))
+
+       sys.stdout.write("\n")
+
+def generate_include_file(defs, args):
     compatible = reduced['/']['props']['compatible'][0]
 
     sys.stdout.write("/**************************************************\n")
@@ -534,23 +557,50 @@ def generate_include_file(defs):
        for prop in prop_keys:
          if prop == 'aliases':
            for entry in sorted(defs[node][prop]):
-             print_key_value(entry, defs[node][prop].get(entry), maxtabstop)
+             a = defs[node][prop].get(entry)
+             print_key_value(entry, a, maxtabstop)
          else:
            print_key_value(prop, defs[node].get(prop), maxtabstop)
+
        sys.stdout.write("\n")
 
-    sys.stdout.write("#endif\n");
+    if args.fixup and os.path.exists(args.fixup):
+        sys.stdout.write("\n")
+        sys.stdout.write("/* Following definitions fixup the generated include */\n")
+        try:
+            with open(args.fixup, "r") as fd:
+                for line in fd.readlines():
+                    sys.stdout.write(line)
+                sys.stdout.write("\n")
+        except:
+            raise Exception("Input file " + os.path.abspath(args.fixup) + " does not exist.")
 
-def main(args):
-  if len(args) < 2:
-    print('Usage: %s filename.dts path_to_yaml' % args[0])
+    sys.stdout.write("#endif\n")
+
+def parse_arguments():
+
+  parser = argparse.ArgumentParser(description = __doc__,
+                                     formatter_class = argparse.RawDescriptionHelpFormatter)
+
+  parser.add_argument("-d", "--dts", help="DTS file")
+  parser.add_argument("-y", "--yaml", help="YAML file")
+  parser.add_argument("-f", "--fixup", help="Fixup file")
+  parser.add_argument("-k", "--keyvalue", action="store_true",
+          help="Generate file to be included by the build system")
+
+  return parser.parse_args()
+
+def main():
+  args = parse_arguments()
+  if not args.dts or not args.yaml:
+    print('Usage: %s -d filename.dts -y path_to_yaml' % sys.argv[0])
     return 1
 
   try:
-    with open(args[1], "r") as fd:
+    with open(args.dts, "r") as fd:
       d = parse_file(fd)
   except:
-     raise Exception("Input file " + os.path.abspath(args[1]) + " does not exist.")
+     raise Exception("Input file " + os.path.abspath(args.dts) + " does not exist.")
 
   # compress list to nodes w/ paths, add interrupt parent
   compress_nodes(d['/'], '/')
@@ -572,7 +622,7 @@ def main(args):
 
   # scan YAML files and find the ones we are interested in
   yaml_files = []
-  for (dirpath, dirnames, filenames) in walk(args[2]):
+  for (dirpath, dirnames, filenames) in walk(args.yaml):
     yaml_files.extend([f for f in filenames if re.match('.*\.yaml\Z', f)])
     yaml_files = [dirpath + '/' + t for t in yaml_files]
     break
@@ -628,9 +678,10 @@ def main(args):
     extract_reg_prop(chosen['zephyr,sram'], None, defs, "CONFIG_SRAM", 1024)
 
   # generate include file
-  generate_include_file(defs)
+  if args.keyvalue:
+    generate_keyvalue_file(defs, args)
+  else:
+    generate_include_file(defs, args)
 
 if __name__ == '__main__':
-  # test1.py executed as script
-  # do something
-  sys.exit(main(sys.argv))
+    main()

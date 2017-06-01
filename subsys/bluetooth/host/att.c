@@ -97,6 +97,8 @@ static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
 static void att_req_destroy(struct bt_att_req *req)
 {
+	BT_DBG("req %p", req);
+
 	if (req->buf) {
 		net_buf_unref(req->buf);
 	}
@@ -148,7 +150,7 @@ static void att_req_sent(struct bt_conn *conn)
 {
 	struct bt_att *att = att_get(conn);
 
-	BT_DBG("conn %p att %p", conn, att);
+	BT_DBG("conn %p att %p att->req %p", conn, att, att->req);
 
 	k_sem_give(&att->tx_sem);
 
@@ -293,17 +295,19 @@ static void att_process(struct bt_att *att)
 	att_send_req(att, ATT_REQ(node));
 }
 
-static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len,
-			      u8_t err)
+static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len, u8_t err)
 {
 	bt_att_func_t func;
 
-	if (!att->req) {
-		goto process;
-	}
+	BT_DBG("err %u len %u: %s", err, len, bt_hex(pdu, len));
 
 	/* Cancel timeout if ongoing */
 	k_delayed_work_cancel(&att->timeout_work);
+
+	if (!att->req) {
+		BT_WARN("No pending ATT request");
+		goto process;
+	}
 
 	/* Release original buffer */
 	if (att->req->buf) {
@@ -2164,6 +2168,8 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 
 	hdr = (void *)buf->data;
 
+	BT_DBG("code 0x%02x", hdr->code);
+
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
 		int err;
 
@@ -2208,6 +2214,8 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
 {
 	struct bt_att *att;
+
+	BT_DBG("req %p", req);
 
 	if (!conn || !req) {
 		return;

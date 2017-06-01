@@ -680,8 +680,12 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  all peer that have notification enabled via CCC otherwise do a direct
  *  notification only the given connection.
  *
+ *  The attribute object must be the so called Characteristic Value Descriptor,
+ *  its usually declared with BT_GATT_DESCRIPTOR after BT_GATT_CHARACTERISTIC
+ *  and before BT_GATT_CCC.
+ *
  *  @param conn Connection object.
- *  @param attr Attribute object.
+ *  @param attr Characteristic Value Descriptor attribute.
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  */
@@ -1026,7 +1030,8 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  *
  * This procedure unsubscribe to value notification using the Client
  * Characteristic Configuration handle. Notification callback with NULL data
- * will not be called if subscription was removed by this call.
+ * will be called if subscription was removed by this call, until then the
+ * parameters cannot be reused.
  *
  * @param conn Connection object.
  * @param params Subscribe parameters.

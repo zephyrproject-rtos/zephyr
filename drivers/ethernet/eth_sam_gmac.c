@@ -477,6 +477,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 	bool frame_is_complete;
 	struct net_buf *frag;
 	struct net_buf *new_frag;
+	struct net_buf *last_frag = NULL;
 	u8_t *frag_data;
 	u32_t frag_len;
 	u32_t frame_len = 0;
@@ -543,7 +544,12 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 				rx_frame = NULL;
 			} else {
 				net_buf_add(frag, frag_len);
-				net_pkt_frag_insert(rx_frame, frag);
+				if (!last_frag) {
+					net_pkt_frag_insert(rx_frame, frag);
+				} else {
+					net_buf_frag_insert(last_frag, frag);
+				}
+				last_frag = frag;
 				frag = new_frag;
 				rx_frag_list->buf[tail] = (u32_t)frag;
 			}

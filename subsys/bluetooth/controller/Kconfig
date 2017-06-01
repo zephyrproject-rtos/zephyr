@@ -30,33 +30,10 @@ endchoice
 
 comment "BLE Controller configuration"
 
-menu "Advertiser"
-	visible if !BLUETOOTH_PERIPHERAL
-
-config BLUETOOTH_CONTROLLER_STATE_ADV
-	bool "Enable Advertiser"
-	default y if BLUETOOTH_PERIPHERAL
-	default y if !BLUETOOTH_CONTROLLER_STATE_SCAN
-	help
-	  Enable support for advertising state in the Controller.
-
-endmenu
-
-menu "Scanner"
-	visible if !BLUETOOTH_CENTRAL
-
-config BLUETOOTH_CONTROLLER_STATE_SCAN
-	bool "Enable Scanner"
-	default y if BLUETOOTH_CENTRAL
-	help
-	  Enable support for scanning state in the Controller.
-
-endmenu
-
 config BLUETOOTH_CONTROLLER_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
-	depends on BLUETOOTH_CONTROLLER_STATE_SCAN
+	depends on BLUETOOTH_OBSERVER
 	default 16
 	help
 	  Set the number of unique BLE addresses that can be filtered as
@@ -116,9 +93,11 @@ config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
 
 config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
 	int
-	default 320
+	default 448
 
 comment "BLE Controller features"
+
+if BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
@@ -155,6 +134,8 @@ config BLUETOOTH_CONTROLLER_CHAN_SEL_2
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
 	  the Controller.
+
+endif # BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 	bool "Show advanced features"
@@ -267,6 +248,8 @@ config BLUETOOTH_CONTROLLER_TIFS_HW
 	help
 	  Enable use of hardware accelerated tIFS Trx switching.
 
+if BLUETOOTH_CONN
+
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
 	help
@@ -284,6 +267,8 @@ config BLUETOOTH_CONTROLLER_CONN_RSSI
 	bool "Connection RSSI"
 	help
 	  Enable connection RSSI measurement.
+
+endif # BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_ADV_INDICATION
 	bool "Advertisement indications"

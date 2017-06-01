@@ -231,17 +231,17 @@ void radio_status_reset(void)
 
 u32_t radio_is_ready(void)
 {
-	return NRF_RADIO->EVENTS_READY;
+	return (NRF_RADIO->EVENTS_READY != 0);
 }
 
 u32_t radio_is_done(void)
 {
-	return NRF_RADIO->EVENTS_END;
+	return (NRF_RADIO->EVENTS_END != 0);
 }
 
 u32_t radio_has_disabled(void)
 {
-	return NRF_RADIO->EVENTS_DISABLED;
+	return (NRF_RADIO->EVENTS_DISABLED != 0);
 }
 
 u32_t radio_is_idle(void)
@@ -262,7 +262,7 @@ void radio_crc_configure(u32_t polynomial, u32_t iv)
 
 u32_t radio_crc_is_valid(void)
 {
-	return NRF_RADIO->CRCSTATUS;
+	return (NRF_RADIO->CRCSTATUS != 0);
 }
 
 static u8_t MALIGN(4) _pkt_empty[PDU_EM_SIZE_MAX];
@@ -362,7 +362,7 @@ void radio_rssi_status_reset(void)
 
 u32_t radio_rssi_is_ready(void)
 {
-	return NRF_RADIO->EVENTS_RSSIEND;
+	return (NRF_RADIO->EVENTS_RSSIEND != 0);
 }
 
 void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
@@ -395,7 +395,7 @@ void radio_filter_status_reset(void)
 
 u32_t radio_filter_has_match(void)
 {
-	return NRF_RADIO->EVENTS_DEVMATCH;
+	return (NRF_RADIO->EVENTS_DEVMATCH != 0);
 }
 
 void radio_bc_configure(u32_t n)
@@ -411,7 +411,7 @@ void radio_bc_status_reset(void)
 
 u32_t radio_bc_has_match(void)
 {
-	return NRF_RADIO->EVENTS_BCMATCH;
+	return (NRF_RADIO->EVENTS_BCMATCH != 0);
 }
 
 void radio_tmr_status_reset(void)
@@ -627,7 +627,7 @@ u32_t radio_ccm_is_done(void)
 
 u32_t radio_ccm_mic_is_valid(void)
 {
-	return NRF_CCM->MICSTATUS;
+	return (NRF_CCM->MICSTATUS != 0);
 }
 
 static u8_t MALIGN(4) _aar_scratch[3];

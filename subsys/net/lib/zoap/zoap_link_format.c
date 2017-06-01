@@ -28,7 +28,7 @@ static bool match_path_uri(const char * const *path,
 			   const char *uri, u16_t len)
 {
 	const char * const *p = NULL;
-	int i, j, plen;
+	int i, j, k, plen;
 
 	if (!path) {
 		return false;
@@ -46,31 +46,43 @@ static bool match_path_uri(const char * const *path,
 		return false;
 	}
 
+	/* Go through uri and try to find a matching path */
 	for (i = 1; i < len; i++) {
-		if (!*p) {
-			return false;
-		}
+		while (*p) {
+			plen = strlen(*p);
 
-		if (!p) {
+			k = i;
+
+			for (j = 0; j < plen; j++) {
+				if (uri[k] == '*') {
+					if ((k + 1) == len) {
+						return true;
+					}
+				}
+
+				if (uri[k] != (*p)[j]) {
+					goto next;
+				}
+
+				k++;
+			}
+
+			if (i == (k - 1) && j == plen) {
+				return true;
+			}
+
+			if (k == len && j == plen) {
+				return true;
+			}
+
+		next:
 			p++;
-			plen = *p ? strlen(*p) : 0;
-			j = 0;
 		}
+	}
 
-		if (j == plen && uri[i] == '/') {
-			p = NULL;
-			continue;
-		}
-
-		if (uri[i] == '*' && i + 1 == len) {
-			return true;
-		}
-
-		if (uri[i] != (*p)[j]) {
-			return false;
-		}
-
-		j++;
+	/* Did we find the resource or not */
+	if (i == len && !*p) {
+		return false;
 	}
 
 	return true;
@@ -260,7 +272,7 @@ static int format_uri(const char * const *path, struct net_buf *buf,
 		return 0;
 	}
 
-	for (p = path; p && *p; ) {
+	for (p = path; *p; ) {
 		u16_t path_len = strlen(*p);
 
 		add_to_net_buf(buf, *p, path_len,
@@ -301,7 +313,7 @@ static int format_attributes(const char * const *attributes,
 		goto terminator;
 	}
 
-	for (attr = attributes; attr && *attr; ) {
+	for (attr = attributes; *attr; ) {
 		int attr_len = strlen(*attr);
 
 		add_to_net_buf(buf, *attr, attr_len,
@@ -527,7 +539,7 @@ static int format_uri(const char * const *path, struct net_buf *buf)
 	str = net_buf_add(buf, sizeof(prefix) - 1);
 	strncpy(str, prefix, sizeof(prefix) - 1);
 
-	for (p = path; p && *p; ) {
+	for (p = path; *p; ) {
 		u16_t path_len = strlen(*p);
 
 		str = net_buf_add(buf, path_len);
@@ -556,7 +568,7 @@ static int format_attributes(const char * const *attributes,
 		goto terminator;
 	}
 
-	for (attr = attributes; attr && *attr; ) {
+	for (attr = attributes; *attr; ) {
 		int attr_len = strlen(*attr);
 
 		str = net_buf_add(buf, attr_len);
@@ -701,5 +713,14 @@ done:
 	}
 
 	return r;
+}
+#endif
+
+/* Exposing some of the APIs to ZoAP unit tests in tests/net/lib/zoap */
+#if defined(CONFIG_ZOAP_TEST_API_ENABLE)
+bool _zoap_match_path_uri(const char * const *path,
+			  const char *uri, u16_t len)
+{
+	return match_path_uri(path, uri, len);
 }
 #endif
