@@ -234,7 +234,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 		goto destroy;
 	}
 
-	if (chan->ops && chan->ops->disconnected) {
+	if (chan->ops->disconnected) {
 		chan->ops->disconnected(chan);
 	}
 
@@ -797,7 +797,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 		/* Update state */
 		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTED);
 
-		if (chan->ops && chan->ops->connected) {
+		if (chan->ops->connected) {
 			chan->ops->connected(chan);
 		}
 
@@ -957,7 +957,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, u8_t ident,
 		/* Update state */
 		bt_l2cap_chan_set_state(&chan->chan, BT_L2CAP_CONNECTED);
 
-		if (chan->chan.ops && chan->chan.ops->connected) {
+		if (chan->chan.ops->connected) {
 			chan->chan.ops->connected(&chan->chan);
 		}
 
@@ -1439,7 +1439,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	}
 
 	/* Always allocate buffer from the channel if supported. */
-	if (chan->chan.ops && chan->chan.ops->alloc_buf) {
+	if (chan->chan.ops->alloc_buf) {
 		chan->_sdu = chan->chan.ops->alloc_buf(&chan->chan);
 		if (!chan->_sdu) {
 			BT_ERR("Unable to allocate buffer for SDU");
