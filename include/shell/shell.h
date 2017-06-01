@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef _SHELL_H_
+#define _SHELL_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -156,3 +159,4 @@ static inline int shell_run(struct device *dev)
 }
 #endif
 
+#endif /* _SHELL_H_ */
