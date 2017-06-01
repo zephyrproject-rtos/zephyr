@@ -4,3 +4,4 @@ obj-$(CONFIG_COUNTER_TMR_CMSDK_APB) += counter_tmr_cmsdk_apb.o
 obj-$(CONFIG_TIMER_TMR_CMSDK_APB) += timer_tmr_cmsdk_apb.o
 obj-$(CONFIG_COUNTER_DTMR_CMSDK_APB) += counter_dtmr_cmsdk_apb.o
 obj-$(CONFIG_TIMER_DTMR_CMSDK_APB) += timer_dtmr_cmsdk_apb.o
+obj-$(CONFIG_RTC_NRF5) += rtc_nrf5.o

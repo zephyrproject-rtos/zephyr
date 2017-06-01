@@ -20,4 +20,6 @@ source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
 
+source "drivers/counter/Kconfig.nrf5"
+
 endif # COUNTER
