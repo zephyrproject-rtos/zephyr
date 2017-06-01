@@ -27,7 +27,7 @@
 #include <zephyr.h>
 
 /* size of stack area used by each thread */
-#define STACKSIZE 2048
+#define STACKSIZE 1024 + CONFIG_TEST_EXTRA_STACKSIZE
 
 /* Number of memory blocks. The minimum number of blocks needed to run the
  * test is 2
