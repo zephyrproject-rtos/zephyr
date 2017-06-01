@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32F3_PINMUX_H_
-#define _STM32F3_PINMUX_H_
+#ifndef _SOC_PINMUX_H_
+#define _SOC_PINMUX_H_
 
 /**
  * @file Header for STM32F3 pin multiplexing helper
@@ -36,4 +36,4 @@
 #define STM32F3_PINMUX_FUNC_PB10_USART3_TX	STM32_PINMUX_FUNC_ALT_7
 #endif
 
-#endif /* _STM32F3_PINMUX_H_ */
+#endif /* _SOC_PINMUX_H_ */

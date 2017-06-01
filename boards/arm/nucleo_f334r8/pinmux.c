@@ -12,6 +12,7 @@
 #include "pinmux/pinmux.h"
 
 #include "pinmux_stm32.h"
+#include "soc_pinmux.h"
 
 /* pin assignments for NUCLEO-F334RB board */
 static const struct pin_config pinconf[] = {
