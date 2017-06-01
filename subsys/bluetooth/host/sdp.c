@@ -39,6 +39,9 @@
 
 #define SDP_DATA_ELEM_NEST_LEVEL_MAX 5
 
+/* Size of Cont state length */
+#define SDP_CONT_STATE_LEN_SIZE 1
+
 /* 1 byte for the no. of services searched till this response */
 /* 2 bytes for the total no. of matching records */
 #define SDP_SS_CONT_STATE_SIZE 3
@@ -1750,6 +1753,11 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_SDP_SVC_SEARCH_ATTR_RSP:
 		/* Get number of attributes in this frame. */
 		frame_len = net_buf_pull_be16(buf);
+		/* Check valid buf len for attribute list and cont state */
+		if (buf->len < frame_len + SDP_CONT_STATE_LEN_SIZE) {
+			BT_ERR("Invalid frame payload length");
+			return;
+		}
 		/* Check valid range of attributes length */
 		if (frame_len < 2) {
 			BT_ERR("Invalid attributes data length");
@@ -1765,7 +1773,8 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			return;
 		}
 
-		if ((frame_len + cstate->length) > len) {
+		if ((frame_len + SDP_CONT_STATE_LEN_SIZE + cstate->length) >
+		     buf->len) {
 			BT_ERR("Invalid frame payload length");
 			return;
 		}
