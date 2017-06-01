@@ -35,29 +35,17 @@
 static sys_slist_t subscriptions;
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
-#if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
-static struct bt_gatt_attr *db;
-static size_t attr_count;
-#else
 static sys_slist_t db;
-#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
-#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	sys_slist_t list;
 	struct bt_gatt_attr *last;
-#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 	u16_t handle;
 
 	__ASSERT(attrs, "invalid parameters\n");
 	__ASSERT(count, "invalid parameters\n");
 
-#if !defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
-	handle = 0;
-	db = attrs;
-	attr_count = count;
-#else
 	sys_slist_init(&list);
 
 	if (sys_slist_is_empty(&db)) {
@@ -69,7 +57,6 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 	handle = last->handle;
 
 populate:
-#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 	/* Populate the handles and append them to the list */
 	for (; attrs && count; attrs++, count--) {
 		if (!attrs->handle) {
@@ -85,19 +72,15 @@ populate:
 			return -EINVAL;
 		}
 
-#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 		sys_slist_append(&list, &attrs->node);
-#endif
 
 		BT_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x",
 		       attrs, attrs->handle, bt_uuid_str(attrs->uuid),
 		       attrs->perm);
 	}
 
-#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	/* Merge attribute list into database */
 	sys_slist_merge_slist(&db, &list);
-#endif
 
 	return 0;
 }
@@ -242,11 +225,7 @@ void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 {
 	struct bt_gatt_attr *attr;
 
-#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	SYS_SLIST_FOR_EACH_CONTAINER(&db, attr, node) {
-#else
-	for (attr = db; attr; attr = bt_gatt_attr_next(attr)) {
-#endif
 		/* Check if attribute handle is within range */
 		if (attr->handle < start_handle || attr->handle > end_handle) {
 			continue;
@@ -260,13 +239,8 @@ void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 {
-#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	return SYS_SLIST_PEEK_NEXT_CONTAINER((struct bt_gatt_attr *)attr,
 					     node);
-#else
-	return ((attr < db || attr > &db[attr_count - 2]) ? NULL :
-		(struct bt_gatt_attr *)&attr[1]);
-#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 }
 
 ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,

@@ -137,9 +137,7 @@ struct bt_gatt_attr {
 	u16_t			handle;
 	/** Attribute permissions */
 	u8_t			perm;
-#if defined(CONFIG_BLUETOOTH_GATT_DYNAMIC_DB)
 	sys_snode_t		node;
-#endif /* CONFIG_BLUETOOTH_GATT_DYNAMIC_DB */
 };
 
 /** @brief Service Attribute Value. */
