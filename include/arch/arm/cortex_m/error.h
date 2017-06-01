@@ -35,6 +35,21 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 #define _SVC_CALL_IRQ_OFFLOAD		1
 #define _SVC_CALL_RUNTIME_EXCEPT	2
 
+#if defined(CONFIG_ARMV6_M)
+/* ARMv6 will hard-fault if SVC is called with interrupts locked. Just
+ * force them unlocked, the thread is in an undefined state anyway
+ */
+#define _ARCH_EXCEPT(reason_p) do { \
+	__asm__ volatile ( \
+		"cpsie i\n\t" \
+		"mov r0, %[reason]\n\t" \
+		"svc %[id]\n\t" \
+		: \
+		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
+		: "memory"); \
+	CODE_UNREACHABLE; \
+} while (0)
+#elif defined(CONFIG_ARMV7_M)
 #define _ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile ( \
 		"mov r0, %[reason]\n\t" \
@@ -44,6 +59,9 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 		: "memory"); \
 	CODE_UNREACHABLE; \
 } while (0)
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M */
 
 #ifdef __cplusplus
 }
