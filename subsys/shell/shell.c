@@ -298,10 +298,9 @@ static int exit_module(int argc, char *argv[])
 	return 0;
 }
 
-static shell_cmd_function_t get_cb(int argc, char *argv[])
+static shell_cmd_function_t get_cb(int *argc, char *argv[], int *module)
 {
 	const char *first_string = argv[0];
-	int module = -1;
 	const struct shell_module *shell_module;
 	const char *command;
 	int i;
@@ -323,17 +322,17 @@ static shell_cmd_function_t get_cb(int argc, char *argv[])
 		return exit_module;
 	}
 
-	if ((argc == 1) && (default_module == -1)) {
+	if ((*argc == 1) && (default_module == -1)) {
 		printk("Missing parameter\n");
 		return NULL;
 	}
 
-	command = get_command_and_module(argv, &module);
-	if ((module == -1) || (command == NULL)) {
+	command = get_command_and_module(argv, module);
+	if ((*module == -1) || (command == NULL)) {
 		return NULL;
 	}
 
-	shell_module = &__shell_cmd_start[module];
+	shell_module = &__shell_cmd_start[*module];
 	for (i = 0; shell_module->commands[i].cmd_name; i++) {
 		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
 			return shell_module->commands[i].cb;
@@ -352,7 +351,8 @@ static inline void print_cmd_unknown(char *argv)
 int shell_exec(char *line)
 {
 	char *argv[ARGC_MAX + 1];
-	size_t argc;
+	int argc;
+	int module = default_module;
 	int err;
 	shell_cmd_function_t cb;
 
@@ -361,7 +361,9 @@ int shell_exec(char *line)
 		return -EINVAL;
 	}
 
-	cb = get_cb(argc, argv);
+	err = argc;
+
+	cb = get_cb(&argc, argv, &module);
 	if (!cb) {
 		if (app_cmd_handler != NULL) {
 			cb = app_cmd_handler;
@@ -372,7 +374,13 @@ int shell_exec(char *line)
 	}
 
 	/* Execute callback with arguments */
-	err = cb(argc, argv);
+	if (module != -1 && module != default_module) {
+		/* Ajust parameters to point to the actual command */
+		err = cb(argc - 1, &argv[1]);
+	} else {
+		err = cb(argc, argv);
+	}
+
 	if (err < 0) {
 		show_cmd_help(argv);
 	}
