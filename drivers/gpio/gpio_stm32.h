@@ -16,7 +16,6 @@
 #include <gpio.h>
 
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 /* GPIO buses definitions */
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define STM32_CLOCK_BUS_GPIO STM32_CLOCK_BUS_APB2
@@ -48,7 +47,6 @@
 #define STM32_PERIPH_GPIOG LL_AHB2_GRP1_PERIPH_GPIOG
 #define STM32_PERIPH_GPIOH LL_AHB2_GRP1_PERIPH_GPIOH
 #endif /* CONFIG_SOC_SERIES_.. */
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 
 
@@ -60,12 +58,7 @@ struct gpio_stm32_config {
 	u32_t *base;
 	/* IO port */
 	enum stm32_pin_port port;
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	struct stm32_pclken pclken;
-#else /* SOC_SERIES_STM32F1X */
-	/* clock subsystem */
-	clock_control_subsys_t clock_subsys;
-#endif
 };
 
 /**
