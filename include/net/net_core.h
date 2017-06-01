@@ -134,7 +134,7 @@ struct net_stack_info {
 #if defined(CONFIG_INIT_STACKS)
 #include <misc/stack.h>
 
-static inline void net_analyze_stack_get_values(unsigned char *stack,
+static inline void net_analyze_stack_get_values(const char *stack,
 						size_t size,
 						unsigned *pcnt,
 						unsigned *unused)
@@ -146,7 +146,7 @@ static inline void net_analyze_stack_get_values(unsigned char *stack,
 }
 
 static inline void net_analyze_stack(const char *name,
-				     unsigned char *stack,
+				     const char *stack,
 				     size_t size)
 {
 	unsigned int pcnt, unused;
