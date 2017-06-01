@@ -25,6 +25,6 @@ config NUM_IRQS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	default 84000000
+	default 120000000
 
 endif # SOC_SERIES_SAM4S
