@@ -12,6 +12,8 @@
 #include <pinmux/stm32/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
+#include "soc_pinmux.h"
+
 static const stm32_pin_func_t pin_pa9_funcs[] = {
 	[STM32F1_PINMUX_FUNC_PA9_USART1_TX - 1] =
 			STM32F10X_PIN_CONFIG_AF_PUSH_PULL,
