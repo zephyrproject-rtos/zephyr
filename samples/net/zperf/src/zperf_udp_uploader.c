@@ -17,7 +17,7 @@
 
 #define TAG CMD_STR_UDP_UPLOAD" "
 
-static char sample_packet[PACKET_SIZE_MAX];
+static u8_t sample_packet[PACKET_SIZE_MAX];
 
 static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 					    struct zperf_results *results)
