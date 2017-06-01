@@ -61,7 +61,12 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 #ifdef CONFIG_TICKLESS_KERNEL
     push {lr}
     bl _update_time_slice_before_swap
+#if defined(CONFIG_ARMV6_M)
+    pop {r0}
+    mov lr, r0
+#else
     pop {lr}
+#endif /* CONFIG_ARMV6_M */
 #endif
 
 /**
