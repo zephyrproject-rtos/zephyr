@@ -205,7 +205,7 @@ static int show_cmd_help(char *argv[])
 	}
 
 	printk("Unrecognized command: %s\n", argv[0]);
-	return 0;
+	return -EINVAL;
 }
 
 static void print_module_commands(const int module)
@@ -235,7 +235,7 @@ static int show_help(int argc, char *argv[])
 			module = get_destination_module(argv[1]);
 			if (module == -1) {
 				printk("Illegal module %s\n", argv[1]);
-				return 0;
+				return -EINVAL;
 			}
 		} else {
 			module = default_module;
@@ -261,14 +261,14 @@ static int set_default_module(const char *name)
 	if (strlen(name) > MODULE_NAME_MAX_LEN) {
 		printk("Module name %s is too long, default is not changed\n",
 			name);
-		return -1;
+		return -EINVAL;
 	}
 
 	module = get_destination_module(name);
 
 	if (module == -1) {
 		printk("Illegal module %s, default is not changed\n", name);
-		return -1;
+		return -EINVAL;
 	}
 
 	default_module = module;
@@ -283,11 +283,10 @@ static int select_module(int argc, char *argv[])
 {
 	if (argc == 1) {
 		default_module = -1;
-	} else {
-		set_default_module(argv[1]);
+		return 0;
 	}
 
-	return 0;
+	return set_default_module(argv[1]);
 }
 
 static int exit_module(int argc, char *argv[])
