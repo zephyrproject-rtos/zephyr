@@ -22,9 +22,17 @@ void _irq_do_offload(void)
 
 void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
-	int key;
+#if defined(CONFIG_ARMV6_M) && defined(CONFIG_ASSERT)
+	/* Cortex M0 hardfaults if you make a SVC call with interrupts
+	 * locked.
+	 */
+	unsigned int key;
 
-	key = irq_lock();
+	__asm__ volatile("mrs %0, PRIMASK;" : "=r" (key) : : "memory");
+	__ASSERT(key == 0, "irq_offload called with interrupts locked\n");
+#endif
+
+	k_sched_lock();
 	offload_routine = routine;
 	offload_param = parameter;
 
@@ -34,6 +42,5 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 			  : "memory");
 
 	offload_routine = NULL;
-
-	irq_unlock(key);
+	k_sched_unlock();
 }
