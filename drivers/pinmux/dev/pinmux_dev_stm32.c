@@ -18,7 +18,7 @@
 #include <soc.h>
 #include "pinmux.h"
 #include <pinmux.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 
 static int pinmux_stm32_set(struct device *dev,
 				 u32_t pin, u32_t func)
