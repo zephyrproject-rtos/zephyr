@@ -864,10 +864,6 @@ int net_shell_cmd_dns(int argc, char *argv[])
 	int arg = 1;
 	int ret, i;
 
-	if (strcmp(argv[0], "dns")) {
-		arg++;
-	}
-
 	if (!argv[arg]) {
 		/* DNS status */
 		ctx = dns_resolve_get_default();
@@ -1206,10 +1202,6 @@ int net_shell_cmd_nbr(int argc, char *argv[])
 #if defined(CONFIG_NET_IPV6)
 	int count = 0;
 	int arg = 1;
-
-	if (strcmp(argv[0], "nbr")) {
-		arg++;
-	}
 
 	if (argv[arg]) {
 		struct in6_addr addr;
@@ -1675,10 +1667,6 @@ int net_shell_cmd_tcp(int argc, char *argv[])
 #if defined(CONFIG_NET_TCP)
 	int arg = 1;
 	int ret;
-
-	if (strcmp(argv[0], "tcp")) {
-		arg++;
-	}
 
 	if (argv[arg]) {
 		if (!strcmp(argv[arg], "connect")) {
