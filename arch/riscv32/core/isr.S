@@ -37,6 +37,10 @@ GTEXT(_sys_k_event_logger_interrupt)
 GTEXT(_offload_routine)
 #endif
 
+#ifdef CONFIG_TIMESLICING
+GTEXT(_update_time_slice_before_swap)
+#endif
+
 /* exports */
 GTEXT(__irq_wrapper)
 
@@ -306,6 +310,9 @@ on_thread_stack:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 reschedule:
+#if CONFIG_TIMESLICING
+	call _update_time_slice_before_swap
+#endif
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
