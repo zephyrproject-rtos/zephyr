@@ -7,9 +7,10 @@
 #include <errno.h>
 
 #include "soc.h"
+#include "soc_pinmux.h"
 #include <device.h>
 #include <misc/util.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
 #define PAD(AF, func)				\

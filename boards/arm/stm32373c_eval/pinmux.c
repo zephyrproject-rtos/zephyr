@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Florian Vaussard, HEIG-VD
+ * Copyright (c) 2017 RnDity Sp. z o.o.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,13 +12,14 @@
 #include "pinmux/pinmux.h"
 
 #include "pinmux_stm32.h"
+#include "soc_pinmux.h"
 
-/* pin assignments for NUCLEO-F413ZH board */
+/* pin assignments for STM32373C-EVAL board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_STM32_PORT_3
-	{STM32_PIN_PD8, STM32F4_PINMUX_FUNC_PD8_USART3_TX},
-	{STM32_PIN_PD9, STM32F4_PINMUX_FUNC_PD9_USART3_RX},
-#endif /* #ifdef CONFIG_UART_STM32_PORT_3 */
+#ifdef CONFIG_UART_STM32_PORT_2
+	{STM32_PIN_PD5, STM32F3_PINMUX_FUNC_PD5_USART2_TX},
+	{STM32_PIN_PD6, STM32F3_PINMUX_FUNC_PD6_USART2_RX},
+#endif	/* CONFIG_UART_STM32_PORT_2 */
 };
 
 static int pinmux_stm32_init(struct device *port)
@@ -31,4 +32,4 @@ static int pinmux_stm32_init(struct device *port)
 }
 
 SYS_INIT(pinmux_stm32_init, PRE_KERNEL_1,
-		CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);
+	 CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);

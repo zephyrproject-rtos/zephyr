@@ -9,8 +9,10 @@
 #include "soc.h"
 #include <device.h>
 #include <misc/util.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
+
+#include "soc_pinmux.h"
 
 static const stm32_pin_func_t pin_pa9_funcs[] = {
 	[STM32F1_PINMUX_FUNC_PA9_USART1_TX - 1] =

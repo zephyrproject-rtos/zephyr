@@ -11,7 +11,6 @@
 #include <soc.h>
 #include <gpio.h>
 #include <clock_control/stm32_clock_control.h>
-#include <pinmux/stm32/pinmux_stm32.h>
 #include <pinmux.h>
 #include <misc/util.h>
 #include <interrupt_controller/exti_stm32.h>

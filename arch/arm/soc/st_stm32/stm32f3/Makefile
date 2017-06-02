@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+ZEPHYRINCLUDE += -I$(srctree)/arch/arm/soc/st_stm32/common
+
 obj-y += soc.o
 
 obj-$(CONFIG_PINMUX) += soc_config.o

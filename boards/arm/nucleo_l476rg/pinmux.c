@@ -10,9 +10,9 @@
 #include <init.h>
 #include <pinmux.h>
 #include <sys_io.h>
-#include "pinmux/pinmux.h"
 
 #include "pinmux_stm32.h"
+#include "soc_pinmux.h"
 
 /* pin assignments for NUCLEO-L476RG board */
 static const struct pin_config pinconf[] = {
