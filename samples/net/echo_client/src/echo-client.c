@@ -159,12 +159,12 @@ static struct sockaddr_in6 peer_addr6 = {
 };
 
 #if defined(CONFIG_NET_UDP)
-static char __noinit __stack ipv6_udp_stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(ipv6_udp_stack, STACKSIZE);
 static struct k_thread ipv6_udp_thread_data;
 #endif
 
 #if defined(CONFIG_NET_TCP)
-static char __noinit __stack ipv6_tcp_stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(ipv6_tcp_stack, STACKSIZE)
 static struct k_thread ipv6_tcp_thread_data;
 #endif
 
@@ -190,12 +190,12 @@ static struct sockaddr_in peer_addr4 = {
 };
 
 #if defined(CONFIG_NET_UDP)
-static char __noinit __stack ipv4_udp_stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(ipv4_udp_stack, STACKSIZE);
 static struct k_thread ipv4_udp_thread_data;
 #endif
 
 #if defined(CONFIG_NET_TCP)
-static char __noinit __stack ipv4_tcp_stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(ipv4_tcp_stack, STACKSIZE);
 static struct k_thread ipv4_tcp_thread_data;
 #endif
 

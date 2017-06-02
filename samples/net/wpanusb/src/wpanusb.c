@@ -75,7 +75,7 @@ static struct k_fifo tx_queue;
 /**
  * Stack for the tx thread.
  */
-static char __noinit __stack tx_stack[1024];
+static K_THREAD_STACK_DEFINE(tx_stack, 1024);
 static struct k_thread tx_thread_data;
 
 #define DEV_DATA(dev) \
@@ -531,7 +531,8 @@ static void init_tx_queue(void)
 	/* Transmit queue init */
 	k_fifo_init(&tx_queue);
 
-	k_thread_create(&tx_thread_data, tx_stack, sizeof(tx_stack),
+	k_thread_create(&tx_thread_data, tx_stack,
+			K_THREAD_STACK_SIZEOF(tx_stack),
 			(k_thread_entry_t)tx_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 }

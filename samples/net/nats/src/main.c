@@ -321,7 +321,7 @@ static void nats_client(void)
 
 void main(void)
 {
-	k_thread_create(&thread_data, stack, sizeof(stack),
+	k_thread_create(&thread_data, stack, K_THREAD_STACK_SIZEOF(stack),
 			(k_thread_entry_t)nats_client,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
