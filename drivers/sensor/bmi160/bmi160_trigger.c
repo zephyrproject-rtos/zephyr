@@ -77,7 +77,7 @@ static void bmi160_handle_interrupts(void *arg)
 }
 
 #ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD
-static char __stack bmi160_thread_stack[CONFIG_BMI160_THREAD_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE);
 static struct k_thread bmi160_thread;
 
 static void bmi160_thread_main(void *arg1, void *unused1, void *unused2)
