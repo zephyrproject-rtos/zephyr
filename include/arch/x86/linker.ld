@@ -93,12 +93,20 @@ SECTIONS
 
 	. = ALIGN(8);
 	_idt_base_address = .;
+#ifdef LINKER_PASS2
 	KEEP(*(staticIdt))
+#else
+	. += CONFIG_IDT_NUM_VECTORS * 8;
+#endif
 
 #ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
+#ifdef LINKER_PASS2
 	KEEP(*(irq_int_vector_map))
+#else
+	. += CONFIG_MAX_IRQ_LINES;
+#endif
 #endif
 
 #ifdef CONFIG_CUSTOM_RODATA_LD
