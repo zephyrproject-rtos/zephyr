@@ -270,6 +270,15 @@ config BLUETOOTH_DEVICE_NAME
 	  Bluetooth device name. Name can be up to 248 bytes long (excluding
 	  NULL termination). Can be empty string.
 
+config BLUETOOTH_DEVICE_APPEARANCE
+	int "Bluetooth device appearance"
+	range 0 65535
+	default 0
+	help
+	  Bluetooth device appearance. For the list of possible values please
+	  consult the following link:
+	  https://www.bluetooth.com/specifications/assigned-numbers
+
 endif # BLUETOOTH_HCI_HOST
 
 config BLUETOOTH_TINYCRYPT_ECC
