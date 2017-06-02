@@ -1346,6 +1346,11 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		net_tcp_print_recv_info("SYN", pkt, NET_TCP_HDR(pkt)->src_port);
 
+		if (net_tcp_get_state(tcp) != NET_TCP_LISTEN) {
+			NET_DBG("we cannot process 2 SYNs here simultaneously.");
+			return NET_DROP;
+		}
+
 		net_tcp_change_state(tcp, NET_TCP_SYN_RCVD);
 
 		remote = create_sockaddr(pkt, &peer);
