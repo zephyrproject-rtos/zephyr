@@ -72,6 +72,8 @@ The hexiwear_k64 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -98,11 +100,19 @@ The K64F SoC has five pairs of pinmux/gpio controllers.
 +-------+-----------------+---------------------------+
 | Name  | Function        | Usage                     |
 +=======+=================+===========================+
+| PTA12 | GPIO            | Click 1 I/O button/LED    |
++-------+-----------------+---------------------------+
+| PTA13 | GPIO            | Click 2 I/O button/LED    |
++-------+-----------------+---------------------------+
+| PTA14 | GPIO            | Click 3 I/O button/LED    |
++-------+-----------------+---------------------------+
 | PTA29 | GPIO            | LDO_EN                    |
 +-------+-----------------+---------------------------+
 | PTB0  | I2C0_SCL        | I2C / MAX30101            |
 +-------+-----------------+---------------------------+
 | PTB1  | I2C0_SDA        | I2C / MAX30101            |
++-------+-----------------+---------------------------+
+| PTB9  | GPIO            | haptic feedback motor     |
 +-------+-----------------+---------------------------+
 | PTB12 | GPIO            | 3V3B EN                   |
 +-------+-----------------+---------------------------+
@@ -129,6 +139,23 @@ The K64F SoC has five pairs of pinmux/gpio controllers.
 | PTE25 | UART4_TX        | UART BT HCI               |
 +-------+-----------------+---------------------------+
 
+
+GPIO lines for the Click board interfaces on the docking station are
+also defined.   Each interface (numbered 1-3) defines the following
+
+   .. code-block:: console
+
+      CLICKn_AN_{NAME, PIN}
+      CLICKn_PWM_{NAME, PIN}
+      CLICKn_INT_{NAME, PIN}
+      CLICKn_CS_{NAME, PIN}
+      CLICKn_RX_{NAME, PIN}
+      CLICKn_TX_{NAME, PIN}
+
+The Click interfaces are on the SPI_0 device.  Use the CLICKn_SPI_SELECT
+values with spi_slave_select().
+
+
 System Clock
 ============
 
@@ -139,7 +166,7 @@ Serial Port
 ===========
 
 The K64F SoC has six UARTs. One is configured for the console, another for BT
-HCI, and the remaining are not used.
+HCI, and three of the remainder are used for the Click board interfaces.
 
 Programming and Debugging
 *************************
@@ -299,3 +326,33 @@ will then see a plot of the heart rate data that updates once per second.
 
 .. _Kinetis BLE Toolbox for Android:
    https://play.google.com/store/apps/details?id=com.freescale.kinetisbletoolbox
+
+.. _FXOS8700CQ 3D Accelerometer + 3D Magnetometer:
+   http://www.nxp.com/products/sensors/6-axis-sensors/digital-sensor-3d-accelerometer-2g-4g-8g-plus-3d-magnetometer:FXOS8700CQ
+
+.. _FXOS8700CQ 3D Accelerometer + 3D Magnetometer Datasheet:
+   http://www.nxp.com/assets/documents/data/en/data-sheets/FXOS8700CQ.pdf
+
+.. _FXAS21002 3-Axis Gyroscope:
+   http://www.nxp.com/products/sensors/gyroscopes/3-axis-digital-gyroscope:FXAS21002C
+
+.. _FXAS21002 3-Axis Gyroscope Datasheet:
+   http://www.nxp.com/assets/documents/data/en/data-sheets/FXAS21002.pdf
+
+.. _TSL2561 Ambient Light Sensor Datasheet:
+   http://ams.com/eng/content/download/250094/975485/file/TSL2560-61_DS000110_2-00.pdf
+
+.. _AMSYS HTU21D Humidity + Temperature Sensor:
+   http://www.amsys.info/products/htu21d.htm
+
+.. _AMSYS HTU21D Humidity + Temperature Sensor Datasheet:
+   http://www.amsys.info/sheets/amsys.en.htu21d.pdf
+
+.. _MAXIM MAX30101 Heart Rate Sensor:
+   https://www.maximintegrated.com/en/products/analog/sensors-and-sensor-interface/MAX30101.html
+
+.. _MAXIM MAX30101 Heart Rate Sensor Datasheet:
+   https://datasheets.maximintegrated.com/en/ds/MAX30101.pdf
+
+.. _WINBOND W25Q64FV Serial Flash Memory:
+   https://www.winbond.com/resource-files/w25q64fv%20revq%2006142016.pdf
