@@ -20,7 +20,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/gap.h>
 #include <gatt/hrs.h>
 #include <gatt/dis.h>
 #include <gatt/bas.h>
@@ -28,7 +27,6 @@
 
 #define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
-#define HEART_RATE_APPEARANCE	0x0341
 
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
@@ -236,7 +234,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	gap_init(DEVICE_NAME, HEART_RATE_APPEARANCE);
 	hrs_init(0x01);
 	bas_init();
 	cts_init();

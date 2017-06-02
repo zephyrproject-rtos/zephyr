@@ -23,14 +23,12 @@
 
 #include <shell/shell.h>
 
-#include <gatt/gap.h>
 #include <gatt/hrs.h>
 
 #define DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
 
 #define MY_SHELL_MODULE "btshell"
 
-static u16_t appearance_value = 0x0001;
 static bool hrs_simulate;
 
 static int cmd_hrs_simulate(int argc, char *argv[])
@@ -44,7 +42,6 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 
 		if (!hrs_registered) {
 			printk("Registering HRS Service\n");
-			gap_init(DEVICE_NAME, appearance_value);
 			hrs_init(0x01);
 			hrs_registered = true;
 		}

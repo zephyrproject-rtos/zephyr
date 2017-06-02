@@ -20,14 +20,12 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/gap.h>
 #include <gatt/dis.h>
 #include <gatt/bas.h>
 #include <gatt/hog.h>
 
 #define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
-#define HOG_APPEARANCE		0x03c2
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -91,7 +89,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	gap_init(DEVICE_NAME, HOG_APPEARANCE);
 	bas_init();
 	dis_init(CONFIG_SOC, "Manufacturer");
 	hog_init();

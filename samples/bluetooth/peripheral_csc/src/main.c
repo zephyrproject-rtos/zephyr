@@ -21,13 +21,11 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/gap.h>
 #include <gatt/dis.h>
 #include <gatt/bas.h>
 
 #define DEVICE_NAME			CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN			(sizeof(DEVICE_NAME) - 1)
-#define CSC_APPEARANCE			0x0485
 #define CSC_SUPPORTED_LOCATIONS		{ CSC_LOC_OTHER, \
 					  CSC_LOC_FRONT_WHEEL, \
 					  CSC_LOC_REAR_WHEEL, \
@@ -385,7 +383,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	gap_init(DEVICE_NAME, CSC_APPEARANCE);
 	bas_init();
 	dis_init(CONFIG_SOC, "ACME");
 	bt_gatt_register(csc_attrs, ARRAY_SIZE(csc_attrs));

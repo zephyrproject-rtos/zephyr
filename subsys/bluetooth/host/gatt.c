@@ -35,16 +35,43 @@
 static sys_slist_t subscriptions;
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
+static const char *gap_name = CONFIG_BLUETOOTH_DEVICE_NAME;
+static const u16_t gap_appearance = CONFIG_BLUETOOTH_DEVICE_APPEARANCE;
+
 static sys_slist_t db;
 
-int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
+static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, u16_t len, u16_t offset)
+{
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, gap_name,
+				 strlen(gap_name));
+}
+
+static ssize_t read_appearance(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, void *buf,
+			       u16_t len, u16_t offset)
+{
+	u16_t appearance = sys_cpu_to_le16(gap_appearance);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
+				 sizeof(appearance));
+}
+
+static struct bt_gatt_attr gap_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_DEVICE_NAME, BT_GATT_PERM_READ,
+			   read_name, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_GAP_APPEARANCE, BT_GATT_PERM_READ,
+			   read_appearance, NULL, NULL),
+};
+
+static int gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
 	sys_slist_t list;
 	struct bt_gatt_attr *last;
 	u16_t handle;
-
-	__ASSERT(attrs, "invalid parameters\n");
-	__ASSERT(count, "invalid parameters\n");
 
 	sys_slist_init(&list);
 
@@ -83,6 +110,24 @@ populate:
 	sys_slist_merge_slist(&db, &list);
 
 	return 0;
+}
+
+void bt_gatt_init(void)
+{
+	gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
+}
+
+int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
+{
+	__ASSERT(attrs, "invalid parameters\n");
+	__ASSERT(count, "invalid parameters\n");
+
+	/* Do no allow to register mandatory services twice */
+	if (!bt_uuid_cmp(attrs->uuid, BT_UUID_GAP)) {
+		return -EALREADY;
+	}
+
+	return gatt_register(attrs, count);
 }
 
 ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
