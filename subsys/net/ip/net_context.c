@@ -400,6 +400,8 @@ int net_context_unref(struct net_context *context)
 
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
+	NET_DBG("Context %p released", context);
+
 	k_sem_give(&contexts_lock);
 
 	return 0;
