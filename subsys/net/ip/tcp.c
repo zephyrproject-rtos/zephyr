@@ -36,6 +36,8 @@
 #include "tcp.h"
 #include "net_stats.h"
 
+#define ALLOC_TIMEOUT 500
+
 /*
  * Each TCP connection needs to be tracked by net_context, so
  * we need to allocate equal number of control structures here.
@@ -315,7 +317,10 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		tail = pkt->frags;
 		pkt->frags = NULL;
 	} else {
-		pkt = net_pkt_get_tx(context, K_FOREVER);
+		pkt = net_pkt_get_tx(context, ALLOC_TIMEOUT);
+		if (!pkt) {
+			return NULL;
+		}
 	}
 
 #if defined(CONFIG_NET_IPV4)
@@ -347,7 +352,12 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		return NULL;
 	}
 
-	header = net_pkt_get_data(context, K_FOREVER);
+	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
+	if (!header) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
+
 	net_pkt_frag_add(pkt, header);
 
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
@@ -740,10 +750,18 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		}
 
 		if (pkt_in_slist) {
-			new_pkt = net_pkt_get_tx(ctx, K_FOREVER);
+			new_pkt = net_pkt_get_tx(ctx, ALLOC_TIMEOUT);
+			if (!new_pkt) {
+				return -ENOMEM;
+			}
 
 			memcpy(new_pkt, pkt, sizeof(struct net_pkt));
-			new_pkt->frags = net_pkt_copy_all(pkt, 0, K_FOREVER);
+			new_pkt->frags = net_pkt_copy_all(pkt, 0,
+							  ALLOC_TIMEOUT);
+			if (!new_pkt->frags) {
+				net_pkt_unref(new_pkt);
+				return -ENOMEM;
+			}
 
 			NET_DBG("Copied %zu bytes from %p to %p",
 				net_pkt_get_len(new_pkt), pkt, new_pkt);
