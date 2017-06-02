@@ -455,7 +455,9 @@ static void recv_cb(struct net_context *net_ctx, struct net_pkt *pkt,
 	}
 
 out:
-	net_pkt_unref(pkt);
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
 }
 
 static int get_local_addr(struct http_client_ctx *ctx)
