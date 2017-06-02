@@ -105,8 +105,8 @@ struct k_fifo timeout_order_fifo;
 static int thread_detected_error;
 static int thread_evidence;
 
-static char __stack thread_stack1[THREAD_STACKSIZE];
-static char __stack thread_stack2[THREAD_STACKSIZE];
+static K_THREAD_STACK_DEFINE(thread_stack1, THREAD_STACKSIZE);
+static K_THREAD_STACK_DEFINE(thread_stack2, THREAD_STACKSIZE);
 static struct k_thread thread_data1;
 static struct k_thread thread_data2;
 
@@ -646,7 +646,8 @@ struct timeout_order timeouts[] = {
 };
 
 #define NUM_TIMEOUT_THREADS ARRAY_SIZE(timeouts)
-static char __stack timeout_stacks[NUM_TIMEOUT_THREADS][THREAD_STACKSIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(timeout_stacks, NUM_TIMEOUT_THREADS,
+				   THREAD_STACKSIZE);
 static struct k_thread timeout_threads[NUM_TIMEOUT_THREADS];
 
 /* a thread busy waits, then reports through a fifo */

@@ -29,7 +29,7 @@ static u32_t helper_thread_iterations;
 #define Y_STACK_SIZE    512
 #define Y_PRIORITY      10
 
-char __noinit __stack y_stack_area[Y_STACK_SIZE];
+K_THREAD_STACK_DEFINE(y_stack_area, Y_STACK_SIZE);
 static struct k_thread y_thread;
 
 /**

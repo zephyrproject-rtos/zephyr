@@ -14,7 +14,7 @@
 
 #include "test_sched.h"
 #define THREADS_NUM     3
-static char __noinit __stack tstack[THREADS_NUM][STACK_SIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
 static struct thread_data tdata[THREADS_NUM];
 static struct k_thread tthread[THREADS_NUM];

@@ -19,7 +19,7 @@ https://www.zephyrproject.org/doc/subsystems/power_management.html#tickless-idle
 
 #define STACK_SIZE 512
 #define NUM_THREAD 4
-static char __noinit __stack tstack[NUM_THREAD][STACK_SIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 static struct k_thread tdata[NUM_THREAD];
 /*for those not supporting tickless idle*/
 #ifndef CONFIG_TICKLESS_IDLE

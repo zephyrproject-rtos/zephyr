@@ -8,7 +8,7 @@
 
 #define STACK_SIZE 512
 #define NUM_THREAD 3
-static char __noinit __stack tstack[NUM_THREAD][STACK_SIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 /* slice size in millisecond*/
 #define SLICE_SIZE 200
 /* busy for more than one slice*/

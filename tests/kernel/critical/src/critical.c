@@ -22,11 +22,12 @@ static u32_t criticalVar;
 static u32_t altTaskIterations;
 
 static struct k_work_q offload_work_q;
-static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(offload_work_q_stack,
+			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 #define STACK_SIZE 1024
-static char __stack stack1[STACK_SIZE];
-static char __stack stack2[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(stack1, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(stack2, STACK_SIZE);
 
 static struct k_thread thread1;
 static struct k_thread thread2;
@@ -161,7 +162,7 @@ static void init_objects(void)
 	altTaskIterations = 0;
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
-		       sizeof(offload_work_q_stack),
+		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
 		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
 }
 

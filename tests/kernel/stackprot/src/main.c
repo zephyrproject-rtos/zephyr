@@ -101,7 +101,7 @@ void alternate_thread(void)
 
 
 
-char __noinit __stack alt_thread_stack_area[STACKSIZE];
+K_THREAD_STACK_DEFINE(alt_thread_stack_area, STACKSIZE);
 static struct k_thread alt_thread_data;
 
 /**

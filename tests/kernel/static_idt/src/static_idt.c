@@ -30,7 +30,7 @@
 #define MY_STACK_SIZE 2048
 #define MY_PRIORITY 5
 
-char __noinit __stack my_stack_area[MY_STACK_SIZE];
+K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
 static struct k_thread my_thread;
 
 /* externs */

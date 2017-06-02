@@ -15,7 +15,7 @@
 
 #include "test_msgq.h"
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
 static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };

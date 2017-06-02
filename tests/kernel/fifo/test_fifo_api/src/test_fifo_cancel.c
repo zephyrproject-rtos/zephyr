@@ -13,7 +13,7 @@ K_FIFO_DEFINE(kfifo_c);
 
 struct k_fifo fifo_c;
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread thread;
 
 static void t_cancel_wait_entry(void *p1, void *p2, void *p3)

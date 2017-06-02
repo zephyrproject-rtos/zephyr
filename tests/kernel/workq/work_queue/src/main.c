@@ -28,7 +28,7 @@ struct test_item {
 	struct k_delayed_work work;
 };
 
-static char __stack co_op_stack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(co_op_stack, STACK_SIZE);
 static struct k_thread co_op_data;
 
 static struct test_item tests[NUM_TEST_ITEMS];

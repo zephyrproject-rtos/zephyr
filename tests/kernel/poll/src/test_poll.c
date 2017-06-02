@@ -96,7 +96,7 @@ static struct k_poll_signal wait_signal = K_POLL_SIGNAL_INITIALIZER();
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
 static struct k_thread poll_wait_helper_thread;
-static __stack __noinit char poll_wait_helper_stack[KB(1)];
+static K_THREAD_STACK_DEFINE(poll_wait_helper_stack, KB(1));
 
 #define TAG_0 10
 #define TAG_1 11
@@ -145,8 +145,9 @@ void test_poll_wait(void)
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
 	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
-			sizeof(poll_wait_helper_stack), poll_wait_helper,
-			(void *)1, 0, 0, main_low_prio - 1, 0, 0);
+			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
+			poll_wait_helper, (void *)1, 0, 0,
+			main_low_prio - 1, 0, 0);
 
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 
@@ -196,7 +197,8 @@ void test_poll_wait(void)
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
 	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
-			sizeof(poll_wait_helper_stack), poll_wait_helper,
+			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
+			poll_wait_helper,
 			0, 0, 0, main_low_prio - 1, 0, 0);
 
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
@@ -230,7 +232,8 @@ void test_poll_wait(void)
 	wait_signal.signaled = 0;
 
 	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
-			sizeof(poll_wait_helper_stack), poll_wait_helper,
+			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
+			poll_wait_helper,
 			(void *)1, 0, 0, old_prio + 1, 0, 0);
 
 	/* semaphore */
@@ -301,7 +304,7 @@ static struct k_sem eaddrinuse_reply =
 	K_SEM_INITIALIZER(eaddrinuse_reply, 0, 1);
 
 static struct k_thread eaddrinuse_hogger_thread;
-static __stack __noinit char eaddrinuse_hogger_stack[KB(1)];
+static K_THREAD_STACK_DEFINE(eaddrinuse_hogger_stack, KB(1));
 
 static void eaddrinuse_hogger(void *p1, void *p2, void *p3)
 {
@@ -338,8 +341,8 @@ void test_poll_eaddrinuse(void)
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
 	k_thread_create(&eaddrinuse_hogger_thread, eaddrinuse_hogger_stack,
-			sizeof(eaddrinuse_hogger_stack), eaddrinuse_hogger,
-			0, 0, 0, main_low_prio - 1, 0, 0);
+			K_THREAD_STACK_SIZEOF(eaddrinuse_hogger_stack),
+			eaddrinuse_hogger, 0, 0, 0, main_low_prio - 1, 0, 0);
 
 	rc = k_poll(events, ARRAY_SIZE(events), K_SECONDS(1));
 

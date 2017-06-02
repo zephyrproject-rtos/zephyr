@@ -14,7 +14,7 @@
 
 #include "test_sched.h"
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static int last_prio;
 

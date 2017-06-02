@@ -31,7 +31,7 @@
 #define STACK_SIZE 512
 #define NUM_OF_WORK 2
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_work_q workq;
 static struct k_work work[NUM_OF_WORK];
 static struct k_delayed_work delayed_work[NUM_OF_WORK], delayed_work_sleepy;
