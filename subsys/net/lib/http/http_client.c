@@ -491,6 +491,17 @@ static int tcp_connect(struct http_client_ctx *ctx)
 
 	if (ctx->tcp.remote.family == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
+
+		/* If we are reconnecting, then make sure the source port
+		 * is re-calculated so that the peer will not get confused
+		 * which connection the connection is related to.
+		 * This was seen in Linux which dropped packets when the same
+		 * source port was for a new connection after the old connection
+		 * was terminated.
+		 */
+		net_sin6(&ctx->tcp.local)->sin6_port = 0;
+	} else {
+		net_sin(&ctx->tcp.local)->sin_port = 0;
 	}
 
 	ret = get_local_addr(ctx);
