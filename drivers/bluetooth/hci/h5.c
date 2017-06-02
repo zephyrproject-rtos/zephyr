@@ -364,8 +364,8 @@ static void ack_timeout(struct k_work *work)
 	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
 
 	/* Analyze stacks */
-	stack_analyze("tx_stack", tx_stack, sizeof(tx_stack));
-	stack_analyze("rx_stack", rx_stack, sizeof(rx_stack));
+	STACK_ANALYZE("tx_stack", tx_stack);
+	STACK_ANALYZE("rx_stack", rx_stack);
 }
 
 static void h5_process_complete_packet(u8_t *hdr)
@@ -717,12 +717,14 @@ static void h5_init(void)
 
 	/* TX thread */
 	k_fifo_init(&h5.tx_queue);
-	k_thread_create(&tx_thread_data, tx_stack, sizeof(tx_stack),
+	k_thread_create(&tx_thread_data, tx_stack,
+			K_THREAD_STACK_SIZEOF(tx_stack),
 			(k_thread_entry_t)tx_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	k_fifo_init(&h5.rx_queue);
-	k_thread_create(&rx_thread_data, rx_stack, sizeof(rx_stack),
+	k_thread_create(&rx_thread_data, rx_stack,
+			K_THREAD_STACK_SIZEOF(rx_stack),
 			(k_thread_entry_t)rx_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 

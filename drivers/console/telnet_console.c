@@ -66,7 +66,7 @@ struct line_buf_rb {
 
 static struct line_buf_rb telnet_rb;
 
-static char __noinit __stack telnet_stack[TELNET_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(telnet_stack, TELNET_STACK_SIZE);
 static struct k_thread telnet_thread_data;
 static K_SEM_DEFINE(send_lock, 0, UINT_MAX);
 
