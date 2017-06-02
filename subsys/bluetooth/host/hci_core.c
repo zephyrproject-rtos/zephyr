@@ -582,10 +582,9 @@ static void hci_disconn_complete(struct net_buf *buf)
 	/* Check stacks usage (no-ops if not enabled) */
 	k_call_stacks_analyze();
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
-	stack_analyze("rx stack", rx_thread_stack, sizeof(rx_thread_stack));
+	STACK_ANALYZE("rx stack", rx_thread_stack);
 #endif
-	stack_analyze("tx stack", tx_thread_stack,
-		      sizeof(tx_thread_stack));
+	STACK_ANALYZE("tx stack", tx_thread_stack);
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0;
@@ -4065,13 +4064,14 @@ int bt_enable(bt_ready_cb_t cb)
 
 	/* TX thread */
 	k_thread_create(&tx_thread_data, tx_thread_stack,
-			sizeof(tx_thread_stack), hci_tx_thread, NULL, NULL,
+			K_THREAD_STACK_SIZEOF(tx_thread_stack),
+			hci_tx_thread, NULL, NULL,
 			NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 #if !defined(CONFIG_BLUETOOTH_RECV_IS_RX_THREAD)
 	/* RX thread */
 	k_thread_create(&rx_thread_data, rx_thread_stack,
-			sizeof(rx_thread_stack),
+			K_THREAD_STACK_SIZEOF(rx_thread_stack),
 			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
