@@ -99,9 +99,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_INIT_STACKS)
 		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
-			stack_analyze("prio recv thread stack",
-				      prio_recv_thread_stack,
-				      sizeof(prio_recv_thread_stack));
+			STACK_ANALYZE("prio recv thread stack",
+				      prio_recv_thread_stack);
 			prio_ts = k_uptime_get_32();
 		}
 #endif
@@ -327,8 +326,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_INIT_STACKS)
 		if (k_uptime_get_32() - rx_ts > K_SECONDS(5)) {
-			stack_analyze("recv thread stack", recv_thread_stack,
-				      sizeof(recv_thread_stack));
+			STACK_ANALYZE("recv thread stack", recv_thread_stack);
 			rx_ts = k_uptime_get_32();
 		}
 #endif
@@ -403,11 +401,12 @@ static int hci_driver_open(void)
 #endif
 
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
-			sizeof(prio_recv_thread_stack), prio_recv_thread,
+			K_THREAD_STACK_SIZEOF(prio_recv_thread_stack),
+			prio_recv_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(6), 0, K_NO_WAIT);
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
-			sizeof(recv_thread_stack), recv_thread,
+			K_THREAD_STACK_SIZEOF(recv_thread_stack), recv_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	BT_DBG("Success.");

@@ -44,7 +44,7 @@ static char default_module_prompt[PROMPT_MAX_LEN];
 static int default_module = -1;
 
 #define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
-static char __noinit __stack stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
 static struct k_thread shell_thread;
 
 #define MAX_CMD_QUEUED CONFIG_CONSOLE_SHELL_MAX_CMD_QUEUED

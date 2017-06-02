@@ -1690,7 +1690,8 @@ void net_if_init(struct k_sem *startup_sync)
 		return;
 	}
 
-	k_thread_create(&tx_thread_data, tx_stack, sizeof(tx_stack),
+	k_thread_create(&tx_thread_data, tx_stack,
+			K_THREAD_STACK_SIZEOF(tx_stack),
 			(k_thread_entry_t)net_if_tx_thread,
 			startup_sync, NULL, NULL, K_PRIO_COOP(7),
 			K_ESSENTIAL, K_NO_WAIT);
