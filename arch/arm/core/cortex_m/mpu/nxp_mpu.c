@@ -38,22 +38,7 @@ static inline u32_t _get_region_attr_by_type(u32_t type)
 
 static inline u8_t _get_num_regions(void)
 {
-	u32_t type = (SYSMPU->CESR & SYSMPU_CESR_NRGD_MASK)
-			>> SYSMPU_CESR_NRGD_SHIFT;
-
-	switch (type) {
-	case 0:
-		return 8;
-	case 1:
-		return 12;
-	case 2:
-		return 16;
-	default:
-		__ASSERT(0, "Unsupported MPU configuration.");
-		return 0;
-	}
-
-	return NXP_MPU_REGION_NUMBER;
+	return FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT;
 }
 
 static void _region_init(u32_t index, u32_t region_base,
