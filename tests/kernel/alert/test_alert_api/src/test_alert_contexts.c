@@ -24,7 +24,7 @@ static int alert_handler1(struct k_alert *);
 K_ALERT_DEFINE(kalert_pending, alert_handler1, PENDING_MAX);
 K_ALERT_DEFINE(kalert_consumed, alert_handler0, PENDING_MAX);
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_alert *palert;
 static volatile int handler_executed;

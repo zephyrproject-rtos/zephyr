@@ -34,7 +34,7 @@
 
 static ldata_t data[LIST_LEN];
 static struct k_lifo lifo;
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_sem end_sema;
 

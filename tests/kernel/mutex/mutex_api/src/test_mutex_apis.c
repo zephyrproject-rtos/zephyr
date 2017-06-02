@@ -26,7 +26,7 @@
 K_MUTEX_DEFINE(kmutex);
 static struct k_mutex mutex;
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 
 static void tThread_entry_lock_forever(void *p1, void *p2, void *p3)

@@ -19,7 +19,7 @@
 #include "bttester.h"
 
 #define STACKSIZE 2048
-static char __stack stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
 static struct k_thread cmd_thread;
 
 #define CMD_QUEUED 2

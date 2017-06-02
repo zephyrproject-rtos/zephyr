@@ -36,7 +36,7 @@
 static qdata_t data[LIST_LEN];
 static qdata_t data_p[LIST_LEN];
 static struct k_queue queue;
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_sem end_sema;
 

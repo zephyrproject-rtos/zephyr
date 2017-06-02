@@ -13,7 +13,7 @@
 #define MAIN_PRIORITY 7
 #define PRIORITY 5
 
-static char __noinit __stack alt_stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(alt_stack, STACKSIZE);
 
 #ifdef CONFIG_STACK_SENTINEL
 #define OVERFLOW_STACKSIZE 1024
@@ -130,7 +130,8 @@ void main(void)
 	k_thread_priority_set(_current, K_PRIO_PREEMPT(MAIN_PRIORITY));
 
 	TC_PRINT("test alt thread 1: generic CPU exception\n");
-	k_thread_create(&alt_thread, alt_stack, sizeof(alt_stack),
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
 			(k_thread_entry_t)alt_thread1,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
@@ -142,7 +143,8 @@ void main(void)
 	}
 
 	TC_PRINT("test alt thread 2: initiate kernel oops\n");
-	k_thread_create(&alt_thread, alt_stack, sizeof(alt_stack),
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
 			(k_thread_entry_t)alt_thread2,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
@@ -186,7 +188,8 @@ void main(void)
 	 */
 	k_thread_create(&alt_thread, overflow_stack, OVERFLOW_STACKSIZE,
 #else
-	k_thread_create(&alt_thread, alt_stack, sizeof(alt_stack),
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
 #endif
 			(k_thread_entry_t)stack_thread1,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), 0,
@@ -207,7 +210,8 @@ void main(void)
 #ifdef CONFIG_STACK_SENTINEL
 	k_thread_create(&alt_thread, overflow_stack, OVERFLOW_STACKSIZE,
 #else
-	k_thread_create(&alt_thread, alt_stack, sizeof(alt_stack),
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
 #endif
 			(k_thread_entry_t)stack_thread2,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), 0,

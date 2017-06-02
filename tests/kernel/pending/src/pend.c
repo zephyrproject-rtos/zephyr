@@ -30,7 +30,8 @@
 #define NON_NULL_PTR          ((void *)0x12345678)
 
 static struct k_work_q offload_work_q;
-static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(offload_work_q_stack,
+			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 struct fifo_data {
 	u32_t reserved;
@@ -47,7 +48,7 @@ struct offload_work {
 	struct k_sem *sem;
 };
 
-static char __stack coop_stack[2][COOP_STACKSIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(coop_stack, 2, COOP_STACKSIZE);
 static struct k_thread coop_thread[2];
 
 static struct k_fifo fifo;
@@ -243,7 +244,7 @@ void task_high(void)
 
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
-		       sizeof(offload_work_q_stack),
+		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
 		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
 
 	counter = SEM_TEST_START;
