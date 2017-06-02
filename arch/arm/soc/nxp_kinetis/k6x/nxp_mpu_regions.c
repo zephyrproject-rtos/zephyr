@@ -46,4 +46,5 @@ static struct nxp_mpu_region mpu_regions[] = {
 struct nxp_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),
 	.mpu_regions = mpu_regions,
+	.sram_region = 3,
 };

@@ -16,6 +16,7 @@ dtb-$(CONFIG_BOARD_96B_CARBON)		=	96b_carbon.dts_compiled
 dtb-$(CONFIG_BOARD_96B_CARBON_NRF51)	=	96b_carbon_nrf51.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F401RE)	=	nucleo_f401re.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F411RE)	=	nucleo_f411re.dts_compiled
+dtb-$(CONFIG_BOARD_NUCLEO_F412ZG)	=	nucleo_f412zg.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F413ZH)	=	nucleo_f413zh.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F103RB)	=	nucleo_f103rb.dts_compiled
 dtb-$(CONFIG_BOARD_STM3210C_EVAL)	=	stm3210c_eval.dts_compiled

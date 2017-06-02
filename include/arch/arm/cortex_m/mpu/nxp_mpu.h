@@ -13,23 +13,70 @@
 
 #define NXP_MPU_REGION_NUMBER 12
 
+/* Bus Master User Mode Access */
+#define UM_READ		4
+#define UM_WRITE	2
+#define UM_EXEC		1
+
+#define BM0_UM_SHIFT	0
+#define BM1_UM_SHIFT	6
+#define BM2_UM_SHIFT	12
+#define BM3_UM_SHIFT	18
+
+/* Bus Master Supervisor Mode Access */
+#define SM_RWX_ALLOW	0
+#define SM_RX_ALLOW	1
+#define SM_RW_ALLOW	2
+#define SM_SAME_AS_UM	3
+
+#define BM0_SM_SHIFT	3
+#define BM1_SM_SHIFT	9
+#define BM2_SM_SHIFT	15
+#define BM3_SM_SHIFT	21
+
 /* Read Attribute */
-#define MPU_REGION_READ  ((1 << 2) | (1 << 8) | (1 << 14))
+#define MPU_REGION_READ  ((UM_READ << BM0_UM_SHIFT) | \
+			  (UM_READ << BM1_UM_SHIFT) | \
+			  (UM_READ << BM2_UM_SHIFT) | \
+			  (UM_READ << BM3_UM_SHIFT))
 
 /* Write Attribute */
-#define MPU_REGION_WRITE ((1 << 1) | (1 << 7) | (1 << 13))
+#define MPU_REGION_WRITE ((UM_WRITE << BM0_UM_SHIFT) | \
+			  (UM_WRITE << BM1_UM_SHIFT) | \
+			  (UM_WRITE << BM2_UM_SHIFT) | \
+			  (UM_WRITE << BM3_UM_SHIFT))
 
 /* Execute Attribute */
-#define MPU_REGION_EXEC  ((1 << 0) | (1 << 6) | (1 << 12))
+#define MPU_REGION_EXEC  ((UM_EXEC << BM0_UM_SHIFT) | \
+			  (UM_EXEC << BM1_UM_SHIFT) | \
+			  (UM_EXEC << BM2_UM_SHIFT) | \
+			  (UM_EXEC << BM3_UM_SHIFT))
 
 /* Super User Attributes */
-#define MPU_REGION_SU    ((3 << 3) | (3 << 9) | (3 << 15) | (3 << 21))
+#define MPU_REGION_SU	 ((SM_SAME_AS_UM << BM0_SM_SHIFT) | \
+			  (SM_SAME_AS_UM << BM1_SM_SHIFT) | \
+			  (SM_SAME_AS_UM << BM2_SM_SHIFT) | \
+			  (SM_SAME_AS_UM << BM3_SM_SHIFT))
+
+/* The ENDADDR field has the last 5 bit reserved and set to 1 */
+#define ENDADDR_ROUND(x) (x - 0x1F)
 
 /* Some helper defines for common regions */
-#define REGION_RAM_ATTR	(MPU_REGION_READ | MPU_REGION_WRITE | MPU_REGION_SU)
-#define REGION_FLASH_ATTR (MPU_REGION_READ | MPU_REGION_EXEC | MPU_REGION_SU)
-#define REGION_IO_ATTR (MPU_REGION_READ | MPU_REGION_WRITE | \
-			MPU_REGION_EXEC |  MPU_REGION_SU)
+#define REGION_RAM_ATTR	  (MPU_REGION_READ | \
+			   MPU_REGION_WRITE | \
+			   MPU_REGION_SU)
+
+#define REGION_FLASH_ATTR (MPU_REGION_READ | \
+			   MPU_REGION_EXEC | \
+			   MPU_REGION_SU)
+
+#define REGION_IO_ATTR	  (MPU_REGION_READ | \
+			   MPU_REGION_WRITE | \
+			   MPU_REGION_EXEC | \
+			   MPU_REGION_SU)
+
+#define REGION_RO_ATTR	  (MPU_REGION_READ | \
+			   MPU_REGION_SU)
 
 /* Region definition data structure */
 struct nxp_mpu_region {
@@ -57,6 +104,8 @@ struct nxp_mpu_config {
 	u32_t num_regions;
 	/* Regions */
 	struct nxp_mpu_region *mpu_regions;
+	/* SRAM Region */
+	u32_t sram_region;
 };
 
 /* Reference to the MPU configuration */

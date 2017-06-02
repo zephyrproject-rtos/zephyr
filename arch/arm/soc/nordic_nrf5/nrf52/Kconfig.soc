@@ -26,3 +26,11 @@ config SOC_NRF52840_QIAA
 	select SOC_NRF52840
 
 endchoice
+
+config ARM_MPU_NRF52X
+	bool "Enable MPU on nRF52"
+	depends on CPU_HAS_MPU
+	select ARM_MPU
+	default n
+	help
+	  Enable MPU support on Nordic Semiconductor nRF52x series ICs.
