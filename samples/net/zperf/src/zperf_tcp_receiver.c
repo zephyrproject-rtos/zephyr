@@ -28,7 +28,7 @@
 
 #define TCP_RX_FIBER_STACK_SIZE 1024
 
-static char __noinit __stack zperf_tcp_rx_stack[TCP_RX_FIBER_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(zperf_tcp_rx_stack, TCP_RX_FIBER_STACK_SIZE);
 static struct k_thread zperf_tcp_rx_thread_data;
 
 #if defined(CONFIG_NET_IPV6)
@@ -242,7 +242,7 @@ void zperf_tcp_receiver_init(int port)
 #endif
 
 	k_thread_create(&zperf_tcp_rx_thread_data, zperf_tcp_rx_stack,
-			sizeof(zperf_tcp_rx_stack),
+			K_THREAD_STACK_SIZEOF(zperf_tcp_rx_stack),
 			(k_thread_entry_t)zperf_tcp_rx_thread,
 			INT_TO_POINTER(port), 0, 0,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
