@@ -354,6 +354,7 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[])
 	bool sign;
 	u16_t handle;
 	u16_t len;
+	u16_t repeat;
 
 	if (!default_conn) {
 		printk("Not connected\n");
@@ -379,8 +380,24 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[])
 		}
 	}
 
-	err = bt_gatt_write_without_response(default_conn, handle,
-					     gatt_write_buf, len, sign);
+	repeat = 0;
+
+	if (argc > 4) {
+		repeat = strtoul(argv[4], NULL, 16);
+	}
+
+	if (!repeat) {
+		repeat = 1;
+	}
+
+	while (repeat--) {
+		err = bt_gatt_write_without_response(default_conn, handle,
+						     gatt_write_buf, len, sign);
+		if (err) {
+			break;
+		}
+	}
+
 	printk("Write Complete (err %d)\n", err);
 
 	return 0;
