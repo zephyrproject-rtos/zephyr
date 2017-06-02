@@ -20,6 +20,9 @@ Windows system with the latest updates installed.
 Installing Requirements and Dependencies
 ****************************************
 
+Using MSYS2
+===========
+
 The Zephyr development environment on Windows relies on MSYS2, a modern UNIX
 environment for Windows. Follow the steps below to set it up:
 
@@ -176,8 +179,29 @@ environment for Windows. Follow the steps below to set it up:
     This should check that all the tools and toolchain are set up correctly for
     your own Zephyr development.
 
+Using Windows 10 WSL (Windows Subsystem for Linux)
+==================================================
+
+If you are running a recent version of Windows 10 you can make use of the
+built-in functionality to natively run Ubuntu binaries directly on a standard
+command-prompt. This allows you to install the standard Zephyr SDK and build
+for all supported architectures without the need for a Virtual Machine.
+
+#. Install Windows Subsystem for Linux (WSL) following the instructions on the
+   official Microsoft website: `WSL Installation`_
+
+   .. note::
+         For the Zephyr SDK to function properly you will need Windows 10
+         build 15002 or greater. You can check which Windows 10 build you are
+         running in the "About your PC" section of the System Settings.
+         If you are running an older Windows 10 build you might need to install
+         the Creator's Update.
+
+#. Follow the instructions for Ubuntu detailed in the Zephyr Linux Getting
+   Started Guide which can be found here: :ref:`installation_linux`
 
 .. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 .. _MSYS2 website: http://www.msys2.org/
 .. _ISSM Toolchain: https://software.intel.com/en-us/articles/issm-toolchain-only-download
 .. _Getting Started on Arduino 101 with ISSM: https://software.intel.com/en-us/articles/getting-started-arduino-101genuino-101-with-intel-system-studio-for-microcontrollers
+.. _WSL Installation: https://msdn.microsoft.com/en-us/commandline/wsl/install_guide
