@@ -899,9 +899,11 @@ static const struct {
 #endif
 };
 
-static void main_thread(void)
+void main(void)
 {
 	int count, pass;
+
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 	net_6lo_set_context(net_if_get_default(), &ctx1);
@@ -922,15 +924,4 @@ static void main_thread(void)
 	net_pkt_print();
 
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
-}
-
-#define STACKSIZE 2000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
-
-void main(void)
-{
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)main_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
