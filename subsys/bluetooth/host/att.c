@@ -2132,6 +2132,8 @@ void bt_att_init(void)
 	};
 
 	bt_l2cap_le_fixed_chan_register(&chan);
+
+	bt_gatt_init();
 }
 
 u16_t bt_att_get_mtu(struct bt_conn *conn)

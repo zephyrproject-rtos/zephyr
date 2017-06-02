@@ -21,7 +21,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/gap.h>
 #include <gatt/dis.h>
 #include <gatt/bas.h>
 
@@ -30,7 +29,6 @@
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"
 #define SENSOR_3_NAME				"Humidity Sensor"
-#define APPEARANCE_THERMOMETER			0x0300
 
 /* Sensor Internal Update Interval [seconds] */
 #define SENSOR_1_UPDATE_IVAL			5
@@ -396,7 +394,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	gap_init(DEVICE_NAME, APPEARANCE_THERMOMETER);
 	bt_gatt_register(ess_attrs, ARRAY_SIZE(ess_attrs));
 	bas_init();
 	dis_init(CONFIG_SOC, "ACME");
