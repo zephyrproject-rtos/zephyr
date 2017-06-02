@@ -513,9 +513,10 @@ static const struct {
 	{ "test_fragment_ipv6_dispatch_big", &test_data_8},
 };
 
-static void main_thread(void)
+void main(void)
 {
 	int count, pass;
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		TC_START(tests[count].name);
@@ -531,13 +532,3 @@ static void main_thread(void)
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
 }
 
-#define STACKSIZE 8000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
-
-void main(void)
-{
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)main_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(7), 0, 0);
-}
