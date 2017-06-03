@@ -1005,12 +1005,13 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, u8_t ident,
 
 static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
 {
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	struct net_buf *seg;
 
 	/* Try to use original pool if possible */
-	if (buf->pool->user_data_size >= BT_BUF_USER_DATA_MIN &&
-	    buf->pool->buf_size >= BT_L2CAP_BUF_SIZE(L2CAP_MAX_LE_MPS)) {
-		seg = net_buf_alloc(buf->pool, K_NO_WAIT);
+	if (pool->user_data_size >= BT_BUF_USER_DATA_MIN &&
+	    pool->buf_size >= BT_L2CAP_BUF_SIZE(L2CAP_MAX_LE_MPS)) {
+		seg = net_buf_alloc(pool, K_NO_WAIT);
 		if (seg) {
 			net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
 			return seg;
@@ -1025,6 +1026,7 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 					     struct net_buf *buf,
 					     size_t sdu_hdr_len)
 {
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	struct net_buf *seg;
 	u16_t headroom;
 	u16_t len;
@@ -1035,9 +1037,9 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 	}
 
 	/* Segment if there is no space in the user_data */
-	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
+	if (pool->user_data_size < BT_BUF_USER_DATA_MIN) {
 		BT_WARN("Too small buffer user_data_size %u",
-			buf->pool->user_data_size);
+			pool->user_data_size);
 		goto segment;
 	}
 

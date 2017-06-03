@@ -664,13 +664,15 @@ static void allocs_cb(struct net_pkt *pkt,
 	return;
 buf:
 	if (func_alloc) {
+		struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
 		if (in_use) {
 			printk("%p/%d\t%5s\t%5s\t%s():%d\n", buf, buf->ref,
-			       str, net_pkt_pool2str(buf->pool), func_alloc,
+			       str, net_pkt_pool2str(pool), func_alloc,
 			       line_alloc);
 		} else {
 			printk("%p\t%5s\t%5s\t%s():%d -> %s():%d\n", buf,
-			       str, net_pkt_pool2str(buf->pool), func_alloc,
+			       str, net_pkt_pool2str(pool), func_alloc,
 			       line_alloc, func_free, line_free);
 		}
 	}
