@@ -646,7 +646,7 @@ int net_context_listen(struct net_context *context, int backlog)
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -1064,7 +1064,7 @@ int net_context_connect(struct net_context *context,
 #endif
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 	if (addr->family != net_context_get_family(context)) {
@@ -1577,7 +1577,7 @@ int net_context_accept(struct net_context *context,
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -1748,7 +1748,7 @@ static int sendto(struct net_pkt *pkt,
 	int ret;
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_TCP)
@@ -2051,7 +2051,7 @@ int net_context_recv(struct net_context *context,
 	NET_ASSERT(context);
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)
