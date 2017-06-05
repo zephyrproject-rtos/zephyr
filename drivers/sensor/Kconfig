@@ -42,6 +42,8 @@ config SENSOR_INIT_PRIORITY
 
 source "drivers/sensor/adxl362/Kconfig"
 
+source "drivers/sensor/adxrs290/Kconfig"
+
 source "drivers/sensor/ak8975/Kconfig"
 
 source "drivers/sensor/bma280/Kconfig"
