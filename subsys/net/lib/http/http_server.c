@@ -29,6 +29,13 @@ static void https_disable(struct http_server_ctx *ctx);
 
 #if defined(MBEDTLS_DEBUG_C)
 #include <mbedtls/debug.h>
+/* - Debug levels (from ext/lib/crypto/mbedtls/include/mbedtls/debug.h)
+ *    - 0 No debug
+ *    - 1 Error
+ *    - 2 State change
+ *    - 3 Informational
+ *    - 4 Verbose
+ */
 #define DEBUG_THRESHOLD 0
 #endif
 
@@ -958,6 +965,7 @@ static void my_debug(void *ctx, int level,
 		     const char *file, int line, const char *str)
 {
 	const char *p, *basename;
+	int len;
 
 	ARG_UNUSED(ctx);
 
@@ -967,6 +975,12 @@ static void my_debug(void *ctx, int level,
 			basename = p + 1;
 		}
 
+	}
+
+	/* Avoid printing double newlines */
+	len = strlen(str);
+	if (str[len - 1] == '\n') {
+		((char *)str)[len - 1] = '\0';
 	}
 
 	NET_DBG("%s:%04d: |%d| %s", basename, line, level, str);
@@ -1281,11 +1295,6 @@ static void https_handler(struct http_server_ctx *ctx)
 
 	heap_init(ctx);
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_HTTP)
-	mbedtls_debug_set_threshold(DEBUG_THRESHOLD);
-	mbedtls_ssl_conf_dbg(&ctx->https.mbedtls.conf, my_debug, NULL);
-#endif
-
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt_init(&ctx->https.mbedtls.srvcert);
 #endif
@@ -1295,6 +1304,11 @@ static void https_handler(struct http_server_ctx *ctx)
 	mbedtls_ssl_config_init(&ctx->https.mbedtls.conf);
 	mbedtls_entropy_init(&ctx->https.mbedtls.entropy);
 	mbedtls_ctr_drbg_init(&ctx->https.mbedtls.ctr_drbg);
+
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_HTTP)
+	mbedtls_debug_set_threshold(DEBUG_THRESHOLD);
+	mbedtls_ssl_conf_dbg(&ctx->https.mbedtls.conf, my_debug, NULL);
+#endif
 
 	/* Load the certificates and private RSA key. This needs to be done
 	 * by the user so we call a callback that user must have provided.
