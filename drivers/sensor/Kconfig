@@ -100,6 +100,8 @@ source "drivers/sensor/nrf5/Kconfig"
 
 source "drivers/sensor/sht3xd/Kconfig"
 
+source "drivers/sensor/si1153/Kconfig"
+
 source "drivers/sensor/sx9500/Kconfig"
 
 source "drivers/sensor/th02/Kconfig"
