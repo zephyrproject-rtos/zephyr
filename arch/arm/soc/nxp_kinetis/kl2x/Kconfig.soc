@@ -16,6 +16,7 @@ config SOC_MKL25Z4
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_LPSCI
+	select HAS_ADC16
 
 endchoice
 

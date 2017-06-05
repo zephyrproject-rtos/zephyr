@@ -15,6 +15,13 @@ config NUM_IRQS
 	int
 	default 32
 
+if ADC
+
+config ADC_MCUX_ADC16
+	def_bool y
+
+endif # ADC
+
 if PINMUX
 
 config PINMUX_MCUX
