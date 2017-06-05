@@ -12,6 +12,7 @@
  */
 
 #include <arch/x86/asm.h>
+#include <kernel_arch_data.h>
 
 	/* exports (private APIs) */
 
@@ -81,6 +82,7 @@ SECTION_FUNC(TEXT_START, __start)
 	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
 #endif
 	lidt	_Idt		/* load 32-bit operand size IDT */
+
 
 
 #ifdef CONFIG_SET_GDT
@@ -282,6 +284,25 @@ bssWords:
 	/* activate RAM-based Global Descriptor Table (GDT) */
 	lgdt	%ds:_gdt
 #endif
+
+#ifdef CONFIG_X86_MMU
+
+	/* load the page directory address into the registers*/
+	movl $__mmu_tables_start, %eax
+	movl %eax, %cr3
+
+	/*Set CR4.PAE = 0 (5th bit in CR4*/
+	movl %cr4, %eax
+	andl $CR4_PAE_DISABLE, %eax
+	movl %eax, %cr4
+
+	/* set CR0.PG bit (31st bit in CR0)*/
+	movl %cr0, %eax
+	orl $CR0_PAGING_ENABLE, %eax
+	movl %eax, %cr0
+
+#endif /* CONFIG_X86_MMU */
+
 
 	/* Jump to C portion of kernel initialization and never return */
 
