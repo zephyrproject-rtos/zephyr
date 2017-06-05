@@ -1,0 +1,8 @@
+sample:
+  description: Panther Board Demo over Wifi
+  name: Panther Board Demo (Sensor Subsystem)
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: panther_ss
+        tags: samples
