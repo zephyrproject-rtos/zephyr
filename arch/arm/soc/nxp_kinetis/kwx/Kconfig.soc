@@ -16,6 +16,7 @@ config SOC_MKW40Z4
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_LPUART
+	select HAS_ADC16
 	select HAS_TRNG
 	select HAS_SEGGER_RTT
 
@@ -26,6 +27,7 @@ config SOC_MKW41Z4
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_LPUART
+	select HAS_ADC16
 	select HAS_TRNG
 
 endchoice

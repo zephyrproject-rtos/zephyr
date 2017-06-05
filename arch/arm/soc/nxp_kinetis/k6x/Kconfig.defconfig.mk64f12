@@ -12,6 +12,13 @@ config SOC
 	string
 	default mk64f12
 
+if ADC
+
+config ADC_MCUX_ADC16
+	def_bool y
+
+endif # ADC
+
 if PINMUX
 
 config PINMUX_MCUX
