@@ -1830,7 +1830,7 @@ static int sendto(struct net_pkt *pkt,
 	}
 
 	if (ret < 0) {
-		NET_DBG("Could not create network packet to send");
+		NET_DBG("Could not create network packet to send (%d)", ret);
 		return ret;
 	}
 
