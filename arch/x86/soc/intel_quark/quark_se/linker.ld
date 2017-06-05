@@ -65,6 +65,7 @@ MEMORY
      */
 
     IDT_LIST        : ORIGIN = 2K, LENGTH = 2K
+    MMU_LIST	    : ORIGIN = 4k, LENGTH = 1K
     }
 
 #include <arch/x86/linker.ld>
