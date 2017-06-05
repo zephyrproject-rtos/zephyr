@@ -776,8 +776,10 @@ typedef void (*http_server_cb_t)(struct http_server_ctx *entry,
 				 void *user_data);
 
 void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
+void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
 #else
 #define http_server_conn_foreach(...)
+#define http_server_conn_monitor(...)
 #endif /* CONFIG_NET_DEBUG_HTTP_CONN */
 
 /**
