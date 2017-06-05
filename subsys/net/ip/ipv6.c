@@ -855,11 +855,23 @@ struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
 	if (atomic_test_bit(net_pkt_iface(pkt)->flags, NET_IF_POINTOPOINT)) {
+		/* Update RPL header */
+		if (net_rpl_update_header(pkt, &NET_IPV6_HDR(pkt)->dst) < 0) {
+			net_pkt_unref(pkt);
+			return NULL;
+		}
+
 		return pkt;
 	}
 
 	if (net_pkt_ll_dst(pkt)->addr ||
 	    net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+		/* Update RPL header */
+		if (net_rpl_update_header(pkt, &NET_IPV6_HDR(pkt)->dst) < 0) {
+			net_pkt_unref(pkt);
+			return NULL;
+		}
+
 		return update_ll_reserve(pkt, &NET_IPV6_HDR(pkt)->dst);
 	}
 
