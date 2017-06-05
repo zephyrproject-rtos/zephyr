@@ -64,9 +64,16 @@ static void https_disable(struct http_server_ctx *ctx);
 /** List of HTTP connections */
 static sys_slist_t http_conn;
 
+static http_server_cb_t ctx_mon;
+static void *mon_user_data;
+
 static void http_server_conn_add(struct http_server_ctx *ctx)
 {
 	sys_slist_prepend(&http_conn, &ctx->node);
+
+	if (ctx_mon) {
+		ctx_mon(ctx, mon_user_data);
+	}
 }
 
 static void http_server_conn_del(struct http_server_ctx *ctx)
@@ -81,6 +88,12 @@ void http_server_conn_foreach(http_server_cb_t cb, void *user_data)
 	SYS_SLIST_FOR_EACH_CONTAINER(&http_conn, ctx, node) {
 		cb(ctx, user_data);
 	}
+}
+
+void http_server_conn_monitor(http_server_cb_t cb, void *user_data)
+{
+	ctx_mon = cb;
+	mon_user_data = user_data;
 }
 #else
 #define http_server_conn_add(...)
@@ -435,8 +448,6 @@ static inline void new_client(struct http_server_ctx *http_ctx,
 		 sprint_ipaddr(buf, sizeof(buf), addr),
 		 net_ctx);
 #endif /* CONFIG_NET_DEBUG_HTTP */
-
-	http_server_conn_add(http_ctx);
 }
 
 static inline void new_server(struct http_server_ctx *ctx,
@@ -499,6 +510,8 @@ static int on_url(struct http_parser *parser, const char *at, size_t length)
 
 	ctx->req.url = at;
 	ctx->req.url_len = length;
+
+	http_server_conn_add(ctx);
 
 	return 0;
 }

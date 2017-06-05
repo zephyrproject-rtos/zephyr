@@ -949,8 +949,12 @@ static char *http_str_output(char *output, int outlen, const char *str, int len)
 		len = outlen;
 	}
 
-	memcpy(output, str, len);
-	output[len] = '\0';
+	if (len == 0) {
+		memset(output, 0, outlen);
+	} else {
+		memcpy(output, str, len);
+		output[len] = '\0';
+	}
 
 	return output;
 }
@@ -990,9 +994,27 @@ int net_shell_cmd_http(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
-	int count = 0;
+	static int count;
+	int arg = 1;
 
-	http_server_conn_foreach(http_server_cb, &count);
+	count = 0;
+
+	/* Turn off monitoring if it was enabled */
+	http_server_conn_monitor(NULL, NULL);
+
+	if (strcmp(argv[0], "http")) {
+		arg++;
+	}
+
+	if (argv[arg]) {
+		if (strcmp(argv[arg], "monitor") == 0) {
+			printk("Activating HTTP monitor. Type \"net http\" "
+			       "to disable HTTP connection monitoring.\n");
+			http_server_conn_monitor(http_server_cb, &count);
+		}
+	} else {
+		http_server_conn_foreach(http_server_cb, &count);
+	}
 #else
 	printk("Enable CONFIG_NET_DEBUG_HTTP_CONN and CONFIG_HTTP_SERVER "
 	       "to get HTTP server connection information\n");
@@ -1773,7 +1795,9 @@ static struct shell_cmd net_commands[] = {
 		"dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default) or "
 		"IPv6 address for a  host name" },
 	{ "http", net_shell_cmd_http,
-		"\n\tPrint information about active HTTP connections" },
+		"\n\tPrint information about active HTTP connections\n"
+		"http monitor\n\tStart monitoring HTTP connections\n"
+		"http\n\tTurn off HTTP connection monitoring" },
 	{ "iface", net_shell_cmd_iface,
 		"\n\tPrint information about network interfaces" },
 	{ "mem", net_shell_cmd_mem,
