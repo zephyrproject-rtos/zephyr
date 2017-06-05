@@ -673,6 +673,10 @@ struct http_server_ctx {
 	/** Function that is called when data is sent to network. */
 	http_send_data_t send_data;
 
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN)
+	sys_snode_t node;
+#endif
+
 	/** Network timeout */
 	s32_t timeout;
 
@@ -766,6 +770,15 @@ struct http_server_ctx {
 	} https;
 #endif /* CONFIG_HTTPS */
 };
+
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN)
+typedef void (*http_server_cb_t)(struct http_server_ctx *entry,
+				 void *user_data);
+
+void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
+#else
+#define http_server_conn_foreach(...)
+#endif /* CONFIG_NET_DEBUG_HTTP_CONN */
 
 /**
  * @brief Initialize user supplied HTTP context.
