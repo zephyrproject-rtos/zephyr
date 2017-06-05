@@ -150,7 +150,11 @@ static void abort_connection(struct net_tcp *tcp)
 	NET_DBG("Segment retransmission exceeds %d, resetting context %p",
 		CONFIG_NET_TCP_RETRY_COUNT, ctx);
 
-	if (ctx->recv_cb) {
+	if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTING) {
+		if (ctx->connect_cb) {
+			ctx->connect_cb(ctx, -ETIMEDOUT, ctx->user_data);
+		}
+	} else if (ctx->recv_cb) {
 		ctx->recv_cb(ctx, NULL, -ECONNRESET, tcp->recv_user_data);
 	}
 
@@ -667,23 +671,28 @@ const char * const net_tcp_state_str(enum net_tcp_state state)
 
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 {
-	struct net_conn *conn = (struct net_conn *)context->conn_handler;
-	size_t data_len = net_pkt_get_len(pkt);
-	int ret;
+	if (net_context_get_state(context) != NET_CONTEXT_CONNECTING) {
+		/* PSH is set on all non-synchronization packets.  Our
+		 * window is so small, there's no point in the remote
+		 * side trying to finesse things and coalesce packets.
+		 */
+		struct net_conn *conn =
+			(struct net_conn *)context->conn_handler;
+		size_t data_len = net_pkt_get_len(pkt);
+		int ret;
 
-	/* Set PSH on all packets, our window is so small that there's
-	 * no point in the remote side trying to finesse things and
-	 * coalesce packets.
-	 */
-	ret = net_tcp_prepare_segment(context->tcp, NET_TCP_PSH | NET_TCP_ACK,
-				      NULL, 0, NULL, &conn->remote_addr, &pkt);
-	if (ret) {
-		return ret;
+		ret = net_tcp_prepare_segment(context->tcp,
+					      NET_TCP_PSH | NET_TCP_ACK,
+					      NULL, 0, NULL,
+					      &conn->remote_addr, &pkt);
+		if (ret) {
+			return ret;
+		}
+
+		context->tcp->send_seq += data_len;
+
+		net_stats_update_tcp_sent(data_len);
 	}
-
-	context->tcp->send_seq += data_len;
-
-	net_stats_update_tcp_sent(data_len);
 
 	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
 
