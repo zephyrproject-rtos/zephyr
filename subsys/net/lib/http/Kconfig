@@ -97,3 +97,10 @@ config  NET_DEBUG_HTTP
 	depends on HTTP && NET_LOG
 	help
 	Enables HTTP output debug messages
+
+config  NET_DEBUG_HTTP_CONN
+	bool "Debug HTTP connections"
+	default n
+	depends on HTTP && NET_LOG
+	help
+	Enables HTTP connection tracking.

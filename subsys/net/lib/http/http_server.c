@@ -60,6 +60,33 @@ static void https_disable(struct http_server_ctx *ctx);
 #define HTTP_STATUS_404_NF	"HTTP/1.1 404 Not Found\r\n" \
 				"\r\n"
 
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN)
+/** List of HTTP connections */
+static sys_slist_t http_conn;
+
+static void http_server_conn_add(struct http_server_ctx *ctx)
+{
+	sys_slist_prepend(&http_conn, &ctx->node);
+}
+
+static void http_server_conn_del(struct http_server_ctx *ctx)
+{
+	sys_slist_find_and_remove(&http_conn, &ctx->node);
+}
+
+void http_server_conn_foreach(http_server_cb_t cb, void *user_data)
+{
+	struct http_server_ctx *ctx;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&http_conn, ctx, node) {
+		cb(ctx, user_data);
+	}
+}
+#else
+#define http_server_conn_add(...)
+#define http_server_conn_del(...)
+#endif /* CONFIG_NET_DEBUG_HTTP_CONN */
+
 static inline u16_t http_strlen(const char *str)
 {
 	if (str) {
@@ -131,6 +158,8 @@ static void req_timeout(struct k_work *work)
 	NET_DBG("Context %p request timeout", ctx);
 
 	net_context_unref(ctx->req.net_ctx);
+
+	http_server_conn_del(ctx);
 }
 
 static void pkt_sent(struct net_context *context,
@@ -146,6 +175,7 @@ static void pkt_sent(struct net_context *context,
 	if (timeout == K_NO_WAIT) {
 		/* We can just close the context after the packet is sent. */
 		net_context_unref(context);
+		http_server_conn_del(ctx);
 	} else if (timeout > 0) {
 		NET_DBG("Context %p starting timer", ctx);
 
@@ -405,6 +435,8 @@ static inline void new_client(struct http_server_ctx *http_ctx,
 		 sprint_ipaddr(buf, sizeof(buf), addr),
 		 net_ctx);
 #endif /* CONFIG_NET_DEBUG_HTTP */
+
+	http_server_conn_add(http_ctx);
 }
 
 static inline void new_server(struct http_server_ctx *ctx,
