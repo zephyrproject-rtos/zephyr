@@ -64,7 +64,7 @@ struct json_obj_descr {
  * error (which will be propagated to the return value of
  * json_obj_encode()), or 0 on success.
  */
-typedef int (*json_append_bytes_t)(const u8_t *bytes, size_t len,
+typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 				   void *data);
 
 
