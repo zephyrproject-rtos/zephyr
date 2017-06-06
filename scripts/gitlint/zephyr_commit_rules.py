@@ -1,4 +1,4 @@
-from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule
+from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule, CommitMessageBody
 from gitlint.options import IntOption, BoolOption, StrOption, ListOption
 import re
 
@@ -68,3 +68,15 @@ class TitleStartsWithSubsystem(LineRule):
         violation_message = "Title does not follow <subsystem>: <subject>"
         if not pattern.search(title):
             return [RuleViolation(self.id, violation_message, title)]
+
+class MaxLineLengthExceptions(LineRule):
+    name = "max-line-length-with-exceptions"
+    id = "UC4"
+    target = CommitMessageBody
+    options_spec = [IntOption('line-length', 80, "Max line length")]
+    violation_message = "Line exceeds max length ({0}>{1})"
+
+    def validate(self, line, _commit):
+        max_length = self.options['line-length'].value
+        if len(line) > max_length and not line.startswith('Signed-off-by'):
+            return [RuleViolation(self.id, self.violation_message.format(len(line), max_length), line)]
