@@ -189,8 +189,10 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	hci_hbuf_sent = 0;
 	hci_hbuf_acked = 0;
 	conn_count = 0;
-	atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
-	k_poll_signal(hbuf_signal, 0x0);
+	if (buf) {
+		atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
+		k_poll_signal(hbuf_signal, 0x0);
+	}
 #endif
 }
 
