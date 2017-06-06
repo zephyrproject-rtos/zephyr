@@ -1,0 +1,14 @@
+# Kconfig - DMA configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DMA_QMSI
+	bool "Enable QMSI DMA driver"
+	default n
+	depends on QMSI
+	help
+	QMSI DMA driver.

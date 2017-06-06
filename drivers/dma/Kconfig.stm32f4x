@@ -1,0 +1,68 @@
+# Kconfig - DMA configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DMA_STM32F4X
+	bool "Enable STM32F4x DMA driver"
+	default n
+	depends on SOC_SERIES_STM32F4X
+	help
+	DMA driver for STM32F4x series SoCs.
+
+config DMA_0_RX_SUB_CHANNEL_ID
+	int "Requested RX sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuration is required to choose a valid sub-channel
+	for communication from a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_0_TX_SUB_CHANNEL_ID
+	int "Requested TX sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuration is required to choose a valid sub-channel
+	for communication to a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_1_RX_SUB_CHANNEL_ID
+	int "Requested RX sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuration is required to choose a valid sub-channel
+	for communication from a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_1_TX_SUB_CHANNEL_ID
+	int "Requested TX sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuration is required to choose a valid sub-channel
+	for communication to a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_2_RX_SUB_CHANNEL_ID
+	int "Requested RX sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuration is required to choose a valid sub-channel
+	for communication from a peripheral/device.  Not required
+	for memory to memory comms.
+
+config DMA_2_TX_SUB_CHANNEL_ID
+	int "Requested TX sub-channel ID"
+	default 0
+	depends on DMA_STM32F4X
+	help
+	This configuration is required to choose a valid sub-channel
+	for communication to a peripheral/device.  Not required
+	for memory to memory comms.
