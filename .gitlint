@@ -35,7 +35,7 @@ words=wip,title
 # (e.g. title-must-not-contain-word).
 #regex=^US[0-9]*
 
-[B1]
+[max-line-length-with-exceptions]
 # B1 = body-max-line-length
 line-length=72
 
