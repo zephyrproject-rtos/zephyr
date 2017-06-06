@@ -46,18 +46,40 @@ config ADC_INIT_PRIORITY
 	help
 	  ADC Device driver initialization priority.
 
+config ADC_0
+	bool "Enable ADC 0"
+	default n
+
 config ADC_0_NAME
-	string "ADC Driver's name"
+	string "ADC 0 Driver's name"
+	depends on ADC_0
 	default "ADC_0"
 
 config ADC_0_IRQ_PRI
 	int
-	prompt "ADC interrupt priority"
+	depends on ADC_0
+	prompt "ADC 0 interrupt priority"
+	default 2
+
+config ADC_1
+	bool "Enable ADC 1"
+	default n
+
+config ADC_1_NAME
+	string "ADC 1 Driver's name"
+	depends on ADC_1
+	default "ADC_1"
+
+config ADC_1_IRQ_PRI
+	int
+	depends on ADC_1
+	prompt "ADC 1 interrupt priority"
 	default 2
 
 menuconfig ADC_TI_ADC108S102
 	bool "TI adc108s102 chip driver"
 	select SPI
+	select ADC_0
 	default n
 	help
 	Enable support for TI's ADC chip adc108s102 driver.
@@ -93,6 +115,7 @@ endif # ADC_TI_ADC108S102
 menuconfig ADC_DW
 	bool "ARC Designware Driver"
 	depends on ARC
+	select ADC_0
 	default n
 	help
 	  Enable the driver implementation of the Designware ADC IP.
@@ -194,6 +217,7 @@ endif # ADC_DW
 menuconfig ADC_QMSI
 	bool "QMSI ADC Driver"
 	depends on QMSI
+	select ADC_0
 	default n
 	help
 	  Enable the driver implementation of the QMSI ADC IP.
@@ -201,6 +225,7 @@ menuconfig ADC_QMSI
 menuconfig ADC_QMSI_SS
 	bool "QMSI ADC Driver for the Sensor Subsystem"
 	depends on QMSI
+	select ADC_0
 	default n
 	help
 	  Enable the driver implementation of the QMSI ADC IP.
