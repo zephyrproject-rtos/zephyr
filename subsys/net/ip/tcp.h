@@ -128,8 +128,6 @@ struct net_tcp {
 	u32_t flags : 8;
 	/** Current TCP state */
 	u32_t state : 4;
-	/* A FIN packet has been queued for transmission */
-	u32_t fin_queued : 1;
 	/* An outbound FIN packet has been sent */
 	u32_t fin_sent : 1;
 	/* An inbound FIN packet has been received */
@@ -140,7 +138,7 @@ struct net_tcp {
 	 */
 	u32_t ack_timer_cancelled : 1;
 	/** Remaining bits in this u32_t */
-	u32_t _padding : 11;
+	u32_t _padding : 12;
 
 	/** Accept callback to be called when the connection has been
 	 * established.
