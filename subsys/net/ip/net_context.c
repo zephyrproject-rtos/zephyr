@@ -360,8 +360,6 @@ static void queue_fin(struct net_context *ctx)
 		return;
 	}
 
-	ctx->tcp->fin_queued = 1;
-
 	ret = net_tcp_send_pkt(pkt);
 	if (ret < 0) {
 		net_pkt_unref(pkt);
