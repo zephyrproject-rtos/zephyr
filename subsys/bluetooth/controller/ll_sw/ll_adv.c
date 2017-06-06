@@ -17,13 +17,8 @@
 
 static struct {
 	u16_t interval;
-	u8_t  pdu_adv_type:4;
-	u8_t  tx_addr:1;
-	u8_t  rx_addr:1;
 	u8_t  filter_policy:2;
 	u8_t  chl_map:3;
-	u8_t  adv_addr[BDADDR_SIZE];
-	u8_t  direct_addr[BDADDR_SIZE];
 } ll_adv;
 
 u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
@@ -55,35 +50,31 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	}
 	ll_adv.chl_map = chl_map;
 	ll_adv.filter_policy = filter_policy;
-	ll_adv.pdu_adv_type = pdu_adv_type[adv_type];
-	ll_adv.tx_addr = own_addr_type;
-	ll_adv.rx_addr = 0;
 
 	/* update the current adv data */
 	radio_adv_data = radio_adv_data_get();
 	pdu = (struct pdu_adv *)&radio_adv_data->data[radio_adv_data->last][0];
-	pdu->type = ll_adv.pdu_adv_type;
+	pdu->type = pdu_adv_type[adv_type];
 	pdu->rfu = 0;
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
-	    ((ll_adv.pdu_adv_type == PDU_ADV_TYPE_ADV_IND) ||
-	     (ll_adv.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND))) {
+	    ((pdu->type == PDU_ADV_TYPE_ADV_IND) ||
+	     (pdu->type == PDU_ADV_TYPE_DIRECT_IND))) {
 		pdu->chan_sel = 1;
 	} else {
 		pdu->chan_sel = 0;
 	}
 
-	pdu->tx_addr = ll_adv.tx_addr;
-	if (ll_adv.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND) {
-		ll_adv.rx_addr = direct_addr_type;
-		memcpy(&ll_adv.direct_addr[0], direct_addr, BDADDR_SIZE);
+	pdu->tx_addr = own_addr_type;
+	pdu->rx_addr = 0;
+	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
+		pdu->rx_addr = direct_addr_type;
 		memcpy(&pdu->payload.direct_ind.tgt_addr[0], direct_addr,
 		       BDADDR_SIZE);
 		pdu->len = sizeof(struct pdu_adv_payload_direct_ind);
 	} else if (pdu->len == 0) {
 		pdu->len = BDADDR_SIZE;
 	}
-	pdu->rx_addr = ll_adv.rx_addr;
 
 	/* update the current scan data */
 	radio_adv_data = radio_scan_data_get();
@@ -91,7 +82,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
 	pdu->rfu = 0;
 	pdu->chan_sel = 0;
-	pdu->tx_addr = ll_adv.tx_addr;
+	pdu->tx_addr = own_addr_type;
 	pdu->rx_addr = 0;
 	if (pdu->len == 0) {
 		pdu->len = BDADDR_SIZE;
@@ -103,6 +94,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 void ll_adv_data_set(u8_t len, u8_t const *const data)
 {
 	struct radio_adv_data *radio_adv_data;
+	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
 	u8_t last;
 
@@ -120,24 +112,26 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 	}
 
 	/* update adv pdu fields. */
+	prev = (struct pdu_adv *)&radio_adv_data->data[radio_adv_data->last][0];
 	pdu = (struct pdu_adv *)&radio_adv_data->data[last][0];
-	pdu->type = ll_adv.pdu_adv_type;
+	pdu->type = prev->type;
 	pdu->rfu = 0;
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
-	    ((ll_adv.pdu_adv_type == PDU_ADV_TYPE_ADV_IND) ||
-	     (ll_adv.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND))) {
+	    ((pdu->type == PDU_ADV_TYPE_ADV_IND) ||
+	     (pdu->type == PDU_ADV_TYPE_DIRECT_IND))) {
 		pdu->chan_sel = 1;
 	} else {
 		pdu->chan_sel = 0;
 	}
 
-	pdu->tx_addr = ll_adv.tx_addr;
-	pdu->rx_addr = ll_adv.rx_addr;
-	memcpy(&pdu->payload.adv_ind.addr[0], &ll_adv.adv_addr[0], BDADDR_SIZE);
-	if (ll_adv.pdu_adv_type == PDU_ADV_TYPE_DIRECT_IND) {
+	pdu->tx_addr = prev->tx_addr;
+	pdu->rx_addr = prev->rx_addr;
+	memcpy(&pdu->payload.adv_ind.addr[0],
+	       &prev->payload.adv_ind.addr[0], BDADDR_SIZE);
+	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
 		memcpy(&pdu->payload.direct_ind.tgt_addr[0],
-		       &ll_adv.direct_addr[0], BDADDR_SIZE);
+		       &prev->payload.direct_ind.tgt_addr[0], BDADDR_SIZE);
 		pdu->len = sizeof(struct pdu_adv_payload_direct_ind);
 	} else {
 		memcpy(&pdu->payload.adv_ind.data[0], data, len);
@@ -151,6 +145,7 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 void ll_scan_data_set(u8_t len, u8_t const *const data)
 {
 	struct radio_adv_data *radio_scan_data;
+	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
 	u8_t last;
 
@@ -166,15 +161,17 @@ void ll_scan_data_set(u8_t len, u8_t const *const data)
 	}
 
 	/* update scan pdu fields. */
+	prev = (struct pdu_adv *)
+	       &radio_scan_data->data[radio_scan_data->last][0];
 	pdu = (struct pdu_adv *)&radio_scan_data->data[last][0];
 	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
 	pdu->rfu = 0;
 	pdu->chan_sel = 0;
-	pdu->tx_addr = ll_adv.tx_addr;
+	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = 0;
 	pdu->len = BDADDR_SIZE + len;
-	memcpy(&pdu->payload.scan_rsp.addr[0], &ll_adv.adv_addr[0],
-	       BDADDR_SIZE);
+	memcpy(&pdu->payload.scan_rsp.addr[0],
+	       &prev->payload.scan_rsp.addr[0], BDADDR_SIZE);
 	memcpy(&pdu->payload.scan_rsp.data[0], data, len);
 
 	/* commit the update so controller picks it. */
@@ -209,10 +206,11 @@ u32_t ll_adv_enable(u8_t enable)
 			[radio_adv_data->last][0];
 	pdu_scan = (struct pdu_adv *)&radio_scan_data->data
 			[radio_scan_data->last][0];
-	ll_addr_get(ll_adv.tx_addr, ll_adv.adv_addr);
-	memcpy(&pdu_adv->payload.adv_ind.addr[0], ll_adv.adv_addr, BDADDR_SIZE);
-	memcpy(&pdu_scan->payload.scan_rsp.addr[0], ll_adv.adv_addr,
-	       BDADDR_SIZE);
+
+	memcpy(&pdu_adv->payload.adv_ind.addr[0],
+	       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
+	memcpy(&pdu_scan->payload.scan_rsp.addr[0],
+	       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
 
 	status = radio_adv_enable(ll_adv.interval, ll_adv.chl_map,
 				  ll_adv.filter_policy);
