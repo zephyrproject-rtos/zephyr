@@ -1,4 +1,7 @@
 tests:
+-   test_adc:
+        platform_whitelist: frdm_k64f frdm_kw41z frdm_kl25z
+        tags: drivers
 -   test_adc_arc_resolution_6:
         extra_args: CONF_FILE=prj_resolution_6.conf
         platform_whitelist: quark_se_c1000_ss_devboard
@@ -18,4 +21,8 @@ tests:
 -   test_adc_arc_poll_mode:
         extra_args: CONF_FILE=prj_poll_mode.conf
         platform_whitelist: quark_se_c1000_ss_devboard
+        tags: drivers
+-   test_adc_hexiwear_k64:
+        extra_args: CONF_FILE=prj_hexiwear_k64.conf
+        platform_whitelist: hexiwear_k64
         tags: drivers

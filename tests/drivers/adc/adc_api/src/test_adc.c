@@ -28,14 +28,33 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#define ADC_DEV_NAME CONFIG_ADC_0_NAME
 #define BUFFER_SIZE 5
+
+#if defined(CONFIG_BOARD_FRDM_K64F)
+#define ADC_DEV_NAME	CONFIG_ADC_1_NAME
+#define ADC_CHANNEL	14
+#elif defined(CONFIG_BOARD_FRDM_KL25Z)
+#define ADC_DEV_NAME	CONFIG_ADC_0_NAME
+#define ADC_CHANNEL	12
+#elif defined(CONFIG_BOARD_FRDM_KW41Z)
+#define ADC_DEV_NAME	CONFIG_ADC_0_NAME
+#define ADC_CHANNEL	3
+#elif defined(CONFIG_BOARD_HEXIWEAR_K64)
+#define ADC_DEV_NAME	CONFIG_ADC_0_NAME
+#define ADC_CHANNEL	16
+#elif defined(CONFIG_BOARD_HEXIWEAR_KW40Z)
+#define ADC_DEV_NAME	CONFIG_ADC_0_NAME
+#define ADC_CHANNEL	1
+#else
+#define ADC_DEV_NAME	CONFIG_ADC_0_NAME
+#define ADC_CHANNEL	10
+#endif
 
 static u16_t seq_buffer[BUFFER_SIZE];
 
 static struct adc_seq_entry entry = {
 	.sampling_delay = 30,
-	.channel_id = 10,
+	.channel_id = ADC_CHANNEL,
 	.buffer = (void *)seq_buffer,
 	.buffer_length = BUFFER_SIZE * sizeof(seq_buffer[0])
 };
@@ -68,7 +87,7 @@ static int test_task(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Channel 10 ADC Sample: ");
+	TC_PRINT("Channel %d ADC Sample: ", ADC_CHANNEL);
 	for (i = 0; i < BUFFER_SIZE; i++) {
 		TC_PRINT("%d ", seq_buffer[i]);
 	}
