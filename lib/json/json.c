@@ -24,9 +24,9 @@ struct token {
 
 struct lexer {
 	void *(*state)(struct lexer *lexer);
-	unsigned char *start;
-	unsigned char *pos;
-	unsigned char *end;
+	char *start;
+	char *pos;
+	char *end;
 	struct token token;
 };
 
@@ -76,7 +76,7 @@ static void emit(struct lexer *lexer, enum json_tokens token)
 	lexer->start = lexer->pos;
 }
 
-static unsigned char next(struct lexer *lexer)
+static char next(struct lexer *lexer)
 {
 	if (lexer->pos >= lexer->end) {
 		lexer->pos = lexer->end + 1;
@@ -97,9 +97,9 @@ static void backup(struct lexer *lexer)
 	lexer->pos--;
 }
 
-static unsigned char peek(struct lexer *lexer)
+static char peek(struct lexer *lexer)
 {
-	unsigned char chr = next(lexer);
+	char chr = next(lexer);
 
 	backup(lexer);
 
@@ -111,7 +111,7 @@ static void *lexer_string(struct lexer *lexer)
 	ignore(lexer);
 
 	while (true) {
-		unsigned char chr = next(lexer);
+		char chr = next(lexer);
 
 		if (chr == '\0') {
 			emit(lexer, JSON_TOK_ERROR);
@@ -216,7 +216,7 @@ static void *lexer_null(struct lexer *lexer)
 static void *lexer_number(struct lexer *lexer)
 {
 	while (true) {
-		unsigned char chr = next(lexer);
+		char chr = next(lexer);
 
 		if (isdigit(chr) || chr == '.') {
 			continue;
@@ -232,7 +232,7 @@ static void *lexer_number(struct lexer *lexer)
 static void *lexer_json(struct lexer *lexer)
 {
 	while (true) {
-		unsigned char chr = next(lexer);
+		char chr = next(lexer);
 
 		switch (chr) {
 		case '\0':
@@ -596,7 +596,7 @@ int json_obj_parse(char *payload, size_t len,
 	return obj_parse(&obj, descr, descr_len, val);
 }
 
-static u8_t escape_as(u8_t chr)
+static char escape_as(char chr)
 {
 	switch (chr) {
 	case '"':
@@ -626,10 +626,10 @@ static int json_escape_internal(const char *str,
 	int ret = 0;
 
 	for (cur = str; ret == 0 && *cur; cur++) {
-		u8_t escaped = escape_as(*cur);
+		char escaped = escape_as(*cur);
 
 		if (escaped) {
-			u8_t bytes[2] = { '\\', escaped };
+			char bytes[2] = { '\\', escaped };
 
 			ret = append_bytes(bytes, 2, data);
 		} else {
@@ -864,7 +864,7 @@ struct appender {
 	size_t size;
 };
 
-static int append_bytes_to_buf(const u8_t *bytes, size_t len, void *data)
+static int append_bytes_to_buf(const char *bytes, size_t len, void *data)
 {
 	struct appender *appender = data;
 
@@ -888,7 +888,7 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 			       &appender);
 }
 
-static int measure_bytes(const u8_t *bytes, size_t len, void *data)
+static int measure_bytes(const char *bytes, size_t len, void *data)
 {
 	ssize_t *total = data;
 
