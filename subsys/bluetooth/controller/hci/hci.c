@@ -637,15 +637,16 @@ static void le_set_scan_param(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u16_t interval;
 	u16_t window;
+	u32_t status;
 
 	interval = sys_le16_to_cpu(cmd->interval);
 	window = sys_le16_to_cpu(cmd->window);
 
-	ll_scan_params_set(cmd->scan_type, interval, window, cmd->addr_type,
-			   cmd->filter_policy);
+	status = ll_scan_params_set(cmd->scan_type, interval, window,
+				    cmd->addr_type, cmd->filter_policy);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
