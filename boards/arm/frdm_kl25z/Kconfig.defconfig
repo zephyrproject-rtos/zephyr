@@ -90,6 +90,13 @@ endif # I2C_0
 
 endif # I2C
 
+if ADC
+
+config ADC_0
+	def_bool y
+
+endif # ADC
+
 if SPI
 
 config SPI_0
