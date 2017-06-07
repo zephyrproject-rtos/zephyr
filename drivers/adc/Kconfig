@@ -16,10 +16,11 @@ menuconfig ADC
 	help
 	  Enable ADC (Analog to Digital Converter) driver configuration
 
+if ADC
+
 config SYS_LOG_ADC_LEVEL
 	int
 	prompt "ADC drivers log level"
-	depends on ADC
 	default 0
 	range 0 4
 	help
@@ -40,7 +41,6 @@ config SYS_LOG_ADC_LEVEL
 
 config ADC_INIT_PRIORITY
 	int
-	depends on ADC
 	default 80
 	prompt "Init priority"
 	help
@@ -48,18 +48,15 @@ config ADC_INIT_PRIORITY
 
 config ADC_0_NAME
 	string "ADC Driver's name"
-	depends on ADC
 	default "ADC_0"
 
 config ADC_0_IRQ_PRI
 	int
-	depends on ADC
 	prompt "ADC interrupt priority"
 	default 2
 
 menuconfig ADC_TI_ADC108S102
 	bool "TI adc108s102 chip driver"
-	depends on ADC
 	select SPI
 	default n
 	help
@@ -95,7 +92,7 @@ endif # ADC_TI_ADC108S102
 
 menuconfig ADC_DW
 	bool "ARC Designware Driver"
-	depends on ADC && ARC
+	depends on ARC
 	default n
 	help
 	  Enable the driver implementation of the Designware ADC IP.
@@ -196,14 +193,14 @@ endif # ADC_DW
 
 menuconfig ADC_QMSI
 	bool "QMSI ADC Driver"
-	depends on QMSI && ADC
+	depends on QMSI
 	default n
 	help
 	  Enable the driver implementation of the QMSI ADC IP.
 
 menuconfig ADC_QMSI_SS
 	bool "QMSI ADC Driver for the Sensor Subsystem"
-	depends on QMSI && ADC
+	depends on QMSI
 	default n
 	help
 	  Enable the driver implementation of the QMSI ADC IP.
@@ -280,3 +277,5 @@ config ADC_QMSI_SAMPLE_WIDTH
 endif
 
 endif # ADC_QMSI || ADC_QMSI_SS
+
+endif # ADC
