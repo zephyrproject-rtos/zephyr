@@ -1005,6 +1005,17 @@ endif
 
 dts: include/generated/generated_dts_board.h
 
+define filechk_.config-sanitycheck
+	(cat .config; \
+	 grep -e '^CONFIG' include/generated/generated_dts_board.conf | cat; \
+	)
+endef
+
+.config-sanitycheck: include/generated/generated_dts_board.conf FORCE
+	$(call filechk,.config-sanitycheck)
+
+config-sanitycheck: .config-sanitycheck
+
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
 $(sort $(zephyr-deps)): $(zephyr-dirs) zephyr-app-dir ;
@@ -1121,6 +1132,7 @@ CLEAN_DIRS  += $(MODVERDIR)
 
 CLEAN_FILES += 	include/generated/generated_dts_board.conf \
 		include/generated/generated_dts_board.h \
+		.config-sanitycheck \
 		.old_version .tmp_System.map .tmp_version \
 		.tmp_* System.map *.lnk *.map *.elf *.lst \
 		*.bin *.hex *.stat *.strip staticIdt.o linker.cmd \
