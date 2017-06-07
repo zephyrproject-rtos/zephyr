@@ -10,7 +10,7 @@ This sample code shows a simple DTLS server using mbedTLS on top of Zephyr.
 Building and Running
 ********************
 
-Follow the steps for testing :ref:`networking with Qemu <networking_with_qemu>`.
+Follow the steps for testing :ref:`networking_with_qemu`.
 
 In the application directory type:
 

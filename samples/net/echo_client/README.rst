@@ -13,12 +13,17 @@ and then verify it matches the data that was sent.
 The source code for this sample application can be found at:
 :file:`samples/net/echo_client`.
 
+Requirements
+************
+
+- :ref:`networking_with_qemu`
+
 Building and Running
 ********************
 
 There are multiple ways to use this application. One of the most common
 usage scenario is to run echo-client application inside QEMU. This is
-described in :ref:`networking with QEMU <networking_with_qemu>`.
+described in :ref:`networking_with_qemu`.
 
 There are configuration files for different boards and setups in the
 echo-client directory:
@@ -68,25 +73,15 @@ Build echo-client sample application like this:
 Make can select the default configuration file based on the BOARD you've
 specified automatically so you might not always need to mention it.
 
-Running echo-server Linux Host
-==============================
+Running echo-server in Linux Host
+=================================
 
 There is one useful testing scenario that can be used with Linux host.
 Here echo-client is run in QEMU and echo-server is run in Linux host.
 
-Run 'loop_socat' and 'loop-slip-tap' scripts from net-tools in Linux host.
+To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
 
-.. code-block:: console
-
-    $ ./loop_socat.sh
-
-In another window:
-
-.. code-block:: console
-
-    $ sudo ./loop-slip-tap.sh
-
-In third window:
+In a terminal window:
 
 .. code-block:: console
 
@@ -96,5 +91,5 @@ Run echo-client application in QEMU:
 
 .. code-block:: console
 
-    $ cd $ZEPHYR_BASE/samples/net/echo-client
+    $ cd $ZEPHYR_BASE/samples/net/echo_client
     $ make pristine && make qemu

@@ -10,7 +10,7 @@ This sample code shows a CoAP over DTLS client using mbedTLS on top of Zephyr.
 Building and Running
 ********************
 
-Follow the steps for testing :ref:`networking with Qemu <networking_with_qemu>`.
+Follow the steps for testing :ref:`networking_with_qemu`.
 
 Run the server application at samples/net/coaps_server, with the following
 command:
