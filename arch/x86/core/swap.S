@@ -27,9 +27,6 @@
 
 	/* externs */
 	GDATA(_k_neg_eagain)
-#ifdef CONFIG_STACK_SENTINEL
-	GTEXT(_check_stack_sentinel)
-#endif
 
 /**
  *
@@ -142,9 +139,6 @@ SECTION_FUNC(TEXT, __swap)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	/* Register the context switch */
 	call	_sys_k_event_logger_context_switch
-#endif
-#ifdef CONFIG_STACK_SENTINEL
-	call	_check_stack_sentinel
 #endif
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
 
