@@ -92,6 +92,7 @@ struct advertiser {
 struct scanner {
 	struct shdr hdr;
 
+	u8_t  is_enabled:1;
 	u8_t  scan_type:1;
 	u8_t  scan_state:1;
 	u8_t  scan_chan:2;
@@ -444,6 +445,7 @@ void ll_reset(void)
 	_radio.filter_enable_bitmask = 0;
 	_radio.nirk = 0;
 	_radio.advertiser.conn = NULL;
+	_radio.scanner.is_enabled = 0;
 	_radio.scanner.conn = NULL;
 	_radio.packet_rx_data_size = PACKET_RX_DATA_SIZE_MIN;
 	_radio.packet_rx_data_count = (_radio.packet_rx_data_pool_size /
@@ -1022,6 +1024,10 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 		/* acquire the master context from scanner */
 		conn = _radio.scanner.conn;
 		_radio.scanner.conn = NULL;
+
+		/* Initiator transitions to Master role */
+		LL_ASSERT(_radio.scanner.is_enabled);
+		_radio.scanner.is_enabled = 0;
 
 		/* Tx the connect request packet */
 		pdu_adv_tx = (struct pdu_adv *)radio_pkt_scratch_get();
@@ -8286,6 +8292,10 @@ u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
 	u32_t us_offset;
 	u32_t ret;
 
+	if (_radio.scanner.is_enabled) {
+		return 1;
+	}
+
 	_radio.scanner.scan_type = scan_type;
 	_radio.scanner.init_addr_type = init_addr_type;
 	memcpy(&_radio.scanner.init_addr[0], init_addr, BDADDR_SIZE);
@@ -8357,8 +8367,13 @@ u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
 		}
 	}
 
+	if (ret_cb != TICKER_STATUS_SUCCESS) {
+		return 1;
+	}
 
-	return ((ret_cb == TICKER_STATUS_SUCCESS) ? 0 : 1);
+	_radio.scanner.is_enabled = 1;
+
+	return 0;
 }
 
 u32_t radio_scan_disable(void)
@@ -8369,6 +8384,8 @@ u32_t radio_scan_disable(void)
 			      RADIO_TICKER_ID_SCAN_STOP);
 	if (!status) {
 		struct connection *conn;
+
+		_radio.scanner.is_enabled = 0;
 
 		conn = _radio.scanner.conn;
 		if (conn) {
@@ -8382,6 +8399,11 @@ u32_t radio_scan_disable(void)
 	}
 
 	return status;
+}
+
+u32_t radio_scan_is_enabled(void)
+{
+	return _radio.scanner.is_enabled;
 }
 
 u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
