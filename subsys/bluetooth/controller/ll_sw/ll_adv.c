@@ -26,10 +26,10 @@ static struct {
 	u8_t  direct_addr[BDADDR_SIZE];
 } ll_adv;
 
-void ll_adv_params_set(u16_t interval, u8_t adv_type,
-		       u8_t own_addr_type, u8_t direct_addr_type,
-		       u8_t const *const direct_addr, u8_t chl_map,
-		       u8_t filter_policy)
+u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
+			u8_t own_addr_type, u8_t direct_addr_type,
+			u8_t const *const direct_addr, u8_t chl_map,
+			u8_t filter_policy)
 {
 	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
@@ -39,10 +39,9 @@ void ll_adv_params_set(u16_t interval, u8_t adv_type,
 	struct radio_adv_data *radio_adv_data;
 	struct pdu_adv *pdu;
 
-	/* TODO: check and fail if adv state active else
-	 * update (implemented below) current index elements for
-	 * both adv and scan data.
-	 */
+	if (radio_adv_is_enabled()) {
+		return 1;
+	}
 
 	/* remember params so that set adv/scan data and adv enable
 	 * interface can correctly update adv/scan data in the
@@ -97,6 +96,8 @@ void ll_adv_params_set(u16_t interval, u8_t adv_type,
 	if (pdu->len == 0) {
 		pdu->len = BDADDR_SIZE;
 	}
+
+	return 0;
 }
 
 void ll_adv_data_set(u8_t len, u8_t const *const data)
