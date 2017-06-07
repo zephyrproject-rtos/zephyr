@@ -19,7 +19,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 void ll_adv_data_set(u8_t len, u8_t const *const p_data);
 void ll_scan_data_set(u8_t len, u8_t const *const p_data);
 u32_t ll_adv_enable(u8_t enable);
-u32_t ll_scan_params_set(u8_t scan_type, u16_t interval, u16_t window,
+u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			 u8_t own_addr_type, u8_t filter_policy);
 u32_t ll_scan_enable(u8_t enable);
 void ll_filter_clear(void);

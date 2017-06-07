@@ -94,9 +94,9 @@ struct scanner {
 	struct shdr hdr;
 
 	u8_t  is_enabled:1;
-	u8_t  scan_type:1;
-	u8_t  scan_state:1;
-	u8_t  scan_chan:2;
+	u8_t  state:1;
+	u8_t  chan:2;
+	u8_t  type:1;
 	u8_t  filter_policy:2;
 	u8_t  adv_addr_type:1;
 	u8_t  init_addr_type:1;
@@ -1230,7 +1230,7 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 	/* Active scanner */
 	else if (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND)) &&
-		 (_radio.scanner.scan_type != 0) &&
+		 (_radio.scanner.type != 0) &&
 		 (_radio.scanner.conn == 0)) {
 		struct pdu_adv *pdu_adv_tx;
 		u32_t err;
@@ -1253,7 +1253,7 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 		       &pdu_adv_rx->payload.adv_ind.addr[0], BDADDR_SIZE);
 
 		/* switch scanner state to active */
-		_radio.scanner.scan_state = 1;
+		_radio.scanner.state = 1;
 		_radio.state = STATE_TX;
 
 		radio_pkt_tx_set(pdu_adv_tx);
@@ -1280,7 +1280,7 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_NONCONN_IND) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND) ||
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
-		   (_radio.scanner.scan_state != 0))) &&
+		   (_radio.scanner.state != 0))) &&
 		 (pdu_adv_rx->len != 0) && (!_radio.scanner.conn)) {
 		u32_t err;
 
@@ -2745,7 +2745,7 @@ static inline void isr_radio_state_rx(u8_t trx_done, u8_t crc_ok,
 			_radio.state = STATE_CLOSE;
 			radio_disable();
 			/* switch scanner state to idle */
-			_radio.scanner.scan_state = 0;
+			_radio.scanner.state = 0;
 		}
 		break;
 
@@ -4966,13 +4966,13 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	_radio.ticker_id_prepare = 0;
 	_radio.ticker_id_event = RADIO_TICKER_ID_SCAN;
 	_radio.ticks_anchor = ticks_at_expire;
-	_radio.scanner.scan_state = 0;
+	_radio.scanner.state = 0;
 
 	adv_scan_configure(0, 0); /* TODO: Advertisement PHY */
 
-	chan_set(37 + _radio.scanner.scan_chan++);
-	if (_radio.scanner.scan_chan == 3) {
-		_radio.scanner.scan_chan = 0;
+	chan_set(37 + _radio.scanner.chan++);
+	if (_radio.scanner.chan == 3) {
+		_radio.scanner.chan = 0;
 	}
 
 	radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
@@ -8301,7 +8301,7 @@ u32_t radio_adv_is_enabled(void)
 	return _radio.advertiser.is_enabled;
 }
 
-u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
+u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 			u16_t interval, u16_t window, u8_t filter_policy)
 {
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
@@ -8315,7 +8315,7 @@ u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
 		return 1;
 	}
 
-	_radio.scanner.scan_type = scan_type;
+	_radio.scanner.type = type;
 	_radio.scanner.init_addr_type = init_addr_type;
 	memcpy(&_radio.scanner.init_addr[0], init_addr, BDADDR_SIZE);
 	_radio.scanner.ticks_window =

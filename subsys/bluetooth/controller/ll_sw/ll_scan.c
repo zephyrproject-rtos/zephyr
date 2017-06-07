@@ -16,19 +16,19 @@
 static struct {
 	u16_t interval;
 	u16_t window;
-	u8_t  scan_type:1;
+	u8_t  type:1;
 	u8_t  tx_addr:1;
 	u8_t  filter_policy:1;
 } ll_scan;
 
-u32_t ll_scan_params_set(u8_t scan_type, u16_t interval, u16_t window,
+u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			 u8_t own_addr_type, u8_t filter_policy)
 {
 	if (radio_scan_is_enabled()) {
 		return 0x0C; /* Command Disallowed */
 	}
 
-	ll_scan.scan_type = scan_type;
+	ll_scan.type = type;
 	ll_scan.interval = interval;
 	ll_scan.window = window;
 	ll_scan.tx_addr = own_addr_type;
@@ -47,7 +47,7 @@ u32_t ll_scan_enable(u8_t enable)
 		return status;
 	}
 
-	status = radio_scan_enable(ll_scan.scan_type, ll_scan.tx_addr,
+	status = radio_scan_enable(ll_scan.type, ll_scan.tx_addr,
 				   ll_addr_get(ll_scan.tx_addr, NULL),
 				   ll_scan.interval, ll_scan.window,
 				   ll_scan.filter_policy);
