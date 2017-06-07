@@ -59,12 +59,6 @@ SECTION_FUNC(exception.other, __swap)
 
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
-#endif
-#ifdef CONFIG_STACK_SENTINEL
-	call _check_stack_sentinel
-#endif
-#if defined(CONFIG_STACK_SENTINEL) || \
-		defined (CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH)
 	/* restore caller-saved r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
