@@ -10,7 +10,7 @@ This sample code shows a simple DTLS client using mbed TLS on top of Zephyr
 Building and running
 ********************
 
-Follow the steps for testing :ref:`networking with Qemu <networking_with_qemu>`.
+Follow the steps for testing :ref:`networking_with_qemu`.
 
 Obtain the mbed TLS code from:
 
@@ -50,7 +50,7 @@ From the application directory type
 
    $ make run
 
-This will result in Qemu running with the following output:
+This will result in QEMU running with the following output:
 
 .. code-block:: console
 
