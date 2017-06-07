@@ -17,7 +17,13 @@
 static struct {
 	u16_t interval;
 	u16_t window;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	u8_t  type:4;
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 	u8_t  type:1;
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 	u8_t  tx_addr:1;
 	u8_t  filter_policy:1;
 } ll_scan;
@@ -29,6 +35,18 @@ u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 		return 0x0C; /* Command Disallowed */
 	}
 
+	/* type value:
+	 * 0000b - legacy 1M passive
+	 * 0001b - legacy 1M active
+	 * 0010b - Ext. 1M passive
+	 * 0011b - Ext. 1M active
+	 * 0100b - invalid
+	 * 0101b - invalid
+	 * 0110b - invalid
+	 * 0111b - invalid
+	 * 1000b - Ext. Coded passive
+	 * 1001b - Ext. Coded active
+	 */
 	ll_scan.type = type;
 	ll_scan.interval = interval;
 	ll_scan.window = window;

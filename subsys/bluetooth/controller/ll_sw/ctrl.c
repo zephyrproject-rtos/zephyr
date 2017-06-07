@@ -100,6 +100,11 @@ struct scanner {
 	u8_t  is_enabled:1;
 	u8_t  state:1;
 	u8_t  chan:2;
+	u8_t  rfu:4;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	u8_t  phy:3;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 	u8_t  type:1;
 	u8_t  filter_policy:2;
 	u8_t  adv_addr_type:1;
@@ -958,7 +963,28 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready)
 
 	/* Prepare the report (adv or scan resp) */
 	radio_pdu_node_rx->hdr.handle = 0xffff;
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
+	if (0) {
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	} else if (_radio.scanner.phy) {
+		switch (_radio.scanner.phy) {
+		case BIT(0):
+			radio_pdu_node_rx->hdr.type =
+				NODE_RX_TYPE_EXT_1M_REPORT;
+			break;
+
+		case BIT(2):
+			radio_pdu_node_rx->hdr.type =
+				NODE_RX_TYPE_EXT_CODED_REPORT;
+			break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	} else {
+		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
+	}
 
 	/* save the RSSI value */
 	pdu_adv_rx = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
@@ -1276,6 +1302,10 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 		     ((pdu_adv_rx->payload.direct_ind.tgt_addr[5] & 0xc0) == 0x40)))) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_NONCONN_IND) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND) ||
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
+		   (_radio.scanner.phy)) ||
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (_radio.scanner.state != 0))) &&
 		 (pdu_adv_rx->len != 0) && (!_radio.scanner.conn)) {
@@ -4975,7 +5005,11 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	_radio.ticks_anchor = ticks_at_expire;
 	_radio.scanner.state = 0;
 
-	adv_scan_configure(0, 0); /* TODO: Advertisement PHY */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	adv_scan_configure(_radio.scanner.phy, 1); /* if coded then use S8. */
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	adv_scan_configure(0, 0);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 	chan_set(37 + _radio.scanner.chan++);
 	if (_radio.scanner.chan == 3) {
@@ -8289,6 +8323,11 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 	}
 
 	_radio.scanner.type = type;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	_radio.scanner.phy = type >> 1;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 	_radio.scanner.init_addr_type = init_addr_type;
 	memcpy(&_radio.scanner.init_addr[0], init_addr, BDADDR_SIZE);
 	_radio.scanner.ticks_window =
@@ -9016,6 +9055,11 @@ void radio_rx_dequeue(void)
 	case NODE_RX_TYPE_DC_PDU:
 	case NODE_RX_TYPE_REPORT:
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
@@ -9078,6 +9122,11 @@ void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
 		switch (_radio_pdu_node_rx_free->hdr.type) {
 		case NODE_RX_TYPE_DC_PDU:
 		case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+		case NODE_RX_TYPE_EXT_1M_REPORT:
+		case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 		case NODE_RX_TYPE_SCAN_REQ:
