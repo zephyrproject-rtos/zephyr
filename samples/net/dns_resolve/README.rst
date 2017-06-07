@@ -21,7 +21,7 @@ For more information about DNS configuration variables, see:
 Requirements
 ************
 
-- :ref:`networking with Qemu <networking_with_qemu>`
+- :ref:`networking_with_qemu`
 
 - screen terminal emulator or equivalent.
 
@@ -82,11 +82,8 @@ DNS server
 ==========
 
 The dnsmasq tool may be used for testing purposes. Sample dnsmasq start
-script can be found in net-tools project.
-
-The net-tools can be downloaded from
-
-    https://github.com/zephyrproject-rtos/net-tools
+script can be downloaded from the zephyrproject-rtos/net-tools project area:
+https://github.com/zephyrproject-rtos/net-tools
 
 Open a terminal window and type:
 
@@ -131,24 +128,7 @@ Try to launch the dnsmasq application again.
 QEMU x86
 ========
 
-Open a terminal window and type:
-
-.. code-block:: console
-
-    $ make
-
-
-Run 'loop_socat.sh' and 'loop-slip-tap.sh' as shown in the net-tools README
-at:
-
-    https://github.com/zephyrproject-rtos/net-tools
-
-
-Open a terminal where the project was build (i.e. :file:`samples/net/dns_resolve`) and type:
-
-.. code-block:: console
-
-    $ make run
+To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
 
 
 FRDM K64F
