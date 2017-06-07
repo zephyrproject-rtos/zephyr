@@ -78,27 +78,27 @@ struct ieee802154_fcf_seq {
 	struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		u16_t frame_type		:3;
-		u16_t security_enabled	:1;
+		u16_t security_enabled		:1;
 		u16_t frame_pending		:1;
 		u16_t ar			:1;
 		u16_t pan_id_comp		:1;
-		u16_t reserved		:1;
+		u16_t reserved			:1;
 		u16_t seq_num_suppr		:1;
-		u16_t ie_list		:1;
+		u16_t ie_list			:1;
 		u16_t dst_addr_mode		:2;
 		u16_t frame_version		:2;
 		u16_t src_addr_mode		:2;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-		u16_t reserved		:1;
+		u16_t reserved			:1;
 		u16_t pan_id_comp		:1;
 		u16_t ar			:1;
 		u16_t frame_pending		:1;
-		u16_t security_enabled	:1;
+		u16_t security_enabled		:1;
 		u16_t frame_type		:3;
 		u16_t src_addr_mode		:2;
 		u16_t frame_version		:2;
 		u16_t dst_addr_mode		:2;
-		u16_t ie_list		:1;
+		u16_t ie_list			:1;
 		u16_t seq_num_suppr		:1;
 #endif
 	} fc __packed;
@@ -166,9 +166,9 @@ struct ieee802154_security_control_field {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u8_t security_level	:3;
 	u8_t key_id_mode	:2;
-	u8_t reserved	:3;
+	u8_t reserved		:3;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	u8_t reserved	:3;
+	u8_t reserved		:3;
 	u8_t key_id_mode	:2;
 	u8_t security_level	:3;
 #endif
@@ -225,9 +225,9 @@ struct ieee802154_mfr {
 struct ieee802154_gts_dir {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	u8_t mask			: 7;
-	u8_t reserved		: 1;
+	u8_t reserved			: 1;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	u8_t reserved		: 1;
+	u8_t reserved			: 1;
 	u8_t mask			: 7;
 #endif
 } __packed;
@@ -246,16 +246,16 @@ struct ieee802154_gts {
 struct ieee802154_gts_spec {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	/* Descriptor Count */
-	u8_t desc_count		: 3;
-	u8_t reserved		: 4;
+	u8_t desc_count			: 3;
+	u8_t reserved			: 4;
 	/* GTS Permit */
 	u8_t permit			: 1;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	/* GTS Permit */
 	u8_t permit			: 1;
-	u8_t reserved		: 4;
+	u8_t reserved			: 4;
 	/* Descriptor Count */
-	u8_t desc_count		: 3;
+	u8_t desc_count			: 3;
 #endif
 } __packed;
 
@@ -263,15 +263,15 @@ struct ieee802154_pas_spec {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	/* Number of Short Addresses Pending */
 	u8_t nb_sap			: 3;
-	u8_t reserved_1		: 1;
+	u8_t reserved_1			: 1;
 	/* Number of Extended Addresses Pending */
 	u8_t nb_eap			: 3;
-	u8_t reserved_2		: 1;
+	u8_t reserved_2			: 1;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	u8_t reserved_1		: 1;
+	u8_t reserved_1			: 1;
 	/* Number of Extended Addresses Pending */
 	u8_t nb_eap			: 3;
-	u8_t reserved_2		: 1;
+	u8_t reserved_2			: 1;
 	/* Number of Short Addresses Pending */
 	u8_t nb_sap			: 3;
 #endif
@@ -280,32 +280,32 @@ struct ieee802154_pas_spec {
 struct ieee802154_beacon_sf {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	/* Beacon Order*/
-	u16_t bc_order	: 4;
+	u16_t bc_order		: 4;
 	/* Superframe Order*/
-	u16_t sf_order	: 4;
+	u16_t sf_order		: 4;
 	/* Final CAP Slot */
-	u16_t cap_slot	: 4;
+	u16_t cap_slot		: 4;
 	/* Battery Life Extension */
 	u16_t ble		: 1;
-	u16_t reserved	: 1;
+	u16_t reserved		: 1;
 	/* PAN Coordinator */
 	u16_t coordinator	: 1;
 	/* Association Permit */
 	u16_t association	: 1;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	/* Superframe Order*/
-	u16_t sf_order	: 4;
+	u16_t sf_order		: 4;
 	/* Beacon Order*/
-	u16_t bc_order	: 4;
+	u16_t bc_order		: 4;
 	/* Association Permit */
 	u16_t association	: 1;
 	/* PAN Coordinator */
 	u16_t coordinator	: 1;
-	u16_t reserved	: 1;
+	u16_t reserved		: 1;
 	/* Battery Life Extension */
 	u16_t ble		: 1;
 	/* Final CAP Slot */
-	u16_t cap_slot	: 4;
+	u16_t cap_slot		: 4;
 #endif
 } __packed;
 
@@ -320,21 +320,21 @@ struct ieee802154_beacon {
 struct ieee802154_cmd_assoc_req {
 	struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		u8_t reserved_1	: 1;
-		u8_t dev_type	: 1;
-		u8_t power_src	: 1;
+		u8_t reserved_1		: 1;
+		u8_t dev_type		: 1;
+		u8_t power_src		: 1;
 		u8_t rx_on		: 1;
-		u8_t reserved_2	: 2;
+		u8_t reserved_2		: 2;
 		u8_t sec_capability	: 1;
-		u8_t alloc_addr	: 1;
+		u8_t alloc_addr		: 1;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-		u8_t alloc_addr	: 1;
+		u8_t alloc_addr		: 1;
 		u8_t sec_capability	: 1;
-		u8_t reserved_2	: 2;
+		u8_t reserved_2		: 2;
 		u8_t rx_on		: 1;
-		u8_t power_src	: 1;
-		u8_t dev_type	: 1;
-		u8_t reserved_1	: 1;
+		u8_t power_src		: 1;
+		u8_t dev_type		: 1;
+		u8_t reserved_1		: 1;
 #endif
 	} ci;
 } __packed;
@@ -380,13 +380,13 @@ struct ieee802154_gts_request {
 	struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		u8_t length		: 4;
-		u8_t direction	: 1;
+		u8_t direction		: 1;
 		u8_t type		: 1;
-		u8_t reserved	: 2;
+		u8_t reserved		: 2;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-		u8_t reserved	: 2;
+		u8_t reserved		: 2;
 		u8_t type		: 1;
-		u8_t direction	: 1;
+		u8_t direction		: 1;
 		u8_t length		: 4;
 #endif
 	} gts;
