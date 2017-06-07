@@ -8,8 +8,8 @@
 #include <st/stm32f401.dtsi>
 
 / {
-	model = "STMicroelectronics STM32F401RE-NUCLEO board";
-	compatible = "st,stm32f401re-nucleo", "st,stm32f401";
+	model = "Seeed Studio Carbon 96boards";
+	compatible = "seeed,carbon", "st,stm32f401";
 
 	chosen {
 		zephyr,console = &usart1;
