@@ -34,7 +34,7 @@ config RTC_0_NAME
 
 config RTC_0_IRQ_PRI
 	int "RTC Driver Interrupt priority"
-	depends on RTC
+	depends on RTC_QMSI
 	help
 	RTC interrupt priority.
 
