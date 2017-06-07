@@ -204,7 +204,7 @@ application to flash.
    $ cd <zephyr_root_path>
    $ . zephyr-env.sh
    $ cd samples/hello_world/
-   $ make BOARD=frdm_k64f FLASH_SCRIPT=pyocd.sh flash
+   $ make BOARD=frdm_k64f flash
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 
@@ -233,7 +233,7 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
    $ cd <zephyr_root_path>
    $ . zephyr-env.sh
    $ cd samples/hello_world/
-   $ make BOARD=frdm_k64f DEBUG_SCRIPT=pyocd.sh debug
+   $ make BOARD=frdm_k64f debug
 
 
 .. _FRDM-K64F Website:
