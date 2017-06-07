@@ -110,6 +110,16 @@ enum sensor_channel {
 	SENSOR_CHAN_GREEN,
 	/** Altitude, in meters */
 	SENSOR_CHAN_ALTITUDE,
+	/**
+	 * Gesture. Returns the type of gesture detected as follow:
+	 * 0  NONE
+	 * 1  UP
+	 * 2  DOWN
+	 * 3  LEFT
+	 * 4  RIGHT
+	 * 5  PROX
+	 */
+	SENSOR_CHAN_GESTURE,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
