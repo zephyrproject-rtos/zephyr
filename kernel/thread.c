@@ -141,12 +141,11 @@ void _thread_monitor_exit(struct k_thread *thread)
  * in a few places:
  *
  * 1) In k_yield() if the current thread is not swapped out
- * 2) In the interrupt code, after the interrupt has been serviced, and
- *    a decision *not* to call _Swap() has been made.
+ * 2) After servicing a non-nested interrupt
  * 3) In _Swap(), check the sentinel in the outgoing thread
  * 4) When a thread returns from its entry function to cooperatively terminate
  *
- * Items 2 and 3 require support in arch/ code.
+ * Item 2 requires support in arch/ code.
  *
  * If the check fails, the thread will be terminated appropriately through
  * the system fatal error handler.

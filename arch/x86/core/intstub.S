@@ -343,6 +343,9 @@ alreadyOnIntStack:
 #if defined(CONFIG_TIMESLICING)
 	call	_update_time_slice_before_swap
 #endif
+#ifdef CONFIG_STACK_SENTINEL
+	call	_check_stack_sentinel
+#endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
 #ifdef CONFIG_X86_IAMCU
 	/* IAMCU first argument goes into a register, not the stack.
@@ -398,8 +401,9 @@ noReschedule:
 	popl	%esp		/* pop thread stack pointer */
 
 #ifdef CONFIG_STACK_SENTINEL
-	call _check_stack_sentinel
+	call	_check_stack_sentinel
 #endif
+
 	/* fall through to 'nestedInterrupt' */
 
 
