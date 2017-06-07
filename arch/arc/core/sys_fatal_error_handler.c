@@ -37,8 +37,8 @@
  *
  * @return N/A
  */
-FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *pEsf)
+FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+						const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
 

@@ -134,7 +134,8 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
  *
  * @return N/A
  */
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
+FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+						const NANO_ESF *esf)
 {
 	ARG_UNUSED(esf);
 
