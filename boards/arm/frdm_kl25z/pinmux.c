@@ -64,6 +64,11 @@ static int frdm_kl25z_pinmux_init(struct device *dev)
 					| PORT_PCR_PS_MASK);
 #endif
 
+#if CONFIG_ADC_0
+	/* ADC0_SE12 */
+	pinmux_pin_set(portb,  2, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+#endif
+
 	return 0;
 }
 
