@@ -12,10 +12,10 @@ int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 u8_t *ll_addr_get(u8_t addr_type, u8_t *p_bdaddr);
 void ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
-void ll_adv_params_set(u16_t interval, u8_t adv_type,
-		       u8_t own_addr_type, u8_t direct_addr_type,
-		       u8_t const *const p_direct_addr, u8_t chl_map,
-		       u8_t filter_policy);
+u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
+			u8_t own_addr_type, u8_t direct_addr_type,
+			u8_t const *const p_direct_addr, u8_t chl_map,
+			u8_t filter_policy);
 void ll_adv_data_set(u8_t len, u8_t const *const p_data);
 void ll_scan_data_set(u8_t len, u8_t const *const p_data);
 u32_t ll_adv_enable(u8_t enable);

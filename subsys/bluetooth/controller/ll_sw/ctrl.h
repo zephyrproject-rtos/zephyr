@@ -312,11 +312,13 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 		 u16_t packet_tx_data_size, u8_t *mem_radio,
 		 u16_t mem_size);
 void radio_ticks_active_to_start_set(u32_t ticks_active_to_start);
+/* Downstream - Advertiser */
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
 u32_t radio_adv_enable(u16_t interval, u8_t chl_map,
 		       u8_t filter_policy);
 u32_t radio_adv_disable(void);
+u32_t radio_adv_is_enabled(void);
 /* Downstream - Scanner */
 u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type,
 			u8_t *init_addr, u16_t interval,
