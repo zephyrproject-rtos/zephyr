@@ -75,6 +75,7 @@ enum state {
 struct advertiser {
 	struct shdr hdr;
 
+	u8_t is_enabled:1;
 	u8_t chl_map:3;
 	u8_t chl_map_current:3;
 	u8_t filter_policy:2;
@@ -444,6 +445,7 @@ void ll_reset(void)
 	/* reset controller context members */
 	_radio.filter_enable_bitmask = 0;
 	_radio.nirk = 0;
+	_radio.advertiser.is_enabled = 0;
 	_radio.advertiser.conn = NULL;
 	_radio.scanner.is_enabled = 0;
 	_radio.scanner.conn = NULL;
@@ -759,6 +761,10 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 		/* acquire the slave context from advertiser */
 		conn = _radio.advertiser.conn;
 		_radio.advertiser.conn = NULL;
+
+		/* Advertiser transitions to Slave role */
+		LL_ASSERT(_radio.advertiser.is_enabled);
+		_radio.advertiser.is_enabled = 0;
 
 		/* Populate the slave context */
 		conn->handle = mem_index_get(conn, _radio.conn_pool,
@@ -8056,6 +8062,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 	struct pdu_adv *pdu_adv;
 	u32_t ret;
 
+	if (_radio.advertiser.is_enabled) {
+		return 1;
+	}
+
 	pdu_adv = (struct pdu_adv *)
 		&_radio.advertiser.adv_data.data[_radio.advertiser.adv_data.last][0];
 
@@ -8246,6 +8256,8 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 	}
 
 	if (ret_cb == TICKER_STATUS_SUCCESS) {
+		_radio.advertiser.is_enabled = 1;
+
 		return 0;
 	}
 
@@ -8269,6 +8281,8 @@ u32_t radio_adv_disable(void)
 	if (!status) {
 		struct connection *conn;
 
+		_radio.advertiser.is_enabled = 0;
+
 		conn = _radio.advertiser.conn;
 		if (conn) {
 			_radio.advertiser.conn = NULL;
@@ -8280,6 +8294,11 @@ u32_t radio_adv_disable(void)
 	}
 
 	return status;
+}
+
+u32_t radio_adv_is_enabled(void)
+{
+	return _radio.advertiser.is_enabled;
 }
 
 u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
