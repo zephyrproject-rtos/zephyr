@@ -17,6 +17,10 @@
 #define I2C_SBCON_3_BASE_ADDR	I2C_SHIELD1_BASE_ADDR
 #endif
 
+#if defined(CONFIG_STMPE811)
+#define STMPE811_IRQ		IRQ_TOUCHSCREEN
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #include "soc_registers.h"
