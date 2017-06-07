@@ -134,7 +134,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
- * @brief Helper macro to declare a descriptor for an array value
+ * @brief Helper macro to declare a descriptor for an array of primitives
  *
  * @param struct_ Struct packing the values
  *
@@ -145,7 +145,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param len_field_ Field name in the struct for the number of elements
  * in the array
  *
- * @param elem_type_ Element type
+ * @param elem_type_ Element type, must be a primitive type
  *
  * Here's an example of use:
  *      struct example {
@@ -242,7 +242,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * @param len_field_ Field name in the struct for the number of elements
  * in the array
  *
- * @param elem_type_ Element type
+ * @param elem_type_ Element type, must be a primitive type
  *
  * @see JSON_OBJ_DESCR_ARRAY
  */
