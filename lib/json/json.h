@@ -173,6 +173,61 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
+ * @brief Helper macro to declare a descriptor for an array of objects
+ *
+ * @param struct_ Struct packing the values
+ *
+ * @param field_name_ Field name in the struct containing the array
+ *
+ * @param max_len_ Maximum number of elements in the array
+ *
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ *
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ *
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ *
+ * Here's an example of use:
+ *
+ *      struct person_height {
+ *          const char *name;
+ *          int height;
+ *      };
+ *
+ *      struct people_heights {
+ *          struct person_height heights[10];
+ *          size_t heights_len;
+ *      };
+ *
+ *      struct json_obj_descr person_height_descr[] = {
+ *           JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
+ *           JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
+ *      };
+ *
+ *      struct json_obj_descr array[] = {
+ *           JSON_OBJ_DESCR_OBJ_ARRAY(struct people_heights, heights, 10,
+ *                                    heights_len, person_height_descr,
+ *                                    ARRAY_SIZE(person_height_descr)),
+ *      };
+ */
+#define JSON_OBJ_DESCR_OBJ_ARRAY(struct_, field_name_, max_len_, \
+				 len_field_, elem_descr_, elem_descr_len_) \
+	{ \
+		.field_name = (#field_name_), \
+		.field_name_len = sizeof(#field_name_) - 1, \
+		.offset = offsetof(struct_, field_name_), \
+		.type = JSON_TOK_LIST_START, \
+		.element_descr = &(struct json_obj_descr) { \
+			.type = JSON_TOK_OBJECT_START, \
+			.sub_descr = elem_descr_, \
+			.sub_descr_len = elem_descr_len_, \
+			.offset = offsetof(struct_, len_field_), \
+		}, \
+		.n_elements = (max_len_), \
+	}
+
+/**
  * @brief Variant of JSON_OBJ_DESCR_PRIM that can be used when the
  *        structure and JSON field names differ.
  *
@@ -256,6 +311,70 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.type = JSON_TOK_LIST_START, \
 		.element_descr = &(struct json_obj_descr) { \
 			.type = elem_type_, \
+			.offset = offsetof(struct_, len_field_), \
+		}, \
+		.n_elements = (max_len_), \
+	}
+
+/**
+ * @brief Variant of JSON_OBJ_DESCR_OBJ_ARRAY that can be used when
+ *        the structure and JSON field names differ.
+ *
+ * This is useful when the JSON field is not a valid C identifier.
+ *
+ * @param struct_ Struct packing the values
+ *
+ * @param json_field_name_ String, field name of the array in JSON strings
+ *
+ * @param struct_field_name_ Field name in the struct containing the array
+ *
+ * @param max_len_ Maximum number of elements in the array
+ *
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ *
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ *
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ *
+ * Here's an example of use:
+ *
+ *      struct person_height {
+ *          const char *name;
+ *          int height;
+ *      };
+ *
+ *      struct people_heights {
+ *          struct person_height heights[10];
+ *          size_t heights_len;
+ *      };
+ *
+ *      struct json_obj_descr person_height_descr[] = {
+ *           JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
+ *           JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
+ *      };
+ *
+ *      struct json_obj_descr array[] = {
+ *           JSON_OBJ_DESCR_OBJ_ARRAY_NAMED(struct people_heights,
+ *                                          "people-heights", heights,
+ *                                          10, heights_len,
+ *                                          person_height_descr,
+ *                                          ARRAY_SIZE(person_height_descr)),
+ *      };
+ */
+#define JSON_OBJ_DESCR_OBJ_ARRAY_NAMED(struct_, json_field_name_, \
+				       struct_field_name_, max_len_, \
+				       len_field_, elem_descr_, \
+				       elem_descr_len_) \
+	{ \
+		.field_name = json_field_name_, \
+		.field_name_len = sizeof(json_field_name_) - 1, \
+		.offset = offsetof(struct_, struct_field_name_), \
+		.type = JSON_TOK_LIST_START, \
+		.element_descr = &(struct json_obj_descr) { \
+			.type = JSON_TOK_OBJECT_START, \
+			.sub_descr = elem_descr_, \
+			.sub_descr_len = elem_descr_len_, \
 			.offset = offsetof(struct_, len_field_), \
 		}, \
 		.n_elements = (max_len_), \
