@@ -518,16 +518,16 @@ static int arr_parse(struct json_obj *obj,
 			return 0;
 		}
 
+		if (field == last_elem) {
+			return -ENOSPC;
+		}
+
 		if (decode_value(obj, elem_descr, &value, field, val) < 0) {
 			return -EINVAL;
 		}
 
 		(*elements)++;
-
 		field = (char *)field + elem_size;
-		if (field == last_elem) {
-			return -ENOSPC;
-		}
 	}
 
 	return -EINVAL;
