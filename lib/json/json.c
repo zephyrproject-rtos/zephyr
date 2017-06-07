@@ -697,13 +697,18 @@ ssize_t json_escape(char *str, size_t *len, size_t buf_size)
 static int encode(const struct json_obj_descr *descr, const void *val,
 		  json_append_bytes_t append_bytes, void *data);
 
-static int arr_encode(const struct json_obj_descr *descr, const void *field,
-		      const void *val, json_append_bytes_t append_bytes,
-		      void *data)
+static int arr_encode(const struct json_obj_descr *elem_descr,
+		      const void *field, const void *val,
+		      json_append_bytes_t append_bytes, void *data)
 {
-	struct json_obj_descr elem_descr = { .type = descr->type };
-	ptrdiff_t elem_size = get_elem_size(descr);
-	size_t n_elem = *(size_t *)((char *)val + descr->offset);
+	ptrdiff_t elem_size = get_elem_size(elem_descr);
+	/*
+	 * NOTE: Since an element descriptor's offset isn't meaningful
+	 * (array elements occur at multiple offsets in `val'), we use
+	 * its space in elem_descr to store the offset to the field
+	 * containing the number of elements.
+	 */
+	size_t n_elem = *(size_t *)((char *)val + elem_descr->offset);
 	size_t i;
 	int ret;
 
@@ -713,7 +718,23 @@ static int arr_encode(const struct json_obj_descr *descr, const void *field,
 	}
 
 	for (i = 0; i < n_elem; i++) {
-		ret = encode(&elem_descr, field, append_bytes, data);
+		/*
+		 * Though "field" points at the next element in the
+		 * array which we need to encode, the value in
+		 * elem_descr->offset is actually the offset of the
+		 * length field in the "parent" struct containing the
+		 * array.
+		 *
+		 * To patch things up, we lie to encode() about where
+		 * the field is by exactly the amount it will offset
+		 * it. This is a size optimization for struct
+		 * json_obj_descr: the alternative is to keep a
+		 * separate field next to element_descr which is an
+		 * offset to the length field in the parent struct,
+		 * but that would add a size_t to every descriptor.
+		 */
+		ret = encode(elem_descr, (char *)field - elem_descr->offset,
+			     append_bytes, data);
 		if (ret < 0) {
 			return ret;
 		}
