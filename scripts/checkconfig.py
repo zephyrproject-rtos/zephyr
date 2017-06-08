@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 """Zephyr Check kconfigs Definitions
 
@@ -62,7 +62,7 @@ import kconfiglib
 
 def separate_location_lines(dirs):
     for dir in dirs:
-        print "    ", dir
+        print("    ", dir)
 
 def search_kconfig_items(items, name, completelog):
     findConfig = False
@@ -84,7 +84,7 @@ def search_kconfig_items(items, name, completelog):
 
         elif item.is_comment():
             if (item.get_text() == name):
-                print completelog
+                print(completelog)
                 if (completelog == True):
                     separate_location_lines(item.get_location())
                 findConfig = True
@@ -100,7 +100,7 @@ def search_config_in_file(tree, items, completelog, exclude):
             if (fname.endswith(".c") or
             fname.endswith(".h") or
             fname.endswith(".S")):
-                with open(os.path.join(dirName, fname), "r") as f:
+                with open(os.path.join(dirName, fname), "r", encoding="utf-8", errors="ignore") as f:
                     searchConf = f.readlines()
                 for i, line in enumerate(searchConf):
                     if re.search('(^|[\s|(])CONFIG_([a-zA-Z0-9_]+)', line) :
@@ -108,20 +108,20 @@ def search_config_in_file(tree, items, completelog, exclude):
                                                +'CONFIG_([a-zA-Z0-9_]+)', line)
                         configs = configs + 1
                         if (completelog == True):
-                            print ('\n' + configName.group(2) + ' at '
+                            print('\n' + configName.group(2) + ' at '
                                    + os.path.join(dirName, fname))
-                            print 'line: ' + line.rstrip()
+                            print('line: ' + line.rstrip())
                         find = search_kconfig_items(items, configName.group(2),
                                                     completelog)
                         if (find == False):
-                            print ('\n' + configName.group(2) + ' at '
+                            print('\n' + configName.group(2) + ' at '
                                    + os.path.join(dirName, fname)
                                    + ' IS NOT DEFINED')
-                            print 'line: ' + line.rstrip()
+                            print('line: ' + line.rstrip())
                             notdefConfig = notdefConfig + 1
     if (completelog == True):
-        print "\n{} Kconfigs evaluated".format(configs)
-        print "{} Kconfigs not defined".format(notdefConfig)
+        print("\n{} Kconfigs evaluated".format(configs))
+        print("{} Kconfigs not defined".format(notdefConfig))
 
 parser = argparse.ArgumentParser(description = help_text,
                                  usage = SUPPRESS,
@@ -138,9 +138,9 @@ parser.add_argument('-e', '--exclude', action='append', dest='exclude',
 
 args= parser.parse_args()
 if args.completelog:
-    print 'sub dir      = ', os.path.join(zephyrbase + args.subdir)
-    print 'complete-log = ', args.completelog
-    print 'exclude dirs = ', args.exclude
+    print('sub dir      = ', os.path.join(zephyrbase + args.subdir))
+    print('complete-log = ', args.completelog)
+    print('exclude dirs = ', args.exclude)
 
 conf = kconfiglib.Config(os.path.join(zephyrbase,'Kconfig'))
 search_config_in_file(os.path.join(zephyrbase + os.path.sep + args.subdir),

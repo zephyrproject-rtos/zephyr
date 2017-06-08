@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright (c) 2016, Intel Corporation
 #
@@ -49,7 +49,7 @@ parser.add_option("-F", "--rom",
 def load_symbols_and_paths(elf_file, path_to_strip = None):
     symbols_paths = {}
     nm_out = subprocess.check_output(["nm", elf_file, "-S", "-l", "--size-sort", "--radix=d"])
-    for line in nm_out.split('\n'):
+    for line in nm_out.decode('utf8').split('\n'):
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
         if len(fields) == 1 and fields[0] == '':
@@ -121,7 +121,7 @@ def generate_target_memory_section(out, kernel_name, source_dir, features_json):
     ram_section_total = 0
     ram_section_names = []
     ram_section_names_sizes = {}
-    for line in size_out.split('\n'):
+    for line in size_out.decode('utf8').split('\n'):
         if "LOAD" in line:
             loaded_section_total = loaded_section_total + int(line.split()[2], 16)
             loaded_section_names.append(line.split()[1])
@@ -183,7 +183,7 @@ def generate_target_memory_section(out, kernel_name, source_dir, features_json):
     ram_symbols_total = 0
     ram_nodes = {}
     ram_nodes['root'] = 0
-    for l in symbols_out.split('\n'):
+    for l in symbols_out.decode('utf8').split('\n'):
         line = l[0:9] + "......." + l[16:]
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
@@ -299,8 +299,8 @@ def generate_target_memory_section(out, kernel_name, source_dir, features_json):
 def print_tree(data, total, depth):
     base = os.environ['ZEPHYR_BASE']
     totp = 0
-    print '{:92s} {:10s} {:8s}'.format(bcolors.FAIL + "Path", "Size", "%" + bcolors.ENDC)
-    print '='*110
+    print('{:92s} {:10s} {:8s}'.format(bcolors.FAIL + "Path", "Size", "%" + bcolors.ENDC))
+    print("'='*110i")
     for i in sorted(data):
         p = i.split("/")
         if depth and len(p) > depth:
@@ -316,12 +316,12 @@ def print_tree(data, total, depth):
                 s = bcolors.WARNING + p[-1] + bcolors.ENDC
             else:
                 s = bcolors.OKBLUE + p[-1] + bcolors.ENDC
-            print '{:80s} {:20d} {:8.2f}%'.format("  "*(len(p)-1) + s, data[i], percent_c )
+            print('{:80s} {:20d} {:8.2f}%'.format("  "*(len(p)-1) + s, data[i], percent_c ))
         else:
-            print '{:80s} {:20d} {:8.2f}%'.format(bcolors.OKBLUE + i + bcolors.ENDC, data[i], percent_c )
+            print('{:80s} {:20d} {:8.2f}%'.format(bcolors.OKBLUE + i + bcolors.ENDC, data[i], percent_c ))
 
-    print '='*110
-    print '{:92d}'.format(total)
+    print('='*110)
+    print('{:92d}'.format(total))
     return totp
 
 
@@ -338,4 +338,4 @@ if options.outdir and os.path.exists(binary):
         print_tree(ram, fp['total_ram'], options.depth)
 
 else:
-    print "%s does not exist." %(binary)
+    print("%s does not exist." %(binary))
