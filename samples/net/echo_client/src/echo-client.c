@@ -772,8 +772,14 @@ static void tcp_connected(struct net_context *context,
 {
 	/* Start to send data */
 	sa_family_t family = POINTER_TO_UINT(user_data);
+	const char *str_family = (family == AF_INET) ? "IPv4" : "IPv6";
 
-	NET_DBG("%s connected.", family == AF_INET ? "IPv4" : "IPv6");
+	if (status < 0) {
+		NET_ERR("Couldn't connect using %s: %d", str_family, status);
+		return;
+	}
+
+	NET_DBG("%s connected.", str_family);
 
 	if (family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
