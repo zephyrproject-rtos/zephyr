@@ -7,6 +7,7 @@
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
+#include "sockets_int.h"
 
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
