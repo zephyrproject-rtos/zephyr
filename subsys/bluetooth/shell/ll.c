@@ -30,6 +30,11 @@
 #define ADV_SID 0
 #define SCAN_REQ_NOT 0
 
+#define SCAN_INTERVAL 0x0004
+#define SCAN_WINDOW 0x0004
+#define SCAN_OWN_ADDR_TYPE 1
+#define SCAN_FILTER_POLICY 0
+
 int cmd_advx(int argc, char *argv[])
 {
 	u16_t evt_prop;
@@ -98,6 +103,62 @@ int cmd_advx(int argc, char *argv[])
 disable:
 	printk("adv enable (%u)...", enable);
 	err = ll_adv_enable(enable);
+	if (err) {
+		goto exit;
+	}
+
+exit:
+	printk("done (err= %d).\n", err);
+
+	return 0;
+}
+
+int cmd_scanx(int argc, char *argv[])
+{
+	u8_t enable;
+	u8_t type;
+	s32_t err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	if (argc > 1) {
+		if (!strcmp(argv[1], "on")) {
+			enable = 1;
+			type = 1;
+		} else if (!strcmp(argv[1], "passive")) {
+			enable = 1;
+			type = 0;
+		} else if (!strcmp(argv[1], "off")) {
+			enable = 0;
+			goto disable;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	type |= BIT(1);
+
+	if (argc > 2) {
+		if (!strcmp(argv[2], "coded")) {
+			type &= BIT(0);
+			type |= BIT(3);
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	printk("scan param set...");
+	err = ll_scan_params_set(type, SCAN_INTERVAL, SCAN_WINDOW,
+				 SCAN_OWN_ADDR_TYPE, SCAN_FILTER_POLICY);
+	if (err) {
+		goto exit;
+	}
+
+disable:
+	printk("scan enable (%u)...", enable);
+	err = ll_scan_enable(enable);
 	if (err) {
 		goto exit;
 	}
