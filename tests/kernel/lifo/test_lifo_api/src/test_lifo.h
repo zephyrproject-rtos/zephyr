@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2016 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef __TEST_LIFO_H__
 #define __TEST_LIFO_H__
 
