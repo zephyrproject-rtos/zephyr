@@ -890,20 +890,6 @@ void main(void)
 	if (rv != TC_PASS) {
 		goto tests_done;
 	}
-#ifdef HAS_POWERSAVE_INSTRUCTION
-	TC_PRINT("Testing k_cpu_idle()\n");
-	rv = test_kernel_cpu_idle(0);
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
-#ifndef CONFIG_ARM
-	TC_PRINT("Testing k_cpu_atomic_idle()\n");
-	rv = test_kernel_cpu_idle(1);
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
-#endif
-#endif
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
 	rv = test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
@@ -970,6 +956,21 @@ void main(void)
 	if (rv != TC_PASS) {
 		goto tests_done;
 	}
+
+#ifdef HAS_POWERSAVE_INSTRUCTION
+	TC_PRINT("Testing k_cpu_idle()\n");
+	rv = test_kernel_cpu_idle(0);
+	if (rv != TC_PASS) {
+		goto tests_done;
+	}
+#ifndef CONFIG_ARM
+	TC_PRINT("Testing k_cpu_atomic_idle()\n");
+	rv = test_kernel_cpu_idle(1);
+	if (rv != TC_PASS) {
+		goto tests_done;
+	}
+#endif
+#endif
 
 tests_done:
 	TC_END_RESULT(rv);
