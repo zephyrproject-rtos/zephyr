@@ -66,6 +66,11 @@ Install the required packages in a Fedora host system with:
 	 libstdc++-static python3-ply ncurses-devel \
 	 python-yaml dfu-util dtc
 
+.. note::
+
+   If you're using the ISSM icx compiler, to avoid compile-time errors,
+   you must use ncurses 5.x version and not ncurses 6.0 or later.
+
 .. _zephyr_sdk:
 
 Installing the Zephyr Software Development Kit
