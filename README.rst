@@ -3,7 +3,7 @@ Zephyr Project
 
 The Zephyr Project is a scalable real-time operating system (RTOS) supporting
 multiple hardware architectures, optimized for resource constrained devices,
-and built with security in mind.
+and built with security in mind. sd;fkhsdfkjsdhfksdjfhsdkfjhsdfkh
 
 The Zephyr OS is based on a small-footprint kernel designed for use on
 resource-constrained systems: from simple embedded environmental sensors and
