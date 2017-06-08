@@ -6,8 +6,9 @@ CROSS_COMPILE = ${GCCARMEMB_TOOLCHAIN_PATH}/bin/arm-none-eabi-
 
 TOOLCHAIN_LIBS = gcc
 LIBGCC_DIR = $(shell dirname `$(CROSS_COMPILE)gcc ${KBUILD_CFLAGS} -print-libgcc-file-name`)
+NEWLIB_DIR = ${GCCARMEMB_TOOLCHAIN_PATH}/arm-none-eabi/lib/`$(CROSS_COMPILE)gcc ${KBUILD_CFLAGS} -print-multi-directory`
 
-LIB_INCLUDE_DIR += -L ${LIBGCC_DIR}
+LIB_INCLUDE_DIR += -L ${LIBGCC_DIR} -L ${NEWLIB_DIR}
 TOOLCHAIN_CFLAGS = -I${GCCARMEMB_TOOLCHAIN_PATH}/arm-none-eabi/include
 
 DTC ?= dtc
