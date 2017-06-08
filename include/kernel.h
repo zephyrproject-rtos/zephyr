@@ -1459,6 +1459,34 @@ static inline int k_queue_is_empty(struct k_queue *queue)
 }
 
 /**
+ * @brief Peek element at the head of queue.
+ *
+ * Return element from the head of queue without removing it.
+ *
+ * @param queue Address of the queue.
+ *
+ * @return Head element, or NULL if queue is empty.
+ */
+static inline void *k_queue_peek_head(struct k_queue *queue)
+{
+	return sys_slist_peek_head(&queue->data_q);
+}
+
+/**
+ * @brief Peek element at the tail of queue.
+ *
+ * Return element from the tail of queue without removing it.
+ *
+ * @param queue Address of the queue.
+ *
+ * @return Tail element, or NULL if queue is empty.
+ */
+static inline void *k_queue_peek_tail(struct k_queue *queue)
+{
+	return sys_slist_peek_tail(&queue->data_q);
+}
+
+/**
  * @brief Statically define and initialize a queue.
  *
  * The queue can be accessed outside the module where it is defined using:
@@ -1614,6 +1642,36 @@ struct k_fifo {
  */
 #define k_fifo_is_empty(fifo) \
 	k_queue_is_empty((struct k_queue *) fifo)
+
+/**
+ * @brief Peek element at the head of fifo.
+ *
+ * Return element from the head of fifo without removing it. A usecase
+ * for this is if elements of the fifo are themselves containers. Then
+ * on each iteration of processing, a head container will be peeked,
+ * and some data processed out of it, and only if the container is empty,
+ * it will be completely remove from the fifo.
+ *
+ * @param fifo Address of the fifo.
+ *
+ * @return Head element, or NULL if the fifo is empty.
+ */
+#define k_fifo_peek_head(fifo) \
+	k_queue_peek_head((struct k_queue *) fifo)
+
+/**
+ * @brief Peek element at the tail of fifo.
+ *
+ * Return element from the tail of fifo (without removing it). A usecase
+ * for this is if elements of the fifo are themselves containers. Then
+ * it may be useful to add more data to the last container in fifo.
+ *
+ * @param fifo Address of the fifo.
+ *
+ * @return Tail element, or NULL if fifo is empty.
+ */
+#define k_fifo_peek_tail(fifo) \
+	k_queue_peek_tail((struct k_queue *) fifo)
 
 /**
  * @brief Statically define and initialize a fifo.
