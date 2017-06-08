@@ -3,15 +3,16 @@
 Zephyr Kernel 1.8.0
 ####################
 
-We are pleased to announce the release of Zephyr kernel version 1.8.0. 
+We are pleased to announce the release of Zephyr kernel version 1.8.0.
 
-This release ... (overview paragraph of major changes)...
+This release ... (overview paragraph of major changes goes here)...
 
 Major enhancements with this release include:
 
 * Tickless kernel
+* IP Stack improvements
 * Bluetooth 5.0 features
-* Ecoystem: Tracing, debugging support through third-party tools
+* Ecosystem: Tracing, debugging support through third-party tools
 * Improved build support on Mac and Windows development environments
 * Improved debug support
 * Third-Party compilers support
@@ -39,7 +40,8 @@ Boards
 Drivers and Sensors
 *******************
 
-* Interesting change
+* UART interrupt-driver API is better defined
+* Support for pull-style console API
 
 Networking
 **********
@@ -82,10 +84,11 @@ Tests and Samples
 *****************
 
 * Interesting change
+
 Deprecations
 ************
 
-* Interesting change 
+* Interesting change
 
 JIRA Related Items
 ******************
@@ -121,7 +124,7 @@ JIRA Related Items
 * :jira:`ZEP-1528` - Provide template for multi-core applications
 * :jira:`ZEP-1529` - Unable to exit menuconfig
 * :jira:`ZEP-1530` - Hotkeys for the menu at the bottom of menuconfig sometimes doesn't work
-* :jira:`ZEP-1568` - Replace arm cortex_m scs and scb functionality with direct CMSIS-core calls  
+* :jira:`ZEP-1568` - Replace arm cortex_m scs and scb functionality with direct CMSIS-core calls
 * :jira:`ZEP-1586` - menuconfig: Backspace is broken
 * :jira:`ZEP-1599` - printk() support for the '-' indicator  in format string (left justifier)
 * :jira:`ZEP-1607` - Json encoding/decoding library
