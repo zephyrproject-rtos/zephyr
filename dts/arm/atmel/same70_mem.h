@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
 #ifndef __DT_BINDING_SAME70_MEM_H
 #define __DT_BINDING_SAME70_MEM_H
 
