@@ -14,5 +14,6 @@
 #define __LL_H
 
 int cmd_advx(int argc, char *argv[]);
+int cmd_scanx(int argc, char *argv[]);
 
 #endif /* __LL_H */

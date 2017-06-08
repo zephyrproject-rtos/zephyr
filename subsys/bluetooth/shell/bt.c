@@ -2043,6 +2043,7 @@ static const struct shell_cmd bt_commands[] = {
 #endif
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
 	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
+	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 	{ NULL, NULL, NULL }
 };
