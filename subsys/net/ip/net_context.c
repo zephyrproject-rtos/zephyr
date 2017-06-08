@@ -710,17 +710,26 @@ static inline int send_control_segment(struct net_context *context,
 
 	ret = net_tcp_prepare_segment(context->tcp, flags, NULL, 0,
 				      local, remote, &pkt);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
+	}
+
+	ret = net_tcp_queue_data(context, pkt);
+	if (ret < 0) {
+		goto out;
 	}
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_pkt_unref(pkt);
+		goto out;
 	}
 
 	net_tcp_print_send_info(msg, pkt, NET_TCP_HDR(pkt)->dst_port);
 
+	return 0;
+
+out:
+	net_pkt_unref(pkt);
 	return ret;
 }
 
