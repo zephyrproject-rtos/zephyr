@@ -32,13 +32,6 @@ config SOC_STM32F469XI
 
 endchoice
 
-config STM32_ARM_MPU_ENABLE
-	bool "Enable MPU"
-	depends on CPU_HAS_MPU
-	select ARM_MPU
-	default n
-	help
-	  Enable MPU
 
 choice
 prompt "Configure Bootloader Options"
