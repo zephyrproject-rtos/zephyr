@@ -398,6 +398,8 @@ int net_context_unref(struct net_context *context)
 		context->conn_handler = NULL;
 	}
 
+	net_context_set_state(context, NET_CONTEXT_UNCONNECTED);
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
 
 	NET_DBG("Context %p released", context);
