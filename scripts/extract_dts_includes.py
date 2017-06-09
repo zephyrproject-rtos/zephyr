@@ -603,6 +603,16 @@ def generate_include_file(defs, args):
 
     sys.stdout.write("#endif\n")
 
+def lookup_defs(defs, node, key):
+    if node not in defs:
+        return None
+
+    if key in defs[node]['aliases']:
+        key = defs[node]['aliases'][key]
+
+    return defs[node].get(key, None)
+
+
 def parse_arguments():
 
   parser = argparse.ArgumentParser(description = __doc__,
@@ -698,10 +708,30 @@ def main():
   if 'zephyr,sram' in chosen:
     extract_reg_prop(chosen['zephyr,sram'], None, defs, "CONFIG_SRAM", 1024, None)
 
-  if 'zephyr,code-partition' in chosen:
-    extract_reg_prop(chosen['zephyr,code-partition'], None, defs, "CONFIG_FLASH_LOAD", 1, "OFFSET")
+  # only compute the load offset if a code partition exists and it is not the
+  # same as the flash base address
+  load_defs = {}
+  if 'zephyr,code-partition' in chosen and \
+     'zephyr,flash' in chosen and \
+     reduced[chosen['zephyr,flash']] is not \
+              reduced[chosen['zephyr,code-partition']]:
+    flash_base = lookup_defs(defs, chosen['zephyr,flash'],
+                              'CONFIG_FLASH_BASE_ADDRESS')
+    part_defs = {}
+    extract_reg_prop(chosen['zephyr,code-partition'], None, part_defs,
+                     "PARTITION", 1, 'offset')
+    part_base = lookup_defs(part_defs, chosen['zephyr,code-partition'],
+                     'PARTITION_OFFSET')
+    load_defs['CONFIG_FLASH_LOAD_OFFSET'] = \
+            hex(int(part_base, 16) - int(flash_base, 16))
+    load_defs['CONFIG_FLASH_LOAD_SIZE'] = \
+            lookup_defs(part_defs, chosen['zephyr,code-partition'],
+                        'PARTITION_SIZE')
   else:
-    extract_reg_prop(chosen['zephyr,flash'], None, defs, "CONFIG_FLASH_LOAD", 1, "OFFSET")
+    load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
+    load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
+
+  insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
 
   # generate include file
   if args.keyvalue:
