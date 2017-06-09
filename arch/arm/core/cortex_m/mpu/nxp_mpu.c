@@ -44,10 +44,33 @@ static inline u8_t _get_num_regions(void)
 static void _region_init(u32_t index, u32_t region_base,
 			 u32_t region_end, u32_t region_attr)
 {
-	SYSMPU->WORD[index][0] = region_base;
-	SYSMPU->WORD[index][1] = region_end;
-	SYSMPU->WORD[index][2] = region_attr;
-	SYSMPU->WORD[index][3] = SYSMPU_WORD_VLD_MASK;
+	if (index == 0) {
+		/* The MPU does not allow writes from the core to affect the
+		 * RGD0 start or end addresses nor the permissions associated
+		 * with the debugger; it can only write the permission fields
+		 * associated with the other masters. These protections
+		 * guarantee that the debugger always has access to the entire
+		 * address space.
+		 */
+		__ASSERT(region_base == SYSMPU->WORD[index][0],
+			 "Region %d base address got 0x%08x expected 0x%08x",
+			 index, region_base, SYSMPU->WORD[index][0]);
+
+		__ASSERT(region_end == SYSMPU->WORD[index][1],
+			 "Region %d end address got 0x%08x expected 0x%08x",
+			 index, region_end, SYSMPU->WORD[index][1]);
+
+		/* Changes to the RGD0_WORD2 alterable fields should be done
+		 * via a write to RGDAAC0.
+		 */
+		SYSMPU->RGDAAC[index] = region_attr;
+
+	} else {
+		SYSMPU->WORD[index][0] = region_base;
+		SYSMPU->WORD[index][1] = region_end;
+		SYSMPU->WORD[index][2] = region_attr;
+		SYSMPU->WORD[index][3] = SYSMPU_WORD_VLD_MASK;
+	}
 
 	SYS_LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x", index,
 		    SYSMPU->WORD[index][0],
@@ -130,7 +153,7 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 	 * structure is mapped on the mpu_config.sram_region + 1 region of
 	 * the MPU.
 	 */
-	_region_init(mpu_config.sram_region + 1,
+	_region_init(mpu_config.sram_region,
 		     mpu_config.mpu_regions[mpu_config.sram_region].base,
 		     ENDADDR_ROUND(base),
 		     mpu_config.mpu_regions[mpu_config.sram_region].attr);
@@ -182,22 +205,9 @@ static void _nxp_mpu_config(void)
 
 	/* MPU Configuration */
 
-	/* Disable Region 0 */
-	SYSMPU->WORD[0][2] = 0;
-
-	SYS_LOG_DBG("[0] 0x%08x 0x%08x 0x%08x 0x%08x",
-		    SYSMPU->WORD[0][0],
-		    SYSMPU->WORD[0][1],
-		    SYSMPU->WORD[0][2],
-		    SYSMPU->WORD[0][3]);
-
-	/*
-	 * Configure regions:
-	 * r_index starts from 0 but is passed to region_init as r_index + 1,
-	 * region 0 is not configurable
-	 */
+	/* Configure regions */
 	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {
-		_region_init(r_index + 1,
+		_region_init(r_index,
 			     mpu_config.mpu_regions[r_index].base,
 			     mpu_config.mpu_regions[r_index].end,
 			     mpu_config.mpu_regions[r_index].attr);
