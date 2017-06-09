@@ -25,51 +25,137 @@ The following sections provide detailed lists of changes by component.
 Kernel
 ******
 
-* Interesting change
+* Use k_cycle_get_32 instead instead of sys_cycle_get_32 for Kernel
+* Added k_panic() and k_oops() APIs for Kernel
+* Added k_thread_create() API for Kernel
+* Added k_queue API for Kernel
+* Add tickless kernel support
 
 Architectures
 *************
 
-* Interesting change
+* arm: Update core to use struct k_thread
+* arm: Added ARM MPU support
+* dts: Added ARM CMSDK support
+* arm: Added Initial support for NXP MPU
+* arm: Added Device Tree Support for nRF52832 SoC based boards
+* arm: Fixed nRF52840-QIAA SoC support for device tree
+* arm: Added Device Tree Support for nRF52840 SoC & boards
+* arm: Added Device Tree Support for nRF51822 SoC & boards
+* dts: Introduced st/mem.h for FLASH & SRAM sizes
+* dts: Put IRQ priority into the interrupt property
+* arm: Support for MKL25Z soc
+* arm: Added FPU support
+* x86: defined MMU data structures
+
+
 
 Boards
 ******
 
-* Interesting change
+* Added qemu_xtensa board definition
+* Added a more informative page fault handler x86 board
+* xtensa: build similar to other Zephyr arches
+* Define MMU data structures for x86 board
+* Added support for board disco_l475_iot1
+* Added STM32F413 Nucleo board
+* Added support for the CC3220SF_LAUNCHXL board
+* Support for new ARM board FRDM-KL25Z
+* arduino_101 board enable GPIO by default
+* boards: convert to using newly introduced integer sized types
+* arm: Added support for Nucleo L432KC board
+* arm: Added support for STM32L496G Discovery board
+* arm: Added support for STM32F469I-DISCO board
+
+
 
 Drivers and Sensors
 *******************
 
 * UART interrupt-driver API is better defined
 * Support for pull-style console API
+* Added MCUX TRNG driver
+* Added support for the SiFive Freedom E310 pinmux driver
+* drivers/sensor: Convert formatter strings to use PRI defines
+* Added lps22hb sensor driver
+* Added lsm6dsl sensor driver
+* Added heart rate sensor driver
+* Added support for max30101 heart rate sensor
+* Added support for lis2dh accelerometer
+
+
 
 Networking
 **********
 
-* Interesting change
+* net: ieee802154: Added native IEEE 802.15.4 driver for KW41Z
+* net/http: Added the HTTP/1.1 API
+* net: Added net_buf pool support to each context
+* net: ipv6: Added support to join/leave multicast group
+* net: Synchronize TX and RX threads startup
+* net: Support fragmented IPv6 packets
+* net: Added HTTP server library support
+* net: Added TCP statistics support
+
+
 
 Bluetooth
 *********
 
-* Interesting change
+* Added Bluetooth 5.0 LE commands and events
+* Added support for logging packet drops
+* Introduced a timeout for synchronous HCI command sending
+* Support for ServiceSearchAttributeRequest
+* Support BT 5.0 feature set bit fields
+* Added L2CAP throughput measurement
+
 
 Build and Infrastructure
 ************************
 
-* Interesting change
+* Support building host tools
+* Added separate DTS target
+* Added support for MSYS2
+* Use -O2 instead of -Os for ARC with SDK 0.9
+
 
 Libraries
 *********
 
-* Interesting change
+* Added library for software driven I2C
+* Created a HTTP library
+* Added HTTP server library support
+* Added minimal JSON library
+* Update TinyCrypt to version 0.2.6
+* Added minimal JSON library
+
 
 HALs
 ****
 
-* Interesting change
+
+* Added Atmel SAM family I2C (TWIHS) driver
+* Added Atmel SAM serial (UART) driver
+* Added WDT driver for Atmel SAM SoCs
+* Added Atmel SAM4S SoC support
+* Imported Nordic 802.15.4 radio driver
+* Added Initial support for NXP MPU
+* Updated QMSI to 1.4 RC4
+* Added FPU support
+* Added basic support for STM32F413
+* Introduced STM32F4x DMA driver
+* pinmux: stm32: Added support for Nucleo L432KC
+* Added support for STM32L496G Discovery board
+* Added dts for STM32F407
+* Added support for STM32F4DISCOVERY Board
+* Added support for STM32F469XI
+* Added support for STM32F469I-DISCO
+
+
 
 Documentation
 *************
+
 
 * Board documentation added for new board ports
 * Continued migration of wiki.zephyrproject.org material to website and github wiki
@@ -80,10 +166,19 @@ Documentation
 * Broken link and spelling check scans
 * Removed deprecated kernel documentation (pre 1.6 release) from website (still available in git repo if needed)
 
+
 Tests and Samples
 *****************
 
-* Interesting change
+
+* Added test to verify same tick timeout expiry order
+* Added clock_test for kernel
+* Added tickless tests
+* Added a simple CC2520 crypto dev test
+* Added combined observer & broadcaster app for Bluetooth samples
+* Added support to wait both IPv4 and IPv6
+* Enabled tickless kernel option in some apps
+
 
 Deprecations
 ************
@@ -94,6 +189,10 @@ JIRA Related Items
 ******************
 
 .. comment  List derived from Jira query: ...
+
+Zephyr Kernel 1.8.0
+The following sections provide a detailed list of changes, by component, since kernel version 1.7.0.
+
 
 * :jira:`ZEP-248` - Add a BOARD/SOC porting guide
 * :jira:`ZEP-339` - Tickless Kernel
@@ -215,6 +314,18 @@ JIRA Related Items
 * :jira:`ZEP-2143` - Compilation Error on Windows 10 with MSYS2
 * :jira:`ZEP-2152` - Xtensa crashes on startup for cores with coprocessors
 * :jira:`ZEP-2178` - Static code scan (coverity) issues seen
+* :jira:`ZEP-2181` - HTTP 400 Bad request forever
+* :jira:`ZEP-2200` - BLE central error "ATT Timeout" when subscribing to NOTIFY attr  
+* :jira:`ZEP-2208` - Coverity static scan issues seen
+* :jira:`ZEP-2211` - Makefile.toolchain.gccarmemb sets DTC to /usr/bin/dtc which is not available on macOS
+* :jira:`ZEP-2219` - Infinite loop caused by NA with unkown ICMPv6 option type (0xff)
+* :jira:`ZEP-2221` - irq_offload() unimplemented for Cortex M0 boards
+* :jira:`ZEP-2222` - [nrf 51] Zephyr fails to compile if TICKLESS_KERNEL is enabled for nrf51
+* :jira:`ZEP-2223` - samples: net: http_client: Cannot send OPTIONS/HEAD request on FRDM K64F
+* :jira:`ZEP-2224` - kernel/mem_pool: test_mpool_alloc_free_isr hits memory crash
+* :jira:`ZEP-2235` - Coverity static scan issues seen
+* :jira:`ZEP-2240` - kernel/test_build/test_newlib / fails for stm32373c_eval with ARM cross-compiler
+* :jira:`ZEP-2257` - test_context fails on bbc_microbit
 
 
 Known Issues
