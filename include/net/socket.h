@@ -28,6 +28,9 @@ int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 #define connect zsock_connect
 #define listen zsock_listen
 #define accept zsock_accept
+
+#define inet_ntop net_addr_ntop
+#define inet_pton net_addr_pton
 #endif
 
 #ifdef __cplusplus
