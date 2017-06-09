@@ -776,7 +776,7 @@ static int send_reset(struct net_context *context,
 	int ret;
 
 	ret = net_tcp_prepare_reset(context->tcp, remote, &pkt);
-	if (ret) {
+	if (ret || !pkt) {
 		return ret;
 	}
 
