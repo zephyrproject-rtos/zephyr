@@ -171,6 +171,7 @@ static void req_timeout(struct k_work *work)
 	NET_DBG("Context %p request timeout", ctx);
 
 	net_context_unref(ctx->req.net_ctx);
+	ctx->req.net_ctx = NULL;
 
 	http_server_conn_del(ctx);
 }
@@ -735,6 +736,19 @@ static void accept_cb(struct net_context *net_ctx,
 	if (status != 0) {
 		net_context_put(net_ctx);
 		return;
+	}
+
+	/* If we receive a HTTP request and if the earlier context is still
+	 * active and it is not the same as the new one, then close the earlier
+	 * one. Otherwise it is possible that the context will be left into
+	 * TCP ESTABLISHED state and would never be released. Example of this
+	 * is that we had IPv4 connection active and then IPv6 connection is
+	 * established, in this case we disconnect the IPv4 here.
+	 */
+	if (http_ctx->req.net_ctx && http_ctx->req.net_ctx != net_ctx &&
+	    net_context_get_state(http_ctx->req.net_ctx) ==
+						      NET_CONTEXT_CONNECTED) {
+		net_context_unref(http_ctx->req.net_ctx);
 	}
 
 	http_ctx->req.net_ctx = net_ctx;
