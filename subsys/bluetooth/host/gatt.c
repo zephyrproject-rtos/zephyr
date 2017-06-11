@@ -130,12 +130,50 @@ populate:
 
 void bt_gatt_init(void)
 {
+	/* Register mandatory services */
 	gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
 	gatt_register(gatt_attrs, ARRAY_SIZE(gatt_attrs));
 }
 
+static struct k_sem sc_sem = K_SEM_INITIALIZER(sc_sem, 1, 1);
+
+static void sc_indicate_rsp(struct bt_conn *conn,
+			    const struct bt_gatt_attr *attr, u8_t err)
+{
+	BT_DBG("err 0x%02x", err);
+
+	k_sem_give(&sc_sem);
+}
+
+static void sc_indicate(struct bt_gatt_attr *start, struct bt_gatt_attr *end)
+{
+	static struct bt_gatt_indicate_params params;
+	u16_t sc_range[2];
+
+	if (k_sem_take(&sc_sem, K_NO_WAIT)) {
+		BT_DBG("Service Changed indicating, waiting until complete...");
+		k_sem_take(&sc_sem, K_FOREVER);
+	}
+
+	sc_range[0] = sys_cpu_to_le16(start->handle);
+	sc_range[1] = sys_cpu_to_le16(end->handle);
+
+	params.attr = &gatt_attrs[2];
+	params.func = sc_indicate_rsp;
+	params.data = &sc_range[0];
+	params.len = sizeof(sc_range);
+
+	if (!bt_gatt_indicate(NULL, &params)) {
+		return;
+	}
+
+	k_sem_give(&sc_sem);
+}
+
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
+	int err;
+
 	__ASSERT(attrs, "invalid parameters\n");
 	__ASSERT(count, "invalid parameters\n");
 
@@ -145,7 +183,14 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 		return -EALREADY;
 	}
 
-	return gatt_register(attrs, count);
+	err = gatt_register(attrs, count);
+	if (err < 0) {
+		return err;
+	}
+
+	sc_indicate(&attrs[0], &attrs[count - 1]);
+
+	return 0;
 }
 
 ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -446,6 +491,7 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 }
 
 struct notify_data {
+	int err;
 	u16_t type;
 	const struct bt_gatt_attr *attr;
 	const void *data;
@@ -588,6 +634,8 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		if (err < 0) {
 			return BT_GATT_ITER_STOP;
 		}
+
+		data->err = 0;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -604,6 +652,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return gatt_notify(conn, attr->handle, data, len);
 	}
 
+	nfy.err = -ENOTCONN;
 	nfy.attr = attr;
 	nfy.type = BT_GATT_CCC_NOTIFY;
 	nfy.data = data;
@@ -611,7 +660,7 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	bt_gatt_foreach_attr(attr->handle, 0xffff, notify_cb, &nfy);
 
-	return 0;
+	return nfy.err;
 }
 
 int bt_gatt_indicate(struct bt_conn *conn,
@@ -626,12 +675,13 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		return gatt_indicate(conn, params);
 	}
 
+	nfy.err = -ENOTCONN;
 	nfy.type = BT_GATT_CCC_INDICATE;
 	nfy.params = params;
 
 	bt_gatt_foreach_attr(params->attr->handle, 0xffff, notify_cb, &nfy);
 
-	return 0;
+	return nfy.err;
 }
 
 u16_t bt_gatt_get_mtu(struct bt_conn *conn)
