@@ -155,7 +155,9 @@ static void att_req_sent(struct bt_conn *conn)
 	k_sem_give(&att->tx_sem);
 
 	/* Start timeout work */
-	k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+	if (att->req) {
+		k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+	}
 }
 
 static void att_pdu_sent(struct bt_conn *conn)
