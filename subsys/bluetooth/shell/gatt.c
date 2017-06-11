@@ -103,7 +103,7 @@ static u8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_service *gatt_service;
+	struct bt_gatt_service_val *gatt_service;
 	struct bt_gatt_chrc *gatt_chrc;
 	struct bt_gatt_include *gatt_include;
 	char uuid[37];
@@ -585,9 +585,11 @@ static struct bt_gatt_attr vnd_attrs[] = {
 				&vnd_long_value2),
 };
 
+static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
+
 int cmd_gatt_register_test_svc(int argc, char *argv[])
 {
-	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
+	bt_gatt_service_register(&vnd_svc);
 
 	printk("Registering test vendor service\n");
 
@@ -665,6 +667,8 @@ static struct bt_gatt_attr met_attrs[] = {
 			   read_met, write_met, met_char_value),
 };
 
+static struct bt_gatt_service met_svc = BT_GATT_SERVICE(met_attrs);
+
 int cmd_gatt_write_cmd_metrics(int argc, char *argv[])
 {
 	int err = 0;
@@ -681,8 +685,7 @@ int cmd_gatt_write_cmd_metrics(int argc, char *argv[])
 
 		if (!registered) {
 			printk("Registering GATT metrics test Service.\n");
-			err = bt_gatt_register(met_attrs,
-					       ARRAY_SIZE(met_attrs));
+			err = bt_gatt_service_register(&met_svc);
 			registered = true;
 		}
 	} else if (!strcmp(argv[1], "off")) {

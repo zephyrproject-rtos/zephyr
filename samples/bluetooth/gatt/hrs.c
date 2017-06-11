@@ -56,11 +56,13 @@ static struct bt_gatt_attr attrs[] = {
 			   NULL, NULL),
 };
 
+static struct bt_gatt_service hrs_svc = BT_GATT_SERVICE(attrs);
+
 void hrs_init(u8_t blsc)
 {
 	hrs_blsc = blsc;
 
-	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+	bt_gatt_service_register(&hrs_svc);
 }
 
 void hrs_notify(void)

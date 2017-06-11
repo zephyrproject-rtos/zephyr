@@ -53,10 +53,12 @@ static struct bt_gatt_attr attrs[] = {
 			   read_manuf, NULL, NULL),
 };
 
+static struct bt_gatt_service dis_svc = BT_GATT_SERVICE(attrs);
+
 void dis_init(const char *model, const char *manuf)
 {
 	dis_model = model;
 	dis_manuf = manuf;
 
-	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+	bt_gatt_service_register(&dis_svc);
 }
