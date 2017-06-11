@@ -67,6 +67,22 @@ static struct bt_gatt_attr gap_attrs[] = {
 			   read_appearance, NULL, NULL),
 };
 
+static struct bt_gatt_ccc_cfg sc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+
+static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+			       u16_t value)
+{
+	BT_DBG("value 0x%04x", value);
+}
+
+static struct bt_gatt_attr gatt_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_SC, BT_GATT_CHRC_INDICATE),
+	BT_GATT_DESCRIPTOR(BT_UUID_GATT_SC, BT_GATT_PERM_NONE,
+			   NULL, NULL, NULL),
+	BT_GATT_CCC(sc_ccc_cfg, sc_ccc_cfg_changed),
+};
+
 static int gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
 	sys_slist_t list;
@@ -115,6 +131,7 @@ populate:
 void bt_gatt_init(void)
 {
 	gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
+	gatt_register(gatt_attrs, ARRAY_SIZE(gatt_attrs));
 }
 
 int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
@@ -123,7 +140,8 @@ int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 	__ASSERT(count, "invalid parameters\n");
 
 	/* Do no allow to register mandatory services twice */
-	if (!bt_uuid_cmp(attrs->uuid, BT_UUID_GAP)) {
+	if (!bt_uuid_cmp(attrs->uuid, BT_UUID_GAP) ||
+	    !bt_uuid_cmp(attrs->uuid, BT_UUID_GATT)) {
 		return -EALREADY;
 	}
 
