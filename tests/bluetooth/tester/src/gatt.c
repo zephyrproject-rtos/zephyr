@@ -40,6 +40,7 @@
 #define GATT_PERM_WRITE_AUTHORIZATION	0x80
 
 /* GATT server context */
+#define SERVER_MAX_SERVICES		10
 #define SERVER_MAX_ATTRIBUTES		50
 #define SERVER_BUF_SIZE			2048
 
@@ -50,6 +51,7 @@
 #define server_buf_push(_len)	net_buf_push(server_buf, ROUND_UP(_len, 4))
 #define server_buf_pull(_len)	net_buf_pull(server_buf, ROUND_UP(_len, 4))
 
+static struct bt_gatt_service server_svcs[SERVER_MAX_SERVICES];
 static struct bt_gatt_attr server_db[SERVER_MAX_ATTRIBUTES];
 static struct net_buf *server_buf;
 NET_BUF_POOL_DEFINE(server_pool, 1, SERVER_BUF_SIZE, 0, NULL);
@@ -201,6 +203,15 @@ static void supported_commands(u8_t *data, u16_t len)
 		    CONTROLLER_INDEX, (u8_t *) rp, sizeof(cmds));
 }
 
+static int register_service(void)
+{
+	server_svcs[svc_count].attrs = server_db +
+				       (attr_count - svc_attr_count);
+	server_svcs[svc_count].attr_count = svc_attr_count;
+
+	return bt_gatt_service_register(server_svcs);
+}
+
 static void add_service(u8_t *data, u16_t len)
 {
 	const struct gatt_add_service_cmd *cmd = (void *) data;
@@ -218,8 +229,7 @@ static void add_service(u8_t *data, u16_t len)
 
 	/* Register last defined service */
 	if (svc_count) {
-		if (bt_gatt_register(server_db + (attr_count - svc_attr_count),
-				     svc_attr_count)) {
+		if (register_service()) {
 			goto fail;
 		}
 	}
@@ -781,8 +791,7 @@ static void start_server(u8_t *data, u16_t len)
 	u16_t db_attr_off;
 
 	/* Register last defined service */
-	if (bt_gatt_register(server_db + (attr_count - svc_attr_count),
-			     svc_attr_count)) {
+	if (register_service()) {
 		tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;
@@ -903,7 +912,7 @@ static u8_t disc_prim_uuid_cb(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_service *data;
+	struct bt_gatt_service_val *data;
 	struct gatt_disc_prim_uuid_rp *rp = (void *) gatt_buf.buf;
 	struct gatt_service *service;
 	u8_t uuid_length;

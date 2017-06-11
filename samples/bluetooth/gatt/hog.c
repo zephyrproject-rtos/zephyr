@@ -162,7 +162,9 @@ static struct bt_gatt_attr attrs[] = {
 			   NULL, write_ctrl_point, &ctrl_point),
 };
 
+static struct bt_gatt_service hog_svc = BT_GATT_SERVICE(attrs);
+
 void hog_init(void)
 {
-	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+	bt_gatt_service_register(&hog_svc);
 }

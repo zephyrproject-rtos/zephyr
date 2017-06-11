@@ -329,6 +329,8 @@ static struct bt_gatt_attr ess_attrs[] = {
 			   read_es_measurement, NULL, &sensor_3.meas),
 };
 
+static struct bt_gatt_service ess_svc = BT_GATT_SERVICE(ess_attrs);
+
 static void ess_simulate(void)
 {
 	static u8_t i;
@@ -394,7 +396,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bt_gatt_register(ess_attrs, ARRAY_SIZE(ess_attrs));
+	bt_gatt_service_register(&ess_svc);
 	bas_init();
 	dis_init(CONFIG_SOC, "ACME");
 

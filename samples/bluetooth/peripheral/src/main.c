@@ -193,6 +193,8 @@ static struct bt_gatt_attr vnd_attrs[] = {
 			   read_signed, write_signed, &signed_value),
 };
 
+static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
+
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
@@ -238,7 +240,7 @@ static void bt_ready(int err)
 	bas_init();
 	cts_init();
 	dis_init(CONFIG_SOC, "Manufacturer");
-	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
+	bt_gatt_service_register(&vnd_svc);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));

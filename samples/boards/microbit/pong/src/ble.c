@@ -525,6 +525,8 @@ static struct bt_gatt_attr pong_attrs[] = {
 	BT_GATT_CCC(pong_ccc_cfg, pong_ccc_cfg_changed),
 };
 
+static struct bt_gatt_service pong_svc = BT_GATT_SERVICE(pong_attrs);
+
 void ble_init(void)
 {
 	int err;
@@ -541,5 +543,5 @@ void ble_init(void)
 
 
 	local_attr = &pong_attrs[2];
-	bt_gatt_register(pong_attrs, ARRAY_SIZE(pong_attrs));
+	bt_gatt_service_register(&pong_svc);
 }

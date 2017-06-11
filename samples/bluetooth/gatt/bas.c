@@ -51,9 +51,11 @@ static struct bt_gatt_attr attrs[] = {
 	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
 };
 
+static struct bt_gatt_service bas_svc = BT_GATT_SERVICE(attrs);
+
 void bas_init(void)
 {
-	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+	bt_gatt_service_register(&bas_svc);
 }
 
 void bas_notify(void)

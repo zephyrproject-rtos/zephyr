@@ -67,6 +67,8 @@ static struct bt_gatt_attr gap_attrs[] = {
 			   read_appearance, NULL, NULL),
 };
 
+static struct bt_gatt_service gap_svc = BT_GATT_SERVICE(gap_attrs);
+
 static struct bt_gatt_ccc_cfg sc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 
 static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
@@ -83,13 +85,14 @@ static struct bt_gatt_attr gatt_attrs[] = {
 	BT_GATT_CCC(sc_ccc_cfg, sc_ccc_cfg_changed),
 };
 
-static int gatt_register(struct bt_gatt_attr *attrs, size_t count)
-{
-	sys_slist_t list;
-	struct bt_gatt_attr *last;
-	u16_t handle;
+static struct bt_gatt_service gatt_svc = BT_GATT_SERVICE(gatt_attrs);
 
-	sys_slist_init(&list);
+static int gatt_register(struct bt_gatt_service *svc)
+{
+	struct bt_gatt_service *last;
+	u16_t handle;
+	struct bt_gatt_attr *attrs = svc->attrs;
+	u16_t count = svc->attr_count;
 
 	if (sys_slist_is_empty(&db)) {
 		handle = 0;
@@ -97,7 +100,7 @@ static int gatt_register(struct bt_gatt_attr *attrs, size_t count)
 	}
 
 	last = SYS_SLIST_PEEK_TAIL_CONTAINER(&db, last, node);
-	handle = last->handle;
+	handle = last->attrs[last->attr_count - 1].handle;
 
 populate:
 	/* Populate the handles and append them to the list */
@@ -115,15 +118,12 @@ populate:
 			return -EINVAL;
 		}
 
-		sys_slist_append(&list, &attrs->node);
-
 		BT_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x",
 		       attrs, attrs->handle, bt_uuid_str(attrs->uuid),
 		       attrs->perm);
 	}
 
-	/* Merge attribute list into database */
-	sys_slist_merge_slist(&db, &list);
+	sys_slist_append(&db, &svc->node);
 
 	return 0;
 }
@@ -131,8 +131,8 @@ populate:
 void bt_gatt_init(void)
 {
 	/* Register mandatory services */
-	gatt_register(gap_attrs, ARRAY_SIZE(gap_attrs));
-	gatt_register(gatt_attrs, ARRAY_SIZE(gatt_attrs));
+	gatt_register(&gap_svc);
+	gatt_register(&gatt_svc);
 }
 
 static struct k_sem sc_sem = K_SEM_INITIALIZER(sc_sem, 1, 1);
@@ -170,25 +170,26 @@ static void sc_indicate(struct bt_gatt_attr *start, struct bt_gatt_attr *end)
 	k_sem_give(&sc_sem);
 }
 
-int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
+int bt_gatt_service_register(struct bt_gatt_service *svc)
 {
 	int err;
 
-	__ASSERT(attrs, "invalid parameters\n");
-	__ASSERT(count, "invalid parameters\n");
+	__ASSERT(svc, "invalid parameters\n");
+	__ASSERT(svc->attrs, "invalid parameters\n");
+	__ASSERT(svc->attr_count, "invalid parameters\n");
 
 	/* Do no allow to register mandatory services twice */
-	if (!bt_uuid_cmp(attrs->uuid, BT_UUID_GAP) ||
-	    !bt_uuid_cmp(attrs->uuid, BT_UUID_GATT)) {
+	if (!bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GAP) ||
+	    !bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GATT)) {
 		return -EALREADY;
 	}
 
-	err = gatt_register(attrs, count);
+	err = gatt_register(svc);
 	if (err < 0) {
 		return err;
 	}
 
-	sc_indicate(&attrs[0], &attrs[count - 1]);
+	sc_indicate(&svc->attrs[0], &svc->attrs[svc->attr_count - 1]);
 
 	return 0;
 }
@@ -331,24 +332,44 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 			  bt_gatt_attr_func_t func, void *user_data)
 {
-	struct bt_gatt_attr *attr;
+	struct bt_gatt_service *svc;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&db, attr, node) {
-		/* Check if attribute handle is within range */
-		if (attr->handle < start_handle || attr->handle > end_handle) {
-			continue;
-		}
+	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
+		int i;
 
-		if (func(attr, user_data) == BT_GATT_ITER_STOP) {
-			break;
+		for (i = 0; i < svc->attr_count; i++) {
+			struct bt_gatt_attr *attr = &svc->attrs[i];
+
+			/* Check if attribute handle is within range */
+			if (attr->handle < start_handle ||
+			    attr->handle > end_handle) {
+				continue;
+			}
+
+			if (func(attr, user_data) == BT_GATT_ITER_STOP) {
+				return;
+			}
 		}
 	}
 }
 
+static u8_t find_next(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct bt_gatt_attr **next = user_data;
+
+	*next = (struct bt_gatt_attr *)attr;
+
+	return BT_GATT_ITER_STOP;
+}
+
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 {
-	return SYS_SLIST_PEEK_NEXT_CONTAINER((struct bt_gatt_attr *)attr,
-					     node);
+	struct bt_gatt_attr *next = NULL;
+
+	bt_gatt_foreach_attr(attr->handle + 1, attr->handle + 1, find_next,
+			     &next);
+
+	return next;
 }
 
 ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
@@ -933,7 +954,7 @@ static void gatt_find_type_rsp(struct bt_conn *conn, u8_t err,
 	for (i = 0; length >= sizeof(rsp->list[i]);
 	     i++, length -=  sizeof(rsp->list[i])) {
 		struct bt_gatt_attr attr = {};
-		struct bt_gatt_service value;
+		struct bt_gatt_service_val value;
 
 		start_handle = sys_le16_to_cpu(rsp->list[i].start_handle);
 		end_handle = sys_le16_to_cpu(rsp->list[i].end_handle);

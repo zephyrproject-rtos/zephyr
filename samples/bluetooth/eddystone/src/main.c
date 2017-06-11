@@ -647,6 +647,8 @@ static struct bt_gatt_attr eds_attrs[] = {
 			   read_connectable, write_connectable, NULL),
 };
 
+static struct bt_gatt_service eds_svc = BT_GATT_SERVICE(eds_attrs);
+
 static void bt_ready(int err)
 {
 	if (err) {
@@ -656,7 +658,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bt_gatt_register(eds_attrs, ARRAY_SIZE(eds_attrs));
+	bt_gatt_service_register(&eds_svc);
 
 	/* Start advertising */
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
