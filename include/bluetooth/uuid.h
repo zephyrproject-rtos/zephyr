@@ -219,6 +219,11 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GAP_PPCP                  BT_UUID_DECLARE_16(0x2a04)
 #define BT_UUID_GAP_PPCP_VAL              0x2a04
+/** @def BT_UUID_GATT_SVC_CHANGED
+ *  @brief GATT Characteristic Service Changed
+ */
+#define BT_UUID_GATT_SC                   BT_UUID_DECLARE_16(0x2a05)
+#define BT_UUID_GATT_SC_VAL               0x2a05
 /** @def BT_UUID_BAS_BATTERY_LEVEL
  *  @brief BAS Characteristic Battery Level
  */
