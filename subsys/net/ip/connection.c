@@ -131,17 +131,17 @@ static inline u16_t ipv4_to_hash(struct in_addr *addr)
 	/* There is 11 bits available for IPv4 address */
 	/* Use more bits from the lower part of address space */
 	return
-		TAKE_BIT(addr->s_addr[0], 31, 11, 1) |
-		TAKE_BIT(addr->s_addr[0], 27, 11, 2) |
-		TAKE_BIT(addr->s_addr[0], 21, 11, 3) |
-		TAKE_BIT(addr->s_addr[0], 17, 11, 4) |
-		TAKE_BIT(addr->s_addr[0], 14, 11, 5) |
-		TAKE_BIT(addr->s_addr[0], 11, 11, 6) |
-		TAKE_BIT(addr->s_addr[0], 8, 11, 7) |
-		TAKE_BIT(addr->s_addr[0], 5, 11, 8) |
-		TAKE_BIT(addr->s_addr[0], 3, 11, 9) |
-		TAKE_BIT(addr->s_addr[0], 2, 11, 10) |
-		TAKE_BIT(addr->s_addr[0], 0, 11, 11);
+		TAKE_BIT(addr->s_addr, 31, 11, 1) |
+		TAKE_BIT(addr->s_addr, 27, 11, 2) |
+		TAKE_BIT(addr->s_addr, 21, 11, 3) |
+		TAKE_BIT(addr->s_addr, 17, 11, 4) |
+		TAKE_BIT(addr->s_addr, 14, 11, 5) |
+		TAKE_BIT(addr->s_addr, 11, 11, 6) |
+		TAKE_BIT(addr->s_addr, 8, 11, 7) |
+		TAKE_BIT(addr->s_addr, 5, 11, 8) |
+		TAKE_BIT(addr->s_addr, 3, 11, 9) |
+		TAKE_BIT(addr->s_addr, 2, 11, 10) |
+		TAKE_BIT(addr->s_addr, 0, 11, 11);
 }
 
 /* Return either the first free position in the cache (idx < 0) or
@@ -594,7 +594,7 @@ int net_conn_register(enum net_ip_protocol proto,
 #if defined(CONFIG_NET_IPV4)
 			if (remote_addr->family == AF_INET) {
 				if (!net_sin(remote_addr)->
-							sin_addr.s_addr[0]) {
+							sin_addr.s_addr) {
 					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
@@ -629,7 +629,7 @@ int net_conn_register(enum net_ip_protocol proto,
 
 #if defined(CONFIG_NET_IPV4)
 			if (local_addr->family == AF_INET) {
-				if (!net_sin(local_addr)->sin_addr.s_addr[0]) {
+				if (!net_sin(local_addr)->sin_addr.s_addr) {
 					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
@@ -735,7 +735,7 @@ static bool check_addr(struct net_pkt *pkt,
 			addr4 = &NET_IPV4_HDR(pkt)->dst;
 		}
 
-		if (net_sin(addr)->sin_addr.s_addr[0]) {
+		if (net_sin(addr)->sin_addr.s_addr) {
 			if (!net_ipv4_addr_cmp(&net_sin(addr)->sin_addr,
 					       addr4)) {
 				return false;
