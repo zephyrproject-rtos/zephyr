@@ -33,8 +33,8 @@ GTEXT(__ev_div_zero)
 GTEXT(__ev_dc_error)
 GTEXT(__ev_maligned)
 
-	.balign 4
 SECTION_VAR(BSS, saved_stack_pointer)
+	.balign 4
 	.word 0
 
 #if CONFIG_RGF_NUM_BANKS == 1
