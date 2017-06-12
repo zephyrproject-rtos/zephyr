@@ -92,7 +92,7 @@ From the app directory type the screen should display
    . Setting up ecjpake password ... ok
    . Performing the TLS handshake...
 
-If trying to use IPv6 edit the file prj_qemu_x86.conf and chage the line from
+If trying to use IPv6 edit the file prj_qemu_x86.conf and change the line from
 CONFIG_NET_IPV6=n to CONFIG_NET_IPV6=y
 
 And run the client on mbedTLS as

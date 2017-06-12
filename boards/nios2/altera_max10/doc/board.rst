@@ -96,7 +96,7 @@ Reference CPU
 A reference CPU design of a Nios II/f core is included in the Zephyr tree
 in the :file:`arch/nios2/soc/nios2f-zephyr/cpu` directory.
 
-Flash ths CPU using the ``nios2-configure-sof`` SDK tool with the FPGA
+Flash this CPU using the ``nios2-configure-sof`` SDK tool with the FPGA
 configuration file
 :file:`arch/nios2/soc/nios2f-zephyr/cpu/ghrd_10m50da.sof`:
 
@@ -284,7 +284,7 @@ nios2-configure-sof. You can leave this process running.
 
    $ nios2-gdb-server --tcpport 1234 --tcppersist --init-cache --reset-target
 
-Build your zephyr kernel, and load it into a GDB built for Nios II (included in
+Build your Zephyr kernel, and load it into a GDB built for Nios II (included in
 the Zephyr SDK):
 
 .. code-block:: console

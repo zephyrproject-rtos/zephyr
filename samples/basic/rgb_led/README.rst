@@ -24,7 +24,7 @@ Arduino 101
 ===========
 
 You will need to connect the LED pins to PWM0, PWM1 and PWM2
-on arduino 101 via the shield. Depending on what kind of RGB
+on Arduino 101 via the shield. Depending on what kind of RGB
 LED you are using, please connect the common cathode to the
 ground or the common anode to Vcc. You need current limiting
 resistor for each of the single color LEDs.

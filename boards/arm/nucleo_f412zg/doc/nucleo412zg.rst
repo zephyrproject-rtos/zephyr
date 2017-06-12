@@ -148,7 +148,7 @@ Programming and Debugging
 *************************
 
 Nucleo F412ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
-However this interface is currently not supported by openocd. You will need
+However this interface is currently not supported by OpenOCD. You will need
 to use ST tools or an external JTAG probe.
 
 

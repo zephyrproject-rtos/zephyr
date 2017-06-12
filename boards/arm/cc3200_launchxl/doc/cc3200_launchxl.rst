@@ -52,7 +52,7 @@ driver support.
 | GPIO      | on-chip    | gpio                  |
 +-----------+------------+-----------------------+
 
-The accelerometer, temperature sensors, WiFi, or other perhipherals
+The accelerometer, temperature sensors, WiFi, or other peripherals
 accessible through the BoosterPack, are not currently supported by
 this Zephyr port.
 

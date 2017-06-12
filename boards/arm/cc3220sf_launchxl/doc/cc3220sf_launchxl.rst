@@ -168,7 +168,7 @@ Debugging
 =========
 
 It is possible to enable loading and debugging of an application via
-OpenOCD and gdb, by linking and locating the program completely in SRAM.
+openocd and gdb, by linking and locating the program completely in SRAM.
 
 Prerequisites:
 --------------

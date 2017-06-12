@@ -6,7 +6,7 @@ X86 Emulation (QEMU)
 Overview
 ********
 
-The Zephyr Kernel uses the qemu_x86 board configuration to emulate pentium-class
+The Zephyr Kernel uses the qemu_x86 board configuration to emulate Pentium-class
 systems running on QEMU.
 This board configuration provides support for an x86 Minute IA CPU and the
 following devices:

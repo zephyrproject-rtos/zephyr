@@ -26,7 +26,7 @@ emulating Xtensa hardware.
 Hardware
 ********
 
-The folllowing Xtensa cores are officially supported:
+The following Xtensa cores are officially supported:
 
 - hifi3_bd5
 - XRC_FUSION_AON_ALL_LM
