@@ -22,6 +22,7 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[]);
 int cmd_gatt_subscribe(int argc, char *argv[]);
 int cmd_gatt_unsubscribe(int argc, char *argv[]);
 int cmd_gatt_register_test_svc(int argc, char *argv[]);
+int cmd_gatt_unregister_test_svc(int argc, char *argv[]);
 int cmd_gatt_write_cmd_metrics(int argc, char *argv[]);
 
 #endif /* __GATT_H */
