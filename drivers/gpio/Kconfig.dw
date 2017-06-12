@@ -28,7 +28,7 @@ config GPIO_DW_INIT_PRIORITY
 	  Device driver initialization priority.
 
 config GPIO_DW_CLOCK_GATE
-	bool "Enable glock gating"
+	bool "Enable clock gating"
 	select CLOCK_CONTROL
 	default n
 

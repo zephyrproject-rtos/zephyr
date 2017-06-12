@@ -1,4 +1,4 @@
 
 config BOARD_MINNOWBOARD
-	bool "Minnowboard Max"
+	bool "MinnowBoard Max"
 	depends on SOC_ATOM
