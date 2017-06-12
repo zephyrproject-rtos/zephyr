@@ -287,6 +287,14 @@ struct bt_gatt_cpf {
  */
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
+/** @brief Unregister GATT service.
+ * *
+ *  @param svc Service to be unregistered.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_unregister_service(struct bt_gatt_service *svc);
+
 enum {
 	BT_GATT_ITER_STOP = 0,
 	BT_GATT_ITER_CONTINUE,
