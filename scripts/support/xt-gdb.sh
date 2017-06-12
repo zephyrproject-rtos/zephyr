@@ -1,6 +1,6 @@
 #!/bin/bash
 
-XT_GDB=$XTENSA_TOOLS_PATH/bin/xt-gdb
+XT_GDB=$XCC_TOOLS/bin/xt-gdb
 ELF_NAME=${O}/${KERNEL_ELF_NAME}
 
 set -e
