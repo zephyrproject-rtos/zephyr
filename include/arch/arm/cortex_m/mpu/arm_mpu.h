@@ -44,6 +44,9 @@ struct arm_mpu {
 #define ARM_MPU_PRIVDEFENA	(1 << 2)
 
 #define REGION_VALID	(1 << 4)
+/* ARM MPU RBAR Register */
+/* Region base address mask */
+#define REGION_BASE_ADDR_MASK	0xFFFFFFE0
 
 /* eXecute Never */
 #define NOT_EXEC        (0x1 << 28)

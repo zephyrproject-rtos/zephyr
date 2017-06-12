@@ -134,7 +134,7 @@ struct lis3mdl_data {
 	sensor_trigger_handler_t data_ready_handler;
 
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_THREAD)
-	char __stack thread_stack[CONFIG_LIS3MDL_THREAD_STACK_SIZE];
+	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS3MDL_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)

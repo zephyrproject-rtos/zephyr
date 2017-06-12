@@ -16,6 +16,7 @@ dtb-$(CONFIG_BOARD_96B_CARBON)		=	96b_carbon.dts_compiled
 dtb-$(CONFIG_BOARD_96B_CARBON_NRF51)	=	96b_carbon_nrf51.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F401RE)	=	nucleo_f401re.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F411RE)	=	nucleo_f411re.dts_compiled
+dtb-$(CONFIG_BOARD_NUCLEO_F412ZG)	=	nucleo_f412zg.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F413ZH)	=	nucleo_f413zh.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F103RB)	=	nucleo_f103rb.dts_compiled
 dtb-$(CONFIG_BOARD_STM3210C_EVAL)	=	stm3210c_eval.dts_compiled
@@ -38,6 +39,7 @@ dtb-$(CONFIG_BOARD_QUARK_SE_C1000_BLE)	=	quark_se_c1000_ble.dts_compiled
 dtb-$(CONFIG_BOARD_QEMU_CORTEX_M3)	=	qemu_cortex_m3.dts_compiled
 dtb-$(CONFIG_BOARD_SAM_E70_XPLAINED)	=	sam_e70_xplained.dts_compiled
 dtb-$(CONFIG_BOARD_ARDUINO_DUE)		=	arduino_due.dts_compiled
+dtb-$(CONFIG_BOARD_SAM4S_XPLAINED)	=	sam4s_xplained.dts_compiled
 
 always	:= $(dtb-y)
 endif

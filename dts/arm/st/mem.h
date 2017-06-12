@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef __DT_BINDING_ST_MEM_H
 #define __DT_BINDING_ST_MEM_H
 
@@ -30,6 +35,9 @@
 #elif defined(CONFIG_SOC_STM32F411XE)
 #define DT_FLASH_SIZE		__SIZE_K(512)
 #define DT_SRAM_SIZE		__SIZE_K(128)
+#elif defined(CONFIG_SOC_STM32F412ZG)
+#define DT_FLASH_SIZE		__SIZE_K(1024)
+#define DT_SRAM_SIZE		__SIZE_K(256)
 #elif defined(CONFIG_SOC_STM32F413XH)
 #define DT_FLASH_SIZE		__SIZE_K(1536)
 #define DT_SRAM_SIZE		__SIZE_K(320)

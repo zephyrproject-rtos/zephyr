@@ -14,7 +14,7 @@
 #include <kernel.h>
 #include <init.h>
 
-char __noinit __stack sys_work_q_stack[CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE];
+K_THREAD_STACK_DEFINE(sys_work_q_stack, CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q k_sys_work_q;
 
@@ -24,7 +24,7 @@ static int k_sys_work_q_init(struct device *dev)
 
 	k_work_q_start(&k_sys_work_q,
 		       sys_work_q_stack,
-		       sizeof(sys_work_q_stack),
+		       K_THREAD_STACK_SIZEOF(sys_work_q_stack),
 		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
 
 	return 0;

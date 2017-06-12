@@ -6,6 +6,9 @@ CONFIG_SOC_STM32F413XH=y
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=96000000
 CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
 
+# Enable MPU
+CONFIG_STM32_ARM_MPU_ENABLE=y
+
 # enable USART2 - passthrough to STLINK v2 connector
 CONFIG_UART_STM32_PORT_3=y
 # enable console on this port by default
@@ -19,7 +22,6 @@ CONFIG_GPIO=y
 
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
-CONFIG_CLOCK_VDD_VOLTAGE=3300
 
 # Clock configuration for Cube Clock control driver
 CONFIG_CLOCK_STM32_HSE_CLOCK=8000000

@@ -242,7 +242,7 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 
-	stack_analyze("dlc stack", dlc->stack, sizeof(dlc->stack));
+	STACK_ANALYZE("dlc stack", dlc->stack);
 
 	if (dlc->ops && dlc->ops->disconnected) {
 		dlc->ops->disconnected(dlc);
@@ -751,7 +751,8 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	k_delayed_work_cancel(&dlc->rtx_work);
 
 	k_fifo_init(&dlc->tx_queue);
-	k_thread_create(&dlc->tx_thread, dlc->stack, sizeof(dlc->stack),
+	k_thread_create(&dlc->tx_thread, dlc->stack,
+			K_THREAD_STACK_SIZEOF(dlc->stack),
 			rfcomm_dlc_tx_thread, dlc, NULL, NULL, K_PRIO_COOP(7),
 			0, K_NO_WAIT);
 

@@ -226,7 +226,7 @@ void Task11(void)
 	k_mutex_unlock(&Mutex3);
 }
 
-char __noinit __stack task12_stack_area[STACKSIZE];
+K_THREAD_STACK_DEFINE(task12_stack_area, STACKSIZE);
 struct k_thread task12_thread_data;
 extern void Task12(void);
 

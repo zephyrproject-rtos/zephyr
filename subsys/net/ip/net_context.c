@@ -398,7 +398,11 @@ int net_context_unref(struct net_context *context)
 		context->conn_handler = NULL;
 	}
 
+	net_context_set_state(context, NET_CONTEXT_UNCONNECTED);
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
+
+	NET_DBG("Context %p released", context);
 
 	k_sem_give(&contexts_lock);
 
@@ -646,7 +650,7 @@ int net_context_listen(struct net_context *context, int backlog)
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -776,7 +780,7 @@ static int send_reset(struct net_context *context,
 	int ret;
 
 	ret = net_tcp_prepare_reset(context->tcp, remote, &pkt);
-	if (ret) {
+	if (ret || !pkt) {
 		return ret;
 	}
 
@@ -1064,7 +1068,7 @@ int net_context_connect(struct net_context *context,
 #endif
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 	if (addr->family != net_context_get_family(context)) {
@@ -1577,7 +1581,7 @@ int net_context_accept(struct net_context *context,
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -1748,7 +1752,7 @@ static int sendto(struct net_pkt *pkt,
 	int ret;
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_TCP)
@@ -1828,7 +1832,7 @@ static int sendto(struct net_pkt *pkt,
 	}
 
 	if (ret < 0) {
-		NET_DBG("Could not create network packet to send");
+		NET_DBG("Could not create network packet to send (%d)", ret);
 		return ret;
 	}
 
@@ -2051,7 +2055,7 @@ int net_context_recv(struct net_context *context,
 	NET_ASSERT(context);
 
 	if (!net_context_is_used(context)) {
-		return -ENOENT;
+		return -EBADF;
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)

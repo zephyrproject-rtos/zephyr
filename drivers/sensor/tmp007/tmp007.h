@@ -48,7 +48,7 @@ struct tmp007_data {
 	struct sensor_trigger th_trigger;
 
 #if defined(CONFIG_TMP007_TRIGGER_OWN_THREAD)
-	char __stack thread_stack[CONFIG_TMP007_THREAD_STACK_SIZE];
+	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_TMP007_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)

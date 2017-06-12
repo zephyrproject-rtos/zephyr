@@ -57,7 +57,7 @@
 #define DISK_THREAD_PRIO	-5
 
 static volatile int thread_op;
-static char __noinit __stack mass_thread_stack[DISK_THREAD_STACK_SZ];
+static K_THREAD_STACK_DEFINE(mass_thread_stack, DISK_THREAD_STACK_SZ);
 static struct k_thread mass_thread_data;
 static struct k_sem disk_wait_sem;
 static volatile u32_t defered_wr_sz;

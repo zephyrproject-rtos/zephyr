@@ -307,18 +307,10 @@ static void handle_time_slicing(s32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	next_ts = 0;
+#endif
 	if (!_is_thread_time_slicing(_current)) {
 		return;
 	}
-#else
-	if (_time_slice_duration == 0) {
-		return;
-	}
-
-	if (_is_prio_higher(_current->base.prio, _time_slice_prio_ceiling)) {
-		return;
-	}
-#endif
 
 	_time_slice_elapsed += __ticks_to_ms(ticks);
 	if (_time_slice_elapsed >= _time_slice_duration) {

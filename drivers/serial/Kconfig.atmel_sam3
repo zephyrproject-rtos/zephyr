@@ -1,9 +1,13 @@
 menuconfig UART_ATMEL_SAM3
-	bool "Atmel SAM3 family processor UART driver"
+	bool "[deprecated] Atmel SAM3 family processor UART driver"
 	default n
 	select SERIAL_HAS_DRIVER
 	depends on SOC_SERIES_SAM3X
 	help
+
+	This driver is deprecated and will be removed. Use
+	"Atmel SAM MCU family UART driver" instead.
+
 	This option enables the UART driver for Atmel SAM3
 	family processors. Note that there is only one
 	UART controller on SAM3. It has only two wires

@@ -55,7 +55,7 @@ Install the required packages in a Ubuntu host system with:
 .. code-block:: console
 
    $ sudo apt-get install git make gcc g++ python3-ply ncurses-dev \
-	 python3-yaml dfu-util dtc
+	 python3-yaml dfu-util device-tree-compiler
 
 Install the required packages in a Fedora host system with:
 

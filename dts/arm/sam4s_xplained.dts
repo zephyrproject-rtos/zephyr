@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) Justin Watson 2017
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/sam4s.dtsi>
+
+/ {
+	model = "Atmel SAM4S Xplained Board with an Atmel SAM4S16C SoC";
+	compatible = "atmel,sam4s_xplained", "atmel,sam4s16c", "atmel,sam4s";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};

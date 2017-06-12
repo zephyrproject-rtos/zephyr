@@ -904,7 +904,7 @@ static bool net_ctx_recv_v4_reconfig(void)
 }
 
 #define STACKSIZE 1024
-char __noinit __stack thread_stack[STACKSIZE];
+K_THREAD_STACK_DEFINE(thread_stack, STACKSIZE);
 static struct k_thread thread_data;
 
 static void recv_cb_timeout(struct net_context *context,

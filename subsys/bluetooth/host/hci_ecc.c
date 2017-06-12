@@ -214,8 +214,7 @@ static void ecc_thread(void *p1, void *p2, void *p3)
 			__ASSERT(0, "Unhandled ECC command");
 		}
 
-		stack_analyze("ecc stack", ecc_thread_stack,
-			      sizeof(ecc_thread_stack));
+		STACK_ANALYZE("ecc stack", ecc_thread_stack);
 	}
 }
 
@@ -310,6 +309,6 @@ int bt_hci_ecc_send(struct net_buf *buf)
 void bt_hci_ecc_init(void)
 {
 	k_thread_create(&ecc_thread_data, ecc_thread_stack,
-			sizeof(ecc_thread_stack), ecc_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(ecc_thread_stack), ecc_thread,
+			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 }

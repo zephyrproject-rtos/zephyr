@@ -115,7 +115,7 @@ struct net_stack_info {
 	NET_STACK_INFO_ADDR(_pretty_name, _name, _orig, _size, _name, 0)
 
 #define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
-	static char __noinit __stack name[size];			\
+	K_THREAD_STACK_DEFINE(name, size);				\
 	NET_STACK_INFO(pretty_name, name, orig, size)
 
 #else /* CONFIG_NET_SHELL */
@@ -124,7 +124,7 @@ struct net_stack_info {
 #define NET_STACK_INFO_ADDR(...)
 
 #define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
-	static char __noinit __stack name[size]
+	K_THREAD_STACK_DEFINE(name, size)
 
 #endif /* CONFIG_NET_SHELL */
 
@@ -134,7 +134,7 @@ struct net_stack_info {
 #if defined(CONFIG_INIT_STACKS)
 #include <misc/stack.h>
 
-static inline void net_analyze_stack_get_values(unsigned char *stack,
+static inline void net_analyze_stack_get_values(const char *stack,
 						size_t size,
 						unsigned *pcnt,
 						unsigned *unused)
@@ -146,7 +146,7 @@ static inline void net_analyze_stack_get_values(unsigned char *stack,
 }
 
 static inline void net_analyze_stack(const char *name,
-				     unsigned char *stack,
+				     const char *stack,
 				     size_t size)
 {
 	unsigned int pcnt, unused;

@@ -674,13 +674,18 @@ static int dns_write(struct dns_resolve_context *ctx,
 		goto quit;
 	}
 
+	ret = net_context_recv(net_ctx, cb_recv, K_NO_WAIT, ctx);
+	if (ret < 0) {
+		NET_DBG("Couldn't receive from socket (%d)", ret);
+		net_pkt_unref(pkt);
+		goto quit;
+	}
+
 	if (server->family == AF_INET) {
 		server_addr_len = sizeof(struct sockaddr_in);
 	} else {
 		server_addr_len = sizeof(struct sockaddr_in6);
 	}
-
-	net_context_recv(net_ctx, cb_recv, K_NO_WAIT, ctx);
 
 	ret = net_context_sendto(pkt, server, server_addr_len, NULL,
 				 K_NO_WAIT, NULL, NULL);

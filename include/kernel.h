@@ -273,7 +273,7 @@ enum execution_context_types {
 /**
  * @brief Analyze the main, idle, interrupt and system workqueue call stacks
  *
- * This routine calls @ref stack_analyze on the 4 call stacks declared and
+ * This routine calls @ref STACK_ANALYZE on the 4 call stacks declared and
  * maintained by the kernel. The sizes of those 4 call stacks are defined by:
  *
  * CONFIG_MAIN_STACK_SIZE
@@ -366,6 +366,11 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  * Thread options are architecture-specific, and can include K_ESSENTIAL,
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
+ *
+ * The stack itself should be declared with K_THREAD_STACK_DEFINE or variant
+ * macros. The stack size parameter should either be a defined constant
+ * also passed to K_THREAD_STACK_DEFINE, or the value of K_THREAD_STACK_SIZEOF.
+ * Do not use regular C sizeof().
  *
  * @param stack Pointer to the stack space.
  * @param stack_size Stack size in bytes.
@@ -581,7 +586,7 @@ struct _static_thread_data {
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
 			prio, options, delay)                            \
-	char __noinit __stack _k_thread_stack_##name[stack_size];        \
+	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
 	struct k_thread _k_thread_obj_##name;				 \
 	struct _static_thread_data _k_thread_data_##name __aligned(4)    \
 		__in_section(_static_thread_data, static, name) =        \
@@ -1953,8 +1958,11 @@ static inline int k_work_pending(struct k_work *work)
  * processing thread, which runs forever.
  *
  * @param work_q Address of workqueue.
- * @param stack Pointer to work queue thread's stack space.
- * @param stack_size Size of the work queue thread's stack (in bytes).
+ * @param stack Pointer to work queue thread's stack space, as defined by
+ *		K_THREAD_STACK_DEFINE()
+ * @param stack_size Size of the work queue thread's stack (in bytes), which
+ *		should either be the same constant passed to
+ *		K_THREAD_STACK_DEFINE() or the value of K_THREAD_STACK_SIZEOF().
  * @param prio Priority of the work queue's thread.
  *
  * @return N/A
@@ -3728,6 +3736,103 @@ extern void _init_static_threads(void);
 
 extern int _is_thread_essential(void);
 extern void _timer_expiration_handler(struct _timeout *t);
+
+/* arch/cpu.h may declare an architecture or platform-specific macro
+ * for properly declaring stacks, compatible with MMU/MPU constraints if
+ * enabled
+ */
+#ifdef _ARCH_THREAD_STACK_DEFINE
+#define K_THREAD_STACK_DEFINE(sym, size) _ARCH_THREAD_STACK_DEFINE(sym, size)
+#define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+		_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
+#define K_THREAD_STACK_MEMBER(sym, size) _ARCH_THREAD_STACK_MEMBER(sym, size)
+#define K_THREAD_STACK_SIZEOF(sym) _ARCH_THREAD_STACK_SIZEOF(sym)
+#define K_THREAD_STACK_BUFFER(sym) _ARCH_THREAD_STACK_BUFFER(sym)
+#else
+/**
+ * @brief Declare a toplevel thread stack memory region
+ *
+ * This declares a region of memory suitable for use as a thread's stack.
+ *
+ * This is the generic, historical definition. Align to STACK_ALIGN and put in
+ * 'noinit' section so that it isn't zeroed at boot
+ *
+ * The declared symbol will always be a character array which can be passed to
+ * k_thread_create, but should otherwise not be manipulated.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_THREAD_STACK_SIZEOF() instead.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_THREAD_STACK_DEFINE(sym, size) \
+	char __noinit __aligned(STACK_ALIGN) sym[size]
+
+/**
+ * @brief Declare a toplevel array of thread stack memory regions
+ *
+ * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
+ * definition for additional details and constraints.
+ *
+ * This is the generic, historical definition. Align to STACK_ALIGN and put in
+ * 'noinit' section so that it isn't zeroed at boot
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+
+#define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	char __noinit __aligned(STACK_ALIGN) sym[nmemb][size]
+
+/**
+ * @brief Declare an embedded stack memory region
+ *
+ * Used for stacks embedded within other data structures. Use is highly
+ * discouraged but in some cases necessary. For memory protection scenarios,
+ * it is very important that any RAM preceding this member not be writable
+ * by threads else a stack overflow will lead to silent corruption. In other
+ * words, the containing data structure should live in RAM owned by the kernel.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_THREAD_STACK_MEMBER(sym, size) \
+	char __aligned(STACK_ALIGN) sym[size]
+
+/**
+ * @brief Return the size in bytes of a stack memory region
+ *
+ * Convenience macro for passing the desired stack size to k_thread_create()
+ * since the underlying implementation may actually create something larger
+ * (for instance a guard area).
+ *
+ * The value returned here is guaranteed to match the 'size' parameter
+ * passed to K_THREAD_STACK_DEFINE and related macros.
+ *
+ * @param sym Stack memory symbol
+ * @return Size of the stack
+ */
+#define K_THREAD_STACK_SIZEOF(sym) sizeof(sym)
+
+/**
+ * @brief Get a pointer to the physical stack buffer
+ *
+ * Convenience macro to get at the real underlying stack buffer used by
+ * the CPU. Guaranteed to be a character pointer of size K_THREAD_STACK_SIZEOF.
+ * This is really only intended for diagnostic tools which want to examine
+ * stack memory contents.
+ *
+ * @param sym Declared stack symbol name
+ * @return The buffer itself, a char *
+ */
+#define K_THREAD_STACK_BUFFER(sym) sym
+
+#endif /* _ARCH_DECLARE_STACK */
 
 #ifdef __cplusplus
 }

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <kernel.h>
 #include <zephyr.h>
 #include <tc_util.h>
@@ -12,8 +18,8 @@ K_SEM_DEFINE(sem_bench_1, 0, 1);
 
 /* To time thread creation*/
 #define STACK_SIZE 500
-extern char __noinit __stack my_stack_area[STACK_SIZE];
-extern char __noinit __stack my_stack_area_0[STACK_SIZE];
+extern char my_stack_area[];
+extern char my_stack_area_0[];
 extern struct k_thread my_thread;
 extern struct k_thread my_thread_0;
 

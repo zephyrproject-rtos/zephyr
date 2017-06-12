@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-BOARD = qemu_x86
+BOARD ?= qemu_x86
 CONF_FILE = prj.conf
 
 export SOURCE_DIR = $(ZEPHYR_BASE)/samples/static_lib/hello_world

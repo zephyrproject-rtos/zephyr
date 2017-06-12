@@ -78,8 +78,8 @@ u64_t __noinit __end_tick_tsc;
 
 #define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
 
-char __noinit __stack _main_stack[MAIN_STACK_SIZE];
-char __noinit __stack _idle_stack[IDLE_STACK_SIZE];
+K_THREAD_STACK_DEFINE(_main_stack, MAIN_STACK_SIZE);
+K_THREAD_STACK_DEFINE(_idle_stack, IDLE_STACK_SIZE);
 
 static struct k_thread _main_thread_s;
 static struct k_thread _idle_thread_s;
@@ -98,7 +98,7 @@ k_tid_t const _idle_thread = (k_tid_t)&_idle_thread_s;
 #if CONFIG_ISR_STACK_SIZE & (STACK_ALIGN - 1)
     #error "ISR_STACK_SIZE must be a multiple of the stack alignment"
 #endif
-char __noinit __stack _interrupt_stack[CONFIG_ISR_STACK_SIZE];
+K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	#include <misc/dlist.h>
@@ -120,15 +120,13 @@ void k_call_stacks_analyze(void)
 #endif /* CONFIG_ARC */
 
 	printk("Kernel stacks:\n");
-	stack_analyze("main     ", _main_stack, sizeof(_main_stack));
-	stack_analyze("idle     ", _idle_stack, sizeof(_idle_stack));
+	STACK_ANALYZE("main     ", _main_stack);
+	STACK_ANALYZE("idle     ", _idle_stack);
 #if defined(CONFIG_ARC) && CONFIG_RGF_NUM_BANKS != 1
-	stack_analyze("firq     ", _firq_stack, sizeof(_firq_stack));
+	STACK_ANALYZE("firq     ", _firq_stack);
 #endif /* CONFIG_ARC */
-	stack_analyze("interrupt", _interrupt_stack,
-		      sizeof(_interrupt_stack));
-	stack_analyze("workqueue", sys_work_q_stack,
-		      sizeof(sys_work_q_stack));
+	STACK_ANALYZE("interrupt", _interrupt_stack);
+	STACK_ANALYZE("workqueue", sys_work_q_stack);
 
 #endif /* CONFIG_INIT_STACKS && CONFIG_PRINTK */
 }
@@ -329,12 +327,10 @@ extern void *__stack_chk_guard;
 FUNC_NORETURN void _Cstart(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	void *dummy_thread = NULL;
+	struct k_thread *dummy_thread = NULL;
 #else
-	/* floating point is NOT used during kernel init */
-
-	char __stack dummy_stack[_K_THREAD_NO_FLOAT_SIZEOF];
-	void *dummy_thread = dummy_stack;
+	struct k_thread dummy_thread_memory;
+	struct k_thread *dummy_thread = &dummy_thread_memory;
 #endif
 
 	/*

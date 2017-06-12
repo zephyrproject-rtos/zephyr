@@ -50,7 +50,7 @@ DEVICE_INIT(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
 #define RING_BUF_SIZE32		8
 
 static u32_t ring_buf_data[RING_BUF_SIZE32];
-static char __stack thread_stack[IPM_CONSOLE_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(thread_stack, IPM_CONSOLE_STACK_SIZE);
 static char line_buf[LINE_BUF_SIZE];
 
 /* Dump incoming messages to printk() */

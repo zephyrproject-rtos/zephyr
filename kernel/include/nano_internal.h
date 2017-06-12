@@ -52,19 +52,27 @@ extern void _new_thread(struct k_thread *thread, char *pStack, size_t stackSize,
 
 extern unsigned int __swap(unsigned int key);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && defined(CONFIG_TIMESLICING)
+#ifdef CONFIG_TIMESLICING
 extern void _update_time_slice_before_swap(void);
+#endif
 
-static inline unsigned int _time_slice_swap(unsigned int key)
+#ifdef CONFIG_STACK_SENTINEL
+extern void _check_stack_sentinel(void);
+#endif
+
+static inline unsigned int _Swap(unsigned int key)
 {
+
+#ifdef CONFIG_STACK_SENTINEL
+	_check_stack_sentinel();
+#endif
+#ifdef CONFIG_TIMESLICING
 	_update_time_slice_before_swap();
+#endif
+
 	return __swap(key);
 }
 
-#define _Swap(x)  _time_slice_swap(x)
-#else
-#define _Swap(x)  __swap(x)
-#endif
 /* set and clear essential fiber/task flag */
 
 extern void _thread_essential_set(void);

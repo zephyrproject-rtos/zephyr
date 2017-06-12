@@ -44,7 +44,7 @@ static char default_module_prompt[PROMPT_MAX_LEN];
 static int default_module = -1;
 
 #define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
-static char __noinit __stack stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
 static struct k_thread shell_thread;
 
 #define MAX_CMD_QUEUED CONFIG_CONSOLE_SHELL_MAX_CMD_QUEUED
@@ -205,7 +205,7 @@ static int show_cmd_help(char *argv[])
 	}
 
 	printk("Unrecognized command: %s\n", argv[0]);
-	return 0;
+	return -EINVAL;
 }
 
 static void print_module_commands(const int module)
@@ -235,7 +235,7 @@ static int show_help(int argc, char *argv[])
 			module = get_destination_module(argv[1]);
 			if (module == -1) {
 				printk("Illegal module %s\n", argv[1]);
-				return 0;
+				return -EINVAL;
 			}
 		} else {
 			module = default_module;
@@ -261,14 +261,14 @@ static int set_default_module(const char *name)
 	if (strlen(name) > MODULE_NAME_MAX_LEN) {
 		printk("Module name %s is too long, default is not changed\n",
 			name);
-		return -1;
+		return -EINVAL;
 	}
 
 	module = get_destination_module(name);
 
 	if (module == -1) {
 		printk("Illegal module %s, default is not changed\n", name);
-		return -1;
+		return -EINVAL;
 	}
 
 	default_module = module;
@@ -283,11 +283,10 @@ static int select_module(int argc, char *argv[])
 {
 	if (argc == 1) {
 		default_module = -1;
-	} else {
-		set_default_module(argv[1]);
+		return 0;
 	}
 
-	return 0;
+	return set_default_module(argv[1]);
 }
 
 static int exit_module(int argc, char *argv[])
@@ -299,10 +298,9 @@ static int exit_module(int argc, char *argv[])
 	return 0;
 }
 
-static shell_cmd_function_t get_cb(int argc, char *argv[])
+static shell_cmd_function_t get_cb(int *argc, char *argv[], int *module)
 {
 	const char *first_string = argv[0];
-	int module = -1;
 	const struct shell_module *shell_module;
 	const char *command;
 	int i;
@@ -324,17 +322,17 @@ static shell_cmd_function_t get_cb(int argc, char *argv[])
 		return exit_module;
 	}
 
-	if ((argc == 1) && (default_module == -1)) {
+	if ((*argc == 1) && (default_module == -1)) {
 		printk("Missing parameter\n");
 		return NULL;
 	}
 
-	command = get_command_and_module(argv, &module);
-	if ((module == -1) || (command == NULL)) {
+	command = get_command_and_module(argv, module);
+	if ((*module == -1) || (command == NULL)) {
 		return NULL;
 	}
 
-	shell_module = &__shell_cmd_start[module];
+	shell_module = &__shell_cmd_start[*module];
 	for (i = 0; shell_module->commands[i].cmd_name; i++) {
 		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
 			return shell_module->commands[i].cb;
@@ -350,44 +348,60 @@ static inline void print_cmd_unknown(char *argv)
 	printk("Type 'help' for list of available commands\n");
 }
 
-static void shell(void *p1, void *p2, void *p3)
+int shell_exec(char *line)
 {
 	char *argv[ARGC_MAX + 1];
-	size_t argc;
+	int argc;
+	int module = default_module;
+	int err;
+	shell_cmd_function_t cb;
 
+	argc = line2argv(line, argv, ARRAY_SIZE(argv));
+	if (!argc) {
+		return -EINVAL;
+	}
+
+	err = argc;
+
+	cb = get_cb(&argc, argv, &module);
+	if (!cb) {
+		if (app_cmd_handler != NULL) {
+			cb = app_cmd_handler;
+		} else {
+			print_cmd_unknown(argv[0]);
+			return -EINVAL;
+		}
+	}
+
+	/* Execute callback with arguments */
+	if (module != -1 && module != default_module) {
+		/* Ajust parameters to point to the actual command */
+		err = cb(argc - 1, &argv[1]);
+	} else {
+		err = cb(argc, argv);
+	}
+
+	if (err < 0) {
+		show_cmd_help(argv);
+	}
+
+	return err;
+}
+
+static void shell(void *p1, void *p2, void *p3)
+{
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	while (1) {
 		struct console_input *cmd;
-		shell_cmd_function_t cb;
 
 		printk("%s", get_prompt());
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
-		argc = line2argv(cmd->line, argv, ARRAY_SIZE(argv));
-		if (!argc) {
-			k_fifo_put(&avail_queue, cmd);
-			continue;
-		}
-
-		cb = get_cb(argc, argv);
-		if (!cb) {
-			if (app_cmd_handler != NULL) {
-				cb = app_cmd_handler;
-			} else {
-				print_cmd_unknown(argv[0]);
-				k_fifo_put(&avail_queue, cmd);
-				continue;
-			}
-		}
-
-		/* Execute callback with arguments */
-		if (cb(argc, argv) < 0) {
-			show_cmd_help(argv);
-		}
+		shell_exec(cmd->line);
 
 		k_fifo_put(&avail_queue, cmd);
 	}

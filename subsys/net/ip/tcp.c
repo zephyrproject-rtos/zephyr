@@ -36,6 +36,8 @@
 #include "tcp.h"
 #include "net_stats.h"
 
+#define ALLOC_TIMEOUT 500
+
 /*
  * Each TCP connection needs to be tracked by net_context, so
  * we need to allocate equal number of control structures here.
@@ -141,6 +143,20 @@ static inline void do_ref_if_needed(struct net_pkt *pkt)
 	}
 }
 
+static void abort_connection(struct net_tcp *tcp)
+{
+	struct net_context *ctx = tcp->context;
+
+	NET_DBG("Segment retransmission exceeds %d, resetting context %p",
+		CONFIG_NET_TCP_RETRY_COUNT, ctx);
+
+	if (ctx->recv_cb) {
+		ctx->recv_cb(ctx, NULL, -ECONNRESET, tcp->recv_user_data);
+	}
+
+	net_context_unref(ctx);
+}
+
 static void tcp_retry_expired(struct k_timer *timer)
 {
 	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
@@ -151,6 +167,12 @@ static void tcp_retry_expired(struct k_timer *timer)
 	 */
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->retry_timeout_shift++;
+
+		if (tcp->retry_timeout_shift > CONFIG_NET_TCP_RETRY_COUNT) {
+			abort_connection(tcp);
+			return;
+		}
+
 		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 
 		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
@@ -295,7 +317,10 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		tail = pkt->frags;
 		pkt->frags = NULL;
 	} else {
-		pkt = net_pkt_get_tx(context, K_FOREVER);
+		pkt = net_pkt_get_tx(context, ALLOC_TIMEOUT);
+		if (!pkt) {
+			return NULL;
+		}
 	}
 
 #if defined(CONFIG_NET_IPV4)
@@ -327,7 +352,12 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		return NULL;
 	}
 
-	header = net_pkt_get_data(context, K_FOREVER);
+	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
+	if (!header) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
+
 	net_pkt_frag_add(pkt, header);
 
 	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
@@ -720,10 +750,18 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		}
 
 		if (pkt_in_slist) {
-			new_pkt = net_pkt_get_tx(ctx, K_FOREVER);
+			new_pkt = net_pkt_get_tx(ctx, ALLOC_TIMEOUT);
+			if (!new_pkt) {
+				return -ENOMEM;
+			}
 
 			memcpy(new_pkt, pkt, sizeof(struct net_pkt));
-			new_pkt->frags = net_pkt_copy_all(pkt, 0, K_FOREVER);
+			new_pkt->frags = net_pkt_copy_all(pkt, 0,
+							  ALLOC_TIMEOUT);
+			if (!new_pkt->frags) {
+				net_pkt_unref(new_pkt);
+				return -ENOMEM;
+			}
 
 			NET_DBG("Copied %zu bytes from %p to %p",
 				net_pkt_get_len(new_pkt), pkt, new_pkt);

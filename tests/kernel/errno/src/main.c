@@ -11,7 +11,7 @@
 #define N_THREADS 2
 
 #define STACK_SIZE 384
-static __stack char stacks[N_THREADS][STACK_SIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THREADS, STACK_SIZE);
 static struct k_thread threads[N_THREADS];
 
 static int errno_values[N_THREADS + 1] = {

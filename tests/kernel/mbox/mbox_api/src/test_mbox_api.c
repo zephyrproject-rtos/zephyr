@@ -36,7 +36,7 @@ static struct k_mbox mbox;
 
 static k_tid_t sender_tid, receiver_tid;
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 
 static struct k_sem end_sema, sync_sema;

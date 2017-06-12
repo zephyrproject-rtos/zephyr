@@ -26,7 +26,7 @@
 K_STACK_DEFINE(kstack, STACK_LEN);
 static struct k_stack stack;
 
-static char __noinit __stack threadstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(threadstack, STACK_SIZE);
 static struct k_thread thread_data;
 static u32_t data[STACK_LEN] = { 0xABCD, 0x1234 };
 static struct k_sem end_sema;

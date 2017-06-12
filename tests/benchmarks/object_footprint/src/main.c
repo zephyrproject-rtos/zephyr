@@ -30,7 +30,7 @@ typedef void * (*pfunc) (void *);
 
 /* stack used by thread */
 #ifdef CONFIG_OBJECTS_THREAD
-static char __stack pStack[THREAD_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(pStack, THREAD_STACK_SIZE);
 static struct k_thread objects_thread;
 #endif
 

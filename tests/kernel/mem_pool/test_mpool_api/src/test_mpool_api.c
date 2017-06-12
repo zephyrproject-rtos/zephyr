@@ -14,7 +14,6 @@
  *   -# K_MEM_POOL_DEFINE
  *   -# k_mem_pool_alloc
  *   -# k_mem_pool_free
- *   -# k_mem_pool_defrag
  * @}
  */
 
@@ -152,37 +151,3 @@ void test_mpool_alloc_timeout(void)
 	}
 }
 
-void test_mpool_defrag(void)
-{
-	struct k_mem_block block[BLK_NUM_MIN];
-
-	/*fragment the memory pool into small blocks*/
-	for (int i = 0; i < BLK_NUM_MIN; i++) {
-		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
-			K_NO_WAIT) == 0, NULL);
-	}
-	/*free the small blocks in the 1st half of the pool*/
-	for (int i = 0; i < (BLK_NUM_MIN >> 1); i++) {
-		k_mem_pool_free(&block[i]);
-	}
-	/*request a big block, the pool has "adjacent free blocks" to merge*/
-	zassert_true(k_mem_pool_alloc(&kmpool, &block[0], BLK_SIZE_MAX,
-		K_FOREVER) == 0, NULL);
-	/*free the small blocks in the 2nd half of the pool*/
-	for (int i = (BLK_NUM_MIN >> 1); i < BLK_NUM_MIN; i++) {
-		k_mem_pool_free(&block[i]);
-	}
-	/**
-	 * TESTPOINT: This routine instructs a memory pool to concatenate unused
-	 * memory blocks into larger blocks wherever possible.
-	 */
-	/*do manual de-fragment*/
-	k_mem_pool_defrag(&kmpool);
-	/*request a big block, the pool is de-fragmented*/
-	zassert_true(k_mem_pool_alloc(&kmpool, &block[1], BLK_SIZE_MAX,
-		K_NO_WAIT) == 0, NULL);
-	/*free the big blocks*/
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		k_mem_pool_free(&block[i]);
-	}
-}

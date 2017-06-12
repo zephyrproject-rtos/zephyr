@@ -456,7 +456,7 @@ static struct net_6lo_data test_data_4 = {
 	.ipv6.len = { 0x00, 0x00 },
 	.ipv6.nexthdr = IPPROTO_UDP,
 	.ipv6.hop_limit = 0xff,
-	.ipv6.src = src_sac1_sam00,
+	.ipv6.src = src_sam00,
 	.ipv6.dst = dst_m1_dam00,
 	.nh.udp.src_port = htons(udp_src_port_16bit),
 	.nh.udp.dst_port = htons(udp_dst_port_16bit),
@@ -795,6 +795,25 @@ static struct net_6lo_data test_data_22 = {
 	.small = true,
 	.iphc = true
 };
+
+static struct net_6lo_data test_data_23 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x20,
+	.ipv6.flow = 0x3412,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sam00,
+	.ipv6.dst = dst_dac1_dam01,
+	.nh.udp.src_port = htons(udp_src_port_8bit_y),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = false,
+	.iphc = true
+};
 #endif
 
 static int test_6lo(struct net_6lo_data *data)
@@ -856,7 +875,7 @@ static const struct {
 	{ "test_6lo_sam00_dam00", &test_data_1},
 	{ "test_6lo_sam01_dam01", &test_data_2},
 	{ "test_6lo_sam10_dam10", &test_data_3},
-	{ "test_6lo_sac1_sam00_m1_dam00", &test_data_4},
+	{ "test_6lo_sam00_m1_dam00", &test_data_4},
 	{ "test_6lo_sam01_m1_dam01", &test_data_5},
 	{ "test_6lo_sam10_m1_dam10", &test_data_6},
 	{ "test_6lo_sam10_m1_dam10_no_udp", &test_data_7},
@@ -876,12 +895,15 @@ static const struct {
 	{ "test_6lo_sac1_sam01_m1_dam01", &test_data_20},
 	{ "test_6lo_sac1_sam10_m1_dam10", &test_data_21},
 	{ "test_6lo_sac1_sam11_m1_dam10", &test_data_22},
+	{ "test_6lo_sac0_sam00_dac1_dam01", &test_data_23},
 #endif
 };
 
-static void main_thread(void)
+void main(void)
 {
 	int count, pass;
+
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 	net_6lo_set_context(net_if_get_default(), &ctx1);
@@ -902,15 +924,4 @@ static void main_thread(void)
 	net_pkt_print();
 
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
-}
-
-#define STACKSIZE 2000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
-
-void main(void)
-{
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)main_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

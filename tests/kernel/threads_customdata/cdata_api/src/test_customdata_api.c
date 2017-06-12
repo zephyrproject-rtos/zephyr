@@ -15,7 +15,7 @@
 #endif
 
 /*local variables*/
-static char __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 
 static void customdata_entry(void *p1, void *p2, void *p3)

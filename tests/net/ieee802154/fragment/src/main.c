@@ -337,7 +337,7 @@ static struct net_fragment_data test_data_4 = {
 	.ipv6.len = { 0x00, 0x00 },
 	.ipv6.nexthdr = IPPROTO_UDP,
 	.ipv6.hop_limit = 0xff,
-	.ipv6.src = src_sac1_sam00,
+	.ipv6.src = src_sam00,
 	.ipv6.dst = dst_m1_dam00,
 	.udp.src_port = htons(udp_src_port_16bit),
 	.udp.dst_port = htons(udp_dst_port_16bit),
@@ -506,16 +506,17 @@ static const struct {
 	{ "test_fragment_sam00_dam00", &test_data_1},
 	{ "test_fragment_sam01_dam01", &test_data_2},
 	{ "test_fragment_sam10_dam10", &test_data_3},
-	{ "test_fragment_sac1_sam00_m1_dam00", &test_data_4},
+	{ "test_fragment_sam00_m1_dam00", &test_data_4},
 	{ "test_fragment_sam01_m1_dam01", &test_data_5},
 	{ "test_fragment_sam10_m1_dam10", &test_data_6},
 	{ "test_fragment_ipv6_dispatch_small", &test_data_7},
 	{ "test_fragment_ipv6_dispatch_big", &test_data_8},
 };
 
-static void main_thread(void)
+void main(void)
 {
 	int count, pass;
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		TC_START(tests[count].name);
@@ -531,13 +532,3 @@ static void main_thread(void)
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
 }
 
-#define STACKSIZE 8000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
-
-void main(void)
-{
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)main_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(7), 0, 0);
-}

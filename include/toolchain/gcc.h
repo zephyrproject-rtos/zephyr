@@ -94,6 +94,11 @@ do {                                                                    \
 #define __weak __attribute__((__weak__))
 #define __unused __attribute__((__unused__))
 
+/* Be *very* careful with this, you cannot filter out with -wno-deprecated,
+ * which has implications for -Werror
+ */
+#define __DEPRECATED_MACRO _Pragma("GCC warning \"Macro is deprecated\"")
+
 /* These macros allow having ARM asm functions callable from thumb */
 
 #if defined(_ASMLANGUAGE) && !defined(_LINKER)

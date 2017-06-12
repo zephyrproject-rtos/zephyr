@@ -308,12 +308,21 @@ int _sys_clock_driver_init(struct device *device)
 u32_t _timer_cycle_get_32(void)
 {
 	u32_t elapsed_cycles;
+	u32_t sys_clock_tick_count;
+	u32_t rtc_prev;
+	u32_t rtc_now;
 
-	elapsed_cycles = (RTC_COUNTER -
-			  (_sys_clock_tick_count * RTC_TICKS_PER_SYS_TICK))
-			  & RTC_MASK;
+	rtc_now = RTC_COUNTER;
+	do {
+		sys_clock_tick_count = _sys_clock_tick_count;
+		elapsed_cycles = (rtc_now - (sys_clock_tick_count *
+					     RTC_TICKS_PER_SYS_TICK)) &
+				 RTC_MASK;
+		rtc_prev = rtc_now;
+		rtc_now = RTC_COUNTER;
+	} while (rtc_now != rtc_prev);
 
-	return (_sys_clock_tick_count * sys_clock_hw_cycles_per_tick) +
+	return (sys_clock_tick_count * sys_clock_hw_cycles_per_tick) +
 	       elapsed_cycles;
 }
 

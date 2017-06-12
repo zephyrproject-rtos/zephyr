@@ -54,7 +54,9 @@ __printf_like(2, 3) void bt_log(int prio, const char *fmt, ...);
 
 #elif defined(CONFIG_BLUETOOTH_DEBUG_LOG)
 
+#if !defined(SYS_LOG_DOMAIN)
 #define SYS_LOG_DOMAIN "bt"
+#endif
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #include <logging/sys_log.h>
 
@@ -93,9 +95,9 @@ static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
 			}
 
 #define BT_STACK(name, size) \
-		char __stack name[(size) + BT_STACK_DEBUG_EXTRA]
+		K_THREAD_STACK_MEMBER(name, (size) + BT_STACK_DEBUG_EXTRA)
 #define BT_STACK_NOINIT(name, size) \
-		char __noinit __stack name[(size) + BT_STACK_DEBUG_EXTRA]
+		K_THREAD_STACK_DEFINE(name, (size) + BT_STACK_DEBUG_EXTRA)
 
 /* This helper is only available when BLUETOOTH_DEBUG is enabled */
 const char *bt_hex(const void *buf, size_t len);

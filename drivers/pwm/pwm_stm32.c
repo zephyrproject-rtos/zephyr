@@ -24,14 +24,8 @@
 #define PWM_STRUCT(dev)					\
 	((TIM_TypeDef *)(DEV_CFG(dev))->pwm_base)
 
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-#define CLOCK_SUBSYS_TIM1 STM32F10X_CLOCK_SUBSYS_TIM1
-#define CLOCK_SUBSYS_TIM2 STM32F10X_CLOCK_SUBSYS_TIM2
-#endif
-
 #define CHANNEL_LENGTH 4
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 static u32_t __get_tim_clk(u32_t bus_clk,
 			      clock_control_subsys_t *sub_system)
 {
@@ -52,30 +46,6 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 
 	return tim_clk;
 }
-#else
-/* This code only applies to F1 family */
-/* To be deleted when F1 series ported to LL clock control driver */
-static u32_t __get_tim_clk(u32_t bus_clk,
-			      clock_control_subsys_t sub_system)
-{
-	u32_t tim_clk, apb_psc;
-	u32_t subsys = POINTER_TO_UINT(sub_system);
-
-	if (subsys > STM32F10X_CLOCK_APB2_BASE) {
-		apb_psc = CONFIG_CLOCK_STM32F10X_APB2_PRESCALER;
-	} else {
-		apb_psc = CONFIG_CLOCK_STM32F10X_APB1_PRESCALER;
-	}
-
-	if (apb_psc == RCC_HCLK_DIV1) {
-		tim_clk = bus_clk;
-	} else	{
-		tim_clk = 2 * bus_clk;
-	}
-
-	return tim_clk;
-}
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 /*
  * Set the period and pulse width for a PWM pin.
@@ -177,17 +147,11 @@ static int pwm_stm32_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	}
 
 	/* Timer clock depends on APB prescaler */
-#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 	clock_control_get_rate(data->clock,
 			(clock_control_subsys_t *)&cfg->pclken, &bus_clk);
 
 	tim_clk = __get_tim_clk(bus_clk,
 			(clock_control_subsys_t *)&cfg->pclken);
-#else
-	clock_control_get_rate(data->clock, cfg->clock_subsys, &bus_clk);
-
-	tim_clk = __get_tim_clk(bus_clk, cfg->clock_subsys);
-#endif
 
 	*cycles = (u64_t)(tim_clk / (data->pwm_prescaler + 1));
 
@@ -219,12 +183,8 @@ static int pwm_stm32_init(struct device *dev)
 	__pwm_stm32_get_clock(dev);
 
 	/* enable clock */
-#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 	clock_control_on(data->clock,
 			(clock_control_subsys_t *)&config->pclken);
-#else
-	clock_control_on(data->clock, config->clock_subsys);
-#endif
 
 	return 0;
 }
@@ -238,12 +198,8 @@ static struct pwm_stm32_data pwm_stm32_dev_data_1 = {
 
 static const struct pwm_stm32_config pwm_stm32_dev_cfg_1 = {
 	.pwm_base = TIM1_BASE,
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	.pclken = { .bus = STM32_CLOCK_BUS_APB2,
 		    .enr = LL_APB2_GRP1_PERIPH_TIM1 },
-#else
-	.clock_subsys = UINT_TO_POINTER(CLOCK_SUBSYS_TIM1),
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
 DEVICE_AND_API_INIT(pwm_stm32_1, CONFIG_PWM_STM32_1_DEV_NAME,
@@ -262,12 +218,8 @@ static struct pwm_stm32_data pwm_stm32_dev_data_2 = {
 
 static const struct pwm_stm32_config pwm_stm32_dev_cfg_2 = {
 	.pwm_base = TIM2_BASE,
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
 		    .enr = LL_APB1_GRP1_PERIPH_TIM2 },
-#else
-	.clock_subsys = UINT_TO_POINTER(CLOCK_SUBSYS_TIM2),
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 };
 
 DEVICE_AND_API_INIT(pwm_stm32_2, CONFIG_PWM_STM32_2_DEV_NAME,

@@ -260,6 +260,7 @@ static void ctrl_tx_enqueue(struct connection *conn,
 static void pdu_node_tx_release(u16_t handle,
 				struct radio_pdu_node_tx *node_tx);
 static void connection_release(struct connection *conn);
+static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason);
 static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
 static u32_t is_peer_compatible(struct connection *conn);
 static u32_t conn_update_req(struct connection *conn);
@@ -271,15 +272,17 @@ static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				u8_t *rx_enqueue);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 static void enc_req_reused_send(struct connection *conn,
 				struct radio_pdu_node_tx *node_tx);
-static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason);
 static void enc_rsp_send(struct connection *conn);
 static void start_enc_rsp_send(struct connection *conn,
 			       struct pdu_data *pdu_ctrl_tx);
+static void pause_enc_rsp_send(struct connection *conn);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
+
 static void unknown_rsp_send(struct connection *conn, u8_t type);
 static void feature_rsp_send(struct connection *conn);
-static void pause_enc_rsp_send(struct connection *conn);
 static void version_ind_send(struct connection *conn);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
@@ -1307,6 +1310,7 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		terminate = 1;
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		/* things from master stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
@@ -1375,6 +1379,7 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		/* Procedure complete */
 		_radio.conn_curr->procedure_expire = 0;
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
@@ -1781,6 +1786,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			pdu_data_rx->payload.llctrl.ctrldata.terminate_ind.error_code;
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		/* things from master stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
@@ -1882,6 +1888,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* Procedure complete */
 		_radio.conn_curr->procedure_expire = 0;
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
@@ -1914,6 +1921,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	}
 	break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		pause_enc_rsp_send(_radio.conn_curr);
 
@@ -1942,6 +1950,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* disable transmit encryption */
 		_radio.conn_curr->enc_tx = 0;
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		_radio.conn_curr->llcp_version.version_number =
@@ -1970,6 +1979,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		/* resume data packet rx and tx */
 		_radio.conn_curr->pause_rx = 0;
@@ -1981,6 +1991,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* enqueue the reject ind */
 		*rx_enqueue = 1;
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		/* connection update or params req in progress
@@ -5561,6 +5572,7 @@ static inline void event_ch_map_prep(struct connection *conn,
 
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 static inline void event_enc_prep(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
@@ -5695,6 +5707,7 @@ static inline void event_enc_prep(struct connection *conn)
 		ctrl_tx_enqueue(conn, node_tx);
 	}
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 static inline void event_fex_prep(struct connection *conn)
 {
@@ -6298,9 +6311,11 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			event_ch_map_prep(conn, event_counter);
 			break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 		case LLCP_ENCRYPTION:
 			event_enc_prep(conn);
 			break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 		case LLCP_FEATURE_EXCHANGE:
 			event_fex_prep(conn);
@@ -6838,7 +6853,10 @@ static void prepare_pdu_data_tx(struct connection *conn,
 	}
 
 	_pdu_data_tx->rfu = 0;
+
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR)
 	_pdu_data_tx->resv = 0;
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR */
 
 	*pdu_data_tx = _pdu_data_tx;
 }
@@ -7426,6 +7444,7 @@ static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *radio_pdu_node_rx,
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 static void enc_req_reused_send(struct connection *conn,
 				struct radio_pdu_node_tx *node_tx)
 {
@@ -7504,6 +7523,25 @@ static void start_enc_rsp_send(struct connection *conn,
 	}
 }
 
+static void pause_enc_rsp_send(struct connection *conn)
+{
+	struct radio_pdu_node_tx *node_tx;
+	struct pdu_data *pdu_ctrl_tx;
+
+	/* acquire tx mem */
+	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
+	LL_ASSERT(node_tx);
+
+	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
+	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata);
+	pdu_ctrl_tx->payload.llctrl.opcode =
+		PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
+
+	ctrl_tx_enqueue(conn, node_tx);
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
+
 static void unknown_rsp_send(struct connection *conn, u8_t type)
 {
 	struct radio_pdu_node_tx *node_tx;
@@ -7546,24 +7584,6 @@ static void feature_rsp_send(struct connection *conn)
 		(conn->llcp_features >> 8) & 0xFF;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[2] =
 		(conn->llcp_features >> 16) & 0xFF;
-
-	ctrl_tx_enqueue(conn, node_tx);
-}
-
-static void pause_enc_rsp_send(struct connection *conn)
-{
-	struct radio_pdu_node_tx *node_tx;
-	struct pdu_data *pdu_ctrl_tx;
-
-	/* acquire tx mem */
-	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	LL_ASSERT(node_tx);
-
-	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
-	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata);
-	pdu_ctrl_tx->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
 
 	ctrl_tx_enqueue(conn, node_tx);
 }
@@ -8595,6 +8615,7 @@ u32_t ll_chm_get(u16_t handle, u8_t *chm)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 {
 	struct connection *conn;
@@ -8715,6 +8736,7 @@ u32_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 
 	return 0;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 u32_t ll_feature_req_send(u16_t handle)
 {
