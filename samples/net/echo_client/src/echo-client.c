@@ -164,7 +164,7 @@ static struct k_thread ipv6_udp_thread_data;
 #endif
 
 #if defined(CONFIG_NET_TCP)
-static K_THREAD_STACK_DEFINE(ipv6_tcp_stack, STACKSIZE)
+static K_THREAD_STACK_DEFINE(ipv6_tcp_stack, STACKSIZE);
 static struct k_thread ipv6_tcp_thread_data;
 #endif
 
