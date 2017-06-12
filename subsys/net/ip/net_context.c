@@ -561,7 +561,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EINVAL;
 		}
 
-		if (addr4->sin_addr.s_addr[0] == INADDR_ANY) {
+		if (addr4->sin_addr.s_addr == INADDR_ANY) {
 			iface = net_if_get_default();
 
 			ptr = (struct in_addr *)net_ipv4_unspecified_address();
@@ -1161,7 +1161,7 @@ int net_context_connect(struct net_context *context,
 		addr4->sin_port = net_sin(addr)->sin_port;
 		addr4->sin_family = AF_INET;
 
-		if (addr4->sin_addr.s_addr[0]) {
+		if (addr4->sin_addr.s_addr) {
 			context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 		} else {
 			context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
@@ -1803,7 +1803,7 @@ static int sendto(struct net_pkt *pkt,
 			return -EINVAL;
 		}
 
-		if (!addr4->sin_addr.s_addr[0]) {
+		if (!addr4->sin_addr.s_addr) {
 			return -EDESTADDRREQ;
 		}
 	} else

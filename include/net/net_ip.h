@@ -83,7 +83,7 @@ struct in_addr {
 #define s4_addr16		in4_u.u4_addr16
 #define s4_addr32		in4_u.u4_addr32
 
-#define s_addr			s4_addr32
+#define s_addr			s4_addr32[0]
 };
 
 typedef unsigned short int sa_family_t;
@@ -427,7 +427,7 @@ static inline bool net_is_ipv4_addr_loopback(struct in_addr *addr)
  */
 static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
 {
-	return addr->s_addr[0] == 0;
+	return addr->s_addr == 0;
 }
 
 /**
@@ -439,7 +439,7 @@ static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
  */
 static inline bool net_is_ipv4_addr_mcast(const struct in_addr *addr)
 {
-	return (addr->s_addr[0] & 0xE0000000) == 0xE0000000;
+	return (addr->s_addr & 0xE0000000) == 0xE0000000;
 }
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
@@ -482,7 +482,7 @@ static inline bool net_is_my_ipv4_addr(const struct in_addr *addr)
 static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 				     const struct in_addr *addr2)
 {
-	return addr1->s_addr[0] == addr2->s_addr[0];
+	return addr1->s_addr == addr2->s_addr;
 }
 
 /**

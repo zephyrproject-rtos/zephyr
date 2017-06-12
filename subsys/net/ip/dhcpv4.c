@@ -1018,8 +1018,8 @@ void net_dhcpv4_start(struct net_if *iface)
 		iface->dhcpv4.lease_time = 0;
 		iface->dhcpv4.renewal_time = 0;
 
-		iface->dhcpv4.server_id.s_addr[0] = 0;
-		iface->dhcpv4.requested_ip.s_addr[0] = 0;
+		iface->dhcpv4.server_id.s_addr = 0;
+		iface->dhcpv4.requested_ip.s_addr = 0;
 
 		k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
 		k_delayed_work_init(&iface->dhcpv4.t1_timer, dhcpv4_t1_timeout);
