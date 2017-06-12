@@ -596,6 +596,15 @@ int cmd_gatt_register_test_svc(int argc, char *argv[])
 	return 0;
 }
 
+int cmd_gatt_unregister_test_svc(int argc, char *argv[])
+{
+	bt_gatt_unregister_service(&vnd_svc);
+
+	printk("Unregistering test vendor service\n");
+
+	return 0;
+}
+
 static struct bt_uuid_128 met_svc_uuid = BT_UUID_INIT_128(
 	0x01, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
