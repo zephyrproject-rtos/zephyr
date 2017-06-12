@@ -24,7 +24,7 @@ Documentation for this board can be found at `embARC website`_.
 See also this URL for details about the board:
 `Designware ARC EM Starter Kit website`_ .
 
-The lastest version of EM Starter Kit is 2.3, developer can upgrade from
+The latest version of EM Starter Kit is 2.3, developer can upgrade from
 2.0/2.1/2.2 to 2.3 using latest firmware.
 The default configuration for EM Starter Kit boards can be found in
 :file:`boards/arc/em_starterkit/em_starterkit_defconfig`.
@@ -102,7 +102,7 @@ switches, 9 LEDs, SDCard on SPI, and a 16MB SPI-Flash memory.
 The SPI-Flash also holds 3 (or 4) separate FPGA CPU bit files, selectable via
 dip switch.
 
-The SPI-Flash is also programmed with a bootloader. The booloader can copy a
+The SPI-Flash is also programmed with a bootloader. The bootloader can copy a
 program image from SPI-Flash into executable memory. Zephyr initialization will
 copy the initialized data section to the data memory if CONFIG_XIP is used.
 

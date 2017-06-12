@@ -105,7 +105,7 @@ The default configuration can be found in the defconfig file:
 Pin Mapping
 ===========
 
-STM32F4DISCOVERY Discovry kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
+STM32F4DISCOVERY Discovery kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
 For mode details please refer to `STM32F4DISCOVERY board User Manual`_.

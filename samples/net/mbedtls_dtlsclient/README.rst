@@ -41,8 +41,9 @@ Assign the server IP address and start the DTLS server.
    . Setting up the SSL/TLS structure... ok
    . Waiting for a remote connection ...
 
-To stop the server use Ctrl-C and repeat steps described in f) every time
-QEMU gets terminated, due the Netwrok interface (tap) being restarted.
+To stop the server, use Ctrl-C and repeat the steps described in
+:ref:`networking_with_qemu` every time
+QEMU gets terminated, due the Network interface (tap) being restarted.
 
 From the application directory type
 

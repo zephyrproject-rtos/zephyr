@@ -46,7 +46,7 @@ Supported Features
 +-----------+------------+-------------------------------------+
 | SPIS      | on-chip    | SPI slave                           |
 +-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
+| RADIO     | on-chip    | Bluetooth                           |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

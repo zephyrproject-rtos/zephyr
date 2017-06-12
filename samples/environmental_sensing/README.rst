@@ -6,7 +6,7 @@ Environmental Sensing Sample
 Overview
 ********
 
-This sample implementes a simple environmental sensing service using the Arduino
+This sample implements a simple environmental sensing service using the Arduino
 101 board.
 
 The sensor subsystem application collects temperature, humidity and pressure

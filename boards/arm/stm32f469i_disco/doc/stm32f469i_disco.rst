@@ -108,7 +108,7 @@ The default configuration can be found in the defconfig file:
 Pin Mapping
 ===========
 
-STM32F469I-DISCO Discovry kit has 9 GPIO controllers. These controllers are responsible for pin muxing,
+STM32F469I-DISCO Discovery kit has 9 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
 For mode details please refer to `32F469IDISCOVERY board User Manual`_.
