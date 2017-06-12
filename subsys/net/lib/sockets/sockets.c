@@ -19,6 +19,16 @@
 #define sock_is_eof(ctx) ((ctx)->user_data != NULL)
 #define sock_set_eof(ctx) { (ctx)->user_data = INT_TO_POINTER(1); }
 
+static inline void _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+{
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+					 K_POLL_MODE_NOTIFY_ONLY, fifo),
+	};
+
+	k_poll(events, ARRAY_SIZE(events), timeout);
+}
+
 int zsock_socket(int family, int type, int proto)
 {
 	struct net_context *ctx;
@@ -171,4 +181,77 @@ ssize_t zsock_send(int sock, const void *buf, size_t len, int flags)
 	}
 
 	return len;
+}
+
+static inline ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size_t max_len)
+{
+	size_t recv_len = 0;
+
+	do {
+		struct net_pkt *pkt;
+		struct net_buf *frag;
+		u32_t frag_len;
+
+		if (sock_is_eof(ctx)) {
+			return 0;
+		}
+
+		_k_fifo_wait_non_empty(&ctx->recv_q, K_FOREVER);
+		pkt = k_fifo_peek_head(&ctx->recv_q);
+		if (!pkt) {
+			/* An expected reason is that wait was
+			 * cancelled due to connection closure by peer.
+			 */
+			NET_DBG("NULL return from fifo");
+			continue;
+		}
+
+		frag = pkt->frags;
+		__ASSERT(frag != NULL,
+			 "net_pkt has empty fragments on start!");
+		frag_len = frag->len;
+		recv_len = frag_len;
+		if (recv_len > max_len) {
+			recv_len = max_len;
+		}
+
+		/* Actually copy data to application buffer */
+		memcpy(buf, frag->data, recv_len);
+
+		if (recv_len != frag_len) {
+			net_buf_pull(frag, recv_len);
+		} else {
+			frag = net_pkt_frag_del(pkt, NULL, frag);
+			if (!frag) {
+				/* Finished processing head pkt in
+				 * the fifo. Drop it from there.
+				 */
+				k_fifo_get(&ctx->recv_q, K_NO_WAIT);
+				if (net_pkt_eof(pkt)) {
+					sock_set_eof(ctx);
+				}
+				net_pkt_unref(pkt);
+			}
+		}
+	} while (recv_len == 0);
+
+	return recv_len;
+}
+
+ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags)
+{
+	ARG_UNUSED(flags);
+	struct net_context *ctx = INT_TO_POINTER(sock);
+	enum net_sock_type sock_type = net_context_get_type(ctx);
+	size_t recv_len = 0;
+
+	if (sock_type == SOCK_DGRAM) {
+		__ASSERT(0, "DGRAM is not yet handled");
+	} else if (sock_type == SOCK_STREAM) {
+		return zsock_recv_stream(ctx, buf, max_len);
+	} else {
+		__ASSERT(0, "Unknown socket type");
+	}
+
+	return recv_len;
 }
