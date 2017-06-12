@@ -2759,8 +2759,6 @@ static inline u32_t isr_close_adv(void)
 
 		adv_setup();
 
-		_radio.state = STATE_TX;
-
 		radio_tx_enable();
 
 		radio_tmr_end_capture();
@@ -4714,6 +4712,7 @@ void radio_event_adv_prepare(u32_t ticks_at_expire, u32_t remainder,
 
 static void adv_setup(void)
 {
+	struct pdu_adv *pdu;
 	u8_t bitmap;
 	u8_t chan;
 
@@ -4729,10 +4728,19 @@ static void adv_setup(void)
 		_radio.advertiser.adv_data.first = first;
 	}
 
-	radio_pkt_tx_set(&_radio.advertiser.adv_data.data
-			 [_radio.advertiser.adv_data.first][0]);
-	radio_tmr_tifs_set(RADIO_TIFS);
-	radio_switch_complete_and_rx();
+
+	pdu = (struct pdu_adv *)
+		_radio.advertiser.adv_data.data[
+			_radio.advertiser.adv_data.first];
+	radio_pkt_tx_set(pdu);
+	if (pdu->type != PDU_ADV_TYPE_NONCONN_IND) {
+		_radio.state = STATE_TX;
+		radio_tmr_tifs_set(RADIO_TIFS);
+		radio_switch_complete_and_rx();
+	} else {
+		_radio.state = STATE_CLOSE;
+		radio_switch_complete_and_disable();
+	}
 
 	bitmap = _radio.advertiser.chl_map_current;
 	chan = 0;
@@ -4764,7 +4772,6 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	 */
 
 	_radio.role = ROLE_ADV;
-	_radio.state = STATE_TX;
 	_radio.ticker_id_prepare = 0;
 	_radio.ticker_id_event = RADIO_TICKER_ID_ADV;
 	_radio.ticks_anchor = ticks_at_expire;
