@@ -30,7 +30,7 @@ Kernel
 Architectures
 *************
 
-* Interesting change
+* Support for ARC EM Starter Kit version 2.3 added
 
 Boards
 ******
