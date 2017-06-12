@@ -157,7 +157,7 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"
 	depends on BLUETOOTH_CONTROLLER_DATA_LENGTH && SOC_SERIES_NRF51X
 	help
-	  Enable support for Bluetooh v4.2 LE Data Length Update procedure, upto
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure, up to
 	  251 byte cleartext payloads in the Controller. Encrypted connections
 	  are not supported.
 

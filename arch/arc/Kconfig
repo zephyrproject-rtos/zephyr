@@ -168,7 +168,7 @@ config CODE_DENSITY
 	bool
 	default n
 	help
-	Enbale code density option to get better code desntiy
+	Enable code density option to get better code density
 
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
