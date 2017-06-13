@@ -295,9 +295,8 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
 
 /** @brief Send data to L2CAP channel
  *
- *  Send data from buffer to the channel. This procedure may block waiting for
- *  credits to send data therefore it shall be used from a fiber to be able to
- *  receive credits when necessary.
+ *  Send data from buffer to the channel. If credits are not available, buf will
+ *  be queued and sent as and when credits are recieved from peer.
  *  Regarding to first input parameter, to get details see reference description
  *  to bt_l2cap_chan_connect() API above.
  *
