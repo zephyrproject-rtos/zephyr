@@ -30,6 +30,8 @@
 #define KW41Z_PER_BYTE_TIME		2
 #define KW41Z_ACK_WAIT_TIME		54
 #define KW41Z_IDLE_WAIT_RETRIES		5
+#define KW41Z_PRE_RX_WAIT_TIME		1
+
 #define RADIO_0_IRQ_PRIO		0x80
 #define KW41Z_FCS_LENGTH		2
 #define KW41Z_PSDU_LENGTH		125
@@ -438,7 +440,14 @@ static void kw41z_isr(int unused)
 		switch (state) {
 		case KW41Z_STATE_RX:
 			SYS_LOG_DBG("RX seq done");
-			ZLL->IRQSTS = irqsts;
+
+			/*
+			 * KW41Z seems to require some time before the RX SEQ
+			 * done IRQ is triggered and the data is actually
+			 * available in the packet buffer.
+			 */
+			k_busy_wait(KW41Z_PRE_RX_WAIT_TIME);
+
 			rx_len = (ZLL->IRQSTS &
 				  ZLL_IRQSTS_RX_FRAME_LENGTH_MASK) >>
 				 ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
