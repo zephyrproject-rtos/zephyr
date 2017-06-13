@@ -10,6 +10,8 @@
 MCUX_DEVICE = $(shell echo $(CONFIG_SOC) | tr '[:lower:]' '[:upper:]')
 MCUX_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))
 
+export MCUX_DEVICE
+
 ifdef CONFIG_IEEE802154_MCR20A
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/components/mcr20a
 endif
@@ -24,7 +26,7 @@ ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/drivers
 ifdef CONFIG_IEEE802154_KW41Z
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.3/Common/
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.3/OSAbstraction/Interface
-ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.3/XCVR/MKW41Z4/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/nxp/mcux/middleware/wireless/framework_5.3.3/XCVR/$(MCUX_DEVICE)/
 endif
 
 # The mcux uses the cpu name to expose SoC-specific features of a given
