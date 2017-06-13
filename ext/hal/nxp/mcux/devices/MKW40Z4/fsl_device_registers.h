@@ -42,6 +42,8 @@
 
 /* CMSIS-style register definitions */
 #include "MKW40Z4.h"
+/* Extension register definitions */
+#include "MKW40Z4_extension.h"
 /* CPU specific feature definitions */
 #include "MKW40Z4_features.h"
 

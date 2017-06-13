@@ -40,7 +40,6 @@
 #include "ifr_mkw40z4_radio.h"
 #include "MKW40Z4.h"
 #include "KW4xXcvrDrv.h"
-#include "Panic.h"
 #include "fsl_device_registers.h"
 #include "fsl_os_abstraction.h"
 
@@ -149,14 +148,14 @@ uint32_t read_resource_ifr(uint32_t read_addr)
     FTFA_WR_FCCOB3(FTFA,flash_addr7_0);
     FTFA_WR_FCCOB8(FTFA,0);
     
-    /* Enter Critical */
-    OSA_EnterCritical(kCriticalDisableInt);  
+    /* Disable Interrupts */
+    OSA_InterruptDisable();
     
     FTFA->FSTAT = FTFA_FSTAT_CCIF_MASK;
     while((FTFA_FSTAT_CCIF_MASK & FTFA->FSTAT)==0); /* Wait till CCIF=1 */
     
-    /* Exit Critical */
-    OSA_ExitCritical(kCriticalDisableInt);
+    /* Enable Interrupts */
+    OSA_InterruptEnable();
     
     /* Start reading */
     read_data31_24 = FTFA->FCCOB4;
