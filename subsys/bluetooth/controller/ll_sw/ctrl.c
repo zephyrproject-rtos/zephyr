@@ -8301,6 +8301,20 @@ u32_t radio_adv_is_enabled(void)
 	return _radio.advertiser.is_enabled;
 }
 
+u32_t radio_adv_filter_pol_get(void)
+{
+	/* NOTE: filter_policy is only written in thread mode; if is_enabled is
+	 * unset by ISR, returning the stale filter_policy is acceptable because
+	 * the unset code path in ISR will generate a connection complete
+	 * event.
+	 */
+	if (_radio.advertiser.is_enabled) {
+		return _radio.advertiser.filter_policy;
+	}
+
+	return 0;
+}
+
 u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 			u16_t interval, u16_t window, u8_t filter_policy)
 {
@@ -8423,6 +8437,20 @@ u32_t radio_scan_disable(void)
 u32_t radio_scan_is_enabled(void)
 {
 	return _radio.scanner.is_enabled;
+}
+
+u32_t radio_scan_filter_pol_get(void)
+{
+	/* NOTE: filter_policy is only written in thread mode; if is_enabled is
+	 * unset by ISR, returning the stale filter_policy is acceptable because
+	 * the unset code path in ISR will generate a connection complete
+	 * event.
+	 */
+	if (_radio.scanner.is_enabled) {
+		return _radio.scanner.filter_policy;
+	}
+
+	return 0;
 }
 
 u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
