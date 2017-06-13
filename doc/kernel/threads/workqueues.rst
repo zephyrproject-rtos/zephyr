@@ -150,7 +150,8 @@ Defining a Workqueue
 A workqueue is defined using a variable of type :c:type:`struct k_work_q`.
 The workqueue is initialized by defining the stack area used by its thread
 and then calling :cpp:func:`k_work_q_start()`. The stack area must be defined
-using the :c:macro:`__stack` attribute to ensure it is properly aligned.
+using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
+memory.
 
 The following code defines and initializes a workqueue.
 
@@ -159,11 +160,12 @@ The following code defines and initializes a workqueue.
     #define MY_STACK_SIZE 512
     #define MY_PRIORITY 5
 
-    char __noinit __stack my_stack_area[MY_STACK_SIZE];
+    K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
 
     struct k_work_q my_work_q;
 
-    k_work_q_start(&my_work_q, my_stack_area, MY_STACK_SIZE, MY_PRIORITY);
+    k_work_q_start(&my_work_q, my_stack_area,
+                   K_THREAD_STACK_SIZEOF(my_stack_area), MY_PRIORITY);
 
 Submitting a Work Item
 ======================
