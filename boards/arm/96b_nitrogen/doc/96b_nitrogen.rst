@@ -267,22 +267,25 @@ and install a more recent version of pyOCD.
 Flashing an Application to 96Boards Nitrogen
 ============================================
 
-The sample application :ref:`hello_world` is being used in this tutorial:
-
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
+This example uses the :ref:`hello_world` sample with the
+:ref:`nxp_opensda_pyocd` tools. Use the ``make flash`` build target to build
+your Zephyr application, invoke the pyOCD flash tool and program your Zephyr
+application to flash.
 
 .. code-block:: console
 
    $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
+   $ . zephyr-env.sh
+   $ cd samples/hello_world/
    $ make BOARD=96b_nitrogen
 
-Connect the micro-USB cable to the 96Boards Nitrogen and to your computer.
+You can either flash the board by using the `make flash` target:
+
+.. code-block:: console
+
+   $ make flash
+
+or you can invoke the pyocd commands directly, as described below.
 
 Erase the flash memory in the nRF52832:
 
