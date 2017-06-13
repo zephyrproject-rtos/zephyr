@@ -28,6 +28,7 @@ struct stack_guard_buffer {
 };
 
 struct stack_guard_buffer buf;
+struct k_thread test_thread;
 
 u32_t recursive_loop(u32_t counter)
 {
@@ -65,6 +66,6 @@ void main(void)
 	printk("Canary Initial Value = 0x%x\n", buf.canary);
 
 	/* spawn stack_guard_thread */
-	k_thread_spawn(buf.stack, STACKSIZE, stack_guard_thread, NULL, NULL,
-		       NULL, PRIORITY, 0, K_NO_WAIT);
+	k_thread_create(&test_thread, buf.stack, STACKSIZE, stack_guard_thread,
+			NULL, NULL, NULL, PRIORITY, 0, K_NO_WAIT);
 }
