@@ -29,6 +29,23 @@ static inline void _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 	k_poll(events, ARRAY_SIZE(events), timeout);
 }
 
+static void zsock_flush_queue(struct net_context *ctx)
+{
+	bool is_listen = net_context_get_state(ctx) == NET_CONTEXT_LISTENING;
+	void *p;
+
+	/* recv_q and accept_q are shared via a union */
+	while ((p = k_fifo_get(&ctx->recv_q, K_NO_WAIT)) != NULL) {
+		if (is_listen) {
+			NET_DBG("discarding ctx %p", p);
+			net_context_put(p);
+		} else {
+			NET_DBG("discarding pkt %p", p);
+			net_pkt_unref(p);
+		}
+	}
+}
+
 int zsock_socket(int family, int type, int proto)
 {
 	struct net_context *ctx;
@@ -44,6 +61,14 @@ int zsock_socket(int family, int type, int proto)
 int zsock_close(int sock)
 {
 	struct net_context *ctx = INT_TO_POINTER(sock);
+
+	/* Reset callbacks to avoid any race conditions while
+	 * flushing queues.
+	 */
+	net_context_accept(ctx, NULL, K_NO_WAIT, NULL);
+	net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+
+	zsock_flush_queue(ctx);
 
 	SET_ERRNO(net_context_put(ctx));
 	return 0;
