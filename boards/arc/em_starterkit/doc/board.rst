@@ -284,4 +284,4 @@ References
 
 .. _Putty website: http://www.putty.org
 
-.. _ARC EM Starter Kit User Guide: https://www.embarc.org/help.html#starterkit
+.. _ARC EM Starter Kit User Guide: https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit
