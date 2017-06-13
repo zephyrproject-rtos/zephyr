@@ -4,5 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-obj-y += XCVR/
-obj-y += OSAbstraction/Source/fsl_os_abstraction_zephyr.o
+obj-y += ifr_mkw40z4_radio.o
+obj-y += KW4xXcvrDrv.o
+obj-y += tsm_ll_timing.o
