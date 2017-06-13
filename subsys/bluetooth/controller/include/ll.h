@@ -38,6 +38,16 @@ u32_t ll_wl_clear(void);
 u32_t ll_wl_add(bt_addr_le_t *addr);
 u32_t ll_wl_remove(bt_addr_le_t *addr);
 
+u32_t ll_rl_size_get(void);
+u32_t ll_rl_clear(void);
+u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
+		const u8_t lirk[16]);
+u32_t ll_rl_remove(bt_addr_le_t *id_addr);
+u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa);
+u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa);
+u32_t ll_rl_enable(u8_t enable);
+void  ll_rl_timeout_set(u16_t timeout);
+
 void ll_irk_clear(void);
 u32_t ll_irk_add(u8_t *irk);
 u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,

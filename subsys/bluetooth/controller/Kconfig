@@ -112,6 +112,23 @@ config BLUETOOTH_CONTROLLER_LE_PING
 	help
 	  Enable support for Bluetooth v4.1 LE Ping feature in the Controller.
 
+config BLUETOOTH_CONTROLLER_PRIVACY
+	bool "LE Controller-based Privacy"
+	default y
+	select BLUETOOTH_RPA
+	help
+	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature in the Controller.
+
+config BLUETOOTH_CONTROLLER_RL_SIZE
+	prompt "LE Controller-based Privacy Resolving List size"
+	depends on BLUETOOTH_CONTROLLER_PRIVACY
+	int
+	default 8
+	range 1 8 if SOC_FAMILY_NRF5
+	help
+	  Set the size of the Resolving List for LE Controller-based Privacy.
+	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
+
 config BLUETOOTH_CONTROLLER_DATA_LENGTH
 	bool "Data Length Update"
 	default y

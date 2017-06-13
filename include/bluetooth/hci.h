@@ -105,6 +105,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_UNSPECIFIED                  0x1f
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
 #define BT_HCI_ERR_UNACCEPT_CONN_PARAM          0x3b
+#define BT_HCI_ERR_ADV_TIMEOUT                  0x3c
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
@@ -949,7 +950,7 @@ struct bt_hci_cp_le_set_addr_res_enable {
 
 #define BT_HCI_OP_LE_SET_RPA_TIMEOUT            BT_OP(BT_OGF_LE, 0x002e)
 struct bt_hci_cp_le_set_rpa_timeout {
-	u8_t  rpa_timeout;
+	u16_t rpa_timeout;
 } __packed;
 
 #define BT_HCI_OP_LE_READ_MAX_DATA_LEN          BT_OP(BT_OGF_LE, 0x002f)

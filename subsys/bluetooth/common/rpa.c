@@ -71,7 +71,8 @@ bool bt_rpa_irk_matches(const u8_t irk[16], const bt_addr_t *addr)
 }
 #endif
 
-#if defined(CONFIG_BLUETOOTH_PRIVACY)
+#if defined(CONFIG_BLUETOOTH_PRIVACY) || \
+	defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
 {
 	int err;

@@ -16,17 +16,17 @@
 #include "ctrl.h"
 #include "ll.h"
 
-static struct {
-	u8_t  chl_map:3;
-	u8_t  filter_policy:2;
+#include "hal/debug.h"
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
-	u8_t  phy_p:3;
-	u32_t interval;
-#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
-	u16_t interval;
-#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
-} ll_adv;
+#include "ll_filter.h"
+#include "ll_adv.h"
+
+static struct ll_adv_set ll_adv;
+
+struct ll_adv_set *ll_adv_set_get(void)
+{
+	return &ll_adv;
+}
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
 u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
@@ -123,7 +123,14 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		pdu->chan_sel = 0;
 	}
 
-	pdu->tx_addr = own_addr_type;
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	ll_adv.own_addr_type = own_addr_type;
+	if (own_addr_type >= BT_ADDR_LE_PUBLIC_ID) {
+		ll_adv.id_addr_type = direct_addr_type;
+		memcpy(&ll_adv.id_addr, direct_addr, BDADDR_SIZE);
+	}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+	pdu->tx_addr = own_addr_type & 0x1;
 	pdu->rx_addr = 0;
 	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
 		pdu->rx_addr = direct_addr_type;
@@ -229,7 +236,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
 	pdu->rfu = 0;
 	pdu->chan_sel = 0;
-	pdu->tx_addr = own_addr_type;
+	pdu->tx_addr = own_addr_type & 0x1;
 	pdu->rx_addr = 0;
 	if (pdu->len == 0) {
 		pdu->len = BDADDR_SIZE;
@@ -374,14 +381,35 @@ u32_t ll_adv_enable(u8_t enable)
 
 		/* TODO: TargetA, fill here at enable */
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
-
 	} else {
-		memcpy(&pdu_adv->payload.adv_ind.addr[0],
-		       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
-		memcpy(&pdu_scan->payload.scan_rsp.addr[0],
-		       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
-	}
+		bool priv = false;
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+		if (ctrl_rl_enabled()) {
+			/*@todo: Enable AR */
+		}
 
+		if (ll_adv.own_addr_type >= BT_ADDR_LE_PUBLIC_ID) {
+			/* Look up the resolving list */
+			int idx = ll_rl_idx_find(ll_adv.id_addr_type,
+						 ll_adv.id_addr);
+
+			if (idx >= 0) {
+				/* Generate RPAs if required */
+				ll_rl_rpa_update(false);
+			}
+
+			ll_rl_pdu_adv_update(idx, pdu_adv);
+			ll_rl_pdu_adv_update(idx, pdu_scan);
+			priv = true;
+		}
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+		if (!priv) {
+			memcpy(&pdu_adv->payload.adv_ind.addr[0],
+			       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
+			memcpy(&pdu_scan->payload.scan_rsp.addr[0],
+			       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
+		}
+	}
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
 	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval, ll_adv.chl_map,
 				  ll_adv.filter_policy);
