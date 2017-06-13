@@ -1,1 +1,1 @@
-obj- = soc.o
+obj-y = soc.o

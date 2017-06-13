@@ -191,10 +191,6 @@ SECTIONS
     *(.dynamic)
     *(.gnu.version_d)
     . = ALIGN(4);               /* this table MUST be 4-byte aligned */
-    _bss_table_start = ABSOLUTE(.);
-    LONG(_bss_start)
-    LONG(_bss_end)
-    _bss_table_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
