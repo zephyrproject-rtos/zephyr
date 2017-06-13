@@ -33,6 +33,9 @@
 #include "ctrl.h"
 #include "ctrl_internal.h"
 
+#include "ll.h"
+#include "ll_filter.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
@@ -80,10 +83,6 @@ struct advertiser {
 	u8_t chl_map_current:3;
 	u8_t filter_policy:2;
 
-	u8_t filter_enable_bitmask;
-	u8_t filter_addr_type_bitmask;
-	u8_t filter_bdaddr[8][BDADDR_SIZE];
-
 	struct radio_adv_data adv_data;
 	struct radio_adv_data scan_data;
 
@@ -104,10 +103,6 @@ struct scanner {
 	u8_t  adv_addr[BDADDR_SIZE];
 	u8_t  init_addr[BDADDR_SIZE];
 	u32_t ticks_window;
-
-	u8_t  filter_enable_bitmask;
-	u8_t  filter_addr_type_bitmask;
-	u8_t  filter_bdaddr[8][BDADDR_SIZE];
 
 	u16_t conn_interval;
 	u16_t conn_latency;
@@ -130,10 +125,6 @@ static struct {
 
 	enum  role volatile role;
 	enum  state state;
-
-	u8_t  filter_enable_bitmask;
-	u8_t  filter_addr_type_bitmask;
-	u8_t  filter_bdaddr[8][BDADDR_SIZE];
 
 	u8_t  nirk;
 	u8_t  irk[RADIO_IRK_COUNT_MAX][16];
@@ -443,7 +434,6 @@ void ll_reset(void)
 	}
 
 	/* reset controller context members */
-	_radio.filter_enable_bitmask = 0;
 	_radio.nirk = 0;
 	_radio.advertiser.is_enabled = 0;
 	_radio.advertiser.conn = NULL;
@@ -460,6 +450,8 @@ void ll_reset(void)
 	_radio.packet_release_first = 0;
 	_radio.packet_release_last = 0;
 
+	/* reset whitelist */
+	ll_wl_clear();
 	/* memory allocations */
 	common_init();
 }
@@ -4795,9 +4787,12 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 
 	/* Setup Radio Filter */
 	if (_radio.advertiser.filter_policy) {
-		radio_filter_configure(_radio.advertiser.filter_enable_bitmask,
-				       _radio.advertiser.filter_addr_type_bitmask,
-				       (u8_t *)_radio.advertiser.filter_bdaddr);
+
+		struct ll_wl *wl = ctrl_wl_get();
+
+		radio_filter_configure(wl->enable_bitmask,
+				       wl->addr_type_bitmask,
+				       (u8_t *)wl->bdaddr);
 	}
 
 	radio_tmr_start(1,
@@ -4982,10 +4977,12 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 	/* Setup Radio Filter */
 	if (_radio.scanner.filter_policy) {
-		radio_filter_configure(_radio.scanner.filter_enable_bitmask,
-				       _radio.scanner.filter_addr_type_bitmask,
-				       (u8_t *)_radio.scanner.filter_bdaddr);
 
+		struct ll_wl *wl = ctrl_wl_get();
+
+		radio_filter_configure(wl->enable_bitmask,
+				       wl->addr_type_bitmask,
+				       (u8_t *)wl->bdaddr);
 		if (_radio.nirk) {
 			radio_ar_configure(_radio.nirk, _radio.irk);
 		}
@@ -7745,56 +7742,6 @@ struct radio_adv_data *radio_scan_data_get(void)
 	return &_radio.advertiser.scan_data;
 }
 
-void ll_filter_clear(void)
-{
-	_radio.filter_enable_bitmask = 0;
-	_radio.filter_addr_type_bitmask = 0;
-}
-
-u32_t ll_filter_add(u8_t addr_type, u8_t *addr)
-{
-	if (_radio.filter_enable_bitmask != 0xFF) {
-		u8_t index;
-
-		for (index = 0;
-		     (_radio.filter_enable_bitmask & (1 << index));
-		     index++) {
-		}
-		_radio.filter_enable_bitmask |= (1 << index);
-		_radio.filter_addr_type_bitmask |=
-			((addr_type & 0x01) << index);
-		memcpy(&_radio.filter_bdaddr[index][0], addr, BDADDR_SIZE);
-
-		return 0;
-	}
-
-	return 1;
-}
-
-u32_t ll_filter_remove(u8_t addr_type, u8_t *addr)
-{
-	u8_t index;
-
-	if (!_radio.filter_enable_bitmask) {
-		return 1;
-	}
-
-	index = 8;
-	while (index--) {
-		if ((_radio.filter_enable_bitmask & BIT(index)) &&
-		    (((_radio.filter_addr_type_bitmask >> index) & 0x01) ==
-		     (addr_type & 0x01)) &&
-		    !memcmp(_radio.filter_bdaddr[index], addr, BDADDR_SIZE)) {
-			_radio.filter_enable_bitmask &= ~BIT(index);
-			_radio.filter_addr_type_bitmask &= ~BIT(index);
-
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
 void ll_irk_clear(void)
 {
 	_radio.nirk = 0;
@@ -8172,15 +8119,6 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 
 	_radio.advertiser.chl_map = chl_map;
 	_radio.advertiser.filter_policy = filter_policy;
-	if (filter_policy) {
-		_radio.advertiser.filter_addr_type_bitmask =
-			_radio.filter_addr_type_bitmask;
-		memcpy(&_radio.advertiser.filter_bdaddr[0][0],
-		       &_radio.filter_bdaddr[0][0],
-		       sizeof(_radio.advertiser.filter_bdaddr));
-		_radio.advertiser.filter_enable_bitmask =
-			_radio.filter_enable_bitmask;
-	}
 
 	_radio.advertiser.hdr.ticks_active_to_start =
 		_radio.ticks_active_to_start;
@@ -8335,15 +8273,6 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 	_radio.scanner.ticks_window =
 		TICKER_US_TO_TICKS((u64_t) window * 625);
 	_radio.scanner.filter_policy = filter_policy;
-	if (filter_policy) {
-		_radio.scanner.filter_addr_type_bitmask =
-			_radio.filter_addr_type_bitmask;
-		memcpy(&_radio.scanner.filter_bdaddr[0][0],
-		       &_radio.filter_bdaddr[0][0],
-		       sizeof(_radio.scanner.filter_bdaddr));
-		_radio.scanner.filter_enable_bitmask =
-			_radio.filter_enable_bitmask;
-	}
 
 	_radio.scanner.hdr.ticks_active_to_start =
 		_radio.ticks_active_to_start;

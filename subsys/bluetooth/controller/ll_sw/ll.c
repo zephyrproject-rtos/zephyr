@@ -14,6 +14,7 @@
 #ifdef CONFIG_CLOCK_CONTROL_NRF5
 #include <drivers/clock_control/nrf5_clock_control.h>
 #endif
+#include <bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
 #include "common/log.h"

@@ -494,17 +494,15 @@ static void le_read_wl_size(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	rp->wl_size = 8;
+	rp->wl_size = ll_wl_size_get();
 }
 
 static void le_clear_wl(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
-	ll_filter_clear();
-
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	ccst->status = ll_wl_clear();
 }
 
 static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf **evt)
@@ -513,10 +511,10 @@ static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u32_t status;
 
-	status = ll_filter_add(cmd->addr.type, &cmd->addr.a.val[0]);
+	status = ll_wl_add(&cmd->addr);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	ccst->status = status;
 }
 
 static void le_rem_dev_from_wl(struct net_buf *buf, struct net_buf **evt)
@@ -525,10 +523,10 @@ static void le_rem_dev_from_wl(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u32_t status;
 
-	status = ll_filter_remove(cmd->addr.type, &cmd->addr.a.val[0]);
+	status = ll_wl_remove(&cmd->addr);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	ccst->status = status;
 }
 
 static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
