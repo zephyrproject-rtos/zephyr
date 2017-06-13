@@ -36,20 +36,20 @@
 
 
 /*
- * Convert FreeRTOSConfig definitions to XTENSA definitions.
- * However these can still be overridden from the command line.
+ * Convert Zephyr definitions to XTENSA definitions.
  */
 
-#ifndef XT_SIMULATOR
-  #if CONFIG_SIMULATOR_XTENSA
-    #define XT_SIMULATOR             1  /* Simulator mode */
-  #endif
+#undef XT_SIMULATOR
+#undef XT_BOARD
+#ifdef CONFIG_SIMULATOR_XTENSA
+  #define XT_SIMULATOR 1
+#else
+  #define XT_BOARD 1
 #endif
 
-#ifndef XT_BOARD
-  #if CONFIG_BOARD_XTENSA
-    #define XT_BOARD                 1  /* Board mode */
-  #endif
+#ifdef CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+  #undef XT_CLOCK_FREQ
+  #define XT_CLOCK_FREQ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 #endif
 
 #ifndef XT_TIMER_INDEX
