@@ -78,6 +78,9 @@
 #define REGION_RO_ATTR	  (MPU_REGION_READ | \
 			   MPU_REGION_SU)
 
+#define REGION_DEBUG_ATTR  MPU_REGION_SU
+
+
 /* Region definition data structure */
 struct nxp_mpu_region {
 	/* Region Base Address */
