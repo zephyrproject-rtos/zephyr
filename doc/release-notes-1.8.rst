@@ -51,7 +51,21 @@ Networking
 Bluetooth
 *********
 
-* Interesting change
+* Host: Added ATT and SMP packet tracking for flow control enforcement
+* Host: GATT database changed to a linked list in preparation for dynamic allocation
+* Bluetooth 5.0: The Controller reports itself as 5.0-capable
+* Bluetooth 5.0: Introduced Channel Selection Algorithm #2 support
+* Bluetooth 5.0: Added Multiple PHY support, both 2Mbit/s and long-range coded
+* Bluetooth 5.0: Integrated Scan Request notifications
+* Controller: Added Low Duty Cycle Directed Advertising support
+* Controller: Added Scan duplicate filtering support
+* Controller: Enforced complete role separation in the controller for smaller builds
+* Controller: Introduced Advanced Controller configuration with several new Kconfig options
+* Controller: Changed the radio interrupts to direct ISRs to reduce interrupt latency
+* Added HCI Controller to Host flow control support in both Host and Controller
+* BR/EDR: Added HFP (e)SCO audio channel establishment support
+* BR/EDR: Added support for a functional SDP server
+* micro:bit: Added a new sample that implements a game of Pong over BLE
 
 Build and Infrastructure
 ************************
