@@ -36,6 +36,7 @@
 #include "ctrl.h"
 #include "ctrl_internal.h"
 #include "ll.h"
+#include "ll_filter.h"
 
 /* Global singletons */
 static u8_t MALIGN(4) _rand_context[3 + 4 + 1];
@@ -210,6 +211,8 @@ int ll_init(struct k_sem *sem_rx)
 		       sizeof(_radio));
 		return -ENOMEM;
 	}
+
+	ll_filter_reset(true);
 
 	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn,
 			   CONFIG_BLUETOOTH_CONTROLLER_WORKER_PRIO,

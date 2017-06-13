@@ -192,6 +192,7 @@ config BLUETOOTH_SMP
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
+	select BLUETOOTH_RPA
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
@@ -199,7 +200,6 @@ config BLUETOOTH_SMP
 if BLUETOOTH_SMP
 config BLUETOOTH_PRIVACY
 	bool "Privacy Feature"
-	select BLUETOOTH_RPA
 	help
 	  Enable local Privacy Feature support. This makes it possible
 	  to use Resolvable Private Addresses (RPAs).

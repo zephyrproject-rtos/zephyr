@@ -33,7 +33,6 @@
 #include "ctrl.h"
 #include "ctrl_internal.h"
 
-#include "ll.h"
 #include "ll_filter.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
@@ -460,8 +459,8 @@ void ll_reset(void)
 	_radio.packet_release_first = 0;
 	_radio.packet_release_last = 0;
 
-	/* reset whitelist */
-	ll_wl_clear();
+	/* reset whitelist and resolving list */
+	ll_filter_reset(false);
 	/* memory allocations */
 	common_init();
 }
@@ -4742,6 +4741,7 @@ static void adv_setup(void)
 	struct pdu_adv *pdu;
 	u8_t bitmap;
 	u8_t chan;
+	u8_t upd = 0;
 
 	/* Use latest adv data PDU buffer */
 	if (_radio.advertiser.adv_data.first !=
@@ -4753,6 +4753,7 @@ static void adv_setup(void)
 			first = 0;
 		}
 		_radio.advertiser.adv_data.first = first;
+		upd = 1;
 	}
 
 	/* Use latest scan data PDU buffer */
@@ -4765,14 +4766,27 @@ static void adv_setup(void)
 			first = 0;
 		}
 		_radio.advertiser.scan_data.first = first;
+		upd = 1;
 	}
 
 	pdu = (struct pdu_adv *)
 		_radio.advertiser.adv_data.data[
 			_radio.advertiser.adv_data.first];
-	/* TODO: Privacy 1.2, copy AdvA from adv data PDU buffer into scan data
-	 * PDU buffer, here. So that Scan Response has same AdvA.
-	 */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	if (upd) {
+		struct pdu_adv *scan_pdu = (struct pdu_adv *)
+		_radio.advertiser.scan_data.data[
+			_radio.advertiser.scan_data.first];
+
+		/* Copy the address from the adv packet we will send into the
+		 * scan response.
+		 */
+		memcpy(&scan_pdu->payload.scan_rsp.addr[0],
+		       &pdu->payload.adv_ind.addr[0], BDADDR_SIZE);
+	}
+#else
+	ARG_UNUSED(upd);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 	radio_pkt_tx_set(pdu);
 	if ((pdu->type != PDU_ADV_TYPE_NONCONN_IND) &&
 	    (!IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT) ||
