@@ -41,9 +41,6 @@
 #include "KW4xXcvrDrv.h"
 #include "fsl_os_abstraction.h"
 #include "fsl_device_registers.h"
-#include "fsl_sim_hal.h"
-#include "fsl_gpio_hal.h"
-#include "fsl_port_hal.h"
 
 #include "tsm_ll_timing.h"
 #include "ifr_mkw40z4_radio.h"
