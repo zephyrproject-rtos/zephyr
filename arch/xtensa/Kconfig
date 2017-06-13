@@ -77,6 +77,14 @@ config XTENSA_RESET_VECTOR
 	This is always needed for the simulator. Real boards may already
 	implement this in boot ROM.
 
+config XTENSA_USE_CORE_CRT1
+	bool
+	prompt "Use crt1.S from core"
+	default y
+	help
+	SoC or boards might define their own __start by setting this setting
+	to false.
+
 menu "Specific core configuration"
 
 config IRQ_OFFLOAD_INTNUM
