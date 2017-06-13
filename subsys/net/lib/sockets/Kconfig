@@ -25,4 +25,11 @@ config NET_SOCKETS_POSIX_NAMES
 	attention, as in POSIX it closes any file descriptor, while with this
 	option enaled, it will still apply only to sockets.
 
+config NET_DEBUG_SOCKETS
+	bool "Debug BSD Sockets like API calls"
+	default n
+	help
+	Enables logging for sockets code. (Logging level is defined by
+	SYS_LOG_NET_LEVEL setting).
+
 endif # NET_SOCKETS

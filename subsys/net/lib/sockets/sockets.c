@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_NET_DEBUG_SOCKETS)
+#define SYS_LOG_DOMAIN "net/sock"
+#define NET_LOG_ENABLED 1
+#endif
+
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
