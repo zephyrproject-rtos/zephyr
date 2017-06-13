@@ -22,9 +22,11 @@ u32_t ll_adv_enable(u8_t enable);
 u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			 u8_t own_addr_type, u8_t filter_policy);
 u32_t ll_scan_enable(u8_t enable);
-void ll_filter_clear(void);
-u32_t ll_filter_add(u8_t addr_type, u8_t *addr);
-u32_t ll_filter_remove(u8_t addr_type, u8_t *addr);
+
+u32_t ll_wl_size_get(void);
+u32_t ll_wl_clear(void);
+u32_t ll_wl_add(bt_addr_le_t *addr);
+u32_t ll_wl_remove(bt_addr_le_t *addr);
 
 void ll_irk_clear(void);
 u32_t ll_irk_add(u8_t *irk);
