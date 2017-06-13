@@ -90,14 +90,14 @@ parameter here. The Ethernet L2 layer will update such information
 once the packet's Ethernet header has been successfully parsed.
 
 In case :c:func:`net_recv_data()` call fails, it will be up to the
-device driver to un-reference the buffer via
+device driver to unreference the buffer via
 :c:func:`net_pkt_unref()`.
 
 On sending, it is up to the device driver to send the buffer all at
 once, with all the fragments.
 
 In case of a fully successful packet transmission only, the device
-driver must un-reference the buffer via `net_pkt_unref()`.
+driver must unreference the buffer via `net_pkt_unref()`.
 
 Each Ethernet device driver will need, in the end, to call
 `NET_DEVICE_INIT_INSTANCE()` like this:
@@ -139,7 +139,7 @@ here as well.  There are two specific differences however:
   :c:type:`struct net_if` send function. It turn, the implementation
   of :c:func:`ieee802154_radio_send()` will ensure the same behavior:
   sending one fragment at a time through :c:type:`struct
-  ieee802154_radio_api` tx function, and un-referencing the buffer
+  ieee802154_radio_api` tx function, and unreferencing the buffer
   only when all the transmission were successful.
 
 Each IEEE 802.15.4 device driver, in the end, will need to call
