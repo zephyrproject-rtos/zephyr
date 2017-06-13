@@ -13,7 +13,7 @@
 #include <ztest.h>
 
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static int execute_flag;
 

@@ -29,7 +29,7 @@ static unsigned char __aligned(4) data[] = "abcd1234$%^&PIPE";
 K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
 static struct k_pipe pipe;
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_sem end_sema;
 

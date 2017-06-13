@@ -134,11 +134,17 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
  *
  * @return N/A
  */
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
+FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+						const NANO_ESF *esf)
 {
 	ARG_UNUSED(esf);
 
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
+#ifdef CONFIG_STACK_SENTINEL
+	if (reason == _NANO_ERR_STACK_CHK_FAIL) {
+		goto hang_system;
+	}
+#endif
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}

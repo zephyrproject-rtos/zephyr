@@ -398,7 +398,11 @@ int net_context_unref(struct net_context *context)
 		context->conn_handler = NULL;
 	}
 
+	net_context_set_state(context, NET_CONTEXT_UNCONNECTED);
+
 	context->flags &= ~NET_CONTEXT_IN_USE;
+
+	NET_DBG("Context %p released", context);
 
 	k_sem_give(&contexts_lock);
 
@@ -776,7 +780,7 @@ static int send_reset(struct net_context *context,
 	int ret;
 
 	ret = net_tcp_prepare_reset(context->tcp, remote, &pkt);
-	if (ret) {
+	if (ret || !pkt) {
 		return ret;
 	}
 
@@ -1828,7 +1832,7 @@ static int sendto(struct net_pkt *pkt,
 	}
 
 	if (ret < 0) {
-		NET_DBG("Could not create network packet to send");
+		NET_DBG("Could not create network packet to send (%d)", ret);
 		return ret;
 	}
 

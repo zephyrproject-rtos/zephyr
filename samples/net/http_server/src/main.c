@@ -355,7 +355,8 @@ void main(void)
 				"Zephyr HTTPS Server",
 				INSTANCE_INFO, strlen(INSTANCE_INFO),
 				setup_cert, NULL, &ssl_rx_pool,
-				https_stack, sizeof(https_stack));
+				https_stack,
+				K_THREAD_STACK_SIZEOF(https_stack));
 	if (ret < 0) {
 		NET_ERR("Cannot initialize HTTPS server (%d)", ret);
 		panic(NULL);

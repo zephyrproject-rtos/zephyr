@@ -34,7 +34,7 @@
 
 K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 
-static char __noinit __stack tstack[THREAD_NUM][STACK_SIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
 static struct k_sem sync_sema;
 static void *block_ok;

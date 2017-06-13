@@ -31,9 +31,6 @@ extern void _update_time_slice_before_swap(void);
 extern s32_t _ms_to_ticks(s32_t ms);
 #endif
 extern void idle(void *, void *, void *);
-#ifdef CONFIG_STACK_SENTINEL
-extern void _check_stack_sentinel(void);
-#endif
 
 /* find which one is the next thread to run */
 /* must be called with interrupts locked */

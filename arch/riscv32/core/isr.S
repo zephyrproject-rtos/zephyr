@@ -274,14 +274,14 @@ on_thread_stack:
 	addi t2, t2, -1
 	sw t2, _kernel_offset_to_nested(t1)
 
+	/* Restore thread stack pointer */
+	lw t0, 0x00(sp)
+	addi sp, t0, 0
+
 #ifdef CONFIG_STACK_SENTINEL
 	call _check_stack_sentinel
 	la t1, _kernel
 #endif
-
-	/* Restore thread stack pointer */
-	lw t0, 0x00(sp)
-	addi sp, t0, 0
 
 #ifdef CONFIG_PREEMPT_ENABLED
 	/*
@@ -316,9 +316,6 @@ reschedule:
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
-#ifdef CONFIG_STACK_SENTINEL
-	call _check_stack_sentinel
-#endif
 	/* Get reference to _kernel */
 	la t0, _kernel
 

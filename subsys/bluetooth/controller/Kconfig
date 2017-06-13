@@ -99,6 +99,13 @@ comment "BLE Controller features"
 
 if BLUETOOTH_CONN
 
+config BLUETOOTH_CONTROLLER_LE_ENC
+	bool
+	depends on !BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR && !BLUETOOTH_CONTROLLER_PHY_2M_NRF
+	default y
+	# Enable support for Bluetooth v4.0 LE Encryption feature in the
+	# Controller.
+
 config BLUETOOTH_CONTROLLER_LE_PING
 	bool "LE Ping"
 	default y
@@ -117,7 +124,8 @@ config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
 	depends on BLUETOOTH_CONTROLLER_DATA_LENGTH
 	int
 	default 27
-	range 27 251
+	range 27 251 if SOC_SERIES_NRF52X || BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR
+	range 27 27
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
@@ -145,6 +153,14 @@ config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 menu "Advanced features"
 	visible if BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 
+config BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR
+	bool "Data Length Support (Cleartext only)"
+	depends on BLUETOOTH_CONTROLLER_DATA_LENGTH && SOC_SERIES_NRF51X
+	help
+	  Enable support for Bluetooh v4.2 LE Data Length Update procedure, upto
+	  251 byte cleartext payloads in the Controller. Encrypted connections
+	  are not supported.
+
 if BLUETOOTH_CONTROLLER_PHY
 
 config BLUETOOTH_CONTROLLER_PHY_2M
@@ -155,7 +171,7 @@ config BLUETOOTH_CONTROLLER_PHY_2M
 	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
 
 config BLUETOOTH_CONTROLLER_PHY_2M_NRF
-	bool "2Mbps Nordic Semiconductor PHY Support (Open Text)"
+	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
 	depends on SOC_SERIES_NRF51X
 	select BLUETOOTH_CONTROLLER_PHY_2M
 	help
@@ -252,6 +268,7 @@ if BLUETOOTH_CONN
 
 config BLUETOOTH_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
+	depends on BLUETOOTH_CONTROLLER_LE_ENC
 	help
 	  Enable connection encryption setup in 3 connection intervals.
 	  Peripheral will respond to Encryption Request with Encryption Response

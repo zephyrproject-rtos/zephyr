@@ -98,7 +98,8 @@
 /* Indicate that an array will be used for stack space. */
 
 #if !defined(_ASMLANGUAGE)
-  #define __stack __aligned(STACK_ALIGN)
+  /* don't use this anymore, use K_DECLARE_STACK instead. Remove for 1.11 */
+  #define __stack __aligned(STACK_ALIGN) __DEPRECATED_MACRO
 #endif
 
 /* concatenate the values of the arguments into one */

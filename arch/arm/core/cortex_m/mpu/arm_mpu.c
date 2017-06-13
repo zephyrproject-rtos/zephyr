@@ -64,7 +64,8 @@ static void _region_init(u32_t index, u32_t region_addr,
 	/* Select the region you want to access */
 	ARM_MPU_DEV->rnr = index;
 	/* Configure the region */
-	ARM_MPU_DEV->rbar = region_addr | REGION_VALID | index;
+	ARM_MPU_DEV->rbar = (region_addr & REGION_BASE_ADDR_MASK)
+				| REGION_VALID | index;
 	ARM_MPU_DEV->rasr = region_attr | REGION_ENABLE;
 }
 
@@ -107,10 +108,12 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
 	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
 	/*
-	 * The new MPU regions are are allocated per type after the statically
-	 * configured regions.
+	 * The new MPU regions are allocated per type after the statically
+	 * configured regions. The type is one-indexed rather than
+	 * zero-indexed, therefore we need to subtract by one to get the region
+	 * index.
 	 */
-	u32_t region_index = mpu_config.num_regions + type;
+	u32_t region_index = mpu_config.num_regions + type - 1;
 	u32_t region_attr = _get_region_attr_by_type(type, size);
 
 	/* ARM MPU supports up to 16 Regions */

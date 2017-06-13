@@ -26,7 +26,7 @@
 /**TESTPOINT: init via K_SEM_DEFINE*/
 K_SEM_DEFINE(ksema, SEM_INITIAL, SEM_LIMIT);
 static struct k_sem sema;
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 
 /*entry of contexts*/

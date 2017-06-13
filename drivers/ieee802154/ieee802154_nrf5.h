@@ -27,7 +27,7 @@ struct nrf5_802154_data {
 	/* 802.15.4 HW address. */
 	u8_t mac[8];
 	/* RX thread stack. */
-	char __stack rx_stack[CONFIG_IEEE802154_NRF5_RX_STACK_SIZE];
+	K_THREAD_STACK_MEMBER(rx_stack, CONFIG_IEEE802154_NRF5_RX_STACK_SIZE);
 	/* RX thread control block */
 	struct k_thread rx_thread;
 

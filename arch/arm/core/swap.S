@@ -42,24 +42,17 @@ GDATA(_kernel)
 
 SECTION_FUNC(TEXT, __pendsv)
 
-#if defined (CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH) || \
-		defined(CONFIG_STACK_SENTINEL)
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
     /* Register the context switch */
     push {lr}
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
     bl _sys_k_event_logger_context_switch
-#endif
-#ifdef CONFIG_STACK_SENTINEL
-    bl _check_stack_sentinel
-#endif
 #if defined(CONFIG_ARMV6_M)
     pop {r0}
     mov lr, r0
 #else
     pop {lr}
 #endif /* CONFIG_ARMV6_M */
-#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH || CONFIG_STACK_SENTINEL */
+#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH  */
 
     /* load _kernel into r1 and current k_thread into r2 */
     ldr r1, =_kernel

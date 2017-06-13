@@ -101,7 +101,9 @@ SYSROOT_TARGET_xtensa = xtensa-$(TOOLCHAIN_VENDOR)-elf
 CROSS_COMPILE_xtensa=$(TOOLCHAIN_HOME)/usr/bin/$(CROSS_COMPILE_TARGET_xtensa)/$(CROSS_COMPILE_TARGET_xtensa)-
 ifeq ($(ARCH),xtensa)
 SYSROOT := ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/${SYSROOT_TARGET_${ARCH}}
-CFLAGS += --sysroot=$(SYSROOT) -I=/usr/include -I=/usr/include/arch/include
+common_xtensa_flags := --sysroot=$(SYSROOT) -I=/usr/include -I=/usr/include/arch/include
+CFLAGS += $(common_xtensa_flags)
+CXXFLAGS += $(common_xtensa_flags)
 endif
 TOOLCHAIN_LIBS_xtensa = hal
 

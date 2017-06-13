@@ -44,8 +44,8 @@ k_tid_t consumer_tid;
 
 /* To time thread creation*/
 #define STACK_SIZE 500
-char __noinit __stack my_stack_area[STACK_SIZE];
-char __noinit __stack my_stack_area_0[STACK_SIZE];
+K_THREAD_STACK_DEFINE(my_stack_area, STACK_SIZE);
+K_THREAD_STACK_DEFINE(my_stack_area_0, STACK_SIZE);
 struct k_thread my_thread;
 struct k_thread my_thread_0;
 

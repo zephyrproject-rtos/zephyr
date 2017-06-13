@@ -721,6 +721,7 @@ static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_start_encryption *cmd = (void *)buf->data;
@@ -735,9 +736,11 @@ static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 static void le_ltk_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_ltk_req_reply *cmd = (void *)buf->data;
@@ -768,6 +771,7 @@ static void le_ltk_req_neg_reply(struct net_buf *buf, struct net_buf **evt)
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = sys_le16_to_cpu(handle);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
@@ -1076,12 +1080,15 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 		le_set_host_chan_classif(cmd, evt);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case BT_OCF(BT_HCI_OP_LE_START_ENCRYPTION):
 		le_start_encryption(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_REPLY):
 		le_ltk_req_reply(cmd, evt);
 		break;
@@ -1089,6 +1096,7 @@ static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY):
 		le_ltk_req_neg_reply(cmd, evt);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
@@ -1450,6 +1458,7 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, u16_t handle,
 	sep->supv_timeout = sys_cpu_to_le16(radio_cu->timeout);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 static void enc_refresh_complete(struct pdu_data *pdu_data, u16_t handle,
 				 struct net_buf *buf)
 {
@@ -1465,6 +1474,7 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, u16_t handle,
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, u16_t handle,
@@ -1562,9 +1572,11 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		le_conn_update_complete(pdu_data, handle, buf);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case NODE_RX_TYPE_ENC_REFRESH:
 		enc_refresh_complete(pdu_data, handle, buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 	case NODE_RX_TYPE_APTO:
@@ -1616,6 +1628,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 static void le_ltk_request(struct pdu_data *pdu_data, u16_t handle,
 			   struct net_buf *buf)
 {
@@ -1651,6 +1664,7 @@ static void encrypt_change(u8_t err, u16_t handle,
 	ep->handle = sys_cpu_to_le16(handle);
 	ep->encrypt = !err ? 1 : 0;
 }
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 static void le_remote_feat_complete(u8_t status, struct pdu_data *pdu_data,
 				    u16_t handle, struct net_buf *buf)
@@ -1764,6 +1778,8 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 	u16_t handle = node_rx->hdr.handle;
 
 	switch (pdu_data->payload.llctrl.opcode) {
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		le_ltk_request(pdu_data, handle, buf);
 		break;
@@ -1771,6 +1787,7 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		encrypt_change(0x00, handle, buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		le_remote_feat_complete(0x00, pdu_data, handle, buf);
@@ -1780,11 +1797,13 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 		remote_version_info(pdu_data, handle, buf);
 		break;
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		encrypt_change(pdu_data->payload.llctrl.ctrldata.reject_ind.
 			       error_code,
 			       handle, buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		le_conn_param_req(pdu_data, handle, buf);
@@ -1903,7 +1922,11 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 			return HCI_CLASS_EVT_REQUIRED;
 		case NODE_RX_TYPE_TERMINATE:
 		case NODE_RX_TYPE_CONN_UPDATE:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 		case NODE_RX_TYPE_ENC_REFRESH:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
 		case NODE_RX_TYPE_RSSI:
 #endif

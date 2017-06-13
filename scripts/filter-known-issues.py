@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python3
 """
 Filters a file, classifying output in errors, warnings and discarding
 the rest.
@@ -175,7 +175,7 @@ else:
     errors = None
 
 def report_error(data):
-    sys.stdout.write(data)
+    sys.stdout.write(data.decode('utf-8'))
     if errors:
         errors.write(data)
 

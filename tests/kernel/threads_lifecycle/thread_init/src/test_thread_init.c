@@ -54,8 +54,8 @@ K_SEM_DEFINE(start_sema, 0, 1);
 K_SEM_DEFINE(end_sema, 0, 1);
 
 /*local variables*/
-static char __noinit __stack stack_coop[INIT_COOP_STACK_SIZE];
-static char __noinit __stack stack_preempt[INIT_PREEMPT_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(stack_coop, INIT_COOP_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(stack_preempt, INIT_PREEMPT_STACK_SIZE);
 static struct k_thread thread_coop;
 static struct k_thread thread_preempt;
 static u64_t t_create;

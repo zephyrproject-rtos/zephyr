@@ -134,7 +134,7 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 	extra = 0;
 
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
-	if (dc) {
+	if (!IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR) && dc) {
 		bits_len = 5;
 	}
 #elif defined(CONFIG_SOC_SERIES_NRF52X)

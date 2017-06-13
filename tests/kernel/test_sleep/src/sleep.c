@@ -40,8 +40,8 @@ static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
 static struct k_sem task_sem;
 
-static char __stack test_thread_stack[THREAD_STACK];
-static char __stack helper_thread_stack[THREAD_STACK];
+static K_THREAD_STACK_DEFINE(test_thread_stack, THREAD_STACK);
+static K_THREAD_STACK_DEFINE(helper_thread_stack, THREAD_STACK);
 
 static k_tid_t  test_thread_id;
 static k_tid_t  helper_thread_id;

@@ -14,9 +14,9 @@
 extern void phil_entry(void);
 extern void object_monitor(void);
 
-char __stack phil_stack[N_PHILOSOPHERS][STSIZE];
+K_THREAD_STACK_ARRAY_DEFINE(phil_stack, N_PHILOSOPHERS, STSIZE);
 static struct k_thread phil_data[N_PHILOSOPHERS];
-char __stack mon_stack[STSIZE];
+K_THREAD_STACK_DEFINE(mon_stack, STSIZE);
 static struct k_thread mon_data;
 struct k_sem forks[N_PHILOSOPHERS];
 

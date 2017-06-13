@@ -23,9 +23,9 @@ struct ieee802154_security_ctx {
 	struct cipher_ctx dec;
 	u8_t key[16];
 	u8_t key_len;
-	u8_t level		: 3;
+	u8_t level	: 3;
 	u8_t key_mode	: 2;
-	u8_t _unused		: 3;
+	u8_t _unused	: 3;
 };
 
 /* This not meant to be used by any code but 802.15.4 L2 stack */
@@ -54,7 +54,7 @@ struct ieee802154_context {
 	u8_t sequence;
 	u8_t ack_received	: 1;
 	u8_t ack_requested	: 1;
-	u8_t associated	: 1;
+	u8_t associated		: 1;
 	u8_t _unused		: 5;
 };
 
@@ -250,8 +250,8 @@ struct ieee802154_security_params {
 	u8_t key[16];
 	u8_t key_len;
 	u8_t key_mode	: 2;
-	u8_t level		: 3;
-	u8_t _unused		: 3;
+	u8_t level	: 3;
+	u8_t _unused	: 3;
 };
 
 #endif /* __IEEE802154_H__ */

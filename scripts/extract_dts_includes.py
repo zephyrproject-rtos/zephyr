@@ -3,7 +3,7 @@
 # vim: ai:ts=4:sw=4
 
 import sys
-from os import walk
+from os import listdir
 import os
 import re
 import yaml
@@ -231,7 +231,7 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
 
   return
 
-def extract_reg_prop(node_address, names, defs, def_label, div):
+def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
   node = reduced[node_address]
 
   props = list(reduced[node_address]['props']['reg'])
@@ -244,9 +244,12 @@ def extract_reg_prop(node_address, names, defs, def_label, div):
     address_cells = reduced[address]['props'].get('#address-cells', address_cells)
     size_cells = reduced[address]['props'].get('#size-cells', size_cells)
 
+  if post_label is None:
+    post_label = "BASE_ADDRESS"
+
   index = 0
   l_base = def_label.split('/')
-  l_addr = ["BASE_ADDRESS"]
+  l_addr = [convert_string_to_label(post_label).upper()]
   l_size = ["SIZE"]
 
   while props:
@@ -401,14 +404,21 @@ def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
 
   return
 
-def extract_property(yaml, node_address, y_key, y_val, names, prefix, defs):
+def extract_property(node_compat, yaml, node_address, y_key, y_val, names, prefix, defs, label_override):
 
   node = reduced[node_address]
-  def_label = convert_string_to_label(get_compat(node)).upper()
-  def_label += '_' + node_address.split('@')[-1].upper()
+
+  if 'base_label' in yaml[node_compat]:
+    def_label = yaml[node_compat].get('base_label')
+  else:
+    def_label = convert_string_to_label(node_compat.upper())
+    def_label += '_' + node_address.split('@')[-1].upper()
+
+  if label_override is not None:
+    def_label += '_' + label_override
 
   if y_key == 'reg':
-    extract_reg_prop(node_address, names, defs, def_label, 1)
+    extract_reg_prop(node_address, names, defs, def_label, 1, y_val.get('label', None))
   elif y_key == 'interrupts' or y_key == 'interupts-extended':
     extract_interrupts(node_address, yaml, y_key, names, defs, def_label)
   elif 'pinctrl-' in y_key:
@@ -419,24 +429,40 @@ def extract_property(yaml, node_address, y_key, y_val, names, prefix, defs):
     extract_cells(node_address, yaml, y_key,
                   names, 0, prefix, defs, def_label)
   else:
-    extract_single(node_address, yaml[get_compat(reduced[node_address])],
+    extract_single(node_address, yaml,
                    reduced[node_address]['props'][y_key], y_key,
                    prefix, defs, def_label)
 
   return
 
-def extract_node_include_info(reduced, node_address, yaml, defs, structs):
-  node = reduced[node_address]
-  node_compat = get_compat(node)
+def extract_node_include_info(reduced, root_node_address, sub_node_address,
+                              yaml, defs, structs, y_sub):
+  node = reduced[sub_node_address]
+  node_compat = get_compat(reduced[root_node_address])
+  label_override = None
 
   if not node_compat in yaml.keys():
     return {}, {}
 
-  y_node = yaml[node_compat]
+  if y_sub is None:
+    y_node = yaml[node_compat]
+  else:
+    y_node = y_sub
+
+  if yaml[node_compat].get('use-property-label', False):
+    for yp in y_node['properties']:
+      if yp.get('label') is not None:
+        if node['props'].get('label') is not None:
+          label_override = convert_string_to_label(node['props']['label']).upper()
+          break
 
   # check to see if we need to process the properties
   for yp in y_node['properties']:
     for k,v in yp.items():
+      if 'properties' in v:
+        for c in reduced:
+          if root_node_address + '/' in c:
+            extract_node_include_info(reduced, root_node_address, c, yaml, defs, structs, v)
       if 'generation' in v:
         if v['generation'] == 'define':
           label = v.get('define_string')
@@ -465,7 +491,7 @@ def extract_node_include_info(reduced, node_address, yaml, defs, structs):
             if not isinstance(names, list):
               names = [names]
 
-            extract_property(yaml, node_address, c, v, names, prefix, defs)
+            extract_property(node_compat, yaml, sub_node_address, c, v, names, prefix, defs, label_override)
 
   return
 
@@ -577,6 +603,16 @@ def generate_include_file(defs, args):
 
     sys.stdout.write("#endif\n")
 
+def lookup_defs(defs, node, key):
+    if node not in defs:
+        return None
+
+    if key in defs[node]['aliases']:
+        key = defs[node]['aliases'][key]
+
+    return defs[node].get(key, None)
+
+
 def parse_arguments():
 
   parser = argparse.ArgumentParser(description = __doc__,
@@ -622,10 +658,16 @@ def main():
 
   # scan YAML files and find the ones we are interested in
   yaml_files = []
-  for (dirpath, dirnames, filenames) in walk(args.yaml):
-    yaml_files.extend([f for f in filenames if re.match('.*\.yaml\Z', f)])
-    yaml_files = [dirpath + '/' + t for t in yaml_files]
-    break
+  for filename in listdir(args.yaml):
+    if re.match('.*\.yaml\Z', filename):
+      yaml_files.append(os.path.realpath(args.yaml + '/' + filename))
+
+  # scan common YAML files and find the ones we are interested in
+  zephyrbase = os.environ.get('ZEPHYR_BASE')
+  if zephyrbase is not None:
+    for filename in listdir(zephyrbase + '/dts/common/yaml'):
+      if re.match('.*\.yaml\Z', filename):
+        yaml_files.append(os.path.realpath(zephyrbase + '/dts/common/yaml/' + filename))
 
   yaml_list = {}
   file_load_list = set()
@@ -646,36 +688,50 @@ def main():
   # collapse the yaml inherited information
   yaml_list = yaml_collapse(yaml_list)
 
-  # load zephyr specific nodes
-  flash = {}
-  console = {}
-  sram = {}
-  if 'zephyr,flash' in chosen:
-    flash = reduced[chosen['zephyr,flash']]
-  if 'zephyr,console' in chosen:
-    console = reduced[chosen['zephyr,console']]
-  if 'zephyr,sram' in chosen:
-    sram = reduced[chosen['zephyr,sram']]
-
   defs = {}
   structs = {}
   for k, v in reduced.items():
     node_compat = get_compat(v)
     if node_compat != None and node_compat in yaml_list:
-      extract_node_include_info(reduced, k, yaml_list, defs, structs)
+      extract_node_include_info(reduced, k, k, yaml_list, defs, structs, None)
 
   if defs == {}:
     raise Exception("No information parsed from dts file.")
 
-  if flash:
-    extract_reg_prop(chosen['zephyr,flash'], None, defs, "CONFIG_FLASH", 1024)
+  if 'zephyr,flash' in chosen:
+    extract_reg_prop(chosen['zephyr,flash'], None, defs, "CONFIG_FLASH", 1024, None)
   else:
     # We will add address and size of 0 for systems with no flash controller
     # This is what they already do in the Kconfig options anyway
     defs['dummy-flash'] =  { 'CONFIG_FLASH_BASE_ADDRESS': 0, 'CONFIG_FLASH_SIZE': 0 }
 
-  if sram:
-    extract_reg_prop(chosen['zephyr,sram'], None, defs, "CONFIG_SRAM", 1024)
+  if 'zephyr,sram' in chosen:
+    extract_reg_prop(chosen['zephyr,sram'], None, defs, "CONFIG_SRAM", 1024, None)
+
+  # only compute the load offset if a code partition exists and it is not the
+  # same as the flash base address
+  load_defs = {}
+  if 'zephyr,code-partition' in chosen and \
+     'zephyr,flash' in chosen and \
+     reduced[chosen['zephyr,flash']] is not \
+              reduced[chosen['zephyr,code-partition']]:
+    flash_base = lookup_defs(defs, chosen['zephyr,flash'],
+                              'CONFIG_FLASH_BASE_ADDRESS')
+    part_defs = {}
+    extract_reg_prop(chosen['zephyr,code-partition'], None, part_defs,
+                     "PARTITION", 1, 'offset')
+    part_base = lookup_defs(part_defs, chosen['zephyr,code-partition'],
+                     'PARTITION_OFFSET')
+    load_defs['CONFIG_FLASH_LOAD_OFFSET'] = \
+            hex(int(part_base, 16) - int(flash_base, 16))
+    load_defs['CONFIG_FLASH_LOAD_SIZE'] = \
+            lookup_defs(part_defs, chosen['zephyr,code-partition'],
+                        'PARTITION_SIZE')
+  else:
+    load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
+    load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
+
+  insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
 
   # generate include file
   if args.keyvalue:

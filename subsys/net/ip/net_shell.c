@@ -31,6 +31,10 @@
 #include "ipv6.h"
 #endif
 
+#if defined(CONFIG_HTTP)
+#include <net/http.h>
+#endif
+
 #include "net_shell.h"
 #include "net_stats.h"
 
@@ -440,6 +444,42 @@ static inline void net_shell_print_statistics(void)
 }
 #endif /* CONFIG_NET_STATISTICS */
 
+static void get_addresses(struct net_context *context,
+			  char addr_local[], int local_len,
+			  char addr_remote[], int remote_len)
+{
+#if defined(CONFIG_NET_IPV6)
+	if (context->local.family == AF_INET6) {
+		snprintk(addr_local, local_len, "[%s]:%u",
+			 net_sprint_ipv6_addr(
+				 net_sin6_ptr(&context->local)->sin6_addr),
+			 ntohs(net_sin6_ptr(&context->local)->sin6_port));
+		snprintk(addr_remote, remote_len, "[%s]:%u",
+			 net_sprint_ipv6_addr(
+				 &net_sin6(&context->remote)->sin6_addr),
+			 ntohs(net_sin6(&context->remote)->sin6_port));
+	} else
+#endif
+#if defined(CONFIG_NET_IPV4)
+	if (context->local.family == AF_INET) {
+		snprintk(addr_local, local_len, "%s:%d",
+			 net_sprint_ipv4_addr(
+				 net_sin_ptr(&context->local)->sin_addr),
+			 ntohs(net_sin_ptr(&context->local)->sin_port));
+		snprintk(addr_remote, remote_len, "%s:%d",
+			 net_sprint_ipv4_addr(
+				 &net_sin(&context->remote)->sin_addr),
+			 ntohs(net_sin(&context->remote)->sin_port));
+	} else
+#endif
+	if (context->local.family == AF_UNSPEC) {
+		snprintk(addr_local, local_len, "AF_UNSPEC");
+	} else {
+		snprintk(addr_local, local_len, "AF_UNK(%d)",
+			 context->local.family);
+	}
+}
+
 static void context_cb(struct net_context *context, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
@@ -455,36 +495,8 @@ static void context_cb(struct net_context *context, void *user_data)
 	char addr_local[ADDR_LEN + 7];
 	char addr_remote[ADDR_LEN + 7] = "";
 
-#if defined(CONFIG_NET_IPV6)
-	if (context->local.family == AF_INET6) {
-		snprintk(addr_local, sizeof(addr_local), "[%s]:%u",
-			 net_sprint_ipv6_addr(
-				 net_sin6_ptr(&context->local)->sin6_addr),
-			 ntohs(net_sin6_ptr(&context->local)->sin6_port));
-		snprintk(addr_remote, sizeof(addr_remote), "[%s]:%u",
-			 net_sprint_ipv6_addr(
-				 &net_sin6(&context->remote)->sin6_addr),
-			 ntohs(net_sin6(&context->remote)->sin6_port));
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-	if (context->local.family == AF_INET) {
-		snprintk(addr_local, sizeof(addr_local), "%s:%d",
-			 net_sprint_ipv4_addr(
-				 net_sin_ptr(&context->local)->sin_addr),
-			 ntohs(net_sin_ptr(&context->local)->sin_port));
-		snprintk(addr_remote, sizeof(addr_remote), "%s:%d",
-			 net_sprint_ipv4_addr(
-				 &net_sin(&context->remote)->sin_addr),
-			 ntohs(net_sin(&context->remote)->sin_port));
-	} else
-#endif
-	if (context->local.family == AF_UNSPEC) {
-		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
-	} else {
-		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
-			 context->local.family);
-	}
+	get_addresses(context, addr_local, sizeof(addr_local),
+		      addr_remote, sizeof(addr_remote));
 
 	printk("[%2d] %p\t%p    %c%c%c   %16s\t%16s\n",
 	       (*count) + 1, context,
@@ -852,10 +864,6 @@ int net_shell_cmd_dns(int argc, char *argv[])
 	int arg = 1;
 	int ret, i;
 
-	if (strcmp(argv[0], "dns")) {
-		arg++;
-	}
-
 	if (!argv[arg]) {
 		/* DNS status */
 		ctx = dns_resolve_get_default();
@@ -925,6 +933,89 @@ int net_shell_cmd_dns(int argc, char *argv[])
 #else
 	printk("DNS resolver not supported.\n");
 #endif
+	return 0;
+}
+
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
+#define MAX_HTTP_OUTPUT_LEN 64
+
+static char *http_str_output(char *output, int outlen, const char *str, int len)
+{
+	if (len > outlen) {
+		len = outlen;
+	}
+
+	if (len == 0) {
+		memset(output, 0, outlen);
+	} else {
+		memcpy(output, str, len);
+		output[len] = '\0';
+	}
+
+	return output;
+}
+
+static void http_server_cb(struct http_server_ctx *entry,
+			   void *user_data)
+{
+	int *count = user_data;
+	static char output[MAX_HTTP_OUTPUT_LEN];
+
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
+
+	get_addresses(entry->req.net_ctx, addr_local, sizeof(addr_local),
+		      addr_remote, sizeof(addr_remote));
+
+	if (*count == 0) {
+		printk("        HTTP ctx    Local           \t"
+		       "Remote          \tURL\n");
+	}
+
+	(*count)++;
+
+	printk("[%2d] %c%c %p  %16s\t%16s\t%s\n",
+	       *count, entry->enabled ? 'E' : 'D',
+	       entry->is_https ? 'S' : ' ',
+	       entry, addr_local, addr_remote,
+	       http_str_output(output, sizeof(output) - 1,
+			       entry->req.url, entry->req.url_len));
+}
+#endif /* CONFIG_NET_DEBUG_HTTP_CONN && CONFIG_HTTP_SERVER */
+
+int net_shell_cmd_http(int argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
+	static int count;
+	int arg = 1;
+
+	count = 0;
+
+	/* Turn off monitoring if it was enabled */
+	http_server_conn_monitor(NULL, NULL);
+
+	if (strcmp(argv[0], "http")) {
+		arg++;
+	}
+
+	if (argv[arg]) {
+		if (strcmp(argv[arg], "monitor") == 0) {
+			printk("Activating HTTP monitor. Type \"net http\" "
+			       "to disable HTTP connection monitoring.\n");
+			http_server_conn_monitor(http_server_cb, &count);
+		}
+	} else {
+		http_server_conn_foreach(http_server_cb, &count);
+	}
+#else
+	printk("Enable CONFIG_NET_DEBUG_HTTP_CONN and CONFIG_HTTP_SERVER "
+	       "to get HTTP server connection information\n");
+#endif
+
 	return 0;
 }
 
@@ -1111,10 +1202,6 @@ int net_shell_cmd_nbr(int argc, char *argv[])
 #if defined(CONFIG_NET_IPV6)
 	int count = 0;
 	int arg = 1;
-
-	if (strcmp(argv[0], "nbr")) {
-		arg++;
-	}
 
 	if (argv[arg]) {
 		struct in6_addr addr;
@@ -1581,10 +1668,6 @@ int net_shell_cmd_tcp(int argc, char *argv[])
 	int arg = 1;
 	int ret;
 
-	if (strcmp(argv[0], "tcp")) {
-		arg++;
-	}
-
 	if (argv[arg]) {
 		if (!strcmp(argv[arg], "connect")) {
 			/* tcp connect <ip> port */
@@ -1699,6 +1782,10 @@ static struct shell_cmd net_commands[] = {
 		"dns cancel\n\tCancel all pending requests\n"
 		"dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default) or "
 		"IPv6 address for a  host name" },
+	{ "http", net_shell_cmd_http,
+		"\n\tPrint information about active HTTP connections\n"
+		"http monitor\n\tStart monitoring HTTP connections\n"
+		"http\n\tTurn off HTTP connection monitoring" },
 	{ "iface", net_shell_cmd_iface,
 		"\n\tPrint information about network interfaces" },
 	{ "mem", net_shell_cmd_mem,

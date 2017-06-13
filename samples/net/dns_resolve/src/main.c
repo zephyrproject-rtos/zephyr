@@ -21,7 +21,7 @@
 #include <net/dns_resolve.h>
 
 #define STACKSIZE 2000
-char __noinit __stack thread_stack[STACKSIZE];
+K_THREAD_STACK_DEFINE(thread_stack, STACKSIZE);
 static struct k_thread thread_data;
 
 #define DNS_TIMEOUT 2000 /* ms */

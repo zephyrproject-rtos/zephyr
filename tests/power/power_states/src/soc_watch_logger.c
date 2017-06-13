@@ -7,7 +7,7 @@
 #include "soc_watch_logger.h"
 
 #define STSIZE 512
-static char __stack __noinit soc_watch_event_logger_stack[STSIZE];
+static K_THREAD_STACK_DEFINE(soc_watch_event_logger_stack, STSIZE);
 static struct k_thread soc_watch_event_logger_data;
 
 /**

@@ -6,7 +6,7 @@ Synchronization Sample
 Overview
 ********
 
-A simple application that demonstates basic sanity of the kernel.
+A simple application that demonstrates basic sanity of the kernel.
 Two threads (A and B) take turns printing a greeting message to the console,
 and use sleep requests and semaphores to control the rate at which messages
 are generated. This demonstrates that kernel scheduling, communication,

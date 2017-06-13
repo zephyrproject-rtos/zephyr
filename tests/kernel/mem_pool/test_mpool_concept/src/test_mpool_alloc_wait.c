@@ -42,7 +42,7 @@
 #define THREAD_NUM 3
 K_MEM_POOL_DEFINE(mpool1, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 
-static char __noinit __stack tstack[THREAD_NUM][STACK_SIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
 static struct k_sem sync_sema;
 static struct k_mem_block block_ok;

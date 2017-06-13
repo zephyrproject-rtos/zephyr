@@ -250,17 +250,17 @@ static void calc_thread(void)
 void main(void)
 {
 	k_thread_create(&sysview_thread_data, sysview_stack,
-			sizeof(sysview_stack),
+			K_THREAD_STACK_SIZEOF(sysview_stack),
 			(k_thread_entry_t)sysview_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
 
 	k_thread_create(&printer_thread_data, printer_stack,
-			sizeof(printer_stack),
+			K_THREAD_STACK_SIZEOF(printer_stack),
 			(k_thread_entry_t)printer_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
 
 	k_thread_create(&calc_thread_data, calc_stack,
-			sizeof(calc_stack),
+			K_THREAD_STACK_SIZEOF(calc_stack),
 			(k_thread_entry_t)calc_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(1), 0, 0);
 }
