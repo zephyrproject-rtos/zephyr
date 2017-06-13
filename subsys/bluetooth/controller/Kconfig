@@ -136,6 +136,8 @@ config BLUETOOTH_CONTROLLER_PHY
 	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
 	  Controller.
 
+endif # BLUETOOTH_CONN
+
 config BLUETOOTH_CONTROLLER_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
 	default y
@@ -143,7 +145,14 @@ config BLUETOOTH_CONTROLLER_CHAN_SEL_2
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
 	  the Controller.
 
-endif # BLUETOOTH_CONN
+config BLUETOOTH_CONTROLLER_ADV_EXT
+	bool "LE Advertising Extensions"
+	select BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
+	select BLUETOOTH_CONTROLLER_CHAN_SEL_2
+	default y
+	help
+	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
+	  Controller.
 
 config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
 	bool "Show advanced features"

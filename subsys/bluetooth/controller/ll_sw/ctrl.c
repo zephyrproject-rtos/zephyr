@@ -58,7 +58,7 @@
 enum role {
 	ROLE_NONE,
 	ROLE_ADV,
-	ROLE_OBS,
+	ROLE_SCAN,
 	ROLE_SLAVE,
 	ROLE_MASTER,
 };
@@ -75,8 +75,14 @@ enum state {
 struct advertiser {
 	struct shdr hdr;
 
-	u8_t chl_map:3;
+	u8_t is_enabled:1;
 	u8_t chl_map_current:3;
+	u8_t rfu:4;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	u8_t phy_p:3;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	u8_t chl_map:3;
 	u8_t filter_policy:2;
 
 	u8_t filter_enable_bitmask;
@@ -89,12 +95,18 @@ struct advertiser {
 	struct connection *conn;
 };
 
-struct observer {
+struct scanner {
 	struct shdr hdr;
 
-	u8_t  scan_type:1;
-	u8_t  scan_state:1;
-	u8_t  scan_chan:2;
+	u8_t  is_enabled:1;
+	u8_t  state:1;
+	u8_t  chan:2;
+	u8_t  rfu:4;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	u8_t  phy:3;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	u8_t  type:1;
 	u8_t  filter_policy:2;
 	u8_t  adv_addr_type:1;
 	u8_t  init_addr_type:1;
@@ -137,7 +149,7 @@ static struct {
 	u8_t  irk[RADIO_IRK_COUNT_MAX][16];
 
 	struct advertiser advertiser;
-	struct observer observer;
+	struct scanner scanner;
 
 	void  *conn_pool;
 	void  *conn_free;
@@ -165,7 +177,7 @@ static struct {
 	/** @todo below members to be made role specific and quota managed for
 	 * Rx-es.
 	 */
-	/* Advertiser, Observer, and Connections Rx data pool */
+	/* Advertiser, Scanner, and Connections Rx data pool */
 	void  *pkt_rx_data_pool;
 	void  *pkt_rx_data_free;
 	u16_t packet_data_octets_max;
@@ -217,7 +229,7 @@ static u16_t const gc_lookup_ppm[] = { 500, 250, 150, 100, 75, 50, 30, 20 };
 static void common_init(void);
 static void ticker_success_assert(u32_t status, void *params);
 static void ticker_stop_adv_assert(u32_t status, void *params);
-static void ticker_stop_obs_assert(u32_t status, void *params);
+static void ticker_stop_scan_assert(u32_t status, void *params);
 static void ticker_update_adv_assert(u32_t status, void *params);
 static void ticker_update_slave_assert(u32_t status, void *params);
 static void event_inactive(u32_t ticks_at_expire, u32_t remainder,
@@ -231,8 +243,8 @@ static void chan_sel_2_ut(void);
 static void adv_setup(void);
 static void event_adv(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *context);
-static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
-		      void *context);
+static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		       void *context);
 static void event_slave_prepare(u32_t ticks_at_expire, u32_t remainder,
 				u16_t lazy, void *context);
 static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
@@ -431,7 +443,7 @@ void ll_reset(void)
 	role_disable(RADIO_TICKER_ID_ADV, RADIO_TICKER_ID_ADV_STOP);
 
 	/* disable oberver events */
-	role_disable(RADIO_TICKER_ID_OBS, RADIO_TICKER_ID_OBS_STOP);
+	role_disable(RADIO_TICKER_ID_SCAN, RADIO_TICKER_ID_SCAN_STOP);
 
 	/* disable connection events */
 	for (conn_handle = 0; conn_handle < _radio.connection_count;
@@ -443,8 +455,10 @@ void ll_reset(void)
 	/* reset controller context members */
 	_radio.filter_enable_bitmask = 0;
 	_radio.nirk = 0;
+	_radio.advertiser.is_enabled = 0;
 	_radio.advertiser.conn = NULL;
-	_radio.observer.conn = NULL;
+	_radio.scanner.is_enabled = 0;
+	_radio.scanner.conn = NULL;
 	_radio.packet_rx_data_size = PACKET_RX_DATA_SIZE_MIN;
 	_radio.packet_rx_data_count = (_radio.packet_rx_data_pool_size /
 				       _radio.packet_rx_data_size);
@@ -597,7 +611,7 @@ static inline void isr_radio_state_tx(void)
 
 		break;
 
-	case ROLE_OBS:
+	case ROLE_SCAN:
 		radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->
 				    pdu_data);
 
@@ -757,6 +771,10 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 		/* acquire the slave context from advertiser */
 		conn = _radio.advertiser.conn;
 		_radio.advertiser.conn = NULL;
+
+		/* Advertiser transitions to Slave role */
+		LL_ASSERT(_radio.advertiser.is_enabled);
+		_radio.advertiser.is_enabled = 0;
 
 		/* Populate the slave context */
 		conn->handle = mem_index_get(conn, _radio.conn_pool,
@@ -941,7 +959,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 	return 1;
 }
 
-static u32_t isr_rx_obs_report(u8_t rssi_ready)
+static u32_t isr_rx_scan_report(u8_t rssi_ready)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_adv *pdu_adv_rx;
@@ -953,7 +971,28 @@ static u32_t isr_rx_obs_report(u8_t rssi_ready)
 
 	/* Prepare the report (adv or scan resp) */
 	radio_pdu_node_rx->hdr.handle = 0xffff;
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
+	if (0) {
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	} else if (_radio.scanner.phy) {
+		switch (_radio.scanner.phy) {
+		case BIT(0):
+			radio_pdu_node_rx->hdr.type =
+				NODE_RX_TYPE_EXT_1M_REPORT;
+			break;
+
+		case BIT(2):
+			radio_pdu_node_rx->hdr.type =
+				NODE_RX_TYPE_EXT_CODED_REPORT;
+			break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	} else {
+		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
+	}
 
 	/* save the RSSI value */
 	pdu_adv_rx = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
@@ -966,7 +1005,7 @@ static u32_t isr_rx_obs_report(u8_t rssi_ready)
 	return 0;
 }
 
-static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
+static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 {
 	struct pdu_adv *pdu_adv_rx;
 
@@ -974,29 +1013,29 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		_radio.packet_rx[_radio.packet_rx_last]->pdu_data;
 
 	/* Initiator */
-	if ((_radio.observer.conn) && ((_radio.fc_ena == 0) ||
-				       (_radio.fc_req == _radio.fc_ack)) &&
+	if ((_radio.scanner.conn) && ((_radio.fc_ena == 0) ||
+				      (_radio.fc_req == _radio.fc_ack)) &&
 	    (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) &&
-	      (((_radio.observer.filter_policy & 0x01) != 0) ||
-	       ((_radio.observer.adv_addr_type == pdu_adv_rx->tx_addr) &&
-		(memcmp(&_radio.observer.adv_addr[0],
+	      (((_radio.scanner.filter_policy & 0x01) != 0) ||
+	       ((_radio.scanner.adv_addr_type == pdu_adv_rx->tx_addr) &&
+		(memcmp(&_radio.scanner.adv_addr[0],
 			&pdu_adv_rx->payload.adv_ind.addr[0],
 			BDADDR_SIZE) == 0)))) ||
 	     ((pdu_adv_rx->type == PDU_ADV_TYPE_DIRECT_IND) &&
 	      (/* allow directed adv packets addressed to this device */
-	       ((_radio.observer.init_addr_type == pdu_adv_rx->rx_addr) &&
-		(memcmp(&_radio.observer.init_addr[0],
+	       ((_radio.scanner.init_addr_type == pdu_adv_rx->rx_addr) &&
+		(memcmp(&_radio.scanner.init_addr[0],
 			&pdu_adv_rx->payload.direct_ind.tgt_addr[0],
 			BDADDR_SIZE) == 0)) ||
 	       /* allow directed adv packets where initiator address
 		* is resolvable private address
 		*/
-	       (((_radio.observer.filter_policy & 0x02) != 0) &&
+	       (((_radio.scanner.filter_policy & 0x02) != 0) &&
 		(pdu_adv_rx->rx_addr != 0) &&
 		((pdu_adv_rx->payload.direct_ind.tgt_addr[5] & 0xc0) ==
 		 0x40))))) &&
 	    ((radio_tmr_end_get() + 502) <
-	     TICKER_TICKS_TO_US(_radio.observer.hdr.ticks_slot))) {
+	     TICKER_TICKS_TO_US(_radio.scanner.hdr.ticks_slot))) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 		struct radio_pdu_node_rx *radio_pdu_node_rx;
 		u32_t ticks_slot_offset;
@@ -1019,9 +1058,13 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 
 		_radio.state = STATE_STOP;
 
-		/* acquire the master context from observer */
-		conn = _radio.observer.conn;
-		_radio.observer.conn = NULL;
+		/* acquire the master context from scanner */
+		conn = _radio.scanner.conn;
+		_radio.scanner.conn = NULL;
+
+		/* Initiator transitions to Master role */
+		LL_ASSERT(_radio.scanner.is_enabled);
+		_radio.scanner.is_enabled = 0;
 
 		/* Tx the connect request packet */
 		pdu_adv_tx = (struct pdu_adv *)radio_pkt_scratch_get();
@@ -1033,11 +1076,11 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 			pdu_adv_tx->chan_sel = 0;
 		}
 
-		pdu_adv_tx->tx_addr = _radio.observer.init_addr_type;
+		pdu_adv_tx->tx_addr = _radio.scanner.init_addr_type;
 		pdu_adv_tx->rx_addr = pdu_adv_rx->tx_addr;
 		pdu_adv_tx->len = sizeof(struct pdu_adv_payload_connect_ind);
 		memcpy(&pdu_adv_tx->payload.connect_ind.init_addr[0],
-		       &_radio.observer.init_addr[0], BDADDR_SIZE);
+		       &_radio.scanner.init_addr[0], BDADDR_SIZE);
 		memcpy(&pdu_adv_tx->payload.connect_ind.adv_addr[0],
 			 &pdu_adv_rx->payload.adv_ind.addr[0], BDADDR_SIZE);
 		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.
@@ -1047,14 +1090,14 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		pdu_adv_tx->payload.connect_ind.lldata. win_size = 1;
 
 		conn_interval_us =
-			(u32_t)_radio.observer.conn_interval * 1250;
-		if (_radio.observer.win_offset_us == 0) {
+			(u32_t)_radio.scanner.conn_interval * 1250;
+		if (_radio.scanner.win_offset_us == 0) {
 			conn_space_us = radio_tmr_end_get() -
 				RADIO_TX_CHAIN_DELAY_US + 502 + 1250 -
 				RADIO_TX_READY_DELAY_US;
 			pdu_adv_tx->payload.connect_ind.lldata.win_offset = 0;
 		} else {
-			conn_space_us = _radio.observer. win_offset_us;
+			conn_space_us = _radio.scanner.win_offset_us;
 			while ((conn_space_us & ((u32_t)1 << 31)) ||
 			       (conn_space_us < (radio_tmr_end_get() -
 						 RADIO_TX_CHAIN_DELAY_US +
@@ -1069,11 +1112,11 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		}
 
 		pdu_adv_tx->payload.connect_ind.lldata.interval =
-			_radio.observer.conn_interval;
+			_radio.scanner.conn_interval;
 		pdu_adv_tx->payload.connect_ind.lldata.latency =
-			_radio.observer.conn_latency;
+			_radio.scanner.conn_latency;
 		pdu_adv_tx->payload.connect_ind.lldata.timeout =
-			_radio.observer.conn_timeout;
+			_radio.scanner.conn_timeout;
 		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.chan_map[0],
 		       &conn->data_chan_map[0],
 		       sizeof(pdu_adv_tx->payload.connect_ind.lldata.chan_map));
@@ -1120,9 +1163,9 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		       &pdu_adv_tx->payload.connect_ind.init_addr[0],
 		       BDADDR_SIZE);
 		radio_le_conn_cmplt->peer_irk_index = irkmatch_id;
-		radio_le_conn_cmplt->interval = _radio.observer.conn_interval;
-		radio_le_conn_cmplt->latency = _radio.observer. conn_latency;
-		radio_le_conn_cmplt->timeout = _radio.observer.conn_timeout;
+		radio_le_conn_cmplt->interval = _radio.scanner.conn_interval;
+		radio_le_conn_cmplt->latency = _radio.scanner. conn_latency;
+		radio_le_conn_cmplt->timeout = _radio.scanner.conn_timeout;
 		radio_le_conn_cmplt->mca =
 			pdu_adv_tx->payload.connect_ind.lldata.sca;
 
@@ -1167,7 +1210,7 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		}
 
 		/* Calculate master slot */
-		conn->hdr.ticks_slot = _radio.observer.ticks_conn_slot;
+		conn->hdr.ticks_slot = _radio.scanner.ticks_conn_slot;
 		conn->hdr.ticks_active_to_start = _radio.ticks_active_to_start;
 		conn->hdr.ticks_xtal_to_start =
 			TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
@@ -1179,21 +1222,21 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 			conn->hdr.ticks_xtal_to_start :
 			conn->hdr.ticks_active_to_start;
 
-		/* Stop Observer */
+		/* Stop Scanner */
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 					    RADIO_TICKER_USER_ID_WORKER,
-					    RADIO_TICKER_ID_OBS,
-					    ticker_stop_obs_assert,
+					    RADIO_TICKER_ID_SCAN,
+					    ticker_stop_scan_assert,
 					    (void *)__LINE__);
-		ticker_stop_obs_assert(ticker_status, (void *)__LINE__);
+		ticker_stop_scan_assert(ticker_status, (void *)__LINE__);
 
-		/* Observer stop can expire while here in this ISR.
+		/* Scanner stop can expire while here in this ISR.
 		 * Deferred attempt to stop can fail as it would have
 		 * expired, hence ignore failure.
 		 */
 		ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 			    RADIO_TICKER_USER_ID_WORKER,
-			    RADIO_TICKER_ID_OBS_STOP, NULL, NULL);
+			    RADIO_TICKER_ID_SCAN_STOP, NULL, NULL);
 
 		/* Start master */
 		ticker_status =
@@ -1218,13 +1261,13 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 	/* Active scanner */
 	else if (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND)) &&
-		 (_radio.observer.scan_type != 0) &&
-		 (_radio.observer.conn == 0)) {
+		 (_radio.scanner.type != 0) &&
+		 (_radio.scanner.conn == 0)) {
 		struct pdu_adv *pdu_adv_tx;
 		u32_t err;
 
 		/* save the adv packet */
-		err = isr_rx_obs_report(rssi_ready);
+		err = isr_rx_scan_report(rssi_ready);
 		if (err) {
 			return err;
 		}
@@ -1232,16 +1275,16 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 		/* prepare the scan request packet */
 		pdu_adv_tx = (struct pdu_adv *)radio_pkt_scratch_get();
 		pdu_adv_tx->type = PDU_ADV_TYPE_SCAN_REQ;
-		pdu_adv_tx->tx_addr = _radio.observer.init_addr_type;
+		pdu_adv_tx->tx_addr = _radio.scanner.init_addr_type;
 		pdu_adv_tx->rx_addr = pdu_adv_rx->tx_addr;
 		pdu_adv_tx->len = sizeof(struct pdu_adv_payload_scan_req);
 		memcpy(&pdu_adv_tx->payload.scan_req.scan_addr[0],
-		       &_radio.observer.init_addr[0], BDADDR_SIZE);
+		       &_radio.scanner.init_addr[0], BDADDR_SIZE);
 		memcpy(&pdu_adv_tx->payload.scan_req.adv_addr[0],
 		       &pdu_adv_rx->payload.adv_ind.addr[0], BDADDR_SIZE);
 
 		/* switch scanner state to active */
-		_radio.observer.scan_state = 1;
+		_radio.scanner.state = 1;
 		_radio.state = STATE_TX;
 
 		radio_pkt_tx_set(pdu_adv_tx);
@@ -1255,25 +1298,29 @@ static inline u32_t isr_rx_obs(u8_t irkmatch_id, u8_t rssi_ready)
 	else if (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		   (/* allow directed adv packets addressed to this device */
-		    ((_radio.observer.init_addr_type == pdu_adv_rx->rx_addr) &&
-		     (memcmp(&_radio.observer.init_addr[0],
+		    ((_radio.scanner.init_addr_type == pdu_adv_rx->rx_addr) &&
+		     (memcmp(&_radio.scanner.init_addr[0],
 			     &pdu_adv_rx->payload.direct_ind.tgt_addr[0],
 			     BDADDR_SIZE) == 0)) ||
 		    /* allow directed adv packets where initiator address
 		     * is resolvable private address
 		     */
-		    (((_radio.observer.filter_policy & 0x02) != 0) &&
+		    (((_radio.scanner.filter_policy & 0x02) != 0) &&
 		     (pdu_adv_rx->rx_addr != 0) &&
 		     ((pdu_adv_rx->payload.direct_ind.tgt_addr[5] & 0xc0) == 0x40)))) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_NONCONN_IND) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND) ||
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
+		   (_radio.scanner.phy)) ||
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
-		   (_radio.observer.scan_state != 0))) &&
-		 (pdu_adv_rx->len != 0) && (!_radio.observer.conn)) {
+		   (_radio.scanner.state != 0))) &&
+		 (pdu_adv_rx->len != 0) && (!_radio.scanner.conn)) {
 		u32_t err;
 
 		/* save the scan response packet */
-		err = isr_rx_obs_report(rssi_ready);
+		err = isr_rx_scan_report(rssi_ready);
 		if (err) {
 			return err;
 		}
@@ -2721,11 +2768,11 @@ static inline void isr_radio_state_rx(u8_t trx_done, u8_t crc_ok,
 		}
 		break;
 
-	case ROLE_OBS:
+	case ROLE_SCAN:
 		if ((crc_ok) &&
-		    (((_radio.observer.filter_policy & 0x01) == 0) ||
+		    (((_radio.scanner.filter_policy & 0x01) == 0) ||
 		     (devmatch_ok) || (irkmatch_ok))) {
-			err = isr_rx_obs(irkmatch_id, rssi_ready);
+			err = isr_rx_scan(irkmatch_id, rssi_ready);
 		} else {
 			err = 1;
 		}
@@ -2733,7 +2780,7 @@ static inline void isr_radio_state_rx(u8_t trx_done, u8_t crc_ok,
 			_radio.state = STATE_CLOSE;
 			radio_disable();
 			/* switch scanner state to idle */
-			_radio.observer.scan_state = 0;
+			_radio.scanner.state = 0;
 		}
 		break;
 
@@ -2758,8 +2805,6 @@ static inline u32_t isr_close_adv(void)
 		dont_close = 1;
 
 		adv_setup();
-
-		_radio.state = STATE_TX;
 
 		radio_tx_enable();
 
@@ -2804,7 +2849,7 @@ static inline u32_t isr_close_adv(void)
 	return dont_close;
 }
 
-static inline u32_t isr_close_obs(void)
+static inline u32_t isr_close_scan(void)
 {
 	u32_t dont_close = 0;
 
@@ -2816,7 +2861,7 @@ static inline u32_t isr_close_obs(void)
 		radio_switch_complete_and_tx();
 		radio_rssi_measure();
 
-		if (_radio.observer.filter_policy && _radio.nirk) {
+		if (_radio.scanner.filter_policy && _radio.nirk) {
 			radio_ar_configure(_radio.nirk, _radio.irk);
 		}
 
@@ -2829,13 +2874,13 @@ static inline u32_t isr_close_obs(void)
 		radio_filter_disable();
 
 		if (_radio.state == STATE_ABORT) {
-			/* Observer stop can expire while here in this ISR.
+			/* Scanner stop can expire while here in this ISR.
 			 * Deferred attempt to stop can fail as it would have
 			 * expired, hence ignore failure.
 			 */
 			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				    RADIO_TICKER_USER_ID_WORKER,
-				    RADIO_TICKER_ID_OBS_STOP, NULL, NULL);
+				    RADIO_TICKER_ID_SCAN_STOP, NULL, NULL);
 		}
 	}
 
@@ -3167,8 +3212,8 @@ static inline void isr_radio_state_close(void)
 
 		break;
 
-	case ROLE_OBS:
-		dont_close = isr_close_obs();
+	case ROLE_SCAN:
+		dont_close = isr_close_scan();
 		break;
 
 	case ROLE_SLAVE:
@@ -3328,16 +3373,16 @@ static void ticker_stop_adv_assert(u32_t status, void *params)
 	}
 }
 
-static void ticker_stop_obs_assert(u32_t status, void *params)
+static void ticker_stop_scan_assert(u32_t status, void *params)
 {
 	ARG_UNUSED(params);
 
 	if (status == TICKER_STATUS_FAILURE) {
-		if (_radio.ticker_id_stop == RADIO_TICKER_ID_OBS) {
+		if (_radio.ticker_id_stop == RADIO_TICKER_ID_SCAN) {
 			/* ticker_stop failed due to race condition
 			 * while in role_disable. Let the role_disable
 			 * be made aware of, so it can return failure
-			 * (to stop Obs role as it is now transitioned
+			 * (to stop Scan role as it is now transitioned
 			 * to Master role).
 			 */
 			_radio.ticker_id_stop = 0;
@@ -3530,7 +3575,7 @@ static void mayfly_xtal_retain(u8_t caller_id, u8_t retain)
 static void prepare_reduced(u32_t status, void *op_context)
 {
 	/* It is acceptable that ticker_update will fail, if ticker is stopped;
-	 * for example, obs ticker is stopped on connection estblishment but
+	 * for example, scan ticker is stopped on connection estblishment but
 	 * is also preempted.
 	 */
 	if (status == 0) {
@@ -3543,7 +3588,7 @@ static void prepare_reduced(u32_t status, void *op_context)
 static void prepare_normal(u32_t status, void *op_context)
 {
 	/* It is acceptable that ticker_update will fail, if ticker is stopped;
-	 * for example, obs ticker is stopped on connection estblishment but
+	 * for example, scan ticker is stopped on connection estblishment but
 	 * is also preempted.
 	 */
 	if (status == 0) {
@@ -3658,8 +3703,8 @@ static void mayfly_xtal_stop_calc(void *params)
 				hdr = &conn->hdr;
 			} else if (ticker_id == RADIO_TICKER_ID_ADV) {
 				hdr = &_radio.advertiser.hdr;
-			} else if (ticker_id == RADIO_TICKER_ID_OBS) {
-				hdr = &_radio.observer.hdr;
+			} else if (ticker_id == RADIO_TICKER_ID_SCAN) {
+				hdr = &_radio.scanner.hdr;
 			} else {
 				LL_ASSERT(0);
 			}
@@ -3793,8 +3838,8 @@ static void mayfly_xtal_stop_calc(void *params)
 				hdr = &conn->hdr;
 			} else if (ticker_id == RADIO_TICKER_ID_ADV) {
 				hdr = &_radio.advertiser.hdr;
-			} else if (ticker_id == RADIO_TICKER_ID_OBS) {
-				hdr = &_radio.observer.hdr;
+			} else if (ticker_id == RADIO_TICKER_ID_SCAN) {
+				hdr = &_radio.scanner.hdr;
 			} else {
 				LL_ASSERT(0);
 			}
@@ -3920,10 +3965,10 @@ static void sched_after_mstr_free_offset_get(u16_t conn_interval,
 
 static void mayfly_sched_after_mstr_free_offset_get(void *params)
 {
-	sched_after_mstr_free_offset_get(_radio.observer.conn_interval,
-					 _radio.observer.ticks_conn_slot,
+	sched_after_mstr_free_offset_get(_radio.scanner.conn_interval,
+					 _radio.scanner.ticks_conn_slot,
 					 (u32_t)params,
-					 &_radio.observer.win_offset_us);
+					 &_radio.scanner.win_offset_us);
 }
 
 static void mayfly_sched_win_offset_use(void *params)
@@ -4673,18 +4718,18 @@ static u32_t access_addr_get(void)
 	return access_addr;
 }
 
-static void adv_obs_conn_configure(void)
+static void adv_scan_conn_configure(void)
 {
 	radio_reset();
 	radio_tx_power_set(0);
 	radio_isr_set(isr);
 }
 
-static void adv_obs_configure(u8_t phy, u8_t flags)
+static void adv_scan_configure(u8_t phy, u8_t flags)
 {
 	u32_t aa = 0x8e89bed6;
 
-	adv_obs_conn_configure();
+	adv_scan_conn_configure();
 	radio_phy_set(phy, flags);
 	radio_aa_set((u8_t *)&aa);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy << 1));
@@ -4714,6 +4759,7 @@ void radio_event_adv_prepare(u32_t ticks_at_expire, u32_t remainder,
 
 static void adv_setup(void)
 {
+	struct pdu_adv *pdu;
 	u8_t bitmap;
 	u8_t chan;
 
@@ -4729,10 +4775,21 @@ static void adv_setup(void)
 		_radio.advertiser.adv_data.first = first;
 	}
 
-	radio_pkt_tx_set(&_radio.advertiser.adv_data.data
-			 [_radio.advertiser.adv_data.first][0]);
-	radio_tmr_tifs_set(RADIO_TIFS);
-	radio_switch_complete_and_rx();
+
+	pdu = (struct pdu_adv *)
+		_radio.advertiser.adv_data.data[
+			_radio.advertiser.adv_data.first];
+	radio_pkt_tx_set(pdu);
+	if ((pdu->type != PDU_ADV_TYPE_NONCONN_IND) &&
+	    (!IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT) ||
+	     (pdu->type != PDU_ADV_TYPE_EXT_IND))) {
+		_radio.state = STATE_TX;
+		radio_tmr_tifs_set(RADIO_TIFS);
+		radio_switch_complete_and_rx();
+	} else {
+		_radio.state = STATE_CLOSE;
+		radio_switch_complete_and_disable();
+	}
 
 	bitmap = _radio.advertiser.chl_map_current;
 	chan = 0;
@@ -4764,12 +4821,16 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	 */
 
 	_radio.role = ROLE_ADV;
-	_radio.state = STATE_TX;
 	_radio.ticker_id_prepare = 0;
 	_radio.ticker_id_event = RADIO_TICKER_ID_ADV;
 	_radio.ticks_anchor = ticks_at_expire;
 
-	adv_obs_configure(0, 0); /* TODO: Advertisement PHY */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	/* TODO: if coded we use S8? */
+	adv_scan_configure(_radio.advertiser.phy_p, 1);
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	adv_scan_configure(0, 0);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 	_radio.advertiser.chl_map_current = _radio.advertiser.chl_map;
 	adv_setup();
@@ -4870,7 +4931,7 @@ void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	packet_rx_enqueue();
 }
 
-static void event_obs_prepare(u32_t ticks_at_expire, u32_t remainder,
+static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 			      u16_t lazy, void *context)
 {
 	ARG_UNUSED(lazy);
@@ -4879,19 +4940,19 @@ static void event_obs_prepare(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_PREPARE_O(1);
 
 	LL_ASSERT(!_radio.ticker_id_prepare);
-	_radio.ticker_id_prepare = RADIO_TICKER_ID_OBS;
+	_radio.ticker_id_prepare = RADIO_TICKER_ID_SCAN;
 
 	event_common_prepare(ticks_at_expire, remainder,
-			     &_radio.observer.hdr.ticks_xtal_to_start,
-			     &_radio.observer.hdr.ticks_active_to_start,
-			     _radio.observer.hdr.ticks_preempt_to_start,
-			     RADIO_TICKER_ID_OBS, event_obs, NULL);
+			     &_radio.scanner.hdr.ticks_xtal_to_start,
+			     &_radio.scanner.hdr.ticks_active_to_start,
+			     _radio.scanner.hdr.ticks_preempt_to_start,
+			     RADIO_TICKER_ID_SCAN, event_scan, NULL);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 	/* calc next group in us for the anchor where first connection event
 	 * to be placed
 	 */
-	if (_radio.observer.conn) {
+	if (_radio.scanner.conn) {
 		static void *s_link[2];
 		static struct mayfly s_mfy_sched_after_mstr_free_offset_get = {
 			0, 0, s_link, NULL,
@@ -4899,15 +4960,15 @@ static void event_obs_prepare(u32_t ticks_at_expire, u32_t remainder,
 		u32_t ticks_at_expire_normal = ticks_at_expire;
 		u32_t retval;
 
-		if (_radio.observer.hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
+		if (_radio.scanner.hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
 			u32_t ticks_prepare_to_start =
-				(_radio.observer.hdr.ticks_active_to_start >
-				 _radio.observer.hdr.ticks_preempt_to_start) ?
-				_radio.observer.hdr.ticks_active_to_start :
-				_radio.observer.hdr.ticks_preempt_to_start;
+				(_radio.scanner.hdr.ticks_active_to_start >
+				 _radio.scanner.hdr.ticks_preempt_to_start) ?
+				_radio.scanner.hdr.ticks_active_to_start :
+				_radio.scanner.hdr.ticks_preempt_to_start;
 
 			ticks_at_expire_normal -=
-				((_radio.observer.hdr.ticks_xtal_to_start &
+				((_radio.scanner.hdr.ticks_xtal_to_start &
 				  (~((u32_t)1 << 31))) -
 				 ticks_prepare_to_start);
 		}
@@ -4925,7 +4986,7 @@ static void event_obs_prepare(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_PREPARE_O(0);
 }
 
-static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *context)
 {
 	u32_t ticker_status;
@@ -4937,23 +4998,27 @@ static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	DEBUG_RADIO_START_O(1);
 
 	LL_ASSERT(_radio.role == ROLE_NONE);
-	LL_ASSERT(_radio.ticker_id_prepare == RADIO_TICKER_ID_OBS);
+	LL_ASSERT(_radio.ticker_id_prepare == RADIO_TICKER_ID_SCAN);
 
 	/** @todo check if XTAL is started, options 1: abort Radio Start,
 	 * 2: wait for XTAL start
 	 */
-	_radio.role = ROLE_OBS;
+	_radio.role = ROLE_SCAN;
 	_radio.state = STATE_RX;
 	_radio.ticker_id_prepare = 0;
-	_radio.ticker_id_event = RADIO_TICKER_ID_OBS;
+	_radio.ticker_id_event = RADIO_TICKER_ID_SCAN;
 	_radio.ticks_anchor = ticks_at_expire;
-	_radio.observer.scan_state = 0;
+	_radio.scanner.state = 0;
 
-	adv_obs_configure(0, 0); /* TODO: Advertisement PHY */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	adv_scan_configure(_radio.scanner.phy, 1); /* if coded then use S8. */
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	adv_scan_configure(0, 0);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
-	chan_set(37 + _radio.observer.scan_chan++);
-	if (_radio.observer.scan_chan == 3) {
-		_radio.observer.scan_chan = 0;
+	chan_set(37 + _radio.scanner.chan++);
+	if (_radio.scanner.chan == 3) {
+		_radio.scanner.chan = 0;
 	}
 
 	radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
@@ -4962,10 +5027,10 @@ static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	radio_rssi_measure();
 
 	/* Setup Radio Filter */
-	if (_radio.observer.filter_policy) {
-		radio_filter_configure(_radio.observer.filter_enable_bitmask,
-				       _radio.observer.filter_addr_type_bitmask,
-				       (u8_t *)_radio.observer.filter_bdaddr);
+	if (_radio.scanner.filter_policy) {
+		radio_filter_configure(_radio.scanner.filter_enable_bitmask,
+				       _radio.scanner.filter_addr_type_bitmask,
+				       (u8_t *)_radio.scanner.filter_bdaddr);
 
 		if (_radio.nirk) {
 			radio_ar_configure(_radio.nirk, _radio.irk);
@@ -4981,7 +5046,7 @@ static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 #if (defined(CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED) && \
      (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
 	/* check if preempt to start has changed */
-	if (preempt_calc(&_radio.observer.hdr, RADIO_TICKER_ID_OBS,
+	if (preempt_calc(&_radio.scanner.hdr, RADIO_TICKER_ID_SCAN,
 			 ticks_at_expire) != 0) {
 		_radio.state = STATE_STOP;
 		radio_disable();
@@ -4992,8 +5057,8 @@ static void event_obs(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		ticker_status =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_WORKER,
-				     RADIO_TICKER_ID_OBS_STOP, ticks_at_expire,
-				     _radio.observer.ticks_window +
+				     RADIO_TICKER_ID_SCAN_STOP, ticks_at_expire,
+				     _radio.scanner.ticks_window +
 				     TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 				     TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY, TICKER_NULL_SLOT,
@@ -5957,7 +6022,7 @@ static inline void event_len_prep(struct connection *conn)
 		if (_radio.advertiser.conn) {
 			free_count_conn++;
 		}
-		if (_radio.observer.conn) {
+		if (_radio.scanner.conn) {
 			free_count_conn++;
 		}
 		packet_rx_data_size = MROUND(offsetof(struct radio_pdu_node_rx,
@@ -6407,7 +6472,7 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 
 static void connection_configure(struct connection *conn)
 {
-	adv_obs_conn_configure();
+	adv_scan_conn_configure();
 	radio_aa_set(conn->access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    (((u32_t)conn->crc_init[2] << 16) |
@@ -7906,7 +7971,7 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 		/* Step 3: Caller inside Event, handle graceful stop of Event
 		 * (role dependent)
 		 */
-		/* Stop ticker "may" be in use for direct adv or observer,
+		/* Stop ticker "may" be in use for direct adv or scanner,
 		 * hence stop may fail if ticker not used.
 		 */
 		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -7963,11 +8028,11 @@ static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 			_radio.advertiser.hdr.ticks_active_to_start;
 		break;
 
-	case RADIO_TICKER_ID_OBS:
+	case RADIO_TICKER_ID_SCAN:
 		ticks_xtal_to_start =
-			_radio.observer.hdr.ticks_xtal_to_start;
+			_radio.scanner.hdr.ticks_xtal_to_start;
 		ticks_active_to_start =
-			_radio.observer.hdr.ticks_active_to_start;
+			_radio.scanner.hdr.ticks_active_to_start;
 		break;
 	default:
 		if (ticker_id_primary >= RADIO_TICKER_ID_FIRST_CONNECTION) {
@@ -8035,13 +8100,22 @@ role_disable_cleanup:
 	return ret_cb;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chl_map,
+		       u8_t filter_policy)
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 {
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ticks_slot_offset;
 	struct connection *conn;
 	struct pdu_adv *pdu_adv;
 	u32_t ret;
+
+	if (_radio.advertiser.is_enabled) {
+		return 1;
+	}
 
 	pdu_adv = (struct pdu_adv *)
 		&_radio.advertiser.adv_data.data[_radio.advertiser.adv_data.last][0];
@@ -8147,6 +8221,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 		conn = NULL;
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	_radio.advertiser.phy_p = phy_p;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 	_radio.advertiser.chl_map = chl_map;
 	_radio.advertiser.filter_policy = filter_policy;
 	if (filter_policy) {
@@ -8233,6 +8311,8 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 	}
 
 	if (ret_cb == TICKER_STATUS_SUCCESS) {
+		_radio.advertiser.is_enabled = 1;
+
 		return 0;
 	}
 
@@ -8256,6 +8336,8 @@ u32_t radio_adv_disable(void)
 	if (!status) {
 		struct connection *conn;
 
+		_radio.advertiser.is_enabled = 0;
+
 		conn = _radio.advertiser.conn;
 		if (conn) {
 			_radio.advertiser.conn = NULL;
@@ -8269,7 +8351,12 @@ u32_t radio_adv_disable(void)
 	return status;
 }
 
-u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
+u32_t radio_adv_is_enabled(void)
+{
+	return _radio.advertiser.is_enabled;
+}
+
+u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 			u16_t interval, u16_t window, u8_t filter_policy)
 {
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
@@ -8279,48 +8366,57 @@ u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
 	u32_t us_offset;
 	u32_t ret;
 
-	_radio.observer.scan_type = scan_type;
-	_radio.observer.init_addr_type = init_addr_type;
-	memcpy(&_radio.observer.init_addr[0], init_addr, BDADDR_SIZE);
-	_radio.observer.ticks_window =
+	if (_radio.scanner.is_enabled) {
+		return 1;
+	}
+
+	_radio.scanner.type = type;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	_radio.scanner.phy = type >> 1;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
+	_radio.scanner.init_addr_type = init_addr_type;
+	memcpy(&_radio.scanner.init_addr[0], init_addr, BDADDR_SIZE);
+	_radio.scanner.ticks_window =
 		TICKER_US_TO_TICKS((u64_t) window * 625);
-	_radio.observer.filter_policy = filter_policy;
+	_radio.scanner.filter_policy = filter_policy;
 	if (filter_policy) {
-		_radio.observer.filter_addr_type_bitmask =
+		_radio.scanner.filter_addr_type_bitmask =
 			_radio.filter_addr_type_bitmask;
-		memcpy(&_radio.observer.filter_bdaddr[0][0],
+		memcpy(&_radio.scanner.filter_bdaddr[0][0],
 		       &_radio.filter_bdaddr[0][0],
-		       sizeof(_radio.observer.filter_bdaddr));
-		_radio.observer.filter_enable_bitmask =
+		       sizeof(_radio.scanner.filter_bdaddr));
+		_radio.scanner.filter_enable_bitmask =
 			_radio.filter_enable_bitmask;
 	}
 
-	_radio.observer.hdr.ticks_active_to_start =
+	_radio.scanner.hdr.ticks_active_to_start =
 		_radio.ticks_active_to_start;
-	_radio.observer.hdr.ticks_xtal_to_start =
+	_radio.scanner.hdr.ticks_xtal_to_start =
 		TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
-	_radio.observer.hdr.ticks_preempt_to_start =
+	_radio.scanner.hdr.ticks_preempt_to_start =
 		TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
-	_radio.observer.hdr.ticks_slot = _radio.observer.ticks_window;
+	_radio.scanner.hdr.ticks_slot = _radio.scanner.ticks_window;
 
 	ticks_interval = TICKER_US_TO_TICKS((u64_t) interval * 625);
-	if (_radio.observer.hdr.ticks_slot >
+	if (_radio.scanner.hdr.ticks_slot >
 	    (ticks_interval -
 	     TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US))) {
-		_radio.observer.hdr.ticks_slot =
+		_radio.scanner.hdr.ticks_slot =
 			(ticks_interval -
 			 TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US));
 	}
 
 	ticks_slot_offset =
-		(_radio.observer.hdr.ticks_active_to_start <
-		 _radio.observer.hdr.ticks_xtal_to_start) ?
-		_radio.observer.hdr.ticks_xtal_to_start :
-		_radio.observer.hdr.ticks_active_to_start;
+		(_radio.scanner.hdr.ticks_active_to_start <
+		 _radio.scanner.hdr.ticks_xtal_to_start) ?
+		_radio.scanner.hdr.ticks_xtal_to_start :
+		_radio.scanner.hdr.ticks_active_to_start;
 
 	ticks_anchor = ticker_ticks_now_get();
 
-	if ((_radio.observer.conn) ||
+	if ((_radio.scanner.conn) ||
 	    !IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)) {
 		us_offset = 0;
 	}
@@ -8328,20 +8424,20 @@ u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
 	else {
 		sched_after_mstr_free_slot_get(RADIO_TICKER_USER_ID_APP,
 					       (ticks_slot_offset +
-						_radio.observer.hdr.ticks_slot),
+						_radio.scanner.hdr.ticks_slot),
 					       &ticks_anchor, &us_offset);
 	}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED */
 
 	ret = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
-			   RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_OBS,
+			   RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_SCAN,
 			   (ticks_anchor + TICKER_US_TO_TICKS(us_offset)), 0,
 			   ticks_interval,
 			   TICKER_REMAINDER((u64_t) interval * 625),
 			   TICKER_NULL_LAZY,
 			   (ticks_slot_offset +
-			    _radio.observer.hdr.ticks_slot),
-			   event_obs_prepare, NULL, ticker_if_done,
+			    _radio.scanner.hdr.ticks_slot),
+			   event_scan_prepare, NULL, ticker_if_done,
 			   (void *)&ret_cb);
 
 	if (ret == TICKER_STATUS_BUSY) {
@@ -8350,22 +8446,29 @@ u32_t radio_scan_enable(u8_t scan_type, u8_t init_addr_type, u8_t *init_addr,
 		}
 	}
 
+	if (ret_cb != TICKER_STATUS_SUCCESS) {
+		return 1;
+	}
 
-	return ((ret_cb == TICKER_STATUS_SUCCESS) ? 0 : 1);
+	_radio.scanner.is_enabled = 1;
+
+	return 0;
 }
 
 u32_t radio_scan_disable(void)
 {
 	u32_t status;
 
-	status = role_disable(RADIO_TICKER_ID_OBS,
-			      RADIO_TICKER_ID_OBS_STOP);
+	status = role_disable(RADIO_TICKER_ID_SCAN,
+			      RADIO_TICKER_ID_SCAN_STOP);
 	if (!status) {
 		struct connection *conn;
 
-		conn = _radio.observer.conn;
+		_radio.scanner.is_enabled = 0;
+
+		conn = _radio.scanner.conn;
 		if (conn) {
-			_radio.observer.conn = NULL;
+			_radio.scanner.conn = NULL;
 
 			mem_release(conn->llcp_terminate.
 				    radio_pdu_node_rx.hdr.onion.link,
@@ -8377,6 +8480,11 @@ u32_t radio_scan_disable(void)
 	return status;
 }
 
+u32_t radio_scan_is_enabled(void)
+{
+	return _radio.scanner.is_enabled;
+}
+
 u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 			   u16_t latency, u16_t timeout)
 {
@@ -8385,7 +8493,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	u32_t access_addr;
 	u32_t conn_interval_us;
 
-	if (_radio.observer.conn) {
+	if (_radio.scanner.conn) {
 		return 1;
 	}
 
@@ -8403,12 +8511,12 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 
 	radio_scan_disable();
 
-	_radio.observer.adv_addr_type = adv_addr_type;
-	memcpy(&_radio.observer.adv_addr[0], adv_addr, BDADDR_SIZE);
-	_radio.observer.conn_interval = interval;
-	_radio.observer.conn_latency = latency;
-	_radio.observer.conn_timeout = timeout;
-	_radio.observer.ticks_conn_slot =
+	_radio.scanner.adv_addr_type = adv_addr_type;
+	memcpy(&_radio.scanner.adv_addr[0], adv_addr, BDADDR_SIZE);
+	_radio.scanner.conn_interval = interval;
+	_radio.scanner.conn_latency = latency;
+	_radio.scanner.conn_timeout = timeout;
+	_radio.scanner.ticks_conn_slot =
 		TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
 				   RADIO_TX_READY_DELAY_US + 328 + 328 + 150);
 
@@ -8424,10 +8532,10 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->data_chan_hop = 6;
 	conn->data_chan_use = 0;
 	conn->event_counter = 0;
-	conn->conn_interval = _radio.observer.conn_interval;
+	conn->conn_interval = _radio.scanner.conn_interval;
 	conn->latency_prepare = 0;
 	conn->latency_event = 0;
-	conn->latency = _radio.observer.conn_latency;
+	conn->latency = _radio.scanner.conn_latency;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 	conn->default_tx_octets = _radio.default_tx_octets;
@@ -8447,9 +8555,9 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->role.master.role = 0;
 	conn->role.master.connect_expire = 6;
 	conn_interval_us =
-		(u32_t)_radio.observer.conn_interval * 1250;
+		(u32_t)_radio.scanner.conn_interval * 1250;
 	conn->supervision_reload =
-		RADIO_CONN_EVENTS((_radio.observer.conn_timeout * 10 * 1000),
+		RADIO_CONN_EVENTS((_radio.scanner.conn_timeout * 10 * 1000),
 				  conn_interval_us);
 	conn->supervision_expire = 0;
 	conn->procedure_reload =
@@ -8511,7 +8619,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->rssi_sample_count = 0;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
 
-	_radio.observer.conn = conn;
+	_radio.scanner.conn = conn;
 
 	return 0;
 }
@@ -8520,7 +8628,7 @@ u32_t ll_connect_disable(void)
 {
 	u32_t status;
 
-	if (_radio.observer.conn == 0) {
+	if (_radio.scanner.conn == 0) {
 		return 1;
 	}
 
@@ -8990,6 +9098,11 @@ void radio_rx_dequeue(void)
 	case NODE_RX_TYPE_DC_PDU:
 	case NODE_RX_TYPE_REPORT:
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
@@ -9052,6 +9165,11 @@ void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
 		switch (_radio_pdu_node_rx_free->hdr.type) {
 		case NODE_RX_TYPE_DC_PDU:
 		case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+		case NODE_RX_TYPE_EXT_1M_REPORT:
+		case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 		case NODE_RX_TYPE_SCAN_REQ:

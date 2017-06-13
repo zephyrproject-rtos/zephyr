@@ -30,6 +30,7 @@
 
 #include "bt.h"
 #include "gatt.h"
+#include "ll.h"
 
 #define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
@@ -2040,6 +2041,10 @@ static const struct shell_cmd bt_commands[] = {
 	{ "br-rfcomm-disconnect", cmd_rfcomm_disconnect, HELP_NONE },
 #endif /* CONFIG_BLUETOOTH_RFCOMM */
 #endif
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
+	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 	{ NULL, NULL, NULL }
 };
 

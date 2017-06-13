@@ -572,16 +572,24 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_set_adv_param *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	u16_t min_interval;
+	u8_t status;
 
 	min_interval = sys_le16_to_cpu(cmd->min_interval);
 
-	ll_adv_params_set(min_interval, cmd->type,
-			  cmd->own_addr_type, cmd->direct_addr.type,
-			  &cmd->direct_addr.a.val[0], cmd->channel_map,
-			  cmd->filter_policy);
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	status = ll_adv_params_set(0, 0, min_interval, cmd->type,
+				   cmd->own_addr_type, cmd->direct_addr.type,
+				   &cmd->direct_addr.a.val[0], cmd->channel_map,
+				   cmd->filter_policy, 0, 0, 0, 0, 0, 0);
+#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+	status = ll_adv_params_set(min_interval, cmd->type,
+				   cmd->own_addr_type, cmd->direct_addr.type,
+				   &cmd->direct_addr.a.val[0], cmd->channel_map,
+				   cmd->filter_policy);
+#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	ccst->status = status;
 }
 
 static void le_read_adv_chan_tx_power(struct net_buf *buf, struct net_buf **evt)
@@ -637,15 +645,16 @@ static void le_set_scan_param(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u16_t interval;
 	u16_t window;
+	u32_t status;
 
 	interval = sys_le16_to_cpu(cmd->interval);
 	window = sys_le16_to_cpu(cmd->window);
 
-	ll_scan_params_set(cmd->scan_type, interval, window, cmd->addr_type,
-			   cmd->filter_policy);
+	status = ll_scan_params_set(cmd->scan_type, interval, window,
+				    cmd->addr_type, cmd->filter_policy);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
@@ -1348,6 +1357,78 @@ fill_report:
 
 }
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+static void le_adv_ext_report(struct pdu_data *pdu_data, u8_t *b,
+			      struct net_buf *buf, u8_t phy)
+{
+	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
+	u8_t rssi;
+
+	rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		 offsetof(struct pdu_adv, payload) + adv->len];
+
+	BT_WARN("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u, rssi=-%u dB",
+		phy, adv->type, adv->len, adv->tx_addr, adv->rx_addr, rssi);
+
+	if ((adv->type == PDU_ADV_TYPE_EXT_IND) && adv->len) {
+		struct pdu_adv_payload_com_ext_adv *p;
+		struct ext_adv_hdr *h;
+		u8_t *ptr;
+
+		p = (void *)&adv->payload.adv_ext_ind;
+		h = (void *)p->ext_hdr_adi_adv_data;
+		ptr = (u8_t *)h + sizeof(*h);
+
+		BT_WARN("Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
+			p->ext_hdr_len);
+
+		if (!p->ext_hdr_len) {
+			goto no_ext_hdr;
+		}
+
+		if (h->adv_addr) {
+			char addr_str[BT_ADDR_LE_STR_LEN];
+			bt_addr_le_t addr;
+
+			addr.type = adv->tx_addr;
+			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
+			ptr += BDADDR_SIZE;
+
+			bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+
+			BT_WARN("AdvA: %s", addr_str);
+
+		}
+
+		if (h->tx_pwr) {
+			s8_t tx_pwr;
+
+			tx_pwr = *(s8_t *)ptr;
+			ptr++;
+
+			BT_WARN("Tx pwr= %d dB", tx_pwr);
+		}
+
+		/* TODO: length check? */
+	}
+
+no_ext_hdr:
+	return;
+}
+
+static void le_adv_ext_1M_report(struct pdu_data *pdu_data, u8_t *b,
+				 struct net_buf *buf)
+{
+	le_adv_ext_report(pdu_data, b, buf, BIT(0));
+}
+
+static void le_adv_ext_coded_report(struct pdu_data *pdu_data, u8_t *b,
+				    struct net_buf *buf)
+{
+	le_adv_ext_report(pdu_data, b, buf, BIT(2));
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 				 struct net_buf *buf)
@@ -1552,6 +1633,16 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 	case NODE_RX_TYPE_REPORT:
 		le_advertising_report(pdu_data, b, buf);
 		break;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+		le_adv_ext_1M_report(pdu_data, b, buf);
+		break;
+
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+		le_adv_ext_coded_report(pdu_data, b, buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
@@ -1908,6 +1999,10 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 
 		switch (node_rx->hdr.type) {
 		case NODE_RX_TYPE_REPORT:
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+		case NODE_RX_TYPE_EXT_1M_REPORT:
+		case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 		case NODE_RX_TYPE_SCAN_REQ:
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
