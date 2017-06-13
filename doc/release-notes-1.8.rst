@@ -42,11 +42,42 @@ Drivers and Sensors
 
 * UART interrupt-driver API is better defined
 * Support for pull-style console API
+* nRF5 IEEE 802.15.4 radio driver added
+* KW41Z IEEE 802.15.4 radio driver added
 
 Networking
 **********
 
-* Interesting change
+* HTTPS server support added
+* HTTP Basic-Auth support added
+* IPv6 fragmentation support added
+* Add block wise support to CoAP for well-known response
+* Big refactoring of network buffer handling
+* Start to collect TCP statistics if enabled in config
+* IEEE 802.15.4 security support added
+* DNS resolver sample application added
+* IPv6 multicast listener (MLDv2) support added
+* NATS protocol sample application added
+* HTTP client and server connectivity fixes
+* Network samples Coverity fixes
+* Network samples llvm compiler warning fixes
+* MQTT publisher connectivity fixes
+* 6lo IPv6 header compression fixes
+* CoAP connectivity fixes
+* DHCPv4 connectivity fixes
+* TCP connectivity fixes
+* DNS documentation and connectivity fixes
+* IPv6 connectivity fixes
+* IPv4 ARP fixes
+* IEEE 802.15.4 configuration tweaking fixes
+* Remove ORFD (Overly Reduced Function Device) 802.15.4 support
+* Network offloading driver fixes
+* Fix various memory leaks
+* Properly check TCP and UDP checksum before accepting packet
+* Start RX and TX network threads in proper order
+* Network samples documentation fixes and clarifications
+* RPL mesh routing fixes
+* Network link (MAC) address fixes
 
 Bluetooth
 *********
