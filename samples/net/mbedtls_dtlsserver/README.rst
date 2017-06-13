@@ -27,12 +27,10 @@ In the application directory type:
    . Setting up ecjpake password ... ok
    . Performing the TLS handshake...
 
-In other terminal window, obtain the mbed TLS code from:
-
-	https://tls.mbed.org/download/start/mbedtls-2.3.0-apache.tgz
-
-and put it in a well known directory, in your Linux machine, this will be your
-client.
+In another terminal window, obtain the mbed TLS code from:
+https://tls.mbed.org/download-archive
+and put it in a well known directory on your Linux machine, this will be your
+client. (We're using version 2.3.0 for this example.)
 
 Move to that directory and compile the mbedTLS on your host machine
 
