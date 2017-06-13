@@ -15,7 +15,7 @@ static struct nxp_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("DEBUGGER_0",
 			 0,
 			 0xFFFFFFFF,
-			 0),
+			 REGION_DEBUG_ATTR),
 	/* Region 1 */
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
