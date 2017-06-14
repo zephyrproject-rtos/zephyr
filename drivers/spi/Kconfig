@@ -75,7 +75,7 @@ config SYS_LOG_SPI_LEVEL
 
 config SPI_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port"
-	select GPIO
+	depends on GPIO
 	default n
 
 config	SPI_0
