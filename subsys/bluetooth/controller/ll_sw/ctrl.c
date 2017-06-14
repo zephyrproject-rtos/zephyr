@@ -8198,6 +8198,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 	if (ret_cb == TICKER_STATUS_SUCCESS) {
 		_radio.advertiser.is_enabled = 1;
 
+		if (!_radio.scanner.is_enabled) {
+			ll_adv_scan_state_cb(BIT(0));
+		}
+
 		return 0;
 	}
 
@@ -8222,6 +8226,10 @@ u32_t radio_adv_disable(void)
 		struct connection *conn;
 
 		_radio.advertiser.is_enabled = 0;
+
+		if (!_radio.scanner.is_enabled) {
+			ll_adv_scan_state_cb(0);
+		}
 
 		conn = _radio.advertiser.conn;
 		if (conn) {
@@ -8337,6 +8345,10 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 
 	_radio.scanner.is_enabled = 1;
 
+	if (!_radio.advertiser.is_enabled) {
+		ll_adv_scan_state_cb(BIT(1));
+	}
+
 	return 0;
 }
 
@@ -8350,6 +8362,10 @@ u32_t radio_scan_disable(void)
 		struct connection *conn;
 
 		_radio.scanner.is_enabled = 0;
+
+		if (!_radio.advertiser.is_enabled) {
+			ll_adv_scan_state_cb(0);
+		}
 
 		conn = _radio.scanner.conn;
 		if (conn) {
@@ -9042,6 +9058,15 @@ void radio_rx_dequeue(void)
 		LL_ASSERT(0);
 		break;
 	}
+
+	if (radio_pdu_node_rx->hdr.type == NODE_RX_TYPE_CONNECTION) {
+		u8_t bm = ((u8_t)_radio.scanner.is_enabled << 1) |
+			  _radio.advertiser.is_enabled;
+
+		if (!bm) {
+			ll_adv_scan_state_cb(0);
+		}
+	}
 }
 
 void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
@@ -9260,4 +9285,8 @@ u32_t radio_tx_mem_enqueue(u16_t handle, struct radio_pdu_node_tx *node_tx)
 	}
 
 	return 0;
+}
+
+void __weak ll_adv_scan_state_cb(u8_t bm)
+{
 }

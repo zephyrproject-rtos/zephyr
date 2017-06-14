@@ -345,5 +345,6 @@ u32_t radio_tx_mem_enqueue(u16_t handle,
 /* Callbacks */
 extern void radio_active_callback(u8_t active);
 extern void radio_event_callback(void);
+extern void ll_adv_scan_state_cb(u8_t bm);
 
 #endif
