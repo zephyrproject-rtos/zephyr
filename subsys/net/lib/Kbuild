@@ -1,3 +1,4 @@
+obj-$(CONFIG_NET_SOCKETS) += sockets/
 obj-$(CONFIG_ZOAP) += zoap/
 obj-$(CONFIG_DNS_RESOLVER) += dns/
 obj-$(CONFIG_MQTT_LIB) += mqtt/

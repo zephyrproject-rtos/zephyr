@@ -176,6 +176,13 @@ struct net_conn_handle;
  * anyway. This saves 12 bytes / context in IPv6.
  */
 struct net_context {
+	/** User data.
+	 *
+	 *  First member of the structure to let users either have user data
+	 *  associated with a context, or put contexts into a FIFO.
+	 */
+	void *user_data;
+
 	/** Reference count
 	 */
 	atomic_t refcount;
@@ -206,10 +213,6 @@ struct net_context {
 	 */
 	net_context_connect_cb_t connect_cb;
 
-	/** User data.
-	 */
-	void *user_data;
-
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	/** Get TX net_buf pool for this context.
 	 */
@@ -237,6 +240,14 @@ struct net_context {
 	/** TCP connection information */
 	struct net_tcp *tcp;
 #endif /* CONFIG_NET_TCP */
+
+#if defined(CONFIG_NET_SOCKETS)
+	/** Per-socket packet or connection queues */
+	union {
+		struct k_fifo recv_q;
+		struct k_fifo accept_q;
+	};
+#endif /* CONFIG_NET_SOCKETS */
 };
 
 static inline bool net_context_is_used(struct net_context *context)
