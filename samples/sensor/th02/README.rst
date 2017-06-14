@@ -18,7 +18,7 @@ controlled using the I2C interface.
 
 More details about the sensor and the display can be found here:
 
-- `Grove Tempture And Humidity`_
+- `Grove Temperature And Humidity`_
 - `Grove LCD Module`_
 
 Wiring
