@@ -51,9 +51,9 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 /* boot time measurement items */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-u64_t __noinit __start_tsc; /* timestamp when kernel starts */
-u64_t __noinit __main_tsc;  /* timestamp when main task starts */
-u64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
+u64_t __noinit __start_time_stamp; /* timestamp when kernel starts */
+u64_t __noinit __main_time_stamp;  /* timestamp when main task starts */
+u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
 #endif
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
@@ -194,9 +194,9 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp for kernel's _main() function */
-	extern u64_t __main_tsc;
+	extern u64_t __main_time_stamp;
 
-	__main_tsc = _tsc_read();
+	__main_time_stamp = (u64_t)k_cycle_get_32();
 #endif
 
 	extern void main(void);
