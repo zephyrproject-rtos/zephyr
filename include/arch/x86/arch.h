@@ -491,6 +491,27 @@ extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF * pEsf);
 
+
+/* All thread stacks, regardless of whether owned by application or kernel,
+ * go in the .stacks input section, which will end up in the kernel's
+ * noinit.
+ */
+
+#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+	char _GENERIC_SECTION(.stacks) __aligned(STACK_ALIGN) sym[size]
+
+#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	char _GENERIC_SECTION(.stacks) __aligned(STACK_ALIGN) sym[nmemb][size]
+
+#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+	char __aligned(STACK_ALIGN) sym[size]
+
+#define _ARCH_THREAD_STACK_SIZEOF(sym) \
+	sizeof(sym)
+
+#define _ARCH_THREAD_STACK_BUFFER(sym) \
+	sym
+
 #if CONFIG_X86_KERNEL_OOPS
 #define _ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
