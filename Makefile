@@ -606,9 +606,8 @@ include/config/auto.conf: ;
 endif # $(dot-config)
 
 # kernel objects are built as a static library
-libs-y := kernel/
-core-y := lib/ misc/ boards/ ext/ subsys/ tests/ arch/
-drivers-y := drivers/
+libs-y := lib/
+core-y := kernel/ drivers/ misc/ boards/ ext/ subsys/ tests/ arch/
 
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
@@ -800,8 +799,7 @@ all: $(KERNEL_BIN_NAME) $(KERNEL_STAT_NAME)
 # this default value
 export KBUILD_IMAGE ?= zephyr
 
-zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(core-y) $(drivers-y) \
-		     $(libs-y)))
+zephyr-dirs	:= $(patsubst %/,%,$(filter %/,$(libs-y) $(core-y)))
 
 # Workaround for some make notdir implementations that require
 # the paramenter not to end in "/".
@@ -812,20 +810,16 @@ zephyr-app-dir-root := $(abspath $(patsubst %, %/.., $(SOURCE_DIR)))
 zephyr-alldirs	:= $(sort $(zephyr-dirs) $(SOURCE_DIR) $(patsubst %/,%,$(filter %/, \
 		     $(core-) $(drivers-) $(libs-) $(app-))))
 
-core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
+core-y		:= $(patsubst %/, %/built-in.o, $(core-y)) kernel/lib.a
 app-y		:= $(patsubst %, %/built-in.o, $(notdir $(zephyr-app-dir-root-name)))
-drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
-libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
-libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
-libs-y		:= $(libs-y1) $(libs-y2)
+libs-y		:= $(patsubst %/, %/built-in.o, $(libs-y))
 
 # core-y must be last here. several arches use .gnu.linkonce magic
 # to register interrupt or exception handlers, and defaults under
 # arch/ (part of core-y) must be linked after drivers or libs.
-export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(libs-y) $(core-y)
 export LDFLAGS_zephyr
 
-zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_MAIN) $(app-y)
+zephyr-deps := $(KBUILD_LDS) $(core-y) $(libs-y) $(app-y)
 
 ALL_LIBS += $(TOOLCHAIN_LIBS)
 export ALL_LIBS
@@ -833,11 +827,18 @@ export ALL_LIBS
 LINK_LIBS := $(foreach l,$(ALL_LIBS), -l$(l))
 
 quiet_cmd_ar_target = AR      $@
-# Do not put lib.a into libzephyr.a. lib.a files are to be linked separately to
-# the final image
-cmd_ar_target = rm -f $@; $(AR) rcT$(KBUILD_ARFLAGS) $@ \
-	$(filter-out %/lib.a, $(KBUILD_ZEPHYR_MAIN))
-libzephyr.a: $(zephyr-deps)
+      cmd_ar_target = rm -f $@; $(AR) rcT$(KBUILD_ARFLAGS) $@ $^
+
+# Contains all the kernel-space objects except the kernel/lib.a which is
+# linked outside of the --whole-archive directive with different AR
+# parameters to save footprint space for unused kernel subsystems
+libzephyr.a: $(filter-out %/lib.a, $(core-y))
+	$(call cmd,ar_target)
+
+# All application objects and third party libraries which would be considered
+# to not directly be part of the kernel (and hence whose symbols would not
+# be globally marked as supervisor-only in memory protection scenarios)
+libapplication.a: $(app-y) $(libs-y) $(KBUILD_ZEPHYR_APP)
 	$(call cmd,ar_target)
 
 quiet_cmd_create-lnk = LINK    $@
@@ -850,11 +851,10 @@ quiet_cmd_create-lnk = LINK    $@
 	echo "-e __start"; 						 	\
 	echo "$(LINKFLAGPREFIX)--start-group";					\
 	echo "$(LINKFLAGPREFIX)--whole-archive";				\
-	echo "$(KBUILD_ZEPHYR_APP)";						\
-	echo "$(app-y)";							\
+	echo "libapplication.a";						\
 	echo "libzephyr.a";							\
 	echo "$(LINKFLAGPREFIX)--no-whole-archive";         			\
-	echo "$(filter %/lib.a, $(KBUILD_ZEPHYR_MAIN))";			\
+	echo "$(filter %/lib.a, $(core-y))";					\
 	echo "$(objtree)/arch/$(ARCH)/core/offsets/offsets.o"; 			\
 	echo "$(LINKFLAGPREFIX)--end-group"; 					\
 	echo "$(LIB_INCLUDE_DIR) $(LINK_LIBS)";					\
@@ -871,7 +871,7 @@ linker.cmd: $(zephyr-deps)
 		$(EXTRA_LINKER_CMD_OPT) $(KBUILD_LDS) -o $@
 
 
-$(PREBUILT_KERNEL): $(zephyr-deps) libzephyr.a $(KBUILD_ZEPHYR_APP) $(app-y) \
+$(PREBUILT_KERNEL): $(zephyr-deps) libzephyr.a libapplication.a \
 		linker.cmd $(KERNEL_NAME).lnk
 	$(Q)$(CC) -T linker.cmd @$(KERNEL_NAME).lnk -o $@
 
