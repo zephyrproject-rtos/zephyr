@@ -246,7 +246,17 @@ ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags)
 	size_t recv_len = 0;
 
 	if (sock_type == SOCK_DGRAM) {
-		__ASSERT(0, "DGRAM is not yet handled");
+
+		struct net_pkt *pkt = k_fifo_get(&ctx->recv_q, K_FOREVER);
+
+		recv_len = net_pkt_appdatalen(pkt);
+		if (recv_len > max_len) {
+			recv_len = max_len;
+		}
+
+		net_frag_linearize(buf, recv_len, pkt, 0, recv_len);
+		net_pkt_unref(pkt);
+
 	} else if (sock_type == SOCK_STREAM) {
 		return zsock_recv_stream(ctx, buf, max_len);
 	} else {
