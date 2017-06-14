@@ -67,6 +67,7 @@ Boards
 * arm: Added support for Nucleo L432KC board
 * arm: Added support for STM32L496G Discovery board
 * arm: Added support for STM32F469I-DISCO board
+* BBC micro:bit: Added driver & API for the 5x5 LED display
 
 Drivers and Sensors
 *******************
