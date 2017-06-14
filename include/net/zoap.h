@@ -393,8 +393,8 @@ struct zoap_pending *zoap_pending_received(
 	struct zoap_pending *pendings, size_t len);
 
 /**
- * @brief After a response is received, clear all pending
- * retransmissions related to that response.
+ * @brief After a response is received, call zoap_reply_t handler
+ * registered in #zoap_reply structure
  *
  * @param response A response received
  * @param from Address from which the response was received
