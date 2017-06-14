@@ -23,6 +23,7 @@ obj-y += stm32f4xx/drivers/src/stm32f4xx_hal_rcc.o
 obj-$(CONFIG_CLOCK_CONTROL_STM32_CUBE) += stm32f4xx/drivers/src/stm32f4xx_ll_utils.o
 obj-$(CONFIG_PWM) += stm32f4xx/drivers/src/stm32f4xx_hal_tim.o
 obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f4xx/drivers/src/stm32f4xx_hal_uart.o
+obj-$(CONFIG_I2C) += stm32f4xx/drivers/src/stm32f4xx_ll_i2c.o
 obj-y += stm32f4xx/soc/system_stm32f4xx.o
 endif
 
@@ -37,6 +38,7 @@ obj-y += stm32l4xx/drivers/src/stm32l4xx_hal_rcc.o
 obj-$(CONFIG_CLOCK_CONTROL_STM32_CUBE) += stm32l4xx/drivers/src/stm32l4xx_ll_utils.o
 obj-$(CONFIG_PWM) += stm32l4xx/drivers/src/stm32l4xx_hal_tim.o
 obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32l4xx/drivers/src/stm32l4xx_hal_uart.o
+obj-$(CONFIG_I2C) += stm32l4xx/drivers/src/stm32l4xx_ll_i2c.o
 obj-y += stm32l4xx/soc/system_stm32l4xx.o
 endif
 

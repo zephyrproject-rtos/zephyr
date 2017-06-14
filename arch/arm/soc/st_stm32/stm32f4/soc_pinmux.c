@@ -137,7 +137,7 @@ static const stm32_pin_func_t pin_pa3_funcs[] = {
 
 static const stm32_pin_func_t pin_pa8_funcs[] = {
 	PINMUX_UART(PA8, UART7, RX)
-	PINMUX_I2C(PA8, 3, SCL)
+	PINMUX_I2C(PA8, I2C3, SCL)
 };
 
 static const stm32_pin_func_t pin_pa9_funcs[] = {

@@ -90,19 +90,26 @@ config I2C_NRF5_GPIO_SCL_PIN
 	help
 	  The GPIO pin to use for SCL.
 
-config I2C_STM32LX
-	bool "STM32Lx MCU I2C Driver"
+config I2C_STM32_V1
+	bool "STM32 V1 Driver (F1/L1/F4X)"
+	depends on SOC_FAMILY_STM32 && SOC_SERIES_STM32F4X
+	default n
+	help
+	  Enable I2C support on the STM32 F1, L1 and F4X family of processors
+
+config I2C_STM32_V2
+	bool "STM32 V2 Driver (F3/F7/L4X)"
 	depends on SOC_FAMILY_STM32 && SOC_SERIES_STM32L4X
 	default n
 	help
-	  Enable I2C support on the STM32Lxx family of processors.
+	  Enable I2C support on the STM32 F3, F7 and L4X family of processors
 
-config I2C_STM32LX_INTERRUPT
-	bool "STM32Lx MCU I2C Interrupt Support"
-	depends on I2C_STM32LX
+config I2C_STM32_INTERRUPT
+	bool "STM32 MCU I2C Interrupt Support"
+	depends on I2C_STM32_V1 || I2C_STM32_V2
 	default n
 	help
-	  Enable Interrupt support for the I2C Driver of STM32Lxx family.
+	  Enable Interrupt support for the I2C Driver
 
 config I2C_BITBANG
 	bool
