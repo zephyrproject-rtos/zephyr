@@ -136,14 +136,19 @@ GDATA(__data_num_words)
 #else /* ! _ASMLANGUAGE */
 
 #include <zephyr/types.h>
+
+/* Used by _bss_zero or arch-specific implementation */
 extern char __bss_start[];
 extern char __bss_end[];
+
+/* Used by _data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
 extern char __data_rom_start[];
 extern char __data_ram_start[];
 extern char __data_ram_end[];
 #endif
 
+/* used by mem_safe subsystem */
 extern char _image_rom_start[];
 extern char _image_rom_end[];
 extern char _image_ram_start[];
@@ -151,7 +156,7 @@ extern char _image_ram_end[];
 extern char _image_text_start[];
 extern char _image_text_end[];
 
-/* end address of image. */
+/* end address of image, used by newlib for the heap */
 extern char _end[];
 
 #endif /* ! _ASMLANGUAGE */
