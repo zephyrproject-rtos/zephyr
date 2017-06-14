@@ -14,6 +14,8 @@
 #include <shell/shell.h>
 #include <misc/printk.h>
 
+#include <bluetooth/hci.h>
+
 #include "../controller/include/ll.h"
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
