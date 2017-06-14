@@ -4841,6 +4841,9 @@ void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	ARG_UNUSED(lazy);
 	ARG_UNUSED(context);
 
+	/* Reset advertiser state */
+	_radio.advertiser.is_enabled = 0;
+
 	/* Stop Direct Adv */
 	ticker_status =
 	    ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -4870,7 +4873,6 @@ void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 	/** Connection handle */
 	radio_pdu_node_rx->hdr.handle = 0xffff;
-					    /** @todo */
 	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 
 	/* prepare connection complete structure */
