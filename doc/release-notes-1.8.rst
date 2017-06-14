@@ -5,8 +5,6 @@ Zephyr Kernel 1.8.0
 
 We are pleased to announce the release of Zephyr kernel version 1.8.0.
 
-This release ... (overview paragraph of major changes goes here)...
-
 Major enhancements with this release include:
 
 * Tickless kernel
@@ -183,6 +181,8 @@ Documentation
 *************
 
 * Board documentation added for new board ports
+* Added a board porting guide
+* Added security sections to porting and user guides
 * Continued migration of wiki.zephyrproject.org material to website and github wiki
 * Improved CSS formatting and appearance of generated documents
 * Added breadcrumb navigation header with kernel version number
@@ -220,7 +220,7 @@ JIRA Related Items
 * :jira:`ZEP-888` - 802.15.4 - Security support
 * :jira:`ZEP-932` - Adapt kernel sample & test projects
 * :jira:`ZEP-948` - Revisit the timeslicing algorithm
-* :jira:`ZEP-973` - Remove deprecated API related to device PM, DEVICE\_ and * SYS\_* macros
+* :jira:`ZEP-973` - Remove deprecated API related to device PM functions and DEVICE\_ and SYS\_* macros
 * :jira:`ZEP-1028` - shrink k_block struct size
 * :jira:`ZEP-1032` - IPSP router role support
 * :jira:`ZEP-1169` - Sample mbedDTLS DTLS client stability on ethernet driver
@@ -300,7 +300,7 @@ JIRA Related Items
 * :jira:`ZEP-2011` - Retrieve RPL node information through CoAP requests
 * :jira:`ZEP-2012` - Fault in networking stack for cores that can't access unaligned memory
 * :jira:`ZEP-2013` - dead object monitor code
-* :jira:`ZEP-2014` - Defaul samples/subsys/shell/shell fails to build on QEMU RISCv32 / NIOS2
+* :jira:`ZEP-2014` - Default samples/subsys/shell/shell fails to build on QEMU RISCv32 / NIOS2
 * :jira:`ZEP-2019` - Xtensa port does not compile if CONFIG_TICKLESS_IDLE is enabled
 * :jira:`ZEP-2027` - Bluetooth Peripheral Sample won't pair with certain Android devices
 * :jira:`ZEP-2029` - xtensa: irq_offload() doesn't work on XRC_D2PM
@@ -329,10 +329,3 @@ JIRA Related Items
 * :jira:`ZEP-2143` - Compilation Error on Windows 10 with MSYS2
 * :jira:`ZEP-2152` - Xtensa crashes on startup for cores with coprocessors
 * :jira:`ZEP-2178` - Static code scan (coverity) issues seen
-
-
-Known Issues
-************
-
-* :jira:`ZEP-0000` - Title
-  - Workaround if available, or "No workaround, will address in a future release."
