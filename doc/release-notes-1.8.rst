@@ -96,7 +96,6 @@ Bluetooth
 * Added HCI Controller to Host flow control support in both Host and Controller
 * BR/EDR: Added HFP (e)SCO audio channel establishment support
 * BR/EDR: Added support for a functional SDP server
-* micro:bit: Added a new sample that implements a game of Pong over BLE
 
 Build and Infrastructure
 ************************
