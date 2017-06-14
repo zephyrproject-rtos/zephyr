@@ -30,7 +30,7 @@ struct flash_stm32_priv {
 	struct k_sem sem;
 };
 
-bool flash_stm32_valid_range(off_t offset, u32_t len);
+bool flash_stm32_valid_range(off_t offset, u32_t len, bool write);
 
 int flash_stm32_write_range(unsigned int offset, const void *data,
 			    unsigned int len, struct flash_stm32_priv *p);
