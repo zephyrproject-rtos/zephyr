@@ -180,8 +180,6 @@ SECTIONS
 	{
 	_image_ram_start = .;
 	__data_ram_start = .;
-	*(.top_of_image_ram)
-	*(.top_of_image_ram.*)
 	*(.data)
 	*(".data.*")
 
@@ -222,8 +220,6 @@ SECTIONS
          */
         *(.noinit)
         *(".noinit.*")
-        *(.bottom_of_image_ram)
-        *(.bottom_of_image_ram.*)
         } GROUP_LINK_IN(RAMABLE_REGION)
 
     /* Define linker symbols */
