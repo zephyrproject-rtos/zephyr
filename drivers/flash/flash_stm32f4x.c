@@ -13,8 +13,9 @@
 
 #include <flash_stm32.h>
 
-bool flash_stm32_valid_range(off_t offset, u32_t len)
+bool flash_stm32_valid_range(off_t offset, u32_t len, bool write)
 {
+	ARG_UNUSED(write);
 	return offset >= 0 && (offset + len - 1 <= STM32F4X_FLASH_END);
 }
 

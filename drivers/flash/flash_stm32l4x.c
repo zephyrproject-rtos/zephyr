@@ -20,13 +20,13 @@
 #define STM32L4X_FLASH_END \
 	((u32_t)(STM32L4X_BANK_SIZE_MAX << STM32L4X_PAGE_SHIFT) - 1)
 
-/* offset and len must be aligned on 8, positive and not beyond end of flash */
-bool flash_stm32_valid_range(off_t offset, u32_t len)
+/* offset and len must be aligned on 8 for write
+ * , positive and not beyond end of flash */
+bool flash_stm32_valid_range(off_t offset, u32_t len, bool write)
 {
-	return offset % 8 == 0 &&
-	       len % 8 == 0 &&
-	       offset >= 0 &&
-	       (offset + len - 1 <= STM32L4X_FLASH_END);
+	return (!write || (offset % 8 == 0 && len % 8 == 0)) &&
+		offset >= 0 &&
+		(offset + len - 1 <= STM32L4X_FLASH_END);
 }
 
 /* STM32L4xx devices can have up to 512 2K pages on two 256x2K pages banks */

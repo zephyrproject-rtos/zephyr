@@ -95,7 +95,7 @@ void flash_stm32_flush_caches(struct flash_stm32_priv *p)
 static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 			    size_t len)
 {
-	if (!flash_stm32_valid_range(offset, len)) {
+	if (!flash_stm32_valid_range(offset, len, false)) {
 		return -EINVAL;
 	}
 
@@ -113,7 +113,7 @@ int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 	struct flash_stm32_priv *p = dev->driver_data;
 	int rc;
 
-	if (!flash_stm32_valid_range(offset, len)) {
+	if (!flash_stm32_valid_range(offset, len, true)) {
 		return -EINVAL;
 	}
 
@@ -138,7 +138,7 @@ int flash_stm32_write(struct device *dev, off_t offset,
 	struct flash_stm32_priv *p = dev->driver_data;
 	int rc;
 
-	if (!flash_stm32_valid_range(offset, len)) {
+	if (!flash_stm32_valid_range(offset, len, true)) {
 		return -EINVAL;
 	}
 
