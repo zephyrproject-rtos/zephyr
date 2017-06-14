@@ -25,17 +25,48 @@ The following sections provide detailed lists of changes by component.
 Kernel
 ******
 
-* Interesting change
+* Use k_cycle_get_32 instead of sys_cycle_get_32 for Kernel
+* Added k_panic() and k_oops() APIs for Kernel
+* Added k_thread_create() API for Kernel
+* Added k_queue API for Kernel
+* Add tickless kernel support
 
 Architectures
 *************
 
+* arm: Update core to use struct k_thread
+* arm: Added ARM MPU support
+* dts: Added ARM CMSDK support
+* arm: Added Initial support for NXP MPU
+* arm: Added Device Tree Support for nRF52832 SoC based boards
+* arm: Fixed nRF52840-QIAA SoC support for device tree
+* arm: Added Device Tree Support for nRF52840 SoC & boards
+* arm: Added Device Tree Support for nRF51822 SoC & boards
+* dts: Introduced st/mem.h for FLASH & SRAM sizes
+* dts: Put IRQ priority into the interrupt property
+* arm: Support for MKL25Z soc
+* arm: Added FPU support
+* x86: defined MMU data structures
 * Support for ARC EM Starter Kit version 2.3 added
+
+
 
 Boards
 ******
 
-* Interesting change
+* Added qemu_xtensa board definition
+* Added a more informative page fault handler x86 board
+* xtensa: build similar to other Zephyr arches
+* Define MMU data structures for x86 board
+* Added support for board disco_l475_iot1
+* Added STM32F413 Nucleo board
+* Added support for the CC3220SF_LAUNCHXL board
+* Support for new ARM board FRDM-KL25Z
+* arduino_101 board enable GPIO by default
+* boards: convert to using newly introduced integer sized types
+* arm: Added support for Nucleo L432KC board
+* arm: Added support for STM32L496G Discovery board
+* arm: Added support for STM32F469I-DISCO board
 
 Drivers and Sensors
 *******************
@@ -44,6 +75,14 @@ Drivers and Sensors
 * Support for pull-style console API
 * nRF5 IEEE 802.15.4 radio driver added
 * KW41Z IEEE 802.15.4 radio driver added
+* Added MCUX TRNG driver
+* Added support for the SiFive Freedom E310 pinmux driver
+* drivers/sensor: Convert formatter strings to use PRI defines
+* Added lps22hb sensor driver
+* Added lsm6dsl sensor driver
+* Added heart rate sensor driver
+* Added support for max30101 heart rate sensor
+* Added support for lis2dh accelerometer
 
 Networking
 **********
@@ -97,20 +136,47 @@ Bluetooth
 * BR/EDR: Added HFP (e)SCO audio channel establishment support
 * BR/EDR: Added support for a functional SDP server
 
+
 Build and Infrastructure
 ************************
 
-* Interesting change
+* Support building host tools
+* Added separate DTS target
+* Added support for MSYS2
+* Use -O2 instead of -Os for ARC with SDK 0.9
+
 
 Libraries
 *********
 
-* Interesting change
+* Added library for software driven I2C
+* Created a HTTP library
+* Added HTTP server library support
+* Added minimal JSON library
+* Update TinyCrypt to version 0.2.6
+* Added minimal JSON library
+
 
 HALs
 ****
 
-* Interesting change
+
+* Added Atmel SAM family I2C (TWIHS) driver
+* Added Atmel SAM serial (UART) driver
+* Added WDT driver for Atmel SAM SoCs
+* Added Atmel SAM4S SoC support
+* Imported Nordic 802.15.4 radio driver
+* Added Initial support for NXP MPU
+* Updated QMSI to 1.4 RC4
+* Added FPU support
+* Added basic support for STM32F413
+* Introduced STM32F4x DMA driver
+* pinmux: stm32: Added support for Nucleo L432KC
+* Added support for STM32L496G Discovery board
+* Added dts for STM32F407
+* Added support for STM32F4DISCOVERY Board
+* Added support for STM32F469XI
+* Added support for STM32F469I-DISCO
 
 Documentation
 *************
@@ -127,12 +193,15 @@ Documentation
 Tests and Samples
 *****************
 
-* Interesting change
 
-Deprecations
-************
+* Added test to verify same tick timeout expiry order
+* Added clock_test for kernel
+* Added tickless tests
+* Added a simple CC2520 crypto dev test
+* Added combined observer & broadcaster app for Bluetooth samples
+* Added support to wait both IPv4 and IPv6
+* Enabled tickless kernel option in some apps
 
-* Interesting change
 
 JIRA Related Items
 ******************
