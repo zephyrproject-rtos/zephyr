@@ -13,33 +13,19 @@ information to a serial console.
 Requirements
 ************
 
-- :ref:`networking with Qemu <networking_with_qemu>`
+- :ref:`networking_with_qemu`
 
 Building and Running
 ********************
 
-QEMU x86
-========
+Running DHCPv4 client in Linux Host
+===================================
 
 These are instructions for how to use this sample application using
 QEMU on a Linux host to negotiate IP address from DHCPv4 server running
 on Linux host.
 
-Follow readme from:
-
-    Run 'loop_socat' and 'loop-slip-tap' scripts from net-tools.
-
-    https://github.com/zephyrproject-rtos/net-tools
-
-.. code-block:: console
-
-    $ ./loop_socat.sh
-
-In another window:
-
-.. code-block:: console
-
-    $ sudo ./loop-slip-tap.sh
+To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
 
 Here's a sample server configuration file '/etc/dhcpd/dhcp.conf'
 used to configure the DHCPv4 server:

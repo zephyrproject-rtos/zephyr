@@ -18,7 +18,7 @@ Rather than hard coding every detail of a board's hardware into the
 operating system, the hardware-describing DTB is passed to the operating
 system at boot time. This allows the same compiled Linux kernel to support
 different hardware configurations within an architecture family (e.g., ARM,
-x86, PowerPC) and moves a signiﬁcant part of the hardware description out of
+x86, PowerPC) and moves a significant part of the hardware description out of
 the kernel binary itself.
 
 Traditional usage of device tree involves storing of the Device Tree Blob.

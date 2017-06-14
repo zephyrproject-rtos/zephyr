@@ -10,16 +10,13 @@ This sample code shows a simple DTLS client using mbed TLS on top of Zephyr
 Building and running
 ********************
 
-Follow the steps for testing :ref:`networking with Qemu <networking_with_qemu>`.
+Follow the steps for testing :ref:`networking_with_qemu`.
 
-Obtain the mbed TLS code from:
-
-https://tls.mbed.org/download/start/mbedtls-2.3.0-apache.tgz
-
+Obtain the mbed TLS code from: https://tls.mbed.org/download-archive
 and put it in a well known directory on your Linux machine, this will be your
-server.
+server. (We're using version 2.3.0 for this example.)
 
-change to that directory and compile the mbedTLS on your host machine:
+Change to that directory and compile the mbedTLS on your host machine:
 
 .. code-block:: console
 
@@ -50,7 +47,7 @@ From the application directory type
 
    $ make run
 
-This will result in Qemu running with the following output:
+This will result in QEMU running with the following output:
 
 .. code-block:: console
 

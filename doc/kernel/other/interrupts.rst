@@ -277,7 +277,7 @@ which case the CONFIG_GEN_IRQ_VECTOR_TABLE option should be disabled.
 
 Some architectures may reserve some initial vectors for system exceptions
 and declare this in a table elsewhere, in which case
-CONFIG_GEN_IRQ_START_VECTOR needs to be set to properly offset the indicies
+CONFIG_GEN_IRQ_START_VECTOR needs to be set to properly offset the indices
 in the table.
 
 SW ISR Table

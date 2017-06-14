@@ -862,11 +862,6 @@ static inline u8_t uncompress_sa(struct net_pkt *pkt,
 				    struct net_ipv6_hdr *ipv6,
 				    u8_t offset)
 {
-	if (CIPHC[1] & NET_6LO_IPHC_SAC_1) {
-		NET_DBG("SAC_1");
-		NET_DBG("SAM_00 unspecified address");
-		return offset;
-	}
 
 	NET_DBG("SAC_0");
 
@@ -913,16 +908,11 @@ static inline u8_t uncompress_sa_ctx(struct net_pkt *pkt,
 					u8_t offset,
 					struct net_6lo_context *ctx)
 {
-	if (!ctx) {
-		return uncompress_sa(pkt, ipv6, offset);
-	}
+	NET_DBG("SAC_1");
 
 	switch (CIPHC[1] & NET_6LO_IPHC_SAM_11) {
 	case NET_6LO_IPHC_SAM_00:
-		NET_DBG("SAM_00 full src addr inlined");
-
-		memcpy(ipv6->src.s6_addr, &CIPHC[offset], 16);
-		offset += 16;
+		NET_DBG("SAM_00 unspecified address");
 		break;
 	case NET_6LO_IPHC_SAM_01:
 		NET_DBG("SAM_01 last 64 bits are inlined");
@@ -978,8 +968,6 @@ static inline u8_t uncompress_da_mcast(struct net_pkt *pkt,
 	NET_DBG("Dst is multicast");
 
 	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
-		/* TODO: DAM00 Unicast-Prefix-based IPv6 Multicast Addresses */
-		/* Reserved DAM_01, DAM_10, DAM_11 */
 		NET_WARN("Unsupported DAM options");
 		return 0;
 	}
@@ -1033,16 +1021,11 @@ static inline u8_t uncompress_da(struct net_pkt *pkt,
 				    struct net_ipv6_hdr *ipv6,
 				    u8_t offset)
 {
+	NET_DBG("DAC_0");
+
 	if (CIPHC[1] & NET_6LO_IPHC_M_1) {
 		return uncompress_da_mcast(pkt, ipv6, offset);
 	}
-
-	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
-		/* Invalid case: ctx doesn't exists , but DAC is 1*/
-		return 0;
-	}
-
-	NET_DBG("DAC_0");
 
 	switch (CIPHC[1] & NET_6LO_IPHC_DAM_11) {
 	case NET_6LO_IPHC_DAM_00:
@@ -1087,20 +1070,11 @@ static inline u8_t uncompress_da_ctx(struct net_pkt *pkt,
 					u8_t offset,
 					struct net_6lo_context *ctx)
 {
-	if (!ctx) {
-		return uncompress_da(pkt, ipv6, offset);
-	}
+	NET_DBG("DAC_1");
 
 	if (CIPHC[1] & NET_6LO_IPHC_M_1) {
 		return uncompress_da_mcast(pkt, ipv6, offset);
 	}
-
-	if (!(CIPHC[1] & NET_6LO_IPHC_DAC_1)) {
-		/* Invalid case: ctx exists but DAC is 0. */
-		return 0;
-	}
-
-	NET_DBG("DAC_1");
 
 	switch (CIPHC[1] & NET_6LO_IPHC_DAM_11) {
 	case NET_6LO_IPHC_DAM_01:
@@ -1210,7 +1184,7 @@ static inline u8_t uncompress_nh_udp(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 /* Helper function to uncompress src and dst contexts */
-static inline bool uncompress_cid(struct net_pkt *pkt,
+static inline void uncompress_cid(struct net_pkt *pkt,
 				  struct net_6lo_context **src,
 				  struct net_6lo_context **dst)
 {
@@ -1230,17 +1204,6 @@ static inline bool uncompress_cid(struct net_pkt *pkt,
 	if (!(*dst)) {
 		NET_DBG("Unknown dst cid %d", cid);
 	}
-
-	/* If CID flag set and src or dst context not available means,
-	 * either we don't have context information or we received
-	 * corrupted packet.
-	 */
-	if (!*src && !*dst) {
-		NET_ERR("Context information does not exist in cache");
-		return false;
-	}
-
-	return true;
 }
 #endif
 
@@ -1259,10 +1222,7 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 
 	if (CIPHC[1] & NET_6LO_IPHC_CID_1) {
 #if defined(CONFIG_NET_6LO_CONTEXT)
-		if (!uncompress_cid(pkt, &src, &dst)) {
-			return false;
-		}
-
+		uncompress_cid(pkt, &src, &dst);
 		offset++;
 #else
 		NET_WARN("Context based uncompression not enabled");
@@ -1298,9 +1258,15 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 
 	/* Uncompress Source Address */
 #if defined(CONFIG_NET_6LO_CONTEXT)
-	offset = uncompress_sa_ctx(pkt, ipv6, offset, src);
-	if (!offset) {
-		goto fail;
+	if (CIPHC[1] & NET_6LO_IPHC_SAC_1) {
+		if (!src) {
+			NET_ERR("SAC is set but src context doesn't exists");
+			goto fail;
+		}
+
+		offset = uncompress_sa_ctx(pkt, ipv6, offset, src);
+	} else {
+		offset = uncompress_sa(pkt, ipv6, offset);
 	}
 #else
 	offset = uncompress_sa(pkt, ipv6, offset);
@@ -1308,15 +1274,26 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 
 	/* Uncompress Destination Address */
 #if defined(CONFIG_NET_6LO_CONTEXT)
-	offset = uncompress_da_ctx(pkt, ipv6, offset, dst);
-	if (!offset) {
-		goto fail;
+	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
+		if (CIPHC[1] & NET_6LO_IPHC_M_1) {
+			/* TODO: DAM00 Unicast-Prefix-based IPv6 Multicast
+			 * Addresses. DAM_01, DAM_10 and DAM_11 are reserved.
+			 */
+			NET_ERR("DAC_1 and M_1 is not supported");
+			goto fail;
+		}
+
+		if (!dst) {
+			NET_ERR("DAC is set but dst context doesn't exists");
+			goto fail;
+		}
+
+		offset = uncompress_da_ctx(pkt, ipv6, offset, dst);
+	} else {
+		offset = uncompress_da(pkt, ipv6, offset);
 	}
 #else
 	offset = uncompress_da(pkt, ipv6, offset);
-	if (!offset) {
-		goto fail;
-	}
 #endif
 
 	net_buf_add(frag, NET_IPV6H_LEN);

@@ -30,7 +30,7 @@ Kernel
 Architectures
 *************
 
-* Interesting change
+* Support for ARC EM Starter Kit version 2.3 added
 
 Boards
 ******
@@ -42,16 +42,61 @@ Drivers and Sensors
 
 * UART interrupt-driver API is better defined
 * Support for pull-style console API
+* nRF5 IEEE 802.15.4 radio driver added
+* KW41Z IEEE 802.15.4 radio driver added
 
 Networking
 **********
 
-* Interesting change
+* HTTPS server support added
+* HTTP Basic-Auth support added
+* IPv6 fragmentation support added
+* Add block wise support to CoAP for well-known response
+* Big refactoring of network buffer handling
+* Start to collect TCP statistics if enabled in config
+* IEEE 802.15.4 security support added
+* DNS resolver sample application added
+* IPv6 multicast listener (MLDv2) support added
+* NATS protocol sample application added
+* HTTP client and server connectivity fixes
+* Network samples Coverity fixes
+* Network samples llvm compiler warning fixes
+* MQTT publisher connectivity fixes
+* 6lo IPv6 header compression fixes
+* CoAP connectivity fixes
+* DHCPv4 connectivity fixes
+* TCP connectivity fixes
+* DNS documentation and connectivity fixes
+* IPv6 connectivity fixes
+* IPv4 ARP fixes
+* IEEE 802.15.4 configuration tweaking fixes
+* Remove ORFD (Overly Reduced Function Device) 802.15.4 support
+* Network offloading driver fixes
+* Fix various memory leaks
+* Properly check TCP and UDP checksum before accepting packet
+* Start RX and TX network threads in proper order
+* Network samples documentation fixes and clarifications
+* RPL mesh routing fixes
+* Network link (MAC) address fixes
 
 Bluetooth
 *********
 
-* Interesting change
+* Host: Added ATT and SMP packet tracking for flow control enforcement
+* Host: GATT database changed to a linked list in preparation for dynamic allocation
+* Bluetooth 5.0: The Controller reports itself as 5.0-capable
+* Bluetooth 5.0: Introduced Channel Selection Algorithm #2 support
+* Bluetooth 5.0: Added Multiple PHY support, both 2Mbit/s and long-range coded
+* Bluetooth 5.0: Integrated Scan Request notifications
+* Controller: Added Low Duty Cycle Directed Advertising support
+* Controller: Added Scan duplicate filtering support
+* Controller: Enforced complete role separation in the controller for smaller builds
+* Controller: Introduced Advanced Controller configuration with several new Kconfig options
+* Controller: Changed the radio interrupts to direct ISRs to reduce interrupt latency
+* Added HCI Controller to Host flow control support in both Host and Controller
+* BR/EDR: Added HFP (e)SCO audio channel establishment support
+* BR/EDR: Added support for a functional SDP server
+* micro:bit: Added a new sample that implements a game of Pong over BLE
 
 Build and Infrastructure
 ************************
