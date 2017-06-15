@@ -19,6 +19,7 @@
 
 #if defined(CONFIG_ARM)
 #define __kinetis_flash_config_section __in_section_unique(KINETIS_FLASH_CONFIG)
+#define __ti_ccfg_section _GENERIC_SECTION(TI_CCFG)
 #endif /* CONFIG_ARM */
 
 #endif /* !_ASMLANGUAGE */
