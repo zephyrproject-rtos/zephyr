@@ -142,9 +142,12 @@ int flash_stm32_write_range(unsigned int offset, const void *data,
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(offset, ((const u64_t *) data)[i], p);
-		if (rc < 0) {
-			return rc;
+		if (((const u64_t *) data)[i>>3] != -1) {
+			rc = write_dword(offset,
+					((const u64_t *)data)[i>>3], p);
+			if (rc < 0) {
+				return rc;
+			}
 		}
 	}
 
