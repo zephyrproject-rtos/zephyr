@@ -717,18 +717,6 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 
 		radio_switch_complete_and_disable();
 
-		/* use the latest scan data, if any */
-		if (_radio.advertiser.scan_data.first != _radio.
-		    advertiser.scan_data.last) {
-			u8_t first;
-
-			first = _radio.advertiser.scan_data.first + 1;
-			if (first == DOUBLE_BUFFER_SIZE) {
-				first = 0;
-			}
-			_radio.advertiser.scan_data.first = first;
-		}
-
 		radio_pkt_tx_set(&_radio.advertiser.scan_data.
 		     data[_radio.advertiser.scan_data.first][0]);
 
@@ -4755,7 +4743,7 @@ static void adv_setup(void)
 	u8_t bitmap;
 	u8_t chan;
 
-	/* Use latest adv packet */
+	/* Use latest adv data PDU buffer */
 	if (_radio.advertiser.adv_data.first !=
 	    _radio.advertiser.adv_data.last) {
 		u8_t first;
@@ -4767,10 +4755,24 @@ static void adv_setup(void)
 		_radio.advertiser.adv_data.first = first;
 	}
 
+	/* Use latest scan data PDU buffer */
+	if (_radio.advertiser.scan_data.first != _radio.
+	    advertiser.scan_data.last) {
+		u8_t first;
+
+		first = _radio.advertiser.scan_data.first + 1;
+		if (first == DOUBLE_BUFFER_SIZE) {
+			first = 0;
+		}
+		_radio.advertiser.scan_data.first = first;
+	}
 
 	pdu = (struct pdu_adv *)
 		_radio.advertiser.adv_data.data[
 			_radio.advertiser.adv_data.first];
+	/* TODO: Privacy 1.2, copy AdvA from adv data PDU buffer into scan data
+	 * PDU buffer, here. So that Scan Response has same AdvA.
+	 */
 	radio_pkt_tx_set(pdu);
 	if ((pdu->type != PDU_ADV_TYPE_NONCONN_IND) &&
 	    (!IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT) ||
