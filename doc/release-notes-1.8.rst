@@ -10,10 +10,9 @@ Major enhancements with this release include:
 * Tickless kernel
 * IP Stack improvements
 * Bluetooth 5.0 features
-* Ecosystem: Tracing, debugging support through third-party tools
+* Ecosystem: Tracing, debugging support through third-party tools (openocd,
+  Segger Systemview)
 * Improved build support on Mac and Windows development environments
-* Improved debug support
-* Third-Party compilers support
 * Xtensa GCC support
 * Initial implementation of MMU/MPU support
 * Expanded device support
@@ -135,7 +134,6 @@ Bluetooth
 * BR/EDR: Added HFP (e)SCO audio channel establishment support
 * BR/EDR: Added support for a functional SDP server
 
-
 Build and Infrastructure
 ************************
 
@@ -143,7 +141,6 @@ Build and Infrastructure
 * Added separate DTS target
 * Added support for MSYS2
 * Use -O2 instead of -Os for ARC with SDK 0.9
-
 
 Libraries
 *********
@@ -155,10 +152,8 @@ Libraries
 * Update TinyCrypt to version 0.2.6
 * Added minimal JSON library
 
-
 HALs
 ****
-
 
 * Added Atmel SAM family I2C (TWIHS) driver
 * Added Atmel SAM serial (UART) driver
@@ -194,7 +189,6 @@ Documentation
 Tests and Samples
 *****************
 
-
 * Added test to verify same tick timeout expiry order
 * Added clock_test for kernel
 * Added tickless tests
@@ -202,7 +196,6 @@ Tests and Samples
 * Added combined observer & broadcaster app for Bluetooth samples
 * Added support to wait both IPv4 and IPv6
 * Enabled tickless kernel option in some apps
-
 
 JIRA Related Items
 ******************
