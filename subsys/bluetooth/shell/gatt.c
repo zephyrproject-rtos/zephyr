@@ -483,6 +483,21 @@ int cmd_gatt_unsubscribe(int argc, char *argv[])
 }
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
+static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
+{
+	printk("attr %p handle 0x%04x uuid %s perm 0x%02x\n",
+		attr, attr->handle, bt_uuid_str(attr->uuid), attr->perm);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+int cmd_gatt_show_db(int argc, char *argv[])
+{
+	bt_gatt_foreach_attr(0x0001, 0xffff, print_attr, NULL);
+
+	return 0;
+}
+
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
 	0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
