@@ -46,6 +46,7 @@
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)
 #define KINETIS_FLASH_CONFIG  kinetis_flash_config
+#define TI_CCFG	.ti_ccfg
 #endif
 
 #include <section_tags.h>
