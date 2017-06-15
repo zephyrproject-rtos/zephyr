@@ -14,9 +14,3 @@ CFLAGS += -DTEST_$(TEST)
 endif
 
 include ${ZEPHYR_BASE}/Makefile.test
-
-ifeq ($(ARCH),ARM)
-  ifneq ($(TEST),min)
-    $(error 'reg' and 'max' test do not currently build for ARM)
-  endif
-endif
