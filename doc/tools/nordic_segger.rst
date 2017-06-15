@@ -1,3 +1,5 @@
+:orphan:
+
 .. _nordic_segger:
 
 Nordic nRF5x Segger J-Link
