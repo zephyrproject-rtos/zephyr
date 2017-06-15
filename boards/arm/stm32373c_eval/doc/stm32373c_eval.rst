@@ -7,7 +7,7 @@ Overview
 ********
 The STM32373C-EVAL evaluation board is designed as a complete demonstration and development platform for STMicroelectronics ARM Cortex-M4 core-based STM32F373VCT6 microcontroller.
 
-The full range of hardware features on the board can help the user evaluate all peripherals (USB FS, USART, audio DAC, microphone ADC, dot-matrix LCD, IrDA, LDR, MicroSD card, HDMI CEC, ECG, pressure sensor, CAN, IR transmitter and receiver, EEPROM, touch slider, temperature sensor, etc.) and develop their own applications. 
+The full range of hardware features on the board can help the user evaluate all peripherals (USB FS, USART, audio DAC, microphone ADC, dot-matrix LCD, IrDA, LDR, MicroSD card, HDMI CEC, ECG, pressure sensor, CAN, IR transmitter and receiver, EEPROM, touch slider, temperature sensor, etc.) and develop their own applications.
 
 Extension headers make it possible to easily connect a daughter board or wrapping board for a specific application.
 
@@ -120,7 +120,7 @@ Flashing
 
 STM32373C-EVAL board includes an ST-LINK/V2-1 embedded debug tool interface.
 At power-on, the board is in firmware-upgrade mode (also called DFU for
-"Device Firmware Upgrade”), allowing the firmware to be updated through the USB. 
+"Device Firmware Upgrade”), allowing the firmware to be updated through the USB.
 This interface is supported by the openocd version included in Zephyr SDK.
 
 Flashing an application to STM32373C-EVAL
