@@ -90,6 +90,15 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	gpio_pin_write(gpioa, 29, 1);
 #endif
 
+#ifdef CONFIG_BATTERY_SENSE
+	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	struct device *gpioc = device_get_binding(CONFIG_GPIO_MCUX_PORTC_NAME);
+
+	gpio_pin_configure(gpioc, 14, GPIO_DIR_OUT);
+	gpio_pin_write(gpioc, 14, 0);
+#endif
+
 	return 0;
 }
 
