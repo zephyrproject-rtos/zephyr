@@ -18,6 +18,8 @@ config SOC_RDA_DEBUG
 	bool
 	prompt "Use for RDA SOC DBG"
 	default n
+	help
+	say y if you want to print the verbose debugging messages.
 endif
 
 source "arch/arm/soc/rda_5981/*/Kconfig.soc"
