@@ -134,6 +134,8 @@ struct bt_hci_driver {
 	 * Send an HCI command or ACL data to the controller. The exact
 	 * type of the data can be checked with the help of bt_buf_get_type().
 	 *
+	 * @note This function must only be called from a cooperative thread.
+	 *
 	 * @param buf Buffer containing data to be sent to the controller.
 	 *
 	 * @return 0 on success or negative error number on failure.
