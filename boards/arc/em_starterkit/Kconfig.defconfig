@@ -4,4 +4,192 @@ if BOARD_EM_STARTERKIT
 config BOARD
 	default "em_starterkit"
 
+if GPIO
+
+config GPIO_DW
+	def_bool y
+
+if GPIO_DW
+
+config GPIO_DW_0
+	def_bool y
+
+if GPIO_DW_0
+
+config GPIO_DW_0_NAME
+	default "GPIO_PORTA"
+
+config GPIO_DW_0_IRQ_PRI
+	default 1
+
+endif # GPIO_DW_0
+
+config GPIO_DW_1
+	def_bool y
+
+if GPIO_DW_1
+
+config GPIO_DW_1_NAME
+	default "GPIO_PORTB"
+
+config GPIO_DW_1_IRQ_PRI
+	default 1
+
+endif # GPIO_DW_1
+
+config GPIO_DW_2
+	def_bool y
+
+if GPIO_DW_2
+
+config GPIO_DW_2_IRQ_PRI
+	default 1
+
+config GPIO_DW_2_NAME
+	default "GPIO_PORTC"
+
+endif # GPIO_DW_2
+
+config GPIO_DW_3
+	def_bool y
+
+if GPIO_DW_3
+
+config GPIO_DW_3_IRQ_PRI
+	default 1
+
+config GPIO_DW_3_NAME
+	default "GPIO_PORTD"
+
+endif # GPIO_DW_3
+
+endif # GPIO_DW
+
+endif # GPIO
+
+if I2C
+
+config I2C_DW
+	def_bool y
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 100
+
+config I2C_0
+	def_bool y
+
+if I2C_0
+
+config I2C_0_NAME
+	default "I2C_0"
+config I2C_0_DEFAULT_CFG
+	default 0x3
+config I2C_0_IRQ_PRI
+	default 1
+
+endif # I2C_0
+
+config I2C_1
+	def_bool y
+
+if I2C_1
+
+config I2C_1_NAME
+	default "I2C_1"
+config I2C_1_DEFAULT_CFG
+	default 0x3
+config I2C_1_IRQ_PRI
+	default 1
+
+endif # I2C_1
+
+endif # I2C_DW
+
+endif # I2C
+
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+	def_bool n
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_NAME
+	default "UART_0"
+config UART_NS16550_PORT_0_IRQ_PRI
+	default 1
+config UART_NS16550_PORT_0_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_1
+	def_bool y
+
+if UART_NS16550_PORT_1
+
+config UART_NS16550_PORT_1_NAME
+	default "UART_1"
+config UART_NS16550_PORT_1_IRQ_PRI
+	default 1
+config UART_NS16550_PORT_1_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_1_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_1
+
+endif # UART_NS16550
+
+if UART_CONSOLE
+
+config UART_CONSOLE_ON_DEV_NAME
+	default "UART_1"
+
+endif
+
+if SPI
+
+config SPI_DW
+	def_bool y
+
+if SPI_DW
+
+config SPI_DW_CLOCK_GATE
+	def_bool n
+
+config SPI_DW_FIFO_DEPTH
+	default 32
+
+config SPI_DW_ARC_AUX_REGS
+	def_bool n
+
+config SPI_0
+	def_bool y
+
+if SPI_0
+
+config SPI_0_IRQ_PRI
+	default 0
+
+endif # SPI_0
+
+config SPI_1
+	def_bool y
+
+if SPI_1
+
+config SPI_1_IRQ_PRI
+	default 0
+
+endif # SPI_1
+
+endif # SPI_DW
+
+endif # SPI
+
 endif # BOARD_EM_STARTERKIT
