@@ -19,7 +19,8 @@ config NUM_IRQ_PRIO_LEVELS
 
 config NUM_IRQS
 	# must be > the highest interrupt number used
-	default 38
+	default 38 if BOARD_EM_STARTERKIT_R23
+	default 36 if BOARD_EM_STARTERKIT_R22
 
 config RGF_NUM_BANKS
 	default 2
