@@ -1354,7 +1354,7 @@ class TestSuite:
                     if tc.tc_filter and (plat in arch.platforms[:platform_limit] or all_plats or platform_filter):
                         args = tc.extra_args[:]
                         args.extend(["ARCH=" + plat.arch.name,
-                                "BOARD=" + plat.name, "initconfig"])
+                                "BOARD=" + plat.name, "config-sanitycheck"])
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every  combination,
@@ -1362,8 +1362,8 @@ class TestSuite:
                         # each other since they all try to build them simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
-                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,".config")
-                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "initconfig"])
+                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,".config-sanitycheck")
+                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location), o, args)
 
         info("Building testcase defconfigs...")

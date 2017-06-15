@@ -40,7 +40,7 @@ config BLUETOOTH_H5
 
 config BLUETOOTH_SPI
 	bool "SPI HCI"
-	select SPI
+	depends on SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers,

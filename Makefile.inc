@@ -125,6 +125,9 @@ outputexports: initconfig
 dts: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 
+config-sanitycheck: dts
+	$(Q)$(call zephyrmake,$(O),$@)
+
 menuconfig: initconfig
 	$(Q)$(call zephyrmake,$(O),$@)
 
