@@ -1,3 +1,5 @@
+:orphan:
+
 .. _nxp_opensda:
 
 NXP OpenSDA
