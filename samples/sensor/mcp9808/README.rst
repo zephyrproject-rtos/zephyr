@@ -12,8 +12,9 @@ Sample application that periodically reads temperature from the MCP9808 sensor.
 Requirements
 ************
 
-The MCP9808 digital temperature sensor converts temperatures between -20°C and
-+100°C to a digital word with ±0.5°C (max.) accuracy. It is I2C compatible and
+The MCP9808 digital temperature sensor converts temperatures between -20 |deg|
+C and +100 |deg| C to a digital word with |plusminus| 0.5 |deg| C (max.)
+accuracy. It is I2C compatible and
 supports up to 16 devices on the bus. We do not require pullup resistors on the
 data or clock signals as they are already installed on the breakout board.
 

@@ -36,7 +36,8 @@ Hardware
 - SMA RF Connector
 - RF regulatory certified
 - Serial Flash for OTA firmware upgrades
-- On board NXP FXOS8700CQ digital sensor, 3D Accelerometer (±2g/±4g/±8g) + 3D
+- On board NXP FXOS8700CQ digital sensor, 3D Accelerometer ( |plusminus| 2g/
+  |plusminus| 4g/ |plusminus| 8g) + 3D
   Magnetometer
 - OpenSDA and JTAG debug
 

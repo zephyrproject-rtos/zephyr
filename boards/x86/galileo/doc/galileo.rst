@@ -58,9 +58,9 @@ This board supports the following hardware features:
 +-----------+------------+-----------------------+
 
 The kernel currently does not support other hardware features.
-See the `Intel® Quark Core Hardware Reference Manual`_ for a
+See the `Intel |reg| Quark Core Hardware Reference Manual`_ for a
 complete list of Galileo board hardware features, and the
-`Intel® Quark Software Developer Manual for Linux`_
+`Intel |reg| Quark Software Developer Manual for Linux`_
 
 
 PCI
@@ -81,7 +81,7 @@ Serial Port Polling Mode Support
 
 The polling mode serial port allows debug output to be printed.
 
-For more information, see `Intel® Quark SoC X1000 Datasheet`_,
+For more information, see `Intel |reg| Quark SoC X1000 Datasheet`_,
 section 18.3.3 FIFO Polled-Mode Operation
 
 
@@ -91,7 +91,7 @@ Serial Port Interrupt Mode Support
 The interrupt mode serial port provides general serial communication
 and external communication.
 
-For more information, see `Intel® Quark SoC X1000 Datasheet`_, section 21.12.1.4.5 Poll Mode
+For more information, see `Intel |reg| Quark SoC X1000 Datasheet`_, section 21.12.1.4.5 Poll Mode
 
 
 Interrupt Controller
@@ -124,18 +124,18 @@ pair of receive and transmit buffers and descriptors.  The driver
 operates the network interface in store-and-forward mode and enables
 the receive interrupt.
 
-For more information, see `Intel® Quark SoC X1000 Datasheet`_,
+For more information, see `Intel |reg| Quark SoC X1000 Datasheet`_,
 section 15.0 10/100 Mbps Ethernet
 
 Connections and IOs
 ===================
 
 For a component layout diagram showing pin names, see page 46 of the
-`Intel® Quark SoC X1000 Datasheet`_.
+`Intel |reg| Quark SoC X1000 Datasheet`_.
 
-See also the `Intel® Galileo Datasheet`_.
+See also the `Intel |reg| Galileo Datasheet`_.
 
-For the Galileo Board Connection Diagram see page 9 of the `Intel® Galileo Board User Guide`_.
+For the Galileo Board Connection Diagram see page 9 of the `Intel |reg| Galileo Board User Guide`_.
 
 
 Jumpers & Switches
@@ -155,7 +155,7 @@ The Galileo default switch settings are:
 +--------+--------------+
 
 For more information, see page 14 of the
-`Intel® Galileo Board User Guide`_.
+`Intel |reg| Galileo Board User Guide`_.
 
 
 Memory Mappings
@@ -165,17 +165,17 @@ This board configuration uses default hardware memory map
 addresses and sizes.
 
 For a list of memory mapped registers, see page 868 of the
-`Intel® Quark SoC X1000 Datasheet`_.
+`Intel |reg| Quark SoC X1000 Datasheet`_.
 
 
 Component Layout
 ================
 
-See page 3 of the Intel® Galileo Datasheet for a component layout
-diagram. Click the link to open the `Intel® Galileo Datasheet`_.
+See page 3 of the Intel |reg| Galileo Datasheet for a component layout
+diagram. Click the link to open the `Intel |reg| Galileo Datasheet`_.
 
 
-For a block diagram, see page 38 of the `Intel® Quark SoC X1000 Datasheet`_.
+For a block diagram, see page 38 of the `Intel |reg| Quark SoC X1000 Datasheet`_.
 
 
 Programming and Debugging
@@ -343,27 +343,27 @@ At this time, the kernel does not support the following:
 Bibliography
 ************
 
-1. `Intel® Galileo Datasheet`_, Order Number: 329681-003US
+1. `Intel |reg| Galileo Datasheet`_, Order Number: 329681-003US
 
-.. _Intel® Galileo Datasheet:
+.. _Intel |reg| Galileo Datasheet:
    https://www.intel.com/content/dam/support/us/en/documents/galileo/sb/galileo_datasheet_329681_003.pdf
 
-2. `Intel® Galileo Board User Guide`_.
+2. `Intel |reg| Galileo Board User Guide`_.
 
-.. _Intel® Galileo Board User Guide:
+.. _Intel |reg| Galileo Board User Guide:
    http://download.intel.com/support/galileo/sb/galileo_boarduserguide_330237_001.pdf
 
-3. `Intel® Quark SoC X1000 Datasheet`_, Order Number: 329676-001US
+3. `Intel |reg| Quark SoC X1000 Datasheet`_, Order Number: 329676-001US
 
-.. _Intel® Quark SoC X1000 Datasheet:
+.. _Intel |reg| Quark SoC X1000 Datasheet:
    https://communities.intel.com/servlet/JiveServlet/previewBody/21828-102-2-25120/329676_QuarkDatasheet.pdf
 
-4. `Intel® Quark Core Hardware Reference Manual`_.
+4. `Intel |reg| Quark Core Hardware Reference Manual`_.
 
-.. _Intel® Quark Core Hardware Reference Manual:
+.. _Intel |reg| Quark Core Hardware Reference Manual:
    http://caxapa.ru/thumbs/497461/Intel_Quark_Core_HWRefMan_001.pdf
 
-5. `Intel® Quark Software Developer Manual for Linux`_.
+5. `Intel |reg| Quark Software Developer Manual for Linux`_.
 
-.. _Intel® Quark Software Developer Manual for Linux:
+.. _Intel |reg| Quark Software Developer Manual for Linux:
    http://www.intel.com/content/dam/www/public/us/en/documents/manuals/quark-x1000-linux-sw-developers-manual.pdf

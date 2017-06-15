@@ -136,9 +136,9 @@ rst_epilog = """
 .. |deg|    unicode:: U+000B0 .. DEGREE SIGN
    :ltrim:
 .. |plusminus|  unicode:: U+000B1 .. PLUS-MINUS SIGN
-   :trim:
+   :rtrim:
 .. |micro|  unicode:: U+000B5 .. MICRO SIGN
-   :trim:
+   :rtrim:
 """
 
 # -- Options for HTML output ----------------------------------------------
