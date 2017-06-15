@@ -1,7 +1,7 @@
 VERSION_MAJOR 	   = 1
 VERSION_MINOR 	   = 8
 PATCHLEVEL 	   = 0
-VERSION_RESERVED   = rc4
+VERSION_RESERVED   =
 EXTRAVERSION       =
 NAME 		   = Zephyr Kernel
 
