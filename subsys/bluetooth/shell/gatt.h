@@ -13,6 +13,7 @@
 #ifndef __GATT_H
 #define __GATT_H
 
+int cmd_gatt_show_db(int argc, char *argv[]);
 int cmd_gatt_exchange_mtu(int argc, char *argv[]);
 int cmd_gatt_discover(int argc, char *argv[]);
 int cmd_gatt_read(int argc, char *argv[]);
