@@ -117,9 +117,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
 	    ((pdu->type == PDU_ADV_TYPE_ADV_IND) ||
-	     (pdu->type == PDU_ADV_TYPE_DIRECT_IND) ||
-	     (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT) &&
-	      (pdu->type == PDU_ADV_TYPE_EXT_IND)))) {
+	     (pdu->type == PDU_ADV_TYPE_DIRECT_IND))) {
 		pdu->chan_sel = 1;
 	} else {
 		pdu->chan_sel = 0;
@@ -266,10 +264,8 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 	pdu->type = prev->type;
 	pdu->rfu = 0;
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2) &&
-	    ((pdu->type == PDU_ADV_TYPE_ADV_IND) ||
-	     (pdu->type == PDU_ADV_TYPE_DIRECT_IND))) {
-		pdu->chan_sel = 1;
+	if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)) {
+		pdu->chan_sel = prev->chan_sel;
 	} else {
 		pdu->chan_sel = 0;
 	}
