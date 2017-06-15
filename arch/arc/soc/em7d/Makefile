@@ -10,3 +10,7 @@ soc-cflags += $(call cc-option,-mcpu=em4_dmips -mno-sdata) \
 ifeq ($(CONFIG_CODE_DENSITY), y)
 soc-cflags += $(call cc-option,-mcode-density)
 endif
+
+ifeq ($(CONFIG_BOARD_EM_STARTERKIT_R23), y)
+$(error em7d from em starterkit 2.3 is not supported)
+endif
