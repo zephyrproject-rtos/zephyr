@@ -11,6 +11,8 @@
  *
  * Driver for Stellaris UART found namely on TI LM3S6965 board. It is similar to
  * an 16550 in functionality, but is not register-compatible.
+ * It is also register-compatible with the UART found on TI CC2650 SoC,
+ * so it can be used for boards using it, like the TI SensorTag.
  *
  * There is only support for poll-mode, so it can only be used with the printk
  * and STDOUT_CONSOLE APIs.
@@ -653,7 +655,7 @@ static void irq_config_func_0(struct device *dev)
 	IRQ_CONNECT(TI_STELLARIS_UART_4000C000_IRQ_0,
 		    TI_STELLARIS_UART_4000C000_IRQ_0_PRIORITY,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris0),
-		    UART_IRQ_FLAGS);
+		    0);
 	irq_enable(TI_STELLARIS_UART_4000C000_IRQ_0);
 }
 #endif
@@ -690,7 +692,7 @@ static void irq_config_func_1(struct device *dev)
 	IRQ_CONNECT(TI_STELLARIS_UART_4000D000_IRQ_0,
 		    TI_STELLARIS_UART_4000D000_IRQ_0_PRIORITY,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris1),
-		    UART_IRQ_FLAGS);
+		    0);
 	irq_enable(TI_STELLARIS_UART_4000D000_IRQ_0);
 }
 #endif
@@ -727,7 +729,7 @@ static void irq_config_func_2(struct device *dev)
 	IRQ_CONNECT(TI_STELLARIS_UART_4000E000_IRQ_0,
 		    TI_STELLARIS_UART_4000E000_IRQ_0_PRIORITY,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris2),
-		    UART_IRQ_FLAGS);
+		    0);
 	irq_enable(TI_STELLARIS_UART_4000E000_IRQ_0);
 }
 #endif
