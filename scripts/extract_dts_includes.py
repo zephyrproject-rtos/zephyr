@@ -722,8 +722,7 @@ def main():
                      "PARTITION", 1, 'offset')
     part_base = lookup_defs(part_defs, chosen['zephyr,code-partition'],
                      'PARTITION_OFFSET')
-    load_defs['CONFIG_FLASH_LOAD_OFFSET'] = \
-            hex(int(part_base, 16) - int(flash_base, 16))
+    load_defs['CONFIG_FLASH_LOAD_OFFSET'] = part_base
     load_defs['CONFIG_FLASH_LOAD_SIZE'] = \
             lookup_defs(part_defs, chosen['zephyr,code-partition'],
                         'PARTITION_SIZE')
