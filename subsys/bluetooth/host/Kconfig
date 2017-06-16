@@ -74,8 +74,10 @@ config BLUETOOTH_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	depends on BLUETOOTH_HCI_HOST || BLUETOOTH_RECV_IS_RX_THREAD
 	default 1024
+	default 2048 if BLUETOOTH_MESH
 	default 512 if CONFIG_BLUETOOTH_HCI_RAW
 	range 1024 65536
+	range 1100 65536 if BLUETOOTH_MESH
 	range 512 65536 if CONFIG_BLUETOOTH_HCI_RAW
 	help
 	  Size of the receiving thread stack. This is the context from
@@ -92,6 +94,9 @@ config BLUETOOTH_RX_PRIO
 	default 8
 
 if BLUETOOTH_HCI_HOST
+
+source "subsys/bluetooth/host/mesh/Kconfig"
+
 config BLUETOOTH_HOST_CRYPTO
 	# Hidden option that compiles in random number generation and AES
 	# encryption support using TinyCrypt library if software-based
