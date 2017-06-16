@@ -1,0 +1,22 @@
+---
+# SPDX-License-Identifier: Apache-2.0
+title: TI CC2650 PRCM
+version: 0.1
+
+description: >
+    This binding gives a base representation of the TI CC2650
+    Power, Reset, and Clock control Module.
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "ti,cc2650-prcm"
+
+  - reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+...
