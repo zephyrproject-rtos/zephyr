@@ -13,7 +13,7 @@ export ALL_LIBS += mylib
 
 include ${ZEPHYR_BASE}/Makefile.inc
 
-all qemu zephyr : all-mylib
+all qemu flash zephyr : all-mylib
 clean pristine mrproper : clean-mylib
 all-mylib: outputexports
 

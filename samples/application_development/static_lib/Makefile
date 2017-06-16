@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-all qemu pristine clean:
+all qemu flash pristine clean:
 	$(MAKE) -C hello_world $@
 
 run : qemu
