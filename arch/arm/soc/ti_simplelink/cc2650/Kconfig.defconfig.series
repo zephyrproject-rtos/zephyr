@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kconfig.defconfig.series - TI SimpleLink CC2650
+#
+
+if SOC_SERIES_CC2650
+
+config SOC_SERIES
+	default cc2650
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+config NUM_IRQS
+	default 34
+
+endif # SOC_SERIES_CC2650
