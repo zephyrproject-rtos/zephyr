@@ -1,5 +1,5 @@
 identifier: 96b_nitrogen
-name: 96b_nitrogen
+name: 96Boards Nitrogen
 type: mcu
 arch: arm
 toolchain:

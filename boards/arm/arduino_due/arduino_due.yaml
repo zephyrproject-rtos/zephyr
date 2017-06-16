@@ -1,5 +1,5 @@
 identifier: arduino_due
-name: arduino_due
+name: Arduino Due
 type: mcu
 arch: arm
 toolchain:

@@ -1,5 +1,5 @@
 identifier: olimexino_stm32
-name: olimexino_stm32
+name: OLIMEXINO-STM32
 type: mcu
 arch: arm
 toolchain:

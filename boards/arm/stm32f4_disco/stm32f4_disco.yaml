@@ -1,5 +1,5 @@
 identifier: stm32f4_disco
-name: stm32f4_disco
+name: STM32F4DISCOVERY
 type: mcu
 arch: arm
 toolchain:

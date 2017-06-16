@@ -1,5 +1,5 @@
 identifier: nrf51_blenano
-name: nrf51_blenano
+name: BLE Nano
 type: mcu
 arch: arm
 toolchain:

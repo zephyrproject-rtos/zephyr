@@ -1,5 +1,5 @@
 identifier: nrf52_pca10040
-name: nrf52_pca10040
+name: nRF52-PCA10040
 type: mcu
 arch: arm
 toolchain:

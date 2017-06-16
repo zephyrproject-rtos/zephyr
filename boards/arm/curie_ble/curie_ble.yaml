@@ -1,5 +1,5 @@
 identifier: curie_ble
-name: curie_ble
+name: Intel Curie (nRF51)
 type: mcu
 arch: arm
 toolchain:

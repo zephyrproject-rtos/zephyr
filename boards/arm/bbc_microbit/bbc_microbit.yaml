@@ -1,5 +1,5 @@
 identifier: bbc_microbit
-name: bbc_microbit
+name: BBC Micro:Bit
 type: mcu
 arch: arm
 toolchain:
