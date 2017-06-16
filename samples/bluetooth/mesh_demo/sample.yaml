@@ -1,0 +1,14 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test_x86:
+        arch_whitelist: x86
+        build_only: true
+        filter: CONFIG_SOC == "ia32"
+        tags: bluetooth
+-   test_arm:
+        arch_whitelist: arm
+        build_only: true
+        platform_exclude: arduino_due
+        tags: bluetooth

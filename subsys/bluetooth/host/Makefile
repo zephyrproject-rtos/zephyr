@@ -34,3 +34,5 @@ obj-$(CONFIG_BLUETOOTH_HFP_HF) += at.o hfp_hf.o
 obj-$(CONFIG_BLUETOOTH_AVDTP) += avdtp.o
 
 obj-$(CONFIG_BLUETOOTH_A2DP) += a2dp.o
+
+obj-$(CONFIG_BLUETOOTH_MESH) += mesh/

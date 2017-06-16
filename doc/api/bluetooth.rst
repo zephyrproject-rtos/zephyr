@@ -36,6 +36,13 @@ Generic Attribute Profile (GATT)
    :project: Zephyr
    :content-only:
 
+Mesh Profile
+************
+
+.. doxygengroup:: bt_mesh
+   :project: Zephyr
+   :content-only:
+
 Universal Unique Identifiers (UUIDs)
 ************************************
 
