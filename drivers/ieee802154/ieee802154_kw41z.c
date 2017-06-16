@@ -314,7 +314,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	/* PKT_BUFFER_RX needs to be accessed alligned to 16 bits */
 	for (i = 0; i < pkt_len; i++) {
 		if (i % 2 == 0) {
-			reg_val = *(((u16_t *)ZLL->PKT_BUFFER_RX) + i/2);
+			reg_val = ZLL->PKT_BUFFER_RX[i/2];
 			frag->data[i] = reg_val & 0xFF;
 		} else {
 			frag->data[i] = reg_val >> 8;
