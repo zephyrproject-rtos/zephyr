@@ -7,6 +7,18 @@
 /**
  * @file Sample app to utilize GPIO on Arduino 101 and Arduino Due.
  *
+ * Sensortag CC2650 - ARM
+ * --------------------
+ *
+ * LED1 is on DIO_10
+ * LED2 is on DIO_15
+ * BUTTON1 is on DIO_4
+ * BUTTON2 is on DIO_0
+ *
+ * This sample toogles LED1 and wait interrupt on BUTTON1.
+ * Note that an internet pull-up is set on BUTTON1 as the button
+ * only drives low when pressed.
+ *
  * Arduino 101 - x86
  * --------------------
  *
@@ -122,6 +134,10 @@
 #define GPIO_OUT_PIN	8
 #define GPIO_INT_PIN	24
 #define GPIO_NAME	"GPIO_"
+#elif defined(CONFIG_SOC_CC2650)
+#define GPIO_OUT_PIN	10
+#define GPIO_INT_PIN	4
+#define GPIO_NAME	"GPIO_"
 #endif
 
 #if defined(CONFIG_GPIO_DW_0)
@@ -163,9 +179,17 @@ void main(void)
 	}
 
 	/* Setup GPIO input, and triggers on rising edge. */
+#ifdef CONFIG_SOC_CC2650
 	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN,
-			(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-			 | GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE));
+				 (GPIO_DIR_IN | GPIO_INT |
+				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
+				  GPIO_INT_DEBOUNCE | GPIO_PUD_PULL_UP));
+#else
+	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN,
+				 (GPIO_DIR_IN | GPIO_INT |
+				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
+				  GPIO_INT_DEBOUNCE));
+#endif
 	if (ret) {
 		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_INT_PIN);
 	}
