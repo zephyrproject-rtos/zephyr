@@ -129,6 +129,16 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_IPSS                      BT_UUID_DECLARE_16(0x1820)
 #define BT_UUID_IPSS_VAL                  0x1820
+/** @def BT_UUID_MESH_PROV
+ *  @brief Mesh Provisioning Service
+ */
+#define BT_UUID_MESH_PROV                 BT_UUID_DECLARE_16(0x1827)
+#define BT_UUID_MESH_PROV_VAL             0x1827
+/** @def BT_UUID_MESH_PROXY
+ *  @brief Mesh Proxy Service
+ */
+#define BT_UUID_MESH_PROXY                BT_UUID_DECLARE_16(0x1828)
+#define BT_UUID_MESH_PROXY_VAL            0x1828
 /** @def BT_UUID_GATT_PRIMARY
  *  @brief GATT Primary Service
  */
@@ -434,6 +444,26 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BAR_PRESSURE_TREND        BT_UUID_DECLARE_16(0x2aa3)
 #define BT_UUID_BAR_PRESSURE_TREND_VAL    0x2aa3
+/** @def BT_UUID_MESH_PROV_DATA_IN
+ *  @brief Mesh Provisioning Data In
+ */
+#define BT_UUID_MESH_PROV_DATA_IN         BT_UUID_DECLARE_16(0x2adb)
+#define BT_UUID_MESH_PROV_DATA_IN_VAL     0x2adb
+/** @def BT_UUID_MESH_PROV_DATA_OUT
+ *  @brief Mesh Provisioning Data Out
+ */
+#define BT_UUID_MESH_PROV_DATA_OUT        BT_UUID_DECLARE_16(0x2adc)
+#define BT_UUID_MESH_PROV_DATA_OUT_VAL    0x2adc
+/** @def BT_UUID_MESH_PROXY_DATA_IN
+ *  @brief Mesh Proxy Data In
+ */
+#define BT_UUID_MESH_PROXY_DATA_IN        BT_UUID_DECLARE_16(0x2add)
+#define BT_UUID_MESH_PROXY_DATA_IN_VAL    0x2add
+/** @def BT_UUID_MESH_PROXY_DATA_OUT
+ *  @brief Mesh Proxy Data Out
+ */
+#define BT_UUID_MESH_PROXY_DATA_OUT       BT_UUID_DECLARE_16(0x2ade)
+#define BT_UUID_MESH_PROXY_DATA_OUT_VAL   0x2ade
 
 /*
  * Protocol UUIDs
