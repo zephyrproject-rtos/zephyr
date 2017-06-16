@@ -141,24 +141,31 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *p;
-		struct ext_adv_hdr *h;
-		u8_t *ptr;
+		struct ext_adv_hdr _h, *h;
+		u8_t *_ptr, *ptr;
 		u8_t len;
 
 		p = (void *)&pdu->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
 		ptr = (u8_t *)h + sizeof(*h);
+		_ptr = ptr;
 
 		/* No ACAD and no AdvData */
 		p->ext_hdr_len = 0;
 		p->adv_mode = evt_prop & 0x03;
 
 		/* Zero-init header flags */
+		*(u8_t *)&_h = *(u8_t *)h;
 		*(u8_t *)h = 0;
 
 		/* AdvA flag */
-		if (!(evt_prop & BIT(5)) && !p->adv_mode && (phy_p != BIT(2))) {
-			/* TODO: optional on 1M */
+		if (_h.adv_addr) {
+			_ptr += BDADDR_SIZE;
+		}
+		if (!p->adv_mode &&
+		    (!_h.aux_ptr ||
+		     (!(evt_prop & BIT(5)) && (phy_p != BIT(2))))) {
+			/* TODO: optional on 1M with Aux Ptr */
 			h->adv_addr = 1;
 
 			/* NOTE: AdvA is filled at enable */
@@ -167,14 +174,23 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* TODO: TargetA flag */
 
-		/* TODO: ADI flag */
+		/* ADI flag */
+		if (_h.adi) {
+			h->adi = 1;
+			ptr += sizeof(struct ext_adv_adi);
+		}
 
-		/* TODO: AuxPtr flag */
+		/* AuxPtr flag */
+		if (_h.aux_ptr) {
+			h->aux_ptr = 1;
+			ptr += sizeof(struct ext_adv_aux_ptr);
+		}
 
-		/* TODO: SyncInfo flag */
+		/* No SyncInfo flag in primary channel PDU */
 
 		/* Tx Power flag */
-		if (evt_prop & BIT(6)) {
+		if (evt_prop & BIT(6) &&
+		    (!_h.aux_ptr || (phy_p != BIT(2)))) {
 			h->tx_pwr = 1;
 			ptr++;
 		}
@@ -194,9 +210,9 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* Start filling primary PDU payload based on flags */
 
-		/* TODO: AdvData */
+		/* No AdvData in primary channel PDU */
 
-		/* TODO: ACAD */
+		/* No ACAD in primary channel PDU */
 
 		/* Tx Power */
 		if (h->tx_pwr) {
@@ -215,11 +231,32 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			*ptr = _tx_pwr;
 		}
 
-		/* TODO: SyncInfo */
+		/* No SyncInfo in primary channel PDU */
 
-		/* TODO: AuxPtr */
+		/* AuxPtr */
+		if (h->aux_ptr) {
+			struct ext_adv_aux_ptr *aux;
 
-		/* TODO: ADI */
+			ptr -= sizeof(struct ext_adv_aux_ptr);
+
+			/* NOTE: Channel Index, CA, Offset Units and AUX Offset
+			 * will be set in Advertiser Event.
+			 */
+			aux = (void *)ptr;
+			aux->phy = find_lsb_set(phy_s);
+		}
+
+		/* ADI */
+		if (h->adi) {
+			struct ext_adv_adi *adi;
+
+			ptr -= sizeof(struct ext_adv_adi);
+			/* NOTE: memcpy shall handle overlapping buffers */
+			memcpy(ptr, _ptr, sizeof(struct ext_adv_adi));
+
+			adi = (void *)ptr;
+			adi->sid = sid;
+		}
 
 		/* NOTE: TargetA, filled at enable and RPA timeout */
 
