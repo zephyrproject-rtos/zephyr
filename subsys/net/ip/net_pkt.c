@@ -1588,12 +1588,6 @@ int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
 		return 0;
 	}
 
-	if (len > net_buf_tailroom(*fragA)) {
-		NET_DBG("Length %u is larger than fragment size %zd",
-			len, net_buf_tailroom(*fragA));
-		return -EINVAL;
-	}
-
 	if (len > orig_frag->len) {
 		*fragA = net_pkt_get_frag(pkt, timeout);
 		if (!*fragA) {
