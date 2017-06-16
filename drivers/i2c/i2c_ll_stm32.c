@@ -40,8 +40,8 @@ static int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
-static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *message,
-				u8_t messages, u16_t slave)
+static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
+			      u8_t num_msgs, u16_t slave)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_msg *current, *next;
@@ -50,14 +50,15 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *message,
 
 	LL_I2C_Enable(i2c);
 
-	current = message;
-	while (messages > 0) {
+	current = msg;
+	while (num_msgs > 0) {
 		unsigned int flags = 0;
 
 		if (current->len > 255)
 			return -EINVAL;
 
-		if (messages > 1) {
+		/* do NOT issue the i2c stop condition at the end of transfer */
+		if (num_msgs > 1) {
 			next = current + 1;
 			if (OPERATION(current) != OPERATION(next)) {
 				flags = I2C_MSG_RESTART;
@@ -74,7 +75,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *message,
 			break;
 		}
 
-		NEXT(current, messages);
+		NEXT(current, num_msgs);
 	};
 
 	LL_I2C_Disable(i2c);
@@ -139,11 +140,11 @@ DEVICE_AND_API_INIT(i2c_stm32_1, CONFIG_I2C_1_NAME, &i2c_stm32_init,
 static void i2c_stm32_irq_config_func_1(struct device *dev)
 {
 	IRQ_CONNECT(I2C1_EV_IRQn, CONFIG_I2C_1_IRQ_PRI,
-		i2c_stm32_ev_isr, DEVICE_GET(i2c_stm32_1), 0);
+		   i2c_stm32_event_isr, DEVICE_GET(i2c_stm32_1), 0);
 	irq_enable(I2C1_EV_IRQn);
 
 	IRQ_CONNECT(I2C1_ER_IRQn, CONFIG_I2C_1_IRQ_PRI,
-		i2c_stm32_er_isr, DEVICE_GET(i2c_stm32_1), 0);
+		   i2c_stm32_error_isr, DEVICE_GET(i2c_stm32_1), 0);
 	irq_enable(I2C1_ER_IRQn);
 }
 #endif
@@ -180,16 +181,18 @@ DEVICE_AND_API_INIT(i2c_stm32_2, CONFIG_I2C_2_NAME, &i2c_stm32_init,
 static void i2c_stm32_irq_config_func_2(struct device *dev)
 {
 	IRQ_CONNECT(I2C2_EV_IRQn, CONFIG_I2C_2_IRQ_PRI,
-		i2c_stm32_ev_isr, DEVICE_GET(i2c_stm32_2), 0);
+		   i2c_stm32_event_isr, DEVICE_GET(i2c_stm32_2), 0);
 	irq_enable(I2C2_EV_IRQn);
 
 	IRQ_CONNECT(I2C2_ER_IRQn, CONFIG_I2C_2_IRQ_PRI,
-		i2c_stm32_er_isr, DEVICE_GET(i2c_stm32_2), 0);
+		   i2c_stm32_error_isr, DEVICE_GET(i2c_stm32_2), 0);
 	irq_enable(I2C2_ER_IRQn);
 }
 #endif
 
 #endif /* CONFIG_I2C_2 */
+
+#ifdef I2C3_BASE
 
 #ifdef CONFIG_I2C_3
 
@@ -221,13 +224,15 @@ DEVICE_AND_API_INIT(i2c_stm32_3, CONFIG_I2C_3_NAME, &i2c_stm32_init,
 static void i2c_stm32_irq_config_func_3(struct device *dev)
 {
 	IRQ_CONNECT(I2C3_EV_IRQn, CONFIG_I2C_3_IRQ_PRI,
-		i2c_stm32_ev_isr, DEVICE_GET(i2c_stm32_3), 0);
+		   i2c_stm32_event_isr, DEVICE_GET(i2c_stm32_3), 0);
 	irq_enable(I2C3_EV_IRQn);
 
 	IRQ_CONNECT(I2C3_ER_IRQn, CONFIG_I2C_3_IRQ_PRI,
-		i2c_stm32_er_isr, DEVICE_GET(i2c_stm32_3), 0);
+		   i2c_stm32_error_isr, DEVICE_GET(i2c_stm32_3), 0);
 	irq_enable(I2C3_ER_IRQn);
 }
 #endif
 
 #endif /* CONFIG_I2C_3 */
+
+#endif /* SOC_SERIES_STM32F1X */
