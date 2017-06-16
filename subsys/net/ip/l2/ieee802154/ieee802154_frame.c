@@ -38,8 +38,7 @@ const u8_t level_2_tag_size[4] = {
 };
 #endif
 
-static inline struct ieee802154_fcf_seq *
-validate_fc_seq(u8_t *buf, u8_t **p_buf)
+struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(u8_t *buf, u8_t **p_buf)
 {
 	struct ieee802154_fcf_seq *fs = (struct ieee802154_fcf_seq *)buf;
 
@@ -81,7 +80,10 @@ validate_fc_seq(u8_t *buf, u8_t **p_buf)
 		return NULL;
 	}
 #endif
-	*p_buf = buf + 3;
+
+	if (p_buf) {
+		*p_buf = buf + 3;
+	}
 
 	return fs;
 }
@@ -378,7 +380,7 @@ bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 		return false;
 	}
 
-	mpdu->mhr.fs = validate_fc_seq(buf, &p_buf);
+	mpdu->mhr.fs = ieee802154_validate_fc_seq(buf, &p_buf);
 	if (!mpdu->mhr.fs) {
 		return false;
 	}
