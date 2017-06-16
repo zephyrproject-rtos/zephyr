@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kconfig - TI CC2650 SensorTag configuration
+#
+
+if BOARD_CC2650_SENSORTAG
+
+endif # BOARD_CC2650_SENSORTAG
