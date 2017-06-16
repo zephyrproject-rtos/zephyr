@@ -343,10 +343,10 @@ At this time, the kernel does not support the following:
 Bibliography
 ************
 
-1. `Intel® Galileo Datasheet`_, Order Number: 329681-001US
+1. `Intel® Galileo Datasheet`_, Order Number: 329681-003US
 
 .. _Intel® Galileo Datasheet:
-   http://www.intel.com/newsroom/kits/quark/galileo/pdfs/Intel_Galileo_Datasheet.pdf
+   https://www.intel.com/content/dam/support/us/en/documents/galileo/sb/galileo_datasheet_329681_003.pdf
 
 2. `Intel® Galileo Board User Guide`_.
 
@@ -356,8 +356,7 @@ Bibliography
 3. `Intel® Quark SoC X1000 Datasheet`_, Order Number: 329676-001US
 
 .. _Intel® Quark SoC X1000 Datasheet:
-   https://communities.intel.com/servlet/JiveServlet/previewBody/
-   21828-102-2-25120/329676_QuarkDatasheet.pdf
+   https://communities.intel.com/servlet/JiveServlet/previewBody/21828-102-2-25120/329676_QuarkDatasheet.pdf
 
 4. `Intel® Quark Core Hardware Reference Manual`_.
 

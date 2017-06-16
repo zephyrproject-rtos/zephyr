@@ -5,17 +5,14 @@ Zephyr Kernel 1.8.0
 
 We are pleased to announce the release of Zephyr kernel version 1.8.0.
 
-This release ... (overview paragraph of major changes goes here)...
-
 Major enhancements with this release include:
 
 * Tickless kernel
 * IP Stack improvements
 * Bluetooth 5.0 features
-* Ecosystem: Tracing, debugging support through third-party tools
+* Ecosystem: Tracing, debugging support through third-party tools (openocd,
+  Segger Systemview)
 * Improved build support on Mac and Windows development environments
-* Improved debug support
-* Third-Party compilers support
 * Xtensa GCC support
 * Initial implementation of MMU/MPU support
 * Expanded device support
@@ -25,53 +22,162 @@ The following sections provide detailed lists of changes by component.
 Kernel
 ******
 
-* Interesting change
+* Use k_cycle_get_32 instead of sys_cycle_get_32 for Kernel
+* Added k_panic() and k_oops() APIs for Kernel
+* Added k_thread_create() API for Kernel
+* Added k_queue API for Kernel
+* Add tickless kernel support
 
 Architectures
 *************
 
+* arm: Update core to use struct k_thread
+* arm: Added ARM MPU support
+* dts: Added ARM CMSDK support
+* arm: Added Initial support for NXP MPU
+* arm: Added Device Tree Support for nRF52832 SoC based boards
+* arm: Fixed nRF52840-QIAA SoC support for device tree
+* arm: Added Device Tree Support for nRF52840 SoC & boards
+* arm: Added Device Tree Support for nRF51822 SoC & boards
+* dts: Introduced st/mem.h for FLASH & SRAM sizes
+* dts: Put IRQ priority into the interrupt property
+* arm: Support for MKL25Z soc
+* arm: Added FPU support
+* x86: defined MMU data structures
 * Support for ARC EM Starter Kit version 2.3 added
+
+
 
 Boards
 ******
 
-* Interesting change
+* Added qemu_xtensa board definition
+* Added a more informative page fault handler x86 board
+* xtensa: build similar to other Zephyr arches
+* Define MMU data structures for x86 board
+* Added support for board disco_l475_iot1
+* Added STM32F413 Nucleo board
+* Added support for the CC3220SF_LAUNCHXL board
+* Support for new ARM board FRDM-KL25Z
+* arduino_101 board enable GPIO by default
+* boards: convert to using newly introduced integer sized types
+* arm: Added support for Nucleo L432KC board
+* arm: Added support for STM32L496G Discovery board
+* arm: Added support for STM32F469I-DISCO board
+* BBC micro:bit: Added driver & API for the 5x5 LED display
 
 Drivers and Sensors
 *******************
 
 * UART interrupt-driver API is better defined
 * Support for pull-style console API
+* nRF5 IEEE 802.15.4 radio driver added
+* KW41Z IEEE 802.15.4 radio driver added
+* Added MCUX TRNG driver
+* Added support for the SiFive Freedom E310 pinmux driver
+* drivers/sensor: Convert formatter strings to use PRI defines
+* Added lps22hb sensor driver
+* Added lsm6dsl sensor driver
+* Added heart rate sensor driver
+* Added support for max30101 heart rate sensor
+* Added support for lis2dh accelerometer
 
 Networking
 **********
 
-* Interesting change
+* HTTPS server support added
+* HTTP Basic-Auth support added
+* IPv6 fragmentation support added
+* Add block wise support to CoAP for well-known response
+* Big refactoring of network buffer handling
+* Start to collect TCP statistics if enabled in config
+* IEEE 802.15.4 security support added
+* DNS resolver sample application added
+* IPv6 multicast listener (MLDv2) support added
+* NATS protocol sample application added
+* HTTP client and server connectivity fixes
+* Network samples Coverity fixes
+* Network samples llvm compiler warning fixes
+* MQTT publisher connectivity fixes
+* 6lo IPv6 header compression fixes
+* CoAP connectivity fixes
+* DHCPv4 connectivity fixes
+* TCP connectivity fixes
+* DNS documentation and connectivity fixes
+* IPv6 connectivity fixes
+* IPv4 ARP fixes
+* IEEE 802.15.4 configuration tweaking fixes
+* Remove ORFD (Overly Reduced Function Device) 802.15.4 support
+* Network offloading driver fixes
+* Fix various memory leaks
+* Properly check TCP and UDP checksum before accepting packet
+* Start RX and TX network threads in proper order
+* Network samples documentation fixes and clarifications
+* RPL mesh routing fixes
+* Network link (MAC) address fixes
 
 Bluetooth
 *********
 
-* Interesting change
+* Host: Added ATT and SMP packet tracking for flow control enforcement
+* Host: GATT database changed to a linked list in preparation for dynamic allocation
+* Bluetooth 5.0: The Controller reports itself as 5.0-capable
+* Bluetooth 5.0: Introduced Channel Selection Algorithm #2 support
+* Bluetooth 5.0: Added Multiple PHY support, both 2Mbit/s and long-range coded
+* Bluetooth 5.0: Integrated Scan Request notifications
+* Controller: Added Low Duty Cycle Directed Advertising support
+* Controller: Added Scan duplicate filtering support
+* Controller: Enforced complete role separation in the controller for smaller builds
+* Controller: Introduced Advanced Controller configuration with several new Kconfig options
+* Controller: Changed the radio interrupts to direct ISRs to reduce interrupt latency
+* Added HCI Controller to Host flow control support in both Host and Controller
+* BR/EDR: Added HFP (e)SCO audio channel establishment support
+* BR/EDR: Added support for a functional SDP server
 
 Build and Infrastructure
 ************************
 
-* Interesting change
+* Support building host tools
+* Added separate DTS target
+* Added support for MSYS2
+* Use -O2 instead of -Os for ARC with SDK 0.9
 
 Libraries
 *********
 
-* Interesting change
+* Added library for software driven I2C
+* Created a HTTP library
+* Added HTTP server library support
+* Added minimal JSON library
+* Update TinyCrypt to version 0.2.6
+* Added minimal JSON library
 
 HALs
 ****
 
-* Interesting change
+* Added Atmel SAM family I2C (TWIHS) driver
+* Added Atmel SAM serial (UART) driver
+* Added WDT driver for Atmel SAM SoCs
+* Added Atmel SAM4S SoC support
+* Imported Nordic 802.15.4 radio driver
+* Added Initial support for NXP MPU
+* Updated QMSI to 1.4 RC4
+* Added FPU support
+* Added basic support for STM32F413
+* Introduced STM32F4x DMA driver
+* pinmux: stm32: Added support for Nucleo L432KC
+* Added support for STM32L496G Discovery board
+* Added dts for STM32F407
+* Added support for STM32F4DISCOVERY Board
+* Added support for STM32F469XI
+* Added support for STM32F469I-DISCO
 
 Documentation
 *************
 
 * Board documentation added for new board ports
+* Added a board porting guide
+* Added security sections to porting and user guides
 * Continued migration of wiki.zephyrproject.org material to website and github wiki
 * Improved CSS formatting and appearance of generated documents
 * Added breadcrumb navigation header with kernel version number
@@ -83,12 +189,13 @@ Documentation
 Tests and Samples
 *****************
 
-* Interesting change
-
-Deprecations
-************
-
-* Interesting change
+* Added test to verify same tick timeout expiry order
+* Added clock_test for kernel
+* Added tickless tests
+* Added a simple CC2520 crypto dev test
+* Added combined observer & broadcaster app for Bluetooth samples
+* Added support to wait both IPv4 and IPv6
+* Enabled tickless kernel option in some apps
 
 JIRA Related Items
 ******************
@@ -106,7 +213,7 @@ JIRA Related Items
 * :jira:`ZEP-888` - 802.15.4 - Security support
 * :jira:`ZEP-932` - Adapt kernel sample & test projects
 * :jira:`ZEP-948` - Revisit the timeslicing algorithm
-* :jira:`ZEP-973` - Remove deprecated API related to device PM, DEVICE\_ and * SYS\_* macros
+* :jira:`ZEP-973` - Remove deprecated API related to device PM functions and DEVICE\_ and SYS\_* macros
 * :jira:`ZEP-1028` - shrink k_block struct size
 * :jira:`ZEP-1032` - IPSP router role support
 * :jira:`ZEP-1169` - Sample mbedDTLS DTLS client stability on ethernet driver
@@ -186,7 +293,7 @@ JIRA Related Items
 * :jira:`ZEP-2011` - Retrieve RPL node information through CoAP requests
 * :jira:`ZEP-2012` - Fault in networking stack for cores that can't access unaligned memory
 * :jira:`ZEP-2013` - dead object monitor code
-* :jira:`ZEP-2014` - Defaul samples/subsys/shell/shell fails to build on QEMU RISCv32 / NIOS2
+* :jira:`ZEP-2014` - Default samples/subsys/shell/shell fails to build on QEMU RISCv32 / NIOS2
 * :jira:`ZEP-2019` - Xtensa port does not compile if CONFIG_TICKLESS_IDLE is enabled
 * :jira:`ZEP-2027` - Bluetooth Peripheral Sample won't pair with certain Android devices
 * :jira:`ZEP-2029` - xtensa: irq_offload() doesn't work on XRC_D2PM
@@ -215,10 +322,3 @@ JIRA Related Items
 * :jira:`ZEP-2143` - Compilation Error on Windows 10 with MSYS2
 * :jira:`ZEP-2152` - Xtensa crashes on startup for cores with coprocessors
 * :jira:`ZEP-2178` - Static code scan (coverity) issues seen
-
-
-Known Issues
-************
-
-* :jira:`ZEP-0000` - Title
-  - Workaround if available, or "No workaround, will address in a future release."

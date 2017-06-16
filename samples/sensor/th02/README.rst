@@ -18,7 +18,7 @@ controlled using the I2C interface.
 
 More details about the sensor and the display can be found here:
 
-- `Grove Tempture And Humidity`_
+- `Grove Temperature And Humidity`_
 - `Grove LCD Module`_
 
 Wiring
@@ -38,4 +38,4 @@ References
 
 
 .. _Grove LCD Module: http://wiki.seeed.cc/Grove-LCD_RGB_Backlight/
-.. _Grove Tempture And Humidity: http://wiki.seeed.cc/Grove-TemptureAndHumidity_Sensor-High-Accuracy_AndMini-v1.0/
+.. _Grove Temperature And Humidity: http://wiki.seeed.cc/Grove-TemptureAndHumidity_Sensor-High-Accuracy_AndMini-v1.0/
