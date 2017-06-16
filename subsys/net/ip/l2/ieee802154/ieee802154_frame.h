@@ -453,6 +453,8 @@ struct ieee802154_aux_security_hdr *
 ieee802154_validate_aux_security_hdr(u8_t *buf, u8_t **p_buf);
 #endif
 
+struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(u8_t *buf, u8_t **p_buf);
+
 bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 			       struct ieee802154_mpdu *mpdu);
 
