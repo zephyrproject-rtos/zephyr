@@ -30,6 +30,10 @@ if(CONFIG_BT_LL_SW)
     ll_sw/ll_master.c
     )
   zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_ADV_EXT
+    ll_sw/ll_adv_aux.c
+    )
+  zephyr_library_sources_ifdef(
     CONFIG_BT_HCI_MESH_EXT
     ll_sw/ll_mesh.c
     )
