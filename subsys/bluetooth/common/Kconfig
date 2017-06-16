@@ -11,6 +11,8 @@ if BLUETOOTH_HCI
 config BLUETOOTH_RPA
 	# Virtual/hidden option
 	bool
+	select TINYCRYPT
+	select TINYCRYPT_AES
 	default n
 
 config BLUETOOTH_DEBUG

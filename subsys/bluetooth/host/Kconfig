@@ -189,7 +189,6 @@ config BLUETOOTH_ATT_TX_MAX
 
 config BLUETOOTH_SMP
 	bool "Security Manager Protocol support"
-	select BLUETOOTH_RPA
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
@@ -200,6 +199,7 @@ config BLUETOOTH_SMP
 if BLUETOOTH_SMP
 config BLUETOOTH_PRIVACY
 	bool "Privacy Feature"
+	select BLUETOOTH_RPA
 	help
 	  Enable local Privacy Feature support. This makes it possible
 	  to use Resolvable Private Addresses (RPAs).
