@@ -57,6 +57,7 @@
 			reg = <0x40001000 0x4C>;
 			interrupts = <5 0>, <6 0>;
 			status = "disabled";
+			label = "UART_0";
 		};
 	};
 };
