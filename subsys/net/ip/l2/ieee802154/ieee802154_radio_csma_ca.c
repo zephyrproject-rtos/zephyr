@@ -31,7 +31,7 @@ static inline int csma_ca_tx_fragment(struct net_if *iface,
 	u8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
-	bool ack_required = prepare_for_ack(ctx, pkt);
+	bool ack_required = prepare_for_ack(ctx, pkt, frag);
 	u8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
 	u8_t nb = 0;
 	int ret = -EIO;
