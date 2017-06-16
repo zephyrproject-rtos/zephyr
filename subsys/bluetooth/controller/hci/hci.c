@@ -912,20 +912,6 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
-static u8_t ffs(u8_t x)
-{
-	u8_t i;
-
-	if (!x) {
-		return 0;
-	}
-
-	for (i = 0; !(x & BIT(i)); i++) {
-	}
-
-	return i + 1;
-}
-
 static void le_read_phy(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_phy *cmd = (void *) buf->data;
@@ -941,8 +927,8 @@ static void le_read_phy(struct net_buf *buf, struct net_buf **evt)
 
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = sys_cpu_to_le16(handle);
-	rp->tx_phy = ffs(rp->tx_phy);
-	rp->rx_phy = ffs(rp->rx_phy);
+	rp->tx_phy = find_lsb_set(rp->tx_phy);
+	rp->rx_phy = find_lsb_set(rp->rx_phy);
 }
 
 static void le_set_default_phy(struct net_buf *buf, struct net_buf **evt)
@@ -1606,8 +1592,8 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 	    !(le_event_mask & BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE)) {
 		BT_WARN("handle: 0x%04x, status: %x, tx: %x, rx: %x.", handle,
 			radio_le_phy_upd_cmplt->status,
-			ffs(radio_le_phy_upd_cmplt->tx),
-			ffs(radio_le_phy_upd_cmplt->rx));
+			find_lsb_set(radio_le_phy_upd_cmplt->tx),
+			find_lsb_set(radio_le_phy_upd_cmplt->rx));
 		return;
 	}
 
@@ -1615,8 +1601,8 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 
 	sep->status = radio_le_phy_upd_cmplt->status;
 	sep->handle = sys_cpu_to_le16(handle);
-	sep->tx_phy = ffs(radio_le_phy_upd_cmplt->tx);
-	sep->rx_phy = ffs(radio_le_phy_upd_cmplt->rx);
+	sep->tx_phy = find_lsb_set(radio_le_phy_upd_cmplt->tx);
+	sep->rx_phy = find_lsb_set(radio_le_phy_upd_cmplt->rx);
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 #endif /* CONFIG_BLUETOOTH_CONN */
