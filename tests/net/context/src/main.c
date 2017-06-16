@@ -50,6 +50,7 @@ static char *test_data = "Test data to be sent";
 
 static bool test_failed;
 static bool cb_failure;
+static bool expecting_cb_failure;
 static bool data_failure;
 static bool recv_cb_called;
 static bool recv_cb_reconfig_called;
@@ -925,7 +926,11 @@ void timeout_thread(struct net_context *ctx, sa_family_t *family)
 	ret = net_context_recv(ctx, recv_cb_timeout, WAIT_TIME_LONG, family);
 
 	if (ret || cb_failure) {
-		TC_ERROR("Context recv UDP timeout test failed (%d)\n", ret);
+		if (!expecting_cb_failure) {
+			TC_ERROR("Context recv UDP timeout test "
+				 "failed (%d)\n", ret);
+		}
+
 		cb_failure = true;
 		return;
 	}
@@ -958,6 +963,7 @@ static void start_timeout_v4_thread(void)
 static bool net_ctx_recv_v6_timeout(void)
 {
 	cb_failure = false;
+	expecting_cb_failure = true;
 
 	/* Start a thread that will send data to receiver. */
 	start_timeout_v6_thread();
@@ -969,12 +975,15 @@ static bool net_ctx_recv_v6_timeout(void)
 
 	k_sem_take(&wait_data, K_FOREVER);
 
+	expecting_cb_failure = false;
+
 	return !cb_failure;
 }
 
 static bool net_ctx_recv_v4_timeout(void)
 {
 	cb_failure = false;
+	expecting_cb_failure = true;
 
 	/* Start a thread that will send data to receiver. */
 	start_timeout_v4_thread();
@@ -983,6 +992,8 @@ static bool net_ctx_recv_v4_timeout(void)
 	timeout_token = SENDING;
 
 	k_sem_take(&wait_data, K_FOREVER);
+
+	expecting_cb_failure = false;
 
 	return !cb_failure;
 }
