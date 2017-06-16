@@ -644,7 +644,8 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_0 = {
 	.baud_rate = TI_STELLARIS_UART_4000C000_CURRENT_SPEED,
 };
 
-DEVICE_AND_API_INIT(uart_stellaris0, CONFIG_UART_STELLARIS_PORT_0_NAME, &uart_stellaris_init,
+DEVICE_AND_API_INIT(uart_stellaris0, TI_STELLARIS_UART_4000C000_LABEL,
+		    &uart_stellaris_init,
 		    &uart_stellaris_dev_data_0, &uart_stellaris_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
@@ -681,7 +682,8 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_1 = {
 	.baud_rate = TI_STELLARIS_UART_4000D000_CURRENT_SPEED,
 };
 
-DEVICE_AND_API_INIT(uart_stellaris1, CONFIG_UART_STELLARIS_PORT_1_NAME, &uart_stellaris_init,
+DEVICE_AND_API_INIT(uart_stellaris1, TI_STELLARIS_UART_4000D000_LABEL,
+		    &uart_stellaris_init,
 		    &uart_stellaris_dev_data_1, &uart_stellaris_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
@@ -718,7 +720,8 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
 	.baud_rate = TI_STELLARIS_UART_4000E000_CURRENT_SPEED,
 };
 
-DEVICE_AND_API_INIT(uart_stellaris2, CONFIG_UART_STELLARIS_PORT_2_NAME, &uart_stellaris_init,
+DEVICE_AND_API_INIT(uart_stellaris2, TI_STELLARIS_UART_4000E000_LABEL,
+		    &uart_stellaris_init,
 		    &uart_stellaris_dev_data_2, &uart_stellaris_dev_cfg_2,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
