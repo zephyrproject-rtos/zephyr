@@ -1,5 +1,5 @@
 identifier: hexiwear_k64
-name: hexiwear_k64
+name: Hexiwear
 type: mcu
 arch: arm
 toolchain:

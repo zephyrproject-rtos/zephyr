@@ -1,5 +1,5 @@
 identifier: stm32l496g_disco
-name: stm32l496g_disco
+name: 32L496GDISCOVERY
 type: mcu
 arch: arm
 toolchain:

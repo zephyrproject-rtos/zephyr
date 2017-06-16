@@ -1,5 +1,5 @@
 identifier: disco_l475_iot1
-name: disco_l475_iot1
+name: ST Disco L475 IOT01
 type: mcu
 arch: arm
 toolchain:

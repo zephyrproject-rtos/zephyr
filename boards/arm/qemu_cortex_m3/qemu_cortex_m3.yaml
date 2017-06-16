@@ -1,5 +1,5 @@
 identifier: qemu_cortex_m3
-name: qemu_cortex_m3
+name: QEMU Emulation for Cortex-M3
 type: qemu
 arch: arm
 toolchain:

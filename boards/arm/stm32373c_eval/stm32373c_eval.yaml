@@ -1,5 +1,5 @@
 identifier: stm32373c_eval
-name: stm32373c_eval
+name: STM32373C-EVAL
 type: mcu
 arch: arm
 toolchain:

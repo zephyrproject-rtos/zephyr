@@ -1,5 +1,5 @@
 identifier: stm32_mini_a15
-name: stm32_mini_a15
+name: STM32 Mini A15
 type: mcu
 arch: arm
 toolchain:

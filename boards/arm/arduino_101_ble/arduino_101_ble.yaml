@@ -1,5 +1,5 @@
 identifier: arduino_101_ble
-name: arduino_101_ble
+name: Ardunio 101 (nRF51)
 type: mcu
 arch: arm
 toolchain:
