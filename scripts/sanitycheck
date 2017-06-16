@@ -121,7 +121,7 @@ Each testcase.ini block can define the following key/value pairs:
 
     Would match it.
 
-Architectures and platforms are defined in an archtecture configuration
+Architectures and platforms are defined in an architecture configuration
 file which are stored by default in scripts/sanity_chk/arches/. These
 each define an [arch] block with the following key/value pairs:
 
@@ -529,7 +529,7 @@ class SizeCalculator:
     def unrecognized_sections(self):
         """Get a list of sections inside the binary that weren't recognized
 
-        @return list of unrecogized section names
+        @return list of unrecognized section names
         """
         slist = []
         for v in self.sections:
@@ -595,7 +595,7 @@ class SizeCalculator:
 class MakeGoal:
     """Metadata class representing one of the sub-makes called by MakeGenerator
 
-    MakeGenerator returns a dictionary of these which can then be associdated
+    MakeGenerator returns a dictionary of these which can then be associated
     with TestInstances to get a complete picture of what happened during a test.
     MakeGenerator is used for tasks outside of building tests (such as
     defconfigs) which is why MakeGoal is a separate class from TestInstance.
@@ -1019,7 +1019,7 @@ class SanityConfigParser:
         for k, v in cp.items(section):
             if k not in valid_keys:
                 raise ConfigurationError(self.filename,
-                                         "Unknown config key '%s' in defintiion for '%s'"
+                                         "Unknown config key '%s' in definition for '%s'"
                                          % (k, section))
             d[k] = v
 
@@ -1358,7 +1358,7 @@ class TestSuite:
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every  combination,
-                        # need a way to avoid different Make processe from clobbering
+                        # need a way to avoid different Make processes from clobbering
                         # each other since they all try to build them simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
@@ -1704,10 +1704,10 @@ def parse_arguments():
     parser.add_argument("-o", "--testcase-report",
             help="Output a CSV spreadsheet containing results of the test run")
     parser.add_argument("-d", "--discard-report",
-            help="Output a CSV spreadhseet showing tests that were skipped "
+            help="Output a CSV spreadsheet showing tests that were skipped "
                  "and why")
     parser.add_argument("--compare-report",
-            help="Use this report file for size comparision")
+            help="Use this report file for size comparison")
 
     parser.add_argument("--ccache", action="store_const", const=1, default=0,
             help="Enable the use of ccache when building")
