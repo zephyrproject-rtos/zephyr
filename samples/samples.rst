@@ -17,7 +17,6 @@ Samples and Demos
    bluetooth/bluetooth.rst
    sensor/*
    grove/*
-   power/power.rst
    boards/*
 
 
