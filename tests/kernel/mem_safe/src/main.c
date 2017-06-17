@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <misc/util.h>
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <debug/mem_safe.h>
 #include <tc_util.h>
 #include <cache.h>

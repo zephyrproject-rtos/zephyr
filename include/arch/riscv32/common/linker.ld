@@ -17,10 +17,10 @@
 #include <soc.h>
 
 #include <autoconf.h>
-#include <sections.h>
+#include <linker/sections.h>
 
-#include <linker-defs.h>
-#include <linker-tool.h>
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
 
 #ifdef CONFIG_XIP
 #define ROMABLE_REGION              ROM

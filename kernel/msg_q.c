@@ -14,7 +14,7 @@
 #include <kernel_structs.h>
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <string.h>
 #include <wait_q.h>
 #include <misc/dlist.h>

@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <device.h>
 #include <init.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 

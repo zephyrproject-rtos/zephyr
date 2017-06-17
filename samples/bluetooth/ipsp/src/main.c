@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
 

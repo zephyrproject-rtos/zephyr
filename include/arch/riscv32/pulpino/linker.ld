@@ -15,10 +15,10 @@
 #define _ASMLANGUAGE
 
 #include <autoconf.h>
-#include <sections.h>
+#include <linker/sections.h>
 
-#include <linker-defs.h>
-#include <linker-tool.h>
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
 
 #define ROMABLE_REGION              DATARAM
 #define RAMABLE_REGION              DATARAM

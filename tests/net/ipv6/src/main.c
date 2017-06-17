@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 

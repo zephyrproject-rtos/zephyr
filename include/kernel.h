@@ -18,7 +18,7 @@
 #include <zephyr/types.h>
 #include <limits.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <atomic.h>
 #include <errno.h>
 #include <misc/__assert.h>

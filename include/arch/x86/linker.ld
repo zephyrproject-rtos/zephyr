@@ -40,12 +40,12 @@
 #define _LINKER
 
 #define _ASMLANGUAGE
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <offsets.h>
 #include <misc/util.h>
 #define MMU_PAGE_SIZE KB(4)
 
-#include <linker-tool.h>
+#include <linker/linker-tool.h>
 
 #ifdef CONFIG_XIP
 	#define ROMABLE_REGION ROM

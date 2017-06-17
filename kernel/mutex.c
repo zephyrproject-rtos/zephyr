@@ -29,7 +29,7 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
 #include <debug/object_tracing_common.h>

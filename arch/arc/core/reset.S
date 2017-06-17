@@ -13,7 +13,7 @@
 
 // #include <board.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 
 GDATA(_interrupt_stack)

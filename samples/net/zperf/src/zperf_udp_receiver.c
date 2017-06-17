@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <toolchain.h>
 
 #include <zephyr.h>

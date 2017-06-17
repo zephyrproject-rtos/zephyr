@@ -15,7 +15,7 @@
 #include <init.h>
 #include <errno.h>
 #include <toolchain.h>
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <misc/util.h>
 #include <debug/mem_safe.h>
 #include <string.h>

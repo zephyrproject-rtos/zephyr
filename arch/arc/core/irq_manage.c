@@ -21,7 +21,7 @@
 #include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <sw_isr_table.h>
 #include <irq.h>
 

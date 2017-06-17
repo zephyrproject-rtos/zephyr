@@ -15,7 +15,7 @@
 #include <misc/printk.h>
 #include <stdarg.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 typedef int (*out_func_t)(int c, void *ctx);
 

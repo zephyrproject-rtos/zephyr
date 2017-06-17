@@ -85,7 +85,7 @@
 
 #include "board.h"
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <drivers/loapic.h> /* public API declarations */
 #include <init.h>
 #include <drivers/sysapic.h>

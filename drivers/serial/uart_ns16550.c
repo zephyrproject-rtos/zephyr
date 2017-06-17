@@ -29,7 +29,7 @@
 #include <board.h>
 #include <init.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <uart.h>
 #include <sys_io.h>
 

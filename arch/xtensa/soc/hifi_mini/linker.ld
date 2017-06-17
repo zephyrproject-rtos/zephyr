@@ -14,10 +14,10 @@
 #define _ASMLANGUAGE
 
 #include <autoconf.h>
-#include <sections.h>
+#include <linker/sections.h>
 
-#include <linker-defs.h>
-#include <linker-tool.h>
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
 
 #define RAMABLE_REGION dram0_0_seg :dram0_0_phdr
 #define ROMABLE_REGION iram0_7_seg :iram0_7_phdr

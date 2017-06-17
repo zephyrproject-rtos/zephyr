@@ -15,7 +15,7 @@
 #include <atomic.h>
 #include <init.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 extern struct k_alert _k_alert_list_start[];
 extern struct k_alert _k_alert_list_end[];

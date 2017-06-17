@@ -8,7 +8,7 @@
 #ifndef __IEEE802154_NRF5_H__
 #define __IEEE802154_NRF5_H__
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <atomic.h>
 
 #define NRF5_FCS_LENGTH   (2)

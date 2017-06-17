@@ -8,7 +8,7 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <misc/__assert.h>
 #include <zephyr/types.h>
 #include <misc/util.h>

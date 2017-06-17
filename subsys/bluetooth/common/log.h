@@ -11,7 +11,7 @@
 #ifndef __BT_LOG_H
 #define __BT_LOG_H
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <offsets.h>
 #include <zephyr.h>
 

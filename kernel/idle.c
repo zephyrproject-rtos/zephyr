@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <drivers/system_timer.h>
 #include <wait_q.h>
 #include <power.h>

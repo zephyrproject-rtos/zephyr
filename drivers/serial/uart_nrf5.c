@@ -14,7 +14,7 @@
 #include <board.h>
 #include <init.h>
 #include <uart.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <gpio.h>
 
 #ifdef CONFIG_SOC_NRF52840

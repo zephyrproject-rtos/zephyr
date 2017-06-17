@@ -24,7 +24,7 @@
 #include <uart.h>
 #include <clock_control.h>
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <clock_control/stm32_clock_control.h>
 #include "uart_stm32.h"
 

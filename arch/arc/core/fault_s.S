@@ -12,7 +12,7 @@
  */
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
 
