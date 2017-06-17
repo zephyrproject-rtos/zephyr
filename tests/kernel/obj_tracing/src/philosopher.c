@@ -32,8 +32,8 @@ extern struct k_sem forks[N_PHILOSOPHERS];
 void phil_entry(void)
 {
 	int counter;
-	struct k_sem *f1;	/* fork #1 */
-	struct k_sem *f2;	/* fork #2 */
+	struct k_sem *f1;       /* fork #1 */
+	struct k_sem *f2;       /* fork #2 */
 	static int myId;        /* next philosopher ID */
 	int pri = irq_lock();   /* interrupt lock level */
 	int id = myId++;        /* current philosopher ID */
@@ -41,7 +41,7 @@ void phil_entry(void)
 	irq_unlock(pri);
 
 	/* always take the lowest fork first */
-	if ((id+1) != N_PHILOSOPHERS) {
+	if ((id + 1) != N_PHILOSOPHERS) {
 		f1 = FORK(id);
 		f2 = FORK(id + 1);
 	} else {
