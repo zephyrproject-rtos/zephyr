@@ -23,6 +23,6 @@ void test_main(void *p1, void *p2, void *p3)
 			 , ztest_unit_test(test_poll_no_wait)
 			 , ztest_unit_test(test_poll_wait)
 			 , ztest_unit_test(test_poll_eaddrinuse)
-	);
+			 );
 	ztest_run_test_suite(test_poll_api);
 }
