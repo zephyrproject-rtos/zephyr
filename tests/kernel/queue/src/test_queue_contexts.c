@@ -46,7 +46,7 @@ static void tqueue_append(struct k_queue *pqueue)
 	}
 
 	/**TESTPOINT: queue append list*/
-	static qdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN-1];
+	static qdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN - 1];
 
 	head->snode.next = (sys_snode_t *)tail;
 	tail->snode.next = NULL;
@@ -111,8 +111,8 @@ static void tqueue_thread_thread(struct k_queue *pqueue)
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-thread data passing via queue*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_entry, pqueue, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_entry, pqueue, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	tqueue_append(pqueue);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
