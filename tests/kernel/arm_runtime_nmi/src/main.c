@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /**
-  * @brief Test to verify the behavior of CONFIG_RUNTIME_NMI at runtime.
-  */
+/**
+ * @brief Test to verify the behavior of CONFIG_RUNTIME_NMI at runtime.
+ */
 
 #include <zephyr.h>
 #include <misc/printk.h>
