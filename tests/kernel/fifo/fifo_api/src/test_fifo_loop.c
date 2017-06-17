@@ -83,8 +83,8 @@ static void tfifo_read_write(struct k_fifo *pfifo)
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-isr-thread data passing via fifo*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_entry, pfifo, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_entry, pfifo, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 
 	TC_PRINT("main fifo put ---> ");
 	tfifo_put(pfifo);

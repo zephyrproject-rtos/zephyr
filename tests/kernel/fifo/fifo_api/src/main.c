@@ -25,13 +25,13 @@ extern void test_fifo_is_empty_isr(void);
 void test_main(void *p1, void *p2, void *p3)
 {
 	ztest_test_suite(test_fifo_api,
-		ztest_unit_test(test_fifo_thread2thread),
-		ztest_unit_test(test_fifo_thread2isr),
-		ztest_unit_test(test_fifo_isr2thread),
-		ztest_unit_test(test_fifo_get_fail),
-		ztest_unit_test(test_fifo_loop),
-		ztest_unit_test(test_fifo_cancel_wait),
-		ztest_unit_test(test_fifo_is_empty_thread),
-		ztest_unit_test(test_fifo_is_empty_isr));
+			 ztest_unit_test(test_fifo_thread2thread),
+			 ztest_unit_test(test_fifo_thread2isr),
+			 ztest_unit_test(test_fifo_isr2thread),
+			 ztest_unit_test(test_fifo_get_fail),
+			 ztest_unit_test(test_fifo_loop),
+			 ztest_unit_test(test_fifo_cancel_wait),
+			 ztest_unit_test(test_fifo_is_empty_thread),
+			 ztest_unit_test(test_fifo_is_empty_isr));
 	ztest_run_test_suite(test_fifo_api);
 }
