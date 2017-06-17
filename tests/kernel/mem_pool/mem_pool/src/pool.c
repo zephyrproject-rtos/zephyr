@@ -41,7 +41,7 @@ struct TEST_CASE {
 	struct k_mem_block *block;      /* pointer to block data */
 	struct k_mem_pool *pool_id;     /* pool ID */
 	int size;                       /* request size in bytes */
-	s32_t timeout;                /* # of ticks to wait */
+	s32_t timeout;                  /* # of ticks to wait */
 	int rcode;                      /* expected return code */
 };
 
