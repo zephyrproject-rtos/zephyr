@@ -18,12 +18,12 @@ K_TIMER_DEFINE(ktimer, duration_expire, duration_stop);
 static struct k_timer timer;
 static struct timer_data tdata;
 
-#define TIMER_ASSERT(exp, tmr)				\
-	do {						\
-		if (!(exp)) {				\
-			k_timer_stop(tmr);		\
-			zassert_true(exp, NULL);		\
-		}					\
+#define TIMER_ASSERT(exp, tmr)			 \
+	do {					 \
+		if (!(exp)) {			 \
+			k_timer_stop(tmr);	 \
+			zassert_true(exp, NULL); \
+		}				 \
 	} while (0)
 
 static void init_timer_data(void)
@@ -39,7 +39,7 @@ static void duration_expire(struct k_timer *timer)
 	tdata.expire_cnt++;
 	if (tdata.expire_cnt == 1) {
 		TIMER_ASSERT(k_uptime_delta(&tdata.timestamp) >= DURATION,
-				timer);
+			     timer);
 	} else {
 		TIMER_ASSERT(k_uptime_delta(&tdata.timestamp) >= PERIOD, timer);
 	}
@@ -103,7 +103,7 @@ void test_timer_duration_period(void)
 	k_timer_init(&timer, duration_expire, duration_stop);
 	k_timer_start(&timer, DURATION, PERIOD);
 	tdata.timestamp = k_uptime_get();
-	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD/2);
+	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 	/** TESTPOINT: check expire and stop times */
 	TIMER_ASSERT(tdata.expire_cnt == EXPIRE_TIMES, &timer);
 	TIMER_ASSERT(tdata.stop_cnt == 1, &timer);
@@ -135,7 +135,7 @@ void test_timer_expirefn_null(void)
 	/** TESTPOINT: expire function NULL */
 	k_timer_init(&timer, NULL, duration_stop);
 	k_timer_start(&timer, DURATION, PERIOD);
-	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD/2);
+	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
 	k_timer_stop(&timer);
 	/** TESTPOINT: expire handler is not invoked */
@@ -155,7 +155,7 @@ void test_timer_status_get(void)
 	/** TESTPOINT: status get upon timer starts */
 	TIMER_ASSERT(k_timer_status_get(&timer) == 0, &timer);
 	/** TESTPOINT: remaining get upon timer starts */
-	TIMER_ASSERT(k_timer_remaining_get(&timer) >= DURATION/2, &timer);
+	TIMER_ASSERT(k_timer_remaining_get(&timer) >= DURATION / 2, &timer);
 
 	/* cleanup environment */
 	k_timer_stop(&timer);
@@ -166,7 +166,7 @@ void test_timer_status_get_anytime(void)
 	init_timer_data();
 	k_timer_init(&timer, NULL, NULL);
 	k_timer_start(&timer, DURATION, PERIOD);
-	busy_wait_ms(DURATION + PERIOD * (EXPIRE_TIMES - 1) + PERIOD/2);
+	busy_wait_ms(DURATION + PERIOD * (EXPIRE_TIMES - 1) + PERIOD / 2);
 
 	/** TESTPOINT: status get at any time */
 	TIMER_ASSERT(k_timer_status_get(&timer) == EXPIRE_TIMES, &timer);
@@ -200,7 +200,7 @@ void test_timer_k_define(void)
 	/** TESTPOINT: init timer via k_timer_init */
 	k_timer_start(&ktimer, DURATION, PERIOD);
 	tdata.timestamp = k_uptime_get();
-	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD/2);
+	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
 	/** TESTPOINT: check expire and stop times */
 	TIMER_ASSERT(tdata.expire_cnt == EXPIRE_TIMES, &ktimer);
@@ -222,9 +222,9 @@ static struct k_timer user_data_timer[5] = {
 	K_TIMER_INITIALIZER(user_data_timer[4], user_data_timer_handler, NULL),
 };
 
-static const intptr_t user_data[5] = {0x1337, 0xbabe, 0xd00d, 0xdeaf, 0xfade};
+static const intptr_t user_data[5] = { 0x1337, 0xbabe, 0xd00d, 0xdeaf, 0xfade };
 
-static int user_data_correct[5] = {0, 0, 0, 0, 0};
+static int user_data_correct[5] = { 0, 0, 0, 0, 0 };
 
 static void user_data_timer_handler(struct k_timer *timer)
 {
