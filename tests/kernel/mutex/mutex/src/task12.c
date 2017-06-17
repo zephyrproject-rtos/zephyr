@@ -32,7 +32,7 @@ extern struct k_mutex private_mutex;
 
 void Task12(void)
 {
-	int  rv;
+	int rv;
 
 	/* Wait for private mutex to be released */
 

@@ -70,7 +70,7 @@ K_MUTEX_DEFINE(Mutex4);
 
 void Task05(void)
 {
-	int  rv;
+	int rv;
 
 	k_sleep(K_MSEC(3500));
 
@@ -79,7 +79,7 @@ void Task05(void)
 	if (rv != -EAGAIN) {
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to timeout on mutex 0x%x\n",
-				 (u32_t)&Mutex4);
+			 (u32_t)&Mutex4);
 		return;
 	}
 }
@@ -94,7 +94,7 @@ void Task05(void)
 
 void Task06(void)
 {
-	int  rv;
+	int rv;
 
 	k_sleep(K_MSEC(3750));
 
@@ -126,7 +126,7 @@ void Task06(void)
 
 void Task07(void)
 {
-	int  rv;
+	int rv;
 
 	k_sleep(K_MSEC(2500));
 
@@ -157,7 +157,7 @@ void Task07(void)
 
 void Task08(void)
 {
-	int  rv;
+	int rv;
 
 	k_sleep(K_MSEC(1500));
 
@@ -181,12 +181,12 @@ void Task08(void)
 
 void Task09(void)
 {
-	int  rv;
+	int rv;
 
-	k_sleep(K_MSEC(500));   /* Allow lower priority task to run */
+	k_sleep(K_MSEC(500));                   /* Allow lower priority task to run */
 
-	rv = k_mutex_lock(&Mutex1, K_NO_WAIT); /*<Mutex1> is already locked. */
-	if (rv != -EBUSY) {            /* This attempt to lock the mutex */
+	rv = k_mutex_lock(&Mutex1, K_NO_WAIT);  /*<Mutex1> is already locked. */
+	if (rv != -EBUSY) {                     /* This attempt to lock the mutex */
 		/* should not succeed. */
 		tcRC = TC_FAIL;
 		TC_ERROR("Failed to NOT take locked mutex 0x%x\n",
@@ -242,12 +242,12 @@ extern void Task12(void);
 
 void RegressionTask(void)
 {
-	int    rv;
-	int    i;
-	struct k_mutex *mutexes[4] = {&Mutex1, &Mutex2, &Mutex3, &Mutex4};
-	struct k_mutex *giveMutex[3] = {&Mutex3, &Mutex2, &Mutex1};
-	int    priority[4] = {9, 8, 7, 5};
-	int    dropPri[3] = {8, 8, 9};
+	int rv;
+	int i;
+	struct k_mutex *mutexes[4] = { &Mutex1, &Mutex2, &Mutex3, &Mutex4 };
+	struct k_mutex *giveMutex[3] = { &Mutex3, &Mutex2, &Mutex1 };
+	int priority[4] = { 9, 8, 7, 5 };
+	int dropPri[3] = { 8, 8, 9 };
 
 	TC_START("Test kernel Mutex API");
 
@@ -286,7 +286,7 @@ void RegressionTask(void)
 	/* ~ 4 seconds have passed */
 
 	TC_PRINT("Done LOCKING!  Current priority = %d\n",
-			k_thread_priority_get(k_current_get()));
+		 k_thread_priority_get(k_current_get()));
 
 	k_sleep(K_SECONDS(1));       /* Task05 should time out */
 
@@ -318,7 +318,7 @@ void RegressionTask(void)
 		rv = k_thread_priority_get(k_current_get());
 		if (rv != dropPri[i]) {
 			TC_ERROR("Expected priority %d, not %d\n",
-					 dropPri[i], rv);
+				 dropPri[i], rv);
 			tcRC = TC_FAIL;
 			goto errorReturn;
 		}
@@ -360,11 +360,11 @@ void RegressionTask(void)
 		goto errorReturn;
 	}
 
-		/* Start thread */
+	/* Start thread */
 	k_thread_create(&task12_thread_data, task12_stack_area, STACKSIZE,
 			(k_thread_entry_t)Task12, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
-	k_sleep(1);	/* Give Task12 a chance to block on the mutex */
+	k_sleep(1);     /* Give Task12 a chance to block on the mutex */
 
 	k_mutex_unlock(&private_mutex);
 	k_mutex_unlock(&private_mutex); /* Task12 should now have lock */
@@ -394,22 +394,22 @@ errorReturn:
 
 
 K_THREAD_DEFINE(TASK05, STACKSIZE, Task05, NULL, NULL, NULL,
-			5, 0, K_NO_WAIT);
+		5, 0, K_NO_WAIT);
 
 K_THREAD_DEFINE(TASK06, STACKSIZE, Task06, NULL, NULL, NULL,
-			6, 0, K_NO_WAIT);
+		6, 0, K_NO_WAIT);
 
 K_THREAD_DEFINE(TASK07, STACKSIZE, Task07, NULL, NULL, NULL,
-			7, 0, K_NO_WAIT);
+		7, 0, K_NO_WAIT);
 
 K_THREAD_DEFINE(TASK08, STACKSIZE, Task08, NULL, NULL, NULL,
-			8, 0, K_NO_WAIT);
+		8, 0, K_NO_WAIT);
 
 K_THREAD_DEFINE(TASK09, STACKSIZE, Task09, NULL, NULL, NULL,
-			9, 0, K_NO_WAIT);
+		9, 0, K_NO_WAIT);
 
 K_THREAD_DEFINE(TASK11, STACKSIZE, Task11, NULL, NULL, NULL,
-			11, 0, K_NO_WAIT);
+		11, 0, K_NO_WAIT);
 
 K_THREAD_DEFINE(REGRESSTASK, STACKSIZE, RegressionTask, NULL, NULL, NULL,
-			10, 0, K_NO_WAIT);
+		10, 0, K_NO_WAIT);
