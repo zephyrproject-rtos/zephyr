@@ -48,7 +48,7 @@ K_MEM_POOL_DEFINE(mpool1, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 K_MEM_POOL_DEFINE(mpool2, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
-static struct k_mem_pool *pools[POOL_NUM] = {&mpool1, &mpool2};
+static struct k_mem_pool *pools[POOL_NUM] = { &mpool1, &mpool2 };
 static struct k_sem sync_sema;
 static atomic_t pool_id;
 
@@ -63,7 +63,7 @@ static void tmpool_api(void *p1, void *p2, void *p3)
 
 	for (int i = 0; i < 4; i++) {
 		ret[i] = k_mem_pool_alloc(pool, &block[i], BLK_SIZE_MIN,
-			TIMEOUT);
+					  TIMEOUT);
 	}
 	ret[4] = k_mem_pool_alloc(pool, &block[4], BLK_SIZE_MAX, TIMEOUT);
 	for (int i = 0; i < 5; i++) {
@@ -86,8 +86,8 @@ void test_mpool_threadsafe(void)
 	/* create multiple threads to invoke same memory pool APIs*/
 	for (int i = 0; i < THREAD_NUM; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
-			tmpool_api, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(1), 0, 0);
+					 tmpool_api, NULL, NULL, NULL,
+					 K_PRIO_PREEMPT(1), 0, 0);
 	}
 	/* TESTPOINT: all threads complete and exit the entry function*/
 	for (int i = 0; i < THREAD_NUM; i++) {

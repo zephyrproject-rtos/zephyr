@@ -12,6 +12,6 @@ extern void test_mpool_threadsafe(void);
 void test_main(void *p1, void *p2, void *p3)
 {
 	ztest_test_suite(test_mpool_threadsafe,
-		ztest_unit_test(test_mpool_threadsafe));
+			 ztest_unit_test(test_mpool_threadsafe));
 	ztest_run_test_suite(test_mpool_threadsafe);
 }
