@@ -40,7 +40,7 @@ static void tfifo_put(struct k_fifo *pfifo)
 	}
 
 	/**TESTPOINT: fifo put list*/
-	static fdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN-1];
+	static fdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN - 1];
 
 	head->snode.next = (sys_snode_t *)tail;
 	tail->snode.next = NULL;
@@ -101,8 +101,8 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-thread data passing via fifo*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_entry, pfifo, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_entry, pfifo, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	tfifo_put(pfifo);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
