@@ -86,6 +86,8 @@ int cmd_test_end(int argc, char *argv[])
 #endif /* CONFIG_BT_CTLR_DTM */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#include "../controller/ll_sw/ll_adv_aux.h"
+
 #define ADV_INTERVAL 0x000020
 #define ADV_TYPE 0x05 /* Adv. Ext. */
 #define OWN_ADDR_TYPE 1
@@ -98,6 +100,11 @@ int cmd_test_end(int argc, char *argv[])
 #define ADV_PHY_S 0x01
 #define ADV_SID 0
 #define SCAN_REQ_NOT 0
+
+#define AD_OP 0x03
+#define AD_FRAG_PREF 0x00
+#define AD_LEN 0x00
+#define AD_DATA NULL
 
 #define SCAN_INTERVAL 0x0004
 #define SCAN_WINDOW 0x0004
@@ -136,6 +143,7 @@ int cmd_advx(int argc, char *argv[])
 			evt_prop |= BIT(5);
 		} else if (!strcmp(argv[2], "txp")) {
 			evt_prop |= BIT(6);
+		} else if (!strcmp(argv[2], "ad")) {
 		} else {
 			return -EINVAL;
 		}
@@ -146,6 +154,7 @@ int cmd_advx(int argc, char *argv[])
 			evt_prop |= BIT(5);
 		} else if (!strcmp(argv[3], "txp")) {
 			evt_prop |= BIT(6);
+		} else if (!strcmp(argv[3], "ad")) {
 		} else {
 			return -EINVAL;
 		}
@@ -154,6 +163,14 @@ int cmd_advx(int argc, char *argv[])
 	if (argc > 4) {
 		if (!strcmp(argv[4], "txp")) {
 			evt_prop |= BIT(6);
+		} else if (!strcmp(argv[4], "ad")) {
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	if (argc > 5) {
+		if (!strcmp(argv[5], "ad")) {
 		} else {
 			return -EINVAL;
 		}
@@ -165,6 +182,13 @@ int cmd_advx(int argc, char *argv[])
 				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
 				phy_p, ADV_SEC_SKIP, ADV_PHY_S, ADV_SID,
 				SCAN_REQ_NOT);
+	if (err) {
+		goto exit;
+	}
+
+	printk("ad data set...");
+	err = ll_adv_aux_ad_data_set(0x00, AD_OP, AD_FRAG_PREF, AD_LEN,
+				     AD_DATA);
 	if (err) {
 		goto exit;
 	}

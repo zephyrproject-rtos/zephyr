@@ -2064,7 +2064,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "mesh_adv", cmd_mesh_adv, "<on, off>"},
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
+	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp] [ad]" },
 	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #if defined(CONFIG_BT_CTLR_DTM)
