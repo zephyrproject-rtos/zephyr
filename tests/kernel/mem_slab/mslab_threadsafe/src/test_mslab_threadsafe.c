@@ -25,7 +25,7 @@
 #define BLK_SIZE2 4
 
 K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE1, BLK_NUM, BLK_ALIGN);
-static struct k_mem_slab mslab2, *slabs[SLAB_NUM] = {&mslab1, &mslab2};
+static struct k_mem_slab mslab2, *slabs[SLAB_NUM] = { &mslab1, &mslab2 };
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE2 * BLK_NUM];
@@ -67,8 +67,8 @@ void test_mslab_threadsafe(void)
 	/* create multiple threads to invoke same memory slab APIs*/
 	for (int i = 0; i < THREAD_NUM; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
-			tmslab_api, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(1), 0, 0);
+					 tmslab_api, NULL, NULL, NULL,
+					 K_PRIO_PREEMPT(1), 0, 0);
 	}
 	/* TESTPOINT: all threads complete and exit the entry function*/
 	for (int i = 0; i < THREAD_NUM; i++) {
