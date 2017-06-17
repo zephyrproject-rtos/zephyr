@@ -42,12 +42,12 @@
 static void thread_entry(void *p1, void *p2, void *p3);
 
 K_THREAD_DEFINE(T_KDEFINE_COOP_THREAD, INIT_COOP_STACK_SIZE,
-	thread_entry, INIT_COOP_P1, INIT_COOP_P2, INIT_COOP_P3,
-	INIT_COOP_PRIO, INIT_COOP_OPTION, INIT_COOP_DELAY);
+		thread_entry, INIT_COOP_P1, INIT_COOP_P2, INIT_COOP_P3,
+		INIT_COOP_PRIO, INIT_COOP_OPTION, INIT_COOP_DELAY);
 
 K_THREAD_DEFINE(T_KDEFINE_PREEMPT_THREAD, INIT_PREEMPT_STACK_SIZE,
-	thread_entry, INIT_PREEMPT_P1, INIT_PREEMPT_P2, INIT_PREEMPT_P3,
-	INIT_PREEMPT_PRIO, INIT_PREEMPT_OPTION, INIT_PREEMPT_DELAY);
+		thread_entry, INIT_PREEMPT_P1, INIT_PREEMPT_P2, INIT_PREEMPT_P3,
+		INIT_PREEMPT_PRIO, INIT_PREEMPT_OPTION, INIT_PREEMPT_DELAY);
 
 K_SEM_DEFINE(start_sema, 0, 1);
 
@@ -59,7 +59,7 @@ static K_THREAD_STACK_DEFINE(stack_preempt, INIT_PREEMPT_STACK_SIZE);
 static struct k_thread thread_coop;
 static struct k_thread thread_preempt;
 static u64_t t_create;
-static struct thread_data{
+static struct thread_data {
 	int init_prio;
 	s32_t init_delay;
 	void *init_p1;
@@ -74,7 +74,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 		u64_t t_delay = k_uptime_get() - t_create;
 		/**TESTPOINT: check delay start*/
 		zassert_true(t_delay >= expected.init_delay,
-			"k_thread_create delay start failed\n");
+			     "k_thread_create delay start failed\n");
 	}
 
 	k_sem_take(&start_sema, K_FOREVER);
@@ -143,9 +143,10 @@ void test_kinit_preempt_thread(void)
 {
 	/*create preempt thread*/
 	k_tid_t pthread = k_thread_create(&thread_preempt, stack_preempt,
-		INIT_PREEMPT_STACK_SIZE, thread_entry, INIT_PREEMPT_P1,
-		INIT_PREEMPT_P2, INIT_PREEMPT_P3, INIT_PREEMPT_PRIO,
-		INIT_PREEMPT_OPTION, INIT_PREEMPT_DELAY);
+					  INIT_PREEMPT_STACK_SIZE, thread_entry, INIT_PREEMPT_P1,
+					  INIT_PREEMPT_P2, INIT_PREEMPT_P3, INIT_PREEMPT_PRIO,
+					  INIT_PREEMPT_OPTION, INIT_PREEMPT_DELAY);
+
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
 	zassert_not_null(pthread, "thread creation failed\n");
@@ -172,9 +173,10 @@ void test_kinit_coop_thread(void)
 {
 	/*create coop thread*/
 	k_tid_t pthread = k_thread_create(&thread_coop, stack_coop,
-		INIT_COOP_STACK_SIZE, thread_entry, INIT_COOP_P1,
-		INIT_COOP_P2, INIT_COOP_P3, INIT_COOP_PRIO,
-		INIT_COOP_OPTION, INIT_COOP_DELAY);
+					  INIT_COOP_STACK_SIZE, thread_entry, INIT_COOP_P1,
+					  INIT_COOP_P2, INIT_COOP_P3, INIT_COOP_PRIO,
+					  INIT_COOP_OPTION, INIT_COOP_DELAY);
+
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
 	zassert_not_null(pthread, "thread spawn failed\n");
