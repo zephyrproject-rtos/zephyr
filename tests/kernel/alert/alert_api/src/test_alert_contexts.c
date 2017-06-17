@@ -55,17 +55,19 @@ static void alert_recv(void)
 	int ret;
 
 	if (palert->handler == K_ALERT_IGNORE ||
-			palert->handler == alert_handler0){
-		if (palert->handler == alert_handler0)
+	    palert->handler == alert_handler0) {
+		if (palert->handler == alert_handler0) {
 			zassert_equal(handler_executed, PENDING_MAX, NULL);
+		}
 		ret = k_alert_recv(palert, TIMEOUT);
 		zassert_equal(ret, -EAGAIN, NULL);
 	}
 
 	if (palert->handler == K_ALERT_DEFAULT ||
-			palert->handler == alert_handler1){
-		if (palert->handler == alert_handler1)
+	    palert->handler == alert_handler1) {
+		if (palert->handler == alert_handler1) {
 			zassert_equal(handler_executed, PENDING_MAX, NULL);
+		}
 		for (int i = 0; i < PENDING_MAX; i++) {
 			/**TESTPOINT: alert recv*/
 			ret = k_alert_recv(palert, K_NO_WAIT);
@@ -90,8 +92,8 @@ static void thread_alert(void)
 	handler_executed = 0;
 	/**TESTPOINT: thread-thread sync via alert*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_entry, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_entry, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	alert_send();
 	k_sleep(TIMEOUT);
 	k_thread_abort(tid);
@@ -115,6 +117,7 @@ static void isr_alert(void)
 void test_thread_alert_default(void)
 {
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, K_ALERT_DEFAULT, PENDING_MAX);
 
@@ -128,6 +131,7 @@ void test_thread_alert_ignore(void)
 {
 	/**TESTPOINT: alert handler ignore*/
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, K_ALERT_IGNORE, PENDING_MAX);
 	palert = &alert;
@@ -137,6 +141,7 @@ void test_thread_alert_ignore(void)
 void test_thread_alert_consumed(void)
 {
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, alert_handler0, PENDING_MAX);
 
@@ -148,6 +153,7 @@ void test_thread_alert_consumed(void)
 void test_thread_alert_pending(void)
 {
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, alert_handler1, PENDING_MAX);
 
@@ -159,6 +165,7 @@ void test_thread_alert_pending(void)
 void test_isr_alert_default(void)
 {
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, K_ALERT_DEFAULT, PENDING_MAX);
 
@@ -171,6 +178,7 @@ void test_isr_alert_ignore(void)
 {
 	/**TESTPOINT: alert handler ignore*/
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, K_ALERT_IGNORE, PENDING_MAX);
 	palert = &alert;
@@ -180,6 +188,7 @@ void test_isr_alert_ignore(void)
 void test_isr_alert_consumed(void)
 {
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, alert_handler0, PENDING_MAX);
 
@@ -191,6 +200,7 @@ void test_isr_alert_consumed(void)
 void test_isr_alert_pending(void)
 {
 	struct k_alert alert;
+
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, alert_handler1, PENDING_MAX);
 
