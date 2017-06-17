@@ -29,8 +29,9 @@ static void ipm_dummy_isr(void *data)
 	/* In a real driver the interrupt simply wouldn't fire, we fake
 	 * that here
 	 */
-	if (!driver_data->regs.enabled || !driver_data->regs.busy)
+	if (!driver_data->regs.enabled || !driver_data->regs.busy) {
 		return;
+	}
 
 	if (driver_data->cb) {
 		driver_data->cb(driver_data->cb_context, driver_data->regs.id,

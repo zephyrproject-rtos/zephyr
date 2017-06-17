@@ -14,14 +14,14 @@
 #include <tc_util.h>
 #include "ipm_dummy.h"
 
-#define PRINTK_OUT	1
+#define PRINTK_OUT      1
 
 #if PRINTK_OUT
-#define SOURCE	IPM_CONSOLE_STDOUT
-#define DEST	IPM_CONSOLE_PRINTK
+#define SOURCE  IPM_CONSOLE_STDOUT
+#define DEST    IPM_CONSOLE_PRINTK
 #else
-#define SOURCE	IPM_CONSOLE_PRINTK
-#define DEST	IPM_CONSOLE_STDOUT
+#define SOURCE  IPM_CONSOLE_PRINTK
+#define DEST    IPM_CONSOLE_STDOUT
 #endif
 
 #define INIT_PRIO_IPM_SEND 50
@@ -29,8 +29,8 @@
 /* Set up the dummy IPM driver */
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
 DEVICE_INIT(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
-				&ipm_dummy0_driver_data, NULL,
-				POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    &ipm_dummy0_driver_data, NULL,
+	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /* Sending side of the console IPM driver, will forward anything sent
  * to printf() since we selected IPM_CONSOLE_STDOUT
@@ -40,14 +40,14 @@ static struct ipm_console_sender_config_info sender_config = {
 	.flags = SOURCE
 };
 DEVICE_INIT(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
-				NULL, &sender_config,
-				APPLICATION, INIT_PRIO_IPM_SEND);
+	    NULL, &sender_config,
+	    APPLICATION, INIT_PRIO_IPM_SEND);
 
 /* Receiving side of the console IPM driver. These numbers are
  * more or less arbitrary
  */
-#define LINE_BUF_SIZE		80
-#define RING_BUF_SIZE32		8
+#define LINE_BUF_SIZE           80
+#define RING_BUF_SIZE32         8
 
 static u32_t ring_buf_data[RING_BUF_SIZE32];
 static K_THREAD_STACK_DEFINE(thread_stack, IPM_CONSOLE_STACK_SIZE);
@@ -66,8 +66,8 @@ static struct ipm_console_receiver_config_info receiver_config = {
 
 struct ipm_console_receiver_runtime_data receiver_data;
 DEVICE_INIT(ipm_console_recv0, "ipm_recv0", ipm_console_receiver_init,
-				&receiver_data, &receiver_config,
-				APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    &receiver_data, &receiver_config,
+	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static const char thestr[] = "everything is awesome\n";
 
