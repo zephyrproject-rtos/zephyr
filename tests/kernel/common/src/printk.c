@@ -63,7 +63,7 @@ void printk_test(void)
 	int count;
 
 	printk("%lld %llu %llx",
-			  1LL, -1ULL, -1ULL);
+	       1LL, -1ULL, -1ULL);
 	_old_char_out = __printk_get_hook();
 	__printk_hook_install(ram_console_out);
 
@@ -86,8 +86,8 @@ void printk_test(void)
 	count = 0;
 
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,
-			 "%zu %hhu %hu %u %lu %llu\n",
-			 stv, uc, usi, ui, ul, ull);
+			  "%zu %hhu %hu %u %lu %llu\n",
+			  stv, uc, usi, ui, ul, ull);
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,
 			  "%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,
