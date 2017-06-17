@@ -1,0 +1,6 @@
+config MERGE_PATCH
+	bool "Merge patch"
+	default y
+	help
+	Will this patch, supporting application
+	Kconfig configuration, be merged?

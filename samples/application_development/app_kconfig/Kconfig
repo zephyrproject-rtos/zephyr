@@ -1,0 +1,5 @@
+menu "APPLICATION CONFIGURATION"
+
+source "$PROJECT_BASE/src/Kconfig"
+
+endmenu
