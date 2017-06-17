@@ -68,8 +68,8 @@
 
 #define MAX_TESTS 500
 #define STACKSIZE 2048
-#define HI_PRI	5
-#define LO_PRI	10
+#define HI_PRI  5
+#define LO_PRI  10
 
 /* space for float register load/store area used by low priority task */
 
@@ -141,7 +141,7 @@ void load_store_low(void)
 
 	/* Keep cranking forever, or until an error is detected. */
 
-	for (load_store_low_count = 0; ; load_store_low_count++) {
+	for (load_store_low_count = 0;; load_store_low_count++) {
 
 		/*
 		 * Clear store buffer to erase all traces of any previous
@@ -195,12 +195,12 @@ void load_store_low(void)
 		for (i = 0; i < SIZEOF_FP_REGISTER_SET; i++) {
 			if (store_ptr[i] != init_byte) {
 				TC_ERROR("load_store_low found 0x%x instead "
-					"of 0x%x @ offset 0x%x\n",
-						store_ptr[i],
-						init_byte, i);
+					 "of 0x%x @ offset 0x%x\n",
+					 store_ptr[i],
+					 init_byte, i);
 				TC_ERROR("Discrepancy found during "
-						"iteration %d\n",
-						load_store_low_count);
+					 "iteration %d\n",
+					 load_store_low_count);
 				fpu_sharing_error = 1;
 			}
 			init_byte++;
@@ -319,9 +319,9 @@ void load_store_high(void)
 
 		if ((++load_store_high_count % 100) == 0) {
 			PRINT_DATA("Load and store OK after %u (high) "
-					"+ %u (low) tests\n",
-					load_store_high_count,
-					load_store_low_count);
+				   "+ %u (low) tests\n",
+				   load_store_high_count,
+				   load_store_low_count);
 		}
 
 		/* terminate testing if specified limit has been reached */
@@ -335,19 +335,19 @@ void load_store_high(void)
 }
 
 #if defined(CONFIG_ISA_IA32)
-#define THREAD_FP_FLAGS	(K_FP_REGS | K_SSE_REGS)
+#define THREAD_FP_FLAGS (K_FP_REGS | K_SSE_REGS)
 #else
-#define THREAD_FP_FLAGS	(K_FP_REGS)
+#define THREAD_FP_FLAGS (K_FP_REGS)
 #endif
 
 K_THREAD_DEFINE(load_low, STACKSIZE, load_store_low, NULL, NULL, NULL,
-			LO_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		LO_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
 
 K_THREAD_DEFINE(load_high, STACKSIZE, load_store_high, NULL, NULL, NULL,
-			HI_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		HI_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
 
 K_THREAD_DEFINE(pi_low, STACKSIZE, calculate_pi_low, NULL, NULL, NULL,
-			LO_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		LO_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
 
 K_THREAD_DEFINE(pi_high, STACKSIZE, calculate_pi_high, NULL, NULL, NULL,
-			HI_PRI, THREAD_FP_FLAGS, K_NO_WAIT);
+		HI_PRI, THREAD_FP_FLAGS, K_NO_WAIT);

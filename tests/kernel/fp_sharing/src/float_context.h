@@ -52,8 +52,8 @@ struct xmm_register {
 };
 
 struct fp_volatile_register_set {
-	struct xmm_register xmm[8];  /* XMM[0] -> XMM[7] */
-	struct fp_register  st[8];   /* ST[0] -> ST[7] */
+	struct xmm_register xmm[8];     /* XMM[0] -> XMM[7] */
+	struct fp_register st[8];       /* ST[0] -> ST[7] */
 };
 
 struct fp_non_volatile_register_set {
@@ -83,24 +83,24 @@ struct fp_non_volatile_register_set {
 	float s[16];
 };
 
-#define SIZEOF_FP_VOLATILE_REGISTER_SET                        \
-		sizeof(struct fp_volatile_register_set)
-#define SIZEOF_FP_NON_VOLATILE_REGISTER_SET                    \
-		sizeof(struct fp_non_volatile_register_set)
+#define SIZEOF_FP_VOLATILE_REGISTER_SET	\
+	sizeof(struct fp_volatile_register_set)
+#define SIZEOF_FP_NON_VOLATILE_REGISTER_SET \
+	sizeof(struct fp_non_volatile_register_set)
 
 #else
 
-#error	"Architecture must provide the following definitions:\n"
-	"\t'struct fp_volatile_registers'\n"
-	"\t'struct fp_non_volatile_registers'\n"
-	"\t'SIZEOF_FP_VOLATILE_REGISTER_SET'\n"
-	"\t'SIZEOF_FP_NON_VOLATILE_REGISTER_SET'\n"
+#error  "Architecture must provide the following definitions:\n"
+"\t'struct fp_volatile_registers'\n"
+"\t'struct fp_non_volatile_registers'\n"
+"\t'SIZEOF_FP_VOLATILE_REGISTER_SET'\n"
+"\t'SIZEOF_FP_NON_VOLATILE_REGISTER_SET'\n"
 #endif /* CONFIG_ISA_IA32 */
 
 /* the set of ALL floating point registers */
 
 struct fp_register_set {
-	struct fp_volatile_register_set     fp_volatile;
+	struct fp_volatile_register_set fp_volatile;
 	struct fp_non_volatile_register_set fp_non_volatile;
 };
 
