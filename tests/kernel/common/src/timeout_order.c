@@ -75,7 +75,7 @@ void timeout_order_test(void)
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		zassert_equal(poll_events[ii].state,
-			     K_POLL_STATE_SEM_AVAILABLE, "");
+			      K_POLL_STATE_SEM_AVAILABLE, "");
 	}
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		zassert_equal(results[ii], ii, "");
