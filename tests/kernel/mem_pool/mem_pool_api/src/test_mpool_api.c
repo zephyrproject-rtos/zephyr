@@ -40,7 +40,7 @@ void tmpool_alloc_free(void *data)
 		 * memory block.
 		 */
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
-			K_NO_WAIT) == 0, NULL);
+					      K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
 	}
 
@@ -59,7 +59,7 @@ void tmpool_alloc_free(void *data)
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MAX,
-			K_NO_WAIT) == 0, NULL);
+					      K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
 	}
 
@@ -91,7 +91,7 @@ void test_mpool_alloc_size(void)
 	 */
 	while (size >= BLK_SIZE_MIN) {
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
-			K_NO_WAIT) == 0, NULL);
+					      K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
 		zassert_true((u32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
@@ -109,7 +109,7 @@ void test_mpool_alloc_size(void)
 	 */
 	while (size <= BLK_SIZE_MAX) {
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
-			K_NO_WAIT) == 0, NULL);
+					      K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
 		zassert_true((u32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
@@ -128,17 +128,17 @@ void test_mpool_alloc_timeout(void)
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		zassert_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
-			K_NO_WAIT), 0, NULL);
+					       K_NO_WAIT), 0, NULL);
 	}
 
 	/** TESTPOINT: Use K_NO_WAIT to return without waiting*/
 	/** TESTPOINT: @retval -ENOMEM Returned without waiting*/
 	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN,
-		K_NO_WAIT), -ENOMEM, NULL);
+				       K_NO_WAIT), -ENOMEM, NULL);
 	/** TESTPOINT: @retval -EAGAIN Waiting period timed out*/
 	tms = k_uptime_get();
 	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN, TIMEOUT),
-		-EAGAIN, NULL);
+		      -EAGAIN, NULL);
 	/**
 	 * TESTPOINT: Maximum time to wait for operation to complete (in
 	 * milliseconds)
