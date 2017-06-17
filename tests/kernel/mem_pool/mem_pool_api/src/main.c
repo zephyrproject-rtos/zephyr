@@ -16,11 +16,11 @@ extern void test_mpool_alloc_timeout(void);
 void test_main(void *p1, void *p2, void *p3)
 {
 	ztest_test_suite(test_mpool_api,
-		ztest_unit_test(test_mpool_alloc_free_thread),
-		ztest_unit_test(test_mpool_alloc_free_isr),
-		ztest_unit_test(test_mpool_kdefine_extern),
-		ztest_unit_test(test_mpool_alloc_size),
-		ztest_unit_test(test_mpool_alloc_timeout)
-		);
+			 ztest_unit_test(test_mpool_alloc_free_thread),
+			 ztest_unit_test(test_mpool_alloc_free_isr),
+			 ztest_unit_test(test_mpool_kdefine_extern),
+			 ztest_unit_test(test_mpool_alloc_size),
+			 ztest_unit_test(test_mpool_alloc_timeout)
+			 );
 	ztest_run_test_suite(test_mpool_api);
 }
