@@ -78,8 +78,8 @@ void test_irq_vector_table(void)
 	}
 
 	zassert_true((k_sem_take(&sem[0], K_NO_WAIT) ||
-				k_sem_take(&sem[1], K_NO_WAIT) ||
-				k_sem_take(&sem[2], K_NO_WAIT)), NULL);
+		      k_sem_take(&sem[1], K_NO_WAIT) ||
+		      k_sem_take(&sem[2], K_NO_WAIT)), NULL);
 
 	for (int ii = 0; ii < 3; ii++) {
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
@@ -91,8 +91,8 @@ void test_irq_vector_table(void)
 	}
 
 	zassert_false((k_sem_take(&sem[0], K_NO_WAIT) ||
-				k_sem_take(&sem[1], K_NO_WAIT) ||
-				k_sem_take(&sem[2], K_NO_WAIT)), NULL);
+		       k_sem_take(&sem[1], K_NO_WAIT) ||
+		       k_sem_take(&sem[2], K_NO_WAIT)), NULL);
 
 }
 
@@ -109,4 +109,4 @@ void test_main(void)
 typedef void (*vth)(void); /* Vector Table Handler */
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	isr0, isr1, isr2
-	};
+};
