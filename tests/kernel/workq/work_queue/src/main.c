@@ -11,17 +11,17 @@
 #include <misc/util.h>
 #include <misc/nano_work.h>
 
-#define NUM_TEST_ITEMS		6
+#define NUM_TEST_ITEMS          6
 /* Each work item takes 100ms */
-#define WORK_ITEM_WAIT		100
+#define WORK_ITEM_WAIT          100
 
 /*
  * Wait 50ms between work submissions, to ensure co-op and prempt
  * preempt thread submit alternatively.
  */
-#define SUBMIT_WAIT		50
+#define SUBMIT_WAIT             50
 
-#define STACK_SIZE	1024
+#define STACK_SIZE      1024
 
 struct test_item {
 	int key;
@@ -101,7 +101,7 @@ static int check_results(int num_tests)
 	for (i = 0; i < num_tests; i++) {
 		if (results[i] != i + 1) {
 			TC_ERROR("*** got result %d in position %d"
-					" (expected %d)\n",
+				 " (expected %d)\n",
 				 results[i], i, i + 1);
 			return TC_FAIL;
 		}
@@ -203,7 +203,7 @@ static void coop_delayed_work_main(int arg1, int arg2)
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " coop thread\n", i + 1);
 		k_delayed_work_submit(&tests[i].work,
-					 (i + 1) * WORK_ITEM_WAIT);
+				      (i + 1) * WORK_ITEM_WAIT);
 	}
 }
 
@@ -219,7 +219,7 @@ static int test_delayed_submit(void)
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " preempt thread\n", i + 1);
 		if (k_delayed_work_submit(&tests[i].work,
-					     (i + 1) * WORK_ITEM_WAIT)) {
+					  (i + 1) * WORK_ITEM_WAIT)) {
 			return TC_FAIL;
 		}
 	}
