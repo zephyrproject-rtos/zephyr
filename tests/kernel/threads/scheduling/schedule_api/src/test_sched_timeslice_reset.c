@@ -12,7 +12,7 @@ static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 /* slice size in millisecond*/
 #define SLICE_SIZE 200
 /* busy for more than one slice*/
-#define BUSY_MS (SLICE_SIZE+20)
+#define BUSY_MS (SLICE_SIZE + 20)
 /* a half timeslice*/
 #define HALF_SLICE_SIZE (SLICE_SIZE >> 1)
 
@@ -21,9 +21,9 @@ K_SEM_DEFINE(sema, 0, NUM_THREAD);
 static s64_t elapsed_slice;
 /*expected elapsed duration*/
 static s64_t expected_slice[NUM_THREAD] = {
-	HALF_SLICE_SIZE,/* the ztest native thread taking a half timeslice*/
-	SLICE_SIZE,     /* the spawned thread taking a full timeslice, reset*/
-	SLICE_SIZE      /* the spawned thread taking a full timeslice, reset*/
+	HALF_SLICE_SIZE,        /* the ztest native thread taking a half timeslice*/
+	SLICE_SIZE,             /* the spawned thread taking a full timeslice, reset*/
+	SLICE_SIZE              /* the spawned thread taking a full timeslice, reset*/
 };
 static int thread_idx;
 
@@ -69,8 +69,8 @@ void test_slice_reset(void)
 		/* create delayed threads with equal preemptive priority*/
 		for (int i = 0; i < NUM_THREAD; i++) {
 			tid[i] = k_thread_create(&t[i], tstack[i], STACK_SIZE,
-				thread_tslice, NULL, NULL, NULL,
-				K_PRIO_PREEMPT(j), 0, 0);
+						 thread_tslice, NULL, NULL, NULL,
+						 K_PRIO_PREEMPT(j), 0, 0);
 		}
 		/* enable time slice*/
 		k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));
