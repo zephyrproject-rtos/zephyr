@@ -20,7 +20,7 @@
 #define _LINKERDEFS_H
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 /* include platform dependent linker-defs */
 #ifdef CONFIG_X86

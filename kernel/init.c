@@ -17,12 +17,12 @@
 #include <misc/printk.h>
 #include <misc/stack.h>
 #include <drivers/rand32.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <device.h>
 #include <init.h>
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <ksched.h>
 #include <version.h>
 #include <string.h>

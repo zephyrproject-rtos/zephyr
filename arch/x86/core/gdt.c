@@ -12,9 +12,9 @@
  * for the IA-32 architecture.
  */
 
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <kernel_structs.h>
 #include <arch/cpu.h>

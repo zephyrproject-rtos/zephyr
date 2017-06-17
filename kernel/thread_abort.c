@@ -15,7 +15,7 @@
 #include <nano_internal.h>
 #include <string.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <wait_q.h>
 #include <ksched.h>
 

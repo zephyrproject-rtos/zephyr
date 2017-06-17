@@ -14,7 +14,7 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 
 GTEXT(k_cpu_idle)

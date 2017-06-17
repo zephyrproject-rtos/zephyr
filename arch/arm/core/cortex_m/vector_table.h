@@ -29,7 +29,7 @@ extern "C" {
 
 #include <board.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <misc/util.h>
 
 GTEXT(__start)

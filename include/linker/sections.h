@@ -49,6 +49,6 @@
 #define TI_CCFG	.ti_ccfg
 #endif
 
-#include <section_tags.h>
+#include <linker/section_tags.h>
 
 #endif /* _SECTIONS_H */

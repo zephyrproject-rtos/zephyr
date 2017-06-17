@@ -67,7 +67,7 @@
 
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
 #include <arch/x86/irq_controller.h>

@@ -17,7 +17,7 @@
 
 #if defined(_LINKER)
 #if defined(__GCC_LINKER_CMD__)
-#include <linker-tool-gcc.h>
+#include <linker/linker-tool-gcc.h>
 #else
 #error "Unknown toolchain"
 #endif

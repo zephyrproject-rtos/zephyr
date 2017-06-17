@@ -9,7 +9,7 @@
 #ifndef __IEEE802154_CC2520_H__
 #define __IEEE802154_CC2520_H__
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <atomic.h>
 #include <spi.h>
 

@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <kernel_arch_thread.h>
 

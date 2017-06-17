@@ -13,7 +13,7 @@
 
 #include <board.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <offsets_short.h>
 #include "vector_table.h"

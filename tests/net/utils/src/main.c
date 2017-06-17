@@ -18,7 +18,7 @@
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 

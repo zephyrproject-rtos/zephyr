@@ -17,7 +17,7 @@
  */
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 /* exports */
 

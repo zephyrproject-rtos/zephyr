@@ -11,7 +11,7 @@
 
 #include <init.h>
 #include <kernel.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <string.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>

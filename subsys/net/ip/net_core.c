@@ -19,7 +19,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <string.h>
 #include <errno.h>
 

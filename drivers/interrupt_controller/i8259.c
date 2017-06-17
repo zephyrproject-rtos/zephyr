@@ -16,7 +16,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <device.h>
 #include <init.h>
 

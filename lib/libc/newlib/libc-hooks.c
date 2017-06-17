@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <misc/util.h>
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)

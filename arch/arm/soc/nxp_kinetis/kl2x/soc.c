@@ -8,7 +8,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>

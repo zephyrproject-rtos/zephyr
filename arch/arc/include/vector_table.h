@@ -31,7 +31,7 @@ extern "C" {
 
 #include <board.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 GTEXT(__start)
 GTEXT(_VectorTable)

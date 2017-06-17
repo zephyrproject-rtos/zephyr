@@ -8,7 +8,7 @@
 #define SYS_LOG_DOMAIN "wpanusb"
 #include <logging/sys_log.h>
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <toolchain.h>
 #include <string.h>
 #include <misc/printk.h>

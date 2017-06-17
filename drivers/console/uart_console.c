@@ -29,7 +29,7 @@
 #include <console/console.h>
 #include <console/uart_console.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <atomic.h>
 #include <misc/printk.h>
 

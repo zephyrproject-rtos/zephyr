@@ -11,7 +11,7 @@
 
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <misc/util.h>
 #include <misc/slist.h>

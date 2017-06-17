@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>

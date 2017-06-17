@@ -17,7 +17,7 @@
 #endif /* CONFIG_INIT_STACKS */
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
 

@@ -27,7 +27,7 @@
 #define _kernel_arch_data__h_
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <asm_inline.h>
 #include <exception.h>
 #include <kernel_arch_thread.h>

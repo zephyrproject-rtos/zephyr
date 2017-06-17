@@ -20,7 +20,7 @@
 #include <ztest.h>
 #include <arch/cpu.h>
 #include <arch/arm/cortex_m/cmsis.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 
 struct k_sem sem[3];

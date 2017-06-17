@@ -17,7 +17,7 @@
 #include <board.h>
 #include <init.h>
 #include <uart.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 /* UART registers struct */
 struct uart_cmsdk_apb {

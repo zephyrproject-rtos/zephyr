@@ -12,7 +12,7 @@
 #include <kernel_structs.h>
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <ksched.h>
 #include <wait_q.h>
 #include <misc/__assert.h>
