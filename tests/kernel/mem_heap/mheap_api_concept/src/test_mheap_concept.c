@@ -36,7 +36,7 @@ void test_mheap_malloc_align4(void)
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		block[i] = k_malloc(i);
 		zassert_not_null(block[i], NULL);
-		zassert_false((int)block[i]%4, NULL);
+		zassert_false((int)block[i] % 4, NULL);
 	}
 
 	/* test case tear down*/
