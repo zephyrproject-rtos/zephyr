@@ -7,7 +7,7 @@
 BOARD ?= qemu_x86
 CONF_FILE = prj.conf
 
-export SOURCE_DIR = $(ZEPHYR_BASE)/samples/static_lib/hello_world
+export SOURCE_DIR = $(CURDIR)
 export LDFLAGS_zephyr += -L$(O)/mylib/lib
 export ALL_LIBS += mylib
 
