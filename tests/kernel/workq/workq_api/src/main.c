@@ -23,18 +23,18 @@ extern void test_delayed_work_cancel_isr(void);
 void test_main(void *p1, void *p2, void *p3)
 {
 	ztest_test_suite(test_workq_api,
-		ztest_unit_test(test_workq_start_before_submit),/*keep first!*/
-		ztest_unit_test(test_work_submit_to_queue_thread),
-		ztest_unit_test(test_work_submit_to_queue_isr),
-		ztest_unit_test(test_work_submit_thread),
-		ztest_unit_test(test_work_submit_isr),
-		ztest_unit_test(test_delayed_work_submit_to_queue_thread),
-		ztest_unit_test(test_delayed_work_submit_to_queue_isr),
-		ztest_unit_test(test_delayed_work_submit_thread),
-		ztest_unit_test(test_delayed_work_submit_isr),
-		ztest_unit_test(test_delayed_work_cancel_from_queue_thread),
-		ztest_unit_test(test_delayed_work_cancel_from_queue_isr),
-		ztest_unit_test(test_delayed_work_cancel_thread),
-		ztest_unit_test(test_delayed_work_cancel_isr));
+			 ztest_unit_test(test_workq_start_before_submit),/*keep first!*/
+			 ztest_unit_test(test_work_submit_to_queue_thread),
+			 ztest_unit_test(test_work_submit_to_queue_isr),
+			 ztest_unit_test(test_work_submit_thread),
+			 ztest_unit_test(test_work_submit_isr),
+			 ztest_unit_test(test_delayed_work_submit_to_queue_thread),
+			 ztest_unit_test(test_delayed_work_submit_to_queue_isr),
+			 ztest_unit_test(test_delayed_work_submit_thread),
+			 ztest_unit_test(test_delayed_work_submit_isr),
+			 ztest_unit_test(test_delayed_work_cancel_from_queue_thread),
+			 ztest_unit_test(test_delayed_work_cancel_from_queue_isr),
+			 ztest_unit_test(test_delayed_work_cancel_thread),
+			 ztest_unit_test(test_delayed_work_cancel_isr));
 	ztest_run_test_suite(test_workq_api);
 }
