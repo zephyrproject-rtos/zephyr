@@ -13,7 +13,7 @@
  * - Test Steps
  *   -# Set dma channel configuration including source/dest addr, burstlen
  *   -# Set direction memory-to-memory
- *   -# Start transter
+ *   -# Start transfer
  * - Expected Results
  *   -# Data is transferred correctly from src to dest
  * @}

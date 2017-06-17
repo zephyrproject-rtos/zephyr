@@ -13,7 +13,7 @@
  * A task that owns a mutex is promoted to the priority level of the
  * highest-priority task attempting to lock the mutex.
  *
- * In addition, recusive locking capabilities and the use of a private mutex
+ * In addition, recursive locking capabilities and the use of a private mutex
  * are also tested.
  *
  * This module tests the following mutex routines:

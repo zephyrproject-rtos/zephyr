@@ -218,7 +218,7 @@ int testSlabGetAllBlocks(void **p)
 
 /**
  *
- * @brief Free all memeory blocks
+ * @brief Free all memory blocks
  *
  * This routine frees all memory blocks and also verifies that the number of
  * blocks used are correct.

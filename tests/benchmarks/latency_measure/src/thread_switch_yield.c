@@ -34,7 +34,7 @@ static struct k_thread y_thread;
 
 /**
  *
- * @brief Helper thread for measuring thread switeh latency using yield
+ * @brief Helper thread for measuring thread switch latency using yield
  *
  * @return N/A
  */

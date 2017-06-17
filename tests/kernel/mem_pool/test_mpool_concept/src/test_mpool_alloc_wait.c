@@ -10,7 +10,7 @@
  * @defgroup t_mpool_concept test_mpool_concept
  * @brief TestPurpose: verify memory pool concepts.
  * @details All TESTPOINTs extracted from kernel documentation.
- * TESTPOINTs cover testable kernel behaviours that preserve across internal
+ * TESTPOINTs cover testable kernel behaviors that preserve across internal
  * implementation change or kernel version change.
  * As a black-box test, TESTPOINTs do not cover internal operations.
  *
@@ -22,7 +22,7 @@
  * memory block
  * - TESTPOINT: memory pool blocks can be recursively partitioned into quarters
  * until blocks of the minimum size are obtained
- * - TESTPOINT: if a suitable block can’t be created, the allocation request
+ * - TESTPOINT: if a suitable block can't be created, the allocation request
  * fails
  *
  * TESTPOINTs related to kconfig are covered in kconfig test:

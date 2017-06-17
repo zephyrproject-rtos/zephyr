@@ -10,7 +10,7 @@
  * @defgroup t_mslab_concept test_mslab_concept
  * @brief TestPurpose: verify memory slab concepts.
  * @details All TESTPOINTs extracted from kernel documentation.
- * TESTPOINTs cover testable kernel behaviours that preserve across internal
+ * TESTPOINTs cover testable kernel behaviors that preserve across internal
  * implementation change or kernel version change.
  * As a black-box test, TESTPOINTs do not cover internal operations.
  *

@@ -81,7 +81,7 @@ void test_mheap_block_desc(void)
 	 * TESTPOINT: The kernel uses the first 16 bytes of any memory block
 	 * allocated from the heap memory pool to save the block descriptor
 	 * information it needs to later free the block. Consequently, an
-	 * application’s request for an N byte chunk of heap memory requires a
+	 * application's request for an N byte chunk of heap memory requires a
 	 * block that is at least (N+16) bytes long.
 	 * Test steps:
 	 * initial memory heap status (F for free, U for used):
