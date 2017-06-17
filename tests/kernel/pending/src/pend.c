@@ -60,13 +60,13 @@ static struct k_sem sync_test_sem;
 static struct k_sem end_test_sem;
 
 struct fifo_data fifo_test_data[4] = {
-	{0, FIFO_TEST_END + 1}, {0, FIFO_TEST_END + 2},
-	{0, FIFO_TEST_END + 3}, {0, FIFO_TEST_END + 4}
+	{ 0, FIFO_TEST_END + 1 }, { 0, FIFO_TEST_END + 2 },
+	{ 0, FIFO_TEST_END + 3 }, { 0, FIFO_TEST_END + 4 }
 };
 
 struct lifo_data lifo_test_data[4] = {
-	{0, LIFO_TEST_END + 1}, {0, LIFO_TEST_END + 2},
-	{0, LIFO_TEST_END + 3}, {0, LIFO_TEST_END + 4}
+	{ 0, LIFO_TEST_END + 1 }, { 0, LIFO_TEST_END + 2 },
+	{ 0, LIFO_TEST_END + 3 }, { 0, LIFO_TEST_END + 4 }
 };
 
 static u32_t timer_start_tick;
@@ -104,7 +104,7 @@ static int increment_counter(void)
 static void sync_threads(struct k_work *work)
 {
 	struct offload_work *offload =
-	    CONTAINER_OF(work, struct offload_work, work_item);
+		CONTAINER_OF(work, struct offload_work, work_item);
 
 	k_sem_give(offload->sem);
 	k_sem_give(offload->sem);
@@ -398,7 +398,7 @@ void task_monitor(void)
 	k_work_submit_to_queue(&offload_work_q, &offload2.work_item);
 
 	timer_end_tick = 0;
-	k_sem_give(&start_test_sem);	/* start timer tests */
+	k_sem_give(&start_test_sem);    /* start timer tests */
 
 	/*
 	 * NOTE: The timer test is running in the context of high_task().
