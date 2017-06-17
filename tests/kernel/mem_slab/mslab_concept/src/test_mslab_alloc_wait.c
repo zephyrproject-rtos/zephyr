@@ -45,7 +45,7 @@ void tmslab_alloc_wait_timeout(void *p1, void *p2, void *p3)
 	void *block;
 
 	zassert_true(k_mem_slab_alloc(&mslab1, &block, TIMEOUT) == -EAGAIN,
-		NULL);
+		     NULL);
 	k_sem_give(&sync_sema);
 }
 
@@ -65,7 +65,7 @@ void test_mslab_alloc_wait_prio(void)
 	/*allocated up all blocks*/
 	for (int i = 0; i < BLK_NUM; i++) {
 		zassert_equal(k_mem_slab_alloc(&mslab1, &block[i], K_NO_WAIT),
-			0, NULL);
+			      0, NULL);
 	}
 
 	/**
@@ -79,16 +79,16 @@ void test_mslab_alloc_wait_prio(void)
 	 */
 	/*the low-priority thread*/
 	tid[0] = k_thread_create(&tdata[0], tstack[0], STACK_SIZE,
-		tmslab_alloc_wait_timeout, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(1), 0, 0);
+				 tmslab_alloc_wait_timeout, NULL, NULL, NULL,
+				 K_PRIO_PREEMPT(1), 0, 0);
 	/*the highest-priority thread that has waited the longest*/
 	tid[1] = k_thread_create(&tdata[1], tstack[1], STACK_SIZE,
-		tmslab_alloc_wait_ok, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 10);
+				 tmslab_alloc_wait_ok, NULL, NULL, NULL,
+				 K_PRIO_PREEMPT(0), 0, 10);
 	/*the highest-priority thread that has waited shorter*/
 	tid[2] = k_thread_create(&tdata[2], tstack[2], STACK_SIZE,
-		tmslab_alloc_wait_timeout, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 20);
+				 tmslab_alloc_wait_timeout, NULL, NULL, NULL,
+				 K_PRIO_PREEMPT(0), 0, 20);
 	/*relinquish CPU for above threads to start */
 	k_sleep(30);
 	/*free one block, expected to unblock thread "tid[1]"*/
