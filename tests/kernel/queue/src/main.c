@@ -22,10 +22,10 @@ extern void test_queue_loop(void);
 void test_main(void *p1, void *p2, void *p3)
 {
 	ztest_test_suite(test_queue_api,
-		ztest_unit_test(test_queue_thread2thread),
-		ztest_unit_test(test_queue_thread2isr),
-		ztest_unit_test(test_queue_isr2thread),
-		ztest_unit_test(test_queue_get_fail),
-		ztest_unit_test(test_queue_loop));
+			 ztest_unit_test(test_queue_thread2thread),
+			 ztest_unit_test(test_queue_thread2isr),
+			 ztest_unit_test(test_queue_isr2thread),
+			 ztest_unit_test(test_queue_get_fail),
+			 ztest_unit_test(test_queue_loop));
 	ztest_run_test_suite(test_queue_api);
 }
