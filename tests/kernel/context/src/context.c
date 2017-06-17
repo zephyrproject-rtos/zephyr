@@ -343,8 +343,8 @@ static int test_kernel_interrupts(disable_int_func disable_int,
  * @brief Test some context routines from a preemptible thread
  *
  * This routines tests the k_current_get() and
- * k_is_in_isr() routines from both a preemtible thread  and an ISR (that
- * interrupted a preemtible thread). Checking those routines with cooperative
+ * k_is_in_isr() routines from both a preemptible thread  and an ISR (that
+ * interrupted a preemptible thread). Checking those routines with cooperative
  * threads are done elsewhere.
  *
  * @return TC_PASS on success
@@ -467,7 +467,7 @@ static int test_kernel_thread(k_tid_t task_thread_id)
  * @brief Entry point to the thread's helper
  *
  * This routine is the entry point to the thread's helper thread.  It is used to
- * help test the behaviour of the k_yield() routine.
+ * help test the behavior of the k_yield() routine.
  *
  * @param arg1    unused
  * @param arg2    unused
@@ -508,14 +508,14 @@ static void thread_helper(void *arg1, void *arg2, void *arg3)
  * @brief Test the k_yield() routine
  *
  * This routine tests the k_yield() routine.  It starts another thread
- * (thus also testing k_thread_create() and checks that behaviour of
+ * (thus also testing k_thread_create() and checks that behavior of
  * k_yield() against the cases of there being a higher priority thread,
  * a lower priority thread, and another thread of equal priority.
  *
  * On error, it may set <thread_detected_error> to one of the following values:
  *   10 - helper thread ran prematurely
  *   11 - k_yield() did not yield to a higher priority thread
- *   12 - k_yield() did not yield to an equal prioirty thread
+ *   12 - k_yield() did not yield to an equal priority thread
  *   13 - k_yield() yielded to a lower priority thread
  *
  * @return TC_PASS on success

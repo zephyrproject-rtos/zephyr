@@ -8,7 +8,7 @@
  * @addtogroup t_pipe_api
  * @{
  * @defgroup t_pipe_fail_get_put test_pipe_fail_get_put
- * @brief TestPurpose: verify zephyr pipe get/put under differnt condition
+ * @brief TestPurpose: verify zephyr pipe get/put under different condition
  * - API coverage
  *   -# k_pipe_get [TIMEOUT K_NO_WAIT]
  *   -# k_pipe_put [K_FOREVER TIMEOUT K_NO_WAIT]

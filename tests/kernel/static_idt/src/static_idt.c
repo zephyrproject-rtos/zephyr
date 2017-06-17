@@ -63,7 +63,7 @@ void isr_handler(void)
 
 /**
  *
- * This is the handler for the divde by zero exception.
+ * This is the handler for the divide by zero exception.
  *
  * The source of this divide-by-zero error comes from the following line in
  * main() ...
