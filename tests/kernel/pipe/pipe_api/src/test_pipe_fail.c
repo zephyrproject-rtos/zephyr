@@ -30,14 +30,14 @@ void test_pipe_put_fail(void *p1, void *p2, void *p3)
 
 	k_pipe_init(&pipe, data, PIPE_LEN);
 	zassert_false(k_pipe_put(&pipe, data, PIPE_LEN, &wt_byte,
-				1, K_FOREVER), NULL);
+				 1, K_FOREVER), NULL);
 	/**TESTPOINT: pipe put returns -EIO*/
 	zassert_equal(k_pipe_put(&pipe, data, PIPE_LEN, &wt_byte,
-				1, K_NO_WAIT), -EIO, NULL);
+				 1, K_NO_WAIT), -EIO, NULL);
 	zassert_false(wt_byte, NULL);
 	/**TESTPOINT: pipe put returns -EAGAIN*/
 	zassert_equal(k_pipe_put(&pipe, data, PIPE_LEN, &wt_byte,
-				1, TIMEOUT), -EAGAIN, NULL);
+				 1, TIMEOUT), -EAGAIN, NULL);
 	zassert_true(wt_byte < 1, NULL);
 }
 
@@ -50,10 +50,10 @@ void test_pipe_get_fail(void *p1, void *p2, void *p3)
 	k_pipe_init(&pipe, data, PIPE_LEN);
 	/**TESTPOINT: pipe put returns -EIO*/
 	zassert_equal(k_pipe_get(&pipe, rx_data, PIPE_LEN, &rd_byte, 1,
-				K_NO_WAIT), -EIO, NULL);
+				 K_NO_WAIT), -EIO, NULL);
 	zassert_false(rd_byte, NULL);
 	/**TESTPOINT: pipe put returns -EAGAIN*/
 	zassert_equal(k_pipe_get(&pipe, rx_data, PIPE_LEN, &rd_byte, 1,
-				TIMEOUT), -EAGAIN, NULL);
+				 TIMEOUT), -EAGAIN, NULL);
 	zassert_true(rd_byte < 1, NULL);
 }

@@ -42,7 +42,7 @@ static void tpipe_put(struct k_pipe *ppipe)
 		to_wt = (PIPE_LEN - i) >= BYTES_TO_WRITE ?
 			BYTES_TO_WRITE : (PIPE_LEN - i);
 		zassert_false(k_pipe_put(ppipe, &data[i], to_wt,
-				&wt_byte, 1, K_NO_WAIT), NULL);
+					 &wt_byte, 1, K_NO_WAIT), NULL);
 		zassert_true(wt_byte == to_wt || wt_byte == 1, NULL);
 	}
 }
@@ -54,7 +54,7 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema)
 	for (int i = 0; i < PIPE_LEN; i += BYTES_TO_WRITE) {
 		/**TESTPOINT: pipe block put*/
 		zassert_equal(k_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
-			K_NO_WAIT), 0, NULL);
+					       K_NO_WAIT), 0, NULL);
 		memcpy(block.data, &data[i], BYTES_TO_WRITE);
 		k_pipe_block_put(ppipe, &block, BYTES_TO_WRITE, sema);
 		if (sema) {
@@ -75,7 +75,7 @@ static void tpipe_get(struct k_pipe *ppipe)
 		to_rd = (PIPE_LEN - i) >= BYTES_TO_READ ?
 			BYTES_TO_READ : (PIPE_LEN - i);
 		zassert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
-				&rd_byte, 1, K_FOREVER), NULL);
+					 &rd_byte, 1, K_FOREVER), NULL);
 		zassert_true(rd_byte == to_rd || rd_byte == 1, NULL);
 	}
 	for (int i = 0; i < PIPE_LEN; i++) {
@@ -104,8 +104,8 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 
 	/**TESTPOINT: thread-thread data passing via pipe*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_entry, ppipe, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_entry, ppipe, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	tpipe_put(ppipe);
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -132,8 +132,9 @@ void test_pipe_block_put(void)
 
 	/**TESTPOINT: test k_pipe_block_put without semaphore*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_block_put, &kpipe, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_block_put, &kpipe, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
+
 	k_sleep(10);
 	tpipe_get(&kpipe);
 	k_sem_take(&end_sema, K_FOREVER);
@@ -148,8 +149,8 @@ void test_pipe_block_put_sema(void)
 	k_sem_init(&sync_sema, 0, 1);
 	/**TESTPOINT: test k_pipe_block_put with semaphore*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_block_put, &pipe, &sync_sema, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_block_put, &pipe, &sync_sema, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	k_sleep(10);
 	tpipe_get(&pipe);
 	k_sem_take(&end_sema, K_FOREVER);
@@ -161,8 +162,9 @@ void test_pipe_get_put(void)
 {
 	/**TESTPOINT: test API sequence: [get, put]*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_block_put, &kpipe, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_block_put, &kpipe, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
+
 	/*get will be executed previor to put*/
 	tpipe_get(&kpipe);
 	k_sem_take(&end_sema, K_FOREVER);
