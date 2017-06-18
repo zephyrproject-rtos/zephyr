@@ -13,7 +13,7 @@ some highlights of the Nucleo F413ZH board:
 
 - STM32 microcontroller in LQFP144 package
 - Two types of extension resources:
-       - ST Zio connector including: support for Arduino™ Uno V3 connectivity
+       - ST Zio connector including: support for Arduino* Uno V3 connectivity
          (A0 to A5, D0 to D15) and additional signals exposing a wide range of
          peripherals
        - ST morpho extension pin headers for full access to all STM32 I/Os
@@ -39,7 +39,7 @@ Hardware
 Nucleo F413ZH provides the following hardware components:
 
 - STM32F413ZHT6 in LQFP144 package
-- ARM®32-bit Cortex®-M4 CPU with FPU
+- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
 - 100 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 1.5 MB Flash

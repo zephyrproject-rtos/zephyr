@@ -46,7 +46,7 @@ Hardware
 STM32F4DISCOVERY Discovery kit provides the following hardware components:
 
 - STM32F407VGT6 in LQFP100 package
-- ARM®32-bit Cortex®-M4 CPU with FPU
+- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
 - 168 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 1 MB Flash

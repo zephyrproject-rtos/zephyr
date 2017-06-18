@@ -116,7 +116,7 @@ Flashing
 
 STM3210C-EVAL board includes an ST-LINK/V2-1 embedded debug tool interface.
 At power-on, the board is in firmware-upgrade mode (also called DFU for
-"Device Firmware Upgrade”), allowing the firmware to be updated through the USB. 
+"Device Firmware Upgrade"), allowing the firmware to be updated through the USB.
 This interface is supported by the openocd version included in Zephyr SDK.
 
 Flashing an application to STM3210C-EVAL

@@ -168,9 +168,9 @@ config BOOT_TIME_MEASUREMENT
 	depends on PERFORMANCE_METRICS
 	help
 	This option enables the recording of timestamps during system start
-	up. The global variable __start_tsc records the time kernel begins
-	executing, while __main_tsc records when main() begins executing,
-	and __idle_tsc records when the CPU becomes idle. All values are
+	up. The global variable __start_time_stamp records the time kernel begins
+	executing, while __main_time_stamp records when main() begins executing,
+	and __idle_time_stamp records when the CPU becomes idle. All values are
 	recorded in terms of CPU clock cycles since system reset.
 
 config CPU_CLOCK_FREQ_MHZ

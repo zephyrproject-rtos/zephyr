@@ -274,8 +274,9 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 		NET_INFO("[%d] frag %p len %d size %d reserve %d "
 			 "pool %p [sz %d ud_sz %d]",
 			 count, frag, frag->len, frag_size, ll_overhead,
-			 frag->pool, frag->pool->buf_size,
-			 frag->pool->user_data_size);
+			 net_buf_pool_get(frag->pool_id),
+			 net_buf_pool_get(frag->pool_id)->buf_size,
+			 net_buf_pool_get(frag->pool_id)->user_data_size);
 
 		count++;
 
@@ -703,9 +704,10 @@ void net_pkt_unref(struct net_pkt *pkt)
 	frag = pkt->frags;
 	while (frag) {
 		NET_DBG("%s (%s) [%d] frag %p ref %d frags %p (%s():%d)",
-			pool2str(frag->pool), frag->pool->name,
-			get_frees(frag->pool), frag, frag->ref - 1,
-			frag->frags, caller, line);
+			pool2str(net_buf_pool_get(frag->pool_id)),
+			net_buf_pool_get(frag->pool_id)->name,
+			get_frees(net_buf_pool_get(frag->pool_id)), frag,
+			frag->ref - 1, frag->frags, caller, line);
 
 		if (!frag->ref) {
 			const char *func_freed;
@@ -781,7 +783,9 @@ struct net_buf *net_pkt_frag_ref(struct net_buf *frag)
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
-		pool2str(frag->pool), frag->pool->name, get_frees(frag->pool),
+		pool2str(net_buf_pool_get(frag->pool_id)),
+		net_buf_pool_get(frag->pool_id)->name,
+		get_frees(net_buf_pool_get(frag->pool_id)),
 		frag, frag->ref + 1, caller, line);
 #endif
 
@@ -803,7 +807,9 @@ void net_pkt_frag_unref(struct net_buf *frag)
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
-		pool2str(frag->pool), frag->pool->name, get_frees(frag->pool),
+		pool2str(net_buf_pool_get(frag->pool_id)),
+		net_buf_pool_get(frag->pool_id)->name,
+		get_frees(net_buf_pool_get(frag->pool_id)),
 		frag, frag->ref - 1, caller, line);
 
 	if (frag->ref == 1) {
@@ -1586,12 +1592,6 @@ int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
 		*fragA = NULL;
 		*fragB = NULL;
 		return 0;
-	}
-
-	if (len > net_buf_tailroom(*fragA)) {
-		NET_DBG("Length %u is larger than fragment size %zd",
-			len, net_buf_tailroom(*fragA));
-		return -EINVAL;
 	}
 
 	if (len > orig_frag->len) {

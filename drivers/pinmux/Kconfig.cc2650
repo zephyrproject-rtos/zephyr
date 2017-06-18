@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kconfig for TI CC2650 SoC pinmux driver.
+
+config PINMUX_CC2650
+	bool "Pinmux driver for CC2650 SoC"
+	depends on PINMUX && SOC_SERIES_CC2650
+	select GPIO
+	select GPIO_CC2650
+	help
+	 Enable pin multiplexer for CC2650 SoC.
+
+	 For hardware reasons, the pinmux depends on the GPIO module
+	 being activated; it must initialize *before* the pinmux does.
+	 Please take care that the pinmux init priority value is *lower*
+	 that the GPIO driver init priority.

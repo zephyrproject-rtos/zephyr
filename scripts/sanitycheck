@@ -4,7 +4,7 @@
 This script scans for the set of unit test applications in the git
 repository and attempts to execute them. By default, it tries to
 build each test case on one platform per architecture, using a precedence
-list defined in an archtecture configuration file, and if possible
+list defined in an architecture configuration file, and if possible
 run the tests in the QEMU emulator.
 
 Test cases are detected by the presence of a 'testcase.ini' file in
@@ -12,7 +12,7 @@ the application's project directory. This file may contain one or
 more blocks, each identifying a test scenario. The title of the block
 is a name for the test case, which only needs to be unique for the
 test cases specified in that testcase.ini file. The full canonical
-name for each test case is <path to test case under samples/>/<block>.
+name for each test case is <path to test case>/<ini block>.
 
 Each testcase.ini block can define the following key/value pairs:
 
@@ -477,7 +477,7 @@ class SizeCalculator:
 		   "_k_fifo_area", "_k_lifo_area", "_k_stack_area",
 		   "_k_msgq_area", "_k_mbox_area", "_k_pipe_area",
                    "net_if", "net_if_event", "net_stack", "net_l2_data",
-                   "_k_queue_area"]
+                   "_k_queue_area", "_net_buf_pool_area" ]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset",
                    "rodata", "devconfig", "net_l2", "vector"]
@@ -1680,7 +1680,7 @@ def parse_arguments():
                  "Default is to not do any tag filtering. Multiple invocations "
                  "are treated as a logical 'or' relationship")
     parser.add_argument("-e", "--exclude-tag", action="append",
-            help="Specify tags of tests that should not run."
+            help="Specify tags of tests that should not run. "
                  "Default is to run all tests with all tags.")
     parser.add_argument("-f", "--only-failed", action="store_true",
             help="Run only those tests that failed the previous sanity check "

@@ -139,7 +139,7 @@ struct bt_gatt_attr {
 	u8_t			perm;
 };
 
-/** @bried GATT Service structure */
+/** @brief GATT Service structure */
 struct bt_gatt_service {
 	/** Service Attributes */
 	struct bt_gatt_attr	*attrs;
@@ -372,7 +372,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, u16_t len, u16_t offset);
 
-/** @def BT_GATT_SVC
+/** @def BT_GATT_SERVICE
  *  @brief Service Structure Declaration Macro.
  *
  *  Helper macro to declare a service structure.

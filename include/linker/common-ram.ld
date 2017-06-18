@@ -130,6 +130,12 @@
 		_k_mem_pool_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(_net_buf_pool_area, (OPTIONAL),)
+	{
+		_net_buf_pool_list = .;
+		KEEP(*(SORT_BY_NAME("._net_buf_pool.static.*")))
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(net_if, (OPTIONAL),)
 	{
 		__net_if_start = .;

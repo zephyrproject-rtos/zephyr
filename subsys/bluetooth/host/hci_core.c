@@ -2537,7 +2537,10 @@ static void hci_cmd_done(u16_t opcode, u8_t status, struct net_buf *buf)
 {
 	BT_DBG("opcode 0x%04x status 0x%02x buf %p", opcode, status, buf);
 
-	if (buf->pool != &hci_cmd_pool) {
+	if (net_buf_pool_get(buf->pool_id) != &hci_cmd_pool) {
+		BT_WARN("pool id %u pool %p != &hci_cmd_pool %p",
+			buf->pool_id, net_buf_pool_get(buf->pool_id),
+			&hci_cmd_pool);
 		return;
 	}
 
@@ -3845,11 +3848,14 @@ int bt_send(struct net_buf *buf)
 
 int bt_recv(struct net_buf *buf)
 {
+	struct net_buf_pool *pool;
+
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
 
-	if (buf->pool->user_data_size < BT_BUF_USER_DATA_MIN) {
+	pool = net_buf_pool_get(buf->pool_id);
+	if (pool->user_data_size < BT_BUF_USER_DATA_MIN) {
 		BT_ERR("Too small user data size");
 		net_buf_unref(buf);
 		return -EINVAL;

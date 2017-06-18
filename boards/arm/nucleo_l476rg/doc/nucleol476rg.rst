@@ -40,10 +40,10 @@ The STM32L476RG SoC provides the following hardware IPs:
 - Clock Sources:
         - 4 to 48 MHz crystal oscillator
         - 32 kHz crystal oscillator for RTC (LSE)
-        - Internal 16 MHz factory-trimmed RC (±1%)
-        - Internal low-power 32 kHz RC (±5%)
+        - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
+        - Internal low-power 32 kHz RC ( |plusminus| 5%)
         - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-          LSE (better than ±0.25 % accuracy)
+          LSE (better than  |plusminus| 0.25 % accuracy)
         - 3 PLLs for system clock, USB, audio, ADC
 - RTC with HW calendar, alarms and calibration
 - LCD 8 x 40 or 4 x 44 with step-up converter

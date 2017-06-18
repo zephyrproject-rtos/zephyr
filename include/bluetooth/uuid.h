@@ -219,7 +219,7 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GAP_PPCP                  BT_UUID_DECLARE_16(0x2a04)
 #define BT_UUID_GAP_PPCP_VAL              0x2a04
-/** @def BT_UUID_GATT_SVC_CHANGED
+/** @def BT_UUID_GATT_SC
  *  @brief GATT Characteristic Service Changed
  */
 #define BT_UUID_GATT_SC                   BT_UUID_DECLARE_16(0x2a05)

@@ -65,6 +65,43 @@
 
 			flash0: flash@0 {
 				reg = <0 0x100000>;
+
+				/*
+				 * If chosen's zephyr,code-partition
+				 * is unset, the image will be linked
+				 * into the entire flash device.  If
+				 * it points to an individual
+				 * partition, the code will be linked
+				 * to, and restricted to that
+				 * partition.
+				 */
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					boot_partition: partition@0 {
+						label = "mcuboot";
+						reg = <0x00000000 0x00010000>;
+						read-only;
+					};
+					app_state_partition: partition@10000 {
+						label = "application-state";
+						reg = <0x00010000 0x00010000>;
+					};
+					slot0_partition: partition@20000 {
+						label = "image-0";
+						reg = <0x00020000 0x00060000>;
+					};
+					slot1_partition: partition@80000 {
+						label = "image-1";
+						reg = <0x00080000 0x00060000>;
+					};
+					scratch_partition: partition@e0000 {
+						label = "image-scratch";
+						reg = <0x000e0000 0x00020000>;
+					};
+				};
 			};
 		};
 
