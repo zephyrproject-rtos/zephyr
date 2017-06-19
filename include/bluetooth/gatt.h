@@ -490,7 +490,7 @@ struct bt_gatt_ccc_cfg {
 	/** Config peer address. */
 	bt_addr_le_t		peer;
 	/** Config peer value. */
-	u16_t		value;
+	u16_t			value;
 	/** Config valid flag. */
 	u8_t			valid;
 };
@@ -499,7 +499,7 @@ struct bt_gatt_ccc_cfg {
 struct _bt_gatt_ccc {
 	struct bt_gatt_ccc_cfg	*cfg;
 	size_t			cfg_len;
-	u16_t		value;
+	u16_t			value;
 	void			(*cfg_changed)(const struct bt_gatt_attr *attr,
 					       u16_t value);
 };
