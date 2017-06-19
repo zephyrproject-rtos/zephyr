@@ -613,7 +613,7 @@ int cmd_gatt_register_test_svc(int argc, char *argv[])
 
 int cmd_gatt_unregister_test_svc(int argc, char *argv[])
 {
-	bt_gatt_unregister_service(&vnd_svc);
+	bt_gatt_service_unregister(&vnd_svc);
 
 	printk("Unregistering test vendor service\n");
 

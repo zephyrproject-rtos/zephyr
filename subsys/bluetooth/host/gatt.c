@@ -194,7 +194,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	return 0;
 }
 
-int bt_gatt_unregister_service(struct bt_gatt_service *svc)
+int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 {
 	__ASSERT(svc, "invalid parameters\n");
 
