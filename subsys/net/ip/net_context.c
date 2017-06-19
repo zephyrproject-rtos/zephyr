@@ -433,10 +433,12 @@ int net_context_put(struct net_context *context)
 		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
 		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
 		    && !context->tcp->fin_rcvd) {
-			NET_DBG("TCP connection in active close, not "
-				"disposing yet");
-			queue_fin(context);
-			return 0;
+			if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
+				NET_DBG("TCP connection in active close, not "
+					"disposing yet");
+				queue_fin(context);
+				return 0;
+			}
 		}
 	}
 #endif /* CONFIG_NET_TCP */
