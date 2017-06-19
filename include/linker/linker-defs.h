@@ -101,6 +101,14 @@
 		KEEP(*(".shell_*"));		\
 		__shell_cmd_end = .;
 
+#ifdef CONFIG_APPLICATION_MEMORY
+#define KERNEL_INPUT_SECTION(sect)	libzephyr.a (sect) kernel/lib.a (sect)
+#define APP_INPUT_SECTION(sect)		EXCLUDE_FILE (*libzephyr.a *kernel/lib.a) *(sect)
+#else
+#define KERNEL_INPUT_SECTION(sect)	*(sect)
+#define APP_INPUT_SECTION(sect)		*(sect)
+#endif
+
 
 #ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
