@@ -145,16 +145,35 @@ GDATA(__data_num_words)
 
 #include <zephyr/types.h>
 
+#ifdef CONFIG_APPLICATION_MEMORY
+/* Application memory area bounds */
+extern char __app_ram_start[];
+extern char __app_ram_end[];
+#endif
+
+/* Memory owned by the kernel */
+extern char __kernel_ram_start[];
+extern char __kernel_ram_end[];
+
 /* Used by _bss_zero or arch-specific implementation */
 extern char __bss_start[];
 extern char __bss_end[];
+#ifdef CONFIG_APPLICATION_MEMORY
+extern char __app_bss_start[];
+extern char __app_bss_end[];
+#endif
 
 /* Used by _data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
 extern char __data_rom_start[];
 extern char __data_ram_start[];
 extern char __data_ram_end[];
-#endif
+#ifdef CONFIG_APPLICATION_MEMORY
+extern char __app_data_rom_start[];
+extern char __app_data_ram_start[];
+extern char __app_data_ram_end[];
+#endif /* CONFIG_APPLICATION_MEMORY */
+#endif /* CONFIG_XIP */
 
 /* used by mem_safe subsystem */
 extern char _image_rom_start[];
