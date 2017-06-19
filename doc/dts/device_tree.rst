@@ -41,13 +41,11 @@ System build requirements
 *************************
 
 The Zephyr device tree feature requires a device tree compiler (DTC) and Python
-YAML packages.  Refer to the installation guide for your specific host OS.
+YAML packages.  Refer to the installation guide for your specific host OS:
 
-:ref:`installing_zephyr_win`
-
-:ref:`installation_linux`
-
-:ref:`installing_zephyr_mac`
+* :ref:`installing_zephyr_win`
+* :ref:`installation_linux`
+* :ref:`installing_zephyr_mac`
 
 
 Zephyr and Device Tree
@@ -85,15 +83,16 @@ driver/source usage.
 
 Device tree file formats
 ************************
+
 Hardware and software is described inside of device tree files in clear text format.
 These files have the file suffix of .dtsi or .dts.  The .dtsi files are meant to
 be included by other files.  Typically for a given board you have some number of
 .dtsi include files that pull in common device descriptions that are used across
 a given SoC family.
 
------------------------------------------
 Example: FRDM K64F Board and Hexiwear K64
------------------------------------------
+=========================================
+
 Both of these boards are based on the same NXP Kinetis SoC family, the K6X.  The
 following shows the include hierarchy for both boards.
 
@@ -135,11 +134,10 @@ The primary DTS file will contain at a minimum a version line, optional
 includes, and the root node definition.  The root node will contain a model and
 compatible that denotes the unique board described by the .dts file.
 
---------------------------------
 Device Tree Source File Template
---------------------------------
+================================
 
-.. code::
+.. code-block:: yaml
 
   /dts-v1/
   / {
@@ -243,7 +241,7 @@ a means to detect that issue.
 
 YAML files reside in a subdirectory inside the common and architecture-specific
 device tree directories.  A YAML template file is provided to show the required
-format.  This file is located at:
+format.  This file is located at::
 
   dts/common/yaml/device_node.yaml.template
 
