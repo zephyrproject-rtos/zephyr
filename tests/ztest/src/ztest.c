@@ -56,11 +56,17 @@ static void run_test_functions(struct unit_test *test)
 #define FAIL_FAST 0
 
 static jmp_buf test_fail;
+static jmp_buf test_pass;
 static jmp_buf stack_fail;
 
 void ztest_test_fail(void)
 {
 	raise(SIGABRT);
+}
+
+void ztest_test_pass(void)
+{
+	longjmp(test_pass, 1);
 }
 
 static void handle_signal(int sig)
@@ -106,6 +112,11 @@ static int run_test(struct unit_test *test)
 		goto out;
 	}
 
+	if (setjmp(test_pass)) {
+		ret = TC_PASS;
+		goto out;
+	}
+
 	run_test_functions(test);
 out:
 	ret |= cleanup_test(test);
@@ -138,6 +149,13 @@ static struct k_sem test_end_signal;
 void ztest_test_fail(void)
 {
 	test_result = -1;
+	k_sem_give(&test_end_signal);
+	k_thread_abort(k_current_get());
+}
+
+void ztest_test_pass(void)
+{
+	test_result = 0;
 	k_sem_give(&test_end_signal);
 	k_thread_abort(k_current_get());
 }
