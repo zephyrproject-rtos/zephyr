@@ -293,7 +293,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_gatt_unregister_service(struct bt_gatt_service *svc);
+int bt_gatt_service_unregister(struct bt_gatt_service *svc);
 
 enum {
 	BT_GATT_ITER_STOP = 0,
