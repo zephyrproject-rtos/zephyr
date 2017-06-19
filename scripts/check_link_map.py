@@ -25,7 +25,7 @@ import sys
 section_re = re.compile('(?x)'                    # (allow whitespace)
                         '^([a-zA-Z0-9_\.]+) \s+'  # name
                         ' (0x[0-9a-f]+)     \s+'  # addr
-                        ' (0x[0-9a-f]+)     \s+') # size
+                        ' (0x[0-9a-f]+)\s*')      # size
 
 load_addr_re = re.compile('load address (0x[0-9a-f]+)')
 
@@ -44,6 +44,13 @@ for line in fileinput.input():
         sec = match.group(1)
         vma = int(match.group(2), 16)
         size = int(match.group(3), 16)
+
+        if (sec == "bss"):
+            # Make sure we don't compare the last section of kernel data
+            # with the first section of application data, the kernel's bss
+            # and noinit are in between.
+            last_sec = None
+            continue
 
         lmatch = load_addr_re.search(line.rstrip())
         if lmatch:
