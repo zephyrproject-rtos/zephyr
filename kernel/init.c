@@ -143,6 +143,10 @@ void _bss_zero(void)
 {
 	memset(&__bss_start, 0,
 		 ((u32_t) &__bss_end - (u32_t) &__bss_start));
+#ifdef CONFIG_APPLICATION_MEMORY
+	memset(&__app_bss_start, 0,
+		 ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
+#endif
 }
 
 
@@ -159,6 +163,10 @@ void _data_copy(void)
 {
 	memcpy(&__data_ram_start, &__data_rom_start,
 		 ((u32_t) &__data_ram_end - (u32_t) &__data_ram_start));
+#ifdef CONFIG_APPLICATION_MEMORY
+	memcpy(&__app_data_ram_start, &__app_data_rom_start,
+		 ((u32_t) &__app_data_ram_end - (u32_t) &__app_data_ram_start));
+#endif
 }
 #endif
 
