@@ -41,6 +41,16 @@ void _ztest_run_test_suite(const char *name, struct unit_test *suite);
 void ztest_test_fail(void);
 
 /**
+ * @brief Pass the currently running test.
+ *
+ * Normally a test passes just by returning without an assertion failure.
+ * However, if the success case for your test involves a fatal fault,
+ * you can call this function from _SysFatalErrorHandler to indicate that
+ * the test passed before aborting the thread.
+ */
+void ztest_test_pass(void);
+
+/**
  * @brief Do nothing, successfully.
  *
  * Unit test / setup function / teardown function that does
