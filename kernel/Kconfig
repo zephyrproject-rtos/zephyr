@@ -164,6 +164,16 @@ config ERRNO
 	symbol. The C library must access the per-thread errno via the
 	_get_errno() symbol.
 
+config APPLICATION_MEMORY
+	bool
+	prompt "Split kernel and application memory"
+	default n
+	help
+	For all read-write memory sections (namely bss, noinit, data),
+	separate them into application and kernel areas. The application area
+	will have the project-level application objects and any libraries
+	including the C library in it.
+
 menu "Kernel Debugging and Metrics"
 config KERNEL_DEBUG
 	bool
