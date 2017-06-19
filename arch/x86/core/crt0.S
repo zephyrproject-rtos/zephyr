@@ -211,27 +211,15 @@ __csSet:
 	movl	$__data_rom_start, %esi /* DATA in ROM (src) */
 	movl	$__data_num_words, %ecx /* Size of DATA in quad bytes */
 
-  #ifdef CONFIG_SSE
-	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
+	call	_x86_data_copy
 
-	movl	%ecx ,%edx		/* save number of quad bytes */
-	shrl	$2, %ecx		/* How many 16 bytes? */
-	je	dataWords
+#ifdef CONFIG_APPLICATION_MEMORY
+	movl	$__app_data_ram_start, %edi /* DATA in RAM (dest) */
+	movl	$__app_data_rom_start, %esi /* DATA in ROM (src) */
+	movl	$__app_data_num_words, %ecx /* Size of DATA in quad bytes */
 
-dataDQ:
-	movdqu	(%esi), %xmm0
-	movdqu	%xmm0, (%edi)
-	addl	$16, %esi
-	addl	$16, %edi
-	loop	dataDQ
-
-dataWords:
-	movl	%edx, %ecx	/* restore # quad bytes */
-	andl	$0x3, %ecx	/* only need to copy at most 3 quad bytes */
-  #endif /* CONFIG_SSE */
-
-	rep
-	movsl				/* copy data 4 bytes at a time */
+	call	_x86_data_copy
+#endif /* CONFIG_APPLICATION_MEMORY */
 
 #endif /* CONFIG_XIP */
 
@@ -241,44 +229,15 @@ dataWords:
 	 * It's assumed that BSS size will be a multiple of a long (4 bytes),
 	 * and aligned on a double word (32-bit) boundary
 	 */
-
-#ifdef CONFIG_SSE
-
-	/* use XMM register to clear 16 bytes at a time */
-
-	pxor	%xmm0, %xmm0		/* zero out xmm0 register */
 	movl	$__bss_start, %edi	/* load BSS start address */
 	movl	$__bss_num_words, %ecx	/* number of quad bytes in .bss */
-	movl	%ecx, %edx		/* make a copy of # quad bytes */
-	shrl	$2, %ecx		/* How many multiples of 16 byte ? */
-	je	bssWords
-bssDQ:
-	movdqu	%xmm0, (%edi)		/* zero 16 bytes... */
-	addl	$16, %edi
-	loop	bssDQ
+	call	_x86_bss_zero
 
-	/* fall through to handle the remaining double words (32-bit chunks) */
-
-bssWords:
-	xorl	%eax, %eax		/* fill memory with 0 */
-	movl	%edx, %ecx		/* move # quad bytes into ECX (for rep) */
-	andl	$0x3, %ecx		/* only need to zero at most 3 quad bytes */
-	cld
-	rep
-	stosl				/* zero memory per 4 bytes */
-
-#else /* !CONFIG_SSE */
-
-	/* clear out BSS double words (32-bits at a time) */
-
-	xorl	%eax, %eax		/* fill memory with 0 */
-	movl	$__bss_start, %edi	/* load BSS start address */
-	movl	$__bss_num_words, %ecx	/* number of quad bytes */
-	cld
-	rep
-	stosl				/* zero memory per 4 bytes */
-
-#endif /* CONFIG_SSE */
+#ifdef CONFIG_APPLICATION_MEMORY
+	movl	$__app_bss_start, %edi		/* load app BSS start address */
+	movl	$__app_bss_num_words, %ecx	/* number of quad bytes */
+	call	_x86_bss_zero
+#endif
 
 #ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */
@@ -307,6 +266,70 @@ bssWords:
 	/* Jump to C portion of kernel initialization and never return */
 
 	jmp	_Cstart
+
+
+_x86_bss_zero:
+	/* ECX = size, EDI = starting address */
+#ifdef CONFIG_SSE
+	/* use XMM register to clear 16 bytes at a time */
+	pxor	%xmm0, %xmm0		/* zero out xmm0 register */
+
+	movl	%ecx, %edx		/* make a copy of # quad bytes */
+	shrl	$2, %ecx		/* How many multiples of 16 byte ? */
+	je	bssWords
+bssDQ:
+	movdqu	%xmm0, (%edi)		/* zero 16 bytes... */
+	addl	$16, %edi
+	loop	bssDQ
+
+	/* fall through to handle the remaining double words (32-bit chunks) */
+
+bssWords:
+	xorl	%eax, %eax		/* fill memory with 0 */
+	movl	%edx, %ecx		/* move # quad bytes into ECX (for rep) */
+	andl	$0x3, %ecx		/* only need to zero at most 3 quad bytes */
+	cld
+	rep
+	stosl				/* zero memory per 4 bytes */
+
+#else /* !CONFIG_SSE */
+
+	/* clear out BSS double words (32-bits at a time) */
+
+	xorl	%eax, %eax		/* fill memory with 0 */
+	cld
+	rep
+	stosl				/* zero memory per 4 bytes */
+
+#endif /* CONFIG_SSE */
+	ret
+
+#ifdef CONFIG_XIP
+_x86_data_copy:
+	/* EDI = dest, ESI = source, ECX = size in 32-bit chunks */
+  #ifdef CONFIG_SSE
+	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
+
+	movl	%ecx ,%edx		/* save number of quad bytes */
+	shrl	$2, %ecx		/* How many 16 bytes? */
+	je	dataWords
+
+dataDQ:
+	movdqu	(%esi), %xmm0
+	movdqu	%xmm0, (%edi)
+	addl	$16, %esi
+	addl	$16, %edi
+	loop	dataDQ
+
+dataWords:
+	movl	%edx, %ecx	/* restore # quad bytes */
+	andl	$0x3, %ecx	/* only need to copy at most 3 quad bytes */
+  #endif /* CONFIG_SSE */
+
+	rep
+	movsl				/* copy data 4 bytes at a time */
+	ret
+#endif /* CONFIG_XIP */
 
 #if defined(CONFIG_SSE)
 
