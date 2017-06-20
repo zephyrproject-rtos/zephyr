@@ -106,7 +106,7 @@
 		};
 
 		uart0: uart@4006a000 {
-			compatible = "nxp,k64f-uart";
+			compatible = "nxp,kinetis-uart";
 			reg = <0x4006a000 0x1000>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "status", "error";
@@ -119,7 +119,7 @@
 		};
 
 		uart1: uart@4006b000 {
-			compatible = "nxp,k64f-uart";
+			compatible = "nxp,kinetis-uart";
 			reg = <0x4006b000 0x1000>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "status", "error";
@@ -129,7 +129,7 @@
 		};
 
 		uart2: uart@4006c000 {
-			compatible = "nxp,k64f-uart";
+			compatible = "nxp,kinetis-uart";
 			reg = <0x4006c000 0x1000>;
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "status", "error";
@@ -139,7 +139,7 @@
 		};
 
 		uart3: uart@4006d000 {
-			compatible = "nxp,k64f-uart";
+			compatible = "nxp,kinetis-uart";
 			reg = <0x4006d000 0x1000>;
 			interrupts = <37 0>, <38 0>;
 			interrupt-names = "status", "error";
@@ -149,7 +149,7 @@
 		};
 
 		uart4: uart@400ea000 {
-			compatible = "nxp,k64f-uart";
+			compatible = "nxp,kinetis-uart";
 			reg = <0x400ea000 0x1000>;
 			interrupts = <66 0>, <67 0>;
 			interrupt-names = "status", "error";
@@ -159,7 +159,7 @@
 		};
 
 		uart5: uart@400eb000 {
-			compatible = "nxp,k64f-uart";
+			compatible = "nxp,kinetis-uart";
 			reg = <0x400eb000 0x1000>;
 			interrupts = <68 0>, <69 0>;
 			interrupt-names = "status", "error";
