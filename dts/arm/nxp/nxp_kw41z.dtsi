@@ -110,7 +110,7 @@
 		};
 
 		gpioa: gpio@400ff000 {
-			compatible = "nxp,kw41z-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff000 0x40>;
 			interrupts = <30 2>;
 			gpio-controller;
@@ -118,7 +118,7 @@
 		};
 
 		gpiob: gpio@400ff040 {
-			compatible = "nxp,kw41z-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff040 0x40>;
 			interrupts = <31 2>;
 			gpio-controller;
@@ -126,7 +126,7 @@
 		};
 
 		gpioc: gpio@400ff080 {
-			compatible = "nxp,kw41z-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff080 0x40>;
 			interrupts = <31 2>;
 			gpio-controller;
