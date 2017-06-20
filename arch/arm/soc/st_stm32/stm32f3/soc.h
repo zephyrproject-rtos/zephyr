@@ -59,6 +59,10 @@ enum stm32f3x_pin_config_mode {
 #include <stm32f3xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
+#ifdef CONFIG_I2C_STM32_V2
+#include <stm32f3xx_ll_i2c.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F3_SOC_H_ */
