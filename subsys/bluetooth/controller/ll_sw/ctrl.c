@@ -694,6 +694,8 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 
 	pdu_adv = (struct pdu_adv *)radio_pkt_scratch_get();
+	_pdu_adv = (struct pdu_adv *)&_radio.advertiser.adv_data.data
+		[_radio.advertiser.adv_data.first][0];
 
 	if ((pdu_adv->type == PDU_ADV_TYPE_SCAN_REQ) &&
 	    (pdu_adv->len == sizeof(struct pdu_adv_payload_scan_req)) &&
@@ -724,7 +726,15 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 		   (pdu_adv->len == sizeof(struct pdu_adv_payload_connect_ind)) &&
 		   (((_radio.advertiser.filter_policy & 0x02) == 0) ||
 		    (devmatch_ok) || (irkmatch_ok)) &&
-		   (1 /** @todo own addr match check */) &&
+		   ((_pdu_adv->type != PDU_ADV_TYPE_DIRECT_IND) ||
+		    ((_pdu_adv->tx_addr == pdu_adv->rx_addr) &&
+		     (_pdu_adv->rx_addr == pdu_adv->tx_addr) &&
+		     !memcmp(_pdu_adv->payload.direct_ind.adv_addr,
+			     pdu_adv->payload.connect_ind.adv_addr,
+			     BDADDR_SIZE) &&
+		     !memcmp(_pdu_adv->payload.direct_ind.tgt_addr,
+			     pdu_adv->payload.connect_ind.init_addr,
+			     BDADDR_SIZE))) &&
 		   ((_radio.fc_ena == 0) || (_radio.fc_req == _radio.fc_ack)) &&
 		   (_radio.advertiser.conn)) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
@@ -899,8 +909,6 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 		ticker_stop_adv_assert(ticker_status, (void *)__LINE__);
 
 		/* Stop Direct Adv Stopper */
-		_pdu_adv = (struct pdu_adv *)&_radio.advertiser.adv_data.data
-			[_radio.advertiser.adv_data.first][0];
 		if (_pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 			/* Advertiser stop can expire while here in this ISR.
 			 * Deferred attempt to stop can fail as it would have
