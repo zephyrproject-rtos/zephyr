@@ -16,6 +16,7 @@ Samples and Demos
    sensor/*
    grove/*
    boards/*
+   mpu/*
 
 
 To add a new sample document, please use the template available under
