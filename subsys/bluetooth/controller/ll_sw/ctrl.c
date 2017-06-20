@@ -4889,39 +4889,26 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		    void *context)
 {
-	u32_t ticker_status;
+	struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_data *pdu_data_rx;
-	struct radio_le_conn_cmplt *radio_le_conn_cmplt;
+	u32_t ticker_status;
 
 	ARG_UNUSED(ticks_at_expire);
 	ARG_UNUSED(remainder);
 	ARG_UNUSED(lazy);
 	ARG_UNUSED(context);
 
-	/* Reset advertiser state */
-	_radio.advertiser.is_enabled = 0;
+	/* Abort an event, if any, to avoid Rx queue corruption used by Radio
+	 * ISR.
+	 */
+	event_stop(0, 0, 0, (void *)STATE_ABORT);
 
 	/* Stop Direct Adv */
 	ticker_status =
 	    ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 			RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_ID_ADV,
 			ticker_success_assert, (void *)__LINE__);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
-	/** @todo synchronize stopping of scanner, i.e. pre-event and event
-	 * needs to complete
-	 */
-	/* below lines are temporary */
-	ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				    RADIO_TICKER_USER_ID_WORKER,
-				    RADIO_TICKER_ID_MARKER_0,
-				    ticker_success_assert, (void *)__LINE__);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
-	ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				    RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_ID_EVENT,
-				    ticker_success_assert, (void *)__LINE__);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
@@ -7985,12 +7972,31 @@ static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 	u32_t ticks_xtal_to_start = 0;
 	u32_t ret;
 
+	/* Determine xtal, active and start ticks. Stop directed adv stop
+	 * ticker.
+	 */
 	switch (ticker_id_primary) {
 	case RADIO_TICKER_ID_ADV:
 		ticks_xtal_to_start =
 			_radio.advertiser.hdr.ticks_xtal_to_start;
 		ticks_active_to_start =
 			_radio.advertiser.hdr.ticks_active_to_start;
+
+		/* Stop ticker "may" be in use for direct adv,
+		 * hence stop may fail if ticker not used.
+		 */
+		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+				  RADIO_TICKER_USER_ID_APP, ticker_id_stop,
+				  ticker_if_done, (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			/* wait for ticker to be stopped */
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				cpu_sleep();
+			}
+		}
+
+		LL_ASSERT((ret_cb == TICKER_STATUS_SUCCESS) ||
+			  (ret_cb == TICKER_STATUS_FAILURE));
 		break;
 
 	case RADIO_TICKER_ID_SCAN:
@@ -8022,7 +8028,6 @@ static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 	}
 
 	LL_ASSERT(!_radio.ticker_id_stop);
-
 	_radio.ticker_id_stop = ticker_id_primary;
 
 	/* Step 1: Is Primary started? Stop the Primary ticker */
