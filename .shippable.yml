@@ -49,9 +49,12 @@ build:
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
-            sudo pip install sphinx==1.5.5
             make htmldocs > doc.log 2>&1;
-            ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
+            python2 ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
+            if [ "$?" != 0 ]; then
+              echo " ==> Error running filter script"
+              exit 1
+            fi;
             if [ -s doc.warnings ]; then
               echo " => New documentation warnings/errors";
             fi;
