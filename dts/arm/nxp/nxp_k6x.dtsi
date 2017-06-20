@@ -169,14 +169,14 @@
 		};
 
 		pinmux_a: pinmux@40049000 {
-			compatible = "nxp,k64f-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 
 			clocks = <&sim 0x1038 9>;
 		};
 
 		pinmux_b: pinmux@4004a000 {
-			compatible = "nxp,k64f-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 
 			clocks = <&sim 0x1038 10>;
@@ -203,19 +203,19 @@
 		};
 
 		pinmux_c: pinmux@4004b000 {
-			compatible = "nxp,k64f-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim 0x1038 11>;
 		};
 
 		pinmux_d: pinmux@4004c000 {
-			compatible = "nxp,k64f-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim 0x1038 12>;
 		};
 
 		pinmux_e: pinmux@4004d000 {
-			compatible = "nxp,k64f-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim 0x1038 13>;
 		};
