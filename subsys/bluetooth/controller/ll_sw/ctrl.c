@@ -4846,7 +4846,7 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	/* Setup Radio Filter */
 	if (_radio.advertiser.filter_policy) {
 
-		struct ll_wl *wl = ctrl_wl_get();
+		struct ll_filter *wl = ctrl_filter_get();
 
 		radio_filter_configure(wl->enable_bitmask,
 				       wl->addr_type_bitmask,
@@ -5042,7 +5042,7 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	/* Setup Radio Filter */
 	if (_radio.scanner.filter_policy) {
 
-		struct ll_wl *wl = ctrl_wl_get();
+		struct ll_filter *wl = ctrl_filter_get();
 
 		radio_filter_configure(wl->enable_bitmask,
 				       wl->addr_type_bitmask,

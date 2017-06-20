@@ -26,7 +26,8 @@
 #include "hal/debug.h"
 #include "pdu.h"
 
-static struct ll_wl wl;
+static struct ll_filter wl;
+u8_t wl_anon;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 #include "common/rpa.h"
@@ -57,14 +58,57 @@ s64_t rpa_last_ms;
 struct k_delayed_work rpa_work;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
-static void wl_clear(void)
+static void filter_clear(struct ll_filter *filter)
 {
-	wl.enable_bitmask = 0;
-	wl.addr_type_bitmask = 0;
-	wl.anon = 0;
+	filter->enable_bitmask = 0;
+	filter->addr_type_bitmask = 0;
 }
 
-struct ll_wl *ctrl_wl_get(void)
+static u32_t filter_add(struct ll_filter *filter, u8_t addr_type, u8_t *bdaddr)
+{
+	u8_t index;
+
+	if (filter->enable_bitmask == 0xFF) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	for (index = 0;
+	     (filter->enable_bitmask & (1 << index));
+	     index++) {
+	}
+	filter->enable_bitmask |= (1 << index);
+	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);
+	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
+
+	return 0;
+}
+
+static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
+			   u8_t *bdaddr)
+{
+	u8_t index;
+
+	if (!filter->enable_bitmask) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	index = 8;
+	while (index--) {
+		if ((filter->enable_bitmask & BIT(index)) &&
+		    (((filter->addr_type_bitmask >> index) & 0x01) ==
+		     (addr_type & 0x01)) &&
+		    !memcmp(filter->bdaddr[index], bdaddr, BDADDR_SIZE)) {
+			filter->enable_bitmask &= ~BIT(index);
+			filter->addr_type_bitmask &= ~BIT(index);
+			return 0;
+		}
+	}
+
+	return BT_HCI_ERR_INVALID_PARAM;
+}
+
+
+struct ll_filter *ctrl_filter_get(void)
 {
 	return &wl;
 }
@@ -80,69 +124,40 @@ u32_t ll_wl_clear(void)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	wl_clear();
+	filter_clear(&wl);
+	wl_anon = 0;
 
 	return 0;
 }
 
 u32_t ll_wl_add(bt_addr_le_t *addr)
 {
-	u8_t index;
 
 	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	if (addr->type == ADDR_TYPE_ANON) {
-		wl.anon = 1;
+		wl_anon = 1;
 		return 0;
 	}
 
-	if (wl.enable_bitmask == 0xFF) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	for (index = 0;
-	     (wl.enable_bitmask & (1 << index));
-	     index++) {
-	}
-	wl.enable_bitmask |= (1 << index);
-	wl.addr_type_bitmask |= ((addr->type & 0x01) << index);
-	memcpy(&wl.bdaddr[index][0], addr->a.val, BDADDR_SIZE);
-
-	return 0;
+	return filter_add(&wl, addr->type, addr->a.val);
 }
 
 u32_t ll_wl_remove(bt_addr_le_t *addr)
 {
-	u8_t index;
 
 	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	if (addr->type == ADDR_TYPE_ANON) {
-		wl.anon = 0;
+		wl_anon = 0;
 		return 0;
 	}
 
-	if (!wl.enable_bitmask) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-
-	index = 8;
-	while (index--) {
-		if ((wl.enable_bitmask & BIT(index)) &&
-		    (((wl.addr_type_bitmask >> index) & 0x01) ==
-		     (addr->type & 0x01)) &&
-		    !memcmp(wl.bdaddr[index], addr->a.val, BDADDR_SIZE)) {
-			wl.enable_bitmask &= ~BIT(index);
-			wl.addr_type_bitmask &= ~BIT(index);
-			return 0;
-		}
-	}
-
-	return BT_HCI_ERR_INVALID_PARAM;
+	return filter_remove(&wl, addr->type, addr->a.val);
 }
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
@@ -472,7 +487,8 @@ void ll_rl_timeout_set(u16_t timeout)
 
 void ll_filter_reset(bool init)
 {
-	wl_clear();
+	filter_clear(&wl);
+	wl_anon = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	rl_enable = 0;
