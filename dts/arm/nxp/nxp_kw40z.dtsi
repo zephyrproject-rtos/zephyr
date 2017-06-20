@@ -45,7 +45,7 @@
 		};
 
 		lpuart0: lpuart@40054000 {
-			compatible = "nxp,kw41z-lpuart";
+			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40054000 0x18>;
 			interrupts = <12 0>;
 			label = "UART_0";
