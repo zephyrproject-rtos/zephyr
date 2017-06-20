@@ -221,7 +221,7 @@
 		};
 
 		gpioa: gpio@400ff000 {
-			compatible = "nxp,k64f-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff000 0x40>;
 			interrupts = <59 2>;
 
@@ -230,7 +230,7 @@
 		};
 
 		gpiob: gpio@400ff040 {
-			compatible = "nxp,k64f-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff040 0x40>;
 			interrupts = <60 2>;
 
@@ -239,7 +239,7 @@
 		};
 
 		gpioc: gpio@400ff080 {
-			compatible = "nxp,k64f-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff080 0x40>;
 			interrupts = <61 2>;
 
@@ -248,7 +248,7 @@
 		};
 
 		gpiod: gpio@400ff0c0 {
-			compatible = "nxp,k64f-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <62 2>;
 
@@ -257,7 +257,7 @@
 		};
 
 		gpioe: gpio@400ff100 {
-			compatible = "nxp,k64f-gpio";
+			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff100 0x40>;
 			interrupts = <63 2>;
 
