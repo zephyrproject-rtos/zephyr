@@ -1,10 +1,10 @@
 ---
-title: KW41Z LPUART
-id: nxp,kw41z-lpuart
+title: Kinetis LPUART
+id: nxp,kinetis-lpuart
 version: 0.1
 
 description: >
-    This binding gives a base representation of the KW41Z LowPower-UART
+    This binding gives a base representation of the Kinetis LPUART
 
 inherits:
   - !include uart.yaml
@@ -14,7 +14,7 @@ properties:
       type: string
       category: required
       description: compatible strings
-      constraint: "nxp,kw41z-lpuart"
+      constraint: "nxp,kinetis-lpuart"
 
   - reg:
       type: array
