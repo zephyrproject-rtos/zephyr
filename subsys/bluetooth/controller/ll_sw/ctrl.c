@@ -751,10 +751,6 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 		conn = _radio.advertiser.conn;
 		_radio.advertiser.conn = NULL;
 
-		/* Advertiser transitions to Slave role */
-		LL_ASSERT(_radio.advertiser.is_enabled);
-		_radio.advertiser.is_enabled = 0;
-
 		/* Populate the slave context */
 		conn->handle = mem_index_get(conn, _radio.conn_pool,
 			CONNECTION_T_SIZE);
@@ -1040,10 +1036,6 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 		/* acquire the master context from scanner */
 		conn = _radio.scanner.conn;
 		_radio.scanner.conn = NULL;
-
-		/* Initiator transitions to Master role */
-		LL_ASSERT(_radio.scanner.is_enabled);
-		_radio.scanner.is_enabled = 0;
 
 		/* Tx the connect request packet */
 		pdu_adv_tx = (struct pdu_adv *)radio_pkt_scratch_get();
@@ -9141,8 +9133,38 @@ void radio_rx_dequeue(void)
 	}
 
 	if (radio_pdu_node_rx->hdr.type == NODE_RX_TYPE_CONNECTION) {
-		u8_t bm = ((u8_t)_radio.scanner.is_enabled << 1) |
-			  _radio.advertiser.is_enabled;
+		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
+		struct connection *conn = NULL;
+		struct pdu_data *pdu_data_rx;
+		u8_t bm;
+
+		pdu_data_rx = (void *)radio_pdu_node_rx->pdu_data;
+		radio_le_conn_cmplt = (void *)&pdu_data_rx->payload;
+		if ((radio_le_conn_cmplt->status == 0x3c) ||
+		    radio_le_conn_cmplt->role) {
+			if (radio_le_conn_cmplt->status == 0x3c) {
+				conn = _radio.advertiser.conn;
+				_radio.advertiser.conn = NULL;
+			}
+
+			LL_ASSERT(_radio.advertiser.is_enabled);
+			_radio.advertiser.is_enabled = 0;
+		} else {
+			LL_ASSERT(_radio.scanner.is_enabled);
+			_radio.scanner.is_enabled = 0;
+		}
+
+		if (conn) {
+			struct radio_pdu_node_rx *node_rx = (void *)
+				&conn->llcp_terminate.radio_pdu_node_rx;
+
+			mem_release(node_rx->hdr.onion.link,
+				    &_radio.link_rx_free);
+			mem_release(conn, &_radio.conn_free);
+		}
+
+		bm = ((u8_t)_radio.scanner.is_enabled << 1) |
+		     _radio.advertiser.is_enabled;
 
 		if (!bm) {
 			ll_adv_scan_state_cb(0);
