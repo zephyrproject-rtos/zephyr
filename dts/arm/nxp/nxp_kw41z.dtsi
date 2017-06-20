@@ -57,7 +57,7 @@
 		};
 
 		pinmux_a: pinmux@40049000 {
-			compatible = "nxp,kw41z-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xa4>;
 			clocks = <&sim 0x1038 9>;
 
@@ -70,13 +70,13 @@
 		};
 
 		pinmux_b: pinmux@4004a000 {
-			compatible = "nxp,kw41z-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xa4>;
 			clocks = <&sim 0x1038 10>;
 		};
 
 		pinmux_c: pinmux@4004b000 {
-			compatible = "nxp,kw41z-pinmux";
+			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xa4>;
 			clocks = <&sim 0x1038 11>;
 
