@@ -50,6 +50,22 @@ config SPI_INTEL
 	  was formerly found on XScale chips. It can be found nowadays
 	  on CEXXXX Intel media controller and Quark CPU (2 of them).
 
+config SPI_STM32
+	bool
+	prompt "STM32 MCU SPI controller driver"
+	depends on SPI && SOC_FAMILY_STM32
+	depends on SOC_SERIES_STM32L4X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F3X
+	default n
+	help
+	  Enable SPI support on the STM32 family of processors.
+
+config SPI_STM32_INTERRUPT
+	bool
+	prompt "STM32 MCU SPI Interrupt Support"
+	depends on SPI_STM32
+	default n
+	help
+	  Enable Interrupt support for the SPI Driver of STM32 family.
 
 if SPI
 config SPI_INIT_PRIORITY
@@ -194,6 +210,44 @@ config SPI_2_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
 	depends on SPI_2 && SPI_CS_GPIO
 	default 0
+
+config SPI_3
+	bool
+	prompt "SPI port 3"
+	default n
+	help
+	  Enable SPI controller port 3.
+
+config SPI_3_NAME
+	string
+	prompt "SPI port 3 device name"
+	depends on SPI_3
+	default "SPI_3"
+
+config SPI_3_IRQ_PRI
+	int
+	prompt "Port 3 interrupt priority"
+	depends on SPI_3
+
+config SPI_3_DEFAULT_CFG
+	hex "Port 3 default configuration"
+	depends on SPI_3
+	default 0x80
+
+config SPI_3_DEFAULT_BAUD_RATE
+	int "Port 3 default baud rate"
+	depends on SPI_3
+	default 500000
+
+config SPI_3_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_3 && SPI_CS_GPIO
+	default "GPIO_0"
+
+config SPI_3_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_3 && SPI_CS_GPIO
 
 config SPI_SS_INIT_PRIORITY
 	int "Init priority"
