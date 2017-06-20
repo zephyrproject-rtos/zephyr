@@ -590,7 +590,7 @@ The following variables are recommended for use within the third-party build
 * All kconfig variables, allowing features of the library code to be
   enabled/disabled automatically based on the Zephyr kernel configuration.
 
-:file:`samples/static_lib` is a sample project that demonstrates
+:file:`samples/application_development/static_lib` is a sample project that demonstrates
 some of these features.
 
 Build an Application
