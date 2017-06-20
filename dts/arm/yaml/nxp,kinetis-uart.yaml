@@ -1,10 +1,10 @@
 ---
-title: K64 Uart
-id: nxp,k64f-uart
+title: Kinetis UART
+id: nxp,kinetis-uart
 version: 0.1
 
 description: >
-    This binding gives a base representation of the K64 UART
+    This binding gives a base representation of the Kinetis UART
 
 inherits:
   - !include uart.yaml
@@ -14,7 +14,7 @@ properties:
       type: string
       category: required
       description: compatible strings
-      constraint: "nxp,k64f-uart"
+      constraint: "nxp,kinetis-uart"
 
   - reg:
       type: array
