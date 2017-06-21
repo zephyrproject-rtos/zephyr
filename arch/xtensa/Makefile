@@ -1,12 +1,3 @@
-
-flagBoardType=
-ifeq ($(CONFIG_BOARD_XTENSA),y)
-flagBoardType= -DXT_BOARD
-endif
-ifeq ($(CONFIG_SIMULATOR_XTENSA),y)
-flagBoardType= -DXT_SIMULATOR
-endif
-
 # XCC emits an annoying warning if this is used even though the
 # $(call cc-option,) test in toplevel Makefile passes.
 KBUILD_CFLAGS := $(filter-out -fno-omit-frame-pointer, \
