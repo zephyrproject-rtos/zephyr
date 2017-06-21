@@ -47,6 +47,10 @@
 #include <stm32l4xx_ll_i2c.h>
 #endif
 
+#ifdef CONFIG_IWDG_STM32
+#include <stm32l4xx_ll_iwdg.h>
+#endif
+
 /* For IMG_MANAGER */
 #if defined(CONFIG_SOC_FLASH_STM32)
 #define FLASH_DRIVER_NAME	CONFIG_SOC_FLASH_STM32_DEV_NAME
