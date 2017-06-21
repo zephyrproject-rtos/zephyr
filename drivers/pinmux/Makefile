@@ -11,6 +11,7 @@ obj-$(CONFIG_BOARD_STM3210C_EVAL) += stm32/pinmux_board_stm3210c_eval.o
 obj-$(CONFIG_BOARD_NUCLEO_F334R8) += stm32/pinmux_board_nucleo_f334r8.o
 obj-$(CONFIG_BOARD_STM32373C_EVAL) += stm32/pinmux_board_stm32373c_eval.o
 obj-$(CONFIG_BOARD_NUCLEO_F401RE) += stm32/pinmux_board_nucleo_f401re.o
+obj-$(CONFIG_BOARD_STM32F3_DISCO) += stm32/pinmux_board_stm32f3_disco.o
 obj-$(CONFIG_BOARD_STM32F4_DISCO) += stm32/pinmux_board_stm32f4_disco.o
 obj-$(CONFIG_BOARD_STM32F469I_DISCO) += stm32/pinmux_board_stm32f469i_disco.o
 obj-$(CONFIG_BOARD_NUCLEO_F411RE) += stm32/pinmux_board_nucleo_f411re.o
