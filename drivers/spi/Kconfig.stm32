@@ -1,0 +1,31 @@
+# Kconfig - STM32 SPI driver configuration options
+
+#
+# Copyright (c) 2015-2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SPI_STM32
+	bool "STM32 MCU SPI controller driver"
+	depends on SPI && SOC_FAMILY_STM32
+	select HAS_DTS_SPI
+	select USE_STM32_LL_SPI
+	default n
+	help
+	  Enable SPI support on the STM32 family of processors.
+
+if SPI_STM32
+
+config SPI_STM32_HAS_FIFO
+	bool
+	depends on SOC_SERIES_STM32L4X || SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
+	default y
+
+config SPI_STM32_INTERRUPT
+	bool "STM32 MCU SPI Interrupt Support"
+	default n
+	help
+	  Enable Interrupt support for the SPI Driver of STM32 family.
+
+endif # SPI_STM32
