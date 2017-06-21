@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <uart.h>
+/* include rom/uart.h (from the esp-dif package) before Z's uart.h so
+ * that the definition of BIT is not overriden */
 #include <rom/uart.h>
+#include <uart.h>
 #include <rom/ets_sys.h>
 #include <errno.h>
 
