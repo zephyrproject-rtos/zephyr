@@ -19,7 +19,7 @@
 #include <zephyr.h>
 
 
-static int tcRC = TC_PASS;         /* test case return code */
+static int tc_rc = TC_PASS;         /* test case return code */
 
 extern struct k_mutex private_mutex;
 
@@ -30,7 +30,7 @@ extern struct k_mutex private_mutex;
  * @return  N/A
  */
 
-void Task12(void)
+void task12(void)
 {
 	int rv;
 
@@ -38,7 +38,7 @@ void Task12(void)
 
 	rv = k_mutex_lock(&private_mutex, K_FOREVER);
 	if (rv != 0) {
-		tcRC = TC_FAIL;
+		tc_rc = TC_FAIL;
 		TC_ERROR("Failed to obtain private mutex\n");
 		return;
 	}

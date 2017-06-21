@@ -36,7 +36,7 @@ void mailrecvtask(void)
 	int getsize;
 	unsigned int gettime;
 	int getcount;
-	GetInfo getinfo;
+	struct getinfo getinfo;
 
 	getcount = NR_OF_MBOX_RUNS;
 

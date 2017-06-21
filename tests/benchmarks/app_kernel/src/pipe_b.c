@@ -13,7 +13,7 @@
 #ifdef FLOAT
 #define PRINT_ALL_TO_N_HEADER_UNIT()                                       \
 	PRINT_STRING("|   size(B) |       time/packet (usec)       |         "\
-		  " MB/sec                |\n", output_file);
+		  " MB/sec                |\n", output_file)
 
 #define PRINT_ALL_TO_N() \
 	PRINT_F(output_file,						\
@@ -25,9 +25,11 @@
 	     (1000.0 * putsize) / puttime[2])
 
 #define PRINT_1_TO_N_HEADER()                                             \
+	do { \
 	PRINT_STRING("|   size(B) |       time/packet (usec)       |        "\
 		  "  MB/sec                |\n", output_file);            \
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline, output_file);\
+	} while (0)
 
 #define  PRINT_1_TO_N()                                               \
 	PRINT_F(output_file,						\
@@ -44,7 +46,7 @@
 #else
 #define PRINT_ALL_TO_N_HEADER_UNIT()                                       \
 	PRINT_STRING("|   size(B) |       time/packet (nsec)       |         "\
-		  " KB/sec                |\n", output_file);
+		  " KB/sec                |\n", output_file)
 
 #define PRINT_ALL_TO_N() \
 	PRINT_F(output_file,                                                 \
@@ -53,12 +55,14 @@
 	     puttime[2],                                                  \
 	     (1000000 * putsize) / puttime[0],                            \
 	     (1000000 * putsize) / puttime[1],                            \
-	     (1000000 * putsize) / puttime[2]);
+	     (1000000 * putsize) / puttime[2])
 
 #define PRINT_1_TO_N_HEADER()                                             \
+	do { \
 	PRINT_STRING("|   size(B) |       time/packet (nsec)       |        "\
 		  "  KB/sec                |\n", output_file);            \
-	PRINT_STRING(dashline, output_file);
+	PRINT_STRING(dashline, output_file); \
+	} while (0)
 
 #define  PRINT_1_TO_N()                                              \
 	PRINT_F(output_file,                                            \
@@ -70,13 +74,13 @@
 	     puttime[2],                                             \
 	     (u32_t)((1000000 * (u64_t)putsize) / puttime[0]), \
 	     (u32_t)((1000000 * (u64_t)putsize) / puttime[1]), \
-	     (u32_t)((1000000 * (u64_t)putsize) / puttime[2]));
+	     (u32_t)((1000000 * (u64_t)putsize) / puttime[2]))
 #endif /* FLOAT */
 
 /*
  * Function prototypes.
  */
-int pipeput(struct k_pipe *pipe, pipe_options
+int pipeput(struct k_pipe *pipe, enum pipe_options
 		 option, int size, int count, u32_t *time);
 
 /*
@@ -98,7 +102,7 @@ void pipe_test(void)
 	int		pipe;
 	u32_t	TaskPrio = UINT32_MAX;
 	int		prio;
-	GetInfo	getinfo;
+	struct getinfo	getinfo;
 
 	k_sem_reset(&SEM0);
 	k_sem_give(&STARTRCV);
@@ -128,7 +132,7 @@ void pipe_test(void)
 	for (putsize = 8; putsize <= MESSAGE_SIZE_PIPE; putsize <<= 1) {
 		for (pipe = 0; pipe < 3; pipe++) {
 			putcount = NR_OF_PIPE_RUNS;
-			pipeput(TestPipes[pipe], _ALL_N, putsize, putcount,
+			pipeput(test_pipes[pipe], _ALL_N, putsize, putcount,
 				 &puttime[pipe]);
 
 			/* waiting for ack */
@@ -160,17 +164,17 @@ void pipe_test(void)
 		PRINT_STRING(dashline, output_file);
 
 	for (putsize = 8; putsize <= (MESSAGE_SIZE_PIPE); putsize <<= 1) {
-			putcount = MESSAGE_SIZE_PIPE / putsize;
-			for (pipe = 0; pipe < 3; pipe++) {
-				pipeput(TestPipes[pipe], _1_TO_N, putsize,
-						 putcount, &puttime[pipe]);
-				/* size*count == MESSAGE_SIZE_PIPE */
-				/* waiting for ack */
-				k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
-				getsize = getinfo.size;
-			}
-			PRINT_1_TO_N();
+		putcount = MESSAGE_SIZE_PIPE / putsize;
+		for (pipe = 0; pipe < 3; pipe++) {
+			pipeput(test_pipes[pipe], _1_TO_N, putsize,
+					 putcount, &puttime[pipe]);
+			/* size*count == MESSAGE_SIZE_PIPE */
+			/* waiting for ack */
+			k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
+			getsize = getinfo.size;
 		}
+		PRINT_1_TO_N();
+	}
 		PRINT_STRING(dashline, output_file);
 		k_thread_priority_set(k_current_get(), TaskPrio);
 	}
@@ -190,7 +194,7 @@ void pipe_test(void)
  * @param time     Total write time.
  */
 int pipeput(struct k_pipe *pipe,
-	    pipe_options option,
+	    enum pipe_options option,
 	    int size,
 	    int count,
 	    u32_t *time)
@@ -203,22 +207,22 @@ int pipeput(struct k_pipe *pipe,
 	/* first sync with the receiver */
 	k_sem_give(&SEM0);
 	t = BENCH_START();
-	for (i = 0; _1_TO_N == option || (i < count); i++) {
+	for (i = 0; option == _1_TO_N || (i < count); i++) {
 		size_t sizexferd = 0;
 		size_t size2xfer = min(size, size2xfer_total - sizexferd_total);
 		int ret;
-
 		size_t mim_num_of_bytes = 0;
+
 		if (option == _ALL_N) {
 			mim_num_of_bytes = size2xfer;
 		}
 		ret = k_pipe_put(pipe, data_bench, size2xfer,
 				&sizexferd, mim_num_of_bytes, K_FOREVER);
 
-		if (0 != ret) {
+		if (ret != 0) {
 			return 1;
 		}
-		if (_ALL_N == option && sizexferd != size2xfer) {
+		if (option == _ALL_N && sizexferd != size2xfer) {
 			return 1;
 		}
 
@@ -236,7 +240,8 @@ int pipeput(struct k_pipe *pipe,
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
 	if (bench_test_end() < 0) {
 		if (high_timer_overflow()) {
-	PRINT_STRING("| Timer overflow. Results are invalid            ",
+			PRINT_STRING("| Timer overflow."
+					"Results are invalid            ",
 						 output_file);
 		} else {
 	PRINT_STRING("| Tick occurred. Results may be inaccurate       ",

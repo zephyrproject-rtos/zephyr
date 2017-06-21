@@ -30,12 +30,12 @@ static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 
 /*entry of contexts*/
-static void tIsr_entry(void *p)
+static void tisr_entry(void *p)
 {
 	k_sem_give((struct k_sem *)p);
 }
 
-static void tThread_entry(void *p1, void *p2, void *p3)
+static void thread_entry(void *p1, void *p2, void *p3)
 {
 	k_sem_give((struct k_sem *)p1);
 }
@@ -44,7 +44,7 @@ static void tsema_thread_thread(struct k_sem *psem)
 {
 	/**TESTPOINT: thread-thread sync via sema*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      tThread_entry, psem, NULL, NULL,
+				      thread_entry, psem, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 
 	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
@@ -55,7 +55,7 @@ static void tsema_thread_thread(struct k_sem *psem)
 static void tsema_thread_isr(struct k_sem *psem)
 {
 	/**TESTPOINT: thread-isr sync via sema*/
-	irq_offload(tIsr_entry, psem);
+	irq_offload(tisr_entry, psem);
 	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
 }
 

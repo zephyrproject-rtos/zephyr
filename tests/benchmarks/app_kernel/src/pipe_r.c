@@ -15,7 +15,7 @@
 /*
  * Function prototypes.
  */
-int pipeget(struct k_pipe *pipe, pipe_options option,
+int pipeget(struct k_pipe *pipe, enum pipe_options option,
 			int size, int count, unsigned int *time);
 
 /*
@@ -37,14 +37,14 @@ void piperecvtask(void)
 	int getcount;
 	int pipe;
 	int prio;
-	GetInfo getinfo;
+	struct getinfo getinfo;
 
 	/* matching (ALL_N) */
 
 	for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
 		for (pipe = 0; pipe < 3; pipe++) {
 			getcount = NR_OF_PIPE_RUNS;
-			pipeget(TestPipes[pipe], _ALL_N, getsize,
+			pipeget(test_pipes[pipe], _ALL_N, getsize,
 				getcount, &gettime);
 			getinfo.time = gettime;
 			getinfo.size = getsize;
@@ -57,18 +57,18 @@ void piperecvtask(void)
 	for (prio = 0; prio < 2; prio++) {
 		/* non-matching (1_TO_N) */
 	for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
-			getcount = MESSAGE_SIZE_PIPE / getsize;
-			for (pipe = 0; pipe < 3; pipe++) {
-				/* size*count == MESSAGE_SIZE_PIPE */
-				pipeget(TestPipes[pipe], _1_TO_N,
-						getsize, getcount, &gettime);
-				getinfo.time = gettime;
-				getinfo.size = getsize;
-				getinfo.count = getcount;
-				/* acknowledge to master */
-				k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
-			}
+		getcount = MESSAGE_SIZE_PIPE / getsize;
+		for (pipe = 0; pipe < 3; pipe++) {
+			/* size*count == MESSAGE_SIZE_PIPE */
+			pipeget(test_pipes[pipe], _1_TO_N,
+					getsize, getcount, &gettime);
+			getinfo.time = gettime;
+			getinfo.size = getsize;
+			getinfo.count = getcount;
+			/* acknowledge to master */
+			k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
 		}
+	}
 	}
 
 }
@@ -86,7 +86,7 @@ void piperecvtask(void)
  * @param count    Number of data chunks.
  * @param time     Total write time.
  */
-int pipeget(struct k_pipe *pipe, pipe_options option, int size, int count,
+int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 			unsigned int *time)
 {
 	int i;
@@ -97,7 +97,7 @@ int pipeget(struct k_pipe *pipe, pipe_options option, int size, int count,
 	/* sync with the sender */
 	k_sem_take(&SEM0, K_FOREVER);
 	t = BENCH_START();
-	for (i = 0; _1_TO_N == option || (i < count); i++) {
+	for (i = 0; option == _1_TO_N || (i < count); i++) {
 		size_t sizexferd = 0;
 		size_t size2xfer = min(size, size2xfer_total - sizexferd_total);
 		int ret;
@@ -105,11 +105,11 @@ int pipeget(struct k_pipe *pipe, pipe_options option, int size, int count,
 		ret = k_pipe_get(pipe, data_recv, size2xfer,
 				 &sizexferd, option, K_FOREVER);
 
-		if (0 != ret) {
+		if (ret != 0) {
 			return 1;
 		}
 
-		if (_ALL_N == option && sizexferd != size2xfer) {
+		if (option == _ALL_N  && sizexferd != size2xfer) {
 			return 1;
 		}
 
@@ -127,10 +127,12 @@ int pipeget(struct k_pipe *pipe, pipe_options option, int size, int count,
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
 	if (bench_test_end() < 0) {
 		if (high_timer_overflow()) {
-			PRINT_STRING("| Timer overflow. Results are invalid            ",
+			PRINT_STRING("| Timer overflow. "
+			"Results are invalid            ",
 						 output_file);
 		} else {
-			PRINT_STRING("| Tick occurred. Results may be inaccurate       ",
+			PRINT_STRING("| Tick occurred. "
+			"Results may be inaccurate       ",
 						 output_file);
 		}
 		PRINT_STRING("                             |\n",

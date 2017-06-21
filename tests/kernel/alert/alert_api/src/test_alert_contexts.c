@@ -82,7 +82,7 @@ static void alert_recv(void)
 	}
 }
 
-static void tThread_entry(void *p1, void *p2, void *p3)
+static void thread_entry(void *p1, void *p2, void *p3)
 {
 	alert_recv();
 }
@@ -92,14 +92,14 @@ static void thread_alert(void)
 	handler_executed = 0;
 	/**TESTPOINT: thread-thread sync via alert*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      tThread_entry, NULL, NULL, NULL,
+				      thread_entry, NULL, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 	alert_send();
 	k_sleep(TIMEOUT);
 	k_thread_abort(tid);
 }
 
-static void tIsr_entry(void *p)
+static void tisr_entry(void *p)
 {
 	alert_send();
 }
@@ -108,7 +108,7 @@ static void isr_alert(void)
 {
 	handler_executed = 0;
 	/**TESTPOINT: thread-isr sync via alert*/
-	irq_offload(tIsr_entry, NULL);
+	irq_offload(tisr_entry, NULL);
 	k_sleep(TIMEOUT);
 	alert_recv();
 }
