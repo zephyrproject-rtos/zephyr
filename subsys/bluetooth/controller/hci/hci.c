@@ -140,7 +140,7 @@ static void read_remote_ver_info(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
 
-static int link_control_cmd_handle(u8_t ocf, struct net_buf *cmd,
+static int link_control_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 				   struct net_buf **evt)
 {
 	switch (ocf) {
@@ -293,7 +293,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 }
 #endif
 
-static int ctrl_bb_cmd_handle(u8_t ocf, struct net_buf *cmd,
+static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 			      struct net_buf **evt)
 {
 	switch (ocf) {
@@ -421,7 +421,7 @@ static void read_bd_addr(struct net_buf *buf, struct net_buf **evt)
 	ll_addr_get(0, &rp->bdaddr.val[0]);
 }
 
-static int info_cmd_handle(u8_t ocf, struct net_buf *cmd,
+static int info_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 			   struct net_buf **evt)
 {
 	switch (ocf) {
@@ -1078,7 +1078,7 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 #endif /* CONFIG_BLUETOOTH_CONN */
 
-static int controller_cmd_handle(u8_t ocf, struct net_buf *cmd,
+static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt)
 {
 	switch (ocf) {
@@ -1279,7 +1279,7 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
 	struct net_buf *evt = NULL;
-	u8_t ocf;
+	u16_t ocf;
 	int err;
 
 	if (cmd->len < sizeof(*chdr)) {
