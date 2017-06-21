@@ -1914,8 +1914,103 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	memset(rp->er, 0x00, sizeof(rp->er));
 #endif /* CONFIG_SOC_FAMILY_NRF */
 }
-
 #endif /* CONFIG_BT_HCI_VS_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+/* TODO:
+static void *mesh_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
+{
+	struct bt_hci_evt_mesh *me;
+
+	evt_create(buf, BT_HCI_EVT_VENDOR, sizeof(*me) + melen);
+	me = net_buf_add(buf, sizeof(*me));
+	me->prefix = BT_HCI_MESH_EVT_PREFIX;
+	me->subevent = subevt;
+
+	return net_buf_add(buf, melen);
+}
+*/
+
+static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_mesh_get_opts *rp;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+
+	rp->status = 0x00;
+	rp->opcode = BT_HCI_OC_MESH_GET_OPTS;
+
+	rp->revision = BT_HCI_MESH_REVISION;
+	rp->ch_map = 0x7;
+	/*@todo: nRF51 only */
+	rp->min_tx_power = -30;
+	/*@todo: nRF51 only */
+	rp->max_tx_power = 4;
+	rp->max_scan_filter = 0;
+	rp->max_filter_pattern = 0;
+	rp->max_adv_slot = 1;
+	rp->evt_prefix_len = 0x01;
+	rp->evt_prefix = BT_HCI_MESH_EVT_PREFIX;
+}
+
+static void mesh_advertise(struct net_buf *buf, struct net_buf **evt)
+{
+
+}
+
+static void mesh_advertise_cancel(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_mesh_advertise_cancel *cmd = (void *)buf->data;
+	struct bt_hci_rp_mesh_advertise_cancel *rp;
+	u8_t adv_slot = cmd->adv_slot;
+	u8_t status;
+
+	/* TODO:
+	status = ll_mesh_advertise_cancel(adv_slot);
+	*/
+	status = 0;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->opcode = BT_HCI_OC_MESH_ADVERTISE_CANCEL;
+	rp->adv_slot = adv_slot;
+}
+
+static int mesh_cmd_handle(struct net_buf *cmd, struct net_buf **evt)
+{
+	struct bt_hci_cp_mesh *cp_mesh;
+	u8_t mesh_op;
+
+	if (cmd->len < sizeof(*cp_mesh)) {
+		BT_ERR("No HCI VSD Command header");
+		return -EINVAL;
+	}
+
+	cp_mesh = (void *)cmd->data;
+	mesh_op = cp_mesh->opcode;
+
+	net_buf_pull(cmd, sizeof(*cp_mesh));
+
+	switch (mesh_op) {
+	case BT_HCI_OC_MESH_GET_OPTS:
+		mesh_get_opts(cmd, evt);
+		break;
+
+	case BT_HCI_OC_MESH_ADVERTISE:
+		mesh_advertise(cmd, evt);
+		break;
+
+	case BT_HCI_OC_MESH_ADVERTISE_CANCEL:
+		mesh_advertise_cancel(cmd, evt);
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 			     struct net_buf **evt)
@@ -1950,6 +2045,12 @@ static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 		vs_read_key_hierarchy_roots(cmd, evt);
 		break;
 #endif /* CONFIG_BT_HCI_VS_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	case BT_OCF(BT_HCI_OP_VS_MESH):
+		mesh_cmd_handle(cmd, evt);
+		break;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	default:
 		return -EINVAL;
@@ -3010,8 +3111,16 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 		case NODE_RX_TYPE_PROFILE:
 #endif
 			return HCI_CLASS_EVT_DISCARDABLE;
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+		/* TODO:
+		case NODE_RX_TYPE_MESH_ADV_CPLT:
+		*/
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 		case NODE_RX_TYPE_CONNECTION:
 			return HCI_CLASS_EVT_REQUIRED;
+
 		case NODE_RX_TYPE_TERMINATE:
 		case NODE_RX_TYPE_CONN_UPDATE:
 
