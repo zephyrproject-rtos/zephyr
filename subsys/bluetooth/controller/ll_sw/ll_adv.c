@@ -384,14 +384,17 @@ u32_t ll_adv_enable(u8_t enable)
 	} else {
 		bool priv = false;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+		/* Prepare whitelist and optionally resolving list */
+		ll_filters_adv_update(ll_adv.filter_policy);
+
 		if (ctrl_rl_enabled()) {
 			/*@todo: Enable AR */
 		}
 
 		if (ll_adv.own_addr_type >= BT_ADDR_LE_PUBLIC_ID) {
 			/* Look up the resolving list */
-			int idx = ll_rl_idx_find(ll_adv.id_addr_type,
-						 ll_adv.id_addr);
+			int idx = ll_rl_find(ll_adv.id_addr_type,
+					     ll_adv.id_addr);
 
 			if (idx >= 0) {
 				/* Generate RPAs if required */

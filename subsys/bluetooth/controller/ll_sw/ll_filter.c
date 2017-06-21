@@ -26,22 +26,34 @@
 #include "hal/debug.h"
 #include "pdu.h"
 
+/* Hardware whitelist */
 static struct ll_filter wl;
 u8_t wl_anon;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 #include "common/rpa.h"
 
+#define IDX_NONE 0xF
+
+/* Whitelist peer list */
+static struct {
+	u8_t      taken:1;
+	u8_t      rl_idx:4;
+	u8_t      id_addr_type:1;
+	bt_addr_t id_addr;
+} wl_peers[WL_SIZE];
+
 static u8_t rl_enable;
 static struct rl_dev {
 	u8_t      taken:1;
 	u8_t      rpas_ready:1;
 	u8_t      pirk:1;
-	u8_t      pirk_idx:4;
+	u8_t      pirk_idx:3;
 	u8_t      lirk:1;
 
-	u8_t      peer_id_addr_type:1;
-	bt_addr_t peer_id_addr;
+	u8_t      id_addr_type:1;
+	bt_addr_t id_addr;
+
 	u8_t      local_irk[16];
 	bt_addr_t peer_rpa;
 	bt_addr_t local_rpa;
@@ -56,6 +68,69 @@ u32_t rpa_timeout_ms;
 s64_t rpa_last_ms;
 
 struct k_delayed_work rpa_work;
+
+#define LIST_MATCH(list, i, type, addr) (list[i].taken && \
+		    (list[i].id_addr_type == (type & 0x1)) && \
+		    !memcmp(list[i].id_addr.val, addr, BDADDR_SIZE))
+
+static void wl_peers_clear(void)
+{
+	for (int i = 0; i < WL_SIZE; i++) {
+		wl_peers[i].taken = 0;
+	}
+}
+
+static int wl_peers_find(u8_t addr_type, u8_t *addr)
+{
+	int i;
+
+	for (i = 0; i < WL_SIZE; i++) {
+		if (LIST_MATCH(wl_peers, i, addr_type, addr)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static u32_t wl_peers_add(bt_addr_le_t *id_addr)
+{
+	int i = wl_peers_find(id_addr->type, id_addr->a.val);
+
+	if (i >= 0) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	for (i = 0; i < WL_SIZE; i++) {
+		if (!wl_peers[i].taken) {
+			int j;
+
+			wl_peers[i].id_addr_type = id_addr->type & 0x1;
+			bt_addr_copy(&wl_peers[i].id_addr, &id_addr->a);
+			/* Get index to Resolving List if applicable */
+			j = ll_rl_find(id_addr->type, id_addr->a.val);
+			wl_peers[i].rl_idx = j >= 0 ? j : IDX_NONE;
+			wl_peers[i].taken = 1;
+			return 0;
+		}
+	}
+
+	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+}
+
+static u32_t wl_peers_remove(bt_addr_le_t *id_addr)
+{
+	/* find the device and mark it as empty */
+	int i = wl_peers_find(id_addr->type, id_addr->a.val);
+
+	if (i >= 0) {
+		wl_peers[i].taken = 0;
+		return 0;
+	}
+
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
+}
+
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 static void filter_clear(struct ll_filter *filter)
@@ -64,29 +139,37 @@ static void filter_clear(struct ll_filter *filter)
 	filter->addr_type_bitmask = 0;
 }
 
+
+static void filter_insert(struct ll_filter *filter, int index, u8_t addr_type,
+			   u8_t *bdaddr)
+{
+	filter->enable_bitmask |= BIT(index);
+	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);
+	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
+}
+
+#if !defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 static u32_t filter_add(struct ll_filter *filter, u8_t addr_type, u8_t *bdaddr)
 {
-	u8_t index;
+	int index;
 
 	if (filter->enable_bitmask == 0xFF) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	for (index = 0;
-	     (filter->enable_bitmask & (1 << index));
+	     (filter->enable_bitmask & BIT(index));
 	     index++) {
 	}
-	filter->enable_bitmask |= (1 << index);
-	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);
-	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
 
+	filter_insert(filter, index, addr_type, bdaddr);
 	return 0;
 }
 
 static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
 			   u8_t *bdaddr)
 {
-	u8_t index;
+	int index;
 
 	if (!filter->enable_bitmask) {
 		return BT_HCI_ERR_INVALID_PARAM;
@@ -106,7 +189,7 @@ static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
 
 	return BT_HCI_ERR_INVALID_PARAM;
 }
-
+#endif
 
 struct ll_filter *ctrl_filter_get(void)
 {
@@ -124,7 +207,11 @@ u32_t ll_wl_clear(void)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	wl_peers_clear();
+#else
 	filter_clear(&wl);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 	wl_anon = 0;
 
 	return 0;
@@ -132,7 +219,6 @@ u32_t ll_wl_clear(void)
 
 u32_t ll_wl_add(bt_addr_le_t *addr)
 {
-
 	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -142,12 +228,15 @@ u32_t ll_wl_add(bt_addr_le_t *addr)
 		return 0;
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	return wl_peers_add(addr);
+#else
 	return filter_add(&wl, addr->type, addr->a.val);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 }
 
 u32_t ll_wl_remove(bt_addr_le_t *addr)
 {
-
 	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -157,21 +246,63 @@ u32_t ll_wl_remove(bt_addr_le_t *addr)
 		return 0;
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	return wl_peers_remove(addr);
+#else
 	return filter_remove(&wl, addr->type, addr->a.val);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 }
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 
-#define RL_MATCH(i, id_addr_type, id_addr) (rl[i].taken && \
-		    rl[i].peer_id_addr_type == (id_addr_type & 0x1) && \
-		    !memcmp(rl[i].peer_id_addr.val, id_addr, BDADDR_SIZE))
-
-
-int ll_rl_idx_find(u8_t id_addr_type, u8_t *id_addr)
+static void filter_wl_update(void)
 {
 	int i;
+
+	/* Populate filter from wl peers */
+	filter_clear(&wl);
+
+	for (i = 0; i < WL_SIZE; i++) {
+		int j = wl_peers[i].rl_idx;
+		if (!rl_enable || j == IDX_NONE || !rl[j].pirk) {
+			filter_insert(&wl, i, wl_peers[i].id_addr_type,
+				      wl_peers[i].id_addr.val);
+		}
+	}
+}
+
+void ll_filters_adv_update(u8_t adv_fp)
+{
+	/* enabling advertising */
+	if (adv_fp && !(radio_scan_filter_pol_get() & 0x1)) {
+		/* whitelist not in use, update whitelist */
+		filter_wl_update();
+	}
+
+	if (rl_enable && !radio_scan_is_enabled()) {
+		/*@todo: rl not in use, update resolving list LUT */
+	}
+}
+
+void ll_filters_scan_update(u8_t scan_fp)
+{
+	/* enabling advertising */
+	if ((scan_fp & 0x1) && !radio_adv_filter_pol_get()) {
+		/* whitelist not in use, update whitelist */
+		filter_wl_update();
+	}
+
+	if (rl_enable && !radio_scan_is_enabled()) {
+		/*@todo: rl not in use, update resolving list LUT */
+	}
+}
+
+int ll_rl_find(u8_t id_addr_type, u8_t *id_addr)
+{
+	int i;
+
 	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
-		if (RL_MATCH(i, id_addr_type, id_addr)) {
+		if (LIST_MATCH(rl, i, id_addr_type, id_addr)) {
 			return i;
 		}
 	}
@@ -255,7 +386,7 @@ static void rpa_adv_refresh(void)
 	}
 
 
-	idx = ll_rl_idx_find(ll_adv->id_addr_type, ll_adv->id_addr);
+	idx = ll_rl_find(ll_adv->id_addr_type, ll_adv->id_addr);
 	LL_ASSERT(idx >= 0);
 	ll_rl_pdu_adv_update(idx, pdu);
 
@@ -285,7 +416,6 @@ static int rl_access_check(bool check_ar)
 
 	return (radio_adv_is_enabled() || radio_scan_is_enabled()) ? 0 : 1;
 }
-
 
 void ll_rl_rpa_update(bool timeout)
 {
@@ -384,12 +514,18 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	i = ll_rl_find(id_addr->type, id_addr->a.val);
+	if (i >= 0) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	/* find an empty slot and insert device */
 	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
 		if (!rl[i].taken) {
-			bt_addr_copy(&rl[i].peer_id_addr,
-					&id_addr->a);
-			rl[i].peer_id_addr_type = id_addr->type & 0x1;
+			int j;
+
+			bt_addr_copy(&rl[i].id_addr, &id_addr->a);
+			rl[i].id_addr_type = id_addr->type & 0x1;
 			rl[i].pirk = mem_nz((u8_t *)pirk, 16);
 			rl[i].lirk = mem_nz((u8_t *)lirk, 16);
 			if (rl[i].pirk) {
@@ -401,13 +537,17 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 				memcpy(rl[i].local_irk, lirk, 16);
 			}
 			rl[i].rpas_ready = 0;
+			/* Add reference to  a whitelist entry */
+			j = wl_peers_find(id_addr->type, id_addr->a.val);
+			if (j >= 0) {
+				wl_peers[j].rl_idx = i;
+			}
 			rl[i].taken = 1;
-			break;
+			return 0;
 		}
 	}
-	return (i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE) ?
-		0x00 : BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 
+	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 }
 
 u32_t ll_rl_remove(bt_addr_le_t *id_addr)
@@ -419,17 +559,26 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 	}
 
 	/* find the device and mark it as empty */
-	i = ll_rl_idx_find(id_addr->type, id_addr->a.val);
+	i = ll_rl_find(id_addr->type, id_addr->a.val);
 	if (i >= 0) {
+		int j;
+
 		if (rl[i].pirk) {
-			u8_t idx = rl[i].pirk_idx;
+			int idx = rl[i].pirk_idx;
 			memmove(peer_irks[idx], peer_irks[idx + 1],
 				16 * peer_irk_count--);
 		}
+
+		/* Check if referenced by a whitelist entry */
+		j = wl_peers_find(id_addr->type, id_addr->a.val);
+		if (j >= 0) {
+			wl_peers[j].rl_idx = IDX_NONE;
+		}
 		rl[i].taken = 0;
+		return 0;
 	}
 
-	return (i >= 0) ?  0x00 : BT_HCI_ERR_UNKNOWN_CONN_ID;
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
 u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa)
@@ -437,12 +586,13 @@ u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa)
 	int i;
 
 	/* find the device and return its RPA */
-	i = ll_rl_idx_find(id_addr->type, id_addr->a.val);
+	i = ll_rl_find(id_addr->type, id_addr->a.val);
 	if (i >= 0) {
 		bt_addr_copy(prpa, &rl[i].peer_rpa);
+		return 0;
 	}
 
-	return (i >= 0) ?  0x00 : BT_HCI_ERR_UNKNOWN_CONN_ID;
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 
 }
 
@@ -451,12 +601,13 @@ u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa)
 	int i;
 
 	/* find the device and return the local RPA */
-	i = ll_rl_idx_find(id_addr->type, id_addr->a.val);
+	i = ll_rl_find(id_addr->type, id_addr->a.val);
 	if (i >= 0) {
 		bt_addr_copy(lrpa, &rl[i].local_rpa);
+		return 0;
 	}
 
-	return (i >= 0) ?  0x00 : BT_HCI_ERR_UNKNOWN_CONN_ID;
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
 u32_t ll_rl_enable(u8_t enable)
