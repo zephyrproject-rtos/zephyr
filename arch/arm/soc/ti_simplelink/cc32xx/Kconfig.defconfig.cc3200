@@ -37,6 +37,9 @@ config GPIO_CC32XX_A2
 config GPIO_CC32XX_A3
 	default n
 
+config WDT_CC32XX
+	default y
+
 endif # GPIO
 
 endif # SOC_CC3200
