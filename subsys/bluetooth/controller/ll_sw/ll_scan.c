@@ -13,6 +13,7 @@
 #include "pdu.h"
 #include "ctrl.h"
 #include "ll.h"
+#include "ll_filter.h"
 
 static struct {
 	u16_t interval;
@@ -25,7 +26,7 @@ static struct {
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
 	u8_t  tx_addr:1;
-	u8_t  filter_policy:1;
+	u8_t  filter_policy:2;
 } ll_scan;
 
 u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
@@ -67,6 +68,9 @@ u32_t ll_scan_enable(u8_t enable)
 		return 0;
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	ll_filters_scan_update(ll_scan.filter_policy);
+#endif
 	status = radio_scan_enable(ll_scan.type, ll_scan.tx_addr,
 				   ll_addr_get(ll_scan.tx_addr, NULL),
 				   ll_scan.interval, ll_scan.window,
