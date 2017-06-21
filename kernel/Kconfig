@@ -204,6 +204,20 @@ config BOOT_BANNER
 	This option outputs a banner to the console device during boot up. It
 	also embeds a date & time stamp in the kernel and in each USAP image.
 
+config BOOT_DELAY
+	int "milliseconds to delay boot"
+	prompt "Boot delay"
+	default 0
+	help
+	This option delays bootup for the specified amount of
+	milliseconds. This is used to allow serial ports to get ready
+	before starting to print information on them during boot, as
+	some systems might boot to fast for a receiving endpoint to
+	detect the new USB serial bus, enumerate it and get ready to
+	receive before it actually gets data. A similar effect can be
+	achieved by waiting for DCD on the serial port--however, not
+	all serial ports have DCD.
+
 config BUILD_TIMESTAMP
 	bool
 	prompt "Build Timestamp"

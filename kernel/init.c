@@ -37,7 +37,17 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 
 /* boot banner items */
 
-#define BOOT_BANNER "BOOTING ZEPHYR OS v" KERNEL_VERSION_STRING
+static const unsigned int boot_delay;
+#if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
+#define BOOT_DELAY_BANNER " (delayed boot "	\
+	STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
+static const unsigned int boot_delay = CONFIG_BOOT_DELAY;
+#else
+#define BOOT_DELAY_BANNER ""
+static const unsigned int boot_delay;
+#endif
+#define BOOT_BANNER "BOOTING ZEPHYR OS v"	\
+	KERNEL_VERSION_STRING BOOT_DELAY_BANNER
 
 #if !defined(CONFIG_BOOT_BANNER)
 #define PRINT_BOOT_BANNER() do { } while (0)
@@ -200,6 +210,13 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 	_init_static_threads();
 
+	if (boot_delay > 0) {
+		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
+		       "ms (per build configuration) *****\n");
+		k_sleep(CONFIG_BOOT_DELAY);
+	}
+	PRINT_BOOT_BANNER();
+
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp for kernel's _main() function */
 	extern u64_t __main_time_stamp;
@@ -359,8 +376,6 @@ FUNC_NORETURN void _Cstart(void)
 #endif
 
 	/* display boot banner */
-
-	PRINT_BOOT_BANNER();
 
 	switch_to_main_thread();
 
