@@ -1,0 +1,24 @@
+IndentWidth: 8
+TabWidth: 8
+UseTab: Always
+ColumnLimit: '80'
+AlignAfterOpenBracket: Align
+AllowShortBlocksOnASingleLine: 'false'
+AllowShortCaseLabelsOnASingleLine: 'false'
+AllowShortFunctionsOnASingleLine: 'Inline'
+AllowShortIfStatementsOnASingleLine: 'false'
+AllowShortLoopsOnASingleLine: 'false'
+AlwaysBreakTemplateDeclarations: 'true'
+BreakBeforeBraces: 'Custom'
+BraceWrapping: {
+    AfterClass: 'true'
+    AfterControlStatement: 'false'
+    AfterEnum : 'true'
+    AfterFunction : 'true'
+    AfterNamespace : 'true'
+    AfterStruct : 'false'
+    AfterUnion : 'true'
+    BeforeCatch : 'false'
+    BeforeElse : 'false'
+    IndentBraces : 'false'
+}
