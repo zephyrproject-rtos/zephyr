@@ -6,6 +6,17 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+#
+# SPI Drivers
+#
+menuconfig SPI
+	bool "SPI hardware bus support"
+	default n
+	help
+	  Enable support for the SPI hardware bus.
+
+if SPI
+
 config SPI_LEGACY_API
 	bool "Use legacy SPI API (default)"
 	default y
@@ -13,68 +24,6 @@ config SPI_LEGACY_API
 	  Driver and user API is the legacy SPI API (spi_legacy.h).
 	  If unselected, the new API will be used.
 
-#
-# SPI Drivers
-#
-menuconfig SPI
-	bool
-	prompt "SPI hardware bus support"
-	default n
-	help
-	  Enable support for the SPI hardware bus.
-
-config SPI_QMSI
-	bool "QMSI driver for SPI controller"
-	depends on SPI && QMSI
-	default n
-	help
-	  SPI driver implementation using QMSI library. QMSI is the
-	  Quark Microcontroller Software Interface, providing a common
-	  interface to the Quark family of microcontrollers.
-
-config SPI_QMSI_SS
-	bool "QMSI driver for SPI controller on Sensor Subsystem"
-	depends on SPI && QMSI
-	default n
-	help
-	  SPI driver implementation using QMSI library. This instance is
-	  for the Sensor Subsystem.
-
-config SPI_INTEL
-	bool
-	prompt "Intel SPI controller driver"
-	depends on SPI && CPU_MINUTEIA
-	default n
-	help
-	  Enable support for Intel's SPI controllers. Such controller
-	  was formerly found on XScale chips. It can be found nowadays
-	  on CEXXXX Intel media controller and Quark CPU (2 of them).
-
-config SPI_STM32
-	bool
-	prompt "STM32 MCU SPI controller driver"
-	depends on SPI && SOC_FAMILY_STM32
-	select HAS_DTS_SPI
-	select USE_STM32_LL_SPI
-	default n
-	help
-	  Enable SPI support on the STM32 family of processors.
-
-config SPI_STM32_HAS_FIFO
-	bool
-	depends on SPI_STM32
-	depends on SOC_SERIES_STM32L4X || SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
-	default y
-
-config SPI_STM32_INTERRUPT
-	bool
-	prompt "STM32 MCU SPI Interrupt Support"
-	depends on SPI_STM32
-	default n
-	help
-	  Enable Interrupt support for the SPI Driver of STM32 family.
-
-if SPI
 config SPI_INIT_PRIORITY
 	int "Init priority"
 	default 70
@@ -82,9 +31,8 @@ config SPI_INIT_PRIORITY
 	  Device driver initialization priority.
 
 config SYS_LOG_SPI_LEVEL
-	int
-	prompt "SPI Driver Log level"
-	depends on SYS_LOG && SPI
+	int "SPI Driver Log level"
+	depends on SYS_LOG
 	default 0
 	range 0 4
 	help
@@ -98,250 +46,186 @@ config SYS_LOG_SPI_LEVEL
 
 config SPI_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port"
-	depends on GPIO
+	depends on GPIO && SPI_LEGACY_API
 	default n
 
 config	SPI_0
-	bool
-	prompt "SPI port 0"
+	bool "SPI port 0"
 	default n
 	help
 	  Enable SPI controller port 0.
 
+if SPI_0
+
 config SPI_0_NAME
-	string
-	prompt "SPI port 0 device name"
-	depends on SPI_0
+	string "SPI port 0 device name"
+	depends on !HAS_DTS_SPI
 	default "SPI_0"
 
 config SPI_0_IRQ_PRI
-	int
-	prompt "Port 0 interrupt priority"
-	depends on SPI_0
+	int "Port 0 interrupt priority"
 
 config SPI_0_DEFAULT_CFG
 	hex "Port 0 default configuration"
-	depends on SPI_0
 	default 0x80
 
 config SPI_0_DEFAULT_BAUD_RATE
 	int "Port 0 default baud rate"
-	depends on SPI_0
 	default 500000
 
 config SPI_0_CS_GPIO_PORT
-	string
-	prompt "The GPIO port which is used to control CS"
-	depends on SPI_0 && SPI_CS_GPIO
+	string "The GPIO port which is used to control CS"
+	depends on SPI_CS_GPIO
 	default "GPIO_0"
 
 config SPI_0_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_0 && SPI_CS_GPIO
+	depends on SPI_CS_GPIO
 	default 0
 
+endif # SPI_0
+
 config SPI_1
-	bool
-	prompt "SPI port 1"
+	bool "SPI port 1"
 	default n
 	help
 	  Enable SPI controller port 1.
 
+if SPI_1
+
 config SPI_1_NAME
-	string
-	prompt "SPI port 1 device name"
-	depends on SPI_1 && !HAS_DTS_SPI
+	string "SPI port 1 device name"
+	depends on !HAS_DTS_SPI
 	default "SPI_1"
 
 config SPI_1_IRQ_PRI
-	int
-	prompt "Port 0 interrupt priority"
-	depends on SPI_1 && !HAS_DTS_SPI
+	int "Port 0 interrupt priority"
+	depends on !HAS_DTS_SPI
 
 config SPI_1_DEFAULT_CFG
 	hex "Port 1 default configuration"
-	depends on SPI_1
 	default 0x80
 
 config SPI_1_DEFAULT_BAUD_RATE
 	int "Port 1 default baud rate"
-	depends on SPI_1
 	default 500000
 
 config SPI_1_CS_GPIO_PORT
-	string
-	prompt "The GPIO port which is used to control CS"
-	depends on SPI_1 && SPI_CS_GPIO
+	string "The GPIO port which is used to control CS"
+	depends on SPI_CS_GPIO
 	default "GPIO_0"
 
 config SPI_1_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_1 && SPI_CS_GPIO
+	depends on SPI_CS_GPIO
 	default 0
 
+endif # SPI_1
+
 config SPI_2
-	bool
-	prompt "SPI port 2"
+	bool "SPI port 2"
 	default n
 	help
 	  Enable SPI controller port 2.
 
+if SPI_2
+
 config SPI_2_NAME
-	string
-	prompt "SPI port 2 device name"
-	depends on SPI_2 && !HAS_DTS_SPI
+	string "SPI port 2 device name"
+	depends on !HAS_DTS_SPI
 	default "SPI_2"
 
 config SPI_2_IRQ_PRI
-	int
-	prompt "Port 2 interrupt priority"
-	depends on SPI_2 && !HAS_DTS_SPI
+	int "Port 2 interrupt priority"
+	depends on !HAS_DTS_SPI
 
 config SPI_2_DEFAULT_CFG
 	hex "Port 2 default configuration"
-	depends on SPI_2
 	default 0x80
 
 config SPI_2_DEFAULT_BAUD_RATE
 	int "Port 2 default baud rate"
-	depends on SPI_2
 	default 500000
 
 config SPI_2_CS_GPIO_PORT
-	string
-	prompt "The GPIO port which is used to control CS"
-	depends on SPI_2 && SPI_CS_GPIO
+	string "The GPIO port which is used to control CS"
+	depends on SPI_CS_GPIO
 	default "GPIO_0"
 
 config SPI_2_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_2 && SPI_CS_GPIO
+	depends on SPI_CS_GPIO
 	default 0
 
+endif # SPI_2
+
 config SPI_3
-	bool
-	prompt "SPI port 3"
+	bool "SPI port 3"
 	default n
 	help
 	  Enable SPI controller port 3.
 
+if SPI_3
+
 config SPI_3_NAME
-	string
-	prompt "SPI port 3 device name"
-	depends on SPI_3 && !HAS_DTS_SPI
+	string "SPI port 3 device name"
+	depends on !HAS_DTS_SPI
 	default "SPI_3"
 
 config SPI_3_IRQ_PRI
-	int
-	prompt "Port 3 interrupt priority"
-	depends on SPI_3 && !HAS_DTS_SPI
+	int "Port 3 interrupt priority"
+	depends on !HAS_DTS_SPI
+
+endif # SPI_3
 
 config SPI_4
-	bool
-	prompt "SPI port 4"
+	bool "SPI port 4"
 	default n
 	help
 	  Enable SPI controller port 4.
 
 config SPI_4_NAME
-	string
-	prompt "SPI port 4 device name"
+	string "SPI port 4 device name"
 	depends on SPI_4
 	default "SPI_4"
 
 config SPI_5
-	bool
-	prompt "SPI port 5"
+	bool "SPI port 5"
 	default n
 	help
 	  Enable SPI controller port 5.
 
 config SPI_5_NAME
-	string
-	prompt "SPI port 5 device name"
+	string "SPI port 5 device name"
 	depends on SPI_5
 	default "SPI_5"
 
-config SPI_SS_INIT_PRIORITY
-	int "Init priority"
-	depends on SPI_QMSI_SS
-	default 70
-	help
-	  Device driver initialization priority.
+if SPI_LEGACY_API
 
-config SPI_SS_CS_GPIO
-	bool "SPI port CS pin is controlled via a GPIO port"
-	select GPIO
-	depends on SPI_QMSI_SS
-	default n
-
-config	SPI_SS_0
-	bool
-	prompt "SPI SS port 0"
-	depends on SPI_QMSI_SS
+config SPI_INTEL
+	bool "Intel SPI controller driver"
+	depends on CPU_MINUTEIA
 	default n
 	help
-	  Enable SPI controller port 0.
+	  Enable support for Intel's SPI controllers. Such controller
+	  was formerly found on XScale chips. It can be found nowadays
+	  on CEXXXX Intel media controller and Quark CPU (2 of them).
 
-config SPI_SS_0_NAME
-	string
-	prompt "SPI SS port 0 device name"
-	depends on SPI_SS_0
-	default "SPI_SS_0"
-
-config SPI_SS_0_IRQ_PRI
-	int
-	prompt "Port 0 interrupt priority"
-	depends on SPI_SS_0
-
-config SPI_SS_0_CS_GPIO_PORT
-	string
-	prompt "The GPIO port which is used to control CS"
-	depends on SPI_SS_0 && SPI_SS_CS_GPIO
-	default "GPIO_0"
-
-config SPI_SS_0_CS_GPIO_PIN
-	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_SS_0 && SPI_SS_CS_GPIO
-	default 0
-
-config SPI_SS_1
-	bool
-	prompt "SPI SS port 1"
-	depends on SPI_QMSI_SS
-	default n
-	help
-	  Enable SPI controller port 1.
-
-config SPI_SS_1_NAME
-	string
-	prompt "SPI port 1 device name"
-	depends on SPI_SS_1
-	default "SPI_SS_1"
-
-config SPI_SS_1_IRQ_PRI
-	int
-	prompt "Port 0 interrupt priority"
-	depends on SPI_SS_1
-
-config SPI_SS_1_CS_GPIO_PORT
-	string
-	prompt "The GPIO port which is used to control CS"
-	depends on SPI_SS_1 && SPI_SS_CS_GPIO
-	default "GPIO_0"
-
-config SPI_SS_1_CS_GPIO_PIN
-	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_SS_1 && SPI_SS_CS_GPIO
-	default 0
-
-source "drivers/spi/Kconfig.dw"
+source "drivers/spi/Kconfig.qmsi"
 
 source "drivers/spi/Kconfig.mcux_dspi"
 
-if SPI_LEGACY_API
 source "drivers/spi/Kconfig.nrf5_legacy"
-endif
+
+endif # SPI_LEGACY_API
+
+if !SPI_LEGACY_API
+
+source "drivers/spi/Kconfig.stm32"
+
+endif # !SPI_LEGACY_API
+
+source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.sam0"
 
