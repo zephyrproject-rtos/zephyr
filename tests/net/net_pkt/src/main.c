@@ -282,31 +282,31 @@ static const char test_data[] = { '0', '1', '2', '3', '4',
 				  '5', '6', '7' };
 
 static const char sample_data[] =
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
 	"abcdefghijklmnopqrstuvxyz";
 
 static char test_rw_short[] =
 	"abcdefghijklmnopqrstuvwxyz";
 
 static char test_rw_long[] =
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz";
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz ";
 
 static void test_pkt_read_append(void)
 {
@@ -440,7 +440,7 @@ static void test_pkt_read_append(void)
 	tfrag = net_frag_read(tfrag, off + 10, &tpos, 10, data);
 	if (!tfrag ||
 	    memcmp(sample_data + off + 10, data, 10)) {
-		printk("Failed to read from offset %d, frag length %d"
+		printk("Failed to read from offset %d, frag length %d "
 		       "read length %d\n",
 		       tfrag->len + 10, tfrag->len, 10);
 		zassert_true(false, "Fail offset read");
@@ -995,8 +995,8 @@ static void test_fragment_split(void)
 #define FRAGA (FRAG_COUNT - 2)
 #define FRAGB (FRAG_COUNT - 1)
 	struct net_pkt *pkt;
-	struct net_buf *frags[FRAG_COUNT], *frag, *fragA, *fragB;
-	int i, total, splitA, splitB;
+	struct net_buf *frags[FRAG_COUNT], *frag, *frag_a, *frag_b;
+	int i, total, split_a, split_b;
 	int ret, frag_size;
 
 	memset(frags, 0, FRAG_COUNT * sizeof(void *));
@@ -1031,45 +1031,45 @@ static void test_fragment_split(void)
 
 	net_pkt_frag_add(pkt, frags[0]);
 
-	fragA = frags[FRAGA];
-	fragB = frags[FRAGB];
+	frag_a = frags[FRAGA];
+	frag_b = frags[FRAGB];
 
-	zassert_is_null(fragA, "fragA is not NULL");
-	zassert_is_null(fragB, "fragB is not NULL");
+	zassert_is_null(frag_a, "frag_a is not NULL");
+	zassert_is_null(frag_b, "frag_b is not NULL");
 
-	splitA = frag_size * 2 / 3;
-	splitB = frag_size - splitA;
+	split_a = frag_size * 2 / 3;
+	split_b = frag_size - split_a;
 
-	zassert_true(splitA > 0, "A size is 0");
-	zassert_true(splitA > splitB, "A is smaller than B");
+	zassert_true(split_a > 0, "A size is 0");
+	zassert_true(split_a > split_b, "A is smaller than B");
 
 	/* Test some error cases first */
-	ret = net_pkt_split(NULL, NULL, 1024, &fragA, &fragB, K_NO_WAIT);
+	ret = net_pkt_split(NULL, NULL, 1024, &frag_a, &frag_b, K_NO_WAIT);
 	zassert_equal(ret, -EINVAL, "Invalid buf pointers");
 
 	ret = net_pkt_split(pkt, pkt->frags, CONFIG_NET_BUF_DATA_SIZE + 1,
-			    &fragA, &fragB, K_NO_WAIT);
+			    &frag_a, &frag_b, K_NO_WAIT);
 	zassert_equal(ret, 0, "Split failed");
 
-	ret = net_pkt_split(pkt, pkt->frags, splitA,
-			     &fragA, &fragB, K_NO_WAIT);
+	ret = net_pkt_split(pkt, pkt->frags, split_a,
+			     &frag_a, &frag_b, K_NO_WAIT);
 	zassert_equal(ret, 0, "Cannot split frag");
 
-	if (fragA->len != splitA) {
-		printk("Frag A len %d not %d\n", fragA->len, splitA);
-		zassert_equal(fragA->len, splitA, "FragA len wrong");
+	if (frag_a->len != split_a) {
+		printk("Frag_a len %d not %d\n", frag_a->len, split_a);
+		zassert_equal(frag_a->len, split_a, "Frag_a len wrong");
 	}
 
-	if (fragB->len != splitB) {
-		printk("Frag B len %d not %d\n", fragB->len, splitB);
-		zassert_true(false, "FragB len wrong");
+	if (frag_b->len != split_b) {
+		printk("Frag_b len %d not %d\n", frag_b->len, split_b);
+		zassert_true(false, "Frag_b len wrong");
 	}
 
-	zassert_false(memcmp(pkt->frags->data, fragA->data, splitA),
-		      "Frag A data mismatch");
+	zassert_false(memcmp(pkt->frags->data, frag_a->data, split_a),
+		      "Frag_a data mismatch");
 
-	zassert_false(memcmp(pkt->frags->data + splitA, fragB->data, splitB),
-		      "Frag B data mismatch");
+	zassert_false(memcmp(pkt->frags->data + split_a, frag_b->data, split_b),
+		      "Frag_b data mismatch");
 }
 
 void test_main(void)

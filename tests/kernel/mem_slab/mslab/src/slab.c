@@ -27,23 +27,23 @@
 #include <zephyr.h>
 
 /* size of stack area used by each thread */
-#define STACKSIZE 1024 + CONFIG_TEST_EXTRA_STACKSIZE
+#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 /* Number of memory blocks. The minimum number of blocks needed to run the
  * test is 2
  */
 #define NUMBLOCKS   2
 
-static int tcRC = TC_PASS;     /* test case return code */
+static int tc_rc = TC_PASS;     /* test case return code */
 
-int testSlabGetAllBlocks(void **P);
-int testSlabFreeAllBlocks(void **P);
+int test_slab_get_all_blocks(void **P);
+int test_slab_free_all_blocks(void **P);
 
 
 K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
 K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
 
-K_MEM_SLAB_DEFINE(MAP_LgBlks, 1024, NUMBLOCKS, 4);
+K_MEM_SLAB_DEFINE(map_lgblks, 1024, NUMBLOCKS, 4);
 
 
 /**
@@ -53,17 +53,17 @@ K_MEM_SLAB_DEFINE(MAP_LgBlks, 1024, NUMBLOCKS, 4);
  * This routine verifies current value against expected value
  * and returns true if they are the same.
  *
- * @param expectRetValue     expect value
- * @param currentRetValue    current value
+ * @param expect_ret_value     expect value
+ * @param current_ret_current    current value
  *
  * @return  true, false
  */
 
-bool verifyRetValue(int expectRetValue, int currentRetValue)
+bool verify_ret_value(int expect_ret_value, int current_ret_current)
 {
-	return (expectRetValue == currentRetValue);
+	return (expect_ret_value == current_ret_current);
 
-} /* verifyRetValue */
+} /* verify_ret_value */
 
 /**
  *
@@ -76,7 +76,7 @@ bool verifyRetValue(int expectRetValue, int currentRetValue)
  * @return  N/A
  */
 
-void HelperTask(void)
+void helper_task(void)
 {
 	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
 
@@ -92,10 +92,10 @@ void HelperTask(void)
 	PRINT_LINE;
 
 	/* Test k_mem_slab_alloc */
-	tcRC = testSlabGetAllBlocks(ptr);
-	if (tcRC == TC_FAIL) {
-		TC_ERROR("Failed testSlabGetAllBlocks function\n");
-		goto exitTest1;          /* terminate test */
+	tc_rc = test_slab_get_all_blocks(ptr);
+	if (tc_rc == TC_FAIL) {
+		TC_ERROR("Failed test_slab_get_all_blocks function\n");
+		goto exittest1;          /* terminate test */
 	}
 
 	k_sem_give(&SEM_HELPERDONE);  /* Indicate part 2 is complete */
@@ -114,7 +114,7 @@ void HelperTask(void)
 	PRINT_LINE;
 
 	TC_PRINT("%s: About to free a memory block\n", __func__);
-	k_mem_slab_free(&MAP_LgBlks, &ptr[0]);
+	k_mem_slab_free(&map_lgblks, &ptr[0]);
 	k_sem_give(&SEM_HELPERDONE);
 
 	/* Part 5 of test */
@@ -123,19 +123,19 @@ void HelperTask(void)
 	TC_PRINT("(5) <%s> freeing the next block\n", __func__);
 	PRINT_LINE;
 	TC_PRINT("%s: About to free another memory block\n", __func__);
-	k_mem_slab_free(&MAP_LgBlks, &ptr[1]);
+	k_mem_slab_free(&map_lgblks, &ptr[1]);
 
 	/*
 	 * Free all the other blocks.  The first 2 blocks are freed by this task
 	 */
 	for (int i = 2; i < NUMBLOCKS; i++) {
-		k_mem_slab_free(&MAP_LgBlks, &ptr[i]);
+		k_mem_slab_free(&map_lgblks, &ptr[i]);
 	}
 	TC_PRINT("%s: freed all blocks allocated by this task\n", __func__);
 
-exitTest1:
+exittest1:
 
-	TC_END_RESULT(tcRC);
+	TC_END_RESULT(tc_rc);
 	k_sem_give(&SEM_HELPERDONE);
 }  /* HelperTask */
 
@@ -156,33 +156,33 @@ exitTest1:
  * @return  TC_PASS, TC_FAIL
  */
 
-int testSlabGetAllBlocks(void **p)
+int test_slab_get_all_blocks(void **p)
 {
-	int retValue;   /* task_mem_map_xxx interface return value */
-	void *errPtr;   /* Pointer to block */
+	int ret_value;   /* task_mem_map_xxx interface return value */
+	void *errptr;   /* Pointer to block */
 
 	TC_PRINT("Function %s\n", __func__);
 
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
-		retValue = k_mem_slab_num_used_get(&MAP_LgBlks);
-		if (verifyRetValue(i, retValue)) {
-			TC_PRINT("MAP_LgBlks used %d blocks\n", retValue);
+		ret_value = k_mem_slab_num_used_get(&map_lgblks);
+		if (verify_ret_value(i, ret_value)) {
+			TC_PRINT("MAP_LgBlks used %d blocks\n", ret_value);
 		} else {
 			TC_ERROR("Failed task_mem_map_used_get for "
 				 "MAP_LgBlks, i=%d, retValue=%d\n",
-				 i, retValue);
+				 i, ret_value);
 			return TC_FAIL;
 		}
 
 		/* Get memory block */
-		retValue = k_mem_slab_alloc(&MAP_LgBlks, &p[i], K_NO_WAIT);
-		if (verifyRetValue(0, retValue)) {
+		ret_value = k_mem_slab_alloc(&map_lgblks, &p[i], K_NO_WAIT);
+		if (verify_ret_value(0, ret_value)) {
 			TC_PRINT("  k_mem_slab_alloc OK, p[%d] = %p\n",
 				 i, p[i]);
 		} else {
 			TC_ERROR("Failed k_mem_slab_alloc, i=%d, "
-				 "retValue %d\n", i, retValue);
+				 "ret_value %d\n", i, ret_value);
 			return TC_FAIL;
 		}
 
@@ -191,30 +191,30 @@ int testSlabGetAllBlocks(void **p)
 	/* Verify number of used blocks in the map - expect all blocks are
 	 * used
 	 */
-	retValue = k_mem_slab_num_used_get(&MAP_LgBlks);
-	if (verifyRetValue(NUMBLOCKS, retValue)) {
-		TC_PRINT("MAP_LgBlks used %d blocks\n", retValue);
+	ret_value = k_mem_slab_num_used_get(&map_lgblks);
+	if (verify_ret_value(NUMBLOCKS, ret_value)) {
+		TC_PRINT("MAP_LgBlks used %d blocks\n", ret_value);
 	} else {
 		TC_ERROR("Failed task_mem_map_used_get for MAP_LgBlks, "
-			 "retValue %d\n", retValue);
+			 "retValue %d\n", ret_value);
 		return TC_FAIL;
 	}
 
 	/* Try to get one more block and it should fail */
-	retValue = k_mem_slab_alloc(&MAP_LgBlks, &errPtr, K_NO_WAIT);
-	if (verifyRetValue(-ENOMEM, retValue)) {
+	ret_value = k_mem_slab_alloc(&map_lgblks, &errptr, K_NO_WAIT);
+	if (verify_ret_value(-ENOMEM, ret_value)) {
 		TC_PRINT("  k_mem_slab_alloc RC_FAIL expected as all (%d) "
 			 "blocks are used.\n", NUMBLOCKS);
 	} else {
 		TC_ERROR("Failed k_mem_slab_alloc, expect RC_FAIL, got %d\n",
-			 retValue);
+			 ret_value);
 		return TC_FAIL;
 	}
 
 	PRINT_LINE;
 
 	return TC_PASS;
-}  /* testSlabGetAllBlocks */
+}  /* test_slab_get_all_blocks */
 
 /**
  *
@@ -232,27 +232,27 @@ int testSlabGetAllBlocks(void **p)
  * @return  TC_PASS, TC_FAIL
  */
 
-int testSlabFreeAllBlocks(void **p)
+int test_slab_free_all_blocks(void **p)
 {
-	int retValue;     /* task_mem_map_xxx interface return value */
+	int ret_value;     /* task_mem_map_xxx interface return value */
 
 	TC_PRINT("Function %s\n", __func__);
 
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
-		retValue = k_mem_slab_num_used_get(&MAP_LgBlks);
-		if (verifyRetValue(NUMBLOCKS - i, retValue)) {
-			TC_PRINT("MAP_LgBlks used %d blocks\n", retValue);
+		ret_value = k_mem_slab_num_used_get(&map_lgblks);
+		if (verify_ret_value(NUMBLOCKS - i, ret_value)) {
+			TC_PRINT("MAP_LgBlks used %d blocks\n", ret_value);
 		} else {
 			TC_ERROR("Failed task_mem_map_used_get for "
 				 "MAP_LgBlks, expect %d, got %d\n",
-				 NUMBLOCKS - i, retValue);
+				 NUMBLOCKS - i, ret_value);
 			return TC_FAIL;
 		}
 
 		TC_PRINT("  block ptr to free p[%d] = %p\n", i, p[i]);
 		/* Free memory block */
-		k_mem_slab_free(&MAP_LgBlks, &p[i]);
+		k_mem_slab_free(&map_lgblks, &p[i]);
 
 		TC_PRINT("MAP_LgBlks freed %d block\n", i + 1);
 
@@ -263,12 +263,12 @@ int testSlabFreeAllBlocks(void **p)
 	 *  - should be 0 as no blocks are used
 	 */
 
-	retValue = k_mem_slab_num_used_get(&MAP_LgBlks);
-	if (verifyRetValue(0, retValue)) {
-		TC_PRINT("MAP_LgBlks used %d blocks\n", retValue);
+	ret_value = k_mem_slab_num_used_get(&map_lgblks);
+	if (verify_ret_value(0, ret_value)) {
+		TC_PRINT("MAP_LgBlks used %d blocks\n", ret_value);
 	} else {
 		TC_ERROR("Failed task_mem_map_used_get for MAP_LgBlks, "
-			 "retValue %d\n", retValue);
+			 "retValue %d\n", ret_value);
 		return TC_FAIL;
 	}
 
@@ -286,7 +286,7 @@ int testSlabFreeAllBlocks(void **p)
  *
  * @return  N/A
  */
-void printPointers(void **pointer)
+void print_pointers(void **pointer)
 {
 	TC_PRINT("%s: ", __func__);
 	for (int i = 0; i < NUMBLOCKS; i++) {
@@ -296,15 +296,15 @@ void printPointers(void **pointer)
 	TC_PRINT("\n");
 	PRINT_LINE;
 
-}  /* printPointers */
+}  /* print_pointers */
 
 /**
  *
  * @brief Main task to test task_mem_map_xxx interfaces
  *
- * This routine calls testSlabGetAllBlocks() to get all memory blocks from the
- * map and calls testSlabFreeAllBlocks() to free all memory blocks.  It also
- * tries to wait (with and without timeout) for a memory block.
+ * This routine calls test_slab_get_all_blocks() to get all memory blocks from
+ * the map and calls test_slab_free_all_blocks() to free all memory blocks.
+ * It also tries to wait (with and without timeout) for a memory block.
  *
  * This routine tests the following:
  *
@@ -313,11 +313,11 @@ void printPointers(void **pointer)
  * @return  N/A
  */
 
-void RegressionTask(void)
+void regression_task(void)
 {
-	int retValue;                   /* task_mem_map_xxx interface return value */
-	void *b;                        /* Pointer to memory block */
-	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
+	int ret_value;             /* task_mem_map_xxx interface return value */
+	void *b;                  /* Pointer to memory block */
+	void *ptr[NUMBLOCKS];     /* Pointer to memory block */
 
 	/* not strictly necessary, but keeps coverity checks happy */
 	memset(ptr, 0, sizeof(ptr));
@@ -332,18 +332,18 @@ void RegressionTask(void)
 	PRINT_LINE;
 
 	/* Test k_mem_slab_alloc */
-	tcRC = testSlabGetAllBlocks(ptr);
-	if (tcRC == TC_FAIL) {
-		TC_ERROR("Failed testSlabGetAllBlocks function\n");
-		goto exitTest;           /* terminate test */
+	tc_rc = test_slab_get_all_blocks(ptr);
+	if (tc_rc == TC_FAIL) {
+		TC_ERROR("Failed test_slab_get_all_blocks function\n");
+		goto exittest;           /* terminate test */
 	}
 
-	printPointers(ptr);
+	print_pointers(ptr);
 	/* Test task_mem_map_free */
-	tcRC = testSlabFreeAllBlocks(ptr);
-	if (tcRC == TC_FAIL) {
-		TC_ERROR("Failed testSlabFreeAllBlocks function\n");
-		goto exitTest;           /* terminate test */
+	tc_rc = test_slab_free_all_blocks(ptr);
+	if (tc_rc == TC_FAIL) {
+		TC_ERROR("Failed testalab_freeall_blocks function\n");
+		goto exittest;           /* terminate test */
 	}
 
 	k_sem_give(&SEM_REGRESSDONE);   /* Allow HelperTask to run */
@@ -363,26 +363,26 @@ void RegressionTask(void)
 		 "in <%s>\n", __func__);
 	PRINT_LINE;
 
-	retValue = k_mem_slab_alloc(&MAP_LgBlks, &b, 20);
-	if (verifyRetValue(-EAGAIN, retValue)) {
+	ret_value = k_mem_slab_alloc(&map_lgblks, &b, 20);
+	if (verify_ret_value(-EAGAIN, ret_value)) {
 		TC_PRINT("%s: k_mem_slab_alloc times out which is "
 			 "expected\n", __func__);
 	} else {
-		TC_ERROR("Failed k_mem_slab_alloc, retValue %d\n", retValue);
-		tcRC = TC_FAIL;
-		goto exitTest;           /* terminate test */
+		TC_ERROR("Failed k_mem_slab_alloc, retValue %d\n", ret_value);
+		tc_rc = TC_FAIL;
+		goto exittest;           /* terminate test */
 	}
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow HelperTask to run part 4 */
-	retValue = k_mem_slab_alloc(&MAP_LgBlks, &b, 50);
-	if (verifyRetValue(0, retValue)) {
+	ret_value = k_mem_slab_alloc(&map_lgblks, &b, 50);
+	if (verify_ret_value(0, ret_value)) {
 		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
 			 __func__, b);
 	} else {
-		TC_ERROR("Failed k_mem_slab_alloc, retValue %d\n", retValue);
-		tcRC = TC_FAIL;
-		goto exitTest;           /* terminate test */
+		TC_ERROR("Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
+		tc_rc = TC_FAIL;
+		goto exittest;           /* terminate test */
 	}
 
 	/* Wait for HelperTask to complete */
@@ -390,14 +390,14 @@ void RegressionTask(void)
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow HelperTask to run part 5 */
-	retValue = k_mem_slab_alloc(&MAP_LgBlks, &b, K_FOREVER);
-	if (verifyRetValue(0, retValue)) {
+	ret_value = k_mem_slab_alloc(&map_lgblks, &b, K_FOREVER);
+	if (verify_ret_value(0, ret_value)) {
 		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
 			 __func__, b);
 	} else {
-		TC_ERROR("Failed k_mem_slab_alloc, retValue %d\n", retValue);
-		tcRC = TC_FAIL;
-		goto exitTest;           /* terminate test */
+		TC_ERROR("Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
+		tc_rc = TC_FAIL;
+		goto exittest;           /* terminate test */
 	}
 
 	/* Wait for HelperTask to complete */
@@ -406,19 +406,19 @@ void RegressionTask(void)
 
 	/* Free memory block */
 	TC_PRINT("%s: Used %d block\n", __func__,
-		 k_mem_slab_num_used_get(&MAP_LgBlks));
-	k_mem_slab_free(&MAP_LgBlks, &b);
+		 k_mem_slab_num_used_get(&map_lgblks));
+	k_mem_slab_free(&map_lgblks, &b);
 	TC_PRINT("%s: 1 block freed, used %d block\n",
-		 __func__,  k_mem_slab_num_used_get(&MAP_LgBlks));
+		 __func__,  k_mem_slab_num_used_get(&map_lgblks));
 
-exitTest:
+exittest:
 
-	TC_END_RESULT(tcRC);
-	TC_END_REPORT(tcRC);
-}  /* RegressionTask */
+	TC_END_RESULT(tc_rc);
+	TC_END_REPORT(tc_rc);
+}  /* regression_task */
 
-K_THREAD_DEFINE(HELPERTASK, STACKSIZE, HelperTask, NULL, NULL, NULL,
+K_THREAD_DEFINE(HELPERTASK, STACKSIZE, helper_task, NULL, NULL, NULL,
 		7, 0, K_NO_WAIT);
 
-K_THREAD_DEFINE(REGRESSTASK, STACKSIZE, RegressionTask, NULL, NULL, NULL,
+K_THREAD_DEFINE(REGRESSTASK, STACKSIZE, regression_task, NULL, NULL, NULL,
 		5, 0, K_NO_WAIT);

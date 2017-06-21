@@ -31,7 +31,8 @@ static void put_msgq(struct k_msgq *pmsgq)
 		ret = k_msgq_put(pmsgq, (void *)&data[i], K_NO_WAIT);
 		zassert_false(ret, NULL);
 		/**TESTPOINT: msgq free get*/
-		zassert_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN - 1 - i, NULL);
+		zassert_equal(k_msgq_num_free_get(pmsgq),
+				MSGQ_LEN - 1 - i, NULL);
 		/**TESTPOINT: msgq used get*/
 		zassert_equal(k_msgq_num_used_get(pmsgq), i + 1, NULL);
 	}
@@ -49,7 +50,8 @@ static void get_msgq(struct k_msgq *pmsgq)
 		/**TESTPOINT: msgq free get*/
 		zassert_equal(k_msgq_num_free_get(pmsgq), i + 1, NULL);
 		/**TESTPOINT: msgq used get*/
-		zassert_equal(k_msgq_num_used_get(pmsgq), MSGQ_LEN - 1 - i, NULL);
+		zassert_equal(k_msgq_num_used_get(pmsgq),
+				MSGQ_LEN - 1 - i, NULL);
 	}
 }
 
@@ -60,12 +62,12 @@ static void purge_msgq(struct k_msgq *pmsgq)
 	zassert_equal(k_msgq_num_used_get(pmsgq), 0, NULL);
 }
 
-static void tIsr_entry(void *p)
+static void tisr_entry(void *p)
 {
 	put_msgq((struct k_msgq *)p);
 }
 
-static void tThread_entry(void *p1, void *p2, void *p3)
+static void thread_entry(void *p1, void *p2, void *p3)
 {
 	get_msgq((struct k_msgq *)p1);
 	k_sem_give(&end_sema);
@@ -76,7 +78,7 @@ static void msgq_thread(struct k_msgq *pmsgq)
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-thread data passing via message queue*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      tThread_entry, pmsgq, NULL, NULL,
+				      thread_entry, pmsgq, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 	put_msgq(pmsgq);
 	k_sem_take(&end_sema, K_FOREVER);
@@ -89,7 +91,7 @@ static void msgq_thread(struct k_msgq *pmsgq)
 static void msgq_isr(struct k_msgq *pmsgq)
 {
 	/**TESTPOINT: thread-isr data passing via message queue*/
-	irq_offload(tIsr_entry, pmsgq);
+	irq_offload(tisr_entry, pmsgq);
 	get_msgq(pmsgq);
 
 	/**TESTPOINT: msgq purge*/
