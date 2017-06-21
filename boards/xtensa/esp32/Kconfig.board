@@ -6,4 +6,3 @@
 config BOARD_ESP32
 	bool "ESP32 Development Board"
 	depends on XTENSA
-	select BOARD_XTENSA
