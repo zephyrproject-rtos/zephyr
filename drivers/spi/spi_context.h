@@ -150,7 +150,7 @@ static inline void spi_context_buffers_setup(struct spi_context *ctx,
 					     size_t tx_count,
 					     struct spi_buf *rx_bufs,
 					     size_t rx_count,
-					     uint8_t dfs)
+					     u8_t dfs)
 {
 	SYS_LOG_DBG("tx_bufs %p (%zu) - rx_bufs %p (%zu) - %u",
 		    tx_bufs, tx_count, rx_bufs, rx_count, dfs);
@@ -184,7 +184,7 @@ static inline void spi_context_buffers_setup(struct spi_context *ctx,
 }
 
 static ALWAYS_INLINE
-void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs)
+void spi_context_update_tx(struct spi_context *ctx, u8_t dfs)
 {
 	if (!ctx->tx_len) {
 		return;
@@ -215,7 +215,7 @@ bool spi_context_tx_on(struct spi_context *ctx)
 }
 
 static ALWAYS_INLINE
-void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs)
+void spi_context_update_rx(struct spi_context *ctx, u8_t dfs)
 {
 	if (!ctx->rx_len) {
 		return;
