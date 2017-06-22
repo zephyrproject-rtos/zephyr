@@ -196,9 +196,11 @@ toolchain:
   The list of supported toolchains that can build this board. This should match
   one of the values used for 'ZEPHYR_GCC_VARIANT' when building on the command line
 ram:
-  Available RAM on the board. This is used to match testcase requirements
+  Available RAM on the board (specified in KB). This is used to match testcase
+  requirements.  If not specified we default to 128KB.
 flash:
-  Available FLASH on the board. This is used to match testcase requirements
+  Available FLASH on the board (specified in KB). This is used to match testcase
+  requirements.  If not specified we default to 512KB.
 testing:
   testing relating keywords to provide best coverage for the features of this
   board.
@@ -208,7 +210,8 @@ testing:
     covered when invoking the simplified sanitycheck without any additional
     arguments.
   ignore_tags:
-    Do not attempt to build or run tests marked with this list of tags.
+    Do not attempt to build (and therefore run) tests marked with this list of
+    tags.
 
 
 
