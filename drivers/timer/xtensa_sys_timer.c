@@ -41,7 +41,7 @@
 #define GET_TIMER_CURRENT_TIME(void) XT_RSR_CCOUNT()
 
 #define XTENSA_RSR(sr) \
-	({uint32_t v; \
+	({u32_t v; \
 	 __asm__ volatile ("rsr." #sr " %0" : "=a"(v)); \
 	 v; })
 #define XTENSA_WSR(sr, v) \
