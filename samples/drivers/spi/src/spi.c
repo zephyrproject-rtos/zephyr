@@ -57,7 +57,11 @@ u8_t buffer_tx[] = "0123456789abcdef\0";
 u8_t buffer_rx[BUF_SIZE] = {};
 
 struct spi_config spi_slow = {
+#if defined(MIN_FREQ)
+	.frequency = MIN_FREQ,
+#else
 	.frequency = 128000,
+#endif
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
