@@ -30,7 +30,7 @@ enum rda5981a_pin_port {
 #define GET_PIN(__pin) \
 	(__pin & 0x1f)
 
-//iomux ctrl reg 0
+/* iomux ctrl reg 0 */
 #define PA0	RDA5981A_PIN(PIN_PORTA, 26)
 #define PA1	RDA5981A_PIN(PIN_PORTA, 27)
 #define PA2	RDA5981A_PIN(PIN_PORTA, 14)
@@ -42,7 +42,7 @@ enum rda5981a_pin_port {
 #define PA8	RDA5981A_PIN(PIN_PORTA, 10)
 #define PA9	RDA5981A_PIN(PIN_PORTA, 11)
 
-//iomux ctrl reg 1
+/* iomux ctrl reg 1 */
 #define PB0	RDA5981A_PIN(PIN_PORTB, 0)
 #define PB1	RDA5981A_PIN(PIN_PORTB, 1)
 #define PB2	RDA5981A_PIN(PIN_PORTB, 2)
@@ -54,7 +54,7 @@ enum rda5981a_pin_port {
 #define PB8	RDA5981A_PIN(PIN_PORTB, 8)
 #define PB9	RDA5981A_PIN(PIN_PORTB, 9)
 
-//iomux ctrl reg 4
+/* iomux ctrl reg 4 */
 #define PC0	RDA5981A_PIN(PIN_PORTC, 12)
 #define PC1	RDA5981A_PIN(PIN_PORTC, 13)
 #define PC2	RDA5981A_PIN(PIN_PORTC, 14)
@@ -66,7 +66,7 @@ enum rda5981a_pin_port {
 #define PC8	RDA5981A_PIN(PIN_PORTC, 20)
 #define PC9	RDA5981A_PIN(PIN_PORTC, 21)
 
-//iomux ctrl reg 4
+/* iomux ctrl reg 4 */
 #define PD0	RDA5981A_PIN(PIN_PORTD, 22)
 #define PD1	RDA5981A_PIN(PIN_PORTD, 23)
 #define PD2	RDA5981A_PIN(PIN_PORTD, 24)
@@ -104,7 +104,7 @@ enum rda5981a_gpio_pin {
 	GPIO_PIN26 = PA0,
 	GPIO_PIN27 = PA1,
 
-	// Another pin names for GPIO 14 - 19
+	/* Another pin names for GPIO 14 - 19 */
 	GPIO_PIN14A = PA2,
 	GPIO_PIN15A = PA3,
 	GPIO_PIN16A = PA4,
@@ -149,6 +149,6 @@ enum {
 	(uint32_t *)(RDA_PERBTBND_BASE + (((uint32_t)(reg)-RDA_PER_BASE)<<5U) + (((uint32_t)(bit))<<2U))
 
 void pinmux_rda5981a_set(uint32_t pin, uint32_t func);
-void rda5981a_setup_pins(const struct pin_config *pinconf,uint32_t pins);
+void rda5981a_setup_pins(const struct pin_config *pinconf, uint32_t pins);
 
 #endif

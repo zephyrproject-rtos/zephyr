@@ -116,7 +116,6 @@ static int uart_rda5981a_init(struct device *dev)
 	const struct uart_rda5981a_config *cfg = DEV_CFG(dev);
 #endif
 	if (data->uart_index == 1) {
-		//UART_CLKGATE_REG |= UART1_CLKEN_MASK;
 	}
 
 	uart->ier = 0 << 0 /* rx data available irq enable */
@@ -141,9 +140,6 @@ static int uart_rda5981a_init(struct device *dev)
 	/* todo pinmode */
 	/* todo flow control */
 
-	//uart->ier = 1 << 0 /* rx data available irq enable */
-	//	| 1 << 1 /* tx fifo empty irq enable */
-	//	| 1 << 2; /* rxline status irq enable */
 	uart->ier = 1 << 2;
 
 	/* clear */
@@ -226,7 +222,7 @@ static int uart_rda5981a_irq_tx_ready(struct device *dev)
 {
 	volatile struct uart_rda5981a *uart = UART_STRUCT(dev);
 
-	return (uart->fsr & TX_FIFO_FULL);  // uart0 not have flow control
+	return (uart->fsr & TX_FIFO_FULL);  /* uart0 not have flow control */
 }
 
 static int uart_rda5981a_irq_tx_empty(struct device *dev)
@@ -301,7 +297,9 @@ static int serial_getc(struct device *dev)
 	int data;
 	volatile struct uart_rda5981a *uart = UART_STRUCT(dev);
 
-	while (!serial_readable(dev));
+	while (!serial_readable(dev)) {
+		;
+	}
 	data = uart->rbr;
 
 	return data;
@@ -311,7 +309,9 @@ static void serial_putc(struct device *dev, int c)
 {
 	volatile struct uart_rda5981a *uart = UART_STRUCT(dev);
 
-	while (serial_writable(dev));
+	while (serial_writable(dev)) {
+		;
+	}
 	uart->thr = c;
 }
 
