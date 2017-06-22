@@ -1,0 +1,4 @@
+tests:
+-   test:
+        filter: CONFIG_CPU_HAS_MPU or CONFIG_X86_MMU
+        tags: core security ignore_faults
