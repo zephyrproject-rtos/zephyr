@@ -1535,6 +1535,11 @@ u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
 	return TICKER_STATUS_SUCCESS;
 }
 
+bool ticker_is_initialized(u8_t instance_index)
+{
+	return !!(_instance[instance_index].count_node);
+}
+
 void ticker_trigger(u8_t instance_index)
 {
 	DEBUG_TICKER_ISR(1);

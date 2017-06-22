@@ -7775,6 +7775,16 @@ static void phy_rsp_send(struct connection *conn)
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
+void ll_radio_state_abort(void)
+{
+	event_stop(0, 0, 0, (void *)STATE_ABORT);
+}
+
+u32_t ll_radio_state_is_idle(void)
+{
+	return radio_is_idle();
+}
+
 void radio_ticks_active_to_start_set(u32_t ticks_active_to_start)
 {
 	_radio.ticks_active_to_start = ticks_active_to_start;

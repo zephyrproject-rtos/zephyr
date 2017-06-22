@@ -10,6 +10,8 @@
 
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
+void ll_radio_state_abort(void);
+u32_t ll_radio_state_is_idle(void);
 u8_t *ll_addr_get(u8_t addr_type, u8_t *p_bdaddr);
 void ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
 
@@ -58,6 +60,7 @@ u32_t ll_start_enc_req_send(u16_t handle, u8_t err_code,
 u32_t ll_feature_req_send(u16_t handle);
 u32_t ll_version_ind_send(u16_t handle);
 u32_t ll_terminate_ind_send(u16_t handle, u8_t reason);
+void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 u32_t ll_length_req_send(u16_t handle, u16_t tx_octets);

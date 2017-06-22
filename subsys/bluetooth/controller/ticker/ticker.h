@@ -96,6 +96,7 @@ typedef void (*ticker_op_func) (u32_t status, void *op_context);
 */
 u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
 		  u8_t count_user, void *user, u8_t count_op, void *user_op);
+bool ticker_is_initialized(u8_t instance_index);
 void ticker_trigger(u8_t instance_index);
 u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		   u32_t ticks_anchor, u32_t ticks_first, u32_t ticks_periodic,
