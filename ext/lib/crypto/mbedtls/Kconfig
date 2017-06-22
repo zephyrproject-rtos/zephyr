@@ -38,6 +38,20 @@ config MBEDTLS_CFG_FILE
 	help
 	Enable custom mbed TLS configuration
 
+config MBEDTLS_DEBUG
+	string "mbed TLS debug activation"
+	depends on MBEDTLS_BUILTIN
+	default n
+	help
+	Enable debugging activation for mbed TLS configuration. Note that this
+	does not directly cause any debug print output. For that you need to
+	call
+	mbedtls_debug_set_threshold(level);
+	and
+	mbedtls_ssl_conf_dbg(&mbedtls.conf, my_debug, NULL);
+	functions in your application, and create the my_debug() function to
+	actually print something useful.
+
 config MBEDTLS_TEST
 	bool "Compile internal self test functions"
 	depends on MBEDTLS_BUILTIN
