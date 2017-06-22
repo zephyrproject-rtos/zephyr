@@ -1378,14 +1378,17 @@ NET_CONN_CB(tcp_syn_rcvd)
 	}
 
 	/*
-	 * If we receive RST, we go back to LISTEN state if the previous state
-	 * was LISTEN, otherwise we go to CLOSED state.
-	 * See RFC 793 chapter 3.4 "Reset Processing" for more details.
+	 * See RFC 793 chapter 3.4 "Reset Processing" and RFC 793, page 65
+	 * for more details. If RST is received in SYN_RCVD state, go back
+	 * to LISTEN state. No other states are valid for this function.
 	 */
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_RST) {
 
-		/* We only accept RST packet that has valid seq field. */
-		if (!net_tcp_validate_seq(tcp, pkt)) {
+		/* We only accept an RST packet that has valid seq field
+		 * and ignore RST received in LISTEN state.
+		 */
+		if (!net_tcp_validate_seq(tcp, pkt) ||
+		    net_tcp_get_state(tcp) == NET_TCP_LISTEN) {
 			net_stats_update_tcp_seg_rsterr();
 			return NET_DROP;
 		}
@@ -1396,7 +1399,10 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
 
-		if (net_tcp_get_state(tcp) != NET_TCP_LISTEN) {
+		if (net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
+			net_tcp_change_state(tcp, NET_TCP_LISTEN);
+		} else {
+			NET_DBG("TCP socket not in SYN RCVD state, closing");
 			net_tcp_change_state(tcp, NET_TCP_CLOSED);
 		}
 
