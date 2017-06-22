@@ -66,8 +66,8 @@ static int write_dword(off_t offset, u64_t val, struct flash_stm32_priv *p)
 	tmp = regs->cr;
 
 	/* Perform the data write operation at the desired memory address */
-	flash[0] = (uint32_t)val;
-	flash[1] = (uint32_t)(val >> 32);
+	flash[0] = (u32_t)val;
+	flash[1] = (u32_t)(val >> 32);
 
 	/* Wait until the BSY bit is cleared */
 	rc = flash_stm32_wait_flash_idle(p);
