@@ -1,8 +1,10 @@
 sample:
-    description: TBD
-    name: TBD
+    description: >
+      Environmental Sensing sample using BLE and sensor features on
+      Arduino 101.
+    name: Environmental Sensing (Sensor Subsystem Part)
 tests:
 -   test:
         build_only: true
-        filter: CONFIG_SOC_QUARK_SE_C1000_SS
-        tags: samples
+        platform_whitelist: arduino_101_sss
+        tags: samples sensor
