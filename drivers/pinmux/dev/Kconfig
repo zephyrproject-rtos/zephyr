@@ -44,3 +44,11 @@ config PINMUX_DEV_ARM_V2M_BEETLE
 	Enables the pinmux dev driver for boards based on the
 	ARM Beetle SoC MCUs.
 	default n
+
+config PINMUX_DEV_RDA5981A
+	bool "Enable pinmux dev driver for RDA5981A supported boards"
+	depends on PINMUX_DEV && SOC_RDA5981A
+	help
+	Enables the pinmux dev driver for boards based on the
+	RDA5981A SoC MCUS.
+	default n
