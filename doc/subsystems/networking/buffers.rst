@@ -74,8 +74,8 @@ Push
   .. code-block:: c
 
      void *net_buf_push(struct net_buf *buf, size_t len);
+     void net_buf_push_u8(struct net_buf *buf, u8_t value);
      void net_buf_push_le16(struct net_buf *buf, u16_t value);
-     u32_t net_buf_pull_le32(struct net_buf *buf);
 
 Pull
   Remove data from the beginning of the buffer. Modifies both the data
@@ -87,6 +87,7 @@ Pull
      void *net_buf_pull(struct net_buf *buf, size_t len);
      u8_t net_buf_pull_u8(struct net_buf *buf);
      u16_t net_buf_pull_le16(struct net_buf *buf);
+     u32_t net_buf_pull_le32(struct net_buf *buf);
 
 The Add and Push operations are used when encoding data into the buffer,
 whereas Pull is used when decoding data from a buffer.
