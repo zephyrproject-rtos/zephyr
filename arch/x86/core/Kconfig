@@ -50,17 +50,21 @@ config MAX_IRQ_LINES
 	to program to the PIC the association between vectors and
 	interrupts.
 
+if !HAS_DTS
 config PHYS_LOAD_ADDR
 	hex "Physical load address"
 	# Default value must be supplied by platform
 	help
 	This option specifies the physical address where the kernel is loaded.
+endif
 
+if !HAS_DTS
 config PHYS_RAM_ADDR
 	hex "Physical RAM address"
 	# Default value must be supplied by platform
 	help
 	This option specifies the physical RAM address of the selected SoC.
+endif
 
 config RAM_SIZE
 	int "Amount of RAM given to the kernel (in kB)"

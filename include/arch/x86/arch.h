@@ -17,6 +17,7 @@
 #include <irq.h>
 #include <arch/x86/irq_controller.h>
 #include <kernel_arch_thread.h>
+#include <generated_dts_board.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
