@@ -8142,7 +8142,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 	u32_t ret;
 
 	if (_radio.advertiser.is_enabled) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	pdu_adv = (struct pdu_adv *)
@@ -8153,19 +8153,19 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 		void *link;
 
 		if (_radio.advertiser.conn) {
-			return 1;
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
 		link = mem_acquire(&_radio.link_rx_free);
 		if (!link) {
-			return 1;
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		conn = mem_acquire(&_radio.conn_free);
 		if (!conn) {
 			mem_release(link, &_radio.link_rx_free);
 
-			return 1;
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		conn->handle = 0xFFFF;
@@ -8347,7 +8347,7 @@ failure_cleanup:
 		mem_release(conn, &_radio.conn_free);
 	}
 
-	return 1;
+	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 u32_t radio_adv_disable(void)
@@ -8375,7 +8375,7 @@ u32_t radio_adv_disable(void)
 		}
 	}
 
-	return status;
+	return status ? BT_HCI_ERR_CMD_DISALLOWED : 0;
 }
 
 u32_t radio_adv_is_enabled(void)
@@ -8408,7 +8408,7 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 	u32_t ret;
 
 	if (_radio.scanner.is_enabled) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	_radio.scanner.type = type;
@@ -8479,7 +8479,7 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 	}
 
 	if (ret_cb != TICKER_STATUS_SUCCESS) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	_radio.scanner.is_enabled = 1;
@@ -8517,7 +8517,7 @@ u32_t radio_scan_disable(void)
 		}
 	}
 
-	return status;
+	return status ? BT_HCI_ERR_CMD_DISALLOWED : 0;
 }
 
 u32_t radio_scan_is_enabled(void)
@@ -8548,22 +8548,19 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	void *link;
 
 	if (_radio.scanner.conn) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	link = mem_acquire(&_radio.link_rx_free);
 	if (!link) {
-		return 1;
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	conn = mem_acquire(&_radio.conn_free);
 	if (!conn) {
 		mem_release(link, &_radio.link_rx_free);
-
-		return 1;
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
-
-	radio_scan_disable();
 
 	_radio.scanner.adv_addr_type = adv_addr_type;
 	memcpy(&_radio.scanner.adv_addr[0], adv_addr, BDADDR_SIZE);
@@ -8684,7 +8681,7 @@ u32_t ll_connect_disable(void)
 	u32_t status;
 
 	if (_radio.scanner.conn == 0) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	status = radio_scan_disable();
