@@ -39,12 +39,27 @@
 #include "ll_filter.h"
 
 /* Global singletons */
+
+/* memory for storing Random number */
 static u8_t MALIGN(4) _rand_context[3 + 4 + 1];
-static u8_t MALIGN(4) _ticker_nodes[RADIO_TICKER_NODES][TICKER_NODE_T_SIZE];
-static u8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT]
-						[TICKER_USER_T_SIZE];
+
+/* memory for ticker nodes/instances */
+#if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
+#define FLASH_TICKER_NODES 1 /* No. of tickers reserved for flashing */
+#else
+#define FLASH_TICKER_NODES 0
+#endif
+#define TICKER_NODES       (RADIO_TICKER_NODES + FLASH_TICKER_NODES)
+static u8_t MALIGN(4) _ticker_nodes[TICKER_NODES][TICKER_NODE_T_SIZE];
+
+/* memory for users/contexts operating on ticker module */
+static u8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT][TICKER_USER_T_SIZE];
+
+/* memory for user/context simultaneous API operations */
 static u8_t MALIGN(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
 						[TICKER_USER_OP_T_SIZE];
+
+/* memory for Bluetooth Controller (buffers, queues etc.) */
 static u8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
 static struct k_sem *sem_recv;
@@ -191,7 +206,7 @@ int ll_init(struct k_sem *sem_rx)
 	_ticker_users[MAYFLY_CALL_ID_2][0] = 0;
 	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = RADIO_TICKER_USER_APP_OPS;
 
-	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, RADIO_TICKER_NODES,
+	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, TICKER_NODES,
 		    &_ticker_nodes[0], MAYFLY_CALLER_COUNT, &_ticker_users[0],
 		    RADIO_TICKER_USER_OPS, &_ticker_user_ops[0]);
 
@@ -229,6 +244,12 @@ int ll_init(struct k_sem *sem_rx)
 	irq_enable(NRF5_IRQ_RNG_IRQn);
 
 	return 0;
+}
+
+void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id)
+{
+	*user_id = (TICKER_NODES - FLASH_TICKER_NODES); /* The last index in the total tickers */
+	*instance_index = RADIO_TICKER_INSTANCE_ID_RADIO;
 }
 
 u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
