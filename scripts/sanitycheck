@@ -1316,7 +1316,7 @@ class TestSuite:
                     if (arch_name == "unit") != (tc.type == "unit"):
                         continue
 
-                    if tc.build_on_all:
+                    if tc.build_on_all and not platform_filter:
                         platform_filter = []
 
                     if tc.skip:
@@ -1413,7 +1413,7 @@ class TestSuite:
                         discards[instance] = "Skip filter"
                         continue
 
-                    if tc.build_on_all:
+                    if tc.build_on_all and not platform_filter:
                         platform_filter = []
 
                     if tag_filter and not tc.tags.intersection(tag_filter):
