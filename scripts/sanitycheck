@@ -1364,7 +1364,8 @@ class TestSuite:
                     if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
                         continue
 
-                    if tc.tc_filter and (plat.default or all_plats or platform_filter):
+                    if (tc.tc_filter and (plat.default or all_plats or platform_filter) and
+                        toolchain in plat.supported_toolchains):
                         args = tc.extra_args[:]
                         args.extend(["ARCH=" + plat.arch,
                                 "BOARD=" + plat.name, "config-sanitycheck"])
