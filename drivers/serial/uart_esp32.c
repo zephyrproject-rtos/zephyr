@@ -52,11 +52,6 @@ static const struct uart_driver_api esp32_uart_api = {
 	.poll_in = &esp32_uart_rx,
 	.poll_out = &esp32_uart_tx,
 	.err_check = NULL,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-
-#error "Interrupt-driven ESP32 UART not implemented yet"
-
-#endif
 };
 
 DEVICE_AND_API_INIT(esp32_uart, "ROMUART",

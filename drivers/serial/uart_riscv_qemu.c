@@ -38,9 +38,6 @@ static const struct uart_driver_api uart_riscv_qemu_driver_api = {
 	.poll_in = uart_riscv_qemu_poll_in,
 	.poll_out = uart_riscv_qemu_poll_out,
 	.err_check = NULL,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#error "Interrupt not available in uart riscv32-qemu"
-#endif
 };
 
 static const struct uart_device_config uart_riscv_qemu_dev_cfg_0 = {

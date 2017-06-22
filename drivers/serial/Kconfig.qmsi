@@ -3,6 +3,7 @@ menuconfig UART_QMSI
 	bool "QMSI UART driver"
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the QMSI UART driver.
 

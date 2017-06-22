@@ -10,6 +10,7 @@ menuconfig UART_CMSDK_APB
 	bool "ARM CMSDK APB UART driver"
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_ARM
 	help
 	  This option enables the UART driver for ARM CMSDK APB UART.

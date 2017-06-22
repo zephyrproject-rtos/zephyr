@@ -85,11 +85,6 @@ static const struct uart_driver_api uart_altera_jtag_driver_api = {
 	.poll_in = NULL,
 	.poll_out = &uart_altera_jtag_poll_out,
 	.err_check = NULL,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-
-#error "Interrupt-driven Altera JTAG UART not implemented yet"
-
-#endif
 };
 
 static const struct uart_device_config uart_altera_jtag_dev_cfg_0 = {

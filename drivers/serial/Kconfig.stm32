@@ -9,6 +9,7 @@ menuconfig UART_STM32
 	bool "STM32 MCU serial driver"
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_STM32
 	help
 	  This option enables the UART driver for STM32F10x family of
