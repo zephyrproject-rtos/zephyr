@@ -422,7 +422,7 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 	i = ll_rl_idx_find(id_addr->type, id_addr->a.val);
 	if (i >= 0) {
 		if (rl[i].pirk) {
-			uint8_t idx = rl[i].pirk_idx;
+			u8_t idx = rl[i].pirk_idx;
 			memmove(peer_irks[idx], peer_irks[idx + 1],
 				16 * peer_irk_count--);
 		}
