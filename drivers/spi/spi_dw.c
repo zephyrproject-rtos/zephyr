@@ -44,7 +44,7 @@
 #include "spi_dw.h"
 #include "spi_context.h"
 
-static void completed(struct device *dev, uint8_t error)
+static void completed(struct device *dev, u8_t error)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
