@@ -59,3 +59,27 @@ config MBEDTLS_INSTALL_PATH
 	This option holds the path where the mbedTLS libraries and headers are
 	installed. Make sure this option is properly set when MBEDTLS_LIBRARY
 	is enabled otherwise the build will fail.
+
+config MBEDTLS_ENABLE_HEAP
+	bool "Enable global heap for mbed TLS"
+	default n
+	depends on MBEDTLS
+	help
+	This option enables the mbedtls to use the heap. This setting must
+	be global so that various applications and libraries in Zephyr do not
+	try to do this themselves as there can be only one heap defined
+	in mbedtls. If this is enabled, then the Zephyr will, during the device
+	startup, initialize the heap automatically.
+
+config MBEDTLS_HEAP_SIZE
+	int "Heap size for mbed TLS"
+	depends on MBEDTLS_ENABLE_HEAP
+	help
+	The mbedtls routines will use this heap if enabled.
+	See ext/lib/crypto/mbedtls/include/mbedtls/config.h and
+	MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details. That option is not
+	enabled by default.
+	Default value for the heap size is not set as it depends on the
+	application. For server application 15000 bytes should be enough.
+	For some dedicated and specific usage of mbedtls API, the 1000 bytes
+	might be ok.
