@@ -188,6 +188,30 @@ DEVICE_AND_API_INIT(gpio_rda5981a, CONFIG_GPIO_RDA5981A_DEV_NAME,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_rda5981a_drv_api_funcs);
 
+#define SPLASH_LED 1
+#if SPLASH_LED
+#define SPLASH_STACK_SIZE	256
+static char __noinit __stack splash_stack[SPLASH_STACK_SIZE];
+static void splash(void *arg1, void *arg2, void *arg3)
+{
+	int toggle = 1;
+	struct device *dev = (struct device *)arg1;
+
+	gpio_rda5981a_config(dev, GPIO_ACCESS_BY_PIN, GPIO_PIN2,
+				(GPIO_DIR_OUT));
+	gpio_rda5981a_config(dev, GPIO_ACCESS_BY_PIN, GPIO_PIN3,
+				(GPIO_DIR_OUT));
+
+	while (1) {
+		gpio_rda5981a_write(dev, GPIO_ACCESS_BY_PIN,
+					GPIO_PIN2, toggle);
+		gpio_rda5981a_write(dev, GPIO_ACCESS_BY_PIN,
+					GPIO_PIN3, !toggle);
+		k_sleep(1000);
+		toggle = toggle ? 0 : 1;
+	}
+}
+#endif
 static int gpio_rda5981a_init(struct device *dev)
 {
 	IRQ_CONNECT(GPIO_IRQ, CONFIG_GPIO_RDA5981A_PORT_PRI,
@@ -195,5 +219,12 @@ static int gpio_rda5981a_init(struct device *dev)
 
 	irq_enable(GPIO_IRQ);
 
+#if SPLASH_LED
+	k_thread_spawn(&splash_stack[0],
+		       SPLASH_STACK_SIZE,
+		       (k_thread_entry_t)splash,
+		       dev, NULL, NULL,
+		       K_PRIO_COOP(10), 0, K_MSEC(500));
+#endif
 	return 0;
 }
