@@ -1,4 +1,4 @@
 tests:
 -   test:
-        platform_whitelist: qemu_x86
         tags: shell
+        filter: (CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT)
