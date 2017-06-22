@@ -46,6 +46,20 @@ struct spi_cs_control spi_cs = {
 #define SPI_CS NULL
 #define CS_CTRL_GPIO_DRV_NAME ""
 
+#elif defined(CONFIG_BOARD_NUCLEO_L432KC) || 	\
+      defined(CONFIG_BOARD_DISCO_L475_IOT1) || 	\
+      defined(CONFIG_BOARD_NUCLEO_F334R8) || 	\
+      defined(CONFIG_BOARD_NUCLEO_F401RE) || 	\
+      defined(CONFIG_BOARD_NUCLEO_L476RG)
+
+#define SPI_DRV_NAME CONFIG_SPI_1_NAME
+#define SPI_SLAVE 0
+#define MIN_FREQ 500000
+
+#undef SPI_CS
+#define SPI_CS NULL
+#define CS_CTRL_GPIO_DRV_NAME ""
+
 #else
 #undef SPI_CS
 #define SPI_CS NULL
