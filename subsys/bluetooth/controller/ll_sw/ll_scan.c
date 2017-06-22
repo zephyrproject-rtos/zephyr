@@ -32,7 +32,7 @@ u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			 u8_t own_addr_type, u8_t filter_policy)
 {
 	if (radio_scan_is_enabled()) {
-		return 0x0C; /* Command Disallowed */
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	/* type value:
@@ -61,9 +61,10 @@ u32_t ll_scan_enable(u8_t enable)
 	u32_t status;
 
 	if (!enable) {
-		status = radio_scan_disable();
-
-		return status;
+		return radio_scan_disable();
+	} else if (radio_scan_is_enabled()) {
+		/* Duplicate filtering is processed in the HCI layer */
+		return 0;
 	}
 
 	status = radio_scan_enable(ll_scan.type, ll_scan.tx_addr,

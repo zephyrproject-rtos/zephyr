@@ -570,7 +570,12 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	sys_put_le64(0x000003ffffffffff, rp->le_states);
+	/* All states and combinations supported except:
+	 * Initiating State + Passive Scanning
+	 * Initiating State + Active Scanning
+	 */
+	/*@todo: conditionally disable states based on Kconfig variables */
+	sys_put_le64(0x000003ffff3fffff, rp->le_states);
 }
 
 #if defined(CONFIG_BLUETOOTH_BROADCASTER)

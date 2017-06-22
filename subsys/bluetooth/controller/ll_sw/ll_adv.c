@@ -58,7 +58,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	struct pdu_adv *pdu;
 
 	if (radio_adv_is_enabled()) {
-		return 0x0C; /* Command Disallowed */
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
@@ -341,9 +341,9 @@ u32_t ll_adv_enable(u8_t enable)
 	u32_t status;
 
 	if (!enable) {
-		status = radio_adv_disable();
-
-		return status;
+		return radio_adv_disable();
+	} else if (radio_adv_is_enabled()) {
+		return 0;
 	}
 
 	/* TODO: move the addr remembered into controller

@@ -22,6 +22,10 @@ u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 {
 	u32_t status;
 
+	if (radio_scan_is_enabled()) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	status = radio_connect_enable(peer_addr_type, peer_addr, interval,
 				      latency, timeout);
 
