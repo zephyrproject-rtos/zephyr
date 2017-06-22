@@ -10,6 +10,7 @@ menuconfig UART_MCUX_LPUART
 	depends on HAS_MCUX && HAS_LPUART
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the MCUX LPUART driver.
 

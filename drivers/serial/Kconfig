@@ -25,10 +25,18 @@ config SERIAL_HAS_DRIVER
 	to signal that there is a serial driver. This is being used
 	by other drivers which are dependent on serial.
 
+config SERIAL_SUPPORT_INTERRUPT
+	bool
+	default n
+	help
+	This is an option to be enabled by individual serial driver
+	to signal that the driver and hardware supports interrupts.
+
 config UART_INTERRUPT_DRIVEN
 	bool
 	prompt "Enable UART Interrupt support"
 	default n
+	depends on SERIAL_SUPPORT_INTERRUPT
 	help
 	This option enables interrupt support for UART allowing console
 	input and other UART based drivers.
