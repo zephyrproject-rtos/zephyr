@@ -13,8 +13,10 @@ config SS_RESET_VECTOR
 config ROM_SIZE
 	default 144
 
+if !HAS_DTS
 config PHYS_LOAD_ADDR
 	default 0x40010000
+endif
 
 if BLUETOOTH_H4
 
