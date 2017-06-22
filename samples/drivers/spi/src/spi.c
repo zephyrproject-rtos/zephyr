@@ -287,6 +287,11 @@ static int spi_async_call(struct spi_config *spi_conf)
 
 	ret = spi_transceive_async(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
 				   rx_bufs, ARRAY_SIZE(rx_bufs), &async_sig);
+	if (ret == -ENOTSUP) {
+		SYS_LOG_DBG("Not supported");
+		return 0;
+	}
+
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
