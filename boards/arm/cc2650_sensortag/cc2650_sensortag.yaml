@@ -1,0 +1,8 @@
+identifier: cc2650_sensortag
+name: SimpleLink multi-standard CC2650 SensorTag kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 20
