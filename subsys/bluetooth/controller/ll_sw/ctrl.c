@@ -4323,19 +4323,25 @@ static void event_stop(u32_t ticks_at_expire, u32_t remainder,
 	LL_ASSERT(!retval);
 }
 
-static void event_common_prepare(u32_t ticks_at_expire,
-				 u32_t remainder,
-				 u32_t *ticks_xtal_to_start,
-				 u32_t *ticks_active_to_start,
-				 u32_t ticks_preempt_to_start,
-				 u8_t ticker_id,
-				 ticker_timeout_func ticker_timeout_fp,
-				 void *context)
+static u32_t event_common_prepare(u32_t ticks_at_expire,
+				  u32_t remainder,
+				  u32_t *ticks_xtal_to_start,
+				  u32_t *ticks_active_to_start,
+				  u32_t ticks_preempt_to_start,
+				  u8_t ticker_id,
+				  ticker_timeout_func ticker_timeout_fp,
+				  void *context)
 {
 	u32_t ticker_status;
 	u32_t _ticks_xtal_to_start = *ticks_xtal_to_start;
 	u32_t _ticks_active_to_start = *ticks_active_to_start;
 	u32_t ticks_to_start;
+
+	/* Check for stale ticks_at_expire */
+	if (ticker_ticks_diff_get(ticker_ticks_now_get(), ticks_at_expire) >
+	    TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US)) {
+		return 1;
+	}
 
 	/* in case this event is short prepare, xtal to start duration will be
 	 * active to start duration.
@@ -4479,6 +4485,8 @@ static void event_common_prepare(u32_t ticks_at_expire,
 		LL_ASSERT(!retval);
 	}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_XTAL_ADVANCED */
+
+	return 0;
 }
 
 static u8_t chan_sel_remap(u8_t *chan_map, u8_t chan_index)
@@ -4757,19 +4765,23 @@ static void adv_scan_configure(u8_t phy, u8_t flags)
 void radio_event_adv_prepare(u32_t ticks_at_expire, u32_t remainder,
 			     u16_t lazy, void *context)
 {
+	u32_t err;
+
 	ARG_UNUSED(lazy);
 	ARG_UNUSED(context);
 
 	DEBUG_RADIO_PREPARE_A(1);
 
 	LL_ASSERT(!_radio.ticker_id_prepare);
-	_radio.ticker_id_prepare = RADIO_TICKER_ID_ADV;
 
-	event_common_prepare(ticks_at_expire, remainder,
-			     &_radio.advertiser.hdr.ticks_xtal_to_start,
-			     &_radio.advertiser.hdr.ticks_active_to_start,
-			     _radio.advertiser.hdr.ticks_preempt_to_start,
-			     RADIO_TICKER_ID_ADV, event_adv, NULL);
+	err = event_common_prepare(ticks_at_expire, remainder,
+				   &_radio.advertiser.hdr.ticks_xtal_to_start,
+				   &_radio.advertiser.hdr.ticks_active_to_start,
+				   _radio.advertiser.hdr.ticks_preempt_to_start,
+				   RADIO_TICKER_ID_ADV, event_adv, NULL);
+	if (!err) {
+		_radio.ticker_id_prepare = RADIO_TICKER_ID_ADV;
+	}
 
 	DEBUG_RADIO_PREPARE_A(0);
 }
@@ -4972,19 +4984,25 @@ void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 			      u16_t lazy, void *context)
 {
+	u32_t err;
+
 	ARG_UNUSED(lazy);
 	ARG_UNUSED(context);
 
 	DEBUG_RADIO_PREPARE_O(1);
 
 	LL_ASSERT(!_radio.ticker_id_prepare);
-	_radio.ticker_id_prepare = RADIO_TICKER_ID_SCAN;
 
-	event_common_prepare(ticks_at_expire, remainder,
-			     &_radio.scanner.hdr.ticks_xtal_to_start,
-			     &_radio.scanner.hdr.ticks_active_to_start,
-			     _radio.scanner.hdr.ticks_preempt_to_start,
-			     RADIO_TICKER_ID_SCAN, event_scan, NULL);
+	err = event_common_prepare(ticks_at_expire, remainder,
+				   &_radio.scanner.hdr.ticks_xtal_to_start,
+				   &_radio.scanner.hdr.ticks_active_to_start,
+				   _radio.scanner.hdr.ticks_preempt_to_start,
+				   RADIO_TICKER_ID_SCAN, event_scan, NULL);
+	if (err) {
+		goto skip;
+	}
+
+	_radio.ticker_id_prepare = RADIO_TICKER_ID_SCAN;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 	/* calc next group in us for the anchor where first connection event
@@ -5021,6 +5039,7 @@ static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 	}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED */
 
+skip:
 	DEBUG_RADIO_PREPARE_O(0);
 }
 
@@ -6360,10 +6379,9 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 				     struct connection *conn)
 {
 	u16_t event_counter;
+	u32_t err;
 
 	LL_ASSERT(!_radio.ticker_id_prepare);
-	_radio.ticker_id_prepare =
-	    RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle;
 
 	/* Calc window widening */
 	if (conn->role.slave.role != 0) {
@@ -6497,17 +6515,23 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 	}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
 
-	/* Setup XTAL startup and radio active events */
-	event_common_prepare(ticks_at_expire, remainder,
-			     &conn->hdr.ticks_xtal_to_start,
-			     &conn->hdr.ticks_active_to_start,
-			     conn->hdr.ticks_preempt_to_start,
-			     (RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle),
-			     (conn->role.slave.role != 0) ? event_slave : event_master,
-			     conn);
-
 	/* store the next event counter value */
 	conn->event_counter = event_counter + 1;
+
+	/* Setup XTAL startup and radio active events */
+	err = event_common_prepare(ticks_at_expire, remainder,
+				   &conn->hdr.ticks_xtal_to_start,
+				   &conn->hdr.ticks_active_to_start,
+				   conn->hdr.ticks_preempt_to_start,
+				   (RADIO_TICKER_ID_FIRST_CONNECTION +
+				    conn->handle),
+				   (conn->role.slave.role != 0) ? event_slave :
+								  event_master,
+				   conn);
+	if (!err) {
+		_radio.ticker_id_prepare = RADIO_TICKER_ID_FIRST_CONNECTION +
+					   conn->handle;
+	}
 }
 
 static void connection_configure(struct connection *conn)
