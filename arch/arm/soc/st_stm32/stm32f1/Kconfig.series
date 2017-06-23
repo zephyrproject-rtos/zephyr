@@ -14,5 +14,6 @@ config SOC_SERIES_STM32F1X
 	select HAS_STM32CUBE
 	select CPU_HAS_SYSTICK
 	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
+	select I2C_STM32_V1 if I2C
 	help
 	 Enable support for STM32F1 MCU series

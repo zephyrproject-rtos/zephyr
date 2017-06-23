@@ -90,19 +90,30 @@ config I2C_NRF5_GPIO_SCL_PIN
 	help
 	  The GPIO pin to use for SCL.
 
-config I2C_STM32LX
-	bool "STM32Lx MCU I2C Driver"
-	depends on SOC_FAMILY_STM32 && SOC_SERIES_STM32L4X
+config I2C_STM32_V1
+	bool "STM32 V1 Driver (F1/F4X)"
+	depends on SOC_FAMILY_STM32
+	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
 	default n
 	help
-	  Enable I2C support on the STM32Lxx family of processors.
+	  Enable I2C support on the STM32 F1 and F4X family of processors. This
+	  driver also supports the F2 and L1 series.
 
-config I2C_STM32LX_INTERRUPT
-	bool "STM32Lx MCU I2C Interrupt Support"
-	depends on I2C_STM32LX
+config I2C_STM32_V2
+	bool "STM32 V2 Driver (F3/L4X)"
+	depends on SOC_FAMILY_STM32
+	depends on SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X
 	default n
 	help
-	  Enable Interrupt support for the I2C Driver of STM32Lxx family.
+	  Enable I2C support on the STM32 F3 and L4X family of processors. This
+	  driver also supports the F0, F7 and L0 series.
+
+config I2C_STM32_INTERRUPT
+	bool "STM32 MCU I2C Interrupt Support"
+	depends on I2C_STM32_V1 || I2C_STM32_V2
+	default n
+	help
+	  Enable Interrupt support for the I2C Driver
 
 config I2C_BITBANG
 	bool
@@ -249,6 +260,32 @@ config I2C_2_DEFAULT_CFG
 config I2C_2_IRQ_PRI
 	int "Port 2 interrupt priority"
 	depends on I2C_2
+	help
+	  IRQ priority.
+
+config I2C_3
+	bool "Enable I2C Port 3"
+	default n
+
+config I2C_3_NAME
+	string "Port 3 device name"
+	depends on I2C_3
+	default "I2C_3"
+
+config I2C_3_DEFAULT_CFG
+	hex "Port 3 default configuration"
+	depends on I2C_3
+	default 0x0
+	help
+	  Allows the I2C port to be brought up with a default configuration.
+	  This is useful to set if other drivers depend upon using the I2C bus
+	  before the application has a chance to custom configure the port.
+	  Setting this value does not prohibit the application from customizing
+	  the values later.  Refer to include/i2c.h file for proper values.
+
+config I2C_3_IRQ_PRI
+	int "Port 3 interrupt priority"
+	depends on I2C_3
 	help
 	  IRQ priority.
 
