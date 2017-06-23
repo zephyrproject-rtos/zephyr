@@ -66,9 +66,11 @@ ti_ccfg[CCFG_SIZE / sizeof(u32_t)] = {
 static const u32_t clkloadctl =
 	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
 		 CC2650_PRCM_CLKLOADCTL);
+#ifdef CONFIG_CC2650_TRNG_RANDOM_GENERATOR
 static const u32_t secdmaclkgr =
 	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
 		 CC2650_PRCM_SECDMACLKGR);
+#endif
 static const u32_t gpioclkgr =
 	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
 		 CC2650_PRCM_GPIOCLKGR);
@@ -78,9 +80,11 @@ static const u32_t pdctl0 =
 static const u32_t pdstat0 =
 	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
 		 CC2650_PRCM_PDSTAT0);
+#ifdef CONFIG_SERIAL
 static const u32_t uartclkgr =
 	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
 		 CC2650_PRCM_UARTCLKGR);
+#endif
 
 /* Setup power and clock for needed hardware modules. */
 static void setup_modules_prcm(void)
