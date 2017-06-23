@@ -50,7 +50,13 @@
 
 /* ########################## Module Selection ############################## */
 /**
-  * @brief This is the list of modules to be used in the HAL driver 
+  * @brief This is the list of modules to be used in the HAL driver
+  *
+  *     Note:
+  *     	HAL_I2C_MODULE_ENABLED had to be disabled due to the HAL
+  *     	redefining I2C_SPEED_STANDARD and I2C_SPEED_FAST when the
+  *     	I2C LL driver was enabled.
+  *
   */
 #define HAL_MODULE_ENABLED  
 #define HAL_ADC_MODULE_ENABLED
@@ -71,7 +77,6 @@
 #define HAL_SDRAM_MODULE_ENABLED
 #define HAL_HASH_MODULE_ENABLED
 #define HAL_GPIO_MODULE_ENABLED
-#define HAL_I2C_MODULE_ENABLED
 #define HAL_I2S_MODULE_ENABLED
 #define HAL_IWDG_MODULE_ENABLED
 #define HAL_LTDC_MODULE_ENABLED
@@ -98,6 +103,22 @@
 #define HAL_DFSDM_MODULE_ENABLED
 #define HAL_LPTIM_MODULE_ENABLED
 #define HAL_MMC_MODULE_ENABLED
+/**
+ * HAL_I2C_MODULE_ENABLED: [disabled]
+ * ----------------------------------
+ *
+ * When enabling the STM32 I2C LL driver this would otherwise trigger:
+ *
+ *  include/i2c.h:34:0: warning: "I2C_SPEED_STANDARD" redefined
+ *  stm32f1xx_hal_i2c.h:578:0: this is the location of the previous definition
+ *
+ *  include/i2c.h:37:0: warning: "I2C_SPEED_FAST" redefined
+ *  stm32f1xx_hal_i2c.h:579:0:  this is the location of the previous definition
+ *
+ */
+#if 0
+#define HAL_I2C_MODULE_ENABLED
+#endif
 
 /* ########################## HSE/HSI Values adaptation ##################### */
 /**
