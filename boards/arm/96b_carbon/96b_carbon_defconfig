@@ -14,11 +14,15 @@ CONFIG_UART_STM32_PORT_1=y
 # enable console on this port by default
 CONFIG_UART_CONSOLE_ON_DEV_NAME="UART_1"
 
+# enable I2C1
+CONFIG_I2C=y
+
 # enable pinmux
 CONFIG_PINMUX=y
 
 # enable GPIO ports A, B, C, D
 CONFIG_GPIO=y
+CONFIG_GPIO_STM32_PORTB=y
 CONFIG_GPIO_STM32_PORTD=y
 
 # clock configuration
