@@ -70,7 +70,9 @@ static s32_t configure_simplelink(void)
 {
 	s32_t retval = -1;
 	s32_t mode = -1;
+#if !defined(CONFIG_NET_IPV6)
 	u32_t if_bitmap = 0;
+#endif
 	SlWlanScanParamCommand_t scan_default = { 0 };
 	SlWlanRxFilterOperationCommandBuff_t rx_filterid_mask = { { 0 } };
 	u8_t config_opt;
