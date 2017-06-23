@@ -45,6 +45,7 @@ config BLUETOOTH_HCI_RAW
 
 config BLUETOOTH_PERIPHERAL
 	bool "Peripheral Role support"
+	select BLUETOOTH_BROADCASTER
 	select BLUETOOTH_CONN
 	default y if BLUETOOTH_HCI_RAW
 	help
@@ -52,6 +53,7 @@ config BLUETOOTH_PERIPHERAL
 
 config BLUETOOTH_CENTRAL
 	bool "Central Role support"
+	select BLUETOOTH_OBSERVER
 	select BLUETOOTH_CONN
 	default y if BLUETOOTH_HCI_RAW
 	help
@@ -62,7 +64,6 @@ menu "Broadcaster"
 
 config BLUETOOTH_BROADCASTER
 	bool "Broadcaster Role support"
-	default y if BLUETOOTH_PERIPHERAL
 	default y if !BLUETOOTH_OBSERVER
 	help
 	  Select this for LE Broadcaster role support.
@@ -74,7 +75,6 @@ menu "Observer"
 
 config BLUETOOTH_OBSERVER
 	bool "Observer Role support"
-	default y if BLUETOOTH_CENTRAL
 	help
 	  Select this for LE Observer role support.
 
