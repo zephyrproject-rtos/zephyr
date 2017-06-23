@@ -14,9 +14,13 @@
 #include <net/net_if.h>
 #include <net/wifi_mgmt.h>
 #include <net/net_offload.h>
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+#include <net/socket_offload.h>
+#endif
 
 #include <ti/drivers/net/wifi/wlan.h>
 #include "simplelink_support.h"
+#include "simplelink_sockets.h"
 
 #define SCAN_RETRY_DELAY 2000  /* ms */
 
@@ -72,19 +76,6 @@ static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
 		break;
 	}
 }
-
-/* TBD: Only here to link/test WiFi mgmnt part */
-static struct net_offload simplelink_offload = {
-	.get            = NULL,
-	.bind		= NULL,
-	.listen		= NULL,
-	.connect	= NULL,
-	.accept		= NULL,
-	.send		= NULL,
-	.sendto		= NULL,
-	.recv		= NULL,
-	.put		= NULL,
-};
 
 static void simplelink_scan_work_handler(struct k_work *work)
 {
@@ -183,6 +174,30 @@ static int simplelink_mgmt_disconnect(struct device *dev)
 	return ret ? -EIO : ret;
 }
 
+static int simplelink_dummy_get(sa_family_t family,
+				enum net_sock_type type,
+				enum net_ip_protocol ip_proto,
+				struct net_context **context)
+{
+
+	SYS_LOG_ERR("NET_SOCKET_OFFLOAD must be configured for this driver");
+
+	return -1;
+}
+
+/* Placeholders, until Zepyr IP stack updated to handle a NULL net_offload */
+static struct net_offload simplelink_offload = {
+	.get	       = simplelink_dummy_get,
+	.bind	       = NULL,
+	.listen	       = NULL,
+	.connect       = NULL,
+	.accept	       = NULL,
+	.send	       = NULL,
+	.sendto	       = NULL,
+	.recv	       = NULL,
+	.put	       = NULL,
+};
+
 static void simplelink_iface_init(struct net_if *iface)
 {
 	SYS_LOG_DBG("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
@@ -195,7 +210,7 @@ static void simplelink_iface_init(struct net_if *iface)
 			     sizeof(simplelink_data.mac),
 			     NET_LINK_ETHERNET);
 
-	/* TBD: Pending support for socket offload: */
+	/* Direct socket offload used instead of net offload for this driver */
 	iface->if_dev->offload = &simplelink_offload;
 
 	simplelink_data.iface = iface;
@@ -227,6 +242,11 @@ static int simplelink_init(struct device *dev)
 	/* We use system workqueue to deal with scan retries: */
 	k_delayed_work_init(&simplelink_data.work,
 			    simplelink_scan_work_handler);
+
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+	/* Direct socket offload: */
+	socket_offload_register(&simplelink_ops);
+#endif
 
 	SYS_LOG_DBG("SimpleLink driver Initialized");
 

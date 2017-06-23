@@ -11,3 +11,4 @@ if(CONFIG_WIFI_SIMPLELINK)
     simplelink.c
     )
 endif()
+zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD simplelink_sockets.c)
