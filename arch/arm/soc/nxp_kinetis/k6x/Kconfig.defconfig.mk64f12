@@ -95,4 +95,11 @@ config UART_MCUX
 
 endif # SERIAL
 
+if DMA
+
+config DMA_MCUX
+	def_bool y
+
+endif # DMA
+
 endif # SOC_MK64F12

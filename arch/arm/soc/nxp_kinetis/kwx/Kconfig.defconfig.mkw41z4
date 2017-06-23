@@ -84,4 +84,11 @@ config NET_APP_IEEE802154_DEV_NAME
 
 endif # NETWORKING
 
+if DMA
+
+config DMA_MCUX
+	def_bool y
+
+endif # DMA
+
 endif # SOC_MKW41Z4

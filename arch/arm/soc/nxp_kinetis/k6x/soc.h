@@ -33,6 +33,23 @@ extern "C" {
 
 /* IRQs */
 
+#define IRQ_DMA_CHAN0 0
+#define IRQ_DMA_CHAN1 1
+#define IRQ_DMA_CHAN2 2
+#define IRQ_DMA_CHAN3 3
+#define IRQ_DMA_CHAN4 4
+#define IRQ_DMA_CHAN5 5
+#define IRQ_DMA_CHAN6 6
+#define IRQ_DMA_CHAN7 7
+#define IRQ_DMA_CHAN8 8
+#define IRQ_DMA_CHAN9 9
+#define IRQ_DMA_CHAN10 10
+#define IRQ_DMA_CHAN11 11
+#define IRQ_DMA_CHAN12 12
+#define IRQ_DMA_CHAN13 13
+#define IRQ_DMA_CHAN14 14
+#define IRQ_DMA_CHAN15 15
+#define IRQ_DMA_ERR 16
 #define IRQ_SPI0 26
 #define IRQ_SPI1 27
 #define IRQ_GPIO_PORTA 59

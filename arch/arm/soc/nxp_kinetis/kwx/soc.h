@@ -20,6 +20,10 @@ extern "C" {
 
 /* IRQs */
 
+#define IRQ_DMA_CHAN0 0
+#define IRQ_DMA_CHAN1 1
+#define IRQ_DMA_CHAN2 2
+#define IRQ_DMA_CHAN3 3
 #define IRQ_SPI0 10
 #define IRQ_SPI1 29
 #define IRQ_GPIO_PORTA 30
