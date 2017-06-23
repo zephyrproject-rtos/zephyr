@@ -38,5 +38,6 @@ source "drivers/ethernet/Kconfig.enc28j60"
 source "drivers/ethernet/Kconfig.mcux"
 source "drivers/ethernet/Kconfig.dw"
 source "drivers/ethernet/Kconfig.sam_gmac"
+source "drivers/ethernet/Kconfig.stm32_hal"
 
 endmenu
