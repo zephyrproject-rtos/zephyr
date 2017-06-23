@@ -35,19 +35,22 @@ connecting an LED, so only this device is supported by our Zephyr port.
 Additional device support is left for the user to implement.
 
 More information on hooking up peripherals and lengthy how to articles can be
-found at `EmbedJoural`_.
+found at `EmbedJournal`_.
 
 STLinkV2 connection:
 ====================
 
 The board can be flashed by using STLinkV2 with the following connections.
 
-+------------------------+
++--------+---------------+
 | Pin    | STLINKv2      |
-+========+===============|
++========+===============+
 | G      | GND           |
++--------+---------------+
 | CLK    | Clock         |
++--------+---------------+
 | IO     | SW IO         |
++--------+---------------+
 | V3     | VCC           |
 +--------+---------------+
 
@@ -59,11 +62,13 @@ and B1 (Boot 1). The pins B0 and B1 are present in between logic 0 and 1 lines. 
 silk screen on the PCB reads BX- or BX+ to indicate 0 and 1 logic lines for B0 and B1
 respectively.
 
-+-----------------------------------------------------------------------------------+
++--------+--------+-------------------+---------------------------------------------+
 | Boot 1 | Boot 0 | Boot Mode         | Aliasing                                    |
 +========+========+===================+=============================================+
 | X      | 0      | Main Flash Memory | Main flash memory is selected as boot space |
++--------+--------+-------------------+---------------------------------------------+
 | 0      | 1      | System Memory     | System memory is selected as boot space     |
++--------+--------+-------------------+---------------------------------------------+
 | 1      | 1      | Embedded SRAM     | Embedded SRAM is selected as boot space     |
 +--------+--------+-------------------+---------------------------------------------+
 
@@ -71,7 +76,7 @@ respectively.
 Supported Features
 ==================
 
-The on board 8Mhz crystal is used to produce a 72Mhz system clock with PLL.
+The on-board 8Mhz crystal is used to produce a 72Mhz system clock with PLL.
 The stm32_min_dev board configuration supports the following hardware features:
 
 +-----------+------------+----------------------+
@@ -94,19 +99,19 @@ Building and Flashing Zephyr onto stm32_min_dev
 
 You can build any of the Zephyr samples with,
 
-  .. code-block:: console
+.. code-block:: console
 
-      $ cd $<zephyr_root_path>
-      $ source zephyr-env.sh
-      $ make -C samples/basic/blinky BOARD=stm32_min_dev
+   $ cd $<zephyr_root_path>
+   $ source zephyr-env.sh
+   $ make -C samples/basic/blinky BOARD=stm32_min_dev
 
 Flashing the Zephyr kernel onto stm32_min_dev requires the popular ST-Link
 debugger/programmer. This port comes with support for doing just that with the
 flash target.
 
-  .. code-block:: console
+.. code-block:: console
 
-      $ make -C samples/basic/blinky BOARD=stm32_min_dev flash
+   $ make -C samples/basic/blinky BOARD=stm32_min_dev flash
 
 .. _STM32F103x8:
         http://www.st.com/resource/en/datasheet/stm32f103c8.pdf
