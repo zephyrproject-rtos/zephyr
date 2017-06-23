@@ -1,0 +1,76 @@
+# Kconfig - STM32 HAL Ethernet driver configuration options
+
+#
+# Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_STM32_HAL
+	bool
+	prompt "STM32 HAL Ethernet driver"
+	depends on NET_L2_ETHERNET
+	default n
+	help
+	  Enable STM32 HAL based Ethernet driver.
+
+if ETH_STM32_HAL
+
+config ETH_STM32_HAL_NAME
+	string "Device name"
+	default "ETH_0"
+
+config ETH_STM32_HAL_IRQ_PRI
+	int "Controller interrupt priority"
+	depends on ETH_STM32_HAL
+	default 0
+	help
+	  IRQ priority
+
+config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	depends on ETH_STM32_HAL
+	default 1500
+	help
+	  RX thread stack size
+
+config ETH_STM32_HAL_RX_THREAD_PRIO
+	int "RX thread priority"
+	depends on ETH_STM32_HAL
+	default 2
+	help
+	  RX thread priority
+
+config ETH_STM32_HAL_RANDOM_MAC
+	bool "Random MAC address"
+	depends on ETH_STM32_HAL && RANDOM_GENERATOR
+	default y
+	help
+	  Generate a random MAC address dynamically.
+
+if !ETH_STM32_HAL_RANDOM_MAC
+
+config ETH_STM32_HAL_MAC3
+	hex "MAC Address Byte 3"
+	default 0
+	range 0 ff
+	help
+	  This is the byte 3 of the MAC address.
+
+config ETH_STM32_HAL_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 ff
+	help
+	  This is the byte 4 of the MAC address.
+
+config ETH_STM32_HAL_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 ff
+	help
+	  This is the byte 5 of the MAC address.
+endif
+
+endif # ETH_STM32_HAL
+

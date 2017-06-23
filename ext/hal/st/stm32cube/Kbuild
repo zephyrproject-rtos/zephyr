@@ -28,6 +28,7 @@ obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f4xx/drivers/src/stm32f4xx_hal_uart.o
 obj-$(CONFIG_I2C) += stm32f4xx/drivers/src/stm32f4xx_ll_i2c.o
 obj-$(CONFIG_SPI_STM32) += stm32f4xx/drivers/src/stm32f4xx_ll_spi.o
 obj-$(CONFIG_RANDOM_STM32_RNG) += stm32f4xx/drivers/src/stm32f4xx_ll_rng.o
+obj-$(CONFIG_ETH_STM32_HAL) += stm32f4xx/drivers/src/stm32f4xx_hal_eth.o
 obj-y += stm32f4xx/soc/system_stm32f4xx.o
 endif
 
