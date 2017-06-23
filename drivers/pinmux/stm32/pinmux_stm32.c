@@ -101,6 +101,9 @@ int _pinmux_stm32_set(u32_t pin, u32_t func,
 
 	/* determine config for alternate function */
 	config = stm32_get_pin_config(pin, func);
+	if (config < 0) {
+		return config;
+	}
 
 	return stm32_pin_configure(pin, config, func);
 }
