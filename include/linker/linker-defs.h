@@ -208,6 +208,9 @@ extern char _image_text_end[];
 extern char _image_rodata_start[];
 extern char _image_rodata_end[];
 
+extern char _vector_start[];
+extern char _vector_end[];
+
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
