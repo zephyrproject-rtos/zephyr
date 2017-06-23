@@ -9,47 +9,12 @@ documented below.
 To add support documentation for a new board, please use the template available
 under :file:`doc/templates/board.tmpl`
 
-X86 Boards
-**********
 
 .. toctree::
-   :maxdepth: 1
-   :glob:
+   :maxdepth: 2
 
-   x86/**/*
-
-ARM Boards
-**********
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   arm/**/*
-
-ARC Boards
-**********
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   arc/**/*
-
-NIOS II Boards
-**************
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   nios2/**/*
-
-XTENSA Boards
-*************
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   xtensa/**/*
+   x86/index.rst
+   arm/index.rst
+   arc/index.rst
+   nios2/index.rst
+   xtensa/index.rst
