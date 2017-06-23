@@ -10,4 +10,14 @@ if BOARD_96B_CARBON
 config BOARD
 	default 96b_carbon
 
+if I2C_1
+
+config I2C_1_DEFAULT_CFG
+	default 0x14
+
+config I2C_1_IRQ_PRI
+	default 0
+
+endif # I2C_1
+
 endif # BOARD_96B_CARBON
