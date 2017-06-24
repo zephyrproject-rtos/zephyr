@@ -789,6 +789,7 @@ static inline u32_t ticker_job_insert(struct ticker_instance *instance,
 
 			ticker_collide = &node[id_collide];
 			if (ticker_collide->ticks_periodic &&
+			    ticker_collide->ticks_periodic &&
 			    ticker_collide->force < ticker->force) {
 				/* dequeue and get the reminder of ticks
 				 * to expire.
