@@ -64,7 +64,8 @@ static int test_task(u32_t chan_id, u32_t blen)
 			chan_id, blen >> 3);
 
 	TC_PRINT("Starting the transfer\n");
-	dma_block_cfg.block_size = strlen(tx_data);
+	memset(rx_data, 0, sizeof(rx_data));
+	dma_block_cfg.block_size = sizeof(tx_data);
 	dma_block_cfg.source_address = (u32_t)tx_data;
 	dma_block_cfg.dest_address = (u32_t)rx_data;
 
