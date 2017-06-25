@@ -776,20 +776,41 @@ static inline u32_t ticker_job_insert(struct ticker_instance *instance,
 {
 	struct ticker_node *node = &instance->node[0];
 	u8_t id_collide;
+	u16_t skip;
 
 	/* Prepare to insert */
 	ticker->next = TICKER_NULL;
+
+	/* No. of times ticker has skipped its interval */
+	if (ticker->lazy_current > ticker->lazy_periodic) {
+		skip = ticker->lazy_current -
+		       ticker->lazy_periodic;
+	} else {
+		skip = 0;
+	}
 
 	/* If insert collides, remove colliding or advance to next interval */
 	while (id_insert !=
 	       (id_collide = ticker_enqueue(instance, id_insert))) {
 		/* check for collision */
 		if (id_collide != TICKER_NULL) {
-			struct ticker_node *ticker_collide;
+			struct ticker_node *ticker_collide = &node[id_collide];
+			u16_t skip_collide;
 
-			ticker_collide = &node[id_collide];
+			/* No. of times ticker colliding has skipped its
+			 * interval.
+			 */
+			if (ticker_collide->lazy_current >
+			    ticker_collide->lazy_periodic) {
+				skip_collide = ticker_collide->lazy_current -
+					       ticker_collide->lazy_periodic;
+			} else {
+				skip_collide = 0;
+			}
+
 			if (ticker_collide->ticks_periodic &&
 			    ticker_collide->ticks_periodic &&
+			    skip_collide <= skip &&
 			    ticker_collide->force < ticker->force) {
 				/* dequeue and get the reminder of ticks
 				 * to expire.
