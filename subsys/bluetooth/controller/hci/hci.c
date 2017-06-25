@@ -415,6 +415,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[34] |= BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7);
 	/* LE Read Local RPA, LE Set AR Enable, Set RPA Timeout */
 	rp->commands[35] |= BIT(0) | BIT(1) | BIT(2);
+	/* LE Set Privacy Mode */
+	rp->commands[39] |= BIT(2);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
@@ -1157,6 +1159,18 @@ static void le_set_rpa_timeout(struct net_buf *buf, struct net_buf **evt)
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = 0x00;
 }
+
+static void le_set_privacy_mode(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_privacy_mode *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	u32_t status;
+
+	status = ll_priv_mode_set(&cmd->id_addr, cmd->mode);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
@@ -1345,6 +1359,9 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		break;
 	case BT_OCF(BT_HCI_OP_LE_SET_RPA_TIMEOUT):
 		le_set_rpa_timeout(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_SET_PRIVACY_MODE):
+		le_set_privacy_mode(cmd, evt);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
