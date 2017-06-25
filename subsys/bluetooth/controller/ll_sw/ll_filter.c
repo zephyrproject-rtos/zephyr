@@ -561,12 +561,25 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 	/* find the device and mark it as empty */
 	i = ll_rl_find(id_addr->type, id_addr->a.val);
 	if (i >= 0) {
-		int j;
+		int j, k;
 
 		if (rl[i].pirk) {
-			int idx = rl[i].pirk_idx;
-			memmove(peer_irks[idx], peer_irks[idx + 1],
-				16 * peer_irk_count--);
+			/* Swap with last item */
+			int pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
+
+			if (pj && pi != pj) {
+				memcpy(peer_irks[pi], peer_irks[pj], 16);
+				for (k = 0;
+				     k < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE;
+				     k++) {
+
+					if (rl[k].taken && rl[k].pirk &&
+					    rl[k].pirk_idx == pj) {
+						rl[k].pirk_idx = pi;
+						break;
+					}
+				}
+			}
 		}
 
 		/* Check if referenced by a whitelist entry */
