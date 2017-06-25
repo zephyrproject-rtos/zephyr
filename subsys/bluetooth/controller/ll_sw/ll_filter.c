@@ -63,6 +63,9 @@ static struct rl_dev {
 static u8_t peer_irks[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE][16];
 static u8_t peer_irk_count;
 
+/* Hardware filter for the resolving list */
+static struct ll_filter rl_filter;
+
 #define DEFAULT_RPA_TIMEOUT_MS 900 * 1000
 u32_t rpa_timeout_ms;
 s64_t rpa_last_ms;
@@ -271,6 +274,21 @@ static void filter_wl_update(void)
 	}
 }
 
+static void filter_rl_update(void)
+{
+	int i;
+	/* No whitelist: populate filter from rl peers */
+	filter_clear(&rl_filter);
+
+	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
+		if (!rl[i].pirk) {
+			filter_insert(&rl_filter, i, rl[i].id_addr_type,
+				      rl[i].id_addr.val);
+		}
+	}
+}
+
+
 void ll_filters_adv_update(u8_t adv_fp)
 {
 	/* enabling advertising */
@@ -280,7 +298,8 @@ void ll_filters_adv_update(u8_t adv_fp)
 	}
 
 	if (rl_enable && !radio_scan_is_enabled()) {
-		/*@todo: rl not in use, update resolving list LUT */
+		/* rl not in use, update resolving list LUT */
+		filter_rl_update();
 	}
 }
 
@@ -292,8 +311,9 @@ void ll_filters_scan_update(u8_t scan_fp)
 		filter_wl_update();
 	}
 
-	if (rl_enable && !radio_scan_is_enabled()) {
-		/*@todo: rl not in use, update resolving list LUT */
+	if (rl_enable && !radio_adv_is_enabled()) {
+		/* rl not in use, update resolving list LUT */
+		filter_rl_update();
 	}
 }
 
