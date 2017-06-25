@@ -47,6 +47,7 @@ u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa);
 u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa);
 u32_t ll_rl_enable(u8_t enable);
 void  ll_rl_timeout_set(u16_t timeout);
+u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode);
 
 void ll_irk_clear(void);
 u32_t ll_irk_add(u8_t *irk);

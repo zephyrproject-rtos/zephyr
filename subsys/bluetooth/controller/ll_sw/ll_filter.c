@@ -50,6 +50,7 @@ static struct rl_dev {
 	u8_t      pirk:1;
 	u8_t      pirk_idx:3;
 	u8_t      lirk:1;
+	u8_t      dev:1;
 
 	u8_t      id_addr_type:1;
 	bt_addr_t id_addr;
@@ -267,7 +268,7 @@ static void filter_wl_update(void)
 
 	for (i = 0; i < WL_SIZE; i++) {
 		int j = wl_peers[i].rl_idx;
-		if (!rl_enable || j == IDX_NONE || !rl[j].pirk) {
+		if (!rl_enable || j == IDX_NONE || !rl[j].pirk || rl[j].dev) {
 			filter_insert(&wl, i, wl_peers[i].id_addr_type,
 				      wl_peers[i].id_addr.val);
 		}
@@ -281,7 +282,7 @@ static void filter_rl_update(void)
 	filter_clear(&rl_filter);
 
 	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
-		if (!rl[i].pirk) {
+		if (!rl[i].pirk || rl[i].dev) {
 			filter_insert(&rl_filter, i, rl[i].id_addr_type,
 				      rl[i].id_addr.val);
 		}
@@ -557,6 +558,8 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 				memcpy(rl[i].local_irk, lirk, 16);
 			}
 			rl[i].rpas_ready = 0;
+			/* Default to Network Privacy */
+			rl[i].dev = 0;
 			/* Add reference to  a whitelist entry */
 			j = wl_peers_find(id_addr->type, id_addr->a.val);
 			if (j >= 0) {
@@ -667,6 +670,33 @@ void ll_rl_timeout_set(u16_t timeout)
 {
 	rpa_timeout_ms = timeout * 1000;
 }
+
+u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)
+{
+	int i;
+
+	if (!rl_access_check(false)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* find the device and mark it as empty */
+	i = ll_rl_find(id_addr->type, id_addr->a.val);
+	if (i >= 0) {
+		switch (mode) {
+		case BT_HCI_LE_PRIVACY_MODE_NETWORK:
+			rl[i].dev = 0;
+			break;
+		case BT_HCI_LE_PRIVACY_MODE_DEVICE:
+			rl[i].dev = 1;
+			break;
+		default:
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	}
+
+	return BT_HCI_ERR_UNKNOWN_CONN_ID;
+}
+
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 void ll_filter_reset(bool init)
