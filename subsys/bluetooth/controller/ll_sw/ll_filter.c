@@ -33,8 +33,6 @@ u8_t wl_anon;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 #include "common/rpa.h"
 
-#define IDX_NONE 0xF
-
 /* Whitelist peer list */
 static struct {
 	u8_t      taken:1;
@@ -119,7 +117,7 @@ static u32_t wl_peers_add(bt_addr_le_t *id_addr)
 				wl_peers[i].rl_idx = j;
 				rl[j].wl = 1;
 			} else {
-				wl_peers[i].rl_idx = IDX_NONE;
+				wl_peers[i].rl_idx = RL_IDX_NONE;
 			}
 			wl_peers[i].taken = 1;
 			return 0;
@@ -136,7 +134,8 @@ static u32_t wl_peers_remove(bt_addr_le_t *id_addr)
 
 	if (i >= 0) {
 		int j = wl_peers[i].rl_idx;
-		if (j != IDX_NONE) {
+
+		if (j != RL_IDX_NONE) {
 			rl[j].wl = 0;
 		}
 		wl_peers[i].taken = 0;
@@ -205,9 +204,48 @@ static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
 }
 #endif
 
-struct ll_filter *ctrl_filter_get(void)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+u8_t *ctrl_irks_get(u8_t *count)
 {
-	return &wl;
+	*count = peer_irk_count;
+	return (u8_t *)peer_irks;
+}
+
+bool ctrl_irk_whitelisted(u8_t irkmatch_id)
+{
+	u8_t i;
+
+	LL_ASSERT(irkmatch_id < peer_irk_count);
+	i = peer_irk_rl_ids[irkmatch_id];
+	LL_ASSERT(i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE);
+	LL_ASSERT(rl[i].taken);
+
+	return rl[i].wl;
+}
+
+bool ctrl_rl_idx_match(u8_t irkmatch_id, u8_t rl_idx)
+{
+	u8_t i;
+
+	LL_ASSERT(irkmatch_id < peer_irk_count);
+	i = peer_irk_rl_ids[irkmatch_id];
+	LL_ASSERT(i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE);
+	LL_ASSERT(rl[i].taken);
+
+	return i == rl_idx;
+}
+#endif
+
+struct ll_filter *ctrl_filter_get(bool whitelist)
+{
+	if (whitelist) {
+		return &wl;
+	}
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	return &rl_filter;
+#else
+	LL_ASSERT(0);
+#endif
 }
 
 u32_t ll_wl_size_get(void)
@@ -279,7 +317,8 @@ static void filter_wl_update(void)
 	for (i = 0; i < WL_SIZE; i++) {
 		int j = wl_peers[i].rl_idx;
 
-		if (!rl_enable || j == IDX_NONE || !rl[j].pirk || rl[j].dev) {
+		if (!rl_enable || j == RL_IDX_NONE || !rl[j].pirk ||
+		    rl[j].dev) {
 			filter_insert(&wl, i, wl_peers[i].id_addr_type,
 				      wl_peers[i].id_addr.val);
 		}
@@ -331,17 +370,43 @@ void ll_filters_scan_update(u8_t scan_fp)
 
 int ll_rl_find(u8_t id_addr_type, u8_t *id_addr)
 {
-	int i, free = -IDX_NONE;
+	int i, free = -RL_IDX_NONE;
 
 	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
 		if (LIST_MATCH(rl, i, id_addr_type, id_addr)) {
 			return i;
-		} else if (!rl[i].taken && free == -IDX_NONE) {
+		} else if (!rl[i].taken && free == -RL_IDX_NONE) {
 			free = -i;
 		}
 	}
 
 	return free;
+}
+
+bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr)
+{
+	int i, j;
+
+	if (!rl_enable) {
+		return true;
+	}
+
+	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
+		if (rl[i].taken && (rl[i].id_addr_type == id_addr_type)) {
+			u8_t *addr = rl[i].id_addr.val;
+			for (j = 0; j < BDADDR_SIZE; j++) {
+				if (addr[j] != id_addr[j]) {
+					break;
+				}
+			}
+
+			if (j == BDADDR_SIZE) {
+				return !rl[i].pirk || rl[i].dev;
+			}
+		}
+	}
+
+	return false;
 }
 
 bool ctrl_rl_enabled(void)
@@ -420,7 +485,6 @@ static void rpa_adv_refresh(void)
 	} else {
 		pdu->chan_sel = 0;
 	}
-
 
 	idx = ll_rl_find(ll_adv->id_addr_type, ll_adv->id_addr);
 	LL_ASSERT(idx >= 0);
@@ -555,7 +619,7 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 	i = ll_rl_find(id_addr->type, id_addr->a.val);
 	if (i >= 0) {
 		return BT_HCI_ERR_INVALID_PARAM;
-	} else if (i == -IDX_NONE) {
+	} else if (i == -RL_IDX_NONE) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
@@ -628,7 +692,7 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 		/* Check if referenced by a whitelist entry */
 		j = wl_peers_find(id_addr->type, id_addr->a.val);
 		if (j >= 0) {
-			wl_peers[j].rl_idx = IDX_NONE;
+			wl_peers[j].rl_idx = RL_IDX_NONE;
 		}
 		rl[i].taken = 0;
 		return 0;
