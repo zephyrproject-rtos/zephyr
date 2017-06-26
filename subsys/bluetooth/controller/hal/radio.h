@@ -56,6 +56,7 @@ void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
 void radio_filter_disable(void);
 void radio_filter_status_reset(void);
 u32_t radio_filter_has_match(void);
+u32_t radio_filter_match_get(void);
 
 void radio_bc_configure(u32_t n);
 void radio_bc_status_reset(void);

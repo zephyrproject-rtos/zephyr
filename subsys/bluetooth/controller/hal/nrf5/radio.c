@@ -554,6 +554,11 @@ u32_t radio_filter_has_match(void)
 	return (NRF_RADIO->EVENTS_DEVMATCH != 0);
 }
 
+u32_t radio_filter_match_get(void)
+{
+	return NRF_RADIO->DAI;
+}
+
 void radio_bc_configure(u32_t n)
 {
 	NRF_RADIO->BCC = n;
