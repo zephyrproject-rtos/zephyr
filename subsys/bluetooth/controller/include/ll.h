@@ -51,8 +51,6 @@ u32_t ll_rl_enable(u8_t enable);
 void  ll_rl_timeout_set(u16_t timeout);
 u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode);
 
-void ll_irk_clear(void);
-u32_t ll_irk_add(u8_t *irk);
 u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			   u8_t filter_policy, u8_t peer_addr_type,
 			   u8_t *p_peer_addr, u8_t own_addr_type,

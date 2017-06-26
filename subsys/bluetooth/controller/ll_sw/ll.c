@@ -254,6 +254,10 @@ void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_i
 
 u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 {
+	if (addr_type > 1) {
+		return NULL;
+	}
+
 	if (addr_type) {
 		if (bdaddr) {
 			memcpy(bdaddr, _ll_context.rnd_addr, BDADDR_SIZE);
