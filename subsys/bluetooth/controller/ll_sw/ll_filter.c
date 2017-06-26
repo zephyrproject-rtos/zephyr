@@ -63,6 +63,7 @@ static struct rl_dev {
 } rl[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE];
 
 static u8_t peer_irks[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE][16];
+static u8_t peer_irk_rl_ids[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE];
 static u8_t peer_irk_count;
 
 /* Hardware filter for the resolving list */
@@ -566,7 +567,9 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 	rl[i].pirk = mem_nz((u8_t *)pirk, 16);
 	rl[i].lirk = mem_nz((u8_t *)lirk, 16);
 	if (rl[i].pirk) {
+		/* cross-reference */
 		rl[i].pirk_idx = peer_irk_count;
+		peer_irk_rl_ids[peer_irk_count] = i;
 		memcpy(peer_irks[peer_irk_count++], pirk, 16);
 	}
 	if (rl[i].lirk) {
@@ -614,10 +617,12 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 					if (rl[k].taken && rl[k].pirk &&
 					    rl[k].pirk_idx == pj) {
 						rl[k].pirk_idx = pi;
+						peer_irk_rl_ids[pi] = k;
 						break;
 					}
 				}
 			}
+			peer_irk_count--;
 		}
 
 		/* Check if referenced by a whitelist entry */
