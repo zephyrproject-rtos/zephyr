@@ -67,7 +67,7 @@ static u8_t peer_irk_count;
 /* Hardware filter for the resolving list */
 static struct ll_filter rl_filter;
 
-#define DEFAULT_RPA_TIMEOUT_MS 900 * 1000
+#define DEFAULT_RPA_TIMEOUT_MS (900 * 1000)
 u32_t rpa_timeout_ms;
 s64_t rpa_last_ms;
 
@@ -267,6 +267,7 @@ static void filter_wl_update(void)
 
 	for (i = 0; i < WL_SIZE; i++) {
 		int j = wl_peers[i].rl_idx;
+
 		if (!rl_enable || j == IDX_NONE || !rl[j].pirk || rl[j].dev) {
 			filter_insert(&wl, i, wl_peers[i].id_addr_type,
 				      wl_peers[i].id_addr.val);
@@ -337,6 +338,7 @@ bool ctrl_rl_enabled(void)
 	return rl_enable;
 }
 
+#if defined(CONFIG_BLUETOOTH_BROADCASTER)
 void ll_rl_pdu_adv_update(int idx, struct pdu_adv *pdu)
 {
 	u8_t *adva = pdu->type == PDU_ADV_TYPE_SCAN_RSP ?
@@ -380,7 +382,8 @@ static void rpa_adv_refresh(void)
 
 	ll_adv = ll_adv_set_get();
 
-	if (ll_adv->own_addr_type < BT_ADDR_LE_PUBLIC_ID) {
+	if (ll_adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
+	    ll_adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
 		return;
 	}
 
@@ -414,11 +417,12 @@ static void rpa_adv_refresh(void)
 
 	memcpy(&pdu->payload.adv_ind.data[0], &prev->payload.adv_ind.data[0],
 	       prev->len - BDADDR_SIZE);
-	pdu->len = prev->len;;
+	pdu->len = prev->len;
 
 	/* commit the update so controller picks it. */
 	radio_adv_data->last = last;
 }
+#endif
 
 static void rl_clear(void)
 {
@@ -470,9 +474,11 @@ void ll_rl_rpa_update(bool timeout)
 	}
 
 	if (timeout) {
+#if defined(CONFIG_BLUETOOTH_BROADCASTER)
 		if (radio_adv_is_enabled()) {
 			rpa_adv_refresh();
 		}
+#endif
 	}
 }
 

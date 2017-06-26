@@ -125,7 +125,8 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	ll_adv.own_addr_type = own_addr_type;
-	if (own_addr_type >= BT_ADDR_LE_PUBLIC_ID) {
+	if (ll_adv.own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+	    ll_adv.own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 		ll_adv.id_addr_type = direct_addr_type;
 		memcpy(&ll_adv.id_addr, direct_addr, BDADDR_SIZE);
 	}
@@ -387,11 +388,8 @@ u32_t ll_adv_enable(u8_t enable)
 		/* Prepare whitelist and optionally resolving list */
 		ll_filters_adv_update(ll_adv.filter_policy);
 
-		if (ctrl_rl_enabled()) {
-			/*@todo: Enable AR */
-		}
-
-		if (ll_adv.own_addr_type >= BT_ADDR_LE_PUBLIC_ID) {
+		if (ll_adv.own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+		    ll_adv.own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 			/* Look up the resolving list */
 			int idx = ll_rl_find(ll_adv.id_addr_type,
 					     ll_adv.id_addr);

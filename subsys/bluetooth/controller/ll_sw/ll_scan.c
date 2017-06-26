@@ -25,7 +25,7 @@ static struct {
 	u8_t  type:1;
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
-	u8_t  tx_addr:1;
+	u8_t  own_addr_type:2;
 	u8_t  filter_policy:2;
 } ll_scan;
 
@@ -51,7 +51,7 @@ u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 	ll_scan.type = type;
 	ll_scan.interval = interval;
 	ll_scan.window = window;
-	ll_scan.tx_addr = own_addr_type;
+	ll_scan.own_addr_type = own_addr_type;
 	ll_scan.filter_policy = filter_policy;
 
 	return 0;
@@ -70,9 +70,16 @@ u32_t ll_scan_enable(u8_t enable)
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	ll_filters_scan_update(ll_scan.filter_policy);
+
+	if ((ll_scan.type & 0x1) &&
+	    (ll_scan.own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+	     ll_scan.own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
+		/* Generate RPAs if required */
+		ll_rl_rpa_update(false);
+	}
 #endif
-	status = radio_scan_enable(ll_scan.type, ll_scan.tx_addr,
-				   ll_addr_get(ll_scan.tx_addr, NULL),
+	status = radio_scan_enable(ll_scan.type, ll_scan.own_addr_type,
+				   ll_addr_get(ll_scan.own_addr_type, NULL),
 				   ll_scan.interval, ll_scan.window,
 				   ll_scan.filter_policy);
 
