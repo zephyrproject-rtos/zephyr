@@ -143,7 +143,6 @@ static void filter_clear(struct ll_filter *filter)
 	filter->addr_type_bitmask = 0;
 }
 
-
 static void filter_insert(struct ll_filter *filter, int index, u8_t addr_type,
 			   u8_t *bdaddr)
 {
@@ -278,6 +277,7 @@ static void filter_wl_update(void)
 static void filter_rl_update(void)
 {
 	int i;
+
 	/* No whitelist: populate filter from rl peers */
 	filter_clear(&rl_filter);
 
@@ -288,7 +288,6 @@ static void filter_rl_update(void)
 		}
 	}
 }
-
 
 void ll_filters_adv_update(u8_t adv_fp)
 {
@@ -320,15 +319,17 @@ void ll_filters_scan_update(u8_t scan_fp)
 
 int ll_rl_find(u8_t id_addr_type, u8_t *id_addr)
 {
-	int i;
+	int i, free = -IDX_NONE;
 
 	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
 		if (LIST_MATCH(rl, i, id_addr_type, id_addr)) {
 			return i;
+		} else if (!rl[i].taken && free == -IDX_NONE) {
+			free = -i;
 		}
 	}
 
-	return -1;
+	return free;
 }
 
 bool ctrl_rl_enabled(void)
@@ -509,7 +510,6 @@ void ll_adv_scan_state_cb(u8_t bm)
 	}
 }
 
-
 u32_t ll_rl_size_get(void)
 {
 	return CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE;
@@ -529,7 +529,7 @@ u32_t ll_rl_clear(void)
 u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 		const u8_t lirk[16])
 {
-	int i;
+	int i, j;
 
 	if (!rl_access_check(false)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -538,39 +538,35 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 	i = ll_rl_find(id_addr->type, id_addr->a.val);
 	if (i >= 0) {
 		return BT_HCI_ERR_INVALID_PARAM;
+	} else if (i == -IDX_NONE) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	/* find an empty slot and insert device */
-	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
-		if (!rl[i].taken) {
-			int j;
+	/* Device not found but empty slot found */
+	i = -i;
 
-			bt_addr_copy(&rl[i].id_addr, &id_addr->a);
-			rl[i].id_addr_type = id_addr->type & 0x1;
-			rl[i].pirk = mem_nz((u8_t *)pirk, 16);
-			rl[i].lirk = mem_nz((u8_t *)lirk, 16);
-			if (rl[i].pirk) {
-				rl[i].pirk_idx = peer_irk_count;
-				memcpy(peer_irks[peer_irk_count++],
-				       pirk, 16);
-			}
-			if (rl[i].lirk) {
-				memcpy(rl[i].local_irk, lirk, 16);
-			}
-			rl[i].rpas_ready = 0;
-			/* Default to Network Privacy */
-			rl[i].dev = 0;
-			/* Add reference to  a whitelist entry */
-			j = wl_peers_find(id_addr->type, id_addr->a.val);
-			if (j >= 0) {
-				wl_peers[j].rl_idx = i;
-			}
-			rl[i].taken = 1;
-			return 0;
-		}
+	bt_addr_copy(&rl[i].id_addr, &id_addr->a);
+	rl[i].id_addr_type = id_addr->type & 0x1;
+	rl[i].pirk = mem_nz((u8_t *)pirk, 16);
+	rl[i].lirk = mem_nz((u8_t *)lirk, 16);
+	if (rl[i].pirk) {
+		rl[i].pirk_idx = peer_irk_count;
+		memcpy(peer_irks[peer_irk_count++], pirk, 16);
 	}
+	if (rl[i].lirk) {
+		memcpy(rl[i].local_irk, lirk, 16);
+	}
+	rl[i].rpas_ready = 0;
+	/* Default to Network Privacy */
+	rl[i].dev = 0;
+	/* Add reference to  a whitelist entry */
+	j = wl_peers_find(id_addr->type, id_addr->a.val);
+	if (j >= 0) {
+		wl_peers[j].rl_idx = i;
+	}
+	rl[i].taken = 1;
 
-	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	return 0;
 }
 
 u32_t ll_rl_remove(bt_addr_le_t *id_addr)
