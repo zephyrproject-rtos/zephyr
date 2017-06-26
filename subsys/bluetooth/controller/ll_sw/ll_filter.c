@@ -51,6 +51,7 @@ static struct rl_dev {
 	u8_t      pirk_idx:3;
 	u8_t      lirk:1;
 	u8_t      dev:1;
+	u8_t      wl:1;
 
 	u8_t      id_addr_type:1;
 	bt_addr_t id_addr;
@@ -113,7 +114,12 @@ static u32_t wl_peers_add(bt_addr_le_t *id_addr)
 			bt_addr_copy(&wl_peers[i].id_addr, &id_addr->a);
 			/* Get index to Resolving List if applicable */
 			j = ll_rl_find(id_addr->type, id_addr->a.val);
-			wl_peers[i].rl_idx = j >= 0 ? j : IDX_NONE;
+			if (j >= 0) {
+				wl_peers[i].rl_idx = j;
+				rl[j].wl = 1;
+			} else {
+				wl_peers[i].rl_idx = IDX_NONE;
+			}
 			wl_peers[i].taken = 1;
 			return 0;
 		}
@@ -128,6 +134,10 @@ static u32_t wl_peers_remove(bt_addr_le_t *id_addr)
 	int i = wl_peers_find(id_addr->type, id_addr->a.val);
 
 	if (i >= 0) {
+		int j = wl_peers[i].rl_idx;
+		if (j != IDX_NONE) {
+			rl[j].wl = 0;
+		}
 		wl_peers[i].taken = 0;
 		return 0;
 	}
@@ -569,6 +579,9 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 	j = wl_peers_find(id_addr->type, id_addr->a.val);
 	if (j >= 0) {
 		wl_peers[j].rl_idx = i;
+		rl[i].wl = 1;
+	} else {
+		rl[i].wl = 0;
 	}
 	rl[i].taken = 1;
 
