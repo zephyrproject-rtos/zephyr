@@ -254,6 +254,8 @@ config DMA_QMSI
 endif
 
 if USB
+config USB_DW
+	def_bool y
 config USB_DW_IRQ_PRI
 	default 3
 endif # USB
