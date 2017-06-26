@@ -55,3 +55,4 @@ else
     echo "Flashing ${BOARD} failed."
     exit 2;
 fi
+
