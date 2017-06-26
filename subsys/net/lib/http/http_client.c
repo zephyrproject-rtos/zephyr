@@ -903,8 +903,6 @@ static int https_init(struct http_client_ctx *ctx)
 
 	mbedtls_platform_set_printf(printk);
 
-	http_heap_init();
-
 	mbedtls_ssl_init(&ctx->https.mbedtls.ssl);
 	mbedtls_ssl_config_init(&ctx->https.mbedtls.conf);
 	mbedtls_entropy_init(&ctx->https.mbedtls.entropy);

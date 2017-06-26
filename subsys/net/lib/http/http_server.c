@@ -1334,8 +1334,6 @@ static void https_handler(struct http_server_ctx *ctx)
 
 	mbedtls_platform_set_printf(printk);
 
-	http_heap_init();
-
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt_init(&ctx->https.mbedtls.srvcert);
 #endif

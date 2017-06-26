@@ -80,17 +80,6 @@ config HTTPS_STACK_SIZE
 	HTTPS thread stack size. The mbedtls routines will use this stack
 	thus it is by default very large.
 
-config HTTPS_HEAP_SIZE
-	int "HTTPS heap size for mbedtls"
-	default 12000
-	depends on HTTPS
-	depends on MBEDTLS
-	help
-	HTTPS heap size. The mbedtls routines will use this heap if enabled.
-	See ext/lib/crypto/mbedtls/include/mbedtls/config.h and
-	MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details. This option is not
-	enabled by default.
-
 config  NET_DEBUG_HTTP
 	bool "Debug HTTP"
 	default n
