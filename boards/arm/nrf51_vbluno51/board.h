@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Linaro Limited.
+ * Copyright (c) 2017 VNG IoT Lab Limited.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
