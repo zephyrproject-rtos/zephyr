@@ -21,13 +21,12 @@ config USB_DW_IRQ_PRI
 	help
 	USB interrupt priority.
 
-config SYS_LOG_USB_DW_LEVEL
+config SYS_LOG_USB_DRIVER_LEVEL
 	int
-	prompt "DesignWare USB driver log level"
-	depends on USB_DW
+	prompt "USB driver log level"
 	default 0
 	help
-	Sets log level for DesignWare USB driver
+	Sets log level for USB driver
 
 	Levels are:
 
