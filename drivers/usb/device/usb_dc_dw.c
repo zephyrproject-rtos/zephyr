@@ -22,7 +22,7 @@
 #include "usb_dw_registers.h"
 #include "clk.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DW_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DRIVER_LEVEL
 #include <logging/sys_log.h>
 
 /* convert from endpoint address to hardware endpoint index */
@@ -65,7 +65,7 @@ static inline void _usb_dw_int_unmask(void)
 #endif
 }
 
-#if (CONFIG_SYS_LOG_USB_DW_LEVEL >= SYS_LOG_LEVEL_DEBUG)
+#if (CONFIG_SYS_LOG_USB_DRIVER_LEVEL >= SYS_LOG_LEVEL_DEBUG)
 static void usb_dw_reg_dump(void)
 {
 	u8_t i;
