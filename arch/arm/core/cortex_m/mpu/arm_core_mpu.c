@@ -24,7 +24,7 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 {
 	arm_core_mpu_disable();
 	arm_core_mpu_configure(THREAD_STACK_GUARD_REGION,
-			       thread->stack_info.start,
+			       thread->stack_info.start - STACK_ALIGN,
 			       thread->stack_info.size);
 	arm_core_mpu_enable();
 }
