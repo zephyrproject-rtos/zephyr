@@ -78,7 +78,7 @@ static bool feed_data; /* feed data back to IP stack */
 
 static int msg_sending;
 
-static struct k_sem wait_data;
+K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 #define WAIT_TIME 250
 
@@ -291,9 +291,6 @@ static bool test_init(void)
 		dest_addresses[i].s6_addr[14] = i + 1;
 		dest_addresses[i].s6_addr[15] = sys_rand32_get();
 	}
-
-	/* The semaphore is there to wait the data to be received. */
-	k_sem_init(&wait_data, 0, UINT_MAX);
 
 	return true;
 }
