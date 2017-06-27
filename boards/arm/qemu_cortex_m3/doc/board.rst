@@ -6,9 +6,8 @@ ARM Cortex-M3 Emulation (QEMU)
 Overview
 ********
 
-The Zephyr kernel uses the qemu_cortex_m3 board configuration to emulate the TI
-LM3S6965 platform running on QEMU. It provides support for an ARM Cortex-M3 CPU
-and the following devices:
+This board configuration will use QEMU to emulate the TI LM3S6965 platform.
+This configuration provides support for an ARM Cortex-M3 CPU and these devices:
 
 * Nested Vectored Interrupt Controller
 * System Tick System Clock
@@ -23,7 +22,7 @@ Hardware
 Supported Features
 ==================
 
-The qemu_cortex_m3 board configuration supports the following hardware features:
+The following hardware features are supported:
 
 +--------------+------------+----------------------+
 | Interface    | Controller | Driver/Component     |
@@ -44,13 +43,13 @@ Devices
 System Clock
 ------------
 
-The qemu_cortex_m3 board configuration uses a system clock frequency of 12 MHz.
+This board configuration uses a system clock frequency of 12 MHz.
 
 Serial Port
 -----------
 
-The qemu_cortex_m3 board configuration uses a single serial communication
-channel with the CPU's UART0.
+This board configuration uses a single serial communication channel with the
+CPU's UART0.
 
 Known Problems or Limitations
 ==============================
@@ -61,6 +60,39 @@ The following platform features are unsupported:
   effectively provides TEXT/RODATA write protection in ROM.
 * SRAM at addresses 0x1FFF0000-0x1FFFFFFF
 * Writing to the hardware's flash memory
+
+
+Programming and Debugging
+*************************
+
+Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
+emulated environment, for example, with the :ref:`synchronization_sample`:
+
+.. code-block:: console
+
+        $ make -C samples/synchronization BOARD=qemu_cortex_m3 run
+
+This will build an image with the synchronization sample app, boot it using
+QEMU, and display the following console output:
+
+.. code-block:: console
+
+        ***** BOOTING ZEPHYR OS v1.8.99 - BUILD: Jun 27 2017 13:09:26 *****
+        threadA: Hello World from arm!
+        threadB: Hello World from arm!
+        threadA: Hello World from arm!
+        threadB: Hello World from arm!
+        threadA: Hello World from arm!
+        threadB: Hello World from arm!
+        threadA: Hello World from arm!
+        threadB: Hello World from arm!
+        threadA: Hello World from arm!
+        threadB: Hello World from arm!
+
+Debugging
+=========
+
+Refer to the detailed overview about :ref:`application_debugging`.
 
 References
 **********
