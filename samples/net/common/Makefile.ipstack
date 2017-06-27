@@ -18,7 +18,7 @@ ifdef QEMU_NUM
 	QEMU_EXTRA_FLAGS += -serial none -serial pipe:${PIPE_BASE}-${QEMU_NUM}	\
 			    -pidfile qemu-${QEMU_NUM}.pid
 else
-	QEMU_EXTRA_FLAGS += -serial none -serial unix:/tmp/slip.sock
+	QEMU_EXTRA_FLAGS += -serial none -serial unix:/tmp/slip.sock$(QEMU_INSTANCE)
 endif
 
 PIPE_SERVER_IN=${PIPE_BASE}-server.in
