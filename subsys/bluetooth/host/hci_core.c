@@ -39,10 +39,7 @@
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "smp.h"
-
-#if defined(CONFIG_BLUETOOTH_HOST_CRYPTO)
 #include "crypto.h"
-#endif
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_SECONDS(5)
@@ -3172,17 +3169,6 @@ static int common_init(void)
 	hci_reset_complete(rsp);
 	net_buf_unref(rsp);
 
-#if defined(CONFIG_BLUETOOTH_HOST_CRYPTO)
-	/*
-	 * initialize PRNG right after reset so that it is safe to use it later
-	 * on in initialization process
-	 */
-	err = prng_init();
-	if (err) {
-		return err;
-	}
-#endif
-
 	/* Read Local Supported Features */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
 	if (err) {
@@ -3216,6 +3202,16 @@ static int common_init(void)
 	}
 	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
+
+	if (IS_ENABLED(CONFIG_BLUETOOTH_HOST_CRYPTO)) {
+		/* Initialize the PRNG so that it is safe to use it later
+		 * on in the initialization process.
+		 */
+		err = prng_init();
+		if (err) {
+			return err;
+		}
+	}
 
 #if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
 	err = set_flow_control();
