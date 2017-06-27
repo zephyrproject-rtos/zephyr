@@ -849,7 +849,7 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 #define DHCPV4_TIMEOUT K_SECONDS(30)
 
 static struct net_mgmt_event_callback mgmt4_cb;
-static struct k_sem dhcpv4_ok = K_SEM_INITIALIZER(dhcpv4_ok, 0, UINT_MAX);
+static K_SEM_DEFINE(dhcpv4_ok, 0, UINT_MAX);
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 				  u32_t mgmt_event,
@@ -945,7 +945,7 @@ static void setup_ipv4(struct zirc *irc, struct net_if *iface)
 #define DAD_TIMEOUT K_SECONDS(3)
 
 static struct net_mgmt_event_callback mgmt6_cb;
-static struct k_sem dad_ok = K_SEM_INITIALIZER(dad_ok, 0, UINT_MAX);
+static K_SEM_DEFINE(dad_ok, 0, UINT_MAX);
 static struct in6_addr laddr;
 
 static void ipv6_dad_ok_handler(struct net_mgmt_event_callback *cb,

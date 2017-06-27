@@ -967,7 +967,7 @@ struct k_timer {
 	_OBJECT_TRACING_NEXT_PTR(k_timer);
 };
 
-#define K_TIMER_INITIALIZER(obj, expiry, stop) \
+#define _K_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout.delta_ticks_from_prev = _INACTIVE, \
 	.timeout.wait_q = NULL, \
@@ -980,6 +980,8 @@ struct k_timer {
 	.user_data = 0, \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_TIMER_INITIALIZER DEPRECATED_MACRO _K_TIMER_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -1034,7 +1036,7 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	struct k_timer name \
 		__in_section(_k_timer, static, name) = \
-		K_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
+		_K_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
 
 /**
  * @brief Initialize a timer.
@@ -1297,13 +1299,15 @@ struct k_queue {
 	_OBJECT_TRACING_NEXT_PTR(k_queue);
 };
 
-#define K_QUEUE_INITIALIZER(obj) \
+#define _K_QUEUE_INITIALIZER(obj) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
 	_POLL_EVENT_OBJ_INIT \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_QUEUE_INITIALIZER DEPRECATED_MACRO _K_QUEUE_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -1498,7 +1502,7 @@ static inline void *k_queue_peek_tail(struct k_queue *queue)
 #define K_QUEUE_DEFINE(name) \
 	struct k_queue name \
 		__in_section(_k_queue, static, name) = \
-		K_QUEUE_INITIALIZER(name)
+		_K_QUEUE_INITIALIZER(name)
 
 /**
  * @} end defgroup queue_apis
@@ -1512,10 +1516,12 @@ struct k_fifo {
 	struct k_queue _queue;
 };
 
-#define K_FIFO_INITIALIZER(obj) \
+#define _K_FIFO_INITIALIZER(obj) \
 	{ \
-	._queue = K_QUEUE_INITIALIZER(obj._queue) \
+	._queue = _K_QUEUE_INITIALIZER(obj._queue) \
 	}
+
+#define K_FIFO_INITIALIZER DEPRECATED_MACRO _K_FIFO_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -1685,7 +1691,7 @@ struct k_fifo {
 #define K_FIFO_DEFINE(name) \
 	struct k_fifo name \
 		__in_section(_k_queue, static, name) = \
-		K_FIFO_INITIALIZER(name)
+		_K_FIFO_INITIALIZER(name)
 
 /**
  * @} end defgroup fifo_apis
@@ -1699,10 +1705,12 @@ struct k_lifo {
 	struct k_queue _queue;
 };
 
-#define K_LIFO_INITIALIZER(obj) \
+#define _K_LIFO_INITIALIZER(obj) \
 	{ \
-	._queue = K_QUEUE_INITIALIZER(obj._queue) \
+	._queue = _K_QUEUE_INITIALIZER(obj._queue) \
 	}
+
+#define K_LIFO_INITIALIZER DEPRECATED_MACRO _K_LIFO_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -1773,7 +1781,7 @@ struct k_lifo {
 #define K_LIFO_DEFINE(name) \
 	struct k_lifo name \
 		__in_section(_k_queue, static, name) = \
-		K_LIFO_INITIALIZER(name)
+		_K_LIFO_INITIALIZER(name)
 
 /**
  * @} end defgroup lifo_apis
@@ -1790,7 +1798,7 @@ struct k_stack {
 	_OBJECT_TRACING_NEXT_PTR(k_stack);
 };
 
-#define K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
+#define _K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.base = stack_buffer, \
@@ -1798,6 +1806,8 @@ struct k_stack {
 	.top = stack_buffer + stack_num_entries, \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_STACK_INITIALIZER DEPRECATED_MACRO _K_STACK_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -1871,7 +1881,7 @@ extern int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
 		_k_stack_buf_##name[stack_num_entries];        \
 	struct k_stack name                                    \
 		__in_section(_k_stack, static, name) =    \
-		K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
+		_K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
 
 /**
@@ -1930,22 +1940,30 @@ extern struct k_work_q k_sys_work_q;
  * INTERNAL_HIDDEN @endcond
  */
 
+#define _K_WORK_INITIALIZER(work_handler) \
+	{ \
+	._reserved = NULL, \
+	.handler = work_handler, \
+	.flags = { 0 } \
+	}
+
+#define K_WORK_INITIALIZER DEPRECATED_MACRO _K_WORK_INITIALIZER
+
 /**
  * @brief Initialize a statically-defined work item.
  *
  * This macro can be used to initialize a statically-defined workqueue work
  * item, prior to its first use. For example,
  *
- * @code struct k_work <work> = K_WORK_INITIALIZER(<work_handler>); @endcode
+ * @code static K_WORK_DEFINE(<work>, <work_handler>); @endcode
  *
+ * @param work Symbol name for work item object
  * @param work_handler Function to invoke each time work item is processed.
  */
-#define K_WORK_INITIALIZER(work_handler) \
-	{ \
-	._reserved = NULL, \
-	.handler = work_handler, \
-	.flags = { 0 } \
-	}
+#define K_WORK_DEFINE(work, work_handler) \
+	struct k_work work \
+		__in_section(_k_work, static, work) = \
+		_K_WORK_INITIALIZER(work_handler)
 
 /**
  * @brief Initialize a work item.
@@ -2192,7 +2210,7 @@ struct k_mutex {
 	_OBJECT_TRACING_NEXT_PTR(k_mutex);
 };
 
-#define K_MUTEX_INITIALIZER(obj) \
+#define _K_MUTEX_INITIALIZER(obj) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.owner = NULL, \
@@ -2200,6 +2218,8 @@ struct k_mutex {
 	.owner_orig_prio = K_LOWEST_THREAD_PRIO, \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_MUTEX_INITIALIZER DEPRECATED_MACRO _K_MUTEX_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2223,7 +2243,7 @@ struct k_mutex {
 #define K_MUTEX_DEFINE(name) \
 	struct k_mutex name \
 		__in_section(_k_mutex, static, name) = \
-		K_MUTEX_INITIALIZER(name)
+		_K_MUTEX_INITIALIZER(name)
 
 /**
  * @brief Initialize a mutex.
@@ -2291,7 +2311,7 @@ struct k_sem {
 	_OBJECT_TRACING_NEXT_PTR(k_sem);
 };
 
-#define K_SEM_INITIALIZER(obj, initial_count, count_limit) \
+#define _K_SEM_INITIALIZER(obj, initial_count, count_limit) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.count = initial_count, \
@@ -2299,6 +2319,8 @@ struct k_sem {
 	_POLL_EVENT_OBJ_INIT \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_SEM_INITIALIZER DEPRECATED_MACRO _K_SEM_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2403,7 +2425,7 @@ static inline unsigned int k_sem_count_get(struct k_sem *sem)
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
 	struct k_sem name \
 		__in_section(_k_sem, static, name) = \
-		K_SEM_INITIALIZER(name, initial_count, count_limit)
+		_K_SEM_INITIALIZER(name, initial_count, count_limit)
 
 /**
  * @} end defgroup semaphore_apis
@@ -2451,14 +2473,16 @@ struct k_alert {
 
 extern void _alert_deliver(struct k_work *work);
 
-#define K_ALERT_INITIALIZER(obj, alert_handler, max_num_pending_alerts) \
+#define _K_ALERT_INITIALIZER(obj, alert_handler, max_num_pending_alerts) \
 	{ \
 	.handler = (k_alert_handler_t)alert_handler, \
 	.send_count = ATOMIC_INIT(0), \
-	.work_item = K_WORK_INITIALIZER(_alert_deliver), \
-	.sem = K_SEM_INITIALIZER(obj.sem, 0, max_num_pending_alerts), \
+	.work_item = _K_WORK_INITIALIZER(_alert_deliver), \
+	.sem = _K_SEM_INITIALIZER(obj.sem, 0, max_num_pending_alerts), \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_ALERT_INITIALIZER DEPRECATED_MACRO _K_ALERT_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2486,7 +2510,7 @@ extern void _alert_deliver(struct k_work *work);
 #define K_ALERT_DEFINE(name, alert_handler, max_num_pending_alerts) \
 	struct k_alert name \
 		__in_section(_k_alert, static, name) = \
-		K_ALERT_INITIALIZER(name, alert_handler, \
+		_K_ALERT_INITIALIZER(name, alert_handler, \
 				    max_num_pending_alerts)
 
 /**
@@ -2560,7 +2584,7 @@ struct k_msgq {
 	_OBJECT_TRACING_NEXT_PTR(k_msgq);
 };
 
-#define K_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
+#define _K_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.max_msgs = q_max_msgs, \
@@ -2572,6 +2596,8 @@ struct k_msgq {
 	.used_msgs = 0, \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_MSGQ_INITIALIZER DEPRECATED_MACRO _K_MSGQ_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2607,7 +2633,7 @@ struct k_msgq {
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];  \
 	struct k_msgq q_name                                        \
 		__in_section(_k_msgq, static, q_name) =        \
-	       K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,     \
+	       _K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,     \
 				  q_msg_size, q_max_msgs)
 
 /**
@@ -2782,12 +2808,14 @@ struct k_mbox {
 	_OBJECT_TRACING_NEXT_PTR(k_mbox);
 };
 
-#define K_MBOX_INITIALIZER(obj) \
+#define _K_MBOX_INITIALIZER(obj) \
 	{ \
 	.tx_msg_queue = SYS_DLIST_STATIC_INIT(&obj.tx_msg_queue), \
 	.rx_msg_queue = SYS_DLIST_STATIC_INIT(&obj.rx_msg_queue), \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_MBOX_INITIALIZER DEPRECATED_MACRO _K_MBOX_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2805,7 +2833,7 @@ struct k_mbox {
 #define K_MBOX_DEFINE(name) \
 	struct k_mbox name \
 		__in_section(_k_mbox, static, name) = \
-		K_MBOX_INITIALIZER(name) \
+		_K_MBOX_INITIALIZER(name) \
 
 /**
  * @brief Initialize a mailbox.
@@ -2953,7 +2981,7 @@ struct k_pipe {
 	_OBJECT_TRACING_NEXT_PTR(k_pipe);
 };
 
-#define K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)        \
+#define _K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)        \
 	{                                                             \
 	.buffer = pipe_buffer,                                        \
 	.size = pipe_buffer_size,                                     \
@@ -2964,6 +2992,8 @@ struct k_pipe {
 	.wait_q.readers = SYS_DLIST_STATIC_INIT(&obj.wait_q.readers), \
 	_OBJECT_TRACING_INIT                            \
 	}
+
+#define K_PIPE_INITIALIZER DEPRECATED_MACRO _K_PIPE_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2992,7 +3022,7 @@ struct k_pipe {
 		_k_pipe_buf_##name[pipe_buffer_size];         \
 	struct k_pipe name                                    \
 		__in_section(_k_pipe, static, name) =    \
-		K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
+		_K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
  * @brief Initialize a pipe.
@@ -3092,7 +3122,7 @@ struct k_mem_slab {
 	_OBJECT_TRACING_NEXT_PTR(k_mem_slab);
 };
 
-#define K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
+#define _K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
 			       slab_num_blocks) \
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
@@ -3103,6 +3133,9 @@ struct k_mem_slab {
 	.num_used = 0, \
 	_OBJECT_TRACING_INIT \
 	}
+
+#define K_MEM_SLAB_INITIALIZER DEPRECATED_MACRO _K_MEM_SLAB_INITIALIZER
+
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3138,7 +3171,7 @@ struct k_mem_slab {
 		_k_mem_slab_buf_##name[(slab_num_blocks) * (slab_block_size)]; \
 	struct k_mem_slab name \
 		__in_section(_k_mem_slab, static, name) = \
-		K_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
+		_K_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
 				      slab_block_size, slab_num_blocks)
 
 /**

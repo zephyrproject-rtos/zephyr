@@ -41,10 +41,10 @@ struct spi_context {
 };
 
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
-	._ctx_name.lock = K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
+	._ctx_name.lock = _K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
 
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
-	._ctx_name.sync = K_SEM_INITIALIZER(_data._ctx_name.sync, 0, UINT_MAX)
+	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, UINT_MAX)
 
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  struct spi_config *config)

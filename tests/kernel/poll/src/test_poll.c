@@ -89,8 +89,8 @@ void test_poll_no_wait(void)
 
 /* verify k_poll() that has to wait */
 
-static struct k_sem wait_sem = K_SEM_INITIALIZER(wait_sem, 0, 1);
-static struct k_fifo wait_fifo = K_FIFO_INITIALIZER(wait_fifo);
+static K_SEM_DEFINE(wait_sem, 0, 1);
+static K_FIFO_DEFINE(wait_fifo);
 static struct k_poll_signal wait_signal = K_POLL_SIGNAL_INITIALIZER();
 
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
@@ -299,9 +299,8 @@ void test_poll_wait(void)
 }
 
 /* verify -EADDRINUSE return value when object has already a poller */
-static struct k_sem eaddrinuse_sem = K_SEM_INITIALIZER(eaddrinuse_sem, 0, 1);
-static struct k_sem eaddrinuse_reply =
-	K_SEM_INITIALIZER(eaddrinuse_reply, 0, 1);
+static K_SEM_DEFINE(eaddrinuse_sem, 0, 1);
+static K_SEM_DEFINE(eaddrinuse_reply, 0, 1);
 
 static struct k_thread eaddrinuse_hogger_thread;
 static K_THREAD_STACK_DEFINE(eaddrinuse_hogger_stack, KB(1));
@@ -320,8 +319,7 @@ static void eaddrinuse_hogger(void *p1, void *p2, void *p3)
 	k_sem_give(&eaddrinuse_reply);
 }
 
-static struct k_sem eaddrinuse_ready_sem =
-	K_SEM_INITIALIZER(eaddrinuse_ready_sem, 1, 1);
+static K_SEM_DEFINE(eaddrinuse_ready_sem, 1, 1);
 
 void test_poll_eaddrinuse(void)
 {

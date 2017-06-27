@@ -480,7 +480,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
 				 _destroy)                                   \
 	{                                                                    \
-		.free = K_LIFO_INITIALIZER(_pool.free),                      \
+		.free = _K_LIFO_INITIALIZER(_pool.free),                      \
 		.__bufs = (struct net_buf *)_bufs,                           \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
@@ -495,7 +495,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
 				 _destroy)                                   \
 	{                                                                    \
-		.free = K_LIFO_INITIALIZER(_pool.free),                      \
+		.free = _K_LIFO_INITIALIZER(_pool.free),                      \
 		.__bufs = (struct net_buf *)_bufs,                           \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \

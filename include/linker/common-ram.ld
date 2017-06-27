@@ -100,6 +100,13 @@
 		_k_pipe_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(_k_work_area, (OPTIONAL),)
+	{
+		_k_work_list_start = .;
+		KEEP(*(SORT_BY_NAME("._k_work.static.*")))
+		_k_work_list_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(_k_task_list, (OPTIONAL),)
 	{
 		_k_task_list_start = .;
