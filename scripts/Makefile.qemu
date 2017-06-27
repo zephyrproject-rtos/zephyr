@@ -6,7 +6,7 @@
 
 # Abstraction of 'run' goal with Qemu
 
-QEMU_FLAGS = $(QEMU_FLAGS_$(ARCH)) -pidfile qemu.pid
+QEMU_FLAGS = $(QEMU_FLAGS_$(ARCH)) -pidfile qemu$(QEMU_INSTANCE).pid
 
 ifneq ($(QEMU_PTY),)
     QEMU_FLAGS += -serial pty
