@@ -66,6 +66,11 @@ int prng_init(void)
 	struct net_buf *rsp;
 	int ret;
 
+	/* Check first that HCI_LE_Rand is supported */
+	if (!(bt_dev.supported_commands[27] & BIT(7))) {
+		return -ENOTSUP;
+	}
+
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 	if (ret) {
 		return ret;
