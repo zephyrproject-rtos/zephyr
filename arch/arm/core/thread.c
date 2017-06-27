@@ -62,8 +62,8 @@ void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
 
 	char *stackEnd = pStackMem + stackSize;
 	struct __esf *pInitCtx;
-
-	_new_thread_init(thread, pStackMem, stackSize, priority, options);
+	_new_thread_init(thread, K_THREAD_STACK_BUFFER(pStackMem), stackSize,
+			priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 
