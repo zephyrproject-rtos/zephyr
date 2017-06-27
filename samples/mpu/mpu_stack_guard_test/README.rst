@@ -35,33 +35,40 @@ To build the test with the MPU enabled and the stack guard feature present:
 Sample Output
 =============
 
-With the MPU disabled:
+With the MPU enabled but the stack guard feature disabled:
 
 .. code-block:: console
 
-   ***** BOOTING ZEPHYR OS v1.7.99 - BUILD: Mar 29 2017 11:07:09 *****
-   MPU STACK GUARD Test
-   Canary Initial Value = 0xf0cacc1a
-   Canary = 0x200003a8     Test not passed.
-   ...
+    ***** BOOTING ZEPHYR OS v1.8.99 - BUILD: Jun 15 2017 23:12:13 *****
+    STACK_ALIGN 4
+    MPU STACK GUARD Test
+    Canary Initial Value = 0xf0cacc1a threads 0x20000b9c
+    Canary = 0xfffffff5     Test not passed.
+    ***** MPU FAULT *****
+      Executing thread ID (thread): 0x20000b9c
+      Faulting instruction address:  0x80025b0
+      Data Access Violation
+      Address: 0x8000edb
+    Fatal fault in thread 0x20000b9c! Aborting.
+    ***** HARD FAULT *****
+      Fault escalation (see below)
+    ***** MPU FAULT *****
+      Executing thread ID (thread): 0x20000b9c
+      Faulting instruction address:  0x8001db6
+      Data Access Violation
+      Address: 0x8000edb
+    Fatal fault in ISR! Spinning...
 
 With the MPU enabled and the stack guard feature present:
 
 .. code-block:: console
 
-   ***** BOOTING ZEPHYR OS v1.7.99 - BUILD: Mar 29 2017 11:20:10 *****
-   MPU STACK GUARD Test
-   Canary Initial Value = 0xf0cacc1a
-   [general] [DBG] arm_core_mpu_configure: Region info: 0x200003ac 0x400
-   ***** MPU FAULT *****
-     Executing thread ID (thread): 0x200003ac
-     Faulting instruction address:  0x0
-     Stacking error
-   Fatal fault in thread 0x200003ac! Aborting.
-   ***** HARD FAULT *****
-     Fault escalation (see below)
-   ***** MPU FAULT *****
-     Executing thread ID (thread): 0x200003ac
-     Faulting instruction address:  0x8000466
-     Stacking error
-   Fatal fault in ISR! Spinning...
+    ***** BOOTING ZEPHYR OS v1.8.99 - BUILD: Jun 15 2017 23:05:56 *****
+    STACK_ALIGN 20
+    MPU STACK GUARD Test
+    Canary Initial Value = 0xf0cacc1a threads 0x20000be0
+    ***** MPU FAULT *****
+      Executing thread ID (thread): 0x20000be0
+      Faulting instruction address:  0x8001dc2
+      Stacking error
+    Fatal fault in thread 0x20000be0! Aborting.
