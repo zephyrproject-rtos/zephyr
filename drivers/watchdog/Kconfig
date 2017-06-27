@@ -26,4 +26,6 @@ source "drivers/watchdog/Kconfig.cmsdk_apb"
 
 source "drivers/watchdog/Kconfig.sam"
 
+source "drivers/watchdog/Kconfig.esp32"
+
 endif
