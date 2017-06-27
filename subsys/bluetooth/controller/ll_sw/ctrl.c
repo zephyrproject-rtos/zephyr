@@ -726,13 +726,16 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t irkmatch_ok,
 	    (1 /** @todo own addr match check */)) {
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
-		u32_t err;
+		if (!IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT) ||
+		    0 /* TODO: extended adv. scan req notification enabled */) {
+			u32_t err;
 
-		/* Generate the scan request event */
-		err = isr_rx_adv_sr_report(pdu_adv, rssi_ready);
-		if (err) {
-			/* Scan Response will not be transmitted */
-			return err;
+			/* Generate the scan request event */
+			err = isr_rx_adv_sr_report(pdu_adv, rssi_ready);
+			if (err) {
+				/* Scan Response will not be transmitted */
+				return err;
+			}
 		}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
 
