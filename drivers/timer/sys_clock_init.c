@@ -17,4 +17,4 @@
 #include <drivers/system_timer.h>
 
 SYS_DEVICE_DEFINE("sys_clock", _sys_clock_driver_init, sys_clock_device_ctrl,
-		POST_KERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+		PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
