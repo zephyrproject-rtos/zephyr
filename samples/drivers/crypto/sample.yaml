@@ -3,7 +3,6 @@ sample:
     name: TBD
 tests:
 -   test-micro:
-        arch_whitelist: x86
         build_only: true
         platform_whitelist: qemu_x86
         tags: crypto

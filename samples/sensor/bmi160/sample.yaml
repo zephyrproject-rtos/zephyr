@@ -3,7 +3,6 @@ sample:
     name: TBD
 tests:
 -   test:
-        arch_whitelist: arc
         build_only: true
         platform_whitelist: arduino_101_sss
         tags: sensors

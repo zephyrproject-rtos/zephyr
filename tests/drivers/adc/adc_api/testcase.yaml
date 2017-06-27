@@ -1,31 +1,21 @@
 tests:
 -   test_adc_arc_resolution_6:
-        arch_whitelist: arc
         extra_args: CONF_FILE=prj_resolution_6.conf
-        platform_whitelist: quark_se_c1000_devboard
-            arduino_101
+        platform_whitelist: quark_se_c1000_ss_devboard
         tags: drivers
 -   test_adc_arc_resolution_8:
-        arch_whitelist: arc
         extra_args: CONF_FILE=prj_resolution_8.conf
-        platform_whitelist: quark_se_c1000_devboard
-            arduino_101
+        platform_whitelist: quark_se_c1000_ss_devboard
         tags: drivers
 -   test_adc_arc_resolution_10:
-        arch_whitelist: arc
         extra_args: CONF_FILE=prj_resolution_10.conf
-        platform_whitelist: quark_se_c1000_devboard
-            arduino_101
+        platform_whitelist: quark_se_c1000_ss_devboard
         tags: drivers
 -   test_adc_arc_resolution_12:
-        arch_whitelist: arc
         extra_args: CONF_FILE=prj_resolution_12.conf
-        platform_whitelist: quark_se_c1000_devboard
-            arduino_101
+        platform_whitelist: quark_se_c1000_ss_devboard
         tags: drivers
 -   test_adc_arc_poll_mode:
-        arch_whitelist: arc
         extra_args: CONF_FILE=prj_poll_mode.conf
-        platform_whitelist: quark_se_c1000_devboard
-            arduino_101
+        platform_whitelist: quark_se_c1000_ss_devboard
         tags: drivers

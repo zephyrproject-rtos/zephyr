@@ -5,7 +5,6 @@ tests:
 -   test:
         arch_whitelist: x86
         build_only: true
-        platform_exclude: quark_d2000_crb
         tags: net
 -   test_bt:
         build_only: true
