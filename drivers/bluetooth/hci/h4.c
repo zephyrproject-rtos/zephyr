@@ -59,7 +59,7 @@ static struct {
 		u8_t hdr[4];
 	};
 } rx = {
-	.fifo = K_FIFO_INITIALIZER(rx.fifo),
+	.fifo = _K_FIFO_INITIALIZER(rx.fifo),
 };
 
 static struct {
@@ -67,7 +67,7 @@ static struct {
 	struct net_buf *buf;
 	struct k_fifo   fifo;
 } tx = {
-	.fifo = K_FIFO_INITIALIZER(tx.fifo),
+	.fifo = _K_FIFO_INITIALIZER(tx.fifo),
 };
 
 static struct device *h4_dev;
