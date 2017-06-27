@@ -1,6 +1,5 @@
 tests:
 -   test:
-        arch_whitelist: x86
         build_only: true
         platform_whitelist: quark_se_c1000_devboard
         tags: net
