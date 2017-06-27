@@ -265,7 +265,7 @@ static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 				 K_POLL_MODE_NOTIFY_ONLY,
 				 &async_sig);
-static struct k_sem caller = K_SEM_INITIALIZER(caller, 0, 1);
+static K_SEM_DEFINE(caller, 0, 1);
 static char __noinit spi_async_stack[256];
 static int result = 1;
 

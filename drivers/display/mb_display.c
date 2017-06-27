@@ -282,7 +282,7 @@ static void clear_display(struct k_timer *timer)
 }
 
 static struct mb_display display = {
-	.timer = K_TIMER_INITIALIZER(display.timer, show_row, clear_display),
+	.timer = _K_TIMER_INITIALIZER(display.timer, show_row, clear_display),
 };
 
 static void start_scroll(struct mb_display *disp, s32_t duration)

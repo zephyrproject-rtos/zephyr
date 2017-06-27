@@ -135,7 +135,7 @@ void bt_gatt_init(void)
 	gatt_register(&gatt_svc);
 }
 
-static struct k_sem sc_sem = K_SEM_INITIALIZER(sc_sem, 1, 1);
+static struct k_sem sc_sem = _K_SEM_INITIALIZER(sc_sem, 1, 1);
 
 static void sc_indicate_rsp(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, u8_t err)

@@ -138,7 +138,7 @@ the timer's expiry function submits a work item to the
         ...
     }
 
-    struct k_work my_work = K_WORK_INITIALIZER(my_work_handler);
+    K_WORK_DEFINE(my_work, my_work_handler);
 
     void my_timer_handler(struct k_timer *dummy)
     {
