@@ -2,8 +2,7 @@ tests:
 -   footprint-min:
         build_only: true
         extra_args: TEST=min
-        filter: not CONFIG_BOARD_GALILEO
-        platform_exclude: tinytile
+        platform_exclude: tinytile galileo
         tags: footprint
 -   footprint-reg:
         arch_whitelist: x86 arm
