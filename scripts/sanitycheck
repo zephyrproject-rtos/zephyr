@@ -927,6 +927,8 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "extra_sections" : {"type" : "list", "default" : []},
                        "platform_exclude" : {"type" : "set"},
                        "platform_whitelist" : {"type" : "set"},
+                       "toolchain_exclude" : {"type" : "set"},
+                       "toolchain_whitelist" : {"type" : "set"},
                        "filter" : {"type" : "str"}}
 
 
@@ -1135,6 +1137,8 @@ class TestCase:
         self.skip = tc_dict["skip"]
         self.platform_exclude = tc_dict["platform_exclude"]
         self.platform_whitelist = tc_dict["platform_whitelist"]
+        self.toolchain_exclude = tc_dict["toolchain_exclude"]
+        self.toolchain_whitelist = tc_dict["toolchain_whitelist"]
         self.tc_filter = tc_dict["filter"]
         self.timeout = tc_dict["timeout"]
         self.build_only = tc_dict["build_only"]
@@ -1346,6 +1350,9 @@ class TestSuite:
                     if tc.platform_exclude and plat.name in tc.platform_exclude:
                         continue
 
+                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                        continue
+
                     if platform_filter and plat.name not in platform_filter:
                         continue
 
@@ -1362,6 +1369,9 @@ class TestSuite:
                         continue
 
                     if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
+                        continue
+
+                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
                         continue
 
                     if (tc.tc_filter and (plat.default or all_plats or platform_filter) and
@@ -1449,12 +1459,20 @@ class TestSuite:
                         discards[instance] = "In test case platform exclude"
                         continue
 
+                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                        discards[instance] = "In test case toolchain exclude"
+                        continue
+
                     if platform_filter and plat.name not in platform_filter:
                         discards[instance] = "Command line platform filter"
                         continue
 
                     if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
                         discards[instance] = "Not in testcase platform whitelist"
+                        continue
+
+                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
+                        discards[instance] = "Not in testcase toolchain whitelist"
                         continue
 
                     if toolchain and toolchain not in plat.supported_toolchains:
