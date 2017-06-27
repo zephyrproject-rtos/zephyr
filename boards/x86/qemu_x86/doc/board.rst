@@ -6,9 +6,8 @@ X86 Emulation (QEMU)
 Overview
 ********
 
-The Zephyr Kernel uses the qemu_x86 board configuration to emulate Pentium-class
-systems running on QEMU.
-This board configuration provides support for an x86 Minute IA CPU and the
+The X86 QEMU board configuration is used to emulate the X86 architecture. This board
+configuration provides support for an x86 Minute IA (Lakemont) CPU and the
 following devices:
 
 * HPET
@@ -22,7 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The qemu_x86 board configuration supports the following hardware features:
+This configuration supports the following hardware features:
 
 +--------------+------------+-----------------------+
 | Interface    | Controller | Driver/Component      |
@@ -41,12 +40,12 @@ Devices
 HPET System Clock Support
 -------------------------
 
-The qemu_x86 board configuration uses an HPET clock frequency of 25 MHz.
+The configuration uses an HPET clock frequency of 25 MHz.
 
 Serial Port
 -----------
 
-The qemu_x86 board configuration uses a single serial communication channel that
+The board configuration uses a single serial communication channel that
 uses the NS16550 serial driver operating in polling mode. To override, enable
 the UART_INTERRUPT_DRIVEN Kconfig option, which allows the system to be
 interrupt-driven.
@@ -63,3 +62,35 @@ The following platform features are unsupported:
 * Inter-Integrated Circuit (I2C)
 * Ethernet
 * Supervisor Mode Execution Protection (SMEP)
+
+Programming and Debugging
+*************************
+
+Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
+emulated environment, for example, with the :ref:`synchronization_sample`:
+
+.. code-block:: console
+
+        $ make -C samples/synchronization BOARD=qemu_x86 run
+
+This will build an image with the synchronization sample app, boot it using
+QEMU, and display the following console output:
+
+.. code-block:: console
+
+        ***** BOOTING ZEPHYR OS v1.8.99 - BUILD: Jun 27 2017 13:09:26 *****
+        threadA: Hello World from x86!
+        threadB: Hello World from x86!
+        threadA: Hello World from x86!
+        threadB: Hello World from x86!
+        threadA: Hello World from x86!
+        threadB: Hello World from x86!
+        threadA: Hello World from x86!
+        threadB: Hello World from x86!
+        threadA: Hello World from x86!
+        threadB: Hello World from x86!
+
+Debugging
+=========
+
+Refer to the detailed overview about :ref:`application_debugging`.

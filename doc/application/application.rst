@@ -703,6 +703,8 @@ hardware.
    The application stops running and the terminal console prompt
    redisplays.
 
+.. _application_debugging:
+
 Application Debugging
 *********************
 
