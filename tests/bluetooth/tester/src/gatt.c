@@ -209,7 +209,7 @@ static int register_service(void)
 				       (attr_count - svc_attr_count);
 	server_svcs[svc_count].attr_count = svc_attr_count;
 
-	return bt_gatt_service_register(server_svcs);
+	return bt_gatt_service_register(&server_svcs[svc_count]);
 }
 
 static void add_service(u8_t *data, u16_t len)
@@ -797,7 +797,9 @@ static void start_server(u8_t *data, u16_t len)
 		return;
 	}
 
-	/* All handles of gatt db are now assigned by bt_gatt_register */
+	/* All handles of gatt db are now assigned by
+	 * bt_gatt_service_register().
+	 */
 	db_attr_off = server_db[0].handle - 1;
 
 	update_incl_svc_offset(db_attr_off);
