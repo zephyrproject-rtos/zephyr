@@ -307,11 +307,6 @@ void main(void)
 {
 	int ret;
 
-	ret = net_app_init("Run HTTP client", 0, APP_STARTUP_TIME);
-	if (ret < 0) {
-		panic("Application init failed");
-	}
-
 	ret = http_client_init(&http_ctx, SERVER_ADDR, SERVER_PORT);
 	if (ret < 0) {
 		NET_ERR("HTTP init failed (%d)", ret);
