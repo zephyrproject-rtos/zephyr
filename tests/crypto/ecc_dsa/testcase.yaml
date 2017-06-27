@@ -1,11 +1,6 @@
 tests:
 -   test:
-        filter: '(ARCH == "nios2" or CONFIG_DTCM_SIZE
-            > 0x4000 or
-
-            CONFIG_SRAM_SIZE > 16 or CONFIG_DCCM_SIZE
-            > 16 or
-
-            CONFIG_RAM_SIZE > 16)'
+        arch_exclude: riscv32 # ZEP-2020
+        min_ram: 16
         tags: crypto ecc dsa
         timeout: 180

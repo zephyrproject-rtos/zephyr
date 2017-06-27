@@ -4,5 +4,5 @@ sample:
 tests:
 -   test:
         build_only: true
-        filter: ZEPHYR_GCC_VARIANT != "issm"
+        toolchain_exclude: issm
         tags: apps

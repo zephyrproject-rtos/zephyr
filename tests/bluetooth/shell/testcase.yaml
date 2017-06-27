@@ -7,6 +7,5 @@ tests:
 -   test_br:
         build_only: true
         extra_args: CONF_FILE="prj_br.conf"
-        filter: not CONFIG_DEBUG
         platform_whitelist: qemu_cortex_m3 qemu_x86
         tags: bluetooth
