@@ -17,6 +17,7 @@
  */
 
 #include <zephyr.h>
+
 #include <tc_util.h>
 
 /* externs */
@@ -58,16 +59,16 @@ void main(void)
 	/* Only print lower 32bit of time result */
 	TC_PRINT("Boot Result: Clock Frequency: %d MHz\n",
 		 freq);
-	TC_PRINT("__start       : %d cycles, %d us\n",
+	TC_PRINT("__start       : %u cycles, %u us\n",
 		 (u32_t)(__start_time_stamp & 0xFFFFFFFFULL),
 		 (u32_t) (_start_us  & 0xFFFFFFFFULL));
-	TC_PRINT("_start->main(): %d cycles, %d us\n",
+	TC_PRINT("_start->main(): %u cycles, %u us\n",
 		 (u32_t)(s_main_time_stamp & 0xFFFFFFFFULL),
 		 (u32_t)  (main_us  & 0xFFFFFFFFULL));
-	TC_PRINT("_start->task  : %d cycles, %d us\n",
+	TC_PRINT("_start->task  : %u cycles, %u us\n",
 		 (u32_t)(s_task_time_stamp & 0xFFFFFFFFULL),
 		 (u32_t)  (task_us  & 0xFFFFFFFFULL));
-	TC_PRINT("_start->idle  : %d cycles, %d us\n",
+	TC_PRINT("_start->idle  : %u cycles, %u us\n",
 		 (u32_t)(s_idle_time_stamp & 0xFFFFFFFFULL),
 		 (u32_t)  (idle_us  & 0xFFFFFFFFULL));
 
