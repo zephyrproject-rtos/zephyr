@@ -4,5 +4,7 @@ type: qemu
 arch: x86
 toolchain:
   - zephyr
+supported:
+  - pci
 testing:
         default: true

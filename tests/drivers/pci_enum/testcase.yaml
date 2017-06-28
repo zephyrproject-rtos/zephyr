@@ -1,5 +1,4 @@
 tests:
 -   test:
-        filter: CONFIG_PCI
-        platform_whitelist: qemu_x86 galileo
+        depends_on: pci
         tags: samples
