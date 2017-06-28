@@ -112,12 +112,6 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 #define net_tcp_trace(...)
 #endif /* CONFIG_NET_DEBUG_TCP */
 
-static inline u32_t init_isn(void)
-{
-	/* Randomise initial seq number */
-	return sys_rand32_get();
-}
-
 static inline u32_t retry_timeout(const struct net_tcp *tcp)
 {
 	return ((u32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
@@ -217,7 +211,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].state = NET_TCP_CLOSED;
 	tcp_context[i].context = context;
 
-	tcp_context[i].send_seq = init_isn();
+	tcp_context[i].send_seq = tcp_init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
 
 	tcp_context[i].accept_cb = NULL;
