@@ -82,6 +82,15 @@ static enum net_verdict packet_received(struct net_conn *conn,
 static void set_appdata_values(struct net_pkt *pkt, enum net_ip_protocol proto);
 
 #if defined(CONFIG_NET_TCP)
+
+static struct tcp_backlog_entry {
+	struct net_tcp *tcp;
+	struct sockaddr remote;
+	u32_t recv_max_ack;
+	u32_t send_seq;
+	u32_t send_ack;
+} tcp_backlog[CONFIG_NET_TCP_BACKLOG_SIZE];
+
 static struct sockaddr *create_sockaddr(struct net_pkt *pkt,
 					struct sockaddr *addr)
 {
@@ -108,6 +117,139 @@ static struct sockaddr *create_sockaddr(struct net_pkt *pkt,
 
 	return addr;
 }
+
+static int tcp_backlog_find(struct net_pkt *pkt, int *empty_slot)
+{
+	int i, empty = -1;
+
+	for (i = 0; i < CONFIG_NET_TCP_BACKLOG_SIZE; i++) {
+		if (tcp_backlog[i].tcp == NULL && empty < 0) {
+			empty = i;
+			continue;
+		}
+
+		if (net_pkt_family(pkt) != tcp_backlog[i].remote.family) {
+			continue;
+		}
+
+		switch (net_pkt_family(pkt)) {
+#if defined(CONFIG_NET_IPV6)
+		case AF_INET6:
+			if (net_sin6(&tcp_backlog[i].remote)->sin6_port !=
+			    NET_TCP_HDR(pkt)->src_port) {
+				continue;
+			}
+
+			if (memcmp(&net_sin6(&tcp_backlog[i].remote)->sin6_addr,
+				   &NET_IPV6_HDR(pkt)->src,
+				   sizeof(struct in6_addr))) {
+				continue;
+			}
+
+			break;
+#endif
+#if defined(CONFIG_NET_IPV4)
+		case AF_INET:
+			if (net_sin(&tcp_backlog[i].remote)->sin_port !=
+			    NET_TCP_HDR(pkt)->src_port) {
+				continue;
+			}
+
+			if (memcmp(&net_sin(&tcp_backlog[i].remote)->sin_addr,
+				   &NET_IPV4_HDR(pkt)->src,
+				   sizeof(struct in_addr))) {
+				continue;
+			}
+
+			break;
+#endif
+		}
+
+		return i;
+	}
+
+	if (empty_slot) {
+		*empty_slot = empty;
+	}
+
+	return -EADDRNOTAVAIL;
+}
+
+static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context)
+{
+	int empty_slot = -1;
+
+	if (tcp_backlog_find(pkt, &empty_slot) >= 0) {
+		return -EADDRINUSE;
+	}
+
+	if (empty_slot < 0) {
+		return -ENOSPC;
+	}
+
+	tcp_backlog[empty_slot].tcp = context->tcp;
+
+	create_sockaddr(pkt, &tcp_backlog[empty_slot].remote);
+
+	tcp_backlog[empty_slot].recv_max_ack = context->tcp->recv_max_ack;
+	tcp_backlog[empty_slot].send_seq = context->tcp->send_seq;
+	tcp_backlog[empty_slot].send_ack = context->tcp->send_ack;
+
+	/* TODO: set up ack timer */
+
+	return 0;
+}
+
+static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
+{
+	int r;
+
+	r = tcp_backlog_find(pkt, NULL);
+
+	if (r < 0) {
+		return r;
+	}
+
+	/* Sent SEQ + 1 needs to be the same as the received ACK */
+	if (tcp_backlog[r].send_seq + 1
+	    != sys_get_be32(NET_TCP_HDR(pkt)->ack)) {
+		return -EINVAL;
+	}
+
+	/* TODO: cancel ack timer */
+
+	memcpy(&context->remote, &tcp_backlog[r].remote,
+		sizeof(struct sockaddr));
+	context->tcp->recv_max_ack = tcp_backlog[r].recv_max_ack;
+	context->tcp->send_seq = tcp_backlog[r].send_seq;
+	context->tcp->send_ack = tcp_backlog[r].send_ack;
+
+	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_t));
+
+	return 0;
+}
+
+static int tcp_backlog_rst(struct net_pkt *pkt)
+{
+	int r;
+
+	r = tcp_backlog_find(pkt, NULL);
+	if (r < 0) {
+		return r;
+	}
+
+	/* The ACK sent needs to be the same as the received SEQ */
+	if (tcp_backlog[r].send_ack != sys_get_be32(NET_TCP_HDR(pkt)->seq)) {
+		return -EINVAL;
+	}
+
+	/* TODO: cancel ack timer */
+
+	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_t));
+
+	return 0;
+}
+
 #endif
 
 static int check_used_port(enum net_ip_protocol ip_proto,
@@ -1347,6 +1489,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 */
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_SYN) {
 		struct sockaddr peer, *remote;
+		int r;
 
 		net_tcp_print_recv_info("SYN", pkt, NET_TCP_HDR(pkt)->src_port);
 
@@ -1354,10 +1497,22 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		remote = create_sockaddr(pkt, &peer);
 
-		/* FIXME: Is this the correct place to set tcp->send_ack? */
+		/* Set TCP seq and ack which are then stored in the backlog */
+		context->tcp->send_seq = tcp_init_isn();
 		context->tcp->send_ack =
 			sys_get_be32(NET_TCP_HDR(pkt)->seq) + 1;
 		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
+
+		r = tcp_backlog_syn(pkt, context);
+		if (r < 0) {
+			if (r == -EADDRINUSE) {
+				NET_DBG("TCP connection already exists");
+			} else {
+				NET_DBG("No free TCP backlog entries");
+			}
+
+			return NET_DROP;
+		}
 
 		pkt_get_sockaddr(net_context_get_family(context),
 				 pkt, &pkt_src_addr);
@@ -1383,6 +1538,8 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 * to LISTEN state. No other states are valid for this function.
 	 */
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_RST) {
+
+		(void) tcp_backlog_rst(pkt);
 
 		/* We only accept an RST packet that has valid seq field
 		 * and ignore RST received in LISTEN state.
@@ -1447,9 +1604,14 @@ NET_CONN_CB(tcp_syn_rcvd)
 			goto conndrop;
 		}
 
-		new_context->tcp->recv_max_ack = context->tcp->recv_max_ack;
-		new_context->tcp->send_seq = context->tcp->send_seq;
-		new_context->tcp->send_ack = context->tcp->send_ack;
+		ret = tcp_backlog_ack(pkt, new_context);
+		if (ret < 0) {
+			NET_DBG("Cannot find context from TCP backlog");
+
+			net_context_unref(new_context);
+
+			goto conndrop;
+		}
 
 #if defined(CONFIG_NET_IPV6)
 		if (net_context_get_family(context) == AF_INET6) {
