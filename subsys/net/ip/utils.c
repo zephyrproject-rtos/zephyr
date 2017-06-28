@@ -403,19 +403,26 @@ static u16_t calc_chksum(u16_t sum, const u8_t *ptr, u16_t len)
 static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
 				       u16_t upper_layer_len)
 {
-	struct net_buf *frag = pkt->frags;
 	u16_t proto_len = net_pkt_ip_hdr_len(pkt) +
 		net_pkt_ipv6_ext_len(pkt);
-	s16_t len = frag->len - proto_len;
-	u8_t *ptr = frag->data + proto_len;
+	struct net_buf *frag;
+	u16_t offset;
+	s16_t len;
+	u8_t *ptr;
 
 	ARG_UNUSED(upper_layer_len);
 
-	if (len < 0) {
-		NET_DBG("1st fragment len %u < IP header len %u",
-			frag->len, proto_len);
+	frag = net_frag_skip(pkt->frags, proto_len, &offset, 0);
+	if (!frag) {
+		NET_DBG("Trying to read past pkt len (proto len %d)",
+			proto_len);
 		return 0;
 	}
+
+	NET_ASSERT(offset <= frag->len);
+
+	ptr = frag->data + offset;
+	len = frag->len - offset;
 
 	while (frag) {
 		sum = calc_chksum(sum, ptr, len);
