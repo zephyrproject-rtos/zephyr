@@ -4,5 +4,5 @@ sample:
 tests:
 -   test:
         build_only: true
-        filter: UART_CONSOLE
+        filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT
         tags: samples
