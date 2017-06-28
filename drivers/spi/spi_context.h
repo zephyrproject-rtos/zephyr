@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+enum spi_ctx_runtime_op_mode {
+	SPI_CTX_RUNTIME_OP_MODE_MASTER = BIT(0),
+	SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1),
+};
+
 struct spi_context {
 	const struct spi_config *config;
 
@@ -53,6 +58,11 @@ static inline bool spi_context_configured(struct spi_context *ctx,
 	return !!(ctx->config == config);
 }
 
+static inline bool spi_context_is_slave(struct spi_context *ctx)
+{
+	return (ctx->config->operation & SPI_OP_MODE_SLAVE);
+}
+
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
 				    struct k_poll_signal *signal)
@@ -67,7 +77,8 @@ static inline void spi_context_lock(struct spi_context *ctx,
 
 static inline void spi_context_release(struct spi_context *ctx, int status)
 {
-	if (!status && (ctx->config->operation & SPI_LOCK_ON)) {
+	if (!status &&
+	    (ctx->config->operation & (SPI_LOCK_ON | SPI_OP_MODE_SLAVE))) {
 		return;
 	}
 
@@ -113,7 +124,8 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 			k_poll_signal(ctx->signal, status);
 		}
 
-		if (!(ctx->config->operation & SPI_LOCK_ON)) {
+		if (!(ctx->config->operation & (SPI_LOCK_ON |
+						SPI_OP_MODE_SLAVE))) {
 			k_sem_give(&ctx->lock);
 		}
 	}
