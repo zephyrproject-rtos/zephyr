@@ -91,6 +91,8 @@ static void net_test_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
+#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
+
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp = NET_ICMP_HDR(pkt);

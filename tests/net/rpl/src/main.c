@@ -119,6 +119,8 @@ static void set_pkt_ll_addr(struct device *dev, struct net_pkt *pkt)
 	src->addr = rpl->mac_addr;
 }
 
+#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
+
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {

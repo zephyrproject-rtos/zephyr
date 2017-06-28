@@ -35,6 +35,28 @@ extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
 bool net_header_fits(struct net_pkt *pkt, u8_t *hdr, size_t hdr_size);
 
+struct net_icmp_hdr *net_pkt_icmp_data(struct net_pkt *pkt);
+u8_t *net_pkt_icmp_opt_data(struct net_pkt *pkt, size_t opt_len);
+
+/* Check if ICMP header can be directly accessed from memory.
+ * If returned value is NULL, then the header was split into
+ * multiple fragments and user must use net_pkt_read/write() etc to get/set
+ * the ICMP header values.
+ * If returned value is not NULL, then the first fragment will
+ * hold the ICMP header and returned value will point to start of ICMP header
+ * inside net_pkt.
+ */
+static inline
+struct net_icmp_hdr *net_icmp_header_fits(struct net_pkt *pkt,
+					  struct net_icmp_hdr *hdr)
+{
+	if (net_header_fits(pkt, (u8_t *)hdr, sizeof(*hdr))) {
+		return hdr;
+	}
+
+	return NULL;
+}
+
 #if defined(CONFIG_NET_IPV4)
 extern u16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */

@@ -1658,6 +1658,68 @@ void net_pkt_print(void)
 }
 #endif /* CONFIG_NET_DEBUG_NET_PKT */
 
+struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
+				 u16_t offset,
+				 u16_t *pos)
+{
+	struct net_buf *frag;
+
+	frag = net_frag_skip(pkt->frags, offset, pos, 0);
+	if (!frag) {
+		return NULL;
+	}
+
+	return frag;
+}
+
+struct net_icmp_hdr *net_pkt_icmp_data(struct net_pkt *pkt)
+{
+	struct net_buf *frag;
+	u16_t offset;
+
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt),
+				&offset);
+	if (!frag) {
+		/* We tried to read past the end of the data */
+		NET_ASSERT_INFO(frag,
+				"IP hdr %d ext len %d offset %d total %zd",
+				net_pkt_ip_hdr_len(pkt),
+				net_pkt_ipv6_ext_len(pkt),
+				offset, net_buf_frags_len(pkt->frags));
+		return NULL;
+	}
+
+	return (struct net_icmp_hdr *)(frag->data + offset);
+}
+
+u8_t *net_pkt_icmp_opt_data(struct net_pkt *pkt, size_t opt_len)
+{
+	struct net_buf *frag;
+	u16_t offset;
+
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) + opt_len,
+				&offset);
+	if (!frag) {
+		/* We tried to read past the end of the data */
+		NET_ASSERT_INFO(frag,
+				"IP hdr %d ext len %d offset %d pos %zd "
+				"total %zd",
+				net_pkt_ip_hdr_len(pkt),
+				net_pkt_ipv6_ext_len(pkt),
+				offset,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) + opt_len,
+				net_buf_frags_len(pkt->frags));
+		return NULL;
+	}
+
+	return frag->data + offset;
+}
+
 void net_pkt_init(void)
 {
 	NET_DBG("Allocating %u RX (%zu bytes), %u TX (%zu bytes), "

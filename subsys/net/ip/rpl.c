@@ -2767,12 +2767,14 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 	}
 
 	/* offset tells now where the ICMPv6 header is starting */
-	offset = net_pkt_icmp_data(pkt) - net_pkt_ip_data(pkt);
-
-	offset += sizeof(struct net_icmp_hdr);
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&offset);
 
 	/* First the DIO option. */
-	frag = net_frag_read_u8(pkt->frags, offset, &pos, &dio.instance_id);
+	frag = net_frag_read_u8(frag, offset, &pos, &dio.instance_id);
 	frag = net_frag_read_u8(frag, pos, &pos, &dio.version);
 	frag = net_frag_read_be16(frag, pos, &pos, &dio.rank);
 
@@ -3147,8 +3149,7 @@ static inline int dao_forward(struct net_if *iface,
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
 
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	net_icmpv6_set_chksum(pkt, pkt->frags);
 
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
@@ -3274,11 +3275,17 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	net_rpl_info(pkt, "Destination Advertisement Object");
 
 	/* offset tells now where the ICMPv6 header is starting */
-	offset = net_pkt_icmp_data(pkt) - net_pkt_ip_data(pkt);
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&offset);
 
-	offset += sizeof(struct net_icmp_hdr);
-
-	frag = net_frag_read_u8(pkt->frags, offset, &pos, &instance_id);
+	frag = net_frag_read_u8(frag, offset, &pos, &instance_id);
+	if (!frag) {
+		NET_DBG("Cannot get instance id");
+		return NET_DROP;
+	}
 
 	instance = net_rpl_get_instance(instance_id);
 	if (!instance) {
@@ -3538,11 +3545,13 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 	net_rpl_info(pkt, "Destination Advertisement Object Ack");
 
 	/* offset tells now where the ICMPv6 header is starting */
-	offset = net_pkt_icmp_data(pkt) - net_pkt_ip_data(pkt);
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&offset);
 
-	offset += sizeof(struct net_icmp_hdr);
-
-	frag = net_frag_read_u8(pkt->frags, offset, &pos, &instance_id);
+	frag = net_frag_read_u8(frag, offset, &pos, &instance_id);
 	if (!frag && pos == 0xffff) {
 		/* Read error */
 		return NET_DROP;

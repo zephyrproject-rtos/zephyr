@@ -134,12 +134,14 @@ const struct in_addr *net_ipv4_broadcast_address(void)
 static inline enum net_verdict process_icmpv4_pkt(struct net_pkt *pkt,
 						  struct net_ipv4_hdr *ipv4)
 {
-	struct net_icmp_hdr *hdr = NET_ICMP_HDR(pkt);
+	struct net_icmp_hdr hdr, *icmp_hdr;
+
+	icmp_hdr = net_icmpv4_get_hdr(pkt, &hdr);
 
 	NET_DBG("ICMPv4 packet received type %d code %d",
-		hdr->type, hdr->code);
+		icmp_hdr->type, icmp_hdr->code);
 
-	return net_icmpv4_input(pkt, hdr->type, hdr->code);
+	return net_icmpv4_input(pkt, icmp_hdr->type, icmp_hdr->code);
 }
 
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
