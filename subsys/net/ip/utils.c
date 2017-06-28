@@ -446,7 +446,7 @@ static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
 u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 {
 	u16_t upper_layer_len;
-	u16_t sum;
+	u16_t sum = 0;
 
 	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
@@ -456,11 +456,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 			net_pkt_ipv6_ext_len(pkt) -
 			net_pkt_ip_hdr_len(pkt);
 
-		if (proto == IPPROTO_ICMP) {
-			return htons(calc_chksum(0, net_pkt_ip_data(pkt) +
-						 net_pkt_ip_hdr_len(pkt),
-						 upper_layer_len));
-		} else {
+		if (proto != IPPROTO_ICMP) {
 			sum = calc_chksum(upper_layer_len + proto,
 					  (u8_t *)&NET_IPV4_HDR(pkt)->src,
 					  2 * sizeof(struct in_addr));
