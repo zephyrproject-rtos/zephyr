@@ -197,6 +197,17 @@ static inline int net_tcp_unregister(struct net_conn_handle *handle)
 	return net_conn_unregister(handle);
 }
 
+/*
+ * @brief Generate initial TCP sequence number
+ *
+ * @return Return a random TCP sequence number
+ */
+inline u32_t tcp_init_isn(void)
+{
+	/* Randomise initial seq number */
+	return sys_rand32_get();
+}
+
 const char * const net_tcp_state_str(enum net_tcp_state state);
 
 #if defined(CONFIG_NET_TCP)
