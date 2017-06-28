@@ -109,6 +109,15 @@ config NET_DEBUG_TCP
 	help
 	Enables TCP handler output debug messages
 
+config NET_TCP_BACKLOG_SIZE
+	int "Number of simultaneous incoming TCP connections"
+	depends on NET_TCP
+	default 1
+	range 1 128
+	help
+	The number of simultaneous TCP connection attempts, i.e. outstanding
+	TCP connections waiting for initial ACK.
+
 config NET_TCP_TIME_WAIT
 	bool "Enable TCP TIME_WAIT timeouts"
 	depends on NET_TCP
