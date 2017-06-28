@@ -171,3 +171,34 @@ Terminal #2:
 
 This will start 2nd QEMU instance, and you should see logging of data sent and
 received in both.
+
+Running multiple QEMU VMs of the same sample
+********************************************
+
+If you find yourself needing to run multiple instances of the same Zephyr
+sample application, which do not need to be able to talk to each other, the
+``QEMU_INSTANCE`` argument is what you need.
+
+Start socat and tunslip6 manually (avoiding loop-x.sh scripts) for as many
+instances as you want. Use the following as a guide, replacing MAIN or OTHER.
+
+Terminal #1:
+============
+
+.. code-block:: console
+
+   $ socat PTY,link=/tmp/slip.devMAIN UNIX-LISTEN:/tmp/slip.sockMAIN
+   $ $ZEPHYR_BASE/../net-tools/tunslip6 -t tapMAIN -T -s /tmp/slip.devMAIN \
+        2001:db8::1/64
+   # Now run Zephyr
+   $ make run QEMU_INSTANCE=MAIN
+
+Terminal #2:
+============
+
+.. code-block:: console
+
+   $ socat PTY,link=/tmp/slip.devOTHER UNIX-LISTEN:/tmp/slip.sockOTHER
+   $ $ZEPHYR_BASE/../net-tools/tunslip6 -t tapOTHER -T -s /tmp/slip.devOTHER \
+        2001:db8::1/64
+   $ make run QEMU_INSTANCE=OTHER

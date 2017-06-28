@@ -6,6 +6,8 @@
 
 # Abstraction of 'run' goal with Qemu
 
+# QEMU_INSTANCE is a command line argument to make. By appending the instance
+# name to the pid file we can easily run more instances of the same sample.
 QEMU_FLAGS = $(QEMU_FLAGS_$(ARCH)) -pidfile qemu$(QEMU_INSTANCE).pid
 
 ifneq ($(QEMU_PTY),)
