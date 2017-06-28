@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+enum spi_ctx_runtime_op_mode {
+	SPI_CTX_RUNTIME_OP_MODE_MASTER = BIT(0),
+	SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1),
+};
+
 struct spi_context {
 	const struct spi_config *config;
 
@@ -26,6 +31,10 @@ struct spi_context {
 	struct k_sem sync;
 	int sync_status;
 
+#ifdef CONFIG_SPI_SLAVE
+	struct gpio_callback cs_cb;
+	bool input_required;
+#endif
 #ifdef CONFIG_SPI_ASYNC
 	struct k_poll_signal *signal;
 	bool asynchronous;
@@ -53,6 +62,11 @@ static inline bool spi_context_configured(struct spi_context *ctx,
 	return !!(ctx->config == config);
 }
 
+static inline bool spi_context_is_slave(struct spi_context *ctx)
+{
+	return (ctx->config->operation & SPI_OP_MODE_SLAVE);
+}
+
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
 				    struct k_poll_signal *signal)
@@ -67,7 +81,8 @@ static inline void spi_context_lock(struct spi_context *ctx,
 
 static inline void spi_context_release(struct spi_context *ctx, int status)
 {
-	if (!status && (ctx->config->operation & SPI_LOCK_ON)) {
+	if (!status &&
+	    (ctx->config->operation & (SPI_LOCK_ON | SPI_OP_MODE_SLAVE))) {
 		return;
 	}
 
@@ -113,7 +128,8 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 			k_poll_signal(ctx->signal, status);
 		}
 
-		if (!(ctx->config->operation & SPI_LOCK_ON)) {
+		if (!(ctx->config->operation & (SPI_LOCK_ON |
+						SPI_OP_MODE_SLAVE))) {
 			k_sem_give(&ctx->lock);
 		}
 	}
@@ -123,35 +139,70 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 #endif /* CONFIG_SPI_ASYNC */
 }
 
+static inline bool spi_context_is_cs_controlled(struct spi_context *ctx)
+{
+	return (ctx->config->cs && ctx->config->cs->gpio_dev);
+}
+
 static inline void spi_context_cs_configure(struct spi_context *ctx)
 {
-	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
+	if (!spi_context_is_cs_controlled(ctx)) {
+		return;
+	}
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(ctx)) {
 		gpio_pin_configure(ctx->config->cs->gpio_dev,
 				   ctx->config->cs->gpio_pin,
-				   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-		gpio_pin_write(ctx->config->cs->gpio_dev,
-			       ctx->config->cs->gpio_pin, 1);
-	} else {
-		SYS_LOG_INF("CS control inhibited (no GPIO device)");
+				   GPIO_DIR_IN | GPIO_INT |
+				   GPIO_INT_DOUBLE_EDGE | GPIO_INT_DEBOUNCE);
+		return;
 	}
+#endif /* CONFIG_SPI_SLAVE */
+
+	gpio_pin_configure(ctx->config->cs->gpio_dev,
+			   ctx->config->cs->gpio_pin,
+			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
+	gpio_pin_write(ctx->config->cs->gpio_dev,
+		       ctx->config->cs->gpio_pin, 1);
 }
 
 static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 {
-	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
-		if (on) {
-			gpio_pin_write(ctx->config->cs->gpio_dev,
-				       ctx->config->cs->gpio_pin, 0);
-			k_busy_wait(ctx->config->cs->delay);
-		} else {
-			if (ctx->config->operation & SPI_HOLD_ON_CS) {
-				return;
-			}
+	if (!spi_context_is_cs_controlled(ctx)) {
+		return;
+	}
 
-			k_busy_wait(ctx->config->cs->delay);
-			gpio_pin_write(ctx->config->cs->gpio_dev,
-				       ctx->config->cs->gpio_pin, 1);
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(ctx)) {
+		if (on) {
+			gpio_add_callback(ctx->config->cs->gpio_dev,
+					  &ctx->cs_cb);
+			gpio_pin_enable_callback(ctx->config->cs->gpio_dev,
+						 ctx->config->cs->gpio_pin);
+		} else {
+			gpio_pin_disable_callback(ctx->config->cs->gpio_dev,
+						  ctx->config->cs->gpio_pin);
+			gpio_remove_callback(ctx->config->cs->gpio_dev,
+					     &ctx->cs_cb);
 		}
+
+		return;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
+	if (on) {
+		gpio_pin_write(ctx->config->cs->gpio_dev,
+			       ctx->config->cs->gpio_pin, 0);
+		k_busy_wait(ctx->config->cs->delay);
+	} else {
+		if (ctx->config->operation & SPI_HOLD_ON_CS) {
+			return;
+		}
+
+		k_busy_wait(ctx->config->cs->delay);
+		gpio_pin_write(ctx->config->cs->gpio_dev,
+			       ctx->config->cs->gpio_pin, 1);
 	}
 }
 
@@ -187,6 +238,9 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 		ctx->rx_len = 0;
 	}
 
+#ifdef CONFIG_SPI_SLAVE
+	ctx->input_required = tx_bufs ? true : false;
+#endif
 	ctx->sync_status = 0;
 
 	SYS_LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
@@ -290,6 +344,43 @@ static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 
 	return ctx->rx_len;
 }
+
+
+#ifdef CONFIG_SPI_SLAVE
+static inline
+void spi_context_slave_cs_cb_configure(struct spi_context *ctx,
+				       gpio_callback_handler_t handler)
+{
+	if (spi_context_is_cs_controlled(ctx)) {
+		gpio_init_callback(&ctx->cs_cb, handler,
+				   BIT(ctx->config->cs->gpio_pin));
+	}
+}
+
+static inline
+bool spi_context_is_slave_and_cs_controlled(struct spi_context *ctx)
+{
+	return !!(spi_context_is_slave(ctx) &&
+		  spi_context_is_cs_controlled(ctx));
+}
+
+static inline
+int spi_context_slave_request_input(struct spi_context *ctx)
+{
+	if (spi_context_is_slave(ctx) &&
+	    ctx->config->slave_cb && ctx->input_required) {
+		return ctx->config->slave_cb(ctx->config,
+					     SPI_SLAVE_EVENT_INPUT);
+	}
+
+	return 0;
+}
+
+#else
+#define spi_context_slave_cs_cb_configure(...)
+#define spi_context_is_slave_and_cs_controlled(...) false
+#define spi_context_slave_request_input(...) 0
+#endif /* CONFIG_SPI_SLAVE */
 
 #ifdef __cplusplus
 }
