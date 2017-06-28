@@ -25,6 +25,7 @@ struct spi_dw_config {
 	void *clock_data;
 #endif /* CONFIG_CLOCK_CONTROL */
 	spi_dw_config_t config_func;
+	u8_t op_modes;
 };
 
 #include "spi_context.h"
@@ -104,6 +105,9 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)
 #define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
 #define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
+
+#define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
+#define DW_SPI_CTRLR0_SLV_OE		BIT(DW_SPI_CTRLR0_SLV_OE_BIT)
 
 #define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
 #define DW_SPI_CTRLR0_TMOD_TX_RX	(0)
@@ -222,6 +226,7 @@ DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 16)
 DEFINE_MM_REG_READ(txflr, DW_SPI_REG_TXFLR, 32)
 DEFINE_MM_REG_READ(rxflr, DW_SPI_REG_RXFLR, 32)
 DEFINE_MM_REG_WRITE(imr, DW_SPI_REG_IMR, 8)
+DEFINE_MM_REG_READ(imr, DW_SPI_REG_IMR, 8)
 DEFINE_MM_REG_READ(isr, DW_SPI_REG_ISR, 8)
 
 DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
