@@ -1,7 +1,7 @@
 /** @file
- @brief Bluetooth shell functions
-
- This is not to be included by the application.
+ *  @brief Bluetooth shell functions
+ *
+ *  This is not to be included by the application.
  */
 
 /*
@@ -11,7 +11,7 @@
  */
 
 #ifndef __BT_H
-#define __bt_H
+#define __BT_H
 
 extern struct bt_conn *default_conn;
 
