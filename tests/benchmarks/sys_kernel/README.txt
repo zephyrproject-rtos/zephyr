@@ -34,7 +34,7 @@ Sample Output:
 MODULE: kernel API test
 KERNEL VERSION: 0x1066300
 
-Each test below is repeated 5000 times;
+Each test below is repeated 2500 times;
 average time for one iteration is displayed.
 
 TEST CASE: Semaphore #1
