@@ -12,7 +12,13 @@
 	compatible = "atmel,sam4s_xplained", "atmel,sam4s16c", "atmel,sam4s";
 
 	chosen {
+		zephyr,console = &uart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "ok";
 };
