@@ -28,6 +28,10 @@
 	status = "ok";
 };
 
+&i2c1 {
+	status = "ok";
+};
+
 &flash0 {
 	partitions {
 		/*
