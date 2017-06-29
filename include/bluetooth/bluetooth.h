@@ -105,6 +105,16 @@ enum {
 	 * providing SCAN_RSP data and/or enabling local privacy support.
 	 */
 	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
+
+	/** Don't try to resume connectable advertising after a connection.
+	 *  This option is only meaningful when used together with
+	 *  BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
+	 *  when bt_le_adv_stop() is called or when an incoming (slave)
+	 *  connection happens. If this option is not set the stack will
+	 *  take care of keeping advertising enabled even as connections
+	 *  occur.
+	 */
+	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
 };
 
 /** LE Advertising Parameters. */

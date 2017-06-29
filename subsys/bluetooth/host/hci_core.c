@@ -4275,7 +4275,9 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
+	if (!(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
+	}
 
 	return 0;
 }
