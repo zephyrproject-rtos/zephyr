@@ -25,11 +25,43 @@
 
 	soc {
 		uart0: uart@400E0800 {
-			compatible = "atmel,sam3x-uart";
+			compatible = "atmel,sam-uart";
 			reg = <0x400E0800 0x124>;
 			interrupts = <8 0>;
 			status = "disabled";
 			label = "UART_0";
+		};
+
+		usart0: usart@40098000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40098000 0x130>;
+			interrupts = <17 0>;
+			status = "disabled";
+			label = "USART_0";
+		};
+
+		usart1: usart@4009C000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x4009C000 0x130>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "USART_1";
+		};
+
+		usart2: usart@400A0000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x400A0000 0x130>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "USART_2";
+		};
+
+		usart3: usart@400A4000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x400A4000 0x130>;
+			interrupts = <20 0>;
+			status = "disabled";
+			label = "USART_3";
 		};
 	};
 };

@@ -19,22 +19,7 @@ config USART_SAM_PORT_0
 	depends on USART_SAM
 	default n
 	help
-	  Configure USART0 at boot depending on the additional options below.
-
-config USART_SAM_PORT_0_NAME
-	string "USART0 Device Name"
-	depends on USART_SAM_PORT_0
-	default "USART_0"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config USART_SAM_PORT_0_BAUD_RATE
-	int "USART0 Baud Rate"
-	depends on USART_SAM_PORT_0
-	default 115200
-	help
-	  USART0 baud rate to be set at boot.
+	  Enable USART0 at boot
 
 # ---------- Port 1 ----------
 
@@ -43,22 +28,7 @@ config USART_SAM_PORT_1
 	depends on USART_SAM
 	default n
 	help
-	  Configure USART1 at boot depending on the additional options below.
-
-config USART_SAM_PORT_1_NAME
-	string "USART1 Device Name"
-	depends on USART_SAM_PORT_1
-	default "USART_1"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config USART_SAM_PORT_1_BAUD_RATE
-	int "USART1 Baud Rate"
-	depends on USART_SAM_PORT_1
-	default 115200
-	help
-	  USART1 baud rate to be set at boot.
+	  Enable USART1 at boot
 
 # ---------- Port 2 ----------
 
@@ -67,19 +37,4 @@ config USART_SAM_PORT_2
 	depends on USART_SAM
 	default n
 	help
-	  Configure USART2 at boot depending on the additional options below.
-
-config USART_SAM_PORT_2_NAME
-	string "USART2 Device Name"
-	depends on USART_SAM_PORT_2
-	default "USART_2"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config USART_SAM_PORT_2_BAUD_RATE
-	int "USART2 Baud Rate"
-	depends on USART_SAM_PORT_2
-	default 115200
-	help
-	  USART2 baud rate to be set at boot.
+	  Enable USART2 at boot

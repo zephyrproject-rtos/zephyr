@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 
 #include <atmel/same70.dtsi>
@@ -7,7 +14,13 @@
 	compatible = "atmel,sam_e70_xplained", "atmel,same70q21", "atmel,same70";
 
 	chosen {
+		zephyr,console = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "ok";
 };
