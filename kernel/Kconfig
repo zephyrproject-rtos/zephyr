@@ -15,6 +15,13 @@ config HAS_DTS
 	This option specifies that the target platform supports device tree
 	configuration.
 
+config HAS_DTS_I2C
+	bool "I2C uses Device Tree"
+	depends on HAS_DTS
+	help
+	This option specifies that the target platform supports device tree
+	configuration for I2c.
+
 config MULTITHREADING
 	bool
 	prompt "Multi-threading"

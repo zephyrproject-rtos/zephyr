@@ -15,9 +15,6 @@ if I2C_2
 config I2C_2_DEFAULT_CFG
 	default 0x14
 
-config I2C_2_IRQ_PRI
-	default 0
-
 endif # I2C_2
 
 endif # BOARD_OLIMEXINO_STM32
