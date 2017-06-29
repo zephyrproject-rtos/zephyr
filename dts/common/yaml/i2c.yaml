@@ -1,0 +1,25 @@
+---
+title: I2C Base Structure
+id: i2c
+version: 0.1
+
+description: >
+    This binding gives the base structures for all I2C devices
+
+properties:
+  - clock-frequency :
+      type: int
+      category: optional
+      description: Maximum I2C bus clock frequency in Hz
+      generation: define
+  - clocks:
+      type: array
+      category: required
+      description: Clock gate information
+      generation: define
+  - label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...
