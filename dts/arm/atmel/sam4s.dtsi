@@ -22,6 +22,40 @@
 		compatible = "flash";
 		reg = <0x00400000 0x100000>;
 	};
+
+	soc {
+		uart0: uart@400E0600 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400E0600 0x200>;
+			interrupts = <8 0>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: uart@400E0800 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400E0800 0x200>;
+			interrupts = <9 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		usart0: usart@40024000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40024000 0x130>;
+			interrupts = <14 0>;
+			status = "disabled";
+			label = "USART_0";
+		};
+
+		usart1: usart@40028000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40028000 0x130>;
+			interrupts = <15 0>;
+			status = "disabled";
+			label = "USART_1";
+		};
+	};
 };
 
 &nvic {
