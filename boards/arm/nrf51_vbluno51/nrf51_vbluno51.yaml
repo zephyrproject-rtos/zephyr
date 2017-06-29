@@ -1,0 +1,8 @@
+identifier: nrf51_vbluno51
+name: nRF51-VBLUno51
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 32
