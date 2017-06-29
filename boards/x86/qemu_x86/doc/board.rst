@@ -50,6 +50,9 @@ uses the NS16550 serial driver operating in polling mode. To override, enable
 the UART_INTERRUPT_DRIVEN Kconfig option, which allows the system to be
 interrupt-driven.
 
+If SLIP networking is enabled (see below), an additional serial port will be
+used for it.
+
 Known Problems or Limitations
 =============================
 
@@ -94,3 +97,10 @@ Debugging
 =========
 
 Refer to the detailed overview about :ref:`application_debugging`.
+
+Networking
+==========
+
+The board supports SLIP networking over an emulated serial port
+(``CONFIG_NET_SLIP_TAP=y``). The detailed setup is described in
+:ref:`networking_with_qemu`.

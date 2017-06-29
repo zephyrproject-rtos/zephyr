@@ -51,6 +51,9 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART0.
 
+If SLIP networking is enabled (see below), an additional serial port will be
+used for it.
+
 Known Problems or Limitations
 ==============================
 
@@ -93,6 +96,13 @@ Debugging
 =========
 
 Refer to the detailed overview about :ref:`application_debugging`.
+
+Networking
+==========
+
+The board supports SLIP networking over an emulated serial port
+(``CONFIG_NET_SLIP_TAP=y``). The detailed setup is described in
+:ref:`networking_with_qemu`.
 
 References
 **********
