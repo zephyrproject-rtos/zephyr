@@ -23,7 +23,14 @@
 	PAD(STM32F4_PINMUX_FUNC_##pin##_##port##_##dir, \
 	    STM32F4X_PIN_CONFIG_AF_PUSH_UP),
 
+#define _PINMUX_I2C(pin, port, line)		\
+	PAD(STM32F4_PINMUX_FUNC_##pin##_I2C##port##_##line, \
+	    STM32F4X_PIN_CONFIG_AF_OPEN_UP),
+
 /* Blank pinmux by default */
+#define PINMUX_I2C1(pin, line)
+#define PINMUX_I2C2(pin, line)
+#define PINMUX_I2C3(pin, line)
 #define PINMUX_PWM2(pin, chan)
 #define PINMUX_UART1(pin, dir)
 #define PINMUX_UART2(pin, dir)
@@ -35,6 +42,21 @@
 #define PINMUX_UART8(pin, dir)
 #define PINMUX_UART9(pin, dir)
 #define PINMUX_UART10(pin, dir)
+
+#ifdef CONFIG_I2C_1
+	#undef PINMUX_I2C1
+	#define PINMUX_I2C1(pin, line)		_PINMUX_I2C(pin, 1, line)
+#endif
+
+#ifdef CONFIG_I2C_2
+	#undef PINMUX_I2C2
+	#define PINMUX_I2C2(pin, line)		_PINMUX_I2C(pin, 2, line)
+#endif
+
+#ifdef CONFIG_I2C_3
+	#undef PINMUX_I2C3
+	#define PINMUX_I2C3(pin, line)		_PINMUX_I2C(pin, 3, line)
+#endif
 
 #ifdef CONFIG_PWM_STM32_2
 	#undef PINMUX_PWM2
@@ -93,6 +115,7 @@
 
 #define PINMUX_PWM(pin, pwm, chan)		PINMUX_##pwm(pin, chan)
 #define PINMUX_UART(pin, port, dir)		PINMUX_##port(pin, dir)
+#define PINMUX_I2C(pin, i2c, line)		PINMUX_##i2c(pin, line)
 
 /* Port A */
 static const stm32_pin_func_t pin_pa0_funcs[] = {
@@ -114,6 +137,7 @@ static const stm32_pin_func_t pin_pa3_funcs[] = {
 
 static const stm32_pin_func_t pin_pa8_funcs[] = {
 	PINMUX_UART(PA8, UART7, RX)
+	PINMUX_I2C(PA8, I2C3, SCL)
 };
 
 static const stm32_pin_func_t pin_pa9_funcs[] = {
@@ -143,10 +167,12 @@ static const stm32_pin_func_t pin_pa15_funcs[] = {
 static const stm32_pin_func_t pin_pb3_funcs[] = {
 	PINMUX_UART(PB3, UART1, RX)
 	PINMUX_UART(PB3, UART7, RX)
+	PINMUX_I2C(PB3, I2C2, SDA)
 };
 
 static const stm32_pin_func_t pin_pb4_funcs[] = {
 	PINMUX_UART(PB4, UART7, TX)
+	PINMUX_I2C(PB4, I2C3, SDA)
 };
 
 static const stm32_pin_func_t pin_pb5_funcs[] = {
@@ -156,26 +182,32 @@ static const stm32_pin_func_t pin_pb5_funcs[] = {
 static const stm32_pin_func_t pin_pb6_funcs[] = {
 	PINMUX_UART(PB6, UART1, TX)
 	PINMUX_UART(PB6, UART5, TX)
+	PINMUX_I2C(PB6, I2C1, SCL)
 };
 
 static const stm32_pin_func_t pin_pb7_funcs[] = {
 	PINMUX_UART(PB7, UART1, RX)
+	PINMUX_I2C(PB7, I2C1, SDA)
 };
 
 static const stm32_pin_func_t pin_pb8_funcs[] = {
 	PINMUX_UART(PB8, UART5, RX)
+	PINMUX_I2C(PB8, I2C1, SCL)
 };
 
 static const stm32_pin_func_t pin_pb9_funcs[] = {
 	PINMUX_UART(PB9, UART5, TX)
+	PINMUX_I2C(PB9, I2C1, SDA)
 };
 
 static const stm32_pin_func_t pin_pb10_funcs[] = {
 	PINMUX_UART(PB10, UART3, TX)
+	PINMUX_I2C(PB10, I2C2, SCL)
 };
 
 static const stm32_pin_func_t pin_pb11_funcs[] = {
 	PINMUX_UART(PB11, UART3, RX)
+	PINMUX_I2C(PB11, I2C2, SDA)
 };
 
 static const stm32_pin_func_t pin_pb12_funcs[] = {
@@ -197,6 +229,10 @@ static const stm32_pin_func_t pin_pc6_funcs[] = {
 
 static const stm32_pin_func_t pin_pc7_funcs[] = {
 	PINMUX_UART(PC7, UART6, RX)
+};
+
+static const stm32_pin_func_t pin_pc9_funcs[] = {
+	PINMUX_I2C(PC9, I2C3, SDA)
 };
 
 static const stm32_pin_func_t pin_pc10_funcs[] = {
@@ -274,7 +310,16 @@ static const stm32_pin_func_t pin_pe8_funcs[] = {
 	PINMUX_UART(PE8, UART7, TX)
 };
 
+#ifdef GPIOF
 /* Port F */
+static const stm32_pin_func_t pin_pf0_funcs[] = {
+	PINMUX_I2C(PF0, I2C2, SDA)
+};
+
+static const stm32_pin_func_t pin_pf1_funcs[] = {
+	PINMUX_I2C(PF1, I2C2, SCL)
+};
+
 static const stm32_pin_func_t pin_pf6_funcs[] = {
 	PINMUX_UART(PF6, UART7, RX)
 };
@@ -290,7 +335,9 @@ static const stm32_pin_func_t pin_pf8_funcs[] = {
 static const stm32_pin_func_t pin_pf9_funcs[] = {
 	PINMUX_UART(PF9, UART8, TX)
 };
+#endif
 
+#ifdef GPIOG
 /* Port G */
 static const stm32_pin_func_t pin_pg0_funcs[] = {
 	PINMUX_UART(PG0, UART9, RX)
@@ -314,6 +361,23 @@ static const stm32_pin_func_t pin_pg12_funcs[] = {
 
 static const stm32_pin_func_t pin_pg14_funcs[] = {
 	PINMUX_UART(PG14, UART6, TX)
+};
+#endif
+
+/* Port H */
+static const stm32_pin_func_t pin_ph4_funcs[] = {
+	PINMUX_I2C(PH4, I2C2, SCL)
+};
+
+static const stm32_pin_func_t pin_ph5_funcs[] = {
+	PINMUX_I2C(PH5, I2C2, SDA)
+};
+
+static const stm32_pin_func_t pin_ph7_funcs[] = {
+	PINMUX_I2C(PH7, I2C3, SCL)
+};
+static const stm32_pin_func_t pin_ph8_funcs[] = {
+	PINMUX_I2C(PH8, I2C3, SDA)
 };
 
 /**
@@ -349,6 +413,7 @@ static const struct stm32_pinmux_conf pins[] = {
 	STM32_PIN_CONF(STM32_PIN_PC5, pin_pc5_funcs),
 	STM32_PIN_CONF(STM32_PIN_PC6, pin_pc6_funcs),
 	STM32_PIN_CONF(STM32_PIN_PC7, pin_pc7_funcs),
+	STM32_PIN_CONF(STM32_PIN_PC9, pin_pc9_funcs),
 	STM32_PIN_CONF(STM32_PIN_PC10, pin_pc10_funcs),
 	STM32_PIN_CONF(STM32_PIN_PC11, pin_pc11_funcs),
 	STM32_PIN_CONF(STM32_PIN_PC12, pin_pc12_funcs),
@@ -372,12 +437,17 @@ static const struct stm32_pinmux_conf pins[] = {
 	STM32_PIN_CONF(STM32_PIN_PE7, pin_pe7_funcs),
 	STM32_PIN_CONF(STM32_PIN_PE8, pin_pe8_funcs),
 
+#ifdef GPIOF
 	/* Port F */
+	STM32_PIN_CONF(STM32_PIN_PF0, pin_pf0_funcs),
+	STM32_PIN_CONF(STM32_PIN_PF1, pin_pf1_funcs),
 	STM32_PIN_CONF(STM32_PIN_PF6, pin_pf6_funcs),
 	STM32_PIN_CONF(STM32_PIN_PF7, pin_pf7_funcs),
 	STM32_PIN_CONF(STM32_PIN_PF8, pin_pf8_funcs),
 	STM32_PIN_CONF(STM32_PIN_PF9, pin_pf9_funcs),
+#endif
 
+#ifdef GPIOG
 	/* Port G */
 	STM32_PIN_CONF(STM32_PIN_PG0, pin_pg0_funcs),
 	STM32_PIN_CONF(STM32_PIN_PG1, pin_pg1_funcs),
@@ -385,6 +455,13 @@ static const struct stm32_pinmux_conf pins[] = {
 	STM32_PIN_CONF(STM32_PIN_PG11, pin_pg11_funcs),
 	STM32_PIN_CONF(STM32_PIN_PG12, pin_pg12_funcs),
 	STM32_PIN_CONF(STM32_PIN_PG14, pin_pg14_funcs),
+#endif
+
+	/* Port H */
+	STM32_PIN_CONF(STM32_PIN_PH4, pin_ph4_funcs),
+	STM32_PIN_CONF(STM32_PIN_PH5, pin_ph5_funcs),
+	STM32_PIN_CONF(STM32_PIN_PH7, pin_ph7_funcs),
+	STM32_PIN_CONF(STM32_PIN_PH8, pin_ph8_funcs),
 };
 
 int stm32_get_pin_config(int pin, int func)

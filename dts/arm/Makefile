@@ -44,6 +44,6 @@ dtb-$(CONFIG_BOARD_SAM4S_XPLAINED)	=	sam4s_xplained.dts_compiled
 dtb-$(CONFIG_BOARD_OLIMEX_STM32_E407)	=	olimex_stm32_e407.dts_compiled
 dtb-$(CONFIG_BOARD_CC2650_SENSORTAG)	= 	cc2650_sensortag.dts_compiled
 dtb-$(CONFIG_BOARD_STM32_MIN_DEV)	=	stm32_min_dev.dts_compiled
-
+dtb-$(CONFIG_BOARD_STM32F3_DISCO)       =       stm32f3_disco.dts_compiled
 always	:= $(dtb-y)
 endif
