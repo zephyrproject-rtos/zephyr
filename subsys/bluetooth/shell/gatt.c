@@ -350,11 +350,11 @@ int cmd_gatt_write(int argc, char *argv[])
 
 int cmd_gatt_write_without_rsp(int argc, char *argv[])
 {
-	int err;
-	bool sign;
 	u16_t handle;
-	u16_t len;
 	u16_t repeat;
+	int err = 0;
+	u16_t len;
+	bool sign;
 
 	if (!default_conn) {
 		printk("Not connected\n");

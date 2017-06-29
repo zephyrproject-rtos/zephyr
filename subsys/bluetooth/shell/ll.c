@@ -117,8 +117,8 @@ exit:
 
 int cmd_scanx(int argc, char *argv[])
 {
+	u8_t type = 0;
 	u8_t enable;
-	u8_t type;
 	s32_t err;
 
 	if (argc < 2) {
