@@ -94,6 +94,7 @@ config I2C_STM32_V1
 	bool "STM32 V1 Driver (F1/F4X)"
 	depends on SOC_FAMILY_STM32
 	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
+	select HAS_DTS_I2C
 	default n
 	help
 	  Enable I2C support on the STM32 F1 and F4X family of processors. This
@@ -103,6 +104,7 @@ config I2C_STM32_V2
 	bool "STM32 V2 Driver (F3/L4X)"
 	depends on SOC_FAMILY_STM32
 	depends on SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X
+	select HAS_DTS_I2C
 	default n
 	help
 	  Enable I2C support on the STM32 F3 and L4X family of processors. This
@@ -218,7 +220,7 @@ config I2C_1
 config I2C_1_NAME
 	string "Port 1 device name"
 	default "I2C_1"
-	depends on I2C_1
+	depends on I2C_1 && !HAS_DTS_I2C
 
 config I2C_1_DEFAULT_CFG
 	hex "Port 1 default configuration"
@@ -233,7 +235,7 @@ config I2C_1_DEFAULT_CFG
 
 config I2C_1_IRQ_PRI
 	int "Port 1 interrupt priority"
-	depends on I2C_1
+	depends on I2C_1 && !HAS_DTS_I2C
 	help
 	  IRQ priority.
 
@@ -244,7 +246,7 @@ config I2C_2
 config I2C_2_NAME
 	string "Port 2 device name"
 	default "I2C_2"
-	depends on I2C_2
+	depends on I2C_2 && !HAS_DTS_I2C
 
 config I2C_2_DEFAULT_CFG
 	hex "Port 2 default configuration"
@@ -259,7 +261,7 @@ config I2C_2_DEFAULT_CFG
 
 config I2C_2_IRQ_PRI
 	int "Port 2 interrupt priority"
-	depends on I2C_2
+	depends on I2C_2 && !HAS_DTS_I2C
 	help
 	  IRQ priority.
 
@@ -269,7 +271,7 @@ config I2C_3
 
 config I2C_3_NAME
 	string "Port 3 device name"
-	depends on I2C_3
+	depends on I2C_3 && !HAS_DTS_I2C
 	default "I2C_3"
 
 config I2C_3_DEFAULT_CFG
@@ -285,7 +287,7 @@ config I2C_3_DEFAULT_CFG
 
 config I2C_3_IRQ_PRI
 	int "Port 3 interrupt priority"
-	depends on I2C_3
+	depends on I2C_3 && !HAS_DTS_I2C
 	help
 	  IRQ priority.
 
