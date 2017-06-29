@@ -3686,19 +3686,23 @@ static void mayfly_xtal_stop_calc(void *params)
 
 	ticker_id = 0xff;
 	ticks_to_expire = 0;
-	ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
-				   RADIO_TICKER_USER_ID_JOB, &ticker_id,
-				   &ticks_current, &ticks_to_expire,
-				   ticker_if_done, (void *)&ret_cb);
+	do {
+		ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
+					   RADIO_TICKER_USER_ID_JOB, &ticker_id,
+					   &ticks_current, &ticks_to_expire,
+					   ticker_if_done, (void *)&ret_cb);
 
-	if (ret == TICKER_STATUS_BUSY) {
-		while (ret_cb == TICKER_STATUS_BUSY) {
-			ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
-					 RADIO_TICKER_USER_ID_JOB);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
+						 RADIO_TICKER_USER_ID_JOB);
+			}
 		}
-	}
 
-	LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+	} while (ticker_id != 0xff &&
+		 ticker_id >= (RADIO_TICKER_ID_FIRST_CONNECTION +
+			       _radio.connection_count));
 
 	if ((ticker_id != 0xff) &&
 	    (ticks_to_expire <
@@ -3910,7 +3914,9 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 			break;
 		}
 
-		if (ticker_id < RADIO_TICKER_ID_FIRST_CONNECTION) {
+		if (ticker_id < RADIO_TICKER_ID_FIRST_CONNECTION ||
+		    ticker_id >= (RADIO_TICKER_ID_FIRST_CONNECTION +
+				  _radio.connection_count)) {
 			continue;
 		}
 
@@ -4065,12 +4071,18 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 			break;
 		}
 
+		/* ticks_anchor shall not change during this loop */
 		if ((ticker_id_prev != 0xff) &&
 		    (ticks_anchor != ticks_anchor_prev)) {
 			LL_ASSERT(0);
 		}
 
-		if (ticker_id < RADIO_TICKER_ID_ADV) {
+		/* consider advertiser time as available. Any other time used by
+		 * tickers declared outside the controller is also available.
+		 */
+		if (ticker_id <= RADIO_TICKER_ID_ADV ||
+		    ticker_id >= (RADIO_TICKER_ID_FIRST_CONNECTION +
+				  _radio.connection_count)) {
 			continue;
 		}
 
@@ -4083,6 +4095,9 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 			continue;
 		}
 
+		/* TODO: handle scanner; for now we exit with as much we
+		 * where able to fill (offsets).
+		 */
 		if (ticker_id_other != 0xFF) {
 			break;
 		}
