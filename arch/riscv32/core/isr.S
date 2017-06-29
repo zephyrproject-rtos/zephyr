@@ -378,6 +378,15 @@ no_reschedule:
 	/* Restore context at SOC level */
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+
+	/* Restore MEPC register */
+	lw t0, __NANO_ESF_mepc_OFFSET(sp)
+	csrw mepc, t0
+
+	/* Restore SOC-specific MSTATUS register */
+	lw t0, __NANO_ESF_mstatus_OFFSET(sp)
+	csrw SOC_MSTATUS_REG, t0
+
 	/* Restore caller-saved registers from thread stack */
 	lw ra, __NANO_ESF_ra_OFFSET(sp)
 	lw gp, __NANO_ESF_gp_OFFSET(sp)
@@ -397,14 +406,6 @@ no_reschedule:
 	lw a5, __NANO_ESF_a5_OFFSET(sp)
 	lw a6, __NANO_ESF_a6_OFFSET(sp)
 	lw a7, __NANO_ESF_a7_OFFSET(sp)
-
-	/* Restore MEPC register */
-	lw t0, __NANO_ESF_mepc_OFFSET(sp)
-	csrw mepc, t0
-
-	/* Restore SOC-specific MSTATUS register */
-	lw t0, __NANO_ESF_mstatus_OFFSET(sp)
-	csrw SOC_MSTATUS_REG, t0
 
 	/* Release stack space */
 	addi sp, sp, __NANO_ESF_SIZEOF
