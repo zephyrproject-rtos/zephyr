@@ -58,13 +58,13 @@ typedef u32_t _timer_res_t;
 #define _TIMER_ZERO  0
 
 /* timestamp routines, from timestamps.c */
-extern void _TimestampOpen(void);
-extern u32_t _TimestampRead(void);
-extern void _TimestampClose(void);
+extern void _timestamp_open(void);
+extern u32_t _timestamp_read(void);
+extern void _timestamp_close(void);
 
-#define _TIMESTAMP_OPEN()	(_TimestampOpen())
-#define _TIMESTAMP_READ()	(_TimestampRead())
-#define _TIMESTAMP_CLOSE()	(_TimestampClose())
+#define _TIMESTAMP_OPEN()	(_timestamp_open())
+#define _TIMESTAMP_READ()	(_timestamp_read())
+#define _TIMESTAMP_CLOSE()	(_timestamp_close())
 
 #else
 #error "Unknown target"
