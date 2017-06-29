@@ -1,6 +1,5 @@
 tests:
 -   test:
-        arch_exclude: riscv32 # ZEP-2020
         min_ram: 16
         tags: crypto ecc dsa
         timeout: 180
