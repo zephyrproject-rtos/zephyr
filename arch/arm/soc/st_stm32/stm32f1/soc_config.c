@@ -108,7 +108,7 @@ static const stm32_pin_func_t pin_pb6_funcs[] = {
 };
 
 static const stm32_pin_func_t pin_pb7_funcs[] = {
-	PINMUX_I2C(PB6, I2C1, SDA)
+	PINMUX_I2C(PB7, I2C1, SDA)
 };
 
 static const stm32_pin_func_t pin_pb8_funcs[] = {
