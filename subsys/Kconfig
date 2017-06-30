@@ -1,25 +1,26 @@
 # Kconfig - Subsystem configuration options
 #
-# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2016-2017 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-
-source "subsys/fs/Kconfig"
-
-source "subsys/usb/Kconfig"
 
 source "subsys/bluetooth/Kconfig"
 
 source "subsys/console/Kconfig"
 
-source "subsys/disk/Kconfig"
-
-source "subsys/net/Kconfig"
-
-source "subsys/logging/Kconfig"
+source "subsys/cpp/Kconfig"
 
 source "subsys/debug/Kconfig"
 
+source "subsys/disk/Kconfig"
+
+source "subsys/fs/Kconfig"
+
+source "subsys/logging/Kconfig"
+
+source "subsys/net/Kconfig"
+
 source "subsys/shell/Kconfig"
 
+source "subsys/usb/Kconfig"

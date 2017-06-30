@@ -5,5 +5,6 @@ obj-$(CONFIG_NET_BUF) += net/
 obj-$(CONFIG_CONSOLE_SHELL) += shell/
 obj-$(CONFIG_CONSOLE_PULL) += console/
 obj-$(CONFIG_DISK_ACCESS) += disk/
+obj-$(CONFIG_CPLUSPLUS) += cpp/
 obj-y += logging/
 obj-y += debug/
