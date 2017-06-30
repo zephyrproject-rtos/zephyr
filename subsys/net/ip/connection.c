@@ -18,10 +18,12 @@
 
 #include <net/net_core.h>
 #include <net/net_pkt.h>
+#include <net/udp.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
 #include "icmpv4.h"
+#include "udp_internal.h"
 #include "connection.h"
 #include "net_stats.h"
 
@@ -43,12 +45,6 @@
 #define NET_RANK_REMOTE_SPEC_ADDR   BIT(5)
 
 static struct net_conn conns[CONFIG_NET_MAX_CONN];
-
-/* This is only used for getting source and destination ports. Because
- * both TCP and UDP header have these in the same location, we can check
- * them both using the UDP struct.
- */
-#define NET_CONN_HDR(pkt) ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
 
 #if defined(CONFIG_NET_CONN_CACHE)
 
@@ -213,13 +209,20 @@ static inline s32_t get_conn(enum net_ip_protocol proto,
 			       struct net_pkt *pkt,
 			       u32_t *cache_value)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		return NET_DROP;
+	}
+
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
 		return check_hash(proto, family,
 				  &NET_IPV4_HDR(pkt)->src,
 				  &NET_IPV4_HDR(pkt)->dst,
-				  NET_UDP_HDR(pkt)->src_port,
-				  NET_UDP_HDR(pkt)->dst_port,
+				  udp_hdr->src_port,
+				  udp_hdr->dst_port,
 				  cache_value);
 	}
 #endif
@@ -229,8 +232,8 @@ static inline s32_t get_conn(enum net_ip_protocol proto,
 		return check_hash(proto, family,
 				  &NET_IPV6_HDR(pkt)->src,
 				  &NET_IPV6_HDR(pkt)->dst,
-				  NET_UDP_HDR(pkt)->src_port,
-				  NET_UDP_HDR(pkt)->dst_port,
+				  udp_hdr->src_port,
+				  udp_hdr->dst_port,
 				  cache_value);
 	}
 #endif
@@ -289,14 +292,20 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 		if (conn_cache[*pos].idx >= 0) {
 			/* Connection is in the cache */
 			struct net_conn *conn;
+			struct net_udp_hdr hdr, *udp_hdr;
+
+			udp_hdr = net_udp_get_hdr(pkt, &hdr);
+			if (!udp_hdr) {
+				return NET_CONTINUE;
+			}
 
 			conn = &conns[conn_cache[*pos].idx];
 
 			NET_DBG("Cache %s listener for pkt %p src port %u "
 				"dst port %u family %d cache[%d] 0x%x",
 				net_proto2str(proto), pkt,
-				ntohs(NET_CONN_HDR(pkt)->src_port),
-				ntohs(NET_CONN_HDR(pkt)->dst_port),
+				ntohs(udp_hdr->src_port),
+				ntohs(udp_hdr->dst_port),
 				net_pkt_family(pkt), *pos,
 				conn_cache[*pos].value);
 
@@ -766,6 +775,7 @@ static inline void send_icmp_error(struct net_pkt *pkt)
 
 enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
 	int i, best_match = -1;
 	s16_t best_rank = -1;
 	u16_t chksum;
@@ -781,17 +791,26 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	}
 #endif
 
+	/* This is only used for getting source and destination ports.
+	 * Because both TCP and UDP header have these in the same
+	 * location, we can check them both using the UDP struct.
+	 */
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		return NET_DROP;
+	}
+
 	if (proto == IPPROTO_TCP) {
 		chksum = NET_TCP_HDR(pkt)->chksum;
 	} else {
-		chksum = NET_UDP_HDR(pkt)->chksum;
+		chksum = udp_hdr->chksum;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_DEBUG_CONN)) {
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "
 			"family %d chksum 0x%04x", net_proto2str(proto), pkt,
-			ntohs(NET_CONN_HDR(pkt)->src_port),
-			ntohs(NET_CONN_HDR(pkt)->dst_port),
+			ntohs(udp_hdr->src_port),
+			ntohs(udp_hdr->dst_port),
 			net_pkt_family(pkt), ntohs(chksum));
 	}
 
@@ -806,14 +825,14 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 
 		if (net_sin(&conns[i].remote_addr)->sin_port) {
 			if (net_sin(&conns[i].remote_addr)->sin_port !=
-			    NET_CONN_HDR(pkt)->src_port) {
+			    udp_hdr->src_port) {
 				continue;
 			}
 		}
 
 		if (net_sin(&conns[i].local_addr)->sin_port) {
 			if (net_sin(&conns[i].local_addr)->sin_port !=
-			    NET_CONN_HDR(pkt)->dst_port) {
+			    udp_hdr->dst_port) {
 				continue;
 			}
 		}
@@ -855,15 +874,13 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		    proto == IPPROTO_UDP) {
 			u16_t chksum_calc;
 
-			NET_UDP_HDR(pkt)->chksum = 0;
-			chksum_calc = ~net_calc_chksum_udp(pkt);
+			net_udp_set_chksum(pkt, pkt->frags);
+			chksum_calc = net_udp_get_chksum(pkt, pkt->frags);
 
 			if (chksum != chksum_calc) {
 				net_stats_update_udp_chkerr();
 				goto drop;
 			}
-
-			NET_UDP_HDR(pkt)->chksum = chksum;
 
 		} else if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
 			   proto == IPPROTO_TCP) {
@@ -876,8 +893,6 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 				net_stats_update_tcp_seg_chkerr();
 				goto drop;
 			}
-
-			NET_TCP_HDR(pkt)->chksum = chksum;
 		}
 
 #if defined(CONFIG_NET_CONN_CACHE)

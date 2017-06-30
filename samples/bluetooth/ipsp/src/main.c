@@ -15,6 +15,7 @@
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
+#include <net/udp.h>
 
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
@@ -205,10 +206,18 @@ static inline void set_dst_addr(sa_family_t family,
 				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data\n");
+		return;
+	}
+
 	net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
 			&NET_IPV6_HDR(pkt)->src);
 	net_sin6(dst_addr)->sin6_family = AF_INET6;
-	net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(pkt)->src_port;
+	net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 }
 
 static void udp_received(struct net_context *context,
