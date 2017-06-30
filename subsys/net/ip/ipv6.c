@@ -28,6 +28,7 @@
 #include "connection.h"
 #include "icmpv6.h"
 #include "udp_internal.h"
+#include "tcp.h"
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"
@@ -706,8 +707,7 @@ int net_ipv6_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 
 #if defined(CONFIG_NET_TCP)
 	if (next_header == IPPROTO_TCP) {
-		NET_TCP_HDR(pkt)->chksum = 0;
-		NET_TCP_HDR(pkt)->chksum = ~net_calc_chksum_tcp(pkt);
+		net_tcp_set_chksum(pkt, pkt->frags);
 	} else
 #endif
 
