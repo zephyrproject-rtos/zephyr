@@ -1363,7 +1363,7 @@ class TestSuite:
                     if set(plat.ignore_tags) & tc.tags:
                         continue
 
-                    if not tc.depends_on.issubset(set(plat.supported)):
+                    if tc.depends_on and not tc.depends_on.intersection(set(plat.supported)):
                         continue
 
                     if plat.flash < tc.min_flash:
@@ -1485,7 +1485,7 @@ class TestSuite:
                         discards[instance] = "Not enough RAM"
                         continue
 
-                    if not tc.depends_on.issubset(set(plat.supported)):
+                    if tc.depends_on and not tc.depends_on.intersection(set(plat.supported)):
                         discards[instance] = "No hardware support"
                         continue
 
