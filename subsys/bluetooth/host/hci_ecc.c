@@ -57,9 +57,12 @@ static const u8_t debug_public_key[64] = {
 enum {
 	PENDING_PUB_KEY,
 	PENDING_DHKEY,
+
+	/* Total number of flags - must be at the end of the enum */
+	NUM_FLAGS,
 };
 
-static atomic_t flags;
+static ATOMIC_DEFINE(flags, NUM_FLAGS);
 
 static K_SEM_DEFINE(cmd_sem, 0, 1);
 
@@ -158,7 +161,7 @@ static void emulate_le_p256_public_key_cmd(void)
 		memcpy(&evt->key[32], ecc.pk.y, 32);
 	}
 
-	atomic_clear_bit(&flags, PENDING_PUB_KEY);
+	atomic_clear_bit(flags, PENDING_PUB_KEY);
 
 	bt_recv(buf);
 }
@@ -196,7 +199,7 @@ static void emulate_le_generate_dhkey(void)
 		memcpy(evt->dhkey, ecc.dhkey, sizeof(ecc.dhkey));
 	}
 
-	atomic_clear_bit(&flags, PENDING_DHKEY);
+	atomic_clear_bit(flags, PENDING_DHKEY);
 
 	bt_recv(buf);
 }
@@ -206,9 +209,9 @@ static void ecc_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&cmd_sem, K_FOREVER);
 
-		if (atomic_test_bit(&flags, PENDING_PUB_KEY)) {
+		if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
 			emulate_le_p256_public_key_cmd();
-		} else if (atomic_test_bit(&flags, PENDING_DHKEY)) {
+		} else if (atomic_test_bit(flags, PENDING_DHKEY)) {
 			emulate_le_generate_dhkey();
 		} else {
 			__ASSERT(0, "Unhandled ECC command");
@@ -237,7 +240,7 @@ static void le_gen_dhkey(struct net_buf *buf)
 	struct bt_hci_cp_le_generate_dhkey *cmd;
 	u8_t status;
 
-	if (atomic_test_bit(&flags, PENDING_PUB_KEY)) {
+	if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
 		goto send_status;
 	}
@@ -247,7 +250,7 @@ static void le_gen_dhkey(struct net_buf *buf)
 		goto send_status;
 	}
 
-	if (atomic_test_and_set_bit(&flags, PENDING_DHKEY)) {
+	if (atomic_test_and_set_bit(flags, PENDING_DHKEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
 		goto send_status;
 	}
@@ -269,9 +272,9 @@ static void le_p256_pub_key(struct net_buf *buf)
 
 	net_buf_unref(buf);
 
-	if (atomic_test_bit(&flags, PENDING_DHKEY)) {
+	if (atomic_test_bit(flags, PENDING_DHKEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
-	} else if (atomic_test_and_set_bit(&flags, PENDING_PUB_KEY)) {
+	} else if (atomic_test_and_set_bit(flags, PENDING_PUB_KEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
 	} else {
 		k_sem_give(&cmd_sem);
