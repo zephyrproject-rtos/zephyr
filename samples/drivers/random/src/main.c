@@ -25,18 +25,28 @@ void main(void)
 
 	while (1) {
 #define BUFFER_LENGTH 10
-		u8_t buffer[BUFFER_LENGTH];
+		u8_t buffer[BUFFER_LENGTH] = {0};
 		int r;
 
-		r = random_get_entropy(dev, buffer, BUFFER_LENGTH);
+		/* The BUFFER_LENGTH-1 is used so the driver will not
+		 * write the last byte of the buffer. If that last
+		 * byte is not 0 on return it means the driver wrote
+		 * outside the passed buffer, and that should never
+		 * happen.
+		 */
+		r = random_get_entropy(dev, buffer, BUFFER_LENGTH-1);
 		if (r) {
 			printf("random_get_entropy failed: %d\n", r);
 			break;
-		};
+		}
 
-		for (int i = 0; i < BUFFER_LENGTH; i++) {
-			printf("  0x%x", buffer[i]);
-		};
+		if (buffer[BUFFER_LENGTH-1] != 0) {
+			printf("random_get_entropy buffer overflow\n");
+		}
+
+		for (int i = 0; i < BUFFER_LENGTH-1; i++) {
+			printf("  0x%02x", buffer[i]);
+		}
 
 		printf("\n");
 
