@@ -8481,7 +8481,9 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 		TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
 	_radio.scanner.hdr.ticks_preempt_to_start =
 		TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
-	_radio.scanner.hdr.ticks_slot = _radio.scanner.ticks_window;
+	_radio.scanner.hdr.ticks_slot =
+		_radio.scanner.ticks_window +
+		TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US);
 
 	ticks_interval = TICKER_US_TO_TICKS((u64_t) interval * 625);
 	if (_radio.scanner.hdr.ticks_slot >
