@@ -9,6 +9,7 @@
 config  MQTT_LIB
 	bool "MQTT Library Support"
 	default n
+	select NET_APP_CLIENT
 	help
 	Enable the Zephyr MQTT Library
 

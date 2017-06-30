@@ -9,6 +9,7 @@
 
 #include <net/mqtt_types.h>
 #include <net/net_context.h>
+#include <net/net_app.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,10 +62,14 @@ enum mqtt_app {
  * the state of the received and sent messages.</b>
  */
 struct mqtt_ctx {
-	/** IP stack context structure */
-	struct net_context *net_ctx;
-	/** Network timeout for tx and rx routines */
+	/** Net app context structure */
+	struct net_app_ctx net_app_ctx;
+	s32_t net_init_timeout;
 	s32_t net_timeout;
+
+	/** Connectivity */
+	char *peer_addr_str;
+	u16_t peer_port;
 
 	/** Callback executed when a MQTT CONNACK msg is received and validated.
 	 * If this function pointer is not used, must be set to NULL.
@@ -175,6 +180,23 @@ struct mqtt_ctx {
  * @retval 0, always.
  */
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type);
+
+/**
+ * Release the MQTT context structure
+ *
+ * @param ctx MQTT context structure
+ * @retval 0 on success, and <0 if error
+ */
+int mqtt_close(struct mqtt_ctx *ctx);
+
+/**
+ * Connect to an MQTT broker
+ *
+ * @param ctx MQTT context structure
+ * @retval 0 on success, and <0 if error
+ */
+
+int mqtt_connect(struct mqtt_ctx *ctx);
 
 /**
  * Sends the MQTT CONNECT message
