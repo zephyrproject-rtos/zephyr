@@ -27,6 +27,30 @@ static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __aligned(4);
 static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __aligned(4);
 static u8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __aligned(4);
 
+static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
+{
+	__ASSERT_NO_MSG(heth != NULL);
+
+	u32_t tmp = heth->Instance->MACFFR;
+
+	/* disable multicast filtering */
+	tmp &= ~(ETH_MULTICASTFRAMESFILTER_PERFECTHASHTABLE |
+		 ETH_MULTICASTFRAMESFILTER_HASHTABLE |
+		 ETH_MULTICASTFRAMESFILTER_PERFECT);
+
+	/* enable receiving all multicast frames */
+	tmp |= ETH_MULTICASTFRAMESFILTER_NONE;
+
+	heth->Instance->MACFFR = tmp;
+
+	/* Wait until the write operation will be taken into account:
+	 * at least four TX_CLK/RX_CLK clock cycles
+	 */
+	tmp = heth->Instance->MACFFR;
+	k_sleep(1);
+	heth->Instance->MACFFR = tmp;
+}
+
 static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct device *dev;
@@ -326,6 +350,8 @@ static void eth0_iface_init(struct net_if *iface)
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
 
 	HAL_ETH_Start(heth);
+
+	disable_mcast_filter(heth);
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,
