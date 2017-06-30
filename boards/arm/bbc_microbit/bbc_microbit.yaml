@@ -8,3 +8,5 @@ toolchain:
 ram: 16
 testing:
         default: true
+supported:
+  - ble
