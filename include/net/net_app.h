@@ -233,16 +233,29 @@ typedef int (*net_app_entropy_src_cb_t)(void *data, unsigned char *output,
 					size_t len, size_t *olen);
 #endif /* CONFIG_NET_APP_TLS */
 
+/* Information for the context and local/remote addresses used. */
+struct net_app_endpoint {
+	/** Network context. */
+	struct net_context *ctx;
+
+	/** Local address */
+	struct sockaddr local;
+
+	/** Remote address */
+	struct sockaddr remote;
+};
+
 /** Network application context. */
 struct net_app_ctx {
 #if defined(CONFIG_NET_IPV6)
-	/** Network IPv6 context. */
-	struct net_context *ipv6_ctx;
+	struct net_app_endpoint ipv6;
 #endif
 #if defined(CONFIG_NET_IPV4)
-	/** Network IPv4 context. */
-	struct net_context *ipv4_ctx;
+	struct net_app_endpoint ipv4;
 #endif
+
+	/** What is the default endpoint for this context. */
+	struct net_app_endpoint *default_ctx;
 
 	/** Internal function that is called when user data is sent to
 	 * network. By default this is set to net_context_sendto() but
@@ -258,12 +271,6 @@ struct net_app_ctx {
 	 * application.
 	 */
 	net_context_recv_cb_t recv_cb;
-
-	/** Local address */
-	struct sockaddr local;
-
-	/** Remote address */
-	struct sockaddr remote;
 
 #if defined(CONFIG_NET_APP_SERVER)
 	struct {
@@ -763,11 +770,13 @@ int net_app_send_buf(struct net_app_ctx *ctx,
  * @brief Create network packet.
  *
  * @param ctx Network application context.
+ * @param family What kind of network packet to get (AF_INET or AF_INET6)
  * @param timeout How long to wait the send before giving up.
  *
  * @return valid net_pkt if ok, NULL if error.
  */
 struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
+				    sa_family_t family,
 				    s32_t timeout);
 
 /**
