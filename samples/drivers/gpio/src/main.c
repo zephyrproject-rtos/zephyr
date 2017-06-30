@@ -108,6 +108,12 @@
  * Toggling GPIO_8
  * GPIO_24 triggered
  * "
+ *
+ * ESP32
+ * -----
+ *
+ * An LED should be connected to pin IO4, and either a jumper cable or
+ * button should be connected between IO2 and GND.
  */
 
 #include <zephyr.h>
@@ -138,6 +144,10 @@
 #define GPIO_OUT_PIN	10
 #define GPIO_INT_PIN	4
 #define GPIO_NAME	"GPIO_"
+#elif defined(CONFIG_SOC_ESP32)
+#define GPIO_OUT_PIN	4
+#define GPIO_INT_PIN	2
+#define GPIO_NAME	"GPIO_"
 #endif
 
 #if defined(CONFIG_GPIO_DW_0)
@@ -148,6 +158,8 @@
 #define GPIO_DRV_NAME CONFIG_GPIO_QMSI_SS_0_NAME
 #elif defined(CONFIG_GPIO_ATMEL_SAM3)
 #define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
+#elif defined(CONFIG_GPIO_ESP32)
+#define GPIO_DRV_NAME CONFIG_GPIO_ESP32_0_NAME
 #else
 #define GPIO_DRV_NAME "GPIO_0"
 #endif
