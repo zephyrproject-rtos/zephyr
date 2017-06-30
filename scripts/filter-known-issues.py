@@ -43,8 +43,8 @@ exclude_regexs = []
 # first is a list of one or more comment lines
 # followed by a list of non-comments which describe a multiline regex
 config_regex = \
-    "(?P<comment>(^\s*#.*\n)+)" \
-    "(?P<regex>(^[^#].*\n)+)"
+    b"(?P<comment>(^\s*#.*\n)+)" \
+    b"(?P<regex>(^[^#].*\n)+)"
 
 def config_import_file(filename):
     """
@@ -72,7 +72,7 @@ def config_import_file(filename):
                     raise
                 logging.debug("%s: found regex at bytes %d-%d: %s",
                               filename, m.start(), m.end(), regex)
-                if '#WARNING' in comment:
+                if b'#WARNING' in comment:
                     exclude_regexs.append((r, origin, ('warning',)))
                 else:
                     exclude_regexs.append((r, origin, ()))
