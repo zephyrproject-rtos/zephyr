@@ -33,6 +33,7 @@ static struct device *monitor_dev;
 
 enum {
 	BT_LOG_BUSY,
+	BT_CONSOLE_BUSY,
 };
 
 static atomic_t flags;
@@ -211,13 +212,14 @@ static int monitor_console_out(int c)
 {
 	static char buf[128];
 	static size_t len;
-	int key;
 
-	key = irq_lock();
+	if (atomic_test_and_set_bit(&flags, BT_CONSOLE_BUSY)) {
+		return c;
+	}
 
 	if (c != '\n' && len < sizeof(buf) - 1) {
 		buf[len++] = c;
-		irq_unlock(key);
+		atomic_clear_bit(&flags, BT_CONSOLE_BUSY);
 		return c;
 	}
 
@@ -226,7 +228,7 @@ static int monitor_console_out(int c)
 	bt_monitor_send(BT_MONITOR_SYSTEM_NOTE, buf, len);
 	len = 0;
 
-	irq_unlock(key);
+	atomic_clear_bit(&flags, BT_CONSOLE_BUSY);
 
 	return c;
 }
