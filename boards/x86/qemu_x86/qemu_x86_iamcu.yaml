@@ -6,5 +6,6 @@ toolchain:
   - zephyr
 supported:
   - pci
+  - net
 testing:
         default: true

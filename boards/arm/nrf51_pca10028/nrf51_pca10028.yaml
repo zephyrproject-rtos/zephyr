@@ -6,3 +6,5 @@ toolchain:
   - zephyr
   - gccarmemb
 ram: 32
+supported:
+  - ble
