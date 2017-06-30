@@ -23,6 +23,7 @@
 #include "net_stats.h"
 #include "icmpv4.h"
 #include "udp_internal.h"
+#include "tcp.h"
 #include "ipv4.h"
 
 struct net_pkt *net_ipv4_create_raw(struct net_pkt *pkt,
@@ -103,8 +104,7 @@ int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 #endif
 #if defined(CONFIG_NET_TCP)
 	if (next_header == IPPROTO_TCP) {
-		NET_TCP_HDR(pkt)->chksum = 0;
-		NET_TCP_HDR(pkt)->chksum = ~net_calc_chksum_tcp(pkt);
+		net_tcp_set_chksum(pkt, pkt->frags);
 	}
 #endif
 

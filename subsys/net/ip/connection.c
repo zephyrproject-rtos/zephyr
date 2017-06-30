@@ -24,6 +24,7 @@
 #include "icmpv6.h"
 #include "icmpv4.h"
 #include "udp_internal.h"
+#include "tcp.h"
 #include "connection.h"
 #include "net_stats.h"
 
@@ -801,7 +802,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	}
 
 	if (proto == IPPROTO_TCP) {
-		chksum = NET_TCP_HDR(pkt)->chksum;
+		chksum = net_tcp_get_chksum(pkt, pkt->frags);
 	} else {
 		chksum = udp_hdr->chksum;
 	}
@@ -886,8 +887,8 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			   proto == IPPROTO_TCP) {
 			u16_t chksum_calc;
 
-			NET_TCP_HDR(pkt)->chksum = 0;
-			chksum_calc = ~net_calc_chksum_tcp(pkt);
+			net_tcp_set_chksum(pkt, pkt->frags);
+			chksum_calc = net_tcp_get_chksum(pkt, pkt->frags);
 
 			if (chksum != chksum_calc) {
 				net_stats_update_tcp_seg_chkerr();

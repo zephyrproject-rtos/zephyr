@@ -70,6 +70,19 @@ struct net_udp_hdr *net_udp_header_fits(struct net_pkt *pkt,
 	return NULL;
 }
 
+struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt);
+
+static inline
+struct net_tcp_hdr *net_tcp_header_fits(struct net_pkt *pkt,
+					struct net_tcp_hdr *hdr)
+{
+	if (net_header_fits(pkt, (u8_t *)hdr, sizeof(*hdr))) {
+		return hdr;
+	}
+
+	return NULL;
+}
+
 #if defined(CONFIG_NET_IPV4)
 extern u16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */
