@@ -6,6 +6,9 @@
 #if defined(CONFIG_SOC_QUARK_SE_C1000)
 #define DT_FLASH_SIZE		__SIZE_K(144)
 #define DT_SRAM_SIZE		__SIZE_K(55)
+#elif defined(CONFIG_SOC_QUARK_D2000)
+#define DT_FLASH_SIZE		__SIZE_K(32)
+#define DT_SRAM_SIZE		__SIZE_K(8)
 #else
 #error "Flash and RAM sizes not defined for this chip"
 #endif
