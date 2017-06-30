@@ -67,6 +67,22 @@ char *_net_app_sprint_ipaddr(char *buf, int buflen,
 
 	return buf;
 }
+
+void _net_app_print_info(struct net_app_ctx *ctx)
+{
+#define PORT_STR_LEN sizeof("[]:xxxxx")
+	char local[NET_IPV6_ADDR_LEN + PORT_STR_LEN];
+	char remote[NET_IPV6_ADDR_LEN + PORT_STR_LEN];
+
+	_net_app_sprint_ipaddr(local, sizeof(local), &ctx->default_ctx->local);
+	_net_app_sprint_ipaddr(remote, sizeof(remote),
+			       &ctx->default_ctx->remote);
+
+	NET_DBG("net app connect %s %s %s",
+		local,
+		ctx->app_type == NET_APP_CLIENT ? "->" : "<-",
+		remote);
+}
 #endif /* CONFIG_NET_DEBUG_APP */
 
 #if defined(CONFIG_NET_APP_SERVER) || defined(CONFIG_NET_APP_CLIENT)
@@ -228,14 +244,14 @@ static int setup_ipv4_ctx(struct net_app_ctx *ctx,
 {
 	int ret;
 
-	ret = net_context_get(AF_INET, sock_type, proto, &ctx->ipv4_ctx);
+	ret = net_context_get(AF_INET, sock_type, proto, &ctx->ipv4.ctx);
 	if (ret < 0) {
 		NET_ERR("Cannot get network context (%d)", ret);
-		ctx->ipv4_ctx = NULL;
+		ctx->ipv4.ctx = NULL;
 		return ret;
 	}
 
-	net_context_setup_pools(ctx->ipv4_ctx, ctx->tx_slab,
+	net_context_setup_pools(ctx->ipv4.ctx, ctx->tx_slab,
 				ctx->data_pool);
 
 	return ret;
@@ -250,14 +266,14 @@ static int setup_ipv6_ctx(struct net_app_ctx *ctx,
 {
 	int ret;
 
-	ret = net_context_get(AF_INET6, sock_type, proto, &ctx->ipv6_ctx);
+	ret = net_context_get(AF_INET6, sock_type, proto, &ctx->ipv6.ctx);
 	if (ret < 0) {
 		NET_ERR("Cannot get network context (%d)", ret);
-		ctx->ipv6_ctx = NULL;
+		ctx->ipv6.ctx = NULL;
 		return ret;
 	}
 
-	net_context_setup_pools(ctx->ipv6_ctx, ctx->tx_slab,
+	net_context_setup_pools(ctx->ipv6.ctx, ctx->tx_slab,
 				ctx->data_pool);
 
 	return ret;
@@ -265,6 +281,15 @@ static int setup_ipv6_ctx(struct net_app_ctx *ctx,
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_APP_SERVER) || defined(CONFIG_NET_APP_CLIENT)
+static void select_default_ctx(struct net_app_ctx *ctx)
+{
+#if defined(CONFIG_NET_IPV6)
+	ctx->default_ctx = &ctx->ipv6;
+#elif defined(CONFIG_NET_IPV4)
+	ctx->default_ctx = &ctx->ipv4;
+#endif
+}
+
 int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			      enum net_sock_type sock_type,
 			      enum net_ip_protocol proto,
@@ -272,31 +297,59 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 {
 	int ret;
 
-	if (addr->family == AF_INET6) {
+	if (!addr) {
 #if defined(CONFIG_NET_IPV6)
-		ret = setup_ipv6_ctx(ctx, sock_type, proto);
-#else
-		ret = -EPFNOSUPPORT;
-		goto fail;
+		if (ctx->ipv6.local.family == AF_INET6 ||
+		    ctx->ipv6.local.family == AF_UNSPEC) {
+			ret = setup_ipv6_ctx(ctx, sock_type, proto);
+		} else {
+			ret = -EPFNOSUPPORT;
+			goto fail;
+		}
 #endif
-	} else if (addr->family == AF_INET) {
+
 #if defined(CONFIG_NET_IPV4)
-		ret = setup_ipv4_ctx(ctx, sock_type, proto);
-#else
-		ret = -EPFNOSUPPORT;
-		goto fail;
+		if (ctx->ipv4.local.family == AF_INET ||
+		    ctx->ipv4.local.family == AF_UNSPEC) {
+			ret = setup_ipv4_ctx(ctx, sock_type, proto);
+		} else {
+			ret = -EPFNOSUPPORT;
+			goto fail;
+		}
 #endif
-	} else if (addr->family == AF_UNSPEC) {
-#if defined(CONFIG_NET_IPV4)
-		ret = setup_ipv4_ctx(ctx, sock_type, proto);
-#endif
-		/* We ignore the IPv4 error if IPv6 is enabled */
-#if defined(CONFIG_NET_IPV6)
-		ret = setup_ipv6_ctx(ctx, sock_type, proto);
-#endif
+
+		select_default_ctx(ctx);
 	} else {
-		ret = -EINVAL;
-		goto fail;
+		if (addr->family == AF_INET6) {
+#if defined(CONFIG_NET_IPV6)
+			ret = setup_ipv6_ctx(ctx, sock_type, proto);
+			ctx->default_ctx = &ctx->ipv6;
+#else
+			ret = -EPFNOSUPPORT;
+			goto fail;
+#endif
+		} else if (addr->family == AF_INET) {
+#if defined(CONFIG_NET_IPV4)
+			ret = setup_ipv4_ctx(ctx, sock_type, proto);
+			ctx->default_ctx = &ctx->ipv4;
+#else
+			ret = -EPFNOSUPPORT;
+			goto fail;
+#endif
+		} else if (addr->family == AF_UNSPEC) {
+#if defined(CONFIG_NET_IPV4)
+			ret = setup_ipv4_ctx(ctx, sock_type, proto);
+			ctx->default_ctx = &ctx->ipv4;
+#endif
+			/* We ignore the IPv4 error if IPv6 is enabled */
+#if defined(CONFIG_NET_IPV6)
+			ret = setup_ipv6_ctx(ctx, sock_type, proto);
+			ctx->default_ctx = &ctx->ipv6;
+#endif
+		} else {
+			ret = -EINVAL;
+			goto fail;
+		}
 	}
 
 fail:
@@ -315,16 +368,16 @@ int net_app_release(struct net_app_ctx *ctx)
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	if (ctx->ipv6_ctx) {
-		net_context_put(ctx->ipv6_ctx);
-		ctx->ipv6_ctx = NULL;
+	if (ctx->ipv6.ctx) {
+		net_context_put(ctx->ipv6.ctx);
+		ctx->ipv6.ctx = NULL;
 	}
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (ctx->ipv4_ctx) {
-		net_context_put(ctx->ipv4_ctx);
-		ctx->ipv4_ctx = NULL;
+	if (ctx->ipv4.ctx) {
+		net_context_put(ctx->ipv4.ctx);
+		ctx->ipv4.ctx = NULL;
 	}
 #endif /* CONFIG_NET_IPV4 */
 
@@ -333,18 +386,33 @@ int net_app_release(struct net_app_ctx *ctx)
 	return 0;
 }
 
-struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx)
+struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx,
+					    const struct sockaddr *dst)
 {
 #if defined(CONFIG_NET_APP_CLIENT)
 	if (ctx->app_type == NET_APP_CLIENT) {
-		if (ctx->remote.family == AF_INET6) {
-#if defined(CONFIG_NET_IPV6)
-			return ctx->ipv6_ctx;
-#endif
-		} else if (ctx->remote.family == AF_INET) {
+		if (!dst) {
+			return ctx->default_ctx->ctx;
+		} else {
+			if (dst->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-			return ctx->ipv4_ctx;
+				return ctx->ipv4.ctx;
+#else
+				return NULL;
 #endif
+			}
+
+			if (dst->family == AF_INET6) {
+#if defined(CONFIG_NET_IPV6)
+				return ctx->ipv6.ctx;
+#else
+				return NULL;
+#endif
+			}
+
+			if (dst->family == AF_UNSPEC) {
+				return ctx->default_ctx->ctx;
+			}
 		}
 	}
 #endif /* CONFIG_NET_APP_CLIENT */
@@ -354,14 +422,24 @@ struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx)
 		if (ctx->proto == IPPROTO_TCP) {
 			return ctx->server.net_ctx;
 		} else if (ctx->proto == IPPROTO_UDP) {
-			if (ctx->local.family == AF_INET6) {
-#if defined(CONFIG_NET_IPV6)
-				return ctx->ipv6_ctx;
-#endif
-			} else if (ctx->local.family == AF_INET) {
+			if (!dst) {
+				return ctx->default_ctx->ctx;
+			} else {
+				if (dst->family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-				return ctx->ipv4_ctx;
+					return ctx->ipv4.ctx;
+#else
+					return NULL;
 #endif
+				}
+
+				if (dst->family == AF_INET6) {
+#if defined(CONFIG_NET_IPV6)
+					return ctx->ipv6.ctx;
+#else
+					return NULL;
+#endif
+				}
 			}
 		}
 	}
@@ -434,12 +512,24 @@ int net_app_send_pkt(struct net_app_ctx *ctx,
 	net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
 
 	if (!dst && ctx->proto == IPPROTO_UDP) {
-		dst = &ctx->remote;
-
-		if (ctx->remote.family == AF_INET) {
+		if (net_pkt_family(pkt) == AF_INET) {
+#if defined(CONFIG_NET_IPV4)
+			dst = &ctx->ipv4.remote;
 			dst_len = sizeof(struct sockaddr_in);
+#else
+			return -EPFNOSUPPORT;
+#endif
 		} else {
-			dst_len = sizeof(struct sockaddr_in6);
+			if (net_pkt_family(pkt) == AF_INET6) {
+#if defined(CONFIG_NET_IPV6)
+				dst = &ctx->ipv6.remote;
+				dst_len = sizeof(struct sockaddr_in6);
+#else
+				return -EPFNOSUPPORT;
+#endif
+			} else {
+				return -EPFNOSUPPORT;
+			}
 		}
 	}
 
@@ -478,7 +568,7 @@ int net_app_send_buf(struct net_app_ctx *ctx,
 		return -EMSGSIZE;
 	}
 
-	net_ctx = _net_app_select_net_ctx(ctx);
+	net_ctx = _net_app_select_net_ctx(ctx, dst);
 	if (!net_ctx) {
 		return -ENOENT;
 	}
@@ -523,9 +613,11 @@ send:
 }
 
 struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
+				    sa_family_t family,
 				    s32_t timeout)
 {
 	struct net_context *net_ctx;
+	struct sockaddr dst;
 
 	if (!ctx) {
 		return NULL;
@@ -535,7 +627,9 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 		return NULL;
 	}
 
-	net_ctx = _net_app_select_net_ctx(ctx);
+	dst.family = family;
+
+	net_ctx = _net_app_select_net_ctx(ctx, &dst);
 	if (!net_ctx) {
 		return NULL;
 	}
@@ -570,7 +664,7 @@ int net_app_close(struct net_app_ctx *ctx)
 		return -ENOENT;
 	}
 
-	net_ctx = _net_app_select_net_ctx(ctx);
+	net_ctx = _net_app_select_net_ctx(ctx, NULL);
 	if (!net_ctx) {
 		return -EAFNOSUPPORT;
 	}
@@ -633,7 +727,7 @@ int _net_app_ssl_tx(void *context, const unsigned char *buf, size_t size)
 	struct net_pkt *send_buf;
 	int ret, len;
 
-	send_buf = net_app_get_net_pkt(ctx, BUF_ALLOC_TIMEOUT);
+	send_buf = net_app_get_net_pkt(ctx, AF_UNSPEC, BUF_ALLOC_TIMEOUT);
 	if (!send_buf) {
 		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 	}
@@ -950,23 +1044,6 @@ int _net_app_entropy_source(void *data, unsigned char *output, size_t len,
 	return 0;
 }
 
-#if defined(CONFIG_NET_DEBUG_APP)
-void _net_app_print_info(struct net_app_ctx *ctx)
-{
-#define PORT_STR_LEN sizeof("[]:xxxxx")
-	char local[NET_IPV6_ADDR_LEN + PORT_STR_LEN];
-	char remote[NET_IPV6_ADDR_LEN + PORT_STR_LEN];
-
-	_net_app_sprint_ipaddr(local, sizeof(local), &ctx->local);
-	_net_app_sprint_ipaddr(remote, sizeof(remote), &ctx->remote);
-
-	NET_DBG("net app connect %s %s %s",
-		local,
-		ctx->app_type == NET_APP_CLIENT ? "->" : "<-",
-		remote);
-}
-#endif
-
 int _net_app_ssl_mainloop(struct net_app_ctx *ctx)
 {
 	size_t len;
@@ -1043,7 +1120,7 @@ reset:
 			struct net_pkt *pkt;
 			int len = ret;
 
-			pkt = net_pkt_get_rx(_net_app_select_net_ctx(ctx),
+			pkt = net_pkt_get_rx(_net_app_select_net_ctx(ctx, NULL),
 					     BUF_ALLOC_TIMEOUT);
 			if (!pkt) {
 				ret = -ENOMEM;

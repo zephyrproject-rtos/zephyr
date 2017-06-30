@@ -133,7 +133,7 @@ struct net_pkt *prepare_send_pkt(struct net_app_ctx *ctx,
 	struct net_pkt *send_pkt;
 	bool status;
 
-	send_pkt = net_app_get_net_pkt(ctx, K_FOREVER);
+	send_pkt = net_app_get_net_pkt(ctx, AF_UNSPEC, K_FOREVER);
 
 	NET_ASSERT(send_pkt);
 
