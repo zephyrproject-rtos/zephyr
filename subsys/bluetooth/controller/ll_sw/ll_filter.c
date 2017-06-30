@@ -504,6 +504,8 @@ static void rl_clear(void)
 	for (int i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
 		rl[i].taken = 0;
 	}
+
+	peer_irk_count = 0;
 }
 
 static int rl_access_check(bool check_ar)
@@ -785,10 +787,11 @@ u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)
 
 void ll_filter_reset(bool init)
 {
-	filter_clear(&wl);
 	wl_anon = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	wl_peers_clear();
+
 	rl_enable = 0;
 	rpa_timeout_ms = DEFAULT_RPA_TIMEOUT_MS;
 	rpa_last_ms = -1;
@@ -798,6 +801,8 @@ void ll_filter_reset(bool init)
 	} else {
 		k_delayed_work_cancel(&rpa_work);
 	}
+#else
+	filter_clear(&wl);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 }
