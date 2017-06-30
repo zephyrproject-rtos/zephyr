@@ -8147,6 +8147,7 @@ static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 	_radio.ticker_id_stop = ticker_id_primary;
 
 	/* Step 1: Is Primary started? Stop the Primary ticker */
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 			  RADIO_TICKER_USER_ID_APP, ticker_id_primary,
 			  ticker_if_done, (void *)&ret_cb);
@@ -8357,6 +8358,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy)
 			goto failure_cleanup;
 		}
 
+		ret_cb = TICKER_STATUS_BUSY;
 		ret =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_APP,
