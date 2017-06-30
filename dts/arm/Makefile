@@ -35,6 +35,7 @@ dtb-$(CONFIG_BOARD_BBC_MICROBIT)	=	bbc_microbit.dts_compiled
 dtb-$(CONFIG_BOARD_CURIE_BLE)		=	curie_ble.dts_compiled
 dtb-$(CONFIG_BOARD_NRF51_BLENANO)	=	nrf51_blenano.dts_compiled
 dtb-$(CONFIG_BOARD_NRF51_PCA10028)	=	nrf51_pca10028.dts_compiled
+dtb-$(CONFIG_BOARD_NRF51_VBLUNO51)	=	nrf51_vbluno51.dts_compiled
 dtb-$(CONFIG_BOARD_QUARK_SE_C1000_BLE)	=	quark_se_c1000_ble.dts_compiled
 dtb-$(CONFIG_BOARD_QEMU_CORTEX_M3)	=	qemu_cortex_m3.dts_compiled
 dtb-$(CONFIG_BOARD_SAM_E70_XPLAINED)	=	sam_e70_xplained.dts_compiled
@@ -43,6 +44,6 @@ dtb-$(CONFIG_BOARD_SAM4S_XPLAINED)	=	sam4s_xplained.dts_compiled
 dtb-$(CONFIG_BOARD_OLIMEX_STM32_E407)	=	olimex_stm32_e407.dts_compiled
 dtb-$(CONFIG_BOARD_CC2650_SENSORTAG)	= 	cc2650_sensortag.dts_compiled
 dtb-$(CONFIG_BOARD_STM32_MIN_DEV)	=	stm32_min_dev.dts_compiled
-
+dtb-$(CONFIG_BOARD_STM32F3_DISCO)       =       stm32f3_disco.dts_compiled
 always	:= $(dtb-y)
 endif
