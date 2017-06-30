@@ -14,6 +14,7 @@
 #include <net/net_pkt.h>
 #include <net/net_mgmt.h>
 #include <net/net_ip.h>
+#include <net/udp.h>
 #include <net/zoap.h>
 
 #if defined(CONFIG_NET_L2_BLUETOOTH)
@@ -76,6 +77,7 @@ static void udp_receive(struct net_context *context,
 	struct zoap_reply *reply;
 	struct zoap_packet response;
 	struct sockaddr_in6 from;
+	struct net_udp_hdr hdr, *udp_hdr;
 	int header_len, r;
 
 	/*
@@ -98,7 +100,14 @@ static void udp_receive(struct net_context *context,
 	}
 
 	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
-	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data received\n");
+		return;
+	}
+
+	from.sin6_port = udp_hdr->src_port;
 
 	reply = zoap_response_received(&response,
 				       (const struct sockaddr *) &from,

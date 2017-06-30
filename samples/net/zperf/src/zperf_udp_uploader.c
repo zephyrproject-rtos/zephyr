@@ -22,14 +22,21 @@ static u8_t sample_packet[PACKET_SIZE_MAX];
 static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 					    struct zperf_results *results)
 {
-	struct net_buf *frag = pkt->frags;
+	struct net_buf *frag;
 	struct zperf_server_hdr hdr;
 	u16_t offset;
 	u16_t pos;
 
-	offset = net_pkt_udp_data(pkt) - net_pkt_ip_data(pkt);
-	offset += sizeof(struct net_udp_hdr) +
-		sizeof(struct zperf_udp_datagram);
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_udp_hdr) +
+				sizeof(struct zperf_udp_datagram),
+				&offset);
+	if (!frag) {
+		printk(TAG "ERROR! Network packet too short\n");
+		return;
+	}
 
 	/* Decode stat */
 	if (!pkt) {

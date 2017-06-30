@@ -30,7 +30,7 @@
 
 #include "ipv6.h"
 #include "ipv4.h"
-#include "udp.h"
+#include "udp_internal.h"
 #include "tcp.h"
 #include "net_stats.h"
 
@@ -1850,13 +1850,23 @@ static int create_udp_packet(struct net_context *context,
 			     struct net_pkt **out_pkt)
 {
 	int r = 0;
+	struct net_pkt *tmp;
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		pkt = net_ipv6_create(context, pkt, NULL, &addr6->sin6_addr);
-		pkt = net_udp_append(context, pkt, ntohs(addr6->sin6_port));
+		tmp = net_udp_insert(context, pkt,
+				     net_pkt_ip_hdr_len(pkt) +
+				     net_pkt_ipv6_ext_len(pkt),
+				     addr6->sin6_port);
+		if (!tmp) {
+			return -ENOMEM;
+		}
+
+		pkt = tmp;
+
 		r = net_ipv6_finalize(context, pkt);
 	} else
 #endif /* CONFIG_NET_IPV6 */
@@ -1866,7 +1876,14 @@ static int create_udp_packet(struct net_context *context,
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
 		pkt = net_ipv4_create(context, pkt, NULL, &addr4->sin_addr);
-		pkt = net_udp_append(context, pkt, ntohs(addr4->sin_port));
+		tmp = net_udp_insert(context, pkt, net_pkt_ip_hdr_len(pkt),
+				     addr4->sin_port);
+		if (!tmp) {
+			return -ENOMEM;
+		}
+
+		pkt = tmp;
+
 		r = net_ipv4_finalize(context, pkt);
 	} else
 #endif /* CONFIG_NET_IPV4 */
@@ -2048,28 +2065,33 @@ int net_context_sendto(struct net_pkt *pkt,
 static void set_appdata_values(struct net_pkt *pkt, enum net_ip_protocol proto)
 {
 	size_t total_len = net_pkt_get_len(pkt);
+	u16_t proto_len = 0;
+	struct net_buf *frag;
+	u16_t offset;
 
 #if defined(CONFIG_NET_UDP)
 	if (proto == IPPROTO_UDP) {
-		net_pkt_set_appdata(pkt, net_pkt_udp_data(pkt) +
-				     sizeof(struct net_udp_hdr));
-	} else
+		proto_len = sizeof(struct net_udp_hdr);
+	}
 #endif /* CONFIG_NET_UDP */
 
 #if defined(CONFIG_NET_TCP)
 	if (proto == IPPROTO_TCP) {
-		net_pkt_set_appdata(pkt, net_pkt_udp_data(pkt) +
-				     tcp_hdr_len(pkt));
-	} else
+		net_pkt_set_appdata(pkt, net_pkt_tcp_data(pkt) +
+				    tcp_hdr_len(pkt));
+	}
 #endif /* CONFIG_NET_TCP */
-	{
-		net_pkt_set_appdata(pkt, net_pkt_ip_data(pkt) +
-				     net_pkt_ip_hdr_len(pkt));
+
+	frag = net_frag_get_pos(pkt, net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				proto_len,
+				&offset);
+	if (frag) {
+		net_pkt_set_appdata(pkt, frag->data + offset);
 	}
 
-	net_pkt_set_appdatalen(pkt, total_len -
-				(net_pkt_appdata(pkt) -
-				 net_pkt_ip_data(pkt)));
+	net_pkt_set_appdatalen(pkt, total_len - net_pkt_ip_hdr_len(pkt) -
+			       net_pkt_ipv6_ext_len(pkt) - proto_len);
 
 	NET_ASSERT_INFO(net_pkt_appdatalen(pkt) < total_len,
 			"Wrong appdatalen %u, total %zu",

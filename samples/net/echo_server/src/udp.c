@@ -19,6 +19,7 @@
 #include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/net_context.h>
+#include <net/udp.h>
 
 #include <net/net_app.h>
 
@@ -51,12 +52,19 @@ static inline void set_dst_addr(sa_family_t family,
 				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		return;
+	}
+
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
 				&NET_IPV6_HDR(pkt)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
-		net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(pkt)->src_port;
+		net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 	}
 #endif /* CONFIG_NET_IPV6) */
 
@@ -65,7 +73,7 @@ static inline void set_dst_addr(sa_family_t family,
 		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
 				&NET_IPV4_HDR(pkt)->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
-		net_sin(dst_addr)->sin_port = NET_UDP_HDR(pkt)->src_port;
+		net_sin(dst_addr)->sin_port = udp_hdr->src_port;
 	}
 #endif /* CONFIG_NET_IPV6) */
 }

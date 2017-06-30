@@ -25,7 +25,7 @@
 #include "net_private.h"
 
 #include "ipv6.h"
-#include "udp.h"
+#include "udp_internal.h"
 
 #if defined(CONFIG_NET_DEBUG_IPV6)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -664,8 +664,7 @@ static void send_ipv6_fragment(void)
 	NET_IPV6_HDR(pkt)->len[1] = total_len -
 		NET_IPV6_HDR(pkt)->len[0] * 256;
 
-	NET_UDP_HDR(pkt)->chksum = 0;
-	NET_UDP_HDR(pkt)->chksum = ~net_calc_chksum_udp(pkt);
+	net_udp_set_chksum(pkt, pkt->frags);
 
 	test_failed = false;
 

@@ -321,12 +321,6 @@ static inline u8_t *net_pkt_ip_data(struct net_pkt *pkt)
 	return pkt->frags->data;
 }
 
-static inline u8_t *net_pkt_udp_data(struct net_pkt *pkt)
-{
-	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ipv6_ext_len(pkt)];
-}
-
 static inline u8_t *net_pkt_tcp_data(struct net_pkt *pkt)
 {
 	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
@@ -408,7 +402,6 @@ static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
 #define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))
-#define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
 #define NET_TCP_HDR(pkt)  ((struct net_tcp_hdr *)(net_pkt_tcp_data(pkt)))
 
 static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)

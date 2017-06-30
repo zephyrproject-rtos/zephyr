@@ -9,6 +9,7 @@
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
+#include <net/udp.h>
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
@@ -21,9 +22,17 @@ static const socklen_t addrlen = sizeof(struct sockaddr_in6);
 
 static void set_client_address(struct sockaddr *addr, struct net_pkt *rx_buf)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(rx_buf, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data\n");
+		return;
+	}
+
 	net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &NET_IPV6_HDR(rx_buf)->src);
 	net_sin6(addr)->sin6_family = AF_INET6;
-	net_sin6(addr)->sin6_port = NET_UDP_HDR(rx_buf)->src_port;
+	net_sin6(addr)->sin6_port = udp_hdr->src_port;
 }
 
 #else
@@ -31,9 +40,17 @@ static const socklen_t addrlen = sizeof(struct sockaddr_in);
 
 static void set_client_address(struct sockaddr *addr, struct net_pkt *rx_buf)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(rx_buf, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data\n");
+		return;
+	}
+
 	net_ipaddr_copy(&net_sin(addr)->sin_addr, &NET_IPV4_HDR(rx_buf)->src);
 	net_sin(addr)->sin_family = AF_INET;
-	net_sin(addr)->sin_port = NET_UDP_HDR(rx_buf)->src_port;
+	net_sin(addr)->sin_port = udp_hdr->src_port;
 }
 
 #endif

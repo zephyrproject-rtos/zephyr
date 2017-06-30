@@ -46,7 +46,7 @@
 #include "rpl.h"
 
 #include "connection.h"
-#include "udp.h"
+#include "udp_internal.h"
 #include "tcp.h"
 
 #include "net_stats.h"
