@@ -13,6 +13,7 @@
 
 #include <autoconf.h>
 
+#include <generated_dts_board.h>
 /* physical address of RAM (needed for correct __ram_phys_end symbol) */
 #define PHYS_RAM_ADDR    CONFIG_PHYS_RAM_ADDR
 
