@@ -9,6 +9,7 @@
 
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
+#include <net/net_app.h>
 #include <net/buf.h>
 #include <errno.h>
 
@@ -42,7 +43,8 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 		goto exit_connect;
 	}
 
-	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_app_get_net_pkt(&ctx->net_app_ctx,
+				AF_UNSPEC, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_connect;
@@ -51,7 +53,8 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 	net_pkt_frag_add(tx, data);
 	data = NULL;
 
-	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
+	rc = net_app_send_pkt(&ctx->net_app_ctx,
+			tx, NULL, 0, ctx->net_timeout, NULL);
 	if (rc < 0) {
 		net_pkt_unref(tx);
 	}
@@ -79,7 +82,8 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 		return -EINVAL;
 	}
 
-	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_app_get_net_pkt(&ctx->net_app_ctx,
+				AF_UNSPEC, ctx->net_timeout);
 	if (tx == NULL) {
 		return -ENOMEM;
 	}
@@ -90,7 +94,8 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 		goto exit_disconnect;
 	}
 
-	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
+	rc = net_app_send_pkt(&ctx->net_app_ctx,
+			tx, NULL, 0, ctx->net_timeout, NULL);
 	if (rc < 0) {
 		goto exit_disconnect;
 	}
@@ -152,7 +157,8 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 		return -EINVAL;
 	}
 
-	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_app_get_net_pkt(&ctx->net_app_ctx,
+				AF_UNSPEC, ctx->net_timeout);
 	if (tx == NULL) {
 		return -ENOMEM;
 	}
@@ -163,7 +169,8 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 		goto exit_send;
 	}
 
-	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
+	rc = net_app_send_pkt(&ctx->net_app_ctx,
+			tx, NULL, 0, ctx->net_timeout, NULL);
 	if (rc < 0) {
 		goto exit_send;
 	}
@@ -215,7 +222,8 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 		goto exit_publish;
 	}
 
-	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_app_get_net_pkt(&ctx->net_app_ctx,
+				AF_UNSPEC, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_publish;
@@ -224,7 +232,8 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 	net_pkt_frag_add(tx, data);
 	data = NULL;
 
-	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
+	rc = net_app_send_pkt(&ctx->net_app_ctx,
+			tx, NULL, 0, ctx->net_timeout, NULL);
 	if (rc < 0) {
 		net_pkt_unref(tx);
 	}
@@ -251,7 +260,8 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		return -EINVAL;
 	}
 
-	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_app_get_net_pkt(&ctx->net_app_ctx,
+				AF_UNSPEC, ctx->net_timeout);
 	if (tx == NULL) {
 		return -ENOMEM;
 	}
@@ -262,7 +272,8 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		goto exit_pingreq;
 	}
 
-	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
+	rc = net_app_send_pkt(&ctx->net_app_ctx,
+			tx, NULL, 0, ctx->net_timeout, NULL);
 	if (rc < 0) {
 		goto exit_pingreq;
 	}
@@ -296,7 +307,8 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 		goto exit_subs;
 	}
 
-	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_app_get_net_pkt(&ctx->net_app_ctx,
+				AF_UNSPEC, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_subs;
@@ -305,7 +317,8 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 	net_pkt_frag_add(tx, data);
 	data = NULL;
 
-	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
+	rc = net_app_send_pkt(&ctx->net_app_ctx,
+			tx, NULL, 0, ctx->net_timeout, NULL);
 	if (rc < 0) {
 		net_pkt_unref(tx);
 	}
@@ -339,7 +352,8 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 		goto exit_unsub;
 	}
 
-	tx = net_pkt_get_tx(ctx->net_ctx, ctx->net_timeout);
+	tx = net_app_get_net_pkt(&ctx->net_app_ctx,
+				AF_UNSPEC, ctx->net_timeout);
 	if (tx == NULL) {
 		rc = -ENOMEM;
 		goto exit_unsub;
@@ -348,7 +362,8 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 	net_pkt_frag_add(tx, data);
 	data = NULL;
 
-	rc = net_context_send(tx, NULL, ctx->net_timeout, NULL, NULL);
+	rc = net_app_send_pkt(&ctx->net_app_ctx,
+			tx, NULL, 0, ctx->net_timeout, NULL);
 	if (rc < 0) {
 		net_pkt_unref(tx);
 	}
@@ -743,13 +758,13 @@ int mqtt_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 }
 
 static
-void mqtt_recv(struct net_context *net_ctx, struct net_pkt *pkt, int status,
+void mqtt_recv(struct net_app_ctx *ctx, struct net_pkt *pkt, int status,
 	       void *data)
 {
 	struct mqtt_ctx *mqtt = (struct mqtt_ctx *)data;
 
 	/* net_ctx is already referenced to by the mqtt_ctx struct */
-	ARG_UNUSED(net_ctx);
+	ARG_UNUSED(ctx);
 
 	if (status || !pkt) {
 		return;
@@ -765,6 +780,49 @@ lb_exit:
 	net_pkt_unref(pkt);
 }
 
+int mqtt_connect(struct mqtt_ctx *ctx)
+{
+	int rc = 0;
+
+	if (!ctx) {
+		return -EFAULT;
+	}
+
+	rc = net_app_init_tcp_client(&ctx->net_app_ctx,
+			NULL,
+			NULL,
+			ctx->peer_addr_str,
+			ctx->peer_port,
+			ctx->net_init_timeout,
+			ctx);
+	if (rc < 0) {
+		goto error_connect;
+	}
+
+	rc = net_app_set_cb(&ctx->net_app_ctx,
+			NULL,
+			mqtt_recv,
+			NULL,
+			NULL);
+	if (rc < 0) {
+		goto error_connect;
+	}
+
+	rc = net_app_connect(&ctx->net_app_ctx, ctx->net_timeout);
+	if (rc < 0) {
+		goto error_connect;
+	}
+
+	return rc;
+
+error_connect:
+	/* clean net app context, so mqtt_connect() can be called repeatedly */
+	net_app_close(&ctx->net_app_ctx);
+	net_app_release(&ctx->net_app_ctx);
+
+	return rc;
+}
+
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 {
 	/* So far, only clean session = 1 is supported */
@@ -774,10 +832,19 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 	ctx->app_type = app_type;
 	ctx->rcv = mqtt_parser;
 
-	/* Install the receiver callback, timeout is set to K_NO_WAIT.
-	 * In this case, no return code is evaluated.
-	 */
-	(void)net_context_recv(ctx->net_ctx, mqtt_recv, K_NO_WAIT, ctx);
+	return 0;
+}
+
+int mqtt_close(struct mqtt_ctx *ctx)
+{
+	if (!ctx) {
+		return -EFAULT;
+	}
+
+	if (ctx->net_app_ctx.is_init) {
+		net_app_close(&ctx->net_app_ctx);
+		net_app_release(&ctx->net_app_ctx);
+	}
 
 	return 0;
 }
