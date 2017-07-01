@@ -43,21 +43,28 @@
 /* memory for storing Random number */
 static u8_t MALIGN(4) _rand_context[3 + 4 + 1];
 
-/* memory for ticker nodes/instances */
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
-#define FLASH_TICKER_NODES 1 /* No. of tickers reserved for flashing */
+#define FLASH_TICKER_NODES        1 /* No. of tickers reserved for flashing */
+#define FLASH_TICKER_USER_APP_OPS 1 /* No. of additional ticker operations */
 #else
-#define FLASH_TICKER_NODES 0
+#define FLASH_TICKER_NODES        0
+#define FLASH_TICKER_USER_APP_OPS 0
 #endif
-#define TICKER_NODES       (RADIO_TICKER_NODES + FLASH_TICKER_NODES)
+
+#define TICKER_NODES              (RADIO_TICKER_NODES + FLASH_TICKER_NODES)
+#define TICKER_USER_APP_OPS       (RADIO_TICKER_USER_APP_OPS + \
+				   FLASH_TICKER_USER_APP_OPS)
+#define TICKER_USER_OPS           (RADIO_TICKER_USER_OPS + \
+				   FLASH_TICKER_USER_APP_OPS)
+
+/* memory for ticker nodes/instances */
 static u8_t MALIGN(4) _ticker_nodes[TICKER_NODES][TICKER_NODE_T_SIZE];
 
 /* memory for users/contexts operating on ticker module */
 static u8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT][TICKER_USER_T_SIZE];
 
 /* memory for user/context simultaneous API operations */
-static u8_t MALIGN(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
-						[TICKER_USER_OP_T_SIZE];
+static u8_t MALIGN(4) _ticker_user_ops[TICKER_USER_OPS][TICKER_USER_OP_T_SIZE];
 
 /* memory for Bluetooth Controller (buffers, queues etc.) */
 static u8_t MALIGN(4) _radio[LL_MEM_TOTAL];
@@ -204,11 +211,11 @@ int ll_init(struct k_sem *sem_rx)
 	_ticker_users[MAYFLY_CALL_ID_0][0] = RADIO_TICKER_USER_WORKER_OPS;
 	_ticker_users[MAYFLY_CALL_ID_1][0] = RADIO_TICKER_USER_JOB_OPS;
 	_ticker_users[MAYFLY_CALL_ID_2][0] = 0;
-	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = RADIO_TICKER_USER_APP_OPS;
+	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = TICKER_USER_APP_OPS;
 
 	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, TICKER_NODES,
 		    &_ticker_nodes[0], MAYFLY_CALLER_COUNT, &_ticker_users[0],
-		    RADIO_TICKER_USER_OPS, &_ticker_user_ops[0]);
+		    TICKER_USER_OPS, &_ticker_user_ops[0]);
 
 	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clk_m16) {
