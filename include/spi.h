@@ -152,7 +152,7 @@ struct spi_cs_control {
  *    cs_hold             [ 13 ]      - Hold on the CS line if possible.
  *    lock_on             [ 14 ]      - Keep ressource locked for the caller.
  *    eeprom              [ 15 ]      - EEPROM mode.
- *
+ * vendor is a vendor specific bitfield
  * slave is the slave number from 0 to host constoller slave limit.
  *
  * cs is a valid pointer on a struct spi_cs_control is CS line is
@@ -166,6 +166,7 @@ struct spi_config {
 
 	u32_t		frequency;
 	u16_t		operation;
+	u16_t		vendor;
 	u16_t		slave;
 
 	struct spi_cs_control *cs;

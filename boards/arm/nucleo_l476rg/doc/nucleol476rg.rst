@@ -106,6 +106,8 @@ The Zephyr nucleo_l476rg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -146,6 +148,18 @@ Default Zephyr Peripheral Mapping:
 - UART_3_RX : PB11
 - I2C_1_SCL : PB6
 - I2C_1_SDA : PB7
+- SPI_1_NSS : PA4
+- SPI_1_SCK : PB3
+- SPI_1_MISO : PA6
+- SPI_1_MOSI : PA7
+- SPI_2_NSS : PB12
+- SPI_2_SCK : PB13
+- SPI_2_MISO : PB14
+- SPI_2_MOSI : PB15
+- SPI_3_NSS : PB12
+- SPI_3_SCK : PC10
+- SPI_3_MISO : PC11
+- SPI_3_MOSI : PC12
 - PWM_2_CH1 : PA0
 - USER_PB : PC13
 - LD2 : PA5

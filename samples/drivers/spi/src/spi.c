@@ -46,6 +46,20 @@ struct spi_cs_control spi_cs = {
 #define SPI_CS NULL
 #define CS_CTRL_GPIO_DRV_NAME ""
 
+#elif defined(CONFIG_BOARD_NUCLEO_L432KC) || 	\
+      defined(CONFIG_BOARD_DISCO_L475_IOT1) || 	\
+      defined(CONFIG_BOARD_NUCLEO_F334R8) || 	\
+      defined(CONFIG_BOARD_NUCLEO_F401RE) || 	\
+      defined(CONFIG_BOARD_NUCLEO_L476RG)
+
+#define SPI_DRV_NAME CONFIG_SPI_1_NAME
+#define SPI_SLAVE 0
+#define MIN_FREQ 500000
+
+#undef SPI_CS
+#define SPI_CS NULL
+#define CS_CTRL_GPIO_DRV_NAME ""
+
 #else
 #undef SPI_CS
 #define SPI_CS NULL
@@ -57,7 +71,11 @@ u8_t buffer_tx[] = "0123456789abcdef\0";
 u8_t buffer_rx[BUF_SIZE] = {};
 
 struct spi_config spi_slow = {
+#if defined(MIN_FREQ)
+	.frequency = MIN_FREQ,
+#else
 	.frequency = 128000,
+#endif
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
@@ -287,6 +305,11 @@ static int spi_async_call(struct spi_config *spi_conf)
 
 	ret = spi_transceive_async(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
 				   rx_bufs, ARRAY_SIZE(rx_bufs), &async_sig);
+	if (ret == -ENOTSUP) {
+		SYS_LOG_DBG("Not supported");
+		return 0;
+	}
+
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;

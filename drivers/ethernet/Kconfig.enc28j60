@@ -77,11 +77,17 @@ config ETH_ENC28J60_0_SPI_PORT_NAME
 	help
 	Master SPI port name through which ENC28J60C chip is accessed.
 
-config ETH_ENC28J60_0_SLAVE
-	hex "ETH_ENC28J60 SPI slave select pin"
-	default 1
+config ETH_ENC28J60_0_SPI_CS_PORT_NAME
+	string "SPI cs port name"
+	default "GPIOB"
 	help
-	ENC28J60C chip select pin.
+	Master SPI port name through which ENC28J60C chip is accessed.
+
+config ETH_ENC28J60_0_SPI_CS_PIN
+	int "SPI CS pin"
+	default 12
+	help
+	CS pin used for the SPI device
 
 config ETH_ENC28J60_0_SPI_BUS_FREQ
 	int "ENC28J60C SPI bus speed in Hz"

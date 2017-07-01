@@ -7,4 +7,5 @@
 
 config BOARD_DISCO_L475_IOT1
 	bool "Discovery IoT L475 Development Board"
+	select I2C_2 if I2C
 	depends on SOC_STM32L475XG
