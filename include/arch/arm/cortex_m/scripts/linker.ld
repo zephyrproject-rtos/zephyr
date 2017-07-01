@@ -179,9 +179,10 @@ SECTIONS
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 	_image_ram_start = .;
+	__kernel_ram_start = .;
 	__data_ram_start = .;
-	*(.data)
-	*(".data.*")
+	KERNEL_INPUT_SECTION(.data)
+	KERNEL_INPUT_SECTION(".data.*")
 
 #ifdef CONFIG_CUSTOM_RWDATA_LD
 /* Located in project source directory */
@@ -202,9 +203,9 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
-	*(.bss)
-	*(".bss.*")
-	COMMON_SYMBOLS
+	KERNEL_INPUT_SECTION(.bss)
+	KERNEL_INPUT_SECTION(".bss.*")
+	KERNEL_INPUT_SECTION(COMMON)
         /*
          * As memory is cleared in words only, it is simpler to ensure the BSS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -218,11 +219,49 @@ SECTIONS
          * This section is used for non-initialized objects that
          * will not be cleared during the boot process.
          */
-        *(.noinit)
-        *(".noinit.*")
+        KERNEL_INPUT_SECTION(.noinit)
+        KERNEL_INPUT_SECTION(".noinit.*")
+
+	/* Put all the stacks here in the kernel noinit */
+	*(.stacks)
+	*(".stacks.*")
+
+	__kernel_ram_end = .;
         } GROUP_LINK_IN(RAMABLE_REGION)
 
     /* Define linker symbols */
+
+#ifdef CONFIG_APPLICATION_MEMORY
+	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
+	{
+		__app_ram_start = .;
+		__app_data_ram_start = .;
+		APP_INPUT_SECTION(.data)
+		APP_INPUT_SECTION(".data.*")
+		__app_data_ram_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__app_data_rom_start = LOADADDR(_APP_DATA_SECTION_NAME);
+
+	SECTION_PROLOGUE(_APP_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		__app_bss_start = .;
+		APP_INPUT_SECTION(.bss)
+		APP_INPUT_SECTION(".bss.*")
+		APP_INPUT_SECTION(COMMON)
+		__app_bss_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_bss_num_words = (__app_bss_end - __app_bss_start) >> 2;
+
+	SECTION_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		APP_INPUT_SECTION(.noinit)
+		APP_INPUT_SECTION(".noinit.*")
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_ram_end = .;
+#endif /* CONFIG_APPLICATION_MEMORY */
 
 	_image_ram_end = .;
     _end = .; /* end of image */
