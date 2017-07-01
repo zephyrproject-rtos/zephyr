@@ -132,7 +132,7 @@ def read_mmu_list_marshal_param():
         # in case where it overflows the currenty PDE's range then limit the
         # PTE to 1024 and so make the mem_size reflect the actual size taken up
         # in the current PDE
-        if (region[1] + (pte_valid_addr_start * 4096) ) > (1024*4096):
+        if (region[1] + (pte_valid_addr_start * 4096) ) >= (1024*4096):
             pte_valid_addr_end = 1024
             mem_size = ( (pte_valid_addr_end - pte_valid_addr_start)*4096)
 
@@ -157,40 +157,41 @@ def read_mmu_list_marshal_param():
         # create all the extra PDEs needed to fit the requested size
         # this loop starts from the current pde till the last pde that is needed
         # the last pde is calcualted as the (start_addr + size) >> 22
-        for extra_pde in range(pde_index+1, get_pde_number(
-                region[0] + region[1])+1):
+        if overflow_size !=0:
+            for extra_pde in range(pde_index+1, get_pde_number(
+                    region[0] + region[1])+1):
 
-            # new pde's start address
-            # each page directory entry has a addr range of (1024 *4096)
-            # thus the new PDE start address is a multiple of that number
-            extra_pde_start_address = extra_pde*(4096*1024)
+                # new pde's start address
+                # each page directory entry has a addr range of (1024 *4096)
+                # thus the new PDE start address is a multiple of that number
+                extra_pde_start_address = extra_pde*(4096*1024)
 
-            # the start address of and extra pde will always be 0
-            # and the end address is calculated with the new pde's start address
-            # and the overflow_size
-            extra_pte_valid_addr_end = get_pte_number(extra_pde_start_address
-                                                      + overflow_size)
+                # the start address of and extra pde will always be 0
+                # and the end address is calculated with the new pde's start address
+                # and the overflow_size
+                extra_pte_valid_addr_end = get_pte_number(extra_pde_start_address
+                                                          + overflow_size)
 
-            # if the overflow_size couldn't be fit inside this new pde then
-            # need another pde and so we now need to limit the end of the PTE
-            # to 1024 and set the size of this new region to the max possible
-            extra_region_size = overflow_size
-            if overflow_size > (1024*4096):
-                extra_region_size = 1024*4096
-                extra_pte_valid_addr_end =  1024
+                # if the overflow_size couldn't be fit inside this new pde then
+                # need another pde and so we now need to limit the end of the PTE
+                # to 1024 and set the size of this new region to the max possible
+                extra_region_size = overflow_size
+                if overflow_size > (1024*4096):
+                    extra_region_size = 1024*4096
+                    extra_pte_valid_addr_end =  1024
 
-            # load the new PDE's details
+                # load the new PDE's details
 
-            set_pde_pte_values(extra_pde, extra_pde_start_address,
-                               extra_region_size,
-                               0, extra_pte_valid_addr_end, region[2] )
+                set_pde_pte_values(extra_pde, extra_pde_start_address,
+                                   extra_region_size,
+                                   0, extra_pte_valid_addr_end, region[2] )
 
 
-            # for the next iteration of the loop the size needs to decreased
-            overflow_size -= (extra_pte_valid_addr_end) * 4096
+                # for the next iteration of the loop the size needs to decreased
+                overflow_size -= (extra_pte_valid_addr_end) * 4096
 
-            if extra_pde not in page_tables_list:
-                page_tables_list.append(extra_pde)
+                if extra_pde not in page_tables_list:
+                    page_tables_list.append(extra_pde)
     page_tables_list.sort()
 
 
