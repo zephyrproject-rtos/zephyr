@@ -78,12 +78,12 @@
 #define Curve_N_Barrett {0xEEDF9BFE, 0x012FFD85, 0xDF1A6C21, 0x43190552, \
 			0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF, 0x00000000, 0x00000001}
 
-uint32_t curve_p[NUM_ECC_DIGITS] = Curve_P;
-uint32_t curve_b[NUM_ECC_DIGITS] = Curve_B;
-EccPoint curve_G = Curve_G;
-uint32_t curve_n[NUM_ECC_DIGITS] = Curve_N;
-uint32_t curve_pb[NUM_ECC_DIGITS + 1] = Curve_P_Barrett;
-uint32_t curve_nb[NUM_ECC_DIGITS + 1] = Curve_N_Barrett;
+const uint32_t curve_p[NUM_ECC_DIGITS] = Curve_P;
+const uint32_t curve_b[NUM_ECC_DIGITS] = Curve_B;
+const EccPoint curve_G = Curve_G;
+const uint32_t curve_n[NUM_ECC_DIGITS] = Curve_N;
+const uint32_t curve_pb[NUM_ECC_DIGITS + 1] = Curve_P_Barrett;
+const uint32_t curve_nb[NUM_ECC_DIGITS + 1] = Curve_N_Barrett;
 
 /* ------ Static functions: ------ */
 
@@ -159,8 +159,8 @@ static uint32_t vli_numBits(uint32_t *p_vli)
  *
  * Side-channel countermeasure: algorithm strengthened against timing attack.
  */
-static uint32_t vli_add(uint32_t *p_result, uint32_t *p_left,
-			uint32_t *p_right)
+static uint32_t vli_add(uint32_t *p_result, const uint32_t *p_left,
+			const uint32_t *p_right)
 {
 
 	uint32_t l_carry = 0;
@@ -177,8 +177,8 @@ static uint32_t vli_add(uint32_t *p_result, uint32_t *p_left,
 
 
 /* Computes p_result = p_left * p_right. */
-static void vli_mult(uint32_t *p_result, uint32_t *p_left,
-		     uint32_t *p_right, uint32_t word_size)
+static void vli_mult(uint32_t *p_result, const uint32_t *p_left,
+		     const uint32_t *p_right, uint32_t word_size)
 {
 
 	uint64_t r01 = 0;
@@ -205,7 +205,7 @@ static void vli_mult(uint32_t *p_result, uint32_t *p_left,
 }
 
 /* Computes p_result = p_left^2. */
-static void vli_square(uint32_t *p_result, uint32_t *p_left)
+static void vli_square(uint32_t *p_result, const uint32_t *p_left)
 {
 
 	uint64_t r01 = 0;
@@ -238,7 +238,7 @@ static void vli_square(uint32_t *p_result, uint32_t *p_left)
 
 /* Computes p_result = p_product % curve_p using Barrett reduction. */
 void vli_mmod_barrett(uint32_t *p_result, uint32_t *p_product,
-			     uint32_t *p_mod, uint32_t *p_barrett)
+			     const uint32_t *p_mod, const uint32_t *p_barrett)
 {
 	uint32_t i;
 	uint32_t q1[NUM_ECC_DIGITS + 1];
@@ -286,8 +286,9 @@ void vli_mmod_barrett(uint32_t *p_result, uint32_t *p_product,
  *
  * Side-channel countermeasure: algorithm strengthened against timing attack.
  */
-static void vli_modExp(uint32_t *p_result, uint32_t *p_base,
-		       uint32_t *p_exp, uint32_t *p_mod, uint32_t *p_barrett)
+static void vli_modExp(uint32_t *p_result, const uint32_t *p_base,
+		       const uint32_t *p_exp, const uint32_t *p_mod,
+		       const uint32_t *p_barrett)
 {
 
 	uint32_t acc[NUM_ECC_DIGITS], tmp[NUM_ECC_DIGITS], product[2 * NUM_ECC_DIGITS];
@@ -365,7 +366,7 @@ static void EccPointJacobi_set(EccPointJacobi *target, EccPointJacobi *input)
 
 /* ------ Externally visible functions (see header file for comments): ------ */
 
-void vli_set(uint32_t *p_dest, uint32_t *p_src)
+void vli_set(uint32_t *p_dest, const uint32_t *p_src)
 {
 
 	uint32_t i;
@@ -375,7 +376,7 @@ void vli_set(uint32_t *p_dest, uint32_t *p_src)
 	}
 }
 
-int32_t vli_cmp(uint32_t *p_left, uint32_t *p_right, int32_t word_size)
+int32_t vli_cmp(const uint32_t *p_left, const uint32_t *p_right, int32_t word_size)
 {
 
 	int32_t i, cmp = 0;
@@ -387,8 +388,8 @@ int32_t vli_cmp(uint32_t *p_left, uint32_t *p_right, int32_t word_size)
 	return cmp;
 }
 
-uint32_t vli_sub(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
-	uint32_t word_size)
+uint32_t vli_sub(uint32_t *p_result, const uint32_t *p_left,
+		 const uint32_t *p_right, uint32_t word_size)
 {
 
 	uint32_t l_borrow = 0;
@@ -415,8 +416,8 @@ void vli_cond_set(uint32_t *output, uint32_t *p_true, uint32_t *p_false,
 	}
 }
 
-void vli_modAdd(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
-	uint32_t *p_mod)
+void vli_modAdd(uint32_t *p_result, const uint32_t *p_left, const uint32_t *p_right,
+	const uint32_t *p_mod)
 {
 	uint32_t l_carry = vli_add(p_result, p_left, p_right);
 	uint32_t p_temp[NUM_ECC_DIGITS];
@@ -425,8 +426,8 @@ void vli_modAdd(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
 	vli_cond_set(p_result, p_temp, p_result, l_carry);
 }
 
-void vli_modSub(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
-	uint32_t *p_mod)
+void vli_modSub(uint32_t *p_result, const uint32_t *p_left, const uint32_t *p_right,
+	const uint32_t *p_mod)
 {
 	uint32_t l_borrow = vli_sub(p_result, p_left, p_right, NUM_ECC_DIGITS);
 	uint32_t p_temp[NUM_ECC_DIGITS];
@@ -435,8 +436,8 @@ void vli_modSub(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
 	vli_cond_set(p_result, p_temp, p_result, l_borrow);
 }
 
-void vli_modMult_fast(uint32_t *p_result, uint32_t *p_left,
-	uint32_t *p_right)
+void vli_modMult_fast(uint32_t *p_result, const uint32_t *p_left,
+	const uint32_t *p_right)
 {
 	uint32_t l_product[2 * NUM_ECC_DIGITS];
 
@@ -444,7 +445,7 @@ void vli_modMult_fast(uint32_t *p_result, uint32_t *p_left,
 	vli_mmod_barrett(p_result, l_product, curve_p, curve_pb);
 }
 
-void vli_modSquare_fast(uint32_t *p_result, uint32_t *p_left)
+void vli_modSquare_fast(uint32_t *p_result, const uint32_t *p_left)
 {
 	uint32_t l_product[2 * NUM_ECC_DIGITS];
 
@@ -452,8 +453,8 @@ void vli_modSquare_fast(uint32_t *p_result, uint32_t *p_left)
 	vli_mmod_barrett(p_result, l_product, curve_p, curve_pb);
 }
 
-void vli_modMult(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
-		 uint32_t *p_mod, uint32_t *p_barrett)
+void vli_modMult(uint32_t *p_result, const uint32_t *p_left, const uint32_t *p_right,
+		 const uint32_t *p_mod, uint32_t *p_barrett)
 {
 
 	uint32_t l_product[2 * NUM_ECC_DIGITS];
@@ -462,8 +463,8 @@ void vli_modMult(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
 	vli_mmod_barrett(p_result, l_product, p_mod, p_barrett);
 }
 
-void vli_modInv(uint32_t *p_result, uint32_t *p_input, uint32_t *p_mod,
-	uint32_t *p_barrett)
+void vli_modInv(uint32_t *p_result, const uint32_t *p_input, const uint32_t *p_mod,
+	const uint32_t *p_barrett)
 {
 	uint32_t p_power[NUM_ECC_DIGITS];
 

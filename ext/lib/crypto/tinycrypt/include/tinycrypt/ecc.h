@@ -120,7 +120,7 @@ uint32_t vli_isZero(uint32_t *p_vli);
  * @param p_src IN -- Origin buffer.
  *
  */
-void vli_set(uint32_t *p_dest, uint32_t *p_src);
+void vli_set(uint32_t *p_dest, const uint32_t *p_src);
 
 /*
  * @brief Computes the sign of p_left - p_right.
@@ -133,7 +133,7 @@ void vli_set(uint32_t *p_dest, uint32_t *p_src);
  * @note Side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
-int32_t vli_cmp(uint32_t *p_left, uint32_t *p_right, int32_t word_size);
+int32_t vli_cmp(const uint32_t *p_left, const uint32_t *p_right, int32_t word_size);
 
 /*
  * @brief Computes p_result = p_left - p_right, returns borrow.
@@ -148,7 +148,7 @@ int32_t vli_cmp(uint32_t *p_left, uint32_t *p_right, int32_t word_size);
  * attack.
  * @note Can modify in place.
  */
-uint32_t vli_sub(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
+uint32_t vli_sub(uint32_t *p_result, const uint32_t *p_left, const uint32_t *p_right,
 		uint32_t word_size);
 
 /*
@@ -176,8 +176,8 @@ void vli_cond_set(uint32_t *output, uint32_t *p_true, uint32_t *p_false,
  * @note Side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
-void vli_modAdd(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
-		uint32_t *p_mod);
+void vli_modAdd(uint32_t *p_result, const uint32_t *p_left, const uint32_t *p_right,
+		const uint32_t *p_mod);
 
 /*
  * @brief Computes p_result = (p_left - p_right) % p_mod.
@@ -191,8 +191,8 @@ void vli_modAdd(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
  * @note Side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
-void vli_modSub(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
-		uint32_t *p_mod);
+void vli_modSub(uint32_t *p_result, const uint32_t *p_left, const uint32_t *p_right,
+		const uint32_t *p_mod);
 
 /*
  * @brief Computes p_result = (p_left * p_right) % curve_p.
@@ -201,8 +201,8 @@ void vli_modSub(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
  * @param p_left IN -- buffer p_left in (p_left * p_right) % curve_p.
  * @param p_right IN -- buffer p_right in (p_left * p_right) % curve_p.
  */
-void vli_modMult_fast(uint32_t *p_result, uint32_t *p_left,
-		uint32_t *p_right);
+void vli_modMult_fast(uint32_t *p_result, const uint32_t *p_left,
+		const uint32_t *p_right);
 
 /*
  * @brief Computes p_result = p_left^2 % curve_p.
@@ -210,7 +210,7 @@ void vli_modMult_fast(uint32_t *p_result, uint32_t *p_left,
  * @param p_result OUT -- result buffer.
  * @param p_left IN -- buffer p_left in (p_left^2 % curve_p).
  */
-void vli_modSquare_fast(uint32_t *p_result, uint32_t *p_left);
+void vli_modSquare_fast(uint32_t *p_result, const uint32_t *p_left);
 
 /*
  * @brief Computes p_result = (p_left * p_right) % p_mod.
@@ -223,8 +223,8 @@ void vli_modSquare_fast(uint32_t *p_result, uint32_t *p_left);
  * @note Side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
-void vli_modMult(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
-		uint32_t *p_mod, uint32_t *p_barrett);
+void vli_modMult(uint32_t *p_result, const uint32_t *p_left, const uint32_t *p_right,
+		const uint32_t *p_mod, uint32_t *p_barrett);
 
 /*
  * @brief Computes modular inversion: (1/p_intput) % p_mod.
@@ -236,8 +236,8 @@ void vli_modMult(uint32_t *p_result, uint32_t *p_left, uint32_t *p_right,
  * @note Side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
-void vli_modInv(uint32_t *p_result, uint32_t *p_input,
-		uint32_t *p_mod, uint32_t *p_barrett);
+void vli_modInv(uint32_t *p_result, const uint32_t *p_input,
+		const uint32_t *p_mod, const uint32_t *p_barrett);
 
 /*
  * @brief modular reduction based on Barrett's method
@@ -251,8 +251,8 @@ void vli_modInv(uint32_t *p_result, uint32_t *p_input,
 void vli_mmod_barrett(
     uint32_t *p_result,
     uint32_t *p_product,
-    uint32_t *p_mod,
-    uint32_t *p_barrett);
+    const uint32_t *p_mod,
+    const uint32_t *p_barrett);
 
 /*
  * @brief Check if a point is zero.
