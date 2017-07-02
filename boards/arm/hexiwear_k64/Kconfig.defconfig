@@ -174,11 +174,11 @@ config SPI_2_IRQ_PRI
 
 endif # SPI
 
-if ETHERNET
+if NET_L2_ETHERNET
 
 config ETH_MCUX_0
 	def_bool y
 
-endif # ETHERNET
+endif # NET_L2_ETHERNET
 
 endif # BOARD_HEXIWEAR_K64
