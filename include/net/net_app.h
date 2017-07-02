@@ -897,7 +897,7 @@ bool net_app_server_tls_enable(struct net_app_ctx *ctx);
 bool net_app_server_tls_disable(struct net_app_ctx *ctx);
 #endif /* CONFIG_NET_APP_SERVER */
 
-#endif /* CONFIG_NET_APP_SEC */
+#endif /* CONFIG_NET_APP_TLS */
 
 #ifdef __cplusplus
 }
