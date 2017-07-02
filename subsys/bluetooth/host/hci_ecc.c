@@ -35,7 +35,7 @@
 #endif
 
 static struct k_thread ecc_thread_data;
-static BT_STACK_NOINIT(ecc_thread_stack, 1060);
+static BT_STACK_NOINIT(ecc_thread_stack, 960);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const u32_t debug_private_key[8] = {
@@ -67,17 +67,11 @@ static ATOMIC_DEFINE(flags, NUM_FLAGS);
 static K_SEM_DEFINE(cmd_sem, 0, 1);
 
 static struct {
-	/* Based on the current implementation of ecc_make_key() it's safe
-	 * for the private_key and random to occupy the same memory area.
-	 */
-	union {
-		u32_t private_key[NUM_ECC_DIGITS];
-		u32_t random[NUM_ECC_DIGITS * 2];
-	};
+	u8_t private_key[32];
 
 	union {
-		EccPoint pk;
-		u32_t dhkey[NUM_ECC_DIGITS];
+		u8_t pk[64];
+		u8_t dhkey[32];
 	};
 } ecc;
 
@@ -110,12 +104,7 @@ static u8_t generate_keys(void)
 	do {
 		int rc;
 
-		if (bt_rand((u8_t *)ecc.random, sizeof(ecc.random))) {
-			BT_ERR("Failed to get random bytes for ECC keys");
-			return BT_HCI_ERR_UNSPECIFIED;
-		}
-
-		rc = ecc_make_key(&ecc.pk, ecc.private_key, ecc.random);
+		rc = uECC_make_key(ecc.pk, ecc.private_key, &curve_secp256r1);
 		if (rc == TC_CRYPTO_FAIL) {
 			BT_ERR("Failed to create ECC public/private pair");
 			return BT_HCI_ERR_UNSPECIFIED;
@@ -157,8 +146,11 @@ static void emulate_le_p256_public_key_cmd(void)
 	if (status) {
 		memset(evt->key, 0, sizeof(evt->key));
 	} else {
-		memcpy(evt->key, ecc.pk.x, 32);
-		memcpy(&evt->key[32], ecc.pk.y, 32);
+		/* Convert X and Y coordinates from big-endian (provided
+		 * by crypto API) to little endian HCI.
+		 */
+		sys_memcpy_swap(evt->key, ecc.pk, 32);
+		sys_memcpy_swap(&evt->key[32], &ecc.pk[32], 32);
 	}
 
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
@@ -172,12 +164,15 @@ static void emulate_le_generate_dhkey(void)
 	struct bt_hci_evt_le_meta_event *meta;
 	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *buf;
-	s32_t ret;
+	int ret;
 
-	if (ecc_valid_public_key(&ecc.pk) < 0) {
+	ret = uECC_valid_public_key(ecc.pk, &curve_secp256r1);
+	if (ret < 0) {
+		BT_ERR("public key is not valid (ret %d)", ret);
 		ret = TC_CRYPTO_FAIL;
 	} else {
-		ret = ecdh_shared_secret(ecc.dhkey, &ecc.pk, ecc.private_key);
+		ret = uECC_shared_secret(ecc.pk, ecc.private_key, ecc.dhkey,
+					 &curve_secp256r1);
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
@@ -196,7 +191,10 @@ static void emulate_le_generate_dhkey(void)
 		memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	} else {
 		evt->status = 0;
-		memcpy(evt->dhkey, ecc.dhkey, sizeof(ecc.dhkey));
+		/* Convert from big-endian (provided by crypto API) to
+		 * little-endian HCI.
+		 */
+		sys_memcpy_swap(evt->dhkey, ecc.dhkey, sizeof(ecc.dhkey));
 	}
 
 	atomic_clear_bit(flags, PENDING_DHKEY);
@@ -256,8 +254,11 @@ static void le_gen_dhkey(struct net_buf *buf)
 	}
 
 	cmd = (void *)buf->data;
-	memcpy(ecc.pk.x, cmd->key, 32);
-	memcpy(ecc.pk.y, &cmd->key[32], 32);
+	/* Convert X and Y coordinates from little-endian HCI to
+	 * big-endian (expected by the crypto API).
+	 */
+	sys_memcpy_swap(ecc.pk, cmd->key, 32);
+	sys_memcpy_swap(&ecc.pk[32], &cmd->key[32], 32);
 	k_sem_give(&cmd_sem);
 	status = BT_HCI_ERR_SUCCESS;
 
@@ -307,6 +308,11 @@ int bt_hci_ecc_send(struct net_buf *buf)
 	}
 
 	return bt_dev.drv->send(buf);
+}
+
+int default_CSPRNG(u8_t *dst, unsigned int len)
+{
+	return !bt_rand(dst, len);
 }
 
 void bt_hci_ecc_init(void)
