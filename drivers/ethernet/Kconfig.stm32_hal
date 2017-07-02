@@ -41,6 +41,13 @@ config ETH_STM32_HAL_RX_THREAD_PRIO
 	help
 	  RX thread priority
 
+config ETH_STM32_HAL_PHY_ADDRESS
+	int "Phy address"
+	depends on ETH_STM32_HAL
+	default 0
+	help
+	  The phy address to use.
+
 config ETH_STM32_HAL_RANDOM_MAC
 	bool "Random MAC address"
 	depends on ETH_STM32_HAL && RANDOM_GENERATOR
