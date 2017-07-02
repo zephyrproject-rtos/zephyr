@@ -49,7 +49,7 @@ choice
 config NET_RPL_MC_NONE
 	bool "No routing metric"
 
-config NET_RPL_MC_EXT
+config NET_RPL_MC_ETX
 	bool "Estimated number of transmissions (ETX)"
 
 config NET_RPL_MC_ENERGY
