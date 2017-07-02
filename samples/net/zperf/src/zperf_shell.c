@@ -46,7 +46,7 @@ static const char *CONFIG =
 #if defined(CONFIG_WLAN)
 		" wlan"
 #endif
-#if defined(CONFIG_ETHERNET)
+#if defined(CONFIG_NET_L2_ETHERNET)
 		" ethernet"
 #endif
 #if defined(CONFIG_NET_IPV4)
