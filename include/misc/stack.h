@@ -26,7 +26,7 @@ static inline size_t stack_unused_space_get(const char *stack, size_t size)
 	 * (or configurable direction) is added this check should be confirmed
 	 * that correct Kconfig option is used.
 	 */
-#if defined(CONFIG_STACK_GROWS_UP)
+#if defined(STACK_GROWS_UP)
 	for (i = size - 1; i >= 0; i--) {
 		if ((unsigned char)stack[i] == 0xaa) {
 			unused++;
