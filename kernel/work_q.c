@@ -26,13 +26,13 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 		struct k_work *work;
 		k_work_handler_t handler;
 
-		work = k_fifo_get(&work_q->fifo, K_FOREVER);
+		work = k_queue_get(&work_q->queue, K_FOREVER);
 
 		handler = work->handler;
 
 		/* Reset pending state so it can be resubmitted by handler */
 		if (atomic_test_and_clear_bit(work->flags,
-					       K_WORK_STATE_PENDING)) {
+					      K_WORK_STATE_PENDING)) {
 			handler(work);
 		}
 
@@ -46,7 +46,7 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 void k_work_q_start(struct k_work_q *work_q, char *stack,
 		    size_t stack_size, int prio)
 {
-	k_fifo_init(&work_q->fifo);
+	k_queue_init(&work_q->queue);
 
 	k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
 			work_q, 0, 0, prio, 0, 0);

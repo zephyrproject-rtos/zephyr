@@ -1922,7 +1922,7 @@ typedef void (*k_work_handler_t)(struct k_work *work);
  */
 
 struct k_work_q {
-	struct k_fifo fifo;
+	struct k_queue queue;
 	struct k_thread thread;
 };
 
@@ -1931,7 +1931,7 @@ enum {
 };
 
 struct k_work {
-	void *_reserved;		/* Used by k_fifo implementation. */
+	void *_reserved;		/* Used by k_queue implementation. */
 	k_work_handler_t handler;
 	atomic_t flags[1];
 };
@@ -2006,7 +2006,7 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_work *work)
 {
 	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
-		k_fifo_put(&work_q->fifo, work);
+		k_fifo_put(&work_q->queue, work);
 	}
 }
 
