@@ -1790,6 +1790,10 @@ static void auth_payload_timeout_exp(struct pdu_data *pdu_data, u16_t handle,
 {
 	struct bt_hci_evt_auth_payload_timeout_exp *ep;
 
+	if (!(event_mask_page_2 & BT_EVT_MASK_AUTH_PAYLOAD_TIMEOUT_EXP)) {
+		return;
+	}
+
 	evt_create(buf, BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP, sizeof(*ep));
 	ep = net_buf_add(buf, sizeof(*ep));
 
