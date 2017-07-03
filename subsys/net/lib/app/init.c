@@ -203,7 +203,7 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 		count++;
 	}
 
-	k_sem_init(&counter, count, count);
+	k_sem_init(&counter, count, UINT_MAX);
 
 	setup_ipv4(iface);
 
