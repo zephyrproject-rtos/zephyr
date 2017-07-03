@@ -2049,7 +2049,7 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_work *work)
 {
 	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
-		k_fifo_put(&work_q->queue, work);
+		k_queue_append(&work_q->queue, work);
 	}
 }
 
