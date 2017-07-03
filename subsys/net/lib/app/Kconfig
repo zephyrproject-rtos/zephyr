@@ -8,7 +8,7 @@
 
 menuconfig NET_APP
 	bool "Network application API support [EXPERIMENTAL]"
-	default y
+	default n
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help

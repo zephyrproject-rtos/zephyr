@@ -18,6 +18,6 @@ ifdef CONFIG_HTTP
 include $(srctree)/subsys/net/lib/http/Makefile
 endif
 
-ifdef CONFIG_NET_APP_SETTINGS
+ifdef CONFIG_NET_APP
 include $(srctree)/subsys/net/lib/app/Makefile
 endif
