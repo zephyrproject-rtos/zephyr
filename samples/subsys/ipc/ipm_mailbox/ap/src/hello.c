@@ -138,7 +138,7 @@ void main(void)
 			main_thread, 0, 0, 0,
 			K_PRIO_COOP(MAIN_FIBER_PRI), 0, 0);
 
-	k_thread_create(&threads[0], &thread_stacks[1][0], STACKSIZE,
+	k_thread_create(&threads[1], &thread_stacks[1][0], STACKSIZE,
 			ping_source_thread, 0, 0, 0,
 			K_PRIO_COOP(PING_FIBER_PRI), 0, 0);
 }
