@@ -124,10 +124,10 @@ static void tdelayed_work_cancel(void *data)
 	 * >t0: cancel delayed_work[0], expected cancellation success
 	 * >t0+TIMEOUT: handling delayed_work_sleepy, which do k_sleep TIMEOUT
 	 *              pending delayed_work[1], check pending flag, expected 1
-	 *              cancel delayed_work[1], expected -EINPROGRESS
+	 *              cancel delayed_work[1], expected 0
 	 * >t0+2*TIMEOUT: delayed_work_sleepy completed
 	 *                delayed_work[1] completed
-	 *                cancel delayed_work_sleepy, expected -EINVAL
+	 *                cancel delayed_work_sleepy, expected 0
 	 */
 	zassert_true(ret == 0, NULL);
 	/**TESTPOINT: delayed work cancel when countdown*/
@@ -143,7 +143,8 @@ static void tdelayed_work_cancel(void *data)
 			     NULL);
 		/**TESTPOINT: delayed work cancel when pending*/
 		ret = k_delayed_work_cancel(&delayed_work[1]);
-		zassert_equal(ret, -EINPROGRESS, NULL);
+		zassert_equal(ret, 0, NULL);
+		k_sem_give(&sync_sema);
 		/*wait for completed work_sleepy and delayed_work[1]*/
 		k_sleep(TIMEOUT);
 		/**TESTPOINT: check pending when work completed*/
@@ -151,7 +152,7 @@ static void tdelayed_work_cancel(void *data)
 				      (struct k_work *)&delayed_work_sleepy), NULL);
 		/**TESTPOINT: delayed work cancel when completed*/
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
-		zassert_equal(ret, -EINVAL, NULL);
+		zassert_equal(ret, 0, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }
