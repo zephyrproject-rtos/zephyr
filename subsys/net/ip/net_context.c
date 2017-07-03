@@ -1420,34 +1420,6 @@ static void ack_timer_cancel(struct net_tcp *tcp)
 	k_delayed_work_cancel(&tcp->ack_timer);
 }
 
-static void ack_timeout(struct k_work *work)
-{
-	/* This means that we did not receive ACK response in time. */
-	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
-
-	if (tcp->ack_timer_cancelled) {
-		return;
-	}
-
-	NET_DBG("Did not receive ACK in %dms while in %s", ACK_TIMEOUT,
-		net_tcp_state_str(net_tcp_get_state(tcp)));
-
-	if (net_tcp_get_state(tcp) == NET_TCP_LAST_ACK) {
-		/* We did not receive the last ACK on time. We can only
-		 * close the connection at this point. We will not send
-		 * anything to peer in this last state, but will go directly
-		 * to to CLOSED state.
-		 */
-		net_tcp_change_state(tcp, NET_TCP_CLOSED);
-
-		net_context_unref(tcp->context);
-	} else {
-		send_reset(tcp->context, &tcp->context->remote);
-
-		net_tcp_change_state(tcp, NET_TCP_LISTEN);
-	}
-}
-
 static void pkt_get_sockaddr(sa_family_t family, struct net_pkt *pkt,
 			     struct sockaddr_ptr *addr)
 {
@@ -1553,50 +1525,23 @@ NET_CONN_CB(tcp_syn_rcvd)
 				 pkt, &pkt_src_addr);
 		send_syn_ack(context, &pkt_src_addr, remote);
 
-		/* We might be entering this section multiple times
-		 * if the SYN is sent more than once. So we need to cancel
-		 * any pending timers.
-		 */
-		ack_timer_cancel(tcp);
-
-		k_delayed_work_init(&tcp->ack_timer, ack_timeout);
-		k_delayed_work_submit(&tcp->ack_timer, ACK_TIMEOUT);
-
-		tcp->ack_timer_cancelled = false;
-
 		return NET_DROP;
 	}
 
 	/*
 	 * See RFC 793 chapter 3.4 "Reset Processing" and RFC 793, page 65
-	 * for more details. If RST is received in SYN_RCVD state, go back
-	 * to LISTEN state. No other states are valid for this function.
+	 * for more details.
 	 */
 	if (NET_TCP_FLAGS(pkt) == NET_TCP_RST) {
 
-		(void) tcp_backlog_rst(pkt);
-
-		/* We only accept an RST packet that has valid seq field
-		 * and ignore RST received in LISTEN state.
-		 */
-		if (!net_tcp_validate_seq(tcp, pkt) ||
-		    net_tcp_get_state(tcp) == NET_TCP_LISTEN) {
+		if (tcp_backlog_rst(pkt) < 0) {
 			net_stats_update_tcp_seg_rsterr();
 			return NET_DROP;
 		}
 
 		net_stats_update_tcp_seg_rst();
 
-		ack_timer_cancel(tcp);
-
 		net_tcp_print_recv_info("RST", pkt, NET_TCP_HDR(pkt)->src_port);
-
-		if (net_tcp_get_state(tcp) == NET_TCP_SYN_RCVD) {
-			net_tcp_change_state(tcp, NET_TCP_LISTEN);
-		} else {
-			NET_DBG("TCP socket not in SYN RCVD state, closing");
-			net_tcp_change_state(tcp, NET_TCP_CLOSED);
-		}
 
 		return NET_DROP;
 	}
@@ -1611,15 +1556,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 		struct net_tcp *tmp_tcp;
 		socklen_t addrlen;
 		int ret;
-
-		/* We can only receive ACK if we have already received SYN.
-		 * So if we are not in SYN_RCVD state, then it is an error.
-		 */
-		if (net_tcp_get_state(tcp) != NET_TCP_SYN_RCVD) {
-			ack_timer_cancel(tcp);
-			NET_DBG("Not in SYN_RCVD state, sending RST");
-			goto reset;
-		}
 
 		net_tcp_print_recv_info("ACK", pkt, NET_TCP_HDR(pkt)->src_port);
 
