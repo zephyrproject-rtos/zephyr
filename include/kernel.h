@@ -1441,6 +1441,24 @@ extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 extern void *k_queue_get(struct k_queue *queue, s32_t timeout);
 
 /**
+ * @brief Find and remove an element from a queue.
+ *
+ * This routine removes data item from @a queue. The first 32 bits of the
+ * data item are reserved for the kernel's use.
+ *
+ * @note Can be called by ISRs
+ *
+ * @param queue Address of the queue.
+ * @param data Address of the data item.
+ *
+ * @return true if data item was removed
+ */
+static inline bool k_queue_find_and_remove(struct k_queue *queue, void *data)
+{
+	return sys_slist_find_and_remove(&queue->data_q, (sys_snode_t *)data);
+}
+
+/**
  * @brief Query a queue to see if it has data available.
  *
  * Note that the data might be already gone by the time this function returns
