@@ -32,7 +32,7 @@ struct ll_adv_set *ll_adv_set_get(void)
 u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 			u8_t adv_type, u8_t own_addr_type,
 			u8_t direct_addr_type, u8_t const *const direct_addr,
-			u8_t chl_map, u8_t filter_policy, u8_t *tx_pwr,
+			u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
 			u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq)
 {
 	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
@@ -44,7 +44,7 @@ u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			u8_t own_addr_type, u8_t direct_addr_type,
-			u8_t const *const direct_addr, u8_t chl_map,
+			u8_t const *const direct_addr, u8_t chan_map,
 			u8_t filter_policy)
 {
 	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
@@ -106,7 +106,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	} else {
 		ll_adv.interval = 0;
 	}
-	ll_adv.chl_map = chl_map;
+	ll_adv.chan_map = chan_map;
 	ll_adv.filter_policy = filter_policy;
 
 	/* update the "current" primary adv data */
@@ -414,10 +414,11 @@ u32_t ll_adv_enable(u8_t enable)
 		}
 	}
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
-	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval, ll_adv.chl_map,
-				  ll_adv.filter_policy, rl_idx);
+	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval,
+				  ll_adv.chan_map, ll_adv.filter_policy,
+				  rl_idx);
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
-	status = radio_adv_enable(ll_adv.interval, ll_adv.chl_map,
+	status = radio_adv_enable(ll_adv.interval, ll_adv.chan_map,
 				  ll_adv.filter_policy, rl_idx);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 

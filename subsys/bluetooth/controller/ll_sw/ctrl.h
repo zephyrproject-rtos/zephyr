@@ -329,10 +329,10 @@ struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
-u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chl_map,
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 		       u8_t filter_policy, u8_t rl_idx);
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
-u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy,
+u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 

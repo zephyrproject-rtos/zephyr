@@ -5,7 +5,7 @@
  */
 
 struct ll_adv_set {
-	u8_t  chl_map:3;
+	u8_t  chan_map:3;
 	u8_t  filter_policy:2;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	u8_t  rl_idx:4;

@@ -19,12 +19,12 @@ void ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
 u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 			u8_t adv_type, u8_t own_addr_type,
 			u8_t direct_addr_type, u8_t const *const direct_addr,
-			u8_t chl_map, u8_t filter_policy, u8_t *tx_pwr,
+			u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
 			u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq);
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			u8_t own_addr_type, u8_t direct_addr_type,
-			u8_t const *const direct_addr, u8_t chl_map,
+			u8_t const *const direct_addr, u8_t chan_map,
 			u8_t filter_policy);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
