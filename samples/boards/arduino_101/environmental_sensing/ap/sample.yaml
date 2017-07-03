@@ -4,7 +4,7 @@ sample:
       Arduino 101.
     name: Environmental Sensing (Application Processor Part)
 tests:
--   test-nimble:
+-   test:
         build_only: true
         platform_whitelist: arduino_101
         tags: samples
