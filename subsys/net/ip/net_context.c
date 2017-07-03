@@ -82,6 +82,7 @@ static enum net_verdict packet_received(struct net_conn *conn,
 static void set_appdata_values(struct net_pkt *pkt, enum net_ip_protocol proto);
 
 #if defined(CONFIG_NET_TCP)
+static int send_reset(struct net_context *context, struct sockaddr *remote);
 
 static struct tcp_backlog_entry {
 	struct net_tcp *tcp;
@@ -89,7 +90,23 @@ static struct tcp_backlog_entry {
 	u32_t recv_max_ack;
 	u32_t send_seq;
 	u32_t send_ack;
+	struct k_delayed_work ack_timer;
+	bool cancelled;
 } tcp_backlog[CONFIG_NET_TCP_BACKLOG_SIZE];
+
+static void backlog_ack_timeout(struct k_work *work)
+{
+	struct tcp_backlog_entry *backlog =
+		CONTAINER_OF(work, struct tcp_backlog_entry, ack_timer);
+
+	if (!backlog->cancelled) {
+		NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
+
+		send_reset(backlog->tcp->context, &backlog->remote);
+	}
+
+	memset(backlog, 0, sizeof(struct tcp_backlog_entry));
+}
 
 static struct sockaddr *create_sockaddr(struct net_pkt *pkt,
 					struct sockaddr *addr)
@@ -195,7 +212,9 @@ static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context)
 	tcp_backlog[empty_slot].send_seq = context->tcp->send_seq;
 	tcp_backlog[empty_slot].send_ack = context->tcp->send_ack;
 
-	/* TODO: set up ack timer */
+	k_delayed_work_init(&tcp_backlog[empty_slot].ack_timer,
+			    backlog_ack_timeout);
+	k_delayed_work_submit(&tcp_backlog[empty_slot].ack_timer, ACK_TIMEOUT);
 
 	return 0;
 }
@@ -216,15 +235,23 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 		return -EINVAL;
 	}
 
-	/* TODO: cancel ack timer */
-
 	memcpy(&context->remote, &tcp_backlog[r].remote,
 		sizeof(struct sockaddr));
 	context->tcp->recv_max_ack = tcp_backlog[r].recv_max_ack;
 	context->tcp->send_seq = tcp_backlog[r].send_seq;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
 
-	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_t));
+	/* For now, remember to check that the delayed work wasn't already
+	 * scheduled to run, and if yes, don't zero out here. Improve the
+	 * delayed work cancellation, but for now use a boolean to keep this
+	 * in sync
+	 */
+	if (k_delayed_work_remaining_get(&tcp_backlog[r].ack_timer) > 0) {
+		tcp_backlog[r].cancelled = true;
+	} else {
+		k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
+		memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
+	}
 
 	return 0;
 }
@@ -243,9 +270,17 @@ static int tcp_backlog_rst(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	/* TODO: cancel ack timer */
-
-	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_t));
+	/* For now, remember to check that the delayed work wasn't already
+	 * scheduled to run, and if yes, don't zero out here. Improve the
+	 * delayed work cancellation, but for now use a boolean to keep this
+	 * in sync
+	 */
+	if (k_delayed_work_remaining_get(&tcp_backlog[r].ack_timer) > 0) {
+		tcp_backlog[r].cancelled = true;
+	} else {
+		k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
+		memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
+	}
 
 	return 0;
 }
