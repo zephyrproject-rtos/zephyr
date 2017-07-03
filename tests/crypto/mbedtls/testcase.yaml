@@ -3,3 +3,4 @@ tests:
         min_ram: 32
         tags: crypto mbedtls
         timeout: 200
+        filter: not CONFIG_DEBUG
