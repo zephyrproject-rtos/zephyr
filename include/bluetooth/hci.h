@@ -535,6 +535,11 @@ struct bt_hci_cp_write_ssp_mode {
 	u8_t mode;
 } __packed;
 
+#define BT_HCI_OP_SET_EVENT_MASK_PAGE_2         BT_OP(BT_OGF_BASEBAND, 0x0063)
+struct bt_hci_cp_set_event_mask_page_2 {
+	u8_t  events_page_2[8];
+} __packed;
+
 #define BT_HCI_OP_LE_WRITE_LE_HOST_SUPP         BT_OP(BT_OGF_BASEBAND, 0x006d)
 struct bt_hci_cp_write_le_host_supp {
 	u8_t  le;
