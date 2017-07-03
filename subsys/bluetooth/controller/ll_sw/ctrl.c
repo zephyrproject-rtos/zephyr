@@ -713,14 +713,13 @@ static u32_t isr_rx_adv_sr_report(struct pdu_adv *pdu_adv_rx, u8_t rssi_ready)
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY */
 
 static inline bool isr_adv_sr_check(struct pdu_adv *pdu, u8_t devmatch_ok,
-				    u8_t irkmatch_ok, u8_t irkmatch_id)
+				    u8_t rl_idx)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	return ((((_radio.advertiser.filter_policy & 0x01) == 0) &&
 		 ctrl_rl_allowed(pdu->tx_addr,
 				 pdu->payload.scan_req.scan_addr)) ||
-		(devmatch_ok) || (ctrl_rl_enabled() && irkmatch_ok &&
-				  ctrl_irk_whitelisted(irkmatch_id))) &&
+		(devmatch_ok) || (ctrl_irk_whitelisted(rl_idx))) &&
 		(1 /** @todo own addr match check */);
 #else
 	return (((_radio.advertiser.filter_policy & 0x01) == 0) ||
@@ -730,11 +729,11 @@ static inline bool isr_adv_sr_check(struct pdu_adv *pdu, u8_t devmatch_ok,
 }
 
 static inline bool isr_adv_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci,
-				      u8_t irkmatch_ok, u8_t irkmatch_id)
+				      u8_t rl_idx)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	if (ctrl_rl_enabled() && irkmatch_ok) {
-		return ctrl_rl_idx_match(irkmatch_id, _radio.advertiser.rl_idx);
+	if (rl_idx != RL_IDX_NONE) {
+		return rl_idx == _radio.advertiser.rl_idx;
 	}
 #endif
 	return !memcmp(adv->payload.direct_ind.tgt_addr,
@@ -743,31 +742,29 @@ static inline bool isr_adv_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci,
 
 static inline bool isr_adv_ci_direct_check(struct pdu_adv *adv,
 					   struct pdu_adv *ci,
-					   u8_t irkmatch_ok, u8_t irkmatch_id)
+					   u8_t rl_idx)
 {
 	return ((adv->type != PDU_ADV_TYPE_DIRECT_IND) ||
 		((adv->tx_addr == ci->rx_addr) &&
 		 (adv->rx_addr == ci->tx_addr) &&
 		 !memcmp(adv->payload.direct_ind.adv_addr,
 			 ci->payload.connect_ind.adv_addr, BDADDR_SIZE) &&
-		 isr_adv_tgta_check(adv, ci, irkmatch_ok, irkmatch_id)));
+		 isr_adv_tgta_check(adv, ci, rl_idx)));
 }
 
 static inline bool isr_adv_ci_check(struct pdu_adv *adv, struct pdu_adv *ci,
-				    u8_t devmatch_ok, u8_t irkmatch_ok,
-				    u8_t irkmatch_id)
+				    u8_t devmatch_ok, u8_t rl_idx)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	return ((((_radio.advertiser.filter_policy & 0x02) == 0) &&
 		 ctrl_rl_allowed(ci->tx_addr,
 				 ci->payload.connect_ind.init_addr)) ||
-		(devmatch_ok) || (ctrl_rl_enabled() && irkmatch_ok &&
-				  ctrl_irk_whitelisted(irkmatch_id))) &&
-	       isr_adv_ci_direct_check(adv, ci, irkmatch_ok, irkmatch_id);
+		(devmatch_ok) || (ctrl_irk_whitelisted(rl_idx))) &&
+	       isr_adv_ci_direct_check(adv, ci, rl_idx);
 #else
 	return (((_radio.advertiser.filter_policy & 0x02) == 0) ||
 		(devmatch_ok)) &&
-	       isr_adv_ci_direct_check(adv, ci, irkmatch_ok, irkmatch_id);
+	       isr_adv_ci_direct_check(adv, ci, rl_idx);
 #endif
 }
 
@@ -777,14 +774,19 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 {
 	struct pdu_adv *pdu_adv, *_pdu_adv;
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
-
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	/* An IRK match implies address resolution enabled */
+	u8_t rl_idx = irkmatch_ok ? ctrl_rl_idx(irkmatch_id) : RL_IDX_NONE;
+#else
+	u8_t rl_idx = RL_IDX_NONE;
+#endif
 	pdu_adv = (struct pdu_adv *)radio_pkt_scratch_get();
 	_pdu_adv = (struct pdu_adv *)&_radio.advertiser.adv_data.data
 		[_radio.advertiser.adv_data.first][0];
 
 	if ((pdu_adv->type == PDU_ADV_TYPE_SCAN_REQ) &&
 	    (pdu_adv->len == sizeof(struct pdu_adv_payload_scan_req)) &&
-	    isr_adv_sr_check(pdu_adv, devmatch_ok, irkmatch_ok, irkmatch_id)) {
+	    isr_adv_sr_check(pdu_adv, devmatch_ok, rl_idx)) {
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY)
 		if (!IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT) ||
@@ -810,8 +812,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		return 0;
 	} else if ((pdu_adv->type == PDU_ADV_TYPE_CONNECT_IND) &&
 		   (pdu_adv->len == sizeof(struct pdu_adv_payload_connect_ind)) &&
-		   isr_adv_ci_check(_pdu_adv, pdu_adv, devmatch_ok, irkmatch_ok,
-				    irkmatch_id) &&
+		   isr_adv_ci_check(_pdu_adv, pdu_adv, devmatch_ok, rl_idx) &&
 		   ((_radio.fc_ena == 0) || (_radio.fc_req == _radio.fc_ack)) &&
 		   (_radio.advertiser.conn)) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;

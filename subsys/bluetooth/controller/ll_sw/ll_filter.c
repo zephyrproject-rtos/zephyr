@@ -211,7 +211,7 @@ u8_t *ctrl_irks_get(u8_t *count)
 	return (u8_t *)peer_irks;
 }
 
-bool ctrl_irk_whitelisted(u8_t irkmatch_id)
+u8_t ctrl_rl_idx(u8_t irkmatch_id)
 {
 	u8_t i;
 
@@ -220,19 +220,19 @@ bool ctrl_irk_whitelisted(u8_t irkmatch_id)
 	LL_ASSERT(i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE);
 	LL_ASSERT(rl[i].taken);
 
-	return rl[i].wl;
+	return i;
 }
 
-bool ctrl_rl_idx_match(u8_t irkmatch_id, u8_t rl_idx)
+bool ctrl_irk_whitelisted(u8_t rl_idx)
 {
-	u8_t i;
+	if (rl_idx == RL_IDX_NONE) {
+		return false;
+	}
 
-	LL_ASSERT(irkmatch_id < peer_irk_count);
-	i = peer_irk_rl_ids[irkmatch_id];
-	LL_ASSERT(i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE);
-	LL_ASSERT(rl[i].taken);
+	LL_ASSERT(rl_idx < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE);
+	LL_ASSERT(rl[rl_idx].taken);
 
-	return i == rl_idx;
+	return rl[rl_idx].wl;
 }
 #endif
 
