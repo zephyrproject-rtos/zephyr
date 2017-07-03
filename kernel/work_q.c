@@ -27,6 +27,9 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 		k_work_handler_t handler;
 
 		work = k_queue_get(&work_q->queue, K_FOREVER);
+		if (!work) {
+			continue;
+		}
 
 		handler = work->handler;
 
@@ -60,8 +63,6 @@ static void work_timeout(struct _timeout *t)
 
 	/* submit work to workqueue */
 	k_work_submit_to_queue(w->work_q, &w->work);
-	/* detach from workqueue, for cancel to return appropriate status */
-	w->work_q = NULL;
 }
 
 void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
@@ -116,18 +117,20 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 {
 	int key = irq_lock();
 
-	if (k_work_pending(&work->work)) {
-		irq_unlock(key);
-		return -EINPROGRESS;
-	}
-
 	if (!work->work_q) {
 		irq_unlock(key);
 		return -EINVAL;
 	}
 
-	/* Abort timeout, if it has expired this will do nothing */
-	_abort_timeout(&work->timeout);
+	if (k_work_pending(&work->work)) {
+		/* Remove from the queue if already submitted */
+		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
+			irq_unlock(key);
+			return -EINVAL;
+		}
+	} else {
+		_abort_timeout(&work->timeout);
+	}
 
 	/* Detach from workqueue */
 	work->work_q = NULL;
