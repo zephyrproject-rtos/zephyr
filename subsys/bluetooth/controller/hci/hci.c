@@ -59,10 +59,12 @@ static struct k_poll_signal *hbuf_signal;
 static u32_t conn_count;
 #endif
 
-#define DEFAULT_EVENT_MASK    0x1fffffffffff
+#define DEFAULT_EVENT_MASK           0x1fffffffffff
+#define DEFAULT_EVENT_MASK_PAGE_2    0x1fffffffffff
 #define DEFAULT_LE_EVENT_MASK 0x1f
 
 static u64_t event_mask = DEFAULT_EVENT_MASK;
+static u64_t event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 static u64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
 
 static void evt_create(struct net_buf *buf, u8_t evt, u8_t len)
@@ -174,6 +176,17 @@ static void set_event_mask(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = 0x00;
 }
 
+static void set_event_mask_page_2(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_set_event_mask_page_2 *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+
+	event_mask_page_2 = sys_get_le64(cmd->events_page_2);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = 0x00;
+}
+
 static void reset(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
@@ -183,6 +196,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 #endif
 	/* reset event masks */
 	event_mask = DEFAULT_EVENT_MASK;
+	event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 	le_event_mask = DEFAULT_LE_EVENT_MASK;
 
 	if (buf) {
@@ -309,6 +323,10 @@ static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 
 	case BT_OCF(BT_HCI_OP_RESET):
 		reset(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_SET_EVENT_MASK_PAGE_2):
+		set_event_mask_page_2(cmd, evt);
 		break;
 
 #if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
