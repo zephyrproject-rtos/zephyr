@@ -60,7 +60,7 @@ static u32_t conn_count;
 #endif
 
 #define DEFAULT_EVENT_MASK           0x1fffffffffff
-#define DEFAULT_EVENT_MASK_PAGE_2    0x1fffffffffff
+#define DEFAULT_EVENT_MASK_PAGE_2    0x0
 #define DEFAULT_LE_EVENT_MASK 0x1f
 
 static u64_t event_mask = DEFAULT_EVENT_MASK;
@@ -382,6 +382,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[14] |= BIT(3) | BIT(5);
 	/* Read BD ADDR. */
 	rp->commands[15] |= BIT(1);
+	/* Set Event Mask Page 2 */
+	rp->commands[22] |= BIT(2);
 	/* LE Set Event Mask, LE Read Buffer Size, LE Read Local Supp Feats,
 	 * Set Random Addr
 	 */
