@@ -882,8 +882,8 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		conn_interval_us =
 			pdu_adv->payload.connect_ind.lldata.interval * 1250;
 		conn->latency = pdu_adv->payload.connect_ind.lldata.latency;
-		memcpy((void *)&conn->role.slave.force, &conn->access_addr[0],
-		       sizeof(conn->role.slave.force));
+		memcpy((void *)&conn->slave.force, &conn->access_addr[0],
+		       sizeof(conn->slave.force));
 		conn->supervision_reload =
 			RADIO_CONN_EVENTS((pdu_adv->payload.connect_ind.lldata.timeout
 					   * 10 * 1000), conn_interval_us);
@@ -971,16 +971,16 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		}
 
 		/* calculate the window widening */
-		conn->role.slave.sca = pdu_adv->payload.connect_ind.lldata.sca;
-		conn->role.slave.window_widening_periodic_us =
+		conn->slave.sca = pdu_adv->payload.connect_ind.lldata.sca;
+		conn->slave.window_widening_periodic_us =
 			(((gc_lookup_ppm[_radio.sca] +
-			   gc_lookup_ppm[conn->role.slave.sca]) *
+			   gc_lookup_ppm[conn->slave.sca]) *
 			  conn_interval_us) + (1000000 - 1)) / 1000000;
-		conn->role.slave.window_widening_max_us =
+		conn->slave.window_widening_max_us =
 			(conn_interval_us >> 1) - RADIO_TIFS;
-		conn->role.slave.window_size_event_us =
+		conn->slave.window_size_event_us =
 			pdu_adv->payload.connect_ind.lldata.win_size * 1250;
-		conn->role.slave.window_size_prepare_us = 0;
+		conn->slave.window_size_prepare_us = 0;
 
 		rx_ready_delay = radio_rx_ready_delay_get(0);
 
@@ -1000,7 +1000,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			conn->hdr.ticks_xtal_to_start :
 			conn->hdr.ticks_active_to_start;
 		conn_interval_us -=
-			conn->role.slave.window_widening_periodic_us;
+			conn->slave.window_widening_periodic_us;
 
 		conn_offset_us = radio_tmr_end_get();
 		conn_offset_us +=
@@ -1606,10 +1606,9 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	_radio.conn_upd = NULL;
 
 	/* update to next ticks offsets */
-	if (_radio.conn_curr->role.slave.role != 0) {
-		_radio.conn_curr->role.slave.ticks_to_offset =
-		    _radio.conn_curr->llcp.connection_update.
-			ticks_to_offset_next;
+	if (_radio.conn_curr->role) {
+		_radio.conn_curr->slave.ticks_to_offset =
+		    _radio.conn_curr->llcp.connection_update.ticks_to_offset_next;
 	}
 
 	/* conn param req procedure, if any, is complete */
@@ -2151,7 +2150,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		if (((_radio.conn_curr->llcp_req == _radio.conn_curr->llcp_ack) &&
 		     (_radio.conn_upd == 0)) ||
 		    ((_radio.conn_curr->llcp_req != _radio.conn_curr->llcp_ack) &&
-		     (_radio.conn_curr->role.slave.role != 0) &&
+		     (_radio.conn_curr->role) &&
 		     (_radio.conn_curr == _radio.conn_upd) &&
 		     (_radio.conn_curr->llcp_type == LLCP_CONNECTION_UPDATE) &&
 		     ((_radio.conn_curr->llcp.connection_update.state ==
@@ -2225,7 +2224,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		 */
 		else if ((_radio.conn_curr->llcp_req !=
 			  _radio.conn_curr->llcp_ack) &&
-			 (_radio.conn_curr->role.master.role == 0) &&
+			 (!_radio.conn_curr->role) &&
 			 (_radio.conn_curr == _radio.conn_upd) &&
 			 (_radio.conn_curr->llcp_type == LLCP_CONNECTION_UPDATE)) {
 			/* ignore this req, as master continue initiating or
@@ -2709,7 +2708,7 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	_radio.state = ((_radio.state == STATE_CLOSE) || (crc_close) ||
 			((crc_ok) && (pdu_data_rx->md == 0) &&
 			 (pdu_data_tx->len == 0)) ||
-			(_radio.conn_curr->llcp_terminate.reason_peer != 0)) ?
+			_radio.conn_curr->llcp_terminate.reason_peer) ?
 			STATE_CLOSE : STATE_TX;
 
 	if (_radio.state == STATE_CLOSE) {
@@ -3006,7 +3005,7 @@ static inline void isr_close_conn(void)
 
 	/* Remote Initiated terminate happened in this event for Slave */
 	if ((_radio.role == ROLE_SLAVE) &&
-	    (_radio.conn_curr->llcp_terminate.reason_peer != 0)) {
+	    _radio.conn_curr->llcp_terminate.reason_peer) {
 		terminate_ind_rx_enqueue(_radio.conn_curr,
 					 _radio.conn_curr->llcp_terminate.reason_peer);
 
@@ -3033,7 +3032,7 @@ static inline void isr_close_conn(void)
 			/* calculate the drift in ticks */
 			start_to_address_actual_us = radio_tmr_aa_get();
 			window_widening_event_us =
-				_radio.conn_curr->role.slave.window_widening_event_us;
+				_radio.conn_curr->slave.window_widening_event_us;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
 			preamble_to_addr_us =
 				addr_us_get(_radio.conn_curr->phy_rx);
@@ -3061,8 +3060,8 @@ static inline void isr_close_conn(void)
 
 
 			/* Reset window widening, as anchor point sync-ed */
-			_radio.conn_curr->role.slave.window_widening_event_us = 0;
-			_radio.conn_curr->role.slave.window_size_event_us = 0;
+			_radio.conn_curr->slave.window_widening_event_us = 0;
+			_radio.conn_curr->slave.window_size_event_us = 0;
 
 			/* apply latency if no more data */
 			_radio.conn_curr->latency_event = _radio.conn_curr->latency;
@@ -3076,18 +3075,17 @@ static inline void isr_close_conn(void)
 					_radio.conn_curr->latency_event = 0;
 				}
 			}
-		} else {
-			/* Reset connection failed to establish procedure */
-			_radio.conn_curr->role.master.connect_expire = 0;
 		}
+
+		/* Reset connection failed to establish procedure */
+		_radio.conn_curr->connect_expire = 0;
 
 		/* Reset supervision counter */
 		_radio.conn_curr->supervision_expire = 0;
 	}
 
 	/* Remote Initiated terminate happened in previous event for Master */
-	else if ((_radio.role == ROLE_MASTER) &&
-		 (_radio.conn_curr->llcp_terminate.reason_peer != 0)) {
+	else if (_radio.conn_curr->llcp_terminate.reason_peer) {
 		terminate_ind_rx_enqueue(_radio.conn_curr,
 					 _radio.conn_curr->llcp_terminate.reason_peer);
 
@@ -3097,12 +3095,10 @@ static inline void isr_close_conn(void)
 		return;
 	}
 
-	/* If master, check connection failed to establish */
-	else if ((_radio.role == ROLE_MASTER) &&
-		 (_radio.conn_curr->role.master.connect_expire != 0)) {
-		if (_radio.conn_curr->role.master.connect_expire >
-		    elapsed_event) {
-			_radio.conn_curr->role.master.connect_expire -= elapsed_event;
+	/* check connection failed to establish */
+	else if (_radio.conn_curr->connect_expire) {
+		if (_radio.conn_curr->connect_expire > elapsed_event) {
+			_radio.conn_curr->connect_expire -= elapsed_event;
 		} else {
 			terminate_ind_rx_enqueue(_radio.conn_curr, 0x3e);
 
@@ -3146,12 +3142,12 @@ static inline void isr_close_conn(void)
 				if (latency_event != 0) {
 					force = 1;
 				} else {
-					force = _radio.conn_curr->role.slave.force & 0x01;
+					force = _radio.conn_curr->slave.force & 0x01;
 
 					/* rotate force bits */
-					_radio.conn_curr->role.slave.force >>= 1;
+					_radio.conn_curr->slave.force >>= 1;
 					if (force) {
-						_radio.conn_curr->role.slave.force |=
+						_radio.conn_curr->slave.force |=
 							((u32_t)1 << 31);
 					}
 				}
@@ -3900,12 +3896,11 @@ static void mayfly_xtal_stop_calc(void *params)
 				/* if next ticker close to this ticker, send
 				 * conn param req.
 				 */
-				if ((conn_curr->role.slave.role != 0) &&
-					(conn->role.master.role == 0) &&
-					(ticks_to_expire <
-					 (TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US +
-							     625)
-					  + conn_curr->hdr.ticks_slot))) {
+				if (conn_curr->role && !conn->role &&
+				    (ticks_to_expire <
+				     (TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US +
+							 625) +
+				      conn_curr->hdr.ticks_slot))) {
 					u32_t status;
 
 					status = conn_update_req(conn_curr);
@@ -3913,12 +3908,11 @@ static void mayfly_xtal_stop_calc(void *params)
 					    (conn->llcp_version.rx)) {
 						conn_update_req(conn);
 					}
-				} else if ((conn_curr->role.master.role == 0) &&
-						(conn->role.slave.role != 0) &&
-						(ticks_to_expire <
-						 (TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US +
-								     625) +
-						  conn_curr->hdr.ticks_slot))) {
+				} else if (!conn_curr->role && conn->role &&
+					   (ticks_to_expire <
+					    (TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US +
+								625) +
+					     conn_curr->hdr.ticks_slot))) {
 					u32_t status;
 
 					status = conn_update_req(conn);
@@ -4007,7 +4001,7 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 
 		conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
 			       (ticker_id - RADIO_TICKER_ID_FIRST_CONNECTION));
-		if ((conn) && (conn->role.master.role == 0)) {
+		if (conn && !conn->role) {
 			u32_t ticks_to_expire_normal = ticks_to_expire;
 
 			if (conn->hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
@@ -4190,8 +4184,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 		conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
 			       (ticker_id - RADIO_TICKER_ID_FIRST_CONNECTION));
 
-		if ((conn != conn_curr) && ((is_select) ||
-					    (conn->role.master.role == 0))) {
+		if ((conn != conn_curr) && (is_select || !conn->role)) {
 			u32_t ticks_to_expire_normal =
 				ticks_to_expire + ticks_prepare_reduced;
 
@@ -4294,9 +4287,9 @@ static void mayfly_sched_free_win_offset_calc(void *params)
 
 	ticks_to_offset_next = &ticks_to_offset_default;
 
-	if (conn->role.slave.role != 0) {
+	if (conn->role) {
 		conn->llcp.connection_update.ticks_to_offset_next =
-			conn->role.slave.ticks_to_offset;
+			conn->slave.ticks_to_offset;
 
 		ticks_to_offset_next =
 			&conn->llcp.connection_update.ticks_to_offset_next;
@@ -5505,8 +5498,7 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 			fp_mayfly_select_or_use = mayfly_sched_win_offset_use;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED */
 			state = conn->llcp.connection_update.state;
-			if ((state == LLCP_CONN_STATE_RSP) &&
-			    (conn->role.master.role == 0)) {
+			if ((state == LLCP_CONN_STATE_RSP) && !conn->role) {
 				state = LLCP_CONN_STATE_INITIATE;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 				fp_mayfly_select_or_use =
@@ -5516,7 +5508,7 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 
 			switch (state) {
 			case LLCP_CONN_STATE_INITIATE:
-				if (conn->role.master.role == 0) {
+				if (!conn->role) {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 					event_conn_update_st_init(conn,
 						event_counter,
@@ -5660,38 +5652,38 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 			conn->hdr.ticks_active_to_start;
 		conn_interval_us = conn->llcp.connection_update.interval * 1250;
 		periodic_us = conn_interval_us;
-		if (conn->role.slave.role != 0) {
-			conn->role.slave.window_widening_prepare_us -=
-				conn->role.slave.window_widening_periodic_us *
+		if (conn->role) {
+			conn->slave.window_widening_prepare_us -=
+				conn->slave.window_widening_periodic_us *
 				instant_latency;
 
-			conn->role.slave.window_widening_periodic_us =
+			conn->slave.window_widening_periodic_us =
 				(((gc_lookup_ppm[_radio.sca] +
-				   gc_lookup_ppm[conn->role.slave.sca]) *
+				   gc_lookup_ppm[conn->slave.sca]) *
 				  conn_interval_us) + (1000000 - 1)) / 1000000;
-			conn->role.slave.window_widening_max_us =
+			conn->slave.window_widening_max_us =
 				(conn_interval_us >> 1) - RADIO_TIFS;
-			conn->role.slave.window_size_prepare_us =
+			conn->slave.window_size_prepare_us =
 				conn->llcp.connection_update.win_size * 1250;
-			conn->role.slave.ticks_to_offset = 0;
+			conn->slave.ticks_to_offset = 0;
 
-			conn->role.slave.window_widening_prepare_us +=
-				conn->role.slave.window_widening_periodic_us *
+			conn->slave.window_widening_prepare_us +=
+				conn->slave.window_widening_periodic_us *
 				latency;
-			if (conn->role.slave.window_widening_prepare_us >
-			    conn->role.slave.window_widening_max_us) {
-				conn->role.slave.window_widening_prepare_us =
-					conn->role.slave.window_widening_max_us;
+			if (conn->slave.window_widening_prepare_us >
+			    conn->slave.window_widening_max_us) {
+				conn->slave.window_widening_prepare_us =
+					conn->slave.window_widening_max_us;
 			}
 
 			ticks_at_expire -=
-				TICKER_US_TO_TICKS(conn->role.slave.window_widening_periodic_us *
+				TICKER_US_TO_TICKS(conn->slave.window_widening_periodic_us *
 						   latency);
 			ticks_win_offset =
 				TICKER_US_TO_TICKS((conn->llcp.connection_update.win_offset_us /
 						    1250) * 1250);
 			periodic_us -=
-				conn->role.slave.window_widening_periodic_us;
+				conn->slave.window_widening_periodic_us;
 
 			if (conn->llcp.connection_update.is_internal == 2) {
 				conn_update_req(conn);
@@ -5760,7 +5752,7 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 				     TICKER_REMAINDER(periodic_us),
 				     TICKER_NULL_LAZY,
 				     (ticks_slot_offset + conn->hdr.ticks_slot),
-				     (conn->role.slave.role != 0) ?
+				     conn->role ?
 				     event_slave_prepare : event_master_prepare,
 				     conn, ticker_success_assert,
 				     (void *)__LINE__);
@@ -5846,7 +5838,7 @@ static inline void event_enc_prep(struct connection *conn)
 		conn->llcp_ack = conn->llcp_req;
 
 		/* master sends encrypted enc start rsp in control priority */
-		if (conn->role.master.role == 0) {
+		if (!conn->role) {
 			/* calc the Session Key */
 			ecb_encrypt(&conn->llcp.encryption.ltk[0],
 				    &conn->llcp.encryption.skd[0],
@@ -5989,7 +5981,7 @@ static inline void event_fex_prep(struct connection *conn)
 		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
 			sizeof(struct pdu_data_llctrl_feature_req);
 		pdu_ctrl_tx->payload.llctrl.opcode =
-			(conn->role.master.role == 0) ?
+			!conn->role ?
 			PDU_DATA_LLCTRL_TYPE_FEATURE_REQ :
 			PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
 		memset(&pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[0],
@@ -6520,13 +6512,13 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 	LL_ASSERT(!_radio.ticker_id_prepare);
 
 	/* Calc window widening */
-	if (conn->role.slave.role != 0) {
-		conn->role.slave.window_widening_prepare_us +=
-		    conn->role.slave.window_widening_periodic_us * (lazy + 1);
-		if (conn->role.slave.window_widening_prepare_us >
-		    conn->role.slave.window_widening_max_us) {
-			conn->role.slave.window_widening_prepare_us =
-				conn->role.slave.window_widening_max_us;
+	if (conn->role) {
+		conn->slave.window_widening_prepare_us +=
+		    conn->slave.window_widening_periodic_us * (lazy + 1);
+		if (conn->slave.window_widening_prepare_us >
+		    conn->slave.window_widening_max_us) {
+			conn->slave.window_widening_prepare_us =
+				conn->slave.window_widening_max_us;
 		}
 	}
 
@@ -6661,8 +6653,7 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 				   conn->hdr.ticks_preempt_to_start,
 				   (RADIO_TICKER_ID_FIRST_CONNECTION +
 				    conn->handle),
-				   (conn->role.slave.role != 0) ? event_slave :
-								  event_master,
+				   conn->role ? event_slave : event_master,
 				   conn);
 	if (!err) {
 		_radio.ticker_id_prepare = RADIO_TICKER_ID_FIRST_CONNECTION +
@@ -6756,19 +6747,19 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	chan_set(data_chan_use);
 
 	/* current window widening */
-	conn->role.slave.window_widening_event_us +=
-		conn->role.slave.window_widening_prepare_us;
-	conn->role.slave.window_widening_prepare_us = 0;
-	if (conn->role.slave.window_widening_event_us >
-	    conn->role.slave.window_widening_max_us) {
-		conn->role.slave.window_widening_event_us =
-			conn->role.slave.window_widening_max_us;
+	conn->slave.window_widening_event_us +=
+		conn->slave.window_widening_prepare_us;
+	conn->slave.window_widening_prepare_us = 0;
+	if (conn->slave.window_widening_event_us >
+	    conn->slave.window_widening_max_us) {
+		conn->slave.window_widening_event_us =
+			conn->slave.window_widening_max_us;
 	}
 
 	/* current window size */
-	conn->role.slave.window_size_event_us +=
-		conn->role.slave.window_size_prepare_us;
-	conn->role.slave.window_size_prepare_us = 0;
+	conn->slave.window_size_event_us +=
+		conn->slave.window_size_prepare_us;
+	conn->slave.window_size_prepare_us = 0;
 
 	remainder_us =
 		radio_tmr_start(0, ticks_at_expire +
@@ -6776,8 +6767,8 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				_radio.remainder_anchor);
 	radio_tmr_aa_capture();
 	hcto = remainder_us + (RADIO_TICKER_JITTER_US << 2) +
-	       (conn->role.slave.window_widening_event_us << 1) +
-	       conn->role.slave.window_size_event_us;
+	       (conn->slave.window_widening_event_us << 1) +
+	       conn->slave.window_size_event_us;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
 	hcto += radio_rx_ready_delay_get(conn->phy_rx);
@@ -6908,21 +6899,17 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 	/* normal connection! */
 #if SILENT_CONNECTION
-	if ((!conn->empty) || (pdu_data_tx->md) ||
-	    ((conn->supervision_expire != 0) &&
-	     (conn->supervision_expire <= 6)) ||
-	    ((conn->role.master.connect_expire != 0) &&
-	     (conn->role.master.connect_expire <= 6)))
+	if (!conn->empty || pdu_data_tx->md ||
+	    (conn->supervision_expire && (conn->supervision_expire <= 6)) ||
+	    (conn->connect_expire && (conn->connect_expire <= 6))) {
 #endif
-	{
 		radio_tmr_start(1, ticks_at_expire +
 				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 				_radio.remainder_anchor);
 		radio_tmr_end_capture();
-	}
 #if SILENT_CONNECTION
 	/* silent connection! */
-	else {
+	} else {
 		u32_t remainder_us;
 		u32_t hcto;
 
@@ -7073,7 +7060,7 @@ static void prepare_pdu_data_tx(struct connection *conn,
 	   ((conn->pause_tx) && (_pdu_data_tx != 0) &&
 	    (_pdu_data_tx->len != 0) &&
 	    ((_pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
-	     ((conn->role.master.role == 0) &&
+	     (!conn->role &&
 	      (((conn->refresh == 0) &&
 		(_pdu_data_tx->payload.llctrl.opcode !=
 		 PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
@@ -7087,7 +7074,7 @@ static void prepare_pdu_data_tx(struct connection *conn,
 		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
 		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
 		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)))) ||
-	     ((conn->role.slave.role != 0) &&
+	     (conn->role &&
 	      (((conn->refresh == 0) &&
 		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
 		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_REQ) &&
@@ -7574,7 +7561,7 @@ static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 	 * be set, but a slave we accept it as new 'set' of mutex.
 	 */
 	if (_radio.conn_upd == 0) {
-		LL_ASSERT(conn->role.slave.role != 0);
+		LL_ASSERT(conn->role);
 
 		_radio.conn_upd = conn;
 	}
@@ -7615,7 +7602,7 @@ static u32_t conn_update_req(struct connection *conn)
 		return 1;
 	}
 
-	if ((conn->role.master.role == 0) || (is_peer_compatible(conn))) {
+	if (!conn->role || (is_peer_compatible(conn))) {
 		/** Perform slave intiated conn param req */
 		conn->llcp.connection_update.win_size = 1;
 		conn->llcp.connection_update.win_offset_us = 0;
@@ -7625,7 +7612,7 @@ static u32_t conn_update_req(struct connection *conn)
 			conn->supervision_reload * 125 / 1000;
 		/* conn->llcp.connection_update.instant     = 0; */
 		conn->llcp.connection_update.state =
-			(conn->role.master.role == 0) ?
+			!conn->role ?
 			LLCP_CONN_STATE_INITIATE : LLCP_CONN_STATE_REQ;
 		conn->llcp.connection_update.is_internal = 1;
 
@@ -8348,12 +8335,13 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		conn->phy_rx = BIT(0);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
-		conn->role.slave.role = 1;
-		conn->role.slave.latency_cancel = 0;
-		conn->role.slave.window_widening_prepare_us = 0;
-		conn->role.slave.window_widening_event_us = 0;
-		conn->role.slave.ticks_to_offset = 0;
-		conn->supervision_expire = 6;
+		conn->role = 1;
+		conn->connect_expire = 6;
+		conn->slave.latency_cancel = 0;
+		conn->slave.window_widening_prepare_us = 0;
+		conn->slave.window_widening_event_us = 0;
+		conn->slave.ticks_to_offset = 0;
+		conn->supervision_expire = 0;
 		conn->procedure_expire = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
@@ -8780,8 +8768,8 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->phy_rx = BIT(0);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
-	conn->role.master.role = 0;
-	conn->role.master.connect_expire = 6;
+	conn->role = 0;
+	conn->connect_expire = 6;
 	conn_interval_us =
 		(u32_t)_radio.scanner.conn_interval * 1250;
 	conn->supervision_reload =
@@ -8916,7 +8904,7 @@ u32_t ll_chm_update(u8_t *chm)
 		struct connection *conn;
 
 		conn = connection_get(instance);
-		if (!conn || conn->role.slave.role) {
+		if (!conn || conn->role) {
 			continue;
 		}
 
@@ -9591,7 +9579,7 @@ static void ticker_op_latency_cancelled(u32_t ticker_status, void *params)
 	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
 
 	conn = (struct connection *)params;
-	conn->role.slave.latency_cancel = 0;
+	conn->slave.latency_cancel = 0;
 }
 
 u32_t radio_tx_mem_enqueue(u16_t handle, struct radio_pdu_node_tx *node_tx)
@@ -9621,11 +9609,10 @@ u32_t radio_tx_mem_enqueue(u16_t handle, struct radio_pdu_node_tx *node_tx)
 	_radio.packet_tx_last = last;
 
 	/* break slave latency */
-	if ((conn->role.slave.role != 0) && (conn->latency_event != 0) &&
-	    (conn->role.slave.latency_cancel == 0)) {
+	if (conn->role && conn->latency_event && !conn->slave.latency_cancel) {
 		u32_t ticker_status;
 
-		conn->role.slave.latency_cancel = 1;
+		conn->slave.latency_cancel = 1;
 
 		ticker_status = ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
 				 RADIO_TICKER_USER_ID_APP,

@@ -44,7 +44,7 @@ struct connection {
 
 	u8_t  data_chan_count:6;
 	u8_t  data_chan_sel:1;
-	u8_t  rfu:1;
+	u8_t  role:1;
 
 	union {
 		struct {
@@ -77,6 +77,7 @@ struct connection {
 	u8_t phy_rx:3;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
+	u16_t connect_expire;
 	u16_t supervision_reload;
 	u16_t supervision_expire;
 	u16_t procedure_reload;
@@ -89,25 +90,18 @@ struct connection {
 	u16_t apto_expire;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
-	union {
-		struct {
-			u8_t  role:1;
-			u8_t  connect_expire;
-		} master;
-		struct {
-			u8_t  role:1;
-			u8_t  sca:3;
-			u8_t  latency_cancel:1;
-			u32_t window_widening_periodic_us;
-			u32_t window_widening_max_us;
-			u32_t window_widening_prepare_us;
-			u32_t window_widening_event_us;
-			u32_t window_size_prepare_us;
-			u32_t window_size_event_us;
-			u32_t force;
-			u32_t ticks_to_offset;
-		} slave;
-	} role;
+	struct {
+		u8_t  sca:3;
+		u8_t  latency_cancel:1;
+		u32_t window_widening_periodic_us;
+		u32_t window_widening_max_us;
+		u32_t window_widening_prepare_us;
+		u32_t window_widening_event_us;
+		u32_t window_size_prepare_us;
+		u32_t window_size_event_us;
+		u32_t force;
+		u32_t ticks_to_offset;
+	} slave;
 
 	u8_t  llcp_req;
 	u8_t  llcp_ack;
