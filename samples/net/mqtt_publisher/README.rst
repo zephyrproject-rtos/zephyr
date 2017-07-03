@@ -98,19 +98,19 @@ of this sample application (i.e. :file:`samples/net/mqtt_publisher`) and type:
 
 .. code-block:: console
 
-	make BOARD=frdm_k64f
+	$ make BOARD=frdm_k64f
 
 Open another terminal window and type:
 
 .. code-block:: console
 
-	sudo mosquitto -v -p 1883
+	$ sudo mosquitto -v -p 1883
 
 Open another terminal window and type:
 
 .. code-block:: console
 
-	mosquito_sub -t sensors
+	$ mosquitto_sub -t sensors
 
 Sample output
 =============
@@ -185,7 +185,7 @@ This is the information that the subscriber will receive:
 
 .. code-block:: console
 
-	mosquitto_sub -t sensors
+	$ mosquitto_sub -t sensors
 	DOORS:OPEN_QoS0
 	DOORS:OPEN_QoS1
 	DOORS:OPEN_QoS2
@@ -206,7 +206,7 @@ This is the output from the MQTT broker:
 
 .. code-block:: console
 
-	sudo mosquitto -v
+	$ sudo mosquitto -v
 	1485663791: mosquitto version 1.3.4 (build date 2014-08-17 00:14:52-0300) starting
 	1485663791: Using default config.
 	1485663791: Opening ipv4 listen socket on port 1883.
