@@ -337,7 +337,7 @@ u32_t ll_adv_enable(u8_t enable)
 {
 	struct radio_adv_data *radio_scan_data;
 	struct radio_adv_data *radio_adv_data;
-	int rl_idx = FILTER_IDX_NONE;
+	u8_t   rl_idx = FILTER_IDX_NONE;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
 	u32_t status;
