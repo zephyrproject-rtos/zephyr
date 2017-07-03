@@ -186,9 +186,9 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 
 int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 {
-#define LOOP_DEVIDER 10
+#define LOOP_DIVIDER 10
 	struct net_if *iface = net_if_get_default();
-	int loop = timeout / LOOP_DEVIDER;
+	int loop = timeout / LOOP_DIVIDER;
 	int count = 0;
 
 	if (app_info) {
