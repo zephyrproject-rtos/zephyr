@@ -78,13 +78,13 @@ struct advertiser {
 	struct shdr hdr;
 
 	u8_t is_enabled:1;
-	u8_t chl_map_current:3;
+	u8_t chan_map_current:3;
 	u8_t rfu:4;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
 	u8_t phy_p:3;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
-	u8_t chl_map:3;
+	u8_t chan_map:3;
 	u8_t filter_policy:2;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	u8_t rl_idx:4;
@@ -502,7 +502,7 @@ static void common_init(void)
 	memq_init(link, &_radio.link_rx_head, (void *)&_radio.link_rx_tail);
 
 	/* initialise advertiser channel map */
-	_radio.advertiser.chl_map = 0x07;
+	_radio.advertiser.chan_map = 0x07;
 
 	/* initialise connection channel map */
 	_radio.data_chan_map[0] = 0xFF;
@@ -2873,7 +2873,7 @@ static inline u32_t isr_close_adv(void)
 	u32_t dont_close = 0;
 
 	if ((_radio.state == STATE_CLOSE) &&
-	    (_radio.advertiser.chl_map_current != 0)) {
+	    (_radio.advertiser.chan_map_current != 0)) {
 		dont_close = 1;
 
 		adv_setup();
@@ -4930,14 +4930,14 @@ static void adv_setup(void)
 		radio_switch_complete_and_disable();
 	}
 
-	bitmap = _radio.advertiser.chl_map_current;
+	bitmap = _radio.advertiser.chan_map_current;
 	chan = 0;
 	while ((bitmap & 0x01) == 0) {
 		chan++;
 		bitmap >>= 1;
 	}
-	_radio.advertiser.chl_map_current &=
-		(_radio.advertiser.chl_map_current - 1);
+	_radio.advertiser.chan_map_current &=
+		(_radio.advertiser.chan_map_current - 1);
 
 	chan_set(37 + chan);
 }
@@ -4971,7 +4971,7 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	adv_scan_configure(0, 0);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
-	_radio.advertiser.chl_map_current = _radio.advertiser.chl_map;
+	_radio.advertiser.chan_map_current = _radio.advertiser.chan_map;
 	adv_setup();
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
@@ -8248,10 +8248,10 @@ role_disable_cleanup:
 }
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
-u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chl_map,
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 		       u8_t filter_policy, u8_t rl_idx)
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
-u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy,
+u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx)
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 {
@@ -8373,7 +8373,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chl_map, u8_t filter_policy,
 	_radio.advertiser.phy_p = phy_p;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 
-	_radio.advertiser.chl_map = chl_map;
+	_radio.advertiser.chan_map = chan_map;
 	_radio.advertiser.filter_policy = filter_policy;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	_radio.advertiser.rl_idx = rl_idx;
