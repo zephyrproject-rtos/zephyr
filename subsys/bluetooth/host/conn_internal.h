@@ -94,7 +94,12 @@ struct bt_conn {
 	u8_t			encrypt;
 #endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
 
-	u16_t		rx_len;
+	/* Connection error or reason for disconnect */
+	u8_t			err;
+
+	bt_conn_state_t		state;
+
+	u16_t		        rx_len;
 	struct net_buf		*rx;
 
 	/* Sent but not acknowledged TX packets */
@@ -109,11 +114,6 @@ struct bt_conn {
 	sys_slist_t		channels;
 
 	atomic_t		ref;
-
-	/* Connection error or reason for disconnect */
-	u8_t			err;
-
-	bt_conn_state_t		state;
 
 	union {
 		struct bt_conn_le	le;
