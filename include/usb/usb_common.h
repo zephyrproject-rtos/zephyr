@@ -63,6 +63,7 @@
 #define USB_HID_DESC                    0x21
 #define USB_HID_REPORT_DESC             0x22
 #define USB_DFU_FUNCTIONAL_DESC         0x21
+#define USB_ASSOCIATION_DESC		0x0B
 
 /* Useful define */
 #define USB_1_1                         0x0110
@@ -118,5 +119,77 @@
 #define ACM_VENDOR_PROTOCOL             0xFF
 /* Misc protocols */
 #define MISC_ETHERNET_PROTOCOL          0x01
+
+/** Standard Device Descriptor */
+struct usb_device_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t bcdUSB;
+	u8_t bDeviceClass;
+	u8_t bDeviceSubClass;
+	u8_t bDeviceProtocol;
+	u8_t bMaxPacketSize0;
+	u16_t idVendor;
+	u16_t idProduct;
+	u16_t bcdDevice;
+	u8_t iManufacturer;
+	u8_t iProduct;
+	u8_t iSerialNumber;
+	u8_t bNumConfigurations;
+} __packed;
+
+/** UNICODE String Descriptor */
+struct usb_string_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t bString;
+} __packed;
+
+/** Association Descriptor */
+struct usb_association_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bFirstInterface;
+	u8_t bInterfaceCount;
+	u8_t bFunctionClass;
+	u8_t bFunctionSubClass;
+	u8_t bFunctionProtocol;
+	u8_t iFunction;
+} __packed;
+
+/** Standard Configuration Descriptor */
+struct usb_cfg_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t wTotalLength;
+	u8_t bNumInterfaces;
+	u8_t bConfigurationValue;
+	u8_t iConfiguration;
+	u8_t bmAttributes;
+	u8_t bMaxPower;
+} __packed;
+
+/** Standard Interface Descriptor */
+struct usb_if_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bInterfaceNumber;
+	u8_t bAlternateSetting;
+	u8_t bNumEndpoints;
+	u8_t bInterfaceClass;
+	u8_t bInterfaceSubClass;
+	u8_t bInterfaceProtocol;
+	u8_t iInterface;
+} __packed;
+
+/** Standard Endpoint Descriptor */
+struct usb_ep_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bEndpointAddress;
+	u8_t bmAttributes;
+	u16_t wMaxPacketSize;
+	u8_t bInterval;
+} __packed;
 
 #endif /* USB_COMMON_H_ */
