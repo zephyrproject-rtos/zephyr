@@ -1328,7 +1328,7 @@ struct bt_hci_evt_remote_version_info {
 	u16_t handle;
 	u8_t  version;
 	u16_t manufacturer;
-	u8_t  subversion;
+	u16_t subversion;
 } __packed;
 
 #define BT_HCI_EVT_CMD_COMPLETE                 0x0e
