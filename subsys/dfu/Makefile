@@ -1,1 +1,2 @@
 obj-$(CONFIG_MCUBOOT_IMG_MANAGER) += boot/
+obj-$(CONFIG_MCUBOOT_IMG_MANAGER) += img_util/
