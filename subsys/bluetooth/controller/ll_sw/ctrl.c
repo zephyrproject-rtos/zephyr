@@ -39,7 +39,7 @@
 #include "common/log.h"
 
 #define RADIO_TIFS                      150
-#define RADIO_CONN_EVENTS(x, y)		((u16_t)((x) / (y)))
+#define RADIO_CONN_EVENTS(x, y)         ((u16_t)(((x) + (y) - 1) / (y)))
 
 #define RADIO_TICKER_JITTER_US			16
 #define RADIO_TICKER_START_PART_US		300
@@ -6612,7 +6612,7 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			/* Terminate Procedure timeout is started, will
 			 * replace any other timeout running
 			 */
-			conn->procedure_expire = conn->procedure_reload;
+			conn->procedure_expire = conn->supervision_reload;
 		}
 	}
 
