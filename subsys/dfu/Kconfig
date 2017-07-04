@@ -1,0 +1,35 @@
+# Kconfig - DFU support configuration options
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# DFU
+#
+
+menu "DFU options"
+
+config IMG_MANAGER
+	bool
+	prompt "DFU image manager"
+	default n
+	help
+	  Enable support for managing DFU image.
+
+choice
+	prompt "Image manager"
+	default MCUBOOT_IMG_MANAGER
+	depends on IMG_MANAGER
+	help
+	  Choice support for managing DFU image.
+	  So far only mcuboot support is available.
+
+config MCUBOOT_IMG_MANAGER
+	bool "Image manager for mcuboot"
+	help
+	  Enable support for managing DFU image downloaded using mcuboot.
+endchoice
+
+endmenu
