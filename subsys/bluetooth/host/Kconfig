@@ -256,7 +256,8 @@ config BLUETOOTH_GATT_CLIENT
 config BLUETOOTH_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 1
-	range 1 128
+	default 0 if !BLUETOOTH_SMP
+	range 0 128
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
