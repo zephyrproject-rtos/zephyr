@@ -3510,7 +3510,8 @@ static inline struct net_pkt *check_unknown_option(struct net_pkt *pkt,
 	 *     Problem, Code 2, message to the packet's Source Address,
 	 *     pointing to the unrecognized Option Type.
 	 */
-	NET_DBG("Unknown option %d MSB %d", opt_type, opt_type >> 6);
+	NET_DBG("Unknown option %d (0x%02x) MSB %d", opt_type, opt_type,
+		opt_type >> 6);
 
 	switch (opt_type & 0xc0) {
 	case 0x00:
@@ -3567,7 +3568,10 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 		case NET_IPV6_EXT_HDR_OPT_PAD1:
 			NET_DBG("PAD1 option");
 			length++;
-			loc++;
+			/* We need to step back as the PAD1 len is only one
+			 * byte and we read already one extra byte.
+			 */
+			loc--;
 			break;
 		case NET_IPV6_EXT_HDR_OPT_PADN:
 			NET_DBG("PADN option");
