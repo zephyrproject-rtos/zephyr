@@ -433,7 +433,7 @@ fail:
 
 static bool ccc_added;
 
-static struct bt_gatt_ccc_cfg ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static struct bt_gatt_ccc_cfg ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t ccc_value;
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
