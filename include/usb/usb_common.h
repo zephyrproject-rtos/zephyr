@@ -2,6 +2,7 @@
  *
  *
  * Copyright(c) 2015,2016 Intel Corporation.
+ * Copyright(c) 2017 PHYTEC Messtechnik GmbH
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,40 +43,41 @@
 #define USB_COMMON_H_
 
 /* Descriptor size in bytes */
-#define USB_DEVICE_DESC_SIZE            18
-#define USB_CONFIGURATION_DESC_SIZE     9
-#define USB_INTERFACE_DESC_SIZE         9
-#define USB_ENDPOINT_DESC_SIZE          7
-#define USB_STRING_DESC_SIZE            4
-#define USB_HID_DESC_SIZE               9
-#define USB_DFU_DESC_SIZE               9
-#define USB_DEVICE_QUAL_DESC_SIZE       10
-#define USB_INTERFACE_ASSOC_DESC_SIZE   8
+#define USB_DEVICE_DESC_SIZE		18
+#define USB_CONFIGURATION_DESC_SIZE	9
+#define USB_INTERFACE_DESC_SIZE		9
+#define USB_ENDPOINT_DESC_SIZE		7
+#define USB_STRING_DESC_SIZE		4
+#define USB_HID_DESC_SIZE		9
+#define USB_DFU_DESC_SIZE		9
+#define USB_DEVICE_QUAL_DESC_SIZE	10
+#define USB_INTERFACE_ASSOC_DESC_SIZE	8
 
 /* Descriptor type */
-#define USB_DEVICE_DESC                 0x01
-#define USB_CONFIGURATION_DESC          0x02
-#define USB_STRING_DESC                 0x03
-#define USB_INTERFACE_DESC              0x04
-#define USB_ENDPOINT_DESC               0x05
-#define USB_DEVICE_QUAL_DESC            0x06
-#define USB_INTERFACE_ASSOC_DESC        0x0B
-#define USB_HID_DESC                    0x21
-#define USB_HID_REPORT_DESC             0x22
-#define USB_DFU_FUNCTIONAL_DESC         0x21
+#define USB_DEVICE_DESC			0x01
+#define USB_CONFIGURATION_DESC		0x02
+#define USB_STRING_DESC			0x03
+#define USB_INTERFACE_DESC		0x04
+#define USB_ENDPOINT_DESC		0x05
+#define USB_DEVICE_QUAL_DESC		0x06
+#define USB_INTERFACE_ASSOC_DESC	0x0B
+#define USB_HID_DESC			0x21
+#define USB_HID_REPORT_DESC		0x22
+#define USB_DFU_FUNCTIONAL_DESC		0x21
+#define USB_ASSOCIATION_DESC		0x0B
 
 /* Useful define */
-#define USB_1_1                         0x0110
-#define USB_2_0                         0x0200
+#define USB_1_1				0x0110
+#define USB_2_0				0x0200
 /* Set USB version to 2.1 so that the host will request the BOS descriptor */
 #define USB_2_1				0x0210
 
-#define BCDDEVICE_RELNUM                0x0100
+#define BCDDEVICE_RELNUM		0x0100
 
 /* 100mA max power, per 2mA units */
 /* USB 1.1 spec indicates 100mA(max) per unit load, up to 5 loads */
-#define MAX_LOW_POWER                   0x32
-#define MAX_HIGH_POWER                  0xFA
+#define MAX_LOW_POWER			0x32
+#define MAX_HIGH_POWER			0xFA
 
 /* bmAttributes:
  * D7:Reserved, always 1,
@@ -83,40 +85,112 @@
  * D5:Remote Wakeup -> 0,
  * D4...0:Reserved -> 0
  */
-#define USB_CONFIGURATION_ATTRIBUTES    0xC0
+#define USB_CONFIGURATION_ATTRIBUTES	0xC0
 
 /* Classes */
-#define COMMUNICATION_DEVICE_CLASS      0x02
-#define COMMUNICATION_DEVICE_CLASS_DATA 0x0A
-#define HID_CLASS                       0x03
-#define MASS_STORAGE_CLASS              0x08
-#define WIRELESS_DEVICE_CLASS           0xE0
-#define MISC_CLASS                      0xEF
-#define CUSTOM_CLASS                    0xFF
-#define DFU_CLASS                       0xFE
+#define COMMUNICATION_DEVICE_CLASS	0x02
+#define COMMUNICATION_DEVICE_CLASS_DATA	0x0A
+#define HID_CLASS			0x03
+#define MASS_STORAGE_CLASS		0x08
+#define WIRELESS_DEVICE_CLASS		0xE0
+#define MISC_CLASS			0xEF
+#define CUSTOM_CLASS			0xFF
+#define DFU_CLASS			0xFE
 
 /* Sub-classes */
-#define ACM_SUBCLASS                    0x02
-#define CDC_ECM_SUBCLASS                0x06
-#define CDC_NCM_SUBCLASS                0x0d
-#define BOOT_INTERFACE_SUBCLASS         0x01
-#define SCSI_TRANSPARENT_SUBCLASS       0x06
-#define DFU_INTERFACE_SUBCLASS          0x01
-#define RF_SUBCLASS                     0x01
-#define CUSTOM_SUBCLASS                 0xFF
+#define ACM_SUBCLASS			0x02
+#define CDC_ECM_SUBCLASS		0x06
+#define CDC_NCM_SUBCLASS		0x0d
+#define BOOT_INTERFACE_SUBCLASS		0x01
+#define SCSI_TRANSPARENT_SUBCLASS	0x06
+#define DFU_INTERFACE_SUBCLASS		0x01
+#define RF_SUBCLASS			0x01
+#define CUSTOM_SUBCLASS			0xFF
 /* Misc subclasses */
-#define MISC_RNDIS_SUBCLASS             0x04
+#define MISC_RNDIS_SUBCLASS		0x04
 
 /* Protocols */
-#define V25TER_PROTOCOL                 0x01
-#define MOUSE_PROTOCOL                  0x02
-#define BULK_ONLY_PROTOCOL              0x50
-#define DFU_RUNTIME_PROTOCOL            0x01
-#define DFU_MODE_PROTOCOL               0x02
-#define BLUETOOTH_PROTOCOL              0x01
+#define V25TER_PROTOCOL			0x01
+#define MOUSE_PROTOCOL			0x02
+#define BULK_ONLY_PROTOCOL		0x50
+#define DFU_RUNTIME_PROTOCOL		0x01
+#define DFU_MODE_PROTOCOL		0x02
+#define BLUETOOTH_PROTOCOL		0x01
 /* CDC ACM protocols */
-#define ACM_VENDOR_PROTOCOL             0xFF
+#define ACM_VENDOR_PROTOCOL		0xFF
 /* Misc protocols */
-#define MISC_ETHERNET_PROTOCOL          0x01
+#define MISC_ETHERNET_PROTOCOL		0x01
+
+/** Standard Device Descriptor */
+struct usb_device_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t bcdUSB;
+	u8_t bDeviceClass;
+	u8_t bDeviceSubClass;
+	u8_t bDeviceProtocol;
+	u8_t bMaxPacketSize0;
+	u16_t idVendor;
+	u16_t idProduct;
+	u16_t bcdDevice;
+	u8_t iManufacturer;
+	u8_t iProduct;
+	u8_t iSerialNumber;
+	u8_t bNumConfigurations;
+} __packed;
+
+/** UNICODE String Descriptor */
+struct usb_string_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t bString;
+} __packed;
+
+/** Association Descriptor */
+struct usb_association_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bFirstInterface;
+	u8_t bInterfaceCount;
+	u8_t bFunctionClass;
+	u8_t bFunctionSubClass;
+	u8_t bFunctionProtocol;
+	u8_t iFunction;
+} __packed;
+
+/** Standard Configuration Descriptor */
+struct usb_cfg_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t wTotalLength;
+	u8_t bNumInterfaces;
+	u8_t bConfigurationValue;
+	u8_t iConfiguration;
+	u8_t bmAttributes;
+	u8_t bMaxPower;
+} __packed;
+
+/** Standard Interface Descriptor */
+struct usb_if_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bInterfaceNumber;
+	u8_t bAlternateSetting;
+	u8_t bNumEndpoints;
+	u8_t bInterfaceClass;
+	u8_t bInterfaceSubClass;
+	u8_t bInterfaceProtocol;
+	u8_t iInterface;
+} __packed;
+
+/** Standard Endpoint Descriptor */
+struct usb_ep_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bEndpointAddress;
+	u8_t bmAttributes;
+	u16_t wMaxPacketSize;
+	u8_t bInterval;
+} __packed;
 
 #endif /* USB_COMMON_H_ */
