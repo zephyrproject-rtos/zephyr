@@ -2423,9 +2423,6 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	u8_t terminate = 0;
 	u8_t nack = 0;
 
-	/* Reset CRC expiry counter */
-	_radio.crc_expire = 0;
-
 	/* Ack for transmitted data */
 	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
 	if (pdu_data_rx->nesn != _radio.conn_curr->sn) {
@@ -2639,6 +2636,12 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 		if (terminate) {
 			goto isr_rx_conn_exit;
 		}
+
+		/* Reset CRC expiry counter */
+		_radio.crc_expire = 0;
+
+		/* Reset supervision counter */
+		_radio.conn_curr->supervision_expire = 0;
 	} else {
 		/* Start CRC error countdown, if not already started */
 		if (_radio.crc_expire == 0) {
@@ -2648,6 +2651,12 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 		/* Check crc error countdown expiry */
 		_radio.crc_expire--;
 		crc_close = (_radio.crc_expire == 0);
+
+		/* Start supervision timeout, if not started already */
+		if (!_radio.conn_curr->supervision_expire) {
+			_radio.conn_curr->supervision_expire =
+				_radio.conn_curr->supervision_reload;
+		}
 	}
 
 	/* prepare transmit packet */
@@ -3059,9 +3068,6 @@ static inline void isr_close_conn(void)
 
 		/* Reset connection failed to establish procedure */
 		_radio.conn_curr->connect_expire = 0;
-
-		/* Reset supervision counter */
-		_radio.conn_curr->supervision_expire = 0;
 	}
 
 	/* Remote Initiated terminate happened in previous event for Master */
@@ -3094,7 +3100,7 @@ static inline void isr_close_conn(void)
 	 */
 	else {
 		/* Start supervision timeout, if not started already */
-		if (_radio.conn_curr->supervision_expire == 0) {
+		if (!_radio.conn_curr->supervision_expire) {
 			_radio.conn_curr->supervision_expire =
 				_radio.conn_curr->supervision_reload;
 		}
@@ -3102,7 +3108,7 @@ static inline void isr_close_conn(void)
 
 	/* check supervision timeout */
 	force = 0;
-	if (_radio.conn_curr->supervision_expire != 0) {
+	if (_radio.conn_curr->supervision_expire) {
 		if (_radio.conn_curr->supervision_expire > elapsed_event) {
 			_radio.conn_curr->supervision_expire -= elapsed_event;
 
