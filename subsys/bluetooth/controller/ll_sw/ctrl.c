@@ -2450,6 +2450,13 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* Increment serial number */
 		_radio.conn_curr->sn++;
 
+		/* First ack (and redundantly any other ack) enable use of
+		 * slave latency.
+		 */
+		if (_radio.role == ROLE_SLAVE) {
+			_radio.conn_curr->slave.latency_enabled = 1;
+		}
+
 		if (_radio.conn_curr->empty == 0) {
 			struct radio_pdu_node_tx *node_tx;
 			u8_t pdu_data_tx_len, pdu_data_tx_ll_id;
@@ -3067,13 +3074,11 @@ static inline void isr_close_conn(void)
 							   preamble_to_addr_us);
 			}
 
-
 			/* Reset window widening, as anchor point sync-ed */
 			_radio.conn_curr->slave.window_widening_event_us = 0;
 			_radio.conn_curr->slave.window_size_event_us = 0;
 
 			/* apply latency if no more data */
-			_radio.conn_curr->latency_event = _radio.conn_curr->latency;
 			if (_radio.conn_curr->pkt_tx_head) {
 				struct pdu_data *pdu_data_tx;
 
@@ -3083,6 +3088,9 @@ static inline void isr_close_conn(void)
 				    _radio.conn_curr->packet_tx_head_offset) {
 					_radio.conn_curr->latency_event = 0;
 				}
+			} else if (_radio.conn_curr->slave.latency_enabled) {
+				_radio.conn_curr->latency_event =
+					_radio.conn_curr->latency;
 			}
 		}
 
@@ -8314,6 +8322,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 
 		conn->role = 1;
 		conn->connect_expire = 6;
+		conn->slave.latency_enabled = 0;
 		conn->slave.latency_cancel = 0;
 		conn->slave.window_widening_prepare_us = 0;
 		conn->slave.window_widening_event_us = 0;

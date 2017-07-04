@@ -91,8 +91,9 @@ struct connection {
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 	struct {
-		u8_t  sca:3;
+		u8_t  latency_enabled:1;
 		u8_t  latency_cancel:1;
+		u8_t  sca:3;
 		u32_t window_widening_periodic_us;
 		u32_t window_widening_max_us;
 		u32_t window_widening_prepare_us;
