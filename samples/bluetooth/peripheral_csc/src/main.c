@@ -80,8 +80,8 @@
 
 /* Cycling Speed and Cadence Service declaration */
 
-static struct bt_gatt_ccc_cfg csc_meas_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
-static struct bt_gatt_ccc_cfg ctrl_point_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+static struct bt_gatt_ccc_cfg csc_meas_ccc_cfg[BT_GATT_CCC_MAX];
+static struct bt_gatt_ccc_cfg ctrl_point_ccc_cfg[BT_GATT_CCC_MAX];
 static u32_t cwr; /* Cumulative Wheel Revolutions */
 static u8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
 static u8_t sensor_location; /* Current Sensor Location */

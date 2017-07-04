@@ -503,7 +503,7 @@ static void ble_timeout(struct k_work *work)
 	}
 }
 
-static struct bt_gatt_ccc_cfg pong_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+static struct bt_gatt_ccc_cfg pong_ccc_cfg[BT_GATT_CCC_MAX];
 
 static void pong_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t val)
 {

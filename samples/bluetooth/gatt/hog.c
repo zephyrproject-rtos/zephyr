@@ -55,7 +55,7 @@ static struct hids_report input = {
 	.type = HIDS_INPUT,
 };
 
-static struct bt_gatt_ccc_cfg input_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static struct bt_gatt_ccc_cfg input_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t simulate_input;
 static u8_t ctrl_point;
 static u8_t report_map[] = {

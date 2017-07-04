@@ -22,7 +22,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-static struct bt_gatt_ccc_cfg ct_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static struct bt_gatt_ccc_cfg ct_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t ct[10];
 static u8_t ct_update;
 

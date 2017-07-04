@@ -69,7 +69,7 @@ static struct bt_gatt_attr gap_attrs[] = {
 
 static struct bt_gatt_service gap_svc = BT_GATT_SERVICE(gap_attrs);
 
-static struct bt_gatt_ccc_cfg sc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static struct bt_gatt_ccc_cfg sc_ccc_cfg[BT_GATT_CCC_MAX] = {};
 
 static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 			       u16_t value)

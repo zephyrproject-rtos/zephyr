@@ -100,7 +100,7 @@ struct temperature_sensor {
 		s16_t ref_val; /* Reference temperature */
 	};
 
-	struct bt_gatt_ccc_cfg  ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+	struct bt_gatt_ccc_cfg  ccc_cfg[BT_GATT_CCC_MAX];
 	struct es_measurement meas;
 };
 

@@ -67,7 +67,7 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-static struct bt_gatt_ccc_cfg vnd_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static struct bt_gatt_ccc_cfg vnd_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t simulate_vnd;
 static u8_t indicating;
 static struct bt_gatt_indicate_params ind_params;
