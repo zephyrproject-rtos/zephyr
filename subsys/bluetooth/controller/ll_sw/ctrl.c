@@ -3011,6 +3011,7 @@ static inline void isr_close_conn(void)
 	u16_t ticks_drift_minus;
 	u16_t latency_event;
 	u16_t elapsed_event;
+	u8_t reason_peer;
 	u16_t lazy;
 	u8_t force;
 
@@ -3019,11 +3020,13 @@ static inline void isr_close_conn(void)
 		return;
 	}
 
-	/* Remote Initiated terminate happened in this event for Slave */
-	if ((_radio.role == ROLE_SLAVE) &&
-	    _radio.conn_curr->llcp_terminate.reason_peer) {
-		terminate_ind_rx_enqueue(_radio.conn_curr,
-					 _radio.conn_curr->llcp_terminate.reason_peer);
+	/* Master transmitted ack for the received terminate ind or
+	 * Slave received terminate ind.
+	 */
+	reason_peer = _radio.conn_curr->llcp_terminate.reason_peer;
+	if (reason_peer && ((_radio.role == ROLE_SLAVE) ||
+			    _radio.conn_curr->master.terminate_ack)) {
+		terminate_ind_rx_enqueue(_radio.conn_curr, reason_peer);
 
 		connection_release(_radio.conn_curr);
 		_radio.conn_curr = NULL;
@@ -3037,8 +3040,8 @@ static inline void isr_close_conn(void)
 	elapsed_event = latency_event + 1;
 
 	/* calculate drift if anchor point sync-ed */
-	if ((_radio.packet_counter != 0) && ((!SILENT_CONNECTION) ||
-					     (_radio.packet_counter != 0xFF))) {
+	if (_radio.packet_counter &&
+	    (!SILENT_CONNECTION || (_radio.packet_counter != 0xFF))) {
 		if (_radio.role == ROLE_SLAVE) {
 			u32_t start_to_address_expected_us;
 			u32_t start_to_address_actual_us;
@@ -3092,21 +3095,12 @@ static inline void isr_close_conn(void)
 				_radio.conn_curr->latency_event =
 					_radio.conn_curr->latency;
 			}
+		} else if (reason_peer) {
+			_radio.conn_curr->master.terminate_ack = 1;
 		}
 
 		/* Reset connection failed to establish procedure */
 		_radio.conn_curr->connect_expire = 0;
-	}
-
-	/* Remote Initiated terminate happened in previous event for Master */
-	else if (_radio.conn_curr->llcp_terminate.reason_peer) {
-		terminate_ind_rx_enqueue(_radio.conn_curr,
-					 _radio.conn_curr->llcp_terminate.reason_peer);
-
-		connection_release(_radio.conn_curr);
-		_radio.conn_curr = NULL;
-
-		return;
 	}
 
 	/* check connection failed to establish */
@@ -7504,8 +7498,7 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 	void *link;
 
 	/* Prepare the rx packet structure */
-	radio_pdu_node_rx =
-		(struct radio_pdu_node_rx *)&conn->llcp_terminate.radio_pdu_node_rx;
+	radio_pdu_node_rx = (void *)&conn->llcp_terminate.radio_pdu_node_rx;
 	LL_ASSERT(radio_pdu_node_rx->hdr.onion.link);
 
 	radio_pdu_node_rx->hdr.handle = conn->handle;
@@ -8765,6 +8758,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 
 	conn->role = 0;
 	conn->connect_expire = 6;
+	conn->master.terminate_ack = 0;
 	conn_interval_us =
 		(u32_t)_radio.scanner.conn_interval * 1250;
 	conn->supervision_reload =
