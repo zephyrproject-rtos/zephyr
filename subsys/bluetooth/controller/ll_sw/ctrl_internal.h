@@ -90,19 +90,25 @@ struct connection {
 	u16_t apto_expire;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
-	struct {
-		u8_t  latency_enabled:1;
-		u8_t  latency_cancel:1;
-		u8_t  sca:3;
-		u32_t window_widening_periodic_us;
-		u32_t window_widening_max_us;
-		u32_t window_widening_prepare_us;
-		u32_t window_widening_event_us;
-		u32_t window_size_prepare_us;
-		u32_t window_size_event_us;
-		u32_t force;
-		u32_t ticks_to_offset;
-	} slave;
+	union {
+		struct {
+			u8_t terminate_ack:1;
+		} master;
+
+		struct {
+			u8_t  latency_enabled:1;
+			u8_t  latency_cancel:1;
+			u8_t  sca:3;
+			u32_t window_widening_periodic_us;
+			u32_t window_widening_max_us;
+			u32_t window_widening_prepare_us;
+			u32_t window_widening_event_us;
+			u32_t window_size_prepare_us;
+			u32_t window_size_event_us;
+			u32_t force;
+			u32_t ticks_to_offset;
+		} slave;
+	};
 
 	u8_t  llcp_req;
 	u8_t  llcp_ack;
@@ -174,10 +180,10 @@ struct connection {
 	} llcp_version;
 
 	struct {
-		u8_t  req;
-		u8_t  ack;
-		u8_t  reason_own;
-		u8_t  reason_peer;
+		u8_t req;
+		u8_t ack;
+		u8_t reason_own;
+		u8_t reason_peer;
 		struct {
 			struct radio_pdu_node_rx_hdr hdr;
 			u8_t reason;
