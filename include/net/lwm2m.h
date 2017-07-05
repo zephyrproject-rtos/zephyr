@@ -89,9 +89,15 @@ int lwm2m_device_add_err(u8_t error_code);
 #define RESULT_UPDATE_FAILED	8
 #define RESULT_UNSUP_PROTO	9
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb);
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
 
+void lwm2m_firmware_set_update_cb(lwm2m_engine_exec_cb_t cb);
+lwm2m_engine_exec_cb_t lwm2m_firmware_get_update_cb(void);
+#endif
+#endif
 
 /* LWM2M Engine */
 
@@ -156,5 +162,4 @@ int lwm2m_engine_start(struct net_context *net_ctx);
 int lwm2m_rd_client_start(struct net_context *net_ctx,
 			  struct sockaddr *peer_addr,
 			  const char *ep_name);
-
 #endif	/* __LWM2M_H__ */

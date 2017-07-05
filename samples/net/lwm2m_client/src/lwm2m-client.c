@@ -163,6 +163,14 @@ static int device_factory_default_cb(u16_t obj_inst_id)
 static int firmware_update_cb(u16_t obj_inst_id)
 {
 	SYS_LOG_DBG("UPDATE");
+
+	/* TODO: kick off update process */
+
+	/* If success, set the update result as RESULT_SUCCESS.
+	 * In reality, it should be set at function lwm2m_setup()
+	 */
+	lwm2m_engine_set_u8("5/0/3", STATE_IDLE);
+	lwm2m_engine_set_u8("5/0/5", RESULT_SUCCESS);
 	return 1;
 }
 
@@ -235,7 +243,7 @@ static int lwm2m_setup(void)
 	lwm2m_engine_register_post_write_callback("5/0/0",
 						  firmware_block_received_cb);
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
-	lwm2m_engine_register_exec_callback("5/0/2", firmware_update_cb);
+	lwm2m_firmware_set_update_cb(firmware_update_cb);
 
 	/* setup TEMP SENSOR object */
 
