@@ -19,6 +19,7 @@ CONFIG_UART_CONSOLE_ON_DEV_NAME="UART_1"
 
 # enable I2C driver
 CONFIG_I2C=y
+CONFIG_I2C_STM32_V1=y
 
 # enable pinmux
 CONFIG_PINMUX=y
