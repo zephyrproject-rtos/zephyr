@@ -88,6 +88,10 @@ def read_mmu_list_marshal_param():
     # a offset used to remember next location to read in the binary
     size_read_from_binary = struct.calcsize(header_values_format);
 
+    if args.verbose and num_of_regions:
+        print("%d memory ranges found in MMU_LIST:" % num_of_regions)
+        print("Range                 Size       Flags")
+
     # for each of the regions mentioned in the binary loop and populate all the
     # required parameters
     for region in range(num_of_regions):
@@ -95,6 +99,10 @@ def read_mmu_list_marshal_param():
                                                read_buff,
                                                size_read_from_binary);
         size_read_from_binary += struct.calcsize(struct_mmu_regions_format);
+
+        if args.verbose:
+            addr, size, flags = basic_mem_region_values
+            print("0x%08x-0x%08x 0x%08x 0x%08x" %(addr, addr + size - 1, size, flags))
 
         #validate for memory overlap here
         for i in raw_info:
