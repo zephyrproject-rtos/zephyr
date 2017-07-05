@@ -236,6 +236,11 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 
 	TC_PRINT(" - Cancel delayed work from coop thread\n");
 	k_delayed_work_cancel(&tests[1].work);
+
+	k_delayed_work_submit(&tests[2].work, 0 /* Submit immeditelly */);
+
+	TC_PRINT(" - Cancel pending delayed work from coop thread\n");
+	k_delayed_work_cancel(&tests[2].work);
 }
 
 static int test_delayed_cancel(void)
@@ -249,7 +254,8 @@ static int test_delayed_cancel(void)
 
 	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
 			(k_thread_entry_t)coop_delayed_work_cancel_main,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
+			NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_SYSTEM_WORKQUEUE_PRIORITY), 0, 0);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_sleep(2 * WORK_ITEM_WAIT);
