@@ -131,6 +131,7 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	bool "Firmware Update object pull support"
 	default y
 	depends on LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+	depends on (HTTP_PARSER || HTTP_PARSER_URL)
 	help
 	  Include support for pulling a file from a remote server via
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
