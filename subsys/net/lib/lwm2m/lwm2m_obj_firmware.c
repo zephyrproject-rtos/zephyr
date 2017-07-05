@@ -59,10 +59,123 @@ static struct lwm2m_engine_obj_inst inst;
 static struct lwm2m_engine_res_inst res[FIRMWARE_MAX_ID];
 
 static lwm2m_engine_set_data_cb_t write_cb;
+static lwm2m_engine_exec_cb_t update_cb;
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(char *package_uri);
 #endif
+
+u8_t lwm2m_firmware_get_update_state(void)
+{
+	return update_state;
+}
+
+void lwm2m_firmware_set_update_state(u8_t state)
+{
+	bool error = false;
+
+	/* Check LWM2M SPEC appendix E.6.1 */
+	switch (state) {
+	case STATE_DOWNLOADING:
+		if (update_state != STATE_IDLE) {
+			error = true;
+		}
+		break;
+	case STATE_DOWNLOADED:
+		if (update_state != STATE_DOWNLOADING &&
+		    update_state != STATE_UPDATING) {
+			error = true;
+		}
+		break;
+	case STATE_UPDATING:
+		if (update_state != STATE_DOWNLOADED) {
+			error = true;
+		}
+		break;
+	case STATE_IDLE:
+		break;
+	default:
+		SYS_LOG_ERR("Unhandled state: %u", state);
+		return;
+	}
+
+	if (error) {
+		SYS_LOG_ERR("Invalid state transition: %u -> %u",
+			    update_state, state);
+	}
+
+	update_state = state;
+	NOTIFY_OBSERVER(LWM2M_OBJECT_FIRMWARE_ID, 0, FIRMWARE_STATE_ID);
+	SYS_LOG_DBG("Update state = %d", update_state);
+}
+
+u8_t lwm2m_firmware_get_update_result(void)
+{
+	return update_result;
+}
+
+void lwm2m_firmware_set_update_result(u8_t result)
+{
+	u8_t state;
+	bool error = false;
+
+	/* Check LWM2M SPEC appendix E.6.1 */
+	switch (result) {
+	case RESULT_DEFAULT:
+		lwm2m_firmware_set_update_state(STATE_IDLE);
+		break;
+	case RESULT_SUCCESS:
+		if (update_state != STATE_UPDATING) {
+			error = true;
+			state = update_state;
+		}
+
+		lwm2m_firmware_set_update_state(STATE_IDLE);
+		break;
+	case RESULT_NO_STORAGE:
+	case RESULT_OUT_OF_MEM:
+	case RESULT_CONNECTION_LOST:
+	case RESULT_UNSUP_FW:
+	case RESULT_INVALID_URI:
+	case RESULT_UNSUP_PROTO:
+		if (update_state != STATE_DOWNLOADING) {
+			error = true;
+			state = update_state;
+		}
+
+		lwm2m_firmware_set_update_state(STATE_IDLE);
+		break;
+	case RESULT_INTEGRITY_FAILED:
+		if (update_state != STATE_DOWNLOADING &&
+		    update_state != STATE_UPDATING) {
+			error = true;
+			state = update_state;
+		}
+
+		lwm2m_firmware_set_update_state(STATE_IDLE);
+		break;
+	case RESULT_UPDATE_FAILED:
+		if (update_state != STATE_UPDATING) {
+			error = true;
+			state = update_state;
+		}
+
+		/* Next state could be idle or downloaded */
+		break;
+	default:
+		SYS_LOG_ERR("Unhandled result: %u", result);
+		return;
+	}
+
+	if (error) {
+		SYS_LOG_ERR("Unexpected result(%u) set while state is %u",
+			    result, state);
+	}
+
+	update_result = result;
+	NOTIFY_OBSERVER(LWM2M_OBJECT_FIRMWARE_ID, 0, FIRMWARE_UPDATE_RESULT_ID);
+	SYS_LOG_DBG("Update result = %d", update_result);
+}
 
 static int package_write_cb(u16_t obj_inst_id,
 			    u8_t *data, u16_t data_len,
@@ -82,11 +195,22 @@ static int package_uri_write_cb(u16_t obj_inst_id,
 				bool last_block, size_t total_size)
 {
 	SYS_LOG_DBG("PACKAGE_URI WRITE: %s", package_uri);
+
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	lwm2m_firmware_start_transfer(package_uri);
+	u8_t state = lwm2m_firmware_get_update_state();
+
+	if (state == STATE_IDLE) {
+		lwm2m_firmware_set_update_result(RESULT_DEFAULT);
+		lwm2m_firmware_start_transfer(package_uri);
+	} else if (state == STATE_DOWNLOADED && data_len == 0) {
+		/* reset to state idle and result default */
+		lwm2m_firmware_set_update_result(RESULT_DEFAULT);
+	}
+
 	return 1;
-#endif
+#else
 	return 0;
+#endif
 }
 
 void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb)
@@ -99,6 +223,48 @@ lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void)
 	return write_cb;
 }
 
+void lwm2m_firmware_set_update_cb(lwm2m_engine_exec_cb_t cb)
+{
+	update_cb = cb;
+}
+
+lwm2m_engine_exec_cb_t lwm2m_firmware_get_update_cb(void)
+{
+	return update_cb;
+}
+
+static int firmware_update_cb(u16_t obj_inst_id)
+{
+	lwm2m_engine_exec_cb_t callback;
+	u8_t state;
+	int ret;
+
+	state = lwm2m_firmware_get_update_state();
+	if (state != STATE_DOWNLOADED) {
+		/* TODO: pass response code to caller, -1 will be shown as
+		 * 4.05 method not allowed in current implementation
+		 */
+		SYS_LOG_ERR("State other than downloaded: %d", state);
+		return -1;
+	}
+
+	lwm2m_firmware_set_update_state(STATE_UPDATING);
+
+	callback = lwm2m_firmware_get_update_cb();
+	if (callback) {
+		ret = callback(obj_inst_id);
+		if (ret < 0) {
+			SYS_LOG_ERR("Failed to update firmware: %d", ret);
+			lwm2m_firmware_set_update_result(
+				ret == -EINVAL ? RESULT_INTEGRITY_FAILED :
+						 RESULT_UPDATE_FAILED);
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
 static struct lwm2m_engine_obj_inst *firmware_create(u16_t obj_inst_id)
 {
 	int i = 0;
@@ -109,7 +275,8 @@ static struct lwm2m_engine_obj_inst *firmware_create(u16_t obj_inst_id)
 	INIT_OBJ_RES(res, i, FIRMWARE_PACKAGE_URI_ID, 0,
 		     package_uri, PACKAGE_URI_LEN,
 		     NULL, NULL, package_uri_write_cb, NULL);
-	INIT_OBJ_RES_DUMMY(res, i, FIRMWARE_UPDATE_ID);
+	INIT_OBJ_RES_EXECUTE(res, i, FIRMWARE_UPDATE_ID,
+			     firmware_update_cb);
 	INIT_OBJ_RES_DATA(res, i, FIRMWARE_STATE_ID,
 			  &update_state, sizeof(update_state));
 	INIT_OBJ_RES_DATA(res, i, FIRMWARE_UPDATE_RESULT_ID,
@@ -130,6 +297,8 @@ static int lwm2m_firmware_init(struct device *dev)
 
 	/* Set default values */
 	package_uri[0] = '\0';
+	/* Initialize state machine */
+	/* TODO: should be restored from the permanent storage */
 	update_state = STATE_IDLE;
 	update_result = RESULT_DEFAULT;
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
