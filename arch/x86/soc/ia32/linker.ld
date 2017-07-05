@@ -38,8 +38,8 @@ MEMORY
      * target. However, it shouldn't overlap any other regions.
      */
 
-    IDT_LIST        : ORIGIN = 2K, LENGTH = 2K
-    MMU_LIST	    : ORIGIN = 4k, LENGTH = 1K
+    IDT_LIST        : ORIGIN = 0xFFFF1000, LENGTH = 2K
+    MMU_LIST	    : ORIGIN = 0xFFFF2000, LENGTH = 1K
     }
 
 #include <arch/x86/linker.ld>
