@@ -54,19 +54,6 @@
 
 #define ENGINE_UPDATE_INTERVAL 500
 
-/* LWM2M / CoAP Content-Formats */
-#define LWM2M_FORMAT_PLAIN_TEXT		0
-#define LWM2M_FORMAT_APP_LINK_FORMAT	40
-#define LWM2M_FORMAT_APP_OCTET_STREAM	42
-#define LWM2M_FORMAT_APP_EXI		47
-#define LWM2M_FORMAT_APP_JSON		50
-#define LWM2M_FORMAT_OMA_PLAIN_TEXT	1541
-#define LWM2M_FORMAT_OMA_OLD_TLV	1542
-#define LWM2M_FORMAT_OMA_OLD_JSON	1543
-#define LWM2M_FORMAT_OMA_OLD_OPAQUE	1544
-#define LWM2M_FORMAT_OMA_TLV		11542
-#define LWM2M_FORMAT_OMA_JSON		11543
-
 #define DISCOVER_PREFACE	"</.well-known/core>;ct=40"
 
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
@@ -662,7 +649,7 @@ static u16_t select_writer(struct lwm2m_output_context *out, u16_t accept)
 		SYS_LOG_ERR("Unknown Accept type %u, using LWM2M plain text",
 			    accept);
 		out->writer = &plain_text_writer;
-		accept = LWM2M_FORMAT_OMA_PLAIN_TEXT;
+		accept = LWM2M_FORMAT_PLAIN_TEXT;
 		break;
 
 	}
@@ -674,6 +661,7 @@ static u16_t select_reader(struct lwm2m_input_context *in, u16_t format)
 {
 	switch (format) {
 
+	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		in->reader = &plain_text_reader;
 		break;
@@ -687,7 +675,7 @@ static u16_t select_reader(struct lwm2m_input_context *in, u16_t format)
 		SYS_LOG_ERR("Unknown content type %u, using LWM2M plain text",
 			    format);
 		in->reader = &plain_text_reader;
-		format = LWM2M_FORMAT_OMA_PLAIN_TEXT;
+		format = LWM2M_FORMAT_PLAIN_TEXT;
 		break;
 
 	}
@@ -1976,7 +1964,7 @@ static int handle_request(struct zoap_packet *request,
 		format = zoap_option_value_to_int(&options[0]);
 	} else {
 		SYS_LOG_DBG("No content-format given. Assume text plain.");
-		format = LWM2M_FORMAT_OMA_PLAIN_TEXT;
+		format = LWM2M_FORMAT_PLAIN_TEXT;
 	}
 
 	/* read Accept */
@@ -1984,9 +1972,8 @@ static int handle_request(struct zoap_packet *request,
 	if (r > 0) {
 		accept = zoap_option_value_to_int(&options[0]);
 	} else {
-		SYS_LOG_DBG("No Accept header: use same as content-format(%d)",
-			    format);
-		accept = format;
+		SYS_LOG_DBG("No accept option given. Assume OMA TLV.");
+		accept = LWM2M_FORMAT_OMA_TLV;
 	}
 
 	/* TODO: Handle bootstrap deleted -- re-add when DTLS support ready */
