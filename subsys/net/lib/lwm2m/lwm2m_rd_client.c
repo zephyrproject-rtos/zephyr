@@ -529,6 +529,12 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 
 	if (!clients[index].registered) {
 		/* include client endpoint in URI QUERY on 1st registration */
+		zoap_add_option_int(&request, ZOAP_OPTION_CONTENT_FORMAT,
+				    LWM2M_FORMAT_APP_LINK_FORMAT);
+		snprintf(query_buffer, sizeof(query_buffer) - 1,
+			 "lwm2m=%s", LWM2M_PROTOCOL_VERSION);
+		zoap_add_option(&request, ZOAP_OPTION_URI_QUERY,
+				query_buffer, strlen(query_buffer));
 		snprintf(query_buffer, sizeof(query_buffer) - 1,
 			 "ep=%s", clients[index].ep_name);
 		zoap_add_option(&request, ZOAP_OPTION_URI_QUERY,
