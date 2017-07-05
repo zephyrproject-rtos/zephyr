@@ -388,6 +388,7 @@ int net_context_unref(struct net_context *context)
 #if defined(CONFIG_NET_TCP)
 	if (context->tcp) {
 		net_tcp_release(context->tcp);
+		context->tcp = NULL;
 	}
 #endif /* CONFIG_NET_TCP */
 
