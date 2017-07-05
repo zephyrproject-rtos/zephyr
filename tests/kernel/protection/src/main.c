@@ -48,11 +48,17 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 #define DO_BARRIERS() do { } while (0)
 #endif
 
+/* i386 MMU doesn't control execute capabilities, only on x86_64 */
+#ifndef CONFIG_X86
+#define NO_EXECUTE_SUPPORT 1
+#endif
+
 static int __attribute__((noinline)) add_one(int i)
 {
 	return (i + 1);
 }
 
+#ifdef NO_EXECUTE_SUPPORT
 static void execute_from_buffer(u8_t *dst)
 {
 	void *src = FUNC_TO_PTR(add_one);
@@ -79,6 +85,7 @@ static void execute_from_buffer(u8_t *dst)
 		INFO("Did not get expected return value!\n");
 	}
 }
+#endif
 
 static void write_ro(void)
 {
@@ -130,6 +137,7 @@ static void write_text(void)
 	zassert_unreachable("Write to text did not fault");
 }
 
+#ifdef NO_EXECUTE_SUPPORT
 static void exec_data(void)
 {
 	execute_from_buffer(data_buf);
@@ -154,17 +162,20 @@ static void exec_heap(void)
 	zassert_unreachable("Execute from heap did not fault");
 }
 #endif
+#endif /* NO_EXECUTE_SUPPORT */
 
 void test_main(void *unused1, void *unused2, void *unused3)
 {
 	ztest_test_suite(test_protection,
-			 ztest_unit_test(write_ro),
-			 ztest_unit_test(write_text),
+#ifdef NO_EXECUTE_SUPPORT
 			 ztest_unit_test(exec_data),
-			 ztest_unit_test(exec_stack)
+			 ztest_unit_test(exec_stack),
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-			 , ztest_unit_test(exec_heap)
+			 ztest_unit_test(exec_heap),
 #endif
+#endif /* NO_EXECUTE_SUPPORT */
+			 ztest_unit_test(write_ro),
+			 ztest_unit_test(write_text)
 		);
 	ztest_run_test_suite(test_protection);
 }
