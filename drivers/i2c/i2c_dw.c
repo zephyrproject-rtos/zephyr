@@ -257,27 +257,6 @@ static void i2c_dw_isr(void *arg)
 				goto done;
 			}
 		}
-	} else { /* we must be configured as a slave device */
-
-		/* We have a read requested by the master device */
-		if (intr_stat.bits.rd_req &&
-		    (!dw->app_config.bits.is_slave_read)) {
-
-			/* data is not ready to send */
-			if (intr_stat.bits.tx_abrt) {
-				/* clear the TX_ABRT interrupt */
-				value = regs->ic_clr_tx_abrt;
-			}
-
-			_i2c_dw_data_send(port);
-			value = regs->ic_clr_rd_req;
-		}
-
-		/* The slave device is ready to receive */
-		if (intr_stat.bits.rx_full &&
-		    dw->app_config.bits.is_slave_read) {
-			_i2c_dw_data_read(port);
-		}
 	}
 
 	/* STOP detected: finish processing this message */
@@ -321,6 +300,8 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 		SYS_LOG_DBG("I2C: host configured as Master Device");
 		ic_con.bits.master_mode = 1;
 		ic_con.bits.slave_disable = 1;
+	} else {
+		return -EINVAL;
 	}
 
 	ic_con.bits.restart_en = 1;

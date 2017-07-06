@@ -55,10 +55,6 @@ extern "C" {
 /** Controller to act as Master. */
 #define I2C_MODE_MASTER			(1 << 4)
 
-/** Controller to act as Slave. */
-#define I2C_MODE_SLAVE_READ		(1 << 5)
-
-
 /*
  * I2C_MSG_* are I2C Message flags.
  */
@@ -101,7 +97,6 @@ union dev_config {
 		u32_t        use_10_bit_addr : 1;
 		u32_t        speed : 3;
 		u32_t        is_master_device : 1;
-		u32_t        is_slave_read : 1;
 		u32_t        reserved : 26;
 	} bits;
 };
