@@ -465,6 +465,10 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_route_entry *route = net_route_data(nbr);
 
+		if (!route) {
+			continue;
+		}
+
 		SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route,
 					     node) {
 			if (nexthop_route->nbr == nbr_nexthop) {
