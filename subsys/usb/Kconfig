@@ -66,6 +66,19 @@ config USB_DEVICE_SN
 	help
 	USB device SerialNumber string
 
+config USB_COMPOSITE_DEVICE
+	bool
+	prompt "Enable composite device driver"
+	depends on USB
+	default n
+	help
+	Enable composite USB device driver.
+
+config USB_COMPOSITE_BUFFER_SIZE
+	int
+	depends on USB_COMPOSITE_DEVICE
+	default 64
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK
