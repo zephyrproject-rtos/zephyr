@@ -43,10 +43,6 @@ static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
 		return -EINVAL;
 	}
 
-	if (dev_config.bits.is_slave_read) {
-		return -EINVAL;
-	}
-
 	if (dev_config.bits.use_10_bit_addr) {
 		return -EINVAL;
 	}

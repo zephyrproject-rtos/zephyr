@@ -194,11 +194,6 @@ static int i2c_sam3_runtime_configure(struct device *dev, u32_t config)
 	dev_data->dev_config.raw = config;
 	reg = 0;
 
-	/* Currently support master mode only */
-	if (dev_data->dev_config.bits.is_slave_read) {
-		return -EINVAL;
-	}
-
 	/* Calculate clock dividers */
 	clk = clk_div_calc(dev);
 	if (!clk) {
