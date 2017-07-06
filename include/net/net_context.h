@@ -763,8 +763,6 @@ static inline void net_context_setup_pools(struct net_context *context,
 					   net_pkt_get_pool_func_t data_pool)
 {
 	NET_ASSERT(context);
-	NET_ASSERT(tx_slab);
-	NET_ASSERT(data_pool);
 
 	context->tx_slab = tx_slab;
 	context->data_pool = data_pool;
