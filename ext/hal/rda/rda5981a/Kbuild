@@ -1,0 +1,1 @@
+obj-$(CONFIG_HAS_RDA5981A_SDMMC) += sdc/sdmmc.o
