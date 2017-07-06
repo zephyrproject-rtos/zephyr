@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2017 RDA
+# Copyright (c) 2016-2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_RDA5981
+
+config WDT_RDA5981A
+	bool "RDA5981A Watchdog Driver for RDA5981 family of MCUs"
+	default n
+	help
+	 Enable WDG driver for RDA5981 line of MCUs
+
+config WDT_RDA5981A_DEVICE_NAME
+	string "Device name for RDA5981A Watchdog"
+	depends on WDT_RDA5981A
+	default "WDT"
+	help
+	 Set the name used by WDT device during registration.
+
+endif # SOC_FAMILY_RDA5981

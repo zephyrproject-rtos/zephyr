@@ -28,4 +28,6 @@ source "drivers/watchdog/Kconfig.sam"
 
 source "drivers/watchdog/Kconfig.esp32"
 
+source "drivers/watchdog/Kconfig.rda5981a"
+
 endif
