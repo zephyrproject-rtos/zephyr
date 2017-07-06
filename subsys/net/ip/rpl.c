@@ -3690,8 +3690,7 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 	net_pkt_write_u8(pkt, pkt->frags, offset, &pos,
 			 rpl_default_instance->instance_id);
 	net_pkt_write_be16(pkt, pkt->frags, pos, &pos,
-			   htons(rpl_default_instance->
-				 current_dag->rank));
+			   rpl_default_instance->current_dag->rank);
 	return 0;
 }
 
