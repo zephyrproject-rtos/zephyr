@@ -36,6 +36,36 @@ config SYS_LOG_USB_LEVEL
 
 	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config USB_DEVICE_VID
+	hex
+	default 0x8086 #Intel vendor ID
+	help
+	USB device vendor ID
+
+config USB_DEVICE_PID
+	hex
+	default 0xF8A1
+	help
+	USB device product ID
+
+config USB_DEVICE_MANUFACTURER
+	string
+	default "ZEPHYR"
+	help
+	USB device Manufacturer string
+
+config USB_DEVICE_PRODUCT
+	string
+	default "USB-DEV"
+	help
+	USB device Product string
+
+config USB_DEVICE_SN
+	string
+	default "0.01"
+	help
+	USB device SerialNumber string
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK
