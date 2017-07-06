@@ -3767,7 +3767,6 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 		down = false;
 	}
 
-	sender_rank = ntohs(sender_rank);
 	sender_closer = sender_rank < instance->current_dag->rank;
 
 	NET_DBG("Packet going %s, sender closer %d (%d < %d)",
