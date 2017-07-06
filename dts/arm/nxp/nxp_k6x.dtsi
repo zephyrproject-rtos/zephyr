@@ -105,6 +105,30 @@
 			};
 		};
 
+		i2c0: i2c@40066000 {
+			compatible = "nxp,kinetis-i2c";
+			reg = <0x40066000 0x1000>;
+			interrupts = <24 0>;
+			label = "I2C_0";
+			status = "disabled";
+		};
+
+		i2c1: i2c@40067000 {
+			compatible = "nxp,kinetis-i2c";
+			reg = <0x40067000 0x1000>;
+			interrupts = <25 0>;
+			label = "I2C_1";
+			status = "disabled";
+		};
+
+		i2c2: i2c@400e6000 {
+			compatible = "nxp,kinetis-i2c";
+			reg = <0x400e6000 0x1000>;
+			interrupts = <74 0>;
+			label = "I2C_2";
+			status = "disabled";
+		};
+
 		uart0: uart@4006a000 {
 			compatible = "nxp,kinetis-uart";
 			reg = <0x4006a000 0x1000>;

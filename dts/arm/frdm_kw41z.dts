@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_kw41z.dtsi>
+#include <i2c.h>
 
 / {
 	model = "NXP Freedom KW41Z board";
@@ -14,6 +15,8 @@
 		gpio_a = &gpioa;
 		gpio_b = &gpiob;
 		gpio_c = &gpioc;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
 	};
 
 	chosen {
@@ -21,6 +24,11 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &lpuart0;
 	};
+};
+
+&i2c1 {
+	status = "ok";
+	zephyr,speed = <I2C_SPEED_STANDARD>;
 };
 
 &lpuart0 {

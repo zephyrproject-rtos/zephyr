@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_k6x.dtsi>
+#include <i2c.h>
 
 / {
 	model = "NXP Freedom MK64F board";
@@ -19,6 +20,9 @@
 		gpio_c = &gpioc;
 		gpio_d = &gpiod;
 		gpio_e = &gpioe;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
+		i2c_2 = &i2c2;
 	};
 
 	chosen {
@@ -26,6 +30,11 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 	};
+};
+
+&i2c0 {
+	status = "ok";
+	zephyr,speed = <I2C_SPEED_STANDARD>;
 };
 
 &uart0 {
