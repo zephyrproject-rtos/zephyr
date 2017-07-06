@@ -407,7 +407,7 @@ static int hci_driver_open(void)
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
 			K_THREAD_STACK_SIZEOF(recv_thread_stack), recv_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 
 	BT_DBG("Success.");
 

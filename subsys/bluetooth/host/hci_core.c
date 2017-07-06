@@ -4075,7 +4075,7 @@ int bt_enable(bt_ready_cb_t cb)
 	k_thread_create(&rx_thread_data, rx_thread_stack,
 			K_THREAD_STACK_SIZEOF(rx_thread_stack),
 			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(7), 0, K_NO_WAIT);
+			K_PRIO_COOP(8), 0, K_NO_WAIT);
 #endif
 
 	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
