@@ -483,11 +483,11 @@ static void hci_acl(struct net_buf *buf)
 static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
-	u16_t i, num_handles = sys_le16_to_cpu(evt->num_handles);
+	int i;
 
-	BT_DBG("num_handles %u", num_handles);
+	BT_DBG("num_handles %u", evt->num_handles);
 
-	for (i = 0; i < num_handles; i++) {
+	for (i = 0; i < evt->num_handles; i++) {
 		u16_t handle, count;
 		struct bt_conn *conn;
 		unsigned int key;
