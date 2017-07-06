@@ -341,7 +341,7 @@ static bool run_tests(void)
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
-	if (tmp || !memcmp(tmp, &any, sizeof(struct in6_addr))) {
+	if (tmp && !memcmp(tmp, &any, sizeof(struct in6_addr))) {
 		printk("IPv6 preferred ll address fetch failed\n");
 		return false;
 	}
