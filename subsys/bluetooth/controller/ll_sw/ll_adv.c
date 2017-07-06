@@ -337,7 +337,7 @@ u32_t ll_adv_enable(u8_t enable)
 {
 	struct radio_adv_data *radio_scan_data;
 	struct radio_adv_data *radio_adv_data;
-	int rl_idx = RL_IDX_NONE;
+	int rl_idx = FILTER_IDX_NONE;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
 	u32_t status;
@@ -393,9 +393,9 @@ u32_t ll_adv_enable(u8_t enable)
 		    ll_adv.own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 			/* Look up the resolving list */
 			rl_idx = ll_rl_find(ll_adv.id_addr_type,
-					    ll_adv.id_addr);
+					    ll_adv.id_addr, NULL);
 
-			if (rl_idx >= 0) {
+			if (rl_idx != FILTER_IDX_NONE) {
 				/* Generate RPAs if required */
 				ll_rl_rpa_update(false);
 			}
@@ -403,7 +403,6 @@ u32_t ll_adv_enable(u8_t enable)
 			ll_rl_pdu_adv_update(rl_idx, pdu_adv);
 			ll_rl_pdu_adv_update(rl_idx, pdu_scan);
 			priv = true;
-			rl_idx = rl_idx >= 0 ? rl_idx : RL_IDX_NONE;
 		}
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 		if (!priv) {

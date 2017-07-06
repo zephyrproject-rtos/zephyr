@@ -8,9 +8,9 @@ struct ll_adv_set {
 	u8_t  chan_map:3;
 	u8_t  filter_policy:2;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	u8_t  rl_idx:4;
 	u8_t  own_addr_type:2;
 	u8_t  id_addr_type:1;
+	u8_t  rl_idx;
 	u8_t  id_addr[BDADDR_SIZE];
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 

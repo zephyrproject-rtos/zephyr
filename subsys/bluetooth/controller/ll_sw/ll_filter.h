@@ -6,7 +6,7 @@
 
 #define WL_SIZE        8
 
-#define RL_IDX_NONE    0xF
+#define FILTER_IDX_NONE    0xFF
 
 struct ll_filter {
 	u8_t  enable_bitmask;
@@ -26,6 +26,6 @@ bool ctrl_irk_whitelisted(u8_t rl_idx);
 bool ctrl_rl_enabled(void);
 void ll_rl_rpa_update(bool timeout);
 
-int ll_rl_find(u8_t id_addr_type, u8_t *id_addr);
+u8_t ll_rl_find(u8_t id_addr_type, u8_t *id_addr, u8_t *free);
 bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr);
 void ll_rl_pdu_adv_update(int idx, struct pdu_adv *pdu);

@@ -87,7 +87,7 @@ struct advertiser {
 	u8_t chan_map:3;
 	u8_t filter_policy:2;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	u8_t rl_idx:4;
+	u8_t rl_idx;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 	struct radio_adv_data adv_data;
@@ -732,7 +732,7 @@ static inline bool isr_adv_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci,
 				      u8_t rl_idx)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	if (rl_idx != RL_IDX_NONE) {
+	if (rl_idx != FILTER_IDX_NONE) {
 		return rl_idx == _radio.advertiser.rl_idx;
 	}
 #endif
@@ -776,9 +776,9 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	/* An IRK match implies address resolution enabled */
-	u8_t rl_idx = irkmatch_ok ? ctrl_rl_idx(irkmatch_id) : RL_IDX_NONE;
+	u8_t rl_idx = irkmatch_ok ? ctrl_rl_idx(irkmatch_id) : FILTER_IDX_NONE;
 #else
-	u8_t rl_idx = RL_IDX_NONE;
+	u8_t rl_idx = FILTER_IDX_NONE;
 #endif
 	pdu_adv = (struct pdu_adv *)radio_pkt_scratch_get();
 	_pdu_adv = (struct pdu_adv *)&_radio.advertiser.adv_data.data
