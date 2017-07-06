@@ -735,6 +735,11 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 		return -ESRCH;
 	}
 
+	if (!net_pkt_ll_src(pkt)->addr) {
+		NET_DBG("Link layer source address not set");
+		return -EINVAL;
+	}
+
 	/* Sanitycheck: If src and dst ll addresses are going to be same,
 	 * then something went wrong in route lookup.
 	 */
