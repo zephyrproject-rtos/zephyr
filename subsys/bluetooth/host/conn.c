@@ -1303,14 +1303,14 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 		k_poll_event_init(&events[ev_count],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
-				  &conn->tx_queue);
-		events[ev_count++].tag = BT_EVENT_CONN_TX_QUEUE;
+				  &conn->tx_notify);
+		events[ev_count++].tag = BT_EVENT_CONN_TX_NOTIFY;
 
 		k_poll_event_init(&events[ev_count],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
-				  &conn->tx_notify);
-		events[ev_count++].tag = BT_EVENT_CONN_TX_NOTIFY;
+				  &conn->tx_queue);
+		events[ev_count++].tag = BT_EVENT_CONN_TX_QUEUE;
 	}
 
 	return ev_count;
