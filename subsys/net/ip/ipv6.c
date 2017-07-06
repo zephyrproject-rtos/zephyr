@@ -1732,7 +1732,6 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 		}
 
 		nd_opt_hdr = net_icmpv6_get_nd_opt_hdr(pkt, &ndopthdr);
-		NET_ASSERT_INFO(nd_opt_hdr, "End-of-opt, this is expected.");
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),

@@ -1211,7 +1211,6 @@ static inline struct net_buf *adjust_offset(struct net_buf *frag,
 					    u16_t offset, u16_t *pos)
 {
 	if (!frag) {
-		NET_ERR("Invalid fragment");
 		return NULL;
 	}
 
@@ -1672,6 +1671,24 @@ struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
 	return frag;
 }
 
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
+static void too_short_msg(struct net_pkt *pkt, u16_t offset, size_t extra_len)
+{
+	size_t total_len = net_buf_frags_len(pkt->frags);
+	size_t hdr_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt);
+
+	if (total_len != (hdr_len + extra_len)) {
+		/* Print info how many bytes past the end we tried to print */
+		NET_ERR("IP hdr %d ext len %d offset %d pos %zd total %zd",
+			net_pkt_ip_hdr_len(pkt),
+			net_pkt_ipv6_ext_len(pkt),
+			offset, hdr_len + extra_len, total_len);
+	}
+}
+#else
+#define too_short_msg(...)
+#endif
+
 struct net_icmp_hdr *net_pkt_icmp_data(struct net_pkt *pkt)
 {
 	struct net_buf *frag;
@@ -1683,11 +1700,7 @@ struct net_icmp_hdr *net_pkt_icmp_data(struct net_pkt *pkt)
 				&offset);
 	if (!frag) {
 		/* We tried to read past the end of the data */
-		NET_ASSERT_INFO(frag,
-				"IP hdr %d ext len %d offset %d total %zd",
-				net_pkt_ip_hdr_len(pkt),
-				net_pkt_ipv6_ext_len(pkt),
-				offset, net_buf_frags_len(pkt->frags));
+		too_short_msg(pkt, offset, 0);
 		return NULL;
 	}
 
@@ -1705,15 +1718,7 @@ u8_t *net_pkt_icmp_opt_data(struct net_pkt *pkt, size_t opt_len)
 				&offset);
 	if (!frag) {
 		/* We tried to read past the end of the data */
-		NET_ASSERT_INFO(frag,
-				"IP hdr %d ext len %d offset %d pos %zd "
-				"total %zd",
-				net_pkt_ip_hdr_len(pkt),
-				net_pkt_ipv6_ext_len(pkt),
-				offset,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt) + opt_len,
-				net_buf_frags_len(pkt->frags));
+		too_short_msg(pkt, offset, opt_len);
 		return NULL;
 	}
 
@@ -1731,15 +1736,7 @@ struct net_udp_hdr *net_pkt_udp_data(struct net_pkt *pkt)
 				&offset);
 	if (!frag) {
 		/* We tried to read past the end of the data */
-		NET_ASSERT_INFO(frag,
-				"IP hdr %d ext len %d offset %d pos %d "
-				"total %zd",
-				net_pkt_ip_hdr_len(pkt),
-				net_pkt_ipv6_ext_len(pkt),
-				offset,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt),
-				net_buf_frags_len(pkt->frags));
+		too_short_msg(pkt, offset, 0);
 		return NULL;
 	}
 
@@ -1757,15 +1754,7 @@ struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt)
 				&offset);
 	if (!frag) {
 		/* We tried to read past the end of the data */
-		NET_ASSERT_INFO(frag,
-				"IP hdr %d ext len %d offset %d pos %d "
-				"total %zd",
-				net_pkt_ip_hdr_len(pkt),
-				net_pkt_ipv6_ext_len(pkt),
-				offset,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt),
-				net_buf_frags_len(pkt->frags));
+		too_short_msg(pkt, offset, 0);
 		return NULL;
 	}
 
