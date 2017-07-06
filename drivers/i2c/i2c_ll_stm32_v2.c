@@ -262,7 +262,7 @@ int stm32_i2c_configure_timing(struct device *dev, u32_t clock)
 	u32_t i2c_hold_time_min, i2c_setup_time_min;
 	u32_t i2c_h_min_time, i2c_l_min_time;
 	u32_t presc = 1;
-	u32_t timing;
+	u32_t timing = 0;
 
 	switch (data->dev_config.bits.speed) {
 	case I2C_SPEED_STANDARD:
