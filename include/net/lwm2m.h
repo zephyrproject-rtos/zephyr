@@ -20,6 +20,10 @@
 #define LWM2M_OBJECT_LOCATION_ID			6
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID		7
 
+/* IPSO Alliance Objects */
+
+#define IPSO_OBJECT_TEMP_SENSOR_ID			3303
+
 /* callback can return 1 if handled (don't update value) */
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
 				       size_t *data_len);

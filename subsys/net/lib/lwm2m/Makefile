@@ -25,3 +25,6 @@ obj-$(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT) += lwm2m_obj_firmware_pull.o
 
 # JSON Support
 obj-$(CONFIG_LWM2M_RW_JSON_SUPPORT) += lwm2m_rw_json.o
+
+# IPSO Objects
+obj-$(CONFIG_LWM2M_IPSO_TEMP_SENSOR) += ipso_temp_sensor.o
