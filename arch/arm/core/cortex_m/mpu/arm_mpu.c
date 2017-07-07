@@ -69,6 +69,77 @@ static void _region_init(u32_t index, u32_t region_addr,
 	ARM_MPU_DEV->rasr = region_attr | REGION_ENABLE;
 }
 
+/**
+ * This internal function is utilized by the MPU driver to parse the intent
+ * type (i.e. THREAD_STACK_REGION) and return the correct region index.
+ */
+static inline u32_t _get_region_index_by_type(u32_t type)
+{
+	/*
+	 * The new MPU regions are allocated per type after the statically
+	 * configured regions. The type is one-indexed rather than
+	 * zero-indexed, therefore we need to subtract by one to get the region
+	 * index.
+	 */
+	switch (type) {
+	case THREAD_STACK_REGION:
+		return mpu_config.num_regions + type - 1;
+	case THREAD_STACK_GUARD_REGION:
+		return mpu_config.num_regions + type - 1;
+	case THREAD_DOMAIN_PARTITION_REGION:
+#if defined(CONFIG_MPU_STACK_GUARD)
+		return mpu_config.num_regions + type - 1;
+#else
+		/*
+		 * Start domain partition region from stack guard region
+		 * since stack guard is not enabled.
+		 */
+		return mpu_config.num_regions + type - 2;
+#endif
+	default:
+		__ASSERT(0, "Unsupported type");
+		return 0;
+	}
+}
+
+static inline u32_t round_up_to_next_power_of_two(u32_t v)
+{
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v++;
+
+	return v;
+}
+
+/**
+ * This internal function converts the region size to
+ * the SIZE field value of MPU_RASR.
+ */
+static inline u32_t _size_to_mpu_rasr_size(u32_t size)
+{
+	/* The minimal supported region size is 32 bytes */
+	if (size <= 32) {
+		return REGION_32B;
+	}
+
+	/*
+	 * A size value greater than 2^31 could not be handled by
+	 * round_up_to_next_power_of_two() properly. We handle
+	 * it separately here.
+	 */
+	if (size > (1 << 31)) {
+		return REGION_4G;
+	}
+
+	size = round_up_to_next_power_of_two(size);
+
+	return (find_msb_set(size) - 2) << 1;
+}
+
 /* ARM Core MPU Driver API Implementation for ARM MPU */
 
 /**
@@ -107,13 +178,7 @@ void arm_core_mpu_disable(void)
 void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
 	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
-	/*
-	 * The new MPU regions are allocated per type after the statically
-	 * configured regions. The type is one-indexed rather than
-	 * zero-indexed, therefore we need to subtract by one to get the region
-	 * index.
-	 */
-	u32_t region_index = mpu_config.num_regions + type - 1;
+	u32_t region_index = _get_region_index_by_type(type);
 	u32_t region_attr = _get_region_attr_by_type(type, size);
 
 	/* ARM MPU supports up to 16 Regions */
@@ -123,6 +188,94 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 
 	_region_init(region_index, base, region_attr);
 }
+
+#if defined(CONFIG_USERSPACE)
+/**
+ * @brief configure MPU regions for the memory partitions of the memory domain
+ *
+ * @param   mem_domain    memory domain that thread belongs to
+ */
+void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
+{
+	u32_t region_index =
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+	u32_t region_attr;
+	u32_t num_partitions;
+	struct k_mem_partition *pparts;
+
+	if (mem_domain) {
+		SYS_LOG_DBG("configure domain: %p", mem_domain);
+		num_partitions = mem_domain->num_partitions;
+		pparts = mem_domain->partitions;
+	} else {
+		SYS_LOG_DBG("disable domain partition regions");
+		num_partitions = 0;
+		pparts = NULL;
+	}
+
+	for (; region_index < _get_num_regions(); region_index++) {
+		if (num_partitions && pparts->size) {
+			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+				    region_index, pparts->start, pparts->size);
+			region_attr = pparts->attr |
+				      _size_to_mpu_rasr_size(pparts->size);
+			_region_init(region_index, pparts->start, region_attr);
+			num_partitions--;
+		} else {
+			SYS_LOG_DBG("disable region 0x%x", region_index);
+			/* Disable region */
+			ARM_MPU_DEV->rnr = region_index;
+			ARM_MPU_DEV->rbar = 0;
+			ARM_MPU_DEV->rasr = 0;
+		}
+		pparts++;
+	}
+}
+
+/**
+ * @brief configure MPU region for a single memory partition
+ *
+ * @param   part_index  memory partition index
+ * @param   part        memory partition info
+ */
+void arm_core_mpu_configure_mem_partition(u32_t part_index,
+					  struct k_mem_partition *part)
+{
+	u32_t region_index =
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+	u32_t region_attr;
+
+	SYS_LOG_DBG("configure partition index: %u", part_index);
+
+	if (part) {
+		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+			    region_index + part_index, part->start, part->size);
+		region_attr = part->attr | _size_to_mpu_rasr_size(part->size);
+		_region_init(region_index + part_index, part->start,
+			     region_attr);
+	} else {
+		SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
+		/* Disable region */
+		ARM_MPU_DEV->rnr = region_index + part_index;
+		ARM_MPU_DEV->rbar = 0;
+		ARM_MPU_DEV->rasr = 0;
+	}
+}
+
+/**
+ * @brief get the maximum number of free regions for memory domain partitions
+ */
+int arm_core_mpu_get_max_domain_partition_regions(void)
+{
+	/*
+	 * Subtract the start of domain partition regions from total regions
+	 * will get the maximum number of free regions for memory domain
+	 * partitions.
+	 */
+	return _get_num_regions() -
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+}
+#endif /* CONFIG_USERSPACE */
 
 /* ARM MPU Driver Initial Setup */
 

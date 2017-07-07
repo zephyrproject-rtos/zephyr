@@ -177,6 +177,10 @@ static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
 	thread->custom_data = NULL;
 #endif
 
+#if defined(CONFIG_USERSPACE)
+	thread->mem_domain_info.mem_domain = NULL;
+#endif /* CONFIG_USERSPACE */
+
 #if defined(CONFIG_THREAD_STACK_INFO)
 	thread->stack_info.start = (u32_t)pStack;
 	thread->stack_info.size = (u32_t)stackSize;
