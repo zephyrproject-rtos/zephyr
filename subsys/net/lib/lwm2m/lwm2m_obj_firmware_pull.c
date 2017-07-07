@@ -198,6 +198,28 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 	return ret;
 }
 
+static enum zoap_block_size default_block_size(void)
+{
+	switch (CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_BLOCK_SIZE) {
+	case 16:
+		return ZOAP_BLOCK_16;
+	case 32:
+		return ZOAP_BLOCK_32;
+	case 64:
+		return ZOAP_BLOCK_64;
+	case 128:
+		return ZOAP_BLOCK_128;
+	case 256:
+		return ZOAP_BLOCK_256;
+	case 512:
+		return ZOAP_BLOCK_512;
+	case 1024:
+		return ZOAP_BLOCK_1024;
+	}
+
+	return ZOAP_BLOCK_256;
+}
+
 static void firmware_transfer(struct k_work *work)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -279,11 +301,7 @@ static void firmware_transfer(struct k_work *work)
 	}
 
 	/* reset block transfer context */
-#if defined(CONFIG_NET_L2_BT)
-	zoap_block_transfer_init(&firmware_block_ctx, ZOAP_BLOCK_64, 0);
-#else
-	zoap_block_transfer_init(&firmware_block_ctx, ZOAP_BLOCK_256, 0);
-#endif
+	zoap_block_transfer_init(&firmware_block_ctx, default_block_size(), 0);
 
 	transfer_request(&firmware_block_ctx, NULL, 0,
 			 do_firmware_transfer_reply_cb);
