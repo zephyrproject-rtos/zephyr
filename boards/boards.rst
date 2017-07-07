@@ -1,6 +1,6 @@
 .. _boards:
 
-Supported Boards
+ Supported Boards
 ################
 
 Zephyr project developers are continually adding board-specific support as
