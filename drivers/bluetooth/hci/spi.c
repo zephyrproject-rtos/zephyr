@@ -328,7 +328,7 @@ static int bt_spi_open(void)
 	k_thread_create(&rx_thread_data, rx_stack,
 			K_THREAD_STACK_SIZEOF(rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
 	gpio_pin_write(rst_dev, GPIO_RESET_PIN, 1);
