@@ -193,7 +193,7 @@ config I2C_0
 
 config I2C_0_NAME
 	string "Port 0 device name"
-	depends on I2C_0
+	depends on I2C_0 && !HAS_DTS_I2C
 	default "I2C_0"
 
 config I2C_0_DEFAULT_CFG
@@ -209,7 +209,7 @@ config I2C_0_DEFAULT_CFG
 
 config I2C_0_IRQ_PRI
 	int "Port 0 interrupt priority"
-	depends on I2C_0
+	depends on I2C_0 && !HAS_DTS_I2C
 	help
 	  IRQ priority.
 
