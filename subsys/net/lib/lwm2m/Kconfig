@@ -141,4 +141,10 @@ config LWM2M_DEVICE_ERROR_CODE_MAX
 	  This value sets the maximum number of error codes that the device
 	  object will store before ignoring new values.
 
+menu "IPSO Alliance Smart Object Support"
+
+source "subsys/net/lib/lwm2m/Kconfig.ipso"
+
+endmenu
+
 endif # LWM2M
