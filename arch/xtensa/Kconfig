@@ -47,8 +47,6 @@ config SW_ISR_TABLE
 	table, unlike ISRs connected directly in the vector table, allow
 	a parameter to be passed to the interrupt handlers. Also, invoking
 	the exception/interrupt exit stub is automatically done.
-	This has to be enabled for dynamically connecting interrupt handlers
-	at runtime (SW_ISR_TABLE_DYNAMIC).
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
@@ -57,16 +55,6 @@ config IRQ_OFFLOAD
 	Enable irq_offload() API which allows functions to be synchronously
 	run in interrupt context. Uses one entry in the IDT.  Mainly useful
 	for test cases.
-
-config SW_ISR_TABLE_DYNAMIC
-	bool
-	prompt "Allow installing interrupt handlers at runtime"
-	depends on SW_ISR_TABLE
-	default n
-	help
-	This option enables irq_connect_dynamic(). It moves the ISR table to
-	SRAM so that it is writable. This has the side-effect of removing
-	write-protection on the ISR table.
 
 config XTENSA_RESET_VECTOR
 	bool
