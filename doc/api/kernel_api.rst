@@ -217,3 +217,17 @@ of variable-size data items.
 
 .. doxygengroup:: ring_buffer_apis
    :project: Zephyr
+   :content-only:
+
+Memory Domain
+*************
+
+A memory domain contains some number of memory partitions. Threads can
+specify the range and attribute (access permission) for memory partitions
+in a memory domain. Threads in the same memory domain have the
+same access permissions to the memory partitions belong to the
+memory domain.
+(See :ref:`memory_domain`.)
+
+.. doxygengroup:: mem_domain_apis
+   :project: Zephyr

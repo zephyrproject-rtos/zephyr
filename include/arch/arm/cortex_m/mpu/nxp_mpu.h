@@ -58,6 +58,16 @@
 			  (SM_SAME_AS_UM << BM2_SM_SHIFT) | \
 			  (SM_SAME_AS_UM << BM3_SM_SHIFT))
 
+#define MPU_REGION_SU_RX ((SM_RX_ALLOW << BM0_SM_SHIFT) | \
+			  (SM_RX_ALLOW << BM1_SM_SHIFT) | \
+			  (SM_RX_ALLOW << BM2_SM_SHIFT) | \
+			  (SM_RX_ALLOW << BM3_SM_SHIFT))
+
+#define MPU_REGION_SU_RW ((SM_RW_ALLOW << BM0_SM_SHIFT) | \
+			  (SM_RW_ALLOW << BM1_SM_SHIFT) | \
+			  (SM_RW_ALLOW << BM2_SM_SHIFT) | \
+			  (SM_RW_ALLOW << BM3_SM_SHIFT))
+
 /* The ENDADDR field has the last 5 bit reserved and set to 1 */
 #define ENDADDR_ROUND(x) (x - 0x1F)
 

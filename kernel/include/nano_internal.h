@@ -95,7 +95,9 @@ static inline unsigned int _Swap(unsigned int key)
  * @return Max number of free regions, or -1 if there is no limit
  */
 extern int _arch_mem_domain_max_partitions_get(void);
+#endif
 
+#ifdef CONFIG_USERSPACE
 /**
  * @brief Check memory region permissions
  *

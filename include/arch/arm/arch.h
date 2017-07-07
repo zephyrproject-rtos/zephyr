@@ -200,6 +200,46 @@ extern "C" {
 #define _ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
+#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARM_MPU
+#ifndef _ASMLANGUAGE
+#include <arch/arm/cortex_m/mpu/arm_mpu.h>
+
+#define K_MEM_PARTITION_P_NA_U_NA	(NO_ACCESS | NOT_EXEC)
+#define K_MEM_PARTITION_P_RW_U_RW	(P_RW_U_RW | NOT_EXEC)
+#define K_MEM_PARTITION_P_RW_U_RO	(P_RW_U_RO | NOT_EXEC)
+#define K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA | NOT_EXEC)
+#define K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO | NOT_EXEC)
+#define K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA | NOT_EXEC)
+#endif /* _ASMLANGUAGE */
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && (size) >= 32 && \
+		!((u32_t)(start) & ((size) - 1)), \
+		"the size of the partition must be power of 2" \
+		" and greater than or equal to 32." \
+		"start address of the partition must align with size.")
+#endif /* CONFIG_ARM_MPU*/
+#ifdef CONFIG_NXP_MPU
+#ifndef _ASMLANGUAGE
+#include <arch/arm/cortex_m/mpu/nxp_mpu.h>
+
+#define K_MEM_PARTITION_P_NA_U_NA	(MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RW_U_RW	(MPU_REGION_READ | MPU_REGION_WRITE | \
+					 MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RW_U_RO	(MPU_REGION_READ | MPU_REGION_SU_RW)
+#define K_MEM_PARTITION_P_RW_U_NA	(MPU_REGION_SU_RW)
+#define K_MEM_PARTITION_P_RO_U_RO	(MPU_REGION_READ | MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RO_U_NA	(MPU_REGION_SU_RX)
+#endif /* _ASMLANGUAGE */
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG((size) % 32 == 0 && (size) >= 32 && \
+		(u32_t)(start) % 32 == 0, \
+		"the size of the partition must align with 32" \
+		" and greater than or equal to 32." \
+		"start address of the partition must align with 32.")
+#endif  /* CONFIG_NXP_MPU */
+#endif /* CONFIG_USERSPACE */
+
 #ifdef CONFIG_ARM_USERSPACE
 #ifndef _ASMLANGUAGE
 /* Syscall invocation macros. arm-specific machine constraints used to ensure

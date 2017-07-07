@@ -557,6 +557,15 @@ config STACK_CANARIES
 	option has no effect.
 endmenu
 
+config MAX_DOMAIN_PARTITIONS
+	int
+	prompt "Maximum number of partitions per memory domain"
+	default 16
+	range 0 255
+	depends on USERSPACE
+	help
+	Configure the maximum number of partitions per memory domain.
+
 source "kernel/Kconfig.event_logger"
 
 source "kernel/Kconfig.power_mgmt"

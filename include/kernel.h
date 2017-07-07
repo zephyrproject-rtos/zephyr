@@ -123,6 +123,8 @@ struct k_mem_pool;
 struct k_timer;
 struct k_poll_event;
 struct k_poll_signal;
+struct k_mem_domain;
+struct k_mem_partition;
 
 /* This enumeration needs to be kept in sync with the lists of kernel objects
  * and subsystems in scripts/gen_kobject_list.py, as well as the otype_to_str()
@@ -360,6 +362,16 @@ struct _thread_stack_info {
 typedef struct _thread_stack_info _thread_stack_info_t;
 #endif /* CONFIG_THREAD_STACK_INFO */
 
+#if defined(CONFIG_USERSPACE)
+struct _mem_domain_info {
+	/* memory domain queue node */
+	sys_dnode_t mem_domain_q_node;
+	/* memory domain of the thread */
+	struct k_mem_domain *mem_domain;
+};
+
+#endif /* CONFIG_USERSPACE */
+
 struct k_thread {
 
 	struct _thread_base base;
@@ -396,6 +408,11 @@ struct k_thread {
 	/* Stack Info */
 	struct _thread_stack_info stack_info;
 #endif /* CONFIG_THREAD_STACK_INFO */
+
+#if defined(CONFIG_USERSPACE)
+	/* memory domain info of the thread */
+	struct _mem_domain_info mem_domain_info;
+#endif /* CONFIG_USERSPACE */
 
 	/* arch-specifics: must always be at the end */
 	struct _thread_arch arch;
@@ -4092,6 +4109,132 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t sym)
 }
 
 #endif /* _ARCH_DECLARE_STACK */
+
+/**
+ * @defgroup mem_domain_apis Memory domain APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/** @def MEM_PARTITION_ENTRY
+ *  @brief Used to declare a memory partition entry
+ */
+#define MEM_PARTITION_ENTRY(_start, _size, _attr) \
+	{\
+		.start = _start, \
+		.size = _size, \
+		.attr = _attr, \
+	}
+
+/** @def K_MEM_PARTITION_DEFINE
+ *  @brief Used to declare a memory partition
+ */
+#ifdef _ARCH_MEM_PARTITION_ALIGN_CHECK
+#define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
+	_ARCH_MEM_PARTITION_ALIGN_CHECK(start, size); \
+	struct k_mem_partition name = \
+		MEM_PARTITION_ENTRY((u32_t)start, size, attr)
+#else
+#define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
+	struct k_mem_partition name = \
+		MEM_PARTITION_ENTRY((u32_t)start, size, attr)
+#endif /* _ARCH_MEM_PARTITION_ALIGN_CHECK */
+
+
+/* memory partition */
+struct k_mem_partition {
+	/* start address of memory partition */
+	u32_t start;
+	/* size of memory partition */
+	u32_t size;
+	/* attribute of memory partition */
+	u32_t attr;
+};
+
+#if defined(CONFIG_USERSPACE)
+/* memory domian */
+struct k_mem_domain {
+	/* number of partitions in the domain */
+	u32_t num_partitions;
+	/* partitions in the domain */
+	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
+	/* domain q */
+	sys_dlist_t mem_domain_q;
+};
+#endif /* CONFIG_USERSPACE */
+
+/**
+ * @brief Initialize a memory domain.
+ *
+ * Initialize a memory domain with given name and memory partitions.
+ *
+ * @param domain The memory domain to be initialized.
+ * @param num_parts The number of array items of "parts" parameter.
+ * @param parts An array of pointers to the memory partitions. Can be NULL
+ *              if num_parts is zero.
+ */
+
+extern void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
+			      struct k_mem_partition *parts[]);
+/**
+ * @brief Destroy a memory domain.
+ *
+ * Destroy a memory domain.
+ *
+ * @param domain The memory domain to be destroyed.
+ */
+
+extern void k_mem_domain_destroy(struct k_mem_domain *domain);
+
+/**
+ * @brief Add a memory partition into a memory domain.
+ *
+ * Add a memory partition into a memory domain.
+ *
+ * @param domain The memory domain to be added a memory partition.
+ * @param part The memory partition to be added
+ */
+
+extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
+				      struct k_mem_partition *part);
+
+/**
+ * @brief Remove a memory partition from a memory domain.
+ *
+ * Remove a memory partition from a memory domain.
+ *
+ * @param domain The memory domain to be removed a memory partition.
+ * @param part The memory partition to be removed
+ */
+
+extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
+					 struct k_mem_partition *part);
+
+/**
+ * @brief Add a thread into a memory domain.
+ *
+ * Add a thread into a memory domain.
+ *
+ * @param domain The memory domain that the thread is going to be added into.
+ * @param thread ID of thread going to be added into the memory domain.
+ */
+
+extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
+				    k_tid_t thread);
+
+/**
+ * @brief Remove a thread from its memory domain.
+ *
+ * Remove a thread from its memory domain.
+ *
+ * @param thread ID of thread going to be removed from its memory domain.
+ */
+
+extern void k_mem_domain_remove_thread(k_tid_t thread);
+
+/**
+ * @} end defgroup mem_domain_apis
+ */
 
 #ifdef __cplusplus
 }

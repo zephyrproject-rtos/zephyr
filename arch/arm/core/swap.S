@@ -175,6 +175,14 @@ _thread_irq_disabled:
     pop {r2, lr}
 #endif /* CONFIG_MPU_STACK_GUARD */
 
+#ifdef CONFIG_USERSPACE
+    /* r2 contains k_thread */
+    add r0, r2, #0
+    push {r2, lr}
+    blx configure_mpu_mem_domain
+    pop {r2, lr}
+#endif /* CONFIG_USERSPACE */
+
     /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved
     ldmia r0, {v1-v8, ip}
