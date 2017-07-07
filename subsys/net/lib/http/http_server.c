@@ -777,7 +777,7 @@ static int set_net_ctx(struct http_server_ctx *http_ctx,
 		goto out;
 	}
 
-	ret = net_context_accept(ctx, accept_cb, 0, http_ctx);
+	ret = net_context_accept(ctx, accept_cb, K_NO_WAIT, http_ctx);
 	if (ret < 0) {
 		NET_ERR("Cannot accept context (%d)", ret);
 		goto out;

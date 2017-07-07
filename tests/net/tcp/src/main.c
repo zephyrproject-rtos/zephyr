@@ -1524,7 +1524,7 @@ static bool test_init_tcp_accept(void)
 		return false;
 	}
 
-	ret = net_context_accept(reply_v6_ctx, accept_v6_cb, 0,
+	ret = net_context_accept(reply_v6_ctx, accept_v6_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET6));
 	if (ret) {
 		TC_ERROR("Context accept v6 test failed (%d)\n", ret);
@@ -1537,7 +1537,7 @@ static bool test_init_tcp_accept(void)
 		return false;
 	}
 
-	ret = net_context_accept(reply_v4_ctx, accept_v4_cb, 0,
+	ret = net_context_accept(reply_v4_ctx, accept_v4_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET));
 	if (ret) {
 		TC_ERROR("Context accept v4 test failed (%d)\n", ret);

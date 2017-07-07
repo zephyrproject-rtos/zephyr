@@ -484,7 +484,7 @@ static void telnet_setup_server(struct net_context **ctx, sa_family_t family,
 		goto error;
 	}
 
-	if (net_context_accept(*ctx, telnet_accept, 0, NULL)) {
+	if (net_context_accept(*ctx, telnet_accept, K_NO_WAIT, NULL)) {
 		SYS_LOG_ERR("Cannot accept");
 		goto error;
 	}
