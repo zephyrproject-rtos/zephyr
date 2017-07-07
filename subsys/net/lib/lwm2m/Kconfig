@@ -1,0 +1,144 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LWM2M
+	bool "OMA LWM2M protocol stack"
+	default n
+	select ZOAP
+	help
+	  This option adds logic for managing OMA LWM2M data
+
+if LWM2M
+
+config SYS_LOG_LWM2M_LEVEL
+	int "LWM2M log level"
+	depends on SYS_LOG
+	default 1
+	range 0 4
+	help
+	  Set the log level for the LWM2M library.
+
+config LWM2M_ENGINE_STACK_SIZE
+	int "LWM2M engine stack size"
+	default 1024
+	help
+	 Set the stack size for the LWM2M library engine (used for handling
+	 OBSERVE and NOTIFY events)
+
+config LWM2M_ENGINE_MAX_PENDING
+	int "LWM2M engine max. pending objects"
+	default 5
+	help
+	  Set the maximum pending objects for the LWM2M library client
+
+config LWM2M_ENGINE_MAX_REPLIES
+	int "LWM2M engine max. reply objects"
+	default 5
+	help
+	  Set the maximum reply objects for the LWM2M library client
+
+config LWM2M_ENGINE_MAX_OBSERVER
+	int "Maximum # of observeable LWM2M resources"
+	default 50
+	range 10 200
+	help
+	  This value sets the maximum number of resources which can be
+	  added to the observe notification list.
+
+config LWM2M_ENGINE_DEFAULT_LIFETIME
+	int "LWM2M engine default server connection lifetime"
+	default 30
+	help
+	  Set the default lifetime (in seconds) for the LWM2M library engine
+
+config LWM2M_LOCAL_PORT
+	int "LWM2M client port"
+	default 5683
+	help
+	  This is the client port for LWM2M communication (0 = random, defaults
+	  to 5683)
+
+config LWM2M_SECURITY_INSTANCE_COUNT
+	int "Maximum # of LWM2M Security object instances"
+	default 3
+	range 1 10
+	help
+	  This setting establishes the total count of LWM2M Security instances
+	  available to the client.
+
+config LWM2M_SERVER_INSTANCE_COUNT
+	int "Maximum # of LWM2M Server object instances"
+	default 3
+	range 1 10
+	help
+	  This setting establishes the total count of LWM2M Server instances
+	  available to the client (including: bootstrap and regular servers).
+
+config LWM2M_RD_CLIENT_SUPPORT
+	bool "support for LWM2M client bootstrap/registration state machine"
+	default y
+	help
+	  Client will use registration state machine to locate and connect to
+	  LWM2M servers (including bootstrap server support)
+
+config LWM2M_RD_CLIENT_STACK_SIZE
+	int "LWM2M RD client stack size"
+	default 1024
+	help
+	  Set the stack size for the LWM2M RD client
+
+config LWM2M_RD_CLIENT_INSTANCE_COUNT
+	int "Maximum # of LWM2M RD client instances"
+	default 2
+	help
+	  This setting establishes the total count of LWM2M RD client instances
+	  available.
+
+config LWM2M_PEER_PORT
+	int "LWM2M server port"
+	depends on LWM2M_RD_CLIENT_SUPPORT
+	default 5683
+	help
+	  This is the server port to connect to for LWM2M communication
+
+config LWM2M_BOOTSTRAP_PORT
+	int "LWM2M bootstrap port"
+	depends on LWM2M_RD_CLIENT_SUPPORT
+	default 5684
+	help
+	  This is the bootstrap port to connect to for security configuration
+
+
+config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+	bool "Firmware Update object support"
+	default y
+	help
+	  Include support for LWM2M Firmware Update Object (ID 5)
+
+config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	bool "Firmware Update object pull support"
+	default y
+	depends on LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+	help
+	  Include support for pulling a file from a remote server via
+	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
+	  adds another UDP context and packet handling.
+
+config LWM2M_RW_JSON_SUPPORT
+	bool "support for JSON writer"
+	default y
+	help
+	  Include support for writing JSON data
+
+config LWM2M_DEVICE_ERROR_CODE_MAX
+	int "Maximum # of device obj error codes to store"
+	default 10
+	range 1 20
+	help
+	  This value sets the maximum number of error codes that the device
+	  object will store before ignoring new values.
+
+endif # LWM2M
