@@ -703,21 +703,31 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 {
 	struct net_context *ctx = net_pkt_context(pkt);
 	struct net_tcp_hdr hdr, *tcp_hdr;
+	bool calc_chksum = false;
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
 		return -EINVAL;
 	}
 
-	sys_put_be32(ctx->tcp->send_ack, tcp_hdr->ack);
+	if (sys_get_be32(tcp_hdr->ack) != ctx->tcp->send_ack) {
+		sys_put_be32(ctx->tcp->send_ack, tcp_hdr->ack);
+		calc_chksum = true;
+	}
 
 	/* The data stream code always sets this flag, because
 	 * existing stacks (Linux, anyway) seem to ignore data packets
 	 * without a valid-but-already-transmitted ACK.  But set it
 	 * anyway if we know we need it just to sanify edge cases.
 	 */
-	if (ctx->tcp->sent_ack != ctx->tcp->send_ack) {
+	if (ctx->tcp->sent_ack != ctx->tcp->send_ack &&
+		(tcp_hdr->flags & NET_TCP_ACK) == 0) {
 		tcp_hdr->flags |= NET_TCP_ACK;
+		calc_chksum = true;
+	}
+
+	if (calc_chksum) {
+		net_tcp_set_chksum(pkt, pkt->frags);
 	}
 
 	if (tcp_hdr->flags & NET_TCP_FIN) {
