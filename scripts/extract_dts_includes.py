@@ -428,6 +428,24 @@ def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
     return
 
 
+def extract_string_prop(node_address, yaml, key, label, defs):
+
+    prop_def = {}
+
+    node = reduced[node_address]
+    prop = node['props'][key]
+
+    k = convert_string_to_label(key).upper()
+    prop_def[label] = "\"" + prop + "\""
+
+    if node_address in defs:
+        defs[node_address].update(prop_def)
+    else:
+        defs[node_address] = prop_def
+
+    return
+
+
 def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
                      prefix, defs, label_override):
 
@@ -745,6 +763,10 @@ def main():
     if 'zephyr,sram' in chosen:
         extract_reg_prop(chosen['zephyr,sram'], None,
                          defs, "CONFIG_SRAM", 1024, None)
+
+    if 'zephyr,console' in chosen:
+        extract_string_prop(chosen['zephyr,console'], None, "label",
+                            "CONFIG_UART_CONSOLE_ON_DEV_NAME", defs)
 
     # only compute the load offset if a code partition exists and it is not the
     # same as the flash base address
