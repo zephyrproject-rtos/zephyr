@@ -31,6 +31,8 @@
 #include "smp.h"
 #include "gatt_internal.h"
 
+#define SC_TIMEOUT K_MSEC(10)
+
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 static sys_slist_t subscriptions;
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
@@ -128,46 +130,106 @@ populate:
 	return 0;
 }
 
-void bt_gatt_init(void)
-{
-	/* Register mandatory services */
-	gatt_register(&gap_svc);
-	gatt_register(&gatt_svc);
-}
+enum {
+	SC_RANGE_CHANGED,    /* SC range changed */
+	SC_INDICATE_PENDING, /* SC indicate pending */
 
-static struct k_sem sc_sem = _K_SEM_INITIALIZER(sc_sem, 1, 1);
+	/* Total number of flags - must be at the end of the enum */
+	SC_NUM_FLAGS,
+};
+
+static struct gatt_sc {
+	struct bt_gatt_indicate_params params;
+	u16_t start;
+	u16_t end;
+	struct k_delayed_work work;
+	ATOMIC_DEFINE(flags, SC_NUM_FLAGS);
+} gatt_sc;
 
 static void sc_indicate_rsp(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, u8_t err)
 {
 	BT_DBG("err 0x%02x", err);
 
-	k_sem_give(&sc_sem);
+	atomic_clear_bit(gatt_sc.flags, SC_INDICATE_PENDING);
+
+	/* Check if there is new change in the meantime */
+	if (atomic_test_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
+		/* Reschedule without any delay since it is waiting already */
+		k_delayed_work_submit(&gatt_sc.work, K_NO_WAIT);
+	}
 }
 
-static void sc_indicate(struct bt_gatt_attr *start, struct bt_gatt_attr *end)
+static void sc_process(struct k_work *work)
 {
-	static struct bt_gatt_indicate_params params;
+	struct gatt_sc *sc = CONTAINER_OF(work, struct gatt_sc, work);
 	u16_t sc_range[2];
 
-	if (k_sem_take(&sc_sem, K_NO_WAIT)) {
-		BT_DBG("Service Changed indicating, waiting until complete...");
-		k_sem_take(&sc_sem, K_FOREVER);
-	}
+	__ASSERT(!atomic_test_bit(sc->flags, SC_INDICATE_PENDING),
+		 "Indicate already pending");
 
-	sc_range[0] = sys_cpu_to_le16(start->handle);
-	sc_range[1] = sys_cpu_to_le16(end->handle);
+	BT_DBG("start 0x%04x end 0x%04x", sc->start, sc->end);
 
-	params.attr = &gatt_attrs[2];
-	params.func = sc_indicate_rsp;
-	params.data = &sc_range[0];
-	params.len = sizeof(sc_range);
+	sc_range[0] = sys_cpu_to_le16(sc->start);
+	sc_range[1] = sys_cpu_to_le16(sc->end);
 
-	if (!bt_gatt_indicate(NULL, &params)) {
+	atomic_clear_bit(sc->flags, SC_RANGE_CHANGED);
+	sc->start = 0;
+	sc->end = 0;
+
+	sc->params.attr = &gatt_attrs[2];
+	sc->params.func = sc_indicate_rsp;
+	sc->params.data = &sc_range[0];
+	sc->params.len = sizeof(sc_range);
+
+	if (!bt_gatt_indicate(NULL, &sc->params)) {
+		/* No connections to indicate */
 		return;
 	}
 
-	k_sem_give(&sc_sem);
+	atomic_set_bit(sc->flags, SC_INDICATE_PENDING);
+}
+
+void bt_gatt_init(void)
+{
+	/* Register mandatory services */
+	gatt_register(&gap_svc);
+	gatt_register(&gatt_svc);
+
+	k_delayed_work_init(&gatt_sc.work, sc_process);
+}
+
+static void sc_indicate(struct gatt_sc *sc, struct bt_gatt_attr *start,
+			struct bt_gatt_attr *end)
+{
+	if (!atomic_test_and_set_bit(sc->flags, SC_RANGE_CHANGED)) {
+		sc->start = start->handle;
+		sc->end = end->handle;
+		goto submit;
+	}
+
+	/* Chech if inside modified range */
+	if (start->handle >= sc->start && end->handle <= sc->end) {
+		return;
+	}
+
+	if (sc->start > start->handle) {
+		sc->start = start->handle;
+	}
+
+	if (sc->end < end->handle) {
+		sc->end = end->handle;
+	}
+
+
+submit:
+	if (atomic_test_bit(sc->flags, SC_INDICATE_PENDING)) {
+		BT_DBG("indicate pending, waiting until complete...");
+		return;
+	}
+
+	/* Reschedule since the range has changed */
+	k_delayed_work_submit(&sc->work, SC_TIMEOUT);
 }
 
 int bt_gatt_service_register(struct bt_gatt_service *svc)
@@ -189,7 +251,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return err;
 	}
 
-	sc_indicate(&svc->attrs[0], &svc->attrs[svc->attr_count - 1]);
+	sc_indicate(&gatt_sc, &svc->attrs[0], &svc->attrs[svc->attr_count - 1]);
 
 	return 0;
 }
@@ -202,7 +264,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		return -ENOENT;
 	}
 
-	sc_indicate(&svc->attrs[0], &svc->attrs[svc->attr_count - 1]);
+	sc_indicate(&gatt_sc, &svc->attrs[0], &svc->attrs[svc->attr_count - 1]);
 
 	return 0;
 }
