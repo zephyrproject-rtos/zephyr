@@ -94,7 +94,7 @@ static int resolve_name(struct net_app_ctx *ctx,
 
 	ctx->client.dns_id = 0;
 
-	if (ctx->default_ctx.remote.family == AF_UNSPEC) {
+	if (ctx->default_ctx->remote.family == AF_UNSPEC) {
 		return -EINVAL;
 	}
 
