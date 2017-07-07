@@ -33,6 +33,9 @@ MEMORY
   iram0_5_seg :                       	org = 0x60020320, len = 0x4
   iram0_6_seg :                       	org = 0x60020324, len = 0x1C
   iram0_7_seg :                       	org = 0x60020340, len = 0x1FCC0
+#ifdef CONFIG_GEN_ISR_TABLES
+  IDT_LIST : org = 0xffffdfff, len = 0x2000
+#endif
 }
 
 PHDRS
@@ -362,4 +365,7 @@ SECTIONS
   {
     KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
   }
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <linker/intlist.ld>
+#endif
 }

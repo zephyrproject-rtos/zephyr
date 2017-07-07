@@ -14,13 +14,13 @@
 #include "xtensa_rtos.h"
 #include "xtensa_api.h"
 #include <kernel_structs.h>
+#include <sw_isr_table.h>
 
 #if XCHAL_HAVE_EXCEPTIONS
 
 /* Handler table is in xtensa_intr_asm.S */
 
 extern xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM];
-
 
 /*
  * Default handler for unhandled exceptions.
@@ -57,13 +57,10 @@ xt_exc_handler _xt_set_exception_handler(int n, xt_exc_handler f)
 
 #endif
 
-#if XCHAL_HAVE_INTERRUPTS
-/*
- * Default handler for unhandled interrupts.
- */
-void xt_unhandled_interrupt(void *arg)
+#if defined(CONFIG_SW_ISR_TABLE) && defined(XCHAL_HAVE_INTERRUPTS)
+void _irq_spurious(void *arg)
 {
 	ReservedInterruptHandler((unsigned int)arg);
 	CODE_UNREACHABLE;
 }
-#endif /* XCHAL_HAVE_INTERRUPTS */
+#endif
