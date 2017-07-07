@@ -5,3 +5,5 @@ arch: x86
 toolchain:
   - zephyr
   - issm
+supported:
+  - usb_device
