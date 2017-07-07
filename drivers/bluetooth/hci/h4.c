@@ -441,7 +441,7 @@ static int h4_open(void)
 
 	k_thread_create(&rx_thread_data, rx_thread_stack,
 			K_THREAD_STACK_SIZEOF(rx_thread_stack), rx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 
 	return 0;
 }
