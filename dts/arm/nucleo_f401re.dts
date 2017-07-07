@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/stm32f401.dtsi>
+#include <i2c.h>
 
 / {
 	model = "STMicroelectronics STM32F401RE-NUCLEO board";
@@ -30,6 +31,7 @@
 
 &i2c1 {
 	status = "ok";
+	zephyr,speed = <I2C_SPEED_FAST>;
 };
 
 &flash0 {

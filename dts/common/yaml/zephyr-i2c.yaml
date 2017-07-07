@@ -1,0 +1,19 @@
+---
+title: Zephyr specific I2C properties
+id: i2c
+version: 0.1
+
+description: >
+    This binding gives Zephyr specific I2C properties
+
+properties:
+  - zephyr,speed :
+      type: int
+      category: required
+      description: Speed setting (1..5) as defined in i2c.h
+      generation: define
+  - zephyr,use-10-bit-addr :
+      type: boolean
+      category: optional
+      description: Use 10-bit addressing
+      generation: define

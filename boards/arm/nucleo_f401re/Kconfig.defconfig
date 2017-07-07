@@ -10,11 +10,4 @@ if BOARD_NUCLEO_F401RE
 config BOARD
 	default nucleo_f401re
 
-if I2C_1
-
-config I2C_1_DEFAULT_CFG
-	default 0x14
-
-endif # I2C_1
-
 endif # BOARD_NUCLEO_F401RE
