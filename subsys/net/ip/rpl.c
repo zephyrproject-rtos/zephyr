@@ -2698,6 +2698,8 @@ static void net_rpl_process_dio(struct net_if *iface,
 			if (net_rpl_dag_is_joined(dag)) {
 				instance->dio_counter++;
 			}
+
+			return;
 		} else {
 			parent->rank = dio->rank;
 		}
