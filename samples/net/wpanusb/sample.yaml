@@ -5,4 +5,4 @@ tests:
 - test_15_4:
         build_only: true
         tags: net ieee802154 usb
-        depends_on: ieee802154
+        depends_on: ieee802154 usb_device
