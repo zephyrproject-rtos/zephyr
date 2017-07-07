@@ -192,7 +192,7 @@ static void zperf_tcp_rx_thread(int port)
 			return;
 		}
 
-		ret = net_context_accept(context6, tcp_accepted, 0, NULL);
+		ret = net_context_accept(context6, tcp_accepted, K_NO_WAIT, NULL);
 		if (ret < 0) {
 			printk(TAG "Cannot receive IPv6 TCP packets (%d)", ret);
 			return;
@@ -217,7 +217,7 @@ static void zperf_tcp_rx_thread(int port)
 			return;
 		}
 
-		ret = net_context_accept(context4, tcp_accepted, 0, NULL);
+		ret = net_context_accept(context4, tcp_accepted, K_NO_WAIT, NULL);
 		if (ret < 0) {
 			printk(TAG "Cannot receive IPv4 TCP packets (%d)", ret);
 			return;

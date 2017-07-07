@@ -449,7 +449,7 @@ static bool net_ctx_accept_v6(void)
 {
 	int ret;
 
-	ret = net_context_accept(udp_v6_ctx, accept_cb, 0,
+	ret = net_context_accept(udp_v6_ctx, accept_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET6));
 	if (ret != -EINVAL || cb_failure) {
 		TC_ERROR("Context accept IPv6 UDP test failed (%d)\n", ret);
@@ -463,7 +463,7 @@ static bool net_ctx_accept_v4(void)
 {
 	int ret;
 
-	ret = net_context_accept(udp_v4_ctx, accept_cb, 0,
+	ret = net_context_accept(udp_v4_ctx, accept_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET));
 	if (ret != -EINVAL || cb_failure) {
 		TC_ERROR("Context accept IPv4 UDP test failed (%d)\n", ret);

@@ -312,7 +312,7 @@ static void setup_tcp_accept(struct net_context *tcp_recv6)
 {
 	int ret;
 
-	ret = net_context_accept(tcp_recv6, tcp_accepted, 0, NULL);
+	ret = net_context_accept(tcp_recv6, tcp_accepted, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		printk("Cannot receive IPv6 TCP packets (%d)", ret);
 	}
