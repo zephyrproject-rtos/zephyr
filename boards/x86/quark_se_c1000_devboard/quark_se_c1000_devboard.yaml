@@ -7,3 +7,4 @@ toolchain:
   - issm
 supported:
   - ieee802154
+  - usb_device
