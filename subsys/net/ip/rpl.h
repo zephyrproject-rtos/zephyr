@@ -306,6 +306,16 @@ struct net_rpl_dag {
 struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data);
 
 /**
+ * @brief Get related neighbor data from parent pointer.
+ *
+ * @param data Pointer to parent.
+ *
+ * @return Neighbor data pointer if found, NULL if neighbor is not found.
+ */
+struct net_ipv6_nbr_data *
+net_rpl_get_ipv6_nbr_data(struct net_rpl_parent *parent);
+
+/**
  * @brief RPL object function (OF) reset.
  *
  * @details Reset the OF state for a specific DAG. This function is called when
