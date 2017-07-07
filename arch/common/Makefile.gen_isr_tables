@@ -4,6 +4,8 @@ OUTPUT_OBJ := isr_tables.o
 
 ifeq ($(ARCH),riscv32)
 OUTPUT_FORMAT := elf32-littleriscv
+else ifeq ($(ARCH),xtensa)
+OUTPUT_FORMAT := elf32-xtensa-le
 else
 OUTPUT_FORMAT := elf32-little$(ARCH)
 endif
