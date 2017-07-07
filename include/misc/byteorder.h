@@ -21,6 +21,14 @@
 				   (((x) >> 8) & 0xff00) | \
 				   (((x) & 0xff00) << 8) | \
 				   (((x) & 0xff) << 24)))
+#define __bswap_64(x) ((u64_t) ((((x) >> 56) & 0xff) | \
+				   (((x) >> 40) & 0xff00) | \
+				   (((x) >> 24) & 0xff0000) | \
+				   (((x) >> 8) & 0xff000000) | \
+				   (((x) & 0xff000000) << 8) | \
+				   (((x) & 0xff0000) << 24) | \
+				   (((x) & 0xff00) << 40) | \
+				   (((x) & 0xff) << 56)))
 
 /** @def sys_le16_to_cpu
  *  @brief Convert 16-bit integer from little-endian to host endianness.
@@ -93,8 +101,12 @@
 #define sys_cpu_to_be16(val) __bswap_16(val)
 #define sys_le32_to_cpu(val) (val)
 #define sys_cpu_to_le32(val) (val)
+#define sys_le64_to_cpu(val) (val)
+#define sys_cpu_to_le64(val) (val)
 #define sys_be32_to_cpu(val) __bswap_32(val)
 #define sys_cpu_to_be32(val) __bswap_32(val)
+#define sys_be64_to_cpu(val) __bswap_64(val)
+#define sys_cpu_to_be64(val) __bswap_64(val)
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define sys_le16_to_cpu(val) __bswap_16(val)
 #define sys_cpu_to_le16(val) __bswap_16(val)
@@ -102,8 +114,12 @@
 #define sys_cpu_to_be16(val) (val)
 #define sys_le32_to_cpu(val) __bswap_32(val)
 #define sys_cpu_to_le32(val) __bswap_32(val)
+#define sys_le64_to_cpu(val) __bswap_64(val)
+#define sys_cpu_to_le64(val) __bswap_64(val)
 #define sys_be32_to_cpu(val) (val)
 #define sys_cpu_to_be32(val) (val)
+#define sys_be64_to_cpu(val) (val)
+#define sys_cpu_to_be64(val) (val)
 #else
 #error "Unknown byte order"
 #endif
