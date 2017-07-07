@@ -1433,6 +1433,68 @@ static bool test_init_tcp_context(void)
 	return true;
 }
 
+/* Receive window helper function copied from tcp.c */
+static inline u32_t get_recv_wnd(struct net_tcp *tcp)
+{
+	ARG_UNUSED(tcp);
+
+	/* We don't queue received data inside the stack, we hand off
+	 * packets to synchronous callbacks (who can queue if they
+	 * want, but it's not our business).  So the available window
+	 * size is always the same.  There are two configurables to
+	 * check though.
+	 */
+	return min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
+}
+
+static bool test_tcp_seq_validity(void)
+{
+	struct net_tcp *tcp = v6_ctx->tcp;
+	u8_t flags = NET_TCP_RST;
+	struct net_pkt *pkt = NULL;
+	int ret;
+
+	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
+				      (struct sockaddr *)&peer_v6_addr, &pkt);
+	if (ret) {
+		DBG("Prepare segment failed (%d)\n", ret);
+		return false;
+	}
+
+	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq) -
+		get_recv_wnd(tcp) / 2;
+	if (!net_tcp_validate_seq(tcp, pkt)) {
+		DBG("1) Sequence validation failed (send_ack %u vs seq %u)\n",
+		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
+		return false;
+	}
+
+	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq);
+	if (!net_tcp_validate_seq(tcp, pkt)) {
+		DBG("2) Sequence validation failed (send_ack %u vs seq %u)\n",
+		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
+		return false;
+	}
+
+	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq) +
+		2 * get_recv_wnd(tcp);
+	if (net_tcp_validate_seq(tcp, pkt)) {
+		DBG("3) Sequence validation failed (send_ack %u vs seq %u)\n",
+		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
+		return false;
+	}
+
+	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq) -
+		2 * get_recv_wnd(tcp);
+	if (net_tcp_validate_seq(tcp, pkt)) {
+		DBG("4) Sequence validation failed (send_ack %u vs seq %u)\n",
+		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
+		return false;
+	}
+
+	return true;
+}
+
 static bool test_init_tcp_reply_context(void)
 {
 	struct net_if *iface = net_if_get_default() + 1;
@@ -1695,6 +1757,7 @@ static const struct {
 	{ "test IPv4 TCP fin packet creation", test_create_v4_fin_packet },
 	{ "test IPv6 TCP seq check", test_v6_seq_check },
 	{ "test IPv4 TCP seq check", test_v4_seq_check },
+	{ "test TCP seq validity", test_tcp_seq_validity },
 	{ "test TCP reply context init", test_init_tcp_reply_context },
 	{ "test TCP accept init", test_init_tcp_accept },
 #if 0

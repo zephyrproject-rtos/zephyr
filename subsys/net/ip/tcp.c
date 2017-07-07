@@ -1028,8 +1028,10 @@ bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt)
 		return false;
 	}
 
-	return !net_tcp_seq_greater(tcp->send_ack + get_recv_wnd(tcp),
-				    sys_get_be32(tcp_hdr->seq));
+	return (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
+				tcp->send_ack) >= 0) &&
+		(net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
+				 tcp->send_ack + get_recv_wnd(tcp)) < 0);
 }
 
 struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
