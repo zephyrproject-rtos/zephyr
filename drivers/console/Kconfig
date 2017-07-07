@@ -47,6 +47,7 @@ config UART_CONSOLE
 	Enable this option to use one UART for console. Make sure
 	CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
 
+if !HAS_DTS
 config UART_CONSOLE_ON_DEV_NAME
 	string "Device Name of UART Device for UART Console"
 	default "UART_0"
@@ -54,6 +55,7 @@ config UART_CONSOLE_ON_DEV_NAME
 	help
 	This option specifies the name of UART device to be used for
 	UART console.
+endif
 
 config UART_CONSOLE_INIT_PRIORITY
 	int
