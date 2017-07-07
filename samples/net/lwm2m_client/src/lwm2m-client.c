@@ -129,6 +129,8 @@ static int set_endpoint_name(char *ep_name, sa_family_t family)
 
 static int lwm2m_setup(void)
 {
+	struct float32_value float_value;
+
 	/* setup SECURITY object */
 	/* setup SERVER object */
 
@@ -171,6 +173,14 @@ static int lwm2m_setup(void)
 						  firmware_block_received_cb);
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
 	lwm2m_engine_register_exec_callback("5/0/2", firmware_update_cb);
+
+	/* setup TEMP SENSOR object */
+
+	lwm2m_engine_create_obj_inst("3303/0");
+	/* dummy temp data in C*/
+	float_value.val1 = 25;
+	float_value.val2 = 0;
+	lwm2m_engine_set_float32("3303/0/5700", &float_value);
 
 	return 0;
 }
