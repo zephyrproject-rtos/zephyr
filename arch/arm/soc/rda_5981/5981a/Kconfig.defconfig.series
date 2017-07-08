@@ -12,9 +12,11 @@ source "arch/arm/soc/rda_5981/5981a/Kconfig.defconfig.5981a"
 config SOC_SERIES
 	default 5981a
 
+if !HAS_DTS
 config NUM_IRQ_PRIO_BITS
 	int
 	default 4
+endif
 
 config SERIAL
 	def_bool y

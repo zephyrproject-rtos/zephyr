@@ -15,6 +15,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 160000000
 
+if !HAS_DTS
 config SRAM_SIZE
 	default 120
 
@@ -24,5 +25,6 @@ config FLASH_SIZE
 config NUM_IRQS
 	int
 	default 16
+endif
 
 endif # SOC_5981A

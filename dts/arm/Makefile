@@ -47,6 +47,6 @@ dtb-$(CONFIG_BOARD_STM32_MIN_DEV)	=	stm32_min_dev.dts_compiled
 dtb-$(CONFIG_BOARD_STM32F3_DISCO)       =       stm32f3_disco.dts_compiled
 dtb-$(CONFIG_BOARD_OLIMEX_STM32_P405)	=	olimex_stm32_p405.dts_compiled
 dtb-$(CONFIG_BOARD_STM32F429I_DISC1)	=	stm32f429i_disc1.dts_compiled
-
+dtb-$(CONFIG_BOARD_96B_BLUESKY)		=	96b_bluesky.dts_compiled
 always	:= $(dtb-y)
 endif

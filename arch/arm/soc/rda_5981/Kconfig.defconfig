@@ -8,10 +8,12 @@ source "arch/arm/soc/rda_5981/*/Kconfig.defconfig.series"
 
 if SOC_FAMILY_RDA5981
 
+if !HAS_DTS
 config SRAM_BASE_ADDRESS
 	default 0x100080
 
 config FLASH_BASE_ADDRESS
 	default 0x018001000
+endif
 
 endif # SOC_FAMILY_RDA5981
