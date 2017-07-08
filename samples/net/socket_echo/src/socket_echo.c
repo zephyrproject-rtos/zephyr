@@ -19,12 +19,11 @@
 
 #include <net/socket.h>
 #include <kernel.h>
-#include <net_sample_app.h>
+#include <net/net_app.h>
 
 void init_net(void)
 {
-	int ret = net_sample_app_init("socket_echo", NET_SAMPLE_NEED_IPV4,
-				      K_SECONDS(3));
+	int ret = net_app_init("socket_echo", NET_APP_NEED_IPV4, K_SECONDS(3));
 
 	if (ret < 0) {
 		printf("Application init failed\n");
