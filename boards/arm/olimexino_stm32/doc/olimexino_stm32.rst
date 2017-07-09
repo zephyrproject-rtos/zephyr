@@ -41,6 +41,8 @@ hardware features:
 +-----------+------------+----------------------+
 | GPIO      | on-chip    | gpio                 |
 +-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
@@ -290,6 +292,20 @@ OLIMEXINO-STM32 has two external oscillators. The frequency of
 the slow clock is 32.768 kHz. The frequency of the main clock
 is 8 MHz. The processor can setup HSE to drive the master clock,
 which can be set as high as 72 MHz.
+
+Serial Port
+===========
+
+OLIMEXINO-STM32 board has up to 3 U(S)ARTs. The Zephyr console output is
+assigned to USART1. Default settings are 115200 8N1.
+
+I2C
+===
+
+OLIMEXINO-STM32 board has up to 1 I2C. The default I2C mapping for Zephyr is:
+
+- I2C2_SCL : PB10
+- I2C2_SDA : PB11
 
 Jumpers
 =======
