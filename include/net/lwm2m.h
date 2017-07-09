@@ -23,6 +23,7 @@
 /* IPSO Alliance Objects */
 
 #define IPSO_OBJECT_TEMP_SENSOR_ID			3303
+#define IPSO_OBJECT_LIGHT_CONTROL_ID			3311
 
 /* callback can return 1 if handled (don't update value) */
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,

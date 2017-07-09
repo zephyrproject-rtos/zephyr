@@ -28,3 +28,4 @@ obj-$(CONFIG_LWM2M_RW_JSON_SUPPORT) += lwm2m_rw_json.o
 
 # IPSO Objects
 obj-$(CONFIG_LWM2M_IPSO_TEMP_SENSOR) += ipso_temp_sensor.o
+obj-$(CONFIG_LWM2M_IPSO_LIGHT_CONTROL) += ipso_light_control.o
