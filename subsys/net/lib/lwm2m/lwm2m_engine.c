@@ -586,6 +586,11 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 	int len;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
+		/* Security obj MUST NOT be part of registration message */
+		if (obj->obj_id == LWM2M_OBJECT_SECURITY_ID) {
+			continue;
+		}
+
 		len = snprintf(temp, sizeof(temp), "%s</%u>",
 			       (pos > 0) ? "," : "", obj->obj_id);
 		if (pos + len >= size) {
@@ -1816,8 +1821,10 @@ static int do_discover_op(struct lwm2m_engine_context *context)
 	out->outlen += strlen(DISCOVER_PREFACE);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		/* avoid discovery for security and server objects */
-		if (obj_inst->obj->obj_id <= LWM2M_OBJECT_SERVER_ID) {
+		/* TODO: support bootstrap discover
+		 * Avoid discovery for security object (5.2.7.3)
+		 */
+		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID) {
 			continue;
 		}
 
