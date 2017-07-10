@@ -514,6 +514,34 @@ static const struct bt_uuid_128 vnd_long_uuid2 = BT_UUID_INIT_128(
 
 static u8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
+static struct bt_uuid_128 vnd1_uuid = BT_UUID_INIT_128(
+	0xf4, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static const struct bt_uuid_128 vnd1_echo_uuid = BT_UUID_INIT_128(
+	0xf5, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static struct bt_gatt_ccc_cfg vnd1_ccc_cfg[BT_GATT_CCC_MAX] = {};
+static u8_t echo_enabled;
+
+static void vnd1_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
+{
+	echo_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+}
+
+static ssize_t write_vnd1(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  const void *buf, u16_t len, u16_t offset,
+			  u8_t flags)
+{
+	if (echo_enabled) {
+		printk("Echo attr len %u\n", len);
+		bt_gatt_notify(conn, attr, buf, len);
+	}
+
+	return len;
+}
+
 static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, u16_t len, u16_t offset)
 {
@@ -602,11 +630,26 @@ static struct bt_gatt_attr vnd_attrs[] = {
 
 static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
 
+static struct bt_gatt_attr vnd1_attrs[] = {
+	/* Vendor Primary Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(&vnd1_uuid),
+
+	BT_GATT_CHARACTERISTIC(&vnd1_echo_uuid.uuid,
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
+			       BT_GATT_CHRC_NOTIFY),
+	BT_GATT_DESCRIPTOR(&vnd1_echo_uuid.uuid,
+			   BT_GATT_PERM_WRITE, NULL, write_vnd1, NULL),
+	BT_GATT_CCC(vnd1_ccc_cfg, vnd1_ccc_cfg_changed),
+};
+
+static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);
+
 int cmd_gatt_register_test_svc(int argc, char *argv[])
 {
 	bt_gatt_service_register(&vnd_svc);
+	bt_gatt_service_register(&vnd1_svc);
 
-	printk("Registering test vendor service\n");
+	printk("Registering test vendor services\n");
 
 	return 0;
 }
@@ -614,8 +657,9 @@ int cmd_gatt_register_test_svc(int argc, char *argv[])
 int cmd_gatt_unregister_test_svc(int argc, char *argv[])
 {
 	bt_gatt_service_unregister(&vnd_svc);
+	bt_gatt_service_unregister(&vnd1_svc);
 
-	printk("Unregistering test vendor service\n");
+	printk("Unregistering test vendor services\n");
 
 	return 0;
 }
