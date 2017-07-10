@@ -91,6 +91,7 @@ struct cdc_acm_notification {
 #define USB_CMFUNC_DESC_SIZE	5 /* Call Management Functional Descriptor */
 #define USB_ACMFUNC_DESC_SIZE	4 /* ACM Functional Descriptor */
 #define USB_UFUNC_DESC_SIZE	5 /* Union Functional Descriptor */
+#define USB_NETFUNC_DESC_SIZE	13 /* Networking Functional Descriptor */
 
 /* Descriptor type */
 #define CS_INTERFACE		0x24
@@ -101,6 +102,7 @@ struct cdc_acm_notification {
 #define USB_CMFUNC_SUBDESC	0x01
 #define USB_ACMFUNC_SUBDESC	0x02
 #define USB_UFUNC_SUBDESC	0x06
+#define USB_NETFUNC_SUBDESC	0x0F
 
 /* Class specific request */
 #define CDC_SET_LINE_CODING		0x20
