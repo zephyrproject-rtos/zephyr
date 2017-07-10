@@ -229,6 +229,12 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	return &tcp_context[i];
 }
 
+static void ack_timer_cancel(struct net_tcp *tcp)
+{
+	tcp->ack_timer_cancelled = true;
+	k_delayed_work_cancel(&tcp->ack_timer);
+}
+
 int net_tcp_release(struct net_tcp *tcp)
 {
 	struct net_pkt *pkt;
@@ -245,10 +251,10 @@ int net_tcp_release(struct net_tcp *tcp)
 		net_pkt_unref(pkt);
 	}
 
-	tcp->ack_timer_cancelled = true;
-	k_delayed_work_cancel(&tcp->ack_timer);
 	k_timer_stop(&tcp->retry_timer);
 	k_sem_reset(&tcp->connect_wait);
+
+	ack_timer_cancel(tcp);
 
 	net_tcp_change_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;

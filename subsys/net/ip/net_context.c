@@ -39,7 +39,7 @@
 #if defined(CONFIG_NET_TCP_ACK_TIMEOUT)
 #define ACK_TIMEOUT CONFIG_NET_TCP_ACK_TIMEOUT
 #else
-#define ACK_TIMEOUT MSEC_PER_SEC
+#define ACK_TIMEOUT K_SECONDS(1)
 #endif
 
 /* Declares a wrapper function for a net_conn callback that refs the
@@ -306,7 +306,30 @@ static int tcp_backlog_rst(struct net_pkt *pkt)
 	return 0;
 }
 
-#endif
+static void handle_ack_timeout(struct k_work *work)
+{
+	/* This means that we did not receive ACK response in time. */
+	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
+
+	if (tcp->ack_timer_cancelled) {
+		return;
+	}
+
+	NET_DBG("Did not receive ACK in %dms while in %s", ACK_TIMEOUT,
+		net_tcp_state_str(net_tcp_get_state(tcp)));
+
+	if (net_tcp_get_state(tcp) == NET_TCP_LAST_ACK) {
+		/* We did not receive the last ACK on time. We can only
+		 * close the connection at this point. We will not send
+		 * anything to peer in this last state, but will go directly
+		 * to to CLOSED state.
+		 */
+		net_tcp_change_state(tcp, NET_TCP_CLOSED);
+
+		net_context_unref(tcp->context);
+	}
+}
+#endif /* CONFIG_NET_TCP */
 
 static int check_used_port(enum net_ip_protocol ip_proto,
 			   u16_t local_port,
@@ -469,6 +492,9 @@ int net_context_get(sa_family_t family,
 						"Cannot allocate TCP context");
 				return -ENOBUFS;
 			}
+
+			k_delayed_work_init(&contexts[i].tcp->ack_timer,
+					    handle_ack_timeout);
 		}
 #endif /* CONFIG_NET_TCP */
 
@@ -1467,12 +1493,6 @@ int net_context_connect(struct net_context *context,
 
 #if defined(CONFIG_NET_TCP)
 
-static void ack_timer_cancel(struct net_tcp *tcp)
-{
-	tcp->ack_timer_cancelled = true;
-	k_delayed_work_cancel(&tcp->ack_timer);
-}
-
 static void pkt_get_sockaddr(sa_family_t family, struct net_pkt *pkt,
 			     struct sockaddr_ptr *addr)
 {
@@ -1744,8 +1764,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		net_tcp_change_state(new_context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(new_context, NET_CONTEXT_CONNECTED);
-
-		ack_timer_cancel(tcp);
 
 		context->tcp->accept_cb(new_context,
 					&new_context->remote,
