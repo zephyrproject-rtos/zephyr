@@ -24,6 +24,10 @@ NET_BUF_POOL_DEFINE(mqtt_msg_pool, MQTT_BUF_CTR, MSG_SIZE, 0, NULL);
 
 #define MQTT_PUBLISHER_MIN_MSG_SIZE	2
 
+#if defined(CONFIG_MQTT_LIB_TLS)
+#define TLS_HS_DEFAULT_TIMEOUT 3000
+#endif
+
 int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 {
 	struct net_buf *data = NULL;
@@ -758,12 +762,29 @@ int mqtt_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 }
 
 static
-void mqtt_recv(struct net_app_ctx *ctx, struct net_pkt *pkt, int status,
+void app_connected(struct net_app_ctx *ctx, int status, void *data)
+{
+	struct mqtt_ctx *mqtt = (struct mqtt_ctx *)data;
+
+	/* net_app_ctx is already referenced to by the mqtt_ctx struct */
+	ARG_UNUSED(ctx);
+
+	if (!mqtt) {
+		return;
+	}
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	k_sem_give(&mqtt->tls_hs_wait);
+#endif
+}
+
+static
+void app_recv(struct net_app_ctx *ctx, struct net_pkt *pkt, int status,
 	       void *data)
 {
 	struct mqtt_ctx *mqtt = (struct mqtt_ctx *)data;
 
-	/* net_ctx is already referenced to by the mqtt_ctx struct */
+	/* net_app_ctx is already referenced to by the mqtt_ctx struct */
 	ARG_UNUSED(ctx);
 
 	if (status || !pkt) {
@@ -800,18 +821,43 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 	}
 
 	rc = net_app_set_cb(&ctx->net_app_ctx,
-			NULL,
-			mqtt_recv,
+			app_connected,
+			app_recv,
 			NULL,
 			NULL);
 	if (rc < 0) {
 		goto error_connect;
 	}
 
+#if defined(CONFIG_MQTT_LIB_TLS)
+	rc = net_app_client_tls(&ctx->net_app_ctx,
+			ctx->request_buf,
+			ctx->request_buf_len,
+			ctx->personalization_data,
+			ctx->personalization_data_len,
+			ctx->cert_cb,
+			ctx->cert_host,
+			ctx->entropy_src_cb,
+			ctx->tls_mem_pool,
+			ctx->tls_stack,
+			ctx->tls_stack_size);
+	if (rc < 0) {
+		goto error_connect;
+	}
+#endif
+
 	rc = net_app_connect(&ctx->net_app_ctx, ctx->net_timeout);
 	if (rc < 0) {
 		goto error_connect;
 	}
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	/* TLS handshake is not finished until app_connected is called */
+	rc = k_sem_take(&ctx->tls_hs_wait, ctx->tls_hs_timeout);
+	if (rc < 0) {
+		goto error_connect;
+	}
+#endif
 
 	return rc;
 
@@ -831,6 +877,14 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 
 	ctx->app_type = app_type;
 	ctx->rcv = mqtt_parser;
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	if (ctx->tls_hs_timeout == 0) {
+		ctx->tls_hs_timeout = TLS_HS_DEFAULT_TIMEOUT;
+	}
+
+	k_sem_init(&ctx->tls_hs_wait, 0, 1);
+#endif
 
 	return 0;
 }

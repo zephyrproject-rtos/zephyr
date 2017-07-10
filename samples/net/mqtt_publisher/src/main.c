@@ -67,6 +67,64 @@ static struct mqtt_client_ctx client_ctx;
 /* This routine sets some basic properties for the network context variable */
 static int network_setup(void);
 
+#if defined(CONFIG_MQTT_LIB_TLS)
+
+#include "test_certs.h"
+
+/* TLS */
+#define TLS_SNI_HOSTNAME "localhost"
+#define TLS_REQUEST_BUF_SIZE 1500
+#define TLS_PRIVATE_DATA "Zephyr TLS mqtt publisher"
+
+static u8_t tls_request_buf[TLS_REQUEST_BUF_SIZE];
+
+NET_STACK_DEFINE("mqtt_tls_stack", tls_stack,
+		CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
+
+NET_APP_TLS_POOL_DEFINE(tls_mem_pool, 30);
+
+int setup_cert(struct net_app_ctx *ctx, void *cert)
+{
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+	mbedtls_ssl_conf_psk(&ctx->tls.mbedtls.conf,
+			client_psk, sizeof(client_psk),
+			(const unsigned char *)client_psk_id,
+			sizeof(client_psk_id) - 1);
+#endif
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	{
+		mbedtls_x509_crt *ca_cert = cert;
+		int ret;
+
+		ret = mbedtls_x509_crt_parse_der(ca_cert,
+				ca_certificate,
+				sizeof(ca_certificate));
+		if (ret != 0) {
+			NET_ERR("mbedtls_x509_crt_parse_der failed "
+					"(-0x%x)", -ret);
+			return ret;
+		}
+
+		/* mbedtls_x509_crt_verify() should be called to verify the
+		 * cerificate in the real cases
+		 */
+
+		mbedtls_ssl_conf_ca_chain(&ctx->tls.mbedtls.conf,
+				ca_cert, NULL);
+
+		mbedtls_ssl_conf_authmode(&ctx->tls.mbedtls.conf,
+				MBEDTLS_SSL_VERIFY_REQUIRED);
+
+		mbedtls_ssl_conf_cert_profile(&ctx->tls.mbedtls.conf,
+				&mbedtls_x509_crt_profile_default);
+	}
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
+	return 0;
+}
+#endif
+
 /* The signature of this routine must match the connect callback declared at
  * the mqtt.h header.
  */
@@ -253,6 +311,20 @@ static void publisher(void)
 
 	client_ctx.mqtt_ctx.peer_addr_str = SERVER_ADDR;
 	client_ctx.mqtt_ctx.peer_port = SERVER_PORT;
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	/** TLS setup */
+	client_ctx.mqtt_ctx.request_buf = tls_request_buf;
+	client_ctx.mqtt_ctx.request_buf_len = TLS_REQUEST_BUF_SIZE;
+	client_ctx.mqtt_ctx.personalization_data = TLS_PRIVATE_DATA;
+	client_ctx.mqtt_ctx.personalization_data_len = strlen(TLS_PRIVATE_DATA);
+	client_ctx.mqtt_ctx.cert_host = TLS_SNI_HOSTNAME;
+	client_ctx.mqtt_ctx.tls_mem_pool = &tls_mem_pool;
+	client_ctx.mqtt_ctx.tls_stack = tls_stack;
+	client_ctx.mqtt_ctx.tls_stack_size = K_THREAD_STACK_SIZEOF(tls_stack);
+	client_ctx.mqtt_ctx.cert_cb = setup_cert;
+	client_ctx.mqtt_ctx.entropy_src_cb = NULL;
+#endif
 
 	/* Publisher apps TX the MQTT PUBLISH msg */
 	client_ctx.mqtt_ctx.publish_tx = publish_cb;
