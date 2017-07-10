@@ -713,8 +713,8 @@ int cmd_gatt_write_cmd_metrics(int argc, char *argv[])
 			registered = true;
 		}
 	} else if (!strcmp(argv[1], "off")) {
-		printk("Not supported.\n");
-		err = -EINVAL;
+		printk("Unregistering GATT metrics test Service.\n");
+		err = bt_gatt_service_unregister(&met_svc);
 	} else {
 		printk("Incorrect value: %s\n", argv[1]);
 		return -EINVAL;
