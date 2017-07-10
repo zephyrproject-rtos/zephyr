@@ -63,10 +63,6 @@ static int fake_set_txpower(struct device *dev, s16_t dbm)
 
 static inline void insert_frag_dummy_way(struct net_pkt *pkt)
 {
-	if (!current_pkt) {
-		return;
-	}
-
 	if (current_pkt->frags) {
 		struct net_buf *frag, *prev_frag = NULL;
 
@@ -89,6 +85,10 @@ static int fake_tx(struct device *dev,
 {
 	NET_INFO("Sending packet %p - length %zu\n",
 		 pkt, net_pkt_get_len(pkt));
+
+	if (!current_pkt) {
+		return 0;
+	}
 
 	net_pkt_set_ll_reserve(current_pkt, net_pkt_ll_reserve(pkt));
 
