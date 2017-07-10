@@ -200,7 +200,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 				int timeout)
 {
 	struct mgmt_event_wait sync_data = {
-		.sync_call = K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
+		.sync_call = _K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
 	};
 	struct net_mgmt_event_callback sync = {
 		.sync_call = &sync_data.sync_call,

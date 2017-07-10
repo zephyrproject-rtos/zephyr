@@ -129,16 +129,25 @@ struct mmu_region {
  * region_size has to be provided in bytes
  * for read write access = MMU_ENTRY_READ/MMU_ENTRY_WRITE
  * for supervisor/user mode access = MMU_ENTRY_SUPERVISOR/MMU_ENTRY_USER
+ *
+ * Preprocessor indirection layers used to ensure __COUNTER__ is expanded
+ * properly.
  */
 
-#define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
-	static struct mmu_region region_##addr				\
+#define __MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
+	static struct mmu_region region_##id				\
 	__attribute__((__section__(".mmulist"), used))  =		\
 	{								\
 		.address = addr,					\
 		.size = region_size,					\
 		.flags = permission_flags,				\
 	}
+
+#define _MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
+	__MMU_BOOT_REGION(id, addr, region_size, permission_flags)
+
+#define MMU_BOOT_REGION(addr, region_size, permission_flags) 		\
+	_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
 
 /*
  * The following defines the format of a 32-bit page directory entry

@@ -27,7 +27,7 @@
 
 #include <net/net_app.h>
 
-static struct k_sem waiter = K_SEM_INITIALIZER(waiter, 0, 1);
+static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
 
 #if defined(CONFIG_NET_DHCPV4)
