@@ -176,12 +176,19 @@ static struct random_stm32_rng_dev_data random_stm32_rng_data = {
 	.rng = RNG,
 };
 
-DEVICE_AND_API_INIT(random_stm32_rng, CONFIG_RANDOM_NAME,
+#if defined(CONFIG_RANDOM_POOL)
+#define DEVICE_NAME CONFIG_HARDWARE_RANDOM_NAME
+#else
+#define DEVICE_NAME CONFIG_RANDOM_NAME
+#endif
+
+DEVICE_AND_API_INIT(random_stm32_rng, DEVICE_NAME,
 		    random_stm32_rng_init,
 		    &random_stm32_rng_data, &random_stm32_rng_config,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &random_stm32_rng_api);
 
+#if !defined(CONFIG_RANDOM_POOL)
 u32_t sys_rand32_get(void)
 {
 	u32_t output;
@@ -193,4 +200,4 @@ u32_t sys_rand32_get(void)
 
 	return output;
 }
-
+#endif

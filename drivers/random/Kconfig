@@ -22,15 +22,74 @@ config RANDOM_HAS_DRIVER
 	bool
 	default n
 	help
-	  This is an option to be enabled by individual random driver
-	  to signal that there is a true random driver.
+	This is an option to be enabled by individual random driver
+	to signal that there is a true random driver.
+
+config RANDOM_POOL
+	bool "Enables the random pool"
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	default n
+	help
+	This adds a device inspired by /dev/random as common on Unices. Various
+	sources of entropy can be enabled, including hardware-based random
+	number generators usually available as microcontroller peripherals.
+
+	If enabled, this will take over the RANDOM_0 device, and the
+	hardware-based random number generators will be named HWRNG_0 instead.
+	Either the random_get_entropy() function or sys_rand32_get() can then
+	be used to obtain some data.
+
+	An idle priority thread will kick in every now and then to stir a pot
+	of integers with the various sources of entropy.  When asked to
+	generate random data, this pot and an atomically-increasing integer
+	will be used as inputs to an AES encryption routine.  The cyphertext is
+	then stirred in the pot, folded into a single integer, and used as
+	entropy for random_get_entropy().  (sys_rand32_get() is just a special
+	case of random_get_entropy().)
+
+config RANDOM_POOL_SOURCE_DEVICES
+	bool "Initialize random pool with device information"
+	depends on RANDOM_POOL
+	default y
+	help
+	Use pointers to all `struct device` that were initialized before main()
+	gets executed.  While not random, this is unique for every configuration.
+
+config RANDOM_POOL_SOURCE_HARDWARE
+	bool "Use hardware-based number generator as entropy source in pool"
+	depends on RANDOM_POOL
+	depends on RANDOM_HAS_DRIVER
+	default y
+	help
+	Mix values obtained from the hardware random number generator in the pool.
+
+config RANDOM_HARDWARE_NAME
+	string "Hardware-based random generator name"
+	depends on RANDOM_POOL
+	depends on RANDOM_POOL_SOURCE_HARDWARE
+	default "HWRNG_0"
+
+config RANDOM_POOL_SOURCE_TIMESTAMP
+	bool "Use time stamp as entropy source in random pool"
+	depends on RANDOM_POOL
+	default y
+	help
+	Mix the CPU timestamp in the pool.
+
+config RANDOM_POOL_SOURCE_CYCLE_COUNTER
+	bool "Use cycle counter as entropy source in random pool"
+	depends on RANDOM_POOL
+	default y
+	help
+	Mix the CPU cycle count in the pool.
 
 config RANDOM_NAME
-	string "Random Device Name"
+	string "Random device name"
 	depends on RANDOM_GENERATOR
 	default "RANDOM_0"
 	help
-	  Specify the device name to be used for the RANDOM driver.
+	Specify the device name to be used for the RANDOM driver.
 
 config SYS_LOG_RANDOM_LEVEL
 	int "Random Log level"
@@ -49,7 +108,7 @@ config SYS_LOG_RANDOM_LEVEL
 config TEST_RANDOM_GENERATOR
 	bool
 	prompt "Non-random number generator"
-	depends on RANDOM_GENERATOR && ! RANDOM_HAS_DRIVER
+	depends on RANDOM_GENERATOR && !RANDOM_HAS_DRIVER && !RANDOM_POOL
 	default n
 	help
 	  This option signifies that the kernel's random number APIs are
