@@ -7,6 +7,7 @@
 menuconfig RANDOM_STM32_RNG
 	bool "STM32 RNG driver"
 	depends on RANDOM_GENERATOR
+	depends on SOC_FAMILY_STM32
 	default n
 	select RANDOM_HAS_DRIVER
 	help
