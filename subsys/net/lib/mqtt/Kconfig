@@ -42,3 +42,12 @@ config MQTT_SUBSCRIBE_MAX_TOPICS
 	help
 	Set the maximum number of topics handled by the SUBSCRIBE/SUBACK
 	messages during reception.
+
+config MQTT_LIB_TLS
+	bool
+	prompt "Enable TLS support for the MQTT application"
+	depends on MQTT_LIB
+	default n
+	select NET_APP_TLS
+	help
+	Enables MQTT library with TLS support

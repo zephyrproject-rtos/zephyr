@@ -71,6 +71,28 @@ struct mqtt_ctx {
 	char *peer_addr_str;
 	u16_t peer_port;
 
+#if defined(CONFIG_MQTT_LIB_TLS)
+	/** TLS parameters */
+	u8_t *request_buf;
+	size_t request_buf_len;
+	u8_t *personalization_data;
+	size_t personalization_data_len;
+	char *cert_host;
+
+	/** TLS thread parameters */
+	struct k_mem_pool *tls_mem_pool;
+	u8_t *tls_stack;
+	size_t tls_stack_size;
+
+	/** TLS callback */
+	net_app_ca_cert_cb_t cert_cb;
+	net_app_entropy_src_cb_t entropy_src_cb;
+
+	/** TLS handshake */
+	struct k_sem tls_hs_wait;
+	s32_t tls_hs_timeout;
+#endif
+
 	/** Callback executed when a MQTT CONNACK msg is received and validated.
 	 * If this function pointer is not used, must be set to NULL.
 	 */
