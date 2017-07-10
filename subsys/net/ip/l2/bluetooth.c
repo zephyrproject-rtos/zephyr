@@ -119,7 +119,11 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	char dst[BT_ADDR_LE_STR_LEN];
 #endif
 
-	bt_conn_get_info(chan->conn, &info);
+	if (bt_conn_get_info(chan->conn, &info) < 0) {
+		NET_ERR("Unable to get connection info");
+		bt_l2cap_chan_disconnect(chan);
+		return;
+	}
 
 #if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
 	bt_addr_le_to_str(info.le.src, src, sizeof(src));
