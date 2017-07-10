@@ -66,8 +66,10 @@ struct net_context;
  * @typedef net_context_recv_cb_t
  * @brief Network data receive callback.
  *
- * @details The recv callback is called after a network data is
- * received.
+ * @details The recv callback is called after a network data packet is
+ * received. This callback is called by RX thread so its stack and execution
+ * context is used here. Keep processing in the callback minimal to reduce the
+ * time spent blocked while handling packets.
  *
  * @param context The context to use.
  * @param pkt Network buffer that is received. If the pkt is not NULL,
@@ -87,8 +89,10 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
  * @typedef net_context_send_cb_t
  * @brief Network data send callback.
  *
- * @details The send callback is called after a network data is
- * sent.
+ * @details The send callback is called after a network data packet is sent.
+ * This callback is called by TX thread so its stack and execution context is
+ * used here. Keep processing in the callback minimal to reduce the time spent
+ * blocked while handling packets.
  *
  * @param context The context to use.
  * @param status Value is set to 0 if all data was sent ok, <0 if
@@ -106,9 +110,11 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
  * @typedef net_tcp_accept_cb_t
  * @brief Accept callback
  *
- * @details The accept callback is called after a successful
- * connection is being established or if there was an error
- * while we were waiting for a connection attempt.
+ * @details The accept callback is called after a successful connection was
+ * established or if there was an error while we were waiting for a connection
+ * attempt. This callback is called by RX thread so its stack and execution
+ * context is used here. Keep processing in the callback minimal to reduce the
+ * time spent blocked while handling packets.
  *
  * @param context The context to use.
  * @param addr The peer address.
@@ -128,6 +134,14 @@ typedef void (*net_tcp_accept_cb_t)(struct net_context *new_context,
  *
  * @details The connect callback is called after a connection is being
  * established.
+ * For TCP connections, this callback is called by RX thread so its stack and
+ * execution context is used here. The callback is called after the TCP
+ * connection was established or if the connection failed. Keep processing in
+ * the callback minimal to reduce the time spent blocked while handling
+ * packets.
+ * For UDP connections, this callback is called immediately by
+ * net_context_connect() function. UDP is a connectionless protocol so the
+ * connection can be thought of being established immediately.
  *
  * @param context The context to use.
  * @param status Status of the connection establishment. This is 0
