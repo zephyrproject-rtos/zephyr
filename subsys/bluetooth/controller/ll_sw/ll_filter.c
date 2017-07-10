@@ -27,7 +27,7 @@
 #include "pdu.h"
 
 /* Hardware whitelist */
-static struct ll_filter wl;
+static struct ll_filter wl_filter;
 u8_t wl_anon;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
@@ -40,7 +40,7 @@ static struct {
 	u8_t      id_addr_type:1;
 	u8_t      rl_idx;
 	bt_addr_t id_addr;
-} wl_peers[WL_SIZE];
+} wl[WL_SIZE];
 
 static u8_t rl_enable;
 static struct rl_dev {
@@ -65,7 +65,7 @@ static u8_t peer_irks[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE][16];
 static u8_t peer_irk_rl_ids[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE];
 static u8_t peer_irk_count;
 
-BUILD_ASSERT(ARRAY_SIZE(wl_peers) < FILTER_IDX_NONE);
+BUILD_ASSERT(ARRAY_SIZE(wl) < FILTER_IDX_NONE);
 BUILD_ASSERT(ARRAY_SIZE(rl) < FILTER_IDX_NONE);
 
 /* Hardware filter for the resolving list */
@@ -81,14 +81,14 @@ struct k_delayed_work rpa_work;
 		    (list[i].id_addr_type == (type & 0x1)) && \
 		    !memcmp(list[i].id_addr.val, addr, BDADDR_SIZE))
 
-static void wl_peers_clear(void)
+static void wl_clear(void)
 {
 	for (int i = 0; i < WL_SIZE; i++) {
-		wl_peers[i].taken = 0;
+		wl[i].taken = 0;
 	}
 }
 
-static u8_t wl_peers_find(u8_t addr_type, u8_t *addr, u8_t *free)
+static u8_t wl_find(u8_t addr_type, u8_t *addr, u8_t *free)
 {
 	int i;
 
@@ -97,7 +97,7 @@ static u8_t wl_peers_find(u8_t addr_type, u8_t *addr, u8_t *free)
 	}
 
 	for (i = 0; i < WL_SIZE; i++) {
-		if (LIST_MATCH(wl_peers, i, addr_type, addr)) {
+		if (LIST_MATCH(wl, i, addr_type, addr)) {
 			return i;
 		} else if (free && !rl[i].taken && (*free == FILTER_IDX_NONE)) {
 			*free = i;
@@ -107,48 +107,48 @@ static u8_t wl_peers_find(u8_t addr_type, u8_t *addr, u8_t *free)
 	return FILTER_IDX_NONE;
 }
 
-static u32_t wl_peers_add(bt_addr_le_t *id_addr)
+static u32_t wl_add(bt_addr_le_t *id_addr)
 {
 	u8_t i, j;
 
-	i = wl_peers_find(id_addr->type, id_addr->a.val, &j);
+	i = wl_find(id_addr->type, id_addr->a.val, &j);
 
 	/* Duplicate  check */
-	if (i < ARRAY_SIZE(wl_peers)) {
+	if (i < ARRAY_SIZE(wl)) {
 		return BT_HCI_ERR_INVALID_PARAM;
-	} else if (j > ARRAY_SIZE(wl_peers)) {
+	} else if (j > ARRAY_SIZE(wl)) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	i = j;
 
-	wl_peers[i].id_addr_type = id_addr->type & 0x1;
-	bt_addr_copy(&wl_peers[i].id_addr, &id_addr->a);
+	wl[i].id_addr_type = id_addr->type & 0x1;
+	bt_addr_copy(&wl[i].id_addr, &id_addr->a);
 	/* Get index to Resolving List if applicable */
 	j = ll_rl_find(id_addr->type, id_addr->a.val, NULL);
 	if (j < ARRAY_SIZE(rl)) {
-		wl_peers[i].rl_idx = j;
+		wl[i].rl_idx = j;
 		rl[j].wl = 1;
 	} else {
-		wl_peers[i].rl_idx = FILTER_IDX_NONE;
+		wl[i].rl_idx = FILTER_IDX_NONE;
 	}
-	wl_peers[i].taken = 1;
+	wl[i].taken = 1;
 
 	return 0;
 }
 
-static u32_t wl_peers_remove(bt_addr_le_t *id_addr)
+static u32_t wl_remove(bt_addr_le_t *id_addr)
 {
 	/* find the device and mark it as empty */
-	int i = wl_peers_find(id_addr->type, id_addr->a.val, NULL);
+	int i = wl_find(id_addr->type, id_addr->a.val, NULL);
 
-	if (i < ARRAY_SIZE(wl_peers)) {
-		int j = wl_peers[i].rl_idx;
+	if (i < ARRAY_SIZE(wl)) {
+		int j = wl[i].rl_idx;
 
 		if (j < ARRAY_SIZE(rl)) {
 			rl[j].wl = 0;
 		}
-		wl_peers[i].taken = 0;
+		wl[i].taken = 0;
 		return 0;
 	}
 
@@ -249,7 +249,7 @@ bool ctrl_irk_whitelisted(u8_t rl_idx)
 struct ll_filter *ctrl_filter_get(bool whitelist)
 {
 	if (whitelist) {
-		return &wl;
+		return &wl_filter;
 	}
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	return &rl_filter;
@@ -270,9 +270,9 @@ u32_t ll_wl_clear(void)
 	}
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	wl_peers_clear();
+	wl_clear();
 #else
-	filter_clear(&wl);
+	filter_clear(&wl_filter);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 	wl_anon = 0;
 
@@ -291,9 +291,9 @@ u32_t ll_wl_add(bt_addr_le_t *addr)
 	}
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	return wl_peers_add(addr);
+	return wl_add(addr);
 #else
-	return filter_add(&wl, addr->type, addr->a.val);
+	return filter_add(&wl_filter, addr->type, addr->a.val);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 }
 
@@ -309,9 +309,9 @@ u32_t ll_wl_remove(bt_addr_le_t *addr)
 	}
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	return wl_peers_remove(addr);
+	return wl_remove(addr);
 #else
-	return filter_remove(&wl, addr->type, addr->a.val);
+	return filter_remove(&wl_filter, addr->type, addr->a.val);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 }
 
@@ -322,15 +322,15 @@ static void filter_wl_update(void)
 	int i;
 
 	/* Populate filter from wl peers */
-	filter_clear(&wl);
+	filter_clear(&wl_filter);
 
 	for (i = 0; i < WL_SIZE; i++) {
-		int j = wl_peers[i].rl_idx;
+		int j = wl[i].rl_idx;
 
 		if (!rl_enable || j < ARRAY_SIZE(rl) || !rl[j].pirk ||
 		    rl[j].dev) {
-			filter_insert(&wl, i, wl_peers[i].id_addr_type,
-				      wl_peers[i].id_addr.val);
+			filter_insert(&wl_filter, i, wl[i].id_addr_type,
+				      wl[i].id_addr.val);
 		}
 	}
 }
@@ -661,9 +661,9 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 	/* Default to Network Privacy */
 	rl[i].dev = 0;
 	/* Add reference to  a whitelist entry */
-	j = wl_peers_find(id_addr->type, id_addr->a.val, NULL);
-	if (j < ARRAY_SIZE(wl_peers)) {
-		wl_peers[j].rl_idx = i;
+	j = wl_find(id_addr->type, id_addr->a.val, NULL);
+	if (j < ARRAY_SIZE(wl)) {
+		wl[j].rl_idx = i;
 		rl[i].wl = 1;
 	} else {
 		rl[i].wl = 0;
@@ -708,9 +708,9 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 		}
 
 		/* Check if referenced by a whitelist entry */
-		j = wl_peers_find(id_addr->type, id_addr->a.val, NULL);
-		if (j < ARRAY_SIZE(wl_peers)) {
-			wl_peers[j].rl_idx = FILTER_IDX_NONE;
+		j = wl_find(id_addr->type, id_addr->a.val, NULL);
+		if (j < ARRAY_SIZE(wl)) {
+			wl[j].rl_idx = FILTER_IDX_NONE;
 		}
 		rl[i].taken = 0;
 		return 0;
@@ -806,7 +806,7 @@ void ll_filter_reset(bool init)
 	wl_anon = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-	wl_peers_clear();
+	wl_clear();
 
 	rl_enable = 0;
 	rpa_timeout_ms = DEFAULT_RPA_TIMEOUT_MS;
@@ -818,7 +818,7 @@ void ll_filter_reset(bool init)
 		k_delayed_work_cancel(&rpa_work);
 	}
 #else
-	filter_clear(&wl);
+	filter_clear(&wl_filter);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 }
