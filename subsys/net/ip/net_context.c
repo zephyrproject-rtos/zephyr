@@ -42,6 +42,8 @@
 #define ACK_TIMEOUT K_SECONDS(1)
 #endif
 
+#define FIN_TIMEOUT K_SECONDS(1)
+
 /* Declares a wrapper function for a net_conn callback that refs the
  * context around the invocation (to protect it from premature
  * deletion).  Long term would be nice to see this feature be part of
@@ -306,6 +308,18 @@ static int tcp_backlog_rst(struct net_pkt *pkt)
 	return 0;
 }
 
+static void handle_fin_timeout(struct k_work *work)
+{
+	struct net_tcp *tcp =
+		CONTAINER_OF(work, struct net_tcp, fin_timer);
+
+	if (!tcp->fin_timer_cancelled) {
+		NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT);
+
+		net_context_unref(tcp->context);
+	}
+}
+
 static void handle_ack_timeout(struct k_work *work)
 {
 	/* This means that we did not receive ACK response in time. */
@@ -495,6 +509,8 @@ int net_context_get(sa_family_t family,
 
 			k_delayed_work_init(&contexts[i].tcp->ack_timer,
 					    handle_ack_timeout);
+			k_delayed_work_init(&contexts[i].tcp->fin_timer,
+					    handle_fin_timeout);
 		}
 #endif /* CONFIG_NET_TCP */
 
@@ -658,12 +674,13 @@ int net_context_put(struct net_context *context)
 		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
 		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
 		    && !context->tcp->fin_rcvd) {
-			if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
-				NET_DBG("TCP connection in active close, not "
-					"disposing yet");
-				queue_fin(context);
-				return 0;
-			}
+			NET_DBG("TCP connection in active close, not "
+				"disposing yet (waiting %dms)", FIN_TIMEOUT);
+			k_delayed_work_submit(&context->tcp->fin_timer,
+					      FIN_TIMEOUT);
+			context->tcp->fin_timer_cancelled = false;
+			queue_fin(context);
+			return 0;
 		}
 	}
 #endif /* CONFIG_NET_TCP */

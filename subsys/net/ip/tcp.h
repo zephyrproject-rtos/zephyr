@@ -104,6 +104,9 @@ struct net_tcp {
 	/** ACK message timer */
 	struct k_delayed_work ack_timer;
 
+	/** Timer for doing active close in case the peer FIN is lost. */
+	struct k_delayed_work fin_timer;
+
 	/** Retransmit timer */
 	struct k_timer retry_timer;
 
@@ -137,8 +140,10 @@ struct net_tcp {
 	 * of various timing issues when timer is scheduled to run.
 	 */
 	u32_t ack_timer_cancelled : 1;
+	/* Tells if fin timer has been already cancelled. */
+	u32_t fin_timer_cancelled : 1;
 	/** Remaining bits in this u32_t */
-	u32_t _padding : 12;
+	u32_t _padding : 11;
 
 	/** Accept callback to be called when the connection has been
 	 * established.
