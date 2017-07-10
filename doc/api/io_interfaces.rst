@@ -29,6 +29,17 @@ I2C Interface
    :project: Zephyr
    :content-only:
 
+I2S Interface
+*************
+
+The I2S (Inter-IC Sound) API provides support for the standard I2S interface
+as well as common non-standard extensions such as PCM Short/Long Frame Sync
+and Left/Right Justified Data Formats.
+
+.. doxygengroup:: i2s_interface
+   :project: Zephyr
+   :content-only:
+
 IPM Interface
 *************
 
