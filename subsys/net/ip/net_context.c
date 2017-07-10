@@ -256,15 +256,15 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 	context->tcp->send_seq = tcp_backlog[r].send_seq;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
 
-	/* For now, remember to check that the delayed work wasn't already
-	 * scheduled to run, and if yes, don't zero out here. Improve the
-	 * delayed work cancellation, but for now use a boolean to keep this
-	 * in sync
-	 */
-	if (k_delayed_work_remaining_get(&tcp_backlog[r].ack_timer) > 0) {
+	if (k_delayed_work_cancel(&tcp_backlog[r].ack_timer) < 0) {
+		/* Too late to cancel - just set flag for worker.
+		 * TODO: Note that in this case, we can be preempted
+		 * anytime (could have been preempted even before we did
+		 * the check), so access to tcp_backlog should be synchronized
+		 * between this function and worker.
+		 */
 		tcp_backlog[r].cancelled = true;
 	} else {
-		k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
 		memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
 	}
 
@@ -291,15 +291,15 @@ static int tcp_backlog_rst(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	/* For now, remember to check that the delayed work wasn't already
-	 * scheduled to run, and if yes, don't zero out here. Improve the
-	 * delayed work cancellation, but for now use a boolean to keep this
-	 * in sync
-	 */
-	if (k_delayed_work_remaining_get(&tcp_backlog[r].ack_timer) > 0) {
+	if (k_delayed_work_cancel(&tcp_backlog[r].ack_timer) < 0) {
+		/* Too late to cancel - just set flag for worker.
+		 * TODO: Note that in this case, we can be preempted
+		 * anytime (could have been preempted even before we did
+		 * the check), so access to tcp_backlog should be synchronized
+		 * between this function and worker.
+		 */
 		tcp_backlog[r].cancelled = true;
 	} else {
-		k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
 		memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
 	}
 
