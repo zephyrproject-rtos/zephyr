@@ -23,6 +23,7 @@ int zsock_listen(int sock, int backlog);
 int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 ssize_t zsock_send(int sock, const void *buf, size_t len, int flags);
 ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags);
+int zsock_fcntl(int sock, int cmd, int flags);
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 #define socket zsock_socket
@@ -33,6 +34,7 @@ ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags);
 #define accept zsock_accept
 #define send zsock_send
 #define recv zsock_recv
+#define fcntl zsock_fcntl
 
 #define inet_ntop net_addr_ntop
 #define inet_pton net_addr_pton

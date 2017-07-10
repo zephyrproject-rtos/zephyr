@@ -9,15 +9,36 @@
 #define NET_LOG_ENABLED 1
 #endif
 
+/* libc headers */
+#include <sys/fcntl.h>
+
+/* Zephyr headers */
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
 
+#define SOCK_EOF 1
+#define SOCK_NONBLOCK 2
+
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
 
-#define sock_is_eof(ctx) ((ctx)->user_data != NULL)
-#define sock_set_eof(ctx) { (ctx)->user_data = INT_TO_POINTER(1); }
+static inline void sock_set_flag(struct net_context *ctx, u32_t mask,
+				 u32_t flag)
+{
+	u32_t val = POINTER_TO_INT(ctx->user_data);
+	val = (val & mask) | flag;
+	(ctx)->user_data = INT_TO_POINTER(val);
+}
+
+static inline u32_t sock_get_flag(struct net_context *ctx, u32_t mask)
+{
+	return POINTER_TO_INT(ctx->user_data) & mask;
+}
+
+#define sock_is_eof(ctx) sock_get_flag(ctx, SOCK_EOF)
+#define sock_set_eof(ctx) sock_set_flag(ctx, SOCK_EOF, SOCK_EOF)
+#define sock_is_nonblock(ctx) sock_get_flag(ctx, SOCK_NONBLOCK)
 
 static inline void _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 {
@@ -181,9 +202,20 @@ ssize_t zsock_send(int sock, const void *buf, size_t len, int flags)
 {
 	ARG_UNUSED(flags);
 	int err;
+	struct net_pkt *send_pkt;
+	s32_t timeout = K_FOREVER;
 	struct net_context *ctx = INT_TO_POINTER(sock);
-	struct net_pkt *send_pkt = net_pkt_get_tx(ctx, K_FOREVER);
 	size_t max_len = net_if_get_mtu(net_context_get_iface(ctx));
+
+	if (sock_is_nonblock(ctx)) {
+		timeout = K_NO_WAIT;
+	}
+
+	send_pkt = net_pkt_get_tx(ctx, timeout);
+	if (!send_pkt) {
+		errno = EAGAIN;
+		return -1;
+	}
 
 	/* Make sure we don't send more data in one packet than
 	 * MTU allows. Optimize for number of branches in the code.
@@ -197,8 +229,14 @@ ssize_t zsock_send(int sock, const void *buf, size_t len, int flags)
 		len = max_len;
 	}
 
-	len = net_pkt_append(send_pkt, len, buf, K_FOREVER);
-	err = net_context_send(send_pkt, /*cb*/NULL, K_FOREVER, NULL, NULL);
+	len = net_pkt_append(send_pkt, len, buf, timeout);
+	if (!len) {
+		net_pkt_unref(send_pkt);
+		errno = EAGAIN;
+		return -1;
+	}
+
+	err = net_context_send(send_pkt, /*cb*/NULL, timeout, NULL, NULL);
 	if (err < 0) {
 		net_pkt_unref(send_pkt);
 		errno = -err;
@@ -211,6 +249,11 @@ ssize_t zsock_send(int sock, const void *buf, size_t len, int flags)
 static inline ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size_t max_len)
 {
 	size_t recv_len = 0;
+	s32_t timeout = K_FOREVER;
+
+	if (sock_is_nonblock(ctx)) {
+		timeout = K_NO_WAIT;
+	}
 
 	do {
 		struct net_pkt *pkt;
@@ -221,14 +264,19 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size
 			return 0;
 		}
 
-		_k_fifo_wait_non_empty(&ctx->recv_q, K_FOREVER);
+		_k_fifo_wait_non_empty(&ctx->recv_q, timeout);
 		pkt = k_fifo_peek_head(&ctx->recv_q);
 		if (!pkt) {
-			/* An expected reason is that wait was
-			 * cancelled due to connection closure by peer.
+			/* Either timeout expired, or wait was cancelled
+			 * due to connection closure by peer.
 			 */
 			NET_DBG("NULL return from fifo");
-			continue;
+			if (sock_is_eof(ctx)) {
+				return 0;
+			} else {
+				errno = EAGAIN;
+				return -1;
+			}
 		}
 
 		frag = pkt->frags;
@@ -272,7 +320,18 @@ ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags)
 
 	if (sock_type == SOCK_DGRAM) {
 
-		struct net_pkt *pkt = k_fifo_get(&ctx->recv_q, K_FOREVER);
+		struct net_pkt *pkt;
+		s32_t timeout = K_FOREVER;
+
+		if (sock_is_nonblock(ctx)) {
+			timeout = K_NO_WAIT;
+		}
+
+		pkt = k_fifo_get(&ctx->recv_q, timeout);
+		if (!pkt) {
+			errno = EAGAIN;
+			return -1;
+		}
 
 		recv_len = net_pkt_appdatalen(pkt);
 		if (recv_len > max_len) {
@@ -289,4 +348,30 @@ ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags)
 	}
 
 	return recv_len;
+}
+
+/* As this is limited function, we don't follow POSIX signature, with
+ * "..." instead of last arg.
+ */
+int zsock_fcntl(int sock, int cmd, int flags)
+{
+	struct net_context *ctx = INT_TO_POINTER(sock);
+
+	switch (cmd) {
+	case F_GETFL:
+		if (sock_is_nonblock(ctx)) {
+		    return O_NONBLOCK;
+		}
+		return 0;
+	case F_SETFL:
+		if (flags & O_NONBLOCK) {
+			sock_set_flag(ctx, SOCK_NONBLOCK, SOCK_NONBLOCK);
+		} else {
+			sock_set_flag(ctx, SOCK_NONBLOCK, 0);
+		}
+		return 0;
+	default:
+		errno = EINVAL;
+		return -1;
+	}
 }
