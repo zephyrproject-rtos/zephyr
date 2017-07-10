@@ -74,7 +74,7 @@ struct cdc_acm_notification {
 #define CDC_CLASS_REQ_MAX_DATA_SIZE	8
 
 /* Number of configurations for the USB Device */
-#define CDC_NUM_CONF	0x01
+#define CDC_NUM_CONF		0x01
 /* Number of interfaces in the configuration */
 #define CDC_NUM_ITF		0x02
 /* Number of Endpoints in the first interface */
@@ -84,17 +84,17 @@ struct cdc_acm_notification {
 
 #define CDC_ENDP_INT	0x81
 #define CDC_ENDP_OUT	0x03
-#define CDC_ENDP_IN		0x82
+#define CDC_ENDP_IN	0x82
 
 /* Decriptor size in bytes */
-#define USB_HFUNC_DESC_SIZE		5 /* Header Functional Descriptor */
+#define USB_HFUNC_DESC_SIZE	5 /* Header Functional Descriptor */
 #define USB_CMFUNC_DESC_SIZE	5 /* Call Management Functional Descriptor */
 #define USB_ACMFUNC_DESC_SIZE	4 /* ACM Functional Descriptor */
-#define USB_UFUNC_DESC_SIZE		5 /* Union Functional Descriptor */
+#define USB_UFUNC_DESC_SIZE	5 /* Union Functional Descriptor */
 
 /* Descriptor type */
 #define CS_INTERFACE		0x24
-#define CS_ENDPOINT			0x25
+#define CS_ENDPOINT		0x25
 
 /* Descriptor subtype */
 #define USB_HFUNC_SUBDESC	0x00
@@ -103,8 +103,8 @@ struct cdc_acm_notification {
 #define USB_UFUNC_SUBDESC	0x06
 
 /* Class specific request */
-#define CDC_SET_LINE_CODING			0x20
-#define CDC_GET_LINE_CODING			0x21
+#define CDC_SET_LINE_CODING		0x20
+#define CDC_GET_LINE_CODING		0x21
 #define CDC_SET_CONTROL_LINE_STATE	0x22
 
 /* Control line state signal bitmap */
