@@ -101,7 +101,7 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
 
 	/* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1
 	 */
-	net_pkt_write(pkt, frag, pos, &pos, 4, (u8_t *)unused, PKT_WAIT_TIME);
+	net_pkt_write(pkt, frag, pos, &pos, 4, (u8_t *)&unused, PKT_WAIT_TIME);
 }
 
 #if defined(CONFIG_NET_DEBUG_ICMPV6)

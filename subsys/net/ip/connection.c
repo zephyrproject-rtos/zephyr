@@ -688,8 +688,8 @@ int net_conn_register(enum net_ip_protocol proto,
 
 			NET_DBG("[%d/%d/%u/0x%02x] remote %p/%s/%u "
 				"local %p/%s/%u cb %p ud %p",
-				i, local_addr->family, proto, rank,
-				remote_addr, dst, remote_port,
+				i, local_addr ? local_addr->family : AF_UNSPEC,
+				proto, rank, remote_addr, dst, remote_port,
 				local_addr, src, local_port,
 				cb, user_data);
 		} while (0);
