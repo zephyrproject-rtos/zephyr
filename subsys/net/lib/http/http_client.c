@@ -903,8 +903,18 @@ static int https_init(struct http_client_ctx *ctx)
 
 	mbedtls_platform_set_printf(printk);
 
+	/* Coverity tells in CID 170746 that the mbedtls_ssl_init()
+	 * is overwriting the ssl struct. This looks like false positive as
+	 * the struct is initialized with proper size.
+	 */
 	mbedtls_ssl_init(&ctx->https.mbedtls.ssl);
+
+	/* Coverity tells in CID 170745 that the mbedtls_ssl_config_init()
+	 * is overwriting the conf struct. This looks like false positive as
+	 * the struct is initialized with proper size.
+	 */
 	mbedtls_ssl_config_init(&ctx->https.mbedtls.conf);
+
 	mbedtls_entropy_init(&ctx->https.mbedtls.entropy);
 	mbedtls_ctr_drbg_init(&ctx->https.mbedtls.ctr_drbg);
 
@@ -1513,6 +1523,10 @@ int http_client_init(struct http_client_ctx *ctx,
 {
 	int ret;
 
+	/* Coverity tells in CID 170743 that the next memset() is
+	 * is overwriting the ctx struct. This is false positive as
+	 * the struct is initialized with proper size.
+	 */
 	memset(ctx, 0, sizeof(*ctx));
 
 	if (server) {
@@ -1712,5 +1726,9 @@ void http_client_release(struct http_client_ctx *ctx)
 	/* Let all the pending waiters run */
 	k_yield();
 
+	/* Coverity tells in CID 170742 that the next memset() is
+	 * is overwriting the ctx struct. This is false positive as
+	 * the struct is initialized with proper size.
+	 */
 	memset(ctx, 0, sizeof(*ctx));
 }
