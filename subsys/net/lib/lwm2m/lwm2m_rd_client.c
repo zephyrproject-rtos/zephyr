@@ -204,6 +204,9 @@ static int do_bootstrap_reply_cb(const struct zoap_packet *response,
 	} else if (code == ZOAP_RESPONSE_CODE_NOT_FOUND) {
 		SYS_LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
 		set_sm_state(index, ENGINE_DO_REGISTRATION);
+	} else if (code == ZOAP_RESPONSE_CODE_FORBIDDEN) {
+		SYS_LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
+		set_sm_state(index, ENGINE_DO_REGISTRATION);
 	} else {
 		/* TODO: Read payload for error message? */
 		SYS_LOG_ERR("Failed with code %u.%u. Retrying ...",
@@ -270,10 +273,14 @@ static int do_registration_reply_cb(const struct zoap_packet *response,
 		SYS_LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
 		set_sm_state(index, ENGINE_REGISTRATION_DONE);
 		return 0;
+	} else if (code == ZOAP_RESPONSE_CODE_FORBIDDEN) {
+		SYS_LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
+		set_sm_state(index, ENGINE_REGISTRATION_DONE);
+		return 0;
 	}
 
 	/* TODO: Read payload for error message? */
-	/* Possible error response codes: 4.00 Bad request & 4.03 Forbidden */
+	/* Possible error response codes: 4.00 Bad request */
 	SYS_LOG_ERR("failed with code %u.%u. Re-init network",
 		    ZOAP_RESPONSE_CODE_CLASS(code),
 		    ZOAP_RESPONSE_CODE_DETAIL(code));
