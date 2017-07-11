@@ -103,15 +103,6 @@ config	RGF_NUM_BANKS
 	register bank, the fast interrupt handler must save
 	and restore general purpose registers.
 
-config	FIRQ_STACK_SIZE
-	int
-	prompt "Size of stack for FIRQs (in bytes)"
-	depends on CPU_ARCV2
-	default 1024
-	help
-	  FIRQs and regular IRQs have different stacks so that a FIRQ can start
-	  running without doing stack switching in software.
-
 config	ARC_STACK_CHECKING
 	bool "Enable Stack Checking"
 	depends on CPU_ARCV2

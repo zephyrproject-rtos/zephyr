@@ -32,7 +32,6 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-extern void _firq_stack_setup(void);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 /*
@@ -56,7 +55,6 @@ static ALWAYS_INLINE void _irq_setup(void)
 
 	_kernel.irq_stack =
 		K_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
-	_firq_stack_setup();
 }
 
 #endif /* _ASMLANGUAGE */
