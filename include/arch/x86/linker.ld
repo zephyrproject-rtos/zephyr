@@ -63,7 +63,6 @@ SECTIONS
 	_image_rom_start = PHYS_LOAD_ADDR;
 	_image_text_start = PHYS_LOAD_ADDR;
 
-
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME, (OPTIONAL),)
 	{
 	. = CONFIG_TEXT_SECTION_OFFSET;
@@ -82,6 +81,7 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_text_end = .;
+	_image_rodata_start = .;
 
 #include <linker/common-rom.ld>
 
@@ -117,7 +117,9 @@ SECTIONS
 	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	_image_rodata_end = .;
 	_image_rom_end = .;
+	_image_rom_size = _image_rom_end - _image_rom_start;
 	__data_rom_start = ALIGN(4);		/* XIP imaged DATA ROMABLE_REGION start addr */
 
 	GROUP_END(ROMABLE_REGION)
@@ -231,6 +233,8 @@ SECTIONS
 
 	/* Define linker symbols */
 	_image_ram_end = .;
+	_image_ram_all = (PHYS_RAM_ADDR + KB(CONFIG_RAM_SIZE)) - _image_ram_start;
+
 	_end = .; /* end of image */
 
 	. = ALIGN(MMU_PAGE_SIZE);
