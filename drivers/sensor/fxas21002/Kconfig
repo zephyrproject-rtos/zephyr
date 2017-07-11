@@ -20,6 +20,7 @@ config FXAS21002_NAME
 
 config FXAS21002_I2C_NAME
 	string "I2C device name"
+	depends on !HAS_DTS_I2C
 	default I2C_0_NAME
 
 config FXAS21002_I2C_ADDRESS

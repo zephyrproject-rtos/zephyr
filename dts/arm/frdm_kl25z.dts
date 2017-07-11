@@ -9,6 +9,8 @@
 	aliases {
 		adc_0 = &adc0;
 		uart_0 = &uart0;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
 	};
 
 	chosen {
@@ -19,6 +21,10 @@
 };
 
 &adc0 {
+	status = "ok";
+};
+
+&i2c0 {
 	status = "ok";
 };
 
