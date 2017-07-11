@@ -86,9 +86,6 @@ if I2C_0
 config I2C_0_DEFAULT_CFG
 	default 0x12
 
-config I2C_0_IRQ_PRI
-	default 0
-
 endif # I2C_0
 
 config I2C_1
@@ -98,9 +95,6 @@ if I2C_1
 
 config I2C_1_DEFAULT_CFG
 	default 0x12
-
-config I2C_1_IRQ_PRI
-	default 0
 
 endif # I2C_1
 
@@ -115,9 +109,6 @@ endif # ADC
 
 if FXOS8700
 
-config FXOS8700_I2C_NAME
-	default I2C_1_NAME
-
 config FXOS8700_I2C_ADDRESS
 	default 0x1e
 
@@ -131,9 +122,6 @@ endif # FXOS8700
 
 if FXAS21002
 
-config FXAS21002_I2C_NAME
-	default I2C_1_NAME
-
 config FXAS21002_I2C_ADDRESS
 	default 0x20
 
@@ -144,13 +132,6 @@ config FXAS21002_GPIO_PIN
 	default 18
 
 endif # FXAS21002
-
-if MAX30101
-
-config MAX30101_I2C_NAME
-	default I2C_0_NAME
-
-endif # MAX30101
 
 if PWM_K64_FTM
 

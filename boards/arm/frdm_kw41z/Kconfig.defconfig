@@ -65,9 +65,6 @@ if I2C_1
 config I2C_1_DEFAULT_CFG
 	default 0x12
 
-config I2C_1_IRQ_PRI
-	default 0
-
 endif # I2C_1
 
 endif # I2C
@@ -80,9 +77,6 @@ config ADC_0
 endif # ADC
 
 if FXOS8700
-
-config FXOS8700_I2C_NAME
-	default I2C_1_NAME
 
 config FXOS8700_I2C_ADDRESS
 	default 0x1f

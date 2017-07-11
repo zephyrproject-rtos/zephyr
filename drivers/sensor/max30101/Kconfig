@@ -21,6 +21,7 @@ config MAX30101_NAME
 config MAX30101_I2C_NAME
 	string
 	prompt "I2C device name"
+	depends on !HAS_DTS_I2C
 	default "I2C_0"
 
 config MAX30101_SMP_AVE
