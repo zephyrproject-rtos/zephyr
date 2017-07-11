@@ -175,13 +175,24 @@ extern char __app_data_ram_end[];
 #endif /* CONFIG_APPLICATION_MEMORY */
 #endif /* CONFIG_XIP */
 
-/* used by mem_safe subsystem */
+/* Includes text and rodata */
 extern char _image_rom_start[];
 extern char _image_rom_end[];
+extern char _image_rom_size[];
+
+/* datas, bss, noinit */
 extern char _image_ram_start[];
 extern char _image_ram_end[];
+/* Size of all ram starting from _image_ram_start, including unused RAM past
+ * _image_ram_end up to the limit of physical RAM.
+ */
+extern char _image_ram_all[];
+
 extern char _image_text_start[];
 extern char _image_text_end[];
+
+extern char _image_rodata_start[];
+extern char _image_rodata_end[];
 
 /* end address of image, used by newlib for the heap */
 extern char _end[];
