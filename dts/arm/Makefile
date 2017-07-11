@@ -28,6 +28,7 @@ dtb-$(CONFIG_BOARD_STM32F4_DISCO)	=	stm32f4_disco.dts_compiled
 dtb-$(CONFIG_BOARD_STM32F469I_DISCO)	=	stm32f469i_disco.dts_compiled
 dtb-$(CONFIG_BOARD_96B_NITROGEN)	=	96b_nitrogen.dts_compiled
 dtb-$(CONFIG_BOARD_NRF52_PCA10040)	=	nrf52_pca10040.dts_compiled
+dtb-$(CONFIG_BOARD_NRF52_VBLUNO52)	=	nrf52_vbluno52.dts_compiled
 dtb-$(CONFIG_BOARD_NRF52_BLENANO2)	=	nrf52_blenano2.dts_compiled
 dtb-$(CONFIG_BOARD_NRF52840_PCA10056)	=	nrf52840_pca10056.dts_compiled
 dtb-$(CONFIG_BOARD_ARDUINO_101_BLE)	=	arduino_101_ble.dts_compiled
