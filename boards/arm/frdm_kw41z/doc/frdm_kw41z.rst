@@ -133,10 +133,22 @@ The FRDM-KW41Z includes the :ref:`nxp_opensda` serial and debug adapter built
 into the board to provide debugging, flash programming, and serial
 communication over USB.
 
-The :ref:`nxp_opensda_pyocd` tools do not yet support the KW41Z SoC.
+To use the pyOCD tools with OpenSDA, follow the instructions in the
+:ref:`nxp_opensda_pyocd` page using the `DAPLink FRDM-KW41Z Firmware`_. The
+pyOCD tools are not the default for this board, therefore it is necessary to
+set ``OPENSDA_FW=daplink`` explicitly when you invoke ``make flash`` or ``make
+debug``.
+
+.. note::
+   pyOCD added support for KW41Z recently and has not yet tagged a release,
+   therefore you must build pyOCD from source based on the current master
+   branch (f21d43d).
 
 To use the Segger J-Link tools with OpenSDA, follow the instructions in the
 :ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
+The Segger J-Link tools are the default for this board, therefore it is not
+necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
+debug``.
 
 Flashing
 ========
@@ -177,6 +189,9 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
 
 .. _KW41Z Reference Manual:
    http://www.nxp.com/assets/documents/data/en/reference-manuals/MKW41Z512RM.pdf
+
+.. _DAPLink FRDM-KW41Z Firmware:
+   http://www.nxp.com/assets/downloads/data/en/reference-applications/OpenSDAv2.2_DAPLink_frdmkw41z_rev0241.zip
 
 .. _Segger J-Link OpenSDA V2.1 Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
