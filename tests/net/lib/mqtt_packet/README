@@ -23,7 +23,7 @@ Build and Run
   sudo dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
 
   For more information about this board, see:
-  https://wiki.zephyrproject.org/view/Arduino_101
+  https://www.zephyrproject.org/doc/boards/x86/arduino_101/doc/board.html
 
 * NXP Freedom-K64F (frdm-k64f)
 
