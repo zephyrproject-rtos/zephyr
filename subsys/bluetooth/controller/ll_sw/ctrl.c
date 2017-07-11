@@ -728,28 +728,32 @@ static inline bool isr_adv_sr_check(struct pdu_adv *pdu, u8_t devmatch_ok,
 #endif
 }
 
-static inline bool isr_adv_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci,
-				      u8_t rl_idx)
+static inline bool isr_adv_ci_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci,
+					 u8_t rl_idx)
 {
+	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
+		return true;
+	}
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	if (rl_idx != FILTER_IDX_NONE) {
 		return rl_idx == _radio.advertiser.rl_idx;
 	}
 #endif
-	return !memcmp(adv->payload.direct_ind.tgt_addr,
+	return (adv->rx_addr == ci->tx_addr) &&
+	       !memcmp(adv->payload.direct_ind.tgt_addr,
 		       ci->payload.connect_ind.init_addr, BDADDR_SIZE);
 }
 
-static inline bool isr_adv_ci_direct_check(struct pdu_adv *adv,
-					   struct pdu_adv *ci,
-					   u8_t rl_idx)
+static inline bool isr_adv_ci_adva_check(struct pdu_adv *adv,
+					 struct pdu_adv *ci)
 {
-	return ((adv->type != PDU_ADV_TYPE_DIRECT_IND) ||
-		((adv->tx_addr == ci->rx_addr) &&
-		 (adv->rx_addr == ci->tx_addr) &&
+	return (adv->tx_addr == ci->rx_addr) &&
+		(((adv->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		 !memcmp(adv->payload.direct_ind.adv_addr,
-			 ci->payload.connect_ind.adv_addr, BDADDR_SIZE) &&
-		 isr_adv_tgta_check(adv, ci, rl_idx)));
+			 ci->payload.connect_ind.adv_addr, BDADDR_SIZE)) ||
+		 (!memcmp(adv->payload.adv_ind.addr,
+			 ci->payload.connect_ind.adv_addr, BDADDR_SIZE)));
 }
 
 static inline bool isr_adv_ci_check(struct pdu_adv *adv, struct pdu_adv *ci,
@@ -760,11 +764,13 @@ static inline bool isr_adv_ci_check(struct pdu_adv *adv, struct pdu_adv *ci,
 		 ctrl_rl_allowed(ci->tx_addr,
 				 ci->payload.connect_ind.init_addr)) ||
 		(devmatch_ok) || (ctrl_irk_whitelisted(rl_idx))) &&
-	       isr_adv_ci_direct_check(adv, ci, rl_idx);
+	       isr_adv_ci_adva_check(adv, ci) &&
+	       isr_adv_ci_tgta_check(adv, ci, rl_idx);
 #else
 	return (((_radio.advertiser.filter_policy & 0x02) == 0) ||
 		(devmatch_ok)) &&
-	       isr_adv_ci_direct_check(adv, ci, rl_idx);
+	       isr_adv_ci_adva_check(adv, ci) &&
+	       isr_adv_ci_tgta_check(adv, ci, rl_idx);
 #endif
 }
 
