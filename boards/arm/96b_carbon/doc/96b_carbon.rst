@@ -69,6 +69,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 More details about the board can be found at `96Boards website`_.
 
@@ -171,6 +173,22 @@ System Clock
 
 STM32F4 has two external oscillators. The frequency of the slow clock is
 32.768 kHz. The frequency of the main clock is 16 MHz.
+
+Serial Port
+===========
+
+96Boards Carbon board has up to 4 U(S)ARTs. The Zephyr console output is
+assigned to USART1. Default settings are 115200 8N1.
+
+I2C
+===
+
+96Boards Carbon board has up to 2 I2Cs. The default I2C mapping for Zephyr is:
+
+- I2C1_SCL : PB6
+- I2C1_SDA : PB7
+- I2C2_SCL : PB10
+- I2C2_SDA : PB3
 
 Flashing Zephyr onto 96Boards Carbon
 ************************************
