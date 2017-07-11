@@ -7,7 +7,6 @@ obj-$(CONFIG_UART_MCUX_LPSCI)	+= uart_mcux_lpsci.o
 obj-$(CONFIG_UART_MCUX_LPUART)	+= uart_mcux_lpuart.o
 obj-$(CONFIG_UART_STELLARIS)	+= uart_stellaris.o
 obj-$(CONFIG_UART_NSIM)		+= uart_nsim.o
-obj-$(CONFIG_UART_ATMEL_SAM3)	+= uart_atmel_sam3.o
 obj-$(CONFIG_UART_SAM) += uart_sam.o
 obj-$(CONFIG_USART_SAM) += usart_sam.o
 obj-$(CONFIG_UART_QMSI)		+= uart_qmsi.o

@@ -9,16 +9,6 @@ if BOARD_ARDUINO_DUE
 config BOARD
 	default arduino_due
 
-if UART_ATMEL_SAM3
-
-config UART_ATMEL_SAM3_BAUD_RATE
-	default 115200
-
-config UART_ATMEL_SAM3_CLK_FREQ
-	default 84000000
-
-endif # UART_ATMEL_SAM3
-
 if GPIO
 
 config GPIO_ATMEL_SAM3
