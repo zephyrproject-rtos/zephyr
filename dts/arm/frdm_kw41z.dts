@@ -15,6 +15,8 @@
 		gpio_a = &gpioa;
 		gpio_b = &gpiob;
 		gpio_c = &gpioc;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
 	};
 
 	chosen {
@@ -25,6 +27,10 @@
 };
 
 &adc0 {
+	status = "ok";
+};
+
+&i2c1 {
 	status = "ok";
 };
 
