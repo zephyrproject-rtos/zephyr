@@ -59,6 +59,11 @@ void trigger_irq(int irq)
 			  : "=r" (mip)
 			  : "r" (1 << irq));
 }
+#elif defined(CONFIG_CPU_ARCV2)
+void trigger_irq(int irq)
+{
+	_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
+}
 #else
 /* So far, Nios II does not support this */
 #define NO_TRIGGER_FROM_SW
