@@ -402,12 +402,15 @@ static int hci_driver_open(void)
 
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
 			K_THREAD_STACK_SIZEOF(prio_recv_thread_stack),
-			prio_recv_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(6), 0, K_NO_WAIT);
+			prio_recv_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BLUETOOTH_CONTROLLER_RX_PRIO),
+			0, K_NO_WAIT);
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
-			K_THREAD_STACK_SIZEOF(recv_thread_stack), recv_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(recv_thread_stack),
+			recv_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BLUETOOTH_RX_PRIO),
+			0, K_NO_WAIT);
 
 	BT_DBG("Success.");
 

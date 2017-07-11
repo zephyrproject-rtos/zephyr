@@ -57,6 +57,11 @@ config BLUETOOTH_HCI_TX_STACK_SIZE
 	default 256 if BLUETOOTH_SPI
 	default 640 if BLUETOOTH_CONTROLLER
 
+config BLUETOOTH_HCI_TX_PRIO
+	# Hidden option for Co-Operative Tx thread priority
+	int
+	default 7
+
 config BLUETOOTH_RECV_IS_RX_THREAD
 	# Virtual option set by the HCI driver to indicate that there's
 	# no need for the host to have its own RX thread, rather the
@@ -79,6 +84,12 @@ config BLUETOOTH_RX_STACK_SIZE
 	  application needs to do advanced things in its callbacks that
 	  require extra stack space, this value can be increased to
 	  accommodate for that.
+
+config BLUETOOTH_RX_PRIO
+	# Hidden option for Co-Operative Rx thread priority
+	int
+	depends on BLUETOOTH_HCI_HOST || BLUETOOTH_RECV_IS_RX_THREAD
+	default 8
 
 if BLUETOOTH_HCI_HOST
 config BLUETOOTH_HOST_CRYPTO
