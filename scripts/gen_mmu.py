@@ -30,7 +30,7 @@ validation_issue_memory_overlap = [False, 0, -1]
 output_offset = 0
 print_string_pde_list = ''
 pde_pte_string = {}
-
+FourMB = (1024*4096) #In Bytes
 #############
 
 #return the page directory number for the give address
@@ -64,12 +64,17 @@ def set_pde_pte_values(pde_index, address, mem_size,
     else:
         list_of_pde[pde_index] = mem_region_values
 
+def print_list_of_pde(list_of_pde):
+    for key, value in list_of_pde.items():
+        print(key,value)
+        print('\n')
 
 
 # read the binary from the input file and populate a dict for
 # start address of mem region
 # size of the region - so page tables entries will be created with this
 # read write permissions
+raw_info=[]
 def read_mmu_list_marshal_param():
 
     global read_buff
@@ -78,7 +83,7 @@ def read_mmu_list_marshal_param():
     global validation_issue_memory_overlap
     read_buff = input_file.read()
     input_file.close()
-    raw_info=[]
+
 
     # read contents of the binary file first 2 values read are
     # num_of_regions and page directory start address both calculated and
@@ -88,10 +93,6 @@ def read_mmu_list_marshal_param():
     # a offset used to remember next location to read in the binary
     size_read_from_binary = struct.calcsize(header_values_format);
 
-    if args.verbose and num_of_regions:
-        print("%d memory ranges found in MMU_LIST:" % num_of_regions)
-        print("Range                 Size       Flags")
-
     # for each of the regions mentioned in the binary loop and populate all the
     # required parameters
     for region in range(num_of_regions):
@@ -99,10 +100,6 @@ def read_mmu_list_marshal_param():
                                                read_buff,
                                                size_read_from_binary);
         size_read_from_binary += struct.calcsize(struct_mmu_regions_format);
-
-        if args.verbose:
-            addr, size, flags = basic_mem_region_values
-            print("0x%08x-0x%08x 0x%08x 0x%08x" %(addr, addr + size - 1, size, flags))
 
         #validate for memory overlap here
         for i in raw_info:
@@ -131,18 +128,18 @@ def read_mmu_list_marshal_param():
         # Since a memory region can take up only a few entries in the Page
         # table, this helps us get the last valid PTE.
         pte_valid_addr_end = get_pte_number(region[0] +
-                                            region[1])
+                                            region[1] - 1)
 
         mem_size = region[1]
 
         # In-case the start address aligns with a page table entry other than zero
-        # and the mem_size is greater than (1024*4096)
+        # and the mem_size is greater than (1024*4096) i.e 4MB
         # in case where it overflows the currenty PDE's range then limit the
         # PTE to 1024 and so make the mem_size reflect the actual size taken up
         # in the current PDE
-        if (region[1] + (pte_valid_addr_start * 4096) ) >= (1024*4096):
-            pte_valid_addr_end = 1024
-            mem_size = ( (pte_valid_addr_end - pte_valid_addr_start)*4096)
+        if (region[1] + (pte_valid_addr_start * 4096) ) >= (FourMB):
+            pte_valid_addr_end = 1023
+            mem_size = ( (1024 - pte_valid_addr_start)*4096)
 
         set_pde_pte_values(pde_index, region[0], mem_size,
                            pte_valid_addr_start, pte_valid_addr_end, region[2])
@@ -158,35 +155,34 @@ def read_mmu_list_marshal_param():
         # so the size remaining will be
         # requested size - allocated size(in the current PDE)
 
-        overflow_size = region[1] - \
-                        ((pte_valid_addr_end -
-                          pte_valid_addr_start) * 4096)
+        overflow_size = region[1] - mem_size
+
 
         # create all the extra PDEs needed to fit the requested size
         # this loop starts from the current pde till the last pde that is needed
         # the last pde is calcualted as the (start_addr + size) >> 22
-        if overflow_size !=0:
+        if overflow_size != 0:
             for extra_pde in range(pde_index+1, get_pde_number(
                     region[0] + region[1])+1):
 
                 # new pde's start address
                 # each page directory entry has a addr range of (1024 *4096)
                 # thus the new PDE start address is a multiple of that number
-                extra_pde_start_address = extra_pde*(4096*1024)
+                extra_pde_start_address = extra_pde*(FourMB)
 
                 # the start address of and extra pde will always be 0
                 # and the end address is calculated with the new pde's start address
                 # and the overflow_size
                 extra_pte_valid_addr_end = get_pte_number(extra_pde_start_address
-                                                          + overflow_size)
+                                                          + overflow_size - 1)
 
                 # if the overflow_size couldn't be fit inside this new pde then
                 # need another pde and so we now need to limit the end of the PTE
                 # to 1024 and set the size of this new region to the max possible
                 extra_region_size = overflow_size
-                if overflow_size > (1024*4096):
-                    extra_region_size = 1024*4096
-                    extra_pte_valid_addr_end =  1024
+                if overflow_size >= (FourMB):
+                    extra_region_size = FourMB
+                    extra_pte_valid_addr_end =  1023
 
                 # load the new PDE's details
 
@@ -196,10 +192,15 @@ def read_mmu_list_marshal_param():
 
 
                 # for the next iteration of the loop the size needs to decreased
-                overflow_size -= (extra_pte_valid_addr_end) * 4096
+                overflow_size -= extra_region_size
 
+                # print(hex_32(overflow_size),extra_pde)
                 if extra_pde not in page_tables_list:
                     page_tables_list.append(extra_pde)
+
+                if overflow_size == 0:
+                    break
+
     page_tables_list.sort()
 
 
@@ -380,6 +381,16 @@ def format_string(input_str):
     output_str = '{0: <5}'.format(str(input_str))
     return(output_str)
 
+#format for 32bit hex value
+def hex_32(input_value):
+    output_value ="{0:#0{1}x}".format(input_value,10)
+    return(output_value)
+
+#format for 20bit hex value
+def hex_20(input_value):
+    output_value ="{0:#0{1}x}".format(input_value,7)
+    return(output_value)
+
 def pde_verbose_output(pde, binary_value):
     if args.verbose == False:
         return
@@ -395,7 +406,7 @@ def pde_verbose_output(pde, binary_value):
     ignored1 = format_string(0)
     ps = format_string((binary_value >> 7 ) & 0x1 )
     ignored2 = format_string(0000)
-    page_table_addr = format_string(hex((binary_value >> 12 ) & 0xFFFFF) )
+    page_table_addr = format_string( hex((binary_value >> 12 ) & 0xFFFFF))
 
     print_string_pde_list += ( format_string(str(pde))+" | "+(present)+ " | "+\
           (read_write)+ " | "+\
@@ -437,7 +448,7 @@ def pte_verbose_output(pde, pte, binary_value):
     g   = format_string( str((binary_value >> 8) & 0x1))
     alloc  = format_string( str((binary_value >> 9) & 0x1))
     custom = format_string( str((binary_value >> 10) & 0x3))
-    page_table_addr = format_string( str(hex((binary_value >> 12) & 0xFFFFF)))
+    page_table_addr = hex_20((binary_value >> 12) & 0xFFFFF)
 
     print_string_list = ( format_string(str(pte))+" | "+(present)+ " | "+\
           (read_write)+ " | "+\
@@ -485,13 +496,23 @@ def verbose_output():
     if args.verbose == False:
         return
 
+    print("\nMemory Regions as defined:")
+    for info in raw_info:
+        print("Memory region start address = " + hex_32(info[0]) +\
+              ", Memory size = " + hex_32(info[1]) +\
+              ", Permission = "+ hex(info[2]))
+
     print("\nTotal Page directory entries " + str(len(list_of_pde.keys())))
     count =0
     for key, value in list_of_pde.items():
         for i in value.page_entries_info:
             count+=1
-            print("Memory Region "+str(count) +" start address = "+
-                  str(hex(i.start_addr)))
+            print("In Page directory entry "+format_string(value.pde_index) +\
+                  ": valid start address = "+ \
+                  hex_32(i.start_addr) + ", end address = " + \
+                  hex_32((i.pte_valid_addr_end +1 )*4096 -1 +\
+                         (value.pde_index * (FourMB))))
+
 
     pde_print_elements()
     pte_print_elements()
