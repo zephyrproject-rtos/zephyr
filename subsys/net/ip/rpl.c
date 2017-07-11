@@ -1600,7 +1600,7 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 			}
 		}
 
-#if !defined(CONFIG_NET_RPL_DAG_MC_NONE)
+#if !defined(CONFIG_NET_RPL_MC_NONE)
 		memcpy(&parent->mc, &dio->mc, sizeof(parent->mc));
 #endif
 
@@ -2712,7 +2712,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 
 	/* We have allocated a candidate parent; process the DIO further. */
 
-#if !defined(CONFIG_NET_RPL_DAG_MC_NONE)
+#if !defined(CONFIG_NET_RPL_MC_NONE)
 	memcpy(&parent->mc, &dio->mc, sizeof(parent->mc));
 #endif
 
