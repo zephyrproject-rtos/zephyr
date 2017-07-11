@@ -75,27 +75,6 @@ struct net_icmpv6_nd_opt_6co {
 	struct in6_addr prefix;
 } __packed;
 
-#define NET_ICMPV6_NS_HDR(pkt)						\
-	((struct net_icmpv6_ns_hdr *)(net_pkt_icmp_data(pkt) +		\
-				      sizeof(struct net_icmp_hdr)))
-
-#define NET_ICMPV6_ND_OPT_HDR_HDR(pkt)					\
-	((struct net_icmpv6_nd_opt_hdr *)(net_pkt_icmp_data(pkt) +	\
-					  sizeof(struct net_icmp_hdr) +	\
-					  net_pkt_ipv6_ext_opt_len(pkt)))
-
-#define NET_ICMPV6_NA_HDR(pkt)						\
-	((struct net_icmpv6_na_hdr *)(net_pkt_icmp_data(pkt) +		\
-				      sizeof(struct net_icmp_hdr)))
-
-#define NET_ICMPV6_RS_HDR(pkt)						\
-	((struct net_icmpv6_rs_hdr *)(net_pkt_icmp_data(pkt) +		\
-				      sizeof(struct net_icmp_hdr)))
-
-#define NET_ICMPV6_RA_HDR(pkt)						\
-	((struct net_icmpv6_ra_hdr *)(net_pkt_icmp_data(pkt) +		\
-				      sizeof(struct net_icmp_hdr)))
-
 #define NET_ICMPV6_ND_O_FLAG(flag) ((flag) & 0x40)
 #define NET_ICMPV6_ND_M_FLAG(flag) ((flag) & 0x80)
 
@@ -193,6 +172,26 @@ void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 				  u8_t type, u8_t code);
+
+struct net_icmp_hdr *net_icmpv6_get_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr);
+struct net_icmp_hdr *net_icmpv6_set_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr);
+struct net_buf *net_icmpv6_set_chksum(struct net_pkt *pkt,
+				      struct net_buf *frag);
+struct net_icmpv6_ns_hdr *net_icmpv6_get_ns_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_ns_hdr *hdr);
+struct net_icmpv6_ns_hdr *net_icmpv6_set_ns_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_ns_hdr *hdr);
+struct net_icmpv6_nd_opt_hdr *net_icmpv6_get_nd_opt_hdr(struct net_pkt *pkt,
+					    struct net_icmpv6_nd_opt_hdr *hdr);
+struct net_icmpv6_na_hdr *net_icmpv6_get_na_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_na_hdr *hdr);
+struct net_icmpv6_na_hdr *net_icmpv6_set_na_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_na_hdr *hdr);
+struct net_icmpv6_ra_hdr *net_icmpv6_get_ra_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_ra_hdr *hdr);
+
 #if defined(CONFIG_NET_IPV6)
 void net_icmpv6_init(void);
 #else

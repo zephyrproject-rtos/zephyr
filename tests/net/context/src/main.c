@@ -21,6 +21,7 @@
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <net/net_context.h>
+#include <net/udp.h>
 
 #include "net_private.h"
 
@@ -1074,6 +1075,8 @@ static void net_context_iface_init(struct net_if *iface)
 
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
@@ -1110,9 +1113,16 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 		}
 
-		port = NET_UDP_HDR(pkt)->src_port;
-		NET_UDP_HDR(pkt)->src_port = NET_UDP_HDR(pkt)->dst_port;
-		NET_UDP_HDR(pkt)->dst_port = port;
+		udp_hdr = net_udp_get_hdr(pkt, &hdr);
+		if (!udp_hdr) {
+			TC_ERROR("UDP data receive failed.");
+			goto out;
+		}
+
+		port = udp_hdr->src_port;
+		udp_hdr->src_port = udp_hdr->dst_port;
+		udp_hdr->dst_port = port;
+		net_udp_set_hdr(pkt, udp_hdr);
 
 		if (net_recv_data(iface, pkt) < 0) {
 			TC_ERROR("Data receive failed.");

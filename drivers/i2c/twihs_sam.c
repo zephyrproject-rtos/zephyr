@@ -92,14 +92,8 @@ static int twihs_sam_configure(struct device *dev, u32_t config)
 	u32_t i2c_speed;
 	u32_t clk;
 
-	if (!(config & (I2C_MODE_MASTER | I2C_MODE_SLAVE_READ))) {
-		SYS_LOG_ERR("Neither Master nor Slave I2C Mode is enabled");
-		return -EIO;
-	}
-
-	if (config & I2C_MODE_SLAVE_READ) {
-		SYS_LOG_ERR("I2C Slave Mode is currently not supported");
-		SYS_LOG_ERR("Please submit a patch");
+	if (!(config & I2C_MODE_MASTER)) {
+		SYS_LOG_ERR("Master I2C Mode is enabled");
 		return -EIO;
 	}
 

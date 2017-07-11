@@ -72,9 +72,10 @@ struct net_pkt *build_reply_pkt(const char *name,
 		return NULL;
 	}
 
-	reply_pkt = net_app_get_net_pkt(ctx, K_FOREVER);
+	reply_pkt = net_app_get_net_pkt(ctx, net_pkt_family(pkt), K_FOREVER);
 
 	NET_ASSERT(reply_pkt);
+	NET_ASSERT(net_pkt_family(reply_pkt) == net_pkt_family(pkt));
 
 	recv_len = net_pkt_get_len(pkt);
 

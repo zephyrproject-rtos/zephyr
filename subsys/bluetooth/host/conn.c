@@ -1099,6 +1099,22 @@ void bt_conn_notify_tx(struct bt_conn *conn)
 	}
 }
 
+static void notify_tx(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
+		if (conns[i].state == BT_CONN_CONNECTED ||
+		    conns[i].state == BT_CONN_DISCONNECT) {
+			bt_conn_notify_tx(&conns[i]);
+		}
+	}
+}
+
 static sys_snode_t *add_pending_tx(struct bt_conn *conn, bt_conn_tx_cb_t cb)
 {
 	sys_snode_t *node;
@@ -1144,7 +1160,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 	k_sem_take(bt_conn_get_pkts(conn), K_FOREVER);
 
 	/* Make sure we notify and free up any pending tx contexts */
-	bt_conn_notify_tx(conn);
+	notify_tx();
 
 	/* Check for disconnection while waiting for pkts_sem */
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -1303,14 +1319,14 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 		k_poll_event_init(&events[ev_count],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
-				  &conn->tx_queue);
-		events[ev_count++].tag = BT_EVENT_CONN_TX_QUEUE;
+				  &conn->tx_notify);
+		events[ev_count++].tag = BT_EVENT_CONN_TX_NOTIFY;
 
 		k_poll_event_init(&events[ev_count],
 				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY,
-				  &conn->tx_notify);
-		events[ev_count++].tag = BT_EVENT_CONN_TX_NOTIFY;
+				  &conn->tx_queue);
+		events[ev_count++].tag = BT_EVENT_CONN_TX_QUEUE;
 	}
 
 	return ev_count;

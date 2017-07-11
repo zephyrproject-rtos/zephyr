@@ -20,6 +20,7 @@
 #include <net/buf.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <net/udp.h>
 
 #include <net/zoap.h>
 #include <net/zoap_link_format.h>
@@ -1115,10 +1116,19 @@ static void udp_receive(struct net_context *context,
 	struct zoap_packet request;
 	struct zoap_pending *pending;
 	struct sockaddr_in6 from;
+	struct net_udp_hdr hdr, *udp_hdr;
 	int r, header_len;
 
 	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
-	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data received\n");
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	from.sin6_port = udp_hdr->src_port;
 	from.sin6_family = AF_INET6;
 
 	/*

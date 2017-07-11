@@ -106,37 +106,37 @@ int net_app_listen(struct net_app_ctx *ctx)
 	}
 
 #if defined(CONFIG_NET_IPV4)
-	if (ctx->local.family == AF_UNSPEC) {
-		ctx->local.family = AF_INET;
+	if (ctx->ipv4.local.family == AF_UNSPEC) {
+		ctx->ipv4.local.family = AF_INET;
 		dual = true;
 
-		_net_app_set_local_addr(&ctx->local, NULL,
-					net_sin(&ctx->local)->sin_port);
+		_net_app_set_local_addr(&ctx->ipv4.local, NULL,
+					net_sin(&ctx->ipv4.local)->sin_port);
 	}
 
-	ret = _net_app_set_net_ctx(ctx, ctx->ipv4_ctx, &ctx->local,
+	ret = _net_app_set_net_ctx(ctx, ctx->ipv4.ctx, &ctx->ipv4.local,
 				   sizeof(struct sockaddr_in), ctx->proto);
 	if (ret < 0) {
-		net_context_put(ctx->ipv4_ctx);
-		ctx->ipv4_ctx = NULL;
+		net_context_put(ctx->ipv4.ctx);
+		ctx->ipv4.ctx = NULL;
 	}
 #endif
 
 	/* We ignore the IPv4 error if IPv6 is enabled */
 
 #if defined(CONFIG_NET_IPV6)
-	if (ctx->local.family == AF_UNSPEC || dual) {
-		ctx->local.family = AF_INET6;
+	if (ctx->ipv6.local.family == AF_UNSPEC || dual) {
+		ctx->ipv6.local.family = AF_INET6;
 
-		_net_app_set_local_addr(&ctx->local, NULL,
-				       net_sin6(&ctx->local)->sin6_port);
+		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
+				       net_sin6(&ctx->ipv6.local)->sin6_port);
 	}
 
-	ret = _net_app_set_net_ctx(ctx, ctx->ipv6_ctx, &ctx->local,
+	ret = _net_app_set_net_ctx(ctx, ctx->ipv6.ctx, &ctx->ipv6.local,
 				   sizeof(struct sockaddr_in6), ctx->proto);
 	if (ret < 0) {
-		net_context_put(ctx->ipv6_ctx);
-		ctx->ipv6_ctx = NULL;
+		net_context_put(ctx->ipv6.ctx);
+		ctx->ipv6.ctx = NULL;
 	}
 #endif
 
@@ -160,19 +160,44 @@ int net_app_init_server(struct net_app_ctx *ctx,
 		return -EALREADY;
 	}
 
-	memset(&ctx->local, 0, sizeof(ctx->local));
+#if defined(CONFIG_NET_IPV4)
+	memset(&ctx->ipv4.local, 0, sizeof(ctx->ipv4.local));
+#endif
+#if defined(CONFIG_NET_IPV6)
+	memset(&ctx->ipv6.local, 0, sizeof(ctx->ipv6.local));
+#endif
 
 	if (server_addr) {
-		memcpy(&ctx->local, server_addr,
-		       sizeof(ctx->local));
-	} else {
-		ctx->local.family = AF_UNSPEC;
+		if (server_addr->family == AF_INET) {
+#if defined(CONFIG_NET_IPV4)
+			memcpy(&ctx->ipv4.local, server_addr,
+			       sizeof(ctx->ipv4.local));
+#else
+			return -EPROTONOSUPPORT;
+#endif
+		}
 
+		if (server_addr->family == AF_INET6) {
+#if defined(CONFIG_NET_IPV6)
+			memcpy(&ctx->ipv6.local, server_addr,
+			       sizeof(ctx->ipv6.local));
+#else
+			return -EPROTONOSUPPORT;
+#endif
+		}
+	} else {
 		if (port == 0) {
 			return -EINVAL;
 		}
 
-		net_sin(&ctx->local)->sin_port = htons(port);
+#if defined(CONFIG_NET_IPV4)
+		ctx->ipv4.local.family = AF_INET;
+		net_sin(&ctx->ipv4.local)->sin_port = htons(port);
+#endif
+#if defined(CONFIG_NET_IPV6)
+		ctx->ipv6.local.family = AF_INET6;
+		net_sin6(&ctx->ipv6.local)->sin6_port = htons(port);
+#endif
 	}
 
 	ctx->app_type = NET_APP_SERVER;
@@ -182,11 +207,12 @@ int net_app_init_server(struct net_app_ctx *ctx,
 	ctx->proto = proto;
 	ctx->sock_type = sock_type;
 
-	ret = _net_app_config_local_ctx(ctx, sock_type, proto,
-					&ctx->local);
+	ret = _net_app_config_local_ctx(ctx, sock_type, proto, NULL);
 	if (ret < 0) {
 		goto fail;
 	}
+
+	NET_ASSERT_INFO(ctx->default_ctx, "Default ctx not selected");
 
 	ctx->is_init = true;
 
@@ -196,8 +222,7 @@ fail:
 
 #if defined(CONFIG_NET_APP_TLS)
 static inline void new_server(struct net_app_ctx *ctx,
-			      const char *server_banner,
-			      const struct sockaddr *addr)
+			      const char *server_banner)
 {
 #if defined(CONFIG_NET_DEBUG_APP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
 #if defined(CONFIG_NET_IPV6)
@@ -208,12 +233,17 @@ static inline void new_server(struct net_app_ctx *ctx,
 	char buf[NET_IPV4_ADDR_LEN + PORT_STR];
 #endif
 
-	if (addr) {
-		NET_INFO("%s %s (%p)", server_banner,
-			 _net_app_sprint_ipaddr(buf, sizeof(buf), addr), ctx);
-	} else {
-		NET_INFO("%s (%p)", server_banner, ctx);
-	}
+#if defined(CONFIG_NET_IPV6)
+	NET_INFO("%s %s (%p)", server_banner,
+		 _net_app_sprint_ipaddr(buf, sizeof(buf), &ctx->ipv6.local),
+		 ctx);
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+	NET_INFO("%s %s (%p)", server_banner,
+		 _net_app_sprint_ipaddr(buf, sizeof(buf), &ctx->ipv4.local),
+		 ctx);
+#endif
 #endif /* CONFIG_NET_DEBUG_APP */
 }
 
@@ -335,7 +365,7 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 	}
 
 	if (server_banner) {
-		new_server(ctx, server_banner, &ctx->local);
+		new_server(ctx, server_banner);
 	}
 
 	ctx->tls.request_buf = request_buf;

@@ -321,24 +321,6 @@ static inline u8_t *net_pkt_ip_data(struct net_pkt *pkt)
 	return pkt->frags->data;
 }
 
-static inline u8_t *net_pkt_udp_data(struct net_pkt *pkt)
-{
-	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ipv6_ext_len(pkt)];
-}
-
-static inline u8_t *net_pkt_tcp_data(struct net_pkt *pkt)
-{
-	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ipv6_ext_len(pkt)];
-}
-
-static inline u8_t *net_pkt_icmp_data(struct net_pkt *pkt)
-{
-	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ipv6_ext_len(pkt)];
-}
-
 static inline u8_t *net_pkt_appdata(struct net_pkt *pkt)
 {
 	return pkt->appdata;
@@ -414,9 +396,6 @@ static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
 #define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))
-#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
-#define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
-#define NET_TCP_HDR(pkt)  ((struct net_tcp_hdr *)(net_pkt_tcp_data(pkt)))
 
 static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
@@ -1309,6 +1288,32 @@ static inline bool net_pkt_insert_be32(struct net_pkt *pkt,
 int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
 		  u16_t len, struct net_buf **fragA,
 		  struct net_buf **fragB, s32_t timeout);
+
+/**
+ * @brief Return the fragment and offset within it according to network
+ * packet offset.
+ *
+ * @details This is typically used to get the protocol header pointer when
+ * we know the offset. According to this information, the corresponding fragment
+ * and position within that fragment is returned.
+ *
+ * @param pkt Network packet
+ * @param offset Offset of desired location in network packet. For example, if
+ * we want to know where UDP header is located after the IPv6 header,
+ * the offset could have a value of sizeof(struct net_ipv6_hdr). Note that this
+ * is a simplified example that does not take into account the possible IPv6
+ * extension headers.
+ * @param pos Pointer to position within result fragment corresponding to
+ * offset param. For example, if the IPv6 header is split between two fragments,
+ * then if we want to know the start of UDP header, the returned pos variable
+ * would indicate how many bytes from second fragment the UDP header starts.
+ *
+ * @return Pointer to the fragment where the the offset is located or
+ *         NULL if there is not enough bytes in the packet
+ */
+struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
+				 u16_t offset,
+				 u16_t *pos);
 
 /**
  * @brief Get information about predefined RX, TX and DATA pools.

@@ -1211,7 +1211,6 @@ static inline struct net_buf *adjust_offset(struct net_buf *frag,
 					    u16_t offset, u16_t *pos)
 {
 	if (!frag) {
-		NET_ERR("Invalid fragment");
 		return NULL;
 	}
 
@@ -1657,6 +1656,110 @@ void net_pkt_print(void)
 		rx_bufs.avail_count, tx_bufs.avail_count);
 }
 #endif /* CONFIG_NET_DEBUG_NET_PKT */
+
+struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
+				 u16_t offset,
+				 u16_t *pos)
+{
+	struct net_buf *frag;
+
+	frag = net_frag_skip(pkt->frags, offset, pos, 0);
+	if (!frag) {
+		return NULL;
+	}
+
+	return frag;
+}
+
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
+static void too_short_msg(struct net_pkt *pkt, u16_t offset, size_t extra_len)
+{
+	size_t total_len = net_buf_frags_len(pkt->frags);
+	size_t hdr_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt);
+
+	if (total_len != (hdr_len + extra_len)) {
+		/* Print info how many bytes past the end we tried to print */
+		NET_ERR("IP hdr %d ext len %d offset %d pos %zd total %zd",
+			net_pkt_ip_hdr_len(pkt),
+			net_pkt_ipv6_ext_len(pkt),
+			offset, hdr_len + extra_len, total_len);
+	}
+}
+#else
+#define too_short_msg(...)
+#endif
+
+struct net_icmp_hdr *net_pkt_icmp_data(struct net_pkt *pkt)
+{
+	struct net_buf *frag;
+	u16_t offset;
+
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt),
+				&offset);
+	if (!frag) {
+		/* We tried to read past the end of the data */
+		too_short_msg(pkt, offset, 0);
+		return NULL;
+	}
+
+	return (struct net_icmp_hdr *)(frag->data + offset);
+}
+
+u8_t *net_pkt_icmp_opt_data(struct net_pkt *pkt, size_t opt_len)
+{
+	struct net_buf *frag;
+	u16_t offset;
+
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) + opt_len,
+				&offset);
+	if (!frag) {
+		/* We tried to read past the end of the data */
+		too_short_msg(pkt, offset, opt_len);
+		return NULL;
+	}
+
+	return frag->data + offset;
+}
+
+struct net_udp_hdr *net_pkt_udp_data(struct net_pkt *pkt)
+{
+	struct net_buf *frag;
+	u16_t offset;
+
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt),
+				&offset);
+	if (!frag) {
+		/* We tried to read past the end of the data */
+		too_short_msg(pkt, offset, 0);
+		return NULL;
+	}
+
+	return (struct net_udp_hdr *)(frag->data + offset);
+}
+
+struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt)
+{
+	struct net_buf *frag;
+	u16_t offset;
+
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt),
+				&offset);
+	if (!frag) {
+		/* We tried to read past the end of the data */
+		too_short_msg(pkt, offset, 0);
+		return NULL;
+	}
+
+	return (struct net_tcp_hdr *)(frag->data + offset);
+}
 
 void net_pkt_init(void)
 {

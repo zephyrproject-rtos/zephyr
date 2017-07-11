@@ -109,6 +109,15 @@ config NET_DEBUG_TCP
 	help
 	Enables TCP handler output debug messages
 
+config NET_TCP_BACKLOG_SIZE
+	int "Number of simultaneous incoming TCP connections"
+	depends on NET_TCP
+	default 1
+	range 1 128
+	help
+	The number of simultaneous TCP connection attempts, i.e. outstanding
+	TCP connections waiting for initial ACK.
+
 config NET_TCP_TIME_WAIT
 	bool "Enable TCP TIME_WAIT timeouts"
 	depends on NET_TCP
@@ -235,18 +244,16 @@ choice
 	optional
 	default NET_SLIP_TUN
 	help
-	The SLIP support is only used when the application is
-	run inside QEMU and the network peer is run in your
-	host.
-	The SLIP support is only used when the application is
-	run inside QEMU and the network peer is run in your
-	host. The host needs to have tunslip running in order
-	to receive and send network packets via the SLIP driver.
-	The SLIP driver Kconfig options can be tweaked in drivers
-	section.
-	Options are provided to communicate with QEMU via a TUN driver,
-	the default, as it requires less configuration in the host side,
-	or via a TAP driver.
+	  The SLIP support is only used when the application is run inside QEMU
+	  and the network peer is run in your host. The host needs to have
+	  tunslip running in order to receive and send network packets via the
+	  SLIP driver.  The SLIP driver Kconfig options can be tweaked in drivers
+	  section.
+
+	  Options are provided to communicate with QEMU via a TUN driver, the
+	  default, as it requires less configuration in the host side, or via a
+	  TAP driver.
+
 config NET_SLIP_TUN
 	bool "TUN SLIP driver"
 	select SLIP
@@ -254,9 +261,10 @@ config NET_SLIP_TUN
 	select UART_INTERRUPT_DRIVEN
 	select NET_L2_DUMMY
 	help
-	The host needs to have tunslip running in order
-	to receive and send network packets via the SLIP driver.
-	Choose this if unsure.
+	  The host needs to have tunslip running in order
+	  to receive and send network packets via the SLIP driver.
+	  Choose this if unsure.
+
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
 	select SLIP
@@ -264,9 +272,9 @@ config NET_SLIP_TAP
 	select UART_INTERRUPT_DRIVEN
 	select SLIP_TAP
 	help
-	SLIP TAP support is necessary when testing IPv4/ARP. The host
-	needs to have tunslip with TAP support running in order to
-	communicate via the SLIP driver.
+	  SLIP TAP support is necessary when testing IPv4/ARP. The host
+	  needs to have tunslip with TAP support running in order to
+	  communicate via the SLIP driver.
 endchoice
 
 config NET_TRICKLE

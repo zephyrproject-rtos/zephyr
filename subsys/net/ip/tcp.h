@@ -70,7 +70,7 @@ enum net_tcp_state {
 #define NET_TCP_URG 0x20
 #define NET_TCP_CTL 0x3f
 
-#define NET_TCP_FLAGS(net_pkt) (NET_TCP_HDR(net_pkt)->flags & NET_TCP_CTL)
+#define NET_TCP_FLAGS(hdr) (hdr->flags & NET_TCP_CTL)
 
 /* TCP max window size */
 #define NET_TCP_MAX_WIN   (4 * 1024)
@@ -195,6 +195,17 @@ static inline int net_tcp_register(const struct sockaddr *remote_addr,
 static inline int net_tcp_unregister(struct net_conn_handle *handle)
 {
 	return net_conn_unregister(handle);
+}
+
+/*
+ * @brief Generate initial TCP sequence number
+ *
+ * @return Return a random TCP sequence number
+ */
+inline u32_t tcp_init_isn(void)
+{
+	/* Randomise initial seq number */
+	return sys_rand32_get();
 }
 
 const char * const net_tcp_state_str(enum net_tcp_state state);
@@ -345,6 +356,58 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
  * @return true if network packet sequence number is valid, false otherwise
  */
 bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt);
+
+#if defined(CONFIG_NET_TCP)
+/**
+ * @brief Get TCP packet header data from net_pkt. The array values are in
+ * network byte order and other values are in host byte order.
+ *
+ * @param pkt Network packet
+ * @param hdr Where to place the header.
+ *
+ * @return Return pointer to header or NULL if something went wrong.
+ */
+struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr);
+
+/**
+ * @brief Set TCP packet header data in net_pkt. The array values are in
+ * network byte order and other values are in host byte order.
+ *
+ * @param pkt Network packet
+ * @param hdr Header to be written
+ *
+ * @return Return hdr or NULL if error
+ */
+struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr);
+
+/**
+ * @brief Set TCP checksum in network packet.
+ *
+ * @param pkt Network packet
+ * @param frag Fragment where to start calculating the offset.
+ * Typically this is set to pkt->frags by the caller.
+ *
+ * @return Return the actual fragment where the checksum was written.
+ */
+struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag);
+
+/**
+ * @brief Get TCP checksum from network packet.
+ *
+ * @param pkt Network packet
+ * @param frag Fragment where to start calculating the offset.
+ * Typically this is set to pkt->frags by the caller.
+ *
+ * @return Return the checksum in host byte order.
+ */
+u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
+#else
+#define net_tcp_get_chksum(pkt, frag) (0)
+#define net_tcp_set_chksum(pkt, frag) NULL
+#define net_tcp_set_hdr(pkt, frag) NULL
+#endif
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);

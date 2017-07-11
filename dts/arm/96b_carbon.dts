@@ -27,3 +27,7 @@
 	current-speed = <115200>;
 	status = "ok";
 };
+
+&i2c1 {
+	status = "ok";
+};

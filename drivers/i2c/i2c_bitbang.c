@@ -54,9 +54,6 @@ int i2c_bitbang_configure(struct i2c_bitbang *context, u32_t dev_config)
 	union dev_config config = { .raw = dev_config };
 
 	/* Check for features we don't support */
-	if (config.bits.is_slave_read) {
-		return -ENOTSUP;
-	}
 	if (config.bits.use_10_bit_addr) {
 		return -ENOTSUP;
 	}

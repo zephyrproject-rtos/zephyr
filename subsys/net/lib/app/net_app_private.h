@@ -77,7 +77,8 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			      enum net_sock_type sock_type,
 			      enum net_ip_protocol proto,
 			      struct sockaddr *addr);
-struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx);
+struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx,
+					    const struct sockaddr *dst);
 int _net_app_ssl_mux(void *context, unsigned char *buf, size_t size);
 int _net_app_tls_sendto(struct net_pkt *pkt,
 			const struct sockaddr *dst_addr,

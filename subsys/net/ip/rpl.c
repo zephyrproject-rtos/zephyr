@@ -281,6 +281,24 @@ struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data)
 	return NULL;
 }
 
+struct net_ipv6_nbr_data *
+net_rpl_get_ipv6_nbr_data(struct net_rpl_parent *parent)
+{
+	struct net_nbr *nbr;
+
+	nbr = net_rpl_get_nbr(parent);
+	if (nbr) {
+		struct net_nbr *ipv6_nbr;
+
+		ipv6_nbr = net_ipv6_get_nbr(nbr->iface, nbr->idx);
+		if (ipv6_nbr) {
+			return net_ipv6_nbr_data(ipv6_nbr);
+		}
+	}
+
+	return NULL;
+}
+
 static inline void nbr_free(struct net_nbr *nbr)
 {
 	NET_DBG("nbr %p", nbr);
@@ -1538,6 +1556,7 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 		struct net_rpl_parent *parent;
 		struct net_linkaddr lladdr;
 		struct net_nbr *rpl_nbr;
+		struct net_nbr *ipv6_nbr;
 
 		lladdr_storage = net_nbr_get_lladdr(nbr->idx);
 
@@ -1571,11 +1590,14 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 		/* Check whether we have a neighbor that has not gotten
 		 * a link metric yet.
 		 */
-		data = net_ipv6_nbr_data(nbr);
-
-		if (data->link_metric == 0) {
-			data->link_metric = CONFIG_NET_RPL_INIT_LINK_METRIC *
-				NET_RPL_MC_ETX_DIVISOR;
+		ipv6_nbr = net_ipv6_get_nbr(iface, nbr->idx);
+		if (ipv6_nbr) {
+			data = net_ipv6_nbr_data(ipv6_nbr);
+			if (data->link_metric == 0) {
+				data->link_metric =
+					CONFIG_NET_RPL_INIT_LINK_METRIC *
+					NET_RPL_MC_ETX_DIVISOR;
+			}
 		}
 
 #if !defined(CONFIG_NET_RPL_DAG_MC_NONE)
@@ -2109,13 +2131,9 @@ static void global_repair(struct net_if *iface,
 
 #define net_rpl_print_parent_info(parent, instance)			\
 	do {								\
-		struct net_nbr *nbr;					\
-		struct net_ipv6_nbr_data *data = NULL;			\
+		struct net_ipv6_nbr_data *data;				\
 									\
-		nbr = net_rpl_get_nbr(parent);				\
-		if (nbr->idx != NET_NBR_LLADDR_UNKNOWN) {		\
-			data = net_ipv6_get_nbr_by_index(nbr->idx);	\
-		}							\
+		data = net_rpl_get_ipv6_nbr_data(parent);		\
 									\
 		NET_DBG("Preferred DAG %s rank %d min_rank %d "		\
 			"parent rank %d parent etx %d link metric %d "	\
@@ -2680,6 +2698,8 @@ static void net_rpl_process_dio(struct net_if *iface,
 			if (net_rpl_dag_is_joined(dag)) {
 				instance->dio_counter++;
 			}
+
+			return;
 		} else {
 			parent->rank = dio->rank;
 		}
@@ -2767,12 +2787,14 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 	}
 
 	/* offset tells now where the ICMPv6 header is starting */
-	offset = net_pkt_icmp_data(pkt) - net_pkt_ip_data(pkt);
-
-	offset += sizeof(struct net_icmp_hdr);
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&offset);
 
 	/* First the DIO option. */
-	frag = net_frag_read_u8(pkt->frags, offset, &pos, &dio.instance_id);
+	frag = net_frag_read_u8(frag, offset, &pos, &dio.instance_id);
 	frag = net_frag_read_u8(frag, pos, &pos, &dio.version);
 	frag = net_frag_read_be16(frag, pos, &pos, &dio.rank);
 
@@ -3147,8 +3169,7 @@ static inline int dao_forward(struct net_if *iface,
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
 
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	net_icmpv6_set_chksum(pkt, pkt->frags);
 
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
@@ -3274,11 +3295,17 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	net_rpl_info(pkt, "Destination Advertisement Object");
 
 	/* offset tells now where the ICMPv6 header is starting */
-	offset = net_pkt_icmp_data(pkt) - net_pkt_ip_data(pkt);
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&offset);
 
-	offset += sizeof(struct net_icmp_hdr);
-
-	frag = net_frag_read_u8(pkt->frags, offset, &pos, &instance_id);
+	frag = net_frag_read_u8(frag, offset, &pos, &instance_id);
+	if (!frag) {
+		NET_DBG("Cannot get instance id");
+		return NET_DROP;
+	}
 
 	instance = net_rpl_get_instance(instance_id);
 	if (!instance) {
@@ -3538,11 +3565,13 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 	net_rpl_info(pkt, "Destination Advertisement Object Ack");
 
 	/* offset tells now where the ICMPv6 header is starting */
-	offset = net_pkt_icmp_data(pkt) - net_pkt_ip_data(pkt);
+	frag = net_frag_get_pos(pkt,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&offset);
 
-	offset += sizeof(struct net_icmp_hdr);
-
-	frag = net_frag_read_u8(pkt->frags, offset, &pos, &instance_id);
+	frag = net_frag_read_u8(frag, offset, &pos, &instance_id);
 	if (!frag && pos == 0xffff) {
 		/* Read error */
 		return NET_DROP;
@@ -3690,8 +3719,7 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 	net_pkt_write_u8(pkt, pkt->frags, offset, &pos,
 			 rpl_default_instance->instance_id);
 	net_pkt_write_be16(pkt, pkt->frags, pos, &pos,
-			   htons(rpl_default_instance->
-				 current_dag->rank));
+			   rpl_default_instance->current_dag->rank);
 	return 0;
 }
 
@@ -3758,7 +3786,6 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 		down = false;
 	}
 
-	sender_rank = ntohs(sender_rank);
 	sender_closer = sender_rank < instance->current_dag->rank;
 
 	NET_DBG("Packet going %s, sender closer %d (%d < %d)",

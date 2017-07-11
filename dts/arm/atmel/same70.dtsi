@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,72 @@
 	sram0: memory {
 		compatible = "sram";
 		reg = <0x20400000 DT_SRAM_SIZE>;
+	};
+
+	soc {
+		uart0: uart@400E0800 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400E0800 0x100>;
+			interrupts = <7 0>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: uart@400E0A00 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400E0A00 0x100>;
+			interrupts = <8 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		uart2: uart@400E1A00 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400E1A00 0x100>;
+			interrupts = <44 0>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		uart3: uart@400E1C00 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400E1C00 0x100>;
+			interrupts = <45 0>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		uart4: uart@400E1E00 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400E1E00 0x100>;
+			interrupts = <46 0>;
+			status = "disabled";
+			label = "UART_4";
+		};
+
+		usart0: usart@40024000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40024000 0x100>;
+			interrupts = <13 0>;
+			status = "disabled";
+			label = "USART_0";
+		};
+
+		usart1: usart@40028000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40028000 0x100>;
+			interrupts = <14 0>;
+			status = "disabled";
+			label = "USART_1";
+		};
+
+		usart2: usart@4002C000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x4002C000 0x100>;
+			interrupts = <15 0>;
+			status = "disabled";
+			label = "USART_2";
+		};
 	};
 };
 

@@ -55,10 +55,6 @@ static int i2c_nrf5_configure(struct device *dev, u32_t dev_config_raw)
 
 	SYS_LOG_DBG("");
 
-	if (dev_config.bits.is_slave_read) {
-		return -EINVAL;
-	}
-
 	if (dev_config.bits.use_10_bit_addr) {
 		return -EINVAL;
 	}

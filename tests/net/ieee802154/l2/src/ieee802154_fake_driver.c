@@ -63,6 +63,10 @@ static int fake_set_txpower(struct device *dev, s16_t dbm)
 
 static inline void insert_frag_dummy_way(struct net_pkt *pkt)
 {
+	if (!current_pkt) {
+		return;
+	}
+
 	if (current_pkt->frags) {
 		struct net_buf *frag, *prev_frag = NULL;
 

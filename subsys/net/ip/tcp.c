@@ -77,10 +77,17 @@ static char upper_if_set(char chr, bool set)
 
 static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 {
-	u8_t flags = NET_TCP_FLAGS(pkt);
+	struct net_tcp_hdr hdr, *tcp_hdr;
 	u32_t rel_ack, ack;
+	u8_t flags;
 
-	ack = sys_get_be32(NET_TCP_HDR(pkt)->ack);
+	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	if (!tcp_hdr) {
+		return;
+	}
+
+	flags = NET_TCP_FLAGS(tcp_hdr);
+	ack = sys_get_be32(tcp_hdr->ack);
 
 	if (!tcp->sent_ack) {
 		rel_ack = 0;
@@ -91,10 +98,10 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	NET_DBG("pkt %p src %u dst %u seq 0x%04x (%u) ack 0x%04x (%u/%u) "
 		"flags %c%c%c%c%c%c win %u chk 0x%04x",
 		pkt,
-		ntohs(NET_TCP_HDR(pkt)->src_port),
-		ntohs(NET_TCP_HDR(pkt)->dst_port),
-		sys_get_be32(NET_TCP_HDR(pkt)->seq),
-		sys_get_be32(NET_TCP_HDR(pkt)->seq),
+		ntohs(tcp_hdr->src_port),
+		ntohs(tcp_hdr->dst_port),
+		sys_get_be32(tcp_hdr->seq),
+		sys_get_be32(tcp_hdr->seq),
 		ack,
 		ack,
 		/* This tells how many bytes we are acking now */
@@ -105,18 +112,12 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 		upper_if_set('r', flags & NET_TCP_RST),
 		upper_if_set('s', flags & NET_TCP_SYN),
 		upper_if_set('f', flags & NET_TCP_FIN),
-		sys_get_be16(NET_TCP_HDR(pkt)->wnd),
-		ntohs(NET_TCP_HDR(pkt)->chksum));
+		sys_get_be16(tcp_hdr->wnd),
+		ntohs(tcp_hdr->chksum));
 }
 #else
 #define net_tcp_trace(...)
 #endif /* CONFIG_NET_DEBUG_TCP */
-
-static inline u32_t init_isn(void)
-{
-	/* Randomise initial seq number */
-	return sys_rand32_get();
-}
 
 static inline u32_t retry_timeout(const struct net_tcp *tcp)
 {
@@ -217,7 +218,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].state = NET_TCP_CLOSED;
 	tcp_context[i].context = context;
 
-	tcp_context[i].send_seq = init_isn();
+	tcp_context[i].send_seq = tcp_init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
 
 	tcp_context[i].accept_cb = NULL;
@@ -301,8 +302,8 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 				       struct net_pkt *pkt)
 {
 	struct net_buf *header, *tail = NULL;
-	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
+	struct net_tcp_hdr *tcp_hdr;
 	u16_t dst_port, src_port;
 	u8_t optlen = 0;
 
@@ -360,23 +361,23 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 
 	net_pkt_frag_add(pkt, header);
 
-	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
+	tcp_hdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
 
 	if (segment->options && segment->optlen) {
 		optlen = net_tcp_add_options(header, segment->optlen,
 					segment->options);
 	}
 
-	tcphdr->offset = (NET_TCPH_LEN + optlen) << 2;
+	tcp_hdr->offset = (NET_TCPH_LEN + optlen) << 2;
 
-	tcphdr->src_port = src_port;
-	tcphdr->dst_port = dst_port;
-	sys_put_be32(segment->seq, tcphdr->seq);
-	sys_put_be32(segment->ack, tcphdr->ack);
-	tcphdr->flags = segment->flags;
-	sys_put_be16(segment->wnd, tcphdr->wnd);
-	tcphdr->urg[0] = 0;
-	tcphdr->urg[1] = 0;
+	tcp_hdr->src_port = src_port;
+	tcp_hdr->dst_port = dst_port;
+	sys_put_be32(segment->seq, tcp_hdr->seq);
+	sys_put_be32(segment->ack, tcp_hdr->ack);
+	tcp_hdr->flags = segment->flags;
+	sys_put_be16(segment->wnd, tcp_hdr->wnd);
+	tcp_hdr->urg[0] = 0;
+	tcp_hdr->urg[1] = 0;
 
 	if (tail) {
 		net_pkt_frag_add(pkt, tail);
@@ -701,9 +702,14 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 int net_tcp_send_pkt(struct net_pkt *pkt)
 {
 	struct net_context *ctx = net_pkt_context(pkt);
-	struct net_tcp_hdr *tcphdr = NET_TCP_HDR(pkt);
+	struct net_tcp_hdr hdr, *tcp_hdr;
 
-	sys_put_be32(ctx->tcp->send_ack, tcphdr->ack);
+	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	if (!tcp_hdr) {
+		return -EINVAL;
+	}
+
+	sys_put_be32(ctx->tcp->send_ack, tcp_hdr->ack);
 
 	/* The data stream code always sets this flag, because
 	 * existing stacks (Linux, anyway) seem to ignore data packets
@@ -711,16 +717,20 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	 * anyway if we know we need it just to sanify edge cases.
 	 */
 	if (ctx->tcp->sent_ack != ctx->tcp->send_ack) {
-		tcphdr->flags |= NET_TCP_ACK;
+		tcp_hdr->flags |= NET_TCP_ACK;
 	}
 
-	if (tcphdr->flags & NET_TCP_FIN) {
+	if (tcp_hdr->flags & NET_TCP_FIN) {
 		ctx->tcp->fin_sent = 1;
 	}
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
 	net_pkt_set_sent(pkt, true);
+
+	/* As we modified the header, we need to write it back.
+	 */
+	net_tcp_set_hdr(pkt, tcp_hdr);
 
 	/* We must have special handling for some network technologies that
 	 * tweak the IP protocol headers during packet sending. This happens
@@ -829,7 +839,6 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	sys_slist_t *list = &ctx->tcp->sent_list;
 	sys_snode_t *head;
 	struct net_pkt *pkt;
-	struct net_tcp_hdr *tcphdr;
 	u32_t seq;
 	bool valid_ack = false;
 
@@ -839,18 +848,21 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	}
 
 	while (!sys_slist_is_empty(list)) {
+		struct net_tcp_hdr hdr, *tcp_hdr;
+
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
-		tcphdr = NET_TCP_HDR(pkt);
 
-		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(pkt) - 1;
+		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+
+		seq = sys_get_be32(tcp_hdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
 		if (!net_tcp_seq_greater(ack, seq)) {
 			net_stats_update_tcp_seg_ackerr();
 			break;
 		}
 
-		if (tcphdr->flags & NET_TCP_FIN) {
+		if (tcp_hdr->flags & NET_TCP_FIN) {
 			enum net_tcp_state s = net_tcp_get_state(tcp);
 
 			if (s == NET_TCP_FIN_WAIT_1) {
@@ -1009,6 +1021,142 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 
 bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt)
 {
+	struct net_tcp_hdr hdr, *tcp_hdr;
+
+	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	if (!tcp_hdr) {
+		return false;
+	}
+
 	return !net_tcp_seq_greater(tcp->send_ack + get_recv_wnd(tcp),
-				    sys_get_be32(NET_TCP_HDR(pkt)->seq));
+				    sys_get_be32(tcp_hdr->seq));
+}
+
+struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr)
+{
+	struct net_tcp_hdr *tcp_hdr;
+	struct net_buf *frag;
+	u16_t pos;
+
+	tcp_hdr = net_pkt_tcp_data(pkt);
+	if (net_tcp_header_fits(pkt, tcp_hdr)) {
+		return tcp_hdr;
+	}
+
+	frag = net_frag_read(pkt->frags, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt),
+			     &pos, sizeof(hdr->src_port),
+			     (u8_t *)&hdr->src_port);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->dst_port),
+			     (u8_t *)&hdr->dst_port);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->seq), hdr->seq);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->ack), hdr->ack);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->offset);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->flags);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->wnd), hdr->wnd);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->urg), hdr->urg);
+
+	if (!frag && pos == 0xffff) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr)
+{
+	struct net_buf *frag;
+	u16_t pos;
+
+	if (net_tcp_header_fits(pkt, hdr)) {
+		return hdr;
+	}
+
+	frag = net_pkt_write(pkt, pkt->frags, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt),
+			     &pos, sizeof(hdr->src_port),
+			     (u8_t *)&hdr->src_port, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->dst_port),
+			     (u8_t *)&hdr->dst_port, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->seq), hdr->seq,
+			     ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->ack), hdr->ack,
+			     ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->offset),
+			     &hdr->offset, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->flags),
+			     &hdr->flags, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->wnd), hdr->wnd,
+			     ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->urg), hdr->urg,
+			     ALLOC_TIMEOUT);
+
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
+{
+	struct net_tcp_hdr *hdr;
+	u16_t chksum;
+	u16_t pos;
+
+	hdr = net_pkt_tcp_data(pkt);
+	if (net_tcp_header_fits(pkt, hdr)) {
+		return hdr->chksum;
+	}
+
+	frag = net_frag_read(frag,
+			     net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     2 + 2 + 4 + 4 + /* src + dst + seq + ack */
+			     1 + 1 + 2 /* offset + flags + wnd */,
+			     &pos, sizeof(chksum), (u8_t *)&chksum);
+	NET_ASSERT(frag);
+
+	return chksum;
+}
+
+struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
+{
+	struct net_tcp_hdr *hdr;
+	u16_t chksum = 0;
+	u16_t pos;
+
+	hdr = net_pkt_tcp_data(pkt);
+	if (net_tcp_header_fits(pkt, hdr)) {
+		hdr->chksum = 0;
+		hdr->chksum = ~net_calc_chksum_tcp(pkt);
+
+		return frag;
+	}
+
+	/* We need to set the checksum to 0 first before the calc */
+	frag = net_pkt_write(pkt, frag,
+			     net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     2 + 2 + 4 + 4 + /* src + dst + seq + ack */
+			     1 + 1 + 2 /* offset + flags + wnd */,
+			     &pos, sizeof(chksum), (u8_t *)&chksum,
+			     ALLOC_TIMEOUT);
+
+	chksum = ~net_calc_chksum_tcp(pkt);
+
+	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
+			     (u8_t *)&chksum, ALLOC_TIMEOUT);
+
+	NET_ASSERT(frag);
+
+	return frag;
 }

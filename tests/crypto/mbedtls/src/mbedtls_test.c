@@ -97,8 +97,9 @@ static int test_snprintf(size_t n, const char ref_buf[10], int ref_ret)
 	const char ref[10] = "xxxxxxxxx";
 
 	ret = mbedtls_snprintf(buf, n, "%s", "123");
-	if (ret < 0 || (size_t) ret >= n)
+	if (ret < 0 || (size_t) ret >= n) {
 		ret = -1;
+	}
 
 	if (strncmp(ref_buf, buf, sizeof(buf)) != 0 ||
 	    ref_ret != ret || memcmp(buf + n, ref + n, sizeof(buf) - n) != 0) {
@@ -133,21 +134,24 @@ static void create_entropy_seed_file(void)
 
 /* Attempt to read the entropy seed file. If this fails - attempt to write
  * to the file to ensure one is present.
-*/
+ */
 	result = mbedtls_platform_std_nv_seed_read(seed_value,
 						   MBEDTLS_ENTROPY_BLOCK_SIZE);
-	if (0 == result)
+	if (0 == result) {
 		return;
+	}
 
 	result = mbedtls_platform_entropy_poll(NULL,
 					       seed_value,
 					       MBEDTLS_ENTROPY_BLOCK_SIZE,
 					       &output_len);
-	if (0 != result)
+	if (0 != result) {
 		return;
+	}
 
-	if (MBEDTLS_ENTROPY_BLOCK_SIZE != output_len)
+	if (MBEDTLS_ENTROPY_BLOCK_SIZE != output_len) {
 		return;
+	}
 
 	mbedtls_platform_std_nv_seed_write(seed_value,
 					   MBEDTLS_ENTROPY_BLOCK_SIZE);
@@ -431,5 +435,5 @@ int main(void)
 	}
 
 	while (1) {
-	};
+	}
 }

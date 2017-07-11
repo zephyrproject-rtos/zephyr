@@ -17,6 +17,7 @@
 #include <net/net_core.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
+#include <net/udp.h>
 
 #include "net_private.h"
 #include "6lo.h"
@@ -684,7 +685,6 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 #endif
 	struct net_ipv6_hdr *ipv6 = NET_IPV6_HDR(pkt);
 	u8_t offset = 0;
-	struct net_udp_hdr *udp;
 	struct net_buf *frag;
 	u8_t compressed;
 
@@ -752,11 +752,19 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 	}
 
 	/* UDP header compression */
-	udp = NET_UDP_HDR(pkt);
-	IPHC[offset] = NET_6LO_NHC_UDP_BARE;
-	offset = compress_nh_udp(udp, frag, offset);
+	if (IS_ENABLED(CONFIG_NET_UDP)) {
+		struct net_udp_hdr hdr, *udp;
 
-	compressed += NET_UDPH_LEN;
+		udp = net_udp_get_hdr(pkt, &hdr);
+		NET_ASSERT(udp);
+
+		IPHC[offset] = NET_6LO_NHC_UDP_BARE;
+		offset = compress_nh_udp(udp, frag, offset);
+
+		compressed += NET_UDPH_LEN;
+
+		net_udp_set_hdr(pkt, udp);
+	}
 
 end:
 	net_buf_add(frag, offset);

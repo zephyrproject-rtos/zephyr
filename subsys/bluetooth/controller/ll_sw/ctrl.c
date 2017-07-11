@@ -1176,6 +1176,13 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 				(conn_space_us - conn_offset_us) / 1250;
 		}
 
+		/* Workaround: Due to the missing remainder param in
+		 * ticker_start function for first interval; add half a
+		 * tick in microseconds so as to restrict the offset
+		 * within the +/- 16us jitter for the offset.
+		 */
+		conn_space_us += (30517578125UL/1000000000UL) >> 1;
+
 		pdu_adv_tx->payload.connect_ind.lldata.interval =
 			_radio.scanner.conn_interval;
 		pdu_adv_tx->payload.connect_ind.lldata.latency =
@@ -5672,6 +5679,13 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 		} else {
 			ticks_win_offset =
 				TICKER_US_TO_TICKS(conn->llcp.connection_update.win_offset_us);
+
+			/* Workaround: Due to the missing remainder param in
+			 * ticker_start function for first interval; add half a
+			 * tick in microseconds so as to restrict the offset
+			 * within the +/- 16us jitter for the offset.
+			 */
+			ticks_win_offset += (30517578125UL/1000000000UL) >> 1;
 		}
 		conn->conn_interval = conn->llcp.connection_update.interval;
 		conn->latency = conn->llcp.connection_update.latency;

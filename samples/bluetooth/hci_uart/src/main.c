@@ -38,7 +38,13 @@ static struct k_thread tx_thread_data;
 NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER)
+#define BT_L2CAP_MTU (CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE - \
+		      BT_L2CAP_HDR_SIZE)
+#else
 #define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
+#endif /* CONFIG_BLUETOOTH_CONTROLLER */
+
 /** Data size needed for ACL buffers */
 #define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
 

@@ -22,6 +22,7 @@
 #include <net/dhcpv4.h>
 #include <net/ethernet.h>
 #include <net/net_mgmt.h>
+#include <net/udp.h>
 
 #include <tc_util.h>
 
@@ -250,7 +251,9 @@ static void set_udp_header(struct net_pkt *pkt)
 	struct net_udp_hdr *udp;
 	u16_t length;
 
-	udp = NET_UDP_HDR(pkt);
+	udp = (struct net_udp_hdr *)((u8_t *)(NET_IPV4_HDR(pkt)) +
+				     sizeof(struct net_ipv4_hdr));
+
 	udp->src_port = htons(SERVER_PORT);
 	udp->dst_port = htons(CLIENT_PORT);
 
@@ -474,7 +477,6 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	parse_dhcp_message(pkt, &msg);
-	net_pkt_unref(pkt);
 
 	if (msg.type == DISCOVER) {
 		/* Reply with DHCPv4 offer message */
@@ -500,6 +502,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
+	net_pkt_unref(pkt);
 	return NET_OK;
 }
 

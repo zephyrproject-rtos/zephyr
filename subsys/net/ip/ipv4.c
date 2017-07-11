@@ -22,6 +22,8 @@
 #include "connection.h"
 #include "net_stats.h"
 #include "icmpv4.h"
+#include "udp_internal.h"
+#include "tcp.h"
 #include "ipv4.h"
 
 struct net_pkt *net_ipv4_create_raw(struct net_pkt *pkt,
@@ -97,14 +99,12 @@ int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 
 #if defined(CONFIG_NET_UDP)
 	if (next_header == IPPROTO_UDP) {
-		NET_UDP_HDR(pkt)->chksum = 0;
-		NET_UDP_HDR(pkt)->chksum = ~net_calc_chksum_udp(pkt);
+		net_udp_set_chksum(pkt, pkt->frags);
 	}
 #endif
 #if defined(CONFIG_NET_TCP)
 	if (next_header == IPPROTO_TCP) {
-		NET_TCP_HDR(pkt)->chksum = 0;
-		NET_TCP_HDR(pkt)->chksum = ~net_calc_chksum_tcp(pkt);
+		net_tcp_set_chksum(pkt, pkt->frags);
 	}
 #endif
 
@@ -134,12 +134,14 @@ const struct in_addr *net_ipv4_broadcast_address(void)
 static inline enum net_verdict process_icmpv4_pkt(struct net_pkt *pkt,
 						  struct net_ipv4_hdr *ipv4)
 {
-	struct net_icmp_hdr *hdr = NET_ICMP_HDR(pkt);
+	struct net_icmp_hdr hdr, *icmp_hdr;
+
+	icmp_hdr = net_icmpv4_get_hdr(pkt, &hdr);
 
 	NET_DBG("ICMPv4 packet received type %d code %d",
-		hdr->type, hdr->code);
+		icmp_hdr->type, icmp_hdr->code);
 
-	return net_icmpv4_input(pkt, hdr->type, hdr->code);
+	return net_icmpv4_input(pkt, icmp_hdr->type, icmp_hdr->code);
 }
 
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)

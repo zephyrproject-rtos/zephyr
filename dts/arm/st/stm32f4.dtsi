@@ -40,6 +40,33 @@
 			status = "disabled";
 			label = "UART_6";
 		};
+
+		i2c1: i2c@40005400 {
+			compatible = "st,stm32-i2c-v1";
+			reg = <0x40005400 0x400>;
+			interrupts = <31 0>, <32 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_1";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v1";
+			reg = <0x40005800 0x400>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_2";
+		};
+
+		i2c3: i2c@40005C00 {
+			compatible = "st,stm32-i2c-v1";
+			reg = <0x40005C00 0x400>;
+			interrupts = <72 0>, <73 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_3";
+		};
 	};
 };
 
