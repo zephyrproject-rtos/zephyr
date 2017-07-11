@@ -440,8 +440,10 @@ static int h4_open(void)
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 
 	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_THREAD_STACK_SIZEOF(rx_thread_stack), rx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BLUETOOTH_RX_PRIO),
+			0, K_NO_WAIT);
 
 	return 0;
 }

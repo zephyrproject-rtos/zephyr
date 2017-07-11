@@ -17,3 +17,20 @@
  * and that the system workqueue priority is negative (cooperative).
  */
 BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY < 0);
+
+/* The Bluetooth subsystem requires the Tx thread to execute at higher priority
+ * than the Rx thread as the Tx thread needs to process the acknowledgements
+ * before new Rx data is processed. This is a necessity to correctly detect
+ * transaction violations in ATT and SMP protocols.
+ */
+BUILD_ASSERT(CONFIG_BLUETOOTH_HCI_TX_PRIO < CONFIG_BLUETOOTH_RX_PRIO);
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER)
+/* The Bluetooth Controller's priority receive thread priority shall be higher
+ * than the Bluetooth Host's Tx and the Controller's receive thread priority.
+ * This is required in order to dispatch Number of Completed Packets event
+ * before any new data arrives on a connection to the Host threads.
+ */
+BUILD_ASSERT(CONFIG_BLUETOOTH_CONTROLLER_RX_PRIO <
+	     CONFIG_BLUETOOTH_HCI_TX_PRIO);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER */

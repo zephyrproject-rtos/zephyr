@@ -95,6 +95,12 @@ config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
 	int
 	default 448
 
+config BLUETOOTH_CONTROLLER_RX_PRIO
+	# Hidden option for Controller's Co-Operative high priority Rx thread
+	# priority.
+	int
+	default 6
+
 comment "BLE Controller features"
 
 if BLUETOOTH_CONN
