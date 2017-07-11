@@ -27,6 +27,26 @@
 			reg = <0 0x20000>;
 		};
 
+		i2c0: i2c@40066000 {
+			compatible = "nxp,kinetis-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40066000 0x1000>;
+			interrupts = <8 0>;
+			label = "I2C_0";
+			status = "disabled";
+		};
+
+		i2c1: i2c@40067000 {
+			compatible = "nxp,kinetis-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40067000 0x1000>;
+			interrupts = <9 0>;
+			label = "I2C_1";
+			status = "disabled";
+		};
+
 		uart0: uart@4006A000 {
 			compatible = "nxp,kinetis-lpsci";
 			reg = <0x4006A000 0xc>;
