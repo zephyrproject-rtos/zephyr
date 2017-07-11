@@ -428,6 +428,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 {
 	struct net_arp_hdr *arp_hdr;
 	struct net_pkt *reply;
+	struct in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
 				    net_pkt_ll_reserve(pkt))) {
@@ -443,8 +444,12 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
 		/* Someone wants to know our ll address */
-		if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-				       if_get_addr(net_pkt_iface(pkt)))) {
+		addr = if_get_addr(net_pkt_iface(pkt));
+		if (!addr) {
+			return NET_DROP;
+		}
+
+		if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr, addr)) {
 			/* Not for us so drop the packet silently */
 			return NET_DROP;
 		}
