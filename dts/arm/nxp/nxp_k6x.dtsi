@@ -277,6 +277,22 @@
 			clock-source = <0>;
 			/* channel information needed - fixme */
 		};
+
+		adc0: adc@4003b000{
+			compatible = "nxp,kinetis-adc16";
+			reg = <0x4003b000 0x70>;
+			interrupts = <39 0>;
+			label = "ADC_0";
+			status = "disabled";
+		};
+
+		adc1: adc@400bb000{
+			compatible = "nxp,kinetis-adc16";
+			reg = <0x400bb000 0x70>;
+			interrupts = <73 0>;
+			label = "ADC_1";
+			status = "disabled";
+		};
 	};
 };
 
