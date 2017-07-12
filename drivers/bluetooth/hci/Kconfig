@@ -58,6 +58,7 @@ endchoice
 
 endif # !BLUETOOTH_CONTROLLER
 
+if !HAS_DTS
 config BLUETOOTH_UART_ON_DEV_NAME
 	string "Device Name of UART Device for Bluetooth"
 	default "UART_0"
@@ -65,6 +66,7 @@ config BLUETOOTH_UART_ON_DEV_NAME
 	help
 	  This option specifies the name of UART device to be used
 	  for Bluetooth.
+endif
 
 config BLUETOOTH_SPI_DEV_NAME
 	string "Device Name of SPI Device for Bluetooth"
