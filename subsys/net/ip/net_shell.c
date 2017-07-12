@@ -35,6 +35,10 @@
 #include <net/http.h>
 #endif
 
+#if defined(CONFIG_NET_APP)
+#include <net/net_app.h>
+#endif
+
 #include "net_shell.h"
 #include "net_stats.h"
 
@@ -698,6 +702,214 @@ int net_shell_cmd_allocs(int argc, char *argv[])
 #else
 	printk("Enable CONFIG_NET_DEBUG_NET_PKT to see allocations.\n");
 #endif /* CONFIG_NET_DEBUG_NET_PKT */
+
+	return 0;
+}
+
+#if defined(CONFIG_NET_DEBUG_APP) && \
+	(defined(CONFIG_NET_APP_SERVER) || defined(CONFIG_NET_APP_CLIENT))
+static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
+{
+	int *count = user_data;
+	char *sec_type = "none";
+	char *app_type = "unknown";
+	char *proto = "unknown";
+	bool printed = false;
+
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#elif defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+#define ADDR_LEN NET_IPV4_ADDR_LEN
+#else
+#define ADDR_LEN NET_IPV6_ADDR_LEN
+#endif
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
+
+	if (*count == 0) {
+		if (ctx->app_type == NET_APP_SERVER) {
+			printk("Network application server instances\n\n");
+		} else if (ctx->app_type == NET_APP_CLIENT) {
+			printk("Network application client instances\n\n");
+		} else {
+			printk("Invalid network application type %d\n",
+			       ctx->app_type);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_APP_TLS) && ctx->is_tls) {
+		if (ctx->sock_type == SOCK_DGRAM) {
+			sec_type = "DTLS";
+		} else {
+			sec_type = "TLS";
+		}
+	}
+
+	if (ctx->app_type == NET_APP_SERVER) {
+		app_type = "server";
+	} else if (ctx->app_type == NET_APP_CLIENT) {
+		app_type = "client";
+	}
+
+	if (ctx->proto == IPPROTO_UDP) {
+#if defined(CONFIG_NET_UDP)
+		proto = "UDP";
+#else
+		proto = "<UDP not configured>";
+#endif
+	}
+
+	if (ctx->proto == IPPROTO_TCP) {
+#if defined(CONFIG_NET_TCP)
+		proto = "TCP";
+#else
+		proto = "<TCP not configured>";
+#endif
+	}
+
+	printk("[%2d] App-ctx: %p  Status: %s  Type: %s  Protocol: %s\n",
+	       *count, ctx, ctx->is_enabled ? "enabled" : "disabled",
+	       app_type, proto);
+
+#if defined(CONFIG_NET_APP_TLS)
+	printk("     Security: %s  Thread id: %p\n", sec_type, ctx->tls.tid);
+
+#if defined(CONFIG_INIT_STACKS)
+	{
+		unsigned int pcnt, unused;
+
+		net_analyze_stack_get_values(ctx->tls.stack,
+					     ctx->tls.stack_size,
+					     &pcnt, &unused);
+		printk("     Stack: %p  Size: %d bytes unused %u usage "
+		       "%u/%d (%u %%)\n",
+		       ctx->tls.stack, ctx->tls.stack_size,
+		       unused, ctx->tls.stack_size - unused,
+		       ctx->tls.stack_size, pcnt);
+	}
+#endif /* CONFIG_INIT_STACKS */
+	if (ctx->tls.cert_host) {
+		printk("     Cert host: %s\n", ctx->tls.cert_host);
+	}
+#endif /* CONFIG_NET_APP_TLS */
+
+#if defined(CONFIG_NET_IPV6)
+	if (ctx->app_type == NET_APP_SERVER) {
+		if (ctx->ipv6.ctx && ctx->ipv6.ctx->local.family == AF_INET6) {
+			get_addresses(ctx->ipv6.ctx,
+				      addr_local, sizeof(addr_local),
+				      addr_remote, sizeof(addr_remote));
+
+			printk("     Listen IPv6: %16s <- %16s\n",
+			       addr_local, addr_remote);
+		} else {
+			printk("     Not listening IPv6 connections.\n");
+		}
+	} else if (ctx->app_type == NET_APP_CLIENT) {
+		if (ctx->ipv6.ctx && ctx->ipv6.ctx->local.family == AF_INET6) {
+			get_addresses(ctx->ipv6.ctx,
+				      addr_local, sizeof(addr_local),
+				      addr_remote, sizeof(addr_remote));
+
+			printk("     Connect IPv6: %16s -> %16s\n",
+			       addr_local, addr_remote);
+		}
+	} else {
+		printk("Invalid application type %d\n", ctx->app_type);
+		printed = true;
+	}
+#else
+	printk("     IPv6 connections not enabled.\n");
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+	if (ctx->app_type == NET_APP_SERVER) {
+		if (ctx->ipv4.ctx && ctx->ipv4.ctx->local.family == AF_INET) {
+			get_addresses(ctx->ipv4.ctx,
+				      addr_local, sizeof(addr_local),
+				      addr_remote, sizeof(addr_remote));
+
+			printk("     Listen IPv4: %16s <- %16s\n",
+			       addr_local, addr_remote);
+		} else {
+			printk("     Not listening IPv4 connections.\n");
+		}
+	} else if (ctx->app_type == NET_APP_CLIENT) {
+		if (ctx->ipv4.ctx && ctx->ipv4.ctx->local.family == AF_INET) {
+			get_addresses(ctx->ipv4.ctx,
+				      addr_local, sizeof(addr_local),
+				      addr_remote, sizeof(addr_remote));
+
+			printk("     Connect IPv4: %16s -> %16s\n",
+			       addr_local, addr_remote);
+		}
+	} else {
+		if (!printed) {
+			printk("Invalid application type %d\n", ctx->app_type);
+		}
+	}
+#else
+	printk("     IPv4 connections not enabled.\n");
+#endif
+
+#if defined(CONFIG_NET_APP_SERVER)
+#if defined(CONFIG_NET_TCP)
+	if (ctx->server.net_ctx) {
+		get_addresses(ctx->server.net_ctx,
+			      addr_local, sizeof(addr_local),
+			      addr_remote, sizeof(addr_remote));
+
+		printk("     Active: %16s <- %16s\n",
+		       addr_local, addr_remote);
+	} else {
+		printk("     No active connections to this server.\n");
+	}
+#else
+	printk("     TCP not enabled for this server.\n");
+#endif
+#endif /* CONFIG_NET_APP_SERVER */
+
+	(*count)++;
+
+	return;
+}
+#endif
+
+int net_shell_cmd_app(int argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_DEBUG_APP)
+	int i = 0;
+
+	if (IS_ENABLED(CONFIG_NET_APP_SERVER)) {
+		net_app_server_foreach(net_app_cb, &i);
+
+		if (i == 0) {
+			printk("No net app server instances found.\n");
+			i = -1;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_APP_CLIENT)) {
+		if (i) {
+			printk("\n");
+			i = 0;
+		}
+
+		net_app_client_foreach(net_app_cb, &i);
+
+		if (i == 0) {
+			printk("No net app client instances found.\n");
+		}
+	}
+#else
+	printk("Enable CONFIG_NET_DEBUG_APP and either CONFIG_NET_APP_CLIENT "
+	       "or CONFIG_NET_APP_SERVER to see client/server instance "
+	       "information.\n");
+#endif
 
 	return 0;
 }
@@ -1785,6 +1997,8 @@ static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
 	{ "allocs", net_shell_cmd_allocs,
 		"\n\tPrint network memory allocations" },
+	{ "app", net_shell_cmd_app,
+		"\n\tPrint network application API usage information" },
 	{ "conn", net_shell_cmd_conn,
 		"\n\tPrint information about network connections" },
 	{ "dns", net_shell_cmd_dns, "\n\tShow how DNS is configure\n"
