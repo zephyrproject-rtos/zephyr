@@ -27,5 +27,5 @@ bool ctrl_rl_enabled(void);
 void ll_rl_rpa_update(bool timeout);
 
 u8_t ll_rl_find(u8_t id_addr_type, u8_t *id_addr, u8_t *free);
-bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr);
+bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr, u8_t *rl_idx);
 void ll_rl_pdu_adv_update(int idx, struct pdu_adv *pdu);

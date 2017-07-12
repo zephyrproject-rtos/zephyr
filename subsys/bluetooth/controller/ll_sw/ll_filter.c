@@ -397,7 +397,7 @@ u8_t ll_rl_find(u8_t id_addr_type, u8_t *id_addr, u8_t *free)
 	return FILTER_IDX_NONE;
 }
 
-bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr)
+bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr, u8_t *rl_idx)
 {
 	int i, j;
 
@@ -415,6 +415,11 @@ bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr)
 			}
 
 			if (j == BDADDR_SIZE) {
+				if (*rl_idx == FILTER_IDX_NONE) {
+					*rl_idx = i;
+				} else {
+					LL_ASSERT(*rl_idx == i);
+				}
 				return !rl[i].pirk || rl[i].dev;
 			}
 		}
