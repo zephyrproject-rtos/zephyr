@@ -158,12 +158,15 @@ static int spim_nrf52_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	spim->CONFIG = (flags & SPI_TRANSFER_LSB) ? SPIM_CONFIG_ORDER_LsbFirst
-		       : SPIM_CONFIG_ORDER_MsbFirst;
-	spim->CONFIG |= (flags & SPI_MODE_CPOL) ? SPIM_CONFIG_CPOL_ActiveLow
-			: SPIM_CONFIG_CPOL_ActiveHigh;
-	spim->CONFIG |= (flags & SPI_MODE_CPHA) ? SPIM_CONFIG_CPHA_Trailing
-			: SPIM_CONFIG_CPHA_Leading;
+	spim->CONFIG = (flags & SPI_TRANSFER_LSB) ?
+		       (SPIM_CONFIG_ORDER_LsbFirst << SPIM_CONFIG_ORDER_Pos) :
+		       (SPIM_CONFIG_ORDER_MsbFirst << SPIM_CONFIG_ORDER_Pos);
+	spim->CONFIG |= (flags & SPI_MODE_CPOL) ?
+			(SPIM_CONFIG_CPOL_ActiveLow << SPIM_CONFIG_CPOL_Pos) :
+			(SPIM_CONFIG_CPOL_ActiveHigh << SPIM_CONFIG_CPOL_Pos);
+	spim->CONFIG |= (flags & SPI_MODE_CPHA) ?
+			(SPIM_CONFIG_CPHA_Trailing << SPIM_CONFIG_CPHA_Pos) :
+			(SPIM_CONFIG_CPHA_Leading << SPIM_CONFIG_CPHA_Pos);
 
 	spim->INTENSET = NRF52_SPIM_INT_END;
 
@@ -428,7 +431,7 @@ static const struct spim_nrf52_config spim_nrf52_config_1 = {
 			CONFIG_SPIM1_NRF52_GPIO_SS_PIN_2,
 			CONFIG_SPIM1_NRF52_GPIO_SS_PIN_3 },
 	},
-	.orc = CONFIG_SPIM0_NRF52_ORC,
+	.orc = CONFIG_SPIM1_NRF52_ORC,
 };
 
 static struct spim_nrf52_data spim_nrf52_data_1;
