@@ -326,7 +326,7 @@ static void filter_wl_update(void)
 	for (i = 0; i < WL_SIZE; i++) {
 		int j = wl[i].rl_idx;
 
-		if (!rl_enable || j < ARRAY_SIZE(rl) || !rl[j].pirk ||
+		if (!rl_enable || j >= ARRAY_SIZE(rl) || !rl[j].pirk ||
 		    rl[j].dev) {
 			filter_insert(&wl_filter, i, wl[i].id_addr_type,
 				      wl[i].id_addr.val);
