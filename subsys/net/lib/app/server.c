@@ -232,6 +232,8 @@ int net_app_init_server(struct net_app_ctx *ctx,
 
 	ctx->is_init = true;
 
+	_net_app_register(ctx);
+
 fail:
 	return ret;
 }
