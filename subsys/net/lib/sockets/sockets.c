@@ -141,6 +141,10 @@ static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
 	net_buf_pull(pkt->frags, header_len);
 
+	if (net_context_get_type(ctx) == SOCK_STREAM) {
+		net_context_update_recv_wnd(ctx, -net_pkt_appdatalen(pkt));
+	}
+
 	k_fifo_put(&ctx->recv_q, pkt);
 }
 
@@ -310,6 +314,8 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size
 			}
 		}
 	} while (recv_len == 0);
+
+	net_context_update_recv_wnd(ctx, recv_len);
 
 	return recv_len;
 }
