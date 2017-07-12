@@ -48,7 +48,8 @@ parser.add_option("-F", "--rom",
 # to the passed sub-path
 def load_symbols_and_paths(elf_file, path_to_strip = None):
     symbols_paths = {}
-    nm_out = subprocess.check_output(["nm", elf_file, "-S", "-l", "--size-sort", "--radix=d"])
+    bin_nm = os.environ.get("NM", "nm")
+    nm_out = subprocess.check_output([bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"])
     for line in nm_out.decode('utf8').split('\n'):
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
@@ -114,7 +115,8 @@ def generate_target_memory_section(out, kernel_name, source_dir, features_json):
     elf_file_abs = os.path.join(out, kernel_name+'.elf')
 
      # First deal with size on flash. These are the symbols flagged as LOAD in objdump output
-    size_out = subprocess.check_output(["objdump", "-hw", elf_file_abs])
+    bin_objdump = os.environ.get("OBJDUMP", "objdump")
+    size_out = subprocess.check_output([bin_objdump, "-hw", elf_file_abs])
     loaded_section_total = 0
     loaded_section_names = []
     loaded_section_names_sizes = {}
@@ -175,7 +177,8 @@ def generate_target_memory_section(out, kernel_name, source_dir, features_json):
 
     # Extract the list of symbols a second time but this time using the objdump tool
     # which provides more info as nm
-    symbols_out = subprocess.check_output(["objdump", "-tw", elf_file_abs])
+    bin_objdump = os.environ.get("OBJDUMP", "objdump")
+    symbols_out = subprocess.check_output([bin_objdump, "-tw", elf_file_abs])
     flash_symbols_total = 0
     data_nodes = {}
     data_nodes['root'] = 0
