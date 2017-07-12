@@ -352,7 +352,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(struct net_buf *buf,
 {
 	struct bt_l2cap_sig_hdr *hdr;
 
-	buf = bt_l2cap_create_rsp(buf, 0);
+	buf = bt_l2cap_create_pdu(NULL, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = code;
@@ -443,20 +443,6 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, u8_t hci_status)
 			chan->ops->encrypt_change(chan, hci_status);
 		}
 	}
-}
-
-struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve)
-{
-	if (!buf || buf->frags || buf->flags) {
-		return bt_l2cap_create_pdu(NULL, 0);
-	}
-
-	net_buf_ref(buf);
-	/* Reset len so buffer can be reused */
-	net_buf_reset(buf);
-	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE + reserve);
-
-	return buf;
 }
 
 struct net_buf *bt_l2cap_create_pdu(struct net_buf_pool *pool, size_t reserve)
