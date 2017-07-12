@@ -776,6 +776,18 @@ def main():
         extract_string_prop(chosen['zephyr,console'], None, "label",
                             "CONFIG_UART_CONSOLE_ON_DEV_NAME", defs)
 
+    if 'zephyr,bt-uart' in chosen:
+       extract_string_prop(chosen['zephyr,bt-uart'], None, "label",
+                           "CONFIG_BLUETOOTH_UART_ON_DEV_NAME", defs)
+
+    if 'zephyr,uart-pipe' in chosen:
+       extract_string_prop(chosen['zephyr,uart-pipe'], None, "label",
+                           "CONFIG_UART_PIPE_ON_DEV_NAME", defs)
+
+    if 'zephyr,bt-mon-uart' in chosen:
+       extract_string_prop(chosen['zephyr,bt-mon-uart'], None, "label",
+                           "CONFIG_BLUETOOTH_MONITOR_ON_DEV_NAME", defs)
+
     # only compute the load offset if a code partition exists and it is not the
     # same as the flash base address
     load_defs = {}

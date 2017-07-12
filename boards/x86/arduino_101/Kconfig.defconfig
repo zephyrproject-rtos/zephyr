@@ -18,22 +18,24 @@ config PHYS_LOAD_ADDR
 	default 0x40010000
 endif
 
-if BLUETOOTH_H4
+if BLUETOOTH_H4 && !HAS_DTS
 
 config BLUETOOTH_UART_ON_DEV_NAME
 	default UART_QMSI_0_NAME
 
 endif
 
-if UART_PIPE
+if UART_PIPE && !HAS_DTS
 
 config UART_PIPE_ON_DEV_NAME
 	default UART_QMSI_1_NAME
 
 endif
 
+if !HAS_DTS
 config BLUETOOTH_MONITOR_ON_DEV_NAME
 	default UART_QMSI_1_NAME if BLUETOOTH_DEBUG_MONITOR
+endif
 
 if FLASH && SPI
 

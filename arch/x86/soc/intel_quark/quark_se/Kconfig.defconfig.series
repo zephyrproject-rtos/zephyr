@@ -198,11 +198,13 @@ endif # RTC
 
 if BLUETOOTH_H4
 
+if !HAS_DTS
 config BLUETOOTH_UART_ON_DEV_NAME
 	default UART_QMSI_0_NAME
 
 config UART_QMSI_0
 	def_bool y
+endif
 
 if !HAS_DTS
 config UART_QMSI_0_BAUDRATE
