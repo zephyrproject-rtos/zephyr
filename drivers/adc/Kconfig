@@ -52,12 +52,12 @@ config ADC_0
 
 config ADC_0_NAME
 	string "ADC 0 Driver's name"
-	depends on ADC_0
+	depends on ADC_0 && !HAS_DTS_ADC
 	default "ADC_0"
 
 config ADC_0_IRQ_PRI
 	int
-	depends on ADC_0
+	depends on ADC_0 && !HAS_DTS_ADC
 	prompt "ADC 0 interrupt priority"
 	default 2
 
@@ -67,12 +67,12 @@ config ADC_1
 
 config ADC_1_NAME
 	string "ADC 1 Driver's name"
-	depends on ADC_1
+	depends on ADC_1 && !HAS_DTS_ADC
 	default "ADC_1"
 
 config ADC_1_IRQ_PRI
 	int
-	depends on ADC_1
+	depends on ADC_1 && !HAS_DTS_ADC
 	prompt "ADC 1 interrupt priority"
 	default 2
 
