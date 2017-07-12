@@ -409,6 +409,8 @@ int net_app_init_client(struct net_app_ctx *ctx,
 out:
 	ctx->is_init = true;
 
+	_net_app_register(ctx);
+
 fail:
 	return ret;
 

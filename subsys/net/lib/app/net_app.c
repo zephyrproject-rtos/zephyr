@@ -36,6 +36,42 @@
 #define DTLS_TIMEOUT K_SECONDS(15)
 #endif
 
+#if defined(CONFIG_NET_DEBUG_APP)
+static sys_slist_t _net_app_instances;
+
+void _net_app_register(struct net_app_ctx *ctx)
+{
+	sys_slist_prepend(&_net_app_instances, &ctx->node);
+}
+
+void _net_app_unregister(struct net_app_ctx *ctx)
+{
+	sys_slist_find_and_remove(&_net_app_instances, &ctx->node);
+}
+
+static void net_app_foreach(net_app_ctx_cb_t cb, enum net_app_type type,
+			    void *user_data)
+{
+	struct net_app_ctx *ctx;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&_net_app_instances, ctx, node) {
+		if (ctx->is_init && ctx->app_type == type) {
+			cb(ctx, user_data);
+		}
+	}
+}
+
+void net_app_server_foreach(net_app_ctx_cb_t cb, void *user_data)
+{
+	net_app_foreach(cb, NET_APP_SERVER, user_data);
+}
+
+void net_app_client_foreach(net_app_ctx_cb_t cb, void *user_data)
+{
+	net_app_foreach(cb, NET_APP_CLIENT, user_data);
+}
+#endif /* CONFIG_NET_DEBUG_APP */
+
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 int net_app_set_net_pkt_pool(struct net_app_ctx *ctx,
 			     net_pkt_get_slab_func_t tx_slab,
@@ -393,6 +429,8 @@ int net_app_release(struct net_app_ctx *ctx)
 #endif /* CONFIG_NET_IPV4 */
 
 	ctx->is_init = false;
+
+	_net_app_unregister(ctx);
 
 	return 0;
 }

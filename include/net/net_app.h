@@ -410,6 +410,11 @@ struct net_app_ctx {
 	/** User data pointer */
 	void *user_data;
 
+#if defined(CONFIG_NET_DEBUG_APP)
+	/** Used when debugging with net-shell */
+	sys_snode_t node;
+#endif
+
 	/** Type of the connection (stream or datagram) */
 	enum net_sock_type sock_type;
 
@@ -942,6 +947,12 @@ bool net_app_server_tls_disable(struct net_app_ctx *ctx);
 /**
  * @}
  */
+
+#if defined(CONFIG_NET_DEBUG_APP)
+typedef void (*net_app_ctx_cb_t)(struct net_app_ctx *ctx, void *user_data);
+void net_app_server_foreach(net_app_ctx_cb_t cb, void *user_data);
+void net_app_client_foreach(net_app_ctx_cb_t cb, void *user_data);
+#endif /* CONFIG_NET_DEBUG_APP */
 
 #ifdef __cplusplus
 }
