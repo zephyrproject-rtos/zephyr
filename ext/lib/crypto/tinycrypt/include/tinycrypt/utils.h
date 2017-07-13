@@ -1,7 +1,7 @@
 /* utils.h - TinyCrypt interface to platform-dependent run-time operations */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -57,8 +57,8 @@ extern "C" {
  * @param from IN -- origin buffer
  * @param from_len IN -- length of origin buffer
  */
-uint32_t _copy(uint8_t *to, uint32_t to_len,
-	       const uint8_t *from, uint32_t from_len);
+unsigned int _copy(uint8_t *to, unsigned int to_len,
+	           const uint8_t *from, unsigned int from_len);
 
 /**
  * @brief Set the value 'val' into the buffer 'to', 'len' times.
@@ -67,7 +67,7 @@ uint32_t _copy(uint8_t *to, uint32_t to_len,
  * @param val IN -- value to be set in 'to'
  * @param len IN -- number of times the value will be copied
  */
-void _set(void *to, uint8_t val, uint32_t len);
+void _set(void *to, uint8_t val, unsigned int len);
 
 /*
  * @brief AES specific doubling function, which utilizes
@@ -86,10 +86,10 @@ uint8_t _double_byte(uint8_t a);
  * @param b IN -- sequence of bytes b
  * @param size IN -- size of sequences a and b
  */
-int32_t _compare(const uint8_t *a, const uint8_t *b, size_t size);
+int _compare(const uint8_t *a, const uint8_t *b, size_t size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_UTILS_H__ */

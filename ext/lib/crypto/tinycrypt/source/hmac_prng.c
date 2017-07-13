@@ -1,7 +1,7 @@
 /* hmac_prng.c - TinyCrypt implementation of HMAC-PRNG */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -39,43 +39,43 @@
  * min bytes in the seed string.
  * MIN_SLEN*8 must be at least the expected security level.
  */
-static const uint32_t MIN_SLEN = 32;
+static const unsigned int MIN_SLEN = 32;
 
 /*
  * max bytes in the seed string;
  * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).
  */
-static const uint32_t MAX_SLEN = UINT32_MAX;
+static const unsigned int MAX_SLEN = UINT32_MAX;
 
 /*
  * max bytes in the personalization string;
  * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).
  */
-static const uint32_t MAX_PLEN = UINT32_MAX;
+static const unsigned int MAX_PLEN = UINT32_MAX;
 
 /*
  * max bytes in the additional_info string;
  * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).
  */
-static const uint32_t MAX_ALEN = UINT32_MAX;
+static const unsigned int MAX_ALEN = UINT32_MAX;
 
 /*
  * max number of generates between re-seeds;
  * TinyCrypt accepts up to (2^32 - 1) which is the maximal value of
- * a uint32_t variable, while SP800-90A specifies a maximum of 2^48.
+ * a 32-bit unsigned int variable, while SP800-90A specifies a maximum of 2^48.
  */
-static const uint32_t MAX_GENS = UINT32_MAX;
+static const unsigned int MAX_GENS = UINT32_MAX;
 
 /*
  * maximum bytes per generate call;
  * SP800-90A specifies a maximum up to 2^19.
  */
-static const uint32_t MAX_OUT = (1 << 19);
+static const unsigned int  MAX_OUT = (1 << 19);
 
 /*
  * Assumes: prng != NULL, e != NULL, len >= 0.
  */
-static void update(TCHmacPrng_t prng, const uint8_t *e, uint32_t len)
+static void update(TCHmacPrng_t prng, const uint8_t *e, unsigned int len)
 {
 	const uint8_t separator0 = 0x00;
 	const uint8_t separator1 = 0x01;
@@ -109,10 +109,11 @@ static void update(TCHmacPrng_t prng, const uint8_t *e, uint32_t len)
 	(void)tc_hmac_final(prng->v, sizeof(prng->v), &prng->h);
 }
 
-int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
-			  const uint8_t *personalization,
-			  uint32_t plen)
+int tc_hmac_prng_init(TCHmacPrng_t prng,
+		      const uint8_t *personalization,
+		      unsigned int plen)
 {
+
 	/* input sanity check: */
 	if (prng == (TCHmacPrng_t) 0 ||
 	    personalization == (uint8_t *) 0 ||
@@ -134,12 +135,13 @@ int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
-			    const uint8_t *seed,
-			    uint32_t seedlen,
-			    const uint8_t *additional_input,
-			    uint32_t additionallen)
+int tc_hmac_prng_reseed(TCHmacPrng_t prng,
+			const uint8_t *seed,
+			unsigned int seedlen,
+			const uint8_t *additional_input,
+			unsigned int additionallen)
 {
+
 	/* input sanity check: */
 	if (prng == (TCHmacPrng_t) 0 ||
 	    seed == (const uint8_t *) 0 ||
@@ -172,9 +174,9 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng)
+int tc_hmac_prng_generate(uint8_t *out, unsigned int outlen, TCHmacPrng_t prng)
 {
-	uint32_t bufferlen;
+	unsigned int bufferlen;
 
 	/* input sanity check: */
 	if (out == (uint8_t *) 0 ||

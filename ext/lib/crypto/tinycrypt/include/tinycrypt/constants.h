@@ -1,7 +1,7 @@
 /* constants.h - TinyCrypt interface to constants */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -43,6 +43,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
@@ -56,4 +58,4 @@ extern "C" {
 }
 #endif
 
-#endif
+#endif /* __TC_CONSTANTS_H__ */

@@ -1,7 +1,7 @@
 /* ccm_mode.h - TinyCrypt interface to a CCM mode implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -91,7 +91,7 @@ extern "C" {
 typedef struct tc_ccm_mode_struct {
 	TCAesKeySched_t sched; /* AES key schedule */
 	uint8_t *nonce; /* nonce required by CCM */
-	uint32_t mlen; /* mac length in bytes (parameter t in SP-800 38C) */
+	unsigned int mlen; /* mac length in bytes (parameter t in SP-800 38C) */
 } *TCCcmMode_t;
 
 /**
@@ -108,8 +108,8 @@ typedef struct tc_ccm_mode_struct {
  * @param nlen -- nonce length in bytes
  * @param mlen -- mac length in bytes (parameter t in SP-800 38C)
  */
-int32_t tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
-			   uint32_t nlen, uint32_t mlen);
+int tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
+		  unsigned int nlen, unsigned int mlen);
 
 /**
  * @brief CCM tag generation and encryption procedure
@@ -120,14 +120,18 @@ int32_t tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
  *                ((plen > 0) and (payload == NULL)) or
  *                ((alen > 0) and (associated_data == NULL)) or
  *                (alen >= TC_CCM_AAD_MAX_BYTES) or
- *                (plen >= TC_CCM_PAYLOAD_MAX_BYTES)
+ *                (plen >= TC_CCM_PAYLOAD_MAX_BYTES) or
+ *                (olen < plen + maclength)
  *
  * @param out OUT -- encrypted data
+ * @param olen IN -- output length in bytes
  * @param associated_data IN -- associated data
  * @param alen IN -- associated data length in bytes
  * @param payload IN -- payload
  * @param plen IN -- payload length in bytes
  * @param c IN -- CCM state
+ *
+ * @note: out buffer should be at least (plen + c->mlen) bytes long.
  *
  * @note: The sequence b for encryption is formatted as follows:
  *        b = [FLAGS | nonce | counter ], where:
@@ -149,9 +153,10 @@ int32_t tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
  *          6: Adata (0 if alen == 0, and 1 otherwise)
  *          7: always 0
  */
-int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_data,
-			   uint32_t alen, const uint8_t *payload,
-			   uint32_t plen, TCCcmMode_t c);
+int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
+			   	 const uint8_t *associated_data,
+			   	 unsigned int alen, const uint8_t *payload,
+				 unsigned int plen, TCCcmMode_t c);
 
 /**
  * @brief CCM decryption and tag verification procedure
@@ -162,7 +167,8 @@ int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_dat
  *                ((plen > 0) and (payload == NULL)) or
  *                ((alen > 0) and (associated_data == NULL)) or
  *                (alen >= TC_CCM_AAD_MAX_BYTES) or
- *                (plen >= TC_CCM_PAYLOAD_MAX_BYTES)
+ *                (plen >= TC_CCM_PAYLOAD_MAX_BYTES) or
+ *                (olen < plen - c->mlen)
  *
  * @param out OUT -- decrypted data
  * @param associated_data IN -- associated data
@@ -170,6 +176,8 @@ int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_dat
  * @param payload IN -- payload
  * @param plen IN -- payload length in bytes
  * @param c IN -- CCM state
+ *
+ * @note: out buffer should be at least (plen - c->mlen) bytes long.
  *
  * @note: The sequence b for encryption is formatted as follows:
  *        b = [FLAGS | nonce | counter ], where:
@@ -191,11 +199,13 @@ int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_dat
  *          6: Adata (0 if alen == 0, and 1 otherwise)
  *          7: always 0
  */
-int32_t tc_ccm_decryption_verification(uint8_t *out, const uint8_t *associated_data,
-			   uint32_t alen, const uint8_t *payload, uint32_t plen,
-			   TCCcmMode_t c);
+int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
+				   const uint8_t *associated_data,
+				   unsigned int alen, const uint8_t *payload, unsigned int plen,
+				   TCCcmMode_t c);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_CCM_MODE_H__ */

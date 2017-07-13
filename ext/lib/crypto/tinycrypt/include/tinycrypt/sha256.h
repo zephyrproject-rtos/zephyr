@@ -1,7 +1,7 @@
 /* sha256.h - TinyCrypt interface to a SHA-256 implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -69,7 +69,7 @@ extern "C" {
 #define TC_SHA256_STATE_BLOCKS (TC_SHA256_DIGEST_SIZE/4)
 
 struct tc_sha256_state_struct {
-	uint32_t iv[TC_SHA256_STATE_BLOCKS];
+	unsigned int iv[TC_SHA256_STATE_BLOCKS];
 	uint64_t bits_hashed;
 	uint8_t leftover[TC_SHA256_BLOCK_SIZE];
 	size_t leftover_offset;
@@ -84,7 +84,7 @@ typedef struct tc_sha256_state_struct *TCSha256State_t;
  *          returns TC_CRYPTO_FAIL (0) if s == NULL
  *  @param s Sha256 state struct
  */
-int32_t tc_sha256_init(TCSha256State_t s);
+int tc_sha256_init(TCSha256State_t s);
 
 /**
  *  @brief SHA256 update procedure
@@ -102,9 +102,7 @@ int32_t tc_sha256_init(TCSha256State_t s);
  *  @param data message to hash
  *  @param datalen length of message to hash
  */
-int32_t tc_sha256_update(TCSha256State_t s,
-			 const uint8_t *data,
-			 size_t datalen);
+int tc_sha256_update (TCSha256State_t s, const uint8_t *data, size_t datalen);
 
 /**
  *  @brief SHA256 final procedure
@@ -120,12 +118,12 @@ int32_t tc_sha256_update(TCSha256State_t s,
  *           If your application intends to have sensitive data in this
  *           buffer, remind to erase it after the data has been processed
  *  @param digest unsigned eight bit integer
- *  @param s Sha256 state struct
+ *  @param Sha256 state struct
  */
-int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s);
+int tc_sha256_final(uint8_t *digest, TCSha256State_t s);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_SHA256_H__ */
