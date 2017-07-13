@@ -52,7 +52,7 @@
 /* Max SPI buffer length for transceive operations.
  *
  * Buffer size needs to be at least the size of the larger RX/TX buffer
- * required by the SPI slave, as spi_transceive requires both RX/TX
+ * required by the SPI slave, as the legacy spi_transceive requires both RX/TX
  * to be the same length. Size also needs to be compatible with the
  * slave device used (e.g. nRF5X max buffer length for SPIS is 255).
  */
@@ -61,7 +61,6 @@
 static u8_t rxmsg[SPI_MAX_MSG_LEN];
 static u8_t txmsg[SPI_MAX_MSG_LEN];
 
-static struct device		*spi_dev;
 #if defined(CONFIG_BT_SPI_BLUENRG)
 static struct device		*cs_dev;
 #endif /* CONFIG_BT_SPI_BLUENRG */
@@ -76,11 +75,6 @@ static K_SEM_DEFINE(sem_busy, 1, 1);
 
 static BT_STACK_NOINIT(rx_stack, 448);
 static struct k_thread rx_thread_data;
-
-static struct spi_config spi_conf = {
-	.config = SPI_WORD(8),
-	.max_sys_freq = CONFIG_BT_SPI_MAX_CLK_FREQ,
-};
 
 #if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include <misc/printk.h>
@@ -104,6 +98,35 @@ static inline void spi_dump_message(const u8_t *pre, u8_t *buf,
 #else
 static inline
 void spi_dump_message(const u8_t *pre, u8_t *buf, u8_t size) {}
+#endif
+
+/*
+ * SPI driver shim.
+ *
+ * This can be removed and this driver further improved when the
+ * legacy SPI API is gone. (For example, the chip select handling done
+ * under CONFIG_BT_SPI_BLUENRG could be done with a struct
+ * spi_cs_control instead).
+ */
+static struct device	*spi_dev;
+#if defined(CONFIG_SPI_LEGACY_API)
+static struct spi_config spi_conf =	    {
+	.config       = SPI_WORD(8),
+	.max_sys_freq = CONFIG_BT_SPI_MAX_CLK_FREQ,
+};
+
+static inline int bt_spi_dev_configure(void)
+{
+	return spi_configure(spi_dev, &spi_conf);
+}
+
+static inline int bt_spi_transceive(const void *tx, u32_t tx_len,
+				    void *rx, u32_t rx_len)
+{
+	return spi_transceive(spi_dev, tx, tx_len, rx, rx_len);
+}
+#else
+/* TODO add support for the new SPI API */
 #endif
 
 static inline u16_t bt_spi_get_cmd(u8_t *txmsg)
@@ -153,14 +176,13 @@ static void bt_spi_rx_thread(void)
 			gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
 			gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
 #endif /* CONFIG_BT_SPI_BLUENRG */
-			spi_transceive(spi_dev,
-				       header_master, 5, header_slave, 5);
+			bt_spi_transceive(header_master, 5, header_slave, 5);
 		} while (header_slave[STATUS_HEADER_TOREAD] == 0 ||
 			 header_slave[STATUS_HEADER_TOREAD] == 0xFF);
 
 		size = header_slave[STATUS_HEADER_TOREAD];
 		do {
-			spi_transceive(spi_dev, &txmsg, size, &rxmsg, size);
+			bt_spi_transceive(&txmsg, size, &rxmsg, size);
 		} while (rxmsg[0] == 0);
 
 		gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
@@ -252,7 +274,7 @@ static int bt_spi_send(struct net_buf *buf)
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
 		gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
 #endif /* CONFIG_BT_SPI_BLUENRG */
-		spi_transceive(spi_dev, header, 5, rxmsg, 5);
+		bt_spi_transceive(header, 5, rxmsg, 5);
 
 		/*
 		 * RX Header (rxmsg) must contain a sanity check Byte and size
@@ -264,7 +286,7 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Transmit the message */
 	do {
-		spi_transceive(spi_dev, buf->data, buf->len, rxmsg, buf->len);
+		bt_spi_transceive(buf->data, buf->len, rxmsg, buf->len);
 	} while (rxmsg[0] == 0);
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
@@ -300,7 +322,7 @@ static int bt_spi_open(void)
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(rst_dev, GPIO_RESET_PIN, 0);
 
-	spi_configure(spi_dev, &spi_conf);
+	bt_spi_dev_configure();
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
 	/* Configure the CS (Chip Select) pin */
