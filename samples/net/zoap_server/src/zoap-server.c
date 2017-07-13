@@ -656,7 +656,7 @@ static int large_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	r = zoap_next_block(&ctx);
+	r = zoap_next_block(&response, &ctx);
 	if (!r) {
 		/* Will return 0 when it's the last block. */
 		memset(&ctx, 0, sizeof(ctx));

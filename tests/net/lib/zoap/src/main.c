@@ -997,7 +997,7 @@ static int test_block_size(void)
 	net_pkt_unref(pkt);
 
 	/* Let's try the second packet */
-	zoap_next_block(&req_ctx);
+	zoap_next_block(&req, &req_ctx);
 
 	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
