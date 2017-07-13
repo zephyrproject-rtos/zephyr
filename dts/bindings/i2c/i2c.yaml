@@ -30,4 +30,9 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for SCL, SDA
+      generation: define
 ...
