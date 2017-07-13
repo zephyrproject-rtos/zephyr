@@ -1270,9 +1270,17 @@ int zoap_update_from_block(const struct zoap_packet *zpkt,
 	return update_descriptive_block(ctx, block2, size2);
 }
 
-size_t zoap_next_block(struct zoap_block_context *ctx)
+size_t zoap_next_block(const struct zoap_packet *zpkt,
+		       struct zoap_block_context *ctx)
 {
-	if (ctx->current >= ctx->total_size) {
+	int block;
+	if (is_request(zpkt)) {
+		block = get_block_option(zpkt, ZOAP_OPTION_BLOCK1);
+	} else {
+		block = get_block_option(zpkt, ZOAP_OPTION_BLOCK2);
+	}
+
+	if (!GET_MORE(block)) {
 		return 0;
 	}
 

@@ -687,12 +687,14 @@ int zoap_update_from_block(const struct zoap_packet *zpkt,
  * indicates the correct offset in the body of data being
  * transferred.
  *
+ * @param zpkt Packet in which to look for block-wise transfers options
  * @param ctx Block context to be updated
  *
  * @return The offset in the block-wise transfer, 0 if the transfer
  * has finished.
  */
-size_t zoap_next_block(struct zoap_block_context *ctx);
+size_t zoap_next_block(const struct zoap_packet *zpkt,
+		       struct zoap_block_context *ctx);
 
 /**
  * @brief Returns the version present in a CoAP packet.
