@@ -418,7 +418,7 @@ int spi_dw_init(struct device *dev)
 
 	SYS_LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
-	spi_context_release(&spi->ctx, 0);
+	spi_context_unlock_unconditionally(&spi->ctx);
 
 	return 0;
 }
