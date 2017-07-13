@@ -1,7 +1,7 @@
 /* aes_decrypt.c - TinyCrypt implementation of AES decryption procedure */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -34,8 +34,6 @@
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 
-#define ZERO_BYTE 0x00
-
 static const uint8_t inv_sbox[256] = {
 	0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e,
 	0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87,
@@ -61,7 +59,7 @@ static const uint8_t inv_sbox[256] = {
 	0x55, 0x21, 0x0c, 0x7d
 };
 
-int32_t tc_aes128_set_decrypt_key(TCAesKeySched_t s, const uint8_t *k)
+int tc_aes128_set_decrypt_key(TCAesKeySched_t s, const uint8_t *k)
 {
 	return tc_aes128_set_encrypt_key(s, k);
 }
@@ -91,7 +89,7 @@ static inline void inv_mix_columns(uint8_t *s)
 	(void)_copy(s, sizeof(t), t, sizeof(t));
 }
 
-static inline void add_round_key(uint8_t *s, const uint32_t *k)
+static inline void add_round_key(uint8_t *s, const unsigned int *k)
 {
 	s[0] ^= (uint8_t)(k[0] >> 24); s[1] ^= (uint8_t)(k[0] >> 16);
 	s[2] ^= (uint8_t)(k[0] >> 8); s[3] ^= (uint8_t)(k[0]);
@@ -105,7 +103,7 @@ static inline void add_round_key(uint8_t *s, const uint32_t *k)
 
 static inline void inv_sub_bytes(uint8_t *s)
 {
-	uint32_t i;
+	unsigned int i;
 
 	for (i = 0; i < (Nb*Nk); ++i) {
 		s[i] = inv_sbox[s[i]];
@@ -128,10 +126,10 @@ static inline void inv_shift_rows(uint8_t *s)
 	(void)_copy(s, sizeof(t), t, sizeof(t));
 }
 
-int32_t tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
+int tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 {
 	uint8_t state[Nk*Nb];
-	uint32_t i;
+	unsigned int i;
 
 	if (out == (uint8_t *) 0) {
 		return TC_CRYPTO_FAIL;
@@ -145,7 +143,7 @@ int32_t tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 
 	add_round_key(state, s->words + Nb*Nr);
 
-	for (i = Nr-1; i > 0; --i) {
+	for (i = Nr - 1; i > 0; --i) {
 		inv_shift_rows(state);
 		inv_sub_bytes(state);
 		add_round_key(state, s->words + Nb*i);
@@ -157,8 +155,10 @@ int32_t tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 	add_round_key(state, s->words);
 
 	(void)_copy(out, sizeof(state), state, sizeof(state));
-	/*zeroing out one byte state buffer */
-	_set(state, ZERO_BYTE, sizeof(state));
+
+	/*zeroing out the state buffer */
+	_set(state, TC_ZERO_BYTE, sizeof(state));
+
 
 	return TC_CRYPTO_SUCCESS;
 }

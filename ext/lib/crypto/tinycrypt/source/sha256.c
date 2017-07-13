@@ -1,7 +1,7 @@
 /* sha256.c - TinyCrypt SHA-256 crypto hash algorithm implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -34,9 +34,9 @@
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 
-static void compress(uint32_t *iv, const uint8_t *data);
+static void compress(unsigned int *iv, const uint8_t *data);
 
-int32_t tc_sha256_init(TCSha256State_t s)
+int tc_sha256_init(TCSha256State_t s)
 {
 	/* input sanity check: */
 	if (s == (TCSha256State_t) 0) {
@@ -62,10 +62,11 @@ int32_t tc_sha256_init(TCSha256State_t s)
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_sha256_update(TCSha256State_t s, const uint8_t *data, size_t datalen)
+int tc_sha256_update(TCSha256State_t s, const uint8_t *data, size_t datalen)
 {
 	/* input sanity check: */
 	if (s == (TCSha256State_t) 0 ||
+	    s->iv == (unsigned int *) 0 ||
 	    data == (void *) 0) {
 		return TC_CRYPTO_FAIL;
 	} else if (datalen == 0) {
@@ -84,13 +85,14 @@ int32_t tc_sha256_update(TCSha256State_t s, const uint8_t *data, size_t datalen)
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s)
+int tc_sha256_final(uint8_t *digest, TCSha256State_t s)
 {
-	uint32_t i;
+	unsigned int i;
 
 	/* input sanity check: */
 	if (digest == (uint8_t *) 0 ||
-	    s == (TCSha256State_t) 0) {
+	    s == (TCSha256State_t) 0 ||
+	    s->iv == (unsigned int *) 0) {
 		return TC_CRYPTO_FAIL;
 	}
 
@@ -122,7 +124,7 @@ int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s)
 
 	/* copy the iv out to digest */
 	for (i = 0; i < TC_SHA256_STATE_BLOCKS; ++i) {
-		uint32_t t = *((uint32_t *) &s->iv[i]);
+		unsigned int t = *((unsigned int *) &s->iv[i]);
 		*digest++ = (uint8_t)(t >> 24);
 		*digest++ = (uint8_t)(t >> 16);
 		*digest++ = (uint8_t)(t >> 8);
@@ -140,7 +142,7 @@ int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s)
  * These values correspond to the first 32 bits of the fractional parts of the
  * cube roots of the first 64 primes between 2 and 311.
  */
-static const uint32_t k256[64] = {
+static const unsigned int k256[64] = {
 	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
 	0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
 	0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -154,7 +156,7 @@ static const uint32_t k256[64] = {
 	0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-static inline uint32_t ROTR(uint32_t a, uint32_t n)
+static inline unsigned int ROTR(unsigned int a, unsigned int n)
 {
 	return (((a) >> n) | ((a) << (32 - n)));
 }
@@ -167,25 +169,25 @@ static inline uint32_t ROTR(uint32_t a, uint32_t n)
 #define Ch(a, b, c)(((a) & (b)) ^ ((~(a)) & (c)))
 #define Maj(a, b, c)(((a) & (b)) ^ ((a) & (c)) ^ ((b) & (c)))
 
-static inline uint32_t BigEndian(const uint8_t **c)
+static inline unsigned int BigEndian(const uint8_t **c)
 {
-	uint32_t n = 0;
+	unsigned int n = 0;
 
-	n = (((uint32_t)(*((*c)++))) << 24);
-	n |= ((uint32_t)(*((*c)++)) << 16);
-	n |= ((uint32_t)(*((*c)++)) << 8);
-	n |= ((uint32_t)(*((*c)++)));
+	n = (((unsigned int)(*((*c)++))) << 24);
+	n |= ((unsigned int)(*((*c)++)) << 16);
+	n |= ((unsigned int)(*((*c)++)) << 8);
+	n |= ((unsigned int)(*((*c)++)));
 	return n;
 }
 
-static void compress(uint32_t *iv, const uint8_t *data)
+static void compress(unsigned int *iv, const uint8_t *data)
 {
-	uint32_t a, b, c, d, e, f, g, h;
-	uint32_t s0, s1;
-	uint32_t t1, t2;
-	uint32_t work_space[16];
-	uint32_t n;
-	uint32_t i;
+	unsigned int a, b, c, d, e, f, g, h;
+	unsigned int s0, s1;
+	unsigned int t1, t2;
+	unsigned int work_space[16];
+	unsigned int n;
+	unsigned int i;
 
 	a = iv[0]; b = iv[1]; c = iv[2]; d = iv[3];
 	e = iv[4]; f = iv[5]; g = iv[6]; h = iv[7];

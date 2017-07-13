@@ -107,7 +107,6 @@ INPUT                  = \
 			../include/arch/arm/cortex_m \
                         ../include/arch/nios2/ \
                         ../lib/libc/minimal/include/ \
-                        ../ext/lib/crypto/tinycrypt/include/ \
                         ../include/net/zoap.h \
                         ../include/net/dns_resolve.h \
                         ../tests/ztest/include/

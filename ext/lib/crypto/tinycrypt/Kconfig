@@ -53,19 +53,27 @@ config TINYCRYPT_ECC_DH
 	bool
 	prompt "ECC_DH anonymous key agreement protocol"
 	depends on TINYCRYPT
+	select RANDOM_GENERATOR
 	default n
 	help
 	This option enables support for the Elliptic curve
 	Diffie-Hellman anonymous key agreement protocol.
 
+	Enabling ECC requires a cryptographically secure random number
+	generator.
+
 config TINYCRYPT_ECC_DSA
 	bool
 	prompt "ECC_DSA digital signature algorithm"
 	depends on TINYCRYPT
+	select RANDOM_GENERATOR
 	default n
 	help
 	This option enables support for the Elliptic Curve Digital
 	Signature Algorithm (ECDSA).
+
+	Enabling ECC requires a cryptographically secure random number
+	generator.
 
 config TINYCRYPT_AES
 	bool

@@ -1,10 +1,8 @@
 /* ecc_dh.h - TinyCrypt interface to EC-DH implementation */
 
 /*
- * =============================================================================
- * Copyright (c) 2013, Kenneth MacKay
+ * Copyright (c) 2014, Kenneth MacKay
  * All rights reserved.
- * https://github.com/kmackay/micro-ecc
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,9 +25,9 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * =============================================================================
- * Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ */
+
+/* Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -66,7 +64,6 @@
  *            uses curve NIST p-256.
  *
  *  Security: The curve NIST p-256 provides approximately 128 bits of security.
- *
  */
 
 #ifndef __TC_ECC_DH_H__
@@ -80,63 +77,55 @@ extern "C" {
 
 /**
  * @brief Create a public/private key pair.
- * @return returns TC_CRYPTO_SUCCESS (1) if key pair was generated successfully
- *         returns TC_CRYPTO_FAIL (0) if:
- *                the private key is 0
+ * @return returns TC_CRYPTO_SUCCESS (1) if the key pair was generated successfully
+ *         returns TC_CRYPTO_FAIL (0) if error while generating key pair
  *
- * @param p_publicKey OUT -- the point representing the public key.
- * @param p_privateKey OUT -- the private key.
- * @param p_random IN -- The random number to use to generate the key pair.
- *
- * @note You must use a new non-predictable random number to generate each
- * new key pair.
- * @note p_random must have NUM_ECC_DIGITS*2 bits of entropy to eliminate
- * bias in keys.
+ * @param p_public_key OUT -- Will be filled in with the public key. Must be at
+ * least 2 * the curve size (in bytes) long. For curve secp256r1, p_public_key
+ * must be 64 bytes long.
+ * @param p_private_key OUT -- Will be filled in with the private key. Must be as
+ * long as the curve order (for secp256r1, p_private_key must be 32 bytes long).
  *
  * @note side-channel countermeasure: algorithm strengthened against timing
  * attack.
+ * @warning A cryptographically-secure PRNG function must be set (using
+ * uECC_set_rng()) before calling uECC_make_key().
  */
-int32_t ecc_make_key(EccPoint *p_publicKey,
-		     uint32_t p_privateKey[NUM_ECC_DIGITS],
-		     uint32_t p_random[2 * NUM_ECC_DIGITS]);
+int uECC_make_key(uint8_t *p_public_key, uint8_t *p_private_key, uECC_Curve curve);
+
+#ifdef ENABLE_TESTS
 
 /**
- * @brief Determine whether or not a given point is on the chosen elliptic curve
- * (ie, is a valid public key).
- * @return returns 0 if the given point is valid
- *         returns -1 if: the point is zero
- *         returns -2 if:  curve_p - p_publicKey->x != 1 or
- *                            curve_p - p_publicKey->y != 1
- *         returns -3 if: y^2 != x^3 + ax + b
- *         returns -4 if: public key is the group generator
+ * @brief Create a public/private key pair given a specific d.
  *
- * @param p_publicKey IN -- The point to be checked.
+ * @note THIS FUNCTION SHOULD BE CALLED ONLY FOR TEST PURPOSES. Refer to
+ * uECC_make_key() function for real applications.
  */
-int32_t ecc_valid_public_key(EccPoint *p_publicKey);
+int uECC_make_key_with_d(uint8_t *p_public_key, uint8_t *p_private_key,
+    			 unsigned int *d, uECC_Curve curve);
+#endif
 
 /**
  * @brief Compute a shared secret given your secret key and someone else's
  * public key.
- * @return returns TC_CRYPTO_SUCCESS (1) if the secret was computed successfully
+ * @return returns TC_CRYPTO_SUCCESS (1) if the shared secret was computed successfully
  *         returns TC_CRYPTO_FAIL (0) otherwise
  *
- * @param p_secret OUT -- The shared secret value.
- * @param p_publicKey IN -- The public key of the remote party.
- * @param p_privateKey IN -- Your private key.
+ * @param p_secret OUT -- Will be filled in with the shared secret value. Must be
+ * the same size as the curve size (for curve secp256r1, secret must be 32 bytes
+ * long.
+ * @param p_public_key IN -- The public key of the remote party.
+ * @param p_private_key IN -- Your private key.
  *
- * @note Optionally, you can provide a random multiplier for resistance to DPA
- * attacks. The random multiplier should probably be different for each
- * invocation of ecdh_shared_secret().
- *
- * @warning It is recommended to use the output of ecdh_shared_secret() as the
+ * @warning It is recommended to use the output of uECC_shared_secret() as the
  * input of a recommended Key Derivation Function (see NIST SP 800-108) in
- * order to produce a symmetric key.
+ * order to produce a cryptographically secure symmetric key.
  */
-int32_t ecdh_shared_secret(uint32_t p_secret[NUM_ECC_DIGITS], EccPoint *p_publicKey,
-			   uint32_t p_privateKey[NUM_ECC_DIGITS]);
+int uECC_shared_secret(const uint8_t *p_public_key, const uint8_t *p_private_key,
+		       uint8_t *p_secret, uECC_Curve curve);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_ECC_DH_H__ */
