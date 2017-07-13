@@ -8,7 +8,33 @@ Overview
 
 Zephyr applications use the 96b_carbon configuration to run on the 96Boards
 Carbon hardware. It is based on the STMicroelectronics STM32F401RET Cortex-M4
-CPU and also contains a nRF51832 chip connected over SPI for BLE connectivity.
+CPU and also contains a nRF51822 chip connected over SPI for BLE connectivity.
+
+The 96Boards Carbon board is built with two chips: an STMicroelectronics
+STM32F401RET Cortex-M4 CPU and an nRF51822 chip connected to
+the Cortex-M4 CPU over SPI for Bluetooth LE connectivity.  Even though
+both chips exist on the same physical board, they must be programmed
+separately:
+
+- The ``96b_carbon`` configuration is used when developing programs for
+  the main chip on the board, the STM32F401RET. Users will likely want to
+  write applications targeting this chip, using the ``96b_carbon``
+  configuration, since it is connected to all of the breakout
+  I/O headers.
+
+- The ``96b_carbon_nrf51`` configuration should be used for programming
+  the secondary nRF51822 chip. Most users will likely not develop
+  applications for this chip, since Zephyr already provides a
+  sample application that can be flashed onto the nRF51822
+  to provide Bluetooth functionality to applications on the main
+  STM32F401RET chip.
+
+For instructions on how to set up the nRF51822 to develop Bluetooth
+applications, see :ref:`96b_carbon_nrf51_bluetooth`.
+
+After you have flashed your nRF51, you can perform basic validation
+of this Bluetooth setup using the instructions
+:ref:`below <96b_carbon_verify_bluetooth>`.
 
 .. figure:: img/96b-carbon-front.png
      :width: 487px
@@ -40,7 +66,7 @@ Hardware
 - SDIO
 - USB 2.0 OTG FS
 - DMA Controller
-- Bluetooth LE over SPI, provided by nRF51832
+- Bluetooth LE over SPI, provided by nRF51822
 
 More information about STM32F401RE can be found here:
        - `STM32F401RE on www.st.com`_
@@ -78,8 +104,8 @@ The default configuration can be found in the defconfig file:
 
         ``boards/arm/96b_carbon/96b_carbon_defconfig``
 
-Pin Mapping
-===========
+Connections and IOs
+===================
 
 LED
 ---
@@ -168,20 +194,20 @@ Low Speed Header
 | 30     | NC          | NC                   |
 +--------+-------------+----------------------+
 
-System Clock
-============
+External Clock Sources
+----------------------
 
 STM32F4 has two external oscillators. The frequency of the slow clock is
 32.768 kHz. The frequency of the main clock is 16 MHz.
 
 Serial Port
-===========
+-----------
 
 96Boards Carbon board has up to 4 U(S)ARTs. The Zephyr console output is
 assigned to USART1. Default settings are 115200 8N1.
 
 I2C
-===
+---
 
 96Boards Carbon board has up to 2 I2Cs. The default I2C mapping for Zephyr is:
 
@@ -190,8 +216,8 @@ I2C
 - I2C2_SCL : PB10
 - I2C2_SDA : PB3
 
-Flashing Zephyr onto 96Boards Carbon
-************************************
+Programming and Debugging
+*************************
 
 There are 2 main entry points for flashing STM32F4X SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional
@@ -201,8 +227,11 @@ supports flashing via USB (DFU), UART, I2C and SPI. You can read more about
 how to enable and use the ROM bootloader by checking the application
 note `AN2606`_, page 109.
 
+Flashing
+========
+
 Installing dfu-util
-===================
+-------------------
 
 It is recommended to use at least v0.8 of `dfu-util`_. The package available in
 debian/ubuntu can be quite old, so you might have to build dfu-util from source.
@@ -280,6 +309,50 @@ terminal:
 .. code-block:: console
 
    Hello World! arm
+
+.. _96b_carbon_verify_bluetooth:
+
+Verifying Bluetooth Functionality
+---------------------------------
+
+This section contains instructions for verifying basic Bluetooth
+functionality on the board. For help on Zephyr applications
+in general, see :ref:`build_an_application`.
+
+1. Flash the nRF51 with the hci_spi sample application as described in
+   :ref:`96b_carbon_nrf51_bluetooth`.
+
+2. Install the dfu-util flashing app, as described above.
+
+3. Build the ``samples/bluetooth/ipsp`` application for 96b_carbon::
+
+     $ cd <zephyr_root_path>
+     $ source zephyr-env.sh
+     $ cd $ZEPHYR_BASE/samples/bluetooth/ipsp/
+     $ make BOARD=96b_carbon
+
+4. Flash the compiled application using dfu-util. See the instructions
+   above for how to put your board into DFU mode if you haven't done
+   this before::
+
+     $ make BOARD=96b_carbon flash
+
+5. Refer to the instructions in :ref:`bluetooth-ipsp-sample` for how
+   to verify functionality.
+
+Congratulations! Your 96Boards Carbon now has Bluetooth
+connectivity. Refer to :ref:`bluetooth` for additional information on
+further Bluetooth application development.
+
+Debugging
+=========
+
+The 96b_carbon can be debugged by installing a 100 mil (0.1 inch) header
+into the header at the bottom right hand side of the board, and
+attaching an SWD debugger to the 3V3 (3.3V), GND, CLK, DIO, and RST
+pins on that header. Then apply power to the 96Boards Carbon via one
+of its USB connectors. You can now attach your debugger to the
+STM32F401RET using an SWD scan.
 
 .. _dfu-util:
    http://dfu-util.sourceforge.net/build.html
