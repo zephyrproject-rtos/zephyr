@@ -247,7 +247,9 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
 
 def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
 
-    props = list(reduced[node_address]['props']['reg'])
+    reg = reduced[node_address]['props']['reg']
+    if type(reg) is not list: reg = [ reg ]
+    props = list(reg)
 
     address_cells = reduced['/']['props'].get('#address-cells')
     size_cells = reduced['/']['props'].get('#size-cells')
@@ -285,15 +287,21 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
 
         l_addr_fqn = '_'.join(l_base + l_addr + l_idx)
         l_size_fqn = '_'.join(l_base + l_size + l_idx)
-        prop_def[l_addr_fqn] = hex(addr)
-        prop_def[l_size_fqn] = int(size / div)
+        if address_cells:
+            prop_def[l_addr_fqn] = hex(addr)
+        if size_cells:
+            prop_def[l_size_fqn] = int(size / div)
         if len(name):
-            prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
-            prop_alias['_'.join(l_base + name + l_size)] = l_size_fqn
+            if address_cells:
+                prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
+            if size_cells:
+                prop_alias['_'.join(l_base + name + l_size)] = l_size_fqn
 
         if index == 0:
-            prop_alias['_'.join(l_base + l_addr)] = l_addr_fqn
-            prop_alias['_'.join(l_base + l_size)] = l_size_fqn
+            if address_cells:
+                prop_alias['_'.join(l_base + l_addr)] = l_addr_fqn
+            if size_cells:
+                prop_alias['_'.join(l_base + l_size)] = l_size_fqn
 
         insert_defs(node_address, defs, prop_def, prop_alias)
 
