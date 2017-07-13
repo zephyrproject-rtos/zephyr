@@ -1313,9 +1313,12 @@ extern u32_t k_uptime_delta_32(s64_t *reftime);
  */
 
 struct k_queue {
-	_wait_q_t wait_q;
 	sys_slist_t data_q;
-	_POLL_EVENT;
+	union {
+		_wait_q_t wait_q;
+
+		_POLL_EVENT;
+	};
 
 	_OBJECT_TRACING_NEXT_PTR(k_queue);
 };

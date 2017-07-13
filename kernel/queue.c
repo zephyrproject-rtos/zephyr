@@ -57,12 +57,14 @@ void k_queue_init(struct k_queue *queue)
 	SYS_TRACING_OBJ_INIT(k_queue, queue);
 }
 
+#if !defined(CONFIG_POLL)
 static void prepare_thread_to_run(struct k_thread *thread, void *data)
 {
 	_abort_thread_timeout(thread);
 	_ready_thread(thread);
 	_set_thread_return_value_with_data(thread, 0, data);
 }
+#endif /* CONFIG_POLL */
 
 /* returns 1 if a reschedule must take place, 0 otherwise */
 static inline int handle_poll_event(struct k_queue *queue)
@@ -79,10 +81,9 @@ static inline int handle_poll_event(struct k_queue *queue)
 
 void k_queue_cancel_wait(struct k_queue *queue)
 {
+	unsigned int key = irq_lock();
+#if !defined(CONFIG_POLL)
 	struct k_thread *first_pending_thread;
-	unsigned int key;
-
-	key = irq_lock();
 
 	first_pending_thread = _unpend_first_thread(&queue->wait_q);
 
@@ -92,22 +93,22 @@ void k_queue_cancel_wait(struct k_queue *queue)
 			(void)_Swap(key);
 			return;
 		}
-	} else {
-		if (handle_poll_event(queue)) {
-			(void)_Swap(key);
-			return;
-		}
 	}
+#else
+	if (handle_poll_event(queue)) {
+		(void)_Swap(key);
+		return;
+	}
+#endif /* !CONFIG_POLL */
 
 	irq_unlock(key);
 }
 
 void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 {
+	unsigned int key = irq_lock();
+#if !defined(CONFIG_POLL)
 	struct k_thread *first_pending_thread;
-	unsigned int key;
-
-	key = irq_lock();
 
 	first_pending_thread = _unpend_first_thread(&queue->wait_q);
 
@@ -117,13 +118,19 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 			(void)_Swap(key);
 			return;
 		}
-	} else {
-		sys_slist_insert(&queue->data_q, prev, data);
-		if (handle_poll_event(queue)) {
-			(void)_Swap(key);
-			return;
-		}
+		irq_unlock(key);
+		return;
 	}
+#endif /* !CONFIG_POLL */
+
+	sys_slist_insert(&queue->data_q, prev, data);
+
+#if defined(CONFIG_POLL)
+	if (handle_poll_event(queue)) {
+		(void)_Swap(key);
+		return;
+	}
+#endif /* CONFIG_POLL */
 
 	irq_unlock(key);
 }
@@ -142,10 +149,9 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
 	__ASSERT(head && tail, "invalid head or tail");
 
+	unsigned int key = irq_lock();
+#if !defined(CONFIG_POLL)
 	struct k_thread *first_thread, *thread;
-	unsigned int key;
-
-	key = irq_lock();
 
 	first_thread = _peek_first_pending_thread(&queue->wait_q);
 	while (head && ((thread = _unpend_first_thread(&queue->wait_q)))) {
@@ -162,12 +168,14 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 			(void)_Swap(key);
 			return;
 		}
-	} else {
-		if (handle_poll_event(queue)) {
-			(void)_Swap(key);
-			return;
-		}
 	}
+#else
+	sys_slist_append_list(&queue->data_q, head, tail);
+	if (handle_poll_event(queue)) {
+		(void)_Swap(key);
+		return;
+	}
+#endif /* !CONFIG_POLL */
 
 	irq_unlock(key);
 }
@@ -185,6 +193,29 @@ void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	k_queue_append_list(queue, list->head, list->tail);
 	sys_slist_init(list);
 }
+
+#if defined(CONFIG_POLL)
+static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
+{
+	struct k_poll_event event;
+	int err;
+
+	k_poll_event_init(&event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, queue);
+
+	event.state = K_POLL_STATE_NOT_READY;
+
+	err = k_poll(&event, 1, timeout);
+	if (err == -EAGAIN) {
+		return NULL;
+	}
+
+	__ASSERT_NO_MSG(err == 0);
+	__ASSERT_NO_MSG(event.state == K_POLL_STATE_FIFO_DATA_AVAILABLE);
+
+	return sys_slist_get(&queue->data_q);
+}
+#endif /* CONFIG_POLL */
 
 void *k_queue_get(struct k_queue *queue, s32_t timeout)
 {
@@ -204,7 +235,14 @@ void *k_queue_get(struct k_queue *queue, s32_t timeout)
 		return NULL;
 	}
 
+#if defined(CONFIG_POLL)
+	irq_unlock(key);
+
+	return k_queue_poll(queue, timeout);
+
+#else
 	_pend_current_thread(&queue->wait_q, timeout);
 
 	return _Swap(key) ? NULL : _current->base.swap_data;
+#endif /* CONFIG_POLL */
 }
