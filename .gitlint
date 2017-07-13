@@ -2,7 +2,7 @@
 [general]
 ignore=title-trailing-punctuation, T3
 # verbosity should be a value between 1 and 3, the commandline -v flags take precedence over this
-verbosity = 2
+verbosity = 3
 # By default gitlint will ignore merge commits. Set to 'false' to disable.
 ignore-merge-commits=true
 # Enable debug mode (prints more output). Disabled by default
