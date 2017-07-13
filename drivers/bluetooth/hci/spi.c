@@ -125,9 +125,38 @@ static inline int bt_spi_transceive(const void *tx, u32_t tx_len,
 {
 	return spi_transceive(spi_dev, tx, tx_len, rx, rx_len);
 }
-#else
-/* TODO add support for the new SPI API */
-#endif
+#else  /* !defined(CONFIG_SPI_LEGACY_API) */
+static struct spi_config spi_conf = {
+	.frequency = CONFIG_BT_SPI_MAX_CLK_FREQ,
+	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |
+		      SPI_LINES_SINGLE),
+	.vendor    = 0,
+	.slave     = 0,
+	.cs        = NULL,
+};
+static struct spi_buf spi_tx_buf;
+static struct spi_buf spi_rx_buf;
+
+static inline int bt_spi_dev_configure(void)
+{
+	spi_conf.dev = spi_dev;
+	return 0;
+}
+
+static inline int bt_spi_transceive(const void *tx, u32_t tx_len,
+				    void *rx, u32_t rx_len)
+{
+	/*
+	 * It's OK to cast away const here: &spi_tx_buf is treated as
+	 * const by spi_transceive().
+	 */
+	spi_tx_buf.buf = (void *)tx;
+	spi_tx_buf.len = (size_t)tx_len;
+	spi_rx_buf.buf = rx;
+	spi_rx_buf.len = (size_t)rx_len;
+	return spi_transceive(&spi_conf, &spi_tx_buf, 1, &spi_rx_buf, 1);
+}
+#endif	/* CONFIG_SPI_LEGACY_API */
 
 static inline u16_t bt_spi_get_cmd(u8_t *txmsg)
 {
