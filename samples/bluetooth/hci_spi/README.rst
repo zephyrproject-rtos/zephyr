@@ -43,4 +43,6 @@ application is compatible with the HCI SPI master driver provided by
 Zephyr's Bluetooth HCI driver core; see the help associated with the
 BT_SPI configuration option for more information.
 
-Refer to :ref:`bluetooth_setup` for general Bluetooth information.
+Refer to :ref:`bluetooth_setup` for general Bluetooth information, and
+to :ref:`96b_carbon_nrf51_bluetooth` for instructions specific to the
+96Boards Carbon board.
