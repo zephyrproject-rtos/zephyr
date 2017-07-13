@@ -776,9 +776,9 @@ static inline void send_icmp_error(struct net_pkt *pkt)
 
 enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 {
-	struct net_udp_hdr hdr, *udp_hdr;
 	int i, best_match = -1;
 	s16_t best_rank = -1;
+	u16_t src_port, dst_port;
 	u16_t chksum;
 
 #if defined(CONFIG_NET_CONN_CACHE)
@@ -796,22 +796,42 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	 * Because both TCP and UDP header have these in the same
 	 * location, we can check them both using the UDP struct.
 	 */
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
-		return NET_DROP;
-	}
+	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+		struct net_udp_hdr hdr, *udp_hdr;
 
-	if (proto == IPPROTO_TCP) {
-		chksum = net_tcp_get_chksum(pkt, pkt->frags);
-	} else {
+		ARG_UNUSED(hdr);
+
+		udp_hdr = net_udp_get_hdr(pkt, &hdr);
+		if (!udp_hdr) {
+			return NET_DROP;
+		}
+
+		src_port = udp_hdr->src_port;
+		dst_port = udp_hdr->dst_port;
 		chksum = udp_hdr->chksum;
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+		struct net_tcp_hdr hdr, *tcp_hdr;
+
+		ARG_UNUSED(hdr);
+
+		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+		if (!tcp_hdr) {
+			return NET_DROP;
+		}
+
+		src_port = tcp_hdr->src_port;
+		dst_port = tcp_hdr->dst_port;
+		chksum = tcp_hdr->chksum;
+	} else {
+		NET_DBG("No UDP or TCP configured, dropping packet.");
+		return NET_DROP;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_DEBUG_CONN)) {
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "
 			"family %d chksum 0x%04x", net_proto2str(proto), pkt,
-			ntohs(udp_hdr->src_port),
-			ntohs(udp_hdr->dst_port),
+			ntohs(src_port),
+			ntohs(dst_port),
 			net_pkt_family(pkt), ntohs(chksum));
 	}
 
@@ -826,14 +846,14 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 
 		if (net_sin(&conns[i].remote_addr)->sin_port) {
 			if (net_sin(&conns[i].remote_addr)->sin_port !=
-			    udp_hdr->src_port) {
+			    src_port) {
 				continue;
 			}
 		}
 
 		if (net_sin(&conns[i].local_addr)->sin_port) {
 			if (net_sin(&conns[i].local_addr)->sin_port !=
-			    udp_hdr->dst_port) {
+			    dst_port) {
 				continue;
 			}
 		}

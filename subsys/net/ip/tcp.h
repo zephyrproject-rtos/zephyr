@@ -412,6 +412,7 @@ u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
 #define net_tcp_get_chksum(pkt, frag) (0)
 #define net_tcp_set_chksum(pkt, frag) NULL
 #define net_tcp_set_hdr(pkt, frag) NULL
+#define net_tcp_get_hdr(pkt, frag) NULL
 #endif
 
 #if defined(CONFIG_NET_TCP)
