@@ -46,6 +46,8 @@
 
 		i2c1: i2c@40005400 {
 			compatible = "st,stm32-i2c-v1";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x40005400 0x400>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "event", "error";
@@ -55,6 +57,8 @@
 
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v1";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
