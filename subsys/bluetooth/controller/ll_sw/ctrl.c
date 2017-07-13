@@ -8595,10 +8595,19 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 	}
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 	else {
+		u32_t ticks_ref = 0;
+
 		sched_after_mstr_free_slot_get(RADIO_TICKER_USER_ID_APP,
 					       (ticks_slot_offset +
 						_radio.scanner.hdr.ticks_slot),
-					       &ticks_anchor, &us_offset);
+					       &ticks_ref, &us_offset);
+		/* Use the ticks_ref as scanner's anchor if a free time space
+		 * after any master role is available (indicated by a non-zero
+		 * us_offset value).
+		 */
+		if (us_offset) {
+			ticks_anchor = ticks_ref;
+		}
 	}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED */
 
