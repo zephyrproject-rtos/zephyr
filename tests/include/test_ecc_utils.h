@@ -1,7 +1,30 @@
 /*  test_ecc_utils.h - TinyCrypt interface to common functions for ECC tests */
 
+/* Copyright (c) 2014, Kenneth MacKay
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.*/
+
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -35,33 +58,45 @@
 #ifndef __TEST_ECC_UTILS_H__
 #define __TEST_ECC_UTILS_H__
 
-#include <stdlib.h>
-#include <zephyr/types.h>
-#include <tinycrypt/constants.h>
+#define ENABLE_TESTS 1
 
-int keygen_vectors(EccPoint  *point, char **d_vec, char **qx_vec, char **qy_vec,
-		   int tests, int verbose);
+#include <tinycrypt/ecc_dh.h>
+#include <tinycrypt/ecc.h>
+#include <test_utils.h>
 
-int random_start(const char *fn);
-int random_end(void);
-int random_bytes(u32_t *out, size_t len);
+int hex2int(char hex);
 
-void string2host(u32_t *native, const u8_t *bytes, size_t len);
 
-int hex_to_num(char hex);
+/*
+ * Convert hex string to byte string
+ * Return number of bytes written to buf, or 0 on error
+ */
+int hex2bin(uint8_t *buf, const size_t buflen, const char *hex,
+	    const size_t hexlen);
 
-int hex_to_num_str(u8_t *buf, const size_t buflen, const char *hex,
-		   const size_t hexlen);
+/*
+ * Convert hex string to zero-padded nanoECC scalar
+ */
+void string2scalar(unsigned int *scalar, unsigned int num_word32, char *str);
 
-int str_to_scalar(u32_t *scalar, u32_t num_word32, char *str);
 
-void vli_print(u32_t *p_vli, unsigned int p_size);
+void print_ecc_scalar(const char *label, const unsigned int *p_vli,
+		      unsigned int num_word32);
 
-int check_code(const int num, const char *name, const int expected,
+int check_ecc_result(const int num, const char *name,
+		     const unsigned int *expected,
+		     const unsigned int *computed,
+		     const unsigned int num_word32, const bool verbose);
+
+/* Test ecc_make_keys, and also as keygen part of other tests */
+int keygen_vectors(char **d_vec, char **qx_vec, char **qy_vec, int tests, bool verbose);
+
+void vli_print_bytes(uint8_t *vli, unsigned int size);
+
+
+int check_code(const int num, const int expected,
 	       const int computed, const int verbose);
 
-int check_ecc_result(const int num, const char *name, const u32_t *expected,
-		     const u32_t *computed, const u32_t num_word32,
-		     int verbose);
 
-#endif
+#endif /* __TEST_ECC_UTILS_H__ */
+
