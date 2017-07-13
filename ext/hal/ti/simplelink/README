@@ -35,3 +35,7 @@ compiled in the Kbuild file:
 - driverlib/pin.c
 - driverlib/utils.c
 - driverlib/prcm.c
+
+Setting CONFIG_SIMPLELINK_HOST_DRIVER=y builds the SimpleLink Host
+Driver, which communicates over dedicated SPI to the
+network coprocessor.
