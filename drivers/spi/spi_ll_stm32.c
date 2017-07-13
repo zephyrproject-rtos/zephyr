@@ -351,7 +351,7 @@ static int spi_stm32_init(struct device *dev)
 	cfg->irq_config(dev);
 #endif
 
-	spi_context_release(&data->ctx, 0);
+	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
