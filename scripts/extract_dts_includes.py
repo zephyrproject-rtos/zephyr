@@ -23,6 +23,7 @@ def convert_string_to_label(s):
     # Transmute ,- to _
     s = s.replace("-", "_")
     s = s.replace(",", "_")
+    s = s.replace("@", "_")
     return s
 
 
