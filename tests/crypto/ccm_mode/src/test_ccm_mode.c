@@ -90,8 +90,8 @@ u32_t do_test(const u8_t *key,
 		goto exitTest1;
 	}
 
-	result = tc_ccm_generation_encryption(ciphertext, hdr, hlen,
-					      data, dlen, &c);
+	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
+					      hdr, hlen, data, dlen, &c);
 	if (result == 0) {
 		TC_ERROR("ccm_encrypt failed in %s.\n", __func__);
 
@@ -110,8 +110,9 @@ u32_t do_test(const u8_t *key,
 		goto exitTest1;
 	}
 
-	result = tc_ccm_decryption_verification(decrypted, hdr, hlen,
-						ciphertext, dlen + mlen, &c);
+	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
+						hdr, hlen, ciphertext,
+						dlen + mlen, &c);
 	if (result == 0) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
 		show_str("\t\tExpected", data, dlen);
@@ -393,8 +394,8 @@ u32_t test_vector_7(void)
 		goto exitTest1;
 	}
 
-	result = tc_ccm_generation_encryption(ciphertext, hdr, 0,
-					      data, sizeof(data), &c);
+	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
+					      hdr, 0, data, sizeof(data), &c);
 	if (result == 0) {
 		TC_ERROR("ccm_encryption failed in %s.\n", __func__);
 
@@ -402,7 +403,8 @@ u32_t test_vector_7(void)
 		goto exitTest1;
 	}
 
-	result = tc_ccm_decryption_verification(decrypted, hdr, 0, ciphertext,
+	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
+						hdr, 0, ciphertext,
 						sizeof(data) + mlen, &c);
 	if (result == 0) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
@@ -453,8 +455,9 @@ u32_t test_vector_8(void)
 		goto exitTest1;
 	}
 
-	result = tc_ccm_generation_encryption(ciphertext, hdr, sizeof(hdr),
-					      data, sizeof(data), &c);
+	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
+					      hdr, sizeof(hdr), data,
+					      sizeof(data), &c);
 	if (result == 0) {
 		TC_ERROR("ccm_encrypt failed in %s.\n", __func__);
 
@@ -462,7 +465,8 @@ u32_t test_vector_8(void)
 		goto exitTest1;
 	}
 
-	result = tc_ccm_decryption_verification(decrypted, hdr, sizeof(hdr),
+	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
+						hdr, sizeof(hdr),
 						ciphertext, mlen, &c);
 	if (result == 0) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
