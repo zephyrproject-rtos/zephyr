@@ -25,3 +25,6 @@ peripheral driver library functions will be accessible from ROM,
 except for the following modules:
 - driverlib/prcm.c
 - driverlib/utils.c
+
+Setting CONFIG_SIMPLELINK_HOST_DRIVER=y builds the SimpleLink Host
+Driver, which communicates over SPI to the network coprocessor.
