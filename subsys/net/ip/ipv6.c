@@ -3325,7 +3325,9 @@ static int send_ipv6_fragment(struct net_if *iface,
 		pkt->frags = end;
 	}
 
-	end->frags = NULL;
+	if (end) {
+		end->frags = NULL;
+	}
 
 	memcpy(ipv6, pkt, sizeof(struct net_pkt));
 
