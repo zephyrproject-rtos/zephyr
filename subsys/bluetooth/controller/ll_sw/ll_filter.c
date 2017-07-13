@@ -421,7 +421,7 @@ bool ctrl_rl_allowed(u8_t id_addr_type, u8_t *id_addr, u8_t *rl_idx)
 		}
 	}
 
-	return false;
+	return true;
 }
 
 bool ctrl_rl_enabled(void)
