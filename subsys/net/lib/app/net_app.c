@@ -116,10 +116,12 @@ void _net_app_received(struct net_context *net_ctx,
 				ctx->cb.close(ctx, status, ctx->user_data);
 			}
 
+#if defined(CONFIG_NET_TCP)
 			if (ctx->proto == IPPROTO_TCP) {
 				net_context_put(ctx->server.net_ctx);
 				ctx->server.net_ctx = NULL;
 			}
+#endif
 
 			return;
 		}
@@ -420,7 +422,11 @@ struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx,
 #if defined(CONFIG_NET_APP_SERVER)
 	if (ctx->app_type == NET_APP_SERVER) {
 		if (ctx->proto == IPPROTO_TCP) {
+#if defined(CONFIG_NET_TCP)
 			return ctx->server.net_ctx;
+#else
+			return NULL;
+#endif
 		} else if (ctx->proto == IPPROTO_UDP) {
 			if (!dst) {
 				return ctx->default_ctx->ctx;
@@ -673,7 +679,7 @@ int net_app_close(struct net_app_ctx *ctx)
 		ctx->cb.close(ctx, 0, ctx->user_data);
 	}
 
-#if defined(CONFIG_NET_APP_SERVER)
+#if defined(CONFIG_NET_APP_SERVER) && defined(CONFIG_NET_TCP)
 	if (ctx->app_type == NET_APP_SERVER) {
 		ctx->server.net_ctx = NULL;
 	}
