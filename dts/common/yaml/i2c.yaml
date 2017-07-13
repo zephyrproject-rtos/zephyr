@@ -7,6 +7,14 @@ description: >
     This binding gives the base structures for all I2C devices
 
 properties:
+  - #address-cells:
+      type: int
+      category: required
+      description: should be 1.
+  - #size-cells:
+      type: int
+      category: required
+      description: should be 0.
   - clock-frequency :
       type: int
       category: optional
