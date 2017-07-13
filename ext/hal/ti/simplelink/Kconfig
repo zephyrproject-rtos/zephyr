@@ -3,9 +3,11 @@
 config HAS_CC3220SDK
 	bool
 
-menuconfig CC3220SDK
-	bool "TI CC3220 SDK support"
+# Note: Host driver requires types (time.h, stdint.h) from NEWLIB_LIBC
+config SIMPLELINK_HOST_DRIVER
+	bool "Build the SimpleLink WiFi Host Driver"
 	default n
 	depends on HAS_CC3220SDK
+	select NEWLIB_LIBC
 	help
-	Build required peripheral driverlib files from the CC3220 SDK
+	Build the SimpleLink host driver
