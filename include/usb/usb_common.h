@@ -102,7 +102,7 @@
 #define WIRELESS_DEVICE_CLASS		0xE0
 #define MISC_CLASS			0xEF
 #define CUSTOM_CLASS			0xFF
-#define DFU_CLASS			0xFE
+#define DFU_DEVICE_CLASS		0xFE
 
 /* Sub-classes */
 #define CDC_NCM_SUBCLASS		0x0d
