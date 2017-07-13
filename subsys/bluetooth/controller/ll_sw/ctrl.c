@@ -4442,12 +4442,6 @@ static u32_t event_common_prepare(u32_t ticks_at_expire,
 	/* Check for stale ticks_at_expire */
 	if (ticker_ticks_diff_get(ticker_ticks_now_get(), ticks_at_expire) >
 	    TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US)) {
-		/* Abort any running role, as it probably is the cause for
-		 * stale ticks_at_expire.
-		 */
-		event_stop(0, 0, 0, (void *)STATE_ABORT);
-
-		/* TODO: How much consecutive skips is tolerable? */
 		return 1;
 	}
 
