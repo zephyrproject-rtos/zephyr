@@ -204,6 +204,9 @@ void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
 
 	unsigned long *pInitialThread;
 
+#if _STACK_GUARD_SIZE
+	pStackMem += _STACK_GUARD_SIZE;
+#endif
 	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
