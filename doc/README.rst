@@ -67,26 +67,11 @@ Ubuntu:
 
 .. code-block:: bash
 
-   $ sudo -E apt-get install python-pip
-   $ pip install --upgrade pip
    $ sudo -E apt-get install doxygen
-   $ pip install sphinx==1.4.4
-   $ sudo -HE pip install breathe
-   $ sudo -HE pip install sphinx-rtd-theme
-
-There is a known issue that causes docutils version 0.13 to fail with sphinx
-1.4.4.  Verify the version of docutils using:
-
-.. code-block:: bash
-
-   $ pip show docutils
-
-If this shows you've got version 0.13 of docutils installed, you can install
-the working version of docutils with:
-
-.. code-block:: bash
-
-   $ sudo -HE  pip install docutils==0.12
+   $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
+   $ ./get-pip.py
+   $ rm get-pip.py
+   $ pip install -r scripts/requirements.txt
 
 
 Running the Documentation Generators
