@@ -106,11 +106,15 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 
 u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
 {
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	return (caller_id == callee_id) ||
 	       ((caller_id == MAYFLY_CALL_ID_0) &&
 		(callee_id == MAYFLY_CALL_ID_1)) ||
 	       ((caller_id == MAYFLY_CALL_ID_1) &&
 		(callee_id == MAYFLY_CALL_ID_0));
+#else
+	return caller_id == callee_id;
+#endif
 }
 
 void mayfly_pend(u8_t caller_id, u8_t callee_id)
