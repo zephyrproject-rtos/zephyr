@@ -82,6 +82,8 @@ config X86_STACK_PROTECTION
 	bool
 	default n
 	depends on X86_MMU
+	select SET_GDT
+	select GDT_DYNAMIC
 	prompt "MMU-based stack overflow protection"
 	help
 	This option leverages the MMU to cause a system fatal error if the

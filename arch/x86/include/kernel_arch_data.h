@@ -39,6 +39,13 @@
 #include <misc/dlist.h>
 #endif
 
+
+/* GDT layout */
+#define CODE_SEG	0x08
+#define DATA_SEG	0x10
+#define MAIN_TSS	0x18
+#define DF_TSS		0x20
+
 /* increase to 16 bytes (or more?) to support SSE/SSE2 instructions? */
 
 #define STACK_ALIGN_SIZE 4

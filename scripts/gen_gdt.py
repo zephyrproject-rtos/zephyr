@@ -11,6 +11,16 @@ import os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
+def debug(text):
+    if not args.verbose:
+        return
+    sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
+
+def error(text):
+    sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
+    sys.exit(1)
+
+
 gdt_pd_fmt = "<HIH"
 
 FLAGS_GRAN = 1 << 7 # page granularity
@@ -65,6 +75,23 @@ def create_code_data_entry(base, limit, dpl, flags, access):
                        access, flags, base_hi)
 
 
+def create_tss_entry(base, limit, dpl):
+    present = 1
+
+    base_lo, base_mid, base_hi, limit_lo, limit_hi, = chop_base_limit(base,
+            limit)
+
+    type_code = 0x9 # non-busy 32-bit TSS descriptor
+    gran = 0
+
+    flags = (gran << 7) | limit_hi
+    type_byte = ((present << 7) | (dpl << 5) | type_code)
+
+
+    return struct.pack(gdt_ent_fmt, limit_lo, base_lo, base_mid,
+                       type_byte, flags, base_hi)
+
+
 def get_symbols(obj):
     for section in obj.iter_sections():
         if isinstance(section, SymbolTableSection):
@@ -95,7 +122,17 @@ def main():
         kernel = ELFFile(fp)
         syms = get_symbols(kernel)
 
-    num_entries = 3
+    # NOTE: use-cases are extremely limited; we always have a basic flat
+    # code/data segments. If we are doing stack protection, we are going to
+    # have two TSS to manage the main task and the special task for double
+    # fault exception handling
+
+    if "CONFIG_X86_STACK_PROTECTION" in syms:
+        stackprot = True
+        num_entries = 5
+    else:
+        stackprot = False
+        num_entries = 3
 
     gdt_base = syms["_gdt"]
 
@@ -111,6 +148,17 @@ def main():
         # Selector 0x10: data descriptor
         fp.write(create_code_data_entry(0, 0xFFFFF, 0,
                  FLAGS_GRAN, ACCESS_RW))
+
+        if stackprot:
+            main_tss = syms["_main_tss"]
+            df_tss = syms["_df_tss"]
+
+            # Selector 0x18: main TSS
+            fp.write(create_tss_entry(main_tss, 0x67, 0))
+
+            # Selector 0x20: double-fault TSS
+            fp.write(create_tss_entry(df_tss, 0x67, 0))
+
 
 if __name__ == "__main__":
     main()
