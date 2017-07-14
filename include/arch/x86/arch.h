@@ -76,6 +76,12 @@ typedef struct s_isrList {
 	unsigned int    vec;
 	/** Privilege level associated with ISR/stub */
 	unsigned int    dpl;
+
+	/** If nonzero, specifies a TSS segment selector. Will configure
+	 * a task gate instead of an interrupt gate. fnc parameter will be
+	 * ignored
+	 */
+	unsigned int	tss;
 } ISR_LIST;
 
 
@@ -106,8 +112,39 @@ typedef struct s_isrList {
 #define NANO_CPU_INT_REGISTER(r, n, p, v, d) \
 	 static ISR_LIST __attribute__((section(".intList"))) \
 			 __attribute__((used)) MK_ISR_NAME(r) = \
-			{&r, n, p, v, d}
+			{ \
+				.fnc = &(r), \
+				.irq = (n), \
+				.priority = (p), \
+				.vec = (v), \
+				.dpl = (d), \
+				.tss = 0 \
+			}
 
+/**
+ * @brief Connect an IA hardware task to an interrupt vector
+ *
+ * This is very similar to NANO_CPU_INT_REGISTER but instead of connecting
+ * a handler function, the interrupt will induce an IA hardware task
+ * switch to another hardware task instead.
+ *
+ * @param tss_p GDT/LDT segment selector for the TSS representing the task
+ * @param irq_p IRQ number
+ * @param priority_p IRQ priority
+ * @param vec_p Interrupt vector
+ * @param dpl_p Descriptor privilege level
+ */
+#define _X86_IDT_TSS_REGISTER(tss_p, irq_p, priority_p, vec_p, dpl_p) \
+	static ISR_LIST __attribute__((section(".intList"))) \
+			__attribute__((used)) MK_ISR_NAME(r) = \
+			{ \
+				.fnc = NULL, \
+				.irq = (irq_p), \
+				.priority = (priority_p), \
+				.vec = (vec_p), \
+				.dpl = (dpl_p), \
+				.tss = (tss_p) \
+			}
 
 /**
  * Code snippets for populating the vector ID and priority into the intList
@@ -172,6 +209,7 @@ typedef struct s_isrList {
 		".long %c[priority]\n\t"	/* ISR_LIST.priority */ \
 		".long %c[vector]\n\t"		/* ISR_LIST.vec */ \
 		".long 0\n\t"			/* ISR_LIST.dpl */ \
+		".long 0\n\t"			/* ISR_LIST.tss */ \
 		".popsection\n\t" \
 		".pushsection .text.irqstubs\n\t" \
 		".global %c[isr]_irq%c[irq]_stub\n\t" \
