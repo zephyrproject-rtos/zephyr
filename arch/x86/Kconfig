@@ -78,6 +78,16 @@ config X86_MMU
 	This options enables the memory management unit present in x86. Enabling
 	this will create boot time page table structure.
 
+config X86_STACK_PROTECTION
+	bool
+	default n
+	depends on X86_MMU
+	prompt "MMU-based stack overflow protection"
+	help
+	This option leverages the MMU to cause a system fatal error if the
+	bounds of the current process stack are overflowed. This is done
+	by preceding all stack areas with a 4K guard page.
+
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
 
