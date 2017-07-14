@@ -178,6 +178,8 @@ SECTIONS
 	KERNEL_INPUT_SECTION(.bss)
 	KERNEL_INPUT_SECTION(".bss.*")
 	KERNEL_INPUT_SECTION(COMMON)
+	*(".kernel_bss.*")
+
 	/*
 	 * As memory is cleared in words only, it is simpler to ensure the BSS
 	 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -196,6 +198,7 @@ SECTIONS
 	 */
 	KERNEL_INPUT_SECTION(.noinit)
 	KERNEL_INPUT_SECTION(".noinit.*")
+	*(".kernel_noinit.*")
 
 	/* All stacks go in kernel's noinit, regardless of where they
 	 * were defined.
