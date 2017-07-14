@@ -80,10 +80,16 @@ adapter built into the board to provide debugging, flash programming, and
 serial communication over USB.
 
 To use the pyOCD tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_pyocd` page using the `DAPLink Hexiwear Firmware`_.
+:ref:`nxp_opensda_pyocd` page using the `DAPLink Hexiwear Firmware`_. The pyOCD
+tools are not the default for this board, therefore it is necessary to set
+``OPENSDA_FW=daplink`` explicitly when you invoke ``make flash`` or ``make
+debug``.
 
 To use the Segger J-Link tools with OpenSDA, follow the instructions in the
 :ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
+The Segger J-Link tools are the default for this board, therefore it is not
+necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
+debug``.
 
 Because `Segger RTT`_ is required for a console to KW40Z, the J-Link tools are
 recommended.
@@ -107,7 +113,7 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
    $ cd <zephyr_root_path>
    $ . zephyr-env.sh
    $ cd samples/hello_world/
-   $ make BOARD=hexiwear_kw40z DEBUG_SCRIPT=jlink.sh debug
+   $ make BOARD=hexiwear_kw40z debug
 
 
 In a second terminal, open telnet:
