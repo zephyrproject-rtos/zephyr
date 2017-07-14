@@ -1,4 +1,13 @@
-DEBUG_SCRIPT = jlink.sh
+OPENSDA_FW ?= jlink
+
+ifeq ($(OPENSDA_FW),jlink)
+DEBUG_SCRIPT ?= jlink.sh
+endif
+
+ifeq ($(OPENSDA_FW),daplink)
+DEBUG_SCRIPT ?= pyocd.sh
+FLASH_SCRIPT ?= pyocd.sh
+endif
 
 JLINK_DEVICE = MKW40Z160xxx4
 
