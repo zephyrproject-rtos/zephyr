@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <misc/byteorder.h>
+#include <cache.h>
 #include <usb/usb_dc.h>
 #include "usb_dw_registers.h"
 #include "clk.h"
@@ -35,6 +36,8 @@
 /* Number of SETUP back-to-back packets */
 #define USB_DW_SUP_CNT (1)
 
+#define DMA_MAX_PKT_SIZE 64
+
 /*
  * USB endpoint private structure.
  */
@@ -45,6 +48,10 @@ struct usb_ep_ctrl_prv {
 	u16_t mps;         /* Max ep pkt size */
 	usb_dc_ep_callback cb;/* Endpoint callback function */
 	u32_t data_len;
+#ifdef CONFIG_USB_DW_DMA
+	u32_t buf_consumed;
+	u32_t dma_buf[DMA_MAX_PKT_SIZE/4];
+#endif
 };
 
 /*
@@ -56,6 +63,9 @@ struct usb_dw_ctrl_prv {
 	struct usb_ep_ctrl_prv out_ep_ctrl[USB_DW_OUT_EP_NUM];
 	int n_tx_fifos;
 	u8_t attached;
+#ifdef CONFIG_USB_DW_DMA
+	u8_t setup_cb_called;
+#endif
 };
 
 
@@ -293,6 +303,13 @@ static int usb_dw_ep_set(u8_t ep,
 	SYS_LOG_DBG("usb_dw_ep_set ep %x, mps %d, type %d", ep, ep_mps,
 		    ep_type);
 
+#ifdef CONFIG_USB_DW_DMA
+	if (ep_mps > DMA_MAX_PKT_SIZE) {
+		ep_mps = DMA_MAX_PKT_SIZE;
+	}
+#endif
+
+
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		p_depctl = &USB_DW->out_ep_reg[ep_idx].doepctl;
 		usb_dw_ctrl.out_ep_ctrl[ep_idx].mps = ep_mps;
@@ -366,6 +383,27 @@ static int usb_dw_ep_set(u8_t ep,
 		}
 	}
 
+#ifdef CONFIG_USB_DW_DMA
+	/* Set the "Next EP" field to the next mod-15 endpoint because
+	 * Linux does that when DMA is enabled.  Per the databook,
+	 * this should only matter in shared FIFO mode (which we don't
+	 * support), but don't rock the boat.  Seems benign.
+	 */
+	u32_t val;
+	volatile u32_t *epctl;
+
+	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_IN) {
+		epctl = &USB_DW->in_ep_reg[ep_idx].diepctl;
+	} else {
+		epctl = &USB_DW->out_ep_reg[ep_idx].doepctl;
+	}
+
+	val = *epctl;
+	val &= ~(USB_DW_DEPCTL_NEXTEP_MASK << USB_DW_DEPCTL_NEXTEP_OFFSET);
+	val |= ((ep_idx + 1) % 15) << USB_DW_DEPCTL_NEXTEP_OFFSET;
+	*epctl = val;
+#endif
+
 	return 0;
 }
 
@@ -377,6 +415,14 @@ static void usb_dw_prep_rx(const u8_t ep, u8_t setup)
 	/* Set max RX size to EP mps so we get an interrupt
 	 * each time a packet is received
 	 */
+
+#ifdef CONFIG_USB_DW_DMA
+	USB_DW->out_ep_reg[ep_idx].doepdma =
+		(u32_t) usb_dw_ctrl.out_ep_ctrl[ep_idx].dma_buf;
+	usb_dw_ctrl.out_ep_ctrl[ep_idx].buf_consumed = 0;
+
+	usb_dw_ctrl.setup_cb_called = 0;
+#endif
 
 	USB_DW->out_ep_reg[ep_idx].doeptsiz =
 	    (USB_DW_SUP_CNT << USB_DW_DOEPTSIZ_SUP_CNT_OFFSET) |
@@ -398,7 +444,9 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	u32_t max_xfer_size, max_pkt_cnt, pkt_cnt, avail_space;
 	u32_t ep_mps = usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
 	unsigned int key;
-	u32_t i;
+#ifndef CONFIG_USB_DW_DMA
+	int i;
+#endif
 
 	key = irq_lock();
 
@@ -468,6 +516,17 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		pkt_cnt = 1;
 	}
 
+#ifdef CONFIG_USB_DW_DMA
+	u32_t *dmabuf = usb_dw_ctrl.in_ep_ctrl[ep_idx].dma_buf;
+
+	memcpy(dmabuf, data, data_len);
+	sys_cache_flush((size_t) dmabuf, data_len);
+
+	USB_DW->in_ep_reg[ep_idx].diepdma = (u32_t) dmabuf;
+#endif
+
+	usb_dw_ctrl.in_ep_ctrl[ep_idx].data_len = data_len;
+
 	/* Set number of packets and transfer size */
 	USB_DW->in_ep_reg[ep_idx].dieptsiz =
 	    (pkt_cnt << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | data_len;
@@ -476,6 +535,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	USB_DW->in_ep_reg[ep_idx].diepctl |= (USB_DW_DEPCTL_EP_ENA |
 					      USB_DW_DEPCTL_CNAK);
 
+#ifndef CONFIG_USB_DW_DMA
 	/*
 	 * Write data to FIFO, make sure that we are protected against
 	 * other USB register accesses.  According to "DesignWare Cores
@@ -499,6 +559,8 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		}
 		USB_DW_EP_FIFO(ep_idx) = val;
 	}
+#endif
+
 	irq_unlock(key);
 
 	SYS_LOG_DBG("USB IN EP%d write %x bytes", ep_idx, data_len);
@@ -510,6 +572,7 @@ static int usb_dw_init(void)
 {
 	u8_t ep;
 	int ret;
+	u32_t val;
 
 	ret = usb_dw_reset();
 	if (ret) {
@@ -532,8 +595,15 @@ static int usb_dw_init(void)
 	    USB_DW_GINTSTS_WK_UP_INT |
 	    USB_DW_GINTSTS_USB_SUSP;
 
-	/* Enable global interrupt */
-	USB_DW->gahbcfg |= USB_DW_GAHBCFG_GLB_INTR_MASK;
+	val = USB_DW->gahbcfg;
+	val |= USB_DW_GAHBCFG_GLB_INTR_MASK;
+#ifdef CONFIG_USB_DW_DMA
+	val &= ~(USB_DW_GAHBCFG_HBSTLEN_MASK << USB_DW_GAHBCFG_HBSTLEN_OFFSET);
+	val |= USB_DW_GAHBCFG_HBSTLEN_INCR4 << USB_DW_GAHBCFG_HBSTLEN_OFFSET;
+	val |= USB_DW_GAHBCFG_DMA_EN;
+	USB_DW->dcfg &= ~USB_DW_GAHBCFG_DESCDMA;
+#endif
+	USB_DW->gahbcfg = val;
 
     /* Disable soft disconnect */
 	USB_DW->dctl &= ~USB_DW_DCTL_SFT_DISCON;
@@ -557,7 +627,12 @@ static void usb_dw_handle_reset(void)
 
 	/* enable global EP interrupts */
 	USB_DW->doepmsk = 0;
+#ifdef CONFIG_USB_DW_DMA
+	USB_DW->doepmsk |= USB_DW_DOEPINT_XFER_COMPL;
+	USB_DW->doepmsk |= USB_DW_DOEPINT_SET_UP;
+#else
 	USB_DW->gintmsk |= USB_DW_GINTSTS_RX_FLVL;
+#endif
 	USB_DW->diepmsk |= USB_DW_DIEPINT_XFER_COMPL;
 }
 
@@ -575,6 +650,149 @@ static void usb_dw_handle_enum_done(void)
 	if (usb_dw_ctrl.status_cb) {
 		usb_dw_ctrl.status_cb(USB_DC_CONNECTED);
 	}
+}
+
+static void rx_packet(int ep_idx, int sz, enum usb_dc_ep_cb_status_code sts)
+{
+	usb_dc_ep_callback ep_cb = usb_dw_ctrl.out_ep_ctrl[ep_idx].cb;
+
+	usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len = sz;
+
+#ifdef CONFIG_USB_DW_DMA
+	if (ep_idx == 0) {
+		/* Quirk: in DMA mode when the OUT packet is
+		 * exactly 8 bytes long, the hardware will
+		 * flag the "transfer complete" interrupt
+		 * BEFORE the "setup phase done" interrupt on
+		 * EP0.  Make the callback early when that happens.
+		 */
+		if (!usb_dw_ctrl.setup_cb_called) {
+			if (ep_cb) {
+				usb_dw_ctrl.setup_cb_called = 1;
+				ep_cb(USB_DW_EP_IDX2ADDR(ep_idx,
+							 USB_EP_DIR_OUT),
+				      USB_DC_EP_SETUP);
+			}
+
+			if (!usb_dw_ctrl.setup_cb_called) {
+				/* Early-exit if the callback consumed
+				 * all the data we have, otherwise
+				 * fall through below to call the data
+				 * callback
+				 */
+				return;
+			}
+		}
+	}
+#endif
+
+	if (ep_cb) {
+		ep_cb(USB_DW_EP_IDX2ADDR(ep_idx, USB_EP_DIR_OUT), sts);
+	}
+}
+
+/* In buffer DMA mode, interrupt delivery on EP0 is absolutely crazy.
+ * There are two interrupts: a "setup phase done" interrupt and a
+ * "transfer complete" interrupt.  Per the databook (which isn't
+ * terribly clear) the intent seems to be that the setup interrupt
+ * occurs synchronously when the first 8 bytes are received.  This is
+ * the standard USB setup packet, and the idea is that because it has
+ * very tight latency tolerance for a reply, the firmware should get a
+ * heads up as soon as it is available.  The "transfer complete"
+ * interrupt is expected to be fired at the end of a packet and is
+ * used to signal remaining bytes in the packet (legal and used by
+ * some protocols, c.f. cdc_acm).
+ *
+ * But that's not what happens in practice.  On the Quark SE at least,
+ * it is possible to see either or both interrupts fired, either
+ * simultaneously or in either order!  I've seen XFER_COMPL fire for
+ * 8-byte packets with no SET_UP at all.  I've seen a SET_UP interrupt
+ * fire on an 8 byte packet where no XFER_COMPL ever occurs.  I've
+ * seen XFER_COMPL and SET_UP flagged in the same interrupt.  I've
+ * seen the SET_UP interrupt skipped and a XFER_COMPL happen after a
+ * 15 byte transfer (setup header plus 7 more CDC bytes).  I've even
+ * seen a XFER_COMPL interrupt arrive to signal TWO sequential setup
+ * packets (i.e. a 16 byte input buffer, effectively having skipped an
+ * interrupt and implying that the NAK bit didn't get engaged
+ * correctly after the first packet).
+ *
+ * Note that we always get the received bytes in the proper order,
+ * though.  The problem is that I don't see a way to detect the
+ * boundaries between packets and their setup headers in all cases.
+ * It seems like the dwc2 Linux driver handles of this by making the
+ * driver layers higher in the stack parse the packets as a stream
+ * (e.g. "if the setup header looks like this, then I expect N bytes
+ * of data follow"), but unfortunately our architecture (ironically
+ * defined to conform to exactly this ISR scheme!) wants to expose the
+ * setup header separately via a different callback, so we can get
+ * "out of order" in a way Linux can't.
+
+ * This handles the existing known edge cases (and works robustly for
+ * all the existing drivers): a "packet" of >=8 bytes is assumed to
+ * begin with a setup header, a packet of <8 bytes is assumed to be
+ * data, a packet of exactly 16 bytes is assumed to be a double setup.
+ * It would also probably be a good idea to check a timer on interrupt
+ * start to detect setup headers, as a way of avoiding pollution from
+ * previous packets.  We then have to rely on the driver above us to
+ * check and read out all the endpoint data in the callback (an empty
+ * pipe resets the DMA state, so will always be "beginning of packet"
+ * if this was the last data) and on the fact that control transfers
+ * on EP0 with "confusing extra data" are rare and have delays between
+ * them.
+ */
+
+/* In FIFO mode, all this does is clear the received interrupt.  In
+ * DMA mode, it's the notification for packet receipt (that would
+ * otherwise arive in the RX_FLVL interrupt)
+ */
+static void out_ep_interrupt(int ep_idx)
+{
+	int status = (USB_DW->out_ep_reg[ep_idx].doepint & USB_DW->doepmsk);
+
+#ifdef CONFIG_USB_DW_DMA
+	/* Retrieve packet size.  Note on mask: the size in bytes is
+	 * in the bottom 7 bits for EP0 and 18 bits for other
+	 * endpoints.  Our one-packet-at-a-time architecture means we
+	 * can use the smaller one without worry.
+	 */
+	int mps = usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
+	int sz = mps - (USB_DW->out_ep_reg[ep_idx].doeptsiz & 0x7f);
+
+	usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len = sz;
+
+	if (status & USB_DW_DOEPINT_SET_UP) {
+		usb_dc_ep_callback ep_cb = usb_dw_ctrl.out_ep_ctrl[ep_idx].cb;
+
+		__ASSERT(ep_idx == 0, "");
+
+
+		/* A setup delivery disables the endpoint, we must
+		 * re-enable it here or else the endpoint gets stuck.
+		 * Do it before the callback for latency reasons,
+		 * future bytes will just go into the buffer after the
+		 * ones we already have.
+		 */
+		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_EP_ENA;
+
+		/* Check sz because we occasionally get spurious setup
+		 * interrupts thrown after the XFER_COMPL has produced
+		 * a reset.  Check setup_cb_called because XFER_COMPL
+		 * sometimes happens first and will have already done
+		 * this for us
+		 */
+		if (ep_cb && sz && !usb_dw_ctrl.setup_cb_called) {
+			ep_cb(USB_DW_EP_IDX2ADDR(ep_idx, USB_EP_DIR_OUT),
+			      USB_DC_EP_SETUP);
+		}
+	}
+
+	if (status & USB_DW_DOEPINT_XFER_COMPL) {
+		rx_packet(ep_idx, sz, USB_DC_EP_DATA_OUT);
+	}
+#endif
+
+	/* Clear the flagged interrupts */
+	USB_DW->out_ep_reg[ep_idx].doepint = status;
 }
 
 /* USB ISR handler */
@@ -625,40 +843,22 @@ static void usb_dw_isr_handler(void)
 
 		if (int_status & USB_DW_GINTSTS_RX_FLVL) {
 			/* Packet in RX FIFO */
-			u32_t status, xfer_size;
-			u32_t grxstsp = USB_DW->grxstsp;
+			u32_t status, sz, grxstsp = USB_DW->grxstsp;
 
-			ep_idx = grxstsp & USB_DW_GRXSTSR_EP_NUM_MASK;
 			status = (grxstsp & USB_DW_GRXSTSR_PKT_STS_MASK) >>
-			    USB_DW_GRXSTSR_PKT_STS_OFFSET;
-			xfer_size = (grxstsp & USB_DW_GRXSTSR_PKT_CNT_MASK) >>
-			    USB_DW_GRXSTSR_PKT_CNT_OFFSET;
+				USB_DW_GRXSTSR_PKT_STS_OFFSET;
 
-			SYS_LOG_DBG("USB OUT EP%d: RX_FLVL status %d, size %d",
-				ep_idx, status, xfer_size);
-			usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len = xfer_size;
-			ep_cb = usb_dw_ctrl.out_ep_ctrl[ep_idx].cb;
-			switch (status) {
-			case USB_DW_GRXSTSR_PKT_STS_SETUP:
-				/* Call the registered callback if any */
-				if (ep_cb) {
-					ep_cb(USB_DW_EP_IDX2ADDR(ep_idx,
-					    USB_EP_DIR_OUT),
-					    USB_DC_EP_SETUP);
-					}
-				break;
-			case USB_DW_GRXSTSR_PKT_STS_OUT_DATA:
-				if (ep_cb) {
-					ep_cb(USB_DW_EP_IDX2ADDR(ep_idx,
-					    USB_EP_DIR_OUT),
-					    USB_DC_EP_DATA_OUT);
-					}
-				break;
-			case USB_DW_GRXSTSR_PKT_STS_OUT_DATA_DONE:
-			case USB_DW_GRXSTSR_PKT_STS_SETUP_DONE:
-				break;
-			default:
-				break;
+			if (status == USB_DW_GRXSTSR_PKT_STS_SETUP ||
+			    status == USB_DW_GRXSTSR_PKT_STS_OUT_DATA) {
+				ep_idx = grxstsp & USB_DW_GRXSTSR_EP_NUM_MASK;
+
+				sz = ((grxstsp & USB_DW_GRXSTSR_PKT_CNT_MASK) >>
+				      USB_DW_GRXSTSR_PKT_CNT_OFFSET);
+
+				rx_packet(ep_idx, sz,
+					(status == USB_DW_GRXSTSR_PKT_STS_SETUP
+					 ? USB_DC_EP_SETUP
+					 : USB_DC_EP_DATA_OUT));
 			}
 		}
 
@@ -701,24 +901,10 @@ static void usb_dw_isr_handler(void)
 		}
 
 		if (int_status & USB_DW_GINTSTS_OEP_INT) {
-			/* No OUT interrupt expected in FIFO mode,
-			 * just clear interruot
-			 */
 			for (ep_idx = 0; ep_idx < USB_DW_OUT_EP_NUM; ep_idx++) {
 				if (USB_DW->daint &
 				    USB_DW_DAINT_OUT_EP_INT(ep_idx)) {
-					/* Read OUT EP interrupt status */
-					ep_int_status =
-					    USB_DW->out_ep_reg[ep_idx].doepint &
-					    USB_DW->doepmsk;
-
-					/* Clear OUT EP interrupts */
-					USB_DW->out_ep_reg[ep_idx].doepint =
-					    ep_int_status;
-
-					SYS_LOG_DBG("USB OUT EP%d interrupt "
-						    "status: 0x%x\n", ep_idx,
-						    ep_int_status);
+					out_ep_interrupt(ep_idx);
 				}
 			}
 			/* Clear interrupt. */
@@ -1035,7 +1221,10 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 			u32_t *read_bytes)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
-	u32_t i, j, data_len, bytes_to_copy;
+	u32_t data_len, bytes_to_copy;
+#ifndef CONFIG_USB_DW_DMA
+	int i, j;
+#endif
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
 		SYS_LOG_ERR("No valid endpoint");
@@ -1083,6 +1272,14 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	SYS_LOG_DBG("Read EP%d, req %d, read %d bytes",
 	    ep, max_data_len, bytes_to_copy);
 
+#ifdef CONFIG_USB_DW_DMA
+	char *src = (char *) usb_dw_ctrl.out_ep_ctrl[ep_idx].dma_buf;
+
+	src += usb_dw_ctrl.out_ep_ctrl[ep_idx].buf_consumed;
+	memcpy(data, src, bytes_to_copy);
+	usb_dw_ctrl.out_ep_ctrl[ep_idx].buf_consumed += bytes_to_copy;
+#else
+
 	/* Data in the FIFOs is always stored per 32-bit words */
 	for (i = 0; i < (bytes_to_copy & ~0x3); i += 4) {
 		*(u32_t *)(data + i) = USB_DW_EP_FIFO(ep_idx);
@@ -1096,6 +1293,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 				(sys_cpu_to_le32(last_dw) >> (8 * j)) & 0xFF;
 			}
 	}
+#endif
 
 	usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len -= bytes_to_copy;
 
