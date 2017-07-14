@@ -170,7 +170,7 @@ static void req_timeout(struct k_work *work)
 
 	NET_DBG("Context %p request timeout", ctx);
 
-	net_context_unref(ctx->req.net_ctx);
+	net_context_put(ctx->req.net_ctx);
 	ctx->req.net_ctx = NULL;
 
 	http_server_conn_del(ctx);
@@ -188,7 +188,7 @@ static void pkt_sent(struct net_context *context,
 
 	if (timeout == K_NO_WAIT) {
 		/* We can just close the context after the packet is sent. */
-		net_context_unref(context);
+		net_context_put(context);
 		http_server_conn_del(ctx);
 	} else if (timeout > 0) {
 		NET_DBG("Context %p starting timer", ctx);
@@ -748,7 +748,7 @@ static void accept_cb(struct net_context *net_ctx,
 	if (http_ctx->req.net_ctx && http_ctx->req.net_ctx != net_ctx &&
 	    net_context_get_state(http_ctx->req.net_ctx) ==
 						      NET_CONTEXT_CONNECTED) {
-		net_context_unref(http_ctx->req.net_ctx);
+		net_context_put(http_ctx->req.net_ctx);
 	}
 
 	http_ctx->req.net_ctx = net_ctx;
