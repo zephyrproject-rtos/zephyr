@@ -17,6 +17,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
 		uart0: uart@4000C000 {
 			compatible = "ti,stellaris-uart";
 			reg = <0x4000C000 0x4c>;

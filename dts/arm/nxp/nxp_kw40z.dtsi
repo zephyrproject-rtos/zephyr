@@ -13,6 +13,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kw41z-mcg";
 			reg = <0x40064000 0x13>;
