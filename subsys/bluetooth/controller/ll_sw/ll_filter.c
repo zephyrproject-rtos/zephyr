@@ -325,7 +325,13 @@ static void filter_wl_update(void)
 	filter_clear(&wl_filter);
 
 	for (i = 0; i < WL_SIZE; i++) {
-		int j = wl[i].rl_idx;
+		int j;
+
+		if (!wl[i].taken) {
+			continue;
+		}
+
+		j = wl[i].rl_idx;
 
 		if (!rl_enable || j >= ARRAY_SIZE(rl) || !rl[j].pirk ||
 		    rl[j].dev) {
@@ -343,7 +349,7 @@ static void filter_rl_update(void)
 	filter_clear(&rl_filter);
 
 	for (i = 0; i < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE; i++) {
-		if (!rl[i].pirk || rl[i].dev) {
+		if (rl[i].taken && (!rl[i].pirk || rl[i].dev)) {
 			filter_insert(&rl_filter, i, rl[i].id_addr_type,
 				      rl[i].id_addr.val);
 		}
