@@ -18,6 +18,7 @@
 #include <arch/x86/irq_controller.h>
 #include <kernel_arch_thread.h>
 #include <generated_dts_board.h>
+#include <mmustructs.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
@@ -530,25 +531,38 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF * pEsf);
 
 
+#ifdef CONFIG_X86_STACK_PROTECTION
+#define _STACK_GUARD_SIZE	MMU_PAGE_SIZE
+#define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
+#else
+#define _STACK_GUARD_SIZE	0
+#define _STACK_BASE_ALIGN	STACK_ALIGN
+#endif
+
+
+
 /* All thread stacks, regardless of whether owned by application or kernel,
  * go in the .stacks input section, which will end up in the kernel's
  * noinit.
  */
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	char _GENERIC_SECTION(.stacks) __aligned(STACK_ALIGN) sym[size]
+	char _GENERIC_SECTION(.stacks) __aligned(_STACK_BASE_ALIGN) \
+		sym[size + _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	char _GENERIC_SECTION(.stacks) __aligned(STACK_ALIGN) sym[nmemb][size]
+	char _GENERIC_SECTION(.stacks) __aligned(_STACK_BASE_ALIGN) \
+		sym[nmemb][ROUND_UP(size, _STACK_BASE_ALIGN) + \
+			   _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
-	char __aligned(STACK_ALIGN) sym[size]
+	char __aligned(_STACK_BASE_ALIGN) sym[size + _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_SIZEOF(sym) \
-	sizeof(sym)
+	(sizeof(sym) - _STACK_GUARD_SIZE)
 
 #define _ARCH_THREAD_STACK_BUFFER(sym) \
-	sym
+	(sym + _STACK_GUARD_SIZE)
 
 #if CONFIG_X86_KERNEL_OOPS
 #define _ARCH_EXCEPT(reason_p) do { \
