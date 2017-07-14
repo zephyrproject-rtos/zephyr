@@ -88,14 +88,14 @@ SECTION_FUNC(TEXT_START, __start)
 #ifdef CONFIG_SET_GDT
 	/* If we set our own GDT, update the segment registers as well.
 	 */
-	movw	$0x10, %ax	/* data segment selector (entry = 3) */
+	movw	$DATA_SEG, %ax	/* data segment selector (entry = 3) */
 	movw	%ax, %ds	/* set DS */
 	movw	%ax, %es	/* set ES */
 	movw	%ax, %fs	/* set FS */
 	movw	%ax, %gs	/* set GS */
 	movw	%ax, %ss	/* set SS */
 
-	ljmp	$0x08, $__csSet	/* set CS = 0x08 */
+	ljmp	$CODE_SEG, $__csSet	/* set CS = 0x08 */
 
 __csSet:
 #endif /* CONFIG_SET_GDT */
@@ -262,7 +262,10 @@ __csSet:
 
 #endif /* CONFIG_X86_MMU */
 
-
+#ifdef CONFIG_X86_STACK_PROTECTION
+	mov $MAIN_TSS, %ax
+	ltr %ax
+#endif
 	/* Jump to C portion of kernel initialization and never return */
 
 	jmp	_Cstart

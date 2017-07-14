@@ -7,12 +7,6 @@
 #include<kernel.h>
 #include<mmustructs.h>
 
-/* Linker variable. It needed to access the start of the Page directory */
-extern u32_t __mmu_tables_start;
-
-#define X86_MMU_PD ((struct x86_mmu_page_directory *)\
-		    (void *)&__mmu_tables_start)
-
 /* Ref to _x86_mmu_buffer_validate documentation for details  */
 #define USER_PERM_BIT_POS ((u32_t)0x1)
 #define GET_RW_PERM(flags) (flags & BUFF_WRITEABLE)

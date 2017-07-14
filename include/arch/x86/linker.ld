@@ -152,13 +152,18 @@ SECTIONS
 #endif
 
 #ifdef CONFIG_GDT_DYNAMIC
+	KEEP(*(.tss))
 	. = ALIGN(8);
 	_gdt = .;
 #ifdef LINKER_PASS2
 	KEEP(*(gdt_ram_data))
 #else /* LINKER_PASS2 */
 
+#ifdef CONFIG_X86_STACK_PROTECTION
+#define GDT_NUM_ENTRIES	5
+#else /* CONFIG_X86_STACK_PROTECTION */
 #define GDT_NUM_ENTRIES 3
+#endif /* CONFIG_X86_STACK_PROTECTION */
 
 	. += GDT_NUM_ENTRIES * 8;
 #endif /* LINKER_PASS2 */

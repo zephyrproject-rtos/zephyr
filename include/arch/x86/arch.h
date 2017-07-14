@@ -576,10 +576,18 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
 } while (0)
-#else
+#endif
+
 /** Dummy ESF for fatal errors that would otherwise not have an ESF */
 extern const NANO_ESF _default_esf;
-#endif /* CONFIG_X86_KERNEL_OOPS */
+
+#ifdef CONFIG_X86_MMU
+/* Linker variable. It needed to access the start of the Page directory */
+extern u32_t __mmu_tables_start;
+
+#define X86_MMU_PD ((struct x86_mmu_page_directory *)\
+		    (void *)&__mmu_tables_start)
+#endif /* CONFIG_X86_MMU */
 
 #endif /* !_ASMLANGUAGE */
 

@@ -130,7 +130,8 @@ extern void (*_kernel_oops_handler)(void);
 NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 		      CONFIG_X86_KERNEL_OOPS_VECTOR / 16,
 		      CONFIG_X86_KERNEL_OOPS_VECTOR, 0);
-#else
+#endif
+
 /*
  * Define a default ESF for use with _NanoFatalErrorHandler() in the event
  * the caller does not have a NANO_ESF to pass
@@ -149,7 +150,6 @@ const NANO_ESF _default_esf = {
 	0xdeaddead, /* CS */
 	0xdeaddead, /* EFLAGS */
 };
-#endif /* CONFIG_X86_KERNEL_OOPS */
 
 #if CONFIG_EXCEPTION_DEBUG
 
@@ -192,7 +192,9 @@ EXC_FUNC_NOCODE(IV_OVERFLOW);
 EXC_FUNC_NOCODE(IV_BOUND_RANGE);
 EXC_FUNC_NOCODE(IV_INVALID_OPCODE);
 EXC_FUNC_NOCODE(IV_DEVICE_NOT_AVAILABLE);
-EXC_FUNC_CODE(IV_DOUBLE_FAULT);
+#ifndef CONFIG_X86_STACK_PROTECTION
+EXC_FUNC_NOCODE(IV_DOUBLE_FAULT);
+#endif
 EXC_FUNC_CODE(IV_INVALID_TSS);
 EXC_FUNC_CODE(IV_SEGMENT_NOT_PRESENT);
 EXC_FUNC_CODE(IV_STACK_FAULT);
@@ -230,3 +232,43 @@ FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
 _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+#ifdef CONFIG_X86_STACK_PROTECTION
+void df_handler(void)
+{
+	printk("DOUBLE FAULT! Likely kernel stack overflow\n");
+
+	/* TODO: do forensic analysis to figure out the faulting context
+	 * since this exception type pushes undefined CS:EIP information
+	 */
+
+	/* Double faults are unrecoverable, time to freak out */
+	_NanoFatalErrorHandler(_NANO_ERR_KERNEL_PANIC, &_default_esf);
+}
+
+_GENERIC_SECTION(.tss)
+struct task_state_segment _main_tss = {
+	.ss0 = DATA_SEG
+};
+
+char __noinit df_stack[512];
+
+/* Special TSS for handling double-faults with a known good stack */
+_GENERIC_SECTION(.tss)
+struct task_state_segment _df_tss = {
+	.esp = (u32_t)(df_stack + sizeof(df_stack)),
+	.cs = CODE_SEG,
+	.ds = DATA_SEG,
+	.es = DATA_SEG,
+	.fs = DATA_SEG,
+	.gs = DATA_SEG,
+	.ss = DATA_SEG,
+	.eip = (u32_t)df_handler,
+	.cr3 = (u32_t)&__mmu_tables_start
+};
+
+/* Configure a task gate descriptor in the IDT for the double fault
+ * exception
+ */
+_X86_IDT_TSS_REGISTER(DF_TSS, -1, -1, IV_DOUBLE_FAULT, 0);
+
+#endif /* CONFIG_X86_STACK_PROTECTION */
