@@ -197,8 +197,8 @@ static const u8_t dfu_mode_usb_description[] = {
 	USB_CONFIGURATION_DESC_SIZE,    /* Descriptor size */
 	USB_CONFIGURATION_DESC,         /* Descriptor type */
 	/* Total length in bytes of data returned */
-	LOW_BYTE(DFU_RUNTIME_CONF_SIZE),
-	HIGH_BYTE(DFU_RUNTIME_CONF_SIZE),
+	LOW_BYTE(DFU_MODE_CONF_SIZE),
+	HIGH_BYTE(DFU_MODE_CONF_SIZE),
 	DFU_NUM_ITF,                    /* Number of interfaces */
 	0x01,                           /* Configuration value */
 	0x00,                           /* Index of the Configuration string */
