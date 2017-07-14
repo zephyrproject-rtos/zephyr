@@ -27,7 +27,7 @@ def error(text):
     sys.exit(1)
 
 # See Section 6.11 of the Intel Architecture Software Developer's Manual
-irq_gate_desc_format = "<HHBBH"
+gate_desc_format = "<HHBBH"
 
 def create_irq_gate(handler, dpl):
     present = 1
@@ -37,14 +37,34 @@ def create_irq_gate(handler, dpl):
     offset_hi = handler >> 16
     offset_lo = handler & 0xFFFF
 
-    data = struct.pack(irq_gate_desc_format, offset_lo, KERNEL_CODE_SEG, 0,
+    data = struct.pack(gate_desc_format, offset_lo, KERNEL_CODE_SEG, 0,
             type_attr, offset_hi)
     return data
 
+
+def create_task_gate(tss, dpl):
+    present = 1
+    gate_type = 0x5 # 32-bit task gate
+    type_attr = gate_type | (dpl << 5) | (present << 7)
+
+    data = struct.pack(gate_desc_format, 0, tss, 0, type_attr, 0)
+    return data
+
+
 def create_idt_binary(idt_config, filename):
     with open(filename, "wb") as fp:
-        for handler, dpl in idt_config:
-            data = create_irq_gate(handler, dpl)
+        for handler, tss, dpl in idt_config:
+            if handler and tss:
+                error("entry specifies both handler function and tss")
+
+            if not handler and not tss:
+                error("entry does not specify either handler or tss")
+
+            if handler:
+                data = create_irq_gate(handler, dpl)
+            else:
+                data = create_task_gate(tss, dpl)
+
             fp.write(data)
 
 map_fmt = "<B"
@@ -83,7 +103,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
     vectors = [None for i in range(max_vec)]
 
     # Pass 1: sanity check and set up hard-coded interrupt vectors
-    for handler, irq, prio, vec, dpl in intlist:
+    for handler, irq, prio, vec, dpl, tss in intlist:
         if vec == -1:
             if prio == -1:
                 error("entry does not specify vector or priority level")
@@ -96,11 +116,11 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
         if vectors[vec] != None:
             error("Multiple assignments for vector %d" % vec)
 
-        vectors[vec] = (handler, dpl)
+        vectors[vec] = (handler, tss, dpl)
         update_irq_vec_map(irq_vec_map, irq, vec, max_irq)
 
     # Pass 2: set up priority-based interrupt vectors
-    for handler, irq, prio, vec, dpl in intlist:
+    for handler, irq, prio, vec, dpl, tss in intlist:
         if vec != -1:
             continue
 
@@ -114,7 +134,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
         if vec == -1:
             error("can't find a free vector in priority level %d" % prio)
 
-        vectors[vec] = (handler, dpl)
+        vectors[vec] = (handler, tss, dpl)
         update_irq_vec_map(irq_vec_map, irq, vec, max_irq)
 
     # Pass 3: fill in unused vectors with spurious handler at dpl=0
@@ -127,7 +147,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
         else:
             handler = spur_nocode
 
-        vectors[i] = (handler, 0)
+        vectors[i] = (handler, 0, 0)
 
     return vectors, irq_vec_map
 
@@ -154,9 +174,10 @@ intlist_header_fmt = "<IIi"
 #	int32_t priority;
 #	int32_t vector_id;
 #	int32_t dpl;
+#	int32_t tss;
 # };
 
-intlist_entry_fmt = "<Iiiii"
+intlist_entry_fmt = "<Iiiiii"
 
 def get_intlist(elf):
     intdata = elf.get_section_by_name("intList").data()
