@@ -320,6 +320,8 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	unsigned int key;
 	u32_t i;
 
+	key = irq_lock();
+
 	/* Check if FIFO space available */
 	avail_space = USB_DW->in_ep_reg[ep_idx].dtxfsts &
 		USB_DW_DTXFSTS_TXF_SPC_AVAIL_MASK;
@@ -327,6 +329,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	if (!avail_space) {
 		SYS_LOG_ERR("USB IN EP%d no space available, DTXFSTS %x",
 		    ep_idx, USB_DW->in_ep_reg[ep_idx].dtxfsts);
+		irq_unlock(key);
 		return -EAGAIN;
 	}
 
@@ -396,7 +399,6 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	 * to access a FIFO, the application must complete the transaction
 	 * before accessing the register."
 	 */
-	key = irq_lock();
 	for (i = 0; i < data_len; i += 4) {
 		USB_DW_EP_FIFO(ep_idx) = *(u32_t *)(data + i);
 	}
