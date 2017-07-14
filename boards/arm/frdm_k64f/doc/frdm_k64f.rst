@@ -186,10 +186,16 @@ into the board to provide debugging, flash programming, and serial
 communication over USB.
 
 To use the pyOCD tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_pyocd` page using the `DAPLink FRDM-K64F Firmware`_.
+:ref:`nxp_opensda_pyocd` page using the `DAPLink FRDM-K64F Firmware`_. The
+pyOCD tools are the default for this board, therefore it is not necessary to
+set ``OPENSDA_FW=daplink`` explicitly when you invoke ``make flash`` or ``make
+debug``.
 
 To use the Segger J-Link tools with OpenSDA, follow the instructions in the
 :ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
+The Segger J-Link tools are not the default for this board, therefore it is
+necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
+debug``.
 
 Flashing
 ========
