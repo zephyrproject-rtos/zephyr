@@ -59,12 +59,13 @@ application binary. :ref:`nxp_opensda_firmware` with this application.
 Flashing
 ========
 
-Use the ``make flash`` build target to build your Zephyr application, invoke
-the pyOCD flash tool and program your Zephyr application to flash.
+Use the ``make flash`` build target with ``OPENSDA_FW=daplink`` to build your
+Zephyr application, invoke the pyOCD flash tool and program your Zephyr
+application to flash.
 
   .. code-block:: console
 
-     $ make FLASH_SCRIPT=pyocd.sh flash
+     $ make OPENSDA_FW=daplink flash
      Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
      Merging /home/maureen/zephyr/tests/include/test.config
      Merging /home/maureen/zephyr/kernel/configs/kernel.config
@@ -130,13 +131,13 @@ the pyOCD flash tool and program your Zephyr application to flash.
 Debugging
 =========
 
-Use the ``make debug`` build target to build your Zephyr application, invoke
-the pyOCD GDB server, attach a GDB client, and program your Zephyr application
-to flash. It will leave you at a gdb prompt.
+Use the ``make debug`` build target with ``OPENSDA_FW=daplink`` to build your
+Zephyr application, invoke the pyOCD GDB server, attach a GDB client, and
+program your Zephyr application to flash. It will leave you at a gdb prompt.
 
   .. code-block:: console
 
-     $ make DEBUG_SCRIPT=pyocd.sh debug
+     $ make OPENSDA_FW=daplink debug
      Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
      Merging /home/maureen/zephyr/tests/include/test.config
      Merging /home/maureen/zephyr/kernel/configs/kernel.config
@@ -254,13 +255,13 @@ the ``make flash`` build target is not supported.
 Debugging
 =========
 
-Use the ``make debug`` build target to build your Zephyr application, invoke
-the J-Link GDB server, attach a GDB client, and program your Zephyr application
-to flash. It will leave you at a gdb prompt.
+Use the ``make debug`` build target with ``OPENSDA_FW=jlink`` to build your
+Zephyr application, invoke the J-Link GDB server, attach a GDB client, and
+program your Zephyr application to flash. It will leave you at a gdb prompt.
 
   .. code-block:: console
 
-     $ make DEBUG_SCRIPT=jlink.sh debug
+     $ make OPENSDA_FW=jlink debug
      Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
      Merging /home/maureen/zephyr/tests/include/test.config
      Merging /home/maureen/zephyr/kernel/configs/kernel.config
