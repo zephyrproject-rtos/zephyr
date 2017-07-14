@@ -484,7 +484,18 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	 */
 	key = irq_lock();
 	for (i = 0; i < data_len; i += 4) {
-		USB_DW_EP_FIFO(ep_idx) = *(u32_t *)(data + i);
+		u32_t val = data[i];
+
+		if (i + 1 < data_len) {
+			val |= ((u32_t)data[i+1]) << 8;
+		}
+		if (i + 2 < data_len) {
+			val |= ((u32_t)data[i+2]) << 16;
+		}
+		if (i + 3 < data_len) {
+			val |= ((u32_t)data[i+3]) << 24;
+		}
+		USB_DW_EP_FIFO(ep_idx) = val;
 	}
 	irq_unlock(key);
 
