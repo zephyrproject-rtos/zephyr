@@ -13,6 +13,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
 		flash0: flash@0 {
 			reg = <0 0x20000>;
 		};
