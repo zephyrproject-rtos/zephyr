@@ -13,6 +13,10 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
 
 		mpu@4000d000 {
 			compatible = "nxp,k64f-mpu";
