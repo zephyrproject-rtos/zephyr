@@ -247,13 +247,14 @@ bool ctrl_irk_whitelisted(u8_t rl_idx)
 
 struct ll_filter *ctrl_filter_get(bool whitelist)
 {
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	if (whitelist) {
 		return &wl_filter;
 	}
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	return &rl_filter;
 #else
-	LL_ASSERT(0);
+	LL_ASSERT(whitelist);
+	return &wl_filter;
 #endif
 }
 
