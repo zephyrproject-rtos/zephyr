@@ -57,8 +57,11 @@ Install tools to build Zephyr binaries:
 
 .. code-block:: console
 
-   $ brew install dfu-util qemu dtc python3
-   $ pip3 install ply pyyaml
+   $ brew install dfu-util doxygen qemu dtc python3
+   $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
+   $ ./get-pip.py
+   $ rm get-pip.py
+   $ pip3 install -r scripts/requirements.txt
 
 Install tools needed for building the toolchain (if needed):
 

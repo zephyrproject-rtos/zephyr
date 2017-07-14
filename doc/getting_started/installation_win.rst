@@ -64,7 +64,7 @@ environment for Windows. Follow the steps below to set it up:
       $ ./get-pip.py
       $ rm get-pip.py
 
-      $ pip install pyaml
+      $ pip install -r scripts/requirements.txt
 
 #. Build the Device Tree Compiler (DTC)
 
