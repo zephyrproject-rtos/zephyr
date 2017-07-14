@@ -472,9 +472,9 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	USB_DW->in_ep_reg[ep_idx].dieptsiz =
 	    (pkt_cnt << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | data_len;
 
-    /* Clear NAK and enable ep */
-	USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_CNAK;
-	USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_EP_ENA;
+	/* Clear NAK and enable ep */
+	USB_DW->in_ep_reg[ep_idx].diepctl |= (USB_DW_DEPCTL_EP_ENA |
+					      USB_DW_DEPCTL_CNAK);
 
 	/*
 	 * Write data to FIFO, make sure that we are protected against
