@@ -898,6 +898,9 @@ include $(srctree)/arch/x86/Makefile.idt
 ifeq ($(CONFIG_X86_MMU),y)
 include $(srctree)/arch/x86/Makefile.mmu
 endif
+ifeq ($(CONFIG_GDT_DYNAMIC),y)
+include $(srctree)/arch/x86/Makefile.gdt
+endif
 endif
 
 ifeq ($(CONFIG_GEN_ISR_TABLES),y)

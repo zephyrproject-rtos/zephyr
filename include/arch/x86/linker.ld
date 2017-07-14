@@ -151,6 +151,19 @@ SECTIONS
 #include <custom-rwdata.ld>
 #endif
 
+#ifdef CONFIG_GDT_DYNAMIC
+	. = ALIGN(8);
+	_gdt = .;
+#ifdef LINKER_PASS2
+	KEEP(*(gdt_ram_data))
+#else /* LINKER_PASS2 */
+
+#define GDT_NUM_ENTRIES 3
+
+	. += GDT_NUM_ENTRIES * 8;
+#endif /* LINKER_PASS2 */
+#endif /* CONFIG_GDT_DYNAMIC */
+
 #ifdef CONFIG_X86_MMU
 	/* Page Tables are located here if MMU is enabled.*/
 	MMU_PAGE_ALIGN
