@@ -99,7 +99,7 @@ static u8_t wl_find(u8_t addr_type, u8_t *addr, u8_t *free)
 	for (i = 0; i < WL_SIZE; i++) {
 		if (LIST_MATCH(wl, i, addr_type, addr)) {
 			return i;
-		} else if (free && !rl[i].taken && (*free == FILTER_IDX_NONE)) {
+		} else if (free && !wl[i].taken && (*free == FILTER_IDX_NONE)) {
 			*free = i;
 		}
 	}
@@ -116,7 +116,7 @@ static u32_t wl_add(bt_addr_le_t *id_addr)
 	/* Duplicate  check */
 	if (i < ARRAY_SIZE(wl)) {
 		return BT_HCI_ERR_INVALID_PARAM;
-	} else if (j > ARRAY_SIZE(wl)) {
+	} else if (j >= ARRAY_SIZE(wl)) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
