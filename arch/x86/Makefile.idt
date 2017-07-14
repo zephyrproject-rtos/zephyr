@@ -1,14 +1,10 @@
 ifeq ($(KBUILD_VERBOSE),1)
-	GENIDT_EXTRA_ARGS := -d
+	GENIDT_EXTRA_ARGS := --verbose
 else
 	GENIDT_EXTRA_ARGS :=
 endif
 
-ifeq ($(PREBUILT_HOST_TOOLS),)
-	GENIDT := scripts/gen_idt/gen_idt
-else
-	GENIDT := $(PREBUILT_HOST_TOOLS)/gen_idt
-endif
+GENIDT := $(srctree)/scripts/gen_idt.py
 
 OUTPUT_FORMAT ?= elf32-i386
 OUTPUT_ARCH ?= i386
@@ -16,20 +12,17 @@ OUTPUT_ARCH ?= i386
 quiet_cmd_gen_idt = SIDT    $@
       cmd_gen_idt =								\
 (										\
-	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j intList $< isrList.bin &&	\
-	$(GENIDT) -i isrList.bin -n $(CONFIG_IDT_NUM_VECTORS) -o staticIdt.bin 	\
-		-m irq_int_vector_map.bin					\
-		-l $(CONFIG_MAX_IRQ_LINES) $(GENIDT_EXTRA_ARGS) &&		\
+	$(GENIDT) --kernel $(PREBUILT_KERNEL) 					\
+		--output-idt staticIdt.bin 					\
+		--vector-map irq_int_vector_map.bin 				\
+		$(GENIDT_EXTRA_ARGS) &&						\
 	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
 		--rename-section .data=staticIdt staticIdt.bin staticIdt.o &&	\
 	$(OBJCOPY) -I binary -B $(OUTPUT_ARCH) -O $(OUTPUT_FORMAT) 		\
 	--rename-section .data=irq_int_vector_map irq_int_vector_map.bin 	\
 		irq_int_vector_map.o &&						\
-	rm staticIdt.bin irq_int_vector_map.bin isrList.bin			\
+	rm staticIdt.bin irq_int_vector_map.bin					\
 )
-
-$(GENIDT):
-	$(Q)$(MAKE) $(build)=scripts/gen_idt
 
 staticIdt.o: $(PREBUILT_KERNEL) $(GENIDT)
 	$(call cmd,gen_idt)
