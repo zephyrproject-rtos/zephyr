@@ -1276,10 +1276,8 @@ $(help-board-dirs): help-%:
 host-tools:
 	$(Q)$(MAKE) $(build)=scripts/basic
 	$(Q)$(MAKE) $(build)=scripts/kconfig standalone
-	$(Q)$(MAKE) $(build)=scripts/gen_idt
 	@mkdir -p ${ZEPHYR_BASE}/bin
-	@cp scripts/basic/fixdep scripts/gen_idt/gen_idt scripts/kconfig/conf \
-		${ZEPHYR_BASE}/bin
+	@cp scripts/basic/fixdep scripts/kconfig/conf ${ZEPHYR_BASE}/bin
 
 
 # Documentation targets
