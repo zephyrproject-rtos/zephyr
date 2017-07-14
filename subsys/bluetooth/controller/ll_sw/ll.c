@@ -247,7 +247,7 @@ int ll_init(struct k_sem *sem_rx)
 		    rtc0_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BLUETOOTH_CONTROLLER_JOB_PRIO,
 		    swi4_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, NULL, 0);
+	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 0xFF, rng_nrf5_isr, NULL, 0);
 
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);

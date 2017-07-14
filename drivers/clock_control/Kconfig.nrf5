@@ -17,8 +17,7 @@ config CLOCK_CONTROL_NRF5_IRQ_PRIORITY
 	int
 	prompt "Power Clock Interrupt Priority"
 	depends on CLOCK_CONTROL_NRF5
-	range 0 7
-	default 1
+	default 255
 	help
 	  The interrupt priority for Power Clock interrupt.
 

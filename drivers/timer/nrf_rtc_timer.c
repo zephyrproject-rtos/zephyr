@@ -296,7 +296,7 @@ int _sys_clock_driver_init(struct device *device)
 	RTC_CC_EVENT = 0;
 	NVIC_ClearPendingIRQ(NRF5_IRQ_RTC1_IRQn);
 
-	IRQ_CONNECT(NRF5_IRQ_RTC1_IRQn, 1, rtc1_nrf5_isr, 0, 0);
+	IRQ_CONNECT(NRF5_IRQ_RTC1_IRQn, 0xFF, rtc1_nrf5_isr, 0, 0);
 	irq_enable(NRF5_IRQ_RTC1_IRQn);
 
 	SYS_CLOCK_RTC->TASKS_CLEAR = 1;
