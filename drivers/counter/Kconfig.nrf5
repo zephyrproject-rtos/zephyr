@@ -1,0 +1,63 @@
+config RTC_NRF5
+	bool "NRF5 RTC Driver"
+	depends on COUNTER && SOC_FAMILY_NRF5
+	default y
+	help
+	Build NRF5 RTC driver.
+
+config RTC_0
+	bool "Enable RTC 0 instance"
+	depends on RTC_NRF5
+	default y
+
+config RTC_0_NAME
+	string "RTC 0 driver instance name"
+	default "RTC_0"
+	depends on RTC_0
+	help
+	RTC_0 driver instance name
+
+config RTC_0_IRQ_PRI
+	int "RTC 0 driver Interrupt priority"
+	depends on RTC_0
+	default 1
+	help
+	RTC interrupt priority.
+
+config RTC_1
+	bool "Enable RTC 1 instance"
+	depends on RTC_NRF5
+	default n
+
+config RTC_1_NAME
+	string "RTC1 driver instance name"
+	default "RTC_1"
+	depends on RTC_1
+	help
+	RTC_1 driver instance name
+
+config RTC_1_IRQ_PRI
+	int "RTC 1 driver Interrupt priority"
+	depends on RTC_1
+	default 1
+	help
+	RTC interrupt priority.
+
+config RTC_2
+	bool "Enable RTC 2 instance"
+	depends on RTC_NRF5
+	default n
+
+config RTC_2_NAME
+	string "RTC 2 driver instance name"
+	default "RTC_2"
+	depends on RTC_2
+	help
+	RTC_2 driver instance name
+
+config RTC_2_IRQ_PRI
+	int "RTC 2 Driver Interrupt priority"
+	depends on RTC_2
+	default 1
+	help
+	RTC interrupt priority.

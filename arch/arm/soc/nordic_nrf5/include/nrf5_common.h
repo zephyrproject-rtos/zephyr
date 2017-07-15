@@ -85,4 +85,10 @@
 #define NRF5_UART_BAUDRATE_921600              0x0f000000
 #define NRF5_UART_BAUDRATE_1000000             0x10000000
 
+/* Minimum delta between current counter and CC register that the nordic
+ * RTC is able to handle.
+ */
+#define RTC_MIN_DELTA          2
+#define RTC_MASK 0x00FFFFFF
+
 #endif /* _NRF5_SOC_COMMON_H_ */
