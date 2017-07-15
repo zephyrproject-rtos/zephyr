@@ -115,7 +115,7 @@ static void i2c_stm32_irq_config_func_1(struct device *port);
 #endif
 
 static const struct i2c_stm32_config i2c_stm32_cfg_1 = {
-	.i2c = (I2C_TypeDef *) I2C1_BASE,
+	.i2c = (I2C_TypeDef *)CONFIG_I2C_1_BASE_ADDRESS,
 	.pclken = {
 		.enr = LL_APB1_GRP1_PERIPH_I2C1,
 		.bus = STM32_CLOCK_BUS_APB1,
@@ -156,7 +156,7 @@ static void i2c_stm32_irq_config_func_2(struct device *port);
 #endif
 
 static const struct i2c_stm32_config i2c_stm32_cfg_2 = {
-	.i2c = (I2C_TypeDef *) I2C2_BASE,
+	.i2c = (I2C_TypeDef *)CONFIG_I2C_2_BASE_ADDRESS,
 	.pclken = {
 		.enr = LL_APB1_GRP1_PERIPH_I2C2,
 		.bus = STM32_CLOCK_BUS_APB1,
@@ -201,7 +201,7 @@ static void i2c_stm32_irq_config_func_3(struct device *port);
 #endif
 
 static const struct i2c_stm32_config i2c_stm32_cfg_3 = {
-	.i2c = (I2C_TypeDef *) I2C3_BASE,
+	.i2c = (I2C_TypeDef *)CONFIG_I2C_3_BASE_ADDRESS,
 	.pclken = {
 		.enr = LL_APB1_GRP1_PERIPH_I2C3,
 		.bus = STM32_CLOCK_BUS_APB1,
