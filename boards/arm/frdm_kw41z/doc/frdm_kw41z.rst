@@ -68,6 +68,8 @@ The frdm_kw41z board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -97,6 +99,8 @@ currently enabled (PORTA/GPIOA and PORTC/GPIOC) for the FRDM-KW41Z board.
 | PTA19 | GPIO        | Green LED                 |
 +-------+-------------+---------------------------+
 | PTA18 | GPIO        | Blue LED                  |
++-------+-------------+---------------------------+
+| PTB2  | ADC         | ADC0 channel 3            |
 +-------+-------------+---------------------------+
 | PTC2  | I2C1_SCL    | I2C / FXOS8700            |
 +-------+-------------+---------------------------+

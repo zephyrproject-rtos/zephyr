@@ -106,6 +106,13 @@ endif # I2C_1
 
 endif # I2C
 
+if ADC
+
+config ADC_0
+	def_bool y
+
+endif # ADC
+
 if FXOS8700
 
 config FXOS8700_I2C_NAME

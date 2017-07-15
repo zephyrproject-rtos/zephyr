@@ -32,6 +32,8 @@ The hexiwear_kw40z board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -55,6 +57,8 @@ currently enabled (PORTC/GPIOC) for the hexiwear_kw40z board.
 +-------+-----------------+---------------------------+
 | Name  | Function        | Usage                     |
 +=======+=================+===========================+
+| PTB1  | ADC             | ADC0 channel 1            |
++-------+-----------------+---------------------------+
 | PTC6  | UART0_RX        | UART BT HCI               |
 +-------+-----------------+---------------------------+
 | PTC7  | UART0_TX        | UART BT HCI               |
