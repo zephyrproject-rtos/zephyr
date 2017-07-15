@@ -159,3 +159,46 @@ int _x86_mmu_buffer_validate(void *addr, size_t size, int flags)
 	}
 	return status;
 }
+
+
+static inline void tlb_flush_page(void *addr)
+{
+	/* Invalidate TLB entries corresponding to the page containing the
+	 * specified address
+	 */
+	char *page = (char *)addr;
+	__asm__ ("invlpg %0" :: "m" (*page));
+}
+
+
+void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask)
+{
+	int pde_index, pte_index;
+	union x86_mmu_pde *pde;
+	union x86_mmu_pte *pte;
+	struct x86_mmu_page_table *pt;
+
+	u32_t addr = (u32_t)ptr;
+
+	__ASSERT(!(addr & MMU_PAGE_MASK), "unaligned address provided");
+	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
+
+	while (size) {
+		pde_index = MMU_PDE_NUM(addr);
+		pde = &X86_MMU_PD->entry[pde_index];
+
+		/* TODO we're not generating 4MB entries at the moment */
+		__ASSERT(pde->fourmb.ps != 1, "4MB PDE found");
+
+		pt = (struct x86_mmu_page_table *)(pde->pt.page_table << 12);
+
+		pte_index = MMU_PAGE_NUM(addr);
+		pte = &pt->entry[pte_index];
+
+		pte->value = (pte->value & ~mask) | flags;
+		tlb_flush_page((void *)addr);
+
+		size -= MMU_PAGE_SIZE;
+		addr += MMU_PAGE_SIZE;
+	}
+}

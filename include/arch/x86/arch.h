@@ -458,22 +458,6 @@ extern void	_arch_irq_enable(unsigned int irq);
 extern void	_arch_irq_disable(unsigned int irq);
 
 /**
- * @brief check page table entry flags
- *
- * This routine checks if the buffer is avaialable to the whoever calls
- * this API.
- * @param addr start address of the buffer
- * @param size the size of the buffer
- * @param flags permisions to check.
- *    Consists of 2 bits the bit0 represents the RW permissions
- *    The bit1 represents the user/supervisor permissions
- *    Use macro BUFF_READABLE/BUFF_WRITEABLE or BUFF_USER to build the flags
- *
- * @return true-if the permissions of the pde matches the request
- */
-int _x86_mmu_buffer_validate(void *addr, size_t size, int flags);
-
-/**
  * @defgroup float_apis Floating Point APIs
  * @ingroup kernel_apis
  * @{
@@ -587,6 +571,36 @@ extern u32_t __mmu_tables_start;
 
 #define X86_MMU_PD ((struct x86_mmu_page_directory *)\
 		    (void *)&__mmu_tables_start)
+
+/**
+ * @brief set flags in the MMU page tables
+ *
+ * Modify bits in the existing page tables for a particular memory
+ * range, which must be page-aligned
+ *
+ * @param ptr Starting memory address which must be page-aligned
+ * @param size Size of the region, must be page size multiple
+ * @flags Value of bits to set in the page table entries
+ * @mask Mask indicating which particular bits in the page table entries to
+ *	 modify
+ */
+void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask);
+
+/**
+ * @brief check page table entry flags
+ *
+ * This routine checks if the buffer is avaialable to the whoever calls
+ * this API.
+ * @param addr start address of the buffer
+ * @param size the size of the buffer
+ * @param flags permisions to check.
+ *    Consists of 2 bits the bit0 represents the RW permissions
+ *    The bit1 represents the user/supervisor permissions
+ *    Use macro BUFF_READABLE/BUFF_WRITEABLE or BUFF_USER to build the flags
+ *
+ * @return true-if the permissions of the pde matches the request
+ */
+int _x86_mmu_buffer_validate(void *addr, size_t size, int flags);
 #endif /* CONFIG_X86_MMU */
 
 #endif /* !_ASMLANGUAGE */
