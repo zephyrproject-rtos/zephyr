@@ -6,3 +6,8 @@ tests:
         arch_whitelist: arc
         extra_args: CONF_FILE=prj-arc.conf
         tags: core ignore_faults
+-   x86-mmu-stack-checking:
+        platform_whitelist: qemu_x86 qemu_x86_iamcu
+        extra_args: CONF_FILE=prj-x86-mmu.conf
+        tags: core ignore_faults
+
