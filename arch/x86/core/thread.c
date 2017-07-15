@@ -20,6 +20,7 @@
 #include <linker/sections.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
+#include <mmustructs.h>
 
 /* forward declaration */
 
@@ -204,6 +205,10 @@ void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
 
 	unsigned long *pInitialThread;
 
+#if CONFIG_X86_STACK_PROTECTION
+	_x86_mmu_set_flags(pStackMem, MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
+			   MMU_PTE_P_MASK);
+#endif
 #if _STACK_GUARD_SIZE
 	pStackMem += _STACK_GUARD_SIZE;
 #endif
