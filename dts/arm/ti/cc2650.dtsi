@@ -7,23 +7,28 @@
 #include "armv7-m.dtsi"
 
 / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory {
+		compatible = "sram";
+		reg = <0x20000000 0x5000>;
+	};
+
+	flash0: serial-flash {
+		compatible = "serial-flash";
+		reg = <0x0 0x20000>;
+	};
+
 	soc {
-		cpus {
-			cpu@0 {
-				compatible = "arm,cortex-m3";
-			};
-		};
-
-		sram0: memory {
-			compatible = "sram";
-			reg = <0x20000000 0x5000>;
-		};
-
-		flash0: serial-flash {
-			compatible = "serial-flash";
-			reg = <0x0 0x20000>;
-		};
-
 		gpioa: gpio@40022000 {
 			compatible = "ti,cc2650-gpio";
 			reg = <0x40022000 0xE4>;

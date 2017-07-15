@@ -8,6 +8,17 @@
 #include <st/mem.h>
 
 / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
 	flash0: flash {
 		reg = <0x08000000 DT_FLASH_SIZE>;
 	};
