@@ -162,7 +162,8 @@ void main(void)
 	}
 
 	TC_PRINT("test alt thread 3: initiate kernel panic\n");
-	k_thread_create(&alt_thread, alt_stack, sizeof(alt_stack),
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
 			(k_thread_entry_t)alt_thread3,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
