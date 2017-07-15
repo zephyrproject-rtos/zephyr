@@ -58,6 +58,7 @@ Install tools to build Zephyr binaries:
 .. code-block:: console
 
    $ brew install dfu-util qemu dtc python3
+   $ brew install grep --with-default-names
    $ pip3 install ply pyyaml
 
 Install tools needed for building the toolchain (if needed):
@@ -66,8 +67,6 @@ Install tools needed for building the toolchain (if needed):
 
    $ brew install gettext help2man mpfr gmp coreutils wget
    $ brew tap homebrew/dupes
-   $ brew install grep --with-default-names
-
 
 To build the toolchain, you will need the latest version of crosstool-ng (1.23).
 This version was not available via brew when writing this documentation, you can
