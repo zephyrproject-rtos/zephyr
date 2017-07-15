@@ -65,8 +65,16 @@ hang_system:
 	ARG_UNUSED(reason);
 #endif
 
+#ifdef CONFIG_BOARD_QEMU_X86
+	printk("Terminate emulator due to fatal kernel error\n");
+	/* Causes QEMU to exit. We passed the following on the command line:
+	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
+	 */
+	sys_out32(0, 0xf4);
+#else
 	for (;;) {
 		k_cpu_idle();
 	}
+#endif
 	CODE_UNREACHABLE;
 }
