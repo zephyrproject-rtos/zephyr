@@ -473,7 +473,8 @@ bool ctrl_rl_addr_resolve(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx)
 	}
 
 	if ((id_addr_type != 0) && ((id_addr[5] & 0xc0) == 0x40)) {
-		/*@todo: resolve address */
+		return bt_rpa_irk_matches(rl[rl_idx].local_irk,
+					  (bt_addr_t *)id_addr);
 	}
 
 	return false;
