@@ -33,7 +33,6 @@ u8_t wl_anon;
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 #include "common/rpa.h"
 
-
 /* Whitelist peer list */
 static struct {
 	u8_t      taken:1;
@@ -57,13 +56,15 @@ static struct rl_dev {
 	u8_t      local_irk[16];
 	u8_t      pirk_idx;
 	bt_addr_t peer_rpa;
-	bt_addr_t local_rpa;
+	bt_addr_t *local_rpa;
 
 } rl[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE];
 
 static u8_t peer_irks[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE][16];
 static u8_t peer_irk_rl_ids[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE];
 static u8_t peer_irk_count;
+
+static bt_addr_t local_rpas[CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE];
 
 BUILD_ASSERT(ARRAY_SIZE(wl) < FILTER_IDX_NONE);
 BUILD_ASSERT(ARRAY_SIZE(rl) < FILTER_IDX_NONE);
@@ -215,6 +216,16 @@ static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
 #endif
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+bt_addr_t *ctrl_lrpa_get(u8_t rl_idx)
+{
+	LL_ASSERT(rl_idx < ARRAY_SIZE(rl));
+	if (!rl[rl_idx].lirk || !rl[rl_idx].rpas_ready) {
+		return NULL;
+	}
+
+	return rl[rl_idx].local_rpa;
+}
+
 u8_t *ctrl_irks_get(u8_t *count)
 {
 	*count = peer_irk_count;
@@ -498,7 +509,7 @@ void ll_rl_pdu_adv_update(int idx, struct pdu_adv *pdu)
 	if (idx >= 0 && rl[idx].lirk) {
 		LL_ASSERT(rl[idx].rpas_ready);
 		pdu->tx_addr = 1;
-		memcpy(adva, rl[idx].local_rpa.val, BDADDR_SIZE);
+		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
 	} else {
 		pdu->tx_addr = ll_adv->own_addr_type & 0x1;
 		ll_addr_get(ll_adv->own_addr_type & 0x1, adva);
@@ -608,9 +619,17 @@ void ll_rl_rpa_update(bool timeout)
 				LL_ASSERT(!err);
 			}
 			if (rl[i].lirk) {
-				err = bt_rpa_create(rl[i].local_irk,
-						    &rl[i].local_rpa);
+				bt_addr_t rpa;
+
+				err = bt_rpa_create(rl[i].local_irk, &rpa);
 				LL_ASSERT(!err);
+				/* pointer read/write assumed to be atomic
+				 * so that if ISR fires the local_rpa pointer
+				 * will always point to a valid full RPA
+				 */
+				rl[i].local_rpa = &rpa;
+				bt_addr_copy(&local_rpas[i], &rpa);
+				rl[i].local_rpa = &local_rpas[i];
 			}
 
 			rl[i].rpas_ready = 1;
@@ -713,6 +732,7 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 	}
 	if (rl[i].lirk) {
 		memcpy(rl[i].local_irk, lirk, 16);
+		rl[i].local_rpa = NULL;
 	}
 	rl[i].rpas_ready = 0;
 	/* Default to Network Privacy */
@@ -798,7 +818,7 @@ u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa)
 	/* find the device and return the local RPA */
 	i = ll_rl_find(id_addr->type, id_addr->a.val, NULL);
 	if (i < ARRAY_SIZE(rl)) {
-		bt_addr_copy(lrpa, &rl[i].local_rpa);
+		bt_addr_copy(lrpa, rl[i].local_rpa);
 		return 0;
 	}
 
