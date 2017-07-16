@@ -54,7 +54,8 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BLUETOOTH_SMP) || \
+	defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 bool bt_rpa_irk_matches(const u8_t irk[16], const bt_addr_t *addr)
 {
 	u8_t hash[3];
