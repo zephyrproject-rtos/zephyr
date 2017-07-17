@@ -10,6 +10,17 @@ config BOARD
 	string
 	default sam_e70_xplained
 
+if I2S
+config I2S_SAM_SSC
+	default y
+
+config I2S_SAM_SSC_0_DMA_RX_CHANNEL
+	default 22
+
+config I2S_SAM_SSC_0_DMA_TX_CHANNEL
+	default 23
+endif # I2S
+
 if ETH_SAM_GMAC
 
 # Read MAC address from AT24MAC402 EEPROM
