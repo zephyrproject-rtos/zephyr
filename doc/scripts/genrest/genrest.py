@@ -12,6 +12,7 @@ TYPENAME = {UNKNOWN: "unknown", BOOL: "bool", TRISTATE: "tristate",
             STRING: "string", HEX: "hex", INT: "int"}
 
 done = []
+itemIndex = {}
 
 def print_with_indent(s, indent):
     print((" " * indent) + s)
@@ -26,21 +27,26 @@ def print_items(items, outdir, indent):
             # Comment
             text = item.get_text()
         if item.is_symbol():
-            #print_with_indent("config {0}".format(item.get_name()), indent)
-
             var = "CONFIG_%s" %item.get_name()
             if not var in done:
                 done.append(var)
-                f.write("   * - :option:`%s`\n" %var)
+
+                # Save up the config items in itemIndex, a dictionary indexed
+                # by the item name with the value as the "prompt" (short
+                # description) from the Kconfig file.  (We'll output them
+                # later in alphabetic order
+
                 if len(item.get_prompts()) > 0:
                     p = item.get_prompts()[0]
                 else:
                     p = ""
-                f.write("     - %s\n" %p)
+                itemIndex[var] = "   * - :option:`%s`\n     - %s\n" % (var, p)
+
+                # Create a details .rst document for each symbol discovered
+
                 config = open("%s/%s.rst" % (outdir, var), "w")
                 config.write(":orphan:\n\n")
-                config.write(".. title:: %s\n\n"
-                    %item.get_name())
+                config.write(".. title:: %s\n\n" %item.get_name())
                 config.write(".. option:: CONFIG_%s:\n" %item.get_name())
                 config.write(".. _CONFIG_%s:\n" %item.get_name())
                 if text:
@@ -51,14 +57,11 @@ def print_items(items, outdir, indent):
 
                 config.close()
         elif item.is_menu():
-            #print_with_indent('menu "{0}"'.format(item.get_title()), indent)
             print_items(item.get_items(), outdir, indent + 2)
         elif item.is_choice():
-            #print_with_indent('choice', indent)
             print_items(item.get_items(), outdir, indent + 2)
         elif item.is_comment():
             pass
-            #print_with_indent('comment "{0}"'.format(item.get_text()), indent)
 
 
 f = open("%s/index.rst" % (sys.argv[2]), "w")
@@ -79,15 +82,29 @@ The Kconfig files are distributed across the build directory tree. The files
 are organized based on their common characteristics and on what new symbols
 they add to the configuration menus.
 
-The configuration options' information is extracted directly from :program:`Kconfig`
-using the :file:`~/doc/scripts/genrest/genrest.py` script.
+The configuration options' information below is extracted directly from
+:program:`Kconfig` using the :file:`~/doc/scripts/genrest/genrest.py` script.
+Click on the option name in the table below for detailed information about
+each option.
 
 
 Supported Options
 *****************
 
+.. list-table:: Alphabetized Index of Configuration Options
+   :header-rows: 1
+
+   * - Kconfig Symbol
+     - Description
 """)
-f.write(".. list-table:: Configuration Options\n\n")
 conf = kconfiglib.Config(sys.argv[1])
 print_items(conf.get_top_level_items(), sys.argv[2],  0)
+
+# print_items created separate .rst files for each configuration option as
+# well as filling itemIndex with all these options (and their descriptions).
+# Now we can print out the accumulated config symbols in alphabetic order.
+
+for item in sorted(itemIndex):
+    f.write(itemIndex[item])
+
 f.close()
