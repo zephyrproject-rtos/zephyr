@@ -9,6 +9,10 @@
 	aliases {
 		adc_0 = &adc0;
 		adc_1 = &adc1;
+		pwm_0 = &pwm0;
+		pwm_1 = &pwm1;
+		pwm_2 = &pwm2;
+		pwm_3 = &pwm3;
 		uart_0 = &uart0;
 		uart_4 = &uart4;
 		pinmux_a = &pinmux_a;
@@ -42,6 +46,10 @@
 };
 
 &adc1 {
+	status = "ok";
+};
+
+&pwm3 {
 	status = "ok";
 };
 
