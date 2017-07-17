@@ -6792,6 +6792,13 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			 * replace any other timeout running
 			 */
 			conn->procedure_expire = conn->supervision_reload;
+
+			/* NOTE: if supervision timeout equals connection
+			 * interval, dont timeout in current event.
+			 */
+			if (conn->procedure_expire <= 1) {
+				conn->procedure_expire++;
+			}
 		}
 	}
 
