@@ -17,3 +17,5 @@ obj-$(CONFIG_SOC_FLASH_STM32) += flash_stm32.o flash_stm32l4x.o
 endif
 
 ccflags-$(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC) += -I${ZEPHYR_BASE}/subsys/bluetooth
+
+obj-$(CONFIG_FLASH_PAGE_LAYOUT) += flash_page_layout.o
