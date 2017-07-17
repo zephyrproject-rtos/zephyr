@@ -650,7 +650,7 @@ static inline void isr_radio_state_tx(void)
 		LL_ASSERT(!radio_is_ready());
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
-		hcto += radio_rx_chain_delay_get(_radio.conn_curr->phy_tx,
+		hcto += radio_rx_chain_delay_get(_radio.conn_curr->phy_rx,
 						 _radio.conn_curr->phy_flags);
 		hcto += addr_us_get(_radio.conn_curr->phy_rx);
 		hcto -= radio_tx_chain_delay_get(_radio.conn_curr->phy_rx,
