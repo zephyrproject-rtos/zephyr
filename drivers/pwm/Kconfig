@@ -57,4 +57,6 @@ source "drivers/pwm/Kconfig.stm32"
 
 source "drivers/pwm/Kconfig.nrf5_sw"
 
+source "drivers/pwm/Kconfig.mcux_ftm"
+
 endif # PWM

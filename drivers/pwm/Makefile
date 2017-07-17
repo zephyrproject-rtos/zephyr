@@ -8,3 +8,4 @@ obj-$(CONFIG_PWM_QMSI)		+= pwm_qmsi.o
 obj-$(CONFIG_PWM_K64_FTM)	+= pwm_k64_ftm.o
 obj-$(CONFIG_PWM_STM32)		+= pwm_stm32.o
 obj-$(CONFIG_PWM_NRF5_SW)       += pwm_nrf5_sw.o
+obj-$(CONFIG_PWM_MCUX_FTM)	+= pwm_mcux_ftm.o
