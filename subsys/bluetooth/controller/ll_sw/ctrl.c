@@ -2006,9 +2006,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* pause rx data packets */
 		_radio.conn_curr->pause_rx = 1;
 
-		/* Start Procedure Timeout (this will not replace terminate
-		 * procedure which always gets place before any packets
-		 * going out, hence safe by design)
+		/* Start Procedure Timeout (TODO: this shall not replace
+		 * terminate procedure).
 		 */
 		_radio.conn_curr->procedure_expire =
 			_radio.conn_curr->procedure_reload;
@@ -2472,6 +2471,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			}
 		} else {
 			phy_rsp_send(_radio.conn_curr);
+
+			/* Start Procedure Timeout (TODO: this shall not replace
+			 * terminate procedure).
+			 */
+			_radio.conn_curr->procedure_expire =
+				_radio.conn_curr->procedure_reload;
 		}
 		break;
 
@@ -5518,7 +5523,9 @@ static inline void event_conn_update_st_req(struct connection *conn,
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset4 = 0xffff;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset5 = 0xffff;
 
-	/* Start Procedure Timeout */
+	/* Start Procedure Timeout (TODO: this shall not replace
+	 * terminate procedure).
+	 */
 	conn->procedure_expire = conn->procedure_reload;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
@@ -6164,7 +6171,7 @@ static inline void event_fex_prep(struct connection *conn)
 
 		ctrl_tx_enqueue(conn, node_tx);
 
-		/* Start Procedure Timeout (@todo this shall not replace
+		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure)
 		 */
 		conn->procedure_expire = conn->procedure_reload;
@@ -6205,7 +6212,7 @@ static inline void event_vex_prep(struct connection *conn)
 
 			ctrl_tx_enqueue(conn, node_tx);
 
-			/* Start Procedure Timeout (@todo this shall not
+			/* Start Procedure Timeout (TODO: this shall not
 			 * replace terminate procedure)
 			 */
 			conn->procedure_expire = conn->procedure_reload;
@@ -6268,7 +6275,7 @@ static inline void event_ping_prep(struct connection *conn)
 
 		ctrl_tx_enqueue(conn, node_tx);
 
-		/* Start Procedure Timeout (@todo this shall not replace
+		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure)
 		 */
 		conn->procedure_expire = conn->procedure_reload;
@@ -6324,7 +6331,7 @@ static inline void event_len_prep(struct connection *conn)
 
 		ctrl_tx_enqueue(conn, node_tx);
 
-		/* Start Procedure Timeout (@todo this shall not replace
+		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure).
 		 */
 		conn->procedure_expire = conn->procedure_reload;
