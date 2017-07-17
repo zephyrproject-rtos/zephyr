@@ -21,6 +21,7 @@ obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 obj-$(CONFIG_FP_SHARING) += float.o
 obj-$(CONFIG_GDT_DYNAMIC) += gdt.o
 obj-$(CONFIG_REBOOT_RST_CNT) += reboot_rst_cnt.o
+obj-$(CONFIG_X86_MMU) += x86_mmu.o
 
 obj-$(CONFIG_DEBUG_INFO) += debug/
 obj-$(CONFIG_REBOOT_RST_CNT) += reboot_rst_cnt.o
