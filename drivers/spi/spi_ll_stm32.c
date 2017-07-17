@@ -25,9 +25,50 @@
 #define CONFIG_DATA(cfg)					\
 ((struct spi_stm32_data * const)(cfg)->dev->driver_data)
 
+#ifdef LL_SPI_SR_UDR
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
+			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
+#else
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
+			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
+#endif
+
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_transmit(SPI_TypeDef *spi, struct spi_stm32_data *data);
 static void spi_stm32_receive(SPI_TypeDef *spi, struct spi_stm32_data *data);
+
+static int spi_stm32_get_err(SPI_TypeDef *spi)
+{
+	u32_t sr = LL_SPI_ReadReg(spi, SR);
+
+	return (int)(sr & SPI_STM32_ERR_MSK);
+}
+
+static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
+			       int status)
+{
+	LL_SPI_DisableIT_TXE(spi);
+	LL_SPI_DisableIT_RXNE(spi);
+	LL_SPI_DisableIT_ERR(spi);
+
+	spi_context_cs_control(&data->ctx, false);
+
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F3X)
+	/* Flush RX buffer */
+	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
+		(void) LL_SPI_ReceiveData8(spi);
+	}
+#endif
+
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		while (LL_SPI_IsActiveFlag_BSY(spi)) {
+			/* NOP */
+		}
+		LL_SPI_Disable(spi);
+	}
+
+	spi_context_complete(&data->ctx, status);
+}
 
 static void spi_stm32_isr(void *arg)
 {
@@ -35,6 +76,13 @@ static void spi_stm32_isr(void *arg)
 	const struct spi_stm32_config *cfg = dev->config->config_info;
 	struct spi_stm32_data *data = dev->driver_data;
 	SPI_TypeDef *spi = cfg->spi;
+	int err;
+
+	err = spi_stm32_get_err(spi);
+	if (err) {
+		spi_stm32_complete(data, spi, err);
+		return;
+	}
 
 	if (LL_SPI_IsActiveFlag_TXE(spi) &&
 	    (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx))) {
@@ -51,26 +99,7 @@ static void spi_stm32_isr(void *arg)
 
 	if (!spi_context_tx_on(&data->ctx) &&
 	    !spi_context_rx_on(&data->ctx)) {
-		LL_SPI_DisableIT_TXE(spi);
-		LL_SPI_DisableIT_RXNE(spi);
-
-		spi_context_cs_control(&data->ctx, false);
-
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F3X)
-		/* Flush RX buffer */
-		while (LL_SPI_IsActiveFlag_RXNE(spi)) {
-			(void) LL_SPI_ReceiveData8(spi);
-		}
-#endif
-
-		if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-			while (LL_SPI_IsActiveFlag_BSY(spi)) {
-				/* NOP */
-			}
-			LL_SPI_Disable(spi);
-		}
-
-		spi_context_complete(&data->ctx, 0);
+		spi_stm32_complete(data, spi, spi_stm32_get_err(spi));
 	}
 }
 #endif
@@ -263,14 +292,17 @@ static int transceive(struct spi_config *config,
 	spi_context_cs_control(&data->ctx, true);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
+	LL_SPI_EnableIT_ERR(spi);
+
 	if (rx_bufs) {
 		LL_SPI_EnableIT_RXNE(spi);
 	}
 
 	LL_SPI_EnableIT_TXE(spi);
 
-	spi_context_wait_for_completion(&data->ctx);
+	ret = spi_context_wait_for_completion(&data->ctx);
 #else
+	ret = 0;		/* FIXME: add error checking. */
 	do {
 		/* Keep transmitting NOP data until RX data left */
 		if ((spi_context_tx_on(&data->ctx) ||
@@ -305,7 +337,11 @@ static int transceive(struct spi_config *config,
 
 	spi_context_release(&data->ctx, 0);
 
-	return 0;
+	if (ret) {
+		SYS_LOG_ERR("error mask 0x%x", ret);
+	}
+
+	return ret ? -EIO : 0;
 }
 
 static int spi_stm32_transceive(struct spi_config *config,
