@@ -15,6 +15,7 @@ obj-$(CONFIG_FLASH) += flash/
 obj-$(CONFIG_COUNTER) += counter/
 obj-$(CONFIG_GPIO) += gpio/
 obj-$(CONFIG_I2C) += i2c/
+obj-$(CONFIG_I2S) += i2s/
 obj-$(CONFIG_PWM) += pwm/
 obj-$(CONFIG_ADC) += adc/
 obj-$(CONFIG_NET_L2_ETHERNET) += ethernet/
