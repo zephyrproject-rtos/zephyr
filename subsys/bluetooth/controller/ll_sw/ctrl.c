@@ -1695,36 +1695,37 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
 		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_PHY_REQ) {
-		if (rej_ext_ind->error_code == 0x23) {
-			/* Cross-over. Ignore, procedure timeout will continue
-			 * until phy upd ind is received.
-			 */
-		} else {
-			/* Different Transaction Collision */
-			struct radio_le_phy_upd_cmplt *p;
+		struct radio_le_phy_upd_cmplt *p;
 
+		/* Same Procedure or Different Procedure Collision */
+
+		/* If not same procedure, stop procedure timeout, else
+		 * continue timer until phy upd ind is received.
+		 */
+		if (rej_ext_ind->error_code != 0x23) {
 			/* Procedure complete */
 			_radio.conn_curr->llcp_phy.ack =
 				_radio.conn_curr->llcp_phy.req;
+
+			/* Stop procedure timeout */
 			_radio.conn_curr->procedure_expire = 0;
-
-			/* skip event generation is not cmd initiated */
-			if (!_radio.conn_curr->llcp_phy.cmd) {
-				return;
-			}
-
-			/* generate phy update complete event with error code */
-			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
-
-			p = (struct radio_le_phy_upd_cmplt *)
-			    &pdu_data_rx->payload;
-			p->status = rej_ext_ind->error_code;
-			p->tx = _radio.conn_curr->phy_tx;
-			p->rx = _radio.conn_curr->phy_rx;
-
-			/* enqueue the phy update complete */
-			*rx_enqueue = 1;
 		}
+
+		/* skip event generation if not cmd initiated */
+		if (!_radio.conn_curr->llcp_phy.cmd) {
+			return;
+		}
+
+		/* generate phy update complete event with error code */
+		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+
+		p = (void *) &pdu_data_rx->payload;
+		p->status = rej_ext_ind->error_code;
+		p->tx = _radio.conn_curr->phy_tx;
+		p->rx = _radio.conn_curr->phy_rx;
+
+		/* enqueue the phy update complete */
+		*rx_enqueue = 1;
 	}
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
