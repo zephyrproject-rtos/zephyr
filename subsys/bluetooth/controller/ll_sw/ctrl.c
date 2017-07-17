@@ -4800,13 +4800,27 @@ static void chan_set(u32_t chan)
  */
 static u32_t access_addr_get(void)
 {
-	u32_t access_addr;
-	u8_t bit_idx;
-	u8_t transitions;
 	u8_t consecutive_cnt;
 	u8_t consecutive_bit;
+	u32_t adv_aa_check;
+	u32_t access_addr;
+	u8_t transitions;
+	u8_t bit_idx;
+	u8_t retry;
+	u8_t len;
 
-	rand_get(sizeof(u32_t), (u8_t *)&access_addr);
+	retry = 3;
+again:
+	LL_ASSERT(retry);
+	retry--;
+
+	len = sizeof(u32_t);
+	while (len) {
+		len = rand_get(len, (u8_t *)&access_addr);
+		if (len) {
+			cpu_sleep();
+		}
+	}
 
 	bit_idx = 31;
 	transitions = 0;
@@ -4828,14 +4842,15 @@ static u32_t access_addr_get(void)
 		/* It shall have a minimum of two transitions in the most
 		 * significant six bits.
 		 */
-		if ((consecutive_cnt > 6)
-		    || ((bit_idx < 28) && (transitions < 2))) {
+		if ((consecutive_cnt > 6) ||
+		    ((bit_idx < 28) && (transitions < 1)) ||
+		    ((bit_idx < 27) && (transitions < 2))) {
 			if (consecutive_bit) {
 				consecutive_bit = 0;
-				access_addr &= ~(1 << bit_idx);
+				access_addr &= ~BIT(bit_idx);
 			} else {
 				consecutive_bit = 1;
-				access_addr |= (1 << bit_idx);
+				access_addr |= BIT(bit_idx);
 			}
 
 			consecutive_cnt = 1;
@@ -4845,21 +4860,30 @@ static u32_t access_addr_get(void)
 		/* It shall have no more than 24 transitions */
 		if (transitions > 24) {
 			if (consecutive_bit) {
-				access_addr &= ~((1 << (bit_idx + 1)) - 1);
+				access_addr &= ~(BIT(bit_idx + 1) - 1);
 			} else {
-				access_addr |= ((1 << (bit_idx + 1)) - 1);
+				access_addr |= (BIT(bit_idx + 1) - 1);
 			}
 
 			break;
 		}
 	}
 
-	/** @todo proper access address calculations
-	 * It shall not be the advertising channel packets Access Address.
+	/* It shall not be the advertising channel packets Access Address.
 	 * It shall not be a sequence that differs from the advertising channel
 	 * packets Access Address by only one bit.
-	 * It shall not have all four octets equal.
 	 */
+	adv_aa_check = access_addr ^ 0x8e89bed6;
+	if (util_ones_count_get((u8_t *)&adv_aa_check,
+				sizeof(adv_aa_check)) <= 1) {
+		goto again;
+	}
+
+	/* It shall not have all four octets equal. */
+	if (!((access_addr & 0xFFFF) ^ (access_addr >> 16)) &&
+	    !((access_addr & 0xFF) ^ (access_addr >> 24))) {
+		goto again;
+	}
 
 	return access_addr;
 }
