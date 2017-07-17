@@ -689,6 +689,49 @@ int net_context_put(struct net_context *context)
 	return 0;
 }
 
+static int bind_default(struct net_context *context,
+			const struct sockaddr *dest_addr)
+{
+	struct net_if *iface = net_if_get_default();
+
+	if (!iface) {
+		NET_ERR("No default interface to bind");
+		return -EADDRNOTAVAIL;
+	}
+
+#if defined(CONFIG_NET_IPV6)
+	if (dest_addr->family == AF_INET6) {
+		if (net_sin6_ptr(&context->local)->sin6_addr) {
+			return 0;
+		}
+
+		net_context_set_iface(context, iface);
+		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
+		net_sin6_ptr(&context->local)->sin6_addr =
+			(struct in6_addr *)net_ipv6_unspecified_address();
+
+		return 0;
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+	if (dest_addr->family == AF_INET) {
+		if (net_sin_ptr(&context->local)->sin_addr) {
+			return 0;
+		}
+
+		net_context_set_iface(context, iface);
+		net_sin_ptr(&context->local)->sin_family = AF_INET;
+		net_sin_ptr(&context->local)->sin_addr =
+			(struct in_addr *)net_ipv4_unspecified_address();
+
+		return 0;
+	}
+#endif
+
+	return -EINVAL;
+}
+
 int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		     socklen_t addrlen)
 {
@@ -1331,8 +1374,8 @@ int net_context_connect(struct net_context *context,
 	struct sockaddr *laddr = NULL;
 	struct sockaddr local_addr;
 	u16_t lport, rport;
-	int ret;
 #endif
+	int ret;
 
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
@@ -1342,6 +1385,11 @@ int net_context_connect(struct net_context *context,
 
 	if (!net_context_is_used(context)) {
 		return -EBADF;
+	}
+
+	ret = bind_default(context, addr);
+	if (ret) {
+		return ret;
 	}
 
 	if (addr->family != net_context_get_family(context)) {
