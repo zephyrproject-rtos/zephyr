@@ -159,6 +159,8 @@ extern const NANO_ESF _default_esf;
 FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *esf);
 
+FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+					  const NANO_ESF *esf);
 
 enum nios2_exception_cause {
 	NIOS2_EXCEPTION_UNKNOWN                      = -1,
