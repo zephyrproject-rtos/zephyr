@@ -34,10 +34,17 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-	/* Red, green, blue LEDs */
+#ifdef CONFIG_PWM_3
+	/* Red, green, blue LEDs as PWM channels */
+	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAlt4));
+#else
+	/* Red, green, blue LEDs as GPIOs */
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
 
 #if CONFIG_I2C_0
 	/* I2C0 SCL, SDA - heart rate, light, humidity */
