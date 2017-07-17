@@ -420,6 +420,22 @@ extern void	_arch_irq_enable(unsigned int irq);
 extern void	_arch_irq_disable(unsigned int irq);
 
 /**
+ * @brief check page table entry flags
+ *
+ * This routine checks if the buffer is avaialable to the whoever calls
+ * this API.
+ * @param addr start address of the buffer
+ * @param size the size of the buffer
+ * @param flags permisions to check.
+ *    Consists of 2 bits the bit0 represents the RW permissions
+ *    The bit1 represents the user/supervisor permissions
+ *    Use macro BUFF_READABLE/BUFF_WRITEABLE or BUFF_USER to build the flags
+ *
+ * @return true-if the permissions of the pde matches the request
+ */
+int _x86_mmu_buffer_validate(void *addr, size_t size, int flags);
+
+/**
  * @defgroup float_apis Floating Point APIs
  * @ingroup kernel_apis
  * @{

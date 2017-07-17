@@ -113,6 +113,14 @@
 #define MMU_ENTRY_NOT_ALLOC         0x00000000
 #define MMU_ENTRY_ALLOC             0x00000200
 
+
+/* Macros needed for define permissions for the buffer validation API
+ * ref to x86_mmu_buffer_validate()
+ */
+#define BUFF_READABLE ((u32_t) 0x0)
+#define BUFF_WRITEABLE ((u32_t) 0x1)
+#define BUFF_USER ((u32_t) 0x2)
+
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
@@ -146,7 +154,7 @@ struct mmu_region {
 #define _MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
 	__MMU_BOOT_REGION(id, addr, region_size, permission_flags)
 
-#define MMU_BOOT_REGION(addr, region_size, permission_flags) 		\
+#define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
 	_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
 
 /*
