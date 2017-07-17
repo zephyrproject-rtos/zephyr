@@ -62,6 +62,7 @@
 
 /* Useful define */
 #define USB_1_1                         0x0110
+#define USB_2_0                         0x0200
 
 #define BCDDEVICE_RELNUM                0x0100
 
@@ -90,6 +91,7 @@
 /* Sub-classes */
 #define ACM_SUBCLASS                    0x02
 #define CDC_ECM_SUBCLASS                0x06
+#define CDC_NCM_SUBCLASS                0x0d
 #define BOOT_INTERFACE_SUBCLASS         0x01
 #define SCSI_TRANSPARENT_SUBCLASS       0x06
 #define DFU_INTERFACE_SUBCLASS          0x01
