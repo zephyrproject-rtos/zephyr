@@ -16,6 +16,13 @@ menuconfig FLASH
 	help
 	  Enable support for the flash hardware.
 
+config FLASH_PAGE_LAYOUT
+	bool "API for retrieving the layout of pages"
+	depends on FLASH
+	default n
+	help
+	  Enables API for retrieving the layout of flash memory pages.
+
 config SPI_FLASH_W25QXXDV
 	bool
 	prompt "SPI NOR Flash Winbond W25QXXDV"

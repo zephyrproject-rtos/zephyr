@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -28,6 +29,13 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+struct flash_pages_layout {
+	size_t pages_count; /* count of pages sequence of the same size */
+	size_t pages_size;
+};
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
 typedef int (*flash_api_read)(struct device *dev, off_t offset, void *data,
 			      size_t len);
 typedef int (*flash_api_write)(struct device *dev, off_t offset,
@@ -35,11 +43,41 @@ typedef int (*flash_api_write)(struct device *dev, off_t offset,
 typedef int (*flash_api_erase)(struct device *dev, off_t offset, size_t size);
 typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+/**
+ * @brief Retrieve a flash device's layout.
+ *
+ * A flash device layout is a run-length encoded description of the
+ * pages on the device.
+ *
+ * For flash memories which have uniform sector layout, this routine
+ * returns an array of length 1, which specifies the page size and
+ * number of pages in the memory.
+ *
+ * Layouts for flash memories with nonuniform sector sizes will be
+ * returned as an array with multiple elements, each of which
+ * describes a group of sectors that all have the same size. In this
+ * case, the sequence of array elements specifies the order in which
+ * these groups occur on the device.
+ *
+ * @param dev         Flash device whose layout to retrieve.
+ * @param layout      The flash layout will be returned in this argument.
+ * @param layout_size The number of elements in the returned layout.
+ */
+
+typedef void (*flash_api_pages_layout)(struct device *dev,
+				       const struct flash_pages_layout **layout,
+				       size_t *layout_size);
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
 struct flash_driver_api {
 	flash_api_read read;
 	flash_api_write write;
 	flash_api_erase erase;
 	flash_api_write_protection write_protection;
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	flash_api_pages_layout page_layout;
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
 };
 
 /**
@@ -126,6 +164,48 @@ static inline int flash_write_protection_set(struct device *dev, bool enable)
 
 	return api->write_protection(dev, enable);
 }
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+
+struct flash_pages_info {
+	off_t start_offset; /* offset from the base of flash address */
+	size_t size;
+	u32_t index;
+};
+
+/**
+ *  @brief  Get size and start offset of flash page at certain flash offset.
+ *
+ *  @param  dev flash device
+ *  @param  offset Offset within the page
+ *  @param  info Page Info structure to be filled
+ *
+ *  @return  0 on success, -EINVAL if page of the offset doesn't exist.
+ */
+int flash_get_page_info_by_offs(struct device *dev, off_t offset,
+				struct flash_pages_info *info);
+
+/**
+ *  @brief  Get size and start offset of flash page of certain index.
+ *
+ *  @param  dev flash device
+ *  @param  page_index Index of the page. Index are counted from 0.
+ *  @param  info Page Info structure to be filled
+ *
+ *  @return  0 on success, -EINVAL  if page of the index doesn't exist.
+ */
+int flash_get_page_info_by_idx(struct device *dev, u32_t page_index,
+			       struct flash_pages_info *info);
+
+/**
+ *  @brief  Get number of flash pages.
+ *
+ *  @param  dev flash device
+ *
+ *  @return  Number of flash pages.
+ */
+size_t flash_get_page_count(struct device *dev);
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #ifdef __cplusplus
 }
