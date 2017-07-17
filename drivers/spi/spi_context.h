@@ -24,6 +24,7 @@ struct spi_context {
 
 	struct k_sem lock;
 	struct k_sem sync;
+	int sync_status;
 
 #ifdef CONFIG_POLL
 	struct k_poll_signal *signal;
@@ -44,7 +45,7 @@ struct spi_context {
 	._ctx_name.lock = _K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
 
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
-	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, UINT_MAX)
+	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  struct spi_config *config)
@@ -86,21 +87,26 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 	}
 }
 
-static inline void spi_context_wait_for_completion(struct spi_context *ctx)
+static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
+	int status = 0;
 #ifdef CONFIG_POLL
 	if (!ctx->asynchronous) {
 		k_sem_take(&ctx->sync, K_FOREVER);
+		status = ctx->sync_status;
 	}
 #else
 	k_sem_take(&ctx->sync, K_FOREVER);
+	status = ctx->sync_status;
 #endif
+	return status;
 }
 
 static inline void spi_context_complete(struct spi_context *ctx, int status)
 {
 #ifdef CONFIG_POLL
 	if (!ctx->asynchronous) {
+		ctx->sync_status = status;
 		k_sem_give(&ctx->sync);
 	} else {
 		if (ctx->signal) {
@@ -112,6 +118,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 		}
 	}
 #else
+	ctx->sync_status = status;
 	k_sem_give(&ctx->sync);
 #endif
 }
@@ -175,6 +182,8 @@ static inline void spi_context_buffers_setup(struct spi_context *ctx,
 		ctx->rx_buf = NULL;
 		ctx->rx_len = 0;
 	}
+
+	ctx->sync_status = 0;
 
 	SYS_LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
 		    " tx buf/len %p/%zu, rx buf/len %p/%zu",
