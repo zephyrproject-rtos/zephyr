@@ -45,10 +45,6 @@ static inline void _IntLibInit(void)
 	/* No special initialization of the interrupt subsystem required */
 }
 
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF * esf);
-
-
 #define _is_in_isr() (_kernel.nested != 0)
 
 #ifdef CONFIG_IRQ_OFFLOAD
