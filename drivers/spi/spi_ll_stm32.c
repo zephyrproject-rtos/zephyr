@@ -62,8 +62,9 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 		while (LL_SPI_IsActiveFlag_BSY(spi)) {
 			/* NOP */
 		}
-		LL_SPI_Disable(spi);
 	}
+
+	LL_SPI_Disable(spi);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	spi_context_complete(&data->ctx, status);
