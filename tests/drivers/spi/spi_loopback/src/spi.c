@@ -327,7 +327,7 @@ static int spi_async_call(struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_ressource_lock_test(struct spi_config *spi_conf_lock,
+static int spi_resource_lock_test(struct spi_config *spi_conf_lock,
 				   struct spi_config *spi_conf_try)
 {
 	spi_conf_lock->operation |= SPI_LOCK_ON;
@@ -353,7 +353,7 @@ void main(void)
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
 
-	SYS_LOG_INF("SPI test on buffex TX/RX %p/%p", buffer_tx, buffer_rx);
+	SYS_LOG_INF("SPI test on buffers TX/RX %p/%p", buffer_tx, buffer_rx);
 
 	if (cs_ctrl_gpio_config(spi_slow.cs) ||
 	    cs_ctrl_gpio_config(spi_fast.cs)) {
@@ -389,7 +389,7 @@ void main(void)
 		goto end;
 	}
 
-	if (spi_ressource_lock_test(&spi_slow, &spi_fast)) {
+	if (spi_resource_lock_test(&spi_slow, &spi_fast)) {
 		goto end;
 	}
 
