@@ -60,6 +60,19 @@ struct spi_cs_control spi_cs = {
 #define SPI_CS NULL
 #define CS_CTRL_GPIO_DRV_NAME ""
 
+#elif defined(CONFIG_BOARD_96B_CARBON)
+
+#define SPI_DRV_NAME CONFIG_SPI_2_NAME
+#define SPI_SLAVE 0
+#define MIN_FREQ 500000
+
+#define CS_CTRL_GPIO_DRV_NAME "GPIOC"
+
+struct spi_cs_control spi_cs = {
+	.gpio_pin = 3,
+	.delay = 0,
+};
+
 #else
 #undef SPI_CS
 #define SPI_CS NULL
