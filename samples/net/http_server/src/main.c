@@ -27,6 +27,11 @@
 
 #include <net/net_app.h>
 
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
+
 #include "config.h"
 
 /* Sets the network parameters */
@@ -271,6 +276,15 @@ void main(void)
 {
 	struct sockaddr addr, *server_addr;
 	int ret;
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	if (bt_enable(NULL) == 0) {
+		ipss_init();
+		ipss_advertise();
+	} else {
+		NET_ERR("Bluetooth init failed");
+	}
+#endif
 
 	/*
 	 * There are several options here for binding to local address.
