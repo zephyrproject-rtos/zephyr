@@ -293,21 +293,39 @@
 		};
 
 		pwm0: pwm@40038000{
-			compatible = "nxp,k64f-pwm";
+			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x98>;
-			prescaler = <2>;
-			period = <1000>;
-			clock-source = <0>;
+			interrupts = <42 0>;
+			label = "PWM_0";
 			/* channel information needed - fixme */
+			status = "disabled";
 		};
 
 		pwm1: pwm@40039000{
-			compatible = "nxp,k64f-pwm";
+			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x98>;
-			prescaler = <2>;
-			period = <1000>;
-			clock-source = <0>;
+			interrupts = <43 0>;
+			label = "PWM_1";
 			/* channel information needed - fixme */
+			status = "disabled";
+		};
+
+		pwm2: pwm@4003a000{
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4003a000 0x98>;
+			interrupts = <43 0>;
+			label = "PWM_2";
+			/* channel information needed - fixme */
+			status = "disabled";
+		};
+
+		pwm3: pwm@400b9000{
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x400b9000 0x98>;
+			interrupts = <71 0>;
+			label = "PWM_3";
+			/* channel information needed - fixme */
+			status = "disabled";
 		};
 
 		adc0: adc@4003b000{
