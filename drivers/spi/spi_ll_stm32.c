@@ -185,9 +185,9 @@ static int spi_stm32_configure(struct spi_config *config)
 		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
 	} else {
 		if (config->operation & SPI_OP_MODE_SLAVE) {
-			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_OUTPUT);
+			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_INPUT);
 		} else {
-			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
+			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_OUTPUT);
 		}
 	}
 
