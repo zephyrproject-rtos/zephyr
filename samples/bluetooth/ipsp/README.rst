@@ -9,12 +9,6 @@ Application demonstrating the IPSP (Internet Protocol Support Profile) Node
 role. IPSP is the Bluetooth profile that underneath utilizes 6LoWPAN, i.e. gives
 you IPv6 connectivity over BLE.
 
-Requirements
-************
-
-This application currently only works with HCI based firmware since it
-requires L2CAP channels support.
-
 Building and Running
 ********************
 
