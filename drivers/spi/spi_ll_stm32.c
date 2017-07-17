@@ -222,8 +222,7 @@ static int spi_stm32_configure(struct spi_config *config)
 static void spi_stm32_transmit(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	if (spi_context_tx_on(&data->ctx)) {
-		LL_SPI_TransmitData8(spi, UNALIGNED_GET((u8_t *)
-							(data->ctx.tx_buf)));
+		LL_SPI_TransmitData8(spi, *data->ctx.tx_buf);
 	} else {
 		/* Transmit NOP byte */
 		LL_SPI_TransmitData8(spi, 0);
@@ -235,9 +234,7 @@ static void spi_stm32_transmit(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static void spi_stm32_receive(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	if (spi_context_rx_on(&data->ctx)) {
-		u8_t byte = LL_SPI_ReceiveData8(spi);
-
-		UNALIGNED_PUT(byte, (u8_t *)data->ctx.rx_buf);
+		*data->ctx.rx_buf = LL_SPI_ReceiveData8(spi);
 	} else {
 		LL_SPI_ReceiveData8(spi);
 	}
