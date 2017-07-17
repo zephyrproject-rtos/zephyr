@@ -42,8 +42,9 @@ u32_t radio_crc_is_valid(void);
 void *radio_pkt_empty_get(void);
 void *radio_pkt_scratch_get(void);
 
-void radio_switch_complete_and_rx(u8_t phy);
-void radio_switch_complete_and_tx(u8_t phy, u8_t flags);
+void radio_switch_complete_and_rx(u8_t phy_rx);
+void radio_switch_complete_and_tx(u8_t phy_rx, u8_t flags_rx, u8_t phy_tx,
+				  u8_t flags_tx);
 void radio_switch_complete_and_disable(void);
 
 void radio_rssi_measure(void);

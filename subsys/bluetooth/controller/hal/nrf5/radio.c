@@ -424,9 +424,11 @@ void *radio_pkt_scratch_get(void)
 #if !defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
 static u8_t sw_tifs_toggle;
 
-static void sw_switch(u8_t dir, u8_t phy, u8_t flags)
+static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
+		      u8_t flags_next)
 {
 	u8_t ppi = 12 + sw_tifs_toggle;
+	u32_t delay;
 
 	NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle] = 0;
 
@@ -436,24 +438,22 @@ static void sw_switch(u8_t dir, u8_t phy, u8_t flags)
 	NRF_PPI->CH[ppi].EEP = (u32_t)
 			       &(NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle]);
 	if (dir) {
-		u32_t delay = radio_tx_ready_delay_get(phy, flags) +
-				 radio_rx_chain_delay_get(phy, flags);
+		delay = radio_tx_ready_delay_get(phy_next, flags_next) +
+			radio_rx_chain_delay_get(phy_curr, flags_curr);
 
-		if (delay < NRF_TIMER1->CC[sw_tifs_toggle]) {
-			NRF_TIMER1->CC[sw_tifs_toggle] -= delay;
-		} else {
-			NRF_TIMER1->CC[sw_tifs_toggle] = 1;
-		}
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_TXEN);
 	} else {
-		u32_t delay = radio_rx_ready_delay_get(phy);
+		delay = radio_rx_ready_delay_get(phy_next) -
+			radio_tx_chain_delay_get(phy_curr, flags_curr) +
+			4; /* 4us as +/- active jitter */
 
-		if (delay < NRF_TIMER1->CC[sw_tifs_toggle]) {
-			NRF_TIMER1->CC[sw_tifs_toggle] -= delay;
-		} else {
-			NRF_TIMER1->CC[sw_tifs_toggle] = 1;
-		}
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_RXEN);
+	}
+
+	if (delay < NRF_TIMER1->CC[sw_tifs_toggle]) {
+		NRF_TIMER1->CC[sw_tifs_toggle] -= delay;
+	} else {
+		NRF_TIMER1->CC[sw_tifs_toggle] = 1;
 	}
 
 	NRF_PPI->CHENSET = PPI_CHEN_CH8_Msk | PPI_CHEN_CH11_Msk;
@@ -463,7 +463,7 @@ static void sw_switch(u8_t dir, u8_t phy, u8_t flags)
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 
-void radio_switch_complete_and_rx(u8_t phy)
+void radio_switch_complete_and_rx(u8_t phy_rx)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
@@ -472,11 +472,12 @@ void radio_switch_complete_and_rx(u8_t phy)
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
-	sw_switch(0, phy, 0);
+	sw_switch(0, 0, 0, phy_rx, 0);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 }
 
-void radio_switch_complete_and_tx(u8_t phy, u8_t flags)
+void radio_switch_complete_and_tx(u8_t phy_rx, u8_t flags_rx, u8_t phy_tx,
+				  u8_t flags_tx)
 {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
@@ -485,7 +486,7 @@ void radio_switch_complete_and_tx(u8_t phy, u8_t flags)
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
-	sw_switch(1, phy, flags);
+	sw_switch(1, phy_rx, flags_rx, phy_tx, flags_tx);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_TIFS_HW */
 }
 

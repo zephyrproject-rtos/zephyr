@@ -580,7 +580,7 @@ static inline void isr_radio_state_tx(void)
 
 	switch (_radio.role) {
 	case ROLE_ADV:
-		radio_switch_complete_and_tx(0, 0);
+		radio_switch_complete_and_tx(0, 0, 0, 0);
 		radio_pkt_rx_set(radio_pkt_scratch_get());
 
 		/* assert if radio packet ptr is not set and radio started rx */
@@ -608,7 +608,7 @@ static inline void isr_radio_state_tx(void)
 		break;
 
 	case ROLE_SCAN:
-		radio_switch_complete_and_tx(0, 0);
+		radio_switch_complete_and_tx(0, 0, 0, 0);
 		radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->
 				    pdu_data);
 
@@ -637,10 +637,11 @@ static inline void isr_radio_state_tx(void)
 	case ROLE_SLAVE:
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
-		radio_switch_complete_and_tx(_radio.conn_curr->phy_tx,
+		radio_switch_complete_and_tx(_radio.conn_curr->phy_rx, 0,
+					     _radio.conn_curr->phy_tx,
 					     _radio.conn_curr->phy_flags);
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
-		radio_switch_complete_and_tx(0, 0);
+		radio_switch_complete_and_tx(0, 0, 0, 0);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 		rx_packet_set(_radio.conn_curr, (struct pdu_data *)_radio.
@@ -3095,7 +3096,7 @@ static inline u32_t isr_close_scan(void)
 		dont_close = 1;
 
 		radio_tmr_tifs_set(RADIO_TIFS);
-		radio_switch_complete_and_tx(0, 0);
+		radio_switch_complete_and_tx(0, 0, 0, 0);
 		radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->
 					pdu_data);
 		radio_rssi_measure();
@@ -5334,7 +5335,7 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	}
 
 	radio_tmr_tifs_set(RADIO_TIFS);
-	radio_switch_complete_and_tx(0, 0);
+	radio_switch_complete_and_tx(0, 0, 0, 0);
 	radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
 	radio_rssi_measure();
 
@@ -6888,9 +6889,10 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	radio_tmr_tifs_set(RADIO_TIFS);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
-	radio_switch_complete_and_tx(conn->phy_tx, conn->phy_flags);
+	radio_switch_complete_and_tx(conn->phy_rx, 0, conn->phy_tx,
+				     conn->phy_flags);
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
-	radio_switch_complete_and_tx(0, 0);
+	radio_switch_complete_and_tx(0, 0, 0, 0);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 	rx_packet_set(conn, (struct pdu_data *)
@@ -7090,9 +7092,10 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		radio_tmr_tifs_set(RADIO_TIFS);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
-		radio_switch_complete_and_tx(conn->phy_tx, conn->phy_flags);
+		radio_switch_complete_and_tx(conn->phy_rx, 0, conn->phy_tx,
+					     conn->phy_flags);
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
-		radio_switch_complete_and_tx(0, 0);
+		radio_switch_complete_and_tx(0, 0, 0, 0);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 		rx_packet_set(conn, (struct pdu_data *)_radio.
