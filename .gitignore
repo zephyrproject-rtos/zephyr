@@ -35,3 +35,4 @@ tags
 .project
 .cproject
 .xxproject
+.envrc
