@@ -318,7 +318,7 @@ static int transceive(struct spi_config *config,
 	} while (spi_context_tx_on(&data->ctx) ||
 		 spi_context_rx_on(&data->ctx));
 
-	spi_context_complete(&data->ctx, 0);
+	spi_context_cs_control(&data->ctx, false);
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F3X)
 	/* Flush RX buffer */
