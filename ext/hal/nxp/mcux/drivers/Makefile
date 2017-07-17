@@ -7,6 +7,7 @@
 obj-$(CONFIG_ADC_MCUX_ADC16) += fsl_adc16.o
 obj-$(CONFIG_ETH_MCUX) += fsl_enet.o
 obj-$(CONFIG_I2C_MCUX) += fsl_i2c.o
+obj-$(CONFIG_PWM_MCUX_FTM) += fsl_ftm.o
 obj-$(CONFIG_RANDOM_MCUX_RNGA) += fsl_rnga.o
 obj-$(CONFIG_RANDOM_MCUX_TRNG) += fsl_trng.o
 obj-$(CONFIG_SOC_FLASH_MCUX) += fsl_flash.o
