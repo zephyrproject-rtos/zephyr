@@ -432,7 +432,13 @@ void _update_time_slice_before_swap(void)
 
 	if (!remaining || (_time_slice_duration < remaining)) {
 		_set_time(_time_slice_duration);
+	} else {
+		/* Account previous elapsed time and reprogram
+		 * timer with remaining time
+		 */
+		_set_time(remaining);
 	}
+
 #endif
 	/* Restart time slice count at new thread switch */
 	_time_slice_elapsed = 0;
