@@ -205,8 +205,8 @@ config BOOT_BANNER
 	also embeds a date & time stamp in the kernel and in each USAP image.
 
 config BOOT_DELAY
-	int "milliseconds to delay boot"
-	prompt "Boot delay"
+	int
+	prompt "Boot delay in milliseconds"
 	default 0
 	help
 	This option delays bootup for the specified amount of
