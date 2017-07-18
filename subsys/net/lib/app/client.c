@@ -24,6 +24,8 @@
 
 #include <net/net_app.h>
 
+#include "../../ip/udp_internal.h"
+
 #include "net_app_private.h"
 
 #if defined(CONFIG_NET_APP_TLS)
@@ -419,7 +421,7 @@ static void _app_connected(struct net_context *net_ctx,
 	struct net_app_ctx *ctx = user_data;
 
 #if defined(CONFIG_NET_APP_TLS)
-	if (ctx->is_tls && ctx->proto == IPPROTO_TCP) {
+	if (ctx->is_tls) {
 		k_sem_give(&ctx->client.connect_wait);
 	}
 #endif
@@ -427,7 +429,7 @@ static void _app_connected(struct net_context *net_ctx,
 	net_context_recv(net_ctx, ctx->recv_cb, K_NO_WAIT, ctx);
 
 #if defined(CONFIG_NET_APP_TLS)
-	if (ctx->is_tls && ctx->proto == IPPROTO_TCP) {
+	if (ctx->is_tls) {
 		/* If we have TLS connection, the connect cb is called
 		 * after TLS handshakes are done.
 		 */
@@ -440,6 +442,91 @@ static void _app_connected(struct net_context *net_ctx,
 		}
 	}
 }
+
+#if defined(CONFIG_NET_APP_DTLS)
+static int connect_dtls(struct net_app_ctx *ctx, struct net_context *orig,
+			struct sockaddr *remote)
+{
+	struct net_context *dtls_context;
+	struct sockaddr local_addr;
+	int ret;
+
+	/* We create a new context that starts to send data and get replies
+	 * directly into correct callback.
+	 */
+	ret = net_context_get(net_context_get_family(orig), SOCK_DGRAM,
+			      IPPROTO_UDP, &dtls_context);
+	if (ret < 0) {
+		NET_DBG("Cannot get connect context");
+		goto out;
+	}
+
+	memcpy(&dtls_context->remote, remote, sizeof(dtls_context->remote));
+
+#if defined(CONFIG_NET_IPV6)
+	if (net_context_get_family(orig) == AF_INET6) {
+		struct sockaddr_in6 *local_addr6 = net_sin6(&local_addr);
+
+		net_sin6(&dtls_context->remote)->sin6_family = AF_INET6;
+
+		local_addr6->sin6_family = AF_INET6;
+		local_addr6->sin6_port = net_sin6_ptr(&orig->local)->sin6_port;
+		net_ipaddr_copy(&local_addr6->sin6_addr,
+				net_sin6_ptr(&orig->local)->sin6_addr);
+	} else
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_context_get_family(orig) == AF_INET) {
+		struct sockaddr_in *local_addr4 = net_sin(&local_addr);
+
+		net_sin(&dtls_context->remote)->sin_family = AF_INET;
+
+		local_addr4->sin_family = AF_INET;
+		local_addr4->sin_port = net_sin_ptr(&orig->local)->sin_port;
+		net_ipaddr_copy(&local_addr4->sin_addr,
+				net_sin_ptr(&orig->local)->sin_addr);
+	} else
+#endif /* CONFIG_NET_IPV4 */
+	{
+		NET_ASSERT_INFO(false, "Invalid protocol family %d",
+				net_context_get_family(orig));
+		goto ctx_drop;
+	}
+
+	ret = net_context_bind(dtls_context, &local_addr, sizeof(local_addr));
+	if (ret < 0) {
+		NET_DBG("Cannot bind connect DTLS context");
+		goto ctx_drop;
+	}
+
+	dtls_context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+
+	ret = net_udp_register(&dtls_context->remote,
+			       &local_addr,
+			       ntohs(net_sin(&dtls_context->remote)->sin_port),
+			       ntohs(net_sin(&local_addr)->sin_port),
+			       _net_app_dtls_established,
+			       ctx,
+			       &dtls_context->conn_handler);
+	if (ret < 0) {
+		NET_DBG("Cannot register connect DTLS handler (%d)", ret);
+		goto ctx_drop;
+	}
+
+	NET_DBG("New DTLS connection context %p created", dtls_context);
+
+	ctx->dtls.ctx = dtls_context;
+
+	return 0;
+
+ctx_drop:
+	net_context_unref(dtls_context);
+
+out:
+	return -ECONNABORTED;
+}
+#endif /* CONFIG_NET_APP_DTLS */
 
 int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 {
@@ -465,7 +552,9 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	}
 
 #if defined(CONFIG_NET_APP_TLS)
-	if (ctx->is_tls && ctx->proto == IPPROTO_TCP && !ctx->tls.tid) {
+	if (ctx->is_tls && !ctx->tls.tid &&
+	    (ctx->proto == IPPROTO_TCP ||
+	     (IS_ENABLED(CONFIG_NET_APP_DTLS) && ctx->proto == IPPROTO_UDP))) {
 		/* TLS thread is not yet running, start it now */
 		ret = start_tls_client(ctx);
 		if (ret < 0) {
@@ -482,12 +571,38 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	ARG_UNUSED(started);
 #endif /* CONFIG_NET_APP_TLS */
 
-	ret = net_context_connect(net_ctx,
-				  &ctx->default_ctx->remote,
-				  sizeof(ctx->default_ctx->remote),
-				  _app_connected,
-				  timeout,
-				  ctx);
+#if defined(CONFIG_NET_APP_DTLS)
+	if (ctx->proto == IPPROTO_UDP) {
+		if (!ctx->dtls.ctx) {
+			ret = connect_dtls(ctx, net_ctx,
+					   &ctx->default_ctx->remote);
+			if (ret < 0) {
+				return ret;
+			}
+
+			ret = net_context_connect(ctx->dtls.ctx,
+						  &ctx->dtls.ctx->remote,
+						  sizeof(ctx->dtls.ctx->remote),
+						  _app_connected,
+						  timeout,
+						  ctx);
+		} else {
+			/* If we have already a connection, then we cannot
+			 * really continue.
+			 */
+			ret = -EAGAIN;
+		}
+	} else
+#endif /* CONFIG_NET_APP_DTLS */
+	{
+		ret = net_context_connect(net_ctx,
+					  &ctx->default_ctx->remote,
+					  sizeof(ctx->default_ctx->remote),
+					  _app_connected,
+					  timeout,
+					  ctx);
+	}
+
 	if (ret < 0) {
 		NET_DBG("Cannot connect to peer (%d)", ret);
 
@@ -520,7 +635,10 @@ static void tls_client_handler(struct net_app_ctx *ctx,
 	/* We wait until TLS connection is established */
 	k_sem_take(&ctx->client.connect_wait, K_FOREVER);
 
-	_net_app_ssl_mainloop(ctx);
+	ret = _net_app_ssl_mainloop(ctx);
+	if (ret < 0) {
+		NET_ERR("TLS mainloop startup failed (%d)", ret);
+	}
 
 	mbedtls_ssl_close_notify(&ctx->tls.mbedtls.ssl);
 

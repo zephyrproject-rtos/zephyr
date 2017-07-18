@@ -91,6 +91,22 @@ config NET_APP_TLS
 	help
 	Enables net app library to use TLS for encrypted communication.
 
+config NET_APP_DTLS
+	bool "Enable DTLS support for UDP applications"
+	depends on NET_UDP
+	depends on NET_APP_TLS
+	default n
+	help
+	Enables net app library to use TLS for encrypted UDP communication.
+
+config NET_APP_DTLS_TIMEOUT
+	int "DTLS session timeout"
+	depends on NET_APP_DTLS
+	default 15
+	help
+	If a DTLS session does not have any activity, then disconnect
+	the session. The value is in seconds.
+
 config NET_DEBUG_APP_TLS_LEVEL
 	int "Debug level for mbedtls in net app library"
 	depends on NET_APP_TLS && NET_DEBUG_APP
