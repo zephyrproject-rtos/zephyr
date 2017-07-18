@@ -63,6 +63,7 @@ config TWIHS_SAM
 config I2C_MCUX
 	bool "MCUX I2C driver"
 	depends on HAS_MCUX
+	select HAS_DTS_I2C
 	default n
 	help
 	  Enable the mcux I2C driver.
