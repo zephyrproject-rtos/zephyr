@@ -127,14 +127,6 @@ extern "C" {
 #include <misc/util.h>
 #include <drivers/rand32.h>
 
-/*
- * PWM/FTM configuration settings
- */
-#define PWM_K64_FTM_0_REG_BASE	0x40038000
-#define PWM_K64_FTM_1_REG_BASE	0x40039000
-#define PWM_K64_FTM_2_REG_BASE	0x4003A000
-#define PWM_K64_FTM_3_REG_BASE	0x400B9000
-
 #endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus
