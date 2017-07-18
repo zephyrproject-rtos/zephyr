@@ -45,7 +45,7 @@ endif # I2C
 
 if PWM
 
-config PWM_K64_FTM
+config PWM_MCUX_FTM
 	def_bool y
 
 endif # PWM
