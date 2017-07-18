@@ -38,5 +38,13 @@ config WDT_0_NAME
 	help
 	  Watchdog driver instance name
 
+config WDT_CC32XX_DEBUGGER_STALL_MODE
+	bool "Stall watchdog timer during debugging breakpoints"
+	depends on WDT_CC32XX
+	default y
+	help
+	  Stall the watchdog countdown while debugging, to preven a
+	  reset during breakpoints.
+
 endif # WDT_CC32XX
 
