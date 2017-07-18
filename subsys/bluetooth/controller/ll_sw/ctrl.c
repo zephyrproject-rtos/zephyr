@@ -6544,8 +6544,16 @@ static inline void event_phy_req_prep(struct connection *conn)
 		}
 
 		/* Initiate PHY Update Ind */
-		conn->llcp.phy_upd_ind.tx = conn->llcp_phy.tx;
-		conn->llcp.phy_upd_ind.rx = conn->llcp_phy.rx;
+		if (conn->llcp_phy.tx != conn->phy_tx) {
+			conn->llcp.phy_upd_ind.tx = conn->llcp_phy.tx;
+		} else {
+			conn->llcp.phy_upd_ind.tx = 0;
+		}
+		if (conn->llcp_phy.rx != conn->phy_rx) {
+			conn->llcp.phy_upd_ind.rx = conn->llcp_phy.rx;
+		} else {
+			conn->llcp.phy_upd_ind.rx = 0;
+		}
 		/* conn->llcp.phy_upd_ind.instant = 0; */
 		conn->llcp.phy_upd_ind.initiate = 1;
 		conn->llcp.phy_upd_ind.cmd = conn->llcp_phy.cmd;
@@ -6589,6 +6597,28 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 
 				/* 0 instant */
 				conn->llcp.phy_upd_ind.instant = 0;
+
+				/* generate phy update event */
+				if (conn->llcp.phy_upd_ind.cmd) {
+					struct radio_pdu_node_rx *node_rx;
+					struct radio_le_phy_upd_cmplt *p;
+					struct pdu_data *pdu_data;
+
+					node_rx = packet_rx_reserve_get(2);
+					LL_ASSERT(node_rx);
+
+					node_rx->hdr.handle = conn->handle;
+					node_rx->hdr.type =
+						NODE_RX_TYPE_PHY_UPDATE;
+
+					pdu_data = (void *)&node_rx->pdu_data;
+					p = (void *)&pdu_data->payload;
+					p->status = 0;
+					p->tx = conn->phy_tx;
+					p->rx = conn->phy_rx;
+
+					packet_rx_enqueue();
+				}
 			} else {
 				/* set instant */
 				conn->llcp.phy_upd_ind.instant = event_counter +
