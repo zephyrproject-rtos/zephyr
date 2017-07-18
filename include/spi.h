@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-/**x
+/**
  * @brief SPI operational mode
  */
 #define SPI_OP_MODE_MASTER	0
