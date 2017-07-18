@@ -177,6 +177,9 @@ struct tls_context {
 	struct k_sem tx_sem;
 	struct k_fifo tx_rx_fifo;
 	int remaining;
+#if defined(CONFIG_NET_APP_DTLS) && defined(CONFIG_NET_APP_SERVER)
+	char client_id;
+#endif
 };
 
 /* This struct is used to pass data to TLS thread when reading or sending
@@ -239,6 +242,14 @@ typedef int (*net_app_entropy_src_cb_t)(void *data, unsigned char *output,
 					size_t len, size_t *olen);
 #endif /* CONFIG_NET_APP_TLS */
 
+#if defined(CONFIG_NET_APP_DTLS)
+struct dtls_timing_context {
+	u32_t snapshot;
+	u32_t int_ms;
+	u32_t fin_ms;
+};
+#endif /* CONFIG_NET_APP_DTLS */
+
 /* Information for the context and local/remote addresses used. */
 struct net_app_endpoint {
 	/** Network context. */
@@ -277,6 +288,25 @@ struct net_app_ctx {
 	 * application.
 	 */
 	net_context_recv_cb_t recv_cb;
+
+#if defined(CONFIG_NET_APP_DTLS)
+	struct {
+		/** Currently active network context. This will contain the
+		 * new context that is created after connection is established
+		 * when UDP and DTLS is used.
+		 */
+		struct net_context *ctx;
+
+		/** DTLS final timer. Connection is terminated if this expires.
+		 */
+		struct k_delayed_work fin_timer;
+
+		/** Timer flag telling whether the dtls timer has been
+		 * cancelled or not.
+		 */
+		bool fin_timer_cancelled;
+	} dtls;
+#endif
 
 #if defined(CONFIG_NET_APP_SERVER)
 	struct {
@@ -352,6 +382,10 @@ struct net_app_ctx {
 			mbedtls_ctr_drbg_context ctr_drbg;
 			mbedtls_ssl_context ssl;
 			mbedtls_ssl_config conf;
+#if defined(CONFIG_NET_APP_DTLS)
+			mbedtls_ssl_cookie_ctx cookie_ctx;
+			struct dtls_timing_context timing_ctx;
+#endif
 			u8_t *personalization_data;
 			size_t personalization_data_len;
 		} mbedtls;

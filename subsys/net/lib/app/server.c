@@ -120,7 +120,15 @@ int net_app_listen(struct net_app_ctx *ctx)
 		net_context_put(ctx->ipv4.ctx);
 		ctx->ipv4.ctx = NULL;
 	}
+#if defined(CONFIG_NET_APP_DTLS)
+	else {
+		if (ctx->is_tls && ctx->proto == IPPROTO_UDP) {
+			net_context_recv(ctx->ipv4.ctx, ctx->recv_cb,
+					 K_NO_WAIT, ctx);
+		}
+	}
 #endif
+#endif /* CONFIG_NET_IPV4 */
 
 	/* We ignore the IPv4 error if IPv6 is enabled */
 
@@ -138,7 +146,15 @@ int net_app_listen(struct net_app_ctx *ctx)
 		net_context_put(ctx->ipv6.ctx);
 		ctx->ipv6.ctx = NULL;
 	}
+#if defined(CONFIG_NET_APP_DTLS)
+	else {
+		if (ctx->is_tls && ctx->proto == IPPROTO_UDP) {
+			net_context_recv(ctx->ipv6.ctx, ctx->recv_cb,
+					 K_NO_WAIT, ctx);
+		}
+	}
 #endif
+#endif /* CONFIG_NET_IPV6 */
 
 	return ret;
 }
