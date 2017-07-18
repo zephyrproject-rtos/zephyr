@@ -3646,7 +3646,7 @@ struct k_poll_event {
  *             values. Only values that apply to the same object being polled
  *             can be used together. Choosing K_POLL_TYPE_IGNORE disables the
  *             event.
- * @param mode Future. Use K_POLL_MODE_INFORM_ONLY.
+ * @param mode Future. Use K_POLL_MODE_NOTIFY_ONLY.
  * @param obj Kernel object or poll signal.
  *
  * @return N/A
