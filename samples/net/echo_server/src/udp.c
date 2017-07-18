@@ -48,6 +48,58 @@ static struct net_buf_pool *data_udp_pool(void)
 #define data_udp_pool NULL
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
+#if defined(CONFIG_NET_APP_DTLS)
+
+/* The result buf size is set to large enough so that we can receive max size
+ * buf back. Note that mbedtls needs also be configured to have equal size
+ * value for its buffer size. See MBEDTLS_SSL_MAX_CONTENT_LEN option in TLS
+ * config file.
+ */
+#define RESULT_BUF_SIZE 1500
+static u8_t dtls_result[RESULT_BUF_SIZE];
+
+#define APP_BANNER "Run DTLS echo-server"
+#define INSTANCE_INFO "Zephyr DTLS echo-server #1"
+
+/* Note that each net_app context needs its own stack as there will be
+ * a separate thread needed.
+ */
+NET_STACK_DEFINE(NET_APP_DTLS, net_app_dtls_stack,
+		 CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
+
+#define RX_FIFO_DEPTH 4
+K_MEM_POOL_DEFINE(dtls_pool, 4, 64, RX_FIFO_DEPTH, 4);
+#endif /* CONFIG_NET_APP_TLS */
+
+#if defined(CONFIG_NET_APP_DTLS)
+/* Load the certificates and private RSA key. */
+
+#include "test_certs.h"
+
+static int setup_cert(struct net_app_ctx *ctx,
+		      mbedtls_x509_crt *cert,
+		      mbedtls_pk_context *pkey)
+{
+	int ret;
+
+	ret = mbedtls_x509_crt_parse(cert, rsa_example_cert_der,
+				     rsa_example_cert_der_len);
+	if (ret != 0) {
+		NET_ERR("mbedtls_x509_crt_parse returned %d", ret);
+		return ret;
+	}
+
+	ret = mbedtls_pk_parse_key(pkey, rsa_example_keypair_der,
+				   rsa_example_keypair_der_len, NULL, 0);
+	if (ret != 0) {
+		NET_ERR("mbedtls_pk_parse_key returned %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_APP_DTLS */
+
 static inline void set_dst_addr(sa_family_t family,
 				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
@@ -137,6 +189,28 @@ void start_udp(void)
 		net_app_release(&udp);
 		return;
 	}
+
+#if defined(CONFIG_NET_APP_DTLS)
+	ret = net_app_server_tls(&udp,
+				 dtls_result,
+				 sizeof(dtls_result),
+				 APP_BANNER,
+				 INSTANCE_INFO,
+				 strlen(INSTANCE_INFO),
+				 setup_cert,
+				 NULL,
+				 &dtls_pool,
+				 net_app_dtls_stack,
+				 K_THREAD_STACK_SIZEOF(net_app_dtls_stack));
+	if (ret < 0) {
+		NET_ERR("Cannot init DTLS");
+	} else {
+		ret = net_app_server_tls_enable(&udp);
+		if (!ret) {
+			NET_ERR("Cannot enable DTLS support");
+		}
+	}
+#endif
 
 	ret = net_app_listen(&udp);
 	if (ret < 0) {
