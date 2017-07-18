@@ -174,10 +174,10 @@ static int gpio_cc2650_config_pin(int pin, int flags)
 	if (flags & GPIO_DS_DISCONNECT_LOW) {
 		disconnect(pin, &gpio_doe31_0_config, &iocfg_config);
 	}
-	if (flags & GPIO_DS_DFLT_LOW) {
-		iocfg_config |= CC2650_IOC_MIN_DRIVE_STRENGTH;
-	} else {
+	if (flags & GPIO_DS_ALT_LOW) {
 		iocfg_config |= CC2650_IOC_MAX_DRIVE_STRENGTH;
+	} else {
+		iocfg_config |= CC2650_IOC_MIN_DRIVE_STRENGTH;
 	}
 
 	/* Commit changes */
