@@ -144,6 +144,7 @@ SECTIONS
 
 	KERNEL_INPUT_SECTION(.data)
 	KERNEL_INPUT_SECTION(".data.*")
+	*(".kernel.*")
 
 #ifdef CONFIG_CUSTOM_RWDATA_LD
 /* Located in project source directory */
