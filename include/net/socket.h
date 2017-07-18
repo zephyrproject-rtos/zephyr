@@ -186,6 +186,8 @@ int ztls_setsockopt(int sock, int level, int optname,
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
+#define pollfd zsock_pollfd
+#if !defined(CONFIG_NET_SOCKETS_OFFLOAD)
 static inline int socket(int family, int type, int proto)
 {
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -296,13 +298,6 @@ static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
-#define pollfd zsock_pollfd
-#define POLLIN ZSOCK_POLLIN
-#define POLLOUT ZSOCK_POLLOUT
-
-#define MSG_PEEK ZSOCK_MSG_PEEK
-#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
-
 static inline int getsockopt(int sock, int level, int optname,
 			     void *optval, socklen_t *optlen)
 {
@@ -322,6 +317,16 @@ static inline int setsockopt(int sock, int level, int optname,
 	return zsock_setsockopt(sock, level, optname, optval, optlen);
 #endif
 }
+
+#else
+#include <net/socket_offload.h>
+#endif /* !defined(CONFIG_NET_SOCKETS_OFFLOAD) */
+
+#define POLLIN ZSOCK_POLLIN
+#define POLLOUT ZSOCK_POLLOUT
+
+#define MSG_PEEK ZSOCK_MSG_PEEK
+#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
 
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
