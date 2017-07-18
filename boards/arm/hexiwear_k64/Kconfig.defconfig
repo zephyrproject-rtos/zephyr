@@ -130,13 +130,6 @@ config FXAS21002_GPIO_PIN
 
 endif # FXAS21002
 
-if PWM_K64_FTM
-
-config PWM_K64_FTM_0
-	def_bool y
-
-endif # PWM_K64_FTM
-
 if PWM_MCUX_FTM
 
 config PWM_3
