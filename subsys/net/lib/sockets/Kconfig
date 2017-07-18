@@ -25,6 +25,13 @@ config NET_SOCKETS_POSIX_NAMES
 	attention, as in POSIX it closes any file descriptor, while with this
 	option enaled, it will still apply only to sockets.
 
+config NET_SOCKETS_POLL_MAX
+	int
+	prompt "Max number of supported poll() entries"
+	default 3
+	help
+	Maximum number of entries supported for poll() call.
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets like API calls"
 	default n
