@@ -15,6 +15,16 @@
 extern "C" {
 #endif
 
+struct zsock_pollfd {
+	int fd;
+	short events;
+	short revents;
+};
+
+/* Values are compatible with Linux */
+#define ZSOCK_POLLIN 1
+#define ZSOCK_POLLOUT 4
+
 int zsock_socket(int family, int type, int proto);
 int zsock_close(int sock);
 int zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
@@ -24,6 +34,7 @@ int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 ssize_t zsock_send(int sock, const void *buf, size_t len, int flags);
 ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags);
 int zsock_fcntl(int sock, int cmd, int flags);
+int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 #define socket zsock_socket
@@ -35,6 +46,11 @@ int zsock_fcntl(int sock, int cmd, int flags);
 #define send zsock_send
 #define recv zsock_recv
 #define fcntl zsock_fcntl
+
+#define poll zsock_poll
+#define pollfd zsock_pollfd
+#define POLLIN ZSOCK_POLLIN
+#define POLLOUT ZSOCK_POLLOUT
 
 #define inet_ntop net_addr_ntop
 #define inet_pton net_addr_pton

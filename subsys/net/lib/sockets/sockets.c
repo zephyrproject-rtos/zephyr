@@ -13,6 +13,7 @@
 #include <sys/fcntl.h>
 
 /* Zephyr headers */
+#include <kernel.h>
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
@@ -22,6 +23,8 @@
 
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
+
+static struct k_poll_event poll_events[CONFIG_NET_SOCKETS_POLL_MAX];
 
 static inline void sock_set_flag(struct net_context *ctx, u32_t mask,
 				 u32_t flag)
@@ -374,4 +377,76 @@ int zsock_fcntl(int sock, int cmd, int flags)
 		errno = EINVAL;
 		return -1;
 	}
+}
+
+int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+{
+	int i;
+	int ret = 0;
+	struct zsock_pollfd *pfd;
+	struct k_poll_event *pev;
+	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
+
+	if (timeout < 0) {
+		timeout = K_FOREVER;
+	}
+
+	pev = poll_events;
+	for (pfd = fds, i = nfds; i--; pfd++) {
+
+		/* Per POSIX, negative fd's are just ignored */
+		if (pfd->fd < 0) {
+			continue;
+		}
+
+		if (pfd->events & POLLIN) {
+			struct net_context *ctx = INT_TO_POINTER(pfd->fd);
+
+			if (pev == pev_end) {
+				errno = ENOMEM;
+				return -1;
+			}
+
+			pev->obj = &ctx->recv_q;
+			pev->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+			pev->mode = K_POLL_MODE_NOTIFY_ONLY;
+			pev->state = K_POLL_STATE_NOT_READY;
+			pev++;
+		}
+	}
+
+	ret = k_poll(poll_events, pev - poll_events, timeout);
+	if (ret != 0 && ret != -EAGAIN) {
+		errno = -ret;
+		return -1;
+	}
+
+	ret = 0;
+
+	pev = poll_events;
+	for (pfd = fds, i = nfds; i--; pfd++) {
+		pfd->revents = 0;
+
+		if (pfd->fd < 0) {
+			continue;
+		}
+
+		/* For now, assume that socket is always writable */
+		if (pfd->events & POLLOUT) {
+			pfd->revents |= POLLOUT;
+		}
+
+		if (pfd->events & POLLIN) {
+			if (pev->state != K_POLL_STATE_NOT_READY) {
+				pfd->revents |= POLLIN;
+			}
+			pev++;
+		}
+
+		if (pfd->revents != 0) {
+			ret++;
+		}
+	}
+
+	return ret;
 }
