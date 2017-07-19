@@ -7,6 +7,8 @@
 	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
 
 	aliases {
+		adc_0 = &adc0;
+		adc_1 = &adc1;
 		uart_0 = &uart0;
 		uart_3 = &uart3;
 		pinmux_a = &pinmux_a;
@@ -19,6 +21,9 @@
 		gpio_c = &gpioc;
 		gpio_d = &gpiod;
 		gpio_e = &gpioe;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
+		i2c_2 = &i2c2;
 	};
 
 	chosen {
@@ -27,6 +32,18 @@
 		zephyr,console = &uart0;
 		zephyr,uart-pipe = &uart0;
 	};
+};
+
+&adc0 {
+	status = "ok";
+};
+
+&adc1 {
+	status = "ok";
+};
+
+&i2c0 {
+	status = "ok";
 };
 
 &uart0 {

@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+obj-$(CONFIG_ADC_MCUX_ADC16) += fsl_adc16.o
 obj-$(CONFIG_ETH_MCUX) += fsl_enet.o
 obj-$(CONFIG_I2C_MCUX) += fsl_i2c.o
 obj-$(CONFIG_RANDOM_MCUX_RNGA) += fsl_rnga.o

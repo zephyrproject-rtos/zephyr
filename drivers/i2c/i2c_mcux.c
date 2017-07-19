@@ -186,7 +186,7 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 static void i2c_mcux_config_func_0(struct device *dev);
 
 static const struct i2c_mcux_config i2c_mcux_config_0 = {
-	.base = I2C0,
+	.base = (I2C_Type *)CONFIG_I2C_MCUX_0_BASE_ADDRESS,
 	.clock_source = I2C0_CLK_SRC,
 	.irq_config_func = i2c_mcux_config_func_0,
 	.default_cfg.raw = CONFIG_I2C_0_DEFAULT_CFG,
@@ -203,10 +203,10 @@ static void i2c_mcux_config_func_0(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(IRQ_I2C0, CONFIG_I2C_0_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_I2C_MCUX_0_IRQ, CONFIG_I2C_MCUX_0_IRQ_PRI,
 		    i2c_mcux_isr, DEVICE_GET(i2c_mcux_0), 0);
 
-	irq_enable(I2C0_IRQn);
+	irq_enable(CONFIG_I2C_MCUX_0_IRQ);
 }
 #endif /* CONFIG_I2C_0 */
 
@@ -214,7 +214,7 @@ static void i2c_mcux_config_func_0(struct device *dev)
 static void i2c_mcux_config_func_1(struct device *dev);
 
 static const struct i2c_mcux_config i2c_mcux_config_1 = {
-	.base = I2C1,
+	.base = (I2C_Type *)CONFIG_I2C_MCUX_1_BASE_ADDRESS,
 	.clock_source = I2C1_CLK_SRC,
 	.irq_config_func = i2c_mcux_config_func_1,
 	.default_cfg.raw = CONFIG_I2C_1_DEFAULT_CFG,
@@ -229,9 +229,9 @@ DEVICE_AND_API_INIT(i2c_mcux_1, CONFIG_I2C_1_NAME, &i2c_mcux_init,
 
 static void i2c_mcux_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(IRQ_I2C1, CONFIG_I2C_1_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_I2C_MCUX_1_IRQ, CONFIG_I2C_MCUX_1_IRQ_PRI,
 		    i2c_mcux_isr, DEVICE_GET(i2c_mcux_1), 0);
 
-	irq_enable(I2C1_IRQn);
+	irq_enable(CONFIG_I2C_MCUX_1_IRQ);
 }
 #endif /* CONFIG_I2C_1 */

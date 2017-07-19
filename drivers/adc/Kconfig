@@ -16,10 +16,11 @@ menuconfig ADC
 	help
 	  Enable ADC (Analog to Digital Converter) driver configuration
 
+if ADC
+
 config SYS_LOG_ADC_LEVEL
 	int
 	prompt "ADC drivers log level"
-	depends on ADC
 	default 0
 	range 0 4
 	help
@@ -40,27 +41,45 @@ config SYS_LOG_ADC_LEVEL
 
 config ADC_INIT_PRIORITY
 	int
-	depends on ADC
 	default 80
 	prompt "Init priority"
 	help
 	  ADC Device driver initialization priority.
 
+config ADC_0
+	bool "Enable ADC 0"
+	default n
+
 config ADC_0_NAME
-	string "ADC Driver's name"
-	depends on ADC
+	string "ADC 0 Driver's name"
+	depends on ADC_0 && !HAS_DTS_ADC
 	default "ADC_0"
 
 config ADC_0_IRQ_PRI
 	int
-	depends on ADC
-	prompt "ADC interrupt priority"
+	depends on ADC_0 && !HAS_DTS_ADC
+	prompt "ADC 0 interrupt priority"
+	default 2
+
+config ADC_1
+	bool "Enable ADC 1"
+	default n
+
+config ADC_1_NAME
+	string "ADC 1 Driver's name"
+	depends on ADC_1 && !HAS_DTS_ADC
+	default "ADC_1"
+
+config ADC_1_IRQ_PRI
+	int
+	depends on ADC_1 && !HAS_DTS_ADC
+	prompt "ADC 1 interrupt priority"
 	default 2
 
 menuconfig ADC_TI_ADC108S102
 	bool "TI adc108s102 chip driver"
-	depends on ADC
 	select SPI
+	select ADC_0
 	default n
 	help
 	Enable support for TI's ADC chip adc108s102 driver.
@@ -95,7 +114,8 @@ endif # ADC_TI_ADC108S102
 
 menuconfig ADC_DW
 	bool "ARC Designware Driver"
-	depends on ADC && ARC
+	depends on ARC
+	select ADC_0
 	default n
 	help
 	  Enable the driver implementation of the Designware ADC IP.
@@ -196,14 +216,16 @@ endif # ADC_DW
 
 menuconfig ADC_QMSI
 	bool "QMSI ADC Driver"
-	depends on QMSI && ADC
+	depends on QMSI
+	select ADC_0
 	default n
 	help
 	  Enable the driver implementation of the QMSI ADC IP.
 
 menuconfig ADC_QMSI_SS
 	bool "QMSI ADC Driver for the Sensor Subsystem"
-	depends on QMSI && ADC
+	depends on QMSI
+	select ADC_0
 	default n
 	help
 	  Enable the driver implementation of the QMSI ADC IP.
@@ -280,3 +302,13 @@ config ADC_QMSI_SAMPLE_WIDTH
 endif
 
 endif # ADC_QMSI || ADC_QMSI_SS
+
+config ADC_MCUX_ADC16
+	bool "MCUX ADC16 driver"
+	depends on HAS_MCUX && HAS_ADC16
+	select HAS_DTS_ADC
+	default n
+	help
+	  Enable the MCUX ADC16 driver.
+
+endif # ADC

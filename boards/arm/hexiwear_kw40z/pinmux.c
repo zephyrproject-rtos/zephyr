@@ -12,6 +12,11 @@ static int hexiwear_kw40z_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#ifdef CONFIG_PINMUX_MCUX_PORTB
+	struct device *portb =
+		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
+#endif
+
 #ifdef CONFIG_PINMUX_MCUX_PORTC
 	struct device *portc =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
@@ -29,6 +34,11 @@ static int hexiwear_kw40z_pinmux_init(struct device *dev)
 					| PORT_PCR_PS_MASK);
 	pinmux_pin_set(portc,  6, PORT_PCR_MUX(kPORT_MuxAlt3)
 					| PORT_PCR_PS_MASK);
+#endif
+
+#if CONFIG_ADC
+	/* ADC0_SE1 */
+	pinmux_pin_set(portb,  1, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
 	return 0;

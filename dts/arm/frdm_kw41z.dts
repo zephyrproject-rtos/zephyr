@@ -7,6 +7,7 @@
 	compatible = "nxp,kw41z", "nxp,mkw41z4";
 
 	aliases {
+		adc_0 = &adc0;
 		lpuart_0 = &lpuart0;
 		pinmux_a = &pinmux_a;
 		pinmux_b = &pinmux_b;
@@ -14,6 +15,8 @@
 		gpio_a = &gpioa;
 		gpio_b = &gpiob;
 		gpio_c = &gpioc;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
 	};
 
 	chosen {
@@ -21,6 +24,14 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &lpuart0;
 	};
+};
+
+&adc0 {
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
 };
 
 &lpuart0 {

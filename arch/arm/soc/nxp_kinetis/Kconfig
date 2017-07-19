@@ -64,6 +64,12 @@ config HAS_LPSCI
 	help
 	  Set if the low power uart (LPSCI) module is present in the SoC.
 
+config HAS_ADC16
+	bool
+	default n
+	help
+	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
+
 config HAS_SYSMPU
 	bool "Enable MPU"
 	depends on CPU_HAS_MPU
