@@ -64,6 +64,12 @@
 		reg = <0x6a>;
 		label = "LSM6DSL";
 	};
+
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		label = "VL53L0X";
+	};
 };
 
 &spi1 {

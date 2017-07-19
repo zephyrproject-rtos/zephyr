@@ -47,4 +47,14 @@ config PWM_STM32_2
 
 endif # PWM
 
+if VL53L0X
+
+config VL53L0X_XSHUT_GPIO_DEV_NAME
+	default "GPIOC"
+
+config VL53L0X_XSHUT_GPIO_PIN_NUM
+	default 6
+
+endif #VL53L0X
+
 endif # BOARD_DISCO_L475_IOT1
