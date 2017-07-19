@@ -1,0 +1,96 @@
+# Kconfig - Kinetis KW2xD SoC configuration options
+#
+# Copyright (c) 2017, Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MKW22D5 || SOC_MKW24D5
+
+if SOC_MKW22D5
+
+config SOC
+	string
+	default mkw22d5
+
+endif # SOC_MKW22D5
+
+if SOC_MKW24D5
+
+config SOC
+	string
+	default mkw24d5
+
+endif # SOC_MKW24D5
+
+config NUM_IRQS
+	int
+	default 65
+
+if ADC
+
+config ADC_MCUX_ADC16
+	def_bool y
+
+endif # ADC
+
+if PINMUX
+
+config PINMUX_MCUX
+	def_bool y
+
+endif # PINMUX
+
+if GPIO
+
+config GPIO_MCUX
+	def_bool y
+
+endif # GPIO
+
+if I2C
+
+config I2C_MCUX
+	def_bool y
+
+endif # I2C
+
+config SPI
+	def_bool y
+
+if PWM
+
+config PWM_MCUX_FTM
+	def_bool y
+
+endif # PWM
+
+if SPI
+
+config SPI_MCUX_DSPI
+	def_bool y
+
+endif # SPI
+
+if RANDOM_GENERATOR
+
+config RANDOM_MCUX_RNGA
+	def_bool y
+
+endif # RANDOM_GENERATOR
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	def_bool y
+
+endif # FLASH
+
+if SERIAL
+
+config UART_MCUX
+	def_bool y
+
+endif # SERIAL
+
+endif # SOC_MKW2xD512
