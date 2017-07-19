@@ -68,6 +68,8 @@
  * Uses the UARTE_BAUDRATE macros since they are more precise.
  */
 
+#define NRF5_UART_BAUDRATE_300                 0x00014000
+#define NRF5_UART_BAUDRATE_600                 0x00027000
 #define NRF5_UART_BAUDRATE_1200                0x0004f000
 #define NRF5_UART_BAUDRATE_2400                0x0009d000
 #define NRF5_UART_BAUDRATE_4800                0x0013b000
