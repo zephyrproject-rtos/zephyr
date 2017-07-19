@@ -62,10 +62,5 @@
 		 * 0x0007ffff (sectors 125-127) is reserved for use
 		 * by the application.
 		 */
-
-		app_state_partition: partition@7d000 {
-			label = "application-state";
-			reg = <0x0007d000 0x3000>;
-		};
 	};
 };
