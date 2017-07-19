@@ -461,7 +461,10 @@ def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
         def_label = yaml[node_compat].get('base_label')
     else:
         def_label = convert_string_to_label(node_compat.upper())
-        def_label += '_' + node_address.split('@')[-1].upper()
+        if '@' in node_address:
+            def_label += '_' + node_address.split('@')[-1].upper()
+        else:
+            def_label += convert_string_to_label(node_address.upper())
 
     if label_override is not None:
         def_label += '_' + label_override
