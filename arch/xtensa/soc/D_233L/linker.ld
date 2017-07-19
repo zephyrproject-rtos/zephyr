@@ -47,7 +47,7 @@ MEMORY
   srom0_seg :                         	org = 0xFE000000, len = 0x300
   srom1_seg :                         	org = 0xFE000300, len = 0xFFFD00
 #ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST : org = 0xffffdfff, len = 0x2000
+  IDT_LIST : org = 0x3ffdd50, len = 0x2000
 #endif
 }
 

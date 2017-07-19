@@ -50,7 +50,7 @@ MEMORY
   sram18_seg :                        	org = 0x600003C0, len = 0x40
   sram19_seg :                        	org = 0x60000400, len = 0x3FFFC00
 #ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST : org = 0xffffdfff, len = 0x2000
+  IDT_LIST : org = 0x3ffbe000, len = 0x2000
 #endif
 }
 
