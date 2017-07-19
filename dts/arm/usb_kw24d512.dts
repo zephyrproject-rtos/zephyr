@@ -1,0 +1,47 @@
+/dts-v1/;
+
+#include <nxp/nxp_kw2xd.dtsi>
+
+/ {
+	model = "NXP USB-KW24D512 board";
+	compatible = "nxp,usb-kw24d512", "nxp,kw24d512", "nxp,kw2xd";
+
+	aliases {
+		uart_0 = &uart0;
+		pinmux_a = &pinmux_a;
+		pinmux_b = &pinmux_b;
+		pinmux_c = &pinmux_c;
+		pinmux_d = &pinmux_d;
+		pinmux_e = &pinmux_e;
+		gpio_a = &gpioa;
+		gpio_b = &gpiob;
+		gpio_c = &gpioc;
+		gpio_d = &gpiod;
+		gpio_e = &gpioe;
+		i2c_0 = &i2c0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+};
+
+&adc0 {
+	status = "ok";
+};
+
+&i2c0 {
+	status = "ok";
+};
+
+&pwm1 {
+	status = "ok";
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
