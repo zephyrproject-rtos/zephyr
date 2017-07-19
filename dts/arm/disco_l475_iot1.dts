@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/stm32l475.dtsi>
+#include <i2c.h>
 
 / {
 	model = "STMicroelectronics B-L475E-IOT01Ax board";
@@ -25,10 +26,12 @@
 
 &i2c1 {
 	status = "ok";
+	zephyr,speed = <I2C_SPEED_FAST>;
 };
 
 &i2c2 {
 	status = "ok";
+	zephyr,speed = <I2C_SPEED_FAST>;
 };
 
 &flash0 {

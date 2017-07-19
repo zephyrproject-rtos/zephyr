@@ -23,9 +23,6 @@
 extern "C" {
 #endif
 
-#include <zephyr/types.h>
-#include <device.h>
-
 /*
  * The following #defines are used to configure the I2C controller.
  */
@@ -54,6 +51,10 @@ extern "C" {
 
 /** Controller to act as Master. */
 #define I2C_MODE_MASTER			(1 << 4)
+
+#ifndef __DTS__
+#include <zephyr/types.h>
+#include <device.h>
 
 /*
  * I2C_MSG_* are I2C Message flags.
@@ -693,6 +694,7 @@ struct i2c_client_config {
 
 #define I2C_GET_MASTER(_conf)		((_conf)->i2c_client.i2c_master)
 #define I2C_GET_ADDR(_conf)		((_conf)->i2c_client.i2c_addr)
+#endif /* !__DTS__ */
 
 #ifdef __cplusplus
 }

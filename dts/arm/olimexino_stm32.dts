@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/stm32f103Xb.dtsi>
+#include <i2c.h>
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
@@ -25,4 +26,5 @@
 
 &i2c2 {
 	status = "ok";
+	zephyr,speed = <I2C_SPEED_FAST>;
 };

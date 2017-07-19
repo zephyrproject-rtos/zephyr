@@ -1,0 +1,29 @@
+---
+title: Kinetis I2C Controller
+version: 0.1
+
+description: >
+    This is a representation of the Kinetis I2C nodes
+
+inherits:
+  - !include i2c.yaml
+  - !include zephyr-i2c.yaml
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nxp,kinetis-i2c"
+
+  - reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+  - interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define

@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/stm32f401.dtsi>
+#include <i2c.h>
 
 / {
 	model = "Seeed Studio Carbon 96boards";
@@ -29,6 +30,7 @@
 };
 
 &i2c1 {
+	zephyr,speed = <I2C_SPEED_FAST>;
 	status = "ok";
 };
 

@@ -1,6 +1,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_kw40z.dtsi>
+#include <i2c.h>
 
 / {
 	model = "Hexiwear KW40 board";
@@ -14,12 +15,19 @@
 		gpio_a = &gpioa;
 		gpio_b = &gpiob;
 		gpio_c = &gpioc;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
 	};
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+};
+
+&i2c0 {
+	status = "ok";
+	zephyr,speed = <I2C_SPEED_STANDARD>;
 };
 
 &lpuart0 {

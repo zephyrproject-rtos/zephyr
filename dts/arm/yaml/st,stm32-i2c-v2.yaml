@@ -8,6 +8,7 @@ description: >
 
 inherits:
   - !include i2c.yaml
+  - !include zephyr-i2c.yaml
 
 properties:
   - compatible:

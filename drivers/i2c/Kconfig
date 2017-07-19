@@ -63,6 +63,7 @@ config TWIHS_SAM
 config I2C_MCUX
 	bool "MCUX I2C driver"
 	depends on HAS_MCUX
+	select HAS_DTS_I2C
 	default n
 	help
 	  Enable the mcux I2C driver.
@@ -193,12 +194,12 @@ config I2C_0
 
 config I2C_0_NAME
 	string "Port 0 device name"
-	depends on I2C_0
+	depends on I2C_0 && !HAS_DTS_I2C
 	default "I2C_0"
 
 config I2C_0_DEFAULT_CFG
 	hex "Port 0 default configuration"
-	depends on I2C_0
+	depends on I2C_0 && !HAS_DTS_I2C
 	default 0x0
 	help
 	  Allows the I2C port to be brought up with a default configuration.
@@ -209,7 +210,7 @@ config I2C_0_DEFAULT_CFG
 
 config I2C_0_IRQ_PRI
 	int "Port 0 interrupt priority"
-	depends on I2C_0
+	depends on I2C_0 && !HAS_DTS_I2C
 	help
 	  IRQ priority.
 
@@ -224,7 +225,7 @@ config I2C_1_NAME
 
 config I2C_1_DEFAULT_CFG
 	hex "Port 1 default configuration"
-	depends on I2C_1
+	depends on I2C_1 && !HAS_DTS_I2C
 	default 0x0
 	help
 	  Allows the I2C port to be brought up with a default configuration.
@@ -250,7 +251,7 @@ config I2C_2_NAME
 
 config I2C_2_DEFAULT_CFG
 	hex "Port 2 default configuration"
-	depends on I2C_2
+	depends on I2C_2 && !HAS_DTS_I2C
 	default 0x0
 	help
 	  Allows the I2C port to be brought up with a default configuration.
@@ -276,7 +277,7 @@ config I2C_3_NAME
 
 config I2C_3_DEFAULT_CFG
 	hex "Port 3 default configuration"
-	depends on I2C_3
+	depends on I2C_3 && !HAS_DTS_I2C
 	default 0x0
 	help
 	  Allows the I2C port to be brought up with a default configuration.
