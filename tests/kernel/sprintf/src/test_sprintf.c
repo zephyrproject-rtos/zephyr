@@ -435,7 +435,7 @@ int sprintf_misc_test(void)
 	}
 
 	/*******************/
-	sprintf(buffer, "%hx", 1234);
+	sprintf(buffer, "%hx", (unsigned short)1234);
 	if (strcmp("4d2", buffer) != 0) {
 		TC_ERROR("sprintf(%%hx).  Expected '4d2', got '%s'\n", buffer);
 		status = TC_FAIL;
