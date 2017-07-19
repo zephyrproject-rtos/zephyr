@@ -668,7 +668,9 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 			continue;
 		}
 
-		k_delayed_work_cancel(&iface->ipv6.unicast[i].lifetime);
+		if (!iface->ipv6.unicast[i].is_infinite) {
+			k_delayed_work_cancel(&iface->ipv6.unicast[i].lifetime);
+		}
 
 		iface->ipv6.unicast[i].is_used = false;
 
