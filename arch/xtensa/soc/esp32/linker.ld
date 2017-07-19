@@ -38,7 +38,7 @@ MEMORY
   rtc_iram_seg(RWX): org = 0x400C0000, len = 0x2000
   rtc_slow_seg(RW): org = 0x50000000, len = 0x1000
 #ifdef CONFIG_GEN_ISR_TABLES
-  IDT_LIST(RW): org = 0xffffdfff, len = 0x2000
+  IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
 #endif
 }
 

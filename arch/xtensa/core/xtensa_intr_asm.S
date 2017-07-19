@@ -39,28 +39,6 @@ _xt_vpri_mask:     .word   0xFFFFFFFF    /* Virtual priority mask */
 #endif /* XCHAL_HAVE_INTERRUPTS */
 
 
-#if XCHAL_HAVE_EXCEPTIONS
-
-/*
--------------------------------------------------------------------------------
-  Table of C-callable exception handlers for each exception. Note that not all
-  slots will be active, because some exceptions (e.g. coprocessor exceptions)
-  are always handled by the OS and cannot be hooked by user handlers.
--------------------------------------------------------------------------------
-*/
-
-	.data
-	.global _xt_exception_table
-	.align  4
-
-_xt_exception_table:
-	.rept   XCHAL_EXCCAUSE_NUM
-	.word   xt_unhandled_exception    /* handler address */
-	.endr
-
-#endif
-
-
 /*
 -------------------------------------------------------------------------------
   unsigned int _xt_ints_on ( unsigned int mask )
