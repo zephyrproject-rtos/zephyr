@@ -1735,7 +1735,14 @@ static inline void
 isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			 u8_t *rx_enqueue)
 {
-	if (_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) {
+	if (0) {
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+	} else if (_radio.conn_curr->llcp_phy.ack !=
+		   _radio.conn_curr->llcp_phy.req) {
+		isr_rx_conn_pkt_ctrl_rej_phy_upd(radio_pdu_node_rx,
+						 rx_enqueue);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+	} else if (_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) {
 		/* reset ctrl procedure */
 		_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
 
@@ -1756,13 +1763,6 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		isr_rx_conn_pkt_ctrl_rej_dle(radio_pdu_node_rx,
 					     rx_enqueue);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
-
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
-	} else if (_radio.conn_curr->llcp_phy.ack !=
-		   _radio.conn_curr->llcp_phy.req) {
-		isr_rx_conn_pkt_ctrl_rej_phy_upd(radio_pdu_node_rx,
-						 rx_enqueue);
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
 	} else {
@@ -2441,10 +2441,16 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			      LLCP_PHY_STATE_RSP_WAIT) ||
 			     (_radio.conn_curr->llcp_phy.state ==
 			      LLCP_PHY_STATE_UPD))) {
-				/* cross-over */
+				/* Same procedure collision  */
 				reject_ind_ext_send(_radio.conn_curr,
 					PDU_DATA_LLCTRL_TYPE_PHY_REQ,
 					0x23);
+			} else if (_radio.conn_curr->llcp_req !=
+				   _radio.conn_curr->llcp_ack) {
+				/* Different procedure collision */
+				reject_ind_ext_send(_radio.conn_curr,
+					PDU_DATA_LLCTRL_TYPE_PHY_REQ,
+					0x2a);
 			} else {
 				struct pdu_data_llctrl *c =
 					&pdu_data_rx->payload.llctrl;
