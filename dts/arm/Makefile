@@ -5,6 +5,7 @@ dtb-$(CONFIG_BOARD_FRDM_KW41Z)		=	frdm_kw41z.dts_compiled
 dtb-$(CONFIG_BOARD_FRDM_KL25Z)		=	frdm_kl25z.dts_compiled
 dtb-$(CONFIG_BOARD_HEXIWEAR_K64)	=	hexiwear_k64.dts_compiled
 dtb-$(CONFIG_BOARD_HEXIWEAR_KW40Z)	=	hexiwear_kw40z.dts_compiled
+dtb-$(CONFIG_BOARD_USB_KW24D512)	=	usb_kw24d512.dts_compiled
 dtb-$(CONFIG_BOARD_CC3220SF_LAUNCHXL)	=	cc3220sf_launchxl.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_L476RG)	=	nucleo_l476rg.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_L432KC)	=	nucleo_l432kc.dts_compiled
