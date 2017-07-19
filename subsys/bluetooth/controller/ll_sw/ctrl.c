@@ -1903,6 +1903,40 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	u8_t nack = 0;
 
 	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+
+	/* Invalid packet */
+	if (_radio.conn_curr->role) {
+		/* Slave */
+		switch (pdu_data_rx->payload.llctrl.opcode) {
+		case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
+		case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
+		case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+		case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
+		case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+			unknown_rsp_send(_radio.conn_curr,
+					 pdu_data_rx->payload.llctrl.opcode);
+			return 0;
+		default:
+			break;
+		}
+	} else {
+		/* Master */
+		switch (pdu_data_rx->payload.llctrl.opcode) {
+		case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
+		case PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND:
+		case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+		case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
+		case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
+			unknown_rsp_send(_radio.conn_curr,
+					 pdu_data_rx->payload.llctrl.opcode);
+			return 0;
+
+		default:
+			break;
+		}
+	}
+
 	switch (pdu_data_rx->payload.llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 		if (conn_update(_radio.conn_curr, pdu_data_rx) == 0) {
