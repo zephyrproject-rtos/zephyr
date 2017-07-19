@@ -22,7 +22,7 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: master.16
+        image_tag: master.27
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
@@ -31,8 +31,6 @@ build:
       - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
-      - sudo pip install pyelftools==0.24
-      - sudo pip install pykwalify
       - make host-tools
       - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
       - >
