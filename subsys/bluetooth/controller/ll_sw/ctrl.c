@@ -1759,6 +1759,38 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		isr_rx_conn_pkt_ctrl_rej_phy_upd(radio_pdu_node_rx,
 						 rx_enqueue);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
+	} else {
+		struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+		struct pdu_data *pdu_rx;
+
+		pdu_rx = (void *)radio_pdu_node_rx->pdu_data;
+		rej_ext_ind = (void *)
+			&pdu_rx->payload.llctrl.ctrldata.reject_ext_ind;
+
+		switch (rej_ext_ind->reject_opcode) {
+		case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+			/* resume data packet rx and tx */
+			_radio.conn_curr->pause_rx = 0;
+			_radio.conn_curr->pause_tx = 0;
+
+			/* Procedure complete */
+			_radio.conn_curr->procedure_expire = 0;
+
+			/* enqueue as if it were a reject ind */
+			pdu_rx->payload.llctrl.opcode =
+				PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+			pdu_rx->payload.llctrl.ctrldata.reject_ind.error_code =
+				rej_ext_ind->error_code;
+			*rx_enqueue = 1;
+			break;
+
+		default:
+			/* Ignore */
+			break;
+		}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
 	}
 }
 
