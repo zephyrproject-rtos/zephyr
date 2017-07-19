@@ -20,7 +20,42 @@
 	};
 };
 
+&uart0 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&uart2 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&uart3 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&uart4 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&usart0 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
 &usart1 {
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&usart2 {
 	current-speed = <115200>;
 	status = "ok";
 };
