@@ -5,7 +5,6 @@
 #
 
 ccflags-$(CONFIG_NET_L2_BLUETOOTH) += -I${ZEPHYR_BASE}/samples/bluetooth/
-ccflags-$(CONFIG_NET_L2_IEEE802154) += -I${ZEPHYR_BASE}/samples/net/common/
 
 obj-$(CONFIG_NET_APP) += init.o
 obj-$(CONFIG_NET_APP_SERVER) += server.o
@@ -17,4 +16,8 @@ else
 	ifeq ($(CONFIG_NET_APP_CLIENT),y)
 		obj-y += net_app.o
 	endif
+endif
+
+ifeq ($(CONFIG_NET_APP_SETTINGS),y)
+	obj-$(CONFIG_NET_L2_IEEE802154) += ieee802154_settings.o
 endif

@@ -27,6 +27,8 @@
 
 #include <net/net_app.h>
 
+#include "ieee802154_settings.h"
+
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
 
@@ -245,6 +247,14 @@ static int init_net_app(struct device *device)
 	int ret;
 
 	ARG_UNUSED(device);
+
+#if defined(CONFIG_NET_IPV6)
+	/* IEEE 802.15.4 is only usable if IPv6 is enabled */
+	ret = _net_app_ieee802154_setup();
+	if (ret < 0) {
+		NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_NET_APP_NEED_IPV6)) {
 		flags |= NET_APP_NEED_IPV6;
