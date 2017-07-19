@@ -4,7 +4,8 @@ and peripheral drivers for Kinetis, LPC, and i.MX SoCs.
 It was previously called the Kinetis Software Development Kit (KSDK), then
 renamed to include support for LPC and i.MX SoCs.
 
-The K64F and KW41Z sources in this directory are imported from mcux.nxp.com.
+The K64F, KW22D5, KW24D5 and KW41Z sources in this directory are imported
+from mcux.nxp.com.
 
 MCUX for KW40Z is not yet deployed on mcux.nxp.com like most other devices,
 therefore the sources are imported from the KW40Z product pages on nxp.com:
@@ -23,6 +24,8 @@ following SoCs:
 - MKW40Z4 (aka KW40Z)
 - MKW30Z4
 - MKW20Z4
+- MKW22D5
+- MKW24D5
 
 
 Additionally, it provides the following components:
