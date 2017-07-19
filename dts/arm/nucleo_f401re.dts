@@ -49,10 +49,12 @@
 			reg = <0x00000000 0x00010000>;
 			read-only;
 		};
-		app_state_partition: partition@10000 {
-			label = "application-state";
-			reg = <0x00010000 0x00010000>;
-		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
 		slot0_partition: partition@20000 {
 			label = "image-0";
 			reg = <0x00020000 0x00020000>;
