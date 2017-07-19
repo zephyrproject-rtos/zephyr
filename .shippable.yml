@@ -31,6 +31,8 @@ build:
       - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
+      - sudo pip install pyelftools==0.24
+      - sudo pip install pykwalify
       - make host-tools
       - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
       - >
