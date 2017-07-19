@@ -1009,6 +1009,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		conn_offset_us -= radio_tx_chain_delay_get(0, 0);
 		conn_offset_us -= rx_ready_delay;
 		conn_offset_us -= RADIO_TICKER_JITTER_US << 1;
+		conn_offset_us -= RADIO_TICKER_JITTER_US;
 
 		/* Stop Advertiser */
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -3180,7 +3181,7 @@ static inline void isr_close_conn(void)
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
 			preamble_to_addr_us = addr_us_get(0);
 #endif /* !CONFIG_BLUETOOTH_CONTROLLER_PHY */
-			start_to_address_expected_us =
+			start_to_address_expected_us = RADIO_TICKER_JITTER_US +
 				(RADIO_TICKER_JITTER_US << 1) +
 				preamble_to_addr_us +
 				window_widening_event_us;
@@ -3195,7 +3196,8 @@ static inline void isr_close_conn(void)
 				ticks_drift_plus =
 					TICKER_US_TO_TICKS(start_to_address_actual_us);
 				ticks_drift_minus =
-					TICKER_US_TO_TICKS((RADIO_TICKER_JITTER_US << 1) +
+					TICKER_US_TO_TICKS(RADIO_TICKER_JITTER_US +
+							   (RADIO_TICKER_JITTER_US << 1) +
 							   preamble_to_addr_us);
 			}
 
@@ -6933,7 +6935,8 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 				_radio.remainder_anchor);
 	radio_tmr_aa_capture();
-	hcto = remainder_us + (RADIO_TICKER_JITTER_US << 2) +
+	hcto = remainder_us + RADIO_TICKER_JITTER_US +
+	       (RADIO_TICKER_JITTER_US << 2) +
 	       (conn->slave.window_widening_event_us << 1) +
 	       conn->slave.window_size_event_us;
 
