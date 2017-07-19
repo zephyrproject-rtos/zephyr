@@ -14,6 +14,7 @@ env:
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
+        - MATRIX_BUILD="3"
 
 build:
     cache: true
@@ -45,7 +46,7 @@ build:
             S3_PATH="s3://zephyr-logs/${LOG_TYPE}/${REPO_FULL_NAME}/${BUILD_NUMBER}";
           fi;
       - >
-          if [ "$MATRIX_BUILD" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
+          if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
             export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
             echo "Building a Pull Request";
             echo "- Building Documentation";
@@ -63,12 +64,9 @@ build:
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
-          if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify" ]; then
-            echo "- Building with --all --enable-slow";
-            COVERAGE="--all --enable-slow";
+          if [ "$MATRIX_BUILD" != "3" ]; then
+          	./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS}  ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
           fi;
-      - >
-          ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS}  ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
       - ccache -s
     on_success:
       - rm -rf sanity-out out-2nd-pass
