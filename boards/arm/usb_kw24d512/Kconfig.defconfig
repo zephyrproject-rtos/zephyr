@@ -1,0 +1,135 @@
+# Kconfig - USB-KW24D512 board
+#
+# Copyright (c) 2017, Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_USB_KW24D512
+
+config BOARD
+	default usb_kw24d512
+
+config OSC_XTAL0_FREQ
+	# The MCU is configured to use 4 MHz external
+	# clock from the transceiver provided at the CLK_OUT output.
+	# CLK_OUT is internally connected to the input pin EXTAL0
+	# of the MCU.
+	default 4000000
+
+config MCG_PRDIV0
+	default 0x1
+
+config MCG_VDIV0
+	default 0x0
+
+config MCG_FCRDIV
+	default 2
+
+if UART_MCUX
+
+config UART_MCUX_0
+	def_bool y
+
+endif # UART_MCUX
+
+
+config PINMUX
+	def_bool y
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	def_bool y if UART_MCUX_0
+
+config PINMUX_MCUX_PORTB
+	def_bool y if SPI_1
+
+config PINMUX_MCUX_PORTC
+	def_bool y
+
+config PINMUX_MCUX_PORTD
+	def_bool y
+
+endif # PINMUX_MCUX
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	def_bool y
+
+config GPIO_MCUX_PORTB
+	def_bool y
+
+config GPIO_MCUX_PORTC
+	def_bool y
+
+config GPIO_MCUX_PORTD
+	def_bool y
+
+config GPIO_MCUX_PORTE
+	def_bool y
+
+endif # GPIO_MCUX
+
+if I2C
+
+config I2C_0
+	def_bool y
+
+config I2C_1
+	def_bool n
+
+endif # I2C
+
+if ADC
+
+config ADC_0
+	def_bool y
+
+endif # ADC
+
+if PWM_MCUX_FTM
+
+config PWM_1
+	def_bool y
+
+endif # PWM_MCUX_FTM
+
+if SPI
+
+config SPI_1
+	def_bool y
+
+config SPI_1_IRQ_PRI
+	default 3
+
+endif # SPI
+
+if IEEE802154_MCR20A || IEEE802154_MCR20A_RAW
+
+config IEEE802154_MCR20A_SPI_DRV_NAME
+	default SPI_1_NAME
+
+config MCR20A_GPIO_IRQ_B_NAME
+	default GPIO_MCUX_PORTB_NAME
+
+config MCR20A_GPIO_IRQ_B_PIN
+	default 3
+
+config MCR20A_GPIO_RESET_NAME
+	default GPIO_MCUX_PORTB_NAME
+
+config MCR20A_GPIO_RESET_PIN
+	default 19
+
+config IEEE802154_MCR20A_SPI_FREQ
+	default 8000000
+
+config MCR20A_IS_PART_OF_KW2XD_SIP
+	default y
+
+endif # IEEE802154_MCR20A || IEEE802154_MCR20A_RAW
+
+
+endif # BOARD_USB_KW24D512
