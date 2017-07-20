@@ -14,6 +14,7 @@ env:
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
+        - MATRIX_BUILD="3"
 
 build:
     cache: true
@@ -21,12 +22,13 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: master.16
+        image_tag: master.27
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
+      - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
       - make host-tools
@@ -44,27 +46,27 @@ build:
             S3_PATH="s3://zephyr-logs/${LOG_TYPE}/${REPO_FULL_NAME}/${BUILD_NUMBER}";
           fi;
       - >
-          if [ "$MATRIX_BUILD" = "1" -a "$IS_PULL_REQUEST" = "true" ]; then
-            export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..${COMMIT}
+          if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
+            export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
-            sudo pip install sphinx==1.5.5
             make htmldocs > doc.log 2>&1;
-            ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
+            python2 ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
+            if [ "$?" != 0 ]; then
+              echo " ==> Error running filter script"
+              exit 1
+            fi;
             if [ -s doc.warnings ]; then
               echo " => New documentation warnings/errors";
             fi;
             echo "- Verify commit message and coding style";
-            ./scripts/ci/check-compliance.py || true;
+            ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
-          if [ "$JOB_TRIGGERED_BY_NAME" = "daily-verify" ]; then
-            echo "- Building with --all --enable-slow";
-            COVERAGE="--all --enable-slow";
+          if [ "$MATRIX_BUILD" != "3" ]; then
+          	./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS}  ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
           fi;
-      - >
-          ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS}  ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
       - ccache -s
     on_success:
       - rm -rf sanity-out out-2nd-pass
