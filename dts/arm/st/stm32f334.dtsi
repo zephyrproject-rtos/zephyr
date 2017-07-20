@@ -30,6 +30,14 @@
 	};
 
 	soc {
+		rcc: rcc@40021000 {
+			compatible = "st,stm32-rcc";
+			clocks-controller;
+			#clocks-cells = <2>;
+			reg = <0x40021000 0x400>;
+			label = "STM32_CLK_RCC";
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
