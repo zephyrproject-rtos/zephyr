@@ -698,15 +698,14 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	ccc = attr->user_data;
+	if (ccc->value != data->type) {
+		return BT_GATT_ITER_CONTINUE;
+	}
 
 	/* Notify all peers configured */
 	for (i = 0; i < ccc->cfg_len; i++) {
 		struct bt_conn *conn;
 		int err;
-
-		if (ccc->value != data->type) {
-			continue;
-		}
 
 		conn = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
 		if (!conn) {
