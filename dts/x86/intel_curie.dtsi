@@ -25,6 +25,7 @@
 
 
 	sram0: memory@a8006400 {
+		compatible = "mmio-sram";
 		reg = <0xa8006400 DT_SRAM_SIZE>;
 	};
 
