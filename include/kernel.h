@@ -3903,7 +3903,11 @@ extern void _timer_expiration_handler(struct _timeout *t);
  * (for instance a guard area).
  *
  * The value returned here is guaranteed to match the 'size' parameter
- * passed to K_THREAD_STACK_DEFINE and related macros.
+ * passed to K_THREAD_STACK_DEFINE.
+ *
+ * Do not use this for stacks declared with K_THREAD_STACK_ARRAY_DEFINE(),
+ * it is not guaranteed to return the original value since each array
+ * element must be aligned.
  *
  * @param sym Stack memory symbol
  * @return Size of the stack
