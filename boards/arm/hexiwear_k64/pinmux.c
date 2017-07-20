@@ -75,7 +75,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_MCUX_4
-	/* UART4 RX, TX - BLE */
+	/* UART4 RX, TX */
 	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
