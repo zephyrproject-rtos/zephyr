@@ -58,15 +58,19 @@ void k_msgq_init(struct k_msgq *q, char *buffer,
 	q->used_msgs = 0;
 	sys_dlist_init(&q->wait_q);
 	SYS_TRACING_OBJ_INIT(k_msgq, q);
+	_k_object_init(q, K_OBJ_MSGQ);
 }
 
 int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
-	unsigned int key = irq_lock();
+	unsigned int key;
 	struct k_thread *pending_thread;
 	int result;
+
+	_k_object_validate(q, K_OBJ_MSGQ);
+	key = irq_lock();
 
 	if (q->used_msgs < q->max_msgs) {
 		/* message queue isn't full */
@@ -112,9 +116,12 @@ int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
-	unsigned int key = irq_lock();
+	unsigned int key;
 	struct k_thread *pending_thread;
 	int result;
+
+	_k_object_validate(q, K_OBJ_MSGQ);
+	key = irq_lock();
 
 	if (q->used_msgs > 0) {
 		/* take first available message from queue */
@@ -164,8 +171,11 @@ int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 
 void k_msgq_purge(struct k_msgq *q)
 {
-	unsigned int key = irq_lock();
+	unsigned int key;
 	struct k_thread *pending_thread;
+
+	_k_object_validate(q, K_OBJ_MSGQ);
+	key = irq_lock();
 
 	/* wake up any threads that are waiting to write */
 	while ((pending_thread = _unpend_first_thread(&q->wait_q)) != NULL) {

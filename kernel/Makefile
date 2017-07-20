@@ -36,3 +36,4 @@ lib-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
 lib-$(CONFIG_SYS_CLOCK_EXISTS) += timer.o
 lib-$(CONFIG_ATOMIC_OPERATIONS_C) += atomic_c.o
 lib-$(CONFIG_POLL) += poll.o
+lib-$(CONFIG_KERNEL_OBJECT_VERIFY) += object_validate.o

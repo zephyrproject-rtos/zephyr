@@ -374,6 +374,14 @@ config NUM_PIPE_ASYNC_MSGS
 
 	Setting this option to 0 disables support for asynchronous
 	pipe messages.
+
+config KERNEL_OBJECT_VERIFY
+	bool "Verify correctness of kernel object pointers"
+	default n
+	help
+	If enabled, all kernel APIs will perform a check to ensure that
+	the kernel object is indeed a valid kernel object pointer.
+
 endmenu
 
 menu "Memory Pool Options"

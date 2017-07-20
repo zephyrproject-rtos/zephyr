@@ -29,6 +29,7 @@ void k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
 
+	_k_object_validate(thread, K_OBJ_THREAD);
 	key = irq_lock();
 
 	_k_thread_single_abort(thread);

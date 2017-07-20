@@ -69,10 +69,13 @@ void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
 	alert->work_item = (struct k_work)_K_WORK_INITIALIZER(_alert_deliver);
 	k_sem_init(&alert->sem, 0, max_num_pending_alerts);
 	SYS_TRACING_OBJ_INIT(k_alert, alert);
+	_k_object_init(alert, K_OBJ_ALERT);
+	_k_object_init(&alert->work_item, K_OBJ_WORK);
 }
 
 void k_alert_send(struct k_alert *alert)
 {
+	_k_object_validate(alert, K_OBJ_ALERT);
 	if (alert->handler == K_ALERT_IGNORE) {
 		/* ignore the alert */
 	} else if (alert->handler == K_ALERT_DEFAULT) {
@@ -90,5 +93,6 @@ void k_alert_send(struct k_alert *alert)
 
 int k_alert_recv(struct k_alert *alert, s32_t timeout)
 {
+	_k_object_validate(alert, K_OBJ_ALERT);
 	return k_sem_take(&alert->sem, timeout);
 }

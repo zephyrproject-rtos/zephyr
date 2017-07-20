@@ -79,13 +79,17 @@ void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	create_free_list(slab);
 	sys_dlist_init(&slab->wait_q);
 	SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
+	_k_object_init(slab, K_OBJ_MEM_SLAB);
 }
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 {
-	unsigned int key = irq_lock();
+	unsigned int key;
 	int result;
 
+	_k_object_validate(slab, K_OBJ_MEM_SLAB);
+
+	key = irq_lock();
 	if (slab->free_list != NULL) {
 		/* take a free block */
 		*mem = slab->free_list;
@@ -113,8 +117,13 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 
 void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 {
-	int key = irq_lock();
-	struct k_thread *pending_thread = _unpend_first_thread(&slab->wait_q);
+	int key;
+	struct k_thread *pending_thread;
+
+	_k_object_validate(slab, K_OBJ_MEM_SLAB);
+
+	key = irq_lock();
+	pending_thread = _unpend_first_thread(&slab->wait_q);
 
 	if (pending_thread) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);

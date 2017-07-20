@@ -51,6 +51,7 @@ void k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
 	stack->top = stack->base + num_entries;
 
 	SYS_TRACING_OBJ_INIT(k_stack, stack);
+	_k_object_init(stack, K_OBJ_STACK);
 }
 
 void k_stack_push(struct k_stack *stack, u32_t data)
@@ -60,6 +61,7 @@ void k_stack_push(struct k_stack *stack, u32_t data)
 
 	__ASSERT(stack->next != stack->top, "stack is full");
 
+	_k_object_validate(stack, K_OBJ_STACK);
 	key = irq_lock();
 
 	first_pending_thread = _unpend_first_thread(&stack->wait_q);
@@ -88,6 +90,7 @@ int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 	unsigned int key;
 	int result;
 
+	_k_object_validate(stack, K_OBJ_STACK);
 	key = irq_lock();
 
 	if (likely(stack->next > stack->base)) {

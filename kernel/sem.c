@@ -56,7 +56,7 @@ void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		unsigned int limit)
 {
 	__ASSERT(limit != 0, "limit cannot be zero");
-
+	_k_object_init(sem, K_OBJ_SEM);
 	sem->count = initial_count;
 	sem->limit = limit;
 	sys_dlist_init(&sem->wait_q);
@@ -115,6 +115,7 @@ void _sem_give_non_preemptible(struct k_sem *sem)
 {
 	struct k_thread *thread;
 
+	_k_object_validate(sem, K_OBJ_SEM);
 	thread = _unpend_first_thread(&sem->wait_q);
 	if (!thread) {
 		increment_count_up_to_limit(sem);
@@ -131,6 +132,7 @@ void k_sem_give(struct k_sem *sem)
 {
 	unsigned int key;
 
+	_k_object_validate(sem, K_OBJ_SEM);
 	key = irq_lock();
 
 	if (do_sem_give(sem)) {
@@ -143,8 +145,10 @@ void k_sem_give(struct k_sem *sem)
 int k_sem_take(struct k_sem *sem, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
+	unsigned int key;
 
-	unsigned int key = irq_lock();
+	_k_object_validate(sem, K_OBJ_SEM);
+	key = irq_lock();
 
 	if (likely(sem->count > 0)) {
 		sem->count--;

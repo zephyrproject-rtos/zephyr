@@ -136,6 +136,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	sys_dlist_init(&pipe->wait_q.writers);
 	sys_dlist_init(&pipe->wait_q.readers);
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
+	_k_object_init(pipe, K_OBJ_PIPE);
 }
 
 /**
@@ -398,7 +399,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS == 0)
 	ARG_UNUSED(async_desc);
 #endif
-
+	_k_object_validate(pipe, K_OBJ_PIPE);
 	key = irq_lock();
 
 	/*
@@ -538,6 +539,7 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	__ASSERT(min_xfer <= bytes_to_read, "");
 	__ASSERT(bytes_read != NULL, "");
+	_k_object_validate(pipe, K_OBJ_PIPE);
 
 	key = irq_lock();
 
