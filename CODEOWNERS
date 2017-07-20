@@ -1,5 +1,294 @@
-# CODEOWNERS for autoreview assigning in github
 
-# Get all docs reviewed
-doc/	@dbkinder
-*.rst	@dbkinder
+# ARC ARCHITECTURE
+arch/arc/*	Ruud.Derwig@synopsys.com    cjordan@synopsys.com    benjamin.walsh@windriver.com
+include/arch/arc/*	Ruud.Derwig@synopsys.com    cjordan@synopsys.com    benjamin.walsh@windriver.com
+boards/arc/*	Ruud.Derwig@synopsys.com    cjordan@synopsys.com    benjamin.walsh@windriver.com
+
+# ARM ARCHITECTURE
+arch/arm/*	maureen.helm@nxp.com    kumar.gala@linaro.org
+include/arch/arm/*	maureen.helm@nxp.com    kumar.gala@linaro.org
+boards/arm/*	maureen.helm@nxp.com    kumar.gala@linaro.org
+
+# ARM CORTEX MICROCONTROLLER SOFTWARE INTERFACE STANDARD (CMSIS)
+ext/hal/cmsis/*	maureen.helm@nxp.com    kumar.gala@linaro.org
+
+# BOARDS/ARC - ARDUINO 101 SSS
+boards/arc/arduino_101_sss/*	anas.nashif@intel.com
+
+# BOARDS/ARC - EM Starterkit
+boards/arc/em_starterkit/*	cjordan@synopsys.com
+
+# BOARDS/ARC - QUARK SE C1000 SS Devboard
+boards/arc/quark_se_c1000_ss_devboard/*	anas.nashif@intel.com
+
+# BOARDS/ARM - 96Boards CARBON
+boards/arm/96b_carbon/*	amit.kucheria@linaro.org    ricardo.salveti@linaro.org
+
+# BOARDS/ARM - 96Boards NITROGEN
+boards/arm/96b_nitrogen/*	amit.kucheria@linaro.org
+
+# BOARDS/ARM - ARDUINO 101 BLE
+boards/arm/arduino_101_ble/*	johan.hedberg@intel.com
+
+# BOARDS/ARM - CC32XX LAUNCHXL
+boards/arm/cc3200_launchxl/*	gil.pitney@linaro.org
+boards/arm/cc3220sf_launchxl/*	gil.pitney@linaro.org
+
+# BOARDS/ARM - NXP FRDM-K64F
+boards/arm/frdm_k64f/*	maureen.helm@nxp.com
+
+# BOARDS/ARM - NXP FRDM-KW41Z
+boards/arm/frdm_kw41z/*	maureen.helm@nxp.com
+
+# BOARDS/ARM - NXP Hexiwear
+boards/arm/hexiwear_k64/*	maureen.helm@nxp.com
+
+# BOARDS/ARM - NORDIC NRF51 REDBEAR BLENANO
+boards/arm/nrf51_blenano/*	ricardo.salveti@linaro.org
+
+# BOARDS/ARM - NORDIC NRF52 PCA10040
+boards/arm/nrf52_pca10040/*	carles.cufi@nordicsemi.no
+
+# BOARDS/ARM - NUCLEO-64 F401RE Devboard
+boards/arm/nucleo_f401re/*	amit.kucheria@linaro.org    ricardo.salveti@linaro.org
+
+# BOARDS/ARM - ARM LTD V2M Beetle
+boards/arm/v2m_beetle/*	vincenzo.frascino@linaro.org
+
+# BOARDS/NIOS2 - ALTERA MAX10
+boards/nios2/altera_max10/*	andrew.p.boie@intel.com
+
+# BOARDS/X86 - ARDUINO 101
+boards/x86/arduino_101/*	anas.nashif@intel.com
+
+# BOARDS/X86 - Galileo
+boards/x86/galileo/*	anas.nashif@intel.com
+
+# BOARDS/X86 - QUARK D2000 Devboard
+boards/x86/quark_d2000/*	anas.nashif@intel.com
+
+# BOARDS/X86 - QUARK SE C1000 Devboard
+boards/x86/quark_se_c1000/*	anas.nashif@intel.com
+
+# BLUETOOTH
+subsys/bluetooth/*	johan.hedberg@intel.com    luiz.dentz@gmail.com    szymon.janc@gmail.com
+include/bluetooth/*	johan.hedberg@intel.com    luiz.dentz@gmail.com    szymon.janc@gmail.com
+include/drivers/bluetooth/*	johan.hedberg@intel.com    luiz.dentz@gmail.com    szymon.janc@gmail.com
+drivers/bluetooth/*	johan.hedberg@intel.com    luiz.dentz@gmail.com    szymon.janc@gmail.com
+samples/bluetooth/*	johan.hedberg@intel.com    luiz.dentz@gmail.com    szymon.janc@gmail.com
+tests/bluetooth/*	johan.hedberg@intel.com    luiz.dentz@gmail.com    szymon.janc@gmail.com
+doc/subsystems/bluetooth/*	johan.hedberg@intel.com    luiz.dentz@gmail.com    szymon.janc@gmail.com
+
+# BLUETOOTH CONTROLLER
+subsys/bluetooth/controller/*	vinayak.kariappa.chettimada@nordicsemi.no    carles.cufi@nordicsemi.no
+
+# CC32XX SDK
+ext/hal/ti/cc3200sdk/*	gil.pitney@linaro.org
+ext/hal/ti/cc3220sdk/*	gil.pitney@linaro.org
+
+# CC32XX SOC - TI SIMPLELINK
+arch/arm/soc/ti_simplelink/cc32xx	gil.pitney@linaro.org
+
+# DOCUMENTATION
+doc/*	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*/*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*/*/*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*/*/*/*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*/*/*/*/*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*/*/*/*/*/*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+*/*/*/*/*/*/*/*/*.rst	david.b.kinder@intel.com    inaky.perez-gonzalez@intel.com
+
+# FILE SYSTEM
+ext/fs/*	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+subsys/fs/*	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+include/fs/*	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+include/fs.h	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+samples/fs/*	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+
+# FLASH DRIVER
+drivers/flash/*	baohong.liu@intel.com    kuo-lang.tseng@intel.com
+
+# INTERRUPTS
+drivers/interrupt_controller/*	andrew.p.boie@intel.com
+arch/arc/core/*	andrew.p.boie@intel.com
+arch/arm/core/*	andrew.p.boie@intel.com
+arch/nios2/core/*	andrew.p.boie@intel.com
+arch/x86/core/*	andrew.p.boie@intel.com
+include/irq.h	andrew.p.boie@intel.com
+include/arch/x86/arch.h	andrew.p.boie@intel.com
+include/arch/arm/cortex_m/irq.h	andrew.p.boie@intel.com
+include/arch/nios2/arch.h	andrew.p.boie@intel.com
+include/arch/arc/arch.h	andrew.p.boie@intel.com
+include/arch/arc/v2/irq.h	andrew.p.boie@intel.com
+include/drivers/loapic.h	andrew.p.boie@intel.com
+include/drivers/ioapic.h	andrew.p.boie@intel.com
+include/drivers/mvic.h	andrew.p.boie@intel.com
+
+# KERNEL CORE
+kernel/*	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/misc/*	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/toolchain/*	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/atomic.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/cache.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/init.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/irq.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/irq_offload.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/kernel_version.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/linker-defs.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/linker-tool-gcc.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/linker-tool.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/section_tags.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/sections.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/shared_irq.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/sw_isr_table.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/sys_clock.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/sys_io.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/toolchain.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/zephyr.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+include/kernel.h	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+tests/kernel/*	benjamin.walsh@windriver.com    andrew.p.boie@intel.com    andrew.j.ross@intel.com
+
+# KNOWN ISSUES
+.known-issues/*	anas.nashif@intel.com    inaky.perez-gonzalez@intel.com
+
+# MAINTAINERS
+MAINTAINERS	anas.nashif@intel.com    inaky.perez-gonzalez@intel.com
+
+# MBEDTLS
+ext/lib/crypto/mbedtls/*	sergio.sf.rodriguez@intel.com    jithu.joseph@intel.com    kuo-lang.tseng@intel.com
+samples/net/mbedtls_sslclient/*	sergio.sf.rodriguez@intel.com    jithu.joseph@intel.com    kuo-lang.tseng@intel.com
+tests/crypto/test_mbedtls/*	sergio.sf.rodriguez@intel.com    jithu.joseph@intel.com    kuo-lang.tseng@intel.com
+
+# MCUXPRESSO SOFTWARE DEVELOPMENT KIT (MCUX)
+ext/hal/nxp/mcux/*	maureen.helm@nxp.com
+
+# MPS2 - ARM LTD CORTEX-M PROTOTYPING SYSTEM
+arch/arm/soc/arm/mps2/*	vincenzo.frascino@linaro.org
+boards/arm/mps2/*	vincenzo.frascino@linaro.org
+
+# NETWORKING
+subsys/net/ip/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+subsys/net/lib/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+include/net/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+samples/net/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+tests/net/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+tests/net/lib/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+drivers/ethernet/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+drivers/ieee802154/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+drivers/slip/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+
+# NETWORK APPLICATIONS
+subsys/net/lib/dns/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+subsys/net/lib/http/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+subsys/net/lib/mqtt/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+samples/net/dns_client/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+samples/net/http_server/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+samples/net/mqtt_publisher/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+tests/net/lib/http_header_fields/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+tests/net/lib/mqtt_packet/*	jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+
+# NETWORK BUFFERS
+subsys/net/buf.c	johan.hedberg@intel.com    jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+include/net/buf.h	johan.hedberg@intel.com    jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+tests/net/buf/*	johan.hedberg@intel.com    jukka.rissanen@linux.intel.com    tomasz.bursztyka@linux.intel.com
+
+# NIOS II
+arch/nios2/*	andrew.p.boie@intel.com
+include/arch/nios2/*	andrew.p.boie@intel.com
+drivers/serial/uart_altera_jtag.c	andrew.p.boie@intel.com
+drivers/timer/altera_avalon_timer.c	andrew.p.boie@intel.com
+tests/kernel/test_intmath/*	andrew.p.boie@intel.com
+boards/nios2/*	andrew.p.boie@intel.com
+
+# NORDIC MDK
+ext/hal/nordic/mdk/*	carles.cufi@nordicsemi.no
+
+# POWER MANAGEMENT
+arch/x86/core/crt0.S	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+include/device.h	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+include/init.h	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+include/power.h	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+kernel/k_idle.c	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+kernel/device.c	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+samples/power/*	ramesh.thomas@intel.com    kuo-lang.tseng@intel.com
+
+# QMSI
+ext/hal/qmsi/*	anas.nashif@intel.com
+
+# QMSI DRIVERS
+drivers/*/*qmsi*	sergio.sf.rodriguez@intel.com    baohong.liu@intel.com    kuo-lang.tseng@intel.com
+drivers/*/*/*qmsi*	sergio.sf.rodriguez@intel.com    baohong.liu@intel.com    kuo-lang.tseng@intel.com
+
+# QUARK D2000 SOC
+arch/x86/soc/intel_quark/quark_d2000/*	anas.nashif@intel.com
+
+# QUARK SE C1000 SOC
+arch/x86/soc/intel_quark/quark_se_c1000/*	anas.nashif@intel.com
+
+# QUARK X1000 SOC
+arch/x86/soc/intel_quark/quark_x1000/*	anas.nashif@intel.com
+
+# SANITYCHECK
+scripts/sanitycheck	andrew.p.boie@intel.com
+scripts/expr_parser.py	andrew.p.boie@intel.com
+scripts/sanity_chk/*	andrew.p.boie@intel.com
+
+# SENSOR DRIVERS
+include/sensor.h	bogdan.davidoaia@linaro.org    murtaza.alexandru1995@gmail.com
+drivers/sensor/*	bogdan.davidoaia@linaro.org    murtaza.alexandru1995@gmail.com
+samples/sensor/*	bogdan.davidoaia@linaro.org    murtaza.alexandru1995@gmail.com
+
+# STM32CUBE SDK
+ext/hal/st/stm32cube/*	erwan.gouriou@linaro.org
+
+# STM32F4X SoC FAMILY and DRIVERS
+arch/arm/soc/st_stm32/stm32f4/*	amit.kucheria@linaro.org    ricardo.salveti@linaro.org
+drivers/pinmux/stm32/*	amit.kucheria@linaro.org    ricardo.salveti@linaro.org
+drivers/gpio/*stm32*	amit.kucheria@linaro.org    ricardo.salveti@linaro.org
+drivers/clock_control/*stm32f4*	amit.kucheria@linaro.org    ricardo.salveti@linaro.org
+
+# TINYCRYPT
+ext/lib/crypto/tinycrypt/*	constanza.m.heath@intel.com
+tests/crypto/*	constanza.m.heath@intel.com
+
+# SPI
+drivers/spi/*	tomasz.bursztyka@linux.intel.com
+include/spi.h	tomasz.bursztyka@linux.intel.com
+tests/drivers/spi_test/*	tomasz.bursztyka@linux.intel.com
+
+# USB
+subsys/usb	jithu.joseph@intel.com
+drivers/usb	jithu.joseph@intel.com
+samples/usb	jithu.joseph@intel.com
+
+# X86 ARCH
+arch/x86/*	benjamin.walsh@windriver.com    andrew.p.boie@intel.com
+include/arch/x86/*	benjamin.walsh@windriver.com    andrew.p.boie@intel.com
+boards/x86/*	benjamin.walsh@windriver.com    andrew.p.boie@intel.com
+
+# XTENSA ARCH
+arch/xtensa	andrew.p.boie@intel.com
+include/arch/xtensa/*	andrew.p.boie@intel.com
+boards/xtensa/*	andrew.p.boie@intel.com
+
+# RISCV32 ARCH
+arch/riscv32	fractalclone@gmail.com
+include/arch/riscv32	fractalclone@gmail.com
+boards/riscv32	fractalclone@gmail.com
+drivers/serial/uart_riscv_qemu.c	fractalclone@gmail.com
+drivers/timer/pulpino_timer.c	fractalclone@gmail.com
+drivers/timer/riscv_machine_timer.c	fractalclone@gmail.com
+drivers/gpio/gpio_pulpino.c	fractalclone@gmail.com
+
+# ZOAP
+subsys/net/lib/zoap/*	vinicius.gomes@intel.com
+samples/net/zoap_client/*	vinicius.gomes@intel.com
+samples/net/zoap_server/*	vinicius.gomes@intel.com
+tests/net/lib/zoap/*	vinicius.gomes@intel.com
+
+# THE REST
+*	anas.nashif@intel.com    kumar.gala@linaro.org
+*/*	anas.nashif@intel.com    kumar.gala@linaro.org
