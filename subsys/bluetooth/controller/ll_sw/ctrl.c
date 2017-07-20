@@ -2468,6 +2468,42 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	return nack;
 }
 
+static inline bool isr_rx_conn_enc_unexpected(struct connection *conn,
+					      struct pdu_data *pdu_data)
+{
+	u8_t opcode = pdu_data->payload.llctrl.opcode;
+
+	return (pdu_data->ll_id != PDU_DATA_LLID_CTRL) ||
+	       (!conn->role &&
+		((!conn->refresh &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_REQ) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)) ||
+		 (conn->refresh &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_ENC_RSP) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_REQ) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)))) ||
+	       (conn->role &&
+		((!conn->refresh &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)) ||
+		 (conn->refresh &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
+		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND))));
+}
+
 static inline u32_t
 isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		struct radio_pdu_node_tx **tx_release, u8_t *rx_enqueue)
@@ -2567,10 +2603,11 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			}
 
 			/* MIC Failure Check or data rx during pause */
-			if (((_radio.conn_curr->enc_rx)	&&
+			if ((_radio.conn_curr->enc_rx &&
 			     !radio_ccm_mic_is_valid()) ||
-			    ((_radio.conn_curr->pause_rx) &&
-			     (pdu_data_rx->ll_id != PDU_DATA_LLID_CTRL))) {
+			    (_radio.conn_curr->pause_rx &&
+			     isr_rx_conn_enc_unexpected(_radio.conn_curr,
+							pdu_data_rx))) {
 				_radio.state = STATE_CLOSE;
 				radio_disable();
 
@@ -7102,41 +7139,13 @@ static void prepare_pdu_data_tx(struct connection *conn,
 	/*@FIXME: assign before checking first 3 conditions */
 	_pdu_data_tx = (struct pdu_data *)conn->pkt_tx_head->pdu_data;
 
-	if ((conn->empty != 0) || /* empty packet */
-	   /* no ctrl or data packet */
-	   (conn->pkt_tx_head == 0) ||
-	   /* data tx paused, only control packets allowed */
-	   ((conn->pause_tx) && (_pdu_data_tx != 0) &&
-	    (_pdu_data_tx->len != 0) &&
-	    ((_pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
-	     (!conn->role &&
-	      (((conn->refresh == 0) &&
-		(_pdu_data_tx->payload.llctrl.opcode !=
-		 PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)) ||
-	       ((conn->refresh != 0) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)))) ||
-	     (conn->role &&
-	      (((conn->refresh == 0) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_REQ) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)) ||
-	       ((conn->refresh != 0) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_ENC_RSP) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_REQ) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&
-		(_pdu_data_tx->payload.llctrl.opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND))))))) {
+	if (/* empty packet */
+	    conn->empty ||
+	    /* no ctrl or data packet */
+	    !conn->pkt_tx_head ||
+	    /* data tx paused, only control packets allowed */
+	    (conn->pause_tx && _pdu_data_tx && _pdu_data_tx->len &&
+	     (_pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL))) {
 			_pdu_data_tx = empty_tx_enqueue(conn);
 	} else {
 		u16_t max_tx_octets;
