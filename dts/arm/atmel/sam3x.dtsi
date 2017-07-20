@@ -19,12 +19,11 @@
 	};
 
 	sram0: memory {
-		compatible = "sram";
+		compatible = "mmio-sram";
 		reg = <0x20070000 0x18000>;
 	};
 
 	flash0: flash {
-		compatible = "flash";
 		reg = <0x00080000 0x80000>;
 	};
 
