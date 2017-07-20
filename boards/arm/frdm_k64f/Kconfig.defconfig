@@ -32,9 +32,6 @@ config UART_MCUX_3
 
 endif # UART_MCUX
 
-config BLUETOOTH_UART_ON_DEV_NAME
-	default "UART_3" if BLUETOOTH_UART
-
 config PINMUX
 	def_bool y
 

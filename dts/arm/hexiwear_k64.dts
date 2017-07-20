@@ -30,6 +30,9 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
+#ifdef CONFIG_BLUETOOTH
+		zephyr,bt-uart = &uart4;
+#endif
 	};
 
 };
