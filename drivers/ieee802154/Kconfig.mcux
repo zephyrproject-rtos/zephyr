@@ -5,4 +5,6 @@ menuconfig IEEE802154_MCUX
 	help
 	  Support for NXP MCUX IEEE 802.15.4 drivers.
 
+source "drivers/ieee802154/Kconfig.fsci"
+
 source "drivers/ieee802154/Kconfig.kw41z"

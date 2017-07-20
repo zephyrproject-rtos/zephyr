@@ -1,0 +1,32 @@
+# Kconfig.fsci - FSCI configuration options
+#
+
+menuconfig IEEE802154_FSCI
+	bool "FSCI Driver support"
+	depends on NETWORKING
+	select NET_L2_IEEE802154
+	select IEEE802154_MCUX
+	select UART_PIPE
+	default n
+	help
+	  Enable FSCI IEEE 802.15.4 driver. The driver interacts with a MAC
+	  black box app over UART using FSCI (Freescale Serial Communication
+	  Interface). UART_PIPE_ON_DEV_NAME needs to correctly configured
+	  in order to use this driver.
+
+if IEEE802154_FSCI
+
+config IEEE802154_FSCI_DRV_NAME
+	string "FSCI Driver's name"
+	default "FSCI"
+	help
+	  This option sets the driver name.
+
+config IEEE802154_FSCI_INIT_PRIO
+	int "FSCI initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. It has to start before the net stack.
+
+endif
