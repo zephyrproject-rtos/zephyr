@@ -38,7 +38,7 @@ static bool cb_1_called;
 static bool cb_2_called;
 static bool test_failed;
 
-#define WAIT_TIME (2 * MSEC_PER_SEC)
+#define WAIT_TIME K_SECONDS(3)
 
 /* Set CHECK_LONG_TIMEOUT to 1 if you want to check longer timeout.
  * Do not do this for automated tests as those need to finish asap.

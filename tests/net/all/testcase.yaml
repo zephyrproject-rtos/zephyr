@@ -1,5 +1,5 @@
 tests:
 -   test:
         build_only: true
-        platform_whitelist: qemu_x86
         tags: net
+        platform_exclude: bbc_microbit qemu_xtensa

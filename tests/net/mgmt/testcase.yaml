@@ -1,4 +1,4 @@
 tests:
 -   test:
-        platform_whitelist: qemu_x86
         tags: net
+        platform_exclude: bbc_microbit
