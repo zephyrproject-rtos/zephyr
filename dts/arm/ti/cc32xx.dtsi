@@ -20,7 +20,7 @@
 	};
 
 	sram0: memory {
-		compatible = "sram";
+		compatible = "mmio-sram";
 		reg = <DT_SRAM_START DT_SRAM_SIZE>;
 	};
 
