@@ -139,6 +139,7 @@ static int spim_nrf52_configure(struct device *dev,
 		break;
 	case 8000000:
 		spim->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M8;
+		break;
 	default:
 		SYS_LOG_ERR("unsupported frequency sck=%d\n",
 			    spi_config->max_sys_freq);
