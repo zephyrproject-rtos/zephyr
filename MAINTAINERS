@@ -62,7 +62,6 @@ Maintainers List (try to look for most precise areas first)
 ARC ARCHITECTURE
 M:	Ruud Derwig <Ruud.Derwig@synopsys.com>
 M:	Chuck Jordan <cjordan@synopsys.com>
-M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 S:	Supported
 F:	arch/arc/
 F:	include/arch/arc/
@@ -173,12 +172,12 @@ F:	boards/x86/galileo/
 BOARDS/X86 - QUARK D2000 Devboard
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
-F:	boards/x86/quark_d2000/
+F:	boards/x86/quark_d2000_crb/
 
 BOARDS/X86 - QUARK SE C1000 Devboard
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
-F:	boards/x86/quark_se_c1000/
+F:	boards/x86/quark_se_c1000_devboard/
 
 BLUETOOTH
 M:	Johan Hedberg <johan.hedberg@intel.com>
@@ -204,7 +203,6 @@ CC32XX SDK
 M:      Gil Pitney <gil.pitney@linaro.org>
 S:      Supported
 F:      ext/hal/ti/cc3200sdk/
-F:      ext/hal/ti/cc3220sdk/
 
 CC32XX SOC - TI SIMPLELINK
 M:      Gil Pitney <gil.pitney@linaro.org>
@@ -212,33 +210,23 @@ S:      Supported
 F:      arch/arm/soc/ti_simplelink/cc32xx
 
 DOCUMENTATION
-M:	Kinder, David <david.b.kinder@intel.com>
-M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
+M:	David Kinder <david.b.kinder@intel.com>
+M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
 S:	Supported
 F:	doc/
 F:	*.rst
-F:	*/*.rst
-F:	*/*/*.rst
-F:	*/*/*/*.rst
-F:	*/*/*/*/*.rst
-F:	*/*/*/*/*/*.rst
-F:	*/*/*/*/*/*/*.rst
-F:	*/*/*/*/*/*/*/*.rst
-F:	*/*/*/*/*/*/*/*/*.rst
 
 FILE SYSTEM
-M:	Ramesh Thomas <ramesh.thomas@intel.com>
-M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+M:	Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	ext/fs/
 F:	subsys/fs/
 F:	include/fs/
 F:	include/fs.h
-F:	samples/fs/
+F:	tests/subsys/fs
 
 FLASH DRIVER
-M:	Baohong Liu <baohong.liu@intel.com>
-M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+M:	Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	drivers/flash/
 
@@ -261,7 +249,6 @@ F:	include/drivers/ioapic.h
 F:	include/drivers/mvic.h
 
 KERNEL CORE
-M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 M:	Andrew Boie <andrew.p.boie@intel.com>
 M:	Andy Ross <andrew.j.ross@intel.com>
 S:	Supported
@@ -274,11 +261,11 @@ F:	include/init.h
 F:	include/irq.h
 F:	include/irq_offload.h
 F:	include/kernel_version.h
-F:	include/linker-defs.h
-F:	include/linker-tool-gcc.h
-F:	include/linker-tool.h
-F:	include/section_tags.h
-F:	include/sections.h
+F:	include/linker/linker-defs.h
+F:	include/linker/linker-tool-gcc.h
+F:	include/linker/linker-tool.h
+F:	include/linker/section_tags.h
+F:	include/linker/sections.h
 F:	include/shared_irq.h
 F:	include/sw_isr_table.h
 F:	include/sys_clock.h
@@ -296,18 +283,16 @@ F:	.known-issues/
 
 MAINTAINERS
 M:	Anas Nashif <anas.nashif@intel.com>
-M:	Perez-Gonzalez, Inaky <inaky.perez-gonzalez@intel.com>
+M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
 S:	Supported
 F:	MAINTAINERS
 
 MBEDTLS
-M:	Sergio Rodriguez <sergio.sf.rodriguez@intel.com>
-M:	Jithu Joseph <jithu.joseph@intel.com>
-M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+M:	Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	ext/lib/crypto/mbedtls/
 F:	samples/net/mbedtls_sslclient/
-F:	tests/crypto/test_mbedtls/
+F:	tests/crypto/mbedtls/
 
 MCUXPRESSO SOFTWARE DEVELOPMENT KIT (MCUX)
 M:	Maureen Helm <maureen.helm@nxp.com>
@@ -318,7 +303,7 @@ MPS2 - ARM LTD CORTEX-M PROTOTYPING SYSTEM
 M:	Vincenzo Frascino <vincenzo.frascino@linaro.org>
 S:	Supported
 F:	arch/arm/soc/arm/mps2/
-F:	boards/arm/mps2/
+F:	boards/arm/mps2_an385/
 
 NETWORKING
 M:	Jukka Rissanen <jukka.rissanen@linux.intel.com>
@@ -342,7 +327,7 @@ S:	Supported
 F:	subsys/net/lib/dns/
 F:	subsys/net/lib/http/
 F:	subsys/net/lib/mqtt/
-F:	samples/net/dns_client/
+F:	samples/net/dns_resolve/
 F:	samples/net/http_server/
 F:	samples/net/mqtt_publisher/
 F:	tests/net/lib/http_header_fields/
@@ -365,7 +350,6 @@ F:	arch/nios2/
 F:	include/arch/nios2/
 F:	drivers/serial/uart_altera_jtag.c
 F:	drivers/timer/altera_avalon_timer.c
-F:	tests/kernel/test_intmath/
 F:	boards/nios2/
 
 NORDIC MDK
@@ -374,16 +358,16 @@ S:	Supported
 F:	ext/hal/nordic/mdk/
 
 POWER MANAGEMENT
-M:	Ramesh Thomas <ramesh.thomas@intel.com>
-M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+M:	Anas Nashif <anas.nashif@intel.com>
+M:	Youvedeep Singh <youvedeep.singh@intel.com>
 S:	Supported
 F:	arch/x86/core/crt0.S
 F:	include/device.h
 F:	include/init.h
 F:	include/power.h
-F:	kernel/k_idle.c
+F:	kernel/idle.c
 F:	kernel/device.c
-F:	samples/power/
+F:	samples/boards/quark_se_c1000/power*/
 
 QMSI
 M:	Anas Nashif <anas.nashif@intel.com>
@@ -391,12 +375,9 @@ S:	Supported
 F:	ext/hal/qmsi/
 
 QMSI DRIVERS
-M:	Sergio Rodriguez <sergio.sf.rodriguez@intel.com>
-M:	Baohong Liu <baohong.liu@intel.com>
-M:	Kuo-Lang Tseng <kuo-lang.tseng@intel.com>
+M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
 F:	drivers/*/*qmsi*
-F:	drivers/*/*/*qmsi*
 
 QUARK D2000 SOC
 M:      Anas Nashif <anas.nashif@intel.com>
@@ -406,7 +387,7 @@ F:	arch/x86/soc/intel_quark/quark_d2000/
 QUARK SE C1000 SOC
 M:      Anas Nashif <anas.nashif@intel.com>
 S:	Supported
-F:	arch/x86/soc/intel_quark/quark_se_c1000/
+F:	arch/x86/soc/intel_quark/quark_se/
 
 QUARK X1000 SOC
 M:      Anas Nashif <anas.nashif@intel.com>
@@ -454,18 +435,19 @@ M:	Tomasz Bursztyka <tomasz.bursztyka@linux.intel.com>
 S:	Supported
 F:	drivers/spi/
 F:	include/spi.h
-F:	tests/drivers/spi_test/
+F:	tests/drivers/spi/
 
 USB
-M:	Jithu Joseph <jithu.joseph@intel.com>
+M:	Youvedeep Singh <youvedeep.singh@intel.com>
+M:	Andy Ross <andrew.j.ross@intel.com>
 S:	Supported
 F:	subsys/usb
 F:	drivers/usb
-F:	samples/usb
+F:	samples/subsys/usb
 
 X86 ARCH
-M:	Benjamin Walsh <benjamin.walsh@windriver.com>
 M:	Andrew Boie <andrew.p.boie@intel.com>
+M:	Youvedeep Singh <youvedeep.singh@intel.com>
 S:	Supported
 F:	arch/x86/
 F:	include/arch/x86/
