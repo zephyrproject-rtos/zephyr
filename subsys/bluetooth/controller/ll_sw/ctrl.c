@@ -2079,12 +2079,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			/* reply with pause enc rsp */
 			pause_enc_rsp_send(_radio.conn_curr);
 
+			/* pause data packet rx */
+			_radio.conn_curr->pause_rx = 1;
+
 			/* disable receive encryption */
 			_radio.conn_curr->enc_rx = 0;
 		}
-
-		/* pause data packet rx */
-		_radio.conn_curr->pause_rx = 1;
 
 		/* disable transmit encryption */
 		_radio.conn_curr->enc_tx = 0;
