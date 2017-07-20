@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-obj-$(CONFIG_IEEE802154_KW41Z) += wireless/
+obj-$(CONFIG_IEEE802154_MCUX) += wireless/

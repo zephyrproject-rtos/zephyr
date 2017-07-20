@@ -1,0 +1,8 @@
+
+menuconfig IEEE802154_MCUX
+	bool "MCUX drivers"
+	default n
+	help
+	  Support for NXP MCUX IEEE 802.15.4 drivers.
+
+source "drivers/ieee802154/Kconfig.kw41z"

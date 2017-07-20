@@ -56,9 +56,9 @@ config SYS_LOG_IEEE802154_DRIVER_LEVEL
 
 source "drivers/ieee802154/Kconfig.cc2520"
 
-source "drivers/ieee802154/Kconfig.kw41z"
-
 source "drivers/ieee802154/Kconfig.mcr20a"
+
+source "drivers/ieee802154/Kconfig.mcux"
 
 source "drivers/ieee802154/Kconfig.nrf5"
 

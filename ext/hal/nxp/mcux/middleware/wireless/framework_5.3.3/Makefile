@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-obj-y += XCVR/
-obj-y += OSAbstraction/Source/fsl_os_abstraction_zephyr.o
+obj-$(CONFIG_IEEE802154_KW41Z) += OSAbstraction/Source/fsl_os_abstraction_zephyr.o
+obj-$(CONFIG_IEEE802154_KW41Z) += XCVR/
