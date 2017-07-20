@@ -272,7 +272,7 @@ static void setup_ipv6_udp_long(struct net_pkt *pkt,
 	net_pkt_append_all(pkt, sizeof(ipv6_hop_by_hop_ext_hdr),
 			   ipv6_hop_by_hop_ext_hdr, K_FOREVER);
 	net_pkt_append_all(pkt, sizeof(hdr), (u8_t *)&hdr, K_FOREVER);
-	net_pkt_append_all(pkt, strlen(payload), payload, K_FOREVER);
+	net_pkt_append_all(pkt, strlen(payload), (u8_t *)payload, K_FOREVER);
 
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hop_by_hop_ext_hdr));
 
