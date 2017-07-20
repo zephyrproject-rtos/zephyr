@@ -19,6 +19,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network buffer library
+ * @defgroup net_buf Network Buffer Library
+ * @{
+ */
+
 /* Alignment needed for various parts of the buffer definition */
 #define __net_buf_align __aligned(sizeof(int))
 
@@ -1021,6 +1027,10 @@ static inline size_t net_buf_frags_len(struct net_buf *buf)
 
 	return bytes;
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

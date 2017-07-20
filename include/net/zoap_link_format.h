@@ -18,8 +18,7 @@ extern "C" {
 #endif
 
 /**
- * @brief COAP library
- * @defgroup zoap COAP Library
+ * @addtogroup zoap COAP Library
  * @{
  */
 

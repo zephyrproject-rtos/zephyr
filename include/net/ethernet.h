@@ -24,6 +24,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Ethernet support functions
+ * @defgroup ethernet Ethernet Support Functions
+ * @{
+ */
+
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_ll(pkt))
 
 #define NET_ETH_PTYPE_ARP		0x0806
@@ -71,5 +77,9 @@ const struct net_eth_addr *net_eth_broadcast_addr(void);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __ETHERNET_H */

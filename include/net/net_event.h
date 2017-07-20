@@ -16,6 +16,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup net_mgmt
+ * @{
+ */
+
 /* Network Interface events */
 #define _NET_IF_LAYER		NET_MGMT_LAYER_L1
 #define _NET_IF_CORE_CODE	0x001
@@ -128,5 +133,9 @@ enum net_event_ipv4_cmd {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __NET_EVENT_H__ */

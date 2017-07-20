@@ -19,6 +19,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief IEEE 802.15.4 library
+ * @defgroup ieee802154 IEEE 802.15.4 Library
+ * @{
+ */
+
 #define IEEE802154_MAX_ADDR_LENGTH	8
 
 struct ieee802154_security_ctx {
@@ -261,5 +267,9 @@ struct ieee802154_security_params {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __IEEE802154_H__ */

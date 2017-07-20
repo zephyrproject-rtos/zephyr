@@ -14,8 +14,7 @@ extern "C" {
 #endif
 
 /**
- * @brief MQTT library
- * @defgroup mqtt MQTT library
+ * @addtogroup mqtt
  * @{
  */
 

@@ -17,6 +17,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network core library
+ * @defgroup net_core Network Core Library
+ * @{
+ */
+
 /* Network subsystem logging helpers */
 
 #if defined(NET_LOG_ENABLED)
@@ -163,6 +169,10 @@ static inline void net_analyze_stack(const char *name,
 #define net_analyze_stack_get_values(...)
 #endif
 /* @endcond */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

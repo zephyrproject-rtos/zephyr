@@ -21,6 +21,12 @@ extern "C" {
 
 #include <net/ethernet.h>
 
+/**
+ * @brief Address resolution (ARP) library
+ * @defgroup arp ARP Library
+ * @{
+ */
+
 #define NET_ARP_HDR(pkt) ((struct net_arp_hdr *)net_pkt_ip_data(pkt))
 
 struct net_arp_hdr {
@@ -45,6 +51,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt);
 
 void net_arp_clear_cache(void);
 void net_arp_init(void);
+
+/**
+ * @}
+ */
 
 #else /* CONFIG_NET_ARP */
 

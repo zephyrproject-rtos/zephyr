@@ -13,6 +13,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief HTTP client and server library
+ * @defgroup http HTTP Library
+ * @{
+ */
+
 #if defined(CONFIG_HTTPS)
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
@@ -1055,5 +1061,9 @@ int http_response_404(struct http_server_ctx *ctx, const char *html_payload);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __HTTP_H__ */
