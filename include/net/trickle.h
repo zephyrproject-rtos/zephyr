@@ -23,6 +23,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Trickle algorithm library
+ * @defgroup trickle Trickle Algorithm Library
+ * @{
+ */
+
 struct net_trickle;
 
 typedef void (*net_trickle_cb_t)(struct net_trickle *trickle,
@@ -119,6 +125,10 @@ static inline bool net_trickle_is_running(struct net_trickle *trickle)
 
 	return trickle->I != 0;
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

@@ -12,6 +12,12 @@
 #ifndef __NET_OFFLOAD_H__
 #define __NET_OFFLOAD_H__
 
+/**
+ * @brief Network offloading interface
+ * @defgroup net_offload Network Offloading Interface
+ * @{
+ */
+
 #if defined(CONFIG_NET_OFFLOAD)
 
 #include <net/buf.h>
@@ -426,5 +432,9 @@ static inline int net_offload_put(struct net_if *iface,
 #endif
 
 #endif /* CONFIG_NET_OFFLOAD */
+
+/**
+ * @}
+ */
 
 #endif /* __NET_OFFLOAD_H__ */

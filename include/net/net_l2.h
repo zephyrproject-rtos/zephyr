@@ -18,6 +18,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network Layer 2 abstraction layer
+ * @defgroup net_l2 Network L2 Abstraction Layer
+ * @{
+ */
+
 struct net_if;
 
 struct net_l2 {
@@ -100,6 +106,10 @@ extern struct net_l2 __net_l2_end[];
 #define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
 	static ctx_type NET_L2_GET_DATA(name, sfx) __used		\
 	__attribute__((__section__(".net_l2.data")));
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

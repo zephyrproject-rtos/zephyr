@@ -31,6 +31,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network packet management library
+ * @defgroup net_pkt Network Packet Library
+ * @{
+ */
+
 struct net_context;
 
 struct net_pkt {
@@ -1351,6 +1357,10 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool);
 #else
 #define net_pkt_print(...)
 #endif /* CONFIG_NET_DEBUG_NET_PKT */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

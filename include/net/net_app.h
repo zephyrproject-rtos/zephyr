@@ -48,6 +48,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network application library
+ * @defgroup net_app Network Application Library
+ * @{
+ */
+
 /** Flags that tell what kind of functionality is needed by the application. */
 #define NET_APP_NEED_ROUTER 0x00000001
 #define NET_APP_NEED_IPV6   0x00000002
@@ -898,6 +904,10 @@ bool net_app_server_tls_disable(struct net_app_ctx *ctx);
 #endif /* CONFIG_NET_APP_SERVER */
 
 #endif /* CONFIG_NET_APP_TLS */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

@@ -11,6 +11,11 @@
 #ifndef _MII_H_
 #define _MII_H_
 
+/**
+ * @addtogroup ethernet
+ * @{
+ */
+
 /* MII management registers */
 #define MII_BMCR       0x0  /** Basic Mode Control Register */
 #define MII_BMSR       0x1  /** Basic Mode Status Register */
@@ -75,5 +80,9 @@
 #define MII_ADVERTISE_ALL (MII_ADVERTISE_10_HALF | MII_ADVERTISE_10_FULL |\
 			   MII_ADVERTISE_100_HALF | MII_ADVERTISE_100_FULL |\
 			   MII_ADVERTISE_SEL_IEEE_802_3)
+
+/**
+ * @}
+ */
 
 #endif /* _MII_H_ */

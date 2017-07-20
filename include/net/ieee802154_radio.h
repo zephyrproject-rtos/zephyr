@@ -19,6 +19,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup ieee802154
+ * @{
+ */
+
 struct ieee802154_radio_api {
 	/**
 	 * Mandatory to get in first position.
@@ -98,5 +103,9 @@ void ieee802154_init(struct net_if *iface);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __IEEE802154_RADIO_H__ */

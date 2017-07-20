@@ -21,6 +21,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief UDP library
+ * @defgroup udp UDP Library
+ * @{
+ */
+
 #if defined(CONFIG_NET_UDP)
 
 /**
@@ -58,10 +64,15 @@ struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
  */
 struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 				    struct net_udp_hdr *hdr);
+
 #else
 #define net_udp_get_hdr(pkt, frag) NULL
 #define net_udp_set_hdr(pkt, frag) NULL
 #endif /* CONFIG_NET_UDP */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
