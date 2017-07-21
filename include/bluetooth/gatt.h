@@ -488,14 +488,17 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 #define BT_GATT_CCC_MAX (CONFIG_BLUETOOTH_MAX_PAIRED + \
 			 CONFIG_BLUETOOTH_MAX_CONN)
 
-/** @brief GATT CCC configuration entry. */
+/** @brief GATT CCC configuration entry.
+ *  @param valid Valid flag
+ *  @param peer Remote peer address
+ *  @param value Configuration value.
+ *  @param data Configuration pointer data.
+ */
 struct bt_gatt_ccc_cfg {
-	/** Config valid flag. */
 	u8_t			valid;
-	/** Config peer address. */
 	bt_addr_le_t		peer;
-	/** Config peer value. */
 	u16_t			value;
+	u8_t			data[4] __aligned(4);
 };
 
 /* Internal representation of CCC value */
