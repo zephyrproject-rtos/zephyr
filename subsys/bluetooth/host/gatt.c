@@ -199,28 +199,40 @@ void bt_gatt_init(void)
 	k_delayed_work_init(&gatt_sc.work, sc_process);
 }
 
-static void sc_indicate(struct gatt_sc *sc, struct bt_gatt_attr *start,
-			struct bt_gatt_attr *end)
+static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
+			 u16_t new_end)
+{
+	BT_DBG("start 0x%04x end 0x%04x new_start 0x%04x new_end 0x%04x",
+	       *start, *end, new_start, new_end);
+
+	/* Check if inside existing range */
+	if (new_start >= *start && new_end <= *end) {
+		return false;
+	}
+
+	/* Update range */
+	if (*start > new_start) {
+		*start = new_start;
+	}
+
+	if (*end < new_end) {
+		*end = new_end;
+	}
+
+	return true;
+}
+
+static void sc_indicate(struct gatt_sc *sc, uint16_t start, uint16_t end)
 {
 	if (!atomic_test_and_set_bit(sc->flags, SC_RANGE_CHANGED)) {
-		sc->start = start->handle;
-		sc->end = end->handle;
+		sc->start = start;
+		sc->end = end;
 		goto submit;
 	}
 
-	/* Chech if inside modified range */
-	if (start->handle >= sc->start && end->handle <= sc->end) {
+	if (!update_range(&sc->start, &sc->end, start, end)) {
 		return;
 	}
-
-	if (sc->start > start->handle) {
-		sc->start = start->handle;
-	}
-
-	if (sc->end < end->handle) {
-		sc->end = end->handle;
-	}
-
 
 submit:
 	if (atomic_test_bit(sc->flags, SC_INDICATE_PENDING)) {
@@ -251,7 +263,8 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return err;
 	}
 
-	sc_indicate(&gatt_sc, &svc->attrs[0], &svc->attrs[svc->attr_count - 1]);
+	sc_indicate(&gatt_sc, svc->attrs[0].handle,
+		    svc->attrs[svc->attr_count - 1].handle);
 
 	return 0;
 }
@@ -264,7 +277,8 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		return -ENOENT;
 	}
 
-	sc_indicate(&gatt_sc, &svc->attrs[0], &svc->attrs[svc->attr_count - 1]);
+	sc_indicate(&gatt_sc, svc->attrs[0].handle,
+		    svc->attrs[svc->attr_count - 1].handle);
 
 	return 0;
 }
@@ -678,6 +692,39 @@ static int gatt_indicate(struct bt_conn *conn,
 	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
 }
 
+struct sc_data {
+	u16_t start;
+	u16_t end;
+};
+
+static void sc_save(struct bt_gatt_ccc_cfg *cfg,
+		    struct bt_gatt_indicate_params *params)
+{
+	struct sc_data data;
+	struct sc_data *stored;
+
+	memcpy(&data, params->data, params->len);
+
+	data.start = sys_le16_to_cpu(data.start);
+	data.end = sys_le16_to_cpu(data.end);
+
+	/* Load data stored */
+	stored = (struct sc_data *)cfg->data;
+
+	/* Check if there is any change stored */
+	if (!stored->start && !stored->end) {
+		*stored = data;
+		goto done;
+	}
+
+	update_range(&stored->start, &stored->end,
+		     data.start, data.end);
+
+done:
+	BT_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(&cfg->peer),
+	       stored->start, stored->end);
+}
+
 static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct notify_data *data = user_data;
@@ -698,17 +745,24 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	ccc = attr->user_data;
-	if (ccc->value != data->type) {
-		return BT_GATT_ITER_CONTINUE;
-	}
 
 	/* Notify all peers configured */
 	for (i = 0; i < ccc->cfg_len; i++) {
 		struct bt_conn *conn;
 		int err;
 
+		/* Check if config value matches data type since consolidated
+		 * value may be for a different peer.
+		 */
+		if (ccc->cfg[i].value != data->type) {
+			continue;
+		}
+
 		conn = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
 		if (!conn) {
+			if (ccc->cfg == sc_ccc_cfg) {
+				sc_save(&ccc->cfg[i], data->params);
+			}
 			continue;
 		}
 
@@ -784,6 +838,23 @@ u16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return bt_att_get_mtu(conn);
 }
 
+static void sc_restore(struct bt_gatt_ccc_cfg *cfg)
+{
+	struct sc_data *data = (struct sc_data *)cfg->data;
+
+	if (!data->start && !data->end) {
+		return;
+	}
+
+	BT_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(&cfg->peer),
+	       data->start, data->end);
+
+	sc_indicate(&gatt_sc, data->start, data->end);
+
+	/* Reset config data */
+	memset(cfg->data, 0, sizeof(cfg->data));
+}
+
 static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct bt_conn *conn = user_data;
@@ -797,11 +868,6 @@ static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	ccc = attr->user_data;
 
-	/* If already enabled skip */
-	if (ccc->value) {
-		return BT_GATT_ITER_CONTINUE;
-	}
-
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Ignore configuration for different peer */
 		if (bt_conn_addr_le_cmp(conn, &ccc->cfg[i].peer)) {
@@ -810,6 +876,9 @@ static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		if (ccc->cfg[i].value) {
 			gatt_ccc_changed(attr, ccc);
+			if (ccc->cfg == sc_ccc_cfg) {
+				sc_restore(&ccc->cfg[i]);
+			}
 			return BT_GATT_ITER_CONTINUE;
 		}
 	}
