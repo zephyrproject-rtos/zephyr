@@ -92,13 +92,21 @@ struct connection {
 
 	union {
 		struct {
+			u8_t reserved:5;
+			u8_t fex_valid:1;
+		} common;
+
+		struct {
 			u8_t terminate_ack:1;
+			u8_t rfu:4;
+			u8_t fex_valid:1;
 		} master;
 
 		struct {
 			u8_t  latency_enabled:1;
 			u8_t  latency_cancel:1;
 			u8_t  sca:3;
+			u8_t  fex_valid:1;
 			u32_t window_widening_periodic_us;
 			u32_t window_widening_max_us;
 			u32_t window_widening_prepare_us;
