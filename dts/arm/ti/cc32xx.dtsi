@@ -19,18 +19,18 @@
 		};
 	};
 
-	sram0: memory {
+	sram0: memory@20004000 {
 		compatible = "mmio-sram";
 		reg = <DT_SRAM_START DT_SRAM_SIZE>;
 	};
 
-	flash0: serial-flash {
+	flash0: serial-flash@0 {
 		compatible = "serial-flash";
 		reg = <0x0 DT_SFLASH_SIZE>;
 	};
 
 #if defined(CONFIG_SOC_CC3220SF)
-	flash1: flash {
+	flash1: flash@1000000 {
 		reg = <0x01000000 DT_FLASH_SIZE>;
 	};
 #endif

@@ -20,11 +20,11 @@
 		};
 	};
 
-	flash0: flash {
+	flash0: flash@400000 {
 		reg = <0x00400000 DT_FLASH_SIZE>;
 	};
 
-	sram0: memory {
+	sram0: memory@20400000 {
 		compatible = "mmio-sram";
 		reg = <0x20400000 DT_SRAM_SIZE>;
 	};
