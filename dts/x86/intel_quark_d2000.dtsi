@@ -4,7 +4,9 @@
 / {
 	cpus {
 		cpu@0 {
+			device_type = "cpu";
 			compatible = "intel,quark";
+			reg = <0>;
 		};
 
 	};
