@@ -71,6 +71,11 @@ u32_t ll_version_ind_send(u16_t handle);
 u32_t ll_terminate_ind_send(u16_t handle, u8_t reason);
 void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id);
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+u32_t ll_apto_get(u16_t handle, u16_t *apto);
+u32_t ll_apto_set(u16_t handle, u16_t apto);
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 u32_t ll_length_req_send(u16_t handle, u16_t tx_octets);
 void ll_length_default_get(u16_t *max_tx_octets, u16_t *max_tx_time);
