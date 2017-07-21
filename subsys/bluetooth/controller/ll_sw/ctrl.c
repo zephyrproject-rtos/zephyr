@@ -2104,6 +2104,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* AND the feature set to get Feature USED */
 		_radio.conn_curr->llcp_features &= feat_get(&req->features[0]);
 
+		/* features exchanged */
+		_radio.conn_curr->common.fex_valid = 1;
+
 		feature_rsp_send(_radio.conn_curr);
 	}
 	break;
@@ -2116,6 +2119,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 		/* AND the feature set to get Feature USED */
 		_radio.conn_curr->llcp_features &= feat_get(&rsp->features[0]);
+
+		/* features exchanged */
+		_radio.conn_curr->common.fex_valid = 1;
 
 		/* enqueue the feature resp */
 		*rx_enqueue = 1;
@@ -5947,6 +5953,37 @@ static inline void event_ch_map_prep(struct connection *conn,
 }
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
+static inline void event_enc_reject_prep(struct connection *conn,
+					 struct pdu_data *pdu)
+{
+	if (conn->common.fex_valid &&
+	    (conn->llcp_features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
+		struct pdu_data_llctrl_reject_ext_ind *p;
+
+		pdu->payload.llctrl.opcode =
+			PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+
+		p = (void *)&pdu->payload.llctrl.ctrldata.reject_ext_ind;
+		p->reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+		p->error_code = conn->llcp.encryption.error_code;
+
+		pdu->len = sizeof(struct pdu_data_llctrl_reject_ext_ind);
+	} else {
+		struct pdu_data_llctrl_reject_ind *p;
+
+		pdu->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+
+		p = (void *)&pdu->payload.llctrl.ctrldata.reject_ind;
+		p->error_code =	conn->llcp.encryption.error_code;
+
+		pdu->len = sizeof(struct pdu_data_llctrl_reject_ind);
+	}
+
+	pdu->len += offsetof(struct pdu_data_llctrl, ctrldata);
+
+	conn->llcp.encryption.error_code = 0;
+}
+
 static inline void event_enc_prep(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
@@ -6005,15 +6042,7 @@ static inline void event_enc_prep(struct connection *conn)
 
 			/* place the reject ind packet as next in tx queue */
 			if (conn->llcp.encryption.error_code) {
-				pdu_ctrl_tx->len =
-				    offsetof(struct pdu_data_llctrl, ctrldata) +
-				    sizeof(struct pdu_data_llctrl_reject_ind);
-				pdu_ctrl_tx->payload.llctrl.opcode =
-					PDU_DATA_LLCTRL_TYPE_REJECT_IND;
-				pdu_ctrl_tx->payload.llctrl.ctrldata.reject_ind.error_code =
-					conn->llcp.encryption.error_code;
-
-				conn->llcp.encryption.error_code = 0;
+				event_enc_reject_prep(conn, pdu_ctrl_tx);
 			}
 			/* place the start enc req packet as next in tx queue */
 			else {
@@ -8426,6 +8455,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 
 		conn->role = 1;
 		conn->connect_expire = 6;
+		conn->common.fex_valid = 0;
 		conn->slave.latency_enabled = 0;
 		conn->slave.latency_cancel = 0;
 		conn->slave.window_widening_prepare_us = 0;
@@ -8869,6 +8899,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 
 	conn->role = 0;
 	conn->connect_expire = 6;
+	conn->common.fex_valid = 0;
 	conn->master.terminate_ack = 0;
 	conn_interval_us =
 		(u32_t)_radio.scanner.conn_interval * 1250;
