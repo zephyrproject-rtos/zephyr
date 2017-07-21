@@ -88,6 +88,12 @@
 
 #endif
 
+#ifdef CONFIG_MCR20A_IS_PART_OF_KW2XD_SIP
+#define PART_OF_KW2XD_SIP	1
+#else
+#define PART_OF_KW2XD_SIP	0
+#endif
+
 /* Values for the power mode (PM) configuration */
 #define MCR20A_PM_HIBERNATE	0
 #define MCR20A_PM_DOZE		MCR20A_PWR_MODES_XTALEN
@@ -1188,6 +1194,7 @@ error:
 static int mcr20a_stop(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
+	u8_t power_mode;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
@@ -1203,7 +1210,13 @@ static int mcr20a_stop(struct device *dev)
 
 	enable_irqb_interrupt(mcr20a, false);
 
-	if (!write_reg_pwr_modes(&mcr20a->spi, MCR20A_PM_HIBERNATE)) {
+	if (PART_OF_KW2XD_SIP) {
+		power_mode = MCR20A_PM_DOZE;
+	} else {
+		power_mode = MCR20A_PM_HIBERNATE;
+	}
+
+	if (!write_reg_pwr_modes(&mcr20a->spi, power_mode)) {
 		goto error;
 	}
 
@@ -1268,20 +1281,23 @@ static int power_on_and_setup(struct device *dev)
 	u32_t status;
 	u8_t tmp = 0;
 
-	set_reset(dev, 0);
-	_usleep(150);
-	set_reset(dev, 1);
+	if (!PART_OF_KW2XD_SIP) {
+		set_reset(dev, 0);
+		_usleep(150);
+		set_reset(dev, 1);
 
-	do {
-		_usleep(50);
-		timeout--;
-		gpio_pin_read(mcr20a->irq_gpio,
-			      CONFIG_MCR20A_GPIO_IRQ_B_PIN, &status);
-	} while (status && timeout);
+		do {
+			_usleep(50);
+			timeout--;
+			gpio_pin_read(mcr20a->irq_gpio,
+				      CONFIG_MCR20A_GPIO_IRQ_B_PIN, &status);
+		} while (status && timeout);
 
-	if (status) {
-		SYS_LOG_ERR("Timeout, failed to get WAKE IRQ");
-		return -EIO;
+		if (status) {
+			SYS_LOG_ERR("Timeout, failed to get WAKE IRQ");
+			return -EIO;
+		}
+
 	}
 
 	tmp = MCR20A_CLK_OUT_CONFIG | MCR20A_CLK_OUT_EXTEND;
@@ -1352,7 +1368,7 @@ static inline int configure_gpios(struct device *dev)
 
 	gpio_pin_configure(mcr20a->reset_gpio, CONFIG_MCR20A_GPIO_RESET_PIN,
 			   GPIO_DIR_OUT);
-	set_reset(dev, 0);
+	set_reset(dev, 1);
 
 	return 0;
 }
