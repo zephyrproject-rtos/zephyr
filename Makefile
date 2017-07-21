@@ -436,6 +436,7 @@ define filechk_Makefile.export
 	echo; \
 	$(foreach e,$(exports),echo $(e)=$($(e));) echo; \
 	echo "include $(O)/include/config/auto.conf"; \
+	echo "include $(O)/include/generated/generated_dts_board.conf"; \
 	echo "-include $(srctree)/boards/$(ARCH)/$(BOARD_NAME)/Makefile.board";)
 endef
 
