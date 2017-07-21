@@ -14,6 +14,7 @@
 	};
 
 	sram0: memory@00280000 {
+		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00280000 DT_SRAM_SIZE>;
 	};
