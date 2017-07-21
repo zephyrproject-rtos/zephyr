@@ -314,6 +314,45 @@ static void host_num_completed_packets(struct net_buf *buf,
 }
 #endif
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+static void read_auth_payload_timeout(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_read_auth_payload_timeout *cmd = (void *)buf->data;
+	struct bt_hci_rp_read_auth_payload_timeout *rp;
+	u32_t status;
+	u16_t handle;
+	u16_t auth_payload_timeout;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_apto_get(handle, &auth_payload_timeout);
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = sys_cpu_to_le16(handle);
+	rp->auth_payload_timeout = sys_cpu_to_le16(auth_payload_timeout);
+}
+
+static void write_auth_payload_timeout(struct net_buf *buf,
+				       struct net_buf **evt)
+{
+	struct bt_hci_cp_write_auth_payload_timeout *cmd = (void *)buf->data;
+	struct bt_hci_rp_write_auth_payload_timeout *rp;
+	u32_t status;
+	u16_t handle;
+	u16_t auth_payload_timeout;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	auth_payload_timeout = sys_le16_to_cpu(cmd->auth_payload_timeout);
+
+	status = ll_apto_set(handle, auth_payload_timeout);
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->handle = sys_cpu_to_le16(handle);
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 			      struct net_buf **evt)
 {
@@ -343,6 +382,17 @@ static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		host_num_completed_packets(cmd, evt);
 		break;
 #endif
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+	case BT_OCF(BT_HCI_OP_READ_AUTH_PAYLOAD_TIMEOUT):
+		read_auth_payload_timeout(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_WRITE_AUTH_PAYLOAD_TIMEOUT):
+		write_auth_payload_timeout(cmd, evt);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+
 	default:
 		return -EINVAL;
 	}
@@ -379,6 +429,7 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* Set FC, Host Buffer Size and Host Num Completed */
 	rp->commands[10] |= BIT(5) | BIT(6) | BIT(7);
 #endif
+
 	/* Read Local Version Info, Read Local Supported Features. */
 	rp->commands[14] |= BIT(3) | BIT(5);
 	/* Read BD ADDR. */
@@ -430,6 +481,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[27] |= BIT(2) | BIT(5);
 	/* LE Remote Conn Param Req and Neg Reply */
 	rp->commands[33] |= BIT(4) | BIT(5);
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+	/* Read and Write authenticated payload timeout */
+	rp->commands[32] |= BIT(4) | BIT(5);
+#endif
 #endif /* CONFIG_BLUETOOTH_CONN */
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 	/* LE resolving list commands, LE Read Peer RPA */

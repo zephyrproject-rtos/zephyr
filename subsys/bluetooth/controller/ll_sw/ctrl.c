@@ -2579,12 +2579,24 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
 		} else if ((_radio.conn_curr->enc_rx) ||
 			   (_radio.conn_curr->pause_rx)) {
+			struct connection *conn = _radio.conn_curr;
+			u16_t appto_reload_new;
+
+			/* check for change in apto */
+			appto_reload_new = (conn->apto_reload >
+					    (conn->latency + 6)) ?
+					   (conn->apto_reload -
+					    (conn->latency + 6)) :
+					   conn->apto_reload;
+			if (conn->appto_reload != appto_reload_new) {
+				conn->appto_reload = appto_reload_new;
+				conn->apto_expire = 0;
+			}
+
 			/* start authenticated payload (pre) timeout */
-			if (_radio.conn_curr->apto_expire == 0) {
-				_radio.conn_curr->appto_expire =
-					_radio.conn_curr->appto_reload;
-				_radio.conn_curr->apto_expire =
-					_radio.conn_curr->apto_reload;
+			if (conn->apto_expire == 0) {
+				conn->appto_expire = conn->appto_reload;
+				conn->apto_expire = conn->apto_reload;
 			}
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
@@ -9096,6 +9108,37 @@ u32_t ll_terminate_ind_send(u16_t handle, u8_t reason)
 
 	return 0;
 }
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+u32_t ll_apto_get(u16_t handle, u16_t *apto)
+{
+	struct connection *conn;
+
+	conn = connection_get(handle);
+	if (!conn) {
+		return 1;
+	}
+
+	*apto = conn->apto_reload * conn->conn_interval * 125 / 1000;
+
+	return 0;
+}
+
+u32_t ll_apto_set(u16_t handle, u16_t apto)
+{
+	struct connection *conn;
+
+	conn = connection_get(handle);
+	if (!conn) {
+		return 1;
+	}
+
+	conn->apto_reload = RADIO_CONN_EVENTS(apto * 10 * 1000,
+					      conn->conn_interval * 1250);
+
+	return 0;
+}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
 u32_t ll_length_req_send(u16_t handle, u16_t tx_octets)

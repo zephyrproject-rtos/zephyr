@@ -555,6 +555,28 @@ struct bt_hci_cp_write_sc_host_supp {
 	u8_t  sc_support;
 } __packed;
 
+#define BT_HCI_OP_READ_AUTH_PAYLOAD_TIMEOUT     BT_OP(BT_OGF_BASEBAND, 0x007b)
+struct bt_hci_cp_read_auth_payload_timeout {
+	u16_t handle;
+} __packed;
+
+struct bt_hci_rp_read_auth_payload_timeout {
+	u8_t  status;
+	u16_t handle;
+	u16_t auth_payload_timeout;
+} __packed;
+
+#define BT_HCI_OP_WRITE_AUTH_PAYLOAD_TIMEOUT    BT_OP(BT_OGF_BASEBAND, 0x007c)
+struct bt_hci_cp_write_auth_payload_timeout {
+	u16_t handle;
+	u16_t auth_payload_timeout;
+} __packed;
+
+struct bt_hci_rp_write_auth_payload_timeout {
+	u8_t  status;
+	u16_t handle;
+} __packed;
+
 /* HCI version from Assigned Numbers */
 #define BT_HCI_VERSION_1_0B                     0
 #define BT_HCI_VERSION_1_1                      1
