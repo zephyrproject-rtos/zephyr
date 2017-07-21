@@ -182,7 +182,7 @@ static void sc_process(struct k_work *work)
 	sc->params.data = &sc_range[0];
 	sc->params.len = sizeof(sc_range);
 
-	if (!bt_gatt_indicate(NULL, &sc->params)) {
+	if (bt_gatt_indicate(NULL, &sc->params)) {
 		/* No connections to indicate */
 		return;
 	}
