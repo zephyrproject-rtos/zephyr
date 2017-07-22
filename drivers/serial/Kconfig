@@ -99,4 +99,6 @@ source "drivers/serial/Kconfig.fe310"
 
 source "drivers/serial/Kconfig.esp32"
 
+source "drivers/serial/Kconfig.msp432p4xx"
+
 endif

@@ -1,0 +1,30 @@
+# Kconfig - MSP432P4XX SDK HAL configuration
+
+config HAS_MSP432P4XXSDK
+	bool
+
+menuconfig MSP432P4XXSDK
+	bool "TI MSP432P4XX SDK support"
+	default n
+	select HAS_CMSIS
+	depends on HAS_MSP432P4XXSDK
+	help
+	Set when MSP432P4XXSDK_BUILTIN or MSP432P4XXSDK_ROM_DRIVERLIB
+
+if HAS_MSP432P4XXSDK
+
+config MSP432P4XXSDK_BUILTIN
+        bool "Enable building the MSP432P4XX SDK files stored in the Zephyr tree"
+        default n
+        select MSP432P4XXSDK
+        help
+        Link with local MSP432P4XX SDK driverlib sources.
+
+config MSP432P4XXSDK_ROM_DRIVERLIB
+        bool "Use the Peripheral Driver library functions in ROM"
+        default n
+        select MSP432P4XXSDK
+        help
+        Vector to MSP432P4XX SDK driverlib APIs in ROM.
+
+endif

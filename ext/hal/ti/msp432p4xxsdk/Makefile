@@ -1,0 +1,9 @@
+ifdef CONFIG_HAS_MSP432P4XXSDK
+ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/ti/msp432p4xxsdk
+ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/ti/msp432p4xxsdk/inc
+ZEPHYRINCLUDE +=-I$(srctree)/ext/hal/ti/msp432p4xxsdk/driverlib
+endif # CONFIG_HAS_MSP432P4XXSDK
+
+ifdef CONFIG_MSP432P4XXSDK_ROM_DRIVERLIB
+KBUILD_CFLAGS += -DTARGET_IS_MSP432P4XX
+endif  # CONFIG_MSP432P4XXSDK_ROM_DRIVERLIB

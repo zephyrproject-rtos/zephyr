@@ -118,6 +118,11 @@ S:      Supported
 F:      boards/arm/cc3200_launchxl/
 F:      boards/arm/cc3220sf_launchxl/
 
+BOARDS/ARM - TI MSP-EXP432P401R LAUNCHXL
+M:      Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org
+S:      Supported
+F:      boards/arm/msp_exp432p401r_launchxl/
+
 BOARDS/ARM - NXP FRDM-K64F
 M:	Maureen Helm <maureen.helm@nxp.com>
 S:	Supported
@@ -208,6 +213,16 @@ CC32XX SOC - TI SIMPLELINK
 M:      Gil Pitney <gil.pitney@linaro.org>
 S:      Supported
 F:      arch/arm/soc/ti_simplelink/cc32xx
+
+MSP432P4XX SDK
+M:      Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+S:      Supported
+F:      ext/hal/ti/msp432p4xxsdk/
+
+MSP432P4XX SOC - TI SIMPLELINK
+M:      Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+S:      Supported
+F:      arch/arm/soc/ti_simplelink/msp432p4xx
 
 DOCUMENTATION
 M:	David Kinder <david.b.kinder@intel.com>

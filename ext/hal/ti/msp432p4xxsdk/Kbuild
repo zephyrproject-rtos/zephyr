@@ -1,0 +1,14 @@
+# CONFIG_MSP432P4XXSDK_BUILTIN can be used for debugging purposes.
+# Note the default build for Zephyr is CONFIG_MSP432P4XXSDK_ROM_DRIVERLIB=y
+# which uses the ROM versions of the APIs instead.
+ccflags-$(CONFIG_HAS_MSP432P4XXSDK) += -D$(COMPILER)
+obj-$(CONFIG_MSP432P4XXSDK_BUILTIN) += driverlib/gpio.o
+obj-$(CONFIG_MSP432P4XXSDK_BUILTIN) += driverlib/interrupt.o
+obj-$(CONFIG_MSP432P4XXSDK_BUILTIN) += driverlib/system_msp432p401r.o
+obj-$(CONFIG_MSP432P4XXSDK_BUILTIN) += driverlib/cpu.o
+obj-$(CONFIG_MSP432P4XXSDK_BUILTIN) += driverlib/i2c.o
+obj-$(CONFIG_MSP432P4XXSDK_BUILTIN) += driverlib/uart.o
+obj-$(CONFIG_MSP432P4XXSDK_BUILTIN) += driverlib/spi.o
+
+# Need system_msp432p401r for SystemInit which is not in ROM
+obj-$(CONFIG_HAS_MSP432P4XXSDK) += driverlib/system_msp432p401r.o
