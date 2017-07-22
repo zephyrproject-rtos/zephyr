@@ -1,8 +1,9 @@
 # CODEOWNERS for autoreview assigning in github
 
-# Get all docs reviewed
+# Do not use wildcard on all source yet
+# *                                        @galak @nashif
 
-*                                        @galak @nashif
+# Get all docs reviewed
 *.rst                                    @dbkinder
 .known-issues/*                          @inakypg @nashif
 MAINTAINERS                              @inakypg @nashif
@@ -15,7 +16,7 @@ arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
 arch/nios2/*                             @andrewboie
 arch/nios2/core/*                        @andrewboie
-arch/riscv32                             fractalclone@gmail.com
+arch/riscv32                             @fractalclone
 arch/x86/*                               @andrewboie @youvedeep
 arch/x86/core/*                          @andrewboie
 arch/x86/core/crt0.S                     @youvedeep @nashif
@@ -39,11 +40,11 @@ boards/arm/hexiwear_k64/*                @MaureenHelm
 boards/arm/mps2_an385/*                  @fvincenzo
 boards/arm/nrf51_blenano/*               @rsalveti
 boards/arm/nrf52_pca10040/*              @carlescufi
-boards/arm/nucleo_f401re/*               @rsalveti idlethread
+boards/arm/nucleo_f401re/*               @rsalveti @idlethread
 boards/arm/v2m_beetle/*                  @fvincenzo
 boards/nios2/*                           @andrewboie
 boards/nios2/altera_max10/*              @andrewboie
-boards/riscv32                           fractalclone@gmail.com
+boards/riscv32                           @fractalclone
 boards/x86/*                             @andrewboie @youvedeep
 boards/x86/arduino_101/*                 @nashif
 boards/x86/galileo/*                     @nashif
@@ -54,22 +55,22 @@ doc/*                                    @dbkinder
 doc/subsystems/bluetooth/*               @sjanc @jhedberg @Vudentz
 drivers/*/*qmsi*                         @nashif
 drivers/bluetooth/*                      @sjanc @jhedberg @Vudentz
-drivers/clock_control/*stm32f4*          @rsalveti idlethread
+drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 drivers/ethernet/*                       @jukkar @tbursztyka
 drivers/flash/*                          @nashif
 drivers/gpio/*stm32*                     @rsalveti @idlethread
-drivers/gpio/gpio_pulpino.c              fractalclone@gmail.com
+drivers/gpio/gpio_pulpino.c              @fractalclone
 drivers/ieee802154/*                     @jukkar @tbursztyka
 drivers/interrupt_controller/*           @andrewboie
 drivers/pinmux/stm32/*                   @rsalveti @idlethread
 drivers/sensor/*                         @bogdan-davidoaia
 drivers/serial/uart_altera_jtag.c        @andrewboie
-drivers/serial/uart_riscv_qemu.c         fractalclone@gmail.com
+drivers/serial/uart_riscv_qemu.c         @fractalclone
 drivers/slip/*                           @jukkar @tbursztyka
 drivers/spi/*                            @tbursztyka
 drivers/timer/altera_avalon_timer.c      @andrewboie
-drivers/timer/pulpino_timer.c            fractalclone@gmail.com
-drivers/timer/riscv_machine_timer.c      fractalclone@gmail.com
+drivers/timer/pulpino_timer.c            @fractalclone
+drivers/timer/riscv_machine_timer.c      @fractalclone
 drivers/usb                              @youvedeep @andyross
 ext/fs/*                                 @nashif
 ext/hal/cmsis/*                          @MaureenHelm @galak
@@ -87,7 +88,7 @@ include/arch/arm/*                       @MaureenHelm @galak
 include/arch/arm/cortex_m/irq.h          @andrewboie
 include/arch/nios2/*                     @andrewboie
 include/arch/nios2/arch.h                @andrewboie
-include/arch/riscv32                     fractalclone@gmail.com
+include/arch/riscv32                     @fractalclone
 include/arch/x86/*                       @andrewboie @youvedeep
 include/arch/x86/arch.h                  @andrewboie
 include/arch/xtensa/*                    @andrewboie
