@@ -2,167 +2,167 @@
 
 # Get all docs reviewed
 
-*                                        kumar.gala@linaro.org anas.nashif@intel.com
+*                                        @galak @nashif
 *.rst                                    @dbkinder
-.known-issues/*                          inaky.perez-gonzalez@intel.com anas.nashif@intel.com
-MAINTAINERS                              inaky.perez-gonzalez@intel.com anas.nashif@intel.com
-arch/arc/*                               cjordan@synopsys.com Ruud.Derwig@synopsys.com
-arch/arc/core/*                          andrew.p.boie@intel.com
-arch/arm/*                               maureen.helm@nxp.com kumar.gala@linaro.org
-arch/arm/core/*                          andrew.p.boie@intel.com
+.known-issues/*                          @inakypg @nashif
+MAINTAINERS                              @inakypg @nashif
+arch/arc/*                               cjordan@synopsys.com @ruuddw
+arch/arc/core/*                          @andrewboie
+arch/arm/*                               @MaureenHelm @galak
+arch/arm/core/*                          @andrewboie
 arch/arm/soc/arm/mps2/*                  vincenzo.frascino@linaro.org
-arch/arm/soc/st_stm32/stm32f4/*          ricardo.salveti@linaro.org amit.kucheria@linaro.org
-arch/arm/soc/ti_simplelink/cc32xx        gil.pitney@linaro.org
-arch/nios2/*                             andrew.p.boie@intel.com
-arch/nios2/core/*                        andrew.p.boie@intel.com
+arch/arm/soc/st_stm32/stm32f4/*          @rsalveti amit.kucheria@linaro.org
+arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
+arch/nios2/*                             @andrewboie
+arch/nios2/core/*                        @andrewboie
 arch/riscv32                             fractalclone@gmail.com
-arch/x86/*                               andrew.p.boie@intel.com youvedeep.singh@intel.com
-arch/x86/core/*                          andrew.p.boie@intel.com
-arch/x86/core/crt0.S                     youvedeep.singh@intel.com anas.nashif@intel.com
-arch/x86/soc/intel_quark/quark_d2000/*   anas.nashif@intel.com
-arch/x86/soc/intel_quark/quark_se/*      anas.nashif@intel.com
-arch/x86/soc/intel_quark/quark_x1000/*   anas.nashif@intel.com
-arch/xtensa                              andrew.p.boie@intel.com
-boards/arc/*                             cjordan@synopsys.com Ruud.Derwig@synopsys.com
-boards/arc/arduino_101_sss/*             anas.nashif@intel.com
+arch/x86/*                               @andrewboie @youvedeep
+arch/x86/core/*                          @andrewboie
+arch/x86/core/crt0.S                     @youvedeep @nashif
+arch/x86/soc/intel_quark/quark_d2000/*   @nashif
+arch/x86/soc/intel_quark/quark_se/*      @nashif
+arch/x86/soc/intel_quark/quark_x1000/*   @nashif
+arch/xtensa                              @andrewboie
+boards/arc/*                             cjordan@synopsys.com @ruuddw
+boards/arc/arduino_101_sss/*             @nashif
 boards/arc/em_starterkit/*               cjordan@synopsys.com
-boards/arc/quark_se_c1000_ss_devboard/*  anas.nashif@intel.com
-boards/arm/*                             maureen.helm@nxp.com kumar.gala@linaro.org
-boards/arm/96b_carbon/*                  ricardo.salveti@linaro.org amit.kucheria@linaro.org
+boards/arc/quark_se_c1000_ss_devboard/*  @nashif
+boards/arm/*                             @MaureenHelm @galak
+boards/arm/96b_carbon/*                  @rsalveti amit.kucheria@linaro.org
 boards/arm/96b_nitrogen/*                amit.kucheria@linaro.org
-boards/arm/arduino_101_ble/*             johan.hedberg@intel.com
-boards/arm/cc3200_launchxl/*             gil.pitney@linaro.org
-boards/arm/cc3220sf_launchxl/*           gil.pitney@linaro.org
-boards/arm/frdm_k64f/*                   maureen.helm@nxp.com
-boards/arm/frdm_kw41z/*                  maureen.helm@nxp.com
-boards/arm/hexiwear_k64/*                maureen.helm@nxp.com
+boards/arm/arduino_101_ble/*             @jhedberg
+boards/arm/cc3200_launchxl/*             @GAnthony
+boards/arm/cc3220sf_launchxl/*           @GAnthony
+boards/arm/frdm_k64f/*                   @MaureenHelm
+boards/arm/frdm_kw41z/*                  @MaureenHelm
+boards/arm/hexiwear_k64/*                @MaureenHelm
 boards/arm/mps2_an385/*                  vincenzo.frascino@linaro.org
-boards/arm/nrf51_blenano/*               ricardo.salveti@linaro.org
-boards/arm/nrf52_pca10040/*              carles.cufi@nordicsemi.no
-boards/arm/nucleo_f401re/*               ricardo.salveti@linaro.org amit.kucheria@linaro.org
+boards/arm/nrf51_blenano/*               @rsalveti
+boards/arm/nrf52_pca10040/*              @carlescufi
+boards/arm/nucleo_f401re/*               @rsalveti amit.kucheria@linaro.org
 boards/arm/v2m_beetle/*                  vincenzo.frascino@linaro.org
-boards/nios2/*                           andrew.p.boie@intel.com
-boards/nios2/altera_max10/*              andrew.p.boie@intel.com
+boards/nios2/*                           @andrewboie
+boards/nios2/altera_max10/*              @andrewboie
 boards/riscv32                           fractalclone@gmail.com
-boards/x86/*                             andrew.p.boie@intel.com youvedeep.singh@intel.com
-boards/x86/arduino_101/*                 anas.nashif@intel.com
-boards/x86/galileo/*                     anas.nashif@intel.com
-boards/x86/quark_d2000_crb/*             anas.nashif@intel.com
-boards/x86/quark_se_c1000_devboard/*     anas.nashif@intel.com
-boards/xtensa/*                          andrew.p.boie@intel.com
+boards/x86/*                             @andrewboie @youvedeep
+boards/x86/arduino_101/*                 @nashif
+boards/x86/galileo/*                     @nashif
+boards/x86/quark_d2000_crb/*             @nashif
+boards/x86/quark_se_c1000_devboard/*     @nashif
+boards/xtensa/*                          @andrewboie
 doc/*                                    @dbkinder
-doc/subsystems/bluetooth/*               szymon.janc@gmail.com johan.hedberg@intel.com luiz.dentz@gmail.com
-drivers/*/*qmsi*                         anas.nashif@intel.com
-drivers/bluetooth/*                      szymon.janc@gmail.com johan.hedberg@intel.com luiz.dentz@gmail.com
-drivers/clock_control/*stm32f4*          ricardo.salveti@linaro.org amit.kucheria@linaro.org
-drivers/ethernet/*                       jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-drivers/flash/*                          anas.nashif@intel.com
-drivers/gpio/*stm32*                     ricardo.salveti@linaro.org amit.kucheria@linaro.org
+doc/subsystems/bluetooth/*               szymon.janc@gmail.com @jhedberg @Vudentz
+drivers/*/*qmsi*                         @nashif
+drivers/bluetooth/*                      szymon.janc@gmail.com @jhedberg @Vudentz
+drivers/clock_control/*stm32f4*          @rsalveti amit.kucheria@linaro.org
+drivers/ethernet/*                       @jukkar @tbursztyka
+drivers/flash/*                          @nashif
+drivers/gpio/*stm32*                     @rsalveti amit.kucheria@linaro.org
 drivers/gpio/gpio_pulpino.c              fractalclone@gmail.com
-drivers/ieee802154/*                     jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-drivers/interrupt_controller/*           andrew.p.boie@intel.com
-drivers/pinmux/stm32/*                   ricardo.salveti@linaro.org amit.kucheria@linaro.org
-drivers/sensor/*                         bogdan.davidoaia@linaro.org murtaza.alexandru1995@gmail.com
-drivers/serial/uart_altera_jtag.c        andrew.p.boie@intel.com
+drivers/ieee802154/*                     @jukkar @tbursztyka
+drivers/interrupt_controller/*           @andrewboie
+drivers/pinmux/stm32/*                   @rsalveti amit.kucheria@linaro.org
+drivers/sensor/*                         @bogdan-davidoaia murtaza.alexandru1995@gmail.com
+drivers/serial/uart_altera_jtag.c        @andrewboie
 drivers/serial/uart_riscv_qemu.c         fractalclone@gmail.com
-drivers/slip/*                           jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-drivers/spi/*                            tomasz.bursztyka@linux.intel.com
-drivers/timer/altera_avalon_timer.c      andrew.p.boie@intel.com
+drivers/slip/*                           @jukkar @tbursztyka
+drivers/spi/*                            @tbursztyka
+drivers/timer/altera_avalon_timer.c      @andrewboie
 drivers/timer/pulpino_timer.c            fractalclone@gmail.com
 drivers/timer/riscv_machine_timer.c      fractalclone@gmail.com
-drivers/usb                              youvedeep.singh@intel.com andrew.j.ross@intel.com
-ext/fs/*                                 anas.nashif@intel.com
-ext/hal/cmsis/*                          maureen.helm@nxp.com kumar.gala@linaro.org
-ext/hal/nordic/mdk/*                     carles.cufi@nordicsemi.no
-ext/hal/nxp/mcux/*                       maureen.helm@nxp.com
-ext/hal/qmsi/*                           anas.nashif@intel.com
-ext/hal/st/stm32cube/*                   erwan.gouriou@linaro.org
-ext/hal/ti/cc3200sdk/*                   gil.pitney@linaro.org
-ext/lib/crypto/mbedtls/*                 anas.nashif@intel.com
+drivers/usb                              @youvedeep @andyross
+ext/fs/*                                 @nashif
+ext/hal/cmsis/*                          @MaureenHelm @galak
+ext/hal/nordic/mdk/*                     @carlescufi
+ext/hal/nxp/mcux/*                       @MaureenHelm
+ext/hal/qmsi/*                           @nashif
+ext/hal/st/stm32cube/*                   @erwango
+ext/hal/ti/cc3200sdk/*                   @GAnthony
+ext/lib/crypto/mbedtls/*                 @nashif
 ext/lib/crypto/tinycrypt/*               constanza.m.heath@intel.com
-include/arch/arc/*                       cjordan@synopsys.com Ruud.Derwig@synopsys.com
-include/arch/arc/arch.h                  andrew.p.boie@intel.com
-include/arch/arc/v2/irq.h                andrew.p.boie@intel.com
-include/arch/arm/*                       maureen.helm@nxp.com kumar.gala@linaro.org
-include/arch/arm/cortex_m/irq.h          andrew.p.boie@intel.com
-include/arch/nios2/*                     andrew.p.boie@intel.com
-include/arch/nios2/arch.h                andrew.p.boie@intel.com
+include/arch/arc/*                       cjordan@synopsys.com @ruuddw
+include/arch/arc/arch.h                  @andrewboie
+include/arch/arc/v2/irq.h                @andrewboie
+include/arch/arm/*                       @MaureenHelm @galak
+include/arch/arm/cortex_m/irq.h          @andrewboie
+include/arch/nios2/*                     @andrewboie
+include/arch/nios2/arch.h                @andrewboie
 include/arch/riscv32                     fractalclone@gmail.com
-include/arch/x86/*                       andrew.p.boie@intel.com youvedeep.singh@intel.com
-include/arch/x86/arch.h                  andrew.p.boie@intel.com
-include/arch/xtensa/*                    andrew.p.boie@intel.com
-include/atomic.h                         andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/bluetooth/*                      szymon.janc@gmail.com johan.hedberg@intel.com luiz.dentz@gmail.com
-include/cache.h                          andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/device.h                         youvedeep.singh@intel.com anas.nashif@intel.com
-include/drivers/bluetooth/*              szymon.janc@gmail.com johan.hedberg@intel.com luiz.dentz@gmail.com
-include/drivers/ioapic.h                 andrew.p.boie@intel.com
-include/drivers/loapic.h                 andrew.p.boie@intel.com
-include/drivers/mvic.h                   andrew.p.boie@intel.com
-include/fs.h                             anas.nashif@intel.com
-include/fs/*                             anas.nashif@intel.com
-include/init.h                           andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/init.h                           youvedeep.singh@intel.com anas.nashif@intel.com
-include/irq.h                            andrew.p.boie@intel.com
-include/irq.h                            andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/irq_offload.h                    andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/kernel.h                         andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/kernel_version.h                 andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/linker/linker-defs.h             andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/linker/linker-tool-gcc.h         andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/linker/linker-tool.h             andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/linker/section_tags.h            andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/linker/sections.h                andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/misc/*                           andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/net/*                            jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-include/net/buf.h                        jukka.rissanen@linux.intel.com johan.hedberg@intel.com tomasz.bursztyka@linux.intel.com
-include/power.h                          youvedeep.singh@intel.com anas.nashif@intel.com
-include/sensor.h                         bogdan.davidoaia@linaro.org murtaza.alexandru1995@gmail.com
-include/shared_irq.h                     andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/spi.h                            tomasz.bursztyka@linux.intel.com
-include/sw_isr_table.h                   andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/sys_clock.h                      andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/sys_io.h                         andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/toolchain.h                      andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/toolchain/*                      andrew.p.boie@intel.com andrew.j.ross@intel.com
-include/zephyr.h                         andrew.p.boie@intel.com andrew.j.ross@intel.com
-kernel/*                                 andrew.p.boie@intel.com andrew.j.ross@intel.com
-kernel/device.c                          youvedeep.singh@intel.com anas.nashif@intel.com
-kernel/idle.c                            youvedeep.singh@intel.com anas.nashif@intel.com
-samples/bluetooth/*                      szymon.janc@gmail.com johan.hedberg@intel.com luiz.dentz@gmail.com
-samples/boards/quark_se_c1000/power*/*   youvedeep.singh@intel.com anas.nashif@intel.com
-samples/net/*                            jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-samples/net/dns_resolve/*                jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-samples/net/http_server/*                jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-samples/net/mbedtls_sslclient/*          anas.nashif@intel.com
-samples/net/mqtt_publisher/*             jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
+include/arch/x86/*                       @andrewboie @youvedeep
+include/arch/x86/arch.h                  @andrewboie
+include/arch/xtensa/*                    @andrewboie
+include/atomic.h                         @andrewboie @andyross
+include/bluetooth/*                      szymon.janc@gmail.com @jhedberg @Vudentz
+include/cache.h                          @andrewboie @andyross
+include/device.h                         @youvedeep @nashif
+include/drivers/bluetooth/*              szymon.janc@gmail.com @jhedberg @Vudentz
+include/drivers/ioapic.h                 @andrewboie
+include/drivers/loapic.h                 @andrewboie
+include/drivers/mvic.h                   @andrewboie
+include/fs.h                             @nashif
+include/fs/*                             @nashif
+include/init.h                           @andrewboie @andyross
+include/init.h                           @youvedeep @nashif
+include/irq.h                            @andrewboie
+include/irq.h                            @andrewboie @andyross
+include/irq_offload.h                    @andrewboie @andyross
+include/kernel.h                         @andrewboie @andyross
+include/kernel_version.h                 @andrewboie @andyross
+include/linker/linker-defs.h             @andrewboie @andyross
+include/linker/linker-tool-gcc.h         @andrewboie @andyross
+include/linker/linker-tool.h             @andrewboie @andyross
+include/linker/section_tags.h            @andrewboie @andyross
+include/linker/sections.h                @andrewboie @andyross
+include/misc/*                           @andrewboie @andyross
+include/net/*                            @jukkar @tbursztyka
+include/net/buf.h                        @jukkar @jhedberg @tbursztyka
+include/power.h                          @youvedeep @nashif
+include/sensor.h                         @bogdan-davidoaia murtaza.alexandru1995@gmail.com
+include/shared_irq.h                     @andrewboie @andyross
+include/spi.h                            @tbursztyka
+include/sw_isr_table.h                   @andrewboie @andyross
+include/sys_clock.h                      @andrewboie @andyross
+include/sys_io.h                         @andrewboie @andyross
+include/toolchain.h                      @andrewboie @andyross
+include/toolchain/*                      @andrewboie @andyross
+include/zephyr.h                         @andrewboie @andyross
+kernel/*                                 @andrewboie @andyross
+kernel/device.c                          @youvedeep @nashif
+kernel/idle.c                            @youvedeep @nashif
+samples/bluetooth/*                      szymon.janc@gmail.com @jhedberg @Vudentz
+samples/boards/quark_se_c1000/power*/*   @youvedeep @nashif
+samples/net/*                            @jukkar @tbursztyka
+samples/net/dns_resolve/*                @jukkar @tbursztyka
+samples/net/http_server/*                @jukkar @tbursztyka
+samples/net/mbedtls_sslclient/*          @nashif
+samples/net/mqtt_publisher/*             @jukkar @tbursztyka
 samples/net/zoap_client/*                vinicius.gomes@intel.com
 samples/net/zoap_server/*                vinicius.gomes@intel.com
-samples/sensor/*                         bogdan.davidoaia@linaro.org murtaza.alexandru1995@gmail.com
-samples/subsys/usb                       youvedeep.singh@intel.com andrew.j.ross@intel.com
-scripts/expr_parser.py                   andrew.p.boie@intel.com
-scripts/sanity_chk/*                     andrew.p.boie@intel.com
-scripts/sanitycheck                      andrew.p.boie@intel.com
-subsys/bluetooth/*                       szymon.janc@gmail.com johan.hedberg@intel.com luiz.dentz@gmail.com
-subsys/bluetooth/controller/*            carles.cufi@nordicsemi.no vinayak.kariappa.chettimada@nordicsemi.no
-subsys/fs/*                              anas.nashif@intel.com
-subsys/net/buf.c                         jukka.rissanen@linux.intel.com johan.hedberg@intel.com tomasz.bursztyka@linux.intel.com
-subsys/net/ip/*                          jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-subsys/net/lib/*                         jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-subsys/net/lib/dns/*                     jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-subsys/net/lib/http/*                    jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-subsys/net/lib/mqtt/*                    jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
+samples/sensor/*                         @bogdan-davidoaia murtaza.alexandru1995@gmail.com
+samples/subsys/usb                       @youvedeep @andyross
+scripts/expr_parser.py                   @andrewboie
+scripts/sanity_chk/*                     @andrewboie
+scripts/sanitycheck                      @andrewboie
+subsys/bluetooth/*                       szymon.janc@gmail.com @jhedberg @Vudentz
+subsys/bluetooth/controller/*            @carlescufi @cvinayak
+subsys/fs/*                              @nashif
+subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka
+subsys/net/ip/*                          @jukkar @tbursztyka
+subsys/net/lib/*                         @jukkar @tbursztyka
+subsys/net/lib/dns/*                     @jukkar @tbursztyka
+subsys/net/lib/http/*                    @jukkar @tbursztyka
+subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
 subsys/net/lib/zoap/*                    vinicius.gomes@intel.com
-subsys/usb                               youvedeep.singh@intel.com andrew.j.ross@intel.com
-tests/bluetooth/*                        szymon.janc@gmail.com johan.hedberg@intel.com luiz.dentz@gmail.com
+subsys/usb                               @youvedeep @andyross
+tests/bluetooth/*                        szymon.janc@gmail.com @jhedberg @Vudentz
 tests/crypto/*                           constanza.m.heath@intel.com
-tests/crypto/mbedtls/*                   anas.nashif@intel.com
-tests/drivers/spi/*                      tomasz.bursztyka@linux.intel.com
-tests/kernel/*                           andrew.p.boie@intel.com andrew.j.ross@intel.com
-tests/net/*                              jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-tests/net/buf/*                          jukka.rissanen@linux.intel.com johan.hedberg@intel.com tomasz.bursztyka@linux.intel.com
-tests/net/lib/*                          jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-tests/net/lib/http_header_fields/*       jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
-tests/net/lib/mqtt_packet/*              jukka.rissanen@linux.intel.com tomasz.bursztyka@linux.intel.com
+tests/crypto/mbedtls/*                   @nashif
+tests/drivers/spi/*                      @tbursztyka
+tests/kernel/*                           @andrewboie @andyross
+tests/net/*                              @jukkar @tbursztyka
+tests/net/buf/*                          @jukkar @jhedberg @tbursztyka
+tests/net/lib/*                          @jukkar @tbursztyka
+tests/net/lib/http_header_fields/*       @jukkar @tbursztyka
+tests/net/lib/mqtt_packet/*              @jukkar @tbursztyka
 tests/net/lib/zoap/*                     vinicius.gomes@intel.com
-tests/subsys/fs/*                        anas.nashif@intel.com
+tests/subsys/fs/*                        @nashif
