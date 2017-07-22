@@ -41,6 +41,7 @@ boards/arm/frdm_k64f/*                   @MaureenHelm
 boards/arm/frdm_kw41z/*                  @MaureenHelm
 boards/arm/hexiwear_k64/*                @MaureenHelm
 boards/arm/mps2_an385/*                  @fvincenzo
+boards/arm/msp_exp432p401r_launchxl/*    @Mani-Sadhasivam
 boards/arm/nrf51_blenano/*               @rsalveti
 boards/arm/nrf52_pca10040/*              @carlescufi
 boards/arm/nucleo_f401re/*               @rsalveti @idlethread
