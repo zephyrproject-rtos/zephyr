@@ -22,7 +22,7 @@ arch/x86/core/crt0.S                     @youvedeep @nashif
 arch/x86/soc/intel_quark/quark_d2000/*   @nashif
 arch/x86/soc/intel_quark/quark_se/*      @nashif
 arch/x86/soc/intel_quark/quark_x1000/*   @nashif
-arch/xtensa                              @andrewboie
+arch/xtensa/*                            @andrewboie
 boards/arc/*                             cjordan@synopsys.com @ruuddw
 boards/arc/arduino_101_sss/*             @nashif
 boards/arc/em_starterkit/*               cjordan@synopsys.com
