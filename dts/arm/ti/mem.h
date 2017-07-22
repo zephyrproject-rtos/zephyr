@@ -18,6 +18,10 @@
 #define DT_FLASH_SIZE		__SIZE_K(1024)
 #define DT_SRAM_SIZE		__SIZE_K(256)
 #define DT_SRAM_START		0x20000000
+#elif defined(CONFIG_SOC_MSP432P401R)
+#define DT_FLASH_SIZE      __SIZE_K(256)
+#define DT_SRAM_SIZE        __SIZE_K(64)
+#define DT_SRAM_START       0x20000000
 #else
 #error "Flash and RAM sizes not defined for this chip"
 #endif

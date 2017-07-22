@@ -5,3 +5,4 @@ obj-$(CONFIG_HAS_CC3200SDK) += ti/cc3200sdk/
 obj-$(CONFIG_HAS_CC3220SDK) += ti/simplelink/
 obj-$(CONFIG_HAS_NORDIC_HAL) += nordic/
 obj-$(CONFIG_HAS_NORDIC_DRIVERS) += nordic/drivers/
+obj-$(CONFIG_HAS_MSP432P4XXSDK) += ti/msp432p4xxsdk/

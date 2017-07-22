@@ -24,6 +24,8 @@ source "ext/hal/st/stm32cube/Kconfig"
 
 source "ext/hal/ti/cc3200sdk/Kconfig"
 
+source "ext/hal/ti/msp432p4xxsdk/Kconfig"
+
 source "ext/hal/ti/simplelink/Kconfig"
 
 endmenu
