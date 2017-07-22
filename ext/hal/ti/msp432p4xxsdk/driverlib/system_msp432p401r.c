@@ -105,7 +105,7 @@ void SystemCoreClockUpdate(void)
 
     float dcoConst;
     int32_t calVal;
-    uint32_t centeredFreq;
+    uint32_t centeredFreq = 1500000; // Initial minimum frequency
     int16_t dcoTune;
 
     divider = (CS->CTL1 & CS_CTL1_DIVM_MASK) >> CS_CTL1_DIVM_OFS;
