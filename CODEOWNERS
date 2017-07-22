@@ -6,12 +6,12 @@
 *.rst                                    @dbkinder
 .known-issues/*                          @inakypg @nashif
 MAINTAINERS                              @inakypg @nashif
-arch/arc/*                               cjordan@synopsys.com @ruuddw
+arch/arc/*                               @cjordan44 @ruuddw
 arch/arc/core/*                          @andrewboie
 arch/arm/*                               @MaureenHelm @galak
 arch/arm/core/*                          @andrewboie
-arch/arm/soc/arm/mps2/*                  vincenzo.frascino@linaro.org
-arch/arm/soc/st_stm32/stm32f4/*          @rsalveti amit.kucheria@linaro.org
+arch/arm/soc/arm/mps2/*                  @fvincenzo
+arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
 arch/nios2/*                             @andrewboie
 arch/nios2/core/*                        @andrewboie
@@ -22,25 +22,25 @@ arch/x86/core/crt0.S                     @youvedeep @nashif
 arch/x86/soc/intel_quark/quark_d2000/*   @nashif
 arch/x86/soc/intel_quark/quark_se/*      @nashif
 arch/x86/soc/intel_quark/quark_x1000/*   @nashif
-arch/xtensa                              @andrewboie
-boards/arc/*                             cjordan@synopsys.com @ruuddw
+arch/xtensa/*                            @andrewboie
+boards/arc/*                             @cjordan44 @ruuddw
 boards/arc/arduino_101_sss/*             @nashif
-boards/arc/em_starterkit/*               cjordan@synopsys.com
+boards/arc/em_starterkit/*               @cjordan44
 boards/arc/quark_se_c1000_ss_devboard/*  @nashif
 boards/arm/*                             @MaureenHelm @galak
-boards/arm/96b_carbon/*                  @rsalveti amit.kucheria@linaro.org
-boards/arm/96b_nitrogen/*                amit.kucheria@linaro.org
+boards/arm/96b_carbon/*                  @rsalveti @idlethread
+boards/arm/96b_nitrogen/*                @idlethread
 boards/arm/arduino_101_ble/*             @jhedberg
 boards/arm/cc3200_launchxl/*             @GAnthony
 boards/arm/cc3220sf_launchxl/*           @GAnthony
 boards/arm/frdm_k64f/*                   @MaureenHelm
 boards/arm/frdm_kw41z/*                  @MaureenHelm
 boards/arm/hexiwear_k64/*                @MaureenHelm
-boards/arm/mps2_an385/*                  vincenzo.frascino@linaro.org
+boards/arm/mps2_an385/*                  @fvincenzo
 boards/arm/nrf51_blenano/*               @rsalveti
 boards/arm/nrf52_pca10040/*              @carlescufi
-boards/arm/nucleo_f401re/*               @rsalveti amit.kucheria@linaro.org
-boards/arm/v2m_beetle/*                  vincenzo.frascino@linaro.org
+boards/arm/nucleo_f401re/*               @rsalveti idlethread
+boards/arm/v2m_beetle/*                  @fvincenzo
 boards/nios2/*                           @andrewboie
 boards/nios2/altera_max10/*              @andrewboie
 boards/riscv32                           fractalclone@gmail.com
@@ -51,18 +51,18 @@ boards/x86/quark_d2000_crb/*             @nashif
 boards/x86/quark_se_c1000_devboard/*     @nashif
 boards/xtensa/*                          @andrewboie
 doc/*                                    @dbkinder
-doc/subsystems/bluetooth/*               szymon.janc@gmail.com @jhedberg @Vudentz
+doc/subsystems/bluetooth/*               @sjanc @jhedberg @Vudentz
 drivers/*/*qmsi*                         @nashif
-drivers/bluetooth/*                      szymon.janc@gmail.com @jhedberg @Vudentz
-drivers/clock_control/*stm32f4*          @rsalveti amit.kucheria@linaro.org
+drivers/bluetooth/*                      @sjanc @jhedberg @Vudentz
+drivers/clock_control/*stm32f4*          @rsalveti idlethread
 drivers/ethernet/*                       @jukkar @tbursztyka
 drivers/flash/*                          @nashif
-drivers/gpio/*stm32*                     @rsalveti amit.kucheria@linaro.org
+drivers/gpio/*stm32*                     @rsalveti @idlethread
 drivers/gpio/gpio_pulpino.c              fractalclone@gmail.com
 drivers/ieee802154/*                     @jukkar @tbursztyka
 drivers/interrupt_controller/*           @andrewboie
-drivers/pinmux/stm32/*                   @rsalveti amit.kucheria@linaro.org
-drivers/sensor/*                         @bogdan-davidoaia murtaza.alexandru1995@gmail.com
+drivers/pinmux/stm32/*                   @rsalveti @idlethread
+drivers/sensor/*                         @bogdan-davidoaia
 drivers/serial/uart_altera_jtag.c        @andrewboie
 drivers/serial/uart_riscv_qemu.c         fractalclone@gmail.com
 drivers/slip/*                           @jukkar @tbursztyka
@@ -79,8 +79,8 @@ ext/hal/qmsi/*                           @nashif
 ext/hal/st/stm32cube/*                   @erwango
 ext/hal/ti/cc3200sdk/*                   @GAnthony
 ext/lib/crypto/mbedtls/*                 @nashif
-ext/lib/crypto/tinycrypt/*               constanza.m.heath@intel.com
-include/arch/arc/*                       cjordan@synopsys.com @ruuddw
+ext/lib/crypto/tinycrypt/*               @lpereira
+include/arch/arc/*                       @cjordan44 @ruuddw
 include/arch/arc/arch.h                  @andrewboie
 include/arch/arc/v2/irq.h                @andrewboie
 include/arch/arm/*                       @MaureenHelm @galak
@@ -92,10 +92,10 @@ include/arch/x86/*                       @andrewboie @youvedeep
 include/arch/x86/arch.h                  @andrewboie
 include/arch/xtensa/*                    @andrewboie
 include/atomic.h                         @andrewboie @andyross
-include/bluetooth/*                      szymon.janc@gmail.com @jhedberg @Vudentz
+include/bluetooth/*                      @sjanc @jhedberg @Vudentz
 include/cache.h                          @andrewboie @andyross
 include/device.h                         @youvedeep @nashif
-include/drivers/bluetooth/*              szymon.janc@gmail.com @jhedberg @Vudentz
+include/drivers/bluetooth/*              @sjanc @jhedberg @Vudentz
 include/drivers/ioapic.h                 @andrewboie
 include/drivers/loapic.h                 @andrewboie
 include/drivers/mvic.h                   @andrewboie
@@ -117,7 +117,7 @@ include/misc/*                           @andrewboie @andyross
 include/net/*                            @jukkar @tbursztyka
 include/net/buf.h                        @jukkar @jhedberg @tbursztyka
 include/power.h                          @youvedeep @nashif
-include/sensor.h                         @bogdan-davidoaia murtaza.alexandru1995@gmail.com
+include/sensor.h                         @bogdan-davidoaia
 include/shared_irq.h                     @andrewboie @andyross
 include/spi.h                            @tbursztyka
 include/sw_isr_table.h                   @andrewboie @andyross
@@ -129,21 +129,21 @@ include/zephyr.h                         @andrewboie @andyross
 kernel/*                                 @andrewboie @andyross
 kernel/device.c                          @youvedeep @nashif
 kernel/idle.c                            @youvedeep @nashif
-samples/bluetooth/*                      szymon.janc@gmail.com @jhedberg @Vudentz
+samples/bluetooth/*                      @sjanc @jhedberg @Vudentz
 samples/boards/quark_se_c1000/power*/*   @youvedeep @nashif
 samples/net/*                            @jukkar @tbursztyka
 samples/net/dns_resolve/*                @jukkar @tbursztyka
 samples/net/http_server/*                @jukkar @tbursztyka
 samples/net/mbedtls_sslclient/*          @nashif
 samples/net/mqtt_publisher/*             @jukkar @tbursztyka
-samples/net/zoap_client/*                vinicius.gomes@intel.com
-samples/net/zoap_server/*                vinicius.gomes@intel.com
-samples/sensor/*                         @bogdan-davidoaia murtaza.alexandru1995@gmail.com
+samples/net/zoap_client/*                @vcgomes
+samples/net/zoap_server/*                @vcgomes
+samples/sensor/*                         @bogdan-davidoaia
 samples/subsys/usb                       @youvedeep @andyross
 scripts/expr_parser.py                   @andrewboie
 scripts/sanity_chk/*                     @andrewboie
 scripts/sanitycheck                      @andrewboie
-subsys/bluetooth/*                       szymon.janc@gmail.com @jhedberg @Vudentz
+subsys/bluetooth/*                       @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/*            @carlescufi @cvinayak
 subsys/fs/*                              @nashif
 subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka
@@ -152,10 +152,10 @@ subsys/net/lib/*                         @jukkar @tbursztyka
 subsys/net/lib/dns/*                     @jukkar @tbursztyka
 subsys/net/lib/http/*                    @jukkar @tbursztyka
 subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
-subsys/net/lib/zoap/*                    vinicius.gomes@intel.com
+subsys/net/lib/zoap/*                    @vcgomes
 subsys/usb                               @youvedeep @andyross
-tests/bluetooth/*                        szymon.janc@gmail.com @jhedberg @Vudentz
-tests/crypto/*                           constanza.m.heath@intel.com
+tests/bluetooth/*                        @sjanc @jhedberg @Vudentz
+tests/crypto/*                           @lpereira
 tests/crypto/mbedtls/*                   @nashif
 tests/drivers/spi/*                      @tbursztyka
 tests/kernel/*                           @andrewboie @andyross
@@ -164,5 +164,5 @@ tests/net/buf/*                          @jukkar @jhedberg @tbursztyka
 tests/net/lib/*                          @jukkar @tbursztyka
 tests/net/lib/http_header_fields/*       @jukkar @tbursztyka
 tests/net/lib/mqtt_packet/*              @jukkar @tbursztyka
-tests/net/lib/zoap/*                     vinicius.gomes@intel.com
+tests/net/lib/zoap/*                     @vcgomes
 tests/subsys/fs/*                        @nashif
