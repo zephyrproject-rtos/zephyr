@@ -1,0 +1,25 @@
+/dts-v1/;
+
+#include <ti/msp432p4xx.dtsi>
+
+/ {
+	model = "TI MSP-EXP432P401R LaunchXL";
+	compatible = "ti,msp-exp432p401r-launchxl","ti,msp432p401r",
+						"ti,msp432p4xx";
+
+	aliases {
+		uart_0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+

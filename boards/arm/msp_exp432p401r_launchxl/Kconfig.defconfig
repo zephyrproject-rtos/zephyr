@@ -1,0 +1,9 @@
+# Kconfig - TI MSP-EXP432P401R LaunchXL development board configuration
+#
+
+if BOARD_MSP_EXP432P401R_LAUNCHXL
+
+config BOARD
+	default msp_exp432p401r_launchxl
+
+endif # BOARD_MSP_EXP432P401R_LAUNCHXL
