@@ -1,0 +1,34 @@
+#include <arm/armv7-m.dtsi>
+#include <ti/mem.h>
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m4f";
+		};
+	};
+
+	sram0: memory {
+		compatible = "sram";
+		reg = <DT_SRAM_START DT_SRAM_SIZE>;
+	};
+
+	flash0: serial-flash {
+		compatible = "serial-flash";
+		reg = <0x0 DT_FLASH_SIZE>;
+	};
+
+	soc {
+		uart0: uart@40001000 {
+			compatible = "ti,msp432p4xx-uart";
+			reg = <0x40001000 0x400>;
+			interrupts = <32 0>;
+			status = "disabled";
+			label = "UART_0";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
