@@ -56,7 +56,13 @@ static const struct random_driver_api random_mcux_rnga_api_funcs = {
 
 static int random_mcux_rnga_init(struct device *);
 
-DEVICE_AND_API_INIT(random_mcux_rnga, CONFIG_RANDOM_NAME,
+#if defined(CONFIG_RANDOM_POOL)
+#define DEVICE_NAME CONFIG_HARDWARE_RANDOM_NAME
+#else
+#define DEVICE_NAME CONFIG_RANDOM_NAME
+#endif
+
+DEVICE_AND_API_INIT(random_mcux_rnga, DEVICE_NAME,
 		    random_mcux_rnga_init, NULL, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &random_mcux_rnga_api_funcs);
@@ -80,6 +86,7 @@ static int random_mcux_rnga_init(struct device *dev)
 	return 0;
 }
 
+#if !defined(CONFIG_RANDOM_POOL)
 u32_t sys_rand32_get(void)
 {
 	u32_t output;
@@ -91,3 +98,4 @@ u32_t sys_rand32_get(void)
 
 	return output;
 }
+#endif
