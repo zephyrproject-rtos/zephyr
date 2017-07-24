@@ -544,6 +544,15 @@ config APPLICATION_INIT_PRIORITY
 	help
 	This priority level is for end-user drivers such as sensors and display
 	which have no inward dependencies.
+
+config PTHREAD_IPC
+	bool
+	prompt "POSIX pthread IPC API"
+	default n
+	help
+        This enables a mostly-standards-compliant implementation of
+        the pthread mutex, condition variable and barrier IPC
+        mechanisms.
 endmenu
 
 menu "Security Options"
