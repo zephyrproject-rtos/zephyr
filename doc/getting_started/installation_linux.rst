@@ -55,7 +55,7 @@ Install the required packages in a Ubuntu host system with:
 .. code-block:: console
 
    $ sudo apt-get install git make gcc g++ ncurses-dev \
-	 doxygen dfu-util device-tree-compiler
+	 doxygen dfu-util device-tree-compiler python-pip3
 
 Install the required packages in a Fedora host system with:
 
@@ -64,14 +64,11 @@ Install the required packages in a Fedora host system with:
    $ sudo dnf group install "Development Tools"
    $ sudo dnf install git make gcc glibc-static \
 	 libstdc++-static ncurses-devel \
-	 doxygen dfu-util dtc
+	 doxygen dfu-util dtc python3-pip
 
 
 Install additional packages required for development with Zephyr::
 
-   $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
-   $ ./get-pip.py
-   $ rm get-pip.py
    $ pip3 install -r scripts/requirements.txt
 
 .. _zephyr_sdk:
