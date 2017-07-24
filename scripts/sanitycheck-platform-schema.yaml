@@ -1,0 +1,47 @@
+#
+# Schema to validate a YAML file describing a Zephyr test platform
+#
+# We load this with pykwalify
+# (http://pykwalify.readthedocs.io/en/unstable/validation-rules.html),
+# a YAML structure validator, to validate the YAML files that describe
+# Zephyr test platforms
+#
+# The original spec comes from Zephyr's sanitycheck script
+#
+
+type: map
+mapping:
+  "identifier":
+    type: str
+  "name":
+    type: str
+  "type":
+    type: str
+    enum: [ 'mcu', 'qemu' ]
+  "arch":
+    type: str
+  "toolchain":
+    type: seq
+    seq:
+      -
+        type: str
+        enum: [ 'gccarmemb', 'issm', 'xcc', 'zephyr' ]
+  "ram":
+    type: int
+  "flash":
+    type: int
+  "supported":
+    type: seq
+    seq:
+      -
+        type: str
+  "testing":
+    type: map
+    mapping:
+      "default":
+        type: bool
+      "ignore_tags":
+        type: seq
+        seq:
+          -
+            type: str
