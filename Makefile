@@ -320,10 +320,8 @@ GDB		= $(CROSS_COMPILE)gdb
 READELF		= $(CROSS_COMPILE)readelf
 AWK		= awk
 ifeq ($(PREBUILT_HOST_TOOLS),)
-GENOFFSET_H	= scripts/gen_offset_header/gen_offset_header
 FIXDEP		= scripts/basic/fixdep
 else
-GENOFFSET_H	= $(PREBUILT_HOST_TOOLS)/gen_offset_header
 ifneq ($(filter host-tools, $(MAKECMDGOALS)),)
 FIXDEP		= scripts/basic/fixdep
 else
@@ -416,7 +414,7 @@ exports += VERSION_MAJOR VERSION_MINOR PATCHLEVEL VERSION_RESERVED EXTRAVERSION
 exports += KERNELRELEASE KERNELVERSION
 exports += ARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC CXX
 exports += CPP AR NM STRIP OBJCOPY OBJDUMP GDB
-exports += MAKE AWK INSTALLKERNEL PERL PYTHON GENOFFSET_H
+exports += MAKE AWK INSTALLKERNEL PERL PYTHON
 exports += HOSTCXX HOSTCXXFLAGS CHECK CHECKFLAGS
 
 exports += KBUILD_CPPFLAGS NOSTDINC_FLAGS ZEPHYRINCLUDE OBJCOPYFLAGS LDFLAGS
@@ -456,7 +454,6 @@ PHONY += scripts_basic
 ifeq ($(PREBUILT_HOST_TOOLS),)
 scripts_basic:
 	$(Q)$(MAKE) $(build)=scripts/basic
-	$(Q)$(MAKE) $(build)=scripts/gen_offset_header
 else
 scripts_basic:
 endif
@@ -1278,10 +1275,9 @@ host-tools:
 	$(Q)$(MAKE) $(build)=scripts/basic
 	$(Q)$(MAKE) $(build)=scripts/kconfig standalone
 	$(Q)$(MAKE) $(build)=scripts/gen_idt
-	$(Q)$(MAKE) $(build)=scripts/gen_offset_header
 	@mkdir -p ${ZEPHYR_BASE}/bin
 	@cp scripts/basic/fixdep scripts/gen_idt/gen_idt scripts/kconfig/conf \
-		scripts/gen_offset_header/gen_offset_header ${ZEPHYR_BASE}/bin
+		${ZEPHYR_BASE}/bin
 
 
 # Documentation targets
