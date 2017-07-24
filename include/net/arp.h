@@ -13,6 +13,10 @@
 #ifndef __ARP_H
 #define __ARP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_NET_ARP)
 
 #include <net/ethernet.h>
@@ -48,5 +52,9 @@ void net_arp_init(void);
 #define net_arp_init(...)
 
 #endif /* CONFIG_NET_ARP */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ARP_H */

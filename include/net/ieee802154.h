@@ -15,6 +15,10 @@
 #include <net/net_mgmt.h>
 #include <crypto/cipher_structs.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define IEEE802154_MAX_ADDR_LENGTH	8
 
 struct ieee802154_security_ctx {
@@ -253,5 +257,9 @@ struct ieee802154_security_params {
 	u8_t level	: 3;
 	u8_t _unused	: 3;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __IEEE802154_H__ */

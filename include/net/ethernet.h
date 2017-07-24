@@ -20,6 +20,10 @@
 #include <net/net_pkt.h>
 #include <misc/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_ll(pkt))
 
 #define NET_ETH_PTYPE_ARP		0x0806
@@ -63,5 +67,9 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 }
 
 const struct net_eth_addr *net_eth_broadcast_addr(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ETHERNET_H */

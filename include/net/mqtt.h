@@ -10,6 +10,10 @@
 #include <net/mqtt_types.h>
 #include <net/net_context.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief MQTT library
  * @defgroup mqtt MQTT library
@@ -418,4 +422,8 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
  * @}
  */
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* _MQTT_H_ */

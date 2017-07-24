@@ -13,6 +13,10 @@
 #ifndef __LINK_FORMAT_H__
 #define __LINK_FORMAT_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief COAP library
  * @defgroup zoap COAP Library
@@ -48,5 +52,9 @@ struct zoap_core_metadata {
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __LINK_FORMAT_H__ */
