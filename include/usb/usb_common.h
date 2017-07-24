@@ -96,6 +96,7 @@
 #define SCSI_TRANSPARENT_SUBCLASS       0x06
 #define DFU_INTERFACE_SUBCLASS          0x01
 #define RF_SUBCLASS                     0x01
+#define CUSTOM_SUBCLASS                 0xFF
 
 /* Protocols */
 #define V25TER_PROTOCOL                 0x01
