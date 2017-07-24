@@ -3,3 +3,8 @@ tests:
         build_only: true
         min_ram: 16
         tags: net mqtt
+-   test_tls:
+        build_only: true
+        platform_whitelist: frdm_k64f qemu_x86
+        extra_args: CONF_FILE="prj_tls.conf"
+        tags: net mqtt
