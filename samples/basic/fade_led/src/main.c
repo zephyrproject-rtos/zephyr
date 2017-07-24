@@ -14,6 +14,7 @@
 #include <misc/printk.h>
 #include <device.h>
 #include <pwm.h>
+#include <board.h>
 
 #if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32L476XG)
 #define PWM_DRIVER CONFIG_PWM_STM32_2_DEV_NAME
@@ -28,6 +29,9 @@
 #include <board.h>
 #define PWM_DRIVER CONFIG_PWM_NRF5_SW_0_DEV_NAME
 #define PWM_CHANNEL LED0_GPIO_PIN
+#elif defined(CONFIG_BOARD_HEXIWEAR_K64)
+#define PWM_DRIVER	GREEN_PWM_NAME
+#define PWM_CHANNEL	GREEN_PWM_CHANNEL
 #else
 #error "Choose supported PWM driver"
 #endif

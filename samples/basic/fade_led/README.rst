@@ -31,6 +31,11 @@ Nucleo_F103RB
 =============
 Connect PWM1(PA8) to LED
 
+Hexiwear K64
+============
+No special board setup is necessary because there is an on-board RGB LED
+connected to the K64 PWM.
+
 Building and Running
 ********************
 
