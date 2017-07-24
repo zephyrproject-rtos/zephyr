@@ -14,6 +14,7 @@
 #include <misc/printk.h>
 #include <device.h>
 #include <pwm.h>
+#include <board.h>
 
 #if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32F412ZG) || \
 	defined(CONFIG_SOC_STM32F413XH) || defined(CONFIG_SOC_STM32L476XG)
@@ -25,15 +26,18 @@
 #elif defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
 #define PWM_DRIVER CONFIG_PWM_QMSI_DEV_NAME
 #define PWM_CHANNEL 0
+#elif defined(CONFIG_BOARD_HEXIWEAR_K64)
+#define PWM_DRIVER	GREEN_PWM_NAME
+#define PWM_CHANNEL	GREEN_PWM_CHANNEL
 #else
 #error "Choose supported PWM driver"
 #endif
 
 /* in micro second */
-#define MIN_PERIOD	2000
+#define MIN_PERIOD	(USEC_PER_SEC / 64)
 
 /* in micro second */
-#define MAX_PERIOD	2000000
+#define MAX_PERIOD	USEC_PER_SEC
 
 void main(void)
 {
