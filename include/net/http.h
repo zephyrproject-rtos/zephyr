@@ -9,6 +9,10 @@
 
 #include <net/net_context.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(CONFIG_HTTPS)
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
@@ -1047,5 +1051,9 @@ int http_response_403(struct http_server_ctx *ctx, const char *html_payload);
 int http_response_404(struct http_server_ctx *ctx, const char *html_payload);
 
 #endif /* CONFIG_HTTP_SERVER */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __HTTP_H__ */

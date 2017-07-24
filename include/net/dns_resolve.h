@@ -16,6 +16,10 @@
 #include <net/net_ip.h>
 #include <net/net_context.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief DNS resolving library
  * @defgroup dns_resolve DNS Resolve Library
@@ -319,5 +323,9 @@ void dns_init_resolver(void);
 #else
 #define dns_init_resolver(...)
 #endif /* CONFIG_DNS_RESOLVER */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _DNS_RESOLVE_H */

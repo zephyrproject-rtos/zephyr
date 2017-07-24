@@ -12,6 +12,10 @@
 #ifndef __NET_MGMT_H__
 #define __NET_MGMT_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Network Management
  * @defgroup net_mgmt Network Management
@@ -263,5 +267,9 @@ static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __NET_MGMT_H__ */

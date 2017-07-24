@@ -15,6 +15,10 @@
 #include <device.h>
 #include <net/net_if.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ieee802154_radio_api {
 	/**
 	 * Mandatory to get in first position.
@@ -90,5 +94,9 @@ extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
  * @param iface A valid pointer on a network interface
  */
 void ieee802154_init(struct net_if *iface);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __IEEE802154_RADIO_H__ */

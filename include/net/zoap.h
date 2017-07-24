@@ -20,6 +20,10 @@
 
 #include <misc/slist.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief COAP library
  * @defgroup zoap COAP Library
@@ -810,5 +814,9 @@ u8_t *zoap_next_token(void);
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZOAP_H__ */
