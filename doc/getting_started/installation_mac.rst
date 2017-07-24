@@ -61,7 +61,7 @@ Install tools to build Zephyr binaries:
    $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
    $ ./get-pip.py
    $ rm get-pip.py
-   $ pip3 install -r scripts/requirements.txt
+   $ pip3 install --user -r scripts/requirements.txt
 
 Install tools needed for building the toolchain (if needed):
 
