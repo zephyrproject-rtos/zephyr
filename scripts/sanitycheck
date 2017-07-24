@@ -176,10 +176,16 @@ from collections import OrderedDict
 from itertools import islice
 import yaml
 
+import logging
+log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
+logging.basicConfig(format = log_format, level = 30)
+
 if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
+
+import scl
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
@@ -936,13 +942,12 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
 class SanityConfigParser:
     """Class to read test case files with semantic checking
     """
-    def __init__(self, filename):
+    def __init__(self, filename, schema):
         """Instantiate a new SanityConfigParser object
 
         @param filename Source .yaml file to read
         """
-        with open(filename, 'r') as stream:
-            cp = yaml.load(stream)
+        cp = scl.yaml_load_verify(filename, schema)
         self.filename = filename
         self.cp = cp
 
@@ -1055,6 +1060,11 @@ class Platform:
     """Class representing metadata for a particular platform
 
     Maps directly to BOARD when building"""
+
+    yaml_platform_schema = scl.yaml_load(
+        os.path.join(os.environ['ZEPHYR_BASE'],
+                     "scripts", "sanitycheck-platform-schema.yaml"))
+
     def __init__(self, cfile):
         """Constructor.
 
@@ -1064,7 +1074,7 @@ class Platform:
             in the architecture configuration file which has lots of metadata.
             See the Architecture class.
         """
-        scp = SanityConfigParser(cfile)
+        scp = SanityConfigParser(cfile, self.yaml_platform_schema)
         cp = scp.cp
 
         self.name = cp['identifier']
@@ -1218,6 +1228,10 @@ def defconfig_cb(context, goals, goal):
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
+    yaml_tc_schema = scl.yaml_load(
+        os.path.join(os.environ['ZEPHYR_BASE'],
+                     "scripts", "sanitycheck-tc-schema.yaml"))
+
     def __init__(self, arch_root, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
         discards = {}
@@ -1240,22 +1254,28 @@ class TestSuite:
             for dirpath, dirnames, filenames in os.walk(testcase_root,
                                                         topdown=True):
                 verbose("scanning %s" % dirpath)
-                if "sample.yaml" in filenames or "testcase.yaml" in filenames:
-                    verbose("Found possible test case in " + dirpath)
-                    dirnames[:] = []
-                    if "sample.yaml" in filenames:
-                        yaml_path = os.path.join(dirpath, "sample.yaml")
-                    else:
-                        yaml_path = os.path.join(dirpath, "testcase.yaml")
-                    cp = SanityConfigParser(yaml_path)
-                    workdir = os.path.relpath(dirpath, testcase_root)
+                if 'sample.yaml' in filenames:
+                    filename = 'sample.yaml'
+                elif 'testcase.yaml' in filenames:
+                    filename = 'testcase.yaml'
+                else:
+                    continue
+                verbose("Found possible test case in " + dirpath)
+                dirnames[:] = []
+                yaml_path = os.path.join(dirpath, filename)
+                try:
+                    cp = SanityConfigParser(yaml_path, self.yaml_tc_schema)
+                except RuntimeError as e:
+                    error("E: %s: can't load: %s" % (yaml_path, e))
 
-                    for section in cp.sections():
-                        name = list(section.keys())[0]
-                        tc_dict = cp.get_section(name, testcase_valid_keys)
-                        tc = TestCase(testcase_root, workdir, name, tc_dict,
-                                      yaml_path)
-                        self.testcases[tc.name] = tc
+                workdir = os.path.relpath(dirpath, testcase_root)
+
+                for section in cp.sections():
+                    name = list(section.keys())[0]
+                    tc_dict = cp.get_section(name, testcase_valid_keys)
+                    tc = TestCase(testcase_root, workdir, name, tc_dict,
+                                  yaml_path)
+                    self.testcases[tc.name] = tc
 
         debug("Reading platform configuration files under %s..." % arch_root)
         for dirpath, dirnames, filenames in os.walk(arch_root):
@@ -1263,8 +1283,11 @@ class TestSuite:
                 if filename.endswith(".yaml"):
                     fn = os.path.join(dirpath, filename)
                     verbose("Found plaform configuration " + fn)
-                    platform = Platform(fn)
-                    self.platforms.append(platform)
+                    try:
+                        platform = Platform(fn)
+                        self.platforms.append(platform)
+                    except RuntimeError as e:
+                        error("E: %s: can't load: %s" % (fn, e))
 
         arches = []
         for p in self.platforms:
