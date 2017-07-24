@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <st/mem.h>
+#include <dt-bindings/clock/stm32_clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@8000000 {
+		reg = <0x08000000 DT_FLASH_SIZE>;
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SRAM_SIZE>;
+	};
+
+	soc {
+		rcc: rcc@40021000 {
+			compatible = "st,stm32-rcc";
+			clocks-controller;
+			#clocks-cells = <2>;
+			reg = <0x40021000 0x400>;
+			label = "STM32_CLK_RCC";
+		};
+
+		usart1: serial@40013800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40013800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			interrupts = <37 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		usart2: serial@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			interrupts = <38 0>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			interrupts = <39 0>;
+			status = "disabled";
+			label = "UART_3";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
