@@ -69,7 +69,7 @@ Install the required packages in a Fedora host system with:
 
 Install additional packages required for development with Zephyr::
 
-   $ pip3 install -r scripts/requirements.txt
+   $ pip3 install --user -r scripts/requirements.txt
 
 .. _zephyr_sdk:
 
