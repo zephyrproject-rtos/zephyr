@@ -51,15 +51,15 @@ arch/$(ARCH)/core/offsets/offsets.o: arch/$(ARCH)/core/offsets/offsets.c $(KCONF
 
 
 define offsetchk
-	$(Q)set -e;                             \
-	$(kecho) '  CHK     $@';                \
-	mkdir -p $(dir $@);                     \
-	$(GENOFFSET_H) -i $(1) -o $@.tmp;       \
-	if [ -r $@ ] && cmp -s $@ $@.tmp; then  \
-	rm -f $@.tmp;                           \
-	else                                    \
-	$(kecho) '  UPD     $@';                \
-	mv -f $@.tmp $@;                        \
+	$(Q)set -e;                                                \
+	$(kecho) '  CHK     $@';                                   \
+	mkdir -p $(dir $@);                                        \
+	$(srctree)/scripts/gen_offset_header.py -i $(1) -o $@.tmp; \
+	if [ -r $@ ] && cmp -s $@ $@.tmp; then                     \
+	rm -f $@.tmp;                                              \
+	else                                                       \
+	$(kecho) '  UPD     $@';                                   \
+	mv -f $@.tmp $@;                                           \
 	fi
 endef
 
