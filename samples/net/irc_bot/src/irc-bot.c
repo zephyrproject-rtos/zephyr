@@ -29,7 +29,7 @@
 #endif
 
 #define STACK_SIZE	2048
-u8_t stack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(bot_stack, STACK_SIZE);
 static struct k_thread bot_thread;
 
 #define CMD_BUFFER_SIZE 256
@@ -1069,7 +1069,8 @@ static void irc_bot(void)
 
 void main(void)
 {
-	k_thread_create(&bot_thread, stack, STACK_SIZE,
+	k_thread_create(&bot_thread, bot_stack,
+			K_THREAD_STACK_SIZEOF(bot_stack),
 			(k_thread_entry_t)irc_bot,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
