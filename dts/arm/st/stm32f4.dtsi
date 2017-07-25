@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <st/stm32f4-pinctrl.dtsi>
 #include <st/mem.h>
 #include <dt-bindings/clock/stm32_clock.h>
 
@@ -38,6 +39,14 @@
 			reg = <0x40023800 0x400>;
 			label = "STM32_CLK_RCC";
 		};
+
+		pinctrl: pin-controller {
+			compatible = "st,stm32-pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40020000 0x1C00>;
+		};
+
 
 		usart1: serial@40011000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
