@@ -143,6 +143,7 @@ samples/boards/quark_se_c1000/power*/*   @youvedeep @nashif
 samples/net/*                            @jukkar @tbursztyka
 samples/net/dns_resolve/*                @jukkar @tbursztyka
 samples/net/http_server/*                @jukkar @tbursztyka
+samples/net/lwm2m_client/*               @mike-scott
 samples/net/mbedtls_sslclient/*          @nashif
 samples/net/mqtt_publisher/*             @jukkar @tbursztyka
 samples/net/zoap_client/*                @vcgomes
@@ -160,6 +161,7 @@ subsys/net/ip/*                          @jukkar @tbursztyka
 subsys/net/lib/*                         @jukkar @tbursztyka
 subsys/net/lib/dns/*                     @jukkar @tbursztyka
 subsys/net/lib/http/*                    @jukkar @tbursztyka
+subsys/net/lib/lwm2m/*                   @mike-scott
 subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
 subsys/net/lib/zoap/*                    @vcgomes
 subsys/usb                               @youvedeep @andyross
