@@ -237,6 +237,10 @@ extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 #endif /* !CONFIG_UART_CONSOLE */
 
+#if defined(CONFIG_HAS_DTS) && !defined(CONFIG_BLUETOOTH_MONITOR_ON_DEV_NAME)
+#define CONFIG_BLUETOOTH_MONITOR_ON_DEV_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
+#endif
+
 static int bt_monitor_init(struct device *d)
 {
 	ARG_UNUSED(d);
