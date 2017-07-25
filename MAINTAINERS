@@ -280,6 +280,11 @@ M:	Anas Nashif <anas.nashif@intel.com>
 M:	Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>
 F:	.known-issues/
 
+LWM2M
+M:	Michael Scott <michael.scott@linaro.org>
+S:	Supported
+F:	subsys/net/lib/lwm2m/
+F:	samples/net/lwm2m_client/
 
 MAINTAINERS
 M:	Anas Nashif <anas.nashif@intel.com>
