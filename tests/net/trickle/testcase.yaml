@@ -2,4 +2,4 @@ tests:
 -   test:
         tags: net
         platform_exclude: qemu_cortex_m3 # FIXME
-        min_ram: 16
+        min_ram: 12

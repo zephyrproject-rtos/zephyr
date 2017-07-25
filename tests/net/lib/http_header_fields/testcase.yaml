@@ -1,4 +1,10 @@
 tests:
 -   test:
-        platform_exclude: bbc_microbit
         tags: http net
+        filter: not CONFIG_BLUETOOTH
+        min_ram: 12
+        platform_exclude: hexiwear_kw40z
+-   test_with_bt:
+        tags: http net
+        filter: CONFIG_BLUETOOTH
+        min_ram: 16

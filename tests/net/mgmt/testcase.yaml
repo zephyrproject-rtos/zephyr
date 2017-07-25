@@ -1,4 +1,9 @@
 tests:
 -   test:
         tags: net
-        platform_exclude: bbc_microbit
+        filter: not CONFIG_BLUETOOTH
+        min_ram: 12
+-   test_with_bt:
+        tags: net
+        filter: CONFIG_BLUETOOTH
+        min_ram: 16
