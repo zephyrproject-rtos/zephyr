@@ -185,10 +185,3 @@ void test_critical(void)
 	zassert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
 		     "Timed out waiting for TEST_SEM");
 }
-
-void test_main(void)
-{
-	ztest_test_suite(kernel_critical_test, ztest_unit_test(test_critical));
-
-	ztest_run_test_suite(kernel_critical_test);
-}
