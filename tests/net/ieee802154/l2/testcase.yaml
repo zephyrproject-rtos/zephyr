@@ -1,4 +1,5 @@
 tests:
 -   test:
         tags: net
-        platform_exclude: bbc_microbit qemu_xtensa
+        min_ram: 16
+        platform_exclude: qemu_xtensa

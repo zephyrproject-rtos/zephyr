@@ -2,4 +2,5 @@ tests:
 -   test:
         build_only: true
         tags: net
-        platform_exclude: bbc_microbit qemu_xtensa
+        min_ram: 32
+        platform_exclude: qemu_xtensa

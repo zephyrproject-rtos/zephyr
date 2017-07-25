@@ -1,4 +1,4 @@
 tests:
 -   test:
-        platform_exclude: bbc_microbit
+        min_ram: 16
         tags: mqtt net
