@@ -7,3 +7,4 @@ toolchain:
   - issm
 supported:
   - usb_device
+  - ble
