@@ -66,6 +66,7 @@ config BLUETOOTH_DEBUG_COLOR
 	help
 	  Use color in the logs. This requires an ANSI capable terminal.
 
+if !HAS_DTS
 config BLUETOOTH_MONITOR_ON_DEV_NAME
 	string "Device Name of Bluetooth monitor logging UART"
 	depends on BLUETOOTH_DEBUG_MONITOR
@@ -73,6 +74,7 @@ config BLUETOOTH_MONITOR_ON_DEV_NAME
 	help
 	 This option specifies the name of UART device to be used
 	 for the Bluetooth monitor logging.
+endif
 
 config BLUETOOTH_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"
