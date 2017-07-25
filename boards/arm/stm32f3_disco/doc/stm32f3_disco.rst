@@ -88,6 +88,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -133,6 +135,18 @@ Serial Port
 STM32F3DISCOVERY Discovery kit has up to 5 UARTs. The Zephyr console output
 is assigned to UART1. Default settings are 115200 8N1.
 
+I2C
+===
+
+STM32F3DISCOVERY has up to 2 I2Cs. I2C1 is connected to the LSM303DLHC and is
+an ultra-compact low-power system-in-package featuring a 3D digital linear
+acceleration sensor and a 3D digital magnetic sensor. The default I2C
+mapping for Zephyr is:
+
+- I2C1_SCL : PB6
+- I2C1_SDA : PB7
+- I2C2_SCL : PF1
+- I2C2_SDA : PF0
 
 Programming and Debugging
 *************************
