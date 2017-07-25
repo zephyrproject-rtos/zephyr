@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <st/stm32l4-pinctrl.dtsi>
+
 #include <arm/armv7-m.dtsi>
 #include <st/mem.h>
 #include <dt-bindings/clock/stm32_clock.h>
@@ -37,6 +39,13 @@
 			#clocks-cells = <2>;
 			reg = <0x40021000 0x400>;
 			label = "STM32_CLK_RCC";
+		};
+
+		pinctrl: pin-controller {
+			compatible = "st,stm32-pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x48000000 0x2000>;
 		};
 
 		usart1: serial@40013800 {
