@@ -242,6 +242,7 @@ struct connection {
 
 	struct radio_pdu_node_tx *pkt_tx_head;
 	struct radio_pdu_node_tx *pkt_tx_ctrl;
+	struct radio_pdu_node_tx *pkt_tx_ctrl_last;
 	struct radio_pdu_node_tx *pkt_tx_data;
 	struct radio_pdu_node_tx *pkt_tx_last;
 	u8_t  packet_tx_head_len;
