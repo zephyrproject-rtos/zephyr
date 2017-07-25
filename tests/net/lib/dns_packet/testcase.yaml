@@ -1,5 +1,5 @@
 tests:
 -   test:
-        platform_exclude: bbc_microbit
+        min_ram: 16
         tags: dns net
         timeout: 200

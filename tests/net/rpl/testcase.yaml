@@ -1,4 +1,4 @@
 tests:
 -   test:
         tags: net
-        platform_exclude: bbc_microbit
+        min_ram: 16
