@@ -10,20 +10,11 @@
 #define _STM32_CLOCK_CONTROL_H_
 
 #include <clock_control.h>
+#include <dt-bindings/clock/stm32_clock.h>
 
 /* common clock control device name for all STM32 chips */
 #define STM32_CLOCK_CONTROL_NAME "stm32-cc"
 
-/* Bus */
-enum {
-	STM32_CLOCK_BUS_AHB1,
-	STM32_CLOCK_BUS_AHB2,
-	STM32_CLOCK_BUS_APB1,
-#ifdef CONFIG_SOC_SERIES_STM32L4X
-	STM32_CLOCK_BUS_APB1_2,
-#endif
-	STM32_CLOCK_BUS_APB2,
-};
 
 struct stm32_pclken {
 	u32_t bus;
