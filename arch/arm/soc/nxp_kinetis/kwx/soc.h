@@ -29,7 +29,6 @@ extern "C" {
 #define IRQ_I2C1 9
 #define IRQ_SPI0 10
 #define IRQ_TSI0 11
-#define IRQ_LPUART0 12
 #define IRQ_TRNG0 13
 #define IRQ_CMT 14
 #define IRQ_ADC0 15
