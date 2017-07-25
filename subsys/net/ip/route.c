@@ -582,8 +582,18 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 	int i, ret = 0;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
-		struct net_nbr *nbr = get_nbr(i);
-		struct net_route_entry *route = net_route_data(nbr);
+		struct net_route_entry *route;
+		struct net_nbr *nbr;
+
+		nbr = get_nbr(i);
+		if (!nbr) {
+			continue;
+		}
+
+		route = net_route_data(nbr);
+		if (!route) {
+			continue;
+		}
 
 		cb(route, user_data);
 
