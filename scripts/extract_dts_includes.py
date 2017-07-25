@@ -238,7 +238,8 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
             l_fqn = '_'.join(l_base + l_cell_prefix + l_idx + l_cell_name)
             prop_def[l_fqn] = props.pop(0)
             if len(name):
-                prop_alias['_'.join(l_base + name + l_cell_name)] = l_fqn
+                alias_list = l_base + l_cell_prefix + name + l_cell_name
+                prop_alias['_'.join(alias_list)] = l_fqn
 
         index += 1
         insert_defs(node_address, defs, prop_def, prop_alias)
