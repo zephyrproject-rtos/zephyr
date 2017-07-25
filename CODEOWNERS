@@ -73,6 +73,7 @@ drivers/serial/uart_altera_jtag.c        @andrewboie
 drivers/serial/uart_riscv_qemu.c         @fractalclone
 drivers/slip/*                           @jukkar @tbursztyka
 drivers/spi/*                            @tbursztyka
+drivers/spi/spi_ll_stm32.*               @superna9999 @mbolivar
 drivers/timer/altera_avalon_timer.c      @andrewboie
 drivers/timer/pulpino_timer.c            @fractalclone
 drivers/timer/riscv_machine_timer.c      @fractalclone
