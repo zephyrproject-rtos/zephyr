@@ -90,10 +90,10 @@ int lwm2m_device_add_err(u8_t error_code);
 #define RESULT_UNSUP_PROTO	9
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
-#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb);
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 void lwm2m_firmware_set_update_cb(lwm2m_engine_exec_cb_t cb);
 lwm2m_engine_exec_cb_t lwm2m_firmware_get_update_cb(void);
 #endif

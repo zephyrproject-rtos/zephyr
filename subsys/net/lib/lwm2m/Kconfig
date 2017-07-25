@@ -128,16 +128,22 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
 	  adds another UDP context and packet handling.
 
-config LWM2M_FIRMWARE_UPDATE_PULL_COAP_BLOCK_SIZE
-	int "Firmware Update object pull CoAP block size"
-	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+config LWM2M_COAP_BLOCK_SIZE
+	int "LWM2M CoAP block-wise transfer size"
 	default 256
 	default 64 if NET_L2_BT
 	default 64 if NET_L2_IEEE802154
 	range 16 1024
 	help
-	  CoAP block size used by firmware pull when performing block-wise
+	  CoAP block size used by LWM2M when performing block-wise
 	  transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024.
+
+config LWM2M_NUM_BLOCK1_CONTEXT
+	int "Maximum # of LWM2M block1 contexts"
+	default 3
+	help
+	  This value sets up the maximum number of block1 contexts for
+	  CoAP block-wise transfer we can handle at the same time.
 
 config LWM2M_RW_JSON_SUPPORT
 	bool "support for JSON writer"

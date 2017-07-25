@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * TODO:
- * Support PUSH transfer method (from server)
- */
-
 #define SYS_LOG_DOMAIN "lwm2m_obj_firmware"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
 #include <logging/sys_log.h>
@@ -182,13 +177,41 @@ static int package_write_cb(u16_t obj_inst_id,
 			    u8_t *data, u16_t data_len,
 			    bool last_block, size_t total_size)
 {
-	SYS_LOG_DBG("PACKAGE WRITE");
-	if (write_cb) {
-		write_cb(obj_inst_id, data, data_len, last_block, total_size);
-		return 1;
+	u8_t state;
+	int ret = 0;
+
+	state = lwm2m_firmware_get_update_state();
+	if (state == STATE_IDLE) {
+		/* TODO: setup timer to check download status,
+		 * make sure it fail after timeout
+		 */
+		lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
+	} else if (state != STATE_DOWNLOADING) {
+		/* reset to default state when empty string received */
+		if (data_len == 0) {
+			lwm2m_firmware_set_update_result(RESULT_DEFAULT);
+			return 1;
+		}
+
+		SYS_LOG_DBG("Cannot download: state = %d", state);
+		return -EPERM;
 	}
 
-	return 0;
+	if (write_cb) {
+		ret = write_cb(obj_inst_id, data, data_len,
+			       last_block, total_size);
+		if (ret < 0) {
+			SYS_LOG_ERR("Failed to store firmware: %d", ret);
+			lwm2m_firmware_set_update_result(
+					RESULT_INTEGRITY_FAILED);
+		}
+	}
+
+	if (last_block) {
+		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
+	}
+
+	return 1;
 }
 
 static int package_uri_write_cb(u16_t obj_inst_id,
@@ -308,7 +331,7 @@ static int lwm2m_firmware_init(struct device *dev)
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	delivery_method = DELIVERY_METHOD_BOTH;
 #else
-	delivery_method = DELIVERY_METHOD_PUSH;
+	delivery_method = DELIVERY_METHOD_PUSH_ONLY;
 #endif
 
 	firmware.obj_id = LWM2M_OBJECT_FIRMWARE_ID;

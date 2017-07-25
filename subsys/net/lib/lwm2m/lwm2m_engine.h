@@ -75,6 +75,8 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 				struct zoap_packet *response,
 				struct sockaddr *from_addr));
 
+enum zoap_block_size lwm2m_default_block_size(void);
+
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 u8_t lwm2m_firmware_get_update_state(void);
 void lwm2m_firmware_set_update_state(u8_t state);
