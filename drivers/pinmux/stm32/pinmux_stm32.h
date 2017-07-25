@@ -16,6 +16,78 @@
 #include <clock_control.h>
 #include "pinmux/pinmux.h"
 
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+
+/**
+ * @brief PIN configuration bitfield
+ *
+ * Pin configuration is coded with the following
+ * fields
+ *    GPIO I/O Mode       [ 0 ]
+ *    GPIO Input config   [ 1 : 2 ]
+ *    GPIO Output speed   [ 3 : 4 ]
+ *    GPIO Output PP/OD   [ 5 ]
+ *    GPIO Output AF/GP   [ 6 ]
+ *    GPIO PUPD Config    [ 7 : 8 ]
+ *
+ * Applicable to STM32F1 series
+ */
+#define STM32_AFR_MASK		0
+
+/* Port Mode */
+#define STM32_MODE_INPUT		(0x0<<STM32_MODE_INOUT_SHIFT)
+#define STM32_MODE_OUTPUT		(0x1<<STM32_MODE_INOUT_SHIFT)
+#define STM32_MODE_INOUT_MASK		0x1
+#define STM32_MODE_INOUT_SHIFT		0
+
+/* Input Port configuration */
+#define STM32_CNF_IN_ANALOG		(0x0<<STM32_CNF_IN_SHIFT)
+#define STM32_CNF_IN_FLOAT		(0x1<<STM32_CNF_IN_SHIFT)
+#define STM32_CNF_IN_PUPD		(0x2<<STM32_CNF_IN_SHIFT)
+#define STM32_CNF_IN_MASK		0x3
+#define STM32_CNF_IN_SHIFT		1
+
+/* Output Port configuration */
+#define STM32_MODE_OUTPUT_MAX_10	(0x0<<STM32_MODE_OSPEED_SHIFT)
+#define STM32_MODE_OUTPUT_MAX_2		(0x1<<STM32_MODE_OSPEED_SHIFT)
+#define STM32_MODE_OUTPUT_MAX_50	(0x2<<STM32_MODE_OSPEED_SHIFT)
+#define STM32_MODE_OSPEED_MASK		0x3
+#define STM32_MODE_OSPEED_SHIFT		3
+
+#define STM32_CNF_PUSH_PULL		(0x0<<STM32_CNF_OUT_0_SHIFT)
+#define STM32_CNF_OPEN_DRAIN		(0x1<<STM32_CNF_OUT_0_SHIFT)
+#define STM32_CNF_OUT_0_MASK		0x1
+#define STM32_CNF_OUT_0_SHIFT		5
+
+#define STM32_CNF_GP_OUTPUT		(0x0<<STM32_CNF_OUT_1_SHIFT)
+#define STM32_CNF_ALT_FUNC		(0x1<<STM32_CNF_OUT_1_SHIFT)
+#define STM32_CNF_OUT_1_MASK		0x1
+#define STM32_CNF_OUT_1_SHIFT		6
+
+/* GPIO High impedance/Pull-up/Pull-down */
+#define STM32_PUPD_NO_PULL		(0x0<<STM32_PUPD_SHIFT)
+#define STM32_PUPD_PULL_UP		(0x1<<STM32_PUPD_SHIFT)
+#define STM32_PUPD_PULL_DOWN		(0x2<<STM32_PUPD_SHIFT)
+#define STM32_PUPD_MASK			0x3
+#define STM32_PUPD_SHIFT		7
+
+/* Alternate defines */
+/* IO pin functions are mostly common across STM32 devices. Notable
+ * exception is STM32F1 as these MCUs do not have registers for
+ * configuration of pin's alternate function. The configuration is
+ * done implicitly by setting specific mode and config in MODE and CNF
+ * registers for particular pin.
+ */
+
+#define STM32_PIN_USART_TX	STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC | \
+				STM32_CNF_PUSH_PULL
+#define STM32_PIN_USART_RX	STM32_MODE_INPUT | STM32_CNF_IN_FLOAT
+#define STM32_PIN_I2C		STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC | \
+				STM32_CNF_OPEN_DRAIN
+#define STM32_PIN_PWM		STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC | \
+				STM32_CNF_PUSH_PULL
+
+#else
 
 /**
  * @brief PIN configuration bitfield
@@ -68,33 +140,7 @@
 #define STM32_OPENDRAIN_PULLUP       (STM32_OTYPER_OPEN_DRAIN | \
 				      STM32_PUPDR_PULL_UP)
 
-/**
- * @brief numerical IDs for IO ports
- */
-enum stm32_pin_port {
-	STM32_PORTA = 0,	/* IO port A */
-	STM32_PORTB,		/* .. */
-	STM32_PORTC,
-	STM32_PORTD,
-	STM32_PORTE,
-	STM32_PORTF,
-	STM32_PORTG,
-	STM32_PORTH,		/* IO port H */
-};
 
-/* override this at soc level */
-#ifndef STM32_PORTS_MAX
-#define STM32_PORTS_MAX (STM32_PORTH + 1)
-#endif
-
-/**
- * @brief helper macro to encode an IO port pin in a numerical format
- */
-#define STM32PIN(_port, _pin) \
-	(_port << 4 | _pin)
-
-/*
- */
 enum stm32_pin_alt_func {
 	STM32_FUNC_ALT_0 = 0, /* GPIO */
 	STM32_FUNC_ALT_1,
@@ -135,6 +181,36 @@ enum stm32_pin_alt_func {
 
 #define STM32_PINMUX_FUNC_GPIO 0
 #define STM32_PINMUX_FUNC_ANALOG (STM32_PINMUX_FUNC_ALT_MAX)
+
+#define STM32_AF_SHIFT 16
+
+#endif /* SOC_SERIES_STM32F1X */
+
+/**
+ * @brief numerical IDs for IO ports
+ */
+enum stm32_pin_port {
+	STM32_PORTA = 0,	/* IO port A */
+	STM32_PORTB,		/* .. */
+	STM32_PORTC,
+	STM32_PORTD,
+	STM32_PORTE,
+	STM32_PORTF,
+	STM32_PORTG,
+	STM32_PORTH,		/* IO port H */
+};
+
+/* override this at soc level */
+#ifndef STM32_PORTS_MAX
+#define STM32_PORTS_MAX (STM32_PORTH + 1)
+#endif
+
+/**
+ * @brief helper macro to encode an IO port pin in a numerical format
+ */
+#define STM32PIN(_port, _pin) \
+	(_port << 4 | _pin)
+
 
 #define STM32_PIN_PA0	STM32PIN(STM32_PORTA, 0)
 #define STM32_PIN_PA1	STM32PIN(STM32_PORTA, 1)
@@ -297,7 +373,6 @@ struct stm32_pinmux_conf {
 #define STM32_PIN_CONF(__pin, __funcs) \
 	{__pin, __funcs, ARRAY_SIZE(__funcs)}
 
-#define STM32_AF_SHIFT 16
 /**
  * @brief helper for encoding alternate function with pin config mode
  * on stm32_pin_func_t
