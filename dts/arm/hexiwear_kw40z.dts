@@ -29,7 +29,7 @@
 	status = "ok";
 };
 
-&i2c0 {
+&i2c1 {
 	status = "ok";
 };
 
