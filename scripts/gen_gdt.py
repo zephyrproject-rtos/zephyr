@@ -8,8 +8,14 @@ import argparse
 import sys
 import struct
 import os
+import elftools
+from distutils.version import LooseVersion
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+
+if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
+    sys.stderr.write("pyelftools is out of date, need version 0.24 or later\n")
+    sys.exit(1)
 
 def debug(text):
     if not args.verbose:
