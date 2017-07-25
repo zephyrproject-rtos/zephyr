@@ -15,6 +15,8 @@ obj-y += stm32f3xx/drivers/src/stm32f3xx_hal.o
 obj-y += stm32f3xx/drivers/src/stm32f3xx_hal_rcc.o
 obj-$(CONFIG_CLOCK_CONTROL_STM32_CUBE) += stm32f3xx/drivers/src/stm32f3xx_ll_utils.o
 obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f3xx/drivers/src/stm32f3xx_hal_uart.o
+obj-$(CONFIG_I2C) += stm32f3xx/drivers/src/stm32f3xx_ll_i2c.o
+obj-$(CONFIG_I2C) += stm32f3xx/drivers/src/stm32f3xx_ll_rcc.o
 obj-$(CONFIG_SPI_STM32) += stm32f3xx/drivers/src/stm32f3xx_ll_spi.o
 obj-y += stm32f3xx/soc/system_stm32f3xx.o
 endif
