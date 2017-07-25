@@ -1556,31 +1556,32 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 static inline struct radio_pdu_node_tx *
 isr_rx_conn_pkt_release(struct radio_pdu_node_tx *node_tx)
 {
-	_radio.conn_curr->packet_tx_head_len = 0;
-	_radio.conn_curr->packet_tx_head_offset = 0;
+	struct connection *conn = _radio.conn_curr;
+
+	conn->packet_tx_head_len = 0;
+	conn->packet_tx_head_offset = 0;
 
 	/* release */
-	if (_radio.conn_curr->pkt_tx_head == _radio.conn_curr->pkt_tx_ctrl) {
+	if (conn->pkt_tx_head == conn->pkt_tx_ctrl) {
 		if (node_tx) {
-			_radio.conn_curr->pkt_tx_ctrl =
-			    _radio.conn_curr->pkt_tx_ctrl->next;
-			_radio.conn_curr->pkt_tx_head =
-				_radio.conn_curr->pkt_tx_ctrl;
-			if (_radio.conn_curr->pkt_tx_ctrl ==
-			    _radio.conn_curr->pkt_tx_data) {
-				_radio.conn_curr->pkt_tx_ctrl = NULL;
+			if (conn->pkt_tx_ctrl == conn->pkt_tx_ctrl_last) {
+				conn->pkt_tx_ctrl_last =
+					conn->pkt_tx_ctrl_last->next;
+			}
+			conn->pkt_tx_ctrl = conn->pkt_tx_ctrl->next;
+			conn->pkt_tx_head = conn->pkt_tx_ctrl;
+			if (conn->pkt_tx_ctrl == conn->pkt_tx_data) {
+				conn->pkt_tx_ctrl = NULL;
+				conn->pkt_tx_ctrl_last = NULL;
 			}
 
 			mem_release(node_tx, &_radio. pkt_tx_ctrl_free);
 		}
 	} else {
-		if (_radio.conn_curr->pkt_tx_head ==
-		    _radio.conn_curr->pkt_tx_data) {
-			_radio.conn_curr->pkt_tx_data =
-				_radio.conn_curr->pkt_tx_data->next;
+		if (conn->pkt_tx_head == conn->pkt_tx_data) {
+			conn->pkt_tx_data = conn->pkt_tx_data->next;
 		}
-		_radio.conn_curr->pkt_tx_head =
-			_radio.conn_curr->pkt_tx_head->next;
+		conn->pkt_tx_head = conn->pkt_tx_head->next;
 
 		return node_tx;
 	}
@@ -7267,23 +7268,18 @@ static void prepare_pdu_data_tx(struct connection *conn,
 {
 	struct pdu_data *_pdu_data_tx;
 
-	/*@FIXME: assign before checking first 3 conditions */
-	_pdu_data_tx = (struct pdu_data *)conn->pkt_tx_head->pdu_data;
-
 	if (/* empty packet */
 	    conn->empty ||
 	    /* no ctrl or data packet */
 	    !conn->pkt_tx_head ||
 	    /* data tx paused, only control packets allowed */
-	    (conn->pause_tx && _pdu_data_tx && _pdu_data_tx->len &&
-	     (_pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL))) {
+	    (conn->pause_tx && (conn->pkt_tx_head != conn->pkt_tx_ctrl))) {
 			_pdu_data_tx = empty_tx_enqueue(conn);
 	} else {
 		u16_t max_tx_octets;
 
-		_pdu_data_tx =
-			(struct pdu_data *)(conn->pkt_tx_head->pdu_data +
-					    conn->packet_tx_head_offset);
+		_pdu_data_tx = (void *)(conn->pkt_tx_head->pdu_data +
+					conn->packet_tx_head_offset);
 
 		if (!conn->packet_tx_head_len) {
 			conn->packet_tx_head_len = _pdu_data_tx->len;
@@ -7294,7 +7290,7 @@ static void prepare_pdu_data_tx(struct connection *conn,
 		}
 
 		_pdu_data_tx->len = conn->packet_tx_head_len -
-		    conn->packet_tx_head_offset;
+				    conn->packet_tx_head_offset;
 		_pdu_data_tx->md = 0;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
@@ -7310,6 +7306,12 @@ static void prepare_pdu_data_tx(struct connection *conn,
 
 		if (conn->pkt_tx_head->next) {
 			_pdu_data_tx->md = 1;
+		}
+
+		if (!conn->pkt_tx_ctrl &&
+		    (conn->pkt_tx_head != conn->pkt_tx_data)) {
+			conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last =
+				conn->pkt_tx_head;
 		}
 	}
 
@@ -7511,19 +7513,12 @@ static struct pdu_data *empty_tx_enqueue(struct connection *conn)
 	return pdu_data_tx;
 }
 
-static void ctrl_tx_enqueue_tail(struct connection *conn,
-			    struct radio_pdu_node_tx *node_tx)
+static void ctrl_tx_last_enqueue(struct connection *conn,
+				 struct radio_pdu_node_tx *node_tx)
 {
-	struct radio_pdu_node_tx *p;
-
-	/* TODO: optimise by having a ctrl_last member. */
-	p = conn->pkt_tx_ctrl;
-	while (p->next != conn->pkt_tx_data) {
-		p = p->next;
-	}
-
-	node_tx->next = p->next;
-	p->next = node_tx;
+	node_tx->next = conn->pkt_tx_ctrl_last->next;
+	conn->pkt_tx_ctrl_last->next = node_tx;
+	conn->pkt_tx_ctrl_last = node_tx;
 }
 
 static void ctrl_tx_enqueue(struct connection *conn,
@@ -7532,13 +7527,11 @@ static void ctrl_tx_enqueue(struct connection *conn,
 	/* check if a packet was tx-ed and not acked by peer */
 	if (
 	    /* An explicit empty PDU is not enqueued */
-	    (conn->empty == 0) &&
+	    !conn->empty &&
 	    /* and data/ctrl packet is in the head */
-	    (conn->pkt_tx_head) && (
-				    /* data PDU tx is not paused */
-				    (conn->pause_tx == 0) ||
-				    /* or ctrl PDU already at head */
-				    (conn->pkt_tx_head == conn->pkt_tx_ctrl))) {
+	    conn->pkt_tx_head &&
+	    /* data PDU tx is not paused */
+	    !conn->pause_tx) {
 		/* data or ctrl may have been transmitted once, but not acked
 		 * by peer, hence place this new ctrl after head
 		 */
@@ -7558,8 +7551,9 @@ static void ctrl_tx_enqueue(struct connection *conn,
 			node_tx->next = conn->pkt_tx_head->next;
 			conn->pkt_tx_head->next = node_tx;
 			conn->pkt_tx_ctrl = node_tx;
+			conn->pkt_tx_ctrl_last = node_tx;
 		} else {
-			ctrl_tx_enqueue_tail(conn, node_tx);
+			ctrl_tx_last_enqueue(conn, node_tx);
 		}
 	} else {
 		/* No packet needing ACK. */
@@ -7571,14 +7565,31 @@ static void ctrl_tx_enqueue(struct connection *conn,
 			node_tx->next = conn->pkt_tx_head;
 			conn->pkt_tx_head = node_tx;
 			conn->pkt_tx_ctrl = node_tx;
+			conn->pkt_tx_ctrl_last = node_tx;
 		} else {
-			ctrl_tx_enqueue_tail(conn, node_tx);
+			ctrl_tx_last_enqueue(conn, node_tx);
 		}
 	}
 
 	/* Update last pointer if ctrl added at end of tx list */
 	if (node_tx->next == 0) {
 		conn->pkt_tx_last = node_tx;
+	}
+}
+
+static void ctrl_tx_sec_enqueue(struct connection *conn,
+				  struct radio_pdu_node_tx *node_tx)
+{
+	if (conn->pause_tx) {
+		if (!conn->pkt_tx_ctrl) {
+			node_tx->next = conn->pkt_tx_head;
+			conn->pkt_tx_head = node_tx;
+		} else {
+			node_tx->next = conn->pkt_tx_ctrl_last->next;
+			conn->pkt_tx_ctrl_last->next = node_tx;
+		}
+	} else {
+		ctrl_tx_enqueue(conn, node_tx);
 	}
 }
 
@@ -7680,6 +7691,7 @@ static void connection_release(struct connection *conn)
 		mem_release(release, &_radio.pkt_tx_ctrl_free);
 	}
 	conn->pkt_tx_ctrl = NULL;
+	conn->pkt_tx_ctrl_last = NULL;
 
 	/* flush and release, rest of data */
 	while (conn->pkt_tx_head) {
@@ -8050,7 +8062,7 @@ static void feature_rsp_send(struct connection *conn)
 	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[2] =
 		(conn->llcp_features >> 16) & 0xFF;
 
-	ctrl_tx_enqueue(conn, node_tx);
+	ctrl_tx_sec_enqueue(conn, node_tx);
 }
 
 static void version_ind_send(struct connection *conn)
@@ -8074,7 +8086,7 @@ static void version_ind_send(struct connection *conn)
 	pdu_ctrl_tx->payload.llctrl.ctrldata.version_ind.sub_version_number =
 		RADIO_BLE_SUB_VERSION_NUMBER;
 
-	ctrl_tx_enqueue(conn, node_tx);
+	ctrl_tx_sec_enqueue(conn, node_tx);
 
 	/* Apple work-around, add empty packet before version_ind */
 	empty_tx_enqueue(conn);
@@ -8573,6 +8585,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		conn->empty = 0;
 		conn->pkt_tx_head = NULL;
 		conn->pkt_tx_ctrl = NULL;
+		conn->pkt_tx_ctrl_last = NULL;
 		conn->pkt_tx_data = NULL;
 		conn->pkt_tx_last = NULL;
 		conn->packet_tx_head_len = 0;
@@ -9030,6 +9043,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->empty = 0;
 	conn->pkt_tx_head = NULL;
 	conn->pkt_tx_ctrl = NULL;
+	conn->pkt_tx_ctrl_last = NULL;
 	conn->pkt_tx_data = NULL;
 	conn->pkt_tx_last = NULL;
 	conn->packet_tx_head_len = 0;
