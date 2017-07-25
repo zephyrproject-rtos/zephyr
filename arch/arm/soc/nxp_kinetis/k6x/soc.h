@@ -76,14 +76,6 @@ extern "C" {
 #define IRQ_I2S0_TX 28
 #define IRQ_I2S0_RX 29
 #define IRQ_RESERVED0 30
-#define IRQ_UART0_STATUS 31
-#define IRQ_UART0_ERROR 32
-#define IRQ_UART1_STATUS 33
-#define IRQ_UART1_ERROR 34
-#define IRQ_UART2_STATUS 35
-#define IRQ_UART2_ERROR 36
-#define IRQ_UART3_STATUS 37
-#define IRQ_UART3_ERROR 38
 #define IRQ_ADC0 39
 #define IRQ_CMP0 40
 #define IRQ_CMP1 41
@@ -111,10 +103,6 @@ extern "C" {
 #define IRQ_GPIO_PORTE 63
 #define IRQ_SOFTWARE 64
 #define IRQ_SPI2 65
-#define IRQ_UART4_STATUS 66
-#define IRQ_UART4_ERROR 67
-#define IRQ_RESERVED2 68 /* IRQ_UART5_STATUS - UART5 not implemented */
-#define IRQ_RESERVED3 69 /* IRQ_UART5_ERROR - UART5 not implemented */
 #define IRQ_CMP2 70
 #define IRQ_FTM3 71
 #define IRQ_DAC1 72
