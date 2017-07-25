@@ -103,6 +103,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
 		       udp_request_handler_cb_t udp_request_handler);
 
+enum zoap_block_size lwm2m_default_block_size(void);
+
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 u8_t lwm2m_firmware_get_update_state(void);
 void lwm2m_firmware_set_update_state(u8_t state);
