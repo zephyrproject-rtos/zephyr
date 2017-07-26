@@ -42,6 +42,8 @@ boards/arm/nrf51_blenano/*               @rsalveti
 boards/arm/nrf52_pca10040/*              @carlescufi
 boards/arm/nucleo_f401re/*               @rsalveti @idlethread
 boards/arm/v2m_beetle/*                  @fvincenzo
+boards/arm/olimexino_stm32/*             @ydamigos
+boards/arm/stm32f3_disco/*               @ydamigos
 boards/nios2/*                           @andrewboie
 boards/nios2/altera_max10/*              @andrewboie
 boards/riscv32                           @fractalclone
@@ -72,6 +74,7 @@ drivers/timer/altera_avalon_timer.c      @andrewboie
 drivers/timer/pulpino_timer.c            @fractalclone
 drivers/timer/riscv_machine_timer.c      @fractalclone
 drivers/usb                              @youvedeep @andyross
+drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 ext/fs/*                                 @nashif
 ext/hal/cmsis/*                          @MaureenHelm @galak
 ext/hal/nordic/mdk/*                     @carlescufi
