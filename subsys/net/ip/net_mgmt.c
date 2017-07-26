@@ -157,8 +157,9 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 	}
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-	net_analyze_stack("Net MGMT event stack", mgmt_stack,
-			  CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+	net_analyze_stack("Net MGMT event stack",
+			  K_THREAD_STACK_BUFFER(mgmt_stack),
+			  K_THREAD_STACK_SIZEOF(mgmt_stack));
 #endif
 }
 

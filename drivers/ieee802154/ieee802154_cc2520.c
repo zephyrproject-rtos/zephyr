@@ -688,8 +688,8 @@ static void cc2520_rx(int arg)
 		}
 
 		net_analyze_stack("CC2520 Rx Fiber stack",
-				  (unsigned char *)cc2520->cc2520_rx_stack,
-				  CONFIG_IEEE802154_CC2520_RX_STACK_SIZE);
+				K_THREAD_STACK_BUFFER(cc2520->cc2520_rx_stack),
+				K_THREAD_STACK_SIZEOF(cc2520->cc2520_rx_stack));
 		continue;
 flush:
 		_cc2520_print_exceptions(cc2520);
