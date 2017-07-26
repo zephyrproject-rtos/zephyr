@@ -24,7 +24,7 @@
 struct stack_guard_buffer {
 	/* Make sure canary is not optimized by the compiler */
 	volatile u32_t canary;
-	u8_t stack[STACKSIZE];
+	K_THREAD_STACK_MEMBER(stack, STACKSIZE);
 };
 
 struct stack_guard_buffer buf;
