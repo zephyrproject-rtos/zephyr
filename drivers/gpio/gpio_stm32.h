@@ -57,7 +57,7 @@ struct gpio_stm32_config {
 	/* port base address */
 	u32_t *base;
 	/* IO port */
-	enum stm32_pin_port port;
+	int port;
 	struct stm32_pclken pclken;
 };
 
