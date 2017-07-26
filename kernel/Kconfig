@@ -231,6 +231,15 @@ config BUILD_TIMESTAMP
 	help
 	Build timestamp and add it to the boot banner.
 
+config COMPILE_TEST
+	bool "Compile code which will not load"
+	default n
+	help
+	Some code can be compiled for different platforms but that platform
+	isn't configured by default to enable that code.  This allows us to
+	dummy up any config values (typically device names) to make sure the
+	code at least compiles.
+
 config INT_LATENCY_BENCHMARK
 	bool
 	prompt "Interrupt latency metrics [EXPERIMENTAL]"
