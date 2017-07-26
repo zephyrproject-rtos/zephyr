@@ -82,6 +82,7 @@ struct observe_node {
 	u32_t min_period_sec;
 	u32_t max_period_sec;
 	u32_t counter;
+	u16_t format;
 	bool used;
 	u8_t  tkl;
 };
@@ -176,7 +177,8 @@ int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 static int engine_add_observer(struct net_context *net_ctx,
 			       struct sockaddr *addr,
 			       const u8_t *token, u8_t tkl,
-			       struct lwm2m_obj_path *path)
+			       struct lwm2m_obj_path *path,
+			       u16_t format)
 {
 	struct observe_node *obs;
 	int i;
@@ -228,6 +230,7 @@ static int engine_add_observer(struct net_context *net_ctx,
 	/* TODO: use server object instance or WRITE_ATTR values */
 	observe_node_data[i].min_period_sec = 10;
 	observe_node_data[i].max_period_sec = 60;
+	observe_node_data[i].format = format;
 	observe_node_data[i].counter = 1;
 	sys_slist_append(&engine_observer_list,
 			 &observe_node_data[i].node);
@@ -2065,7 +2068,7 @@ static int handle_request(struct zoap_packet *request,
 
 				r = engine_add_observer(
 					net_pkt_context(in.in_zpkt->pkt),
-					from_addr, token, tkl, &path);
+					from_addr, token, tkl, &path, accept);
 				if (r < 0) {
 					SYS_LOG_ERR("add OBSERVE error: %d", r);
 				}
@@ -2403,14 +2406,12 @@ static int generate_notify_message(struct observe_node *obs,
 		goto cleanup;
 	}
 
-	/* TODO: save the accept-format from original request */
-
 	/* set the output writer */
-	select_writer(&out, LWM2M_FORMAT_OMA_TLV);
+	select_writer(&out, obs->format);
 
 	/* set response content-format */
 	ret = zoap_add_option_int(out.out_zpkt, ZOAP_OPTION_CONTENT_FORMAT,
-				  LWM2M_FORMAT_OMA_TLV);
+				  obs->format);
 	if (ret > 0) {
 		SYS_LOG_ERR("error setting content-format (err:%d)", ret);
 		goto cleanup;
