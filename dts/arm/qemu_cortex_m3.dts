@@ -17,7 +17,11 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,bt-uart = &uart1;
+#if CONFIG_BLUETOOTH
+		zephyr,uart-pipe = &uart2;
+#else
 		zephyr,uart-pipe = &uart1;
+#endif
 		zephyr,bt-mon-uart = &uart2;
 	};
 };
