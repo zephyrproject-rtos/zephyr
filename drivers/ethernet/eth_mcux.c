@@ -365,7 +365,8 @@ static void eth_rx(struct device *iface)
 	status_t status;
 	unsigned int imask;
 
-	status = ENET_GetRxFrameSize(&context->enet_handle, &frame_length);
+	status = ENET_GetRxFrameSize(&context->enet_handle,
+				     (uint32_t *)&frame_length);
 	if (status) {
 		enet_data_error_stats_t error_stats;
 
