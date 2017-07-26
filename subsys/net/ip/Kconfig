@@ -239,31 +239,12 @@ config NET_CONTEXT_CHECK
 	If you know that the options passed to net_context...() functions
 	are ok, then you can disable the checks to save some memory.
 
-choice
-	prompt "Use SLIP connectivity with QEMU"
-	optional
-	default NET_SLIP_TUN
+config NET_TEST
+	bool "Network Testing"
+	default n
 	help
-	  The SLIP support is only used when the application is run inside QEMU
-	  and the network peer is run in your host. The host needs to have
-	  tunslip running in order to receive and send network packets via the
-	  SLIP driver.  The SLIP driver Kconfig options can be tweaked in drivers
-	  section.
-
-	  Options are provided to communicate with QEMU via a TUN driver, the
-	  default, as it requires less configuration in the host side, or via a
-	  TAP driver.
-
-config NET_SLIP_TUN
-	bool "TUN SLIP driver"
-	select SLIP
-	select UART_PIPE
-	select UART_INTERRUPT_DRIVEN
-	select NET_L2_DUMMY
-	help
-	  The host needs to have tunslip running in order
-	  to receive and send network packets via the SLIP driver.
-	  Choose this if unsure.
+	  Used for self-contained networking tests that do not require a
+	  network device.
 
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
@@ -271,11 +252,12 @@ config NET_SLIP_TAP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 	select SLIP_TAP
+	default n
+	default y if (QEMU_TARGET && !NET_TEST)
 	help
 	  SLIP TAP support is necessary when testing IPv4/ARP. The host
 	  needs to have tunslip with TAP support running in order to
 	  communicate via the SLIP driver.
-endchoice
 
 config NET_TRICKLE
 	bool "Enable Trickle library"

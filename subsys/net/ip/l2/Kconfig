@@ -9,7 +9,7 @@ menu "Link layer options"
 config NET_L2_DUMMY
 	bool "Enable dummy l2 layer"
 	default n
-	default y if !NET_L2_ETHERNET && NET_SLIP_TUN
+	default y if !NET_L2_ETHERNET && NET_TEST
 	help
 	Add a dummy L2 layer driver, usually in case you need SLIP in
 	TUN mode.
