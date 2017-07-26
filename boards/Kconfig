@@ -7,6 +7,12 @@ config BOARD_DEPRECATED
 	When set, any build for that board will generate a clearly visible
 	deprecation warning.
 
+config QEMU_TARGET
+	bool n
+	help
+	  Mark all QEMU targets with this variable for checking whether we are
+	  running in an emulated environment.
+
 choice
 prompt "Board Selection"
 source "boards/*/*/Kconfig.board"
