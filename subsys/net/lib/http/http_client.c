@@ -1635,7 +1635,7 @@ int https_client_init(struct http_client_ctx *ctx,
 		      const char *cert_host,
 		      https_entropy_src_cb_t entropy_src_cb,
 		      struct k_mem_pool *pool,
-		      u8_t *https_stack,
+		      k_thread_stack_t https_stack,
 		      size_t https_stack_size)
 {
 	int ret;

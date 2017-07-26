@@ -42,11 +42,14 @@ extern void _xt_user_exit(void);
  * @return N/A
  */
 
-void _new_thread(struct k_thread *thread, char *pStack, size_t stackSize,
+void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
+		size_t stackSize,
 		void (*pEntry)(void *, void *, void *),
 		void *p1, void *p2, void *p3,
 		int priority, unsigned int options)
 {
+	char *pStack = K_THREAD_STACK_BUFFER(stack);
+
 	/* Align stack end to maximum alignment requirement. */
 	char *stackEnd = (char *)ROUND_DOWN(pStack + stackSize, 16);
 #if XCHAL_CP_NUM > 0

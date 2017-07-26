@@ -31,11 +31,12 @@ struct init_stack_frame {
 };
 
 
-void _new_thread(struct k_thread *thread, char *stack_memory, size_t stack_size,
-		 _thread_entry_t thread_func,
+void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
+		 size_t stack_size, _thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {
+	char *stack_memory = K_THREAD_STACK_BUFFER(stack);
 	_ASSERT_VALID_PRIO(priority, thread_func);
 
 	struct init_stack_frame *iframe;

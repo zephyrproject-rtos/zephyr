@@ -347,6 +347,26 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
 #if !defined(_ASMLANGUAGE)
 
+/* Using typedef deliberately here, this is quite intended to be an opaque
+ * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
+ *
+ * The purpose of this data type is to clearly distinguish between the
+ * declared symbol for a stack (of type k_thread_stack_t) and the underlying
+ * buffer which composes the stack data actually used by the underlying
+ * thread; they cannot be used interchangably as some arches precede the
+ * stack buffer region with guard areas that trigger a MPU or MMU fault
+ * if written to.
+ *
+ * APIs that want to work with the buffer inside should continue to use
+ * char *.
+ *
+ * Stacks should always be created with K_THREAD_STACK_DEFINE().
+ */
+struct __packed _k_thread_stack_element {
+	char data;
+};
+typedef struct _k_thread_stack_element *k_thread_stack_t;
+
 /**
  * @brief Spawn a thread.
  *
@@ -384,10 +404,10 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  *
  * @return ID of new thread.
  */
-extern __deprecated k_tid_t k_thread_spawn(char *stack, size_t stack_size,
-			      k_thread_entry_t entry,
-			      void *p1, void *p2, void *p3,
-			      int prio, u32_t options, s32_t delay);
+extern __deprecated k_tid_t k_thread_spawn(k_thread_stack_t stack,
+			size_t stack_size, k_thread_entry_t entry,
+			void *p1, void *p2, void *p3,
+			int prio, u32_t options, s32_t delay);
 
 /**
  * @brief Create a thread.
@@ -421,7 +441,8 @@ extern __deprecated k_tid_t k_thread_spawn(char *stack, size_t stack_size,
  *
  * @return ID of new thread.
  */
-extern k_tid_t k_thread_create(struct k_thread *new_thread, char *stack,
+extern k_tid_t k_thread_create(struct k_thread *new_thread,
+			       k_thread_stack_t stack,
 			       size_t stack_size,
 			       void (*entry)(void *, void *, void*),
 			       void *p1, void *p2, void *p3,
@@ -521,7 +542,7 @@ extern void k_thread_abort(k_tid_t thread);
 
 struct _static_thread_data {
 	struct k_thread *init_thread;
-	char *init_stack;
+	k_thread_stack_t init_stack;
 	unsigned int init_stack_size;
 	void (*init_entry)(void *, void *, void *);
 	void *init_p1;
@@ -2043,7 +2064,8 @@ static inline int k_work_pending(struct k_work *work)
  *
  * @return N/A
  */
-extern void k_work_q_start(struct k_work_q *work_q, char *stack,
+extern void k_work_q_start(struct k_work_q *work_q,
+			   k_thread_stack_t stack,
 			   size_t stack_size, int prio);
 
 /**
@@ -3838,7 +3860,10 @@ extern void _timer_expiration_handler(struct _timeout *t);
 		_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
 #define K_THREAD_STACK_MEMBER(sym, size) _ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) _ARCH_THREAD_STACK_SIZEOF(sym)
-#define K_THREAD_STACK_BUFFER(sym) _ARCH_THREAD_STACK_BUFFER(sym)
+static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t sym)
+{
+	return _ARCH_THREAD_STACK_BUFFER(sym);
+}
 #else
 /**
  * @brief Declare a toplevel thread stack memory region
@@ -3848,8 +3873,9 @@ extern void _timer_expiration_handler(struct _timeout *t);
  * This is the generic, historical definition. Align to STACK_ALIGN and put in
  * 'noinit' section so that it isn't zeroed at boot
  *
- * The declared symbol will always be a character array which can be passed to
- * k_thread_create, but should otherwise not be manipulated.
+ * The declared symbol will always be a k_thread_stack_t which can be passed to
+ * k_thread_create, but should otherwise not be manipulated. If the buffer
+ * inside needs to be examined, use K_THREAD_STACK_BUFFER().
  *
  * It is legal to precede this definition with the 'static' keyword.
  *
@@ -3861,7 +3887,7 @@ extern void _timer_expiration_handler(struct _timeout *t);
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	char __noinit __aligned(STACK_ALIGN) sym[size]
+	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) sym[size]
 
 /**
  * @brief Declare a toplevel array of thread stack memory regions
@@ -3878,7 +3904,8 @@ extern void _timer_expiration_handler(struct _timeout *t);
  */
 
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	char __noinit __aligned(STACK_ALIGN) sym[nmemb][size]
+	struct _k_thread_stack_element __noinit \
+		__aligned(STACK_ALIGN) sym[nmemb][size]
 
 /**
  * @brief Declare an embedded stack memory region
@@ -3893,7 +3920,7 @@ extern void _timer_expiration_handler(struct _timeout *t);
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_MEMBER(sym, size) \
-	char __aligned(STACK_ALIGN) sym[size]
+	struct _k_thread_stack_element __aligned(STACK_ALIGN) sym[size]
 
 /**
  * @brief Return the size in bytes of a stack memory region
@@ -3925,7 +3952,10 @@ extern void _timer_expiration_handler(struct _timeout *t);
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
  */
-#define K_THREAD_STACK_BUFFER(sym) sym
+static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t sym)
+{
+	return (char *)sym;
+}
 
 #endif /* _ARCH_DECLARE_STACK */
 

@@ -340,7 +340,7 @@ struct net_app_ctx {
 #if defined(CONFIG_NET_APP_TLS)
 	struct {
 		/** TLS stack for mbedtls library. */
-		u8_t *stack;
+		k_thread_stack_t stack;
 
 		/** TLS stack size. */
 		int stack_size;
@@ -899,7 +899,7 @@ int net_app_client_tls(struct net_app_ctx *ctx,
 		       const char *cert_host,
 		       net_app_entropy_src_cb_t entropy_src_cb,
 		       struct k_mem_pool *pool,
-		       u8_t *stack,
+		       k_thread_stack_t stack,
 		       size_t stack_size);
 #endif /* CONFIG_NET_APP_CLIENT */
 
@@ -935,7 +935,7 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 		       net_app_cert_cb_t cert_cb,
 		       net_app_entropy_src_cb_t entropy_src_cb,
 		       struct k_mem_pool *pool,
-		       u8_t *stack,
+		       k_thread_stack_t stack,
 		       size_t stack_len);
 
 bool net_app_server_tls_enable(struct net_app_ctx *ctx);

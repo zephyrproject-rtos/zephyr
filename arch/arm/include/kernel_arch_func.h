@@ -38,13 +38,15 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 }
 
 static ALWAYS_INLINE void
-_arch_switch_to_main_thread(struct k_thread *main_thread, char *main_stack,
+_arch_switch_to_main_thread(struct k_thread *main_thread,
+			    k_thread_stack_t main_stack,
 			    size_t main_stack_size, _thread_entry_t _main)
 {
 	/* get high address of the stack, i.e. its start (stack grows down) */
 	char *start_of_main_stack;
 
-	start_of_main_stack = main_stack + main_stack_size;
+	start_of_main_stack =
+		K_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
 	start_of_main_stack = (void *)STACK_ROUND_DOWN(start_of_main_stack);
 
 	_current = main_thread;

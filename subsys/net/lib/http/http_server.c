@@ -1575,7 +1575,7 @@ int https_server_init(struct http_server_ctx *ctx,
 		      https_server_cert_cb_t cert_cb,
 		      https_entropy_src_cb_t entropy_src_cb,
 		      struct k_mem_pool *pool,
-		      u8_t *https_stack,
+		      k_thread_stack_t https_stack,
 		      size_t https_stack_size)
 {
 	int ret;
