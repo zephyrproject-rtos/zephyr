@@ -28,6 +28,7 @@ following SoCs:
 - MKW24D5
 - MIMXRT1051
 - MIMXRT1052
+- LPC54114
 
 
 Additionally, it provides the following components:
