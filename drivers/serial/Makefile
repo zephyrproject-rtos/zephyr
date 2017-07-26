@@ -21,3 +21,4 @@ obj-$(CONFIG_UART_FE310)	+= uart_fe310.o
 obj-$(CONFIG_UART_ESP32)	+= uart_esp32.o
 obj-$(CONFIG_UART_GECKO)	+= uart_gecko.o
 obj-$(CONFIG_UART_MSP432P4XX)	+= uart_msp432p4xx.o
+obj-$(CONFIG_USART_LPC_MCUX)    += usart_mcux.o
