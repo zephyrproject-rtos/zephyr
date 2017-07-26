@@ -547,22 +547,25 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
  */
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	char _GENERIC_SECTION(.stacks) __aligned(_STACK_BASE_ALIGN) \
-		sym[size + _STACK_GUARD_SIZE]
+	struct _k_thread_stack_element _GENERIC_SECTION(.stacks) \
+		__aligned(_STACK_BASE_ALIGN) \
+		sym[(size) + _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	char _GENERIC_SECTION(.stacks) __aligned(_STACK_BASE_ALIGN) \
+	struct _k_thread_stack_element _GENERIC_SECTION(.stacks) \
+		__aligned(_STACK_BASE_ALIGN) \
 		sym[nmemb][ROUND_UP(size, _STACK_BASE_ALIGN) + \
 			   _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
-	char __aligned(_STACK_BASE_ALIGN) sym[size + _STACK_GUARD_SIZE]
+	struct _k_thread_stack_element __aligned(_STACK_BASE_ALIGN) \
+		sym[(size) + _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_SIZEOF(sym) \
 	(sizeof(sym) - _STACK_GUARD_SIZE)
 
 #define _ARCH_THREAD_STACK_BUFFER(sym) \
-	(sym + _STACK_GUARD_SIZE)
+	((char *)((sym) + _STACK_GUARD_SIZE))
 
 #if CONFIG_X86_KERNEL_OOPS
 #define _ARCH_EXCEPT(reason_p) do { \

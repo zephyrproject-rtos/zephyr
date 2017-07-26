@@ -81,7 +81,7 @@ struct mqtt_ctx {
 
 	/** TLS thread parameters */
 	struct k_mem_pool *tls_mem_pool;
-	u8_t *tls_stack;
+	k_thread_stack_t tls_stack;
 	size_t tls_stack_size;
 
 	/** TLS callback */

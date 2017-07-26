@@ -89,7 +89,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
 int net_send_data(struct net_pkt *pkt);
 
 struct net_stack_info {
-	char *stack;
+	k_thread_stack_t stack;
 	const char *pretty_name;
 	const char *name;
 	size_t orig_size;

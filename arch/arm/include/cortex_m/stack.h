@@ -33,7 +33,7 @@ extern "C" {
 
 #else
 
-extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
+extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 /**
  *
@@ -46,7 +46,8 @@ extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
  */
 static ALWAYS_INLINE void _InterruptStackSetup(void)
 {
-	u32_t msp = (u32_t)(_interrupt_stack + CONFIG_ISR_STACK_SIZE);
+	u32_t msp = (u32_t)(K_THREAD_STACK_BUFFER(_interrupt_stack) +
+			    CONFIG_ISR_STACK_SIZE);
 
 	_MspSet(msp);
 }

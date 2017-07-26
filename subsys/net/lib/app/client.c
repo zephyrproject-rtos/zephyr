@@ -576,7 +576,7 @@ int net_app_client_tls(struct net_app_ctx *ctx,
 		       const char *cert_host,
 		       net_app_entropy_src_cb_t entropy_src_cb,
 		       struct k_mem_pool *pool,
-		       u8_t *stack,
+		       k_thread_stack_t stack,
 		       size_t stack_size)
 {
 	if (!request_buf || request_buf_len == 0) {

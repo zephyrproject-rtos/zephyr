@@ -49,11 +49,13 @@
  * @return N/A
  */
 
-void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
-		 _thread_entry_t pEntry,
+void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
+		 size_t stackSize, _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
 {
+	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
+
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
 	__ASSERT(!((u32_t)pStackMem & (STACK_ALIGN - 1)),

@@ -196,22 +196,23 @@ __asm__("\t.globl _thread_entry\n"
  *
  * @return opaque pointer to initialized k_thread structure
  */
-void _new_thread(struct k_thread *thread, char *pStackMem, size_t stackSize,
+void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
+		 size_t stackSize,
 		 _thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
 {
+	char *pStackMem;
+
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
 	unsigned long *pInitialThread;
 
 #if CONFIG_X86_STACK_PROTECTION
-	_x86_mmu_set_flags(pStackMem, MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
+	_x86_mmu_set_flags(stack, MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
 			   MMU_PTE_P_MASK);
 #endif
-#if _STACK_GUARD_SIZE
-	pStackMem += _STACK_GUARD_SIZE;
-#endif
+	pStackMem = K_THREAD_STACK_BUFFER(stack);
 	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
