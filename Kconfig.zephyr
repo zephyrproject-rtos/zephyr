@@ -37,3 +37,4 @@ source "tests/Kconfig"
 #
 source "arch/*/soc/*/Kconfig.defconfig"
 source "boards/*/*/Kconfig.defconfig"
+source Kconfig.defconfig

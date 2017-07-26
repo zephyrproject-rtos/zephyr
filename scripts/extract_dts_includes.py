@@ -611,7 +611,7 @@ def generate_keyvalue_file(defs, args):
         sys.stdout.write("\n")
 
 
-def generate_include_file(defs, args):
+def generate_include_file(defs, args, compile_test):
     compatible = reduced['/']['props']['compatible'][0]
 
     sys.stdout.write("/**************************************************\n")
@@ -645,7 +645,14 @@ def generate_include_file(defs, args):
                     a = defs[node][prop].get(entry)
                     print_key_value(entry, a, maxtabstop)
             else:
+                ifdef_compile_test = False
+                if prop in compile_test:
+                    ifdef_compile_test = True
+                    print("#ifndef CONFIG_COMPILE_TEST")
+                    print("\t", end='')
                 print_key_value(prop, defs[node].get(prop), maxtabstop)
+                if ifdef_compile_test:
+                    print("#endif /* CONFIG_COMPILE_TEST */")
 
         sys.stdout.write("\n")
 
@@ -815,7 +822,7 @@ def main():
     if args.keyvalue:
         generate_keyvalue_file(defs, args)
     else:
-        generate_include_file(defs, args)
+        generate_include_file(defs, args, name_dict.keys())
 
 
 if __name__ == '__main__':
