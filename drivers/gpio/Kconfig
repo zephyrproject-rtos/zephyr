@@ -47,6 +47,8 @@ source "drivers/gpio/Kconfig.mcux"
 
 source "drivers/gpio/Kconfig.mcux_igpio"
 
+source "drivers/gpio/Kconfig.mcux_lpc"
+
 source "drivers/gpio/Kconfig.mmio32"
 
 source "drivers/gpio/Kconfig.atmel_sam3"

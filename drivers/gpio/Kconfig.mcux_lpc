@@ -1,0 +1,41 @@
+# Kconfig.mcux_lpc - MCUX LPC GPIO configuration options
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_MCUX_LPC
+	bool "MCUX LPC GPIO driver"
+	depends on GPIO && HAS_MCUX
+	default n
+	help
+	  Enable the MCUX LPC pinmux driver.
+
+if GPIO_MCUX_LPC
+
+config GPIO_MCUX_LPC_PORT0
+	bool "Port 0"
+	depends on PINMUX_MCUX_LPC_PORT0
+	default n
+	help
+	  Enable Port 0.
+
+config GPIO_MCUX_LPC_PORT0_NAME
+	string "Port 0 driver name"
+	depends on GPIO_MCUX_LPC_PORT0
+	default "GPIO_0"
+
+config GPIO_MCUX_LPC_PORT1
+	bool "Port 1"
+	depends on PINMUX_MCUX_LPC_PORT1
+	default n
+	help
+	  Enable Port 1.
+
+config GPIO_MCUX_LPC_PORT1_NAME
+	string "Port 1 driver name"
+	depends on GPIO_MCUX_LPC_PORT1
+	default "GPIO_1"
+
+endif # GPIO_MCUX_LPC
