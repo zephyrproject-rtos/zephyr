@@ -67,6 +67,8 @@ source "drivers/serial/Kconfig.ns16550"
 
 source "drivers/serial/Kconfig.mcux"
 
+source "drivers/serial/Kconfig.mcux_lpc_usart"
+
 source "drivers/serial/Kconfig.mcux_lpsci"
 
 source "drivers/serial/Kconfig.mcux_lpuart"

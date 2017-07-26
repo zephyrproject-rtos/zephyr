@@ -17,5 +17,6 @@ zephyr_sources_if_kconfig(usart_sam.c)
 zephyr_sources_if_kconfig(uart_stellaris.c)
 zephyr_sources_if_kconfig(uart_stm32.c)
 zephyr_sources_if_kconfig(uart_sam0.c)
+zephyr_sources_if_kconfig(usart_mcux_lpc.c)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
