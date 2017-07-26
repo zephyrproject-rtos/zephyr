@@ -254,6 +254,19 @@ bool spi_context_rx_on(struct spi_context *ctx)
 	return !!(ctx->rx_buf || ctx->rx_len);
 }
 
+static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
+{
+	if (!ctx->tx_len) {
+		return ctx->rx_len;
+	} else if (!ctx->rx_len) {
+		return ctx->tx_len;
+	} else if (ctx->tx_len < ctx->rx_len) {
+		return ctx->tx_len;
+	}
+
+	return ctx->rx_len;
+}
+
 #ifdef __cplusplus
 }
 #endif
