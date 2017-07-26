@@ -97,7 +97,9 @@ int _pinmux_stm32_set(u32_t pin, u32_t func,
 		return -EIO;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+    defined(CONFIG_SOC_SERIES_STM32F1X) || \
+    defined(CONFIG_SOC_SERIES_STM32F4X)
 	return stm32_pin_configure(pin, func, func & STM32_AFR_MASK);
 #else
 	/* determine config for alternate function */
