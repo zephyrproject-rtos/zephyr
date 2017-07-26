@@ -139,6 +139,9 @@
 				      STM32_PUPDR_NO_PULL)
 #define STM32_OPENDRAIN_PULLUP       (STM32_OTYPER_OPEN_DRAIN | \
 				      STM32_PUPDR_PULL_UP)
+#define STM32_PUSHPULL_PULLUP	     (STM32_OTYPER_PUSH_PULL | \
+				      STM32_PUPDR_PULL_UP)
+
 
 
 enum stm32_pin_alt_func {
