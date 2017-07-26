@@ -12,6 +12,7 @@ arch/arc/core/*                          @andrewboie
 arch/arm/*                               @MaureenHelm @galak
 arch/arm/core/*                          @andrewboie
 arch/arm/soc/arm/mps2/*                  @fvincenzo
+arch/arm/soc/st_stm32/*                  @erwango
 arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
 arch/nios2/*                             @andrewboie
@@ -34,6 +35,7 @@ boards/arm/96b_nitrogen/*                @idlethread
 boards/arm/arduino_101_ble/*             @jhedberg
 boards/arm/cc3200_launchxl/*             @GAnthony
 boards/arm/cc3220sf_launchxl/*           @GAnthony
+boards/arm/disco_l475_iot1/*             @erwango
 boards/arm/frdm_k64f/*                   @MaureenHelm
 boards/arm/frdm_kw41z/*                  @MaureenHelm
 boards/arm/hexiwear_k64/*                @MaureenHelm
@@ -56,6 +58,7 @@ boards/xtensa/*                          @andrewboie
 doc/*                                    @dbkinder
 doc/subsystems/bluetooth/*               @sjanc @jhedberg @Vudentz
 drivers/*/*qmsi*                         @nashif
+drivers/*/*stm32*                        @erwango
 drivers/bluetooth/*                      @sjanc @jhedberg @Vudentz
 drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 drivers/ethernet/*                       @jukkar @tbursztyka
@@ -75,6 +78,7 @@ drivers/timer/pulpino_timer.c            @fractalclone
 drivers/timer/riscv_machine_timer.c      @fractalclone
 drivers/usb                              @youvedeep @andyross
 drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
+dts/arm/st/*                             @erwango
 ext/fs/*                                 @nashif
 ext/hal/cmsis/*                          @MaureenHelm @galak
 ext/hal/nordic/mdk/*                     @carlescufi
