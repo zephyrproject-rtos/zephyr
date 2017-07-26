@@ -3,4 +3,4 @@ tests:
         build_only: true
         tags: net
         min_ram: 32
-        platform_exclude: qemu_xtensa
+        platform_whitelist: qemu_x86 qemu_cortex_m3
