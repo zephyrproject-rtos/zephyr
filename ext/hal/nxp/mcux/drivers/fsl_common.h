@@ -172,7 +172,7 @@ typedef int32_t status_t;
  */
 #if ((defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0)) || \
      (defined(FSL_FEATURE_SOC_ASYNC_SYSCON_COUNT) && (FSL_FEATURE_SOC_ASYNC_SYSCON_COUNT > 0)))
-#include "fsl_reset.h"
+#include "fsl_lpc_reset.h"
 #endif
 
 /*! @name Min/max macros */

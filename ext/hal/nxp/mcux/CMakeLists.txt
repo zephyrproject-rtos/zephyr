@@ -2,7 +2,11 @@
 # name respectively.
 string(TOUPPER ${CONFIG_SOC} MCUX_DEVICE)
 
-set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER})
+if("${MCUX_DEVICE}" STREQUAL "LPC54114")
+  set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER}_cm4)
+else()
+  set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER})
+endif()
 
 zephyr_include_directories(devices/${MCUX_DEVICE})
 
