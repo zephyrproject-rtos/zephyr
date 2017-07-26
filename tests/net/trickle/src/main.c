@@ -25,7 +25,7 @@
 
 #include "net_private.h"
 
-#if defined(CONFIG_NET_DEBUG_CONTEXT)
+#if defined(CONFIG_NET_DEBUG_TRICKLE)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
@@ -49,11 +49,11 @@ static bool test_failed;
 #endif
 
 #define T1_IMIN 30
-#define T1_IMAX 100
+#define T1_IMAX 5
 #define T1_K 20
 
 #define T2_IMIN 80
-#define T2_IMAX 200
+#define T2_IMAX 3
 #define T2_K 40
 
 static struct net_trickle t1;
