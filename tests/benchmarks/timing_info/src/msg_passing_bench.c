@@ -71,8 +71,8 @@ k_tid_t thread_mbox_async_put_receive_tid;
 
 /* To time thread creation*/
 #define STACK_SIZE 500
-extern char my_stack_area[];
-extern char my_stack_area_0[];
+extern K_THREAD_STACK_DEFINE(my_stack_area, STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(my_stack_area_0, STACK_SIZE);
 extern struct k_thread my_thread;
 extern struct k_thread my_thread_0;
 
