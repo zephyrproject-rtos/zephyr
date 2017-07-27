@@ -25,8 +25,7 @@ int main(void)
 	int i;
 
 	for (i = 0; i < N_PHILOSOPHERS; i++) {
-		k_sem_init(&forks[i], 0, 1);
-		k_sem_give(&forks[i]);
+		k_sem_init(&forks[i], 1, 1);
 	}
 
 	/* create philosopher threads */

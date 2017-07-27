@@ -1408,8 +1408,7 @@ static int mcr20a_init(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
-	k_sem_init(&mcr20a->spi.spi_sem, 0, UINT_MAX);
-	k_sem_give(&mcr20a->spi.spi_sem);
+	k_sem_init(&mcr20a->spi.spi_sem, 1, UINT_MAX);
 
 	k_mutex_init(&mcr20a->phy_mutex);
 	k_sem_init(&mcr20a->isr_sem, 0, 1);

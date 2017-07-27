@@ -308,8 +308,7 @@ static int adc_qmsi_ss_init(struct device *dev)
 	ss_clk_adc_set_div(CONFIG_ADC_QMSI_CLOCK_RATIO);
 	k_sem_init(&info->device_sync_sem, 0, UINT_MAX);
 
-	k_sem_init(&info->sem, 0, UINT_MAX);
-	k_sem_give(&info->sem);
+	k_sem_init(&info->sem, 1, UINT_MAX);
 	info->state = ADC_STATE_IDLE;
 
 	adc_config_irq();

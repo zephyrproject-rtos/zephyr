@@ -183,8 +183,7 @@ int ataes132a_init(struct device *dev)
 
 	i2c_configure(ataes132a->i2c, i2c_cfg.raw);
 
-	k_sem_init(&ataes132a->device_sem, 0, UINT_MAX);
-	k_sem_give(&ataes132a->device_sem);
+	k_sem_init(&ataes132a->device_sem, 1, UINT_MAX);
 
 	ataes132a_init_states();
 

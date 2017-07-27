@@ -554,8 +554,7 @@ int net_context_get(sa_family_t family,
 #endif
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-		k_sem_init(&contexts[i].recv_data_wait, 0, UINT_MAX);
-		k_sem_give(&contexts[i].recv_data_wait);
+		k_sem_init(&contexts[i].recv_data_wait, 1, UINT_MAX);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 		*context = &contexts[i];
@@ -2446,7 +2445,5 @@ void net_context_foreach(net_context_cb_t cb, void *user_data)
 
 void net_context_init(void)
 {
-	k_sem_init(&contexts_lock, 0, UINT_MAX);
-
-	k_sem_give(&contexts_lock);
+	k_sem_init(&contexts_lock, 1, UINT_MAX);
 }

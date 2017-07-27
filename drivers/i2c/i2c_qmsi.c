@@ -261,8 +261,7 @@ static int i2c_qmsi_init(struct device *dev)
 	int err;
 
 	k_sem_init(&driver_data->device_sync_sem, 0, UINT_MAX);
-	k_sem_init(&driver_data->sem, 0, UINT_MAX);
-	k_sem_give(&driver_data->sem);
+	k_sem_init(&driver_data->sem, 1, UINT_MAX);
 
 	switch (instance) {
 	case QM_I2C_0:

@@ -359,8 +359,7 @@ static int spi_flash_init(struct device *dev)
 
 	data->spi = spi_dev;
 
-	k_sem_init(&data->sem, 0, UINT_MAX);
-	k_sem_give(&data->sem);
+	k_sem_init(&data->sem, 1, UINT_MAX);
 
 	ret = spi_flash_wb_config(dev);
 	if (!ret) {
