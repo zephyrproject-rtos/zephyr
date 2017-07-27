@@ -255,9 +255,10 @@ config NET_SLIP_TAP
 	default n
 	default y if (QEMU_TARGET && !NET_TEST && !NET_L2_BLUETOOTH)
 	help
-	  SLIP TAP support is necessary when testing IPv4/ARP. The host
-	  needs to have tunslip with TAP support running in order to
-	  communicate via the SLIP driver.
+	  SLIP TAP support is necessary when testing with QEMU. The host
+	  needs to have tunslip6 with TAP support running in order to
+	  communicate via the SLIP driver. See net-tools project at
+	  https://github.com/zephyrproject-rtos/net-tools for more details.
 
 config NET_TRICKLE
 	bool "Enable Trickle library"

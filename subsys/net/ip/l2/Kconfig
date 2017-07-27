@@ -11,16 +11,16 @@ config NET_L2_DUMMY
 	default n
 	default y if !NET_L2_ETHERNET && NET_TEST
 	help
-	Add a dummy L2 layer driver, usually in case you need SLIP in
-	TUN mode.
+	Add a dummy L2 layer driver. This is usually only needed when
+	simulating a network interface when running network stack inside QEMU.
 
 config NET_L2_ETHERNET
 	bool "Enable Ethernet support"
 	default n
 	help
 	Add support for Ethernet, enabling selecting relevant hardware drivers.
-	If SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully simulate
-	Ethernet through SLIP.
+	If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
+	simulate Ethernet through SLIP.
 
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"
