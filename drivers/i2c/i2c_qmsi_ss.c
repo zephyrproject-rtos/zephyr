@@ -350,8 +350,7 @@ static int i2c_qmsi_ss_init(struct device *dev)
 	config->irq_cfg();
 	ss_clk_i2c_enable(instance);
 
-	k_sem_init(&driver_data->sem, 0, UINT_MAX);
-	k_sem_give(&driver_data->sem);
+	k_sem_init(&driver_data->sem, 1, UINT_MAX);
 
 	err = i2c_qmsi_ss_configure(dev, config->default_cfg.raw);
 

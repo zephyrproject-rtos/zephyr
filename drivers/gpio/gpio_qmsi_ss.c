@@ -368,8 +368,7 @@ static int ss_gpio_qmsi_init(struct device *port)
 	u32_t *scss_intmask = NULL;
 
 	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
-		k_sem_init(RP_GET(port), 0, UINT_MAX);
-		k_sem_give(RP_GET(port));
+		k_sem_init(RP_GET(port), 1, UINT_MAX);
 	}
 
 	switch (gpio_config->gpio) {

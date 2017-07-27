@@ -139,8 +139,7 @@ static const struct rtc_driver_api api = {
 static int rtc_qmsi_init(struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_RTC_QMSI_API_REENTRANCY)) {
-		k_sem_init(RP_GET(dev), 0, UINT_MAX);
-		k_sem_give(RP_GET(dev));
+		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
 	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_RTC_0_INT), CONFIG_RTC_0_IRQ_PRI,
