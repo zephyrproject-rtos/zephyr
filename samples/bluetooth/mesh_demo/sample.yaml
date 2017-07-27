@@ -4,4 +4,5 @@ tests:
 -   test:
         build_only: true
         tags: bluetooth
-        depends_on: ble
+        # FIXME: does not fit on all Bluetooth devices
+        platform_whitelist: bbc_microbit nrf51_blenano qemu_x86
