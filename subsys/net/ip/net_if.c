@@ -433,15 +433,23 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 				  struct net_if_addr *ifaddr)
 {
 	ifaddr->addr_state = NET_ADDR_TENTATIVE;
-	ifaddr->dad_count = 1;
 
-	NET_DBG("Interface %p ll addr %s tentative IPv6 addr %s", iface,
-		net_sprint_ll_addr(iface->link_addr.addr,
-				   iface->link_addr.len),
-		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+	if (net_if_is_up(iface)) {
+		NET_DBG("Interface %p ll addr %s tentative IPv6 addr %s",
+			iface,
+			net_sprint_ll_addr(iface->link_addr.addr,
+					   iface->link_addr.len),
+			net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
-	if (!net_ipv6_start_dad(iface, ifaddr)) {
-		k_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
+		ifaddr->dad_count = 1;
+
+		if (!net_ipv6_start_dad(iface, ifaddr)) {
+			k_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
+		}
+	} else {
+		NET_DBG("Interface %p is down, starting DAD for %s later.",
+			iface,
+			net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 	}
 }
 
@@ -449,6 +457,7 @@ void net_if_start_dad(struct net_if *iface)
 {
 	struct net_if_addr *ifaddr;
 	struct in6_addr addr = { };
+	int i;
 
 	net_ipv6_addr_create_iid(&addr, &iface->link_addr);
 
@@ -456,6 +465,19 @@ void net_if_start_dad(struct net_if *iface)
 	if (!ifaddr) {
 		NET_ERR("Cannot add %s address to interface %p, DAD fails",
 			net_sprint_ipv6_addr(&addr), iface);
+	}
+
+	/* Start DAD for all the addresses that were added earlier when
+	 * the interface was down.
+	 */
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!iface->ipv6.unicast[i].is_used ||
+		    iface->ipv6.unicast[i].address.family != AF_INET6 ||
+		    &iface->ipv6.unicast[i] == ifaddr) {
+			continue;
+		}
+
+		net_if_ipv6_start_dad(iface, &iface->ipv6.unicast[i]);
 	}
 }
 
