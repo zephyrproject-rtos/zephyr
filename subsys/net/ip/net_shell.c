@@ -98,6 +98,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	printk("Interface %p\n", iface);
 	printk("====================\n");
 
+	if (!net_if_is_up(iface)) {
+		printk("Interface is down.\n");
+		return;
+	}
+
 	printk("Link addr : %s\n", net_sprint_ll_addr(iface->link_addr.addr,
 						      iface->link_addr.len));
 	printk("MTU       : %d\n", iface->mtu);

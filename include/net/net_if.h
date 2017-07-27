@@ -1184,6 +1184,20 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
 int net_if_up(struct net_if *iface);
 
 /**
+ * @brief Check if interface is up.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is up, False if it is down.
+ */
+static inline bool net_if_is_up(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_bit(iface->flags, NET_IF_UP);
+}
+
+/**
  * @brief Bring interface down
  *
  * @param iface Pointer to network interface
