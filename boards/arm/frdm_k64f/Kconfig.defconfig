@@ -124,6 +124,13 @@ config PWM_K64_FTM_0
 
 endif # PWM_K64_FTM
 
+if PWM_MCUX_FTM
+
+config PWM_3
+	def_bool y
+
+endif # PWM_MCUX_FTM
+
 if SPI
 
 config SPI_0
