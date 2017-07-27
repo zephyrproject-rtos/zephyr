@@ -273,9 +273,7 @@ static int pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		return -EAGAIN;
 	}
 
-	for (from_l = free_l;
-	     level_empty(p, alloc_l) && from_l < alloc_l;
-	     from_l++) {
+	for (from_l = free_l; from_l < alloc_l; from_l++) {
 		blk = break_block(p, blk, from_l, lsizes);
 	}
 
