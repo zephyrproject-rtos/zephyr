@@ -34,5 +34,6 @@ void test_unlock_preemptible(void);
 void test_sched_is_preempt_thread(void);
 void test_slice_reset(void);
 void test_slice_scheduling(void);
+void test_priority_scheduling(void);
 
 #endif /* __TEST_SCHED_H__ */
