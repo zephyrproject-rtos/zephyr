@@ -254,7 +254,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 void bt_mesh_adv_init(void)
 {
 	k_thread_create(&adv_thread_data, adv_thread_stack,
-			sizeof(adv_thread_stack), adv_thread,
+			K_THREAD_STACK_SIZEOF(adv_thread_stack), adv_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
