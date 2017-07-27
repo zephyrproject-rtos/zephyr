@@ -32,6 +32,11 @@ resistor for each of the single color LEDs.
 The sample app requires three PWM ports. So, it can not work
 on Quark D2000 platform.
 
+Hexiwear K64
+============
+No special board setup is necessary because there is an on-board RGB LED
+connected to the K64 PWM.
+
 Building and Running
 ********************
 
