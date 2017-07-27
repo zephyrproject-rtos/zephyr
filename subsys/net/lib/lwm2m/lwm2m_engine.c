@@ -261,7 +261,7 @@ static int engine_remove_observer(const u8_t *token, u8_t tkl)
 
 	sys_slist_remove(&engine_observer_list, NULL, &found_obj->node);
 
-	SYS_LOG_DBG("oberver '%s' removed", sprint_token(token, tkl));
+	SYS_LOG_DBG("observer '%s' removed", sprint_token(token, tkl));
 
 	return 0;
 }
