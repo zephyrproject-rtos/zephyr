@@ -35,6 +35,11 @@ static struct lwm2m_ctx firmware_ctx;
 static int firmware_retry;
 static struct zoap_block_context firmware_block_ctx;
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+#define PROXY_URI_LEN		255
+static char proxy_uri[PROXY_URI_LEN];
+#endif
+
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
 
 static void
@@ -50,11 +55,16 @@ static int transfer_request(struct zoap_block_context *ctx,
 {
 	struct lwm2m_message *msg;
 	int ret;
+#if !defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	int i;
 	int path_len;
 	char *cursor;
 	u16_t off;
 	u16_t len;
+#else
+	char *uri_path =
+		CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_URI_PATH;
+#endif
 
 	msg = lwm2m_get_message(&firmware_ctx);
 	if (!msg) {
@@ -75,6 +85,14 @@ static int transfer_request(struct zoap_block_context *ctx,
 		goto cleanup;
 	}
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+	ret = zoap_add_option(&msg->zpkt, ZOAP_OPTION_URI_PATH,
+			uri_path, strlen(uri_path));
+	if (ret < 0) {
+		SYS_LOG_ERR("Error adding URI_PATH '%s'", uri_path);
+		goto cleanup;
+	}
+#else
 	/* if path is not available, off/len will be zero */
 	off = parsed_uri.field_data[UF_PATH].off;
 	len = parsed_uri.field_data[UF_PATH].len;
@@ -113,6 +131,7 @@ static int transfer_request(struct zoap_block_context *ctx,
 		}
 		path_len += 1;
 	}
+#endif
 
 	ret = zoap_add_block2_option(&msg->zpkt, ctx);
 	if (ret) {
@@ -120,12 +139,21 @@ static int transfer_request(struct zoap_block_context *ctx,
 		goto cleanup;
 	}
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+	ret = zoap_add_option(&msg->zpkt, ZOAP_OPTION_PROXY_URI,
+			firmware_uri, strlen(firmware_uri));
+	if (ret < 0) {
+		SYS_LOG_ERR("Error adding PROXY_URI '%s'", firmware_uri);
+		goto cleanup;
+	}
+#else
 	/* Ask the server to provide a size estimate */
 	ret = zoap_add_option_int(&msg->zpkt, ZOAP_OPTION_SIZE2, 0);
 	if (ret) {
 		SYS_LOG_ERR("Unable to add size2 option.");
 		goto cleanup;
 	}
+#endif
 
 	/* send request */
 	ret = lwm2m_send_message(msg);
@@ -148,6 +176,40 @@ cleanup:
 	return ret;
 }
 
+static int transfer_empty_ack(u16_t mid)
+{
+	struct lwm2m_message *msg;
+	int ret;
+
+	msg = lwm2m_get_message(&firmware_ctx);
+	if (!msg) {
+		SYS_LOG_ERR("Unable to get a lwm2m message!");
+		return -ENOMEM;
+	}
+
+	msg->type = ZOAP_TYPE_ACK;
+	msg->code = ZOAP_CODE_EMPTY;
+	msg->mid = mid;
+
+	ret = lwm2m_init_message(msg);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = lwm2m_send_message(msg);
+	if (ret < 0) {
+		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
+			    ret);
+		goto cleanup;
+	}
+
+	return 0;
+
+cleanup:
+	lwm2m_release_message(msg);
+	return ret;
+}
+
 static int
 do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 			      struct zoap_reply *reply,
@@ -163,6 +225,21 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 	lwm2m_engine_set_data_cb_t callback;
 	u8_t resp_code;
 	struct zoap_block_context received_block_ctx;
+
+	/* token is used to determine a valid ACK vs a separated response */
+	token = zoap_header_get_token(check_response, &tkl);
+
+	/* If separated response (ACK) return and wait for response */
+	if (!tkl && zoap_header_get_type(response) == ZOAP_TYPE_ACK) {
+		return 0;
+	} else if (zoap_header_get_type(response) == ZOAP_TYPE_CON) {
+		/* Send back ACK so the server knows we received the pkt */
+		ret = transfer_empty_ack(zoap_header_get_id(check_response));
+		if (ret < 0) {
+			SYS_LOG_ERR("Error transmitting ACK");
+			return ret;
+		}
+	}
 
 	/* Check response code from server. Expecting (2.05) */
 	resp_code = zoap_header_get_code(check_response);
@@ -228,7 +305,6 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 
 	if (transfer_offset > 0) {
 		/* More block(s) to come, setup next transfer */
-		token = zoap_header_get_token(check_response, &tkl);
 		ret = transfer_request(&firmware_block_ctx, token, tkl,
 				       do_firmware_transfer_reply_cb);
 	} else {
@@ -265,17 +341,33 @@ static void firmware_transfer(struct k_work *work)
 	u16_t off;
 	u16_t len;
 	char tmp;
+	char *server_addr;
 
 	/* Server Peer IP information */
 	family = AF_INET;
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
+	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
+	if (strlen(server_addr) >= PROXY_URI_LEN) {
+		SYS_LOG_ERR("Invalid Proxy URI: %s", server_addr);
+		lwm2m_firmware_set_update_result(RESULT_UNSUP_PROTO);
+		return;
+	}
+
+	/* Copy required as it gets modified when port is available */
+	strcpy(proxy_uri, server_addr);
+	server_addr = proxy_uri;
+#else
+	server_addr = firmware_uri;
+#endif
+
 	http_parser_url_init(&parsed_uri);
-	ret = http_parser_parse_url(firmware_uri,
-				    strlen(firmware_uri),
+	ret = http_parser_parse_url(server_addr,
+				    strlen(server_addr),
 				    0,
 				    &parsed_uri);
 	if (ret != 0) {
-		SYS_LOG_ERR("Invalid firmware URI: %s", firmware_uri);
+		SYS_LOG_ERR("Invalid firmware URI: %s", server_addr);
 		lwm2m_firmware_set_update_result(RESULT_INVALID_URI);
 		return;
 	}
@@ -290,7 +382,7 @@ static void firmware_transfer(struct k_work *work)
 	/* TODO: enable coaps when DTLS is ready */
 	off = parsed_uri.field_data[UF_SCHEMA].off;
 	len = parsed_uri.field_data[UF_SCHEMA].len;
-	if (len != 4 || memcmp(firmware_uri + off, "coap", 4)) {
+	if (len != 4 || memcmp(server_addr + off, "coap", 4)) {
 		SYS_LOG_ERR("Unsupported schema");
 		lwm2m_firmware_set_update_result(RESULT_UNSUP_PROTO);
 		return;
@@ -305,20 +397,21 @@ static void firmware_transfer(struct k_work *work)
 	len = parsed_uri.field_data[UF_HOST].len;
 
 	/* truncate host portion */
-	tmp = firmware_uri[off + len];
-	firmware_uri[off + len] = '\0';
+	tmp = server_addr[off + len];
+	server_addr[off + len] = '\0';
 
 	ret = net_app_init_udp_client(&firmware_ctx.net_app_ctx, NULL, NULL,
-				      &firmware_uri[off], parsed_uri.port,
+				      &server_addr[off], parsed_uri.port,
 				      firmware_ctx.net_init_timeout, NULL);
-	firmware_uri[off + len] = tmp;
+	server_addr[off + len] = tmp;
 	if (ret) {
 		SYS_LOG_ERR("Could not get an UDP context (err:%d)", ret);
 		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
 		return;
 	}
 
-	SYS_LOG_DBG("Attached to port: %d", parsed_uri.port);
+	SYS_LOG_INF("Connecting to server %s, port %d", server_addr + off,
+		    parsed_uri.port);
 
 	lwm2m_engine_context_init(&firmware_ctx);
 
@@ -341,7 +434,7 @@ static void firmware_transfer(struct k_work *work)
 	/* reset block transfer context */
 	zoap_block_transfer_init(&firmware_block_ctx,
 				 lwm2m_default_block_size(), 0);
-	transfer_request(&firmware_block_ctx, NULL, 0,
+	transfer_request(&firmware_block_ctx, zoap_next_token(), 8,
 			 do_firmware_transfer_reply_cb);
 	return;
 

@@ -154,6 +154,30 @@ config LWM2M_NUM_BLOCK1_CONTEXT
 	  This value sets up the maximum number of block1 contexts for
 	  CoAP block-wise transfer we can handle at the same time.
 
+config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
+	bool "Firmware Update object pull via CoAP-CoAP/HTTP proxy support"
+	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	default n
+	help
+	  Include support for pulling firmware file via a CoAP-CoAP/HTTP proxy.
+
+if LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
+
+config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR
+	string "CoAP proxy network address"
+	help
+	  Network address of the CoAP proxy server.
+
+config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_URI_PATH
+	string "CoAP URI path element used by the proxy"
+	default "coap2http"
+	help
+	  CoAP URI path element exported by the CoAP proxy server.
+	  Defaults to coap2http, which is the URI path used by the
+	  Californium CoAP-HTTP proxy.
+
+endif # LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
+
 config LWM2M_RW_JSON_SUPPORT
 	bool "support for JSON writer"
 	default y
