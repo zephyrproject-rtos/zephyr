@@ -1091,18 +1091,18 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf *buf, int sent)
+				  struct net_buf **buf, int sent)
 {
 	int ret, total_len;
 	struct net_buf *frag;
 
-	total_len = net_buf_frags_len(buf) + sent;
+	total_len = net_buf_frags_len(*buf) + sent;
 
 	if (total_len > ch->tx.mtu) {
 		return -EMSGSIZE;
 	}
 
-	frag = buf;
+	frag = *buf;
 	if (!frag->len && frag->frags) {
 		frag = frag->frags;
 	}
@@ -1113,9 +1113,10 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
-				memcpy(net_buf_user_data(buf), &sent,
+				memcpy(net_buf_user_data(frag), &sent,
 				       sizeof(sent));
 			}
+			*buf = frag;
 			return ret;
 		}
 		sent = ret;
@@ -1125,16 +1126,17 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 	for (ret = 0; sent < total_len; sent += ret) {
 		/* Proceed to next fragment */
 		if (!frag->len) {
-			frag = net_buf_frag_del(buf, frag);
+			frag = net_buf_frag_del(NULL, frag);
 		}
 
 		ret = l2cap_chan_le_send(ch, frag, 0);
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
-				memcpy(net_buf_user_data(buf), &sent,
+				memcpy(net_buf_user_data(frag), &sent,
 				       sizeof(sent));
 			}
+			*buf = frag;
 			return ret;
 		}
 	}
@@ -1142,7 +1144,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 	BT_DBG("ch %p cid 0x%04x sent %u total_len %u", ch, ch->tx.cid, sent,
 	       total_len);
 
-	net_buf_unref(buf);
+	net_buf_unref(frag);
 
 	return ret;
 }
@@ -1171,7 +1173,7 @@ static void l2cap_chan_le_send_resume(struct bt_l2cap_le_chan *ch)
 
 		BT_DBG("buf %p sent %u", buf, sent);
 
-		sent = l2cap_chan_le_send_sdu(ch, buf, sent);
+		sent = l2cap_chan_le_send_sdu(ch, &buf, sent);
 		if (sent < 0) {
 			if (sent == -EAGAIN) {
 				ch->tx_buf = buf;
@@ -1672,7 +1674,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
 
-	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), buf, 0);
+	err = l2cap_chan_le_send_sdu(BT_L2CAP_LE_CHAN(chan), &buf, 0);
 	if (err < 0) {
 		if (err == -EAGAIN) {
 			/* Queue buffer to be sent later */
