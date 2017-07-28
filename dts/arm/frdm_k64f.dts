@@ -33,7 +33,11 @@
 #ifdef CONFIG_BLUETOOTH
 		zephyr,bt-uart = &uart3;
 #endif
+#ifdef CONFIG_IEEE802154_FSCI
+		zephyr,uart-pipe = &uart3;
+#else
 		zephyr,uart-pipe = &uart0;
+#endif
 	};
 };
 
@@ -54,7 +58,7 @@
 	current-speed = <115200>;
 };
 
-#ifdef CONFIG_BLUETOOTH
+#if defined(CONFIG_BLUETOOTH) || defined(CONFIG_IEEE802154_FSCI)
 &uart3 {
 	status = "ok";
 	current-speed = <115200>;
