@@ -7431,6 +7431,11 @@ static void connection_release(struct connection *conn)
 	if ((_radio.state == STATE_ABORT) &&
 	    (_radio.ticker_id_prepare == (RADIO_TICKER_ID_FIRST_CONNECTION +
 					  conn->handle))) {
+		/* Reset the stored ticker id in prepare phase that
+		 * initiated the connection event abort (pre-emption).
+		 */
+		_radio.ticker_id_prepare = 0;
+
 		ticker_status =
 			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
 				    RADIO_TICKER_USER_ID_WORKER,
