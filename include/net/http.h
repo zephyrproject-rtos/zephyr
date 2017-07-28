@@ -200,6 +200,18 @@ struct http_client_ctx {
 	/** Server name */
 	const char *server;
 
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	/** Network packet (net_pkt) memory pool for network contexts attached
+	 * to this http_client context.
+	 */
+	net_pkt_get_slab_func_t tx_slab;
+
+	/** Network data net_buf pool for network contexts attached to this
+	 * http_client context.
+	 */
+	net_pkt_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
 	/** Is this instance HTTPS or not.
 	 */
 	bool is_https;
@@ -580,6 +592,28 @@ int https_client_init(struct http_client_ctx *http_ctx,
  * @param http_ctx HTTP context.
  */
 void http_client_release(struct http_client_ctx *http_ctx);
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+/**
+ * @brief Configure the net_pkt pool for this context.
+ *
+ * @details Use of this function is optional and if the pools are not set,
+ * then the default TX and DATA pools are used. This needs to be called before
+ * http init function, as that will setup net_context which needs the net_pkt
+ * pool information.
+ *
+ * @param ctx HTTP client context
+ * @param tx_slab Function which is used when allocating TX network packet.
+ * This can be NULL in which case default TX memory pool is used.
+ * @param data_pool Function which is used when allocating data network buffer.
+ * This can be NULL in which case default DATA net_buf pool is used.
+ */
+int http_client_set_net_pkt_pool(struct http_client_ctx *ctx,
+				 net_pkt_get_slab_func_t tx_slab,
+				 net_pkt_get_pool_func_t data_pool);
+#else
+#define http_client_set_net_pkt_pool(...)
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 #endif /* CONFIG_HTTP_CLIENT */
 
 #if defined(CONFIG_HTTP_SERVER)
