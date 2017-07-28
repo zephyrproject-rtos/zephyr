@@ -193,7 +193,6 @@ static inline void net_pkt_set_next_hdr(struct net_pkt *pkt, u8_t *hdr)
 	pkt->next_hdr = hdr;
 }
 
-#if defined(CONFIG_NET_TCP)
 static inline u8_t net_pkt_sent(struct net_pkt *pkt)
 {
 	return pkt->sent_or_eof;
@@ -214,7 +213,6 @@ static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
 {
 	pkt->sent_or_eof = eof;
 }
-#endif
 #endif
 
 #if defined(CONFIG_NET_ROUTE)
