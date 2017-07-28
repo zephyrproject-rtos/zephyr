@@ -430,6 +430,7 @@ zirc_chan_part(struct zirc_chan *chan)
 	return -ENOENT;
 }
 
+#if defined(CONFIG_NET_IPV6)
 static int in_addr_set(sa_family_t family,
 		       const char *ip_addr,
 		       int port,
@@ -466,6 +467,7 @@ static int in_addr_set(sa_family_t family,
 
 	return rc;
 }
+#endif
 
 #if defined(CONFIG_DNS_RESOLVER)
 static void resolve_cb(enum dns_resolve_status status,
