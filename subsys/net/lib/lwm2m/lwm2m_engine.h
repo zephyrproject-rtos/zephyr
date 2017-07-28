@@ -54,6 +54,7 @@ int lwm2m_udp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr);
 void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 		       struct zoap_pending *zpendings, int num_zpendings,
 		       struct zoap_reply *zreplies, int num_zreplies,
+		       bool handle_separate_response,
 		       int (*udp_request_handler)(struct zoap_packet *request,
 				struct zoap_packet *response,
 				struct sockaddr *from_addr));

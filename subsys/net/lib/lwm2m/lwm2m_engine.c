@@ -2154,6 +2154,7 @@ int lwm2m_udp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr)
 void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 		       struct zoap_pending *zpendings, int num_zpendings,
 		       struct zoap_reply *zreplies, int num_zreplies,
+		       bool handle_separate_response,
 		       int (*udp_request_handler)(struct zoap_packet *,
 						  struct zoap_packet *,
 						  struct sockaddr *))
@@ -2256,8 +2257,23 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 			SYS_LOG_ERR("No handler for response");
 		}
 	} else {
-		SYS_LOG_DBG("reply handled reply:%p", reply);
-		zoap_reply_clear(reply);
+		/*
+		 * Separate response is composed of 2 messages, empty ACK with
+		 * no token and an additional message with a matching token id
+		 * (based on the token used by the CON request).
+		 *
+		 * Since the ACK received by the notify CON messages are also
+		 * empty with no token (consequence of always using the same
+		 * token id for all notifications), we have to use an
+		 * additional flag to decide when to clear the reply callback.
+		 */
+		if (handle_separate_response && !tkl &&
+			zoap_header_get_type(&response) == ZOAP_TYPE_ACK) {
+			SYS_LOG_DBG("separated response, not removing reply");
+		} else {
+			SYS_LOG_DBG("reply %p handled and removed", reply);
+			zoap_reply_clear(reply);
+		}
 	}
 
 cleanup:
@@ -2270,7 +2286,7 @@ static void udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 			int status, void *user_data)
 {
 	lwm2m_udp_receive(ctx, pkt, pendings, NUM_PENDINGS,
-			  replies, NUM_REPLIES, handle_request);
+			  replies, NUM_REPLIES, false, handle_request);
 }
 
 static void retransmit_request(struct k_work *work)
