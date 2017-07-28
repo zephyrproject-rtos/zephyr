@@ -13,16 +13,34 @@
  *
  * Pin configuration is coded with the following
  * fields
- *    Alternate Function  [ 0 : 7 ]
- *    GPIO Mode           [ 8 : 9 ]
- *    GPIO Output type    [ 10 ]
- *    GPIO Speed          [ 11 : 12 ]
- *    GPIO PUPD config    [ 13 : 14 ]
+ *    Alternate Functions [ 0 : 3 ]
+ *    GPIO Mode           [ 4 : 5 ]
+ *    GPIO Output type    [ 6 ]
+ *    GPIO Speed          [ 7 : 8 ]
+ *    GPIO PUPD config    [ 9 : 10 ]
  *
  * Applicable to STM32F3, STM32F4, STM32L4 series
  */
 
+/* Alternate functions */
+#define STM32_FUNC_ALT_0                0
+#define STM32_FUNC_ALT_1                1
+#define STM32_FUNC_ALT_2                2
+#define STM32_FUNC_ALT_3                3
+#define STM32_FUNC_ALT_4                4
+#define STM32_FUNC_ALT_5                5
+#define STM32_FUNC_ALT_6                6
+#define STM32_FUNC_ALT_7                7
+#define STM32_FUNC_ALT_8                8
+#define STM32_FUNC_ALT_9                9
+#define STM32_FUNC_ALT_10               10
+#define STM32_FUNC_ALT_11               11
+#define STM32_FUNC_ALT_12               12
+#define STM32_FUNC_ALT_13               13
+#define STM32_FUNC_ALT_14               14
+#define STM32_FUNC_ALT_15               15
 #define STM32_AFR_MASK			0xF
+#define STM32_AFR_SHIFT			0
 
 /* GPIO Mode */
 #define STM32_MODER_INPUT_MODE		(0x0<<STM32_MODER_SHIFT)
@@ -53,29 +71,6 @@
 #define STM32_PUPDR_MASK		0x3
 #define STM32_PUPDR_SHIFT		9
 
-/* Usefull definitions */
-#define STM32_PUSHPULL_NOPULL    (STM32_OTYPER_PUSH_PULL | STM32_PUPDR_NO_PULL)
-#define STM32_OPENDRAIN_PULLUP   (STM32_OTYPER_OPEN_DRAIN | STM32_PUPDR_PULL_UP)
-#define STM32_PUSHPULL_PULLUP	 (STM32_OTYPER_PUSH_PULL | STM32_PUPDR_PULL_UP)
-
-/* Alternate functions numbers*/
-#define	STM32_FUNC_ALT_0 0
-#define	STM32_FUNC_ALT_1 1
-#define	STM32_FUNC_ALT_2 2
-#define	STM32_FUNC_ALT_3 3
-#define	STM32_FUNC_ALT_4 4
-#define	STM32_FUNC_ALT_5 5
-#define	STM32_FUNC_ALT_6 6
-#define	STM32_FUNC_ALT_7 7
-#define	STM32_FUNC_ALT_8 8
-#define	STM32_FUNC_ALT_9 9
-#define	STM32_FUNC_ALT_10 10
-#define	STM32_FUNC_ALT_11 11
-#define	STM32_FUNC_ALT_12 12
-#define	STM32_FUNC_ALT_13 13
-#define	STM32_FUNC_ALT_14 14
-#define	STM32_FUNC_ALT_15 15
-
 /* Alternate functions definitions */
 #define	STM32_PINMUX_ALT_FUNC_0 (STM32_FUNC_ALT_0 | STM32_MODER_ALT_MODE)
 #define	STM32_PINMUX_ALT_FUNC_1 (STM32_FUNC_ALT_1 | STM32_MODER_ALT_MODE)
@@ -93,5 +88,10 @@
 #define	STM32_PINMUX_ALT_FUNC_13 (STM32_FUNC_ALT_13 | STM32_MODER_ALT_MODE)
 #define	STM32_PINMUX_ALT_FUNC_14 (STM32_FUNC_ALT_14 | STM32_MODER_ALT_MODE)
 #define	STM32_PINMUX_ALT_FUNC_15 (STM32_FUNC_ALT_15 | STM32_MODER_ALT_MODE)
+
+/* Useful definitions */
+#define STM32_PUSHPULL_NOPULL    (STM32_OTYPER_PUSH_PULL | STM32_PUPDR_NO_PULL)
+#define STM32_OPENDRAIN_PULLUP   (STM32_OTYPER_OPEN_DRAIN | STM32_PUPDR_PULL_UP)
+#define STM32_PUSHPULL_PULLUP	 (STM32_OTYPER_PUSH_PULL | STM32_PUPDR_PULL_UP)
 
 #endif	/* _STM32_PINCTRL_H_ */

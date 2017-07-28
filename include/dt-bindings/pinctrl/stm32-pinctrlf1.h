@@ -24,7 +24,11 @@
  * Applicable to STM32F1 series
  */
 
-#define STM32_AFR_MASK		0
+/* Alternate functions */
+/* STM32F1 Pinmux doesn't use explicit alternate functions */
+/* These are kept for compatibility with other STM32 pinmux */
+#define STM32_AFR_MASK			0
+#define STM32_AFR_SHIFT			0
 
 /* Port Mode */
 #define STM32_MODE_INPUT		(0x0<<STM32_MODE_INOUT_SHIFT)
