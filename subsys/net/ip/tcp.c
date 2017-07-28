@@ -1085,7 +1085,14 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->urg), hdr->urg);
 
 	if (!frag && pos == 0xffff) {
-		NET_ASSERT(frag);
+		/* If the pkt is compressed, then this is the typical outcome
+		 * so no use printing error in this case.
+		 */
+		if (IS_ENABLED(CONFIG_NET_DEBUG_TCP) &&
+		    !is_6lo_technology(pkt)) {
+			NET_ASSERT(frag);
+		}
+
 		return NULL;
 	}
 
