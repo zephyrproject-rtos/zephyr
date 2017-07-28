@@ -60,9 +60,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	r = net_context_sendto(pending->pkt, &pending->addr,
-			       NET_SOCKADDR_MAX_SIZE,
-			       NULL, K_NO_WAIT, NULL, NULL);
+	r = lwm2m_udp_sendto(pending->pkt, &pending->addr);
 	if (r < 0) {
 		return;
 	}
@@ -129,8 +127,7 @@ static int transfer_request(struct zoap_block_context *ctx,
 	}
 
 	/* send request */
-	ret = net_context_sendto(pkt, &firmware_addr, NET_SOCKADDR_MAX_SIZE,
-				 NULL, 0, NULL, NULL);
+	ret = lwm2m_udp_sendto(pkt, &firmware_addr);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 			    ret);
