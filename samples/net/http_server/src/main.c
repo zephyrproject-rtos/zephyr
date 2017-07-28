@@ -36,6 +36,29 @@
 
 /* Sets the network parameters */
 
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+NET_PKT_TX_SLAB_DEFINE(http_srv_tx, 15);
+NET_PKT_DATA_POOL_DEFINE(http_srv_data, 30);
+
+static struct k_mem_slab *tx_slab(void)
+{
+	return &http_srv_tx;
+}
+
+static struct net_buf_pool *data_pool(void)
+{
+	return &http_srv_data;
+}
+#else
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#error "TCP connections over Bluetooth need CONFIG_NET_CONTEXT_NET_PKT_POOL "\
+	"defined."
+#endif /* CONFIG_NET_L2_BLUETOOTH */
+
+#define tx_slab NULL
+#define data_pool NULL
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
 #define RESULT_BUF_SIZE 1024
 static u8_t http_result[RESULT_BUF_SIZE];
 
@@ -346,6 +369,8 @@ void main(void)
 			    http_response_it_works);
 
 #if defined(CONFIG_HTTPS)
+	http_server_set_net_pkt_pool(&https_ctx, tx_slab, data_pool);
+
 	ret = https_server_init(&https_ctx, &http_urls, server_addr,
 				https_result, sizeof(https_result),
 				"Zephyr HTTPS Server",
@@ -360,6 +385,8 @@ void main(void)
 
 	http_server_enable(&https_ctx);
 #endif
+
+	http_server_set_net_pkt_pool(&http_ctx, tx_slab, data_pool);
 
 	ret = http_server_init(&http_ctx, &http_urls, server_addr, http_result,
 			       sizeof(http_result), "Zephyr HTTP Server");
