@@ -1347,9 +1347,10 @@ void bt_conn_process_tx(struct bt_conn *conn)
 
 	/* Get next ACL packet for connection */
 	buf = net_buf_get(&conn->tx_queue, K_NO_WAIT);
-	BT_ASSERT(buf);
-	if (!send_buf(conn, buf)) {
-		net_buf_unref(buf);
+	if (buf) {
+		if (!send_buf(conn, buf)) {
+			net_buf_unref(buf);
+		}
 	}
 }
 
