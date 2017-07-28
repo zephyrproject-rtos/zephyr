@@ -1,8 +1,7 @@
 sample:
-    description: TBD
-    name: TBD
+    name: IRC Bot
 tests:
 -   test:
         build_only: true
-        platform_whitelist: qemu_x86 frdm_k64f
         tags: net irc
+        depends_on: netif
