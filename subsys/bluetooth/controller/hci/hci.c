@@ -1030,12 +1030,13 @@ static void le_set_data_len(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_rp_le_set_data_len *rp;
 	u32_t status;
 	u16_t tx_octets;
+	u16_t tx_time;
 	u16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
 	tx_octets = sys_le16_to_cpu(cmd->tx_octets);
-	/** @todo add reject_ext_ind support in ctrl.c */
-	status = ll_length_req_send(handle, tx_octets);
+	tx_time = sys_le16_to_cpu(cmd->tx_time);
+	status = ll_length_req_send(handle, tx_octets, tx_time);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;

@@ -78,7 +78,7 @@ u32_t ll_apto_set(u16_t handle, u16_t apto);
 #endif /* CONFIG_BT_CONTROLLER_LE_PING */
 
 #if defined(CONFIG_BT_CONTROLLER_DATA_LENGTH)
-u32_t ll_length_req_send(u16_t handle, u16_t tx_octets);
+u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time);
 void ll_length_default_get(u16_t *max_tx_octets, u16_t *max_tx_time);
 u32_t ll_length_default_set(u16_t max_tx_octets, u16_t max_tx_time);
 void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
