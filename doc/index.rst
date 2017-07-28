@@ -40,7 +40,7 @@ Sections
    api/api.rst
    samples/samples.rst
    reference/kconfig/index.rst
-   contribute/code.rst
+   contribute/contribute.rst
    release-notes.rst
    LICENSING.rst
    glossary.rst
