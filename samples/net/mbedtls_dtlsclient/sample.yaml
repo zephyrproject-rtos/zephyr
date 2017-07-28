@@ -1,8 +1,7 @@
 sample:
-    description: TBD
-    name: TBD
+    description: mBED DTLS Client
 tests:
 -   test:
-        platform_whitelist: qemu_x86
         build_only: true
         tags: net
+        depends_on: netif
