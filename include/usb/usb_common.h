@@ -49,6 +49,7 @@
 #define USB_STRING_DESC_SIZE            4
 #define USB_HID_DESC_SIZE               9
 #define USB_DFU_DESC_SIZE               9
+#define USB_DEVICE_QUAL_DESC_SIZE       10
 
 /* Descriptor type */
 #define USB_DEVICE_DESC                 0x01
@@ -56,6 +57,7 @@
 #define USB_STRING_DESC                 0x03
 #define USB_INTERFACE_DESC              0x04
 #define USB_ENDPOINT_DESC               0x05
+#define USB_DEVICE_QUAL_DESC            0x06
 #define USB_HID_DESC                    0x21
 #define USB_HID_REPORT_DESC             0x22
 #define USB_DFU_FUNCTIONAL_DESC         0x21
