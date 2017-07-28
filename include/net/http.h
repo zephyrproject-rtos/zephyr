@@ -677,6 +677,18 @@ struct http_server_ctx {
 	/** Function that is called when data is sent to network. */
 	http_send_data_t send_data;
 
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	/** Network packet (net_pkt) memory pool for network contexts attached
+	 * to this http server context.
+	 */
+	net_pkt_get_slab_func_t tx_slab;
+
+	/** Network data net_buf pool for network contexts attached to this
+	 * http server context.
+	 */
+	net_pkt_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN)
 	sys_snode_t node;
 #endif
@@ -1049,6 +1061,28 @@ int http_response_403(struct http_server_ctx *ctx, const char *html_payload);
  * @return 0 if ok, <0 if error.
  */
 int http_response_404(struct http_server_ctx *ctx, const char *html_payload);
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+/**
+ * @brief Configure the net_pkt pool for this context.
+ *
+ * @details Use of this function is optional and if the pools are not set,
+ * then the default TX and DATA pools are used. This needs to be called before
+ * http init function, as that will setup net_context which needs the net_pkt
+ * pool information.
+ *
+ * @param ctx HTTP server context
+ * @param tx_slab Function which is used when allocating TX network packet.
+ * This can be NULL in which case default TX memory pool is used.
+ * @param data_pool Function which is used when allocating data network buffer.
+ * This can be NULL in which case default DATA net_buf pool is used.
+ */
+int http_server_set_net_pkt_pool(struct http_server_ctx *ctx,
+				 net_pkt_get_slab_func_t tx_slab,
+				 net_pkt_get_pool_func_t data_pool);
+#else
+#define http_server_set_net_pkt_pool(...)
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #endif /* CONFIG_HTTP_SERVER */
 
