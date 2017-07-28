@@ -5,3 +5,8 @@ tests:
         build_only: true
         platform_whitelist: frdm_k64f qemu_x86
         tags: net http
+-   test_bt:
+        build_only: true
+        platform_whitelist: qemu_x86
+        extra_args: CONF_FILE="prj_bt.conf"
+        tags: net http
