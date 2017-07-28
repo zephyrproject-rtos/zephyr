@@ -20,6 +20,11 @@
 
 #include <net/net_app.h>
 
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
+
 #include "config.h"
 
 #define MAX_ITERATIONS	20
@@ -329,6 +334,15 @@ out:
 void main(void)
 {
 	int ret;
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+	if (bt_enable(NULL) == 0) {
+		ipss_init();
+		ipss_advertise();
+	} else {
+		NET_ERR("Bluetooth init failed");
+	}
+#endif
 
 	ret = http_client_init(&http_ctx, SERVER_ADDR, SERVER_PORT);
 	if (ret < 0) {
