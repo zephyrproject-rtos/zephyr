@@ -1125,7 +1125,8 @@ static inline u32_t isr_rx_scan(u8_t irkmatch_id, u8_t rssi_ready)
 		((pdu_adv_rx->payload.direct_ind.tgt_addr[5] & 0xc0) ==
 		 0x40))))) &&
 	    ((radio_tmr_end_get() + 502) <
-	     TICKER_TICKS_TO_US(_radio.scanner.hdr.ticks_slot))) {
+	     (TICKER_TICKS_TO_US(_radio.scanner.hdr.ticks_slot) -
+	      RADIO_TICKER_START_PART_US))) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 		struct radio_pdu_node_rx *radio_pdu_node_rx;
 		struct pdu_adv *pdu_adv_tx;
@@ -3491,6 +3492,12 @@ static void ticker_stop_adv_assert(u32_t status, void *params)
 		} else {
 			LL_ASSERT(0);
 		}
+	} else {
+		/* This assert shall not happen if advertiser role's slot
+		 * calculation is correct, and next event shall not
+		 * overlap/pre-empt the current advertise role event.
+		 */
+		LL_ASSERT(_radio.ticker_id_prepare != RADIO_TICKER_ID_ADV);
 	}
 }
 
@@ -3510,6 +3517,12 @@ static void ticker_stop_scan_assert(u32_t status, void *params)
 		} else {
 			LL_ASSERT(0);
 		}
+	} else {
+		/* This assert shall not happen if scanner role's slot
+		 * calculation is correct, and next event shall not
+		 * overlap/pre-empt the current scanner role event.
+		 */
+		LL_ASSERT(_radio.ticker_id_prepare != RADIO_TICKER_ID_SCAN);
 	}
 }
 
