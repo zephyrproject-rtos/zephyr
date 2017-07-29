@@ -222,9 +222,7 @@ endif # BLUETOOTH_CONTROLLER_PHY
 config BLUETOOTH_CONTROLLER_WORKER_PRIO
 	prompt "Radio and Ticker's Worker IRQ priority"
 	int
-	range 0 3 if SOC_SERIES_NRF51X
-	range 0 6 if SOC_SERIES_NRF52X
-	default 0
+	default 253
 	help
 	  The interrupt priority for event preparation and radio IRQ. This value
 	  shall be less than or equal to the Ticker's Job priority value.
@@ -232,9 +230,8 @@ config BLUETOOTH_CONTROLLER_WORKER_PRIO
 config BLUETOOTH_CONTROLLER_JOB_PRIO
 	prompt "Ticker's JOB IRQ priority"
 	int
-	range BLUETOOTH_CONTROLLER_WORKER_PRIO 3 if SOC_SERIES_NRF51X
-	range BLUETOOTH_CONTROLLER_WORKER_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
+	range BLUETOOTH_CONTROLLER_WORKER_PRIO 255
+	default 254
 	help
 	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
 	  be greater than or equal to the Ticker's Worker IRQ priority value.
