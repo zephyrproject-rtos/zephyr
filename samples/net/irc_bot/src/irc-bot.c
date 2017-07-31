@@ -28,10 +28,6 @@
 #error "CONFIG_NET_IPV6 or CONFIG_NET_IPV4 must be enabled for irc_bot"
 #endif
 
-#define STACK_SIZE	2048
-static K_THREAD_STACK_DEFINE(bot_stack, STACK_SIZE);
-static struct k_thread bot_thread;
-
 #define CMD_BUFFER_SIZE 256
 static u8_t cmd_buf[CMD_BUFFER_SIZE];
 
@@ -1046,7 +1042,7 @@ initialize_hardware(void)
 	}
 }
 
-static void irc_bot(void)
+void main(void)
 {
 	struct zirc irc = { };
 	struct zirc_chan chan = { };
@@ -1065,12 +1061,4 @@ static void irc_bot(void)
 	for (;;) {
 		k_sleep(K_FOREVER);
 	}
-}
-
-void main(void)
-{
-	k_thread_create(&bot_thread, bot_stack,
-			K_THREAD_STACK_SIZEOF(bot_stack),
-			(k_thread_entry_t)irc_bot,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

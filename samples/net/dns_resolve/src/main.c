@@ -20,10 +20,6 @@
 #include <net/net_mgmt.h>
 #include <net/dns_resolve.h>
 
-#define STACKSIZE 2000
-K_THREAD_STACK_DEFINE(thread_stack, STACKSIZE);
-static struct k_thread thread_data;
-
 #define DNS_TIMEOUT 2000 /* ms */
 
 void dns_result_cb(enum dns_resolve_status status,
@@ -267,22 +263,15 @@ static void setup_ipv6(struct net_if *iface)
 #define setup_ipv6(...)
 #endif /* CONFIG_NET_IPV6 */
 
-static void network_setup(void)
+void main(void)
 {
 	struct net_if *iface = net_if_get_default();
+
+	NET_INFO("Starting DNS resolve sample");
 
 	setup_ipv4(iface);
 
 	setup_dhcpv4(iface);
 
 	setup_ipv6(iface);
-}
-
-void main(void)
-{
-	NET_INFO("Starting DNS resolve sample");
-
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)network_setup,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }
