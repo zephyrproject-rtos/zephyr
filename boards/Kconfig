@@ -8,7 +8,8 @@ config BOARD_DEPRECATED
 	deprecation warning.
 
 config QEMU_TARGET
-	bool n
+	bool
+	default n
 	help
 	  Mark all QEMU targets with this variable for checking whether we are
 	  running in an emulated environment.
