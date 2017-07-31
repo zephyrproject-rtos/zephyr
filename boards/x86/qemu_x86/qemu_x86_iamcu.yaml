@@ -6,6 +6,6 @@ toolchain:
   - zephyr
 supported:
   - pci
-  - net
+  - slip
 testing:
         default: true
