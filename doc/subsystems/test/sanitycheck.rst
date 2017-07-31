@@ -201,6 +201,27 @@ ram:
 flash:
   Available FLASH on the board (specified in KB). This is used to match testcase
   requirements.  If not specified we default to 512KB.
+supported:
+  A list of features this board supports. This can be specified as a single word
+  feature or as a variant of a feature class. For example:
+
+  ::
+
+        supported:
+          - pci
+
+  This indicates the board does support PCI. You can make a testcase build or
+  run only on such boards, or:
+
+  ::
+
+        supported:
+          - netif:eth
+          - sensor:bmi16
+
+  A testcase can both depend on 'eth' to only test ethernet or on 'netif' to run
+  on any board with a networking interface.
+
 testing:
   testing relating keywords to provide best coverage for the features of this
   board.
