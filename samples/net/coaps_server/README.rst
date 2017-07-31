@@ -16,13 +16,13 @@ In the application directory type:
 
 .. code-block:: console
 
-   $make run
+   $ make run
 
 In other terminal window, obtain the libcoap code from:
 
 .. code-block:: console
 
-	git clone --recursive -b dtls https://github.com/obgm/libcoap.git
+   $ git clone --recursive -b dtls https://github.com/obgm/libcoap.git
 
 and put it in a well known directory, in your Linux machine, this will be your
 client. In order to compile libcoap you may need to install the following
@@ -30,22 +30,22 @@ libraries, for Ubuntu
 
 .. code-block:: console
 
-	sudo apt-get install libtool asciidoc
+   $ sudo apt-get install libtool asciidoc
 
 Move to that directory and compile the libcoap on your host machine
 
 .. code-block:: console
 
-	./autogen.sh
-	./configure --disable-shared
-	make all
+   $ ./autogen.sh
+   $ ./configure --disable-shared
+   $ make all
 
 Now you can run the client like
 
 .. code-block:: console
 
-	cd examples
-	./coap-client -m get coaps://[2001:db8::1]/test -u Client_identity -k passwd
+   $ cd examples
+   $ ./coap-client -m get coaps://[2001:db8::1]/test -u Client_identity -k passwd
 
 You will get the following output:
 
