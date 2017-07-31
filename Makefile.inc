@@ -98,7 +98,8 @@ run: $(DOTCONFIG)
 
 ifeq ($(MAKECMDGOALS),debugserver)
 ARCH = $(notdir $(subst /$(BOARD),,$(wildcard $(ZEPHYR_BASE)/boards/*/$(BOARD))))
--include $(ZEPHYR_BASE)/boards/$(ARCH)/$(BOARD)/Makefile.board
+BOARD_DIR = $(dir $(wildcard $(ZEPHYR_BASE)/boards/*/*/$(BOARD)_defconfig))
+-include $(BOARD_DIR)/Makefile.board
 -include $(ZEPHYR_BASE)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 BOARD_NAME = $(BOARD)
 export BOARD_NAME
