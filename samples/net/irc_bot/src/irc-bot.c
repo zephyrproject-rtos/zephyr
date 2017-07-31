@@ -851,7 +851,6 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
-	char hr_addr[NET_IPV4_ADDR_LEN];
 	int i;
 
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
@@ -865,16 +864,24 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-		NET_INFO("IPv4 address: %s",
-			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
-				       hr_addr, NET_IPV4_ADDR_LEN));
-		NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
-		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
-				       hr_addr, NET_IPV4_ADDR_LEN));
-		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.gw,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+#if CONFIG_SYS_LOG_NET_LEVEL > 2
+		{
+			char hr_addr[NET_IPV4_ADDR_LEN];
+
+			NET_INFO("IPv4 address: %s",
+				 net_addr_ntop(AF_INET,
+					       &if_addr->address.in_addr,
+					       hr_addr, NET_IPV4_ADDR_LEN));
+			NET_INFO("Lease time: %u seconds",
+				 iface->dhcpv4.lease_time);
+			NET_INFO("Subnet: %s",
+				 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
+					       hr_addr, NET_IPV4_ADDR_LEN));
+			NET_INFO("Router: %s",
+				 net_addr_ntop(AF_INET, &iface->ipv4.gw,
+					       hr_addr, NET_IPV4_ADDR_LEN));
+		}
+#endif
 		break;
 	}
 
@@ -911,7 +918,9 @@ static void setup_dhcpv4(struct zirc *irc, struct net_if *iface)
 
 static void setup_ipv4(struct zirc *irc, struct net_if *iface)
 {
+#if CONFIG_SYS_LOG_NET_LEVEL > 2
 	char hr_addr[NET_IPV4_ADDR_LEN];
+#endif
 	struct in_addr addr;
 
 	if (net_addr_pton(AF_INET, ZIRC_LOCAL_IP_ADDR, &addr)) {
@@ -967,7 +976,9 @@ static void ipv6_dad_ok_handler(struct net_mgmt_event_callback *cb,
 
 static void setup_ipv6(struct zirc *irc, struct net_if *iface)
 {
+#if CONFIG_SYS_LOG_NET_LEVEL > 2
 	char hr_addr[NET_IPV6_ADDR_LEN];
+#endif
 
 	if (net_addr_pton(AF_INET6, ZIRC_LOCAL_IP_ADDR, &laddr)) {
 		NET_ERR("Invalid address: %s", ZIRC_LOCAL_IP_ADDR);
