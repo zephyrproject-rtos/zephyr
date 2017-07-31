@@ -408,7 +408,8 @@ def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
 
                     prop_def[key_label] = cells
                     prop_def[func_label] = \
-                        reduced[subnode]['props'][cells]
+                        "{%s, %s}" % (str(reduced[subnode]['props'][cells][0]), 
+                                      str(reduced[subnode]['props'][cells][1]))
 
     insert_defs(node_address, defs, prop_def, {})
 
