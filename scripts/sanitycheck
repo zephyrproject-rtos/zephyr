@@ -1075,7 +1075,11 @@ class Platform:
         self.default = testing.get("default", False)
         # if no flash size is specified by the board, take a default of 512K
         self.flash = cp.get("flash", 512)
-        self.supported = set(cp.get("supported", []))
+        self.supported = set()
+        for supp_feature in cp.get("supported", []):
+            for item in supp_feature.split(":"):
+                self.supported.add(item)
+
         self.qemu_support = True if cp.get('type', "na") == 'qemu' else False
         self.arch = cp['arch']
         self.supported_toolchains = cp.get("toolchain", [])
