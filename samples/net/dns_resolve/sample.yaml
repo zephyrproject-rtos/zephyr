@@ -1,8 +1,8 @@
 sample:
     description: TBD
-    name: TBD
+    name: DNS Resolver
 tests:
 -   test:
         build_only: true
-        platform_whitelist: qemu_x86
         tags: net dns
+        depends_on: netif
