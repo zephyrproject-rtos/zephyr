@@ -6,6 +6,6 @@ toolchain:
   - zephyr
 supported:
   - pci
-  - net
+  - netif:slip
 testing:
         default: true

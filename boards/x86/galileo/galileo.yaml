@@ -6,4 +6,4 @@ toolchain:
   - zephyr
 supported:
   - pci
-  - ethernet
+  - netif:eth
