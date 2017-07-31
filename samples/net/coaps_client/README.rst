@@ -17,13 +17,13 @@ command:
 
 .. code-block:: console
 
-	make server
+	$ make server
 
 In other terminal window, run this client application at samples/net/coaps_client:
 
 .. code-block:: console
 
-	make client
+	$ make client
 
 You will get the following output:
 
