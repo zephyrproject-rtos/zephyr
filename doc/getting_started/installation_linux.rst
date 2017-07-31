@@ -55,7 +55,7 @@ Install the required packages in a Ubuntu host system with:
 .. code-block:: console
 
    $ sudo apt-get install git make gcc g++ ncurses-dev \
-	 doxygen dfu-util device-tree-compiler python-pip3
+	 doxygen dfu-util device-tree-compiler python3-pip
 
 Install the required packages in a Fedora host system with:
 
