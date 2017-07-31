@@ -1,8 +1,7 @@
 sample:
-    description: TBD
-    name: TBD
+    name: COAP Client with DTLS
 tests:
 -   test:
-        platform_whitelist: qemu_x86
         build_only: true
-        tags: net
+        tags: net coap dtls
+        depends_on: netif
