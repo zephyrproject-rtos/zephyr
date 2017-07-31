@@ -28,6 +28,7 @@
 #include <net/net_app.h>
 
 #include "ieee802154_settings.h"
+#include "bt_settings.h"
 
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
@@ -277,6 +278,11 @@ static int init_net_app(struct device *device)
 	ret = _net_app_ieee802154_setup();
 	if (ret < 0) {
 		NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
+	}
+
+	ret = _net_app_bt_setup();
+	if (ret < 0) {
+		NET_ERR("Cannot setup Bluetooth interface (%d)", ret);
 	}
 #endif
 
