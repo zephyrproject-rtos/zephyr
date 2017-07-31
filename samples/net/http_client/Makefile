@@ -5,7 +5,7 @@
 #
 
 BOARD ?= qemu_x86
-CONF_FILE ?= prj_$(BOARD).conf
+CONF_FILE ?= prj.conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
 
