@@ -236,4 +236,16 @@ config NET_APP_IEEE802154_SECURITY_LEVEL
 
 endif # NET_L2_IEEE802154 || NET_L2_RAW_CHANNEL
 
+if NET_L2_BLUETOOTH
+
+config NET_APP_BLUETOOTH_NODE
+	bool "Enable Bluetooth node support"
+	default n
+	select NET_L2_BLUETOOTH_MGMT
+	help
+	Enables application to operate in node mode which requires GATT
+	service to be registered and start advertising as peripheral.
+
+endif # NET_L2_BLUETOOTH
+
 endif # NET_APP_SETTINGS
