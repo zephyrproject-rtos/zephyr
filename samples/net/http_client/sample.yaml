@@ -1,11 +1,10 @@
 sample:
-    description: TBD
-    name: TBD
+    name: HTTP Client
 tests:
 -   test:
         build_only: true
-        platform_whitelist: frdm_k64f
         tags: net http
+        depends_on: netif
 -   test_bt:
         build_only: true
         platform_whitelist: qemu_x86 qemu_cortex_m3
