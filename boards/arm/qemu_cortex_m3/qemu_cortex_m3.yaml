@@ -5,5 +5,7 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+supported:
+  - netif:slip
 testing:
         default: true
