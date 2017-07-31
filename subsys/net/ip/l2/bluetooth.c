@@ -292,6 +292,34 @@ static struct bt_l2cap_server server = {
 
 #if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
 
+#define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
+#define UNKNOWN_APPEARANCE	0x0000
+
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x20, 0x18),
+};
+
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+};
+
+static int bt_advertise(u32_t mgmt_request, struct net_if *iface, void *data,
+		      size_t len)
+{
+	if (!strcmp(data, "on")) {
+		return bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
+				       sd, ARRAY_SIZE(sd));
+	} else if (!strcmp(data, "off")) {
+		return bt_le_adv_stop();
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int bt_connect(u32_t mgmt_request, struct net_if *iface, void *data,
 		      size_t len)
 {
@@ -524,6 +552,7 @@ static int net_bt_init(struct device *dev)
 }
 
 #if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_ADVERTISE, bt_advertise);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_CONNECT, bt_connect);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_SCAN, bt_scan);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_DISCONNECT, bt_disconnect);
