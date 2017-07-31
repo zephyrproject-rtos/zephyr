@@ -199,7 +199,7 @@ struct mqtt_ctx {
  *
  * @param ctx MQTT context structure
  * @param app_type See enum mqtt_app
- * @retval 0, always.
+ * @retval 0 always
  */
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type);
 
