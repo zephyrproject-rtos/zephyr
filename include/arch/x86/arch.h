@@ -589,6 +589,20 @@ extern u32_t __mmu_tables_start;
 #define X86_MMU_PD ((struct x86_mmu_page_directory *)\
 		    (void *)&__mmu_tables_start)
 
+
+/**
+ * @brief Fetch page table flags for a particular page
+ *
+ * Given a memory address, return the flags for the containing page's
+ * PDE and PTE entries. Intended for debugging.
+ *
+ * @param addr Memory address to example
+ * @param pde_flags Output parameter for page directory entry flags
+ * @param pte_flags Output parameter for page table entry flags
+ */
+void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags);
+
+
 /**
  * @brief set flags in the MMU page tables
  *
