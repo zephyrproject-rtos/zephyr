@@ -1,0 +1,9 @@
+sample:
+    name: RPL Border Router
+tests:
+-   test:
+        build_only: true
+        # Currently do a compile test for QEMU only because we do not have
+        # a device with 802.15.4 and ethernet support.
+        platform_whitelist: qemu_x86
+        tags: net rpl
