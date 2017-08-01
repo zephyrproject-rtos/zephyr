@@ -13,11 +13,13 @@ integration testing, or for unit testing specific modules.
 Quick start - Integration testing
 *********************************
 
-A simple working base is located at `samples/testing/integration`. Just copy the
-files to `tests/` and edit them for your needs. The test will then be
-automatically built and run by the sanitycheck script. If you are testing the `bar`
-component of `foo`, you should copy the sample folder to tests/foo/bar. It can
-then be tested with `./scripts/sanitycheck -s tests/foo/bar/test`.
+A simple working base is located at :file:`samples/testing/integration`.  Just
+copy the files to ``tests/`` and edit them for your needs. The test will then
+be automatically built and run by the sanitycheck script. If you are testing
+the **bar** component of **foo**, you should copy the sample folder to
+``tests/foo/bar``. It can then be tested with::
+
+    ./scripts/sanitycheck -s tests/foo/bar/test
 
 The sample contains the following files:
 
@@ -74,7 +76,7 @@ and are used to decide whether a test failed or passed by verifying whether an
 interaction with an object occurred, and if required, to assert the order of
 that interaction.
 
-The `samples/testing/unit` folder contains an example for testing
+The :file:`samples/testing/unit` folder contains an example for testing
 the net-buf api of Zephyr.
 
 Makefile
@@ -111,11 +113,11 @@ Assertions
 These macros will instantly fail the test if the related assertion fails.
 When an assertion fails, it will print the current file, line and function,
 alongside a reason for the failure and an optional message. If the config
-option `CONFIG_ZTEST_ASSERT_VERBOSE=0`, the assertions will only print the
+option:`CONFIG_ZTEST_ASSERT_VERBOSE` is 0, the assertions will only print the
 file and line numbers, reducing the binary size of the test.
 
 Example output for a failed macro from
-`zassert_equal(buf->ref, 2, "Invalid refcount")`:
+``zassert_equal(buf->ref, 2, "Invalid refcount")``:
 
 .. code-block:: none
 
@@ -131,12 +133,13 @@ Mocking
 
 These functions allow abstracting callbacks and related functions and
 controlling them from specific tests. You can enable the mocking framework by
-setting `CONFIG_ZTEST_MOCKING=y` in the configuration file of the test.
-The amount of concurrent return values and expected parameters is
-limited by `ZTEST_PARAMETER_COUNT`.
+setting :option:`CONFIG_ZTEST_MOCKING` to "y" in the configuration file of the
+test.  The amount of concurrent return values and expected parameters is
+limited by :option:`CONFIG_ZTEST_PARAMETER_COUNT`.
 
-Here is an example for configuring the function `expect_two_parameters` to
-expect the values `a=2` and `b=3`, and telling `returns_int` to return `5`:
+Here is an example for configuring the function ``expect_two_parameters`` to
+expect the values ``a=2`` and ``b=3``, and telling ``returns_int`` to return
+``5``:
 
 .. literalinclude:: mocking.c
    :language: c

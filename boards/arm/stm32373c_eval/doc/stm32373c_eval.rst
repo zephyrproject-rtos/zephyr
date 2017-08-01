@@ -86,8 +86,8 @@ The Zephyr stm32373c_eval board configuration supports the following hardware fe
 
 Other hardware features are not yet supported in this Zephyr port.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/stm32373c_eval/stm32373c_eval_defconfig``
+The default configuration can be found in the defconfig file
+:file:`boards/arm/stm32373c_eval/stm32373c_eval_defconfig`
 
 Connections and IOs
 ===================
@@ -126,7 +126,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32373C-EVAL
 -----------------------------------------
 
-The sample application `blinky` is being used in this tutorial:
+The sample application :ref:`blinky-sample` is being used in this tutorial:
 
 .. code-block:: console
 

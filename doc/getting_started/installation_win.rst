@@ -95,7 +95,7 @@ environment for Windows. Follow the steps below to set it up:
    * For ARM, install GNU ARM Embedded from the ARM developer website:
      `GNU ARM Embedded`_ (install to :file:`c:\\gccarmemb`).
 
-#. From within the `MSYS2 MSYS Shell`, clone a copy of the Zephyr source into
+#. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source into
    your home directory using Git:
 
    .. code-block:: console

@@ -23,7 +23,7 @@ Building and Running
 
 * Follow the instructions to install J-Link and SystemView software on your
   computer
-* Open J-Link Commander.  On Linux, its executable is named `JLinkExe`:
+* Open J-Link Commander.  On Linux, its executable is named ``JLinkExe``:
 
 .. code-block:: console
 
@@ -40,11 +40,11 @@ Building and Running
   Type "connect" to establish a target connection, '?' for help
   J-Link>
 
-* Issue the "connect" command.  If it's the only connected board, `Enter`
-  can be pressed at the `Device>` prompt.
-* Select the target interface.  Some devices only support the `SWD` type, so
-  select it by typing `S` followed by `Enter`.
-* At the `Speed>` prompt, select the interface polling frequency.  The
+* Issue the "connect" command.  If it's the only connected board, ``Enter``
+  can be pressed at the ``Device>`` prompt.
+* Select the target interface.  Some devices only support the ``SWD`` type,
+  so select it by typing ``S`` followed by ``Enter``.
+* At the ``Speed>`` prompt, select the interface polling frequency.  The
   default of 4000kHz is sufficient, but a higher frequency can be specified.
 * Once the connection has been successful, an output similar to this one
   should be produced:
@@ -73,8 +73,8 @@ Building and Running
   J-Link>
 
 * Now open SystemView.  Select the option *Start Recording* from the
-  *Target* menu (or press `F5`), choose USB, the target device (in this
-  case, `MK64FN1M0XXX12`), and confirm that the target interface and speed
+  *Target* menu (or press ``F5``), choose USB, the target device (in this
+  case, ``MK64FN1M0XXX12``), and confirm that the target interface and speed
   matches the ones selected in J-Link Commander.  The *RTT Control Block
   Detection* can be left on *Auto Detection*.
 * Once OK is clicked, information will be pulled from the device as usual:

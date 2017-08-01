@@ -92,16 +92,16 @@ split into read-only and runtime-mutable parts. At a high level we have:
         void *driver_data;
   };
 
-The `config` member is for read-only configuration data set at build time. For
+The ``config`` member is for read-only configuration data set at build time. For
 example, base memory mapped IO addresses, IRQ line numbers, or other fixed
-physical characteristics of the device. This is the `config_info` structure
-passed to the `DEVICE_*INIT()` macros.
+physical characteristics of the device. This is the ``config_info`` structure
+passed to the ``DEVICE_*INIT()`` macros.
 
-The `driver_data` struct is kept in RAM, and is used by the driver for
+The ``driver_data`` struct is kept in RAM, and is used by the driver for
 per-instance runtime housekeeping. For example, it may contain reference counts,
 semaphores, scratch buffers, etc.
 
-The `driver_api` struct maps generic subsystem APIs to the device-specific
+The ``driver_api`` struct maps generic subsystem APIs to the device-specific
 implementations in the driver. It is typically read-only and populated at
 build time. The next section describes this in more detail.
 
@@ -141,7 +141,7 @@ A subsystem API definition typically looks like this:
         api->do_that(device, foo, bar);
   }
 
-In general, it's best to use `__ASSERT()` macros instead of
+In general, it's best to use ``__ASSERT()`` macros instead of
 propagating return values unless the failure is expected to occur during
 the normal course of operation (such as a storage device full). Bad
 parameters, programming errors, consistency checks, pathological/unrecoverable
@@ -172,15 +172,15 @@ of these APIs, and populate an instance of subsystem_api structure:
         .do_that = my_driver_do_that
   };
 
-The driver would then pass `my_driver_api_funcs` as the `api` argument to
-`DEVICE_AND_API_INIT()`, or manually assign it to `device->driver_api` in the
-driver init function.
+The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
+``DEVICE_AND_API_INIT()``, or manually assign it to ``device->driver_api``
+in the driver init function.
 
 .. note::
 
-        Since pointers to the API functions are referenced in the driver_api`
+        Since pointers to the API functions are referenced in the ``driver_api``
         struct, they will always be included in the binary even if unused;
-        `gc-sections` linker option will always see at least one reference to
+        ``gc-sections`` linker option will always see at least one reference to
         them. Providing for link-time size optimizations with driver APIs in
         most cases requires that the optional feature be controlled by a
         Kconfig option.
@@ -190,15 +190,15 @@ Single Driver, Multiple Instances
 
 Some drivers may be instantiated multiple times in a given system. For example
 there can be multiple GPIO banks, or multiple UARTS. Each instance of the driver
-will have a different `config_info` struct and `driver_data` struct.
+will have a different ``config_info`` struct and ``driver_data`` struct.
 
 Configuring interrupts for multiple drivers instances is a special case. If each
 instance needs to configure a different interrupt line, this can be accomplished
 through the use of per-instance configuration functions, since the parameters
-to `IRQ_CONNECT()` need to be resolvable at build time.
+to ``IRQ_CONNECT()`` need to be resolvable at build time.
 
-For example, let's say we need to configure two instances of `my_driver`, each
-with a different interrupt line. In `drivers/subsystem/subsystem_my_driver.h`:
+For example, let's say we need to configure two instances of ``my_driver``, each
+with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
 
 .. code-block:: C
 
@@ -258,7 +258,7 @@ Then when the particular instance is declared:
 
   #endif /* CONFIG_MY_DRIVER_0 */
 
-Note the use of `DEVICE_DECLARE()` to avoid a circular dependency on providing
+Note the use of ``DEVICE_DECLARE()`` to avoid a circular dependency on providing
 the IRQ handler argument and the definition of the device itself.
 
 Initialization Levels
@@ -269,7 +269,7 @@ require the use of kernel services. The DEVICE_INIT() APIs allow the user to
 specify at what time during the boot sequence the init function will be
 executed. Any driver will specify one of five initialization levels:
 
-`PRE_KERNEL_1`
+``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
         solely on hardware present in the processor/SOC. These devices cannot
         use any kernel services during configuration, since the services are
@@ -277,17 +277,17 @@ executed. Any driver will specify one of five initialization levels:
         so it's OK to set up interrupts. Init functions at this level run on the
         interrupt stack.
 
-`PRE_KERNEL_2`
+``PRE_KERNEL_2``
         Used for devices that rely on the initialization of devices initialized
         as part of the PRIMARY level. These devices cannot use any kernel
         services during configuration, since the kernel services are not yet
         available. Init functions at this level run on the interrupt stack.
 
-`POST_KERNEL`
+``POST_KERNEL``
         Used for devices that require kernel services during configuration.
         Init functions at this level run in context of the kernel main task.
 
-`APPLICATION`
+``APPLICATION``
         Used for application components (i.e. non-kernel components) that need
         automatic configuration. These devices can use all services provided by
         the kernel during configuration. Init functions at this level run on
@@ -298,21 +298,22 @@ other devices in the same initialization level. The priority level is specified
 as an integer value in the range 0 to 99; lower values indicate earlier
 initialization.  The priority level must be a decimal integer literal without
 leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
-`\#define MY_INIT_PRIO 32`); symbolic expressions are *not* permitted (e.g.
-`CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5`).
+``\#define MY_INIT_PRIO 32``); symbolic expressions are *not* permitted (e.g.
+``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
 
 System Drivers
 **************
 
-In some cases you may just need to run a function at boot. Special `SYS_INIT`
-macros exist that map to `DEVICE_INIT()` or `DEVICE_INIT_PM()` calls.
-For `SYS_INIT()` there are no config or runtime data structures and there isn't a way
+In some cases you may just need to run a function at boot. Special ``SYS_INIT``
+macros exist that map to ``DEVICE_INIT()`` or ``DEVICE_INIT_PM()`` calls.
+For ``SYS_INIT()`` there are no config or runtime data structures and there
+isn't a way
 to later get a device pointer by name. The same policies for initialization
 level and priority apply.
 
-For `SYS_INIT_PM()` you can obtain pointers by name, see :ref:`power management
-<power_management>` section.
+For ``SYS_INIT_PM()`` you can obtain pointers by name, see
+:ref:`power management <power_management>` section.
 
 :c:func:`SYS_INIT()`
 

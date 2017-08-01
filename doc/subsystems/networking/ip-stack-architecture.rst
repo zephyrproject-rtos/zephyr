@@ -81,7 +81,7 @@ connectivity APIs, following things will happen.
 4) The application will then receive the data, which is stored inside a chain
    of net_bufs. The application now owns the data. After it has finished working
    with it, the application should release the net_bufs data by calling
-   `net_pkt_unref()`.
+   :cpp:func:`net_pkt_unref()`.
 
 *Data sending (TX):*
 

@@ -34,7 +34,7 @@ from other open source efforts.
 
 We begin with an overview of secure design as it relates to
 Zephyr.  This is followed by
-a section on `Secure development knowledge`, which
+a section on `Secure development knowledge`_, which
 gives basic requirements that a developer working on the project will
 need to have.  This section gives references to other security
 documents, and full details of how to write secure software are beyond
