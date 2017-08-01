@@ -1,0 +1,105 @@
+h1 {
+    margin-left: 20px;
+}
+
+table, th, td {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 15px;
+}
+
+th {
+    text-align: left;
+}
+
+td.wrappable {
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.box {
+    background-color: white;
+    color: black;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 150%;
+}
+
+body {
+    margin: 40px;
+}
+
+.sidebar {
+    grid-area: sidebar;
+}
+
+.content {
+    grid-area: content;
+    height: 100%;
+    overflow: auto;
+}
+
+.header {
+    grid-area: header;
+    text-align: center;
+}
+
+.footer {
+    grid-area: footer;
+    scroll-behavior: auto;
+    font-size: 100%;
+    overflow: auto;
+}
+
+.container {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: 15% 45% 40%;
+    grid-template-rows: 3% 90% 5%;
+    grid-template-areas:
+	"header header header"
+	"sidebar content content"
+	"footer footer footer";
+}
+
+.header, .footer {
+    background-color: #999;
+}
+
+/* Style the tab */
+div.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+div.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+div.tab button:hover {
+    background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+div.tab button.active {
+    background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
