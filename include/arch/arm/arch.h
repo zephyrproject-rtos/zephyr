@@ -43,8 +43,10 @@ extern "C" {
 #include <arch/arm/cortex_m/nmi.h>
 #endif
 #if defined(CONFIG_MPU_STACK_GUARD)
-
 #define STACK_ALIGN  32
+#else  /* CONFIG_MPU_STACK_GUARD */
+#define STACK_ALIGN  4
+#endif
 
 /**
  * @brief Declare a toplevel thread stack memory region
@@ -128,11 +130,6 @@ extern "C" {
  */
 #define _ARCH_THREAD_STACK_BUFFER(sym) (sym + STACK_ALIGN)
 
-#else  /* CONFIG_MPU_STACK_GUARD */
-
-#define STACK_ALIGN  4
-
-#endif
 #ifdef __cplusplus
 }
 #endif
