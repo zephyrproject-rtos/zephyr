@@ -65,6 +65,26 @@ static inline u32_t check_pte_flags(union x86_mmu_pte pte,
 }
 
 
+void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags)
+{
+	int pde_index, pte_index;
+
+	union x86_mmu_pde *pde;
+	union x86_mmu_pte *pte;
+	struct x86_mmu_page_table *pt;
+
+	pde_index = MMU_PDE_NUM(addr);
+	pte_index = MMU_PAGE_NUM(addr);
+
+	pde = &X86_MMU_PD->entry[pde_index];
+	pt = (struct x86_mmu_page_table *)(pde->pt.page_table << 12);
+	pte = &pt->entry[pte_index];
+
+	*pde_flags = pde->pt.value & ~MMU_PDE_PAGE_TABLE_MASK;
+	*pte_flags = pte->value & ~MMU_PTE_PAGE_MASK;
+}
+
+
 /**
  * @brief check page table entry flags
  *

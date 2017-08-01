@@ -212,6 +212,29 @@ EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 #define PK	BIT(5)
 #define SGX	BIT(15)
 
+#ifdef CONFIG_X86_MMU
+static void dump_entry_flags(u32_t flags)
+{
+	printk("0x%03x %s %s %s\n", flags,
+	       flags & MMU_ENTRY_PRESENT ? "Present" : "Non-present",
+	       flags & MMU_ENTRY_WRITE ? "Writable" : "Read-only",
+	       flags & MMU_ENTRY_USER ? "User" : "Supervisor");
+}
+
+static void dump_mmu_flags(void *addr)
+{
+	u32_t pde_flags, pte_flags;
+
+	_x86_mmu_get_flags(addr, &pde_flags, &pte_flags);
+
+	printk("PDE: ");
+	dump_entry_flags(pde_flags);
+
+	printk("PTE: ");
+	dump_entry_flags(pte_flags);
+}
+#endif
+
 FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
 {
 	u32_t err, cr2;
@@ -226,6 +249,10 @@ FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
 	       err & US ? "User" : "Supervisor",
 	       err & ID ? "executed" : (err & WR ? "wrote" : "read"),
 	       cr2);
+
+#ifdef CONFIG_X86_MMU
+	dump_mmu_flags((void *)cr2);
+#endif
 
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
 }
