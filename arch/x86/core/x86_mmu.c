@@ -4,13 +4,37 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include<kernel.h>
-#include<mmustructs.h>
+#include <kernel.h>
+#include <mmustructs.h>
+#include <linker/linker-defs.h>
 
 /* Ref to _x86_mmu_buffer_validate documentation for details  */
 #define USER_PERM_BIT_POS ((u32_t)0x1)
 #define GET_RW_PERM(flags) (flags & BUFF_WRITEABLE)
 #define GET_US_PERM(flags) ((flags & BUFF_USER) >> USER_PERM_BIT_POS)
+
+/* Common regions for all x86 processors.
+ * Peripheral I/O ranges configured at the SOC level
+ */
+
+/* Mark text and rodata as read-only.
+ * Userspace may read all text and rodata.
+ */
+MMU_BOOT_REGION((u32_t)&_image_rom_start, (u32_t)&_image_rom_size,
+		MMU_ENTRY_READ | MMU_ENTRY_USER);
+
+#ifdef CONFIG_APPLICATION_MEMORY
+/* User threads by default can read/write app-level memory. */
+MMU_BOOT_REGION((u32_t)&__app_ram_start, (u32_t)&__app_ram_size,
+		MMU_ENTRY_WRITE | MMU_ENTRY_USER);
+#endif
+
+/* __kernel_ram_size includes all unused memory, which is used for heaps.
+ * User threads cannot access this unless granted at runtime. This is done
+ * automatically for stacks.
+ */
+MMU_BOOT_REGION((u32_t)&__kernel_ram_start, (u32_t)&__kernel_ram_size,
+		MMU_ENTRY_WRITE | MMU_ENTRY_RUNTIME_USER);
 
 /**
  * brief check page directory flags
