@@ -1812,8 +1812,4 @@ static struct shell_cmd net_commands[] = {
 	{ NULL, NULL, NULL }
 };
 
-void net_shell_init(void)
-{
-}
-
 SHELL_REGISTER(NET_SHELL_MODULE, net_commands);

@@ -382,8 +382,6 @@ static int net_init(struct device *unused)
 
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
 
-	net_shell_init();
-
 	net_pkt_init();
 
 	net_context_init();
