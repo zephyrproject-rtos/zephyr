@@ -18,7 +18,7 @@ def get_symbol_table(obj):
     raise LookupError("Could not find symbol table")
 
 def gen_offset_header(input_name, input_file, output_file):
-    include_guard = "__INCLUDE_GUARD_%016x__" % abs(input_name.__hash__())
+    include_guard = "__GEN_OFFSETS_H__"
     output_file.write("""/* THIS FILE IS AUTO GENERATED.  PLEASE DO NOT EDIT.
  *
  * This header file provides macros for the offsets of various structure
