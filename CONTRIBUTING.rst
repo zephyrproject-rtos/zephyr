@@ -242,7 +242,7 @@ The Linux kernel GPL-licensed tool ``checkpatch`` is used to check coding
 style conformity. Checkpatch is available in the scripts directory. To invoke
 it when committing code, edit your *.git/hooks/pre-commit* file to contain:
 
-.. code-block: bash
+.. code-block:: bash
 
     #!/bin/sh
     set -e exec
