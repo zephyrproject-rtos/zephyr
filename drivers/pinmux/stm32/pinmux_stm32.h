@@ -46,14 +46,14 @@ struct stm32_pinmux_conf {
  * value
  */
 #define STM32_PORT(__pin) \
-	(__pin >> 4)
+	((__pin) >> 4)
 
 /**
  * @brief helper to extract IO pin number from STM32PIN() encoded
  * value
  */
 #define STM32_PIN(__pin) \
-	(__pin & 0xf)
+	((__pin) & 0xf)
 
 
 /**
