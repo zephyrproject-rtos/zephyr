@@ -69,6 +69,9 @@ int stm32_gpio_configure(u32_t *base_addr, int pin, int conf, int altf)
 	scratch = gpio->mode & ~(STM32_MODER_MASK << pin_shift);
 	gpio->mode = scratch | (mode << pin_shift);
 
+	scratch = gpio->ospeed & ~(STM32_OSPEEDR_MASK << pin_shift);
+	gpio->ospeed = scratch | (ospeed << pin_shift);
+
 	scratch = gpio->otype & ~(STM32_OTYPER_MASK << pin);
 	gpio->otype = scratch | (otype << pin);
 
