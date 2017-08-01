@@ -1102,6 +1102,24 @@ int http_response_403(struct http_server_ctx *ctx, const char *html_payload);
  */
 int http_response_404(struct http_server_ctx *ctx, const char *html_payload);
 
+/**
+ * @brief Send some data to the client.
+ *
+ * @detail Send a piece of data to the client. If html_payload is NULL, then
+ * we close the connection.
+ *
+ * @param ctx HTTP context.
+ * @param http_header HTTP header to be sent. Can be NULL.
+ * @param html_payload HTML payload to send.
+ * @param timeout Timeout to wait until the connection is teared down.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int http_response_send_data(struct http_server_ctx *ctx,
+			    const char *http_header,
+			    const char *html_payload,
+			    s32_t timeout);
+
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 /**
  * @brief Configure the net_pkt pool for this context.

@@ -270,6 +270,48 @@ int http_response_404(struct http_server_ctx *ctx, const char *html_payload)
 	return http_response(ctx, HTTP_STATUS_404_NF, html_payload);
 }
 
+int http_response_send_data(struct http_server_ctx *ctx,
+			    const char *http_header,
+			    const char *html_payload,
+			    s32_t timeout)
+{
+	struct net_pkt *pkt;
+	int ret = -EINVAL;
+
+	pkt = net_pkt_get_tx(ctx->req.net_ctx, ctx->timeout);
+	if (!pkt) {
+		return ret;
+	}
+
+	if (http_header) {
+		ret = http_add_header(pkt, ctx->timeout, http_header);
+		if (ret != 0) {
+			goto exit_routine;
+		}
+	}
+
+	ret = http_add_chunk(pkt, ctx->timeout, html_payload);
+	if (ret != 0) {
+		goto exit_routine;
+	}
+
+	net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
+
+	ret = ctx->send_data(pkt, pkt_sent, 0, INT_TO_POINTER(timeout), ctx);
+	if (ret != 0) {
+		goto exit_routine;
+	}
+
+	pkt = NULL;
+
+exit_routine:
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
 int http_server_set_local_addr(struct sockaddr *addr, const char *myaddr,
 			       u16_t port)
 {
