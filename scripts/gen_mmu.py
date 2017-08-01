@@ -256,6 +256,13 @@ def address_of_page_table(page_table_number):
 # 	};
 # };
 
+
+def check_bits(val, bits):
+    for b in bits:
+        if val & (1 << b):
+            return 1
+    return 0
+
 def page_directory_create_binary_file():
     global output_buffer
     global output_offset
@@ -266,9 +273,12 @@ def page_directory_create_binary_file():
         if pde in sorted(list_of_pde.keys()):
             value = list_of_pde[pde]
 
+            perms = value.page_entries_info[0].permissions
+
             present = 1 << 0;
-            read_write = ( ( value.page_entries_info[0].permissions >> 1) & 0x1) << 1;
-            user_mode = ( ( value.page_entries_info[0].permissions >> 2) & 0x1) << 2;
+            read_write = check_bits(perms, [1, 29]) << 1;
+            user_mode = check_bits(perms, [2, 28]) << 2;
+
             pwt = 0 << 3;
             pcd = 0 << 4;
             a = 0 << 5; # this is a read only field

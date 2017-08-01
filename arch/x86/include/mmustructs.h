@@ -114,6 +114,28 @@
 #define MMU_ENTRY_ALLOC             0x00000200
 
 
+/* Special flag argument for MMU_BOOT region invocations */
+
+/* Indicates that pages within this region may have their user/supervisor
+ * permissions adjusted at runtime. Unnecessary if MMU_ENTRY_USER is already
+ * set.
+ *
+ * The result of this is a guarantee that the 'user' bit for all PDEs referring
+ * to the region will be set, even if the boot configuration has no user pages
+ * in it.
+ */
+#define MMU_ENTRY_RUNTIME_USER      0x10000000
+
+/* Indicates that pages within this region may have their read/write
+ * permissions adjusted at runtime. Unnecessary if MMU_ENTRY_WRITE is already
+ * set.
+ *
+ * The result of this is a guarantee that the 'write' bit for all PDEs
+ * referring to the region will be set, even if the boot configuration has no
+ * writable pages in it.
+ */
+#define MMU_ENTRY_RUNTIME_WRITE	    0x20000000
+
 /* Macros needed for define permissions for the buffer validation API
  * ref to x86_mmu_buffer_validate()
  */
