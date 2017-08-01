@@ -402,9 +402,9 @@ F:	scripts/expr_parser.py
 F:	scripts/sanity_chk/
 
 SENSOR DRIVERS
-M:	Bogdan Davidoaia <bogdan.davidoaia@linaro.org>
+M:	Bogdan Davidoaia <bogdan.davidoaia@gmail.com>
 M:	Murtaza Alexandru <murtaza.alexandru1995@gmail.com>
-S:	Supported
+S:	Maintained
 W:	https://www.zephyrproject.org/doc/subsystems/sensor.html
 F:	include/sensor.h
 F:	drivers/sensor/
