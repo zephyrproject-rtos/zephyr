@@ -345,7 +345,7 @@ struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
 	return net_ipv6_nbr_lookup_by_index(iface, nbr->idx);
 }
 
-#if defined(CONFIG_NET_DEBUG_RPL)
+#if defined(CONFIG_NET_DEBUG_RPL) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
 static void net_rpl_print_neighbors(void)
 {
 	if (rpl_default_instance && rpl_default_instance->current_dag) {
@@ -1459,7 +1459,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 				   struct net_rpl_parent *parent)
 {
 	struct net_rpl_dag *dag = parent->dag;
-#if defined(CONFIG_NET_DEBUG_RPL)
+#if defined(CONFIG_NET_DEBUG_RPL) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
 	struct in6_addr *addr = net_rpl_get_parent_addr(iface, parent);
 #endif
 
