@@ -190,8 +190,8 @@ SensorTag board would be:
   source [find target/cc26xx.cfg]
   adapter_khz 5000
 
-Copy this in a file named `ti-sensortag.cfg`, located in the :file:`scripts/board`
-subdirectory of your local OpenOCD installation path.
+Copy this in a file named ``ti-sensortag.cfg``, located in the
+:file:`scripts/board` subdirectory of your local OpenOCD installation path.
 When you wish to launch the OpenOCD server, just type:
 
 .. code-block:: console

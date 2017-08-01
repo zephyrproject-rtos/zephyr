@@ -121,7 +121,7 @@ Follow these steps to install the SDK on your Linux host system.
       $ chmod +x zephyr-sdk-<version>-setup.run
       $ ./zephyr-sdk-<version>-setup.run
 
-   There is no need for `sudo` if the SDK is installed in the current
+   There is no need to use ``sudo`` if the SDK is installed in the current
    user's home directory.
 
 #. Follow the installation instructions on the screen. The

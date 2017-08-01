@@ -279,7 +279,7 @@ application to flash.
    $ cd samples/hello_world/
    $ make BOARD=96b_nitrogen
 
-You can either flash the board by using the `make flash` target:
+You can either flash the board by using the ``make flash`` target:
 
 .. code-block:: console
 

@@ -143,9 +143,9 @@ Flashing
 
    You can flash the image using an external debug adapter such as J-Link or
    ULINK, connected to the 20-pin JTAG header. Supply the name of the debug
-   adapter (e.g., `jlink`) to the make command via an OPENOCD_INTERFACE
+   adapter (e.g., ``jlink``) to the make command via an OPENOCD_INTERFACE
    variable. OpenOCD will look for the appropriate interface configuration in an
-   `interface/$(OPENOCD_INTERFACE).cfg` file on its internal search path.
+   ``interface/$(OPENOCD_INTERFACE).cfg`` file on its internal search path.
 
    .. code-block:: console
 

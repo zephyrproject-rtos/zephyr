@@ -54,7 +54,7 @@ A Linux host system is required for Xtensa development work.
 We recommend using a __``Debian 9.x (Stretch)``__ or recent __``Ubuntu``__
 releases (with multilib support).
 
-Only `Xtensa tools` version ``RF-2016.4-linux`` or later are officially
+Only Xtensa tools version ``RF-2016.4-linux`` or later are officially
 supported. Other versions may work but are not supported by Cadence Systems Inc.
 
 In order to set up the Zephyr OS build system, a Linux 32-bit GCC compiler must

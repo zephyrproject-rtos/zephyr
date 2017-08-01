@@ -128,7 +128,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to Nucleo F334R8
 ----------------------------------------
 
-The sample application `blinky` is being used in this tutorial:
+The sample application :ref:`blinky-sample` is being used in this tutorial:
 
 .. code-block:: console
 

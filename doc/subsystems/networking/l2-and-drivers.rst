@@ -6,11 +6,11 @@ L2 Stack and Drivers
 The L2 stack is designed to hide the whole networking link-layer part
 and the related device drivers from the higher IP stack. This is made
 through a unique object known as the "network interface object":
-:c:type:`struct net_if` declared in `include/net/net_if.h`.
+:c:type:`struct net_if` declared in :file:`include/net/net_if.h`.
 
 The IP layer is unaware of implementation details beyond the net_if
 object and the generic API provided by the L2 layer in
-`include/net/net_l2.h` as :c:type:`struct net_l2`.
+:file:`include/net/net_l2.h` as :c:type:`struct net_l2`.
 
 Only the L2 layer can talk to the device driver, linked to the net_if
 object. The L2 layer dictates the API provided by the device driver,
@@ -61,7 +61,7 @@ There are, however, two differences:
 - the driver_api pointer must point to a valid :c:type:`struct
   net_if_api` pointer.
 
-- The network device driver must use NET_DEVICE_INIT_INSTANCE(). This
+- The network device driver must use ``NET_DEVICE_INIT_INSTANCE()``. This
   macro will call the DEVICE_AND_API_INIT() macro, and also
   instantiate a unique :c:type:`struct net_if` related to the created
   device driver instance.
@@ -82,7 +82,7 @@ as many data fragments as required. The buffer itself is a
 allocated through :c:func:`net_pkt_get_reserve_data(0)`. Of course
 the amount of required fragments depends on the size of the received
 packet and on the size of a fragment, which is given by
-`CONFIG_NET_PKT_DATA_SIZE`.
+:option:`CONFIG_NET_BUF_DATA_SIZE`.
 
 Note that it is not up to the device driver to decide on the
 link-layer space to be reserved in the buffer. Hence the 0 given as
@@ -97,10 +97,10 @@ On sending, it is up to the device driver to send the buffer all at
 once, with all the fragments.
 
 In case of a fully successful packet transmission only, the device
-driver must unreference the buffer via `net_pkt_unref()`.
+driver must unreference the buffer via :c:func:`net_pkt_unref()`.
 
 Each Ethernet device driver will need, in the end, to call
-`NET_DEVICE_INIT_INSTANCE()` like this:
+``NET_DEVICE_INIT_INSTANCE()`` like this:
 
 .. code-block:: c
 
@@ -121,7 +121,7 @@ here as well.  There are two specific differences however:
   ieee802154_radio_api`, which overloads :c:type:`struct
   net_if_api`. This is because 802.15.4 L2 needs more from the device
   driver than just send and recv functions.  This dedicated API is
-  declared in `include/net/ieee802154_radio.h`. Each and every IEEE
+  declared in :file:`include/net/ieee802154_radio.h`. Each and every IEEE
   802.15.4 device driver must provide a valid pointer on such
   relevantly filled-in API structure.
 
@@ -143,7 +143,7 @@ here as well.  There are two specific differences however:
   only when all the transmission were successful.
 
 Each IEEE 802.15.4 device driver, in the end, will need to call
-`NET_DEVICE_INIT_INSTANCE()` that way:
+``NET_DEVICE_INIT_INSTANCE()`` that way:
 
 .. code-block:: c
 

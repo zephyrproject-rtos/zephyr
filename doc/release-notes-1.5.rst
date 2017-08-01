@@ -206,7 +206,7 @@ Bug
 * :jira:`ZEP-401` - PWM driver turns off pin if off time is 0 in set_values
 * :jira:`ZEP-423` - Quark D2000 CRB documentation should include instructions to flash bootloader
 * :jira:`ZEP-435` - Ethernet/IPv4/TCP: ip_buf_appdatalen returns wrong values
-* :jira:`ZEP-456` - doc: `IDT security` section disappeared
+* :jira:`ZEP-456` - doc: ``IDT security`` section dissapeared
 * :jira:`ZEP-457` - doc: contribute/doxygen/typedefs.rst: examples files are broken
 * :jira:`ZEP-459` - doc: kconfig reference entries in HTML are lacking a title
 * :jira:`ZEP-460` - doc: document parameters of DEVICE* macros
