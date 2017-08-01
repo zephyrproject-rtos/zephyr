@@ -122,7 +122,6 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rodata_end = .;
-	__data_rom_start = ALIGN(4);		/* XIP imaged DATA ROMABLE_REGION start addr */
 
 	/* This align directive needs to be after __data_rom_start or XIP
 	 * won't be copying the data from the right LMA
@@ -136,9 +135,46 @@ SECTIONS
 	/* RAMABLE_REGION */
 	GROUP_START(RAMABLE_REGION)
 
+#ifdef CONFIG_APPLICATION_MEMORY
+	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
+	{
+		_image_ram_start = .;
+		__app_ram_start = .;
+		__app_data_ram_start = .;
+		APP_INPUT_SECTION(.data)
+		APP_INPUT_SECTION(".data.*")
+		__app_data_ram_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__app_data_rom_start = LOADADDR(_APP_DATA_SECTION_NAME);
+
+	SECTION_PROLOGUE(_APP_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		__app_bss_start = .;
+		APP_INPUT_SECTION(.bss)
+		APP_INPUT_SECTION(".bss.*")
+		APP_INPUT_SECTION(COMMON)
+		__app_bss_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_bss_num_words = (__app_bss_end - __app_bss_start) >> 2;
+
+	SECTION_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		APP_INPUT_SECTION(.noinit)
+		APP_INPUT_SECTION(".noinit.*")
+		MMU_PAGE_ALIGN
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_ram_end = .;
+#endif /* CONFIG_APPLICATION_MEMORY */
+
+
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME, (OPTIONAL),)
 	{
+#ifndef CONFIG_APPLICATION_MEMORY
 	_image_ram_start = .;
+#endif
 	__kernel_ram_start = .;
 	__data_ram_start = .;
 
@@ -178,6 +214,9 @@ SECTIONS
 #endif
 	. = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+
 
 #include <linker/common-ram.ld>
 
@@ -225,43 +264,12 @@ SECTIONS
 	*(.stacks)
 	*(".stacks.*")
 
-	__kernel_ram_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-#ifdef CONFIG_APPLICATION_MEMORY
 	MMU_PAGE_ALIGN
-	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
-	{
-		__app_ram_start = .;
-		__app_data_ram_start = .;
-		APP_INPUT_SECTION(.data)
-		APP_INPUT_SECTION(".data.*")
-		__app_data_ram_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	__app_data_rom_start = LOADADDR(_APP_DATA_SECTION_NAME);
-
-	SECTION_PROLOGUE(_APP_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
-	{
-		__app_bss_start = .;
-		APP_INPUT_SECTION(.bss)
-		APP_INPUT_SECTION(".bss.*")
-		APP_INPUT_SECTION(COMMON)
-		__app_bss_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-	__app_bss_num_words = (__app_bss_end - __app_bss_start) >> 2;
-
-	SECTION_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
-	{
-		APP_INPUT_SECTION(.noinit)
-		APP_INPUT_SECTION(".noinit.*")
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-	__app_ram_end = .;
-#endif /* CONFIG_APPLICATION_MEMORY */
 
 	/* Define linker symbols */
+	__kernel_ram_end = .;
 	_image_ram_end = .;
 	_image_ram_all = (PHYS_RAM_ADDR + KB(CONFIG_RAM_SIZE)) - _image_ram_start;
 
