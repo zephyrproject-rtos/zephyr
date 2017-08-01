@@ -47,6 +47,10 @@ can be disabled if not needed.
   and client roles can be used the the application. The amount of TCP sockets
   that are available to applications can be configured at build time.
 
+* **BSD Sockets API** Experimental support for a subset of a BSD Sockets
+  compatible API is implemented. Both blocking and non-blocking DGRAM (UDP)
+  amd STREAM (TCP) sockets are supported.
+
 * **HTTP** Hypertext Transfer Protocol (RFC 2116) is supported. A simple
   library is provided that applications can use. Sample applications are
   implemented for :ref:`http-client-sample` and :ref:`http-server-sample`.
@@ -89,16 +93,15 @@ can be disabled if not needed.
   is even possible to have zero-copy data path from application to device
   driver.
 
-Additionally these network technologies are supported in Zephyr OS v1.7
-or later:
+Additionally these network technologies (link layers) are supported in
+Zephyr OS v1.7 and later:
 
 * IEEE 802.15.4
 * Bluetooth
 * Ethernet
-
-  * SLIP (IP over serial line) is used for testing with QEMU. It provides
-    ethernet interface to host system (like Linux) and test applications
-    can be run in Linux host and send network data to Zephyr OS device.
+* SLIP (IP over serial line). Used for testing with QEMU. It provides
+  ethernet interface to host system (like Linux) and test applications
+  can be run in Linux host and send network data to Zephyr OS device.
 
 Source Tree Layout
 ******************
@@ -107,6 +110,10 @@ The IP stack source code tree is organized as follows:
 
 ``subsys/net/ip/``
   This is where the IP stack code is located.
+
+``subsys/net/lib/``
+  Application-level protocols (DNS, MQTT, etc.) and additional stack
+  components (BSD Sockets, etc.).
 
 ``include/net/``
   Public API header files. These are the header files applications need

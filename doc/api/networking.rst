@@ -76,6 +76,13 @@ Application network context
    :project: Zephyr
    :content-only:
 
+BSD Sockets compatible API
+**************************
+
+.. doxygengroup:: bsd_sockets
+   :project: Zephyr
+   :content-only:
+
 Network offloading support
 **************************
 

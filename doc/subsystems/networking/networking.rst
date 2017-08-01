@@ -13,6 +13,7 @@ operation of the stacks and how they were implemented.
    overview.rst
    ip-stack-architecture.rst
    networking-api-usage.rst
+   bsd-sockets.rst
    l2-and-drivers.rst
    network-management-api.rst
    net-app-api.rst

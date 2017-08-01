@@ -1,3 +1,10 @@
+/**
+ * @file
+ * @brief BSD Sockets compatible API definitions
+ *
+ * An API for applications to use BSD Sockets like API.
+ */
+
 /*
  * Copyright (c) 2017 Linaro Limited
  *
@@ -6,6 +13,12 @@
 
 #ifndef __NET_SOCKET_H
 #define __NET_SOCKET_H
+
+/**
+ * @brief BSD Sockets compatible API
+ * @defgroup bsd_sockets BSD Sockets compatible API
+ * @{
+ */
 
 #include <sys/types.h>
 #include <zephyr/types.h>
@@ -59,5 +72,9 @@ int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __NET_SOCKET_H */
