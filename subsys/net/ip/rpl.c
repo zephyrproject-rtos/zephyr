@@ -1285,7 +1285,6 @@ static void net_rpl_reset_dio_timer(struct net_rpl_instance *instance)
 	net_stats_update_rpl_resets();
 }
 
-static
 struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 						  u8_t instance_id,
 						  struct in6_addr *dag_id,
@@ -2044,7 +2043,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 	return ret;
 }
 
-static bool net_rpl_repair_root(u8_t instance_id)
+bool net_rpl_repair_root(u8_t instance_id)
 {
 	struct net_rpl_instance *instance;
 
