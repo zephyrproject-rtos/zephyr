@@ -888,6 +888,21 @@ struct net_rpl_dag *net_rpl_set_root(struct net_if *iface,
 				     struct in6_addr *dag_id);
 
 /**
+ * @brief Set the root DAG with version.
+ *
+ * @param iface Network interface to use.
+ * @param instance Pointer to instance object.
+ * @param dag_id IPv6 address of the DAG.
+ * @param version Version number to use.
+ *
+ * @return DAG object or NULL if creation failed.
+ */
+struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
+						  u8_t instance_id,
+						  struct in6_addr *dag_id,
+						  u8_t version);
+
+/**
  * @brief Get first available DAG.
  *
  * @return First available DAG or NULL if none found.
@@ -915,6 +930,13 @@ bool net_rpl_set_prefix(struct net_if *iface,
  * @param route IPv6 route entry.
  */
 void net_rpl_global_repair(struct net_route_entry *route);
+
+/**
+ * @brief Do global repair for this instance.
+ *
+ * @param instance RPL instance id.
+ */
+bool net_rpl_repair_root(u8_t instance_id);
 
 /**
  * @brief Update RPL headers in IPv6 packet.
