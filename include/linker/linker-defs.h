@@ -147,14 +147,31 @@ GDATA(__data_num_words)
 #include <zephyr/types.h>
 
 #ifdef CONFIG_APPLICATION_MEMORY
-/* Application memory area bounds */
+/* Memory owned by the application. Start and end will be aligned for memory
+ * management/protection hardware for the target architecture.
+
+ * The policy for this memory will be to configure all of it as user thread
+ * accessible. It consists of all non-kernel globals.
+ */
 extern char __app_ram_start[];
 extern char __app_ram_end[];
+extern char __app_ram_size[];
 #endif
 
-/* Memory owned by the kernel */
+/* Memory owned by the kernel. Start and end will be aligned for memory
+ * management/protection hardware for the target architecture..
+ *
+ * Consists of all kernel-side globals, all kernel objects, all thread stacks,
+ * and all currently unused RAM.  If CONFIG_APPLICATION_MEMORY is not enabled,
+ * has all globals, not just kernel side.
+ *
+ * Except for the stack of the currently executing thread, none of this memory
+ * is normally accessible to user threads unless specifically granted at
+ * runtime.
+ */
 extern char __kernel_ram_start[];
 extern char __kernel_ram_end[];
+extern char __kernel_ram_size[];
 
 /* Used by _bss_zero or arch-specific implementation */
 extern char __bss_start[];
@@ -184,10 +201,6 @@ extern char _image_rom_size[];
 /* datas, bss, noinit */
 extern char _image_ram_start[];
 extern char _image_ram_end[];
-/* Size of all ram starting from _image_ram_start, including unused RAM past
- * _image_ram_end up to the limit of physical RAM.
- */
-extern char _image_ram_all[];
 
 extern char _image_text_start[];
 extern char _image_text_end[];
