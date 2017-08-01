@@ -27,6 +27,12 @@
 					tx = <STM32_PIN_PG9 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)>;
 				};
 			};
+			usart6_pins_b: usart6@1 {
+				rx_tx {
+					rx = <STM32_PIN_PC7 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)>;
+					tx = <STM32_PIN_PC6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)>;
+				};
+			};
 		};
 	};
 };
