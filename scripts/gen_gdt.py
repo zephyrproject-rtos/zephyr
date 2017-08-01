@@ -74,7 +74,7 @@ def create_code_data_entry(base, limit, dpl, flags, access):
     # bit in the OS
     accessed = 1
 
-    access = access | (present << 7) | (desc_type << 4) | accessed
+    access = access | (present << 7) | (dpl << 5) | (desc_type << 4) | accessed
     flags = flags | (size << 6) | limit_hi
 
     return struct.pack(gdt_ent_fmt, limit_lo, base_lo, base_mid,
