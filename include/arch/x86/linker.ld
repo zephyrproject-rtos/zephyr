@@ -167,6 +167,7 @@ SECTIONS
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 	__app_ram_end = .;
+	__app_ram_size = __app_ram_end - __app_ram_start;
 #endif /* CONFIG_APPLICATION_MEMORY */
 
 
@@ -268,8 +269,10 @@ SECTIONS
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-	/* Define linker symbols */
-	__kernel_ram_end = .;
+	/* All unused memory also owned by the kernel for heaps */
+	__kernel_ram_end = PHYS_RAM_ADDR + KB(CONFIG_RAM_SIZE);
+	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+
 	_image_ram_end = .;
 	_image_ram_all = (PHYS_RAM_ADDR + KB(CONFIG_RAM_SIZE)) - _image_ram_start;
 
