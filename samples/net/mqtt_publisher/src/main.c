@@ -16,7 +16,6 @@
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <gatt/ipss.h>
 #endif
 
 #include "config.h"
@@ -441,13 +440,7 @@ static int network_setup(void)
 		return rc;
 	}
 
-	ipss_init();
 	bt_conn_cb_register(&bt_conn_cb);
-	rc = ipss_advertise();
-	if (rc) {
-		printk("advertising failed to start\n");
-		return rc;
-	}
 
 	printk("\nwaiting for bt connection: ");
 	while (bt_connected == false) {
