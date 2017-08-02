@@ -70,6 +70,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ztest.h>
 
 /* Maximum size of message to be signed. */
 #define BUF_SIZE 256
@@ -110,11 +111,8 @@ int sign_vectors(TCSha256State_t hash, char **d_vec, char **k_vec,
 
 		msglen = hex2bin(msg, BUF_SIZE, msg_vec[i], strlen(msg_vec[i]));
 
-		if (msglen == false) {
-			TC_ERROR("failed to import message!\n");
-			result = TC_FAIL;
-			goto exitTest1;
-		}
+		/**TESTPOINT: Check if msg imported*/
+		zassert_true(msglen, "failed to import message!");
 
 		tc_sha256_init(hash);
 		tc_sha256_update(hash, msg, msglen);
@@ -131,28 +129,26 @@ int sign_vectors(TCSha256State_t hash, char **d_vec, char **k_vec,
 		uECC_vli_bytesToNative(digest + (NUM_ECC_WORDS - hash_dwords),
 				       digest_bytes, TC_SHA256_DIGEST_SIZE);
 
-		if (uECC_sign_with_k(private_bytes, digest_bytes,
-				     sizeof(digest_bytes), k, sig_bytes, uECC_secp256r1()) == 0) {
-			TC_ERROR("ECDSA_sign failed!\n");
-			result = TC_FAIL;
-			goto exitTest1;
-		}
+		/**TESTPOINT: Check ECDSA_sign*/
+		zassert_true(uECC_sign_with_k(private_bytes, digest_bytes,
+				     sizeof(digest_bytes), k, sig_bytes, uECC_secp256r1()),
+					"ECDSA_sign failed!");
 
 		uECC_vli_bytesToNative(sig, sig_bytes, NUM_ECC_BYTES);
 		uECC_vli_bytesToNative(sig + NUM_ECC_WORDS, sig_bytes + NUM_ECC_BYTES, NUM_ECC_BYTES);
 
 		result = check_ecc_result(i, "sig.r", exp_r, sig,  NUM_ECC_WORDS, verbose);
-		if (result == TC_FAIL) {
-			goto exitTest1;
-		}
+
+		/**TESTPOINT: Check ECC result*/
+		zassert_false(result, "ECC check failed");
+
 		result = check_ecc_result(i, "sig.s", exp_s, sig + NUM_ECC_WORDS,  NUM_ECC_WORDS, verbose);
-		if (result == TC_FAIL) {
-			goto exitTest1;
-		}
+
+		/**TESTPOINT: Check ECC result*/
+		zassert_false(result, "ECC check failed");
 	}
 
-exitTest1:
-	TC_END_RESULT(result);
+	result = TC_PASS;
 	return result;
 }
 
@@ -372,11 +368,8 @@ int vrfy_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec, char **qy_
 		/* validate ECDSA: hash message, verify r+s */
 		msglen = hex2bin(msg, BUF_SIZE, msg_vec[i], strlen(msg_vec[i]));
 
-		if (msglen == false) {
-			TC_ERROR("failed to import message!\n");
-			result = TC_FAIL;
-			goto exitTest1;
-		}
+		/**TESTPOINT: Check if msg imported*/
+		zassert_true(msglen, "failed to import message!");
 
 		tc_sha256_init(hash);
 		tc_sha256_update(hash, msg, msglen);
@@ -417,12 +410,10 @@ int vrfy_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec, char **qy_
 		}
 
 		result = check_code(i, exp_rc, rc, verbose);
-		if (result == TC_FAIL) {
-			goto exitTest1;
-		}
+
+		/**TESTPOINT: Check result*/
+		zassert_false(result, "check_code failed");
 	}
-exitTest1:
-	TC_END_RESULT(result);
 	return result;
 }
 
@@ -598,20 +589,18 @@ int montecarlo_signverify(int num_tests, bool verbose)
 		uECC_generate_random_int(hash_words, curve->n, BITS_TO_WORDS(curve->num_n_bits));
 		uECC_vli_nativeToBytes(hash, NUM_ECC_BYTES, hash_words);
 
-		if (!uECC_make_key(public, private, curve)) {
-			TC_ERROR("uECC_make_key() failed\n");
-			return TC_FAIL;
-		}
+		/**TESTPOINT: Check uECC_make_key*/
+		zassert_true(uECC_make_key(public, private, curve),
+				"uECC_make_key() failed");
 
-		if (!uECC_sign(private, hash, sizeof(hash), sig, curve)) {
-			TC_ERROR("uECC_sign() failed\n");
-			return TC_FAIL;
-		}
+		/**TESTPOINT: Check uECC_sign*/
+		zassert_true(uECC_sign(private, hash, sizeof(hash), sig, curve),
+				"uECC_sign() failed");
 
-		if (!uECC_verify(public, hash, sizeof(hash), sig, curve)) {
-			TC_ERROR("uECC_verify() failed\n");
-			return TC_FAIL;
-		}
+		/**TESTPOINT: Check uECC_verify*/
+		zassert_true(uECC_verify(public, hash, sizeof(hash), sig, curve),
+				"uECC_verify() failed");
+
 		if (verbose) {
 			printf(".");
 		}
@@ -637,7 +626,7 @@ int default_CSPRNG(u8_t *dest, unsigned int size)
 	return 1;
 }
 
-int main(void)
+void test_ecc_dsa(void)
 {
 	unsigned int result = TC_PASS;
 
@@ -649,28 +638,21 @@ int main(void)
 
 	TC_PRINT("Performing cavp_sign test:\n");
 	result = cavp_sign(verbose);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("cavp_sign test failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Verify cavp_sign*/
+	zassert_false(result, "cavp_sign test failed.");
+
 	TC_PRINT("Performing cavp_verify test:\n");
 	result = cavp_verify(verbose);
-	if (result == TC_FAIL) {
-		TC_ERROR("cavp_verify test failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Verify cavp_verify*/
+	zassert_false(result, "cavp_verify test failed.");
+
 	TC_PRINT("Performing montecarlo_signverify test:\n");
 	result = montecarlo_signverify(10, verbose);
-	if (result == TC_FAIL) {
-		TC_ERROR("montecarlo_signverify test failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Verify montecarlo_signverify*/
+	zassert_false(result, "montecarlo_signverify test failed.");
 
 	TC_PRINT("\nAll ECC-DSA tests succeeded.\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
-
-	return 0;
 }
