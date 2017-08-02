@@ -20,11 +20,6 @@
 
 #include <net/net_app.h>
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
-#endif
-
 #include "config.h"
 
 #define INSTANCE_INFO "Zephyr HTTPS example client #1"
@@ -397,15 +392,6 @@ void main(void)
 {
 	bool failure = false;
 	int ret;
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-	if (bt_enable(NULL) == 0) {
-		ipss_init();
-		ipss_advertise();
-	} else {
-		NET_ERR("Bluetooth init failed");
-	}
-#endif
 
 	ret = https_client_init(&https_ctx, SERVER_ADDR, SERVER_PORT,
 				(u8_t *)INSTANCE_INFO, strlen(INSTANCE_INFO),
