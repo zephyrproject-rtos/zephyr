@@ -25,11 +25,6 @@
 #include <net/zoap.h>
 #include <net/zoap_link_format.h>
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
-#endif
-
 #if defined(CONFIG_NET_L2_IEEE802154)
 #include <ieee802154_settings.h>
 #endif
@@ -1252,16 +1247,6 @@ void main(void)
 		.sin6_addr = IN6ADDR_ANY_INIT,
 		.sin6_port = htons(MY_COAP_PORT) };
 	int r;
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-	if (bt_enable(NULL)) {
-		NET_ERR("Bluetooth init failed");
-		return;
-	}
-	ipss_init();
-
-	ipss_advertise();
-#endif
 
 #if defined(CONFIG_NET_L2_IEEE802154)
 	if (ieee802154_sample_setup()) {
