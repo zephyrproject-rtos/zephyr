@@ -798,7 +798,7 @@ void radio_ar_configure(u32_t nirk, void *irk)
 	NRF_AAR->ENABLE = 1;
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (u32_t)irk;
-	NRF_AAR->ADDRPTR = (u32_t)NRF_RADIO->PACKETPTR;
+	NRF_AAR->ADDRPTR = (u32_t)NRF_RADIO->PACKETPTR - 1;
 	NRF_AAR->SCRATCHPTR = (u32_t)&_aar_scratch[0];
 
 	radio_bc_configure(64);
