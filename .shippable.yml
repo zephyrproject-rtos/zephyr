@@ -79,7 +79,25 @@ build:
           	./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS}  ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY};
           fi;
       - ccache -s
-    post_ci:
+    on_failure:
+      - rm -rf sanity-out out-2nd-pass
+      - mkdir -p shippable/testresults
+      - >
+          if [ -e compliance.xml ]; then
+            cp compliance.xml shippable/testresults/;
+            aws s3 cp compliance.xml ${S3_PATH}/;
+          fi;
+      - >
+          if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
+            cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
+            aws s3 cp ./scripts/sanity_chk/last_sanity.xml ${S3_PATH}/sanitycheck.xml;
+          fi;
+      - >
+          if [ -e ./modified_tests.xml ]; then
+            cp ./modified_tests.xml shippable/testresults/;
+            aws s3 cp ./modified_tests.xml ${S3_PATH}/modified_tests.xml;
+          fi;
+    on_success:
       - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
       - >
