@@ -31,12 +31,11 @@
  */
 
 /*
-  DESCRIPTION
-  This module tests the following AES-CTR Mode routines:
-
-  Scenarios tested include:
-  - AES128 CTR mode encryption SP 800-38a tests
-*/
+ * DESCRIPTION
+ * This module tests the following AES-CTR Mode routines:
+ * Scenarios tested include:
+ * - AES128 CTR mode encryption SP 800-38a tests
+ */
 
 #include <tinycrypt/ctr_mode.h>
 #include <tinycrypt/constants.h>
@@ -45,12 +44,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ztest.h>
 
 /*
  * NIST SP 800-38a CTR Test for encryption and decryption.
  */
-u32_t test_1_and_2(void)
+void test_1_and_2(void)
 {
+	TC_START("Performing AES128-CTR mode tests:");
+
+	TC_PRINT("Performing CTR tests:\n");
+
 	const u8_t key[16] = {
 		0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7,
 		0x15, 0x88,
@@ -98,55 +102,28 @@ u32_t test_1_and_2(void)
 	(void)tc_aes128_set_encrypt_key(&sched, key);
 
 	(void)memcpy(out, ctr, sizeof(ctr));
-	if (tc_ctr_mode(&out[TC_AES_BLOCK_SIZE], sizeof(plaintext), plaintext,
-			sizeof(plaintext), ctr, &sched) == 0) {
-		TC_ERROR("CTR test #1 (encryption SP 800-38a tests) failed in "
-			 "%s.\n", __func__);
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+
+	/**TESTPOINT: Check test 1 result*/
+	zassert_true(tc_ctr_mode(&out[TC_AES_BLOCK_SIZE],
+			sizeof(plaintext), plaintext, sizeof(plaintext),
+			ctr, &sched),
+			"CTR test #1 (encryption SP 800-38a tests) failed");
 
 	result = check_result(1, ciphertext, sizeof(out), out, sizeof(out), 1);
-	TC_END_RESULT(result);
 
 	TC_PRINT("CTR test #2 (decryption SP 800-38a tests):\n");
 	(void)memcpy(ctr, out, sizeof(ctr));
-	if (tc_ctr_mode(decrypted, sizeof(decrypted), &out[TC_AES_BLOCK_SIZE],
-			sizeof(decrypted), ctr, &sched) == 0) {
-		TC_ERROR("CTR test #2 (decryption SP 800-38a tests) failed in. "
-			 "%s\n", __func__);
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+
+	/**TESTPOINT: Check test 2 result*/
+	zassert_true(tc_ctr_mode(decrypted, sizeof(decrypted),
+			&out[TC_AES_BLOCK_SIZE], sizeof(decrypted),
+			ctr, &sched),
+			"CTR test #2 (decryption SP 800-38a tests) failed");
 
 	result = check_result(2, plaintext, sizeof(plaintext),
 			      decrypted, sizeof(plaintext), 1);
 
-exitTest1:
-	TC_END_RESULT(result);
-	return result;
-}
-
-/*
- * Main task to test AES
- */
-
-void main(void)
-{
-	u32_t result = TC_PASS;
-
-	TC_START("Performing AES128-CTR mode tests:");
-
-	TC_PRINT("Performing CTR tests:\n");
-	result = test_1_and_2();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("CBC test #1 failed.\n");
-		goto exitTest;
-	}
-
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CBC test #1 failed");
 	TC_PRINT("All CTR tests succeeded!\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
 }
