@@ -234,7 +234,7 @@ JIRA Related Items
 * :jira:`ZEP-1568` - Replace arm cortex_m scs and scb functionality with direct CMSIS-core calls
 * :jira:`ZEP-1586` - menuconfig: Backspace is broken
 * :jira:`ZEP-1599` - printk() support for the '-' indicator  in format string (left justifier)
-* :jira:`ZEP-1607` - Json encoding/decoding library
+* :jira:`ZEP-1607` - JSON encoding/decoding library
 * :jira:`ZEP-1621` - Stack Monitoring
 * :jira:`ZEP-1631` - Ability to use k_mem_pool_alloc (or similar API) from ISR
 * :jira:`ZEP-1684` - Add Atmel SAM family watchdog (WDT) driver
@@ -243,8 +243,8 @@ JIRA Related Items
 * :jira:`ZEP-1711` - xtensa build defines Kconfigs with lowercase names
 * :jira:`ZEP-1718` - support for IPv6 fragmentation
 * :jira:`ZEP-1719` - TCP does not work with 6lo
-* :jira:`ZEP-1721` - many tinycrypt test cases only run on ARM and x86
-* :jira:`ZEP-1722` - xtensa: tinycrypt does not build
+* :jira:`ZEP-1721` - many TinyCrypt test cases only run on ARM and x86
+* :jira:`ZEP-1722` - xtensa: TinyCrypt does not build
 * :jira:`ZEP-1735` - Controller to Host flow control
 * :jira:`ZEP-1759` - All python scripts needed for build should be moved to python 3 to minimize dependencies
 * :jira:`ZEP-1761` - K_MEM_POOL_DEFINE build error "invalid register name" when built with llvm/icx from ISSM toolchain

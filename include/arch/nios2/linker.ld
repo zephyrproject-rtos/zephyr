@@ -179,8 +179,8 @@ SECTIONS
 
         /* the Nios2 architecture only has 16-bit signed immediate offsets in
          * the instructions, so accessing a general address requires typically
-         * three instructions – basically, two for the two halves of the 32-bit
-         * address, and one to merge them – but if we can put the most commonly
+         * three instructions - basically, two for the two halves of the 32-bit
+         * address, and one to merge them - but if we can put the most commonly
          * accessed globals in a special 64K span of memory addressed by the GP
          * register, then we can access those values in a single instruction,
          * saving both codespace and runtime.

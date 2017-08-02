@@ -35,7 +35,7 @@ Supported Features
 ==================
 
 - CPU:
-	+ Nordic nRF51822: ARM® Cortex™ M0 32bit.
+	+ Nordic nRF51822: ARM |reg| Cortex |trade| M0 32bit.
 	+ *Bluetooth Low Energy interface.*
 	+ 256KB Flash, 32KB Ram.
 	+ UART(1), I2C(2), SPI(1), PWM(3), SWD, Timer 16bit(3).
@@ -59,7 +59,7 @@ Supported Features
 	+ USB port.
 	+ Power adapter: +9 -> +12V.
 	+ 3V Battery: CR20xx holder
-	+ Recharageable battery jump: +3.7 -> +12V
+	+ Rechargeable battery jump: +3.7 -> +12V
 - Open source: Hardware design, firmware, packages, tutorial and example codes
 
 See `VBLUno51 wiki page`_ for full documents and tutorials about the VBLUno51 board.
