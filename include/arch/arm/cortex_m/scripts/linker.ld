@@ -60,7 +60,7 @@
 		#define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
 			(CONFIG_SRAM_SIZE * 1K - RAM_SIZE))
 	#else
-		#define RAM_SIZE CONFIG_SRAM_SIZE * 1K
+		#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
 		#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 	#endif
 #else
@@ -162,7 +162,6 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rom_end = .;
-    __data_rom_start = .;    /* XIP imaged DATA ROM start addr */
 
     GROUP_END(ROMABLE_REGION)
 
@@ -176,9 +175,45 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+#ifdef CONFIG_APPLICATION_MEMORY
+	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
+	{
+		__app_ram_start = .;
+		__app_data_ram_start = .;
+		_image_ram_start = .;
+		APP_INPUT_SECTION(.data)
+		APP_INPUT_SECTION(".data.*")
+		__app_data_ram_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__app_data_rom_start = LOADADDR(_APP_DATA_SECTION_NAME);
+
+	SECTION_PROLOGUE(_APP_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		__app_bss_start = .;
+		APP_INPUT_SECTION(.bss)
+		APP_INPUT_SECTION(".bss.*")
+		APP_INPUT_SECTION(COMMON)
+		__app_bss_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_bss_num_words = (__app_bss_end - __app_bss_start) >> 2;
+
+	SECTION_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		APP_INPUT_SECTION(.noinit)
+		APP_INPUT_SECTION(".noinit.*")
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_ram_end = .;
+#endif /* CONFIG_APPLICATION_MEMORY */
+
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
+#ifndef CONFIG_APPLICATION_MEMORY
 	_image_ram_start = .;
+#endif
 	__kernel_ram_start = .;
 	__data_ram_start = .;
 	KERNEL_INPUT_SECTION(.data)
@@ -190,6 +225,8 @@ SECTIONS
 #endif
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+    __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 
@@ -226,45 +263,15 @@ SECTIONS
 	*(.stacks)
 	*(".stacks.*")
 
-	__kernel_ram_end = .;
         } GROUP_LINK_IN(RAMABLE_REGION)
 
     /* Define linker symbols */
 
-#ifdef CONFIG_APPLICATION_MEMORY
-	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
-	{
-		__app_ram_start = .;
-		__app_data_ram_start = .;
-		APP_INPUT_SECTION(.data)
-		APP_INPUT_SECTION(".data.*")
-		__app_data_ram_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	__app_data_rom_start = LOADADDR(_APP_DATA_SECTION_NAME);
-
-	SECTION_PROLOGUE(_APP_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
-	{
-		__app_bss_start = .;
-		APP_INPUT_SECTION(.bss)
-		APP_INPUT_SECTION(".bss.*")
-		APP_INPUT_SECTION(COMMON)
-		__app_bss_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-	__app_bss_num_words = (__app_bss_end - __app_bss_start) >> 2;
-
-	SECTION_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
-	{
-		APP_INPUT_SECTION(.noinit)
-		APP_INPUT_SECTION(".noinit.*")
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-
-	__app_ram_end = .;
-#endif /* CONFIG_APPLICATION_MEMORY */
-
-	_image_ram_end = .;
+    _image_ram_end = .;
     _end = .; /* end of image */
+
+    __kernel_ram_end = RAM_ADDR + RAM_SIZE;
+    __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
     GROUP_END(RAMABLE_REGION)
 
