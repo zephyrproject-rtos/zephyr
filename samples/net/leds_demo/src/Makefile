@@ -9,10 +9,6 @@ ccflags-$(CONFIG_NET_L2_BLUETOOTH) += -I${ZEPHYR_BASE}/samples/bluetooth/
 
 obj-y = leds-demo.o
 
-ifeq ($(CONFIG_NET_L2_BLUETOOTH), y)
-obj-y += ipss.o
-endif
-
 ifeq ($(CONFIG_NET_L2_IEEE802154), y)
 ccflags-y +=-I${ZEPHYR_BASE}/samples/net/common/
 ifeq ($(CONFIG_NET_APP_SETTINGS), y)
