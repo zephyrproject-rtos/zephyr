@@ -1,4 +1,4 @@
+include ${ZEPHYR_BASE}/tests/Makefile.test
 ccflags-y += -I$(ZEPHYR_BASE)/tests/include
 
-obj-y = test_hmac_prng.o
-
+obj-y = main.o hmac_prng.o
