@@ -31,12 +31,11 @@
  */
 
 /*
-  DESCRIPTION
-  This module tests the following SHA256 routines:
-
-  Scenarios tested include:
-  - NIST SHA256 test vectors
-*/
+ * DESCRIPTION
+ * This module tests the following SHA256 routines:
+ * Scenarios tested include:
+ * - NIST SHA256 test vectors
+ */
 
 #include <tinycrypt/sha256.h>
 #include <tinycrypt/constants.h>
@@ -46,12 +45,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/types.h>
+#include <ztest.h>
 
 /*
  * NIST SHA256 test vector 1.
  */
-u32_t test_1(void)
+void test_1(void)
 {
+	TC_START("Performing SHA256 tests (NIST tests vectors):");
+
 	u32_t result = TC_PASS;
 
 	TC_PRINT("SHA256 test #1:\n");
@@ -71,14 +73,15 @@ u32_t test_1(void)
 	(void)tc_sha256_final(digest, &s);
 	result = check_result(1, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #1 failed.");
 }
 
 /*
  * NIST SHA256 test vector 2.
  */
-u32_t test_2(void)
+void test_2(void)
 {
 	u32_t result = TC_PASS;
 
@@ -101,11 +104,12 @@ u32_t test_2(void)
 
 	result = check_result(2, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #2 failed.");
 }
 
-u32_t test_3(void)
+void test_3(void)
 {
 	u32_t result = TC_PASS;
 
@@ -127,11 +131,13 @@ u32_t test_3(void)
 
 	result = check_result(3, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #3 failed.");
+
 }
 
-u32_t test_4(void)
+void test_4(void)
 {
 	u32_t result = TC_PASS;
 
@@ -153,11 +159,13 @@ u32_t test_4(void)
 
 	result = check_result(4, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #4 failed.");
+
 }
 
-u32_t test_5(void)
+void test_5(void)
 {
 	u32_t result = TC_PASS;
 
@@ -181,11 +189,13 @@ u32_t test_5(void)
 
 	result = check_result(5, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #5 failed.");
+
 }
 
-u32_t test_6(void)
+void test_6(void)
 {
 	u32_t result = TC_PASS;
 
@@ -209,11 +219,13 @@ u32_t test_6(void)
 
 	result = check_result(6, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #6 failed.");
+
 }
 
-u32_t test_7(void)
+void test_7(void)
 {
 	u32_t result = TC_PASS;
 
@@ -237,11 +249,13 @@ u32_t test_7(void)
 
 	result = check_result(7, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #7 failed.");
+
 }
 
-u32_t test_8(void)
+void test_8(void)
 {
 	u32_t result = TC_PASS;
 
@@ -265,11 +279,13 @@ u32_t test_8(void)
 
 	result = check_result(8, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #8 failed.");
+
 }
 
-u32_t test_9(void)
+void test_9(void)
 {
 	u32_t result = TC_PASS;
 
@@ -293,11 +309,13 @@ u32_t test_9(void)
 
 	result = check_result(9, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #9 failed.");
+
 }
 
-u32_t test_10(void)
+void test_10(void)
 {
 	u32_t result = TC_PASS;
 
@@ -321,11 +339,13 @@ u32_t test_10(void)
 
 	result = check_result(10, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #10 failed.");
+
 }
 
-u32_t test_11(void)
+void test_11(void)
 {
 	u32_t result = TC_PASS;
 
@@ -349,11 +369,13 @@ u32_t test_11(void)
 
 	result = check_result(11, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #11 failed.");
+
 }
 
-u32_t test_12(void)
+void test_12(void)
 {
 	u32_t result = TC_PASS;
 
@@ -380,11 +402,12 @@ u32_t test_12(void)
 
 	result = check_result(12, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #12 failed.");
 }
 #if EXTREME_SLOW
-u32_t test_13(void)
+void test_13(void)
 {
 	u32_t result = TC_PASS;
 
@@ -411,11 +434,13 @@ u32_t test_13(void)
 
 	result = check_result(13, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #13 failed.");
+
 }
 
-u32_t test_14(void)
+void test_14(void)
 {
 	u32_t result = TC_PASS;
 
@@ -442,97 +467,17 @@ u32_t test_14(void)
 
 	result = check_result(14, expected, sizeof(expected),
 			      digest, sizeof(digest), 1);
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "SHA256 test #14 failed.");
+
 }
 #endif
 
-/*
- * Main task to test AES
- */
-
-void main(void)
+void test_13_and_14(void)
 {
-	u32_t result = TC_PASS;
-
-	TC_START("Performing SHA256 tests (NIST tests vectors):");
-
-	result = test_1();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #1 failed.\n");
-		goto exitTest;
-	}
-	result = test_2();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #2 failed.\n");
-		goto exitTest;
-	}
-	result = test_3();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #3 failed.\n");
-		goto exitTest;
-	}
-	result = test_4();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #4 failed.\n");
-		goto exitTest;
-	}
-	result = test_5();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #5 failed.\n");
-		goto exitTest;
-	}
-	result = test_6();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #6 failed.\n");
-		goto exitTest;
-	}
-	result = test_7();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #7 failed.\n");
-		goto exitTest;
-	}
-	result = test_8();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #8 failed.\n");
-		goto exitTest;
-	}
-	result = test_9();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #9 failed.\n");
-		goto exitTest;
-	}
-	result = test_10();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #10 failed.\n");
-		goto exitTest;
-	}
-	result = test_11();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #11 failed.\n");
-		goto exitTest;
-	}
-	result = test_12();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #12 failed.\n");
-		goto exitTest;
-	}
-#if EXTRME_SLOW
+#if EXTREME_SLOW
 	result = test_13();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #13 failed.\n");
-		goto exitTest;
-	}
 	result = test_14();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("SHA256 test #14 failed.\n");
-		goto exitTest;
-	}
 #endif
-
-	TC_PRINT("All SHA256 tests succeeded!\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
 }
