@@ -31,16 +31,16 @@
  */
 
 /*
-  DESCRIPTION
-  This module tests the following HMAC routines:
-
-  Scenarios tested include:
-  - HMAC tests (RFC 4231 test vectors)
-*/
+ * DESCRIPTION
+ * This module tests the following HMAC routines:
+ * Scenarios tested include:
+ * - HMAC tests (RFC 4231 test vectors)
+ */
 
 #include <tinycrypt/hmac.h>
 #include <tinycrypt/constants.h>
 #include <test_utils.h>
+#include <ztest.h>
 
 u32_t do_hmac_test(TCHmacState_t h, u32_t testnum, const u8_t *data,
 		      size_t datalen, const u8_t *expected,
@@ -60,9 +60,11 @@ u32_t do_hmac_test(TCHmacState_t h, u32_t testnum, const u8_t *data,
 /*
  * NIST test vectors for encryption.
  */
-u32_t test_1(void)
+void test_1(void)
 {
 	u32_t result = TC_PASS;
+
+	TC_START("Performing HMAC tests (RFC4231 test vectors):");
 
 	TC_PRINT("HMAC %s:\n", __func__);
 
@@ -87,11 +89,12 @@ u32_t test_1(void)
 	(void)tc_hmac_set_key(&h, key, sizeof(key));
 	result = do_hmac_test(&h, 1, data, sizeof(data),
 			      expected, sizeof(expected));
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "HMAC test #7 failed");
 }
 
-u32_t test_2(void)
+void test_2(void)
 {
 	u32_t result = TC_PASS;
 
@@ -120,11 +123,12 @@ u32_t test_2(void)
 
 	result = do_hmac_test(&h, 2, data, sizeof(data),
 			      expected, sizeof(expected));
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "HMAC test #7 failed");
 }
 
-u32_t test_3(void)
+void test_3(void)
 {
 	u32_t result = TC_PASS;
 
@@ -159,11 +163,12 @@ u32_t test_3(void)
 
 	result = do_hmac_test(&h, 3, data, sizeof(data),
 			      expected, sizeof(expected));
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "HMAC test #3 failed");
 }
 
-u32_t test_4(void)
+void test_4(void)
 {
 	u32_t result = TC_PASS;
 
@@ -200,11 +205,12 @@ u32_t test_4(void)
 
 	result = do_hmac_test(&h, 4, data, sizeof(data),
 			      expected, sizeof(expected));
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "HMAC test #4 failed");
 }
 
-u32_t test_5(void)
+void test_5(void)
 {
 	u32_t result = TC_PASS;
 
@@ -233,11 +239,12 @@ u32_t test_5(void)
 
 	result = do_hmac_test(&h, 5, data, sizeof(data),
 			      expected, sizeof(expected));
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "HMAC test #5 failed");
 }
 
-u32_t test_6(void)
+void test_6(void)
 {
 	u32_t result = TC_PASS;
 
@@ -290,11 +297,12 @@ u32_t test_6(void)
 
 	result = do_hmac_test(&h, 6, data, sizeof(data),
 			      expected, sizeof(expected));
-	TC_END_RESULT(result);
-	return result;
+
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "HMAC test #6 failed");
 }
 
-u32_t test_7(void)
+void test_7(void)
 {
 	u32_t result = TC_PASS;
 
@@ -363,58 +371,7 @@ u32_t test_7(void)
 
 	result = do_hmac_test(&h, 7, data, sizeof(data),
 			      expected, sizeof(expected));
-	TC_END_RESULT(result);
-	return result;
-}
 
-/*
- * Main task to test AES
- */
-void main(void)
-{
-	u32_t result = TC_PASS;
-
-	TC_START("Performing HMAC tests (RFC4231 test vectors):");
-
-	result = test_1();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("HMAC test #1 failed.\n");
-		goto exitTest;
-	}
-	result = test_2();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("HMAC test #2 failed.\n");
-		goto exitTest;
-	}
-	result = test_3();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("HMAC test #3 failed.\n");
-		goto exitTest;
-	}
-	result = test_4();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("HMAC test #4 failed.\n");
-		goto exitTest;
-	}
-	result = test_5();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("HMAC test #5 failed.\n");
-		goto exitTest;
-	}
-	result = test_6();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("HMAC #6 test failed.\n");
-		goto exitTest;
-	}
-	result = test_7();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("HMAC test #7 failed.\n");
-		goto exitTest;
-	}
-
-	TC_PRINT("All HMAC tests succeeded!\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "HMAC test #7 failed");
 }
