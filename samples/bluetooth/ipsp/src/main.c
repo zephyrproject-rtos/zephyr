@@ -17,9 +17,6 @@
 #include <net/net_context.h>
 #include <net/udp.h>
 
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
-
 /* admin-local, dynamically allocated multicast address */
 #define MCAST_IP6ADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, \
 			    0, 0, 0, 0, 0, 0, 0, 0x2 } } }
@@ -345,27 +342,7 @@ static void listen(void)
 
 void main(void)
 {
-	int err;
-
 	init_app();
-
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	ipss_init();
-
-	err = ipss_advertise();
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
-	printk("Advertising successfully started\n");
 
 	k_thread_create(&thread_data, thread_stack, STACKSIZE,
 			(k_thread_entry_t)listen,
