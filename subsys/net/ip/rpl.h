@@ -995,6 +995,20 @@ int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos);
 struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
 					 struct net_rpl_parent *parent);
 
+typedef void (*net_rpl_parent_cb_t)(struct net_rpl_parent *parent,
+				    void *user_data);
+
+/**
+ * @brief Go through all the parents entries and call callback
+ * for each entry that is in use.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ *
+ * @return Total number of parents found.
+ */
+int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data);
+
 /**
  * @brief Set the RPL mode (mesh or leaf) of this node.
  *
