@@ -69,7 +69,8 @@ extern "C" {
  * @param size Size of the stack memory region
  */
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	char __noinit __aligned(STACK_ALIGN) sym[size+STACK_ALIGN]
+	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
+		sym[size+STACK_ALIGN]
 
 /**
  * @brief Declare a toplevel array of thread stack memory regions
@@ -85,7 +86,8 @@ extern "C" {
  * @param size Size of the stack memory region
  */
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	char __noinit __aligned(STACK_ALIGN) sym[nmemb][size+STACK_ALIGN]
+	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
+		sym[nmemb][size+STACK_ALIGN]
 
 /**
  * @brief Declare an embedded stack memory region
@@ -100,7 +102,8 @@ extern "C" {
  * @param size Size of the stack memory region
  */
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
-	char __aligned(STACK_ALIGN) sym[size+STACK_ALIGN]
+	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
+		sym[size+STACK_ALIGN]
 
 /**
  * @brief Return the size in bytes of a stack memory region
@@ -128,7 +131,7 @@ extern "C" {
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
  */
-#define _ARCH_THREAD_STACK_BUFFER(sym) (sym + STACK_ALIGN)
+#define _ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_ALIGN))
 
 #ifdef __cplusplus
 }
