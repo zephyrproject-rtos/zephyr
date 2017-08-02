@@ -48,6 +48,7 @@
 #include <tinycrypt/ccm_mode.h>
 #include <tinycrypt/constants.h>
 #include <test_utils.h>
+#include <ztest.h>
 
 #include <string.h>
 
@@ -83,53 +84,43 @@ u32_t do_test(const u8_t *key,
 	tc_aes128_set_encrypt_key(&sched, key);
 
 	result = tc_ccm_config(&c, &sched, nonce, nlen, mlen);
-	if (result == 0) {
-		TC_ERROR("CCM config failed in %s.\n", __func__);
 
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check CCM config*/
+	zassert_true(result, "CCM config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
 					      hdr, hlen, data, dlen, &c);
-	if (result == 0) {
-		TC_ERROR("ccm_encrypt failed in %s.\n", __func__);
 
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check CCM encrypt*/
+	zassert_true(result, "ccm_encrypt failed");
 
-
+	/**TESTPOINT: Verify ciphertext*/
 	if (memcmp(expected, ciphertext, elen) != 0) {
-		TC_ERROR("ccm_encrypt produced wrong ciphertext in %s.\n",
-			 __func__);
 		show_str("\t\tExpected", expected, elen);
 		show_str("\t\tComputed", ciphertext, elen);
 
-		result = TC_FAIL;
-		goto exitTest1;
+		/**ASSERTION: Signal wrong output and assert*/
+		zassert_true(0, "ccm_encrypt produced wrong ciphertext");
 	}
 
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
 						hdr, hlen, ciphertext,
 						dlen + mlen, &c);
+
+	/**TESTPOINT: Check decryption*/
 	if (result == 0) {
-		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
 		show_str("\t\tExpected", data, dlen);
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 
-		result = TC_FAIL;
-		goto exitTest1;
+		/**ASSERTION: Decrypt failed, so exit by assert*/
+		zassert_true(0, "ccm_decrypt failed");
 	}
 
 	result = TC_PASS;
-
-exitTest1:
-	TC_END_RESULT(result);
 	return result;
 }
 
-u32_t test_vector_1(void)
+void test_vector_1(void)
 {
 	u32_t result = TC_PASS;
 	/* RFC 3610 test vector #1 */
@@ -163,10 +154,11 @@ u32_t test_vector_1(void)
 	result = do_test(key, nonce, sizeof(nonce), hdr, sizeof(hdr),
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #1 (RFC 3610 test vector #1) failed.");
 }
 
-u32_t test_vector_2(void)
+void test_vector_2(void)
 {
 	u32_t result = TC_PASS;
 	/* RFC 3610 test vector #2 */
@@ -200,10 +192,11 @@ u32_t test_vector_2(void)
 	result = do_test(key, nonce, sizeof(nonce), hdr, sizeof(hdr),
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #2 failed.");
 }
 
-u32_t test_vector_3(void)
+void test_vector_3(void)
 {
 	u32_t result = TC_PASS;
 	/* RFC 3610 test vector #3  */
@@ -239,10 +232,11 @@ u32_t test_vector_3(void)
 	result = do_test(key, nonce, sizeof(nonce), hdr, sizeof(hdr), data,
 			 sizeof(data), expected, sizeof(expected), mlen);
 
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #3 failed.");
 }
 
-u32_t test_vector_4(void)
+void test_vector_4(void)
 {
 	u32_t result = TC_PASS;
 	/* RFC 3610 test vector #7  */
@@ -277,10 +271,11 @@ u32_t test_vector_4(void)
 	result = do_test(key, nonce, sizeof(nonce), hdr, sizeof(hdr),
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #4 failed.");
 }
 
-u32_t test_vector_5(void)
+void test_vector_5(void)
 {
 	u32_t result = TC_PASS;
 	/* RFC 3610 test vector #8  */
@@ -315,10 +310,11 @@ u32_t test_vector_5(void)
 	result = do_test(key, nonce, sizeof(nonce), hdr, sizeof(hdr),
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #5 failed.");
 }
 
-u32_t test_vector_6(void)
+void test_vector_6(void)
 {
 	u32_t result = TC_PASS;
 	/* RFC 3610 test vector #9  */
@@ -354,10 +350,11 @@ u32_t test_vector_6(void)
 	result = do_test(key, nonce, sizeof(nonce), hdr, sizeof(hdr),
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #6 failed.");
 }
 
-u32_t test_vector_7(void)
+void test_vector_7(void)
 {
 	u32_t result = TC_PASS;
 	/* Test based on RFC 3610 test vector #9 but with no associated data */
@@ -387,43 +384,38 @@ u32_t test_vector_7(void)
 		 __func__);
 
 	tc_aes128_set_encrypt_key(&sched, key);
-	if (tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen) == 0) {
-		TC_ERROR("ccm_config failed in %s.\n", __func__);
 
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check CCM configuration*/
+	zassert_true(tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen),
+		"ccm_config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
 					      hdr, 0, data, sizeof(data), &c);
-	if (result == 0) {
-		TC_ERROR("ccm_encryption failed in %s.\n", __func__);
-
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check CCM encryption*/
+	zassert_true(result, "ccm_encryption failed");
 
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
 						hdr, 0, ciphertext,
 						sizeof(data) + mlen, &c);
+
 	if (result == 0) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
 		show_str("\t\tExpected", data, sizeof(data));
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 
-		result = TC_FAIL;
-		goto exitTest1;
+		/**TESTPOINT: Check CCM decryption, and assert*/
+		zassert_true(result, "ccm_decryption failed");
+
 	}
 
 	result = TC_PASS;
 
-exitTest1:
-	TC_END_RESULT(result);
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #7 failed.");
 
 }
 
-u32_t test_vector_8(void)
+void test_vector_8(void)
 {
 	u32_t result = TC_PASS;
 	/* Test based on RFC 3610 test vector #9 but with no payload data */
@@ -448,96 +440,32 @@ u32_t test_vector_8(void)
 	TC_PRINT("%s: Performing CCM test #8 (no payload data):\n", __func__);
 
 	tc_aes128_set_encrypt_key(&sched, key);
-	if (tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen) == 0) {
-		TC_ERROR("CCM config failed in %s.\n", __func__);
 
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check CCM configuration*/
+	zassert_true(tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen),
+	"CCM config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
 					      hdr, sizeof(hdr), data,
 					      sizeof(data), &c);
-	if (result == 0) {
-		TC_ERROR("ccm_encrypt failed in %s.\n", __func__);
-
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check CCM encryption*/
+	zassert_true(result, "ccm_encrypt failed");
 
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
 						hdr, sizeof(hdr),
 						ciphertext, mlen, &c);
+	/**TESTPOINT: Check CCM decryption*/
 	if (result == 0) {
-		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
 		show_str("\t\tExpected", data, sizeof(data));
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 
-		result = TC_FAIL;
-		goto exitTest1;
+		/**ASSERTION: Decrypt failed, so exit by assert*/
+		zassert_true(0, "ccm_decrypt failed");
 	}
 
 	result = TC_PASS;
-
-exitTest1:
 	TC_END_RESULT(result);
-	return result;
-}
 
-/*
- * Main task to test CCM
- */
-
-void main(void)
-{
-	u32_t result = TC_PASS;
-
-	TC_START("Performing CCM tests:");
-
-	result = test_vector_1();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #1 (RFC 3610 test vector #1) failed.\n");
-		goto exitTest;
-	}
-	result = test_vector_2();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #2 failed.\n");
-		goto exitTest;
-	}
-	result = test_vector_3();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #3 failed.\n");
-		goto exitTest;
-	}
-	result = test_vector_4();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #4 failed.\n");
-		goto exitTest;
-	}
-	result = test_vector_5();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #5 failed.\n");
-		goto exitTest;
-	}
-	result = test_vector_6();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #6 failed.\n");
-		goto exitTest;
-	}
-	result = test_vector_7();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #7 failed.\n");
-		goto exitTest;
-	}
-	result = test_vector_8();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CCM test #8 (no payload data) failed.\n");
-		goto exitTest;
-	}
-
-	TC_PRINT("All CCM tests succeeded!\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CCM test #8 (no payload data) failed.");
 }
