@@ -7,7 +7,7 @@ and attempts to execute them. By default, it tries to build each test case
 boards set to be default in the board definition file.
 
 The default options will build the  majority of the tests on a defined set of
-boards and will run in emulated environemnts (QEMU) if available for the
+boards and will run in emulated environments (QEMU) if available for the
 architecture or configuration being tested.
 
 In general, the sanitycheck is used to verify that local changes did not break
@@ -227,7 +227,7 @@ that testcase meta-data.
 
 Test cases are written suing the YAML syntax and share the same structure as
 samples. The following is an example test with a few options that are
-exaplained in this document.
+explained in this document.
 
 
 ::

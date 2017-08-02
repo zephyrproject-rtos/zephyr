@@ -59,7 +59,7 @@ Hierarchy Example
 +------------+-----------+--------------+------------+--------------+---------+
 |SOC Family  |NXP Kinetis|Nordic NRF5   |Nordic NRF5 |Quark         |Quark    |
 +------------+-----------+--------------+------------+--------------+---------+
-|CPU Core    |Cortex-M4  |Cortex-M4     |Cortex-M0+  |Lakemount     |Lakemount|
+|CPU Core    |Cortex-M4  |Cortex-M4     |Cortex-M0+  |Lakemont      |Lakemont |
 +------------+-----------+--------------+------------+--------------+---------+
 |Architecture|ARM        |ARM           |ARM         |x86           |x86      |
 +------------+-----------+--------------+------------+--------------+---------+

@@ -311,7 +311,7 @@ Steps
 
 5. From the menu that appears, select :guilabel:`UEFI Misc Device` to
    boot from a micro-SD card.  To boot from a USB flash drive, select
-   the menu entry that desribes that particular type of USB flash
+   the menu entry that describes that particular type of USB flash
    drive.
 
    GRUB2 starts and a menu shows entries for the items you added

@@ -18,7 +18,7 @@ notes pages listed below), or use Git clone and checkout commands, such as:
    git checkout tags/v1.8.0
 
 
-The project’s technical documentation is also tagged to correspond with a
+The project's technical documentation is also tagged to correspond with a
 specific release and can be found at https://www.zephyrproject.org/doc/.
 
 Zephyr Kernel Releases

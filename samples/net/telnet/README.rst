@@ -72,7 +72,7 @@ logs, follow the  :ref:`Freedom-K64F board <frdm_k64f>` documentation section.
 
 Connect ethernet cable from :ref:`Freedom-K64F <frdm_k64f>` board to a
 local network providing IPv4 address configuration via DHCPv4. Creating your own
-dhcp server on a local network is not in the scope of this README.
+DHCP server on a local network is not in the scope of this README.
 
 Build Zephyr samples/net/telnet application:
 
