@@ -1842,7 +1842,9 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 	sep->supv_timeout = sys_cpu_to_le16(radio_cc->timeout);
 	sep->clock_accuracy = radio_cc->mca;
 
-	conn_count++;
+	if (!radio_cc->status) {
+		conn_count++;
+	}
 }
 
 static void disconn_complete(struct pdu_data *pdu_data, u16_t handle,
