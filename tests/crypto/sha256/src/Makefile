@@ -1,4 +1,4 @@
+include ${ZEPHYR_BASE}/tests/Makefile.test
 ccflags-y += -I$(ZEPHYR_BASE)/tests/include
 
-obj-y = test_sha256.o
-
+obj-y = main.o sha256.o
