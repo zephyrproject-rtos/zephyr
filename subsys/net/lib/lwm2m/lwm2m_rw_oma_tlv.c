@@ -652,15 +652,17 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 	size_t len;
 	struct oma_tlv tlv;
 	int tlvpos = 0, ret;
+	u16_t insize = in->insize;
+	u8_t *inbuf = in->inbuf;
 
-	while (tlvpos < in->insize) {
-		len = oma_tlv_get(&tlv, &in->inbuf[tlvpos],
-				   in->insize - tlvpos);
+	while (tlvpos < insize) {
+		len = oma_tlv_get(&tlv, &inbuf[tlvpos],
+				  insize - tlvpos);
 
 		SYS_LOG_DBG("Got TLV format First is: type:%d id:%d "
 			    "len:%d (p:%d len:%d/%d)",
 			    tlv.type, tlv.id, (int) tlv.length,
-			    (int) tlvpos, (int) len, (int) in->insize);
+			    (int) tlvpos, (int) len, (int) insize);
 
 		if (tlv.type == OMA_TLV_TYPE_OBJECT_INSTANCE) {
 			struct oma_tlv tlv2;
@@ -700,7 +702,7 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 			path->res_id = tlv.id;
 			path->level = 3;
 			ret = do_write_op_tlv_item(context,
-						   &in->inbuf[tlvpos], len);
+						   &inbuf[tlvpos], len);
 			if (ret < 0) {
 				return ret;
 			}
