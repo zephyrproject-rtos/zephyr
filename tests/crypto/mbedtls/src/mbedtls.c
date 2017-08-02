@@ -24,6 +24,7 @@
 #include <errno.h>
 
 #include <tc_util.h>
+#include <ztest.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
@@ -137,7 +138,7 @@ static void create_entropy_seed_file(void)
  */
 	result = mbedtls_platform_std_nv_seed_read(seed_value,
 						   MBEDTLS_ENTROPY_BLOCK_SIZE);
-	if (0 == result) {
+	if (result == 0) {
 		return;
 	}
 
@@ -145,11 +146,11 @@ static void create_entropy_seed_file(void)
 					       seed_value,
 					       MBEDTLS_ENTROPY_BLOCK_SIZE,
 					       &output_len);
-	if (0 != result) {
+	if (result != 0) {
 		return;
 	}
 
-	if (MBEDTLS_ENTROPY_BLOCK_SIZE != output_len) {
+	if (output_len != MBEDTLS_ENTROPY_BLOCK_SIZE) {
 		return;
 	}
 
@@ -162,7 +163,7 @@ static void create_entropy_seed_file(void)
 unsigned char buf[16384];
 #endif
 
-int main(void)
+void test_mbedtls(void)
 {
 	int v, suites_tested = 0, suites_failed = 0;
 
