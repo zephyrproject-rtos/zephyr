@@ -30,12 +30,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 /*
-  DESCRIPTION
-  This module tests the following AES-CBC Mode routines:
-
-  Scenarios tested include:
-  - AES128 CBC mode encryption SP 800-38a tests
-*/
+ * DESCRIPTION
+ * This module tests the following AES-CBC Mode routines:
+ * Scenarios tested include:
+ * - AES128 CBC mode encryption SP 800-38a tests
+ */
 
 #include <tinycrypt/cbc_mode.h>
 #include <tinycrypt/constants.h>
@@ -44,6 +43,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ztest.h>
 
 /*
  * NIST test vectors from SP 800-38a:
@@ -101,8 +101,13 @@ const u8_t ciphertext[80] = {
 /*
  * NIST SP 800-38a CBC Test for encryption and decryption.
  */
-u32_t test_1_and_2(void)
+void test_1_and_2(void)
 {
+
+	TC_START("Performing AES128 tests:");
+
+	TC_PRINT("Performing CBC tests:\n");
+
 	struct tc_aes_key_sched_struct a;
 	u8_t iv_buffer[16];
 	u8_t encrypted[80];
@@ -116,15 +121,12 @@ u32_t test_1_and_2(void)
 	(void)memcpy(iv_buffer, iv, TC_AES_BLOCK_SIZE);
 
 	TC_PRINT("CBC test #1 (encryption SP 800-38a tests):\n");
-	if (tc_cbc_mode_encrypt(encrypted,
-				sizeof(plaintext) + TC_AES_BLOCK_SIZE,
-				plaintext, sizeof(plaintext),
-				iv_buffer, &a) == 0) {
-		TC_ERROR("CBC test #1 (encryption SP 800-38a tests) failed in "
-			 "%s.\n", __func__);
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+
+	/**TESTPOINT: Check test 1*/
+	zassert_true(tc_cbc_mode_encrypt(encrypted,
+			sizeof(plaintext) + TC_AES_BLOCK_SIZE,
+			plaintext, sizeof(plaintext), iv_buffer, &a),
+			"CBC test #1 (encryption SP 800-38a tests) failed");
 
 	result = check_result(1, ciphertext, sizeof(encrypted),
 			      encrypted, sizeof(encrypted), 1);
@@ -136,42 +138,14 @@ u32_t test_1_and_2(void)
 	p = &encrypted[TC_AES_BLOCK_SIZE];
 	length = ((u32_t) sizeof(encrypted)) - TC_AES_BLOCK_SIZE;
 
-	if (tc_cbc_mode_decrypt(decrypted, length - TC_AES_BLOCK_SIZE, p,
-				length, encrypted, &a) == 0) {
-		TC_ERROR("CBC test #2 (decryption SP 800-38a tests) failed in. "
-			 "%s\n", __func__);
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check test 2*/
+	zassert_true(tc_cbc_mode_decrypt(decrypted,
+		length - TC_AES_BLOCK_SIZE, p, length, encrypted,
+		&a), "CBC test #2 (decryption SP 800-38a tests) failed");
 
 	result = check_result(2, plaintext, sizeof(decrypted),
 			      decrypted, sizeof(decrypted), 1);
 
-exitTest1:
-	TC_END_RESULT(result);
-	return result;
-}
-
-/*
- * Main task to test AES
- */
-
-void main(void)
-{
-	u32_t result = TC_PASS;
-
-	TC_START("Performing AES128 tests:");
-
-	TC_PRINT("Performing CBC tests:\n");
-	result = test_1_and_2();
-	if (result == TC_FAIL) {	/* terminate test */
-		TC_ERROR("CBC test #1 failed.\n");
-		goto exitTest;
-	}
-
-	TC_PRINT("All CBC tests succeeded!\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "CBC test #1 failed.");
 }
