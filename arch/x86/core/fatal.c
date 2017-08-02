@@ -68,7 +68,8 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		printk("***** Invalid Exit Software Error! *****\n");
 		break;
 
-#if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
+#if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL) || \
+		defined(CONFIG_X86_STACK_PROTECTION)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
 		break;
@@ -260,38 +261,97 @@ _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_X86_STACK_PROTECTION
-void df_handler(void)
-{
-	printk("DOUBLE FAULT! Likely kernel stack overflow\n");
+static __noinit volatile NANO_ESF _df_esf;
 
-	/* TODO: do forensic analysis to figure out the faulting context
-	 * since this exception type pushes undefined CS:EIP information
-	 */
+/* Very tiny stack; just enough for the bogus error code pushed by the CPU
+ * and a frame pointer push by the compiler. All _df_handler_top does is
+ * shuffle some data around with 'mov' statements and then 'iret'.
+ */
+static __noinit char _df_stack[8];
 
-	/* Double faults are unrecoverable, time to freak out */
-	_NanoFatalErrorHandler(_NANO_ERR_KERNEL_PANIC, &_default_esf);
-}
+static FUNC_NORETURN __used void _df_handler_top(void);
 
 _GENERIC_SECTION(.tss)
 struct task_state_segment _main_tss = {
 	.ss0 = DATA_SEG
 };
 
-char __noinit df_stack[512];
-
 /* Special TSS for handling double-faults with a known good stack */
 _GENERIC_SECTION(.tss)
 struct task_state_segment _df_tss = {
-	.esp = (u32_t)(df_stack + sizeof(df_stack)),
+	.esp = (u32_t)(_df_stack + sizeof(_df_stack)),
 	.cs = CODE_SEG,
 	.ds = DATA_SEG,
 	.es = DATA_SEG,
 	.fs = DATA_SEG,
 	.gs = DATA_SEG,
 	.ss = DATA_SEG,
-	.eip = (u32_t)df_handler,
-	.cr3 = (u32_t)&__mmu_tables_start
+	.eip = (u32_t)_df_handler_top,
+	.cr3 = (u32_t)X86_MMU_PD
 };
+
+static FUNC_NORETURN __used void _df_handler_bottom(void)
+{
+	/* We're back in the main hardware task on the interrupt stack */
+	u32_t pte_flags, pde_flags;
+	int reason;
+
+	/* Restore the top half so it is runnable again */
+	_df_tss.esp = (u32_t)(_df_stack + sizeof(_df_stack));
+	_df_tss.eip = (u32_t)_df_handler_top;
+
+	/* Now check if the stack pointer is inside a guard area. Subtract
+	 * one byte, since if a single push operation caused the fault ESP
+	 * wouldn't be decremented
+	 */
+	_x86_mmu_get_flags((void *)_df_esf.esp - 1, &pde_flags, &pte_flags);
+	if (pte_flags & MMU_ENTRY_PRESENT) {
+		printk("***** Double Fault *****\n");
+		reason = _NANO_ERR_CPU_EXCEPTION;
+	} else {
+		reason = _NANO_ERR_STACK_CHK_FAIL;
+	}
+
+	_NanoFatalErrorHandler(reason, (NANO_ESF *)&_df_esf);
+}
+
+static FUNC_NORETURN __used void _df_handler_top(void)
+{
+	/* State of the system when the double-fault forced a task switch
+	 * will be in _main_tss. Set up a NANO_ESF and copy system state into
+	 * it
+	 */
+	_df_esf.esp = _main_tss.esp;
+	_df_esf.ebp = _main_tss.ebp;
+	_df_esf.ebx = _main_tss.ebx;
+	_df_esf.esi = _main_tss.esi;
+	_df_esf.edi = _main_tss.edi;
+	_df_esf.edx = _main_tss.edx;
+	_df_esf.eax = _main_tss.eax;
+	_df_esf.ecx = _main_tss.ecx;
+	_df_esf.errorCode = 0;
+	_df_esf.eip = _main_tss.eip;
+	_df_esf.cs = _main_tss.cs;
+	_df_esf.eflags = _main_tss.eflags;
+
+	/* Restore the main IA task to a runnable state */
+	_main_tss.esp = (u32_t)(K_THREAD_STACK_BUFFER(_interrupt_stack) +
+				CONFIG_ISR_STACK_SIZE);
+	_main_tss.cs = CODE_SEG;
+	_main_tss.ds = DATA_SEG;
+	_main_tss.es = DATA_SEG;
+	_main_tss.fs = DATA_SEG;
+	_main_tss.gs = DATA_SEG;
+	_main_tss.ss = DATA_SEG;
+	_main_tss.eip = (u32_t)_df_handler_bottom;
+	_main_tss.cr3 = (u32_t)X86_MMU_PD;
+
+	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
+	 * and run _df_handler_bottom
+	 */
+	__asm__ volatile ("iret");
+	CODE_UNREACHABLE;
+}
 
 /* Configure a task gate descriptor in the IDT for the double fault
  * exception
