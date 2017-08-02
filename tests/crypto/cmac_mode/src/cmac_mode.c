@@ -48,6 +48,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ztest.h>
 
 #define BUF_LEN 16
 
@@ -250,7 +251,7 @@ static u32_t verify_cmac_512_bit_msg(TCCmacState_t s)
  * Main task to test CMAC
  */
 
-void main(void)
+void test_cmac_mode(void)
 {
 
 	u32_t result = TC_PASS;
@@ -268,38 +269,33 @@ void main(void)
 
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_gf_2_128_double(K1, K2, state);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CMAC test #1 (128 double) failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check result - test 1*/
+	zassert_false(result, "CMAC test #1 (128 double) failed");
+
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_null_msg(&state);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CMAC test #2 (null msg) failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check result - test 2*/
+	zassert_false(result, "CMAC test #2 (null msg) failed");
+
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_1_block_msg(&state);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CMAC test #3 (1 block msg)failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check result - test 3*/
+	zassert_false(result, "CMAC test #1 (1 block msg) failed");
+
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_320_bit_msg(&state);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CMAC test #4 (320 bit msg) failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check result - test 4*/
+	zassert_false(result, "CMAC test #1 (320 bit msg) failed");
+
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_512_bit_msg(&state);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("CMAC test #5  (512 bit msg)failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check result - test 5*/
+	zassert_false(result, "CMAC test #1 (512 bit msg) failed");
 
 	TC_PRINT("All CMAC tests succeeded!\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
 }
