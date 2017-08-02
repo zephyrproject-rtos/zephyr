@@ -1,2 +1,4 @@
 ccflags-y += -I$(ZEPHYR_BASE)/tests/include
-obj-y = test_aes.o
+include ${ZEPHYR_BASE}/tests/Makefile.test
+
+obj-y = main.o aes.o
