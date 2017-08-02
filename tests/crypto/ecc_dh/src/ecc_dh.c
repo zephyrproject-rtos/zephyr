@@ -21,7 +21,8 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.*/
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /*
  *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
@@ -65,6 +66,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ztest.h>
 
 int ecdh_vectors(char **qx_vec, char **qy_vec, char **d_vec, char **z_vec,
 		 int tests, int verbose)
@@ -96,18 +98,15 @@ int ecdh_vectors(char **qx_vec, char **qy_vec, char **d_vec, char **z_vec,
 
 		rc = uECC_shared_secret(pub_bytes, private_bytes, z_bytes, curve);
 
-		if (rc == TC_CRYPTO_FAIL) {
-			TC_ERROR("ECDH failure, exit.\n");
-			result = TC_FAIL;
-			return result;;
-		}
+		/**TESTPOINT: Check for ECDH failure*/
+		zassert_equal(rc, TC_CRYPTO_SUCCESS, "ECDH failure, exit");
 
 		uECC_vli_bytesToNative(z, z_bytes, NUM_ECC_BYTES);
 
 		result = check_ecc_result(i, "Z", exp_z, z, NUM_ECC_WORDS, verbose);
-		if (result == TC_FAIL) {
-			return result;
-		}
+
+		/**TESTPOINT: Check result*/
+		zassert_false(result, "ECDH test failed");
 	}
 	return result;
 }
@@ -234,12 +233,9 @@ int cavp_ecdh(bool verbose)
 	TC_PRINT("NIST-p256\n");
 
 	result = ecdh_vectors(x, y, d, Z, 25, verbose);
-	if (result == TC_FAIL) {
-		goto exitTest1;
-	}
 
-exitTest1:
-	TC_END_RESULT(result);
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "ECDH test failed");
 	return result;
 }
 
@@ -292,12 +288,9 @@ int cavp_keygen(bool verbose)
 	TC_PRINT("NIST-p256\n");
 
 	result = keygen_vectors(d, x, y, 10, verbose);
-	if (result == TC_FAIL) {
-		goto exitTest1;
-	}
 
-exitTest1:
-	TC_END_RESULT(result);
+	/**TESTPOINT: Check result*/
+	zassert_false(result, "ECC KeyGen test failed");
 	return result;
 }
 
@@ -348,14 +341,11 @@ int pkv_vectors(char **qx_vec, char **qy_vec, int res_vec[], int tests,
 		}
 
 		result = check_code(i, exp_rc, rc, verbose);
-		if (result == TC_FAIL) {
-			goto exitTest1;
-		}
-	}
 
-exitTest1:
-	TC_END_RESULT(result);
-	return result;
+		/**TESTPOINT: Check result*/
+		zassert_false(result, "PubKey verification failed");
+	}
+		return result;
 }
 
 int cavp_pkv(bool verbose)
@@ -424,21 +414,15 @@ int montecarlo_ecdh(int num_tests, bool verbose)
 
 		if (!uECC_make_key(public1, private1, curve) ||
 		    !uECC_make_key(public2, private2, curve)) {
-			TC_ERROR("uECC_make_key() failed\n");
-			result = TC_FAIL;
-			goto exitTest1;
+			zassert_true(0, "uECC_make_key() failed");
 		}
 
 		if (!uECC_shared_secret(public2, private1, secret1, curve)) {
-			TC_ERROR("shared_secret() failed (1)\n");
-			result = TC_FAIL;
-			goto exitTest1;;
+			zassert_true(0, "shared_secret() failed (1)");
 		}
 
 		if (!uECC_shared_secret(public1, private2, secret2, curve)) {
-			TC_ERROR("shared_secret() failed (2)\n");
-			result = TC_FAIL;
-			goto exitTest1;
+			zassert_true(0, "shared_secret() failed (2)");
 		}
 
 		if (memcmp(secret1, secret2, sizeof(secret1)) != 0) {
@@ -460,9 +444,6 @@ int montecarlo_ecdh(int num_tests, bool verbose)
 	}
 
 	TC_PRINT("\n");
-
-exitTest1:
-	TC_END_RESULT(result);
 	return result;
 }
 
@@ -483,7 +464,7 @@ int default_CSPRNG(u8_t *dest, unsigned int size)
 	return 1;
 }
 
-int main(void)
+void test_ecc_dh(void)
 {
 	unsigned int result = TC_PASS;
 
@@ -496,34 +477,27 @@ int main(void)
 
 	TC_PRINT("Performing cavp_ecdh test:\n");
 	result = cavp_ecdh(verbose);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("cavp_ecdh test failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check cavp_ecdh*/
+	zassert_false(result, "cavp_ecdh test failed");
+
 	TC_PRINT("Performing cavp_keygen test:\n");
 	result = cavp_keygen(verbose);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("cavp_keygen test failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check cavp_keygen*/
+	zassert_false(result, "cavp_keygen test failed");
+
 	TC_PRINT("Performing cavp_pkv test:\n");
 	result = cavp_pkv(verbose);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("cavp_pkv failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check cavp_pkv*/
+	zassert_false(result, "cavp_pkv test failed");
+
 	TC_PRINT("Performing montecarlo_ecdh test:\n");
 	result = montecarlo_ecdh(10, verbose);
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("montecarlo_ecdh test failed.\n");
-		goto exitTest;
-	}
+
+	/**TESTPOINT: Check cavp_ecdh*/
+	zassert_false(result, "montecarlo_ecdh test failed");
 
 	TC_PRINT("All EC-DH tests succeeded!\n");
-
-exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
-
-	return 0;
 }
