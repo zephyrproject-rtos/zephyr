@@ -126,6 +126,7 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 	return NULL;
 }
 
+#if CONFIG_SYS_LOG_LWM2M_LEVEL > 3
 static char *sprint_token(const u8_t *token, u8_t tkl)
 {
 	int i;
@@ -138,6 +139,7 @@ static char *sprint_token(const u8_t *token, u8_t tkl)
 	buf[pos] = '\0';
 	return buf;
 }
+#endif
 
 /* observer functions */
 
