@@ -54,6 +54,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <misc/printk.h>
+#include <ztest.h>
 
 #define NUM_OF_NIST_KEYS 16
 #define NUM_OF_FIXED_KEYS 128
@@ -67,7 +68,7 @@ struct kat_table {
 /*
  * NIST test key schedule.
  */
-u32_t test_1(void)
+void test_1(void)
 {
 	u32_t result = TC_PASS;
 	const u8_t nist_key[NUM_OF_NIST_KEYS] = {
@@ -91,26 +92,23 @@ u32_t test_1(void)
 
 	TC_PRINT("AES128 %s (NIST key schedule test):\n", __func__);
 
-	if (tc_aes128_set_encrypt_key(&s, nist_key) == 0) {
-		TC_ERROR("AES128 test %s (NIST key schedule test) failed.\n",
-			 __func__);
-		result = TC_FAIL;
-		goto exitTest1;
-	}
+	/**TESTPOINT: Check NIST_key*/
+	zassert_true(tc_aes128_set_encrypt_key(&s, nist_key),
+			"NIST key schedule test failed.");
 
 	result = check_result(1, expected.words,
 		     sizeof(expected.words),
 		     s.words, sizeof(s.words), 1);
 
- exitTest1:
-	TC_END_RESULT(result);
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result,
+			"AES128 test #1 (NIST key schedule test) failed.");
 }
 
 /*
  * NIST test vectors for encryption.
  */
-s32_t test_2(void)
+void test_2(void)
 {
 	int result = TC_PASS;
 	const u8_t nist_key[NUM_OF_NIST_KEYS] = {
@@ -131,20 +129,17 @@ s32_t test_2(void)
 	TC_PRINT("AES128 %s (NIST encryption test):\n", __func__);
 
 	(void)tc_aes128_set_encrypt_key(&s, nist_key);
-	if (tc_aes_encrypt(ciphertext, nist_input, &s) == 0) {
-		TC_ERROR("AES128 %s (NIST encryption test) failed.\n",
-			 __func__);
-		result = TC_FAIL;
-		goto exitTest2;
-	}
+
+	/**TESTPOINT: Check NIST input*/
+	zassert_true(tc_aes_encrypt(ciphertext, nist_input, &s),
+			"NIST encryption test failed.");
 
 	result = check_result(2, expected, sizeof(expected),
 			      ciphertext, sizeof(ciphertext), 1);
 
- exitTest2:
-
-	TC_END_RESULT(result);
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result,
+			"AES128 test #2 (NIST encryption test) failed.");
 }
 
 u32_t var_text_test(u32_t r, const u8_t *in, const u8_t *out,
@@ -172,7 +167,7 @@ u32_t var_text_test(u32_t r, const u8_t *in, const u8_t *out,
 /*
  * All NIST tests with fixed key and variable text.
  */
-u32_t test_3(void)
+void test_3(void)
 {
 	u32_t result = TC_PASS;
 	const u8_t key[NUM_OF_NIST_KEYS] = {
@@ -1091,8 +1086,9 @@ u32_t test_3(void)
 		}
 	}
 
-	TC_END_RESULT(result);
-	return result;
+	/**TESTPOINT: Check result*/
+	zassert_false(result,
+			"AES128 test #3 (NIST fixed-key and variable-text) failed.");
 }
 
 u32_t var_key_test(u32_t r, const u8_t *in, const u8_t *out)
@@ -1117,7 +1113,7 @@ u32_t var_key_test(u32_t r, const u8_t *in, const u8_t *out)
 /*
  * All NIST tests with variable key and fixed text.
  */
-u32_t test_4(void)
+void test_4(void)
 {
 	u32_t result = TC_PASS;
 	const struct kat_table kat_tbl[NUM_OF_FIXED_KEYS] = {
@@ -2030,46 +2026,7 @@ u32_t test_4(void)
 
 	}
 
-	TC_END_RESULT(result);
-	return result;
-}
-
-/*
- * Main task to test AES
- */
-
-void main(void)
-{
-	u32_t result = TC_PASS;
-
-	TC_START("Performing AES128 tests:");
-
-	result = test_1();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("AES128 test #1 (NIST key schedule test) failed.\n");
-		goto exitTest;
-	}
-	result = test_2();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("AES128 test #2 (NIST encryption test) failed.\n");
-		goto exitTest;
-	}
-	result = test_3();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("AES128 test #3 (NIST fixed-key and variable-text) "
-			 "failed.\n");
-		goto exitTest;
-	}
-	result = test_4();
-	if (result == TC_FAIL) { /* terminate test */
-		TC_ERROR("AES128 test #4 (NIST variable-key and fixed-text) "
-			 "failed.\n");
-		goto exitTest;
-	}
-
-	TC_PRINT("All AES128 tests succeeded!\n");
-
- exitTest:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
+	/**TESTPOINT: Check result*/
+	zassert_false(result,
+			"AES128 test #4 (NIST variable-key and fixed-text) failed.");
 }
