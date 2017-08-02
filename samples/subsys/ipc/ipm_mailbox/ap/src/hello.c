@@ -27,7 +27,7 @@ QUARK_SE_IPM_DEFINE(message_ipm2, 3, QUARK_SE_IPM_OUTBOUND);
 #define PING_FIBER_PRI          4
 #define TASK_PRIO               7
 
-char thread_stacks[2][STACKSIZE];
+K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, 2, STACKSIZE);
 static struct k_thread threads[2];
 
 u32_t scss_reg(u32_t offset)
