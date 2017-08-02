@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <zephyr.h>
+#include <misc/byteorder.h>
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
@@ -728,7 +729,8 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 		/* cross-reference */
 		rl[i].pirk_idx = peer_irk_count;
 		peer_irk_rl_ids[peer_irk_count] = i;
-		memcpy(peer_irks[peer_irk_count++], pirk, 16);
+		/* AAR requires big-endian IRKs */
+		sys_memcpy_swap(peer_irks[peer_irk_count++], pirk, 16);
 	}
 	if (rl[i].lirk) {
 		memcpy(rl[i].local_irk, lirk, 16);
