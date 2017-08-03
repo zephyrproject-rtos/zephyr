@@ -86,7 +86,7 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 
 	bt_mesh_model_msg_init(msg, OP_HEALTH_CURRENT_STATUS);
 
-	test_id = net_buf_simple_add(msg, sizeof(test_id));
+	test_id = net_buf_simple_add(msg, 1);
 	company_ptr = net_buf_simple_add(msg, sizeof(company_id));
 
 	fault_count = net_buf_simple_tailroom(msg) - 4;
