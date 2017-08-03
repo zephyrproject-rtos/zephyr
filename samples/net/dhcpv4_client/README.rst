@@ -52,7 +52,7 @@ Run Zephyr samples/net/dhcpv4_client application in QEMU:
 .. code-block:: console
 
     $ cd $ZEPHYR_BASE/samples/net/dhcpv4_client
-    $ make pristine && make qemu
+    $ make pristine && make run
 
 Once DHCPv4 client address negotiation completed with server, details
 are shown like this:

@@ -1,4 +1,4 @@
-$make qemu
+$make run
 Running test suite test_customdata_api
 tc_start() - test_customdata_get_set_coop
 ===================================================================

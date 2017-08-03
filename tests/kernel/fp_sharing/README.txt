@@ -18,7 +18,7 @@ Building and Running Project:
 This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
-    make qemu
+    make run
 
 --------------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ through the variable PI_NUM_ITERATIONS (default 700000). Lowering this value
 will increase the test's speed, but at the expense of the calculation's
 precision.
 
-    make qemu PI_NUM_ITERATIONS=100000
+    make run PI_NUM_ITERATIONS=100000
 
 --------------------------------------------------------------------------------
 

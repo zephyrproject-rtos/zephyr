@@ -1,4 +1,4 @@
-$make qemu
+$ make run
 
 [QEMU] CPU: qemu32
 Running test suite test_timer_api

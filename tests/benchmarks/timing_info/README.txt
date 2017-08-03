@@ -91,7 +91,7 @@ Building and Running Project:
 This benchmark outputs to the console.  It can be built and executed
 on QEMU as follows:
 
-    make qemu
+    make run
 
 --------------------------------------------------------------------------------
 

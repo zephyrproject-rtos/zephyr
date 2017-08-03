@@ -71,7 +71,7 @@ In terminal #1, type:
 .. code-block:: console
 
    $ cd samples/net/echo_server
-   $ make pristine && make qemu
+   $ make pristine && make run
 
 If you see error from QEMU about unix:/tmp/slip.sock, it means you missed Step 1
 above.

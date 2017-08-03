@@ -92,4 +92,4 @@ Run echo-client application in QEMU:
 .. code-block:: console
 
     $ cd $ZEPHYR_BASE/samples/net/echo_client
-    $ make pristine && make qemu
+    $ make pristine && make run
