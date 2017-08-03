@@ -1,4 +1,4 @@
-/*
+/**
  * \file cmac.c
  *
  * \brief NIST SP800-38B compliant CMAC implementation for AES and 3DES
