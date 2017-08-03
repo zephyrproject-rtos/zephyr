@@ -1,15 +1,5 @@
 # vim: filetype=make
 
-ifeq (${CONFIG_NUM_COMMAND_PACKETS},)
-CONFIG_NUM_COMMAND_PACKETS=0
-endif
-ifeq (${CONFIG_NUM_TIMER_PACKETS},)
-CONFIG_NUM_TIMER_PACKETS=0
-endif
-ifeq (${CONFIG_NUM_TASK_PRIORITIES},)
-CONFIG_NUM_TASK_PRIORITIES=$(CONFIG_NUM_PREEMPT_PRIORITIES)
-endif
-
 define filechk_configs.c
 	(echo "/* file is auto-generated, do not modify ! */"; \
 	echo; \
