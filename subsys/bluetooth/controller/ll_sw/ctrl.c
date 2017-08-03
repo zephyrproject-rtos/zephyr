@@ -1218,6 +1218,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t conn_offset_us;
 		u32_t ticker_status;
 		u32_t conn_space_us;
+		bt_addr_t *lrpa;
 
 		if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)) {
 			radio_pdu_node_rx = packet_rx_reserve_get(4);
@@ -1248,9 +1249,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		pdu_adv_tx->rx_addr = pdu_adv_rx->tx_addr;
 		pdu_adv_tx->len = sizeof(struct pdu_adv_payload_connect_ind);
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-		if (_radio.scanner.rpa_gen && rl_idx != FILTER_IDX_NONE) {
-			bt_addr_t *lrpa = ctrl_lrpa_get(rl_idx);
-			LL_ASSERT(lrpa);
+		if (_radio.scanner.rpa_gen && rl_idx != FILTER_IDX_NONE &&
+		    (lrpa = ctrl_lrpa_get(rl_idx))) {
 			pdu_adv_tx->tx_addr = 1;
 			memcpy(&pdu_adv_tx->payload.connect_ind.init_addr[0],
 			       lrpa->val, BDADDR_SIZE);
@@ -1473,6 +1473,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		 (_radio.scanner.type != 0) &&
 		 (_radio.scanner.conn == 0)) {
 		struct pdu_adv *pdu_adv_tx;
+		bt_addr_t *lrpa;
 		u32_t err;
 
 		/* save the adv packet */
@@ -1487,9 +1488,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		pdu_adv_tx->rx_addr = pdu_adv_rx->tx_addr;
 		pdu_adv_tx->len = sizeof(struct pdu_adv_payload_scan_req);
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
-		if (_radio.scanner.rpa_gen && rl_idx != FILTER_IDX_NONE) {
-			bt_addr_t *lrpa = ctrl_lrpa_get(rl_idx);
-			LL_ASSERT(lrpa);
+		if (_radio.scanner.rpa_gen && rl_idx != FILTER_IDX_NONE &&
+		    (lrpa = ctrl_lrpa_get(rl_idx))) {
 			pdu_adv_tx->tx_addr = 1;
 			memcpy(&pdu_adv_tx->payload.scan_req.adv_addr[0],
 			       lrpa->val, BDADDR_SIZE);
