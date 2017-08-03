@@ -887,9 +887,11 @@ u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)
 		default:
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
+	} else {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	return 0;
 }
 
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
