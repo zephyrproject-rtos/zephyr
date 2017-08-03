@@ -139,8 +139,6 @@ help:
 %:
 	$(Q)$(call zephyrmake,$(O),$@)
 
-OVERLAY_CONFIG += $(ZEPHYR_BASE)/kernel/configs/kernel.config
-
 $(DOTCONFIG): $(BOARDCONFIG) $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
 		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $(OVERLAY_CONFIG) $(CONF_FILE) \
