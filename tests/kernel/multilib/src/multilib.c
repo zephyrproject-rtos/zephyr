@@ -7,19 +7,16 @@
 #include <zephyr.h>
 #include <errno.h>
 #include <tc_util.h>
+#include <ztest.h>
 
-void main(void)
+void test_multilib(void)
 {
 	volatile long long a = 100;
 	volatile long long b = 3;
 	volatile long long c = a / b;
-	int rv = TC_PASS;
 
 	TC_START("test_multilib");
-	if (c != 33) {
-		rv = TC_FAIL;
-	}
 
-	TC_END_RESULT(rv);
-	TC_END_REPORT(rv);
+	/**TESTPOINT: Check if the correct multilib is selected*/
+	zassert_equal(c, 33, "smoke-test failed: wrong multilib selected");
 }
