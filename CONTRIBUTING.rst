@@ -464,6 +464,7 @@ it is a downstream copy).
 For example, a copy of a locally maintained import::
 
     Origin: Contiki OS
+    License: BSD 3-Clause
     URL: http://www.contiki-os.org/
     commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
     Purpose: Introduction of networking stack.
@@ -472,6 +473,7 @@ For example, a copy of a locally maintained import::
 For example, a copy of an externally maintained import::
 
     Origin: Tiny Crypt
+    License: BSD 3-Clause
     URL: https://github.com/01org/tinycrypt
     commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
     Purpose: Introduction of TinyCrypt
