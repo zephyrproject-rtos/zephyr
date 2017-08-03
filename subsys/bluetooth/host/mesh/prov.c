@@ -1005,7 +1005,7 @@ static void prov_complete(const u8_t *data)
 
 static void prov_failed(const u8_t *data)
 {
-	BT_DBG("Error: 0x%02x", data[0]);
+	BT_WARN("Error: 0x%02x", data[0]);
 }
 
 static const struct {
@@ -1168,7 +1168,7 @@ static void prov_msg_recv(void)
 
 	BT_DBG("type 0x%02x len %u", type, link.rx.buf->len);
 
-	if (type != link.expect) {
+	if (type != PROV_FAILED && type != link.expect) {
 		BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
 		return;
 	}
@@ -1374,7 +1374,7 @@ int bt_mesh_pb_gatt_recv(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	type = net_buf_simple_pull_u8(buf);
-	if (type != link.expect) {
+	if (type != PROV_FAILED && type != link.expect) {
 		BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
 		return -EINVAL;
 	}
