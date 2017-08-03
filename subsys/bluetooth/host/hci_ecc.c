@@ -35,7 +35,7 @@
 #endif
 
 static struct k_thread ecc_thread_data;
-static BT_STACK_NOINIT(ecc_thread_stack, 960);
+static BT_STACK_NOINIT(ecc_thread_stack, 1024);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const u32_t debug_private_key[8] = {
