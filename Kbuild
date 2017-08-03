@@ -10,10 +10,6 @@ ifeq (${CONFIG_NUM_TASK_PRIORITIES},)
 CONFIG_NUM_TASK_PRIORITIES=$(CONFIG_NUM_PREEMPT_PRIORITIES)
 endif
 
-ifeq ($(ARCH),x86)
-TASKGROUP_SSE="  TASKGROUP SSE"
-endif
-
 define filechk_configs.c
 	(echo "/* file is auto-generated, do not modify ! */"; \
 	echo; \
