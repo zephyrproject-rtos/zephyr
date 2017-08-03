@@ -85,9 +85,11 @@ static void mbedtls_zeroize( void *v, size_t n ) {
  */
 const mbedtls_x509_crt_profile mbedtls_x509_crt_profile_default =
 {
-    /* Hashes from SHA-1 and above */
+#if defined(MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_CERTIFICATES)
+    /* Allow SHA-1 (weak, but still safe in controlled environments) */
     MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA1 ) |
-    MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_RIPEMD160 ) |
+#endif
+    /* Only SHA-2 hashes */
     MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA224 ) |
     MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA256 ) |
     MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA384 ) |
