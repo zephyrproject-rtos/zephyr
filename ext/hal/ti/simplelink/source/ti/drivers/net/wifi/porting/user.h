@@ -152,7 +152,9 @@ typedef signed int _SlFd_t;
                 (Once errno has been read, the driver assumes it can be allocated to another thread).
 */
 
+/* Zephyr Port: use Zephyr's errno mechanism:
 #define SL_INC_INTERNAL_ERRNO
+*/
 
 /*!
     \brief      Defines whether to include extended API in SimpleLink driver
@@ -664,7 +666,19 @@ typedef signed int _SlFd_t;
     \warning
 */
 #ifndef SL_INC_INTERNAL_ERRNO
-#define slcb_SetErrno
+/*
+ * Zephyr Port: use Zephyr SDK's errno.h definitions, and supply those missing
+ * to allow the SimpleLink driver.c to compile
+ * Also, supply the external errno setter function.
+ */
+#include <errno.h>
+#define ERROR  EIO
+#define INEXE  EALREADY
+#define ENSOCK ENFILE
+
+#include <dpl.h>
+#define slcb_SetErrno dpl_set_errno
+
 #endif
 
 /*!
