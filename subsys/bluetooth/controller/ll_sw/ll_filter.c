@@ -447,6 +447,15 @@ bool ctrl_rl_idx_allowed(u8_t irkmatch_ok, u8_t rl_idx)
 	return !rl[rl_idx].pirk || rl[rl_idx].dev;
 }
 
+void ctrl_id_addr_get(u8_t rl_idx, u8_t *id_addr_type, u8_t *id_addr)
+{
+	LL_ASSERT(rl_idx < CONFIG_BLUETOOTH_CONTROLLER_RL_SIZE);
+	LL_ASSERT(rl[rl_idx].taken);
+
+	*id_addr_type = rl[rl_idx].id_addr_type;
+	memcpy(id_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
+}
+
 bool ctrl_rl_addr_allowed(u8_t id_addr_type, u8_t *id_addr, u8_t *rl_idx)
 {
 	int i, j;

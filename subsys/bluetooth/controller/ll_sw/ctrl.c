@@ -810,7 +810,8 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 				    FILTER_IDX_NONE;
 #else
 	u8_t rl_idx = FILTER_IDX_NONE;
-#endif
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+
 	pdu_adv = (struct pdu_adv *)radio_pkt_scratch_get();
 	_pdu_adv = (struct pdu_adv *)&_radio.advertiser.adv_data.data
 		[_radio.advertiser.adv_data.first][0];
@@ -924,14 +925,35 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			(struct radio_le_conn_cmplt *)&pdu_data->payload;
 		radio_le_conn_cmplt->status = 0x00;
 		radio_le_conn_cmplt->role = 0x01;
-		radio_le_conn_cmplt->peer_addr_type = pdu_adv->tx_addr;
-		memcpy(&radio_le_conn_cmplt->peer_addr[0],
-		       &pdu_adv->payload.connect_ind.init_addr[0],
-		       BDADDR_SIZE);
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 		radio_le_conn_cmplt->own_addr_type = pdu_adv->rx_addr;
 		memcpy(&radio_le_conn_cmplt->own_addr[0],
 		       &pdu_adv->payload.connect_ind.adv_addr[0], BDADDR_SIZE);
-		radio_le_conn_cmplt->peer_irk_index = irkmatch_id;
+		if (rl_idx != FILTER_IDX_NONE) {
+			/* TODO: store rl_idx instead if safe */
+			/* Store identity address */
+			ctrl_id_addr_get(rl_idx,
+					 &radio_le_conn_cmplt->peer_addr_type,
+					 &radio_le_conn_cmplt->peer_addr[0]);
+			/* Mark it as identity address from RPA (0x02, 0x03) */
+			radio_le_conn_cmplt->peer_addr_type += 2;
+
+			/* Store peer RPA */
+			memcpy(&radio_le_conn_cmplt->peer_rpa[0],
+			       &pdu_adv->payload.connect_ind.init_addr[0],
+			       BDADDR_SIZE);
+		} else {
+			memset(&radio_le_conn_cmplt->peer_rpa[0], 0x0,
+			       BDADDR_SIZE);
+#else
+		if (1) {
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+			radio_le_conn_cmplt->peer_addr_type = pdu_adv->tx_addr;
+			memcpy(&radio_le_conn_cmplt->peer_addr[0],
+			       &pdu_adv->payload.connect_ind.init_addr[0],
+			       BDADDR_SIZE);
+		}
+
 		radio_le_conn_cmplt->interval =
 			pdu_adv->payload.connect_ind.lldata.interval;
 		radio_le_conn_cmplt->latency =
@@ -1171,7 +1193,8 @@ static inline bool isr_scan_init_check(struct pdu_adv *pdu, u8_t rl_idx)
 }
 
 static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
-				u8_t irkmatch_id, u8_t rl_idx, u8_t rssi_ready)
+				u8_t irkmatch_ok, u8_t irkmatch_id, u8_t rl_idx,
+				u8_t rssi_ready)
 {
 	struct pdu_adv *pdu_adv_rx;
 
@@ -1317,15 +1340,38 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		    (struct radio_le_conn_cmplt *)&pdu_data->payload;
 		radio_le_conn_cmplt->status = 0x00;
 		radio_le_conn_cmplt->role = 0x00;
-		radio_le_conn_cmplt->peer_addr_type = pdu_adv_tx->rx_addr;
-		memcpy(&radio_le_conn_cmplt->peer_addr[0],
-		       &pdu_adv_tx->payload.connect_ind.adv_addr[0],
-		       BDADDR_SIZE);
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 		radio_le_conn_cmplt->own_addr_type = pdu_adv_tx->tx_addr;
 		memcpy(&radio_le_conn_cmplt->own_addr[0],
 		       &pdu_adv_tx->payload.connect_ind.init_addr[0],
 		       BDADDR_SIZE);
-		radio_le_conn_cmplt->peer_irk_index = irkmatch_id;
+
+		if (irkmatch_ok && rl_idx != FILTER_IDX_NONE) {
+			/* TODO: store rl_idx instead if safe */
+			/* Store identity address */
+			ctrl_id_addr_get(rl_idx,
+					 &radio_le_conn_cmplt->peer_addr_type,
+					 &radio_le_conn_cmplt->peer_addr[0]);
+			/* Mark it as identity address from RPA (0x02, 0x03) */
+			radio_le_conn_cmplt->peer_addr_type += 2;
+
+			/* Store peer RPA */
+			memcpy(&radio_le_conn_cmplt->peer_rpa[0],
+			       &pdu_adv_tx->payload.connect_ind.adv_addr[0],
+			       BDADDR_SIZE);
+		} else {
+			memset(&radio_le_conn_cmplt->peer_rpa[0], 0x0,
+			       BDADDR_SIZE);
+#else
+		if (1) {
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+			radio_le_conn_cmplt->peer_addr_type =
+				pdu_adv_tx->rx_addr;
+			memcpy(&radio_le_conn_cmplt->peer_addr[0],
+			       &pdu_adv_tx->payload.connect_ind.adv_addr[0],
+			       BDADDR_SIZE);
+		}
+
 		radio_le_conn_cmplt->interval = _radio.scanner.conn_interval;
 		radio_le_conn_cmplt->latency = _radio.scanner. conn_latency;
 		radio_le_conn_cmplt->timeout = _radio.scanner.conn_timeout;
@@ -3104,8 +3150,8 @@ static inline void isr_radio_state_rx(u8_t trx_done, u8_t crc_ok,
 #endif
 		if (crc_ok &&
 		    isr_rx_scan_check(irkmatch_ok, devmatch_ok, rl_idx)) {
-			err = isr_rx_scan(devmatch_ok, devmatch_id, irkmatch_id,
-					  rl_idx, rssi_ready);
+			err = isr_rx_scan(devmatch_ok, devmatch_id, irkmatch_ok,
+					  irkmatch_id, rl_idx, rssi_ready);
 		} else {
 			err = 1;
 		}
