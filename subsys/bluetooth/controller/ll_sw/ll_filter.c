@@ -624,10 +624,15 @@ void ll_rl_rpa_update(bool timeout)
 		if ((rl[i].taken) && (all || !rl[i].rpas_ready)) {
 
 			if (rl[i].pirk) {
-				err = bt_rpa_create(peer_irks[rl[i].pirk_idx],
-						    &rl[i].peer_rpa);
+				u8_t irk[16];
+
+				/* TODO: move this swap to the driver level */
+				sys_memcpy_swap(irk, peer_irks[rl[i].pirk_idx],
+						16);
+				err = bt_rpa_create(irk, &rl[i].peer_rpa);
 				LL_ASSERT(!err);
 			}
+
 			if (rl[i].lirk) {
 				bt_addr_t rpa;
 
