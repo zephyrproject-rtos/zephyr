@@ -87,12 +87,6 @@ debug:	$(DOTCONFIG)
 flash: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
-qemugdb: debugserver
-
-qemu: $(DOTCONFIG)
-	@echo This target is deprecated, use 'make run' instead
-	$(Q)$(call zephyrmake,$(O),$@)
-
 run: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 

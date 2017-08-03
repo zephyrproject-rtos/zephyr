@@ -1219,8 +1219,6 @@ help:
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* zephyr	  - Build a zephyr application'
 	@echo  '  run		  - Build a zephyr application and run it if board supports emulation'
-	@echo  '  qemu		  - Build a zephyr application and run it in qemu [deprecated]'
-	@echo  '  qemugdb         - Same as 'qemu' but start a GDB server on port 1234 [deprecated]'
 	@echo  '  flash		  - Build and flash an application'
 	@echo  '  debug		  - Build and debug an application using GDB'
 	@echo  '  debugserver	  - Build and start a GDB server (port 1234 for Qemu targets)'
