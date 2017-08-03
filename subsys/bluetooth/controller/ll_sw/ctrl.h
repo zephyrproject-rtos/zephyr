@@ -271,9 +271,11 @@ struct radio_le_conn_cmplt {
 	u8_t  role;
 	u8_t  peer_addr_type;
 	u8_t  peer_addr[BDADDR_SIZE];
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	u8_t  peer_rpa[BDADDR_SIZE];
 	u8_t  own_addr_type;
 	u8_t  own_addr[BDADDR_SIZE];
-	u8_t  peer_irk_index;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 	u16_t interval;
 	u16_t latency;
 	u16_t timeout;
