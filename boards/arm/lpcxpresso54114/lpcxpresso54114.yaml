@@ -1,0 +1,9 @@
+identifier: lpcxpresso54114
+name: NXP LPCXPRESSO54114
+type: mcu
+arch: arm
+ram: 64
+flash: 256
+toolchain:
+  - zephyr
+  - gccarmemb
