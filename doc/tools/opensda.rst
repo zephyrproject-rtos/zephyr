@@ -68,7 +68,6 @@ application to flash.
      $ make OPENSDA_FW=daplink flash
      Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
      Merging /home/maureen/zephyr/tests/include/test.config
-     Merging /home/maureen/zephyr/kernel/configs/kernel.config
      Merging prj.conf
      #
      # configuration written to .config
@@ -140,7 +139,6 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
      $ make OPENSDA_FW=daplink debug
      Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
      Merging /home/maureen/zephyr/tests/include/test.config
-     Merging /home/maureen/zephyr/kernel/configs/kernel.config
      Merging prj.conf
      #
      # configuration written to .config
@@ -264,7 +262,6 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
      $ make OPENSDA_FW=jlink debug
      Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
      Merging /home/maureen/zephyr/tests/include/test.config
-     Merging /home/maureen/zephyr/kernel/configs/kernel.config
      Merging prj.conf
      #
      # configuration written to .config
