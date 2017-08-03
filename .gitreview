@@ -1,5 +1,0 @@
-[gerrit]
-host=gerrit.zephyrproject.org
-port=29418
-project=zephyr.git
-defaultremote=origin
