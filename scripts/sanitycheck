@@ -338,7 +338,7 @@ class UnitHandler(Handler):
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
 
-    We pass QEMU_PIPE to 'make qemu' and monitor the pipes for output.
+    We pass QEMU_PIPE to 'make run' and monitor the pipes for output.
     We need to do this as once qemu starts, it runs forever until killed.
     Test cases emit special messages to the console as they run, we check
     for these to collect whether the test passed or failed.
@@ -622,7 +622,7 @@ class MakeGoal:
             # Failure when calling the sub-make to build the code
             return self.build_log
         elif self.make_state == "running":
-            # Failure in sub-make for "make qemu", qemu probably failed to start
+            # Failure in sub-make for "make run", qemu probably failed to start
             return self.run_log
         elif self.make_state == "finished":
             # QEMU finished, but timed out or otherwise wasn't successful
@@ -861,7 +861,7 @@ class MakeGenerator:
 
                 if error:
                     # Sometimes QEMU will run an image and then crash out, which
-                    # will cause the 'make qemu' invocation to exit with
+                    # will cause the 'make run' invocation to exit with
                     # nonzero status.
                     # Need to distinguish this case from a compilation failure.
                     if goal.qemu:

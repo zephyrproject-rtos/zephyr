@@ -87,7 +87,7 @@ Run echo-server application in QEMU:
 .. code-block:: console
 
     $ cd $ZEPHYR_BASE/samples/net/echo_server
-    $ make pristine && make qemu
+    $ make pristine && make run
 
 In a terminal window:
 
