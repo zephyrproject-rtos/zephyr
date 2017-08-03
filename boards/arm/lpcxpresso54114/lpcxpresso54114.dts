@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc54xxx.dtsi>
+
+/ {
+	model = "NXP LPCXpresso54114 board";
+	compatible = "nxp,lpc54xxx", "nxp,lpc";
+
+	aliases{
+		usart_0 = &usart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+	};
+
+};
+
+&usart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
