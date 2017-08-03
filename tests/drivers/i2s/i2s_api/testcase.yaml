@@ -1,0 +1,4 @@
+tests:
+  - test:
+        depends_on: i2s
+        tags: drivers
