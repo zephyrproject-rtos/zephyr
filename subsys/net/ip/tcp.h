@@ -154,6 +154,8 @@ struct net_tcp {
 	 * Semaphore to signal TCP connection completion
 	 */
 	struct k_sem connect_wait;
+
+	uint16_t recv_wnd;
 };
 
 static inline bool net_tcp_is_used(struct net_tcp *tcp)

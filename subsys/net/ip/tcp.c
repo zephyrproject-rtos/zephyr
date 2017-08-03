@@ -220,6 +220,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 	tcp_context[i].send_seq = tcp_init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
+	tcp_context[i].recv_wnd = min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 
 	tcp_context[i].accept_cb = NULL;
 
@@ -406,8 +407,9 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	return pkt;
 }
 
-static inline u32_t get_recv_wnd(struct net_tcp *tcp)
+u32_t get_recv_wnd(struct net_tcp *tcp)
 {
+	return tcp->recv_wnd;
 	ARG_UNUSED(tcp);
 
 	/* We don't queue received data inside the stack, we hand off
