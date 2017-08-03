@@ -399,7 +399,7 @@ int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 			continue;
 		}
 
-		if (pfd->events & POLLIN) {
+		if (pfd->events & ZSOCK_POLLIN) {
 			struct net_context *ctx = INT_TO_POINTER(pfd->fd);
 
 			if (pev == pev_end) {
@@ -432,13 +432,13 @@ int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 		}
 
 		/* For now, assume that socket is always writable */
-		if (pfd->events & POLLOUT) {
-			pfd->revents |= POLLOUT;
+		if (pfd->events & ZSOCK_POLLOUT) {
+			pfd->revents |= ZSOCK_POLLOUT;
 		}
 
-		if (pfd->events & POLLIN) {
+		if (pfd->events & ZSOCK_POLLIN) {
 			if (pev->state != K_POLL_STATE_NOT_READY) {
-				pfd->revents |= POLLIN;
+				pfd->revents |= ZSOCK_POLLIN;
 			}
 			pev++;
 		}
