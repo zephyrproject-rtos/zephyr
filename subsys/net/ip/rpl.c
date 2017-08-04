@@ -3974,11 +3974,6 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 		return 0;
 	}
 
-	if (opt_type != NET_IPV6_EXT_HDR_OPT_RPL) {
-		NET_DBG("Multi Hop-by-hop options not implemented");
-		return 0;
-	}
-
 	NET_DBG("Updating RPL option");
 
 	/* The offset should point to "rank" right now */
