@@ -24,7 +24,7 @@ if PWM_K64_FTM
 config SYS_LOG_PWM_K64_FTM_LEVEL
 	int
 	prompt "Sets log level for pwm_ftm driver"
-	depends on PWM_K64_FTM
+	depends on PWM_K64_FTM && SYS_LOG
 	default 0
 	help
 	Sets log level for pwm_ftm driver.

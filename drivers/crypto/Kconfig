@@ -25,6 +25,7 @@ config CRYPTO_INIT_PRIORITY
 config SYS_LOG_CRYPTO_LEVEL
 	int "Crypto drivers log level"
 	default 0
+	depends on SYS_LOG
 	help
 	Sets log level for crypto drivers
 

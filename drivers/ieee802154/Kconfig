@@ -38,6 +38,7 @@ menu "IEEE 802.15.4 drivers options"
 config SYS_LOG_IEEE802154_DRIVER_LEVEL
 	int
 	prompt "IEEE802154 driver log level"
+	depends on SYS_LOG
 	default 0
 	help
 	Sets log level for 802.15.4 drivers.

@@ -21,6 +21,7 @@ if ADC
 config SYS_LOG_ADC_LEVEL
 	int
 	prompt "ADC drivers log level"
+	depends on SYS_LOG
 	default 0
 	range 0 4
 	help
