@@ -13,23 +13,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define init_net()
-
 #else
 
 #include <net/socket.h>
 #include <kernel.h>
 #include <net/net_app.h>
-
-void init_net(void)
-{
-	int ret = net_app_init("socket_echo", NET_APP_NEED_IPV4, K_SECONDS(3));
-
-	if (ret < 0) {
-		printf("Application init failed\n");
-		k_panic();
-	}
-}
 
 #endif
 
@@ -37,8 +25,6 @@ int main(void)
 {
 	int serv;
 	struct sockaddr_in bind_addr;
-
-	init_net();
 
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
