@@ -1,0 +1,7 @@
+identifier: olimex_stm32_p405
+name: STM32-P405
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
