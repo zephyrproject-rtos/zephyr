@@ -94,6 +94,22 @@
 			status = "disabled";
 			label = "USART_2";
 		};
+
+		adc0: adc@4003C000 {
+			compatible = "atmel,sam-afec";
+			reg = <0x4003C000 0x100>;
+			interrupts = <29 0>;
+			status = "disabled";
+			label = "ADC_0";
+		};
+
+		adc1: adc@40064000 {
+			compatible = "atmel,sam-afec";
+			reg = <0x40064000 0x100>;
+			interrupts = <40 0>;
+			status = "disabled";
+			label = "ADC_1";
+		};
 	};
 };
 
