@@ -24,6 +24,7 @@ config USB_DW_IRQ_PRI
 config SYS_LOG_USB_DRIVER_LEVEL
 	int
 	prompt "USB driver log level"
+	depends on SYS_LOG
 	default 0
 	help
 	Sets log level for USB driver

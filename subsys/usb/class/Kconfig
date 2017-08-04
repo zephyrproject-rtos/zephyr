@@ -25,7 +25,7 @@ config CDC_ACM_PORT_NAME
 config SYS_LOG_USB_CDC_ACM_LEVEL
 	int
 	prompt "USB CDC ACM device class driver log level"
-	depends on USB_CDC_ACM
+	depends on USB_CDC_ACM && SYS_LOG
 	default 0
 	help
 	Sets log level for USB CDC ACM device class driver
@@ -53,7 +53,7 @@ config USB_MASS_STORAGE
 config SYS_LOG_USB_MASS_STORAGE_LEVEL
 	int
 	prompt "USB Mass Storage device class driver log level"
-	depends on USB_MASS_STORAGE
+	depends on USB_MASS_STORAGE && SYS_LOG
 	default 0
 	help
 	Sets log level for USB Mass Storage device class driver

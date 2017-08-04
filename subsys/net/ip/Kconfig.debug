@@ -21,6 +21,7 @@ config SYS_LOG_NET_LEVEL
 	int
 	prompt "Network Stack Logging level"
 	default 1
+	depends on SYS_LOG
 	range 0 4
 	help
 	  Sets log level for the network stack.

@@ -24,6 +24,7 @@ if CLOCK_CONTROL
 config SYS_LOG_CLOCK_CONTROL_LEVEL
 	int
 	prompt "Hardware clock controller drivers log level"
+	depends on SYS_LOG
 	default 0
 	help
 	  Sets log level for clock controller drivers

@@ -89,6 +89,7 @@ config TELNET_CONSOLE_PRIO
 config SYS_LOG_TELNET_CONSOLE_LEVEL
 	int "Telnet console log level"
 	default 0
+	depends on SYS_LOG
 	help
 	Sets log level for telnet console (for telnet console dev only)
 

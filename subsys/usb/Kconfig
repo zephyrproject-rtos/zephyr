@@ -20,6 +20,7 @@ config SYS_LOG_USB_LEVEL
 	int
 	prompt "Sets log level for the USB device stack"
 	default 0
+	depends on SYS_LOG
 	help
 	This option sets log level for the USB device stack.
 
