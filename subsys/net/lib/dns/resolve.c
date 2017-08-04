@@ -300,6 +300,11 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 #endif
 		}
 
+		if (!local_addr) {
+			NET_DBG("Local address not set");
+			return -EAFNOSUPPORT;
+		}
+
 		ret = net_context_get(ctx->servers[i].dns_server.family,
 				      SOCK_DGRAM, IPPROTO_UDP,
 				      &ctx->servers[i].net_ctx);
