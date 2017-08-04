@@ -219,8 +219,8 @@ static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 bt_addr_t *ctrl_lrpa_get(u8_t rl_idx)
 {
-	LL_ASSERT(rl_idx < ARRAY_SIZE(rl));
-	if (!rl[rl_idx].lirk || !rl[rl_idx].rpas_ready) {
+	if ((rl_idx >= ARRAY_SIZE(rl)) || !rl[rl_idx].lirk ||
+	    !rl[rl_idx].rpas_ready) {
 		return NULL;
 	}
 
