@@ -15,6 +15,11 @@
 
 #include <soc.h>
 
+/* Analog to Digital Converter (AFEC) */
+
+#define PIN_AFE0_ADTRG {PIO_PA8B_AFEC0_ADTRG, PIOA, ID_PIOA, SOC_GPIO_FUNC_B}
+#define PIN_AFE1_ADTRG {PIO_PD9C_AFEC1_ADTRG, PIOD, ID_PIOD, SOC_GPIO_FUNC_C}
+
 /* Ethernet MAC (GMAC) */
 
 #define PINS_GMAC_MASK (PIO_PD0A_GMAC_GTXCK | PIO_PD1A_GMAC_GTXEN \
