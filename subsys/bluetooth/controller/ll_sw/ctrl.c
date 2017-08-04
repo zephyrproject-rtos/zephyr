@@ -15,6 +15,7 @@
 #include <bluetooth/hci.h>
 #include <misc/util.h>
 
+#include "ll.h"
 #include "hal/cpu.h"
 #include "hal/rand.h"
 #include "hal/ecb.h"
@@ -365,7 +366,7 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 
 	/* initialise rx memory size and count */
 	_radio.packet_data_octets_max = packet_data_octets_max;
-	if ((PDU_AC_SIZE_MAX + 1) <
+	if ((PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA) <
 	    (offsetof(struct pdu_data, payload) +
 			_radio.packet_data_octets_max)) {
 		_radio.packet_rx_data_pool_size =
@@ -375,7 +376,7 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 	} else {
 		_radio.packet_rx_data_pool_size =
 			(MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) +
-			  (PDU_AC_SIZE_MAX + 1)) * rx_count_max);
+			  (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA)) * rx_count_max);
 	}
 	_radio.packet_rx_data_size = PACKET_RX_DATA_SIZE_MIN;
 	_radio.packet_rx_data_count = (_radio.packet_rx_data_pool_size /
@@ -932,9 +933,9 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		if (rl_idx != FILTER_IDX_NONE) {
 			/* TODO: store rl_idx instead if safe */
 			/* Store identity address */
-			ctrl_id_addr_get(rl_idx,
-					 &radio_le_conn_cmplt->peer_addr_type,
-					 &radio_le_conn_cmplt->peer_addr[0]);
+			ll_rl_id_addr_get(rl_idx,
+					  &radio_le_conn_cmplt->peer_addr_type,
+					  &radio_le_conn_cmplt->peer_addr[0]);
 			/* Mark it as identity address from RPA (0x02, 0x03) */
 			radio_le_conn_cmplt->peer_addr_type += 2;
 
@@ -1083,7 +1084,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 	return 1;
 }
 
-static u32_t isr_rx_scan_report(u8_t rssi_ready)
+static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_adv *pdu_adv_rx;
@@ -1123,6 +1124,12 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready)
 	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
 			     pdu_adv_rx->len] =
 		(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	/* save the resolving list index */
+	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
+			     pdu_adv_rx->len + 1] = rl_idx;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 	packet_rx_enqueue();
 
@@ -1349,9 +1356,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		if (irkmatch_ok && rl_idx != FILTER_IDX_NONE) {
 			/* TODO: store rl_idx instead if safe */
 			/* Store identity address */
-			ctrl_id_addr_get(rl_idx,
-					 &radio_le_conn_cmplt->peer_addr_type,
-					 &radio_le_conn_cmplt->peer_addr[0]);
+			ll_rl_id_addr_get(rl_idx,
+					  &radio_le_conn_cmplt->peer_addr_type,
+					  &radio_le_conn_cmplt->peer_addr[0]);
 			/* Mark it as identity address from RPA (0x02, 0x03) */
 			radio_le_conn_cmplt->peer_addr_type += 2;
 
@@ -1477,7 +1484,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t err;
 
 		/* save the adv packet */
-		err = isr_rx_scan_report(rssi_ready);
+		err = isr_rx_scan_report(rssi_ready,
+					 irkmatch_ok ? rl_idx :
+						       FILTER_IDX_NONE);
 		if (err) {
 			return err;
 		}
@@ -1532,7 +1541,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t err;
 
 		/* save the scan response packet */
-		err = isr_rx_scan_report(rssi_ready);
+		err = isr_rx_scan_report(rssi_ready,
+					 irkmatch_ok ? rl_idx :
+						       FILTER_IDX_NONE);
 		if (err) {
 			return err;
 		}
@@ -6562,11 +6573,13 @@ static inline void event_len_prep(struct connection *conn)
 			}
 
 			/* calculate the new rx node size and new count */
-			if (conn->max_rx_octets < (PDU_AC_SIZE_MAX + 1)) {
+			if (conn->max_rx_octets < (PDU_AC_SIZE_MAX +
+						   PDU_AC_SIZE_EXTRA)) {
 				_radio.packet_rx_data_size =
 				    MROUND(offsetof(struct radio_pdu_node_rx,
 						    pdu_data) +
-					   (PDU_AC_SIZE_MAX + 1));
+					   (PDU_AC_SIZE_MAX +
+					    PDU_AC_SIZE_EXTRA));
 			} else {
 				_radio.packet_rx_data_size =
 					packet_rx_data_size;

@@ -40,6 +40,7 @@ u32_t ll_wl_clear(void);
 u32_t ll_wl_add(bt_addr_le_t *addr);
 u32_t ll_wl_remove(bt_addr_le_t *addr);
 
+void ll_rl_id_addr_get(u8_t rl_idx, u8_t *id_addr_type, u8_t *id_addr);
 u32_t ll_rl_size_get(void);
 u32_t ll_rl_clear(void);
 u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],

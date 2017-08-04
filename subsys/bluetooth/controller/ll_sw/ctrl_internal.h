@@ -261,10 +261,17 @@ struct pdu_data_q_tx {
 	struct radio_pdu_node_tx *node_tx;
 };
 
+/* Extra bytes for enqueued rx_node metadata: rssi and resolving index */
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+#define PDU_AC_SIZE_EXTRA 2
+#else
+#define PDU_AC_SIZE_EXTRA 1
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+
 /* Minimum Rx Data allocation size */
 #define PACKET_RX_DATA_SIZE_MIN \
 			MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) + \
-			(PDU_AC_SIZE_MAX + 1))
+			(PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA))
 
 /* Minimum Tx Ctrl allocation size */
 #define PACKET_TX_CTRL_SIZE_MIN \
@@ -284,13 +291,13 @@ struct pdu_data_q_tx {
 
 #define LL_MEM_RX_POOL_SZ (MROUND(offsetof(struct radio_pdu_node_rx,\
 				pdu_data) + ((\
-			(PDU_AC_SIZE_MAX + 1) < \
+			(PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA) < \
 			 (offsetof(struct pdu_data, payload) + \
 			  RADIO_LL_LENGTH_OCTETS_RX_MAX)) ? \
 		      (offsetof(struct pdu_data, payload) + \
 		      RADIO_LL_LENGTH_OCTETS_RX_MAX) \
 			: \
-		      (PDU_AC_SIZE_MAX + 1))) * \
+		      (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA))) * \
 			(RADIO_PACKET_COUNT_RX_MAX + 3))
 
 #define LL_MEM_RX_LINK_POOL (sizeof(void *) * 2 * ((RADIO_PACKET_COUNT_RX_MAX +\
