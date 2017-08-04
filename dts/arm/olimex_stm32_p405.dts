@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2017, Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f405.dtsi>
+
+/ {
+	model = "Olimex STM32-P405 board";
+	compatible = "olimex,stm32-p405", "st,stm32f405";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
