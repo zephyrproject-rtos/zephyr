@@ -205,11 +205,12 @@ static void net_if_tx_thread(struct k_sem *startup_sync)
 	k_sem_give(startup_sync);
 
 	while (1) {
-		int ev_count;
+		int ev_count, ret;
 
 		ev_count = net_if_prepare_events();
 
-		k_poll(__net_if_event_start, ev_count, K_FOREVER);
+		ret = k_poll(__net_if_event_start, ev_count, K_FOREVER);
+		NET_ASSERT(ret == 0);
 
 		net_if_process_events(__net_if_event_start, ev_count);
 
