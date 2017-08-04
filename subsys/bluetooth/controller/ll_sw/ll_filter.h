@@ -23,7 +23,6 @@ bt_addr_t *ctrl_lrpa_get(u8_t rl_idx);
 u8_t *ctrl_irks_get(u8_t *count);
 u8_t ctrl_rl_idx(bool whitelist, u8_t devmatch_id);
 u8_t ctrl_rl_irk_idx(u8_t irkmatch_id);
-void ctrl_id_addr_get(u8_t rl_idx, u8_t *id_addr_type, u8_t *id_addr);
 bool ctrl_irk_whitelisted(u8_t rl_idx);
 
 bool ctrl_rl_enabled(void);

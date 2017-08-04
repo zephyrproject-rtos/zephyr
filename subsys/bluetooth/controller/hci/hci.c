@@ -1628,8 +1628,11 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
 	struct bt_hci_evt_le_advertising_info *adv_info;
 	u8_t data_len;
-	u8_t *rssi;
 	u8_t info_len;
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	u8_t rl_idx;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+	u8_t *rssi;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
@@ -1692,9 +1695,25 @@ fill_report:
 	adv_info = (void *)(((u8_t *)sep) + sizeof(*sep));
 
 	adv_info->evt_type = c_adv_type[adv->type];
-	adv_info->addr.type = adv->tx_addr;
-	memcpy(&adv_info->addr.a.val[0], &adv->payload.adv_ind.addr[0],
-	       sizeof(bt_addr_t));
+
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+	rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+			offsetof(struct pdu_adv, payload) + adv->len + 1];
+	if (rl_idx < ll_rl_size_get()) {
+		/* Store identity address */
+		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
+				  &adv_info->addr.a.val[0]);
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		adv_info->addr.type += 2;
+	} else {
+#else
+	if (1) {
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+
+		adv_info->addr.type = adv->tx_addr;
+		memcpy(&adv_info->addr.a.val[0], &adv->payload.adv_ind.addr[0],
+		       sizeof(bt_addr_t));
+	}
 
 	adv_info->length = data_len;
 	memcpy(&adv_info->data[0], &adv->payload.adv_ind.data[0], data_len);
