@@ -131,9 +131,9 @@ struct connection {
 			u32_t win_offset_us;
 			u8_t win_size;
 			u8_t state:2;
-#define LLCP_CPI_STATE_INPROG 0
-#define LLCP_CPI_STATE_USE 1
-#define LLCP_CPI_STATE_SELECT 2
+#define LLCP_CUI_STATE_INPROG 0
+#define LLCP_CUI_STATE_USE 1
+#define LLCP_CUI_STATE_SELECT 2
 			u8_t is_internal:1;
 			u16_t *pdu_win_offset;
 			u32_t ticks_anchor;
@@ -186,17 +186,18 @@ struct connection {
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
 	struct {
-		u8_t req;
-		u8_t ack;
-		u8_t state:2;
+		u8_t  req;
+		u8_t  ack;
+		u8_t  state:2;
 #define LLCP_CPR_STATE_REQ      0 /* master / slave send req */
 #define LLCP_CPR_STATE_RSP      1 /* master rej/rsp / slave rej/rsp */
 #define LLCP_CPR_STATE_APP_WAIT 2 /* wait app resp */
 #define LLCP_CPR_STATE_RSP_WAIT 3 /* wait master/slave rsp/rej */
+		u8_t  status;
 		u16_t interval;
 		u16_t latency;
 		u16_t timeout;
-		u8_t preferred_periodicity;
+		u8_t  preferred_periodicity;
 		u16_t reference_conn_event_count;
 		u16_t offset0;
 		u16_t offset1;
@@ -204,8 +205,10 @@ struct connection {
 		u16_t offset3;
 		u16_t offset4;
 		u16_t offset5;
+		u16_t *pdu_win_offset0;
+		u32_t ticks_ref;
 		u32_t ticks_to_offset_next;
-		u8_t is_internal:1;
+		u8_t  is_internal:1;
 	} llcp_conn_param;
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 

@@ -272,7 +272,7 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason);
 static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ) && 0
 static uint32_t is_peer_compatible(struct connection *conn);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 
@@ -1874,20 +1874,10 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
-	} else if (_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) {
-		/* reset ctrl procedure */
-		_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
-
-		switch (_radio.conn_curr->llcp_type) {
-		case LLCP_CONNECTION_UPDATE:
-			isr_rx_conn_pkt_ctrl_rej_conn_upd(radio_pdu_node_rx,
-							  rx_enqueue);
-			break;
-
-		default:
-			LL_ASSERT(0);
-			break;
-		}
+	} else if (_radio.conn_curr->llcp_conn_param.ack !=
+		   _radio.conn_curr->llcp_conn_param.req) {
+		isr_rx_conn_pkt_ctrl_rej_conn_upd(radio_pdu_node_rx,
+						  rx_enqueue);
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
@@ -2384,9 +2374,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				pdu_data_rx->payload.llctrl.ctrldata.conn_param_req.timeout;
 			_radio.conn_curr->llcp_conn_param.preferred_periodicity =
 				pdu_data_rx->payload.llctrl.ctrldata.conn_param_req.preferred_periodicity;
-			_radio.conn_curr->llcp_conn_param.instant =
-				pdu_data_rx->payload.llctrl.ctrldata.conn_param_req.
-				reference_conn_event_count;
+			_radio.conn_curr->llcp_conn_param.reference_conn_event_count =
+				pdu_data_rx->payload.llctrl.ctrldata.conn_param_req.reference_conn_event_count;
 			_radio.conn_curr->llcp_conn_param.offset0 =
 				pdu_data_rx->payload.llctrl.ctrldata.conn_param_req.offset0;
 			_radio.conn_curr->llcp_conn_param.offset1 =
@@ -4601,7 +4590,7 @@ static void mayfly_sched_free_win_offset_calc(void *params)
 	sched_free_win_offset_calc(conn, 0, ticks_to_offset_next,
 				   conn->llcp_conn_param.interval,
 				   &offset_max,
-				   (u8_t *)conn->llcp_conn_param.pdu_win_offset);
+				   (u8_t *)conn->llcp_conn_param.pdu_win_offset0);
 }
 
 static void mayfly_sched_win_offset_select(void *params)
@@ -4646,9 +4635,9 @@ static void mayfly_sched_win_offset_select(void *params)
 	}
 
 	if (offset_index_s < OFFSET_S_MAX) {
-		conn->llcp_conn_param.win_offset_us =
+		conn->llcp.conn_upd.win_offset_us =
 			win_offset_s * 1250;
-		memcpy(conn->llcp_conn_param.pdu_win_offset,
+		memcpy(conn->llcp.conn_upd.pdu_win_offset,
 		       &win_offset_s, sizeof(u16_t));
 	} else {
 		struct pdu_data *pdu_ctrl_tx;
@@ -4661,7 +4650,7 @@ static void mayfly_sched_win_offset_select(void *params)
 
 		/* send reject_ind_ext */
 		pdu_ctrl_tx = (struct pdu_data *)
-			((u8_t *)conn->conn_param_req.pdu_win_offset -
+			((u8_t *)conn->llcp.conn_upd.pdu_win_offset -
 			 offsetof(struct pdu_data,
 				  payload.llctrl.ctrldata.conn_update_ind.win_offset));
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -5580,7 +5569,7 @@ event_conn_update_st_init(struct connection *conn,
 			  void (*fp_mayfly_select_or_use)(void *))
 {
 	/* move to in progress */
-	conn->llcp.conn_upd.state = LLCP_CPI_STATE_INPROG;
+	conn->llcp.conn_upd.state = LLCP_CUI_STATE_INPROG;
 
 	/* set instant */
 	conn->llcp.conn_upd.instant =
@@ -5652,7 +5641,7 @@ static inline void event_conn_update_st_req(struct connection *conn,
 					    struct mayfly *mayfly_sched_offset)
 {
 	/* move to wait for conn_update/rsp/rej */
-	conn->conn_param_req.state = LLCP_CONN_STATE_RSP_WAIT;
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
 
 	/* place the conn param req packet as next in tx queue */
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -5661,13 +5650,13 @@ static inline void event_conn_update_st_req(struct connection *conn,
 	pdu_ctrl_tx->payload.llctrl.opcode =
 		PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.interval_min =
-		conn->conn_param_req.interval;
+		conn->llcp_conn_param.interval;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.interval_max =
-		conn->conn_param_req.interval;
+		conn->llcp_conn_param.interval;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.latency =
-		conn->conn_param_req.latency;
+		conn->llcp_conn_param.latency;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.timeout =
-		conn->conn_param_req.timeout;
+		conn->llcp_conn_param.timeout;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.preferred_periodicity = 0;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.reference_conn_event_count = event_counter;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset0 = 0x0000;
@@ -5686,7 +5675,7 @@ static inline void event_conn_update_st_req(struct connection *conn,
 	{
 		u32_t retval;
 
-		conn->conn_param_req.ticks_ref = ticks_at_expire;
+		conn->llcp_conn_param.ticks_ref = ticks_at_expire;
 		if (conn->hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
 			uint32_t ticks_prepare_to_start =
 				(conn->hdr.ticks_active_to_start >
@@ -5694,13 +5683,13 @@ static inline void event_conn_update_st_req(struct connection *conn,
 				conn->hdr.ticks_active_to_start :
 				conn->hdr.ticks_preempt_to_start;
 
-			conn->conn_param_req.ticks_ref -=
+			conn->llcp_conn_param.ticks_ref -=
 				((conn->hdr.ticks_xtal_to_start &
 				  (~((u32_t)1 << 31))) -
 				 ticks_prepare_to_start);
 		}
 
-		conn->conn_param_req.pdu_win_offset = (u16_t *)
+		conn->llcp_conn_param.pdu_win_offset0 = (u16_t *)
 			&pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset0;
 
 		mayfly_sched_offset->fp = mayfly_sched_free_win_offset_calc;
@@ -5734,30 +5723,30 @@ static inline void event_conn_update_st_rsp(struct connection *conn,
 		sizeof(struct pdu_data_llctrl_conn_param_rsp);
 	pdu_ctrl_tx->payload.llctrl.opcode =
 		PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.interval_min =
-		conn->conn_param_req.interval;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.interval_max =
-		conn->conn_param_req.interval;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.latency =
-		conn->conn_param_req.latency;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.timeout =
-		conn->conn_param_req.timeout;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.preferred_periodicity =
-		conn->conn_param_req.preferred_periodicity;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.reference_conn_event_count =
-		conn->conn_param_req.instant;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset0 =
-		conn->conn_param_req.offset0;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset1 =
-		conn->conn_param_req.offset1;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset2 =
-		conn->conn_param_req.offset2;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset3 =
-		conn->conn_param_req.offset3;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset4 =
-		conn->conn_param_req.offset4;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req.offset5 =
-		conn->conn_param_req.offset5;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.interval_min =
+		conn->llcp_conn_param.interval;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.interval_max =
+		conn->llcp_conn_param.interval;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.latency =
+		conn->llcp_conn_param.latency;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.timeout =
+		conn->llcp_conn_param.timeout;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.preferred_periodicity =
+		conn->llcp_conn_param.preferred_periodicity;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.reference_conn_event_count =
+		conn->llcp_conn_param.reference_conn_event_count;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.offset0 =
+		conn->llcp_conn_param.offset0;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.offset1 =
+		conn->llcp_conn_param.offset1;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.offset2 =
+		conn->llcp_conn_param.offset2;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.offset3 =
+		conn->llcp_conn_param.offset3;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.offset4 =
+		conn->llcp_conn_param.offset4;
+	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_rsp.offset5 =
+		conn->llcp_conn_param.offset5;
 }
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 
@@ -5778,7 +5767,7 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 	instant_latency =
 		((event_counter - conn->llcp.conn_upd.instant) &
 		 0xffff);
-	if (conn->llcp.conn_upd.state != LLCP_CPI_STATE_INPROG) {
+	if (conn->llcp.conn_upd.state != LLCP_CUI_STATE_INPROG) {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 		static void *s_link[2];
 		static struct mayfly s_mfy_sched_offset = {0, 0,
@@ -5797,13 +5786,13 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
 		switch (conn->llcp.conn_upd.state) {
-		case LLCP_CPI_STATE_USE:
+		case LLCP_CUI_STATE_USE:
 			fp_mayfly_select_or_use =
 				mayfly_sched_win_offset_use;
 			break;
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
-		case LLCP_CPI_STATE_SELECT:
+		case LLCP_CUI_STATE_SELECT:
 			fp_mayfly_select_or_use =
 				mayfly_sched_win_offset_select;
 			break;
@@ -7964,14 +7953,7 @@ static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 		return 1;
 	}
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
-	LL_ASSERT((conn->llcp_req == conn->llcp_ack) ||
-		  ((conn->llcp_type == LLCP_CONNECTION_UPDATE) &&
-		   (conn->llcp_conn_param.state ==
-		    LLCP_CONN_STATE_RSP_WAIT)));
-#else /* !CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 	LL_ASSERT(conn->llcp_req == conn->llcp_ack);
-#endif /* !CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 
 	/* set mutex, if only not already set. As a master the mutex shall
 	 * be set, but a slave we accept it as new 'set' of mutex.
@@ -7995,7 +7977,7 @@ static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.timeout;
 	conn->llcp.conn_upd.instant =
 		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.instant;
-	conn->llcp.conn_upd.state = LLCP_CPI_STATE_INPROG;
+	conn->llcp.conn_upd.state = LLCP_CUI_STATE_INPROG;
 	conn->llcp.conn_upd.is_internal = 0;
 
 	conn->llcp_type = LLCP_CONNECTION_UPDATE;
@@ -8005,7 +7987,7 @@ static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 }
 
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_SCHED_ADVANCED)
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ) && 0
 static u32_t is_peer_compatible(struct connection *conn)
 {
 	return ((conn->llcp_version.rx) &&
@@ -8038,7 +8020,7 @@ static u32_t conn_update_req(struct connection *conn)
 
 		return 0;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ) && 0
 	} else if (is_peer_compatible(conn)) {
 		/** Perform slave intiated conn param req */
 		conn->conn_param_req.interval = conn->conn_interval;
@@ -9314,46 +9296,43 @@ u32_t ll_connect_disable(void)
 u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
 		     u16_t latency, u16_t timeout)
 {
-	struct connection *conn;
+	if (!cmd) {
+		struct connection *conn;
 
-	ARG_UNUSED(status);
-
-	conn = connection_get(handle);
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
-	if ((!conn) ||
-	    ((conn->llcp_req != conn->llcp_ack) &&
-	     ((conn->llcp_type != LLCP_CONNECTION_UPDATE) ||
-	      (conn->llcp_conn_param.state !=
-	       LLCP_CONN_STATE_APP_WAIT)))) {
-		if ((conn) && (conn->llcp_type == LLCP_CONNECTION_UPDATE)) {
-			/* controller busy (mockup requirement) */
-			return 2;
+		conn = connection_get(handle);
+		if (!conn || (conn->llcp_req != conn->llcp_ack)) {
+			return 1;
 		}
 
-		return 1;
-	}
-#else /* !CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
-	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
-		return 1;
-	}
-#endif /* !CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
-
-	if (!cmd) {
 		conn->llcp.conn_upd.win_size = 1;
 		conn->llcp.conn_upd.win_offset_us = 0;
 		conn->llcp.conn_upd.interval = interval;
 		conn->llcp.conn_upd.latency = latency;
 		conn->llcp.conn_upd.timeout = timeout;
 		/* conn->llcp.conn_upd.instant     = 0; */
-		conn->llcp.conn_upd.state = LLCP_CPI_STATE_USE;
+		conn->llcp.conn_upd.state = LLCP_CUI_STATE_USE;
 		conn->llcp.conn_upd.is_internal = 0;
 
 		conn->llcp_type = LLCP_CONNECTION_UPDATE;
 		conn->llcp_req++;
 	} else {
 #if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ)
-		/* TODO: implementation for CP req/rsp */
-		BT_ASSERT(0);
+		struct connection *conn;
+
+		conn = connection_get(handle);
+		if (!conn ||
+		    ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
+		     conn->llcp_conn_param.state != LLCP_CPR_STATE_APP_WAIT)) {
+			return 1;
+		}
+
+		conn->llcp_conn_param.status = status;
+		conn->llcp_conn_param.interval = interval;
+		conn->llcp_conn_param.latency = latency;
+		conn->llcp_conn_param.timeout = timeout;
+		conn->llcp_conn_param.state = cmd - 1;
+		conn->llcp_conn_param.is_internal = 0;
+		conn->llcp_conn_param.req++;
 #else /* !CONFIG_BLUETOOTH_CONTROLLER_CONN_PARAM_REQ */
 		/* CPR feature not supported */
 		return 1;
