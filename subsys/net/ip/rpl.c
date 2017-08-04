@@ -3261,6 +3261,10 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 		 * original DAO message.
 		 */
 		if (flags & NET_RPL_DAO_K_FLAG) {
+			/* Coverity CID 173650 complains about reversed
+			 * parameters. This is false positive as dst and
+			 * src parameters are properly set.
+			 */
 			r = dao_ack_send(&dst, &src, net_pkt_iface(pkt),
 					 instance, sequence, 128);
 		}
