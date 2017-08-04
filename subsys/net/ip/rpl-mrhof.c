@@ -119,7 +119,7 @@ static int net_rpl_mrhof_neighbor_link_cb(struct net_if *iface,
 	/* Do not penalize the ETX when collisions or transmission errors
 	 * occur.
 	 */
-	if (!status) {
+	if (status < 0) {
 		/* FIXME - The status values need to be set properly */
 		if (status == -EIO) {
 			packet_etx = MRHOF_MAX_LINK_METRIC *
