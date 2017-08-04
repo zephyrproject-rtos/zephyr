@@ -87,7 +87,8 @@ int zsock_close(int sock)
 	struct net_context *ctx = INT_TO_POINTER(sock);
 
 	/* Reset callbacks to avoid any race conditions while
-	 * flushing queues.
+	 * flushing queues. No need to check return values here
+	 * as Coverity complains in CID 173646.
 	 */
 	net_context_accept(ctx, NULL, K_NO_WAIT, NULL);
 	net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
