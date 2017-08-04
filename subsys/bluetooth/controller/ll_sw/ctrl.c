@@ -1225,7 +1225,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t conn_offset_us;
 		u32_t ticker_status;
 		u32_t conn_space_us;
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 		bt_addr_t *lrpa;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 
 		if (IS_ENABLED(CONFIG_BLUETOOTH_CONTROLLER_CHAN_SEL_2)) {
 			radio_pdu_node_rx = packet_rx_reserve_get(4);
@@ -1480,7 +1482,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		 (_radio.scanner.type != 0) &&
 		 (_radio.scanner.conn == 0)) {
 		struct pdu_adv *pdu_adv_tx;
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
 		bt_addr_t *lrpa;
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 		u32_t err;
 
 		/* save the adv packet */
