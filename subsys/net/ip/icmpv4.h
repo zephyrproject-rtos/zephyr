@@ -31,7 +31,7 @@ struct net_icmpv4_echo_req {
 } __packed;
 
 #define NET_ICMPV4_ECHO_REQ(pkt)					\
-	((struct net_icmpv4_echo_req *)(net_pkt_icmp_data(pkt) +	\
+	((struct net_icmpv4_echo_req *)((u8_t *)net_pkt_icmp_data(pkt) + \
 					sizeof(struct net_icmp_hdr)))
 
 typedef enum net_verdict (*icmpv4_callback_handler_t)(struct net_pkt *pkt);
