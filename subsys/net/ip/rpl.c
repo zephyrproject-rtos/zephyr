@@ -927,6 +927,11 @@ static void rpl_probing_timer(struct k_work *work)
 		struct in6_addr *dst;
 		int ret;
 
+		if (!nbr) {
+			NET_DBG("No such parent neighbor %p", probing_target);
+			return;
+		}
+
 		dst = net_ipv6_nbr_lookup_by_index(instance->iface, nbr->idx);
 
 		lladdr = net_nbr_get_lladdr(nbr->idx);
