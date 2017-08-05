@@ -90,7 +90,7 @@ build:
       - >
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
-            aws s3 cp ./scripts/sanity_chk/last_sanity.xml ${S3_PATH}/sanitycheck.xml;
+            aws s3 cp ./scripts/sanity_chk/last_sanity.xml ${S3_PATH}/sanitycheck.${MATRIX_BUILD}.xml;
           fi;
       - >
           if [ -e ./modified_tests.xml ]; then
@@ -108,7 +108,7 @@ build:
       - >
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
-            aws s3 cp ./scripts/sanity_chk/last_sanity.xml ${S3_PATH}/sanitycheck.xml;
+            aws s3 cp ./scripts/sanity_chk/last_sanity.xml ${S3_PATH}/sanitycheck.${MATRIX_BUILD}..xml;
           fi;
       - >
           if [ -e ./modified_tests.xml ]; then
