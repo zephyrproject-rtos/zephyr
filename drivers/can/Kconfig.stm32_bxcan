@@ -1,0 +1,213 @@
+# Kconfig.stm32_bxcan - STM32 bxCAN configuration options
+#
+#
+# Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CAN_STM32_BXCAN
+	bool "STM32 MCU bxCAN driver"
+	default n
+	depends on SOC_FAMILY_STM32
+	help
+	  This option enables the bxCAN driver for STM32 family of
+	  processors. Say y if you wish to use CAN ports on STM32
+	  MCU.
+
+if CAN_STM32_BXCAN
+
+config CAN_STM32_BXCAN_PORT_1
+	bool "STM32 CAN port 1"
+	depends on CAN_STM32_BXCAN
+	default n
+	help
+	  Enable CAN port 1.
+
+config CAN_STM32_BXCAN_PORT_1_DEV_NAME
+	string "STM32 CAN Port 1 Device Name"
+	default "CAN_1"
+	depends on CAN_STM32_BXCAN_PORT_1
+	help
+	  Specify the device name for CAN port 1.
+
+config CAN_STM32_BXCAN_PORT_2
+	bool "STM32 CAN port 2"
+	depends on CAN_STM32_BXCAN
+	select CAN_STM32_BXCAN_PORT_1
+	default n
+	help
+	  Enable CAN port 2.
+
+config CAN_STM32_BXCAN_PORT_2_DEV_NAME
+	string "STM32 CAN Port 2 Device Name"
+	default "CAN_2"
+	depends on CAN_STM32_BXCAN_PORT_2
+	help
+	  Specify the device name for CAN port 2.
+
+config CAN_STM32_BXCAN_PORT_2_FILTER_BANK_COUNT
+	int "Number of filters banks for port 2"
+	default 14
+	depends on CAN_STM32_BXCAN_PORT_2
+	help
+	  Specify the number of filter banks for port 2.
+	
+
+menu "bitrates"
+	menuconfig CAN_STM32_BXCAN_BITRATE_1MBIT
+		bool "1Mbit/s"
+		default y
+		
+	if CAN_STM32_BXCAN_BITRATE_1MBIT
+		config CAN_STM32_BXCAN_BITRATE_1MBIT_PRESCALER
+			int "Prescaler"
+			default 7
+		config CAN_STM32_BXCAN_BITRATE_1MBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_1MBIT_BS1
+			int "BS1"
+			default 4
+		config CAN_STM32_BXCAN_BITRATE_1MBIT_BS2
+			int "BS2"
+			default 1
+	endif
+	
+	menuconfig CAN_STM32_BXCAN_BITRATE_800KBIT
+		bool "800kbit/s"
+		default n
+		
+	if CAN_STM32_BXCAN_BITRATE_800KBIT
+		config CAN_STM32_BXCAN_BITRATE_800KBIT_PRESCALER
+			int "Prescaler"
+			default 3
+		config CAN_STM32_BXCAN_BITRATE_800KBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_800KBIT_BS1
+			int "BS1"
+			default 13
+		config CAN_STM32_BXCAN_BITRATE_800KBIT_BS2
+			int "BS2"
+			default 4
+	endif
+	
+
+	menuconfig CAN_STM32_BXCAN_BITRATE_500KBIT
+		bool "500kbit/s"
+		default y
+		
+	if CAN_STM32_BXCAN_BITRATE_500KBIT
+		config CAN_STM32_BXCAN_BITRATE_500KBIT_PRESCALER
+			int "Prescaler"
+			default 14
+		config CAN_STM32_BXCAN_BITRATE_500KBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_500KBIT_BS1
+			int "BS1"
+			default 4
+		config CAN_STM32_BXCAN_BITRATE_500KBIT_BS2
+			int "BS2"
+			default 1
+	endif
+	
+	menuconfig CAN_STM32_BXCAN_BITRATE_250KBIT
+		bool "250kbit/s"
+		default y
+		
+	if CAN_STM32_BXCAN_BITRATE_250KBIT
+		config CAN_STM32_BXCAN_BITRATE_250KBIT_PRESCALER
+			int "Prescaler"
+			default 28
+		config CAN_STM32_BXCAN_BITRATE_250KBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_250KBIT_BS1
+			int "BS1"
+			default 4
+		config CAN_STM32_BXCAN_BITRATE_250KBIT_BS2
+			int "BS2"
+			default 1
+	endif
+	
+	menuconfig CAN_STM32_BXCAN_BITRATE_125KBIT
+		bool "125kbit/s"
+		default y
+		
+	if CAN_STM32_BXCAN_BITRATE_125KBIT
+		config CAN_STM32_BXCAN_BITRATE_125KBIT_PRESCALER
+			int "Prescaler"
+			default 56
+		config CAN_STM32_BXCAN_BITRATE_125KBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_125KBIT_BS1
+			int "BS1"
+			default 4
+		config CAN_STM32_BXCAN_BITRATE_125KBIT_BS2
+			int "BS2"
+			default 1
+	endif
+	
+	menuconfig CAN_STM32_BXCAN_BITRATE_50KBIT
+		bool "50kbit/s"
+		default y
+		
+	if CAN_STM32_BXCAN_BITRATE_50KBIT
+		config CAN_STM32_BXCAN_BITRATE_50KBIT_PRESCALER
+			int "Prescaler"
+			default 140
+		config CAN_STM32_BXCAN_BITRATE_50KBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_50KBIT_BS1
+			int "BS1"
+			default 4
+		config CAN_STM32_BXCAN_BITRATE_50KBIT_BS2
+			int "BS2"
+			default 1
+	endif
+	
+	menuconfig CAN_STM32_BXCAN_BITRATE_20KBIT
+		bool "20kbit/s"
+		default y
+		
+	if CAN_STM32_BXCAN_BITRATE_20KBIT
+		config CAN_STM32_BXCAN_BITRATE_20KBIT_PRESCALER
+			int "Prescaler"
+			default 350
+		config CAN_STM32_BXCAN_BITRATE_20KBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_20KBIT_BS1
+			int "BS1"
+			default 4
+		config CAN_STM32_BXCAN_BITRATE_20KBIT_BS2
+			int "BS2"
+			default 1
+	endif
+	
+	menuconfig CAN_STM32_BXCAN_BITRATE_10KBIT
+		bool "10kbit/s"
+		default y
+		
+	if CAN_STM32_BXCAN_BITRATE_10KBIT
+		config CAN_STM32_BXCAN_BITRATE_10KBIT_PRESCALER
+			int "Prescaler"
+			default 700
+		config CAN_STM32_BXCAN_BITRATE_10KBIT_SJW
+			int "SJW"
+			default 1
+		config CAN_STM32_BXCAN_BITRATE_10KBIT_BS1
+			int "BS1"
+			default 4
+		config CAN_STM32_BXCAN_BITRATE_10KBIT_BS2
+			int "BS2"
+			default 1
+	endif
+		
+endmenu
+			
+endif

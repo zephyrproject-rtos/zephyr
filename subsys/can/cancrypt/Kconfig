@@ -1,0 +1,17 @@
+# Kconfig - CAN stack configuration options
+
+#
+# Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CANCRYPT
+	bool "CANCrypt"
+	depends on CAN
+	default n
+
+if CANCRYPT
+
+endif
+

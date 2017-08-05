@@ -26,3 +26,6 @@ source "subsys/shell/Kconfig"
 source "subsys/usb/Kconfig"
 
 source "subsys/dfu/Kconfig"
+
+source "subsys/can/Kconfig"
+

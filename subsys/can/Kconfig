@@ -1,0 +1,26 @@
+# Kconfig - CAN stack configuration options
+
+#
+# Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CAN
+	bool "CAN"
+	default n
+
+if CAN
+
+config CAN_FRAME_POOL_SIZE
+	int "Size of can_frame pool"
+	default 16
+
+
+
+source "subsys/can/canopen/Kconfig"
+
+source "subsys/can/cancrypt/Kconfig"
+
+endif
+

@@ -1,0 +1,20 @@
+# Kconfig.sam_mcan - SAM mCAN configuration options
+#
+#
+# Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CAN_SAM_MCAN
+	bool "Sam MCU mCAN driver"
+	default n
+	depends on SOC_FAMILY_STM32
+	help
+	  This option enables the CAN driver for STM32 family of
+	  processors. Say y if you wish to use CAN ports on STM32
+	  MCU.
+
+if CAN_SAM_MCAN
+			
+endif

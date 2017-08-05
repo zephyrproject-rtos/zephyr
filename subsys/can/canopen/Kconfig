@@ -1,0 +1,17 @@
+# Kconfig - CAN stack configuration options
+
+#
+# Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CANOPEN
+	bool "CANOpen"
+	depends on CAN
+	default n
+
+if CANOPEN
+
+endif
+
