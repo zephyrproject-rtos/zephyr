@@ -101,6 +101,11 @@ build:
       - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
       - >
+          if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
+            aws s3 sync --quiet  doc/_build/html ${S3_PATH}/doc;
+            aws s3 sync --quiet  doc/doxygen/html ${S3_PATH}/api;
+          fi
+      - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
             aws s3 cp compliance.xml ${S3_PATH}/;
