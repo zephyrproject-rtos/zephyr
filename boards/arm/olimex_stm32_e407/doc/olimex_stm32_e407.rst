@@ -18,7 +18,10 @@ the STMicroelectronics STM32F407ZG ARM Cortex-M4 CPU.
 
      OLIMEX-STM32-E407
 
-More information about the board can be found at the
+Hardware
+********
+
+Information about the board can be found at the
 `OLIMEX-STM32-E407 website`_ and `OLIMEX-STM32-E407 user manual`_.
 The `ST STM32F407ZG Datasheet`_ contains the processor's
 information and the datasheet.
@@ -318,13 +321,13 @@ is 12 MHz. The processor can setup HSE to drive the master clock,
 which can be set as high as 168 MHz.
 
 Programming and Debugging
-=========================
+*************************
 The OLIMEX-STM32-E407 board does not include an embedded debug tool
 interface. You will need to use ST tools or an external JTAG probe.
 In the following examples a ST-Link V2 USB dongle is used.
 
-Flashing an application to STM32F4DISCOVERY
--------------------------------------------
+Flashing an application to the Olimex-STM32-E407
+================================================
 
 The sample application :ref:`hello_world` is being used in this tutorial. To
 build the Zephyr kernel and application, enter:
@@ -350,11 +353,11 @@ Run a serial host program to connect with your board:
 
    $ minicom -D /dev/ttyACM0
 
-You should see the following message:
+After reseting the board you should see the following message:
 
 .. code-block:: console
 
-   ***** BOOTING ZEPHYR OS v1.7.99 - BUILD: May 29 2017 22:31:53 *****
+   ***** BOOTING ZEPHYR OS v1.8.99 - BUILD: May 29 2017 22:31:53 *****
    Hello World! arm
 
 Debugging
