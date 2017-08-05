@@ -2694,6 +2694,10 @@ static void net_rpl_process_dio(struct net_if *iface,
 			if (parent) {
 				net_rpl_move_parent(iface, previous_dag,
 						    dag, parent);
+			} else {
+				NET_DBG("No parent %s found",
+					net_sprint_ipv6_addr(from));
+				return;
 			}
 		}
 	} else {
