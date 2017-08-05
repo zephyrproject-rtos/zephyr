@@ -72,12 +72,23 @@ static inline void handle_addr(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 static inline void handle_txe(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 {
 	if (data->current.len) {
+		data->current.len--;
+		if (data->current.len == 0) {
+			/*
+			 * This is the last byte to transmit disable Buffer
+			 * interrupt and wait for a BTF interrupt
+			 */
+			LL_I2C_DisableIT_BUF(i2c);
+		}
 		LL_I2C_TransmitData8(i2c, *data->current.buf);
 		data->current.buf++;
-		data->current.len--;
-	} else if (LL_I2C_IsActiveFlag_BTF(i2c) && !data->current.len) {
+	} else {
 		if ((data->current.flags & I2C_MSG_RESTART) == 0) {
 			LL_I2C_GenerateStopCondition(i2c);
+		}
+		if (LL_I2C_IsActiveFlag_BTF(i2c)) {
+			/* Read DR to clear BTF flag */
+			LL_I2C_ReceiveData8(i2c);
 		}
 		k_sem_give(&data->device_sync_sem);
 	}
@@ -103,6 +114,13 @@ static inline void handle_rxne(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 	k_sem_give(&data->device_sync_sem);
 }
 
+static inline void handle_btf(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
+{
+	if (data->current.is_write) {
+		handle_txe(i2c, data);
+	}
+}
+
 void stm32_i2c_event_isr(void *arg)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG((struct device *)arg);
@@ -119,6 +137,8 @@ void stm32_i2c_event_isr(void *arg)
 		handle_txe(i2c, data);
 	} else if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
 		handle_rxne(i2c, data);
+	} else if (LL_I2C_IsActiveFlag_BTF(i2c)) {
+		handle_btf(i2c, data);
 	}
 }
 
