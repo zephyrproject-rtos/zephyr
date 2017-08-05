@@ -2437,7 +2437,7 @@ static void net_rpl_add_dag(struct net_if *iface,
 {
 	struct net_rpl_instance *instance;
 	struct net_rpl_dag *dag, *previous_dag;
-	struct net_rpl_parent *parent;
+	struct net_rpl_parent *parent = NULL;
 
 	dag = alloc_dag(dio->instance_id, &dio->dag_id);
 	if (!dag) {
@@ -2465,6 +2465,11 @@ static void net_rpl_add_dag(struct net_if *iface,
 		if (parent) {
 			net_rpl_move_parent(iface, previous_dag, dag, parent);
 		}
+	}
+
+	if (!parent) {
+		NET_DBG("No parent found.");
+		return;
 	}
 
 	if (net_rpl_of_find(dio->ocp) ||
