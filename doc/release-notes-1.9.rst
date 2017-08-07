@@ -48,12 +48,28 @@ Boards
 Drivers and Sensors
 *******************
 
-* change description
+* KW40Z IEEE 802.15.4 radio driver support added
 
 Networking
 **********
 
-* change description
+* LWM2M support added
+* net-app API support added. This is higher level API that can be used
+  by applications to create client/server applications with transparent
+  TLS (for TCP) or DTLS (for UDP) support.
+* MQTT TLS support added
+* Add support to automatically setup IEEE 802.15.4 and Bluetooth IPSP networks
+* TCP receive window support added
+* Network sample application configuration file unification, where most of the
+  similar configuration files were merged together
+* Added Bluetooth support to HTTP(S) server sample application
+* BSD socket layer fixes and enhancements
+* Networking API documentation fixes
+* Network shell enhancements
+* Trickle algorithm fixes
+* CoAP API fixes
+* IPv6 fixes
+* RPL fixes
 
 Bluetooth
 *********
