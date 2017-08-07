@@ -1393,8 +1393,14 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	int *count = user_data;
 
 	if (*count == 0) {
+		char *padding = "";
+
+		if (net_nbr_get_lladdr(nbr->idx)->len == 8) {
+			padding = "      ";
+		}
+
 		printk("     Neighbor   Flags   Interface  State\t"
-		       "Remain\tLink              Address\n");
+		       "Remain\tLink              %sAddress\n", padding);
 	}
 
 	(*count)++;
