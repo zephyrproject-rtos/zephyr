@@ -3286,6 +3286,23 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 	return r;
 }
 
+static bool is_root(struct net_rpl_instance *instance)
+{
+	if (!(instance && instance->current_dag)) {
+		return false;
+	}
+
+	if (instance->current_dag->preferred_parent) {
+		return false;
+	}
+
+	if (instance->current_dag->rank != NET_RPL_ROOT_RANK(instance)) {
+		return false;
+	}
+
+	return true;
+}
+
 static enum net_verdict handle_dao(struct net_pkt *pkt)
 {
 	struct in6_addr *dao_sender = &NET_IPV6_HDR(pkt)->src;
@@ -3566,6 +3583,22 @@ fwd_dao:
 			if (r >= 0) {
 				net_pkt_unref(pkt);
 				return NET_OK;
+			}
+		} else {
+			if (IS_ENABLED(CONFIG_NET_RPL_DAO_ACK) &&
+			    (flags & NET_RPL_DAO_K_FLAG) &&
+			    is_root(instance)) {
+				r = dao_ack_send(&NET_IPV6_HDR(pkt)->dst,
+						 &NET_IPV6_HDR(pkt)->src,
+						 net_pkt_iface(pkt),
+						 instance, sequence, 0);
+				if (r >= 0) {
+					NET_DBG("Sending DAO-ACK to %s",
+						net_sprint_ipv6_addr(
+						     &NET_IPV6_HDR(pkt)->src));
+					net_pkt_unref(pkt);
+					return NET_OK;
+				}
 			}
 		}
 	}
