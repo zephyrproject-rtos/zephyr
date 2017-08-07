@@ -63,6 +63,22 @@ which have the EM7D, EM9D, or EM11D SoC.
 Documentation and general information for the board can be found at the
 `embARC website`_, which also includes some free sample software.
 
+
+Supported Firmware Versions
+===========================
+
+The EM Starter Kit has different versions, such as 1.0, 1.1, 2.0, 2.1,
+2.2 and 2.3.
+In Zephyr, 2.2 and 2.3 firmware versions are supported.
+
+* For EM Starter Kit 2.2, EM7D, EM9D and EM11D core configurations are supported.
+  * Use `CONFIG_BOARD_EM_STARTERKIT_R22` to select 2.2 version.
+  * Use `CONFIG_SOC_EM7D`, `CONFIG_SOC_EM9D` or `CONFIG_SOC_EM11D` to select
+  EM7D, EM9D or EM11D.
+* For EM Starter Kit 2.3, EM9D and EM11D core configurations are supported.
+  * Use `CONFIG_BOARD_EM_STARTERKIT_R23` to select 2.3 version.
+  * Use `CONFIG_SOC_EM9D` or `CONFIG_SOC_EM11D` to select EM9D or EM11D.
+
 Supported Features
 ==================
 
@@ -150,6 +166,25 @@ setup the board correctly.
 
 * If you want to know more about how to use this board, you can take a look
   at the `ARC EM Starter Kit User Guide`_.
+
+Set up Zephyr Software
+======================
+
+Since there are different firmware versions of EM Starter Kit, you need to
+choose the proper firmware version supported in Zephyr.
+If you select one core configuration in EM Starter Kit, you need to change
+the default EM Starter Kit board default configuration file
+:file:`/boards/arc/em_starterkit/em_starterkit_defconfig`.
+
+For example, if you choose EM Starter Kit 2.2 EM11D, you need to change the
+line 2-4 of this file.
+
+.. code-block:: shell
+
+   CONFIG_SOC_EM11D=y
+   CONFIG_BOARD_EM_STARTERKIT=y
+   CONFIG_BOARD_EM_STARTERKIT_R22=y
+
 
 Building Sample Applications
 ==============================
