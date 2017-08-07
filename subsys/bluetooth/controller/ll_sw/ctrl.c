@@ -622,6 +622,14 @@ static inline void isr_radio_state_tx(void)
 		/* assert if radio packet ptr is not set and radio started rx */
 		LL_ASSERT(!radio_is_ready());
 
+#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+		if (ctrl_rl_enabled()) {
+			u8_t count, *irks = ctrl_irks_get(&count);
+
+			radio_ar_configure(count, irks);
+		}
+#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+
 		hcto += radio_rx_chain_delay_get(0, 0);
 		hcto += addr_us_get(0);
 		hcto -= radio_tx_chain_delay_get(0, 0);
