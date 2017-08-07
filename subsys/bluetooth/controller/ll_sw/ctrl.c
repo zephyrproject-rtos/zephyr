@@ -1181,23 +1181,24 @@ static inline bool isr_scan_tgta_check(bool init, struct pdu_adv *pdu,
 	if (ctrl_rl_addr_resolve(pdu->rx_addr,
 				 pdu->payload.direct_ind.tgt_addr, rl_idx)) {
 		return true;
+	} else if (init && _radio.scanner.rpa_gen && ctrl_lrpa_get(rl_idx)) {
+		/* Initiator generating RPAs, and could not resolve TargetA:
+		 * discard
+		 */
+		return false;
 	}
-
-	return (((!init || _radio.scanner.rl_idx == FILTER_IDX_NONE) &&
-#else
-	return (((1) &&
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
-		((_radio.scanner.init_addr_type == pdu->rx_addr) &&
-		   (memcmp(&_radio.scanner.init_addr[0],
-			   &pdu->payload.direct_ind.tgt_addr[0],
-			   BDADDR_SIZE) == 0))) ||
+
+	return (((_radio.scanner.init_addr_type == pdu->rx_addr) &&
+		(memcmp(&_radio.scanner.init_addr[0],
+			&pdu->payload.direct_ind.tgt_addr[0],
+			BDADDR_SIZE) == 0))) ||
 		  /* allow directed adv packets where TargetA address
 		   * is resolvable private address (scanner only)
 		   */
-		  (((_radio.scanner.filter_policy & 0x02) != 0) &&
-		   (pdu->rx_addr != 0) &&
-		   ((pdu->payload.direct_ind.tgt_addr[5] & 0xc0) ==
-		    0x40)));
+	       (((_radio.scanner.filter_policy & 0x02) != 0) &&
+		(pdu->rx_addr != 0) &&
+		((pdu->payload.direct_ind.tgt_addr[5] & 0xc0) == 0x40));
 }
 
 static inline bool isr_scan_init_check(struct pdu_adv *pdu, u8_t rl_idx)
