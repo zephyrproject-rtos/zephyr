@@ -269,16 +269,11 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 		return;
 	}
 
-	printk("IPv6 Route %p for interface %p\n", entry, iface);
-	printk("==============================================\n");
-
 	printk("IPv6 prefix : %s/%d\n",
 	       net_sprint_ipv6_addr(&entry->addr),
 	       entry->prefix_len);
 
 	count = 0;
-
-	printk("Next hops   :\n");
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&entry->nexthop, nexthop_route, node) {
 		struct net_linkaddr_storage *lladdr;
@@ -310,6 +305,9 @@ static void route_cb(struct net_route_entry *entry, void *user_data)
 static void iface_per_route_cb(struct net_if *iface, void *user_data)
 {
 	ARG_UNUSED(user_data);
+
+	printk("IPv6 routes for interface %p\n", iface);
+	printk("====================================\n");
 
 	net_route_foreach(route_cb, iface);
 }
