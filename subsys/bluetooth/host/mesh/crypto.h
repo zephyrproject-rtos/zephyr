@@ -30,12 +30,12 @@ static inline bool bt_mesh_s1(const char *m, u8_t salt[16])
 }
 
 int bt_mesh_k1(const u8_t *ikm, size_t ikm_len, const u8_t salt[16],
-	       const u8_t *info, size_t info_len, u8_t okm[16]);
+	       const char *info, u8_t okm[16]);
 
 #define bt_mesh_k1_str(ikm, ikm_len, salt_str, info, okm) \
 ({ \
 	const u8_t salt[16] = salt_str; \
-	bt_mesh_k1(ikm, ikm_len, salt, info, strlen(info), okm); \
+	bt_mesh_k1(ikm, ikm_len, salt, info, okm); \
 })
 
 int bt_mesh_k2(const u8_t n[16], const u8_t *p, size_t p_len,
@@ -78,7 +78,7 @@ static inline int bt_mesh_session_key(const u8_t dhkey[32],
 				      const u8_t prov_salt[16],
 				      u8_t session_key[16])
 {
-	return bt_mesh_k1(dhkey, 32, prov_salt, "prsk", 4, session_key);
+	return bt_mesh_k1(dhkey, 32, prov_salt, "prsk", session_key);
 }
 
 static inline int bt_mesh_prov_nonce(const u8_t dhkey[32],
@@ -88,7 +88,7 @@ static inline int bt_mesh_prov_nonce(const u8_t dhkey[32],
 	u8_t tmp[16];
 	int err;
 
-	err = bt_mesh_k1(dhkey, 32, prov_salt, "prsn", 4, tmp);
+	err = bt_mesh_k1(dhkey, 32, prov_salt, "prsn", tmp);
 	if (!err) {
 		memcpy(nonce, tmp + 3, 13);
 	}
@@ -100,7 +100,7 @@ static inline int bt_mesh_dev_key(const u8_t dhkey[32],
 				  const u8_t prov_salt[16],
 				  u8_t dev_key[16])
 {
-	return bt_mesh_k1(dhkey, 32, prov_salt, "prdk", 4, dev_key);
+	return bt_mesh_k1(dhkey, 32, prov_salt, "prdk", dev_key);
 }
 
 static inline int bt_mesh_prov_salt(const u8_t conf_salt[16],
