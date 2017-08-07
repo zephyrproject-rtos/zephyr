@@ -41,7 +41,10 @@
 /* Global singletons */
 
 /* memory for storing Random number */
-static u8_t MALIGN(4) _rand_context[3 + 4 + 1];
+#define RAND_THREAD_THRESHOLD 4  /* atleast access address */
+#define RAND_ISR_THRESHOLD    12 /* atleast encryption div. and iv */
+static u8_t MALIGN(4) rand_context[4 + RAND_THREAD_THRESHOLD + 1];
+static u8_t MALIGN(4) rand_isr_context[4 + RAND_ISR_THRESHOLD + 1];
 
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
 #define FLASH_TICKER_NODES        1 /* No. of tickers reserved for flashing */
@@ -198,7 +201,9 @@ int ll_init(struct k_sem *sem_rx)
 	sem_recv = sem_rx;
 
 	/* TODO: bind and use RNG driver */
-	rand_init(_rand_context, sizeof(_rand_context));
+	rand_init(rand_context, sizeof(rand_context), RAND_THREAD_THRESHOLD);
+	rand_isr_init(rand_isr_context, sizeof(rand_isr_context),
+		      RAND_ISR_THRESHOLD);
 
 	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
 	if (!clk_k32) {
