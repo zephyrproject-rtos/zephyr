@@ -79,17 +79,6 @@ config BLUETOOTH_SPI_DEV_NAME
 	  this device is used to reply back with HCI frames that are sent over
 	  the air.
 
-# Headroom that the driver needs for sending and receiving buffers.
-# Add a new 'default' entry for each new driver.
-config BLUETOOTH_HCI_RESERVE
-	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 0
-	default 0 if BLUETOOTH_H4
-	default 1 if BLUETOOTH_H5
-	default 1 if BLUETOOTH_SPI
-
 if BLUETOOTH_SPI
 
 config BLUETOOTH_SPI_BLUENRG
