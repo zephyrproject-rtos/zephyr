@@ -44,6 +44,8 @@ source "drivers/sensor/adxl362/Kconfig"
 
 source "drivers/sensor/ak8975/Kconfig"
 
+source "drivers/sensor/am2320/Kconfig"
+
 source "drivers/sensor/apds9960/Kconfig"
 
 source "drivers/sensor/bma280/Kconfig"

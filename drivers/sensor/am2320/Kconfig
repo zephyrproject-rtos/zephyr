@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2017 Tidy Jiang <tidyjiang@163.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig AM2320
+	bool
+	prompt "AM2320 temperature and humidity sensor"
+	depends on SENSOR && I2C
+	default n
+	help
+	  Enable driver for AM2320 I2C-based temperature and humidity sensor.
+
+config AM2320_NAME
+	string
+	prompt "Driver name"
+	default "AM2320"
+	depends on AM2320
+	help
+	  Device name with which the AM2320 sensor is identified.
+
+config AM2320_I2C_MASTER_DEV_NAME
+	string
+	prompt "I2C master where AM2320 is connected"
+	depends on AM2320
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which AM2320 is
+	  connected.
+
