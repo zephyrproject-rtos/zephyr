@@ -25,6 +25,7 @@
 #include <net/udp.h>
 
 #include <tc_util.h>
+#include <ztest.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -154,10 +155,8 @@ struct dhcp_msg {
 static void test_result(bool pass)
 {
 	if (pass) {
-		TC_END(PASS, "passed\n");
 		TC_END_REPORT(TC_PASS);
 	} else {
-		TC_END(FAIL, "failed\n");
 		TC_END_REPORT(TC_PASS);
 	}
 }
@@ -527,7 +526,7 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	test_result(true);
 }
 
-void main(void)
+void test_dhcp(void)
 {
 	struct net_if *iface;
 
@@ -546,4 +545,12 @@ void main(void)
 	net_dhcpv4_start(iface);
 
 	k_yield();
+}
+
+/**test case main entry */
+void test_main(void)
+{
+	ztest_test_suite(test_dhcpv4,
+			ztest_unit_test(test_dhcp));
+	ztest_run_test_suite(test_dhcpv4);
 }
