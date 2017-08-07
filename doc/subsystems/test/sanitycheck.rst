@@ -49,7 +49,7 @@ The sanitycheck script accepts the following optional arguments:
                         Controls what platforms are tested if --platform or
                         --all are not used. For each architecture specified by
                         --arch (defaults to all of them), choose the first N
-                        platforms to test in the arch-specific .ini file
+                        platforms to test in the arch-specific .yaml file
                         'platforms' list. Defaults to 1.
   -a ARCH, --arch ARCH  Arch filter for testing. Takes precedence over
                         --platform. If unspecified, test all arches. Multiple
@@ -74,7 +74,7 @@ The sanitycheck script accepts the following optional arguments:
                         match.
   -s TEST, --test TEST  Run only the specified test cases. These are named by
                         <path to test project relative to --testcase-
-                        root>/<testcase.ini section name>
+                        root>/<testcase.yaml section name>
   -l, --all             Build/test on all platforms. Any --platform arguments
                         ignored.
   -o TESTCASE_REPORT, --testcase-report TESTCASE_REPORT
@@ -127,17 +127,17 @@ The sanitycheck script accepts the following optional arguments:
                         in faster compilation since builds will be incremental
   -T TESTCASE_ROOT, --testcase-root TESTCASE_ROOT
                         Base directory to recursively search for test cases.
-                        All testcase.ini files under here will be processed.
+                        All testcase.yaml files under here will be processed.
                         May be called multiple times. Defaults to the
                         'samples' and 'tests' directories in the Zephyr tree.
   -A ARCH_ROOT, --arch-root ARCH_ROOT
                         Directory to search for arch configuration files. All
-                        .ini files in the directory will be processed.
+                        .yaml files in the directory will be processed.
   -z SIZE, --size SIZE  Don't run sanity checks. Instead, produce a report to
                         stdout detailing RAM/ROM sizes on the specified
                         filenames. All other command line arguments ignored.
   -S, --enable-slow     Execute time-consuming test cases that have been
-                        marked as 'slow' in testcase.ini. Normally these are
+                        marked as 'slow' in testcase.yaml. Normally these are
                         only built.
   -R, --enable-asserts  Build all test cases with assertions enabled.
   -Q, --error-on-deprecations

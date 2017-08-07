@@ -1735,7 +1735,7 @@ def parse_arguments():
             help="Controls what platforms are tested if --platform or "
                  "--all are not used. For each architecture specified by "
                  "--arch (defaults to all of them), choose the first "
-                 "N platforms to test in the arch-specific .ini file "
+                 "N platforms to test in the arch-specific .yaml file "
                  "'platforms' list. Defaults to 1.")
     parser.add_argument("-a", "--arch", action="append",
             help="Arch filter for testing. Takes precedence over --platform. "
@@ -1762,7 +1762,7 @@ def parse_arguments():
     parser.add_argument("-s", "--test", action="append",
             help="Run only the specified test cases. These are named by "
                  "<path to test project relative to "
-                 "--testcase-root>/<testcase.ini section name>")
+                 "--testcase-root>/<testcase.yaml section name>")
     parser.add_argument("-l", "--all", action="store_true",
             help="Build/test on all platforms. Any --platform arguments "
                  "ignored.")
@@ -1831,12 +1831,12 @@ def parse_arguments():
                  "faster compilation since builds will be incremental")
     parser.add_argument("-T", "--testcase-root", action="append", default=[],
             help="Base directory to recursively search for test cases. All "
-                 "testcase.ini files under here will be processed. May be "
+                 "testcase.yaml files under here will be processed. May be "
                  "called multiple times. Defaults to the 'samples' and "
                  "'tests' directories in the Zephyr tree.")
     parser.add_argument("-A", "--arch-root",
             default="%s/boards" % ZEPHYR_BASE,
-            help="Directory to search for arch configuration files. All .ini "
+            help="Directory to search for arch configuration files. All .yaml "
                  "files in the directory will be processed.")
     parser.add_argument("-z", "--size", action="append",
             help="Don't run sanity  checks. Instead, produce a report to "
@@ -1844,7 +1844,7 @@ def parse_arguments():
                  "All other command line arguments ignored.")
     parser.add_argument("-S", "--enable-slow", action="store_true",
             help="Execute time-consuming test cases that have been marked "
-                 "as 'slow' in testcase.ini. Normally these are only built.")
+                 "as 'slow' in testcase.yaml. Normally these are only built.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
             help="Build all test cases with assertions enabled.")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
