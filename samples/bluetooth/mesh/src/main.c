@@ -55,7 +55,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 {
 }
 
-static const struct bt_mesh_model_op const gen_onoff_op[] = {
+static const struct bt_mesh_model_op gen_onoff_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x01), 0, gen_onoff_get },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x02), 2, gen_onoff_set },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x03), 2, gen_onoff_set_unack },
@@ -104,7 +104,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 {
 }
 
-static const struct bt_mesh_model_op const gen_level_op[] = {
+static const struct bt_mesh_model_op gen_level_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x05), 0, gen_level_get },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x06), 3, gen_level_set },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x07), 3, gen_level_set_unack },

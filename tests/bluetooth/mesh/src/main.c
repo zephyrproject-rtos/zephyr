@@ -126,7 +126,7 @@ static struct bt_mesh_model_pub vnd_pub = {
 
 static struct bt_mesh_model_pub vnd_pub2;
 
-static struct bt_mesh_model_op const vnd_ops[] = {
+static const struct bt_mesh_model_op vnd_ops[] = {
 	BT_MESH_MODEL_OP_END,
 };
 

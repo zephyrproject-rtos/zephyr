@@ -326,7 +326,7 @@ static void health_period_set(struct bt_mesh_model *model,
 	send_health_period_status(model, ctx);
 }
 
-const struct bt_mesh_model_op const bt_mesh_health_op[] = {
+const struct bt_mesh_model_op bt_mesh_health_op[] = {
 	{ OP_HEALTH_FAULT_GET,         2,   health_fault_get },
 	{ OP_HEALTH_FAULT_CLEAR,       2,   health_fault_clear },
 	{ OP_HEALTH_FAULT_CLEAR_UNREL, 2,   health_fault_clear_unrel },

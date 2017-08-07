@@ -116,7 +116,7 @@ static void vnd_button_pressed(struct bt_mesh_model *model,
 	board_play("100G200 100G");
 }
 
-static struct bt_mesh_model_op const vnd_ops[] = {
+static const struct bt_mesh_model_op vnd_ops[] = {
 	{ OP_VENDOR_BUTTON, 0, vnd_button_pressed },
 	BT_MESH_MODEL_OP_END,
 };

@@ -2841,7 +2841,7 @@ static void hearbeat_sub_set(struct bt_mesh_model *model,
 	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
 }
 
-const struct bt_mesh_model_op const bt_mesh_cfg_op[] = {
+const struct bt_mesh_model_op bt_mesh_cfg_op[] = {
 	{ OP_DEV_COMP_DATA_GET,        1,   dev_comp_data_get },
 	{ OP_APP_KEY_ADD,              19,  app_key_add },
 	{ OP_APP_KEY_UPDATE,           19,  app_key_update },
