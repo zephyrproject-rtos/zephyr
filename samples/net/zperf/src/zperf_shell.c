@@ -30,10 +30,6 @@
 
 #include "ipv6.h" /* to get infinite lifetime */
 
-#if defined(CONFIG_NET_L2_IEEE802154)
-#include <ieee802154_settings.h>
-#endif
-
 #define DEVICE_NAME "zperf shell"
 
 static const char *CONFIG =
@@ -1083,13 +1079,6 @@ struct shell_cmd commands[] = {
 
 void main(void)
 {
-#if defined(CONFIG_NET_L2_IEEE802154)
-	if (ieee802154_sample_setup()) {
-		NET_ERR("IEEE 802.15.4 setup failed");
-		return;
-	}
-#endif
-
 	shell_cmd_version(0, NULL);
 	SHELL_REGISTER(MY_SHELL_MODULE, commands);
 	shell_register_default_module(MY_SHELL_MODULE);
