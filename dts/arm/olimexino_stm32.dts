@@ -31,7 +31,7 @@
 	pinctrl-names = "default";
 };
 
-&usart2 {
+&usart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_a>;
 	pinctrl-names = "default";
