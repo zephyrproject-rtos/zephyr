@@ -32,10 +32,6 @@
 
 #include <net/net_app.h>
 
-#if defined(CONFIG_NET_L2_IEEE802154)
-#include <ieee802154_settings.h>
-#endif
-
 #include "common.h"
 
 #define APP_BANNER "Run echo client"
@@ -101,13 +97,6 @@ static inline int init_app(void)
 	NET_INFO(APP_BANNER);
 
 	k_sem_init(&quit_lock, 0, UINT_MAX);
-
-#if defined(CONFIG_NET_L2_IEEE802154)
-	if (ieee802154_sample_setup()) {
-		NET_ERR("IEEE 802.15.4 setup failed");
-		return -EFAULT;
-	}
-#endif
 
 	return 0;
 }

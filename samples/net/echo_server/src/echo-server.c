@@ -22,10 +22,6 @@
 
 #include <net/net_app.h>
 
-#if defined(CONFIG_NET_L2_IEEE802154)
-#include <ieee802154_settings.h>
-#endif
-
 #include "common.h"
 
 /* The startup time needs to be longish if DHCP is enabled as setting
@@ -147,13 +143,6 @@ void pkt_sent(struct net_app_ctx *ctx,
 static inline int init_app(void)
 {
 	k_sem_init(&quit_lock, 0, UINT_MAX);
-
-#if defined(CONFIG_NET_L2_IEEE802154)
-	if (ieee802154_sample_setup()) {
-		NET_ERR("IEEE 802.15.4 setup failed");
-		return -EFAULT;
-	}
-#endif
 
 	return 0;
 }
