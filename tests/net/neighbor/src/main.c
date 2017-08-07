@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ztest.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -33,8 +34,6 @@ static void net_neighbor_data_remove(struct net_nbr *nbr)
 	printk("Neighbor %p removed\n", nbr);
 
 	remove_count++;
-
-	return;
 }
 
 static void net_neighbor_table_clear(struct net_nbr_table *table)
@@ -359,13 +358,17 @@ static bool run_tests(void)
 }
 
 
-void main(void)
+void test_neighbor(void)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
-	if (run_tests()) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
+	zassert_true(run_tests(), NULL);
+}
+
+/*test case main entry*/
+void test_main(void *p1, void *p2, void *p3)
+{
+	ztest_test_suite(test_neighbor,
+			 ztest_unit_test(test_neighbor));
+	ztest_run_test_suite(test_neighbor);
 }
