@@ -139,6 +139,7 @@ static int spim_nrf52_configure(struct device *dev,
 		break;
 	case 8000000:
 		spim->FREQUENCY = SPIM_FREQUENCY_FREQUENCY_M8;
+		break;
 	default:
 		SYS_LOG_ERR("unsupported frequency sck=%d\n",
 			    spi_config->max_sys_freq);
@@ -328,7 +329,7 @@ static int spim_nrf52_init(struct device *dev)
 		if (config->psel.ss[i] != SS_UNUSED) {
 			status = gpio_pin_configure(data->gpio_port,
 						    config->psel.ss[i],
-						    GPIO_DIR_OUT);
+						    GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 			__ASSERT_NO_MSG(status == 0);
 
 			spim_nrf52_csn(data->gpio_port, config->psel.ss[i],
