@@ -539,6 +539,19 @@ struct net_if *net_if_get_default(void);
  */
 struct net_if *net_if_get_first_by_type(const struct net_l2 *l2);
 
+#if defined(CONFIG_NET_L2_IEEE802154)
+/**
+ * @brief Get the first IEEE 802.15.4 network interface.
+ *
+ * @return First IEEE 802.15.4 network interface or NULL if no such
+ * interfaces was found.
+ */
+static inline struct net_if *net_if_get_ieee802154(void)
+{
+	return net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
+}
+#endif /* CONFIG_NET_L2_IEEE802154 */
+
 #if defined(CONFIG_NET_IPV6)
 /**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
