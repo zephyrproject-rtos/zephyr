@@ -1160,6 +1160,15 @@ static inline bool isr_rx_scan_check(u8_t irkmatch_ok, u8_t devmatch_ok,
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
 }
 
+static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
+{
+	struct pdu_adv *sreq = (struct pdu_adv *)radio_pkt_scratch_get();
+
+	return ((sreq->rx_addr == srsp->tx_addr) &&
+		(memcmp(&sreq->payload.scan_req.adv_addr[0],
+			&srsp->payload.scan_rsp.addr[0], BDADDR_SIZE) == 0));
+}
+
 static inline bool isr_scan_init_adva_check(struct pdu_adv *pdu,
 					    u8_t rl_idx)
 {
@@ -1552,7 +1561,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		   (_radio.scanner.phy)) ||
 #endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
-		   (_radio.scanner.state != 0))) &&
+		   (_radio.scanner.state != 0) &&
+		   isr_scan_rsp_adva_matches(pdu_adv_rx))) &&
 		 (pdu_adv_rx->len != 0) && (!_radio.scanner.conn)) {
 		u32_t err;
 
