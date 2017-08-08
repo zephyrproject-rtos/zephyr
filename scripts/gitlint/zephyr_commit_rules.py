@@ -78,5 +78,12 @@ class MaxLineLengthExceptions(LineRule):
 
     def validate(self, line, _commit):
         max_length = self.options['line-length'].value
-        if len(line) > max_length and not line.startswith('Signed-off-by'):
+        urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line)
+        if line.startswith('Signed-off-by'):
+            return
+
+        if len(urls) > 0:
+            return
+
+        if len(line) > max_length:
             return [RuleViolation(self.id, self.violation_message.format(len(line), max_length), line)]
