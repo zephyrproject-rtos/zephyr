@@ -779,9 +779,10 @@ static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 	{
 		unsigned int pcnt, unused;
 
-		net_analyze_stack_get_values(ctx->tls.stack,
-					     ctx->tls.stack_size,
-					     &pcnt, &unused);
+		net_analyze_stack_get_values(
+			K_THREAD_STACK_BUFFER(ctx->tls.stack),
+			ctx->tls.stack_size,
+			&pcnt, &unused);
 		printk("     Stack: %p  Size: %d bytes unused %u usage "
 		       "%u/%d (%u %%)\n",
 		       ctx->tls.stack, ctx->tls.stack_size,
