@@ -109,6 +109,7 @@
 
 static struct net_rpl_instance rpl_instances[CONFIG_NET_RPL_MAX_INSTANCES];
 static struct net_rpl_instance *rpl_default_instance;
+static struct net_if *rpl_default_iface;
 static enum net_rpl_mode rpl_mode = NET_RPL_MODE_MESH;
 static net_rpl_join_callback_t rpl_join_callback;
 static u8_t rpl_dao_sequence;
@@ -388,10 +389,10 @@ static void net_rpl_print_neighbors(void)
 			parent = nbr_data(nbr);
 
 			parent_addr =
-				net_rpl_get_parent_addr(net_if_get_default(),
+				net_rpl_get_parent_addr(rpl_default_iface,
 							parent);
 
-			ipv6_nbr = net_ipv6_nbr_lookup(net_if_get_default(),
+			ipv6_nbr = net_ipv6_nbr_lookup(rpl_default_iface,
 						       parent_addr);
 
 			NET_DBG("[%d] nbr %s %5u %5u => %5u %c "
@@ -639,12 +640,12 @@ static void dio_timer(struct k_work *work)
 	if (instance->dio_send) {
 		if (instance->dio_redundancy &&
 		    instance->dio_counter < instance->dio_redundancy) {
-			struct net_if *iface;
 			struct in6_addr *addr =
-				net_if_ipv6_get_ll_addr(NET_ADDR_PREFERRED,
-							&iface);
+				net_if_ipv6_get_ll(rpl_default_iface,
+						   NET_ADDR_PREFERRED);
 
-			net_rpl_dio_send(iface, instance, addr, NULL);
+			net_rpl_dio_send(rpl_default_iface, instance, addr,
+					 NULL);
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
 			instance->dio_send_pkt++;
@@ -4196,7 +4197,7 @@ static void dis_timeout(struct k_work *work)
 
 	NET_DBG("DIS Timer triggered at %u", k_uptime_get_32());
 
-	net_rpl_dis_send(NULL, NULL);
+	net_rpl_dis_send(NULL, rpl_default_iface);
 
 	dis_interval = CONFIG_NET_RPL_DIS_INTERVAL * MSEC_PER_SEC;
 
@@ -4245,8 +4246,18 @@ void net_rpl_init(void)
 
 	net_rpl_init_timers();
 
+#if defined(CONFIG_NET_RPL_L2_IEEE802154)
+	rpl_default_iface = net_if_get_ieee802154();
+#endif
+
+	if (!rpl_default_iface) {
+		rpl_default_iface = net_if_get_default();
+	}
+
+	NET_DBG("Default interface is %p", rpl_default_iface);
+
 	create_linklocal_rplnodes_mcast(&addr);
-	if (!net_if_ipv6_maddr_add(net_if_get_default(), &addr)) {
+	if (!net_if_ipv6_maddr_add(rpl_default_iface, &addr)) {
 		NET_ERR("Cannot create RPL multicast address");
 
 		/* Ignore error at this point */
