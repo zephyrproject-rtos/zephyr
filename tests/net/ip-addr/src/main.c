@@ -19,6 +19,7 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <ztest.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -29,7 +30,7 @@
 		net_byte_to_hex(out, value, 'A', true);		 \
 		if (strcmp(out, expected)) {			 \
 			printk("Test 0x%s failed.\n", expected); \
-			return false;				 \
+			zassert_true(0, "exiting");		 \
 		}						 \
 	} while (0)
 
@@ -39,7 +40,7 @@
 		net_byte_to_hex(out, value, 'a', true);		 \
 		if (strcmp(out, expected)) {			 \
 			printk("Test 0x%s failed.\n", expected); \
-			return false;				 \
+			zassert_true(0, "exiting");		 \
 		}						 \
 	} while (0)
 
@@ -49,7 +50,7 @@
 		if (strcmp(net_sprint_ll_addr(ll, sizeof(ll)),		\
 			   expected)) {					\
 			printk("Test %s failed.\n", expected);		\
-			return false;					\
+			zassert_true(0, "exiting");			\
 		}							\
 	} while (0)
 
@@ -59,7 +60,7 @@
 		if (strcmp(net_sprint_ll_addr(ll, sizeof(ll)),		\
 			   expected)) {					\
 			printk("Test %s failed.\n", expected);		\
-			return false;					\
+			zassert_true(0, "exiting");			\
 		}							\
 	} while (0)
 
@@ -75,7 +76,7 @@
 			 net_sprint_ll_addr(ll2, sizeof(ll2)));		\
 		if (strcmp(out, expected)) {				\
 			printk("Test %s failed, got %s\n", expected, out); \
-			return false;					\
+			zassert_true(0, "exiting");			\
 		}							\
 	} while (0)
 
@@ -86,7 +87,7 @@
 		char *ptr = net_sprint_ipv6_addr(&addr);		     \
 		if (strcmp(ptr, expected)) {				     \
 			printk("Test %s failed, got %s\n", expected, ptr);   \
-			return false;					     \
+			zassert_true(0, "exiting");			     \
 		}							     \
 	} while (0)
 
@@ -96,7 +97,7 @@
 		char *ptr = net_sprint_ipv4_addr(&addr);		\
 		if (strcmp(ptr, expected)) {				\
 			printk("Test %s failed, got %s\n", expected, ptr); \
-			return false;					\
+			zassert_true(0, "exiting");			\
 		}							\
 	} while (0)
 
@@ -159,8 +160,10 @@ NET_DEVICE_INIT(net_addr_test, "net_addr_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-static bool run_tests(void)
+void run_tests(void)
 {
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
+
 	struct in6_addr loopback = IN6ADDR_LOOPBACK_INIT;
 	struct in6_addr any = IN6ADDR_ANY_INIT;
 	struct in6_addr mcast = { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0,
@@ -223,137 +226,101 @@ static bool run_tests(void)
 
 	printk("IP address print tests passed\n");
 
-	if (!net_is_ipv6_addr_loopback(&loopback)) {
-		printk("IPv6 loopback address check failed.\n");
-		return false;
-	}
+	/**TESTPOINT: Check if the IPv6 address is a loopback address*/
+	zassert_true(net_is_ipv6_addr_loopback(&loopback),
+			"IPv6 loopback address check failed.");
 
-	if (!net_is_ipv6_addr_mcast(&mcast)) {
-		printk("IPv6 multicast address check failed.\n");
-		return false;
-	}
+	/**TESTPOINT: Check if the IPv6 address is a multicast address*/
+	zassert_true(net_is_ipv6_addr_mcast(&mcast),
+			"IPv6 multicast address check failed.");
 
 	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
 				      &addr6,
 				      NET_ADDR_MANUAL,
 				      0);
-	if (!ifaddr1) {
-		printk("IPv6 interface address add failed\n");
-		return false;
-	}
+	/**TESTPOINT: Check if IPv6 interface address is added*/
+	zassert_not_null(ifaddr1, "IPv6 interface address add failed");
 
 	ifaddr2 = net_if_ipv6_addr_lookup(&addr6, NULL);
-	if (ifaddr1 != ifaddr2) {
-		printk("IPv6 interface address mismatch\n");
-		return false;
-	}
 
-	if (net_is_my_ipv6_addr(&loopback)) {
-		printk("My IPv6 loopback address check failed\n");
-		return false;
-	}
+	/**TESTPOINT: Check if addresses match*/
+	zassert_equal_ptr(ifaddr1, ifaddr2,
+			"IPv6 interface address mismatch");
 
-	if (!net_is_my_ipv6_addr(&addr6)) {
-		printk("My IPv6 address check failed\n");
-		return false;
-	}
+	/**TESTPOINT: Check if the IPv6 address is a loopback address*/
+	zassert_false(net_is_my_ipv6_addr(&loopback),
+			"My IPv6 loopback address check failed");
 
-	if (!net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	/**TESTPOINT: Check IPv6 address*/
+	zassert_true(net_is_my_ipv6_addr(&addr6),
+			"My IPv6 address check failed");
+
+	/**TESTPOINTS: Check IPv6 prefix*/
+	zassert_true(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
 				(u8_t *)&addr6_pref2,
-				64)) {
-		printk("Same IPv6 prefix test failed\n");
-		return false;
-	}
+				64), "Same IPv6 prefix test failed");
 
-	if (net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	zassert_false(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
 			       (u8_t *)&addr6_pref3,
-			       64)) {
-		printk("Different IPv6 prefix test failed\n");
-		return false;
-	}
+			       64), "Different IPv6 prefix test failed");
 
-	if (net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	zassert_false(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
 			       (u8_t *)&addr6_pref2,
-			       128)) {
-		printk("Different full IPv6 prefix test failed\n");
-		return false;
-	}
+			       128), "Different full IPv6 prefix test failed");
 
-	if (net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	zassert_false(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
 			       (u8_t *)&addr6_pref3,
-			       255)) {
-		printk("Too long prefix test failed\n");
-		return false;
-	}
+			       255), "Too long prefix test failed");
 
 	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &mcast);
-	if (!ifmaddr1) {
-		printk("IPv6 multicast address add failed\n");
-		return false;
-	}
+
+	/**TESTPOINTS: Check IPv6 addresses*/
+	zassert_not_null(ifmaddr1, "IPv6 multicast address add failed");
 
 	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &addr6);
-	if (ifmaddr1) {
-		printk("IPv6 multicast address could be added failed\n");
-		return false;
-	}
+
+	zassert_is_null(ifmaddr1,
+			"IPv6 multicast address could be added failed");
 
 	ifaddr1 = net_if_ipv4_addr_add(net_if_get_default(),
 				      &addr4,
 				      NET_ADDR_MANUAL,
 				      0);
-	if (!ifaddr1) {
-		printk("IPv4 interface address add failed\n");
-		return false;
-	}
+	zassert_not_null(ifaddr1, "IPv4 interface address add failed");
 
-	if (!net_is_my_ipv4_addr(&addr4)) {
-		printk("My IPv4 address check failed\n");
-		return false;
-	}
+	zassert_true(net_is_my_ipv4_addr(&addr4),
+			"My IPv4 address check failed");
 
-	if (net_is_my_ipv4_addr(&loopback4)) {
-		printk("My IPv4 loopback address check failed\n");
-		return false;
-	}
+	zassert_false(net_is_my_ipv4_addr(&loopback4),
+			"My IPv4 loopback address check failed");
 
-	if (memcmp(net_ipv6_unspecified_address(), &any, sizeof(any))) {
-		printk("My IPv6 unspecified address check failed\n");
-		return false;
-	}
+	zassert_false(memcmp(net_ipv6_unspecified_address(), &any, sizeof(any)),
+		"My IPv6 unspecified address check failed");
 
 	ifaddr2 = net_if_ipv6_addr_add(net_if_get_default(),
 				       &addr6,
 				       NET_ADDR_AUTOCONF,
 				       0);
-	if (!ifaddr2) {
-		printk("IPv6 ll address autoconf add failed\n");
-		return false;
-	}
+	zassert_not_null(ifaddr2, "IPv6 ll address autoconf add failed");
+
 	ifaddr2->addr_state = NET_ADDR_PREFERRED;
 
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
-	if (memcmp(tmp, &addr6.s6_addr, sizeof(struct in6_addr))) {
-		printk("IPv6 ll address fetch failed\n");
-		return false;
-	}
+	zassert_false(memcmp(tmp, &addr6.s6_addr, sizeof(struct in6_addr)),
+		"IPv6 ll address fetch failed");
 
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
-	if (tmp && !memcmp(tmp, &any, sizeof(struct in6_addr))) {
-		printk("IPv6 preferred ll address fetch failed\n");
-		return false;
-	}
+	zassert_false(tmp && !memcmp(tmp, &any, sizeof(struct in6_addr)),
+		"IPv6 preferred ll address fetch failed");
 
 	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
 				       &addr6_pref2,
 				       NET_ADDR_AUTOCONF,
 				       0);
-	if (!ifaddr1) {
-		printk("IPv6 global address autoconf add failed\n");
-		return false;
-	}
+	zassert_not_null(ifaddr1, "IPv6 global address autoconf add failed");
+
 	ifaddr1->addr_state = NET_ADDR_PREFERRED;
 
 	/* Two tests, first with interface given, then when iface is NULL */
@@ -364,7 +331,7 @@ static bool run_tests(void)
 		if (!out) {
 			printk("IPv6 src addr selection failed, iface %p\n",
 				iface);
-			return false;
+			zassert_true(0, "exiting");
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
@@ -373,7 +340,7 @@ static bool run_tests(void)
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src address selected, iface %p\n",
 			       iface);
-			return false;
+			zassert_true(0, "exiting");
 		}
 
 		/* Now we should get :: address */
@@ -381,7 +348,7 @@ static bool run_tests(void)
 		if (!out) {
 			printk("IPv6 src any addr selection failed, "
 			       "iface %p\n", iface);
-			return false;
+			zassert_true(0, "exiting");
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
@@ -390,7 +357,7 @@ static bool run_tests(void)
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src any address selected, "
 			       "iface %p\n", iface);
-			return false;
+			zassert_true(0, "exiting");
 		}
 
 		ifaddr2->addr_state = NET_ADDR_PREFERRED;
@@ -400,7 +367,7 @@ static bool run_tests(void)
 		if (!out) {
 			printk("IPv6 src ll addr selection failed, iface %p\n",
 				iface);
-			return false;
+			zassert_true(0, "exiting");
 		}
 		printk("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
@@ -409,7 +376,7 @@ static bool run_tests(void)
 			   sizeof(struct in6_addr))) {
 			printk("IPv6 wrong src ll address selected, "
 			       "iface %p\n", iface);
-			return false;
+			zassert_true(0, "exiting");
 		}
 	}
 
@@ -418,28 +385,18 @@ static bool run_tests(void)
 	net_if_ipv4_set_gw(iface, &gw);
 	net_if_ipv4_set_netmask(iface, &netmask);
 
-	if (net_ipv4_addr_mask_cmp(iface, &fail_addr)) {
-		printk("IPv4 wrong match failed\n");
-		return false;
-	}
+	zassert_false(net_ipv4_addr_mask_cmp(iface, &fail_addr),
+		"IPv4 wrong match failed");
 
-	if (!net_ipv4_addr_mask_cmp(iface, &match_addr)) {
-		printk("IPv4 match failed\n");
-		return false;
-	}
+	zassert_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
+		"IPv4 match failed");
 
 	printk("IP address checks passed\n");
-
-	return true;
 }
 
-void main(void)
+void test_main(void)
 {
-	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
-
-	if (run_tests()) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
+	ztest_test_suite(test_ip_addr_fn,
+		ztest_unit_test(run_tests));
+	ztest_run_test_suite(test_ip_addr_fn);
 }
