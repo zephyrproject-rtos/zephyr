@@ -460,3 +460,12 @@ int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 
 	return ret;
 }
+
+int zsock_inet_pton(sa_family_t family, const char *src, void *dst)
+{
+	if (net_addr_pton(family, src, dst) == 0) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
