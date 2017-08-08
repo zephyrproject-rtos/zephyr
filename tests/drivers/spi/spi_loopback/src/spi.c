@@ -395,5 +395,5 @@ void main(void)
 
 	SYS_LOG_INF("All tx/rx passed");
 end:
-	k_thread_cancel(async_thread_id);
+	k_thread_abort(async_thread_id);
 }
