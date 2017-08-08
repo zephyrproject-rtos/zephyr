@@ -590,12 +590,13 @@ int net_rpl_dio_send(struct net_if *iface,
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
 		if (!dst) {
-			NET_DBG("Sent a multicast DIO with rank %d",
-				instance->current_dag->rank);
+			NET_DBG("Sent a multicast DIO with rank %d (iface %p)",
+				instance->current_dag->rank, iface);
 		} else {
-			NET_DBG("Sent a unicast DIO with rank %d to %s",
+			NET_DBG("Sent a unicast DIO with rank %d to %s "
+				"(iface %p)",
 				instance->current_dag->rank,
-				net_sprint_ipv6_addr(dst));
+				net_sprint_ipv6_addr(dst), iface);
 		}
 
 		net_stats_update_icmp_sent();
@@ -787,8 +788,9 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
-		NET_DBG("Sent a %s DIS to %s", dst ? "unicast" : "multicast",
-			net_sprint_ipv6_addr(dst_addr));
+		NET_DBG("Sent a %s DIS to %s (iface %p)",
+			dst ? "unicast" : "multicast",
+			net_sprint_ipv6_addr(dst_addr), iface);
 
 		net_stats_update_icmp_sent();
 		net_stats_update_rpl_dis_sent();
@@ -3612,9 +3614,11 @@ fwd_dao:
 						 net_pkt_iface(pkt),
 						 instance, sequence, 0);
 				if (r >= 0) {
-					NET_DBG("Sending DAO-ACK to %s",
+					NET_DBG("Sending DAO-ACK to %s "
+						"(iface %p)",
 						net_sprint_ipv6_addr(
-						     &NET_IPV6_HDR(pkt)->src));
+						      &NET_IPV6_HDR(pkt)->src),
+						net_pkt_iface(pkt));
 					net_pkt_unref(pkt);
 					return NET_OK;
 				}
