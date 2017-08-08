@@ -106,6 +106,8 @@ source "drivers/sensor/nrf5/Kconfig"
 
 source "drivers/sensor/pms7003/Kconfig"
 
+source "drivers/sensor/qdec_sam/Kconfig"
+
 source "drivers/sensor/sht3xd/Kconfig"
 
 source "drivers/sensor/sx9500/Kconfig"

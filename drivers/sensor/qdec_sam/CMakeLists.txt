@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_QDEC_SAM qdec_sam.c)
