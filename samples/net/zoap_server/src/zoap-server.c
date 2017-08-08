@@ -1200,6 +1200,11 @@ static bool join_coap_multicast_group(void)
 #endif
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		NET_ERR("Could not add unicast address to interface");
+		return false;
+	}
+
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
