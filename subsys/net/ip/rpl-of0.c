@@ -200,7 +200,7 @@ struct net_rpl_dag *net_rpl_of_best_dag(struct net_rpl_dag *dag1,
 	ALIAS_OF(net_rpl_of0_best_dag);
 
 static u16_t net_rpl_of0_calc_rank(struct net_rpl_parent *parent,
-				      u16_t base_rank)
+				   u16_t base_rank)
 {
 	u16_t increment;
 
@@ -226,7 +226,7 @@ static u16_t net_rpl_of0_calc_rank(struct net_rpl_parent *parent,
 }
 
 u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
-			      u16_t base_rank)
+			   u16_t base_rank)
 	ALIAS_OF(net_rpl_of0_calc_rank);
 
 static int net_rpl_of0_update_mc(struct net_rpl_instance *instance)

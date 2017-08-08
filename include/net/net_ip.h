@@ -64,8 +64,8 @@ enum net_sock_type {
 struct in6_addr {
 	union {
 		u8_t		u6_addr8[16];
-		u16_t	u6_addr16[8]; /* In big endian */
-		u32_t	u6_addr32[4]; /* In big endian */
+		u16_t		u6_addr16[8]; /* In big endian */
+		u32_t		u6_addr32[4]; /* In big endian */
 	} in6_u;
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
@@ -76,8 +76,8 @@ struct in6_addr {
 struct in_addr {
 	union {
 		u8_t		u4_addr8[4];
-		u16_t	u4_addr16[2]; /* In big endian */
-		u32_t	u4_addr32[1]; /* In big endian */
+		u16_t		u4_addr16[2]; /* In big endian */
+		u32_t		u4_addr32[1]; /* In big endian */
 	} in4_u;
 #define s4_addr			in4_u.u4_addr8
 #define s4_addr16		in4_u.u4_addr16
@@ -95,27 +95,27 @@ typedef size_t socklen_t;
  */
 struct sockaddr_in6 {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	u16_t		sin6_port;     /* Port number            */
+	u16_t			sin6_port;     /* Port number            */
 	struct in6_addr		sin6_addr;     /* IPv6 address           */
 	u8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 struct sockaddr_in6_ptr {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	u16_t		sin6_port;     /* Port number            */
+	u16_t			sin6_port;     /* Port number            */
 	struct in6_addr		*sin6_addr;    /* IPv6 address           */
 	u8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 struct sockaddr_in {
 	sa_family_t		sin_family;    /* AF_INET      */
-	u16_t		sin_port;      /* Port number  */
+	u16_t			sin_port;      /* Port number  */
 	struct in_addr		sin_addr;      /* IPv4 address */
 };
 
 struct sockaddr_in_ptr {
 	sa_family_t		sin_family;    /* AF_INET      */
-	u16_t		sin_port;      /* Port number  */
+	u16_t			sin_port;      /* Port number  */
 	struct in_addr		*sin_addr;     /* IPv4 address */
 };
 
@@ -351,8 +351,8 @@ static inline bool net_is_my_ipv6_addr(struct in6_addr *addr)
 	return net_if_ipv6_addr_lookup(addr, NULL) != NULL;
 }
 
-extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
-							  struct net_if **iface);
+extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(
+	const struct in6_addr *addr, struct net_if **iface);
 
 /**
  * @brief Check if IPv6 multicast address is found in one of the

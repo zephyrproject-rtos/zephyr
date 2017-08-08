@@ -136,8 +136,8 @@ static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
 }
 
 static inline u8_t calc_max_payload(struct net_pkt *pkt,
-				       struct net_buf *frag,
-				       u8_t offset)
+				    struct net_buf *frag,
+				    u8_t offset)
 {
 	u8_t max;
 
@@ -148,11 +148,11 @@ static inline u8_t calc_max_payload(struct net_pkt *pkt,
 }
 
 static inline u8_t move_frag_data(struct net_buf *frag,
-				     struct net_buf *next,
-				     u8_t max,
-				     bool first,
-				     int hdr_diff,
-				     u8_t *room_left)
+				  struct net_buf *next,
+				  u8_t max,
+				  bool first,
+				  int hdr_diff,
+				  u8_t *room_left)
 {
 	u8_t room;
 	u8_t move;

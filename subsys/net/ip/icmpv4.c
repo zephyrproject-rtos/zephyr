@@ -202,7 +202,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	 */
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
 					      (const struct in6_addr *)dst),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 

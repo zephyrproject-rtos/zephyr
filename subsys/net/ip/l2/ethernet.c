@@ -322,4 +322,4 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 }
 
 NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve,
-		ethernet_enable);
+	    ethernet_enable);

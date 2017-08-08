@@ -277,7 +277,7 @@ int net_tcp_release(struct net_tcp *tcp)
 }
 
 static inline u8_t net_tcp_add_options(struct net_buf *header, size_t len,
-					  void *data)
+				       void *data)
 {
 	u8_t optlen;
 
