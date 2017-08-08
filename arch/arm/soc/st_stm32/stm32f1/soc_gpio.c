@@ -35,24 +35,20 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 
 	if (direction == GPIO_DIR_OUT) {
 		/* Pin is configured as an output */
-		*pincfg = (STM32_MODE_OUTPUT << STM32_MODE_INOUT_SHIFT) |
-			  (STM32_CNF_GP_OUTPUT << STM32_CNF_OUT_1_SHIFT) |
-			  (STM32_CNF_PUSH_PULL << STM32_CNF_OUT_0_SHIFT);
+		*pincfg = (STM32_MODE_OUTPUT | STM32_CNF_GP_OUTPUT |
+			   STM32_CNF_PUSH_PULL);
 	} else {
 		/* Pin is configured as an input */
 		int pud = flags & GPIO_PUD_MASK;
 
 		/* pull-{up,down} maybe? */
 		if (pud == GPIO_PUD_PULL_UP) {
-			*pincfg = (STM32_MODE_INPUT << STM32_MODE_INOUT_SHIFT) |
-				  (STM32_PUPD_PULL_UP << STM32_PUPD_SHIFT);
+			*pincfg = (STM32_MODE_INPUT | STM32_PUPD_PULL_UP);
 		} else if (pud == GPIO_PUD_PULL_DOWN) {
-			*pincfg = (STM32_MODE_INPUT << STM32_MODE_INOUT_SHIFT) |
-				  (STM32_PUPD_PULL_DOWN << STM32_PUPD_SHIFT);
+			*pincfg = (STM32_MODE_INPUT | STM32_PUPD_PULL_DOWN);
 		} else {
 			/* floating */
-			*pincfg = (STM32_MODE_INPUT << STM32_MODE_INOUT_SHIFT) |
-				  (STM32_PUPD_NO_PULL << STM32_PUPD_SHIFT);
+			*pincfg = (STM32_MODE_INPUT | STM32_PUPD_NO_PULL);
 		}
 	}
 
