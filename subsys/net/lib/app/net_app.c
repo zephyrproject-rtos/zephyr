@@ -980,7 +980,7 @@ static inline void copy_pool_vars(struct net_context *new_context,
 #define copy_pool_vars(...)
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-static void dtls_timing_set_delay(void *data, u32_t int_ms, u32_t fin_ms)
+static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
 {
 	struct dtls_timing_context *ctx = data;
 
