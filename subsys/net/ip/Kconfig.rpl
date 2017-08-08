@@ -19,6 +19,22 @@ menuconfig NET_RPL
 if NET_RPL
 
 choice
+	prompt "Network type"
+	default NET_RPL_L2_ANY
+	default NET_RPL_L2_IEEE802154 if NET_L2_IEEE802154
+	help
+	The type of the network that this RPL device is supporting.
+	Currently all the nodes in the network need to be the same type
+	like IEEE 802.15.4.
+
+config NET_RPL_L2_ANY
+	bool "Any network type"
+
+config NET_RPL_L2_IEEE802154
+	bool "IEEE 802.15.4"
+endchoice
+
+choice
 	prompt "Objective function"
 	default NET_RPL_MRHOF
 	help
