@@ -43,12 +43,15 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 
 		/* pull-{up,down} maybe? */
 		if (pud == GPIO_PUD_PULL_UP) {
-			*pincfg = (STM32_MODE_INPUT | STM32_PUPD_PULL_UP);
+			*pincfg = (STM32_MODE_INPUT | STM32_CNF_IN_PUPD |
+				   STM32_PUPD_PULL_UP);
 		} else if (pud == GPIO_PUD_PULL_DOWN) {
-			*pincfg = (STM32_MODE_INPUT | STM32_PUPD_PULL_DOWN);
+			*pincfg = (STM32_MODE_INPUT | STM32_CNF_IN_PUPD |
+				   STM32_PUPD_PULL_DOWN);
 		} else {
 			/* floating */
-			*pincfg = (STM32_MODE_INPUT | STM32_PUPD_NO_PULL);
+			*pincfg = (STM32_MODE_INPUT | STM32_CNF_IN_FLOAT |
+				   STM32_PUPD_NO_PULL);
 		}
 	}
 
