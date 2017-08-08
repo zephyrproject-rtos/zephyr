@@ -119,7 +119,6 @@ enum sensor_channel {
 	SENSOR_CHAN_BLUE,
 	/** Altitude, in meters */
 	SENSOR_CHAN_ALTITUDE,
-
 	/** 1.0 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_1_0,
 	/** 2.5 micro-meters Particulate Matter, in ug/m^3 */
@@ -139,6 +138,8 @@ enum sensor_channel {
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
 
+	/** Angular position in radians ranging from -pi to pi */
+	SENSOR_ANGULAR_POSITION,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
