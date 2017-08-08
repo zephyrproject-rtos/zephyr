@@ -162,12 +162,12 @@ static int gpio_cc2650_config_pin(int pin, int flags)
 		iocfg_config |= CC2650_IOC_NORMAL_IO;
 	}
 
-	if (flags & GPIO_PUD_NORMAL) {
-		iocfg_config |= CC2650_IOC_NO_PULL;
-	} else if (flags & GPIO_PUD_PULL_UP) {
+	if (flags & GPIO_PUD_PULL_UP) {
 		iocfg_config |= CC2650_IOC_PULL_UP;
 	} else if (flags & GPIO_PUD_PULL_DOWN) {
 		iocfg_config |= CC2650_IOC_PULL_DOWN;
+	} else {
+		iocfg_config |= CC2650_IOC_NO_PULL;
 	}
 
 	/* Remember, we only look at GPIO_DS_*_LOW ! */
