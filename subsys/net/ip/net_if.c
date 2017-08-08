@@ -336,6 +336,19 @@ struct net_if *net_if_get_default(void)
 	return __net_if_start;
 }
 
+struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		if (iface->l2 == l2) {
+			return iface;
+		}
+	}
+
+	return NULL;
+}
+
 #if defined(CONFIG_NET_IPV6)
 
 #if defined(CONFIG_NET_IPV6_MLD)
