@@ -1,6 +1,6 @@
 # All these sections are optional, edit this file as you like.
 [general]
-ignore=title-trailing-punctuation, T3
+ignore=title-trailing-punctuation, T3, title-max-length, T1
 # verbosity should be a value between 1 and 3, the commandline -v flags take precedence over this
 verbosity = 3
 # By default gitlint will ignore merge commits. Set to 'false' to disable.
@@ -12,12 +12,11 @@ debug = false
 # See http://jorisroovers.github.io/gitlint/user_defined_rules for details
 extra-path=scripts/gitlint
 
+[title-max-length-no-revert]
+line-length=72
 
 [body-max-line-count]
 max-line-count=200
-
-[title-max-length]
-line-length=72
 
 [title-starts-with-subsystem]
 regex = ^(([^:]+):)(\s([^:]+):)*\s(.+)$
