@@ -143,7 +143,7 @@ void isr_rand(void *param)
 	ARG_UNUSED(param);
 
 	if (NRF_RNG->EVENTS_VALRDY) {
-		u8_t ret;
+		int ret;
 
 		ret = isr(rng_isr, true);
 		if (ret != -EBUSY) {
