@@ -3290,10 +3290,10 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 static enum net_verdict handle_dao(struct net_pkt *pkt)
 {
 	struct in6_addr *dao_sender = &NET_IPV6_HDR(pkt)->src;
+	struct net_rpl_route_entry *extra = NULL;
 	struct net_rpl_parent *parent = NULL;
 	enum net_rpl_route_source learned_from;
 	struct net_rpl_instance *instance;
-	struct net_rpl_route_entry *extra;
 	struct net_route_entry *route;
 	struct net_rpl_dag *dag;
 	struct net_buf *frag;
@@ -3458,24 +3458,16 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	}
 #endif
 
-	route = net_route_lookup(net_pkt_iface(pkt), &addr);
-	if (!route) {
-		NET_DBG("No route to %s for iface %p",
-			net_sprint_ipv6_addr(&addr), net_pkt_iface(pkt));
-		return NET_DROP;
-	}
-
-	nbr = net_route_get_nbr(route);
-	if (!nbr) {
-		return NET_DROP;
-	}
-
-	extra = net_nbr_extra_data(nbr);
-
 	if (lifetime == NET_RPL_ZERO_LIFETIME) {
 		struct in6_addr *nexthop;
 
 		NET_DBG("No-Path DAO received");
+
+		route = net_route_lookup(net_pkt_iface(pkt), &addr);
+		nbr = net_route_get_nbr(route);
+		if (nbr) {
+			extra = net_nbr_extra_data(nbr);
+		}
 
 		nexthop = net_route_get_nexthop(route);
 
@@ -3551,6 +3543,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
+	extra = net_nbr_extra_data(nbr);
 	if (extra) {
 		extra->lifetime = net_rpl_lifetime(instance, lifetime);
 		extra->route_source = learned_from;

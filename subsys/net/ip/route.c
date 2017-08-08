@@ -554,7 +554,9 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 	struct net_route_nexthop *nexthop_route;
 	struct net_ipv6_nbr_data *ipv6_nbr_data;
 
-	NET_ASSERT(route);
+	if (!route) {
+		return NULL;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		struct in6_addr *addr;
