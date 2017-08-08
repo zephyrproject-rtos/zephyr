@@ -1,5 +1,5 @@
 sample:
-    description: mBED DTLS Client
+    name: mBED DTLS Client
 tests:
 -   test:
         build_only: true
