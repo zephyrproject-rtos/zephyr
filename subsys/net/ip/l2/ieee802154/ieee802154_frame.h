@@ -457,7 +457,7 @@ bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 			       struct ieee802154_mpdu *mpdu);
 
 u16_t ieee802154_compute_header_size(struct net_if *iface,
-					struct in6_addr *dst);
+				     struct in6_addr *dst);
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,

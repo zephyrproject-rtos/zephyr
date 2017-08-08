@@ -206,9 +206,9 @@ static s32_t check_hash(enum net_ip_protocol proto,
 }
 
 static inline s32_t get_conn(enum net_ip_protocol proto,
-			       sa_family_t family,
-			       struct net_pkt *pkt,
-			       u32_t *cache_value)
+			     sa_family_t family,
+			     struct net_pkt *pkt,
+			     u32_t *cache_value)
 {
 	struct net_udp_hdr hdr, *udp_hdr;
 

@@ -193,7 +193,7 @@ void net_rpl_set_mode(enum net_rpl_mode new_mode)
 }
 
 static inline u32_t net_rpl_lifetime(struct net_rpl_instance *instance,
-					u8_t lifetime)
+				     u8_t lifetime)
 {
 	return (u32_t)instance->lifetime_unit * (u32_t)lifetime;
 }
@@ -475,7 +475,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	int ret;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				      K_FOREVER);
+				     K_FOREVER);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -511,7 +511,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	net_pkt_append_be16(pkt, 0);
 
 	net_pkt_append_all(pkt, sizeof(struct in6_addr), dag->dag_id.s6_addr,
-		       K_FOREVER);
+			   K_FOREVER);
 
 	if (instance->mc.type != NET_RPL_MC_NONE) {
 		net_rpl_of_update_mc(instance);
@@ -759,7 +759,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 	}
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst_addr),
-				      K_FOREVER);
+				     K_FOREVER);
 	if (!pkt) {
 		return -ENOMEM;
 	}

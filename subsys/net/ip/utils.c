@@ -401,7 +401,7 @@ static u16_t calc_chksum(u16_t sum, const u8_t *ptr, u16_t len)
 }
 
 static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
-				       u16_t upper_layer_len)
+				    u16_t upper_layer_len)
 {
 	u16_t proto_len = net_pkt_ip_hdr_len(pkt) +
 		net_pkt_ipv6_ext_len(pkt);

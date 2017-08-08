@@ -78,8 +78,8 @@ static struct net_context contexts[NET_MAX_CONTEXT];
 static struct k_sem contexts_lock;
 
 static enum net_verdict packet_received(struct net_conn *conn,
-				 struct net_pkt *pkt,
-				 void *user_data);
+					struct net_pkt *pkt,
+					void *user_data);
 
 static void set_appdata_values(struct net_pkt *pkt, enum net_ip_protocol proto);
 

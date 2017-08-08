@@ -380,7 +380,7 @@ extern struct net_rpl_dag *net_rpl_of_best_dag(struct net_rpl_dag *dagA,
  * about parent to select an increment to the base rank.
  */
 extern u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
-				     u16_t rank);
+				  u16_t rank);
 
 /**
  * @brief RPL object function (OF) update metric container.

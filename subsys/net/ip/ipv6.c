@@ -1780,7 +1780,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	u8_t llao_len;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -1915,7 +1915,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	u8_t llao_len = 0;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 
@@ -2572,7 +2572,7 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 	int ret;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	net_pkt_append_be16(pkt, 1); /* number of records */
 
@@ -2640,7 +2640,7 @@ static void send_mld_report(struct net_if *iface)
 	int i, count = 0;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	net_pkt_append_u8(pkt, 0); /* This will be the record count */
 

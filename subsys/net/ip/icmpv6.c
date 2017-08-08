@@ -634,7 +634,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	pkt = net_ipv6_create_raw(pkt, src, dst, iface, IPPROTO_ICMPV6);
 

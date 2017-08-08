@@ -1128,8 +1128,8 @@ bool net_pkt_compact(struct net_pkt *pkt)
  * the buffer. It assumes that the buffer has at least one fragment.
  */
 static inline u16_t net_pkt_append_bytes(struct net_pkt *pkt,
-					const u8_t *value,
-					u16_t len, s32_t timeout)
+					 const u8_t *value,
+					 u16_t len, s32_t timeout)
 {
 	struct net_buf *frag = net_buf_frag_last(pkt->frags);
 	u16_t added_len = 0;
@@ -1235,7 +1235,7 @@ static inline struct net_buf *adjust_offset(struct net_buf *frag,
 }
 
 struct net_buf *net_frag_read(struct net_buf *frag, u16_t offset,
-			     u16_t *pos, u16_t len, u8_t *data)
+			      u16_t *pos, u16_t len, u8_t *data)
 {
 	u16_t copy = 0;
 

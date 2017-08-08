@@ -131,7 +131,7 @@ static inline struct net_context *net_pkt_context(struct net_pkt *pkt)
 }
 
 static inline void net_pkt_set_context(struct net_pkt *pkt,
-					struct net_context *ctx)
+				       struct net_context *ctx)
 {
 	pkt->context = ctx;
 }
@@ -392,7 +392,7 @@ static inline u8_t net_pkt_ieee802154_rssi(struct net_pkt *pkt)
 }
 
 static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
-						u8_t rssi)
+					       u8_t rssi)
 {
 	pkt->ieee802154_rssi = rssi;
 }
