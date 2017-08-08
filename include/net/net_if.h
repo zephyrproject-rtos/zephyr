@@ -529,6 +529,16 @@ static inline void net_if_router_rm(struct net_if_router *router)
  */
 struct net_if *net_if_get_default(void);
 
+/**
+ * @brief Get the first network interface according to its type.
+ *
+ * @param l2 Layer 2 type of the network interface.
+ *
+ * @return First network interface of a given type or NULL if no such
+ * interfaces was found.
+ */
+struct net_if *net_if_get_first_by_type(const struct net_l2 *l2);
+
 #if defined(CONFIG_NET_IPV6)
 /**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
