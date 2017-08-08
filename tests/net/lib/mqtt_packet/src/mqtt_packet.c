@@ -7,6 +7,7 @@
 #include <tc_util.h>
 #include <mqtt_pkt.h>
 #include <misc/util.h>	/* for ARRAY_SIZE */
+#include <ztest.h>
 
 #define RC_STR(rc)	(rc == TC_PASS ? PASS : FAIL)
 
@@ -752,82 +753,66 @@ static int eval_msg_connect(struct mqtt_test *mqtt_test)
 	msg = (struct mqtt_connect_msg *)mqtt_test->msg;
 
 	rc = mqtt_pack_connect(buf, &buf_len, sizeof(buf), msg);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check eval_msg_connect functions*/
+	zassert_false(rc, "mqtt_pack_connect failed");
 
 	rc = eval_buffers(buf, buf_len,
 			  mqtt_test->expected, mqtt_test->expected_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "eval_buffers failed");
 
 	rc = mqtt_unpack_connect(buf, buf_len, &msg2);
-	if (rc != 0) {
-		TC_ERROR("mqtt_unpack_connect");
-		return TC_FAIL;
-	}
 
-	if (msg->clean_session != msg2.clean_session) {
-		TC_ERROR("Clean session\n");
-		return TC_FAIL;
-	}
-	if (test_strlen(msg->client_id) != msg2.client_id_len) {
-		TC_ERROR("Client Id length\n");
-		return TC_FAIL;
-	}
-	if (memcmp(msg->client_id, msg2.client_id, msg2.client_id_len)) {
-		TC_ERROR("Client Id\n");
-		return TC_FAIL;
-	}
-	if (msg->will_flag != msg2.will_flag) {
-		TC_ERROR("Will flag\n");
-		return TC_FAIL;
-	}
-	if (msg->will_qos != msg2.will_qos) {
-		TC_ERROR("Will QoS\n");
-		return TC_FAIL;
-	}
-	if (msg->will_retain != msg2.will_retain) {
-		TC_ERROR("Will retain\n");
-		return TC_FAIL;
-	}
-	if (test_strlen(msg->will_topic) != msg2.will_topic_len) {
-		TC_ERROR("Will topic length\n");
-		return TC_FAIL;
-	}
-	if (memcmp(msg->will_topic, msg2.will_topic, msg2.will_topic_len)) {
-		TC_ERROR("Will topic\n");
-		return TC_FAIL;
-	}
-	if (msg->will_msg_len != msg2.will_msg_len) {
-		TC_ERROR("Will msg len\n");
-		return TC_FAIL;
-	}
-	if (memcmp(msg->will_msg, msg2.will_msg, msg2.will_msg_len)) {
-		TC_ERROR("Will msg\n");
-		return TC_FAIL;
-	}
-	if (msg->keep_alive != msg2.keep_alive) {
-		TC_ERROR("Keep alive\n");
-		return TC_FAIL;
-	}
-	if (test_strlen(msg->user_name) != msg2.user_name_len) {
-		TC_ERROR("Username length\n");
-		return TC_FAIL;
-	}
-	if (memcmp(msg->user_name, msg2.user_name, msg2.user_name_len)) {
-		TC_ERROR("Username\n");
-		return TC_FAIL;
-	}
-	if (msg->password_len != msg2.password_len) {
-		TC_ERROR("Password length\n");
-		return TC_FAIL;
-	}
-	if (memcmp(msg->password, msg2.password, msg2.password_len)) {
-		TC_ERROR("Password\n");
-		return TC_FAIL;
-	}
+	zassert_false(rc, "mqtt_unpack_connect failed");
+
+	zassert_equal(msg->clean_session, msg2.clean_session,
+		"clean session check failed");
+
+	zassert_equal(test_strlen(msg->client_id), msg2.client_id_len,
+		"client ID length check failed");
+
+	zassert_false(memcmp(msg->client_id, msg2.client_id,
+				msg2.client_id_len),
+				"client ID check failed");
+
+	zassert_equal(msg->will_flag, msg2.will_flag,
+		"will flag error");
+
+	zassert_equal(msg->will_qos, msg2.will_qos,
+		"will QoS error");
+
+	zassert_equal(msg->will_retain, msg2.will_retain,
+		"will retain error");
+
+	zassert_equal(test_strlen(msg->will_topic), msg2.will_topic_len,
+		"will topic length error");
+
+	zassert_false(memcmp(msg->will_topic, msg2.will_topic,
+				msg2.will_topic_len),
+				"will topic error");
+
+	zassert_equal(msg->will_msg_len, msg2.will_msg_len,
+		"will msg len error");
+
+	zassert_false(memcmp(msg->will_msg, msg2.will_msg, msg2.will_msg_len),
+		"will msg error");
+
+	zassert_equal(msg->keep_alive, msg2.keep_alive,
+		"keep alive error");
+
+	zassert_equal(test_strlen(msg->user_name), msg2.user_name_len,
+		"username length error");
+
+	zassert_false(memcmp(msg->user_name, msg2.user_name,
+				msg2.user_name_len),
+				"username error");
+
+	zassert_equal(msg->password_len, msg2.password_len,
+		"password length error");
+
+	zassert_false(memcmp(msg->password, msg2.password, msg2.password_len),
+		"password error");
 
 	return TC_PASS;
 }
@@ -837,20 +822,18 @@ static int eval_msg_disconnect(struct mqtt_test *mqtt_test)
 	int rc;
 
 	rc = mqtt_pack_disconnect(buf, &buf_len, sizeof(buf));
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check eval_msg_disconnect functions*/
+	zassert_false(rc, "mqtt_pack_disconnect failed");
 
 	rc = eval_buffers(buf, buf_len,
 			  mqtt_test->expected, mqtt_test->expected_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "eval_buffers failed");
 
 	rc = mqtt_unpack_disconnect(buf, buf_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "mqtt_unpack_disconnect failed");
 
 	return TC_PASS;
 }
@@ -863,9 +846,9 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 	msg = (struct mqtt_publish_msg *)mqtt_test->msg;
 
 	rc = mqtt_pack_publish(buf, &buf_len, sizeof(buf), msg);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINT: Check eval_msg_publish function*/
+	zassert_false(rc, "mqtt_pack_publish failed");
 
 	return eval_buffers(buf, buf_len,
 			    mqtt_test->expected, mqtt_test->expected_len);
@@ -878,9 +861,9 @@ static int eval_msg_subscribe(struct mqtt_test *mqtt_test)
 
 	rc = mqtt_pack_subscribe(buf, &buf_len, sizeof(buf), msg->pkt_id,
 				 msg->items, msg->topics, msg->qos);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINT: Check eval_msg_subscribe function*/
+	zassert_false(rc, "mqtt_pack_subscribe failed");
 
 	return eval_buffers(buf, buf_len,
 			    mqtt_test->expected, mqtt_test->expected_len);
@@ -893,9 +876,9 @@ static int eval_msg_suback(struct mqtt_test *mqtt_test)
 
 	rc = mqtt_pack_suback(buf, &buf_len, sizeof(buf),
 			      msg->pkt_id, msg->elements, msg->qos);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINT: Check eval_msg_suback function*/
+	zassert_false(rc, "mqtt_pack_suback failed");
 
 	return eval_buffers(buf, buf_len,
 			    mqtt_test->expected, mqtt_test->expected_len);
@@ -906,20 +889,18 @@ static int eval_msg_pingreq(struct mqtt_test *mqtt_test)
 	int rc;
 
 	rc = mqtt_pack_pingreq(buf, &buf_len, sizeof(buf));
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check eval_msg_pingreq functions*/
+	zassert_false(rc, "mqtt_pack_pingreq failed");
 
 	rc = eval_buffers(buf, buf_len,
 			  mqtt_test->expected, mqtt_test->expected_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "eval_buffers failed");
 
 	rc = mqtt_unpack_pingreq(buf, buf_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "mqtt_unpack_pingreq failed");
 
 	return TC_PASS;
 }
@@ -929,20 +910,18 @@ static int eval_msg_pingresp(struct mqtt_test *mqtt_test)
 	int rc;
 
 	rc = mqtt_pack_pingresp(buf, &buf_len, sizeof(buf));
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check evam_msg_pingresp functions*/
+	zassert_false(rc, "mqtt_pack_pingresp failed");
 
 	rc = eval_buffers(buf, buf_len,
 			  mqtt_test->expected, mqtt_test->expected_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "eval_buffers failed");
 
 	rc = mqtt_unpack_pingresp(buf, buf_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "mqtt_unpack_pingresp failed");
 
 	return TC_PASS;
 }
@@ -982,25 +961,20 @@ int eval_msg_packet_id(struct mqtt_test *mqtt_test, enum mqtt_packet type)
 	}
 
 	rc = pack(buf, &buf_len, sizeof(buf), msg->pkt_id);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check eval_msg_packet_id functions*/
+	zassert_false(rc, "pack failed");
 
 	rc = eval_buffers(buf, buf_len,
 			  mqtt_test->expected, mqtt_test->expected_len);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "eval_buffers failed");
 
 	rc = unpack(buf, buf_len, &pkt_id);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
 
-	if (pkt_id != msg->pkt_id) {
-		TC_ERROR("Packet identifier\n");
-		return TC_FAIL;
-	}
+	zassert_false(rc, "unpack failed");
+
+	zassert_equal(pkt_id, msg->pkt_id, "packet identifier error");
 
 	return TC_PASS;
 }
@@ -1030,8 +1004,10 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test)
 	return eval_msg_packet_id(mqtt_test, MQTT_UNSUBACK);
 }
 
-static int run_tests(void)
+void run_tests(void)
 {
+	TC_START("MQTT Library test");
+
 	int rc;
 	int i;
 
@@ -1045,29 +1021,18 @@ static int run_tests(void)
 
 		rc = test->eval_fcn(test);
 		TC_PRINT("[%s] %d - %s\n", RC_STR(rc), i + 1, test->test_name);
-		if (rc != TC_PASS) {
-			rc = TC_FAIL;
-			goto exit_test;
-		}
+
+		/**TESTPOINT: Check eval_fcn*/
+		zassert_false(rc, "mqtt_packet test error");
 
 		i++;
 	} while (1);
-
-	rc = TC_PASS;
-
-exit_test:
-	return rc;
 }
 
 
-void main(void)
+void test_main(void)
 {
-	int rc;
-
-	TC_START("MQTT Library test");
-
-	rc = run_tests();
-
-	TC_END_RESULT(rc);
-	TC_END_REPORT(rc);
+	ztest_test_suite(test_mqtt_packet_fn,
+		ztest_unit_test(run_tests));
+	ztest_run_test_suite(test_mqtt_packet_fn);
 }
