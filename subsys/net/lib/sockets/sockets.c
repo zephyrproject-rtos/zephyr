@@ -26,6 +26,9 @@
 
 static struct k_poll_event poll_events[CONFIG_NET_SOCKETS_POLL_MAX];
 
+static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
+			      int status, void *user_data);
+
 static inline void sock_set_flag(struct net_context *ctx, u32_t mask,
 				 u32_t flag)
 {
@@ -103,6 +106,8 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 			      struct sockaddr *addr, socklen_t addrlen,
 			      int status, void *user_data) {
 	struct net_context *parent = user_data;
+
+	net_context_recv(new_ctx, zsock_received_cb, K_NO_WAIT, NULL);
 
 	NET_DBG("parent=%p, ctx=%p, st=%d", parent, new_ctx, status);
 
@@ -192,8 +197,6 @@ int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 	struct net_context *parent = INT_TO_POINTER(sock);
 
 	struct net_context *ctx = k_fifo_get(&parent->accept_q, K_FOREVER);
-
-	SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, NULL));
 
 	if (addr != NULL && addrlen != NULL) {
 		int len = min(*addrlen, sizeof(ctx->remote));
