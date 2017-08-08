@@ -179,7 +179,6 @@ void board_play_tune(const char *str)
 {
 	while (*str) {
 		u32_t period, duration = 0;
-		bool sharp;
 
 		while (*str && !isdigit(*str)) {
 			str++;
@@ -195,12 +194,14 @@ void board_play_tune(const char *str)
 			break;
 		}
 
-		if (str[0] && str[1] == '#') {
-			sharp = true;
+		if (str[1] == '#') {
+			period = get_period(*str, true);
+			str += 2;
+		} else {
+			period = get_period(*str, false);
 			str++;
 		}
 
-		period = get_period(*str, sharp);
 		if (period) {
 			pwm_pin_set_usec(pwm, BUZZER_PIN, period, period / 2);
 		}
