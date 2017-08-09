@@ -906,21 +906,31 @@ void dns_init_resolver(void)
 	}
 
 	switch (count) {
+#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 4
 	case 5:
 		dns_servers[4] = CONFIG_DNS_SERVER5;
 		/* fallthrough */
+#endif
+#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 3
 	case 4:
 		dns_servers[3] = CONFIG_DNS_SERVER4;
 		/* fallthrough */
+#endif
+#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 2
 	case 3:
 		dns_servers[2] = CONFIG_DNS_SERVER3;
 		/* fallthrough */
+#endif
+#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 1
 	case 2:
 		dns_servers[1] = CONFIG_DNS_SERVER2;
 		/* fallthrough */
+#endif
+#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 0
 	case 1:
 		dns_servers[0] = CONFIG_DNS_SERVER1;
 		/* fallthrough */
+#endif
 	case 0:
 		break;
 	}
