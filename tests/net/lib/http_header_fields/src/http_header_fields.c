@@ -25,6 +25,7 @@
 
 #include <misc/printk.h>
 #include <tc_util.h>
+#include <ztest.h>
 
 static
 struct http_parser_settings settings_null = {
@@ -571,21 +572,19 @@ const struct url_test url_tests[] = {
 #endif
 };
 
-int test_preserve_data(void)
+void test_preserve_data(void)
 {
 	struct http_parser parser = { 0 };
 	char my_data[] = "application-specific data";
 
 	parser.data = my_data;
 	http_parser_init(&parser, HTTP_REQUEST);
-	if (parser.data != my_data) {
-		return TC_FAIL;
-	}
 
-	return TC_PASS;
+	/**TESTPOINT: Check results*/
+	zassert_equal(parser.data, my_data, "test_preserve_data error");
 }
 
-int test_parse_url(void)
+void test_parse_url(void)
 {
 	struct http_parser_url u;
 	const struct url_test *test;
@@ -604,36 +603,29 @@ int test_parse_url(void)
 					   &u);
 
 		if (test->rv == 0) {
-			if (rv != 0) {
-				return TC_FAIL;
-			}
 
-			if (memcmp(&u, &test->u, sizeof(u)) != 0) {
-				return TC_FAIL;
-			}
+			/**TESTPOINT: Check test_parse_url functions*/
+			zassert_false(rv, "http_parser_parse_url error");
+
+			zassert_false(memcmp(&u, &test->u, sizeof(u)),
+					"test_parse_url failed");
 		} else {
 			/* test->rv != 0 */
-			if (rv == 0) {
-				return TC_FAIL;
-			}
+			zassert_true(rv, "http_parser_parse_url error");
 		}
 	}
-	return TC_PASS;
 }
 
-int test_method_str(void)
+void test_method_str(void)
 {
-	if (strcmp("GET", http_method_str(HTTP_GET)) != 0) {
-		return TC_FAIL;
-	}
-	if (strcmp("<unknown>", http_method_str(127)) != 0) {
-		return TC_FAIL;
-	}
-
-	return TC_PASS;
+	/**TESTPOINT: Check test_method_str function*/
+	zassert_false(strcmp("GET", http_method_str(HTTP_GET)),
+			"http_method_str error");
+	zassert_false(strcmp("<unknown>", http_method_str(127)),
+			"http_method_str error");
 }
 
-int test_header_nread_value(void)
+void test_header_nread_value(void)
 {
 	struct http_parser parser = { 0 };
 	const char *buf;
@@ -643,14 +635,10 @@ int test_header_nread_value(void)
 	buf = "GET / HTTP/1.1\r\nheader: value\nhdr: value\r\n";
 	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
 
-	if (parsed != strlen(buf)) {
-		return TC_FAIL;
-	}
-	if (parser.nread != strlen(buf)) {
-		return TC_FAIL;
-	}
-
-	return TC_PASS;
+	zassert_equal(parsed, strlen(buf),
+			"http_parser error");
+	zassert_equal(parser.nread, strlen(buf),
+			"http_parser error");
 }
 
 int test_invalid_header_content(int req, const char *str)
@@ -663,17 +651,19 @@ int test_invalid_header_content(int req, const char *str)
 	http_parser_init(&parser, req ? HTTP_REQUEST : HTTP_RESPONSE);
 	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
 	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
-	if (parsed != strlen(buf)) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check test_invalid_header_content functions*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
 
 	buf = str;
 	buflen = strlen(buf);
 	parsed = http_parser_execute(&parser, &settings_null, buf, buflen);
 	if (parsed != buflen) {
-		if (HTTP_PARSER_ERRNO(&parser) != HPE_INVALID_HEADER_TOKEN) {
-			return TC_FAIL;
-		}
+		zassert_equal(HTTP_PARSER_ERRNO(&parser),
+				HPE_INVALID_HEADER_TOKEN,
+				"http_parser_execute error");
+
 		return TC_PASS;
 	}
 
@@ -685,14 +675,13 @@ int test_invalid_header_field_content_error(int req)
 	int rc;
 
 	rc = test_invalid_header_content(req, "Foo: F\01ailure");
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check test_invalid_header_field_content_error*/
+	zassert_false(rc, "test_invalid_header_content error");
 
 	rc = test_invalid_header_content(req, "Foo: B\02ar");
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	zassert_false(rc, "test_invalid_header_content error");
 
 	return TC_PASS;
 }
@@ -707,17 +696,18 @@ int test_invalid_header_field(int req, const char *str)
 	http_parser_init(&parser, req ? HTTP_REQUEST : HTTP_RESPONSE);
 	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
 	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
-	if (parsed != strlen(buf)) {
-		return TC_FAIL;
-	}
 
+	/**TESTPOINTS: Check http_parser_execute*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
 	buf = str;
 	buflen = strlen(buf);
 	parsed = http_parser_execute(&parser, &settings_null, buf, buflen);
 	if (parsed != buflen) {
-		if (HTTP_PARSER_ERRNO(&parser) != HPE_INVALID_HEADER_TOKEN) {
-			return TC_FAIL;
-		}
+		zassert_equal(HTTP_PARSER_ERRNO(&parser),
+				HPE_INVALID_HEADER_TOKEN,
+				"http_parser_execute error");
+
 		return TC_PASS;
 	}
 
@@ -729,14 +719,12 @@ int test_invalid_header_field_token_error(int req)
 	int rc;
 
 	rc = test_invalid_header_field(req, "Fo@: Failure");
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check test_invalid_header_field_token_error*/
+	zassert_false(rc, "test_invalid_header_field error");
 
 	rc = test_invalid_header_field(req, "Foo\01\test: Bar");
-	if (rc != 0) {
-		return TC_FAIL;
-	}
+	zassert_false(rc, "test_invalid_header_field error");
 
 	return TC_PASS;
 }
@@ -751,9 +739,10 @@ int test_double_content_length_error(int req)
 	http_parser_init(&parser, req ? HTTP_REQUEST : HTTP_RESPONSE);
 	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
 	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
-	if (parsed != strlen(buf)) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check http_parser_execute*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
 
 	buf = "Content-Length: 0\r\nContent-Length: 1\r\n\r\n";
 	buflen = strlen(buf);
@@ -761,9 +750,9 @@ int test_double_content_length_error(int req)
 	if (parsed != buflen) {
 		int error = HTTP_PARSER_ERRNO(&parser);
 
-		if (error != HPE_UNEXPECTED_CONTENT_LENGTH) {
-			return TC_FAIL;
-		}
+		zassert_equal(error, HPE_UNEXPECTED_CONTENT_LENGTH,
+			"http_parser_execute error");
+
 		return TC_PASS;
 	}
 
@@ -781,9 +770,10 @@ int test_chunked_content_length_error(int req)
 
 	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
 	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
-	if (parsed != strlen(buf)) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check http_parser_execute*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
 
 	buf = "Transfer-Encoding: chunked\r\nContent-Length: 1\r\n\r\n";
 	buflen = strlen(buf);
@@ -791,9 +781,9 @@ int test_chunked_content_length_error(int req)
 	if (parsed != buflen) {
 		int error = HTTP_PARSER_ERRNO(&parser);
 
-		if (error != HPE_UNEXPECTED_CONTENT_LENGTH) {
-			return TC_FAIL;
-		}
+		zassert_equal(error, HPE_UNEXPECTED_CONTENT_LENGTH,
+			"http_parser_execute error");
+
 		return TC_PASS;
 	}
 
@@ -810,9 +800,11 @@ int test_header_cr_no_lf_error(int req)
 	http_parser_init(&parser, req ? HTTP_REQUEST : HTTP_RESPONSE);
 	buf = req ? "GET / HTTP/1.1\r\n" : "HTTP/1.1 200 OK\r\n";
 	parsed = http_parser_execute(&parser, &settings_null, buf, strlen(buf));
-	if (parsed != strlen(buf)) {
-		return TC_FAIL;
-	}
+
+	/**TESTPOINTS: Check http_parser_execute*/
+	zassert_equal(parsed, strlen(buf),
+			"http_parser_execute error");
+
 
 	buf = "Foo: 1\rBar: 1\r\n\r\n";
 	buflen = strlen(buf);
@@ -820,9 +812,9 @@ int test_header_cr_no_lf_error(int req)
 	if (parsed != buflen) {
 		int error = HTTP_PARSER_ERRNO(&parser);
 
-		if (error != HPE_LF_EXPECTED) {
-			return TC_FAIL;
-		}
+		zassert_equal(error, HPE_LF_EXPECTED,
+			"http_parser_execute error");
+
 		return TC_PASS;
 	}
 
@@ -831,111 +823,77 @@ int test_header_cr_no_lf_error(int req)
 
 #define RC_STR(rc)	(rc == TC_PASS ? PASS : FAIL)
 
-void main(void)
+void test_http_header_fields(void)
 {
 	int rc;
 
 	TC_START("HTTP header fields test");
 
 	/* api */
-	rc = test_preserve_data();
-	TC_PRINT("[%s] test_preserve_data\n", RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+	test_preserve_data();
 
-	rc = test_parse_url();
-	TC_PRINT("[%s] test_parse_url\n", RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+	test_parse_url();
 
-	rc = test_method_str();
-	TC_PRINT("[%s] test_method_str\n", RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+	test_method_str();
 
 	/* nread */
-	rc = test_header_nread_value();
-	TC_PRINT("[%s] test_header_nread_value\n", RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+	test_header_nread_value();
 
 	/* header field tests */
 	rc = test_double_content_length_error(HTTP_REQUEST);
-	TC_PRINT("[%s] test_double_content_length_error HTTP_REQUEST\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_double_content_length_error*/
+	zassert_false(rc, "test_double_content_length_error failed");
 
 	rc = test_chunked_content_length_error(HTTP_REQUEST);
-	TC_PRINT("[%s] test_chunked_content_length_error HTTP_REQUEST\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_chunked_content_length_error*/
+	zassert_false(rc, "test_chunked_content_length_error failed");
 
 	rc = test_header_cr_no_lf_error(HTTP_REQUEST);
-	TC_PRINT("[%s] test_header_cr_no_lf_error HTTP_REQUEST\n", RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_header_cr_no_lf_error*/
+	zassert_false(rc, "test_header_cr_no_lf_error failed");
 
 	rc = test_invalid_header_field_token_error(HTTP_REQUEST);
-	TC_PRINT("[%s] test_invalid_header_field_token_error HTTP_REQUEST\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_invalid_header_field_token_error*/
+	zassert_false(rc, "test_invalid_header_field_token_error failed");
 
 	rc = test_invalid_header_field_content_error(HTTP_REQUEST);
-	TC_PRINT("[%s] test_invalid_header_field_content_error HTTP_REQUEST\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_invalid_header_field_content_error*/
+	zassert_false(rc, "test_invalid_header_field_content_error failed");
 
 	rc = test_double_content_length_error(HTTP_RESPONSE);
-	TC_PRINT("[%s] test_double_content_length_error HTTP_RESPONSE\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_double_content_length_error*/
+	zassert_false(rc, "test_double_content_length_error failed");
 
 	rc = test_chunked_content_length_error(HTTP_RESPONSE);
-	TC_PRINT("[%s] test_chunked_content_length_error HTTP_RESPONSE\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_chunked_content_length_error*/
+	zassert_false(rc, "test_chunked_content_length_error failed");
 
 	rc = test_header_cr_no_lf_error(HTTP_RESPONSE);
-	TC_PRINT("[%s] test_header_cr_no_lf_error HTTP_RESPONSE\n", RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_header_cr_no_lf_error*/
+	zassert_false(rc, "test_header_cr_no_lf_error failed");
 
 	rc = test_invalid_header_field_token_error(HTTP_RESPONSE);
-	TC_PRINT("[%s] test_invalid_header_field_token_error HTTP_RESPONSE\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
+
+	/**TESTPOINT: Check test_invalid_header_field_token_error*/
+	zassert_false(rc, "test_invalid_header_field_token_error failed");
 
 	rc = test_invalid_header_field_content_error(HTTP_RESPONSE);
-	TC_PRINT("[%s] test_invalid_header_field_content_error HTTP_RESPONSE\n",
-		 RC_STR(rc));
-	if (rc != TC_PASS) {
-		goto exit_test;
-	}
 
-	TC_PRINT("\n\tNo errors detected\n");
-	rc = TC_PASS;
+	/**TESTPOINT: Check test_invalid_header_field_content_error*/
+	zassert_false(rc, "test_invalid_header_field_content_error failed");
+}
 
-exit_test:
-	TC_END_RESULT(rc);
-	TC_END_REPORT(rc);
+void test_main(void)
+{
+	ztest_test_suite(test_http_header_fields_fn,
+		ztest_unit_test(test_http_header_fields));
+	ztest_run_test_suite(test_http_header_fields_fn);
 }
