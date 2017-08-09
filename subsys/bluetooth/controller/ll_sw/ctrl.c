@@ -1104,7 +1104,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 	return 1;
 }
 
-static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx)
+static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_adv *pdu_adv_rx;
@@ -1149,6 +1149,9 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx)
 	/* save the resolving list index */
 	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
 			     pdu_adv_rx->len + 1] = rl_idx;
+	/* save the directed adv report flag */
+	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
+			     pdu_adv_rx->len + 2] = dir_report ? 1 : 0;
 #endif /* CONFIG_BT_CONTROLLER_PRIVACY */
 
 	packet_rx_enqueue();
@@ -1193,8 +1196,25 @@ static inline bool isr_scan_init_adva_check(struct pdu_adv *pdu,
 			&pdu->payload.adv_ind.addr[0], BDADDR_SIZE) == 0));
 }
 
+static inline bool isr_scan_tgta_rpa_check(struct pdu_adv *pdu,
+					   bool *dir_report)
+{
+	if (((_radio.scanner.filter_policy & 0x02) != 0) &&
+	    (pdu->rx_addr != 0) &&
+	    ((pdu->payload.direct_ind.tgt_addr[5] & 0xc0) == 0x40)) {
+
+		if (dir_report) {
+			*dir_report = true;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 static inline bool isr_scan_tgta_check(bool init, struct pdu_adv *pdu,
-				       u8_t rl_idx)
+				       u8_t rl_idx, bool *dir_report)
 {
 #if defined(CONFIG_BT_CONTROLLER_PRIVACY)
 	if (ctrl_rl_addr_resolve(pdu->rx_addr,
@@ -1215,9 +1235,7 @@ static inline bool isr_scan_tgta_check(bool init, struct pdu_adv *pdu,
 		  /* allow directed adv packets where TargetA address
 		   * is resolvable private address (scanner only)
 		   */
-	       (((_radio.scanner.filter_policy & 0x02) != 0) &&
-		(pdu->rx_addr != 0) &&
-		((pdu->payload.direct_ind.tgt_addr[5] & 0xc0) == 0x40));
+	       isr_scan_tgta_rpa_check(pdu, dir_report);
 }
 
 static inline bool isr_scan_init_check(struct pdu_adv *pdu, u8_t rl_idx)
@@ -1227,7 +1245,7 @@ static inline bool isr_scan_init_check(struct pdu_adv *pdu, u8_t rl_idx)
 		((pdu->type == PDU_ADV_TYPE_ADV_IND) ||
 		((pdu->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		 (/* allow directed adv packets addressed to this device */
-		  isr_scan_tgta_check(true, pdu, rl_idx)))));
+		  isr_scan_tgta_check(true, pdu, rl_idx, NULL)))));
 }
 
 static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
@@ -1235,6 +1253,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 				u8_t rssi_ready)
 {
 	struct pdu_adv *pdu_adv_rx;
+	/* Directed Adverising Report */
+	bool dir_report = false;
 
 	pdu_adv_rx = (struct pdu_adv *)
 		_radio.packet_rx[_radio.packet_rx_last]->pdu_data;
@@ -1521,7 +1541,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		/* save the adv packet */
 		err = isr_rx_scan_report(rssi_ready,
 					 irkmatch_ok ? rl_idx :
-						       FILTER_IDX_NONE);
+						       FILTER_IDX_NONE,
+					 false);
 		if (err) {
 			return err;
 		}
@@ -1563,7 +1584,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 	else if (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		   (/* allow directed adv packets addressed to this device */
-		    isr_scan_tgta_check(false, pdu_adv_rx, rl_idx))) ||
+		    isr_scan_tgta_check(false, pdu_adv_rx, rl_idx,
+					&dir_report))) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_NONCONN_IND) ||
 		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND) ||
 #if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
@@ -1579,7 +1601,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		/* save the scan response packet */
 		err = isr_rx_scan_report(rssi_ready,
 					 irkmatch_ok ? rl_idx :
-						       FILTER_IDX_NONE);
+						       FILTER_IDX_NONE,
+					 dir_report);
 		if (err) {
 			return err;
 		}

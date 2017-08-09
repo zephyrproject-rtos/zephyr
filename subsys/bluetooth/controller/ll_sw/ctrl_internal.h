@@ -273,9 +273,11 @@ struct pdu_data_q_tx {
 	struct radio_pdu_node_tx *node_tx;
 };
 
-/* Extra bytes for enqueued rx_node metadata: rssi and resolving index */
+/* Extra bytes for enqueued rx_node metadata: rssi (always) and resolving
+ * index and directed adv report (with privacy enabled).
+ */
 #if defined(CONFIG_BT_CONTROLLER_PRIVACY)
-#define PDU_AC_SIZE_EXTRA 2
+#define PDU_AC_SIZE_EXTRA 3
 #else
 #define PDU_AC_SIZE_EXTRA 1
 #endif /* CONFIG_BT_CONTROLLER_PRIVACY */

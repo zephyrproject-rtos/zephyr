@@ -1607,8 +1607,8 @@ struct bt_hci_evt_le_enh_conn_complete {
 #define BT_HCI_EVT_LE_DIRECT_ADV_REPORT         0x0b
 struct bt_hci_evt_le_direct_adv_info {
 	u8_t         evt_type;
-	bt_addr_le_t dir_addr;
 	bt_addr_le_t addr;
+	bt_addr_le_t dir_addr;
 	s8_t         rssi;
 } __packed;
 struct bt_hci_evt_le_direct_adv_report {
