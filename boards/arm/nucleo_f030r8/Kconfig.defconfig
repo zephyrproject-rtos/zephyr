@@ -1,0 +1,13 @@
+# Kconfig - STM32 Nucleo-64 development board with STM32F030R8 MCU
+#
+# Copyright (c) 2017 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_F030R8
+
+config BOARD
+	default nucleo_f030r8
+
+endif # BOARD_NUCLEO_F030R8
