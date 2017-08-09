@@ -28,6 +28,7 @@
 #include <gpio.h>
 
 #include <net/ieee802154_radio.h>
+#include "ieee802154_frame.h"
 
 #include "ieee802154_mcr20a.h"
 #include "MCR20Overwrites.h"
@@ -705,7 +706,7 @@ static inline bool _irqsts3_event(struct mcr20a_context *mcr20a,
 	bool retval = false;
 
 	if (dregs[MCR20A_IRQSTS3] & MCR20A_IRQSTS3_TMR4IRQ) {
-		SYS_LOG_DBG("Sequence timeout, IRQSTSs 0x%02x 0x%02x 0x%02x",
+		SYS_LOG_WRN("Sequence timeout, IRQSTSs 0x%02x 0x%02x 0x%02x",
 			    dregs[MCR20A_IRQSTS1],
 			    dregs[MCR20A_IRQSTS2],
 			    dregs[MCR20A_IRQSTS3]);
@@ -1081,8 +1082,11 @@ static int mcr20a_tx(struct device *dev,
 		     struct net_buf *frag)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t seq = MCR20A_AUTOACK_ENABLED ? MCR20A_XCVSEQ_TX_RX :
-					       MCR20A_XCVSEQ_TX;
+	struct net_if *iface = mcr20a->iface;
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	bool ack_required = ieee802154_ack_required(pkt);
+	u8_t seq = ack_required ? MCR20A_XCVSEQ_TX_RX :
+				  MCR20A_XCVSEQ_TX;
 	int retval;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -1125,6 +1129,9 @@ static int mcr20a_tx(struct device *dev,
 	}
 
 	SYS_LOG_DBG("done");
+	if (ack_required && !retval) {
+		ctx->ack_received = true;
+	}
 
 	return mcr20a->seq_retval;
 
