@@ -32,8 +32,8 @@ typedef struct {
 	bt_addr_t a;
 } bt_addr_le_t;
 
-#define BT_ADDR_ANY     (&(bt_addr_t) {{0, 0, 0, 0, 0, 0} })
-#define BT_ADDR_LE_ANY  (&(bt_addr_le_t) { 0, { {0, 0, 0, 0, 0, 0} } })
+#define BT_ADDR_ANY     (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
+#define BT_ADDR_LE_ANY  (&(bt_addr_le_t) { 0, { { 0, 0, 0, 0, 0, 0 } } })
 #define BT_ADDR_LE_NONE (&(bt_addr_le_t) { 0, \
 			 { { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } })
 
@@ -57,14 +57,13 @@ static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 	memcpy(dst, src, sizeof(*dst));
 }
 
-#define BT_ADDR_IS_RPA(addr)     (((addr)->val[5] & 0xc0) == 0x40)
-#define BT_ADDR_IS_NRPA(addr)    (((addr)->val[5] & 0xc0) == 0x00)
-#define BT_ADDR_IS_STATIC(addr)  (((addr)->val[5] & 0xc0) == 0xc0)
+#define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
+#define BT_ADDR_IS_NRPA(a)    (((a)->val[5] & 0xc0) == 0x00)
+#define BT_ADDR_IS_STATIC(a)  (((a)->val[5] & 0xc0) == 0xc0)
 
-#define BT_ADDR_SET_RPA(addr)    ((addr)->val[5] = \
-					(((addr)->val[5] & 0x3f) | 0x40))
-#define BT_ADDR_SET_NRPA(addr)   ((addr)->val[5] &= 0x3f)
-#define BT_ADDR_SET_STATIC(addr) ((addr)->val[5] |= 0xc0)
+#define BT_ADDR_SET_RPA(a)    ((a)->val[5] = (((a)->val[5] & 0x3f) | 0x40))
+#define BT_ADDR_SET_NRPA(a)   ((a)->val[5] &= 0x3f)
+#define BT_ADDR_SET_STATIC(a) ((a)->val[5] |= 0xc0)
 
 int bt_addr_le_create_nrpa(bt_addr_le_t *addr);
 int bt_addr_le_create_static(bt_addr_le_t *addr);
