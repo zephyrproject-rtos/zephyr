@@ -61,6 +61,10 @@ small-footprint OSes:
    * *Power Management Services* such as tickless idle and an advanced idling
      infrastructure.
 
+.. include:: ../../README.rst
+   :start-after: start_include_here
+
+
 Fundamental Terms and Concepts
 ******************************
 
