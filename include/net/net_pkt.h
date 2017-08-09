@@ -1381,6 +1381,19 @@ void net_pkt_get_info(struct k_mem_slab **rx,
 		      struct net_buf_pool **rx_data,
 		      struct net_buf_pool **tx_data);
 
+/**
+ * @brief Get source socket address.
+ *
+ * @param pkt Nework packet
+ * @param addr Source socket address
+ * @param addrlen The length of source socket address
+ * @return 0 on success, <0 otherwise.
+ */
+
+int net_pkt_get_src_addr(struct net_pkt *pkt,
+			 struct sockaddr *addr,
+			 socklen_t addrlen);
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 /**
  * @brief Debug helper to print out the buffer allocations
