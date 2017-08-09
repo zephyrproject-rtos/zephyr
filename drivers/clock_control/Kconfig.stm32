@@ -1,6 +1,7 @@
 # Kconfig - STM32 MCU clock control driver config
 #
 # Copyright (c) 2017 Linaro
+# Copyright (c) 2017 RnDity Sp. z o.o.
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -66,10 +67,14 @@ prompt "STM32 PLL Clock Source"
 depends on CLOCK_STM32_SYSCLK_SRC_PLL
 default CLOCK_STM32_PLL_SRC_HSI
 
+if SOC_SERIES_STM32F0X!=y
+
 config CLOCK_STM32_PLL_SRC_MSI
 	bool "MSI"
 	help
 	  Use MSI as source of PLL
+
+endif # SOC_SERIES_STM32F0X!=y
 
 config CLOCK_STM32_PLL_SRC_HSI
 	bool "HSI"
@@ -89,6 +94,34 @@ config CLOCK_STM32_PLL_SRC_PLL2
 	 PLL2 as source PREDIV1SCR. If not selected, default source is HSE.
 
 endchoice
+
+if SOC_SERIES_STM32F0X
+
+config CLOCK_STM32_PLL_PREDIV
+	int "PREDIV Prescaler"
+	default 1
+	range 1 16
+	help
+	 PREDIV is PLLSCR clock signal prescaler, allowed values: 1 - 16.
+
+config CLOCK_STM32_PLL_PREDIV1
+	int "PREDIV1 Prescaler"
+	depends on CLOCK_STM32_PLL_SRC_HSE && (SOC_STM32F091XB || SOC_STM32F091XC)
+	default 1
+	range 1 16
+	help
+	 PREDIV is PLLSCR clock signal prescaler, present on STM32F091xB, STM32F091xC.
+	 Allowed values: 1 - 16.
+
+config CLOCK_STM32_PLL_MULTIPLIER
+	int "PLL multiplier"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 6
+	range 2 16
+	help
+	 PLL multiplier, allowed values: 2-16. PLL output must not exceed 48MHz.
+
+endif # SOC_SERIES_STM32F0X
 
 if SOC_SERIES_STM32F1X
 
@@ -271,6 +304,8 @@ config CLOCK_STM32_APB1_PRESCALER
 	  APB1 Low speed clock (PCLK1) prescaler, allowed values:
 	  1, 2, 4, 8, 16
 
+if SOC_SERIES_STM32F0X!=y
+
 config CLOCK_STM32_APB2_PRESCALER
 	int "APB2 prescaler"
 	default 1
@@ -278,6 +313,8 @@ config CLOCK_STM32_APB2_PRESCALER
 	help
 	  APB2 High speed clock (PCLK2) prescaler, allowed values:
 	  1, 2, 4, 8, 16
+
+endif # SOC_SERIES_STM32F0X!=y
 
 endif # CLOCK_CONTROL_STM32_CUBE
 endif # SOC_FAMILY_STM32
