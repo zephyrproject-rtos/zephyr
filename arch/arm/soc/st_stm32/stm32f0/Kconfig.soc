@@ -1,0 +1,15 @@
+# Kconfig - ST Microelectronics STM32F0 MCU line
+#
+# Copyright (c) 2017 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "STM32F0x MCU Selection"
+depends on SOC_SERIES_STM32F0X
+
+config SOC_STM32F030X8
+	bool "STM32F030X8"
+
+endchoice

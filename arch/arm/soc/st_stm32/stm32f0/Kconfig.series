@@ -1,0 +1,18 @@
+# Kconfig - ST Microelectronics STM32F0 MCU series
+#
+# Copyright (c) 2017 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_STM32F0X
+	bool "STM32F0x Series MCU"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M0
+	select SOC_FAMILY_STM32
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select CPU_HAS_SYSTICK
+	select HAS_STM32CUBE
+	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
+	help
+	 Enable support for STM32F0 MCU series
