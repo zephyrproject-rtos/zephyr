@@ -62,6 +62,15 @@ config BT_HCI_TX_PRIO
 	int
 	default 7
 
+config BT_WAIT_NOP
+	bool "Wait for \"NOP\" Command Complete event during init"
+	depends on BT_HCI
+	help
+	  Some controllers emit a Command Complete event for the NOP
+	  opcode to indicate that they're ready to receive commands.
+	  This option should be selected if the controller used
+	  exhibits such behavior.
+
 # Headroom that the driver needs for sending and receiving buffers.
 # Add a new 'default' entry for each new driver.
 config BT_HCI_RESERVE

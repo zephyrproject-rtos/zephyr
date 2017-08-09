@@ -29,15 +29,6 @@ config BT_NRF51_PM
 	  Power Management support for Nordic BLE nRF51 chip. Allows to enable,
 	  disable the chip and handle wakeups.
 
-config BT_WAIT_NOP
-	bool "Wait for \"NOP\" Command Complete event during init"
-	depends on BT_HCI
-	help
-	  Some controllers emit a Command Complete event for the NOP
-	  opcode to indicate that they're ready to receive commands.
-	  This option should be selected if the controller used
-	  exhibits such behavior.
-
 endmenu
 
 endif # BT
