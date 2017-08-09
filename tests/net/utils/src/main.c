@@ -21,6 +21,7 @@
 #include <linker/sections.h>
 
 #include <tc_util.h>
+#include <ztest.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -147,8 +148,10 @@ static const unsigned char pkt5[98] = {
 0x36, 0x37                                      /* 67 */
 };
 
-static bool run_tests(void)
+void run_tests(void)
 {
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
+
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	u16_t chksum, orig_chksum;
@@ -163,7 +166,7 @@ static bool run_tests(void)
 	if (frag->len != sizeof(pkt1)) {
 		printk("Fragment len %d invalid, should be %zd\n",
 		       frag->len, sizeof(pkt1));
-		return false;
+		zassert_true(0, "exiting");
 	}
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
@@ -180,7 +183,7 @@ static bool run_tests(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt1, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return false;
+		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
 
@@ -208,7 +211,7 @@ static bool run_tests(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt2, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return false;
+		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
 
@@ -239,7 +242,7 @@ static bool run_tests(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return false;
+		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
 
@@ -296,14 +299,14 @@ static bool run_tests(void)
 		       "pkt3 size %zd frags size %zd calc total %zd\n",
 		       sizeof(pkt3), net_pkt_get_len(pkt),
 		       total + sizeof(struct net_ipv6_hdr));
-		return false;
+		zassert_true(0, "exiting");
 	}
 
 	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return false;
+		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
 
@@ -332,7 +335,7 @@ static bool run_tests(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt4, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return false;
+		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
 
@@ -361,11 +364,9 @@ static bool run_tests(void)
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt5, should be 0x%x\n",
 		       chksum, orig_chksum);
-		return false;
+		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
 struct net_addr_test_data {
@@ -724,7 +725,7 @@ static bool test_net_addr(struct net_addr_test_data *data)
 	return true;
 }
 
-static bool run_net_addr_tests(void)
+void run_net_addr_tests(void)
 {
 	int count, pass;
 
@@ -739,15 +740,13 @@ static bool run_net_addr_tests(void)
 		}
 	}
 
-	return (pass != ARRAY_SIZE(tests)) ? false : true;
+	zassert_equal(pass, ARRAY_SIZE(tests), "test_net_addr error");
 }
 
-void main(void)
+void test_main(void)
 {
-	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
-	if (run_tests() && run_net_addr_tests()) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
+	ztest_test_suite(test_utils_fn,
+		ztest_unit_test(run_tests),
+		ztest_unit_test(run_net_addr_tests));
+	ztest_run_test_suite(test_utils_fn);
 }
