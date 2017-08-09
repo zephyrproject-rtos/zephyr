@@ -6,6 +6,7 @@ menuconfig  IEEE802154_KW41Z
 	depends on NETWORKING
 	select NET_L2_IEEE802154
 	select NEWLIB_LIBC
+	select IEEE802154_MCUX
 	default n
 
 if IEEE802154_KW41Z
