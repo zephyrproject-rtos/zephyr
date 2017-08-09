@@ -61,6 +61,10 @@ int zsock_listen(int sock, int backlog);
 int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 ssize_t zsock_send(int sock, const void *buf, size_t len, int flags);
 ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags);
+ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
+		     const struct sockaddr *dest_addr, socklen_t addrlen);
+ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
+		       struct sockaddr *src_addr, socklen_t *addrlen);
 int zsock_fcntl(int sock, int cmd, int flags);
 int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
@@ -78,6 +82,8 @@ int zsock_getaddrinfo(const char *host, const char *service,
 #define send zsock_send
 #define recv zsock_recv
 #define fcntl zsock_fcntl
+#define sendto zsock_sendto
+#define recvfrom zsock_recvfrom
 
 #define poll zsock_poll
 #define pollfd zsock_pollfd
