@@ -444,7 +444,7 @@ config BT_BREDR
 	select BT_SMP
 	select BT_L2CAP_DYNAMIC_CHANNEL
 	help
-	  This option enables Bluetooth BR/EDR support"
+	  This option enables Bluetooth BR/EDR support
 
 if BT_BREDR
 config BT_MAX_SCO_CONN
