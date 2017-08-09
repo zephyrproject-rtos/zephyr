@@ -39,6 +39,16 @@ config NET_APP_INIT_TIMEOUT
 	received within this limit, then the net_app_init() call will fail
 	during the device startup.
 
+config NET_APP_INIT_ASYNC
+	bool "Don't wait for networking startup after init"
+	default n
+	depends on NET_APP_AUTO_INIT
+	help
+	If this option is set, the net_app API won't wait for network init.
+	Applications with this enabled, need to handle NET_EVENT_IF_UP
+	notifications via the net_mgmt APIs prior to performing any network
+	activity.
+
 config NET_APP_NEED_IPV6
 	bool "This application wants IPv6 support"
 	depends on NET_APP_AUTO_INIT
