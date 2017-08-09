@@ -1,0 +1,50 @@
+# Kconfig - CC320xx WDT configuration
+#
+# Copyright (C) 2017 Matthias Boesl
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WDT_CC32XX
+	bool "TI CC32xx MCU Watchdog (WDT) Driver"
+	depends on SOC_SERIES_CC32XX
+	default n
+	help
+	  Enable WDT driver for TI CC32xx MCUs.
+
+if WDT_CC32XX
+
+config WDT_CC32XX_RELOAD_TIME
+	int "Watchdog timer reload in sec"
+	depends on WDT_CC32XX
+	default 15
+	range 0 30
+	help
+	  Configure the value to be loaded into the watchdog's counter each
+	  time a reload operation is performed.
+
+config WDT_CC32XX_IRQ_PRI
+	int "WDT interrupt priority"
+	depends on WDT_CC32XX
+	range 0 5
+	default 1
+	help
+	  CC32XX WDT IRQ priority.
+
+config WDT_0_NAME
+	string "Watchdog driver instance name"
+	default "WATCHDOG_0"
+	depends on WDT_CC32XX
+	help
+	  Watchdog driver instance name
+
+config WDT_CC32XX_DEBUGGER_STALL_MODE
+	bool "Stall watchdog timer during debugging breakpoints"
+	depends on WDT_CC32XX
+	default y
+	help
+	  Stall the watchdog countdown while debugging, to preven a
+	  reset during breakpoints.
+
+endif # WDT_CC32XX
+
