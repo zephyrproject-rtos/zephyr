@@ -15,7 +15,7 @@
 #include <net/net_app.h>
 #include <net/lwm2m.h>
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
 #endif
@@ -212,7 +212,7 @@ void main(void)
 
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 	if (bt_enable(NULL)) {
 		SYS_LOG_ERR("Bluetooth init failed");
 		return;
