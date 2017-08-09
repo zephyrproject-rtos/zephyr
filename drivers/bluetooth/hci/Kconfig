@@ -8,10 +8,6 @@
 
 comment "Bluetooth HCI Driver Options"
 
-# Controller support is an HCI driver in itself, so these HCI driver
-# options are only applicable if controller support hasn't been enabled.
-if !BT_CONTROLLER
-
 config BT_UART
 	bool
 
@@ -55,8 +51,6 @@ config BT_NO_DRIVER
 	  should be selected.
 
 endchoice
-
-endif # !BT_CONTROLLER
 
 if !HAS_DTS
 config BT_UART_ON_DEV_NAME
