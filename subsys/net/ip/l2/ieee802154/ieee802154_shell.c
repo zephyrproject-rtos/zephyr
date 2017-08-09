@@ -27,7 +27,12 @@ static struct net_mgmt_event_callback scan_cb;
 
 static int shell_cmd_ack(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (!strcmp(argv[1], "set") || !strcmp(argv[1], "1")) {
 		net_mgmt(NET_REQUEST_IEEE802154_SET_ACK, iface, NULL, 0);
@@ -66,7 +71,12 @@ static inline void parse_extended_address(char *addr, u8_t *ext_addr)
 
 static int shell_cmd_associate(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	params.pan_id = atoi(argv[1]);
 
@@ -91,8 +101,13 @@ static int shell_cmd_associate(int argc, char *argv[])
 
 static int shell_cmd_disassociate(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	int ret;
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	ret = net_mgmt(NET_REQUEST_IEEE802154_DISASSOCIATE, iface, NULL, 0);
 	if (ret == -EALREADY) {
@@ -162,9 +177,14 @@ static void scan_result_cb(struct net_mgmt_event_callback *cb,
 
 static int shell_cmd_scan(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u32_t scan_type;
 	int ret;
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	memset(&params, 0, sizeof(struct ieee802154_req_params));
 
@@ -214,8 +234,13 @@ static int shell_cmd_scan(int argc, char *argv[])
 
 static int shell_cmd_set_chan(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u16_t channel = (u16_t) atoi(argv[1]);
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_CHANNEL, iface,
 		     &channel, sizeof(u16_t))) {
@@ -229,8 +254,13 @@ static int shell_cmd_set_chan(int argc, char *argv[])
 
 static int shell_cmd_get_chan(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u16_t channel;
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_CHANNEL, iface,
 		     &channel, sizeof(u16_t))) {
@@ -244,8 +274,13 @@ static int shell_cmd_get_chan(int argc, char *argv[])
 
 static int shell_cmd_set_pan_id(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u16_t pan_id = (u16_t) atoi(argv[1]);
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID, iface,
 		     &pan_id, sizeof(u16_t))) {
@@ -259,8 +294,13 @@ static int shell_cmd_set_pan_id(int argc, char *argv[])
 
 static int shell_cmd_get_pan_id(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u16_t pan_id;
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_PAN_ID, iface,
 		     &pan_id, sizeof(u16_t))) {
@@ -274,8 +314,13 @@ static int shell_cmd_get_pan_id(int argc, char *argv[])
 
 static int shell_cmd_set_ext_addr(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (strlen(argv[2]) != 23) {
 		printk("23 characters needed\n");
@@ -296,8 +341,13 @@ static int shell_cmd_set_ext_addr(int argc, char *argv[])
 
 static int shell_cmd_get_ext_addr(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_EXT_ADDR, iface,
 		     addr, IEEE802154_EXT_ADDR_LENGTH)) {
@@ -322,8 +372,13 @@ static int shell_cmd_get_ext_addr(int argc, char *argv[])
 
 static int shell_cmd_set_short_addr(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u16_t short_addr = (u16_t) atoi(argv[1]);
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface,
 		     &short_addr, sizeof(u16_t))) {
@@ -337,8 +392,13 @@ static int shell_cmd_set_short_addr(int argc, char *argv[])
 
 static int shell_cmd_get_short_addr(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	u16_t short_addr;
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_SHORT_ADDR, iface,
 		     &short_addr, sizeof(u16_t))) {
@@ -352,8 +412,13 @@ static int shell_cmd_get_short_addr(int argc, char *argv[])
 
 static int shell_cmd_set_tx_power(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	s16_t tx_power = (s16_t) atoi(argv[1]);
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_TX_POWER, iface,
 		     &tx_power, sizeof(s16_t))) {
@@ -367,8 +432,13 @@ static int shell_cmd_set_tx_power(int argc, char *argv[])
 
 static int shell_cmd_get_tx_power(int argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_ieee802154();
 	s16_t tx_power;
+
+	if (!iface) {
+		printk("No IEEE 802.15.4 interface found.\n");
+		return -EINVAL;
+	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_SHORT_ADDR, iface,
 		     &tx_power, sizeof(s16_t))) {
