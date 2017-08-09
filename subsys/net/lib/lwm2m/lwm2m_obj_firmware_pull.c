@@ -279,7 +279,7 @@ static void firmware_transfer(struct k_work *work)
 	}
 
 	/* reset block transfer context */
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 	zoap_block_transfer_init(&firmware_block_ctx, ZOAP_BLOCK_64, 0);
 #else
 	zoap_block_transfer_init(&firmware_block_ctx, ZOAP_BLOCK_256, 0);
