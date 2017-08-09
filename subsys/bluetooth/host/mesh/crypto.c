@@ -23,7 +23,7 @@
 #include <bluetooth/mesh.h>
 #include <bluetooth/crypto.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_CRYPTO)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CRYPTO)
 #include "common/log.h"
 
 #include "mesh.h"
@@ -519,7 +519,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_MESH_PROXY)
+#if defined(CONFIG_BT_MESH_PROXY)
 static void create_proxy_nonce(u8_t nonce[13], const u8_t *pdu,
 			       u32_t iv_index)
 {
@@ -610,7 +610,7 @@ int bt_mesh_net_encrypt(const u8_t key[16], struct net_buf_simple *buf,
 	       mic_len);
 	BT_DBG("PDU (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
 
-#if defined(CONFIG_BLUETOOTH_MESH_PROXY)
+#if defined(CONFIG_BT_MESH_PROXY)
 	if (proxy) {
 		create_proxy_nonce(nonce, buf->data, iv_index);
 	} else {
@@ -641,7 +641,7 @@ int bt_mesh_net_decrypt(const u8_t key[16], struct net_buf_simple *buf,
 	BT_DBG("iv_index %u, key %s mic_len %u", iv_index, bt_hex(key, 16),
 	       mic_len);
 
-#if defined(CONFIG_BLUETOOTH_MESH_PROXY)
+#if defined(CONFIG_BT_MESH_PROXY)
 	if (proxy) {
 		create_proxy_nonce(nonce, buf->data, iv_index);
 	} else {

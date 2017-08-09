@@ -24,7 +24,7 @@
 #define SCAN_TIMEOUT     K_SECONDS(2)
 
 #define APPEARANCE       0
-#define DEVICE_NAME      CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN  (sizeof(DEVICE_NAME) - 1)
 
 #define PONG_SVC_UUID	0x90, 0x6c, 0x55, 0x0f, 0xee, 0x6f, 0x4d, 0x0d, \

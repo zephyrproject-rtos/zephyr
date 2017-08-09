@@ -192,10 +192,10 @@ struct bt_l2cap_le_credits {
 
 #define BT_L2CAP_SDU_HDR_LEN		2
 
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
-#define BT_L2CAP_RX_MTU CONFIG_BLUETOOTH_L2CAP_RX_MTU
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+#define BT_L2CAP_RX_MTU CONFIG_BT_L2CAP_RX_MTU
 #else
-#define BT_L2CAP_RX_MTU (CONFIG_BLUETOOTH_RX_BUF_LEN - \
+#define BT_L2CAP_RX_MTU (CONFIG_BT_RX_BUF_LEN - \
 			 BT_HCI_ACL_HDR_SIZE - BT_L2CAP_HDR_SIZE)
 #endif
 
@@ -226,7 +226,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
 
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+#if defined(CONFIG_BT_DEBUG_L2CAP)
 void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 				   bt_l2cap_chan_state_t state,
 				   const char *func, int line);
@@ -235,7 +235,7 @@ void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 #else
 void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 			     bt_l2cap_chan_state_t state);
-#endif /* CONFIG_BLUETOOTH_DEBUG_L2CAP */
+#endif /* CONFIG_BT_DEBUG_L2CAP */
 
 /*
  * Notify L2CAP channels of a change in encryption state passing additionally

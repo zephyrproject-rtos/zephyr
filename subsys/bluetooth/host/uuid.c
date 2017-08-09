@@ -79,7 +79,7 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 	return -EINVAL;
 }
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
+#if defined(CONFIG_BT_DEBUG)
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 {
 	u32_t tmp1, tmp5;
@@ -117,4 +117,4 @@ const char *bt_uuid_str(const struct bt_uuid *uuid)
 
 	return str;
 }
-#endif /* CONFIG_BLUETOOTH_DEBUG */
+#endif /* CONFIG_BT_DEBUG */

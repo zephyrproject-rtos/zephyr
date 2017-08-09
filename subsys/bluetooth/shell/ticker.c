@@ -18,8 +18,8 @@
 
 #define TICKER_SHELL_MODULE "ticker"
 
-#if defined(CONFIG_BLUETOOTH_MAX_CONN)
-#define TICKERS_MAX (CONFIG_BLUETOOTH_MAX_CONN + 2)
+#if defined(CONFIG_BT_MAX_CONN)
+#define TICKERS_MAX (CONFIG_BT_MAX_CONN + 2)
 #else
 #define TICKERS_MAX 2
 #endif

@@ -780,9 +780,9 @@ def main():
 
     name_dict = {
             "CONFIG_UART_CONSOLE_ON_DEV_NAME": "zephyr,console",
-            "CONFIG_BLUETOOTH_UART_ON_DEV_NAME": "zephyr,bt-uart",
+            "CONFIG_BT_UART_ON_DEV_NAME": "zephyr,bt-uart",
             "CONFIG_UART_PIPE_ON_DEV_NAME": "zephyr,uart-pipe",
-            "CONFIG_BLUETOOTH_MONITOR_ON_DEV_NAME": "zephyr,bt-mon-uart"
+            "CONFIG_BT_MONITOR_ON_DEV_NAME": "zephyr,bt-mon-uart"
             }
 
     for k, v in name_dict.items():

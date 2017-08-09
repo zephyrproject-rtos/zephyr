@@ -209,10 +209,10 @@ struct bt_mesh_model_op {
 {                                                                            \
 	.id = (_id),                                                         \
 	.op = _op,                                                           \
-	.keys = { [0 ... (CONFIG_BLUETOOTH_MESH_MODEL_KEY_COUNT - 1)] =      \
+	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =      \
 			BT_MESH_KEY_UNUSED },                                \
 	.pub = _pub,                                                         \
-	.groups = { [0 ... (CONFIG_BLUETOOTH_MESH_MODEL_GROUP_COUNT - 1)] =  \
+	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =  \
 			BT_MESH_ADDR_UNASSIGNED },                           \
 	.user_data = _user_data,                                             \
 }
@@ -223,9 +223,9 @@ struct bt_mesh_model_op {
 	.vnd.id = (_id),                                                     \
 	.op = _op,                                                           \
 	.pub = _pub,                                                         \
-	.keys = { [0 ... (CONFIG_BLUETOOTH_MESH_MODEL_KEY_COUNT - 1)] =      \
+	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =      \
 			BT_MESH_KEY_UNUSED },                                \
-	.groups = { [0 ... (CONFIG_BLUETOOTH_MESH_MODEL_GROUP_COUNT - 1)] =  \
+	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =  \
 			BT_MESH_ADDR_UNASSIGNED },                           \
 	.user_data = _user_data,                                             \
 }
@@ -367,10 +367,10 @@ struct bt_mesh_model {
 	struct bt_mesh_model_pub * const pub;
 
 	/* AppKey List */
-	u16_t keys[CONFIG_BLUETOOTH_MESH_MODEL_KEY_COUNT];
+	u16_t keys[CONFIG_BT_MESH_MODEL_KEY_COUNT];
 
 	/* Subscription List (group or virtual addresses) */
-	u16_t groups[CONFIG_BLUETOOTH_MESH_MODEL_GROUP_COUNT];
+	u16_t groups[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
 
 	const struct bt_mesh_model_op * const op;
 

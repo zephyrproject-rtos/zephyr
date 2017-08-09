@@ -20,7 +20,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_GATT)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_GATT)
 #include "common/log.h"
 
 #include "hci_core.h"
@@ -33,12 +33,12 @@
 
 #define SC_TIMEOUT K_MSEC(10)
 
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+#if defined(CONFIG_BT_GATT_CLIENT)
 static sys_slist_t subscriptions;
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BT_GATT_CLIENT */
 
-static const char *gap_name = CONFIG_BLUETOOTH_DEVICE_NAME;
-static const u16_t gap_appearance = CONFIG_BLUETOOTH_DEVICE_APPEARANCE;
+static const char *gap_name = CONFIG_BT_DEVICE_NAME;
+static const u16_t gap_appearance = CONFIG_BT_DEVICE_APPEARANCE;
 
 static sys_slist_t db;
 
@@ -948,7 +948,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+#if defined(CONFIG_BT_GATT_CLIENT)
 void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 			  const void *data, u16_t length)
 {
@@ -1748,7 +1748,7 @@ int bt_gatt_write_without_response(struct bt_conn *conn, u16_t handle,
 		return -ENOTCONN;
 	}
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 	if (conn->encrypt) {
 		/* Don't need to sign if already encrypted */
 		sign = false;
@@ -2065,15 +2065,15 @@ static void add_subscriptions(struct bt_conn *conn)
 	}
 }
 
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BT_GATT_CLIENT */
 
 void bt_gatt_connected(struct bt_conn *conn)
 {
 	BT_DBG("conn %p", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, connected_cb, conn);
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+#if defined(CONFIG_BT_GATT_CLIENT)
 	add_subscriptions(conn);
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BT_GATT_CLIENT */
 }
 
 void bt_gatt_disconnected(struct bt_conn *conn)
@@ -2081,7 +2081,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
 
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+#if defined(CONFIG_BT_GATT_CLIENT)
 	remove_subscriptions(conn);
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BT_GATT_CLIENT */
 }

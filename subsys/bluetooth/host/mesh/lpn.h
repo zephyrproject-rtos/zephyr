@@ -17,7 +17,7 @@ int bt_mesh_lpn_friend_sub_cfm(struct bt_mesh_net_rx *rx,
 
 static inline bool bt_mesh_lpn_established(void)
 {
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	return (bt_mesh.lpn.state >= BT_MESH_LPN_ESTABLISHED);
 #else
 	return false;
@@ -26,7 +26,7 @@ static inline bool bt_mesh_lpn_established(void)
 
 static inline bool bt_mesh_lpn_waiting_update(void)
 {
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	return (bt_mesh.lpn.state == BT_MESH_LPN_WAIT_UPDATE);
 #else
 	return false;

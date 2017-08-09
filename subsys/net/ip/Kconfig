@@ -253,7 +253,7 @@ config NET_SLIP_TAP
 	select UART_INTERRUPT_DRIVEN
 	select SLIP_TAP
 	default n
-	default y if (QEMU_TARGET && !NET_TEST && !NET_L2_BLUETOOTH)
+	default y if (QEMU_TARGET && !NET_TEST && !NET_L2_BT)
 	help
 	  SLIP TAP support is necessary when testing with QEMU. The host
 	  needs to have tunslip6 with TAP support running in order to
@@ -319,7 +319,7 @@ config NET_BUF_DATA_SIZE
 config NET_BUF_USER_DATA_SIZE
 	int "Size of user_data reserved"
 	default 0
-	default 4 if NET_L2_BLUETOOTH
+	default 4 if NET_L2_BT
 	help
 	This is for drivers to set how much user_data shall be included in
 	each network data fragment.

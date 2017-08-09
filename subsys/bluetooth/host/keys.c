@@ -15,7 +15,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_KEYS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #include "common/log.h"
 
 #include "common/rpa.h"
@@ -23,7 +23,7 @@
 #include "smp.h"
 #include "keys.h"
 
-static struct bt_keys key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
+static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 {

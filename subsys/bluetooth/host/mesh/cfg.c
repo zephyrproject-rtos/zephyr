@@ -18,7 +18,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_MODEL)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)
 #include "common/log.h"
 
 #include "mesh.h"
@@ -39,7 +39,7 @@ static struct bt_mesh_cfg *conf;
 static struct label {
 	u16_t addr;
 	u8_t  uuid[16];
-} labels[CONFIG_BLUETOOTH_MESH_LABEL_COUNT];
+} labels[CONFIG_BT_MESH_LABEL_COUNT];
 
 static inline void key_idx_unpack(struct net_buf_simple *buf,
 				  u16_t *idx1, u16_t *idx2)
@@ -87,7 +87,7 @@ static void hb_send(struct bt_mesh_model *model)
 		feat |= BT_MESH_FEAT_FRIEND;
 	}
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	if (bt_mesh.lpn.state != BT_MESH_LPN_DISABLED) {
 		feat |= BT_MESH_FEAT_LOW_POWER;
 	}
@@ -139,18 +139,18 @@ static int comp_get_page_0(struct net_buf_simple *buf)
 
 	comp = bt_mesh_comp_get();
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_RELAY)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
 		feat |= BT_MESH_FEAT_RELAY;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		feat |= BT_MESH_FEAT_LOW_POWER;
 	}
 
 	net_buf_simple_add_le16(buf, comp->cid);
 	net_buf_simple_add_le16(buf, comp->pid);
 	net_buf_simple_add_le16(buf, comp->vid);
-	net_buf_simple_add_le16(buf, CONFIG_BLUETOOTH_MESH_CRPL);
+	net_buf_simple_add_le16(buf, CONFIG_BT_MESH_CRPL);
 	net_buf_simple_add_le16(buf, feat);
 
 	for (i = 0; i < comp->elem_count; i++) {
@@ -247,7 +247,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 		return STATUS_NVAL_PUB_PARAM;
 	}
 
-	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER) && cred_flag) {
+	if (!IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) && cred_flag) {
 		return STATUS_FEAT_NOT_SUPP;
 	}
 
@@ -573,7 +573,7 @@ static void app_key_get(struct bt_mesh_model *model,
 {
 	struct net_buf_simple *msg =
 		NET_BUF_SIMPLE(2 + 3 + 4 +
-			       IDX_LEN(CONFIG_BLUETOOTH_MESH_APP_KEY_COUNT));
+			       IDX_LEN(CONFIG_BT_MESH_APP_KEY_COUNT));
 	u16_t get_idx, i, prev;
 	u8_t status;
 
@@ -772,7 +772,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY) ||
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) ||
 	    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_NOT_SUPPORTED) {
 		goto send_status;
 	}
@@ -1045,7 +1045,7 @@ send_status:
 			    status, mod_id);
 }
 
-#if CONFIG_BLUETOOTH_MESH_LABEL_COUNT > 0
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
 static u16_t va_find(u8_t *label_uuid, struct label **free_slot)
 {
 	int i;
@@ -1198,7 +1198,7 @@ send_status:
 	send_mod_pub_status(model, ctx, elem_addr, pub_addr, vnd, mod,
 			    status, mod_id);
 }
-#endif /* CONFIG_BLUETOOTH_MESH_LABEL_COUNT > 0 */
+#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */
 
 static void send_mod_sub_status(struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx, u8_t status,
@@ -1283,7 +1283,7 @@ static void mod_sub_add(struct bt_mesh_model *model,
 	} else {
 		status = STATUS_SUCCESS;
 
-		if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 			bt_mesh_lpn_group_add(sub_addr);
 		}
 	}
@@ -1336,7 +1336,7 @@ static void mod_sub_del(struct bt_mesh_model *model,
 	 */
 	status = STATUS_SUCCESS;
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_group_del(&sub_addr, 1);
 	}
 
@@ -1387,7 +1387,7 @@ static void mod_sub_overwrite(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
 	}
 
@@ -1398,7 +1398,7 @@ static void mod_sub_overwrite(struct bt_mesh_model *model,
 		mod->groups[0] = sub_addr;
 		status = STATUS_SUCCESS;
 
-		if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 			bt_mesh_lpn_group_add(sub_addr);
 		}
 	} else {
@@ -1442,7 +1442,7 @@ static void mod_sub_del_all(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
 	}
 
@@ -1462,7 +1462,7 @@ static void mod_sub_get(struct bt_mesh_model *model,
 {
 	struct net_buf_simple *msg =
 		NET_BUF_SIMPLE(2 + 5 + 4 +
-			       CONFIG_BLUETOOTH_MESH_MODEL_GROUP_COUNT * 2);
+			       CONFIG_BT_MESH_MODEL_GROUP_COUNT * 2);
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
 	u16_t addr, id;
@@ -1514,7 +1514,7 @@ static void mod_sub_get_vnd(struct bt_mesh_model *model,
 {
 	struct net_buf_simple *msg =
 		NET_BUF_SIMPLE(2 + 7 + 4 +
-			       CONFIG_BLUETOOTH_MESH_MODEL_GROUP_COUNT * 2);
+			       CONFIG_BT_MESH_MODEL_GROUP_COUNT * 2);
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
 	u16_t company, addr, id;
@@ -1564,7 +1564,7 @@ send_list:
 	}
 }
 
-#if CONFIG_BLUETOOTH_MESH_LABEL_COUNT > 0
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
 static void mod_sub_va_add(struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
@@ -1622,7 +1622,7 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 	if (i == ARRAY_SIZE(mod->groups)) {
 		status = STATUS_INSUFF_RESOURCES;
 	} else {
-		if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 			bt_mesh_lpn_group_add(sub_addr);
 		}
 
@@ -1724,7 +1724,7 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
 	}
 
@@ -1736,7 +1736,7 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 		if (status == STATUS_SUCCESS) {
 			mod->groups[0] = sub_addr;
 
-			if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER)) {
+			if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 				bt_mesh_lpn_group_add(sub_addr);
 			}
 		}
@@ -1853,7 +1853,7 @@ send_status:
 	send_mod_sub_status(model, ctx, status, elem_addr,
 			    BT_MESH_ADDR_UNASSIGNED, mod_id, vnd);
 }
-#endif /* CONFIG_BLUETOOTH_MESH_LABEL_COUNT > 0 */
+#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */
 
 static void send_net_key_status(struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
@@ -1926,7 +1926,7 @@ static void net_key_add(struct bt_mesh_model *model,
 
 	sub->net_idx = idx;
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
 		bt_mesh_proxy_beacon_send(sub);
 		bt_mesh_adv_update();
@@ -1984,8 +1984,8 @@ static void net_key_update(struct bt_mesh_model *model,
 	}
 
 	err = bt_mesh_net_keys_create(&sub->keys[1], buf->data);
-	if (!err && (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER) ||
-		     IS_ENABLED(CONFIG_BLUETOOTH_MESH_FRIEND))) {
+	if (!err && (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
+		     IS_ENABLED(CONFIG_BT_MESH_FRIEND))) {
 		err = bt_mesh_friend_cred_update(ctx->net_idx, 1, buf->data);
 	}
 
@@ -2074,8 +2074,7 @@ static void net_key_get(struct bt_mesh_model *model,
 			struct net_buf_simple *buf)
 {
 	struct net_buf_simple *msg =
-		NET_BUF_SIMPLE(2 + 4 +
-			       IDX_LEN(CONFIG_BLUETOOTH_MESH_SUBNET_COUNT));
+		NET_BUF_SIMPLE(2 + 4 + IDX_LEN(CONFIG_BT_MESH_SUBNET_COUNT));
 	u16_t prev, i;
 
 	bt_mesh_model_msg_init(msg, OP_NET_KEY_LIST);
@@ -2182,7 +2181,7 @@ static void node_identity_set(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(msg, STATUS_SUCCESS);
 		net_buf_simple_add_le16(msg, idx);
 
-		if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 			sub->node_id = node_id;
 			bt_mesh_adv_update();
 		}
@@ -2302,7 +2301,7 @@ send_status:
 	}
 }
 
-#define KEY_LIST_LEN (CONFIG_BLUETOOTH_MESH_MODEL_KEY_COUNT * 2)
+#define KEY_LIST_LEN (CONFIG_BT_MESH_MODEL_KEY_COUNT * 2)
 
 static void mod_app_get(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
@@ -2579,8 +2578,8 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		    sub->kr_phase == BT_MESH_KR_PHASE_2) &&
 		   phase == BT_MESH_KR_PHASE_3) {
 		memcpy(&sub->keys[0], &sub->keys[1], sizeof(sub->keys[0]));
-		if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER) ||
-		    IS_ENABLED(CONFIG_BLUETOOTH_MESH_FRIEND)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
+		    IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 			bt_mesh_friend_cred_refresh(ctx->net_idx);
 		}
 		sub->kr_phase = BT_MESH_KR_NORMAL;
@@ -2956,15 +2955,15 @@ int bt_mesh_conf_init(struct bt_mesh_model *model, bool primary)
 	/* Configuration Model security is device-key based */
 	model->keys[0] = BT_MESH_KEY_DEV;
 
-	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_RELAY)) {
+	if (!IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
 		cfg->relay = BT_MESH_RELAY_NOT_SUPPORTED;
 	}
 
-	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_FRIEND)) {
+	if (!IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 		cfg->frnd = BT_MESH_RELAY_NOT_SUPPORTED;
 	}
 
-	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY)) {
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		cfg->gatt_proxy = BT_MESH_GATT_PROXY_NOT_SUPPORTED;
 	}
 

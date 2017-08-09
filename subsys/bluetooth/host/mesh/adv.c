@@ -16,7 +16,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_ADV)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_ADV)
 #include "common/log.h"
 
 #include "../hci_core.h"
@@ -44,7 +44,7 @@
 /* TinyCrypt PRNG consumes a lot of stack space, so we need to have
  * an increased call stack whenever it's used.
  */
-#if defined(CONFIG_BLUETOOTH_HOST_CRYPTO)
+#if defined(CONFIG_BT_HOST_CRYPTO)
 #define ADV_STACK_SIZE 768
 #else
 #define ADV_STACK_SIZE 512
@@ -60,7 +60,7 @@ static const u8_t adv_type[] = {
 	[BT_MESH_ADV_BEACON] = BT_DATA_MESH_BEACON,
 };
 
-NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BLUETOOTH_MESH_ADV_BUF_COUNT,
+NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, sizeof(struct bt_mesh_adv), NULL);
 
 static inline void adv_sent(struct net_buf *buf, int err)
@@ -129,7 +129,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		struct net_buf *buf;
 
-		if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_PROXY)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
 			buf = net_buf_get(&adv_queue, K_NO_WAIT);
 			while (!buf) {
 				s32_t timeout;
@@ -234,7 +234,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 		case BT_DATA_MESH_MESSAGE:
 			bt_mesh_net_recv(buf, rssi, BT_MESH_NET_IF_ADV);
 			break;
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 		case BT_DATA_MESH_PROV:
 			bt_mesh_pb_adv_recv(buf);
 			break;

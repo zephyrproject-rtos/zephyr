@@ -24,7 +24,7 @@
 #include <gatt/dis.h>
 #include <gatt/bas.h>
 
-#define DEVICE_NAME			CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME			CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN			(sizeof(DEVICE_NAME) - 1)
 #define CSC_SUPPORTED_LOCATIONS		{ CSC_LOC_OTHER, \
 					  CSC_LOC_FRONT_WHEEL, \

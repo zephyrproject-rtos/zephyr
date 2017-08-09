@@ -30,7 +30,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
-#ifdef CONFIG_BLUETOOTH
+#ifdef CONFIG_BT
 		zephyr,bt-uart = &uart4;
 #endif
 	};
@@ -58,7 +58,7 @@
 	current-speed = <115200>;
 };
 
-#ifdef CONFIG_BLUETOOTH
+#ifdef CONFIG_BT
 &uart4 {
 	status = "ok";
 	current-speed = <115200>;

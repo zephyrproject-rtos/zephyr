@@ -7,21 +7,21 @@
 
 comment "BLE Controller support"
 
-config BLUETOOTH_CONTROLLER
+config BT_CONTROLLER
 	bool "Bluetooth Controller"
-	select BLUETOOTH_RECV_IS_RX_THREAD
+	select BT_RECV_IS_RX_THREAD
 	help
 	  Enables support for SoC native controller implementations.
 
-if BLUETOOTH_CONTROLLER
+if BT_CONTROLLER
 
 choice
 	prompt "Bluetooth Link Layer Selection"
-	default BLUETOOTH_LL_SW
+	default BT_LL_SW
 	help
 	  Select the Bluetooth Link Layer to compile.
 
-config BLUETOOTH_LL_SW
+config BT_LL_SW
 	bool "Use the software-based BLE Link Layer"
 	help
 	  Use Zephyr software BLE Link Layer implementation.
@@ -30,31 +30,31 @@ endchoice
 
 comment "BLE Controller configuration"
 
-config BLUETOOTH_CONTROLLER_DUP_FILTER_LEN
+config BT_CONTROLLER_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
-	depends on BLUETOOTH_OBSERVER
+	depends on BT_OBSERVER
 	default 16
 	help
 	  Set the number of unique BLE addresses that can be filtered as
 	  duplicates while scanning.
 
-config BLUETOOTH_CONTROLLER_RX_BUFFERS
+config BT_CONTROLLER_RX_BUFFERS
 	prompt "Number of Rx buffers"
 	int
 	default 1
-	default 6 if BLUETOOTH_HCI_RAW
+	default 6 if BT_HCI_RAW
 	range 1 18
 	help
 	  Set the number of Rx PDUs to be buffered in the controller. In a 7.5ms
 	  connection interval and 2M PHY, maximum 18 packets with L2CAP payload
 	  size of 1 byte can be received.
 
-config BLUETOOTH_CONTROLLER_TX_BUFFERS
+config BT_CONTROLLER_TX_BUFFERS
 	prompt "Number of Tx buffers"
 	int
 	default 2
-	default 7 if BLUETOOTH_HCI_RAW
+	default 7 if BT_HCI_RAW
 	range 1 19
 	help
 	  Set the number of Tx PDUs to be queued for transmission in the
@@ -62,7 +62,7 @@ config BLUETOOTH_CONTROLLER_TX_BUFFERS
 	  packets can be enqueued, with 18 packets with L2CAP payload size of 1
 	  byte can be acknowledged.
 
-config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
+config BT_CONTROLLER_TX_BUFFER_SIZE
 	prompt "Tx buffer size"
 	int
 	range 27 16384
@@ -75,7 +75,7 @@ config BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE
 	  Maximum is set to 16384 due to implementation limitations (use of
 	  u16_t for size/length variables).
 
-config BLUETOOTH_CONTROLLER_COMPANY_ID
+config BT_CONTROLLER_COMPANY_ID
 	prompt "Company Id"
 	hex
 	default 0xFFFF
@@ -83,7 +83,7 @@ config BLUETOOTH_CONTROLLER_COMPANY_ID
 	help
 	  Set the Company Id that will be used in VERSION_IND PDU.
 
-config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
+config BT_CONTROLLER_SUBVERSION_NUMBER
 	prompt "Subversion Number"
 	hex
 	default 0xFFFF
@@ -91,11 +91,11 @@ config BLUETOOTH_CONTROLLER_SUBVERSION_NUMBER
 	help
 	  Set the Subversion Number that will be used in VERSION_IND PDU.
 
-config BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE
+config BT_CONTROLLER_RX_PRIO_STACK_SIZE
 	int
 	default 448
 
-config BLUETOOTH_CONTROLLER_RX_PRIO
+config BT_CONTROLLER_RX_PRIO
 	# Hidden option for Controller's Co-Operative high priority Rx thread
 	# priority.
 	int
@@ -103,31 +103,31 @@ config BLUETOOTH_CONTROLLER_RX_PRIO
 
 comment "BLE Controller features"
 
-if BLUETOOTH_CONN
+if BT_CONN
 
-config BLUETOOTH_CONTROLLER_LE_ENC
+config BT_CONTROLLER_LE_ENC
 	bool
-	depends on !BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR && !BLUETOOTH_CONTROLLER_PHY_2M_NRF
+	depends on !BT_CONTROLLER_DATA_LENGTH_CLEAR && !BT_CONTROLLER_PHY_2M_NRF
 	default y
 	# Enable support for Bluetooth v4.0 LE Encryption feature in the
 	# Controller.
 
-config BLUETOOTH_CONTROLLER_LE_PING
+config BT_CONTROLLER_LE_PING
 	bool "LE Ping"
 	default y
 	help
 	  Enable support for Bluetooth v4.1 LE Ping feature in the Controller.
 
-config BLUETOOTH_CONTROLLER_PRIVACY
+config BT_CONTROLLER_PRIVACY
 	bool "LE Controller-based Privacy"
 	default y
-	select BLUETOOTH_RPA
+	select BT_RPA
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature in the Controller.
 
-config BLUETOOTH_CONTROLLER_RL_SIZE
+config BT_CONTROLLER_RL_SIZE
 	prompt "LE Controller-based Privacy Resolving List size"
-	depends on BLUETOOTH_CONTROLLER_PRIVACY
+	depends on BT_CONTROLLER_PRIVACY
 	int
 	default 8
 	range 1 8 if SOC_FAMILY_NRF5
@@ -135,91 +135,91 @@ config BLUETOOTH_CONTROLLER_RL_SIZE
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
 
-config BLUETOOTH_CONTROLLER_DATA_LENGTH
+config BT_CONTROLLER_DATA_LENGTH
 	bool "Data Length Update"
 	default y
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure in
 	  the Controller.
 
-config BLUETOOTH_CONTROLLER_DATA_LENGTH_MAX
+config BT_CONTROLLER_DATA_LENGTH_MAX
 	prompt "Maximum data length supported"
-	depends on BLUETOOTH_CONTROLLER_DATA_LENGTH
+	depends on BT_CONTROLLER_DATA_LENGTH
 	int
 	default 27
-	range 27 251 if SOC_SERIES_NRF52X || BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR
+	range 27 251 if SOC_SERIES_NRF52X || BT_CONTROLLER_DATA_LENGTH_CLEAR
 	range 27 27
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
-config BLUETOOTH_CONTROLLER_PHY
+config BT_CONTROLLER_PHY
 	bool "PHY Update"
 	default y
 	help
 	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
 	  Controller.
 
-endif # BLUETOOTH_CONN
+endif # BT_CONN
 
-config BLUETOOTH_CONTROLLER_CHAN_SEL_2
+config BT_CONTROLLER_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
 	  the Controller.
 
-config BLUETOOTH_CONTROLLER_ADV_EXT
+config BT_CONTROLLER_ADV_EXT
 	bool "LE Advertising Extensions"
-	select BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
-	select BLUETOOTH_CONTROLLER_CHAN_SEL_2
+	select BT_CONTROLLER_SCAN_REQ_NOTIFY
+	select BT_CONTROLLER_CHAN_SEL_2
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
 
-config BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+config BT_CONTROLLER_ADVANCED_FEATURES
 	bool "Show advanced features"
 	help
 	  Makes advanced features visible to controller developers.
 
 menu "Advanced features"
-	visible if BLUETOOTH_CONTROLLER_ADVANCED_FEATURES
+	visible if BT_CONTROLLER_ADVANCED_FEATURES
 
-config BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR
+config BT_CONTROLLER_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"
-	depends on BLUETOOTH_CONTROLLER_DATA_LENGTH && SOC_SERIES_NRF51X
+	depends on BT_CONTROLLER_DATA_LENGTH && SOC_SERIES_NRF51X
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure, up to
 	  251 byte cleartext payloads in the Controller. Encrypted connections
 	  are not supported.
 
-if BLUETOOTH_CONTROLLER_PHY
+if BT_CONTROLLER_PHY
 
-config BLUETOOTH_CONTROLLER_PHY_2M
+config BT_CONTROLLER_PHY_2M
 	bool "2Mbps PHY Support"
-	depends on !SOC_SERIES_NRF51X || BLUETOOTH_CONTROLLER_PHY_2M_NRF
+	depends on !SOC_SERIES_NRF51X || BT_CONTROLLER_PHY_2M_NRF
 	default y
 	help
 	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
 
-config BLUETOOTH_CONTROLLER_PHY_2M_NRF
+config BT_CONTROLLER_PHY_2M_NRF
 	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
 	depends on SOC_SERIES_NRF51X
-	select BLUETOOTH_CONTROLLER_PHY_2M
+	select BT_CONTROLLER_PHY_2M
 	help
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
 
-config BLUETOOTH_CONTROLLER_PHY_CODED
+config BT_CONTROLLER_PHY_CODED
 	bool "Coded PHY Support"
 	depends on SOC_NRF52840
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 
-endif # BLUETOOTH_CONTROLLER_PHY
+endif # BT_CONTROLLER_PHY
 
-config BLUETOOTH_CONTROLLER_WORKER_PRIO
+config BT_CONTROLLER_WORKER_PRIO
 	prompt "Radio and Ticker's Worker IRQ priority"
 	int
 	range 0 3 if SOC_SERIES_NRF51X
@@ -229,17 +229,17 @@ config BLUETOOTH_CONTROLLER_WORKER_PRIO
 	  The interrupt priority for event preparation and radio IRQ. This value
 	  shall be less than or equal to the Ticker's Job priority value.
 
-config BLUETOOTH_CONTROLLER_JOB_PRIO
+config BT_CONTROLLER_JOB_PRIO
 	prompt "Ticker's JOB IRQ priority"
 	int
-	range BLUETOOTH_CONTROLLER_WORKER_PRIO 3 if SOC_SERIES_NRF51X
-	range BLUETOOTH_CONTROLLER_WORKER_PRIO 6 if SOC_SERIES_NRF52X
+	range BT_CONTROLLER_WORKER_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CONTROLLER_WORKER_PRIO 6 if SOC_SERIES_NRF52X
 	default 0
 	help
 	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
 	  be greater than or equal to the Ticker's Worker IRQ priority value.
 
-config BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+config BT_CONTROLLER_XTAL_ADVANCED
 	bool "Advanced event preparation"
 	default y
 	help
@@ -260,9 +260,9 @@ config BLUETOOTH_CONTROLLER_XTAL_ADVANCED
 	  higher average current due to increased number of crystal settling
 	  current consumptions.
 
-config BLUETOOTH_CONTROLLER_XTAL_THRESHOLD
+config BT_CONTROLLER_XTAL_THRESHOLD
 	prompt "Crystal shutdown threshold in uS"
-	depends on BLUETOOTH_CONTROLLER_XTAL_ADVANCED
+	depends on BT_CONTROLLER_XTAL_ADVANCED
 	int
 	default 5168
 	help
@@ -271,11 +271,11 @@ config BLUETOOTH_CONTROLLER_XTAL_THRESHOLD
 	  value is board dependent. The value 5168 is based on crude calculation
 	  for nRF51 current versus startup time of high frequency crystal.
 
-config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
+config BT_CONTROLLER_SCHED_ADVANCED
 	bool "Advanced scheduling"
-	depends on (BLUETOOTH_MAX_CONN != 0)
+	depends on (BT_MAX_CONN != 0)
 	default y
-	default n if BLUETOOTH_PERIPHERAL && !BLUETOOTH_CENTRAL
+	default n if BT_PERIPHERAL && !BT_CENTRAL
 	help
 	  Enable non-overlapping placement of observer, initiator and master
 	  roles in timespace. Uses window offset in connection updates and uses
@@ -290,25 +290,25 @@ config BLUETOOTH_CONTROLLER_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
-config BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST
+config BT_CONTROLLER_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
 	depends on SOC_SERIES_NRF52X
 	default y if SOC_NRF52840
 	help
 	  Enable use of fast radio ramp-up mode.
 
-config BLUETOOTH_CONTROLLER_TIFS_HW
+config BT_CONTROLLER_TIFS_HW
 	bool "H/w Accelerated tIFS Trx switching"
-	depends on !BLUETOOTH_CONTROLLER_RADIO_ENABLE_FAST
+	depends on !BT_CONTROLLER_RADIO_ENABLE_FAST
 	default y
 	help
 	  Enable use of hardware accelerated tIFS Trx switching.
 
-if BLUETOOTH_CONN
+if BT_CONN
 
-config BLUETOOTH_CONTROLLER_FAST_ENC
+config BT_CONTROLLER_FAST_ENC
 	bool "Fast Encryption Setup"
-	depends on BLUETOOTH_CONTROLLER_LE_ENC
+	depends on BT_CONTROLLER_LE_ENC
 	help
 	  Enable connection encryption setup in 3 connection intervals.
 	  Peripheral will respond to Encryption Request with Encryption Response
@@ -320,26 +320,26 @@ config BLUETOOTH_CONTROLLER_FAST_ENC
 	  Maximum CPU time in Radio ISR will increase if this feature is
 	  selected.
 
-config BLUETOOTH_CONTROLLER_CONN_RSSI
+config BT_CONTROLLER_CONN_RSSI
 	bool "Connection RSSI"
 	help
 	  Enable connection RSSI measurement.
 
-endif # BLUETOOTH_CONN
+endif # BT_CONN
 
-config BLUETOOTH_CONTROLLER_ADV_INDICATION
+config BT_CONTROLLER_ADV_INDICATION
 	bool "Advertisement indications"
 	help
 	  Generate events indicating on air advertisement events.
 
-config BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
+config BT_CONTROLLER_SCAN_REQ_NOTIFY
 	bool "Scan Request Notifications"
 	help
 	  Generate events notifying the on air scan requests received.
 
-config BLUETOOTH_CONTROLLER_SCAN_REQ_RSSI
+config BT_CONTROLLER_SCAN_REQ_RSSI
 	bool "Measure Scan Request RSSI"
-	depends on BLUETOOTH_CONTROLLER_SCAN_REQ_NOTIFY
+	depends on BT_CONTROLLER_SCAN_REQ_NOTIFY
 	help
 	  Measure RSSI of the on air scan requests received.
 
@@ -347,9 +347,9 @@ endmenu
 
 comment "BLE Controller debug configuration"
 
-config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
+config BT_CONTROLLER_ASSERT_HANDLER
 	bool "Bluetooth Controller Assertion Handler"
-	depends on BLUETOOTH_HCI_RAW
+	depends on BT_HCI_RAW
 	help
 	  This option enables an application-defined sink for the
 	  controller assertion mechanism. This must be defined in
@@ -357,7 +357,7 @@ config BLUETOOTH_CONTROLLER_ASSERT_HANDLER
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
 
-config BLUETOOTH_CONTROLLER_PROFILE_ISR
+config BT_CONTROLLER_PROFILE_ISR
 	bool "Profile radio ISR"
 	help
 	  Turn on measurement of radio ISR latency, CPU usage and generation of
@@ -365,7 +365,7 @@ config BLUETOOTH_CONTROLLER_PROFILE_ISR
 	  contains current, minimum and maximum ISR entry latencies; and
 	  current, minimum and maximum ISR CPU use in micro-seconds.
 
-config BLUETOOTH_CONTROLLER_DEBUG_PINS
+config BT_CONTROLLER_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
@@ -373,4 +373,4 @@ config BLUETOOTH_CONTROLLER_DEBUG_PINS
 	  the code. When enabled, pins P0.16 to P0.25 are taken over exclusively
 	  by the controller and cannot be used outside of it.
 
-endif # BLUETOOTH_CONTROLLER
+endif # BT_CONTROLLER

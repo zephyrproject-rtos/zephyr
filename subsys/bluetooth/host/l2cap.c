@@ -18,7 +18,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_L2CAP)
 #include "common/log.h"
 
 #include "hci_core.h"
@@ -29,10 +29,10 @@
 
 #define L2CAP_LE_MIN_MTU		23
 
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
-#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_RX_COUNT - 1)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+#define L2CAP_LE_MAX_CREDITS		(CONFIG_BT_ACL_RX_COUNT - 1)
 #else
-#define L2CAP_LE_MAX_CREDITS		(CONFIG_BLUETOOTH_RX_BUF_COUNT - 1)
+#define L2CAP_LE_MAX_CREDITS		(CONFIG_BT_RX_BUF_COUNT - 1)
 #endif
 
 #define L2CAP_LE_CREDITS_THRESHOLD(_creds) (_creds / 2)
@@ -50,7 +50,7 @@
 
 static sys_slist_t le_channels;
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 /* Size of MTU is based on the maximum amount of data the buffer can hold
  * excluding ACL and driver headers.
  */
@@ -63,7 +63,7 @@ static sys_slist_t le_channels;
 
 static sys_slist_t servers;
 
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
 struct bt_l2cap {
@@ -71,7 +71,7 @@ struct bt_l2cap {
 	struct bt_l2cap_le_chan	chan;
 };
 
-static struct bt_l2cap bt_l2cap_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_l2cap bt_l2cap_pool[CONFIG_BT_MAX_CONN];
 
 static u8_t get_ident(void)
 {
@@ -93,7 +93,7 @@ void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 	sys_slist_append(&le_channels, &chan->node);
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 						     struct bt_l2cap_chan *chan)
 {
@@ -138,7 +138,7 @@ __l2cap_lookup_ident(struct bt_conn *conn, u16_t ident, bool remove)
 
 	return NULL;
 }
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *ch)
 {
@@ -155,8 +155,8 @@ void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *ch)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
-#if defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_DEBUG_L2CAP)
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
 {
 	switch (state) {
@@ -223,8 +223,8 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 {
 	chan->state = state;
 }
-#endif /* CONFIG_BLUETOOTH_DEBUG_L2CAP */
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_DEBUG_L2CAP */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
@@ -241,7 +241,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 	chan->conn = NULL;
 
 destroy:
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/* Reset internal members of common channel */
 	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
 	chan->psm = 0;
@@ -278,7 +278,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 {
 	struct bt_l2cap_le_chan *ch;
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	ch = l2cap_chan_alloc_cid(conn, chan);
 #else
 	ch = BT_L2CAP_LE_CHAN(chan);
@@ -293,7 +293,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL) &&
+	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL) &&
 	    L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
 		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECT);
 	}
@@ -306,7 +306,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_connected(conn);
 		return;
@@ -362,7 +362,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(struct net_buf *buf,
 	return buf;
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
 				struct net_buf *buf, s32_t timeout)
 {
@@ -422,20 +422,20 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, u8_t status)
 	/* Retry to connect */
 	l2cap_le_conn_req(BT_L2CAP_LE_CHAN(chan));
 }
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 void bt_l2cap_encrypt_change(struct bt_conn *conn, u8_t hci_status)
 {
 	struct bt_l2cap_chan *chan;
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		l2cap_br_encrypt_change(conn, hci_status);
 		return;
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 		l2cap_le_encrypt_change(chan, hci_status);
 #endif
 
@@ -495,7 +495,7 @@ static void le_conn_param_rsp(struct bt_l2cap *l2cap, struct net_buf *buf)
 	BT_DBG("LE conn param rsp result %u", sys_le16_to_cpu(rsp->result));
 }
 
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL)
 static void le_conn_param_update_req(struct bt_l2cap *l2cap, u8_t ident,
 				     struct net_buf *buf)
 {
@@ -543,7 +543,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, u8_t ident,
 		bt_conn_le_conn_update(conn, &param);
 	}
 }
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#endif /* CONFIG_BT_CENTRAL */
 
 struct bt_l2cap_chan *bt_l2cap_le_lookup_tx_cid(struct bt_conn *conn,
 						u16_t cid)
@@ -573,7 +573,7 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 	return NULL;
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *l2cap_server_lookup_psm(u16_t psm)
 {
 	struct bt_l2cap_server *server;
@@ -1238,7 +1238,7 @@ static void reject_cmd(struct bt_l2cap *l2cap, u8_t ident,
 
 	bt_l2cap_chan_del(&chan->chan);
 }
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -1271,12 +1271,12 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_L2CAP_CONN_PARAM_RSP:
 		le_conn_param_rsp(l2cap, buf);
 		break;
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL)
 	case BT_L2CAP_CONN_PARAM_REQ:
 		le_conn_param_update_req(l2cap, hdr->ident, buf);
 		break;
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#endif /* CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	case BT_L2CAP_LE_CONN_REQ:
 		le_conn_req(l2cap, hdr->ident, buf);
 		break;
@@ -1299,7 +1299,7 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_L2CAP_CMD_REJECT:
 		/* Ignored */
 		break;
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 	default:
 		BT_WARN("Unknown L2CAP PDU code 0x%02x", hdr->code);
 		l2cap_send_reject(chan->conn, hdr->ident,
@@ -1308,7 +1308,7 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
 				      struct net_buf *buf)
 {
@@ -1445,18 +1445,18 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 
 	l2cap_chan_update_credits(chan, buf);
 }
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	if (L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
 		l2cap_chan_le_recv(ch, buf);
 		return;
 	}
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 	BT_DBG("chan %p len %u", chan, buf->len);
 
@@ -1469,7 +1469,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	struct bt_l2cap_chan *chan;
 	u16_t cid;
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		bt_l2cap_br_recv(conn, buf);
 		return;
@@ -1567,12 +1567,12 @@ void bt_l2cap_init(void)
 
 	bt_l2cap_le_fixed_chan_register(&chan);
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR)) {
+	if (IS_ENABLED(CONFIG_BT_BREDR)) {
 		bt_l2cap_br_init();
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 			    u16_t psm)
 {
@@ -1605,7 +1605,7 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
 	}
@@ -1630,7 +1630,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 		return -ENOTCONN;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_disconnect(chan);
 	}
@@ -1669,7 +1669,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_BREDR) &&
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    chan->conn->type == BT_CONN_TYPE_BR) {
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
@@ -1686,4 +1686,4 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	return err;
 }
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */

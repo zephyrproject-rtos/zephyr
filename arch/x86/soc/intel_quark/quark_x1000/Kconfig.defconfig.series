@@ -265,9 +265,9 @@ config UART_CONSOLE_ON_DEV_NAME
 
 endif
 
-if BLUETOOTH_UART
+if BT_UART
 
-config BLUETOOTH_UART_ON_DEV_NAME
+config BT_UART_ON_DEV_NAME
 	default "UART_1"
 
 endif

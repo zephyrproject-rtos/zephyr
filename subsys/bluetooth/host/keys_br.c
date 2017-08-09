@@ -15,13 +15,13 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_KEYS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #include "common/log.h"
 
 #include "hci_core.h"
 #include "keys.h"
 
-static struct bt_keys_link_key key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
+static struct bt_keys_link_key key_pool[CONFIG_BT_MAX_PAIRED];
 
 struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr)
 {

@@ -485,8 +485,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 					       .properties = _props, }),\
 }
 
-#define BT_GATT_CCC_MAX (CONFIG_BLUETOOTH_MAX_PAIRED + \
-			 CONFIG_BLUETOOTH_MAX_CONN)
+#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 
 /** @brief GATT CCC configuration entry.
  *  @param valid Valid flag

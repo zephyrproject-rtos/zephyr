@@ -65,7 +65,7 @@ struct bt_mesh_subnet {
 		u8_t nid;           /* NID */
 		u8_t enc[16];       /* EncKey */
 		u8_t net_id[8];     /* Network ID */
-#if defined(CONFIG_BLUETOOTH_MESH_GATT_PROXY)
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
 		u8_t identity[16];  /* IdentityKey */
 #endif
 		u8_t privacy[16];   /* PrivacyKey */
@@ -97,8 +97,8 @@ struct bt_mesh_friend {
 	struct k_fifo queue;
 };
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
-#define LPN_GROUPS CONFIG_BLUETOOTH_MESH_LOW_POWER
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+#define LPN_GROUPS CONFIG_BT_MESH_LOW_POWER
 #else
 #define LPN_GROUPS 0
 #endif
@@ -166,17 +166,17 @@ struct bt_mesh_net {
 
 	s64_t last_update;       /* Time since last IV Update change */
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOCAL_INTERFACE)
+#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 	/* Local network interface */
 	struct k_work local_work;
 	struct k_fifo local_queue;
 #endif
 
-#if defined(CONFIG_BLUETOOTH_MESH_FRIEND)
+#if defined(CONFIG_BT_MESH_FRIEND)
 	struct bt_mesh_friend frnd;  /* Friend state */
 #endif
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	struct bt_mesh_lpn lpn;  /* Low Power Node state */
 #endif
 
@@ -185,11 +185,11 @@ struct bt_mesh_net {
 
 	u8_t dev_key[16];
 
-	struct bt_mesh_app_key app_keys[CONFIG_BLUETOOTH_MESH_APP_KEY_COUNT];
+	struct bt_mesh_app_key app_keys[CONFIG_BT_MESH_APP_KEY_COUNT];
 
-	struct bt_mesh_subnet sub[CONFIG_BLUETOOTH_MESH_SUBNET_COUNT];
+	struct bt_mesh_subnet sub[CONFIG_BT_MESH_SUBNET_COUNT];
 
-	struct bt_mesh_rpl rpl[CONFIG_BLUETOOTH_MESH_CRPL];
+	struct bt_mesh_rpl rpl[CONFIG_BT_MESH_CRPL];
 };
 
 /* Network interface */

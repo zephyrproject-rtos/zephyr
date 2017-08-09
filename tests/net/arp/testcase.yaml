@@ -1,11 +1,11 @@
 tests:
 -   test:
         tags: net
-        filter: not CONFIG_BLUETOOTH
+        filter: not CONFIG_BT
         min_ram: 12
         platform_exclude: qemu_xtensa
 -   test_with_bt:
         tags: net
-        filter: CONFIG_BLUETOOTH
+        filter: CONFIG_BT
         min_ram: 16
         platform_exclude: qemu_xtensa

@@ -15,7 +15,7 @@
 
 #include <bluetooth/sdp.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_SDP)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SDP)
 #include "common/log.h"
 
 #include "hci_core.h"
@@ -64,10 +64,10 @@ struct bt_sdp {
 static struct bt_sdp_record *db;
 static u8_t num_services;
 
-static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
-NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
+NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
@@ -88,7 +88,7 @@ struct bt_sdp_client {
 	struct net_buf                      *rec_buf;
 };
 
-static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BT_MAX_CONN];
 
 enum {
 	BT_SDP_ITER_STOP,

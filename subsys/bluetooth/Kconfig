@@ -7,27 +7,27 @@
 
 menu "Bluetooth"
 
-config BLUETOOTH
+config BT
 	bool "Bluetooth support"
 	select NET_BUF
 	help
 	  This option enables Bluetooth support.
 
-if BLUETOOTH
+if BT
 
 choice
 	prompt "Bluetooth Stack Selection"
-	default BLUETOOTH_HCI
+	default BT_HCI
 	help
 	  Select the Bluetooth stack to compile.
 
-config BLUETOOTH_HCI
+config BT_HCI
 	bool "HCI-based"
 	help
 	  HCI-based stack with optional host & controller parts and an
 	  HCI driver in between.
 
-config BLUETOOTH_CUSTOM
+config BT_CUSTOM
 	bool "Custom"
 	help
 	  Select a custom, non-HCI based stack. If you're not sure what
@@ -35,84 +35,84 @@ config BLUETOOTH_CUSTOM
 
 endchoice
 
-if BLUETOOTH_HCI
+if BT_HCI
 
-config BLUETOOTH_HCI_RAW
+config BT_HCI_RAW
 	bool "RAW HCI access"
 	help
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
-config BLUETOOTH_PERIPHERAL
+config BT_PERIPHERAL
 	bool "Peripheral Role support"
-	select BLUETOOTH_BROADCASTER
-	select BLUETOOTH_CONN
-	default y if BLUETOOTH_HCI_RAW
+	select BT_BROADCASTER
+	select BT_CONN
+	default y if BT_HCI_RAW
 	help
 	  Select this for LE Peripheral role support.
 
-config BLUETOOTH_CENTRAL
+config BT_CENTRAL
 	bool "Central Role support"
-	select BLUETOOTH_OBSERVER
-	select BLUETOOTH_CONN
-	default y if BLUETOOTH_HCI_RAW
+	select BT_OBSERVER
+	select BT_CONN
+	default y if BT_HCI_RAW
 	help
 	  Select this for LE Central role support.
 
 menu "Broadcaster"
-	visible if !BLUETOOTH_PERIPHERAL
+	visible if !BT_PERIPHERAL
 
-config BLUETOOTH_BROADCASTER
+config BT_BROADCASTER
 	bool "Broadcaster Role support"
-	default y if !BLUETOOTH_OBSERVER
+	default y if !BT_OBSERVER
 	help
 	  Select this for LE Broadcaster role support.
 
 endmenu
 
 menu "Observer"
-	visible if !BLUETOOTH_CENTRAL
+	visible if !BT_CENTRAL
 
-config BLUETOOTH_OBSERVER
+config BT_OBSERVER
 	bool "Observer Role support"
 	help
 	  Select this for LE Observer role support.
 
 endmenu
 
-config BLUETOOTH_CONN
+config BT_CONN
 	# Virtual/hidden option
 	bool
 
-config BLUETOOTH_MAX_CONN
+config BT_MAX_CONN
 	int "Maximum number of simultaneous connections"
-	depends on BLUETOOTH_CONN
+	depends on BT_CONN
 	range 1 64
 	default 1
 	help
 	  Maximum number of simultaneous Bluetooth connections
 	  supported.
 
-if BLUETOOTH_CONN
-config BLUETOOTH_HCI_ACL_FLOW_CONTROL
+if BT_CONN
+config BT_HCI_ACL_FLOW_CONTROL
 	bool "Controller to Host ACL flow control support"
 	default n
 	# Enable if building a Host-only build
-	default y if !BLUETOOTH_CONTROLLER
+	default y if !BT_CONTROLLER
 	# Enable if building a Controller-only build
-	default y if BLUETOOTH_HCI_RAW
+	default y if BT_HCI_RAW
 	select POLL
 	help
 	  Enable support for throttling ACL buffers from the controller
 	  to the host. This is particularly useful when the host and
 	  controller are on separate cores since it ensures that we do
 	  not run out of incoming ACL buffers.
-endif # BLUETOOTH_CONN
+endif # BT_CONN
 
-config BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME
+config BT_CONTROLLER_TO_HOST_UART_DEV_NAME
 	string "Device Name of UART Device to an external Bluetooth Host"
 	default "UART_0"
-	depends on BLUETOOTH_HCI_RAW
+	depends on BT_HCI_RAW
 	help
 	  This option specifies the name of UART device to be used
 	  to connect to an external Bluetooth Host when Zephyr is
@@ -122,8 +122,8 @@ source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"
 source "subsys/bluetooth/shell/Kconfig"
-endif # BLUETOOTH_HCI
+endif # BT_HCI
 
-endif # BLUETOOTH
+endif # BT
 
 endmenu

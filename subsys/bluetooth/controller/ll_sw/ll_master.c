@@ -36,7 +36,7 @@ u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 		return status;
 	}
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
 	ll_filters_scan_update(filter_policy);
 
 	if (!filter_policy && ctrl_rl_enabled()) {

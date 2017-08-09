@@ -53,9 +53,9 @@ static void supported_services(u8_t *data, u16_t len)
 	tester_set_bit(buf, BTP_SERVICE_ID_CORE);
 	tester_set_bit(buf, BTP_SERVICE_ID_GAP);
 	tester_set_bit(buf, BTP_SERVICE_ID_GATT);
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	tester_set_bit(buf, BTP_SERVICE_ID_L2CAP);
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
 		    BTP_INDEX_NONE, (u8_t *) rp, sizeof(buf));
@@ -77,10 +77,10 @@ static void register_service(u8_t *data, u16_t len)
 	case BTP_SERVICE_ID_GATT:
 		status = tester_init_gatt();
 		break;
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	case BTP_SERVICE_ID_L2CAP:
 		status = tester_init_l2cap();
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 		break;
 	default:
 		status = BTP_STATUS_FAILED;
@@ -143,11 +143,11 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 			tester_handle_gatt(cmd->opcode, cmd->index, cmd->data,
 					    len);
 			break;
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 		case BTP_SERVICE_ID_L2CAP:
 			tester_handle_l2cap(cmd->opcode, cmd->index, cmd->data,
 					    len);
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 			break;
 		default:
 			tester_rsp(cmd->service, cmd->opcode, cmd->index,

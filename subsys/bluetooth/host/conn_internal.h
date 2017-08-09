@@ -52,7 +52,7 @@ struct bt_conn_le {
 	struct k_delayed_work	update_work;
 };
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 /* For now reserve space for 2 pages of LMP remote features */
 #define LMP_MAX_PAGES 2
 
@@ -88,11 +88,11 @@ struct bt_conn {
 
 	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
 	u8_t			encrypt;
-#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 	/* Connection error or reason for disconnect */
 	u8_t			err;
@@ -117,7 +117,7 @@ struct bt_conn {
 
 	union {
 		struct bt_conn_le	le;
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 		struct bt_conn_br	br;
 		struct bt_conn_sco	sco;
 #endif
@@ -183,19 +183,19 @@ void notify_le_param_updated(struct bt_conn *conn);
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, u64_t rand,
 				u16_t ediv, const u8_t *ltk, size_t len);
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BT_SMP */
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn);
-#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 /* Prepare a PDU to be sent over a connection */
 struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve);

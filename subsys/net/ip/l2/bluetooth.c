@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 #define SYS_LOG_DOMAIN "net/bt"
 #define NET_LOG_ENABLED 1
 #endif
@@ -39,7 +39,7 @@
 
 #define CHAN_CTXT(_ch) CONTAINER_OF(_ch, struct bt_context, ipsp_chan.chan)
 
-#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+#if defined(CONFIG_NET_L2_BT_MGMT)
 static struct bt_conn *default_conn;
 #endif
 
@@ -114,7 +114,7 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	struct net_linkaddr ll;
 	struct in6_addr in6;
 
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 	char src[BT_ADDR_LE_STR_LEN];
 	char dst[BT_ADDR_LE_STR_LEN];
 #endif
@@ -125,7 +125,7 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 		return;
 	}
 
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 	bt_addr_le_to_str(info.le.src, src, sizeof(src));
 	bt_addr_le_to_str(info.le.dst, dst, sizeof(dst));
 
@@ -165,7 +165,7 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 	/* Set iface down */
 	net_if_down(ctxt->iface);
 
-#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+#if defined(CONFIG_NET_L2_BT_MGMT)
 	if (chan->conn != default_conn) {
 		return;
 	}
@@ -257,7 +257,7 @@ static void bt_iface_init(struct net_if *iface)
 
 	ctxt->iface = iface;
 
-#if defined(CONFIG_NET_L2_BLUETOOTH_ZEP1656)
+#if defined(CONFIG_NET_L2_BT_ZEP1656)
 	/* Workaround Linux bug, see:
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
@@ -286,13 +286,13 @@ static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 static struct bt_l2cap_server server = {
 	.psm		= L2CAP_IPSP_PSM,
-	.sec_level	= CONFIG_NET_L2_BLUETOOTH_SEC_LEVEL,
+	.sec_level	= CONFIG_NET_L2_BT_SEC_LEVEL,
 	.accept		= ipsp_accept,
 };
 
-#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+#if defined(CONFIG_NET_L2_BT_MGMT)
 
-#define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define UNKNOWN_APPEARANCE	0x0000
 
@@ -351,7 +351,7 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 		      void *user_data)
 {
 	int i;
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 	bt_addr_le_t *addr = user_data;
 	char dev[BT_ADDR_LE_STR_LEN];
 #endif
@@ -372,7 +372,7 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 			continue;
 		}
 
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 		bt_addr_le_to_str(addr, dev, sizeof(dev));
 		NET_DBG("[DEVICE]: %s", dev);
 #endif
@@ -495,7 +495,7 @@ static int bt_disconnect(u32_t mgmt_request, struct net_if *iface,
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 		char addr[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
@@ -515,7 +515,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 	char addr[BT_ADDR_LE_STR_LEN];
 #endif
 
@@ -523,7 +523,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 		return;
 	}
 
-#if defined(CONFIG_NET_DEBUG_L2_BLUETOOTH)
+#if defined(CONFIG_NET_DEBUG_L2_BT)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	NET_DBG("Disconnected: %s (reason %u)\n", addr, reason);
@@ -537,13 +537,13 @@ static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
-#endif /* CONFIG_NET_L2_BLUETOOTH_MGMT */
+#endif /* CONFIG_NET_L2_BT_MGMT */
 
 static int net_bt_init(struct device *dev)
 {
 	NET_DBG("dev %p driver_data %p", dev, dev->driver_data);
 
-#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+#if defined(CONFIG_NET_L2_BT_MGMT)
 	bt_conn_cb_register(&conn_callbacks);
 #endif
 	bt_l2cap_server_register(&server);
@@ -551,7 +551,7 @@ static int net_bt_init(struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_NET_L2_BLUETOOTH_MGMT)
+#if defined(CONFIG_NET_L2_BT_MGMT)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_ADVERTISE, bt_advertise);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_CONNECT, bt_connect);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_SCAN, bt_scan);

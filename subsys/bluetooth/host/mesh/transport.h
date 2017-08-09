@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define BT_MESH_TX_SEG_COUNT (CONFIG_BLUETOOTH_MESH_ADV_BUF_COUNT - 3)
+#define BT_MESH_TX_SEG_COUNT (CONFIG_BT_MESH_ADV_BUF_COUNT - 3)
 #define BT_MESH_TX_SDU_MAX (BT_MESH_TX_SEG_COUNT * 12)
 
 #define TRANS_CTL_OP_ACK               0x00

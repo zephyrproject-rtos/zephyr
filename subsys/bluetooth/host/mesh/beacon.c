@@ -15,7 +15,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_BEACON)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_BEACON)
 #include "common/log.h"
 
 #include "adv.h"
@@ -45,7 +45,7 @@ static struct k_delayed_work beacon_timer;
 static struct {
 	u16_t net_idx;
 	u8_t  data[21];
-} beacon_cache[CONFIG_BLUETOOTH_MESH_SUBNET_COUNT];
+} beacon_cache[CONFIG_BT_MESH_SUBNET_COUNT];
 
 static struct bt_mesh_subnet *cache_check(u8_t data[21])
 {
@@ -164,7 +164,7 @@ static int secure_beacon_send(void)
 
 static int unprovisioned_beacon_send(void)
 {
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 	struct net_buf *buf;
 
 	BT_DBG("");
@@ -185,7 +185,7 @@ static int unprovisioned_beacon_send(void)
 	bt_mesh_adv_send(buf, NULL);
 	net_buf_unref(buf);
 
-#endif /* CONFIG_BLUETOOTH_MESH_PB_ADV */
+#endif /* CONFIG_BT_MESH_PB_ADV */
 	return 0;
 }
 
@@ -218,7 +218,7 @@ static void update_beacon_observation(void)
 static void beacon_send(struct k_work *work)
 {
 	/* Don't send anything if we have an active provisioning link */
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_PROV) && bt_prov_active()) {
+	if (IS_ENABLED(CONFIG_BT_MESH_PROV) && bt_prov_active()) {
 		k_delayed_work_submit(&beacon_timer, UNPROVISIONED_INTERVAL);
 		return;
 	}

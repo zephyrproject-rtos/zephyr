@@ -18,7 +18,7 @@
 #include <bluetooth/l2cap.h>
 #include <bluetooth/avdtp.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_AVDTP)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_AVDTP)
 #include "common/log.h"
 
 #include "hci_core.h"

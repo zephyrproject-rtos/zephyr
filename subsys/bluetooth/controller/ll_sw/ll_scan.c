@@ -19,11 +19,11 @@ static struct {
 	u16_t interval;
 	u16_t window;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
 	u8_t  type:4;
-#else /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+#else /* !CONFIG_BT_CONTROLLER_ADV_EXT */
 	u8_t  type:1;
-#endif /* !CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+#endif /* !CONFIG_BT_CONTROLLER_ADV_EXT */
 
 	u8_t  own_addr_type:2;
 	u8_t  filter_policy:2;
@@ -69,7 +69,7 @@ u32_t ll_scan_enable(u8_t enable)
 		return 0;
 	}
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
 	ll_filters_scan_update(ll_scan.filter_policy);
 
 	if ((ll_scan.type & 0x1) &&

@@ -14,7 +14,7 @@
 
 #include <bluetooth/conn.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HFP_HF)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HFP_HF)
 /* FIXME: #include "common/log.h" */
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/hfp_hf.h>
@@ -30,11 +30,11 @@
 
 struct bt_hfp_hf_cb *bt_hf;
 
-NET_BUF_POOL_DEFINE(hf_pool, CONFIG_BLUETOOTH_MAX_CONN + 1,
-		    BT_RFCOMM_BUF_SIZE(BLUETOOTH_HF_CLIENT_MAX_PDU),
+NET_BUF_POOL_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
+		    BT_RFCOMM_BUF_SIZE(BT_HF_CLIENT_MAX_PDU),
 		    BT_BUF_USER_DATA_MIN, NULL);
 
-static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 
 /* The order should follow the enum hfp_hf_ag_indicators */
 static const struct {
@@ -659,7 +659,7 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 		hf->at.buf_max_len = HF_MAX_BUF_LEN;
 
 		hf->rfcomm_dlc.ops = &ops;
-		hf->rfcomm_dlc.mtu = BLUETOOTH_HFP_MAX_MTU;
+		hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
 
 		*dlc = &hf->rfcomm_dlc;
 
