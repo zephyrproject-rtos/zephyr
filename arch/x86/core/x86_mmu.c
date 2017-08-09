@@ -143,7 +143,7 @@ int _x86_mmu_buffer_validate(void *addr, size_t size, int flags)
 	end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 	rw_permission = GET_RW_PERM(flags);
 	us_permission = GET_US_PERM(flags);
-	starting_pte_num = MMU_PAGE_NUM((char *)addr + size - 1);
+	starting_pte_num = MMU_PAGE_NUM((char *)addr);
 
 	/* Iterate for all the pde's the buffer might take up.
 	 * (depends on the size of the buffer and start address of the buff)
