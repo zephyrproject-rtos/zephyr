@@ -72,13 +72,16 @@ The EM Starter Kit has different versions, such as 1.0, 1.1, 2.0, 2.1,
 In Zephyr, only firmware versions 2.2 and 2.3 are supported.
 
 * For EM Starter Kit 2.2, EM7D, EM9D and EM11D core configurations are supported.
+
   * Use :option:`CONFIG_BOARD_EM_STARTERKIT_R22` to select 2.2 version.
   * Use :option:`CONFIG_SOC_EM7D`, :option:`CONFIG_SOC_EM9D` or
-    :option:`CONFIG_SOC_EM11D` to select   EM7D, EM9D or EM11D.
+    :option:`CONFIG_SOC_EM11D` to select EM7D, EM9D or EM11D.
+
 * For EM Starter Kit 2.3, EM9D and EM11D core configurations are supported.
+
   * Use :option:`CONFIG_BOARD_EM_STARTERKIT_R23` to select 2.3 version.
-  * Use :option:`CONFIG_SOC_EM9D` or :option:`CONFIG_SOC_EM11D` to select
-    EM9D or EM11D.
+  * Use :option:`CONFIG_SOC_EM9D` or :option:`CONFIG_SOC_EM11D`
+    to select EM9D or EM11D.
 
 Supported Features
 ==================
