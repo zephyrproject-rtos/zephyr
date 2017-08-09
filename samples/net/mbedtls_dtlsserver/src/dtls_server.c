@@ -261,8 +261,8 @@ reset:
 	/* For HelloVerifyRequest cookies */
 	ctx.client_id = (char)ctx.remaining;
 
-	ret = mbedtls_ssl_set_client_transport_id(&ssl, &ctx.client_id,
-						  sizeof(char));
+	ret = mbedtls_ssl_set_client_transport_id(
+		&ssl, (unsigned char *)&ctx.client_id, sizeof(char));
 	if (ret != 0) {
 		mbedtls_printf(" failed\n  ! "
 			       "mbedtls_ssl_set_client_transport_id()"

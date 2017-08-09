@@ -505,9 +505,9 @@ reset:
 	mbedtls_ssl_session_reset(&ssl);
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-	ret =
-	    mbedtls_ssl_conf_psk(&conf, psk, strlen(psk), psk_id,
-				 strlen(psk_id));
+	ret = mbedtls_ssl_conf_psk(&conf, psk, strlen((char *)psk),
+				   (unsigned char *)psk_id,
+				   strlen(psk_id));
 	if (ret != 0) {
 		mbedtls_printf("  failed!\n  mbedtls_ssl_conf_psk"
 			       " returned -0x%04X\n", -ret);
@@ -523,8 +523,8 @@ reset:
 	/* For HelloVerifyRequest cookies */
 	ctx.client_id = (char)ctx.remaining;
 
-	ret = mbedtls_ssl_set_client_transport_id(&ssl, &ctx.client_id,
-						  sizeof(char));
+	ret = mbedtls_ssl_set_client_transport_id(
+		&ssl, (unsigned char *)&ctx.client_id, sizeof(char));
 	if (ret != 0) {
 		mbedtls_printf(" failed!\n"
 			       " mbedtls_ssl_set_client_transport_id()"

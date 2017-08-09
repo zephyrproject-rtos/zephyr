@@ -568,7 +568,8 @@ static void receive_cb(struct net_context *ctx, struct net_pkt *pkt, int status,
 			break;
 		}
 
-		tmp = net_frag_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
+		tmp = net_frag_read(tmp, pos, &pos, len,
+				    (u8_t *)(cmd_buf + cmd_len));
 		cmd_len += len;
 
 		if (end_of_line) {

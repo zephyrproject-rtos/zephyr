@@ -142,7 +142,7 @@ transmit(struct net_context *ctx, char buffer[], size_t len)
 		return -ENOMEM;
 	}
 
-	if (!net_pkt_append_all(send_pkt, len, buffer, K_FOREVER)) {
+	if (!net_pkt_append_all(send_pkt, len, (u8_t *)buffer, K_FOREVER)) {
 		return -EINVAL;
 	}
 
@@ -321,7 +321,7 @@ on_context_recv(struct net_context *ctx, struct net_pkt *pkt,
 			}
 
 			cmd_buf[cmd_len] = '\0';
-			process_command(irc, cmd_buf, cmd_len);
+			process_command(irc, (char *)cmd_buf, cmd_len);
 			cmd_len = 0;
 		}
 	}
