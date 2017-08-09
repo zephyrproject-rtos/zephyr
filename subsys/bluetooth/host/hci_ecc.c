@@ -23,11 +23,11 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
 
 #include "hci_ecc.h"
-#ifdef CONFIG_BLUETOOTH_HCI_RAW
+#ifdef CONFIG_BT_HCI_RAW
 #include <bluetooth/hci_raw.h>
 #include "hci_raw_internal.h"
 #else
@@ -43,7 +43,7 @@ static const u32_t debug_private_key[8] = {
 	0xa3c55f38, 0x3f49f6d4
 };
 
-#if defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+#if defined(CONFIG_BT_USE_DEBUG_KEYS)
 static const u8_t debug_public_key[64] = {
 	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc, 0xdb, 0xfd, 0xf4, 0xac,
 	0x11, 0x91, 0xf4, 0xef, 0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e,
@@ -100,7 +100,7 @@ static void send_cmd_status(u16_t opcode, u8_t status)
 
 static u8_t generate_keys(void)
 {
-#if !defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+#if !defined(CONFIG_BT_USE_DEBUG_KEYS)
 	do {
 		int rc;
 

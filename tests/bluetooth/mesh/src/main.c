@@ -20,8 +20,8 @@ static bool has_reg_fault = true;
 static struct bt_mesh_cfg cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
 	.beacon = BT_MESH_BEACON_DISABLED,
-#if defined(CONFIG_BLUETOOTH_MESH_FRIEND)
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_FRIEND)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	.frnd = BT_MESH_FRIEND_DISABLED,
 #else
 	.frnd = BT_MESH_FRIEND_ENABLED,
@@ -29,7 +29,7 @@ static struct bt_mesh_cfg cfg_srv = {
 #else
 	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
 #endif
-#if defined(CONFIG_BLUETOOTH_MESH_GATT_PROXY)
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
 	.gatt_proxy = BT_MESH_GATT_PROXY_ENABLED,
 #else
 	.gatt_proxy = BT_MESH_GATT_PROXY_NOT_SUPPORTED,
@@ -156,7 +156,7 @@ static int output_number(bt_mesh_output_action action, uint32_t number)
 }
 #endif
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 static struct k_delayed_work timer;
 
 static void enable_lpn(struct k_work *work)
@@ -171,7 +171,7 @@ static void prov_complete(void)
 {
 	board_prov_complete();
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	k_delayed_work_init(&timer, enable_lpn);
 	k_delayed_work_submit(&timer, K_SECONDS(10));
 #endif

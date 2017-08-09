@@ -192,7 +192,7 @@ Bluetooth
   Priority: High
   Complexity: C1
 
-  Enable samples to use CONFIG_NET_L2_BLUETOOTH.
+  Enable samples to use CONFIG_NET_L2_BT.
 
 IP-based services
 =================

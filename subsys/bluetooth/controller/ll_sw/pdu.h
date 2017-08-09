@@ -53,7 +53,7 @@ struct pdu_adv_payload_connect_ind {
 	} __packed lldata;
 } __packed;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
 struct pdu_adv_payload_com_ext_adv {
 	u8_t ext_hdr_len:6;
 	u8_t adv_mode:2;
@@ -116,7 +116,7 @@ struct ext_adv_sync_info {
 	u8_t  crc_init[3];
 	u16_t evt_cntr;
 } __packed;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
 
 enum pdu_adv_type {
 	PDU_ADV_TYPE_ADV_IND = 0x00,
@@ -152,9 +152,9 @@ struct pdu_adv {
 		struct pdu_adv_payload_scan_rsp scan_rsp;
 		struct pdu_adv_payload_connect_ind connect_ind;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
 		struct pdu_adv_payload_com_ext_adv adv_ext_ind;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
 	} __packed payload;
 } __packed;
 
@@ -330,7 +330,7 @@ struct pdu_data_llctrl {
 	} __packed ctrldata;
 } __packed;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+#if defined(CONFIG_BT_CONTROLLER_PROFILE_ISR)
 struct profile {
 	u8_t lcur;
 	u8_t lmin;
@@ -339,7 +339,7 @@ struct profile {
 	u8_t min;
 	u8_t max;
 } __packed;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+#endif /* CONFIG_BT_CONTROLLER_PROFILE_ISR */
 
 struct pdu_data {
 	u8_t ll_id:2;
@@ -350,21 +350,21 @@ struct pdu_data {
 
 	u8_t len:8;
 
-#if !defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR)
+#if !defined(CONFIG_BT_CONTROLLER_DATA_LENGTH_CLEAR)
 	u8_t resv:8; /* TODO: remove nRF specific code */
-#endif /* !CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH_CLEAR */
+#endif /* !CONFIG_BT_CONTROLLER_DATA_LENGTH_CLEAR */
 
 	union {
 		u8_t lldata[1];
 		struct pdu_data_llctrl llctrl;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
+#if defined(CONFIG_BT_CONTROLLER_CONN_RSSI)
 		u8_t rssi;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+#endif /* CONFIG_BT_CONTROLLER_CONN_RSSI */
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR)
+#if defined(CONFIG_BT_CONTROLLER_PROFILE_ISR)
 		struct profile profile;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PROFILE_ISR */
+#endif /* CONFIG_BT_CONTROLLER_PROFILE_ISR */
 	} __packed payload;
 } __packed;
 

@@ -10,21 +10,21 @@ enum llcp {
 	LLCP_CONNECTION_UPDATE,
 	LLCP_CHAN_MAP,
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
 	LLCP_ENCRYPTION,
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
 
 	LLCP_FEATURE_EXCHANGE,
 	LLCP_VERSION_EXCHANGE,
 	/* LLCP_TERMINATE, */
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CONTROLLER_LE_PING)
 	LLCP_PING,
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+#endif /* CONFIG_BT_CONTROLLER_LE_PING */
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CONTROLLER_PHY)
 	LLCP_PHY_UPD,
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CONTROLLER_PHY */
 };
 
 
@@ -62,20 +62,20 @@ struct connection {
 	u16_t latency_prepare;
 	u16_t latency_event;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+#if defined(CONFIG_BT_CONTROLLER_DATA_LENGTH)
 	u16_t default_tx_octets;
 	u16_t max_tx_octets;
 	u16_t max_rx_octets;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BT_CONTROLLER_DATA_LENGTH */
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CONTROLLER_PHY)
 	u8_t phy_pref_tx:3;
 	u8_t phy_tx:3;
 	u8_t phy_pref_flags:1;
 	u8_t phy_flags:1;
 	u8_t phy_pref_rx:3;
 	u8_t phy_rx:3;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CONTROLLER_PHY */
 
 	u16_t connect_expire;
 	u16_t supervision_reload;
@@ -83,12 +83,12 @@ struct connection {
 	u16_t procedure_reload;
 	u16_t procedure_expire;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CONTROLLER_LE_PING)
 	u16_t appto_reload;
 	u16_t appto_expire;
 	u16_t apto_reload;
 	u16_t apto_expire;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_LE_PING */
+#endif /* CONFIG_BT_CONTROLLER_LE_PING */
 
 	union {
 		struct {
@@ -158,7 +158,7 @@ struct connection {
 			u16_t instant;
 		} chan_map;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CONTROLLER_PHY)
 		struct {
 			u8_t initiate:1;
 			u8_t cmd:1;
@@ -166,7 +166,7 @@ struct connection {
 			u8_t rx:3;
 			u16_t instant;
 		} phy_upd_ind;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CONTROLLER_PHY */
 
 		struct {
 			u8_t  error_code;
@@ -198,7 +198,7 @@ struct connection {
 		} radio_pdu_node_rx;
 	} llcp_terminate;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH)
+#if defined(CONFIG_BT_CONTROLLER_DATA_LENGTH)
 	struct {
 		u8_t  req;
 		u8_t  ack;
@@ -210,9 +210,9 @@ struct connection {
 		u16_t rx_octets;
 		u16_t tx_octets;
 	} llcp_length;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BT_CONTROLLER_DATA_LENGTH */
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CONTROLLER_PHY)
 	struct {
 		u8_t req;
 		u8_t ack;
@@ -226,7 +226,7 @@ struct connection {
 		u8_t flags:1;
 		u8_t cmd:1;
 	} llcp_phy;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CONTROLLER_PHY */
 
 	u8_t  sn:1;
 	u8_t  nesn:1;
@@ -248,11 +248,11 @@ struct connection {
 	u8_t  packet_tx_head_len;
 	u8_t  packet_tx_head_offset;
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI)
+#if defined(CONFIG_BT_CONTROLLER_CONN_RSSI)
 	u8_t  rssi_latest;
 	u8_t  rssi_reported;
 	u8_t  rssi_sample_count;
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_CONN_RSSI */
+#endif /* CONFIG_BT_CONTROLLER_CONN_RSSI */
 };
 #define CONNECTION_T_SIZE MROUND(sizeof(struct connection))
 
@@ -262,11 +262,11 @@ struct pdu_data_q_tx {
 };
 
 /* Extra bytes for enqueued rx_node metadata: rssi and resolving index */
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
 #define PDU_AC_SIZE_EXTRA 2
 #else
 #define PDU_AC_SIZE_EXTRA 1
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
 
 /* Minimum Rx Data allocation size */
 #define PACKET_RX_DATA_SIZE_MIN \

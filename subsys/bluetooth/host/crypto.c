@@ -20,7 +20,7 @@
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
 
 #include "hci_core.h"

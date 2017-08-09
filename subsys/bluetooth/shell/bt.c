@@ -32,7 +32,7 @@
 #include "gatt.h"
 #include "ll.h"
 
-#define DEVICE_NAME		CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
@@ -45,21 +45,21 @@ static bt_addr_le_t id_addr;
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */
 static struct bt_conn *pairing_conn;
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 NET_BUF_POOL_DEFINE(data_tx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
 NET_BUF_POOL_DEFINE(data_rx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
 #endif
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 NET_BUF_POOL_DEFINE(data_bredr_pool, 1, DATA_BREDR_MTU, BT_BUF_USER_DATA_MIN,
 		    NULL);
 
 #define SDP_CLIENT_USER_BUF_LEN		512
-NET_BUF_POOL_DEFINE(sdp_client_pool, CONFIG_BLUETOOTH_MAX_CONN,
+NET_BUF_POOL_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN,
 		    SDP_CLIENT_USER_BUF_LEN, BT_BUF_USER_DATA_MIN, NULL);
-#endif /* CONFIG_BLUETOOTH_BREDR */
+#endif /* CONFIG_BT_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_RFCOMM)
+#if defined(CONFIG_BT_RFCOMM)
 
 static struct bt_sdp_attribute spp_attrs[] = {
 	BT_SDP_NEW_SERVICE,
@@ -125,7 +125,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 
 static struct bt_sdp_record spp_rec = BT_SDP_RECORD(spp_attrs);
 
-#endif /* CONFIG_BLUETOOTH_RFCOMM */
+#endif /* CONFIG_BT_RFCOMM */
 
 static const char *current_prompt(void)
 {
@@ -202,7 +202,7 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	}
 
 	switch (info.type) {
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, len);
 		break;
@@ -213,7 +213,7 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 static u8_t sdp_hfp_ag_user(struct bt_conn *conn,
 			       struct bt_sdp_client_result *result)
 {
@@ -393,7 +393,7 @@ static void le_param_updated(struct bt_conn *conn, u16_t interval,
 	       latency, timeout);
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
 {
@@ -407,7 +407,7 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 }
 #endif
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 static void security_changed(struct bt_conn *conn, bt_security_t level)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -422,10 +422,10 @@ static struct bt_conn_cb conn_callbacks = {
 	.disconnected = disconnected,
 	.le_param_req = le_param_req,
 	.le_param_updated = le_param_updated,
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 	.identity_resolved = identity_resolved,
 #endif
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	.security_changed = security_changed,
 #endif
 };
@@ -819,7 +819,7 @@ static int cmd_conn_update(int argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 static int cmd_security(int argc, char *argv[])
 {
 	int err, sec;
@@ -944,7 +944,7 @@ static int cmd_oob(int argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -1002,7 +1002,7 @@ static void auth_pairing_confirm(struct bt_conn *conn)
 	printk("Confirm pairing for %s\n", addr);
 }
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -1038,7 +1038,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
@@ -1049,7 +1049,7 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
@@ -1060,7 +1060,7 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.passkey_display = NULL,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = NULL,
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
@@ -1071,7 +1071,7 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
 	.passkey_confirm = auth_passkey_confirm,
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	.pincode_entry = auth_pincode_entry,
 #endif
 	.cancel = auth_cancel,
@@ -1170,9 +1170,9 @@ static int cmd_auth_passkey(int argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BLUETOOTH_SMP) || CONFIG_BLUETOOTH_BREDR */
+#endif /* CONFIG_BT_SMP) || CONFIG_BT_BREDR */
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 static int cmd_auth_pincode(int argc, char *argv[])
 {
 	struct bt_conn *conn;
@@ -1344,7 +1344,7 @@ static int cmd_bredr_discovery(int argc, char *argv[])
 	return 0;
 }
 
-#endif /* CONFIG_BLUETOOTH_BREDR */
+#endif /* CONFIG_BT_BREDR */
 
 static int cmd_clear(int argc, char *argv[])
 {
@@ -1368,7 +1368,7 @@ static int cmd_clear(int argc, char *argv[])
 	}
 
 	if (argc < 3) {
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 		addr.type = BT_ADDR_LE_PUBLIC;
 		err = str2bt_addr(argv[1], &addr.a);
 #else
@@ -1394,7 +1394,7 @@ static int cmd_clear(int argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static void hexdump(const u8_t *data, size_t len)
 {
 	int n = 0;
@@ -1630,7 +1630,7 @@ static int cmd_l2cap_metrics(int argc, char *argv[])
 
 #endif
 
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 static void l2cap_bredr_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
@@ -1707,7 +1707,7 @@ static int cmd_bredr_l2cap_register(int argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_RFCOMM)
+#if defined(CONFIG_BT_RFCOMM)
 static void rfcomm_bredr_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
 	printk("Incoming data dlc %p len %u\n", dlci, buf->len);
@@ -1842,7 +1842,7 @@ static int cmd_rfcomm_disconnect(int argc, char *argv[])
 	return 0;
 }
 
-#endif /* CONFIG_BLUETOOTH_RFCOMM) */
+#endif /* CONFIG_BT_RFCOMM) */
 
 static int cmd_bredr_discoverable(int argc, char *argv[])
 {
@@ -1979,7 +1979,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "conn-update", cmd_conn_update, "<min> <max> <latency> <timeout>" },
 	{ "oob", cmd_oob },
 	{ "clear", cmd_clear },
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
 	{ "auth", cmd_auth,
 	  "<authentication method: all, input, display, yesno, none>" },
@@ -1987,11 +1987,11 @@ static const struct shell_cmd bt_commands[] = {
 	{ "auth-passkey", cmd_auth_passkey, "<passkey>" },
 	{ "auth-passkey-confirm", cmd_auth_passkey_confirm, HELP_NONE },
 	{ "auth-pairing-confirm", cmd_auth_pairing_confirm, HELP_NONE },
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	{ "auth-pincode", cmd_auth_pincode, "<pincode>" },
-#endif /* CONFIG_BLUETOOTH_BREDR */
-#endif /* CONFIG_BLUETOOTH_SMP || CONFIG_BLUETOOTH_BREDR) */
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
+#if defined(CONFIG_BT_GATT_CLIENT)
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu, HELP_NONE },
 	{ "gatt-discover-primary", cmd_gatt_discover,
 	  "<UUID> [start handle] [end handle]" },
@@ -2013,7 +2013,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "gatt-subscribe", cmd_gatt_subscribe,
 	  "<CCC handle> <value handle> [ind]" },
 	{ "gatt-unsubscribe", cmd_gatt_unsubscribe, HELP_NONE },
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BT_GATT_CLIENT */
 	{ "gatt-show-db", cmd_gatt_show_db, HELP_NONE },
 	{ "gatt-register-service", cmd_gatt_register_test_svc,
 	  "register pre-predefined test service" },
@@ -2021,14 +2021,14 @@ static const struct shell_cmd bt_commands[] = {
 	  "unregister pre-predefined test service" },
 	{ "gatt-metrics", cmd_gatt_write_cmd_metrics,
 	  "register vendr char and measure rx [value on, off]" },
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	{ "l2cap-register", cmd_l2cap_register, "<psm> [sec_level]" },
 	{ "l2cap-connect", cmd_l2cap_connect, "<psm>" },
 	{ "l2cap-disconnect", cmd_l2cap_disconnect, HELP_NONE },
 	{ "l2cap-send", cmd_l2cap_send, "<number of packets>" },
 	{ "l2cap-metrics", cmd_l2cap_metrics, "<value on, off>" },
 #endif
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	{ "br-iscan", cmd_bredr_discoverable, "<value: on, off>" },
 	{ "br-pscan", cmd_bredr_connectable, "value: on, off" },
 	{ "br-connect", cmd_connect_bredr, "<address>" },
@@ -2037,17 +2037,17 @@ static const struct shell_cmd bt_commands[] = {
 	{ "br-l2cap-register", cmd_bredr_l2cap_register, "<psm>" },
 	{ "br-oob", cmd_bredr_oob },
 	{ "br-sdp-find", cmd_bredr_sdp_find_record, "<HFPAG>" },
-#if defined(CONFIG_BLUETOOTH_RFCOMM)
+#if defined(CONFIG_BT_RFCOMM)
 	{ "br-rfcomm-register", cmd_bredr_rfcomm_register },
 	{ "br-rfcomm-connect", cmd_rfcomm_connect, "<channel>" },
 	{ "br-rfcomm-send", cmd_rfcomm_send, "<number of packets>"},
 	{ "br-rfcomm-disconnect", cmd_rfcomm_disconnect, HELP_NONE },
-#endif /* CONFIG_BLUETOOTH_RFCOMM */
+#endif /* CONFIG_BT_RFCOMM */
 #endif
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
 	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
 	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_ADV_EXT */
+#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
 	{ NULL, NULL, NULL }
 };
 

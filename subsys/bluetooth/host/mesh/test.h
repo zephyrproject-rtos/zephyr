@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BLUETOOTH_MESH_SELF_TEST)
+#if defined(CONFIG_BT_MESH_SELF_TEST)
 int bt_mesh_test(void);
 #else
 static inline int bt_mesh_test(void)

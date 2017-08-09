@@ -12,7 +12,7 @@ void bt_gatt_init(void);
 void bt_gatt_connected(struct bt_conn *conn);
 void bt_gatt_disconnected(struct bt_conn *conn);
 
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+#if defined(CONFIG_BT_GATT_CLIENT)
 void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 			  const void *data, u16_t length);
 #else
@@ -20,4 +20,4 @@ static inline void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 					const void *data, u16_t length)
 {
 }
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BT_GATT_CLIENT */

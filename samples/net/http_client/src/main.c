@@ -48,10 +48,10 @@ static struct net_buf_pool *data_pool(void)
 	return &http_cli_data;
 }
 #else
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 #error "TCP connections over Bluetooth need CONFIG_NET_CONTEXT_NET_PKT_POOL "\
 	"defined."
-#endif /* CONFIG_NET_L2_BLUETOOTH */
+#endif /* CONFIG_NET_L2_BT */
 
 #define tx_slab NULL
 #define data_pool NULL

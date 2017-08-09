@@ -25,7 +25,7 @@
 
 #include <gatt/hrs.h>
 
-#define DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
 #define MY_SHELL_MODULE "btshell"
 

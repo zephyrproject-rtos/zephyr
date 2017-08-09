@@ -12,7 +12,7 @@
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/hci_raw.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
 
 #include "hci_ecc.h"
@@ -21,7 +21,7 @@
 
 static struct k_fifo *raw_rx;
 
-NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BLUETOOTH_RX_BUF_COUNT,
+NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 
 struct bt_dev_raw bt_dev;
@@ -94,7 +94,7 @@ int bt_send(struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
 		return bt_hci_ecc_send(buf);
 	}
 
@@ -115,7 +115,7 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
 		bt_hci_ecc_init();
 	}
 

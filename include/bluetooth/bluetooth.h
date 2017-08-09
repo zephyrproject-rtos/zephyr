@@ -278,7 +278,7 @@ struct bt_le_oob {
  * pairing or connection creation process.
  *
  * If privacy is enabled this will result in generating new Resolvable Private
- * Address that is valid for CONFIG_BLUETOOTH_RPA_TIMEOUT seconds. This address
+ * Address that is valid for CONFIG_BT_RPA_TIMEOUT seconds. This address
  * will be used for advertising, active scanning and connection creation.
  *
  * @param oob LE related information

@@ -495,11 +495,11 @@ building your application:
 
 .. code-block:: console
 
-   CONFIG_BLUETOOTH_DEBUG_MONITOR=y
+   CONFIG_BT_DEBUG_MONITOR=y
    CONFIG_UART_CONSOLE=n
    CONFIG_UART_QMSI_1_BAUDRATE=1000000
 
-The first item replaces the BLUETOOTH_DEBUG_LOG option, the second one
+The first item replaces the BT_DEBUG_LOG option, the second one
 disables the default printk/printf hooks, and the third one matches the console
 baudrate with what's used to communicate with the nRF51, in order not to create
 a bottleneck.

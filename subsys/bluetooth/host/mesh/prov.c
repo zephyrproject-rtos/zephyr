@@ -18,7 +18,7 @@
 #include <bluetooth/mesh.h>
 #include <bluetooth/uuid.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_PROV)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
 #include "common/log.h"
 
 #include "../ecc.h"
@@ -115,7 +115,7 @@ enum {
 
 struct prov_link {
 	ATOMIC_DEFINE(flags, NUM_FLAGS);
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 	struct bt_conn *conn;    /* GATT connection */
 #endif
 	u8_t  dhkey[32];         /* Calculated DHKey */
@@ -134,7 +134,7 @@ struct prov_link {
 	u8_t  conf_inputs[145];  /* ConfirmationInputs */
 	u8_t  prov_salt[16];     /* Provisioning Salt */
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 	u32_t id;                /* Link ID */
 
 	struct {
@@ -169,7 +169,7 @@ struct prov_rx {
 #define BUF_TIMEOUT          K_MSEC(400)
 #define TRANSACTION_TIMEOUT  K_SECONDS(30)
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 #define PROV_BUF_HEADROOM 5
 #else
 #define PROV_BUF_HEADROOM 0
@@ -184,7 +184,7 @@ static const struct bt_mesh_prov *prov;
 
 static void close_link(u8_t err, u8_t reason);
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 static void buf_sent(struct net_buf *buf, int err)
 {
 	if (!link.tx.buf[0]) {
@@ -234,7 +234,7 @@ static void reset_link(void)
 		atomic_set_bit(link.flags, LOCAL_PUB_KEY);
 	}
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 	link.rx.buf = bt_mesh_proxy_get_buf();
 #else
 	net_buf_simple_init(rx_buf, 0);
@@ -422,9 +422,9 @@ static int prov_send_adv(struct net_buf_simple *msg)
 	return 0;
 }
 
-#endif /* CONFIG_BLUETOOTH_MESH_PB_ADV */
+#endif /* CONFIG_BT_MESH_PB_ADV */
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 static int prov_send_gatt(struct net_buf_simple *msg)
 {
 	if (!link.conn) {
@@ -433,16 +433,16 @@ static int prov_send_gatt(struct net_buf_simple *msg)
 
 	return bt_mesh_proxy_send(link.conn, BT_MESH_PROXY_PROV, msg);
 }
-#endif /* CONFIG_BLUETOOTH_MESH_PB_GATT */
+#endif /* CONFIG_BT_MESH_PB_GATT */
 
 static inline int prov_send(struct net_buf_simple *buf)
 {
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 	if (link.conn) {
 		return prov_send_gatt(buf);
 	}
 #endif
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 	return prov_send_adv(buf);
 #else
 	return 0;
@@ -838,7 +838,7 @@ static void prov_pub_key(const u8_t *data)
 
 	if (!atomic_test_bit(link.flags, LOCAL_PUB_KEY)) {
 		/* Clear retransmit timer */
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 		prov_clear_tx();
 #endif
 		atomic_set_bit(link.flags, REMOTE_PUB_KEY);
@@ -877,7 +877,7 @@ static void prov_confirm(const u8_t *data)
 	memcpy(link.conf, data, 16);
 
 	if (!atomic_test_bit(link.flags, HAVE_DHKEY)) {
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 		prov_clear_tx();
 #endif
 		atomic_set_bit(link.flags, SEND_CONFIRM);
@@ -1026,14 +1026,14 @@ static const struct {
 
 static void close_link(u8_t err, u8_t reason)
 {
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 	if (link.conn) {
 		bt_mesh_pb_gatt_close(link.conn);
 		return;
 	}
 #endif
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 	if (err) {
 		struct net_buf_simple *buf = PROV_BUF(2);
 
@@ -1054,7 +1054,7 @@ static void close_link(u8_t err, u8_t reason)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 static void prov_retransmit(struct k_work *work)
 {
 	int i;
@@ -1354,9 +1354,9 @@ void bt_mesh_pb_adv_recv(struct net_buf_simple *buf)
 
 	gen_prov_recv(&rx, buf);
 }
-#endif /* CONFIG_BLUETOOTH_MESH_PB_ADV */
+#endif /* CONFIG_BT_MESH_PB_ADV */
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 int bt_mesh_pb_gatt_recv(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	u8_t type;
@@ -1435,7 +1435,7 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 
 	return 0;
 }
-#endif /* CONFIG_BLUETOOTH_MESH_PB_GATT */
+#endif /* CONFIG_BT_MESH_PB_GATT */
 
 const u8_t *bt_mesh_prov_get_uuid(void)
 {
@@ -1459,20 +1459,20 @@ void bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 
 	prov = prov_info;
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV)
 	k_delayed_work_init(&link.tx.retransmit, prov_retransmit);
 	link.rx.prev_id = XACT_NVAL;
 
-#if defined(CONFIG_BLUETOOTH_MESH_PB_GATT)
+#if defined(CONFIG_BT_MESH_PB_GATT)
 	link.rx.buf = bt_mesh_proxy_get_buf();
 #else
 	net_buf_simple_init(rx_buf, 0);
 	link.rx.buf = rx_buf;
 #endif
 
-#endif /* CONFIG_BLUETOOTH_MESH_PB_ADV */
+#endif /* CONFIG_BT_MESH_PB_ADV */
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_DEBUG)) {
+	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
 		struct bt_uuid_128 uuid = { .uuid.type = BT_UUID_TYPE_128 };
 		memcpy(uuid.val, prov->uuid, 16);
 		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));

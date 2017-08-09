@@ -14,7 +14,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_LOW_POWER)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 #include "common/log.h"
 
 #include "crypto.h"
@@ -26,8 +26,8 @@
 #include "beacon.h"
 #include "lpn.h"
 
-#define LPN_RECV_DELAY            CONFIG_BLUETOOTH_MESH_LPN_RECV_DELAY
-#define SCAN_LATENCY              min(CONFIG_BLUETOOTH_MESH_LPN_SCAN_LATENCY, \
+#define LPN_RECV_DELAY            CONFIG_BT_MESH_LPN_RECV_DELAY
+#define SCAN_LATENCY              min(CONFIG_BT_MESH_LPN_SCAN_LATENCY, \
 				      LPN_RECV_DELAY)
 
 #define FRIEND_REQ_RETRY_TIMEOUT  K_SECONDS(5)
@@ -41,17 +41,17 @@
 				  (LPN_RECV_DELAY + (lpn)->recv_win + \
 				   POLL_RETRY_TIMEOUT))
 
-#define POLL_TIMEOUT(lpn)   ((CONFIG_BLUETOOTH_MESH_LPN_POLL_TIMEOUT * 100) - \
+#define POLL_TIMEOUT(lpn)   ((CONFIG_BT_MESH_LPN_POLL_TIMEOUT * 100) - \
 			     REQ_RETRY_DURATION(lpn))
 
-#define LPN_CRITERIA ((CONFIG_BLUETOOTH_MESH_LPN_MIN_QUEUE_SIZE) | \
-		      (CONFIG_BLUETOOTH_MESH_LPN_RSSI_FACTOR << 3) | \
-		      (CONFIG_BLUETOOTH_MESH_LPN_RECV_WIN_FACTOR << 5))
+#define LPN_CRITERIA ((CONFIG_BT_MESH_LPN_MIN_QUEUE_SIZE) | \
+		      (CONFIG_BT_MESH_LPN_RSSI_FACTOR << 3) | \
+		      (CONFIG_BT_MESH_LPN_RECV_WIN_FACTOR << 5))
 
 #define POLL_TO(to) { (u8_t)((to) >> 16), (u8_t)((to) >> 8), (u8_t)(to) }
-#define LPN_POLL_TO POLL_TO(CONFIG_BLUETOOTH_MESH_LPN_POLL_TIMEOUT)
+#define LPN_POLL_TO POLL_TO(CONFIG_BT_MESH_LPN_POLL_TIMEOUT)
 
-#if defined(CONFIG_BLUETOOTH_MESH_DEBUG_LOW_POWER)
+#if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 static const char *state2str(int state)
 {
 	switch (state) {
@@ -75,11 +75,11 @@ static const char *state2str(int state)
 		return "(unknown)";
 	}
 }
-#endif /* CONFIG_BLUETOOTH_MESH_DEBUG_LPN */
+#endif /* CONFIG_BT_MESH_DEBUG_LPN */
 
 static inline void lpn_set_state(int state)
 {
-#if defined(CONFIG_BLUETOOTH_MESH_DEBUG_LOW_POWER)
+#if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 	BT_DBG("%s -> %s", state2str(bt_mesh.lpn.state), state2str(state));
 #endif
 	bt_mesh.lpn.state = state;
@@ -210,7 +210,7 @@ static int send_friend_req(void)
 
 static inline void group_zero(atomic_t *target)
 {
-#if CONFIG_BLUETOOTH_MESH_LPN_GROUPS > 32
+#if CONFIG_BT_MESH_LPN_GROUPS > 32
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
@@ -223,7 +223,7 @@ static inline void group_zero(atomic_t *target)
 
 static inline void group_set(atomic_t *target, atomic_t *source)
 {
-#if CONFIG_BLUETOOTH_MESH_LPN_GROUPS > 32
+#if CONFIG_BT_MESH_LPN_GROUPS > 32
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
@@ -236,7 +236,7 @@ static inline void group_set(atomic_t *target, atomic_t *source)
 
 static inline void group_clear(atomic_t *target, atomic_t *source)
 {
-#if CONFIG_BLUETOOTH_MESH_LPN_GROUPS > 32
+#if CONFIG_BT_MESH_LPN_GROUPS > 32
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
@@ -526,7 +526,7 @@ static void lpn_group_del(u16_t group)
 
 static inline int group_popcount(atomic_t *target)
 {
-#if CONFIG_BLUETOOTH_MESH_LPN_GROUPS > 32
+#if CONFIG_BT_MESH_LPN_GROUPS > 32
 	int i, count = 0;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
@@ -609,7 +609,7 @@ static void lpn_timeout(struct k_work *work)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-#if defined(CONFIG_BLUETOOTH_MESH_DEBUG_LOW_POWER)
+#if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 	BT_DBG("state: %s", state2str(lpn->state));
 #endif
 

@@ -76,7 +76,7 @@ static K_FIFO_DEFINE(rx_queue);
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
+NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    sizeof(u8_t), NULL);
 
 #define BT_L2CAP_MTU 64

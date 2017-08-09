@@ -8,7 +8,7 @@
 
 static inline bool bt_mesh_friend_dst_is_lpn(u16_t dst)
 {
-#if defined(CONFIG_BLUETOOTH_MESH_FRIEND)
+#if defined(CONFIG_BT_MESH_FRIEND)
 	return (dst == bt_mesh.frnd.lpn);
 #else
 	return false;

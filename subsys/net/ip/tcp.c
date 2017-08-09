@@ -126,7 +126,7 @@ static inline u32_t retry_timeout(const struct net_tcp *tcp)
 
 #define is_6lo_technology(pkt)						    \
 	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(pkt) == AF_INET6 &&  \
-	 ((IS_ENABLED(CONFIG_NET_L2_BLUETOOTH) &&			    \
+	 ((IS_ENABLED(CONFIG_NET_L2_BT) &&			    \
 	   net_pkt_ll_dst(pkt)->type == NET_LINK_BLUETOOTH) ||		    \
 	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
 	   net_pkt_ll_dst(pkt)->type == NET_LINK_IEEE802154)))

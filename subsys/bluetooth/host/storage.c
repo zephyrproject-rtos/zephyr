@@ -15,7 +15,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/storage.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
 
 #define STORAGE_ROOT          "/bt"

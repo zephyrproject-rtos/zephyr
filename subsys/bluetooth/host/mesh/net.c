@@ -19,7 +19,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_NET)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_NET)
 #include "common/log.h"
 
 #include "crypto.h"
@@ -37,13 +37,13 @@
 /* Seq limit after IV Update is triggered */
 #define IV_UPDATE_SEQ_LIMIT 8000000
 
-#if defined(CONFIG_BLUETOOTH_MESH_IV_UPDATE_TEST)
+#if defined(CONFIG_BT_MESH_IV_UPDATE_TEST)
 /* Small test timeout for IV Update Procedure testing */
 #define IV_UPDATE_TIMEOUT  K_SECONDS(120)
 #else
 /* Maximum time to stay in IV Update mode (96 < time < 144) */
 #define IV_UPDATE_TIMEOUT  K_HOURS(120)
-#endif /* CONFIG_BLUETOOTH_MESH_IV_UPDATE_TEST */
+#endif /* CONFIG_BT_MESH_IV_UPDATE_TEST */
 
 #define IVI(pdu)           ((pdu)[0] >> 7)
 #define NID(pdu)           ((pdu)[0] & 0x7f)
@@ -51,10 +51,10 @@
 #define TTL(pdu)           ((pdu)[1] & 0x7f)
 
 /* Determine how many friendship credentials we need */
-#if defined(CONFIG_BLUETOOTH_MESH_FRIEND)
-#define FRIEND_CRED_COUNT CONFIG_BLUETOOTH_MESH_FRIEND_LPN_COUNT
-#elif defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
-#define FRIEND_CRED_COUNT CONFIG_BLUETOOTH_MESH_SUBNET_COUNT
+#if defined(CONFIG_BT_MESH_FRIEND)
+#define FRIEND_CRED_COUNT CONFIG_BT_MESH_FRIEND_LPN_COUNT
+#elif defined(CONFIG_BT_MESH_LOW_POWER)
+#define FRIEND_CRED_COUNT CONFIG_BT_MESH_SUBNET_COUNT
 #else
 #define FRIEND_CRED_COUNT 0
 #endif
@@ -63,18 +63,18 @@
 static struct bt_mesh_friend_cred friend_cred[FRIEND_CRED_COUNT];
 #endif
 
-static u64_t msg_cache[CONFIG_BLUETOOTH_MESH_MSG_CACHE_SIZE];
+static u64_t msg_cache[CONFIG_BT_MESH_MSG_CACHE_SIZE];
 static u16_t msg_cache_next;
 
 /* Singleton network context (the implementation only supports one) */
 struct bt_mesh_net bt_mesh = {
 	.sub = {
-		[0 ... (CONFIG_BLUETOOTH_MESH_SUBNET_COUNT - 1)] = {
+		[0 ... (CONFIG_BT_MESH_SUBNET_COUNT - 1)] = {
 			.net_idx = BT_MESH_KEY_UNUSED,
 		}
 	},
 	.app_keys = {
-		[0 ... (CONFIG_BLUETOOTH_MESH_APP_KEY_COUNT - 1)] = {
+		[0 ... (CONFIG_BT_MESH_APP_KEY_COUNT - 1)] = {
 			.net_idx = BT_MESH_KEY_UNUSED,
 		}
 	},
@@ -190,7 +190,7 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 
 	BT_DBG("NetID %s", bt_hex(keys->net_id, 8));
 
-#if defined(CONFIG_BLUETOOTH_MESH_GATT_PROXY)
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
 	err = bt_mesh_identity_key(key, keys->identity);
 	if (err) {
 		BT_ERR("Unable to generate IdentityKey");
@@ -211,8 +211,8 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 	return 0;
 }
 
-#if (defined(CONFIG_BLUETOOTH_MESH_LOW_POWER) || \
-     defined(CONFIG_BLUETOOTH_MESH_FRIEND))
+#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
+     defined(CONFIG_BT_MESH_FRIEND))
 int bt_mesh_friend_cred_set(struct bt_mesh_friend_cred *cred, u8_t idx,
 			    const u8_t net_key[16])
 {
@@ -220,7 +220,7 @@ int bt_mesh_friend_cred_set(struct bt_mesh_friend_cred *cred, u8_t idx,
 	int err;
 	u8_t p[9];
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	if (cred->addr == bt_mesh.lpn.frnd) {
 		lpn_addr = bt_mesh_primary_addr();
 		frnd_addr = cred->addr;
@@ -449,7 +449,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 	bt_mesh.valid = 1;
 	sub->net_idx = idx;
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
 	} else {
 		sub->node_id = BT_MESH_NODE_IDENTITY_NOT_SUPPORTED;
@@ -503,8 +503,8 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, u8_t new_kr, bool new_key)
 			BT_DBG("KR Phase 0x%02x -> Normal", sub->kr_phase);
 			memcpy(&sub->keys[0], &sub->keys[1],
 			       sizeof(sub->keys[0]));
-			if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER) ||
-			    IS_ENABLED(CONFIG_BLUETOOTH_MESH_FRIEND)) {
+			if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
+			    IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 				bt_mesh_friend_cred_refresh(sub->net_idx);
 			}
 			sub->kr_phase = BT_MESH_KR_NORMAL;
@@ -575,7 +575,7 @@ void bt_mesh_iv_update(u32_t iv_index, bool iv_update)
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_IV_UPDATE_TEST)) {
+	if (!IS_ENABLED(CONFIG_BT_MESH_IV_UPDATE_TEST)) {
 		s64_t delta = k_uptime_get() - bt_mesh.last_update;
 
 		if (delta < K_HOURS(96)) {
@@ -677,7 +677,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOCAL_INTERFACE)
+#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 static void bt_mesh_net_local(struct k_work *work)
 {
 	struct net_buf *buf;
@@ -773,7 +773,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	BT_DBG("Payload len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 	BT_DBG("Seq 0x%06x", bt_mesh.seq);
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	/* Communication between LPN & Friend should always be using
 	 * the Friendship Credentials. Any other destination should
 	 * use the Master Credentials.
@@ -793,7 +793,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	}
 
 	/* Deliver to GATT Proxy Clients if necessary */
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
 		    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 			err = 0;
@@ -801,7 +801,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		}
 	}
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOCAL_INTERFACE)
+#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
 	    bt_mesh_elem_find(tx->ctx->addr)) {
@@ -927,7 +927,7 @@ static int net_decrypt(struct bt_mesh_subnet *sub, u8_t idx, const u8_t *data,
 
 	BT_DBG("src 0x%04x", rx->ctx.addr);
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_PROXY) &&
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY) &&
 	    rx->net_if == BT_MESH_NET_IF_PROXY_CFG) {
 		return bt_mesh_net_decrypt(enc, buf, BT_MESH_NET_IVI_RX(rx),
 					   true);
@@ -975,9 +975,9 @@ static int net_find_and_decrypt(const u8_t *data, size_t data_len,
 	return false;
 }
 
-#if (defined(CONFIG_BLUETOOTH_MESH_RELAY) || \
-     defined(CONFIG_BLUETOOTH_MESH_FRIEND) || \
-     defined(CONFIG_BLUETOOTH_MESH_GATT_PROXY))
+#if (defined(CONFIG_BT_MESH_RELAY) || \
+     defined(CONFIG_BT_MESH_FRIEND) || \
+     defined(CONFIG_BT_MESH_GATT_PROXY))
 static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 			      struct bt_mesh_net_rx *rx)
 {
@@ -1059,14 +1059,14 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		goto done;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_FRIEND)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 		if (bt_mesh_friend_enqueue(buf, rx->dst) &&
 		    BT_MESH_ADDR_IS_UNICAST(rx->dst)) {
 			goto done;
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		if (bt_mesh_proxy_relay(&buf->b, rx->dst) &&
 			    BT_MESH_ADDR_IS_UNICAST(rx->dst)) {
 			goto done;
@@ -1168,7 +1168,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_GATT_PROXY) &&
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    net_if == BT_MESH_NET_IF_PROXY) {
 		bt_mesh_proxy_addr_add(data, rx.ctx.addr);
 	}
@@ -1181,12 +1181,12 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		}
 	}
 
-#if (defined(CONFIG_BLUETOOTH_MESH_RELAY) || \
-     defined(CONFIG_BLUETOOTH_MESH_FRIEND) || \
-     defined(CONFIG_BLUETOOTH_MESH_GATT_PROXY))
+#if (defined(CONFIG_BT_MESH_RELAY) || \
+     defined(CONFIG_BT_MESH_FRIEND) || \
+     defined(CONFIG_BT_MESH_GATT_PROXY))
 	net_buf_simple_restore(buf, &state);
 	bt_mesh_net_relay(buf, &rx);
-#endif /* CONFIG_BLUETOOTH_MESH_RELAY  || FRIEND || GATT_PROXY */
+#endif /* CONFIG_BT_MESH_RELAY  || FRIEND || GATT_PROXY */
 }
 
 static void ivu_complete(struct k_work *work)
@@ -1201,7 +1201,7 @@ void bt_mesh_net_init(void)
 {
 	k_delayed_work_init(&bt_mesh.ivu_complete, ivu_complete);
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOCAL_INTERFACE)
+#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 	k_work_init(&bt_mesh.local_work, bt_mesh_net_local);
 #endif
 }

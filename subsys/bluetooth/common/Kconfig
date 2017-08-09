@@ -6,41 +6,41 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BLUETOOTH_HCI
+if BT_HCI
 
-config BLUETOOTH_RPA
+config BT_RPA
 	# Virtual/hidden option
 	bool
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	default n
 
-config BLUETOOTH_DEBUG
+config BT_DEBUG
 	# Virtual/hidden option to make the conditions more intuitive
 	bool
 
 choice
 	prompt "Bluetooth debug type"
-	depends on BLUETOOTH
-	default BLUETOOTH_DEBUG_NONE
+	depends on BT
+	default BT_DEBUG_NONE
 
-config BLUETOOTH_DEBUG_NONE
+config BT_DEBUG_NONE
 	bool "No debug log"
 	help
 	  Select this to disable all Bluetooth debug logs.
 
-config BLUETOOTH_DEBUG_LOG
+config BT_DEBUG_LOG
 	bool "Normal printf-style to console"
-	select BLUETOOTH_DEBUG
+	select BT_DEBUG
 	select PRINTK
 	select SYS_LOG
 	help
 	  This option enables Bluetooth debug going to standard
 	  serial console.
 
-config BLUETOOTH_DEBUG_MONITOR
+config BT_DEBUG_MONITOR
 	bool "Monitor protocol over UART"
-	select BLUETOOTH_DEBUG
+	select BT_DEBUG
 	select PRINTK
 	select CONSOLE_HAS_DRIVER
 	help
@@ -57,39 +57,39 @@ config BLUETOOTH_DEBUG_MONITOR
 
 endchoice
 
-if BLUETOOTH_DEBUG
-config BLUETOOTH_DEBUG_COLOR
+if BT_DEBUG
+config BT_DEBUG_COLOR
 	bool "Use colored logs"
-	depends on BLUETOOTH_DEBUG_LOG
+	depends on BT_DEBUG_LOG
 	select SYS_LOG_SHOW_COLOR
 	default y
 	help
 	  Use color in the logs. This requires an ANSI capable terminal.
 
 if !HAS_DTS
-config BLUETOOTH_MONITOR_ON_DEV_NAME
+config BT_MONITOR_ON_DEV_NAME
 	string "Device Name of Bluetooth monitor logging UART"
-	depends on BLUETOOTH_DEBUG_MONITOR
+	depends on BT_DEBUG_MONITOR
 	default "UART_0"
 	help
 	 This option specifies the name of UART device to be used
 	 for the Bluetooth monitor logging.
 endif
 
-config BLUETOOTH_DEBUG_HCI_DRIVER
+config BT_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"
-	depends on BLUETOOTH_DEBUG
+	depends on BT_DEBUG
 	help
 	  This option enables debug support for the active
 	  Bluetooth HCI driver, including the Controller-side HCI layer
 	  when included in the build.
 
-config BLUETOOTH_DEBUG_RPA
+config BT_DEBUG_RPA
 	bool "Bluetooth Resolvable Private Address (RPA) debug"
-	depends on BLUETOOTH_RPA
+	depends on BT_RPA
 	help
 	  This option enables debug support for the Bluetooth
 	  Resolvable Private Address (RPA) generation and resolution.
 
-endif #BLUETOOTH_DEBUG
-endif # BLUETOOTH_HCI
+endif #BT_DEBUG
+endif # BT_HCI

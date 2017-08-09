@@ -18,7 +18,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_TRANS)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_TRANS)
 #include "common/log.h"
 
 #include "crypto.h"
@@ -69,7 +69,7 @@ static struct seg_tx {
 	bt_mesh_cb_t             cb;
 	void                    *cb_data;
 	struct k_delayed_work    retransmit; /* Retransmit timer */
-} seg_tx[CONFIG_BLUETOOTH_MESH_TX_SEG_MSG_COUNT];
+} seg_tx[CONFIG_BT_MESH_TX_SEG_MSG_COUNT];
 
 static struct seg_rx {
 	struct bt_mesh_subnet   *sub;
@@ -85,10 +85,10 @@ static struct seg_rx {
 	u32_t                    last;
 	struct k_delayed_work    ack;
 	struct net_buf_simple    buf;
-	u8_t                     buf_data[CONFIG_BLUETOOTH_MESH_RX_SDU_MAX];
-} seg_rx[CONFIG_BLUETOOTH_MESH_RX_SEG_MSG_COUNT] = {
-	[0 ... (CONFIG_BLUETOOTH_MESH_RX_SEG_MSG_COUNT - 1)] = {
-		.buf.size = CONFIG_BLUETOOTH_MESH_RX_SDU_MAX,
+	u8_t                     buf_data[CONFIG_BT_MESH_RX_SDU_MAX];
+} seg_rx[CONFIG_BT_MESH_RX_SEG_MSG_COUNT] = {
+	[0 ... (CONFIG_BT_MESH_RX_SEG_MSG_COUNT - 1)] = {
+		.buf.size = CONFIG_BT_MESH_RX_SDU_MAX,
 	},
 };
 
@@ -450,7 +450,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
 		    u8_t aszmic, struct net_buf_simple *buf)
 {
 	struct net_buf_simple *sdu =
-		NET_BUF_SIMPLE(CONFIG_BLUETOOTH_MESH_RX_SDU_MAX - 4);
+		NET_BUF_SIMPLE(CONFIG_BT_MESH_RX_SDU_MAX - 4);
 	u8_t *ad;
 	u16_t i;
 	int err;
@@ -644,7 +644,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 		return trans_heartbeat(rx, buf);
 	}
 
-#if defined(CONFIG_BLUETOOTH_MESH_FRIEND)
+#if defined(CONFIG_BT_MESH_FRIEND)
 	switch (ctl_op) {
 	case TRANS_CTL_OP_FRIEND_POLL:
 		return bt_mesh_friend_poll(rx, buf);
@@ -653,7 +653,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 	}
 #endif
 
-#if defined(CONFIG_BLUETOOTH_MESH_LOW_POWER)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	if (ctl_op == TRANS_CTL_OP_FRIEND_OFFER) {
 		return bt_mesh_lpn_friend_offer(rx, buf);
 	}
@@ -675,7 +675,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 			return bt_mesh_lpn_friend_sub_cfm(rx, buf);
 		}
 	}
-#endif /* CONFIG_BLUETOOTH_MESH_LOW_POWER */
+#endif /* CONFIG_BT_MESH_LOW_POWER */
 
 	BT_WARN("Unhandled TransOpCode 0x%02x", ctl_op);
 
@@ -825,7 +825,7 @@ static inline u8_t seg_len(bool ctl)
 
 static inline bool sdu_len_is_ok(bool ctl, u8_t seg_n)
 {
-	return ((seg_n * seg_len(ctl) + 1) <= CONFIG_BLUETOOTH_MESH_RX_SDU_MAX);
+	return ((seg_n * seg_len(ctl) + 1) <= CONFIG_BT_MESH_RX_SDU_MAX);
 }
 
 static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
@@ -1013,7 +1013,7 @@ found_rx:
 		BT_DBG("Target len %u * %u + %u = %u", seg_n, seg_len(rx->ctl),
 		       buf->len, rx->buf.len);
 
-		if (rx->buf.len > CONFIG_BLUETOOTH_MESH_RX_SDU_MAX) {
+		if (rx->buf.len > CONFIG_BT_MESH_RX_SDU_MAX) {
 			BT_ERR("Too large SDU len");
 			send_ack(net_rx->sub, net_rx->dst, net_rx->ctx.addr,
 				 net_rx->ctx.send_ttl, seq_zero, 0);
@@ -1080,7 +1080,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 * requested the Friend to send them. The messages must also
 	 * be encrypted using the Friend Credentials.
 	 */
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER) &&
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    bt_mesh_lpn_established() &&
 	    (!bt_mesh_lpn_waiting_update() || !rx->ctx.friend_cred)) {
 		BT_WARN("Ignoring unexpected message in Low Power mode");
@@ -1100,7 +1100,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 * we still need to go through the actual sending to the bearer and
 	 * wait for ReceiveDelay before transitioning to WAIT_UPDATE state.
 	 */
-	if (IS_ENABLED(CONFIG_BLUETOOTH_MESH_LOW_POWER) &&
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()) {
 		bt_mesh_lpn_msg_received(rx);
 	}

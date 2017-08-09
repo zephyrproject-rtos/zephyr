@@ -14,7 +14,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_MESH_DEBUG_FRIEND)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_FRIEND)
 #include "common/log.h"
 
 #include "crypto.h"
@@ -89,8 +89,8 @@ static int send_friend_offer(s8_t rssi)
 		.src = bt_mesh_primary_addr(),
 	};
 	struct bt_mesh_ctl_friend_offer off = {
-		.recv_win = CONFIG_BLUETOOTH_MESH_FRIEND_RECV_WIN,
-		.queue_size = CONFIG_BLUETOOTH_MESH_FRIEND_QUEUE_SIZE,
+		.recv_win = CONFIG_BT_MESH_FRIEND_RECV_WIN,
+		.queue_size = CONFIG_BT_MESH_FRIEND_QUEUE_SIZE,
 		.rssi = rssi,
 		.frnd_counter = bt_mesh.frnd.counter++,
 	};

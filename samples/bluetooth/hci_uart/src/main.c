@@ -30,26 +30,25 @@
 #include "common/log.h"
 
 static struct device *hci_uart_dev;
-static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BLUETOOTH_HCI_TX_STACK_SIZE);
+static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BLUETOOTH_HCI_CMD_COUNT, CMD_BUF_SIZE,
+NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER)
-#define BT_L2CAP_MTU (CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFER_SIZE - \
-		      BT_L2CAP_HDR_SIZE)
+#if defined(CONFIG_BT_CONTROLLER)
+#define BT_L2CAP_MTU (CONFIG_BT_CONTROLLER_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
 #else
 #define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
-#endif /* CONFIG_BLUETOOTH_CONTROLLER */
+#endif /* CONFIG_BT_CONTROLLER */
 
 /** Data size needed for ACL buffers */
 #define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS)
-#define TX_BUF_COUNT CONFIG_BLUETOOTH_CONTROLLER_TX_BUFFERS
+#if defined(CONFIG_BT_CONTROLLER_TX_BUFFERS)
+#define TX_BUF_COUNT CONFIG_BT_CONTROLLER_TX_BUFFERS
 #else
 #define TX_BUF_COUNT 6
 #endif
@@ -273,7 +272,7 @@ static int h4_send(struct net_buf *buf)
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER)
+#if defined(CONFIG_BT_CONTROLLER_ASSERT_HANDLER)
 void bt_controller_assert_handle(char *file, u32_t line)
 {
 	u32_t len = 0, pos = 0;
@@ -318,14 +317,14 @@ void bt_controller_assert_handle(char *file, u32_t line)
 	while (1) {
 	}
 }
-#endif /* CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER */
+#endif /* CONFIG_BT_CONTROLLER_ASSERT_HANDLER */
 
 static int hci_uart_init(struct device *unused)
 {
 	SYS_LOG_DBG("");
 
 	hci_uart_dev =
-		device_get_binding(CONFIG_BLUETOOTH_CONTROLLER_TO_HOST_UART_DEV_NAME);
+		device_get_binding(CONFIG_BT_CONTROLLER_TO_HOST_UART_DEV_NAME);
 	if (!hci_uart_dev) {
 		return -EINVAL;
 	}

@@ -26,7 +26,7 @@ extern "C" {
 #define BT_DBG_ENABLED 1
 #endif
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_MONITOR)
+#if defined(CONFIG_BT_DEBUG_MONITOR)
 #include <stdio.h>
 
 /* These defines follow the values used by syslog(2) */
@@ -52,7 +52,7 @@ __printf_like(2, 3) void bt_log(int prio, const char *fmt, ...);
 /* Enabling debug increases stack size requirement */
 #define BT_STACK_DEBUG_EXTRA	300
 
-#elif defined(CONFIG_BLUETOOTH_DEBUG_LOG)
+#elif defined(CONFIG_BT_DEBUG_LOG)
 
 #if !defined(SYS_LOG_DOMAIN)
 #define SYS_LOG_DOMAIN "bt"
@@ -99,7 +99,7 @@ static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
 #define BT_STACK_NOINIT(name, size) \
 		K_THREAD_STACK_DEFINE(name, (size) + BT_STACK_DEBUG_EXTRA)
 
-/* This helper is only available when BLUETOOTH_DEBUG is enabled */
+/* This helper is only available when BT_DEBUG is enabled */
 const char *bt_hex(const void *buf, size_t len);
 
 /* These helpers are only safe to be called from internal threads as they're

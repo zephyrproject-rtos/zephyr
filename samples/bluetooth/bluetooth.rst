@@ -25,8 +25,8 @@ down.
    Listening on /tmp/bt-server-bredr
 
 Running the application in QEMU will connect the second serial line to
-``bt-server-bredr`` Unix socket. When Bluetooth (CONFIG_BLUETOOTH) and Bluetooth
-HCI UART driver (CONFIG_BLUETOOTH_H4) are enabled, the Bluetooth driver
+``bt-server-bredr`` Unix socket. When Bluetooth (CONFIG_BT) and Bluetooth
+HCI UART driver (CONFIG_BT_H4) are enabled, the Bluetooth driver
 registers with the system.
 
 From now on Bluetooth may be used by the application. To run applications in

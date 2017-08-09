@@ -631,8 +631,8 @@ u8_t tester_init_gatt(void);
 void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 			u16_t len);
 
-#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 u8_t tester_init_l2cap(void);
 void tester_handle_l2cap(u8_t opcode, u8_t index, u8_t *data,
 			 u16_t len);
-#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */

@@ -28,7 +28,7 @@ config UART_MCUX_0
 	def_bool y if UART_CONSOLE
 
 config UART_MCUX_4
-	def_bool y if BLUETOOTH_UART
+	def_bool y if BT_UART
 
 endif # UART_MCUX
 

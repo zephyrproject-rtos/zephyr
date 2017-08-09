@@ -24,7 +24,7 @@
 #include <tinycrypt/utils.h>
 #include <tinycrypt/cmac_mode.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RPA)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RPA)
 #include "common/log.h"
 
 static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
@@ -54,8 +54,7 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 	return 0;
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP) || \
-	defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CONTROLLER_PRIVACY)
 bool bt_rpa_irk_matches(const u8_t irk[16], const bt_addr_t *addr)
 {
 	u8_t hash[3];
@@ -72,8 +71,7 @@ bool bt_rpa_irk_matches(const u8_t irk[16], const bt_addr_t *addr)
 }
 #endif
 
-#if defined(CONFIG_BLUETOOTH_PRIVACY) || \
-	defined(CONFIG_BLUETOOTH_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CONTROLLER_PRIVACY)
 int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
 {
 	int err;
@@ -99,5 +97,5 @@ int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
 {
 	return -ENOTSUP;
 }
-#endif /* CONFIG_BLUETOOTH_PRIVACY */
+#endif /* CONFIG_BT_PRIVACY */
 
