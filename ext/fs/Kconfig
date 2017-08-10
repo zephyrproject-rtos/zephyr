@@ -11,5 +11,6 @@
 menu "File Systems"
 
 source "ext/fs/fat/Kconfig"
+source "ext/fs/nffs/Kconfig"
 
 endmenu
