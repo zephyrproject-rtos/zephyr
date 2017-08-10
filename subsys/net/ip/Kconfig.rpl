@@ -18,6 +18,14 @@ menuconfig NET_RPL
 
 if NET_RPL
 
+config NET_RPL_PREFIX
+	string "Network IPv6 prefix"
+	help
+	What is the DAG id (prefix) of the RPL network. This is only used
+	if you are creating a root node. You should specify here the full
+	IPv6 address as that is used as a root node address.
+	Example: 2001:db8::1/64
+
 choice
 	prompt "Network type"
 	default NET_RPL_L2_ANY
