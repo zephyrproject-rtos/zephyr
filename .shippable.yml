@@ -68,12 +68,17 @@ build:
       - >
           sudo pip3 install sh;
           ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
+          ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
+          if [ -s modified_boards.args ]; then
+            ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_boards.args || ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_boards.args --only-failed;
+            cp ./scripts/sanity_chk/last_sanity.xml modified_boards.xml;
+          fi;
           if [ -s modified_tests.args ]; then
             ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_tests.args || ./scripts/sanitycheck +modified_tests.args --only-failed
             cp ./scripts/sanity_chk/last_sanity.xml modified_tests.xml;
           fi;
-          rm -f modified_tests.args;
+          rm -f modified_tests.args modified_boards.args;
       - >
           if [ "$MATRIX_BUILD" != "3" ]; then
              ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${PLATFORMS} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY}
