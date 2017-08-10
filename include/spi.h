@@ -59,7 +59,7 @@ extern "C" {
 /**
  * Clock Phase: this dictates when is the data captured, and depends
  * clock's polarity. When SPI_MODE_CPOL is set and this bit as well,
- * capture will occure on low to high transition and high to low if
+ * capture will occur on low to high transition and high to low if
  * this bit is not set (default). This is fully reversed if CPOL is
  * not set.
  */
@@ -152,10 +152,10 @@ struct spi_cs_control {
  *    word_size           [ 5 : 10 ]  - Size of a data frame in bits.
  *    lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
  *    cs_hold             [ 13 ]      - Hold on the CS line if possible.
- *    lock_on             [ 14 ]      - Keep ressource locked for the caller.
+ *    lock_on             [ 14 ]      - Keep resource locked for the caller.
  *    eeprom              [ 15 ]      - EEPROM mode.
  * vendor is a vendor specific bitfield
- * slave is the slave number from 0 to host constoller slave limit.
+ * slave is the slave number from 0 to host controller slave limit.
  *
  * cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.

@@ -620,11 +620,11 @@ void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask);
 /**
  * @brief check page table entry flags
  *
- * This routine checks if the buffer is avaialable to the whoever calls
+ * This routine checks if the buffer is available to whoever calls
  * this API.
  * @param addr start address of the buffer
  * @param size the size of the buffer
- * @param flags permisions to check.
+ * @param flags permissions to check.
  *    Consists of 2 bits the bit0 represents the RW permissions
  *    The bit1 represents the user/supervisor permissions
  *    Use macro BUFF_READABLE/BUFF_WRITEABLE or BUFF_USER to build the flags

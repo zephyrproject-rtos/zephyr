@@ -421,9 +421,9 @@ int http_request(struct http_client_ctx *ctx,
  * @param http_ctx HTTP context.
  * @param req HTTP request to perform.
  * @param cb Callback to call when the response has been received from peer.
- * @param response_buf Caller supplied buffer where the HTTP response will be
+ * @param response_buf Caller-supplied buffer where the HTTP response will be
  * stored
- * @param response_buf_len Length of the caller suppied buffer.
+ * @param response_buf_len Length of the caller-supplied buffer.
  * @param user_data A valid pointer on some user data or NULL
  * @param timeout Amount of time to wait for a reply. If the timeout is 0,
  * then we return immediately and the callback (if set) will be called later.
@@ -449,9 +449,9 @@ int http_client_send_req(struct http_client_ctx *http_ctx,
  * to add. This can be set to NULL. The format is "name: value\r\n"
  * Example: "Accept: text/plain\r\nConnection: Close\r\n"
  * @param cb Callback to call when the response has been received from peer.
- * @param response_buf Caller supplied buffer where the HTTP request will be
+ * @param response_buf Caller-supplied buffer where the HTTP request will be
  * stored
- * @param response_buf_len Length of the caller suppied buffer.
+ * @param response_buf_len Length of the caller-supplied buffer.
  * @param user_data A valid pointer on some user data or NULL
  * @param timeout Amount of time to wait for a reply. If the timeout is 0,
  * then we return immediately and the callback (if set) will be called later.
@@ -493,9 +493,9 @@ static inline int http_client_send_get_req(struct http_client_ctx *http_ctx,
  * @param content_type Content type of the data.
  * @param payload Payload data.
  * @param cb Callback to call when the response has been received from peer.
- * @param response_buf Caller supplied buffer where the HTTP response will be
+ * @param response_buf Caller-supplied buffer where the HTTP response will be
  * stored
- * @param response_buf_len Length of the caller suppied buffer.
+ * @param response_buf_len Length of the caller-supplied buffer.
  * @param user_data A valid pointer on some user data or NULL
  * @param timeout Amount of time to wait for a reply. If the timeout is 0,
  * then we return immediately and the callback (if set) will be called later.
@@ -529,7 +529,7 @@ static inline int http_client_send_post_req(struct http_client_ctx *http_ctx,
 }
 
 /**
- * @brief Initialize user supplied HTTP context.
+ * @brief Initialize user-supplied HTTP context.
  *
  * @detail Caller can set the various fields in http_ctx after this call
  * if needed.
@@ -549,7 +549,7 @@ int http_client_init(struct http_client_ctx *http_ctx,
 
 #if defined(CONFIG_HTTPS)
 /**
- * @brief Initialize user supplied HTTP context when using HTTPS.
+ * @brief Initialize user-supplied HTTP context when using HTTPS.
  *
  * @detail Caller can set the various fields in http_ctx after this call
  * if needed.
@@ -564,7 +564,7 @@ int http_client_init(struct http_client_ctx *http_ctx,
  * @param personalization_data Personalization data (Device specific
  * identifiers) for random number generator. (Can be NULL).
  * @param personalization_data_len Length of the personalization data.
- * @param cert_cb User supplied callback that setups the certifacates.
+ * @param cert_cb User-supplied callback that setups the certificates.
  * @param cert_host Hostname that is used to verify the server certificate.
  * This value is used when HTTP client API calls mbedtls_ssl_set_hostname()
  * which sets the hostname to check against the received server certificate.
@@ -572,7 +572,7 @@ int http_client_init(struct http_client_ctx *http_ctx,
  * This can be left NULL in which case mbedtls will silently skip certificate
  * verification entirely. This option is only used if MBEDTLS_X509_CRT_PARSE_C
  * is enabled in mbedtls config file.
- * @param entropy_src_cb User supplied callback that setup the entropy. This
+ * @param entropy_src_cb User-supplied callback that setup the entropy. This
  * can be set to NULL, in which case default entropy source is used.
  * @param pool Memory pool for RX data reads.
  * @param https_stack HTTPS thread stack.
@@ -839,7 +839,7 @@ void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
 #endif /* CONFIG_NET_DEBUG_HTTP_CONN */
 
 /**
- * @brief Initialize user supplied HTTP context.
+ * @brief Initialize user-supplied HTTP context.
  *
  * @detail Caller can set the various callback fields in http_ctx and
  * http_ctx.req.parser after this call if needed.
@@ -859,9 +859,9 @@ void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
  * listened. The parameter can be left NULL in which case a listener to port 80
  * using IPv4 and IPv6 is created. Note that if IPv4 or IPv6 is disabled, then
  * the corresponding disabled service listener is not created.
- * @param request_buf Caller supplied buffer where the HTTP request will be
+ * @param request_buf Caller-supplied buffer where the HTTP request will be
  * stored
- * @param request_buf_len Length of the caller suppied buffer.
+ * @param request_buf_len Length of the caller-supplied buffer.
  * @param server_banner Print information about started service. This is only
  * printed if HTTP debugging is activated. The parameter can be set to NULL if
  * no extra prints are needed.
@@ -877,7 +877,7 @@ int http_server_init(struct http_server_ctx *http_ctx,
 
 #if defined(CONFIG_HTTPS)
 /**
- * @brief Initialize user supplied HTTP context. This function must be
+ * @brief Initialize user-supplied HTTP context. This function must be
  * used if HTTPS server is created.
  *
  * @detail Caller can set the various callback fields in http_ctx and
@@ -898,17 +898,17 @@ int http_server_init(struct http_server_ctx *http_ctx,
  * listened. The parameter can be left NULL in which case a listener to port 80
  * using IPv4 and IPv6 is created. Note that if IPv4 or IPv6 is disabled, then
  * the corresponding disabled service listener is not created.
- * @param request_buf Caller supplied buffer where the HTTP request will be
+ * @param request_buf Caller-supplied buffer where the HTTP request will be
  * stored
- * @param request_buf_len Length of the caller suppied buffer.
+ * @param request_buf_len Length of the caller-supplied buffer.
  * @param server_banner Print information about started service. This is only
  * printed if HTTP debugging is activated. The parameter can be set to NULL if
  * no extra prints are needed.
  * @param personalization_data Personalization data (Device specific
  * identifiers) for random number generator. (Can be NULL).
  * @param personalization_data_len Length of the personalization data.
- * @param cert_cb User supplied callback that setups the certifacates.
- * @param entropy_src_cb User supplied callback that setup the entropy. This
+ * @param cert_cb User-supplied callback that setups the certificates.
+ * @param entropy_src_cb User-supplied callback that setup the entropy. This
  * can be set to NULL, in which case default entropy source is used.
  * @param pool Memory pool for RX data reads.
  * @param https_stack HTTPS thread stack.
