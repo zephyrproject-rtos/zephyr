@@ -1192,7 +1192,7 @@ typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
  * @brief Go through all the network interfaces and call callback
  * for each interface.
  *
- * @param cb User supplied callback function to call
+ * @param cb User-supplied callback function to call
  * @param user_data User specified data
  */
 void net_if_foreach(net_if_cb_t cb, void *user_data);

@@ -573,7 +573,7 @@ int net_context_listen(struct net_context *context,
  *
  * @details          The net_context_connect function creates a network
  *                   connection to the host specified by addr. After the
- *                   connection is established, the user supplied callback (cb)
+ *                   connection is established, the user-supplied callback (cb)
  *                   is executed. cb is called even if the timeout was set to
  *                   K_FOREVER. cb is not called if the timeout expires.
  *                   For datagram sockets (SOCK_DGRAM), this function only sets
@@ -614,17 +614,17 @@ int net_context_connect(struct net_context *context,
  * If the timeout is set to K_FOREVER, the function will wait
  * until the connection is established. Timeout value > 0, will wait as
  * many ms.
- * After the connection is established a caller supplied callback is called.
+ * After the connection is established a caller-supplied callback is called.
  * The callback is called even if timeout was set to K_FOREVER, the
  * callback is called before this function will return in this case.
  * The callback is not called if the timeout expires.
  * This is similar as BSD accept() function.
  *
  * @param context The context to use.
- * @param cb Caller supplied callback function.
+ * @param cb Caller-supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
- * @param user_data Caller supplied user data.
+ * @param user_data Caller-supplied user data.
  *
  * @return 0 if ok, < 0 if error
  */
@@ -641,7 +641,7 @@ int net_context_accept(struct net_context *context,
  * is set to K_NO_WAIT. If the timeout is set to K_FOREVER, the function
  * will wait until the network buffer is sent. Timeout value > 0 will
  * wait as many ms. After the network buffer is sent,
- * a caller supplied callback is called. The callback is called even
+ * a caller-supplied callback is called. The callback is called even
  * if timeout was set to K_FOREVER, the callback is called
  * before this function will return in this case. The callback is not
  * called if the timeout expires. For context of type SOCK_DGRAM,
@@ -650,11 +650,11 @@ int net_context_accept(struct net_context *context,
  * This is similar as BSD send() function.
  *
  * @param pkt The network buffer to send.
- * @param cb Caller supplied callback function.
+ * @param cb Caller-supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param token Caller specified value that is passed as is to callback.
- * @param user_data Caller supplied user data.
+ * @param user_data Caller-supplied user data.
  *
  * @return 0 if ok, < 0 if error
  */
@@ -673,7 +673,7 @@ int net_context_send(struct net_pkt *pkt,
  * if the timeout is set to K_NO_WAIT. If the timeout is set to K_FOREVER,
  * the function will wait until the network buffer is sent. Timeout
  * value > 0 will wait as many ms. After the network buffer
- * is sent, a caller supplied callback is called. The callback is called
+ * is sent, a caller-supplied callback is called. The callback is called
  * even if timeout was set to K_FOREVER, the callback is called
  * before this function will return. The callback is not called if the
  * timeout expires.
@@ -683,11 +683,11 @@ int net_context_send(struct net_pkt *pkt,
  * @param dst_addr Destination address. This will override the address
  * already set in network buffer.
  * @param addrlen Length of the address.
- * @param cb Caller supplied callback function.
+ * @param cb Caller-supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param token Caller specified value that is passed as is to callback.
- * @param user_data Caller supplied user data.
+ * @param user_data Caller-supplied user data.
  *
  * @return 0 if ok, < 0 if error
  */
@@ -712,7 +712,7 @@ int net_context_sendto(struct net_pkt *pkt,
  * This function will return immediately if the timeout is set to K_NO_WAIT.
  * If the timeout is set to K_FOREVER, the function will wait until the
  * network buffer is received. Timeout value > 0 will wait as many ms.
- * After the network buffer is received, a caller supplied callback is
+ * After the network buffer is received, a caller-supplied callback is
  * called. The callback is called even if timeout was set to K_FOREVER,
  * the callback is called before this function will return in this case.
  * The callback is not called if the timeout expires. The timeout functionality
@@ -728,10 +728,10 @@ int net_context_sendto(struct net_pkt *pkt,
  * a connection associated.
  *
  * @param context The network context to use.
- * @param cb Caller supplied callback function.
- * @param timeout Caller supplied timeout. Possible values
+ * @param cb Caller-supplied callback function.
+ * @param timeout Caller-supplied timeout. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
- * @param user_data Caller supplied user data.
+ * @param user_data Caller-supplied user data.
  *
  * @return 0 if ok, < 0 if error
  */
@@ -776,7 +776,7 @@ typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
  * @brief Go through all the network connections and call callback
  * for each network context.
  *
- * @param cb User supplied callback function to call.
+ * @param cb User-supplied callback function to call.
  * @param user_data User specified data.
  */
 void net_context_foreach(net_context_cb_t cb, void *user_data);

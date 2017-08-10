@@ -606,7 +606,7 @@ int net_app_listen(struct net_app_ctx *ctx);
  * given here. Note that the port number is optional in the string. If the
  * port number is not given in the string, then peer_port variable is used
  * instead.
- * Following syntex is supported for the address:
+ * Following syntax is supported for the address:
  *      192.0.2.1
  *      192.0.2.1:5353
  *      2001:db8::1
@@ -650,7 +650,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
  * given here. Note that the port number is optional in the string. If the
  * port number is not given in the string, then peer_port variable is used
  * instead.
- * Following syntex is supported for the address:
+ * Following syntax is supported for the address:
  *      192.0.2.1
  *      192.0.2.1:5353
  *      2001:db8::1
@@ -703,7 +703,7 @@ static inline int net_app_init_tcp_client(struct net_app_ctx *ctx,
  * given here. Note that the port number is optional in the string. If the
  * port number is not given in the string, then peer_port variable is used
  * instead.
- * Following syntex is supported for the address:
+ * Following syntax is supported for the address:
  *      192.0.2.1
  *      192.0.2.1:5353
  *      2001:db8::1
@@ -868,13 +868,13 @@ int net_app_release(struct net_app_ctx *ctx);
  * @brief Initialize TLS support for this net_app client context.
  *
  * @param ctx net_app context.
- * @param request_buf Caller supplied buffer where the TLS request will be
+ * @param request_buf Caller-supplied buffer where the TLS request will be
  * stored
- * @param request_buf_len Length of the caller suppied buffer.
+ * @param request_buf_len Length of the caller-supplied buffer.
  * @param personalization_data Personalization data (Device specific
  * identifiers) for random number generator. (Can be NULL).
  * @param personalization_data_len Length of the personalization data.
- * @param cert_cb User supplied callback that setups the certifacates.
+ * @param cert_cb User-supplied callback that setups the certificates.
  * @param cert_host Hostname that is used to verify the server certificate.
  * This value is used when net_api API calls mbedtls_ssl_set_hostname()
  * which sets the hostname to check against the received server certificate.
@@ -882,7 +882,7 @@ int net_app_release(struct net_app_ctx *ctx);
  * This can be left NULL in which case mbedtls will silently skip certificate
  * verification entirely. This option is only used if MBEDTLS_X509_CRT_PARSE_C
  * is enabled in mbedtls config file.
- * @param entropy_src_cb User supplied callback that setup the entropy. This
+ * @param entropy_src_cb User-supplied callback that setup the entropy. This
  * can be set to NULL, in which case default entropy source is used.
  * @param pool Memory pool for RX data reads.
  * @param stack TLS thread stack.
@@ -908,17 +908,17 @@ int net_app_client_tls(struct net_app_ctx *ctx,
  * @brief Initialize TLS support for this net_app server context.
  *
  * @param ctx net_app context.
- * @param request_buf Caller supplied buffer where the TLS request will be
+ * @param request_buf Caller-supplied buffer where the TLS request will be
  * stored
- * @param request_buf_len Length of the caller suppied buffer.
+ * @param request_buf_len Length of the caller-supplied buffer.
  * @param server_banner Print information about started service. This is only
  * printed if net_app debugging is activated. The parameter can be set to NULL
  * if no extra prints are needed.
  * @param personalization_data Personalization data (Device specific
  * identifiers) for random number generator. (Can be NULL).
  * @param personalization_data_len Length of the personalization data.
- * @param cert_cb User supplied callback that setups the certifacates.
- * @param entropy_src_cb User supplied callback that setup the entropy. This
+ * @param cert_cb User-supplied callback that setups the certificates.
+ * @param entropy_src_cb User-supplied callback that setup the entropy. This
  * can be set to NULL, in which case default entropy source is used.
  * @param pool Memory pool for RX data reads.
  * @param stack TLS thread stack.

@@ -257,7 +257,7 @@ typedef enum __packed {
  *  pairing will be initiated.
  *
  *  This function may return error if required level of security is not possible
- *  to achieve due to local or remote device limitation (eg input output
+ *  to achieve due to local or remote device limitation (e.g., input output
  *  capabilities).
  *
  *  @param conn Connection object.
