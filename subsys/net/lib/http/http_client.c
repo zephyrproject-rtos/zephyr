@@ -45,6 +45,7 @@
 /* HTTP client defines */
 #define HTTP_EOF           "\r\n\r\n"
 
+#define HTTP_HOST          "Host: "
 #define HTTP_CONTENT_TYPE  "Content-Type: "
 #define HTTP_CONT_LEN_SIZE 64
 
@@ -87,6 +88,11 @@ int http_request(struct http_client_ctx *ctx,
 	}
 
 	if (req->host) {
+		if (!net_pkt_append_all(pkt, strlen(HTTP_HOST),
+					(u8_t *)HTTP_HOST, timeout)) {
+			goto out;
+		}
+
 		if (!net_pkt_append_all(pkt, strlen(req->host),
 					(u8_t *)req->host, timeout)) {
 			goto out;
