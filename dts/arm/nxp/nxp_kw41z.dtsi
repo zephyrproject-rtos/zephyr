@@ -1,4 +1,5 @@
 #include <arm/armv6-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -52,6 +53,7 @@
 
 		i2c0: i2c@40066000 {
 			compatible = "nxp,kinetis-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40066000 0x1000>;
@@ -62,6 +64,7 @@
 
 		i2c1: i2c@40067000 {
 			compatible = "nxp,kinetis-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40067000 0x1000>;
