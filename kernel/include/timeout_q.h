@@ -197,7 +197,7 @@ static inline void _add_timeout(struct k_thread *thread,
 				_wait_q_t *wait_q,
 				s32_t timeout_in_ticks)
 {
-	__ASSERT(timeout_in_ticks > 0, "");
+	__ASSERT(timeout_in_ticks >= 0, "");
 
 	timeout->delta_ticks_from_prev = timeout_in_ticks;
 	timeout->thread = thread;
@@ -206,6 +206,16 @@ static inline void _add_timeout(struct k_thread *thread,
 	K_DEBUG("before adding timeout %p\n", timeout);
 	_dump_timeout(timeout, 0);
 	_dump_timeout_q();
+
+	/* If timer is submitted to expire ASAP with
+	 * timeout_in_ticks (duration) as zero value,
+	 * then handle timeout immedately without going
+	 * through timeout queue.
+	 */
+	if (!timeout_in_ticks) {
+		_handle_one_expired_timeout(timeout);
+		return;
+	}
 
 	s32_t *delta = &timeout->delta_ticks_from_prev;
 	struct _timeout *in_q;
