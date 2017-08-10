@@ -30,8 +30,18 @@
 #include "ieee802154_settings.h"
 #include "bt_settings.h"
 
+#if !defined(CONFIG_NET_APP_INIT_ASYNC)
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
+
+static void net_app_init_complete(void)
+{
+	k_sem_take(&counter, K_NO_WAIT);
+	k_sem_give(&waiter);
+}
+#else
+#define net_app_init_complete(...)
+#endif /* CONFIG_NET_APP_INIT_ASYNC */
 
 #if defined(CONFIG_NET_DHCPV4)
 static struct net_mgmt_event_callback mgmt4_cb;
@@ -71,8 +81,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		break;
 	}
 
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	net_app_init_complete();
 }
 
 static void setup_dhcpv4(struct net_if *iface)
@@ -115,8 +124,7 @@ static void setup_ipv4(struct net_if *iface)
 		 net_addr_ntop(AF_INET, &addr, hr_addr, NET_IPV4_ADDR_LEN));
 #endif
 
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	net_app_init_complete();
 }
 
 #else
@@ -167,13 +175,11 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 				       NET_IPV6_ADDR_LEN));
 #endif
 
-		k_sem_take(&counter, K_NO_WAIT);
-		k_sem_give(&waiter);
+		net_app_init_complete();
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ROUTER_ADD) {
-		k_sem_take(&counter, K_NO_WAIT);
-		k_sem_give(&waiter);
+		net_app_init_complete();
 	}
 }
 
@@ -221,12 +227,9 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 {
 #define LOOP_DIVIDER 10
 	struct net_if *iface = net_if_get_default();
+#if !defined(CONFIG_NET_APP_INIT_ASYNC)
 	int loop = timeout / LOOP_DIVIDER;
 	int count = 0;
-
-	if (app_info) {
-		NET_INFO("%s", app_info);
-	}
 
 	if (flags & NET_APP_NEED_IPV6) {
 		count++;
@@ -237,6 +240,11 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 	}
 
 	k_sem_init(&counter, count, UINT_MAX);
+#endif /* CONFIG_NET_APP_INIT_ASYNC */
+
+	if (app_info) {
+		NET_INFO("%s", app_info);
+	}
 
 	setup_ipv4(iface);
 
@@ -244,6 +252,7 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 
 	setup_ipv6(iface, flags);
 
+#if !defined(CONFIG_NET_APP_INIT_ASYNC)
 	if (timeout < 0) {
 		count = -1;
 	} else if (timeout == 0) {
@@ -267,6 +276,7 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 		NET_ERR("Timeout while waiting setup");
 		return -ETIMEDOUT;
 	}
+#endif /* CONFIG_NET_APP_INIT_ASYNC */
 
 	return 0;
 }
