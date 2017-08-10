@@ -18,7 +18,7 @@ properties:
   - clock-frequency :
       type: int
       category: optional
-      description: Maximum I2C bus clock frequency in Hz
+      description: Initial clock frequency in Hz
       generation: define
   - clocks:
       type: array
