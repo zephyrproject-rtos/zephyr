@@ -2,23 +2,28 @@ tests:
 -   test_build_drivers:
         build_only: true
         tags: drivers footprint
+        min_ram: 16
 -   test_build_sensors_a_m:
         build_only: true
         extra_args: CONF_FILE=sensors_a_m.conf
         min_ram: 32
         tags: drivers footprint
+        platform_exclude: zedboard_pulpino
 -   test_build_sensors_n_z:
         build_only: true
         extra_args: CONF_FILE=sensors_n_z.conf
         min_ram: 32
         tags: drivers footprint
+        platform_exclude: zedboard_pulpino
 -   test_build_sensor_triggers:
         build_only: true
         extra_args: CONF_FILE=sensors_trigger.conf
         min_ram: 32
         tags: drivers footprint
+        platform_exclude: zedboard_pulpino
 -   test_build_ethernet:
         build_only: true
         extra_args: CONF_FILE=ethernet.conf
         min_ram: 32
         tags: drivers footprint
+        platform_exclude: zedboard_pulpino

@@ -2,3 +2,4 @@ tests:
 -   test:
         tags: net
         min_ram: 20
+        depends_on: netif

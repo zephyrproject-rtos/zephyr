@@ -3,3 +3,4 @@ tests:
         slow: true
         tags: crypto ecc dh
         timeout: 500
+        min_ram: 16
