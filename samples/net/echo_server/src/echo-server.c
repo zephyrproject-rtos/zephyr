@@ -116,8 +116,6 @@ struct net_pkt *build_reply_pkt(const char *name,
 
 		memcpy(net_buf_add(frag, tmp->len), tmp->data, tmp->len);
 
-		net_pkt_frag_add(reply_pkt, frag);
-
 		tmp = net_pkt_frag_del(pkt, NULL, tmp);
 	}
 
