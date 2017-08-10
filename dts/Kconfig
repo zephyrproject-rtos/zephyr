@@ -1,18 +1,18 @@
 config HAS_DTS
-	bool "Uses Device Tree"
+	bool
 	help
 	This option specifies that the target platform supports device tree
 	configuration.
 
 config HAS_DTS_ADC
-	bool "ADC uses Device Tree"
+	bool
 	depends on HAS_DTS
 	help
 	This option specifies that the target platform supports device tree
 	configuration for ADC.
 
 config HAS_DTS_I2C
-	bool "I2C uses Device Tree"
+	bool
 	default n
 	depends on HAS_DTS
 	help
