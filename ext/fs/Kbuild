@@ -1,1 +1,2 @@
 obj-$(CONFIG_FAT_FILESYSTEM_ELM) += fat/
+obj-$(CONFIG_NFFS_FILESYSTEM) += nffs/
