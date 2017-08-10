@@ -71,6 +71,7 @@ do {                                                                       \
 	}                                                                  \
 } while (0)
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 /* Don't allow the total size of the HTTP headers (including the status
  * line) to exceed HTTP_MAX_HEADER_SIZE.  This check is here to protect
  * embedders against denial-of-service attacks where the attacker feeds
@@ -169,6 +170,7 @@ s8_t unhex[256] = {
 	-1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */
 
 
 #ifdef HTTP_PARSER_STRICT
@@ -284,6 +286,7 @@ enum state {
 	s_message_done
 };
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 #define PARSING_HEADER(state) (state <= s_headers_done)
 
 enum header_states {
@@ -311,6 +314,7 @@ enum header_states {
 	h_connection_close,
 	h_connection_upgrade
 };
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */
 
 enum http_host_state {
 	s_http_host_dead = 1,
@@ -327,6 +331,7 @@ enum http_host_state {
 	s_http_host_port
 };
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 static inline
 int cb_notify(struct http_parser *parser, enum state *current_state, http_cb cb,
 	      int cb_error, size_t *parsed, size_t already_parsed)
@@ -382,6 +387,7 @@ lb_end:
 
 	return 0;
 }
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */
 
 
 /* Macros for character classes; depends on strict-mode  */
@@ -416,6 +422,7 @@ lb_end:
 	(IS_ALPHANUM(c) || (c) == '.' || (c) == '-' || (c) == '_')
 #endif
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 /**
  * Verify that a char is a valid visible (printable) US-ASCII
  * character or %x80-FF
@@ -493,6 +500,7 @@ static struct {
 };
 
 int http_message_needs_eof(const struct http_parser *parser);
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */
 
 /* Our URL parser.
  *
@@ -655,6 +663,7 @@ static enum state parse_url_char(enum state s, const char ch)
 	return s_dead;
 }
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 static
 int parser_header_state(struct http_parser *parser, char ch, char c)
 {
@@ -2624,6 +2633,7 @@ const char *http_errno_description(enum http_errno err)
 
 	return http_strerror_tab[err].description;
 }
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */
 
 static enum http_host_state
 http_parse_host_char(enum http_host_state s, const char ch)
@@ -2906,6 +2916,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 	return 0;
 }
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 void http_parser_pause(struct http_parser *parser, int paused)
 {
 	/* Users should only be pausing/unpausing a parser that is not in an
@@ -2933,3 +2944,4 @@ unsigned long http_parser_version(void)
 	       HTTP_PARSER_VERSION_MINOR * 0x00100 |
 	       HTTP_PARSER_VERSION_PATCH * 0x00001;
 }
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */

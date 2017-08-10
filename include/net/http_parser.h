@@ -24,10 +24,12 @@
 extern "C" {
 #endif
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 /* Also update SONAME in the Makefile whenever you change these. */
 #define HTTP_PARSER_VERSION_MAJOR 2
 #define HTTP_PARSER_VERSION_MINOR 7
 #define HTTP_PARSER_VERSION_PATCH 1
+#endif
 
 #include <sys/types.h>
 #if defined(_WIN32) && !defined(__MINGW32__) && \
@@ -47,6 +49,7 @@ typedef unsigned __int64 u64_t;
 #include <stddef.h>
 #endif
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 /* Maximium header size allowed. If the macro is not defined
  * before including this header then the default is used. To
  * change the maximum header size, define the macro in the build
@@ -227,6 +230,7 @@ struct http_parser_settings {
 	http_cb      on_chunk_header;
 	http_cb      on_chunk_complete;
 };
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */
 
 
 enum http_parser_url_fields {
@@ -261,6 +265,7 @@ struct http_parser_url {
 };
 
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 /* Returns the library version. Bits 16-23 contain the major version number,
  * bits 8-15 the minor version number and bits 0-7 the patch level.
  * Usage example:
@@ -305,6 +310,7 @@ const char *http_errno_name(enum http_errno err);
 
 /* Return a string description of the given error */
 const char *http_errno_description(enum http_errno err);
+#endif /* !CONFIG_HTTP_PARSER_URL_ONLY */
 
 /* Initialize all http_parser_url members to 0 */
 void http_parser_url_init(struct http_parser_url *u);
@@ -313,11 +319,13 @@ void http_parser_url_init(struct http_parser_url *u);
 int http_parser_parse_url(const char *buf, size_t buflen,
 			  int is_connect, struct http_parser_url *u);
 
+#if !defined(CONFIG_HTTP_PARSER_URL_ONLY)
 /* Pause or un-pause the parser; a nonzero value pauses */
 void http_parser_pause(struct http_parser *parser, int paused);
 
 /* Checks if this is the final chunk of the body. */
 int http_body_is_final(const struct http_parser *parser);
+#endif
 
 #ifdef __cplusplus
 }
