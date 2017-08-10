@@ -29,8 +29,8 @@
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_SRAM_BASE_ADDRESS)
 #define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
 #elif CONFIG_XTENSA
-extern void *__heap_sentry;
-#define MAX_HEAP_SIZE  (POINTER_TO_UINT(&__heap_sentry) - USED_RAM_END_ADDR)
+extern void *_heap_sentry;
+#define MAX_HEAP_SIZE  (POINTER_TO_UINT(&_heap_sentry) - USED_RAM_END_ADDR)
 #else
 #define USED_RAM_SIZE  (USED_RAM_END_ADDR - CONFIG_SRAM_BASE_ADDRESS)
 #define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
