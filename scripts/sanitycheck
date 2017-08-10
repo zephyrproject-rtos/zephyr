@@ -1384,7 +1384,7 @@ class TestSuite:
                     if platform_filter and plat.name not in platform_filter:
                         continue
 
-                    if plat.ram <= tc.min_ram:
+                    if plat.ram < tc.min_ram:
                         continue
 
                     if set(plat.ignore_tags) & tc.tags:
@@ -1510,7 +1510,7 @@ class TestSuite:
                         discards[instance] = "Not supported by the toolchain"
                         continue
 
-                    if plat.ram <= tc.min_ram:
+                    if plat.ram < tc.min_ram:
                         discards[instance] = "Not enough RAM"
                         continue
 
@@ -1520,7 +1520,7 @@ class TestSuite:
                             discards[instance] = "No hardware support"
                             continue
 
-                    if plat.flash< tc.min_flash:
+                    if plat.flash < tc.min_flash:
                         discards[instance] = "Not enough FLASH"
                         continue
 
