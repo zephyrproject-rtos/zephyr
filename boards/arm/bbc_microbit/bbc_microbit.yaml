@@ -7,6 +7,8 @@ toolchain:
   - gccarmemb
 ram: 16
 testing:
-        default: true
+  default: true
+  ignore_tags:
+    - net
 supported:
   - ble

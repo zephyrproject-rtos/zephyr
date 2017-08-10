@@ -8,3 +8,6 @@ toolchain:
 ram: 16
 supported:
   - ble
+testing:
+  ignore_tags:
+    - net

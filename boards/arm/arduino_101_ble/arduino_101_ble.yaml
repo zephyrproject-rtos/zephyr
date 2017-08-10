@@ -6,3 +6,6 @@ toolchain:
   - zephyr
   - gccarmemb
 ram: 16
+testing:
+  ignore_tags:
+    - net

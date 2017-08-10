@@ -7,3 +7,7 @@ flash: 128
 toolchain:
   - zephyr
   - gccarmemb
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

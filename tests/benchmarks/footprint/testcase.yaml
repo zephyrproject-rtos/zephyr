@@ -5,6 +5,7 @@ tests:
         tags: footprint
 -   footprint-reg:
         arch_whitelist: x86 arm
+        platform_exclude: quark_d2000_crb
         build_only: true
         extra_args: TEST=reg
         min_ram: 8

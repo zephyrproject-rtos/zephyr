@@ -7,3 +7,6 @@ flash: 512
 toolchain:
   - zephyr
   - gccarmemb
+testing:
+  ignore_tags:
+    - net
