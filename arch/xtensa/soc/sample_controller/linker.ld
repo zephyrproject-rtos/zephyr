@@ -568,7 +568,7 @@ SECTIONS
     _memmap_seg_sram0_end = ALIGN(0x8);
   } >sram0_seg :sram0_bss_phdr
   __stack = 0x64000000;
-  _heap_sentry = 0x64000000;
+  __heap_sentry = 0x64000000;
   .debug  0 :  { *(.debug) }
   .line  0 :  { *(.line) }
   .debug_srcinfo  0 :  { *(.debug_srcinfo) }
