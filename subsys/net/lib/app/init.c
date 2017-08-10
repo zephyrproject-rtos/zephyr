@@ -103,6 +103,11 @@ static void setup_ipv4(struct net_if *iface)
 #endif
 	struct in_addr addr;
 
+	if (sizeof(CONFIG_NET_APP_MY_IPV4_ADDR) == 1) {
+		/* Empty address, skip setting ANY address in this case */
+		return;
+	}
+
 	if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_ADDR, &addr)) {
 		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV4_ADDR);
 		return;
@@ -181,6 +186,11 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 {
 	struct net_if_addr *ifaddr;
 	u32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
+
+	if (sizeof(CONFIG_NET_APP_MY_IPV6_ADDR) == 1) {
+		/* Empty address, skip setting ANY address in this case */
+		return;
+	}
 
 	if (net_addr_pton(AF_INET6, CONFIG_NET_APP_MY_IPV6_ADDR, &laddr)) {
 		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV6_ADDR);
