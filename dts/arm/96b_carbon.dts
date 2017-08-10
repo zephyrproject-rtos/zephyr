@@ -34,6 +34,7 @@
 
 &i2c1 {
 	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &flash0 {

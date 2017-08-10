@@ -8,6 +8,7 @@
 #include <arm/armv7-m.dtsi>
 #include <st/mem.h>
 #include <dt-bindings/clock/stm32_clock.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -77,6 +78,7 @@
 
 		i2c1: i2c@40005400 {
 			compatible = "st,stm32-i2c-v1";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005400 0x400>;
@@ -88,6 +90,7 @@
 
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v1";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;

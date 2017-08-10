@@ -12,6 +12,7 @@
 #include <board.h>
 #include <errno.h>
 #include <i2c.h>
+#include "i2c-priv.h"
 #include "i2c_ll_stm32.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
@@ -90,13 +91,15 @@ static int i2c_stm32_init(struct device *dev)
 {
 	struct device *clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	u32_t bitrate_cfg;
 	int ret;
 
 	__ASSERT_NO_MSG(clock);
 	clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
 
-	ret = i2c_stm32_runtime_configure(dev, data->dev_config.raw);
+	bitrate_cfg = _i2c_map_dt_bitrate(cfg->bitrate);
+
+	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {
 		SYS_LOG_ERR("i2c: failure initializing");
 		return ret;
@@ -123,11 +126,10 @@ static const struct i2c_stm32_config i2c_stm32_cfg_1 = {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_1,
 #endif
+	.bitrate = CONFIG_I2C_1_BITRATE,
 };
 
-static struct i2c_stm32_data i2c_stm32_dev_data_1 = {
-	.dev_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
-};
+static struct i2c_stm32_data i2c_stm32_dev_data_1;
 
 DEVICE_AND_API_INIT(i2c_stm32_1, CONFIG_I2C_1_NAME, &i2c_stm32_init,
 		    &i2c_stm32_dev_data_1, &i2c_stm32_cfg_1,
@@ -164,11 +166,10 @@ static const struct i2c_stm32_config i2c_stm32_cfg_2 = {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_2,
 #endif
+	.bitrate = CONFIG_I2C_2_BITRATE,
 };
 
-static struct i2c_stm32_data i2c_stm32_dev_data_2 = {
-	.dev_config.raw = CONFIG_I2C_2_DEFAULT_CFG,
-};
+static struct i2c_stm32_data i2c_stm32_dev_data_2;
 
 DEVICE_AND_API_INIT(i2c_stm32_2, CONFIG_I2C_2_NAME, &i2c_stm32_init,
 		    &i2c_stm32_dev_data_2, &i2c_stm32_cfg_2,
@@ -209,11 +210,10 @@ static const struct i2c_stm32_config i2c_stm32_cfg_3 = {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_3,
 #endif
+	.bitrate = CONFIG_I2C_3_BITRATE,
 };
 
-static struct i2c_stm32_data i2c_stm32_dev_data_3 = {
-	.dev_config.raw = CONFIG_I2C_3_DEFAULT_CFG,
-};
+static struct i2c_stm32_data i2c_stm32_dev_data_3;
 
 DEVICE_AND_API_INIT(i2c_stm32_3, CONFIG_I2C_3_NAME, &i2c_stm32_init,
 		    &i2c_stm32_dev_data_3, &i2c_stm32_cfg_3,

@@ -17,6 +17,7 @@ struct i2c_stm32_config {
 #endif
 	struct stm32_pclken pclken;
 	I2C_TypeDef *i2c;
+	u32_t bitrate;
 };
 
 struct i2c_stm32_data {
