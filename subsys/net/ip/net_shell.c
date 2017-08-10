@@ -1739,16 +1739,31 @@ static void rpl_parent(struct net_rpl_parent *parent, void *user_data)
 	int *count = user_data;
 
 	if (*count == 0) {
-		printk("   Parent  Last TX    Rank DTSN Flags\tAddress\n");
+		printk("      Parent     Last TX   Rank  DTSN  Flags DAG\t\t\t"
+		       "Address\n");
 	}
 
 	(*count)++;
 
 	if (parent->dag) {
-		printk("[%2d] %p %10d %2d   %d    0x%08x %s\n",
-		       *count, parent, parent->last_tx_time, parent->rank,
+		struct net_ipv6_nbr_data *data;
+		char addr[NET_IPV6_ADDR_LEN];
+
+		data = net_rpl_get_ipv6_nbr_data(parent);
+		if (data) {
+			snprintk(addr, sizeof(addr), "%s",
+				 net_sprint_ipv6_addr(&data->addr));
+		} else {
+			snprintk(addr, sizeof(addr), "<unknown>");
+		}
+
+		printk("[%2d]%s %p %7d  %5d   %3d  0x%02x  %s\t%s\n",
+		       *count,
+		       parent->dag->preferred_parent == parent ? "*" : " ",
+		       parent, parent->last_tx_time, parent->rank,
 		       parent->dtsn, parent->flags,
-		       net_sprint_ipv6_addr(&parent->dag->dag_id));
+		       net_sprint_ipv6_addr(&parent->dag->dag_id),
+		       addr);
 	}
 }
 
@@ -1849,7 +1864,7 @@ int net_shell_cmd_rpl(int argc, char *argv[])
 	       instance, instance->is_used ? "active" : "disabled");
 
 	if (instance->default_route) {
-		printk("Default route    : %s\n",
+		printk("Default route   : %s\n",
 		       net_sprint_ipv6_addr(
 			       &instance->default_route->address.in6_addr));
 	}
