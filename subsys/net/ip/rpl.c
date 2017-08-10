@@ -209,7 +209,7 @@ static void net_rpl_neighbor_table_clear(struct net_nbr_table *table)
 	NET_DBG("Neighbor table %p cleared", table);
 }
 
-NET_NBR_POOL_INIT(net_rpl_neighbor_pool, CONFIG_NET_IPV6_MAX_NEIGHBORS,
+NET_NBR_POOL_INIT(net_rpl_neighbor_pool, CONFIG_NET_RPL_MAX_PARENTS,
 		  sizeof(struct net_rpl_parent),
 		  net_rpl_neighbor_data_remove, 0);
 
@@ -271,7 +271,7 @@ struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 
 		if (nbr->data == (u8_t *)data) {
@@ -350,7 +350,7 @@ int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data)
 {
 	int i, ret = 0;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 
 		if (!nbr->ref) {
@@ -378,7 +378,7 @@ static void net_rpl_print_neighbors(void)
 		NET_DBG("rank %u DIO interval %u", curr_rank,
 			curr_interval);
 
-		for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 			struct net_nbr *ipv6_nbr, *nbr = get_nbr(i);
 			struct in6_addr *parent_addr;
 
@@ -893,7 +893,7 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 	 * for NET_RPL_PROBING_EXPIRATION_TIME
 	 */
 	if (!probing_target && (sys_rand32_get() % 2) == 0) {
-		for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 			struct net_nbr *nbr = get_nbr(i);
 
 			parent = nbr_data(nbr);
@@ -914,7 +914,7 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 
 	/* The default probing target is the least recently updated parent */
 	if (!probing_target) {
-		for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 			struct net_nbr *nbr = get_nbr(i);
 
 			parent = nbr_data(nbr);
@@ -1553,7 +1553,7 @@ static void remove_parents(struct net_if *iface,
 
 	NET_DBG("Removing parents minimum rank %u", minimum_rank);
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_rpl_parent *parent;
 
@@ -1796,7 +1796,7 @@ static struct net_rpl_parent *best_parent(struct net_if *iface,
 	struct net_rpl_parent *best = NULL;
 	int i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_rpl_parent *parent;
 
@@ -1965,7 +1965,7 @@ static void nullify_parents(struct net_if *iface,
 
 	NET_DBG("Nullifying parents (minimum rank %u)", minimum_rank);
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_rpl_parent *parent;
 
@@ -4234,8 +4234,8 @@ void net_rpl_init(void)
 	static struct net_if_link_cb link_cb;
 	struct in6_addr addr;
 
-	NET_DBG("Allocated %d routing entries (%zu bytes)",
-		CONFIG_NET_IPV6_MAX_NEIGHBORS,
+	NET_DBG("Allocated %d parent routing entries (%zu bytes)",
+		CONFIG_NET_RPL_MAX_PARENTS,
 		sizeof(net_rpl_neighbor_pool));
 
 #if defined(CONFIG_NET_STATISTICS_RPL)

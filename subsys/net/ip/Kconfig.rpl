@@ -123,6 +123,12 @@ config	NET_RPL_MAX_DAG_PER_INSTANCE
 	help
 	This determines how many DAG to allocate within one RPL instance.
 
+config	NET_RPL_MAX_PARENTS
+	int "Maximum number of parents for one node"
+	default NET_IPV6_MAX_NEIGHBORS
+	help
+	This determines how many RPL parents each node can have.
+
 config	NET_RPL_DAO_SPECIFY_DAG
 	bool "Specify DAG when sending a DAO message."
 	depends on NET_RPL
