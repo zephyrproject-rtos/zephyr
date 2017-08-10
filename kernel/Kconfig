@@ -104,6 +104,7 @@ config MAIN_STACK_SIZE
 	int
 	prompt "Size of stack for initialization and main thread"
 	default 1024
+	default 512 if ZTEST
 	help
 	When the initialization is complete, the thread executing it then
 	executes the main() routine, so as to reuse the stack used by the
