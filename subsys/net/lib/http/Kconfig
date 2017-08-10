@@ -65,6 +65,13 @@ config HTTP_PARSER
 	This parser requires some string-related routines commonly
 	provided by a libc implementation.
 
+config HTTP_PARSER_URL_ONLY
+	bool "HTTP URL parser only support"
+	default n
+	select HTTP_PARSER
+	help
+	This option only enables URL parser of the http_parser library.
+
 config HTTP_PARSER_STRICT
 	bool "HTTP strict parsing"
 	default n
