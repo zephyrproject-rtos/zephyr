@@ -1,4 +1,4 @@
 obj-y += hal/
 obj-y += lib/
-obj-y += fs/
+obj-$(CONFIG_FILE_SYSTEM) += fs/
 obj-y += debug/
