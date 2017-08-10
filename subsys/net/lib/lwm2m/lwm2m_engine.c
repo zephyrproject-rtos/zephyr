@@ -649,6 +649,7 @@ static u16_t select_writer(struct lwm2m_output_context *out, u16_t accept)
 		break;
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
+	case LWM2M_FORMAT_APP_LINK_FORMAT:
 	case LWM2M_FORMAT_OMA_JSON:
 	case LWM2M_FORMAT_OMA_OLD_JSON:
 		out->writer = &json_writer;
