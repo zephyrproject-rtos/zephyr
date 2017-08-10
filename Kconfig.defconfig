@@ -1,0 +1,21 @@
+if COMPILE_TEST
+
+config UART_CONSOLE_ON_DEV_NAME
+	default ""
+
+config BLUETOOTH_UART_ON_DEV_NAME
+	default ""
+
+config UART_PIPE_ON_DEV_NAME
+	default ""
+
+config FXOS8700_I2C_NAME
+	default ""
+
+config MAX30101_I2C_NAME
+	default ""
+
+config FXAS21002_I2C_NAME
+	default ""
+
+endif
