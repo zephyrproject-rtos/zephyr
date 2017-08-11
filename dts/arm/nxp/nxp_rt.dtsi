@@ -1,0 +1,169 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/clock/imx_ccm.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		flexram0: flexram@400b0000 {
+			compatible = "nxp,imx-flexram";
+			reg = <0x400b0000 0x4000>;
+			interrupts = <38 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itcm0: itcm0 {
+				reg = <0x00000000 0x20000>;
+			};
+
+			dtcm0: dtcm0 {
+				reg = <0x20000000 0x20000>;
+			};
+
+			ocram0: ocram0 {
+				reg = <0x20200000 0x40000>;
+			};
+		};
+
+		ccm: ccm@400fc000 {
+			compatible = "nxp,imx-ccm";
+			reg = <0x400fc000 0x4000>;
+			label = "CCM";
+
+			clock-controller;
+			#clocks-cells = <3>;
+		};
+
+		gpio1: gpio@401b8000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x401b8000 0x4000>;
+			interrupts = <80 0>, <81 0>;
+			label = "GPIO_1";
+		};
+
+		gpio2: gpio@401bc000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x401bc000 0x4000>;
+			interrupts = <82 0>, <83 0>;
+			label = "GPIO_2";
+		};
+
+		gpio3: gpio@401c0000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x401c0000 0x4000>;
+			interrupts = <84 0>, <85 0>;
+			label = "GPIO_3";
+		};
+
+		gpio4: gpio@401c4000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x401c4000 0x4000>;
+			interrupts = <86 0>, <87 0>;
+			label = "GPIO_4";
+		};
+
+		gpio5: gpio@400c0000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x400c0000 0x4000>;
+			interrupts = <88 0>, <89 0>;
+			label = "GPIO_5";
+		};
+
+		iomuxc: iomuxc@401f8000 {
+			reg = <0x401f8000 0x4000>;
+			label = "PINMUX_0";
+		};
+
+		uart1: uart@40184000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40184000 0x4000>;
+			interrupts = <20 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 24>;
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2: uart@40188000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40188000 0x4000>;
+			interrupts = <21 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 28>;
+			label = "UART_2";
+			status = "disabled";
+		};
+
+		uart3: uart@4018c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4018c000 0x4000>;
+			interrupts = <22 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 12>;
+			label = "UART_3";
+			status = "disabled";
+		};
+
+		uart4: uart@40190000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40190000 0x4000>;
+			interrupts = <23 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+			label = "UART_4";
+			status = "disabled";
+		};
+
+		uart5: uart@40194000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40194000 0x4000>;
+			interrupts = <24 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 2>;
+			label = "UART_5";
+			status = "disabled";
+		};
+
+		uart6: uart@40198000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40198000 0x4000>;
+			interrupts = <25 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 6>;
+			label = "UART_6";
+			status = "disabled";
+		};
+
+		uart7: uart@4019c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4019c000 0x4000>;
+			interrupts = <26 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 26>;
+			label = "UART_7";
+			status = "disabled";
+		};
+
+		uart8: uart@401a0000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x401a0000 0x4000>;
+			interrupts = <27 0>;
+			clocks = <&ccm IMX_CCM_LPUART_CLK 0x80 14>;
+			label = "UART_8";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

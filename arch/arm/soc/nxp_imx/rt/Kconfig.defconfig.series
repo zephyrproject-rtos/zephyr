@@ -1,0 +1,20 @@
+# Kconfig - i.MX RT series
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_IMX_RT
+
+config SOC_SERIES
+	default rt
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 160
+
+source "arch/arm/soc/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
+
+endif # SOC_SERIES_IMX_RT
