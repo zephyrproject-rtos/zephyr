@@ -2,3 +2,4 @@
 config BOARD_TINYTILE
 	bool "TinyTILE"
 	depends on SOC_SERIES_QUARK_SE
+	select HAS_DTS
