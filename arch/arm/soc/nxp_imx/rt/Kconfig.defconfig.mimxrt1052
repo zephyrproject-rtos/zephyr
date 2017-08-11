@@ -1,0 +1,38 @@
+# Kconfig - i.MX RT1052
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MIMXRT1052
+
+config SOC
+	string
+	default mimxrt1052
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_CCM
+	def_bool y
+
+endif # CLOCK_CONTROL
+
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_MCUX_IGPIO
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	def_bool y
+
+endif # SERIAL
+
+endif # SOC_MIMXRT1052
