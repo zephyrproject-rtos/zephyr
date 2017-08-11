@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt.dtsi>
+
+/ {
+	model = "NXP MIMXRT1050-EVK board";
+	compatible = "nxp,mimxrt1052";
+
+	aliases {
+		gpio_1= &gpio1;
+		gpio_2= &gpio2;
+		gpio_3= &gpio3;
+		gpio_4= &gpio4;
+		gpio_5= &gpio5;
+		uart_1 = &uart1;
+	};
+
+	chosen {
+		zephyr,flash = &itcm0;
+		zephyr,sram = &dtcm0;
+		zephyr,console = &uart1;
+	};
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};
