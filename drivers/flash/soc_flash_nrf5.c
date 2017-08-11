@@ -222,10 +222,9 @@ static void time_slot_callback_work(u32_t ticks_at_expire, u32_t remainder,
 	u8_t instance_index;
 	u8_t ticker_id;
 	int result;
-	u32_t err;
 
-	err = ll_radio_state_is_idle();
-	__ASSERT(!err, "Radio is on during flash operation.\n");
+	__ASSERT(ll_radio_state_is_idle(),
+		 "Radio is on during flash operation.\n");
 
 	op_desc = context;
 	if (op_desc->handler(op_desc->context) == FLASH_OP_DONE) {
