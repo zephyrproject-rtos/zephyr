@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_IMX
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+if SOC_FAMILY_IMX
+config SOC_FAMILY
+	string
+	default "nxp_imx"
+endif
+
+source "arch/arm/soc/nxp_imx/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	string
+	default SOC_PART_NUMBER_IMX_RT if SOC_SERIES_IMX_RT
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
