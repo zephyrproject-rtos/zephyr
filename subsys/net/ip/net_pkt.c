@@ -11,7 +11,7 @@
  */
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-#define SYS_LOG_DOMAIN "net/net_pkt"
+#define SYS_LOG_DOMAIN "net/pkt"
 #define NET_LOG_ENABLED 1
 #endif
 
