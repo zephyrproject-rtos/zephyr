@@ -35,6 +35,7 @@ config BT_RX_BUF_COUNT
 config BT_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
 	default 76
+	default 77 if BT_MESH_PROXY
 	default 264 if BT_BREDR
 	range 73 2000
 	help
