@@ -2,5 +2,4 @@ tests:
 -   test:
         build_only: true
         filter: not CONFIG_NEWLIB_LIBC
-        min_ram: 32
         tags: json
