@@ -131,18 +131,21 @@ static inline u32_t retry_timeout(const struct net_tcp *tcp)
 	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
 	   net_pkt_ll_dst(pkt)->type == NET_LINK_IEEE802154)))
 
-static inline void do_ref_if_needed(struct net_pkt *pkt)
-{
-	/* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
-	 * IPv6 header compression (6lo). For BT and 802.15.4 we copy the pkt
-	 * chain we are about to send so it is fine if the network driver
-	 * releases it. As we have our own copy of the sent data, we do not
-	 * need to take a reference of it. See also net_tcp_send_pkt().
-	 */
-	if (!is_6lo_technology(pkt)) {
-		pkt = net_pkt_ref(pkt);
-	}
-}
+/* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
+ * IPv6 header compression (6lo). For BT and 802.15.4 we copy the pkt
+ * chain we are about to send so it is fine if the network driver
+ * releases it. As we have our own copy of the sent data, we do not
+ * need to take a reference of it. See also net_tcp_send_pkt().
+ *
+ * Note that this is macro so that we get information who called the
+ * net_pkt_ref() if memory debugging is active.
+ */
+#define do_ref_if_needed(pkt)				\
+	do {						\
+		if (!is_6lo_technology(pkt)) {		\
+			pkt = net_pkt_ref(pkt);		\
+		}					\
+	} while (0)
 
 static void abort_connection(struct net_tcp *tcp)
 {
