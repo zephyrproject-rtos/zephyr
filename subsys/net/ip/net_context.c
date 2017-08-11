@@ -2084,6 +2084,16 @@ static int sendto(struct net_pkt *pkt,
 	}
 #endif /* CONFIG_NET_TCP */
 
+#if defined(CONFIG_NET_UDP)
+	/* Bind default address and port only if UDP */
+	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		ret = bind_default(context);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif /* CONFIG_NET_UDP */
+
 	if (!dst_addr) {
 		return -EDESTADDRREQ;
 	}
@@ -2321,6 +2331,11 @@ static int recv_udp(struct net_context *context,
 	if (context->conn_handler) {
 		net_conn_unregister(context->conn_handler);
 		context->conn_handler = NULL;
+	}
+
+	ret = bind_default(context);
+	if (ret) {
+		return ret;
 	}
 
 #if defined(CONFIG_NET_IPV6)
