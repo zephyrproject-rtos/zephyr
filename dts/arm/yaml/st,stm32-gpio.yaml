@@ -1,0 +1,33 @@
+---
+title: STM32 GPIO
+version: 0.1
+
+description: >
+    This is a representation of the STM32 GPIO nodes
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-gpio"
+
+  - reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+  - label:
+      type: string
+      description:   Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+      category: required
+      
+  - interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+...
