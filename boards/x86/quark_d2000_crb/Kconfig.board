@@ -2,3 +2,4 @@
 config BOARD_QUARK_D2000_CRB
 	bool "Intel Quark D2000 CRB"
 	depends on SOC_SERIES_QUARK_D2000
+	select HAS_DTS
