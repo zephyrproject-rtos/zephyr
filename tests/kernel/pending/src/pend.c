@@ -15,8 +15,8 @@
 #define  THIRD_SECOND               (333)
 #define  FOURTH_SECOND              (250)
 
-#define COOP_STACKSIZE   1024
-#define PREEM_STACKSIZE  2048
+#define COOP_STACKSIZE   512
+#define PREEM_STACKSIZE  1024
 
 #define FIFO_TEST_START       10
 #define FIFO_TEST_END         20
