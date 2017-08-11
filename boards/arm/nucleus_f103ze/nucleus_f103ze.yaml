@@ -1,0 +1,7 @@
+identifier: nucleus_f103ze
+name: nucleus F103zet6 dev
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
