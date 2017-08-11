@@ -9,7 +9,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-#define MESSAGE_SIZE        8192
-#define MESSAGE_SIZE_PIPE   4096	/* must be smaller than MESSAGE_SIZE */
+#define MESSAGE_SIZE        4096
+#define MESSAGE_SIZE_PIPE   2048	/* must be smaller than MESSAGE_SIZE */
 
 #endif
