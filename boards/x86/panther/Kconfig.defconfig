@@ -27,4 +27,47 @@ endif
 config BT_MONITOR_ON_DEV_NAME
 	default UART_QMSI_1_NAME if BT_DEBUG_MONITOR
 
+if WIFI_WINC1500
+
+config SPI
+	def_bool y
+config GPIO
+	def_bool y
+
+if GPIO_QMSI
+
+config WINC1500_GPIO_0_NAME
+	default GPIO_QMSI_0_NAME
+config WINC1500_GPIO_1_NAME
+	default GPIO_QMSI_1_NAME
+
+endif # GPIO_QMSI
+
+if SPI_QMSI
+config SPI_CS_GPIO
+	def_bool y
+config SPI_1_CS_GPIO_PORT
+	default GPIO_QMSI_0_NAME
+config SPI_1_CS_GPIO_PIN
+	default 11
+config WINC1500_GPIO_0_NAME
+	string
+	default GPIO_QMSI_0_NAME
+config WINC1500_GPIO_1_NAME
+	string
+	default GPIO_QMSI_1_NAME
+endif
+
+endif # WIFI_WINC1500
+
+
+
+config LEDS_GPIO_NAME
+	string
+	default GPIO_QMSI_0_NAME
+
+config SPI_0
+	def_bool n
+
+
 endif # BOARD_PANTHER

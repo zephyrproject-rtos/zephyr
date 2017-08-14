@@ -1,0 +1,30 @@
+# Kconfig - drivers configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+
+
+menuconfig WIFI
+	bool "add support for WIFI Drivers"
+	default n
+
+if WIFI
+
+config WIFI_INIT_PRIORITY
+	int "WiFi driver init priority"
+	depends on WIFI
+	default 80
+	help
+	  WiFi device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+source "drivers/wifi/winc1500/Kconfig"
+
+endif # WIFI

@@ -1,0 +1,9 @@
+# Kconfig - Atmel WINC1500 configuration options
+#
+# WINC1500 options
+#
+
+# menuconfig NETWORKING_WITH_WINC1500
+# 	bool
+# 	prompt "WINC1500 driver Configuration"
+# 	default n

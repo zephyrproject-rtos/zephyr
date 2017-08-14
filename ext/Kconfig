@@ -16,4 +16,6 @@ source "ext/fs/Kconfig"
 
 source "ext/debug/Kconfig"
 
+source "ext/drivers/atmel/winc1500/Kconfig"
+
 endmenu

@@ -2,3 +2,4 @@ obj-y += hal/
 obj-y += lib/
 obj-y += fs/
 obj-y += debug/
+obj-y += drivers/atmel/winc1500/

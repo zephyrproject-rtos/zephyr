@@ -31,3 +31,4 @@ obj-$(CONFIG_DMA) += dma/
 obj-$(CONFIG_USB) += usb/
 obj-$(CONFIG_CRYPTO) += crypto/
 obj-y += crc/
+obj-$(CONFIG_WIFI) += wifi/

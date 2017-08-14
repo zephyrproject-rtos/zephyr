@@ -65,4 +65,11 @@ config NET_DEBUG_MGMT_EVENT_STACK
 	help
 	Add debug messages output on how much Net MGMT event stack is used.
 
+config NET_MGMT_WIFI
+	bool "Enable wifi management module"
+	default n
+	depends on NET_MGMT_EVENT
+	help
+	Enables support for wifi management functions
+
 endif
