@@ -49,7 +49,7 @@ MEMORY
      * target. However, it shouldn't overlap any other regions.
      */
 
-    IDT_LIST        : ORIGIN = 512, LENGTH = 512
+    IDT_LIST        : ORIGIN = 0, LENGTH = 2K
     }
 
 #include <arch/x86/linker.ld>
