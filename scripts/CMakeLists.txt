@@ -8,8 +8,6 @@ Project(Zehpyr-Host-Tools)
 # Suggestion is to stop using fixdep.
 # add_executable(fixdep basic/fixdep.c)
 
-add_executable(gen_offset_header gen_offset_header/gen_offset_header.c)
-
 add_executable(gen_idt gen_idt/gen_idt.c gen_idt/version.c)
 target_include_directories(gen_idt PRIVATE gen_idt ../include/arch/x86 ../include)
 target_compile_definitions(gen_idt PRIVATE -DKERNEL_VERSION=0)
