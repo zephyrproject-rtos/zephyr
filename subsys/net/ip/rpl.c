@@ -140,7 +140,7 @@ static void remove_parents(struct net_if *iface,
 			   struct net_rpl_dag *dag,
 			   u16_t minimum_rank);
 
-static void net_rpl_schedule_dao_now(struct net_rpl_instance *instance);
+static inline void net_rpl_schedule_dao_now(struct net_rpl_instance *instance);
 static void net_rpl_local_repair(struct net_if *iface,
 				 struct net_rpl_instance *instance);
 
@@ -2782,7 +2782,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 
 static enum net_verdict handle_dio(struct net_pkt *pkt)
 {
-	struct net_rpl_dio dio = { 0 };
+	struct net_rpl_dio dio = { };
 	struct net_buf *frag;
 	struct net_nbr *nbr;
 	u16_t offset, pos;

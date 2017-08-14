@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE 256
+#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 /* nrf 51 has lower ram, so creating less number of threads */
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_STM32F3X)
 	#define NUM_THREAD 3
@@ -20,9 +20,9 @@ static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 #define SLICE_SIZE 200
 /* busy for more than one slice*/
 #define BUSY_MS (SLICE_SIZE + 20)
-struct k_thread t[NUM_THREAD];
+static struct k_thread t[NUM_THREAD];
 
-K_SEM_DEFINE(sema1, 0, NUM_THREAD);
+static K_SEM_DEFINE(sema1, 0, NUM_THREAD);
 /*elapsed_slice taken by last thread*/
 static s64_t elapsed_slice;
 
@@ -35,14 +35,14 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 								((int)p1 + 'A');
 
 	while (1) {
-		s64_t t = k_uptime_delta(&elapsed_slice);
+		s64_t tdelta = k_uptime_delta(&elapsed_slice);
 
 		TC_PRINT("%c", thread_parameter);
 		/* Test Fails if thread exceed allocated time slice or
 		 * Any thread is scheduled out of order.
 		 */
-		zassert_true(((t <= SLICE_SIZE) && ((int)p1 == thread_idx)),
-				NULL);
+		zassert_true(((tdelta <= SLICE_SIZE) &&
+			      ((int)p1 == thread_idx)), NULL);
 		thread_idx = (thread_idx+1) % (NUM_THREAD);
 		u32_t t32 = k_uptime_get_32();
 

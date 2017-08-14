@@ -209,13 +209,13 @@ static inline int net_tcp_unregister(struct net_conn_handle *handle)
  *
  * @return Return a random TCP sequence number
  */
-inline u32_t tcp_init_isn(void)
+static inline u32_t tcp_init_isn(void)
 {
 	/* Randomise initial seq number */
 	return sys_rand32_get();
 }
 
-const char * const net_tcp_state_str(enum net_tcp_state state);
+const char *net_tcp_state_str(enum net_tcp_state state);
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_change_state(struct net_tcp *tcp, enum net_tcp_state new_state);
@@ -419,11 +419,40 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag);
  * @return Return the checksum in host byte order.
  */
 u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
+
 #else
-#define net_tcp_get_chksum(pkt, frag) (0)
-#define net_tcp_set_chksum(pkt, frag) NULL
-#define net_tcp_set_hdr(pkt, frag) NULL
-#define net_tcp_get_hdr(pkt, frag) NULL
+
+static inline u16_t net_tcp_get_chksum(struct net_pkt *pkt,
+				       struct net_buf *frag)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(frag);
+	return 0;
+}
+
+static inline struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt,
+						 struct net_buf *frag)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(frag);
+	return NULL;
+}
+
+static inline struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
+						  struct net_tcp_hdr *hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	return NULL;
+}
+
+static inline struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
+						  struct net_tcp_hdr *hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	return NULL;
+}
 #endif
 
 #if defined(CONFIG_NET_TCP)
