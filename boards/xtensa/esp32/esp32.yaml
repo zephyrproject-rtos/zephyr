@@ -1,0 +1,6 @@
+identifier: esp32
+name: ESP-32
+type: mcu
+arch: xtensa
+toolchain:
+  - espressif
