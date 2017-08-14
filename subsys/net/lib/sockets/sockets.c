@@ -46,14 +46,14 @@ static inline u32_t sock_get_flag(struct net_context *ctx, u32_t mask)
 #define sock_set_eof(ctx) sock_set_flag(ctx, SOCK_EOF, SOCK_EOF)
 #define sock_is_nonblock(ctx) sock_get_flag(ctx, SOCK_NONBLOCK)
 
-static inline void _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+static inline int _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 					 K_POLL_MODE_NOTIFY_ONLY, fifo),
 	};
 
-	k_poll(events, ARRAY_SIZE(events), timeout);
+	return k_poll(events, ARRAY_SIZE(events), timeout);
 }
 
 static void zsock_flush_queue(struct net_context *ctx)
@@ -261,6 +261,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size
 {
 	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
+	int res;
 
 	if (sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
@@ -275,7 +276,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size
 			return 0;
 		}
 
-		_k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		res = _k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		if (res && res != -EAGAIN) {
+			errno = -res;
+			return -1;
+		}
+
 		pkt = k_fifo_peek_head(&ctx->recv_q);
 		if (!pkt) {
 			/* Either timeout expired, or wait was cancelled
