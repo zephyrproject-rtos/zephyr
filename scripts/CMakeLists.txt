@@ -8,14 +8,4 @@ Project(Zehpyr-Host-Tools)
 # Suggestion is to stop using fixdep.
 # add_executable(fixdep basic/fixdep.c)
 
-add_executable(gen_idt gen_idt/gen_idt.c gen_idt/version.c)
-target_include_directories(gen_idt PRIVATE gen_idt ../include/arch/x86 ../include)
-target_compile_definitions(gen_idt PRIVATE -DKERNEL_VERSION=0)
-target_compile_options(gen_idt PRIVATE
-  -Wall
-  -Werror
-  -g
-  -Wno-unused-result
-)
-
 add_subdirectory(kconfig)
