@@ -37,13 +37,13 @@
  */
 static u16_t _opcode;
 
-#if CONFIG_BT_CONTROLLER_DUP_FILTER_LEN > 0
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 /* Scan duplicate filter */
 struct dup {
 	u8_t         mask;
 	bt_addr_le_t addr;
 };
-static struct dup dup_filter[CONFIG_BT_CONTROLLER_DUP_FILTER_LEN];
+static struct dup dup_filter[CONFIG_BT_CTLR_DUP_FILTER_LEN];
 static s32_t dup_count;
 static u32_t dup_curr;
 #endif
@@ -192,7 +192,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
-#if CONFIG_BT_CONTROLLER_DUP_FILTER_LEN > 0
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	dup_count = -1;
 #endif
 	/* reset event masks */
@@ -314,7 +314,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 }
 #endif
 
-#if defined(CONFIG_BT_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CTLR_LE_PING)
 static void read_auth_payload_timeout(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_read_auth_payload_timeout *cmd = (void *)buf->data;
@@ -351,7 +351,7 @@ static void write_auth_payload_timeout(struct net_buf *buf,
 	rp->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = sys_cpu_to_le16(handle);
 }
-#endif /* CONFIG_BT_CONTROLLER_LE_PING */
+#endif /* CONFIG_BT_CTLR_LE_PING */
 
 static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 			      struct net_buf **evt)
@@ -383,7 +383,7 @@ static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		break;
 #endif
 
-#if defined(CONFIG_BT_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CTLR_LE_PING)
 	case BT_OCF(BT_HCI_OP_READ_AUTH_PAYLOAD_TIMEOUT):
 		read_auth_payload_timeout(cmd, evt);
 		break;
@@ -391,7 +391,7 @@ static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_WRITE_AUTH_PAYLOAD_TIMEOUT):
 		write_auth_payload_timeout(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_LE_PING */
+#endif /* CONFIG_BT_CTLR_LE_PING */
 
 	default:
 		return -EINVAL;
@@ -463,16 +463,16 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[26] |= BIT(4) | BIT(5);
 	/* Set Host Channel Classification */
 	rp->commands[27] |= BIT(3);
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* LE Start Encryption */
 	rp->commands[28] |= BIT(0);
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_PERIPHERAL)
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* LE LTK Request Reply, LE LTK Request Negative Reply */
 	rp->commands[28] |= BIT(1) | BIT(2);
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif
 #if defined(CONFIG_BT_CONN)
 	/* Disconnect. */
@@ -481,28 +481,28 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[27] |= BIT(2) | BIT(5);
 	/* LE Remote Conn Param Req and Neg Reply */
 	rp->commands[33] |= BIT(4) | BIT(5);
-#if defined(CONFIG_BT_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CTLR_LE_PING)
 	/* Read and Write authenticated payload timeout */
 	rp->commands[32] |= BIT(4) | BIT(5);
 #endif
 #endif /* CONFIG_BT_CONN */
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* LE resolving list commands, LE Read Peer RPA */
 	rp->commands[34] |= BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7);
 	/* LE Read Local RPA, LE Set AR Enable, Set RPA Timeout */
 	rp->commands[35] |= BIT(0) | BIT(1) | BIT(2);
 	/* LE Set Privacy Mode */
 	rp->commands[39] |= BIT(2);
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
-#if defined(CONFIG_BT_CONTROLLER_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* LE Set Data Length, and LE Read Suggested Data Length. */
 	rp->commands[33] |= BIT(6) | BIT(7);
 	/* LE Write Suggested Data Length. */
 	rp->commands[34] |= BIT(0);
 	/* LE Read Maximum Data Length. */
 	rp->commands[35] |= BIT(3);
-#endif /* CONFIG_BT_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
 	/* LE Read Local P256 Public Key and LE Generate DH Key*/
@@ -742,17 +742,17 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 
 	min_interval = sys_le16_to_cpu(cmd->min_interval);
 
-#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = ll_adv_params_set(0, 0, min_interval, cmd->type,
 				   cmd->own_addr_type, cmd->direct_addr.type,
 				   &cmd->direct_addr.a.val[0], cmd->channel_map,
 				   cmd->filter_policy, 0, 0, 0, 0, 0, 0);
-#else /* !CONFIG_BT_CONTROLLER_ADV_EXT */
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 	status = ll_adv_params_set(min_interval, cmd->type,
 				   cmd->own_addr_type, cmd->direct_addr.type,
 				   &cmd->direct_addr.a.val[0], cmd->channel_map,
 				   cmd->filter_policy);
-#endif /* !CONFIG_BT_CONTROLLER_ADV_EXT */
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
@@ -829,7 +829,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u32_t status;
 
-#if CONFIG_BT_CONTROLLER_DUP_FILTER_LEN > 0
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	/* initialize duplicate filtering */
 	if (cmd->enable && cmd->filter_dup) {
 		dup_count = 0;
@@ -896,7 +896,7 @@ static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_start_encryption *cmd = (void *)buf->data;
@@ -911,11 +911,11 @@ static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 static void le_ltk_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_ltk_req_reply *cmd = (void *)buf->data;
@@ -946,7 +946,7 @@ static void le_ltk_req_neg_reply(struct net_buf *buf, struct net_buf **evt)
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = sys_le16_to_cpu(handle);
 }
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif /* CONFIG_BT_PERIPHERAL */
 
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
@@ -1023,7 +1023,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	rp->handle = sys_cpu_to_le16(handle);
 }
 
-#if defined(CONFIG_BT_CONTROLLER_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void le_set_data_len(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_data_len *cmd = (void *)buf->data;
@@ -1076,9 +1076,9 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 			  &rp->max_rx_octets, &rp->max_rx_time);
 	rp->status = 0x00;
 }
-#endif /* CONFIG_BT_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-#if defined(CONFIG_BT_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CTLR_PHY)
 static void le_read_phy(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_phy *cmd = (void *) buf->data;
@@ -1145,10 +1145,10 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
-#endif /* CONFIG_BT_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 static void le_add_dev_to_rl(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_add_dev_to_rl *cmd = (void *)buf->data;
@@ -1248,7 +1248,7 @@ static void le_set_privacy_mode(struct net_buf *buf, struct net_buf **evt)
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
 }
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt)
@@ -1344,15 +1344,15 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		le_set_host_chan_classif(cmd, evt);
 		break;
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	case BT_OCF(BT_HCI_OP_LE_START_ENCRYPTION):
 		le_start_encryption(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_REPLY):
 		le_ltk_req_reply(cmd, evt);
 		break;
@@ -1360,7 +1360,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY):
 		le_ltk_req_neg_reply(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif /* CONFIG_BT_PERIPHERAL */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
@@ -1379,7 +1379,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		le_conn_param_req_neg_reply(cmd, evt);
 		break;
 
-#if defined(CONFIG_BT_CONTROLLER_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
 		le_set_data_len(cmd, evt);
 		break;
@@ -1395,9 +1395,9 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_READ_MAX_DATA_LEN):
 		le_read_max_data_len(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_DATA_LENGTH */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-#if defined(CONFIG_BT_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CTLR_PHY)
 	case BT_OCF(BT_HCI_OP_LE_READ_PHY):
 		le_read_phy(cmd, evt);
 		break;
@@ -1409,10 +1409,10 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_PHY):
 		le_set_phy(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_RL):
 		le_add_dev_to_rl(cmd, evt);
 		break;
@@ -1440,7 +1440,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_PRIVACY_MODE):
 		le_set_privacy_mode(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 
 	default:
@@ -1620,7 +1620,7 @@ int hci_acl_handle(struct net_buf *buf)
 	return 0;
 }
 
-#if CONFIG_BT_CONTROLLER_DUP_FILTER_LEN > 0
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 static inline bool dup_found(struct pdu_adv *adv)
 {
 	/* check for duplicate filtering */
@@ -1649,21 +1649,21 @@ static inline bool dup_found(struct pdu_adv *adv)
 		dup_filter[dup_curr].addr.type = adv->tx_addr;
 		dup_filter[dup_curr].mask = BIT(adv->type);
 
-		if (dup_count < CONFIG_BT_CONTROLLER_DUP_FILTER_LEN) {
+		if (dup_count < CONFIG_BT_CTLR_DUP_FILTER_LEN) {
 			dup_count++;
 			dup_curr = dup_count;
 		} else {
 			dup_curr++;
 		}
 
-		if (dup_curr == CONFIG_BT_CONTROLLER_DUP_FILTER_LEN) {
+		if (dup_curr == CONFIG_BT_CTLR_DUP_FILTER_LEN) {
 			dup_curr = 0;
 		}
 	}
 
 	return false;
 }
-#endif /* CONFIG_BT_CONTROLLER_DUP_FILTER_LEN > 0 */
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 				  struct net_buf *buf)
@@ -1676,16 +1676,16 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	u8_t data_len;
 	u8_t info_len;
 	u8_t rssi;
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t rl_idx, direct;
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 	u8_t *prssi;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT)) {
 		return;
 	}
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	direct = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 		   offsetof(struct pdu_adv, payload) + adv->len + 2];
 
@@ -1697,14 +1697,14 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	if (!(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
 		return;
 	}
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 
-#if CONFIG_BT_CONTROLLER_DUP_FILTER_LEN > 0
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	if (dup_found(adv)) {
 		return;
 	}
-#endif /* CONFIG_BT_CONTROLLER_DUP_FILTER_LEN > 0 */
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
 		data_len = (adv->len - BDADDR_SIZE);
@@ -1715,7 +1715,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 		 offsetof(struct pdu_adv, payload) + adv->len];
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 		   offsetof(struct pdu_adv, payload) + adv->len + 1];
 
@@ -1753,7 +1753,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 
 		return;
 	}
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
 		   sizeof(*prssi);
@@ -1765,7 +1765,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 
 	adv_info->evt_type = c_adv_type[adv->type];
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx < ll_rl_size_get()) {
 		/* Store identity address */
 		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
@@ -1775,7 +1775,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	} else {
 #else
 	if (1) {
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		adv_info->addr.type = adv->tx_addr;
 		memcpy(&adv_info->addr.a.val[0], &adv->payload.adv_ind.addr[0],
@@ -1789,7 +1789,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	*prssi = rssi;
 }
 
-#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 static void le_adv_ext_report(struct pdu_data *pdu_data, u8_t *b,
 			      struct net_buf *buf, u8_t phy)
 {
@@ -1859,9 +1859,9 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data, u8_t *b,
 {
 	le_adv_ext_report(pdu_data, b, buf, BIT(2));
 }
-#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-#if defined(CONFIG_BT_CONTROLLER_SCAN_REQ_NOTIFY)
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 				 struct net_buf *buf)
 {
@@ -1898,7 +1898,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 	memcpy(&sep->addr.a.val[0], &adv->payload.scan_req.scan_addr[0],
 	       sizeof(bt_addr_t));
 }
-#endif /* CONFIG_BT_CONTROLLER_SCAN_REQ_NOTIFY */
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 #if defined(CONFIG_BT_CONN)
 static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
@@ -1909,11 +1909,11 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    (!(le_event_mask & BT_EVT_MASK_LE_CONN_COMPLETE) &&
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	     !(le_event_mask & BT_EVT_MASK_LE_ENH_CONN_COMPLETE))) {
 #else
 	     1)) {
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 		return;
 	}
 
@@ -1923,7 +1923,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 		conn_count++;
 	}
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (le_event_mask & BT_EVT_MASK_LE_ENH_CONN_COMPLETE) {
 		struct bt_hci_evt_le_enh_conn_complete *leecc;
 
@@ -1958,7 +1958,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 		leecc->clock_accuracy = radio_cc->mca;
 		return;
 	}
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	lecc = meta_evt(buf, BT_HCI_EVT_LE_CONN_COMPLETE, sizeof(*lecc));
 
@@ -2015,7 +2015,7 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, u16_t handle,
 	sep->supv_timeout = sys_cpu_to_le16(radio_cu->timeout);
 }
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 static void enc_refresh_complete(struct pdu_data *pdu_data, u16_t handle,
 				 struct net_buf *buf)
 {
@@ -2031,9 +2031,9 @@ static void enc_refresh_complete(struct pdu_data *pdu_data, u16_t handle,
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 }
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
-#if defined(CONFIG_BT_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CTLR_LE_PING)
 static void auth_payload_timeout_exp(struct pdu_data *pdu_data, u16_t handle,
 				     struct net_buf *buf)
 {
@@ -2048,9 +2048,9 @@ static void auth_payload_timeout_exp(struct pdu_data *pdu_data, u16_t handle,
 
 	ep->handle = sys_cpu_to_le16(handle);
 }
-#endif /* CONFIG_BT_CONTROLLER_LE_PING */
+#endif /* CONFIG_BT_CTLR_LE_PING */
 
-#if defined(CONFIG_BT_CONTROLLER_CHAN_SEL_2)
+#if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 static void le_chan_sel_algo(struct pdu_data *pdu_data, u16_t handle,
 			     struct net_buf *buf)
 {
@@ -2070,9 +2070,9 @@ static void le_chan_sel_algo(struct pdu_data *pdu_data, u16_t handle,
 	sep->handle = sys_cpu_to_le16(handle);
 	sep->chan_sel_algo = radio_le_chan_sel_algo->chan_sel_algo;
 }
-#endif /* CONFIG_BT_CONTROLLER_CHAN_SEL_2 */
+#endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 
-#if defined(CONFIG_BT_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CTLR_PHY)
 static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 				struct net_buf *buf)
 {
@@ -2098,7 +2098,7 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 	sep->tx_phy = find_lsb_set(radio_le_phy_upd_cmplt->tx);
 	sep->rx_phy = find_lsb_set(radio_le_phy_upd_cmplt->rx);
 }
-#endif /* CONFIG_BT_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CONN */
 
 static void encode_control(struct radio_pdu_node_rx *node_rx,
@@ -2114,7 +2114,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		le_advertising_report(pdu_data, b, buf);
 		break;
 
-#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 		le_adv_ext_1M_report(pdu_data, b, buf);
 		break;
@@ -2122,13 +2122,13 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		le_adv_ext_coded_report(pdu_data, b, buf);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-#if defined(CONFIG_BT_CONTROLLER_SCAN_REQ_NOTIFY)
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
 		le_scan_req_received(pdu_data, b, buf);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_SCAN_REQ_NOTIFY */
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
@@ -2143,45 +2143,45 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		le_conn_update_complete(pdu_data, handle, buf);
 		break;
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	case NODE_RX_TYPE_ENC_REFRESH:
 		enc_refresh_complete(pdu_data, handle, buf);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
-#if defined(CONFIG_BT_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CTLR_LE_PING)
 	case NODE_RX_TYPE_APTO:
 		auth_payload_timeout_exp(pdu_data, handle, buf);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_LE_PING */
+#endif /* CONFIG_BT_CTLR_LE_PING */
 
-#if defined(CONFIG_BT_CONTROLLER_CHAN_SEL_2)
+#if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 	case NODE_RX_TYPE_CHAN_SEL_ALGO:
 		le_chan_sel_algo(pdu_data, handle, buf);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_CHAN_SEL_2 */
+#endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 
-#if defined(CONFIG_BT_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CTLR_PHY)
 	case NODE_RX_TYPE_PHY_UPDATE:
 		le_phy_upd_complete(pdu_data, handle, buf);
 		return;
-#endif /* CONFIG_BT_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CTLR_PHY */
 
-#if defined(CONFIG_BT_CONTROLLER_CONN_RSSI)
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	case NODE_RX_TYPE_RSSI:
 		BT_INFO("handle: 0x%04x, rssi: -%d dB.", handle,
 			pdu_data->payload.rssi);
 		return;
-#endif /* CONFIG_BT_CONTROLLER_CONN_RSSI */
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CONTROLLER_ADV_INDICATION)
+#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 	case NODE_RX_TYPE_ADV_INDICATION:
 		BT_INFO("Advertised.");
 		return;
-#endif /* CONFIG_BT_CONTROLLER_ADV_INDICATION */
+#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
-#if defined(CONFIG_BT_CONTROLLER_PROFILE_ISR)
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
 		BT_INFO("l: %d, %d, %d; t: %d, %d, %d.",
 			pdu_data->payload.profile.lcur,
@@ -2191,7 +2191,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 			pdu_data->payload.profile.min,
 			pdu_data->payload.profile.max);
 		return;
-#endif /* CONFIG_BT_CONTROLLER_PROFILE_ISR */
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 	default:
 		LL_ASSERT(0);
@@ -2199,7 +2199,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 	}
 }
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 static void le_ltk_request(struct pdu_data *pdu_data, u16_t handle,
 			   struct net_buf *buf)
 {
@@ -2235,7 +2235,7 @@ static void encrypt_change(u8_t err, u16_t handle,
 	ep->handle = sys_cpu_to_le16(handle);
 	ep->encrypt = !err ? 1 : 0;
 }
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 static void le_remote_feat_complete(u8_t status, struct pdu_data *pdu_data,
 				    u16_t handle, struct net_buf *buf)
@@ -2349,7 +2349,7 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 
 	switch (pdu_data->payload.llctrl.opcode) {
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		le_ltk_request(pdu_data, handle, buf);
 		break;
@@ -2357,7 +2357,7 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		encrypt_change(0x00, handle, buf);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		le_remote_feat_complete(0x00, pdu_data, handle, buf);
@@ -2367,13 +2367,13 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 		remote_version_info(pdu_data, handle, buf);
 		break;
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		encrypt_change(pdu_data->payload.llctrl.ctrldata.reject_ind.
 			       error_code,
 			       handle, buf);
 		break;
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		le_conn_param_req(pdu_data, handle, buf);
@@ -2478,17 +2478,17 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 
 		switch (node_rx->hdr.type) {
 		case NODE_RX_TYPE_REPORT:
-#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
-#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
-#if defined(CONFIG_BT_CONTROLLER_SCAN_REQ_NOTIFY)
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 		case NODE_RX_TYPE_SCAN_REQ:
-#endif /* CONFIG_BT_CONTROLLER_SCAN_REQ_NOTIFY */
-#if defined(CONFIG_BT_CONTROLLER_ADV_INDICATION)
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
+#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 		case NODE_RX_TYPE_ADV_INDICATION:
 #endif
-#if defined(CONFIG_BT_CONTROLLER_PROFILE_ISR)
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 		case NODE_RX_TYPE_PROFILE:
 #endif
 			return HCI_CLASS_EVT_DISCARDABLE;
@@ -2497,22 +2497,22 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 		case NODE_RX_TYPE_TERMINATE:
 		case NODE_RX_TYPE_CONN_UPDATE:
 
-#if defined(CONFIG_BT_CONTROLLER_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 		case NODE_RX_TYPE_ENC_REFRESH:
-#endif /* CONFIG_BT_CONTROLLER_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
-#if defined(CONFIG_BT_CONTROLLER_CONN_RSSI)
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
 		case NODE_RX_TYPE_RSSI:
 #endif
-#if defined(CONFIG_BT_CONTROLLER_LE_PING)
+#if defined(CONFIG_BT_CTLR_LE_PING)
 		case NODE_RX_TYPE_APTO:
 #endif
-#if defined(CONFIG_BT_CONTROLLER_CHAN_SEL_2)
+#if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 		case NODE_RX_TYPE_CHAN_SEL_ALGO:
 #endif
-#if defined(CONFIG_BT_CONTROLLER_PHY)
+#if defined(CONFIG_BT_CTLR_PHY)
 		case NODE_RX_TYPE_PHY_UPDATE:
-#endif /* CONFIG_BT_CONTROLLER_PHY */
+#endif /* CONFIG_BT_CTLR_PHY */
 			return HCI_CLASS_EVT_CONNECTION;
 		default:
 			return -1;

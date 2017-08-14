@@ -12,7 +12,7 @@
  * which can be defined to SoC's GPIO toggle to observe/debug the
  * controller's runtime behavior.
  */
-#ifdef CONFIG_BT_CONTROLLER_DEBUG_PINS
+#ifdef CONFIG_BT_CTLR_DEBUG_PINS
 #define DEBUG_INIT()            do { \
 				NRF_GPIO->DIRSET = 0x03FF0000; \
 				NRF_GPIO->OUTCLR = 0x03FF0000; } \
@@ -199,6 +199,6 @@
 
 #define DEBUG_RADIO_START_M(flag)
 
-#endif /* CONFIG_BT_CONTROLLER_DEBUG_PINS */
+#endif /* CONFIG_BT_CTLR_DEBUG_PINS */
 
 #endif /* _DEBUG_H_ */

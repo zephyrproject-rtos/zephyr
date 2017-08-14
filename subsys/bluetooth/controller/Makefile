@@ -1,4 +1,4 @@
-obj-$(CONFIG_BT_CONTROLLER) += hci/
+obj-$(CONFIG_BT_CTLR) += hci/
 
 obj-$(CONFIG_BT_LL_SW) += util/
 obj-$(CONFIG_BT_LL_SW) += hal/

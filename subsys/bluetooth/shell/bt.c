@@ -2044,10 +2044,10 @@ static const struct shell_cmd bt_commands[] = {
 	{ "br-rfcomm-disconnect", cmd_rfcomm_disconnect, HELP_NONE },
 #endif /* CONFIG_BT_RFCOMM */
 #endif
-#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
 	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
-#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	{ NULL, NULL, NULL }
 };
 

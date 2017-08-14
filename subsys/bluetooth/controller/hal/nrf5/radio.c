@@ -94,11 +94,11 @@ void radio_phy_set(u8_t phy, u8_t flags)
 
 	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
 
-#if defined(CONFIG_BT_CONTROLLER_RADIO_ENABLE_FAST)
+#if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
 	NRF_RADIO->MODECNF0 |= (RADIO_MODECNF0_RU_Fast <<
 				RADIO_MODECNF0_RU_Pos) &
 			       RADIO_MODECNF0_RU_Msk;
-#endif /* CONFIG_BT_CONTROLLER_RADIO_ENABLE_FAST */
+#endif /* CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 }
 
 void radio_tx_power_set(u32_t power)
@@ -140,7 +140,7 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 	extra = 0;
 
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
-	if (!IS_ENABLED(CONFIG_BT_CONTROLLER_DATA_LENGTH_CLEAR) && dc) {
+	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) && dc) {
 		bits_len = 5;
 	}
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
@@ -217,21 +217,21 @@ u32_t radio_tx_ready_delay_get(u8_t phy, u8_t flags)
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 	return 140;
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
-#if defined(CONFIG_BT_CONTROLLER_RADIO_ENABLE_FAST)
+#if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
 	return 40;
 #elif defined(CONFIG_SOC_NRF52840)
 	switch (phy) {
 	default:
-#if defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
 	case BIT(0):
 		return 141; /* floor(140.1 + 1.6) */
 	case BIT(1):
 		return 146; /* floor(145 + 1) */
-#else /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
 	case BIT(0):
 	case BIT(1):
 		return 131; /* floor(129.5 + 1.6) */
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 	case BIT(2):
 		if (flags & 0x01) {
 			return 121; /* floor(119.6 + 2.2) */
@@ -240,11 +240,11 @@ u32_t radio_tx_ready_delay_get(u8_t phy, u8_t flags)
 		}
 	}
 #else /* !CONFIG_SOC_NRF52840 */
-#if defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
 	return 140;
-#else /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
 	return 131; /* floor(129.5 + 1.6) */
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* !CONFIG_SOC_NRF52840 */
 #endif /* CONFIG_SOC_SERIES_NRF52X */
 }
@@ -280,30 +280,30 @@ u32_t radio_rx_ready_delay_get(u8_t phy)
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 	return 138;
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
-#if defined(CONFIG_BT_CONTROLLER_RADIO_ENABLE_FAST)
+#if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
 	return 40;
 #elif defined(CONFIG_SOC_NRF52840)
 	switch (phy) {
 	default:
-#if defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
 	case BIT(0):
 		return 141; /* ceil(140.1 + 0.2) */
 	case BIT(1):
 		return 145; /* ceil(144.6 + 0.2) */
-#else /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
 	case BIT(0):
 	case BIT(1):
 		return 130; /* ceil(129.5 + 0.2) */
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 	case BIT(2):
 		return 121; /* ceil(120 + 0.2) */
 	}
 #else /* !CONFIG_SOC_NRF52840 */
-#if defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
 	return 140;
-#else /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
 	return 130; /* ceil(129.5 + 0.2) */
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* !CONFIG_SOC_NRF52840 */
 #endif /* CONFIG_SOC_SERIES_NRF52X */
 }
@@ -351,11 +351,11 @@ void radio_tx_enable(void)
 
 void radio_disable(void)
 {
-#if !defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_PPI->CHENCLR = PPI_CHEN_CH8_Msk | PPI_CHEN_CH11_Msk;
 	NRF_PPI->TASKS_CHG[0].DIS = 1;
 	NRF_PPI->TASKS_CHG[1].DIS = 1;
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	NRF_RADIO->SHORTS = 0;
 	NRF_RADIO->TASKS_DISABLE = 1;
@@ -421,7 +421,7 @@ void *radio_pkt_scratch_get(void)
 	return _pkt_scratch;
 }
 
-#if !defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 static u8_t sw_tifs_toggle;
 
 static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
@@ -461,33 +461,33 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 	sw_tifs_toggle += 1;
 	sw_tifs_toggle &= 1;
 }
-#endif /* CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* CONFIG_BT_CTLR_TIFS_HW */
 
 void radio_switch_complete_and_rx(u8_t phy_rx)
 {
-#if defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
-#else /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
 	sw_switch(0, 0, 0, phy_rx, 0);
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
 void radio_switch_complete_and_tx(u8_t phy_rx, u8_t flags_rx, u8_t phy_tx,
 				  u8_t flags_tx)
 {
-#if defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
-#else /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
 	sw_switch(1, phy_rx, flags_rx, phy_tx, flags_tx);
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
 void radio_switch_complete_and_disable(void)
@@ -495,9 +495,9 @@ void radio_switch_complete_and_disable(void)
 	NRF_RADIO->SHORTS =
 	    (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
 
-#if !defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_PPI->CHENCLR = PPI_CHEN_CH8_Msk | PPI_CHEN_CH11_Msk;
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
 void radio_rssi_measure(void)
@@ -587,11 +587,11 @@ void radio_tmr_status_reset(void)
 
 void radio_tmr_tifs_set(u32_t tifs)
 {
-#if defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->TIFS = tifs;
-#else /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
 	NRF_TIMER1->CC[sw_tifs_toggle] = tifs;
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
 u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
@@ -632,7 +632,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 		NRF_PPI->CHENSET = PPI_CHEN_CH0_Msk;
 	}
 
-#if !defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_TIMER1->TASKS_CLEAR = 1;
 	NRF_TIMER1->MODE = 0;
 	NRF_TIMER1->PRESCALER = 4;
@@ -652,7 +652,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 
 	NRF_PPI->CHG[0] = PPI_CHG_CH9_Msk | PPI_CHG_CH12_Msk;
 	NRF_PPI->CHG[1] = PPI_CHG_CH10_Msk | PPI_CHG_CH13_Msk;
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder;
 }
@@ -662,10 +662,10 @@ void radio_tmr_stop(void)
 	NRF_TIMER0->TASKS_STOP = 1;
 	NRF_TIMER0->TASKS_SHUTDOWN = 1;
 
-#if !defined(CONFIG_BT_CONTROLLER_TIFS_HW)
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_TIMER1->TASKS_STOP = 1;
 	NRF_TIMER1->TASKS_SHUTDOWN = 1;
-#endif /* !CONFIG_BT_CONTROLLER_TIFS_HW */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
 void radio_tmr_hcto_configure(u32_t hcto)
