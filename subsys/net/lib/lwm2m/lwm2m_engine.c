@@ -591,15 +591,19 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 			continue;
 		}
 
-		len = snprintf(temp, sizeof(temp), "%s</%u>",
-			       (pos > 0) ? "," : "", obj->obj_id);
-		if (pos + len >= size) {
-			/* full buffer -- exit loop */
-			break;
-		}
+		/* Only report <OBJ_ID> when no instance available */
+		if (obj->instance_count == 0) {
+			len = snprintf(temp, sizeof(temp), "%s</%u>",
+				       (pos > 0) ? "," : "", obj->obj_id);
+			if (pos + len >= size) {
+				/* full buffer -- exit loop */
+				break;
+			}
 
-		memcpy(&client_data[pos], temp, len);
-		pos += len;
+			memcpy(&client_data[pos], temp, len);
+			pos += len;
+			continue;
+		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list,
 					     obj_inst, node) {
