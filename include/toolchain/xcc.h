@@ -9,6 +9,13 @@
 
 #include <toolchain/gcc.h>
 
+/* XCC doesn't support __COUNTER__ but this should be good enough */
+#define __COUNTER__ __LINE__
+
+#undef __in_section_unique
+#define __in_section_unique(seg) \
+	__attribute__((section("." STRINGIFY(seg) "." STRINGIFY(__COUNTER__))))
+
 #ifndef __GCC_LINKER_CMD__
 #include <xtensa/config/core.h>
 
