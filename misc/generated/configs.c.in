@@ -5,5 +5,4 @@
 GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)
 
 @GEN_ABS_SYM_LIST@
-
 GEN_ABS_SYM_END
