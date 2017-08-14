@@ -19,13 +19,13 @@
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 
 /* Semaphore on which Ztest thread wait*/
-K_SEM_DEFINE(sema2, 0, NUM_THREAD);
+static K_SEM_DEFINE(sema2, 0, NUM_THREAD);
 
 /* Semaphore on which application threads wait*/
-K_SEM_DEFINE(sema3, 0, NUM_THREAD);
+static K_SEM_DEFINE(sema3, 0, NUM_THREAD);
 
 static int thread_idx;
-struct k_thread t[NUM_THREAD];
+static struct k_thread t[NUM_THREAD];
 
 /* Application thread */
 static void thread_tslice(void *p1, void *p2, void *p3)
