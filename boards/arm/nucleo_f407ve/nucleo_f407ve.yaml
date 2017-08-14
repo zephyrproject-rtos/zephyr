@@ -1,0 +1,7 @@
+identifier: nucleo_f407ve
+name: NUCLEO-F407VE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
