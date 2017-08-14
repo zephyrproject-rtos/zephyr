@@ -140,7 +140,7 @@ static void remove_parents(struct net_if *iface,
 			   struct net_rpl_dag *dag,
 			   u16_t minimum_rank);
 
-static void net_rpl_schedule_dao_now(struct net_rpl_instance *instance);
+static inline void net_rpl_schedule_dao_now(struct net_rpl_instance *instance);
 static void net_rpl_local_repair(struct net_if *iface,
 				 struct net_rpl_instance *instance);
 
