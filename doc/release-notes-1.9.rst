@@ -74,7 +74,11 @@ Networking
 Bluetooth
 *********
 
-* change description
+* Bluetooth Mesh support (all mandatory features and most optional ones)
+* GATT Service Changed Characteristic support
+* IPSP net-app support: a simplified networking API reducing duplication
+  of common tasks an application writer has to go through to connect
+  to the network.
 
 Build and Infrastructure
 ************************
