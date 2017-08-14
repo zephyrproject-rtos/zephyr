@@ -18,7 +18,7 @@
 
 #include "../controller/include/ll.h"
 
-#if defined(CONFIG_BT_CONTROLLER_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define ADV_INTERVAL 0x000020
 #define ADV_TYPE 0x05 /* Adv. Ext. */
 #define OWN_ADDR_TYPE 1
@@ -170,4 +170,4 @@ exit:
 
 	return 0;
 }
-#endif /* CONFIG_BT_CONTROLLER_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */

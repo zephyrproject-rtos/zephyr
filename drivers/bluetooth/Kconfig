@@ -12,7 +12,7 @@
 
 # Controller support is an HCI driver in itself, so these HCI driver
 # options are only applicable if controller support hasn't been enabled.
-if BT && ! BT_CONTROLLER
+if BT && ! BT_CTLR
 
 menu "Bluetooth Drivers"
 
@@ -33,4 +33,4 @@ config BT_NRF51_PM
 
 endmenu
 
-endif # BT && ! BT_CONTROLLER
+endif # BT && ! BT_CTLR

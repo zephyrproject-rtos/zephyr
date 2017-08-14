@@ -132,7 +132,7 @@ config SOC_FLASH_NRF5_DEV_NAME
 
 config SOC_FLASH_NRF5_RADIO_SYNC
 	bool "Nordic nRF5x flash driver synchronized with radio"
-	depends on SOC_FLASH_NRF5 && BT_CONTROLLER
+	depends on SOC_FLASH_NRF5 && BT_CTLR
 	default y
 	help
 	  Enable synchronization between flash memory driver and radio.

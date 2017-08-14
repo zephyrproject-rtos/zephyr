@@ -56,7 +56,7 @@ config BT_HCI_TX_STACK_SIZE
 	default 256 if BT_H4
 	default 256 if BT_H5
 	default 256 if BT_SPI
-	default 640 if BT_CONTROLLER
+	default 640 if BT_CTLR
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
@@ -123,7 +123,7 @@ config BT_HOST_CRYPTO
 	# encryption support using TinyCrypt library if software-based
 	# controller is disabled.
 	bool
-	default y if !BT_CONTROLLER
+	default y if !BT_CTLR
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_SHA256
@@ -145,7 +145,7 @@ if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default 6
-	default BT_CONTROLLER_RX_BUFFERS if BT_CONTROLLER
+	default BT_CTLR_RX_BUFFERS if BT_CTLR
 	range 2 64
 	help
 	  Number of buffers available for incoming ACL data.
@@ -181,7 +181,7 @@ config BT_L2CAP_TX_MTU
 config BT_CONN_TX_MAX
 	int "Maximum number of pending TX buffers"
 	default 7
-	default BT_CONTROLLER_TX_BUFFERS if BT_CONTROLLER
+	default BT_CTLR_TX_BUFFERS if BT_CTLR
 	range 1 128
 	help
 	  Maximum number of pending TX buffers that have not yet

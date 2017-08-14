@@ -31,7 +31,7 @@
 static struct ll_filter wl_filter;
 u8_t wl_anon;
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 #include "common/rpa.h"
 
 /* Whitelist peer list */
@@ -59,13 +59,13 @@ static struct rl_dev {
 	bt_addr_t peer_rpa;
 	bt_addr_t *local_rpa;
 
-} rl[CONFIG_BT_CONTROLLER_RL_SIZE];
+} rl[CONFIG_BT_CTLR_RL_SIZE];
 
-static u8_t peer_irks[CONFIG_BT_CONTROLLER_RL_SIZE][16];
-static u8_t peer_irk_rl_ids[CONFIG_BT_CONTROLLER_RL_SIZE];
+static u8_t peer_irks[CONFIG_BT_CTLR_RL_SIZE][16];
+static u8_t peer_irk_rl_ids[CONFIG_BT_CTLR_RL_SIZE];
 static u8_t peer_irk_count;
 
-static bt_addr_t local_rpas[CONFIG_BT_CONTROLLER_RL_SIZE];
+static bt_addr_t local_rpas[CONFIG_BT_CTLR_RL_SIZE];
 
 BUILD_ASSERT(ARRAY_SIZE(wl) < FILTER_IDX_NONE);
 BUILD_ASSERT(ARRAY_SIZE(rl) < FILTER_IDX_NONE);
@@ -157,7 +157,7 @@ static u32_t wl_remove(bt_addr_le_t *id_addr)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 static void filter_clear(struct ll_filter *filter)
 {
@@ -173,7 +173,7 @@ static void filter_insert(struct ll_filter *filter, int index, u8_t addr_type,
 	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
 }
 
-#if !defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if !defined(CONFIG_BT_CTLR_PRIVACY)
 static u32_t filter_add(struct ll_filter *filter, u8_t addr_type, u8_t *bdaddr)
 {
 	int index;
@@ -216,7 +216,7 @@ static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
 }
 #endif
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 bt_addr_t *ctrl_lrpa_get(u8_t rl_idx)
 {
 	if ((rl_idx >= ARRAY_SIZE(rl)) || !rl[rl_idx].lirk ||
@@ -256,7 +256,7 @@ u8_t ctrl_rl_irk_idx(u8_t irkmatch_id)
 
 	LL_ASSERT(irkmatch_id < peer_irk_count);
 	i = peer_irk_rl_ids[irkmatch_id];
-	LL_ASSERT(i < CONFIG_BT_CONTROLLER_RL_SIZE);
+	LL_ASSERT(i < CONFIG_BT_CTLR_RL_SIZE);
 	LL_ASSERT(rl[i].taken);
 
 	return i;
@@ -276,7 +276,7 @@ bool ctrl_irk_whitelisted(u8_t rl_idx)
 
 struct ll_filter *ctrl_filter_get(bool whitelist)
 {
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (whitelist) {
 		return &wl_filter;
 	}
@@ -298,11 +298,11 @@ u32_t ll_wl_clear(void)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	wl_clear();
 #else
 	filter_clear(&wl_filter);
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 	wl_anon = 0;
 
 	return 0;
@@ -319,11 +319,11 @@ u32_t ll_wl_add(bt_addr_le_t *addr)
 		return 0;
 	}
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	return wl_add(addr);
 #else
 	return filter_add(&wl_filter, addr->type, addr->a.val);
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
 u32_t ll_wl_remove(bt_addr_le_t *addr)
@@ -337,14 +337,14 @@ u32_t ll_wl_remove(bt_addr_le_t *addr)
 		return 0;
 	}
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	return wl_remove(addr);
 #else
 	return filter_remove(&wl_filter, addr->type, addr->a.val);
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 
 static void filter_wl_update(void)
 {
@@ -377,7 +377,7 @@ static void filter_rl_update(void)
 	/* No whitelist: populate filter from rl peers */
 	filter_clear(&rl_filter);
 
-	for (i = 0; i < CONFIG_BT_CONTROLLER_RL_SIZE; i++) {
+	for (i = 0; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		if (rl[i].taken) {
 			filter_insert(&rl_filter, i, rl[i].id_addr_type,
 				      rl[i].id_addr.val);
@@ -421,7 +421,7 @@ u8_t ll_rl_find(u8_t id_addr_type, u8_t *id_addr, u8_t *free)
 		*free = FILTER_IDX_NONE;
 	}
 
-	for (i = 0; i < CONFIG_BT_CONTROLLER_RL_SIZE; i++) {
+	for (i = 0; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		if (LIST_MATCH(rl, i, id_addr_type, id_addr)) {
 			return i;
 		} else if (free && !rl[i].taken && (*free == FILTER_IDX_NONE)) {
@@ -441,7 +441,7 @@ bool ctrl_rl_idx_allowed(u8_t irkmatch_ok, u8_t rl_idx)
 		return true;
 	}
 
-	LL_ASSERT(rl_idx < CONFIG_BT_CONTROLLER_RL_SIZE);
+	LL_ASSERT(rl_idx < CONFIG_BT_CTLR_RL_SIZE);
 	LL_ASSERT(rl[rl_idx].taken);
 
 	return !rl[rl_idx].pirk || rl[rl_idx].dev;
@@ -449,7 +449,7 @@ bool ctrl_rl_idx_allowed(u8_t irkmatch_ok, u8_t rl_idx)
 
 void ll_rl_id_addr_get(u8_t rl_idx, u8_t *id_addr_type, u8_t *id_addr)
 {
-	LL_ASSERT(rl_idx < CONFIG_BT_CONTROLLER_RL_SIZE);
+	LL_ASSERT(rl_idx < CONFIG_BT_CTLR_RL_SIZE);
 	LL_ASSERT(rl[rl_idx].taken);
 
 	*id_addr_type = rl[rl_idx].id_addr_type;
@@ -467,7 +467,7 @@ bool ctrl_rl_addr_allowed(u8_t id_addr_type, u8_t *id_addr, u8_t *rl_idx)
 		return true;
 	}
 
-	for (i = 0; i < CONFIG_BT_CONTROLLER_RL_SIZE; i++) {
+	for (i = 0; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		if (rl[i].taken && (rl[i].id_addr_type == id_addr_type)) {
 			u8_t *addr = rl[i].id_addr.val;
 			for (j = 0; j < BDADDR_SIZE; j++) {
@@ -572,7 +572,7 @@ static void rpa_adv_refresh(void)
 	pdu->type = prev->type;
 	pdu->rfu = 0;
 
-	if (IS_ENABLED(CONFIG_BT_CONTROLLER_CHAN_SEL_2)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		pdu->chan_sel = prev->chan_sel;
 	} else {
 		pdu->chan_sel = 0;
@@ -593,7 +593,7 @@ static void rpa_adv_refresh(void)
 
 static void rl_clear(void)
 {
-	for (int i = 0; i < CONFIG_BT_CONTROLLER_RL_SIZE; i++) {
+	for (int i = 0; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		rl[i].taken = 0;
 	}
 
@@ -620,7 +620,7 @@ void ll_rl_rpa_update(bool timeout)
 		   (now - rpa_last_ms >= rpa_timeout_ms);
 	BT_DBG("");
 
-	for (i = 0; i < CONFIG_BT_CONTROLLER_RL_SIZE; i++) {
+	for (i = 0; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		if ((rl[i].taken) && (all || !rl[i].rpas_ready)) {
 
 			if (rl[i].pirk) {
@@ -700,7 +700,7 @@ void ll_adv_scan_state_cb(u8_t bm)
 
 u32_t ll_rl_size_get(void)
 {
-	return CONFIG_BT_CONTROLLER_RL_SIZE;
+	return CONFIG_BT_CTLR_RL_SIZE;
 }
 
 u32_t ll_rl_clear(void)
@@ -786,7 +786,7 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 			if (pj && pi != pj) {
 				memcpy(peer_irks[pi], peer_irks[pj], 16);
 				for (k = 0;
-				     k < CONFIG_BT_CONTROLLER_RL_SIZE;
+				     k < CONFIG_BT_CTLR_RL_SIZE;
 				     k++) {
 
 					if (rl[k].taken && rl[k].pirk &&
@@ -894,13 +894,13 @@ u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)
 	return 0;
 }
 
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 void ll_filter_reset(bool init)
 {
 	wl_anon = 0;
 
-#if defined(CONFIG_BT_CONTROLLER_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	wl_clear();
 
 	rl_enable = 0;
@@ -914,6 +914,6 @@ void ll_filter_reset(bool init)
 	}
 #else
 	filter_clear(&wl_filter);
-#endif /* CONFIG_BT_CONTROLLER_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 }
