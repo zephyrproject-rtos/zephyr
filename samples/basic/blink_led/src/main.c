@@ -29,7 +29,7 @@
 #elif defined(CONFIG_BOARD_HEXIWEAR_K64)
 #define PWM_DRIVER	GREEN_PWM_NAME
 #define PWM_CHANNEL	GREEN_PWM_CHANNEL
-#else
+#elif !defined(CONFIG_PWM)
 #error "Choose supported PWM driver"
 #endif
 

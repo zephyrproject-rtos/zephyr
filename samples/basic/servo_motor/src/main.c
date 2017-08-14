@@ -14,9 +14,12 @@
 #include <misc/printk.h>
 #include <device.h>
 #include <pwm.h>
+#include <board.h>
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
 #define PWM_DEV CONFIG_PWM_QMSI_DEV_NAME
+#elif defined(CONFIG_PWM)
+#define PWM_DEV PWM_DRIVER
 #else
 #error "Choose supported board or add new board for the application"
 #endif
