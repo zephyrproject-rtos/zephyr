@@ -209,7 +209,7 @@ static inline int net_tcp_unregister(struct net_conn_handle *handle)
  *
  * @return Return a random TCP sequence number
  */
-inline u32_t tcp_init_isn(void)
+static inline u32_t tcp_init_isn(void)
 {
 	/* Randomise initial seq number */
 	return sys_rand32_get();
