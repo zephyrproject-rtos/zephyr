@@ -15,7 +15,7 @@
 #include <arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
-#include <toolchain/gcc.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
