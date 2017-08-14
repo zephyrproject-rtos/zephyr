@@ -9,5 +9,4 @@ if(CONFIG_MDEF)
 
   target_sources(zephyr PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configs.c)
 
-  include(${CMAKE_CURRENT_LIST_DIR}/sysgen/CMakeLists.txt)
 endif()
