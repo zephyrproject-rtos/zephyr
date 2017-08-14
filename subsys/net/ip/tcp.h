@@ -215,7 +215,7 @@ static inline u32_t tcp_init_isn(void)
 	return sys_rand32_get();
 }
 
-const char * const net_tcp_state_str(enum net_tcp_state state);
+const char *net_tcp_state_str(enum net_tcp_state state);
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_change_state(struct net_tcp *tcp, enum net_tcp_state new_state);
