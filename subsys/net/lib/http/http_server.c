@@ -304,6 +304,12 @@ int http_response_send_data(struct http_server_ctx *ctx,
 
 	pkt = NULL;
 
+	/* We must let the system to send the packet, otherwise TCP might
+	 * timeout before the packet is actually sent. This is easily seen
+	 * if the application calls this functions many times in a row.
+	 */
+	k_yield();
+
 exit_routine:
 	if (pkt) {
 		net_pkt_unref(pkt);
