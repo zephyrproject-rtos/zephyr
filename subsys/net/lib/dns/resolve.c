@@ -550,7 +550,7 @@ static void cb_recv(struct net_context *net_ctx,
 		    void *user_data)
 {
 	struct dns_resolve_context *ctx = user_data;
-	struct dns_addrinfo info = { 0 };
+	struct dns_addrinfo info = { };
 	struct net_buf *dns_cname = NULL;
 	struct net_buf *dns_data = NULL;
 	u16_t dns_id = 0;

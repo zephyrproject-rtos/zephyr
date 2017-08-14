@@ -2782,7 +2782,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 
 static enum net_verdict handle_dio(struct net_pkt *pkt)
 {
-	struct net_rpl_dio dio = { 0 };
+	struct net_rpl_dio dio = { };
 	struct net_buf *frag;
 	struct net_nbr *nbr;
 	u16_t offset, pos;
