@@ -633,6 +633,23 @@ int net_context_unref(struct net_context *context)
 
 #if defined(CONFIG_NET_TCP)
 	if (context->tcp) {
+		int i;
+
+		/* Clear the backlog for this TCP context. */
+		for (i = 0; i < CONFIG_NET_TCP_BACKLOG_SIZE; i++) {
+			if (tcp_backlog[i].tcp != context->tcp) {
+				continue;
+			}
+
+			if (k_delayed_work_cancel(&tcp_backlog[i].ack_timer) ==
+							    -EINPROGRESS) {
+				tcp_backlog[i].cancelled = true;
+			} else {
+				memset(&tcp_backlog[i], 0,
+				       sizeof(struct tcp_backlog_entry));
+			}
+		}
+
 		net_tcp_release(context->tcp);
 		context->tcp = NULL;
 	}
