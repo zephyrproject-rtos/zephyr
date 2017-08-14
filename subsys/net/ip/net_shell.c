@@ -657,6 +657,57 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 
 	(*count)++;
 }
+
+#if defined(CONFIG_NET_DEBUG_TCP)
+static void tcp_sent_list_cb(struct net_tcp *tcp, void *user_data)
+{
+	int *printed = user_data;
+	struct net_pkt *pkt;
+	struct net_pkt *tmp;
+
+	if (sys_slist_is_empty(&tcp->sent_list)) {
+		return;
+	}
+
+	if (!*printed) {
+		printk("\nTCP packets waiting ACK:\n");
+		printk("TCP             net_pkt[ref/totlen]->net_buf[ref/len]...\n");
+	}
+
+	printk("%p      ", tcp);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, pkt, tmp,
+					  sent_list) {
+		struct net_buf *frag = pkt->frags;
+
+		if (!*printed) {
+			printk("%p[%d/%zd]", pkt, pkt->ref,
+			       net_pkt_get_len(pkt));
+			*printed = true;
+		} else {
+			printk("                %p[%d/%zd]", pkt, pkt->ref,
+			       net_pkt_get_len(pkt));
+		}
+
+		if (frag) {
+			printk("->");
+		}
+
+		while (frag) {
+			printk("%p[%d/%d]", frag, frag->ref, frag->len);
+
+			frag = frag->frags;
+			if (frag) {
+				printk("->");
+			}
+		}
+
+		printk("\n");
+	}
+
+	*printed = true;
+}
+#endif /* CONFIG_NET_DEBUG_TCP */
 #endif
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
@@ -1022,6 +1073,12 @@ int net_shell_cmd_conn(int argc, char *argv[])
 
 	if (count == 0) {
 		printk("No TCP connections\n");
+	} else {
+#if defined(CONFIG_NET_DEBUG_TCP)
+		/* Print information about pending packets */
+		count = 0;
+		net_tcp_foreach(tcp_sent_list_cb, &count);
+#endif /* CONFIG_NET_DEBUG_TCP */
 	}
 #endif
 
