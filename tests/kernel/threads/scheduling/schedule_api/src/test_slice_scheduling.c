@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE 256
+#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 /* nrf 51 has lower ram, so creating less number of threads */
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_STM32F3X)
 	#define NUM_THREAD 3
