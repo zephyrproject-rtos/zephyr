@@ -12,6 +12,7 @@
 #define __CRC16_H
 
 #include <zephyr/types.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 /**
@@ -25,11 +26,12 @@
  * @param polynomial The polynomial to use omitting the leading x^16
  *        coefficient
  * @param initial_value Initial value for the CRC computation
+ * @param pad Adds padding with zeros at the end of input bytes
  *
  * @return The computed CRC16 value
  */
 u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
-	       u16_t initial_value);
+	    u16_t initial_value, bool pad);
 
 /**
  * @brief Compute CCITT variant of CRC 16
@@ -44,7 +46,7 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
  */
 static inline u16_t crc16_ccitt(const u8_t *src, size_t len)
 {
-	return crc16(src, len, 0x1021, 0xffff);
+	return crc16(src, len, 0x1021, 0xffff, true);
 }
 
 /**
@@ -60,7 +62,7 @@ static inline u16_t crc16_ccitt(const u8_t *src, size_t len)
  */
 static inline u16_t crc16_ansi(const u8_t *src, size_t len)
 {
-	return crc16(src, len, 0x8005, 0xffff);
+	return crc16(src, len, 0x8005, 0xffff, true);
 }
 
 #endif
