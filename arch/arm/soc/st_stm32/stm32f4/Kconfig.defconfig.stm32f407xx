@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32F407XG
+if SOC_STM32F407XG || SOC_STM32F407XE
 
 config SOC
 	string
