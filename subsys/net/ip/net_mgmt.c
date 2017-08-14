@@ -200,6 +200,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 				struct net_if **event_iface,
 				int timeout)
 {
+#ifndef __XCC__
 	struct mgmt_event_wait sync_data = {
 		.sync_call = _K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
 	};
@@ -207,8 +208,16 @@ static int mgmt_event_wait_call(struct net_if *iface,
 		.sync_call = &sync_data.sync_call,
 		.event_mask = mgmt_event_mask | NET_MGMT_SYNC_EVENT_BIT,
 	};
+#endif
 	int ret;
+#ifdef __XCC__
+	struct mgmt_event_wait sync_data = {};
+	struct net_mgmt_event_callback sync = {};
 
+	k_sem_init(&sync_data.sync_call, 0, 1);
+	sync.sync_call = &sync_data.sync_call;
+	sync.event_mask = mgmt_event_mask | NET_MGMT_SYNC_EVENT_BIT;
+#endif
 	if (iface) {
 		sync_data.iface = iface;
 	}
