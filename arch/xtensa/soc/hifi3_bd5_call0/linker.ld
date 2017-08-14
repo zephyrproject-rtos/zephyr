@@ -305,13 +305,7 @@ SECTIONS
     _data_start = ABSOLUTE(.);
     *(.data)
     *(.data.*)
-	KEEP(*(.isr_irq*))
-	/* sections for IRQ0-9 */
-	KEEP(*(SORT(.gnu.linkonce.d.isr_irq[0-9])))
-	/* sections for IRQ10-99 */
-	KEEP(*(SORT(.gnu.linkonce.d.isr_irq[0-9][0-9])))
-	/* sections for IRQ100-999 */
-	KEEP(*(SORT(.gnu.linkonce.d.isr_irq[0-9][0-9][0-9])))
+    KEEP(*(SW_ISR_TABLE))
     *(.gnu.linkonce.d.*)
     KEEP(*(.gnu.linkonce.d.*personality*))
     *(.data1)
