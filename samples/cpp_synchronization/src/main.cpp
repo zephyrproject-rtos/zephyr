@@ -133,7 +133,7 @@ void coop_thread_entry(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	struct k_timer timer;
 
