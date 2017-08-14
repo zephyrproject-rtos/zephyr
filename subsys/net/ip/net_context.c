@@ -34,6 +34,13 @@
 #include "tcp.h"
 #include "net_stats.h"
 
+#ifndef EPFNOSUPPORT
+/* Some old versions of newlib haven't got this defined in errno.h,
+ * Just use EPROTONOSUPPORT in this case
+ */
+#define EPFNOSUPPORT EPROTONOSUPPORT
+#endif
+
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
 #if defined(CONFIG_NET_TCP_ACK_TIMEOUT)
