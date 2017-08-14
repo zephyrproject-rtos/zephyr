@@ -5,7 +5,7 @@ target_include_directories(subsys__bluetooth INTERFACE ${CMAKE_CURRENT_SOURCE_DI
 
 add_subdirectory(common)
 add_subdirectory_ifdef(CONFIG_BT_HCI host)
-add_subdirectory_ifdef(CONFIG_BT_CONTROLLER controller)
+add_subdirectory_ifdef(CONFIG_BT_CTLR controller)
 
 # TODO: Add shell
 
