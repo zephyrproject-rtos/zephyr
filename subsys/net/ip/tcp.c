@@ -641,7 +641,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 	return 0;
 }
 
-const char * const net_tcp_state_str(enum net_tcp_state state)
+const char *net_tcp_state_str(enum net_tcp_state state)
 {
 #if defined(CONFIG_NET_DEBUG_TCP)
 	switch (state) {
