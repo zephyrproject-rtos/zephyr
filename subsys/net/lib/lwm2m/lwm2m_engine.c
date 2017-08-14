@@ -56,6 +56,26 @@
 
 #define DISCOVER_PREFACE	"</.well-known/core>;ct=40"
 
+/*
+ * TODO: to implement a way for clients to specify alternate path
+ * via Kconfig (LwM2M specification 8.2.2 Alternate Path)
+ *
+ * For now, in order to inform server we support JSON format, we have to
+ * report 'ct=11543' to the server. '</>' is required in order to append
+ * content attribute. And resource type attribute is appended because of
+ * Eclipse wakaama will reject the registration when 'rt="oma.lwm2m"' is
+ * missing.
+ */
+
+#define RESOURCE_TYPE		";rt=\"oma.lwm2m\""
+
+#if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
+#define REG_PREFACE		"</>" RESOURCE_TYPE \
+				";ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
+#else
+#define REG_PREFACE		""
+#endif
+
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
 struct observe_node {
@@ -584,6 +604,10 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 	u8_t temp[32];
 	u16_t pos = 0;
 	int len;
+
+	/* Add resource-type/content-type to the registration message */
+	memcpy(client_data, REG_PREFACE, sizeof(REG_PREFACE) - 1);
+	pos += sizeof(REG_PREFACE) - 1;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
 		/* Security obj MUST NOT be part of registration message */
