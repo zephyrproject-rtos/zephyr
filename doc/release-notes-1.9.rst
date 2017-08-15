@@ -14,7 +14,7 @@ Major enhancements planned with this release include:
 * BSD Socket Support
 * Expand Device Tree support to more architectures
 * BLE Mesh
-* Full Bluetooth 5.0 Support
+* Bluetooth 5.0 Support (all features except Advertising Extensions)
 * Expand LLVM Support to more architectures
 * Revamp Testsuite, Increase Coverage
 * Zephyr SDK NG
