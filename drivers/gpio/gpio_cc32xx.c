@@ -18,14 +18,14 @@
 #include <inc/hw_gpio.h>
 #include <driverlib/rom.h>
 #include <driverlib/pin.h>
-#undef __GPIO_H__  /* Zephyr and CC3200SDK gpio.h conflict */
+#undef __GPIO_H__  /* Zephyr and CC32XX SDK gpio.h conflict */
 #include <driverlib/gpio.h>
 #include <driverlib/rom_map.h>
 #include <driverlib/interrupt.h>
 
 #include "gpio_utils.h"
 
-/* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC3200 SDK */
+/* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC32XX SDK */
 #define EXCEPTION_GPIOA0  0  /* (INT_GPIOA0 - 16) = (16-16) */
 #define EXCEPTION_GPIOA1  1  /* (INT_GPIOA1 - 16) = (17-16) */
 #define EXCEPTION_GPIOA2  2  /* (INT_GPIOA2 - 16) = (18-16) */
