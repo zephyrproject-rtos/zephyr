@@ -1,0 +1,6 @@
+identifier: xt-sim_XRC_FUSION_AON_ALL_LM
+name: XT Simulator XRC_FUSION_AON_ALL_LM
+type: sim
+arch: xtensa
+toolchain:
+  - xcc

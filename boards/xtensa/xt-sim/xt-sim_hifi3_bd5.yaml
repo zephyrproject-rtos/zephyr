@@ -1,0 +1,6 @@
+identifier: xt-sim_hifi3_bd5
+name: XT Simulator hifi3_bd5
+type: sim
+arch: xtensa
+toolchain:
+  - xcc
