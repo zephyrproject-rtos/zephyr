@@ -49,7 +49,7 @@ config I2C_NRF5_GPIO_SCA_PIN
 
 config I2C_0_DEFAULT_CFG
 	# Standard speed, master
-	default 0x11
+	default 0x12
 
 endif
 
