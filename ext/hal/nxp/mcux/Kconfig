@@ -30,6 +30,12 @@ config HAS_MCUX_FTM
 	help
 	  Set if the FlexTimer (FTM) module is present in the SoC.
 
+config HAS_MCUX_IGPIO
+	bool
+	default n
+	help
+	  Set if the iMX GPIO (IGPIO) module is present in the SoC.
+
 config HAS_MCUX_LPSCI
 	bool
 	default n
