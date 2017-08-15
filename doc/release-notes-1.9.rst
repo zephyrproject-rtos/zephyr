@@ -79,6 +79,12 @@ Bluetooth
 * IPSP net-app support: a simplified networking API reducing duplication
   of common tasks an application writer has to go through to connect
   to the network.
+* BLE controller qualification-ready, with all required tests passing
+* Controller-based privacy (including all optional features)
+* Extended Scanner Filter Policies support in the controller
+* Controller roles (Advertiser, Scanner, Master and Slave) separation in
+  source code, conditionally includable
+* Flash access cooperation with BLE radio activity
 
 Build and Infrastructure
 ************************
