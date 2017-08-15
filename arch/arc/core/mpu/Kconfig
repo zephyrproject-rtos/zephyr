@@ -1,0 +1,38 @@
+# Kconfig - Memory Protection Unit (MPU) configuration options
+
+#
+# Copyright (c) 2017 Synopsys
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config ARC_MPU_VER
+	int
+	prompt "ARC MPU version"
+	range 2 4
+	default 2
+	help
+	ARC MPU has several versions. For MPU v2, the minimum region is 2048 bytes;
+	For MPU v3, the minimum region is 32 bytes
+
+config ARC_CORE_MPU
+	bool "ARC Core MPU functionalities"
+	depends on CPU_HAS_MPU
+	select THREAD_STACK_INFO
+	default n
+	help
+	  ARC Core MPU functionalities
+
+config MPU_STACK_GUARD
+	bool "Thread Stack Guards"
+	depends on ARC_CORE_MPU
+	default n
+	help
+	  Enable Thread Stack Guards via MPU
+
+config ARC_MPU
+	bool "ARC MPU Support"
+	depends on CPU_HAS_MPU
+	select ARC_CORE_MPU
+	default n
+	help
+	  Target has ARC MPU (currently only works for EMSK 2.2 ARCEM7D)

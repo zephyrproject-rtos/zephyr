@@ -110,6 +110,13 @@ SECTION_FUNC(TEXT, __swap)
 
 	_load_callee_saved_regs
 
+#ifdef CONFIG_MPU_STACK_GUARD
+	push_s r2
+	mov r0, r2
+	bl configure_mpu_stack_guard
+	pop_s r2
+#endif
+
 	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
 
 	breq r3, _CAUSE_RIRQ, _swap_return_from_rirq
