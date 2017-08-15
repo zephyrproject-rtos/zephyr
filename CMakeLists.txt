@@ -105,6 +105,7 @@ ld_option(-nostartfiles)
 ld_option(-nodefaultlibs)
 ld_option(-nostdlib)
 ld_option(-static)
+ld_option(-no-pie)
 
 if(CONFIG_READABLE_ASM)
   cc_option(-fno-reorder-blocks)
@@ -113,6 +114,8 @@ if(CONFIG_READABLE_ASM)
 endif()
 
 cc_option(-fno-asynchronous-unwind-tables)
+cc_option(-fno-pie)
+cc_option(-fno-pic)
 
 if(CONFIG_STACK_CANARIES)
   cc_option(-fstack-protector-all)
