@@ -108,6 +108,11 @@ static bool net_if_tx(struct net_if *iface)
 #if defined(CONFIG_NET_STATISTICS)
 		pkt_len = net_pkt_get_len(pkt);
 #endif
+
+		if (IS_ENABLED(CONFIG_NET_TCP)) {
+			net_pkt_set_sent(pkt, true);
+		}
+
 		status = api->send(iface, pkt);
 	} else {
 		/* Drop packet if interface is not up */
@@ -116,6 +121,10 @@ static bool net_if_tx(struct net_if *iface)
 	}
 
 	if (status < 0) {
+		if (IS_ENABLED(CONFIG_NET_TCP)) {
+			net_pkt_set_sent(pkt, false);
+		}
+
 		net_pkt_unref(pkt);
 	} else {
 		net_stats_update_bytes_sent(pkt_len);

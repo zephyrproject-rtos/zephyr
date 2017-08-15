@@ -745,8 +745,6 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
-	net_pkt_set_sent(pkt, true);
-
 	/* As we modified the header, we need to write it back.
 	 */
 	net_tcp_set_hdr(pkt, tcp_hdr);
