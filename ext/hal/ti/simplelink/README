@@ -5,6 +5,8 @@ SimpleLink SoCs.
 For an explanation of the SimpleLink family SDK directory structure, see:
 http://dev.ti.com/tirex/content/simplelink_cc13x0_sdk_1_30_00_06/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
 
+1. CC3220 SDK
+
 The current version supported in Zephyr is the SimpleLink CC3220 SDK
 1.50.00.06, downloaded from:
 
@@ -39,3 +41,22 @@ compiled in the Kbuild file:
 Setting CONFIG_SIMPLELINK_HOST_DRIVER=y builds the SimpleLink Host
 Driver, which communicates over dedicated SPI to the
 network coprocessor.
+
+2. MSP432 SDK
+
+The current version supported in Zephyr is MSP432 SDK V1.50.00.12, downloaded
+from:
+
+        http://www.ti.com/tool/simplelink-msp432-sdk
+
+Files in source/ti/devices/msp432p4xx/driverlib/ and inc/ are copied from
+a Linux SDK installation (without modification).
+
+TI provides the driver library functions burned into ROM at the factory,
+or updated via a service pack patch, thus saving application code space.
+
+Calling driverlib APIs prefixed by "MAP_" will vector to those functions
+already existing in ROM.
+
+After setting CONFIG_HAS_MSP432P4XXSDK=y in Kconfig, most of the
+peripheral driver library functions will be accessible from ROM.
