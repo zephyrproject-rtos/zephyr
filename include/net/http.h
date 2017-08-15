@@ -107,9 +107,6 @@ enum http_final_call {
 #define HTTP_STATUS_STR_SIZE	32
 #endif
 
-/* Default network activity timeout in seconds */
-#define HTTP_NETWORK_TIMEOUT	K_SECONDS(20)
-
 /* It seems enough to hold 'Content-Length' and its value */
 #define HTTP_CONTENT_LEN_SIZE	48
 
