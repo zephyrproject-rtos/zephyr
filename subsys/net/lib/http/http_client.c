@@ -49,6 +49,9 @@
 #define HTTP_CONTENT_TYPE  "Content-Type: "
 #define HTTP_CONT_LEN_SIZE 64
 
+/* Default network activity timeout in seconds */
+#define HTTP_NETWORK_TIMEOUT	K_SECONDS(CONFIG_HTTP_CLIENT_NETWORK_TIMEOUT)
+
 struct waiter {
 	struct http_client_ctx *ctx;
 	struct k_sem wait;

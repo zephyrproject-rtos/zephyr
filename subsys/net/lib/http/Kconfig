@@ -48,6 +48,14 @@ config HTTP_CLIENT
 	help
 	Enables HTTP client routines
 
+config HTTP_CLIENT_NETWORK_TIMEOUT
+	int "Default network activity timeout in seconds"
+	default 20
+	depends on HTTP_CLIENT
+	help
+	Default network activity timeout in seconds.  This setting is used
+	for TCP connection timeout.
+
 config HTTP_PARSER
 	bool "HTTP Parser support"
 	default n
