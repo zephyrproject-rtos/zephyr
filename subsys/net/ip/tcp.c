@@ -185,7 +185,10 @@ static void tcp_retry_expired(struct k_timer *timer)
 		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_pkt, sent_list);
 
-		do_ref_if_needed(tcp, pkt);
+		if (net_pkt_sent(pkt)) {
+			do_ref_if_needed(tcp, pkt);
+			net_pkt_set_sent(pkt, false);
+		}
 
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
 			NET_DBG("[%p] pkt %p send failed", tcp, pkt);
