@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.7)
 set(APPLICATION_SOURCE_DIR ${PROJECT_SOURCE_DIR} CACHE PATH "Application Source Directory")
 set(APPLICATION_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE PATH "Application Binary Directory")
 
-project(Zephyr-Kernel VERSION 1.7.99)
+project(Zephyr-Kernel VERSION 1.8.99)
 enable_language(C CXX ASM)
 
 # Do not generate make install target.
