@@ -4,3 +4,5 @@ type: sim
 arch: xtensa
 toolchain:
   - xcc
+testing:
+  default: true
