@@ -923,8 +923,6 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		 * pipe is uncorked again.
 		 */
 		if (ctx->tcp->flags & NET_TCP_RETRYING) {
-			struct net_pkt *pkt;
-
 			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, pkt,
 						     sent_list) {
 				if (net_pkt_sent(pkt)) {
