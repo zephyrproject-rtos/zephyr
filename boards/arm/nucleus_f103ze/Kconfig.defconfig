@@ -1,0 +1,13 @@
+# Kconfig - STM32 MINI A15 board configuration
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEUS_F103ZE
+
+config BOARD
+	default nucleus_f103ze
+
+endif # BOARD_NUCLEUS_F103ZE

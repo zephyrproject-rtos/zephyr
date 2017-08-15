@@ -48,6 +48,62 @@
 
 		};
 
+                gpioa: gpio@40010800 {
+                        compatible = "st,stm32-gpio";
+			gpio-controller;
+                        reg = <0x40010800 0x400>;
+			interrupts = <59 2>;
+                        label = "GPIOA";
+                };
+
+                gpiob: gpio@40010C00 {
+                        compatible = "st,stm32-gpio";
+                        gpio-controller;
+                        reg = <0x40010C00 0x400>;
+                        interrupts = <60 2>;
+                        label = "GPIOB";
+                };
+
+                gpioc: gpio@40011000 {
+                        compatible = "st,stm32-gpio";
+                        gpio-controller;
+                        reg = <0x40011000 0x400>;
+                        interrupts = <61 2>;
+                        label = "GPIOC";
+                };
+
+                gpiod: gpio@40011400 {
+                        compatible = "st,stm32-gpio";
+                        gpio-controller;
+                        reg = <0x40011400 0x400>;
+                        interrupts = <62 2>;
+                        label = "GPIOD";
+                };
+
+                gpioe: gpio@40011800 {
+                        compatible = "st,stm32-gpio";
+                        gpio-controller;
+                        reg = <0x40011800 0x400>;
+                        interrupts = <63 2>;
+                        label = "GPIOE";
+                };
+
+                gpiof: gpio@40011C00 {
+                        compatible = "st,stm32-gpio";
+                        gpio-controller;
+                        reg = <0x40011C00 0x400>;
+                        interrupts = <64 2>;
+                        label = "GPIOF";
+                };
+
+                gpiog: gpio@40012000 {
+                        compatible = "st,stm32-gpio";
+                        gpio-controller;
+                        reg = <0x40012000 0x400>;
+                        interrupts = <65 2>;
+                        label = "GPIOG";
+                };
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
