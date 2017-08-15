@@ -1677,15 +1677,18 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	u8_t info_len;
 	u8_t rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t rl_idx, direct;
+	u8_t rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	u8_t direct;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 	u8_t *prssi;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT)) {
 		return;
 	}
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	direct = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 		   offsetof(struct pdu_adv, payload) + adv->len + 2];
 
@@ -1697,7 +1700,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	if (!(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
@@ -1715,10 +1718,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 		 offsetof(struct pdu_adv, payload) + adv->len];
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		   offsetof(struct pdu_adv, payload) + adv->len + 1];
-
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	if (direct) {
 		struct bt_hci_evt_le_direct_adv_report *drp;
 		struct bt_hci_evt_le_direct_adv_info *dir_info;
@@ -1732,6 +1732,9 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 
 		dir_info->evt_type = c_adv_type[PDU_ADV_TYPE_DIRECT_IND];
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+			   offsetof(struct pdu_adv, payload) + adv->len + 1];
 		if (rl_idx < ll_rl_size_get()) {
 			/* Store identity address */
 			ll_rl_id_addr_get(rl_idx, &dir_info->addr.type,
@@ -1739,6 +1742,9 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 			/* Mark it as identity address from RPA (0x02, 0x03) */
 			dir_info->addr.type += 2;
 		} else {
+#else
+		if (1) {
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 			dir_info->addr.type = adv->tx_addr;
 			memcpy(&dir_info->addr.a.val[0],
 			       &adv->payload.direct_ind.adv_addr[0],
@@ -1753,7 +1759,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
 		   sizeof(*prssi);
@@ -1766,6 +1772,8 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	adv_info->evt_type = c_adv_type[adv->type];
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+	rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		   offsetof(struct pdu_adv, payload) + adv->len + 1];
 	if (rl_idx < ll_rl_size_get()) {
 		/* Store identity address */
 		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,

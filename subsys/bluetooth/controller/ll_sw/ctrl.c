@@ -1145,13 +1145,15 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 		(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	/* save the resolving list index */
+	/* save the resolving list index. */
 	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
 			     pdu_adv_rx->len + 1] = rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	/* save the directed adv report flag */
 	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
 			     pdu_adv_rx->len + 2] = dir_report ? 1 : 0;
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 	packet_rx_enqueue();
 

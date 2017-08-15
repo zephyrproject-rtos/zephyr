@@ -123,7 +123,8 @@ config BT_CTLR_PRIVACY
 	default y
 	select BT_RPA
 	help
-	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature in the Controller.
+	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
+	  in the Controller.
 
 config BT_CTLR_RL_SIZE
 	prompt "LE Controller-based Privacy Resolving List size"
@@ -134,6 +135,13 @@ config BT_CTLR_RL_SIZE
 	help
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
+
+config BT_CTLR_EXT_SCAN_FP
+	bool "LE Extended Scanner Filter Policies"
+	default y
+	help
+	  Enable support for Bluetooth v4.2 LE Extended Scanner Filter Policies
+	  in the Controller.
 
 config BT_CTLR_DATA_LENGTH
 	bool "Data Length Update"
