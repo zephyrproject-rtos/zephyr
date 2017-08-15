@@ -158,7 +158,7 @@ cc_option(-fno-strict-overflow)
 
 cc_option_ifdef(CONFIG_STACK_USAGE -fstack-usage)
 
-# disallow errors like 'EXPORT_GPL(foo);' with missing header
+# Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
 cc_option(-Werror=implicit-int)
 
 # Prohibit date/time macros, which would make the build non-deterministic
