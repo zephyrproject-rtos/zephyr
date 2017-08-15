@@ -3,7 +3,6 @@ name: QEMU Emulation for Xtensa
 type: qemu
 arch: xtensa
 toolchain:
-  - xcc
   - zephyr
 testing:
-          default: true
+  default: true
