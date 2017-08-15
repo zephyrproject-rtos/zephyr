@@ -5,4 +5,6 @@ ccflags-y +=-I$(srctree)/drivers
 
 asflags-y := ${ccflags-y}
 
-obj-y = soc.o soc_config.o
+obj-y += soc.o soc_config.o
+
+obj-$(CONFIG_ARC_MPU_ENABLE) += arc_mpu_regions.o

@@ -186,6 +186,21 @@ config FP_SHARING
 
 endmenu
 
+menu "ARC MPU Options"
+depends on CPU_HAS_MPU
+
+config ARC_MPU_ENABLE
+	bool "Enable MPU"
+	depends on CPU_HAS_MPU
+	select ARC_MPU
+	default n
+	help
+	  Enable MPU
+
+source "arch/arc/core/mpu/Kconfig"
+
+endmenu
+
 config ICCM_SIZE
 	int "ICCM Size in kB"
 	help
