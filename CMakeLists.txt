@@ -171,7 +171,6 @@ cc_option(-Werror=implicit-int)
 # ar_option(D)
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
-# TODO are these options only for linking zephyr?
 ld_option(${LINKERFLAGPREFIX},-X)
 ld_option(${LINKERFLAGPREFIX},-N)
 ld_option(${LINKERFLAGPREFIX},--gc-sections)
