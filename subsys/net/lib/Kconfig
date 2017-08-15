@@ -6,8 +6,6 @@
 
 menu "Network Protocols"
 
-source "subsys/net/lib/sockets/Kconfig"
-
 source "subsys/net/lib/zoap/Kconfig"
 
 source "subsys/net/lib/dns/Kconfig"
@@ -20,8 +18,10 @@ source "subsys/net/lib/lwm2m/Kconfig"
 
 endmenu
 
-menu "Network Applications"
+menu "Network Application Support"
 
 source "subsys/net/lib/app/Kconfig"
+
+source "subsys/net/lib/sockets/Kconfig"
 
 endmenu
