@@ -1,4 +1,5 @@
-ccflags-$(CONFIG_HAS_CC3220SDK) += -D$(COMPILER)
+ifeq ($(CONFIG_HAS_CC3220SDK),y)
+ccflags-y += -D$(COMPILER)
 # Need to build prcm, utils and pin, which are not in ROM
 obj-$(CONFIG_HAS_CC3220SDK) += source/ti/devices/cc32xx/driverlib/utils.o
 obj-$(CONFIG_HAS_CC3220SDK) += source/ti/devices/cc32xx/driverlib/prcm.o
@@ -35,3 +36,10 @@ obj-$(CONFIG_SIMPLELINK_HOST_DRIVER) += kernel/zephyr/dpl/MutexP_zephyr.o
 obj-$(CONFIG_SIMPLELINK_HOST_DRIVER) += kernel/zephyr/dpl/SemaphoreP_zephyr.o
 obj-$(CONFIG_SIMPLELINK_HOST_DRIVER) += kernel/zephyr/dpl/ClockP_zephyr.o
 obj-$(CONFIG_SIMPLELINK_HOST_DRIVER) += kernel/zephyr/dpl/HwiP_zephyr.o
+endif
+
+ifeq ($(CONFIG_HAS_MSP432P4XXSDK),y)
+ccflags-y += -D$(COMPILER)
+# Need system_msp432p401r for SystemInit which is not in ROM
+obj-y += source/ti/devices/msp432p4xx/startup_system_files/system_msp432p401r.o
+endif

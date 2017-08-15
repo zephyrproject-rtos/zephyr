@@ -15,3 +15,9 @@ config SIMPLELINK_HOST_DRIVER
 	select ERRNO
 	help
 	Build the SimpleLink host driver
+
+# Kconfig - MSP432 SDK HAL configuration
+
+config HAS_MSP432P4XXSDK
+        bool
+        select HAS_CMSIS
