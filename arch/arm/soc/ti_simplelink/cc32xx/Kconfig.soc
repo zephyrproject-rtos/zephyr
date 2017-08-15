@@ -1,13 +1,9 @@
-# Kconfig.soc - Texas Instruments CC3200
+# Kconfig.soc - Texas Instruments CC32XX
 #
 
 choice
 prompt "TI SimpleLink MCU Selection"
 depends on SOC_SERIES_CC32XX
-
-config SOC_CC3200
-	bool "CC3200"
-	select HAS_CC3200SDK
 
 config SOC_CC3220SF
 	bool "CC3220SF"

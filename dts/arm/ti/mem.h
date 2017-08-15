@@ -9,11 +9,7 @@
 
 #define __SIZE_K(x) (x * 1024)
 
-#if defined(CONFIG_SOC_CC3200)
-#define DT_SFLASH_SIZE		__SIZE_K(1024)
-#define DT_SRAM_SIZE		__SIZE_K(240)
-#define DT_SRAM_START		0x20004000
-#elif defined(CONFIG_SOC_CC3220SF)
+#if defined(CONFIG_SOC_CC3220SF)
 #define DT_SFLASH_SIZE		__SIZE_K(1024)
 #define DT_FLASH_SIZE		__SIZE_K(1024)
 #define DT_SRAM_SIZE		__SIZE_K(256)

@@ -115,7 +115,6 @@ F:	boards/arm/arduino_101_ble/
 BOARDS/ARM - CC32XX LAUNCHXL
 M:      Gil Pitney <gil.pitney@linaro.org>
 S:      Supported
-F:      boards/arm/cc3200_launchxl/
 F:      boards/arm/cc3220sf_launchxl/
 
 BOARDS/ARM - NXP FRDM-K64F
@@ -202,7 +201,7 @@ F:	subsys/bluetooth/controller/
 CC32XX SDK
 M:      Gil Pitney <gil.pitney@linaro.org>
 S:      Supported
-F:      ext/hal/ti/cc3200sdk/
+F:      ext/hal/ti/simplelink
 
 CC32XX SOC - TI SIMPLELINK
 M:      Gil Pitney <gil.pitney@linaro.org>
