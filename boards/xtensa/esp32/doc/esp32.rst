@@ -20,7 +20,7 @@ From Wikipedia:
 The features include the following:
 
 - Dual core Xtensa microprocessor (LX6), running at 160 or 240MHz
-- 520KiB of SRAM
+- 520KB of SRAM
 - 802.11b/g/n/e/i
 - Bluetooth v4.2 BR/EDR and BLE
 - Various peripherals:

@@ -104,7 +104,7 @@ The default configuration can be found in the defconfig file:
 Pin Mapping
 ===========
 
-The STM32F429I-DISC1 Discovry kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
+The STM32F429I-DISC1 Discovery kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
 For mode details please refer to `STM32F429I-DISC1 board User Manual`_.
