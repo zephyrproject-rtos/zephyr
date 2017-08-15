@@ -13,6 +13,13 @@
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 #define SYS_LOG_DOMAIN "net/pkt"
 #define NET_LOG_ENABLED 1
+
+/* This enables allocation debugging but does not print so much output
+ * as that can slow things down a lot.
+ */
+#if !defined(CONFIG_NET_DEBUG_NET_PKT_ALL)
+#define NET_SYS_LOG_LEVEL 5
+#endif
 #endif
 
 #include <kernel.h>
