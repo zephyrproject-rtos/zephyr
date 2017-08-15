@@ -489,6 +489,20 @@ static void recv_cb(struct net_context *net_ctx, struct net_pkt *pkt,
 	}
 
 	if (!pkt || net_pkt_appdatalen(pkt) == 0) {
+		/*
+		 * This block most likely handles a TCP_FIN message.
+		 * (this means the connection is now closed)
+		 * If we get here, and req.wait.count is still 0 this means
+		 * http client is still waiting to parse a response body.
+		 * This will will never happen now.  Instead of generating
+		 * an ETIMEDOUT error in the future, let's unlock the
+		 * req.wait semaphore and let the app deal with whatever
+		 * data was parsed in the header (IE: http status, etc).
+		 */
+		if (ctx->req.wait.count == 0) {
+			k_sem_give(&ctx->req.wait);
+		}
+
 		goto out;
 	}
 
