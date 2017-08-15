@@ -1,0 +1,6 @@
+identifier: xt-sim_D_233L
+name: XT Simulator D_233L
+type: sim
+arch: xtensa
+toolchain:
+  - xcc

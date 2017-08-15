@@ -1,0 +1,6 @@
+identifier: xt-sim_hifi2_std
+name: XT Simulatora hifi2_std
+type: sim
+arch: xtensa
+toolchain:
+  - xcc

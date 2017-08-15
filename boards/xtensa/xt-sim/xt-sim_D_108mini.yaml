@@ -1,0 +1,6 @@
+identifier: xt-sim_D_108mini
+name: XT Simulator D_108mini
+type: sim
+arch: xtensa
+toolchain:
+  - xcc

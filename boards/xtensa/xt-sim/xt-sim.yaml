@@ -1,6 +1,6 @@
 identifier: xt-sim
 name: XT Simulator
-type: mcu
+type: sim
 arch: xtensa
 toolchain:
   - xcc
