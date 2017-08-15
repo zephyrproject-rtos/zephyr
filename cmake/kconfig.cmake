@@ -8,7 +8,9 @@ set(BOARD_DEFCONFIG ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD}/${BOARD}_defco
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
 
 if(CONF_FILE)
-  # CONF_FILE has been specified on the cmake CLI and has precedence
+  # CONF_FILE has either been specified on the cmake CLI or is already
+  # in the CMakeCache.txt. This has precedence over the environment
+  # variable CONF_FILE and the default prj.conf
 elseif(DEFINED ENV{CONF_FILE})
   set(CONF_FILE $ENV{CONF_FILE})
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
@@ -17,7 +19,9 @@ endif()
 
 set(CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
-These settings will override the settings in the application’s .config file or its default .conf file. ")
+These settings will override the settings in the application’s .config file or its default .conf file.\
+Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
+string(REPLACE " " ";" CONF_FILE_AS_LIST ${CONF_FILE})
 
 set(ENV{srctree}            ${PROJECT_SOURCE_DIR})
 set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
@@ -30,15 +34,18 @@ set(CREATE_NEW_DOTCONFIG "")
 if(NOT EXISTS ${DOTCONFIG} OR ${BOARD_DEFCONFIG} IS_NEWER_THAN ${DOTCONFIG})
   set(CREATE_NEW_DOTCONFIG 1)
 elseif(${CONF_FILE})
-  if(${CONF_FILE} IS_NEWER_THAN ${DOTCONFIG})
-    set(CREATE_NEW_DOTCONFIG 1)
-  endif()
+  foreach(CONF_FILE_ITEM ${CONF_FILE_AS_LIST})
+    if(${CONF_FILE_ITEM} IS_NEWER_THAN ${DOTCONFIG})
+      set(CREATE_NEW_DOTCONFIG 1)
+    endif()
+  endforeach()
 endif()
 if(CREATE_NEW_DOTCONFIG)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py -m -q
       -O ${PROJECT_BINARY_DIR}
-      ${BOARD_DEFCONFIG} ${CONF_FILE}
+      ${BOARD_DEFCONFIG}
+      ${CONF_FILE_AS_LIST}
     RESULT_VARIABLE ret
   )
   if(NOT "${ret}" STREQUAL "0")
@@ -60,8 +67,10 @@ endif()
 
 # Force CMAKE configure when the configuration files changes.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${BOARD_DEFCONFIG})
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CONF_FILE})
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${DOTCONFIG})
+foreach(CONF_FILE_ITEM ${CONF_FILE_AS_LIST})
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CONF_FILE_ITEM})
+endforeach()
 
 message(STATUS "Generating zephyr/include/generated/autoconf.h")
 execute_process(
