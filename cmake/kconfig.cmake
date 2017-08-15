@@ -5,7 +5,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 
 set(BOARD_DEFCONFIG ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD}/${BOARD}_defconfig)
-set(APP_CONFIG      ${APPLICATION_SOURCE_DIR}/prj.conf)
+set(CONF_FILE       ${APPLICATION_SOURCE_DIR}/prj.conf)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
 
 set(ENV{srctree}            ${PROJECT_SOURCE_DIR})
@@ -16,13 +16,13 @@ set(ENV{KCONFIG_AUTOHEADER} ${AUTOCONF_H})
 # Create new .config if the file does not exists, or the user has edited one of the configuration files.
 if(NOT EXISTS ${DOTCONFIG}
    OR ${BOARD_DEFCONFIG} IS_NEWER_THAN ${DOTCONFIG}
-   OR ${APP_CONFIG}      IS_NEWER_THAN ${DOTCONFIG}
+   OR ${CONF_FILE}       IS_NEWER_THAN ${DOTCONFIG}
   )
 
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py -m -q
       -O ${PROJECT_BINARY_DIR}
-      ${BOARD_DEFCONFIG} ${APP_CONFIG}
+      ${BOARD_DEFCONFIG} ${CONF_FILE}
     RESULT_VARIABLE ret
   )
   if(NOT "${ret}" STREQUAL "0")
@@ -44,7 +44,7 @@ endif()
 
 # Force CMAKE configure when the configuration files changes.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${BOARD_DEFCONFIG})
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${APP_CONFIG})
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CONF_FILE})
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${DOTCONFIG})
 
 message(STATUS "Generating zephyr/include/generated/autoconf.h")
