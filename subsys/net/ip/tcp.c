@@ -248,13 +248,11 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 static void ack_timer_cancel(struct net_tcp *tcp)
 {
-	tcp->ack_timer_cancelled = true;
 	k_delayed_work_cancel(&tcp->ack_timer);
 }
 
 static void fin_timer_cancel(struct net_tcp *tcp)
 {
-	tcp->fin_timer_cancelled = true;
 	k_delayed_work_cancel(&tcp->fin_timer);
 }
 
