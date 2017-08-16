@@ -229,6 +229,7 @@ void _ztest_run_test_suite(const char *name, struct unit_test *suite)
 	init_testing();
 
 	PRINT("Running test suite %s\n", name);
+	PRINT_LINE;
 	while (suite->test) {
 		fail += run_test(suite);
 		suite++;
