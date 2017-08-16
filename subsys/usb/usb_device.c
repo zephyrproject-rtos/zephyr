@@ -553,7 +553,7 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_SET_ADDRESS:
-		SYS_LOG_DBG("REQ_SET_ADDRESS\n");
+		SYS_LOG_DBG("REQ_SET_ADDRESS, addr 0x%x\n", setup->wValue);
 		usb_dc_set_address(setup->wValue);
 		break;
 
@@ -571,7 +571,8 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		break;
 
 	case REQ_SET_CONFIGURATION:
-		SYS_LOG_DBG("REQ_SET_CONFIGURATION\n");
+		SYS_LOG_DBG("REQ_SET_CONFIGURATION, conf 0x%x\n",
+			    setup->wValue & 0xFF);
 		if (!usb_set_configuration(setup->wValue & 0xFF, 0)) {
 			SYS_LOG_DBG("USBSetConfiguration failed!\n");
 			ret = false;
