@@ -737,9 +737,9 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	struct net_linkaddr_storage *lladdr;
 	struct net_nbr *nbr;
 
-	nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt), nexthop);
+	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (!nbr) {
-		NET_DBG("Cannot find %s neighbor.",
+		NET_DBG("Cannot find %s neighbor",
 			net_sprint_ipv6_addr(nexthop));
 		return -ENOENT;
 	}
@@ -776,6 +776,8 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	net_pkt_ll_dst(pkt)->addr = lladdr->addr;
 	net_pkt_ll_dst(pkt)->type = lladdr->type;
 	net_pkt_ll_dst(pkt)->len = lladdr->len;
+
+	net_pkt_set_iface(pkt, nbr->iface);
 
 	return net_send_data(pkt);
 }
