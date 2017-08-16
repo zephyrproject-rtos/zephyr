@@ -1675,14 +1675,14 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	struct bt_hci_evt_le_advertising_info *adv_info;
 	u8_t data_len;
 	u8_t info_len;
-	u8_t rssi;
+	s8_t rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	u8_t direct;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-	u8_t *prssi;
+	s8_t *prssi;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT)) {
 		return;
@@ -1715,8 +1715,8 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 		data_len = 0;
 	}
 
-	rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		 offsetof(struct pdu_adv, payload) + adv->len];
+	rssi = -b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		  offsetof(struct pdu_adv, payload) + adv->len];
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	if (direct) {
@@ -1802,12 +1802,12 @@ static void le_adv_ext_report(struct pdu_data *pdu_data, u8_t *b,
 			      struct net_buf *buf, u8_t phy)
 {
 	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
-	u8_t rssi;
+	s8_t rssi;
 
-	rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		 offsetof(struct pdu_adv, payload) + adv->len];
+	rssi = -b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		  offsetof(struct pdu_adv, payload) + adv->len];
 
-	BT_WARN("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u, rssi=-%u dB",
+	BT_WARN("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u, rssi=%d dB",
 		phy, adv->type, adv->len, adv->tx_addr, adv->rx_addr, rssi);
 
 	if ((adv->type == PDU_ADV_TYPE_EXT_IND) && adv->len) {
@@ -1883,18 +1883,18 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 		char addr_str[BT_ADDR_LE_STR_LEN];
 		bt_addr_le_t addr;
 		u8_t handle;
-		u8_t rssi;
+		s8_t rssi;
 
 		handle = 0;
 		addr.type = adv->tx_addr;
 		memcpy(&addr.a.val[0], &adv->payload.scan_req.scan_addr[0],
 		       sizeof(bt_addr_t));
-		rssi = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-			 offsetof(struct pdu_adv, payload) + adv->len];
+		rssi = -b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+			  offsetof(struct pdu_adv, payload) + adv->len];
 
 		bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
 
-		BT_WARN("handle: %d, addr: %s, rssi: -%d dB.",
+		BT_WARN("handle: %d, addr: %s, rssi: %d dB.",
 			handle, addr_str, rssi);
 
 		return;
