@@ -41,7 +41,7 @@ config LWM2M_ENGINE_MAX_REPLIES
 	  Set the maximum reply objects for the LWM2M library client
 
 config LWM2M_ENGINE_MAX_OBSERVER
-	int "Maximum # of observeable LWM2M resources"
+	int "Maximum # of observable LWM2M resources"
 	default 50
 	range 10 200
 	help
