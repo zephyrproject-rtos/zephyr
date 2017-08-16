@@ -104,7 +104,20 @@ HALs
 Documentation
 *************
 
-* change description
+* CONTRIBUTING.rst and Contribution Guide material added
+* Configuration options doc reorganized for easier access
+* Navigation sidebar issues fixed for supported boards section
+* Completed migration of wiki.zephyrproject.org content into docs and
+  GitHub wiki. All links to old wiki updated.
+* Broken link and spelling check scans through .rst, Kconfig (used for
+  auto-generated configuration docs), and source code doxygen comments
+  (used for API documentation).
+* API documentation added for new interfaces and improved for existing
+  ones.
+* Documentation added for new boards supported with this release.
+* Python packages needed for document generation added to new python
+  pip requirements.txt
+
 
 Tests and Samples
 *****************
