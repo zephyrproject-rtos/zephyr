@@ -667,7 +667,17 @@ class MakeGenerator:
 """
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
-\t$(MAKE) -C {directory} O={outdir} V={verb} EXTRA_CFLAGS="-Werror {cflags}" EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LDFLAGS=--fatal-warnings {args} >{logfile} 2>&1
+\tcmake  \\
+\t\t-DCMAKE_TOOLCHAIN_FILE=$(ZEPHYR_BASE)/cmake/toolchain.cmake\\
+\t\t-H{directory}\\
+\t\t-B{outdir}\\
+\t\t-DEXTRA_CFLAGS="-Werror {cflags}"\\
+\t\t-DEXTRA_AFLAGS=-Wa,--fatal-warnings\\
+\t\t-DEXTRA_LDFLAGS=--fatal-warnings\\
+\t\t{args}\\
+\t\t>{logfile} 2>&1
+\t$(MAKE) -C {outdir}\\
+\t\t>>{logfile} 2>&1
 """
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
@@ -808,8 +818,8 @@ class MakeGenerator:
             by execute() will be keyed by its .name field.
         """
         args = ti.test.extra_args[:]
-        args.extend(["ARCH=%s" % ti.platform.arch,
-                     "BOARD=%s" % ti.platform.name])
+        args.extend(["-DARCH=%s" % ti.platform.arch,
+                     "-DBOARD=%s" % ti.platform.name])
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
             (not build_only) and (enable_slow or not ti.test.slow)):
@@ -1407,8 +1417,8 @@ class TestSuite:
                     if (tc.tc_filter and (plat.default or all_plats or platform_filter) and
                         toolchain in plat.supported_toolchains):
                         args = tc.extra_args[:]
-                        args.extend(["ARCH=" + plat.arch,
-                                "BOARD=" + plat.name, "config-sanitycheck"])
+                        args.extend(["-DARCH=" + plat.arch,
+                                "-DBOARD=" + plat.name, "config-sanitycheck"])
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every  combination,
