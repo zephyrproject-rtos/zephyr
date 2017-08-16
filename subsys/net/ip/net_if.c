@@ -111,6 +111,7 @@ static bool net_if_tx(struct net_if *iface)
 
 		if (IS_ENABLED(CONFIG_NET_TCP)) {
 			net_pkt_set_sent(pkt, true);
+			net_pkt_set_queued(pkt, false);
 		}
 
 		status = api->send(iface, pkt);
