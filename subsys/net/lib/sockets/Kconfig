@@ -23,7 +23,7 @@ config NET_SOCKETS_POSIX_NAMES
 	with standard POSIX names like socket(), recv(), and close(), to help
 	with porting existing code. Note that close() may require a special
 	attention, as in POSIX it closes any file descriptor, while with this
-	option enaled, it will still apply only to sockets.
+	option enabled, it will still apply only to sockets.
 
 config NET_SOCKETS_POLL_MAX
 	int
