@@ -190,6 +190,8 @@ static void tcp_retry_expired(struct k_timer *timer)
 			net_pkt_set_sent(pkt, false);
 		}
 
+		net_pkt_set_queued(pkt, true);
+
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
 			NET_DBG("[%p] pkt %p send failed", tcp, pkt);
 			net_pkt_unref(pkt);
@@ -852,12 +854,21 @@ int net_tcp_send_data(struct net_context *context)
 	 * add window handling and retry/ACK logic.
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&context->tcp->sent_list, pkt, sent_list) {
+		/* Do not resend packets that were sent by expire timer */
+		if (net_pkt_queued(pkt)) {
+			NET_DBG("[%p] Skipping pkt %p because it was already "
+				"sent.", context->tcp, pkt);
+			continue;
+		}
+
 		if (!net_pkt_sent(pkt)) {
 			NET_DBG("[%p] Sending pkt %p", context->tcp, pkt);
 			if (net_tcp_send_pkt(pkt) < 0 &&
 			    !is_6lo_technology(pkt)) {
 				net_pkt_unref(pkt);
 			}
+
+			net_pkt_set_queued(pkt, true);
 		}
 	}
 
