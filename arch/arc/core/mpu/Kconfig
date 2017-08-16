@@ -17,17 +17,18 @@ config ARC_MPU_VER
 config ARC_CORE_MPU
 	bool "ARC Core MPU functionalities"
 	depends on CPU_HAS_MPU
-	select THREAD_STACK_INFO
 	default n
 	help
-	  ARC Core MPU functionalities
+	  ARC core MPU functionalities
 
 config MPU_STACK_GUARD
 	bool "Thread Stack Guards"
-	depends on ARC_CORE_MPU
+	depends on ARC_CORE_MPU && !ARC_STACK_CHECKING
+	select THREAD_STACK_INFO
 	default n
 	help
-	  Enable Thread Stack Guards via MPU
+	  Enable thread stack guards via MPU. ARC supports built-in stack protection.
+	  If your core supports that, it is prefered over MPU stack guard
 
 config ARC_MPU
 	bool "ARC MPU Support"
