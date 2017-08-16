@@ -1423,11 +1423,11 @@ static void context_info(struct net_context *context, void *user_data)
 		}
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-		printk("ETX\t%zu\t%u\t%u\t%p\n",
-		       slab->num_blocks * slab->block_size,
-		       slab->num_blocks, k_mem_slab_num_free_get(slab), slab);
+		printk("%p\t%zu\t%u\t%u\tETX\n",
+		       slab, slab->num_blocks * slab->block_size,
+		       slab->num_blocks, k_mem_slab_num_free_get(slab));
 #else
-		printk("ETX     \t%d\t%p\n", slab->num_blocks, slab);
+		printk("%p\t%d\tETX\n", slab, slab->num_blocks);
 #endif
 		info->are_external_pools = true;
 		info->tx_slabs[info->pos] = slab;
@@ -1441,11 +1441,11 @@ static void context_info(struct net_context *context, void *user_data)
 		}
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-		printk("EDATA (%s)\t%d\t%d\t%d\t%p\n",
-		       pool->name, pool->pool_size, pool->buf_count,
-		       pool->avail_count, pool);
+		printk("%p\t%d\t%d\t%d\tEDATA (%s)\n",
+		       pool, pool->pool_size, pool->buf_count,
+		       pool->avail_count, pool->name);
 #else
-		printk("EDATA   \t%d\t%p\n", pool->buf_count, pool);
+		printk("%p\t%d\tEDATA\n", pool, pool->buf_count);
 #endif
 		info->are_external_pools = true;
 		info->data_pools[info->pos] = pool;
@@ -1470,30 +1470,30 @@ int net_shell_cmd_mem(int argc, char *argv[])
 	printk("Network buffer pools:\n");
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
-	printk("Name\t\t\tSize\tCount\tAvail\tAddress\n");
+	printk("Address\t\tSize\tCount\tAvail\tName\n");
 
-	printk("RX\t\t%zu\t%d\t%u\t%p\n",
-	       rx->num_blocks * rx->block_size,
-	       rx->num_blocks, k_mem_slab_num_free_get(rx), rx);
+	printk("%p\t%zu\t%d\t%u\tRX\n",
+	       rx, rx->num_blocks * rx->block_size,
+	       rx->num_blocks, k_mem_slab_num_free_get(rx));
 
-	printk("TX\t\t%zu\t%d\t%u\t%p\n",
-	       tx->num_blocks * tx->block_size,
-	       tx->num_blocks, k_mem_slab_num_free_get(tx), tx);
+	printk("%p\t%zu\t%d\t%u\tTX\n",
+	       tx, tx->num_blocks * tx->block_size,
+	       tx->num_blocks, k_mem_slab_num_free_get(tx));
 
-	printk("RX DATA (%s)\t%d\t%d\t%d\t%p\n",
-	       rx_data->name, rx_data->pool_size, rx_data->buf_count,
-	       rx_data->avail_count, rx_data);
+	printk("%p\t%d\t%d\t%d\tRX DATA (%s)\n",
+	       rx_data, rx_data->pool_size, rx_data->buf_count,
+	       rx_data->avail_count, rx_data->name);
 
-	printk("TX DATA (%s)\t%d\t%d\t%d\t%p\n",
-	       tx_data->name, tx_data->pool_size, tx_data->buf_count,
-	       tx_data->avail_count, tx_data);
+	printk("%p\t%d\t%d\t%d\tTX DATA (%s)\n",
+	       tx_data, tx_data->pool_size, tx_data->buf_count,
+	       tx_data->avail_count, tx_data->name);
 #else
-	printk("Name    \tCount\tAddress\n");
+	printk("Address\t\tCount\tName\n");
 
-	printk("RX      \t%d\t%p\n", rx->num_blocks, rx);
-	printk("TX      \t%d\t%p\n", tx->num_blocks, tx);
-	printk("RX DATA \t%d\t%p\n", rx_data->buf_count, rx_data);
-	printk("TX DATA \t%d\t%p\n", tx_data->buf_count, tx_data);
+	printk("%p\t%d\tRX\n", rx, rx->num_blocks);
+	printk("%p\t%d\tTX\n", tx, tx->num_blocks);
+	printk("%p\t%d\tRX DATA\n", rx_data, rx_data->buf_count);
+	printk("%p\t%d\tTX DATA\n", tx_data, tx_data->buf_count);
 #endif /* CONFIG_NET_DEBUG_NET_PKT */
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
