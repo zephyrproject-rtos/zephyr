@@ -67,6 +67,14 @@ config NET_ROUTE
 	default n
 	default y if NET_IPV6_NBR_CACHE
 
+config NET_ROUTING
+	bool "IP routing between interfaces"
+	default n
+	depends on NET_ROUTE
+	help
+	Allow IPv6 routing between different network interfaces and
+	technologies.
+
 config	NET_MAX_ROUTES
 	int "Max number of routing entries stored."
 	default NET_IPV6_MAX_NEIGHBORS
