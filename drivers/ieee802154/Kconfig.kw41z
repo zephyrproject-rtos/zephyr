@@ -1,5 +1,10 @@
 # Kconfig.kw41z - NXP KW41Z configuration options
 #
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
 menuconfig  IEEE802154_KW41Z
 	bool "NXP KW41Z Driver support"
