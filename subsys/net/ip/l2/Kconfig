@@ -60,7 +60,7 @@ config NET_L2_BT
 config NET_L2_BT_ZEP1656
 	bool "***Workaround to work with Linux.***"
 	depends on NET_L2_BT
-	default n
+	default y
 	help
 	This workaround is necessary to interoperate with Linux up to 4.10 but
 	it might not be compliant with RFC 7668 as it cause the stack to skip
