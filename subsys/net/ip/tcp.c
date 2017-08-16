@@ -919,7 +919,8 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		valid_ack = true;
 	}
 
-	if (valid_ack) {
+	/* No need to re-send stuff we are closing down */
+	if (valid_ack && net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED) {
 		/* Restart the timer on a valid inbound ACK.  This
 		 * isn't quite the same behavior as per-packet retry
 		 * timers, but is close in practice (it starts retries
