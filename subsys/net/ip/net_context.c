@@ -100,7 +100,6 @@ static struct tcp_backlog_entry {
 	u32_t send_seq;
 	u32_t send_ack;
 	struct k_delayed_work ack_timer;
-	bool cancelled;
 } tcp_backlog[CONFIG_NET_TCP_BACKLOG_SIZE];
 
 static void backlog_ack_timeout(struct k_work *work)
@@ -108,11 +107,9 @@ static void backlog_ack_timeout(struct k_work *work)
 	struct tcp_backlog_entry *backlog =
 		CONTAINER_OF(work, struct tcp_backlog_entry, ack_timer);
 
-	if (!backlog->cancelled) {
-		NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
+	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
 
-		send_reset(backlog->tcp->context, &backlog->remote);
-	}
+	send_reset(backlog->tcp->context, &backlog->remote);
 
 	memset(backlog, 0, sizeof(struct tcp_backlog_entry));
 }
@@ -265,17 +262,8 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 	context->tcp->send_seq = tcp_backlog[r].send_seq;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
 
-	if (k_delayed_work_cancel(&tcp_backlog[r].ack_timer) < 0) {
-		/* Too late to cancel - just set flag for worker.
-		 * TODO: Note that in this case, we can be preempted
-		 * anytime (could have been preempted even before we did
-		 * the check), so access to tcp_backlog should be synchronized
-		 * between this function and worker.
-		 */
-		tcp_backlog[r].cancelled = true;
-	} else {
-		memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
-	}
+	k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
+	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
 
 	return 0;
 }
@@ -300,17 +288,8 @@ static int tcp_backlog_rst(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	if (k_delayed_work_cancel(&tcp_backlog[r].ack_timer) < 0) {
-		/* Too late to cancel - just set flag for worker.
-		 * TODO: Note that in this case, we can be preempted
-		 * anytime (could have been preempted even before we did
-		 * the check), so access to tcp_backlog should be synchronized
-		 * between this function and worker.
-		 */
-		tcp_backlog[r].cancelled = true;
-	} else {
-		memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
-	}
+	k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
+	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
 
 	return 0;
 }
@@ -320,21 +299,15 @@ static void handle_fin_timeout(struct k_work *work)
 	struct net_tcp *tcp =
 		CONTAINER_OF(work, struct net_tcp, fin_timer);
 
-	if (!tcp->fin_timer_cancelled) {
-		NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT);
+	NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT);
 
-		net_context_unref(tcp->context);
-	}
+	net_context_unref(tcp->context);
 }
 
 static void handle_ack_timeout(struct k_work *work)
 {
 	/* This means that we did not receive ACK response in time. */
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
-
-	if (tcp->ack_timer_cancelled) {
-		return;
-	}
 
 	NET_DBG("Did not receive ACK in %dms while in %s", ACK_TIMEOUT,
 		net_tcp_state_str(net_tcp_get_state(tcp)));
@@ -641,13 +614,8 @@ int net_context_unref(struct net_context *context)
 				continue;
 			}
 
-			if (k_delayed_work_cancel(&tcp_backlog[i].ack_timer) ==
-							    -EINPROGRESS) {
-				tcp_backlog[i].cancelled = true;
-			} else {
-				memset(&tcp_backlog[i], 0,
-				       sizeof(struct tcp_backlog_entry));
-			}
+			k_delayed_work_cancel(&tcp_backlog[i].ack_timer);
+			memset(&tcp_backlog[i], 0, sizeof(tcp_backlog[i]));
 		}
 
 		net_tcp_release(context->tcp);
@@ -701,7 +669,6 @@ int net_context_put(struct net_context *context)
 				"disposing yet (waiting %dms)", FIN_TIMEOUT);
 			k_delayed_work_submit(&context->tcp->fin_timer,
 					      FIN_TIMEOUT);
-			context->tcp->fin_timer_cancelled = false;
 			queue_fin(context);
 			return 0;
 		}
@@ -1247,7 +1214,6 @@ NET_CONN_CB(tcp_established)
 		 * would be stuck forever.
 		 */
 		k_delayed_work_submit(&context->tcp->ack_timer, ACK_TIMEOUT);
-		context->tcp->ack_timer_cancelled = false;
 	}
 
 	send_ack(context, &conn->remote_addr, false);

@@ -785,9 +785,6 @@ struct http_server_ctx {
 
 		/** URL's length */
 		u16_t url_len;
-
-		/** Has the request timer been cancelled. */
-		u8_t timer_cancelled;
 	} req;
 
 #if defined(CONFIG_HTTPS)

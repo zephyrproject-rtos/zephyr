@@ -222,12 +222,7 @@ struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(u8_t idx)
 
 static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 {
-	int ret;
-
-	ret = k_delayed_work_cancel(&data->send_ns);
-	if (ret < 0) {
-		NET_DBG("Cannot cancel NS work (%d)", ret);
-	}
+	k_delayed_work_cancel(&data->send_ns);
 
 	if (data->pending) {
 		net_pkt_unref(data->pending);

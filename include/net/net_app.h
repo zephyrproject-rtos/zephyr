@@ -300,11 +300,6 @@ struct net_app_ctx {
 		/** DTLS final timer. Connection is terminated if this expires.
 		 */
 		struct k_delayed_work fin_timer;
-
-		/** Timer flag telling whether the dtls timer has been
-		 * cancelled or not.
-		 */
-		bool fin_timer_cancelled;
 	} dtls;
 #endif
 

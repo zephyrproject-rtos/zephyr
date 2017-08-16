@@ -152,7 +152,6 @@ static int http_add_chunk(struct net_pkt *pkt, s32_t timeout, const char *str)
 
 static void req_timer_cancel(struct http_server_ctx *ctx)
 {
-	ctx->req.timer_cancelled = true;
 	k_delayed_work_cancel(&ctx->req.timer);
 
 	NET_DBG("Context %p request timer cancelled", ctx);
@@ -163,10 +162,6 @@ static void req_timeout(struct k_work *work)
 	struct http_server_ctx *ctx = CONTAINER_OF(work,
 						   struct http_server_ctx,
 						   req.timer);
-
-	if (ctx->req.timer_cancelled) {
-		return;
-	}
 
 	NET_DBG("Context %p request timeout", ctx);
 
@@ -194,8 +189,6 @@ static void pkt_sent(struct net_context *context,
 		NET_DBG("Context %p starting timer", ctx);
 
 		k_delayed_work_submit(&ctx->req.timer, timeout);
-
-		ctx->req.timer_cancelled = false;
 	}
 
 	/* Note that if the timeout is K_FOREVER, we do not close

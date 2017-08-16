@@ -1041,8 +1041,6 @@ static int dtls_timing_get_delay(void *data)
 
 static void dtls_cleanup(struct net_app_ctx *ctx, bool cancel_timer)
 {
-	ctx->dtls.fin_timer_cancelled = true;
-
 	if (cancel_timer) {
 		k_delayed_work_cancel(&ctx->dtls.fin_timer);
 	}
@@ -1060,11 +1058,9 @@ static void dtls_timeout(struct k_work *work)
 	struct net_app_ctx *ctx =
 		CONTAINER_OF(work, struct net_app_ctx, dtls.fin_timer);
 
-	if (!ctx->dtls.fin_timer_cancelled) {
-		NET_DBG("Did not receive DTLS traffic in %dms", DTLS_TIMEOUT);
+	NET_DBG("Did not receive DTLS traffic in %dms", DTLS_TIMEOUT);
 
-		dtls_cleanup(ctx, false);
-	}
+	dtls_cleanup(ctx, false);
 }
 
 enum net_verdict _net_app_dtls_established(struct net_conn *conn,
@@ -1117,12 +1113,10 @@ enum net_verdict _net_app_dtls_established(struct net_conn *conn,
 
 	k_fifo_put(&ctx->tls.mbedtls.ssl_ctx.tx_rx_fifo, (void *)rx_data);
 
-	ctx->dtls.fin_timer_cancelled = true;
 	k_delayed_work_cancel(&ctx->dtls.fin_timer);
 
 	k_yield();
 
-	ctx->dtls.fin_timer_cancelled = false;
 	k_delayed_work_submit(&ctx->dtls.fin_timer, DTLS_TIMEOUT);
 
 	return NET_OK;
@@ -1226,7 +1220,6 @@ static int accept_dtls(struct net_app_ctx *ctx,
 
 	ctx->dtls.ctx = dtls_context;
 
-	ctx->dtls.fin_timer_cancelled = false;
 	k_delayed_work_submit(&ctx->dtls.fin_timer, DTLS_TIMEOUT);
 
 	return 0;
@@ -1279,17 +1272,6 @@ void _net_app_tls_received(struct net_context *context,
 			net_pkt_unref(pkt);
 			return;
 		} else {
-			if (ctx->dtls.fin_timer_cancelled) {
-				if (pkt) {
-					net_pkt_unref(pkt);
-					pkt = NULL;
-				}
-
-				ctx->dtls.fin_timer_cancelled = false;
-
-				goto dtls_disconnect;
-			}
-
 			ret = accept_dtls(ctx, context, pkt);
 			if (ret < 0) {
 				NET_DBG("Cannot accept new DTLS "
