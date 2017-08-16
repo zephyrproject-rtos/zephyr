@@ -16,10 +16,11 @@
 
 #define AUX_MPU_RDB_VALID_MASK (0x1)
 #define AUX_MPU_EN_ENABLE   (0x40000000)
-#define AUX_MPU_EN_DISABLE  (0x0)
+#define AUX_MPU_EN_DISABLE  (0xBFFFFFFF)
 
 #define AUX_MPU_RDP_REGION_SIZE(bits)  \
 			(((bits - 1) & 0x3) | (((bits - 1) & 0x1C) << 7))
+#define AUX_MPU_RDP_ATTR_MASK (0xFFF)
 
 #define _ARC_V2_MPU_EN   (0x409)
 #define _ARC_V2_MPU_RDB0 (0x422)
@@ -85,7 +86,8 @@ static inline void _region_init(u32_t index, u32_t region_addr,
 void arc_core_mpu_enable(void)
 {
 	/* Enable MPU */
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, AUX_MPU_EN_ENABLE);
+	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN,
+		_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) | AUX_MPU_EN_ENABLE);
 }
 
 /**
@@ -94,7 +96,8 @@ void arc_core_mpu_enable(void)
 void arc_core_mpu_disable(void)
 {
 	/* Disable MPU */
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, AUX_MPU_EN_DISABLE);
+	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN,
+		_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) & AUX_MPU_EN_DISABLE);
 }
 
 
@@ -135,6 +138,41 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 	base |= AUX_MPU_RDB_VALID_MASK;
 
 	_region_init(region_index, base, region_attr);
+}
+
+/**
+ * @brief configure the default region
+ *
+ * @param   region_attr region attribute of default region
+ */
+void arc_core_mpu_default(u32_t region_attr)
+{
+	u32_t val =  _arc_v2_aux_reg_read(_ARC_V2_MPU_EN) &
+			(~AUX_MPU_RDP_ATTR_MASK);
+
+	region_attr &= AUX_MPU_RDP_ATTR_MASK;
+
+	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, region_attr | val);
+}
+
+
+/**
+ * @brief configure the mpu region
+ *
+ * @param   index   MPU region index
+ * @param   base    base address
+ * @param   region_attr region attribute
+ */
+void arc_core_mpu_region(u32_t index, u32_t base, u32_t region_attr)
+{
+	if (index >= _get_num_regions()) {
+		return;
+	}
+
+	base |= AUX_MPU_RDB_VALID_MASK;
+	region_attr &= AUX_MPU_RDP_ATTR_MASK;
+
+	_region_init(index, base, region_attr);
 }
 
 /* ARC MPU Driver Initial Setup */
@@ -183,6 +221,9 @@ static void _arc_mpu_config(void)
 			mpu_config.mpu_regions[r_index].attr);
 		r_index++;
 	}
+
+	/* default region: no read, write and execute */
+	arc_core_mpu_default(0);
 
 	/* Enable MPU */
 	arc_core_mpu_enable();

@@ -41,33 +41,41 @@ extern "C" {
 #if defined(CONFIG_MPU_STACK_GUARD)
 #if defined(CONFIG_ARC_CORE_MPU)
 #if CONFIG_ARC_MPU_VER == 2
-/* The minimum MPU region of MPU v2 is 2048 bytes */
+/*
+ * The minimum MPU region of MPU v2 is 2048 bytes. The
+ * start address of MPU region should be aligned to the
+ * region size
+ */
+/* The STACK_GUARD_SIZE is the size of stack guard region */
 #define STACK_ALIGN  2048
+#define STACK_GUARD_SIZE 2048
 #elif CONFIG_ARC_MPU_VER == 3
 #define STACK_ALIGN 32
+#define STACK_GUARD_SIZE 32
 #endif
 #else /* CONFIG_ARC_CORE_MPU */
 #error "Unsupported STACK_ALIGN"
 #endif
 #else  /* CONFIG_MPU_STACK_GUARD */
 #define STACK_ALIGN  4
+#define STACK_GUARD_SIZE 0
 #endif
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[size+STACK_ALIGN]
+		sym[size+STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[nmemb][size+STACK_ALIGN]
+		sym[nmemb][size+STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
-		sym[size+STACK_ALIGN]
+		sym[size+STACK_GUARD_SIZE]
 
-#define _ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - STACK_ALIGN)
+#define _ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - STACK_GUARD_SIZE)
 
-#define _ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_ALIGN))
+#define _ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_GUARD_SIZE))
 
 
 #ifdef __cplusplus

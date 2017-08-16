@@ -23,7 +23,7 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 {
 	arc_core_mpu_disable();
 	arc_core_mpu_configure(THREAD_STACK_GUARD_REGION,
-			       thread->stack_info.start - STACK_ALIGN,
+			       thread->stack_info.start - STACK_GUARD_SIZE,
 			       thread->stack_info.size);
 	arc_core_mpu_enable();
 }

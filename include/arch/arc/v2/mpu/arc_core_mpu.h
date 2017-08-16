@@ -49,6 +49,25 @@ void arc_core_mpu_enable(void);
  */
 void arc_core_mpu_disable(void);
 
+/*
+ * Before configure the MPU regions, mpu should be disabled
+ */
+/**
+ * @brief configure the default region
+ *
+ * @param   region_attr region attribute of default region
+ */
+void arc_core_mpu_default(u32_t region_attr);
+
+/**
+ * @brief configure the mpu region
+ *
+ * @param   index   MPU region index
+ * @param   base    base address
+ * @param   region_attr region attribute
+ */
+void arc_core_mpu_region(u32_t index, u32_t base, u32_t region_attr);
+
 /**
  * @brief configure the base address and size for an MPU region
  *
