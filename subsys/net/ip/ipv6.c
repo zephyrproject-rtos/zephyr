@@ -202,8 +202,11 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 			continue;
 		}
 
-		if (nbr->iface == iface &&
-		    net_ipv6_addr_cmp(&net_ipv6_nbr_data(nbr)->addr, addr)) {
+		if (iface && nbr->iface != iface) {
+			continue;
+		}
+
+		if (net_ipv6_addr_cmp(&net_ipv6_nbr_data(nbr)->addr, addr)) {
 			return nbr;
 		}
 	}
@@ -757,9 +760,11 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 
 	/* No need to do anything if we are forwarding the packet
 	 * as we already know everything about the destination of
-	 * the packet.
+	 * the packet, but only if both src and dest are using
+	 * same technology meaning that link address length is the same.
 	 */
-	if (net_pkt_forwarding(pkt)) {
+	if (net_pkt_forwarding(pkt) &&
+	    net_pkt_orig_iface(pkt) == net_pkt_iface(pkt)) {
 		return pkt;
 	}
 
@@ -823,6 +828,51 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 	}
 
 	return pkt;
+}
+
+static struct in6_addr *check_route(struct net_if *iface,
+				    struct in6_addr *dst,
+				    bool *try_route)
+{
+	struct in6_addr *nexthop = NULL;
+	struct net_route_entry *route;
+	struct net_if_router *router;
+
+	route = net_route_lookup(iface, dst);
+	if (route) {
+		nexthop = net_route_get_nexthop(route);
+		if (!nexthop) {
+			net_route_del(route);
+
+			net_rpl_global_repair(route);
+
+			NET_DBG("No route to host %s",
+				net_sprint_ipv6_addr(dst));
+
+			return NULL;
+		}
+	} else {
+		/* No specific route to this host, use the default
+		 * route instead.
+		 */
+		router = net_if_ipv6_router_find_default(NULL, dst);
+		if (!router) {
+			NET_DBG("No default route to %s",
+				net_sprint_ipv6_addr(dst));
+
+			/* Try to send the packet anyway */
+			nexthop = dst;
+			if (try_route) {
+				*try_route = true;
+			}
+
+			return nexthop;
+		}
+
+		nexthop = &router->address.in6_addr;
+	}
+
+	return nexthop;
 }
 
 struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
@@ -894,7 +944,16 @@ ignore_frag_error:
 		return pkt;
 	}
 
-	if (net_pkt_ll_dst(pkt)->addr ||
+	/* If the IPv6 destination address is not link local, then try to get
+	 * the next hop from routing table if we have multi interface routing
+	 * enabled. The reason for this is that the neighbor cache will not
+	 * contain public IPv6 address information so in that case we should
+	 * not enter this branch.
+	 */
+	if ((net_pkt_ll_dst(pkt)->addr &&
+	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
+	      net_is_ipv6_ll_addr(&NET_IPV6_HDR(pkt)->dst)) ||
+	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
 	    net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		/* Update RPL header */
 		if (net_rpl_update_header(pkt, &NET_IPV6_HDR(pkt)->dst) < 0) {
@@ -913,41 +972,17 @@ ignore_frag_error:
 		/* We need to figure out where the destination
 		 * host is located.
 		 */
-		struct net_route_entry *route;
-		struct net_if_router *router;
+		bool try_route = false;
 
-		route = net_route_lookup(NULL, &NET_IPV6_HDR(pkt)->dst);
-		if (route) {
-			nexthop = net_route_get_nexthop(route);
-			if (!nexthop) {
-				net_route_del(route);
+		nexthop = check_route(NULL, &NET_IPV6_HDR(pkt)->dst,
+				      &try_route);
+		if (!nexthop) {
+			net_pkt_unref(pkt);
+			return NULL;
+		}
 
-				net_rpl_global_repair(route);
-
-				NET_DBG("No route to host %s",
-					net_sprint_ipv6_addr(
-						&NET_IPV6_HDR(pkt)->dst));
-
-				net_pkt_unref(pkt);
-				return NULL;
-			}
-		} else {
-			/* No specific route to this host, use the default
-			 * route instead.
-			 */
-			router = net_if_ipv6_router_find_default(NULL,
-						&NET_IPV6_HDR(pkt)->dst);
-			if (!router) {
-				NET_DBG("No default route to %s",
-					net_sprint_ipv6_addr(
-						&NET_IPV6_HDR(pkt)->dst));
-
-				/* Try to send the packet anyway */
-				nexthop = &NET_IPV6_HDR(pkt)->dst;
-				goto try_send;
-			}
-
-			nexthop = &router->address.in6_addr;
+		if (try_route) {
+			goto try_send;
 		}
 	}
 
@@ -1218,13 +1253,34 @@ drop:
 	return -EINVAL;
 }
 
+static void ns_routing_info(struct net_pkt *pkt,
+			    struct in6_addr *nexthop,
+			    struct in6_addr *tgt)
+{
+#if defined(CONFIG_NET_DEBUG_IPV6) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
+	char out[NET_IPV6_ADDR_LEN];
+
+	snprintk(out, sizeof(out), "%s", net_sprint_ipv6_addr(nexthop));
+
+	if (net_ipv6_addr_cmp(nexthop, tgt)) {
+		NET_DBG("Routing to %s iface %p", out, net_pkt_iface(pkt));
+	} else {
+		NET_DBG("Routing to %s via %s iface %p",
+			net_sprint_ipv6_addr(tgt), out, net_pkt_iface(pkt));
+	}
+#endif
+}
+
 static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	struct net_icmpv6_nd_opt_hdr ndopthdr, *nd_opt_hdr;
 	struct net_icmpv6_ns_hdr nshdr, *ns_hdr;
 	struct net_if_addr *ifaddr;
+	struct in6_addr *tgt;
+	const struct in6_addr *src;
 	u8_t flags = 0, prev_opt_len = 0;
+	bool routing = false;
 	int ret;
 	size_t left_len;
 
@@ -1307,13 +1363,61 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 		nd_opt_hdr = net_icmpv6_get_nd_opt_hdr(pkt, &ndopthdr);
 	}
 
-	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-						  &ns_hdr->tgt);
+	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+		ifaddr = net_if_ipv6_addr_lookup(&ns_hdr->tgt, NULL);
+	} else {
+		ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
+							  &ns_hdr->tgt);
+	}
+
 	if (!ifaddr) {
+		if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+			struct in6_addr *nexthop;
+
+			nexthop = check_route(NULL, &ns_hdr->tgt, NULL);
+			if (nexthop) {
+				ns_routing_info(pkt, nexthop, &ns_hdr->tgt);
+
+				/* Note that the target is not the address of
+				 * the "nethop" as that is a link-local address
+				 * which is not routable.
+				 */
+				tgt = &ns_hdr->tgt;
+
+				/* Source address must be one of our real
+				 * interface address where the packet was
+				 * received.
+				 */
+				src = net_if_ipv6_select_src_addr(
+					net_pkt_iface(pkt),
+					&NET_IPV6_HDR(pkt)->src);
+				if (!src) {
+					NET_DBG("No interface address for "
+						"dst %s iface %p",
+						net_sprint_ipv6_addr(
+						      &NET_IPV6_HDR(pkt)->src),
+						net_pkt_iface(pkt));
+					goto drop;
+				}
+
+				routing = true;
+				goto nexthop_found;
+			}
+		}
+
 		NET_DBG("No such interface address %s",
 			net_sprint_ipv6_addr(&ns_hdr->tgt));
 		goto drop;
+	} else {
+		tgt = &ifaddr->address.in6_addr;
+
+		/* As we swap the addresses later, the source will correctly
+		 * have our address.
+		 */
+		src = &NET_IPV6_HDR(pkt)->src;
 	}
+
+nexthop_found:
 
 #if !defined(CONFIG_NET_IPV6_DAD)
 	if (net_is_ipv6_addr_unspecified(&NET_IPV6_HDR(pkt)->src)) {
@@ -1367,12 +1471,26 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 		goto send_na;
 	}
 
+	if (routing) {
+		/* No need to do NUD here when the target is being routed. */
+		goto send_na;
+	}
+
 	/* Neighbor Unreachability Detection (NUD) */
-	if (net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-					     &NET_IPV6_HDR(pkt)->dst)) {
+	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+		ifaddr = net_if_ipv6_addr_lookup(&NET_IPV6_HDR(pkt)->dst,
+						 NULL);
+	} else {
+		ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
+						      &NET_IPV6_HDR(pkt)->dst);
+	}
+
+	if (ifaddr) {
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
 				&NET_IPV6_HDR(pkt)->src);
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, &ns_hdr->tgt);
+		src = &NET_IPV6_HDR(pkt)->src;
+		tgt = &ifaddr->address.in6_addr;
 		flags = NET_ICMPV6_NA_FLAG_SOLICITED |
 			NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
@@ -1383,9 +1501,9 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 
 send_na:
 	ret = net_ipv6_send_na(net_pkt_iface(pkt),
-			       &NET_IPV6_HDR(pkt)->src,
+			       src,
 			       &NET_IPV6_HDR(pkt)->dst,
-			       &ifaddr->address.in6_addr,
+			       tgt,
 			       flags);
 	if (!ret) {
 		net_pkt_unref(pkt);
@@ -3735,6 +3853,41 @@ static inline bool is_upper_layer_protocol_header(u8_t proto)
 		proto == IPPROTO_TCP);
 }
 
+#if defined(CONFIG_NET_ROUTE)
+static struct net_route_entry *add_route(struct net_if *iface,
+					 struct in6_addr *addr,
+					 u8_t prefix_len)
+{
+	struct net_route_entry *route;
+
+	route = net_route_lookup(iface, addr);
+	if (route) {
+		return route;
+	}
+
+	route = net_route_add(iface, addr, prefix_len, addr);
+
+	NET_DBG("%s route to %s/%d iface %p", route ? "Add" : "Cannot add",
+		net_sprint_ipv6_addr(addr), prefix_len, iface);
+
+	return route;
+}
+#endif /* CONFIG_NET_ROUTE */
+
+static void no_route_info(struct net_pkt *pkt,
+			  struct in6_addr *src,
+			  struct in6_addr *dst)
+{
+#if defined(CONFIG_NET_DEBUG_IPV6) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
+	char out[NET_IPV6_ADDR_LEN];
+
+	snprintk(out, sizeof(out), "%s", net_sprint_ipv6_addr(dst));
+
+	NET_DBG("Will not route pkt %p ll src %s to dst %s between interfaces",
+		pkt, net_sprint_ipv6_addr(src), out);
+#endif
+}
+
 enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 {
 	struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
@@ -3777,30 +3930,84 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 #if defined(CONFIG_NET_ROUTE)
 		struct net_route_entry *route;
 		struct in6_addr *nexthop;
+		bool found;
 
 		/* Check if the packet can be routed */
-		if (net_route_get_info(net_pkt_iface(pkt), &hdr->dst, &route,
-				       &nexthop)) {
+		if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+			found = net_route_get_info(NULL, &hdr->dst, &route,
+				&nexthop);
+		} else {
+			found = net_route_get_info(net_pkt_iface(pkt),
+				&hdr->dst, &route, &nexthop);
+		}
+
+		if (found) {
 			int ret;
+
+			if (IS_ENABLED(CONFIG_NET_ROUTING) &&
+			    (net_is_ipv6_ll_addr(&hdr->src) ||
+			     net_is_ipv6_ll_addr(&hdr->dst))) {
+				/* RFC 4291 ch 2.5.6 */
+				no_route_info(pkt, &hdr->src, &hdr->dst);
+
+				net_stats_update_ipv6_drop();
+				goto drop;
+			}
+
+			/* Used when detecting if the original link
+			 * layer address length is changed or not.
+			 */
+			net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
 
 			if (route) {
 				net_pkt_set_iface(pkt, route->iface);
 			}
 
+			if (IS_ENABLED(CONFIG_NET_ROUTING) &&
+			    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
+				/* If the route interface to destination is
+				 * different than the original route, then add
+				 * route to original source.
+				 */
+				NET_DBG("Route pkt %p from %p to %p",
+					pkt, net_pkt_orig_iface(pkt),
+					net_pkt_iface(pkt));
+
+				add_route(net_pkt_orig_iface(pkt),
+					  &NET_IPV6_HDR(pkt)->src, 128);
+			}
+
 			ret = net_route_packet(pkt, nexthop);
 			if (ret < 0) {
-				NET_DBG("Cannot re-route pkt %p via %s (%d)",
+				NET_DBG("Cannot re-route pkt %p via %s "
+					"at iface %p (%d)",
 					pkt, net_sprint_ipv6_addr(nexthop),
-					ret);
+					net_pkt_iface(pkt), ret);
 			} else {
 				return NET_OK;
 			}
-		} else
+		} else {
+			NET_DBG("No route to %s pkt %p dropped",
+				net_sprint_ipv6_addr(&hdr->dst), pkt);
+		}
+#else /* CONFIG_NET_ROUTE */
+		NET_DBG("IPv6 packet in pkt %p not for me", pkt);
 #endif /* CONFIG_NET_ROUTE */
 
-		{
-			NET_DBG("IPv6 packet in pkt %p not for me", pkt);
-		}
+		net_stats_update_ipv6_drop();
+		goto drop;
+	}
+
+	/* If we receive a packet with ll source address fe80: and destination
+	 * address is one of ours, and if the packet would cross interface
+	 * boundary, then drop the packet. RFC 4291 ch 2.5.6
+	 */
+	if (IS_ENABLED(CONFIG_NET_ROUTING) &&
+	    net_is_ipv6_ll_addr(&hdr->src) &&
+	    !net_is_ipv6_addr_mcast(&hdr->dst) &&
+	    !net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
+					      &hdr->dst)) {
+		no_route_info(pkt, &hdr->src, &hdr->dst);
 
 		net_stats_update_ipv6_drop();
 		goto drop;
