@@ -67,15 +67,15 @@
 	} while (0)
 
 #define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
-#define TC_START(name) PRINT_DATA("tc_start() - %s\n", name)
+#define TC_START(name) PRINT_DATA("starting test - %s\n", name)
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 
 /* prints result and the function name */
 #define _TC_END_RESULT(result, func)					\
 	do {								\
-		PRINT_LINE;						\
 		TC_END(result, "%s - %s.\n",				\
 		       (result) == TC_PASS ? PASS : FAIL, func);	\
+		PRINT_LINE;						\
 	} while (0)
 #define TC_END_RESULT(result)                           \
 	_TC_END_RESULT((result), __func__)
