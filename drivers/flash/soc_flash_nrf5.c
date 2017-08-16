@@ -468,7 +468,8 @@ static int write_op(void *context)
 	/* Write all the 4-byte aligned data */
 	while (w_ctx->len >= sizeof(u32_t)) {
 		nvmc_wait_ready();
-		*(u32_t *)w_ctx->flash_addr = *(u32_t *)w_ctx->data_addr;
+		*(u32_t *)w_ctx->flash_addr =
+				UNALIGNED_GET((u32_t *)w_ctx->data_addr);
 
 		shift_write_context(sizeof(u32_t), w_ctx);
 
