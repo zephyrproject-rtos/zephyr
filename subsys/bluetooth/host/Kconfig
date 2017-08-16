@@ -55,7 +55,7 @@ config BT_HCI_TX_STACK_SIZE
 	default 256
 	default 256 if BT_H4
 	default 256 if BT_H5
-	default 256 if BT_SPI
+	default 416 if BT_SPI
 	default 640 if BT_CTLR
 
 config BT_HCI_TX_PRIO
