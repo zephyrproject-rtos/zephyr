@@ -30,6 +30,13 @@ endchoice
 
 comment "BLE Controller configuration"
 
+config BT_CTLR_HCI_VS_EXT
+	bool "Zephyr HCI Vendor-Specific Extensions"
+	default y
+	help
+	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
+	  Controller.
+
 config BT_CTLR_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
