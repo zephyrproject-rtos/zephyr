@@ -6,13 +6,13 @@ For an explanation of the SimpleLink family SDK directory structure, see:
 http://dev.ti.com/tirex/content/simplelink_cc13x0_sdk_1_30_00_06/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
 
 The current version supported in Zephyr is the SimpleLink CC3220 SDK
-1.40.00.03, downloaded from:
+1.30.01.03, downloaded from:
 
 	http://www.ti.com/tool/download/SIMPLELINK-CC3220-SDK
 
 A subset of the files in the source/ti/devices/cc32xx/driverlib/ and inc/
-directories are copied from a Linux CC3220 SDK installation, with
-some whitespace cleanup and file mode fixes.
+directories are copied from a Linux CC3220 SDK installation without
+modification.
 
 TI provides the driver library functions burned into ROM at the factory,
 or updated via a service pack patch, thus saving application code space.
@@ -20,11 +20,11 @@ or updated via a service pack patch, thus saving application code space.
 Calling driverlib APIs prefixed by "MAP_" will vector to those functions
 already existing in ROM.
 
+For the zephyr shell sample, for example, using these ROM functions
+results in a savings of about 2Kb in code space.
+
 After setting CONFIG_HAS_CC3220SDK=y in Kconfig, most of the
 peripheral driver library functions will be accessible from ROM,
 except for the following modules:
 - driverlib/prcm.c
 - driverlib/utils.c
-
-Setting CONFIG_SIMPLELINK_HOST_DRIVER=y builds the SimpleLink Host
-Driver, which communicates over SPI to the network coprocessor.
