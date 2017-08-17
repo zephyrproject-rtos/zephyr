@@ -63,12 +63,14 @@ execute_process(
   COMMAND ${CMAKE_C_COMPILER} --print-file-name=include
   OUTPUT_VARIABLE _OUTPUT
 )
+string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
 list(APPEND NOSTDINC ${_OUTPUT})
 
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
   OUTPUT_VARIABLE _OUTPUT
 )
+string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
 list(APPEND NOSTDINC ${_OUTPUT})
 
 if(TOOLCHAIN_DO_PASS2 AND TARGET zephyr)
