@@ -130,8 +130,8 @@ int net_ipv6_send_ns(struct net_if *iface, struct net_pkt *pending,
 int net_ipv6_send_rs(struct net_if *iface);
 int net_ipv6_start_rs(struct net_if *iface);
 
-int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
-		     struct in6_addr *dst, struct in6_addr *tgt,
+int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
+		     const struct in6_addr *dst, const struct in6_addr *tgt,
 		     u8_t flags);
 
 /**

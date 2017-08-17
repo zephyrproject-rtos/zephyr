@@ -1167,8 +1167,8 @@ static inline void handle_ns_neighbor(struct net_pkt *pkt, u8_t ll_len,
 	nbr_add(pkt, &nbr_lladdr, false, NET_IPV6_NBR_STATE_INCOMPLETE);
 }
 
-int net_ipv6_send_na(struct net_if *iface, struct in6_addr *src,
-		     struct in6_addr *dst, struct in6_addr *tgt,
+int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
+		     const struct in6_addr *dst, const struct in6_addr *tgt,
 		     u8_t flags)
 {
 	struct net_icmpv6_na_hdr hdr, *na_hdr;
