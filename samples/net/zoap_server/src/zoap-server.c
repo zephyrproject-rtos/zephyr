@@ -217,8 +217,11 @@ static int test_post(struct zoap_resource *resource,
 	zoap_header_set_token(&response, token, tkl);
 
 	for (p = location_path; *p; p++) {
-		zoap_add_option(&response, ZOAP_OPTION_LOCATION_PATH,
-				*p, strlen(*p));
+		r = zoap_add_option(&response, ZOAP_OPTION_LOCATION_PATH,
+				    *p, strlen(*p));
+		if (r < 0) {
+			return -EINVAL;
+		}
 	}
 
 	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
@@ -280,8 +283,11 @@ static int location_query_post(struct zoap_resource *resource,
 	zoap_header_set_token(&response, token, tkl);
 
 	for (p = location_query; *p; p++) {
-		zoap_add_option(&response, ZOAP_OPTION_LOCATION_QUERY,
-				*p, strlen(*p));
+		r = zoap_add_option(&response, ZOAP_OPTION_LOCATION_QUERY,
+				    *p, strlen(*p));
+		if (r < 0) {
+			return -EINVAL;
+		}
 	}
 
 	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
