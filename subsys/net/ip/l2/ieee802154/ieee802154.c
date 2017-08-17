@@ -33,53 +33,13 @@
 
 #if 0
 
-#include <misc/printk.h>
+#include "net_private.h"
 
-static inline void hexdump(u8_t *pkt, u16_t length, u8_t reserve)
+static inline void pkt_hexdump(struct net_pkt *pkt, bool full)
 {
-	int i;
-
-	for (i = 0; i < length;) {
-		int j;
-
-		printk("\t");
-
-		for (j = 0; j < 10 && i < length; j++, i++) {
-#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-			if (i < reserve && reserve) {
-				printk(SYS_LOG_COLOR_YELLOW);
-			} else {
-				printk(SYS_LOG_COLOR_OFF);
-			}
-#endif
-			printk("%02x ", *pkt++);
-		}
-
-#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-		if (i < reserve) {
-			printk(SYS_LOG_COLOR_OFF);
-		}
-#endif
-		printk("\n");
-	}
+	net_hexdump_frags("IEEE 802.15.4 packet content:", pkt, full);
 }
 
-static void pkt_hexdump(struct net_pkt *pkt, bool each_frag_reserve)
-{
-	u16_t reserve = each_frag_reserve ? net_pkt_ll_reserve(pkt) : 0;
-	struct net_buf *frag;
-
-	printk("IEEE 802.15.4 packet content:\n");
-
-	frag = pkt->frags;
-	while (frag) {
-		hexdump(each_frag_reserve ?
-			frag->data - reserve : frag->data,
-			frag->len + reserve, reserve);
-
-		frag = frag->frags;
-	}
-}
 #else
 #define pkt_hexdump(...)
 #endif
