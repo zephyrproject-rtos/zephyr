@@ -254,7 +254,7 @@ static void set_baud_rate(struct device *dev, u32_t baud_rate)
 
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = INBYTE(LCR(dev));
-		OUTBYTE(LCR(dev), LCR_DLAB);
+		OUTBYTE(LCR(dev), LCR_DLAB | lcr_cache);
 		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
 		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
 
