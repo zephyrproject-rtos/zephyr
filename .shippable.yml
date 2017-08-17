@@ -5,7 +5,7 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.1
-        - SANITYCHECK_OPTIONS=" --inline-logs -R"
+        - SANITYCHECK_OPTIONS=" --inline-logs -R --no-update -p nrf52_pca10040 -T samples/bluetooth/"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
@@ -30,10 +30,19 @@ build:
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
+      - wget -q https://cmake.org/files/v3.9/cmake-3.9.1-Linux-x86_64.tar.gz;
+      - tar xf cmake-3.9.1-Linux-x86_64.tar.gz;
+      - sudo cp -a cmake-3.9.1-Linux-x86_64/bin/* /usr/local/bin/;
+      - sudo cp -a cmake-3.9.1-Linux-x86_64/share/* /usr/local/share/;
+      - cmake -version
       - source zephyr-env.sh
+      - cd $ZEPHYR_BASE/scripts
+      - mkdir build && cd build
+      - cmake .. && make
+      - export PREBUILT_HOST_TOOLS=$(pwd)
+      - cd $ZEPHYR_BASE
+      - export BOARD=nrf52_pca10040
       - ccache -c -s --max-size=2000M
-      - make host-tools
-      - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
       - >
           if [ "$IS_PULL_REQUEST" = "true" ]; then
             S3_PATH="s3://zephyr-logs/pull-requests/${REPO_FULL_NAME}/${PULL_REQUEST}"
