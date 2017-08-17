@@ -55,6 +55,25 @@ set(KERNEL_BIN_NAME ${KERNEL_NAME}.bin)
 set(KERNEL_HEX_NAME ${KERNEL_NAME}.hex)
 set(KERNEL_STAT_NAME ${KERNEL_NAME}.stat)
 
+define_property(GLOBAL PROPERTY ZEPHYR_LIBS
+    BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
+    FULL_DOCS "Global list of all Zephyr CMake libs that should be linked in. zephyr_library() appends libs to this list.")
+set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
+
+define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
+  BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
+  FULL_DOCS "\
+Object files that are generated after Zephyr has been linked once.\
+May include isr tables, mmu tables, etc."
+  )
+set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
+
+# zephyr is a catchall CMake library for source files that can be
+# built purely with the include paths, defines, and other compiler
+# flags that all zephyr source files use.
+add_library(zephyr STATIC "")
+zephyr_library(zephyr)
+
 include(dts/dts.cmake)
 
 include_directories(
@@ -226,25 +245,6 @@ if(NOT EXISTS ${LINKER_SCRIPT})
 endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
-
-define_property(GLOBAL PROPERTY ZEPHYR_LIBS
-    BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
-    FULL_DOCS "Global list of all Zephyr CMake libs that should be linked in. zephyr_library() appends libs to this list.")
-set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
-
-define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
-  BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
-  FULL_DOCS "\
-Object files that are generated after Zephyr has been linked once.\
-May include isr tables, mmu tables, etc."
-  )
-set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
-
-# zephyr is a catchall CMake library for source files that don't need
-# to be built with include paths, defines, or other compiler flags
-# above what all zephyr source files use.
-add_library(zephyr STATIC "")
-zephyr_library(zephyr)
 
 # main is a "CMake OBJECT library"[0] containing all the application
 # code and is modified by the entry point
