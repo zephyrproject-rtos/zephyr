@@ -32,6 +32,12 @@ function(target_compile_option_ifdef feature_toggle target scope option)
   endif()
 endfunction()
 
+function(target_cc_option_ifdef feature_toggle target scope option)
+  if(${feature_toggle})
+    target_cc_options(${target} ${scope} ${option})
+  endif()
+endfunction()
+
 function(cc_option_ifdef feature_toggle option)
   if(${feature_toggle})
     cc_option_ifdef(${option})
