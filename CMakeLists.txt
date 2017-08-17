@@ -76,7 +76,7 @@ zephyr_library(zephyr)
 
 include(dts/dts.cmake)
 
-include_directories(
+target_include_directories(zephyr PUBLIC
   kernel/include
   arch/${ARCH}/include
   arch/${ARCH}/soc/${SOC_PATH}
@@ -88,14 +88,13 @@ include_directories(
   ${STDINCLUDE}
 )
 
-add_definitions(
-  -DKERNEL
-  -D__ZEPHYR__=1
-  -include ${AUTOCONF_H}
-  -D_FORTIFY_SOURCE=2
+target_compile_definitions(zephyr PUBLIC
+  KERNEL
+  __ZEPHYR__=1
+  _FORTIFY_SOURCE=2
 )
 
-add_compile_options(
+target_compile_options(zephyr PUBLIC
   -Os # TODO: allow config to override this
   -g # TODO: build configuration enough?
   -Wall
@@ -104,9 +103,10 @@ add_compile_options(
   -Wno-format-zero-length
   -Wno-main
   -ffreestanding
+  -include ${AUTOCONF_H}
 )
 
-add_compile_options(
+target_compile_options(zephyr PUBLIC
   $<$<COMPILE_LANGUAGE:C>:-std=c99>
 
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++11>
@@ -120,11 +120,13 @@ add_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
-ld_option(-nostartfiles)
-ld_option(-nodefaultlibs)
-ld_option(-nostdlib)
-ld_option(-static)
-ld_option(-no-pie)
+target_link_libraries(zephyr PUBLIC
+  -nostartfiles
+  -nodefaultlibs
+  -nostdlib
+  -static
+  -no-pie
+  )
 
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
@@ -136,83 +138,82 @@ separate_arguments(EXTRA_CXXFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CXXFLAGS})
 separate_arguments(EXTRA_AFLAGS_AS_LIST   UNIX_COMMAND ${EXTRA_AFLAGS})
 
 if(EXTRA_CPPFLAGS)
-  add_definitions(${EXTRA_CPPFLAGS_AS_LIST})
+  target_compile_definitions(zephyr PUBLIC ${EXTRA_CPPFLAGS_AS_LIST})
 endif()
 if(EXTRA_LDFLAGS)
-  link_libraries(${EXTRA_LDFLAGS_AS_LIST})
+  target_link_libraries(zephyr PUBLIC ${EXTRA_LDFLAGS_AS_LIST})
 endif()
 if(EXTRA_CFLAGS)
   foreach(F ${EXTRA_CFLAGS_AS_LIST})
-    add_compile_options($<$<COMPILE_LANGUAGE:C>:${F}>)
+    target_compile_options(zephyr PUBLIC $<$<COMPILE_LANGUAGE:C>:${F}>)
   endforeach()
 endif()
 if(EXTRA_CXXFLAGS)
   foreach(F ${EXTRA_CXXFLAGS_AS_LIST})
-    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${F}>)
+    target_compile_options(zephyr PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${F}>)
   endforeach()
 endif()
 if(EXTRA_AFLAGS)
   foreach(F ${EXTRA_AFLAGS_AS_LIST})
-    add_compile_options($<$<COMPILE_LANGUAGE:ASM>:${F}>)
+    target_compile_options(zephyr PUBLIC $<$<COMPILE_LANGUAGE:ASM>:${F}>)
   endforeach()
 endif()
 
 if(CONFIG_READABLE_ASM)
-  cc_option(-fno-reorder-blocks)
-  cc_option(-fno-ipa-cp-clone)
-  cc_option(-fno-partial-inlining)
+  target_cc_option(zephyr PUBLIC -fno-reorder-blocks)
+  target_cc_option(zephyr PUBLIC -fno-ipa-cp-clone)
+  target_cc_option(zephyr PUBLIC -fno-partial-inlining)
 endif()
 
-cc_option(-fno-asynchronous-unwind-tables)
-cc_option(-fno-pie)
-cc_option(-fno-pic)
+target_cc_option(zephyr PUBLIC -fno-asynchronous-unwind-tables)
+target_cc_option(zephyr PUBLIC -fno-pie)
+target_cc_option(zephyr PUBLIC -fno-pic)
+target_cc_option(zephyr PUBLIC -fno-strict-overflow)
+target_cc_option(zephyr PUBLIC -Wno-pointer-sign)
 
 if(CONFIG_STACK_CANARIES)
-  cc_option(-fstack-protector-all)
+  target_cc_option(zephyr PUBLIC -fstack-protector-all)
 else()
-  cc_option(-fno-stack-protector)
+  target_cc_option(zephyr PUBLIC -fno-stack-protector)
 endif()
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   if(CONFIG_OMIT_FRAME_POINTER)
-    cc_option(-fomit-frame-pointer)
+    target_cc_option(zephyr PUBLIC -fomit-frame-pointer)
   else()
-    cc_option(-fno-omit-frame-pointer)
+    target_cc_option(zephyr PUBLIC -fno-omit-frame-pointer)
   endif()
 endif()
 
 # TODO: Handle default to Os
-add_compile_options(${CONFIG_COMPILER_OPT})
+target_compile_options(zephyr PUBLIC ${CONFIG_COMPILER_OPT})
 
 # TODO: Include arch compiler options at this point.
 
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-   cc_disable_warning(no-unknown-warning-option)
-   cc_disable_warning(unused-variable)
-   cc_disable_warning(format-invalid-specifier)
-   cc_disable_warning(gnu)
-   # comparison of unsigned expression < 0 is always false
-   cc_disable_warning(tautological-compare)
+  target_cc_option(zephyr PUBLIC -Wno-unknown-warning-option)
+  target_cc_option(zephyr PUBLIC -Wno-unused-variable)
+  target_cc_option(zephyr PUBLIC -Wno-unused-variable)
+  target_cc_option(zephyr PUBLIC -Wno-format-invalid-specifier)
+  target_cc_option(zephyr PUBLIC -Wno-gnu)
+  # comparison of unsigned expression < 0 is always false
+  target_cc_option(zephyr PUBLIC -Wtautological-compare)
 else() # GCC assumed
-  cc_disable_warning(unused-but-set-variable)
-  cc_option(-fno-reorder-functions)
+  target_cc_option(zephyr PUBLIC -Wno-unused-but-set-variable)
+  target_cc_option(zephyr PUBLIC -fno-reorder-functions)
   if(NOT ${ZEPHYR_GCC_VARIANT} STREQUAL "xcc")
-    cc_option(-fno-defer-pop)
+    target_cc_option(zephyr PUBLIC -fno-defer-pop)
   endif()
 endif()
 
-cc_option_ifdef(CONFIG_DEBUG_SECTION_MISMATCH -fno-inline-functions-called-once)
+target_cc_option_ifdef(CONFIG_DEBUG_SECTION_MISMATCH zephyr PUBLIC -fno-inline-functions-called-once)
+target_cc_option_ifdef(CONFIG_STACK_USAGE zephyr PUBLIC -fstack-usage)
 
-add_compile_options(-nostdinc)
-include_directories(SYSTEM ${NOSTDINC})
-
-cc_disable_warning(pointer-sign)
-cc_option(-fno-strict-overflow)
-
-cc_option_ifdef(CONFIG_STACK_USAGE -fstack-usage)
+target_compile_options(zephyr PUBLIC -nostdinc)
+target_include_directories(zephyr SYSTEM PUBLIC ${NOSTDINC})
 
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
-cc_option(-Werror=implicit-int)
+target_cc_option(zephyr PUBLIC -Werror=implicit-int)
 
 # Prohibit date/time macros, which would make the build non-deterministic
 # cc-option(-Werror=date-time)
@@ -221,10 +222,10 @@ cc_option(-Werror=implicit-int)
 # ar_option(D)
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
-ld_option(${LINKERFLAGPREFIX},-X)
-ld_option(${LINKERFLAGPREFIX},-N)
-ld_option(${LINKERFLAGPREFIX},--gc-sections)
-ld_option(${LINKERFLAGPREFIX},--build-id=none)
+target_link_libraries(zephyr PUBLIC ${LINKERFLAGPREFIX},-X)
+target_link_libraries(zephyr PUBLIC ${LINKERFLAGPREFIX},-N)
+target_link_libraries(zephyr PUBLIC ${LINKERFLAGPREFIX},--gc-sections)
+target_link_libraries(zephyr PUBLIC ${LINKERFLAGPREFIX},--build-id=none)
 
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${PROJECT_BASE}/${CONFIG_CUSTOM_LINKER_SCRIPT})
@@ -246,12 +247,10 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
-# main is a "CMake OBJECT library"[0] containing all the application
-# code and is modified by the entry point
-# ${APPLICATION_SOURCE_DIR}/CMakeLists.txt that was specified when
-# cmake was called.  [0]
-# https://cmake.org/Wiki/CMake/Tutorials/Object_Library
-add_library(main OBJECT "")
+# app is a CMake library containing all the application code and is
+# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
+# that was specified when cmake was called.
+zephyr_library(app)
 
 add_subdirectory(lib)
 add_subdirectory(misc)
@@ -336,8 +335,6 @@ set(zephyr_lnk
   ${TOOLCHAIN_LIBS}
 )
 
-target_object_link_libraries(main zephyr)
-
 if(CONFIG_GEN_ISR_TABLES)
   if("${ARCH}" STREQUAL "riscv32")
     set(OUTPUT_FORMAT elf32-littleriscv)
@@ -370,7 +367,7 @@ endif()
 # Read the global variable into the local variable GKOF
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 
-add_executable(       prebuilt_kernel $<TARGET_OBJECTS:main> $<TARGET_OBJECTS:offsets>)
+add_executable(       prebuilt_kernel $<TARGET_OBJECTS:offsets>)
 target_link_libraries(prebuilt_kernel -T${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
 set_property(TARGET   prebuilt_kernel PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     prebuilt_kernel linker_script)
@@ -397,7 +394,7 @@ if(GKOF)
     )
   add_custom_target(linker_pass2_script DEPENDS linker_pass2.cmd)
 
-  add_executable(       kernel_elf $<TARGET_OBJECTS:main> $<TARGET_OBJECTS:offsets> ${GKOF})
+  add_executable(       kernel_elf $<TARGET_OBJECTS:offsets> ${GKOF})
   target_link_libraries(kernel_elf -T${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass2.cmd)
   add_dependencies(     kernel_elf linker_pass2_script)
