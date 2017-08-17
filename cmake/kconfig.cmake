@@ -46,6 +46,9 @@ if(CREATE_NEW_DOTCONFIG)
       -O ${PROJECT_BINARY_DIR}
       ${BOARD_DEFCONFIG}
       ${CONF_FILE_AS_LIST}
+    WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
+    # The working directory is set to the app dir such that the user
+    # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
     RESULT_VARIABLE ret
   )
   if(NOT "${ret}" STREQUAL "0")
