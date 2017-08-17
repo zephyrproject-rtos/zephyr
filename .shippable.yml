@@ -5,8 +5,8 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.1
-        - SANITYCHECK_OPTIONS=" --inline-logs -R"
-        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
+        - SANITYCHECK_OPTIONS=" -R -p nrf52_pca10040 -p qemu_riscv32 -p qemu_cortex_m3 -p qemu_x86_iamcu -p qemu_x86 -p arduino_101 -p arduino_due -p cc3220sf_launchxl -p qemu_nios2 -p em_starterkit -p qemu_xtensa"
+        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS}  --load-tests test_file.txt --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
@@ -34,9 +34,13 @@ build:
           git rebase origin/${PULL_REQUEST_BASE_BRANCH};
         fi
       - source zephyr-env.sh
+      - cd $ZEPHYR_BASE/scripts
+      - mkdir build && cd build
+      - cmake .. && make
+      - export PREBUILT_HOST_TOOLS=$(pwd)
+      - cd $ZEPHYR_BASE
+      - export BOARD=nrf52_pca10040
       - ccache -c -s --max-size=2000M
-      - make host-tools
-      - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
       - >
           if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
             export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
@@ -58,7 +62,7 @@ build:
             if [ -s modified_boards.args ]; then
               ./scripts/sanitycheck +modified_boards.args --save-tests test_file.txt;
             fi;
-            if [ -s modified_tests.args ]; then
+            if [ -s modified_tests.argsXX ]; then
               ./scripts/sanitycheck +modified_tests.args --save-tests test_file.txt;
             fi;
             rm -f modified_tests.args modified_boards.args;
