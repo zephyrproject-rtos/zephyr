@@ -617,7 +617,12 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context,
 
 	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj,
 					       context->path->res_id);
+	/* if obj_field is not found, treat as an optional resource */
 	if (!obj_field) {
+		if (context->operation == LWM2M_OP_CREATE) {
+			return -ENOTSUP;
+		}
+
 		return -ENOENT;
 	}
 
@@ -703,7 +708,13 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 			path->level = 3;
 			ret = do_write_op_tlv_item(context,
 						   &inbuf[tlvpos], len);
-			if (ret < 0) {
+			/*
+			 * ignore errors for CREATE op
+			 * TODO: support BOOTSTRAP WRITE where optional
+			 * resources are ignored
+			 */
+			if (ret < 0 && (context->operation != LWM2M_OP_CREATE ||
+					ret != -ENOTSUP)) {
 				return ret;
 			}
 		}
