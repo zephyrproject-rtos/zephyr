@@ -401,7 +401,7 @@ static unsigned char uart_ns16550_poll_out(struct device *dev,
 					   unsigned char c)
 {
 	/* wait for transmitter to ready to accept a character */
-	while ((INBYTE(LSR(dev)) & LSR_TEMT) == 0)
+	while ((INBYTE(LSR(dev)) & LSR_THRE) == 0)
 		;
 
 	OUTBYTE(THR(dev), c);
