@@ -89,7 +89,7 @@ int stm32_gpio_configure(u32_t *base_addr, int pin, int conf, int altf)
 	mode_io = (conf >> STM32_MODE_INOUT_SHIFT) & STM32_MODE_INOUT_MASK;
 
 	if (mode_io == STM32_MODE_INPUT) {
-		int in_pudpd = (conf >> STM32_PUPD_SHIFT) & STM32_PUPD_MASK;
+		int in_pudpd = conf & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
 
 		/* Pin configured in input mode */
 		/* Mode: 00 */
