@@ -10,4 +10,3 @@ patches for code, documentation, tests, and more, directly to the project.
    :maxdepth: 1
 
    contribute_guidelines.rst
-   security.rst

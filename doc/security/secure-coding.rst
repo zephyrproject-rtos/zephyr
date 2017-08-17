@@ -79,7 +79,7 @@ help prevent security violations and limit their impact:
   protection scheme, e.g., after successful authentication.
   Furthermore, default settings for services shall be chosen in a way
   to provide maximum security.  This corresponds to the "Secure by
-  Default" paradigm [MICRO12]_.
+  Default" paradigm [MS12]_.
 
 - **Separation of privilege** is the principle that two conditions or
   more need to be satisfied before access is granted. In the context
@@ -108,13 +108,13 @@ specific to the development of a secure RTOS:
   threat mitigation approach. In case of the complementary security
   approach, parts of the threat mitigation are performed by the
   underlying platform. In case such mechanisms are not provided by the
-  platform, or are not trusted, a defense in depth [MICRO12]_ paradigm
+  platform, or are not trusted, a defense in depth [MS12]_ paradigm
   shall be used.
 
 - **Less commonly used services off by default**: to reduce the
   exposure of the system to potential attacks, features or services
   shall not be enabled by default if they are only rarely used (a
-  threshold of 80% is given in [MICRO12]_). For the Zephyr project, this can
+  threshold of 80% is given in [MS12]_). For the Zephyr project, this can
   be realized using the configuration management. Each functionality
   and module shall be represented as a configuration option and needs
   to be explicitly enabled. Then, all features, protocols, and drivers
@@ -279,14 +279,3 @@ and approved by consensus.
    infrastructure being taken down.
 
 .. _attack: http://www.theverge.com/2016/10/21/13362354/dyn-dns-ddos-attack-cause-outage-status-explained
-
-.. [MICRO12] Microsoft Corporation, Security Development Lifecycle - SDL
-   Process Guidance Version 5.2, 2012.
-
-.. [PAUL09] M. Paul, "The Ten Best Practices for Secure Software
-   Development," International Information Systems Security Certification
-   Consortium, Inc. [(ISC)2], Palm Harbor, FL, USA, 2009.
-
-.. [SALT75] J. H. Saltzer and M. D. Schroeder, "The protection of
-   information in computer systems," Proceedings of the IEEE,
-   vol. 63, no. 9, pp. 1278- 1308, Sep 1975.

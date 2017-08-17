@@ -46,6 +46,7 @@ Sections
    api/api.rst
    samples/samples.rst
    reference/kconfig/index.rst
+   security/security.rst
    contribute/contribute.rst
    release-notes.rst
    LICENSING.rst
