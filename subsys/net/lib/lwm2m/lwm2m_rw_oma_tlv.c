@@ -615,10 +615,11 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context,
 		return ret;
 	}
 
+	/* if obj_field is not found, treated as an optional resource */
 	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj,
 					       context->path->res_id);
 	if (!obj_field) {
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if ((obj_field->permissions & LWM2M_PERM_W) != LWM2M_PERM_W) {
@@ -703,7 +704,8 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 			path->level = 3;
 			ret = do_write_op_tlv_item(context,
 						   &inbuf[tlvpos], len);
-			if (ret < 0) {
+			/* skip optional */
+			if (ret < 0 && ret != -ENOTSUP) {
 				return ret;
 			}
 		}
