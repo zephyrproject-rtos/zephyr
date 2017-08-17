@@ -1578,8 +1578,8 @@ static void vs_read_supported_commands(struct net_buf *buf,
 	/* Set Version Information, Supported Commands, Supported Features. */
 	rp->commands[0] |= BIT(0) | BIT(1) | BIT(2);
 #if defined(CONFIG_BT_CTLR_HCI_VS_EXT)
-	/* Read Static Addresses */
-	rp->commands[1] |= BIT(0);
+	/* Read Static Addresses, Read Key Hierarchy Roots */
+	rp->commands[1] |= BIT(0) | BIT(1);
 #endif /* CONFIG_BT_CTLR_HCI_VS_EXT */
 }
 
@@ -1633,6 +1633,53 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 	rp->num_addrs = 0;
 }
+
+static void vs_read_key_hierarchy_roots(struct net_buf *buf,
+					struct net_buf **evt)
+{
+	struct bt_hci_rp_vs_read_key_hierarchy_roots *rp;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = 0x00;
+
+#if defined(CONFIG_SOC_FAMILY_NRF5)
+	/* Fill in IR if present */
+	if ((NRF_FICR->IR[0] != UINT32_MAX) &&
+	    (NRF_FICR->IR[1] != UINT32_MAX) &&
+	    (NRF_FICR->IR[2] != UINT32_MAX) &&
+	    (NRF_FICR->IR[3] != UINT32_MAX)) {
+		sys_put_le32(NRF_FICR->IR[0], &rp->ir[0]);
+		sys_put_le32(NRF_FICR->IR[1], &rp->ir[4]);
+		sys_put_le32(NRF_FICR->IR[2], &rp->ir[8]);
+		sys_put_le32(NRF_FICR->IR[3], &rp->ir[12]);
+	} else {
+		/* Mark IR as invalid */
+		memset(rp->ir, 0x00, sizeof(rp->ir));
+	}
+
+	/* Fill in ER if present */
+	if ((NRF_FICR->ER[0] != UINT32_MAX) &&
+	    (NRF_FICR->ER[1] != UINT32_MAX) &&
+	    (NRF_FICR->ER[2] != UINT32_MAX) &&
+	    (NRF_FICR->ER[3] != UINT32_MAX)) {
+		sys_put_le32(NRF_FICR->ER[0], &rp->er[0]);
+		sys_put_le32(NRF_FICR->ER[1], &rp->er[4]);
+		sys_put_le32(NRF_FICR->ER[2], &rp->er[8]);
+		sys_put_le32(NRF_FICR->ER[3], &rp->er[12]);
+	} else {
+		/* Mark ER as invalid */
+		memset(rp->er, 0x00, sizeof(rp->er));
+	}
+
+	return;
+#endif /* CONFIG_SOC_FAMILY_NRF5 */
+
+	/* Mark IR as invalid */
+	memset(rp->ir, 0x00, sizeof(rp->ir));
+	/* Mark ER as invalid */
+	memset(rp->er, 0x00, sizeof(rp->er));
+}
+
 #endif /* CONFIG_BT_CTLR_HCI_VS_EXT */
 
 static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
@@ -1654,6 +1701,10 @@ static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 #if defined(CONFIG_BT_CTLR_HCI_VS_EXT)
 	case BT_OCF(BT_HCI_OP_VS_READ_STATIC_ADDRS):
 		vs_read_static_addrs(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_VS_READ_KEY_HIERARCHY_ROOTS):
+		vs_read_key_hierarchy_roots(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_HCI_VS_EXT */
 
