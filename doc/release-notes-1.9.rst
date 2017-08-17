@@ -49,6 +49,7 @@ Drivers and Sensors
 *******************
 
 * KW40Z IEEE 802.15.4 radio driver support added
+* APDS9960 sensor driver added
 
 Networking
 **********
