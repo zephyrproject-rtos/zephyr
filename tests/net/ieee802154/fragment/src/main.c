@@ -430,7 +430,7 @@ static int test_fragment(struct net_fragment_data *data)
 
 #if DEBUG > 0
 	printk("length before compression %zd\n", net_pkt_get_len(pkt));
-	net_hexdump_frags("before-compression", pkt);
+	net_hexdump_frags("before-compression", pkt, false);
 #endif
 
 	if (!net_6lo_compress(pkt, data->iphc,
@@ -442,7 +442,7 @@ static int test_fragment(struct net_fragment_data *data)
 #if DEBUG > 0
 	printk("length after compression and fragmentation %zd\n",
 	       net_pkt_get_len(pkt));
-	net_hexdump_frags("after-compression", pkt);
+	net_hexdump_frags("after-compression", pkt, false);
 #endif
 
 	frag = pkt->frags;
@@ -481,7 +481,7 @@ compare:
 #if DEBUG > 0
 	printk("length after reassembly and uncompression %zd\n",
 	       net_pkt_get_len(rxpkt));
-	net_hexdump_frags("after-uncompression", rxpkt);
+	net_hexdump_frags("after-uncompression", rxpkt, false);
 #endif
 
 	if (compare_data(rxpkt, data)) {
@@ -531,4 +531,3 @@ void main(void)
 
 	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
 }
-

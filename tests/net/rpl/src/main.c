@@ -149,8 +149,8 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 
 	DBG("pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
 
-#if 0
-	net_hexdump_frags("recv", pkt);
+#if defined(CONFIG_NET_DEBUG_RPL)
+	net_hexdump_frags("recv", pkt, false);
 #endif
 
 	if (NET_ICMP_HDR(pkt)->type != expected_icmpv6) {

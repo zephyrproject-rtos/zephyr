@@ -145,8 +145,8 @@ static void v6_send_syn_ack(struct net_if *iface, struct net_pkt *req)
 	DBG("rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->dst),
 	    ntohs(NET_TCP_HDR(rsp)->dst_port));
 
-	net_hexdump_frags("request TCPv6", req);
-	net_hexdump_frags("reply   TCPv6", rsp);
+	net_hexdump_frags("request TCPv6", req, false);
+	net_hexdump_frags("reply   TCPv6", rsp, false);
 
 	ret =  net_recv_data(iface, rsp);
 	if (!ret) {
@@ -941,7 +941,7 @@ static bool test_create_v6_reset_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv6", pkt);
+	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -978,7 +978,7 @@ static bool test_create_v4_reset_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv4", pkt);
+	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -1015,7 +1015,7 @@ static bool test_create_v6_syn_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv6", pkt);
+	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -1052,7 +1052,7 @@ static bool test_create_v4_syn_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv4", pkt);
+	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -1089,7 +1089,7 @@ static bool test_create_v6_synack_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv6", pkt);
+	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -1127,7 +1127,7 @@ static bool test_create_v4_synack_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv4", pkt);
+	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -1165,7 +1165,7 @@ static bool test_create_v6_fin_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv6", pkt);
+	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -1202,7 +1202,7 @@ static bool test_create_v4_fin_packet(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv4", pkt);
+	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -1239,7 +1239,7 @@ static bool test_v6_seq_check(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv6", pkt);
+	net_hexdump_frags("TCPv6", pkt, false);
 
 	seq = NET_TCP_HDR(pkt)->seq[0] << 24 |
 		NET_TCP_HDR(pkt)->seq[1] << 16 |
@@ -1271,7 +1271,7 @@ static bool test_v4_seq_check(void)
 		return false;
 	}
 
-	net_hexdump_frags("TCPv4", pkt);
+	net_hexdump_frags("TCPv4", pkt, false);
 
 	seq = NET_TCP_HDR(pkt)->seq[0] << 24 |
 		NET_TCP_HDR(pkt)->seq[1] << 16 |

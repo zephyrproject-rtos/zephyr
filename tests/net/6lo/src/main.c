@@ -830,7 +830,7 @@ static int test_6lo(struct net_6lo_data *data)
 #if DEBUG > 0
 	TC_PRINT("length before compression %zu\n",
 		 net_pkt_get_len(pkt));
-	net_hexdump_frags("before-compression", pkt);
+	net_hexdump_frags("before-compression", pkt, false);
 #endif
 
 	if (!net_6lo_compress(pkt, data->iphc, NULL)) {
@@ -841,7 +841,7 @@ static int test_6lo(struct net_6lo_data *data)
 #if DEBUG > 0
 	TC_PRINT("length after compression %zu\n",
 		 net_pkt_get_len(pkt));
-	net_hexdump_frags("after-compression", pkt);
+	net_hexdump_frags("after-compression", pkt, false);
 #endif
 
 	if (!net_6lo_uncompress(pkt)) {
@@ -852,7 +852,7 @@ static int test_6lo(struct net_6lo_data *data)
 #if DEBUG > 0
 	TC_PRINT("length after uncompression %zu\n",
 	       net_pkt_get_len(pkt));
-	net_hexdump_frags("after-uncompression", pkt);
+	net_hexdump_frags("after-uncompression", pkt, false);
 #endif
 
 	if (compare_data(pkt, data)) {
