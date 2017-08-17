@@ -6,11 +6,6 @@
 
 # Common routines used in net samples
 
-ifeq ($(CONFIG_NET_L2_BT), y)
-ccflags-y += -I${ZEPHYR_BASE}/samples/bluetooth/
-obj-y += ../../../bluetooth/gatt/ipss.o
-endif
-
 ifeq ($(CONFIG_NET_L2_IEEE802154), y)
 ifeq ($(CONFIG_NET_APP_SETTINGS), y)
 ccflags-y += -I${ZEPHYR_BASE}/samples/net/common/
