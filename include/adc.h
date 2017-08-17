@@ -85,11 +85,14 @@ struct adc_driver_api {
  * This routine enables the ADC hardware block for data sampling for the
  * specified device.
  *
+ * @deprecated This function is deprecated, power management API should be used
+ * instead.
+ *
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @return N/A
  */
-static inline void adc_enable(struct device *dev)
+static inline void __deprecated adc_enable(struct device *dev)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
@@ -102,11 +105,14 @@ static inline void adc_enable(struct device *dev)
  * This routine disables the ADC hardware block for data sampling for the
  * specified device.
  *
+ * @deprecated This function is deprecated, power management API should be used
+ * instead.
+ *
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @return N/A
  */
-static inline void adc_disable(struct device *dev)
+static inline void __deprecated adc_disable(struct device *dev)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
