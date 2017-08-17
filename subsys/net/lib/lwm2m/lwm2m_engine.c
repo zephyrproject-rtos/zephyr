@@ -2043,7 +2043,7 @@ static int handle_request(struct zoap_packet *request,
 	case ZOAP_METHOD_POST:
 		if (path.level < 2) {
 			/* write/create a object instance */
-			context.operation = LWM2M_OP_WRITE;
+			context.operation = LWM2M_OP_CREATE;
 		} else {
 			context.operation = LWM2M_OP_EXECUTE;
 		}
@@ -2123,6 +2123,7 @@ static int handle_request(struct zoap_packet *request,
 		break;
 
 	case LWM2M_OP_WRITE:
+	case LWM2M_OP_CREATE:
 		r = do_write_op(obj, &context, format);
 		break;
 
