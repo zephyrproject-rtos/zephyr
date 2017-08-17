@@ -618,7 +618,7 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context,
 	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj,
 					       context->path->res_id);
 	if (!obj_field) {
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	if ((obj_field->permissions & LWM2M_PERM_W) != LWM2M_PERM_W) {
