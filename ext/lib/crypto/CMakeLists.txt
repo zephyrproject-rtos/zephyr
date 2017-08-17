@@ -1,0 +1,2 @@
+add_subdirectory_if_kconfig(tinycrypt)
+add_subdirectory_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls)
