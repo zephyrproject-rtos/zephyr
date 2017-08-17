@@ -84,7 +84,7 @@ struct bt_hci_rp_vs_read_build_info {
 
 struct bt_hci_vs_static_addr {
 	bt_addr_t bdaddr;
-	u8_t      irk[16];
+	u8_t      ir[16];
 } __packed;
 
 #define BT_HCI_OP_VS_READ_STATIC_ADDRS          BT_OP(BT_OGF_VS, 0x0009)
@@ -97,7 +97,7 @@ struct bt_hci_rp_vs_read_static_addrs {
 #define BT_HCI_OP_VS_READ_KEY_HIERARCHY_ROOTS   BT_OP(BT_OGF_VS, 0x000a)
 struct bt_hci_rp_vs_read_key_hierarchy_roots {
 	u8_t  status;
-	u8_t  irk[16];
+	u8_t  ir[16];
 	u8_t  er[16];
 } __packed;
 
