@@ -7,7 +7,7 @@ Overview
 ********
 
 The sockets/echo-async sample application for Zephyr implements an
-asyncronous IPv4 TCP echo server using a BSD Sockets like API with
+asyncronous IPv4 TCP echo server using a BSD Sockets compatible API with
 non-blocking sockets and a ``poll()`` call. This is an extension of
 the :ref:`sockets-echo-sample` sample. The purpose of this sample is
 still to show how it's possible to develop a sockets application portable
@@ -58,7 +58,7 @@ Running application on POSIX Host
 =================================
 
 The same application source code can be built for a POSIX system, e.g.
-Linux. (Note: if you look at the source, you will see that code is
+Linux. (Note: if you look at the source, you will see that the code is
 the same except the header files are different for Zephyr vs POSIX.)
 
 To build for a host POSIX OS:
