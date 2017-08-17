@@ -678,7 +678,9 @@ static int server_resource_1_get(struct zoap_resource *resource,
 			    resource->age);
 
 	p = zoap_packet_get_payload(&response, &len);
-	memcpy(p, payload, sizeof(payload));
+	if (p) {
+		memcpy(p, payload, sizeof(payload));
+	}
 
 	r = zoap_packet_set_used(&response, sizeof(payload));
 	if (r < 0) {
