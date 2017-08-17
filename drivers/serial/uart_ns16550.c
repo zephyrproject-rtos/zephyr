@@ -190,14 +190,22 @@
 
 #define IIRC(dev) (DEV_DATA(dev)->iir_cache)
 
+#ifdef CONFIG_NS16550_REG_SHIFT
+#define UART_REG_ADDR_INTERVAL (1<<CONFIG_NS16550_REG_SHIFT)
+#endif
+
 #ifdef UART_NS16550_ACCESS_IOPORT
 #define INBYTE(x) sys_in8(x)
 #define OUTBYTE(x, d) sys_out8(d, x)
+#ifndef UART_REG_ADDR_INTERVAL
 #define UART_REG_ADDR_INTERVAL 1 /* address diff of adjacent regs. */
+#endif
 #else
 #define INBYTE(x) sys_read8(x)
 #define OUTBYTE(x, d) sys_write8(d, x)
+#ifndef UART_REG_ADDR_INTERVAL
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
+#endif
 #endif /* UART_NS16550_ACCESS_IOPORT */
 
 
