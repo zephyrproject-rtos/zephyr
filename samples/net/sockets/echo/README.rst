@@ -7,9 +7,9 @@ Overview
 ********
 
 The sockets/echo sample application for Zephyr implements an IPv4 TCP echo
-server using a BSD Sockets like API. The purpose of this sample is to show
-how it's possible to develop a sockets application portable to both POSIX
-and Zephyr. As such, it is kept minimal and supports only IPv4 and TCP.
+server using a BSD Sockets compatible API. The purpose of this sample is to
+show how it's possible to develop a sockets application portable to both
+POSIX and Zephyr. As such, it is kept minimal and supports only IPv4 and TCP.
 
 The source code for this sample application can be found at:
 :file:`samples/net/sockets/echo`.
@@ -53,8 +53,8 @@ Running application on POSIX Host
 =================================
 
 The same application source code can be built for a POSIX system, e.g.
-Linux. (Note: if you look at the source, you will see that code is the
-same except the header files are different for Zephyr vs POSIX.)
+Linux. (Note: if you look at the source, you will see that the code is
+the same except the header files are different for Zephyr vs POSIX.)
 
 To build for a host POSIX OS:
 
