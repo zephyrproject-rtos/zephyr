@@ -154,6 +154,7 @@ struct bt_hci_evt_vs_trace_info {
 #define BT_HCI_EVT_VS_SCAN_REQ_RX              0x04
 struct bt_hci_evt_vs_scan_req_rx {
 	bt_addr_le_t addr;
+	s8_t         rssi;
 } __packed;
 
 /* Event mask bits */

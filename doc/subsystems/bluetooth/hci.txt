@@ -908,7 +908,8 @@ This event indicates that a SCAN_REQ PDU has been received by an advertiser.
 +-------------------------------+------------+-------------------------------+
 | Scan_Request_Received         | 0xFF       | Subevent_Code,                |
 |                               |            | Address_Type,                 |
-|                               |            | Address                       |
+|                               |            | Address,                      |
+|                               |            | RSSI                          |
 +-------------------------------+------------+-------------------------------+
 
 The request contains a device address from a scanner that is allowed by the
@@ -944,6 +945,19 @@ advertising sets, this event shall not be generated.
 	|                    | Address, Public Identity Address or  |
 	|                    | Random (static) Identity Address of  |
 	|                    | the advertising device.              |
+	+--------------------+--------------------------------------+
+
+	RSSI:                                           Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| N                  | Size: 1 Octet (signed integer)       |
+	|                    | Range: -127 <= N <= +20              |
+	|                    | Units: dBm                           |
+	+--------------------+--------------------------------------+
+	| 127                | RSSI is not available                |
+	+--------------------+--------------------------------------+
+	| 21 to 126          | Reserved for future use              |
 	+--------------------+--------------------------------------+
 
 The event is only reported when unmasked by Set_Event_Mask command.
