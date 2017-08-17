@@ -707,7 +707,7 @@ class MakeGenerator:
 
     def _get_sub_make(self, name, phase, workdir, outdir, logfile, args):
         verb = "1" if VERBOSE else "0"
-        args = " ".join(args)
+        args = " ".join(["-D{}".format(a) for a in args])
 
         if self.asserts:
             cflags="-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
@@ -718,7 +718,7 @@ class MakeGenerator:
             cflags = cflags + "  -Wno-deprecated-declarations"
 
         if self.ccache:
-            args = args + " USE_CCACHE=1"
+            args = args + " -DUSE_CCACHE=1"
 
         return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name,
                                                    outdir=outdir, cflags=cflags,
@@ -818,8 +818,8 @@ class MakeGenerator:
             by execute() will be keyed by its .name field.
         """
         args = ti.test.extra_args[:]
-        args.extend(["-DARCH=%s" % ti.platform.arch,
-                     "-DBOARD=%s" % ti.platform.name])
+        args.append("ARCH={}" .format(ti.platform.arch))
+        args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
             (not build_only) and (enable_slow or not ti.test.slow)):
@@ -1417,8 +1417,9 @@ class TestSuite:
                     if (tc.tc_filter and (plat.default or all_plats or platform_filter) and
                         toolchain in plat.supported_toolchains):
                         args = tc.extra_args[:]
-                        args.extend(["-DARCH=" + plat.arch,
-                                "-DBOARD=" + plat.name, "config-sanitycheck"])
+                        args.append("ARCH={}" .format(plat.arch))
+                        args.append("BOARD={}".format(plat.name))
+                        args.append("config-sanitycheck")
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every  combination,
