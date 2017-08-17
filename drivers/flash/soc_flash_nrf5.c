@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Linaro Limited
- *               2016 Intel Corporation
+ * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,11 +191,26 @@ static int flash_nrf5_write_protection(struct device *dev, bool enable)
 	return 0;
 }
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+static struct flash_pages_layout dev_layout;
+
+static void flash_nrf5_pages_layout(struct device *dev,
+				     const struct flash_pages_layout **layout,
+				     size_t *layout_size)
+{
+	*layout = &dev_layout;
+	*layout_size = 1;
+}
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
 static const struct flash_driver_api flash_nrf5_api = {
 	.read = flash_nrf5_read,
 	.write = flash_nrf5_write,
 	.erase = flash_nrf5_erase,
 	.write_protection = flash_nrf5_write_protection,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.page_layout = flash_nrf5_pages_layout
+#endif
 };
 
 static int nrf5_flash_init(struct device *dev)
@@ -206,6 +222,11 @@ static int nrf5_flash_init(struct device *dev)
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
 	k_sem_init(&sem_sync, 0, 1);
 #endif /* CONFIG_SOC_FLASH_NRF5_RADIO_SYNC */
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	dev_layout.pages_count = NRF_FICR->CODESIZE;
+	dev_layout.pages_size = NRF_FICR->CODEPAGESIZE;
+#endif
 
 	return 0;
 }
