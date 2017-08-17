@@ -802,6 +802,24 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 	NET_DBG("Adjust reserve old %d new %d",
 		net_pkt_ll_reserve(pkt), reserve);
 
+	/* Normally these debug prints are not needed so we do not print them
+	 * always. If your packets get dropped for some reason by L2, then
+	 * you can enable this block to see the IPv6 and LL addresses that
+	 * are used.
+	 */
+	if (0) {
+		NET_DBG("ll src %s",
+			net_sprint_ll_addr(net_pkt_ll_src(pkt)->addr,
+					   net_pkt_ll_src(pkt)->len));
+		NET_DBG("ll dst %s",
+			net_sprint_ll_addr(net_pkt_ll_dst(pkt)->addr,
+					   net_pkt_ll_dst(pkt)->len));
+		NET_DBG("ip src %s",
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
+		NET_DBG("ip dst %s",
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
+	}
+
 	net_pkt_set_ll_reserve(pkt, reserve);
 
 	orig_frag = pkt->frags;
