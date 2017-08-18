@@ -94,7 +94,7 @@ int ecdh_vectors(char **qx_vec, char **qy_vec, char **d_vec, char **z_vec,
 		uint8_t private_bytes[NUM_ECC_BYTES];
 		uECC_vli_nativeToBytes(private_bytes, NUM_ECC_BYTES, prv);
 		uint8_t z_bytes[NUM_ECC_BYTES];
-		uECC_vli_nativeToBytes(z_bytes, NUM_ECC_BYTES, z);
+		uECC_vli_nativeToBytes(z_bytes, NUM_ECC_BYTES, exp_z);
 
 		rc = uECC_shared_secret(pub_bytes, private_bytes, z_bytes, curve);
 
