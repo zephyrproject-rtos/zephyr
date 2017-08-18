@@ -103,7 +103,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                           [self.elf_name] +
                           ['-ex', 'target remote :{}'.format(self.gdb_port),
                            '-ex', 'monitor halt',
-                           '-ex', 'load',
-                           '-ex', 'monitor reset'])
+                           '-ex', 'monitor reset',
+                           '-ex', 'load'])
             self.print_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)
