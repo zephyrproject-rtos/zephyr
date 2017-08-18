@@ -51,7 +51,6 @@ Sections
    boards/boards.rst
    devices/index.rst
    subsystems/subsystems.rst
-   api/api.rst
 
 Indices and Tables
 ******************

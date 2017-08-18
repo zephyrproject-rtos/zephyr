@@ -10,3 +10,4 @@ Developer Guides
    application.rst
    ../samples/samples.rst
    ../reference/kconfig/index.rst
+   ../api/api.rst
