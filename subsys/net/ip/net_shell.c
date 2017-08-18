@@ -1647,7 +1647,7 @@ int net_shell_cmd_nbr(int argc, char *argv[])
 			return 0;
 		}
 
-		if (!net_ipv6_nbr_rm(net_if_get_default(), &addr)) {
+		if (!net_ipv6_nbr_rm(NULL, &addr)) {
 			printk("Cannot remove neighbor %s\n",
 			       net_sprint_ipv6_addr(&addr));
 		} else {
@@ -1706,7 +1706,13 @@ static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
 static int _ping_ipv6(char *host)
 {
 	struct in6_addr ipv6_target;
+	struct net_if *iface = net_if_get_default();
+	struct net_nbr *nbr;
 	int ret;
+
+#if defined(CONFIG_NET_ROUTE)
+	struct net_route_entry *route;
+#endif
 
 	if (net_addr_pton(AF_INET6, host, &ipv6_target) < 0) {
 		return -EINVAL;
@@ -1714,7 +1720,19 @@ static int _ping_ipv6(char *host)
 
 	net_icmpv6_register_handler(&ping6_handler);
 
-	ret = net_icmpv6_send_echo_request(net_if_get_default(),
+	nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
+	if (nbr) {
+		iface = nbr->iface;
+	}
+
+#if defined(CONFIG_NET_ROUTE)
+	route = net_route_lookup(NULL, &ipv6_target);
+	if (route) {
+		iface = route->iface;
+	}
+#endif
+
+	ret = net_icmpv6_send_echo_request(iface,
 					   &ipv6_target,
 					   sys_rand32_get(),
 					   sys_rand32_get());
@@ -2140,7 +2158,7 @@ static void get_my_ipv6_addr(struct net_if *iface,
 {
 	const struct in6_addr *my6addr;
 
-	my6addr = net_if_ipv6_select_src_addr(net_if_get_default(),
+	my6addr = net_if_ipv6_select_src_addr(iface,
 					      &net_sin6(myaddr)->sin6_addr);
 
 	memcpy(&net_sin6(myaddr)->sin6_addr, my6addr, sizeof(struct in6_addr));
@@ -2203,6 +2221,8 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 {
 	struct sockaddr addr;
 	struct sockaddr myaddr;
+	struct net_nbr *nbr;
+	struct net_if *iface = net_if_get_default();
 	int addrlen;
 	int family;
 	int ret;
@@ -2216,18 +2236,26 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 
 	net_sin6(&addr)->sin6_port = htons(port);
 	addrlen = sizeof(struct sockaddr_in6);
-	get_my_ipv6_addr(net_if_get_default(), &myaddr);
+
+	nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
+	if (nbr) {
+		iface = nbr->iface;
+	}
+
+	get_my_ipv6_addr(iface, &myaddr);
 	family = addr.sa_family = myaddr.sa_family = AF_INET6;
 #endif
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+	ARG_UNUSED(nbr);
+
 	ret = net_addr_pton(AF_INET, host, &net_sin(&addr)->sin_addr);
 	if (ret < 0) {
 		printk("Invalid IPv4 address\n");
 		return 0;
 	}
 
-	get_my_ipv4_addr(net_if_get_default(), &myaddr);
+	get_my_ipv4_addr(iface, &myaddr);
 	net_sin(&addr)->sin_port = htons(port);
 	addrlen = sizeof(struct sockaddr_in);
 	family = addr.sa_family = myaddr.sa_family = AF_INET;
@@ -2244,12 +2272,19 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 
 		net_sin(&addr)->sin_port = htons(port);
 		addrlen = sizeof(struct sockaddr_in);
-		get_my_ipv4_addr(net_if_get_default(), &myaddr);
+
+		get_my_ipv4_addr(iface, &myaddr);
 		family = addr.sa_family = myaddr.sa_family = AF_INET;
 	} else {
 		net_sin6(&addr)->sin6_port = htons(port);
 		addrlen = sizeof(struct sockaddr_in6);
-		get_my_ipv6_addr(net_if_get_default(), &myaddr);
+
+		nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
+		if (nbr) {
+			iface = nbr->iface;
+		}
+
+		get_my_ipv6_addr(iface, &myaddr);
 		family = addr.sa_family = myaddr.sa_family = AF_INET6;
 	}
 #endif
