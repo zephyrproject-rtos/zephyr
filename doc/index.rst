@@ -38,25 +38,22 @@ Sections
    getting_started/getting_started.rst
    contribute/contribute.rst
    kernel/kernel.rst
-   boards/boards.rst
    application/index.rst
-   samples/samples.rst
-   porting/porting.rst
+   boards/boards.rst
    devices/index.rst
    subsystems/subsystems.rst
    api/api.rst
    security/security.rst
    release-notes.rst
    LICENSING.rst
-   glossary.rst
 
 
 Indices and Tables
 ******************
 
-* :ref:`genindex`
+* :ref:`glossary`
 
-* :ref:`search`
+* :ref:`genindex`
 
 .. _Zephyr 1.8.0: https://www.zephyrproject.org/doc/1.8.0/
 .. _Zephyr 1.7.0: https://www.zephyrproject.org/doc/1.7.0/
