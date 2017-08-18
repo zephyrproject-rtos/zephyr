@@ -154,6 +154,7 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 	uECC_word_t carry;
 	wordcount_t num_words = curve->num_words;
 	wordcount_t num_bytes = curve->num_bytes;
+	int r;
 
 	/* Converting buffers to correct bit order: */
 	uECC_vli_bytesToNative(_private,
@@ -174,7 +175,8 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 	 * improve protection against side-channel attacks. */
 	if (g_rng_function) {
 		if (!uECC_generate_random_int(p2[carry], curve->p, num_words)) {
-			return 0;
+			r = 0;
+			goto clear_and_out;
     		}
     		initial_Z = p2[carry];
   	}
@@ -182,9 +184,17 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 	EccPoint_mult(_public, _public, p2[!carry], initial_Z, curve->num_n_bits + 1,
 		      curve);
 
-	/* erasing temporary buffer used to store secret: */
-	memset (p2, 0, 2*NUM_ECC_WORDS);
-
 	uECC_vli_nativeToBytes(secret, num_bytes, _public);
-	return !EccPoint_isZero(_public, curve);
+	r = !EccPoint_isZero(_public, curve);
+
+clear_and_out:
+	/* erasing temporary buffer used to store secret: */
+	memset(p2, 0, sizeof(p2));
+	__asm__ __volatile__("" :: "g"(p2) : "memory");
+	memset(tmp, 0, sizeof(tmp));
+	__asm__ __volatile__("" :: "g"(tmp) : "memory");
+	memset(_private, 0, sizeof(_private));
+	__asm__ __volatile__("" :: "g"(_private) : "memory");
+
+	return r;
 }
