@@ -176,6 +176,13 @@ config BT_CTLR_CHAN_SEL_2
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
 	  the Controller.
 
+config BT_CTLR_MIN_USED_CHAN
+	bool "Minimum Number of Used Channels"
+	default y
+	help
+	  Enable support for Bluetooth 5.0 Minimum Number of Used Channels
+	  Procedure in the Controller.
+
 config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions"
 	select BT_CTLR_SCAN_REQ_NOTIFY

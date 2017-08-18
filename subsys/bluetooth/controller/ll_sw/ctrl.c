@@ -2228,6 +2228,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
 		case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+		case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 			unknown_rsp_send(_radio.conn_curr,
 					 pdu_data_rx->payload.llctrl.opcode);
 			return 0;
@@ -2795,6 +2796,37 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
+		if (!_radio.conn_curr->role) {
+			struct pdu_data_llctrl_min_used_chans_ind *p =
+				&pdu_data_rx->payload.llctrl.ctrldata.min_used_chans_ind;
+			struct connection *conn = _radio.conn_curr;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+			if (!(p->phys & (conn->phy_tx | conn->phy_rx))) {
+#else /* !CONFIG_BT_CTLR_PHY */
+			if (!(p->phys & 0x01)) {
+#endif /* !CONFIG_BT_CTLR_PHY */
+				break;
+			}
+
+			if (conn->llcp_req != conn->llcp_ack) {
+				break;
+			}
+
+			memcpy(&conn->llcp.chan_map.chm[0],
+			       &_radio.data_chan_map[0],
+			       sizeof(conn->llcp.chan_map.chm));
+			/* conn->llcp.chan_map.instant     = 0; */
+			conn->llcp.chan_map.initiate = 1;
+
+			conn->llcp_type = LLCP_CHAN_MAP;
+			conn->llcp_ack--;
+		}
+		break;
+#endif /* CONFIG_BT_MIN_USED_CHAN */
 
 	default:
 		unknown_rsp_send(_radio.conn_curr,
