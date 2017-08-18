@@ -143,6 +143,37 @@
 #define BUFF_WRITEABLE ((u32_t) 0x1)
 #define BUFF_USER ((u32_t) 0x2)
 
+
+/* Helper macros to ease the usage of the MMU page table structures.
+ * Returns the Page table address for the particular address.
+ * Page Table address(returned value) is always 4KBytes aligned.
+ */
+#define X86_MMU_GET_PT_ADDR(addr) \
+	((struct x86_mmu_page_table *)\
+	 (X86_MMU_PD->entry[MMU_PDE_NUM(addr)].pt.page_table \
+	  << MMU_PAGE_SHIFT))
+
+/* Returns the page table entry for the addr
+ * use the union to extract page entry related information.
+ */
+#define X86_MMU_GET_PTE(addr)\
+	((union x86_mmu_pte *)\
+	 (&X86_MMU_GET_PT_ADDR(addr)->entry[MMU_PAGE_NUM(addr)]))
+
+/* Returns the page directory entry for the addr
+ * use the union to extract page directory entry related information.
+ */
+#define X86_MMU_GET_PDE(addr)\
+	((union x86_mmu_pde_pt *)\
+	 (&X86_MMU_PD->entry[MMU_PDE_NUM(addr)].pt))
+
+/* Returns the 4 MB page directory entry for the addr
+ * use the union to extract page directory entry related information.
+ */
+#define X86_MMU_GET_4MB_PDE(addr)\
+	((union x86_mmu_pde_4mb *)\
+	 (&X86_MMU_PD->entry[MMU_PDE_NUM(addr)].fourmb))
+
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
