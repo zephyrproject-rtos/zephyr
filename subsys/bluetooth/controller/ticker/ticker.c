@@ -419,7 +419,7 @@ static void ticks_to_expire_prep(struct ticker_node *ticker,
 	u16_t ticks_to_expire_minus = ticker->ticks_to_expire_minus;
 
 	/* Calculate ticks to expire for this new node */
-	if (((ticks_at_start - ticks_current) & BIT(31)) == 0) {
+	if (((ticks_at_start - ticks_current) & BIT(23)) == 0) {
 		ticks_to_expire += ticker_ticks_diff_get(ticks_at_start,
 							 ticks_current);
 	} else {
