@@ -22,6 +22,14 @@ Zephyr Project Documentation
 
    `Zephyr 1.5.0`_ | `Zephyr 1.6.0`_ | `Zephyr 1.7.0`_ | `Zephyr 1.8.0`_
 
+For more information about previous releases, please consult the published
+:ref:`zephyr_release_notes`.
+
+The Zephyr OS is provided under the :download:`Apache 2.0 license. <../LICENSE>`.
+The Zephyr OS also imports or reuses packages, scripts, and other files that
+are not covered by the Apache License. A list of those licenses can be found
+under :ref:`zephyr_licensing`.
+
 Source code for the Zephyr Project is maintained in the
 `Zephyr Project GitHub repository`_.
 
@@ -44,9 +52,6 @@ Sections
    subsystems/subsystems.rst
    api/api.rst
    security/security.rst
-   release-notes.rst
-   LICENSING.rst
-
 
 Indices and Tables
 ******************
