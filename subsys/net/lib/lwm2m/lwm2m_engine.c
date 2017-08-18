@@ -118,19 +118,19 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 	static char buf[NET_IPV6_ADDR_LEN];
 
 #if defined(CONFIG_NET_IPV6)
-	if (addr->family == AF_INET6) {
+	if (addr->sa_family == AF_INET6) {
 		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr,
 				     buf, sizeof(buf));
 	}
 #endif
 #if defined(CONFIG_NET_IPV4)
-	if (addr->family == AF_INET) {
+	if (addr->sa_family == AF_INET) {
 		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr,
 				     buf, sizeof(buf));
 	}
 #endif
 
-	SYS_LOG_ERR("Unknown IP address family:%d", addr->family);
+	SYS_LOG_ERR("Unknown IP address family:%d", addr->sa_family);
 	return NULL;
 }
 

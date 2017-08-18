@@ -135,7 +135,7 @@ struct sockaddr_in_ptr {
 #endif
 
 struct sockaddr {
-	sa_family_t family;
+	sa_family_t sa_family;
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 

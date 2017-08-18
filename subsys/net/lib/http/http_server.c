@@ -328,14 +328,14 @@ int http_server_set_local_addr(struct sockaddr *addr, const char *myaddr,
 	if (myaddr) {
 		void *inaddr;
 
-		if (addr->family == AF_INET) {
+		if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 			inaddr = &net_sin(addr)->sin_addr;
 			net_sin(addr)->sin_port = htons(port);
 #else
 			return -EPFNOSUPPORT;
 #endif
-		} else if (addr->family == AF_INET6) {
+		} else if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 			inaddr = &net_sin6(addr)->sin6_addr;
 			net_sin6(addr)->sin6_port = htons(port);
@@ -346,13 +346,13 @@ int http_server_set_local_addr(struct sockaddr *addr, const char *myaddr,
 			return -EAFNOSUPPORT;
 		}
 
-		return net_addr_pton(addr->family, myaddr, inaddr);
+		return net_addr_pton(addr->sa_family, myaddr, inaddr);
 	}
 
 	/* If the caller did not supply the address where to bind, then
 	 * try to figure it out ourselves.
 	 */
-	if (addr->family == AF_INET6) {
+	if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		net_ipaddr_copy(&net_sin6(addr)->sin6_addr,
 				net_if_ipv6_select_src_addr(NULL,
@@ -361,7 +361,7 @@ int http_server_set_local_addr(struct sockaddr *addr, const char *myaddr,
 #else
 		return -EPFNOSUPPORT;
 #endif
-	} else if (addr->family == AF_INET) {
+	} else if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		struct net_if *iface = net_if_get_default();
 
@@ -453,21 +453,21 @@ int http_server_del_default(struct http_server_urls *my)
 #if defined(CONFIG_NET_DEBUG_HTTP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
 static char *sprint_ipaddr(char *buf, int buflen, const struct sockaddr *addr)
 {
-	if (addr->family == AF_INET6) {
+	if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		char ipaddr[NET_IPV6_ADDR_LEN];
 
-		net_addr_ntop(addr->family,
+		net_addr_ntop(addr->sa_family,
 			      &net_sin6(addr)->sin6_addr,
 			      ipaddr, sizeof(ipaddr));
 		snprintk(buf, buflen, "[%s]:%u", ipaddr,
 			 ntohs(net_sin6(addr)->sin6_port));
 #endif
-	} else if (addr->family == AF_INET) {
+	} else if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		char ipaddr[NET_IPV4_ADDR_LEN];
 
-		net_addr_ntop(addr->family,
+		net_addr_ntop(addr->sa_family,
 			      &net_sin(addr)->sin_addr,
 			      ipaddr, sizeof(ipaddr));
 		snprintk(buf, buflen, "%s:%u", ipaddr,
@@ -855,8 +855,8 @@ static int setup_ipv4_ctx(struct http_server_ctx *http_ctx,
 	net_context_setup_pools(http_ctx->net_ipv4_ctx, http_ctx->tx_slab,
 				http_ctx->data_pool);
 
-	if (addr->family == AF_UNSPEC) {
-		addr->family = AF_INET;
+	if (addr->sa_family == AF_UNSPEC) {
+		addr->sa_family = AF_INET;
 
 		http_server_set_local_addr(addr, NULL,
 					   net_sin(addr)->sin_port);
@@ -892,8 +892,8 @@ int setup_ipv6_ctx(struct http_server_ctx *http_ctx, struct sockaddr *addr)
 	net_context_setup_pools(http_ctx->net_ipv6_ctx, http_ctx->tx_slab,
 				http_ctx->data_pool);
 
-	if (addr->family == AF_UNSPEC) {
-		addr->family = AF_INET6;
+	if (addr->sa_family == AF_UNSPEC) {
+		addr->sa_family = AF_INET6;
 
 		http_server_set_local_addr(addr, NULL,
 					   net_sin6(addr)->sin6_port);
@@ -922,30 +922,30 @@ static int init_net(struct http_server_ctx *ctx,
 	if (server_addr) {
 		memcpy(&addr, server_addr, sizeof(addr));
 	} else {
-		addr.family = AF_UNSPEC;
+		addr.sa_family = AF_UNSPEC;
 		net_sin(&addr)->sin_port = htons(port);
 	}
 
-	if (addr.family == AF_INET6) {
+	if (addr.sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		ret = setup_ipv6_ctx(ctx, &addr);
 #else
 		return -EPFNOSUPPORT;
 #endif
-	} else if (addr.family == AF_INET) {
+	} else if (addr.sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		ret = setup_ipv4_ctx(ctx, &addr);
 #else
 		return -EPFNOSUPPORT;
 #endif
-	} else if (addr.family == AF_UNSPEC) {
+	} else if (addr.sa_family == AF_UNSPEC) {
 #if defined(CONFIG_NET_IPV4)
 		ret = setup_ipv4_ctx(ctx, &addr);
 #endif
 		/* We ignore the IPv4 error if IPv6 is enabled */
 #if defined(CONFIG_NET_IPV6)
 		memset(&addr, 0, sizeof(addr));
-		addr.family = AF_UNSPEC;
+		addr.sa_family = AF_UNSPEC;
 		net_sin6(&addr)->sin6_port = htons(port);
 
 		ret = setup_ipv6_ctx(ctx, &addr);

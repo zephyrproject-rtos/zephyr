@@ -784,14 +784,14 @@ static bool peer_addr_exist(struct sockaddr *peer_addr)
 	/* look for duplicate peer_addr */
 	for (i = 0; i < client_count; i++) {
 #if defined(CONFIG_NET_IPV6)
-		if (peer_addr->family == AF_INET6 && net_ipv6_addr_cmp(
+		if (peer_addr->sa_family == AF_INET6 && net_ipv6_addr_cmp(
 				&net_sin6(&clients[i].bs_server)->sin6_addr,
 				&net_sin6(peer_addr)->sin6_addr)) {
 			ret = true;
 			break;
 		}
 
-		if (peer_addr->family == AF_INET6 && net_ipv6_addr_cmp(
+		if (peer_addr->sa_family == AF_INET6 && net_ipv6_addr_cmp(
 				&net_sin6(&clients[i].reg_server)->sin6_addr,
 				&net_sin6(peer_addr)->sin6_addr)) {
 			ret = true;
@@ -800,14 +800,14 @@ static bool peer_addr_exist(struct sockaddr *peer_addr)
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-		if (peer_addr->family == AF_INET && net_ipv4_addr_cmp(
+		if (peer_addr->sa_family == AF_INET && net_ipv4_addr_cmp(
 				&net_sin(&clients[i].bs_server)->sin_addr,
 				&net_sin(peer_addr)->sin_addr)) {
 			ret = true;
 			break;
 		}
 
-		if (peer_addr->family == AF_INET && net_ipv4_addr_cmp(
+		if (peer_addr->sa_family == AF_INET && net_ipv4_addr_cmp(
 				&net_sin(&clients[i].reg_server)->sin_addr,
 				&net_sin(peer_addr)->sin_addr)) {
 			ret = true;
@@ -822,24 +822,24 @@ static bool peer_addr_exist(struct sockaddr *peer_addr)
 static void set_ep_ports(int index)
 {
 #if defined(CONFIG_NET_IPV6)
-	if (clients[index].bs_server.family == AF_INET6) {
+	if (clients[index].bs_server.sa_family == AF_INET6) {
 		net_sin6(&clients[index].bs_server)->sin6_port =
 			htons(LWM2M_BOOTSTRAP_PORT);
 	}
 
-	if (clients[index].reg_server.family == AF_INET6) {
+	if (clients[index].reg_server.sa_family == AF_INET6) {
 		net_sin6(&clients[index].reg_server)->sin6_port =
 			htons(LWM2M_PEER_PORT);
 	}
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	if (clients[index].bs_server.family == AF_INET) {
+	if (clients[index].bs_server.sa_family == AF_INET) {
 		net_sin(&clients[index].bs_server)->sin_port =
 			htons(LWM2M_BOOTSTRAP_PORT);
 	}
 
-	if (clients[index].reg_server.family == AF_INET) {
+	if (clients[index].reg_server.sa_family == AF_INET) {
 		net_sin(&clients[index].reg_server)->sin_port =
 			htons(LWM2M_PEER_PORT);
 	}

@@ -145,7 +145,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			NET_DBG("[%d] IPv6 server %s port %d", idx, server,
 				port);
 
-			ctx->servers[idx++].dns_server.family = AF_INET6;
+			ctx->servers[idx++].dns_server.sa_family = AF_INET6;
 #endif /* CONFIG_NET_IPV6 */
 
 			continue;
@@ -196,7 +196,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			NET_DBG("[%d] IPv4 server %s port %d", idx, server,
 				port);
 
-			ctx->servers[idx++].dns_server.family = AF_INET;
+			ctx->servers[idx++].dns_server.sa_family = AF_INET;
 #endif /* CONFIG_NET_IPV4 */
 
 			continue;
@@ -218,7 +218,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i],
 				53);
 
-			ctx->servers[idx++].dns_server.family = AF_INET;
+			ctx->servers[idx++].dns_server.sa_family = AF_INET;
 
 		} else if (ret == -EINVAL) {
 			/* Then the address must be IPv6 based */
@@ -239,7 +239,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i],
 				53);
 
-			ctx->servers[idx++].dns_server.family = AF_INET6;
+			ctx->servers[idx++].dns_server.sa_family = AF_INET6;
 		}
 #endif
 
@@ -258,7 +258,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 		NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i], 53);
 
 		net_sin(&ctx->servers[idx].dns_server)->sin_port = htons(53);
-		ctx->servers[idx++].dns_server.family = AF_INET;
+		ctx->servers[idx++].dns_server.sa_family = AF_INET;
 #endif /* IPv4 && !IPv6 */
 
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
@@ -275,14 +275,14 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 		NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i], 53);
 
 		net_sin6(&ctx->servers[idx].dns_server)->sin6_port = htons(53);
-		ctx->servers[idx++].dns_server.family = AF_INET6;
+		ctx->servers[idx++].dns_server.sa_family = AF_INET6;
 #endif /* IPv6 && !IPv4 */
 	}
 
 	for (i = 0, count = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS &&
-		     ctx->servers[i].dns_server.family; i++) {
+		     ctx->servers[i].dns_server.sa_family; i++) {
 
-		if (ctx->servers[i].dns_server.family == AF_INET6) {
+		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 			local_addr = (struct sockaddr *)&local_addr6;
 			addr_len = sizeof(struct sockaddr_in6);
@@ -291,7 +291,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 #endif
 		}
 
-		if (ctx->servers[i].dns_server.family == AF_INET) {
+		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 			local_addr = (struct sockaddr *)&local_addr4;
 			addr_len = sizeof(struct sockaddr_in);
@@ -305,7 +305,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 			return -EAFNOSUPPORT;
 		}
 
-		ret = net_context_get(ctx->servers[i].dns_server.family,
+		ret = net_context_get(ctx->servers[i].dns_server.sa_family,
 				      SOCK_DGRAM, IPPROTO_UDP,
 				      &ctx->servers[i].net_ctx);
 		if (ret < 0) {
@@ -436,13 +436,13 @@ static int dns_read(struct dns_resolve_context *ctx,
 		address_size = DNS_IPV4_LEN;
 		addr = (u8_t *)&net_sin(&info->ai_addr)->sin_addr;
 		info->ai_family = AF_INET;
-		info->ai_addr.family = AF_INET;
+		info->ai_addr.sa_family = AF_INET;
 		info->ai_addrlen = sizeof(struct sockaddr_in);
 	} else if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_AAAA) {
 		address_size = DNS_IPV6_LEN;
 		addr = (u8_t *)&net_sin6(&info->ai_addr)->sin6_addr;
 		info->ai_family = AF_INET6;
-		info->ai_addr.family = AF_INET6;
+		info->ai_addr.sa_family = AF_INET6;
 		info->ai_addrlen = sizeof(struct sockaddr_in6);
 	} else {
 		ret = DNS_EAI_FAMILY;
@@ -686,7 +686,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 		goto quit;
 	}
 
-	if (server->family == AF_INET) {
+	if (server->sa_family == AF_INET) {
 		server_addr_len = sizeof(struct sockaddr_in);
 	} else {
 		server_addr_len = sizeof(struct sockaddr_in6);

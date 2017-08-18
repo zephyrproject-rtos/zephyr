@@ -106,8 +106,8 @@ int net_app_listen(struct net_app_ctx *ctx)
 	}
 
 #if defined(CONFIG_NET_IPV4)
-	if (ctx->ipv4.local.family == AF_UNSPEC) {
-		ctx->ipv4.local.family = AF_INET;
+	if (ctx->ipv4.local.sa_family == AF_UNSPEC) {
+		ctx->ipv4.local.sa_family = AF_INET;
 		dual = true;
 
 		_net_app_set_local_addr(&ctx->ipv4.local, NULL,
@@ -133,8 +133,8 @@ int net_app_listen(struct net_app_ctx *ctx)
 	/* We ignore the IPv4 error if IPv6 is enabled */
 
 #if defined(CONFIG_NET_IPV6)
-	if (ctx->ipv6.local.family == AF_UNSPEC || dual) {
-		ctx->ipv6.local.family = AF_INET6;
+	if (ctx->ipv6.local.sa_family == AF_UNSPEC || dual) {
+		ctx->ipv6.local.sa_family = AF_INET6;
 
 		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
 				       net_sin6(&ctx->ipv6.local)->sin6_port);
@@ -184,7 +184,7 @@ int net_app_init_server(struct net_app_ctx *ctx,
 #endif
 
 	if (server_addr) {
-		if (server_addr->family == AF_INET) {
+		if (server_addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 			memcpy(&ctx->ipv4.local, server_addr,
 			       sizeof(ctx->ipv4.local));
@@ -193,7 +193,7 @@ int net_app_init_server(struct net_app_ctx *ctx,
 #endif
 		}
 
-		if (server_addr->family == AF_INET6) {
+		if (server_addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 			memcpy(&ctx->ipv6.local, server_addr,
 			       sizeof(ctx->ipv6.local));
@@ -207,11 +207,11 @@ int net_app_init_server(struct net_app_ctx *ctx,
 		}
 
 #if defined(CONFIG_NET_IPV4)
-		ctx->ipv4.local.family = AF_INET;
+		ctx->ipv4.local.sa_family = AF_INET;
 		net_sin(&ctx->ipv4.local)->sin_port = htons(port);
 #endif
 #if defined(CONFIG_NET_IPV6)
-		ctx->ipv6.local.family = AF_INET6;
+		ctx->ipv6.local.sa_family = AF_INET6;
 		net_sin6(&ctx->ipv6.local)->sin6_port = htons(port);
 #endif
 	}

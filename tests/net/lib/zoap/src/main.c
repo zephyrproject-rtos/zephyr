@@ -587,14 +587,14 @@ done:
 
 static bool ipaddr_cmp(const struct sockaddr *a, const struct sockaddr *b)
 {
-	if (a->family != b->family) {
+	if (a->sa_family != b->sa_family) {
 		return false;
 	}
 
-	if (a->family == AF_INET6) {
+	if (a->sa_family == AF_INET6) {
 		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr,
 					 &net_sin6(b)->sin6_addr);
-	} else if (a->family == AF_INET) {
+	} else if (a->sa_family == AF_INET) {
 		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr,
 					 &net_sin(b)->sin_addr);
 	}

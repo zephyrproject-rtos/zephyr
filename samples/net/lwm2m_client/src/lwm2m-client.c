@@ -303,7 +303,7 @@ void main(void)
 		goto cleanup_ipv6;
 	}
 
-	ret = set_endpoint_name(ep_name, udp6.ipv6.local.family);
+	ret = set_endpoint_name(ep_name, udp6.ipv6.local.sa_family);
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot set IPv6 endpoint name (%d)", ret);
 		goto cleanup_ipv6;
@@ -333,7 +333,7 @@ void main(void)
 		goto cleanup_ipv4;
 	}
 
-	ret = set_endpoint_name(ep_name, udp4.ipv4.local.family);
+	ret = set_endpoint_name(ep_name, udp4.ipv4.local.sa_family);
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot set IPv4 endpoint name (%d)", ret);
 		goto cleanup_ipv4;
