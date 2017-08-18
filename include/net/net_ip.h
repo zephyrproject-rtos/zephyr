@@ -144,6 +144,12 @@ struct sockaddr_ptr {
 	char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
+/* Same as sockaddr in our case */
+struct sockaddr_storage {
+	sa_family_t ss_family;
+	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+};
+
 struct net_addr {
 	sa_family_t family;
 	union {
