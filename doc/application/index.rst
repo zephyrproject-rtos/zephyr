@@ -1,11 +1,12 @@
-.. _application_dev:
+.. _developer_guides:
 
-Application Development
-#######################
-
+Developer Guides
+################
 
 .. toctree::
    :maxdepth: 1
 
+   ../porting/porting.rst
    application.rst
+   ../samples/samples.rst
    ../reference/kconfig/index.rst
