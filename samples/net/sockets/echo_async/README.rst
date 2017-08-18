@@ -7,12 +7,11 @@ Overview
 ********
 
 The sockets/echo-async sample application for Zephyr implements an
-asyncronous IPv4 TCP echo server using a BSD Sockets compatible API with
-non-blocking sockets and a ``poll()`` call. This is an extension of
-the :ref:`sockets-echo-sample` sample. The purpose of this sample is
-still to show how it's possible to develop a sockets application portable
-to both POSIX and Zephyr. As such, it is kept minimal and supports only
-IPv4 and TCP.
+asyncronous IPv4/IPv6 TCP echo server using a BSD Sockets compatible API
+with non-blocking sockets and a ``poll()`` call. This is an extension of
+the :ref:`sockets-echo-sample` sample. It's a more involved application,
+supporting both IPv4 and IPv6 with concurrent connections, limiting
+maximum number of simultaneous connections, and basic error handling.
 
 The source code for this sample application can be found at:
 :file:`samples/net/sockets/echo_async`.
@@ -21,7 +20,7 @@ Requirements
 ************
 
 - :ref:`networking_with_qemu`
-- or, a board with hardware networking
+- or, a board with hardware networking (including 6LoWPAN)
 
 Building and Running
 ********************
@@ -40,12 +39,13 @@ will need to consult its documentation for application deployment
 instructions. You can read about Zephyr support for specific boards in
 the documentation at :ref:`boards`.
 
-After the sample starts, it expects connections at 192.0.2.1, port 4242.
-The easiest way to connect is:
+After the sample starts, it expects connections at 192.0.2.1 (IPv4), or
+2001:db8::1 (IPv6), port 4242. The easiest way to connect is:
 
 .. code-block:: console
 
-    $ telnet 192.0.2.1 4242
+    $ telnet 192.0.2.1 4242     # use this for IPv4
+    $ telnet 2001:db8::1 4242   # or this for IPv6
 
 After a connection is made, the application will echo back any line sent to
 it. Unlike the above-mentioned :ref:`sockets-echo-sample`, this application
@@ -59,7 +59,8 @@ Running application on POSIX Host
 
 The same application source code can be built for a POSIX system, e.g.
 Linux. (Note: if you look at the source, you will see that the code is
-the same except the header files are different for Zephyr vs POSIX.)
+the same except the header files are different for Zephyr vs POSIX, and
+there's an additional option to set for Linux to make a socket IPv6-only).
 
 To build for a host POSIX OS:
 
@@ -77,7 +78,8 @@ To test:
 
 .. code-block:: console
 
-    $ telnet 127.0.0.1 4242
+    $ telnet 127.0.0.1 4242   # use this for IPv4
+    $ telnet ::1 4242         # or this for IPv6
 
 As can be seen, the behavior of the application is the same as the Zephyr
 version.
