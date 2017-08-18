@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/gpio_reg.h>
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
+
 #include <errno.h>
 #include <misc/util.h>
 #include <pinmux.h>

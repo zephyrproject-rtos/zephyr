@@ -4,13 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/dport_reg.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
-#include <string.h>
-#include <toolchain/gcc.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
+
+#include <string.h>
+#include <toolchain/gcc.h>
 #include <zephyr/types.h>
 
 extern void _Cstart(void);
