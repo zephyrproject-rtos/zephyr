@@ -702,6 +702,9 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 	}
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	if (!frag) {
+		return false;
+	}
 
 	IPHC[offset++] = NET_6LO_DISPATCH_IPHC;
 	IPHC[offset++] = 0;
@@ -1377,6 +1380,9 @@ static inline bool compress_ipv6_header(struct net_pkt *pkt,
 	struct net_buf *frag;
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	if (!frag) {
+		return false;
+	}
 
 	frag->data[0] = NET_6LO_DISPATCH_IPV6;
 	net_buf_add(frag, 1);
