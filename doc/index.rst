@@ -39,13 +39,12 @@ Sections
    contribute/contribute.rst
    kernel/kernel.rst
    boards/boards.rst
-   application/application.rst
+   application/index.rst
    samples/samples.rst
    porting/porting.rst
    devices/index.rst
    subsystems/subsystems.rst
    api/api.rst
-   reference/kconfig/index.rst
    security/security.rst
    release-notes.rst
    LICENSING.rst
