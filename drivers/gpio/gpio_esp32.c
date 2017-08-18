@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <rom/ets_sys.h>
 #include <soc/dport_reg.h>
 #include <soc/gpio_reg.h>
 #include <soc/soc.h>
+
 #include <errno.h>
 #include <device.h>
 #include <gpio.h>
