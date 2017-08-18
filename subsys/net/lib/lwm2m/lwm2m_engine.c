@@ -1892,7 +1892,7 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 			return ret;
 		}
 
-		zoap_header_set_code(context->in->in_zpkt,
+		zoap_header_set_code(context->out->out_zpkt,
 				     ZOAP_RESPONSE_CODE_CREATED);
 		/* set created flag to one */
 		if (created) {
