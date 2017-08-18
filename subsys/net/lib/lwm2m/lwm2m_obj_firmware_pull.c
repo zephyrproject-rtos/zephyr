@@ -238,9 +238,9 @@ static void firmware_transfer(struct k_work *work)
 
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
-		firmware_addr.family = family;
+		firmware_addr.sa_family = family;
 		/* HACK: use firmware_uri directly as IP address */
-		net_addr_pton(firmware_addr.family, firmware_uri,
+		net_addr_pton(firmware_addr.sa_family, firmware_uri,
 			      &net_sin6(&firmware_addr)->sin6_addr);
 		net_sin6(&firmware_addr)->sin6_port = htons(5685);
 	}
@@ -248,14 +248,14 @@ static void firmware_transfer(struct k_work *work)
 
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {
-		firmware_addr.family = family;
-		net_addr_pton(firmware_addr.family, firmware_uri,
+		firmware_addr.sa_family = family;
+		net_addr_pton(firmware_addr.sa_family, firmware_uri,
 			      &net_sin(&firmware_addr)->sin_addr);
 		net_sin(&firmware_addr)->sin_port = htons(5685);
 	}
 #endif
 
-	ret = net_context_get(firmware_addr.family, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(firmware_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
 			      &firmware_net_ctx);
 	if (ret) {
 		NET_ERR("Could not get an UDP context (err:%d)", ret);
@@ -269,7 +269,7 @@ static void firmware_transfer(struct k_work *work)
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	if (firmware_addr.family == AF_INET6) {
+	if (firmware_addr.sa_family == AF_INET6) {
 		ret = net_context_bind(firmware_net_ctx,
 				       (struct sockaddr *)&any_addr6,
 				       sizeof(any_addr6));
@@ -277,7 +277,7 @@ static void firmware_transfer(struct k_work *work)
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	if (firmware_addr.family == AF_INET) {
+	if (firmware_addr.sa_family == AF_INET) {
 		ret = net_context_bind(firmware_net_ctx,
 				       (struct sockaddr *)&any_addr4,
 				       sizeof(any_addr4));

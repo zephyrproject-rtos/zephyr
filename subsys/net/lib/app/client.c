@@ -48,7 +48,7 @@ static void dns_cb(enum dns_resolve_status status,
 #if defined(CONFIG_NET_IPV4)
 		net_ipaddr_copy(&net_sin(&ctx->ipv4.remote)->sin_addr,
 				&net_sin(&info->ai_addr)->sin_addr);
-		ctx->ipv4.remote.family = info->ai_family;
+		ctx->ipv4.remote.sa_family = info->ai_family;
 #else
 		goto out;
 #endif
@@ -56,7 +56,7 @@ static void dns_cb(enum dns_resolve_status status,
 #if defined(CONFIG_NET_IPV6)
 		net_ipaddr_copy(&net_sin6(&ctx->ipv6.remote)->sin6_addr,
 				&net_sin6(&info->ai_addr)->sin6_addr);
-		ctx->ipv6.remote.family = info->ai_family;
+		ctx->ipv6.remote.sa_family = info->ai_family;
 #else
 		goto out;
 #endif
@@ -96,7 +96,7 @@ static int resolve_name(struct net_app_ctx *ctx,
 
 	ctx->client.dns_id = 0;
 
-	if (ctx->default_ctx->remote.family == AF_UNSPEC) {
+	if (ctx->default_ctx->remote.sa_family == AF_UNSPEC) {
 		return -EINVAL;
 	}
 
@@ -207,7 +207,7 @@ static int set_remote_addr(struct net_app_ctx *ctx,
 
 	net_sin6(&ctx->ipv6.remote)->sin6_port = htons(peer_port);
 	net_sin6(&ctx->ipv6.remote)->sin6_family = AF_INET6;
-	ctx->ipv6.remote.family = AF_INET6;
+	ctx->ipv6.remote.sa_family = AF_INET6;
 	ctx->default_ctx = &ctx->ipv6;
 #endif /* IPV6 && !IPV4 */
 
@@ -230,7 +230,7 @@ static int set_remote_addr(struct net_app_ctx *ctx,
 
 	net_sin(&ctx->ipv4.remote)->sin_port = htons(peer_port);
 	net_sin(&ctx->ipv4.remote)->sin_family = AF_INET;
-	ctx->ipv4.remote.family = AF_INET;
+	ctx->ipv4.remote.sa_family = AF_INET;
 	ctx->default_ctx = &ctx->ipv4;
 #endif /* IPV6 && !IPV4 */
 
@@ -270,7 +270,7 @@ static int set_remote_addr(struct net_app_ctx *ctx,
 			net_sin6(&ctx->ipv6.remote)->sin6_port =
 				htons(peer_port);
 			net_sin6(&ctx->ipv6.remote)->sin6_family = AF_INET6;
-			ctx->ipv6.remote.family = AF_INET6;
+			ctx->ipv6.remote.sa_family = AF_INET6;
 			ctx->default_ctx = &ctx->ipv6;
 		}
 	} else {
@@ -279,7 +279,7 @@ static int set_remote_addr(struct net_app_ctx *ctx,
 #endif
 		net_sin(&ctx->ipv4.remote)->sin_port = htons(peer_port);
 		net_sin(&ctx->ipv4.remote)->sin_family = AF_INET;
-		ctx->ipv4.remote.family = AF_INET;
+		ctx->ipv4.remote.sa_family = AF_INET;
 		ctx->default_ctx = &ctx->ipv4;
 	}
 #endif /* IPV4 && IPV6 */
@@ -288,7 +288,7 @@ static int set_remote_addr(struct net_app_ctx *ctx,
 	 * then we cannot continue.
 	 */
 	if (!ctx->default_ctx ||
-	    ctx->default_ctx->remote.family == AF_UNSPEC) {
+	    ctx->default_ctx->remote.sa_family == AF_UNSPEC) {
 		NET_ERR("Unknown protocol family.");
 		return -EPFNOSUPPORT;
 	}
@@ -322,7 +322,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	if (client_addr) {
 		memcpy(&addr, client_addr, sizeof(addr));
 	} else {
-		addr.family = AF_UNSPEC;
+		addr.sa_family = AF_UNSPEC;
 	}
 
 	ctx->app_type = NET_APP_CLIENT;
@@ -338,7 +338,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	}
 
 	if (peer_addr) {
-		if (peer_addr->family == AF_INET) {
+		if (peer_addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 			memcpy(&ctx->ipv4.remote, peer_addr,
 			       sizeof(ctx->ipv4.remote));
@@ -346,7 +346,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 #else
 			return -EPROTONOSUPPORT;
 #endif
-		} else if (peer_addr->family == AF_INET6) {
+		} else if (peer_addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 			memcpy(&ctx->ipv6.remote, peer_addr,
 			       sizeof(ctx->ipv6.remote));
@@ -371,8 +371,8 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	}
 
 #if defined(CONFIG_NET_IPV4)
-	if (ctx->ipv4.remote.family == AF_INET) {
-		ctx->ipv4.local.family = AF_INET;
+	if (ctx->ipv4.remote.sa_family == AF_INET) {
+		ctx->ipv4.local.sa_family = AF_INET;
 		_net_app_set_local_addr(&ctx->ipv4.local, NULL,
 					net_sin(&ctx->ipv4.local)->sin_port);
 
@@ -388,8 +388,8 @@ int net_app_init_client(struct net_app_ctx *ctx,
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-	if (ctx->ipv6.remote.family == AF_INET6) {
-		ctx->ipv6.local.family = AF_INET6;
+	if (ctx->ipv6.remote.sa_family == AF_INET6) {
+		ctx->ipv6.local.sa_family = AF_INET6;
 		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
 				       net_sin6(&ctx->ipv6.local)->sin6_port);
 

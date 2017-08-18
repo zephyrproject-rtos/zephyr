@@ -523,7 +523,7 @@ out:
 
 static int get_local_addr(struct http_client_ctx *ctx)
 {
-	if (ctx->tcp.local.family == AF_INET6) {
+	if (ctx->tcp.local.sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		struct in6_addr *dst = &net_sin6(&ctx->tcp.remote)->sin6_addr;
 
@@ -532,7 +532,7 @@ static int get_local_addr(struct http_client_ctx *ctx)
 #else
 		return -EPFNOSUPPORT;
 #endif
-	} else if (ctx->tcp.local.family == AF_INET) {
+	} else if (ctx->tcp.local.sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		struct net_if *iface = net_if_get_default();
 
@@ -558,7 +558,7 @@ static int tcp_connect(struct http_client_ctx *ctx)
 		return -EALREADY;
 	}
 
-	if (ctx->tcp.remote.family == AF_INET6) {
+	if (ctx->tcp.remote.sa_family == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
 
 		/* If we are reconnecting, then make sure the source port
@@ -579,7 +579,7 @@ static int tcp_connect(struct http_client_ctx *ctx)
 		return ret;
 	}
 
-	ret = net_context_get(ctx->tcp.remote.family, SOCK_STREAM,
+	ret = net_context_get(ctx->tcp.remote.sa_family, SOCK_STREAM,
 			      IPPROTO_TCP, &ctx->tcp.ctx);
 	if (ret) {
 		NET_DBG("Get context error (%d)", ret);
@@ -634,10 +634,10 @@ static inline void print_info(struct http_client_ctx *ctx,
 	char local[NET_IPV6_ADDR_LEN];
 	char remote[NET_IPV6_ADDR_LEN];
 
-	sprint_addr(local, NET_IPV6_ADDR_LEN, ctx->tcp.local.family,
+	sprint_addr(local, NET_IPV6_ADDR_LEN, ctx->tcp.local.sa_family,
 		    &ctx->tcp.local);
 
-	sprint_addr(remote, NET_IPV6_ADDR_LEN, ctx->tcp.remote.family,
+	sprint_addr(remote, NET_IPV6_ADDR_LEN, ctx->tcp.remote.sa_family,
 		    &ctx->tcp.remote);
 
 	NET_DBG("HTTP %s (%s) %s -> %s port %d",
@@ -1395,7 +1395,7 @@ static void dns_cb(enum dns_resolve_status status,
 		goto out;
 	}
 
-	ctx->tcp.remote.family = info->ai_family;
+	ctx->tcp.remote.sa_family = info->ai_family;
 
 out:
 	k_sem_give(&waiter->wait);
@@ -1433,7 +1433,7 @@ static int resolve_name(struct http_client_ctx *ctx,
 
 	ctx->dns_id = 0;
 
-	if (ctx->tcp.remote.family == AF_UNSPEC) {
+	if (ctx->tcp.remote.sa_family == AF_UNSPEC) {
 		return -EINVAL;
 	}
 
@@ -1535,7 +1535,7 @@ static inline int set_remote_addr(struct http_client_ctx *ctx,
 	/* If we have not yet figured out what is the protocol family,
 	 * then we cannot continue.
 	 */
-	if (ctx->tcp.remote.family == AF_UNSPEC) {
+	if (ctx->tcp.remote.sa_family == AF_UNSPEC) {
 		NET_ERR("Unknown protocol family.");
 		return -EPFNOSUPPORT;
 	}
@@ -1560,7 +1560,7 @@ int http_client_init(struct http_client_ctx *ctx,
 			return ret;
 		}
 
-		ctx->tcp.local.family = ctx->tcp.remote.family;
+		ctx->tcp.local.sa_family = ctx->tcp.remote.sa_family;
 		ctx->server = server;
 	}
 
@@ -1676,7 +1676,7 @@ int https_client_init(struct http_client_ctx *ctx,
 			return ret;
 		}
 
-		ctx->tcp.local.family = ctx->tcp.remote.family;
+		ctx->tcp.local.sa_family = ctx->tcp.remote.sa_family;
 		ctx->server = server;
 	}
 

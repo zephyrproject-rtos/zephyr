@@ -370,7 +370,7 @@ static void dns_query_ipv4_server_count(void)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.family == AF_INET) {
+		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
 			count++;
 		}
 
@@ -398,7 +398,7 @@ static void dns_query_ipv6_server_count(void)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.family == AF_INET6) {
+		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
 			count++;
 		}
 
