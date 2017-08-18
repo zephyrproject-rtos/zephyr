@@ -19,10 +19,10 @@ Major enhancements planned with this release include:
 * Revamp Testsuite, Increase Coverage
 * Zephyr SDK NG
 * Eco System: Tracing, debugging support through 3rd party tools
+* Lightweight Machine to Machine (LwM2M) support
 
 These enhancements are planned, but may move out to a future release:
 
-* LWM2M
 * Thread Protocol (initial drop)
 * MMU/MPU (Cont.): Thread Isolation, Paging
 * Build and Configuration System (CMake)
