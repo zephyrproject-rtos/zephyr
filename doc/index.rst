@@ -46,12 +46,12 @@ Sections
    getting_started/getting_started.rst
    contribute/contribute.rst
    kernel/kernel.rst
+   security/security.rst
    application/index.rst
    boards/boards.rst
    devices/index.rst
    subsystems/subsystems.rst
    api/api.rst
-   security/security.rst
 
 Indices and Tables
 ******************
