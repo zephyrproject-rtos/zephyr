@@ -139,8 +139,8 @@ class Loader(yaml.Loader):
             filepath = os.path.dirname(self._root).split('/')
             filepath = '/'.join(filepath[:-2])
             filepath = os.path.join(filepath + '/common/yaml', filename)
-            with open(filepath, 'r') as f:
-                return yaml.load(f, Loader)
+        with open(filepath, 'r') as f:
+            return yaml.load(f, Loader)
 
 
 def insert_defs(node_address, defs, new_defs, new_aliases):
@@ -553,22 +553,34 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
     return
 
 
+def yaml_traverse_inherited(node, props):
+    if 'inherits' in node:
+        for inherited in node['inherits']:
+            yaml_traverse_inherited(inherited, props)
+
+    for prop in node['properties']:
+        props.append(prop)
+
+    return
+
+
 def yaml_collapse(yaml_list):
     collapsed = dict(yaml_list)
 
     for k, v in collapsed.items():
-        props = set()
+        existing = set()
         if 'properties' in v:
             for entry in v['properties']:
                 for key in entry:
-                    props.add(key)
+                    existing.add(key)
 
+        inh_list = []
         if 'inherits' in v:
-            for inherited in v['inherits']:
-                for prop in inherited['properties']:
-                    for key in prop:
-                        if key not in props:
-                            v['properties'].append(prop)
+            yaml_traverse_inherited(v, inh_list)
+            for prop in inh_list:
+                 for key in prop:
+                     if key not in existing:
+                         v['properties'].append(prop)
             v.pop('inherits')
 
     return collapsed
