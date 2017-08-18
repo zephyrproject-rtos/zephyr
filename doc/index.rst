@@ -36,18 +36,17 @@ Sections
 
    introduction/introducing_zephyr.rst
    getting_started/getting_started.rst
-   boards/boards.rst
+   contribute/contribute.rst
    kernel/kernel.rst
+   boards/boards.rst
    application/application.rst
+   samples/samples.rst
    porting/porting.rst
-   drivers/drivers.rst
-   dts/device_tree.rst
+   devices/index.rst
    subsystems/subsystems.rst
    api/api.rst
-   samples/samples.rst
    reference/kconfig/index.rst
    security/security.rst
-   contribute/contribute.rst
    release-notes.rst
    LICENSING.rst
    glossary.rst
