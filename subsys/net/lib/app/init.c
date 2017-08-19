@@ -120,6 +120,28 @@ static void setup_ipv4(struct net_if *iface)
 		 net_addr_ntop(AF_INET, &addr, hr_addr, NET_IPV4_ADDR_LEN));
 #endif
 
+	if (sizeof(CONFIG_NET_APP_MY_IPV4_NETMASK) > 1) {
+		/* If not empty */
+		if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_NETMASK,
+				  &addr)) {
+			NET_ERR("Invalid netmask: %s",
+				CONFIG_NET_APP_MY_IPV4_NETMASK);
+		} else {
+			net_if_ipv4_set_netmask(iface, &addr);
+		}
+	}
+
+	if (sizeof(CONFIG_NET_APP_MY_IPV4_GW) > 1) {
+		/* If not empty */
+		if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_GW,
+				  &addr)) {
+			NET_ERR("Invalid gateway: %s",
+				CONFIG_NET_APP_MY_IPV4_GW);
+		} else {
+			net_if_ipv4_set_gw(iface, &addr);
+		}
+	}
+
 	k_sem_take(&counter, K_NO_WAIT);
 	k_sem_give(&waiter);
 }
