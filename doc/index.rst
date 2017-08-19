@@ -25,7 +25,7 @@ Zephyr Project Documentation
 For more information about previous releases, please consult the published
 :ref:`zephyr_release_notes`.
 
-The Zephyr OS is provided under the :download:`Apache 2.0 license. <../LICENSE>`.
+The Zephyr OS is provided under the :download:`Apache 2.0 license<../LICENSE>`.
 The Zephyr OS also imports or reuses packages, scripts, and other files that
 are not covered by the Apache License. A list of those licenses can be found
 under :ref:`zephyr_licensing`.
