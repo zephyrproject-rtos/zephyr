@@ -994,6 +994,8 @@ static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 
 	return;
 }
+#elif defined(CONFIG_NET_DEBUG_APP)
+static void net_app_cb(struct net_app_ctx *ctx, void *user_data) {}
 #endif
 
 int net_shell_cmd_app(int argc, char *argv[])
