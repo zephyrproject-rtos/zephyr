@@ -38,6 +38,7 @@ if(CONFIG_HAS_DTS)
     -P
     -E ${DTS_SOURCE} 
     -o ${BOARD_NAME}.dts.pre.tmp
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
@@ -47,6 +48,7 @@ if(CONFIG_HAS_DTS)
     -o ${BOARD_NAME}.dts_compiled
     -b 0
     ${BOARD_NAME}.dts.pre.tmp
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
 
   # Run extract_dts_includes.py for the header file
