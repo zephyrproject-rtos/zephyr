@@ -16,7 +16,5 @@ target_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE zephyr PRIVATE ${CMAKE_CURRENT_SOUR
 target_sources_ifdef(CONFIG_CPLUSPLUS zephyr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/__aeabi_atexit.c)
 target_sources_ifdef(CONFIG_IRQ_OFFLOAD zephyr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/irq_offload.c)
 
-add_subdirectory(offsets)
-
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M cortex_m)
 add_subdirectory_ifdef(CONFIG_CPU_HAS_MPU  cortex_m/mpu)
