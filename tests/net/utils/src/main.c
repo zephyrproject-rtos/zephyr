@@ -26,6 +26,7 @@
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
+#if defined(CONFIG_NET_IPV6)
 /* ICMPv6 frame (104 bytes) */
 static const unsigned char pkt1[104] = {
 /* IPv6 header starts here */
@@ -103,7 +104,9 @@ static const unsigned char pkt3[199] = {
 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, /* ........ */
 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96        /* ....... */
 };
+#endif /* CONFIG_NET_IPV6 */
 
+#if defined(CONFIG_NET_IPV4)
 /* ICMP reply (98 bytes) */
 static const unsigned char pkt4[98] = {
 /* Ethernet header starts here */
@@ -147,6 +150,7 @@ static const unsigned char pkt5[98] = {
 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, /* ./012345 */
 0x36, 0x37                                      /* 67 */
 };
+#endif /* CONFIG_NET_IPV4 */
 
 void run_tests(void)
 {
@@ -155,7 +159,10 @@ void run_tests(void)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	u16_t chksum, orig_chksum;
-	int hdr_len, i, chunk, datalen, total = 0;
+	int hdr_len;
+
+#if defined(CONFIG_NET_IPV6)
+	int i, chunk, datalen, total = 0;
 
 	/* Packet fits to one fragment */
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
@@ -309,10 +316,12 @@ void run_tests(void)
 		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
+#endif /* CONFIG_NET_IPV6 */
 
 	/* Another packet that fits to one fragment.
 	 * This one has ethernet header before IPv4 data.
 	 */
+#if defined(CONFIG_NET_IPV4)
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = net_pkt_get_reserve_rx_data(sizeof(struct net_eth_hdr),
 					    K_FOREVER);
@@ -367,6 +376,7 @@ void run_tests(void)
 		zassert_true(0, "exiting");
 	}
 	net_pkt_unref(pkt);
+#endif /* CONFIG_NET_IPV4 */
 }
 
 struct net_addr_test_data {
@@ -743,10 +753,440 @@ void run_net_addr_tests(void)
 	zassert_equal(pass, ARRAY_SIZE(tests), "test_net_addr error");
 }
 
+void run_addr_parse_tests(void)
+{
+	struct sockaddr addr;
+	bool ret;
+	int i;
+#if defined(CONFIG_NET_IPV4)
+	static const struct {
+		const char *address;
+		int len;
+		struct sockaddr_in result;
+		bool verdict;
+	} parse_ipv4_entries[] = {
+		{
+			.address = "192.0.2.1:80",
+			.len = sizeof("192.0.2.1:80") - 1,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = htons(80),
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 1
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "192.0.2.2",
+			.len = sizeof("192.0.2.2") - 1,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = 0,
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 2
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "192.0.2.3/foobar",
+			.len = sizeof("192.0.2.3/foobar") - 8,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = 0,
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 3
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "255.255.255.255:0",
+			.len = sizeof("255.255.255.255:0") - 1,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = 0,
+				.sin_addr = {
+					.s4_addr[0] = 255,
+					.s4_addr[1] = 255,
+					.s4_addr[2] = 255,
+					.s4_addr[3] = 255
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "127.0.0.42:65535",
+			.len = sizeof("127.0.0.42:65535") - 1,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = htons(65535),
+				.sin_addr = {
+					.s4_addr[0] = 127,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 0,
+					.s4_addr[3] = 42
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "192.0.2.3:80/foobar",
+			.len = sizeof("192.0.2.3:80/foobar") - 1,
+			.verdict = false
+		},
+		{
+			.address = "192.168.1.1:65536/foobar",
+			.len = sizeof("192.168.1.1:65536") - 1,
+			.verdict = false
+		},
+		{
+			.address = "192.0.2.3:80/foobar",
+			.len = sizeof("192.0.2.3") - 1,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = 0,
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 3
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "192.0.2.3/foobar",
+			.len = sizeof("192.0.2.3/foobar") - 1,
+			.verdict = false
+		},
+		{
+			.address = "192.0.2.3:80:80",
+			.len = sizeof("192.0.2.3:80:80") - 1,
+			.verdict = false
+		},
+		{
+			.address = "192.0.2.1:80000",
+			.len = sizeof("192.0.2.1:80000") - 1,
+			.verdict = false
+		},
+		{
+			.address = "192.168.0.1",
+			.len = sizeof("192.168.0.1:80000") - 1,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = 0,
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 168,
+					.s4_addr[2] = 0,
+					.s4_addr[3] = 1
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "a.b.c.d",
+			.verdict = false
+		},
+	};
+#endif
+#if defined(CONFIG_NET_IPV6)
+	static const struct {
+		const char *address;
+		int len;
+		struct sockaddr_in6 result;
+		bool verdict;
+	} parse_ipv6_entries[] = {
+		{
+			.address = "[2001:db8::2]:80",
+			.len = sizeof("[2001:db8::2]:80") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = htons(80),
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = 0,
+					.s6_addr16[7] = ntohs(2)
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "[2001:db8::a]/barfoo",
+			.len = sizeof("[2001:db8::a]/barfoo") - 8,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = 0,
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = 0,
+					.s6_addr16[7] = ntohs(0xa)
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "[2001:db8::a]",
+			.len = sizeof("[2001:db8::a]") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = 0,
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = 0,
+					.s6_addr16[7] = ntohs(0xa)
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "[2001:db8:3:4:5:6:7:8]:65535",
+			.len = sizeof("[2001:db8:3:4:5:6:7:8]:65535") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = 65535,
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[2] = ntohs(3),
+					.s6_addr16[3] = ntohs(4),
+					.s6_addr16[4] = ntohs(5),
+					.s6_addr16[5] = ntohs(6),
+					.s6_addr16[6] = ntohs(7),
+					.s6_addr16[7] = ntohs(8),
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "[::]:0",
+			.len = sizeof("[::]:0") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = 0,
+				.sin6_addr = {
+					.s6_addr16[0] = 0,
+					.s6_addr16[1] = 0,
+					.s6_addr16[2] = 0,
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = 0,
+					.s6_addr16[7] = 0,
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "2001:db8::42",
+			.len = sizeof("2001:db8::42") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = 0,
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = 0,
+					.s6_addr16[7] = ntohs(0x42)
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "[2001:db8::192.0.2.1]:80000",
+			.len = sizeof("[2001:db8::192.0.2.1]:80000") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::1]:80",
+			.len = sizeof("[2001:db8::1") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::1]:65536",
+			.len = sizeof("[2001:db8::1]:65536") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::1]:80",
+			.len = sizeof("2001:db8::1") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::1]:a",
+			.len = sizeof("[2001:db8::1]:a") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::1]:10-12",
+			.len = sizeof("[2001:db8::1]:10-12") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::]:80/url/continues",
+			.len = sizeof("[2001:db8::]") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = 0,
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = 0,
+					.s6_addr16[7] = 0,
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "[2001:db8::200]:080",
+			.len = sizeof("[2001:db8:433:2]:80000") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = htons(80),
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = 0,
+					.s6_addr16[7] = ntohs(0x200)
+				}
+			},
+			.verdict = true
+		},
+		{
+			.address = "[2001:db8::]:8080/another/url",
+			.len = sizeof("[2001:db8::]:8080/another/url") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::1",
+			.len = sizeof("[2001:db8::1") - 1,
+			.verdict = false
+		},
+		{
+			.address = "[2001:db8::1]:-1",
+			.len = sizeof("[2001:db8::1]:-1") - 1,
+			.verdict = false
+		},
+		{
+			/* Valid although user probably did not mean this */
+			.address = "2001:db8::1:80",
+			.len = sizeof("2001:db8::1:80") - 1,
+			.result = {
+				.sin6_family = AF_INET6,
+				.sin6_port = 0,
+				.sin6_addr = {
+					.s6_addr16[0] = ntohs(0x2001),
+					.s6_addr16[1] = ntohs(0xdb8),
+					.s6_addr16[3] = 0,
+					.s6_addr16[4] = 0,
+					.s6_addr16[5] = 0,
+					.s6_addr16[6] = ntohs(0x01),
+					.s6_addr16[7] = ntohs(0x80)
+				}
+			},
+			.verdict = true
+		},
+	};
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+	for (i = 0; i < ARRAY_SIZE(parse_ipv4_entries) - 1; i++) {
+		memset(&addr, 0, sizeof(addr));
+
+		ret = net_ipaddr_parse(
+			parse_ipv4_entries[i].address,
+			parse_ipv4_entries[i].len,
+			&addr);
+		if (ret != parse_ipv4_entries[i].verdict) {
+			printk("IPv4 entry [%d] \"%s\" failed\n", i,
+				parse_ipv4_entries[i].address);
+			zassert_true(false, "failure");
+		}
+
+		if (ret == true) {
+			zassert_true(
+				net_ipv4_addr_cmp(
+				      &net_sin(&addr)->sin_addr,
+				      &parse_ipv4_entries[i].result.sin_addr),
+				parse_ipv4_entries[i].address);
+			zassert_true(net_sin(&addr)->sin_port ==
+				     parse_ipv4_entries[i].result.sin_port,
+				     "IPv4 port");
+			zassert_true(net_sin(&addr)->sin_family ==
+				     parse_ipv4_entries[i].result.sin_family,
+				     "IPv4 family");
+		}
+	}
+#endif
+#if defined(CONFIG_NET_IPV6)
+	for (i = 0; i < ARRAY_SIZE(parse_ipv6_entries) - 1; i++) {
+		memset(&addr, 0, sizeof(addr));
+
+		ret = net_ipaddr_parse(
+			parse_ipv6_entries[i].address,
+			parse_ipv6_entries[i].len,
+			&addr);
+		if (ret != parse_ipv6_entries[i].verdict) {
+			printk("IPv6 entry [%d] \"%s\" failed\n", i,
+			       parse_ipv6_entries[i].address);
+			zassert_true(false, "failure");
+		}
+
+		if (ret == true) {
+			zassert_true(
+				net_ipv6_addr_cmp(
+				      &net_sin6(&addr)->sin6_addr,
+				      &parse_ipv6_entries[i].result.sin6_addr),
+				parse_ipv6_entries[i].address);
+			zassert_true(net_sin6(&addr)->sin6_port ==
+				     parse_ipv6_entries[i].result.sin6_port,
+				     "IPv6 port");
+			zassert_true(net_sin6(&addr)->sin6_family ==
+				     parse_ipv6_entries[i].result.sin6_family,
+				     "IPv6 family");
+		}
+	}
+#endif
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(test_utils_fn,
-		ztest_unit_test(run_tests),
-		ztest_unit_test(run_net_addr_tests));
+			 ztest_unit_test(run_tests),
+			 ztest_unit_test(run_net_addr_tests),
+			 ztest_unit_test(run_addr_parse_tests));
 	ztest_run_test_suite(test_utils_fn);
 }
