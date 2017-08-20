@@ -65,6 +65,7 @@ if(CONFIG_HAS_DTS)
   execute_process(
     COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
     OUTPUT_VARIABLE STDOUT
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
 
   # extract_dts_includes.py writes the header file contents to stdout,
@@ -77,6 +78,7 @@ if(CONFIG_HAS_DTS)
   execute_process(
     COMMAND ${CMD_EXTRACT_DTS_INCLUDES} --keyvalue
     OUTPUT_VARIABLE STDOUT
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
   file(WRITE ${GENERATED_DTS_BOARD_CONF} "${STDOUT}" )
   import_kconfig(${GENERATED_DTS_BOARD_CONF})
