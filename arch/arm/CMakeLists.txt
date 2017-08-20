@@ -56,5 +56,5 @@ endif()
 target_compile_options(zephyr PUBLIC -mabi=aapcs -mthumb -mcpu=${GCC_M_CPU})
 target_compile_options(zephyr PUBLIC -mthumb -march=${ARCH_FOR_${GCC_M_CPU}})
 
-add_subdirectory(soc/${SOC_PATH}/)
+add_subdirectory(soc/${SOC_PATH})
 add_subdirectory(core)
