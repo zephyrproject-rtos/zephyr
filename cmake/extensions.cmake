@@ -40,7 +40,7 @@ endfunction()
 
 function(cc_option_ifdef feature_toggle option)
   if(${feature_toggle})
-    cc_option_ifdef(${option})
+    cc_option(${option})
   endif()
 endfunction()
 
