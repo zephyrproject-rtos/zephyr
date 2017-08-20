@@ -2,6 +2,6 @@
 add_subdirectory(cmsis)
 add_subdirectory(nordic)
 # add_subdirectory(nxp/mcux)
-# add_subdirectory(qmsi)
+add_subdirectory_if_kconfig(qmsi)
 # add_subdirectory(st/stm32cube)
 # add_subdirectory(ti/cc3200sdk)

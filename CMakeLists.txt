@@ -30,7 +30,6 @@ if(NOT PREBUILT_HOST_TOOLS)
   message(FATAL_ERROR "Building host tools not yet supported, please use PREBUILT_HOST_TOOLS")
 endif()
 
-include(cmake/extensions.cmake)
 include(cmake/kconfig.cmake)
 
 # set the variables VERSION_MAJOR, PATCHLEVEL and more
@@ -55,18 +54,6 @@ set(KERNEL_BIN_NAME ${KERNEL_NAME}.bin)
 set(KERNEL_HEX_NAME ${KERNEL_NAME}.hex)
 set(KERNEL_STAT_NAME ${KERNEL_NAME}.stat)
 
-define_property(GLOBAL PROPERTY ZEPHYR_LIBS
-    BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
-    FULL_DOCS "Global list of all Zephyr CMake libs that should be linked in. zephyr_library() appends libs to this list.")
-set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
-
-define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
-  BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
-  FULL_DOCS "\
-Object files that are generated after Zephyr has been linked once.\
-May include isr tables, mmu tables, etc."
-  )
-set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
 endif()
@@ -74,8 +61,7 @@ endif()
 # zephyr is a catchall CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
 # flags that all zephyr source files use.
-add_library(zephyr STATIC "")
-zephyr_library(zephyr)
+zephyr_library_named(zephyr)
 
 include(dts/dts.cmake)
 
@@ -249,11 +235,6 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
-# app is a CMake library containing all the application code and is
-# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
-# that was specified when cmake was called.
-zephyr_library(app)
-
 add_subdirectory(lib)
 add_subdirectory(misc)
 # We use include instead of add_subdirectory to avoid creating a new directory scope.
@@ -265,6 +246,26 @@ add_subdirectory(ext)
 add_subdirectory(subsys)
 add_subdirectory(arch)
 add_subdirectory(drivers)
+
+# Generate offsets.h from offsets.o
+
+set(OFFSETS_C_PATH ${PROJECT_SOURCE_DIR}/arch/${ARCH}/core/offsets/offsets.c)
+add_library(offsets OBJECT ${OFFSETS_C_PATH})
+target_object_link_libraries(offsets zephyr)
+
+set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
+add_custom_command(
+  OUTPUT ${OFFSETS_H_PATH}
+  COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/gen_offset_header.py
+  -i ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj
+  -o ${OFFSETS_H_PATH}
+  DEPENDS offsets
+)
+add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
+
+add_dependencies(zephyr offsets_h)
+
+target_sources(zephyr PRIVATE ${OFFSETS_C_PATH})
 
 # Get ZEPHYR_INCLUDE for preprocessing, with cmake 3.8 this should be possible with generator expressions.
 get_property(ZEPHYR_INCLUDES_LIST TARGET zephyr PROPERTY INCLUDE_DIRECTORIES)
@@ -310,7 +311,9 @@ add_custom_command(
 )
 add_custom_target(
   linker_script
-  DEPENDS linker.cmd
+  DEPENDS
+  linker.cmd
+  offsets_h
 )
 
 if(TOOLCHAIN_DO_PASS2)
@@ -365,17 +368,20 @@ if(CONFIG_GEN_ISR_TABLES)
     --vector-table
     DEPENDS prebuilt_kernel
     )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES isr_tables.c)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
+
 endif()
 
-# Read the global variable into the local variable GKOF
+# Read global variables into local variables
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
+get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
-add_executable(       prebuilt_kernel $<TARGET_OBJECTS:offsets>)
+add_executable(       prebuilt_kernel dummy.c)
 target_link_libraries(prebuilt_kernel -T${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
 set_property(TARGET   prebuilt_kernel PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     prebuilt_kernel linker_script)
-if(GKOF)
+
+if(GKOF OR GKSF)
   set(logical_target_for_zephyr_elf kernel_elf)
 
   # The second linker pass uses the same source linker script of the
@@ -396,10 +402,15 @@ if(GKOF)
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
-  add_custom_target(linker_pass2_script DEPENDS linker_pass2.cmd)
+  add_custom_target(
+    linker_pass2_script
+    DEPENDS
+    linker_pass2.cmd
+    offsets_h
+    )
 
-  add_executable(       kernel_elf $<TARGET_OBJECTS:offsets> ${GKOF})
-  target_link_libraries(kernel_elf -T${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
+  add_executable(       kernel_elf dummy.c ${GKSF})
+  target_link_libraries(kernel_elf ${GKOF} -T${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass2.cmd)
   add_dependencies(     kernel_elf linker_pass2_script)
 else()
