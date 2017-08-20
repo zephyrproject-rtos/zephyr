@@ -228,3 +228,23 @@ DEVICE_AND_API_INIT(pwm_stm32_2, CONFIG_PWM_STM32_2_DEV_NAME,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_stm32_drv_api_funcs);
 #endif /* CONFIG_PWM_STM32_2 */
+
+
+#ifdef CONFIG_PWM_STM32_3
+static struct pwm_stm32_data pwm_stm32_dev_data_3 = {
+	/* Default case */
+	.pwm_prescaler = 10000,
+};
+
+static const struct pwm_stm32_config pwm_stm32_dev_cfg_3 = {
+	.pwm_base = TIM3_BASE,
+	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
+		    .enr = LL_APB1_GRP1_PERIPH_TIM3 },
+};
+
+DEVICE_AND_API_INIT(pwm_stm32_2, CONFIG_PWM_STM32_3_DEV_NAME,
+		    pwm_stm32_init,
+		    &pwm_stm32_dev_data_3, &pwm_stm32_dev_cfg_3,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &pwm_stm32_drv_api_funcs);
+#endif /* CONFIG_PWM_STM32_3 */

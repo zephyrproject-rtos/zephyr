@@ -44,3 +44,18 @@ config PWM_STM32_2_DEV_NAME
 	depends on PWM_STM32_2
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_3
+	bool "STM32 PWM 3 Output"
+	depends on PWM_STM32
+	default n
+	help
+	  Enable output for PWM3 in the driver. Say y here
+	  if you want to use PWM3 output.
+
+config PWM_STM32_3_DEV_NAME
+	string "STM32 PWM Device Name"
+	default "PWM_3"
+	depends on PWM_STM32_3
+	help
+	  Specify the device name for the PWM driver.
