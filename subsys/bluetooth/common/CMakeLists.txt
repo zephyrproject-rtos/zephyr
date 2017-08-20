@@ -1,5 +1,4 @@
-add_library(subsys__bluetooth__common STATIC "")
-zephyr_library(subsys__bluetooth__common)
+zephyr_library()
 
 target_sources(subsys__bluetooth__common PRIVATE dummy.c)
 

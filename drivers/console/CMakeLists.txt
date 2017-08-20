@@ -1,5 +1,4 @@
-add_library(drivers__console STATIC "")
-zephyr_library(drivers__console)
+zephyr_library()
 
 target_sources_if_kconfig(drivers__console PRIVATE uart_console.c)
 target_sources_if_kconfig(drivers__console PRIVATE ram_console.c)

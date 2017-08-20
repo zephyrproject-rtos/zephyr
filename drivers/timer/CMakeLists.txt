@@ -1,5 +1,6 @@
-add_library(drivers__timer STATIC sys_clock_init.c)
-zephyr_library(drivers__timer)
+zephyr_library()
+
+zephyr_library_sources(sys_clock_init.c)
 
 target_sources_ifdef(CONFIG_HPET_TIMER  drivers__timer PRIVATE hpet.c)
 target_sources_ifdef(CONFIG_ARCV2_TIMER drivers__timer PRIVATE arcv2_timer0.c)
