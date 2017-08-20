@@ -1,5 +1,4 @@
-add_library(subsys__bluetooth__host STATIC "")
-zephyr_library(subsys__bluetooth__host)
+zephyr_library()
 target_link_libraries(subsys__bluetooth__host subsys__bluetooth)
 
 target_sources_ifdef(CONFIG_BT_HCI_RAW          subsys__bluetooth__host PRIVATE hci_raw.c)
