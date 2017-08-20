@@ -51,6 +51,12 @@ function(set_ifndef variable value)
   endif()
 endfunction()
 
+function(target_cc_option_ifndef feature_toggle target scope option)
+  if(NOT ${feature_toggle})
+    target_cc_option(${target} ${scope} ${option})
+  endif()
+endfunction()
+
 # Utility functions for silently omitting a compiler flag when the
 # compiler does not support it.
 function(cc_option option)
