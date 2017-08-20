@@ -66,6 +66,15 @@ int http_close(struct http_ctx *ctx)
 	}
 #endif
 
+#if defined(CONFIG_HTTP_SERVER) && defined(CONFIG_WEBSOCKET)
+	if (ctx->websocket.pending) {
+		net_pkt_unref(ctx->websocket.pending);
+		ctx->websocket.pending = NULL;
+	}
+
+	ctx->websocket.data_waiting = 0;
+#endif
+
 	return net_app_close(&ctx->app_ctx);
 }
 
