@@ -193,7 +193,6 @@ target_compile_options(zephyr PUBLIC ${CONFIG_COMPILER_OPT})
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   target_cc_option(zephyr PUBLIC -Wno-unknown-warning-option)
   target_cc_option(zephyr PUBLIC -Wno-unused-variable)
-  target_cc_option(zephyr PUBLIC -Wno-unused-variable)
   target_cc_option(zephyr PUBLIC -Wno-format-invalid-specifier)
   target_cc_option(zephyr PUBLIC -Wno-gnu)
   # comparison of unsigned expression < 0 is always false
