@@ -870,6 +870,30 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 		    char *dst, size_t size);
 
 /**
+ * @brief Parse a string that contains either IPv4 or IPv6 address
+ * and optional port, and store the information in user supplied
+ * sockaddr struct.
+ *
+ * @details Syntax of the IP address string:
+ *   192.0.2.1:80
+ *   192.0.2.42
+ *   [2001:db8::1]:8080
+ *   [2001:db8::2]
+ *   2001:db::42
+ * Note that the str_len parameter is used to restrict the amount of
+ * characters that are checked. If the string does not contain port
+ * number, then the port number in sockaddr is not modified.
+ *
+ * @param str String that contains the IP address.
+ * @param str_len Length of the string to be parsed.
+ * @param addr Pointer to user supplied struct sockaddr.
+ *
+ * @return True if parsing could be done, false otherwise.
+ */
+bool net_ipaddr_parse(const char *str, size_t str_len,
+		      struct sockaddr *addr);
+
+/**
  * @brief Compare TCP sequence numbers.
  *
  * @details This function compares TCP sequence numbers,
