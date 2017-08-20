@@ -67,6 +67,9 @@ Object files that are generated after Zephyr has been linked once.\
 May include isr tables, mmu tables, etc."
   )
 set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
+if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
+  set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
+endif()
 
 # zephyr is a catchall CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
@@ -288,6 +291,8 @@ else()
   set(LINKER_SCRIPT_DEP "")
 endif()
 
+get_property(LINKER_SCRIPT_DEFINES GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
+
 get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 add_custom_command(
   OUTPUT linker.cmd
@@ -297,7 +302,7 @@ add_custom_command(
   -x assembler-with-cpp
   -MD -MF linker.cmd.dep -MT ${BASE_NAME}/linker.cmd
   ${ZEPHYR_INCLUDES}
-  -D__GCC_LINKER_CMD__
+  ${LINKER_SCRIPT_DEFINES}
   -E ${LINKER_SCRIPT} -P
   -o linker.cmd
   VERBATIM
@@ -384,7 +389,7 @@ if(GKOF)
     -x assembler-with-cpp
     -MD -MF linker_pass2.cmd.dep -MT ${BASE_NAME}/linker_pass2.cmd
     ${ZEPHYR_INCLUDES}
-    -D__GCC_LINKER_CMD__
+    ${LINKER_SCRIPT_DEFINES}
     -DLINKER_PASS2
     -E ${LINKER_SCRIPT} -P
     -o linker_pass2.cmd
