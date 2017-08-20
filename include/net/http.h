@@ -435,6 +435,27 @@ struct http_ctx {
 		u16_t url_len;
 	} http;
 
+#if defined(CONFIG_WEBSOCKET)
+	struct {
+		/** Pending data that is not yet ready for processing */
+		struct net_pkt *pending;
+
+		/** Amount of data that needs to be read still */
+		u32_t data_waiting;
+
+		/** Websocket connection masking value */
+		u32_t masking_value;
+
+		/** How many bytes we have read */
+		u32_t data_read;
+
+		/** Message type flag. Value is one of WS_FLAG_XXX flag values
+		 * defined in weboscket.h
+		 */
+		u32_t msg_type_flag;
+	} websocket;
+#endif /* CONFIG_WEBSOCKET */
+
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN)
 	sys_snode_t node;
 #endif /* CONFIG_HTTP_DEBUG_HTTP_CONN */
