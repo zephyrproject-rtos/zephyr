@@ -1,5 +1,4 @@
-add_library(                                                  drivers__clock_control STATIC "")
-zephyr_library(                                               drivers__clock_control)
+zephyr_library()
 target_link_libraries(                                        drivers__clock_control drivers)
 target_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF5                drivers__clock_control PRIVATE nrf5_power_clock.c)
 target_sources_ifdef(CONFIG_CLOCK_CONTROL_QUARK_SE            drivers__clock_control PRIVATE quark_se_clock_control.c)

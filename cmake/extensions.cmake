@@ -62,6 +62,12 @@ function(cc_option_ifdef feature_toggle option)
   endif()
 endfunction()
 
+function(zephyr_library_sources_ifdef feature_toggle source)
+  if(${${feature_toggle}})
+    zephyr_library_sources(${source} ${ARGN})
+  endif()
+endfunction()
+
 # <function-name>_ifndef()
 function(set_ifndef variable value)
   if(NOT ${variable})
@@ -167,8 +173,66 @@ endfunction()
 # Zephyr-aware extensions
 ########################################################
 
+# Zephyr-library-aware extentions
+#
+# Zephyr libraries use CMake's library concept and a set of
+# assumptions about how zephyr code is organized to cut down on
+# boilerplate code.
+#
+# Zephyr libraries are created and modified by the below functions.
+#
+
+macro(zephyr_library)
+  # Remove the prefix (/home/sebo/zephyr/driver/serial/CMakeLists.txt => driver/serial/CMakeLists.txt)
+  file(RELATIVE_PATH name $ENV{ZEPHYR_BASE} ${CMAKE_CURRENT_LIST_FILE})
+
+  # Remove the filename (driver/serial/CMakeLists.txt => driver/serial)
+  get_filename_component(name ${name} DIRECTORY)
+
+  # Replace / with __ (driver/serial => driver__serial)
+  string(REGEX REPLACE "/" "__" name ${name})
+
+  zephyr_library_named(${name})
+endmacro()
+
+macro(zephyr_library_named name)
+  # This is a macro because we need add_library() to be executed
+  # within the scope of the caller.
+  set(ZEPHYR_CURRENT_LIBRARY ${name})
+  add_library(${name} STATIC "")
+  get_property(x TARGET ${name} PROPERTY LIBRARY_OUTPUT_DIRECTORY)
+
+  # Get all propreties that cmake supports
+  execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
+
+  # Convert command output into a CMake list
+  STRING(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+  STRING(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+
+  zephyr_append_cmake_library(${name})
+
+  if(${name} STREQUAL "zephyr")
+  else()
+    target_link_libraries(${name} zephyr)
+  endif()
+endmacro()
+
+#
+# zephyr_library versions of normal CMake target_<func> functions
+#
+function(zephyr_library_sources source)
+  target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
+endfunction()
+
+function(zephyr_library_include_directories scope item)
+  target_include_directories(${ZEPHYR_CURRENT_LIBRARY} ${scope} ${item} ${ARGN})
+endfunction()
+
 # Add the existing CMake library 'library' to the global list of
-# Zephyr CMake libraries.
-function(zephyr_library library)
+# Zephyr CMake libraries. This done automatically by zephyr_library()
+# but must called explicitly on CMake libraries that are not created
+# by zephyr_library().
+function(zephyr_append_cmake_library library)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
 endfunction()
+

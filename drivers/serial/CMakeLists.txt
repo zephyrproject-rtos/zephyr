@@ -1,5 +1,4 @@
-add_library(drivers__serial STATIC "")
-zephyr_library(drivers__serial)
+zephyr_library()
 target_link_libraries(drivers__serial drivers)
 
 target_sources_if_kconfig(drivers__serial PRIVATE uart_ns16550.c)
