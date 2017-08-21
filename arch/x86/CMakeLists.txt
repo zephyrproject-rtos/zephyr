@@ -35,17 +35,17 @@ set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
 
 # Use gen_idt.py and objcopy to generate irq_int_vector_map.o and
-# staticIdt.o from the elf file prebuilt_kernel
+# staticIdt.o from the elf file zephyr_prebuilt
 add_custom_command(
   OUTPUT irq_int_vector_map.bin staticIdt.bin
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${GENIDT}
-  --kernel $<TARGET_FILE:prebuilt_kernel>
+  --kernel $<TARGET_FILE:zephyr_prebuilt>
   --output-idt staticIdt.bin
   --vector-map irq_int_vector_map.bin
   ${GENIDT_EXTRA_ARGS}
-  DEPENDS prebuilt_kernel
+  DEPENDS zephyr_prebuilt
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
