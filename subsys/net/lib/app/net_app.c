@@ -188,6 +188,10 @@ int _net_app_set_net_ctx(struct net_app_ctx *ctx,
 {
 	int ret;
 
+	if (!net_ctx || !net_context_is_used(net_ctx)) {
+		return -ENOENT;
+	}
+
 	ret = net_context_bind(net_ctx, addr, socklen);
 	if (ret < 0) {
 		NET_ERR("Cannot bind context (%d)", ret);

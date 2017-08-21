@@ -90,8 +90,8 @@ void _net_app_accept_cb(struct net_context *net_ctx,
 
 int net_app_listen(struct net_app_ctx *ctx)
 {
+	bool dual = false, v4_failed = false;
 	int ret;
-	bool dual = false;
 
 	if (!ctx) {
 		return -EINVAL;
@@ -117,8 +117,12 @@ int net_app_listen(struct net_app_ctx *ctx)
 	ret = _net_app_set_net_ctx(ctx, ctx->ipv4.ctx, &ctx->ipv4.local,
 				   sizeof(struct sockaddr_in), ctx->proto);
 	if (ret < 0) {
-		net_context_put(ctx->ipv4.ctx);
-		ctx->ipv4.ctx = NULL;
+		if (ctx->ipv4.ctx) {
+			net_context_put(ctx->ipv4.ctx);
+			ctx->ipv4.ctx = NULL;
+		}
+
+		v4_failed = true;
 	}
 #if defined(CONFIG_NET_APP_DTLS)
 	else {
@@ -143,8 +147,14 @@ int net_app_listen(struct net_app_ctx *ctx)
 	ret = _net_app_set_net_ctx(ctx, ctx->ipv6.ctx, &ctx->ipv6.local,
 				   sizeof(struct sockaddr_in6), ctx->proto);
 	if (ret < 0) {
-		net_context_put(ctx->ipv6.ctx);
-		ctx->ipv6.ctx = NULL;
+		if (ctx->ipv6.ctx) {
+			net_context_put(ctx->ipv6.ctx);
+			ctx->ipv6.ctx = NULL;
+		}
+
+		if (!v4_failed) {
+			ret = 0;
+		}
 	}
 #if defined(CONFIG_NET_APP_DTLS)
 	else {
@@ -223,7 +233,7 @@ int net_app_init_server(struct net_app_ctx *ctx,
 	ctx->proto = proto;
 	ctx->sock_type = sock_type;
 
-	ret = _net_app_config_local_ctx(ctx, sock_type, proto, NULL);
+	ret = _net_app_config_local_ctx(ctx, sock_type, proto, server_addr);
 	if (ret < 0) {
 		goto fail;
 	}
