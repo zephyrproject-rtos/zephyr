@@ -1266,7 +1266,8 @@ static bool send_buf(struct bt_conn *conn, struct net_buf *buf)
 	return send_frag(conn, buf, BT_ACL_CONT, false);
 }
 
-static struct k_poll_signal conn_change = K_POLL_SIGNAL_INITIALIZER();
+static struct k_poll_signal conn_change =
+		K_POLL_SIGNAL_INITIALIZER(conn_change);
 
 static void conn_cleanup(struct bt_conn *conn)
 {

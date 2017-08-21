@@ -59,7 +59,8 @@ static u32_t rx_ts;
 #endif
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-static struct k_poll_signal hbuf_signal = K_POLL_SIGNAL_INITIALIZER();
+static struct k_poll_signal hbuf_signal =
+		K_POLL_SIGNAL_INITIALIZER(hbuf_signal);
 static sys_slist_t hbuf_pend;
 static s32_t hbuf_count;
 #endif

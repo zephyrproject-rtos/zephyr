@@ -324,7 +324,7 @@ static int spi_rx_every_4(struct spi_config *spi_conf)
 	return 0;
 }
 
-static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER();
+static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 				 K_POLL_MODE_NOTIFY_ONLY,

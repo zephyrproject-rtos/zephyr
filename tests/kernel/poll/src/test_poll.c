@@ -91,7 +91,8 @@ void test_poll_no_wait(void)
 
 static K_SEM_DEFINE(wait_sem, 0, 1);
 static K_FIFO_DEFINE(wait_fifo);
-static struct k_poll_signal wait_signal = K_POLL_SIGNAL_INITIALIZER();
+static struct k_poll_signal wait_signal =
+		K_POLL_SIGNAL_INITIALIZER(wait_signal);
 
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
@@ -298,30 +299,30 @@ void test_poll_wait(void)
 	wait_signal.signaled = 0;
 }
 
-/* verify -EADDRINUSE return value when object has already a poller */
-static K_SEM_DEFINE(eaddrinuse_sem, 0, 1);
-static K_SEM_DEFINE(eaddrinuse_reply, 0, 1);
+/* verify multiple pollers */
+static K_SEM_DEFINE(multi_sem, 0, 1);
+static K_SEM_DEFINE(multi_reply, 0, 1);
 
-static struct k_thread eaddrinuse_hogger_thread;
-static K_THREAD_STACK_DEFINE(eaddrinuse_hogger_stack, KB(1));
+static struct k_thread multi_thread;
+static K_THREAD_STACK_DEFINE(multi_stack, KB(1));
 
-static void eaddrinuse_hogger(void *p1, void *p2, void *p3)
+static void multi(void *p1, void *p2, void *p3)
 {
 	(void)p1; (void)p2; (void)p3;
 
 	struct k_poll_event event;
 
 	k_poll_event_init(&event, K_POLL_TYPE_SEM_AVAILABLE,
-			  K_POLL_MODE_NOTIFY_ONLY, &eaddrinuse_sem);
+			  K_POLL_MODE_NOTIFY_ONLY, &multi_sem);
 
 	(void)k_poll(&event, 1, K_FOREVER);
-	k_sem_take(&eaddrinuse_sem, K_FOREVER);
-	k_sem_give(&eaddrinuse_reply);
+	k_sem_take(&multi_sem, K_FOREVER);
+	k_sem_give(&multi_reply);
 }
 
-static K_SEM_DEFINE(eaddrinuse_ready_sem, 1, 1);
+static K_SEM_DEFINE(multi_ready_sem, 1, 1);
 
-void test_poll_eaddrinuse(void)
+void test_poll_multi(void)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
 	const int main_low_prio = 10;
@@ -330,29 +331,29 @@ void test_poll_eaddrinuse(void)
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
 					 K_POLL_MODE_NOTIFY_ONLY,
-					 &eaddrinuse_sem),
+					 &multi_sem),
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
 					 K_POLL_MODE_NOTIFY_ONLY,
-					 &eaddrinuse_ready_sem),
+					 &multi_ready_sem),
 	};
 
 	k_thread_priority_set(k_current_get(), main_low_prio);
 
-	k_thread_create(&eaddrinuse_hogger_thread, eaddrinuse_hogger_stack,
-			K_THREAD_STACK_SIZEOF(eaddrinuse_hogger_stack),
-			eaddrinuse_hogger, 0, 0, 0, main_low_prio - 1, 0, 0);
+	k_thread_create(&multi_thread, multi_stack,
+			K_THREAD_STACK_SIZEOF(multi_stack),
+			multi, 0, 0, 0, main_low_prio - 1, 0, 0);
 
 	rc = k_poll(events, ARRAY_SIZE(events), K_SECONDS(1));
 
 	k_thread_priority_set(k_current_get(), old_prio);
 
-	zassert_equal(rc, -EADDRINUSE, "");
-	zassert_equal(events[0].state, K_POLL_STATE_EADDRINUSE, "");
+	zassert_equal(rc, 0, "");
+	zassert_equal(events[0].state, K_POLL_STATE_NOT_READY, "");
 	zassert_equal(events[1].state, K_POLL_STATE_SEM_AVAILABLE, "");
 
-	/* free hogger, ensuring it awoken from k_poll() and got the sem */
-	k_sem_give(&eaddrinuse_sem);
-	rc = k_sem_take(&eaddrinuse_reply, K_SECONDS(1));
+	/* free multi, ensuring it awoken from k_poll() and got the sem */
+	k_sem_give(&multi_sem);
+	rc = k_sem_take(&multi_reply, K_SECONDS(1));
 
 	zassert_equal(rc, 0, "");
 }
