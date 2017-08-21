@@ -200,14 +200,6 @@ macro(zephyr_library_named name)
   # within the scope of the caller.
   set(ZEPHYR_CURRENT_LIBRARY ${name})
   add_library(${name} STATIC "")
-  get_property(x TARGET ${name} PROPERTY LIBRARY_OUTPUT_DIRECTORY)
-
-  # Get all propreties that cmake supports
-  execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
-
-  # Convert command output into a CMake list
-  STRING(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
-  STRING(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
 
   zephyr_append_cmake_library(${name})
 
