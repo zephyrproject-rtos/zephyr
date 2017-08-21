@@ -142,10 +142,10 @@ static u32_t wl_add(bt_addr_le_t *id_addr)
 static u32_t wl_remove(bt_addr_le_t *id_addr)
 {
 	/* find the device and mark it as empty */
-	int i = wl_find(id_addr->type, id_addr->a.val, NULL);
+	u8_t i = wl_find(id_addr->type, id_addr->a.val, NULL);
 
 	if (i < ARRAY_SIZE(wl)) {
-		int j = wl[i].rl_idx;
+		u8_t j = wl[i].rl_idx;
 
 		if (j < ARRAY_SIZE(rl)) {
 			rl[j].wl = 0;
@@ -348,13 +348,13 @@ u32_t ll_wl_remove(bt_addr_le_t *addr)
 
 static void filter_wl_update(void)
 {
-	int i;
+	u8_t i;
 
 	/* Populate filter from wl peers */
 	filter_clear(&wl_filter);
 
 	for (i = 0; i < WL_SIZE; i++) {
-		int j;
+		u8_t j;
 
 		if (!wl[i].taken) {
 			continue;
@@ -372,7 +372,7 @@ static void filter_wl_update(void)
 
 static void filter_rl_update(void)
 {
-	int i;
+	u8_t i;
 
 	/* No whitelist: populate filter from rl peers */
 	filter_clear(&rl_filter);
@@ -415,7 +415,7 @@ void ll_filters_scan_update(u8_t scan_fp)
 
 u8_t ll_rl_find(u8_t id_addr_type, u8_t *id_addr, u8_t *free)
 {
-	int i;
+	u8_t i;
 
 	if (free) {
 		*free = FILTER_IDX_NONE;
@@ -458,7 +458,7 @@ void ll_rl_id_addr_get(u8_t rl_idx, u8_t *id_addr_type, u8_t *id_addr)
 
 bool ctrl_rl_addr_allowed(u8_t id_addr_type, u8_t *id_addr, u8_t *rl_idx)
 {
-	int i, j;
+	u8_t i, j;
 
 	/* If AR is disabled or we matched an IRK then we're all set. No hw
 	 * filters are used in this case.
@@ -507,7 +507,7 @@ bool ctrl_rl_enabled(void)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-void ll_rl_pdu_adv_update(int idx, struct pdu_adv *pdu)
+void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
 {
 	u8_t *adva = pdu->type == PDU_ADV_TYPE_SCAN_RSP ?
 				  &pdu->payload.scan_rsp.addr[0] :
@@ -516,7 +516,7 @@ void ll_rl_pdu_adv_update(int idx, struct pdu_adv *pdu)
 	struct ll_adv_set *ll_adv = ll_adv_set_get();
 
 	/* AdvA */
-	if (idx >= 0 && rl[idx].lirk) {
+	if (idx < ARRAY_SIZE(rl) && rl[idx].lirk) {
 		LL_ASSERT(rl[idx].rpas_ready);
 		pdu->tx_addr = 1;
 		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
@@ -527,7 +527,7 @@ void ll_rl_pdu_adv_update(int idx, struct pdu_adv *pdu)
 
 	/* TargetA */
 	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
-		if (idx >= 0 && rl[idx].pirk) {
+		if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
 			pdu->rx_addr = 1;
 			memcpy(&pdu->payload.direct_ind.tgt_addr[0],
 			       rl[idx].peer_rpa.val, BDADDR_SIZE);
@@ -546,7 +546,7 @@ static void rpa_adv_refresh(void)
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
 	u8_t last;
-	int idx;
+	u8_t idx;
 
 	ll_adv = ll_adv_set_get();
 
@@ -593,7 +593,7 @@ static void rpa_adv_refresh(void)
 
 static void rl_clear(void)
 {
-	for (int i = 0; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
+	for (u8_t i = 0; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		rl[i].taken = 0;
 	}
 
@@ -614,7 +614,8 @@ static int rl_access_check(bool check_ar)
 
 void ll_rl_rpa_update(bool timeout)
 {
-	int i, err;
+	u8_t i;
+	int err;
 	s64_t now = k_uptime_get();
 	bool all = timeout || (rpa_last_ms == -1) ||
 		   (now - rpa_last_ms >= rpa_timeout_ms);
@@ -768,7 +769,7 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 
 u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 {
-	int i;
+	u8_t i;
 
 	if (!rl_access_check(false)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -777,11 +778,11 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 	/* find the device and mark it as empty */
 	i = ll_rl_find(id_addr->type, id_addr->a.val, NULL);
 	if (i < ARRAY_SIZE(rl)) {
-		int j, k;
+		u8_t j, k;
 
 		if (rl[i].pirk) {
 			/* Swap with last item */
-			int pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
+			u8_t pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
 
 			if (pj && pi != pj) {
 				memcpy(peer_irks[pi], peer_irks[pj], 16);
@@ -814,7 +815,7 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 
 u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa)
 {
-	int i;
+	u8_t i;
 
 	/* find the device and return its RPA */
 	i = ll_rl_find(id_addr->type, id_addr->a.val, NULL);
@@ -829,7 +830,7 @@ u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa)
 
 u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa)
 {
-	int i;
+	u8_t i;
 
 	/* find the device and return the local RPA */
 	i = ll_rl_find(id_addr->type, id_addr->a.val, NULL);
@@ -868,7 +869,7 @@ void ll_rl_timeout_set(u16_t timeout)
 
 u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)
 {
-	int i;
+	u8_t i;
 
 	if (!rl_access_check(false)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
