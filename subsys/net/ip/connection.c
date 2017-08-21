@@ -578,19 +578,11 @@ int net_conn_register(enum net_ip_protocol proto,
 		}
 
 		if (remote_addr) {
-			if (remote_addr->sa_family != AF_INET &&
-			    remote_addr->sa_family != AF_INET6) {
-				NET_ERR("Remote address family not set.");
-				return -EINVAL;
-			}
-
-			conns[i].flags |= NET_CONN_REMOTE_ADDR_SET;
-
-			memcpy(&conns[i].remote_addr, remote_addr,
-			       sizeof(struct sockaddr));
-
 #if defined(CONFIG_NET_IPV6)
 			if (remote_addr->sa_family == AF_INET6) {
+				memcpy(&conns[i].remote_addr, remote_addr,
+				       sizeof(struct sockaddr_in6));
+
 				if (net_is_ipv6_addr_unspecified(
 					    &net_sin6(remote_addr)->
 							sin6_addr)) {
@@ -598,35 +590,36 @@ int net_conn_register(enum net_ip_protocol proto,
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 			if (remote_addr->sa_family == AF_INET) {
+				memcpy(&conns[i].remote_addr, remote_addr,
+				       sizeof(struct sockaddr_in));
+
 				if (!net_sin(remote_addr)->
 							sin_addr.s_addr) {
 					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
-		}
-
-		if (local_addr) {
-			if (local_addr->sa_family != AF_INET &&
-			    local_addr->sa_family != AF_INET6) {
-				NET_ERR("Local address family not set.");
+			{
+				NET_ERR("Remote address family not set");
 				return -EINVAL;
 			}
 
-			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
+			conns[i].flags |= NET_CONN_REMOTE_ADDR_SET;
+		}
 
-			memcpy(&conns[i].local_addr, local_addr,
-			       sizeof(struct sockaddr));
-
+		if (local_addr) {
 #if defined(CONFIG_NET_IPV6)
 			if (local_addr->sa_family == AF_INET6) {
+				memcpy(&conns[i].local_addr, local_addr,
+				       sizeof(struct sockaddr_in6));
+
 				if (net_is_ipv6_addr_unspecified(
 					    &net_sin6(local_addr)->
 							sin6_addr)) {
@@ -634,23 +627,32 @@ int net_conn_register(enum net_ip_protocol proto,
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 			if (local_addr->sa_family == AF_INET) {
+				memcpy(&conns[i].local_addr, local_addr,
+				       sizeof(struct sockaddr_in));
+
 				if (!net_sin(local_addr)->sin_addr.s_addr) {
 					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
+			{
+				NET_ERR("Local address family not set");
+				return -EINVAL;
+			}
+
+			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
 		}
 
 		if (remote_addr && local_addr) {
 			if (remote_addr->sa_family != local_addr->sa_family) {
-				NET_ERR("Address families different.");
+				NET_ERR("Address families different");
 				return -EINVAL;
 			}
 		}
