@@ -250,17 +250,20 @@ add_subdirectory(subsys)
 add_subdirectory(arch)
 add_subdirectory(drivers)
 
-# Generate offsets.h from offsets.o
+# Generate offsets.c.obj from offsets.c
+# Generate offsets.h     from offsets.c.obj
 
-set(OFFSETS_C_PATH ${PROJECT_SOURCE_DIR}/arch/${ARCH}/core/offsets/offsets.c)
+set(OFFSETS_C_PATH $ENV{ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
+set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
+set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
+
 add_library(offsets OBJECT ${OFFSETS_C_PATH})
 target_object_link_libraries(offsets zephyr)
 
-set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
   COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/gen_offset_header.py
-  -i ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj
+  -i ${OFFSETS_O_PATH}
   -o ${OFFSETS_H_PATH}
   DEPENDS offsets
 )
