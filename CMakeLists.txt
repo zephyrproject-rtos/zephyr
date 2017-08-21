@@ -338,8 +338,6 @@ set(zephyr_lnk
   ${LINKERFLAGPREFIX},--start-group
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}
-  ${LINKERFLAGPREFIX},--end-group
-  ${LINKERFLAGPREFIX},--start-group
   ${LINKERFLAGPREFIX},--no-whole-archive
   kernel
   ${LINKERFLAGPREFIX},--end-group
