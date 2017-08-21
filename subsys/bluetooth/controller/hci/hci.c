@@ -423,6 +423,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 	memset(&rp->commands[0], 0, sizeof(rp->commands));
 
+	/* Read Remote Version Info. */
+	rp->commands[2] |= BIT(7);
 	/* Set Event Mask, and Reset. */
 	rp->commands[5] |= BIT(6) | BIT(7);
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
