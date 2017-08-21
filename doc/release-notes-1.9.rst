@@ -50,6 +50,7 @@ Drivers and Sensors
 
 * KW40Z IEEE 802.15.4 radio driver support added
 * APDS9960 sensor driver added
+* Added TICKLESS KERNEL support for nrf RTC Timer.
 
 Networking
 **********
@@ -123,7 +124,9 @@ Documentation
 Tests and Samples
 *****************
 
-* change description
+* Added test Case to stress test round robin scheduling in schedule_api test.
+* Added test case to stress test priority scheduling in scheduling_api_test.
+
 
 JIRA Related Items
 ******************
