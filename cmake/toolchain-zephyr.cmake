@@ -64,7 +64,7 @@ execute_process(
   OUTPUT_VARIABLE _OUTPUT
 )
 string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
-list(APPEND NOSTDINC ${_OUTPUT})
+set(NOSTDINC ${_OUTPUT})
 
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
