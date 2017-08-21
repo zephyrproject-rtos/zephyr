@@ -262,7 +262,7 @@ target_object_link_libraries(offsets zephyr)
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
-  COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/gen_offset_header.py
+  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/gen_offset_header.py
   -i ${OFFSETS_O_PATH}
   -o ${OFFSETS_H_PATH}
   DEPENDS offsets
