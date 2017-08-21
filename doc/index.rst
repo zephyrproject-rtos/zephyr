@@ -25,16 +25,19 @@ Zephyr Project Documentation
 For more information about previous releases, please consult the published
 :ref:`zephyr_release_notes`.
 
-The Zephyr OS is provided under the :download:`Apache 2.0 license<../LICENSE>`.
-The Zephyr OS also imports or reuses packages, scripts, and other files that
-are not covered by the Apache License. A list of those licenses can be found
-under :ref:`zephyr_licensing`.
+The Zephyr OS is provided under the `Apache 2.0 license`_ (as found in
+the LICENSE file in the project's `GitHub repo`_).  The Zephyr OS also
+imports or reuses packages, scripts, and other files that use other
+licensing, as described in :ref:`Zephyr_Licensing`.
 
-Source code for the Zephyr Project is maintained in the
-`Zephyr Project GitHub repository`_.
+Source code for the Zephyr Project is maintained in the Zephyr Project's
+`GitHub repo`_.
 
-.. _Zephyr Project GitHub repository:
-   https://github.com/zephyrproject-rtos/zephyr
+.. _Apache 2.0 license:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+
+.. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
+
 
 Sections
 ********
