@@ -17,7 +17,7 @@ static void offload_function(void *param)
 {
 	u32_t x = (u32_t)param;
 
-	TC_PRINT("offload_function running\n");
+	SYS_LOG_INF("offload_function running\n");
 
 	/* Make sure we're in IRQ context */
 	zassert_true(_is_in_isr(), "Not in IRQ context!\n");
