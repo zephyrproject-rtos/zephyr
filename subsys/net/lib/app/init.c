@@ -238,6 +238,11 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 		NET_INFO("%s", app_info);
 	}
 
+	if (!iface) {
+		NET_ERR("No network interfaces");
+		return -ENODEV;
+	}
+
 	if (flags & NET_APP_NEED_IPV6) {
 		count++;
 	}
