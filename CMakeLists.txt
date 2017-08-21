@@ -271,8 +271,6 @@ add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
 
 add_dependencies(zephyr offsets_h)
 
-target_sources(zephyr PRIVATE ${OFFSETS_C_PATH})
-
 # Get ZEPHYR_INCLUDE for preprocessing, with cmake 3.8 this should be possible with generator expressions.
 get_property(ZEPHYR_INCLUDES_LIST TARGET zephyr PROPERTY INCLUDE_DIRECTORIES)
 foreach(INCLUDE ${ZEPHYR_INCLUDES_LIST})
@@ -343,6 +341,7 @@ set(zephyr_lnk
   ${ZEPHYR_LIBS_PROPERTY}
   ${LINKERFLAGPREFIX},--no-whole-archive
   kernel
+  ${OFFSETS_O_PATH} # Try just offsets_o
   ${LINKERFLAGPREFIX},--end-group
   ${LIB_INCLUDE_DIR}
   ${TOOLCHAIN_LIBS}
@@ -357,7 +356,7 @@ if(CONFIG_GEN_ISR_TABLES)
     -I ${OUTPUT_FORMAT}
     -O binary
     --only-section=.intList
-    $<TARGET_FILE:prebuilt_kernel>
+    $<TARGET_FILE:zephyr_prebuilt>
     isrList.bin
     COMMAND ${PYTHON_EXECUTABLE}
     $ENV{ZEPHYR_BASE}/arch/common/gen_isr_tables.py
@@ -366,7 +365,7 @@ if(CONFIG_GEN_ISR_TABLES)
     --debug
     --sw-isr-table
     --vector-table
-    DEPENDS prebuilt_kernel
+    DEPENDS zephyr_prebuilt
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 
@@ -376,10 +375,10 @@ endif()
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
-add_executable(       prebuilt_kernel dummy.c)
-target_link_libraries(prebuilt_kernel -T${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
-set_property(TARGET   prebuilt_kernel PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
-add_dependencies(     prebuilt_kernel linker_script)
+add_executable(       zephyr_prebuilt dummy.c)
+target_link_libraries(zephyr_prebuilt -T${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
+set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
+add_dependencies(     zephyr_prebuilt linker_script offsets)
 
 if(GKOF OR GKSF)
   set(logical_target_for_zephyr_elf kernel_elf)
@@ -414,7 +413,7 @@ if(GKOF OR GKSF)
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass2.cmd)
   add_dependencies(     kernel_elf linker_pass2_script)
 else()
-  set(logical_target_for_zephyr_elf prebuilt_kernel)
+  set(logical_target_for_zephyr_elf zephyr_prebuilt)
   # Use the prebuilt elf as the final elf since we don't have a
   # generation stage.
 endif()
