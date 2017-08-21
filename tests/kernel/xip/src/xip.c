@@ -24,17 +24,9 @@
  * @return N/A
  */
 
-void test_xip(void)
+void test_globals(void)
 {
 	int  i;
-
-	TC_START("kernel_xip");
-	PRINT_DATA("Starting XIP tests\n");
-	PRINT_LINE;
-
-	/* Test globals are correct */
-
-	TC_PRINT("Test globals\n");
 
 	/* Array should be filled with monotomically incrementing values */
 	for (i = 0; i < XIP_TEST_ARRAY_SZ; i++) {

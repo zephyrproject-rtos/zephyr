@@ -5,12 +5,12 @@
  */
 
 #include <ztest.h>
-extern void test_xip(void);
+extern void test_globals(void);
 
 /**test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_xip_fn,
-		ztest_unit_test(test_xip));
-	ztest_run_test_suite(test_xip_fn);
+	ztest_test_suite(test_xip,
+		ztest_unit_test(test_globals));
+	ztest_run_test_suite(test_xip);
 }
