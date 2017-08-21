@@ -29,8 +29,10 @@ endif()
 
 set(GENIDT ${PROJECT_SOURCE_DIR}/scripts/gen_idt.py)
 
-set_ifndef(OUTPUT_FORMAT elf32-i386)
-set_ifndef(OUTPUT_ARCH         i386)
+define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH BRIEF_DOCS " " FULL_DOCS " ")
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
+
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
 
 # Use gen_idt.py and objcopy to generate irq_int_vector_map.o and
 # staticIdt.o from the elf file prebuilt_kernel
@@ -48,6 +50,14 @@ add_custom_command(
   )
 
 message("curr bin ${CMAKE_CURRENT_BINARY_DIR}")
+
+add_subdirectory_ifdef(CONFIG_GDB_SERVER debug)
+add_subdirectory(soc/${SOC_PATH})
+# Must be last so that debug/ or soc/ can override default exception
+# handlers
+add_subdirectory(core)
+
+get_property(OUTPUT_ARCH GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/irq_int_vector_map.o
@@ -99,9 +109,3 @@ endif()
 if(CONFIG_GDT_DYNAMIC)
   include(gdt.CMakeLists.txt)
 endif()
-
-add_subdirectory_ifdef(CONFIG_GDB_SERVER debug)
-add_subdirectory(soc/${SOC_PATH})
-# Must be last so that debug/ or soc/ can override default exception
-# handlers
-add_subdirectory(core)

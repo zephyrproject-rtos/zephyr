@@ -9,13 +9,10 @@ endif()
 target_cc_option(zephyr PUBLIC -msoft-float -march=pentium)
 
 if(CONFIG_X86_IAMCU)
-  # TODO
-  # target_cc_option(zephyr PUBLIC -miamcu)
-  # set_property(GLOBAL APPEND PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
-
-  # # OUTPUT_{FORMAT,ARCH} need to be global variables as well, can't set like this
-  # set(OUTPUT_FORMAT elf32-iamcu)
-  # set(OUTPUT_ARCH iamcu:intel)
+  target_cc_option(zephyr PUBLIC -miamcu)
+  set_property(GLOBAL APPEND PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
+  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_FORMAT         "elf32-iamcu")
+  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_ARCH           "iamcu:intel")
 else()
   target_cc_option(zephyr PUBLIC -mno-iamcu)
 endif()
