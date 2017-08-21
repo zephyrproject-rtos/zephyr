@@ -89,30 +89,46 @@ static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
 	return 0;
 }
 
+static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
+			     struct _poller *poller)
+{
+	struct k_poll_event *pending;
+
+	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
+	if (!pending || _is_t1_higher_prio_than_t2(pending->poller->thread,
+						   poller->thread)) {
+		sys_dlist_append(events, &event->_node);
+		return;
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
+		if (_is_t1_higher_prio_than_t2(poller->thread,
+					       pending->poller->thread)) {
+			sys_dlist_insert_before(events, &pending->_node,
+						&event->_node);
+			return;
+		}
+	}
+
+	sys_dlist_append(events, &event->_node);
+}
+
 /* must be called with interrupts locked */
-static inline int register_event(struct k_poll_event *event)
+static inline int register_event(struct k_poll_event *event,
+				 struct _poller *poller)
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
 		__ASSERT(event->sem, "invalid semaphore\n");
-		if (event->sem->poll_event) {
-			return -EADDRINUSE;
-		}
-		event->sem->poll_event = event;
+		add_event(&event->sem->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
 		__ASSERT(event->queue, "invalid queue\n");
-		if (event->queue->poll_event) {
-			return -EADDRINUSE;
-		}
-		event->queue->poll_event = event;
+		add_event(&event->queue->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		__ASSERT(event->queue, "invalid poll signal\n");
-		if (event->signal->poll_event) {
-			return -EADDRINUSE;
-		}
-		event->signal->poll_event = event;
+		__ASSERT(event->signal, "invalid poll signal\n");
+		add_event(&event->signal->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
@@ -121,6 +137,8 @@ static inline int register_event(struct k_poll_event *event)
 		__ASSERT(0, "invalid event type\n");
 		break;
 	}
+
+	event->poller = poller;
 
 	return 0;
 }
@@ -133,15 +151,15 @@ static inline void clear_event_registration(struct k_poll_event *event)
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
 		__ASSERT(event->sem, "invalid semaphore\n");
-		event->sem->poll_event = NULL;
+		sys_dlist_remove(&event->_node);
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
 		__ASSERT(event->queue, "invalid queue\n");
-		event->queue->poll_event = NULL;
+		sys_dlist_remove(&event->_node);
 		break;
 	case K_POLL_TYPE_SIGNAL:
 		__ASSERT(event->signal, "invalid poll signal\n");
-		event->signal->poll_event = NULL;
+		sys_dlist_remove(&event->_node);
 		break;
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
@@ -176,18 +194,13 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 	__ASSERT(events, "NULL events\n");
 	__ASSERT(num_events > 0, "zero events\n");
 
-	int last_registered = -1, in_use = 0, rc;
+	int last_registered = -1, rc;
 	unsigned int key;
 
 	key = irq_lock();
 	set_polling_state(_current);
 	irq_unlock(key);
 
-	/*
-	 * We can get by with one poller structure for all events for now:
-	 * if/when we allow multiple threads to poll on the same object, we
-	 * will need one per poll event associated with an object.
-	 */
 	struct _poller poller = { .thread = _current };
 
 	/* find events whose condition is already fulfilled */
@@ -198,18 +211,10 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 		if (is_condition_met(&events[ii], &state)) {
 			set_event_ready(&events[ii], state);
 			clear_polling_state(_current);
-		} else if (timeout != K_NO_WAIT && is_polling() && !in_use) {
-			rc = register_event(&events[ii]);
+		} else if (timeout != K_NO_WAIT && is_polling()) {
+			rc = register_event(&events[ii], &poller);
 			if (rc == 0) {
-				events[ii].poller = &poller;
 				++last_registered;
-			} else if (rc == -EADDRINUSE) {
-				/* setting in_use also prevents any further
-				 * registrations by the current thread
-				 */
-				in_use = -EADDRINUSE;
-				events[ii].state = K_POLL_STATE_EADDRINUSE;
-				clear_polling_state(_current);
 			} else {
 				__ASSERT(0, "unexpected return code\n");
 			}
@@ -224,16 +229,12 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 	 * condition is met, either when looping through the events here or
 	 * because one of the events registered has had its state changed, or
 	 * that one of the objects we wanted to poll on already had a thread
-	 * polling on it. We can remove all registrations and return either
-	 * success or a -EADDRINUSE error. In the case of a -EADDRINUSE error,
-	 * the events that were available are still flagged as such, and it is
-	 * valid for the caller to consider them available, as if this function
-	 * returned success.
+	 * polling on it.
 	 */
 	if (!is_polling()) {
 		clear_event_registrations(events, last_registered, key);
 		irq_unlock(key);
-		return in_use;
+		return 0;
 	}
 
 	clear_polling_state(_current);
@@ -306,20 +307,23 @@ ready_event:
 }
 
 /* returns 1 if a reschedule must take place, 0 otherwise */
-/* *obj_poll_event is guaranteed to not be NULL */
-int _handle_obj_poll_event(struct k_poll_event **obj_poll_event, u32_t state)
+int _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
 {
-	struct k_poll_event *poll_event = *obj_poll_event;
+	struct k_poll_event *poll_event;
 	int must_reschedule;
 
-	*obj_poll_event = NULL;
+	poll_event = (struct k_poll_event *)sys_dlist_get(events);
+	if (!poll_event) {
+		return 0;
+	}
+
 	(void)_signal_poll_event(poll_event, state, &must_reschedule);
 	return must_reschedule;
 }
 
 void k_poll_signal_init(struct k_poll_signal *signal)
 {
-	signal->poll_event = NULL;
+	sys_dlist_init(&signal->poll_events);
 	signal->signaled = 0;
 	/* signal->result is left unitialized */
 }
@@ -327,17 +331,19 @@ void k_poll_signal_init(struct k_poll_signal *signal)
 int k_poll_signal(struct k_poll_signal *signal, int result)
 {
 	unsigned int key = irq_lock();
+	struct k_poll_event *poll_event;
 	int must_reschedule;
 
 	signal->result = result;
 	signal->signaled = 1;
 
-	if (!signal->poll_event) {
+	poll_event = (struct k_poll_event *)sys_dlist_get(&signal->poll_events);
+	if (!poll_event) {
 		irq_unlock(key);
 		return 0;
 	}
 
-	int rc = _signal_poll_event(signal->poll_event, K_POLL_STATE_SIGNALED,
+	int rc = _signal_poll_event(poll_event, K_POLL_STATE_SIGNALED,
 				    &must_reschedule);
 
 	if (must_reschedule) {

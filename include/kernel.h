@@ -98,11 +98,11 @@ typedef sys_dlist_t _wait_q_t;
 #endif
 
 #ifdef CONFIG_POLL
-#define _POLL_EVENT_OBJ_INIT \
-	.poll_event = NULL,
-#define _POLL_EVENT struct k_poll_event *poll_event
+#define _POLL_EVENT_OBJ_INIT(obj) \
+	.poll_events = SYS_DLIST_STATIC_INIT(&obj.poll_events),
+#define _POLL_EVENT sys_dlist_t poll_events
 #else
-#define _POLL_EVENT_OBJ_INIT
+#define _POLL_EVENT_OBJ_INIT(obj)
 #define _POLL_EVENT
 #endif
 
@@ -1327,7 +1327,7 @@ struct k_queue {
 	{ \
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
-	_POLL_EVENT_OBJ_INIT \
+	_POLL_EVENT_OBJ_INIT(obj) \
 	_OBJECT_TRACING_INIT \
 	}
 
@@ -2360,7 +2360,7 @@ struct k_sem {
 	.wait_q = SYS_DLIST_STATIC_INIT(&obj.wait_q), \
 	.count = initial_count, \
 	.limit = count_limit, \
-	_POLL_EVENT_OBJ_INIT \
+	_POLL_EVENT_OBJ_INIT(obj) \
 	_OBJECT_TRACING_INIT \
 	}
 
@@ -3544,9 +3544,6 @@ enum _poll_states_bits {
 	/* default state when creating event */
 	_POLL_STATE_NOT_READY,
 
-	/* there was another poller already on the object */
-	_POLL_STATE_EADDRINUSE,
-
 	/* signaled by k_poll_signal() */
 	_POLL_STATE_SIGNALED,
 
@@ -3601,7 +3598,6 @@ enum k_poll_modes {
 
 /* public - values for k_poll_event.state bitfield */
 #define K_POLL_STATE_NOT_READY 0
-#define K_POLL_STATE_EADDRINUSE _POLL_STATE_BIT(_POLL_STATE_EADDRINUSE)
 #define K_POLL_STATE_SIGNALED _POLL_STATE_BIT(_POLL_STATE_SIGNALED)
 #define K_POLL_STATE_SEM_AVAILABLE _POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
 #define K_POLL_STATE_DATA_AVAILABLE _POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
@@ -3610,7 +3606,7 @@ enum k_poll_modes {
 /* public - poll signal object */
 struct k_poll_signal {
 	/* PRIVATE - DO NOT TOUCH */
-	struct k_poll_event *poll_event;
+	sys_dlist_t poll_events;
 
 	/*
 	 * 1 if the event has been signaled, 0 otherwise. Stays set to 1 until
@@ -3622,14 +3618,17 @@ struct k_poll_signal {
 	int result;
 };
 
-#define K_POLL_SIGNAL_INITIALIZER() \
+#define K_POLL_SIGNAL_INITIALIZER(obj) \
 	{ \
-	.poll_event = NULL, \
+	.poll_events = SYS_DLIST_STATIC_INIT(&obj.poll_events), \
 	.signaled = 0, \
 	.result = 0, \
 	}
 
 struct k_poll_event {
+	/* PRIVATE - DO NOT TOUCH */
+	sys_dnode_t _node;
+
 	/* PRIVATE - DO NOT TOUCH */
 	struct _poller *poller;
 
@@ -3716,16 +3715,9 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  * reason, the k_poll() call is more effective when the objects being polled
  * only have one thread, the polling thread, trying to acquire them.
  *
- * Only one thread can be polling for a particular object at a given time. If
- * another thread tries to poll on it, the k_poll() call returns -EADDRINUSE
- * and returns as soon as it has finished handling the other events. This means
- * that k_poll() can return -EADDRINUSE and have the state value of some events
- * be non-K_POLL_STATE_NOT_READY. When this condition occurs, the @a timeout
- * parameter is ignored.
- *
- * When k_poll() returns 0 or -EADDRINUSE, the caller should loop on all the
- * events that were passed to k_poll() and check the state field for the values
- * that were expected and take the associated actions.
+ * When k_poll() returns 0, the caller should loop on all the events that were
+ * passed to k_poll() and check the state field for the values that were
+ * expected and take the associated actions.
  *
  * Before being reused for another call to k_poll(), the user has to reset the
  * state field to K_POLL_STATE_NOT_READY.
@@ -3736,7 +3728,6 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 One or more events are ready.
- * @retval -EADDRINUSE One or more objects already had a poller.
  * @retval -EAGAIN Waiting period timed out.
  */
 
@@ -3777,8 +3768,7 @@ extern void k_poll_signal_init(struct k_poll_signal *signal);
 extern int k_poll_signal(struct k_poll_signal *signal, int result);
 
 /* private internal function */
-extern int _handle_obj_poll_event(struct k_poll_event **obj_poll_event,
-				  u32_t state);
+extern int _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
 
 /**
  * @} end defgroup poll_apis

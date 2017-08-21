@@ -14,7 +14,7 @@
 #include <ztest.h>
 extern void test_poll_no_wait(void);
 extern void test_poll_wait(void);
-extern void test_poll_eaddrinuse(void);
+extern void test_poll_multi(void);
 
 /*test case main entry*/
 void test_main(void *p1, void *p2, void *p3)
@@ -22,7 +22,7 @@ void test_main(void *p1, void *p2, void *p3)
 	ztest_test_suite(test_poll_api
 			 , ztest_unit_test(test_poll_no_wait)
 			 , ztest_unit_test(test_poll_wait)
-			 , ztest_unit_test(test_poll_eaddrinuse)
+			 , ztest_unit_test(test_poll_multi)
 			 );
 	ztest_run_test_suite(test_poll_api);
 }

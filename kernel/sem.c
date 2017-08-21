@@ -60,21 +60,21 @@ void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	sem->count = initial_count;
 	sem->limit = limit;
 	sys_dlist_init(&sem->wait_q);
-
-	_INIT_OBJ_POLL_EVENT(sem);
+#if defined(CONFIG_POLL)
+	sys_dlist_init(&sem->poll_events);
+#endif
 
 	SYS_TRACING_OBJ_INIT(k_sem, sem);
 }
 
 
 /* returns 1 if a reschedule must take place, 0 otherwise */
-static inline int handle_poll_event(struct k_sem *sem)
+static inline int handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
 	u32_t state = K_POLL_STATE_SEM_AVAILABLE;
 
-	return sem->poll_event ?
-	       _handle_obj_poll_event(&sem->poll_event, state) : 0;
+	return _handle_obj_poll_events(&sem->poll_events, state);
 #else
 	return 0;
 #endif
@@ -92,7 +92,7 @@ static int do_sem_give(struct k_sem *sem)
 
 	if (!thread) {
 		increment_count_up_to_limit(sem);
-		return handle_poll_event(sem);
+		return handle_poll_events(sem);
 	}
 	(void)_abort_thread_timeout(thread);
 	_ready_thread(thread);
