@@ -23,7 +23,6 @@ cmake_policy(SET CMP0002 NEW)
 include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 
 zephyr_library_named(app)
-target_link_libraries(app zephyr) # TODO: Needed?
 
 set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})
