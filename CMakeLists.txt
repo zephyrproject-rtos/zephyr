@@ -22,7 +22,7 @@ find_package(PythonInterp 3.4)
 if(NOT PREBUILT_HOST_TOOLS)
   set(PREBUILT_HOST_TOOLS $ENV{PREBUILT_HOST_TOOLS} CACHE PATH "")
   if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
-    set(PREBUILT_HOST_TOOLS ${PROJECT_SOURCE_DIR}/scripts/prebuilt)
+    set(PREBUILT_HOST_TOOLS $ENV{ZEPHYR_BASE}/scripts/prebuilt)
   endif()
 endif()
 
@@ -222,10 +222,10 @@ if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   endif()
 else()
   # Try a board specific linker file
-  set(LINKER_SCRIPT ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD_NAME}/linker.ld)
+  set(LINKER_SCRIPT $ENV{ZEPHYR_BASE}/boards/${ARCH}/${BOARD_NAME}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT ${PROJECT_SOURCE_DIR}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
+    set(LINKER_SCRIPT $ENV{ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
   endif()
 endif()
 
@@ -360,7 +360,7 @@ if(CONFIG_GEN_ISR_TABLES)
     $<TARGET_FILE:prebuilt_kernel>
     isrList.bin
     COMMAND ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/arch/common/gen_isr_tables.py
+    $ENV{ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
     --intlist isrList.bin
     --debug
