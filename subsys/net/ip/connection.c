@@ -362,7 +362,7 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	NET_DBG("[%zu] connection handler %p removed",
 		(conn - conns) / sizeof(*conn), conn);
 
-	conn->flags = 0;
+	memset(conn, 0, sizeof(*conn));
 
 	return 0;
 }
