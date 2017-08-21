@@ -488,7 +488,7 @@ static inline bool net_is_my_ipv4_addr(const struct in_addr *addr)
 static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 				     const struct in_addr *addr2)
 {
-	return addr1->s_addr == addr2->s_addr;
+	return UNALIGNED_GET(&addr1->s_addr) == UNALIGNED_GET(&addr2->s_addr);
 }
 
 /**
