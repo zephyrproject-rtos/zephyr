@@ -1,5 +1,4 @@
 zephyr_library()
-target_link_libraries(ext__hal__qmsi zephyr)
 
 target_compile_definitions(                                  zephyr PUBLIC ENABLE_EXTERNAL_ISR_HANDLING)
 target_compile_definitions_ifdef(CONFIG_SYS_POWER_DEEP_SLEEP zephyr PUBLIC ENABLE_RESTORE_CONTEXT)
