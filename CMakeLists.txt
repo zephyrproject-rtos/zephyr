@@ -58,6 +58,9 @@ if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
 endif()
 
+define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
+set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH})
+
 # zephyr is a catchall CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
 # flags that all zephyr source files use.
@@ -325,6 +328,8 @@ add_subdirectory(kernel)
 # Read list content
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 
+get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
+
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_NAME}.map
   -u_OffsetAbsSyms
@@ -343,13 +348,7 @@ set(zephyr_lnk
 )
 
 if(CONFIG_GEN_ISR_TABLES)
-  if("${ARCH}" STREQUAL "riscv32")
-    set(OUTPUT_FORMAT elf32-littleriscv)
-  else()
-    set(OUTPUT_FORMAT elf32-little${ARCH})
-  endif()
-
-  # isr_tables.c is generated from prebuilt_kernel by
+  # isr_tables.c is generated from zephyr_prebuilt by
   # gen_isr_tables.py
   add_custom_command(
     OUTPUT isr_tables.c
