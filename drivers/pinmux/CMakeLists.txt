@@ -1,8 +1,6 @@
 zephyr_library()
 target_link_libraries(                             drivers__pinmux drivers)
 
-target_link_libraries_ifdef(CONFIG_QMSI            drivers__pinmux ext__hal__qmsi)
-
 # Board initialization
 target_sources_ifdef(CONFIG_BOARD_96B_CARBON       drivers__pinmux PRIVATE stm32/pinmux_board_carbon.c)
 target_sources_ifdef(CONFIG_BOARD_DISCO_L475_IOT1  drivers__pinmux PRIVATE stm32/pinmux_board_disco_l475_iot1.c)
