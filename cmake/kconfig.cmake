@@ -7,20 +7,6 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 set(BOARD_DEFCONFIG ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
 
-if(CONF_FILE)
-  # CONF_FILE has either been specified on the cmake CLI or is already
-  # in the CMakeCache.txt. This has precedence over the environment
-  # variable CONF_FILE and the default prj.conf
-elseif(DEFINED ENV{CONF_FILE})
-  set(CONF_FILE $ENV{CONF_FILE})
-elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
-  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
-endif()
-
-set(CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
-the configuration settings specified in an alternate .conf file using this parameter. \
-These settings will override the settings in the application’s .config file or its default .conf file.\
-Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
 string(REPLACE " " ";" CONF_FILE_AS_LIST ${CONF_FILE})
 
 set(ENV{srctree}            ${PROJECT_SOURCE_DIR})
