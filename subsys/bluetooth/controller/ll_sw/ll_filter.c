@@ -56,6 +56,7 @@ static struct rl_dev {
 
 	u8_t      local_irk[16];
 	u8_t      pirk_idx;
+	bt_addr_t curr_rpa;
 	bt_addr_t peer_rpa;
 	bt_addr_t *local_rpa;
 
@@ -751,6 +752,7 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 		memcpy(rl[i].local_irk, lirk, 16);
 		rl[i].local_rpa = NULL;
 	}
+	memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
 	rl[i].rpas_ready = 0;
 	/* Default to Network Privacy */
 	rl[i].dev = 0;
@@ -813,19 +815,35 @@ u32_t ll_rl_remove(bt_addr_le_t *id_addr)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa)
+void ll_rl_crpa_set(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx, u8_t *crpa)
+{
+	if ((crpa[5] & 0xc0) == 0x40) {
+
+		if (id_addr) {
+			/* find the device and return its RPA */
+			rl_idx = ll_rl_find(id_addr_type, id_addr, NULL);
+		}
+
+		if (rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].taken) {
+				memcpy(rl[rl_idx].curr_rpa.val, crpa,
+				       sizeof(bt_addr_t));
+		}
+	}
+}
+
+u32_t ll_rl_crpa_get(bt_addr_le_t *id_addr, bt_addr_t *crpa)
 {
 	u8_t i;
 
 	/* find the device and return its RPA */
 	i = ll_rl_find(id_addr->type, id_addr->a.val, NULL);
-	if (i < ARRAY_SIZE(rl)) {
-		bt_addr_copy(prpa, &rl[i].peer_rpa);
-		return 0;
+	if (i < ARRAY_SIZE(rl) &&
+	    mem_nz(rl[i].curr_rpa.val, sizeof(rl[i].curr_rpa.val))) {
+			bt_addr_copy(crpa, &rl[i].curr_rpa);
+			return 0;
 	}
 
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
-
 }
 
 u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa)
