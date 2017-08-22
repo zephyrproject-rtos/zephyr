@@ -25,18 +25,18 @@ if(CONFIG_HAS_DTS)
   # intermediary file *.dts.pre.tmp
   execute_process(
     COMMAND ${CMAKE_C_COMPILER}
-    -x assembler-with-cpp 
-    -nostdinc 
-    ${ZEPHYR_INCLUDES} 
-    -I${PROJECT_SOURCE_DIR}/arch/${ARCH}/source_group 
-    -isystem ${PROJECT_SOURCE_DIR}/dts/${ARCH} 
-    -isystem ${PROJECT_SOURCE_DIR}/dts 
-    -include ${AUTOCONF_H} 
-    -I${PROJECT_SOURCE_DIR}/dts/common 
-    -I${PROJECT_SOURCE_DIR}/drivers/of/testcase-data 
+    -x assembler-with-cpp
+    -nostdinc
+    ${ZEPHYR_INCLUDES}
+    -I${PROJECT_SOURCE_DIR}/arch/${ARCH}/source_group
+    -isystem ${PROJECT_SOURCE_DIR}/dts/${ARCH}
+    -isystem ${PROJECT_SOURCE_DIR}/dts
+    -include ${AUTOCONF_H}
+    -I${PROJECT_SOURCE_DIR}/dts/common
+    -I${PROJECT_SOURCE_DIR}/drivers/of/testcase-data
     -undef -D__DTS__
     -P
-    -E ${DTS_SOURCE} 
+    -E ${DTS_SOURCE}
     -o ${BOARD_NAME}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
