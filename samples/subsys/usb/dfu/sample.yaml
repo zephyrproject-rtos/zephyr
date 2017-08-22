@@ -1,7 +1,7 @@
 sample:
-  name: DFU over USB
+  name: USB DFU sample
 tests:
-  test_x86:
+  test:
+    platform_whitelist: nrf52840_pca10056
     depends_on: usb_device
-    platform_whitelist: quark_se_c1000_devboard
     tags: usb
