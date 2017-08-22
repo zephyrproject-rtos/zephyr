@@ -211,6 +211,18 @@ int net_app_init_server(struct net_app_ctx *ctx,
 			return -EPROTONOSUPPORT;
 #endif
 		}
+
+		if (server_addr->sa_family == AF_UNSPEC) {
+#if defined(CONFIG_NET_IPV4)
+			net_sin(&ctx->ipv4.local)->sin_port =
+				net_sin(server_addr)->sin_port;
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+			net_sin6(&ctx->ipv6.local)->sin6_port =
+				net_sin6(server_addr)->sin6_port;
+#endif
+		}
 	} else {
 		if (port == 0) {
 			return -EINVAL;
