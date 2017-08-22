@@ -152,5 +152,39 @@ if(CONFIG_X86_MMU)
 endif()
 
 if(CONFIG_GDT_DYNAMIC)
-  include(gdt.CMakeLists.txt)
+  # Use gen_gdt.py and objcopy to generate gdt.o from from the elf
+  # file zephyr_prebuilt, creating the temp file gdt.bin along the
+  # way.
+  #
+  # zephyr_prebuilt.elf -> gdt.bin -> gdt.o
+  add_custom_command(
+    OUTPUT gdt.bin
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${PROJECT_SOURCE_DIR}/scripts/gen_gdt.py
+    --kernel $<TARGET_FILE:zephyr_prebuilt>
+    --output-gdt gdt.bin
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    DEPENDS zephyr_prebuilt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gdt.o
+    COMMAND
+    ${CMAKE_OBJCOPY}
+    -I binary
+    -B ${OUTPUT_ARCH}
+    -O ${OUTPUT_FORMAT}
+    --rename-section .data=.gdt_ram_data
+    gdt.bin
+    gdt.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS gdt.bin
+    )
+
+  add_custom_target(  gdt_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gdt.o)
+  add_library(        gdt STATIC IMPORTED GLOBAL)
+  set_property(TARGET gdt PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/gdt.o)
+  add_dependencies(   gdt gdt_o)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES gdt)
 endif()
