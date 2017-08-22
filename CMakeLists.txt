@@ -1,39 +1,12 @@
 cmake_minimum_required(VERSION 3.7)
 
-# Copy the PROJECT vars into APPLICATION vars before they are modified
-# by project()
-set(APPLICATION_SOURCE_DIR ${PROJECT_SOURCE_DIR} CACHE PATH "Application Source Directory")
-set(APPLICATION_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE PATH "Application Binary Directory")
-
-project(Zephyr-Kernel VERSION 1.8.99)
+project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
 # Do not generate make install target.
 set(CMAKE_SKIP_INSTALL_RULES ON)
 
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
-
-set(AUTOCONF_H ${PROJECT_BINARY_DIR}/include/generated/autoconf.h)
-# Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
-
-find_package(PythonInterp 3.4)
-
-if(NOT PREBUILT_HOST_TOOLS)
-  set(PREBUILT_HOST_TOOLS $ENV{PREBUILT_HOST_TOOLS} CACHE PATH "")
-  if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
-    set(PREBUILT_HOST_TOOLS $ENV{ZEPHYR_BASE}/scripts/prebuilt)
-  endif()
-endif()
-
-if(NOT PREBUILT_HOST_TOOLS)
-  message(FATAL_ERROR "Building host tools not yet supported, please use PREBUILT_HOST_TOOLS")
-endif()
-
-include(cmake/kconfig.cmake)
-
-# set the variables VERSION_MAJOR, PATCHLEVEL and more
-include(cmake/version.cmake)
 
 set(SOC_NAME ${CONFIG_SOC})
 set(SOC_SERIES ${CONFIG_SOC_SERIES})
@@ -319,10 +292,6 @@ add_custom_target(
   linker.cmd
   offsets_h
 )
-
-if(TOOLCHAIN_DO_PASS2)
-  include(${CMAKE_TOOLCHAIN_FILE})
-endif()
 
 add_subdirectory(kernel)
 
