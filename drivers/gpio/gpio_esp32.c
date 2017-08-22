@@ -52,23 +52,23 @@ static int convert_int_type(int flags)
 	}
 
 	if ((flags & GPIO_INT_EDGE) == GPIO_INT_EDGE) {
-		if ((flags & GPIO_INT_ACTIVE_LOW) == GPIO_INT_ACTIVE_LOW) {
-			return 2;
+		if ((flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_HIGH) {
+			return 1;
 		}
 
 		if ((flags & GPIO_INT_DOUBLE_EDGE) == GPIO_INT_DOUBLE_EDGE) {
 			return 3;
 		}
 
-		return 1;	/* Defaults to rising edge. */
+		return 2;	/* Defaults to falling edge. */
 	}
 
 	if ((flags & GPIO_INT_LEVEL) == GPIO_INT_LEVEL) {
-		if ((flags & GPIO_INT_ACTIVE_LOW) == GPIO_INT_ACTIVE_LOW) {
-			return 4;
+		if ((flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_HIGH) {
+			return 5;
 		}
 
-		return 5;	/* Defaults to high level. */
+		return 4;	/* Defaults to low level. */
 	}
 
 	/* Any other type of interrupt triggering is invalid. */
