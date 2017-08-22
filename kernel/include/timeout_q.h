@@ -108,11 +108,11 @@ static inline void _handle_one_expired_timeout(struct _timeout *timeout)
 
 static inline void _handle_expired_timeouts(sys_dlist_t *expired)
 {
-	sys_dnode_t *timeout, *next;
+	struct _timeout *timeout, *next;
 
-	SYS_DLIST_FOR_EACH_NODE_SAFE(expired, timeout, next) {
-		sys_dlist_remove(timeout);
-		_handle_one_expired_timeout((struct _timeout *)timeout);
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(expired, timeout, next, node) {
+		sys_dlist_remove(&timeout->node);
+		_handle_one_expired_timeout(timeout);
 	}
 }
 
@@ -161,13 +161,13 @@ static inline void _dump_timeout(struct _timeout *timeout, int extra_tab)
 static inline void _dump_timeout_q(void)
 {
 #ifdef CONFIG_KERNEL_DEBUG
-	sys_dnode_t *node;
+	struct _timeout *timeout;
 
 	K_DEBUG("_timeout_q: %p, head: %p, tail: %p\n",
 		&_timeout_q, _timeout_q.head, _timeout_q.tail);
 
-	SYS_DLIST_FOR_EACH_NODE(&_timeout_q, node) {
-		_dump_timeout((struct _timeout *)node, 1);
+	SYS_DLIST_FOR_EACH_CONTAINER(&_timeout_q, timeout, node) {
+		_dump_timeout(timeout, 1);
 	}
 #endif
 }
