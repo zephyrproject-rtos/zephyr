@@ -185,4 +185,23 @@ source "subsys/usb/class/netusb/Kconfig"
 
 source "subsys/usb/class/hid/Kconfig"
 
+config USB_DFU_CLASS
+	bool
+	prompt "USB DFU Class Driver"
+	depends on IMG_MANAGER
+	select MPU_ALLOW_FLASH_WRITE
+	default n
+	help
+	  USB DFU class driver
+
+config USB_DFU_MAX_XFER_SIZE
+	int
+	depends on USB_DFU_CLASS
+	default 64
+
+config USB_DFU_DETACH_TIMEOUT
+	int
+	depends on USB_DFU_CLASS
+	default 1000
+
 endif # CONFIG_USB_DEVICE_STACK

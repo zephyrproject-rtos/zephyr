@@ -15,6 +15,7 @@
 #include <usb/class/usb_msc.h>
 #include <usb/class/usb_cdc.h>
 #include <usb/class/usb_hid.h>
+#include <usb/class/usb_dfu.h>
 #include "usb_descriptor.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
@@ -130,6 +131,12 @@ struct dev_common_descriptor {
 		struct usb_ep_descriptor if0_out_ep;
 		struct usb_ep_descriptor if0_in_ep;
 	} __packed bluetooth_cfg;
+#endif
+#ifdef CONFIG_USB_DFU_CLASS
+	struct usb_dfu_config {
+		struct usb_if_descriptor if0;
+		struct dfu_runtime_descriptor dfu_descr;
+	} __packed dfu_cfg;
 #endif
 	struct usb_string_desription {
 		struct usb_string_descriptor lang_descr;
@@ -724,6 +731,35 @@ static struct dev_common_descriptor common_desc = {
 		},
 	},
 #endif /* CONFIG_USB_DEVICE_BLUETOOTH */
+#ifdef CONFIG_USB_DFU_CLASS
+	.dfu_cfg = {
+		/* Interface descriptor */
+		.if0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_DFU,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 0,
+			.bInterfaceClass = DFU_DEVICE_CLASS,
+			.bInterfaceSubClass = DFU_SUBCLASS,
+			.bInterfaceProtocol = DFU_RT_PROTOCOL,
+			.iInterface = 0,
+		},
+		.dfu_descr = {
+			.bLength = sizeof(struct dfu_runtime_descriptor),
+			.bDescriptorType = DFU_FUNC_DESC,
+			.bmAttributes = DFU_ATTR_CAN_DNLOAD |
+					DFU_ATTR_CAN_UPLOAD |
+					DFU_ATTR_MANIFESTATION_TOLERANT,
+			.wDetachTimeOut =
+				sys_cpu_to_le16(CONFIG_USB_DFU_DETACH_TIMEOUT),
+			.wTransferSize =
+				sys_cpu_to_le16(CONFIG_USB_DFU_MAX_XFER_SIZE),
+			.bcdDFUVersion =
+				sys_cpu_to_le16(DFU_VERSION),
+		},
+	},
+#endif /* CONFIG_USB_DFU_CLASS */
 	.string_descr = {
 		.lang_descr = {
 			.bLength = sizeof(struct usb_string_descriptor),
