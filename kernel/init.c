@@ -300,6 +300,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 		    CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
 	_mark_thread_as_started(_main_thread);
 	_add_thread_to_ready_q(_main_thread);
+	_k_object_init(_main_thread);
 
 #ifdef CONFIG_MULTITHREADING
 	_new_thread(_idle_thread, _idle_stack,
@@ -307,6 +308,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 		    K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(_idle_thread);
 	_add_thread_to_ready_q(_idle_thread);
+	_k_object_init(_idle_thread);
 #endif
 
 	initialize_timeouts();
@@ -351,8 +353,11 @@ FUNC_NORETURN void _Cstart(void)
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	struct k_thread *dummy_thread = NULL;
 #else
-	struct k_thread dummy_thread_memory;
-	struct k_thread *dummy_thread = &dummy_thread_memory;
+	/* Normally, kernel objects are not allowed on the stack, special case
+	 * here since this is just being used to bootstrap the first _Swap()
+	 */
+	char dummy_thread_memory[sizeof(struct k_thread)];
+	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
 #endif
 
 	/*

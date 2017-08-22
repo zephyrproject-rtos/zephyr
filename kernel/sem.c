@@ -65,6 +65,8 @@ void k_sem_init(struct k_sem *sem, unsigned int initial_count,
 #endif
 
 	SYS_TRACING_OBJ_INIT(k_sem, sem);
+
+	_k_object_init(sem);
 }
 
 

@@ -51,6 +51,7 @@ void k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
 	stack->top = stack->base + num_entries;
 
 	SYS_TRACING_OBJ_INIT(k_stack, stack);
+	_k_object_init(stack);
 }
 
 void k_stack_push(struct k_stack *stack, u32_t data)

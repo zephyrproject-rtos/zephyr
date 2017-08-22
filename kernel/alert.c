@@ -69,6 +69,8 @@ void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
 	alert->work_item = (struct k_work)_K_WORK_INITIALIZER(_alert_deliver);
 	k_sem_init(&alert->sem, 0, max_num_pending_alerts);
 	SYS_TRACING_OBJ_INIT(k_alert, alert);
+
+	_k_object_init(alert);
 }
 
 void k_alert_send(struct k_alert *alert)

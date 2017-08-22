@@ -77,6 +77,7 @@ void k_mutex_init(struct k_mutex *mutex)
 	sys_dlist_init(&mutex->wait_q);
 
 	SYS_TRACING_OBJ_INIT(k_mutex, mutex);
+	_k_object_init(mutex);
 }
 
 static int new_prio_for_inheritance(int target, int limit)

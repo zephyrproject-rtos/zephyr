@@ -103,6 +103,8 @@ void k_timer_init(struct k_timer *timer,
 	SYS_TRACING_OBJ_INIT(k_timer, timer);
 
 	timer->user_data = NULL;
+
+	_k_object_init(timer);
 }
 
 
