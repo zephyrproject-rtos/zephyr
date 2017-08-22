@@ -16,6 +16,12 @@ STM32CUBE_CPU = $(shell echo $(CONFIG_SOC) | tr '[a-wyz]' '[A-WYZ]')
 
 KBUILD_CFLAGS += -D$(STM32CUBE_CPU) -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 
+ifdef CONFIG_SOC_SERIES_STM32F0X
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32f0xx/soc/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32f0xx/drivers/include/
+ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32f0xx/drivers/include/Legacy/
+endif
+
 ifdef CONFIG_SOC_SERIES_STM32F1X
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32f1xx/soc/
 ZEPHYRINCLUDE += -I$(srctree)/ext/hal/st/stm32cube/stm32f1xx/drivers/include/
