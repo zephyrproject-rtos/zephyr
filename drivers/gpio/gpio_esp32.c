@@ -278,6 +278,7 @@ static const struct gpio_driver_api gpio_esp32_driver = {
 	.disable_callback = gpio_esp32_disable_callback,
 };
 
+#if defined(CONFIG_GPIO_ESP32_0)
 static struct gpio_esp32_data gpio_data_pins_0_to_31 = {
 	.port = {
 		.write = {
@@ -294,6 +295,9 @@ static struct gpio_esp32_data gpio_data_pins_0_to_31 = {
 		.pin_offset = 0,
 	}
 };
+#endif
+
+#if defined(CONFIG_GPIO_ESP32_1)
 static struct gpio_esp32_data gpio_data_pins_32_to_63 = {
 	.port = {
 		.write = {
@@ -310,6 +314,7 @@ static struct gpio_esp32_data gpio_data_pins_32_to_63 = {
 		.pin_offset = 32,
 	}
 };
+#endif
 
 #define GPIO_DEVICE_INIT(__name, __data_struct_name) \
 	DEVICE_AND_API_INIT(gpio_esp32_ ## __data_struct_name, \
