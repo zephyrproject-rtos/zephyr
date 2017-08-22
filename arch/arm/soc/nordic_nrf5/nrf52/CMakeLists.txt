@@ -3,11 +3,11 @@ target_include_directories(zephyr PUBLIC
 )
 
 if(CONFIG_SOC_NRF52832)
-  target_compile_definitions(zephyr PUBLIC -DNRF52832_XXAA)
+  target_compile_definitions(zephyr PUBLIC NRF52832_XXAA)
 endif()
 
 if(CONFIG_SOC_NRF52840)
-  target_compile_definitions(zephyr PUBLIC -DNRF52840_XXAA)
+  target_compile_definitions(zephyr PUBLIC NRF52840_XXAA)
 endif()
 
 target_sources(zephyr PRIVATE
