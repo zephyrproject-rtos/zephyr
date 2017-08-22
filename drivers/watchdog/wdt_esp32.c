@@ -25,21 +25,21 @@ static struct wdt_esp32_data shared_data;
  */
 static inline void wdt_esp32_seal(void)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTWPROTECT_REG(0);
+	volatile u32_t *reg = (u32_t *)TIMG_WDTWPROTECT_REG(1);
 
 	*reg = 0;
 }
 
 static inline void wdt_esp32_unseal(void)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTWPROTECT_REG(0);
+	volatile u32_t *reg = (u32_t *)TIMG_WDTWPROTECT_REG(1);
 
 	*reg = TIMG_WDT_WKEY_VALUE;
 }
 
 static void wdt_esp32_enable(struct device *dev)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(0);
+	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
 
 	ARG_UNUSED(dev);
 
@@ -50,7 +50,7 @@ static void wdt_esp32_enable(struct device *dev)
 
 static void wdt_esp32_disable(struct device *dev)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(0);
+	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
 
 	ARG_UNUSED(dev);
 
@@ -88,7 +88,7 @@ static void adjust_timeout(u32_t timeout)
 	 /* MWDT ticks every 12.5ns.  Set the prescaler to 40000, so the
 	  * counter for each watchdog stage is decremented every 0.5ms.
 	  */
-	 reg = (u32_t *)TIMG_WDTCONFIG1_REG(0);
+	 reg = (u32_t *)TIMG_WDTCONFIG1_REG(1);
 	 *reg = 40000;
 
 	 ticks = 1<<(cycles + 2);
@@ -100,10 +100,10 @@ static void adjust_timeout(u32_t timeout)
 	  */
 	 ticks += (1<<cycles) / 10;
 
-	 reg = (u32_t *)TIMG_WDTCONFIG2_REG(0);
+	 reg = (u32_t *)TIMG_WDTCONFIG2_REG(1);
 	 *reg = ticks;
 
-	 reg = (u32_t *)TIMG_WDTCONFIG3_REG(0);
+	 reg = (u32_t *)TIMG_WDTCONFIG3_REG(1);
 	 *reg = ticks;
 }
 
@@ -111,7 +111,7 @@ static void wdt_esp32_isr(void *param);
 
 static void wdt_esp32_reload(struct device *dev)
 {
-	volatile u32_t *reg = (u32_t *)TIMG_WDTFEED_REG(0);
+	volatile u32_t *reg = (u32_t *)TIMG_WDTFEED_REG(1);
 
 	ARG_UNUSED(dev);
 
@@ -122,7 +122,7 @@ static void wdt_esp32_reload(struct device *dev)
 
 static void set_interrupt_enabled(bool setting)
 {
-	volatile u32_t *intr_enable_reg = (u32_t *)TIMG_INT_ENA_TIMERS_REG(0);
+	volatile u32_t *intr_enable_reg = (u32_t *)TIMG_INT_ENA_TIMERS_REG(1);
 
 	wdt_esp32_unseal();
 	if (setting) {
@@ -141,7 +141,7 @@ static void set_interrupt_enabled(bool setting)
 static int wdt_esp32_set_config(struct device *dev, struct wdt_config *config)
 {
 	struct wdt_esp32_data *data = dev->driver_data;
-	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(0);
+	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
 	u32_t v;
 
 	if (!config) {
