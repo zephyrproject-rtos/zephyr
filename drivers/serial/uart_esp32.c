@@ -18,7 +18,7 @@ static unsigned char esp32_uart_tx(struct device *dev,
 
 	uart_tx_one_char(c);
 
-	return 0;
+	return c;
 }
 
 static int esp32_uart_rx(struct device *dev, unsigned char *p_char)
