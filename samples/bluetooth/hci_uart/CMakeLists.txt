@@ -1,4 +1,8 @@
-set(BOARD nrf52_pca10040)
+if(DEFINED ENV{BOARD})
+  set(BOARD $ENV{BOARD})
+else()
+  set(BOARD nrf52_pca10040)
+endif()
 
 if(BOARD EQUAL bbc_microbit)
   set(CONF_FILE microbit.conf)
