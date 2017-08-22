@@ -49,8 +49,6 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
-message("curr bin ${CMAKE_CURRENT_BINARY_DIR}")
-
 add_subdirectory_ifdef(CONFIG_GDB_SERVER debug)
 add_subdirectory(soc/${SOC_PATH})
 # Must be last so that debug/ or soc/ can override default exception
