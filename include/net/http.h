@@ -324,6 +324,7 @@ struct http_client_ctx {
 
 		u8_t cl_present:1;
 		u8_t body_found:1;
+		u8_t message_complete:1;
 	} rsp;
 
 #if defined(CONFIG_HTTPS)

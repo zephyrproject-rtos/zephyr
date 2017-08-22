@@ -367,6 +367,7 @@ static int on_message_complete(struct http_parser *parser)
 			    ctx->req.user_data);
 	}
 
+	ctx->rsp.message_complete = 1;
 	k_sem_give(&ctx->req.wait);
 
 	return 0;
@@ -464,6 +465,7 @@ int client_reset(struct http_client_ctx *ctx)
 	ctx->rsp.content_length = 0;
 	ctx->rsp.processed = 0;
 	ctx->rsp.body_found = 0;
+	ctx->rsp.message_complete = 0;
 	ctx->rsp.body_start = NULL;
 
 	memset(ctx->rsp.response_buf, 0, ctx->rsp.response_buf_len);
@@ -495,14 +497,15 @@ static void recv_cb(struct net_context *net_ctx, struct net_pkt *pkt,
 		/*
 		 * This block most likely handles a TCP_FIN message.
 		 * (this means the connection is now closed)
-		 * If we get here, and req.wait.count is still 0 this means
-		 * http client is still waiting to parse a response body.
+		 * If we get here, and rsp.message_complete is still 0
+		 * this means the HTTP client is still waiting to parse a
+		 * response body.
 		 * This will will never happen now.  Instead of generating
 		 * an ETIMEDOUT error in the future, let's unlock the
 		 * req.wait semaphore and let the app deal with whatever
 		 * data was parsed in the header (IE: http status, etc).
 		 */
-		if (ctx->req.wait.count == 0) {
+		if (ctx->rsp.message_complete == 0) {
 			k_sem_give(&ctx->req.wait);
 		}
 
