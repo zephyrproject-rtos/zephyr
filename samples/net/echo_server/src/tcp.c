@@ -176,13 +176,10 @@ void start_tcp(void)
 				 K_THREAD_STACK_SIZEOF(net_app_tls_stack));
 	if (ret < 0) {
 		NET_ERR("Cannot init TLS");
-	} else {
-		ret = net_app_server_tls_enable(&tcp);
-		if (!ret) {
-			NET_ERR("Cannot enable TLS support");
-		}
 	}
 #endif
+
+	net_app_server_enable(&tcp);
 
 	ret = net_app_listen(&tcp);
 	if (ret < 0) {

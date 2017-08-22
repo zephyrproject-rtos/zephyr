@@ -104,6 +104,8 @@ void _net_app_accept_cb(struct net_context *net_ctx,
 #endif /* CONFIG_NET_APP_CLIENT */
 
 #if defined(CONFIG_NET_APP_TLS)
+bool _net_app_server_tls_enable(struct net_app_ctx *ctx);
+bool _net_app_server_tls_disable(struct net_app_ctx *ctx);
 void _net_app_tls_handler_stop(struct net_app_ctx *ctx);
 int _net_app_tls_init(struct net_app_ctx *ctx, int client_or_server);
 int _net_app_entropy_source(void *data, unsigned char *output, size_t len,
