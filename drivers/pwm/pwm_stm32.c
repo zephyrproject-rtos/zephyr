@@ -38,7 +38,13 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 		apb_psc = CONFIG_CLOCK_STM32_APB2_PRESCALER;
 	}
 
-	if (apb_psc == RCC_HCLK_DIV1) {
+	/*
+	 * If the APB prescaler equals 1, the timer clock frequencies
+	 * are set to the same frequency as that of the APB domain.
+	 * Otherwise, they are set to twice (×2) the frequency of the
+	 * APB domain.
+	 */
+	if (apb_psc == 1) {
 		tim_clk = bus_clk;
 	} else	{
 		tim_clk = 2 * bus_clk;
