@@ -768,6 +768,7 @@ fail:
 
 quit:
 	http_parser_init(&http_ctx->req.parser, HTTP_REQUEST);
+	http_ctx->req.field_values_ctr = 0;
 	http_ctx->req.data_len = 0;
 	net_pkt_unref(pkt);
 }
@@ -1536,6 +1537,7 @@ reset:
 
 close:
 	http_parser_init(&ctx->req.parser, HTTP_REQUEST);
+	ctx->req.field_values_ctr = 0;
 
 	mbedtls_ssl_close_notify(&ctx->https.mbedtls.ssl);
 
