@@ -102,7 +102,53 @@ set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES irq_int_vector
 set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES staticIdt)
 
 if(CONFIG_X86_MMU)
-  include(mmu.CMakeLists.txt)
+  # Use gen_mmu.py and objcopy to generate mmu_tables.o from from the
+  # elf file zephyr_prebuilt, creating the temp files mmu_tables.bin
+  # and mmulist.bin along the way.
+  #
+  # zephyr_prebuilt.elf -> mmulist.bin -> mmu_tables.bin -> mmu_tables.o
+  add_custom_command(
+    OUTPUT mmulist.bin
+    COMMAND
+    ${CMAKE_OBJCOPY}
+    -I ${OUTPUT_FORMAT}
+    -O binary
+    -j mmulist
+    $<TARGET_FILE:zephyr_prebuilt>
+    mmulist.bin
+    DEPENDS zephyr_prebuilt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  add_custom_command(
+    OUTPUT mmu_tables.bin
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${PROJECT_SOURCE_DIR}/scripts/gen_mmu.py
+    -i mmulist.bin
+    -o mmu_tables.bin
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-v>
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS mmulist.bin
+    )
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mmu_tables.o
+    COMMAND
+    ${CMAKE_OBJCOPY}
+    -I binary
+    -B ${OUTPUT_ARCH}
+    -O ${OUTPUT_FORMAT}
+    --rename-section .data=.mmu_data
+    mmu_tables.bin
+    mmu_tables.o
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS mmu_tables.bin
+    )
+
+  add_custom_target(  mmu_tables_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/mmu_tables.o)
+  add_library(        mmu_tables STATIC IMPORTED GLOBAL)
+  set_property(TARGET mmu_tables PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/mmu_tables.o)
+  add_dependencies(   mmu_tables mmu_tables_o)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES mmu_tables)
 endif()
 
 if(CONFIG_GDT_DYNAMIC)
