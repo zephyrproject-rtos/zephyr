@@ -55,7 +55,8 @@ add_subdirectory(soc/${SOC_PATH})
 # handlers
 add_subdirectory(core)
 
-get_property(OUTPUT_ARCH GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH)
+get_property(OUTPUT_ARCH   GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH)
+get_property(OUTPUT_FORMAT GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/irq_int_vector_map.o
