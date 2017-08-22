@@ -668,7 +668,6 @@ class MakeGenerator:
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
 \tcmake  \\
-\t\t-DCMAKE_TOOLCHAIN_FILE=$(ZEPHYR_BASE)/cmake/toolchain.cmake\\
 \t\t-H{directory}\\
 \t\t-B{outdir}\\
 \t\t-DEXTRA_CFLAGS="-Werror {cflags}"\\
