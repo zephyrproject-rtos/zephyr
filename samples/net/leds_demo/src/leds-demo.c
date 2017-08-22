@@ -457,12 +457,16 @@ static bool join_coap_multicast_group(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		NET_ERR("Could not get te default interface\n");
+		NET_ERR("Could not get default interface");
 		return false;
 	}
 
 	ifaddr = net_if_ipv6_addr_add(net_if_get_default(),
 				      &my_addr, NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		NET_ERR("Could not add IPv6 address to default interface");
+		return false;
+	}
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
