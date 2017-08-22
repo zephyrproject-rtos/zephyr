@@ -32,6 +32,10 @@
 #define DEV_NAME CONFIG_GPIO_QMSI_0_NAME
 #define PIN_OUT 8  /* DIO7 */
 #define PIN_IN 9  /* DIO8 */
+#elif defined(CONFIG_BOARD_ESP32)
+#define DEV_NAME CONFIG_GPIO_ESP32_0_NAME
+#define PIN_OUT 4  /* DIO4 */
+#define PIN_IN 2  /* DIO2 */
 #endif
 
 #define MAX_INT_CNT 3
