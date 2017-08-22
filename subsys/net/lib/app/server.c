@@ -54,7 +54,7 @@ void _net_app_accept_cb(struct net_context *net_ctx,
 	ARG_UNUSED(addr);
 	ARG_UNUSED(addrlen);
 
-	if (status != 0 || ctx->server.net_ctx) {
+	if (status != 0 || ctx->server.net_ctx || !ctx->is_enabled) {
 		/* We are already connected and support only one connection at
 		 * a time so this new connection must be closed.
 		 */
@@ -322,7 +322,7 @@ static void tls_server_handler(struct net_app_ctx *ctx,
 
 #define TLS_STARTUP_TIMEOUT K_SECONDS(5)
 
-bool net_app_server_tls_enable(struct net_app_ctx *ctx)
+bool _net_app_server_tls_enable(struct net_app_ctx *ctx)
 {
 	struct k_sem startup_sync;
 
@@ -332,8 +332,6 @@ bool net_app_server_tls_enable(struct net_app_ctx *ctx)
 		/* No stack or stack size is 0, we cannot enable */
 		return false;
 	}
-
-	ctx->is_enabled = true;
 
 	/* Start the thread that handles TLS traffic. */
 	if (!ctx->tls.tid) {
@@ -358,11 +356,9 @@ bool net_app_server_tls_enable(struct net_app_ctx *ctx)
 	return true;
 }
 
-bool net_app_server_tls_disable(struct net_app_ctx *ctx)
+bool _net_app_server_tls_disable(struct net_app_ctx *ctx)
 {
 	NET_ASSERT(ctx);
-
-	ctx->is_enabled = false;
 
 	if (!ctx->tls.tid) {
 		return false;
@@ -431,3 +427,39 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 	return 0;
 }
 #endif /* CONFIG_NET_APP_TLS */
+
+bool net_app_server_enable(struct net_app_ctx *ctx)
+{
+	bool old;
+
+	NET_ASSERT(ctx);
+
+	old = ctx->is_enabled;
+
+	ctx->is_enabled = true;
+
+#if defined(CONFIG_NET_APP_TLS)
+	if (ctx->is_tls) {
+		_net_app_server_tls_enable(ctx);
+	}
+#endif
+	return old;
+}
+
+bool net_app_server_disable(struct net_app_ctx *ctx)
+{
+	bool old;
+
+	NET_ASSERT(ctx);
+
+	old = ctx->is_enabled;
+
+	ctx->is_enabled = false;
+
+#if defined(CONFIG_NET_APP_TLS)
+	if (ctx->is_tls) {
+		_net_app_server_tls_disable(ctx);
+	}
+#endif
+	return old;
+}
