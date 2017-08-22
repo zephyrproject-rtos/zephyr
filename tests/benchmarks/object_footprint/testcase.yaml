@@ -1,0 +1,56 @@
+tests:
+-  test_001:
+        build_only: true
+        extra_args: CONF_FILE=prj01.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_002:
+        build_only: true
+        extra_args: CONF_FILE=prj02.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_003:
+        build_only: true
+        extra_args: CONF_FILE=prj03.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_004:
+        build_only: true
+        extra_args: CONF_FILE=prj04.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_005:
+        build_only: true
+        extra_args: CONF_FILE=prj05.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_006:
+        build_only: true
+        extra_args: CONF_FILE=prj06.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_007:
+        build_only: true
+        extra_args: CONF_FILE=prj07.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_008:
+        build_only: true
+        extra_args: CONF_FILE=prj08.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_009:
+        build_only: true
+        extra_args: CONF_FILE=prj09.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_010:
+        build_only: true
+        extra_args: CONF_FILE=prj10.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
+-  test_011:
+        build_only: true
+        extra_args: CONF_FILE=prj11.conf
+        tags: footprint
+        platform_whitelist: qemu_x86
