@@ -258,6 +258,7 @@ k_tid_t k_thread_create(struct k_thread *new_thread,
 	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
+	_k_object_init(new_thread);
 
 	schedule_new_thread(new_thread, delay);
 	return new_thread;
@@ -424,6 +425,7 @@ void _init_static_threads(void)
 			thread_data->init_options);
 
 		thread_data->init_thread->init_data = thread_data;
+		_k_object_init(thread_data->init_thread);
 	}
 
 	_sched_lock();

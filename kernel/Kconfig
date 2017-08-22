@@ -354,6 +354,26 @@ config NUM_PIPE_ASYNC_MSGS
 
 	Setting this option to 0 disables support for asynchronous
 	pipe messages.
+
+config USERSPACE
+	bool "Enable user-level threads"
+	default n
+	help
+	When enabled, threads may be created or dropped down to user mode,
+	which has significantly restricted permissions and must interact
+	with the kernel via system calls. See Zephyr documentation for more
+	details	about this feature.
+
+config MAX_THREAD_BYTES
+	int "Bytes to use when tracking object thread permissions"
+	default 2
+	depends on USERSPACE
+	help
+	Every kernel object will have an associated bitfield to store
+	thread permissions for that object. This controls the size of the
+	bitfield (in bytes) and imposes a limit on how many threads can
+	be created in the system.
+
 endmenu
 
 menu "Memory Pool Options"

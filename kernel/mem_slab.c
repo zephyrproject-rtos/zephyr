@@ -79,6 +79,8 @@ void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	create_free_list(slab);
 	sys_dlist_init(&slab->wait_q);
 	SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
+
+	_k_object_init(slab);
 }
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)

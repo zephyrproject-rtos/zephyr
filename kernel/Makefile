@@ -37,3 +37,4 @@ lib-$(CONFIG_SYS_CLOCK_EXISTS) += timer.o
 lib-$(CONFIG_ATOMIC_OPERATIONS_C) += atomic_c.o
 lib-$(CONFIG_POLL) += poll.o
 lib-$(CONFIG_PTHREAD_IPC) += pthread.o
+lib-$(CONFIG_USERSPACE) += userspace.o

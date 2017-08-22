@@ -893,6 +893,8 @@ DEPRECATION_WARNING_STR := \
 WARN_ABOUT_DEPRECATION := $(if $(CONFIG_BOARD_DEPRECATED),echo -e \
 				-n $(DEPRECATION_WARNING_STR),true)
 
+GENERATED_KERNEL_OBJECT_FILES :=
+
 ifeq ($(ARCH),x86)
 include $(srctree)/arch/x86/Makefile.idt
 ifeq ($(CONFIG_X86_MMU),y)
@@ -905,6 +907,10 @@ endif
 
 ifeq ($(CONFIG_GEN_ISR_TABLES),y)
 include $(srctree)/arch/common/Makefile.gen_isr_tables
+endif
+
+ifeq ($(CONFIG_USERSPACE),y)
+include $(srctree)/arch/common/Makefile.kobjects
 endif
 
 ifneq ($(GENERATED_KERNEL_OBJECT_FILES),)

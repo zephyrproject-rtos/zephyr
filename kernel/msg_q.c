@@ -58,6 +58,8 @@ void k_msgq_init(struct k_msgq *q, char *buffer,
 	q->used_msgs = 0;
 	sys_dlist_init(&q->wait_q);
 	SYS_TRACING_OBJ_INIT(k_msgq, q);
+
+	_k_object_init(q);
 }
 
 int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
