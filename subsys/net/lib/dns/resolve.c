@@ -610,6 +610,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 {
 	struct net_buf *dns_data;
 	struct net_buf *dns_qname = NULL;
+	struct sockaddr addr;
 	int ret, i, j = 0;
 	int failure = 0;
 
@@ -623,6 +624,36 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		return -EINVAL;
 	}
 
+	ret = net_ipaddr_parse(query, strlen(query), &addr);
+	if (ret) {
+		/* The query name was already in numeric form, no
+		 * need to continue further.
+		 */
+		struct dns_addrinfo info = { 0 };
+
+		if (type == DNS_QUERY_TYPE_A) {
+			memcpy(net_sin(&info.ai_addr), net_sin(&addr),
+			       sizeof(struct sockaddr_in));
+			info.ai_family = AF_INET;
+			info.ai_addr.sa_family = AF_INET;
+			info.ai_addrlen = sizeof(struct sockaddr_in);
+		} else if (type == DNS_QUERY_TYPE_AAAA) {
+			memcpy(net_sin6(&info.ai_addr), net_sin6(&addr),
+			       sizeof(struct sockaddr_in6));
+			info.ai_family = AF_INET6;
+			info.ai_addr.sa_family = AF_INET6;
+			info.ai_addrlen = sizeof(struct sockaddr_in6);
+		} else {
+			goto try_resolve;
+		}
+
+		cb(DNS_EAI_INPROGRESS, &info, user_data);
+		cb(DNS_EAI_ALLDONE, NULL, user_data);
+
+		return 0;
+	}
+
+try_resolve:
 	i = get_cb_slot(ctx);
 	if (i < 0) {
 		return -EAGAIN;
