@@ -506,8 +506,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CONN)
 	/* Disconnect. */
 	rp->commands[0] |= BIT(5);
-	/* LE Connection Update, LE Read Remote Features */
-	rp->commands[27] |= BIT(2) | BIT(5);
+	/* LE Connection Update, LE Read Channel Map, LE Read Remote Features */
+	rp->commands[27] |= BIT(2) | BIT(4) | BIT(5);
 	/* LE Remote Conn Param Req and Neg Reply */
 	rp->commands[33] |= BIT(4) | BIT(5);
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -1029,6 +1029,21 @@ static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
+static void le_read_chan_map(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_read_chan_map *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_read_chan_map *rp;
+	u32_t status;
+	u16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	status = ll_chm_get(handle, rp->ch_map);
+
+	rp->status = (!status) ?  0x00 : BT_HCI_ERR_UNKNOWN_CONN_ID;
+	rp->handle = sys_le16_to_cpu(handle);
+}
 
 static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 {
@@ -1440,6 +1455,10 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif /* CONFIG_BT_PERIPHERAL */
+
+	case BT_OCF(BT_HCI_OP_LE_READ_CHAN_MAP):
+		le_read_chan_map(cmd, evt);
+		break;
 
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
 		le_read_remote_features(cmd, evt);
