@@ -110,18 +110,16 @@ _idle_state_cleared:
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-#if defined(CONFIG_ARMV6_M)
-	push {r3}
-#endif
+	stm sp!,{r0-r3} /* Save r0 to r4 into stack */
 	push {lr}
 	bl read_timer_end_of_isr
 #if defined(CONFIG_ARMV6_M)
 	pop {r3}
 	mov lr,r3
-	pop {r3}
 #else
 	pop {lr}
 #endif
+	ldm sp!,{r0-r3} /* Restore r0 to r4 regs */
 #endif
 	blx r3		/* call ISR */
 
