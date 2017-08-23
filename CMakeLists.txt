@@ -395,9 +395,10 @@ set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME "z
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
-  COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame ${KERNEL_ELF_NAME} ${KERNEL_HEX_NAME}
-  COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame ${KERNEL_ELF_NAME} ${KERNEL_BIN_NAME}
-  COMMAND ${CMAKE_OBJDUMP} -D                                             ${KERNEL_ELF_NAME} > ${KERNEL_NAME}.lst
+  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
+  COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME} ${KERNEL_HEX_NAME}
+  COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME} ${KERNEL_BIN_NAME}
+  COMMAND ${CMAKE_OBJDUMP} -D                                              ${KERNEL_ELF_NAME} > ${KERNEL_NAME}.lst
   COMMENT "Generating zephyr.{hex,bin,lst} from zephyr.elf"
   # NB: COMMENT only works for some CMake-Generators
 )
