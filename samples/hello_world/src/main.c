@@ -9,5 +9,5 @@
 
 void main(void)
 {
-	printk("Hello World! %s\n", CONFIG_ARCH);
+	printk("Hello World!, Created a test_br %s\n", CONFIG_ARCH);
 }
