@@ -72,6 +72,7 @@ u32_t ll_feature_req_send(u16_t handle);
 u32_t ll_version_ind_send(u16_t handle);
 u32_t ll_terminate_ind_send(u16_t handle, u8_t reason);
 void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id);
+u32_t ll_rssi_get(u16_t handle, u8_t *rssi);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 u32_t ll_apto_get(u16_t handle, u16_t *apto);

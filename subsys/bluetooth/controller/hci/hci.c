@@ -436,6 +436,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[14] |= BIT(3) | BIT(5);
 	/* Read BD ADDR. */
 	rp->commands[15] |= BIT(1);
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+	/* Read RSSI. */
+	rp->commands[15] |= BIT(5);
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 	/* Set Event Mask Page 2 */
 	rp->commands[22] |= BIT(2);
 	/* LE Set Event Mask, LE Read Buffer Size, LE Read Local Supp Feats,
@@ -553,6 +557,44 @@ static int info_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_READ_BD_ADDR):
 		read_bd_addr(cmd, evt);
 		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+static void read_rssi(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_read_rssi *cmd = (void *)buf->data;
+	struct bt_hci_rp_read_rssi *rp;
+	u32_t status;
+	u16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	rp = cmd_complete(evt, sizeof(*rp));
+
+	status = ll_rssi_get(handle, &rp->rssi);
+
+	rp->status = (!status) ? 0x00 : BT_HCI_ERR_UNKNOWN_CONN_ID;
+	rp->handle = sys_cpu_to_le16(handle);
+	/* The Link Layer currently returns RSSI as an absolute value */
+	rp->rssi = (!status) ? -rp->rssi : 127;
+}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+static int status_cmd_handle(u16_t  ocf, struct net_buf *cmd,
+			     struct net_buf **evt)
+{
+	switch (ocf) {
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+	case BT_OCF(BT_HCI_OP_READ_RSSI):
+		read_rssi(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 	default:
 		return -EINVAL;
@@ -1551,6 +1593,9 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 	case BT_OGF_INFO:
 		err = info_cmd_handle(ocf, cmd, &evt);
 		break;
+	case BT_OGF_STATUS:
+		err = status_cmd_handle(ocf, cmd, &evt);
+		break;
 	case BT_OGF_LE:
 		err = controller_cmd_handle(ocf, cmd, &evt);
 		break;
@@ -1727,6 +1772,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 		data_len = 0;
 	}
 
+	/* The Link Layer currently returns RSSI as an absolute value */
 	rssi = -b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 		  offsetof(struct pdu_adv, payload) + adv->len];
 
@@ -1814,6 +1860,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data, u8_t *b,
 	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
 	s8_t rssi;
 
+	/* The Link Layer currently returns RSSI as an absolute value */
 	rssi = -b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 		  offsetof(struct pdu_adv, payload) + adv->len];
 
@@ -1899,6 +1946,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 		addr.type = adv->tx_addr;
 		memcpy(&addr.a.val[0], &adv->payload.scan_req.scan_addr[0],
 		       sizeof(bt_addr_t));
+		/* The Link Layer currently returns RSSI as an absolute value */
 		rssi = -b[offsetof(struct radio_pdu_node_rx, pdu_data) +
 			  offsetof(struct pdu_adv, payload) + adv->len];
 

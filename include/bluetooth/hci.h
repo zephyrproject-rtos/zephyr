@@ -636,6 +636,16 @@ struct bt_hci_rp_read_bd_addr {
 	bt_addr_t bdaddr;
 } __packed;
 
+#define BT_HCI_OP_READ_RSSI                     BT_OP(BT_OGF_STATUS, 0x0005)
+struct bt_hci_cp_read_rssi {
+	u16_t handle;
+} __packed;
+struct bt_hci_rp_read_rssi {
+	u8_t  status;
+	u16_t handle;
+	s8_t  rssi;
+} __packed;
+
 #define BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE      BT_OP(BT_OGF_STATUS, 0x0008)
 struct bt_hci_cp_read_encryption_key_size {
 	u16_t handle;
