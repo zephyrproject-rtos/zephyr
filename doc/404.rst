@@ -5,13 +5,48 @@ Sorry, Page Not Found
 
 .. image:: Zephyr-Kite-in-tree.png
    :align: right
-   :scale: 30 %
+   :scale: 25 %
 
-Sorry, the page you requested was not found on this site.
+.. raw:: html
 
-Please check the url for misspellings.
+   <noscript>
+   Sorry, the page you requested was not found on this site.
+   </noscript>
+   <script type="text/javaScript">
+   <!--
+   document.write("<p>Sorry, the page you requested: " +
+   "<a href=\"" + location.href + "\">" +
+   location.href + "</a> was not found on this site.</p>");
+   //-->
+   </script>
 
-It's also possible we've removed or renamed the page you're looking for.
+Please check the address for misspellings.
+
+.. raw:: html
+
+   <script type="text/javaScript">
+   <!--
+   var strReferrer=document.referrer.toLowerCase();
+   if (location.href.indexOf("noreferrer=true")>=0) strReferrer="";
+
+   if (strReferrer.length==0) {  // no referrer
+      document.write("<p>You may have an out-of-date browser " +
+         "bookmark or favorite.</p>");
+      }
+   else { // there was a referrer
+      document.write("<p>You were incorrectly referred to this page by " +
+         "<a href=\"" + strReferrer + "\" target=\"_blank\">" +
+         strReferrer + "</a>. ");
+      if (strReferrer.indexOf("zephyrproject.org")>=0) {
+         document.write("Sorry, but it appears one of " +
+            "our own links is broken! ");
+         }
+      document.write("</p>");
+      }
+   //-->
+   </script>
+
+It's possible we've removed or renamed the page you're looking for.
 
 Please try using the links at the top and left of the page, to navigate
 the major sections of our site, or use the search box.
