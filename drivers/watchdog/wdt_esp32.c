@@ -123,6 +123,9 @@ static void wdt_esp32_reload(struct device *dev)
 static void set_interrupt_enabled(bool setting)
 {
 	volatile u32_t *intr_enable_reg = (u32_t *)TIMG_INT_ENA_TIMERS_REG(1);
+	volatile u32_t *intr_clear_timers = (u32_t *)TIMG_INT_CLR_TIMERS_REG(1);
+
+	*intr_clear_timers |= TIMG_WDT_INT_CLR;
 
 	if (setting) {
 		*intr_enable_reg |= TIMG_WDT_INT_ENA;
@@ -132,6 +135,7 @@ static void set_interrupt_enabled(bool setting)
 		irq_enable(CONFIG_WDT_ESP32_IRQ);
 	} else {
 		*intr_enable_reg &= ~TIMG_WDT_INT_ENA;
+
 		irq_disable(CONFIG_WDT_ESP32_IRQ);
 	}
 }
@@ -229,8 +233,11 @@ DEVICE_AND_API_INIT(wdt_esp32, CONFIG_WDT_ESP32_DEVICE_NAME, wdt_esp32_init,
 static void wdt_esp32_isr(void *param)
 {
 	struct wdt_esp32_data *data = param;
+	volatile u32_t *reg = (u32_t *)TIMG_INT_CLR_TIMERS_REG(1);
 
 	if (data->config.interrupt_fn) {
 		data->config.interrupt_fn(DEVICE_GET(wdt_esp32));
 	}
+
+	*reg |= TIMG_WDT_INT_CLR;
 }
