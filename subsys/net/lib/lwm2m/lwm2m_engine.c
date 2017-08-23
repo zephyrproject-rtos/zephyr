@@ -1525,6 +1525,13 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	data_ptr = res->data_ptr;
 	data_len = res->data_len;
 
+	/* setup data_ptr/data_len for OPAQUE when it has none setup */
+	if (obj_field->data_type == LWM2M_RES_TYPE_OPAQUE &&
+	    data_ptr == NULL && data_len == 0) {
+		data_ptr = in->inbuf;
+		data_len = in->insize;
+	}
+
 	/* allow user to override data elements via callback */
 	if (res->pre_write_cb) {
 		data_ptr = res->pre_write_cb(obj_inst->obj_inst_id, &data_len);
