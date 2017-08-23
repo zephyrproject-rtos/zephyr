@@ -9743,6 +9743,22 @@ u32_t ll_terminate_ind_send(u16_t handle, u8_t reason)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+u32_t ll_rssi_get(u16_t handle, u8_t *rssi)
+{
+	struct connection *conn;
+
+	conn = connection_get(handle);
+	if (!conn) {
+		return 1;
+	}
+
+	*rssi = conn->rssi_latest;
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
 #if defined(CONFIG_BT_CTLR_LE_PING)
 u32_t ll_apto_get(u16_t handle, u16_t *apto)
 {
