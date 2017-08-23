@@ -91,21 +91,9 @@ static inline u32_t check_pte_flags(union x86_mmu_pte pte,
 
 void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags)
 {
-	int pde_index, pte_index;
 
-	union x86_mmu_pde *pde;
-	union x86_mmu_pte *pte;
-	struct x86_mmu_page_table *pt;
-
-	pde_index = MMU_PDE_NUM(addr);
-	pte_index = MMU_PAGE_NUM(addr);
-
-	pde = &X86_MMU_PD->entry[pde_index];
-	pt = (struct x86_mmu_page_table *)(pde->pt.page_table << 12);
-	pte = &pt->entry[pte_index];
-
-	*pde_flags = pde->pt.value & ~MMU_PDE_PAGE_TABLE_MASK;
-	*pte_flags = pte->value & ~MMU_PTE_PAGE_MASK;
+	*pde_flags = X86_MMU_GET_PDE(addr)->value & ~MMU_PDE_PAGE_TABLE_MASK;
+	*pte_flags = X86_MMU_GET_PTE(addr)->value & ~MMU_PTE_PAGE_MASK;
 }
 
 
@@ -217,10 +205,7 @@ static inline void tlb_flush_page(void *addr)
 
 void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask)
 {
-	int pde_index, pte_index;
-	union x86_mmu_pde *pde;
 	union x86_mmu_pte *pte;
-	struct x86_mmu_page_table *pt;
 
 	u32_t addr = (u32_t)ptr;
 
@@ -228,16 +213,11 @@ void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask)
 	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
 
 	while (size) {
-		pde_index = MMU_PDE_NUM(addr);
-		pde = &X86_MMU_PD->entry[pde_index];
 
 		/* TODO we're not generating 4MB entries at the moment */
-		__ASSERT(pde->fourmb.ps != 1, "4MB PDE found");
+		__ASSERT(X86_MMU_GET_4MB_PDE(addr)->ps != 1, "4MB PDE found");
 
-		pt = (struct x86_mmu_page_table *)(pde->pt.page_table << 12);
-
-		pte_index = MMU_PAGE_NUM(addr);
-		pte = &pt->entry[pte_index];
+		pte = X86_MMU_GET_PTE(addr);
 
 		pte->value = (pte->value & ~mask) | flags;
 		tlb_flush_page((void *)addr);
