@@ -353,6 +353,24 @@ static void write_auth_payload_timeout(struct net_buf *buf,
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_read_tx_power_level *cmd = (void *)buf->data;
+	struct bt_hci_rp_read_tx_power_level *rp;
+	u32_t status;
+	u16_t handle;
+	u8_t  type;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	type = cmd->type;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+
+	status = ll_tx_power_level_get(handle, type, &rp->tx_power_level);
+	rp->status = (!status) ? 0x00 : BT_HCI_ERR_UNKNOWN_CONN_ID;
+	rp->handle = sys_cpu_to_le16(handle);
+}
+
 static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 			      struct net_buf **evt)
 {
@@ -367,6 +385,10 @@ static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 
 	case BT_OCF(BT_HCI_OP_SET_EVENT_MASK_PAGE_2):
 		set_event_mask_page_2(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_READ_TX_POWER_LEVEL):
+		read_tx_power_level(cmd, evt);
 		break;
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -427,11 +449,12 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[2] |= BIT(7);
 	/* Set Event Mask, and Reset. */
 	rp->commands[5] |= BIT(6) | BIT(7);
+	/* Read TX Power Level. */
+	rp->commands[10] |= BIT(2);
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	/* Set FC, Host Buffer Size and Host Num Completed */
 	rp->commands[10] |= BIT(5) | BIT(6) | BIT(7);
 #endif
-
 	/* Read Local Version Info, Read Local Supported Features. */
 	rp->commands[14] |= BIT(3) | BIT(5);
 	/* Read BD ADDR. */
@@ -514,6 +537,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Read Local P256 Public Key and LE Generate DH Key*/
 	rp->commands[34] |= BIT(1) | BIT(2);
 #endif
+	/* LE Read TX Power. */
+	rp->commands[38] |= BIT(7);
 }
 
 static void read_local_features(struct net_buf *buf, struct net_buf **evt)
@@ -1294,6 +1319,15 @@ static void le_set_privacy_mode(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+static void le_read_tx_power(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_le_read_tx_power *rp;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = 0x00;
+	ll_tx_power_get(&rp->min_tx_power, &rp->max_tx_power);
+}
+
 static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt)
 {
@@ -1486,6 +1520,8 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+	case BT_OCF(BT_HCI_OP_LE_READ_TX_POWER):
+		le_read_tx_power(cmd, evt);
 
 	default:
 		return -EINVAL;

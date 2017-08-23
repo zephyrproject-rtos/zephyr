@@ -502,6 +502,20 @@ struct bt_hci_write_local_name {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+#define BT_TX_POWER_LEVEL_CURRENT               0x00
+#define BT_TX_POWER_LEVEL_MAX                   0x01
+#define BT_HCI_OP_READ_TX_POWER_LEVEL           BT_OP(BT_OGF_BASEBAND, 0x002d)
+struct bt_hci_cp_read_tx_power_level {
+	u16_t handle;
+	u8_t  type;
+} __packed;
+
+struct bt_hci_rp_read_tx_power_level {
+	u8_t  status;
+	u16_t handle;
+	s8_t  tx_power_level;
+} __packed;
+
 #define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031)

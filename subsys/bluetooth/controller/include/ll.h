@@ -73,6 +73,8 @@ u32_t ll_version_ind_send(u16_t handle);
 u32_t ll_terminate_ind_send(u16_t handle, u8_t reason);
 void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id);
 u32_t ll_rssi_get(u16_t handle, u8_t *rssi);
+u32_t ll_tx_power_level_get(u16_t handle, u8_t type, s8_t *tx_power_level);
+void ll_tx_power_get(s8_t *min, s8_t *max);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 u32_t ll_apto_get(u16_t handle, u16_t *apto);
