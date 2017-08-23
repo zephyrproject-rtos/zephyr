@@ -92,7 +92,9 @@ get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
 set(LIB_INCLUDE_DIR -L${LIBGCC_DIR})
 set(TOOLCHAIN_LIBS gcc)
 
-set(DTC ${TOOLCHAIN_HOME}/usr/bin/dtc)
+set(DTC       ${TOOLCHAIN_HOME}/usr/bin/dtc)
+set(QEMU      ${TOOLCHAIN_HOME}/usr/bin/${QEMU_${ARCH}})
+set(QEMU_BIOS ${TOOLCHAIN_HOME}/usr/share/qemu)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)

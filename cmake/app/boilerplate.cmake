@@ -88,6 +88,7 @@ set(CMAKE_CXX_COMPILER_FORCED 1)
 include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
+include($ENV{ZEPHYR_BASE}/boards/${ARCH}/${BOARD}/board.cmake OPTIONAL)
 include($ENV{ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
 
 zephyr_library_named(app)

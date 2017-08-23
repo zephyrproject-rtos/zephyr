@@ -188,6 +188,16 @@ target_cc_option(zephyr PUBLIC -Werror=implicit-int)
 # TODO: Archiver arguments
 # ar_option(D)
 
+# Determine if the application is in zephyr/tests, if so it is a test
+# and must be built differently
+string(REGEX MATCH "^$ENV{ZEPHYR_BASE}/tests" match ${APPLICATION_SOURCE_DIR})
+if(match)
+  set(IS_TEST 1)
+endif()
+if(IS_TEST)
+  add_subdirectory(cmake/test)
+endif()
+
 set_ifndef(LINKERFLAGPREFIX -Wl)
 target_link_libraries(zephyr PUBLIC ${LINKERFLAGPREFIX},-X)
 target_link_libraries(zephyr PUBLIC ${LINKERFLAGPREFIX},-N)
@@ -405,3 +415,14 @@ add_custom_command(
   COMMENT "Generating zephyr.{hex,bin,lst,strip} from zephyr.elf"
   # NB: COMMENT only works for some CMake-Generators
 )
+
+if(EMU_PLATFORM)
+  # TODO: Support more emulators
+  add_subdirectory(cmake/qemu)
+else()
+  add_custom_target(run COMMENT "\
+    ===================================================\
+	Emulation/Simulation not supported with this board.\
+	===================================================\
+    ")
+endif()
