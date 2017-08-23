@@ -43,7 +43,8 @@ Architectures
 Boards
 ******
 
-* change description
+* Added device tree support for Intel Quark based microcontroller boards
+  such as Arduino_101, tinytile, and Quark_d2000_crb.
 
 Drivers and Sensors
 *******************
