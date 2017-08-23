@@ -9743,6 +9743,30 @@ u32_t ll_terminate_ind_send(u16_t handle, u8_t reason)
 	return 0;
 }
 
+u32_t ll_tx_power_level_get(u16_t handle, u8_t type, s8_t *tx_power_level)
+{
+	struct connection *conn;
+
+	conn = connection_get(handle);
+	if (!conn) {
+		return 1;
+	}
+
+	/*TODO: check type here for current or maximum */
+
+	/* We only support one TX Power Level: 0dBm */
+	*tx_power_level = 0;
+
+	return 0;
+}
+
+void ll_tx_power_get(s8_t *min, s8_t *max)
+{
+	/* We only support one TX Power Level: 0dBm */
+	*min = 0;
+	*max = 0;
+}
+
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 u32_t ll_rssi_get(u16_t handle, u8_t *rssi)
 {
