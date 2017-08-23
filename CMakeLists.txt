@@ -22,11 +22,13 @@ set(ARCH ${CONFIG_ARCH})
 set(BOARD_NAME ${CONFIG_BOARD})
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
-set(KERNEL_ELF_NAME  ${KERNEL_NAME}.elf)
-set(KERNEL_BIN_NAME  ${KERNEL_NAME}.bin)
-set(KERNEL_HEX_NAME  ${KERNEL_NAME}.hex)
-set(KERNEL_MAP_NAME  ${KERNEL_NAME}.map)
-set(KERNEL_STAT_NAME ${KERNEL_NAME}.stat)
+set(KERNEL_ELF_NAME   ${KERNEL_NAME}.elf)
+set(KERNEL_BIN_NAME   ${KERNEL_NAME}.bin)
+set(KERNEL_HEX_NAME   ${KERNEL_NAME}.hex)
+set(KERNEL_MAP_NAME   ${KERNEL_NAME}.map)
+set(KERNEL_LST_NAME   ${KERNEL_NAME}.lst)
+set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
+set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
@@ -396,9 +398,10 @@ add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
   COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
-  COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME} ${KERNEL_HEX_NAME}
-  COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME} ${KERNEL_BIN_NAME}
-  COMMAND ${CMAKE_OBJDUMP} -D                                              ${KERNEL_ELF_NAME} > ${KERNEL_NAME}.lst
-  COMMENT "Generating zephyr.{hex,bin,lst} from zephyr.elf"
+  COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_HEX_NAME}
+  COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
+  COMMAND ${CMAKE_OBJDUMP} -D                                              ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
+  COMMAND ${CMAKE_STRIP}   --strip-all                                     ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
+  COMMENT "Generating zephyr.{hex,bin,lst,strip} from zephyr.elf"
   # NB: COMMENT only works for some CMake-Generators
 )
