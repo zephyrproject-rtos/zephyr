@@ -1161,7 +1161,12 @@ _xt_medint3_exit:
 
 #endif  /* Level 3 */
 
-#if XCHAL_EXCM_LEVEL >= 4
+/* FIXME: For some reason, the HAL provided by the ESP32 port of FreeRTOS,
+ * that Zephyr uses, defines XCHAL_EXCM_LEVEL to 3.  That essentially
+ * enables the other _Level4Vector routine, that doesn't work on ESP32.
+ * This is tracked by: https://jira.zephyrproject.org/browse/ZEP-2570
+ */
+#if defined(CONFIG_SOC_ESP32) || (XCHAL_EXCM_LEVEL >= 4)
 
     .begin      literal_prefix .Level4InterruptVector
     .section    .Level4InterruptVector.text, "ax"
@@ -1488,7 +1493,7 @@ _xt_highint3:
 
 #endif  /* Level 3 */
 
-#if XCHAL_NUM_INTLEVELS >=4 && XCHAL_EXCM_LEVEL <4 && XCHAL_DEBUGLEVEL !=4
+#if !defined(CONFIG_SOC_ESP32) && XCHAL_NUM_INTLEVELS >=4 && XCHAL_EXCM_LEVEL <4 && XCHAL_DEBUGLEVEL !=4
 
     .begin      literal_prefix .Level4InterruptVector
     .section    .Level4InterruptVector.text, "ax"
