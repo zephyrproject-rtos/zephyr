@@ -41,6 +41,7 @@ struct connection {
 	u8_t  access_addr[4];
 	u8_t  crc_init[3];
 	u8_t  data_chan_map[5];
+	u8_t  chm_update;
 
 	u8_t  data_chan_count:6;
 	u8_t  data_chan_sel:1;

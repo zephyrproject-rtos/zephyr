@@ -822,7 +822,7 @@ struct bt_hci_cp_le_set_host_chan_classif {
 struct bt_hci_cp_le_read_chan_map {
 	u16_t handle;
 } __packed;
-struct bt_hci_rp_le_read_ch_map {
+struct bt_hci_rp_le_read_chan_map {
 	u8_t  status;
 	u16_t handle;
 	u8_t  ch_map[5];

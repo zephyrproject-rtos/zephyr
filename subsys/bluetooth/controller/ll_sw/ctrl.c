@@ -6317,6 +6317,7 @@ static inline void event_ch_map_prep(struct connection *conn,
 		conn->data_chan_count =
 			util_ones_count_get(&conn->data_chan_map[0],
 					    sizeof(conn->data_chan_map));
+		conn->chm_update = 1;
 	}
 
 }
@@ -9577,8 +9578,13 @@ u32_t ll_chm_get(u16_t handle, u8_t *chm)
 		return 1;
 	}
 
-	/** @todo make reading context-safe */
-	memcpy(chm, conn->data_chan_map, sizeof(conn->data_chan_map));
+	/* Iterate until we are sure the ISR did not modify the value while
+	 * we were reading it from memory.
+	 */
+	do {
+		conn->chm_update = 0;
+		memcpy(chm, conn->data_chan_map, sizeof(conn->data_chan_map));
+	} while (conn->chm_update);
 
 	return 0;
 }
