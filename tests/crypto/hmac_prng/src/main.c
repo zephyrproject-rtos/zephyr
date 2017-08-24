@@ -8,7 +8,7 @@
 extern void test_hmac_prng(void);
 
 /**test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_hmac_prng_fn,
 		ztest_unit_test(test_hmac_prng));

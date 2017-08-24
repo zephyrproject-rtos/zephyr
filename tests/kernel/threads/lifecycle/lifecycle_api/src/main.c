@@ -25,7 +25,7 @@ extern void test_threads_abort_self(void);
 extern void test_threads_abort_others(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_threads_lifecycle,
 			 ztest_unit_test(test_threads_spawn_params),

@@ -19,7 +19,7 @@ extern void test_queue_get_fail(void);
 extern void test_queue_loop(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_queue_api,
 			 ztest_unit_test(test_queue_thread2thread),

@@ -20,7 +20,7 @@ extern void test_delayed_work_cancel_thread(void);
 extern void test_delayed_work_cancel_isr(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_workq_api,
 			 ztest_unit_test(test_workq_start_before_submit),/*keep first!*/

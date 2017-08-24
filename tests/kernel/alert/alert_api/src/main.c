@@ -24,7 +24,7 @@ extern void test_thread_kinit_alert(void);
 extern void test_isr_kinit_alert(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_alert_api,
 			 ztest_unit_test(test_thread_alert_default),

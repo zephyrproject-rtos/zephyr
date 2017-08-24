@@ -11,7 +11,7 @@ extern void test_mpool_alloc_merge_failed_diff_size(void);
 extern void test_mpool_alloc_merge_failed_diff_parent(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_mpool_concept,
 		ztest_unit_test(test_mpool_alloc_wait_prio),

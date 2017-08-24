@@ -16,12 +16,8 @@
 #include <ztest.h>
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
 	ztest_test_suite(test_timer_api,
 			 ztest_unit_test(test_timer_duration_period),
 			 ztest_unit_test(test_timer_period_0),

@@ -19,7 +19,7 @@ extern void test_lifo_get_fail(void);
 extern void test_lifo_loop(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_lifo_api,
 		ztest_unit_test(test_lifo_thread2thread),
