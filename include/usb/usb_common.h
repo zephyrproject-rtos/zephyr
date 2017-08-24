@@ -41,7 +41,7 @@
 #ifndef USB_COMMON_H_
 #define USB_COMMON_H_
 
-/* Decriptor size in bytes */
+/* Descriptor size in bytes */
 #define USB_DEVICE_DESC_SIZE            18
 #define USB_CONFIGURATION_DESC_SIZE     9
 #define USB_INTERFACE_DESC_SIZE         9
@@ -50,6 +50,7 @@
 #define USB_HID_DESC_SIZE               9
 #define USB_DFU_DESC_SIZE               9
 #define USB_DEVICE_QUAL_DESC_SIZE       10
+#define USB_INTERFACE_ASSOC_DESC_SIZE   8
 
 /* Descriptor type */
 #define USB_DEVICE_DESC                 0x01
@@ -58,6 +59,7 @@
 #define USB_INTERFACE_DESC              0x04
 #define USB_ENDPOINT_DESC               0x05
 #define USB_DEVICE_QUAL_DESC            0x06
+#define USB_INTERFACE_ASSOC_DESC        0x0B
 #define USB_HID_DESC                    0x21
 #define USB_HID_REPORT_DESC             0x22
 #define USB_DFU_FUNCTIONAL_DESC         0x21
@@ -87,6 +89,7 @@
 #define HID_CLASS                       0x03
 #define MASS_STORAGE_CLASS              0x08
 #define WIRELESS_DEVICE_CLASS           0xE0
+#define MISC_CLASS                      0xEF
 #define CUSTOM_CLASS                    0xFF
 #define DFU_CLASS                       0xFE
 
@@ -99,6 +102,8 @@
 #define DFU_INTERFACE_SUBCLASS          0x01
 #define RF_SUBCLASS                     0x01
 #define CUSTOM_SUBCLASS                 0xFF
+/* Misc subclasses */
+#define MISC_RNDIS_SUBCLASS             0x04
 
 /* Protocols */
 #define V25TER_PROTOCOL                 0x01
@@ -107,5 +112,9 @@
 #define DFU_RUNTIME_PROTOCOL            0x01
 #define DFU_MODE_PROTOCOL               0x02
 #define BLUETOOTH_PROTOCOL              0x01
+/* CDC ACM protocols */
+#define ACM_VENDOR_PROTOCOL             0xFF
+/* Misc protocols */
+#define MISC_ETHERNET_PROTOCOL          0x01
 
 #endif /* USB_COMMON_H_ */
