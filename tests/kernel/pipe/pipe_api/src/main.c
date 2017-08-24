@@ -20,7 +20,7 @@ extern void test_pipe_block_put_sema(void);
 extern void test_pipe_get_put(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_pipe_api,
 			 ztest_unit_test(test_pipe_thread2thread),

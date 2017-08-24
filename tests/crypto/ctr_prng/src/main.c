@@ -11,7 +11,7 @@ extern void test_uninstantiate(void);
 extern void test_robustness(void);
 
 /**test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_ctr_prng_fn,
 		ztest_unit_test(test_ctr_prng_vector),

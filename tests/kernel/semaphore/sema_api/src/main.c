@@ -19,7 +19,7 @@ extern void test_sema_reset(void);
 extern void test_sema_count_get(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_sema_api,
 			 ztest_unit_test(test_sema_thread2thread),

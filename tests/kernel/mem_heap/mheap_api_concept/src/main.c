@@ -11,7 +11,7 @@ extern void test_mheap_min_block_size(void);
 extern void test_mheap_block_desc(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_mheap_api,
 			 ztest_unit_test(test_mheap_malloc_free),

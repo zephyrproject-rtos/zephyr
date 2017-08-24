@@ -17,7 +17,7 @@ extern void test_stack_thread2isr(void);
 extern void test_stack_pop_fail(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_stack_api,
 			 ztest_unit_test(test_stack_thread2thread),

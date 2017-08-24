@@ -13,7 +13,7 @@ extern void test_mpool_alloc_size(void);
 extern void test_mpool_alloc_timeout(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_mpool_api,
 			 ztest_unit_test(test_mpool_alloc_free_thread),

@@ -8,7 +8,7 @@
 extern void test_xip(void);
 
 /**test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_xip_fn,
 		ztest_unit_test(test_xip));
