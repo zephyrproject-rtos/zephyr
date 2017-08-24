@@ -1,4 +1,4 @@
-/* Task12.c - helper file for testing kernel mutex APIs */
+/* thread_12.c - helper file for testing kernel mutex APIs */
 
 /*
  * Copyright (c) 2015-2016 Wind River Systems, Inc.
@@ -10,7 +10,7 @@
  * @file
  * @brief mutex test helper
  *
- * This module defines a task that is used in recursive mutex locking tests.
+ * This module defines a thread that is used in recursive mutex locking tests.
  * It helps ensure that a private mutex can be referenced in a file other than
  * the one it was defined in.
  */
@@ -25,12 +25,12 @@ extern struct k_mutex private_mutex;
 
 /**
  *
- * Task12 - task that participates in recursive locking tests
+ * thread_12 - thread that participates in recursive locking tests
  *
  * @return  N/A
  */
 
-void task12(void)
+void thread_12(void)
 {
 	int rv;
 
