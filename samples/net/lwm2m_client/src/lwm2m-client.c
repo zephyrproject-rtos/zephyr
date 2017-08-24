@@ -252,9 +252,13 @@ static int lwm2m_setup(void)
 	return 0;
 }
 
-int setup_net_app_ctx(struct net_app_ctx *ctx, const char *peer)
+int setup_net_app_ctx(struct lwm2m_ctx *client_ctx,
+		      struct net_app_ctx *ctx, const char *peer)
 {
 	int ret;
+
+	/* Set everything to 0 and later just assign the required fields. */
+	memset(client_ctx, 0x00, sizeof(*client_ctx));
 
 	ret = net_app_init_udp_client(ctx, NULL, NULL, peer,
 				      CONFIG_LWM2M_PEER_PORT, WAIT_TIME, NULL);
@@ -286,7 +290,8 @@ void main(void)
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	ret = setup_net_app_ctx(&app_udp6, CONFIG_NET_APP_PEER_IPV6_ADDR);
+	ret = setup_net_app_ctx(&udp6, &app_udp6,
+				CONFIG_NET_APP_PEER_IPV6_ADDR);
 	if (ret < 0) {
 		goto cleanup_ipv6;
 	}
@@ -315,7 +320,8 @@ void main(void)
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	ret = setup_net_app_ctx(&app_udp4, CONFIG_NET_APP_PEER_IPV4_ADDR);
+	ret = setup_net_app_ctx(&udp4, &app_udp4,
+				CONFIG_NET_APP_PEER_IPV4_ADDR);
 	if (ret < 0) {
 		goto cleanup_ipv4;
 	}

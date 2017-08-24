@@ -325,6 +325,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	}
 
 	if (transfer_state == STATE_IDLE) {
+		memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
 		k_work_init(&firmware_work, firmware_transfer);
 		k_delayed_work_init(&retransmit_work, retransmit_request);
 
