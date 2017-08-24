@@ -220,6 +220,10 @@ function(zephyr_library_include_directories scope item)
   target_include_directories(${ZEPHYR_CURRENT_LIBRARY} ${scope} ${item} ${ARGN})
 endfunction()
 
+function(zephyr_library_link_libraries item)
+  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} ${item} ${ARGN})
+endfunction()
+
 # Add the existing CMake library 'library' to the global list of
 # Zephyr CMake libraries. This done automatically by zephyr_library()
 # but must called explicitly on CMake libraries that are not created
