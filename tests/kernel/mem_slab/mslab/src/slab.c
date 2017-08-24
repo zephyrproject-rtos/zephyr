@@ -1,5 +1,3 @@
-/* map.c - test memory slab APIs */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -10,14 +8,14 @@
  * @file
  * @brief Test memory slab APIs
  *
- * This module tests the following map routines:
+ * This module tests the following memory slab routines:
  *
  *     k_mem_slab_alloc
- *     task_mem_map_free
- *     task_mem_map_used_get
+ *     k_mem_slab_free
+ *     k_mem_slab_num_used_get
  *
  * @note
- * One should ensure that the block is released to the same map from which it
+ * One should ensure that the block is released to the same memory slab from which it
  * was allocated, and is only released once.  Using an invalid pointer will
  * have unpredictable side effects.
  */
@@ -76,7 +74,7 @@ bool verify_ret_value(int expect_ret_value, int current_ret_current)
  * @return  N/A
  */
 
-void helper_task(void)
+void helper_thread(void)
 {
 	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
 
@@ -137,7 +135,7 @@ exittest1:
 
 	TC_END_RESULT(tc_rc);
 	k_sem_give(&SEM_HELPERDONE);
-}  /* HelperTask */
+}  /* helper thread */
 
 
 /**
@@ -300,7 +298,7 @@ void print_pointers(void **pointer)
 
 /**
  *
- * @brief Main task to test task_mem_map_xxx interfaces
+ * @brief Main task to test memory slab interfaces
  *
  * This routine calls test_slab_get_all_blocks() to get all memory blocks from
  * the map and calls test_slab_free_all_blocks() to free all memory blocks.
@@ -313,7 +311,7 @@ void print_pointers(void **pointer)
  * @return  N/A
  */
 
-void regression_task(void)
+void main(void)
 {
 	int ret_value;             /* task_mem_map_xxx interface return value */
 	void *b;                  /* Pointer to memory block */
@@ -346,16 +344,16 @@ void regression_task(void)
 		goto exittest;           /* terminate test */
 	}
 
-	k_sem_give(&SEM_REGRESSDONE);   /* Allow HelperTask to run */
-	/* Wait for HelperTask to finish */
+	k_sem_give(&SEM_REGRESSDONE);   /* Allow helper thread to run */
+	/* Wait for helper thread to finish */
 	k_sem_take(&SEM_HELPERDONE, K_FOREVER);
 
 	/*
 	 * Part 3 of test.
 	 *
-	 * HelperTask got all memory blocks.  There is no free block left.
+	 * helper thread got all memory blocks.  There is no free block left.
 	 * The call will timeout.  Note that control does not switch back to
-	 * HelperTask as it is waiting for SEM_REGRESSDONE.
+	 * helper thread as it is waiting for SEM_REGRESSDONE.
 	 */
 
 	PRINT_LINE;
@@ -374,7 +372,7 @@ void regression_task(void)
 	}
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
-	k_sem_give(&SEM_REGRESSDONE);    /* Allow HelperTask to run part 4 */
+	k_sem_give(&SEM_REGRESSDONE);    /* Allow helper thread to run part 4 */
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, 50);
 	if (verify_ret_value(0, ret_value)) {
 		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
@@ -385,11 +383,11 @@ void regression_task(void)
 		goto exittest;           /* terminate test */
 	}
 
-	/* Wait for HelperTask to complete */
+	/* Wait for helper thread to complete */
 	k_sem_take(&SEM_HELPERDONE, K_FOREVER);
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
-	k_sem_give(&SEM_REGRESSDONE);    /* Allow HelperTask to run part 5 */
+	k_sem_give(&SEM_REGRESSDONE);    /* Allow helper thread to run part 5 */
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, K_FOREVER);
 	if (verify_ret_value(0, ret_value)) {
 		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
@@ -400,7 +398,7 @@ void regression_task(void)
 		goto exittest;           /* terminate test */
 	}
 
-	/* Wait for HelperTask to complete */
+	/* Wait for helper thread to complete */
 	k_sem_take(&SEM_HELPERDONE, K_FOREVER);
 
 
@@ -415,10 +413,7 @@ exittest:
 
 	TC_END_RESULT(tc_rc);
 	TC_END_REPORT(tc_rc);
-}  /* regression_task */
+}
 
-K_THREAD_DEFINE(HELPERTASK, STACKSIZE, helper_task, NULL, NULL, NULL,
+K_THREAD_DEFINE(HELPER, STACKSIZE, helper_thread, NULL, NULL, NULL,
 		7, 0, K_NO_WAIT);
-
-K_THREAD_DEFINE(REGRESSTASK, STACKSIZE, regression_task, NULL, NULL, NULL,
-		5, 0, K_NO_WAIT);
