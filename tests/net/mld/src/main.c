@@ -49,6 +49,7 @@ static bool is_join_msg_ok;
 static bool is_leave_msg_ok;
 static bool is_query_received;
 static bool is_report_sent;
+static bool ignore_already;
 static struct k_sem wait_data;
 
 #define WAIT_TIME 500
@@ -200,7 +201,12 @@ static void join_group(void)
 
 	ret = net_ipv6_mld_join(iface, &mcast_addr);
 
-	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+	if (ignore_already) {
+		zassert_true(ret == 0 || ret == -EALREADY,
+			     "Cannot join IPv6 multicast group");
+	} else {
+		zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+	}
 
 	k_yield();
 }
@@ -221,6 +227,8 @@ static void leave_group(void)
 static void catch_join_group(void)
 {
 	is_group_joined = false;
+
+	ignore_already = false;
 
 	join_group();
 
@@ -255,6 +263,8 @@ static void catch_leave_group(void)
 static void verify_join_group(void)
 {
 	is_join_msg_ok = false;
+
+	ignore_already = false;
 
 	join_group();
 
@@ -389,6 +399,8 @@ static void verify_send_report(void)
 
 	is_query_received = false;
 	is_report_sent = false;
+
+	ignore_already = true;
 
 	join_group();
 
