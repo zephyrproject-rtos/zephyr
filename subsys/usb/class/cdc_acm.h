@@ -105,6 +105,8 @@ struct cdc_acm_notification {
 #define USB_NETFUNC_SUBDESC	0x0F
 
 /* Class specific request */
+#define CDC_SEND_ENC_CMD		0x00
+#define CDC_GET_ENC_RSP			0x01
 #define CDC_SET_LINE_CODING		0x20
 #define CDC_GET_LINE_CODING		0x21
 #define CDC_SET_CONTROL_LINE_STATE	0x22
