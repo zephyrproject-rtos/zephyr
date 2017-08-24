@@ -1,0 +1,3 @@
+tests:
+-   test_random_num_genrator:
+        tags: driver
