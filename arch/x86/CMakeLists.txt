@@ -2,9 +2,9 @@
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr COMPILE_OPTIONS)
 if ("-Os" IN_LIST zephyr_COMPILE_OPTIONS)
-  target_compile_definitions(zephyr PUBLIC PERF_OPT)
-else()
   target_cc_option(zephyr PUBLIC -mpreferred-stack-boundary=2)
+else()
+  target_compile_definitions(zephyr PUBLIC PERF_OPT)
 endif()
 
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
