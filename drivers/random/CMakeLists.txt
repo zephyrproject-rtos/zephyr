@@ -1,0 +1,6 @@
+zephyr_sources_ifdef(CONFIG_RANDOM_ESP32_RNG          random_esp32.c)
+zephyr_sources_ifdef(CONFIG_RANDOM_MCUX_RNGA          random_mcux_rnga.c)
+zephyr_sources_ifdef(CONFIG_RANDOM_MCUX_TNGA          random_mcux_trng.c)
+zephyr_sources_ifdef(CONFIG_RANDOM_STM32_RNG          random_stm32_rng.c)
+zephyr_sources_ifdef(CONFIG_TIMER_RANDOM_GENERATOR    rand32_timer.c)
+zephyr_sources_ifdef(CONFIG_X86_TSC_RANDOM_GENERATOR  rand32_timestamp.c)
