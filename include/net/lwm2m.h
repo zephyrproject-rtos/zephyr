@@ -33,6 +33,9 @@
 struct lwm2m_ctx {
 	/** Net context structure */
 	struct net_context *net_ctx;
+
+	/** Private ZoAP and networking structures */
+	struct k_delayed_work retransmit_work;
 };
 
 /* callback can return 1 if handled (don't update value) */

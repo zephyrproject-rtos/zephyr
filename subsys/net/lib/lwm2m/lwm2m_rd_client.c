@@ -121,7 +121,6 @@ struct k_thread lwm2m_rd_client_thread_data;
 
 extern struct zoap_pending pendings[NUM_PENDINGS];
 extern struct zoap_reply replies[NUM_REPLIES];
-extern struct k_delayed_work retransmit_work;
 
 /* buffers */
 static char query_buffer[64]; /* allocate some data for queries and updates */
@@ -448,7 +447,8 @@ static int sm_do_bootstrap(int index)
 		}
 
 		zoap_pending_cycle(pending);
-		k_delayed_work_submit(&retransmit_work, pending->timeout);
+		k_delayed_work_submit(&clients[index].ctx->retransmit_work,
+				      pending->timeout);
 		set_sm_state(index, ENGINE_BOOTSTRAP_SENT);
 	}
 	return ret;
@@ -599,7 +599,8 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	}
 
 	zoap_pending_cycle(pending);
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&clients[index].ctx->retransmit_work,
+			      pending->timeout);
 	return ret;
 
 cleanup:
@@ -697,7 +698,8 @@ static int sm_do_deregister(int index)
 	}
 
 	zoap_pending_cycle(pending);
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&clients[index].ctx->retransmit_work,
+			      pending->timeout);
 	set_sm_state(index, ENGINE_DEREGISTER_SENT);
 	return ret;
 

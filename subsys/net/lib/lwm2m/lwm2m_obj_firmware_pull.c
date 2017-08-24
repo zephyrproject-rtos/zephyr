@@ -34,7 +34,6 @@ static struct k_work firmware_work;
 static char firmware_uri[PACKAGE_URI_LEN];
 static struct sockaddr firmware_addr;
 static struct lwm2m_ctx firmware_ctx;
-static struct k_delayed_work retransmit_work;
 
 #define NUM_PENDINGS	CONFIG_LWM2M_ENGINE_MAX_PENDING
 #define NUM_REPLIES	CONFIG_LWM2M_ENGINE_MAX_REPLIES
@@ -70,7 +69,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&firmware_ctx.retransmit_work, pending->timeout);
 }
 
 static int transfer_request(struct zoap_block_context *ctx,
@@ -135,7 +134,7 @@ static int transfer_request(struct zoap_block_context *ctx,
 	}
 
 	zoap_pending_cycle(pending);
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&firmware_ctx.retransmit_work, pending->timeout);
 	return 0;
 
 cleanup:
@@ -327,7 +326,8 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	if (transfer_state == STATE_IDLE) {
 		memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
 		k_work_init(&firmware_work, firmware_transfer);
-		k_delayed_work_init(&retransmit_work, retransmit_request);
+		k_delayed_work_init(&firmware_ctx.retransmit_work,
+				    retransmit_request);
 
 		/* start file transfer work */
 		strncpy(firmware_uri, package_uri, PACKAGE_URI_LEN - 1);
