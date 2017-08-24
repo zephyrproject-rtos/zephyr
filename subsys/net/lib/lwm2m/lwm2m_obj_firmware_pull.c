@@ -34,19 +34,13 @@ static struct k_work firmware_work;
 static char firmware_uri[PACKAGE_URI_LEN];
 static struct sockaddr firmware_addr;
 static struct lwm2m_ctx firmware_ctx;
-
-#define NUM_PENDINGS	CONFIG_LWM2M_ENGINE_MAX_PENDING
-#define NUM_REPLIES	CONFIG_LWM2M_ENGINE_MAX_REPLIES
-static struct zoap_pending pendings[NUM_PENDINGS];
-static struct zoap_reply replies[NUM_REPLIES];
 static struct zoap_block_context firmware_block_ctx;
 
 static void
 firmware_udp_receive(struct net_context *ctx, struct net_pkt *pkt, int status,
 		     void *user_data)
 {
-	lwm2m_udp_receive(ctx, pkt, pendings, NUM_PENDINGS,
-			  replies, NUM_REPLIES, true, NULL);
+	lwm2m_udp_receive(&firmware_ctx, ctx, pkt, true, NULL);
 }
 
 static void retransmit_request(struct k_work *work)
@@ -54,7 +48,8 @@ static void retransmit_request(struct k_work *work)
 	struct zoap_pending *pending;
 	int r;
 
-	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+	pending = zoap_pending_next_to_expire(firmware_ctx.pendings,
+					      CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (!pending) {
 		return;
 	}
@@ -105,8 +100,8 @@ static int transfer_request(struct zoap_block_context *ctx,
 		goto cleanup;
 	}
 
-	pending = lwm2m_init_message_pending(&request, &firmware_addr,
-					     pendings, NUM_PENDINGS);
+	pending = lwm2m_init_message_pending(&firmware_ctx, &request,
+					     &firmware_addr);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
@@ -114,7 +109,8 @@ static int transfer_request(struct zoap_block_context *ctx,
 
 	/* set the reply handler */
 	if (reply_cb) {
-		reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+		reply = zoap_reply_next_unused(firmware_ctx.replies,
+					       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 		if (!reply) {
 			SYS_LOG_ERR("No resources for waiting for replies.");
 			ret = -ENOMEM;

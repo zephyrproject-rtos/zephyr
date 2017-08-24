@@ -51,10 +51,9 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 int lwm2m_init_message(struct net_context *net_ctx, struct zoap_packet *zpkt,
 		       struct net_pkt **pkt, u8_t type, u8_t code, u16_t mid,
 		       const u8_t *token, u8_t tkl);
-struct zoap_pending *lwm2m_init_message_pending(struct zoap_packet *zpkt,
-						struct sockaddr *addr,
-						struct zoap_pending *zpendings,
-						int num_zpendings);
+struct zoap_pending *lwm2m_init_message_pending(struct lwm2m_ctx *client_ctx,
+						struct zoap_packet *zpkt,
+						struct sockaddr *addr);
 void lwm2m_init_message_cleanup(struct net_pkt *pkt,
 				struct zoap_pending *pending,
 				struct zoap_reply *reply);
@@ -67,9 +66,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_context *context);
 
 int lwm2m_udp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr);
-void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
-		       struct zoap_pending *zpendings, int num_zpendings,
-		       struct zoap_reply *zreplies, int num_zreplies,
+void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
+		       struct net_context *ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
 		       int (*udp_request_handler)(struct zoap_packet *request,
 				struct zoap_packet *response,

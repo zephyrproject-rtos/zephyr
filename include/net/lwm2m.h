@@ -8,6 +8,7 @@
 #define __LWM2M_H__
 
 #include <net/net_context.h>
+#include <net/zoap.h>
 
 /* LWM2M Objects defined by OMA */
 
@@ -35,6 +36,8 @@ struct lwm2m_ctx {
 	struct net_context *net_ctx;
 
 	/** Private ZoAP and networking structures */
+	struct zoap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
+	struct zoap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct k_delayed_work retransmit_work;
 };
 

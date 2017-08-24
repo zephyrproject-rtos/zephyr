@@ -94,12 +94,6 @@ struct observe_node {
 	u8_t  tkl;
 };
 
-#define NUM_PENDINGS	CONFIG_LWM2M_ENGINE_MAX_PENDING
-#define NUM_REPLIES	CONFIG_LWM2M_ENGINE_MAX_REPLIES
-
-struct zoap_pending pendings[NUM_PENDINGS];
-struct zoap_reply replies[NUM_REPLIES];
-
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
 static sys_slist_t engine_obj_list;
@@ -629,15 +623,15 @@ int lwm2m_init_message(struct net_context *net_ctx, struct zoap_packet *zpkt,
 	return 0;
 }
 
-struct zoap_pending *lwm2m_init_message_pending(struct zoap_packet *zpkt,
-						struct sockaddr *addr,
-						struct zoap_pending *zpendings,
-						int num_zpendings)
+struct zoap_pending *lwm2m_init_message_pending(struct lwm2m_ctx *client_ctx,
+						struct zoap_packet *zpkt,
+						struct sockaddr *addr)
 {
 	struct zoap_pending *pending = NULL;
 	int ret;
 
-	pending = zoap_pending_next_unused(zpendings, num_zpendings);
+	pending = zoap_pending_next_unused(client_ctx->pendings,
+					   CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (!pending) {
 		SYS_LOG_ERR("Unable to find a free pending to track "
 			    "retransmissions.");
@@ -2242,9 +2236,8 @@ int lwm2m_udp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr)
 				  NULL, K_NO_WAIT, NULL, NULL);
 }
 
-void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
-		       struct zoap_pending *zpendings, int num_zpendings,
-		       struct zoap_reply *zreplies, int num_zreplies,
+void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
+		       struct net_context *net_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
 		       int (*udp_request_handler)(struct zoap_packet *,
 						  struct zoap_packet *,
@@ -2300,7 +2293,8 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 	}
 
 	token = zoap_header_get_token(&response, &tkl);
-	pending = zoap_pending_received(&response, zpendings, num_zpendings);
+	pending = zoap_pending_received(&response, client_ctx->pendings,
+					CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (pending) {
 		/* TODO: If necessary cancel retransmissions */
 	}
@@ -2308,7 +2302,8 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 	SYS_LOG_DBG("checking for reply from [%s]",
 		    lwm2m_sprint_ip_addr(&from_addr));
 	reply = zoap_response_received(&response, &from_addr,
-				       zreplies, num_zreplies);
+				       client_ctx->replies,
+				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (!reply) {
 		/*
 		 * If no normal response handler is found, then this is
@@ -2318,7 +2313,7 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 		if (udp_request_handler &&
 		    zoap_header_get_type(&response) == ZOAP_TYPE_CON) {
 			/* Create a response packet if we reach this point */
-			r = lwm2m_init_message(ctx, &response2, &pkt2,
+			r = lwm2m_init_message(net_ctx, &response2, &pkt2,
 					       ZOAP_TYPE_ACK,
 					       zoap_header_get_code(&response),
 					       zoap_header_get_id(&response),
@@ -2373,11 +2368,14 @@ cleanup:
 	}
 }
 
-static void udp_receive(struct net_context *ctx, struct net_pkt *pkt,
+static void udp_receive(struct net_context *net_ctx, struct net_pkt *pkt,
 			int status, void *user_data)
 {
-	lwm2m_udp_receive(ctx, pkt, pendings, NUM_PENDINGS,
-			  replies, NUM_REPLIES, false, handle_request);
+	struct lwm2m_ctx *client_ctx = CONTAINER_OF(net_ctx,
+						    struct lwm2m_ctx,
+						    net_ctx);
+
+	lwm2m_udp_receive(client_ctx, net_ctx, pkt, false, handle_request);
 }
 
 static void retransmit_request(struct k_work *work)
@@ -2387,7 +2385,8 @@ static void retransmit_request(struct k_work *work)
 	int r;
 
 	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
-	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+	pending = zoap_pending_next_to_expire(client_ctx->pendings,
+					      CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (!pending) {
 		return;
 	}
@@ -2525,15 +2524,15 @@ static int generate_notify_message(struct observe_node *obs,
 		goto cleanup;
 	}
 
-	pending = lwm2m_init_message_pending(out.out_zpkt,
-					     &obs->addr,
-					     pendings, NUM_PENDINGS);
+	pending = lwm2m_init_message_pending(client_ctx, out.out_zpkt,
+					     &obs->addr);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
 	}
 
-	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+	reply = zoap_reply_next_unused(client_ctx->replies,
+				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (!reply) {
 		SYS_LOG_ERR("No resources for waiting for replies.");
 		ret = -ENOMEM;
