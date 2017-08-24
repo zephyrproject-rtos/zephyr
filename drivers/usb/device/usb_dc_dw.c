@@ -402,7 +402,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	}
 	irq_unlock(key);
 
-	SYS_LOG_DBG("USB IN EP%d write %x bytes", ep_idx, data_len);
+	SYS_LOG_DBG("USB IN EP%d write %u bytes", ep_idx, data_len);
 
 	return data_len;
 }
