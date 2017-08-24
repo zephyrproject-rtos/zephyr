@@ -1220,7 +1220,7 @@ class TestInstance:
 
         @return A SizeCalculator object
         """
-        fns = glob.glob(os.path.join(self.outdir, "*.elf"))
+        fns = glob.glob(os.path.join(self.outdir, "zephyr", "*.elf"))
         fns = [x for x in fns if not x.endswith('_prebuilt.elf')]
         if (len(fns) != 1):
             raise BuildError("Missing/multiple output ELF binary")
