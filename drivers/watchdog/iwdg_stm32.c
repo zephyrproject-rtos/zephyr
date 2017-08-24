@@ -33,10 +33,12 @@ static void iwdg_stm32_enable(struct device *dev)
 	iwdg->kr.bit.key = STM32_IWDG_KR_START;
 }
 
-static void iwdg_stm32_disable(struct device *dev)
+static int iwdg_stm32_disable(struct device *dev)
 {
 	/* watchdog cannot be stopped once started */
 	ARG_UNUSED(dev);
+
+	return 0;
 }
 
 static int iwdg_stm32_set_config(struct device *dev,
