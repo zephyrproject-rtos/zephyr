@@ -16,11 +16,6 @@
 #include <net/net_app.h>
 #include <net/lwm2m.h>
 
-#if defined(CONFIG_NET_L2_BT)
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
-#endif
-
 #define APP_BANNER "Run LWM2M client"
 
 #if !defined(CONFIG_NET_APP_PEER_IPV4_ADDR)
@@ -281,15 +276,6 @@ void main(void)
 	SYS_LOG_INF(APP_BANNER);
 
 	k_sem_init(&quit_lock, 0, UINT_MAX);
-
-#if defined(CONFIG_NET_L2_BT)
-	if (bt_enable(NULL)) {
-		SYS_LOG_ERR("Bluetooth init failed");
-		return;
-	}
-	ipss_init();
-	ipss_advertise();
-#endif
 
 	ret = lwm2m_setup();
 	if (ret < 0) {
