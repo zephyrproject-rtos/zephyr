@@ -5,7 +5,7 @@ target_include_directories(drivers INTERFACE ${PROJECT_SOURCE_DIR}/include/drive
 target_link_libraries(drivers INTERFACE zephyr)
 
 add_subdirectory_ifdef(CONFIG_CONSOLE_HAS_DRIVER console)
-# add_subdirectory_ifdef(CONFIG_RANDOM_GENERATOR random)
+add_subdirectory(random)
 add_subdirectory_if_kconfig(serial)
 add_subdirectory_ifdef(CONFIG_SYS_CLOCK_EXISTS  timer)
 add_subdirectory(interrupt_controller)
