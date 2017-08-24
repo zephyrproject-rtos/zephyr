@@ -38,7 +38,6 @@ u32_t tm_off;
 /********************************************************************/
 /* static allocation  */
 K_THREAD_DEFINE(RECVTASK, 1024, recvtask, NULL, NULL, NULL, 5, 0, K_NO_WAIT);
-K_THREAD_DEFINE(BENCHTASK, 1024, bench_task, NULL, NULL, NULL, 6, 0, K_NO_WAIT);
 
 K_MSGQ_DEFINE(DEMOQX1, 1, 500, 4);
 K_MSGQ_DEFINE(DEMOQX4, 4, 500, 4);
@@ -120,7 +119,7 @@ void output_close(void)
  *
  * @return N/A
  */
-void bench_task(void *p1, void *p2, void *p3)
+void main(void)
 {
 	int autorun = 0, continuously = 0;
 
