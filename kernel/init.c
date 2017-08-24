@@ -205,14 +205,14 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	__do_init_array_aux();
 #endif
 
-	_init_static_threads();
-
 	if (boot_delay > 0) {
 		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
 		       "ms (per build configuration) *****\n");
 		k_sleep(CONFIG_BOOT_DELAY);
 	}
 	PRINT_BOOT_BANNER();
+	_init_static_threads();
+
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp for kernel's _main() function */
