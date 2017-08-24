@@ -85,7 +85,7 @@ static int in_addr_set(sa_family_t family,
 {
 	int rc = 0;
 
-	_sockaddr->family = family;
+	_sockaddr->sa_family = family;
 
 	if (ip_addr) {
 		if (family == AF_INET6) {

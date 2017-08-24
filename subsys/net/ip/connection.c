@@ -362,7 +362,7 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	NET_DBG("[%zu] connection handler %p removed",
 		(conn - conns) / sizeof(*conn), conn);
 
-	conn->flags = 0;
+	memset(conn, 0, sizeof(*conn));
 
 	return 0;
 }
@@ -396,7 +396,7 @@ void prepare_register_debug_print(char *dst, int dst_len,
 				  const struct sockaddr *remote_addr,
 				  const struct sockaddr *local_addr)
 {
-	if (remote_addr && remote_addr->family == AF_INET6) {
+	if (remote_addr && remote_addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		snprintk(dst, dst_len, "%s",
 			 net_sprint_ipv6_addr(&net_sin6(remote_addr)->
@@ -405,7 +405,7 @@ void prepare_register_debug_print(char *dst, int dst_len,
 		snprintk(dst, dst_len, "%s", "?");
 #endif
 
-	} else if (remote_addr && remote_addr->family == AF_INET) {
+	} else if (remote_addr && remote_addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		snprintk(dst, dst_len, "%s",
 			 net_sprint_ipv4_addr(&net_sin(remote_addr)->
@@ -418,7 +418,7 @@ void prepare_register_debug_print(char *dst, int dst_len,
 		snprintk(dst, dst_len, "%s", "-");
 	}
 
-	if (local_addr && local_addr->family == AF_INET6) {
+	if (local_addr && local_addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		snprintk(src, src_len, "%s",
 			 net_sprint_ipv6_addr(&net_sin6(local_addr)->
@@ -427,7 +427,7 @@ void prepare_register_debug_print(char *dst, int dst_len,
 		snprintk(src, src_len, "%s", "?");
 #endif
 
-	} else if (local_addr && local_addr->family == AF_INET) {
+	} else if (local_addr && local_addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		snprintk(src, src_len, "%s",
 			 net_sprint_ipv4_addr(&net_sin(local_addr)->
@@ -466,9 +466,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			}
 
 #if defined(CONFIG_NET_IPV6)
-			if (remote_addr->family == AF_INET6 &&
-			    remote_addr->family ==
-			    conns[i].remote_addr.family) {
+			if (remote_addr->sa_family == AF_INET6 &&
+			    remote_addr->sa_family ==
+			    conns[i].remote_addr.sa_family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(remote_addr)->sin6_addr,
 					    &net_sin6(&conns[i].remote_addr)->
@@ -478,9 +478,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-			if (remote_addr->family == AF_INET &&
-			    remote_addr->family ==
-			    conns[i].remote_addr.family) {
+			if (remote_addr->sa_family == AF_INET &&
+			    remote_addr->sa_family ==
+			    conns[i].remote_addr.sa_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(remote_addr)->sin_addr,
 					    &net_sin(&conns[i].remote_addr)->
@@ -504,9 +504,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			}
 
 #if defined(CONFIG_NET_IPV6)
-			if (local_addr->family == AF_INET6 &&
-			    local_addr->family ==
-			    conns[i].local_addr.family) {
+			if (local_addr->sa_family == AF_INET6 &&
+			    local_addr->sa_family ==
+			    conns[i].local_addr.sa_family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(local_addr)->sin6_addr,
 					    &net_sin6(&conns[i].local_addr)->
@@ -516,9 +516,9 @@ static int find_conn_handler(enum net_ip_protocol proto,
 			} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-			if (local_addr->family == AF_INET &&
-			    local_addr->family ==
-			    conns[i].local_addr.family) {
+			if (local_addr->sa_family == AF_INET &&
+			    local_addr->sa_family ==
+			    conns[i].local_addr.sa_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(local_addr)->sin_addr,
 					    &net_sin(&conns[i].local_addr)->
@@ -578,19 +578,11 @@ int net_conn_register(enum net_ip_protocol proto,
 		}
 
 		if (remote_addr) {
-			if (remote_addr->family != AF_INET &&
-			    remote_addr->family != AF_INET6) {
-				NET_ERR("Remote address family not set.");
-				return -EINVAL;
-			}
-
-			conns[i].flags |= NET_CONN_REMOTE_ADDR_SET;
-
-			memcpy(&conns[i].remote_addr, remote_addr,
-			       sizeof(struct sockaddr));
-
 #if defined(CONFIG_NET_IPV6)
-			if (remote_addr->family == AF_INET6) {
+			if (remote_addr->sa_family == AF_INET6) {
+				memcpy(&conns[i].remote_addr, remote_addr,
+				       sizeof(struct sockaddr_in6));
+
 				if (net_is_ipv6_addr_unspecified(
 					    &net_sin6(remote_addr)->
 							sin6_addr)) {
@@ -598,35 +590,36 @@ int net_conn_register(enum net_ip_protocol proto,
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-			if (remote_addr->family == AF_INET) {
+			if (remote_addr->sa_family == AF_INET) {
+				memcpy(&conns[i].remote_addr, remote_addr,
+				       sizeof(struct sockaddr_in));
+
 				if (!net_sin(remote_addr)->
 							sin_addr.s_addr) {
 					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
-		}
-
-		if (local_addr) {
-			if (local_addr->family != AF_INET &&
-			    local_addr->family != AF_INET6) {
-				NET_ERR("Local address family not set.");
+			{
+				NET_ERR("Remote address family not set");
 				return -EINVAL;
 			}
 
-			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
+			conns[i].flags |= NET_CONN_REMOTE_ADDR_SET;
+		}
 
-			memcpy(&conns[i].local_addr, local_addr,
-			       sizeof(struct sockaddr));
-
+		if (local_addr) {
 #if defined(CONFIG_NET_IPV6)
-			if (local_addr->family == AF_INET6) {
+			if (local_addr->sa_family == AF_INET6) {
+				memcpy(&conns[i].local_addr, local_addr,
+				       sizeof(struct sockaddr_in6));
+
 				if (net_is_ipv6_addr_unspecified(
 					    &net_sin6(local_addr)->
 							sin6_addr)) {
@@ -634,23 +627,32 @@ int net_conn_register(enum net_ip_protocol proto,
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-			if (local_addr->family == AF_INET) {
+			if (local_addr->sa_family == AF_INET) {
+				memcpy(&conns[i].local_addr, local_addr,
+				       sizeof(struct sockaddr_in));
+
 				if (!net_sin(local_addr)->sin_addr.s_addr) {
 					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
 				}
-			}
+			} else
 #endif
+			{
+				NET_ERR("Local address family not set");
+				return -EINVAL;
+			}
+
+			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
 		}
 
 		if (remote_addr && local_addr) {
-			if (remote_addr->family != local_addr->family) {
-				NET_ERR("Address families different.");
+			if (remote_addr->sa_family != local_addr->sa_family) {
+				NET_ERR("Address families different");
 				return -EINVAL;
 			}
 		}
@@ -688,7 +690,7 @@ int net_conn_register(enum net_ip_protocol proto,
 
 			NET_DBG("[%d/%d/%u/0x%02x] remote %p/%s/%u "
 				"local %p/%s/%u cb %p ud %p",
-				i, local_addr ? local_addr->family : AF_UNSPEC,
+				i, local_addr ? local_addr->sa_family : AF_UNSPEC,
 				proto, rank, remote_addr, dst, remote_port,
 				local_addr, src, local_port,
 				cb, user_data);
@@ -709,12 +711,12 @@ static bool check_addr(struct net_pkt *pkt,
 		       struct sockaddr *addr,
 		       bool is_remote)
 {
-	if (addr->family != net_pkt_family(pkt)) {
+	if (addr->sa_family != net_pkt_family(pkt)) {
 		return false;
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6 && addr->family == AF_INET6) {
+	if (net_pkt_family(pkt) == AF_INET6 && addr->sa_family == AF_INET6) {
 		struct in6_addr *addr6;
 
 		if (is_remote) {
@@ -736,7 +738,7 @@ static bool check_addr(struct net_pkt *pkt,
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET && addr->family == AF_INET) {
+	if (net_pkt_family(pkt) == AF_INET && addr->sa_family == AF_INET) {
 		struct in_addr *addr4;
 
 		if (is_remote) {

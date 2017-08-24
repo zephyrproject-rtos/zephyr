@@ -604,7 +604,7 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 	char addr_remote[ADDR_LEN + 7] = "";
 
 #if defined(CONFIG_NET_IPV6)
-	if (conn->local_addr.family == AF_INET6) {
+	if (conn->local_addr.sa_family == AF_INET6) {
 		snprintk(addr_local, sizeof(addr_local), "[%s]:%u",
 			 net_sprint_ipv6_addr(
 				 &net_sin6(&conn->local_addr)->sin6_addr),
@@ -616,7 +616,7 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
-	if (conn->local_addr.family == AF_INET) {
+	if (conn->local_addr.sa_family == AF_INET) {
 		snprintk(addr_local, sizeof(addr_local), "%s:%d",
 			 net_sprint_ipv4_addr(
 				 &net_sin(&conn->local_addr)->sin_addr),
@@ -627,11 +627,11 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 			 ntohs(net_sin(&conn->remote_addr)->sin_port));
 	} else
 #endif
-	if (conn->local_addr.family == AF_UNSPEC) {
+	if (conn->local_addr.sa_family == AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
 	} else {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
-			 conn->local_addr.family);
+			 conn->local_addr.sa_family);
 	}
 
 	printk("[%2d] %p %p\t%s\t%16s\t%16s\n",
@@ -994,6 +994,8 @@ static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 
 	return;
 }
+#elif defined(CONFIG_NET_DEBUG_APP)
+static void net_app_cb(struct net_app_ctx *ctx, void *user_data) {}
 #endif
 
 int net_shell_cmd_app(int argc, char *argv[])
@@ -1153,14 +1155,14 @@ static void print_dns_info(struct dns_resolve_context *ctx)
 	printk("DNS servers:\n");
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
-		if (ctx->servers[i].dns_server.family == AF_INET) {
+		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
 			printk("\t%s:%u\n",
 			       net_sprint_ipv4_addr(
 				       &net_sin(&ctx->servers[i].dns_server)->
 				       sin_addr),
 			       ntohs(net_sin(&ctx->servers[i].
 					     dns_server)->sin_port));
-		} else if (ctx->servers[i].dns_server.family == AF_INET6) {
+		} else if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
 			printk("\t[%s]:%u\n",
 			       net_sprint_ipv6_addr(
 				       &net_sin6(&ctx->servers[i].dns_server)->
@@ -2144,7 +2146,7 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 	net_sin6(&addr)->sin6_port = htons(port);
 	addrlen = sizeof(struct sockaddr_in6);
 	get_my_ipv6_addr(net_if_get_default(), &myaddr);
-	family = addr.family = myaddr.family = AF_INET6;
+	family = addr.sa_family = myaddr.sa_family = AF_INET6;
 #endif
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
@@ -2157,7 +2159,7 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 	get_my_ipv4_addr(net_if_get_default(), &myaddr);
 	net_sin(&addr)->sin_port = htons(port);
 	addrlen = sizeof(struct sockaddr_in);
-	family = addr.family = myaddr.family = AF_INET;
+	family = addr.sa_family = myaddr.sa_family = AF_INET;
 #endif
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
@@ -2172,12 +2174,12 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 		net_sin(&addr)->sin_port = htons(port);
 		addrlen = sizeof(struct sockaddr_in);
 		get_my_ipv4_addr(net_if_get_default(), &myaddr);
-		family = addr.family = myaddr.family = AF_INET;
+		family = addr.sa_family = myaddr.sa_family = AF_INET;
 	} else {
 		net_sin6(&addr)->sin6_port = htons(port);
 		addrlen = sizeof(struct sockaddr_in6);
 		get_my_ipv6_addr(net_if_get_default(), &myaddr);
-		family = addr.family = myaddr.family = AF_INET6;
+		family = addr.sa_family = myaddr.sa_family = AF_INET6;
 	}
 #endif
 

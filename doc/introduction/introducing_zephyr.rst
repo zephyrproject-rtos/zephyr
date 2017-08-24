@@ -8,14 +8,22 @@ resource-constrained systems: from simple embedded environmental sensors and LED
 wearables to sophisticated smart watches and IoT wireless gateways.
 
 The Zephyr kernel supports multiple architectures, including ARM Cortex-M, Intel
-x86, ARC, NIOS II and RISC V. The full list of supported boards can be found
-:ref:`here <boards>`.
+x86, ARC, NIOS II, Tensilica Xtensa and RISC V. The full list of supported
+boards can be found :ref:`here <boards>`.
 
 Licensing
 *********
 
-The Zephyr project associated with the kernel makes it available
-to users and developers under the Apache License, version 2.0.
+Zephyr uses the `Apache 2.0 license`_ (as found in the LICENSE file in the
+project's `GitHub repo`_).  There are some
+imported or reused components of the Zephyr project that use other licensing,
+as described in :ref:`Zephyr_Licensing`.
+
+.. _Apache 2.0 license:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+
+.. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
+
 
 Distinguishing Features
 ***********************

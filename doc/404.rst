@@ -1,0 +1,23 @@
+:orphan:
+
+Sorry, Page Not Found
+#####################
+
+.. image:: Zephyr-Kite-in-tree.png
+   :align: right
+   :scale: 30 %
+
+Sorry, the page you requested was not found on this site.
+
+Please check the url for misspellings.
+
+It's also possible we've removed or renamed the page you're looking for.
+
+Please try using the links at the top and left of the page, to navigate
+the major sections of our site, or use the search box.
+
+If you got this error by following a link, please let us know by sending
+us a message using this `contact us form`_, or send an email message to
+info@zephyrproject.org
+
+.. _contact us form: https://www.zephyrproject.org/about/contact

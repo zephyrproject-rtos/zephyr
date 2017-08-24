@@ -10,8 +10,8 @@ We are pleased to announce the release of Zephyr kernel version 1.9.0
 
 Major enhancements planned with this release include:
 
-* POSIX API Layer
-* BSD Socket Support
+* Pthreads compatible API
+* BSD Sockets compatible API
 * Expand Device Tree support to more architectures
 * BLE Mesh
 * Bluetooth 5.0 Support (all features except Advertising Extensions)
@@ -19,10 +19,10 @@ Major enhancements planned with this release include:
 * Revamp Testsuite, Increase Coverage
 * Zephyr SDK NG
 * Eco System: Tracing, debugging support through 3rd party tools
+* Lightweight Machine to Machine (LwM2M) support
 
 These enhancements are planned, but may move out to a future release:
 
-* LWM2M
 * Thread Protocol (initial drop)
 * MMU/MPU (Cont.): Thread Isolation, Paging
 * Build and Configuration System (CMake)
@@ -64,10 +64,12 @@ Networking
 * Network sample application configuration file unification, where most of the
   similar configuration files were merged together
 * Added Bluetooth support to HTTP(S) server sample application
-* BSD socket layer fixes and enhancements
+* BSD Socket compatible API layer, allowing to write and/or port simple
+  networking applications using a well-known, cross-platform API
 * Networking API documentation fixes
 * Network shell enhancements
 * Trickle algorithm fixes
+* Improvements to HTTP server and client libraries
 * CoAP API fixes
 * IPv6 fixes
 * RPL fixes

@@ -1,3 +1,5 @@
+:orphan:
+
 .. _zephyr_release_notes:
 
 Release Notes

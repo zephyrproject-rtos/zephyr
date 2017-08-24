@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <watchdog.h>
-#include <device.h>
-
+/* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <rom/ets_sys.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
+
+#include <string.h>
+#include <watchdog.h>
+#include <device.h>
 
 struct wdt_esp32_data {
 	struct wdt_config config;

@@ -22,11 +22,22 @@ Zephyr Project Documentation
 
    `Zephyr 1.5.0`_ | `Zephyr 1.6.0`_ | `Zephyr 1.7.0`_ | `Zephyr 1.8.0`_
 
-Source code for the Zephyr Project is maintained in the
-`Zephyr Project GitHub repository`_.
+For more information about previous releases, please consult the published
+:ref:`zephyr_release_notes`.
 
-.. _Zephyr Project GitHub repository:
-   https://github.com/zephyrproject-rtos/zephyr
+The Zephyr OS is provided under the `Apache 2.0 license`_ (as found in
+the LICENSE file in the project's `GitHub repo`_).  The Zephyr OS also
+imports or reuses packages, scripts, and other files that use other
+licensing, as described in :ref:`Zephyr_Licensing`.
+
+Source code for the Zephyr Project is maintained in the Zephyr Project's
+`GitHub repo`_.
+
+.. _Apache 2.0 license:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+
+.. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
+
 
 Sections
 ********
@@ -36,29 +47,20 @@ Sections
 
    introduction/introducing_zephyr.rst
    getting_started/getting_started.rst
-   boards/boards.rst
-   kernel/kernel.rst
-   application/application.rst
-   porting/porting.rst
-   drivers/drivers.rst
-   dts/device_tree.rst
-   subsystems/subsystems.rst
-   api/api.rst
-   samples/samples.rst
-   reference/kconfig/index.rst
-   security/security.rst
    contribute/contribute.rst
-   release-notes.rst
-   LICENSING.rst
-   glossary.rst
-
+   kernel/kernel.rst
+   security/security.rst
+   application/index.rst
+   boards/boards.rst
+   devices/index.rst
+   subsystems/subsystems.rst
 
 Indices and Tables
 ******************
 
-* :ref:`genindex`
+* :ref:`glossary`
 
-* :ref:`search`
+* :ref:`genindex`
 
 .. _Zephyr 1.8.0: https://www.zephyrproject.org/doc/1.8.0/
 .. _Zephyr 1.7.0: https://www.zephyrproject.org/doc/1.7.0/

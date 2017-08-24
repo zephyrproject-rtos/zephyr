@@ -1329,14 +1329,24 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		       access_addr[0], &conn->access_addr[0], 4);
 		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.crc_init[0],
 		       &conn->crc_init[0], 3);
-		pdu_adv_tx->payload.connect_ind.lldata. win_size = 1;
+		pdu_adv_tx->payload.connect_ind.lldata.win_size = 1;
 
 		conn_interval_us =
 			(u32_t)_radio.scanner.conn_interval * 1250;
 
 		conn_offset_us = radio_tmr_end_get() + 502 + 1250;
-		conn_offset_us -= radio_tx_chain_delay_get(0, 0);
-		conn_offset_us -= radio_tx_ready_delay_get(0, 0);
+
+		/* The ticker module generates the timeout callbacks with a
+		 * +/- half the 32KHz clock resolution. In order to achieve
+		 * a microsecond resolution, in the case of negative remainder,
+		 * the radio packet timer is started one 32KHz tick early,
+		 * hence substract one tick unit from the measurement of the
+		 * packet end.
+		 */
+		if (!_radio.remainder_anchor ||
+		    (_radio.remainder_anchor & BIT(31))) {
+			conn_offset_us -= TICKER_TICKS_TO_US(1);
+		}
 
 		if (_radio.scanner.win_offset_us == 0) {
 			conn_space_us = conn_offset_us;
@@ -1349,14 +1359,17 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			}
 			pdu_adv_tx->payload.connect_ind.lldata.win_offset =
 				(conn_space_us - conn_offset_us) / 1250;
+			pdu_adv_tx->payload.connect_ind.lldata.win_size++;
 		}
 
+		conn_space_us -= radio_tx_ready_delay_get(0, 0);
+		conn_space_us -= radio_tx_chain_delay_get(0, 0);
+
 		/* Workaround: Due to the missing remainder param in
-		 * ticker_start function for first interval; add half a
-		 * tick in microseconds so as to restrict the offset
-		 * within the +/- 16us jitter for the offset.
+		 * ticker_start function for first interval; add a
+		 * tick so as to use the ceiled value.
 		 */
-		conn_space_us += (30517578125UL/1000000000UL) >> 1;
+		conn_space_us += TICKER_TICKS_TO_US(1);
 
 		pdu_adv_tx->payload.connect_ind.lldata.interval =
 			_radio.scanner.conn_interval;
@@ -2228,6 +2241,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
 		case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+		case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 			unknown_rsp_send(_radio.conn_curr,
 					 pdu_data_rx->payload.llctrl.opcode);
 			return 0;
@@ -2795,6 +2809,37 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
+		if (!_radio.conn_curr->role) {
+			struct pdu_data_llctrl_min_used_chans_ind *p =
+				&pdu_data_rx->payload.llctrl.ctrldata.min_used_chans_ind;
+			struct connection *conn = _radio.conn_curr;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+			if (!(p->phys & (conn->phy_tx | conn->phy_rx))) {
+#else /* !CONFIG_BT_CTLR_PHY */
+			if (!(p->phys & 0x01)) {
+#endif /* !CONFIG_BT_CTLR_PHY */
+				break;
+			}
+
+			if (conn->llcp_req != conn->llcp_ack) {
+				break;
+			}
+
+			memcpy(&conn->llcp.chan_map.chm[0],
+			       &_radio.data_chan_map[0],
+			       sizeof(conn->llcp.chan_map.chm));
+			/* conn->llcp.chan_map.instant     = 0; */
+			conn->llcp.chan_map.initiate = 1;
+
+			conn->llcp_type = LLCP_CHAN_MAP;
+			conn->llcp_ack--;
+		}
+		break;
+#endif /* CONFIG_BT_MIN_USED_CHAN */
 
 	default:
 		unknown_rsp_send(_radio.conn_curr,
@@ -6146,11 +6191,10 @@ static inline u32_t event_conn_update_prep(struct connection *conn,
 				TICKER_US_TO_TICKS(conn->llcp.connection_update.win_offset_us);
 
 			/* Workaround: Due to the missing remainder param in
-			 * ticker_start function for first interval; add half a
-			 * tick in microseconds so as to restrict the offset
-			 * within the +/- 16us jitter for the offset.
+			 * ticker_start function for first interval; add a
+			 * tick so as to use the ceiled value.
 			 */
-			ticks_win_offset += (30517578125UL/1000000000UL) >> 1;
+			ticks_win_offset += TICKER_TICKS_TO_US(1);
 		}
 		conn->conn_interval = conn->llcp.connection_update.interval;
 		conn->latency = conn->llcp.connection_update.latency;

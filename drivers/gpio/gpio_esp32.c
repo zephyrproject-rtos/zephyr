@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <rom/ets_sys.h>
 #include <soc/dport_reg.h>
 #include <soc/gpio_reg.h>
 #include <soc/soc.h>
+
 #include <errno.h>
 #include <device.h>
 #include <gpio.h>
@@ -50,23 +52,23 @@ static int convert_int_type(int flags)
 	}
 
 	if ((flags & GPIO_INT_EDGE) == GPIO_INT_EDGE) {
-		if ((flags & GPIO_INT_ACTIVE_LOW) == GPIO_INT_ACTIVE_LOW) {
-			return 2;
+		if ((flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_HIGH) {
+			return 1;
 		}
 
 		if ((flags & GPIO_INT_DOUBLE_EDGE) == GPIO_INT_DOUBLE_EDGE) {
 			return 3;
 		}
 
-		return 1;	/* Defaults to rising edge. */
+		return 2;	/* Defaults to falling edge. */
 	}
 
 	if ((flags & GPIO_INT_LEVEL) == GPIO_INT_LEVEL) {
-		if ((flags & GPIO_INT_ACTIVE_LOW) == GPIO_INT_ACTIVE_LOW) {
-			return 4;
+		if ((flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_HIGH) {
+			return 5;
 		}
 
-		return 5;	/* Defaults to high level. */
+		return 4;	/* Defaults to low level. */
 	}
 
 	/* Any other type of interrupt triggering is invalid. */
@@ -276,6 +278,7 @@ static const struct gpio_driver_api gpio_esp32_driver = {
 	.disable_callback = gpio_esp32_disable_callback,
 };
 
+#if defined(CONFIG_GPIO_ESP32_0)
 static struct gpio_esp32_data gpio_data_pins_0_to_31 = {
 	.port = {
 		.write = {
@@ -292,6 +295,9 @@ static struct gpio_esp32_data gpio_data_pins_0_to_31 = {
 		.pin_offset = 0,
 	}
 };
+#endif
+
+#if defined(CONFIG_GPIO_ESP32_1)
 static struct gpio_esp32_data gpio_data_pins_32_to_63 = {
 	.port = {
 		.write = {
@@ -308,6 +314,7 @@ static struct gpio_esp32_data gpio_data_pins_32_to_63 = {
 		.pin_offset = 32,
 	}
 };
+#endif
 
 #define GPIO_DEVICE_INIT(__name, __data_struct_name) \
 	DEVICE_AND_API_INIT(gpio_esp32_ ## __data_struct_name, \

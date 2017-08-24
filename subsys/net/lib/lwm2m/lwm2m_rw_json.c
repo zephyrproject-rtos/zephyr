@@ -605,8 +605,20 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 
 			obj_field = lwm2m_get_engine_obj_field(obj,
 							       path->res_id);
+			/*
+			 * if obj_field is not found,
+			 * treat as an optional resource
+			 */
 			if (!obj_field) {
-				return -EINVAL;
+				/*
+				 * TODO: support BOOTSTRAP WRITE where optional
+				 * resources are ignored
+				 */
+				if (context->operation != LWM2M_OP_CREATE) {
+					return -ENOENT;
+				}
+
+				goto skip_optional;
 			}
 
 			if ((obj_field->permissions & LWM2M_PERM_W) !=
@@ -633,6 +645,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 
 			lwm2m_write_handler(obj_inst, res, obj_field, context);
 
+skip_optional:
 			mode = MODE_NONE;
 			in->inbuf = inbuf;
 			in->inpos = inpos;

@@ -77,7 +77,7 @@ static int network_setup(void);
 
 static u8_t tls_request_buf[TLS_REQUEST_BUF_SIZE];
 
-NET_STACK_DEFINE("mqtt_tls_stack", tls_stack,
+NET_STACK_DEFINE(mqtt_tls_stack, tls_stack,
 		CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
 
 NET_APP_TLS_POOL_DEFINE(tls_mem_pool, 30);

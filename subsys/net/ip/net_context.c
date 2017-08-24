@@ -162,7 +162,7 @@ static int tcp_backlog_find(struct net_pkt *pkt, int *empty_slot)
 			continue;
 		}
 
-		if (net_pkt_family(pkt) != tcp_backlog[i].remote.family) {
+		if (net_pkt_family(pkt) != tcp_backlog[i].remote.sa_family) {
 			continue;
 		}
 
@@ -370,7 +370,7 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 			continue;
 		}
 
-		if (local_addr->family == AF_INET6) {
+		if (local_addr->sa_family == AF_INET6) {
 			if (net_ipv6_addr_cmp(
 				    net_sin6_ptr(&contexts[i].local)->
 							     sin6_addr,
@@ -776,7 +776,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	if (addr->family == AF_INET6) {
+	if (addr->sa_family == AF_INET6) {
 		struct net_if *iface = NULL;
 		struct in6_addr *ptr;
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
@@ -862,7 +862,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	if (addr->family == AF_INET) {
+	if (addr->sa_family == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
 		struct net_if_addr *ifaddr;
 		struct net_if *iface;
@@ -1428,11 +1428,11 @@ int net_context_connect(struct net_context *context,
 		return ret;
 	}
 
-	if (addr->family != net_context_get_family(context)) {
-		NET_ASSERT_INFO(addr->family == \
+	if (addr->sa_family != net_context_get_family(context)) {
+		NET_ASSERT_INFO(addr->sa_family == \
 				net_context_get_family(context),
 				"Family mismatch %d should be %d",
-				addr->family,
+				addr->sa_family,
 				net_context_get_family(context));
 		return -EINVAL;
 	}
@@ -1938,7 +1938,7 @@ int net_context_accept(struct net_context *context,
 		}
 	}
 
-	local_addr.family = net_context_get_family(context);
+	local_addr.sa_family = net_context_get_family(context);
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_context_get_family(context) == AF_INET6) {
@@ -2335,7 +2335,7 @@ static int recv_udp(struct net_context *context,
 		    void *user_data)
 {
 	struct sockaddr local_addr = {
-		.family = net_context_get_family(context),
+		.sa_family = net_context_get_family(context),
 	};
 	struct sockaddr *laddr = NULL;
 	u16_t lport = 0;

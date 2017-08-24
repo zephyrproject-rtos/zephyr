@@ -423,6 +423,8 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 	memset(&rp->commands[0], 0, sizeof(rp->commands));
 
+	/* Read Remote Version Info. */
+	rp->commands[2] |= BIT(7);
 	/* Set Event Mask, and Reset. */
 	rp->commands[5] |= BIT(6) | BIT(7);
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -1200,7 +1202,7 @@ static void le_read_peer_rpa(struct net_buf *buf, struct net_buf **evt)
 	bt_addr_le_copy(&peer_id_addr, &cmd->peer_id_addr);
 	rp = cmd_complete(evt, sizeof(*rp));
 
-	rp->status = ll_rl_prpa_get(&peer_id_addr, &rp->peer_rpa);
+	rp->status = ll_rl_crpa_get(&peer_id_addr, &rp->peer_rpa);
 }
 
 static void le_read_local_rpa(struct net_buf *buf, struct net_buf **evt)
@@ -1684,6 +1686,16 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 	s8_t *prssi;
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		   offsetof(struct pdu_adv, payload) + adv->len + 1];
+	/* Update current RPA */
+	if (adv->tx_addr) {
+		ll_rl_crpa_set(0x00, NULL, rl_idx,
+			       &adv->payload.adv_ind.addr[0]);
+	}
+#endif
+
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT)) {
 		return;
 	}
@@ -1733,8 +1745,6 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 		dir_info->evt_type = c_adv_type[PDU_ADV_TYPE_DIRECT_IND];
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-			   offsetof(struct pdu_adv, payload) + adv->len + 1];
 		if (rl_idx < ll_rl_size_get()) {
 			/* Store identity address */
 			ll_rl_id_addr_get(rl_idx, &dir_info->addr.type,
@@ -1915,6 +1925,13 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 	struct bt_hci_evt_le_conn_complete *lecc;
 	struct radio_le_conn_cmplt *radio_cc;
 
+	radio_cc = (struct radio_le_conn_cmplt *) (pdu_data->payload.lldata);
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* Update current RPA */
+	ll_rl_crpa_set(radio_cc->peer_addr_type, &radio_cc->peer_addr[0],
+		       0xff, &radio_cc->peer_rpa[0]);
+#endif
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    (!(le_event_mask & BT_EVT_MASK_LE_CONN_COMPLETE) &&
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1924,8 +1941,6 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 		return;
 	}
-
-	radio_cc = (struct radio_le_conn_cmplt *) (pdu_data->payload.lldata);
 
 	if (!radio_cc->status) {
 		conn_count++;

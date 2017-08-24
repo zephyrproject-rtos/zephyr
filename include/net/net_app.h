@@ -433,8 +433,8 @@ struct net_app_ctx {
 
 	/** Running status of the server. If true, then the server is enabled.
 	 * If false then it is disabled and will not serve clients.
-	 * The server is disabled by default after initialization and will need
-	 * to be enabled manually.
+	 * The server is disabled by default after initialization and needs to
+	 * be manually enabled in order to serve any requests.
 	 */
 	u8_t is_enabled : 1;
 
@@ -581,6 +581,26 @@ static inline int net_app_init_udp_server(struct net_app_ctx *ctx,
  * @return 0 if ok, <0 if error.
  */
 int net_app_listen(struct net_app_ctx *ctx);
+
+/**
+ * @brief Enable server to serve connections.
+ *
+ * @details By default the server status is disabled.
+ *
+ * @param ctx Network application context.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+bool net_app_server_enable(struct net_app_ctx *ctx);
+
+/**
+ * @brief Disable server so that it will not serve any clients.
+ *
+ * @param ctx Network application context.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+bool net_app_server_disable(struct net_app_ctx *ctx);
 
 #endif /* CONFIG_NET_APP_SERVER */
 
@@ -861,7 +881,6 @@ int net_app_close(struct net_app_ctx *ctx);
  */
 int net_app_release(struct net_app_ctx *ctx);
 
-
 #if defined(CONFIG_NET_APP_TLS)
 #if defined(CONFIG_NET_APP_CLIENT)
 /**
@@ -938,8 +957,6 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 		       k_thread_stack_t stack,
 		       size_t stack_len);
 
-bool net_app_server_tls_enable(struct net_app_ctx *ctx);
-bool net_app_server_tls_disable(struct net_app_ctx *ctx);
 #endif /* CONFIG_NET_APP_SERVER */
 
 #endif /* CONFIG_NET_APP_TLS */

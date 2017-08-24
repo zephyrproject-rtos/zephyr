@@ -135,13 +135,19 @@ struct sockaddr_in_ptr {
 #endif
 
 struct sockaddr {
-	sa_family_t family;
+	sa_family_t sa_family;
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 struct sockaddr_ptr {
 	sa_family_t family;
 	char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
+};
+
+/* Same as sockaddr in our case */
+struct sockaddr_storage {
+	sa_family_t ss_family;
+	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 struct net_addr {
@@ -482,7 +488,7 @@ static inline bool net_is_my_ipv4_addr(const struct in_addr *addr)
 static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 				     const struct in_addr *addr2)
 {
-	return addr1->s_addr == addr2->s_addr;
+	return UNALIGNED_GET(&addr1->s_addr) == UNALIGNED_GET(&addr2->s_addr);
 }
 
 /**
