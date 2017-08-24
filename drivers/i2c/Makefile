@@ -10,3 +10,4 @@ obj-$(CONFIG_I2C_SBCON) += i2c_sbcon.o
 obj-$(CONFIG_I2C_STM32_V1) += i2c_ll_stm32_v1.o i2c_ll_stm32.o
 obj-$(CONFIG_I2C_STM32_V2) += i2c_ll_stm32_v2.o i2c_ll_stm32.o
 obj-$(CONFIG_TWIHS_SAM) += twihs_sam.o
+obj-$(CONFIG_I2C_ESP32) += i2c_esp32.o
