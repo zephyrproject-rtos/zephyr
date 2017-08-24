@@ -40,7 +40,7 @@ static void
 firmware_udp_receive(struct net_context *ctx, struct net_pkt *pkt, int status,
 		     void *user_data)
 {
-	lwm2m_udp_receive(&firmware_ctx, ctx, pkt, true, NULL);
+	lwm2m_udp_receive(&firmware_ctx, pkt, true, NULL);
 }
 
 static void retransmit_request(struct k_work *work)

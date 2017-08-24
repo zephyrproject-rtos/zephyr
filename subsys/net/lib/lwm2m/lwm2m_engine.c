@@ -2236,8 +2236,7 @@ int lwm2m_udp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr)
 				  NULL, K_NO_WAIT, NULL, NULL);
 }
 
-void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
-		       struct net_context *net_ctx, struct net_pkt *pkt,
+void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
 		       int (*udp_request_handler)(struct zoap_packet *,
 						  struct zoap_packet *,
@@ -2313,7 +2312,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		if (udp_request_handler &&
 		    zoap_header_get_type(&response) == ZOAP_TYPE_CON) {
 			/* Create a response packet if we reach this point */
-			r = lwm2m_init_message(net_ctx, &response2, &pkt2,
+			r = lwm2m_init_message(client_ctx->net_ctx,
+					       &response2, &pkt2,
 					       ZOAP_TYPE_ACK,
 					       zoap_header_get_code(&response),
 					       zoap_header_get_id(&response),
@@ -2375,7 +2375,7 @@ static void udp_receive(struct net_context *net_ctx, struct net_pkt *pkt,
 						    struct lwm2m_ctx,
 						    net_ctx);
 
-	lwm2m_udp_receive(client_ctx, net_ctx, pkt, false, handle_request);
+	lwm2m_udp_receive(client_ctx, pkt, false, handle_request);
 }
 
 static void retransmit_request(struct k_work *work)
