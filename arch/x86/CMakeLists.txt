@@ -1,3 +1,5 @@
+target_cc_option(zephyr PUBLIC -ffunction-sections)
+target_cc_option(zephyr PUBLIC -fdata-sections)
 
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr COMPILE_OPTIONS)
