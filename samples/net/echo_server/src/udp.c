@@ -204,13 +204,10 @@ void start_udp(void)
 				 K_THREAD_STACK_SIZEOF(net_app_dtls_stack));
 	if (ret < 0) {
 		NET_ERR("Cannot init DTLS");
-	} else {
-		ret = net_app_server_tls_enable(&udp);
-		if (!ret) {
-			NET_ERR("Cannot enable DTLS support");
-		}
 	}
 #endif
+
+	net_app_server_enable(&udp);
 
 	ret = net_app_listen(&udp);
 	if (ret < 0) {

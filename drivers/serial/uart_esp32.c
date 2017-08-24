@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* include rom/uart.h (from the esp-dif package) before Z's uart.h so
- * that the definition of BIT is not overriden */
+/* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <rom/uart.h>
-#include <uart.h>
 #include <rom/ets_sys.h>
+
+#include <uart.h>
 #include <errno.h>
 
 static unsigned char esp32_uart_tx(struct device *dev,
@@ -18,7 +18,7 @@ static unsigned char esp32_uart_tx(struct device *dev,
 
 	uart_tx_one_char(c);
 
-	return 0;
+	return c;
 }
 
 static int esp32_uart_rx(struct device *dev, unsigned char *p_char)

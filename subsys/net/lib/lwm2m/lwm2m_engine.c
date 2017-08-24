@@ -118,19 +118,19 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 	static char buf[NET_IPV6_ADDR_LEN];
 
 #if defined(CONFIG_NET_IPV6)
-	if (addr->family == AF_INET6) {
+	if (addr->sa_family == AF_INET6) {
 		return net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr,
 				     buf, sizeof(buf));
 	}
 #endif
 #if defined(CONFIG_NET_IPV4)
-	if (addr->family == AF_INET) {
+	if (addr->sa_family == AF_INET) {
 		return net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr,
 				     buf, sizeof(buf));
 	}
 #endif
 
-	SYS_LOG_ERR("Unknown IP address family:%d", addr->family);
+	SYS_LOG_ERR("Unknown IP address family:%d", addr->sa_family);
 	return NULL;
 }
 
@@ -390,7 +390,11 @@ int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
 	if (!*obj_inst) {
 		SYS_LOG_ERR("unable to create obj %u instance %u",
 			    obj_id, obj_inst_id);
-		return -EINVAL;
+		/*
+		 * Already checked for instance count total.
+		 * This can only be an error if the object instance exists.
+		 */
+		return -EEXIST;
 	}
 
 	obj->instance_count++;
@@ -2043,7 +2047,7 @@ static int handle_request(struct zoap_packet *request,
 	case ZOAP_METHOD_POST:
 		if (path.level < 2) {
 			/* write/create a object instance */
-			context.operation = LWM2M_OP_WRITE;
+			context.operation = LWM2M_OP_CREATE;
 		} else {
 			context.operation = LWM2M_OP_EXECUTE;
 		}
@@ -2123,6 +2127,7 @@ static int handle_request(struct zoap_packet *request,
 		break;
 
 	case LWM2M_OP_WRITE:
+	case LWM2M_OP_CREATE:
 		r = do_write_op(obj, &context, format);
 		break;
 
@@ -2160,6 +2165,10 @@ static int handle_request(struct zoap_packet *request,
 		} else if (r == -EPERM) {
 			zoap_header_set_code(out.out_zpkt,
 					     ZOAP_RESPONSE_CODE_NOT_ALLOWED);
+			r = 0;
+		} else if (r == -EEXIST) {
+			zoap_header_set_code(out.out_zpkt,
+					     ZOAP_RESPONSE_CODE_BAD_REQUEST);
 			r = 0;
 		} else {
 			/* Failed to handle the request */

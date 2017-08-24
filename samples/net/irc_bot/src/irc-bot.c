@@ -492,7 +492,7 @@ static void resolve_cb(enum dns_resolve_status status,
 				&net_sin6(&info->ai_addr)->sin6_addr);
 		net_sin6(&irc->remote_addr)->sin6_port = htons(DEFAULT_PORT);
 		net_sin6(&irc->remote_addr)->sin6_family = AF_INET6;
-		irc->remote_addr.family = AF_INET6;
+		irc->remote_addr.sa_family = AF_INET6;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
@@ -501,7 +501,7 @@ static void resolve_cb(enum dns_resolve_status status,
 				&net_sin(&info->ai_addr)->sin_addr);
 		net_sin(&irc->remote_addr)->sin_port = htons(DEFAULT_PORT);
 		net_sin(&irc->remote_addr)->sin_family = AF_INET;
-		irc->remote_addr.family = AF_INET;
+		irc->remote_addr.sa_family = AF_INET;
 	} else
 #endif
 	{
@@ -906,7 +906,7 @@ static void setup_dhcpv4(struct zirc *irc, struct net_if *iface)
 
 	net_ipaddr_copy(&net_sin(&irc->local_addr)->sin_addr,
 			&iface->dhcpv4.requested_ip);
-	irc->local_addr.family = AF_INET;
+	irc->local_addr.sa_family = AF_INET;
 	net_sin(&irc->local_addr)->sin_family = AF_INET;
 	net_sin(&irc->local_addr)->sin_port = 0;
 

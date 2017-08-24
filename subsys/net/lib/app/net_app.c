@@ -88,21 +88,21 @@ int net_app_set_net_pkt_pool(struct net_app_ctx *ctx,
 char *_net_app_sprint_ipaddr(char *buf, int buflen,
 			     const struct sockaddr *addr)
 {
-	if (addr->family == AF_INET6) {
+	if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		char ipaddr[NET_IPV6_ADDR_LEN];
 
-		net_addr_ntop(addr->family,
+		net_addr_ntop(addr->sa_family,
 			      &net_sin6(addr)->sin6_addr,
 			      ipaddr, sizeof(ipaddr));
 		snprintk(buf, buflen, "[%s]:%u", ipaddr,
 			 ntohs(net_sin6(addr)->sin6_port));
 #endif
-	} else if (addr->family == AF_INET) {
+	} else if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		char ipaddr[NET_IPV4_ADDR_LEN];
 
-		net_addr_ntop(addr->family,
+		net_addr_ntop(addr->sa_family,
 			      &net_sin(addr)->sin_addr,
 			      ipaddr, sizeof(ipaddr));
 		snprintk(buf, buflen, "%s:%u", ipaddr,
@@ -188,6 +188,10 @@ int _net_app_set_net_ctx(struct net_app_ctx *ctx,
 {
 	int ret;
 
+	if (!net_ctx || !net_context_is_used(net_ctx)) {
+		return -ENOENT;
+	}
+
 	ret = net_context_bind(net_ctx, addr, socklen);
 	if (ret < 0) {
 		NET_ERR("Cannot bind context (%d)", ret);
@@ -231,14 +235,14 @@ int _net_app_set_local_addr(struct sockaddr *addr, const char *myaddr,
 	if (myaddr) {
 		void *inaddr;
 
-		if (addr->family == AF_INET) {
+		if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 			inaddr = &net_sin(addr)->sin_addr;
 			net_sin(addr)->sin_port = htons(port);
 #else
 			return -EPFNOSUPPORT;
 #endif
-		} else if (addr->family == AF_INET6) {
+		} else if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 			inaddr = &net_sin6(addr)->sin6_addr;
 			net_sin6(addr)->sin6_port = htons(port);
@@ -249,13 +253,13 @@ int _net_app_set_local_addr(struct sockaddr *addr, const char *myaddr,
 			return -EAFNOSUPPORT;
 		}
 
-		return net_addr_pton(addr->family, myaddr, inaddr);
+		return net_addr_pton(addr->sa_family, myaddr, inaddr);
 	}
 
 	/* If the caller did not supply the address where to bind, then
 	 * try to figure it out ourselves.
 	 */
-	if (addr->family == AF_INET6) {
+	if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 		net_ipaddr_copy(&net_sin6(addr)->sin6_addr,
 				net_if_ipv6_select_src_addr(NULL,
@@ -264,7 +268,7 @@ int _net_app_set_local_addr(struct sockaddr *addr, const char *myaddr,
 #else
 		return -EPFNOSUPPORT;
 #endif
-	} else if (addr->family == AF_INET) {
+	} else if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 		struct net_if *iface = net_if_get_default();
 
@@ -346,8 +350,8 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 
 	if (!addr) {
 #if defined(CONFIG_NET_IPV6)
-		if (ctx->ipv6.local.family == AF_INET6 ||
-		    ctx->ipv6.local.family == AF_UNSPEC) {
+		if (ctx->ipv6.local.sa_family == AF_INET6 ||
+		    ctx->ipv6.local.sa_family == AF_UNSPEC) {
 			ret = setup_ipv6_ctx(ctx, sock_type, proto);
 		} else {
 			ret = -EPFNOSUPPORT;
@@ -356,8 +360,8 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-		if (ctx->ipv4.local.family == AF_INET ||
-		    ctx->ipv4.local.family == AF_UNSPEC) {
+		if (ctx->ipv4.local.sa_family == AF_INET ||
+		    ctx->ipv4.local.sa_family == AF_UNSPEC) {
 			ret = setup_ipv4_ctx(ctx, sock_type, proto);
 		} else {
 			ret = -EPFNOSUPPORT;
@@ -367,7 +371,7 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 
 		select_default_ctx(ctx);
 	} else {
-		if (addr->family == AF_INET6) {
+		if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 			ret = setup_ipv6_ctx(ctx, sock_type, proto);
 			ctx->default_ctx = &ctx->ipv6;
@@ -375,7 +379,7 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			ret = -EPFNOSUPPORT;
 			goto fail;
 #endif
-		} else if (addr->family == AF_INET) {
+		} else if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 			ret = setup_ipv4_ctx(ctx, sock_type, proto);
 			ctx->default_ctx = &ctx->ipv4;
@@ -383,7 +387,7 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			ret = -EPFNOSUPPORT;
 			goto fail;
 #endif
-		} else if (addr->family == AF_UNSPEC) {
+		} else if (addr->sa_family == AF_UNSPEC) {
 #if defined(CONFIG_NET_IPV4)
 			ret = setup_ipv4_ctx(ctx, sock_type, proto);
 			ctx->default_ctx = &ctx->ipv4;
@@ -473,7 +477,7 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 			return ctx->default_ctx->ctx;
 		} else {
 		common_checks:
-			if (dst->family == AF_INET) {
+			if (dst->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 				return ctx->ipv4.ctx;
 #else
@@ -481,7 +485,7 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 #endif
 			}
 
-			if (dst->family == AF_INET6) {
+			if (dst->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 				return ctx->ipv6.ctx;
 #else
@@ -489,7 +493,7 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 #endif
 			}
 
-			if (dst->family == AF_UNSPEC) {
+			if (dst->sa_family == AF_UNSPEC) {
 				return ctx->default_ctx->ctx;
 			}
 		}
@@ -532,7 +536,7 @@ struct net_context *select_server_ctx(struct net_app_ctx *ctx,
 #endif
 			}
 
-			if (dst->family == AF_INET) {
+			if (dst->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 				return ctx->ipv4.ctx;
 #else
@@ -540,7 +544,7 @@ struct net_context *select_server_ctx(struct net_app_ctx *ctx,
 #endif
 			}
 
-			if (dst->family == AF_INET6) {
+			if (dst->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
 				return ctx->ipv6.ctx;
 #else
@@ -548,7 +552,7 @@ struct net_context *select_server_ctx(struct net_app_ctx *ctx,
 #endif
 			}
 
-			if (dst->family == AF_UNSPEC) {
+			if (dst->sa_family == AF_UNSPEC) {
 				return ctx->default_ctx->ctx;
 			}
 		}
@@ -778,7 +782,7 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 		return NULL;
 	}
 
-	dst.family = family;
+	dst.sa_family = family;
 
 	net_ctx = _net_app_select_net_ctx(ctx, &dst);
 	if (!net_ctx) {

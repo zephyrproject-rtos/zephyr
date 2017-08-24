@@ -1103,7 +1103,7 @@ int dhcpv4_init(void)
 
 	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
 			net_ipv4_unspecified_address());
-	local_addr.family = AF_INET;
+	local_addr.sa_family = AF_INET;
 
 	/* Register UDP input callback on
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for

@@ -3,7 +3,6 @@
 Application Development Primer
 ##############################
 
-
 Overview
 ********
 The Zephyr Kernel's build system is based on the Kbuild system used in the

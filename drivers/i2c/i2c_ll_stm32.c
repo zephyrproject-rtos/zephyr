@@ -93,6 +93,12 @@ static int i2c_stm32_init(struct device *dev)
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	u32_t bitrate_cfg;
 	int ret;
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+	struct i2c_stm32_data *data = DEV_DATA(dev);
+
+	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
+	cfg->irq_config_func(dev);
+#endif
 
 	__ASSERT_NO_MSG(clock);
 	clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
@@ -104,10 +110,7 @@ static int i2c_stm32_init(struct device *dev)
 		SYS_LOG_ERR("i2c: failure initializing");
 		return ret;
 	}
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
-	cfg->irq_config_func(dev);
-#endif
+
 	return 0;
 }
 

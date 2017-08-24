@@ -412,7 +412,7 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 
 	obj_field = lwm2m_get_engine_obj_field(obj, path->res_id);
 	if (!obj_field) {
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	if ((obj_field->permissions & LWM2M_PERM_W) != LWM2M_PERM_W) {

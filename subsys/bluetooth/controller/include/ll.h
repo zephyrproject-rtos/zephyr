@@ -46,7 +46,8 @@ u32_t ll_rl_clear(void);
 u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 		const u8_t lirk[16]);
 u32_t ll_rl_remove(bt_addr_le_t *id_addr);
-u32_t ll_rl_prpa_get(bt_addr_le_t *id_addr, bt_addr_t *prpa);
+void ll_rl_crpa_set(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx, u8_t *crpa);
+u32_t ll_rl_crpa_get(bt_addr_le_t *id_addr, bt_addr_t *crpa);
 u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa);
 u32_t ll_rl_enable(u8_t enable);
 void  ll_rl_timeout_set(u16_t timeout);
