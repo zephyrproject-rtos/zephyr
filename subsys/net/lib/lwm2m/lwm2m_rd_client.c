@@ -115,13 +115,6 @@ static K_THREAD_STACK_DEFINE(lwm2m_rd_client_thread_stack,
 			     CONFIG_LWM2M_RD_CLIENT_STACK_SIZE);
 struct k_thread lwm2m_rd_client_thread_data;
 
-/* HACK: remove when engine transactions are ready */
-#define NUM_PENDINGS	CONFIG_LWM2M_ENGINE_MAX_PENDING
-#define NUM_REPLIES	CONFIG_LWM2M_ENGINE_MAX_REPLIES
-
-extern struct zoap_pending pendings[NUM_PENDINGS];
-extern struct zoap_reply replies[NUM_REPLIES];
-
 /* buffers */
 static char query_buffer[64]; /* allocate some data for queries and updates */
 static u8_t client_data[256]; /* allocate some data for the RD */
@@ -416,15 +409,16 @@ static int sm_do_bootstrap(int index)
 		zoap_add_option(&request, ZOAP_OPTION_URI_QUERY,
 				query_buffer, strlen(query_buffer));
 
-		pending = lwm2m_init_message_pending(&request,
-						     &clients[index].bs_server,
-						     pendings, NUM_PENDINGS);
+		pending = lwm2m_init_message_pending(clients[index].ctx,
+						     &request,
+						     &clients[index].bs_server);
 		if (!pending) {
 			ret = -ENOMEM;
 			goto cleanup;
 		}
 
-		reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+		reply = zoap_reply_next_unused(clients[index].ctx->replies,
+					       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 		if (!reply) {
 			SYS_LOG_ERR("No resources for waiting for replies.");
 			ret = -ENOMEM;
@@ -569,15 +563,15 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 		}
 	}
 
-	pending = lwm2m_init_message_pending(&request,
-					     &clients[index].reg_server,
-					     pendings, NUM_PENDINGS);
+	pending = lwm2m_init_message_pending(clients[index].ctx, &request,
+					     &clients[index].reg_server);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
 	}
 
-	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+	reply = zoap_reply_next_unused(clients[index].ctx->replies,
+				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (!reply) {
 		SYS_LOG_ERR("No resources for waiting for replies.");
 		ret = -ENOMEM;
@@ -670,15 +664,15 @@ static int sm_do_deregister(int index)
 			clients[index].server_ep,
 			strlen(clients[index].server_ep));
 
-	pending = lwm2m_init_message_pending(&request,
-					     &clients[index].reg_server,
-					     pendings, NUM_PENDINGS);
+	pending = lwm2m_init_message_pending(clients[index].ctx, &request,
+					     &clients[index].reg_server);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
 	}
 
-	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+	reply = zoap_reply_next_unused(clients[index].ctx->replies,
+				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (!reply) {
 		SYS_LOG_ERR("No resources for waiting for replies.");
 		ret = -ENOMEM;
