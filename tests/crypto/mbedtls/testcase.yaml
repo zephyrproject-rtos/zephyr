@@ -1,6 +1,7 @@
 tests:
 -   test:
         min_ram: 32
+        min_flash: 33
         tags: crypto mbedtls
         timeout: 200
         filter: not CONFIG_DEBUG
