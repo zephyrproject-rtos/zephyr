@@ -712,7 +712,8 @@ class MakeGenerator:
         """
         verb = "1" if VERBOSE else "0"
         args      = " ".join(["-D{}".format(a) for a in args])
-        make_args = " ".join(make_args)
+        #print(make_args)
+        #make_args = " ".join(make_args)
 
         if self.asserts:
             cflags="-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
@@ -744,7 +745,7 @@ class MakeGenerator:
         if not os.path.exists(outdir):
             os.makedirs(outdir)
 
-    def add_build_goal(self, name, directory, outdir, args, buildlog):
+    def add_build_goal(self, name, directory, outdir, args, buildlog, make_args=""):
         """Add a goal to invoke a Kbuild session
 
         @param name A unique string name for this build goal. The results
@@ -760,7 +761,7 @@ class MakeGenerator:
         build_logfile = os.path.join(outdir, buildlog)
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args) +
+                                   outdir, build_logfile, args, make_args=make_args) +
                 self._get_rule_footer(name))
         self.goals[name] = MakeGoal(name, text, None, self.logfile, build_logfile,
                                     None, None)
@@ -1431,7 +1432,6 @@ class TestSuite:
                         args = tc.extra_args[:]
                         args.append("ARCH={}" .format(plat.arch))
                         args.append("BOARD={}".format(plat.name))
-                        args.append("config-sanitycheck")
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every  combination,
@@ -1439,10 +1439,10 @@ class TestSuite:
                         # each other since they all try to build them simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
-                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,".config-sanitycheck")
+                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,"zephyr", ".config")
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location), o,
-                                args, "config-sanitycheck.log")
+                                args, "config-sanitycheck.log", make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
