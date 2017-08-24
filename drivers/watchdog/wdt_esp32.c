@@ -48,7 +48,7 @@ static void wdt_esp32_enable(struct device *dev)
 	wdt_esp32_seal();
 }
 
-static void wdt_esp32_disable(struct device *dev)
+static int wdt_esp32_disable(struct device *dev)
 {
 	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
 
@@ -57,6 +57,8 @@ static void wdt_esp32_disable(struct device *dev)
 	wdt_esp32_unseal();
 	*reg &= ~BIT(TIMG_WDT_EN_S);
 	wdt_esp32_seal();
+
+	return 0;
 }
 
 static void adjust_timeout(u32_t timeout)
