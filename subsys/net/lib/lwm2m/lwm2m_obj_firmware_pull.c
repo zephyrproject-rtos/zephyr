@@ -33,7 +33,7 @@ static u8_t transfer_state;
 static struct k_work firmware_work;
 static char firmware_uri[PACKAGE_URI_LEN];
 static struct sockaddr firmware_addr;
-static struct net_context *firmware_net_ctx;
+static struct lwm2m_ctx firmware_ctx;
 static struct k_delayed_work retransmit_work;
 
 #define NUM_PENDINGS	CONFIG_LWM2M_ENGINE_MAX_PENDING
@@ -83,7 +83,7 @@ static int transfer_request(struct zoap_block_context *ctx,
 	struct zoap_reply *reply = NULL;
 	int ret;
 
-	ret = lwm2m_init_message(firmware_net_ctx, &request, &pkt,
+	ret = lwm2m_init_message(firmware_ctx.net_ctx, &request, &pkt,
 				 ZOAP_TYPE_CON, ZOAP_METHOD_GET,
 				 0, token, tkl);
 	if (ret) {
@@ -256,7 +256,7 @@ static void firmware_transfer(struct k_work *work)
 #endif
 
 	ret = net_context_get(firmware_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
-			      &firmware_net_ctx);
+			      &firmware_ctx.net_ctx);
 	if (ret) {
 		NET_ERR("Could not get an UDP context (err:%d)", ret);
 		return;
@@ -270,7 +270,7 @@ static void firmware_transfer(struct k_work *work)
 
 #if defined(CONFIG_NET_IPV6)
 	if (firmware_addr.sa_family == AF_INET6) {
-		ret = net_context_bind(firmware_net_ctx,
+		ret = net_context_bind(firmware_ctx.net_ctx,
 				       (struct sockaddr *)&any_addr6,
 				       sizeof(any_addr6));
 	}
@@ -278,7 +278,7 @@ static void firmware_transfer(struct k_work *work)
 
 #if defined(CONFIG_NET_IPV4)
 	if (firmware_addr.sa_family == AF_INET) {
-		ret = net_context_bind(firmware_net_ctx,
+		ret = net_context_bind(firmware_ctx.net_ctx,
 				       (struct sockaddr *)&any_addr4,
 				       sizeof(any_addr4));
 	}
@@ -290,7 +290,8 @@ static void firmware_transfer(struct k_work *work)
 	}
 
 	SYS_LOG_DBG("Attached to port: %d", port);
-	ret = net_context_recv(firmware_net_ctx, firmware_udp_receive, 0, NULL);
+	ret = net_context_recv(firmware_ctx.net_ctx,
+			       firmware_udp_receive, 0, NULL);
 	if (ret) {
 		SYS_LOG_ERR("Could not set receive for net context (err:%d)",
 			    ret);
@@ -305,8 +306,8 @@ static void firmware_transfer(struct k_work *work)
 	return;
 
 cleanup:
-	if (firmware_net_ctx) {
-		net_context_put(firmware_net_ctx);
+	if (firmware_ctx.net_ctx) {
+		net_context_put(firmware_ctx.net_ctx);
 	}
 }
 
@@ -319,8 +320,8 @@ int lwm2m_firmware_cancel_transfer(void)
 int lwm2m_firmware_start_transfer(char *package_uri)
 {
 	/* free up old context */
-	if (firmware_net_ctx) {
-		net_context_put(firmware_net_ctx);
+	if (firmware_ctx.net_ctx) {
+		net_context_put(firmware_ctx.net_ctx);
 	}
 
 	if (transfer_state == STATE_IDLE) {

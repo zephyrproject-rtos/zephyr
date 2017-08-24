@@ -93,7 +93,7 @@ enum sm_engine_state {
 
 struct lwm2m_rd_client_info {
 	u16_t lifetime;
-	struct net_context *net_ctx;
+	struct lwm2m_ctx *ctx;
 	struct sockaddr bs_server;
 	struct sockaddr reg_server;
 	u8_t engine_state;
@@ -402,7 +402,7 @@ static int sm_do_bootstrap(int index)
 	    clients[index].bootstrapped == 0 &&
 	    clients[index].has_bs_server_info) {
 
-		ret = lwm2m_init_message(clients[index].net_ctx,
+		ret = lwm2m_init_message(clients[index].ctx->net_ctx,
 					 &request, &pkt, ZOAP_TYPE_CON,
 					 ZOAP_METHOD_POST, 0, NULL, 0);
 		if (ret) {
@@ -516,7 +516,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 
 	/* remember the last reg time */
 	clients[index].last_update = k_uptime_get();
-	ret = lwm2m_init_message(clients[index].net_ctx,
+	ret = lwm2m_init_message(clients[index].ctx->net_ctx,
 				 &request, &pkt, ZOAP_TYPE_CON,
 				 ZOAP_METHOD_POST, 0, NULL, 0);
 	if (ret) {
@@ -658,7 +658,7 @@ static int sm_do_deregister(int index)
 	struct zoap_reply *reply = NULL;
 	int ret;
 
-	ret = lwm2m_init_message(clients[index].net_ctx,
+	ret = lwm2m_init_message(clients[index].ctx->net_ctx,
 				 &request, &pkt, ZOAP_TYPE_CON,
 				 ZOAP_METHOD_DELETE, 0, NULL, 0);
 	if (ret) {
@@ -846,7 +846,7 @@ static void set_ep_ports(int index)
 #endif
 }
 
-int lwm2m_rd_client_start(struct net_context *net_ctx,
+int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  struct sockaddr *peer_addr,
 			  const char *ep_name)
 {
@@ -864,7 +864,7 @@ int lwm2m_rd_client_start(struct net_context *net_ctx,
 	/* TODO: use server URI data from security */
 	index = client_count;
 	client_count++;
-	clients[index].net_ctx = net_ctx;
+	clients[index].ctx = client_ctx;
 	memcpy(&clients[index].reg_server, peer_addr, sizeof(struct sockaddr));
 	memcpy(&clients[index].bs_server, peer_addr, sizeof(struct sockaddr));
 	set_ep_ports(index);
