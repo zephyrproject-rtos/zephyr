@@ -369,4 +369,6 @@ config I2C_SDA_RX_HOLD
 	  The hold time on the data signal after a negative edge of i2c clock
 	  while i2c acts as receiver. The unit is i2c module base clock.
 
+source "drivers/i2c/Kconfig.esp32"
+
 endif # I2C

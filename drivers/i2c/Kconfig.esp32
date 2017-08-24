@@ -1,0 +1,79 @@
+# Kconfig.esp32 - ESP32 I2C configuration options
+#
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_ESP32
+	bool "ESP32 I2C"
+	depends on I2C && SOC_ESP32
+	select GPIO_ESP32
+	default n
+	help
+	  Enables the ESP32 I2C driver
+
+if I2C_ESP32
+
+config I2C_ESP32_TIMEOUT
+	int "I2C timeout to receive a data bit in APB clock cycles"
+	default 200000
+
+if I2C_0
+
+config I2C_0_DEFAULT_CFG
+	# Standard speed, master
+	default 0x12
+
+config I2C_ESP32_0_TX_LSB_FIRST
+	bool "Port 0 Transmit LSB first"
+	default n
+
+config I2C_ESP32_0_RX_LSB_FIRST
+	bool "Port 0 Receive LSB first"
+	default n
+
+config I2C_ESP32_0_IRQ
+	int "Port 0 IRQ line"
+	default 8
+
+config I2C_ESP32_0_SCL_PIN
+	int "Port 0 SCL pin"
+	default 2
+
+config I2C_ESP32_0_SDA_PIN
+	int "Port 0 SDA pin"
+	default 4
+
+endif # I2C_0
+
+if I2C_1
+
+config I2C_1_DEFAULT_CFG
+	# Standard speed, master
+	default 0x12
+
+config I2C_ESP32_1_TX_LSB_FIRST
+	bool "Port 1 Transmit LSB first"
+	default n
+
+config I2C_ESP32_1_RX_LSB_FIRST
+	bool "Port 1 Receive LSB first"
+	default n
+
+config I2C_ESP32_1_IRQ
+	int "Port 1 IRQ line"
+	default 9
+
+config I2C_ESP32_1_SCL_PIN
+	int "Port 1 SCL pin"
+	default 5
+
+config I2C_ESP32_1_SDA_PIN
+	int "Port 1 SDA pin"
+	default 18
+
+endif # I2C_1
+
+endif # I2C_ESP32
