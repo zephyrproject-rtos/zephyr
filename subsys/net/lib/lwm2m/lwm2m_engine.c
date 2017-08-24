@@ -99,7 +99,6 @@ struct observe_node {
 
 struct zoap_pending pendings[NUM_PENDINGS];
 struct zoap_reply replies[NUM_REPLIES];
-struct k_delayed_work retransmit_work;
 
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
@@ -2383,9 +2382,11 @@ static void udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 
 static void retransmit_request(struct k_work *work)
 {
+	struct lwm2m_ctx *client_ctx;
 	struct zoap_pending *pending;
 	int r;
 
+	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
 	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
 		return;
@@ -2401,7 +2402,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
 }
 
 static int notify_message_reply_cb(const struct zoap_packet *response,
@@ -2446,7 +2447,15 @@ static int generate_notify_message(struct observe_node *obs,
 	struct lwm2m_output_context out;
 	struct lwm2m_engine_context context;
 	struct lwm2m_obj_path path;
+	struct lwm2m_ctx *client_ctx;
 	int ret = 0;
+
+	client_ctx = CONTAINER_OF(obs->net_ctx,
+				  struct lwm2m_ctx, net_ctx);
+	if (!client_ctx) {
+		SYS_LOG_ERR("observer has no valid LwM2M ctx!");
+		return -EINVAL;
+	}
 
 	/* setup engine context */
 	memset(&context, 0, sizeof(struct lwm2m_engine_context));
@@ -2542,7 +2551,7 @@ static int generate_notify_message(struct observe_node *obs,
 	SYS_LOG_DBG("NOTIFY MSG: SENT");
 
 	zoap_pending_cycle(pending);
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
 	return ret;
 
 cleanup:
@@ -2603,6 +2612,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 			    ret);
 	}
 
+	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
 	return ret;
 }
 
@@ -2614,7 +2624,6 @@ static int lwm2m_engine_init(struct device *dev)
 			K_THREAD_STACK_SIZEOF(engine_thread_stack),
 			(k_thread_entry_t) lwm2m_engine_service,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-	k_delayed_work_init(&retransmit_work, retransmit_request);
 	SYS_LOG_DBG("LWM2M engine thread started");
 	return 0;
 }
