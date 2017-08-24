@@ -5,7 +5,7 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.1
-        - SANITYCHECK_OPTIONS=" --inline-logs -R --no-update -p nrf52_pca10040 -T samples/bluetooth/"
+        - SANITYCHECK_OPTIONS=" --inline-logs -R -p nrf52_pca10040 -T samples/bluetooth/"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
