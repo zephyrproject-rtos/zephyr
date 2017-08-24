@@ -8,6 +8,7 @@ menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
 	default n
 	select ZOAP
+	select NET_APP_CLIENT
 	help
 	  This option adds logic for managing OMA LWM2M data
 
