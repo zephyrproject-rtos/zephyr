@@ -1,22 +1,49 @@
 # Kconfig - Watchdog configuration options
 #
-#
 # Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2017 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-#
-# Watchdog options
-#
 menuconfig WATCHDOG
 	bool
 	prompt "Watchdog Support"
-	default n
 	help
 	  Include support for watchdogs.
 
 if WATCHDOG
+
+config WDT_DISABLE_AT_BOOT
+	bool
+	prompt "Disable at boot"
+	help
+	  Disable watchdog at Zephyr system startup.
+
+config SYS_LOG_WDT_LEVEL
+	int
+	prompt "Watchdog Driver Log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for Watchdog drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config HAS_WDT_MULTISTAGE
+	bool
+
+config WDT_MULTISTAGE
+	bool
+	prompt "Enable multistage timeouts"
+	depends on HAS_WDT_MULTISTAGE
+	help
+	  Enable multistage operation of watchdog timeouts.
 
 source "drivers/watchdog/Kconfig.qmsi"
 

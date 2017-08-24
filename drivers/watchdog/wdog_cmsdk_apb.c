@@ -87,7 +87,7 @@ static void wdog_cmsdk_apb_enable(struct device *dev)
 	wdog->ctrl = (CMSDK_APB_WDOG_CTRL_RESEN | CMSDK_APB_WDOG_CTRL_INTEN);
 }
 
-static void wdog_cmsdk_apb_disable(struct device *dev)
+static int wdog_cmsdk_apb_disable(struct device *dev)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
@@ -95,6 +95,8 @@ static void wdog_cmsdk_apb_disable(struct device *dev)
 
 	/* Stop the watchdog counter with INTEN bit */
 	wdog->ctrl = ~(CMSDK_APB_WDOG_CTRL_RESEN | CMSDK_APB_WDOG_CTRL_INTEN);
+
+	return 0;
 }
 
 static int wdog_cmsdk_apb_set_config(struct device *dev,
