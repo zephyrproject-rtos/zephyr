@@ -25,6 +25,16 @@
 #define IPSO_OBJECT_TEMP_SENSOR_ID			3303
 #define IPSO_OBJECT_LIGHT_CONTROL_ID			3311
 
+/**
+ * LwM2M context structure
+ *
+ * @details Context structure for the LwM2M high-level API.
+ */
+struct lwm2m_ctx {
+	/** Net context structure */
+	struct net_context *net_ctx;
+};
+
 /* callback can return 1 if handled (don't update value) */
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
 				       size_t *data_len);
@@ -149,11 +159,11 @@ int lwm2m_engine_register_post_write_callback(char *path,
 int lwm2m_engine_register_exec_callback(char *path,
 					lwm2m_engine_exec_cb_t cb);
 
-int lwm2m_engine_start(struct net_context *net_ctx);
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
 
 /* LWM2M RD Client */
 
-int lwm2m_rd_client_start(struct net_context *net_ctx,
+int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  struct sockaddr *peer_addr,
 			  const char *ep_name);
 

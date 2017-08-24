@@ -57,10 +57,12 @@ static struct device *led_dev;
 static u32_t led_state;
 
 #if defined(CONFIG_NET_IPV6)
-static struct net_app_ctx udp6;
+static struct net_app_ctx app_udp6;
+static struct lwm2m_ctx udp6;
 #endif
 #if defined(CONFIG_NET_IPV4)
-static struct net_app_ctx udp4;
+static struct net_app_ctx app_udp4;
+static struct lwm2m_ctx udp4;
 #endif
 static struct k_sem quit_lock;
 
@@ -284,7 +286,7 @@ void main(void)
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	ret = setup_net_app_ctx(&udp6, CONFIG_NET_APP_PEER_IPV6_ADDR);
+	ret = setup_net_app_ctx(&app_udp6, CONFIG_NET_APP_PEER_IPV6_ADDR);
 	if (ret < 0) {
 		goto cleanup_ipv6;
 	}
@@ -295,15 +297,14 @@ void main(void)
 		goto cleanup_ipv6;
 	}
 
-
-	ret = lwm2m_engine_start(udp6.ipv6.ctx);
+	udp6.net_ctx = app_udp6.ipv6.ctx;
+	ret = lwm2m_engine_start(&udp6);
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot init LWM2M IPv6 engine (%d)", ret);
 		goto cleanup_ipv6;
 	}
 
-	ret = lwm2m_rd_client_start(udp6.ipv6.ctx, &udp6.ipv6.remote,
-				    ep_name);
+	ret = lwm2m_rd_client_start(&udp6, &app_udp6.ipv6.remote, ep_name);
 	if (ret < 0) {
 		SYS_LOG_ERR("LWM2M init LWM2M IPv6 RD client error (%d)",
 			ret);
@@ -314,7 +315,7 @@ void main(void)
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	ret = setup_net_app_ctx(&udp4, CONFIG_NET_APP_PEER_IPV4_ADDR);
+	ret = setup_net_app_ctx(&app_udp4, CONFIG_NET_APP_PEER_IPV4_ADDR);
 	if (ret < 0) {
 		goto cleanup_ipv4;
 	}
@@ -325,14 +326,14 @@ void main(void)
 		goto cleanup_ipv4;
 	}
 
-	ret = lwm2m_engine_start(udp4.ipv4.ctx);
+	udp4.net_ctx = app_udp4.ipv4.ctx;
+	ret = lwm2m_engine_start(&udp4);
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot init LWM2M IPv4 engine (%d)", ret);
 		goto cleanup_ipv4;
 	}
 
-	ret = lwm2m_rd_client_start(udp4.ipv4.ctx, &udp4.ipv4.remote,
-				    ep_name);
+	ret = lwm2m_rd_client_start(&udp4, &app_udp4.ipv4.remote, ep_name);
 	if (ret < 0) {
 		SYS_LOG_ERR("LWM2M init LWM2M IPv4 RD client error (%d)",
 			ret);
@@ -346,13 +347,13 @@ void main(void)
 
 #if defined(CONFIG_NET_IPV4)
 cleanup_ipv4:
-	net_app_close(&udp4);
-	net_app_release(&udp4);
+	net_app_close(&app_udp4);
+	net_app_release(&app_udp4);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 cleanup_ipv6:
-	net_app_close(&udp6);
-	net_app_release(&udp6);
+	net_app_close(&app_udp6);
+	net_app_release(&app_udp6);
 #endif
 }

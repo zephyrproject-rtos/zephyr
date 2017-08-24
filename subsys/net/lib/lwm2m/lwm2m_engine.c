@@ -2592,12 +2592,12 @@ static void lwm2m_engine_service(void)
 	}
 }
 
-int lwm2m_engine_start(struct net_context *net_ctx)
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 {
 	int ret = 0;
 
 	/* set callback */
-	ret = net_context_recv(net_ctx, udp_receive, 0, NULL);
+	ret = net_context_recv(client_ctx->net_ctx, udp_receive, 0, NULL);
 	if (ret) {
 		SYS_LOG_ERR("Could not set receive for net context (err:%d)",
 			    ret);
