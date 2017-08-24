@@ -666,19 +666,21 @@ def generate_include_file(defs, args):
 
         sys.stdout.write("\n")
 
-    if args.fixup and os.path.exists(args.fixup):
-        sys.stdout.write("\n")
-        sys.stdout.write(
-            "/* Following definitions fixup the generated include */\n")
-        try:
-            with open(args.fixup, "r") as fd:
-                for line in fd.readlines():
-                    sys.stdout.write(line)
+    if args.fixup:
+        for fixup in args.fixup:
+            if os.path.exists(fixup):
                 sys.stdout.write("\n")
-        except:
-            raise Exception(
-                "Input file " + os.path.abspath(args.fixup) +
-                " does not exist.")
+                sys.stdout.write(
+                    "/* Following definitions fixup the generated include */\n")
+                try:
+                    with open(fixup, "r") as fd:
+                        for line in fd.readlines():
+                            sys.stdout.write(line)
+                        sys.stdout.write("\n")
+                except:
+                    raise Exception(
+                        "Input file " + os.path.abspath(fixup) +
+                        " does not exist.")
 
     sys.stdout.write("#endif\n")
 
@@ -700,7 +702,8 @@ def parse_arguments():
 
     parser.add_argument("-d", "--dts", help="DTS file")
     parser.add_argument("-y", "--yaml", help="YAML file")
-    parser.add_argument("-f", "--fixup", help="Fixup file")
+    parser.add_argument("-f", "--fixup", action="append",
+                        help="Fixup file, we allow multiple")
     parser.add_argument("-k", "--keyvalue", action="store_true",
                         help="Generate include file for the build system")
 
