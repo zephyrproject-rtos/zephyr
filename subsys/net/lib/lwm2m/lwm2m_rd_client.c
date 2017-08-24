@@ -433,7 +433,8 @@ static int sm_do_bootstrap(int index)
 			    lwm2m_sprint_ip_addr(&clients[index].bs_server),
 			    query_buffer);
 
-		ret = lwm2m_udp_sendto(pkt, &clients[index].bs_server);
+		ret = lwm2m_udp_sendto(clients[index].ctx->net_ctx,
+				       pkt, &clients[index].bs_server);
 		if (ret < 0) {
 			SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 				    ret);
@@ -585,7 +586,8 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	SYS_LOG_DBG("registration sent [%s]",
 		    lwm2m_sprint_ip_addr(&clients[index].reg_server));
 
-	ret = lwm2m_udp_sendto(pkt, &clients[index].reg_server);
+	ret = lwm2m_udp_sendto(clients[index].ctx->net_ctx,
+			       pkt, &clients[index].reg_server);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 			    ret);
@@ -684,7 +686,8 @@ static int sm_do_deregister(int index)
 
 	SYS_LOG_INF("Deregister from '%s'", clients[index].server_ep);
 
-	ret = lwm2m_udp_sendto(pkt, &clients[index].reg_server);
+	ret = lwm2m_udp_sendto(clients[index].ctx->net_ctx,
+			       pkt, &clients[index].reg_server);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 			    ret);

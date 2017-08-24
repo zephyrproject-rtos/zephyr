@@ -65,10 +65,12 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_engine_context *context);
 
-int lwm2m_udp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr);
+int lwm2m_udp_sendto(struct net_context *net_ctx, struct net_pkt *pkt,
+		     const struct sockaddr *dst_addr);
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
-		       int (*udp_request_handler)(struct zoap_packet *request,
+		       int (*udp_request_handler)(struct net_context *net_ctx,
+				struct zoap_packet *request,
 				struct zoap_packet *response,
 				struct sockaddr *from_addr));
 
