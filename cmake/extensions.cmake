@@ -68,6 +68,12 @@ function(zephyr_library_sources_ifdef feature_toggle source)
   endif()
 endfunction()
 
+function(zephyr_sources_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_sources(${ARGN})
+  endif()
+endfunction()
+
 function(zephyr_library_compile_definitions_ifdef feature_toggle item)
   if(${${feature_toggle}})
     zephyr_library_compile_definitions(${item} ${ARGN})
@@ -242,3 +248,27 @@ function(zephyr_append_cmake_library library)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
 endfunction()
 
+# zephyr-aware extentions
+#
+# The following functions are for modifying the Zephyr library called
+# "zephyr". zephyr is a catchall CMake library for source files that
+# can be built purely with the include paths, defines, and other
+# compiler flags that all zephyr source files use.
+#
+
+# Usage:
+# zephyr_sources(
+#   random_esp32.c
+#   utils.c
+#   )
+#
+# Is short for:
+# target_sources(zephyr PRIVATE
+#   ${CMAKE_CURRENT_SOURCE_DIR}/random_esp32.c
+#   ${CMAKE_CURRENT_SOURCE_DIR}/utils.c
+#  )
+function(zephyr_sources)
+  foreach(arg ${ARGV})
+    target_sources(zephyr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
+  endforeach()
+endfunction()
