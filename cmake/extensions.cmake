@@ -68,6 +68,12 @@ function(zephyr_library_sources_ifdef feature_toggle source)
   endif()
 endfunction()
 
+function(zephyr_library_compile_definitions_ifdef feature_toggle item)
+  if(${${feature_toggle}})
+    zephyr_library_compile_definitions(${item} ${ARGN})
+  endif()
+endfunction()
+
 # <function-name>_ifndef()
 function(set_ifndef variable value)
   if(NOT ${variable})
@@ -222,6 +228,10 @@ endfunction()
 
 function(zephyr_library_link_libraries item)
   target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} ${item} ${ARGN})
+endfunction()
+
+function(zephyr_library_compile_definitions item)
+  target_compile_definitions(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
 endfunction()
 
 # Add the existing CMake library 'library' to the global list of
