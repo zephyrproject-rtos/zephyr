@@ -1,6 +1,5 @@
 set(EMU_PLATFORM qemu)
 
-set(QEMU_${ARCH} qemu-system-${ARCH})
 set(QEMU_CPU_TYPE_${ARCH} cortex-m3)
 set(QEMU_FLAGS_${ARCH}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
