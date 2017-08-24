@@ -8,6 +8,7 @@
 #include <rom/ets_sys.h>
 #include <soc/dport_reg.h>
 #include <soc/gpio_reg.h>
+#include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 
 #include <errno.h>
@@ -134,7 +135,7 @@ static int gpio_esp32_config(struct device *dev, int access_op,
 		return r;
 	}
 
-	pinmux_pin_set(data->pinmux, pin, PINMUX_FUNC_A);
+	pinmux_pin_set(data->pinmux, pin, PIN_FUNC_GPIO);
 	if (flags & GPIO_PUD_PULL_UP) {
 		pinmux_pin_pullup(data->pinmux, pin, PINMUX_PULLUP_ENABLE);
 	} else if (flags & GPIO_PUD_PULL_DOWN) {
