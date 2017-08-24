@@ -69,6 +69,8 @@ execute_process(
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
 )
 
+add_custom_target(config-sanitycheck DEPENDS ${DOTCONFIG})
+
 add_custom_target(menuconfig
   COMMAND
     ${CMAKE_COMMAND} -E env
