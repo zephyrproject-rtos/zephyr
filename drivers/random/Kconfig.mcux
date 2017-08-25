@@ -15,7 +15,7 @@ menuconfig RANDOM_MCUX_RNGA
 
 menuconfig RANDOM_MCUX_TRNG
 	bool "MCUX TRNG driver"
-	depends on RANDOM_GENERATOR && HAS_TRNG
+	depends on RANDOM_GENERATOR && HAS_MCUX_TRNG
 	default n
 	select RANDOM_HAS_DRIVER
 	help
