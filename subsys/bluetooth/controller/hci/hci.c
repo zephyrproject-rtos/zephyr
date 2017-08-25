@@ -27,6 +27,10 @@
 #include "ll.h"
 #include "hci_internal.h"
 
+#if defined(CONFIG_BT_CTLR_DTM_HCI)
+#include "ll_sw/ll_test.h"
+#endif /* CONFIG_BT_CTLR_DTM_HCI */
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 #include "hal/debug.h"
@@ -503,6 +507,14 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[28] |= BIT(1) | BIT(2);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif
+#if defined(CONFIG_BT_CTLR_DTM_HCI)
+	/* LE RX Test, LE TX Test, LE Test End */
+	rp->commands[28] |= BIT(4) | BIT(5) | BIT(6);
+	/* LE Enhanced RX Test. */
+	rp->commands[35] |= BIT(7);
+	/* LE Enhanced TX Test. */
+	rp->commands[36] |= BIT(0);
+#endif /* CONFIG_BT_CTLR_DTM_HCI */
 #if defined(CONFIG_BT_CONN)
 	/* Disconnect. */
 	rp->commands[0] |= BIT(5);
@@ -1343,6 +1355,70 @@ static void le_read_tx_power(struct net_buf *buf, struct net_buf **evt)
 	ll_tx_power_get(&rp->min_tx_power, &rp->max_tx_power);
 }
 
+#if defined(CONFIG_BT_CTLR_DTM_HCI)
+static void le_rx_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_rx_test *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	u32_t status;
+
+	status = ll_test_rx(cmd->rx_ch, 0x01, 0);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_tx_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_tx_test *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	u32_t status;
+
+	status = ll_test_tx(cmd->tx_ch, cmd->test_data_len, cmd->pkt_payload,
+			    0x01);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_test_end(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_le_test_end *rp;
+	u16_t rx_pkt_count;
+
+	ll_test_end(&rx_pkt_count);
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = 0x00;
+	rp->rx_pkt_count = sys_cpu_to_le16(rx_pkt_count);
+}
+
+static void le_enh_rx_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_enh_rx_test *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	u32_t status;
+
+	status = ll_test_rx(cmd->rx_ch, cmd->phy, cmd->mod_index);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_enh_tx_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_enh_tx_test *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	u32_t status;
+
+	status = ll_test_tx(cmd->tx_ch, cmd->test_data_len, cmd->pkt_payload,
+			    cmd->phy);
+
+	ccst = cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+#endif /* CONFIG_BT_CTLR_DTM_HCI */
+
 static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt)
 {
@@ -1542,6 +1618,24 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_READ_TX_POWER):
 		le_read_tx_power(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_DTM_HCI)
+	case BT_OCF(BT_HCI_OP_LE_RX_TEST):
+		le_rx_test(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_TX_TEST):
+		le_tx_test(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_TEST_END):
+		le_test_end(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_ENH_RX_TEST):
+		le_enh_rx_test(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_ENH_TX_TEST):
+		le_enh_tx_test(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_DTM_HCI */
 
 	default:
 		return -EINVAL;

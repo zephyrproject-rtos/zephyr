@@ -206,6 +206,17 @@ config BT_CTLR_ADV_EXT
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
 
+config BT_CTLR_DTM
+	bool
+	help
+	  Enable support for Direct Test Mode in the Controller.
+
+config BT_CTLR_DTM_HCI
+	bool "Direct Test Mode over HCI"
+	select BT_CTLR_DTM
+	help
+	  Enable support for Direct Test Mode over the HCI transport.
+
 config BT_CTLR_ADVANCED_FEATURES
 	bool "Show advanced features"
 	help
