@@ -72,6 +72,12 @@ support systems:
   our JIRA system: https://jira.zephyrproject.org. You can browse through the
   reported issues and submit issues of your own.
 
+* **Security-related Issue Reporting**: For security-related inquiries or
+  reporting suspected security-related bugs in the Zephyr OS, please
+  send email to vulnerabilities@zephyrproject.org.  We will assess and fix
+  flaws according to our security policy outlined in the Zephyr Project
+  `Security Overview`_.
+
 * **Mailing List**: The `Zephyr Mailing Lists`_ are perhaps the most convenient
   way to track developer discussions and to ask your own support questions to
   the Zephyr project community.
@@ -92,3 +98,4 @@ support systems:
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _Zephyr Mailing Lists: https://lists.zephyrproject.org/
 .. _Sample and Demo Code Examples: https://www.zephyrproject.org/doc/samples/samples.html
+.. _Security Overview: https://www.zephyrproject.org/doc/security/security-overview.html
