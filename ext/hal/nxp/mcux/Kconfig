@@ -36,4 +36,11 @@ config HAS_MCUX_LPUART
 	help
 	  Set if the low power uart (LPUART) module is present in the SoC.
 
+config HAS_MCUX_RNGA
+	bool
+	default n
+	help
+	  Set if the random number generator accelerator (RNGA) module is
+	  present in the SoC.
+
 endif # HAS_MCUX
