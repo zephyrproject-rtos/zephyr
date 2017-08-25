@@ -404,7 +404,7 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
   COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_HEX_NAME}
   COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
-  COMMAND ${CMAKE_OBJDUMP} -D                                              ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
+  COMMAND ${CMAKE_OBJDUMP} -S                                              ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
   COMMAND ${CMAKE_STRIP}   --strip-all                                     ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
   COMMENT "Generating zephyr.{hex,bin,lst,strip} from zephyr.elf"
   # NB: COMMENT only works for some CMake-Generators
