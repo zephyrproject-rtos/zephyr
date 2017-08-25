@@ -191,9 +191,7 @@ void start_tcp(void)
 
 void stop_tcp(void)
 {
-#if defined(CONFIG_NET_APP_TLS)
-	net_app_server_tls_disable(&tcp);
-#endif
+	net_app_server_disable(&tcp);
 
 	net_app_close(&tcp);
 	net_app_release(&tcp);
