@@ -188,12 +188,6 @@ target_cc_option(zephyr PUBLIC -Werror=implicit-int)
 # TODO: Archiver arguments
 # ar_option(D)
 
-# Determine if the application is in zephyr/tests, if so it is a test
-# and must be built differently
-string(REGEX MATCH "^$ENV{ZEPHYR_BASE}/tests" match ${APPLICATION_SOURCE_DIR})
-if(match)
-  set(IS_TEST 1)
-endif()
 if(IS_TEST)
   add_subdirectory(cmake/test)
 endif()
