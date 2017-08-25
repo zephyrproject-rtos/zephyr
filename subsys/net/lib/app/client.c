@@ -28,10 +28,10 @@
 
 #include "net_app_private.h"
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #define TLS_STARTUP_TIMEOUT K_SECONDS(5)
 static int start_tls_client(struct net_app_ctx *ctx);
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_DNS_RESOLVER)
 static void dns_cb(enum dns_resolve_status status,
@@ -422,7 +422,7 @@ static void _app_connected(struct net_context *net_ctx,
 {
 	struct net_app_ctx *ctx = user_data;
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 	if (ctx->is_tls) {
 		k_sem_give(&ctx->client.connect_wait);
 	}
@@ -430,7 +430,7 @@ static void _app_connected(struct net_context *net_ctx,
 
 	net_context_recv(net_ctx, ctx->recv_cb, K_NO_WAIT, ctx);
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 	if (ctx->is_tls) {
 		/* If we have TLS connection, the connect cb is called
 		 * after TLS handshakes are done.
@@ -553,7 +553,7 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 		return -EAFNOSUPPORT;
 	}
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 	if (ctx->is_tls && !ctx->tls.tid &&
 	    (ctx->proto == IPPROTO_TCP ||
 	     (IS_ENABLED(CONFIG_NET_APP_DTLS) && ctx->proto == IPPROTO_UDP))) {
@@ -571,7 +571,7 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	}
 #else
 	ARG_UNUSED(started);
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_APP_DTLS)
 	if (ctx->proto == IPPROTO_UDP) {
@@ -608,7 +608,7 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	if (ret < 0) {
 		NET_DBG("Cannot connect to peer (%d)", ret);
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 		if (started) {
 			_net_app_tls_handler_stop(ctx);
 		}
@@ -618,7 +618,7 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	return ret;
 }
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 static void tls_client_handler(struct net_app_ctx *ctx,
 			       struct k_sem *startup_sync)
 {
@@ -746,4 +746,4 @@ int net_app_client_tls(struct net_app_ctx *ctx,
 	 */
 	return 0;
 }
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
