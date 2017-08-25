@@ -13,10 +13,10 @@ config SOC_MKW40Z4
 	bool "SOC_MKW40Z4"
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
+	select HAS_MCUX_ADC16
 	select HAS_MCUX_LPUART
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_ADC16
 	select HAS_TRNG
 	select HAS_SEGGER_RTT
 
@@ -24,10 +24,10 @@ config SOC_MKW41Z4
 	bool "SOC_MKW41Z4"
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
+	select HAS_MCUX_ADC16
 	select HAS_MCUX_LPUART
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_ADC16
 	select HAS_TRNG
 
 endchoice
