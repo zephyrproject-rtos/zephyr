@@ -229,6 +229,7 @@ add_subdirectory(ext)
 add_subdirectory(subsys)
 add_subdirectory(arch)
 add_subdirectory(drivers)
+add_subdirectory(tests)
 
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
