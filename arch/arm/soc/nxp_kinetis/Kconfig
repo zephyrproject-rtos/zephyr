@@ -52,12 +52,6 @@ config HAS_TRNG
 	help
 	  Set if the true random number generator (TRNG) module is present in the SoC.
 
-config HAS_FTM
-	bool
-	default n
-	help
-	  Set if the FlexTimer (FTM) module is present in the SoC.
-
 config HAS_SYSMPU
 	bool "Enable MPU"
 	depends on CPU_HAS_MPU
