@@ -173,6 +173,7 @@ typedef int (*net_app_send_data_t)(struct net_pkt *pkt,
 /* Internal information for managing TLS data */
 struct tls_context {
 	struct net_pkt *rx_pkt;
+	struct net_buf *hdr; /* IP + UDP/TCP header */
 	struct net_buf *frag;
 	struct k_sem tx_sem;
 	struct k_fifo tx_rx_fifo;
