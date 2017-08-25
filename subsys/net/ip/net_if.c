@@ -63,6 +63,10 @@ static struct k_thread tx_thread_data;
 static inline void net_context_send_cb(struct net_context *context,
 				       void *token, int status)
 {
+	if (!context) {
+		return;
+	}
+
 	if (context->send_cb) {
 		context->send_cb(context, status, token, context->user_data);
 	}
