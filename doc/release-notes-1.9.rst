@@ -52,6 +52,7 @@ Drivers and Sensors
 * KW40Z IEEE 802.15.4 radio driver support added
 * APDS9960 sensor driver added
 * Added TICKLESS KERNEL support for nrf RTC Timer.
+* Added Kinetis adc and pwm drivers
 
 Networking
 **********
