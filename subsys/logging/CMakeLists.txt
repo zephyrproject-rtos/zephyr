@@ -1,7 +1,6 @@
-
-target_sources_ifdef(CONFIG_SYS_LOG 		zephyr PRIVATE
-	${CMAKE_CURRENT_LIST_DIR}/sys_log.c)
-target_sources_ifdef(CONFIG_KERNEL_EVENT_LOGGER zephyr PRIVATE
-	${CMAKE_CURRENT_LIST_DIR}/event_logger.c
-	${CMAKE_CURRENT_LIST_DIR}/kernel_event_logger.c
-	)
+zephyr_sources(sys_log.c)
+zephyr_sources_ifdef(
+  CONFIG_KERNEL_EVENT_LOGGER
+  event_logger.c
+  kernel_event_logger.c
+  )
