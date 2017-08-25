@@ -827,6 +827,34 @@ int net_shell_cmd_allocs(int argc, char *argv[])
 
 #if defined(CONFIG_NET_DEBUG_APP) && \
 	(defined(CONFIG_NET_APP_SERVER) || defined(CONFIG_NET_APP_CLIENT))
+
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
+static void print_app_sec_info(struct net_app_ctx *ctx, const char *sec_type)
+{
+	printk("     Security: %s  Thread id: %p\n", sec_type, ctx->tls.tid);
+
+#if defined(CONFIG_INIT_STACKS)
+	{
+		unsigned int pcnt, unused;
+
+		net_analyze_stack_get_values(
+			K_THREAD_STACK_BUFFER(ctx->tls.stack),
+			ctx->tls.stack_size,
+			&pcnt, &unused);
+		printk("     Stack: %p  Size: %d bytes unused %u usage "
+		       "%u/%d (%u %%)\n",
+		       ctx->tls.stack, ctx->tls.stack_size,
+		       unused, ctx->tls.stack_size - unused,
+		       ctx->tls.stack_size, pcnt);
+	}
+#endif /* CONFIG_INIT_STACKS */
+
+	if (ctx->tls.cert_host) {
+		printk("     Cert host: %s\n", ctx->tls.cert_host);
+	}
+}
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
+
 static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 {
 	int *count = user_data;
@@ -858,10 +886,14 @@ static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_APP_TLS) && ctx->is_tls) {
+		if (ctx->sock_type == SOCK_STREAM) {
+			sec_type = "TLS";
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_APP_DTLS) && ctx->is_tls) {
 		if (ctx->sock_type == SOCK_DGRAM) {
 			sec_type = "DTLS";
-		} else {
-			sec_type = "TLS";
 		}
 	}
 
@@ -891,28 +923,11 @@ static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 	       *count, ctx, ctx->is_enabled ? "enabled" : "disabled",
 	       app_type, proto);
 
-#if defined(CONFIG_NET_APP_TLS)
-	printk("     Security: %s  Thread id: %p\n", sec_type, ctx->tls.tid);
-
-#if defined(CONFIG_INIT_STACKS)
-	{
-		unsigned int pcnt, unused;
-
-		net_analyze_stack_get_values(
-			K_THREAD_STACK_BUFFER(ctx->tls.stack),
-			ctx->tls.stack_size,
-			&pcnt, &unused);
-		printk("     Stack: %p  Size: %d bytes unused %u usage "
-		       "%u/%d (%u %%)\n",
-		       ctx->tls.stack, ctx->tls.stack_size,
-		       unused, ctx->tls.stack_size - unused,
-		       ctx->tls.stack_size, pcnt);
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
+	if (ctx->is_tls) {
+		print_app_sec_info(ctx, sec_type);
 	}
-#endif /* CONFIG_INIT_STACKS */
-	if (ctx->tls.cert_host) {
-		printk("     Cert host: %s\n", ctx->tls.cert_host);
-	}
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_IPV6)
 	if (ctx->app_type == NET_APP_SERVER) {
