@@ -140,6 +140,7 @@ static void udp_received(struct net_app_ctx *ctx,
 	struct sockaddr dst_addr;
 	sa_family_t family = net_pkt_family(pkt);
 	socklen_t dst_len;
+	u32_t pkt_len;
 	int ret;
 
 	snprintk(dbg, MAX_DBG_PRINT, "UDP IPv%c",
@@ -151,6 +152,10 @@ static void udp_received(struct net_app_ctx *ctx,
 		dst_len = sizeof(struct sockaddr_in);
 	}
 
+	/* Note that for DTLS swapping the source/destination address has no
+	 * effect as the user data is sent in a DTLS tunnel where tunnel end
+	 * points are already set.
+	 */
 	set_dst_addr(family, pkt, &dst_addr);
 
 	reply_pkt = build_reply_pkt(dbg, ctx, pkt);
@@ -161,8 +166,10 @@ static void udp_received(struct net_app_ctx *ctx,
 		return;
 	}
 
+	pkt_len = net_pkt_appdatalen(reply_pkt);
+
 	ret = net_app_send_pkt(ctx, reply_pkt, &dst_addr, dst_len, K_NO_WAIT,
-			       UINT_TO_POINTER(net_pkt_get_len(reply_pkt)));
+			       UINT_TO_POINTER(pkt_len));
 	if (ret < 0) {
 		NET_ERR("Cannot send data to peer (%d)", ret);
 		net_pkt_unref(reply_pkt);

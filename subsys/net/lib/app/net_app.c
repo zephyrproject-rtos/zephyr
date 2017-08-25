@@ -639,7 +639,23 @@ int net_app_send_pkt(struct net_app_ctx *ctx,
 		return -ENOENT;
 	}
 
-	net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
+	/* Get rid of IP + UDP/TCP header if it is there. The IP header
+	 * will be put back just before sending the packet. Normally the
+	 * data that is sent does not contain IP header, but if the caller
+	 * replies the packet directly back, the IP header could be there
+	 * at this point.
+	 */
+	if (net_pkt_appdatalen(pkt) > 0) {
+		int header_len;
+
+		header_len = net_buf_frags_len(pkt->frags) -
+			net_pkt_appdatalen(pkt);
+		if (header_len > 0) {
+			net_buf_pull(pkt->frags, header_len);
+		}
+	} else {
+		net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
+	}
 
 	if (ctx->proto == IPPROTO_UDP) {
 		if (!dst) {
@@ -1460,6 +1476,25 @@ int _net_app_ssl_mux(void *context, unsigned char *buf, size_t size)
 			return -EINVAL;
 		}
 
+		/* Save the IP header so that we can pass it to application. */
+		if (!ctx->tls.mbedtls.ssl_ctx.hdr) {
+			/* Only allocate a IP fragment header once. The header
+			 * is same for every packet so we can ignore the
+			 * duplicated one.
+			 */
+			ctx->tls.mbedtls.ssl_ctx.hdr =
+				net_pkt_get_frag(
+					ctx->tls.mbedtls.ssl_ctx.rx_pkt,
+					BUF_ALLOC_TIMEOUT);
+
+			if (ctx->tls.mbedtls.ssl_ctx.hdr) {
+				net_buf_add_mem(
+					ctx->tls.mbedtls.ssl_ctx.hdr,
+					ctx->tls.mbedtls.ssl_ctx.frag->data,
+					len);
+			}
+		}
+
 		/* This will get rid of IP header */
 		net_buf_pull(ctx->tls.mbedtls.ssl_ctx.frag, len);
 	} else {
@@ -1668,6 +1703,16 @@ reset:
 				goto close;
 			}
 
+			/* Add the IP + UDP/TCP headers if found. This is done
+			 * just in case the application needs to get some info
+			 * from the IP header.
+			 */
+			if (ctx->tls.mbedtls.ssl_ctx.hdr) {
+				net_pkt_frag_add(pkt,
+						 ctx->tls.mbedtls.ssl_ctx.hdr);
+				ctx->tls.mbedtls.ssl_ctx.hdr = NULL;
+			}
+
 			ret = net_pkt_append_all(pkt, len,
 						 ctx->tls.request_buf,
 						 BUF_ALLOC_TIMEOUT);
@@ -1697,6 +1742,11 @@ close:
 	 */
 	if (ret != -EIO) {
 		_net_app_print_error("Closing connection -0x%x", ret);
+
+		if (ctx->tls.mbedtls.ssl_ctx.hdr) {
+			net_pkt_frag_unref(ctx->tls.mbedtls.ssl_ctx.hdr);
+			ctx->tls.mbedtls.ssl_ctx.hdr = NULL;
+		}
 	}
 
 #if defined(CONFIG_NET_APP_DTLS)
