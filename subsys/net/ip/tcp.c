@@ -850,9 +850,15 @@ int net_tcp_send_data(struct net_context *context)
 		}
 
 		if (!net_pkt_sent(pkt)) {
-			NET_DBG("[%p] Sending pkt %p", context->tcp, pkt);
-			if (net_tcp_send_pkt(pkt) < 0 &&
-			    !is_6lo_technology(pkt)) {
+			int ret;
+
+			NET_DBG("[%p] Sending pkt %p (%zd bytes)", context->tcp,
+				pkt, net_pkt_get_len(pkt));
+
+			ret = net_tcp_send_pkt(pkt);
+			if (ret < 0 && !is_6lo_technology(pkt)) {
+				NET_DBG("[%p] pkt %p not sent (%d)",
+					context->tcp, pkt, ret);
 				net_pkt_unref(pkt);
 			}
 
