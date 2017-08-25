@@ -9,3 +9,13 @@ config HAS_MCUX
 	bool
 	select HAS_CMSIS
 	depends on SOC_FAMILY_KINETIS
+
+if HAS_MCUX
+
+config HAS_MCUX_LPUART
+	bool
+	default n
+	help
+	  Set if the low power uart (LPUART) module is present in the SoC.
+
+endif # HAS_MCUX
