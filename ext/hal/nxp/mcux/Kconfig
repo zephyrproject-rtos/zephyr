@@ -12,6 +12,12 @@ config HAS_MCUX
 
 if HAS_MCUX
 
+config HAS_MCUX_LPSCI
+	bool
+	default n
+	help
+	  Set if the low power uart (LPSCI) module is present in the SoC.
+
 config HAS_MCUX_LPUART
 	bool
 	default n
