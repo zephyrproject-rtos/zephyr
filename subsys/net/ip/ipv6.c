@@ -847,8 +847,29 @@ struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 							   pkt, pkt_len);
 			if (ret < 0) {
 				NET_DBG("Cannot fragment IPv6 pkt (%d)", ret);
-				net_pkt_unref(pkt);
+
+				if (ret == -ENOMEM) {
+					/* Try to send the packet if we could
+					 * not allocate enough network packets
+					 * and hope the original large packet
+					 * can be sent ok.
+					 */
+					goto ignore_frag_error;
+				}
 			}
+
+			/* We "fake" the sending of the packet here so that
+			 * tcp.c:tcp_retry_expired() will increase the ref
+			 * count when re-sending the packet. This is crucial
+			 * thing to do here and will cause free memory access
+			 * if not done.
+			 */
+			net_pkt_set_sent(pkt, true);
+
+			/* We need to unref here because we simulate the packet
+			 * sending.
+			 */
+			net_pkt_unref(pkt);
 
 			/* No need to continue with the sending as the packet
 			 * is now split and its fragments will be sent
@@ -857,6 +878,7 @@ struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 			return NULL;
 		}
 	}
+ignore_frag_error:
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 	/* Workaround Linux bug, see:
@@ -3431,13 +3453,16 @@ free_pkts:
 	return ret;
 }
 
+#define BUF_ALLOC_TIMEOUT 100
+
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 u16_t pkt_len)
 {
-	struct net_buf *frag = pkt->frags;
-	struct net_buf *prev = NULL;
 	struct net_buf *orig_ipv6 = NULL;
+	struct net_buf *prev = NULL;
 	struct net_buf *rest;
+	struct net_buf *frag;
+	struct net_pkt *clone;
 	int frag_count = 0;
 	int curr_len = 0;
 	int status = false;
@@ -3446,6 +3471,20 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	u8_t next_hdr;
 	u16_t next_hdr_idx, last_hdr_idx;
 	int ret;
+
+	/* We cannot touch original pkt because it might be used for
+	 * some other purposes, like TCP resend etc. So we need to copy
+	 * the large pkt here and do the fragmenting with the clone.
+	 */
+	clone = net_pkt_clone(pkt, BUF_ALLOC_TIMEOUT);
+	if (!clone) {
+		NET_DBG("Cannot clone %p", pkt);
+		return -ENOMEM;
+	}
+
+	pkt = clone;
+
+	frag = pkt->frags;
 
 	ret = get_next_hdr(pkt, &next_hdr_idx, &last_hdr_idx, &next_hdr);
 	if (ret < 0) {
