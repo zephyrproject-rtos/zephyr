@@ -8,7 +8,7 @@
 
 config ADC_MCUX_ADC16
 	bool "MCUX ADC16 driver"
-	depends on HAS_MCUX && HAS_ADC16
+	depends on HAS_MCUX_ADC16
 	select HAS_DTS_ADC
 	default n
 	help
