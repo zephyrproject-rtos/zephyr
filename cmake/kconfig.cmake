@@ -14,6 +14,10 @@ set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
 set(ENV{KCONFIG_AUTOHEADER} ${AUTOCONF_H})
 
+if(IS_TEST)
+  list(APPEND OVERLAY_CONFIG $ENV{ZEPHYR_BASE}/tests/include/test.config)
+endif()
+
 # Create new .config if the file does not exists, or the user has
 # edited one of the configuration files.
 set(CREATE_NEW_DOTCONFIG "")
@@ -31,6 +35,7 @@ if(CREATE_NEW_DOTCONFIG)
     COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py -m -q
       -O ${PROJECT_BINARY_DIR}
       ${BOARD_DEFCONFIG}
+      ${OVERLAY_CONFIG}
       ${CONF_FILE_AS_LIST}
     WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
     # The working directory is set to the app dir such that the user
