@@ -1541,6 +1541,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 
 	case BT_OCF(BT_HCI_OP_LE_READ_TX_POWER):
 		le_read_tx_power(cmd, evt);
+		break;
 
 	default:
 		return -EINVAL;
