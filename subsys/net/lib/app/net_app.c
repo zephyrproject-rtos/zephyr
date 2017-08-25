@@ -864,7 +864,7 @@ int net_app_close(struct net_app_ctx *ctx)
 	return 0;
 }
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_APP)
 static void my_debug(void *ctx, int level,
 		     const char *file, int line, const char *str)
@@ -1301,7 +1301,6 @@ void _net_app_tls_received(struct net_context *context,
 			 */
 		}
 	}
-dtls_disconnect:
 #endif /* CONFIG_NET_APP_DTLS */
 
 	ret = k_mem_pool_alloc(ctx->tls.pool, &block,
@@ -1960,5 +1959,5 @@ void _net_app_tls_handler_stop(struct net_app_ctx *ctx)
 	k_thread_abort(ctx->tls.tid);
 	ctx->tls.tid = 0;
 }
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 

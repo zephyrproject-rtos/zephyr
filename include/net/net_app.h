@@ -11,7 +11,7 @@
 #ifndef __NET_APP_H
 #define __NET_APP_H
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
@@ -38,7 +38,7 @@
 #include <mbedtls/error.h>
 #include <mbedtls/debug.h>
 #endif /* CONFIG_MBEDTLS */
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
@@ -169,7 +169,7 @@ typedef int (*net_app_send_data_t)(struct net_pkt *pkt,
 				   void *token,
 				   void *user_data);
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 /* Internal information for managing TLS data */
 struct tls_context {
 	struct net_pkt *rx_pkt;
@@ -241,7 +241,7 @@ typedef int (*net_app_ca_cert_cb_t)(struct net_app_ctx *ctx,
  */
 typedef int (*net_app_entropy_src_cb_t)(void *data, unsigned char *output,
 					size_t len, size_t *olen);
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_APP_DTLS)
 struct dtls_timing_context {
@@ -333,7 +333,7 @@ struct net_app_ctx {
 	} client;
 #endif /* CONFIG_NET_APP_CLIENT */
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 	struct {
 		/** TLS stack for mbedtls library. */
 		k_thread_stack_t stack;
@@ -389,7 +389,7 @@ struct net_app_ctx {
 		/** Have we called connect cb yet? */
 		bool connect_cb_called;
 	} tls;
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	/** Network packet (net_pkt) memory pool for network contexts attached
@@ -877,7 +877,7 @@ int net_app_close(struct net_app_ctx *ctx);
  */
 int net_app_release(struct net_app_ctx *ctx);
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #if defined(CONFIG_NET_APP_CLIENT)
 /**
  * @brief Initialize TLS support for this net_app client context.
@@ -955,7 +955,7 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 
 #endif /* CONFIG_NET_APP_SERVER */
 
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 /**
  * @}

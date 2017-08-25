@@ -87,6 +87,7 @@ config NET_APP_CLIENT
 config NET_APP_TLS
 	bool "Enable TLS support for TCP applications"
 	default n
+	depends on NET_TCP
 	select MBEDTLS
 	help
 	Enables net app library to use TLS for encrypted communication.
@@ -94,10 +95,10 @@ config NET_APP_TLS
 config NET_APP_DTLS
 	bool "Enable DTLS support for UDP applications"
 	depends on NET_UDP
-	depends on NET_APP_TLS
+	select MBEDTLS
 	default n
 	help
-	Enables net app library to use TLS for encrypted UDP communication.
+	Enables net app library to use DTLS for encrypted UDP communication.
 
 config NET_APP_DTLS_TIMEOUT
 	int "DTLS session timeout"
@@ -109,7 +110,7 @@ config NET_APP_DTLS_TIMEOUT
 
 config NET_DEBUG_APP_TLS_LEVEL
 	int "Debug level for mbedtls in net app library"
-	depends on NET_APP_TLS && NET_DEBUG_APP
+	depends on (NET_APP_TLS || NET_APP_DTLS) && NET_DEBUG_APP
 	default 0
 	range 0 4
 	help
@@ -124,7 +125,7 @@ config NET_DEBUG_APP_TLS_LEVEL
 config NET_APP_TLS_STACK_SIZE
 	int "TLS handler thread stack size"
 	default 8192
-	depends on NET_APP_TLS
+	depends on NET_APP_TLS || NET_APP_DTLS
 	help
 	TLS handler thread stack size. The mbedtls routines will use this stack
 	thus it is by default very large.
