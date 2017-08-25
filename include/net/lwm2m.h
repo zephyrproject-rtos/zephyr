@@ -92,6 +92,22 @@ struct lwm2m_ctx {
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
 	struct k_delayed_work retransmit_work;
+
+#if defined(CONFIG_NET_APP_DTLS)
+	/** Pre-Shared Key  Information*/
+	unsigned char *client_psk;
+	size_t client_psk_len;
+	char *client_psk_id;
+	size_t client_psk_id_len;
+
+	/** DTLS support structures */
+	char *cert_host;
+	u8_t *dtls_result_buf;
+	size_t dtls_result_buf_len;
+	struct k_mem_pool *dtls_pool;
+	k_thread_stack_t dtls_stack;
+	size_t dtls_stack_len;
+#endif
 };
 
 /* callback can return 1 if handled (don't update value) */

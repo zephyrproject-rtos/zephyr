@@ -77,6 +77,10 @@
 
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
+#if defined(CONFIG_NET_APP_DTLS)
+#define INSTANCE_INFO "Zephyr DTLS LwM2M-client"
+#endif
+
 #define MAX_TOKEN_LEN		8
 
 struct observe_node {
@@ -3007,6 +3011,24 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 #endif
 }
 
+#if defined(CONFIG_NET_APP_DTLS)
+static int setup_cert(struct net_app_ctx *app_ctx, void *cert)
+{
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
+						    struct lwm2m_ctx,
+						    net_app_ctx);
+
+	mbedtls_ssl_conf_psk(&app_ctx->tls.mbedtls.conf,
+			     (const unsigned char *)client_ctx->client_psk,
+			     client_ctx->client_psk_len,
+			     (const unsigned char *)client_ctx->client_psk_id,
+			     client_ctx->client_psk_id_len);
+#endif
+	return 0;
+}
+#endif /* CONFIG_NET_APP_DTLS */
+
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       char *peer_str, u16_t peer_port)
 {
@@ -3033,6 +3055,24 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		SYS_LOG_ERR("Could not set receive callback (err:%d)", ret);
 		goto error_start;
 	}
+
+#if defined(CONFIG_NET_APP_DTLS)
+	ret = net_app_client_tls(&client_ctx->net_app_ctx,
+				 client_ctx->dtls_result_buf,
+				 client_ctx->dtls_result_buf_len,
+				 INSTANCE_INFO,
+				 strlen(INSTANCE_INFO),
+				 setup_cert,
+				 client_ctx->cert_host,
+				 NULL,
+				 client_ctx->dtls_pool,
+				 client_ctx->dtls_stack,
+				 client_ctx->dtls_stack_len);
+	if (ret < 0) {
+		SYS_LOG_ERR("Cannot init DTLS (%d)", ret);
+		goto error_start;
+	}
+#endif
 
 	ret = net_app_connect(&client_ctx->net_app_ctx,
 			      client_ctx->net_timeout);
