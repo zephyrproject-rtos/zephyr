@@ -58,6 +58,7 @@ config LWM2M_ENGINE_MAX_OBSERVER
 config LWM2M_ENGINE_DEFAULT_LIFETIME
 	int "LWM2M engine default server connection lifetime"
 	default 30
+	range 15 65535
 	help
 	  Set the default lifetime (in seconds) for the LWM2M library engine
 
