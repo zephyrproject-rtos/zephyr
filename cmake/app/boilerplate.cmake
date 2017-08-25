@@ -85,6 +85,13 @@ Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
+# Determine if the application is in zephyr/tests, if so it is a test
+# and must be built differently
+string(REGEX MATCH "^$ENV{ZEPHYR_BASE}/tests" match ${APPLICATION_SOURCE_DIR})
+if(match)
+  set(IS_TEST 1)
+endif()
+
 include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
