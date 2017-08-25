@@ -7,5 +7,6 @@ target_sources_if_kconfig(drivers__console PRIVATE ipm_console_receiver.c)
 target_sources_if_kconfig(drivers__console PRIVATE ipm_console_sender.c)
 target_sources_if_kconfig(drivers__console PRIVATE uart_pipe.c)
 target_sources_if_kconfig(drivers__console PRIVATE telnet_console.c)
+target_sources_if_kconfig(drivers__console PRIVATE xtensa_sim_console.c)
 
 target_link_libraries(drivers__console drivers)
