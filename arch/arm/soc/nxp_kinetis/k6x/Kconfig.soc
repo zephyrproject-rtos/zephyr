@@ -12,10 +12,10 @@ depends on SOC_SERIES_KINETIS_K6X
 config SOC_MK64F12
 	bool "SOC_MK64F12"
 	select HAS_MCUX
+	select HAS_MCUX_ADC16
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_RNGA
-	select HAS_ADC16
 	select CPU_HAS_FPU
 
 endchoice
