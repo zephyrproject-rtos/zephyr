@@ -790,21 +790,10 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		}
 
 		if (pkt_in_slist) {
-			new_pkt = net_pkt_get_tx(ctx, ALLOC_TIMEOUT);
+			new_pkt = net_pkt_clone(pkt, ALLOC_TIMEOUT);
 			if (!new_pkt) {
 				return -ENOMEM;
 			}
-
-			memcpy(new_pkt, pkt, sizeof(struct net_pkt));
-			new_pkt->frags = net_pkt_copy_all(pkt, 0,
-							  ALLOC_TIMEOUT);
-			if (!new_pkt->frags) {
-				net_pkt_unref(new_pkt);
-				return -ENOMEM;
-			}
-
-			NET_DBG("[%p] Copied %zu bytes from %p to %p", ctx->tcp,
-				net_pkt_get_len(new_pkt), pkt, new_pkt);
 
 			/* This function is called from net_context.c and if we
 			 * return < 0, the caller will unref the original pkt.
