@@ -101,7 +101,6 @@ struct lwm2m_rd_client_info {
 	u8_t has_bs_server_info;
 	u8_t use_registration;
 	u8_t has_registration_info;
-	u8_t registered;
 	u8_t bootstrapped; /* bootstrap done */
 	u8_t trigger_update;
 
@@ -127,6 +126,12 @@ static void set_sm_state(int index, u8_t state)
 {
 	/* TODO: add locking? */
 	clients[index].engine_state = state;
+}
+
+static bool sm_is_registered(int index)
+{
+	return (clients[index].engine_state >= ENGINE_REGISTRATION_DONE &&
+		clients[index].engine_state <= ENGINE_DEREGISTER_FAILED);
 }
 
 static u8_t get_sm_state(int index)
@@ -256,7 +261,6 @@ static int do_registration_reply_cb(const struct zoap_packet *response,
 		       options[1].len);
 		clients[index].server_ep[options[1].len] = '\0';
 		set_sm_state(index, ENGINE_REGISTRATION_DONE);
-		clients[index].registered = 1;
 		SYS_LOG_INF("Registration Done (EP='%s')",
 			    clients[index].server_ep);
 
@@ -311,7 +315,6 @@ static int do_update_reply_cb(const struct zoap_packet *response,
 	SYS_LOG_ERR("Failed with code %u.%u. Retrying registration",
 		    ZOAP_RESPONSE_CODE_CLASS(code),
 		    ZOAP_RESPONSE_CODE_DETAIL(code));
-	clients[index].registered = 0;
 	set_sm_state(index, ENGINE_DO_REGISTRATION);
 
 	return 0;
@@ -336,7 +339,6 @@ static int do_deregister_reply_cb(const struct zoap_packet *response,
 	}
 
 	if (code == ZOAP_RESPONSE_CODE_DELETED) {
-		clients[index].registered = 0;
 		SYS_LOG_DBG("Deregistration success");
 		set_sm_state(index, ENGINE_DEREGISTERED);
 	} else {
@@ -361,7 +363,6 @@ static int sm_do_init(int index)
 		    clients[index].lifetime);
 	/* Zephyr has joined network already */
 	clients[index].has_registration_info = 1;
-	clients[index].registered = 0;
 	clients[index].bootstrapped = 0;
 	clients[index].trigger_update = 0;
 #if defined(CONFIG_LWM2M_BOOTSTRAP_SERVER)
@@ -476,7 +477,6 @@ static int sm_bootstrap_done(int index)
 				SYS_LOG_ERR("Failed to parse URI!");
 			} else {
 				clients[index].has_registration_info = 1;
-				clients[index].registered = 0;
 				clients[index].bootstrapped++;
 			}
 		} else {
@@ -522,7 +522,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 			LWM2M_RD_CLIENT_URI,
 			strlen(LWM2M_RD_CLIENT_URI));
 
-	if (!clients[index].registered) {
+	if (!sm_is_registered(index)) {
 		/* include client endpoint in URI QUERY on 1st registration */
 		zoap_add_option_int(&request, ZOAP_OPTION_CONTENT_FORMAT,
 				    LWM2M_FORMAT_APP_LINK_FORMAT);
@@ -609,7 +609,7 @@ static int sm_do_registration(int index)
 	int ret = 0;
 
 	if (clients[index].use_registration &&
-	    !clients[index].registered &&
+	    !sm_is_registered(index) &&
 	    clients[index].has_registration_info) {
 		ret = sm_send_registration(index, true,
 					   do_registration_reply_cb);
@@ -629,7 +629,7 @@ static int sm_registration_done(int index)
 	bool forced_update;
 
 	/* check for lifetime seconds - 1 so that we can update early */
-	if (clients[index].registered &&
+	if (sm_is_registered(index) &&
 	    (clients[index].trigger_update ||
 	     ((clients[index].lifetime - SECONDS_TO_UPDATE_EARLY) <=
 	      (k_uptime_get() - clients[index].last_update) / 1000))) {
