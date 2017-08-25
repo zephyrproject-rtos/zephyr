@@ -799,7 +799,7 @@ class MakeGenerator:
                                    outdir, build_logfile, args) +
                 self._get_sub_make(name, "running", directory,
                                    outdir, run_logfile,
-                                   args, make_args=["run"]) +
+                                   args, make_args="run") +
                 self._get_rule_footer(name))
         self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
