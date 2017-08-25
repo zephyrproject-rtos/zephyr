@@ -729,7 +729,8 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
-		return -EINVAL;
+		NET_ERR("Packet %p does not contain TCP header", pkt);
+		return -EMSGSIZE;
 	}
 
 	if (sys_get_be32(tcp_hdr->ack) != ctx->tcp->send_ack) {
@@ -883,6 +884,15 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+		if (!tcp_hdr) {
+			/* The pkt does not contain TCP header, this should
+			 * not happen.
+			 */
+			NET_ERR("pkt %p has no TCP header", pkt);
+			sys_slist_remove(list, NULL, head);
+			net_pkt_unref(pkt);
+			continue;
+		}
 
 		seq = sys_get_be32(tcp_hdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
