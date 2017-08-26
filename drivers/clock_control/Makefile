@@ -8,3 +8,4 @@ obj-$(CONFIG_SOC_SERIES_STM32F3X) += stm32f3x_ll_clock.o
 obj-$(CONFIG_SOC_SERIES_STM32F4X) += stm32f4x_ll_clock.o
 endif
 obj-$(CONFIG_CLOCK_CONTROL_BEETLE) += beetle_clock_control.o
+obj-$(CONFIG_CLOCK_CONTROL_MCUX_SIM) += clock_control_mcux_sim.o
