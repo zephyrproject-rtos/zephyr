@@ -7,13 +7,14 @@
 #include <errno.h>
 #include <device.h>
 #include <uart.h>
+#include <clock_control.h>
 #include <fsl_uart.h>
-#include <fsl_clock.h>
 #include <soc.h>
 
 struct uart_mcux_config {
 	UART_Type *base;
-	clock_name_t clock_source;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
 	u32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
@@ -227,9 +228,18 @@ static int uart_mcux_init(struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config->config_info;
 	uart_config_t uart_config;
+	struct device *clock_dev;
 	u32_t clock_freq;
 
-	clock_freq = CLOCK_GetFreq(config->clock_source);
+	clock_dev = device_get_binding(config->clock_name);
+	if (clock_dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
 
 	UART_GetDefaultConfig(&uart_config);
 	uart_config.enableTx = true;
@@ -275,7 +285,8 @@ static void uart_mcux_config_func_0(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_0_config = {
 	.base = UART0,
-	.clock_source = UART0_CLK_SRC,
+	.clock_name = CONFIG_UART_MCUX_0_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t)CONFIG_UART_MCUX_0_CLOCK_SUBSYS,
 	.baud_rate = CONFIG_UART_MCUX_0_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_mcux_config_func_0,
@@ -317,7 +328,8 @@ static void uart_mcux_config_func_1(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_1_config = {
 	.base = UART1,
-	.clock_source = UART1_CLK_SRC,
+	.clock_name = CONFIG_UART_MCUX_1_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t)CONFIG_UART_MCUX_1_CLOCK_SUBSYS,
 	.baud_rate = CONFIG_UART_MCUX_1_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_mcux_config_func_1,
@@ -359,7 +371,8 @@ static void uart_mcux_config_func_2(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_2_config = {
 	.base = UART2,
-	.clock_source = UART2_CLK_SRC,
+	.clock_name = CONFIG_UART_MCUX_2_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t)CONFIG_UART_MCUX_2_CLOCK_SUBSYS,
 	.baud_rate = CONFIG_UART_MCUX_2_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_mcux_config_func_2,
@@ -401,7 +414,8 @@ static void uart_mcux_config_func_3(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_3_config = {
 	.base = UART3,
-	.clock_source = UART3_CLK_SRC,
+	.clock_name = CONFIG_UART_MCUX_3_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t)CONFIG_UART_MCUX_3_CLOCK_SUBSYS,
 	.baud_rate = CONFIG_UART_MCUX_3_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_mcux_config_func_3,
@@ -443,7 +457,8 @@ static void uart_mcux_config_func_4(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_4_config = {
 	.base = UART4,
-	.clock_source = UART4_CLK_SRC,
+	.clock_name = CONFIG_UART_MCUX_4_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t)CONFIG_UART_MCUX_4_CLOCK_SUBSYS,
 	.baud_rate = CONFIG_UART_MCUX_4_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_mcux_config_func_4,
@@ -485,7 +500,8 @@ static void uart_mcux_config_func_5(struct device *dev);
 
 static const struct uart_mcux_config uart_mcux_5_config = {
 	.base = UART5,
-	.clock_source = UART5_CLK_SRC,
+	.clock_name = CONFIG_UART_MCUX_5_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t)CONFIG_UART_MCUX_5_CLOCK_SUBSYS,
 	.baud_rate = CONFIG_UART_MCUX_5_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_mcux_config_func_5,
