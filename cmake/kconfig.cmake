@@ -7,7 +7,10 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 set(BOARD_DEFCONFIG ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
 
+if(CONF_FILE)
 string(REPLACE " " ";" CONF_FILE_AS_LIST ${CONF_FILE})
+endif()
+
 
 set(ENV{srctree}            ${PROJECT_SOURCE_DIR})
 set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
@@ -29,6 +32,8 @@ elseif(CONF_FILE)
       set(CREATE_NEW_DOTCONFIG 1)
     endif()
   endforeach()
+elseif(NOT CONF_FILE AND NOT EXISTS ${DOTCONFIG})
+      set(CREATE_NEW_DOTCONFIG 1)
 endif()
 if(CREATE_NEW_DOTCONFIG)
   execute_process(
