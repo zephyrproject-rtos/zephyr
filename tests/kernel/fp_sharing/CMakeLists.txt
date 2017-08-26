@@ -7,5 +7,6 @@ endif()
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
 
+target_compile_definitions(zephyr PUBLIC PI_NUM_ITERATIONS=700000)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
