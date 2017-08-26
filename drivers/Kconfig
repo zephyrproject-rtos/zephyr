@@ -30,7 +30,7 @@ source "drivers/interrupt_controller/Kconfig"
 
 source "drivers/timer/Kconfig"
 
-source "drivers/random/Kconfig"
+source "drivers/random_generator/Kconfig"
 
 source "drivers/grove/Kconfig"
 
