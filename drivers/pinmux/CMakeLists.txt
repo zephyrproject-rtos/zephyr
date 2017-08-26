@@ -30,5 +30,8 @@ target_sources_ifdef(CONFIG_PINMUX_MCUX            drivers__pinmux PRIVATE pinmu
 target_sources_ifdef(CONFIG_PINMUX_QMSI            drivers__pinmux PRIVATE pinmux_qmsi.c)
 target_sources_ifdef(CONFIG_PINMUX_STM32           drivers__pinmux PRIVATE stm32/pinmux_stm32.c)
 
+# FIXME: needed when board pinmux is somewhere else
+target_sources(drivers__pinmux PRIVATE dummy.c)
+
 # "runtime" pinmux
 add_subdirectory_ifdef(CONFIG_PINMUX_DEV dev)
