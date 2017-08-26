@@ -7,13 +7,14 @@
 #include <errno.h>
 #include <device.h>
 #include <uart.h>
+#include <clock_control.h>
 #include <fsl_lpuart.h>
-#include <fsl_clock.h>
 #include <soc.h>
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
-	clock_name_t clock_source;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
 	u32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
@@ -231,9 +232,18 @@ static int mcux_lpuart_init(struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config->config_info;
 	lpuart_config_t uart_config;
+	struct device *clock_dev;
 	u32_t clock_freq;
 
-	clock_freq = CLOCK_GetFreq(config->clock_source);
+	clock_dev = device_get_binding(config->clock_name);
+	if (clock_dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
 
 	LPUART_GetDefaultConfig(&uart_config);
 	uart_config.enableTx = true;
@@ -279,7 +289,9 @@ static void mcux_lpuart_config_func_0(struct device *dev);
 
 static const struct mcux_lpuart_config mcux_lpuart_0_config = {
 	.base = LPUART0,
-	.clock_source = LPUART0_CLK_SRC,
+	.clock_name = CONFIG_UART_MCUX_LPUART_0_CLOCK_NAME,
+	.clock_subsys =
+		(clock_control_subsys_t)CONFIG_UART_MCUX_LPUART_0_CLOCK_SUBSYS,
 	.baud_rate = CONFIG_UART_MCUX_LPUART_0_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpuart_config_func_0,
