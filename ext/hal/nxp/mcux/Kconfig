@@ -43,6 +43,13 @@ config HAS_MCUX_RNGA
 	  Set if the random number generator accelerator (RNGA) module is
 	  present in the SoC.
 
+config HAS_MCUX_SIM
+	bool
+	default n
+	help
+	  Set if the system integration module (SIM) module is present in the
+	  SoC.
+
 config HAS_MCUX_TRNG
 	bool
 	default n
