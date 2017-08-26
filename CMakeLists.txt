@@ -48,6 +48,7 @@ target_include_directories(zephyr PUBLIC
   kernel/include
   arch/${ARCH}/include
   arch/${ARCH}/soc/${SOC_PATH}
+  arch/${ARCH}/soc/${SOC_FAMILY}/include
   boards/${ARCH}/${BOARD_NAME}
   include
   lib/libc/minimal/include
