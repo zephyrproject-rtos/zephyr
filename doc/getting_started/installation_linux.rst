@@ -148,4 +148,4 @@ Follow these steps to install the SDK on your Linux host system.
      EOF
 
 .. _Zephyr SDK archive:
-    https://zephyrproject.org/downloads/tools
+    https://www.zephyrproject.org/downloads#Zephyr_SDK_Tools
