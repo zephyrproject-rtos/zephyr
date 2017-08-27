@@ -449,6 +449,11 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 	return retcode;
 }
 
+struct device *radio_hf_clock_get(void)
+{
+	return _radio.hf_clock;
+}
+
 void ll_reset(void)
 {
 	u16_t conn_handle;
