@@ -12,6 +12,7 @@ cscope.*
 outdir
 outdir-*
 scripts/basic/fixdep
+scripts/basic/stdin2hex
 scripts/gen_idt/gen_idt
 scripts/kconfig/conf
 scripts/kconfig/mconf
