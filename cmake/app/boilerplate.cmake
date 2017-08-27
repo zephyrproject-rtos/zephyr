@@ -59,12 +59,13 @@ if(NOT BOARD)
   message(FATAL_ERROR "BOARD not set")
 endif()
 
-find_path(BOARD_DIR NAMES ${BOARD} PATHS $ENV{ZEPHYR_BASE}/boards/* NO_DEFAULT_PATH)
+find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
 if(NOT BOARD_DIR)
   message(FATAL_ERROR "No board named '${BOARD}' found")
 endif()
 
-get_filename_component(ARCH ${BOARD_DIR} NAME)
+get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
+get_filename_component(ARCH ${BOARD_ARCH_DIR} NAME)
 
 if(CONF_FILE)
   # CONF_FILE has either been specified on the cmake CLI or is already
@@ -96,7 +97,7 @@ include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
-include($ENV{ZEPHYR_BASE}/boards/${ARCH}/${BOARD}/board.cmake OPTIONAL)
+include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
 
