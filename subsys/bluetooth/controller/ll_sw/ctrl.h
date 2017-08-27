@@ -342,6 +342,7 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 		 u16_t packet_data_octets_max,
 		 u16_t packet_tx_data_size, u8_t *mem_radio,
 		 u16_t mem_size);
+struct device *radio_hf_clock_get(void);
 void radio_ticks_active_to_start_set(u32_t ticks_active_to_start);
 /* Downstream - Advertiser */
 struct radio_adv_data *radio_adv_data_get(void);

@@ -68,16 +68,31 @@ void radio_phy_set(u8_t phy, u8_t flags)
 	case BIT(0):
 	default:
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
+
+#if defined(CONFIG_SOC_NRF52840)
+		/* Workaround: nRF52840 Engineering A Errata ID 164 */
+		*(volatile u32_t *)0x4000173c &= ~0x80000000;
+#endif /* CONFIG_SOC_NRF52840 */
 		break;
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 	case BIT(1):
 		mode = RADIO_MODE_MODE_Nrf_2Mbit;
+
+#if defined(CONFIG_SOC_NRF52840)
+		/* Workaround: nRF52840 Engineering A Errata ID 164 */
+		*(volatile u32_t *)0x4000173c &= ~0x80000000;
+#endif /* CONFIG_SOC_NRF52840 */
 		break;
 
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
 	case BIT(1):
 		mode = RADIO_MODE_MODE_Ble_2Mbit;
+
+#if defined(CONFIG_SOC_NRF52840)
+		/* Workaround: nRF52840 Engineering A Errata ID 164 */
+		*(volatile u32_t *)0x4000173c &= ~0x80000000;
+#endif /* CONFIG_SOC_NRF52840 */
 		break;
 
 #if defined(CONFIG_SOC_NRF52840)
@@ -87,6 +102,12 @@ void radio_phy_set(u8_t phy, u8_t flags)
 		} else {
 			mode = RADIO_MODE_MODE_Ble_LR500Kbit;
 		}
+
+		/* Workaround: nRF52840 Engineering A Errata ID 164 */
+		*(volatile u32_t *)0x4000173c |= 0x80000000;
+		*(volatile u32_t *)0x4000173c =
+			((*(volatile u32_t *)0x4000173c) & 0xFFFFFF00) |
+			0x5C;
 		break;
 #endif /* CONFIG_SOC_NRF52840 */
 #endif /* CONFIG_SOC_SERIES_NRF52X */
@@ -115,6 +136,10 @@ void radio_freq_chan_set(u32_t chan)
 void radio_whiten_iv_set(u32_t iv)
 {
 	NRF_RADIO->DATAWHITEIV = iv;
+
+	NRF_RADIO->PCNF1 &= ~RADIO_PCNF1_WHITEEN_Msk;
+	NRF_RADIO->PCNF1 |= ((1UL) << RADIO_PCNF1_WHITEEN_Pos) &
+			    RADIO_PCNF1_WHITEEN_Msk;
 }
 
 void radio_aa_set(u8_t *aa)
@@ -187,17 +212,17 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 			    RADIO_PCNF0_S1LEN_Msk) |
 			   extra;
 
-	NRF_RADIO->PCNF1 = (((((u32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) &
+	NRF_RADIO->PCNF1 &= ~(RADIO_PCNF1_MAXLEN_Msk | RADIO_PCNF1_STATLEN_Msk |
+			      RADIO_PCNF1_BALEN_Msk | RADIO_PCNF1_ENDIAN_Msk);
+	NRF_RADIO->PCNF1 |= ((((u32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) &
 			     RADIO_PCNF1_MAXLEN_Msk) |
-			     (((0UL) << RADIO_PCNF1_STATLEN_Pos) &
-			       RADIO_PCNF1_STATLEN_Msk) |
-			     (((3UL) << RADIO_PCNF1_BALEN_Pos) &
-			       RADIO_PCNF1_BALEN_Msk) |
-			     (((RADIO_PCNF1_ENDIAN_Little) <<
-			       RADIO_PCNF1_ENDIAN_Pos) &
-			      RADIO_PCNF1_ENDIAN_Msk) |
-			     (((1UL) << RADIO_PCNF1_WHITEEN_Pos) &
-			       RADIO_PCNF1_WHITEEN_Msk));
+			    (((0UL) << RADIO_PCNF1_STATLEN_Pos) &
+			     RADIO_PCNF1_STATLEN_Msk) |
+			    (((3UL) << RADIO_PCNF1_BALEN_Pos) &
+			     RADIO_PCNF1_BALEN_Msk) |
+			    (((RADIO_PCNF1_ENDIAN_Little) <<
+			      RADIO_PCNF1_ENDIAN_Pos) &
+			     RADIO_PCNF1_ENDIAN_Msk);
 }
 
 void radio_pkt_rx_set(void *rx_packet)
@@ -657,6 +682,25 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	return remainder;
 }
 
+void radio_tmr_start_us(u8_t trx, u32_t us)
+{
+	if (trx) {
+		NRF_PPI->CH[0].EEP =
+			(u32_t)&(NRF_TIMER0->EVENTS_COMPARE[0]);
+		NRF_PPI->CH[0].TEP =
+			(u32_t)&(NRF_RADIO->TASKS_TXEN);
+	} else {
+		NRF_PPI->CH[0].EEP =
+			(u32_t)&(NRF_TIMER0->EVENTS_COMPARE[0]);
+		NRF_PPI->CH[0].TEP =
+			(u32_t)&(NRF_RADIO->TASKS_RXEN);
+	}
+	NRF_PPI->CHENSET = PPI_CHEN_CH0_Msk;
+
+	NRF_TIMER0->CC[0] = us;
+	NRF_TIMER0->EVENTS_COMPARE[0] = 0;
+}
+
 void radio_tmr_stop(void)
 {
 	NRF_TIMER0->TASKS_STOP = 1;
@@ -687,6 +731,11 @@ void radio_tmr_aa_capture(void)
 	NRF_PPI->CH[3].EEP = (u32_t)&(NRF_RADIO->EVENTS_ADDRESS);
 	NRF_PPI->CH[3].TEP = (u32_t)&(NRF_TIMER0->TASKS_CAPTURE[1]);
 	NRF_PPI->CHENSET = (PPI_CHEN_CH2_Msk | PPI_CHEN_CH3_Msk);
+}
+
+u32_t radio_tmr_ready_get(void)
+{
+	return NRF_TIMER0->CC[0];
 }
 
 u32_t radio_tmr_aa_get(void)
