@@ -68,6 +68,12 @@ function(zephyr_library_sources_ifdef feature_toggle source)
   endif()
 endfunction()
 
+function(zephyr_sources_if_kconfig item)
+  get_filename_component(item_basename ${item} NAME_WE)
+  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
+  zephyr_sources_ifdef(${UPPER_CASE_CONFIG} ${item})
+endfunction()
+
 function(zephyr_sources_ifdef feature_toggle)
   if(${${feature_toggle}})
     zephyr_sources(${ARGN})
