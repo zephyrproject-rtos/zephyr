@@ -1,0 +1,4 @@
+tests:
+-   test:
+        tags: core security
+        arch_whitelist: x86
