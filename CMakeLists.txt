@@ -49,7 +49,7 @@ target_include_directories(zephyr PUBLIC
   arch/${ARCH}/include
   arch/${ARCH}/soc/${SOC_PATH}
   arch/${ARCH}/soc/${SOC_FAMILY}/include
-  boards/${ARCH}/${BOARD_NAME}
+  ${BOARD_DIR}
   include
   lib/libc/minimal/include
   ${PROJECT_BINARY_DIR}/include/generated
@@ -206,7 +206,7 @@ if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   endif()
 else()
   # Try a board specific linker file
-  set(LINKER_SCRIPT $ENV{ZEPHYR_BASE}/boards/${ARCH}/${BOARD_NAME}/linker.ld)
+  set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
     set(LINKER_SCRIPT $ENV{ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
