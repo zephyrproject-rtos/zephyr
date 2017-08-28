@@ -107,7 +107,7 @@ INPUT                  = \
 			../include/arch/arm/cortex_m \
                         ../include/arch/nios2/ \
                         ../lib/libc/minimal/include/ \
-                        ../include/net/zoap.h \
+                        ../include/net/coap.h \
                         ../include/net/dns_resolve.h \
                         ../tests/ztest/include/
 INPUT_ENCODING         = UTF-8
