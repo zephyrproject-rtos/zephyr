@@ -1,4 +1,4 @@
-target_sources(zephyr PRIVATE
+target_sources(app PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/source/stdlib/atoi.c
   ${CMAKE_CURRENT_SOURCE_DIR}/source/stdlib/strtol.c
   ${CMAKE_CURRENT_SOURCE_DIR}/source/stdlib/strtoul.c
@@ -10,7 +10,7 @@ target_sources(zephyr PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/source/stdout/sprintf.c
   ${CMAKE_CURRENT_SOURCE_DIR}/source/stdout/fprintf.c
 )
-target_include_directories(zephyr
+target_include_directories(app
   PUBLIC
   include
 )
