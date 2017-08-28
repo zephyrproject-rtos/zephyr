@@ -1,5 +1,6 @@
 obj-$(CONFIG_NET_SOCKETS) += sockets/
 obj-$(CONFIG_ZOAP) += zoap/
+obj-$(CONFIG_COAP) += coap/
 obj-$(CONFIG_DNS_RESOLVER) += dns/
 obj-$(CONFIG_MQTT_LIB) += mqtt/
 obj-$(CONFIG_HTTP) += http/
