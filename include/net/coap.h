@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * @brief COAP library
- * @defgroup coap COAP Library
+ * @defgroup COAP Library
  * @{
  */
 
@@ -64,8 +64,7 @@ enum coap_option_num {
 /**
  * @brief Available request methods.
  *
- * To be used with coap_header_set_code() when creating a request
- * or a response.
+ * To be used when creating a request or a response.
  */
 enum coap_method {
 	COAP_METHOD_GET = 1,
@@ -114,7 +113,7 @@ enum coap_msgtype {
 /**
  * @brief Set of response codes available for a response packet.
  *
- * To be used with coap_header_set_code() when creating a response.
+ * To be used when creating a response.
  */
 enum coap_response_code {
 	COAP_RESPONSE_CODE_OK = coap_make_response_code(2, 0),
@@ -134,13 +133,15 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_INCOMPLETE = coap_make_response_code(4, 8),
 	COAP_RESPONSE_CODE_PRECONDITION_FAILED = coap_make_response_code(4, 12),
 	COAP_RESPONSE_CODE_REQUEST_TOO_LARGE = coap_make_response_code(4, 13),
-	COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT = coap_make_response_code(4, 15),
+	COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT =
+						coap_make_response_code(4, 15),
 	COAP_RESPONSE_CODE_INTERNAL_ERROR = coap_make_response_code(5, 0),
 	COAP_RESPONSE_CODE_NOT_IMPLEMENTED = coap_make_response_code(5, 1),
 	COAP_RESPONSE_CODE_BAD_GATEWAY = coap_make_response_code(5, 2),
 	COAP_RESPONSE_CODE_SERVICE_UNAVAILABLE = coap_make_response_code(5, 3),
 	COAP_RESPONSE_CODE_GATEWAY_TIMEOUT = coap_make_response_code(5, 4),
-	COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED = coap_make_response_code(5, 5)
+	COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED =
+						coap_make_response_code(5, 5)
 };
 
 #define COAP_CODE_EMPTY (0)
@@ -157,8 +158,7 @@ struct coap_resource;
  * invoked by the remote entity.
  */
 typedef int (*coap_method_t)(struct coap_resource *resource,
-			     struct coap_packet *request,
-			     const struct sockaddr *from);
+			     struct coap_packet *request);
 
 /**
  * @typedef coap_notify_t
@@ -199,8 +199,11 @@ struct coap_observer {
  */
 struct coap_packet {
 	struct net_pkt *pkt;
-	u8_t *start; /* Start of the payload */
-	u16_t total_size;
+	struct net_buf *frag; /* Where CoAP header resides */
+	u16_t offset; /* Where CoAP header starts.*/
+	u8_t hdr_len; /* CoAP header length */
+	u8_t opt_len; /* Total options length (delta + len + value) */
+	u16_t last_delta; /* Used only when preparing CoAP packet */
 };
 
 /**
@@ -310,8 +313,15 @@ void coap_reply_init(struct coap_reply *reply,
  * To be used with coap_find_options().
  */
 struct coap_option {
-	u8_t *value;
+	u16_t delta;
+
+#if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
 	u16_t len;
+	u8_t value[CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE];
+#else
+	u8_t len;
+	u8_t value[12];
+#endif
 };
 
 /**
@@ -321,10 +331,13 @@ struct coap_option {
  * @param cpkt Packet to be initialized from received @a pkt.
  * @param pkt Network Packet containing a CoAP packet, its @a data pointer is
  * positioned on the start of the CoAP packet.
+ * @param options Parse options and cache its details.
+ * @param opt_num Number of options
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_packet_parse(struct coap_packet *cpkt, struct net_pkt *pkt);
+int coap_packet_parse(struct coap_packet *cpkt, struct net_pkt *pkt,
+		      struct coap_option *options, u8_t opt_num);
 
 /**
  * @brief Creates a new CoAP packet from a net_pkt. @a pkt must remain
@@ -333,10 +346,18 @@ int coap_packet_parse(struct coap_packet *cpkt, struct net_pkt *pkt);
  * @param cpkt New packet to be initialized using the storage from @a
  * pkt.
  * @param pkt Network Packet that will contain a CoAP packet
+ * @param ver CoAP header version
+ * @param type CoAP header type
+ * @param tokenlen CoAP header token length
+ * @param token CoAP header token
+ * @param code CoAP header code
+ * @param id CoAP header message id
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt);
+int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
+		     u8_t ver, u8_t type, u8_t tokenlen,
+		     u8_t *token, u8_t code, u16_t id);
 
 /**
  * @brief Initialize a pending request with a request.
@@ -459,13 +480,15 @@ void coap_reply_clear(struct coap_reply *reply);
  *
  * @param cpkt Packet received
  * @param resources Array of known resources
- * @param from Address from which the packet was received
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
  *
  * @return 0 in case of success or negative in case of error.
  */
 int coap_handle_request(struct coap_packet *cpkt,
 			struct coap_resource *resources,
-			const struct sockaddr *from);
+			struct coap_option *options,
+			u8_t opt_num);
 
 /**
  * @brief Indicates that this resource was updated and that the @a
@@ -488,36 +511,32 @@ int coap_resource_notify(struct coap_resource *resource);
 bool coap_request_is_observe(const struct coap_packet *request);
 
 /**
- * @brief Returns a pointer to the start of the payload and its size
+ * @brief Append payload marker to CoAP packet
  *
- * It will insert the COAP_MARKER (0xFF), if its not set, and return the
- * available size for the payload.
- *
- * @param cpkt Packet to get (or insert) the payload
- * @param len Amount of space for the payload
- *
- * @return pointer to the start of the payload, NULL in case of error.
- */
-u8_t *coap_packet_get_payload(struct coap_packet *cpkt, u16_t *len);
-
-/**
- * @brief Sets how much space was used by the payload.
- *
- * Used for outgoing packets, after coap_packet_get_payload(), to
- * update the internal representation with the amount of data that was
- * added to the packet.
- *
- * @param cpkt Packet to be updated
- * @param len Amount of data that was added to the payload
+ * @param cpkt Packet to append the payload marker (0xFF)
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_packet_set_used(struct coap_packet *cpkt, u16_t len);
+int coap_packet_append_payload_marker(struct coap_packet *cpkt);
 
 /**
- * @brief Adds an option to the packet.
+ * @brief Append payload to CoAP packet
  *
- * Note: options must be added in numeric order of their codes.
+ * @param cpkt Packet to append the payload
+ * @param payload CoAP packet payload
+ * @param payload_len CoAP packet payload len
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_packet_append_payload(struct coap_packet *cpkt, u8_t *payload,
+			       u16_t payload_len);
+
+/**
+ * @brief Appends an option to the packet.
+ *
+ * Note: options must be added in numeric order of their codes. Otherwise
+ * error will be returned.
+ * TODO: Add support for placing options according to its delta value.
  *
  * @param cpkt Packet to be updated
  * @param code Option code to add to the packet, see #coap_option_num
@@ -526,8 +545,8 @@ int coap_packet_set_used(struct coap_packet *cpkt, u16_t len);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_add_option(struct coap_packet *cpkt, u16_t code,
-		    const void *value, u16_t len);
+int coap_packet_append_option(struct coap_packet *cpkt, u16_t code,
+			      const u8_t *value, u16_t len);
 
 /**
  * @brief Converts an option to its integer representation.
@@ -543,7 +562,7 @@ int coap_add_option(struct coap_packet *cpkt, u16_t code,
 unsigned int coap_option_value_to_int(const struct coap_option *option);
 
 /**
- * @brief Adds an integer value option to the packet.
+ * @brief Appends an integer value option to the packet.
  *
  * The option must be added in numeric order of their codes, and the
  * least amount of bytes will be used to encode the value.
@@ -554,8 +573,8 @@ unsigned int coap_option_value_to_int(const struct coap_option *option);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_add_option_int(struct coap_packet *cpkt, u16_t code,
-			unsigned int val);
+int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
+			   unsigned int val);
 
 /**
  * @brief Return the values associated with the option of value @a
@@ -628,7 +647,7 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 			     size_t total_size);
 
 /**
- * @brief Add BLOCK1 option to the packet.
+ * @brief Append BLOCK1 option to the packet.
  *
  * @param cpkt Packet to be updated
  * @param ctx Block context from which to retrieve the
@@ -636,11 +655,11 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_add_block1_option(struct coap_packet *cpkt,
-			   struct coap_block_context *ctx);
+int coap_append_block1_option(struct coap_packet *cpkt,
+			      struct coap_block_context *ctx);
 
 /**
- * @brief Add BLOCK2 option to the packet.
+ * @brief Append BLOCK2 option to the packet.
  *
  * @param cpkt Packet to be updated
  * @param ctx Block context from which to retrieve the
@@ -648,11 +667,11 @@ int coap_add_block1_option(struct coap_packet *cpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_add_block2_option(struct coap_packet *cpkt,
-			   struct coap_block_context *ctx);
+int coap_append_block2_option(struct coap_packet *cpkt,
+			      struct coap_block_context *ctx);
 
 /**
- * @brief Add SIZE1 option to the packet.
+ * @brief Append SIZE1 option to the packet.
  *
  * @param cpkt Packet to be updated
  * @param ctx Block context from which to retrieve the
@@ -660,11 +679,11 @@ int coap_add_block2_option(struct coap_packet *cpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_add_size1_option(struct coap_packet *cpkt,
-			 struct coap_block_context *ctx);
+int coap_append_size1_option(struct coap_packet *cpkt,
+			     struct coap_block_context *ctx);
 
 /**
- * @brief Add SIZE2 option to the packet.
+ * @brief Append SIZE2 option to the packet.
  *
  * @param cpkt Packet to be updated
  * @param ctx Block context from which to retrieve the
@@ -672,8 +691,8 @@ int coap_add_size1_option(struct coap_packet *cpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_add_size2_option(struct coap_packet *cpkt,
-			 struct coap_block_context *ctx);
+int coap_append_size2_option(struct coap_packet *cpkt,
+			     struct coap_block_context *ctx);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates
@@ -723,12 +742,11 @@ u8_t coap_header_get_type(const struct coap_packet *cpkt);
  * @brief Returns the token (if any) in the CoAP packet.
  *
  * @param cpkt CoAP packet representation
- * @param len Where to store the length of the token
+ * @param token Where to store the token
  *
- * @return pointer to the start of the token in the CoAP packet.
+ * @return Token length in the CoAP packet.
  */
-const u8_t *coap_header_get_token(const struct coap_packet *cpkt,
-				     u8_t *len);
+u8_t coap_header_get_token(const struct coap_packet *cpkt, u8_t *token);
 
 /**
  * @brief Returns the code of the CoAP packet.
@@ -749,50 +767,6 @@ u8_t coap_header_get_code(const struct coap_packet *cpkt);
 u16_t coap_header_get_id(const struct coap_packet *cpkt);
 
 /**
- * @brief Sets the version of the CoAP packet.
- *
- * @param cpkt CoAP packet representation
- * @param ver The CoAP version to set in the packet
- */
-void coap_header_set_version(struct coap_packet *cpkt, u8_t ver);
-
-/**
- * @brief Sets the type of the CoAP packet.
- *
- * @param cpkt CoAP packet representation
- * @param type The packet type to set
- */
-void coap_header_set_type(struct coap_packet *cpkt, u8_t type);
-
-/**
- * @brief Sets the token in the CoAP packet.
- *
- * @param cpkt CoAP packet representation
- * @param token Token to set in the packet, will be copied
- * @param tokenlen Size of the token to be set, 8 bytes maximum
- *
- * @return 0 in case of success or negative in case of error.
- */
-int coap_header_set_token(struct coap_packet *cpkt, const u8_t *token,
-			  u8_t tokenlen);
-
-/**
- * @brief Sets the code present in the CoAP packet.
- *
- * @param cpkt CoAP packet representation
- * @param code The code set in the packet
- */
-void coap_header_set_code(struct coap_packet *cpkt, u8_t code);
-
-/**
- * @brief Sets the message id present in the CoAP packet.
- *
- * @param cpkt CoAP packet representation
- * @param id The message id to set in the packet
- */
-void coap_header_set_id(struct coap_packet *cpkt, u16_t id);
-
-/**
  * @brief Helper to generate message ids
  *
  * @return a new message id
@@ -803,6 +777,23 @@ static inline u16_t coap_next_id(void)
 
 	return ++message_id;
 }
+
+/**
+ * @brief Returns the fragment pointer and offset where payload starts
+ * in the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ * @param offset Stores the offset value where payload starts
+ * @param len Total length of CoAP payload
+ *
+ * @return the net_buf fragment pointer and offset value if payload exists
+ *         NULL pointer and offset set to 0 in case there is no payload
+ *         NULL pointer and offset value 0xffff incase of an error
+ */
+struct net_buf *coap_packet_get_payload(const struct coap_packet *cpkt,
+					u16_t *offset,
+					u16_t *len);
+
 
 /**
  * @brief Returns a randomly generated array of 8 bytes, that can be

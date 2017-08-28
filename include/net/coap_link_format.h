@@ -21,22 +21,17 @@ extern "C" {
  * @addtogroup coap COAP Library
  * @{
  */
-
-#define _COAP_WELL_KNOWN_CORE_PATH \
-	((const char * const[]) { ".well-known", "core", NULL })
-
-int _coap_well_known_core_get(struct coap_resource *resource,
-			      struct coap_packet *request,
-			      const struct sockaddr *from);
-
 /**
  * This resource should be added before all other resources that should be
  * included in the responses of the .well-known/core resource.
  */
-#define COAP_WELL_KNOWN_CORE_RESOURCE		\
-	{ .get = _coap_well_known_core_get,	\
-	  .path = _COAP_WELL_KNOWN_CORE_PATH,	\
-	}
+#define COAP_WELL_KNOWN_CORE_PATH \
+	((const char * const[]) { ".well-known", "core", NULL })
+
+int coap_well_known_core_get(struct coap_resource *resource,
+			     struct coap_packet *request,
+			     struct coap_packet *response,
+			     struct net_pkt *pkt);
 
 /**
  * In case you want to add attributes to the resources included in the
