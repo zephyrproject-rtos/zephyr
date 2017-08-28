@@ -41,7 +41,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 
-#include <net/zoap.h>
+#include <net/coap.h>
 
 #if defined(MBEDTLS_DEBUG_C)
 #include "mbedtls/debug.h"
@@ -66,12 +66,12 @@ const char *pers = "mini_client";
 static unsigned char payload[128];
 
 #define NUM_REPLIES 3
-struct zoap_reply replies[NUM_REPLIES];
+struct coap_reply replies[NUM_REPLIES];
 
-#define ZOAP_BUF_SIZE 128
+#define COAP_BUF_SIZE 128
 
-NET_PKT_TX_SLAB_DEFINE(zoap_pkt_slab, 4);
-NET_BUF_POOL_DEFINE(zoap_data_pool, 4, ZOAP_BUF_SIZE, 0, NULL);
+NET_PKT_TX_SLAB_DEFINE(coap_pkt_slab, 4);
+NET_BUF_POOL_DEFINE(coap_data_pool, 4, COAP_BUF_SIZE, 0, NULL);
 
 static const char *const test_path[] = { "test", NULL };
 
@@ -95,8 +95,8 @@ static void msg_dump(const char *s, u8_t *data, unsigned int len)
 	printk("(%u bytes)\n", len);
 }
 
-static int resource_reply_cb(const struct zoap_packet *response,
-			     struct zoap_reply *reply,
+static int resource_reply_cb(const struct coap_packet *response,
+			     struct coap_reply *reply,
 			     const struct sockaddr *from)
 {
 
@@ -184,8 +184,8 @@ void dtls_client(void)
 	int ret;
 	struct udp_context ctx;
 	struct dtls_timing_context timer;
-	struct zoap_packet request, zpkt;
-	struct zoap_reply *reply;
+	struct coap_packet request, zpkt;
+	struct coap_reply *reply;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	u8_t observe = 0;
@@ -283,53 +283,48 @@ void dtls_client(void)
 
 	/* Write to server */
 retry:
-	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
 		goto exit;
 	}
 
-	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
 	if (!frag) {
 		goto exit;
 	}
 
 	net_pkt_frag_add(pkt, frag);
 
-	ret = zoap_packet_init(&request, pkt);
+	ret = coap_packet_init(&request, pkt, 1, COAP_TYPE_CON,
+			       0, NULL, COAP_METHOD_GET, coap_next_id());
 	if (ret < 0) {
 		goto exit;
 	}
 
-	zoap_header_set_version(&request, 1);
-	zoap_header_set_type(&request, ZOAP_TYPE_CON);
-	zoap_header_set_code(&request, ZOAP_METHOD_GET);
-	zoap_header_set_id(&request, zoap_next_id());
-	zoap_header_set_token(&request, zoap_next_token(), 0);
-
 	/* Enable observing the resource. */
-	ret = zoap_add_option(&request, ZOAP_OPTION_OBSERVE,
-			      &observe, sizeof(observe));
+	ret = coap_packet_append_option(&request, COAP_OPTION_OBSERVE,
+					&observe, sizeof(observe));
 	if (ret < 0) {
 		mbedtls_printf("Unable add option to request.\n");
 		goto exit;
 	}
 
 	for (p = test_path; p && *p; p++) {
-		ret = zoap_add_option(&request, ZOAP_OPTION_URI_PATH,
-				      *p, strlen(*p));
+		ret = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+						*p, strlen(*p));
 		if (ret < 0) {
 			mbedtls_printf("Unable add option/path to request.\n");
 			goto exit;
 		}
 	}
 
-	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+	reply = coap_reply_next_unused(replies, NUM_REPLIES);
 	if (!reply) {
 		mbedtls_printf("No resources for waiting for replies.\n");
 		goto exit;
 	}
 
-	zoap_reply_init(reply, &request);
+	coap_reply_init(reply, &request);
 	reply->reply = resource_reply_cb;
 	len = frag->len;
 
@@ -346,24 +341,24 @@ retry:
 		goto exit;
 	}
 
-	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
 		mbedtls_printf("Could not get packet from pool\n");
 		goto exit;
 	}
 
-	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
 	if (!frag) {
 		mbedtls_printf("Could not get frag from pool\n");
 		goto exit;
 	}
 
 	net_pkt_frag_add(pkt, frag);
-	len = ZOAP_BUF_SIZE - 1;
-	memset(frag->data, 0, ZOAP_BUF_SIZE);
+	len = COAP_BUF_SIZE - 1;
+	memset(frag->data, 0, COAP_BUF_SIZE);
 
 	do {
-		ret = mbedtls_ssl_read(&ssl, frag->data, ZOAP_BUF_SIZE - 1);
+		ret = mbedtls_ssl_read(&ssl, frag->data, COAP_BUF_SIZE - 1);
 	} while (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 		 ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
@@ -390,13 +385,13 @@ retry:
 	len = ret;
 	frag->len = len;
 
-	ret = zoap_packet_parse(&zpkt, pkt);
+	ret = coap_packet_parse(&zpkt, pkt, NULL, 0);
 	if (ret) {
 		mbedtls_printf("Could not parse packet\n");
 		goto exit;
 	}
 
-	reply = zoap_response_received(&zpkt, NULL, replies, NUM_REPLIES);
+	reply = coap_response_received(&zpkt, NULL, replies, NUM_REPLIES);
 	if (!reply) {
 		mbedtls_printf("No handler for response (%d)\n", ret);
 	}
