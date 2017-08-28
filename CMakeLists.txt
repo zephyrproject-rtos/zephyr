@@ -289,6 +289,8 @@ add_custom_command(
   # TODO: Remove duplication
   COMMAND ${CMAKE_C_COMPILER}
   -x assembler-with-cpp
+  -nostdinc
+  -undef
   -MD -MF linker.cmd.dep -MT ${BASE_NAME}/linker.cmd
   ${ZEPHYR_INCLUDES}
   ${LINKER_SCRIPT_DEFINES}
@@ -372,6 +374,8 @@ if(GKOF OR GKSF)
     ${LINKER_SCRIPT_DEP}
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
+    -nostdinc
+    -undef
     -MD -MF linker_pass2.cmd.dep -MT ${BASE_NAME}/linker_pass2.cmd
     ${ZEPHYR_INCLUDES}
     ${LINKER_SCRIPT_DEFINES}
