@@ -2290,12 +2290,17 @@ static int handle_request(struct zoap_packet *request,
 	in.reader = &plain_text_reader;
 	out.writer = &plain_text_writer;
 
+	code = zoap_header_get_code(in.in_zpkt);
+
 	/* parse the URL path into components */
 	r = zoap_find_options(in.in_zpkt, ZOAP_OPTION_URI_PATH, options, 4);
 	if (r <= 0) {
 		/* '/' is used by bootstrap-delete only */
 
-		/* TODO: handle bootstrap-delete */
+		/*
+		 * TODO: Handle bootstrap deleted --
+		 * re-add when DTLS support ready
+		 */
 		r = -EPERM;
 		goto error;
 	}
@@ -2306,6 +2311,11 @@ static int handle_request(struct zoap_packet *request,
 	     strncmp(options[0].value, ".well-known", 11) == 0) &&
 	    (options[1].len == 4 &&
 	     strncmp(options[1].value, "core", 4) == 0)) {
+		if ((code & ZOAP_REQUEST_MASK) != ZOAP_METHOD_GET) {
+			r = -EPERM;
+			goto error;
+		}
+
 		discover = true;
 	} else {
 		r = zoap_options_to_path(options, r, &path);
@@ -2333,10 +2343,6 @@ static int handle_request(struct zoap_packet *request,
 		SYS_LOG_DBG("No accept option given. Assume OMA TLV.");
 		accept = LWM2M_FORMAT_OMA_TLV;
 	}
-
-	/* TODO: Handle bootstrap deleted -- re-add when DTLS support ready */
-
-	code = zoap_header_get_code(in.in_zpkt);
 
 	/* find registered obj */
 	obj = get_engine_obj(path.obj_id);
