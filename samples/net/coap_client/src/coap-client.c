@@ -15,7 +15,7 @@
 #include <net/net_mgmt.h>
 #include <net/net_ip.h>
 #include <net/udp.h>
-#include <net/zoap.h>
+#include <net/coap.h>
 
 #define MY_COAP_PORT 5683
 
@@ -32,8 +32,8 @@ static const struct sockaddr_in6 mcast_addr = {
 
 static struct net_context *context;
 
-struct zoap_pending pendings[NUM_PENDINGS];
-struct zoap_reply replies[NUM_REPLIES];
+struct coap_pending pendings[NUM_PENDINGS];
+struct coap_reply replies[NUM_REPLIES];
 struct k_delayed_work retransmit_work;
 
 #if defined(CONFIG_NET_MGMT_EVENT)
@@ -52,8 +52,8 @@ static void msg_dump(const char *s, u8_t *data, unsigned len)
 	printk("(%u bytes)\n", len);
 }
 
-static int resource_reply_cb(const struct zoap_packet *response,
-			     struct zoap_reply *reply,
+static int resource_reply_cb(const struct coap_packet *response,
+			     struct coap_reply *reply,
 			     const struct sockaddr *from)
 {
 	struct net_pkt *pkt = response->pkt;
@@ -63,48 +63,46 @@ static int resource_reply_cb(const struct zoap_packet *response,
 	return 0;
 }
 
+static void get_from_ip_addr(struct coap_packet *cpkt,
+			     struct sockaddr_in6 *from)
+{
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(cpkt->pkt, &hdr);
+	if (!udp_hdr) {
+		return;
+	}
+
+	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(cpkt->pkt)->src);
+	from->sin6_port = udp_hdr->src_port;
+	from->sin6_family = AF_INET6;
+}
+
 static void udp_receive(struct net_context *context,
 			struct net_pkt *pkt,
 			int status,
 			void *user_data)
 {
-	struct zoap_pending *pending;
-	struct zoap_reply *reply;
-	struct zoap_packet response;
+	struct coap_pending *pending;
+	struct coap_reply *reply;
+	struct coap_packet response;
 	struct sockaddr_in6 from;
-	struct net_udp_hdr hdr, *udp_hdr;
-	int header_len, r;
+	int r;
 
-	/*
-	 * zoap expects that buffer->data starts at the
-	 * beginning of the CoAP header
-	 */
-	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
-	net_buf_pull(pkt->frags, header_len);
-
-	r = zoap_packet_parse(&response, pkt);
+	r = coap_packet_parse(&response, pkt, NULL, 0);
 	if (r < 0) {
 		printk("Invalid data received (%d)\n", r);
 		return;
 	}
 
-	pending = zoap_pending_received(&response, pendings,
+	pending = coap_pending_received(&response, pendings,
 					NUM_PENDINGS);
 	if (pending) {
 		/* If necessary cancel retransmissions */
 	}
 
-	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
-
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
-		printk("Invalid UDP data received\n");
-		return;
-	}
-
-	from.sin6_port = udp_hdr->src_port;
-
-	reply = zoap_response_received(&response,
+	get_from_ip_addr(&response, &from);
+	reply = coap_response_received(&response,
 				       (const struct sockaddr *) &from,
 				       replies, NUM_REPLIES);
 	if (!reply) {
@@ -115,10 +113,10 @@ static void udp_receive(struct net_context *context,
 
 static void retransmit_request(struct k_work *work)
 {
-	struct zoap_pending *pending;
+	struct coap_pending *pending;
 	int r;
 
-	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
 		return;
 	}
@@ -129,8 +127,8 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	if (!zoap_pending_cycle(pending)) {
-		zoap_pending_clear(pending);
+	if (!coap_pending_cycle(pending)) {
+		coap_pending_clear(pending);
 		return;
 	}
 
@@ -142,9 +140,9 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 {
 	static struct sockaddr_in6 any_addr = { .sin6_addr = IN6ADDR_ANY_INIT,
 						.sin6_family = AF_INET6 };
-	struct zoap_packet request;
-	struct zoap_pending *pending;
-	struct zoap_reply *reply;
+	struct coap_packet request;
+	struct coap_pending *pending;
+	struct coap_reply *reply;
 	const char * const *p;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -186,56 +184,51 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&request, pkt);
+	r = coap_packet_init(&request, pkt, 1, COAP_TYPE_CON,
+			     8, coap_next_token(),
+			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		return;
 	}
 
-	/* FIXME: Could be that zoap_packet_init() sets some defaults */
-	zoap_header_set_version(&request, 1);
-	zoap_header_set_type(&request, ZOAP_TYPE_CON);
-	zoap_header_set_code(&request, ZOAP_METHOD_GET);
-	zoap_header_set_id(&request, zoap_next_id());
-	zoap_header_set_token(&request, zoap_next_token(), 8);
-
 	/* Enable observing the resource. */
-	r = zoap_add_option(&request, ZOAP_OPTION_OBSERVE,
-			    &observe, sizeof(observe));
+	r = coap_packet_append_option(&request, COAP_OPTION_OBSERVE,
+				      &observe, sizeof(observe));
 	if (r < 0) {
 		printk("Unable add option to request.\n");
 		return;
 	}
 
 	for (p = test_path; p && *p; p++) {
-		r = zoap_add_option(&request, ZOAP_OPTION_URI_PATH,
-				     *p, strlen(*p));
+		r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+					      *p, strlen(*p));
 		if (r < 0) {
 			printk("Unable add option to request.\n");
 			return;
 		}
 	}
 
-	pending = zoap_pending_next_unused(pendings, NUM_PENDINGS);
+	pending = coap_pending_next_unused(pendings, NUM_PENDINGS);
 	if (!pending) {
 		printk("Unable to find a free pending to track "
 		       "retransmissions.\n");
 		return;
 	}
 
-	r = zoap_pending_init(pending, &request,
+	r = coap_pending_init(pending, &request,
 			      (struct sockaddr *) &mcast_addr);
 	if (r < 0) {
 		printk("Unable to initialize a pending retransmission.\n");
 		return;
 	}
 
-	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+	reply = coap_reply_next_unused(replies, NUM_REPLIES);
 	if (!reply) {
 		printk("No resources for waiting for replies.\n");
 		return;
 	}
 
-	zoap_reply_init(reply, &request);
+	coap_reply_init(reply, &request);
 	reply->reply = resource_reply_cb;
 
 	r = net_context_sendto(pkt, (struct sockaddr *) &mcast_addr,
@@ -246,7 +239,7 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	zoap_pending_cycle(pending);
+	coap_pending_cycle(pending);
 
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 
