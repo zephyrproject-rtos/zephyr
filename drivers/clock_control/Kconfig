@@ -49,6 +49,8 @@ source "drivers/clock_control/Kconfig.stm32"
 
 source "drivers/clock_control/Kconfig.beetle"
 
+source "drivers/clock_control/Kconfig.mcux_ccm"
+
 source "drivers/clock_control/Kconfig.mcux_sim"
 
 endif # CLOCK_CONTROL
