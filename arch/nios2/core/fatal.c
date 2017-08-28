@@ -56,11 +56,6 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	case _NANO_ERR_SPURIOUS_INT:
 		break;
 
-	case _NANO_ERR_INVALID_TASK_EXIT:
-		printk("***** Invalid Exit Software Error! *****\n");
-		break;
-
-
 	case _NANO_ERR_ALLOCATION_FAIL:
 		printk("**** Kernel Allocation Failure! ****\n");
 		break;

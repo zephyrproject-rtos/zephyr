@@ -189,10 +189,6 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 	_check_stack_sentinel();
 #endif
 #ifdef CONFIG_MULTITHREADING
-	if (_is_thread_essential()) {
-		_k_except_reason(_NANO_ERR_INVALID_TASK_EXIT);
-	}
-
 	k_thread_abort(_current);
 #else
 	for (;;) {

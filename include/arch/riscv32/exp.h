@@ -69,7 +69,6 @@ extern void _SysFatalErrorHandler(unsigned int reason,
 #endif /* _ASMLANGUAGE */
 
 #define _NANO_ERR_CPU_EXCEPTION (0)      /* Any unhandled exception */
-#define _NANO_ERR_INVALID_TASK_EXIT (1)  /* Invalid task exit */
 #define _NANO_ERR_STACK_CHK_FAIL (2)     /* Stack corruption detected */
 #define _NANO_ERR_ALLOCATION_FAIL (3)    /* Kernel Allocation Failure */
 #define _NANO_ERR_SPURIOUS_INT (4)	 /* Spurious interrupt */
