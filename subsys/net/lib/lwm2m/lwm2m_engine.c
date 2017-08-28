@@ -2330,7 +2330,8 @@ static int handle_request(struct zoap_packet *request,
 	obj = get_engine_obj(path.obj_id);
 	if (!obj) {
 		/* No matching object found - ignore request */
-		return -ENOENT;
+		r = -ENOENT;
+		goto error;
 	}
 
 	format = select_reader(&in, format);
@@ -2475,7 +2476,7 @@ static int handle_request(struct zoap_packet *request,
 
 	default:
 		SYS_LOG_ERR("Unknown operation: %u", context.operation);
-		return -EINVAL;
+		r = -EINVAL;
 	}
 
 	if (r) {
