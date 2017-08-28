@@ -2290,17 +2290,23 @@ static int handle_request(struct zoap_packet *request,
 
 	/* parse the URL path into components */
 	r = zoap_find_options(in.in_zpkt, ZOAP_OPTION_URI_PATH, options, 4);
-	if (r > 0) {
-		/* check for .well-known/core URI query (DISCOVER) */
-		if (r == 2 &&
-		    (options[0].len == 11 &&
-		     strncmp(options[0].value, ".well-known", 11) == 0) &&
-		    (options[1].len == 4 &&
-		     strncmp(options[1].value, "core", 4) == 0)) {
-			discover = true;
-		} else {
-			zoap_options_to_path(options, r, &path);
-		}
+	if (r <= 0) {
+		/* '/' is used by bootstrap-delete only */
+
+		/* TODO: handle bootstrap-delete */
+		r = -EPERM;
+		goto error;
+	}
+
+	/* check for .well-known/core URI query (DISCOVER) */
+	if (r == 2 &&
+	    (options[0].len == 11 &&
+	     strncmp(options[0].value, ".well-known", 11) == 0) &&
+	    (options[1].len == 4 &&
+	     strncmp(options[1].value, "core", 4) == 0)) {
+		discover = true;
+	} else {
+		zoap_options_to_path(options, r, &path);
 	}
 
 	/* read Content Format */
