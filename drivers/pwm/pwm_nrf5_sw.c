@@ -123,13 +123,13 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	/* configure GPIO pin as output */
 	NRF_GPIO->DIRSET = BIT(pwm);
 	if (pulse_cycles == 0) {
-		/* 0% duty cycle, keep pin high (for active low LED) */
-		NRF_GPIO->OUTSET = BIT(pwm);
+		/* 0% duty cycle, keep pin low */
+		NRF_GPIO->OUTCLR = BIT(pwm);
 
 		goto pin_set_pwm_off;
 	} else if (pulse_cycles == period_cycles) {
-		/* 100% duty cycle, keep pin low (for active low LED) */
-		NRF_GPIO->OUTCLR = BIT(pwm);
+		/* 100% duty cycle, keep pin high */
+		NRF_GPIO->OUTSET = BIT(pwm);
 
 		goto pin_set_pwm_off;
 	} else {
@@ -158,8 +158,8 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	timer->CC[config->map_size] = period_cycles >> div;
 	timer->TASKS_CLEAR = 1;
 
-	/* configure GPIOTE, toggle with initialise output low */
-	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00030003 |
+	/* configure GPIOTE, toggle with initialise output high */
+	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00130003 |
 							    (pwm << 8);
 
 	/* setup PPI */
