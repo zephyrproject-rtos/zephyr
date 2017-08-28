@@ -5,7 +5,7 @@
  */
 
 #if 1
-#define SYS_LOG_DOMAIN "zoap-server"
+#define SYS_LOG_DOMAIN "coap-server"
 #define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #define NET_LOG_ENABLED 1
 #endif
@@ -26,8 +26,8 @@
 
 #include <gpio.h>
 
-#include <net/zoap.h>
-#include <net/zoap_link_format.h>
+#include <net/coap.h>
+#include <net/coap_link_format.h>
 
 #define MY_COAP_PORT 5683
 
@@ -56,6 +56,54 @@ static const char led_toggle_off[] = "LED Toggle OFF\n";
 
 static bool fake_led;
 
+static void get_from_ip_addr(struct coap_packet *cpkt,
+			     struct sockaddr_in6 *from)
+{
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(cpkt->pkt, &hdr);
+	if (!udp_hdr) {
+		return;
+	}
+
+	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(cpkt->pkt)->src);
+
+	from->sin6_port = udp_hdr->src_port;
+	from->sin6_family = AF_INET6;
+}
+
+static int well_known_core_get(struct coap_resource *resource,
+			       struct coap_packet *request)
+{
+	struct coap_packet response;
+	struct sockaddr_in6 from;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	int r;
+
+	NET_DBG("");
+
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
+	net_pkt_frag_add(pkt, frag);
+
+	r = coap_well_known_core_get(resource, request, &response, pkt);
+	if (r < 0) {
+		net_pkt_unref(response.pkt);
+		return r;
+	}
+
+	get_from_ip_addr(request, &from);
+	r = net_context_sendto(response.pkt, (const struct sockaddr *)&from,
+			       sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		net_pkt_unref(response.pkt);
+	}
+
+	return r;
+}
+
 static bool read_led(void)
 {
 	u32_t led = 0;
@@ -83,19 +131,18 @@ static void write_led(bool led)
 	gpio_pin_write(led0, LED_PIN, !led);
 }
 
-static int led_get(struct zoap_resource *resource,
-		   struct zoap_packet *request,
-		   const struct sockaddr *from)
+static int led_get(struct coap_resource *resource,
+		   struct coap_packet *request)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct zoap_packet response;
+	struct sockaddr_in6 from;
+	struct coap_packet response;
 	const char *str;
-	u8_t *payload;
 	u16_t len, id;
 	int r;
 
-	id = zoap_header_get_id(request);
+	id = coap_header_get_id(request);
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	if (!pkt) {
@@ -109,38 +156,35 @@ static int led_get(struct zoap_resource *resource,
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, pkt);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     0, NULL, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		return -EINVAL;
-	}
-
-	/* FIXME: Could be that zoap_packet_init() sets some defaults */
-	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
-	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
-	zoap_header_set_id(&response, id);
-
-	payload = zoap_packet_get_payload(&response, &len);
-	if (!payload) {
 		return -EINVAL;
 	}
 
 	if (read_led()) {
 		str = led_on;
-		r = sizeof(led_on);
+		len = sizeof(led_on);
 	} else {
 		str = led_off;
-		r = sizeof(led_off);
+		len = sizeof(led_off);
 	}
 
-	memcpy(payload, str, r);
-
-	r = zoap_packet_set_used(&response, r);
-	if (r) {
+	r = coap_packet_append_payload_marker(&response);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
+	r = coap_packet_append_payload(&response, (u8_t *)str, len);
+	if (r < 0) {
+		net_pkt_unref(pkt);
+		return -EINVAL;
+	}
+
+	get_from_ip_addr(request, &from);
+	r = net_context_sendto(pkt, (const struct sockaddr *)&from,
+			       sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
 		net_pkt_unref(pkt);
@@ -149,26 +193,42 @@ static int led_get(struct zoap_resource *resource,
 	return r;
 }
 
-static int led_post(struct zoap_resource *resource,
-		    struct zoap_packet *request,
-		    const struct sockaddr *from)
+static int led_post(struct coap_resource *resource,
+		    struct coap_packet *request)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct zoap_packet response;
+	struct sockaddr_in6 from;
+	struct coap_packet response;
 	const char *str;
-	u8_t *payload;
-	u16_t len, id;
+	u8_t payload;
+	u8_t len;
+	u16_t id;
+	u16_t offset;
 	u32_t led;
 	int r;
 
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		printk("packet without payload");
+	led = 0;
+	frag = net_frag_skip(request->frag, request->offset, &offset,
+			     request->hdr_len + request->opt_len);
+	if (!frag && offset == 0xffff) {
 		return -EINVAL;
 	}
 
-	id = zoap_header_get_id(request);
+	frag = net_frag_read_u8(frag, offset, &offset, &payload);
+	if (!frag && offset == 0xffff) {
+		printk("packet without payload, so toggle the led");
+		led = read_led();
+		led = !led;
+	} else {
+		if (payload == 0x31) {
+			led = 1;
+		}
+	}
+
+	write_led(led);
+
+	id = coap_header_get_id(request);
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	if (!pkt) {
@@ -182,44 +242,35 @@ static int led_post(struct zoap_resource *resource,
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, pkt);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     0, NULL, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return -EINVAL;
 	}
-
-	/* FIXME: Could be that zoap_packet_init() sets some defaults */
-	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
-	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
-	zoap_header_set_id(&response, id);
-
-	payload = zoap_packet_get_payload(&response, &len);
-	if (!payload) {
-		return -EINVAL;
-	}
-
-	led = read_led();
-
-	led = !led;
-
-	write_led(led);
 
 	if (led) {
 		str = led_toggle_on;
-		r = sizeof(led_toggle_on);
+		len = sizeof(led_toggle_on);
 	} else {
 		str = led_toggle_off;
-		r = sizeof(led_toggle_off);
+		len = sizeof(led_toggle_off);
 	}
 
-	memcpy(payload, str, r);
-
-	r = zoap_packet_set_used(&response, r);
-	if (r) {
+	r = coap_packet_append_payload_marker(&response);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
+	r = coap_packet_append_payload(&response, (u8_t *)str, len);
+	if (r < 0) {
+		net_pkt_unref(pkt);
+		return -EINVAL;
+	}
+
+	get_from_ip_addr(request, &from);
+	r = net_context_sendto(pkt, (const struct sockaddr *)&from,
+			       sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
 		net_pkt_unref(pkt);
@@ -228,31 +279,42 @@ static int led_post(struct zoap_resource *resource,
 	return r;
 }
 
-static int led_put(struct zoap_resource *resource,
-		   struct zoap_packet *request,
-		   const struct sockaddr *from)
+static int led_put(struct coap_resource *resource,
+		   struct coap_packet *request)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct zoap_packet response;
+	struct sockaddr_in6 from;
+	struct coap_packet response;
 	const char *str;
-	u8_t *payload;
-	u16_t len, id;
+	u8_t payload;
+	u8_t len;
+	u16_t id;
+	u16_t offset;
 	u32_t led;
 	int r;
 
-	payload = zoap_packet_get_payload(request, &len);
-	if (!payload) {
-		printk("packet without payload");
+	led = 0;
+	frag = net_frag_skip(request->frag, request->offset, &offset,
+			     request->hdr_len + request->opt_len);
+	if (!frag && offset == 0xffff) {
 		return -EINVAL;
 	}
 
-	led = 0;
-	if (len > 0 && payload[0] == '1') {
-		led = 1;
+	frag = net_frag_read_u8(frag, offset, &offset, &payload);
+	if (!frag && offset == 0xffff) {
+		printk("packet without payload, so toggle the led");
+		led = read_led();
+		led = !led;
+	} else {
+		if (payload == 0x31) {
+			led = 1;
+		}
 	}
 
-	id = zoap_header_get_id(request);
+	write_led(led);
+
+	id = coap_header_get_id(request);
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	if (!pkt) {
@@ -266,40 +328,35 @@ static int led_put(struct zoap_resource *resource,
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, pkt);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     0, NULL, COAP_RESPONSE_CODE_CHANGED, id);
 	if (r < 0) {
 		return -EINVAL;
 	}
 
-	/* FIXME: Could be that zoap_packet_init() sets some defaults */
-	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
-	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CHANGED);
-	zoap_header_set_id(&response, id);
-
-	payload = zoap_packet_get_payload(&response, &len);
-	if (!payload) {
-		return -EINVAL;
-	}
-
-	write_led(led);
-
 	if (led) {
 		str = led_on;
-		r = sizeof(led_on);
+		len = sizeof(led_on);
 	} else {
 		str = led_off;
-		r = sizeof(led_off);
+		len = sizeof(led_off);
 	}
 
-	memcpy(payload, str, r);
-
-	r = zoap_packet_set_used(&response, r);
-	if (r) {
+	r = coap_packet_append_payload_marker(&response);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
+	r = coap_packet_append_payload(&response, (u8_t *)str, len);
+	if (r < 0) {
+		net_pkt_unref(pkt);
+		return -EINVAL;
+	}
+
+	get_from_ip_addr(request, &from);
+	r = net_context_sendto(pkt, (const struct sockaddr *)&from,
+			       sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
 		net_pkt_unref(pkt);
@@ -308,19 +365,18 @@ static int led_put(struct zoap_resource *resource,
 	return r;
 }
 
-static int dummy_get(struct zoap_resource *resource,
-		     struct zoap_packet *request,
-		     const struct sockaddr *from)
+static int dummy_get(struct coap_resource *resource,
+		     struct coap_packet *request)
 {
 	static const char dummy_str[] = "Just a test\n";
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct zoap_packet response;
-	u8_t *payload;
-	u16_t len, id;
+	struct sockaddr_in6 from;
+	struct coap_packet response;
+	u16_t id;
 	int r;
 
-	id = zoap_header_get_id(request);
+	id = coap_header_get_id(request);
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	if (!pkt) {
@@ -334,30 +390,28 @@ static int dummy_get(struct zoap_resource *resource,
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, pkt);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     0, NULL, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return -EINVAL;
 	}
 
-	/* FIXME: Could be that zoap_packet_init() sets some defaults */
-	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
-	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
-	zoap_header_set_id(&response, id);
-
-	payload = zoap_packet_get_payload(&response, &len);
-	if (!payload) {
+	r = coap_packet_append_payload_marker(&response);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	memcpy(payload, dummy_str, sizeof(dummy_str));
-
-	r = zoap_packet_set_used(&response, sizeof(dummy_str));
-	if (r) {
+	r = coap_packet_append_payload(&response, (u8_t *)dummy_str,
+				      sizeof(dummy_str));
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
+	get_from_ip_addr(request, &from);
+	r = net_context_sendto(pkt, (const struct sockaddr *)&from,
+			       sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
 		net_pkt_unref(pkt);
@@ -378,19 +432,24 @@ static const char * const dummy_attributes[] = {
 	"rt=dummy",
 	NULL };
 
-static struct zoap_resource resources[] = {
-	ZOAP_WELL_KNOWN_CORE_RESOURCE,
+static struct coap_resource resources[] = {
+	{ .get = well_known_core_get,
+	  .post = NULL,
+	  .put = NULL,
+	  .path = COAP_WELL_KNOWN_CORE_PATH,
+	  .user_data = NULL,
+	},
 	{ .get = led_get,
 	  .post = led_post,
 	  .put = led_put,
 	  .path = led_default_path,
-	  .user_data = &((struct zoap_core_metadata) {
+	  .user_data = &((struct coap_core_metadata) {
 			  .attributes = led_default_attributes,
 			}),
 	},
 	{ .get = dummy_get,
 	  .path = dummy_path,
-	  .user_data = &((struct zoap_core_metadata) {
+	  .user_data = &((struct coap_core_metadata) {
 			  .attributes = dummy_attributes,
 			}),
 	},
@@ -402,46 +461,24 @@ static void udp_receive(struct net_context *context,
 			int status,
 			void *user_data)
 {
-	struct zoap_packet request;
-	struct sockaddr_in6 from;
-	struct net_udp_hdr hdr, *udp_hdr;
-	int r, header_len;
+	struct coap_packet request;
+	struct coap_option options[16] = { 0 };
+	u8_t opt_num = 16;
+	int r;
 
-	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
-
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
-		printk("Invalid UDP data received\n");
-		net_pkt_unref(pkt);
-		return;
-	}
-
-	from.sin6_port = udp_hdr->src_port;
-	from.sin6_family = AF_INET6;
-
-	/*
-	 * zoap expects that buffer->data starts at the
-	 * beginning of the CoAP header
-	 */
-	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
-	net_buf_pull(pkt->frags, header_len);
-
-	r = zoap_packet_parse(&request, pkt);
+	r = coap_packet_parse(&request, pkt, options, opt_num);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
 		net_pkt_unref(pkt);
 		return;
 	}
 
-	r = zoap_handle_request(&request, resources,
-				(const struct sockaddr *) &from);
-
-	net_pkt_unref(pkt);
-
+	r = coap_handle_request(&request, resources, options, opt_num);
 	if (r < 0) {
 		NET_ERR("No handler for such request (%d)\n", r);
-		return;
 	}
+
+	net_pkt_unref(pkt);
 }
 
 static bool join_coap_multicast_group(void)
