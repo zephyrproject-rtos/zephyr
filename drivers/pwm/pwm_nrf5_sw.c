@@ -8,6 +8,10 @@
 
 #include "pwm.h"
 
+#define SYS_LOG_DOMAIN "pwm/nrf5_sw"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_PWM_LEVEL
+#include <logging/sys_log.h>
+
 struct pwm_config {
 	NRF_TIMER_Type *timer;
 	u8_t gpiote_base;
@@ -92,14 +96,19 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	ret = pwm_period_check(data, config->map_size, pwm, period_cycles,
 			       pulse_cycles);
 	if (ret) {
+		SYS_LOG_ERR("Incompatible period");
 		return ret;
 	}
 
 	/* map pwm pin to GPIOTE config/channel */
 	channel = pwm_channel_map(data, config->map_size, pwm);
 	if (channel >= config->map_size) {
+		SYS_LOG_ERR("No more channels available");
 		return -ENOMEM;
 	}
+
+	SYS_LOG_DBG("PWM %d, period %u, pulse %u", pwm,
+			period_cycles, pulse_cycles);
 
 	/* stop timer, if already running */
 	timer->TASKS_STOP = 1;
