@@ -6,6 +6,10 @@ ifdef CONFIG_ZOAP
 include $(srctree)/subsys/net/lib/zoap/Makefile
 endif
 
+ifdef CONFIG_COAP
+include $(srctree)/subsys/net/lib/coap/Makefile
+endif
+
 ifdef CONFIG_DNS_RESOLVER
 include $(srctree)/subsys/net/lib/dns/Makefile
 endif

@@ -136,7 +136,7 @@ MQTT 3.1.1
 CoAP
 ====
 
-.. doxygengroup:: zoap
+.. doxygengroup:: coap
    :project: Zephyr
 
 DNS Resolve
