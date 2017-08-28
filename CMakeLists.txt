@@ -285,6 +285,8 @@ add_custom_command(
   OUTPUT linker.cmd
   DEPENDS ${LINKER_SCRIPT}
   ${LINKER_SCRIPT_DEP}
+  # NB: This COMMAND is copy-pasted to generate linker_pass2.cmd
+  # TODO: Remove duplication
   COMMAND ${CMAKE_C_COMPILER}
   -x assembler-with-cpp
   -MD -MF linker.cmd.dep -MT ${BASE_NAME}/linker.cmd
