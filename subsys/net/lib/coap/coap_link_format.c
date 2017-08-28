@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_NET_DEBUG_COAP)
+#define SYS_LOG_DOMAIN "coap"
+#define NET_LOG_ENABLED 1
+#endif
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <zephyr/types.h>
@@ -21,8 +26,6 @@
 #include <net/coap_link_format.h>
 
 #define PKT_WAIT_TIME K_SECONDS(1)
-/* CoAP End Of Options Marker */
-#define COAP_MARKER	0xFF
 
 static bool match_path_uri(const char * const *path,
 			   const char *uri, u16_t len)
@@ -75,7 +78,7 @@ static bool match_path_uri(const char * const *path,
 				return true;
 			}
 
-		next:
+next:
 			p++;
 		}
 	}
@@ -144,55 +147,6 @@ static bool match_queries_resource(const struct coap_resource *resource,
 	return match_attributes(attributes, query);
 }
 
-static int send_error_response(struct coap_resource *resource,
-			       struct coap_packet *request,
-			       const struct sockaddr *from)
-{
-	struct net_context *context;
-	struct coap_packet response;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	u16_t id;
-	int r;
-
-	id = coap_header_get_id(request);
-
-	context = net_pkt_context(request->pkt);
-
-	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
-	if (!pkt) {
-		return -ENOMEM;
-	}
-
-	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
-	if (!frag) {
-		net_pkt_unref(pkt);
-		return -ENOMEM;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt);
-	if (r < 0) {
-		net_pkt_unref(pkt);
-		return r;
-	}
-
-	/* FIXME: Could be that coap_packet_init() sets some defaults */
-	coap_header_set_version(&response, 1);
-	coap_header_set_type(&response, COAP_TYPE_ACK);
-	coap_header_set_code(&response, COAP_RESPONSE_CODE_BAD_REQUEST);
-	coap_header_set_id(&response, id);
-
-	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
-			       NULL, 0, NULL, NULL);
-	if (r < 0) {
-		net_pkt_unref(pkt);
-	}
-
-	return r;
-}
-
 #if defined(CONFIG_COAP_WELL_KNOWN_BLOCK_WISE)
 
 #define MAX_BLOCK_WISE_TRANSFER_SIZE 2048
@@ -219,17 +173,15 @@ enum coap_block_size default_block_size(void)
 	return COAP_BLOCK_64;
 }
 
-static void add_to_net_buf(struct net_buf *buf, const char *str, u16_t len,
-			   u16_t *remaining, size_t *offset, size_t current)
+static bool append_to_net_pkt(struct net_pkt *pkt, const char *str, u16_t len,
+			      u16_t *remaining, size_t *offset, size_t current)
 {
-	u16_t pos;
-	char *ptr;
+	u16_t pos = 0;
+	bool res;
 
 	if (!*remaining) {
-		return;
+		return true;
 	}
-
-	pos = 0;
 
 	if (*offset < current) {
 		pos = current - *offset;
@@ -239,7 +191,7 @@ static void add_to_net_buf(struct net_buf *buf, const char *str, u16_t len,
 			*offset += pos;
 		} else {
 			*offset += len;
-			return;
+			return true;
 		}
 	}
 
@@ -247,26 +199,32 @@ static void add_to_net_buf(struct net_buf *buf, const char *str, u16_t len,
 		len = *remaining;
 	}
 
-	ptr = net_buf_add(buf, len);
-	strncpy(ptr, str + pos, len);
+	res = net_pkt_append_all(pkt, len, str + pos, PKT_WAIT_TIME);
 
 	*remaining -= len;
 	*offset += len;
+
+	return res;
 }
 
-static int format_uri(const char * const *path, struct net_buf *buf,
+static int format_uri(const char * const *path, struct net_pkt *pkt,
 		      u16_t *remaining, size_t *offset,
 		      size_t current, bool *more)
 {
 	static const char prefix[] = "</";
 	const char * const *p;
+	bool res;
 
 	if (!path) {
 		return -EINVAL;
 	}
 
-	add_to_net_buf(buf, &prefix[0], sizeof(prefix) - 1,
-		       remaining, offset, current);
+	res = append_to_net_pkt(pkt, &prefix[0], sizeof(prefix) - 1,
+				remaining, offset, current);
+	if (!res) {
+		return -ENOMEM;
+	}
+
 	if (!*remaining) {
 		*more = true;
 		return 0;
@@ -275,8 +233,12 @@ static int format_uri(const char * const *path, struct net_buf *buf,
 	for (p = path; *p; ) {
 		u16_t path_len = strlen(*p);
 
-		add_to_net_buf(buf, *p, path_len,
-			       remaining, offset, current);
+		res = append_to_net_pkt(pkt, *p, path_len, remaining, offset,
+					current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
 		if (!*remaining) {
 			*more = true;
 			return 0;
@@ -287,8 +249,12 @@ static int format_uri(const char * const *path, struct net_buf *buf,
 			continue;
 		}
 
-		add_to_net_buf(buf, "/", 1,
-			       remaining, offset, current);
+		res = append_to_net_pkt(pkt, "/", 1, remaining, offset,
+					current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
 		if (!*remaining) {
 			*more = true;
 			return 0;
@@ -296,18 +262,28 @@ static int format_uri(const char * const *path, struct net_buf *buf,
 
 	}
 
-	add_to_net_buf(buf, ">", 1, remaining, offset, current);
+	res = append_to_net_pkt(pkt, ">", 1, remaining, offset, current);
+	if (!res) {
+		return -ENOMEM;
+	}
+
+	if (!*remaining) {
+		*more = true;
+		return 0;
+	}
+
 	*more = false;
 
 	return 0;
 }
 
 static int format_attributes(const char * const *attributes,
-			     struct net_buf *buf,
+			     struct net_pkt *pkt,
 			     u16_t *remaining, size_t *offset,
 			     size_t current, bool *more)
 {
 	const char * const *attr;
+	bool res;
 
 	if (!attributes) {
 		goto terminator;
@@ -316,8 +292,12 @@ static int format_attributes(const char * const *attributes,
 	for (attr = attributes; *attr; ) {
 		int attr_len = strlen(*attr);
 
-		add_to_net_buf(buf, *attr, attr_len,
-			       remaining, offset, current);
+		res = append_to_net_pkt(pkt, *attr, attr_len,
+					remaining, offset, current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
 		if (!*remaining) {
 			*more = true;
 			return 0;
@@ -328,8 +308,12 @@ static int format_attributes(const char * const *attributes,
 			continue;
 		}
 
-		add_to_net_buf(buf, ";", 1,
-			       remaining, offset, current);
+		res = append_to_net_pkt(pkt, ";", 1,
+					remaining, offset, current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
 		if (!*remaining) {
 			*more = true;
 			return 0;
@@ -337,14 +321,23 @@ static int format_attributes(const char * const *attributes,
 	}
 
 terminator:
-	add_to_net_buf(buf, ";", 1, remaining, offset, current);
+	res = append_to_net_pkt(pkt, ";", 1, remaining, offset, current);
+	if (!res) {
+		return -ENOMEM;
+	}
+
+	if (!*remaining) {
+		*more = true;
+		return 0;
+	}
+
 	*more = false;
 
 	return 0;
 }
 
 static int format_resource(const struct coap_resource *resource,
-			   struct net_buf *buf,
+			   struct net_pkt *pkt,
 			   u16_t *remaining, size_t *offset,
 			   size_t current, bool *more)
 {
@@ -352,7 +345,7 @@ static int format_resource(const struct coap_resource *resource,
 	const char * const *attributes = NULL;
 	int r;
 
-	r = format_uri(resource->path, buf, remaining, offset, current, more);
+	r = format_uri(resource->path, pkt, remaining, offset, current, more);
 	if (r < 0) {
 		return r;
 	}
@@ -366,158 +359,161 @@ static int format_resource(const struct coap_resource *resource,
 		attributes = meta->attributes;
 	}
 
-	return format_attributes(attributes, buf, remaining, offset, current,
+	return format_attributes(attributes, pkt, remaining, offset, current,
 				 more);
 }
 
-int _coap_well_known_core_get(struct coap_resource *resource,
-			      struct coap_packet *request,
-			      const struct sockaddr *from)
+int clear_more_flag(struct coap_packet *cpkt)
 {
-	/* FIXME: Add support for concurrent connections at same time,
-	 * Maintain separate Context for each client (from addr) through slist
-	 * and match it with 'from' address.
-	 */
-	static struct coap_block_context ctx;
-	struct net_context *context;
-	struct coap_packet response;
-	struct coap_option query;
-	struct net_pkt *pkt;
 	struct net_buf *frag;
+	u16_t offset;
+	u8_t opt;
+	u8_t delta;
+	u8_t len;
+
+	frag = net_frag_skip(cpkt->frag, 0, &offset, cpkt->hdr_len);
+	if (!frag && offset == 0xffff) {
+		return -EINVAL;
+	}
+
+	delta = 0;
+	/* Note: coap_well_known_core_get() added Option (delta and len) witho
+	 * out any extended options so parsing will not consider at the moment.
+	 */
+	while (1) {
+		frag = net_frag_read_u8(frag, offset, &offset, &opt);
+		if (!frag && offset == 0xffff) {
+			return -EINVAL;
+		}
+
+		delta += ((opt & 0xF0) >> 4);
+		len = (opt & 0xF);
+
+		if (delta == COAP_OPTION_BLOCK2) {
+			break;
+		}
+
+		frag = net_frag_skip(frag, offset, &offset, len);
+		if (!frag && offset == 0xffff) {
+			return -EINVAL;
+		}
+	}
+
+	/* As per RFC 7959 Sec 2.2 : NUM filed can be on 0-3 bytes.
+	 * Skip NUM field to update M bit.
+	 */
+	if (len > 1) {
+		frag = net_frag_skip(frag, offset, &offset, len - 1);
+		if (!frag && offset == 0xffff) {
+			return -EINVAL;
+		}
+	}
+
+	frag->data[offset] = frag->data[offset] & 0xF7;
+
+	return 0;
+}
+
+int coap_well_known_core_get(struct coap_resource *resource,
+			      struct coap_packet *request,
+			      struct coap_packet *response,
+			      struct net_pkt *pkt)
+{
+	static struct coap_block_context ctx;
+	struct coap_option query;
 	unsigned int num_queries;
 	size_t offset;
-	const u8_t *token;
-	bool more;
+	u8_t token[8];
 	u16_t remaining;
 	u16_t id;
 	u8_t tkl;
-	u8_t format = 40; /* application/link-format */
-	u8_t *str;
+	u8_t format;
 	int r;
+	bool more = false;
 
 	if (ctx.total_size == 0) {
+		/* We have to iterate through resources and it's attributes,
+		 * total size is unknown, so initialize it to
+		 * MAX_BLOCK_WISE_TRANSFER_SIZE and update it according to
+		 * offset.
+		 */
 		coap_block_transfer_init(&ctx, default_block_size(),
 					 MAX_BLOCK_WISE_TRANSFER_SIZE);
 	}
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		return -EINVAL;
+		goto end;
 	}
 
 	id = coap_header_get_id(request);
-	token = coap_header_get_token(request, &tkl);
+	tkl = coap_header_get_token(request, token);
 
 	/* Per RFC 6690, Section 4.1, only one (or none) query parameter may be
 	 * provided, use the first if multiple.
 	 */
 	r = coap_find_options(request, COAP_OPTION_URI_QUERY, &query, 1);
 	if (r < 0) {
-		return r;
+		goto end;
 	}
 
 	num_queries = r;
 
-	context = net_pkt_context(request->pkt);
-
-	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
-	if (!pkt) {
-		return -ENOMEM;
-	}
-
-	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
-	if (!frag) {
-		net_pkt_unref(pkt);
-		return -ENOMEM;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt);
+	r = coap_packet_init(response, pkt, 1, COAP_TYPE_ACK,
+			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		goto done;
+		goto end;
 	}
 
-	/* FIXME: Could be that coap_packet_init() sets some defaults */
-	coap_header_set_version(&response, 1);
-	coap_header_set_type(&response, COAP_TYPE_ACK);
-	coap_header_set_code(&response, COAP_RESPONSE_CODE_CONTENT);
-	coap_header_set_id(&response, id);
-	coap_header_set_token(&response, token, tkl);
+	format = 40; /* application/link-format */
 
-	r = coap_add_option(&response, COAP_OPTION_CONTENT_FORMAT,
-			    &format, sizeof(format));
+	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
+				      &format, sizeof(format));
 	if (r < 0) {
-		net_pkt_unref(pkt);
-		return -EINVAL;
+		goto end;
+	}
+
+	r = coap_append_block2_option(response, &ctx);
+	if (r < 0) {
+		goto end;
+	}
+
+	r = coap_packet_append_payload_marker(response);
+	if (r < 0) {
+		goto end;
 	}
 
 	offset = 0;
-	more = false;
 	remaining = coap_block_size_to_bytes(ctx.block_size);
 
 	while (resource++ && resource->path) {
-		struct net_buf *temp;
-
-		if (!match_queries_resource(resource, &query, num_queries)) {
-			continue;
-		}
-
 		if (!remaining) {
 			more = true;
 			break;
 		}
 
-		temp = net_pkt_get_data(context, PKT_WAIT_TIME);
-		if (!temp) {
-			net_pkt_unref(pkt);
-			return -ENOMEM;
+		if (!match_queries_resource(resource, &query, num_queries)) {
+			continue;
 		}
 
-		net_pkt_frag_add(pkt, temp);
-
-		r = format_resource(resource, temp, &remaining, &offset,
+		r = format_resource(resource, pkt, &remaining, &offset,
 				    ctx.current, &more);
 		if (r < 0) {
-			goto done;
+			goto end;
 		}
 	}
 
-	if (!response.pkt->frags->frags) {
-		r = -ENOENT;
-		goto done;
-	}
-
+	/* Offset is the total size now, but block2 option is already
+	 * appended. So update only 'more' flag.
+	 */
 	if (!more) {
 		ctx.total_size = offset;
+		r = clear_more_flag(response);
 	}
 
-	r = coap_add_block2_option(&response, &ctx);
-	if (r < 0) {
-		net_pkt_unref(pkt);
-		return -EINVAL;
-	}
-
-	str = net_buf_add(response.pkt->frags, 1);
-	*str = COAP_MARKER;
-	response.start = str + 1;
-
-	net_pkt_compact(pkt);
-
-done:
-	if (r < 0) {
-		net_pkt_unref(pkt);
-		return send_error_response(resource, request, from);
-	}
-
-	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
-			       NULL, 0, NULL, NULL);
-	if (r < 0) {
-		net_pkt_unref(pkt);
-	}
-
+end:
+	/* So it's a last block, reset context */
 	if (!more) {
-		/* So it's a last block, reset context */
 		memset(&ctx, 0, sizeof(ctx));
 	}
 
@@ -526,76 +522,77 @@ done:
 
 #else
 
-static int format_uri(const char * const *path, struct net_buf *buf)
+static int format_uri(const char * const *path, struct net_pkt *pkt)
 {
-	static const char prefix[] = "</";
 	const char * const *p;
-	char *str;
+	char *prefix = "</";
+	bool res;
 
 	if (!path) {
 		return -EINVAL;
 	}
 
-	str = net_buf_add(buf, sizeof(prefix) - 1);
-	strncpy(str, prefix, sizeof(prefix) - 1);
+	res = net_pkt_append_all(pkt, strlen(prefix), (u8_t *) prefix,
+				 PKT_WAIT_TIME);
+	if (!res) {
+		return -ENOMEM;
+	}
 
 	for (p = path; *p; ) {
-		u16_t path_len = strlen(*p);
-
-		str = net_buf_add(buf, path_len);
-		strncpy(str, *p, path_len);
+		res = net_pkt_append_all(pkt, strlen(*p), (u8_t *) *p,
+					 PKT_WAIT_TIME);
+		if (!res) {
+			return -ENOMEM;
+		}
 
 		p++;
 		if (*p) {
-			str = net_buf_add(buf, 1);
-			*str = '/';
+			net_pkt_append_u8(pkt, (u8_t) '/');
 		}
 	}
 
-	str = net_buf_add(buf, 1);
-	*str = '>';
+	net_pkt_append_u8(pkt, (u8_t) '>');
 
 	return 0;
 }
 
 static int format_attributes(const char * const *attributes,
-			     struct net_buf *buf)
+			     struct net_pkt *pkt)
 {
 	const char * const *attr;
-	char *str;
+	bool res;
 
 	if (!attributes) {
 		goto terminator;
 	}
 
 	for (attr = attributes; *attr; ) {
-		int attr_len = strlen(*attr);
-
-		str = net_buf_add(buf, attr_len);
-		strncpy(str, *attr, attr_len);
+		res = net_pkt_append_all(pkt, strlen(*attr), (u8_t *) *attr,
+					 PKT_WAIT_TIME);
+		if (!res) {
+			return -ENOMEM;
+		}
 
 		attr++;
 		if (*attr) {
-			str = net_buf_add(buf, 1);
-			*str = ';';
+			net_pkt_append_u8(pkt, (u8_t) ';');
 		}
 	}
 
 terminator:
-	str = net_buf_add(buf, 1);
-	*str = ';';
+	net_pkt_append_u8(pkt, (u8_t) ';');
 
 	return 0;
 }
 
 static int format_resource(const struct coap_resource *resource,
-			   struct net_buf *buf)
+			   struct net_pkt *pkt)
 {
 	struct coap_core_metadata *meta = resource->user_data;
 	const char * const *attributes = NULL;
 	int r;
 
-	r = format_uri(resource->path, buf);
+	r = format_uri(resource->path, pkt);
 	if (r < 0) {
 		return r;
 	}
@@ -604,28 +601,28 @@ static int format_resource(const struct coap_resource *resource,
 		attributes = meta->attributes;
 	}
 
-	return format_attributes(attributes, buf);
+	return format_attributes(attributes, pkt);
 }
 
-int _coap_well_known_core_get(struct coap_resource *resource,
-			      struct coap_packet *request,
-			      const struct sockaddr *from)
+int coap_well_known_core_get(struct coap_resource *resource,
+			     struct coap_packet *request,
+			     struct coap_packet *response,
+			     struct net_pkt *pkt)
 {
-	struct net_context *context;
-	struct coap_packet response;
 	struct coap_option query;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	const u8_t *token;
-	unsigned int num_queries;
+	u8_t token[8];
 	u16_t id;
 	u8_t tkl;
-	u8_t format = 40; /* application/link-format */
-	u8_t *str;
+	u8_t format;
+	u8_t num_queries;
 	int r;
 
+	if (!resource || !request || !response || !pkt) {
+		return -EINVAL;
+	}
+
 	id = coap_header_get_id(request);
-	token = coap_header_get_token(request, &tkl);
+	tkl = coap_header_get_token(request, token);
 
 	/* Per RFC 6690, Section 4.1, only one (or none) query parameter may be
 	 * provided, use the first if multiple.
@@ -637,82 +634,36 @@ int _coap_well_known_core_get(struct coap_resource *resource,
 
 	num_queries = r;
 
-	context = net_pkt_context(request->pkt);
-
-	pkt = net_pkt_get_tx(context, PKT_WAIT_TIME);
-	if (!pkt) {
-		return -ENOMEM;
-	}
-
-	frag = net_pkt_get_data(context, PKT_WAIT_TIME);
-	if (!frag) {
-		net_pkt_unref(pkt);
-		return -ENOMEM;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt);
+	r = coap_packet_init(response, pkt, 1, COAP_TYPE_ACK,
+			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		goto done;
+		return r;
 	}
 
-	/* FIXME: Could be that coap_packet_init() sets some defaults */
-	coap_header_set_version(&response, 1);
-	coap_header_set_type(&response, COAP_TYPE_ACK);
-	coap_header_set_code(&response, COAP_RESPONSE_CODE_CONTENT);
-	coap_header_set_id(&response, id);
-	coap_header_set_token(&response, token, tkl);
-
-	r = coap_add_option(&response, COAP_OPTION_CONTENT_FORMAT,
-			    &format, sizeof(format));
+	format = 40; /* application/link-format */
+	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
+				      &format, sizeof(format));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = -ENOENT;
-
-	str = net_buf_add(response.pkt->frags, 1);
-	*str = COAP_MARKER;
-	response.start = str + 1;
+	r = coap_packet_append_payload_marker(response);
+	if (r < 0) {
+		return -EINVAL;
+	}
 
 	while (resource++ && resource->path) {
-		struct net_buf *temp;
-
 		if (!match_queries_resource(resource, &query, num_queries)) {
 			continue;
 		}
 
-		temp = net_pkt_get_data(context, PKT_WAIT_TIME);
-		if (!temp) {
-			net_pkt_unref(pkt);
-			return -ENOMEM;
-		}
-
-		net_pkt_frag_add(pkt, temp);
-
-		r = format_resource(resource, temp);
+		r = format_resource(resource, pkt);
 		if (r < 0) {
-			goto done;
+			return r;
 		}
 	}
 
-	net_pkt_compact(pkt);
-
-done:
-	if (r < 0) {
-		net_pkt_unref(pkt);
-		return send_error_response(resource, request, from);
-	}
-
-	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
-			       NULL, 0, NULL, NULL);
-	if (r < 0) {
-		net_pkt_unref(pkt);
-	}
-
-	return r;
+	return 0;
 }
 #endif
 
