@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <init.h>
 #include <misc/printk.h>
+#include <net/net_app.h>
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
@@ -80,7 +81,7 @@
 
 struct observe_node {
 	sys_snode_t node;
-	struct net_context *net_ctx;
+	struct net_app_ctx *net_app_ctx;
 	struct sockaddr addr;
 	struct lwm2m_obj_path path;
 	u8_t  token[8];
@@ -178,7 +179,7 @@ int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 				     path->res_id);
 }
 
-static int engine_add_observer(struct net_context *net_ctx,
+static int engine_add_observer(struct net_app_ctx *app_ctx,
 			       struct sockaddr *addr,
 			       const u8_t *token, u8_t tkl,
 			       struct lwm2m_obj_path *path,
@@ -257,7 +258,7 @@ static int engine_add_observer(struct net_context *net_ctx,
 
 	/* copy the values and add it to the list */
 	observe_node_data[i].used = true;
-	observe_node_data[i].net_ctx = net_ctx;
+	observe_node_data[i].net_app_ctx = app_ctx;
 	memcpy(&observe_node_data[i].addr, addr, sizeof(*addr));
 	memcpy(&observe_node_data[i].path, path, sizeof(*path));
 	memcpy(observe_node_data[i].token, token, tkl);
@@ -573,28 +574,27 @@ static void zoap_options_to_path(struct zoap_option *opt, int options_count,
 	}
 }
 
-int lwm2m_init_message(struct net_context *net_ctx, struct zoap_packet *zpkt,
+int lwm2m_init_message(struct net_app_ctx *app_ctx, struct zoap_packet *zpkt,
 		       struct net_pkt **pkt, u8_t type, u8_t code, u16_t mid,
 		       const u8_t *token, u8_t tkl)
 {
 	struct net_buf *frag;
 	int r;
 
-	*pkt = net_pkt_get_tx(net_ctx, BUF_ALLOC_TIMEOUT);
+	*pkt = net_app_get_net_pkt(app_ctx, AF_UNSPEC, BUF_ALLOC_TIMEOUT);
 	if (!*pkt) {
 		SYS_LOG_ERR("Unable to get TX packet, not enough memory.");
 		return -ENOMEM;
 	}
 
-	frag = net_pkt_get_data(net_ctx, BUF_ALLOC_TIMEOUT);
+	frag = net_app_get_net_buf(app_ctx, *pkt,
+				   BUF_ALLOC_TIMEOUT);
 	if (!frag) {
 		SYS_LOG_ERR("Unable to get DATA buffer, not enough memory.");
 		net_pkt_unref(*pkt);
 		*pkt = NULL;
 		return -ENOMEM;
 	}
-
-	net_pkt_frag_add(*pkt, frag);
 
 	r = zoap_packet_init(zpkt, *pkt);
 	if (r < 0) {
@@ -1997,7 +1997,7 @@ static int get_observe_option(const struct zoap_packet *zpkt)
 	return zoap_option_value_to_int(&option);
 }
 
-static int handle_request(struct net_context *net_ctx,
+static int handle_request(struct net_app_ctx *app_ctx,
 			  struct zoap_packet *request,
 			  struct zoap_packet *response,
 			  struct sockaddr *from_addr)
@@ -2142,7 +2142,7 @@ static int handle_request(struct net_context *net_ctx,
 						    r);
 				}
 
-				r = engine_add_observer(net_ctx, from_addr,
+				r = engine_add_observer(app_ctx, from_addr,
 							token, tkl, &path,
 							accept);
 				if (r < 0) {
@@ -2231,16 +2231,16 @@ static int handle_request(struct net_context *net_ctx,
 	return r;
 }
 
-int lwm2m_udp_sendto(struct net_context *net_ctx, struct net_pkt *pkt,
+int lwm2m_udp_sendto(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
 		     const struct sockaddr *dst_addr)
 {
-	return net_context_sendto(pkt, dst_addr, NET_SOCKADDR_MAX_SIZE,
-				  NULL, K_NO_WAIT, NULL, NULL);
+	return net_app_send_pkt(app_ctx, pkt, dst_addr, NET_SOCKADDR_MAX_SIZE,
+				K_NO_WAIT, NULL);
 }
 
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
-		       int (*udp_request_handler)(struct net_context *net_ctx,
+		       int (*udp_request_handler)(struct net_app_ctx *app_ctx,
 						  struct zoap_packet *,
 						  struct zoap_packet *,
 						  struct sockaddr *))
@@ -2315,7 +2315,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		if (udp_request_handler &&
 		    zoap_header_get_type(&response) == ZOAP_TYPE_CON) {
 			/* Create a response packet if we reach this point */
-			r = lwm2m_init_message(client_ctx->net_ctx,
+			r = lwm2m_init_message(&client_ctx->net_app_ctx,
 					       &response2, &pkt2,
 					       ZOAP_TYPE_ACK,
 					       zoap_header_get_code(&response),
@@ -2331,13 +2331,13 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 			/*
 			 * The "response" here is actually a new request
 			 */
-			r = udp_request_handler(client_ctx->net_ctx,
+			r = udp_request_handler(&client_ctx->net_app_ctx,
 						&response, &response2,
 						&from_addr);
 			if (r < 0) {
 				SYS_LOG_ERR("Request handler error: %d", r);
 			} else {
-				r = lwm2m_udp_sendto(client_ctx->net_ctx,
+				r = lwm2m_udp_sendto(&client_ctx->net_app_ctx,
 						     pkt2, &from_addr);
 				if (r < 0) {
 					SYS_LOG_ERR("Err sending response: %d",
@@ -2373,12 +2373,12 @@ cleanup:
 	}
 }
 
-static void udp_receive(struct net_context *net_ctx, struct net_pkt *pkt,
+static void udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
 			int status, void *user_data)
 {
-	struct lwm2m_ctx *client_ctx = CONTAINER_OF(net_ctx,
+	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
 						    struct lwm2m_ctx,
-						    net_ctx);
+						    net_app_ctx);
 
 	lwm2m_udp_receive(client_ctx, pkt, false, handle_request);
 }
@@ -2396,7 +2396,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	r = lwm2m_udp_sendto(client_ctx->net_ctx,
+	r = lwm2m_udp_sendto(&client_ctx->net_app_ctx,
 			     pending->pkt, &pending->addr);
 	if (r < 0) {
 		return;
@@ -2455,8 +2455,8 @@ static int generate_notify_message(struct observe_node *obs,
 	struct lwm2m_ctx *client_ctx;
 	int ret = 0;
 
-	client_ctx = CONTAINER_OF(obs->net_ctx,
-				  struct lwm2m_ctx, net_ctx);
+	client_ctx = CONTAINER_OF(obs->net_app_ctx,
+				  struct lwm2m_ctx, net_app_ctx);
 	if (!client_ctx) {
 		SYS_LOG_ERR("observer has no valid LwM2M ctx!");
 		return -EINVAL;
@@ -2491,7 +2491,7 @@ static int generate_notify_message(struct observe_node *obs,
 		return -EINVAL;
 	}
 
-	ret = lwm2m_init_message(obs->net_ctx, out.out_zpkt, &pkt,
+	ret = lwm2m_init_message(obs->net_app_ctx, out.out_zpkt, &pkt,
 				 ZOAP_TYPE_CON, ZOAP_RESPONSE_CODE_CONTENT,
 				 0, obs->token, obs->tkl);
 	if (ret) {
@@ -2548,7 +2548,7 @@ static int generate_notify_message(struct observe_node *obs,
 	zoap_reply_init(reply, &request);
 	reply->reply = notify_message_reply_cb;
 
-	ret = lwm2m_udp_sendto(obs->net_ctx, pkt, &obs->addr);
+	ret = lwm2m_udp_sendto(obs->net_app_ctx, pkt, &obs->addr);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
@@ -2606,18 +2606,62 @@ static void lwm2m_engine_service(void)
 	}
 }
 
-int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
+				  net_pkt_get_slab_func_t tx_slab,
+				  net_pkt_get_pool_func_t data_pool)
+{
+	ctx->tx_slab = tx_slab;
+	ctx->data_pool = data_pool;
+
+	return 0;
+}
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
+		       char *peer_str, u16_t peer_port)
 {
 	int ret = 0;
 
-	/* set callback */
-	ret = net_context_recv(client_ctx->net_ctx, udp_receive, 0, NULL);
+	/* TODO: use security object for initial setup */
+	ret = net_app_init_udp_client(&client_ctx->net_app_ctx,
+				      NULL, NULL,
+				      peer_str,
+				      peer_port,
+				      client_ctx->net_init_timeout,
+				      client_ctx);
 	if (ret) {
-		SYS_LOG_ERR("Could not set receive for net context (err:%d)",
-			    ret);
+		SYS_LOG_ERR("net_app_init_udp_client err:%d", ret);
+		goto error_start;
 	}
 
 	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	net_app_set_net_pkt_pool(&client_ctx->net_app_ctx,
+				 client_ctx->tx_slab, client_ctx->data_pool);
+#endif
+
+	/* set net_app callbacks */
+	ret = net_app_set_cb(&client_ctx->net_app_ctx,
+			     NULL, udp_receive, NULL, NULL);
+	if (ret) {
+		SYS_LOG_ERR("Could not set receive callback (err:%d)", ret);
+		goto error_start;
+	}
+
+	ret = net_app_connect(&client_ctx->net_app_ctx,
+			      client_ctx->net_timeout);
+	if (ret < 0) {
+		SYS_LOG_ERR("Cannot connect UDP (%d)", ret);
+		goto error_start;
+	}
+
+	return 0;
+
+error_start:
+	net_app_close(&client_ctx->net_app_ctx);
+	net_app_release(&client_ctx->net_app_ctx);
 	return ret;
 }
 

@@ -7,7 +7,7 @@
 #ifndef __LWM2M_H__
 #define __LWM2M_H__
 
-#include <net/net_context.h>
+#include <net/net_app.h>
 #include <net/zoap.h>
 
 /* LWM2M Objects defined by OMA */
@@ -32,8 +32,22 @@
  * @details Context structure for the LwM2M high-level API.
  */
 struct lwm2m_ctx {
-	/** Net context structure */
-	struct net_context *net_ctx;
+	/** Net app context structure */
+	struct net_app_ctx net_app_ctx;
+	s32_t net_init_timeout;
+	s32_t net_timeout;
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	/** Network packet (net_pkt) memory pool for network contexts attached
+	 * to this LwM2M context.
+	 */
+	net_pkt_get_slab_func_t tx_slab;
+
+	/** Network data net_buf pool for network contexts attached to this
+	 * LwM2M context.
+	 */
+	net_pkt_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 	/** Private ZoAP and networking structures */
 	struct zoap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
@@ -165,12 +179,18 @@ int lwm2m_engine_register_post_write_callback(char *path,
 int lwm2m_engine_register_exec_callback(char *path,
 					lwm2m_engine_exec_cb_t cb);
 
-int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
+				  net_pkt_get_slab_func_t tx_slab,
+				  net_pkt_get_pool_func_t data_pool);
+#endif
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
+		       char *peer_str, u16_t peer_port);
 
 /* LWM2M RD Client */
 
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
-			  struct sockaddr *peer_addr,
+			  char *peer_str, u16_t peer_port,
 			  const char *ep_name);
 
 #endif	/* __LWM2M_H__ */
