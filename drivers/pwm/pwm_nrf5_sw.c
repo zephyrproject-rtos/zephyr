@@ -110,9 +110,6 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	SYS_LOG_DBG("PWM %d, period %u, pulse %u", pwm,
 			period_cycles, pulse_cycles);
 
-	/* stop timer, if already running */
-	timer->TASKS_STOP = 1;
-
 	/* clear GPIOTE config */
 	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0;
 
@@ -185,6 +182,20 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 
 pin_set_pwm_off:
 	data->map[channel].pulse_cycles = 0;
+	bool pwm_active = false;
+
+	/* stop timer if all channels are inactive */
+	for (channel = 0; channel < config->map_size; channel++) {
+		if (data->map[channel].pulse_cycles) {
+			pwm_active = true;
+			break;
+		}
+	}
+
+	if (!pwm_active) {
+		/* No active PWM, stop timer */
+		timer->TASKS_STOP = 1;
+	}
 
 	return 0;
 }
