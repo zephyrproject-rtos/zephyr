@@ -31,9 +31,8 @@
 #include "ipv6.h"
 #endif
 
-#if defined(CONFIG_HTTP)
 #include <net/http.h>
-#endif
+#include <net/websocket.h>
 
 #if defined(CONFIG_NET_APP)
 #include <net/net_app.h>
@@ -1298,7 +1297,8 @@ int net_shell_cmd_dns(int argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
+#if ((defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)) || \
+(defined(CONFIG_NET_DEBUG_WS_CONN) && defined(CONFIG_WS_SERVER)))
 #define MAX_HTTP_OUTPUT_LEN 64
 
 static char *http_str_output(char *output, int outlen, const char *str, int len)
@@ -1317,6 +1317,7 @@ static char *http_str_output(char *output, int outlen, const char *str, int len)
 	return output;
 }
 
+#if defined(CONFIG_HTTP_SERVER)
 static void http_server_cb(struct http_server_ctx *entry,
 			   void *user_data)
 {
@@ -1344,14 +1345,53 @@ static void http_server_cb(struct http_server_ctx *entry,
 	       http_str_output(output, sizeof(output) - 1,
 			       entry->req.url, entry->req.url_len));
 }
-#endif /* CONFIG_NET_DEBUG_HTTP_CONN && CONFIG_HTTP_SERVER */
+#else
+#define http_server_cb(...) NULL
+#endif
+
+#if defined(CONFIG_WS_SERVER)
+static void ws_server_cb(struct ws_ctx *entry, void *user_data)
+{
+	int *count = user_data;
+	static char output[MAX_HTTP_OUTPUT_LEN];
+
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
+
+	if (*count == 0) {
+		printk("        WS ctx      Local           \t"
+		       "Remote          \tURL\n");
+	}
+
+	(*count)++;
+
+	get_addresses(entry->app_ctx.server.net_ctx,
+		      addr_local, sizeof(addr_local),
+		      addr_remote, sizeof(addr_remote));
+
+	printk("[%2d] %c%c %p  %16s\t%16s\t%s\n",
+	       *count,
+	       entry->app_ctx.is_enabled ? 'E' : 'D',
+	       entry->is_tls ? 'S' : ' ',
+	       entry, addr_local, addr_remote,
+	       http_str_output(output, sizeof(output) - 1,
+			       entry->http.url, entry->http.url_len));
+}
+#else
+#define ws_server_cb(...) NULL
+#endif
+#endif /* CONFIG_NET_DEBUG_HTTP_CONN && CONFIG_HTTP_SERVER ||
+	* CONFIG_NET_DEBUG_WS_CONN && CONFIG_WS_SERVER
+	*/
 
 int net_shell_cmd_http(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
+#if (defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)) || \
+(defined(CONFIG_NET_DEBUG_WS_CONN) && defined(CONFIG_WS_SERVER))
 	static int count;
 	int arg = 1;
 
@@ -1359,6 +1399,7 @@ int net_shell_cmd_http(int argc, char *argv[])
 
 	/* Turn off monitoring if it was enabled */
 	http_server_conn_monitor(NULL, NULL);
+	ws_server_conn_monitor(NULL, NULL);
 
 	if (strcmp(argv[0], "http")) {
 		arg++;
@@ -1369,12 +1410,15 @@ int net_shell_cmd_http(int argc, char *argv[])
 			printk("Activating HTTP monitor. Type \"net http\" "
 			       "to disable HTTP connection monitoring.\n");
 			http_server_conn_monitor(http_server_cb, &count);
+			ws_server_conn_monitor(ws_server_cb, &count);
 		}
 	} else {
 		http_server_conn_foreach(http_server_cb, &count);
+		ws_server_conn_foreach(ws_server_cb, &count);
 	}
 #else
 	printk("Enable CONFIG_NET_DEBUG_HTTP_CONN and CONFIG_HTTP_SERVER "
+	       "or CONFIG_NET_DEBUG_WS_CONN and CONFIG_WS_SERVER "
 	       "to get HTTP server connection information\n");
 #endif
 

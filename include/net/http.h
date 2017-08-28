@@ -822,17 +822,6 @@ struct http_server_ctx {
 #endif /* CONFIG_HTTPS */
 };
 
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN)
-typedef void (*http_server_cb_t)(struct http_server_ctx *entry,
-				 void *user_data);
-
-void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
-void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
-#else
-#define http_server_conn_foreach(...)
-#define http_server_conn_monitor(...)
-#endif /* CONFIG_NET_DEBUG_HTTP_CONN */
-
 /**
  * @brief Initialize user-supplied HTTP context.
  *
@@ -1138,6 +1127,17 @@ int http_server_set_net_pkt_pool(struct http_server_ctx *ctx,
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #endif /* CONFIG_HTTP_SERVER */
+
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
+typedef void (*http_server_cb_t)(struct http_server_ctx *entry,
+				 void *user_data);
+
+void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
+void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
+#else
+#define http_server_conn_foreach(...)
+#define http_server_conn_monitor(...)
+#endif /* CONFIG_NET_DEBUG_HTTP_CONN */
 
 #ifdef __cplusplus
 }
