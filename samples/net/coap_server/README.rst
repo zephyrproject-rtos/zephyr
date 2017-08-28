@@ -1,4 +1,4 @@
-.. _zoap-server-sample:
+.. _coap-server-sample:
 
 CoAP Server
 ###########
@@ -27,7 +27,7 @@ The sample exports the following resources:
    /large-update
 
 These resources allow a good part of the ETSI test cases to be run
-against zoap-server.
+against coap-server.
 
 Building And Running
 ********************
