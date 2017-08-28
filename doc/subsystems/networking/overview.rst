@@ -64,7 +64,7 @@ can be disabled if not needed.
   implemented.
 
 * **CoAP** Constrained Application Protocol (RFC 7252) is supported.
-  Both :ref:`zoap-client-sample` and :ref:`coap-server-sample` sample
+  Both :ref:`coap-client-sample` and :ref:`coap-server-sample` sample
   applications are implemented. A :ref:`coap-client-sample` and
   :ref:`coap-server-sample` using DTLS (Datagram Transport Layer Security)
   (RFC 6347) are also implemented.

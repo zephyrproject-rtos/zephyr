@@ -1,4 +1,4 @@
-.. _zoap-client-sample:
+.. _coap-client-sample:
 
 CoAP client
 ###########
