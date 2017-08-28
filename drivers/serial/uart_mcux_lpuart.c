@@ -318,3 +318,41 @@ static void mcux_lpuart_config_func_0(struct device *dev)
 #endif
 
 #endif /* CONFIG_UART_MCUX_LPUART_0 */
+
+#ifdef CONFIG_UART_MCUX_LPUART_1
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void mcux_lpuart_config_func_1(struct device *dev);
+#endif
+
+static const struct mcux_lpuart_config mcux_lpuart_1_config = {
+	.base = (LPUART_Type *) CONFIG_UART_MCUX_LPUART_1_BASE_ADDRESS,
+	.clock_name = CONFIG_UART_MCUX_LPUART_1_CLOCK_NAME,
+	.clock_subsys =
+		(clock_control_subsys_t)CONFIG_UART_MCUX_LPUART_1_CLOCK_SUBSYS,
+	.baud_rate = CONFIG_UART_MCUX_LPUART_1_BAUD_RATE,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = mcux_lpuart_config_func_1,
+#endif
+};
+
+static struct mcux_lpuart_data mcux_lpuart_1_data;
+
+DEVICE_AND_API_INIT(uart_1, CONFIG_UART_MCUX_LPUART_1_NAME,
+		    &mcux_lpuart_init,
+		    &mcux_lpuart_1_data, &mcux_lpuart_1_config,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &mcux_lpuart_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void mcux_lpuart_config_func_1(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_UART_MCUX_LPUART_1_IRQ,
+		    CONFIG_UART_MCUX_LPUART_1_IRQ_PRI,
+		    mcux_lpuart_isr, DEVICE_GET(uart_1), 0);
+
+	irq_enable(CONFIG_UART_MCUX_LPUART_1_IRQ);
+}
+#endif
+
+#endif /* CONFIG_UART_MCUX_LPUART_1 */
