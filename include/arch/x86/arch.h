@@ -358,8 +358,6 @@ typedef struct nanoIsf {
 #define _NANO_ERR_PAGE_FAULT		 (1)
 /** General protection fault */
 #define _NANO_ERR_GEN_PROT_FAULT	 (2)
-/** Invalid task exit */
-#define _NANO_ERR_INVALID_TASK_EXIT  (3)
 /** Stack corruption detected */
 #define _NANO_ERR_STACK_CHK_FAIL	 (4)
 /** Kernel Allocation Failure */

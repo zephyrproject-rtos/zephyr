@@ -64,10 +64,6 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		printk("*****\n");
 		break;
 	}
-	case _NANO_ERR_INVALID_TASK_EXIT:
-		printk("***** Invalid Exit Software Error! *****\n");
-		break;
-
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL) || \
 		defined(CONFIG_X86_STACK_PROTECTION)
 	case _NANO_ERR_STACK_CHK_FAIL:

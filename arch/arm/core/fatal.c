@@ -46,10 +46,6 @@ void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
 	switch (reason) {
-	case _NANO_ERR_INVALID_TASK_EXIT:
-		printk("***** Invalid Exit Software Error! *****\n");
-		break;
-
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
