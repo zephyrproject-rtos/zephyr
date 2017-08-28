@@ -11,9 +11,6 @@
 #include <board.h>
 #include <zephyr.h>
 #include <gpio.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_app.h>
 #include <net/lwm2m.h>
 
 #define APP_BANNER "Run LWM2M client"
@@ -56,14 +53,7 @@ static int usb_current = 900;
 static struct device *led_dev;
 static u32_t led_state;
 
-#if defined(CONFIG_NET_IPV6)
-static struct net_app_ctx app_udp6;
-static struct lwm2m_ctx udp6;
-#endif
-#if defined(CONFIG_NET_IPV4)
-static struct net_app_ctx app_udp4;
-static struct lwm2m_ctx udp4;
-#endif
+static struct lwm2m_ctx client;
 static struct k_sem quit_lock;
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
@@ -172,21 +162,6 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 	return 1;
 }
 
-static int set_endpoint_name(char *ep_name, sa_family_t family)
-{
-	int ret;
-
-	ret = snprintk(ep_name, ENDPOINT_LEN, "%s-%s-%u",
-		       CONFIG_BOARD, (family == AF_INET6 ? "ipv6" : "ipv4"),
-		       sys_rand32_get());
-	if (ret < 0 || ret >= ENDPOINT_LEN) {
-		SYS_LOG_ERR("Can't fill name buffer");
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int lwm2m_setup(void)
 {
 	struct float32_value float_value;
@@ -252,32 +227,9 @@ static int lwm2m_setup(void)
 	return 0;
 }
 
-int setup_net_app_ctx(struct lwm2m_ctx *client_ctx,
-		      struct net_app_ctx *ctx, const char *peer)
-{
-	int ret;
-
-	/* Set everything to 0 and later just assign the required fields. */
-	memset(client_ctx, 0x00, sizeof(*client_ctx));
-
-	ret = net_app_init_udp_client(ctx, NULL, NULL, peer,
-				      CONFIG_LWM2M_PEER_PORT, WAIT_TIME, NULL);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot init UDP client (%d)", ret);
-		return ret;
-	}
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	net_app_set_net_pkt_pool(ctx, tx_udp_slab, data_udp_pool);
-#endif
-
-	return ret;
-}
-
 void main(void)
 {
 	int ret;
-	char ep_name[ENDPOINT_LEN];
 
 	SYS_LOG_INF(APP_BANNER);
 
@@ -289,77 +241,29 @@ void main(void)
 		return;
 	}
 
+	memset(&client, 0x0, sizeof(client));
+	client.net_init_timeout = WAIT_TIME;
+	client.net_timeout = CONNECT_TIME;
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	client.tx_slab = tx_udp_slab;
+	client.data_pool = data_udp_pool;
+#endif
+
 #if defined(CONFIG_NET_IPV6)
-	ret = setup_net_app_ctx(&udp6, &app_udp6,
-				CONFIG_NET_APP_PEER_IPV6_ADDR);
-	if (ret < 0) {
-		goto cleanup_ipv6;
-	}
-
-	ret = set_endpoint_name(ep_name, udp6.ipv6.local.sa_family);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot set IPv6 endpoint name (%d)", ret);
-		goto cleanup_ipv6;
-	}
-
-	udp6.net_ctx = app_udp6.ipv6.ctx;
-	ret = lwm2m_engine_start(&udp6);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot init LWM2M IPv6 engine (%d)", ret);
-		goto cleanup_ipv6;
-	}
-
-	ret = lwm2m_rd_client_start(&udp6, &app_udp6.ipv6.remote, ep_name);
-	if (ret < 0) {
-		SYS_LOG_ERR("LWM2M init LWM2M IPv6 RD client error (%d)",
-			ret);
-		goto cleanup_ipv6;
-	}
-
-	SYS_LOG_INF("IPv6 setup complete.");
+	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV6_ADDR,
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+#elif defined(CONFIG_NET_IPV4)
+	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV4_ADDR,
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+#else
+	SYS_LOG_ERR("LwM2M client requires IPv4 or IPv6.");
+	ret = -EPROTONOSUPPORT;
 #endif
-
-#if defined(CONFIG_NET_IPV4)
-	ret = setup_net_app_ctx(&udp4, &app_udp4,
-				CONFIG_NET_APP_PEER_IPV4_ADDR);
 	if (ret < 0) {
-		goto cleanup_ipv4;
-	}
-
-	ret = set_endpoint_name(ep_name, udp4.ipv4.local.sa_family);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot set IPv4 endpoint name (%d)", ret);
-		goto cleanup_ipv4;
-	}
-
-	udp4.net_ctx = app_udp4.ipv4.ctx;
-	ret = lwm2m_engine_start(&udp4);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot init LWM2M IPv4 engine (%d)", ret);
-		goto cleanup_ipv4;
-	}
-
-	ret = lwm2m_rd_client_start(&udp4, &app_udp4.ipv4.remote, ep_name);
-	if (ret < 0) {
-		SYS_LOG_ERR("LWM2M init LWM2M IPv4 RD client error (%d)",
+		SYS_LOG_ERR("LWM2M init LWM2M RD client error (%d)",
 			ret);
-		goto cleanup_ipv4;
+		return;
 	}
-
-	SYS_LOG_INF("IPv4 setup complete.");
-#endif
 
 	k_sem_take(&quit_lock, K_FOREVER);
-
-#if defined(CONFIG_NET_IPV4)
-cleanup_ipv4:
-	net_app_close(&app_udp4);
-	net_app_release(&app_udp4);
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-cleanup_ipv6:
-	net_app_close(&app_udp6);
-	net_app_release(&app_udp6);
-#endif
 }

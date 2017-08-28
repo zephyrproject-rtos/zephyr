@@ -394,7 +394,7 @@ static int sm_do_bootstrap(int index)
 	    clients[index].bootstrapped == 0 &&
 	    clients[index].has_bs_server_info) {
 
-		ret = lwm2m_init_message(clients[index].ctx->net_ctx,
+		ret = lwm2m_init_message(&clients[index].ctx->net_app_ctx,
 					 &request, &pkt, ZOAP_TYPE_CON,
 					 ZOAP_METHOD_POST, 0, NULL, 0);
 		if (ret) {
@@ -433,7 +433,7 @@ static int sm_do_bootstrap(int index)
 			    lwm2m_sprint_ip_addr(&clients[index].bs_server),
 			    query_buffer);
 
-		ret = lwm2m_udp_sendto(clients[index].ctx->net_ctx,
+		ret = lwm2m_udp_sendto(&clients[index].ctx->net_app_ctx,
 				       pkt, &clients[index].bs_server);
 		if (ret < 0) {
 			SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
@@ -511,7 +511,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 
 	/* remember the last reg time */
 	clients[index].last_update = k_uptime_get();
-	ret = lwm2m_init_message(clients[index].ctx->net_ctx,
+	ret = lwm2m_init_message(&clients[index].ctx->net_app_ctx,
 				 &request, &pkt, ZOAP_TYPE_CON,
 				 ZOAP_METHOD_POST, 0, NULL, 0);
 	if (ret) {
@@ -586,7 +586,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	SYS_LOG_DBG("registration sent [%s]",
 		    lwm2m_sprint_ip_addr(&clients[index].reg_server));
 
-	ret = lwm2m_udp_sendto(clients[index].ctx->net_ctx,
+	ret = lwm2m_udp_sendto(&clients[index].ctx->net_app_ctx,
 			       pkt, &clients[index].reg_server);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
@@ -655,7 +655,7 @@ static int sm_do_deregister(int index)
 	struct zoap_reply *reply = NULL;
 	int ret;
 
-	ret = lwm2m_init_message(clients[index].ctx->net_ctx,
+	ret = lwm2m_init_message(&clients[index].ctx->net_app_ctx,
 				 &request, &pkt, ZOAP_TYPE_CON,
 				 ZOAP_METHOD_DELETE, 0, NULL, 0);
 	if (ret) {
@@ -686,7 +686,7 @@ static int sm_do_deregister(int index)
 
 	SYS_LOG_INF("Deregister from '%s'", clients[index].server_ep);
 
-	ret = lwm2m_udp_sendto(clients[index].ctx->net_ctx,
+	ret = lwm2m_udp_sendto(&clients[index].ctx->net_app_ctx,
 			       pkt, &clients[index].reg_server);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
@@ -818,60 +818,53 @@ static bool peer_addr_exist(struct sockaddr *peer_addr)
 	return ret;
 }
 
-static void set_ep_ports(int index)
-{
-#if defined(CONFIG_NET_IPV6)
-	if (clients[index].bs_server.sa_family == AF_INET6) {
-		net_sin6(&clients[index].bs_server)->sin6_port =
-			htons(LWM2M_BOOTSTRAP_PORT);
-	}
-
-	if (clients[index].reg_server.sa_family == AF_INET6) {
-		net_sin6(&clients[index].reg_server)->sin6_port =
-			htons(LWM2M_PEER_PORT);
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-	if (clients[index].bs_server.sa_family == AF_INET) {
-		net_sin(&clients[index].bs_server)->sin_port =
-			htons(LWM2M_BOOTSTRAP_PORT);
-	}
-
-	if (clients[index].reg_server.sa_family == AF_INET) {
-		net_sin(&clients[index].reg_server)->sin_port =
-			htons(LWM2M_PEER_PORT);
-	}
-#endif
-}
-
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
-			  struct sockaddr *peer_addr,
+			  char *peer_str, u16_t peer_port,
 			  const char *ep_name)
 {
-	int index;
+	int index, ret = 0;
 
 	if (client_count + 1 > CLIENT_INSTANCE_COUNT) {
 		return -ENOMEM;
 	}
 
-	if (peer_addr_exist(peer_addr)) {
-		return -EEXIST;
+	ret = lwm2m_engine_start(client_ctx, peer_str, peer_port);
+	if (ret < 0) {
+		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		goto cleanup;
 	}
 
-	/* Server Peer IP information */
+	if (!client_ctx->net_app_ctx.default_ctx) {
+		SYS_LOG_ERR("Default net_app_ctx not selected!");
+		return -EINVAL;
+	}
+
+	if (peer_addr_exist(&client_ctx->net_app_ctx.default_ctx->remote)) {
+		SYS_LOG_ERR("Remote exists already");
+		ret = -EEXIST;
+		goto cleanup;
+	}
+
 	/* TODO: use server URI data from security */
 	index = client_count;
 	client_count++;
 	clients[index].ctx = client_ctx;
-	memcpy(&clients[index].reg_server, peer_addr, sizeof(struct sockaddr));
-	memcpy(&clients[index].bs_server, peer_addr, sizeof(struct sockaddr));
-	set_ep_ports(index);
+	memcpy(&clients[index].reg_server,
+	       &client_ctx->net_app_ctx.default_ctx->remote,
+	       sizeof(struct sockaddr));
+	memcpy(&clients[index].bs_server,
+	       &client_ctx->net_app_ctx.default_ctx->remote,
+	       sizeof(struct sockaddr));
 	set_sm_state(index, ENGINE_INIT);
 	strncpy(clients[index].ep_name, ep_name, CLIENT_EP_LEN - 1);
 	SYS_LOG_INF("LWM2M Client: %s", clients[index].ep_name);
 
 	return 0;
+
+cleanup:
+	net_app_close(&client_ctx->net_app_ctx);
+	net_app_release(&client_ctx->net_app_ctx);
+	return ret;
 }
 
 static int lwm2m_rd_client_init(struct device *dev)
