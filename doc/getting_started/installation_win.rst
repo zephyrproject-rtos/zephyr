@@ -56,7 +56,7 @@ environment for Windows. Follow the steps below to set it up:
 
    .. code-block:: console
 
-      $ pacman -S git make gcc dtc diffutils ncurses-devel python3
+      $ pacman -S git make gcc dtc diffutils ncurses-devel python3 gperf
 
 #. Install pip and the required Python modules::
 
