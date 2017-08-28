@@ -1009,15 +1009,27 @@ static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 
 #if defined(CONFIG_NET_APP_SERVER)
 #if defined(CONFIG_NET_TCP)
-	if (ctx->server.net_ctx) {
-		get_addresses(ctx->server.net_ctx,
-			      addr_local, sizeof(addr_local),
-			      addr_remote, sizeof(addr_remote));
+	{
+		int i, found = 0;
 
-		printk("     Active: %16s <- %16s\n",
-		       addr_local, addr_remote);
-	} else {
-		printk("     No active connections to this server.\n");
+		for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+			if (!ctx->server.net_ctxs[i] ||
+			    !net_context_is_used(ctx->server.net_ctxs[i])) {
+				continue;
+			}
+
+			get_addresses(ctx->server.net_ctxs[i],
+				      addr_local, sizeof(addr_local),
+				      addr_remote, sizeof(addr_remote));
+
+			printk("     Active: %16s <- %16s\n",
+			       addr_local, addr_remote);
+			found++;
+		}
+
+		if (!found) {
+			printk("     No active connections to this server.\n");
+		}
 	}
 #else
 	printk("     TCP not enabled for this server.\n");
