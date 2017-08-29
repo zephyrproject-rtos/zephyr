@@ -522,6 +522,7 @@ static int eth_enc28j60_rx(struct device *dev)
 
 	do {
 		struct net_buf *pkt_buf = NULL;
+		struct net_buf *last_buf = NULL;
 		u16_t frm_len = 0;
 		struct net_pkt *pkt;
 		u16_t next_packet;
@@ -570,7 +571,13 @@ static int eth_enc28j60_rx(struct device *dev)
 				goto done;
 			}
 
-			net_pkt_frag_insert(pkt, pkt_buf);
+			if (!last_buf) {
+				net_pkt_frag_insert(pkt, pkt_buf);
+			} else {
+				net_buf_frag_insert(last_buf, pkt_buf);
+			}
+
+			last_buf = pkt_buf;
 
 			data_ptr = pkt_buf->data;
 
