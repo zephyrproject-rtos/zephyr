@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Intel Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _PROT_TEST_TARGETS_H_
 #define _PROT_TEST_TARGETS_H_
 

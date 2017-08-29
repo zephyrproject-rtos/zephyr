@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017 Intel Corp.
  *
- * SPDX-License-Identifier:0xApache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
