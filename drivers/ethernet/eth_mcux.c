@@ -570,10 +570,25 @@ static int eth_0_init(struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV6)
+static void net_if_mcast_cb(struct net_if *iface,
+			    const struct in6_addr *addr,
+			    bool is_joined)
+{
+	/* TBD */
+}
+#endif /* CONFIG_NET_IPV6 */
+
 static void eth_0_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->driver_data;
+
+#if defined(CONFIG_NET_IPV6)
+	static struct net_if_mcast_monitor mon;
+
+	net_if_mcast_mon_register(&mon, iface, net_if_mcast_cb);
+#endif /* CONFIG_NET_IPV6 */
 
 	net_if_set_link_addr(iface, context->mac_addr,
 			     sizeof(context->mac_addr),
