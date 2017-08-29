@@ -24,6 +24,11 @@ if(NOT QEMU_PIPE)
   set(QEMU_PIPE_COMMENT "\nTo exit from QEMU enter: 'CTRL+a, x'\n")
 endif()
 
+# Use flags passed in from the environment
+set(env_qemu $ENV{QEMU_EXTRA_FLAGS})
+separate_arguments(env_qemu)
+list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
+
 add_custom_target(run
   ${IAMCU_HACK}
   COMMAND
