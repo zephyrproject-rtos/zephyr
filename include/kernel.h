@@ -608,7 +608,7 @@ struct _static_thread_data {
 			entry, p1, p2, p3,                               \
 			prio, options, delay)                            \
 	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
-	struct k_thread _k_thread_obj_##name;				 \
+	struct k_thread __kernel _k_thread_obj_##name;			 \
 	struct _static_thread_data _k_thread_data_##name __aligned(4)    \
 		__in_section(_static_thread_data, static, name) =        \
 		_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
