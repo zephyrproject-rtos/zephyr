@@ -664,6 +664,69 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface);
 
 /**
+ * @typedef net_if_mcast_callback_t
+
+ * @brief Define callback that is called whenever IPv6 multicast address group
+ * is joined or left.
+
+ * @param "struct net_if *iface" A pointer to a struct net_if to which the
+ *        multicast address is attached.
+ * @param "const struct in6_addr *addr" IPv6 multicast address.
+ * @param "bool is_joined" True if the address is joined, false if left.
+ */
+typedef void (*net_if_mcast_callback_t)(struct net_if *iface,
+					const struct in6_addr *addr,
+					bool is_joined);
+
+/**
+ * @brief Multicast monitor handler struct.
+ *
+ * Stores the multicast callback information. Caller must make sure that
+ * the variable pointed by this is valid during the lifetime of
+ * registration. Typically this means that the variable cannot be
+ * allocated from stack.
+ */
+struct net_if_mcast_monitor {
+	/** Node information for the slist. */
+	sys_snode_t node;
+
+	/** Network interface */
+	struct net_if *iface;
+
+	/** Multicast callback */
+	net_if_mcast_callback_t cb;
+};
+
+/**
+ * @brief Register a multicast monitor
+ *
+ * @param mon Monitor handle. This is a pointer to a monitor storage structure
+ * which should be allocated by caller, but does not need to be initialized.
+ * @param iface Network interface
+ * @param cb Monitor callback
+ */
+void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
+			       struct net_if *iface,
+			       net_if_mcast_callback_t cb);
+
+/**
+ * @brief Unregister a multicast monitor
+ *
+ * @param mon Monitor handle
+ */
+void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon);
+
+/**
+ * @brief Call registered multicast monitors
+ *
+ * @param iface Network interface
+ * @param addr Multicast address
+ * @param is_joined Is this multicast address joined (true) or not (false)
+ */
+void net_if_mcast_monitor(struct net_if *iface, const struct in6_addr *addr,
+			  bool is_joined);
+
+/**
  * @brief Mark a given multicast address to be joined.
  *
  * @param addr IPv6 multicast address
