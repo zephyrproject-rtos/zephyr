@@ -1,0 +1,5 @@
+tests:
+-   test:
+        platform_whitelist: qemu_x86
+        platform_exclude: qemu_x86_nommu
+        tags: kernel
