@@ -1277,6 +1277,9 @@ class TestSuite:
             for dirpath, dirnames, filenames in os.walk(testcase_root,
                                                         topdown=True):
                 verbose("scanning %s" % dirpath)
+                # FIXME: To only run on ported tests and samples when migrating to cmake
+                if 'CMakeLists.txt' not in filenames:
+                    continue
                 if 'sample.yaml' in filenames:
                     filename = 'sample.yaml'
                 elif 'testcase.yaml' in filenames:

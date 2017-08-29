@@ -52,7 +52,7 @@ endfunction()
 
 function(target_cc_option_ifdef feature_toggle target scope option)
   if(${feature_toggle})
-    target_cc_options(${target} ${scope} ${option})
+    target_cc_option(${target} ${scope} ${option})
   endif()
 endfunction()
 
@@ -66,6 +66,12 @@ function(zephyr_library_sources_ifdef feature_toggle source)
   if(${${feature_toggle}})
     zephyr_library_sources(${source} ${ARGN})
   endif()
+endfunction()
+
+function(zephyr_library_sources_if_kconfig item)
+  get_filename_component(item_basename ${item} NAME_WE)
+  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
+  zephyr_library_sources_ifdef(${UPPER_CASE_CONFIG} ${item})
 endfunction()
 
 function(zephyr_sources_if_kconfig item)

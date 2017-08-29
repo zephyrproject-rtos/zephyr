@@ -1,3 +1,4 @@
+add_subdirectory_ifdef(CONFIG_CONSOLE_PULL console)
 # add_subdirectory_ifdef(CONFIG_FILE_SYSTEM fs)
 # add_subdirectory_ifdef(CONFIG_USB usb)
 add_subdirectory_ifdef(CONFIG_BT bluetooth)
