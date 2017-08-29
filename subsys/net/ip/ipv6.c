@@ -2628,6 +2628,8 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 
 	net_if_ipv6_maddr_join(maddr);
 
+	net_if_mcast_monitor(iface, addr, true);
+
 	net_mgmt_event_notify(NET_EVENT_IPV6_MCAST_JOIN, iface);
 
 	return ret;
@@ -2645,6 +2647,8 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 	if (ret < 0) {
 		return ret;
 	}
+
+	net_if_mcast_monitor(iface, addr, false);
 
 	net_mgmt_event_notify(NET_EVENT_IPV6_MCAST_LEAVE, iface);
 

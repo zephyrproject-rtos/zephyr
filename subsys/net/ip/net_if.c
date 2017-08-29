@@ -42,6 +42,12 @@ static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
  */
 static sys_slist_t link_callbacks;
 
+#if defined(CONFIG_NET_IPV6)
+/* Multicast join/leave tracking.
+ */
+static sys_slist_t mcast_monitor_callbacks;
+#endif
+
 NET_STACK_DEFINE(TX, tx_stack, CONFIG_NET_TX_STACK_SIZE,
 		 CONFIG_NET_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
@@ -830,6 +836,35 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 	}
 
 	return NULL;
+}
+
+void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
+			       struct net_if *iface,
+			       net_if_mcast_callback_t cb)
+{
+	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
+
+	mon->iface = iface;
+	mon->cb = cb;
+}
+
+void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
+{
+	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+}
+
+void net_if_mcast_monitor(struct net_if *iface, const struct in6_addr *addr,
+			  bool is_joined)
+{
+	struct net_if_mcast_monitor *mon, *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
+					  mon, tmp, node) {
+		if (iface == mon->iface) {
+			mon->cb(iface, addr, is_joined);
+		}
+	}
 }
 
 static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
