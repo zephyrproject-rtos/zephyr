@@ -20,7 +20,6 @@ add_library(kernel
   thread_abort.c
   version.c
   work_q.c
-  ${PROJECT_BINARY_DIR}/include/generated/version.h
 )
 
 target_sources_ifdef(CONFIG_INT_LATENCY_BENCHMARK kernel PRIVATE int_latency_bench.c)
