@@ -42,7 +42,7 @@ if(CONFIG_FLOAT)
   set(FPU_FOR_cortex-m4  fpv4-sp-d16)
   set(FPU_FOR_cortex-m7  fpv5-d16)
   set(FPU_FOR_cortex-m33 fpv5-d16)
-  target_cc_options(zephyr PUBLIC -mfpu=${FPU_FOR_${GCC_M_CPU}})
+  target_cc_option(zephyr PUBLIC -mfpu=${FPU_FOR_${GCC_M_CPU}})
 
   if    (CONFIG_FP_SOFTABI)
     target_cc_option(zephyr PUBLIC -mfloat-abi=soft)

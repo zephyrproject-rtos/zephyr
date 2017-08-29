@@ -52,7 +52,7 @@ endfunction()
 
 function(target_cc_option_ifdef feature_toggle target scope option)
   if(${feature_toggle})
-    target_cc_options(${target} ${scope} ${option})
+    target_cc_option(${target} ${scope} ${option})
   endif()
 endfunction()
 
