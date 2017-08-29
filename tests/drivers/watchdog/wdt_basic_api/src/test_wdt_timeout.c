@@ -29,20 +29,47 @@
  * @}
  */
 
+#ifdef CONFIG_BOARD_ESP32
+#include <soc/rtc_cntl_reg.h>
+#else
 #include <qm_soc_regs.h>
+#endif
 #include <watchdog.h>
 #include <zephyr.h>
 #include <ztest.h>
 
+#ifdef CONFIG_BOARD_ESP32
+#define WDT_DEV_NAME CONFIG_WDT_ESP32_DEVICE_NAME
+#define MWDT1_GLOBAL_RST	0x08
+#define RWDT_SYSTEM_RST		0x10
+#else
 #define WDT_DEV_NAME CONFIG_WDT_0_NAME
+#endif
+
+#ifdef CONFIG_BOARD_ESP32
+static volatile u32_t *gp_retention_reg0 = (u32_t *)(RTC_CNTL_STORE0_REG);
+static volatile u32_t *gp_retention_reg1 = (u32_t *)(RTC_CNTL_STORE1_REG);
+
+static int wdt_reset_reason(void)
+{
+	/*Reading reset cause of PRO CPU*/
+	volatile u32_t *wdt_rtc_rst_procpu =
+		(u32_t *)(RTC_CNTL_RESET_STATE_REG);
+	/* RTC_CNTL_RESET_CAUSE_PROCPU :bitpos:[5:0] */
+	return *wdt_rtc_rst_procpu & 0x1F;
+}
+#endif
 
 static void wdt_int_cb(struct device *wdt_dev)
 {
 	static u32_t wdt_int_cnt;
 
 	TC_PRINT("%s: Invoked (%u)\n", __func__, ++wdt_int_cnt);
+#ifdef CONFIG_BOARD_ESP32
+	(*gp_retention_reg1)++;
+#else
 	QM_SCSS_GP->gps2++;
-
+#endif
 #ifdef INT_RESET
 	/* Don't come out from the loopback to avoid have the interrupt
 	 * cleared and the system will reset in interrupt reset mode
@@ -57,6 +84,13 @@ static int test_wdt(u32_t timeout, enum wdt_mode r_mode)
 	struct wdt_config config;
 	struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
+#ifdef CONFIG_BOARD_ESP32
+	/*Initialize retention registers to 0 on first boot*/
+	if (wdt_reset_reason() == RWDT_SYSTEM_RST) {
+		*gp_retention_reg0 = 0;
+		*gp_retention_reg1 = 0;
+	}
+#endif
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");
 		return TC_FAIL;
@@ -95,13 +129,20 @@ static int test_wdt(u32_t timeout, enum wdt_mode r_mode)
 	/* 4. Verify wdt_disable(), and Warm Reset won't happen */
 	wdt_disable(wdt);
 
+#ifdef CONFIG_BOARD_ESP32
+	if (*gp_retention_reg0) {
+		TC_PRINT("A Warm Reset shouldn't happen when Timer disabled\n");
+		return TC_FAIL;
+	}
+	*gp_retention_reg0 = 1;
+#else
 	if (QM_SCSS_GP->gps3) {
 		TC_PRINT("A Warm Reset shouldn't happen when Timer disabled\n");
 		return TC_FAIL;
 	}
 
 	QM_SCSS_GP->gps3 = 1;
-
+#endif
 	/*
 	 * Wait to check whether a Warm Reset will happen.
 	 * The sleep time should be longer than Watchdog Timer
@@ -111,11 +152,41 @@ static int test_wdt(u32_t timeout, enum wdt_mode r_mode)
 	 */
 	k_sleep(5000);
 
+#ifdef CONFIG_BOARD_ESP32
+	*gp_retention_reg0 = 0;
+#else
 	QM_SCSS_GP->gps3 = 0;
+#endif
 
 	/* 5. Verify watchdog trigger a Warm Reset */
 	wdt_enable(wdt);
 
+#ifdef CONFIG_BOARD_ESP32
+	if (!*gp_retention_reg1 && (wdt_reset_reason() == RWDT_SYSTEM_RST)) {
+		TC_PRINT("Waiting for WDT reset\n");
+		*gp_retention_reg1 = 1;
+		while (1)
+			;
+	} else {
+		if (r_mode == WDT_MODE_INTERRUPT_RESET) {
+			if ((*gp_retention_reg1 == 2) &&
+				(wdt_reset_reason() == MWDT1_GLOBAL_RST)) {
+				wdt_disable(wdt);
+				return TC_PASS;
+			}
+		} else {
+			if (*gp_retention_reg1 &&
+				(wdt_reset_reason() == MWDT1_GLOBAL_RST)) {
+				wdt_disable(wdt);
+				return TC_PASS;
+			}
+		}
+		TC_PRINT("gp_retention_reg1 = %d\n", *gp_retention_reg1);
+		wdt_disable(wdt);
+		return TC_FAIL;
+	}
+
+#else
 	if (!QM_SCSS_GP->gps2) {
 		TC_PRINT("Waiting for WDT reset\n");
 		QM_SCSS_GP->gps2 = 1;
@@ -137,6 +208,7 @@ static int test_wdt(u32_t timeout, enum wdt_mode r_mode)
 		wdt_disable(wdt);
 		return TC_FAIL;
 	}
+#endif
 }
 
 /*
@@ -147,12 +219,22 @@ void test_wdt_int_reset_26(void)
 {
 	zassert_true(test_wdt(WDT_2_26_CYCLES,
 			     WDT_MODE_INTERRUPT_RESET) == TC_PASS, NULL);
+#ifdef CONFIG_BOARD_ESP32
+	*gp_retention_reg1 = 0;
+	*gp_retention_reg0 = 0;
+#else
 	QM_SCSS_GP->gps2 = 0;
+#endif
 }
 
 void test_wdt_reset_26(void)
 {
 	zassert_true(test_wdt(WDT_2_26_CYCLES,
 			     WDT_MODE_RESET) == TC_PASS, NULL);
+#ifdef CONFIG_BOARD_ESP32
+	*gp_retention_reg1 = 0;
+	*gp_retention_reg0 = 0;
+#else
 	QM_SCSS_GP->gps2 = 0;
+#endif
 }
