@@ -164,7 +164,7 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   target_cc_option(zephyr PUBLIC -Wno-format-invalid-specifier)
   target_cc_option(zephyr PUBLIC -Wno-gnu)
   # comparison of unsigned expression < 0 is always false
-  target_cc_option(zephyr PUBLIC -Wtautological-compare)
+  target_cc_option(zephyr PUBLIC -Wno-tautological-compare)
 else() # GCC assumed
   target_cc_option(zephyr PUBLIC -Wno-unused-but-set-variable)
   target_cc_option(zephyr PUBLIC -fno-reorder-functions)
