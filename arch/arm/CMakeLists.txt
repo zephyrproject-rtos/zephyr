@@ -1,9 +1,4 @@
-target_cc_option(zephyr PUBLIC -ffunction-sections)
-target_cc_option(zephyr PUBLIC -fdata-sections)
-
-if(CONFIG_LTO)
-  target_cc_option(zephyr PUBLIC -flto)
-endif()
+zephyr_cc_option_ifdef(CONFIG_LTO -flto)
 
 if    (CONFIG_CPU_CORTEX_M0)
   set(GCC_M_CPU cortex-m0)
@@ -42,19 +37,27 @@ if(CONFIG_FLOAT)
   set(FPU_FOR_cortex-m4  fpv4-sp-d16)
   set(FPU_FOR_cortex-m7  fpv5-d16)
   set(FPU_FOR_cortex-m33 fpv5-d16)
-  target_cc_option(zephyr PUBLIC -mfpu=${FPU_FOR_${GCC_M_CPU}})
+  zephyr_cc_option(-mfpu=${FPU_FOR_${GCC_M_CPU}})
 
   if    (CONFIG_FP_SOFTABI)
-    target_cc_option(zephyr PUBLIC -mfloat-abi=soft)
+    zephyr_cc_option(-mfloat-abi=soft)
   elseif(CONFIG_FP_HARDABI)
-    target_cc_option(zephyr PUBLIC -mfloat-abi=hard)
+    zephyr_cc_option(-mfloat-abi=hard)
   else()
     message(FATAL_ERROR "Expected CONFIG_FP_(SOFT|HARD)ABI to be set")
   endif()
 endif()
 
-target_compile_options(zephyr PUBLIC -mabi=aapcs -mthumb -mcpu=${GCC_M_CPU})
-target_compile_options(zephyr PUBLIC -mthumb -march=${ARCH_FOR_${GCC_M_CPU}})
+zephyr_cc_option(
+  -ffunction-sections
+  -fdata-sections
+  )
+zephyr_compile_options(
+  -mabi=aapcs
+  -mthumb
+  -mcpu=${GCC_M_CPU}
+  -march=${ARCH_FOR_${GCC_M_CPU}}
+  )
 
 add_subdirectory(soc/${SOC_PATH})
 add_subdirectory(core)

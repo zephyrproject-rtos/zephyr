@@ -1,1 +1,1 @@
-add_subdirectory_ifdef(CONFIG_ZTEST ztest)
+add_subdirectory_if_kconfig(ztest)

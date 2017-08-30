@@ -1,11 +1,11 @@
 if(CONFIG_HAS_NORDIC_MDK)
-  target_include_directories(zephyr PUBLIC mdk)
+  zephyr_include_directories(mdk)
 endif()
 
 if(CONFIG_HAS_NORDIC_HAL)
-  target_include_directories(zephyr PUBLIC hal)
+  zephyr_include_directories(hal)
 endif()
 
 if(CONFIG_HAS_NORDIC_DRIVERS)
-  target_include_directories(zephyr PUBLIC drivers)
+  zephyr_include_directories(drivers)
 endif()

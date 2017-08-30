@@ -1,7 +1,3 @@
-# TODO: KBuild was structured differently here. Should we
-# conditionally include ll_adv, ll_scan, ll_master, etc., like KBuild
-# did?
-
 zephyr_library()
 zephyr_library_sources(
   util/mem.c
@@ -21,11 +17,11 @@ zephyr_library_sources(
   hci/hci.c
   )
 
-target_sources_ifdef(CONFIG_BT_BROADCASTER subsys__bluetooth__controller PRIVATE ll_sw/ll_adv.c)
-target_sources_ifdef(CONFIG_BT_OBSERVER    subsys__bluetooth__controller PRIVATE ll_sw/ll_scan.c)
-target_sources_ifdef(CONFIG_BT_CENTRAL     subsys__bluetooth__controller PRIVATE ll_sw/ll_master.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BROADCASTER ll_sw/ll_adv.c)
+zephyr_library_sources_ifdef(CONFIG_BT_OBSERVER    ll_sw/ll_scan.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CENTRAL     ll_sw/ll_master.c)
 
-target_include_directories(subsys__bluetooth__controller PRIVATE
+zephyr_library_include_directories(
   .
   util
   hal
@@ -34,4 +30,4 @@ target_include_directories(subsys__bluetooth__controller PRIVATE
   include
 )
 
-target_link_libraries(subsys__bluetooth__controller subsys__bluetooth)
+zephyr_library_link_libraries(subsys__bluetooth)
