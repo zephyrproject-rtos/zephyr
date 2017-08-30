@@ -1,16 +1,11 @@
-target_include_directories(zephyr PUBLIC
-  ${PROJECT_SOURCE_DIR}/arch/arm/soc/nordic_nrf5/include
+zephyr_include_directories(
+  ../include
 )
 
-if(CONFIG_SOC_NRF52832)
-  target_compile_definitions(zephyr PUBLIC NRF52832_XXAA)
-endif()
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52832 NRF52832_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52840 NRF52840_XXAA)
 
-if(CONFIG_SOC_NRF52840)
-  target_compile_definitions(zephyr PUBLIC NRF52840_XXAA)
-endif()
-
-target_sources(zephyr PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/soc.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/mpu_regions.c
+zephyr_sources(
+  soc.c
+  mpu_regions.c
   )
