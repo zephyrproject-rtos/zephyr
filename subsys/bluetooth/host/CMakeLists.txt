@@ -1,36 +1,39 @@
 zephyr_library()
-target_link_libraries(subsys__bluetooth__host subsys__bluetooth)
+zephyr_library_link_libraries(subsys__bluetooth)
 
-target_sources_ifdef(CONFIG_BT_HCI_RAW          subsys__bluetooth__host PRIVATE hci_raw.c)
-target_sources_ifdef(CONFIG_BT_DEBUG_MONITOR    subsys__bluetooth__host PRIVATE monitor.c)
-target_sources_ifdef(CONFIG_BT_TINYCRYPT_ECC    subsys__bluetooth__host PRIVATE hci_ecc.c)
-target_sources_ifdef(CONFIG_BT_INTERNAL_STORAGE subsys__bluetooth__host PRIVATE storage.c)
-target_sources_ifdef(CONFIG_BT_A2DP             subsys__bluetooth__host PRIVATE a2dp.c)
-target_sources_ifdef(CONFIG_BT_AVDTP            subsys__bluetooth__host PRIVATE avdtp.c)
-target_sources_ifdef(CONFIG_BT_RFCOMM           subsys__bluetooth__host PRIVATE rfcomm.c)
+zephyr_library_sources_ifdef(CONFIG_BT_HCI_RAW          hci_raw.c)
+zephyr_library_sources_ifdef(CONFIG_BT_DEBUG_MONITOR    monitor.c)
+zephyr_library_sources_ifdef(CONFIG_BT_TINYCRYPT_ECC    hci_ecc.c)
+zephyr_library_sources_ifdef(CONFIG_BT_INTERNAL_STORAGE storage.c)
+zephyr_library_sources_ifdef(CONFIG_BT_A2DP             a2dp.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AVDTP            avdtp.c)
+zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
 
-target_sources_ifdef(CONFIG_BT_BREDR subsys__bluetooth__host PRIVATE
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BREDR
   keys_br.c
   l2cap_br.c
   sdp.c
   )
 
-target_sources_ifdef(CONFIG_BT_HFP_HF subsys__bluetooth__host PRIVATE
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HFP_HF
   hfp_hf.c
   at.c
   )
 
 if(CONFIG_BT_HCI_HOST)
-  target_sources(subsys__bluetooth__host PRIVATE
+  zephyr_library_sources(
     uuid.c
     hci_core.c
     )
-  target_sources_ifdef(CONFIG_BT_HOST_CRYPTO subsys__bluetooth__host PRIVATE
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_HOST_CRYPTO
     crypto.c
     )
 
   if(CONFIG_BT_CONN)
-    target_sources(subsys__bluetooth__host PRIVATE
+    zephyr_library_sources(
       conn.c
       l2cap.c
       att.c
@@ -38,12 +41,12 @@ if(CONFIG_BT_HCI_HOST)
       )
 
     if(CONFIG_BT_SMP)
-      target_sources(subsys__bluetooth__host PRIVATE
+      zephyr_library_sources(
         smp.c
         keys.c
         )
     else()
-      target_sources(subsys__bluetooth__host PRIVATE
+      zephyr_library_sources(
         smp_null.c
         )
     endif()
