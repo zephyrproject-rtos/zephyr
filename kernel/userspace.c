@@ -69,21 +69,22 @@ const char *otype_to_str(enum k_objects otype)
 
 static void set_thread_perms(struct _k_object *ko, struct k_thread *thread)
 {
-	ARG_UNUSED(ko);
-	ARG_UNUSED(thread);
-
-	/* STUB */
+	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+		sys_bitfield_set_bit((mem_addr_t)&ko->perms,
+				     thread->base.perm_index);
+	}
 }
 
 
 static int test_thread_perms(struct _k_object *ko)
 {
-	ARG_UNUSED(ko);
-
-	/* STUB */
-
-	return 1;
+	if (_current->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+		return sys_bitfield_test_bit((mem_addr_t)&ko->perms,
+					     _current->base.perm_index);
+	}
+	return 0;
 }
+
 
 void k_object_grant_access(void *object, struct k_thread *thread)
 {

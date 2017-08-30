@@ -22,9 +22,25 @@
 #include <drivers/system_timer.h>
 #include <ksched.h>
 #include <wait_q.h>
+#include <atomic.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
+
+#ifdef CONFIG_USERSPACE
+/* Each thread gets assigned an index into a permission bitfield */
+static atomic_t thread_index;
+
+static unsigned int thread_index_get(void)
+{
+	unsigned int retval;
+
+	retval = (int)atomic_inc(&thread_index);
+	__ASSERT(retval < 8 * CONFIG_MAX_THREAD_BYTES,
+		 "too many threads created, increase CONFIG_MAX_THREAD_BYTES");
+	return retval;
+}
+#endif
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	for (struct _static_thread_data *thread_data =   \
@@ -241,8 +257,24 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 }
 #endif
 
-#ifdef CONFIG_MULTITHREADING
+void _setup_new_thread(struct k_thread *new_thread,
+		       k_thread_stack_t stack, size_t stack_size,
+		       k_thread_entry_t entry,
+		       void *p1, void *p2, void *p3,
+		       int prio, u32_t options)
+{
+	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+		    prio, options);
+#ifdef CONFIG_USERSPACE
+	new_thread->base.perm_index = thread_index_get();
+	_k_object_init(new_thread);
 
+	/* Any given thread has access to itself */
+	k_object_grant_access(new_thread, new_thread);
+#endif
+}
+
+#ifdef CONFIG_MULTITHREADING
 k_tid_t k_thread_create(struct k_thread *new_thread,
 			k_thread_stack_t stack,
 			size_t stack_size, k_thread_entry_t entry,
@@ -250,9 +282,8 @@ k_tid_t k_thread_create(struct k_thread *new_thread,
 			int prio, u32_t options, s32_t delay)
 {
 	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
-	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
-		    prio, options);
-	_k_object_init(new_thread);
+	_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
+			  prio, options);
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);
@@ -394,7 +425,7 @@ void _init_static_threads(void)
 	unsigned int  key;
 
 	_FOREACH_STATIC_THREAD(thread_data) {
-		_new_thread(
+		_setup_new_thread(
 			thread_data->init_thread,
 			thread_data->init_stack,
 			thread_data->init_stack_size,
@@ -406,7 +437,6 @@ void _init_static_threads(void)
 			thread_data->init_options);
 
 		thread_data->init_thread->init_data = thread_data;
-		_k_object_init(thread_data->init_thread);
 	}
 
 	_sched_lock();

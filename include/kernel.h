@@ -310,6 +310,11 @@ struct _thread_base {
 	/* this thread's entry in a timeout queue */
 	struct _timeout timeout;
 #endif
+
+#ifdef CONFIG_USERSPACE
+	/* Bit position in kernel object permissions bitfield for this thread */
+	unsigned int perm_index;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;
