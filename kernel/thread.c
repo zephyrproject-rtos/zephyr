@@ -500,3 +500,13 @@ void _k_thread_group_leave(u32_t groups, struct k_thread *thread)
 	thread_data->init_groups &= groups;
 }
 
+
+#ifdef CONFIG_USERSPACE
+FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
+					    void *p1, void *p2, void *p3)
+{
+	_current->base.user_options |= K_USER;
+	_thread_essential_clear();
+	_arch_user_mode_enter(entry, p1, p2, p3);
+}
+#endif /* CONFIG_USERSPACE */
