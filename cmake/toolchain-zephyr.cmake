@@ -107,6 +107,12 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --sysroot ${SYSROOT_DIR} --print-multi-directory
+  OUTPUT_VARIABLE NEWLIB_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
 get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
 
 set(LIB_INCLUDE_DIR -L${LIBGCC_DIR})
@@ -135,3 +141,6 @@ set(BUILD_SHARED_LIBS OFF)
 # CMake checks compiler flags with check_c_compiler_flag() (Which we
 # wrap with target_cc_option() in extentions.cmake)
 set(CMAKE_REQUIRED_FLAGS "-nostartfiles -nostdlib --sysroot=${SYSROOT_DIR}")
+
+set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/usr/include)
+set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/usr/lib/${NEWLIB_DIR})
