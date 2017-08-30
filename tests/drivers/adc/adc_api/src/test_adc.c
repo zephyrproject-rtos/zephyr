@@ -28,6 +28,10 @@
 #include <zephyr.h>
 #include <ztest.h>
 
+#ifndef CONFIG_ADC_LEGACY_API
+#error "Supports only legacy API"
+#endif
+
 #define BUFFER_SIZE 5
 
 #if defined(CONFIG_BOARD_FRDM_K64F)

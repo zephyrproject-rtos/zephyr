@@ -6,6 +6,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config ADC_LEGACY_API
+	bool "Use legacy ADC API (default)"
+	default y
+	help
+	  Legacy API uses clock ticks as timing parameters unit.
+	  There is also no distinction between sampling delay and
+	  sampling interval.
+
 #
 # ADC options
 #

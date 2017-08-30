@@ -33,8 +33,16 @@ extern "C" {
  * to define a sample from a specific channel.
  */
 struct adc_seq_entry {
+#if defined(CONFIG_ADC_LEGACY_API)
 	/** Clock ticks delay before sampling the ADC. */
 	s32_t sampling_delay;
+#else
+	/** Delay before starting sampling the ADC in microseconds. */
+	u32_t sampling_delay;
+
+	/** Interval between adjacent samples in microseconds. */
+	u32_t sampling_interval;
+#endif
 
 	/** Buffer pointer where the sample is written.*/
 	u8_t *buffer;

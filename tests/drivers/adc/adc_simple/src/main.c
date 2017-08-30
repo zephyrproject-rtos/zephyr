@@ -16,6 +16,10 @@
 #include <adc.h>
 #include <misc/printk.h>
 
+#ifndef CONFIG_ADC_LEGACY_API
+#error "Supports only legacy API"
+#endif
+
 /* in millisecond */
 #define SLEEPTIME  2000
 
