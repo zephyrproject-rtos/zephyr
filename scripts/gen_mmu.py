@@ -101,6 +101,9 @@ def read_mmu_list_marshal_param():
                                                size_read_from_binary);
         size_read_from_binary += struct.calcsize(struct_mmu_regions_format);
 
+        if basic_mem_region_values[1] == 0:
+            continue
+
         #validate for memory overlap here
         for i in raw_info:
             start_location = basic_mem_region_values[0]
