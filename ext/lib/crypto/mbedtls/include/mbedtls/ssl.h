@@ -1052,7 +1052,7 @@ void mbedtls_ssl_conf_authmode( mbedtls_ssl_config *conf, int authmode );
  *
  *                 If set, the verify callback is called for each
  *                 certificate in the chain. For implementation
- *                 information, please see \c x509parse_verify()
+ *                 information, please see \c mbedtls_x509_crt_verify()
  *
  * \param conf     SSL configuration
  * \param f_vrfy   verification function
