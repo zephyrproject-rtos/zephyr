@@ -359,23 +359,8 @@ mbedtls_pk_type_t mbedtls_ssl_get_ciphersuite_sig_pk_alg( const mbedtls_ssl_ciph
 mbedtls_pk_type_t mbedtls_ssl_get_ciphersuite_sig_alg( const mbedtls_ssl_ciphersuite_t *info );
 #endif
 
-#if defined(MBEDTLS_ECDH_C) || defined(MBEDTLS_ECDSA_C)
-static inline int mbedtls_ssl_ciphersuite_uses_ec( const mbedtls_ssl_ciphersuite_t *info )
-{
-    switch( info->key_exchange )
-    {
-        case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
-        case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
-        case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
-        case MBEDTLS_KEY_EXCHANGE_ECDH_RSA:
-        case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
-            return( 1 );
-
-        default:
-            return( 0 );
-    }
-}
-#endif /* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C */
+int mbedtls_ssl_ciphersuite_uses_ec( const mbedtls_ssl_ciphersuite_t *info );
+int mbedtls_ssl_ciphersuite_uses_psk( const mbedtls_ssl_ciphersuite_t *info );
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME_PFS__ENABLED)
 static inline int mbedtls_ssl_ciphersuite_has_pfs( const mbedtls_ssl_ciphersuite_t *info )
@@ -428,23 +413,6 @@ static inline int mbedtls_ssl_ciphersuite_uses_ecdh( const mbedtls_ssl_ciphersui
     }
 }
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__ECDH_ENABLED */
-
-#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-static inline int mbedtls_ssl_ciphersuite_uses_psk( const mbedtls_ssl_ciphersuite_t *info )
-{
-    switch( info->key_exchange )
-    {
-        case MBEDTLS_KEY_EXCHANGE_PSK:
-        case MBEDTLS_KEY_EXCHANGE_RSA_PSK:
-        case MBEDTLS_KEY_EXCHANGE_DHE_PSK:
-        case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
-            return( 1 );
-
-        default:
-            return( 0 );
-    }
-}
-#endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 
 static inline int mbedtls_ssl_ciphersuite_cert_req_allowed( const mbedtls_ssl_ciphersuite_t *info )
 {
