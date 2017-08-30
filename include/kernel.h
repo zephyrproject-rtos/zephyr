@@ -510,6 +510,20 @@ extern k_tid_t k_thread_create(struct k_thread *new_thread,
 			       void *p1, void *p2, void *p3,
 			       int prio, u32_t options, s32_t delay);
 
+#ifdef CONFIG_USERSPACE
+/**
+ * @brief Drop a thread's privileges permanently to user mode
+ *
+ * @param entry Function to start executing from
+ * @param p1 1st entry point parameter
+ * @param p2 2nd entry point parameter
+ * @param p3 3rd entry point parameter
+ */
+extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
+						   void *p1, void *p2,
+						   void *p3);
+#endif
+
 /**
  * @brief Put the current thread to sleep.
  *
@@ -3891,6 +3905,16 @@ extern void _sys_power_save_idle_exit(s32_t ticks);
  * @return nonzero if the CPU is currently running with user permissions
  */
 static inline int _arch_is_user_context(void);
+
+/**
+ * Indicate whether the CPU is currently in user mode
+ *
+ * @return nonzero if the CPU is currently running with user permissions
+ */
+static inline int _is_user_context(void)
+{
+	return _arch_is_user_context();
+}
 
 /* Interfaces for invoking system calls */
 static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
