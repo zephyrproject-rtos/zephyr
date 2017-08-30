@@ -13,6 +13,7 @@
 
 #include <arch/x86/asm.h>
 #include <kernel_arch_data.h>
+#include <arch/cpu.h>
 
 	/* exports (private APIs) */
 

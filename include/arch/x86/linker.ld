@@ -242,9 +242,13 @@ SECTIONS
 #else /* LINKER_PASS2 */
 
 #ifdef CONFIG_X86_STACK_PROTECTION
-#define GDT_NUM_ENTRIES	5
+    #ifdef CONFIG_X86_USERSPACE
+        #define GDT_NUM_ENTRIES 7
+    #else
+        #define GDT_NUM_ENTRIES	5
+    #endif /* CONFIG_X86_USERSPACE */
 #else /* CONFIG_X86_STACK_PROTECTION */
-#define GDT_NUM_ENTRIES 3
+    #define GDT_NUM_ENTRIES 3
 #endif /* CONFIG_X86_STACK_PROTECTION */
 
 	. += GDT_NUM_ENTRIES * 8;

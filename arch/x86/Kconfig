@@ -35,12 +35,14 @@ config CPU_ATOM
 	select CMOV
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	# Hidden
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
 	bool
 	help
 	This option signifies the use of a CPU from the Minute IA family.
@@ -87,6 +89,15 @@ config X86_STACK_PROTECTION
 	This option leverages the MMU to cause a system fatal error if the
 	bounds of the current process stack are overflowed. This is done
 	by preceding all stack areas with a 4K guard page.
+
+config X86_USERSPACE
+	bool
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	help
+	This option enables APIs to drop a thread's privileges down to ring 3,
+	supporting user-level threads that are protected from each other and
+	from crashing the kernel.
 
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
