@@ -1,10 +1,10 @@
 zephyr_library()
 
-target_compile_definitions(                                  zephyr PUBLIC ENABLE_EXTERNAL_ISR_HANDLING)
-target_compile_definitions_ifdef(CONFIG_SYS_POWER_DEEP_SLEEP zephyr PUBLIC ENABLE_RESTORE_CONTEXT)
-
+zephyr_compile_definitions(                                  ENABLE_EXTERNAL_ISR_HANDLING)
+zephyr_compile_definitions_ifdef(CONFIG_SYS_POWER_DEEP_SLEEP ENABLE_RESTORE_CONTEXT)
 
 if(CONFIG_QMSI_LIBRARY)
+  message(FATAL_ERROR TODO)
   # TODO: Support QMSI LIBRARY
   # ZEPHYRINCLUDE += -I$(CONFIG_QMSI_INSTALL_PATH)/include
   # LIB_INCLUDE_DIR += -L$(CONFIG_QMSI_INSTALL_PATH:"%"=%)/lib
@@ -12,18 +12,18 @@ if(CONFIG_QMSI_LIBRARY)
 endif()
 
 if(CONFIG_QMSI_BUILTIN)
-  target_include_directories(zephyr PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/drivers/include
+  zephyr_include_directories(
+    include
+    drivers/include
     )
-  target_include_directories_ifdef(CONFIG_ARC zephyr PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/drivers/sensor/include)
-  target_include_directories(                 zephyr PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/soc/${SOC_SERIES}/include)
+  zephyr_include_directories_ifdef(CONFIG_ARC drivers/sensor/include)
+  zephyr_include_directories(                 soc/${SOC_SERIES}/include)
 endif()
 
 set_ifndef(SOC_WATCH_ENABLE 0)
 if(CONFIG_SOC_WATCH)
   set(SOC_WATCH_ENABLE 1)
-  target_compile_definitions(zephyr PUBLIC SOC_WATCH_ENABLE)
+  zephyr_compile_definitions(SOC_WATCH_ENABLE)
 endif()
 
 if(CONFIG_QMSI_BUILTIN)

@@ -8,4 +8,4 @@ foreach (CONFIG ${CONFIG_LIST})
 endforeach()
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/configs.c.in ${CONFIGS_C})
-target_sources(zephyr PRIVATE                         ${CONFIGS_C})
+zephyr_sources(                                       ${CONFIGS_C})

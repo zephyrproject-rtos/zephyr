@@ -1,6 +1,6 @@
-target_include_directories(zephyr PUBLIC ${CMAKE_INCLUDE_CURRENT_DIR})
+zephyr_include_directories(.)
 
-target_sources(zephyr PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/dns_pack.c
-  ${CMAKE_CURRENT_LIST_DIR}/dns_client.c
+zephyr_sources(
+  dns_pack.c
+  dns_client.c
 )

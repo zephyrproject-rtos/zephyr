@@ -277,8 +277,8 @@ function(zephyr_library_sources source)
   target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
 endfunction()
 
-function(zephyr_library_include_directories scope item)
-  target_include_directories(${ZEPHYR_CURRENT_LIBRARY} ${scope} ${item} ${ARGN})
+function(zephyr_library_include_directories)
+  target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${ARGN})
 endfunction()
 
 function(zephyr_library_link_libraries item)

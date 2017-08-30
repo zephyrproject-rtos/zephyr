@@ -1,8 +1,8 @@
 zephyr_library()
 
-target_sources(subsys__bluetooth__common PRIVATE dummy.c)
+zephyr_library_sources(dummy.c)
 
-target_sources_ifdef(CONFIG_BT_DEBUG subsys__bluetooth__common PRIVATE log.c)
-target_sources_ifdef(CONFIG_BT_RPA   subsys__bluetooth__common PRIVATE rpa.c)
+zephyr_library_sources_ifdef(CONFIG_BT_DEBUG log.c)
+zephyr_library_sources_ifdef(CONFIG_BT_RPA   rpa.c)
 
-target_link_libraries(subsys__bluetooth__common subsys__bluetooth)
+zephyr_library_link_libraries(subsys__bluetooth)
