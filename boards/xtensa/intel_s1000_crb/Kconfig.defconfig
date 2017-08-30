@@ -10,4 +10,22 @@ config BOARD
 config BOARD_XTENSA
 	def_bool y
 
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_NAME
+	default "UART_0"
+config UART_NS16550_PORT_0_BAUD_RATE
+	default 115200
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_0
+
+endif # UART_NS16550
+
 endif # BOARD_INTEL_S1000_CRB
