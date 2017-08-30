@@ -10,6 +10,7 @@
 #include <misc/printk.h>
 #include <kernel_structs.h>
 #include <sys_io.h>
+#include <ksched.h>
 
 /**
  * Kernel object validation function
@@ -82,13 +83,6 @@ static int test_thread_perms(struct _k_object *ko)
 	/* STUB */
 
 	return 1;
-}
-
-static int _is_thread_user(void)
-{
-	/* STUB */
-
-	return 0;
 }
 
 void k_object_grant_access(void *object, struct k_thread *thread)
