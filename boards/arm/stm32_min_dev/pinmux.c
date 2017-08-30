@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (c) 2017, embedjournal.com
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,11 +9,10 @@
 #include <init.h>
 #include <pinmux.h>
 #include <sys_io.h>
-#include "pinmux/pinmux.h"
 
-#include "pinmux_stm32.h"
+#include <pinmux/stm32/pinmux_stm32.h>
 
-/* pin assignments for STM32 MINI A15 board */
+/* pin assignments for STM32_MIN_DEV board */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_STM32_PORT_1
 	{STM32_PIN_PA9,  STM32F1_PINMUX_FUNC_PA9_USART1_TX},
