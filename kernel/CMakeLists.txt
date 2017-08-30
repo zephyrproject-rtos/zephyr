@@ -1,3 +1,5 @@
+# kernel is a normal CMake library and not a zephyr_library because it
+# should not be --whole-archive'd
 add_library(kernel
   alert.c
   device.c
@@ -28,7 +30,6 @@ target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timer.c)
 target_sources_ifdef(CONFIG_LEGACY_KERNEL         kernel PRIVATE legacy_timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_PTHREAD_IPC           kernel PRIVATE pthread.c)
-
 target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 
 add_dependencies(kernel offsets_h)
