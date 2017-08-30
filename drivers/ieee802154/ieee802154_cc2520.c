@@ -1133,8 +1133,7 @@ NET_DEVICE_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
 NET_STACK_INFO_ADDR(RX, cc2520,
 		    CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
 		    CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
-		    ((struct cc2520_context *)(&__device_cc2520))->
-							cc2520_rx_stack,
+		    cc2520_context_data.cc2520_rx_stack,
 		    0);
 #endif
 
