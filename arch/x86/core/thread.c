@@ -21,90 +21,23 @@
 #include <kernel_structs.h>
 #include <wait_q.h>
 #include <mmustructs.h>
+#include <misc/printk.h>
 
 /* forward declaration */
 
-#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
-	|| defined(CONFIG_X86_IAMCU)
-extern void _thread_entry_wrapper(k_thread_entry_t entry,
-				  void *p1, void *p2, void *p3);
-/**
- *
- * @brief Adjust stack/parameters before invoking _thread_entry
- *
- * This function adjusts the initial stack frame created by _new_thread() such
- * that the GDB stack frame unwinders recognize it as the outermost frame in
- * the thread's stack.  For targets that use the IAMCU calling convention, the
- * first three arguments are popped into eax, edx, and ecx. The function then
- * jumps to _thread_entry().
- *
- * GDB normally stops unwinding a stack when it detects that it has
- * reached a function called main().  Kernel tasks, however, do not have
- * a main() function, and there does not appear to be a simple way of stopping
- * the unwinding of the stack.
- *
- * SYS V Systems:
- *
- * Given the initial thread created by _new_thread(), GDB expects to find a
- * return address on the stack immediately above the thread entry routine
- * _thread_entry, in the location occupied by the initial EFLAGS.
- * GDB attempts to examine the memory at this return address, which typically
- * results in an invalid access to page 0 of memory.
- *
- * This function overwrites the initial EFLAGS with zero.  When GDB subsequently
- * attempts to examine memory at address zero, the PeekPoke driver detects
- * an invalid access to address zero and returns an error, which causes the
- * GDB stack unwinder to stop somewhat gracefully.
- *
- * The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
- * the new thread for the first time.  This routine is called by _Swap() the
- * first time that the new thread is swapped in, and it jumps to
- * _thread_entry after it has done its work.
- *
- * IAMCU Systems:
- *
- * There is no EFLAGS on the stack when we get here. _thread_entry() takes
- * four arguments, and we need to pop off the first three into the
- * appropriate registers. Instead of using the 'call' instruction, we push
- * a NULL return address onto the stack and jump into _thread_entry,
- * ensuring the stack won't be unwound further. Placing some kind of return
- * address on the stack is mandatory so this isn't conditionally compiled.
- *
- *       __________________
- *      |      param3      |   <------ Top of the stack
- *      |__________________|
- *      |      param2      |           Stack Grows Down
- *      |__________________|                  |
- *      |      param1      |                  V
- *      |__________________|
- *      |      pEntry      |  <----   ESP when invoked by _Swap() on IAMCU
- *      |__________________|
- *      | initial EFLAGS   |  <----   ESP when invoked by _Swap() on Sys V
- *      |__________________|             (Zeroed by this routine on Sys V)
- *
- *
- *
- * @return this routine does NOT return.
+/* Some configurations require that the stack/registers be adjusted before
+ * _thread_entry. See discussion in swap.S for _x86_thread_entry_wrapper()
  */
-__asm__("\t.globl _thread_entry\n"
-	"\t.section .text\n"
-	"_thread_entry_wrapper:\n" /* should place this func .S file and use
-				    * SECTION_FUNC
-				    */
-
-#ifdef CONFIG_X86_IAMCU
-	/* IAMCU calling convention has first 3 arguments supplied in
-	 * registers not the stack
-	 */
-	"\tpopl %eax\n"
-	"\tpopl %edx\n"
-	"\tpopl %ecx\n"
-	"\tpushl $0\n" /* Null return address */
-#elif defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
-	"\tmovl $0, (%esp)\n" /* zero initialEFLAGS location */
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) || \
+	defined(CONFIG_X86_IAMCU)
+#define WRAPPER_REQUIRED
 #endif
-	"\tjmp _thread_entry\n");
-#endif /* CONFIG_GDB_INFO || CONFIG_DEBUG_INFO) || CONFIG_X86_IAMCU */
+
+#ifdef WRAPPER_REQUIRED
+extern void _x86_thread_entry_wrapper(k_thread_entry_t entry,
+				      void *p1, void *p2, void *p3);
+#endif /* WRAPPER_REQUIRED */
+
 
 /* Initial thread stack frame, such that everything is laid out as expected
  * for when _Swap() switches to it for the first time.
@@ -149,12 +82,23 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
 	struct _x86_initial_frame *initial_frame;
 
 	_ASSERT_VALID_PRIO(priority, entry);
+	stack_buf = K_THREAD_STACK_BUFFER(stack);
+	_new_thread_init(thread, stack_buf, stack_size, priority, options);
+
+#if CONFIG_X86_USERSPACE
+	if (!(options & K_USER)) {
+		/* Running in kernel mode, kernel stack region is also a guard
+		 * page */
+		_x86_mmu_set_flags((void *)(stack_buf - MMU_PAGE_SIZE),
+				   MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
+				   MMU_PTE_P_MASK);
+	}
+#endif /* CONFIG_X86_USERSPACE */
+
 #if CONFIG_X86_STACK_PROTECTION
 	_x86_mmu_set_flags(stack, MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
 			   MMU_PTE_P_MASK);
 #endif
-	stack_buf = K_THREAD_STACK_BUFFER(stack);
-	_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
 	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
 
@@ -168,13 +112,24 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
 	initial_frame->p3 = parameter3;
 	/* initial EFLAGS; only modify IF and IOPL bits */
 	initial_frame->eflags = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
-#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
-	|| defined(CONFIG_X86_IAMCU)
-	 /* Adjust the stack before _thread_entry() is invoked */
-	initial_frame->_thread_entry = _thread_entry_wrapper;
+#ifdef CONFIG_X86_USERSPACE
+	if (options & K_USER) {
+#ifdef WRAPPER_REQUIRED
+		initial_frame->edi = (u32_t)_arch_user_mode_enter;
+		initial_frame->_thread_entry = _x86_thread_entry_wrapper;
 #else
-	initial_frame->_thread_entry = _thread_entry;
+		initial_frame->_thread_entry = _arch_user_mode_enter;
+#endif /* WRAPPER_REQUIRED */
+	} else
+#endif /* CONFIG_X86_USERSPACE */
+	{
+#ifdef WRAPPER_REQUIRED
+		initial_frame->edi = (u32_t)_thread_entry;
+		initial_frame->_thread_entry = _x86_thread_entry_wrapper;
+#else
+		initial_frame->_thread_entry = _thread_entry;
 #endif
+	}
 	/* Remaining _x86_initial_frame members can be garbage, _thread_entry()
 	 * doesn't care about their state when execution begins
 	 */
@@ -188,3 +143,64 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
 	thread_monitor_init(thread);
 #endif
 }
+
+#ifdef CONFIG_X86_USERSPACE
+void _x86_swap_update_page_tables(struct k_thread *incoming,
+				  struct k_thread *outgoing)
+{
+	/* Outgoing thread stack no longer accessible */
+	_x86_mmu_set_flags((void *)outgoing->stack_info.start,
+			   ROUND_UP(outgoing->stack_info.size, MMU_PAGE_SIZE),
+			   MMU_ENTRY_SUPERVISOR, MMU_PTE_US_MASK);
+
+
+	/* Userspace can now access the incoming thread's stack */
+	_x86_mmu_set_flags((void *)incoming->stack_info.start,
+			   ROUND_UP(incoming->stack_info.size, MMU_PAGE_SIZE),
+			   MMU_ENTRY_USER, MMU_PTE_US_MASK);
+
+	/* In case of privilege elevation, use the incoming thread's kernel
+	 * stack, the top of the thread stack is the bottom of the kernel stack
+	 */
+	_main_tss.esp0 = incoming->stack_info.start;
+
+	/* TODO: if either thread defines different memory domains, efficiently
+	 * switch between them
+	 */
+}
+
+
+FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
+					 void *p1, void *p2, void *p3)
+{
+	u32_t stack_end;
+
+	/* Transition will reset stack pointer to initial, discarding
+	 * any old context since this is a one-way operation
+	 */
+	stack_end = STACK_ROUND_DOWN(_current->stack_info.start +
+				     _current->stack_info.size);
+
+	/* Set up the kernel stack used during privilege elevation */
+	_x86_mmu_set_flags((void *)(_current->stack_info.start - MMU_PAGE_SIZE),
+			   MMU_PAGE_SIZE,
+			   (MMU_ENTRY_PRESENT | MMU_ENTRY_WRITE |
+			    MMU_ENTRY_SUPERVISOR),
+			   (MMU_PTE_P_MASK | MMU_PTE_RW_MASK |
+			    MMU_PTE_US_MASK));
+
+	_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
+			     _current->stack_info.start);
+	CODE_UNREACHABLE;
+}
+
+
+/* Implemented in userspace.S */
+extern void _x86_syscall_entry_stub(void);
+
+/* Syscalls invoked by 'int 0x80'. Installed in the IDT at DPL=3 so that
+ * userspace can invoke it.
+ */
+NANO_CPU_INT_REGISTER(_x86_syscall_entry_stub, -1, -1, 0x80, 3);
+
+#endif /* CONFIG_X86_USERSPACE */

@@ -23,6 +23,7 @@
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
 #include <arch/x86/addr_types.h>
+#include <arch/x86/segmentation.h>
 #endif
 
 #ifdef __cplusplus
@@ -33,6 +34,14 @@ extern "C" {
 
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)
+
+/* GDT layout */
+#define CODE_SEG	0x08
+#define DATA_SEG	0x10
+#define MAIN_TSS	0x18
+#define DF_TSS		0x20
+#define USER_CODE_SEG	0x2b /* at dpl=3 */
+#define USER_DATA_SEG	0x33 /* at dpl=3 */
 
 /**
  * Macro used internally by NANO_CPU_INT_REGISTER and NANO_CPU_INT_REGISTER_ASM.
@@ -530,12 +539,119 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 
 
 #ifdef CONFIG_X86_STACK_PROTECTION
+extern struct task_state_segment _main_tss;
+
+#ifdef CONFIG_X86_USERSPACE
+/* Syscall invocation macros. x86-specific machine constraints used to ensure
+ * args land in the proper registers, see implementation of
+ * _x86_syscall_entry_stub in userspace.S
+ */
+
+static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5, u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("int $0x80"
+			 : "=a" (ret)
+			 : "S" (call_id), "a" (arg1), "d" (arg2),
+			   "c" (arg3), "b" (arg4), "D" (arg5));
+	return ret;
+}
+
+static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("int $0x80"
+			 : "=a" (ret)
+			 : "S" (call_id), "a" (arg1), "d" (arg2),
+			   "c" (arg3), "b" (arg4));
+	return ret;
+}
+
+static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("int $0x80"
+			 : "=a" (ret)
+			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3));
+	return ret;
+}
+
+static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("int $0x80"
+			 : "=a" (ret)
+			 : "S" (call_id), "a" (arg1), "d" (arg2));
+	return ret;
+}
+
+static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("int $0x80"
+			 : "=a" (ret)
+			 : "S" (call_id), "a" (arg1));
+	return ret;
+}
+
+static inline u32_t _arch_syscall_invoke0(u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("int $0x80"
+			 : "=a" (ret)
+			 : "S" (call_id));
+	return ret;
+}
+
+static inline int _arch_is_user_context(void)
+{
+	int cs;
+
+	/* On x86, read the CS register (which cannot be manually set) */
+	__asm__ volatile ("mov %%cs, %[cs_val]" : [cs_val] "=r" (cs));
+
+	return cs == USER_CODE_SEG;
+}
+
+/* With userspace enabled, stacks are arranged as follows:
+ *
+ * High memory addresses
+ * +---------------+
+ * | Thread stack  |
+ * +---------------+
+ * | Kernel stack  |
+ * +---------------+
+ * | Guard page    |
+ * +---------------+
+ * Low Memory addresses
+ *
+ * Kernel stacks are fixed at 4K. All the pages containing the thread stack
+ * are marked as user-accessible.
+ * All threads start in supervisor mode, and the kernel stack/guard page
+ * are both marked non-present in the MMU.
+ * If a thread drops down to user mode, the kernel stack page will be marked
+ * as present, supervior-only, and the _main_tss.esp0 field updated to point
+ * to the top of it.
+ * All context switches will save/restore the esp0 field in the TSS.
+ */
+#define _STACK_GUARD_SIZE	(MMU_PAGE_SIZE * 2)
+#else /* !CONFIG_X86_USERSPACE */
 #define _STACK_GUARD_SIZE	MMU_PAGE_SIZE
+#endif /* CONFIG_X86_USERSPACE */
 #define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
-#else
+#else /* !CONFIG_X86_STACK_PROTECTION */
 #define _STACK_GUARD_SIZE	0
 #define _STACK_BASE_ALIGN	STACK_ALIGN
-#endif
+#endif /* CONFIG_X86_STACK_PROTECTION */
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \

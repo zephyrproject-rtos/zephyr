@@ -135,7 +135,12 @@ def main():
 
     if "CONFIG_X86_STACK_PROTECTION" in syms:
         stackprot = True
-        num_entries = 5
+        if "CONFIG_X86_USERSPACE" in syms:
+            userspace = True
+            num_entries = 7
+        else:
+            userspace = False
+            num_entries = 5
     else:
         stackprot = False
         num_entries = 3
@@ -164,6 +169,15 @@ def main():
 
             # Selector 0x20: double-fault TSS
             fp.write(create_tss_entry(df_tss, 0x67, 0))
+
+            if userspace:
+                # Selector 0x28: code descriptor, dpl = 3
+                fp.write(create_code_data_entry(0, 0xFFFFF, 3,
+                         FLAGS_GRAN, ACCESS_EX | ACCESS_RW))
+
+                # Selector 0x30: data descriptor, dpl = 3
+                fp.write(create_code_data_entry(0, 0xFFFFF, 3,
+                         FLAGS_GRAN, ACCESS_RW))
 
 
 if __name__ == "__main__":
