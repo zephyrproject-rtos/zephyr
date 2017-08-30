@@ -23,7 +23,15 @@ static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
 static struct k_thread cmd_thread;
 
 #define CMD_QUEUED 2
-static u8_t cmd_buf[CMD_QUEUED * BTP_MTU];
+struct btp_buf {
+	u32_t _reserved;
+	union {
+		u8_t data[BTP_MTU];
+		struct btp_hdr hdr;
+	};
+};
+
+static struct btp_buf cmd_buf[CMD_QUEUED];
 
 static K_FIFO_DEFINE(cmds_queue);
 static K_FIFO_DEFINE(avail_queue);
@@ -120,38 +128,39 @@ static void handle_core(u8_t opcode, u8_t index, u8_t *data,
 static void cmd_handler(void *p1, void *p2, void *p3)
 {
 	while (1) {
-		struct btp_hdr *cmd;
+		struct btp_buf *cmd;
 		u16_t len;
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
-		len = sys_le16_to_cpu(cmd->len);
+		len = sys_le16_to_cpu(cmd->hdr.len);
 
 		/* TODO
 		 * verify if service is registered before calling handler
 		 */
 
-		switch (cmd->service) {
+		switch (cmd->hdr.service) {
 		case BTP_SERVICE_ID_CORE:
-			handle_core(cmd->opcode, cmd->index, cmd->data, len);
+			handle_core(cmd->hdr.opcode, cmd->hdr.index,
+				    cmd->hdr.data, len);
 			break;
 		case BTP_SERVICE_ID_GAP:
-			tester_handle_gap(cmd->opcode, cmd->index, cmd->data,
-					  len);
+			tester_handle_gap(cmd->hdr.opcode, cmd->hdr.index,
+					  cmd->hdr.data, len);
 			break;
 		case BTP_SERVICE_ID_GATT:
-			tester_handle_gatt(cmd->opcode, cmd->index, cmd->data,
-					    len);
+			tester_handle_gatt(cmd->hdr.opcode, cmd->hdr.index,
+					   cmd->hdr.data, len);
 			break;
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 		case BTP_SERVICE_ID_L2CAP:
-			tester_handle_l2cap(cmd->opcode, cmd->index, cmd->data,
-					    len);
+			tester_handle_l2cap(cmd->hdr.opcode, cmd->hdr.index,
+					    cmd->hdr.data, len);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 			break;
 		default:
-			tester_rsp(cmd->service, cmd->opcode, cmd->index,
-				   BTP_STATUS_FAILED);
+			tester_rsp(cmd->hdr.service, cmd->hdr.opcode,
+				   cmd->hdr.index, BTP_STATUS_FAILED);
 			break;
 		}
 
@@ -162,7 +171,7 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 static u8_t *recv_cb(u8_t *buf, size_t *off)
 {
 	struct btp_hdr *cmd = (void *) buf;
-	u8_t *new_buf;
+	struct btp_buf *new_buf;
 	u16_t len;
 
 	if (*off < sizeof(*cmd)) {
@@ -187,25 +196,26 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 		return buf;
 	}
 
-	k_fifo_put(&cmds_queue, buf);
+	k_fifo_put(&cmds_queue, CONTAINER_OF(buf, struct btp_buf, data));
 
 	*off = 0;
-	return new_buf;
+	return new_buf->data;
 }
 
 void tester_init(void)
 {
 	int i;
+	struct btp_buf *buf;
 
 	for (i = 0; i < CMD_QUEUED; i++) {
-		k_fifo_put(&avail_queue, &cmd_buf[i * BTP_MTU]);
+		k_fifo_put(&avail_queue, &cmd_buf[i]);
 	}
 
 	k_thread_create(&cmd_thread, stack, STACKSIZE, cmd_handler,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	uart_pipe_register(k_fifo_get(&avail_queue, K_NO_WAIT),
-			   BTP_MTU, recv_cb);
+	buf = k_fifo_get(&avail_queue, K_NO_WAIT);
+	uart_pipe_register(buf->data, BTP_MTU, recv_cb);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_EV_IUT_READY, BTP_INDEX_NONE,
 		    NULL, 0);
