@@ -10,7 +10,7 @@
  * to demonstrates the ZEPHYR File System APIs
  */
 
-#include <test_fat.h>
+#include "test_fat.h"
 
 static int test_statvfs(void)
 {

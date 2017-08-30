@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <test_fat.h>
+#include "test_fat.h"
 
 const char test_str[] = "hello world!";
 
