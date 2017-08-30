@@ -400,7 +400,8 @@ typedef struct _k_thread_stack_element *k_thread_stack_t;
  * @param p3 3rd entry point parameter.
  * @param prio Thread priority.
  * @param options Thread options.
- * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay).
+ * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay),
+ *              or K_FOREVER (to not run until k_thread_start() is called)
  *
  * @return ID of new thread.
  */
@@ -529,6 +530,18 @@ extern int k_thread_cancel(k_tid_t thread);
  * @return N/A
  */
 extern void k_thread_abort(k_tid_t thread);
+
+
+/**
+ * @brief Start an inactive thread
+ *
+ * If a thread was created with K_FOREVER in the delay parameter, it will
+ * not be added to the scheduling queue until this function is called
+ * on it.
+ *
+ * @param thread thread to start
+ */
+extern void k_thread_start(k_tid_t thread);
 
 /**
  * @cond INTERNAL_HIDDEN

@@ -80,3 +80,22 @@ void test_threads_spawn_delay(void)
 	zassert_true(tp2 == 100, NULL);
 	k_thread_abort(tid);
 }
+
+void test_threads_spawn_forever(void)
+{
+	/* spawn thread with highest priority. It will run immediately once
+	 * started.
+	 */
+	tp2 = 10;
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry_delay, NULL, NULL, NULL,
+				      K_HIGHEST_THREAD_PRIO, 0, K_FOREVER);
+	k_yield();
+	/* checkpoint: check spawn thread not execute */
+	zassert_true(tp2 == 10, NULL);
+	/* checkpoint: check spawn thread executed */
+	k_thread_start(tid);
+	k_yield();
+	zassert_true(tp2 == 100, NULL);
+	k_thread_abort(tid);
+}

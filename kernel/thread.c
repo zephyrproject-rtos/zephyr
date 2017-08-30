@@ -209,9 +209,14 @@ FUNC_NORETURN void _thread_entry(void (*entry)(void *, void *, void *),
 }
 
 #ifdef CONFIG_MULTITHREADING
-static void start_thread(struct k_thread *thread)
+void k_thread_start(struct k_thread *thread)
 {
 	int key = irq_lock(); /* protect kernel queues */
+
+	if (_has_thread_started(thread)) {
+		irq_unlock(key);
+		return;
+	}
 
 	_mark_thread_as_started(thread);
 
@@ -232,7 +237,7 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (delay == 0) {
-		start_thread(thread);
+		k_thread_start(thread);
 	} else {
 		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
 		int key = irq_lock();
@@ -242,7 +247,7 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 	}
 #else
 	ARG_UNUSED(delay);
-	start_thread(thread);
+	k_thread_start(thread);
 #endif
 }
 #endif
@@ -259,7 +264,9 @@ k_tid_t k_thread_create(struct k_thread *new_thread,
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
 
-	schedule_new_thread(new_thread, delay);
+	if (delay != K_FOREVER) {
+		schedule_new_thread(new_thread, delay);
+	}
 	return new_thread;
 }
 
