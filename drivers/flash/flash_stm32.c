@@ -202,6 +202,9 @@ static const struct flash_driver_api flash_stm32_api = {
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+	.page_layout = flash_stm32_page_layout,
+#endif
 };
 
 static int stm32_flash_init(struct device *dev)
