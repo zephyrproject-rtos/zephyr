@@ -16,6 +16,7 @@
 extern void test_threads_spawn_params(void);
 extern void test_threads_spawn_priority(void);
 extern void test_threads_spawn_delay(void);
+extern void test_threads_spawn_forever(void);
 extern void test_threads_suspend_resume_cooperative(void);
 extern void test_threads_suspend_resume_preemptible(void);
 extern void test_threads_cancel_undelayed(void);
@@ -31,6 +32,7 @@ void test_main(void)
 			 ztest_unit_test(test_threads_spawn_params),
 			 ztest_unit_test(test_threads_spawn_priority),
 			 ztest_unit_test(test_threads_spawn_delay),
+			 ztest_unit_test(test_threads_spawn_forever),
 			 ztest_unit_test(test_threads_suspend_resume_cooperative),
 			 ztest_unit_test(test_threads_suspend_resume_preemptible),
 			 ztest_unit_test(test_threads_cancel_undelayed),
