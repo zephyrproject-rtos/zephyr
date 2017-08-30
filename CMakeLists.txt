@@ -252,8 +252,8 @@ set(OFFSETS_C_PATH $ENV{ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
-add_library(offsets OBJECT ${OFFSETS_C_PATH})
-target_object_link_libraries(offsets zephyr_interface)
+add_library(offsets STATIC ${OFFSETS_C_PATH})
+target_link_libraries(offsets zephyr_interface)
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
