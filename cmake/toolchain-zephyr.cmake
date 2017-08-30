@@ -140,7 +140,8 @@ set(BUILD_SHARED_LIBS OFF)
 #
 # CMake checks compiler flags with check_c_compiler_flag() (Which we
 # wrap with target_cc_option() in extentions.cmake)
-set(CMAKE_REQUIRED_FLAGS "-nostartfiles -nostdlib --sysroot=${SYSROOT_DIR}")
+set(CMAKE_REQUIRED_FLAGS "-nostartfiles -nostdlib --sysroot=${SYSROOT_DIR} -Wl,--unresolved-symbols=ignore-in-object-files")
+
 
 set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/usr/include)
 set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/usr/lib/${NEWLIB_DIR})
