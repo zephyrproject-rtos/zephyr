@@ -4,7 +4,7 @@ zephyr_cc_option(
   )
 
 # Find out if we are optimizing for size
-get_target_property(zephyr_COMPILE_OPTIONS zephyr COMPILE_OPTIONS)
+get_target_property(zephyr_COMPILE_OPTIONS zephyr_interface INTERFACE_COMPILE_OPTIONS)
 if ("-Os" IN_LIST zephyr_COMPILE_OPTIONS)
   zephyr_cc_option(-mpreferred-stack-boundary=2)
 else()
