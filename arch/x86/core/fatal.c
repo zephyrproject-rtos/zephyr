@@ -157,7 +157,12 @@ const NANO_ESF _default_esf = {
 static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 					     const NANO_ESF *pEsf)
 {
-	printk("***** CPU exception %d\n", vector);
+	printk("***** ");
+	if (vector == 13) {
+		printk("General Protection Fault\n");
+	} else {
+		printk("CPU exception %d\n", vector);
+	}
 	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
 	}
