@@ -427,6 +427,11 @@ extern void k_call_stacks_analyze(void);
 #define K_FP_REGS (1 << 1)
 #endif
 
+/* This thread has dropped from supervisor mode to user mode and consequently
+ * has additional restrictions
+ */
+#define K_USER (1 << 2)
+
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 

@@ -516,4 +516,17 @@ static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 	return thread;
 }
 
+#ifdef CONFIG_USERSPACE
+/**
+ * Indicate whether the currently running thread has been configured to be
+ * a user thread.
+ *
+ * @return nonzero if the current thread is a user thread, regardless of what
+ *         mode the CPU is currently in
+ */
+static inline int _is_thread_user(void)
+{
+	return _current->base.user_options & K_USER;
+}
+#endif /* CONFIG_USERSPACE */
 #endif /* _ksched__h_ */
