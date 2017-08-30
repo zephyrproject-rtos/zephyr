@@ -89,6 +89,27 @@ static inline unsigned int _Swap(unsigned int key)
  * @return nonzero if the permissions don't match.
  */
 extern int _arch_buffer_validate(void *addr, size_t size, int write);
+
+/**
+ * Perform a one-way transition from supervisor to kernel mode.
+ *
+ * Implementations of this function must do the following:
+ * - Reset the thread's stack pointer to a suitable initial value. We do not
+ *   need any prior context since this is a one-way operation.
+ * - Set up any kernel stack region for the CPU to use during privilege
+ *   elevation
+ * - Put the CPU in whatever its equivalent of user mode is
+ * - Transfer execution to _new_thread() passing along all the supplied
+ *   arguments, in user mode.
+ *
+ * @param Entry point to start executing as a user thread
+ * @param p1 1st parameter to user thread
+ * @param p2 2nd parameter to user thread
+ * @param p3 3rd parameter to user thread
+ */
+extern FUNC_NORETURN
+void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
+			   void *p3);
 #endif /* CONFIG_USERSPACE */
 
 /* set and clear essential fiber/task flag */
