@@ -1,0 +1,96 @@
+# Kconfig - ADC configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ADC_QMSI
+	bool "QMSI ADC Driver"
+	depends on QMSI
+	select ADC_0
+	default n
+	help
+	  Enable the driver implementation of the QMSI ADC IP.
+
+menuconfig ADC_QMSI_SS
+	bool "QMSI ADC Driver for the Sensor Subsystem"
+	depends on QMSI
+	select ADC_0
+	default n
+	help
+	  Enable the driver implementation of the QMSI ADC IP.
+
+if ADC_QMSI || ADC_QMSI_SS
+
+choice
+	prompt "Capturing Mode"
+	default ADC_QMSI_INTERRUPT
+	help
+	  ADC sample capture mode - interrupt mode/polling mode
+
+config ADC_QMSI_POLL
+	bool "Polling samples"
+
+config ADC_QMSI_INTERRUPT
+	bool "Interrupt notification"
+
+endchoice
+
+config ADC_QMSI_CALIBRATION
+	bool "Enable Calibration"
+	default y
+	help
+	  Enables ADC to run with a calibrated output at the
+	  expense of execution speed when exiting low power states.
+	  If disabled, the ADC will require the application/system-integrator
+	  to provide a calibration method.
+
+config ADC_QMSI_CLOCK_RATIO
+	int "Clock Ratio"
+	default 100
+	help
+	  ADC Clock Ratio
+
+config ADC_QMSI_SERIAL_DELAY
+	int "Serial Delay"
+	default 1
+	help
+	  Number of ADC clock ticks that the first bit of
+	  the serial output is delayed after the conversion
+	  has started.
+
+if ADC_QMSI
+config ADC_QMSI_SAMPLE_WIDTH
+	int "Sample Width"
+	default 3
+	help
+	  Defines ADC device data sample width (resolution):
+
+	  - 0 = 6 bits resolution
+
+	  - 1 = 8 bits resolution
+
+	  - 2 = 10 bits resolution
+
+	  - 3 = 12 bits resolution
+endif
+
+if ADC_QMSI_SS
+config ADC_QMSI_SAMPLE_WIDTH
+	int "Sample Width"
+	default 11
+	help
+	  Defines ADC device data sample width (resolution):
+
+	  - 5 = 6 bits resolution
+
+	  - 7 = 8 bits resolution
+
+	  - 9 = 10 bits resolution
+
+	  - 11 = 12 bits resolution
+endif
+
+endif # ADC_QMSI || ADC_QMSI_SS
