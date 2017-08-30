@@ -765,6 +765,13 @@ int mbedtls_internal_aes_encrypt( mbedtls_aes_context *ctx,
 }
 #endif /* !MBEDTLS_AES_ENCRYPT_ALT */
 
+void mbedtls_aes_encrypt( mbedtls_aes_context *ctx,
+                          const unsigned char input[16],
+                          unsigned char output[16] )
+{
+    mbedtls_internal_aes_encrypt( ctx, input, output );
+}
+
 /*
  * AES-ECB block decryption
  */
@@ -823,6 +830,13 @@ int mbedtls_internal_aes_decrypt( mbedtls_aes_context *ctx,
     return( 0 );
 }
 #endif /* !MBEDTLS_AES_DECRYPT_ALT */
+
+void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
+                          const unsigned char input[16],
+                          unsigned char output[16] )
+{
+    mbedtls_internal_aes_decrypt( ctx, input, output );
+}
 
 /*
  * AES-ECB block encryption/decryption
