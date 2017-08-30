@@ -28,8 +28,7 @@ zephyr_cc_option(
   )
 zephyr_compile_options(
   -mabi=aapcs
-  -mthumb
-  -mcpu=${GCC_M_CPU}
+  ${TOOLCHAIN_C_FLAGS}
   -march=${ARCH_FOR_${GCC_M_CPU}}
   )
 
