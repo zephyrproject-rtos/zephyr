@@ -244,6 +244,11 @@ endfunction()
 #
 
 macro(zephyr_library)
+  zephyr_library_get_current_dir_lib_name(lib_name)
+  zephyr_library_named(${lib_name})
+endmacro()
+
+macro(zephyr_library_get_current_dir_lib_name lib_name)
   # Remove the prefix (/home/sebo/zephyr/driver/serial/CMakeLists.txt => driver/serial/CMakeLists.txt)
   file(RELATIVE_PATH name $ENV{ZEPHYR_BASE} ${CMAKE_CURRENT_LIST_FILE})
 
@@ -253,7 +258,7 @@ macro(zephyr_library)
   # Replace / with __ (driver/serial => driver__serial)
   string(REGEX REPLACE "/" "__" name ${name})
 
-  zephyr_library_named(${name})
+  set(${lib_name} ${name})
 endmacro()
 
 macro(zephyr_library_named name)
