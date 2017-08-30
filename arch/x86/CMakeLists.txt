@@ -1,27 +1,31 @@
-target_cc_option(zephyr PUBLIC -ffunction-sections)
-target_cc_option(zephyr PUBLIC -fdata-sections)
+zephyr_cc_option(
+  -ffunction-sections
+  -fdata-sections
+  )
 
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr COMPILE_OPTIONS)
 if ("-Os" IN_LIST zephyr_COMPILE_OPTIONS)
-  target_cc_option(zephyr PUBLIC -mpreferred-stack-boundary=2)
+  zephyr_cc_option(-mpreferred-stack-boundary=2)
 else()
-  target_compile_definitions(zephyr PUBLIC PERF_OPT)
+  zephyr_compile_definitions(PERF_OPT)
 endif()
 
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   if(CONFIG_X86_IAMCU)
-    target_cc_option(zephyr PUBLIC -Qunused-arguments)
+    zephyr_cc_option(-Qunused-arguments)
   else()
-    target_cc_option(zephyr PUBLIC -mmcu)
+    zephyr_cc_option(-mmcu)
   endif()
 
-  target_cc_option(zephyr PUBLIC -m32)
-  target_cc_option(zephyr PUBLIC -gdwarf-2)
+  zephyr_cc_option(
+    -m32
+    -gdwarf-2
+    )
 endif()
 
-target_cc_option_ifdef(CONFIG_LTO          zephyr PUBLIC -flto)
-target_cc_option_ifndef(CONFIG_SSE_FP_MATH zephyr PUBLIC -mno-sse)
+zephyr_cc_option_ifdef (CONFIG_LTO         -flto)
+zephyr_cc_option_ifndef(CONFIG_SSE_FP_MATH -mno-sse)
 
 if(CMAKE_VERBOSE_MAKEFILE)
   set(GENIDT_EXTRA_ARGS --verbose)
