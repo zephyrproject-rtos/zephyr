@@ -37,9 +37,15 @@ endif()
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH})
 
+# zephyr_interface is a source-less library that has all the global
+# compiler options needed by all source files. All zephyr libraries,
+# including the library named "zephyr" link with this library to
+# obtain these flags.
+add_library(zephyr_interface INTERFACE)
+
 # zephyr is a catchall CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
-# flags that all zephyr source files use.
+# flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
 include(dts/dts.cmake)
@@ -247,7 +253,7 @@ set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARC
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
 add_library(offsets OBJECT ${OFFSETS_C_PATH})
-target_object_link_libraries(offsets zephyr)
+target_object_link_libraries(offsets zephyr_interface)
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
@@ -261,7 +267,7 @@ add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
 add_dependencies(zephyr offsets_h)
 
 # Get ZEPHYR_INCLUDE for preprocessing, with cmake 3.8 this should be possible with generator expressions.
-get_property(ZEPHYR_INCLUDES_LIST TARGET zephyr PROPERTY INCLUDE_DIRECTORIES)
+get_property(ZEPHYR_INCLUDES_LIST TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 foreach(INCLUDE ${ZEPHYR_INCLUDES_LIST})
   list(APPEND ZEPHYR_INCLUDES -I${INCLUDE})
 endforeach()
