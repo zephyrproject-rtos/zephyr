@@ -1,0 +1,2 @@
+zephyr_sources_ifdef(CONFIG_FILE_SYSTEM_SHELL shell.c)
+zephyr_sources_ifdef(CONFIG_FILE_SYSTEM_FATL fat_fs.c)
