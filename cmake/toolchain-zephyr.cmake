@@ -39,7 +39,23 @@ if("${ARCH}" STREQUAL "arm")
     message(FATAL_ERROR "Expected CONFIG_CPU_CORTEX_x to be defined")
   endif()
 
-  set(TOOLCHAIN_C_FLAGS -mthumb -mcpu=${GCC_M_CPU})
+  set(FPU_FOR_cortex-m4      fpv4-sp-d16)
+  set(FPU_FOR_cortex-m7      fpv5-d16)
+  set(FPU_FOR_cortex-m33     fpv5-d16)
+
+  set(TOOLCHAIN_C_FLAGS
+    -mthumb
+    -mcpu=${GCC_M_CPU}
+    )
+
+  if(CONFIG_FLOAT)
+    list(APPEND TOOLCHAIN_C_FLAGS -mfpu=${FPU_FOR_${GCC_M_CPU}})
+    if    (CONFIG_FP_SOFTABI)
+      list(APPEND TOOLCHAIN_C_FLAGS -mfloat-abi=soft)
+    elseif(CONFIG_FP_HARDABI)
+      list(APPEND TOOLCHAIN_C_FLAGS -mfloat-abi=hard)
+    endif()
+  endif()
 
   set(CROSS_COMPILE_TARGET arm-${TOOLCHAIN_VENDOR}-eabi)
   set(SYSROOT_TARGET armv5-${TOOLCHAIN_VENDOR}-eabi)
