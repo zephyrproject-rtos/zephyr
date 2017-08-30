@@ -189,7 +189,7 @@ FUNC_NORETURN void _thread_entry(k_thread_entry_t entry,
 	_check_stack_sentinel();
 #endif
 #ifdef CONFIG_MULTITHREADING
-	k_thread_abort(_current);
+	k_thread_abort(k_current_get());
 #else
 	for (;;) {
 		k_cpu_idle();
