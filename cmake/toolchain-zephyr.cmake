@@ -39,6 +39,7 @@ if("${ARCH}" STREQUAL "arm")
     message(FATAL_ERROR "Expected CONFIG_CPU_CORTEX_x to be defined")
   endif()
 
+  set(TOOLCHAIN_C_FLAGS -mthumb -mcpu=${GCC_M_CPU})
 
   set(CROSS_COMPILE_TARGET arm-${TOOLCHAIN_VENDOR}-eabi)
   set(SYSROOT_TARGET armv5-${TOOLCHAIN_VENDOR}-eabi)
@@ -101,7 +102,7 @@ list(APPEND NOSTDINC ${_OUTPUT})
 set(SYSROOT_DIR ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/${SYSROOT_TARGET})
 
 execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --sysroot ${SYSROOT_DIR} --print-libgcc-file-name
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --sysroot ${SYSROOT_DIR} --print-libgcc-file-name
   OUTPUT_VARIABLE LIBGCC_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
