@@ -57,7 +57,6 @@ zephyr_include_directories(
   arch/${ARCH}/soc/${SOC_FAMILY}/include
   ${BOARD_DIR}
   include
-  lib/libc/minimal/include
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
   ${STDINCLUDE}
