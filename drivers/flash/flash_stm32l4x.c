@@ -22,8 +22,10 @@
 
 /* offset and len must be aligned on 8 for write
  * , positive and not beyond end of flash */
-bool flash_stm32_valid_range(off_t offset, u32_t len, bool write)
+bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
+			     bool write)
 {
+	ARG_UNUSED(dev);
 	return (!write || (offset % 8 == 0 && len % 8 == 0)) &&
 		offset >= 0 &&
 		(offset + len - 1 <= STM32L4X_FLASH_END);
@@ -35,10 +37,10 @@ static unsigned int get_page(off_t offset)
 	return offset >> STM32L4X_PAGE_SHIFT;
 }
 
-static int write_dword(off_t offset, u64_t val, struct flash_stm32_priv *p)
+static int write_dword(struct device *dev, off_t offset, u64_t val)
 {
 	volatile u32_t *flash = (u32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
-	struct stm32l4x_flash *regs = p->regs;
+	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
 	int rc;
 
@@ -48,7 +50,7 @@ static int write_dword(off_t offset, u64_t val, struct flash_stm32_priv *p)
 	}
 
 	/* Check that no Flash main memory operation is ongoing */
-	rc = flash_stm32_wait_flash_idle(p);
+	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {
 		return rc;
 	}
@@ -70,7 +72,7 @@ static int write_dword(off_t offset, u64_t val, struct flash_stm32_priv *p)
 	flash[1] = (u32_t)(val >> 32);
 
 	/* Wait until the BSY bit is cleared */
-	rc = flash_stm32_wait_flash_idle(p);
+	rc = flash_stm32_wait_flash_idle(dev);
 
 	/* Clear the PG bit */
 	regs->cr &= (~FLASH_CR_PG);
@@ -78,9 +80,9 @@ static int write_dword(off_t offset, u64_t val, struct flash_stm32_priv *p)
 	return rc;
 }
 
-static int erase_page(unsigned int page, struct flash_stm32_priv *p)
+static int erase_page(struct device *dev, unsigned int page)
 {
-	struct stm32l4x_flash *regs = p->regs;
+	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
 	int rc;
 
@@ -90,7 +92,7 @@ static int erase_page(unsigned int page, struct flash_stm32_priv *p)
 	}
 
 	/* Check that no Flash memory operation is ongoing */
-	rc = flash_stm32_wait_flash_idle(p);
+	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {
 		return rc;
 	}
@@ -113,21 +115,21 @@ static int erase_page(unsigned int page, struct flash_stm32_priv *p)
 	tmp = regs->cr;
 
 	/* Wait for the BSY bit */
-	rc = flash_stm32_wait_flash_idle(p);
+	rc = flash_stm32_wait_flash_idle(dev);
 
 	regs->cr &= ~FLASH_CR_PER;
 
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(unsigned int offset, unsigned int len,
-				 struct flash_stm32_priv *p)
+int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+				 unsigned int len)
 {
 	int i, rc = 0;
 
 	i = get_page(offset);
 	for (; i <= get_page(offset + len - 1) ; ++i) {
-		rc = erase_page(i, p);
+		rc = erase_page(dev, i);
 		if (rc < 0) {
 			break;
 		}
@@ -136,13 +138,13 @@ int flash_stm32_block_erase_loop(unsigned int offset, unsigned int len,
 	return rc;
 }
 
-int flash_stm32_write_range(unsigned int offset, const void *data,
-			    unsigned int len, struct flash_stm32_priv *p)
+int flash_stm32_write_range(struct device *dev, unsigned int offset,
+			    const void *data, unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(offset, ((const u64_t *) data)[i>>3], p);
+		rc = write_dword(dev, offset, ((const u64_t *) data)[i>>3]);
 		if (rc < 0) {
 			return rc;
 		}

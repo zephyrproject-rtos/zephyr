@@ -16,14 +16,23 @@
 
 #define STM32_FLASH_TIMEOUT	((u32_t) 0x000B0000)
 
-int flash_stm32_check_status(struct flash_stm32_priv *p)
+/*
+ * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
+ * similarly for flash_stm32_sem_give) to avoid confusion with locking
+ * actual flash pages.
+ */
+static inline void flash_stm32_sem_take(struct device *dev)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
-	struct stm32f4x_flash *regs = p->regs;
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	struct stm32l4x_flash *regs = p->regs;
-#endif
+	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
+}
 
+static inline void flash_stm32_sem_give(struct device *dev)
+{
+	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
+}
+
+static int flash_stm32_check_status(struct device *dev)
+{
 	u32_t const error =
 		FLASH_FLAG_WRPERR |
 		FLASH_FLAG_PGAERR |
@@ -36,29 +45,24 @@ int flash_stm32_check_status(struct flash_stm32_priv *p)
 		FLASH_FLAG_PGSERR |
 		FLASH_FLAG_OPERR;
 
-	if (regs->sr & error) {
+	if (FLASH_STM32_REGS(dev)->sr & error) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-int flash_stm32_wait_flash_idle(struct flash_stm32_priv *p)
+int flash_stm32_wait_flash_idle(struct device *dev)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
-	struct stm32f4x_flash *regs = p->regs;
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	struct stm32l4x_flash *regs = p->regs;
-#endif
 	u32_t timeout = STM32_FLASH_TIMEOUT;
 	int rc;
 
-	rc = flash_stm32_check_status(p);
+	rc = flash_stm32_check_status(dev);
 	if (rc < 0) {
 		return -EIO;
 	}
 
-	while ((regs->sr & FLASH_SR_BSY) && timeout) {
+	while ((FLASH_STM32_REGS(dev)->sr & FLASH_SR_BSY) && timeout) {
 		timeout--;
 	}
 
@@ -69,12 +73,12 @@ int flash_stm32_wait_flash_idle(struct flash_stm32_priv *p)
 	return 0;
 }
 
-void flash_stm32_flush_caches(struct flash_stm32_priv *p)
+static void flash_stm32_flush_caches(struct device *dev)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
-	struct stm32f4x_flash *regs = p->regs;
+	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	struct stm32l4x_flash *regs = p->regs;
+	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
 
 	if (regs->acr.val & FLASH_ACR_ICEN) {
@@ -95,7 +99,7 @@ void flash_stm32_flush_caches(struct flash_stm32_priv *p)
 static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 			    size_t len)
 {
-	if (!flash_stm32_valid_range(offset, len, false)) {
+	if (!flash_stm32_valid_range(dev, offset, len, false)) {
 		return -EINVAL;
 	}
 
@@ -108,12 +112,11 @@ static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 	return 0;
 }
 
-int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
+static int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 {
-	struct flash_stm32_priv *p = dev->driver_data;
 	int rc;
 
-	if (!flash_stm32_valid_range(offset, len, true)) {
+	if (!flash_stm32_valid_range(dev, offset, len, true)) {
 		return -EINVAL;
 	}
 
@@ -121,24 +124,23 @@ int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 		return 0;
 	}
 
-	k_sem_take(&p->sem, K_FOREVER);
+	flash_stm32_sem_take(dev);
 
-	rc = flash_stm32_block_erase_loop(offset, len, p);
+	rc = flash_stm32_block_erase_loop(dev, offset, len);
 
-	flash_stm32_flush_caches(p);
+	flash_stm32_flush_caches(dev);
 
-	k_sem_give(&p->sem);
+	flash_stm32_sem_give(dev);
 
 	return rc;
 }
 
-int flash_stm32_write(struct device *dev, off_t offset,
-		      const void *data, size_t len)
+static int flash_stm32_write(struct device *dev, off_t offset,
+			     const void *data, size_t len)
 {
-	struct flash_stm32_priv *p = dev->driver_data;
 	int rc;
 
-	if (!flash_stm32_valid_range(offset, len, true)) {
+	if (!flash_stm32_valid_range(dev, offset, len, true)) {
 		return -EINVAL;
 	}
 
@@ -146,31 +148,30 @@ int flash_stm32_write(struct device *dev, off_t offset,
 		return 0;
 	}
 
-	k_sem_take(&p->sem, K_FOREVER);
+	flash_stm32_sem_take(dev);
 
-	rc = flash_stm32_write_range(offset, data, len, p);
+	rc = flash_stm32_write_range(dev, offset, data, len);
 
-	k_sem_give(&p->sem);
+	flash_stm32_sem_give(dev);
 
 	return rc;
 }
 
 static int flash_stm32_write_protection(struct device *dev, bool enable)
 {
-	struct flash_stm32_priv *p = dev->driver_data;
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
-	struct stm32f4x_flash *regs = p->regs;
+	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	struct stm32l4x_flash *regs = p->regs;
+	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
 	int rc = 0;
 
-	k_sem_take(&p->sem, K_FOREVER);
+	flash_stm32_sem_take(dev);
 
 	if (enable) {
-		rc = flash_stm32_wait_flash_idle(p);
+		rc = flash_stm32_wait_flash_idle(dev);
 		if (rc) {
-			k_sem_give(&p->sem);
+			flash_stm32_sem_give(dev);
 			return rc;
 		}
 		regs->cr |= FLASH_CR_LOCK;
@@ -181,7 +182,7 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 		}
 	}
 
-	k_sem_give(&p->sem);
+	flash_stm32_sem_give(dev);
 
 	return rc;
 }
@@ -205,7 +206,7 @@ static const struct flash_driver_api flash_stm32_api = {
 
 static int stm32_flash_init(struct device *dev)
 {
-	struct flash_stm32_priv *p = dev->driver_data;
+	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
