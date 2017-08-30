@@ -263,6 +263,10 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	dummy_thread->base.user_options = K_ESSENTIAL;
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
+#ifdef CONFIG_THREAD_STACK_INFO
+	dummy_thread->stack_info.start = 0;
+	dummy_thread->stack_info.size = 0;
+#endif
 #endif
 
 	/* _kernel.ready_q is all zeroes */
