@@ -30,23 +30,19 @@ struct flash_stm32_priv {
 	struct k_sem sem;
 };
 
-bool flash_stm32_valid_range(off_t offset, u32_t len, bool write);
+#define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->driver_data))
+#define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
 
-int flash_stm32_write_range(unsigned int offset, const void *data,
-			    unsigned int len, struct flash_stm32_priv *p);
+bool flash_stm32_valid_range(struct device *dev, off_t offset,
+			     u32_t len, bool write);
 
-int flash_stm32_block_erase_loop(unsigned int offset, unsigned int len,
-				 struct flash_stm32_priv *p);
+int flash_stm32_write_range(struct device *dev, unsigned int offset,
+			    const void *data, unsigned int len);
 
-void flash_stm32_flush_caches(struct flash_stm32_priv *p);
+int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+				 unsigned int len);
 
-int flash_stm32_wait_flash_idle(struct flash_stm32_priv *p);
+int flash_stm32_wait_flash_idle(struct device *dev);
 
-int flash_stm32_check_status(struct flash_stm32_priv *p);
-
-int flash_stm32_erase(struct device *dev, off_t offset, size_t len);
-
-int flash_stm32_write(struct device *dev, off_t offset,
-		      const void *data, size_t len);
 
 #endif /* DRIVERS_FLASH_STM32_H */
