@@ -5,6 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define SYS_LOG_DOMAIN "flash_stm32l4"
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_ERROR
+#include <logging/sys_log.h>
+
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
@@ -14,21 +18,15 @@
 
 #include <flash_stm32.h>
 
-#define STM32L4X_BANK_SIZE_MAX	512
 #define STM32L4X_PAGE_SHIFT	11
-
-#define STM32L4X_FLASH_END \
-	((u32_t)(STM32L4X_BANK_SIZE_MAX << STM32L4X_PAGE_SHIFT) - 1)
 
 /* offset and len must be aligned on 8 for write
  * , positive and not beyond end of flash */
 bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 			     bool write)
 {
-	ARG_UNUSED(dev);
 	return (!write || (offset % 8 == 0 && len % 8 == 0)) &&
-		offset >= 0 &&
-		(offset + len - 1 <= STM32L4X_FLASH_END);
+		flash_stm32_range_exists(dev, offset, len);
 }
 
 /* STM32L4xx devices can have up to 512 2K pages on two 256x2K pages banks */
@@ -151,4 +149,24 @@ int flash_stm32_write_range(struct device *dev, unsigned int offset,
 	}
 
 	return rc;
+}
+
+void flash_stm32_page_layout(struct device *dev,
+			     const struct flash_pages_layout **layout,
+			     size_t *layout_size)
+{
+	static struct flash_pages_layout stm32l4_flash_layout = {
+		.pages_count = 0,
+		.pages_size = 0,
+	};
+
+	ARG_UNUSED(dev);
+
+	if (stm32l4_flash_layout.pages_count == 0) {
+		stm32l4_flash_layout.pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
+		stm32l4_flash_layout.pages_size = FLASH_PAGE_SIZE;
+	}
+
+	*layout = &stm32l4_flash_layout;
+	*layout_size = 1;
 }
