@@ -9,11 +9,10 @@
 #include <init.h>
 #include <pinmux.h>
 #include <sys_io.h>
-#include "pinmux/pinmux.h"
 
-#include "pinmux_stm32.h"
+#include <pinmux/stm32/pinmux_stm32.h>
 
-/* pin assignments for NUCLEO-F103RB board */
+/* pin assignments for STM32 MINI A15 board */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_STM32_PORT_1
 	{STM32_PIN_PA9,  STM32F1_PINMUX_FUNC_PA9_USART1_TX},
@@ -27,9 +26,6 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PB10, STM32F1_PINMUX_FUNC_PB10_USART3_TX},
 	{STM32_PIN_PB11, STM32F1_PINMUX_FUNC_PB11_USART3_RX},
 #endif	/* CONFIG_UART_STM32_PORT_3 */
-#ifdef CONFIG_PWM_STM32_1
-	{STM32_PIN_PA8, STM32F1_PINMUX_FUNC_PA8_PWM1_CH1},
-#endif /* CONFIG_PWM_STM32_1 */
 };
 
 static int pinmux_stm32_init(struct device *port)
@@ -41,5 +37,4 @@ static int pinmux_stm32_init(struct device *port)
 	return 0;
 }
 
-SYS_INIT(pinmux_stm32_init, PRE_KERNEL_1,
-	 CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);
+SYS_INIT(pinmux_stm32_init, PRE_KERNEL_1, CONFIG_PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY);
