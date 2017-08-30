@@ -62,6 +62,7 @@ Drivers and Sensors
 * APDS9960 sensor driver added
 * Added TICKLESS KERNEL support for nrf RTC Timer.
 * Added Kinetis adc and pwm drivers
+* Removed deprecated PWM driver APIs.
 
 Networking
 **********
