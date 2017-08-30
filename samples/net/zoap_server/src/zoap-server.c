@@ -866,7 +866,10 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 	zoap_header_set_token(&response, token, tkl);
 
 	if (age >= 2) {
-		zoap_add_option_int(&response, ZOAP_OPTION_OBSERVE, age);
+		r = zoap_add_option_int(&response, ZOAP_OPTION_OBSERVE, age);
+		if (r < 0) {
+			return -EINVAL;
+		}
 	}
 
 	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
