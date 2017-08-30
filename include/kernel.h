@@ -3869,6 +3869,38 @@ extern void _sys_power_save_idle_exit(s32_t ticks);
 
 #include <arch/cpu.h>
 
+#ifdef CONFIG_USERSPACE
+/* Architecture-specific inline functions that may be indirectly called by
+ * application code due to their appearance in macros or other inline functions.
+ *
+ * Each arch should implement these in <arch/cpu.h>
+ */
+
+/* Indicate whether we are currently running in user mode
+ *
+ * @return nonzero if the CPU is currently running with user permissions
+ */
+static inline int _arch_is_user_context(void);
+
+/* Interfaces for invoking system calls */
+static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5,
+					  u32_t call_id);
+
+static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t call_id);
+
+static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t call_id);
+
+static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2,
+					  u32_t call_id);
+
+static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id);
+
+static inline u32_t _arch_syscall_invoke0(u32_t call_id);
+#endif
+
 #ifdef _ARCH_EXCEPT
 /* This archtecture has direct support for triggering a CPU exception */
 #define _k_except_reason(reason)	_ARCH_EXCEPT(reason)
