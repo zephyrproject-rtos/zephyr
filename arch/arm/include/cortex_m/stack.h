@@ -21,12 +21,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
-#define STACK_ALIGN_SIZE 8
-#else
-#define STACK_ALIGN_SIZE 4
-#endif
-
 #ifdef _ASMLANGUAGE
 
 /* nothing */
