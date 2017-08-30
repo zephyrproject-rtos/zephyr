@@ -1,0 +1,43 @@
+# Kconfig - ADC configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ADC_TI_ADC108S102
+	bool "TI adc108s102 chip driver"
+	select SPI
+	select ADC_0
+	default n
+	help
+	Enable support for TI's ADC chip adc108s102 driver.
+
+if ADC_TI_ADC108S102
+
+config ADC_TI_ADC108S102_SPI_PORT_NAME
+	string "Master SPI port name"
+	default ""
+	help
+	  Master SPI port name through which adc108s102 chip is accessed.
+
+config ADC_TI_ADC108S102_SPI_CONFIGURATION
+	hex "Master SPI port configuration"
+	default 0x0
+	help
+	  Master SPI port configuration flags used to access adc108s102 chip.
+
+config ADC_TI_ADC108S102_SPI_MAX_FREQ
+	hex "Master SPI port max frequency"
+	default 0x0
+	help
+	  Master SPI port maximum frequency used to access adc108s102 chip.
+
+config ADC_TI_ADC108S102_SPI_SLAVE
+	int "SPI slave slot"
+	default 0
+	help
+	  adc108s102 chip's SPI slave number on master SPI port.
+
+endif # ADC_TI_ADC108S102

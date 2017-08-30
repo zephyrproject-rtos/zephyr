@@ -12,7 +12,6 @@
 menuconfig ADC
 	bool
 	prompt "ADC drivers"
-	default n
 	help
 	  Enable ADC (Analog to Digital Converter) driver configuration
 
@@ -49,7 +48,6 @@ config ADC_INIT_PRIORITY
 
 config ADC_0
 	bool "Enable ADC 0"
-	default n
 
 config ADC_0_NAME
 	string "ADC 0 Driver's name"
@@ -64,7 +62,6 @@ config ADC_0_IRQ_PRI
 
 config ADC_1
 	bool "Enable ADC 1"
-	default n
 
 config ADC_1_NAME
 	string "ADC 1 Driver's name"
@@ -77,239 +74,12 @@ config ADC_1_IRQ_PRI
 	prompt "ADC 1 interrupt priority"
 	default 2
 
-menuconfig ADC_TI_ADC108S102
-	bool "TI adc108s102 chip driver"
-	select SPI
-	select ADC_0
-	default n
-	help
-	Enable support for TI's ADC chip adc108s102 driver.
+source "drivers/adc/Kconfig.dw"
 
-if ADC_TI_ADC108S102
+source "drivers/adc/Kconfig.mcux"
 
-config ADC_TI_ADC108S102_SPI_PORT_NAME
-	string "Master SPI port name"
-	default ""
-	help
-	  Master SPI port name through which adc108s102 chip is accessed.
+source "drivers/adc/Kconfig.qmsi"
 
-config ADC_TI_ADC108S102_SPI_CONFIGURATION
-	hex "Master SPI port configuration"
-	default 0x0
-	help
-	  Master SPI port configuration flags used to access adc108s102 chip.
-
-config ADC_TI_ADC108S102_SPI_MAX_FREQ
-	hex "Master SPI port max frequency"
-	default 0x0
-	help
-	  Master SPI port maximum frequency used to access adc108s102 chip.
-
-config ADC_TI_ADC108S102_SPI_SLAVE
-	int "SPI slave slot"
-	default 0
-	help
-	  adc108s102 chip's SPI slave number on master SPI port.
-
-endif # ADC_TI_ADC108S102
-
-menuconfig ADC_DW
-	bool "ARC Designware Driver"
-	depends on ARC
-	select ADC_0
-	default n
-	help
-	  Enable the driver implementation of the Designware ADC IP.
-
-if ADC_DW
-
-
-config ADC_DW_CALIBRATION
-	bool "Enable Calibration"
-	default y
-	help
-	  Enables ADC to run with a calibrated output at the
-	  expense of execution speed when exiting low power states.
-	  If disabled, the ADC will require the application/system-integrator
-	  to provide a calibration method.
-
-config ADC_DW_DUMMY_CONVERSION
-	bool "Enable dummy conversion"
-	default y
-	help
-	  After awaking from low power state a dummy
-	  conversion must be performed and discarded.
-	  If disabled the user will have to discard the first
-	  sample after a resume from a low power state.
-
-choice
-	prompt "Output Mode"
-	default ADC_DW_SERIAL
-	help
-	  ADC output mode: parallel or serial.
-
-config ADC_DW_SERIAL
-	bool "Serial"
-
-config ADC_DW_PARALLEL
-	bool "Parallel"
-
-endchoice
-
-choice
-	prompt "Sequence Mode"
-	default ADC_DW_SINGLESHOT
-	help
-	  ADC sequence mode - single run/repetitive
-
-config ADC_DW_SINGLESHOT
-	bool "Single Ended"
-
-config ADC_DW_REPETITIVE
-	bool "Differential"
-
-endchoice
-
-choice
-	prompt "Capture Mode"
-	default ADC_DW_RISING_EDGE
-	help
-	  ADC controller capture mode:
-	  by rising or falling edge of adc_clk
-
-config ADC_DW_RISING_EDGE
-	bool "Rising Edge"
-
-config ADC_DW_FALLING_EDGE
-	bool "Falling Edge"
-
-endchoice
-
-config ADC_DW_SAMPLE_WIDTH
-	int "Sample Width"
-	default 31
-	help
-	  Defines ADC device data sample width (resolution):
-
-	  - 0 = 6 bits resolution
-
-	  - 1 = 8 bits resolution
-
-	  - 2 = 10 bits resolution
-
-	  - 3 = 12 bits resolution
-
-config ADC_DW_SERIAL_DELAY
-	int "Serial Delay"
-	default 1
-	help
-	  Number of ADC clock ticks that the first bit of
-	  the serial output is delayed after the conversion
-	  has started.
-
-config ADC_DW_CLOCK_RATIO
-	int "Clock Ratio"
-	default 1024
-	help
-	  ADC Clock Ratio
-
-endif # ADC_DW
-
-menuconfig ADC_QMSI
-	bool "QMSI ADC Driver"
-	depends on QMSI
-	select ADC_0
-	default n
-	help
-	  Enable the driver implementation of the QMSI ADC IP.
-
-menuconfig ADC_QMSI_SS
-	bool "QMSI ADC Driver for the Sensor Subsystem"
-	depends on QMSI
-	select ADC_0
-	default n
-	help
-	  Enable the driver implementation of the QMSI ADC IP.
-
-if ADC_QMSI || ADC_QMSI_SS
-
-choice
-	prompt "Capturing Mode"
-	default ADC_QMSI_INTERRUPT
-	help
-	  ADC sample capture mode - interrupt mode/polling mode
-
-config ADC_QMSI_POLL
-	bool "Polling samples"
-
-config ADC_QMSI_INTERRUPT
-	bool "Interrupt notification"
-
-endchoice
-
-config ADC_QMSI_CALIBRATION
-	bool "Enable Calibration"
-	default y
-	help
-	  Enables ADC to run with a calibrated output at the
-	  expense of execution speed when exiting low power states.
-	  If disabled, the ADC will require the application/system-integrator
-	  to provide a calibration method.
-
-config ADC_QMSI_CLOCK_RATIO
-	int "Clock Ratio"
-	default 100
-	help
-	  ADC Clock Ratio
-
-config ADC_QMSI_SERIAL_DELAY
-	int "Serial Delay"
-	default 1
-	help
-	  Number of ADC clock ticks that the first bit of
-	  the serial output is delayed after the conversion
-	  has started.
-
-if ADC_QMSI
-config ADC_QMSI_SAMPLE_WIDTH
-	int "Sample Width"
-	default 3
-	help
-	  Defines ADC device data sample width (resolution):
-
-	  - 0 = 6 bits resolution
-
-	  - 1 = 8 bits resolution
-
-	  - 2 = 10 bits resolution
-
-	  - 3 = 12 bits resolution
-endif
-
-if ADC_QMSI_SS
-config ADC_QMSI_SAMPLE_WIDTH
-	int "Sample Width"
-	default 11
-	help
-	  Defines ADC device data sample width (resolution):
-
-	  - 5 = 6 bits resolution
-
-	  - 7 = 8 bits resolution
-
-	  - 9 = 10 bits resolution
-
-	  - 11 = 12 bits resolution
-endif
-
-endif # ADC_QMSI || ADC_QMSI_SS
-
-config ADC_MCUX_ADC16
-	bool "MCUX ADC16 driver"
-	depends on HAS_MCUX && HAS_ADC16
-	select HAS_DTS_ADC
-	default n
-	help
-	  Enable the MCUX ADC16 driver.
+source "drivers/adc/Kconfig.ti_adc108s102"
 
 endif # ADC
