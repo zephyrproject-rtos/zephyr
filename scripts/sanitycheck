@@ -729,7 +729,13 @@ class MakeGenerator:
             cflags = cflags + "  -Wno-deprecated-declarations"
 
         if self.ccache:
-            args = args + " -DUSE_CCACHE=1"
+            # CMake enables ccache by default when installed
+            #
+            # sanitycheck requires the user to explicitly enable
+            # ccache
+            pass
+        else:
+            args += " -DUSE_CCACHE=0"
 
         return MakeGenerator.MAKE_RULE_TMPL.format(
             phase=phase,
