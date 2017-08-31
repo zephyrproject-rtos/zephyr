@@ -1,15 +1,9 @@
-zephyr_library()
-
-zephyr_library_sources(sys_clock_init.c)
-
-zephyr_library_sources_ifdef(CONFIG_HPET_TIMER  hpet.c)
-zephyr_library_sources_ifdef(CONFIG_ARCV2_TIMER arcv2_timer0.c)
-
-zephyr_library_sources_if_kconfig(loapic_timer.c)
-zephyr_library_sources_if_kconfig(altera_avalon_timer.c)
-zephyr_library_sources_if_kconfig(nrf_rtc_timer.c)
-zephyr_library_sources_if_kconfig(pulpino_timer.c)
-zephyr_library_sources_if_kconfig(riscv_machine_timer.c)
-zephyr_library_sources_if_kconfig(cortex_m_systick.c)
-
-zephyr_library_link_libraries(drivers)
+zephyr_sources(                         sys_clock_init.c)
+zephyr_sources_ifdef(CONFIG_HPET_TIMER  hpet.c)
+zephyr_sources_ifdef(CONFIG_ARCV2_TIMER arcv2_timer0.c)
+zephyr_sources_if_kconfig(              loapic_timer.c)
+zephyr_sources_if_kconfig(              altera_avalon_timer.c)
+zephyr_sources_if_kconfig(              nrf_rtc_timer.c)
+zephyr_sources_if_kconfig(              pulpino_timer.c)
+zephyr_sources_if_kconfig(              riscv_machine_timer.c)
+zephyr_sources_if_kconfig(              cortex_m_systick.c)
