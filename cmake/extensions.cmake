@@ -171,20 +171,6 @@ function(ld_option option)
   # endif()
 endfunction()
 
-#
-# Misc.
-#
-function(target_object_link_libraries target)
-  foreach(library ${ARGN})
-    get_property(target_options     TARGET ${library} PROPERTY INTERFACE_COMPILE_OPTIONS)
-    get_property(target_definitions TARGET ${library} PROPERTY INTERFACE_COMPILE_DEFINITIONS)
-    get_property(target_directories TARGET ${library} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-    target_include_directories(${target} PRIVATE ${target_directories})
-    target_compile_options    (${target} PRIVATE ${target_options})
-    target_compile_definitions(${target} PRIVATE ${target_definitions})
-  endforeach()
-endfunction()
-
 ########################################################
 # Kconfig-aware extensions
 ########################################################
