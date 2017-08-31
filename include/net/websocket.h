@@ -723,6 +723,12 @@ void ws_server_conn_monitor(ws_server_cb_t cb, void *user_data);
 #define ws_server_conn_monitor(...)
 #endif /* CONFIG_NET_DEBUG_WS_CONN */
 
+#if defined(CONFIG_WS_CONSOLE)
+int ws_console_enable(struct ws_ctx *ctx);
+int ws_console_disable(struct ws_ctx *ctx);
+int ws_console_recv(struct ws_ctx *ctx, struct net_pkt *pkt);
+#endif /* CONFIG_WS_CONSOLE */
+
 #ifdef __cplusplus
 }
 #endif
