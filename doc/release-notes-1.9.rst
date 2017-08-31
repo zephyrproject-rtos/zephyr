@@ -42,6 +42,7 @@ Architectures
 * arm: Added TI CC2650 SoC
 * arm: Removed TI CC3200 SoC
 * arm: Added MPU support to nRF52, STM32L4, and STM32F3
+* xtensa: Added ESP32
 
 Boards
 ******
@@ -54,15 +55,18 @@ Boards
 * arm: Added TI SensorTag board
 * arm: Removed TI CC3200 LaunchXL board
 * arm: Added VBLUno51 and VBLUno52 boards
+* xtensa: Added ESP32
 
 Drivers and Sensors
 *******************
 
 * KW40Z IEEE 802.15.4 radio driver support added
 * APDS9960 sensor driver added
-* Added TICKLESS KERNEL support for nrf RTC Timer.
+* Added TICKLESS KERNEL support for nrf RTC Timer
 * Added Kinetis adc and pwm drivers
-* Removed deprecated PWM driver APIs.
+* Removed deprecated PWM driver APIs
+* Added ESP32 drivers for GPIO, pin mux, watchdog, random number generator,
+  and UART
 
 Networking
 **********
