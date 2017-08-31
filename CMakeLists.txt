@@ -339,7 +339,7 @@ set(zephyr_lnk
   ${LINKERFLAGPREFIX},--end-group
   ${LIB_INCLUDE_DIR}
   ${TOOLCHAIN_LIBS}
-)
+  )
 
 if(CONFIG_GEN_ISR_TABLES)
   # isr_tables.c is generated from zephyr_prebuilt by
@@ -369,6 +369,7 @@ endif()
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
+# FIXME: Is there any way to get rid of dummy.c?
 add_executable(       zephyr_prebuilt dummy.c)
 target_link_libraries(zephyr_prebuilt -T${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
 set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
