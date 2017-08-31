@@ -1,13 +1,59 @@
 include(CheckCCompilerFlag)
 
 ########################################################
-# CMake-generic extensions
+# Table of contents
 ########################################################
+# 1. CMake-generic extensions
+# 1.1. *_ifdef
+# 1.2. *_ifndef
+# 1.3. *_option compiler compatibility checks
+# 2. Kconfig-aware extensions
+# 2.1 *_if_kconfig
+# 2.2 Misc
+# 3. Zephyr-aware extensions
+# 3.1. zephyr_library_*
+# 3.2. zephyr_*
 
-# Conditionally executing CMake functions with oneliners
-# e.g. if(x) sqrt(10); would be sqrt_ifdef(x 10)
+########################################################
+# 1. CMake-generic extensions
+########################################################
 #
-# <function-name>_ifdef()
+# These functions extend the CMake API in a way that is not particular
+# to Zephyr. Primarily they work around limitations in the CMake
+# language to allow cleaner build scripts.
+
+# 1.1. *_ifdef
+#
+# Functions for conditionally executing CMake functions with oneliners
+# e.g.
+#
+# if(CONFIG_FFT)
+#   zephyr_library_source(
+#     fft_32.c
+#     fft_utils.c
+#     )
+# endif()
+#
+# Becomes
+#
+# zephyr_source_ifdef(
+#   CONFIG_FFT
+#   fft_32.c
+#   fft_utils.c
+#   )
+#
+# More Generally
+# "<function-name>_ifdef(CONDITION args)"
+# Becomes
+# """
+# if(CONDITION)
+#   <function-name>(args)
+# endif()
+# """
+#
+# ifdef functions are added on an as-need basis. See
+# https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
+# a list of available functions.
 function(add_subdirectory_ifdef feature_toggle dir)
   if(${${feature_toggle}})
     add_subdirectory(${dir})
@@ -104,7 +150,8 @@ function(zephyr_library_compile_definitions_ifdef feature_toggle item)
   endif()
 endfunction()
 
-# <function-name>_ifndef()
+# 1.2. *_ifndef
+# See 1.1 *_ifdef
 function(set_ifndef variable value)
   if(NOT ${variable})
     set(${variable} ${value} PARENT_SCOPE)
@@ -123,9 +170,15 @@ function(zephyr_cc_option_ifndef feature_toggle)
   endif()
 endfunction()
 
-
-# Utility functions for silently omitting a compiler flag when the
-# compiler does not support it.
+# 1.3. *_option Compiler-compatibility checks
+#
+# Utility functions for silently omitting compiler flags when the
+# compiler lacks support. *_cc_option was ported from KBuild, see
+# cc-option in
+# https://www.kernel.org/doc/Documentation/kbuild/makefiles.txt
+#
+# TODO: Support an optional second option for when the first option is
+# not supported.
 function(target_cc_option target scope option)
   string(MAKE_C_IDENTIFIER check${option} check)
   check_c_compiler_flag(${option} ${check})
@@ -142,8 +195,24 @@ function(ld_option option)
 endfunction()
 
 ########################################################
-# Kconfig-aware extensions
+# 2. Kconfig-aware extensions
 ########################################################
+#
+# Kconfig is a configuration language developed for the Linux
+# kernel. The below functions integrate CMake with Kconfig.
+#
+# 2.1 *_if_kconfig
+#
+# Functions for conditionally including directories and source files
+# that have matching KConfig values.
+#
+# zephyr_library_sources_if_kconfig(fft.c)
+# is the same as
+# zephyr_library_sources_ifdef(CONFIG_FFT fft.c)
+#
+# add_subdirectory_if_kconfig(serial)
+# is the same as
+# add_subdirectory_ifdef(CONFIG_SERIAL serial)
 function(add_subdirectory_if_kconfig dir)
   string(TOUPPER config_${dir} UPPER_CASE_CONFIG)
   add_subdirectory_ifdef(${UPPER_CASE_CONFIG} ${dir})
@@ -167,6 +236,8 @@ function(zephyr_sources_if_kconfig item)
   zephyr_sources_ifdef(${UPPER_CASE_CONFIG} ${item})
 endfunction()
 
+# 2.2 Misc
+#
 # Parse a KConfig formatted file (typically named *.config) and
 # introduce all the CONF_ variables into the CMake namespace
 function(import_kconfig config_file)
@@ -199,23 +270,39 @@ function(import_kconfig config_file)
 endfunction()
 
 ########################################################
-# Zephyr-aware extensions
+# 3. Zephyr-aware extensions
 ########################################################
 
-# Zephyr-library-aware extentions
+# 3.1 zephyr_library_*
 #
 # Zephyr libraries use CMake's library concept and a set of
 # assumptions about how zephyr code is organized to cut down on
 # boilerplate code.
 #
-# Zephyr libraries are created and modified by the below functions.
+# A Zephyr library can be constructed by the function zephyr_library
+# or zephyr_library_named. The constructors create a CMake library
+# with a name accessible through the variable ZEPHYR_CURRENT_LIBRARY.
 #
+# The variable ZEPHYR_CURRENT_LIBRARY should seldomly be needed since
+# the zephyr libraries have methods that modify the libraries. These
+# methods have the signature: zephyr_library_<target-function>
+#
+# The methods are wrappers around the CMake target_* functions. See
+# https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
+# documentation on the underlying target_* functions.
+#
+# The methods modify the CMake target_* API to reduce boilerplate;
+#  PRIVATE is assumed
+#  The target is assumed to be ZEPHYR_CURRENT_LIBRARY
 
+# Constructor with a directory-inferred name
 macro(zephyr_library)
   zephyr_library_get_current_dir_lib_name(lib_name)
   zephyr_library_named(${lib_name})
 endmacro()
 
+# Determines what the current directory's lib name would be and writes
+# it to the argument "lib_name"
 macro(zephyr_library_get_current_dir_lib_name lib_name)
   # Remove the prefix (/home/sebo/zephyr/driver/serial/CMakeLists.txt => driver/serial/CMakeLists.txt)
   file(RELATIVE_PATH name $ENV{ZEPHYR_BASE} ${CMAKE_CURRENT_LIST_FILE})
@@ -229,6 +316,7 @@ macro(zephyr_library_get_current_dir_lib_name lib_name)
   set(${lib_name} ${name})
 endmacro()
 
+# Constructor with an explicitly given name.
 macro(zephyr_library_named name)
   # This is a macro because we need add_library() to be executed
   # within the scope of the caller.
@@ -260,21 +348,20 @@ function(zephyr_library_compile_definitions item)
 endfunction()
 
 # Add the existing CMake library 'library' to the global list of
-# Zephyr CMake libraries. This done automatically by zephyr_library()
-# but must called explicitly on CMake libraries that are not created
-# by zephyr_library().
+# Zephyr CMake libraries. This is done automatically by the
+# constructor but must called explicitly on CMake libraries that do
+# not use a zephyr library constructor.
 function(zephyr_append_cmake_library library)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
 endfunction()
 
-# zephyr-aware extentions
+# 3.2. zephyr_*
 #
 # The following functions are for modifying the Zephyr library called
 # "zephyr". zephyr is a catchall CMake library for source files that
 # can be built purely with the include paths, defines, and other
 # compiler flags that all zephyr source files use.
 #
-
 # Usage:
 # zephyr_sources(
 #   random_esp32.c
