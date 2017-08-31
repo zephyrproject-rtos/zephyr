@@ -458,6 +458,11 @@ static void rtc1_nrf5_isr(void *arg)
 	ARG_UNUSED(arg);
 	RTC_CC_EVENT = 0;
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
+
 #ifdef CONFIG_TICKLESS_KERNEL
 	_sys_idle_elapsed_ticks = expected_sys_ticks;
 	/* Initialize expected sys tick,
@@ -469,6 +474,12 @@ static void rtc1_nrf5_isr(void *arg)
 #else
 	rtc_announce_set_next();
 #endif
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
+#endif
+
 }
 
 int _sys_clock_driver_init(struct device *device)
