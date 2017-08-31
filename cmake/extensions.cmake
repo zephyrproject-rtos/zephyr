@@ -56,12 +56,6 @@ function(target_cc_option_ifdef feature_toggle target scope option)
   endif()
 endfunction()
 
-function(cc_option_ifdef feature_toggle option)
-  if(${feature_toggle})
-    cc_option(${option})
-  endif()
-endfunction()
-
 function(zephyr_library_sources_ifdef feature_toggle source)
   if(${${feature_toggle}})
     zephyr_library_sources(${source} ${ARGN})
@@ -132,12 +126,6 @@ endfunction()
 
 # Utility functions for silently omitting a compiler flag when the
 # compiler does not support it.
-function(cc_option option)
-  string(MAKE_C_IDENTIFIER check${option} check)
-  check_c_compiler_flag(${option} ${check})
-  add_compile_option_ifdef(${check} ${option})
-endfunction()
-
 function(target_cc_option target scope option)
   string(MAKE_C_IDENTIFIER check${option} check)
   check_c_compiler_flag(${option} ${check})
