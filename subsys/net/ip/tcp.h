@@ -313,6 +313,17 @@ int net_tcp_send_data(struct net_context *context);
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
 
 /**
+ * @brief Enqueue a single packet for transmission, this version just places
+ * the packet into queue and triggers sending if needed.
+ *
+ * @param context TCP context
+ * @param pkt Packet
+ *
+ * @return 0 if ok, < 0 if error
+ */
+void net_tcp_queue_pkt(struct net_context *context, struct net_pkt *pkt);
+
+/**
  * @brief Sends one TCP packet initialized with the _prepare_*()
  *        family of functions.
  *
