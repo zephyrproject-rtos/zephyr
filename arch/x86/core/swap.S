@@ -94,8 +94,8 @@ SECTION_FUNC(TEXT, __swap)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,__start_swap_tsc
-	mov %edx,__start_swap_tsc+4
+	mov %eax,__start_swap_time
+	mov %edx,__start_swap_time+4
 	pop %edx
 	pop %eax
 #endif
@@ -362,10 +362,10 @@ skipIntLatencyStop:
 	/* Save the eax and edx registers before reading the time stamp
 	* once done pop the values.
 	*/
-	cmp $0x1,__read_swap_end_tsc_value
+	cmp $0x1,__read_swap_end_time_value
 	jne time_read_not_needed
-	movw $0x2,__read_swap_end_tsc_value
-	read_tsc __common_var_swap_end_tsc
+	movw $0x2,__read_swap_end_time_value
+	read_tsc __common_var_swap_end_time
 time_read_not_needed:
 #endif
 	ret

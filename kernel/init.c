@@ -67,12 +67,12 @@ u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
 #endif
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-u64_t __noinit __start_swap_tsc;
-u64_t __noinit __end_swap_tsc;
-u64_t __noinit __start_intr_tsc;
-u64_t __noinit __end_intr_tsc;
-u64_t __noinit __start_tick_tsc;
-u64_t __noinit __end_tick_tsc;
+u64_t __noinit __start_swap_time;
+u64_t __noinit __end_swap_time;
+u64_t __noinit __start_intr_time;
+u64_t __noinit __end_intr_time;
+u64_t __noinit __start_tick_time;
+u64_t __noinit __end_tick_time;
 #endif
 /* init/main and idle threads */
 
