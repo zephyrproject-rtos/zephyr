@@ -104,6 +104,77 @@ struct scu_ctrl {
 	uint32_t ftmrpreval;           /* 0x50 : Free Timer Prescale Init Val */
 	uint32_t pwropencfg;           /* 0x54 : Power Open Config            */
 	uint32_t pwrclosecfg;          /* 0x58 : Power Close Config           */
+ } ;
+
+struct spi_rda5981a {
+	uint32_t cfg;
+	uint32_t d0cmd;
+	uint32_t d1cmd;
+};
+
+struct i2s_rda5981a {
+	uint32_t cfg;
+	uint32_t doutwr;
+	uint32_t dinrd;
+};
+
+#define EXIF_MISC_INT_RFU(x)		((x & 0x1) << 15)
+
+struct exif_rda5981a {
+	struct spi_rda5981a spi0;      /* 0x00 - 0x08 : spi0 registers group  */
+	struct i2s_rda5981a i2s;       /* 0x0c - 0x14 : i2s registers group   */
+	uint32_t misc_st_cfg;          /* 0x18 : misc status config register  */
+	uint32_t spi1ctrl;             /* 0x1c : spi1 control register        */
+	uint32_t reserved0[4];
+	uint32_t misc_int_cfg;         /* 0x30 : misc int config register     */
+	uint32_t mbb2w;                /* 0x34 : bt to wifi mailbox register  */
+	uint32_t mbw2b;                /* 0x38 : wifi to bt mailbox register  */
+	uint32_t misc_cfg;             /* 0x3c : misc configure register      */
+	uint32_t pwm0_cfg;             /* 0x40 : pwm0 configure register      */
+	uint32_t pwm1_cfg;             /* 0x44 : pwm1 configure register      */
+	uint32_t pwm2_cfg;             /* 0x48 : pwm2 configure register      */
+	uint32_t pwm3_cfg;             /* 0x4c : pwm3 configure register      */
+};
+
+/*------------- AHB Direct Memory Access (DMA) -------------------------------*/
+struct dma_cfg_rda5981h {
+	uint32_t dma_ctrl;             /* 0x00 : DMA ctrl                     */
+	uint32_t dma_src;              /* 0x04 : DMA src                      */
+	uint32_t dma_dst;              /* 0x08 : DMA dst                      */
+	uint32_t dma_len;              /* 0x0c : DMA len                      */
+	uint32_t crc_gen;              /* 0x10 : CRC gen                      */
+	uint32_t dma_func_ctrl;        /* 0x14 : DMA func ctrl                */
+	uint32_t aes_key0;             /* 0x18 : AES key 0                    */
+	uint32_t aes_key1;             /* 0x1c : AES key 1                    */
+	uint32_t aes_key2;             /* 0x20 : AES key 2                    */
+	uint32_t aes_key3;             /* 0x24 : AES key 2                    */
+	uint32_t aes_iv0;              /* 0x28 : AES iv 0                     */
+	uint32_t aes_iv1;              /* 0x2c : AES iv 1                     */
+	uint32_t aes_iv2;              /* 0x30 : AES iv 2                     */
+	uint32_t aes_iv3;              /* 0x34 : AES iv 2                     */
+	uint32_t aes_mode;             /* 0x38 : AES mode                     */
+	uint32_t cios_ctrl;            /* 0x3c : cios ctrl                    */
+	uint32_t cios_reg0;            /* 0x40 : cios reg 0                   */
+	uint32_t crc_init_val;         /* 0x44 : CRC init val                 */
+	uint32_t crc_out_xorval;       /* 0x48 : CRC out xorval               */
+	uint32_t crc_out_val;          /* 0x4c : CRC out val                  */
+	uint32_t RESERVED0[12];
+	uint32_t dma_int_out;          /* 0x80 : DMA int out                  */
+	uint32_t dma_int_mask;         /* 0x84 : DMA int mask                 */
+	uint32_t RESERVED1[30];
+	uint32_t trng_ctrl;            /* 0x100 : TRNG ctrl                   */
+	uint32_t prng_ctrl;            /* 0x104 : PRNG ctrl                   */
+	uint32_t prng_seed;            /* 0x108 : PRNG seed                   */
+	uint32_t prng_timer_int;       /* 0x10c : PRNG timer init             */
+	uint32_t prng_timer;           /* 0x110 : PRNG timer                  */
+	uint32_t trng_data0;           /* 0x114 : TRNG data 0                 */
+	uint32_t trng_data0_mask;      /* 0x118 : TRNG data 0 mask            */
+	uint32_t trng_data1;           /* 0x11c : TRNG data 1                 */
+	uint32_t trng_data1_mask;      /* 0x120 : TRNG data 1 mask            */
+	uint32_t prng_data;            /* 0x124 : PRNG data                   */
+	uint32_t trng_hc;              /* 0x128 : TRNG hc                     */
+	uint32_t RESERVED2[437];
+	uint32_t cios_data_base;       /* 0x800 : CIOS data base              */
 };
 
 #endif

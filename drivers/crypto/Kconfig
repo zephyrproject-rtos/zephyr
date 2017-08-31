@@ -41,6 +41,20 @@ config SYS_LOG_CRYPTO_LEVEL
 
 	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config CRYPTO_TINYCRYPT_RDA5981A
+	bool "Enable TinyCrypt rda5991h driver"
+	default n
+	depends on CRYPTO
+	help
+	Enable TinyCrypt rda5991h layer compliant with crypto APIs.
+
+config CRYPTO_RDA_NAME
+	string "Device name for rda5991h aes device"
+	default "CRYPTO_RDA5991H"
+	depends on CRYPTO_TINYCRYPT_RDA5981A
+	help
+	Device name for rda5991h aes device.
+
 config CRYPTO_TINYCRYPT_SHIM
 	bool "Enable TinyCrypt shim driver [EXPERIMENTAL] "
 	default n
