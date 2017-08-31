@@ -1270,7 +1270,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 	if ((_radio.scanner.conn) && ((_radio.fc_ena == 0) ||
 				      (_radio.fc_req == _radio.fc_ack)) &&
 	    isr_scan_init_check(pdu_adv_rx, rl_idx) &&
-	    ((radio_tmr_end_get() + 502) <
+	    ((radio_tmr_end_get() + 502 + (RADIO_TICKER_JITTER_US << 1)) <
 	     (TICKER_TICKS_TO_US(_radio.scanner.hdr.ticks_slot) -
 	      RADIO_TICKER_START_PART_US))) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
