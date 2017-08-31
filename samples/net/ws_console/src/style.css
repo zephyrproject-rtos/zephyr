@@ -1,0 +1,54 @@
+body {
+    background-color: black;
+    color: white;
+}
+
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 5px;
+}
+
+th {
+    text-align: left;
+}
+
+div.container {
+}
+
+div.textcontainer {
+    font-family: monospace !important;
+    font-size: 150%;
+}
+
+div.zconsole {
+    white-space: pre-wrap !important;
+    scroll-behavior: auto;
+    border: 1px solid gray;
+    padding: 5px;
+    width: 95%;
+    height: 70%;
+    overflow: auto;
+}
+
+div.output {
+    scroll-behavior: auto;
+    border: 1px solid gray;
+    padding: 5px;
+    margin-top: 20px;
+    width: 95%;
+    height: 10%;
+    overflow: auto;
+}
+
+div.inputbar {
+    margin-top: 5px;
+    width: 100%;
+}
+
+.zconsole em {
+    color: red;
+}
