@@ -24,6 +24,9 @@
 #ifdef CONFIG_TELNET_CONSOLE
 #include <console/telnet_console.h>
 #endif
+#ifdef CONFIG_WEBSOCKET_CONSOLE
+#include <console/websocket_console.h>
+#endif
 
 #include <shell/shell.h>
 
@@ -575,6 +578,9 @@ void shell_init(const char *str)
 #endif
 #ifdef CONFIG_TELNET_CONSOLE
 	telnet_register_input(&avail_queue, &cmds_queue, completion);
+#endif
+#ifdef CONFIG_WEBSOCKET_CONSOLE
+	ws_register_input(&avail_queue, &cmds_queue, completion);
 #endif
 }
 
