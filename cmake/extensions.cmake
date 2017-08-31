@@ -409,6 +409,12 @@ function(zephyr_cc_option_ifndef feature_toggle)
   endif()
 endfunction()
 
+function(zephyr_compile_options_ifndef feature_toggle)
+  if(NOT ${feature_toggle})
+    zephyr_compile_options(${ARGN})
+  endif()
+endfunction()
+
 # 3.2. *_option Compiler-compatibility checks
 #
 # Utility functions for silently omitting compiler flags when the
