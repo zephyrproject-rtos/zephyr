@@ -301,6 +301,8 @@ int ws_send_data_raw(struct ws_ctx *ctx, struct net_pkt *pkt,
 {
 	int ret;
 
+	NET_DBG("[%p] Sending %zd bytes data", ctx, net_pkt_get_len(pkt));
+
 	ret = net_app_send_pkt(&ctx->app_ctx, pkt, NULL, 0, 0,
 			       user_send_data);
 	if (!ret) {
