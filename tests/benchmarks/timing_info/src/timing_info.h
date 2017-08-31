@@ -8,9 +8,9 @@
 
 #define CALCULATE_TIME(special_char, profile, name)			     \
 	{								     \
-		total_##profile##_##name##_time = SYS_CLOCK_HW_CYCLES_TO_NS( \
-			special_char##profile##_##name##_end_tsc -	     \
-			special_char##profile##_##name##_start_tsc);	     \
+		total_##profile##_##name##_time = CYCLES_TO_NS( \
+			special_char##profile##_##name##_end_time -	     \
+			special_char##profile##_##name##_start_time);	     \
 	}
 
 /*total_##profile##_##name##_time =
@@ -20,14 +20,17 @@
 #define DECLARE_VAR(profile, name) \
 	u64_t total_##profile##_##name##_time;
 
-extern u64_t __start_swap_tsc;
-extern u64_t __end_swap_tsc;
-extern u64_t __start_intr_tsc;
-extern u64_t __end_intr_tsc;
-extern u64_t __start_tick_tsc;
-extern u64_t __end_tick_tsc;
+extern u64_t __start_swap_time;
+extern u64_t __end_swap_time;
+extern u64_t __start_intr_time;
+extern u64_t __end_intr_time;
+extern u64_t __start_tick_time;
+extern u64_t __end_tick_time;
 
 
+#define GET_CURRENT_TIME()  OS_GET_TIME()
+#define CYCLES_TO_NS(x) SYS_CLOCK_HW_CYCLES_TO_NS(x)
+#define PRINT_STATS(x, y, z)	PRINT_F(x, y, z)
 
 /* Function prototypes */
 void system_thread_bench(void);
@@ -88,13 +91,15 @@ void msg_passing_bench(void);
  * always incrementing i.e count up counter.
  * If we are using the ARM based controllers the systick is a
  * count down counter.
+ * If we are using nrf SOC, we are using external timer which always increments
+ * ie count up counter.
  * Hence to calculate the cycles taken up by the code we need to adjust the
  * values accordingly.
  *
  * NOTE: Needed only when reading value from end of swap operation
  */
 #if CONFIG_ARM
-#define SUBTRACT_CLOCK_CYCLES(val) (SysTick->LOAD - (u32_t)val)
+#define SUBTRACT_CLOCK_CYCLES(val) (SysTick->LOAD - (u32_t) val)
 #else
 #define SUBTRACT_CLOCK_CYCLES(val) (val)
-#endif
+#endif /* CONFIG_ARM */
