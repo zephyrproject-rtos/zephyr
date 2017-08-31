@@ -114,7 +114,8 @@ Build and Infrastructure
 Libraries
 *********
 
-* change description
+* mbedTLS updated to 2.6.0
+* TinyCrypt updated to 0.2.7
 
 HALs
 ****
