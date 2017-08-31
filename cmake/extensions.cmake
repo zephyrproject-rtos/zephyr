@@ -156,12 +156,6 @@ function(target_cc_option target scope option)
   target_compile_option_ifdef(${check} ${target} ${scope} ${option})
 endfunction()
 
-function(cc_disable_warning warning)
-  string(MAKE_C_IDENTIFIER check_warning_${warning} check)
-  check_c_compiler_flag(-W${warning} ${check})
-  add_compile_option_ifdef(${check} -Wno-${warning})
-endfunction()
-
 function(ld_option option)
   # TODO: figure out how to test linker flags
   # string(MAKE_C_IDENTIFIER check${option} check)
