@@ -1,9 +1,3 @@
-add_library(drivers INTERFACE)
-
-target_include_directories(drivers INTERFACE ${PROJECT_SOURCE_DIR}/include/drivers)
-
-target_link_libraries(drivers INTERFACE zephyr_interface)
-
 add_subdirectory_ifdef(CONFIG_CONSOLE_HAS_DRIVER console)
 add_subdirectory_if_kconfig(random_generator)
 add_subdirectory_if_kconfig(serial)

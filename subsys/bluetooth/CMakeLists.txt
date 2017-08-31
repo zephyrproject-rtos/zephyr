@@ -9,4 +9,4 @@ add_subdirectory_ifdef(CONFIG_BT_CTLR controller)
 
 # TODO: Add shell
 
-target_link_libraries(subsys__bluetooth INTERFACE zephyr drivers)
+target_link_libraries(subsys__bluetooth INTERFACE zephyr_interface)
