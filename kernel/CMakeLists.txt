@@ -34,4 +34,4 @@ target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 
 add_dependencies(kernel offsets_h)
 
-target_link_libraries(kernel zephyr)
+target_link_libraries(kernel zephyr_interface)
