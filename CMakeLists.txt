@@ -57,6 +57,7 @@ zephyr_include_directories(
   arch/${ARCH}/soc/${SOC_FAMILY}/include
   ${BOARD_DIR}
   include
+  include/drivers
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
   ${STDINCLUDE}
