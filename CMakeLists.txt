@@ -263,8 +263,6 @@ add_custom_command(
 )
 add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
 
-add_dependencies(zephyr offsets_h)
-
 # Get ZEPHYR_INCLUDE for preprocessing, with cmake 3.8 this should be possible with generator expressions.
 get_property(ZEPHYR_INCLUDES_LIST TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 foreach(INCLUDE ${ZEPHYR_INCLUDES_LIST})
@@ -322,6 +320,11 @@ add_subdirectory(kernel)
 
 # Read list content
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
+
+foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
+  # TODO: Could this become an INTERFACE property of zephyr_interface?
+  add_dependencies(${zephyr_lib} offsets_h)
+endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
