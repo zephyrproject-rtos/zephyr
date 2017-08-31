@@ -18,7 +18,11 @@
 
 void main(void)
 {
-	u32_t freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000;
+	u32_t freq = get_core_freq_MHz();
+
+	/* Configure and start timer */
+	benchmark_timer_init();
+	benchmark_timer_start();
 
 	TC_START("Time Measurement");
 	TC_PRINT("Timing Results: Clock Frequency: %d MHz\n", freq);
@@ -53,5 +57,5 @@ void main(void)
 	/* for sanity regression test utility. */
 	TC_END_RESULT(TC_PASS);
 	TC_END_REPORT(TC_PASS);
-
+	benchmark_timer_stop();
 }
