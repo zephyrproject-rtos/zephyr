@@ -537,20 +537,13 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 #define _STACK_BASE_ALIGN	STACK_ALIGN
 #endif
 
-
-
-/* All thread stacks, regardless of whether owned by application or kernel,
- * go in the .stacks input section, which will end up in the kernel's
- * noinit.
- */
-
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element _GENERIC_SECTION(.stacks) \
+	struct _k_thread_stack_element __noinit \
 		__aligned(_STACK_BASE_ALIGN) \
 		sym[(size) + _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element _GENERIC_SECTION(.stacks) \
+	struct _k_thread_stack_element __noinit \
 		__aligned(_STACK_BASE_ALIGN) \
 		sym[nmemb][ROUND_UP(size, _STACK_BASE_ALIGN) + \
 			   _STACK_GUARD_SIZE]

@@ -246,10 +246,6 @@ SECTIONS
         KERNEL_INPUT_SECTION(.noinit)
         KERNEL_INPUT_SECTION(".noinit.*")
 
-	/* Put all the stacks here in the kernel noinit */
-	*(.stacks)
-	*(".stacks.*")
-
         } GROUP_LINK_IN(RAMABLE_REGION)
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
