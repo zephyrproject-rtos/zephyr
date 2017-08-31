@@ -11,7 +11,8 @@
 #include <errno.h>
 
 #include <kernel.h>
-
+#include <device.h>
+#include <init.h>
 #include <misc/util.h>
 #include <gpio.h>
 #include <i2c.h>
@@ -554,9 +555,6 @@ static int gpio_pcal9535a_init(struct device *dev)
 
 /* Initialization for PCAL9535A_0 */
 #ifdef CONFIG_GPIO_PCAL9535A_0
-#include <device.h>
-#include <init.h>
-
 static const struct gpio_pcal9535a_config gpio_pcal9535a_0_cfg = {
 	.i2c_master_dev_name = CONFIG_GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = CONFIG_GPIO_PCAL9535A_0_I2C_ADDR,
@@ -581,9 +579,6 @@ DEVICE_INIT(gpio_pcal9535a_0, CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
 
 /* Initialization for PCAL9535A_1 */
 #ifdef CONFIG_GPIO_PCAL9535A_1
-#include <device.h>
-#include <init.h>
-
 static const struct gpio_pcal9535a_config gpio_pcal9535a_1_cfg = {
 	.i2c_master_dev_name = CONFIG_GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = CONFIG_GPIO_PCAL9535A_1_I2C_ADDR,
@@ -608,9 +603,6 @@ DEVICE_INIT(gpio_pcal9535a_1, CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
 
 /* Initialization for PCAL9535A_2 */
 #ifdef CONFIG_GPIO_PCAL9535A_2
-#include <device.h>
-#include <init.h>
-
 static const struct gpio_pcal9535a_config gpio_pcal9535a_2_cfg = {
 	.i2c_master_dev_name = CONFIG_GPIO_PCAL9535A_2_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = CONFIG_GPIO_PCAL9535A_2_I2C_ADDR,
@@ -635,9 +627,6 @@ DEVICE_INIT(gpio_pcal9535a_2, CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
 
 /* Initialization for PCAL9535A_3 */
 #ifdef CONFIG_GPIO_PCAL9535A_3
-#include <device.h>
-#include <init.h>
-
 static const struct gpio_pcal9535a_config gpio_pcal9535a_3_cfg = {
 	.i2c_master_dev_name = CONFIG_GPIO_PCAL9535A_3_I2C_MASTER_DEV_NAME,
 	.i2c_slave_addr = CONFIG_GPIO_PCAL9535A_3_I2C_ADDR,
