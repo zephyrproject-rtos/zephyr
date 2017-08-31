@@ -24,6 +24,7 @@
 #include <linker/sections.h>
 #include <sw_isr_table.h>
 #include <irq.h>
+#include <misc/printk.h>
 
 /*
  * @brief Enable an interrupt line
@@ -95,7 +96,6 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
  * @return N/A
  */
 
-#include <misc/printk.h>
 void _irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);

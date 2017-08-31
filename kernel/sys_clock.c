@@ -203,8 +203,6 @@ u32_t k_uptime_delta_32(s64_t *reftime)
 /* handle the expired timeouts in the nano timeout queue */
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-#include <wait_q.h>
-
 /*
  * Handle timeouts by dequeuing the expired ones from _timeout_q and queue
  * them on a local one, then doing the real handling from that queue. This
