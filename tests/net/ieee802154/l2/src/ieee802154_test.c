@@ -225,7 +225,10 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 	net_pkt_frag_add(pkt, frag);
 
-	net_recv_data(iface, pkt);
+	if (net_recv_data(iface, pkt) == NET_DROP) {
+		NET_ERR("Packet dropped");
+		return false;
+	}
 
 	k_sem_take(&driver_lock, 20);
 
