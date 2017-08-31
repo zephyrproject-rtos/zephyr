@@ -215,12 +215,6 @@ SECTIONS
 	KERNEL_INPUT_SECTION(".noinit.*")
 	*(".kernel_noinit.*")
 
-	/* All stacks go in kernel's noinit, regardless of where they
-	 * were defined.
-	 */
-	*(.stacks)
-	*(".stacks.*")
-
 	MMU_PAGE_ALIGN
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
