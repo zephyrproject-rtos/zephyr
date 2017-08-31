@@ -190,7 +190,7 @@ _thread_irq_disabled:
 #endif
     push {lr}
 
-    bl read_systick_end_of_swap
+    bl read_timer_end_of_swap
 
 #if defined(CONFIG_ARMV6_M)
     pop {r3}
@@ -367,7 +367,7 @@ SECTION_FUNC(TEXT, __swap)
     push {r3}
 #endif
     push {lr}
-    bl read_systick_start_of_swap
+    bl read_timer_start_of_swap
 #if defined(CONFIG_ARMV6_M)
     pop {r3}
     mov lr,r3

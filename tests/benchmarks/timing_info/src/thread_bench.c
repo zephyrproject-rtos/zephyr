@@ -15,28 +15,27 @@
 #include <tc_util.h>
 #include <ksched.h>
 #include "timing_info.h"
-
 char sline[256];
 /* FILE *output_file = stdout; */
 
 /* location of the time stamps*/
-u32_t __read_swap_end_tsc_value;
-u64_t __common_var_swap_end_tsc;
+u32_t __read_swap_end_time_value;
+u64_t __common_var_swap_end_time;
 
-volatile u64_t thread_abort_end_tsc;
-volatile u64_t thread_abort_start_tsc;
+volatile u64_t thread_abort_end_time;
+volatile u64_t thread_abort_start_time;
 
 /* Thread suspend*/
-volatile u64_t thread_suspend_start_tsc;
-volatile u64_t thread_suspend_end_tsc;
+volatile u64_t thread_suspend_start_time;
+volatile u64_t thread_suspend_end_time;
 
 /* Thread resume*/
-volatile u64_t thread_resume_start_tsc;
-volatile u64_t thread_resume_end_tsc;
+volatile u64_t thread_resume_start_time;
+volatile u64_t thread_resume_end_time;
 
 /* Thread sleep*/
-volatile u64_t thread_sleep_start_tsc;
-volatile u64_t thread_sleep_end_tsc;
+volatile u64_t thread_sleep_start_time;
+volatile u64_t thread_sleep_end_time;
 
 /*For benchmarking msg queues*/
 k_tid_t producer_tid;
@@ -49,7 +48,7 @@ K_THREAD_STACK_DEFINE(my_stack_area_0, STACK_SIZE);
 struct k_thread my_thread;
 struct k_thread my_thread_0;
 
-u32_t __read_swap_end_tsc_value_test = 1;
+u32_t __read_swap_end_time_value_test = 1;
 u64_t dummy_time;
 u64_t start_time;
 u64_t test_end_time;
@@ -69,9 +68,9 @@ u32_t benchmarking_overhead_swap(void)
 		"rdtsc\n\t"
 		"mov %eax,start_time\n\t"
 		"mov %edx,start_time+4\n\t"
-		"cmp $0x1,__read_swap_end_tsc_value_test\n\t"
+		"cmp $0x1,__read_swap_end_time_value_test\n\t"
 		"jne time_read_not_needed_test\n\t"
-		"movw $0x2,__read_swap_end_tsc_value\n\t"
+		"movw $0x2,__read_swap_end_time_value\n\t"
 		"pushl %eax\n\t"
 		"pushl %edx\n\t"
 		"rdtsc\n\t"
@@ -86,46 +85,49 @@ u32_t benchmarking_overhead_swap(void)
 		"pop %edx\n\t"
 		"pop %eax\n\t");
 
-	/* u64_t end_time = OS_GET_TIME(); */
+	/* u64_t end_time = GET_CURRENT_TIME(); */
 	return(test_end_time - start_time);
 }
 #endif
 
 #if CONFIG_ARM
-void read_systick_start_of_swap(void)
+void read_timer_start_of_swap(void)
 {
-	__start_swap_tsc = (u32_t)SysTick->VAL;
+	__start_swap_time = GET_CURRENT_TIME();
 }
 
-void read_systick_end_of_swap(void)
+void read_timer_end_of_swap(void)
 {
-	if (__read_swap_end_tsc_value == 1) {
-		__read_swap_end_tsc_value = 2;
-		__common_var_swap_end_tsc = OS_GET_TIME();
+	if (__read_swap_end_time_value == 1) {
+		__read_swap_end_time_value = 2;
+		__common_var_swap_end_time = GET_CURRENT_TIME();
 	}
 }
 
-void read_systick_start_of_isr(void)
+/* ARM processors read current value of time through sysTick timer
+ * and nrf soc read it though timer
+ */
+void read_timer_start_of_isr(void)
 {
-	__start_intr_tsc  = (u32_t)SysTick->VAL;
+	__start_intr_time  = (u32_t)SysTick->VAL;
 }
 
-void read_systick_end_of_isr(void)
+void read_timer_end_of_isr(void)
 {
-	__end_intr_tsc  = (u32_t)SysTick->VAL;
+	__end_intr_time  = (u32_t)SysTick->VAL;
 }
 
-void read_systick_start_of_tick_handler(void)
+void read_timer_start_of_tick_handler(void)
 {
-	__start_tick_tsc  = (u32_t)SysTick->VAL;
+	__start_tick_time  = (u32_t)SysTick->VAL;
 }
 
-void read_systick_end_of_tick_handler(void)
+void read_timer_end_of_tick_handler(void)
 {
-	__end_tick_tsc  = (u32_t)SysTick->VAL;
+	 __end_tick_time  = (u32_t)SysTick->VAL;
 }
 
-#endif
+#endif /* CONFIG_ARM */
 
 
 
@@ -139,8 +141,8 @@ void test_thread_entry(void *p, void *p1, void *p2)
 
 void thread_swap_test(void *p1, void *p2, void *p3)
 {
-	__read_swap_end_tsc_value = 1;
-	thread_abort_start_tsc = OS_GET_TIME();
+	__read_swap_end_time_value = 1;
+	thread_abort_start_time = GET_CURRENT_TIME();
 	k_thread_abort(_current);
 }
 
@@ -157,14 +159,14 @@ void system_thread_bench(void)
 	u64_t total_tick_time;
 
 	/*Thread create*/
-	u64_t thread_create_start_tsc;
-	u64_t thread_create_end_tsc;
+	u64_t thread_create_start_time;
+	u64_t thread_create_end_time;
 
 	DECLARE_VAR(thread, create)
 
 	/*Thread cancel*/
-	u64_t thread_cancel_start_tsc;
-	u64_t thread_cancel_end_tsc;
+	u64_t thread_cancel_start_time;
+	u64_t thread_cancel_end_time;
 	DECLARE_VAR(thread, cancel)
 
 	/* Thread Abort*/
@@ -183,38 +185,37 @@ void system_thread_bench(void)
 			NULL, NULL, NULL,
 			-1 /*priority*/, 0, 0);
 
-	thread_abort_end_tsc = (__common_var_swap_end_tsc);
-	__end_swap_tsc = __common_var_swap_end_tsc;
+	thread_abort_end_time = (__common_var_swap_end_time);
+	__end_swap_time = __common_var_swap_end_time;
 
 
-	u32_t total_swap_cycles = __end_swap_tsc -
-				     SUBTRACT_CLOCK_CYCLES(__start_swap_tsc);
+	u32_t total_swap_cycles = __end_swap_time -
+				     SUBTRACT_CLOCK_CYCLES(__start_swap_time);
 
 	/* Interrupt latency*/
-	total_intr_time = SYS_CLOCK_HW_CYCLES_TO_NS(__end_intr_tsc -
-						    __start_intr_tsc);
+	total_intr_time = CYCLES_TO_NS(__end_intr_time -
+						    __start_intr_time);
 
 	/* tick overhead*/
-	total_tick_time = SYS_CLOCK_HW_CYCLES_TO_NS(__end_tick_tsc -
-						    __start_tick_tsc);
+	total_tick_time = CYCLES_TO_NS(__end_tick_time -
+						    __start_tick_time);
 
 	/*******************************************************************/
 	/* thread create*/
-	thread_create_start_tsc = OS_GET_TIME();
+	thread_create_start_time = GET_CURRENT_TIME();
 
 	k_tid_t my_tid = k_thread_create(&my_thread, my_stack_area,
 					 STACK_SIZE,
 					 thread_swap_test,
 					 NULL, NULL, NULL,
 					 5 /*priority*/, 0, 10);
-
-	thread_create_end_tsc = OS_GET_TIME();
+	thread_create_end_time = GET_CURRENT_TIME();
 
 	/* thread Termination*/
-	thread_cancel_start_tsc = OS_GET_TIME();
+	thread_cancel_start_time = GET_CURRENT_TIME();
 	s32_t ret_value_thread_cancel  = k_thread_cancel(my_tid);
 
-	thread_cancel_end_tsc = OS_GET_TIME();
+	thread_cancel_end_time = GET_CURRENT_TIME();
 	ARG_UNUSED(ret_value_thread_cancel);
 
 	/* Thread suspend*/
@@ -224,7 +225,7 @@ void system_thread_bench(void)
 					      NULL, NULL, NULL,
 					      -1 /*priority*/, 0, 0);
 
-	thread_suspend_end_tsc = OS_GET_TIME();
+	thread_suspend_end_time = GET_CURRENT_TIME();
 	/* At this point test for resume*/
 	k_thread_resume(sus_res_tid);
 
@@ -241,61 +242,60 @@ void system_thread_bench(void)
 	CALCULATE_TIME(, thread, suspend)
 
 	/* calculation for resume */
-	thread_resume_start_tsc = thread_suspend_end_tsc;
+	thread_resume_start_time = thread_suspend_end_time;
 	CALCULATE_TIME(, thread, resume)
 
 	/*******************************************************************/
 
 	/* Only print lower 32bit of time result */
-
-	PRINT_F("Context switch",
+	PRINT_STATS("Context switch",
 		(u32_t)(total_swap_cycles & 0xFFFFFFFFULL),
-		(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(total_swap_cycles));
+		(u32_t) CYCLES_TO_NS(total_swap_cycles));
 
 	/*TC_PRINT("Swap Overhead:%d cycles\n", benchmarking_overhead_swap());*/
 
 	/*Interrupt latency */
-	u32_t intr_latency_cycles = SUBTRACT_CLOCK_CYCLES(__end_intr_tsc) -
-				       SUBTRACT_CLOCK_CYCLES(__start_intr_tsc);
+	u32_t intr_latency_cycles = SUBTRACT_CLOCK_CYCLES(__end_intr_time) -
+				       SUBTRACT_CLOCK_CYCLES(__start_intr_time);
 
-	PRINT_F("Interrupt latency",
+	PRINT_STATS("Interrupt latency",
 		(u32_t)(intr_latency_cycles),
-		(u32_t) (SYS_CLOCK_HW_CYCLES_TO_NS(intr_latency_cycles)));
+		(u32_t) (CYCLES_TO_NS(intr_latency_cycles)));
 
 	/*tick overhead*/
-	u32_t tick_overhead_cycles =  SUBTRACT_CLOCK_CYCLES(__end_tick_tsc) -
-					SUBTRACT_CLOCK_CYCLES(__start_tick_tsc);
-	PRINT_F("Tick overhead",
+	u32_t tick_overhead_cycles =  SUBTRACT_CLOCK_CYCLES(__end_tick_time) -
+				SUBTRACT_CLOCK_CYCLES(__start_tick_time);
+	PRINT_STATS("Tick overhead",
 		(u32_t)(tick_overhead_cycles),
-		(u32_t) (SYS_CLOCK_HW_CYCLES_TO_NS(tick_overhead_cycles)));
+		(u32_t) (CYCLES_TO_NS(tick_overhead_cycles)));
 
 	/*thread creation*/
-	PRINT_F("Thread Creation",
-		(u32_t)((thread_create_end_tsc - thread_create_start_tsc) &
+	PRINT_STATS("Thread Creation",
+		(u32_t)((thread_create_end_time - thread_create_start_time) &
 			   0xFFFFFFFFULL),
-		(u32_t) (total_thread_create_time  & 0xFFFFFFFFULL));
+		(u32_t) ((total_thread_create_time) & 0xFFFFFFFFULL));
 
 	/*thread cancel*/
-	PRINT_F("Thread cancel",
-		(u32_t)((thread_cancel_end_tsc - thread_cancel_start_tsc) &
+	PRINT_STATS("Thread cancel",
+		(u32_t)((thread_cancel_end_time - thread_cancel_start_time) &
 			   0xFFFFFFFFULL),
 		(u32_t) (total_thread_cancel_time  & 0xFFFFFFFFULL));
 
 	/*thread abort*/
-	PRINT_F("Thread abort",
-		(u32_t)((thread_abort_end_tsc - thread_abort_start_tsc) &
+	PRINT_STATS("Thread abort",
+		(u32_t)((thread_abort_end_time - thread_abort_start_time) &
 			   0xFFFFFFFFULL),
 		(u32_t) (total_thread_abort_time  & 0xFFFFFFFFULL));
 
 	/*thread suspend*/
-	PRINT_F("Thread Suspend",
-		(u32_t)((thread_suspend_end_tsc - thread_suspend_start_tsc) &
+	PRINT_STATS("Thread Suspend",
+		(u32_t)((thread_suspend_end_time - thread_suspend_start_time) &
 			   0xFFFFFFFFULL),
 		(u32_t) (total_thread_suspend_time  & 0xFFFFFFFFULL));
 
 	/*thread resume*/
-	PRINT_F("Thread Resume",
-		(u32_t)((thread_resume_end_tsc - thread_suspend_end_tsc)
+	PRINT_STATS("Thread Resume",
+		(u32_t)((thread_resume_end_time - thread_suspend_end_time)
 			   & 0xFFFFFFFFULL),
 		(u32_t) (total_thread_resume_time  & 0xFFFFFFFFULL));
 
@@ -304,11 +304,11 @@ void system_thread_bench(void)
 
 void thread_suspend_test(void *p1, void *p2, void *p3)
 {
-	thread_suspend_start_tsc = OS_GET_TIME();
+	thread_suspend_start_time = GET_CURRENT_TIME();
 	k_thread_suspend(_current);
 
 	/* comes to this line once its resumed*/
-	thread_resume_end_tsc = OS_GET_TIME();
+	thread_resume_end_time = GET_CURRENT_TIME();
 
 	/* k_thread_suspend(_current); */
 }
@@ -316,38 +316,38 @@ void thread_suspend_test(void *p1, void *p2, void *p3)
 void heap_malloc_free_bench(void)
 {
 	/* heap malloc*/
-	u64_t heap_malloc_start_tsc = 0;
-	u64_t heap_malloc_end_tsc = 0;
+	u64_t heap_malloc_start_time = 0;
+	u64_t heap_malloc_end_time = 0;
 
 	/* heap free*/
-	u64_t heap_free_start_tsc = 0;
-	u64_t heap_free_end_tsc = 0;
+	u64_t heap_free_start_time = 0;
+	u64_t heap_free_end_time = 0;
 
 	s32_t count = 0;
 	u32_t sum_malloc = 0;
 	u32_t sum_free = 0;
 
 	while (count++ != 100) {
-		heap_malloc_start_tsc = OS_GET_TIME();
+		heap_malloc_start_time = GET_CURRENT_TIME();
 		void *allocated_mem = k_malloc(10);
 
-		heap_malloc_end_tsc = OS_GET_TIME();
+		heap_malloc_end_time = GET_CURRENT_TIME();
 		if (allocated_mem == NULL) {
 			TC_PRINT("\n Malloc failed at count %d\n", count);
 			break;
 		}
-		heap_free_start_tsc = OS_GET_TIME();
+		heap_free_start_time = GET_CURRENT_TIME();
 		k_free(allocated_mem);
-		heap_free_end_tsc = OS_GET_TIME();
-		sum_malloc += heap_malloc_end_tsc - heap_malloc_start_tsc;
-		sum_free += heap_free_end_tsc - heap_free_start_tsc;
+		heap_free_end_time = GET_CURRENT_TIME();
+		sum_malloc += heap_malloc_end_time - heap_malloc_start_time;
+		sum_free += heap_free_end_time - heap_free_start_time;
 	}
 
-	PRINT_F("Heap Malloc",
+	PRINT_STATS("Heap Malloc",
 		(u32_t)((sum_malloc / count) & 0xFFFFFFFFULL),
-		(u32_t)(SYS_CLOCK_HW_CYCLES_TO_NS(sum_malloc / count)));
-	PRINT_F("Heap Free",
+		(u32_t)(CYCLES_TO_NS(sum_malloc / count)));
+	PRINT_STATS("Heap Free",
 		(u32_t)((sum_free / count) & 0xFFFFFFFFULL),
-		(u32_t)(SYS_CLOCK_HW_CYCLES_TO_NS(sum_free / count)));
+		(u32_t)(CYCLES_TO_NS(sum_free / count)));
 
 }
