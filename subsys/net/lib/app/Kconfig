@@ -172,13 +172,13 @@ config NET_APP_MY_IPV4_NETMASK
 	string "My IPv4 netmask"
 	default "255.255.255.0"
 	help
-	  Static netmask to use if not overriden by DHCP. Use empty value to
+	  Static netmask to use if not overridden by DHCP. Use empty value to
 	  skip setting static value.
 
 config NET_APP_MY_IPV4_GW
 	string "My IPv4 gateway"
 	help
-	  Static gateway to use if not overriden by DHCP. Use empty value to
+	  Static gateway to use if not overridden by DHCP. Use empty value to
 	  skip setting static value.
 
 config NET_APP_PEER_IPV4_ADDR

@@ -37,8 +37,8 @@ config LWM2M_IPSO_LIGHT_CONTROL
 	help
 	  This Object is used to control a light source, such as a LED or other
 	  light. It allows a light to be turned on or off and its dimmer
-	  setting to be controlled as a % between 0 and 100. An optional colour
-	  setting enables a string to be used to indicate the desired colour.
+	  setting to be controlled as a % between 0 and 100. An optional color
+	  setting enables a string to be used to indicate the desired color.
 
 config LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
 	int "Maximum # of IPSO Light Control object instances"
