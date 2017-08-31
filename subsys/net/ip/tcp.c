@@ -686,6 +686,20 @@ const char *net_tcp_state_str(enum net_tcp_state state)
 	return "";
 }
 
+/* This one just queues the packet and nothing else */
+void net_tcp_queue_pkt(struct net_context *context, struct net_pkt *pkt)
+{
+	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
+
+	/* We need to restart retry_timer if it is stopped. */
+	if (k_timer_remaining_get(&context->tcp->retry_timer) == 0) {
+		k_timer_start(&context->tcp->retry_timer,
+			      retry_timeout(context->tcp), 0);
+	}
+
+	do_ref_if_needed(context->tcp, pkt);
+}
+
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 {
 	struct net_conn *conn = (struct net_conn *)context->conn_handler;
@@ -708,15 +722,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	net_stats_update_tcp_sent(data_len);
 
-	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
-
-	/* We need to restart retry_timer if it is stopped. */
-	if (k_timer_remaining_get(&context->tcp->retry_timer) == 0) {
-		k_timer_start(&context->tcp->retry_timer,
-			      retry_timeout(context->tcp), 0);
-	}
-
-	do_ref_if_needed(context->tcp, pkt);
+	net_tcp_queue_pkt(context, pkt);
 
 	return 0;
 }
