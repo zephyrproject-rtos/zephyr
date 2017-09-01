@@ -27,6 +27,7 @@ set(KERNEL_BIN_NAME   ${KERNEL_NAME}.bin)
 set(KERNEL_HEX_NAME   ${KERNEL_NAME}.hex)
 set(KERNEL_MAP_NAME   ${KERNEL_NAME}.map)
 set(KERNEL_LST_NAME   ${KERNEL_NAME}.lst)
+set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat) # TODO: Port this
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 
@@ -429,6 +430,7 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
   COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_HEX_NAME}
   COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
+  COMMAND ${CMAKE_OBJCOPY} --srec-len 1 --output-target=srec               ${KERNEL_ELF_NAME}    ${KERNEL_S19_NAME}
   COMMAND ${CMAKE_OBJDUMP} -S                                              ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
   COMMAND ${CMAKE_STRIP}   --strip-all                                     ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
   COMMENT "Generating zephyr.{hex,bin,lst,strip} from zephyr.elf"
