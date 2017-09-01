@@ -81,7 +81,7 @@
 
 struct observe_node {
 	sys_snode_t node;
-	struct net_app_ctx *net_app_ctx;
+	struct lwm2m_ctx *ctx;
 	struct lwm2m_obj_path path;
 	u8_t  token[8];
 	s64_t event_timestamp;
@@ -226,7 +226,7 @@ static int engine_add_observer(struct net_app_ctx *app_ctx,
 
 	/* make sure this observer doesn't exist already */
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
-		if (obs->net_app_ctx == app_ctx &&
+		if (&obs->ctx->net_app_ctx == app_ctx &&
 		    memcmp(&obs->path, path, sizeof(*path)) == 0) {
 			/* quietly update the token information */
 			memcpy(obs->token, token, tkl);
@@ -255,7 +255,8 @@ static int engine_add_observer(struct net_app_ctx *app_ctx,
 
 	/* copy the values and add it to the list */
 	observe_node_data[i].used = true;
-	observe_node_data[i].net_app_ctx = app_ctx;
+	observe_node_data[i].ctx = CONTAINER_OF(app_ctx,
+						struct lwm2m_ctx, net_app_ctx);
 	memcpy(&observe_node_data[i].path, path, sizeof(*path));
 	memcpy(observe_node_data[i].token, token, tkl);
 	observe_node_data[i].tkl = tkl;
@@ -2444,12 +2445,9 @@ static int generate_notify_message(struct observe_node *obs,
 	struct lwm2m_output_context out;
 	struct lwm2m_engine_context context;
 	struct lwm2m_obj_path path;
-	struct lwm2m_ctx *client_ctx;
 	int ret = 0;
 
-	client_ctx = CONTAINER_OF(obs->net_app_ctx,
-				  struct lwm2m_ctx, net_app_ctx);
-	if (!client_ctx) {
+	if (!obs->ctx) {
 		SYS_LOG_ERR("observer has no valid LwM2M ctx!");
 		return -EINVAL;
 	}
@@ -2472,7 +2470,7 @@ static int generate_notify_message(struct observe_node *obs,
 		    obs->path.level,
 		    sprint_token(obs->token, obs->tkl),
 		    lwm2m_sprint_ip_addr(
-				&obs->net_app_ctx->default_ctx->remote),
+				&obs->ctx->net_app_ctx.default_ctx->remote),
 		    k_uptime_get());
 
 	obj_inst = get_engine_obj_inst(obs->path.obj_id,
@@ -2484,7 +2482,7 @@ static int generate_notify_message(struct observe_node *obs,
 		return -EINVAL;
 	}
 
-	ret = lwm2m_init_message(obs->net_app_ctx, out.out_zpkt, &pkt,
+	ret = lwm2m_init_message(&obs->ctx->net_app_ctx, out.out_zpkt, &pkt,
 				 ZOAP_TYPE_CON, ZOAP_RESPONSE_CODE_CONTENT,
 				 0, obs->token, obs->tkl);
 	if (ret) {
@@ -2523,13 +2521,13 @@ static int generate_notify_message(struct observe_node *obs,
 		goto cleanup;
 	}
 
-	pending = lwm2m_init_message_pending(client_ctx, out.out_zpkt);
+	pending = lwm2m_init_message_pending(obs->ctx, out.out_zpkt);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
 	}
 
-	reply = zoap_reply_next_unused(client_ctx->replies,
+	reply = zoap_reply_next_unused(obs->ctx->replies,
 				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (!reply) {
 		SYS_LOG_ERR("No resources for waiting for replies.");
@@ -2540,7 +2538,7 @@ static int generate_notify_message(struct observe_node *obs,
 	zoap_reply_init(reply, &request);
 	reply->reply = notify_message_reply_cb;
 
-	ret = lwm2m_udp_sendto(obs->net_app_ctx, pkt);
+	ret = lwm2m_udp_sendto(&obs->ctx->net_app_ctx, pkt);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
@@ -2548,7 +2546,7 @@ static int generate_notify_message(struct observe_node *obs,
 	SYS_LOG_DBG("NOTIFY MSG: SENT");
 
 	zoap_pending_cycle(pending);
-	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
+	k_delayed_work_submit(&obs->ctx->retransmit_work, pending->timeout);
 	return ret;
 
 cleanup:
