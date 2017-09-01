@@ -397,8 +397,8 @@ function(zephyr_library_compile_definitions_ifdef feature_toggle item)
   endif()
 endfunction()
 
-# 1.2. *_ifndef
-# See 1.1 *_ifdef
+# 3.2. *_ifndef
+# See 3.1 *_ifdef
 function(set_ifndef variable value)
   if(NOT ${variable})
     set(${variable} ${value} PARENT_SCOPE)
