@@ -4,6 +4,6 @@ sample:
 tests:
 -   test:
         build_only: true
-        platform_whitelist: arduino_101_sss quark_d2000_crb
-            arduino_due
+        platform_whitelist: arduino_101_sss quark_d2000_crb arduino_due
         tags: drivers
+        min_flash: 33
