@@ -29,6 +29,12 @@ config LWM2M_ENGINE_STACK_SIZE
 	 Set the stack size for the LWM2M library engine (used for handling
 	 OBSERVE and NOTIFY events)
 
+config LWM2M_ENGINE_MAX_MESSAGES
+	int "LWM2M engine max. message object"
+	default 5
+	help
+	  Set the maximum message objects for the LWM2M library client
+
 config LWM2M_ENGINE_MAX_PENDING
 	int "LWM2M engine max. pending objects"
 	default 5

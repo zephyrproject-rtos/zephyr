@@ -32,6 +32,13 @@
 #define NOTIFY_OBSERVER(o, i, r)	lwm2m_notify_observer(o, i, r)
 #define NOTIFY_OBSERVER_PATH(path)	lwm2m_notify_observer_path(path)
 
+/* Use this value to skip token generation in an lwm2m_msg */
+#define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
+
+/* Establish a request handler callback type */
+typedef int (*udp_request_handler_cb_t)(struct zoap_packet *request,
+					struct lwm2m_message *msg);
+
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
 int lwm2m_notify_observer(u16_t obj_id, u16_t obj_inst_id, u16_t res_id);
@@ -48,14 +55,14 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    u8_t *created);
 
-int lwm2m_init_message(struct net_app_ctx *app_ctx, struct zoap_packet *zpkt,
-		       struct net_pkt **pkt, u8_t type, u8_t code, u16_t mid,
-		       const u8_t *token, u8_t tkl);
-struct zoap_pending *lwm2m_init_message_pending(struct lwm2m_ctx *client_ctx,
-						struct zoap_packet *zpkt);
-void lwm2m_init_message_cleanup(struct net_pkt *pkt,
-				struct zoap_pending *pending,
-				struct zoap_reply *reply);
+/* LwM2M message functions */
+struct lwm2m_message *find_msg_from_pending(struct zoap_pending *pending,
+					    struct lwm2m_message *messages,
+					    size_t len);
+struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
+void lwm2m_release_message(struct lwm2m_message *msg);
+int lwm2m_init_message(struct lwm2m_message *msg);
+int lwm2m_send_message(struct lwm2m_message *msg);
 
 u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size);
 
@@ -64,11 +71,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_engine_context *context);
 
-int lwm2m_udp_sendto(struct net_app_ctx *app_ctx, struct net_pkt *pkt);
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
-		       int (*udp_request_handler)(struct net_app_ctx *app_ctx,
-				struct zoap_packet *request,
-				struct zoap_packet *response));
+		       udp_request_handler_cb_t udp_request_handler);
 
 #endif /* LWM2M_ENGINE_H */
