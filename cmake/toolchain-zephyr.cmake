@@ -64,6 +64,12 @@ if("${ARCH}" STREQUAL "arm")
 elseif("${ARCH}" STREQUAL "arc")
   if(CONFIG_SOC_QUARK_SE_C1000_SS)
     set(ARC_CPU quarkse_em)
+  elseif(CONFIG_SOC_EM9D)
+    set(ARC_CPU em4_fpus)
+  elseif(CONFIG_SOC_EM7D)
+    set(ARC_CPU em4_dmips)
+  elseif(CONFIG_SOC_EM11D)
+    set(ARC_CPU em4_fpuda)
   endif()
   set(TOOLCHAIN_C_FLAGS
 	  -mcpu=${ARC_CPU}
