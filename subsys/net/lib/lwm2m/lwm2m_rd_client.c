@@ -94,8 +94,6 @@ enum sm_engine_state {
 struct lwm2m_rd_client_info {
 	u16_t lifetime;
 	struct lwm2m_ctx *ctx;
-	struct sockaddr bs_server;
-	struct sockaddr reg_server;
 	u8_t engine_state;
 	u8_t use_bootstrap;
 	u8_t has_bs_server_info;
@@ -140,24 +138,39 @@ static u8_t get_sm_state(int index)
 	return clients[index].engine_state;
 }
 
-static int find_clients_index(const struct sockaddr *addr,
-				  bool check_bs_server)
+static int find_clients_index(const struct sockaddr *addr)
 {
 	int index = -1, i;
+	struct sockaddr *remote;
 
 	for (i = 0; i < client_count; i++) {
-		if (check_bs_server) {
-			if (memcmp(addr, &clients[i].bs_server,
-				   sizeof(addr)) == 0) {
+		remote = &clients[i].ctx->net_app_ctx.default_ctx->remote;
+		if (clients[i].ctx) {
+			if (remote->sa_family != addr->sa_family) {
+				continue;
+			}
+
+#if defined(CONFIG_NET_IPV6)
+			if (remote->sa_family == AF_INET6 &&
+			    net_ipv6_addr_cmp(&net_sin6(remote)->sin6_addr,
+					      &net_sin6(addr)->sin6_addr) &&
+			    net_sin6(remote)->sin6_port ==
+					net_sin6(addr)->sin6_port) {
 				index = i;
 				break;
 			}
-		} else {
-			if (memcmp(addr, &clients[i].reg_server,
-				   sizeof(addr)) == 0) {
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+			if (remote->sa_family == AF_INET &&
+			    net_ipv4_addr_cmp(&net_sin(remote)->sin_addr,
+					      &net_sin(addr)->sin_addr) &&
+			    net_sin(remote)->sin_port ==
+					net_sin(addr)->sin_port) {
 				index = i;
 				break;
 			}
+#endif
 		}
 	}
 
@@ -189,7 +202,7 @@ static int do_bootstrap_reply_cb(const struct zoap_packet *response,
 		    ZOAP_RESPONSE_CODE_CLASS(code),
 		    ZOAP_RESPONSE_CODE_DETAIL(code));
 
-	index = find_clients_index(from, true);
+	index = find_clients_index(from);
 	if (index < 0) {
 		SYS_LOG_ERR("Bootstrap client index not found.");
 		return 0;
@@ -228,7 +241,7 @@ static int do_registration_reply_cb(const struct zoap_packet *response,
 		    ZOAP_RESPONSE_CODE_CLASS(code),
 		    ZOAP_RESPONSE_CODE_DETAIL(code));
 
-	index = find_clients_index(from, false);
+	index = find_clients_index(from);
 	if (index < 0) {
 		SYS_LOG_ERR("Registration client index not found.");
 		return 0;
@@ -296,7 +309,7 @@ static int do_update_reply_cb(const struct zoap_packet *response,
 		    ZOAP_RESPONSE_CODE_CLASS(code),
 		    ZOAP_RESPONSE_CODE_DETAIL(code));
 
-	index = find_clients_index(from, false);
+	index = find_clients_index(from);
 	if (index < 0) {
 		SYS_LOG_ERR("Registration client index not found.");
 		return 0;
@@ -332,7 +345,7 @@ static int do_deregister_reply_cb(const struct zoap_packet *response,
 		    ZOAP_RESPONSE_CODE_CLASS(code),
 		    ZOAP_RESPONSE_CODE_DETAIL(code));
 
-	index = find_clients_index(from, false);
+	index = find_clients_index(from);
 	if (index < 0) {
 		SYS_LOG_ERR("Registration clients index not found.");
 		return 0;
@@ -389,13 +402,14 @@ static int sm_do_bootstrap(int index)
 	struct net_pkt *pkt = NULL;
 	struct zoap_pending *pending = NULL;
 	struct zoap_reply *reply = NULL;
+	struct net_app_ctx *app_ctx = NULL;
 	int ret = 0;
 
 	if (clients[index].use_bootstrap &&
 	    clients[index].bootstrapped == 0 &&
 	    clients[index].has_bs_server_info) {
-
-		ret = lwm2m_init_message(&clients[index].ctx->net_app_ctx,
+		app_ctx = &clients[index].ctx->net_app_ctx;
+		ret = lwm2m_init_message(app_ctx,
 					 &request, &pkt, ZOAP_TYPE_CON,
 					 ZOAP_METHOD_POST, 0, NULL, 0);
 		if (ret) {
@@ -411,8 +425,7 @@ static int sm_do_bootstrap(int index)
 				query_buffer, strlen(query_buffer));
 
 		pending = lwm2m_init_message_pending(clients[index].ctx,
-						     &request,
-						     &clients[index].bs_server);
+						     &request);
 		if (!pending) {
 			ret = -ENOMEM;
 			goto cleanup;
@@ -431,11 +444,11 @@ static int sm_do_bootstrap(int index)
 
 		/* log the bootstrap attempt */
 		SYS_LOG_DBG("Register ID with bootstrap server [%s] as '%s'",
-			    lwm2m_sprint_ip_addr(&clients[index].bs_server),
+			    lwm2m_sprint_ip_addr(
+				&app_ctx->default_ctx->remote),
 			    query_buffer);
 
-		ret = lwm2m_udp_sendto(&clients[index].ctx->net_app_ctx,
-				       pkt, &clients[index].bs_server);
+		ret = lwm2m_udp_sendto(app_ctx, pkt);
 		if (ret < 0) {
 			SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 				    ret);
@@ -501,6 +514,7 @@ static int sm_bootstrap_done(int index)
 static int sm_send_registration(int index, bool send_obj_support_data,
 				zoap_reply_t reply_cb)
 {
+	struct net_app_ctx *app_ctx = NULL;
 	struct zoap_packet request;
 	struct net_pkt *pkt = NULL;
 	struct zoap_pending *pending = NULL;
@@ -509,9 +523,11 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	u16_t client_data_len, len;
 	int ret = 0;
 
+	app_ctx = &clients[index].ctx->net_app_ctx;
+
 	/* remember the last reg time */
 	clients[index].last_update = k_uptime_get();
-	ret = lwm2m_init_message(&clients[index].ctx->net_app_ctx,
+	ret = lwm2m_init_message(app_ctx,
 				 &request, &pkt, ZOAP_TYPE_CON,
 				 ZOAP_METHOD_POST, 0, NULL, 0);
 	if (ret) {
@@ -564,8 +580,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 		}
 	}
 
-	pending = lwm2m_init_message_pending(clients[index].ctx, &request,
-					     &clients[index].reg_server);
+	pending = lwm2m_init_message_pending(clients[index].ctx, &request);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
@@ -584,10 +599,9 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 
 	/* log the registration attempt */
 	SYS_LOG_DBG("registration sent [%s]",
-		    lwm2m_sprint_ip_addr(&clients[index].reg_server));
+		    lwm2m_sprint_ip_addr(&app_ctx->default_ctx->remote));
 
-	ret = lwm2m_udp_sendto(&clients[index].ctx->net_app_ctx,
-			       pkt, &clients[index].reg_server);
+	ret = lwm2m_udp_sendto(app_ctx, pkt);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 			    ret);
@@ -649,13 +663,16 @@ static int sm_registration_done(int index)
 
 static int sm_do_deregister(int index)
 {
+	struct net_app_ctx *app_ctx = NULL;
 	struct zoap_packet request;
 	struct net_pkt *pkt = NULL;
 	struct zoap_pending *pending = NULL;
 	struct zoap_reply *reply = NULL;
 	int ret;
 
-	ret = lwm2m_init_message(&clients[index].ctx->net_app_ctx,
+	app_ctx = &clients[index].ctx->net_app_ctx;
+
+	ret = lwm2m_init_message(app_ctx,
 				 &request, &pkt, ZOAP_TYPE_CON,
 				 ZOAP_METHOD_DELETE, 0, NULL, 0);
 	if (ret) {
@@ -666,8 +683,7 @@ static int sm_do_deregister(int index)
 			clients[index].server_ep,
 			strlen(clients[index].server_ep));
 
-	pending = lwm2m_init_message_pending(clients[index].ctx, &request,
-					     &clients[index].reg_server);
+	pending = lwm2m_init_message_pending(clients[index].ctx, &request);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
@@ -686,8 +702,7 @@ static int sm_do_deregister(int index)
 
 	SYS_LOG_INF("Deregister from '%s'", clients[index].server_ep);
 
-	ret = lwm2m_udp_sendto(&clients[index].ctx->net_app_ctx,
-			       pkt, &clients[index].reg_server);
+	ret = lwm2m_udp_sendto(app_ctx, pkt);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 			    ret);
@@ -775,49 +790,6 @@ static void lwm2m_rd_client_service(void)
 	}
 }
 
-static bool peer_addr_exist(struct sockaddr *peer_addr)
-{
-	bool ret = false;
-	int i;
-
-	/* look for duplicate peer_addr */
-	for (i = 0; i < client_count; i++) {
-#if defined(CONFIG_NET_IPV6)
-		if (peer_addr->sa_family == AF_INET6 && net_ipv6_addr_cmp(
-				&net_sin6(&clients[i].bs_server)->sin6_addr,
-				&net_sin6(peer_addr)->sin6_addr)) {
-			ret = true;
-			break;
-		}
-
-		if (peer_addr->sa_family == AF_INET6 && net_ipv6_addr_cmp(
-				&net_sin6(&clients[i].reg_server)->sin6_addr,
-				&net_sin6(peer_addr)->sin6_addr)) {
-			ret = true;
-			break;
-		}
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-		if (peer_addr->sa_family == AF_INET && net_ipv4_addr_cmp(
-				&net_sin(&clients[i].bs_server)->sin_addr,
-				&net_sin(peer_addr)->sin_addr)) {
-			ret = true;
-			break;
-		}
-
-		if (peer_addr->sa_family == AF_INET && net_ipv4_addr_cmp(
-				&net_sin(&clients[i].reg_server)->sin_addr,
-				&net_sin(peer_addr)->sin_addr)) {
-			ret = true;
-			break;
-		}
-#endif
-	}
-
-	return ret;
-}
-
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  char *peer_str, u16_t peer_port,
 			  const char *ep_name)
@@ -839,22 +811,10 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 		return -EINVAL;
 	}
 
-	if (peer_addr_exist(&client_ctx->net_app_ctx.default_ctx->remote)) {
-		SYS_LOG_ERR("Remote exists already");
-		ret = -EEXIST;
-		goto cleanup;
-	}
-
 	/* TODO: use server URI data from security */
 	index = client_count;
 	client_count++;
 	clients[index].ctx = client_ctx;
-	memcpy(&clients[index].reg_server,
-	       &client_ctx->net_app_ctx.default_ctx->remote,
-	       sizeof(struct sockaddr));
-	memcpy(&clients[index].bs_server,
-	       &client_ctx->net_app_ctx.default_ctx->remote,
-	       sizeof(struct sockaddr));
 	set_sm_state(index, ENGINE_INIT);
 	strncpy(clients[index].ep_name, ep_name, CLIENT_EP_LEN - 1);
 	SYS_LOG_INF("LWM2M Client: %s", clients[index].ep_name);
