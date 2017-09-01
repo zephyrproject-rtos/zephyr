@@ -18,5 +18,5 @@ zephyr_compile_options(
   -march=${ARCH_FOR_${GCC_M_CPU}}
   )
 
-add_subdirectory(soc/${SOC_PATH})
+add_subdirectory(soc)
 add_subdirectory(core)
