@@ -1,4 +1,4 @@
-# add_subdirectory(atmel/asf)
+add_subdirectory(atmel)
 add_subdirectory(cmsis)
 add_subdirectory(nordic)
 # add_subdirectory(nxp/mcux)
