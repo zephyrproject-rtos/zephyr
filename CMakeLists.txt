@@ -49,8 +49,6 @@ add_library(zephyr_interface INTERFACE)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
-include(dts/dts.cmake)
-
 zephyr_include_directories(
   kernel/include
   arch/${ARCH}/include
@@ -245,6 +243,11 @@ add_subdirectory(subsys)
 add_subdirectory(arch)
 add_subdirectory(drivers)
 add_subdirectory(tests)
+
+# DTS is placed behind ext/ because
+# /home/sebo/zephyr/dts/arm/ti/cc32xx.dtsi depends on include
+# directories from ext/hal/ti/simplelink
+include(dts/dts.cmake)
 
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
