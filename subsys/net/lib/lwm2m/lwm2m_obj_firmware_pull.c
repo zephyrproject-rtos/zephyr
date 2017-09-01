@@ -57,8 +57,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	r = lwm2m_udp_sendto(&firmware_ctx.net_app_ctx,
-			     pending->pkt, &pending->addr);
+	r = lwm2m_udp_sendto(&firmware_ctx.net_app_ctx, pending->pkt);
 	if (r < 0) {
 		return;
 	}
@@ -104,8 +103,7 @@ static int transfer_request(struct zoap_block_context *ctx,
 		goto cleanup;
 	}
 
-	pending = lwm2m_init_message_pending(&firmware_ctx, &request,
-					     &firmware_addr);
+	pending = lwm2m_init_message_pending(&firmware_ctx, &request);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
@@ -126,8 +124,7 @@ static int transfer_request(struct zoap_block_context *ctx,
 	}
 
 	/* send request */
-	ret = lwm2m_udp_sendto(&firmware_ctx.net_app_ctx,
-			       pkt, &firmware_addr);
+	ret = lwm2m_udp_sendto(&firmware_ctx.net_app_ctx, pkt);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
 			    ret);
