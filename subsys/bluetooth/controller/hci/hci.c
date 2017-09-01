@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <string.h>
+#include <version.h>
 
 #include <soc.h>
 #include <toolchain.h>
@@ -1651,12 +1652,13 @@ static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	rp->hw_platform = sys_cpu_to_le16(0);
-	rp->hw_variant = sys_cpu_to_le16(0);
+	rp->hw_platform = BT_HCI_VS_HW_PLAT;
+	rp->hw_variant = BT_HCI_VS_HW_VAR;
+
 	rp->fw_variant = 0;
-	rp->fw_version = 0;
-	rp->fw_revision = sys_cpu_to_le16(0);
-	rp->fw_build = sys_cpu_to_le32(0);
+	rp->fw_version = (KERNEL_VERSION_MAJOR & 0xff);
+	rp->fw_revision = KERNEL_VERSION_MINOR;
+	rp->fw_build = (KERNEL_PATCHLEVEL & 0xffff);
 }
 
 static void vs_read_supported_commands(struct net_buf *buf,
