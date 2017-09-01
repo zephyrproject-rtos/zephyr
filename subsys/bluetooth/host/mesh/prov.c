@@ -755,7 +755,7 @@ int bt_mesh_input_string(const char *str)
 		return 0;
 	}
 
-	strncpy(link.auth, str, prov->output_size);
+	strncpy(link.auth, str, prov->input_size);
 
 	if (atomic_test_and_clear_bit(link.flags, SEND_CONFIRM)) {
 		send_confirm();
