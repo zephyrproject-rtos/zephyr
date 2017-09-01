@@ -1,7 +1,3 @@
-zephyr_include_directories(
-  ../include
-)
-
 zephyr_compile_definitions_ifdef(
   CONFIG_SOC_SERIES_NRF51X
   NRF51
