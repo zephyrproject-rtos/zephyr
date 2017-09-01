@@ -35,6 +35,40 @@
 /* Use this value to skip token generation */
 #define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
 
+struct lwm2m_message;
+
+/* Establish a message timeout callback */
+typedef void (*lwm2m_message_timeout_cb_t)(struct lwm2m_message *msg);
+
+/* Internal LwM2M message structure to track in-flight messages. */
+struct lwm2m_message {
+	/** LwM2M context related to this message */
+	struct lwm2m_ctx *ctx;
+
+	/** ZoAP packet data related to this message */
+	struct zoap_packet zpkt;
+
+	/** Message transmission handling for TYPE_CON */
+	struct zoap_pending *pending;
+	struct zoap_reply *reply;
+
+	/** Message configuration */
+	const u8_t *token;
+	zoap_reply_t reply_cb;
+	lwm2m_message_timeout_cb_t message_timeout_cb;
+	u16_t mid;
+	u8_t type;
+	u8_t code;
+	u8_t tkl;
+
+	/** Counter for message re-send / abort handling */
+	u8_t send_attempts;
+};
+
+/* Establish a request handler callback type */
+typedef int (*udp_request_handler_cb_t)(struct zoap_packet *request,
+					struct lwm2m_message *msg);
+
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
 int lwm2m_notify_observer(u16_t obj_id, u16_t obj_inst_id, u16_t res_id);
@@ -51,14 +85,12 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    u8_t *created);
 
-int lwm2m_init_message(struct net_app_ctx *app_ctx, struct zoap_packet *zpkt,
-		       struct net_pkt **pkt, u8_t type, u8_t code, u16_t mid,
-		       const u8_t *token, u8_t tkl);
-struct zoap_pending *lwm2m_init_message_pending(struct lwm2m_ctx *client_ctx,
-						struct zoap_packet *zpkt);
-void lwm2m_init_message_cleanup(struct net_pkt *pkt,
-				struct zoap_pending *pending,
-				struct zoap_reply *reply);
+/* LwM2M message functions */
+struct lwm2m_message *find_msg_from_pending(struct zoap_pending *pending);
+struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
+void lwm2m_release_message(struct lwm2m_message *msg);
+int lwm2m_init_message(struct lwm2m_message *msg);
+int lwm2m_send_message(struct lwm2m_message *msg);
 
 u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size);
 
@@ -67,11 +99,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_engine_context *context);
 
-int lwm2m_udp_sendto(struct net_app_ctx *app_ctx, struct net_pkt *pkt);
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
-		       int (*udp_request_handler)(struct net_app_ctx *app_ctx,
-				struct zoap_packet *request,
-				struct zoap_packet *response));
+		       udp_request_handler_cb_t udp_request_handler);
 
 #endif /* LWM2M_ENGINE_H */

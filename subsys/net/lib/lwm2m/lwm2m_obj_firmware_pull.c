@@ -46,97 +46,64 @@ firmware_udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
 	lwm2m_udp_receive(&firmware_ctx, pkt, true, NULL);
 }
 
-static void retransmit_request(struct k_work *work)
+static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
-	struct zoap_pending *pending;
-	int r;
-
-	pending = zoap_pending_next_to_expire(firmware_ctx.pendings,
-					      CONFIG_LWM2M_ENGINE_MAX_PENDING);
-	if (!pending) {
-		return;
-	}
-
-	r = lwm2m_udp_sendto(&firmware_ctx.net_app_ctx, pending->pkt);
-	if (r < 0) {
-		return;
-	}
-
-	if (!zoap_pending_cycle(pending)) {
-		zoap_pending_clear(pending);
-		return;
-	}
-
-	k_delayed_work_submit(&firmware_ctx.retransmit_work, pending->timeout);
+	/* TODO: Handle timeout */
 }
 
 static int transfer_request(struct zoap_block_context *ctx,
 			    const u8_t *token, u8_t tkl,
 			    zoap_reply_t reply_cb)
 {
-	struct zoap_packet request;
-	struct net_pkt *pkt = NULL;
-	struct zoap_pending *pending = NULL;
-	struct zoap_reply *reply = NULL;
+	struct lwm2m_message *msg;
 	int ret;
 
-	ret = lwm2m_init_message(&firmware_ctx.net_app_ctx, &request, &pkt,
-				 ZOAP_TYPE_CON, ZOAP_METHOD_GET,
-				 0, token, tkl);
+	msg = lwm2m_get_message(&firmware_ctx);
+	if (!msg) {
+		SYS_LOG_ERR("Unable to get a lwm2m message!");
+		return -ENOMEM;
+	}
+
+	msg->type = ZOAP_TYPE_CON;
+	msg->code = ZOAP_METHOD_GET;
+	msg->mid = 0;
+	msg->token = token;
+	msg->tkl = tkl;
+	msg->reply_cb = reply_cb;
+	msg->message_timeout_cb = do_transmit_timeout_cb;
+
+	ret = lwm2m_init_message(msg);
 	if (ret) {
 		goto cleanup;
 	}
 
 	/* hard code URI path here -- should be pulled from package_uri */
-	ret = zoap_add_option(&request, ZOAP_OPTION_URI_PATH,
+	ret = zoap_add_option(&msg->zpkt, ZOAP_OPTION_URI_PATH,
 			"large-create", sizeof("large-create") - 1);
-	ret = zoap_add_option(&request, ZOAP_OPTION_URI_PATH,
+	ret = zoap_add_option(&msg->zpkt, ZOAP_OPTION_URI_PATH,
 			"1", sizeof("1") - 1);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error adding URI_QUERY 'large'");
 		goto cleanup;
 	}
 
-	ret = zoap_add_block2_option(&request, ctx);
+	ret = zoap_add_block2_option(&msg->zpkt, ctx);
 	if (ret) {
 		SYS_LOG_ERR("Unable to add block2 option.");
 		goto cleanup;
 	}
 
-	pending = lwm2m_init_message_pending(&firmware_ctx, &request);
-	if (!pending) {
-		ret = -ENOMEM;
-		goto cleanup;
-	}
-
-	/* set the reply handler */
-	if (reply_cb) {
-		reply = zoap_reply_next_unused(firmware_ctx.replies,
-					       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
-		if (!reply) {
-			SYS_LOG_ERR("No resources for waiting for replies.");
-			ret = -ENOMEM;
-			goto cleanup;
-		}
-
-		zoap_reply_init(reply, &request);
-		reply->reply = reply_cb;
-	}
-
 	/* send request */
-	ret = lwm2m_udp_sendto(&firmware_ctx.net_app_ctx, pkt);
+	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
-			    ret);
+		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
 	}
 
-	zoap_pending_cycle(pending);
-	k_delayed_work_submit(&firmware_ctx.retransmit_work, pending->timeout);
 	return 0;
 
 cleanup:
-	lwm2m_init_message_cleanup(pkt, pending, reply);
+	lwm2m_release_message(msg);
 	return ret;
 }
 
@@ -299,8 +266,6 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 		firmware_ctx.net_init_timeout = NETWORK_INIT_TIMEOUT;
 		firmware_ctx.net_timeout = NETWORK_CONNECT_TIMEOUT;
 		k_work_init(&firmware_work, firmware_transfer);
-		k_delayed_work_init(&firmware_ctx.retransmit_work,
-				    retransmit_request);
 
 		/* start file transfer work */
 		strncpy(firmware_uri, package_uri, PACKAGE_URI_LEN - 1);
