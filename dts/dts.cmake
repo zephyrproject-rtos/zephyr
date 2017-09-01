@@ -39,7 +39,12 @@ if(CONFIG_HAS_DTS)
     -E ${DTS_SOURCE}
     -o ${BOARD_NAME}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE result_variable
     )
+
+  if(result_variable)
+    message(FATAL_ERROR "Preprocessing ${DTS_SOURCE} failed.")
+  endif()
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
   execute_process(
