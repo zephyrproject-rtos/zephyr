@@ -78,6 +78,9 @@ MEMORY
 }
 #endif
 
+/*  Default entry point:  */
+ENTRY(__start)
+
 SECTIONS
     {
     GROUP_START(ROMABLE_REGION)

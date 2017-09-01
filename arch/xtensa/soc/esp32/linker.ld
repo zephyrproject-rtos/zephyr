@@ -49,6 +49,9 @@ PHDRS
 }
 
 /*  Default entry point:  */
+ENTRY(__start)
+
+/*  Default entry point:  */
 PROVIDE ( _ResetVector = 0x40000400 );
 
 _rom_store_table = 0;
