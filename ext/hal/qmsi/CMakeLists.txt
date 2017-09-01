@@ -11,6 +11,10 @@ if(CONFIG_QMSI_LIBRARY)
   # ALL_LIBS += qmsi
 endif()
 
+if(CONFIG_SOC_QUARK_SE_C1000_SS)
+set(SOC_SERIES quark_se)
+endif()
+
 if(CONFIG_QMSI_BUILTIN)
   zephyr_include_directories(
     include
