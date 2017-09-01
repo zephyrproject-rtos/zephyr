@@ -161,3 +161,5 @@ set(CMAKE_REQUIRED_FLAGS "-nostartfiles -nostdlib --sysroot=${SYSROOT_DIR} -Wl,-
 
 set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/usr/include)
 set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/usr/lib/${NEWLIB_DIR})
+
+set(COMPILER gcc)
