@@ -1784,25 +1784,38 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 		return NULL;
 	}
 
-	clone->frags = net_pkt_copy_all(pkt, 0, timeout);
-	if (!clone->frags) {
-		net_pkt_unref(clone);
-		return NULL;
+	clone->frags = NULL;
+
+	if (pkt->frags) {
+		clone->frags = net_pkt_copy_all(pkt, 0, timeout);
+		if (!clone->frags) {
+			net_pkt_unref(clone);
+			return NULL;
+		}
 	}
 
 	clone->context = pkt->context;
 	clone->token = pkt->token;
 	clone->iface = pkt->iface;
 
-	frag = net_frag_get_pos(clone, net_pkt_ip_hdr_len(pkt), &pos);
+	if (clone->frags) {
+		frag = net_frag_get_pos(clone, net_pkt_ip_hdr_len(pkt), &pos);
 
-	net_pkt_set_appdata(clone, frag->data + pos);
-	net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
+		net_pkt_set_appdata(clone, frag->data + pos);
+		net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
+
+		/* The link header pointers are only usable if there is
+		 * a fragment that we copied because those pointers point
+		 * to start of the fragment which we do not have right now.
+		 */
+		memcpy(&clone->lladdr_src, &pkt->lladdr_src,
+		       sizeof(clone->lladdr_src));
+		memcpy(&clone->lladdr_dst, &pkt->lladdr_dst,
+		       sizeof(clone->lladdr_dst));
+	}
+
 	net_pkt_set_next_hdr(clone, NULL);
 	net_pkt_set_ip_hdr_len(clone, net_pkt_ip_hdr_len(pkt));
-
-	memcpy(&clone->lladdr_src, &pkt->lladdr_src, sizeof(clone->lladdr_src));
-	memcpy(&clone->lladdr_dst, &pkt->lladdr_dst, sizeof(clone->lladdr_dst));
 
 	net_pkt_set_family(clone, net_pkt_family(pkt));
 
