@@ -1,0 +1,2 @@
+add_subdirectory_ifdef(CONFIG_HAS_CC3220SDK cc32xx)
+
