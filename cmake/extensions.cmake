@@ -95,6 +95,14 @@ function(zephyr_cc_option)
   endforeach()
 endfunction()
 
+macro(zephyr_get_include_directories includes)
+  # With cmake 3.8 this should be possible with generator expressions.
+  get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+  foreach(dir ${__l})
+    list(APPEND ${includes} -I${dir})
+  endforeach()
+endmacro()
+
 
 # 2.1 zephyr_library_*
 #
