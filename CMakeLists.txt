@@ -265,11 +265,7 @@ add_custom_command(
 )
 add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
 
-# Get ZEPHYR_INCLUDE for preprocessing, with cmake 3.8 this should be possible with generator expressions.
-get_property(ZEPHYR_INCLUDES_LIST TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-foreach(INCLUDE ${ZEPHYR_INCLUDES_LIST})
-  list(APPEND ZEPHYR_INCLUDES -I${INCLUDE})
-endforeach()
+zephyr_get_include_directories(ZEPHYR_INCLUDES)
 
 # Run the pre-processor on the linker script
 #
