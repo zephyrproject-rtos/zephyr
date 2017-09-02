@@ -968,9 +968,9 @@ $(KERNEL_STAT_NAME): $(KERNEL_BIN_NAME) $(KERNEL_ELF_NAME)
 	@$(READELF) -e $(KERNEL_ELF_NAME) > $@
 
 ram_report: $(KERNEL_STAT_NAME)
-	@$(srctree)/scripts/size_report -r -o $(O)
+	@$(srctree)/scripts/footprint/size_report -r -o $(O)
 rom_report: $(KERNEL_STAT_NAME)
-	@$(srctree)/scripts/size_report -F -o $(O)
+	@$(srctree)/scripts/footprint/size_report -F -o $(O)
 
 zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 
