@@ -53,7 +53,7 @@ if(CREATE_NEW_DOTCONFIG)
   endif()
 
   execute_process(
-    COMMAND ${PREBUILT_HOST_TOOLS}/kconfig/conf
+	  COMMAND ${KCONFIG_CONF}
       --olddefconfig
       ${PROJECT_SOURCE_DIR}/Kconfig
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
@@ -74,7 +74,7 @@ endforeach()
 
 message(STATUS "Generating zephyr/include/generated/autoconf.h")
 execute_process(
-  COMMAND ${PREBUILT_HOST_TOOLS}/kconfig/conf
+	COMMAND ${KCONFIG_CONF}
     --silentoldconfig
     ${PROJECT_SOURCE_DIR}/Kconfig
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
@@ -88,7 +88,7 @@ add_custom_target(menuconfig
       srctree=${PROJECT_SOURCE_DIR}
       KERNELVERSION=${PROJECT_VERSION}
       KCONFIG_CONFIG=${DOTCONFIG}
-        ${PREBUILT_HOST_TOOLS}/kconfig/mconf ${PROJECT_SOURCE_DIR}/Kconfig
+      ${KCONFIG_MCONF} ${PROJECT_SOURCE_DIR}/Kconfig
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
   USES_TERMINAL
 )
