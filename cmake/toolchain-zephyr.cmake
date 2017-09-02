@@ -147,8 +147,10 @@ get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
 set(LIB_INCLUDE_DIR -L${LIBGCC_DIR})
 set(TOOLCHAIN_LIBS gcc)
 
-set(DTC       ${TOOLCHAIN_HOME}/usr/bin/dtc)
-set(QEMU_BIOS ${TOOLCHAIN_HOME}/usr/share/qemu)
+set(DTC       		${TOOLCHAIN_HOME}/usr/bin/dtc)
+set(KCONFIG_CONF       	${TOOLCHAIN_HOME}/usr/bin/conf)
+set(KCONFIG_MCONF      	${TOOLCHAIN_HOME}/usr/bin/mconf)
+set(QEMU_BIOS 		${TOOLCHAIN_HOME}/usr/share/qemu)
 
 if("${ARCH}" STREQUAL "x86")
   set(QEMU ${TOOLCHAIN_HOME}/usr/bin/qemu-system-i386)
