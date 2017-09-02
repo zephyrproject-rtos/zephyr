@@ -1233,7 +1233,7 @@ class TestSuite:
         os.path.join(os.environ['ZEPHYR_BASE'],
                      "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
 
-    def __init__(self, arch_root, testcase_roots, outdir, coverage):
+    def __init__(self, board_root, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
         discards = {}
         self.arches = {}
@@ -1245,7 +1245,7 @@ class TestSuite:
         self.discards = None
         self.coverage = coverage
 
-        arch_root = os.path.abspath(arch_root)
+        board_root = os.path.abspath(board_root)
 
         for testcase_root in testcase_roots:
             testcase_root = os.path.abspath(testcase_root)
@@ -1278,8 +1278,8 @@ class TestSuite:
                                   yaml_path)
                     self.testcases[tc.name] = tc
 
-        debug("Reading platform configuration files under %s..." % arch_root)
-        for dirpath, dirnames, filenames in os.walk(arch_root):
+        debug("Reading platform configuration files under %s..." % board_root)
+        for dirpath, dirnames, filenames in os.walk(board_root):
             for filename in filenames:
                 if filename.endswith(".yaml"):
                     fn = os.path.join(dirpath, filename)
@@ -1858,9 +1858,9 @@ def parse_arguments():
                  "testcase.yaml files under here will be processed. May be "
                  "called multiple times. Defaults to the 'samples' and "
                  "'tests' directories in the Zephyr tree.")
-    parser.add_argument("-A", "--arch-root",
+    parser.add_argument("-A", "--board-root",
             default="%s/boards" % ZEPHYR_BASE,
-            help="Directory to search for arch configuration files. All .yaml "
+            help="Directory to search for board configuration files. All .yaml "
                  "files in the directory will be processed.")
     parser.add_argument("-z", "--size", action="append",
             help="Don't run sanity  checks. Instead, produce a report to "
@@ -2013,7 +2013,7 @@ def main():
         args.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(args.arch_root, args.testcase_root, args.outdir, args.coverage)
+    ts = TestSuite(args.board_root, args.testcase_root, args.outdir, args.coverage)
     discards = ts.apply_filters(args.platform, args.arch, args.tag, args.exclude_tag, args.config,
                                 args.test, args.only_failed, args.all,
                                 args.platform_limit, toolchain, args.extra_args, args.ccache)
