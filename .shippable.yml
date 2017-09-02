@@ -6,11 +6,11 @@ env:
     global:
         - SDK=0.9.1
         - SANITYCHECK_OPTIONS=" --inline-logs -R"
-        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
+        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS}  --load-tests test_file.txt --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
-        - MATRIX_BUILDS="2"
+        - MATRIX_BUILDS="3"
         - MATRIX_BUILDS_EXTRA="3"
     matrix:
         - MATRIX_BUILD="1"
@@ -59,18 +59,15 @@ build:
           ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
           if [ -s modified_boards.args ]; then
-            ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_boards.args || ./scripts/sanitycheck +modified_boards.args --only-failed;
-            cp ./scripts/sanity_chk/last_sanity.xml modified_boards.xml;
+            ./scripts/sanitycheck +modified_boards.args --save-tests test_file.txt
           fi;
           if [ -s modified_tests.args ]; then
-            ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_tests.args || ./scripts/sanitycheck +modified_tests.args --only-failed
-            cp ./scripts/sanity_chk/last_sanity.xml modified_tests.xml;
+            ./scripts/sanitycheck +modified_tests.args --save-tests test_file.txt
           fi;
           rm -f modified_tests.args modified_boards.args;
-      - >
-          if [ "$MATRIX_BUILD" != "3" ]; then
-             ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
-          fi;
+      - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt
+      - ./scripts/sanitycheck  --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
+      - rm test_file.txt
       - ccache -s
     on_failure:
       - rm -rf sanity-out out-2nd-pass
