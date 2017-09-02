@@ -579,7 +579,10 @@ static void queue_fin(struct net_context *ctx)
 		return;
 	}
 
-	net_tcp_queue_pkt(ctx, pkt);
+	ret = net_tcp_send_pkt(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
 }
 
 #endif /* CONFIG_NET_TCP */
