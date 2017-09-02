@@ -185,11 +185,11 @@ if "ZEPHYR_BASE" not in os.environ:
     exit(1)
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
 
-import scl
+from sanity_chk import scl
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
-import expr_parser
+from sanity_chk import expr_parser
 
 VERBOSE = 0
 LAST_SANITY = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
@@ -1064,7 +1064,7 @@ class Platform:
 
     yaml_platform_schema = scl.yaml_load(
         os.path.join(os.environ['ZEPHYR_BASE'],
-                     "scripts", "sanitycheck-platform-schema.yaml"))
+                     "scripts", "sanity_chk", "sanitycheck-platform-schema.yaml"))
 
     def __init__(self, cfile):
         """Constructor.
@@ -1231,7 +1231,7 @@ class TestSuite:
 
     yaml_tc_schema = scl.yaml_load(
         os.path.join(os.environ['ZEPHYR_BASE'],
-                     "scripts", "sanitycheck-tc-schema.yaml"))
+                     "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
 
     def __init__(self, arch_root, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
