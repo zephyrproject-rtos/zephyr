@@ -809,7 +809,6 @@ static inline u32_t ticker_job_insert(struct ticker_instance *instance,
 			}
 
 			if (ticker_collide->ticks_periodic &&
-			    ticker_collide->ticks_periodic &&
 			    skip_collide <= skip &&
 			    ticker_collide->force < ticker->force) {
 				/* dequeue and get the reminder of ticks
