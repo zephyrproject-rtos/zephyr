@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <soc.h>
- #include <arch/arc/v2/mpu/arc_mpu.h>
+#include <soc.h>
+#include <arch/arc/v2/mpu/arc_mpu.h>
 
 static struct arc_mpu_region mpu_regions[] = {
 #if CONFIG_ICCM_SIZE > 0

@@ -20,23 +20,23 @@
 #define DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS
 
 #if defined CONFIG_SOC_PART_NUMBER_SAME70J19
-  #include <same70j19.h>
+#include <same70j19.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70J20
-  #include <same70j20.h>
+#include <same70j20.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70J21
-  #include <same70j21.h>
+#include <same70j21.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70N19
-  #include <same70n19.h>
+#include <same70n19.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70N20
-  #include <same70n20.h>
+#include <same70n20.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70N21
-  #include <same70n21.h>
+#include <same70n21.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70Q19
-  #include <same70q19.h>
+#include <same70q19.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70Q20
-  #include <same70q20.h>
+#include <same70q20.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70Q21
-  #include <same70q21.h>
+#include <same70q21.h>
 #else
   #error Library does not support the specified device.
 #endif

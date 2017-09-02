@@ -22,17 +22,17 @@
 #define DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS
 
 #if defined CONFIG_SOC_PART_NUMBER_SAM3X4C
-  #include <sam3x4c.h>
+#include <sam3x4c.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAM3X4E
-  #include <sam3x4e.h>
+#include <sam3x4e.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAM3X8C
-  #include <sam3x8c.h>
+#include <sam3x8c.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAM3X8E
-  #include <sam3x8e.h>
+#include <sam3x8e.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAM3X8H
-  #include <sam3x8h.h>
+#include <sam3x8h.h>
 #else
-  #error Library does not support the specified device.
+#error Library does not support the specified device.
 #endif
 
 #define ID_UART0   ID_UART
