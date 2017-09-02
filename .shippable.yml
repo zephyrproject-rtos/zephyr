@@ -69,7 +69,7 @@ build:
           rm -f modified_tests.args modified_boards.args;
       - >
           if [ "$MATRIX_BUILD" != "3" ]; then
-             ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${PLATFORMS} ${SANITYCHECK_OPTIONS_RETRY}
+             ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
           fi;
       - ccache -s
     on_failure:
