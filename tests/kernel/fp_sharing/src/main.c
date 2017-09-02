@@ -47,17 +47,17 @@
 #include <zephyr.h>
 
 #if defined(CONFIG_ISA_IA32)
-  #if defined(__GNUC__)
-    #include <float_regs_x86_gcc.h>
-  #else
-    #include <float_regs_x86_other.h>
-  #endif /* __GNUC__ */
+#if defined(__GNUC__)
+#include <float_regs_x86_gcc.h>
+#else
+#include <float_regs_x86_other.h>
+#endif /* __GNUC__ */
 #elif defined(CONFIG_CPU_CORTEX_M4)
-  #if defined(__GNUC__)
-    #include <float_regs_arm_gcc.h>
-  #else
-    #include <float_regs_arm_other.h>
-  #endif /* __GNUC__ */
+#if defined(__GNUC__)
+#include <float_regs_arm_gcc.h>
+#else
+#include <float_regs_arm_other.h>
+#endif /* __GNUC__ */
 #endif
 
 #include <arch/cpu.h>
