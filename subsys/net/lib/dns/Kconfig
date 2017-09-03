@@ -13,6 +13,13 @@ config DNS_RESOLVER
 
 if DNS_RESOLVER
 
+config MDNS_RESOLVER
+	bool "Enable mDNS support"
+	default n
+	help
+	This option enables multicast DNS client side support.
+	See RFC 6762 for details.
+
 config DNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int
 	prompt "Additional DNS buffers"

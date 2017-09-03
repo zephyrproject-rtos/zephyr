@@ -48,6 +48,19 @@ enum dns_query_type {
 #define CONFIG_DNS_NUM_CONCUR_QUERIES 1
 #endif
 
+/* If mDNS is enabled, then add some extra well known multicast servers to the
+ * server list.
+ */
+#if defined(CONFIG_MDNS_RESOLVER)
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+#define MDNS_SERVER_COUNT 2
+#else
+#define MDNS_SERVER_COUNT 1
+#endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
+#else
+#define MDNS_SERVER_COUNT 0
+#endif /* CONFIG_MDNS_RESOLVER */
+
 /**
  * Address info struct is passed to callback that gets all the results.
  */
@@ -114,7 +127,10 @@ struct dns_resolve_context {
 
 		/** Connection to the DNS server */
 		struct net_context *net_ctx;
-	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS];
+
+		/** Is this server mDNS one */
+		bool is_mdns;
+	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + MDNS_SERVER_COUNT];
 
 	/** This timeout is also used when a buffer is required from the
 	 * buffer pools.
