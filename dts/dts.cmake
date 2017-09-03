@@ -30,12 +30,12 @@ if(CONFIG_HAS_DTS)
     -x assembler-with-cpp
     -nostdinc
     ${ZEPHYR_INCLUDES}
-    -I${PROJECT_SOURCE_DIR}/arch/${ARCH}/source_group
+    -I${PROJECT_SOURCE_DIR}/arch/${ARCH}/soc
     -isystem ${PROJECT_SOURCE_DIR}/dts/${ARCH}
     -isystem ${PROJECT_SOURCE_DIR}/dts
     -include ${AUTOCONF_H}
     -I${PROJECT_SOURCE_DIR}/dts/common
-    -I${PROJECT_SOURCE_DIR}/drivers/of/testcase-data
+    -I${PROJECT_SOURCE_DIR}/drivers
     -undef -D__DTS__
     -P
     -E ${DTS_SOURCE}
