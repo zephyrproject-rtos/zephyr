@@ -5,7 +5,6 @@ ccflags-$(CONFIG_PINMUX_QMSI) += -I$(CONFIG_QMSI_INSTALL_PATH)/include
 # Board initialization
 obj-$(CONFIG_PINMUX_MCUX) += pinmux_mcux.o
 obj-$(CONFIG_PINMUX_STM32) += stm32/pinmux_stm32.o
-obj-$(CONFIG_PINMUX_BEETLE) += beetle/pinmux_board_v2m_beetle.o
 obj-$(CONFIG_BOARD_NUCLEO_F103RB) += stm32/pinmux_board_nucleo_f103rb.o
 obj-$(CONFIG_BOARD_STM3210C_EVAL) += stm32/pinmux_board_stm3210c_eval.o
 obj-$(CONFIG_BOARD_NUCLEO_F334R8) += stm32/pinmux_board_nucleo_f334r8.o

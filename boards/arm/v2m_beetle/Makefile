@@ -6,6 +6,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Trick the build system into generating built-in.o even though there
-# are no C files (yet) to compile
-obj- += dummy.o
+obj- += pinmux.o
