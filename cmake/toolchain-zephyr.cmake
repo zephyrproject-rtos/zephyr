@@ -156,18 +156,6 @@ get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
 set(LIB_INCLUDE_DIR -L${LIBGCC_DIR})
 set(TOOLCHAIN_LIBS gcc)
 
-set(DTC       		${TOOLCHAIN_HOME}/usr/bin/dtc)
-if(${SDK_VERSION} VERSION_GREATER "0.9.1")
-  set(KCONFIG_CONF       	${TOOLCHAIN_HOME}/usr/bin/conf)
-  set(KCONFIG_MCONF      	${TOOLCHAIN_HOME}/usr/bin/mconf)
-endif()
-set(QEMU_BIOS 		${TOOLCHAIN_HOME}/usr/share/qemu)
-
-if("${ARCH}" STREQUAL "x86")
-  set(QEMU ${TOOLCHAIN_HOME}/usr/bin/qemu-system-i386)
-else()
-  set(QEMU ${TOOLCHAIN_HOME}/usr/bin/qemu-system-${ARCH})
-endif()
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
