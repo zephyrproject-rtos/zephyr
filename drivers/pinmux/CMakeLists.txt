@@ -18,7 +18,6 @@ zephyr_sources_ifdef(CONFIG_BOARD_STM32F4_DISCO    stm32/pinmux_board_stm32f4_di
 zephyr_sources_ifdef(CONFIG_BOARD_STM32L496G_DISCO stm32/pinmux_board_stm32l496g_disco.c)
 zephyr_sources_ifdef(CONFIG_BOARD_STM32_MINI_A15   stm32/pinmux_board_stm32_mini_a15.c)
 zephyr_sources_ifdef(CONFIG_BOARD_STM32_MIN_DEV    stm32/pinmux_board_stm32_min_dev.c)
-zephyr_sources_ifdef(CONFIG_PINMUX_BEETLE          beetle/pinmux_board_v2m_beetle.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_CC2650          pinmux_cc2650.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_DW              pinmux_dw.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_ESP32           pinmux_esp32.c)
