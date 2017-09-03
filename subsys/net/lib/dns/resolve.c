@@ -25,6 +25,12 @@
 #include <net/dns_resolve.h>
 #include "dns_pack.h"
 
+#define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
+#define SERVER_COUNT (DNS_SERVER_COUNT + MDNS_SERVER_COUNT)
+
+#define MDNS_IPV4_ADDR "224.0.0.251:5353"
+#define MDNS_IPV6_ADDR "[ff02::fb]:5353"
+
 static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
 		     int query_idx,
@@ -104,7 +110,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 
 	memset(ctx, 0, sizeof(*ctx));
 
-	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS && servers[i]; i++) {
+	for (i = 0; i < SERVER_COUNT && servers[i]; i++) {
 		struct sockaddr *addr = &ctx->servers[idx].dns_server;
 
 		memset(addr, 0, sizeof(*addr));
@@ -115,20 +121,49 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 		}
 
 		if (addr->sa_family == AF_INET) {
+			if (net_is_ipv4_addr_mcast(&net_sin(addr)->sin_addr)) {
+				ctx->servers[idx].is_mdns = true;
+			} else {
+				ctx->servers[idx].is_mdns = false;
+			}
+
 			if (net_sin(addr)->sin_port == 0) {
-				net_sin(addr)->sin_port = htons(53);
+				if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
+				    ctx->servers[idx].is_mdns) {
+					/* We only use 5353 as a default port
+					 * if mDNS support is enabled. User can
+					 * override this by defining the port
+					 * in config file.
+					 */
+					net_sin(addr)->sin_port = htons(5353);
+				} else {
+					net_sin(addr)->sin_port = htons(53);
+				}
 			}
 		} else {
+			if (net_is_ipv6_addr_mcast(&net_sin6(addr)->sin6_addr)) {
+				ctx->servers[idx].is_mdns = true;
+			} else {
+				ctx->servers[idx].is_mdns = false;
+			}
+
 			if (net_sin6(addr)->sin6_port == 0) {
-				net_sin6(addr)->sin6_port = htons(53);
+				if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
+				    ctx->servers[idx].is_mdns) {
+					net_sin6(addr)->sin6_port = htons(5353);
+				} else {
+					net_sin6(addr)->sin6_port = htons(53);
+				}
 			}
 		}
+
+		NET_DBG("[%d] %s", i, servers[i]);
 
 		idx++;
 	}
 
-	for (i = 0, count = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS &&
-		     ctx->servers[i].dns_server.sa_family; i++) {
+	for (i = 0, count = 0;
+	     i < SERVER_COUNT && ctx->servers[i].dns_server.sa_family; i++) {
 
 		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
@@ -441,7 +476,7 @@ static void cb_recv(struct net_context *net_ctx,
 			goto free_buf;
 		}
 
-		for (j = 0; j < CONFIG_DNS_RESOLVER_MAX_SERVERS; j++) {
+		for (j = 0; j < SERVER_COUNT; j++) {
 			if (!ctx->servers[j].net_ctx) {
 				continue;
 			}
@@ -528,8 +563,8 @@ static int dns_write(struct dns_resolve_context *ctx,
 	}
 
 	ret = net_context_recv(net_ctx, cb_recv, K_NO_WAIT, ctx);
-	if (ret < 0) {
-		NET_DBG("Couldn't receive from socket (%d)", ret);
+	if (ret < 0 && ret != -EALREADY) {
+		NET_DBG("Could not receive from socket (%d)", ret);
 		net_pkt_unref(pkt);
 		goto quit;
 	}
@@ -613,6 +648,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 	struct sockaddr addr;
 	int ret, i, j = 0;
 	int failure = 0;
+	bool mdns_query = false;
 
 	if (!ctx || !ctx->is_used || !query || !cb) {
 		return -EINVAL;
@@ -697,9 +733,28 @@ try_resolve:
 		NET_DBG("DNS id will be %u", *dns_id);
 	}
 
+	/* If mDNS is enabled, then send .local queries only to multicast
+	 * address.
+	 */
+	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
+		const char *ptr = strrchr(query, '.');
 
-	for (j = 0; j < CONFIG_DNS_RESOLVER_MAX_SERVERS; j++) {
+		/* Note that we memcmp() the \0 here too */
+		if (ptr && !memcmp(ptr, (const void *){ ".local" }, 7)) {
+			mdns_query = true;
+		}
+	}
+
+	for (j = 0; j < SERVER_COUNT; j++) {
 		if (!ctx->servers[j].net_ctx) {
+			continue;
+		}
+
+		/* If mDNS is enabled, then send .local queries only to
+		 * a well known multicast mDNS server address.
+		 */
+		if (IS_ENABLED(CONFIG_MDNS_RESOLVER) && mdns_query &&
+		    !ctx->servers[j].is_mdns) {
 			continue;
 		}
 
@@ -759,7 +814,7 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 		return -ENOENT;
 	}
 
-	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
+	for (i = 0; i < SERVER_COUNT; i++) {
 		if (ctx->servers[i].net_ctx) {
 			net_context_put(ctx->servers[i].net_ctx);
 		}
@@ -776,8 +831,8 @@ struct dns_resolve_context *dns_resolve_get_default(void)
 void dns_init_resolver(void)
 {
 #if defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
-	static const char *dns_servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + 1];
-	int count = CONFIG_DNS_RESOLVER_MAX_SERVERS;
+	static const char *dns_servers[SERVER_COUNT + 1];
+	int count = DNS_SERVER_COUNT;
 	int ret;
 
 	if (count > 5) {
@@ -785,27 +840,27 @@ void dns_init_resolver(void)
 	}
 
 	switch (count) {
-#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 4
+#if DNS_SERVER_COUNT > 4
 	case 5:
 		dns_servers[4] = CONFIG_DNS_SERVER5;
 		/* fallthrough */
 #endif
-#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 3
+#if DNS_SERVER_COUNT > 3
 	case 4:
 		dns_servers[3] = CONFIG_DNS_SERVER4;
 		/* fallthrough */
 #endif
-#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 2
+#if DNS_SERVER_COUNT > 2
 	case 3:
 		dns_servers[2] = CONFIG_DNS_SERVER3;
 		/* fallthrough */
 #endif
-#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 1
+#if DNS_SERVER_COUNT > 1
 	case 2:
 		dns_servers[1] = CONFIG_DNS_SERVER2;
 		/* fallthrough */
 #endif
-#if CONFIG_DNS_RESOLVER_MAX_SERVERS > 0
+#if DNS_SERVER_COUNT > 0
 	case 1:
 		dns_servers[0] = CONFIG_DNS_SERVER1;
 		/* fallthrough */
@@ -814,7 +869,21 @@ void dns_init_resolver(void)
 		break;
 	}
 
-	dns_servers[CONFIG_DNS_RESOLVER_MAX_SERVERS] = NULL;
+#if defined(CONFIG_MDNS_RESOLVER) && (MDNS_SERVER_COUNT > 0)
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+	dns_servers[DNS_SERVER_COUNT + 1] = MDNS_IPV6_ADDR;
+	dns_servers[DNS_SERVER_COUNT] = MDNS_IPV4_ADDR;
+#else /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
+#if defined(CONFIG_NET_IPV6)
+	dns_servers[DNS_SERVER_COUNT] = MDNS_IPV6_ADDR;
+#endif
+#if defined(CONFIG_NET_IPV4)
+	dns_servers[DNS_SERVER_COUNT] = MDNS_IPV4_ADDR;
+#endif
+#endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
+#endif /* MDNS_RESOLVER && MDNS_SERVER_COUNT > 0 */
+
+	dns_servers[SERVER_COUNT] = NULL;
 
 	ret = dns_resolve_init(dns_resolve_get_default(), dns_servers);
 	if (ret < 0) {
