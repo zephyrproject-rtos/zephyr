@@ -8,10 +8,6 @@ set(ARCH_FOR_cortex-m7     armv7e-m    )
 set(ARCH_FOR_cortex-m23    armv8-m.base)
 set(ARCH_FOR_cortex-m33    armv8-m.main)
 
-zephyr_cc_option(
-  -ffunction-sections
-  -fdata-sections
-  )
 zephyr_compile_options(
   -mabi=aapcs
   ${TOOLCHAIN_C_FLAGS}
