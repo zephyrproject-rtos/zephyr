@@ -1,7 +1,3 @@
-zephyr_cc_option(
-  -ffunction-sections
-  -fdata-sections
-  )
 
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr_interface INTERFACE_COMPILE_OPTIONS)

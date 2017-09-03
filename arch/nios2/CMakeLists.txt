@@ -1,10 +1,3 @@
-# Put functions and data in their own binary sections so that ld can
-# garbage collect them
-zephyr_cc_option(
-  -ffunction-sections
-  -fdata-sections
-  )
-
 if(CONFIG_GP_NONE)
 set(gpopt none)
 elseif(CONFIG_GP_LOCAL)
