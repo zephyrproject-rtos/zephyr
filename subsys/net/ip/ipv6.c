@@ -1018,11 +1018,10 @@ ignore_frag_error:
 	}
 
 try_send:
-	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt), nexthop);
+	nbr = nbr_lookup(&net_neighbor.table, NULL, nexthop);
 
-	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s state %s", nbr,
+	NET_DBG("Neighbor lookup %p (%d) addr %s state %s", nbr,
 		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN,
-		net_pkt_iface(pkt),
 		net_sprint_ipv6_addr(nexthop),
 		nbr ? net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state) :
 		"-");
@@ -1544,6 +1543,15 @@ static void nd_reachable_timeout(struct k_work *work)
 	if (!data || !nbr) {
 		NET_DBG("ND reachable timeout but no nbr data "
 			"(nbr %p data %p)", nbr, data);
+		return;
+	}
+
+	if (net_rpl_get_interface() && nbr->iface == net_rpl_get_interface()) {
+		/* The address belongs to RPL network, no need to activate
+		 * full neighbor reachable rules in this case.
+		 * Mark the neighbor always reachable.
+		 */
+		data->state = NET_IPV6_NBR_STATE_REACHABLE;
 		return;
 	}
 

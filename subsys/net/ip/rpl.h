@@ -939,6 +939,12 @@ void net_rpl_global_repair(struct net_route_entry *route);
 bool net_rpl_repair_root(u8_t instance_id);
 
 /**
+ * @brief Get the default RPL interface.
+ *
+ */
+struct net_if *net_rpl_get_interface(void);
+
+/**
  * @brief Update RPL headers in IPv6 packet.
  *
  * @param pkt Network packet.
@@ -1037,6 +1043,10 @@ void net_rpl_init(void);
 #define net_rpl_init(...)
 #define net_rpl_global_repair(...)
 #define net_rpl_update_header(...) 0
+static inline struct net_if *net_rpl_get_interface(void)
+{
+	return NULL;
+}
 #endif /* CONFIG_NET_RPL */
 
 #ifdef __cplusplus
