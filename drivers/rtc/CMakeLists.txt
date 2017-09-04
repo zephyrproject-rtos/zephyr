@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_RTC_QMSI rtc_qmsi.c)
