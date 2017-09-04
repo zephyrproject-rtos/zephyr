@@ -189,6 +189,11 @@ static inline void kw41z_tmr2_disable(void)
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR2CMP_EN_MASK;
 }
 
+static enum ieee802154_hw_caps kw41z_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+}
+
 static int kw41z_cca(struct device *dev)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
@@ -655,15 +660,16 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.iface_api.init	= kw41z_iface_init,
 	.iface_api.send	= ieee802154_radio_send,
 
-	.cca		= kw41z_cca,
-	.set_channel	= kw41z_set_channel,
-	.set_pan_id	= kw41z_set_pan_id,
-	.set_short_addr	= kw41z_set_short_addr,
-	.set_ieee_addr	= kw41z_set_ieee_addr,
-	.set_txpower	= kw41z_set_txpower,
-	.start		= kw41z_start,
-	.stop		= kw41z_stop,
-	.tx		= kw41z_tx,
+	.get_capabilities	= kw41z_get_capabilities,
+	.cca			= kw41z_cca,
+	.set_channel		= kw41z_set_channel,
+	.set_pan_id		= kw41z_set_pan_id,
+	.set_short_addr		= kw41z_set_short_addr,
+	.set_ieee_addr		= kw41z_set_ieee_addr,
+	.set_txpower		= kw41z_set_txpower,
+	.start			= kw41z_start,
+	.stop			= kw41z_stop,
+	.tx			= kw41z_tx,
 };
 
 NET_DEVICE_INIT(kw41z, CONFIG_IEEE802154_KW41Z_DRV_NAME,

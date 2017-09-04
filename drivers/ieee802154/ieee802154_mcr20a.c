@@ -858,6 +858,11 @@ static int mcr20a_set_cca_mode(struct device *dev, u8_t mode)
 	return 0;
 }
 
+static enum ieee802154_hw_caps mcr20a_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+}
+
 /* Note: CCA before TX is enabled by default */
 static int mcr20a_cca(struct device *dev)
 {
@@ -1456,15 +1461,16 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 	.iface_api.init	= mcr20a_iface_init,
 	.iface_api.send	= ieee802154_radio_send,
 
-	.cca		= mcr20a_cca,
-	.set_channel	= mcr20a_set_channel,
-	.set_pan_id	= mcr20a_set_pan_id,
-	.set_short_addr	= mcr20a_set_short_addr,
-	.set_ieee_addr	= mcr20a_set_ieee_addr,
-	.set_txpower	= mcr20a_set_txpower,
-	.start		= mcr20a_start,
-	.stop		= mcr20a_stop,
-	.tx		= mcr20a_tx,
+	.get_capabilities	= mcr20a_get_capabilities,
+	.cca			= mcr20a_cca,
+	.set_channel		= mcr20a_set_channel,
+	.set_pan_id		= mcr20a_set_pan_id,
+	.set_short_addr		= mcr20a_set_short_addr,
+	.set_ieee_addr		= mcr20a_set_ieee_addr,
+	.set_txpower		= mcr20a_set_txpower,
+	.start			= mcr20a_start,
+	.stop			= mcr20a_stop,
+	.tx			= mcr20a_tx,
 };
 
 #if defined(CONFIG_IEEE802154_MCR20A_RAW)

@@ -19,6 +19,11 @@
 extern struct net_pkt *current_pkt;
 extern struct k_sem driver_lock;
 
+static enum ieee802154_hw_caps fake_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+}
+
 static int fake_cca(struct device *dev)
 {
 	return 0;
@@ -139,15 +144,16 @@ static struct ieee802154_radio_api fake_radio_api = {
 	.iface_api.init	= fake_iface_init,
 	.iface_api.send	= ieee802154_radio_send,
 
-	.cca		= fake_cca,
-	.set_channel	= fake_set_channel,
-	.set_pan_id	= fake_set_pan_id,
-	.set_short_addr	= fake_set_short_addr,
-	.set_ieee_addr	= fake_set_ieee_addr,
-	.set_txpower	= fake_set_txpower,
-	.start		= fake_start,
-	.stop		= fake_stop,
-	.tx		= fake_tx,
+	.get_capabilities	= fake_get_capabilities,
+	.cca			= fake_cca,
+	.set_channel		= fake_set_channel,
+	.set_pan_id		= fake_set_pan_id,
+	.set_short_addr		= fake_set_short_addr,
+	.set_ieee_addr		= fake_set_ieee_addr,
+	.set_txpower		= fake_set_txpower,
+	.start			= fake_start,
+	.stop			= fake_stop,
+	.tx			= fake_tx,
 };
 
 NET_DEVICE_INIT(fake, "fake_ieee802154",
