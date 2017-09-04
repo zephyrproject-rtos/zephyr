@@ -1585,6 +1585,15 @@ static void nd_reachable_timeout(struct k_work *work)
 		return;
 	}
 
+	if (net_rpl_get_interface() && nbr->iface == net_rpl_get_interface()) {
+		/* The address belongs to RPL network, no need to activate
+		 * full neighbor reachable rules in this case.
+		 * Mark the neighbor always reachable.
+		 */
+		data->state = NET_IPV6_NBR_STATE_REACHABLE;
+		return;
+	}
+
 	switch (data->state) {
 	case NET_IPV6_NBR_STATE_STATIC:
 		NET_ASSERT_INFO(false, "Static entry shall never timeout");
