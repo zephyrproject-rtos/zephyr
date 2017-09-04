@@ -415,6 +415,7 @@ int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
 
 int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 {
+	int i, ret = 0;
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_obj_inst *obj_inst;
 
@@ -430,11 +431,22 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 
 	engine_unregister_obj_inst(obj_inst);
 	obj->instance_count--;
+
 	if (obj->delete_cb) {
-		return obj->delete_cb(obj_inst_id);
+		ret = obj->delete_cb(obj_inst_id);
 	}
 
-	return 0;
+	/* reset obj_inst and res_inst data structure */
+	for (i = 0; i < obj_inst->resource_count; i++) {
+		memset(obj_inst->resources + i, 0,
+		       sizeof(struct lwm2m_engine_res_inst));
+	}
+
+	memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
+#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
+	engine_trigger_update();
+#endif
+	return ret;
 }
 
 /* utility functions */
@@ -1674,32 +1686,12 @@ static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
 static int lwm2m_delete_handler(struct lwm2m_engine_obj *obj,
 				struct lwm2m_engine_context *context)
 {
-	struct lwm2m_obj_path *path = context->path;
-	struct lwm2m_engine_obj_inst *obj_inst;
-
-	SYS_LOG_DBG(">> DELETE [path:%u/%u/%u(%u)]",
-		path->obj_id, path->obj_inst_id, path->res_id, path->level);
-
-	if (!obj || !context) {
+	if (!context) {
 		return -EINVAL;
 	}
 
-	obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
-	if (!obj_inst) {
-		return -ENOENT;
-	}
-
-	engine_unregister_obj_inst(obj_inst);
-	obj->instance_count--;
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-	engine_trigger_update();
-#endif
-
-	if (obj->delete_cb) {
-		return obj->delete_cb(path->obj_inst_id);
-	}
-
-	return 0;
+	return lwm2m_delete_obj_inst(context->path->obj_id,
+				     context->path->obj_inst_id);
 }
 
 /*
