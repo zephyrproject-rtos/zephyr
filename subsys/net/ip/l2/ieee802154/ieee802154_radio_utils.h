@@ -59,12 +59,19 @@ static inline int tx_packet_fragments(struct net_if *iface,
 				      struct net_pkt *pkt,
 				      ieee802154_radio_tx_frag_t *tx_func)
 {
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	int ret = 0;
 	struct net_buf *frag;
 
 	frag = pkt->frags;
 	while (frag) {
-		ret = tx_func(iface, pkt, frag);
+		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
+		    radio->get_capabilities(iface->dev) & IEEE802154_HW_CSMA) {
+			ret = radio->tx(iface->dev, pkt, frag);
+		} else {
+			ret = tx_func(iface, pkt, frag);
+		}
+
 		if (ret) {
 			break;
 		}
