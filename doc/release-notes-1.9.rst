@@ -97,6 +97,10 @@ Bluetooth
 * Controller roles (Advertiser, Scanner, Master and Slave) separation in
   source code, conditionally includable
 * Flash access cooperation with BLE radio activity
+* Bluetooth Kconfig options have been renamed have the same (consistent)
+  prefix as the Bluetooth APIs, namely BT_* instead of BLUETOOTH_*.
+  Controller Kconfig options have been shortened to use CTLR instead of
+  CONTROLLER.
 
 Build and Infrastructure
 ************************
