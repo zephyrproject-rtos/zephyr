@@ -83,7 +83,7 @@ build:
             ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_boards.args || ./scripts/sanitycheck +modified_boards.args --only-failed;
             cp ./scripts/sanity_chk/last_sanity.xml modified_boards.xml;
           fi;
-          if [ -s modified_tests.args ]; then
+          if [ -s modified_tests.argsXX ]; then
             ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_tests.args || ./scripts/sanitycheck +modified_tests.args --only-failed
             cp ./scripts/sanity_chk/last_sanity.xml modified_tests.xml;
           fi;
