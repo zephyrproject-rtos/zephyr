@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_AIO_COMPARATOR_QMSI aio_comparator_qmsi.c)
