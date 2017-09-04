@@ -62,6 +62,20 @@ enum dns_query_type {
 #define MDNS_SERVER_COUNT 0
 #endif /* CONFIG_MDNS_RESOLVER */
 
+/* If LLMNR is enabled, then add some extra well known multicast servers to the
+ * server list.
+ */
+#if defined(CONFIG_LLMNR_RESOLVER)
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+#define LLMNR_SERVER_COUNT 2
+#else
+#define LLMNR_SERVER_COUNT 1
+#endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
+#else
+#define LLMNR_SERVER_COUNT 0
+#endif /* CONFIG_MDNS_RESOLVER */
+
+#define DNS_MAX_MCAST_SERVERS (MDNS_SERVER_COUNT + LLMNR_SERVER_COUNT)
 /**
  * Address info struct is passed to callback that gets all the results.
  */
@@ -130,8 +144,11 @@ struct dns_resolve_context {
 		struct net_context *net_ctx;
 
 		/** Is this server mDNS one */
-		bool is_mdns;
-	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + MDNS_SERVER_COUNT];
+		u8_t is_mdns : 1;
+
+		/** Is this server LLMNR one */
+		u8_t is_llmnr : 1;
+	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS];
 
 	/** This timeout is also used when a buffer is required from the
 	 * buffer pools.

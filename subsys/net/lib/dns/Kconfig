@@ -20,6 +20,17 @@ config MDNS_RESOLVER
 	  This option enables multicast DNS client side support.
 	  See RFC 6762 for details.
 
+config LLMNR_RESOLVER
+	bool "Enable LLMNR support"
+	default n
+	help
+	  This option enables link local multicast name resolution client side
+	  support. See RFC 4795 for details. LLMNR is typically used by Windows
+	  hosts. If you enable this option, then the DNS requests are ONLY sent
+	  to LLMNR well known multicast address 224.0.0.252:5355 or
+	  [ff02::1:3]:5355 and other DNS server addresses are ignored.
+
+
 config DNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int
 	prompt "Additional DNS buffers"
