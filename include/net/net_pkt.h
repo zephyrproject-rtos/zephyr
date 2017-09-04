@@ -95,6 +95,10 @@ struct net_pkt {
 	u8_t family     : 4;	/* IPv4 vs IPv6 */
 	u8_t _unused    : 3;
 
+#if defined(CONFIG_NET_IPV4)
+	u8_t ipv4_ttl;		/* IPv4 time-to-live for this network packet */
+#endif /* CONFIG_NET_IPV4 */
+
 #if defined(CONFIG_NET_IPV6)
 	u8_t ipv6_hop_limit;	/* IPv6 hop limit for this network packet. */
 	u8_t ipv6_ext_len;	/* length of extension headers */
@@ -331,6 +335,18 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 #define net_pkt_ipv6_ext_len(...) 0
 #define net_pkt_set_ipv6_ext_len(...)
 #endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+static inline u8_t net_pkt_ipv4_ttl(struct net_pkt *pkt)
+{
+	return pkt->ipv4_ttl;
+}
+
+static inline void net_pkt_set_ipv4_ttl(struct net_pkt *pkt, u8_t ttl)
+{
+	pkt->ipv4_ttl = ttl;
+}
+#endif /* CONFIG_NET_IPV4 */
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {
