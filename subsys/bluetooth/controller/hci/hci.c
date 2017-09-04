@@ -1672,12 +1672,12 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	}
 
 	return;
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
-
+#else
 	/* Mark IR as invalid */
 	memset(rp->ir, 0x00, sizeof(rp->ir));
 	/* Mark ER as invalid */
 	memset(rp->er, 0x00, sizeof(rp->er));
+#endif /* CONFIG_SOC_FAMILY_NRF5 */
 }
 
 #endif /* CONFIG_BT_CTLR_HCI_VS_EXT */
