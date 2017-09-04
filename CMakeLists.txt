@@ -63,6 +63,7 @@ zephyr_include_directories(
   ${STDINCLUDE}
 )
 
+
 zephyr_compile_definitions(
   KERNEL
   __ZEPHYR__=1
@@ -268,6 +269,8 @@ add_custom_command(
   DEPENDS offsets
 )
 add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
+
+zephyr_include_directories(${TOOLCHAIN_INCLUDES})
 
 zephyr_get_include_directories(ZEPHYR_INCLUDES)
 
