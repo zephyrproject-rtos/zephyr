@@ -182,6 +182,12 @@ function(zephyr_library_compile_definitions item)
   target_compile_definitions(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
 endfunction()
 
+function(zephyr_library_cc_option)
+  foreach(arg ${ARGV})
+     target_cc_option(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${arg})
+  endforeach()
+endfunction()
+
 # Add the existing CMake library 'library' to the global list of
 # Zephyr CMake libraries. This is done automatically by the
 # constructor but must called explicitly on CMake libraries that do
@@ -361,6 +367,12 @@ endfunction()
 
 function(zephyr_sources_ifdef feature_toggle)
   if(${${feature_toggle}})
+    zephyr_sources(${ARGN})
+  endif()
+endfunction()
+
+function(zephyr_sources_ifndef feature_toggle)
+   if(NOT ${feature_toggle})
     zephyr_sources(${ARGN})
   endif()
 endfunction()
