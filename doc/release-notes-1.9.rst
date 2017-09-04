@@ -15,18 +15,9 @@ Major enhancements planned with this release include:
 * Expand Device Tree support to more architectures
 * BLE Mesh
 * Bluetooth 5.0 Support (all features except Advertising Extensions)
-* Expand LLVM Support to more architectures
 * Revamp Testsuite, Increase Coverage
-* Zephyr SDK NG
-* Eco System: Tracing, debugging support through 3rd party tools
 * Lightweight Machine to Machine (LwM2M) support
-
-These enhancements are planned, but may move out to a future release:
-
-* Thread Protocol (initial drop)
 * MMU/MPU (Cont.): Thread Isolation, Paging
-* Build and Configuration System (CMake)
-
 
 The following sections provide detailed lists of changes by component.
 
