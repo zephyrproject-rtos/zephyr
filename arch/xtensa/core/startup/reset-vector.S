@@ -24,8 +24,8 @@
 	.section		.ResetVector.text, "ax"
 
 	.align	4
-	.global	_ResetVector
-_ResetVector:
+	.global	__start
+__start:
 
 #if (!XCHAL_HAVE_HALT || defined(XTOS_UNPACK)) && XCHAL_HAVE_IMEM_LOADSTORE
 	/*
@@ -39,7 +39,7 @@ _ResetVector:
 	 */
 	j	_ResetHandler
 
-	.size	_ResetVector, . - _ResetVector
+	.size	__start, . - __start
 
 #if XCHAL_HAVE_HALT
 	/*
@@ -692,7 +692,7 @@ unpackdone:
 #if (!XCHAL_HAVE_HALT || defined(XTOS_UNPACK)) && XCHAL_HAVE_IMEM_LOADSTORE
 	.size	_ResetHandler, . - _ResetHandler
 #else
-	.size	_ResetVector, . - _ResetVector
+	.size	__start, . - __start
 #endif
 
 	.text

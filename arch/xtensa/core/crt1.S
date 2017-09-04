@@ -49,11 +49,10 @@
 	.align 4
 
 _start:
-__start:
 	/*
 	 *  _start is typically NOT at the beginning of the text segment --
-	 *  it is always called from either the reset vector or other code
-	 *  that does equivalent initialization (such as crt0-app.S).
+	 *  it is always called from either the reset vector (__start) or other
+	 *  code that does equivalent initialization (such as crt0-app.S).
 	 *
 	 *  Assumptions on entry to _start:
 	 *	- low (level-one) and medium priority interrupts are disabled
