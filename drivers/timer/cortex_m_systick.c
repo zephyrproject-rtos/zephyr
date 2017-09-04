@@ -216,8 +216,8 @@ void _timer_int_handler(void *unused)
 	ARG_UNUSED(unused);
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_systick_start_of_tick_handler(void);
-	read_systick_start_of_tick_handler();
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
@@ -350,8 +350,8 @@ void _timer_int_handler(void *unused)
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_systick_end_of_tick_handler(void);
-	read_systick_end_of_tick_handler();
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
 #endif
 
 	extern void _ExcExit(void);

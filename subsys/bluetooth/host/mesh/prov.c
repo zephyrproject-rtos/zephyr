@@ -479,7 +479,7 @@ static void prov_invite(const u8_t *data)
 	net_buf_simple_add_u8(buf, 0x00);
 
 	/* Static OOB Type */
-	net_buf_simple_add_u8(buf, prov->static_val ? BIT(1) : 0x00);
+	net_buf_simple_add_u8(buf, prov->static_val ? BIT(0) : 0x00);
 
 	/* Output OOB Size */
 	net_buf_simple_add_u8(buf, prov->output_size);
@@ -755,7 +755,7 @@ int bt_mesh_input_string(const char *str)
 		return 0;
 	}
 
-	strncpy(link.auth, str, prov->output_size);
+	strncpy(link.auth, str, prov->input_size);
 
 	if (atomic_test_and_clear_bit(link.flags, SEND_CONFIRM)) {
 		send_confirm();

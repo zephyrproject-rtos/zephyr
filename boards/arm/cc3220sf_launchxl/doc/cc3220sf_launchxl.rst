@@ -99,6 +99,10 @@ For Windows developers, see the `CC3220 Getting Started Guide`_ for
 instructions on installation of tools, and how to flash the board using
 UniFlash.
 
+Note that zephyr.bin produced by the Zephyr SDK may not load via
+UniFlash tool.  If encountering difficulties, use the zephyr.elf
+file and dslite.sh instead.
+
 The following instructions are geared towards Linux developers who
 prefer command line tools to an IDE.
 
@@ -132,8 +136,7 @@ Prerequisites:
 
 #. Ensure CONFIG_XIP=y is set.
 
-   The default board configuration file can be found at
-   :file:`boards/arm/cc3220sf_launchxl/cc3220sf_launchxl_defconfig`.
+   Add a 'CONFIG_XIP=y' line to the project's prj.conf file.
 
    This locates the program into flash, and sets CONFIG_CC3220SF_DEBUG=y,
    which prepends a debug header enabling the flash to persist over

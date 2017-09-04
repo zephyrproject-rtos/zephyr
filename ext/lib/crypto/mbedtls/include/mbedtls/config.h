@@ -56,6 +56,34 @@
 #define MBEDTLS_HAVE_ASM
 
 /**
+ * \def MBEDTLS_NO_UDBL_DIVISION
+ *
+ * The platform lacks support for double-width integer division (64-bit
+ * division on a 32-bit platform, 128-bit division on a 64-bit platform).
+ *
+ * Used in:
+ *      include/mbedtls/bignum.h
+ *      library/bignum.c
+ *
+ * The bignum code uses double-width division to speed up some operations.
+ * Double-width division is often implemented in software that needs to
+ * be linked with the program. The presence of a double-width integer
+ * type is usually detected automatically through preprocessor macros,
+ * but the automatic detection cannot know whether the code needs to
+ * and can be linked with an implementation of division for that type.
+ * By default division is assumed to be usable if the type is present.
+ * Uncomment this option to prevent the use of double-width division.
+ *
+ * Note that division for the native integer type is always required.
+ * Furthermore, a 64-bit type is always required even on a 32-bit
+ * platform, but it need not support multiplication or division. In some
+ * cases it is also desirable to disable some double-width operations. For
+ * example, if double-width division is implemented in software, disabling
+ * it can reduce code size in some embedded targets.
+ */
+//#define MBEDTLS_NO_UDBL_DIVISION
+
+/**
  * \def MBEDTLS_HAVE_SSE2
  *
  * CPU supports SSE2 instruction set.
@@ -163,6 +191,7 @@
 //#define MBEDTLS_PLATFORM_PRINTF_ALT
 //#define MBEDTLS_PLATFORM_SNPRINTF_ALT
 //#define MBEDTLS_PLATFORM_NV_SEED_ALT
+//#define MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT
 
 /**
  * \def MBEDTLS_DEPRECATED_WARNING
@@ -273,9 +302,15 @@
  * of mbedtls_sha1_context, so your implementation of mbedtls_sha1_process must be compatible
  * with this definition.
  *
- * Note: if you use the AES_xxx_ALT macros, then is is recommended to also set
- * MBEDTLS_AES_ROM_TABLES in order to help the linker garbage-collect the AES
- * tables.
+ * \note Because of a signature change, the core AES encryption and decryption routines are
+ *       currently named mbedtls_aes_internal_encrypt and mbedtls_aes_internal_decrypt,
+ *       respectively. When setting up alternative implementations, these functions should
+ *       be overriden, but the wrapper functions mbedtls_aes_decrypt and mbedtls_aes_encrypt
+ *       must stay untouched.
+ *
+ * \note If you use the AES_xxx_ALT macros, then is is recommended to also set
+ *       MBEDTLS_AES_ROM_TABLES in order to help the linker garbage-collect the AES
+ *       tables.
  *
  * Uncomment a macro to enable alternate implementation of the corresponding
  * function.

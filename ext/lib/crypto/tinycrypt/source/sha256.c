@@ -66,7 +66,6 @@ int tc_sha256_update(TCSha256State_t s, const uint8_t *data, size_t datalen)
 {
 	/* input sanity check: */
 	if (s == (TCSha256State_t) 0 ||
-	    s->iv == (unsigned int *) 0 ||
 	    data == (void *) 0) {
 		return TC_CRYPTO_FAIL;
 	} else if (datalen == 0) {
@@ -91,8 +90,7 @@ int tc_sha256_final(uint8_t *digest, TCSha256State_t s)
 
 	/* input sanity check: */
 	if (digest == (uint8_t *) 0 ||
-	    s == (TCSha256State_t) 0 ||
-	    s->iv == (unsigned int *) 0) {
+	    s == (TCSha256State_t) 0) {
 		return TC_CRYPTO_FAIL;
 	}
 

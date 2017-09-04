@@ -260,7 +260,7 @@ fail:
 	return ret;
 }
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 static inline void new_server(struct net_app_ctx *ctx,
 			      const char *server_banner)
 {
@@ -426,7 +426,7 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 	/* Then mbedtls specific initialization */
 	return 0;
 }
-#endif /* CONFIG_NET_APP_TLS */
+#endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 bool net_app_server_enable(struct net_app_ctx *ctx)
 {
@@ -438,7 +438,7 @@ bool net_app_server_enable(struct net_app_ctx *ctx)
 
 	ctx->is_enabled = true;
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 	if (ctx->is_tls) {
 		_net_app_server_tls_enable(ctx);
 	}
@@ -456,7 +456,7 @@ bool net_app_server_disable(struct net_app_ctx *ctx)
 
 	ctx->is_enabled = false;
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 	if (ctx->is_tls) {
 		_net_app_server_tls_disable(ctx);
 	}

@@ -58,18 +58,14 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
 
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
-	__ASSERT(!((u32_t)pStackMem & (STACK_ALIGN - 1)),
-		 "stack is not aligned properly\n"
-		 "%d-byte alignment required\n", STACK_ALIGN);
-
 	char *stackEnd = pStackMem + stackSize;
 	struct __esf *pInitCtx;
 	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 
-	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd) -
-				    sizeof(struct __esf));
+	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
+						     sizeof(struct __esf)));
 
 	pInitCtx->pc = ((u32_t)_thread_entry) & 0xfffffffe;
 	pInitCtx->a1 = (u32_t)pEntry;

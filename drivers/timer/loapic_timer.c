@@ -257,8 +257,8 @@ void _timer_int_handler(void *unused /* parameter is not used */
 		"pushl %eax\n\t"
 		"pushl %edx\n\t"
 		"rdtsc\n\t"
-		"mov %eax, __start_tick_tsc\n\t"
-		"mov %edx, __start_tick_tsc+4\n\t"
+		"mov %eax, __start_tick_time\n\t"
+		"mov %edx, __start_tick_time+4\n\t"
 		"pop %edx\n\t"
 		"pop %eax\n\t");
 #endif
@@ -339,8 +339,8 @@ void _timer_int_handler(void *unused /* parameter is not used */
 		"pushl %eax\n\t"
 		"pushl %edx\n\t"
 		"rdtsc\n\t"
-		"mov %eax, __end_tick_tsc\n\t"
-		"mov %edx, __end_tick_tsc+4\n\t"
+		"mov %eax, __end_tick_time\n\t"
+		"mov %edx, __end_tick_time+4\n\t"
 		"pop %edx\n\t"
 		"pop %eax\n\t");
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
