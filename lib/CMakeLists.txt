@@ -1,1 +1,2 @@
 add_subdirectory(libc)
+add_subdirectory_ifdef(CONFIG_JSON_LIBRARY json)
