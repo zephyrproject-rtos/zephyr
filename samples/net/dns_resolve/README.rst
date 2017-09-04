@@ -17,6 +17,10 @@ The multicast DNS (mDNS) client resolver support can be enabled by setting
 CONFIG_MDNS_RESOLVER Kconfig variable.
 See https://tools.ietf.org/html/rfc6762 for more details about mDNS.
 
+The link-local multicast name resolution (LLMNR) client resolver support can be
+enabled by setting the :option:`CONFIG_LLMNR_RESOLVER` Kconfig option.
+See https://tools.ietf.org/html/rfc4795 for more details about LLMNR.
+
 For more information about DNS configuration variables, see:
 :file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
 :file:`include/net/dns_resolve.h`. The sample code can be found at:
