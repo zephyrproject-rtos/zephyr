@@ -88,7 +88,6 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 	struct sockaddr *local_addr = NULL;
 	socklen_t addr_len = 0;
 	int i = 0, idx = 0;
-	u16_t port = 0;
 	int ret, count;
 
 	if (!ctx) {
@@ -106,177 +105,26 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 	memset(ctx, 0, sizeof(*ctx));
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS && servers[i]; i++) {
-		int j;
-		char *ptr;
+		struct sockaddr *addr = &ctx->servers[idx].dns_server;
 
-		if (*servers[i] == '[') {
-#if defined(CONFIG_NET_IPV6)
-			/* IPv6 address with port number */
-			struct in6_addr *addr;
-			char server[INET6_ADDRSTRLEN + 1];
-			int end;
+		memset(addr, 0, sizeof(*addr));
 
-			ptr = strstr(servers[i], "]:");
-			if (!ptr) {
-				continue;
-			}
-
-			end = min(INET6_ADDRSTRLEN, ptr - (servers[i] + 1));
-			memcpy(server, servers[i] + 1, end);
-			server[end] = '\0';
-
-			addr = &net_sin6(&ctx->servers[idx].dns_server)->
-				sin6_addr;
-
-			ret = net_addr_pton(AF_INET6, server, addr);
-			if (ret < 0 && ret != -EINVAL) {
-				return ret;
-			}
-
-			if (ret == -EINVAL) {
-				continue;
-			}
-
-			port = strtol(ptr + 2, NULL, 10);
-
-			net_sin6(&ctx->servers[idx].dns_server)->sin6_port =
-				htons(port);
-
-			NET_DBG("[%d] IPv6 server %s port %d", idx, server,
-				port);
-
-			ctx->servers[idx++].dns_server.sa_family = AF_INET6;
-#endif /* CONFIG_NET_IPV6 */
-
-			continue;
-		}
-
-		count = j = 0;
-		while (servers[i][j]) {
-			if (servers[i][j] == ':') {
-				count++;
-			}
-
-			j++;
-		}
-
-		if (count == 1) {
-#if defined(CONFIG_NET_IPV4)
-			/* IPv4 address with port number */
-			char server[NET_IPV4_ADDR_LEN + 1];
-			struct in_addr *addr;
-			int end;
-
-			ptr = strstr(servers[i], ":");
-			if (!ptr) {
-				continue;
-			}
-
-			end = min(NET_IPV4_ADDR_LEN, ptr - servers[i]);
-			memcpy(server, servers[i], end);
-			server[end] = '\0';
-
-			addr = &net_sin(&ctx->servers[idx].dns_server)->
-				sin_addr;
-			ret = net_addr_pton(AF_INET, server, addr);
-			if (ret < 0 && ret != -EINVAL) {
-				NET_ERR("Cannot set DNS server %s", server);
-				return ret;
-			}
-
-			if (ret == -EINVAL) {
-				continue;
-			}
-
-			port = strtol(ptr + 1, NULL, 10);
-
-			net_sin(&ctx->servers[idx].dns_server)->sin_port =
-				htons(port);
-
-			NET_DBG("[%d] IPv4 server %s port %d", idx, server,
-				port);
-
-			ctx->servers[idx++].dns_server.sa_family = AF_INET;
-#endif /* CONFIG_NET_IPV4 */
-
-			continue;
-		}
-
-#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
-		/* First try IPv4 address */
-		ret = net_addr_pton(AF_INET, servers[i],
-				    &net_sin(&ctx->servers[idx].dns_server)->
-				    sin_addr);
-		if (ret < 0 && ret != -EINVAL) {
-			return ret;
-		}
-
+		ret = net_ipaddr_parse(servers[i], strlen(servers[i]), addr);
 		if (!ret) {
-			net_sin(&ctx->servers[idx].dns_server)->sin_port =
-				htons(53);
-
-			NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i],
-				53);
-
-			ctx->servers[idx++].dns_server.sa_family = AF_INET;
-
-		} else if (ret == -EINVAL) {
-			/* Then the address must be IPv6 based */
-			ret = net_addr_pton(AF_INET6, servers[i],
-				&net_sin6(&ctx->servers[idx].dns_server)->
-					    sin6_addr);
-			if (ret < 0 && ret != -EINVAL) {
-				return ret;
-			}
-
-			if (ret == -EINVAL) {
-				continue;
-			}
-
-			net_sin6(&ctx->servers[idx].dns_server)->sin6_port =
-				htons(53);
-
-			NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i],
-				53);
-
-			ctx->servers[idx++].dns_server.sa_family = AF_INET6;
-		}
-#endif
-
-#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
-		ret = net_addr_pton(AF_INET, servers[i],
-				    &net_sin(&ctx->servers[idx].dns_server)->
-				    sin_addr);
-		if (ret < 0 && ret != -EINVAL) {
-			return ret;
-		}
-
-		if (ret == -EINVAL) {
 			continue;
 		}
 
-		NET_DBG("[%d] IPv4 server %s port %d", idx, servers[i], 53);
-
-		net_sin(&ctx->servers[idx].dns_server)->sin_port = htons(53);
-		ctx->servers[idx++].dns_server.sa_family = AF_INET;
-#endif /* IPv4 && !IPv6 */
-
-#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
-		ret = net_addr_pton(AF_INET6, servers[i],
-			  &net_sin6(&ctx->servers[idx].dns_server)->sin6_addr);
-		if (ret < 0 && ret != -EINVAL) {
-			return ret;
+		if (addr->sa_family == AF_INET) {
+			if (net_sin(addr)->sin_port == 0) {
+				net_sin(addr)->sin_port = htons(53);
+			}
+		} else {
+			if (net_sin6(addr)->sin6_port == 0) {
+				net_sin6(addr)->sin6_port = htons(53);
+			}
 		}
 
-		if (ret == -EINVAL) {
-			continue;
-		}
-
-		NET_DBG("[%d] IPv6 server %s port %d", idx, servers[i], 53);
-
-		net_sin6(&ctx->servers[idx].dns_server)->sin6_port = htons(53);
-		ctx->servers[idx++].dns_server.sa_family = AF_INET6;
-#endif /* IPv6 && !IPv4 */
+		idx++;
 	}
 
 	for (i = 0, count = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS &&
@@ -762,6 +610,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 {
 	struct net_buf *dns_data;
 	struct net_buf *dns_qname = NULL;
+	struct sockaddr addr;
 	int ret, i, j = 0;
 	int failure = 0;
 
@@ -775,6 +624,36 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		return -EINVAL;
 	}
 
+	ret = net_ipaddr_parse(query, strlen(query), &addr);
+	if (ret) {
+		/* The query name was already in numeric form, no
+		 * need to continue further.
+		 */
+		struct dns_addrinfo info = { 0 };
+
+		if (type == DNS_QUERY_TYPE_A) {
+			memcpy(net_sin(&info.ai_addr), net_sin(&addr),
+			       sizeof(struct sockaddr_in));
+			info.ai_family = AF_INET;
+			info.ai_addr.sa_family = AF_INET;
+			info.ai_addrlen = sizeof(struct sockaddr_in);
+		} else if (type == DNS_QUERY_TYPE_AAAA) {
+			memcpy(net_sin6(&info.ai_addr), net_sin6(&addr),
+			       sizeof(struct sockaddr_in6));
+			info.ai_family = AF_INET6;
+			info.ai_addr.sa_family = AF_INET6;
+			info.ai_addrlen = sizeof(struct sockaddr_in6);
+		} else {
+			goto try_resolve;
+		}
+
+		cb(DNS_EAI_INPROGRESS, &info, user_data);
+		cb(DNS_EAI_ALLDONE, NULL, user_data);
+
+		return 0;
+	}
+
+try_resolve:
 	i = get_cb_slot(ctx);
 	if (i < 0) {
 		return -EAGAIN;

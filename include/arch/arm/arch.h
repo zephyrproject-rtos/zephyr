@@ -42,19 +42,85 @@ extern "C" {
 #include <arch/arm/cortex_m/sys_io.h>
 #include <arch/arm/cortex_m/nmi.h>
 #endif
-#if defined(CONFIG_MPU_STACK_GUARD)
-#define STACK_ALIGN  32
-#else  /* CONFIG_MPU_STACK_GUARD */
-#define STACK_ALIGN  4
+
+
+/**
+ * @brief Declare the STACK_ALIGN_SIZE
+ *
+ * Denotes the required alignment of the stack pointer on public API
+ * boundaries
+ *
+ */
+#ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
+#define STACK_ALIGN_SIZE 8
+#else
+#define STACK_ALIGN_SIZE 4
 #endif
+
+/**
+ * @brief Declare a minimum MPU guard alignment and size
+ *
+ * This specifies the minimum MPU guard alignment/size for the MPU.  This
+ * will be used to denote the guard section of the stack, if it exists.
+ *
+ * One key note is that this guard results in extra bytes being added to
+ * the stack.  APIs which give the stack ptr and stack size will take this
+ * guard size into account.
+ *
+ * Stack is allocated, but initial stack pointer is at the end
+ * (highest address).  Stack grows down to the actual allocation
+ * address (lowest address).  Stack guard, if present, will comprise
+ * the lowest MPU_GUARD_ALIGN_AND_SIZE bytes of the stack.
+ *
+ * As the stack grows down, it will reach the end of the stack when it
+ * encounters either the stack guard region, or the stack allocation
+ * address.
+ *
+ * ----------------------- <---- Stack allocation address + stack size +
+ * |                     |            MPU_GUARD_ALIGN_AND_SIZE
+ * |  Some thread data   | <---- Defined when thread is created
+ * |        ...          |
+ * |---------------------| <---- Actual initial stack ptr
+ * |  Initial Stack Ptr  |       aligned to STACK_ALIGN_SIZE
+ * |        ...          |
+ * |        ...          |
+ * |        ...          |
+ * |        ...          |
+ * |        ...          |
+ * |        ...          |
+ * |        ...          |
+ * |        ...          |
+ * |  Stack Ends         |
+ * |---------------------- <---- Stack Buffer Ptr from API
+ * |  MPU Guard,         |
+ * |     if present      |
+ * ----------------------- <---- Stack Allocation address
+ *
+ */
+#if defined(CONFIG_MPU_STACK_GUARD)
+#define MPU_GUARD_ALIGN_AND_SIZE	32
+#else
+#define MPU_GUARD_ALIGN_AND_SIZE	0
+#endif
+
+/**
+ * @brief Define alignment of a stack buffer
+ *
+ * This is used for two different things:
+ * 1) Used in checks for stack size to be a multiple of the stack buffer
+ *    alignment
+ * 2) Used to determine the alignment of a stack buffer
+ *
+ */
+#define STACK_ALIGN	max(STACK_ALIGN_SIZE, MPU_GUARD_ALIGN_AND_SIZE)
 
 /**
  * @brief Declare a toplevel thread stack memory region
  *
  * This declares a region of memory suitable for use as a thread's stack.
  *
- * This is the generic, historical definition. Align to STACK_ALIGN and put in
- * 'noinit' section so that it isn't zeroed at boot
+ * This is the generic, historical definition. Align to STACK_ALIGN_SIZE and
+ * put in * 'noinit' section so that it isn't zeroed at boot
  *
  * The declared symbol will always be a character array which can be passed to
  * k_thread_create, but should otherwise not be manipulated.
@@ -70,7 +136,7 @@ extern "C" {
  */
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[size+STACK_ALIGN]
+		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
 
 /**
  * @brief Declare a toplevel array of thread stack memory regions
@@ -78,8 +144,8 @@ extern "C" {
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
  * definition for additional details and constraints.
  *
- * This is the generic, historical definition. Align to STACK_ALIGN and put in
- * 'noinit' section so that it isn't zeroed at boot
+ * This is the generic, historical definition. Align to STACK_ALIGN_SIZE and
+ * put in * 'noinit' section so that it isn't zeroed at boot
  *
  * @param sym Thread stack symbol name
  * @param nmemb Number of stacks to declare
@@ -87,7 +153,7 @@ extern "C" {
  */
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[nmemb][size+STACK_ALIGN]
+		sym[nmemb][size+MPU_GUARD_ALIGN_AND_SIZE]
 
 /**
  * @brief Declare an embedded stack memory region
@@ -103,7 +169,7 @@ extern "C" {
  */
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
-		sym[size+STACK_ALIGN]
+		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
 
 /**
  * @brief Return the size in bytes of a stack memory region
@@ -118,7 +184,7 @@ extern "C" {
  * @param sym Stack memory symbol
  * @return Size of the stack
  */
-#define _ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - STACK_ALIGN)
+#define _ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - MPU_GUARD_ALIGN_AND_SIZE)
 
 /**
  * @brief Get a pointer to the physical stack buffer
@@ -131,7 +197,8 @@ extern "C" {
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
  */
-#define _ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_ALIGN))
+#define _ARCH_THREAD_STACK_BUFFER(sym) \
+		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
 #ifdef __cplusplus
 }

@@ -90,11 +90,12 @@ int zsock_close(int sock)
 	struct net_context *ctx = INT_TO_POINTER(sock);
 
 	/* Reset callbacks to avoid any race conditions while
-	 * flushing queues. No need to check return values here
-	 * as Coverity complains in CID 173646.
+	 * flushing queues. No need to check return values here,
+	 * as these are fail-free operations and we're closing
+	 * socket anyway.
 	 */
-	net_context_accept(ctx, NULL, K_NO_WAIT, NULL);
-	net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+	(void)net_context_accept(ctx, NULL, K_NO_WAIT, NULL);
+	(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
 
 	zsock_flush_queue(ctx);
 
@@ -108,6 +109,7 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 	struct net_context *parent = user_data;
 
 	net_context_recv(new_ctx, zsock_received_cb, K_NO_WAIT, NULL);
+	k_fifo_init(&new_ctx->recv_q);
 
 	NET_DBG("parent=%p, ctx=%p, st=%d", parent, new_ctx, status);
 

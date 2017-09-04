@@ -103,36 +103,71 @@
 /*
  * Define the base integer type, architecture-wise.
  *
- * 32-bit integers can be forced on 64-bit arches (eg. for testing purposes)
- * by defining MBEDTLS_HAVE_INT32 and undefining MBEDTLS_HAVE_ASM
+ * 32 or 64-bit integer types can be forced regardless of the underlying
+ * architecture by defining MBEDTLS_HAVE_INT32 or MBEDTLS_HAVE_INT64
+ * respectively and undefining MBEDTLS_HAVE_ASM.
+ *
+ * Double-width integers (e.g. 128-bit in 64-bit architectures) can be
+ * disabled by defining MBEDTLS_NO_UDBL_DIVISION.
  */
-#if ( ! defined(MBEDTLS_HAVE_INT32) && \
-        defined(_MSC_VER) && defined(_M_AMD64) )
-  #define MBEDTLS_HAVE_INT64
-  typedef  int64_t mbedtls_mpi_sint;
-  typedef uint64_t mbedtls_mpi_uint;
-#else
-  #if ( ! defined(MBEDTLS_HAVE_INT32) &&               \
-        defined(__GNUC__) && (                          \
-        defined(__amd64__) || defined(__x86_64__)    || \
-        defined(__ppc64__) || defined(__powerpc64__) || \
-        defined(__ia64__)  || defined(__alpha__)     || \
-        (defined(__sparc__) && defined(__arch64__))  || \
-        defined(__s390x__) || defined(__mips64) ) )
-     #define MBEDTLS_HAVE_INT64
-     typedef  int64_t mbedtls_mpi_sint;
-     typedef uint64_t mbedtls_mpi_uint;
-     /* mbedtls_t_udbl defined as 128-bit unsigned int */
-     typedef unsigned int mbedtls_t_udbl __attribute__((mode(TI)));
-     #define MBEDTLS_HAVE_UDBL
-  #else
-     #define MBEDTLS_HAVE_INT32
-     typedef  int32_t mbedtls_mpi_sint;
-     typedef uint32_t mbedtls_mpi_uint;
-     typedef uint64_t mbedtls_t_udbl;
-     #define MBEDTLS_HAVE_UDBL
-  #endif /* !MBEDTLS_HAVE_INT32 && __GNUC__ && 64-bit platform */
-#endif /* !MBEDTLS_HAVE_INT32 && _MSC_VER && _M_AMD64 */
+#if !defined(MBEDTLS_HAVE_INT32)
+    #if defined(_MSC_VER) && defined(_M_AMD64)
+        /* Always choose 64-bit when using MSC */
+        #if !defined(MBEDTLS_HAVE_INT64)
+            #define MBEDTLS_HAVE_INT64
+        #endif /* !MBEDTLS_HAVE_INT64 */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+    #elif defined(__GNUC__) && (                         \
+        defined(__amd64__) || defined(__x86_64__)     || \
+        defined(__ppc64__) || defined(__powerpc64__)  || \
+        defined(__ia64__)  || defined(__alpha__)      || \
+        ( defined(__sparc__) && defined(__arch64__) ) || \
+        defined(__s390x__) || defined(__mips64) )
+        #if !defined(MBEDTLS_HAVE_INT64)
+            #define MBEDTLS_HAVE_INT64
+        #endif /* MBEDTLS_HAVE_INT64 */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+        #if !defined(MBEDTLS_NO_UDBL_DIVISION)
+            /* mbedtls_t_udbl defined as 128-bit unsigned int */
+            typedef unsigned int mbedtls_t_udbl __attribute__((mode(TI)));
+            #define MBEDTLS_HAVE_UDBL
+        #endif /* !MBEDTLS_NO_UDBL_DIVISION */
+    #elif defined(__ARMCC_VERSION) && defined(__aarch64__)
+        /*
+         * __ARMCC_VERSION is defined for both armcc and armclang and
+         * __aarch64__ is only defined by armclang when compiling 64-bit code
+         */
+        #if !defined(MBEDTLS_HAVE_INT64)
+            #define MBEDTLS_HAVE_INT64
+        #endif /* !MBEDTLS_HAVE_INT64 */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+        #if !defined(MBEDTLS_NO_UDBL_DIVISION)
+            /* mbedtls_t_udbl defined as 128-bit unsigned int */
+            typedef __uint128_t mbedtls_t_udbl;
+            #define MBEDTLS_HAVE_UDBL
+        #endif /* !MBEDTLS_NO_UDBL_DIVISION */
+    #elif defined(MBEDTLS_HAVE_INT64)
+        /* Force 64-bit integers with unknown compiler */
+        typedef  int64_t mbedtls_mpi_sint;
+        typedef uint64_t mbedtls_mpi_uint;
+    #endif
+#endif /* !MBEDTLS_HAVE_INT32 */
+
+#if !defined(MBEDTLS_HAVE_INT64)
+    /* Default to 32-bit compilation */
+    #if !defined(MBEDTLS_HAVE_INT32)
+        #define MBEDTLS_HAVE_INT32
+    #endif /* !MBEDTLS_HAVE_INT32 */
+    typedef  int32_t mbedtls_mpi_sint;
+    typedef uint32_t mbedtls_mpi_uint;
+    #if !defined(MBEDTLS_NO_UDBL_DIVISION)
+        typedef uint64_t mbedtls_t_udbl;
+        #define MBEDTLS_HAVE_UDBL
+    #endif /* !MBEDTLS_NO_UDBL_DIVISION */
+#endif /* !MBEDTLS_HAVE_INT64 */
 
 #ifdef __cplusplus
 extern "C" {

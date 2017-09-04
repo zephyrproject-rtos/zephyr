@@ -729,7 +729,8 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
-		return -EINVAL;
+		NET_ERR("Packet %p does not contain TCP header", pkt);
+		return -EMSGSIZE;
 	}
 
 	if (sys_get_be32(tcp_hdr->ack) != ctx->tcp->send_ack) {
@@ -790,21 +791,10 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		}
 
 		if (pkt_in_slist) {
-			new_pkt = net_pkt_get_tx(ctx, ALLOC_TIMEOUT);
+			new_pkt = net_pkt_clone(pkt, ALLOC_TIMEOUT);
 			if (!new_pkt) {
 				return -ENOMEM;
 			}
-
-			memcpy(new_pkt, pkt, sizeof(struct net_pkt));
-			new_pkt->frags = net_pkt_copy_all(pkt, 0,
-							  ALLOC_TIMEOUT);
-			if (!new_pkt->frags) {
-				net_pkt_unref(new_pkt);
-				return -ENOMEM;
-			}
-
-			NET_DBG("[%p] Copied %zu bytes from %p to %p", ctx->tcp,
-				net_pkt_get_len(new_pkt), pkt, new_pkt);
 
 			/* This function is called from net_context.c and if we
 			 * return < 0, the caller will unref the original pkt.
@@ -860,9 +850,15 @@ int net_tcp_send_data(struct net_context *context)
 		}
 
 		if (!net_pkt_sent(pkt)) {
-			NET_DBG("[%p] Sending pkt %p", context->tcp, pkt);
-			if (net_tcp_send_pkt(pkt) < 0 &&
-			    !is_6lo_technology(pkt)) {
+			int ret;
+
+			NET_DBG("[%p] Sending pkt %p (%zd bytes)", context->tcp,
+				pkt, net_pkt_get_len(pkt));
+
+			ret = net_tcp_send_pkt(pkt);
+			if (ret < 0 && !is_6lo_technology(pkt)) {
+				NET_DBG("[%p] pkt %p not sent (%d)",
+					context->tcp, pkt, ret);
 				net_pkt_unref(pkt);
 			}
 
@@ -894,6 +890,15 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+		if (!tcp_hdr) {
+			/* The pkt does not contain TCP header, this should
+			 * not happen.
+			 */
+			NET_ERR("pkt %p has no TCP header", pkt);
+			sys_slist_remove(list, NULL, head);
+			net_pkt_unref(pkt);
+			continue;
+		}
 
 		seq = sys_get_be32(tcp_hdr->seq) + net_pkt_appdatalen(pkt) - 1;
 

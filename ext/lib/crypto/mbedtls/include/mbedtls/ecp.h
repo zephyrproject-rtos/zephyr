@@ -461,7 +461,7 @@ int mbedtls_ecp_tls_write_point( const mbedtls_ecp_group *grp, const mbedtls_ecp
  * \brief           Set a group using well-known domain parameters
  *
  * \param grp       Destination group
- * \param index     Index in the list of well-known domain parameters
+ * \param id        Index in the list of well-known domain parameters
  *
  * \return          0 if successful,
  *                  MBEDTLS_ERR_MPI_XXX if initialization failed
@@ -470,7 +470,7 @@ int mbedtls_ecp_tls_write_point( const mbedtls_ecp_group *grp, const mbedtls_ecp
  * \note            Index should be a value of RFC 4492's enum NamedCurve,
  *                  usually in the form of a MBEDTLS_ECP_DP_XXX macro.
  */
-int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id index );
+int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id id );
 
 /**
  * \brief           Set a group from a TLS ECParameters record
