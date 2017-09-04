@@ -408,9 +408,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
- * @brief Parses the JSON-encoded object pointer to by @param json, with
- * size @param len, according to the descriptor pointed to by @param descr.
- * Values are stored in a struct pointed to by @param val.  Set up the
+ * @brief Parses the JSON-encoded object pointer to by @a json, with
+ * size @a len, according to the descriptor pointed to by @a descr.
+ * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
  *    struct s { int foo; char *bar; }
