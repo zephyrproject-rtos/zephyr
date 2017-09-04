@@ -96,6 +96,11 @@ done:
 	return buf;
 }
 
+static enum ieee802154_hw_caps upipe_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+}
+
 static int upipe_cca(struct device *dev)
 {
 	struct upipe_context *upipe = dev->driver_data;
@@ -271,6 +276,7 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.iface_api.init		= upipe_iface_init,
 	.iface_api.send		= ieee802154_radio_send,
 
+	.get_capabilities	= upipe_get_capabilities,
 	.cca			= upipe_cca,
 	.set_channel		= upipe_set_channel,
 	.set_pan_id		= upipe_set_pan_id,

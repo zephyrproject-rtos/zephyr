@@ -140,6 +140,12 @@ out:
 
 /* Radio device API */
 
+static enum ieee802154_hw_caps nrf5_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+}
+
+
 static int nrf5_cca(struct device *dev)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
@@ -396,6 +402,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.iface_api.init = nrf5_iface_init,
 	.iface_api.send = ieee802154_radio_send,
 
+	.get_capabilities = nrf5_get_capabilities,
 	.cca = nrf5_cca,
 	.set_channel = nrf5_set_channel,
 	.set_pan_id = nrf5_set_pan_id,

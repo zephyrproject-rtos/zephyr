@@ -703,6 +703,14 @@ out:
 /********************
  * Radio device API *
  *******************/
+static enum ieee802154_hw_caps cc2520_get_capabilities(struct device *dev)
+{
+	/* ToDo: Add support for
+	 * IEEE802154_HW_PROMISC | IEEE802154_HW_FILTER
+	 */
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+}
+
 static int cc2520_cca(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
@@ -1097,15 +1105,16 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.iface_api.init	= cc2520_iface_init,
 	.iface_api.send	= ieee802154_radio_send,
 
-	.cca		= cc2520_cca,
-	.set_channel	= cc2520_set_channel,
-	.set_pan_id	= cc2520_set_pan_id,
-	.set_short_addr	= cc2520_set_short_addr,
-	.set_ieee_addr	= cc2520_set_ieee_addr,
-	.set_txpower	= cc2520_set_txpower,
-	.start		= cc2520_start,
-	.stop		= cc2520_stop,
-	.tx		= cc2520_tx,
+	.get_capabilities	= cc2520_get_capabilities,
+	.cca			= cc2520_cca,
+	.set_channel		= cc2520_set_channel,
+	.set_pan_id		= cc2520_set_pan_id,
+	.set_short_addr		= cc2520_set_short_addr,
+	.set_ieee_addr		= cc2520_set_ieee_addr,
+	.set_txpower		= cc2520_set_txpower,
+	.start			= cc2520_start,
+	.stop			= cc2520_stop,
+	.tx			= cc2520_tx,
 };
 
 #if defined(CONFIG_IEEE802154_CC2520_RAW)
