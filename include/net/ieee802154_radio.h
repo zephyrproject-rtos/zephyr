@@ -24,6 +24,14 @@ extern "C" {
  * @{
  */
 
+enum ieee802154_hw_caps {
+	IEEE802154_HW_FCS	= BIT(0), /* Frame Check-Sum supported */
+	IEEE802154_HW_PROMISC	= BIT(1), /* Promiscuous mode supported */
+	IEEE802154_HW_FILTER	= BIT(2), /* Filters PAN ID, long/short addr */
+	IEEE802154_HW_CSMA	= BIT(3), /* CSMA-CA supported */
+	IEEE802154_HW_2_4_GHZ	= BIT(4), /* 2.4Ghz radio supported */
+};
+
 struct ieee802154_radio_api {
 	/**
 	 * Mandatory to get in first position.
@@ -32,6 +40,9 @@ struct ieee802154_radio_api {
 	 * that can be casted to a net_if_api structure pointer.
 	 */
 	struct net_if_api iface_api;
+
+	/** Get the device capabilities */
+	enum ieee802154_hw_caps (*get_capabilities)(struct device *dev);
 
 	/** Clear Channel Assesment - Check channel's activity */
 	int (*cca)(struct device *dev);
