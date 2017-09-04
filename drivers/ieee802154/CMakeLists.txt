@@ -1,0 +1,7 @@
+zephyr_sources_ifdef(CONFIG_IEEE802154_CC2520 ieee802154_cc2520.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_KW41Z ieee802154_kw41z.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_UPIPE ieee802154_uart_pipe.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_MCR20A ieee802154_mcr20a.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_MCR20A_RAW ieee802154_mcr20a.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_NRF5 ieee802154_nrf5.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_NRF5_RAW ieee802154_nrf5.c)
