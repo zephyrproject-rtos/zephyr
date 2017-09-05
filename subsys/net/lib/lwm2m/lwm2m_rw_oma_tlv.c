@@ -691,11 +691,21 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 				if (tlv2.type == OMA_TLV_TYPE_RESOURCE) {
 					path->res_id = tlv2.id;
 					path->level = 3;
-					/* ignore errors */
-					do_write_op_tlv_item(
+					ret = do_write_op_tlv_item(
 							context,
 							(u8_t *)&tlv.value[pos],
 							len2);
+					/*
+					 * ignore errors for CREATE op
+					 * TODO: support BOOTSTRAP WRITE where
+					 * optional resources are ignored
+					 */
+					if (ret < 0 &&
+					    (context->operation !=
+					     LWM2M_OP_CREATE ||
+					     ret != -ENOTSUP)) {
+						return ret;
+					}
 				}
 
 				pos += len2;
