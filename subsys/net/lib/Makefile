@@ -25,3 +25,7 @@ endif
 ifdef CONFIG_LWM2M
 include $(srctree)/subsys/net/lib/lwm2m/Makefile
 endif
+
+ifdef CONFIG_SNTP
+include $(srctree)/subsys/net/lib/sntp/Makefile
+endif
