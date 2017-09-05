@@ -441,12 +441,12 @@ static int decode_value(struct json_obj *obj,
 
 	switch (descr->type) {
 	case JSON_TOK_OBJECT_START:
-		return obj_parse(obj, descr->sub_descr,
-				 descr->sub_descr_len,
+		return obj_parse(obj, descr->object.sub_descr,
+				 descr->object.sub_descr_len,
 				 field);
 	case JSON_TOK_LIST_START:
-		return arr_parse(obj, descr->element_descr,
-				 descr->n_elements, field, val);
+		return arr_parse(obj, descr->array.element_descr,
+				 descr->array.n_elements, field, val);
 	case JSON_TOK_FALSE:
 	case JSON_TOK_TRUE: {
 		bool *v = field;
@@ -484,13 +484,13 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_FALSE:
 		return sizeof(bool);
 	case JSON_TOK_LIST_START:
-		return descr->n_elements * get_elem_size(descr->element_descr);
+		return descr->array.n_elements * get_elem_size(descr->array.element_descr);
 	case JSON_TOK_OBJECT_START: {
 		ptrdiff_t total = 0;
 		size_t i;
 
 		for (i = 0; i < descr->sub_descr_len; i++) {
-			total += get_elem_size(&descr->sub_descr[i]);
+			total += get_elem_size(&descr->object.sub_descr[i]);
 		}
 
 		return total;
@@ -809,11 +809,11 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 	case JSON_TOK_STRING:
 		return str_encode(ptr, append_bytes, data);
 	case JSON_TOK_LIST_START:
-		return arr_encode(descr->element_descr, ptr,
+		return arr_encode(descr->array.element_descr, ptr,
 				  val, append_bytes, data);
 	case JSON_TOK_OBJECT_START:
-		return json_obj_encode(descr->sub_descr,
-				       descr->sub_descr_len,
+		return json_obj_encode(descr->object.sub_descr,
+				       descr->object.sub_descr_len,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
