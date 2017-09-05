@@ -483,3 +483,14 @@ endfunction()
 function(print arg)
   message(STATUS "${arg}: ${${arg}}")
 endfunction()
+
+# Usage:
+#   assert(ZEPHYR_GCC_VARIANT "ZEPHYR_GCC_VARIANT not set.")
+#
+# will cause a FATAL_ERROR and print an error message if the first
+# expression is false
+macro(assert test comment)
+  if(NOT ${test})
+    message(FATAL_ERROR "Assertion failed: ${comment}")
+  endif()
+endmacro()
