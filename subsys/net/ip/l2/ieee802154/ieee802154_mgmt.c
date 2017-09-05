@@ -116,7 +116,6 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 	ctx->scan_ctx = scan;
 	ret = 0;
 
-	radio->set_pan_id(iface->dev, IEEE802154_BROADCAST_PAN_ID);
 	ieee802154_filter_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
 
 	if (radio->start(iface->dev)) {
@@ -164,7 +163,6 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 	}
 
 	/* Let's come back to context's settings */
-	radio->set_pan_id(iface->dev, ctx->pan_id);
 	ieee802154_filter_pan_id(iface, ctx->pan_id);
 	radio->set_channel(iface->dev, ctx->channel);
 out:
@@ -397,11 +395,8 @@ static int ieee802154_set_parameters(u32_t mgmt_request,
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_PAN_ID) {
 		if (ctx->pan_id != value) {
-			ret = radio->set_pan_id(iface->dev, value);
-			if (!ret) {
-				ctx->pan_id = value;
-				ieee802154_filter_pan_id(iface, ctx->pan_id);
-			}
+			ctx->pan_id = value;
+			ieee802154_filter_pan_id(iface, ctx->pan_id);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
 		if (len != IEEE802154_EXT_ADDR_LENGTH) {
@@ -409,22 +404,13 @@ static int ieee802154_set_parameters(u32_t mgmt_request,
 		}
 
 		if (memcmp(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH)) {
-			ret = radio->set_ieee_addr(iface->dev, (u8_t *)data);
-			if (!ret) {
-				memcpy(ctx->ext_addr, data,
-				       IEEE802154_EXT_ADDR_LENGTH);
-				ieee802154_filter_ieee_addr(iface,
-							    ctx->ext_addr);
-			}
+			memcpy(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH);
+			ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
 		if (ctx->short_addr != value) {
-			ret = radio->set_short_addr(iface->dev, value);
-			if (!ret) {
-				ctx->short_addr = value;
-				ieee802154_filter_short_addr(iface,
-							     ctx->short_addr);
-			}
+			ctx->short_addr = value;
+			ieee802154_filter_short_addr(iface, ctx->short_addr);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_TX_POWER) {
 		if (ctx->tx_power != (s16_t)value) {
