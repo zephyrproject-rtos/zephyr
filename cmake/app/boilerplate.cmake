@@ -53,6 +53,12 @@ if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
  Please specify a build directory, e.g. cmake -Bbuild -H.")
 endif()
 
+add_custom_target(
+  pristine
+  COMMAND ${CMAKE_COMMAND} -P $ENV{ZEPHYR_BASE}/cmake/pristine.cmake
+  # Equivalent to rm -rf build/*
+  )
+
 if(NOT BOARD)
   set(BOARD $ENV{BOARD})
 endif()
