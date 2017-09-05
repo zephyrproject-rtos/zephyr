@@ -1081,8 +1081,8 @@ int net_shell_cmd_conn(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_TCP)
-	printk("\nTCP        Src port  Dst port   Send-Seq   Send-Ack  MSS    "
-	       "State\n");
+	printk("\nTCP        Src port  Dst port   Send-Seq   Send-Ack  MSS"
+	       "%s\n", IS_ENABLED(CONFIG_NET_DEBUG_TCP) ? "    State" : "");
 
 	count = 0;
 
