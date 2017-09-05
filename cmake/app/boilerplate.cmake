@@ -55,6 +55,7 @@ if(NOT BOARD)
   message(FATAL_ERROR "BOARD not set")
 endif()
 
+unset(BOARD_DIR CACHE)
 find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
 if(NOT BOARD_DIR)
   message(FATAL_ERROR "No board named '${BOARD}' found")
