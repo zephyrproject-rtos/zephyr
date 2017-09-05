@@ -15,6 +15,7 @@ Major enhancements planned with this release include:
 * Expand Device Tree support to more architectures
 * BLE Mesh
 * Bluetooth 5.0 Support (all features except Advertising Extensions)
+* Bluetooth Qualification-ready BLE Controller
 * Revamp Testsuite, Increase Coverage
 * Lightweight Machine to Machine (LwM2M) support
 * MMU/MPU (Cont.): Thread Isolation, Paging
