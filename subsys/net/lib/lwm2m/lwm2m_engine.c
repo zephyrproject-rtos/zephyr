@@ -112,6 +112,10 @@ static K_THREAD_STACK_DEFINE(engine_thread_stack,
 			     CONFIG_LWM2M_ENGINE_STACK_SIZE);
 static struct k_thread engine_thread_data;
 
+static struct lwm2m_engine_obj *get_engine_obj(int obj_id);
+static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
+							 int obj_inst_id);
+
 /* for debugging: to print IP addresses */
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 {
@@ -187,12 +191,46 @@ static int engine_add_observer(struct net_context *net_ctx,
 			       struct lwm2m_obj_path *path,
 			       u16_t format)
 {
+	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct observe_node *obs;
 	int i;
 
 	if (!addr) {
 		SYS_LOG_ERR("sockaddr is required");
 		return -EINVAL;
+	}
+
+	/* check if object exists */
+	if (!get_engine_obj(path->obj_id)) {
+		SYS_LOG_ERR("unable to find obj: %u", path->obj_id);
+		return -ENOENT;
+	}
+
+	/* check if object instance exists */
+	if (path->level >= 2) {
+		obj_inst = get_engine_obj_inst(path->obj_id,
+					       path->obj_inst_id);
+		if (!obj_inst) {
+			SYS_LOG_ERR("unable to find obj_inst: %u/%u",
+				    path->obj_id, path->obj_inst_id);
+			return -ENOENT;
+		}
+	}
+
+	/* check if resource exists */
+	if (path->level >= 3) {
+		for (i = 0; i < obj_inst->resource_count; i++) {
+			if (obj_inst->resources[i].res_id == path->res_id) {
+				break;
+			}
+		}
+
+		if (i == obj_inst->resource_count) {
+			SYS_LOG_ERR("unable to find res_id: %u/%u/%u",
+				    path->obj_id, path->obj_inst_id,
+				    path->res_id);
+			return -ENOENT;
+		}
 	}
 
 	/* make sure this observer doesn't exist already */
