@@ -797,10 +797,6 @@ static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 	return append_bytes("false", 5, data);
 }
 
-static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
-		      const void *val, json_append_bytes_t append_bytes,
-		      void *data);
-
 static int encode(const struct json_obj_descr *descr, const void *val,
 		  json_append_bytes_t append_bytes, void *data)
 {
@@ -816,8 +812,9 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 		return arr_encode(descr->element_descr, ptr,
 				  val, append_bytes, data);
 	case JSON_TOK_OBJECT_START:
-		return obj_encode(descr->sub_descr, descr->sub_descr_len,
-				  ptr, append_bytes, data);
+		return json_obj_encode(descr->sub_descr,
+				       descr->sub_descr_len,
+				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
 	default:
@@ -825,9 +822,9 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 	}
 }
 
-static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
-		      const void *val, json_append_bytes_t append_bytes,
-		      void *data)
+int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
+		    const void *val, json_append_bytes_t append_bytes,
+		    void *data)
 {
 	size_t i;
 	int ret;
@@ -863,20 +860,6 @@ static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	}
 
 	return append_bytes("}", 1, data);
-}
-
-int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
-		    const void *val, json_append_bytes_t append_bytes,
-		    void *data)
-{
-	int ret;
-
-	ret = obj_encode(descr, descr_len, val, append_bytes, data);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return append_bytes("", 1, data);
 }
 
 struct appender {
