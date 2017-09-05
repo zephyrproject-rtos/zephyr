@@ -4,7 +4,7 @@ sample:
 tests:
 -   test_arm:
         build_only: true
-        platform_whitelist: 96b_nitrogen nrf51_pca10028 nrf52_pca10040
+        platform_whitelist: 96b_nitrogen nrf51_pca10028 nrf52_pca10040 bbc_microbit
         tags: uart bluetooth
 -   test_nrf5:
         build_only: true
