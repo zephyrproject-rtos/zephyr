@@ -317,8 +317,7 @@ NET_L2_INIT(IEEE802154_L2,
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const struct ieee802154_radio_api *radio =
-		iface->dev->driver_api;
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	const u8_t *mac = iface->link_addr.addr;
 	u8_t long_addr[8];
 
@@ -333,9 +332,6 @@ void ieee802154_init(struct net_if *iface)
 #endif
 
 	sys_memcpy_swap(long_addr, mac, 8);
-
-	radio->set_ieee_addr(iface->dev, long_addr);
-
 	memcpy(ctx->ext_addr, long_addr, 8);
 	ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 
