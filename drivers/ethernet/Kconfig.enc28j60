@@ -9,7 +9,6 @@
 menuconfig ETH_ENC28J60
 	bool "ENC28J60C Ethernet Controller"
 	depends on NET_L2_ETHERNET
-	depends on SPI_LEGACY_API
 	depends on SPI
 	default n
 	help
@@ -83,6 +82,18 @@ config ETH_ENC28J60_0_SLAVE
 	default 1
 	help
 	ENC28J60C chip select pin.
+
+config ETH_ENC28J60_0_SPI_CS_PORT_NAME
+	string "SPI cs port name"
+	default "GPIOB"
+	help
+	Master SPI port name through which ENC28J60C chip is accessed.
+
+config ETH_ENC28J60_0_SPI_CS_PIN
+	int "SPI CS pin"
+	default 12
+	help
+	CS pin used for the SPI device
 
 config ETH_ENC28J60_0_SPI_BUS_FREQ
 	int "ENC28J60C SPI bus speed in Hz"
