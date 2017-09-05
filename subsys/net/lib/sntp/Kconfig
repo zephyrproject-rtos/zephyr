@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SNTP
+	bool "SNTP Support"
+	default n
+	select NET_APP_CLIENT
+	help
+	Enable SNTP client library
+
+if SNTP
+
+config NET_DEBUG_SNTP
+	bool "Debug SNTP"
+	default n
+	help
+	Enable debug message of SNTP client library
+
+endif # SNTP
