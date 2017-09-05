@@ -1802,15 +1802,12 @@ isr_rx_conn_pkt_release(struct radio_pdu_node_tx *node_tx)
 	/* release */
 	if (conn->pkt_tx_head == conn->pkt_tx_ctrl) {
 		if (node_tx) {
+			conn->pkt_tx_head = conn->pkt_tx_head->next;
 			if (conn->pkt_tx_ctrl == conn->pkt_tx_ctrl_last) {
-				conn->pkt_tx_ctrl_last =
-					conn->pkt_tx_ctrl_last->next;
-			}
-			conn->pkt_tx_ctrl = conn->pkt_tx_ctrl->next;
-			conn->pkt_tx_head = conn->pkt_tx_ctrl;
-			if (conn->pkt_tx_ctrl == conn->pkt_tx_data) {
 				conn->pkt_tx_ctrl = NULL;
 				conn->pkt_tx_ctrl_last = NULL;
+			} else {
+				conn->pkt_tx_ctrl = conn->pkt_tx_head;
 			}
 
 			mem_release(node_tx, &_radio. pkt_tx_ctrl_free);
