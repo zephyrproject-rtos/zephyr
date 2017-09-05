@@ -110,12 +110,13 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 
 	pkt = net_pkt_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!pkt) {
-		goto fail;
+		return NULL;
 	}
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
-		goto fail;
+		net_pkt_unref(pkt);
+		return NULL;
 	}
 
 	net_pkt_frag_add(pkt, frag);
@@ -176,11 +177,6 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	return pkt;
-
-fail:
-	net_pkt_unref(pkt);
-	net_pkt_unref(pending);
-	return NULL;
 }
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
@@ -259,8 +255,6 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 				req = prepare_arp(net_pkt_iface(pkt),
 						  addr, NULL, pkt);
 				NET_DBG("Resending ARP %p", req);
-
-				net_pkt_unref(pkt);
 
 				return req;
 			}
