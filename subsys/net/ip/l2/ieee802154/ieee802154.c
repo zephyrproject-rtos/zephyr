@@ -29,6 +29,7 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt.h"
 #include "ieee802154_security.h"
+#include "ieee802154_utils.h"
 
 #if 0
 
@@ -334,7 +335,9 @@ void ieee802154_init(struct net_if *iface)
 	sys_memcpy_swap(long_addr, mac, 8);
 
 	radio->set_ieee_addr(iface->dev, long_addr);
+
 	memcpy(ctx->ext_addr, long_addr, 8);
+	ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 
 	if (!radio->set_txpower(iface->dev,
 				CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER)) {
