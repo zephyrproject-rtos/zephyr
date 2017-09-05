@@ -436,7 +436,7 @@ add_custom_command(
   COMMAND ${CMAKE_OBJCOPY} --srec-len 1 --output-target=srec               ${KERNEL_ELF_NAME}    ${KERNEL_S19_NAME}
   COMMAND ${CMAKE_OBJDUMP} -S                                              ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
   COMMAND ${CMAKE_STRIP}   --strip-all                                     ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
-  COMMENT "Generating zephyr.{hex,bin,lst,strip} from zephyr.elf"
+  COMMENT "Generating zephyr.{hex,bin,lst,strip} from zephyr.elf for board: ${BOARD}"
   # NB: COMMENT only works for some CMake-Generators
 )
 
