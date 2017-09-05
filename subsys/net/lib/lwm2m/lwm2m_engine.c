@@ -282,6 +282,26 @@ static int engine_remove_observer(const u8_t *token, u8_t tkl)
 	return 0;
 }
 
+static void engine_remove_observer_by_id(u16_t obj_id, s32_t obj_inst_id)
+{
+	struct observe_node *obs, *tmp;
+	sys_snode_t *prev_node = NULL;
+
+	/* remove observer instances accordingly */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(
+			&engine_observer_list, obs, tmp, node) {
+		if (!(obj_id == obs->path.obj_id &&
+		      (obj_inst_id < 0 ||
+		       obj_inst_id == obs->path.obj_inst_id))) {
+			prev_node = &obs->node;
+			continue;
+		}
+
+		sys_slist_remove(&engine_observer_list, prev_node, &obs->node);
+		memset(obs, 0, sizeof(*obs));
+	}
+}
+
 /* engine object */
 
 void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
@@ -291,7 +311,7 @@ void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
 
 void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj)
 {
-	/* TODO: remove all observer instances */
+	engine_remove_observer_by_id(obj->obj_id, -1);
 	sys_slist_find_and_remove(&engine_obj_list, &obj->node);
 }
 
@@ -333,6 +353,8 @@ static void engine_register_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 
 static void engine_unregister_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 {
+	engine_remove_observer_by_id(
+			obj_inst->obj->obj_id, obj_inst->obj_inst_id);
 	sys_slist_find_and_remove(&engine_obj_inst_list, &obj_inst->node);
 }
 
