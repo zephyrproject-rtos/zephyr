@@ -13,6 +13,7 @@ include(CheckCCompilerFlag)
 # 3.1. *_ifdef
 # 3.2. *_ifndef
 # 3.3. *_option compiler compatibility checks
+# 3.4. Debugging CMake
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -471,4 +472,14 @@ function(ld_option option)
   # if(${check})
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${option}" PARENT_SCOPE)
   # endif()
+endfunction()
+
+# 3.4. Debugging CMake
+
+# Usage:
+#   print(BOARD)
+#
+# will print: "BOARD: nrf52_pca10040"
+function(print arg)
+  message(STATUS "${arg}: ${${arg}}")
 endfunction()
