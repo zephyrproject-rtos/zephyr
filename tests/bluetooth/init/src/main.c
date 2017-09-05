@@ -9,18 +9,19 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <misc/printk.h>
+#include <ztest.h>
 
 #include <bluetooth/bluetooth.h>
 
-void main(void)
+void test_init(void)
 {
-	int err;
+	zassert_false(bt_enable(NULL), "Bluetooth init failed");
+}
 
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Bluetooth initialized\n");
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_bluetooth,
+			ztest_unit_test(test_init));
+	ztest_run_test_suite(test_bluetooth);
 }
