@@ -32,6 +32,22 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_2_4_GHZ	= BIT(4), /* 2.4Ghz radio supported */
 };
 
+enum ieee802154_filter_type {
+	IEEE802154_FILTER_TYPE_IEEE_ADDR,
+	IEEE802154_FILTER_TYPE_SHORT_ADDR,
+	IEEE802154_FILTER_TYPE_PAN_ID,
+};
+
+struct ieee802154_filter {
+/** @cond ignore */
+	union {
+		u8_t *ieee_addr;
+		u16_t short_addr;
+		u16_t pan_id;
+	};
+/* @endcond */
+};
+
 struct ieee802154_radio_api {
 	/**
 	 * Mandatory to get in first position.
@@ -49,6 +65,11 @@ struct ieee802154_radio_api {
 
 	/** Set current channel */
 	int (*set_channel)(struct device *dev, u16_t channel);
+
+	/** Set address filters (for IEEE802154_HW_FILTER ) */
+	int (*set_filter)(struct device *dev,
+			  enum ieee802154_filter_type type,
+			  const struct ieee802154_filter *filter);
 
 	/** Set current PAN id */
 	int (*set_pan_id)(struct device *dev, u16_t pan_id);
