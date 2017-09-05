@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <tc_util.h>
+#include <ztest.h>
 
 #include <bluetooth/bluetooth.h>
 #include <drivers/bluetooth/hci_driver.h>
@@ -41,22 +42,18 @@ static void driver_init(void)
 	bt_hci_driver_register(&drv);
 }
 
-void main(void)
+void test_bluetooth_entry(void)
 {
-	int ret, ret_code;
-
-	TC_START("bluetooth");
 	driver_init();
 
-	ret = bt_enable(NULL);
-	if (ret == EXPECTED_ERROR) {
-		ret_code = TC_PASS;
-	} else {
-		ret_code = TC_FAIL;
-	}
+	zassert_true((bt_enable(NULL) == EXPECTED_ERROR),
+			"bt_enable failed");
+}
 
-	TC_END(ret_code, "%s - %s.\n", ret_code == TC_PASS ? PASS : FAIL,
-		   __func__);
-
-	TC_END_REPORT(ret_code);
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_bluetooth,
+			ztest_unit_test(test_bluetooth_entry));
+	ztest_run_test_suite(test_bluetooth);
 }
