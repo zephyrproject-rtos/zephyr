@@ -71,15 +71,6 @@ struct ieee802154_radio_api {
 			  enum ieee802154_filter_type type,
 			  const struct ieee802154_filter *filter);
 
-	/** Set current PAN id */
-	int (*set_pan_id)(struct device *dev, u16_t pan_id);
-
-	/** Set current device's short address */
-	int (*set_short_addr)(struct device *dev, u16_t short_addr);
-
-	/** Set current devices's full length address */
-	int (*set_ieee_addr)(struct device *dev, const u8_t *ieee_addr);
-
 	/** Set TX power level in dbm */
 	int (*set_txpower)(struct device *dev, s16_t dbm);
 
