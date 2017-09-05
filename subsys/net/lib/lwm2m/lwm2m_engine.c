@@ -252,6 +252,7 @@ static int engine_add_observer(struct net_context *net_ctx,
 static int engine_remove_observer(const u8_t *token, u8_t tkl)
 {
 	struct observe_node *obs, *found_obj = NULL;
+	sys_snode_t *prev_node = NULL;
 
 	if (!token || tkl == 0) {
 		SYS_LOG_ERR("token(%p) and token length(%u) must be valid.",
@@ -265,13 +266,16 @@ static int engine_remove_observer(const u8_t *token, u8_t tkl)
 			found_obj = obs;
 			break;
 		}
+
+		prev_node = &obs->node;
 	}
 
 	if (!found_obj) {
 		return -ENOENT;
 	}
 
-	sys_slist_remove(&engine_observer_list, NULL, &found_obj->node);
+	sys_slist_remove(&engine_observer_list, prev_node, &found_obj->node);
+	memset(found_obj, 0, sizeof(*found_obj));
 
 	SYS_LOG_DBG("observer '%s' removed", sprint_token(token, tkl));
 
@@ -288,7 +292,7 @@ void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
 void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj)
 {
 	/* TODO: remove all observer instances */
-	sys_slist_remove(&engine_obj_list, NULL, &obj->node);
+	sys_slist_find_and_remove(&engine_obj_list, &obj->node);
 }
 
 static struct lwm2m_engine_obj *get_engine_obj(int obj_id)
@@ -329,7 +333,7 @@ static void engine_register_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 
 static void engine_unregister_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 {
-	sys_slist_remove(&engine_obj_inst_list, NULL, &obj_inst->node);
+	sys_slist_find_and_remove(&engine_obj_inst_list, &obj_inst->node);
 }
 
 static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
