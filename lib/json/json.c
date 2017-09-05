@@ -903,6 +903,8 @@ static int measure_bytes(const char *bytes, size_t len, void *data)
 
 	*total += (ssize_t)len;
 
+	ARG_UNUSED(bytes);
+
 	return 0;
 }
 
