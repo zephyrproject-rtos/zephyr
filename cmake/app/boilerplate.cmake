@@ -54,6 +54,7 @@ set(BOARD ${BOARD} CACHE STRING "Board")
 if(NOT BOARD)
   message(FATAL_ERROR "BOARD not set")
 endif()
+message(STATUS "Selected BOARD ${BOARD}")
 
 find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
 if(NOT BOARD_DIR)
