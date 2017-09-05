@@ -29,25 +29,55 @@ static int eth_enc28j60_soft_reset(struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t tx_buf[2] = {ENC28J60_SPI_SC, 0xFF};
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = tx_buf,
+			.len = 1,
+		},
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
 
-	return spi_write(context->spi, tx_buf, 2);
+	return spi_write(context->spi, &context->spi_cfg, &tx);
 }
 
 static void eth_enc28j60_set_bank(struct device *dev, u16_t reg_addr)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct spi_buf tx_bufs[1];
+	struct spi_buf rx_bufs[1];
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
 	u8_t tx_buf[2];
+	u8_t rx_buf[2];
+	int ret;
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_RCR | ENC28J60_REG_ECON1;
 	tx_buf[1] = 0x0;
 
-	if (!spi_transceive(context->spi, tx_buf, 2, tx_buf, 2)) {
-		tx_buf[0] = ENC28J60_SPI_WCR | ENC28J60_REG_ECON1;
-		tx_buf[1] = (tx_buf[1] & 0xFC) | ((reg_addr >> 8) & 0x0F);
+	tx_bufs[0].buf = tx_buf;
+	tx_bufs[0].len = 2;
+	rx_bufs[0].buf = rx_buf;
+	rx_bufs[0].len = 2;
 
-		spi_write(context->spi, tx_buf, 2);
+	ret = spi_transceive(context->spi, &context->spi_cfg, &tx, &rx);
+	if (!ret) {
+		tx_buf[0] = ENC28J60_SPI_WCR | ENC28J60_REG_ECON1;
+		tx_buf[1] = (rx_buf[1] & 0xFC) | ((reg_addr >> 8) & 0x0F);
+
+		tx_bufs[0].buf = tx_buf;
+		tx_bufs[0].len = 2;
+		spi_write(context->spi, &context->spi_cfg, &tx);
 	} else {
 		SYS_LOG_DBG("Failure while setting bank to %d", reg_addr);
 	}
@@ -60,14 +90,23 @@ static void eth_enc28j60_write_reg(struct device *dev, u16_t reg_addr,
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t tx_buf[2];
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = tx_buf,
+			.len = 2
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_WCR | (reg_addr & 0xFF);
 	tx_buf[1] = value;
 
-	spi_write(context->spi, tx_buf, 2);
-
+	spi_write(context->spi, &context->spi_cfg, &tx);
 	k_sem_give(&context->spi_sem);
 }
 
@@ -75,20 +114,44 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 				  u8_t *value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	u8_t tx_size = 2;
-	u8_t tx_buf[3];
+	u8_t tx_buf[2];
+	const struct spi_buf tx_bufs[1] = {
+		{
+			.buf = tx_buf,
+			.len = 2
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	u8_t rx_buf[3];
+	struct spi_buf rx_bufs[1] = {
+		{
+			.buf = rx_buf,
+		}
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+	u8_t rx_size = 2;
+	int ret;
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	if (reg_addr & 0xF000) {
-		tx_size = 3;
+		rx_size = 3;
 	}
 
 	tx_buf[0] = ENC28J60_SPI_RCR | (reg_addr & 0xFF);
 	tx_buf[1] = 0x0;
 
-	if (!spi_transceive(context->spi, tx_buf, tx_size, tx_buf, tx_size)) {
-		*value = tx_buf[tx_size - 1];
+	rx_bufs[0].len = rx_size;
+
+	ret = spi_transceive(context->spi, &context->spi_cfg, &tx, &rx);
+	if (!ret) {
+		*value = rx_buf[rx_size - 1];
 	} else {
 		SYS_LOG_DBG("Failure while reading register %d", reg_addr);
 		*value = 0;
@@ -102,13 +165,23 @@ static void eth_enc28j60_set_eth_reg(struct device *dev, u16_t reg_addr,
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t tx_buf[2];
+	const struct spi_buf tx_bufs[1] = {
+		{
+			.buf = tx_buf,
+			.len = 2
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_BFS | (reg_addr & 0xFF);
 	tx_buf[1] = value;
 
-	spi_write(context->spi, tx_buf, 2);
+	spi_write(context->spi, &context->spi_cfg, &tx);
 
 	k_sem_give(&context->spi_sem);
 }
@@ -119,13 +192,23 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, u16_t reg_addr,
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t tx_buf[2];
+	const struct spi_buf tx_bufs[1] = {
+		{
+			.buf = tx_buf,
+			.len = ARRAY_SIZE(tx_bufs)
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_BFC | (reg_addr & 0xFF);
 	tx_buf[1] = value;
 
-	spi_write(context->spi, tx_buf, 2);
+	spi_write(context->spi, &context->spi_cfg, &tx);
 
 	k_sem_give(&context->spi_sem);
 }
@@ -134,6 +217,11 @@ static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
 				   u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct spi_buf tx_bufs[1];
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
 	u8_t *index_buf;
 	u16_t num_segments;
 	u16_t num_remaining;
@@ -148,14 +236,19 @@ static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
 	     ++i, index_buf += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_WBM;
 		memcpy(context->mem_buf + 1, index_buf, MAX_BUFFER_LENGTH);
-		spi_write(context->spi,
-			  context->mem_buf, MAX_BUFFER_LENGTH + 1);
+		tx_bufs[0].buf = context->mem_buf;
+		tx_bufs[0].len = MAX_BUFFER_LENGTH + 1;
+
+		spi_write(context->spi, &context->spi_cfg, &tx);
 	}
 
 	if (num_remaining > 0) {
 		context->mem_buf[0] = ENC28J60_SPI_WBM;
 		memcpy(context->mem_buf + 1, index_buf, num_remaining);
-		spi_write(context->spi, context->mem_buf, num_remaining + 1);
+		tx_bufs[0].buf = context->mem_buf;
+		tx_bufs[0].len = num_remaining + 1;
+
+		spi_write(context->spi, &context->spi_cfg, &tx);
 	}
 
 	k_sem_give(&context->spi_sem);
@@ -165,8 +258,14 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 				  u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
+	struct spi_buf tx_bufs[1];
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
 	u16_t num_segments;
 	u16_t num_remaining;
+	int ret;
 
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
@@ -177,9 +276,11 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 	     ++i, data_buffer += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
 
-		if (!spi_transceive(context->spi,
-				    context->mem_buf, MAX_BUFFER_LENGTH + 1,
-				    context->mem_buf, MAX_BUFFER_LENGTH + 1)) {
+		tx_bufs[0].buf = context->mem_buf;
+		tx_bufs[0].len = MAX_BUFFER_LENGTH + 1;
+
+		ret = spi_transceive(context->spi, &context->spi_cfg, &tx, &tx);
+		if (!ret) {
 			if (data_buffer) {
 				memcpy(data_buffer, context->mem_buf + 1,
 				       MAX_BUFFER_LENGTH);
@@ -192,9 +293,11 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 	if (num_remaining > 0) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
 
-		if (!spi_transceive(context->spi,
-				    context->mem_buf, num_remaining + 1,
-				    context->mem_buf, num_remaining + 1)) {
+		tx_bufs[0].buf = context->mem_buf;
+		tx_bufs[0].len = num_remaining + 1;
+
+		ret = spi_transceive(context->spi, &context->spi_cfg, &tx, &tx);
+		if (!ret) {
 			if (data_buffer) {
 				memcpy(data_buffer, context->mem_buf + 1,
 				       num_remaining);
@@ -348,23 +451,40 @@ static int eth_enc28j60_init(struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	struct spi_config spi_cfg;
 
 	k_sem_init(&context->spi_sem, 1, UINT_MAX);
 
+	/* SPI config */
+	context->spi_cfg.operation = SPI_WORD_SET(8);
+	context->spi_cfg.frequency = config->spi_freq;
+	context->spi_cfg.slave = config->spi_slave;
+
+	context->spi = device_get_binding((char *)config->spi_port);
+	if (!context->spi) {
+
+		SYS_LOG_ERR("SPI master port %s not found", config->spi_port);
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
+	context->spi_cs.gpio_dev =
+		device_get_binding((char *)config->spi_cs_port);
+	if (!context->spi_cs.gpio_dev) {
+		SYS_LOG_ERR("SPI CS port %s not found", config->spi_cs_port);
+		return -EINVAL;
+	}
+
+	context->spi_cs.gpio_pin = config->spi_cs_pin;
+	context->spi_cfg.cs = &context->spi_cs;
+#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
+
+	/* Initialize GPIO */
 	context->gpio = device_get_binding((char *)config->gpio_port);
 	if (!context->gpio) {
 		SYS_LOG_ERR("GPIO port %s not found", config->gpio_port);
 		return -EINVAL;
 	}
 
-	context->spi = device_get_binding((char *)config->spi_port);
-	if (!context->spi) {
-		SYS_LOG_ERR("SPI master port %s not found", config->spi_port);
-		return -EINVAL;
-	}
-
-	/* Initialize GPIO */
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
 			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
 			       | GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
@@ -384,27 +504,12 @@ static int eth_enc28j60_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Initialize SPI:
-	 * Mode: 0/0; Size: 8 bits; MSB
-	 */
-	spi_cfg.config = 8 << 4;
-	spi_cfg.max_sys_freq = config->spi_freq;
-
-	if (spi_configure(context->spi, &spi_cfg) < 0) {
-		SYS_LOG_ERR("Failed to configure SPI");
-		return -EIO;
-	}
-
-	if (spi_slave_select(context->spi, config->spi_slave) < 0) {
-		return -EIO;
-	}
-
 	if (eth_enc28j60_soft_reset(dev)) {
 		SYS_LOG_ERR("Soft-reset failed");
 		return -EIO;
 	}
 
-	/* Errata B7/2 */
+	/* Errata B7/1 */
 	k_busy_wait(D10D24S);
 
 	eth_enc28j60_init_buffers(dev);
@@ -528,6 +633,11 @@ static int eth_enc28j60_rx(struct device *dev)
 	 * does not reliably/accurately report the status of pending packet.
 	 * Use EPKTCNT register instead.
 	*/
+	eth_enc28j60_set_bank(dev, ENC28J60_REG_EPKTCNT);
+	eth_enc28j60_read_reg(dev, ENC28J60_REG_EPKTCNT, &counter);
+	if (!counter) {
+		return 0;
+	}
 
 	SYS_LOG_DBG("");
 
@@ -658,7 +768,6 @@ static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2)
 	while (1) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &int_stat);
-
 		if (int_stat & ENC28J60_BIT_EIR_PKTIF) {
 			eth_enc28j60_rx(dev);
 			/* Clear rx interruption flag */
@@ -718,6 +827,10 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi_port = CONFIG_ETH_ENC28J60_0_SPI_PORT_NAME,
 	.spi_freq  = CONFIG_ETH_ENC28J60_0_SPI_BUS_FREQ,
 	.spi_slave = CONFIG_ETH_ENC28J60_0_SLAVE,
+#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
+	.spi_cs_port = CONFIG_ETH_ENC28J60_0_SPI_CS_PORT_NAME,
+	.spi_cs_pin = CONFIG_ETH_ENC28J60_0_SPI_CS_PIN,
+#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
 	.full_duplex = CONFIG_ETH_EN28J60_0_FULL_DUPLEX,
 	.timeout = CONFIG_ETH_EN28J60_TIMEOUT,
 };
