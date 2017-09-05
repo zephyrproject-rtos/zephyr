@@ -9,10 +9,11 @@
 #include <errno.h>
 #include <limits.h>
 #include <misc/printk.h>
+#include <misc/util.h>
 #include <stdbool.h>
-#include <zephyr/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zephyr/types.h>
 
 #include "json.h"
 
@@ -475,6 +476,8 @@ static int decode_value(struct json_obj *obj,
 
 static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 {
+	assert(descr->alignment);
+
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
 		return sizeof(s32_t);
@@ -489,8 +492,10 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		ptrdiff_t total = 0;
 		size_t i;
 
-		for (i = 0; i < descr->sub_descr_len; i++) {
-			total += get_elem_size(&descr->object.sub_descr[i]);
+		for (i = 0; i < descr->object.sub_descr_len; i++) {
+			ptrdiff_t s = get_elem_size(&descr->object.sub_descr[i]);
+
+			total += ROUND_UP(s, descr->alignment);
 		}
 
 		return total;
