@@ -134,6 +134,7 @@ config BT_CTLR_LE_PING
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
+	depends on !SOC_SERIES_NRF51X
 	default y
 	select BT_RPA
 	help
