@@ -309,6 +309,54 @@ static inline u8_t *get_mac(struct device *dev)
 	return cc2520->mac_addr;
 }
 
+static int _cc2520_set_pan_id(struct device *dev, u16_t pan_id)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+
+	SYS_LOG_DBG("0x%x", pan_id);
+
+	pan_id = sys_le16_to_cpu(pan_id);
+
+	if (!write_mem_pan_id(&cc2520->spi, (u8_t *) &pan_id)) {
+		SYS_LOG_ERR("Failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int _cc2520_set_short_addr(struct device *dev, u16_t short_addr)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+
+	SYS_LOG_DBG("0x%x", short_addr);
+
+	short_addr = sys_le16_to_cpu(short_addr);
+
+	if (!write_mem_short_addr(&cc2520->spi, (u8_t *) &short_addr)) {
+		SYS_LOG_ERR("Failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int _cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+
+	if (!write_mem_ext_addr(&cc2520->spi, (void *)ieee_addr)) {
+		SYS_LOG_ERR("Failed");
+		return -EIO;
+	}
+
+	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
+		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
+
+	return 0;
+}
+
 /******************
  * GPIO functions *
  *****************/
@@ -744,54 +792,6 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int cc2520_set_pan_id(struct device *dev, u16_t pan_id)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-
-	SYS_LOG_DBG("0x%x", pan_id);
-
-	pan_id = sys_le16_to_cpu(pan_id);
-
-	if (!write_mem_pan_id(&cc2520->spi, (u8_t *) &pan_id)) {
-		SYS_LOG_ERR("Failed");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int cc2520_set_short_addr(struct device *dev, u16_t short_addr)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-
-	SYS_LOG_DBG("0x%x", short_addr);
-
-	short_addr = sys_le16_to_cpu(short_addr);
-
-	if (!write_mem_short_addr(&cc2520->spi, (u8_t *) &short_addr)) {
-		SYS_LOG_ERR("Failed");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-
-	if (!write_mem_ext_addr(&cc2520->spi, (void *)ieee_addr)) {
-		SYS_LOG_ERR("Failed");
-		return -EIO;
-	}
-
-	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
-		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
-
-	return 0;
-}
-
 static int cc2520_set_filter(struct device *dev,
 			     enum ieee802154_filter_type type,
 			     const struct ieee802154_filter *filter)
@@ -799,11 +799,11 @@ static int cc2520_set_filter(struct device *dev,
 	SYS_LOG_DBG("Applying filter %u", type);
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
-		return cc2520_set_ieee_addr(dev, filter->ieee_addr);
+		return _cc2520_set_ieee_addr(dev, filter->ieee_addr);
 	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
-		return cc2520_set_short_addr(dev, filter->short_addr);
+		return _cc2520_set_short_addr(dev, filter->short_addr);
 	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
-		return cc2520_set_pan_id(dev, filter->pan_id);
+		return _cc2520_set_pan_id(dev, filter->pan_id);
 	}
 
 	return -EINVAL;
@@ -1126,9 +1126,6 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.cca			= cc2520_cca,
 	.set_channel		= cc2520_set_channel,
 	.set_filter		= cc2520_set_filter,
-	.set_pan_id		= cc2520_set_pan_id,
-	.set_short_addr		= cc2520_set_short_addr,
-	.set_ieee_addr		= cc2520_set_ieee_addr,
 	.set_txpower		= cc2520_set_txpower,
 	.start			= cc2520_start,
 	.stop			= cc2520_stop,
