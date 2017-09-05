@@ -123,39 +123,6 @@ static int upipe_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int upipe_set_pan_id(struct device *dev, u16_t pan_id)
-{
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int upipe_set_short_addr(struct device *dev, u16_t short_addr)
-{
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int upipe_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
-{
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int upipe_set_txpower(struct device *dev, s16_t dbm)
 {
 	struct upipe_context *upipe = dev->driver_data;
@@ -279,9 +246,6 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.get_capabilities	= upipe_get_capabilities,
 	.cca			= upipe_cca,
 	.set_channel		= upipe_set_channel,
-	.set_pan_id		= upipe_set_pan_id,
-	.set_short_addr		= upipe_set_short_addr,
-	.set_ieee_addr		= upipe_set_ieee_addr,
 	.set_txpower		= upipe_set_txpower,
 	.tx			= upipe_tx,
 	.start			= upipe_start,
