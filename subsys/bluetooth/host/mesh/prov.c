@@ -455,6 +455,15 @@ static void prov_buf_init(struct net_buf_simple *buf, u8_t type)
 	net_buf_simple_add_u8(buf, type);
 }
 
+static void prov_send_fail_msg(u8_t err)
+{
+	struct net_buf_simple *buf = PROV_BUF(2);
+
+	prov_buf_init(buf, PROV_FAILED);
+	net_buf_simple_add_u8(buf, err);
+	prov_send(buf);
+}
+
 static void prov_invite(const u8_t *data)
 {
 	struct net_buf_simple *buf = PROV_BUF(12);
@@ -664,6 +673,13 @@ static void prov_start(const u8_t *data)
 
 	if (data[0] != PROV_ALG_P256) {
 		BT_ERR("Unknown algorithm 0x%02x", data[0]);
+		prov_send_fail_msg(PROV_ERR_NVAL_FMT);
+		return;
+	}
+
+	if (data[1] > 0x01) {
+		BT_ERR("Invalid public key value: 0x%02x", data[1]);
+		prov_send_fail_msg(PROV_ERR_NVAL_FMT);
 		return;
 	}
 
@@ -672,7 +688,9 @@ static void prov_start(const u8_t *data)
 	link.expect = PROV_PUB_KEY;
 
 	if (prov_auth(data[2], data[3], data[4]) < 0) {
-		BT_ERR("Invalid authentication method");
+		BT_ERR("Invalid authentication method: 0x%02x; "
+			"action: 0x%02x; size: 0x%02x", data[2], data[3], data[4]);
+		prov_send_fail_msg(PROV_ERR_NVAL_FMT);
 	}
 }
 
@@ -1035,11 +1053,7 @@ static void close_link(u8_t err, u8_t reason)
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	if (err) {
-		struct net_buf_simple *buf = PROV_BUF(2);
-
-		prov_buf_init(buf, PROV_FAILED);
-		net_buf_simple_add_u8(buf, err);
-		prov_send(buf);
+		prov_send_fail_msg(err);
 	}
 
 	link.rx.seg = 0;
@@ -1170,6 +1184,7 @@ static void prov_msg_recv(void)
 
 	if (type != PROV_FAILED && type != link.expect) {
 		BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
+		prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
 		return;
 	}
 
