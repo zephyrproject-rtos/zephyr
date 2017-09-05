@@ -705,10 +705,10 @@ out:
  *******************/
 static enum ieee802154_hw_caps cc2520_get_capabilities(struct device *dev)
 {
-	/* ToDo: Add support for
-	 * IEEE802154_HW_PROMISC | IEEE802154_HW_FILTER
-	 */
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+	/* ToDo: Add support for IEEE802154_HW_PROMISC */
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
 }
 
 static int cc2520_cca(struct device *dev)
@@ -790,6 +790,23 @@ static int cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
 	return 0;
+}
+
+static int cc2520_set_filter(struct device *dev,
+			     enum ieee802154_filter_type type,
+			     const struct ieee802154_filter *filter)
+{
+	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return cc2520_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return cc2520_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return cc2520_set_pan_id(dev, filter->pan_id);
+	}
+
+	return -EINVAL;
 }
 
 static int cc2520_set_txpower(struct device *dev, s16_t dbm)
@@ -1108,6 +1125,7 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.get_capabilities	= cc2520_get_capabilities,
 	.cca			= cc2520_cca,
 	.set_channel		= cc2520_set_channel,
+	.set_filter		= cc2520_set_filter,
 	.set_pan_id		= cc2520_set_pan_id,
 	.set_short_addr		= cc2520_set_short_addr,
 	.set_ieee_addr		= cc2520_set_ieee_addr,

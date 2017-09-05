@@ -191,7 +191,9 @@ static inline void kw41z_tmr2_disable(void)
 
 static enum ieee802154_hw_caps kw41z_get_capabilities(struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
 }
 
 static int kw41z_cca(struct device *dev)
@@ -253,6 +255,23 @@ static int kw41z_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	ZLL->MACLONGADDRS0_MSB = val;
 
 	return 0;
+}
+
+static int kw41z_set_filter(struct device *dev,
+			    enum ieee802154_filter_type type,
+			    const struct ieee802154_filter *filter)
+{
+	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return kw41z_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return kw41z_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return kw41z_set_pan_id(dev, filter->pan_id);
+	}
+
+	return -EINVAL;
 }
 
 static int kw41z_set_txpower(struct device *dev, s16_t dbm)
@@ -663,6 +682,7 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.get_capabilities	= kw41z_get_capabilities,
 	.cca			= kw41z_cca,
 	.set_channel		= kw41z_set_channel,
+	.set_filter		= kw41z_set_filter,
 	.set_pan_id		= kw41z_set_pan_id,
 	.set_short_addr		= kw41z_set_short_addr,
 	.set_ieee_addr		= kw41z_set_ieee_addr,
