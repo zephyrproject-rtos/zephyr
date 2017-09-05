@@ -142,7 +142,9 @@ out:
 
 static enum ieee802154_hw_caps nrf5_get_capabilities(struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
 }
 
 
@@ -226,6 +228,23 @@ static int nrf5_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	nrf_drv_radio802154_extended_address_set(ieee_addr);
 
 	return 0;
+}
+
+static int nrf5_set_filter(struct device *dev,
+			   enum ieee802154_filter_type type,
+			   const struct ieee802154_filter *filter)
+{
+	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return nrf5_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return nrf5_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return nrf5_set_pan_id(dev, filter->pan_id);
+	}
+
+	return -EINVAL;
 }
 
 static int nrf5_set_txpower(struct device *dev, s16_t dbm)
@@ -405,6 +424,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.get_capabilities = nrf5_get_capabilities,
 	.cca = nrf5_cca,
 	.set_channel = nrf5_set_channel,
+	.set_filter = nrf5_set_filter,
 	.set_pan_id = nrf5_set_pan_id,
 	.set_short_addr = nrf5_set_short_addr,
 	.set_ieee_addr = nrf5_set_ieee_addr,

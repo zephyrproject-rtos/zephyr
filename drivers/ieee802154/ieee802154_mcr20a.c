@@ -860,7 +860,9 @@ static int mcr20a_set_cca_mode(struct device *dev, u8_t mode)
 
 static enum ieee802154_hw_caps mcr20a_get_capabilities(struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
 }
 
 /* Note: CCA before TX is enabled by default */
@@ -1019,6 +1021,23 @@ static int mcr20a_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
 	return 0;
+}
+
+static int mcr20a_set_filter(struct device *dev,
+			     enum ieee802154_filter_type type,
+			     const struct ieee802154_filter *filter)
+{
+	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return mcr20a_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return mcr20a_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return mcr20a_set_pan_id(dev, filter->pan_id);
+	}
+
+	return -EINVAL;
 }
 
 static int mcr20a_set_txpower(struct device *dev, s16_t dbm)
@@ -1464,6 +1483,7 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 	.get_capabilities	= mcr20a_get_capabilities,
 	.cca			= mcr20a_cca,
 	.set_channel		= mcr20a_set_channel,
+	.set_filter		= mcr20a_set_filter,
 	.set_pan_id		= mcr20a_set_pan_id,
 	.set_short_addr		= mcr20a_set_short_addr,
 	.set_ieee_addr		= mcr20a_set_ieee_addr,
