@@ -70,10 +70,11 @@ if(NOT BOARD)
 endif()
 message(STATUS "Selected BOARD ${BOARD}")
 
+# Use BOARD to search zephyr/boards/** for a _defconfig file,
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
+# found, use that path to infer the ARCH we are building for.
 find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
-if(NOT BOARD_DIR)
-  message(FATAL_ERROR "No board named '${BOARD}' found")
-endif()
+assert(BOARD_DIR "No board named '${BOARD}' found")
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
 get_filename_component(ARCH ${BOARD_ARCH_DIR} NAME)
