@@ -86,7 +86,6 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 				    u8_t *created);
 
 /* LwM2M message functions */
-struct lwm2m_message *find_msg_from_pending(struct zoap_pending *pending);
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_release_message(struct lwm2m_message *msg);
 int lwm2m_init_message(struct lwm2m_message *msg);
