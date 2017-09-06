@@ -53,7 +53,7 @@ def print_items(items, outdir, indent):
                     config.write("\n%s\n\n" %text)
                 else:
                     config.write("\nThe configuration item %s:\n\n" %var)
-                config.write(item.rest())
+                config.write("%s\n" %item.rest())
 
                 config.close()
         elif item.is_menu():
