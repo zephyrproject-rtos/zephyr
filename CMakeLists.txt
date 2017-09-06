@@ -69,7 +69,7 @@ zephyr_compile_definitions(
 )
 
 zephyr_compile_options(
-  -Os # TODO: allow config to override this
+  -Os
   -g # TODO: build configuration enough?
   -Wall
   -Wformat
@@ -159,7 +159,6 @@ if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   endif()
 endif()
 
-# TODO: Handle default to Os
 zephyr_compile_options(${CONFIG_COMPILER_OPT})
 
 # TODO: Include arch compiler options at this point.
