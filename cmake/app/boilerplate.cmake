@@ -30,22 +30,9 @@ set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
+include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
+
 find_package(PythonInterp 3.4)
-
-if(NOT PREBUILT_HOST_TOOLS)
-  set(PREBUILT_HOST_TOOLS $ENV{PREBUILT_HOST_TOOLS} CACHE PATH "")
-  if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")
-    set(PREBUILT_HOST_TOOLS $ENV{ZEPHYR_BASE}/scripts/prebuilt)
-  endif()
-endif()
-
-if(NOT ZEPHYR_GCC_VARIANT)
-  set(ZEPHYR_GCC_VARIANT $ENV{ZEPHYR_GCC_VARIANT})
-endif()
-set(ZEPHYR_GCC_VARIANT ${ZEPHYR_GCC_VARIANT} CACHE STRING "Zephyr GCC variant")
-if(NOT ZEPHYR_GCC_VARIANT)
-  message(FATAL_ERROR "ZEPHYR_GCC_VARIANT not set")
-endif()
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
   message(FATAL_ERROR "Source directory equals build directory.\
@@ -59,37 +46,48 @@ add_custom_target(
   # Equivalent to rm -rf build/*
   )
 
-if(NOT BOARD)
-  set(BOARD $ENV{BOARD})
-endif()
-set(BOARD ${BOARD} CACHE STRING "Board")
-if(NOT BOARD)
-  message(FATAL_ERROR "BOARD not set")
-endif()
-message(STATUS "Selected BOARD ${BOARD}")
+include(    ${PROJECT_SOURCE_DIR}/defaults.cmake       OPTIONAL)
+include(${APPLICATION_SOURCE_DIR}/defaults.cmake       OPTIONAL)
 
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
-if(NOT BOARD_DIR)
-  message(FATAL_ERROR "No board named '${BOARD}' found")
-endif()
+include(    ${PROJECT_SOURCE_DIR}/local-defaults.cmake OPTIONAL)
+include(${APPLICATION_SOURCE_DIR}/local-defaults.cmake OPTIONAL)
 
-get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
-get_filename_component(ARCH ${BOARD_ARCH_DIR} NAME)
-
-if(CONF_FILE)
-  # CONF_FILE has either been specified on the cmake CLI or is already
-  # in the CMakeCache.txt. This has precedence over the environment
-  # variable CONF_FILE and the default prj.conf
-elseif(DEFINED ENV{CONF_FILE})
-  set(CONF_FILE $ENV{CONF_FILE})
-elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
-  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
+if(EXISTS ${CONF_FILE__for__${BOARD}})
+  set(CONF_FILE ${CONF_FILE__for__${BOARD}})
+elseif(NOT CONF_FILE)
+  if(EXISTS ${APPLICATION_SOURCE_DIR}/prj.conf)
+    set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
+  endif()
 endif()
 
-set(CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
+set(PREBUILT_HOST_TOOLS     ${PREBUILT_HOST_TOOLS}    CACHE PATH   "")
+set(ZEPHYR_SDK_INSTALL_DIR  ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH   "Zephyr SDK install directory")
+set(ZEPHYR_GCC_VARIANT      ${ZEPHYR_GCC_VARIANT}     CACHE STRING "Zephyr GCC variant")
+set(BOARD                   ${BOARD}                  CACHE STRING "Board")
+set(CONF_FILE               ${CONF_FILE}              CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
 Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
+
+assert(ZEPHYR_GCC_VARIANT "ZEPHYR_GCC_VARIANT not set. Please configure zephyr/local-defaults.cmake")
+assert(BOARD              "This should be nearly impossible since BOARD is configured in zephyr/defaults.cmake")
+
+message(STATUS "Selected BOARD ${BOARD}")
+
+if(PREBUILT_HOST_TOOLS)
+  set(KCONFIG_CONF  ${PREBUILT_HOST_TOOLS}/kconfig/conf)
+  set(KCONFIG_MCONF ${PREBUILT_HOST_TOOLS}/kconfig/mconf)
+endif()
+
+# Use BOARD to search zephyr/boards/** for a _defconfig file,
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
+# found, use that path to infer the ARCH we are building for.
+unset(BOARD_DIR CACHE)
+find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
+assert(BOARD_DIR "No board named '${BOARD}' found")
+
+get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
+get_filename_component(ARCH ${BOARD_ARCH_DIR} NAME)
 
 # Prevent CMake from testing the toolchain
 set(CMAKE_C_COMPILER_FORCED   1)
@@ -103,16 +101,10 @@ if(match)
 endif()
 
 include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/host-tools-${ZEPHYR_GCC_VARIANT}.cmake)
-if(NOT PREBUILT_HOST_TOOLS)
-  if (NOT KCONFIG_CONF)
-  	message(FATAL_ERROR "PREBUILT_HOST_TOOLS was not set. Please follow the Zephyr installation instructions.")
-  endif()
-else()
-  set(KCONFIG_CONF ${PREBUILT_HOST_TOOLS}/kconfig/conf)
-  set(KCONFIG_MCONF ${PREBUILT_HOST_TOOLS}/kconfig/mconf)
-endif()
+
+assert(KCONFIG_CONF "PREBUILT_HOST_TOOLS was not set. Please follow the Zephyr installation instructions.")
+
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
 

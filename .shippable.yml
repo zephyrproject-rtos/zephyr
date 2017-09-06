@@ -7,8 +7,6 @@ env:
         - SDK=0.9.1
         - SANITYCHECK_OPTIONS=" --inline-logs -R -p nrf52_pca10040 -p qemu_riscv32 -p qemu_cortex_m3 -p qemu_x86_iamcu -p qemu_x86 -p arduino_101 -p arduino_due -p cc3220sf_launchxl -p qemu_nios2 -p em_starterkit -p qemu_xtensa"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
-        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
-        - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
         - MATRIX_BUILDS="2"
         - MATRIX_BUILDS_EXTRA="3"
@@ -35,13 +33,15 @@ build:
       - sudo cp -a cmake-3.9.1-Linux-x86_64/bin/* /usr/local/bin/;
       - sudo cp -a cmake-3.9.1-Linux-x86_64/share/* /usr/local/share/;
       - cmake -version
-      - source zephyr-env.sh
+      - export ZEPHYR_BASE=$PWD
       - cd $ZEPHYR_BASE/scripts
       - mkdir build && cd build
       - cmake .. && make
-      - export PREBUILT_HOST_TOOLS=$(pwd)
+      - echo "set(PREBUILT_HOST_TOOLS $PWD)" >> $ZEPHYR_BASE/local-defaults.cmake
       - cd $ZEPHYR_BASE
-      - export BOARD=nrf52_pca10040
+      - echo "set(BOARD nrf52_pca10040)"                             >> $ZEPHYR_BASE/local-defaults.cmake
+      - echo "set(ZEPHYR_SDK_INSTALL_DIR /opt/sdk/zephyr-sdk-0.9.1)" >> $ZEPHYR_BASE/local-defaults.cmake
+      - echo "set(ZEPHYR_GCC_VARIANT zephyr)"                        >> $ZEPHYR_BASE/local-defaults.cmake
       - ccache -c -s --max-size=2000M
       - >
           if [ "$IS_PULL_REQUEST" = "true" ]; then
