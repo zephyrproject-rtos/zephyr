@@ -870,6 +870,9 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		radio_pkt_tx_set(&_radio.advertiser.scan_data.
 		     data[_radio.advertiser.scan_data.first][0]);
 
+		/* assert if radio packet ptr is not set and radio started tx */
+		LL_ASSERT(!radio_is_ready());
+
 		return 0;
 	} else if ((pdu_adv->type == PDU_ADV_TYPE_CONNECT_IND) &&
 		   (pdu_adv->len == sizeof(struct pdu_adv_payload_connect_ind)) &&
@@ -1600,6 +1603,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		radio_switch_complete_and_rx(0);
 		radio_pkt_tx_set(pdu_adv_tx);
 		radio_tmr_end_capture();
+
+		/* assert if radio packet ptr is not set and radio started tx */
+		LL_ASSERT(!radio_is_ready());
 
 		return 0;
 	}
@@ -3349,6 +3355,9 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 
 	/* setup the radio tx packet buffer */
 	tx_packet_set(_radio.conn_curr, pdu_data_tx);
+
+	/* assert if radio packet ptr is not set and radio started tx */
+	LL_ASSERT(!radio_is_ready());
 
 isr_rx_conn_exit:
 
@@ -5609,7 +5618,9 @@ static void adv_setup(void)
 #else
 	ARG_UNUSED(upd);
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
+
 	radio_pkt_tx_set(pdu);
+
 	if ((pdu->type != PDU_ADV_TYPE_NONCONN_IND) &&
 	    (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
 	     (pdu->type != PDU_ADV_TYPE_EXT_IND))) {
