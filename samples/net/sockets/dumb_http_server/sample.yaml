@@ -1,0 +1,8 @@
+sample:
+    description: BSD Sockets API dumb HTTP server example
+    name: socket_dumb_http_server
+tests:
+-   test:
+        min_ram: 32
+        build_only: true
+        tags: net
