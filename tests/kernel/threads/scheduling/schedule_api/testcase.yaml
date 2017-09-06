@@ -1,4 +1,4 @@
 tests:
 -   test:
-        tags: kernel
+        tags: kernel threads sched
         min_ram: 20
