@@ -160,7 +160,7 @@ config BT_CTLR_EXT_SCAN_FP
 
 config BT_CTLR_DATA_LENGTH
 	bool "Data Length Update"
-	default y
+	default y if SOC_SERIES_NRF52X
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure in
 	  the Controller.
@@ -177,7 +177,7 @@ config BT_CTLR_DATA_LENGTH_MAX
 
 config BT_CTLR_PHY
 	bool "PHY Update"
-	default y
+	default y if SOC_SERIES_NRF52X
 	help
 	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
 	  Controller.
