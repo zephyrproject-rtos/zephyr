@@ -15,4 +15,12 @@ config NUM_IRQS
 	int
 	default 85
 
+config USB_DC_STM32_EP_NUM
+	int
+	default 4
+
+config USB_DC_STM32_PACKET_RAM_SIZE
+	int
+	default 1280
+
 endif # SOC_STM32F401XE
