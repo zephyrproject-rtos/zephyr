@@ -36,3 +36,4 @@ tags
 .cproject
 .xxproject
 .envrc
+local-defaults.cmake

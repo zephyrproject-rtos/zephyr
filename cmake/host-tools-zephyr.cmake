@@ -5,14 +5,7 @@
 # and currently provided by the Zephyr SDK. Those tools will need to be
 # provided for different OSes and sepearately from the toolchain.
 
-
-if(NOT ZEPHYR_SDK_INSTALL_DIR)
-  set(ZEPHYR_SDK_INSTALL_DIR $ENV{ZEPHYR_SDK_INSTALL_DIR})
-endif()
-set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
-if(NOT ZEPHYR_SDK_INSTALL_DIR)
-  message(FATAL_ERROR "ZEPHYR_SDK_INSTALL_DIR is not set")
-endif()
+assert(ZEPHYR_SDK_INSTALL_DIR "ZEPHYR_SDK_INSTALL_DIR is not set")
 
 set(REQUIRED_SDK_VER 0.9.1)
 set(TOOLCHAIN_VENDOR zephyr)
