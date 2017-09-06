@@ -30,6 +30,8 @@ set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
+include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
+
 find_package(PythonInterp 3.4)
 
 if(NOT PREBUILT_HOST_TOOLS)
@@ -103,7 +105,6 @@ if(match)
 endif()
 
 include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/host-tools-${ZEPHYR_GCC_VARIANT}.cmake)
 if(NOT PREBUILT_HOST_TOOLS)
   if (NOT KCONFIG_CONF)
