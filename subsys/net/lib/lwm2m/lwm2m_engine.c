@@ -715,18 +715,23 @@ static void zoap_options_to_path(struct zoap_option *opt, int options_count,
 	}
 }
 
-struct lwm2m_message *find_msg_from_pending(struct zoap_pending *pending,
-					    struct lwm2m_message *messages,
-					    size_t len)
+static struct lwm2m_message *find_msg(struct zoap_pending *pending,
+				      struct zoap_reply *reply,
+				      struct lwm2m_message *messages,
+				      size_t len)
 {
 	size_t i;
 
-	if (!pending || !messages) {
+	if (!messages || (!pending && !reply)) {
 		return NULL;
 	}
 
 	for (i = 0; i < len; i++) {
 		if (messages[i].ctx && messages[i].pending == pending) {
+			return &messages[i];
+		}
+
+		if (messages[i].ctx && messages[i].reply == reply) {
 			return &messages[i];
 		}
 	}
@@ -2591,8 +2596,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	 * is != NULL.
 	 */
 	if (pending) {
-		msg = find_msg_from_pending(pending, client_ctx->messages,
-					    CONFIG_LWM2M_ENGINE_MAX_MESSAGES);
+		msg = find_msg(pending, NULL, client_ctx->messages,
+			       CONFIG_LWM2M_ENGINE_MAX_MESSAGES);
 		if (msg) {
 			msg->pending = NULL;
 		}
@@ -2618,6 +2623,11 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 			zoap_header_get_type(&response) == ZOAP_TYPE_ACK) {
 			SYS_LOG_DBG("separated response, not removing reply");
 			goto cleanup;
+		}
+
+		if (!msg) {
+			msg = find_msg(pending, reply, client_ctx->messages,
+				       CONFIG_LWM2M_ENGINE_MAX_MESSAGES);
 		}
 	}
 
@@ -2702,8 +2712,8 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	msg = find_msg_from_pending(pending, client_ctx->messages,
-				    CONFIG_LWM2M_ENGINE_MAX_MESSAGES);
+	msg = find_msg(pending, NULL, client_ctx->messages,
+		       CONFIG_LWM2M_ENGINE_MAX_MESSAGES);
 	if (!msg) {
 		SYS_LOG_ERR("pending has no valid LwM2M message!");
 		return;
