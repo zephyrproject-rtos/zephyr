@@ -210,6 +210,10 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_iface(pkt, iface);
 
+	net_buf_add(pkt->frags, sizeof(struct net_ipv4_hdr) +
+		    sizeof(struct net_icmp_hdr) +
+		    sizeof(struct net_icmpv4_echo_req));
+
 	setup_ipv4_header(pkt, 0, net_if_ipv4_get_ttl(iface),
 			  NET_ICMPV4_ECHO_REQUEST, 0);
 
@@ -231,10 +235,6 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_ICMPV4 */
-
-	net_buf_add(pkt->frags, sizeof(struct net_ipv4_hdr) +
-		    sizeof(struct net_icmp_hdr) +
-		    sizeof(struct net_icmpv4_echo_req));
 
 	net_icmpv4_set_chksum(pkt, pkt->frags);
 
