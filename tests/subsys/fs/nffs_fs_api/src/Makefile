@@ -26,6 +26,7 @@ obj-y += test_overwrite_three.o
 obj-y += test_read.o
 obj-y += test_cache_large_file.o
 obj-y += test_large_write.o
+obj-y += test_performance.o
 obj-$(CONFIG_BOARD_QEMU_X86) += test_ram_backend.o
 
 include $(ZEPHYR_BASE)/tests/Makefile.test
