@@ -57,32 +57,81 @@ void rand_isr_init(u8_t *context, u8_t context_len, u8_t threshold)
 
 static size_t get(struct rand *rng, size_t octets, u8_t *rand)
 {
-	u8_t first;
-	u8_t avail;
+	u8_t first, last, remaining;
 
 	LL_ASSERT(rng);
 
-	while (octets) {
-		if (rng->first == rng->last) {
-			break;
+	first = rng->first;
+	last = rng->last;
+
+	if (first <= last) {
+		u8_t *d, *s;
+		u8_t avail;
+
+		d = &rand[octets];
+		s = &rng->rand[first];
+
+		avail = last - first;
+		if (octets < avail) {
+			remaining = avail - octets;
+			avail = octets;
+		} else {
+			remaining = 0;
 		}
 
-		rand[--octets] = rng->rand[rng->first];
+		first += avail;
+		octets -= avail;
 
-		first = rng->first + 1;
-		if (first == rng->count) {
+		while (avail--) {
+			*(--d) = *s++;
+		}
+
+		rng->first = first;
+	} else {
+		u8_t *d, *s;
+		u8_t avail;
+
+		d = &rand[octets];
+		s = &rng->rand[first];
+
+		avail = rng->count - first;
+		if (octets < avail) {
+			remaining = avail + last - octets;
+			avail = octets;
+			first += avail;
+		} else {
+			remaining = last;
 			first = 0;
 		}
+
+		octets -= avail;
+
+		while (avail--) {
+			*(--d) = *s++;
+		}
+
+		if (octets && last) {
+			s = &rng->rand[0];
+
+			if (octets < last) {
+				remaining = last - octets;
+				last = octets;
+			} else {
+				remaining = 0;
+			}
+
+			first = last;
+			octets -= last;
+
+			while (last--) {
+				*(--d) = *s++;
+			}
+		}
+
 		rng->first = first;
 	}
 
-	if (rng->first <= rng->last) {
-		avail = rng->last - rng->first;
-	} else {
-		avail = rng->count - rng->first + rng->last;
-	}
-
-	if (avail < rng->threshold) {
+	if (remaining < rng->threshold) {
 		NRF_RNG->TASKS_START = 1;
 	}
 
