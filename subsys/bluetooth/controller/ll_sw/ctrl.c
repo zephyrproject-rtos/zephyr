@@ -3239,29 +3239,6 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	u8_t chg = 0;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
-#if defined(CONFIG_BT_CTLR_CONN_RSSI)
-	/* Collect RSSI for connection */
-	if (_radio.packet_counter == 0) {
-		if (rssi_ready) {
-			u8_t rssi = radio_rssi_get();
-
-			_radio.conn_curr->rssi_latest = rssi;
-
-			if (((_radio.conn_curr->rssi_reported - rssi) & 0xFF) >
-			    RADIO_RSSI_THRESHOLD) {
-				if (_radio.conn_curr->rssi_sample_count) {
-					_radio.conn_curr->rssi_sample_count--;
-				}
-			} else {
-				_radio.conn_curr->rssi_sample_count =
-					RADIO_RSSI_SAMPLE_COUNT;
-			}
-		}
-	}
-#else /* !CONFIG_BT_CTLR_CONN_RSSI */
-	ARG_UNUSED(rssi_ready);
-#endif /* !CONFIG_BT_CTLR_CONN_RSSI */
-
 	/* Increment packet counter for this connection event */
 	_radio.packet_counter++;
 
@@ -3386,6 +3363,13 @@ isr_rx_conn_exit:
 
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
+	/* NOTE: Check for connection termination and skip accessing connection
+	 * context.
+	 */
+	if (!_radio.conn_curr) {
+		goto isr_rx_conn_terminate_exit;
+	}
+
 	/* release tx node and generate event for num complete */
 	if (tx_release) {
 		pdu_node_tx_release(_radio.conn_curr->handle, tx_release);
@@ -3400,6 +3384,29 @@ isr_rx_conn_exit:
 		radio_pdu_node_rx->hdr.handle = _radio.conn_curr->handle;
 		packet_rx_enqueue();
 	}
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+	/* Collect RSSI for connection */
+	if (rssi_ready) {
+		u8_t rssi = radio_rssi_get();
+
+		_radio.conn_curr->rssi_latest = rssi;
+
+		if (((_radio.conn_curr->rssi_reported - rssi) & 0xFF) >
+		    RADIO_RSSI_THRESHOLD) {
+			if (_radio.conn_curr->rssi_sample_count) {
+				_radio.conn_curr->rssi_sample_count--;
+			}
+		} else {
+			_radio.conn_curr->rssi_sample_count =
+				RADIO_RSSI_SAMPLE_COUNT;
+		}
+	}
+#else /* !CONFIG_BT_CTLR_CONN_RSSI */
+	ARG_UNUSED(rssi_ready);
+#endif /* !CONFIG_BT_CTLR_CONN_RSSI */
+
+isr_rx_conn_terminate_exit:
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	/* calculate the elapsed time in us since on-air radio packet end
