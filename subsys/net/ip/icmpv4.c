@@ -219,8 +219,6 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	NET_ICMPV4_ECHO_REQ(pkt)->identifier = htons(identifier);
 	NET_ICMPV4_ECHO_REQ(pkt)->sequence = htons(sequence);
 
-	net_icmpv4_set_chksum(pkt, pkt->frags);
-
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
 		char out[NET_IPV4_ADDR_LEN];
@@ -237,6 +235,8 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	net_buf_add(pkt->frags, sizeof(struct net_ipv4_hdr) +
 		    sizeof(struct net_icmp_hdr) +
 		    sizeof(struct net_icmpv4_echo_req));
+
+	net_icmpv4_set_chksum(pkt, pkt->frags);
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent();
