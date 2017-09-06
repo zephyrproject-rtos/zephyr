@@ -22,20 +22,8 @@ if(IS_TEST)
   list(APPEND OVERLAY_CONFIG $ENV{ZEPHYR_BASE}/tests/include/test.config)
 endif()
 
-# Create new .config if the file does not exists, or the user has
-# edited one of the configuration files.
-set(CREATE_NEW_DOTCONFIG "")
-if(NOT EXISTS ${DOTCONFIG} OR ${BOARD_DEFCONFIG} IS_NEWER_THAN ${DOTCONFIG})
-  set(CREATE_NEW_DOTCONFIG 1)
-elseif(CONF_FILE)
-  foreach(CONF_FILE_ITEM ${CONF_FILE_AS_LIST})
-    if(${CONF_FILE_ITEM} IS_NEWER_THAN ${DOTCONFIG})
-      set(CREATE_NEW_DOTCONFIG 1)
-    endif()
-  endforeach()
-elseif(NOT CONF_FILE AND NOT EXISTS ${DOTCONFIG})
-      set(CREATE_NEW_DOTCONFIG 1)
-endif()
+# FIXME: Implement lazy rebuilding of DOTCONFIG for performance reasons
+set(CREATE_NEW_DOTCONFIG 1)
 if(CREATE_NEW_DOTCONFIG)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py -m -q
