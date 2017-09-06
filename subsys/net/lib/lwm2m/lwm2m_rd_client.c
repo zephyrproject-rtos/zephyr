@@ -435,7 +435,7 @@ static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 
 static int sm_do_init(int index)
 {
-	SYS_LOG_DBG("RD Client started with endpoint "
+	SYS_LOG_INF("RD Client started with endpoint "
 		    "'%s' and client lifetime %d",
 		    clients[index].ep_name,
 		    clients[index].lifetime);
