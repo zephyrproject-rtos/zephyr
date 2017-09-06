@@ -787,5 +787,5 @@ See :ref:`security-citations`
 .. _`STRIDE`: https://msdn.microsoft.com/en-us/library/ee823878%28v=cs.20%29.aspx
 .. _`Zephyr Kernel subsystem documentation`: https://www.zephyrproject.org/doc/subsystems/subsystems.html
 .. _`secure coding guidelines`: https://www.zephyrproject.org/doc/contribute/security.html
-.. _`development model documentation`: https://wiki.zephyrproject.org/view/Development_Model
+.. _`development model documentation`: https://github.com/zephyrproject-rtos/zephyr/wiki/Development-Model
 .. _`CVSS`: https://www.first.org/cvss/specification-document
