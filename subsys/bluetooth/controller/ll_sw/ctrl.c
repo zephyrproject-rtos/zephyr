@@ -3064,7 +3064,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 		if (_radio.conn_curr->empty == 0) {
 			struct radio_pdu_node_tx *node_tx;
-			u8_t pdu_data_tx_len, pdu_data_tx_ll_id;
+			u8_t pdu_data_tx_len;
 
 			node_tx = _radio.conn_curr->pkt_tx_head;
 			pdu_data_tx = (struct pdu_data *)
@@ -3072,8 +3072,6 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				 _radio.conn_curr->packet_tx_head_offset);
 
 			pdu_data_tx_len = pdu_data_tx->len;
-			pdu_data_tx_ll_id = pdu_data_tx->ll_id;
-
 			if (pdu_data_tx_len != 0) {
 				/* if encrypted increment tx counter */
 				if (_radio.conn_curr->enc_tx) {
@@ -3081,7 +3079,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				}
 
 				/* process ctrl packet on tx cmplt */
-				if (pdu_data_tx_ll_id == PDU_DATA_LLID_CTRL) {
+				if (pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) {
 					terminate =
 						isr_rx_conn_pkt_ack(pdu_data_tx,
 								    &node_tx);
