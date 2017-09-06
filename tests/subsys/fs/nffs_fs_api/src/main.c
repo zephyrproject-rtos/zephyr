@@ -120,4 +120,11 @@ void test_main(void)
 					       test_setup, test_teardown));
 	ztest_run_test_suite(nffs_fs_cache_test);
 #endif
+
+#ifdef TEST_performance
+	ztest_test_suite(nffs_fs_performace_test,
+		ztest_unit_test_setup_teardown(test_performance,
+					       test_setup, test_teardown));
+	ztest_run_test_suite(nffs_fs_performace_test);
+#endif
 }

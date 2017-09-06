@@ -34,3 +34,4 @@ void test_overwrite_three(void);
 void test_read(void);
 void test_cache_large_file(void);
 void test_large_write(void);
+void test_performance(void);
