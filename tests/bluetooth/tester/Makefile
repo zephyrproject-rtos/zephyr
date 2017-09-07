@@ -13,7 +13,7 @@ BOARD ?= arduino_101
 CONF_FILE ?= default.conf
 
 # UART for Tester
-QEMU_EXTRA_FLAGS = -serial pipe:/tmp/bt-stack-tester
+QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-stack-tester
 
 # UART for Bluetooth
 QEMU_EXTRA_FLAGS += -serial unix:/tmp/bt-server-bredr
