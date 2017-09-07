@@ -9,6 +9,13 @@
 #elif defined(CONFIG_SOC_QUARK_D2000)
 #define DT_FLASH_SIZE		__SIZE_K(32)
 #define DT_SRAM_SIZE		__SIZE_K(8)
+#elif defined(CONFIG_SOC_IA32)
+#define DT_FLASH_SIZE		__SIZE_K(4092)
+#if XIP
+	#define DT_SRAM_SIZE		__SIZE_K(4096)
+#else
+	#define DT_SRAM_SIZE		__SIZE_K(8188)
+#endif
 #else
 #error "Flash and RAM sizes not defined for this chip"
 #endif
