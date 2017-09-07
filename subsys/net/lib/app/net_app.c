@@ -164,14 +164,26 @@ void _net_app_received(struct net_context *net_ctx,
 #if defined(CONFIG_NET_APP_SERVER)
 	if (ctx->app_type == NET_APP_SERVER) {
 		if (!pkt) {
+#if defined(CONFIG_NET_TCP)
+			int i;
+#endif
+
 			if (ctx->cb.close) {
 				ctx->cb.close(ctx, status, ctx->user_data);
 			}
 
 #if defined(CONFIG_NET_TCP)
-			if (ctx->proto == IPPROTO_TCP) {
-				net_context_put(ctx->server.net_ctx);
-				ctx->server.net_ctx = NULL;
+			for (i = 0;
+			     ctx->proto == IPPROTO_TCP &&
+				     i < CONFIG_NET_APP_SERVER_NUM_CONN;
+			     i++) {
+				if (ctx->server.net_ctxs[i] == net_ctx &&
+				    ctx == net_ctx->net_app) {
+					net_context_put(net_ctx);
+					ctx->server.net_ctxs[i] = NULL;
+					net_ctx->net_app = NULL;
+					break;
+				}
 			}
 #endif
 
@@ -513,13 +525,102 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 #endif /* CONFIG_NET_APP_CLIENT */
 
 #if defined(CONFIG_NET_APP_SERVER)
+static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
+					  const struct sockaddr *dst)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+		struct net_context *tmp = ctx->server.net_ctxs[i];
+		u16_t port, rport;
+
+		if (!tmp || !net_context_is_used(tmp)) {
+			continue;
+		}
+
+		if (!dst) {
+			if (tmp->net_app == ctx) {
+				NET_DBG("Selecting net_ctx %p for NULL dst",
+					tmp);
+				return tmp;
+			}
+
+			continue;
+		}
+
+		/* Serve IPv6 first if the user does not care */
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		    (dst->sa_family == AF_UNSPEC ||
+		     (tmp->remote.sa_family == AF_INET6 &&
+		      dst->sa_family == AF_INET6))) {
+			struct in6_addr *addr6 = &net_sin6(dst)->sin6_addr;
+			struct in6_addr *remote6;
+
+			remote6 = &net_sin6(&tmp->remote)->sin6_addr;
+			rport = net_sin6(&tmp->remote)->sin6_port;
+			port = net_sin6(dst)->sin6_port;
+
+			if (dst->sa_family == AF_UNSPEC) {
+				if (tmp->net_app == ctx) {
+					NET_DBG("Selecting net_ctx %p for "
+						"AF_UNSPEC port %d", tmp,
+						ntohs(rport));
+					return tmp;
+				}
+
+				continue;
+			}
+
+			if (net_ipv6_addr_cmp(addr6, remote6) &&
+			    port == rport) {
+				NET_DBG("Selecting net_ctx %p for AF_INET6 "
+					"port %d", tmp, ntohs(rport));
+				return tmp;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		    (dst->sa_family == AF_UNSPEC ||
+		     (tmp->remote.sa_family == AF_INET &&
+		      dst->sa_family == AF_INET))) {
+			struct in_addr *addr4 = &net_sin(dst)->sin_addr;
+			struct in_addr *remote4;
+
+			remote4 = &net_sin(&tmp->remote)->sin_addr;
+			rport = net_sin(&tmp->remote)->sin_port;
+			port = net_sin(dst)->sin_port;
+
+			if (dst->sa_family == AF_UNSPEC) {
+				if (tmp->net_app == ctx) {
+					NET_DBG("Selecting net_ctx %p for "
+						"AF_UNSPEC port %d", tmp,
+						ntohs(port));
+					return tmp;
+				}
+
+				continue;
+			}
+
+			if (net_ipv4_addr_cmp(addr4, remote4) &&
+			    port == rport) {
+				NET_DBG("Selecting net_ctx %p for AF_INET "
+					"port %d", tmp, ntohs(port));
+				return tmp;
+			}
+
+		}
+	}
+
+	return NULL;
+}
+
 static inline
 struct net_context *select_server_ctx(struct net_app_ctx *ctx,
 				      const struct sockaddr *dst)
 {
 	if (ctx->proto == IPPROTO_TCP) {
 #if defined(CONFIG_NET_TCP)
-		return ctx->server.net_ctx;
+		return get_server_ctx(ctx, dst);
 #else
 		return NULL;
 #endif
@@ -858,12 +959,20 @@ int net_app_close(struct net_app_ctx *ctx)
 	}
 
 #if defined(CONFIG_NET_APP_SERVER) && defined(CONFIG_NET_TCP)
-	if (ctx->app_type == NET_APP_SERVER) {
-		ctx->server.net_ctx = NULL;
+	if (net_ctx && ctx->app_type == NET_APP_SERVER) {
+		int i;
+
+		for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+			if (ctx->server.net_ctxs[i] == net_ctx) {
+				ctx->server.net_ctxs[i] = NULL;
+				break;
+			}
+		}
 	}
 #endif
 
 	if (net_ctx) {
+		net_ctx->net_app = NULL;
 		net_context_put(net_ctx);
 	}
 

@@ -307,11 +307,11 @@ struct net_app_ctx {
 #if defined(CONFIG_NET_APP_SERVER)
 	struct {
 #if defined(CONFIG_NET_TCP)
-		/** Currently active network context. This will contain the
-		 * new context that is created after connection is accepted
+		/** Currently active network contexts. This will contain the
+		 * new contexts that are created after connection is accepted
 		 * when TCP is enabled.
 		 */
-		struct net_context *net_ctx;
+		struct net_context *net_ctxs[CONFIG_NET_APP_SERVER_NUM_CONN];
 #endif
 	} server;
 #endif /* CONFIG_NET_APP_SERVER */
