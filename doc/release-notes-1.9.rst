@@ -6,19 +6,19 @@ Zephyr Kernel 1.9.0 (WIP)
 #########################
 
 We are pleased to announce the release of Zephyr kernel version 1.9.0
-(planned for release in August 2017).
 
 Major enhancements planned with this release include:
 
-* Pthreads compatible API
-* BSD Sockets compatible API
-* Expand Device Tree support to more architectures
-* BLE Mesh
 * Bluetooth 5.0 Support (all features except Advertising Extensions)
 * Bluetooth Qualification-ready BLE Controller
-* Revamp Testsuite, Increase Coverage
+* BLE Mesh
 * Lightweight Machine to Machine (LwM2M) support
+* Pthreads compatible API
+* BSD Sockets compatible API
 * MMU/MPU (Cont.): Thread Isolation, Paging
+* Expand Device Tree support to more architectures
+* Revamp Testsuite, Increase Coverage
+* Stack Sentinel support (See details below)
 
 The following sections provide detailed lists of changes by component.
 
@@ -27,6 +27,7 @@ Kernel
 
 * Added POSIX thread IPC support for Kernel
 * kernel: introduce opaque data type for stacks
+* Timeslicing and tickless kernel improvements
 
 Architectures
 *************
@@ -35,7 +36,12 @@ Architectures
 * arm: Added TI CC2650 SoC
 * arm: Removed TI CC3200 SoC
 * arm: Added MPU support to nRF52, STM32L4, and STM32F3
-* xtensa: Added ESP32
+* xtensa: Added ESP32 support
+* Stack sentinel: This places a sentinel value at the lowest 4 bytes of a stack
+  memory region and checks it at various intervals, including when servicing
+  interrupts or context switching.  This is implemented on all arches except
+  ARC, which supports stack bounds checking directly in hardware.
+* x86: enable MMU for application memory
 
 Boards
 ******
@@ -48,7 +54,7 @@ Boards
 * arm: Added TI SensorTag board
 * arm: Removed TI CC3200 LaunchXL board
 * arm: Added VBLUno51 and VBLUno52 boards
-* xtensa: Added ESP32
+* xtensa: Added ESP32 board support
 
 Drivers and Sensors
 *******************
@@ -60,6 +66,7 @@ Drivers and Sensors
 * Removed deprecated PWM driver APIs
 * Added ESP32 drivers for GPIO, pin mux, watchdog, random number generator,
   and UART
+* sensor: Add BMM150 Geomagnetic sensor driver
 
 Networking
 **********
@@ -102,6 +109,7 @@ Bluetooth
   prefix as the Bluetooth APIs, namely BT_* instead of BLUETOOTH_*.
   Controller Kconfig options have been shortened to use CTLR instead of
   CONTROLLER.
+* Removed deprecated NBLE support
 
 Build and Infrastructure
 ************************
@@ -140,6 +148,12 @@ Documentation
 * Documentation added for new boards supported with this release.
 * Python packages needed for document generation added to new python
   pip requirements.txt
+
+
+Build System and Tools
+**********************
+* Convert post-processing host tools to python, this includes the following
+  tools: gen_offset_header.py gen_idt.py gen_gdt.py gen_mmu.p
 
 
 Tests and Samples
