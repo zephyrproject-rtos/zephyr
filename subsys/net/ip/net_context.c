@@ -259,7 +259,7 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 	memcpy(&context->remote, &tcp_backlog[r].remote,
 		sizeof(struct sockaddr));
 	context->tcp->recv_max_ack = tcp_backlog[r].recv_max_ack;
-	context->tcp->send_seq = tcp_backlog[r].send_seq;
+	context->tcp->send_seq = tcp_backlog[r].send_seq + 1;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
 
 	k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
@@ -1706,7 +1706,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		struct net_context *new_context;
 		struct sockaddr local_addr;
 		struct sockaddr remote_addr;
-		struct net_tcp *tmp_tcp;
+		struct net_tcp *new_tcp;
 		socklen_t addrlen;
 		int ret;
 
@@ -1814,22 +1814,20 @@ NET_CONN_CB(tcp_syn_rcvd)
 		}
 
 		/* Swap the newly-created TCP states with the one that
-		 * was used to establish this connection. The new TCP
+		 * was used to establish this connection. The old TCP
 		 * must be listening to accept other connections.
 		 */
-		tmp_tcp = new_context->tcp;
-		tmp_tcp->accept_cb = tcp->accept_cb;
-		tcp->accept_cb = NULL;
-		new_context->tcp = tcp;
+		new_tcp = new_context->tcp;
+		new_tcp->accept_cb = NULL;
 		copy_pool_vars(new_context, context);
-		context->tcp = tmp_tcp;
 
-		tcp->context = new_context;
-		tmp_tcp->context = context;
+		net_tcp_change_state(tcp, NET_TCP_LISTEN);
 
-		net_tcp_change_state(tmp_tcp, NET_TCP_LISTEN);
+		/* We cannot use net_tcp_change_state() here as that will
+		 * check the state transitions. So set the state directly.
+		 */
+		new_context->tcp->state = NET_TCP_ESTABLISHED;
 
-		net_tcp_change_state(new_context->tcp, NET_TCP_ESTABLISHED);
 		net_context_set_state(new_context, NET_CONTEXT_CONNECTED);
 
 		context->tcp->accept_cb(new_context,
