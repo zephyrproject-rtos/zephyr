@@ -263,10 +263,8 @@ static void tx_packet_set(struct connection *conn,
 static void prepare_pdu_data_tx(struct connection *conn,
 				struct pdu_data **pdu_data_tx);
 static void packet_rx_allocate(u8_t max);
-
-static u8_t packet_rx_acquired_count_get(void);
-
-static struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count);
+static inline u8_t packet_rx_acquired_count_get(void);
+static inline struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count);
 static void packet_rx_enqueue(void);
 static void packet_tx_enqueue(u8_t max);
 static struct pdu_data *empty_tx_enqueue(struct connection *conn);
@@ -8045,7 +8043,7 @@ static void packet_rx_allocate(u8_t max)
 	}
 }
 
-static u8_t packet_rx_acquired_count_get(void)
+static inline u8_t packet_rx_acquired_count_get(void)
 {
 	if (_radio.packet_rx_acquire >=
 	    _radio.packet_rx_last) {
@@ -8058,18 +8056,13 @@ static u8_t packet_rx_acquired_count_get(void)
 	}
 }
 
-static struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count)
+static inline struct radio_pdu_node_rx *packet_rx_reserve_get(u8_t count)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
-
 	if (count > packet_rx_acquired_count_get()) {
 		return 0;
 	}
 
-	radio_pdu_node_rx = _radio.packet_rx[_radio.packet_rx_last];
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
-
-	return radio_pdu_node_rx;
+	return _radio.packet_rx[_radio.packet_rx_last];
 }
 
 static void packet_rx_callback(void)
