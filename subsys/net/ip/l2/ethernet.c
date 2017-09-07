@@ -205,17 +205,20 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
-			arp_pkt, pkt, iface);
-
 		if (pkt != arp_pkt) {
+			NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
+				arp_pkt, pkt, iface);
+
 			/* Either pkt went to ARP pending queue
 			 * or there was not space in the queue anymore
 			 */
 			net_pkt_unref(pkt);
-		}
 
-		pkt = arp_pkt;
+			pkt = arp_pkt;
+		} else {
+			NET_DBG("Found ARP entry, sending pkt %p to iface %p",
+				pkt, iface);
+		}
 
 		net_pkt_ll_src(pkt)->addr = (u8_t *)&NET_ETH_HDR(pkt)->src;
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
