@@ -354,7 +354,7 @@ static int do_update_reply_cb(const struct zoap_packet *response,
 	int index;
 
 	code = zoap_header_get_code(response);
-	SYS_LOG_DBG("Update callback (code:%u.%u)",
+	SYS_LOG_INF("Update callback (code:%u.%u)",
 		    ZOAP_RESPONSE_CODE_CLASS(code),
 		    ZOAP_RESPONSE_CODE_DETAIL(code));
 
@@ -368,7 +368,7 @@ static int do_update_reply_cb(const struct zoap_packet *response,
 	if ((code == ZOAP_RESPONSE_CODE_CHANGED) ||
 	    (code == ZOAP_RESPONSE_CODE_CREATED)) {
 		set_sm_state(index, ENGINE_REGISTRATION_DONE);
-		SYS_LOG_DBG("Update Done");
+		SYS_LOG_INF("Update Done");
 		return 0;
 	}
 
