@@ -2794,16 +2794,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
-		if (_radio.conn_curr->llcp_req != _radio.conn_curr->llcp_ack) {
-			/* reset ctrl procedure */
-			_radio.conn_curr->llcp_ack = _radio.conn_curr->llcp_req;
-
-			switch (_radio.conn_curr->llcp_type) {
-			default:
-				LL_ASSERT(0);
-				break;
-			}
-
+		if (0) {
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		} else if (_radio.conn_curr->llcp_length.req !=
 			   _radio.conn_curr->llcp_length.ack) {
