@@ -2,8 +2,8 @@
 
 .. _zephyr_1.9:
 
-Zephyr Kernel 1.9.0 (WIP)
-#########################
+Zephyr Kernel 1.9.0
+###################
 
 We are pleased to announce the release of Zephyr kernel version 1.9.0
 
@@ -138,6 +138,7 @@ Documentation
 * CONTRIBUTING.rst and Contribution Guide material added
 * Configuration options doc reorganized for easier access
 * Navigation sidebar issues fixed for supported boards section
+* Fixed link targets hidden behind header
 * Completed migration of wiki.zephyrproject.org content into docs and
   GitHub wiki. All links to old wiki updated.
 * Broken link and spelling check scans through .rst, Kconfig (used for
@@ -153,7 +154,7 @@ Documentation
 Build System and Tools
 **********************
 * Convert post-processing host tools to python, this includes the following
-  tools: gen_offset_header.py gen_idt.py gen_gdt.py gen_mmu.p
+  tools: gen_offset_header.py gen_idt.py gen_gdt.py gen_mmu.py
 
 
 Tests and Samples
@@ -263,7 +264,7 @@ JIRA Related Items
 * :jira:`ZEP-2397` - net_if_ipv6_addr_rm calls k_delayed_work_cancel() on uninitialized k_delayed_work object
 * :jira:`ZEP-2398` - network stack test cases are only tested on x86
 * :jira:`ZEP-2403` - Enabling MMU for qemu_x86 broke active connect support
-* :jira:`ZEP-2407` - [Cortex m series ] Getting a crash on Cortex m3 series when more than 8 premptive threads with equal priority are scheduled
+* :jira:`ZEP-2407` - [Cortex m series ] Getting a crash on Cortex m3 series when more than 8 preemptive threads with equal priority are scheduled
 * :jira:`ZEP-2408` - design mechanism for kernel object sharing policy
 * :jira:`ZEP-2412` - Bluetooth tester app not working from commit c1e5cb
 * :jira:`ZEP-2432` - ieee802154_shell.c, net_mgmt call leads to a BUS FAULT
