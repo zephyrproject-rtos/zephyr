@@ -44,19 +44,36 @@ static void new_client(struct net_context *net_ctx,
 #endif /* CONFIG_NET_DEBUG_APP */
 }
 
+static int get_avail_net_ctx(struct net_app_ctx *ctx)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+		if (!ctx->server.net_ctxs[i] ||
+		    !net_context_is_used(ctx->server.net_ctxs[i])) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 void _net_app_accept_cb(struct net_context *net_ctx,
 			struct sockaddr *addr,
 			socklen_t addrlen,
 			int status, void *data)
 {
 	struct net_app_ctx *ctx = data;
+	int i, ret;
 
 	ARG_UNUSED(addr);
 	ARG_UNUSED(addrlen);
 
-	if (status != 0 || ctx->server.net_ctx || !ctx->is_enabled) {
-		/* We are already connected and support only one connection at
-		 * a time so this new connection must be closed.
+	i = get_avail_net_ctx(ctx);
+
+	if (i < 0 || status != 0 || !ctx->is_enabled) {
+		/* We are already connected and there are no free context slots
+		 * available so this new connection must be closed.
 		 */
 		net_context_put(net_ctx);
 
@@ -68,19 +85,29 @@ void _net_app_accept_cb(struct net_context *net_ctx,
 			ctx->cb.connect(ctx, status, ctx->user_data);
 		}
 
-		if (ctx->server.net_ctx) {
-			NET_DBG("Already connected via context %p",
-				ctx->server.net_ctx);
+		if (i < 0) {
+			NET_DBG("All connection slots occupied, new "
+				"connection dropped");
 		}
 
 		return;
 	}
 
-	ctx->server.net_ctx = net_ctx;
+	NET_DBG("[%d] Accepted net_ctx %p", i, net_ctx);
+
+	ret = net_context_recv(net_ctx, ctx->recv_cb, K_NO_WAIT, ctx);
+	if (ret < 0) {
+		NET_DBG("Cannot set recv_cb (%d)", ret);
+	}
+
+	ctx->server.net_ctxs[i] = net_ctx;
+
+	/* We need to set the backpointer here, as otherwise it is impossible
+	 * to find the correct net_ctx from a list of net_ctxs.
+	 */
+	net_ctx->net_app = ctx;
 
 	new_client(net_ctx, addr);
-
-	net_context_recv(net_ctx, ctx->recv_cb, K_NO_WAIT, ctx);
 
 	if (ctx->cb.connect) {
 		ctx->cb.connect(ctx, 0, ctx->user_data);
@@ -287,10 +314,27 @@ static inline void new_server(struct net_app_ctx *ctx,
 #endif /* CONFIG_NET_DEBUG_APP */
 }
 
+static struct net_context *find_net_ctx(struct net_app_ctx *ctx,
+					int *idx)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+		if (ctx->server.net_ctxs[i] &&
+		    ctx->server.net_ctxs[i]->net_app == ctx &&
+		    net_context_is_used(ctx->server.net_ctxs[i])) {
+			*idx = i;
+			return ctx->server.net_ctxs[i];
+		}
+	}
+
+	return NULL;
+}
+
 static void tls_server_handler(struct net_app_ctx *ctx,
 			       struct k_sem *startup_sync)
 {
-	int ret;
+	int ret, i;
 
 	NET_DBG("Starting TLS server thread for %p", ctx);
 
@@ -303,6 +347,8 @@ static void tls_server_handler(struct net_app_ctx *ctx,
 	k_sem_give(startup_sync);
 
 	while (1) {
+		struct net_context *net_ctx;
+
 		_net_app_ssl_mainloop(ctx);
 
 		mbedtls_ssl_close_notify(&ctx->tls.mbedtls.ssl);
@@ -311,11 +357,11 @@ static void tls_server_handler(struct net_app_ctx *ctx,
 			ctx->cb.close(ctx, -ESHUTDOWN, ctx->user_data);
 		}
 
-		if (ctx->server.net_ctx) {
-			NET_DBG("Server context %p removed",
-				ctx->server.net_ctx);
-			net_context_put(ctx->server.net_ctx);
-			ctx->server.net_ctx = NULL;
+		net_ctx = find_net_ctx(ctx, &i);
+		if (net_ctx) {
+			NET_DBG("Server context %p removed", net_ctx);
+			net_context_put(net_ctx);
+			ctx->server.net_ctxs[i] = NULL;
 		}
 	}
 }

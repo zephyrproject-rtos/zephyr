@@ -79,6 +79,15 @@ config NET_APP_SERVER
 	help
 	Enables net app library server APIs.
 
+config NET_APP_SERVER_NUM_CONN
+	int "Number of simultaneous incoming connections"
+	default 1
+	depends on NET_APP_SERVER
+	help
+	Tells how many simultaneous incoming connections the server instance can
+	support. The value of CONFIG_NET_TCP_BACKLOG_SIZE must be greater than
+	or equal to CONFIG_NET_APP_SERVER_NUM_CONN.
+
 config NET_APP_CLIENT
 	bool "Enable client support"
 	default n

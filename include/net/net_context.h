@@ -255,6 +255,11 @@ struct net_context {
 	struct net_tcp *tcp;
 #endif /* CONFIG_NET_TCP */
 
+#if defined(CONFIG_NET_APP)
+	/** net_app connection information */
+	void *net_app;
+#endif /* CONFIG_NET_APP */
+
 #if defined(CONFIG_NET_SOCKETS)
 	/** Per-socket packet or connection queues */
 	union {

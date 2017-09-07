@@ -272,9 +272,15 @@ static void close_net_ctx(struct net_app_ctx *ctx)
 	}
 #endif
 #if defined(CONFIG_NET_APP_SERVER)
-	if (ctx->server.net_ctx) {
-		net_context_put(ctx->server.net_ctx);
-		ctx->server.net_ctx = NULL;
+	{
+		int i;
+
+		for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+			if (ctx->server.net_ctxs[i]) {
+				net_context_put(ctx->server.net_ctxs[i]);
+				ctx->server.net_ctxs[i] = NULL;
+			}
+		}
 	}
 #endif
 }
