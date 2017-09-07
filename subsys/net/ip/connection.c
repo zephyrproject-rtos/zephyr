@@ -830,11 +830,24 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_DEBUG_CONN)) {
+		int data_len = -1;
+
+		if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		    net_pkt_family(pkt) == AF_INET) {
+			data_len = NET_IPV4_HDR(pkt)->len[0] * 256 +
+				NET_IPV4_HDR(pkt)->len[1];
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			   net_pkt_family(pkt) == AF_INET6) {
+			data_len = NET_IPV6_HDR(pkt)->len[0] * 256 +
+				NET_IPV6_HDR(pkt)->len[1];
+		}
+
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "
-			"family %d chksum 0x%04x", net_proto2str(proto), pkt,
+			"family %d chksum 0x%04x len %d", net_proto2str(proto),
+			pkt,
 			ntohs(src_port),
 			ntohs(dst_port),
-			net_pkt_family(pkt), ntohs(chksum));
+			net_pkt_family(pkt), ntohs(chksum), data_len);
 	}
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
