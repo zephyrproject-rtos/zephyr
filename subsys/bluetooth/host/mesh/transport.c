@@ -529,6 +529,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
 		}
 
 		bt_mesh_model_recv(rx, sdu);
+		return 0;
 	}
 
 	BT_WARN("No matching AppKey");
