@@ -241,6 +241,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 	if (net_pkt_family(pkt) == AF_INET) {
 		if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
+			NET_DBG("IPv4 dst address missing");
 			return -EADDRNOTAVAIL;
 		}
 
