@@ -169,11 +169,14 @@ JIRA Related Items
 * :jira:`ZEP-230` - Define I2S driver APIs
 * :jira:`ZEP-601` - enable CONFIG_DEBUG_INFO
 * :jira:`ZEP-702` - Integrate Nordic's Phoenix Link Layer into Zephyr
+* :jira:`ZEP-749` - TinyCrypt uses an old, unoptimized version of micro-ecc
 * :jira:`ZEP-896` - nRF5x Series: Add support for power and clock peripheral
+* :jira:`ZEP-1067` - Driver for BMM150
 * :jira:`ZEP-1396` - Add ksdk adc shim driver
 * :jira:`ZEP-1426` - CONFIG_BOOT_TIME_MEASUREMENT on all targets?
 * :jira:`ZEP-1552` - Provide apds9960 sensor driver
 * :jira:`ZEP-1647` - Figure out new combo for breathe/doxygen/sphinx versions that are supported
+* :jira:`ZEP-1744` - UPF 56 BLE Controller Issues
 * :jira:`ZEP-1751` - Add template YAML file
 * :jira:`ZEP-1819` - Add tickless kernel support in nrf_rtc_timer timer
 * :jira:`ZEP-1843` - provide mechanism to filter test cases based on available hardware
@@ -181,11 +184,13 @@ JIRA Related Items
 * :jira:`ZEP-1902` - Missing board documentation for arm/nucleo_f334r8
 * :jira:`ZEP-1911` - Missing board documentation for arm/stm3210c_eval
 * :jira:`ZEP-1917` - Missing board documentation for arm/stm32373c_eval
+* :jira:`ZEP-1918` - Fix connection parameter request procedure
 * :jira:`ZEP-2018` - Remove deprecated PWM APIs
 * :jira:`ZEP-2020` - tests/crypto/test_ecc_dsa intermittently fails on riscv32
 * :jira:`ZEP-2025` - Add mcux pwm shim driver for k64
 * :jira:`ZEP-2031` - ESP32 Architecture Configuration
 * :jira:`ZEP-2032` - Espressif Open-source Toolchain Support
+* :jira:`ZEP-2039` - Implement stm32cube LL based clock control driver
 * :jira:`ZEP-2054` - Convert all helper script to use python3
 * :jira:`ZEP-2062` - Convert gen_offset_header to a python script
 * :jira:`ZEP-2063` - Convert gen_idt to python
@@ -195,18 +200,24 @@ JIRA Related Items
 * :jira:`ZEP-2089` - UART support for ESP32
 * :jira:`ZEP-2115` - Common API for networked applications for setting up network
 * :jira:`ZEP-2116` - Common API for networked apps to create client/server applications
+* :jira:`ZEP-2141` - Coverity CID 169303 in tests/net/ipv6/src/main.c
 * :jira:`ZEP-2150` - Move Arduino 101 to Device Tree
 * :jira:`ZEP-2151` - Move Quark D2000 to device tree
 * :jira:`ZEP-2156` - Build warnings [-Wformat] with LLVM/icx (tests/kernel/sprintf)
 * :jira:`ZEP-2168` - Timers seem to be broken with TICKLESS_KERNEL on nRF51 (Cortex M0)
+* :jira:`ZEP-2171` - Move all board pinmux code from drivers/pinmux/stm32 to the corrosponding board/soc locations
 * :jira:`ZEP-2184` - Split data, bss, noinit sections into application and kernel areas
 * :jira:`ZEP-2188` - x86: Implement simple stack memory protection
 * :jira:`ZEP-2217` - schedule_api test fails on ARM with tickless kernel enabled
 * :jira:`ZEP-2218` - unexpected short timeslice when running schedule_api with tickless kernel enabled
+* :jira:`ZEP-2220` - Extend MPU to stm32 family
 * :jira:`ZEP-2225` - Ability to unregister GATT services
+* :jira:`ZEP-2226` - BSD Sockets API: Basic blocking API
+* :jira:`ZEP-2227` - BSD Sockets API: Non-blocking API
 * :jira:`ZEP-2229` - test_time_slicing_preemptible fails on bbc_microbit and other NRF boards
 * :jira:`ZEP-2250` - sanitycheck not filtering defconfigs properly
 * :jira:`ZEP-2258` - Coverity static scan issues seen
+* :jira:`ZEP-2265` - stack declaration macros for ARM MPU
 * :jira:`ZEP-2267` - Create Release Notes
 * :jira:`ZEP-2270` - Convert mpu_stack_guard_test from using k_thread_spawn to k_thread_create
 * :jira:`ZEP-2274` - Build warnings [-Wpointer-sign] with LLVM/icx (tests/net/ipv6_fragment)
@@ -223,6 +234,8 @@ JIRA Related Items
 * :jira:`ZEP-2306` - echo server hangs from IPv6 hop-by-hop option anomaly
 * :jira:`ZEP-2308` - (New) Networking API details documentation is missing
 * :jira:`ZEP-2310` - Improve configuration documentation index organization
+* :jira:`ZEP-2314` - Testcase failure :tests/benchmarks/timing_info/testcase.ini#test
+* :jira:`ZEP-2316` - Testcase failure :tests/bluetooth/shell/testcase.ini#test_br
 * :jira:`ZEP-2318` - some kernel objects sections are misaligned
 * :jira:`ZEP-2319` - tests/net/ieee802154/l2 uses semaphore before initialization
 * :jira:`ZEP-2321` - [PTS] All TC's of SM/GATT/GAP failed due to BTP_TIMEOUT error.
@@ -234,6 +247,7 @@ JIRA Related Items
 * :jira:`ZEP-2332` - bad memory access tests/net/ip-addr
 * :jira:`ZEP-2334` - bluetooth shell build warning when CONFIG_DEBUG=y
 * :jira:`ZEP-2335` - Ensure the Licensing page is up-to-date for the release
+* :jira:`ZEP-2340` - Disabling advertising gets stuck
 * :jira:`ZEP-2341` - Build warnings:override: reassigning to symbol MAIN_STACK_SIZE with LLVM/icx (/tests/net/6lo)
 * :jira:`ZEP-2343` - Coverity static scan issues seen
 * :jira:`ZEP-2344` - Coverity static scan issues seen
@@ -267,11 +281,13 @@ JIRA Related Items
 * :jira:`ZEP-2407` - [Cortex m series ] Getting a crash on Cortex m3 series when more than 8 preemptive threads with equal priority are scheduled
 * :jira:`ZEP-2408` - design mechanism for kernel object sharing policy
 * :jira:`ZEP-2412` - Bluetooth tester app not working from commit c1e5cb
+* :jira:`ZEP-2423` - samples/bluetooth/ipsp's builtin TCP echo crashes on TCP closure
 * :jira:`ZEP-2432` - ieee802154_shell.c, net_mgmt call leads to a BUS FAULT
 * :jira:`ZEP-2433` - x86: do forensic analysis to determine stack overflow context in supervisor mode
 * :jira:`ZEP-2436` - Unable to see console output in Quark_D200_CRB
 * :jira:`ZEP-2437` - warnings when building applications for quark d2000
 * :jira:`ZEP-2444` - [nrf] Scheduling test API is getting failed in case of nrf51/nrf52 platforms
+* :jira:`ZEP-2445` - nrf52: CPU lock-up when using Bluetooth + Flash driver + CONFIG_ASSERT
 * :jira:`ZEP-2447` - 'make debugserver' fails for qemu_x86_iamcu
 * :jira:`ZEP-2451` - Move Bluetooth IPSP support functions from samples/bluetooth to a separate library
 * :jira:`ZEP-2452` - https server does not build for olimex_stm32_e407
@@ -279,7 +295,9 @@ JIRA Related Items
 * :jira:`ZEP-2459` - Sample application not working with Quark SE C1000
 * :jira:`ZEP-2460` - tests/crypto/ecc_dh fails on qemu_nios2
 * :jira:`ZEP-2464` - "allow IPv6 interface init to work with late IP assignment" patch broke non-late IPv6 assignment
+* :jira:`ZEP-2465` - Static code scan (coverity) issues seen
 * :jira:`ZEP-2467` - Static code scan (coverity) issues seen
+* :jira:`ZEP-2468` - Static code scan (coverity) issues seen
 * :jira:`ZEP-2469` - Static code scan (coverity) issues seen
 * :jira:`ZEP-2474` - Static code scan (coverity) issues seen
 * :jira:`ZEP-2480` - Build warnings [-Wpointer-sign] with LLVM/icx (samples/net/coaps_server)
@@ -291,18 +309,32 @@ JIRA Related Items
 * :jira:`ZEP-2488` - Build warnings [-Wpointer-sign] and [-Warray-bounds] with LLVM/icx (samples/net/irc_bot)
 * :jira:`ZEP-2489` - bug in _x86_mmu_buffer_validate API
 * :jira:`ZEP-2496` - Build failure on tests/benchmarks/object_footprint
+* :jira:`ZEP-2497` - [TIMER] k_timer_start should take 0 value for duration parameter
+* :jira:`ZEP-2498` - [Display] Minimum Duration argument to k_timer_start should be non Zero positive value
 * :jira:`ZEP-2508` - esp32 linkage doesn't unify ELF sections correctly
+* :jira:`ZEP-2510` - BT: CONFIG_BT_HCI_TX_STACK_SIZE appears to be too low for BT_SPI
+* :jira:`ZEP-2514` - XCC sanitycheck build compile wrong targets
 * :jira:`ZEP-2523` - Static code scan (Coverity) issue seen in file: /samples/net/zoap_server/src/zoap-server.c
+* :jira:`ZEP-2525` - Static code scan (Coverity) issue seen in file: /samples/net/zoap_server/src/zoap-server.c
 * :jira:`ZEP-2531` - Static code scan (Coverity) issue seen in file: /tests/net/lib/dns_resolve/src/main.c
 * :jira:`ZEP-2528` - Static code scan (Coverity) issue seen in file: /samples/net/nats/src/nats.c
 * :jira:`ZEP-2534` - Static code scan (Coverity) issue seen in file: /tests/kernel/irq_offload/src/irq_offload.c
 * :jira:`ZEP-2535` - Static code scan (Coverity) issue seen in file: /tests/net/lib/zoap/src/main.c
+* :jira:`ZEP-2537` - Static code scan (Coverity) issue seen in file: /tests/crypto/ecc_dh/src/ecc_dh.c
 * :jira:`ZEP-2538` - Static code scan (Coverity) issue seen in file: /arch/arm/soc/st_stm32/stm32f1/soc_gpio.c
 * :jira:`ZEP-2539` - Static code scan (Coverity) issue seen in file: /tests/net/ieee802154/l2/src/ieee802154_test.c
+* :jira:`ZEP-2540` - Static code scan (Coverity) issue seen in file: /ext/lib/crypto/tinycrypt/source/ecc_dh.c
+* :jira:`ZEP-2541` - Static code scan (Coverity) issue seen in file: /subsys/bluetooth/host/mesh/cfg.c
+* :jira:`ZEP-2549` - Static code scan (Coverity) issue seen in file: /samples/net/leds_demo/src/leds-demo.c
 * :jira:`ZEP-2552` - ESP32 uart poll_out always return 0
 * :jira:`ZEP-2553` - k_queue_poll not handling -EADDRINUSE (another thread already polling) properly
 * :jira:`ZEP-2556` - ESP32 watchdog WDT_MODE_INTERRUPT_RESET mode fails
 * :jira:`ZEP-2557` - ESP32 : Some GPIO tests are getting failed (tests/drivers/gpio/gpio_basic_api)
+* :jira:`ZEP-2558` - CONFIG_BLUETOOTH_* Kconfig options silently ignored
+* :jira:`ZEP-2560` - samples/net: the sample of zoap_server fails to add multicast address
 * :jira:`ZEP-2561` - samples/net: The HTTP client failed to send the POST request
 * :jira:`ZEP-2568` - [PTS] All TC's of L2CAP/SM/GATT/GAP failed due to BTP_ERROR.
 * :jira:`ZEP-2575` - error:[ '-O: command not found'] with LLVM/icx (samples/hello_world)
+* :jira:`ZEP-2576` - samples/net/sockets/echo, echo_async : fails to send the TCP packets
+* :jira:`ZEP-2581` - CC3220 executable binary format support
+* :jira:`ZEP-2584` - Update mbedTLS to 2.6.0
