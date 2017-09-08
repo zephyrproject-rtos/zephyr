@@ -2932,6 +2932,16 @@ int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
 }
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
+void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
+{
+	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	net_app_set_net_pkt_pool(&client_ctx->net_app_ctx,
+				 client_ctx->tx_slab, client_ctx->data_pool);
+#endif
+}
+
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       char *peer_str, u16_t peer_port)
 {
@@ -2949,12 +2959,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		goto error_start;
 	}
 
-	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	net_app_set_net_pkt_pool(&client_ctx->net_app_ctx,
-				 client_ctx->tx_slab, client_ctx->data_pool);
-#endif
+	lwm2m_engine_context_init(client_ctx);
 
 	/* set net_app callbacks */
 	ret = net_app_set_cb(&client_ctx->net_app_ctx,

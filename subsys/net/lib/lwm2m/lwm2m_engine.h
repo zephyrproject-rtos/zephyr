@@ -85,6 +85,9 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    u8_t *created);
 
+/* LwM2M context functions */
+void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
+
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_release_message(struct lwm2m_message *msg);
