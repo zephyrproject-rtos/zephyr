@@ -128,10 +128,10 @@ extern "C" {
  * This can be used to control a CS line via a GPIO line, instead of
  * using the controller inner CS logic.
  *
- * gpio_dev is a valid pointer to an actual GPIO device
- * gpio_pin is a number representing the gpio PIN that will be used
+ * @param gpio_dev is a valid pointer to an actual GPIO device
+ * @param gpio_pin is a number representing the gpio PIN that will be used
  *    to act as a CS line
- * delay is a delay in microseconds to wait before starting the
+ * @param delay is a delay in microseconds to wait before starting the
  *    transmission and before releasing the CS line
  */
 struct spi_cs_control {
@@ -143,24 +143,24 @@ struct spi_cs_control {
 /**
  * @brief SPI controller configuration structure
  *
- * dev is a valid pointer to an actual SPI device
- * frequency is the bus frequency in Hertz
- * operation is a bit field with the following parts:
- *    operational mode    [ 0 ]       - master or slave.
- *    mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
- *    transfer            [ 4 ]       - LSB or MSB first.
- *    word_size           [ 5 : 10 ]  - Size of a data frame in bits.
- *    lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
- *    cs_hold             [ 13 ]      - Hold on the CS line if possible.
- *    lock_on             [ 14 ]      - Keep resource locked for the caller.
- *    eeprom              [ 15 ]      - EEPROM mode.
- * vendor is a vendor specific bitfield
- * slave is the slave number from 0 to host controller slave limit.
+ * @param dev is a valid pointer to an actual SPI device
+ * @param frequency is the bus frequency in Hertz
+ * @param operation is a bit field with the following parts:
  *
- * cs is a valid pointer on a struct spi_cs_control is CS line is
+ *     operational mode    [ 0 ]       - master or slave.
+ *     mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
+ *     transfer            [ 4 ]       - LSB or MSB first.
+ *     word_size           [ 5 : 10 ]  - Size of a data frame in bits.
+ *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
+ *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
+ *     lock_on             [ 14 ]      - Keep resource locked for the caller.
+ *     eeprom              [ 15 ]      - EEPROM mode.
+ * @param vendor is a vendor specific bitfield
+ * @param slave is the slave number from 0 to host controller slave limit.
+ * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * Note: cs_hold, lock_on and eeprom_rx can be changed between consecutive
+ * @note cs_hold, lock_on and eeprom_rx can be changed between consecutive
  * transceive call.
  */
 struct spi_config {
@@ -177,10 +177,10 @@ struct spi_config {
 /**
  * @brief SPI buffer structure
  *
- * buf is a valid pointer on a data buffer, or NULL otherwise.
- * len is the length of the buffer or, if buf is NULL, will be the
- *     length which as to be sent as dummy bytes (as TX buffer) or
- *     the length of bytes that should be skipped (as RX buffer).
+ * @param buf is a valid pointer on a data buffer, or NULL otherwise.
+ * @param len is the length of the buffer or, if buf is NULL, will be the
+ *    length which as to be sent as dummy bytes (as TX buffer) or
+ *    the length of bytes that should be skipped (as RX buffer).
  */
 struct spi_buf {
 	void *buf;
