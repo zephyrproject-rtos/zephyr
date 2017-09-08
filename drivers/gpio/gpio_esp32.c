@@ -118,6 +118,17 @@ static void config_polarity(u32_t pin, int flags)
 	}
 }
 
+static void config_drive_strength(u32_t pin, int flags)
+{
+	volatile u32_t *reg = gpio_pin_reg(pin);
+
+	if ((flags & GPIO_DS_DISCONNECT_LOW) == GPIO_DS_DISCONNECT_LOW) {
+		*reg |= GPIO_PIN_PAD_DRIVER;
+	} else {
+		*reg &= ~GPIO_PIN_PAD_DRIVER;
+	}
+}
+
 static int gpio_esp32_config(struct device *dev, int access_op,
 			     u32_t pin, int flags)
 {
@@ -150,6 +161,8 @@ static int gpio_esp32_config(struct device *dev, int access_op,
 					PINMUX_INPUT_ENABLED);
 		config_polarity(pin, flags);
 	}
+
+	config_drive_strength(pin, flags);
 
 	return config_interrupt(pin, flags);
 }
