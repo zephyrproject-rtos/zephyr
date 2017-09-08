@@ -110,6 +110,9 @@ extern int _arch_buffer_validate(void *addr, size_t size, int write);
 extern FUNC_NORETURN
 void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
 			   void *p3);
+
+extern u32_t _k_syscall_entry(u32_t arg1, u32_t arg2, u32_t arg3, u32_t arg4,
+			      u32_t arg5, u32_t call_id);
 #endif /* CONFIG_USERSPACE */
 
 /* set and clear essential fiber/task flag */

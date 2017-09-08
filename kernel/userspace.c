@@ -186,3 +186,16 @@ void _k_object_init(void *object)
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 
+
+u32_t _k_syscall_entry(u32_t arg1, u32_t arg2, u32_t arg3, u32_t arg4,
+		       u32_t arg5, u32_t call_id)
+{
+	/* A real implementation will figure out what function to call
+	 * based on call_id, validate arguments, perform any other runtime
+	 * checks needed, and call into the appropriate kernel function.
+	 */
+	__ASSERT(0, "system calls are unimplemented");
+
+	return 0;
+}
+
