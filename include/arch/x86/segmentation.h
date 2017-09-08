@@ -437,8 +437,8 @@ static inline void _init_irq_gate(struct segment_descriptor *sd,
 static inline void _far_jump(u16_t sel, void *offset)
 {
 	struct far_ptr ptr = {
-		.sel = sel,
-		.offset = offset
+		.offset = offset,
+		.sel = sel
 	};
 
 	__asm__ __volatile__ ("ljmp *%0" :: "m" (ptr));
@@ -454,8 +454,8 @@ static inline void _far_jump(u16_t sel, void *offset)
 static inline void _far_call(u16_t sel, void *offset)
 {
 	struct far_ptr ptr = {
-		.sel = sel,
-		.offset = offset
+		.offset = offset,
+		.sel = sel
 	};
 
 	__asm__ __volatile__ ("lcall *%0" :: "m" (ptr));
