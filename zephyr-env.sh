@@ -67,3 +67,5 @@ unset zephyr_answer_file
 zephyr_answer_file=~/.zephyrrc
 [ -f ${zephyr_answer_file} ] &&  . ${zephyr_answer_file};
 unset zephyr_answer_file
+export ZEPHYR_GCC_VARIANT=gccarmemb
+export GCCARMEMB_TOOLCHAIN_PATH=/usr
