@@ -286,6 +286,8 @@ static void firmware_transfer(struct k_work *work)
 
 	SYS_LOG_DBG("Attached to port: %d", parsed_uri.port);
 
+	lwm2m_engine_context_init(&firmware_ctx);
+
 	/* set net_app callbacks */
 	ret = net_app_set_cb(&firmware_ctx.net_app_ctx, NULL,
 			     firmware_udp_receive, NULL, NULL);
