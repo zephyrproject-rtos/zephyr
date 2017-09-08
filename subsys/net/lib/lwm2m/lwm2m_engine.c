@@ -2725,6 +2725,8 @@ static void retransmit_request(struct k_work *work)
 			msg->message_timeout_cb(msg);
 		}
 
+		/* final unref to release pkt */
+		net_pkt_unref(pending->pkt);
 		lwm2m_release_message(msg);
 		return;
 	}
