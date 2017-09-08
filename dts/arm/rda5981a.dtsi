@@ -1,0 +1,55 @@
+#include "armv7-m.dtsi"
+
+/ {
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m4";
+		};
+	};
+
+	sram0: memory {
+		compatible = "iram";
+		reg = <0x100080 0x1e000>;
+	};
+
+	flash0: flash {
+		compatible = "flash";
+		reg = <0x018001000 0x7d000>;
+	};
+
+	clocks {
+		clk_sys: clk-sys {
+			#clock-cells = <0>;
+			compatible = "sys-clock";
+			clock-frequency = <160000000>;
+		};
+	};
+
+	soc {
+		uart0: uart@40012000 {
+			compatible = "rda,5981a-uart";
+			reg = <0x40012000 0x44>;
+			interrupts = <7>;
+			zephyr,irq-prio = <0>;
+			baud-rate = <921600>;
+		};
+
+		uart1: uart@40180000 {
+			compatible = "rda,5981a-uart";
+			reg = <0x40012000 0x44>;
+			interrupts = <9>;
+			zephyr,irq-prio = <0>;
+			baud-rate = <921600>;
+		};
+
+		wdog: watchdog@4000000c {
+			compatible = "rda,5981a-watchdog";
+			reg = <0x4000000c 4>;
+		};
+	};
+};
+
+&nvic {
+	num-irqs = <16>;
+	num-irq-prio-bits = <4>;
+};

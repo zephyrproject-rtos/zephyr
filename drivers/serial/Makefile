@@ -19,3 +19,4 @@ obj-$(CONFIG_UART_CMSDK_APB)	+= uart_cmsdk_apb.o
 obj-$(CONFIG_UART_RISCV_QEMU)	+= uart_riscv_qemu.o
 obj-$(CONFIG_UART_FE310)	+= uart_fe310.o
 obj-$(CONFIG_UART_ESP32)	+= uart_esp32.o
+obj-$(CONFIG_UART_RDA5981A)    += uart_rda5981a.o

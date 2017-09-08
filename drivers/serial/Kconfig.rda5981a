@@ -1,0 +1,89 @@
+#
+# Copyright (c) 2017 RDA
+# Copyright (c) 2016-2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_RDA5981A
+	bool "RDA5981 MCU serial driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	depends on SOC_FAMILY_RDA5981
+	help
+	  This option enables the UART driver for RDA5981 family of
+	  processors. Say y if you wish to use serial port on RDA5981
+	  MCU.
+
+config UART_RDA5981A_PORT_N
+	int "RDA5981 default uart number"
+	default 0
+	depends on UART_RDA5981A
+	help
+
+# --- port 0 ---
+
+config UART_RDA5981A_PORT_0
+	bool "Enable RDA5981A USART0 Port"
+	default n
+	depends on UART_RDA5981A
+	help
+	  Enable support for USART0 port in the driver. Say y here
+	  if you want to use USART0 device.
+
+config UART_RDA5981A_PORT_0_NAME
+	string "Device Name for RDA5981A USART0 Port"
+	default "UART_0"
+	depends on UART_RDA5981A_PORT_0
+	help
+	  This is the device name for USART0 port, and is
+	  included in the device struct.
+
+if !HAS_DTS
+config UART_RDA5981A_PORT_0_BAUD_RATE
+	int "RDA5981A USART0 Baud Rate"
+	default 115200
+	depends on UART_RDA5981A_PORT_0
+	help
+	  The baud rate for USART0 port to be set to at boot.
+
+config UART_RDA5981A_PORT_0_IRQ_PRI
+	int "RDA5981A USART0 Interrupt Priority"
+	default 0
+	depends on UART_RDA5981A_PORT_0 && UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for USART0 port.
+endif
+
+# --- port 1---
+
+config UART_RDA5981A_PORT_1
+	bool "Enable RDA5981A USART1 Port"
+	default n
+	depends on UART_RDA5981A
+	help
+	 Enable support for USART1 port in the driver. Say y here
+	  if you want to use USART1 device.
+
+config UART_RDA5981A_PORT_1_NAME
+	string "Device Name for RDA5981A USART1 Port"
+	default "UART_1"
+	depends on UART_RDA5981A_PORT_1
+	help
+	  This is the device name for USART1 port, and is
+	  included in the device struct.
+if !HAS_DTS
+config UART_RDA5981A_PORT_1_BAUD_RATE
+	int "RDA5981A USART1 Baud Rate"
+	default 115200
+	depends on UART_RDA5981A_PORT_1
+	help
+	  The baud rate for USART1 port to be set to at boot.
+
+config UART_RDA5981A_PORT_1_IRQ_PRI
+	int "RDA5981A USART1 Interrupt Priority"
+	default 0
+	depends on UART_RDA5981_PORT_1 && UART_INTERRUPT_DRIVEN
+	help
+	  The interrupt priority for USART1 port.
+endif

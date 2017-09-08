@@ -1,0 +1,20 @@
+/dts-v1/;
+
+#include "armv7-m.dtsi"
+#include "rda_5981a.dtsi"
+
+/ {
+	compatible = "arm,96b_bluesky";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&clk_sys {
+    clock-frequency = <160000000>;
+};

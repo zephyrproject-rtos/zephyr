@@ -14,3 +14,5 @@ endif
 -include $(srctree)/ext/hal/st/stm32cube/Makefile
 
 -include $(srctree)/ext/hal/ti/simplelink/Makefile
+
+-include $(srctree)/ext/hal/rda/rda5981a/Makefile
