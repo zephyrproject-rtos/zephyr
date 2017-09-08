@@ -1,0 +1,22 @@
+# Kconfig - tinycbor library support configuration options
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# CBORATTR
+#
+
+menuconfig CBORATTR
+	prompt "cbor attribute parser"
+	bool
+	depends on TINYCBOR
+	help
+	  Attribute based decoding basing on tinycbor.
+
+config CBORATTR_MAX_SIZE
+	int "maximum cbor attribute size"
+	default 512
+	depends on CBORATTR

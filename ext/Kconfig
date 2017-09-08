@@ -18,4 +18,6 @@ source "ext/debug/Kconfig"
 
 source "ext/lib/tinycbor/Kconfig"
 
+source "ext/lib/cborattr/Kconfig"
+
 endmenu

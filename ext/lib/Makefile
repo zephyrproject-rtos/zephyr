@@ -14,3 +14,7 @@ endif
 ifdef CONFIG_TINYCBOR
 ZEPHYRINCLUDE += -I$(srctree)/ext/lib/tinycbor/include
 endif
+
+ifdef CONFIG_CBORATTR
+ZEPHYRINCLUDE += -I$(srctree)/ext/lib/cborattr/include
+endif
