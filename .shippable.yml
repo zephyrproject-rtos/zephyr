@@ -54,7 +54,6 @@ build:
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
-          sudo pip3 install sh;
           ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
           ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
