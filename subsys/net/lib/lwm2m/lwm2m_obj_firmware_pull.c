@@ -162,6 +162,7 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 	struct zoap_packet *check_response = (struct zoap_packet *)response;
 	lwm2m_engine_set_data_cb_t callback;
 	u8_t resp_code;
+	struct zoap_block_context received_block_ctx;
 
 	/* Check response code from server. Expecting (2.05) */
 	resp_code = zoap_header_get_code(check_response);
@@ -173,11 +174,25 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 		return -ENOENT;
 	}
 
+	/* save main firmware block context */
+	memcpy(&received_block_ctx, &firmware_block_ctx,
+	       sizeof(firmware_block_ctx));
+
 	ret = zoap_update_from_block(check_response, &firmware_block_ctx);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error from block update: %d", ret);
 		lwm2m_firmware_set_update_result(RESULT_INTEGRITY_FAILED);
 		return ret;
+	}
+
+	/* test for duplicate transfer */
+	if (firmware_block_ctx.current < received_block_ctx.current) {
+		SYS_LOG_WRN("Duplicate packet ignored");
+
+		/* restore main firmware block context */
+		memcpy(&firmware_block_ctx, &received_block_ctx,
+		       sizeof(firmware_block_ctx));
+		return 0;
 	}
 
 	/* Reach last block if transfer_offset equals to 0 */
