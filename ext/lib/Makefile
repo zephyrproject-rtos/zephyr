@@ -18,3 +18,7 @@ endif
 ifdef CONFIG_CBORATTR
 ZEPHYRINCLUDE += -I$(srctree)/ext/lib/cborattr/include
 endif
+
+ifdef CONFIG_BASE64
+ZEPHYRINCLUDE += -I$(srctree)/ext/lib/base64/include
+endif

@@ -1,0 +1,16 @@
+# Kconfig - tinycbor library support configuration options
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# BASE64
+#
+
+config BASE64
+	bool
+	prompt "base64"
+	help
+	  Enable support for RFC 1521 base64 encoding/decoding.

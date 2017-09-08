@@ -20,4 +20,6 @@ source "ext/lib/tinycbor/Kconfig"
 
 source "ext/lib/cborattr/Kconfig"
 
+source "ext/lib/base64/Kconfig"
+
 endmenu

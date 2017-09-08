@@ -1,3 +1,4 @@
 obj-y += crypto/
 obj-$(CONFIG_TINYCBOR) += tinycbor/
 obj-$(CONFIG_CBORATTR) += cborattr/
+obj-$(CONFIG_BASE64) += base64/
