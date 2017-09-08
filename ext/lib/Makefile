@@ -10,3 +10,7 @@ endif
 ifdef CONFIG_MBEDTLS_LIBRARY
 include $(srctree)/ext/lib/crypto/mbedtls/Makefile
 endif
+
+ifdef CONFIG_TINYCBOR
+ZEPHYRINCLUDE += -I$(srctree)/ext/lib/tinycbor/include
+endif
