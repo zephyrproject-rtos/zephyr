@@ -1,11 +1,11 @@
-# Kconfig - ST STM32F417XG MCU configuration options
+# Kconfig - ST STM32F417XX MCU configuration options
 #
 # Copyright (c) 2016 Linaro Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32F417XG
+if SOC_STM32F417XE || SOC_STM32F417XG
 
 config SOC
 	string
@@ -15,4 +15,4 @@ config NUM_IRQS
 	int
 	default 82
 
-endif # SOC_STM32F417XG
+endif # SOC_STM32F417XE || SOC_STM32F417XG
