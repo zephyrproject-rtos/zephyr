@@ -1,1 +1,2 @@
 obj-y += crypto/
+obj-$(CONFIG_BASE64) += base64/
