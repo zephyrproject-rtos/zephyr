@@ -26,23 +26,22 @@
 #define BUF_ALLOC_TIMEOUT	K_SECONDS(1)
 #define NETWORK_INIT_TIMEOUT	K_SECONDS(10)
 #define NETWORK_CONNECT_TIMEOUT	K_SECONDS(10)
+#define PACKET_TRANSFER_RETRY_MAX	3
 
 static struct k_work firmware_work;
 static char firmware_uri[PACKAGE_URI_LEN];
 static struct http_parser_url parsed_uri;
 static struct lwm2m_ctx firmware_ctx;
+static int firmware_retry;
 static struct zoap_block_context firmware_block_ctx;
+
+static void do_transmit_timeout_cb(struct lwm2m_message *msg);
 
 static void
 firmware_udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
 		     int status, void *user_data)
 {
 	lwm2m_udp_receive(&firmware_ctx, pkt, true, NULL);
-}
-
-static void do_transmit_timeout_cb(struct lwm2m_message *msg)
-{
-	lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
 }
 
 static int transfer_request(struct zoap_block_context *ctx,
@@ -225,6 +224,26 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 	return ret;
 }
 
+static void do_transmit_timeout_cb(struct lwm2m_message *msg)
+{
+	const u8_t *token;
+	u8_t tkl;
+
+	if (firmware_retry < PACKET_TRANSFER_RETRY_MAX) {
+		/* retry block */
+		SYS_LOG_WRN("TIMEOUT - Sending a retry packet!");
+		token = zoap_header_get_token(&msg->zpkt, &tkl);
+
+		transfer_request(&firmware_block_ctx, token, tkl,
+				 do_firmware_transfer_reply_cb);
+		firmware_retry++;
+	} else {
+		SYS_LOG_ERR("TIMEOUT - Too many retry packet attempts! "
+			    "Aborting firmware download.");
+		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
+	}
+}
+
 static void firmware_transfer(struct k_work *work)
 {
 	int ret, family;
@@ -331,6 +350,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	}
 
 	memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
+	firmware_retry = 0;
 	firmware_ctx.net_init_timeout = NETWORK_INIT_TIMEOUT;
 	firmware_ctx.net_timeout = NETWORK_CONNECT_TIMEOUT;
 	k_work_init(&firmware_work, firmware_transfer);
