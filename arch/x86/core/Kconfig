@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "x86 Core Options"
-
 config NESTED_INTERRUPTS
 	bool
 	prompt "Enable nested interrupts"
@@ -113,7 +111,5 @@ config DEBUG_IRQS
 	help
 	Enable additional debugging services for interrupts. May nontrivially
 	increase ROM size, so use only when you need it.
-
-endmenu
 
 endmenu
