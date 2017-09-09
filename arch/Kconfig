@@ -44,11 +44,64 @@ config HW_STACK_PROTECTION
 	help
 	  Select this option to enable hardware stack protection.
 
+menu "Interrupt Configuration"
+#
+# Interrupt related configs
+#
+config GEN_ISR_TABLES
+	bool
+	prompt "Use generated IRQ tables"
+	default n
+	help
+	This option controls whether a platform uses the gen_isr_tables
+	script to generate its interrupt tables. This mechanism will create
+	an appropriate hardware vector table and/or software IRQ table.
+
+config GEN_IRQ_VECTOR_TABLE
+	bool
+	prompt "Generate an interrupt vector table"
+	default y
+	depends on GEN_ISR_TABLES
+	help
+	This option controls whether a platform using gen_isr_tables
+	needs an interrupt vector table created. Only disable this if the
+	platform does not use a vector table at all, or requires the vector
+	table to be in a format that is not an array of function pointers
+	indexed by IRQ line. In the latter case, the vector table must be
+	supplied by the application or architecture code.
+
+config GEN_SW_ISR_TABLE
+	bool
+	prompt "Generate a software ISR table"
+	default y
+	depends on GEN_ISR_TABLES
+	help
+	This option controls whether a platform using gen_isr_tables
+	needs a software ISR table table created. This is an array of struct
+	_isr_table_entry containing the interrupt service routine and supplied
+	parameter.
+
+config GEN_IRQ_START_VECTOR
+	int
+	default 0
+	depends on GEN_ISR_TABLES
+	help
+	On some architectures, part of the vector table may be reserved for
+	system exceptions and is declared separately from the tables
+	created by gen_isr_tables.py. When creating these tables, this value
+	will be subtracted from CONFIG_NUM_IRQS to properly size them.
+	This is a hidden option which needs to be set per architecture and
+	left alone.
+
+endmenu # Interrupt configuration
+
 endmenu
 
+#
+# Architecture Capabilities
+#
 config ARCH_HAS_STACK_PROTECTION
 	bool
-
 
 #
 # Hidden PM feature configs which are to be selected by
@@ -129,54 +182,6 @@ config BOARD
 	if not found we look for the linker file in
 	arch/<arch>/soc/<family>/<series>
 
-#
-# Interrupt related configs
-#
-
-config GEN_ISR_TABLES
-	bool
-	prompt "Use generated IRQ tables"
-	default n
-	help
-	This option controls whether a platform uses the gen_isr_tables
-	script to generate its interrupt tables. This mechanism will create
-	an appropriate hardware vector table and/or software IRQ table.
-
-config GEN_IRQ_VECTOR_TABLE
-	bool
-	prompt "Generate an interrupt vector table"
-	default y
-	depends on GEN_ISR_TABLES
-	help
-	This option controls whether a platform using gen_isr_tables
-	needs an interrupt vector table created. Only disable this if the
-	platform does not use a vector table at all, or requires the vector
-	table to be in a format that is not an array of function pointers
-	indexed by IRQ line. In the latter case, the vector table must be
-	supplied by the application or architecture code.
-
-config GEN_SW_ISR_TABLE
-	bool
-	prompt "Generate a software ISR table"
-	default y
-	depends on GEN_ISR_TABLES
-	help
-	This option controls whether a platform using gen_isr_tables
-	needs a software ISR table table created. This is an array of struct
-	_isr_table_entry containing the interrupt service routine and supplied
-	parameter.
-
-config GEN_IRQ_START_VECTOR
-	int
-	default 0
-	depends on GEN_ISR_TABLES
-	help
-	On some architectures, part of the vector table may be reserved for
-	system exceptions and is declared separately from the tables
-	created by gen_isr_tables.py. When creating these tables, this value
-	will be subtracted from CONFIG_NUM_IRQS to properly size them.
-	This is a hidden option which needs to be set per architecture and
-	left alone.
 
 source "arch/*/Kconfig"
 
