@@ -45,10 +45,13 @@ config I2C_QMSI
 	  provided by the QMSI BSP.
 
 config I2C_ATMEL_SAM3
-	bool "Atmel SAM3X I2C Driver"
+	bool "[deprecated] Atmel SAM3X I2C Driver"
 	depends on SOC_SERIES_SAM3X
 	default n
 	help
+	  This driver is deprecated and will be removed. Use
+	  "Atmel SAM (TWI) I2C driver" instead.
+
 	  Enable I2C support on the Atmel SAM3 family processor.
 	  Says y to enable additional options to enable support
 	  for individual controllers.
