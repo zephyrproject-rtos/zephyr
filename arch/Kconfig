@@ -35,6 +35,21 @@ config XTENSA
 
 endchoice
 
+
+menu "General Architecture Options"
+
+config HW_STACK_PROTECTION
+	bool "Hardware Stack Protection"
+	depends on ARCH_HAS_STACK_PROTECTION
+	help
+	  Select this option to enable hardware stack protection.
+
+endmenu
+
+config ARCH_HAS_STACK_PROTECTION
+	bool
+
+
 #
 # Hidden PM feature configs which are to be selected by
 # individual SoC.
