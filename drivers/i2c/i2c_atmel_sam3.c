@@ -7,6 +7,9 @@
 /**
  * @file I2C/TWI Controller driver for Atmel SAM3 family processor
  *
+ * @deprecated This driver is deprecated. Please use i2c_sam_twi.c SAM family
+ *             driver instead.
+ *
  * Notes on this driver:
  * 1. The controller does not have a documented way to
  *    issue RESTART when changing transfer direction as master.
@@ -570,7 +573,7 @@ static const struct i2c_driver_api api_funcs = {
 	.transfer = i2c_sam3_transfer,
 };
 
-static int i2c_sam3_init(struct device *dev)
+static int __deprecated i2c_sam3_init(struct device *dev)
 {
 	const struct i2c_sam3_dev_config * const cfg = dev->config->config_info;
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
