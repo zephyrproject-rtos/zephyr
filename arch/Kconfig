@@ -44,6 +44,17 @@ config HW_STACK_PROTECTION
 	help
 	  Select this option to enable hardware stack protection.
 
+config SIMPLE_FATAL_ERROR_HANDLER
+	prompt "Simple system fatal error handler"
+	bool
+	default n
+	default y if !MULTITHREADING
+	help
+	Provides an implementation of _SysFatalErrorHandler() that hard hangs
+	instead of aborting the faulting thread, and does not print anything,
+	for footprint-concerned systems. Only enable this option if you do not
+	want debug capabilities in case of system fatal error.
+
 menu "Interrupt Configuration"
 #
 # Interrupt related configs
@@ -130,17 +141,6 @@ config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	help
 	This option signifies that the target has options of bootloaders
 	that support context restore upon resume from deep sleep
-
-config SIMPLE_FATAL_ERROR_HANDLER
-	prompt "Simple system fatal error handler"
-	bool
-	default n
-	default y if !MULTITHREADING
-	help
-	Provides an implementation of _SysFatalErrorHandler() that hard hangs
-	instead of aborting the faulting thread, and does not print anything,
-	for footprint-concerned systems. Only enable this option if you do not
-	want debug capabilities in case of system fatal error.
 
 #
 # End hidden PM feature configs
