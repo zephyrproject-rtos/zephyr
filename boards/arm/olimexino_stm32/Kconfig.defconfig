@@ -10,4 +10,20 @@ if BOARD_OLIMEXINO_STM32
 config BOARD
 	default olimexino_stm32
 
+if USB_DC_STM32
+
+config USB_DC_STM32_DISCONN_ENABLE
+	default y
+
+config USB_DC_STM32_DISCONN_GPIO_PORT_NAME
+	default "GPIOC"
+
+config USB_DC_STM32_DISCONN_PIN
+	default 12
+
+config USB_DC_STM32_DISCONN_PIN_LEVEL
+	default 0
+
+endif # USB_DC_STM32
+
 endif # BOARD_OLIMEXINO_STM32
