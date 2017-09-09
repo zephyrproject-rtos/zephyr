@@ -104,12 +104,4 @@ config GDT_DYNAMIC
 	This option stores the GDT in RAM instead of ROM, so that it may
 	be modified at runtime at the expense of some memory.
 
-config DEBUG_IRQS
-	bool
-	prompt "Extra interrupt debugging functionality"
-	default n
-	help
-	Enable additional debugging services for interrupts. May nontrivially
-	increase ROM size, so use only when you need it.
-
 endmenu
