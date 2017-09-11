@@ -74,31 +74,31 @@ static void net_ctx_get_fail(void)
 
 	ret = net_context_get(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, &context);
 	zassert_equal(ret, -EAFNOSUPPORT,
-			"Invalid family test failed");
+		      "Invalid family test failed");
 
 	ret = net_context_get(AF_INET6, 10, IPPROTO_UDP, &context);
 	zassert_equal(ret, -EPROTOTYPE,
-			"Invalid context type test failed ");
+		      "Invalid context type test failed ");
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6, &context);
 	zassert_equal(ret, -EPROTONOSUPPORT,
-			"Invalid context protocol test failed");
+		      "Invalid context protocol test failed");
 
 	ret = net_context_get(1, SOCK_DGRAM, IPPROTO_UDP, &context);
 	zassert_equal(ret, -EAFNOSUPPORT,
-			"Invalid context family test failed");
+		      "Invalid context family test failed");
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &context);
 	zassert_equal(ret, -EPROTOTYPE,
-			"Invalid context proto type test failed");
+		      "Invalid context proto type test failed");
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_TCP, &context);
 	zassert_equal(ret, -EPROTONOSUPPORT,
-			"Invalid context proto value test failed");
+		      "Invalid context proto value test failed");
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, NULL);
 	zassert_equal(ret, -EINVAL,
-			"Invalid context value test failed ");
+		      "Invalid context value test failed ");
 }
 
 static void net_ctx_get_success(void)
@@ -108,15 +108,15 @@ static void net_ctx_get_success(void)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	zassert_equal(ret, 0,
-			"Context get test failed");
+		      "Context get test failed");
 	zassert_not_null(context, "Got NULL context");
 
 	ret = net_context_put(context);
 	zassert_equal(ret, 0,
-			"Context put test failed");
+		      "Context put test failed");
 
 	zassert_false(net_context_is_used(context),
-			"Context put check test failed");
+		      "Context put check test failed");
 }
 
 static void net_ctx_get_all(void)
@@ -129,17 +129,17 @@ static void net_ctx_get_all(void)
 		ret = net_context_get(AF_INET6, SOCK_DGRAM,
 				      IPPROTO_UDP, &contexts[i]);
 		zassert_equal(ret, 0,
-				"context get test failed");
+			      "context get test failed");
 	}
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	zassert_equal(ret, -ENOENT,
-			"Context get extra test failed");
+		      "Context get extra test failed");
 
 	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
 		ret = net_context_put(contexts[i]);
 		zassert_equal(ret, 0,
-				"Context put test failed");
+			      "Context put test failed");
 	}
 }
 
@@ -150,28 +150,28 @@ static void net_ctx_create(void)
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx);
 	zassert_equal(ret, 0,
-			"Context create IPv6 UDP test failed");
+		      "Context create IPv6 UDP test failed");
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &mcast_v6_ctx);
 	zassert_equal(ret, 0,
-			"Context create IPv6 mcast test failed ");
+		      "Context create IPv6 mcast test failed ");
 
 	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v4_ctx);
 	zassert_equal(ret, 0,
-			"Context create IPv4 UDP test failed");
+		      "Context create IPv4 UDP test failed");
 
 #if defined(CONFIG_NET_TCP)
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
 			      &tcp_v6_ctx);
 	zassert_equal(ret, 0,
-			"Context create IPv6 TCP test failed");
+		      "Context create IPv6 TCP test failed");
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
 			      &tcp_v4_ctx);
 	zassert_equal(ret, 0,
-			"Context create IPv4 TCP test failed");
+		      "Context create IPv4 TCP test failed");
 #endif /* CONFIG_NET_TCP */
 }
 
@@ -188,7 +188,7 @@ static void net_ctx_bind_fail(void)
 	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&addr,
 			       sizeof(struct sockaddr_in6));
 	zassert_equal(ret, -ENOENT,
-			"Context bind failure test failed");
+		      "Context bind failure test failed");
 }
 
 static void net_ctx_bind_uni_success_v6(void)
@@ -204,7 +204,7 @@ static void net_ctx_bind_uni_success_v6(void)
 	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&addr,
 			       sizeof(struct sockaddr_in6));
 	zassert_equal(ret, 0,
-			"Context bind IPv6 test failed");
+		      "Context bind IPv6 test failed");
 }
 
 static void net_ctx_bind_uni_success_v4(void)
@@ -219,7 +219,7 @@ static void net_ctx_bind_uni_success_v4(void)
 	ret = net_context_bind(udp_v4_ctx, (struct sockaddr *)&addr,
 			       sizeof(struct sockaddr_in));
 	zassert_equal(ret, 0,
-			"Context bind IPv4 test failed");
+		      "Context bind IPv4 test failed");
 }
 
 static void net_ctx_bind_mcast_success(void)
@@ -236,28 +236,28 @@ static void net_ctx_bind_mcast_success(void)
 	ret = net_context_bind(mcast_v6_ctx, (struct sockaddr *)&addr,
 			       sizeof(struct sockaddr_in6));
 	zassert_equal(ret, 0,
-			"Context bind test failed ");
+		      "Context bind test failed ");
 }
 
 static void net_ctx_listen_v6(void)
 {
 	zassert_true(net_context_listen(udp_v6_ctx, 0),
-			"Context listen IPv6 UDP test failed");
+		     "Context listen IPv6 UDP test failed");
 
 #if defined(CONFIG_NET_TCP)
 	zassert_true(net_context_listen(tcp_v6_ctx, 0),
-			"Context listen IPv6 TCP test failed");
+		     "Context listen IPv6 TCP test failed");
 #endif /* CONFIG_NET_TCP */
 }
 
 static void net_ctx_listen_v4(void)
 {
 	zassert_true(net_context_listen(udp_v4_ctx, 0),
-			"Context listen IPv4 UDP test failed ");
+		     "Context listen IPv4 UDP test failed ");
 
 #if defined(CONFIG_NET_TCP)
 	zassert_true(net_context_listen(tcp_v4_ctx, 0),
-			"Context listen IPv4 TCP test failed");
+		     "Context listen IPv4 TCP test failed");
 #endif /* CONFIG_NET_TCP */
 }
 
@@ -663,10 +663,10 @@ static void net_ctx_recv_v4_fail(void)
 	net_ctx_sendto_v4_wrong_src();
 
 	zassert_true(k_sem_take(&wait_data, WAIT_TIME),
-				"Semaphore triggered but should not");
+		     "Semaphore triggered but should not");
 
 	zassert_false(recv_cb_called, "Data received but should not have, "
-			 "IPv4 recv test failed");
+		      "IPv4 recv test failed");
 
 	recv_cb_called = false;
 }
@@ -678,7 +678,7 @@ static void net_ctx_recv_v6_again(void)
 	k_sem_take(&wait_data, WAIT_TIME);
 
 	zassert_true(recv_cb_called, "No data received on time 2nd time, "
-			 "IPv6 recv test failed");
+		     "IPv6 recv test failed");
 
 	recv_cb_called = false;
 }
@@ -690,8 +690,8 @@ static void net_ctx_recv_v4_again(void)
 	k_sem_take(&wait_data, WAIT_TIME);
 
 	zassert_true(recv_cb_called,
-			"No data received on time 2nd time, "
-			 "IPv4 recv test failed");
+		     "No data received on time 2nd time, "
+		     "IPv4 recv test failed");
 
 	recv_cb_called = false;
 }
@@ -714,15 +714,15 @@ static void net_ctx_recv_v6_reconfig(void)
 	ret = net_context_recv(udp_v6_ctx, recv_cb_another, 0,
 			       INT_TO_POINTER(AF_INET6));
 	zassert_false((ret || cb_failure),
-			"Context recv reconfig IPv6 UDP test failed");
+		      "Context recv reconfig IPv6 UDP test failed");
 
 	net_ctx_sendto_v6();
 
 	k_sem_take(&wait_data, WAIT_TIME);
 
 	zassert_true(recv_cb_reconfig_called,
-			"No data received on time, "
-			 "IPv6 recv reconfig test failed");
+		     "No data received on time, "
+		     "IPv6 recv reconfig test failed");
 
 	recv_cb_reconfig_called = false;
 }
@@ -734,7 +734,7 @@ static void net_ctx_recv_v4_reconfig(void)
 	ret = net_context_recv(udp_v4_ctx, recv_cb_another, 0,
 			       INT_TO_POINTER(AF_INET));
 	zassert_false((ret || cb_failure),
-			"Context recv reconfig IPv4 UDP test failed");
+		      "Context recv reconfig IPv4 UDP test failed");
 
 
 	net_ctx_sendto_v4();
@@ -742,7 +742,7 @@ static void net_ctx_recv_v4_reconfig(void)
 	k_sem_take(&wait_data, WAIT_TIME);
 
 	zassert_true(recv_cb_reconfig_called, "No data received on time, "
-			 "IPv4 recv reconfig test failed");
+		     "IPv4 recv reconfig test failed");
 
 	recv_cb_reconfig_called = false;
 }
@@ -770,7 +770,7 @@ void timeout_thread(struct net_context *ctx, sa_family_t *family)
 
 	if (ret || cb_failure) {
 		zassert_true(expecting_cb_failure,
-				"Context recv UDP timeout test failed");
+			     "Context recv UDP timeout test failed");
 		cb_failure = true;
 		return;
 	}
@@ -844,24 +844,24 @@ static void net_ctx_put(void)
 
 	ret = net_context_put(udp_v6_ctx);
 	zassert_equal(ret, 0,
-			"Context put IPv6 UDP test failed.");
+		      "Context put IPv6 UDP test failed.");
 
 	ret = net_context_put(mcast_v6_ctx);
 	zassert_equal(ret, 0,
-			"Context put IPv6 mcast test failed");
+		      "Context put IPv6 mcast test failed");
 
 	ret = net_context_put(udp_v4_ctx);
 	zassert_equal(ret, 0,
-			"Context put IPv4 UDP test failed");
+		      "Context put IPv4 UDP test failed");
 
 #if defined(CONFIG_NET_TCP)
 	ret = net_context_put(tcp_v4_ctx);
 	zassert_equal(ret, 0,
-			"Context put IPv4 TCP test failed");
+		      "Context put IPv4 TCP test failed");
 
 	ret = net_context_put(tcp_v6_ctx);
 	zassert_equal(ret, 0,
-			"Context put IPv6 TCP test failed");
+		      "Context put IPv6 TCP test failed");
 #endif
 }
 
@@ -998,18 +998,18 @@ static void test_init(void)
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_my,
 				      NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr,
-				"Cannot add IPv6 address ");
+			 "Cannot add IPv6 address ");
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my,
 				      NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr,
-			"Cannot add IPv4 address");
+			 "Cannot add IPv4 address");
 
 	net_ipv6_addr_create(&in6addr_mcast, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	maddr = net_if_ipv6_maddr_add(iface, &in6addr_mcast);
 	zassert_not_null(maddr,
-			"Cannot add multicast IPv6 address");
+			 "Cannot add multicast IPv6 address");
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
