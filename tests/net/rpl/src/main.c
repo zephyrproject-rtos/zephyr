@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/types.h>
+#include <ztest.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
@@ -220,47 +221,34 @@ static void send_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 	link_cb_called = true;
 }
 
-static bool test_init(void)
+static void test_init(void)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if_mcast_addr *maddr;
 	struct net_if *iface = net_if_get_default();
 	struct net_rpl_dag *dag;
 
-	if (!iface) {
-		TC_ERROR("Interface is NULL\n");
-		return false;
-	}
+	zassert_not_null(iface, "Interface is NULL");
 
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_my,
 				      NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		TC_ERROR("Cannot add IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&in6addr_my));
-		return false;
-	}
+	zassert_not_null(ifaddr, "Cannot add IPv6 address");
 
 	/* For testing purposes we need to set the adddresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_ll,
 				      NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		TC_ERROR("Cannot add IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&in6addr_ll));
-		return false;
-	}
+	zassert_not_null(ifaddr,
+			"Cannot add IPv6 address");
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	net_ipv6_addr_create(&in6addr_mcast, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	maddr = net_if_ipv6_maddr_add(iface, &in6addr_mcast);
-	if (!maddr) {
-		TC_ERROR("Cannot add multicast IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&in6addr_mcast));
-		return false;
-	}
+
+	zassert_not_null(maddr, "Cannot add multicast IPv6 address");
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
@@ -271,26 +259,19 @@ static bool test_init(void)
 	net_rpl_set_root(iface, NET_RPL_DEFAULT_INSTANCE, &in6addr_my);
 	dag = net_rpl_get_any_dag();
 	net_rpl_set_prefix(iface, dag, &in6addr_my, 64);
-
-	return true;
 }
 
-static bool net_ctx_create(void)
+static void net_ctx_create(void)
 {
 	int ret;
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context create IPv6 UDP test failed (%d vs %d)\n",
-		       ret, 0);
-		return false;
-	}
-
-	return true;
+	zassert_equal(ret, 0,
+			"Context create IPv6 UDP test failed");
 }
 
-static bool test_rpl_mcast_addr(void)
+static void test_rpl_mcast_addr(void)
 {
 	struct in6_addr rpl_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1a } } };
@@ -298,23 +279,15 @@ static bool test_rpl_mcast_addr(void)
 	bool ret;
 
 	ret = net_rpl_is_ipv6_addr_mcast(&rpl_mcast);
-	if (!ret) {
-		TC_ERROR("RPL multicast address check failed.\n");
-		return false;
-	}
+	zassert_true(ret, "RPL multicast address check failed.");
 
 	net_rpl_create_mcast_address(&addr);
 
 	ret = net_rpl_is_ipv6_addr_mcast(&addr);
-	if (!ret) {
-		TC_ERROR("Generated RPL multicast address check failed.\n");
-		return false;
-	}
-
-	return true;
+	zassert_true(ret, "Generated RPL multicast address check failed.");
 }
 
-static bool test_dio_dummy_input(void)
+static void test_dio_dummy_input(void)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -331,25 +304,19 @@ static bool test_dio_dummy_input(void)
 
 	ret = net_icmpv6_input(pkt, NET_ICMPV6_RPL, msg_sending);
 	if (!ret) {
-		TC_ERROR("%d: Callback in %s not called properly\n", __LINE__,
-			 __func__);
-		return false;
+		zassert_true(0, "Callback is not called properly");
 	}
 
 	data_failure = false;
 	k_sem_take(&wait_data, WAIT_TIME);
 
-	if (data_failure) {
-		TC_ERROR("%d: Unexpected ICMPv6 code received\n", __LINE__);
-		return false;
-	}
+	zassert_false(data_failure,
+			"Unexpected ICMPv6 code received");
 
 	data_failure = false;
-
-	return true;
 }
 
-static bool test_dis_sending(void)
+static void test_dis_sending(void)
 {
 	struct net_if *iface;
 	int ret;
@@ -360,24 +327,20 @@ static bool test_dis_sending(void)
 
 	ret = net_rpl_dis_send(NULL, iface);
 	if (ret) {
-		TC_ERROR("%d: Cannot send DIS (%d)\n", __LINE__, ret);
-		return false;
+		zassert_true(0, "Cannot send DIS");
 	}
 
 	k_sem_take(&wait_data, WAIT_TIME);
 
 	if (data_failure) {
 		data_failure = false;
-		TC_ERROR("%d: Unexpected ICMPv6 code received\n", __LINE__);
-		return false;
+		zassert_true(0, "Unexpected ICMPv6 code received");
 	}
 
 	data_failure = false;
-
-	return true;
 }
 
-static bool test_dao_sending_fail(void)
+static void test_dao_sending_fail(void)
 {
 	struct net_if *iface = NULL, *iface_def;
 	struct in6_addr *prefix, *prefix2;
@@ -398,22 +361,14 @@ static bool test_dao_sending_fail(void)
 	prefix2 = net_if_ipv6_get_global_addr(&iface_def);
 
 	prefix = net_if_ipv6_get_global_addr(&iface);
-	if (!prefix) {
-		TC_ERROR("Will not send DAO as no global address was found.");
-		return false;
-	}
+	zassert_not_null(prefix,
+			"Will not send DAO as no global address was found");
 
-	if (iface != iface_def) {
-		TC_ERROR("Network interface mismatch (%p vs %p)\n",
-			 iface, iface_def);
-		return false;
-	}
+	zassert_equal_ptr(iface, iface_def,
+			"Network interface mismatch");
 
-	if (prefix != prefix2) {
-		TC_ERROR("Network interface mismatch or not set (%p vs %p)\n",
-			 prefix, prefix2);
-		return false;
-	}
+	zassert_equal_ptr(prefix, prefix2,
+				"Network interface mismatch or not set");
 
 	msg_sending = NET_RPL_DEST_ADV_OBJ;
 
@@ -422,11 +377,8 @@ static bool test_dao_sending_fail(void)
 	 */
 	ret = net_rpl_dao_send(iface, &parent, prefix, 100);
 	if (!ret) {
-		TC_ERROR("DAO send succeed but should not have\n");
-		return false;
+		zassert_true(0, "DAO send succeed but should not have");
 	}
-
-	return true;
 }
 
 static bool net_test_send_ns(void)
@@ -492,7 +444,7 @@ static bool net_test_nbr_lookup_ok(void)
 	return true;
 }
 
-static bool populate_nbr_cache(void)
+static void populate_nbr_cache(void)
 {
 	struct net_nbr *nbr;
 
@@ -500,18 +452,13 @@ static bool populate_nbr_cache(void)
 	feed_data = true;
 	data_failure = false;
 
-	if (!net_test_send_ns()) {
-		return false;
-	}
+	zassert_true(net_test_send_ns(), NULL);
 
 	k_sem_take(&wait_data, WAIT_TIME);
 
 	feed_data = false;
 
-	if (data_failure) {
-		data_failure = false;
-		return false;
-	}
+	zassert_false(data_failure, NULL);
 
 	data_failure = false;
 
@@ -520,18 +467,10 @@ static bool populate_nbr_cache(void)
 			       &lladdr_src,
 			       false,
 			       NET_IPV6_NBR_STATE_REACHABLE);
-	if (!nbr) {
-		TC_ERROR("Cannot add peer to neighbor cache\n");
-		return false;
-	}
+	zassert_not_null(nbr, "Cannot add peer to neighbor cache");
 
-	if (!net_test_nbr_lookup_ok()) {
-		return false;
-	}
-
-	return true;
+	zassert_true(net_test_nbr_lookup_ok(), NULL);
 }
-
 #if 0
 /* This test is currently disabled as it needs more TLC */
 static bool test_dao_sending_ok(void)
@@ -617,7 +556,7 @@ static bool test_link_cb(void)
 }
 #endif
 
-static bool test_dio_receive_dest(void)
+static void test_dio_receive_dest(void)
 {
 	struct net_if *iface = NULL, *iface_def;
 	struct in6_addr *prefix, *prefix2;
@@ -647,77 +586,38 @@ static bool test_dio_receive_dest(void)
 	prefix2 = net_if_ipv6_get_global_addr(&iface_def);
 
 	prefix = net_if_ipv6_get_global_addr(&iface);
-	if (!prefix) {
-		TC_ERROR("Will not send DAO as no global address was found.");
-		return false;
-	}
+	zassert_not_null(prefix,
+			 "Will not send DAO as no global address was found.");
 
-	if (iface != iface_def) {
-		TC_ERROR("Network interface mismatch (%p vs %p)\n",
-			 iface, iface_def);
-		return false;
-	}
+	zassert_equal_ptr(iface, iface_def,
+			  "Network interface mismatch");
 
-	if (prefix != prefix2) {
-		TC_ERROR("Network interface mismatch or not set (%p vs %p)\n",
-			 prefix, prefix2);
-		return false;
-	}
+	zassert_equal_ptr(prefix, prefix2,
+			  "Network interface mismatch or not set");
 
 	msg_sending = NET_RPL_DODAG_INFO_OBJ;
 
 	ret = net_rpl_dio_send(iface, &instance, &peer_addr, &in6addr_my);
-	if (ret) {
-		TC_ERROR("%d: Cannot send DIO (%d)\n", __LINE__, ret);
-		return false;
-	}
+	zassert_false(ret, "cannot send DIO");
 
 	k_sem_take(&wait_data, WAIT_TIME);
 
-	if (data_failure) {
-		data_failure = false;
-		TC_ERROR("%d: Unexpected ICMPv6 code received\n", __LINE__);
-		return false;
-	}
+	zassert_false(data_failure, "Unexpected ICMPv6 code received");
 
 	data_failure = false;
-
-	return true;
 }
 
-static const struct {
-	const char *name;
-	bool (*func)(void);
-} tests[] = {
-	{ "test init", test_init },
-	{ "test ctx create", net_ctx_create },
-	{ "RPL multicast address test", test_rpl_mcast_addr },
-	{ "DIO input handler test", test_dio_dummy_input },
-	{ "DIS sending", test_dis_sending },
-	{ "DAO sending fail", test_dao_sending_fail },
-	{ "Populate neighbor cache", populate_nbr_cache },
-	{ "DIO receive dest set", test_dio_receive_dest },
-#if 0
-	{ "Link cb test", test_link_cb },
-	{ "DAO sending ok", test_dao_sending_ok },
-	{ "DIO receive dest not set", test_dio_receive },
-#endif
-};
-
-void main(void)
+/*test case main entry*/
+void test_main(void)
 {
-	int count, pass;
-
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
-		test_failed = false;
-		if (!tests[count].func() || test_failed) {
-			TC_END(FAIL, "failed\n");
-		} else {
-			TC_END(PASS, "passed\n");
-			pass++;
-		}
-	}
-
-	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
+	ztest_test_suite(test_rpl,
+			ztest_unit_test(test_init),
+			ztest_unit_test(net_ctx_create),
+			ztest_unit_test(test_rpl_mcast_addr),
+			ztest_unit_test(test_dio_dummy_input),
+			ztest_unit_test(test_dis_sending),
+			ztest_unit_test(test_dao_sending_fail),
+			ztest_unit_test(populate_nbr_cache),
+			ztest_unit_test(test_dio_receive_dest));
+	ztest_run_test_suite(test_rpl);
 }
