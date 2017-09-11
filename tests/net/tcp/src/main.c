@@ -10,6 +10,7 @@
 #include <linker/sections.h>
 
 #include <zephyr/types.h>
+#include <ztest.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -443,9 +444,8 @@ static bool send_ipv6_tcp_msg(struct net_if *iface,
 	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		if (expect_failure) {
 			return true;
-		} else {
-			DBG("Timeout, packet not received\n");
-			return false;
+		DBG("Timeout, packet not received\n");
+		return false;
 		}
 	}
 
@@ -494,10 +494,9 @@ static bool send_ipv4_tcp_msg(struct net_if *iface,
 	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		if (expect_failure) {
 			return true;
-		} else {
-			DBG("Timeout, packet not received\n");
-			return false;
 		}
+		DBG("Timeout, packet not received\n");
+		return false;
 	}
 
 	/* Check that the returned user data is the same as what was given
@@ -545,10 +544,9 @@ static bool send_ipv6_tcp_long_msg(struct net_if *iface,
 	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		if (expect_failure) {
 			return true;
-		} else {
-			DBG("Timeout, packet not received\n");
-			return false;
 		}
+		DBG("Timeout, packet not received\n");
+		return false;
 	}
 
 	/* Check that the returned user data is the same as what was given
@@ -588,7 +586,7 @@ static void set_port(sa_family_t family, struct sockaddr *raddr,
 	}
 }
 
-static bool test_register(void)
+static void test_register(void)
 {
 	struct net_conn_handle *handlers[CONFIG_NET_MAX_CONN];
 	struct net_if *iface = net_if_get_default();
@@ -626,18 +624,11 @@ static bool test_register(void)
 	k_sem_init(&recv_lock, 0, UINT_MAX);
 
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_my, NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		DBG("Cannot add %s to interface %p\n",
-		    net_sprint_ipv6_addr(&in6addr_my), iface);
-		return false;
-	}
+	zassert_not_null(ifaddr, "Cannot add to increase");
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my, NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		DBG("Cannot add %s to interface %p\n",
-		    net_sprint_ipv4_addr(&in4addr_my), iface);
-		return false;
-	}
+	zassert_not_null(ifaddr,
+			"Cannot add to increase ");
 
 	/*
 	 * First test the TCP port handling logic. This just simulates
@@ -666,84 +657,99 @@ static bool test_register(void)
 		if (ret) {						\
 			DBG("TCP register %s failed (%d)\n",		\
 			    user_data.test, ret);			\
-			return false;					\
+			zassert_true(0, NULL);				\
 		}							\
 		user_data.handle = handlers[i++];			\
 		&user_data;						\
 	})
 
 #define REGISTER_FAIL(raddr, laddr, rport, lport)			\
-	ret = net_tcp_register((struct sockaddr *)raddr,		\
-			       (struct sockaddr *)laddr,		\
-			       rport, lport,				\
-			       test_fail, INT_TO_POINTER(0), NULL);	\
-	if (!ret) {							\
-		DBG("TCP register invalid match %s failed\n",		\
-		    #raddr"-"#laddr"-"#rport"-"#lport);			\
-		return false;						\
-	}
-
+	do {								\
+		ret = net_tcp_register((struct sockaddr *)raddr,	\
+				       (struct sockaddr *)laddr,	\
+					rport, lport,			\
+					test_fail, INT_TO_POINTER(0), NULL);\
+		if (!ret) {						\
+			DBG("TCP register invalid match %s failed\n",	\
+			#raddr"-"#laddr"-"#rport"-"#lport);		\
+			zassert_true(0, NULL);				\
+		}							\
+	} while (0)
 #define UNREGISTER(ud)							\
-	ret = net_tcp_unregister(ud->handle);				\
-	if (ret) {							\
-		DBG("TCP unregister %p failed (%d)\n", ud->handle,	\
-		    ret);						\
-		return false;						\
-	}
+	do {								\
+		ret = net_tcp_unregister(ud->handle);			\
+		if (ret) {						\
+			DBG("TCP unregister %p failed (%d)\n", ud->handle,\
+			ret);						\
+			zassert_true(0, "TCP unregister failed");	\
+		}							\
+	} while (0)
 
 #define TEST_IPV6_OK(ud, raddr, laddr, rport, lport)			\
-	st = send_ipv6_tcp_msg(iface, raddr, laddr, rport, lport, ud,	\
-			       false);					\
-	if (!st) {							\
-		DBG("%d: TCP test \"%s\" fail\n", __LINE__,		\
-		    ud->test);						\
-		return false;						\
-	}
+	do {								\
+		st = send_ipv6_tcp_msg(iface, raddr, laddr, rport, lport, ud,\
+				       false);				\
+		if (!st) {						\
+			DBG("%d: TCP test \"%s\" fail\n", __LINE__,	\
+			    ud->test);					\
+		zassert_true(0, NULL);				\
+		}						\
+	} while (0)
 
 #define TEST_IPV4_OK(ud, raddr, laddr, rport, lport)			\
-	st = send_ipv4_tcp_msg(iface, raddr, laddr, rport, lport, ud,	\
-			       false);					\
+	do {								\
+		st = send_ipv4_tcp_msg(iface, raddr, laddr, rport, lport, ud,\
+				       false);				\
 	if (!st) {							\
 		DBG("%d: TCP test \"%s\" fail\n", __LINE__,		\
 		    ud->test);						\
-		return false;						\
-	}
+		zassert_true(0, NULL);					\
+	}								\
+	} while (0)
 
 #define TEST_IPV6_LONG_OK(ud, raddr, laddr, rport, lport)		\
-	st = send_ipv6_tcp_long_msg(iface, raddr, laddr, rport, lport, ud, \
-			       false);					\
-	if (!st) {							\
-		DBG("%d: TCP long test \"%s\" fail\n", __LINE__,	\
-		    ud->test);						\
-		return false;						\
-	}
+	do {								\
+		st = send_ipv6_tcp_long_msg(iface, raddr, laddr, rport,\
+					    lport, ud, false);		\
+		if (!st) {						\
+			DBG("%d: TCP long test \"%s\" fail\n", __LINE__,\
+			    ud->test);					\
+			zassert_true(0, NULL);				\
+		}							\
+	} while (0)
 
 #define TEST_IPV4_LONG_OK(ud, raddr, laddr, rport, lport)		\
-	st = send_ipv4_tcp_long_msg(iface, raddr, laddr, rport, lport, ud, \
-			       false);					\
-	if (!st) {							\
-		DBG("%d: TCP long_test \"%s\" fail\n", __LINE__,	\
-		    ud->test);						\
-		return false;						\
-	}
+	do {								\
+		st = send_ipv4_tcp_long_msg(iface, raddr, laddr, rport,	\
+				    lport, ud, false);			\
+		if (!st) {						\
+			DBG("%d: TCP long_test \"%s\" fail\n", __LINE__,\
+			   ud->test);					\
+		zassert_true(0, NULL);					\
+		}							\
+	} while (0)
 
 #define TEST_IPV6_FAIL(ud, raddr, laddr, rport, lport)			\
-	st = send_ipv6_tcp_msg(iface, raddr, laddr, rport, lport, ud,	\
-			       true);					\
-	if (!st) {							\
-		DBG("%d: TCP neg test \"%s\" fail\n", __LINE__,		\
-		    ud->test);						\
-		return false;						\
-	}
+	do {								\
+		st = send_ipv6_tcp_msg(iface, raddr, laddr, rport,\
+				       lport, ud, true);		\
+		if (!st) {						\
+			DBG("%d: TCP neg test \"%s\" fail\n", __LINE__,	\
+			    ud->test);					\
+			zassert_true(0, NULL);				\
+		}							\
+	} while (0)
 
 #define TEST_IPV4_FAIL(ud, raddr, laddr, rport, lport)			\
-	st = send_ipv4_tcp_msg(iface, raddr, laddr, rport, lport, ud,	\
-			       true);					\
-	if (!st) {							\
-		DBG("%d: TCP neg test \"%s\" fail\n", __LINE__,		\
-		    ud->test);						\
-		return false;						\
-	}
+	do {								\
+		st = send_ipv4_tcp_msg(iface, raddr, laddr, rport,\
+					lport, ud, true);		\
+		if (!st) {						\
+			DBG("%d: TCP neg test \"%s\" fail\n", __LINE__,	\
+			    ud->test);					\
+			zassert_true(0, NULL);				\
+		}							\
+	} while (0)
 
 	ud = REGISTER(AF_INET6, &any_addr6, &any_addr6, 1234, 4242);
 	TEST_IPV6_OK(ud, &in6addr_peer, &in6addr_my, 1234, 4242);
@@ -813,8 +819,7 @@ static bool test_register(void)
 	REGISTER_FAIL(&my_addr4, &my_addr6, 1234, 4242);
 
 	if (fail) {
-		DBG("Tests failed\n");
-		return false;
+		zassert_true(0, "Tests failed");
 	}
 
 	i--;
@@ -822,7 +827,7 @@ static bool test_register(void)
 		ret = net_tcp_unregister(handlers[i]);
 		if (ret < 0 && ret != -ENOENT) {
 			DBG("Cannot unregister tcp %d\n", i);
-			return false;
+			zassert_true(0, NULL);
 		}
 
 		i--;
@@ -830,24 +835,22 @@ static bool test_register(void)
 
 	if (!(net_tcp_unregister(NULL) < 0)) {
 		DBG("Unregister tcp failed\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	st = net_if_ipv6_addr_rm(iface, &in6addr_my);
 	if (!st) {
 		DBG("Cannot remove %s from interface %p\n",
 		    net_sprint_ipv6_addr(&in6addr_my), iface);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	st = net_if_ipv4_addr_rm(iface, &in4addr_my);
 	if (!st) {
 		DBG("Cannot rm %s from interface %p\n",
 		    net_sprint_ipv4_addr(&in4addr_my), iface);
-		return false;
+		zassert_true(0, NULL);
 	}
-
-	return true;
 }
 
 static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
@@ -926,7 +929,7 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 	return true;
 }
 
-static bool test_create_v6_reset_packet(void)
+static void test_create_v6_reset_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
 	u8_t flags = NET_TCP_RST;
@@ -938,32 +941,28 @@ static bool test_create_v6_reset_packet(void)
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!(NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST)) {
 		DBG("Reset flag not set\n");
-		return false;
+		zassert_not_null(0, NULL);
 	}
 
 	if (!v6_check_port_and_address("TCP reset", pkt,
 				       &peer_v6_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_create_v4_reset_packet(void)
+static void test_create_v4_reset_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
 	u8_t flags = NET_TCP_RST;
@@ -975,32 +974,28 @@ static bool test_create_v4_reset_packet(void)
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!(NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST)) {
 		DBG("Reset flag not set\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	if (!v4_check_port_and_address("TCP reset", pkt,
 				       &peer_v4_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_create_v6_syn_packet(void)
+static void test_create_v6_syn_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
 	u8_t flags = NET_TCP_SYN;
@@ -1012,32 +1007,28 @@ static bool test_create_v6_syn_packet(void)
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!(NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN)) {
 		DBG("SYN flag not set\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	if (!v6_check_port_and_address("TCP syn", pkt,
 				       &peer_v6_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_create_v4_syn_packet(void)
+static void test_create_v4_syn_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
 	u8_t flags = NET_TCP_SYN;
@@ -1049,32 +1040,28 @@ static bool test_create_v4_syn_packet(void)
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!(NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN)) {
 		DBG("Reset flag not set\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	if (!v4_check_port_and_address("TCP syn", pkt,
 				       &peer_v4_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_create_v6_synack_packet(void)
+static void test_create_v6_synack_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
 	u8_t flags = NET_TCP_SYN | NET_TCP_ACK;
@@ -1086,33 +1073,29 @@ static bool test_create_v6_synack_packet(void)
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!((NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN) &&
 	      (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_ACK))) {
 		DBG("SYN|ACK flag not set\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	if (!v6_check_port_and_address("TCP synack", pkt,
 				       &peer_v6_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_create_v4_synack_packet(void)
+static void test_create_v4_synack_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
 	u8_t flags = NET_TCP_SYN | NET_TCP_ACK;
@@ -1124,33 +1107,29 @@ static bool test_create_v4_synack_packet(void)
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!((NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN) &&
 	      (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_ACK))) {
 		DBG("SYN|ACK flag not set\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	if (!v4_check_port_and_address("TCP synack", pkt,
 				       &peer_v4_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_create_v6_fin_packet(void)
+static void test_create_v6_fin_packet(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
 	u8_t flags = NET_TCP_FIN;
@@ -1162,32 +1141,28 @@ static bool test_create_v6_fin_packet(void)
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv6", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!(NET_TCP_FLAGS(tcp_hdr) & NET_TCP_FIN)) {
 		DBG("FIN flag not set\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	if (!v6_check_port_and_address("TCP fin", pkt,
 				       &peer_v6_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_create_v4_fin_packet(void)
+static void test_create_v4_fin_packet(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
 	u8_t flags = NET_TCP_FIN;
@@ -1199,32 +1174,28 @@ static bool test_create_v4_fin_packet(void)
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv4", pkt, false);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
-		return false;
-	}
+	zassert_not_null(tcp_hdr, NULL);
 
 	if (!(NET_TCP_FLAGS(tcp_hdr) & NET_TCP_FIN)) {
 		DBG("FIN flag not set\n");
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	if (!v4_check_port_and_address("TCP fin", pkt,
 				       &peer_v4_inaddr, PEER_TCP_PORT)) {
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_v6_seq_check(void)
+static void test_v6_seq_check(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
 	u8_t flags = NET_TCP_SYN;
@@ -1236,7 +1207,7 @@ static bool test_v6_seq_check(void)
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv6", pkt, false);
@@ -1248,15 +1219,13 @@ static bool test_v6_seq_check(void)
 	if (seq != (tcp->send_seq - 1)) {
 		DBG("Seq does not match (%u vs %u)\n",
 		    seq + 1, tcp->send_seq);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
-static bool test_v4_seq_check(void)
+static void test_v4_seq_check(void)
 {
 	struct net_tcp *tcp = v4_ctx->tcp;
 	u8_t flags = NET_TCP_SYN;
@@ -1268,7 +1237,7 @@ static bool test_v4_seq_check(void)
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_hexdump_frags("TCPv4", pkt, false);
@@ -1280,12 +1249,10 @@ static bool test_v4_seq_check(void)
 	if (seq != (tcp->send_seq - 1)) {
 		DBG("Seq does not match (%u vs %u)\n",
 		    seq + 1, tcp->send_seq);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	net_pkt_unref(pkt);
-
-	return true;
 }
 
 #if 0
@@ -1351,23 +1318,20 @@ NET_DEVICE_INIT_INSTANCE(net_tcp_test_peer, "net_tcp_test_peer", peer,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		 &net_tcp_if_api_peer, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-static bool test_init_tcp_context(void)
+static void test_init_tcp_context(void)
 {
 	struct net_if *iface = net_if_get_default();
 	struct net_if_addr *ifaddr;
 	int ret;
 
-	if (!iface) {
-		TC_ERROR("Interface is NULL\n");
-		return false;
-	}
+	zassert_not_null(iface, "Interface is NULL");
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_v6_inaddr,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add %s to interface %p\n",
 		       net_sprint_ipv6_addr(&my_v6_inaddr), iface);
-		return false;
+		zassert_not_null(ifaddr, NULL);
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &my_v4_inaddr,
@@ -1375,18 +1339,16 @@ static bool test_init_tcp_context(void)
 	if (!ifaddr) {
 		DBG("Cannot add %s to interface %p\n",
 		       net_sprint_ipv4_addr(&my_v4_inaddr), iface);
-		return false;
+		zassert_not_null(ifaddr, NULL);
 	}
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &v6_ctx);
 	if (ret != 0) {
-		TC_ERROR("Context get v6 test failed.\n");
-		return false;
+		zassert_true(0, "Context get v6 test failed");
 	}
 
 	if (!v6_ctx) {
-		TC_ERROR("Got NULL v6 context\n");
-		return false;
+		zassert_true(0, "Got NULL v6 context");
 	}
 
 	net_ipaddr_copy(&my_v6_addr.sin6_addr, &my_v6_inaddr);
@@ -1400,19 +1362,14 @@ static bool test_init_tcp_context(void)
 	ret = net_context_bind(v6_ctx, (struct sockaddr *)&my_v6_addr,
 			       sizeof(my_v6_addr));
 	if (ret) {
-		TC_ERROR("Context bind v6 test failed (%d)\n", ret);
-		return false;
+		zassert_true(ret, "Context bind v6 test failed");
 	}
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &v4_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context get v4 test failed.\n");
-		return false;
-	}
+	zassert_equal(ret, 0, "Context get v4 test failed.");
 
 	if (!v4_ctx) {
-		TC_ERROR("Got NULL v4 context\n");
-		return false;
+		zassert_true(0, "Got NULL v4 context");
 	}
 
 	net_ipaddr_copy(&my_v4_addr.sin_addr, &my_v4_inaddr);
@@ -1426,11 +1383,8 @@ static bool test_init_tcp_context(void)
 	ret = net_context_bind(v4_ctx, (struct sockaddr *)&my_v4_addr,
 			       sizeof(my_v4_addr));
 	if (ret) {
-		TC_ERROR("Context bind v4 test failed (%d)\n", ret);
-		return false;
+		zassert_true(0, "Context bind v4 test failed");
 	}
-
-	return true;
 }
 
 /* Receive window helper function copied from tcp.c */
@@ -1447,7 +1401,7 @@ static inline u32_t get_recv_wnd(struct net_tcp *tcp)
 	return min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 }
 
-static bool test_tcp_seq_validity(void)
+static void test_tcp_seq_validity(void)
 {
 	struct net_tcp *tcp = v6_ctx->tcp;
 	u8_t flags = NET_TCP_RST;
@@ -1458,7 +1412,7 @@ static bool test_tcp_seq_validity(void)
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq) -
@@ -1466,14 +1420,14 @@ static bool test_tcp_seq_validity(void)
 	if (!net_tcp_validate_seq(tcp, pkt)) {
 		DBG("1) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq);
 	if (!net_tcp_validate_seq(tcp, pkt)) {
 		DBG("2) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq) +
@@ -1481,7 +1435,7 @@ static bool test_tcp_seq_validity(void)
 	if (net_tcp_validate_seq(tcp, pkt)) {
 		DBG("3) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	tcp->send_ack = sys_get_be32(NET_TCP_HDR(pkt)->seq) -
@@ -1489,13 +1443,11 @@ static bool test_tcp_seq_validity(void)
 	if (net_tcp_validate_seq(tcp, pkt)) {
 		DBG("4) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(NET_TCP_HDR(pkt)->seq));
-		return false;
+		zassert_true(0, NULL);
 	}
-
-	return true;
 }
 
-static bool test_init_tcp_reply_context(void)
+static void test_init_tcp_reply_context(void)
 {
 	struct net_if *iface = net_if_get_default() + 1;
 	struct net_if_addr *ifaddr;
@@ -1506,7 +1458,7 @@ static bool test_init_tcp_reply_context(void)
 	if (!ifaddr) {
 		DBG("Cannot add %s to interface %p\n",
 		    net_sprint_ipv6_addr(&peer_v6_inaddr), iface);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &peer_v4_inaddr, NET_ADDR_MANUAL,
@@ -1514,48 +1466,35 @@ static bool test_init_tcp_reply_context(void)
 	if (!ifaddr) {
 		DBG("Cannot add %s to interface %p\n",
 		    net_sprint_ipv4_addr(&peer_v4_inaddr), iface);
-		return false;
+		zassert_true(0, NULL);
 	}
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
 			      &reply_v6_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context get reply v6 test failed.\n");
-		return false;
-	}
+	zassert_equal(ret, 0,
+			"Context get reply v6 test failed.");
 
 	if (!reply_v6_ctx) {
-		TC_ERROR("Got NULL reply v6 context\n");
-		return false;
+		zassert_true(0, "Got NULL reply v6 context");
 	}
 
 	ret = net_context_bind(reply_v6_ctx, (struct sockaddr *)&peer_v6_addr,
 			       sizeof(peer_v6_addr));
-	if (ret) {
-		TC_ERROR("Context bind reply v6 test failed (%d)\n", ret);
-		return false;
-	}
+	zassert_false(ret, "Context bind reply v6 test failed");
 
 	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
 			      &reply_v4_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context get reply v4 test failed.\n");
-		return false;
-	}
+	zassert_equal(ret, 0, "Context get reply v4 test failed.");
 
 	if (!reply_v4_ctx) {
-		TC_ERROR("Got NULL reply v4 context\n");
-		return false;
+		zassert_true(0, "Got NULL reply v4 context");
 	}
 
 	ret = net_context_bind(reply_v4_ctx, (struct sockaddr *)&peer_v4_addr,
 			       sizeof(peer_v4_addr));
 	if (ret) {
-		TC_ERROR("Context bind reply v4 test failed (%d)\n", ret);
-		return false;
+		zassert_true(0, "Context bind reply v4 test failed");
 	}
-
-	return true;
 }
 
 static void accept_v6_cb(struct net_context *new_context,
@@ -1576,39 +1515,33 @@ static void accept_v4_cb(struct net_context *new_context,
 	DBG("error %d\n", error);
 }
 
-static bool test_init_tcp_accept(void)
+static void test_init_tcp_accept(void)
 {
 	int ret;
 
 	ret = net_context_listen(reply_v6_ctx, 0);
 	if (ret) {
-		TC_ERROR("Context listen v6 test failed (%d)\n", ret);
-		return false;
+		zassert_true(0, "Context listen v6 test failed");
 	}
 
 	ret = net_context_accept(reply_v6_ctx, accept_v6_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET6));
 	if (ret) {
-		TC_ERROR("Context accept v6 test failed (%d)\n", ret);
-		return false;
+		zassert_true(0, "Context accept v6 test failed");
 	}
 
 	ret = net_context_listen(reply_v4_ctx, 0);
 	if (ret) {
-		TC_ERROR("Context listen v4 test failed (%d)\n", ret);
-		return false;
+		zassert_true(0, "Context listen v4 test failed");
 	}
 
 	ret = net_context_accept(reply_v4_ctx, accept_v4_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET));
 	if (ret) {
-		TC_ERROR("Context accept v4 test failed (%d)\n", ret);
-		return false;
+		zassert_true(0, "Context accept v4 test failed");
 	}
 
 	DBG("Waiting a connection...\n");
-
-	return true;
 }
 
 #if 0
@@ -1681,22 +1614,17 @@ static bool test_init_tcp_connect(void)
 }
 #endif
 
-static bool test_init(void)
+static void test_init(void)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if *iface = net_if_get_default();
 
-	if (!iface) {
-		TC_ERROR("Interface is NULL\n");
-		return false;
-	}
+	zassert_not_null(iface, "Interface is NULL");
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_v6_inaddr,
 				      NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		TC_ERROR("Cannot add address\n");
-		return false;
-	}
+	zassert_not_null(ifaddr,
+			"Cannot add address");
 
 	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_any);
 	any_addr6.sin6_family = AF_INET6;
@@ -1705,84 +1633,48 @@ static bool test_init(void)
 	any_addr4.sin_family = AF_INET;
 
 	k_sem_init(&wait_connect, 0, UINT_MAX);
-
-	return true;
 }
 
-static bool test_cleanup(void)
+static void test_cleanup(void)
 {
 	int ret;
 
 	ret = net_context_put(v6_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context free v6 failed.\n");
-		return false;
-	}
+	zassert_equal(ret, 0,
+			"Context free v6 failed.");
 
 	ret = net_context_put(v4_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context free v4 failed.\n");
-		return false;
-	}
+	zassert_equal(ret, 0,
+			"Context free v4 failed.");
 
 	ret = net_context_put(reply_v6_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context free reply v6 failed.\n");
-		return false;
-	}
+	zassert_equal(ret, 0, "Context free reply v6 failed.");
 
 	ret = net_context_put(reply_v4_ctx);
-	if (ret != 0) {
-		TC_ERROR("Context free reply v4 failed.\n");
-		return false;
-	}
-
-	return true;
+	zassert_equal(ret, 0, "Context free reply v4 failed.");
 }
 
-static const struct {
-	const char *name;
-	bool (*func)(void);
-} tests[] = {
-	{ "test TCP init", test_init },
-	{ "test TCP register/unregister port cb", test_register },
-	{ "test TCP context init", test_init_tcp_context },
-	{ "test IPv6 TCP reset packet creation", test_create_v6_reset_packet },
-	{ "test IPv4 TCP reset packet creation", test_create_v4_reset_packet },
-	{ "test IPv6 TCP syn packet creation", test_create_v6_syn_packet },
-	{ "test IPv4 TCP syn packet creation", test_create_v4_syn_packet },
-	{ "test IPv6 TCP synack packet create", test_create_v6_synack_packet },
-	{ "test IPv4 TCP synack packet create", test_create_v4_synack_packet },
-	{ "test IPv6 TCP fin packet creation", test_create_v6_fin_packet },
-	{ "test IPv4 TCP fin packet creation", test_create_v4_fin_packet },
-	{ "test IPv6 TCP seq check", test_v6_seq_check },
-	{ "test IPv4 TCP seq check", test_v4_seq_check },
-	{ "test TCP seq validity", test_tcp_seq_validity },
-	{ "test TCP reply context init", test_init_tcp_reply_context },
-	{ "test TCP accept init", test_init_tcp_accept },
-#if 0
-	/* TBD: more tests are needed */
-	{ "test TCP connect init", test_init_tcp_connect },
-	{ "test IPv6 TCP data packet creation", test_create_v6_data_packet },
-	{ "test IPv4 TCP data packet creation", test_create_v4_data_packet },
-#endif
-	{ "test cleanup", test_cleanup },
-};
-
-void main(void)
+/*test case main entry*/
+void test_main(void)
 {
-	int count, pass;
-
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
-		test_failed = false;
-		if (!tests[count].func() || test_failed) {
-			TC_END(FAIL, "failed\n");
-		} else {
-			TC_END(PASS, "passed\n");
-			pass++;
-		}
-	}
-
-	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
+	ztest_test_suite(test_tcp,
+			ztest_unit_test(test_init),
+			ztest_unit_test(test_register),
+			ztest_unit_test(test_init_tcp_context),
+			ztest_unit_test(test_create_v6_reset_packet),
+			ztest_unit_test(test_create_v4_reset_packet),
+			ztest_unit_test(test_create_v6_syn_packet),
+			ztest_unit_test(test_create_v4_syn_packet),
+			ztest_unit_test(test_create_v6_synack_packet),
+			ztest_unit_test(test_create_v4_synack_packet),
+			ztest_unit_test(test_create_v6_fin_packet),
+			ztest_unit_test(test_create_v4_fin_packet),
+			ztest_unit_test(test_v6_seq_check),
+			ztest_unit_test(test_v4_seq_check),
+			ztest_unit_test(test_tcp_seq_validity),
+			ztest_unit_test(test_init_tcp_reply_context),
+			ztest_unit_test(test_init_tcp_accept),
+			ztest_unit_test(test_cleanup)
+);
+	ztest_run_test_suite(test_tcp);
 }
