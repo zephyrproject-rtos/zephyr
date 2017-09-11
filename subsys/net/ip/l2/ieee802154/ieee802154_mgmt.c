@@ -389,6 +389,10 @@ static int ieee802154_set_parameters(u32_t mgmt_request,
 
 	if (mgmt_request == NET_REQUEST_IEEE802154_SET_CHANNEL) {
 		if (ctx->channel != value) {
+			if (!ieee802154_verify_channel(iface->dev, value)) {
+				return -EINVAL;
+			}
+
 			ret = radio->set_channel(iface->dev, value);
 			if (!ret) {
 				ctx->channel = value;
