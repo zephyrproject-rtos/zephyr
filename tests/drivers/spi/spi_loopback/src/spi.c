@@ -49,6 +49,7 @@ struct spi_cs_control spi_cs = {
 
 #elif defined(CONFIG_BOARD_NUCLEO_L432KC) || 	\
       defined(CONFIG_BOARD_DISCO_L475_IOT1) || 	\
+      defined(CONFIG_BOARD_NUCLEO_F091RC) || 	\
       defined(CONFIG_BOARD_NUCLEO_F334R8) || 	\
       defined(CONFIG_BOARD_NUCLEO_F401RE) || 	\
       defined(CONFIG_BOARD_NUCLEO_L476RG)
