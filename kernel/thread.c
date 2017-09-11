@@ -266,21 +266,6 @@ k_tid_t k_thread_create(struct k_thread *new_thread,
 	}
 	return new_thread;
 }
-
-
-k_tid_t k_thread_spawn(k_thread_stack_t stack, size_t stack_size,
-			void (*entry)(void *, void *, void*),
-			void *p1, void *p2, void *p3,
-			int prio, u32_t options, s32_t delay)
-{
-	struct k_thread *new_thread =
-		(struct k_thread *)K_THREAD_STACK_BUFFER(stack);
-
-	return k_thread_create(new_thread, stack,
-			       stack_size, entry, p1, p2,
-			       p3, prio, options, delay);
-}
-
 #endif
 
 int k_thread_cancel(k_tid_t tid)
