@@ -14,7 +14,7 @@
  * to _thread_entry() since this arch puts the first four arguments
  * in r4-r7 and not on the stack
  */
-void _thread_entry_wrapper(_thread_entry_t, void *, void *, void *);
+void _thread_entry_wrapper(k_thread_entry_t, void *, void *, void *);
 
 struct init_stack_frame {
 	/* top of the stack / most recently pushed */
@@ -22,7 +22,7 @@ struct init_stack_frame {
 	/* Used by _thread_entry_wrapper. pulls these off the stack and
 	 * into argument registers before calling _thread_entry()
 	 */
-	_thread_entry_t entry_point;
+	k_thread_entry_t entry_point;
 	void *arg1;
 	void *arg2;
 	void *arg3;
@@ -32,7 +32,7 @@ struct init_stack_frame {
 
 
 void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
-		 size_t stack_size, _thread_entry_t thread_func,
+		 size_t stack_size, k_thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {

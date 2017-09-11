@@ -40,12 +40,11 @@ static inline void _data_copy(void)
 #endif
 FUNC_NORETURN void _Cstart(void);
 
-extern FUNC_NORETURN void _thread_entry(void (*)(void *, void *, void *),
-			  void *, void *, void *);
+extern FUNC_NORETURN void _thread_entry(k_thread_entry_t entry,
+			  void *p1, void *p2, void *p3);
 
 extern void _new_thread(struct k_thread *thread, k_thread_stack_t pStack,
-			size_t stackSize,
-			void (*pEntry)(void *, void *, void *),
+			size_t stackSize, k_thread_entry_t entry,
 			void *p1, void *p2, void *p3,
 			int prio, unsigned int options);
 
