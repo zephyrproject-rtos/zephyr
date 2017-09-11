@@ -463,48 +463,6 @@ struct __packed _k_thread_stack_element {
 };
 typedef struct _k_thread_stack_element *k_thread_stack_t;
 
-/**
- * @brief Spawn a thread.
- *
- * This routine initializes a thread, then schedules it for execution.
- *
- * The new thread may be scheduled for immediate execution or a delayed start.
- * If the newly spawned thread does not have a delayed start the kernel
- * scheduler may preempt the current thread to allow the new thread to
- * execute.
- *
- * Kernel data structures for bookkeeping and context storage for this thread
- * will be placed at the beginning of the thread's stack memory region and may
- * become corrupted if too much of the stack is used. This function has been
- * deprecated in favor of k_thread_create() to give the user more control on
- * where these data structures reside.
- *
- * Thread options are architecture-specific, and can include K_ESSENTIAL,
- * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
- * them using "|" (the logical OR operator).
- *
- * The stack itself should be declared with K_THREAD_STACK_DEFINE or variant
- * macros. The stack size parameter should either be a defined constant
- * also passed to K_THREAD_STACK_DEFINE, or the value of K_THREAD_STACK_SIZEOF.
- * Do not use regular C sizeof().
- *
- * @param stack Pointer to the stack space.
- * @param stack_size Stack size in bytes.
- * @param entry Thread entry function.
- * @param p1 1st entry point parameter.
- * @param p2 2nd entry point parameter.
- * @param p3 3rd entry point parameter.
- * @param prio Thread priority.
- * @param options Thread options.
- * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay),
- *              or K_FOREVER (to not run until k_thread_start() is called)
- *
- * @return ID of new thread.
- */
-extern __deprecated k_tid_t k_thread_spawn(k_thread_stack_t stack,
-			size_t stack_size, k_thread_entry_t entry,
-			void *p1, void *p2, void *p3,
-			int prio, u32_t options, s32_t delay);
 
 /**
  * @brief Create a thread.
