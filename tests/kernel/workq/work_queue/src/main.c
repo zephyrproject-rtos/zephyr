@@ -9,7 +9,6 @@
 #include <zephyr.h>
 #include <tc_util.h>
 #include <misc/util.h>
-#include <misc/nano_work.h>
 
 #define NUM_TEST_ITEMS          6
 /* Each work item takes 100ms */
