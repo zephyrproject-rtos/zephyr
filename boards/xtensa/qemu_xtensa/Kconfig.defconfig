@@ -7,7 +7,4 @@ if BOARD_QEMU_XTENSA
 config BOARD
 	default qemu_xtensa
 
-config SIMULATOR_XTENSA
-        def_bool y
-
 endif # BOARD_QEMU_XTENSA
