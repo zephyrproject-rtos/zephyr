@@ -73,6 +73,24 @@ static inline unsigned int _Swap(unsigned int key)
 	return __swap(key);
 }
 
+#ifdef CONFIG_USERSPACE
+/**
+ * @brief Check memory region permissions
+ *
+ * Given a memory region, return whether the current memory management hardware
+ * configuration would allow a user thread to read/write that region. Used by
+ * system calls to validate buffers coming in from userspace.
+ *
+ * @param addr start address of the buffer
+ * @param size the size of the buffer
+ * @param write If nonzero, additionally check if the area is writable.
+ *	  Otherwise, just check if the memory can be read.
+ *
+ * @return nonzero if the permissions don't match.
+ */
+extern int _arch_buffer_validate(void *addr, size_t size, int write);
+#endif /* CONFIG_USERSPACE */
+
 /* set and clear essential fiber/task flag */
 
 extern void _thread_essential_set(void);
