@@ -88,5 +88,3 @@ APIs
 
 .. doxygengroup:: system_log
    :project: Zephyr
-   :content-only:
-

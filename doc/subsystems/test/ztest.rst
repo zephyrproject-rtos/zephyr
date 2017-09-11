@@ -105,7 +105,6 @@ Running tests
 
 .. doxygengroup:: ztest_test
    :project: Zephyr
-   :content-only:
 
 Assertions
 ==========
@@ -126,7 +125,6 @@ Example output for a failed macro from
 
 .. doxygengroup:: ztest_assert
    :project: Zephyr
-   :content-only:
 
 Mocking
 =======
@@ -147,4 +145,3 @@ expect the values ``a=2`` and ``b=3``, and telling ``returns_int`` to return
 
 .. doxygengroup:: ztest_mock
    :project: Zephyr
-   :content-only:

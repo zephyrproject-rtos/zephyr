@@ -13,5 +13,3 @@ Device Model
 
 .. doxygengroup:: device_model
    :project: Zephyr
-   :content-only:
-
