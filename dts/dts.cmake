@@ -4,7 +4,7 @@
 # encoded in DTS.
 #
 # Here we call on dtc, the gcc preprocessor, and
-# scripts/extract_dts_includes.py to generate this header file at
+# scripts/dts/extract_dts_includes.py to generate this header file at
 # CMake configure-time.
 #
 # See ~/zephyr/doc/dts
@@ -64,7 +64,7 @@ if(CONFIG_HAS_DTS)
   if(EXISTS ${FIXUP_FILE})
     set(FIXUP -f ${FIXUP_FILE})
   endif()
-  set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/extract_dts_includes.py
+  set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD}.dts_compiled
     --yaml ${PROJECT_SOURCE_DIR}/dts/${ARCH}/yaml
     ${FIXUP}
