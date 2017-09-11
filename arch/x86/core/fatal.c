@@ -284,8 +284,6 @@ struct task_state_segment _df_tss = {
 	.cs = CODE_SEG,
 	.ds = DATA_SEG,
 	.es = DATA_SEG,
-	.fs = DATA_SEG,
-	.gs = DATA_SEG,
 	.ss = DATA_SEG,
 	.eip = (u32_t)_df_handler_top,
 	.cr3 = (u32_t)X86_MMU_PD
@@ -341,8 +339,6 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;
 	_main_tss.es = DATA_SEG;
-	_main_tss.fs = DATA_SEG;
-	_main_tss.gs = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (u32_t)_df_handler_bottom;
 	_main_tss.cr3 = (u32_t)X86_MMU_PD;

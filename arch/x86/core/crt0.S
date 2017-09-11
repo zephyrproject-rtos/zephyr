@@ -91,9 +91,10 @@ SECTION_FUNC(TEXT_START, __start)
 	movw	$DATA_SEG, %ax	/* data segment selector (entry = 3) */
 	movw	%ax, %ds	/* set DS */
 	movw	%ax, %es	/* set ES */
-	movw	%ax, %fs	/* set FS */
-	movw	%ax, %gs	/* set GS */
 	movw	%ax, %ss	/* set SS */
+	xorw	%ax, %ax	/* AX = 0 */
+	movw	%ax, %fs	/* Zero FS */
+	movw	%ax, %gs	/* Zero GS */
 
 	ljmp	$CODE_SEG, $__csSet	/* set CS = 0x08 */
 
