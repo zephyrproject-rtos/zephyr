@@ -235,12 +235,29 @@ struct _timeout {
 
 extern s32_t _timeout_remaining_get(struct _timeout *timeout);
 
-/* Threads */
-typedef void (*_thread_entry_t)(void *, void *, void *);
+/**
+ * @typedef k_thread_entry_t
+ * @brief Thread entry point function type.
+ *
+ * A thread's entry point function is invoked when the thread starts executing.
+ * Up to 3 argument values can be passed to the function.
+ *
+ * The thread terminates execution permanently if the entry point function
+ * returns. The thread is responsible for releasing any shared resources
+ * it may own (such as mutexes and dynamically allocated memory), prior to
+ * returning.
+ *
+ * @param p1 First argument.
+ * @param p2 Second argument.
+ * @param p3 Third argument.
+ *
+ * @return N/A
+ */
+typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
 #ifdef CONFIG_THREAD_MONITOR
 struct __thread_entry {
-	_thread_entry_t pEntry;
+	k_thread_entry_t pEntry;
 	void *parameter1;
 	void *parameter2;
 	void *parameter3;
@@ -394,26 +411,6 @@ extern void k_call_stacks_analyze(void);
  * @{
  */
 
-/**
- * @typedef k_thread_entry_t
- * @brief Thread entry point function type.
- *
- * A thread's entry point function is invoked when the thread starts executing.
- * Up to 3 argument values can be passed to the function.
- *
- * The thread terminates execution permanently if the entry point function
- * returns. The thread is responsible for releasing any shared resources
- * it may own (such as mutexes and dynamically allocated memory), prior to
- * returning.
- *
- * @param p1 First argument.
- * @param p2 Second argument.
- * @param p3 Third argument.
- *
- * @return N/A
- */
-typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
-
 #endif /* !_ASMLANGUAGE */
 
 
@@ -499,7 +496,7 @@ typedef struct _k_thread_stack_element *k_thread_stack_t;
 extern k_tid_t k_thread_create(struct k_thread *new_thread,
 			       k_thread_stack_t stack,
 			       size_t stack_size,
-			       void (*entry)(void *, void *, void*),
+			       k_thread_entry_t entry,
 			       void *p1, void *p2, void *p3,
 			       int prio, u32_t options, s32_t delay);
 
@@ -611,7 +608,7 @@ struct _static_thread_data {
 	struct k_thread *init_thread;
 	k_thread_stack_t init_stack;
 	unsigned int init_stack_size;
-	void (*init_entry)(void *, void *, void *);
+	k_thread_entry_t init_entry;
 	void *init_p1;
 	void *init_p2;
 	void *init_p3;
@@ -629,7 +626,7 @@ struct _static_thread_data {
 	.init_thread = (thread),				 \
 	.init_stack = (stack),					 \
 	.init_stack_size = (stack_size),                         \
-	.init_entry = (void (*)(void *, void *, void *))entry,   \
+	.init_entry = (k_thread_entry_t)entry,			 \
 	.init_p1 = (void *)p1,                                   \
 	.init_p2 = (void *)p2,                                   \
 	.init_p3 = (void *)p3,                                   \

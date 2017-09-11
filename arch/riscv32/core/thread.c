@@ -10,13 +10,13 @@
 #include <wait_q.h>
 #include <string.h>
 
-void _thread_entry_wrapper(_thread_entry_t thread,
+void _thread_entry_wrapper(k_thread_entry_t thread,
 			   void *arg1,
 			   void *arg2,
 			   void *arg3);
 
 void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
-		 size_t stack_size, _thread_entry_t thread_func,
+		 size_t stack_size, k_thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {
