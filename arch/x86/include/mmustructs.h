@@ -136,12 +136,6 @@
  */
 #define MMU_ENTRY_RUNTIME_WRITE	    0x20000000
 
-/* Macros needed for define permissions for the buffer validation API
- * ref to x86_mmu_buffer_validate()
- */
-#define BUFF_READABLE ((u32_t) 0x0)
-#define BUFF_WRITEABLE ((u32_t) 0x1)
-#define BUFF_USER ((u32_t) 0x2)
 
 
 /* Helper macros to ease the usage of the MMU page table structures.

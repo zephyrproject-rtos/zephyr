@@ -607,22 +607,6 @@ void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags);
  *	 modify
  */
 void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask);
-
-/**
- * @brief check page table entry flags
- *
- * This routine checks if the buffer is available to whoever calls
- * this API.
- * @param addr start address of the buffer
- * @param size the size of the buffer
- * @param flags permissions to check.
- *    Consists of 2 bits the bit0 represents the RW permissions
- *    The bit1 represents the user/supervisor permissions
- *    Use macro BUFF_READABLE/BUFF_WRITEABLE or BUFF_USER to build the flags
- *
- * @return true-if the permissions of the pde matches the request
- */
-int _x86_mmu_buffer_validate(void *addr, size_t size, int flags);
 #endif /* CONFIG_X86_MMU */
 
 #endif /* !_ASMLANGUAGE */
