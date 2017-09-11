@@ -130,4 +130,3 @@ Shell API Functions
 *******************
 .. doxygengroup:: _shell_api_functions
    :project: Zephyr
-   :content-only:

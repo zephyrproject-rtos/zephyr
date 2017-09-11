@@ -24,7 +24,6 @@ that is too lengthy or too complex to be performed by an ISR.
 
 .. doxygengroup:: thread_apis
    :project: Zephyr
-   :content-only:
 
 Workqueues
 **********
@@ -36,7 +35,6 @@ or high-priority thread to offload non-urgent processing.
 
 .. doxygengroup:: workqueue_apis
    :project: Zephyr
-   :content-only:
 
 Clocks
 ******
@@ -47,7 +45,6 @@ with either normal and high precision.
 
 .. doxygengroup:: clock_apis
    :project: Zephyr
-   :content-only:
 
 Timers
 ******
@@ -58,7 +55,6 @@ an action when the timer expires.
 
 .. doxygengroup:: timer_apis
    :project: Zephyr
-   :content-only:
 
 Memory Slabs
 ************
@@ -69,7 +65,6 @@ memory blocks.
 
 .. doxygengroup:: mem_slab_apis
    :project: Zephyr
-   :content-only:
 
 Memory Pools
 ************
@@ -80,7 +75,6 @@ memory blocks.
 
 .. doxygengroup:: mem_pool_apis
    :project: Zephyr
-   :content-only:
 
 Heap Memory Pool
 ****************
@@ -91,7 +85,6 @@ in a :cpp:func:`malloc()`-like manner.
 
 .. doxygengroup:: heap_apis
    :project: Zephyr
-   :content-only:
 
 Semaphores
 **********
@@ -101,7 +94,6 @@ Semaphores provide traditional counting semaphore capabilities.
 
 .. doxygengroup:: semaphore_apis
    :project: Zephyr
-   :content-only:
 
 Mutexes
 *******
@@ -112,7 +104,6 @@ with basic priority inheritance.
 
 .. doxygengroup:: mutex_apis
    :project: Zephyr
-   :content-only:
 
 Alerts
 ******
@@ -123,7 +114,6 @@ somewhat akin to Unix-style signals.
 
 .. doxygengroup:: alert_apis
    :project: Zephyr
-   :content-only:
 
 Fifos
 *****
@@ -134,7 +124,6 @@ of any size.
 
 .. doxygengroup:: fifo_apis
    :project: Zephyr
-   :content-only:
 
 Lifos
 *****
@@ -145,7 +134,6 @@ of any size.
 
 .. doxygengroup:: lifo_apis
    :project: Zephyr
-   :content-only:
 
 Stacks
 ******
@@ -156,7 +144,6 @@ data items.
 
 .. doxygengroup:: stack_apis
    :project: Zephyr
-   :content-only:
 
 Message Queues
 **************
@@ -167,7 +154,6 @@ for fixed-size data items.
 
 .. doxygengroup:: msgq_apis
    :project: Zephyr
-   :content-only:
 
 Mailboxes
 *********
@@ -178,7 +164,6 @@ for variable-size messages.
 
 .. doxygengroup:: mailbox_apis
    :project: Zephyr
-   :content-only:
 
 Pipes
 *****
@@ -189,7 +174,6 @@ variable-size chunks of data, in whole or in part.
 
 .. doxygengroup:: pipe_apis
    :project: Zephyr
-   :content-only:
 
 Interrupt Service Routines (ISRs)
 *********************************
@@ -200,7 +184,6 @@ executed asynchronously in response to a hardware or software interrupt.
 
 .. doxygengroup:: isr_apis
    :project: Zephyr
-   :content-only:
 
 Atomic Services
 ***************
@@ -214,7 +197,6 @@ The atomic services enable multiple threads and ISRs to read and modify
 
 .. doxygengroup:: atomic_apis
    :project: Zephyr
-   :content-only:
 
 Floating Point Services
 ***********************
@@ -225,7 +207,6 @@ registers.
 
 .. doxygengroup:: float_apis
    :project: Zephyr
-   :content-only:
 
 Ring Buffers
 ************
@@ -236,5 +217,3 @@ of variable-size data items.
 
 .. doxygengroup:: ring_buffer_apis
    :project: Zephyr
-   :content-only:
-

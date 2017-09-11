@@ -20,70 +20,60 @@ Generic Access Profile (GAP)
 
 .. doxygengroup:: bt_gap
    :project: Zephyr
-   :content-only:
 
 Connection Management
 *********************
 
 .. doxygengroup:: bt_conn
    :project: Zephyr
-   :content-only:
 
 Generic Attribute Profile (GATT)
 ********************************
 
 .. doxygengroup:: bt_gatt
    :project: Zephyr
-   :content-only:
 
 Mesh Profile
 ************
 
 .. doxygengroup:: bt_mesh
    :project: Zephyr
-   :content-only:
 
 Universal Unique Identifiers (UUIDs)
 ************************************
 
 .. doxygengroup:: bt_uuid
    :project: Zephyr
-   :content-only:
 
 Logical Link Control and Adaptation Protocol (L2CAP)
 ****************************************************
 
 .. doxygengroup:: bt_l2cap
    :project: Zephyr
-   :content-only:
 
 Serial Port Emulation (RFCOMM)
 ******************************
 
 .. doxygengroup:: bt_rfcomm
    :project: Zephyr
-   :content-only:
 
 Data Buffers
 ************
 
 .. doxygengroup:: bt_buf
    :project: Zephyr
-   :content-only:
 
 Persistent Storage
 ******************
 
 .. doxygengroup:: bt_storage
    :project: Zephyr
-   :content-only:
 
 HCI Drivers
 ***********
 
 .. doxygengroup:: bt_hci_driver
    :project: Zephyr
-   :content-only:
 
 HCI RAW channel
 ***************
@@ -95,4 +85,3 @@ are sent and received by the Bluetooth HCI driver.
 
 .. doxygengroup:: hci_raw
    :project: Zephyr
-   :content-only:

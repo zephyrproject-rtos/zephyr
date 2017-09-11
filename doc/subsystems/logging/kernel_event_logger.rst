@@ -260,7 +260,6 @@ events, which can be subsequently extracted and reviewed.
 
 .. doxygengroup:: event_logger
    :project: Zephyr
-   :content-only:
 
 Kernel Event Logger
 ===================
@@ -271,4 +270,3 @@ which can be subsequently extracted and reviewed.
 
 .. doxygengroup:: kernel_event_logger
    :project: Zephyr
-   :content-only:
