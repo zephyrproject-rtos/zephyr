@@ -44,6 +44,26 @@ config HW_STACK_PROTECTION
 	help
 	  Select this option to enable hardware stack protection.
 
+config USERSPACE
+	bool "User mode threads"
+	depends on ARCH_HAS_USERSPACE
+	depends on HW_STACK_PROTECTION
+	help
+	When enabled, threads may be created or dropped down to user mode,
+	which has significantly restricted permissions and must interact
+	with the kernel via system calls. See Zephyr documentation for more
+	details	about this feature.
+
+config MAX_THREAD_BYTES
+	int "Bytes to use when tracking object thread permissions"
+	default 2
+	depends on USERSPACE
+	help
+	Every kernel object will have an associated bitfield to store
+	thread permissions for that object. This controls the size of the
+	bitfield (in bytes) and imposes a limit on how many threads can
+	be created in the system.
+
 config SIMPLE_FATAL_ERROR_HANDLER
 	prompt "Simple system fatal error handler"
 	bool
@@ -112,6 +132,9 @@ endmenu
 # Architecture Capabilities
 #
 config ARCH_HAS_STACK_PROTECTION
+	bool
+
+config ARCH_HAS_USERSPACE
 	bool
 
 #
