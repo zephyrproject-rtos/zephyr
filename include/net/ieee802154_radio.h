@@ -32,6 +32,7 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_CSMA	= BIT(3), /* CSMA-CA supported */
 	IEEE802154_HW_2_4_GHZ	= BIT(4), /* 2.4Ghz radio supported */
 	IEEE802154_HW_TX_RX_ACK = BIT(5), /* Handles ACK request on TX */
+	IEEE802154_HW_SUB_GHZ	= BIT(6), /* Sub-GHz radio supported */
 };
 
 enum ieee802154_filter_type {
@@ -86,6 +87,11 @@ struct ieee802154_radio_api {
 
 	/** Stop the device */
 	int (*stop)(struct device *dev);
+
+#ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
+	/** Get the available amount of Sub-GHz channels */
+	u16_t (*get_subg_channel_count)(struct device *dev);
+#endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 } __packed;
 
 /**
