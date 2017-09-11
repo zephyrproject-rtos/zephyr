@@ -23,18 +23,13 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: master.43
+        image_tag: v0.1
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
-      - wget -q https://cmake.org/files/v3.9/cmake-3.9.1-Linux-x86_64.tar.gz;
-      - tar xf cmake-3.9.1-Linux-x86_64.tar.gz;
-      - sudo cp -a cmake-3.9.1-Linux-x86_64/bin/* /usr/local/bin/;
-      - sudo cp -a cmake-3.9.1-Linux-x86_64/share/* /usr/local/share/;
-      - cmake -version
       - source zephyr-env.sh
       - cd $ZEPHYR_BASE/scripts
       - mkdir build && cd build
