@@ -43,6 +43,10 @@
 #include "rpl.h"
 #endif
 
+#if defined(CONFIG_NET_ARP)
+#include <net/arp.h>
+#endif
+
 #include "net_shell.h"
 #include "net_stats.h"
 
@@ -1046,6 +1050,43 @@ int net_shell_cmd_app(int argc, char *argv[])
 	printk("Enable CONFIG_NET_DEBUG_APP and either CONFIG_NET_APP_CLIENT "
 	       "or CONFIG_NET_APP_SERVER to see client/server instance "
 	       "information.\n");
+#endif
+
+	return 0;
+}
+
+#if defined(CONFIG_NET_ARP)
+static void arp_cb(struct arp_entry *entry, void *user_data)
+{
+	int *count = user_data;
+
+	if (*count == 0) {
+		printk("     Interface  Link              Address\n");
+	}
+
+	printk("[%2d] %p %s %s\n", *count, entry->iface,
+	       net_sprint_ll_addr(entry->eth.addr,
+				  sizeof(struct net_eth_addr)),
+	       net_sprint_ipv4_addr(&entry->ip));
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_ARP */
+
+int net_shell_cmd_arp(int argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_ARP)
+	int count = 0;
+
+	if (net_arp_foreach(arp_cb, &count) == 0) {
+		printk("ARP cache is empty.\n");
+	}
+#else
+	printk("Enable CONFIG_NET_ARP, CONFIG_NET_IPV4 and "
+	       "CONFIG_NET_L2_ETHERNET to see ARP information.\n");
 #endif
 
 	return 0;
@@ -2342,6 +2383,8 @@ static struct shell_cmd net_commands[] = {
 		"\n\tPrint network memory allocations" },
 	{ "app", net_shell_cmd_app,
 		"\n\tPrint network application API usage information" },
+	{ "arp", net_shell_cmd_arp,
+		"\n\tPrint information about IPv4 ARP cache" },
 	{ "conn", net_shell_cmd_conn,
 		"\n\tPrint information about network connections" },
 	{ "dns", net_shell_cmd_dns, "\n\tShow how DNS is configure\n"

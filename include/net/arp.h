@@ -49,6 +49,18 @@ struct net_arp_hdr {
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt);
 enum net_verdict net_arp_input(struct net_pkt *pkt);
 
+struct arp_entry {
+	u32_t time;	/* FIXME - implement timeout functionality */
+	struct net_if *iface;
+	struct net_pkt *pending;
+	struct in_addr ip;
+	struct net_eth_addr eth;
+};
+
+typedef void (*net_arp_cb_t)(struct arp_entry *entry,
+			     void *user_data);
+int net_arp_foreach(net_arp_cb_t cb, void *user_data);
+
 void net_arp_clear_cache(void);
 void net_arp_init(void);
 

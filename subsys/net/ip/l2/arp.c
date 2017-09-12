@@ -21,14 +21,6 @@
 #include <net/arp.h>
 #include "net_private.h"
 
-struct arp_entry {
-	u32_t time;	/* FIXME - implement timeout functionality */
-	struct net_if *iface;
-	struct net_pkt *pending;
-	struct in_addr ip;
-	struct net_eth_addr eth;
-};
-
 static struct arp_entry arp_table[CONFIG_NET_ARP_TABLE_SIZE];
 
 static inline struct arp_entry *find_entry(struct net_if *iface,
@@ -493,6 +485,23 @@ void net_arp_clear_cache(void)
 	}
 
 	memset(&arp_table, 0, sizeof(arp_table));
+}
+
+int net_arp_foreach(net_arp_cb_t cb, void *user_data)
+{
+	int i, ret = 0;
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		if (!arp_table[i].iface) {
+			continue;
+		}
+
+		ret++;
+
+		cb(&arp_table[i], user_data);
+	}
+
+	return ret;
 }
 
 void net_arp_init(void)
