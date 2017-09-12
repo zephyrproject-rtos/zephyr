@@ -193,13 +193,18 @@ static inline void spi_context_buffers_setup(struct spi_context *ctx,
 }
 
 static ALWAYS_INLINE
-void spi_context_update_tx(struct spi_context *ctx, u8_t dfs)
+void spi_context_update_tx(struct spi_context *ctx, u8_t dfs, u32_t len)
 {
 	if (!ctx->tx_len) {
 		return;
 	}
 
-	ctx->tx_len--;
+	if (len > ctx->tx_len) {
+		SYS_LOG_ERR("Update exceeds current buffer");
+		return;
+	}
+
+	ctx->tx_len -= len;
 	if (!ctx->tx_len) {
 		ctx->current_tx++;
 		ctx->tx_count--;
@@ -211,7 +216,7 @@ void spi_context_update_tx(struct spi_context *ctx, u8_t dfs)
 			ctx->tx_buf = NULL;
 		}
 	} else if (ctx->tx_buf) {
-		ctx->tx_buf += dfs;
+		ctx->tx_buf += dfs * len;
 	}
 
 	SYS_LOG_DBG("tx buf/len %p/%zu", ctx->tx_buf, ctx->tx_len);
@@ -224,13 +229,18 @@ bool spi_context_tx_on(struct spi_context *ctx)
 }
 
 static ALWAYS_INLINE
-void spi_context_update_rx(struct spi_context *ctx, u8_t dfs)
+void spi_context_update_rx(struct spi_context *ctx, u8_t dfs, u32_t len)
 {
 	if (!ctx->rx_len) {
 		return;
 	}
 
-	ctx->rx_len--;
+	if (len > ctx->rx_len) {
+		SYS_LOG_ERR("Update exceeds current buffer");
+		return;
+	}
+
+	ctx->rx_len -= len;
 	if (!ctx->rx_len) {
 		ctx->current_rx++;
 		ctx->rx_count--;
@@ -242,7 +252,7 @@ void spi_context_update_rx(struct spi_context *ctx, u8_t dfs)
 			ctx->rx_buf = NULL;
 		}
 	} else if (ctx->rx_buf) {
-		ctx->rx_buf += dfs;
+		ctx->rx_buf += dfs * len;
 	}
 
 	SYS_LOG_DBG("rx buf/len %p/%zu", ctx->rx_buf, ctx->rx_len);
