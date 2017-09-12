@@ -1,4 +1,4 @@
-ccflags-y += -I$(srctree)/kernel/include
+ccflags-y += -I$(srctree)/kernel/include -D__ZEPHYR_KERNEL__
 
 asflags-y := ${ccflags-y}
 
