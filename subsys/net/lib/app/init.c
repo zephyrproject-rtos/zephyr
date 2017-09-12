@@ -230,10 +230,11 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 	/*
 	 * check for CMD_ADDR_ADD bit here, NET_EVENT_IPV6_ADDR_ADD is
 	 * a combination of _NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_ADDR_ADD
-	 * so NET_EVENT_IPV6_ADDR_ADD will always return != 0 if any other
+	 * so it will always return != NET_EVENT_IPV6_CMD_ADDR_ADD if any other
 	 * event is set (for instance NET_EVENT_IPV6_ROUTER_ADD)
 	 */
-	if ((mask & NET_EVENT_IPV6_CMD_ADDR_ADD) == 0) {
+	if ((mask & NET_EVENT_IPV6_CMD_ADDR_ADD) ==
+	    NET_EVENT_IPV6_CMD_ADDR_ADD) {
 		ifaddr = net_if_ipv6_addr_add(iface, &laddr,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
