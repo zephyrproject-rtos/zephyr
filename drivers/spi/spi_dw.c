@@ -129,7 +129,7 @@ static void push_data(struct device *dev)
 
 		write_dr(data, info->regs);
 
-		spi_context_update_tx(&spi->ctx, spi->dfs);
+		spi_context_update_tx(&spi->ctx, spi->dfs, 1);
 		spi->fifo_diff++;
 
 		f_tx--;
@@ -173,7 +173,7 @@ static void pull_data(struct device *dev)
 			}
 		}
 
-		spi_context_update_rx(&spi->ctx, spi->dfs);
+		spi_context_update_rx(&spi->ctx, spi->dfs, 1);
 		spi->fifo_diff--;
 	}
 
