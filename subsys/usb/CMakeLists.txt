@@ -1,0 +1,2 @@
+zephyr_sources_ifdef(CONFIG_USB_DEVICE_STACK usb_device.c)
+add_subdirectory_ifdef(CONFIG_USB_DEVICE_STACK class)
