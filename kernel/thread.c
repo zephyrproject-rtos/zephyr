@@ -143,7 +143,6 @@ void _thread_monitor_exit(struct k_thread *thread)
  * 1) In k_yield() if the current thread is not swapped out
  * 2) After servicing a non-nested interrupt
  * 3) In _Swap(), check the sentinel in the outgoing thread
- * 4) When a thread returns from its entry function to cooperatively terminate
  *
  * Item 2 requires support in arch/ code.
  *
@@ -154,10 +153,7 @@ void _check_stack_sentinel(void)
 {
 	u32_t *stack;
 
-	if (_is_thread_prevented_from_running(_current)) {
-		/* Filter out threads that are dummy threads or already
-		 * marked for termination (_THREAD_DEAD)
-		 */
+	if (_current->base.thread_state == _THREAD_DUMMY) {
 		return;
 	}
 
@@ -185,9 +181,6 @@ FUNC_NORETURN void _thread_entry(k_thread_entry_t entry,
 {
 	entry(p1, p2, p3);
 
-#ifdef CONFIG_STACK_SENTINEL
-	_check_stack_sentinel();
-#endif
 #ifdef CONFIG_MULTITHREADING
 	k_thread_abort(k_current_get());
 #else
