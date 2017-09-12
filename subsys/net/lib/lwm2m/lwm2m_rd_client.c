@@ -106,6 +106,8 @@ struct lwm2m_rd_client_info {
 
 	char ep_name[CLIENT_EP_LEN];
 	char server_ep[CLIENT_EP_LEN];
+
+	lwm2m_ctx_event_cb_t event_cb;
 };
 
 static K_THREAD_STACK_DEFINE(lwm2m_rd_client_thread_stack,
@@ -120,10 +122,31 @@ static u8_t client_data[256]; /* allocate some data for the RD */
 static struct lwm2m_rd_client_info clients[CLIENT_INSTANCE_COUNT];
 static int client_count;
 
-static void set_sm_state(int index, u8_t state)
+static void set_sm_state(int index, u8_t sm_state)
 {
+	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
+
+	/* Determine if a callback to the app is needed */
+	if (sm_state == ENGINE_BOOTSTRAP_DONE) {
+		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE;
+	} else if (clients[index].engine_state == ENGINE_UPDATE_SENT &&
+		   sm_state == ENGINE_REGISTRATION_DONE) {
+		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
+	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
+		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
+	} else if ((sm_state == ENGINE_INIT ||
+		    sm_state == ENGINE_DEREGISTERED) &&
+		   (clients[index].engine_state > ENGINE_BOOTSTRAP_DONE &&
+		    clients[index].engine_state < ENGINE_DEREGISTER)) {
+		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
+	}
+
 	/* TODO: add locking? */
-	clients[index].engine_state = state;
+	clients[index].engine_state = sm_state;
+
+	if (event > LWM2M_RD_CLIENT_EVENT_NONE && clients[index].event_cb) {
+		clients[index].event_cb(clients[index].ctx, event);
+	}
 }
 
 static bool sm_is_registered(int index)
@@ -200,6 +223,7 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 				    enum sm_engine_state sm_state)
 {
 	int index;
+	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
 
 	index = find_rd_client_from_msg(msg, clients, CLIENT_INSTANCE_COUNT);
 	if (index < 0) {
@@ -207,7 +231,23 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 		return;
 	}
 
+	if (clients[index].engine_state == ENGINE_BOOTSTRAP_SENT) {
+		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE;
+	} else if (clients[index].engine_state == ENGINE_REGISTRATION_SENT) {
+		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
+	} else if (clients[index].engine_state == ENGINE_UPDATE_SENT) {
+		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE;
+	} else if (clients[index].engine_state == ENGINE_DEREGISTER_SENT) {
+		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
+	} else {
+		/* TODO: unknown timeout state */
+	}
+
 	set_sm_state(index, sm_state);
+
+	if (event > LWM2M_RD_CLIENT_EVENT_NONE && clients[index].event_cb) {
+		clients[index].event_cb(clients[index].ctx, event);
+	}
 }
 
 /* force re-update with remote peer(s) */
@@ -820,7 +860,8 @@ static void lwm2m_rd_client_service(void)
 
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  char *peer_str, u16_t peer_port,
-			  const char *ep_name)
+			  const char *ep_name,
+			  lwm2m_ctx_event_cb_t event_cb)
 {
 	int index, ret = 0;
 
@@ -843,6 +884,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	index = client_count;
 	client_count++;
 	clients[index].ctx = client_ctx;
+	clients[index].event_cb = event_cb;
 	set_sm_state(index, ENGINE_INIT);
 	strncpy(clients[index].ep_name, ep_name, CLIENT_EP_LEN - 1);
 	SYS_LOG_INF("LWM2M Client: %s", clients[index].ep_name);
