@@ -39,7 +39,7 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd);
 void hci_evt_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
 s8_t hci_get_class(struct radio_pdu_node_rx *node_rx);
 #if defined(CONFIG_BT_CONN)
-int hci_acl_handle(struct net_buf *acl);
+int hci_acl_handle(struct net_buf *acl, struct net_buf **evt);
 void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
 void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num);
 #endif
