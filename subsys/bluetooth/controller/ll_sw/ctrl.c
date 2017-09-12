@@ -5729,31 +5729,11 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_START_A(0);
 }
 
-void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
-		    void *context)
+static void mayfly_adv_stop(void *param)
 {
 	struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
 	struct pdu_data *pdu_data_rx;
-	u32_t ticker_status;
-
-	ARG_UNUSED(ticks_at_expire);
-	ARG_UNUSED(remainder);
-	ARG_UNUSED(lazy);
-	ARG_UNUSED(context);
-
-	/* Abort an event, if any, to avoid Rx queue corruption used by Radio
-	 * ISR.
-	 */
-	event_stop(0, 0, 0, (void *)STATE_ABORT);
-
-	/* Stop Direct Adv */
-	ticker_status =
-	    ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-			RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_ID_ADV,
-			ticker_success_assert, (void *)__LINE__);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
 
 	/* Prepare the rx packet structure */
 	radio_pdu_node_rx = packet_rx_reserve_get(1);
@@ -5772,6 +5752,186 @@ void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 	/* enqueue connection complete structure into queue */
 	packet_rx_enqueue();
+}
+
+static inline void ticker_stop_adv_stop_active(void)
+{
+	static void *s_link[2];
+	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, NULL,
+		mayfly_radio_inactive};
+	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+	u32_t ret;
+
+	/* Step 2: Is caller before Event? Stop Event */
+	ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+			  RADIO_TICKER_USER_ID_JOB, RADIO_TICKER_ID_EVENT,
+			  ticker_if_done, (void *)&ret_cb);
+
+	if (ret == TICKER_STATUS_BUSY) {
+		mayfly_enable(RADIO_TICKER_USER_ID_JOB,
+			      RADIO_TICKER_USER_ID_JOB, 1);
+
+		while (ret_cb == TICKER_STATUS_BUSY) {
+			ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
+					 RADIO_TICKER_USER_ID_JOB);
+		}
+	}
+
+	if (ret_cb == TICKER_STATUS_SUCCESS) {
+		static void *s_link[2];
+		static struct mayfly s_mfy_xtal_stop = {0, 0, s_link, NULL,
+			mayfly_xtal_stop};
+		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+		u32_t ret;
+
+		/* Reset the stored ticker id in prepare phase. */
+		LL_ASSERT(_radio.ticker_id_prepare);
+		_radio.ticker_id_prepare = 0;
+
+		/* Step 2.1: Is caller between Primary and Marker0?
+		 * Stop the Marker0 event
+		 */
+		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+				  RADIO_TICKER_USER_ID_JOB,
+				  RADIO_TICKER_ID_MARKER_0,
+				  ticker_if_done, (void *)&ret_cb);
+
+		if (ret == TICKER_STATUS_BUSY) {
+			mayfly_enable(RADIO_TICKER_USER_ID_JOB,
+				      RADIO_TICKER_USER_ID_JOB, 1);
+
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(RADIO_TICKER_INSTANCE_ID_RADIO,
+						 RADIO_TICKER_USER_ID_JOB);
+			}
+		}
+
+		if (ret_cb == TICKER_STATUS_SUCCESS) {
+			/* Step 2.1.1: Check and deassert Radio Active or XTAL
+			 * start
+			 */
+			if (_radio.advertiser.hdr.ticks_active_to_start >
+			    (_radio.advertiser.hdr.ticks_xtal_to_start &
+			     ~BIT(31))) {
+				u32_t retval;
+
+				/* radio active asserted, handle deasserting
+				 * here
+				 */
+				retval = mayfly_enqueue(
+						RADIO_TICKER_USER_ID_JOB,
+						RADIO_TICKER_USER_ID_WORKER, 0,
+						&s_mfy_radio_inactive);
+				LL_ASSERT(!retval);
+			} else {
+				u32_t retval;
+
+				/* XTAL started, handle XTAL stop here */
+				retval = mayfly_enqueue(
+						RADIO_TICKER_USER_ID_JOB,
+						RADIO_TICKER_USER_ID_WORKER, 0,
+						&s_mfy_xtal_stop);
+				LL_ASSERT(!retval);
+			}
+		} else if (ret_cb == TICKER_STATUS_FAILURE) {
+			u32_t retval;
+
+			/* Step 2.1.2: Deassert Radio Active and XTAL start */
+
+			/* radio active asserted, handle deasserting here */
+			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+						RADIO_TICKER_USER_ID_WORKER, 0,
+						&s_mfy_radio_inactive);
+			LL_ASSERT(!retval);
+
+			/* XTAL started, handle XTAL stop here */
+			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+						RADIO_TICKER_USER_ID_WORKER, 0,
+						&s_mfy_xtal_stop);
+			LL_ASSERT(!retval);
+		} else {
+			LL_ASSERT(0);
+		}
+	} else if (ret_cb == TICKER_STATUS_FAILURE) {
+		/* Step 3: Caller inside Event, handle graceful stop of Event
+		 * (role dependent)
+		 */
+		if (_radio.role != ROLE_NONE) {
+			static void *s_link[2];
+			static struct mayfly s_mfy_radio_stop = {0, 0, s_link,
+				NULL, mayfly_radio_stop};
+			u32_t retval;
+
+			/* Radio state STOP is supplied in params */
+			s_mfy_radio_stop.param = (void *)STATE_STOP;
+
+			/* Stop Radio Tx/Rx */
+			retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+						RADIO_TICKER_USER_ID_WORKER, 0,
+						&s_mfy_radio_stop);
+			LL_ASSERT(!retval);
+
+			/* NOTE: Cannot wait here for the event to finish
+			 * as we need to let radio ISR to execute if we are in
+			 * the same priority.
+			 */
+		}
+	} else {
+		LL_ASSERT(0);
+	}
+}
+
+static void ticker_stop_adv_stop(u32_t status, void *params)
+{
+	static void *s_link[2];
+	static struct mayfly s_mfy_adv_stop = {0, 0, s_link, NULL,
+					       mayfly_adv_stop};
+	u32_t retval;
+
+	ARG_UNUSED(params);
+
+	/* Ignore if being stopped from app/thread prio */
+	if (status != TICKER_STATUS_SUCCESS) {
+		LL_ASSERT(_radio.ticker_id_stop == RADIO_TICKER_ID_ADV);
+
+		return;
+	}
+
+	/* Handle adv stop inside a prepare and/or event */
+	if ((_radio.ticker_id_prepare == RADIO_TICKER_ID_ADV) ||
+	    (_radio.ticker_id_event == RADIO_TICKER_ID_ADV)) {
+		ticker_stop_adv_stop_active();
+	}
+
+	/* Generate the connection complete event in WORKER Prio */
+	retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+				RADIO_TICKER_USER_ID_WORKER, 0,
+				&s_mfy_adv_stop);
+	LL_ASSERT(!retval);
+}
+
+void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		    void *context)
+{
+	u32_t ticker_status;
+
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(context);
+
+	/* Abort an event, if any, to avoid Rx queue corruption used by Radio
+	 * ISR.
+	 */
+	event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+	/* Stop Direct Adv */
+	ticker_status =
+	    ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+			RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_ID_ADV,
+			ticker_stop_adv_stop, (void *)__LINE__);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
 }
 
 static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
@@ -8999,6 +9159,9 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 		}
 
 		if (ret_cb == TICKER_STATUS_SUCCESS) {
+			/* If in reduced prepare, use the absolute value */
+			ticks_xtal_to_start &= ~BIT(31);
+
 			/* Step 2.1.1: Check and deassert Radio Active or XTAL
 			 * start
 			 */
