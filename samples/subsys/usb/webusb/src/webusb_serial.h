@@ -41,7 +41,7 @@
 #define __WEBUSB_SERIAL_H__
 
 #include <device.h>
-#include "usb_device.h"
+#include <usb/usb_device.h>
 
 /* BOS descriptor type */
 #define DESCRIPTOR_TYPE_BOS     0x0f
