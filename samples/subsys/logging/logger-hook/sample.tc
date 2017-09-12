@@ -2,6 +2,6 @@
 # @targets \
 # board:(?!qemu_nios2)
 #
-# @eval console-rx %(console)s:5 \[sample-unified\] \[ERR\] main: SYS LOG ERR is ACTIVE
-# @eval console-rx %(console)s:5 \[sample-unified\] \[WRN\] main: SYS LOG WRN is ACTIVE
-# @eval console-rx %(console)s:5 \[sample-unified\] \[INF\] main: SYS LOG INF is ACTIVE
+# @eval console-rx %(console)s:5 \[syslogger\] \[ERR\] main: SYS LOG ERR is ACTIVE
+# @eval console-rx %(console)s:5 \[syslogger\] \[WRN\] main: SYS LOG WRN is ACTIVE
+# @eval console-rx %(console)s:5 \[syslogger\] \[INF\] main: SYS LOG INF is ACTIVE

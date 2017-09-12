@@ -328,8 +328,7 @@ CROHandlingDone:
 	 *
 	 * - the return value for __swap() that was set up by a call to
 	 * _set_thread_return_value()
-	 * - in legacy kernel, same value as %ebx, which is non-volatile
-	 * - in unified kernel, -EINVAL
+	 * - -EINVAL
 	 */
 
 	/* Utilize the 'eflags' parameter to __swap() */
