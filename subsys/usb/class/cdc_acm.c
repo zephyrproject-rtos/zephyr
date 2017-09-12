@@ -42,7 +42,7 @@
 #include <uart.h>
 #include <string.h>
 #include <misc/byteorder.h>
-#include "cdc_acm.h"
+#include <usb/class/cdc_acm.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 
