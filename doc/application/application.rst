@@ -220,7 +220,7 @@ Directories can also be conditionally added:
 
 .. code-block:: none
 
-   obj-y-$(CONFIG_VAR) += <directory_name>/
+   obj-$(CONFIG_VAR) += <directory_name>/
 
 The subdirectory must contain its own Makefile following the rules described in
 :ref:`makefile_conventions`.
