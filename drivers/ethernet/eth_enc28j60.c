@@ -23,12 +23,10 @@
 
 #define D10D24S 11
 
-#ifndef CONFIG_SPI_LEGACY_API
 static struct spi_cs_control enc_spi_cs = {
 	.gpio_pin = 0,
 	.delay = 0
 };
-#endif
 
 static void enc28j60_thread_main(void *arg1, void *unused1, void *unused2);
 
@@ -36,9 +34,6 @@ static int eth_enc28j60_soft_reset(struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t tx_buf[2] = {ENC28J60_SPI_SC, 0xFF};
-#ifdef CONFIG_SPI_LEGACY_API
-	return spi_write(context->spi, tx_buf, 2);
-#else
 	const struct spi_buf tx_bufs[] = {
 		{
 			.buf = tx_buf,
@@ -47,42 +42,34 @@ static int eth_enc28j60_soft_reset(struct device *dev)
 	};
 
 	return spi_write(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
 }
 
 static void eth_enc28j60_set_bank(struct device *dev, u16_t reg_addr)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifndef CONFIG_SPI_LEGACY_API
 	struct spi_buf tx_bufs[1];
 	struct spi_buf rx_bufs[1];
-#endif
+
 	u8_t tx_buf[2];
 	u8_t rx_buf[2];
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_RCR | ENC28J60_REG_ECON1;
 	tx_buf[1] = 0x0;
-#ifdef CONFIG_SPI_LEGACY_API
-	spi_transceive(context->spi, tx_buf, 2, rx_buf, 2);
-#else
+
 	tx_bufs[0].buf = tx_buf;
 	tx_bufs[0].len = 2;
 	rx_bufs[0].buf = rx_buf;
 	rx_bufs[0].len = 2;
 	spi_transceive(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs),
 		       rx_bufs, ARRAY_SIZE(rx_bufs));
-#endif
+
 	tx_buf[0] = ENC28J60_SPI_WCR | ENC28J60_REG_ECON1;
 	tx_buf[1] = (rx_buf[1] & 0xFC) | ((reg_addr >> 8) & 0x0F);
 
-#ifdef CONFIG_SPI_LEGACY_API
-	spi_write(context->spi, tx_buf, 2);
-#else
 	tx_bufs[0].buf = tx_buf;
 	tx_bufs[0].len = 2;
 	spi_write(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
 	k_sem_give(&context->spi_sem);
 }
 
@@ -90,23 +77,17 @@ static void eth_enc28j60_write_reg(struct device *dev, u16_t reg_addr,
 				   u8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifndef CONFIG_SPI_LEGACY_API
 	struct spi_buf tx_bufs[1];
-#endif
 	u8_t tx_buf[2];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_WCR | (reg_addr & 0xFF);
 	tx_buf[1] = value;
-#ifdef CONFIG_SPI_LEGACY_API
-	spi_write(context->spi, tx_buf, 2);
-#else
 	tx_bufs[0].buf = tx_buf;
 	tx_bufs[0].len = 2;
 
 	spi_write(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
 	k_sem_give(&context->spi_sem);
 }
 
@@ -114,12 +95,8 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 				  u8_t *value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifndef CONFIG_SPI_LEGACY_API
 	struct spi_buf tx_bufs[1];
 	struct spi_buf rx_bufs[1];
-#else
-	u8_t tx_size = 2;
-#endif
 	u8_t rx_size = 2;
 	u8_t rx_buf[3];
 	u8_t tx_buf[2];
@@ -132,11 +109,6 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 
 	tx_buf[0] = ENC28J60_SPI_RCR | (reg_addr & 0xFF);
 	tx_buf[1] = 0x0;
-
-#ifdef CONFIG_SPI_LEGACY_API
-	spi_transceive(context->spi, tx_buf, tx_size, rx_buf, rx_size);
-#else
-
 	rx_bufs[0].buf = rx_buf;
 	rx_bufs[0].len = rx_size;
 	tx_bufs[0].buf = tx_buf;
@@ -144,7 +116,7 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 
 	spi_transceive(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs),
 		       rx_bufs, ARRAY_SIZE(rx_bufs));
-#endif
+
 	*value = rx_buf[rx_size - 1];
 	k_sem_give(&context->spi_sem);
 }
@@ -153,23 +125,19 @@ static void eth_enc28j60_set_eth_reg(struct device *dev, u16_t reg_addr,
 				     u8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifndef CONFIG_SPI_LEGACY_API
 	struct spi_buf tx_bufs[1];
-#endif
+
 	u8_t tx_buf[2];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_BFS | (reg_addr & 0xFF);
 	tx_buf[1] = value;
-#ifdef CONFIG_SPI_LEGACY_API
-	spi_write(context->spi, tx_buf, 2);
-#else
 	tx_bufs[0].buf = tx_buf;
 	tx_bufs[0].len = 2;
 
 	spi_write(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
+
 	k_sem_give(&context->spi_sem);
 }
 
@@ -178,23 +146,19 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, u16_t reg_addr,
 				       u8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifndef CONFIG_SPI_LEGACY_API
 	struct spi_buf tx_bufs[1];
-#endif
+
 	u8_t tx_buf[2];
 
 	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	tx_buf[0] = ENC28J60_SPI_BFC | (reg_addr & 0xFF);
 	tx_buf[1] = value;
-#ifdef CONFIG_SPI_LEGACY_API
-	spi_write(context->spi, tx_buf, 2);
-#else
 	tx_bufs[0].buf = tx_buf;
 	tx_bufs[0].len = 2;
 
 	spi_write(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
+
 	k_sem_give(&context->spi_sem);
 }
 
@@ -202,9 +166,9 @@ static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
 				   u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifndef CONFIG_SPI_LEGACY_API
+
 	struct spi_buf tx_bufs[1];
-#endif
+
 	u8_t *index_buf;
 	u16_t num_segments;
 	u16_t num_remaining;
@@ -219,28 +183,19 @@ static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
 	     ++i, index_buf += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_WBM;
 		memcpy(context->mem_buf + 1, index_buf, MAX_BUFFER_LENGTH);
-#ifdef CONFIG_SPI_LEGACY_API
-		spi_write(context->spi,
-			  context->mem_buf, MAX_BUFFER_LENGTH + 1);
-#else
 		tx_bufs[0].buf = context->mem_buf;
 		tx_bufs[0].len = MAX_BUFFER_LENGTH + 1;
 
 		spi_write(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
 	}
 
 	if (num_remaining > 0) {
 		context->mem_buf[0] = ENC28J60_SPI_WBM;
 		memcpy(context->mem_buf + 1, index_buf, num_remaining);
-#ifdef CONFIG_SPI_LEGACY_API
-		spi_write(context->spi, context->mem_buf, num_remaining + 1);
-#else
 		tx_bufs[0].buf = context->mem_buf;
 		tx_bufs[0].len = num_remaining + 1;
 
 		spi_write(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
 	}
 
 	k_sem_give(&context->spi_sem);
@@ -250,9 +205,8 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 				  u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifndef CONFIG_SPI_LEGACY_API
 	struct spi_buf tx_bufs[1];
-#endif
+
 	u16_t num_segments;
 	u16_t num_remaining;
 
@@ -264,18 +218,12 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 	for (int i = 0; i < num_segments;
 	     ++i, data_buffer += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
-#ifdef CONFIG_SPI_LEGACY_API
-		spi_transceive(context->spi,
-			       context->mem_buf, MAX_BUFFER_LENGTH + 1,
-			       context->mem_buf, MAX_BUFFER_LENGTH + 1);
-
-#else
 		tx_bufs[0].buf = context->mem_buf;
 		tx_bufs[0].len = MAX_BUFFER_LENGTH + 1;
 
 		spi_transceive(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs),
 			       tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
+
 		if (data_buffer) {
 			memcpy(data_buffer, context->mem_buf + 1,
 			       MAX_BUFFER_LENGTH);
@@ -284,17 +232,12 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 
 	if (num_remaining > 0) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
-#ifdef CONFIG_SPI_LEGACY_API
-		spi_transceive(context->spi,
-			       context->mem_buf, num_remaining + 1,
-			       context->mem_buf, num_remaining + 1);
-#else
 		tx_bufs[0].buf = context->mem_buf;
 		tx_bufs[0].len = num_remaining + 1;
 
 		spi_transceive(&context->spi_cfg, tx_bufs, ARRAY_SIZE(tx_bufs),
-			       tx_bufs, ARRAY_SIZE(tx_bufs));
-#endif
+				   tx_bufs, ARRAY_SIZE(tx_bufs));
+
 		if (data_buffer) {
 			memcpy(data_buffer, context->mem_buf + 1,
 			       num_remaining);
@@ -445,9 +388,7 @@ static int eth_enc28j60_init(struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-#ifdef CONFIG_SPI_LEGACY_API
-	struct spi_config spi_cfg;
-#else
+
 	/* SPI config */
 	context->spi_cfg.operation = SPI_WORD_SET(8);
 	context->spi_cfg.frequency = config->spi_freq;
@@ -458,7 +399,6 @@ static int eth_enc28j60_init(struct device *dev)
 	enc_spi_cs.gpio_pin = config->spi_cs_pin;
 #endif /* CONFIG_ETH_ENC28J60_0_SPI_CS_PIN */
 
-#endif
 	k_sem_init(&context->spi_sem, 1, UINT_MAX);
 
 	context->gpio = device_get_binding((char *)config->gpio_port);
@@ -466,13 +406,7 @@ static int eth_enc28j60_init(struct device *dev)
 		SYS_LOG_ERR("GPIO port %s not found", config->gpio_port);
 		return -EINVAL;
 	}
-#ifdef CONFIG_SPI_LEGACY_API
-	context->spi = device_get_binding((char *)config->spi_port);
-	if (!context->spi) {
-		SYS_LOG_ERR("SPI master port %s not found", config->spi_port);
-		return -EINVAL;
-	}
-#else /* !CONFIG_SPI_LEGACY_API */
+
 	context->spi_cfg.dev = device_get_binding((char *)config->spi_port);
 	if (!context->spi_cfg.dev) {
 
@@ -488,7 +422,6 @@ static int eth_enc28j60_init(struct device *dev)
 		return -EINVAL;
 	}
 #endif /* CONFIG_ETH_ENC28J60_0_SPI_CS_PIN */
-#endif /* CONFIG_SPI_LEGACY_API */
 
 	/* Initialize GPIO */
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
@@ -509,23 +442,6 @@ static int eth_enc28j60_init(struct device *dev)
 	if (gpio_pin_enable_callback(context->gpio, config->gpio_pin)) {
 		return -EINVAL;
 	}
-#ifdef CONFIG_SPI_LEGACY_API
-
-	/* Initialize SPI:
-	 * Mode: 0/0; Size: 8 bits; MSB
-	 */
-	spi_cfg.config = 8 << 4;
-	spi_cfg.max_sys_freq = config->spi_freq;
-
-	if (spi_configure(context->spi, &spi_cfg) < 0) {
-		SYS_LOG_ERR("Failed to configure SPI");
-		return -EIO;
-	}
-
-	if (spi_slave_select(context->spi, config->spi_slave) < 0) {
-		return -EIO;
-	}
-#endif
 
 	if (eth_enc28j60_soft_reset(dev)) {
 		SYS_LOG_ERR("Soft-reset failed");

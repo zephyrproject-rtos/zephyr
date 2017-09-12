@@ -231,11 +231,7 @@ struct eth_enc28j60_runtime {
 			      CONFIG_ETH_ENC28J60_RX_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct device *gpio;
-#ifdef CONFIG_SPI_LEGACY_API
-	struct device *spi;
-#else
 	struct spi_config spi_cfg;
-#endif
 	struct gpio_callback gpio_cb;
 	u8_t mem_buf[MAX_BUFFER_LENGTH + 1];
 	u8_t  tx_tsv[TSV_SIZE];
