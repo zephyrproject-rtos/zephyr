@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Linaro Limited.
+ * Copyright (c) 2017 Powersoft.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,20 +9,15 @@
 #include <init.h>
 #include <pinmux.h>
 #include <sys_io.h>
-#include "pinmux/pinmux.h"
 
-#include "pinmux_stm32.h"
+#include <pinmux/stm32/pinmux_stm32.h>
 
-/* pin assignments for STM32F4DISCOVERY board */
+/* pin assignments for STM32F412G-DISCO board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_STM32_PORT_1
-	{STM32_PIN_PB6, STM32F4_PINMUX_FUNC_PB6_USART1_TX},
-	{STM32_PIN_PB7, STM32F4_PINMUX_FUNC_PB7_USART1_RX},
-#endif	/* CONFIG_UART_STM32_PORT_1 */
 #ifdef CONFIG_UART_STM32_PORT_2
 	{STM32_PIN_PA2, STM32F4_PINMUX_FUNC_PA2_USART2_TX},
 	{STM32_PIN_PA3, STM32F4_PINMUX_FUNC_PA3_USART2_RX},
-#endif	/* CONFIG_UART_STM32_PORT_2 */
+#endif	/* CONFIG_UART_STM32_PORT_3 */
 };
 
 static int pinmux_stm32_init(struct device *port)

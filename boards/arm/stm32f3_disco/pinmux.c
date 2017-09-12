@@ -9,15 +9,14 @@
 #include <init.h>
 #include <pinmux.h>
 #include <sys_io.h>
-#include "pinmux/pinmux.h"
 
-#include "pinmux_stm32.h"
+#include <pinmux/stm32/pinmux_stm32.h>
 
 /* pin assignments for STM32F3DISCOVERY board */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_STM32_PORT_1
-	{STM32_PIN_PA9, STM32F3_PINMUX_FUNC_PA9_USART1_TX},
-	{STM32_PIN_PA10, STM32F3_PINMUX_FUNC_PA10_USART1_RX},
+	{STM32_PIN_PC4, STM32F3_PINMUX_FUNC_PC4_USART1_TX},
+	{STM32_PIN_PC5, STM32F3_PINMUX_FUNC_PC5_USART1_RX},
 #endif	/* CONFIG_UART_STM32_PORT_1 */
 #ifdef CONFIG_UART_STM32_PORT_2
 	{STM32_PIN_PA2, STM32F3_PINMUX_FUNC_PA2_USART2_TX},

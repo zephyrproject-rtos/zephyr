@@ -17,11 +17,30 @@
 
 /* Memory mapped registers I/O functions */
 
+static inline u8_t sys_read8(mem_addr_t addr)
+{
+	return *(volatile u8_t *)addr;
+}
+
+static inline void sys_write8(u8_t data, mem_addr_t addr)
+{
+	*(volatile u8_t *)addr = data;
+}
+
+static inline u16_t sys_read16(mem_addr_t addr)
+{
+	return *(volatile u16_t *)addr;
+}
+
+static inline void sys_write16(u16_t data, mem_addr_t addr)
+{
+	*(volatile u16_t *)addr = data;
+}
+
 static inline u32_t sys_read32(mem_addr_t addr)
 {
 	return *(volatile u32_t *)addr;
 }
-
 
 static inline void sys_write32(u32_t data, mem_addr_t addr)
 {
