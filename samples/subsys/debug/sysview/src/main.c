@@ -13,9 +13,9 @@
 #include "SEGGER_SYSVIEW.h"
 #include "SEGGER_RTT.h"
 
-static u8_t printer_stack[1024];
-static u8_t calc_stack[1024];
-static u8_t sysview_stack[2048];
+K_THREAD_STACK_DEFINE(printer_stack, 1024);
+K_THREAD_STACK_DEFINE(calc_stack, 1024);
+K_THREAD_STACK_DEFINE(sysview_stack, 1024);
 
 static struct k_thread printer_thread_data;
 static struct k_thread calc_thread_data;
