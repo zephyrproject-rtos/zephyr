@@ -397,9 +397,11 @@ static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
  *
  * @return  N/A.
  */
-static void cdc_acm_dev_status_cb(enum usb_dc_status_code status)
+static void cdc_acm_dev_status_cb(enum usb_dc_status_code status, u8_t *param)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
+
+	ARG_UNUSED(param);
 
 	/* Store the new status */
 	dev_data->usb_status = status;
