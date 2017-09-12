@@ -1,0 +1,4 @@
+
+zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+zephyr_sources_ifdef(CONFIG_HAS_SEGGER_RTT rtt/SEGGER_RTT.c)
+zephyr_sources_ifdef(CONFIG_HAS_SEGGER_SYSTEMVIEW systemview/SEGGER_SYSVIEW.c)

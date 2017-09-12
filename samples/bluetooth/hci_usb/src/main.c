@@ -17,8 +17,8 @@
 #include <bluetooth/hci_raw.h>
 #include <bluetooth/l2cap.h>
 
-#include "usb_device.h"
-#include "usb_common.h"
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
 
 #define BTUSB_BUFFER_SIZE 64
 

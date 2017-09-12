@@ -41,7 +41,7 @@
 #define __WEBUSB_SERIAL_H__
 
 #include <device.h>
-#include "usb_device.h"
+#include <usb/usb_device.h>
 
 /* Set USB version to 2.1 so that the host will request the BOS descriptor. */
 #define USB_2_1     0x0210

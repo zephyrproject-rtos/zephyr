@@ -38,9 +38,9 @@
 #include <string.h>
 #include <misc/__assert.h>
 #include <disk_access.h>
-#include "mass_storage.h"
-#include "usb_device.h"
-#include "usb_common.h"
+#include <usb/class/mass_storage.h>
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_MASS_STORAGE_LEVEL
 #include <logging/sys_log.h>
