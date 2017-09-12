@@ -1,5 +1,4 @@
-ccflags-y += -I$(srctree)/kernel/unified/include
-asflags-y += -I$(srctree)/kernel/unified/include -mlongcalls
+asflags-y += -mlongcalls
 
 ifdef CONFIG_ATOMIC_OPERATIONS_C
 # Use C routines from kernel/atomic_c.c

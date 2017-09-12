@@ -1,4 +1,3 @@
-ccflags-y += -I$(srctree)/kernel/unified/include
 ccflags-y +=-I$(srctree)/arch/$(ARCH)/include
 
 obj-y += isr.o reset.o fatal.o irq_manage.o \

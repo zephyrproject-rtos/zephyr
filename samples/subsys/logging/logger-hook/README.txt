@@ -11,8 +11,8 @@ logger output can be sent to a driver such as UART / USIF etc. as well.
 
 Building and Running Project:
 
-This unified project outputs to the console.
-It can be built and executed on QEMU as follows:
+This project outputs to the console.  It can be built and executed on QEMU as
+follows:
 
     make run
 
@@ -33,6 +33,6 @@ or
 
 Sample Output:
 
-[sample-unified] [ERR] main: SYS LOG ERR is ACTIVE
-[sample-unified] [WRN] main: SYS LOG WRN is ACTIVE
-[sample-unified] [INF] main: SYS LOG INF is ACTIVE
+[syslogger] [ERR] main: SYS LOG ERR is ACTIVE
+[syslogger] [WRN] main: SYS LOG WRN is ACTIVE
+[syslogger] [INF] main: SYS LOG INF is ACTIVE
