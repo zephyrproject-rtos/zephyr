@@ -605,8 +605,8 @@ include/config/auto.conf: ;
 endif # $(dot-config)
 
 # kernel objects are built as a static library
-libs-y := lib/
-core-y := kernel/ drivers/ misc/ boards/ ext/ subsys/ tests/ arch/
+libs-y := lib/ tests/
+core-y := kernel/ drivers/ misc/ boards/ ext/ subsys/ arch/
 
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH
