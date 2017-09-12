@@ -17,7 +17,7 @@ notes pages listed below), or use Git clone and checkout commands, such as:
 
    git clone https://github.com/zephyrproject-rtos/zephyr
    cd zephyr
-   git checkout tags/v1.8.0
+   git checkout tags/v1.9.0
 
 
 The project's technical documentation is also tagged to correspond with a
@@ -29,6 +29,7 @@ Zephyr Kernel Releases
 .. toctree::
    :maxdepth: 1
 
+   release-notes-1.9
    release-notes-1.8
    release-notes-1.7
    release-notes-1.6
