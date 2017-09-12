@@ -465,8 +465,10 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 		/* skip to next descriptor */
 		p += p[DESC_bLength];
 	}
-	if (usb_dev.status_callback)
-		usb_dev.status_callback(USB_DC_CONFIGURED);
+
+	if (usb_dev.status_callback) {
+		usb_dev.status_callback(USB_DC_CONFIGURED, &config_index);
+	}
 
 	return true;
 }
