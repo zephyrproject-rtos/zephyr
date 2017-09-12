@@ -38,7 +38,7 @@
 #include <string.h>
 #include <misc/__assert.h>
 #include <disk_access.h>
-#include "mass_storage.h"
+#include <usb/class/mass_storage.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 

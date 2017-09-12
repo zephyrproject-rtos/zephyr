@@ -44,7 +44,7 @@
 #include <string.h>
 #include <misc/byteorder.h>
 #include <logging/sys_log.h>
-#include "cdc_acm.h"
+#include <usb/class/cdc_acm.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include "webusb_serial.h"
