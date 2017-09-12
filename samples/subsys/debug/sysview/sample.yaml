@@ -1,0 +1,7 @@
+sample:
+    name: Systemview Demo
+tests:
+-   test:
+        build_only: true
+        tags: apps debug
+        platform_whitelist: frdm_k64f
