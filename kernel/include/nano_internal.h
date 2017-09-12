@@ -82,6 +82,21 @@ static inline unsigned int _Swap(unsigned int key)
 
 #ifdef CONFIG_USERSPACE
 /**
+ * @brief Get the maximum number of partitions for a memory domain
+ *
+ * A memory domain is a container data structure containing some number of
+ * memory partitions, where each partition represents a memory range with
+ * access policies.
+ *
+ * MMU-based systems don't have a limit here, but MPU-based systems will
+ * have an upper bound on how many different regions they can manage
+ * simultaneously.
+ *
+ * @return Max number of free regions, or -1 if there is no limit
+ */
+extern int _arch_mem_domain_max_partitions_get(void);
+
+/**
  * @brief Check memory region permissions
  *
  * Given a memory region, return whether the current memory management hardware
