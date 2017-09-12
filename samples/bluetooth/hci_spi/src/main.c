@@ -225,7 +225,12 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 		SYS_LOG_DBG("buf %p type %u len %u",
 			    buf, bt_buf_get_type(buf), buf->len);
 
-		bt_send(buf);
+		ret = bt_send(buf);
+		if (ret) {
+			SYS_LOG_ERR("Unable to send (ret %d)", ret);
+			net_buf_unref(buf);
+		}
+
 		STACK_ANALYZE("tx_stack", bt_tx_thread_stack);
 
 		/* Make sure other threads get a chance to run */
