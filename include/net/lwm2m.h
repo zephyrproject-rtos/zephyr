@@ -198,8 +198,26 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 
 /* LWM2M RD Client */
 
+/* Client events */
+enum lwm2m_rd_client_event {
+	LWM2M_RD_CLIENT_EVENT_NONE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_DISCONNECT
+};
+
+/* Event callback */
+typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
+				     enum lwm2m_rd_client_event event);
+
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  char *peer_str, u16_t peer_port,
-			  const char *ep_name);
+			  const char *ep_name,
+			  lwm2m_ctx_event_cb_t event_cb);
 
 #endif	/* __LWM2M_H__ */
