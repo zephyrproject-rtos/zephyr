@@ -12,12 +12,14 @@
  * init time. If no routine is installed, a nop routine is called.
  */
 
+#include <kernel.h>
 #include <misc/printk.h>
 #include <stdarg.h>
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <kernel_runtime.h>
 
-typedef int (*out_func_t)(int c, void *ctx);
+typedef void (*out_func_t)(int c, void *ctx);
 
 enum pad_type {
 	PAD_NONE,
@@ -32,49 +34,6 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 static void _printk_hex_ulong(out_func_t out, void *ctx,
 			      const unsigned long num, enum pad_type padding,
 			      int min_width);
-
-/**
- * @brief Default character output routine that does nothing
- * @param c Character to swallow
- *
- * @return 0
- */
-static int _nop_char_out(int c)
-{
-	ARG_UNUSED(c);
-
-	/* do nothing */
-	return 0;
-}
-
-static int (*_char_out)(int) = _nop_char_out;
-
-/**
- * @brief Install the character output routine for printk
- *
- * To be called by the platform's console driver at init time. Installs a
- * routine that outputs one ASCII character at a time.
- * @param fn putc routine to install
- *
- * @return N/A
- */
-void __printk_hook_install(int (*fn)(int))
-{
-	_char_out = fn;
-}
-
-/**
- * @brief Get the current character output routine for printk
- *
- * To be called by any console driver that would like to save
- * current hook - if any - for later re-installation.
- *
- * @return a function pointer or NULL if no hook is set
- */
-void *__printk_get_hook(void)
-{
-	return _char_out;
-}
 
 /**
  * @brief Printk internals
@@ -215,21 +174,50 @@ still_might_format:
 	}
 }
 
+#ifdef CONFIG_USERSPACE
+struct out_context {
+	int count;
+	unsigned int buf_count;
+	char buf[CONFIG_PRINTK_BUFFER_SIZE];
+};
+
+static void buf_flush(struct out_context *ctx)
+{
+	_k_str_out(ctx->buf, ctx->buf_count);
+	ctx->buf_count = 0;
+}
+
+static void char_out(int c, struct out_context *ctx)
+{
+	ctx->count++;
+	ctx->buf[ctx->buf_count++] = c;
+	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
+		buf_flush(ctx);
+	}
+}
+#else
 struct out_context {
 	int count;
 };
 
-static int char_out(int c, struct out_context *ctx)
+static void char_out(int c, struct out_context *ctx)
 {
 	ctx->count++;
-	return _char_out(c);
+	_k_char_out(c);
 }
+#endif
 
 int vprintk(const char *fmt, va_list ap)
 {
 	struct out_context ctx = { 0 };
 
 	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
+
+#ifdef CONFIG_USERSPACE
+	if (ctx.buf_count) {
+		buf_flush(&ctx);
+	}
+#endif
 	return ctx.count;
 }
 

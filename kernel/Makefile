@@ -2,11 +2,6 @@ ccflags-y += -I$(srctree)/kernel/include -D__ZEPHYR_KERNEL__
 
 asflags-y := ${ccflags-y}
 
-obj-y =
-obj-y += $(strip \
-	version.o \
-)
-
 lib-y =
 lib-y += $(strip \
 	sys_clock.o \
@@ -32,9 +27,9 @@ lib-y += $(strip \
 )
 
 lib-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
-lib-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
 lib-$(CONFIG_SYS_CLOCK_EXISTS) += timer.o
 lib-$(CONFIG_ATOMIC_OPERATIONS_C) += atomic_c.o
 lib-$(CONFIG_POLL) += poll.o
 lib-$(CONFIG_PTHREAD_IPC) += pthread.o
 lib-$(CONFIG_USERSPACE) += userspace.o userspace_handler.o mem_domain.o
+lib-$(CONFIG_PRINTK) += printk.o

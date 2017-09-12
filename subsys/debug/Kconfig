@@ -59,6 +59,17 @@ config PRINTK
 	of printk() output entirely. Output is sent immediately, without
 	any mutual exclusion or buffering.
 
+config PRINTK_BUFFER_SIZE
+	int
+	prompt "printk() buffer size"
+	depends on PRINTK
+	depends on USERSPACE
+	default 32
+	help
+	If userspace is enabled, printk() calls are buffered so that we do
+	not have to make a system call for every character emitted. Specify
+	the size of this buffer.
+
 config STDOUT_CONSOLE
 	bool
 	prompt "Send stdout to console"

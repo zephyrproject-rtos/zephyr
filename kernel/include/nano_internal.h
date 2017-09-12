@@ -168,6 +168,29 @@ extern void _thread_monitor_exit(struct k_thread *thread);
 	} while (0)
 #endif /* CONFIG_THREAD_MONITOR */
 
+#ifdef CONFIG_PRINTK
+/**
+ * @brief Get the current character output routine for printk
+ *
+ * To be called by any console driver that would like to save
+ * current hook - if any - for later re-installation.
+ *
+ * @return a function pointer or NULL if no hook is set
+ */
+extern void *__printk_get_hook(void);
+
+/**
+ * @brief Install the character output routine for printk
+ *
+ * To be called by the platform's console driver at init time. Installs a
+ * routine that outputs one ASCII character at a time.
+ * @param fn putc routine to install
+ *
+ * @return N/A
+ */
+extern void __printk_hook_install(int (*fn)(int));
+#endif
+
 #ifdef __cplusplus
 }
 #endif
