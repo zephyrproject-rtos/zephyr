@@ -241,6 +241,50 @@ static int lwm2m_setup(void)
 	return 0;
 }
 
+static void rd_client_event(struct lwm2m_ctx *client,
+			    enum lwm2m_rd_client_event client_event)
+{
+	switch (client_event) {
+
+	case LWM2M_RD_CLIENT_EVENT_NONE:
+		/* do nothing */
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE:
+		SYS_LOG_DBG("Bootstrap failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE:
+		SYS_LOG_DBG("Bootstrap complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE:
+		SYS_LOG_DBG("Registration failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE:
+		SYS_LOG_DBG("Registration complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE:
+		SYS_LOG_DBG("Registration update failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
+		SYS_LOG_DBG("Registration update complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE:
+		SYS_LOG_DBG("Deregister failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_DISCONNECT:
+		SYS_LOG_DBG("Disconnected");
+		break;
+
+	}
+}
+
 void main(void)
 {
 	int ret;
@@ -265,10 +309,12 @@ void main(void)
 
 #if defined(CONFIG_NET_IPV6)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV6_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
+				    rd_client_event);
 #elif defined(CONFIG_NET_IPV4)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV4_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
+				    rd_client_event);
 #else
 	SYS_LOG_ERR("LwM2M client requires IPv4 or IPv6.");
 	ret = -EPROTONOSUPPORT;
