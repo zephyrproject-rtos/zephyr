@@ -1811,6 +1811,21 @@ static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 	return 0;
 }
 
+static void data_buf_overflow(struct net_buf **buf)
+{
+	struct bt_hci_evt_data_buf_overflow *ep;
+
+	if (!(event_mask & BT_EVT_MASK_DATA_BUFFER_OVERFLOW)) {
+		return;
+	}
+
+	*buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+	evt_create(*buf, BT_HCI_EVT_DATA_BUF_OVERFLOW, sizeof(*ep));
+	ep = net_buf_add(*buf, sizeof(*ep));
+
+	ep->link_type = BT_OVERFLOW_LINK_ACL;
+}
+
 struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 {
 	struct bt_hci_evt_cc_status *ccst;
@@ -1869,7 +1884,7 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 	return evt;
 }
 
-int hci_acl_handle(struct net_buf *buf)
+int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 {
 	struct radio_pdu_node_tx *radio_pdu_node_tx;
 	struct bt_hci_acl_hdr *acl;
@@ -1877,6 +1892,8 @@ int hci_acl_handle(struct net_buf *buf)
 	u16_t handle;
 	u8_t flags;
 	u16_t len;
+
+	*evt = NULL;
 
 	if (buf->len < sizeof(*acl)) {
 		BT_ERR("No HCI ACL header");
@@ -1900,6 +1917,7 @@ int hci_acl_handle(struct net_buf *buf)
 	radio_pdu_node_tx = radio_tx_mem_acquire();
 	if (!radio_pdu_node_tx) {
 		BT_ERR("Tx Buffer Overflow");
+		data_buf_overflow(evt);
 		return -ENOBUFS;
 	}
 

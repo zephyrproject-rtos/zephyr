@@ -347,6 +347,22 @@ static int cmd_handle(struct net_buf *buf)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CONN)
+static int acl_handle(struct net_buf *buf)
+{
+	struct net_buf *evt;
+	int err;
+
+	err = hci_acl_handle(buf, &evt);
+	if (evt) {
+		BT_DBG("Replying with event of %u bytes", evt->len);
+		bt_recv_prio(evt);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CONN */
+
 static int hci_driver_send(struct net_buf *buf)
 {
 	u8_t type;
@@ -363,9 +379,9 @@ static int hci_driver_send(struct net_buf *buf)
 	switch (type) {
 #if defined(CONFIG_BT_CONN)
 	case BT_BUF_ACL_OUT:
-		err = hci_acl_handle(buf);
+		err = acl_handle(buf);
 		break;
-#endif
+#endif /* CONFIG_BT_CONN */
 	case BT_BUF_CMD:
 		err = cmd_handle(buf);
 		break;
