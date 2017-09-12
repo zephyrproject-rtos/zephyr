@@ -39,9 +39,11 @@ Architectures
 * xtensa: Added ESP32 support
 * Stack sentinel: This places a sentinel value at the lowest 4 bytes of a stack
   memory region and checks it at various intervals, including when servicing
-  interrupts or context switching.  This is implemented on all arches except
-  ARC, which supports stack bounds checking directly in hardware.
-* x86: enable MMU for application memory
+  interrupts or context switching.
+* x86: Enable MMU for application memory
+* ARC: Added initial MPU support, including stack sentinel checking for ARC
+  configurations not featuring hardware stack bounds checking
+* ARC: Nested interrupt support for normal, non-FIRQ interrupts
 
 Boards
 ******
@@ -55,6 +57,9 @@ Boards
 * arm: Removed TI CC3200 LaunchXL board
 * arm: Added VBLUno51 and VBLUno52 boards
 * xtensa: Added ESP32 board support
+* ARC: Added support for EMSK EM7D v2.2 version (incl. MPU)
+* ARC: Board configuration restructuring, peripheral configs moved from soc to
+  board level
 
 Drivers and Sensors
 *******************
@@ -338,3 +343,4 @@ JIRA Related Items
 * :jira:`ZEP-2576` - samples/net/sockets/echo, echo_async : fails to send the TCP packets
 * :jira:`ZEP-2581` - CC3220 executable binary format support
 * :jira:`ZEP-2584` - Update mbedTLS to 2.6.0
+* :jira:`ZEP-713`  - Implement preemptible regular IRQs on ARC
