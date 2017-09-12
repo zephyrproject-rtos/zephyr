@@ -42,9 +42,9 @@
 #include <uart.h>
 #include <string.h>
 #include <misc/byteorder.h>
-#include "cdc_acm.h"
-#include "usb_device.h"
-#include "usb_common.h"
+#include <usb/class/cdc_acm.h>
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
 
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 #error "CONFIG_UART_INTERRUPT_DRIVEN must be set for CDC ACM driver"
