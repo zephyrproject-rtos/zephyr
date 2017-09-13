@@ -21,6 +21,32 @@ if(IS_TEST)
   list(APPEND OVERLAY_CONFIG $ENV{ZEPHYR_BASE}/tests/include/test.config)
 endif()
 
+set(kconfig_target_list
+  config
+  gconfig
+  menuconfig
+  oldconfig
+  xconfig
+  )
+
+set(COMMAND_FOR_config     ${KCONFIG_CONF} --oldaskconfig ${PROJECT_SOURCE_DIR}/Kconfig)
+set(COMMAND_FOR_gconfig    gconf                          ${PROJECT_SOURCE_DIR}/Kconfig)
+set(COMMAND_FOR_menuconfig ${KCONFIG_MCONF}               ${PROJECT_SOURCE_DIR}/Kconfig)
+set(COMMAND_FOR_oldconfig  ${KCONFIG_CONF} --oldconfig    ${PROJECT_SOURCE_DIR}/Kconfig)
+set(COMMAND_FOR_xconfig    qconf                          ${PROJECT_SOURCE_DIR}/Kconfig)
+
+foreach(kconfig_target ${kconfig_target_list})
+  add_custom_target(
+    ${kconfig_target}
+    ${CMAKE_COMMAND} -E env
+    srctree=${PROJECT_SOURCE_DIR}
+    KERNELVERSION=${PROJECT_VERSION}
+    KCONFIG_CONFIG=${DOTCONFIG}
+    ${COMMAND_FOR_${kconfig_target}}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+    )
+endforeach()
+
 if(NOT EXISTS ${DOTCONFIG})
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py -m -q
@@ -65,17 +91,6 @@ execute_process(
 )
 
 add_custom_target(config-sanitycheck DEPENDS ${DOTCONFIG})
-
-add_custom_target(menuconfig
-  COMMAND
-    ${CMAKE_COMMAND} -E env
-      srctree=${PROJECT_SOURCE_DIR}
-      KERNELVERSION=${PROJECT_VERSION}
-      KCONFIG_CONFIG=${DOTCONFIG}
-      ${KCONFIG_MCONF} ${PROJECT_SOURCE_DIR}/Kconfig
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-  USES_TERMINAL
-)
 
 # Parse the lines prefixed with CONFIG_ in the .config file from Kconfig
 import_kconfig(${DOTCONFIG})
