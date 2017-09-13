@@ -78,11 +78,6 @@ void radio_phy_set(u8_t phy, u8_t flags)
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 	case BIT(1):
 		mode = RADIO_MODE_MODE_Nrf_2Mbit;
-
-#if defined(CONFIG_SOC_NRF52840)
-		/* Workaround: nRF52840 Engineering A Errata ID 164 */
-		*(volatile u32_t *)0x4000173c &= ~0x80000000;
-#endif /* CONFIG_SOC_NRF52840 */
 		break;
 
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
