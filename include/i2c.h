@@ -48,13 +48,25 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define I2C_SPEED_SHIFT			(1)
 #define I2C_SPEED_MASK			(0x7 << I2C_SPEED_SHIFT) /* 3 bits */
+#define I2C_GET_SPEED(x) 		(((x) & I2C_SPEED_MASK) \
+						>> I2C_SPEED_SHIFT)
 /** @endcond  */
 
 /** Use 10-bit addressing. */
 #define I2C_ADDR_10_BITS		(1 << 0)
 
+/** @cond INTERNAL_HIDDEN */
+#define I2C_GET_ADDR_10_BITS(x)		((x) & I2C_ADDR_10_BITS)
+/** @endcond  */
+
 /** Controller to act as Master. */
 #define I2C_MODE_MASTER			(1 << 4)
+
+/** @cond INTERNAL_HIDDEN */
+#define I2C_MODE_MASTER_SHIFT		4
+#define I2C_GET_MODE_MASTER(x)		(((x) & I2C_MODE_MASTER) \
+						>> I2C_MODE_MASTER_SHIFT)
+/** @endcond  */
 
 /*
  * I2C_MSG_* are I2C Message flags.

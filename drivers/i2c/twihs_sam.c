@@ -106,7 +106,7 @@ static int twihs_sam_configure(struct device *dev, u32_t config)
 	dev_data->mode_config.raw = config;
 
 	/* Configure clock */
-	switch ((dev_data->mode_config.bits.speed)) {
+	switch (I2C_GET_SPEED(dev_data->dev_config.raw)) {
 	case I2C_SPEED_STANDARD:
 		i2c_speed = BUS_SPEED_STANDARD_HZ;
 		break;

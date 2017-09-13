@@ -292,7 +292,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	value = regs->ic_clr_intr;
 
 	/* Set master or slave mode - (initialization = slave) */
-	if (dw->app_config.bits.is_master_device) {
+	if (I2C_GET_MODE_MASTER(dw->app_config.raw)) {
 		/*
 		 * Make sure to set both the master_mode and slave_disable_bit
 		 * to both 0 or both 1
@@ -307,14 +307,14 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	ic_con.bits.restart_en = 1;
 
 	/* Set addressing mode - (initialization = 7 bit) */
-	if (dw->app_config.bits.use_10_bit_addr) {
+	if (I2C_GET_ADDR_10_BITS(dw->app_config.raw)) {
 		SYS_LOG_DBG("I2C: using 10-bit address");
 		ic_con.bits.addr_master_10bit = 1;
 		ic_con.bits.addr_slave_10bit = 1;
 	}
 
 	/* Setup the clock frequency and speed mode */
-	switch (dw->app_config.bits.speed) {
+	switch (I2C_GET_SPEED(dw->app_config.raw)) {
 	case I2C_SPEED_STANDARD:
 		SYS_LOG_DBG("I2C: speed set to STANDARD");
 		regs->ic_ss_scl_lcnt = dw->lcnt;
@@ -508,7 +508,7 @@ static int i2c_dw_runtime_configure(struct device *dev, u32_t config)
 
 	/* Make sure we have a supported speed for the DesignWare model */
 	/* and have setup the clock frequency and speed mode */
-	switch (dw->app_config.bits.speed) {
+	switch (I2C_GET_SPEED(dw->app_config.raw)) {
 	case I2C_SPEED_STANDARD:
 		/* Following the directions on DW spec page 59, IC_SS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
@@ -595,7 +595,7 @@ static int i2c_dw_runtime_configure(struct device *dev, u32_t config)
 	 * currently.  This "hack" forces us to always be configured for master
 	 * mode, until we can verify that Slave mode works correctly.
 	 */
-	dw->app_config.bits.is_master_device = 1;
+	dw->app_config.raw |= I2C_MODE_MASTER;
 
 	return rc;
 }

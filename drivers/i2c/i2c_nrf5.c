@@ -50,16 +50,15 @@ struct i2c_nrf5_data {
 static int i2c_nrf5_configure(struct device *dev, u32_t dev_config_raw)
 {
 	const struct i2c_nrf5_config *config = dev->config->config_info;
-	union dev_config dev_config = (union dev_config)dev_config_raw;
 	volatile NRF_TWI_Type *twi = config->base;
 
 	SYS_LOG_DBG("");
 
-	if (dev_config.bits.use_10_bit_addr) {
+	if (I2C_GET_ADDR_10_BITS(dev_config_raw)) {
 		return -EINVAL;
 	}
 
-	switch (dev_config.bits.speed) {
+	switch (I2C_GET_SPEED(dev_config_raw)) {
 	case I2C_SPEED_STANDARD:
 		twi->FREQUENCY = TWI_FREQUENCY_FREQUENCY_K100;
 		break;

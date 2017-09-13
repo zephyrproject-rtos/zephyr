@@ -223,21 +223,21 @@ static int i2c_qmsi_ss_configure(struct device *dev, u32_t config)
 {
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
-	union dev_config cfg;
 	qm_ss_i2c_config_t qm_cfg;
 	u32_t i2c_base = QM_SS_I2C_0_BASE;
 
-	cfg.raw = config;
-
 	/* This driver only supports master mode. */
-	if (!cfg.bits.is_master_device) {
+	if (!I2C_GET_MODE_MASTER(config)) {
 		return -EINVAL;
 	}
 
-	qm_cfg.address_mode = (cfg.bits.use_10_bit_addr) ? QM_SS_I2C_10_BIT :
-							   QM_SS_I2C_7_BIT;
+	if (I2C_GET_ADDR_10_BITS(config)) {
+		qm_cfg.address_mode = QM_I2C_10_BIT;
+	} else {
+		qm_cfg.address_mode = QM_I2C_7_BIT;
+	}
 
-	switch (cfg.bits.speed) {
+	switch (I2C_GET_SPEED(config)) {
 	case I2C_SPEED_STANDARD:
 		qm_cfg.speed = QM_SS_I2C_SPEED_STD;
 		break;
