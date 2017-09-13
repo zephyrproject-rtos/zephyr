@@ -85,7 +85,7 @@ static u32_t clk_div_calc(struct device *dev)
 	 */
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
-	switch ((dev_data->dev_config.bits.speed)) {
+	switch (I2C_GET_SPEED(dev_data->dev_config.raw)) {
 	case I2C_SPEED_STANDARD:
 		/* CKDIV = 1
 		 * CHDIV = CLDIV = 208 = 0xD0
@@ -125,7 +125,7 @@ static u32_t clk_div_calc(struct device *dev)
 	 *
 	 * So use these to calculate chdiv_min and cldiv_min.
 	 */
-	switch ((dev_data->dev_config.bits.speed)) {
+	switch (I2C_GET_SPEED(dev_data->dev_config.raw)) {
 	case I2C_SPEED_STANDARD:
 		i2c_clk = 100000 * 2;
 		i2c_h_min_time = 4000;
@@ -271,7 +271,7 @@ static inline void transfer_setup(struct device *dev, u16_t slave_address)
 	u32_t iadr;
 
 	/* Set slave address */
-	if (dev_data->dev_config.bits.use_10_bit_addr) {
+	if (I2C_GET_ADDR_10_BITS(dev_data->dev_config.raw)) {
 		/* 10-bit slave addressing:
 		 * first two bits goes to MMR/DADR, other 8 to IADR.
 		 *
