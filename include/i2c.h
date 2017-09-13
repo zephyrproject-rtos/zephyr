@@ -45,12 +45,12 @@ extern "C" {
 /** I2C Ultra Fast Speed */
 #define I2C_SPEED_ULTRA			(0x5)
 
-/** @cond INTERNAL_HIDDEN */
 #define I2C_SPEED_SHIFT			(1)
+#define I2C_SPEED_SET(speed)		(((speed) << I2C_SPEED_SHIFT) \
+						& I2C_SPEED_MASK)
 #define I2C_SPEED_MASK			(0x7 << I2C_SPEED_SHIFT) /* 3 bits */
 #define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
 						>> I2C_SPEED_SHIFT)
-/** @endcond  */
 
 /** Use 10-bit addressing. */
 #define I2C_ADDR_10_BITS		(1 << 0)
@@ -94,7 +94,7 @@ struct i2c_msg {
 	u8_t		flags;
 };
 
-union dev_config {
+union __deprecated dev_config {
 	u32_t raw;
 	struct __bits {
 		u32_t        use_10_bit_addr : 1;

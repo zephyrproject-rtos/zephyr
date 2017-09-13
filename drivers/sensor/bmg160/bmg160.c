@@ -21,13 +21,11 @@ static inline int bmg160_bus_config(struct device *dev)
 {
 	const struct bmg160_device_config *dev_cfg = dev->config->config_info;
 	struct bmg160_device_data *bmg160 = dev->driver_data;
-	union dev_config i2c_cfg;
+	u32_t i2c_cfg;
 
-	i2c_cfg.raw = 0;
-	i2c_cfg.bits.is_master_device = 1;
-	i2c_cfg.bits.speed = dev_cfg->i2c_speed;
+	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(dev_cfg->i2c_speed);
 
-	return i2c_configure(bmg160->i2c, i2c_cfg.raw);
+	return i2c_configure(bmg160->i2c, i2c_cfg);
 }
 
 int bmg160_read(struct device *dev, u8_t reg_addr, u8_t *data,
