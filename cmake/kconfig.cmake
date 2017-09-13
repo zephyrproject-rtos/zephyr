@@ -12,7 +12,6 @@ if(CONF_FILE)
 string(REPLACE " " ";" CONF_FILE_AS_LIST ${CONF_FILE})
 endif()
 
-
 set(ENV{srctree}            ${PROJECT_SOURCE_DIR})
 set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
@@ -50,7 +49,6 @@ if(CREATE_NEW_DOTCONFIG)
   if(NOT "${ret}" STREQUAL "0")
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
-
 endif()
 
 # Force CMAKE configure when the configuration files changes.
