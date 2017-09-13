@@ -21,9 +21,7 @@ if(IS_TEST)
   list(APPEND OVERLAY_CONFIG $ENV{ZEPHYR_BASE}/tests/include/test.config)
 endif()
 
-# FIXME: Implement lazy rebuilding of DOTCONFIG for performance reasons
-set(CREATE_NEW_DOTCONFIG 1)
-if(CREATE_NEW_DOTCONFIG)
+if(NOT EXISTS ${DOTCONFIG})
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py -m -q
       -O ${PROJECT_BINARY_DIR}
