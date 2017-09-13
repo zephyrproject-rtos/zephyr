@@ -764,15 +764,36 @@ static u8_t MALIGN(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
 {
+	u32_t mode;
+
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Disabled;
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
-	NRF_CCM->MODE =
-#if !defined(CONFIG_SOC_SERIES_NRF51X)
-	    ((CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
-	       CCM_MODE_LENGTH_Msk) |
+	mode = (CCM_MODE_MODE_Decryption << CCM_MODE_MODE_Pos) &
+	       CCM_MODE_MODE_Msk;
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+	/* Enable CCM support for 8-bit length field PDUs. */
+	mode |= (CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
+		CCM_MODE_LENGTH_Msk;
+
+	/* Select CCM data rate based on current PHY in use. */
+	/* TODO: add cases for nRF52840's coded PHY */
+	switch ((NRF_RADIO->MODE & RADIO_MODE_MODE_Msk) >>
+		RADIO_MODE_MODE_Pos) {
+	default:
+	case RADIO_MODE_MODE_Ble_1Mbit:
+		mode |= (CCM_MODE_DATARATE_1Mbit <<
+			 CCM_MODE_DATARATE_Pos) &
+			CCM_MODE_DATARATE_Msk;
+		break;
+
+	case RADIO_MODE_MODE_Ble_2Mbit:
+		mode |= (CCM_MODE_DATARATE_2Mbit <<
+			 CCM_MODE_DATARATE_Pos) &
+			CCM_MODE_DATARATE_Msk;
+		break;
+	}
 #endif
-	    ((CCM_MODE_MODE_Decryption << CCM_MODE_MODE_Pos) &
-	     CCM_MODE_MODE_Msk);
+	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (u32_t)ccm;
 	NRF_CCM->INPTR = (u32_t)_pkt_scratch;
 	NRF_CCM->OUTPTR = (u32_t)pkt;
@@ -793,15 +814,24 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
 
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 {
+	u32_t mode;
+
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Disabled;
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
-	NRF_CCM->MODE =
-#if !defined(CONFIG_SOC_SERIES_NRF51X)
-	    ((CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
-	       CCM_MODE_LENGTH_Msk) |
+	mode = (CCM_MODE_MODE_Encryption << CCM_MODE_MODE_Pos) &
+	       CCM_MODE_MODE_Msk;
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+	/* Enable CCM support for 8-bit length field PDUs. */
+	mode |= (CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
+		CCM_MODE_LENGTH_Msk;
+
+	/* NOTE: use fastest data rate as tx data needs to be prepared before
+	 * radio Tx on any PHY.
+	 */
+	mode |= (CCM_MODE_DATARATE_2Mbit << CCM_MODE_DATARATE_Pos) &
+		CCM_MODE_DATARATE_Msk;
 #endif
-	    ((CCM_MODE_MODE_Encryption << CCM_MODE_MODE_Pos) &
-	     CCM_MODE_MODE_Msk);
+	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (u32_t)ccm;
 	NRF_CCM->INPTR = (u32_t)pkt;
 	NRF_CCM->OUTPTR = (u32_t)_pkt_scratch;
