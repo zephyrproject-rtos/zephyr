@@ -6,7 +6,7 @@ env:
     global:
         - SDK=0.9.1
         - SANITYCHECK_OPTIONS=" --inline-logs -R"
-        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS}  --load-tests test_file.txt --only-failed --outdir=out-2nd-pass"
+        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
@@ -65,7 +65,7 @@ build:
           fi;
           rm -f modified_tests.args modified_boards.args;
       - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt
-      - ./scripts/sanitycheck  --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
+      - ./scripts/sanitycheck  --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
       - rm test_file.txt
       - ccache -s
     on_failure:
@@ -79,10 +79,6 @@ build:
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
           fi;
-      - >
-          if [ -e ./modified_tests.xml ]; then
-            cp ./modified_tests.xml shippable/testresults/;
-          fi;
     on_success:
       - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
@@ -93,10 +89,6 @@ build:
       - >
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
-          fi;
-      - >
-          if [ -e ./modified_tests.xml ]; then
-            cp ./modified_tests.xml shippable/testresults/;
           fi;
 
 integrations:
