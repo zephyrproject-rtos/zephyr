@@ -20,13 +20,11 @@
 static inline int hp206c_bus_config(struct device *dev)
 {
 	struct hp206c_device_data *hp206c = dev->driver_data;
-	union dev_config i2c_cfg;
+	u32_t i2c_cfg;
 
-	i2c_cfg.raw = 0;
-	i2c_cfg.bits.is_master_device = 1;
-	i2c_cfg.bits.speed = I2C_SPEED_STANDARD;
+	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
-	return i2c_configure(hp206c->i2c, i2c_cfg.raw);
+	return i2c_configure(hp206c->i2c, i2c_cfg);
 }
 
 static int hp206c_read(struct device *dev, u8_t cmd, u8_t *data,

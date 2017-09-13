@@ -22,14 +22,7 @@
 #define I2C_DEV_NAME CONFIG_I2C_0_NAME
 #endif
 
-static union dev_config i2c_cfg = {
-	.raw = 0,
-	.bits = {
-		.use_10_bit_addr = 0,
-		.is_master_device = 1,
-		.speed = I2C_SPEED_STANDARD,
-	},
-};
+u32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
 
 static int test_gy271(void)
 {
@@ -42,7 +35,7 @@ static int test_gy271(void)
 	}
 
 	/* 1. Verify i2c_configure() */
-	if (i2c_configure(i2c_dev, i2c_cfg.raw)) {
+	if (i2c_configure(i2c_dev, i2c_cfg)) {
 		TC_PRINT("I2C config failed\n");
 		return TC_FAIL;
 	}
@@ -97,7 +90,7 @@ static int test_burst_gy271(void)
 	}
 
 	/* 1. verify i2c_configure() */
-	if (i2c_configure(i2c_dev, i2c_cfg.raw)) {
+	if (i2c_configure(i2c_dev, i2c_cfg)) {
 		TC_PRINT("I2C config failed\n");
 		return TC_FAIL;
 	}
