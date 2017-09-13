@@ -52,10 +52,9 @@ struct spi_dw_data {
 	struct device *clock;
 #endif /* CONFIG_SPI_DW_CLOCK_GATE */
 	struct spi_context ctx;
-	u8_t error;
 	u8_t dfs;	/* dfs in bytes: 1,2 or 4 */
 	u8_t fifo_diff;	/* cannot be bigger than FIFO depth */
-	u8_t _unused;
+	u16_t _unused;
 };
 #endif /* CONFIG_SPI_LEGACY_API */
 

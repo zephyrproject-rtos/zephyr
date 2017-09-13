@@ -63,8 +63,6 @@ out:
 	while (test_bit_sr_busy(info->regs)) {
 	}
 
-	spi->error = error;
-
 	/* Disabling interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	/* Disabling the controller */
@@ -308,11 +306,7 @@ static int transceive(struct spi_config *config,
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);
 
-	spi_context_wait_for_completion(&spi->ctx);
-
-	if (spi->error) {
-		ret = -EIO;
-	}
+	ret = spi_context_wait_for_completion(&spi->ctx);
 out:
 	spi_context_release(&spi->ctx, ret);
 
