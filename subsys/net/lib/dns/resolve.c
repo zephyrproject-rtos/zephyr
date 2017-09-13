@@ -322,11 +322,20 @@ static int dns_read(struct dns_resolve_context *ctx,
 		info->ai_addr.sa_family = AF_INET;
 		info->ai_addrlen = sizeof(struct sockaddr_in);
 	} else if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_AAAA) {
+		/* We cannot resolve IPv6 address if IPv6 is disabled. The reason
+		 * being that "struct sockaddr" does not have enough space for
+		 * IPv6 address in that case.
+		 */
+#if defined(CONFIG_NET_IPV6)
 		address_size = DNS_IPV6_LEN;
 		addr = (u8_t *)&net_sin6(&info->ai_addr)->sin6_addr;
 		info->ai_family = AF_INET6;
 		info->ai_addr.sa_family = AF_INET6;
 		info->ai_addrlen = sizeof(struct sockaddr_in6);
+#else
+		ret = DNS_EAI_FAMILY;
+		goto quit;
+#endif
 	} else {
 		ret = DNS_EAI_FAMILY;
 		goto quit;
@@ -643,10 +652,10 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		     void *user_data,
 		     s32_t timeout)
 {
-	struct net_buf *dns_data;
+	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
 	struct sockaddr addr;
-	int ret, i, j = 0;
+	int ret, i = -1, j = 0;
 	int failure = 0;
 	bool mdns_query = false;
 
@@ -674,11 +683,16 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 			info.ai_addr.sa_family = AF_INET;
 			info.ai_addrlen = sizeof(struct sockaddr_in);
 		} else if (type == DNS_QUERY_TYPE_AAAA) {
+#if defined(CONFIG_NET_IPV6)
 			memcpy(net_sin6(&info.ai_addr), net_sin6(&addr),
 			       sizeof(struct sockaddr_in6));
 			info.ai_family = AF_INET6;
 			info.ai_addr.sa_family = AF_INET6;
 			info.ai_addrlen = sizeof(struct sockaddr_in6);
+#else
+			ret = -EAFNOSUPPORT;
+			goto quit;
+#endif
 		} else {
 			goto try_resolve;
 		}
@@ -784,11 +798,14 @@ try_resolve:
 
 quit:
 	if (ret < 0) {
-		if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
-			k_delayed_work_cancel(&ctx->queries[i].timer);
-		}
+		if (i >= 0) {
+			if (k_delayed_work_remaining_get(
+				    &ctx->queries[i].timer) > 0) {
+				k_delayed_work_cancel(&ctx->queries[i].timer);
+			}
 
-		ctx->queries[i].cb = NULL;
+			ctx->queries[i].cb = NULL;
+		}
 
 		if (dns_id) {
 			*dns_id = 0;
