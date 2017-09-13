@@ -10,6 +10,7 @@ menuconfig BMI160
 	bool "Bosch BMI160 inertial measurement unit"
 	depends on SENSOR
 	depends on SPI
+	depends on SPI_LEGACY_API
 	default n
 	help
 	Enable Bosch BMI160 inertial measurement unit that provides acceleration
