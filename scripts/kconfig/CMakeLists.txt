@@ -65,3 +65,26 @@ add_executable(mconf
   lxdialog/yesno.c
 )
 target_link_libraries(mconf ${CURSES_LIBRARIES} ${Regex_LIBRARIES} ${Intl_LIBRARIES})
+
+# Build a GTK-based frontend to Kconfig if the necessary dependencies
+# are already installed.
+find_package (PkgConfig)
+if(PkgConfig_FOUND)
+  pkg_check_modules (GTK2 gtk+-2.0 libglade-2.0)
+  if(GTK2_FOUND)
+    message(STATUS "Found GTK+-2.0 and libglade-2.0, will build gconf")
+    add_executable(gconf
+      gconf.c
+      zconf.tab.c
+      )
+    target_include_directories( gconf PRIVATE ${GTK2_INCLUDE_DIRS})
+    target_link_libraries(      gconf PRIVATE ${GTK2_LIBRARY_DIRS})
+    target_compile_options(     gconf PRIVATE ${GTK2_CFLAGS_OTHER})
+    target_link_libraries(      gconf PRIVATE ${GTK2_LIBRARIES})
+    target_link_libraries(      gconf PRIVATE -Wl,--export-dynamic)
+    file(COPY gconf.glade DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
+endif()
+if(NOT GTK2_FOUND)
+    message(STATUS "Skipped building gconf since GTK dependencies were not met.")
+endif()
