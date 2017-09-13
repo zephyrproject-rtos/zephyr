@@ -36,7 +36,6 @@ build:
       - cmake .. && make
       - export PREBUILT_HOST_TOOLS=$(pwd)
       - cd $ZEPHYR_BASE
-      - export BOARD=nrf52_pca10040
       - ccache -c -s --max-size=2000M
       - >
           if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
