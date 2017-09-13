@@ -641,7 +641,12 @@ def generate_include_file(defs, args):
         sys.stdout.write('/* ' + node.split('/')[-1] + ' */')
         sys.stdout.write("\n")
 
-        maxlength = max(len(s + '#define ') for s in defs[node].keys())
+        max_dict_key = lambda d: max(len(k) for k in d.keys())
+        maxlength = 0
+        if defs[node].get('aliases'):
+            maxlength = max_dict_key(defs[node]['aliases'])
+        maxlength = max(maxlength, max_dict_key(defs[node])) + len('#define ')
+
         if maxlength % 8:
             maxtabstop = (maxlength + 7) >> 3
         else:
