@@ -839,7 +839,8 @@ static u8_t MALIGN(4) _aar_scratch[3];
 
 void radio_ar_configure(u32_t nirk, void *irk)
 {
-	NRF_AAR->ENABLE = 1;
+	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
+			  AAR_ENABLE_ENABLE_Msk;
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (u32_t)irk;
 	NRF_AAR->ADDRPTR = (u32_t)NRF_RADIO->PACKETPTR - 1;
