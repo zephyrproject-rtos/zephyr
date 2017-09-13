@@ -88,3 +88,28 @@ endif()
 if(NOT GTK2_FOUND)
     message(STATUS "Skipped building gconf since GTK dependencies were not met.")
 endif()
+
+# Build a QT-based frontend to Kconfig if the necessary dependencies
+# are already installed.
+# FIXME: Support other QT versions
+find_package(Qt4 COMPONENTS QtGui QtNetwork QtSql QtCore Qt3Support)
+if(Qt4_FOUND)
+  set(CMAKE_INCLUDE_CURRENT_DIR ON)
+  set(CMAKE_AUTOMOC ON)
+
+  add_executable(qconf
+    qconf.cc
+    zconf.tab.c
+    )
+  target_compile_options(qconf PRIVATE -Wfatal-errors)
+
+  target_link_libraries(qconf
+    Qt4::QtGui
+    Qt4::QtNetwork
+    Qt4::QtSql
+    Qt4::QtCore
+    Qt4::Qt3Support
+    )
+else()
+  message(STATUS "Skipped building qconf since QT dependencies were not found.")
+endif()
