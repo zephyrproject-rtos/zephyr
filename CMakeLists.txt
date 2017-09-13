@@ -214,6 +214,9 @@ if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${PROJECT_BASE}/${CONFIG_CUSTOM_LINKER_SCRIPT})
   if(NOT EXISTS LINKER_SCRIPT)
     set(LINKER_SCRIPT ${CONFIG_CUSTOM_LINKER_SCRIPT})
+    if(NOT EXISTS LINKER_SCRIPT)
+      message(FATAL_ERROR "CONFIG_HAVE_CUSTOM_LINKER_SCRIPT was set, but no linker script was found at '${CONFIG_CUSTOM_LINKER_SCRIPT}'")
+    endif()
   endif()
 else()
   # Try a board specific linker file
@@ -225,7 +228,7 @@ else()
 endif()
 
 if(NOT EXISTS ${LINKER_SCRIPT})
-  message(FATAL_ERROR "Could not find linker script ${LINKER_SCRIPT}")
+  message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
 endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
