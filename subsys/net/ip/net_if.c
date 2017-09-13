@@ -1773,7 +1773,7 @@ void net_if_init(struct k_sem *startup_sync)
 	}
 
 	if (iface == __net_if_start) {
-		NET_WARN("There is no network interface to work with!");
+		NET_ERR("There is no network interface to work with!");
 		return;
 	}
 
