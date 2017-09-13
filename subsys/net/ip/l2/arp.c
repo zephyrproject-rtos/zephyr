@@ -299,16 +299,8 @@ static inline void send_pending(struct net_if *iface, struct net_pkt **pkt)
 	*pkt = NULL;
 
 	if (net_if_send_data(iface, pending) == NET_DROP) {
-		/* This is to unref the original ref */
 		net_pkt_unref(pending);
 	}
-
-	/* The pending pkt was referenced when
-	 * it was added to cache so we need to
-	 * unref it now when it is removed from
-	 * the cache.
-	 */
-	net_pkt_unref(pending);
 }
 
 static inline void arp_update(struct net_if *iface,
