@@ -36,19 +36,18 @@ static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
-	union dev_config dev_config = (union dev_config)dev_config_raw;
 	u32_t clock_freq;
 	u32_t baudrate;
 
-	if (!dev_config.bits.is_master_device) {
+	if (!(I2C_MODE_MASTER & dev_config_raw)) {
 		return -EINVAL;
 	}
 
-	if (dev_config.bits.use_10_bit_addr) {
+	if (I2C_ADDR_10_BITS & dev_config_raw) {
 		return -EINVAL;
 	}
 
-	switch (dev_config.bits.speed) {
+	switch (I2C_SPEED_GET(dev_config_raw)) {
 	case I2C_SPEED_STANDARD:
 		baudrate = KHZ(100);
 		break;

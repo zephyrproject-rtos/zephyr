@@ -25,7 +25,7 @@ static int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	I2C_TypeDef *i2c = cfg->i2c;
 	u32_t clock;
 
-	data->dev_config.raw = config;
+	data->dev_config = config;
 
 	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
 			(clock_control_subsys_t *) &cfg->pclken, &clock);
