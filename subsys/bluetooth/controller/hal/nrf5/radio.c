@@ -48,6 +48,48 @@ void radio_isr_set(radio_isr_fp fp_radio_isr)
 	irq_enable(RADIO_IRQn);
 }
 
+void radio_setup(void)
+{
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+	struct {
+		u32_t volatile reserved_0[0x5a0 >> 2];
+		u32_t volatile bridge_type;
+		u32_t volatile reserved_1[((0xe00 - 0x5a0) >> 2) - 1];
+		struct {
+			u32_t volatile CPU0;
+			u32_t volatile SPIS1;
+			u32_t volatile RADIO;
+			u32_t volatile ECB;
+			u32_t volatile CCM;
+			u32_t volatile AAR;
+			u32_t volatile SAADC;
+			u32_t volatile UARTE;
+			u32_t volatile SERIAL0;
+			u32_t volatile SERIAL2;
+			u32_t volatile NFCT;
+			u32_t volatile I2S;
+			u32_t volatile PDM;
+			u32_t volatile PWM;
+		} RAMPRI;
+	} volatile *NRF_AMLI = (void volatile *)0x40000000UL;
+
+	NRF_AMLI->RAMPRI.CPU0    = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.SPIS1   = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.RADIO   = 0x00000000UL;
+	NRF_AMLI->RAMPRI.ECB     = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.CCM     = 0x00000000UL;
+	NRF_AMLI->RAMPRI.AAR     = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.SAADC   = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.UARTE   = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.SERIAL0 = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.SERIAL2 = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.NFCT    = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.I2S     = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.PDM     = 0xFFFFFFFFUL;
+	NRF_AMLI->RAMPRI.PWM     = 0xFFFFFFFFUL;
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+}
+
 void radio_reset(void)
 {
 	irq_disable(RADIO_IRQn);
