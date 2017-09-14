@@ -67,6 +67,29 @@
 #include <driverlib/rom_map.h>
 #include <driverlib/gpio.h>
 #include <driverlib/prcm.h>
+#include <driverlib/i2c.h>
+
+/* Defines taken from SimpleLink SDK's I2CCC32XX.h: */
+/*
+ *  Macros defining possible I2C signal pin mux options
+ *
+ *  The bits in the pin mode macros are as follows:
+ *  The lower 8 bits of the macro refer to the pin, offset by 1, to match
+ *  driverlib pin defines.  For example, I2C_CC32XX_PIN_01_I2C_SCL & 0xff = 0,
+ *  which equals PIN_01 in driverlib pin.h.  By matching the PIN_xx defines in
+ *  driverlib pin.h, we can pass the pin directly to the driverlib functions.
+ *  The upper 8 bits of the macro correspond to the pin mux confg mode
+ *  value for the pin to operate in the I2C mode.  For example, pin 1 is
+ *  configured with mode 1 to operate as I2C_SCL.
+ */
+#define I2C_CC32XX_PIN_01_I2C_SCL  0x100  /*!< PIN 1 is used for I2C_SCL */
+#define I2C_CC32XX_PIN_02_I2C_SDA  0x101  /*!< PIN 2 is used for I2C_SDA */
+#define I2C_CC32XX_PIN_03_I2C_SCL  0x502  /*!< PIN 3 is used for I2C_SCL */
+#define I2C_CC32XX_PIN_04_I2C_SDA  0x503  /*!< PIN 4 is used for I2C_SDA */
+#define I2C_CC32XX_PIN_05_I2C_SCL  0x504  /*!< PIN 5 is used for I2C_SCL */
+#define I2C_CC32XX_PIN_06_I2C_SDA  0x505  /*!< PIN 6 is used for I2C_SDA */
+#define I2C_CC32XX_PIN_16_I2C_SCL  0x90F  /*!< PIN 16 is used for I2C_SCL */
+#define I2C_CC32XX_PIN_17_I2C_SDA  0x910  /*!< PIN 17 is used for I2C_SDA */
 
 int pinmux_initialize(struct device *port)
 {
@@ -113,6 +136,29 @@ int pinmux_initialize(struct device *port)
 
 #ifdef CONFIG_GPIO_CC32XX_A3
 	MAP_PRCMPeripheralClkEnable(PRCM_GPIOA3, PRCM_RUN_MODE_CLK);
+
+#endif
+
+#ifdef CONFIG_I2C_CC32XX
+	{
+		unsigned long pin;
+		unsigned long mode;
+
+		/* Enable the I2C module clocks and wait for completion:*/
+		MAP_PRCMPeripheralClkEnable(PRCM_I2CA0,
+					    PRCM_RUN_MODE_CLK |
+					    PRCM_SLP_MODE_CLK);
+		while (!MAP_PRCMPeripheralStatusGet(PRCM_I2CA0)) {
+		}
+
+		pin = I2C_CC32XX_PIN_01_I2C_SCL & 0xff;
+		mode = (I2C_CC32XX_PIN_01_I2C_SCL >> 8) & 0xff;
+		MAP_PinTypeI2C(pin, mode);
+
+		pin = I2C_CC32XX_PIN_02_I2C_SDA & 0xff;
+		mode = (I2C_CC32XX_PIN_02_I2C_SDA >> 8) & 0xff;
+		MAP_PinTypeI2C(pin, mode);
+	}
 #endif
 
 	return 0;

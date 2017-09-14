@@ -1,0 +1,30 @@
+---
+title: CC32XX I2C
+id: ti,cc32xx-i2c
+
+description: >
+    This binding gives a base representation of the TI CC32XX I2C controller
+
+inherits:
+    !include i2c.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "ti,cc32xx-i2c"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+...
