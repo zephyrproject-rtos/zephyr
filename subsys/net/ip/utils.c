@@ -683,6 +683,15 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 {
 	int i, count;
 
+	if (!str || str_len == 0) {
+		return false;
+	}
+
+	/* We cannot accept empty string here */
+	if (*str == '\0') {
+		return false;
+	}
+
 	if (*str == '[') {
 #if defined(CONFIG_NET_IPV6)
 		return parse_ipv6(str, str_len, addr, true);
