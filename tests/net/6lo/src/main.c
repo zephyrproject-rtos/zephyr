@@ -11,6 +11,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <ztest.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -353,7 +354,8 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	}
 
 	/* length is not set in net_6lo_data data pointer, calculate and set
-	 * in ipv6, udp and in data pointer too (it's required in comparison) */
+	 * in ipv6, udp and in data pointer too (it's required in comparison)
+	 */
 	frag->data[4] = len >> 8;
 	frag->data[5] = (u8_t) len;
 
@@ -851,16 +853,12 @@ static struct net_6lo_data test_data_25 = {
 
 #endif
 
-static int test_6lo(struct net_6lo_data *data)
+static void test_6lo(struct net_6lo_data *data)
 {
 	struct net_pkt *pkt;
-	int result = TC_FAIL;
 
 	pkt = create_pkt(data);
-	if (!pkt) {
-		TC_PRINT("%s: failed to create buffer\n", __func__);
-		goto end;
-	}
+	zassert_not_null(pkt, "failed to create buffer");
 
 #if DEBUG > 0
 	TC_PRINT("length before compression %zu\n",
@@ -868,21 +866,16 @@ static int test_6lo(struct net_6lo_data *data)
 	net_hexdump_frags("before-compression", pkt, false);
 #endif
 
-	if (!net_6lo_compress(pkt, data->iphc, NULL)) {
-		TC_PRINT("compression failed\n");
-		goto end;
-	}
+	zassert_true(net_6lo_compress(pkt, data->iphc, NULL),
+			"compression failed");
 
 #if DEBUG > 0
 	TC_PRINT("length after compression %zu\n",
 		 net_pkt_get_len(pkt));
 	net_hexdump_frags("after-compression", pkt, false);
 #endif
-
-	if (!net_6lo_uncompress(pkt)) {
-		TC_PRINT("uncompression failed\n");
-		goto end;
-	}
+	zassert_true(net_6lo_uncompress(pkt),
+			"uncompression failed");
 
 #if DEBUG > 0
 	TC_PRINT("length after uncompression %zu\n",
@@ -891,12 +884,10 @@ static int test_6lo(struct net_6lo_data *data)
 #endif
 
 	if (compare_data(pkt, data)) {
-		result = TC_PASS;
+		zassert_true(1, NULL);
 	}
 
-end:
 	net_pkt_unref(pkt);
-	return result;
 }
 
 /* tests names are based on traffic class, flow label, source address mode
@@ -904,41 +895,40 @@ end:
  * ports compressible type.
  */
 static const struct {
-	const char *name;
 	struct net_6lo_data *data;
 } tests[] = {
-	{ "test_6lo_sam00_dam00", &test_data_1},
-	{ "test_6lo_sam01_dam01", &test_data_2},
-	{ "test_6lo_sam10_dam10", &test_data_3},
-	{ "test_6lo_sam00_m1_dam00", &test_data_4},
-	{ "test_6lo_sam01_m1_dam01", &test_data_5},
-	{ "test_6lo_sam10_m1_dam10", &test_data_6},
-	{ "test_6lo_sam10_m1_dam10_no_udp", &test_data_7},
-	{ "test_6lo_sam10_m1_dam10_iphc", &test_data_8},
-	{ "test_6lo_ipv6_dispatch_small", &test_data_9},
-	{ "test_6lo_ipv6_dispatch_big", &test_data_10},
-	{ "test_6lo_ipv6_dispatch_big_no_udp", &test_data_11},
-	{ "test_6lo_ipv6_dispatch_big_iphc", &test_data_12},
-	{ "test_6lo_sam11_dam11", &test_data_13},
-	{ "test_6lo_sac1_sam00_m1_dam11", &test_data_14},
+	{&test_data_1},
+	{&test_data_2},
+	{&test_data_3},
+	{&test_data_4},
+	{&test_data_5},
+	{&test_data_6},
+	{&test_data_7},
+	{&test_data_8},
+	{&test_data_9},
+	{&test_data_10},
+	{&test_data_11},
+	{&test_data_12},
+	{&test_data_13},
 #if defined(CONFIG_NET_6LO_CONTEXT)
-	{ "test_6lo_sac1_sam01_dac1_dam01", &test_data_15},
-	{ "test_6lo_sac1_sam10_dac1_dam10", &test_data_16},
-	{ "test_6lo_sac1_sam11_dac1_dam11", &test_data_17},
-	{ "test_6lo_sac0_sam01_dac1_dam01", &test_data_18},
-	{ "test_6lo_sac1_sam01_dac0_dam01", &test_data_19},
-	{ "test_6lo_sac1_sam01_m1_dam00", &test_data_20},
-	{ "test_6lo_sac1_sam01_m1_dam01", &test_data_21},
-	{ "test_6lo_sac1_sam10_m1_dam10", &test_data_22},
-	{ "test_6lo_sac1_sam11_m1_dam10", &test_data_23},
-	{ "test_6lo_sac0_sam00_dac1_dam01", &test_data_24},
-	{ "test_6lo_sac1_sam00_m1_dam00", &test_data_25},
+	{&test_data_14},
+	{&test_data_15},
+	{&test_data_16},
+	{&test_data_17},
+	{&test_data_18},
+	{&test_data_19},
+	{&test_data_20},
+	{&test_data_21},
+	{&test_data_22},
+	{&test_data_23},
+	{&test_data_24},
+	{&test_data_25}
 #endif
 };
 
-void main(void)
+void test_loop(void)
 {
-	int count, pass;
+	int count;
 
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
@@ -946,19 +936,16 @@ void main(void)
 	net_6lo_set_context(net_if_get_default(), &ctx1);
 	net_6lo_set_context(net_if_get_default(), &ctx2);
 #endif
-
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
-
-		if (test_6lo(tests[count].data)) {
-			TC_END(FAIL, "failed\n");
-		} else {
-			TC_END(PASS, "passed\n");
-			pass++;
-		}
+	for (count = 0; count < ARRAY_SIZE(tests); count++) {
+		test_6lo(tests[count].data);
 	}
-
 	net_pkt_print();
+}
 
-	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_6lo,
+			ztest_unit_test(test_loop));
+	ztest_run_test_suite(test_6lo);
 }
