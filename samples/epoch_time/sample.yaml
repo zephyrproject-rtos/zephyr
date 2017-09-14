@@ -1,0 +1,8 @@
+sample:
+  name: epoch time sample app
+  description: gettimeofday() and settimeofday() work on zephyr project
+tests:
+    - test:
+        build_only: true
+        platform_whitelist: frdm_k64f
+        tags: samples tests
