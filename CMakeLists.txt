@@ -201,12 +201,7 @@ if(IS_TEST)
 endif()
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
-zephyr_link_libraries(
-  ${LINKERFLAGPREFIX},-X
-  ${LINKERFLAGPREFIX},-N
-  ${LINKERFLAGPREFIX},--gc-sections
-  ${LINKERFLAGPREFIX},--build-id=none
-  )
+zephyr_link_libraries(${LINKERFLAGPREFIX},-X,-N,--gc-sections,--build-id=none)
 
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${PROJECT_BASE}/${CONFIG_CUSTOM_LINKER_SCRIPT})
