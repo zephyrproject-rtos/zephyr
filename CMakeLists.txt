@@ -78,6 +78,7 @@ zephyr_compile_options(
   -Wno-main
   -ffreestanding
   -include ${AUTOCONF_H}
+  --sysroot=${SYSROOT_DIR}
 )
 
 zephyr_compile_options(
@@ -185,9 +186,6 @@ endif()
 
 zephyr_cc_option_ifdef(CONFIG_DEBUG_SECTION_MISMATCH -fno-inline-functions-called-once)
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
-
-zephyr_compile_options(-nostdinc)
-zephyr_system_include_directories(${NOSTDINC})
 
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
 zephyr_cc_option(-Werror=implicit-int)
