@@ -1,0 +1,68 @@
+.. _sockets-http-get:
+
+Socket HTTP GET Example
+#######################
+
+Overview
+********
+
+The sockets/http_get sample application for Zephyr implements a simple
+HTTP GET client using a BSD Sockets compatible API. The purpose of this
+sample is to show how it's possible to develop a sockets application
+portable to both POSIX and Zephyr. As such, it is kept minimal and
+supports only IPv4.
+
+The source code for this sample application can be found at:
+:file:`samples/net/sockets/http_get`.
+
+Requirements
+************
+
+- :ref:`networking_with_qemu`
+- or, a board with hardware networking
+- NAT/routing should be set up to allow connections to the Internet
+- DNS server should be available on the host to resolve domain names
+
+Building and Running
+********************
+
+Build the Zephyr version of the application like this:
+
+.. code-block:: console
+
+    $ cd $ZEPHYR_BASE/samples/net/sockets/http_get
+    $ make pristine
+    $ make BOARD=<board_to_use>
+
+``board_to_use`` defaults to ``qemu_x86``. In this case, you can run the
+application in QEMU using ``make run``. If you used another BOARD, you
+will need to consult its documentation for application deployment
+instructions. You can read about Zephyr support for specific boards in
+the documentation at :ref:`boards`.
+
+After the sample starts, it issues HTTP GET request to "google.com:80"
+and dumps the response. You can edit the source code to issue a request
+to any other site on the Internet (or on the local network, in which
+case no NAT/routing setup is needed).
+
+Running application on POSIX Host
+=================================
+
+The same application source code can be built for a POSIX system, e.g.
+Linux. (Note: if you look at the source, you will see that the code is
+the same except the header files are different for Zephyr vs POSIX.)
+
+To build for a host POSIX OS:
+
+.. code-block:: console
+
+    $ make -f Makefile.posix
+
+To run:
+
+.. code-block:: console
+
+    $ ./http_get
+
+As can be seen, the behavior of the application is the same as the Zephyr
+version.
