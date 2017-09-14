@@ -15,6 +15,39 @@
 #include <soc.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
+#include <linker/linker-defs.h>
+#include <string.h>
+
+
+/**
+ * @brief Relocate vector table to SRAM.
+ *
+ * On Cortex-M0 platforms, the Vector Base address cannot be changed.
+ *
+ * A Zephyr image that is run from the mcuboot bootloader must relocate the
+ * vector table to SRAM to be able to replace the vectors pointing to the
+ * bootloader.
+ *
+ * A zephyr image that is a bootloader does not have to relocate the
+ * vector table.
+ *
+ * Replaces the default function from prep_c.c.
+ *
+ * @note Zephyr applications that will not be loaded by a bootloader should
+ *       pretend to be a bootloader if the SRAM vector table is not needed.
+ */
+void relocate_vector_table(void)
+{
+#ifndef CONFIG_IS_BOOTLOADER
+	extern char _ram_vector_start[];
+
+	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
+
+	memcpy(_ram_vector_start, _vector_start, vector_size);
+	LL_SYSCFG_SetRemapMemory(LL_SYSCFG_REMAP_SRAM);
+#endif
+}
+
 
 /**
  * @brief This function configures the source of stm32cube time base.
