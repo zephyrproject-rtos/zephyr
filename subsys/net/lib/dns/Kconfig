@@ -112,6 +112,7 @@ config DNS_NUM_CONCUR_QUERIES
 config NET_DEBUG_DNS_RESOLVE
 	bool "Debug DNS resolver"
 	default n
+	default y if NET_LOG_GLOBAL
 	help
 	Enables DNS resolver code to output debug messages
 
