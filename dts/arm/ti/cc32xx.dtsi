@@ -1,14 +1,17 @@
 #include <arm/armv7-m.dtsi>
 
 #include <ti/mem.h>
+#include <dt-bindings/i2c/i2c.h>
 
 #define INT_UARTA0              21          // UART0 Rx and Tx
 #define INT_UARTA1              22          // UART1 Rx and Tx
+#define INT_I2CA0               24          // I2C controller
 
 /* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC32XX SDK */
 /* which are offset by 16: */
 #define EXP_UARTA0 (INT_UARTA0 - 16)
 #define EXP_UARTA1 (INT_UARTA1 - 16)
+#define EXP_I2CA0  (INT_I2CA0 - 16)
 
 / {
 	cpus {
@@ -54,6 +57,17 @@
 			interrupts = <EXP_UARTA1 3>;
 			status = "disabled";
 			label = "UART_1";
+		};
+
+		i2c0: i2c@40020000 {
+			compatible = "ti,cc32xx-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0xfc8>;
+			interrupts = <EXP_I2CA0 3>;
+			status = "disabled";
+			label= "I2C_0";
 		};
 
 	};

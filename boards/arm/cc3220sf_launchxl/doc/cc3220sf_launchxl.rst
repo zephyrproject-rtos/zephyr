@@ -57,6 +57,14 @@ driver support.
 +-----------+------------+-----------------------+
 | GPIO      | on-chip    | gpio                  |
 +-----------+------------+-----------------------+
+| I2C       | on-chip    | i2c                   |
++-----------+------------+-----------------------+
+
+.. note::
+
+   For consistency with TI SimpleLink SDK and BoosterPack examples,
+   the I2C driver defaults to I2C_BITRATE_FAST mode (400 kHz) bus speed
+   on bootup.
 
 The accelerometer, temperature sensors, or other peripherals
 accessible through the BoosterPack, are not currently supported.
