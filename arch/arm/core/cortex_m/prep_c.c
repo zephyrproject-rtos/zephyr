@@ -27,7 +27,7 @@
 #ifdef CONFIG_ARMV6_M
 
 #define VECTOR_ADDRESS 0
-static inline void relocate_vector_table(void)
+void __weak relocate_vector_table(void)
 {
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
     !defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
