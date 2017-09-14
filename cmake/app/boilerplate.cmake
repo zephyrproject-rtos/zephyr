@@ -108,7 +108,7 @@ endif()
 include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/host-tools.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
+include($ENV{ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
