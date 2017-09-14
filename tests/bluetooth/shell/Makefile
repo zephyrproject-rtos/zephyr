@@ -13,6 +13,10 @@ QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
 
 ifeq ($(BOARD),arduino_101)
 CONF_FILE = arduino_101.conf
+else ifeq ($(BOARD),nrf52840_pca10056)
+CONF_FILE = nrf5.conf
+else ifeq ($(BOARD),nrf52_pca10040)
+CONF_FILE = nrf5.conf
 else
 CONF_FILE = prj.conf
 endif
