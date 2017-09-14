@@ -2760,6 +2760,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				break;
 			}
 
+			/* Stop procedure timeout */
+			_radio.conn_curr->procedure_expire = 0;
+
 			/* save parameters to be used to select offset
 			 */
 			conn->llcp_conn_param.interval = cpr->interval_min;
