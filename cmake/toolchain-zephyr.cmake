@@ -127,20 +127,6 @@ set(CMAKE_OBJDUMP      ${CROSS_COMPILE}objdump CACHE INTERNAL " " FORCE)
 set(CMAKE_AR           ${CROSS_COMPILE}ar      CACHE INTERNAL " " FORCE)
 set(CMAKE_RANLILB      ${CROSS_COMPILE}ranlib  CACHE INTERNAL " " FORCE)
 
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include
-  OUTPUT_VARIABLE _OUTPUT
-)
-string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
-set(NOSTDINC ${_OUTPUT})
-
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
-  OUTPUT_VARIABLE _OUTPUT
-)
-string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
-list(APPEND NOSTDINC ${_OUTPUT})
-
 set(SYSROOT_DIR ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/${SYSROOT_TARGET})
 
 execute_process(
