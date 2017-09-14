@@ -1707,6 +1707,7 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 		struct bt_hci_vs_static_addr *addr;
 
 		rp = cmd_complete(evt, sizeof(*rp) + sizeof(*addr));
+		rp->status = 0x00;
 		rp->num_addrs = 1;
 
 		addr = &rp->a[0];
