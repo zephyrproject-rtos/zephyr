@@ -1,14 +1,9 @@
-The current version supported in Zephyr for STM32F1 Cube is V1.5.0
+The current version supported in Zephyr for STM32F1 Cube is V1.6.0
 
 
 
 Patch List:
 ===========
-*This version contains following patch vs the official version:
-drivers/include/stm32f1_hal_conf.h: l355
-- #include "stm32f4xx_hal_mmc.h"
-+ #include "stm32f1xx_hal_mmc.h"
-ST Bug tracker ID: 33517
 
 *Disable i2c HAL
    Due to conflict with zephyr i2c.h (I2C_SPEED_STANDARD and I2C_SPEED_FAST
