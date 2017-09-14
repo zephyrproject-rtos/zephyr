@@ -25,6 +25,13 @@ config RTC_QMSI
 	help
 	Build QMSI RTC driver.
 
+config RTC_MCUX
+	bool "MCUX RTC Driver"
+	depends on HAS_MCUX
+	default n
+	help
+	Build MCUX RTC driver.
+
 config RTC_0_NAME
 	string "Driver instance name"
 	default "RTC_0"

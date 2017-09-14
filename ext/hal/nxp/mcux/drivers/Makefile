@@ -15,3 +15,4 @@ obj-$(CONFIG_SPI_MCUX_DSPI) += fsl_dspi.o
 obj-$(CONFIG_UART_MCUX) += fsl_uart.o
 obj-$(CONFIG_UART_MCUX_LPSCI) += fsl_lpsci.o
 obj-$(CONFIG_UART_MCUX_LPUART) += fsl_lpuart.o
+obj-$(CONFIG_RTC_MCUX) += fsl_rtc.o

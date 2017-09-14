@@ -62,6 +62,12 @@
 	current-speed = <115200>;
 };
 
+&rtc {
+	status = "ok";
+	interrupts = <46 0>;
+	interrupt-names = "alarm";
+};
+
 #ifdef CONFIG_BT
 &uart3 {
 	status = "ok";
