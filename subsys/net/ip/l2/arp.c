@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_ARP)
+#if defined(CONFIG_NET_DEBUG_ARP) || defined(CONFIG_NET_LOG_GLOBAL)
 #define SYS_LOG_DOMAIN "net/arp"
 #define NET_LOG_ENABLED 1
 #endif
