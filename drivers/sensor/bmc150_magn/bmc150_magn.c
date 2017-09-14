@@ -587,9 +587,6 @@ static int bmc150_magn_init(struct device *dev)
 		return -EINVAL;
 	}
 #endif
-
-	dev->driver_api = &bmc150_magn_api_funcs;
-
 	return 0;
 }
 
@@ -604,6 +601,6 @@ static const struct bmc150_magn_config bmc150_magn_config = {
 
 static struct bmc150_magn_data bmc150_magn_data;
 
-DEVICE_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init,
+DEVICE_AND_API_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init,
 	    &bmc150_magn_data, &bmc150_magn_config, POST_KERNEL,
-	    CONFIG_SENSOR_INIT_PRIORITY);
+	    CONFIG_SENSOR_INIT_PRIORITY, &bmc150_magn_api_funcs);
