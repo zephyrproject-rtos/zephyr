@@ -133,8 +133,22 @@ extern FUNC_NORETURN
 void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
 			   void *p3);
 
-extern u32_t _k_syscall_entry(u32_t arg1, u32_t arg2, u32_t arg3, u32_t arg4,
-			      u32_t arg5, u32_t call_id);
+
+/**
+ * @brief Induce a kernel oops that appears to come from a specific location
+ *
+ * Normally, k_oops() generates an exception that appears to come from the
+ * call site of the k_oops() itself.
+ *
+ * However, when validating arguments to a system call, if there are problems
+ * we want the oops to appear to come from where the system call was invoked
+ * and not inside the validation function.
+ *
+ * @param ssf System call stack frame pointer. This gets passed as an argument
+ *            to _k_syscall_handler_t functions and its contents are completely
+ *            architecture specific.
+ */
+extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
 #endif /* CONFIG_USERSPACE */
 
 /* set and clear essential fiber/task flag */

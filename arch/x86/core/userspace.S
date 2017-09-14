@@ -8,19 +8,33 @@
 #include <arch/x86/asm.h>
 #include <arch/cpu.h>
 #include <offsets_short.h>
+#include <syscall.h>
 
 /* Exports */
 GTEXT(_x86_syscall_entry_stub)
 GTEXT(_x86_userspace_enter)
 
 /* Imports */
-GTEXT(_k_syscall_entry)
+GTEXT(_k_syscall_table)
 
 /* Landing site for syscall SW IRQ. Marshal arguments and call C function for
- * further processing.
+ * further processing. We're on the kernel stack for the invoking thread.
  */
 SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
-	push	%esi		/* call_id */
+	sti			/* re-enable interrupts */
+	cld			/* clear direction flag, restored on 'iret' */
+
+	/* call_id is in ESI. bounds-check it, must be less than
+	 * K_SYSCALL_LIMIT
+	 */
+	cmp	$K_SYSCALL_LIMIT, %esi
+	jae	_bad_syscall
+
+_id_ok:
+	/* Marshal arguments per calling convention to match what is expected
+	 * for _k_syscall_handler_t functions
+	 */
+	push	%esp		/* ssf */
 	push	%edi		/* arg5 */
 	push	%ebx		/* arg4 */
 #ifndef CONFIG_X86_IAMCU
@@ -29,24 +43,43 @@ SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
 	push	%eax		/* arg1 */
 #endif
 
-	call	_k_syscall_entry
+	/* from the call ID in ESI, load EBX with the actual function pointer
+	 * to call by looking it up in the system call dispatch table
+	 */
+	xor	%edi, %edi
+	mov	_k_syscall_table(%edi, %esi, 4), %ebx
+
+	/* Run the handler, which is some entry in _k_syscall_table */
+	call	*%ebx
 
 	/* EAX now contains return value. Pop or xor everything else to prevent
 	 * information leak from kernel mode.
 	 */
 #ifndef CONFIG_X86_IAMCU
-	pop	%edx	/* old EAX value, discard it */
+	pop	%edx		/* old arg1 value, discard it */
 	pop	%edx
 	pop	%ecx
-#else
-	xor	%edx, %edx
-	xor	%ecx, %ecx
 #endif
 	pop	%ebx
 	pop	%edi
-	pop	%esi
-
+#ifndef CONFIG_X86_IAMCU
+	/* Discard ssf, no free register to pop it into so we add instead  */
+	add	$4, %esp
+#else
+	xor	%edx, %edx	/* Clean EDX */
+	pop	%ecx		/* Clean ECX and get ssf arg off the stack */
+#endif
 	iret
+
+_bad_syscall:
+	/* ESI had a bogus syscall value in it, replace with the bad syscall
+	 * handler's ID, and put the bad ID as its first argument.  This
+	 * clobbers ESI but the bad syscall handler never returns
+	 * anyway, it's going to generate a kernel oops
+	 */
+	mov	%esi, %eax
+	mov	$K_SYSCALL_BAD, %esi
+	jmp	_id_ok
 
 
 /* FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
