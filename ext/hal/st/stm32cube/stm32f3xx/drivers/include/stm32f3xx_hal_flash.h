@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_flash.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of Flash HAL module.
   ******************************************************************************
   * @attention
@@ -396,3 +394,4 @@ HAL_StatusTypeDef       FLASH_WaitForLastOperation(uint32_t Timeout);
 #endif /* __STM32F3xx_HAL_FLASH_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

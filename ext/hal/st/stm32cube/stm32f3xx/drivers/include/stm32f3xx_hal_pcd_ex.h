@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_pcd_ex.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of PCD HAL Extension module.
   ******************************************************************************
   * @attention
@@ -67,8 +65,8 @@
   */
 /**
   * @brief  Gets address in an endpoint register.
-  * @param  USBx: USB peripheral instance register address.
-  * @param  bEpNum: Endpoint Number.
+  * @param  USBx USB peripheral instance register address.
+  * @param  bEpNum Endpoint Number.
   * @retval None
   */
 

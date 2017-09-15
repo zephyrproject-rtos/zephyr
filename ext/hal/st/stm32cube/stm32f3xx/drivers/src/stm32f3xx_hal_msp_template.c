@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_msp_template.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   HAL MSP module.
   *          This file template is located in the HAL folder and should be copied
   *          to the user folder.

@@ -2,14 +2,12 @@
   ******************************************************************************
   * @file    stm32f373xc.h
   * @author  MCD Application Team
-  * @version V2.3.1
-  * @date    16-December-2016
   * @brief   CMSIS STM32F373xC Devices Peripheral Access Layer Header File.
   *
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheralï¿½s registers hardware
+  *           - Macros to access peripheral’s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -8374,9 +8372,9 @@ typedef struct
 #define RTC_CR_COSEL_Pos             (19U)
 #define RTC_CR_COSEL_Msk             (0x1U << RTC_CR_COSEL_Pos)                /*!< 0x00080000 */
 #define RTC_CR_COSEL                 RTC_CR_COSEL_Msk
-#define RTC_CR_BCK_Pos               (18U)
-#define RTC_CR_BCK_Msk               (0x1U << RTC_CR_BCK_Pos)                  /*!< 0x00040000 */
-#define RTC_CR_BCK                   RTC_CR_BCK_Msk
+#define RTC_CR_BKP_Pos               (18U)
+#define RTC_CR_BKP_Msk               (0x1U << RTC_CR_BKP_Pos)                  /*!< 0x00040000 */
+#define RTC_CR_BKP                   RTC_CR_BKP_Msk
 #define RTC_CR_SUB1H_Pos             (17U)
 #define RTC_CR_SUB1H_Msk             (0x1U << RTC_CR_SUB1H_Pos)                /*!< 0x00020000 */
 #define RTC_CR_SUB1H                 RTC_CR_SUB1H_Msk
@@ -8425,6 +8423,11 @@ typedef struct
 #define RTC_CR_WUCKSEL_0             (0x1U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000001 */
 #define RTC_CR_WUCKSEL_1             (0x2U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000002 */
 #define RTC_CR_WUCKSEL_2             (0x4U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000004 */
+
+/* Legacy defines */
+#define RTC_CR_BCK_Pos               RTC_CR_BKP_Pos
+#define RTC_CR_BCK_Msk               RTC_CR_BKP_Msk
+#define RTC_CR_BCK                   RTC_CR_BKP
 
 /********************  Bits definition for RTC_ISR register  ******************/
 #define RTC_ISR_RECALPF_Pos          (16U)
