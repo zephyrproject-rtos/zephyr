@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_opamp_ex.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of OPAMP HAL Extended module.
   ******************************************************************************
   * @attention
@@ -62,7 +60,9 @@
   */
 
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
-    defined (STM32L496xx) || defined (STM32L4A6xx)
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
+    
 
 /* I/O operation functions  *****************************************************/
 /** @addtogroup OPAMPEx_Exported_Functions_Group1 Extended Input and Output operation functions

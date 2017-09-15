@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_qspi.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   QSPI HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the QuadSPI interface (QSPI).
@@ -168,6 +166,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal.h"
 
+#if defined(QUADSPI) || defined(QUADSPI1) || defined(QUADSPI2)
+
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
@@ -263,9 +263,7 @@ HAL_StatusTypeDef HAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
   assert_param(IS_QSPI_FLASH_SIZE(hqspi->Init.FlashSize));
   assert_param(IS_QSPI_CS_HIGH_TIME(hqspi->Init.ChipSelectHighTime));
   assert_param(IS_QSPI_CLOCK_MODE(hqspi->Init.ClockMode));
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || \
-    defined(STM32L443xx) || defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) 
+#if defined(QUADSPI_CR_DFM) 
   assert_param(IS_QSPI_DUAL_FLASH_MODE(hqspi->Init.DualFlash));
 
   if (hqspi->Init.DualFlash != QSPI_DUALFLASH_ENABLE )
@@ -291,7 +289,7 @@ HAL_StatusTypeDef HAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
   
   /* Configure QSPI FIFO Threshold */
   MODIFY_REG(hqspi->Instance->CR, QUADSPI_CR_FTHRES, 
-             ((hqspi->Init.FifoThreshold - 1) << POSITION_VAL(QUADSPI_CR_FTHRES)));
+             ((hqspi->Init.FifoThreshold - 1) << QUADSPI_CR_FTHRES_Pos));
 
   /* Wait till BUSY flag reset */
   status = QSPI_WaitFlagStateUntilTimeout(hqspi, QSPI_FLAG_BUSY, RESET, tickstart, hqspi->Timeout);
@@ -299,21 +297,19 @@ HAL_StatusTypeDef HAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
   if(status == HAL_OK)
   {
     /* Configure QSPI Clock Prescaler and Sample Shift */
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || \
-    defined(STM32L443xx) || defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) 
+#if defined(QUADSPI_CR_DFM) 
     MODIFY_REG(hqspi->Instance->CR, (QUADSPI_CR_PRESCALER | QUADSPI_CR_SSHIFT | QUADSPI_CR_FSEL | QUADSPI_CR_DFM), 
-               ((hqspi->Init.ClockPrescaler << POSITION_VAL(QUADSPI_CR_PRESCALER)) | 
+               ((hqspi->Init.ClockPrescaler << QUADSPI_CR_PRESCALER_Pos) | 
                 hqspi->Init.SampleShifting  | hqspi->Init.FlashID | hqspi->Init.DualFlash));
 #else
     MODIFY_REG(hqspi->Instance->CR, (QUADSPI_CR_PRESCALER | QUADSPI_CR_SSHIFT), 
-               ((hqspi->Init.ClockPrescaler << POSITION_VAL(QUADSPI_CR_PRESCALER)) | 
+               ((hqspi->Init.ClockPrescaler << QUADSPI_CR_PRESCALER_Pos) | 
                 hqspi->Init.SampleShifting));
 #endif
     
     /* Configure QSPI Flash Size, CS High Time and Clock Mode */
     MODIFY_REG(hqspi->Instance->DCR, (QUADSPI_DCR_FSIZE | QUADSPI_DCR_CSHT | QUADSPI_DCR_CKMODE), 
-               ((hqspi->Init.FlashSize << POSITION_VAL(QUADSPI_DCR_FSIZE)) | 
+               ((hqspi->Init.FlashSize << QUADSPI_DCR_FSIZE_Pos) | 
                 hqspi->Init.ChipSelectHighTime | hqspi->Init.ClockMode));
 
     /* Enable the QSPI peripheral */
@@ -547,7 +543,7 @@ void HAL_QSPI_IRQHandler(QSPI_HandleTypeDef *hqspi)
       /* Workaround - Extra data written in the FIFO at the end of a read transfer */
       HAL_QSPI_Abort_IT(hqspi);
 #endif
-      
+
       /* Change state of QSPI */
       hqspi->State = HAL_QSPI_STATE_READY;
 
@@ -2016,7 +2012,7 @@ HAL_StatusTypeDef HAL_QSPI_SetFifoThreshold(QSPI_HandleTypeDef *hqspi, uint32_t 
     
     /* Configure QSPI FIFO Threshold */
     MODIFY_REG(hqspi->Instance->CR, QUADSPI_CR_FTHRES, 
-               ((hqspi->Init.FifoThreshold - 1) << POSITION_VAL(QUADSPI_CR_FTHRES)));
+               ((hqspi->Init.FifoThreshold - 1) << QUADSPI_CR_FTHRES_Pos));
   }
   else
   {
@@ -2036,7 +2032,7 @@ HAL_StatusTypeDef HAL_QSPI_SetFifoThreshold(QSPI_HandleTypeDef *hqspi, uint32_t 
   */
 uint32_t HAL_QSPI_GetFifoThreshold(QSPI_HandleTypeDef *hqspi)
 {
-  return ((READ_BIT(hqspi->Instance->CR, QUADSPI_CR_FTHRES) >> POSITION_VAL(QUADSPI_CR_FTHRES)) + 1);
+  return ((READ_BIT(hqspi->Instance->CR, QUADSPI_CR_FTHRES) >> QUADSPI_CR_FTHRES_Pos) + 1);
 }
 
 /**
@@ -2149,6 +2145,7 @@ static void QSPI_DMAAbortCplt(DMA_HandleTypeDef *hdma)
     HAL_QSPI_ErrorCallback(hqspi);
   }
 }
+
 /**
   * @brief  Wait for a flag state until timeout.
   * @param  hqspi: QSPI handle
@@ -2213,7 +2210,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         /*---- Command with instruction, address and alternate bytes ----*/
         /* Configure QSPI: CCR register with all communications parameters */
         WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                         cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                         cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                          cmd->AlternateBytesSize | cmd->AlternateByteMode | 
                                          cmd->AddressSize | cmd->AddressMode | cmd->InstructionMode | 
                                          cmd->Instruction | FunctionalMode));
@@ -2229,7 +2226,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         /*---- Command with instruction and alternate bytes ----*/
         /* Configure QSPI: CCR register with all communications parameters */
         WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                         cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                         cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                          cmd->AlternateBytesSize | cmd->AlternateByteMode | 
                                          cmd->AddressMode | cmd->InstructionMode | 
                                          cmd->Instruction | FunctionalMode));
@@ -2242,7 +2239,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         /*---- Command with instruction and address ----*/
         /* Configure QSPI: CCR register with all communications parameters */
         WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                         cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                         cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                          cmd->AlternateByteMode | cmd->AddressSize | cmd->AddressMode | 
                                          cmd->InstructionMode | cmd->Instruction | FunctionalMode));
 
@@ -2257,7 +2254,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         /*---- Command with only instruction ----*/
         /* Configure QSPI: CCR register with all communications parameters */
         WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                         cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                         cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                          cmd->AlternateByteMode | cmd->AddressMode | 
                                          cmd->InstructionMode | cmd->Instruction | FunctionalMode));
       }
@@ -2275,7 +2272,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         /*---- Command with address and alternate bytes ----*/
         /* Configure QSPI: CCR register with all communications parameters */
         WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                         cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                         cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                          cmd->AlternateBytesSize | cmd->AlternateByteMode | 
                                          cmd->AddressSize | cmd->AddressMode | 
                                          cmd->InstructionMode | FunctionalMode));
@@ -2291,7 +2288,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         /*---- Command with only alternate bytes ----*/
         /* Configure QSPI: CCR register with all communications parameters */
         WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                         cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                         cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                          cmd->AlternateBytesSize | cmd->AlternateByteMode | 
                                          cmd->AddressMode | cmd->InstructionMode | FunctionalMode));
       }
@@ -2303,7 +2300,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         /*---- Command with only address ----*/
         /* Configure QSPI: CCR register with all communications parameters */
         WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                         cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                         cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                          cmd->AlternateByteMode | cmd->AddressSize | 
                                          cmd->AddressMode | cmd->InstructionMode | FunctionalMode));
 
@@ -2320,7 +2317,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
         {
           /* Configure QSPI: CCR register with all communications parameters */
           WRITE_REG(hqspi->Instance->CCR, (cmd->DdrMode | cmd->DdrHoldHalfCycle | cmd->SIOOMode | 
-                                           cmd->DataMode | (cmd->DummyCycles << POSITION_VAL(QUADSPI_CCR_DCYC)) | 
+                                           cmd->DataMode | (cmd->DummyCycles << QUADSPI_CCR_DCYC_Pos) | 
                                            cmd->AlternateByteMode | cmd->AddressMode | 
                                            cmd->InstructionMode | FunctionalMode));
         }
@@ -2341,5 +2338,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
 /**
   * @}
   */
+
+#endif /* defined(QUADSPI) || defined(QUADSPI1) || defined(QUADSPI2) */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rng.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   RNG HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Random Number Generator (RNG) peripheral:
@@ -123,7 +121,13 @@ HAL_StatusTypeDef HAL_RNG_Init(RNG_HandleTypeDef *hrng)
     return HAL_ERROR;
   }
   
-  assert_param(IS_RNG_ALL_INSTANCE(hrng->Instance)); 
+  assert_param(IS_RNG_ALL_INSTANCE(hrng->Instance));
+#if defined(RNG_CR_CED)
+  assert_param(IS_RNG_CED(hrng->Init.ClockErrorDetection));
+#endif /* defined(RNG_CR_CED) */
+#if defined(RNG_CR_BYP)
+  assert_param(IS_RNG_BYPASS(hrng->Init.BypassMode));
+#endif /* defined(RNG_CR_BYP) */
   
   __HAL_LOCK(hrng);
   
@@ -139,6 +143,15 @@ HAL_StatusTypeDef HAL_RNG_Init(RNG_HandleTypeDef *hrng)
   /* Change RNG peripheral state */
   hrng->State = HAL_RNG_STATE_BUSY;
 
+#if defined(RNG_CR_CED)
+  /* Clock Error Detection configuration */
+  MODIFY_REG(hrng->Instance->CR, RNG_CR_CED, hrng->Init.ClockErrorDetection);
+#endif /* defined(RNG_CR_CED) */
+#if defined(RNG_CR_BYP)
+  /* Bypass mode configuration */
+  MODIFY_REG(hrng->Instance->CR, RNG_CR_BYP, hrng->Init.BypassMode);
+#endif /* defined(RNG_CR_BYP) */
+  
   /* Enable the RNG Peripheral */
   __HAL_RNG_ENABLE(hrng);
 
@@ -163,6 +176,16 @@ HAL_StatusTypeDef HAL_RNG_DeInit(RNG_HandleTypeDef *hrng)
   {
     return HAL_ERROR;
   }
+  
+#if defined(RNG_CR_CED)
+  /* Clear Clock Error Detection bit */
+  CLEAR_BIT(hrng->Instance->CR, RNG_CR_CED);
+#endif /* defined(RNG_CR_CED) */
+#if defined(RNG_CR_BYP)
+  /* Clear Bypass mode bit */
+  CLEAR_BIT(hrng->Instance->CR, RNG_CR_BYP);
+#endif /* defined(RNG_CR_BYP) */
+  
   /* Disable the RNG Peripheral */
   CLEAR_BIT(hrng->Instance->CR, RNG_CR_IE | RNG_CR_RNGEN);
   

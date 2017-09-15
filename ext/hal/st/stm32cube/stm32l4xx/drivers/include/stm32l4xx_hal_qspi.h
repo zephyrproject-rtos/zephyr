@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_qspi.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of QSPI HAL module.
   ******************************************************************************
   * @attention
@@ -43,6 +41,8 @@
  extern "C" {
 #endif
 
+#if defined(QUADSPI) || defined(QUADSPI1) || defined(QUADSPI2)
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
 
@@ -81,9 +81,7 @@ typedef struct
                                   This parameter can be a value of @ref QSPI_ChipSelectHighTime */   
   uint32_t ClockMode;          /* Specifies the Clock Mode. It indicates the level that clock takes between commands.
                                   This parameter can be a value of @ref QSPI_ClockMode */
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || \
-    defined(STM32L443xx) || defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) 
+#if defined(QUADSPI_CR_DFM) 
   uint32_t FlashID;            /* Specifies the Flash which will be used,
                                   This parameter can be a value of @ref QSPI_Flash_Select */
   uint32_t DualFlash;          /* Specifies the Dual Flash Mode State
@@ -248,9 +246,7 @@ typedef struct
   * @}
   */
 
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || \
-    defined(STM32L443xx) || defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) 
+#if defined(QUADSPI_CR_DFM) 
 /** @defgroup QSPI_Flash_Select QSPI Flash Select
   * @{
   */
@@ -349,9 +345,7 @@ typedef struct
   * @{
   */
 #define QSPI_DDR_HHC_ANALOG_DELAY      ((uint32_t)0x00000000)       /*!<Delay the data output using analog delay in DDR mode*/
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || \
-    defined(STM32L443xx) || defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) 
+#if defined(QUADSPI_CCR_DHHC) 
 #define QSPI_DDR_HHC_HALF_CLK_DELAY    ((uint32_t)QUADSPI_CCR_DHHC) /*!<Delay the data output by 1/2 clock cycle in DDR mode*/
 #endif
 /**
@@ -611,9 +605,7 @@ uint32_t              HAL_QSPI_GetFifoThreshold(QSPI_HandleTypeDef *hqspi);
 #define IS_QSPI_CLOCK_MODE(CLKMODE)        (((CLKMODE) == QSPI_CLOCK_MODE_0) || \
                                             ((CLKMODE) == QSPI_CLOCK_MODE_3))
 
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || \
-    defined(STM32L443xx) || defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) 
+#if defined(QUADSPI_CR_DFM) 
 #define IS_QSPI_FLASH_ID(FLASH)            (((FLASH) == QSPI_FLASH_ID_1) || \
                                             ((FLASH) == QSPI_FLASH_ID_2)) 
                                   
@@ -658,9 +650,7 @@ uint32_t              HAL_QSPI_GetFifoThreshold(QSPI_HandleTypeDef *hqspi);
 #define IS_QSPI_DDR_MODE(DDR_MODE)         (((DDR_MODE) == QSPI_DDR_MODE_DISABLE) || \
                                             ((DDR_MODE) == QSPI_DDR_MODE_ENABLE))
 
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || \
-    defined(STM32L443xx) || defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) 
+#if defined(QUADSPI_CCR_DHHC) 
 #define IS_QSPI_DDR_HHC(DDR_HHC)           (((DDR_HHC) == QSPI_DDR_HHC_ANALOG_DELAY) || \
                                             ((DDR_HHC) == QSPI_DDR_HHC_HALF_CLK_DELAY))
 #else
@@ -696,7 +686,9 @@ uint32_t              HAL_QSPI_GetFifoThreshold(QSPI_HandleTypeDef *hqspi);
 /**
   * @}
   */ 
-  
+
+#endif /* defined(QUADSPI) || defined(QUADSPI1) || defined(QUADSPI2) */
+
 #ifdef __cplusplus
 }
 #endif
