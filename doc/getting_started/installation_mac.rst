@@ -1,12 +1,12 @@
 .. _installing_zephyr_mac:
 
-Development Environment Setup on Mac OS
-#######################################
+Development Environment Setup on macOS
+######################################
 
-This section describes how to set up a Mac OS development system.
+This section describes how to set up a macOS development system.
 
 After completing these steps, you will be able to compile and run your Zephyr
-applications on the following Mac OS version:
+applications on the following macOS version:
 
 * Mac OS X 10.11 (El Capitan)
 * macOS Sierra 10.12
