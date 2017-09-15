@@ -43,8 +43,6 @@ Note that having a newer version available for an installed package
 ``dnf upgrade`` will install it, because it must also ensure dependencies
 and other restrictions are satisfied.
 
-.. _linux_required_software:
-
 Installing Requirements and Dependencies
 ****************************************
 
@@ -114,7 +112,7 @@ Follow these steps to install the SDK on your Linux host system.
    .. important::
       Make sure you have installed all required packages for your host
       distribution as described in the previous section
-      `linux_required_software`_ otherwise the SDK installation will fail.
+      `Installing Requirements and Dependencies`_ otherwise the SDK installation will fail.
 
    .. code-block:: console
 
