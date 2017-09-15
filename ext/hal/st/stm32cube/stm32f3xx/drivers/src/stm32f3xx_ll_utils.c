@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_utils.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   UTILS LL module driver.
   ******************************************************************************
   * @attention
@@ -61,15 +59,15 @@
   */
 
 /* Defines used for PLL range */
-#define UTILS_PLL_OUTPUT_MAX        ((uint32_t)72000000U)        /*!< Frequency max for PLL output, in Hz  */
+#define UTILS_PLL_OUTPUT_MAX        72000000U    /*!< Frequency max for PLL output, in Hz  */
 
 /* Defines used for HSE range */
-#define UTILS_HSE_FREQUENCY_MIN     ((uint32_t)4000000U)         /*!< Frequency min for HSE frequency, in Hz   */
-#define UTILS_HSE_FREQUENCY_MAX     ((uint32_t)32000000U)        /*!< Frequency max for HSE frequency, in Hz   */
+#define UTILS_HSE_FREQUENCY_MIN      4000000U       /*!< Frequency min for HSE frequency, in Hz   */
+#define UTILS_HSE_FREQUENCY_MAX     32000000U       /*!< Frequency max for HSE frequency, in Hz   */
 
 /* Defines used for FLASH latency according to SYSCLK Frequency */
-#define UTILS_LATENCY1_FREQ         ((uint32_t)24000000U)        /*!< SYSCLK frequency to set FLASH latency 1 */
-#define UTILS_LATENCY2_FREQ         ((uint32_t)48000000U)        /*!< SYSCLK frequency to set FLASH latency 2 */
+#define UTILS_LATENCY1_FREQ         24000000U        /*!< SYSCLK frequency to set FLASH latency 1 */
+#define UTILS_LATENCY2_FREQ         48000000U        /*!< SYSCLK frequency to set FLASH latency 2 */
 /**
   * @}
   */
@@ -140,7 +138,9 @@
   */
 static uint32_t    UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency,
                                                LL_UTILS_PLLInitTypeDef *UTILS_PLLInitStruct);
+#if defined(FLASH_ACR_LATENCY)
 static ErrorStatus UTILS_SetFlashLatency(uint32_t Frequency);
+#endif /* FLASH_ACR_LATENCY */
 static ErrorStatus UTILS_EnablePLLAndSwitchSystem(uint32_t SYSCLK_Frequency, LL_UTILS_ClkInitTypeDef *UTILS_ClkInitStruct);
 static ErrorStatus UTILS_PLL_IsBusy(void);
 /**
@@ -277,7 +277,6 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
     /* Force PREDIV value to 2 */
     UTILS_PLLInitStruct->Prediv = LL_RCC_PREDIV_DIV_2;
 #endif /*RCC_PLLSRC_PREDIV1_SUPPORT*/
-
     /* Calculate the new PLL output frequency */
     pllfreq = UTILS_GetPLLOutputFrequency(HSI_VALUE, UTILS_PLLInitStruct);
 
@@ -317,7 +316,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
   *         - PLL output frequency = ((HSI frequency / PREDIV) * PLLMUL)
   *         - PREDIV: Set to 2 for few devices
   *         - PLLMUL: The application software must set correctly the PLL multiplication factor to
-  *                   not exceed 72MHz
+  *                   not exceed @ref UTILS_PLL_OUTPUT_MAX
   * @note   FLASH latency can be modified through this function.
   * @param  HSEFrequency Value between Min_Data = 4000000 and Max_Data = 32000000
   * @param  HSEBypass This parameter can be one of the following values:
@@ -379,7 +378,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSE(uint32_t HSEFrequency, uint32_t HSEBypa
 #if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
       LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE, UTILS_PLLInitStruct->PLLMul, UTILS_PLLInitStruct->PLLDiv);
 #else
-      LL_RCC_PLL_ConfigDomain_SYS((RCC_CFGR_PLLSRC_HSE_PREDIV | UTILS_PLLInitStruct->Prediv), UTILS_PLLInitStruct->PLLMul);
+    LL_RCC_PLL_ConfigDomain_SYS((RCC_CFGR_PLLSRC_HSE_PREDIV | UTILS_PLLInitStruct->Prediv), UTILS_PLLInitStruct->PLLMul);
 #endif /*RCC_PLLSRC_PREDIV1_SUPPORT*/
 
     /* Enable PLL and switch system clock to PLL */
@@ -413,6 +412,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSE(uint32_t HSEFrequency, uint32_t HSEBypa
   *          - SUCCESS: Latency has been modified
   *          - ERROR: Latency cannot be modified
   */
+#if defined(FLASH_ACR_LATENCY)
 static ErrorStatus UTILS_SetFlashLatency(uint32_t Frequency)
 {
   ErrorStatus status = SUCCESS;
@@ -452,6 +452,7 @@ static ErrorStatus UTILS_SetFlashLatency(uint32_t Frequency)
   }
   return status;
 }
+#endif /* FLASH_ACR_LATENCY */
 
 /**
   * @brief  Function to check that PLL can be modified
@@ -469,7 +470,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTIL
 
   /* Check different PLL parameters according to RM                          */
   /* The application software must set correctly the PLL multiplication factor to
-     not exceed 72MHz */
+     not exceed @ref UTILS_PLL_OUTPUT_MAX */
 #if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
   pllfreq = __LL_RCC_CALC_PLLCLK_FREQ(PLL_InputFrequency, UTILS_PLLInitStruct->PLLMul, UTILS_PLLInitStruct->PLLDiv);
 #else
@@ -497,7 +498,6 @@ static ErrorStatus UTILS_PLL_IsBusy(void)
     status = ERROR;
   }
 
-
   return status;
 }
 
@@ -520,7 +520,7 @@ static ErrorStatus UTILS_EnablePLLAndSwitchSystem(uint32_t SYSCLK_Frequency, LL_
   assert_param(IS_LL_UTILS_APB2_DIV(UTILS_ClkInitStruct->APB2CLKDivider));
 
   /* Calculate current SYSCLK frequency */
-  sysclk_frequency_current = (SystemCoreClock << AHBPrescTable[(UTILS_ClkInitStruct->AHBCLKDivider & RCC_CFGR_HPRE) >>  RCC_POSITION_HPRE]);
+  sysclk_frequency_current = (SystemCoreClock << AHBPrescTable[LL_RCC_GetAHBPrescaler() >> RCC_POSITION_HPRE]);
 
   /* Increasing the number of wait states because of higher CPU frequency */
   if (sysclk_frequency_current < SYSCLK_Frequency)

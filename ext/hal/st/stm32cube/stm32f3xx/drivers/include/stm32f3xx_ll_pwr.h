@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_pwr.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of PWR LL module.
   ******************************************************************************
   * @attention
@@ -102,7 +100,7 @@ extern "C" {
   * @{
   */
 #define LL_PWR_MODE_STOP_MAINREGU             0x00000000U                    /*!< Enter Stop mode when the CPU enters deepsleep */
-#define LL_PWR_MODE_STOP_LPREGU               (PWR_CR_LPDS)                  /*!< Enter Stop mode (ith low power regulator ON) when the CPU enters deepsleep */
+#define LL_PWR_MODE_STOP_LPREGU               (PWR_CR_LPDS)                  /*!< Enter Stop mode (with low power Regulator ON) when the CPU enters deepsleep */
 #define LL_PWR_MODE_STANDBY                   (PWR_CR_PDDS)                  /*!< Enter Standby mode when the CPU enters deepsleep */
 /**
   * @}
@@ -112,8 +110,8 @@ extern "C" {
 /** @defgroup PWR_LL_EC_REGU_MODE_DS_MODE  Regulator Mode In Deep Sleep Mode
  * @{
  */
-#define LL_PWR_REGU_DSMODE_MAIN        0x00000000U           /*!< Voltage regulator in main mode during deepsleep mode */
-#define LL_PWR_REGU_DSMODE_LOW_POWER   (PWR_CR_LPDS)         /*!< Voltage regulator in low-power mode during deepsleep mode */
+#define LL_PWR_REGU_DSMODE_MAIN        0x00000000U           /*!< Voltage Regulator in main mode during deepsleep mode */
+#define LL_PWR_REGU_DSMODE_LOW_POWER   (PWR_CR_LPDS)         /*!< Voltage Regulator in low-power mode during deepsleep mode */
 /**
   * @}
   */
@@ -286,7 +284,7 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledBkUpAccess(void)
 
 #if defined(PWR_CR_LPDS)
 /**
-  * @brief  Set voltage regulator mode during deep sleep mode
+  * @brief  Set voltage Regulator mode during deep sleep mode
   * @rmtoll CR    LPDS         LL_PWR_SetRegulModeDS
   * @param  RegulMode This parameter can be one of the following values:
   *         @arg @ref LL_PWR_REGU_DSMODE_MAIN
@@ -299,7 +297,7 @@ __STATIC_INLINE void LL_PWR_SetRegulModeDS(uint32_t RegulMode)
 }
 
 /**
-  * @brief  Get voltage regulator mode during deep sleep mode
+  * @brief  Get voltage Regulator mode during deep sleep mode
   * @rmtoll CR    LPDS         LL_PWR_GetRegulModeDS
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_REGU_DSMODE_MAIN
@@ -312,7 +310,7 @@ __STATIC_INLINE uint32_t LL_PWR_GetRegulModeDS(void)
 #endif /* PWR_CR_LPDS */
 
 /**
-  * @brief  Set power down mode when CPU enters deepsleep
+  * @brief  Set Power Down mode when CPU enters deepsleep
   * @rmtoll CR    PDDS         LL_PWR_SetPowerMode\n
   * @rmtoll CR    LPDS         LL_PWR_SetPowerMode
   * @param  PDMode This parameter can be one of the following values:
@@ -327,7 +325,7 @@ __STATIC_INLINE void LL_PWR_SetPowerMode(uint32_t PDMode)
 }
 
 /**
-  * @brief  Get power down mode when CPU enters deepsleep
+  * @brief  Get Power Down mode when CPU enters deepsleep
   * @rmtoll CR    PDDS         LL_PWR_GetPowerMode\n
   * @rmtoll CR    LPDS         LL_PWR_GetPowerMode
   * @retval Returned value can be one of the following values:
@@ -534,6 +532,11 @@ __STATIC_INLINE void LL_PWR_ClearFlag_WU(void)
 {
   SET_BIT(PWR->CR, PWR_CR_CWUF);
 }
+
+/**
+  * @}
+  */
+
 #if defined(USE_FULL_LL_DRIVER)
 /** @defgroup PWR_LL_EF_Init De-initialization function
   * @{
@@ -543,10 +546,6 @@ ErrorStatus LL_PWR_DeInit(void);
   * @}
   */
 #endif /* USE_FULL_LL_DRIVER */
-
-/**
-  * @}
-  */
 
 /**
   * @}

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_sdadc.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   This file contains all the functions prototypes for the SDADC
   *          firmware library.
   ******************************************************************************
@@ -382,8 +380,8 @@ typedef struct
 /* final user.                                                                */
 
 /** @brief Enable the ADC end of conversion interrupt.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC Interrupt
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC Interrupt
   *          This parameter can be any combination of the following values:
   *            @arg SDADC_IT_EOCAL: End of calibration interrupt enable
   *            @arg SDADC_IT_JEOC: Injected end of conversion interrupt enable
@@ -396,8 +394,8 @@ typedef struct
   (SET_BIT((__HANDLE__)->Instance->CR1, (__INTERRUPT__)))
 
 /** @brief Disable the ADC end of conversion interrupt.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC Interrupt
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC Interrupt
   *          This parameter can be any combination of the following values:
   *            @arg SDADC_IT_EOCAL: End of calibration interrupt enable
   *            @arg SDADC_IT_JEOC: Injected end of conversion interrupt enable
@@ -410,8 +408,8 @@ typedef struct
   (CLEAR_BIT((__HANDLE__)->Instance->CR1, (__INTERRUPT__)))
 
 /** @brief  Checks if the specified ADC interrupt source is enabled or disabled.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC interrupt source to check
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC interrupt source to check
   *          This parameter can be any combination of the following values:
   *            @arg SDADC_IT_EOCAL: End of calibration interrupt enable
   *            @arg SDADC_IT_JEOC: Injected end of conversion interrupt enable
@@ -424,8 +422,8 @@ typedef struct
   (((__HANDLE__)->Instance->CR1 & (__INTERRUPT__)) == (__INTERRUPT__))
 
 /** @brief Get the selected ADC's flag status.
-  * @param __HANDLE__: ADC handle
-  * @param __FLAG__: ADC flag
+  * @param __HANDLE__ ADC handle
+  * @param __FLAG__ ADC flag
   *          This parameter can be any combination of the following values:
   *            @arg SDADC_FLAG_EOCAL: End of calibration flag
   *            @arg SDADC_FLAG_JEOC: End of injected conversion flag
@@ -438,8 +436,8 @@ typedef struct
   ((((__HANDLE__)->Instance->ISR) & (__FLAG__)) == (__FLAG__))
 
 /** @brief Clear the ADC's pending flags
-  * @param __HANDLE__: ADC handle
-  * @param __FLAG__: ADC flag
+  * @param __HANDLE__ ADC handle
+  * @param __FLAG__ ADC flag
   *          This parameter can be any combination of the following values:
   *            @arg SDADC_FLAG_EOCAL: End of calibration flag
   *            @arg SDADC_FLAG_JEOC: End of injected conversion flag
@@ -452,7 +450,7 @@ typedef struct
   (CLEAR_BIT((__HANDLE__)->Instance->ISR, (__FLAG__)))
 
 /** @brief  Reset SDADC handle state
-  * @param  __HANDLE__: SDADC handle.
+  * @param  __HANDLE__ SDADC handle.
   * @retval None
   */
 #define __HAL_SDADC_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SDADC_STATE_RESET)

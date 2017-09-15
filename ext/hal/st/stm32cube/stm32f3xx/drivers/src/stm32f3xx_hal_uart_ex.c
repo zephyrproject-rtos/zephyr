@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_uart_ex.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Extended UART HAL module driver.
   *          This file provides firmware functions to manage the following extended
   *          functionalities of the Universal Asynchronous Receiver Transmitter Peripheral (UART).
@@ -153,16 +151,16 @@
 /**
   * @brief Initialize the RS485 Driver enable feature according to the specified
   *         parameters in the UART_InitTypeDef and creates the associated handle.
-  * @param huart: UART handle.
-  * @param Polarity: select the driver enable polarity.
+  * @param huart UART handle.
+  * @param Polarity select the driver enable polarity.
   *        This parameter can be one of the following values:
   *          @arg @ref UART_DE_POLARITY_HIGH DE signal is active high
   *          @arg @ref UART_DE_POLARITY_LOW  DE signal is active low
-  * @param AssertionTime: Driver Enable assertion time:
+  * @param AssertionTime Driver Enable assertion time:
   *                         5-bit value defining the time between the activation of the DE (Driver Enable)
   *                         signal and the beginning of the start bit. It is expressed in sample time
   *                         units (1/8 or 1/16 bit time, depending on the oversampling rate)
-  * @param DeassertionTime: Driver Enable deassertion time:
+  * @param DeassertionTime Driver Enable deassertion time:
   *                         5-bit value defining the time between the end of the last stop bit, in a
   *                         transmitted message, and the de-activation of the DE (Driver Enable) signal.
   *                         It is expressed in sample time units (1/8 or 1/16 bit time, depending on the
@@ -259,7 +257,7 @@ HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity,
 
 /**
   * @brief  UART wakeup from Stop mode callback.
-  * @param  huart: UART handle.
+  * @param  huart UART handle.
   * @retval None
   */
 __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
@@ -298,8 +296,8 @@ __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
 
 /**
   * @brief Set Wakeup from Stop mode interrupt flag selection.
-  * @param huart: UART handle.
-  * @param WakeUpSelection: address match, Start Bit detection or RXNE bit status.
+  * @param huart UART handle.
+  * @param WakeUpSelection address match, Start Bit detection or RXNE bit status.
   * This parameter can be one of the following values:
   *      @arg @ref UART_WAKEUP_ON_ADDRESS
   *      @arg @ref UART_WAKEUP_ON_STARTBIT
@@ -359,7 +357,7 @@ HAL_StatusTypeDef HAL_UARTEx_StopModeWakeUpSourceConfig(UART_HandleTypeDef *huar
 /**
   * @brief Enable UART Stop Mode.
   * @note  The UART is able to wake up the MCU from Stop mode as long as UART clock is HSI or LSE.
-  * @param huart: UART handle.
+  * @param huart UART handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_UARTEx_EnableStopMode(UART_HandleTypeDef *huart)
@@ -385,7 +383,7 @@ HAL_StatusTypeDef HAL_UARTEx_EnableStopMode(UART_HandleTypeDef *huart)
 
 /**
   * @brief Disable UART Stop Mode.
-  * @param huart: UART handle.
+  * @param huart UART handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_UARTEx_DisableStopMode(UART_HandleTypeDef *huart)
@@ -416,8 +414,8 @@ HAL_StatusTypeDef HAL_UARTEx_DisableStopMode(UART_HandleTypeDef *huart)
   *        long).
   * @note  Addresses detection lengths are: 6-bit address detection in 7-bit data mode,
   *        7-bit address detection in 8-bit data mode, 8-bit address detection in 9-bit data mode.
-  * @param huart: UART handle.
-  * @param AddressLength: this parameter can be one of the following values:
+  * @param huart UART handle.
+  * @param AddressLength this parameter can be one of the following values:
   *          @arg @ref UART_ADDRESS_DETECT_4B 4-bit long address
   *          @arg @ref UART_ADDRESS_DETECT_7B 6-, 7- or 8-bit long address
   * @retval HAL status

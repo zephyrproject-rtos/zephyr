@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_wwdg.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of WWDG LL module.
   ******************************************************************************
   * @attention
@@ -82,7 +80,7 @@ extern "C" {
 /** @defgroup WWDG_LL_EC_PRESCALER  PRESCALER
 * @{
 */
-#define LL_WWDG_PRESCALER_1                (uint32_t)0x00000000U                                   /*!< WWDG counter clock = (PCLK1/4096)/1 */
+#define LL_WWDG_PRESCALER_1                0x00000000U                                             /*!< WWDG counter clock = (PCLK1/4096)/1 */
 #define LL_WWDG_PRESCALER_2                WWDG_CFR_WDGTB_0                                        /*!< WWDG counter clock = (PCLK1/4096)/2 */
 #define LL_WWDG_PRESCALER_4                WWDG_CFR_WDGTB_1                                        /*!< WWDG counter clock = (PCLK1/4096)/4 */
 #define LL_WWDG_PRESCALER_8                (WWDG_CFR_WDGTB_0 | WWDG_CFR_WDGTB_1)                   /*!< WWDG counter clock = (PCLK1/4096)/8 */

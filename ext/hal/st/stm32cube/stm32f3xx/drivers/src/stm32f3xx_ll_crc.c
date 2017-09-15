@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_crc.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   CRC LL module driver.
   ******************************************************************************
   * @attention
@@ -134,3 +132,4 @@ ErrorStatus LL_CRC_DeInit(CRC_TypeDef *CRCx)
 #endif /* USE_FULL_LL_DRIVER */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

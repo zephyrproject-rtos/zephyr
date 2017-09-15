@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_hrtim.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   HRTIM LL module driver.
   ******************************************************************************
   * @attention

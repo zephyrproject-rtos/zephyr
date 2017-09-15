@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_pccard.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of PCCARD HAL module.
   ******************************************************************************
   * @attention
@@ -175,7 +173,7 @@ typedef struct
   */
 
 /** @brief Reset PCCARD handle state
-  * @param  __HANDLE__: specifies the PCCARD handle.
+  * @param  __HANDLE__ specifies the PCCARD handle.
   * @retval None
   */
 #define __HAL_PCCARD_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_PCCARD_STATE_RESET)

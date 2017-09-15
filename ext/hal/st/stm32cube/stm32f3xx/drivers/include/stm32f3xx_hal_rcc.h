@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_rcc.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of RCC HAL module.
   ******************************************************************************
   * @attention
@@ -1755,3 +1753,4 @@ void              HAL_RCC_GetClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct,
 #endif /* __STM32F3xx_HAL_RCC_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

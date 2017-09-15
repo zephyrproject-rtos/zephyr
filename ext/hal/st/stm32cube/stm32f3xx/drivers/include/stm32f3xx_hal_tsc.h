@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_tsc.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of TSC HAL module.
   ******************************************************************************
   * @attention
@@ -369,189 +367,189 @@ typedef struct
  */
 
 /** @brief Reset TSC handle state.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_TSC_STATE_RESET)
 
 /**
   * @brief Enable the TSC peripheral.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR |= TSC_CR_TSCE)
 
 /**
   * @brief Disable the TSC peripheral.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR &= (uint32_t)(~TSC_CR_TSCE))
 
 /**
   * @brief Start acquisition.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_START_ACQ(__HANDLE__) ((__HANDLE__)->Instance->CR |= TSC_CR_START)
 
 /**
   * @brief Stop acquisition.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_STOP_ACQ(__HANDLE__) ((__HANDLE__)->Instance->CR &= (uint32_t)(~TSC_CR_START))
 
 /**
   * @brief Set IO default mode to output push-pull low.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_SET_IODEF_OUTPPLOW(__HANDLE__) ((__HANDLE__)->Instance->CR &= (uint32_t)(~TSC_CR_IODEF))
 
 /**
   * @brief Set IO default mode to input floating.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_SET_IODEF_INFLOAT(__HANDLE__) ((__HANDLE__)->Instance->CR |= TSC_CR_IODEF)
 
 /**
   * @brief Set synchronization polarity to falling edge.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_SET_SYNC_POL_FALL(__HANDLE__) ((__HANDLE__)->Instance->CR &= (uint32_t)(~TSC_CR_SYNCPOL))
 
 /**
   * @brief Set synchronization polarity to rising edge and high level.
-  * @param  __HANDLE__: TSC handle
+  * @param  __HANDLE__ TSC handle
   * @retval None
   */
 #define __HAL_TSC_SET_SYNC_POL_RISE_HIGH(__HANDLE__) ((__HANDLE__)->Instance->CR |= TSC_CR_SYNCPOL)
 
 /**
   * @brief Enable TSC interrupt.
-  * @param  __HANDLE__: TSC handle
-  * @param  __INTERRUPT__: TSC interrupt
+  * @param  __HANDLE__ TSC handle
+  * @param  __INTERRUPT__ TSC interrupt
   * @retval None
   */
 #define __HAL_TSC_ENABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->IER |= (__INTERRUPT__))
 
 /**
   * @brief Disable TSC interrupt.
-  * @param  __HANDLE__: TSC handle
-  * @param  __INTERRUPT__: TSC interrupt
+  * @param  __HANDLE__ TSC handle
+  * @param  __INTERRUPT__ TSC interrupt
   * @retval None
   */
 #define __HAL_TSC_DISABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->IER &= (uint32_t)(~(__INTERRUPT__)))
 
 /** @brief Check whether the specified TSC interrupt source is enabled or not.
-  * @param  __HANDLE__: TSC Handle
-  * @param  __INTERRUPT__: TSC interrupt
+  * @param  __HANDLE__ TSC Handle
+  * @param  __INTERRUPT__ TSC interrupt
   * @retval SET or RESET
   */
 #define __HAL_TSC_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->IER & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /**
   * @brief Check whether the specified TSC flag is set or not.
-  * @param  __HANDLE__: TSC handle
-  * @param  __FLAG__: TSC flag
+  * @param  __HANDLE__ TSC handle
+  * @param  __FLAG__ TSC flag
   * @retval SET or RESET
   */
 #define __HAL_TSC_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->ISR & (__FLAG__)) == (__FLAG__)) ? SET : RESET)
 
 /**
   * @brief Clear the TSC's pending flag.
-  * @param  __HANDLE__: TSC handle
-  * @param  __FLAG__: TSC flag
+  * @param  __HANDLE__ TSC handle
+  * @param  __FLAG__ TSC flag
   * @retval None
   */
 #define __HAL_TSC_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->ICR = (__FLAG__))
 
 /**
   * @brief Enable schmitt trigger hysteresis on a group of IOs.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_ENABLE_HYSTERESIS(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOHCR |= (__GX_IOY_MASK__))
 
 /**
   * @brief Disable schmitt trigger hysteresis on a group of IOs.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_DISABLE_HYSTERESIS(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOHCR &= (uint32_t)(~(__GX_IOY_MASK__)))
 
 /**
   * @brief Open analog switch on a group of IOs.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_OPEN_ANALOG_SWITCH(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOASCR &= (uint32_t)(~(__GX_IOY_MASK__)))
 
 /**
   * @brief Close analog switch on a group of IOs.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_CLOSE_ANALOG_SWITCH(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOASCR |= (__GX_IOY_MASK__))
 
 /**
   * @brief Enable a group of IOs in channel mode.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_ENABLE_CHANNEL(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOCCR |= (__GX_IOY_MASK__))
 
 /**
   * @brief Disable a group of channel IOs.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_DISABLE_CHANNEL(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOCCR &= (uint32_t)(~(__GX_IOY_MASK__)))
 
 /**
   * @brief Enable a group of IOs in sampling mode.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_ENABLE_SAMPLING(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOSCR |= (__GX_IOY_MASK__))
 
 /**
   * @brief Disable a group of sampling IOs.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_IOY_MASK__: IOs mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_IOY_MASK__ IOs mask
   * @retval None
   */
 #define __HAL_TSC_DISABLE_SAMPLING(__HANDLE__, __GX_IOY_MASK__) ((__HANDLE__)->Instance->IOSCR &= (uint32_t)(~(__GX_IOY_MASK__)))
 
 /**
   * @brief Enable acquisition groups.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_MASK__: Groups mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_MASK__ Groups mask
   * @retval None
   */
 #define __HAL_TSC_ENABLE_GROUP(__HANDLE__, __GX_MASK__) ((__HANDLE__)->Instance->IOGCSR |= (__GX_MASK__))
 
 /**
   * @brief Disable acquisition groups.
-  * @param  __HANDLE__: TSC handle
-  * @param  __GX_MASK__: Groups mask
+  * @param  __HANDLE__ TSC handle
+  * @param  __GX_MASK__ Groups mask
   * @retval None
   */
 #define __HAL_TSC_DISABLE_GROUP(__HANDLE__, __GX_MASK__) ((__HANDLE__)->Instance->IOGCSR &= (uint32_t)(~(__GX_MASK__)))
 
 /** @brief Gets acquisition group status.
-  * @param  __HANDLE__: TSC Handle
-  * @param  __GX_INDEX__: Group index
+  * @param  __HANDLE__ TSC Handle
+  * @param  __GX_INDEX__ Group index
   * @retval SET or RESET
   */
 #define __HAL_TSC_GET_GROUP_STATUS(__HANDLE__, __GX_INDEX__) \
