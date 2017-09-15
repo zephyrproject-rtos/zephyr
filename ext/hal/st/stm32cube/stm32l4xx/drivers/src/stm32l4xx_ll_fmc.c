@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_fmc.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   FMC Low Layer HAL module driver.
   *
   *          This file provides firmware functions to manage the following
@@ -111,7 +109,17 @@
 
 /* --- BCR Register ---*/
 /* BCR register clear mask */
-#if defined(FMC_BCR1_WFDIS)
+#if defined(FMC_BCRx_NBLSET)
+#define BCR_CLEAR_MASK                  ((uint32_t)(FMC_BCRx_MBKEN   | FMC_BCRx_MUXEN     |\
+                                                    FMC_BCRx_MTYP    | FMC_BCRx_MWID      |\
+                                                    FMC_BCRx_FACCEN  | FMC_BCRx_BURSTEN   |\
+                                                    FMC_BCRx_WAITPOL | FMC_BCRx_WAITCFG   |\
+                                                    FMC_BCRx_WREN    | FMC_BCRx_WAITEN    |\
+                                                    FMC_BCRx_EXTMOD  | FMC_BCRx_ASYNCWAIT |\
+                                                    FMC_BCRx_CPSIZE  | FMC_BCRx_CBURSTRW  |\
+                                                    FMC_BCR1_CCLKEN  | FMC_BCR1_WFDIS     |\
+                                                    FMC_BCRx_NBLSET))
+#elif defined(FMC_BCR1_WFDIS)
 #define BCR_CLEAR_MASK                  ((uint32_t)(FMC_BCRx_MBKEN   | FMC_BCRx_MUXEN     |\
                                                     FMC_BCRx_MTYP    | FMC_BCRx_MWID      |\
                                                     FMC_BCRx_FACCEN  | FMC_BCRx_BURSTEN   |\
@@ -133,16 +141,29 @@
 
 /* --- BTR Register ---*/
 /* BTR register clear mask */
-#define BTR_CLEAR_MASK                 ((uint32_t)(FMC_BTRx_ADDSET | FMC_BTRx_ADDHLD  |\
-                                                   FMC_BTRx_DATAST | FMC_BTRx_BUSTURN |\
-                                                   FMC_BTRx_CLKDIV | FMC_BTRx_DATLAT  |\
-                                                   FMC_BTRx_ACCMOD))
+#if defined(FMC_BTRx_DATAHLD)
+#define BTR_CLEAR_MASK                  ((uint32_t)(FMC_BTRx_ADDSET | FMC_BTRx_ADDHLD  |\
+                                                    FMC_BTRx_DATAST | FMC_BTRx_BUSTURN |\
+                                                    FMC_BTRx_CLKDIV | FMC_BTRx_DATLAT  |\
+                                                    FMC_BTRx_ACCMOD | FMC_BTRx_DATAHLD))
+#else
+#define BTR_CLEAR_MASK                  ((uint32_t)(FMC_BTRx_ADDSET | FMC_BTRx_ADDHLD  |\
+                                                    FMC_BTRx_DATAST | FMC_BTRx_BUSTURN |\
+                                                    FMC_BTRx_CLKDIV | FMC_BTRx_DATLAT  |\
+                                                    FMC_BTRx_ACCMOD))
+#endif /* FMC_BTRx_DATAHLD */
 
 /* --- BWTR Register ---*/
 /* BWTR register clear mask */
-#define BWTR_CLEAR_MASK                ((uint32_t)(FMC_BWTRx_ADDSET | FMC_BWTRx_ADDHLD | \
-                                                   FMC_BWTRx_DATAST | FMC_BWTRx_ACCMOD | \
-                                                   FMC_BWTRx_BUSTURN))
+#if defined(FMC_BWTRx_DATAHLD)
+#define BWTR_CLEAR_MASK                ((uint32_t)(FMC_BWTRx_ADDSET | FMC_BWTRx_ADDHLD  |\
+                                                   FMC_BWTRx_DATAST | FMC_BWTRx_BUSTURN |\
+                                                   FMC_BWTRx_ACCMOD | FMC_BWTRx_DATAHLD))
+#else
+#define BWTR_CLEAR_MASK                ((uint32_t)(FMC_BWTRx_ADDSET | FMC_BWTRx_ADDHLD  |\
+                                                   FMC_BWTRx_DATAST | FMC_BWTRx_BUSTURN |\
+                                                   FMC_BWTRx_ACCMOD))
+#endif /* FMC_BWTRx_DATAHLD */
 
 /**
   * @}
@@ -234,6 +255,9 @@ HAL_StatusTypeDef  FMC_NORSRAM_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_Ini
 #if defined(FMC_BCR1_WFDIS)
   assert_param(IS_FMC_WRITE_FIFO(Init->WriteFifo));
 #endif /* FMC_BCR1_WFDIS */
+#if defined(FMC_BCRx_NBLSET)
+  assert_param(IS_FMC_NBLSETUP_TIME(Init->NBLSetupTime));
+#endif /* FMC_BCRx_NBLSET */
   assert_param(IS_FMC_PAGESIZE(Init->PageSize));
 
   /* Disable NORSRAM Device */
@@ -258,6 +282,9 @@ HAL_StatusTypeDef  FMC_NORSRAM_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_Ini
 #if defined(FMC_BCR1_WFDIS)
                | Init->WriteFifo
 #endif /* FMC_BCR1_WFDIS */
+#if defined(FMC_BCRx_NBLSET)
+               | Init->NBLSetupTime << POSITION_VAL(FMC_BCRx_NBLSET)
+#endif /* FMC_BCRx_NBLSET */
                | Init->PageSize
                                                                      )
               );
@@ -280,6 +307,9 @@ HAL_StatusTypeDef  FMC_NORSRAM_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_Ini
 #if defined(FMC_BCR1_WFDIS)
                | Init->WriteFifo
 #endif /* FMC_BCR1_WFDIS */
+#if defined(FMC_BCRx_NBLSET)
+               | Init->NBLSetupTime << POSITION_VAL(FMC_BCRx_NBLSET)
+#endif /* FMC_BCRx_NBLSET */
                | Init->PageSize
                                                                      )
               );
@@ -297,8 +327,8 @@ HAL_StatusTypeDef  FMC_NORSRAM_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSRAM_Ini
     /* Configure Write FIFO mode when Write Fifo is enabled for bank2..4 */
     SET_BIT(Device->BTCR[FMC_NORSRAM_BANK1], (uint32_t)(Init->WriteFifo));
   }
-
 #endif /* FMC_BCR1_WFDIS */
+
   return HAL_OK;
 }
 
@@ -356,6 +386,9 @@ HAL_StatusTypeDef FMC_NORSRAM_Timing_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSR
   assert_param(IS_FMC_ADDRESS_SETUP_TIME(Timing->AddressSetupTime));
   assert_param(IS_FMC_ADDRESS_HOLD_TIME(Timing->AddressHoldTime));
   assert_param(IS_FMC_DATASETUP_TIME(Timing->DataSetupTime));
+#if defined(FMC_BTRx_DATAHLD)
+  assert_param(IS_FMC_DATAHOLD_TIME(Timing->DataHoldTime));
+#endif /* FMC_BTRx_DATAHLD */
   assert_param(IS_FMC_TURNAROUND_TIME(Timing->BusTurnAroundDuration));
   assert_param(IS_FMC_CLK_DIV(Timing->CLKDivision));
   assert_param(IS_FMC_DATA_LATENCY(Timing->DataLatency));
@@ -363,14 +396,17 @@ HAL_StatusTypeDef FMC_NORSRAM_Timing_Init(FMC_NORSRAM_TypeDef *Device, FMC_NORSR
   assert_param(IS_FMC_NORSRAM_BANK(Bank));
 
   /* Set FMC_NORSRAM device timing parameters */
-  MODIFY_REG(Device->BTCR[Bank + 1],                                                    \
-             BTR_CLEAR_MASK,                                                                     \
-             (uint32_t)(Timing->AddressSetupTime                                               | \
-                        ((Timing->AddressHoldTime)        << POSITION_VAL(FMC_BTRx_ADDHLD))        | \
-                        ((Timing->DataSetupTime)          << POSITION_VAL(FMC_BTRx_DATAST))        | \
-                        ((Timing->BusTurnAroundDuration)  << POSITION_VAL(FMC_BTRx_BUSTURN))       | \
-                        (((Timing->CLKDivision) - 1)        << POSITION_VAL(FMC_BTRx_CLKDIV))        | \
-                        (((Timing->DataLatency) - 2)        << POSITION_VAL(FMC_BTRx_DATLAT))        | \
+  MODIFY_REG(Device->BTCR[Bank + 1],
+             BTR_CLEAR_MASK,
+             (uint32_t)(Timing->AddressSetupTime                                                   |
+                        ((Timing->AddressHoldTime)        << POSITION_VAL(FMC_BTRx_ADDHLD))        |
+                        ((Timing->DataSetupTime)          << POSITION_VAL(FMC_BTRx_DATAST))        |
+#if defined(FMC_BTRx_DATAHLD)
+                        ((Timing->DataHoldTime)           << POSITION_VAL(FMC_BTRx_DATAHLD))       |
+#endif /* FMC_BTRx_DATAHLD */
+                        ((Timing->BusTurnAroundDuration)  << POSITION_VAL(FMC_BTRx_BUSTURN))       |
+                        (((Timing->CLKDivision) - 1)      << POSITION_VAL(FMC_BTRx_CLKDIV))        |
+                        (((Timing->DataLatency) - 2)      << POSITION_VAL(FMC_BTRx_DATLAT))        |
                         (Timing->AccessMode)));
 
   /* Configure Clock division value (in NORSRAM bank 1) when continuous clock is enabled */
@@ -408,18 +444,24 @@ HAL_StatusTypeDef  FMC_NORSRAM_Extended_Timing_Init(FMC_NORSRAM_EXTENDED_TypeDef
     assert_param(IS_FMC_NORSRAM_EXTENDED_DEVICE(Device));
     assert_param(IS_FMC_ADDRESS_SETUP_TIME(Timing->AddressSetupTime));
     assert_param(IS_FMC_ADDRESS_HOLD_TIME(Timing->AddressHoldTime));
+#if defined(FMC_BTRx_DATAHLD)
+    assert_param(IS_FMC_DATAHOLD_TIME(Timing->DataHoldTime));
+#endif /* FMC_BTRx_DATAHLD */
     assert_param(IS_FMC_DATASETUP_TIME(Timing->DataSetupTime));
     assert_param(IS_FMC_TURNAROUND_TIME(Timing->BusTurnAroundDuration));
     assert_param(IS_FMC_ACCESS_MODE(Timing->AccessMode));
     assert_param(IS_FMC_NORSRAM_BANK(Bank));
 
     /* Set NORSRAM device timing register for write configuration, if extended mode is used */
-    MODIFY_REG(Device->BWTR[Bank],                                                  \
-               BWTR_CLEAR_MASK,                                                              \
-               (uint32_t)(Timing->AddressSetupTime                                         | \
-                          ((Timing->AddressHoldTime)        << POSITION_VAL(FMC_BWTRx_ADDHLD)) | \
-                          ((Timing->DataSetupTime)          << POSITION_VAL(FMC_BWTRx_DATAST)) | \
-                          Timing->AccessMode                                                          | \
+    MODIFY_REG(Device->BWTR[Bank],
+               BWTR_CLEAR_MASK,
+               (uint32_t)(Timing->AddressSetupTime                                             |
+                          ((Timing->AddressHoldTime)        << POSITION_VAL(FMC_BWTRx_ADDHLD)) |
+                          ((Timing->DataSetupTime)          << POSITION_VAL(FMC_BWTRx_DATAST)) |
+#if defined(FMC_BTRx_DATAHLD)
+                          ((Timing->DataHoldTime)           << POSITION_VAL(FMC_BTRx_DATAHLD)) |
+#endif /* FMC_BTRx_DATAHLD */
+                          Timing->AccessMode                                                   |
                           ((Timing->BusTurnAroundDuration)  << POSITION_VAL(FMC_BWTRx_BUSTURN))));
   }
   else

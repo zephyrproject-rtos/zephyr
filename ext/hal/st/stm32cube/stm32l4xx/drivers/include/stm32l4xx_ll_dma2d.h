@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_dma2d.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of DMA2D LL module.
   ******************************************************************************
   * @attention
@@ -135,8 +133,23 @@ typedef struct
 
                                       This parameter can be modified afterwards using unitary function @ref LL_DMA2D_SetOutputMemAddr(). */
 
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+  uint32_t OutputSwapMode;             /*!< Specifies the output swap mode color format of the output image.
+                                      - This parameter can be one value of @ref DMA2D_LL_EC_OUTPUT_SWAP_MODE.
+
+                                      This parameter can be modified afterwards using unitary function @ref LL_DMA2D_SetOutputSwapMode(). */
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
+
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+  uint32_t LineOffsetMode;       /*!< Specifies the output line offset mode.
+                                      - This parameter can be one value of @ref DMA2D_LL_EC_LINE_OFFSET_MODE.
+
+                                      This parameter can be modified afterwards using unitary function @ref LL_DMA2D_SetLineOffsetMode(). */
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
+
   uint32_t LineOffset;           /*!< Specifies the output line offset value.
-                                      - This parameter must be a number between Min_Data = 0x0000 and Max_Data = 0x3FFF.
+                                      - This parameter must be a number between Min_Data = 0x0000 and Max_Data = 0x3FFF on STM32L496xx/STM32L4A6xx
+                                      else between Min_Data = 0x0000 and Max_Data = 0xFFFF on other devices.
 
                                       This parameter can be modified afterwards using unitary function @ref LL_DMA2D_SetLineOffset(). */
 
@@ -355,7 +368,11 @@ typedef struct
 #define LL_DMA2D_MODE_M2M                       0x00000000U                       /*!< DMA2D memory to memory transfer mode */
 #define LL_DMA2D_MODE_M2M_PFC                   DMA2D_CR_MODE_0                   /*!< DMA2D memory to memory with pixel format conversion transfer mode */
 #define LL_DMA2D_MODE_M2M_BLEND                 DMA2D_CR_MODE_1                   /*!< DMA2D memory to memory with blending transfer mode */
-#define LL_DMA2D_MODE_R2M                       DMA2D_CR_MODE                     /*!< DMA2D register to memory transfer mode */
+#define LL_DMA2D_MODE_R2M                       (DMA2D_CR_MODE_0|DMA2D_CR_MODE_1) /*!< DMA2D register to memory transfer mode */
+#if defined(DMA2D_M2M_BLEND_FIXED_COLOR_FG_BG_SUPPORT)
+#define LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_FG  DMA2D_CR_MODE_2                   /*!< DMA2D memory to memory with blending transfer mode and fixed color foreground */
+#define LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG  (DMA2D_CR_MODE_0|DMA2D_CR_MODE_2) /*!< DMA2D memory to memory with blending transfer mode and fixed color background */
+#endif /* DMA2D_M2M_BLEND_FIXED_COLOR_FG_BG_SUPPORT */
 /**
   * @}
   */
@@ -401,6 +418,17 @@ typedef struct
   * @}
   */
 
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+/** @defgroup DMA2D_LL_EC_OUTPUT_SWAP_MODE Swap Mode
+  * @{
+  */
+#define LL_DMA2D_SWAP_MODE_REGULAR        ((uint32_t)0x00000000)           /*!< Regular order */
+#define LL_DMA2D_SWAP_MODE_TWO_BY_TWO     DMA2D_OPFCCR_SB                  /*!< Bytes swapped two by two */
+/**
+  * @}
+  */
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
+
 /** @defgroup DMA2D_LL_EC_RED_BLUE_SWAP Red Blue Swap
   * @{
   */
@@ -418,6 +446,17 @@ typedef struct
 /**
   * @}
   */
+
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+/** @defgroup DMA2D_LL_EC_LINE_OFFSET_MODE Line Offset Mode
+  * @{
+  */
+#define LL_DMA2D_LINE_OFFSET_PIXELS     ((uint32_t)0x00000000)          /*!< Line offsets are expressed in pixels  */
+#define LL_DMA2D_LINE_OFFSET_BYTES      DMA2D_CR_LOM                    /*!< Line offsets are expressed in bytes   */
+/**
+  * @}
+  */
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
 
 /** @defgroup DMA2D_LL_EC_CLUT_COLOR_MODE CLUT Color Mode
   * @{
@@ -567,6 +606,10 @@ __STATIC_INLINE uint32_t LL_DMA2D_IsAborted(DMA2D_TypeDef *DMA2Dx)
   *         @arg @ref LL_DMA2D_MODE_M2M_PFC
   *         @arg @ref LL_DMA2D_MODE_M2M_BLEND
   *         @arg @ref LL_DMA2D_MODE_R2M
+  *         @arg @ref LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_FG (*)
+  *         @arg @ref LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG (*)
+  *
+  *         (*) value not defined in all devices.
   * @retval None
   */
 __STATIC_INLINE void LL_DMA2D_SetMode(DMA2D_TypeDef *DMA2Dx, uint32_t Mode)
@@ -583,6 +626,10 @@ __STATIC_INLINE void LL_DMA2D_SetMode(DMA2D_TypeDef *DMA2Dx, uint32_t Mode)
   *         @arg @ref LL_DMA2D_MODE_M2M_PFC
   *         @arg @ref LL_DMA2D_MODE_M2M_BLEND
   *         @arg @ref LL_DMA2D_MODE_R2M
+  *         @arg @ref LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_FG (*)
+  *         @arg @ref LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG (*)
+  *
+  *         (*) value not defined in all devices.
   */
 __STATIC_INLINE uint32_t LL_DMA2D_GetMode(DMA2D_TypeDef *DMA2Dx)
 {
@@ -676,11 +723,73 @@ __STATIC_INLINE uint32_t LL_DMA2D_GetOutputAlphaInvMode(DMA2D_TypeDef *DMA2Dx)
   return (uint32_t)(READ_BIT(DMA2Dx->OPFCCR, DMA2D_OPFCCR_AI));
 }
 
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+/**
+  * @brief  Set DMA2D output swap mode.
+  * @rmtoll OPFCCR          SB          LL_DMA2D_SetOutputSwapMode
+  * @param  DMA2Dx DMA2D Instance
+  * @param  OutputSwapMode This parameter can be one of the following values:
+  *         @arg @ref LL_DMA2D_SWAP_MODE_REGULAR
+  *         @arg @ref LL_DMA2D_SWAP_MODE_TWO_BY_TWO
+  * @retval None
+  */
+__STATIC_INLINE void LL_DMA2D_SetOutputSwapMode(DMA2D_TypeDef *DMA2Dx, uint32_t OutputSwapMode)
+{
+  MODIFY_REG(DMA2Dx->OPFCCR, DMA2D_OPFCCR_SB, OutputSwapMode);
+}
+
+/**
+  * @brief  Return DMA2D output swap mode.
+  * @rmtoll OPFCCR          SB         LL_DMA2D_GetOutputSwapMode
+  * @param  DMA2Dx DMA2D Instance
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref LL_DMA2D_SWAP_MODE_REGULAR
+  *         @arg @ref LL_DMA2D_SWAP_MODE_TWO_BY_TWO
+  */
+__STATIC_INLINE uint32_t LL_DMA2D_GetOutputSwapMode(DMA2D_TypeDef *DMA2Dx)
+{
+  return (uint32_t)(READ_BIT(DMA2Dx->OPFCCR, DMA2D_OPFCCR_SB));
+}
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
+
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+/**
+  * @brief  Set DMA2D line offset mode.
+  * @rmtoll CR          LOM          LL_DMA2D_SetLineOffsetMode
+  * @param  DMA2Dx DMA2D Instance
+  * @param  LineOffsetMode This parameter can be one of the following values:
+  *         @arg @ref LL_DMA2D_LINE_OFFSET_PIXELS
+  *         @arg @ref LL_DMA2D_LINE_OFFSET_BYTES
+  * @retval None
+  */
+__STATIC_INLINE void LL_DMA2D_SetLineOffsetMode(DMA2D_TypeDef *DMA2Dx, uint32_t LineOffsetMode)
+{
+  MODIFY_REG(DMA2Dx->CR, DMA2D_CR_LOM, LineOffsetMode);
+}
+
+/**
+  * @brief  Return DMA2D line offset mode.
+  * @rmtoll CR          LOM         LL_DMA2D_GetLineOffsetMode
+  * @param  DMA2Dx DMA2D Instance
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref LL_DMA2D_LINE_OFFSET_PIXELS
+  *         @arg @ref LL_DMA2D_LINE_OFFSET_BYTES
+  */
+__STATIC_INLINE uint32_t LL_DMA2D_GetLineOffsetMode(DMA2D_TypeDef *DMA2Dx)
+{
+  return (uint32_t)(READ_BIT(DMA2Dx->CR, DMA2D_CR_LOM));
+}
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
+
 /**
   * @brief  Set DMA2D line offset, expressed on 14 bits ([13:0] bits).
   * @rmtoll OOR          LO          LL_DMA2D_SetLineOffset
   * @param  DMA2Dx DMA2D Instance
+  @if DMA2D_LINE_OFFSET_MODE_SUPPORT
+  * @param  LineOffset Value between Min_Data=0 and Max_Data=0xFFFF
+  @else
   * @param  LineOffset Value between Min_Data=0 and Max_Data=0x3FFF
+  @endif
   * @retval None
   */
 __STATIC_INLINE void LL_DMA2D_SetLineOffset(DMA2D_TypeDef *DMA2Dx, uint32_t LineOffset)
@@ -692,7 +801,11 @@ __STATIC_INLINE void LL_DMA2D_SetLineOffset(DMA2D_TypeDef *DMA2Dx, uint32_t Line
   * @brief  Return DMA2D line offset, expressed on 14 bits ([13:0] bits).
   * @rmtoll OOR          LO         LL_DMA2D_GetLineOffset
   * @param  DMA2Dx DMA2D Instance
+  @if DMA2D_LINE_OFFSET_MODE_SUPPORT
+  * @retval Line offset value between Min_Data=0 and Max_Data=0xFFFF
+  @else
   * @retval Line offset value between Min_Data=0 and Max_Data=0x3FFF
+  @endif
   */
 __STATIC_INLINE uint32_t LL_DMA2D_GetLineOffset(DMA2D_TypeDef *DMA2Dx)
 {

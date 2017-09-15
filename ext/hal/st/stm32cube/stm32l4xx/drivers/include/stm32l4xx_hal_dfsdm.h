@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dfsdm.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of DFSDM HAL module.
   ******************************************************************************
   * @attention
@@ -45,7 +43,9 @@
 
 #if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
     defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx)
+    defined(STM32L496xx) || defined(STM32L4A6xx) || \
+    defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
 
@@ -91,7 +91,8 @@ typedef struct
 {
   uint32_t Multiplexer; /*!< Input is external serial inputs, internal register or ADC output.
                              ADC output is available only on STM32L451xx, STM32L452xx, STM32L462xx,
-                             STM32L496xx, STM32L4A6xx products.
+                             STM32L496xx, STM32L4A6xx, STM32L4R5xx, STM32L4R7xx, STM32L4R9xx,
+                             STM32L4S5xx, STM32L4S7xx and STM32L4S9xx products.
                              This parameter can be a value of @ref DFSDM_Channel_InputMultiplexer */
   uint32_t DataPacking; /*!< Standard, interleaved or dual mode for internal register.
                              This parameter can be a value of @ref DFSDM_Channel_DataPacking */
@@ -271,9 +272,10 @@ typedef struct
   */
 #define DFSDM_CHANNEL_EXTERNAL_INPUTS    ((uint32_t)0x00000000U) /*!< Data are taken from external inputs */
 #if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx)
+    defined(STM32L496xx) || defined(STM32L4A6xx) || \
+    defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 #define DFSDM_CHANNEL_ADC_OUTPUT         DFSDM_CHCFGR1_DATMPX_0  /*!< Data are taken from ADC output */
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L496xx || STM32L4A6xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L496xx || STM32L4A6xx || STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 #define DFSDM_CHANNEL_INTERNAL_REGISTER  DFSDM_CHCFGR1_DATMPX_1  /*!< Data are taken from internal register */
 /**
   * @}
@@ -352,6 +354,22 @@ typedef struct
 #define DFSDM_FILTER_EXT_TRIG_TIM6_TRGO  (DFSDM_FLTCR1_JEXTSEL_0 | DFSDM_FLTCR1_JEXTSEL_2) /*!< For DFSDM filter 0 and 1 */
 #define DFSDM_FILTER_EXT_TRIG_EXTI11     (DFSDM_FLTCR1_JEXTSEL_1 | DFSDM_FLTCR1_JEXTSEL_2) /*!< For DFSDM filter 0, 1, 2 and 3 */
 #define DFSDM_FILTER_EXT_TRIG_EXTI15     DFSDM_FLTCR1_JEXTSEL                              /*!< For DFSDM filter 0, 1, 2 and 3 */
+#elif defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+#define DFSDM_FILTER_EXT_TRIG_TIM1_TRGO  ((uint32_t)0x00000000U)                           /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM1_TRGO2 DFSDM_FLTCR1_JEXTSEL_0                            /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM8_TRGO  DFSDM_FLTCR1_JEXTSEL_1                            /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM8_TRGO2 (DFSDM_FLTCR1_JEXTSEL_0 | DFSDM_FLTCR1_JEXTSEL_1) /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM3_TRGO  DFSDM_FLTCR1_JEXTSEL_2                            /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM4_TRGO  (DFSDM_FLTCR1_JEXTSEL_0 | DFSDM_FLTCR1_JEXTSEL_2) /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM16_OC1  (DFSDM_FLTCR1_JEXTSEL_1 | DFSDM_FLTCR1_JEXTSEL_2) /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM6_TRGO  (DFSDM_FLTCR1_JEXTSEL_0 | DFSDM_FLTCR1_JEXTSEL_1 | \
+                                          DFSDM_FLTCR1_JEXTSEL_2)                          /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_TIM7_TRGO  DFSDM_FLTCR1_JEXTSEL_3                            /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_EXTI11     (DFSDM_FLTCR1_JEXTSEL_3 | DFSDM_FLTCR1_JEXTSEL_4) /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_EXTI15     (DFSDM_FLTCR1_JEXTSEL_0 | DFSDM_FLTCR1_JEXTSEL_3 | \
+                                          DFSDM_FLTCR1_JEXTSEL_4)                          /*!< For all DFSDM filters */
+#define DFSDM_FILTER_EXT_TRIG_LPTIM1_OUT (DFSDM_FLTCR1_JEXTSEL_1 | DFSDM_FLTCR1_JEXTSEL_3 | \
+                                          DFSDM_FLTCR1_JEXTSEL_4)                          /*!< For all DFSDM filters */
 #else
 #define DFSDM_FILTER_EXT_TRIG_TIM1_TRGO  ((uint32_t)0x00000000U)                           /*!< For DFSDM filter 0, 1, 2 and 3 */
 #define DFSDM_FILTER_EXT_TRIG_TIM1_TRGO2 DFSDM_FLTCR1_JEXTSEL_0                            /*!< For DFSDM filter 0, 1, 2 and 3 */
@@ -440,7 +458,7 @@ typedef struct
 #define DFSDM_CHANNEL_1                              ((uint32_t)0x00010002U)
 #define DFSDM_CHANNEL_2                              ((uint32_t)0x00020004U)
 #define DFSDM_CHANNEL_3                              ((uint32_t)0x00030008U)
-#else /* STM32L451xx || STM32L452xx || STM32L462xx */
+#else
 #define DFSDM_CHANNEL_0                              ((uint32_t)0x00000001U)
 #define DFSDM_CHANNEL_1                              ((uint32_t)0x00010002U)
 #define DFSDM_CHANNEL_2                              ((uint32_t)0x00020004U)
@@ -498,6 +516,11 @@ typedef struct
   * @}
   */
 /* End of exported macros ----------------------------------------------------*/
+
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+/* Include DFSDM HAL Extension module */
+#include "stm32l4xx_hal_dfsdm_ex.h"
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup DFSDM_Exported_Functions DFSDM Exported Functions
@@ -644,14 +667,17 @@ uint32_t                      HAL_DFSDM_FilterGetError(DFSDM_Filter_HandleTypeDe
                                                        ((CLOCK) == DFSDM_CHANNEL_OUTPUT_CLOCK_AUDIO))
 #define IS_DFSDM_CHANNEL_OUTPUT_CLOCK_DIVIDER(DIVIDER) ((2 <= (DIVIDER)) && ((DIVIDER) <= 256))
 #if defined(STM32L451xx) || defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx)
+    defined(STM32L496xx) || defined(STM32L4A6xx) || \
+    defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 #define IS_DFSDM_CHANNEL_INPUT(INPUT)                 (((INPUT) == DFSDM_CHANNEL_EXTERNAL_INPUTS) || \
                                                        ((INPUT) == DFSDM_CHANNEL_ADC_OUTPUT) || \
                                                        ((INPUT) == DFSDM_CHANNEL_INTERNAL_REGISTER))
 #else
 #define IS_DFSDM_CHANNEL_INPUT(INPUT)                 (((INPUT) == DFSDM_CHANNEL_EXTERNAL_INPUTS) || \
                                                        ((INPUT) == DFSDM_CHANNEL_INTERNAL_REGISTER))
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L496xx || STM32L4A6xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || */
+       /* STM32L496xx || STM32L4A6xx ||                */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 #define IS_DFSDM_CHANNEL_DATA_PACKING(MODE)           (((MODE) == DFSDM_CHANNEL_STANDARD_MODE) || \
                                                        ((MODE) == DFSDM_CHANNEL_INTERLEAVED_MODE) || \
                                                        ((MODE) == DFSDM_CHANNEL_DUAL_MODE))
@@ -686,6 +712,19 @@ uint32_t                      HAL_DFSDM_FilterGetError(DFSDM_Filter_HandleTypeDe
                                                        ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM6_TRGO) || \
                                                        ((TRIG) == DFSDM_FILTER_EXT_TRIG_EXTI11) || \
                                                        ((TRIG) == DFSDM_FILTER_EXT_TRIG_EXTI15))
+#elif defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+#define IS_DFSDM_FILTER_EXT_TRIG(TRIG)                (((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM1_TRGO) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM1_TRGO2) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM8_TRGO) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM8_TRGO2) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM3_TRGO) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM4_TRGO) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM16_OC1) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM6_TRGO) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM7_TRGO) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_EXTI11) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_EXTI15) || \
+                                                       ((TRIG) == DFSDM_FILTER_EXT_TRIG_LPTIM1_OUT))
 #else
 #define IS_DFSDM_FILTER_EXT_TRIG(TRIG)                (((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM1_TRGO) || \
                                                        ((TRIG) == DFSDM_FILTER_EXT_TRIG_TIM1_TRGO2) || \
@@ -720,7 +759,7 @@ uint32_t                      HAL_DFSDM_FilterGetError(DFSDM_Filter_HandleTypeDe
                                                        ((CHANNEL) == DFSDM_CHANNEL_2)  || \
                                                        ((CHANNEL) == DFSDM_CHANNEL_3))
 #define IS_DFSDM_INJECTED_CHANNEL(CHANNEL)            (((CHANNEL) != 0) && ((CHANNEL) <= 0x0003000FU))
-#else /* STM32L451xx || STM32L452xx || STM32L462xx */
+#else
 #define IS_DFSDM_REGULAR_CHANNEL(CHANNEL)             (((CHANNEL) == DFSDM_CHANNEL_0)  || \
                                                        ((CHANNEL) == DFSDM_CHANNEL_1)  || \
                                                        ((CHANNEL) == DFSDM_CHANNEL_2)  || \
@@ -745,7 +784,11 @@ uint32_t                      HAL_DFSDM_FilterGetError(DFSDM_Filter_HandleTypeDe
 /**
   * @}
   */
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || STM32L496xx || STM32L4A6xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
+       /* STM32L496xx || STM32L4A6xx || */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+
 #ifdef __cplusplus
 }
 #endif

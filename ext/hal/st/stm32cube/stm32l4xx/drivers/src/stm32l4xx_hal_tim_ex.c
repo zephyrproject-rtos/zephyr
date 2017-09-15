@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_tim_ex.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Timer Extended peripheral:
@@ -113,7 +111,7 @@
 /* Private define ------------------------------------------------------------*/
 #define BDTR_BKF_SHIFT (16)
 #define BDTR_BK2F_SHIFT (20)
-#define TIMx_ETRSEL_MASK ((uint32_t)0x0001C000) 
+#define TIMx_ETRSEL_MASK ((uint32_t)0x0003C000)
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -164,9 +162,10 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Init(TIM_HandleTypeDef *htim, TIM_HallSen
     return HAL_ERROR;
   }
 
-  assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
   assert_param(IS_TIM_IC_POLARITY(sConfig->IC1Polarity));
   assert_param(IS_TIM_IC_PRESCALER(sConfig->IC1Prescaler));
   assert_param(IS_TIM_IC_FILTER(sConfig->IC1Filter));
@@ -292,10 +291,10 @@ __weak void HAL_TIMEx_HallSensor_MspDeInit(TIM_HandleTypeDef *htim)
 HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start(TIM_HandleTypeDef *htim)
 {
   /* Check the parameters */
-  assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
 
-  /* Enable the Input Capture channels 1
-    (in the Hall Sensor Interface the Three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
+  /* Enable the Input Capture channel 1
+    (in the Hall Sensor Interface the three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
   TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_ENABLE);
 
   /* Enable the Peripheral */
@@ -313,10 +312,10 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start(TIM_HandleTypeDef *htim)
 HAL_StatusTypeDef HAL_TIMEx_HallSensor_Stop(TIM_HandleTypeDef *htim)
 {
   /* Check the parameters */
-  assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
 
   /* Disable the Input Capture channels 1, 2 and 3
-    (in the Hall Sensor Interface the Three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
+    (in the Hall Sensor Interface the three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
   TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_DISABLE);
 
   /* Disable the Peripheral */
@@ -334,13 +333,13 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Stop(TIM_HandleTypeDef *htim)
 HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_IT(TIM_HandleTypeDef *htim)
 {
   /* Check the parameters */
-  assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
 
   /* Enable the capture compare Interrupts 1 event */
   __HAL_TIM_ENABLE_IT(htim, TIM_IT_CC1);
 
-  /* Enable the Input Capture channels 1
-    (in the Hall Sensor Interface the Three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
+  /* Enable the Input Capture channel 1
+    (in the Hall Sensor Interface the three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
   TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_ENABLE);
 
   /* Enable the Peripheral */
@@ -358,10 +357,10 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_IT(TIM_HandleTypeDef *htim)
 HAL_StatusTypeDef HAL_TIMEx_HallSensor_Stop_IT(TIM_HandleTypeDef *htim)
 {
   /* Check the parameters */
-  assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
 
-  /* Disable the Input Capture channels 1
-    (in the Hall Sensor Interface the Three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
+  /* Disable the Input Capture channel 1
+    (in the Hall Sensor Interface the three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
   TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_DISABLE);
 
   /* Disable the capture compare Interrupts event */
@@ -384,7 +383,7 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Stop_IT(TIM_HandleTypeDef *htim)
 HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_DMA(TIM_HandleTypeDef *htim, uint32_t *pData, uint16_t Length)
 {
   /* Check the parameters */
-  assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
 
    if((htim->State == HAL_TIM_STATE_BUSY))
   {
@@ -401,8 +400,8 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_DMA(TIM_HandleTypeDef *htim, uint32
       htim->State = HAL_TIM_STATE_BUSY;
     }
   }
-  /* Enable the Input Capture channels 1
-    (in the Hall Sensor Interface the Three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
+  /* Enable the Input Capture channel 1
+    (in the Hall Sensor Interface the three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
   TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_ENABLE);
 
   /* Set the DMA Input Capture 1 Callback */
@@ -431,10 +430,10 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_DMA(TIM_HandleTypeDef *htim, uint32
 HAL_StatusTypeDef HAL_TIMEx_HallSensor_Stop_DMA(TIM_HandleTypeDef *htim)
 {
   /* Check the parameters */
-  assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(htim->Instance));
 
-  /* Disable the Input Capture channels 1
-    (in the Hall Sensor Interface the Three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
+  /* Disable the Input Capture channel 1
+    (in the Hall Sensor Interface the three possible channels that can be used are TIM_CHANNEL_1, TIM_CHANNEL_2 and TIM_CHANNEL_3) */
   TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_DISABLE);
 
 
@@ -585,7 +584,7 @@ HAL_StatusTypeDef HAL_TIMEx_OCN_Start_IT(TIM_HandleTypeDef *htim, uint32_t Chann
 
   /* Enable the TIM Break interrupt */
   __HAL_TIM_ENABLE_IT(htim, TIM_IT_BREAK);
-  
+
   /* Enable the Capture compare channel N */
   TIM_CCxNChannelCmd(htim->Instance, Channel, TIM_CCxN_ENABLE);
 
@@ -1071,7 +1070,7 @@ HAL_StatusTypeDef HAL_TIMEx_PWMN_Stop_IT (TIM_HandleTypeDef *htim, uint32_t Chan
   /* Disable the complementary PWM output  */
   TIM_CCxNChannelCmd(htim->Instance, Channel, TIM_CCxN_DISABLE);
 
-  
+
   /* Disable the TIM Break interrupt (only if no more channel is active) */
   tmpccer = htim->Instance->CCER;
   if ((tmpccer & (TIM_CCER_CC1NE | TIM_CCER_CC2NE | TIM_CCER_CC3NE)) == RESET)
@@ -1672,7 +1671,7 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
                                                 TIM_BreakDeadTimeConfigTypeDef * sBreakDeadTimeConfig)
 {
   uint32_t tmpbdtr = 0;
-  
+
   /* Check the parameters */
   assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
   assert_param(IS_TIM_OSSR_STATE(sBreakDeadTimeConfig->OffStateRunMode));
@@ -1683,13 +1682,13 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
   assert_param(IS_TIM_BREAK_POLARITY(sBreakDeadTimeConfig->BreakPolarity));
   assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->BreakFilter));
   assert_param(IS_TIM_AUTOMATIC_OUTPUT_STATE(sBreakDeadTimeConfig->AutomaticOutput));
-  
+
   /* Check input state */
   __HAL_LOCK(htim);
-  
+
   /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
-  the OSSI State, the dead time value and the Automatic Output Enable Bit */
-  
+     the OSSI State, the dead time value and the Automatic Output Enable Bit */
+
   /* Set the BDTR bits */
   MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, sBreakDeadTimeConfig->DeadTime);
   MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, sBreakDeadTimeConfig->LockLevel);
@@ -1700,22 +1699,23 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakDeadTime(TIM_HandleTypeDef *htim,
   MODIFY_REG(tmpbdtr, TIM_BDTR_AOE, sBreakDeadTimeConfig->AutomaticOutput);
   MODIFY_REG(tmpbdtr, TIM_BDTR_MOE, sBreakDeadTimeConfig->AutomaticOutput);
   MODIFY_REG(tmpbdtr, TIM_BDTR_BKF, (sBreakDeadTimeConfig->BreakFilter << BDTR_BKF_SHIFT));
-  
+
   if (IS_TIM_BKIN2_INSTANCE(htim->Instance))
   {
+    /* Check the parameters */
     assert_param(IS_TIM_BREAK2_STATE(sBreakDeadTimeConfig->Break2State));
     assert_param(IS_TIM_BREAK2_POLARITY(sBreakDeadTimeConfig->Break2Polarity));
     assert_param(IS_TIM_BREAK_FILTER(sBreakDeadTimeConfig->Break2Filter));
-    
+
     /* Set the BREAK2 input related BDTR bits */
     MODIFY_REG(tmpbdtr, TIM_BDTR_BK2F, (sBreakDeadTimeConfig->Break2Filter << BDTR_BK2F_SHIFT));
     MODIFY_REG(tmpbdtr, TIM_BDTR_BK2E, sBreakDeadTimeConfig->Break2State);
     MODIFY_REG(tmpbdtr, TIM_BDTR_BK2P, sBreakDeadTimeConfig->Break2Polarity);
   }
-  
+
   /* Set TIMx_BDTR */
   htim->Instance->BDTR = tmpbdtr;
-  
+
   __HAL_UNLOCK(htim);
 
   return HAL_OK;
@@ -1748,22 +1748,24 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   assert_param(IS_TIM_BREAKINPUTSOURCE(sBreakInputConfig->Source));
   assert_param(IS_TIM_BREAKINPUTSOURCE_STATE(sBreakInputConfig->Enable));
 
-#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
-    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
-    defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
   if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
   {
     assert_param(IS_TIM_BREAKINPUTSOURCE_POLARITY(sBreakInputConfig->Polarity));
   }
 #else
    assert_param(IS_TIM_BREAKINPUTSOURCE_POLARITY(sBreakInputConfig->Polarity));
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
-       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
-       /* STM32L496xx || STM32L4A6xx */
-  
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
+       /* STM32L496xx || STM32L4A6xx || */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+
   /* Check input state */
   __HAL_LOCK(htim);
-  
+
   switch(sBreakInputConfig->Source)
   {
   case TIM_BREAKINPUTSOURCE_BKIN:
@@ -1791,81 +1793,87 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
     }
     break;
 
-#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
-    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
-    defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
   case TIM_BREAKINPUTSOURCE_DFSDM1:
     {
       bkin_enable_mask = TIM1_OR2_BKDF1BK0E;
       bkin_enable_bitpos = 8;
     }
-    break;    
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
-       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
-       /* STM32L496xx || STM32L4A6xx */
+    break;
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
+       /* STM32L496xx || STM32L4A6xx || */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
   default:
     break;
   }
-  
+
   switch(BreakInput)
   {
     case TIM_BREAKINPUT_BRK:
       {
         /* Get the TIMx_OR2 register value */
         tmporx = htim->Instance->OR2;
-        
+
         /* Enable the break input */
         tmporx &= ~bkin_enable_mask;
         tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
-        
+
         /* Set the break input polarity */
-#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
-    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
-    defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
         if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
-       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
-       /* STM32L496xx || STM32L4A6xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx || */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
+       /* STM32L496xx || STM32L4A6xx || */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
         {
           tmporx &= ~bkin_polarity_mask;
           tmporx |= (sBreakInputConfig->Polarity << bkin_polarity_bitpos) & bkin_polarity_mask;
         }
-        
+
         /* Set TIMx_OR2 */
-        htim->Instance->OR2 = tmporx;        
+        htim->Instance->OR2 = tmporx;
       }
         break;
     case TIM_BREAKINPUT_BRK2:
       {
         /* Get the TIMx_OR3 register value */
         tmporx = htim->Instance->OR3;
-        
+
         /* Enable the break input */
         tmporx &= ~bkin_enable_mask;
         tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
-        
+
         /* Set the break input polarity */
-#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L471xx) || \
-    defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
-    defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
         if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
-#endif /* STM32L451xx || STM32L452xx || STM32L462xx || STM32L471xx */
-       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx */
+#endif /* STM32L451xx || STM32L452xx || STM32L462xx */
+       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
        /* STM32L496xx || STM32L4A6xx */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
         {
           tmporx &= ~bkin_polarity_mask;
           tmporx |= (sBreakInputConfig->Polarity << bkin_polarity_bitpos) & bkin_polarity_mask;
         }
-        
+
         /* Set TIMx_OR3 */
-        htim->Instance->OR3 = tmporx;        
+        htim->Instance->OR3 = tmporx;
       }
-      break;    
+      break;
   default:
     break;
   }
-  
+
   __HAL_UNLOCK(htim);
 
   return HAL_OK;
@@ -1898,7 +1906,7 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *                   field4 can have the following values:
   *            @arg TIM_TIM1_ETR_COMP1:               TIM1_ETR is connected to COMP1 output
   *            @arg TIM_TIM1_ETR_COMP2:               TIM1_ETR is connected to COMP2 output
-  *            @note  When field4 is set to TIM_TIM1_ETR_COMP1 or TIM_TIM1_ETR_COMP2 field1 and field2 values are not significant 
+  *            @note  When field4 is set to TIM_TIM1_ETR_COMP1 or TIM_TIM1_ETR_COMP2 field1 and field2 values are not significant
   @endif
   @if STM32L443xx
   *         For TIM1, the parameter is a combination of 3 fields (field1 | field2 | field3):
@@ -1917,7 +1925,7 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM1_ETR_COMP1:               TIM1_ETR is connected to COMP1 output
   *            @arg TIM_TIM1_ETR_COMP2:               TIM1_ETR is connected to COMP2 output
   *
-  *            @note  When field3 is set to TIM_TIM1_ETR_COMP1 or TIM_TIM1_ETR_COMP2 field1 values is not significant 
+  *            @note  When field3 is set to TIM_TIM1_ETR_COMP1 or TIM_TIM1_ETR_COMP2 field1 values is not significant
   *
   @endif
   @if STM32L486xx
@@ -1995,7 +2003,7 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *                   field4 can have the following values:
   *            @arg TIM_TIM8_ETR_COMP1:               TIM8_ETR is connected to COMP1 output
   *            @arg TIM_TIM8_ETR_COMP2:               TIM8_ETR is connected to COMP2 output
-  *            @note  When field4 is set to TIM_TIM8_ETR_COMP1 or TIM_TIM8_ETR_COMP2 field1 and field2 values are not significant 
+  *            @note  When field4 is set to TIM_TIM8_ETR_COMP1 or TIM_TIM8_ETR_COMP2 field1 and field2 values are not significant
   *
   @endif
   *         For TIM15, the parameter is a combination of 3 fields (field1 | field2):
@@ -2005,7 +2013,7 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM15_TI1_LSE:               TIM15 TI1 is connected to LSE
   *
   *                   field2 can have the following values:
-  *            @arg TIM_TIM15_ENCODERMODE_NONE:      No redirection 
+  *            @arg TIM_TIM15_ENCODERMODE_NONE:      No redirection
   *            @arg TIM_TIM15_ENCODERMODE_TIM2:      TIM2 IC1 and TIM2 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
   *            @arg TIM_TIM15_ENCODERMODE_TIM3:      TIM3 IC1 and TIM3 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
   *            @arg TIM_TIM15_ENCODERMODE_TIM4:      TIM4 IC1 and TIM4 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
@@ -2042,34 +2050,31 @@ HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
 {
   uint32_t tmpor1 = 0;
   uint32_t tmpor2 = 0;
-  
+
   __HAL_LOCK(htim);
 
   /* Check parameters */
   assert_param(IS_TIM_REMAP_INSTANCE(htim->Instance));
   assert_param(IS_TIM_REMAP(Remap));
-  
+
   /* Set ETR_SEL bit field (if required) */
   if (IS_TIM_ETRSEL_INSTANCE(htim->Instance))
   {
     tmpor2 = htim->Instance->OR2;
     tmpor2 &= ~TIMx_ETRSEL_MASK;
     tmpor2 |= (Remap & TIMx_ETRSEL_MASK);
-    
+
     /* Set TIMx_OR2 */
-    htim->Instance->OR2 = tmpor2;        
+    htim->Instance->OR2 = tmpor2;
   }
-  
+
   /* Set other remapping capabilities */
   tmpor1 = Remap;
   tmpor1 &= ~TIMx_ETRSEL_MASK;
 
   /* Set TIMx_OR1 */
-  htim->Instance->OR1 = Remap;
-  
-  /* Set TIMx_OR1 */
-  htim->Instance->OR1 = tmpor1;        
-  
+  htim->Instance->OR1 = tmpor1;
+
   htim->State = HAL_TIM_STATE_READY;
 
   __HAL_UNLOCK(htim);
