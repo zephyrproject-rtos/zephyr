@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dma2d.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   DMA2D HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the DMA2D peripheral:
@@ -98,7 +96,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -151,36 +149,6 @@
   */  
 #define DMA2D_TIMEOUT_ABORT           ((uint32_t)1000)  /*!<  1s  */
 #define DMA2D_TIMEOUT_SUSPEND         ((uint32_t)1000)  /*!<  1s  */
-/**
-  * @}
-  */
-
-/** @defgroup DMA2D_Shifts DMA2D Shifts 
-  * @{
-  */                                     
-#define DMA2D_POSITION_FGPFCCR_CS     (uint32_t)POSITION_VAL(DMA2D_FGPFCCR_CS)    /*!< Required left shift to set foreground CLUT size */
-#define DMA2D_POSITION_BGPFCCR_CS     (uint32_t)POSITION_VAL(DMA2D_BGPFCCR_CS)    /*!< Required left shift to set background CLUT size */
-                                                                                 
-#define DMA2D_POSITION_FGPFCCR_CCM    (uint32_t)POSITION_VAL(DMA2D_FGPFCCR_CCM)   /*!< Required left shift to set foreground CLUT color mode */
-#define DMA2D_POSITION_BGPFCCR_CCM    (uint32_t)POSITION_VAL(DMA2D_BGPFCCR_CCM)   /*!< Required left shift to set background CLUT color mode */
-                                                                                 
-#define DMA2D_POSITION_OPFCCR_AI      (uint32_t)POSITION_VAL(DMA2D_OPFCCR_AI)     /*!< Required left shift to set output alpha inversion     */
-#define DMA2D_POSITION_FGPFCCR_AI     (uint32_t)POSITION_VAL(DMA2D_FGPFCCR_AI)    /*!< Required left shift to set foreground alpha inversion */ 
-#define DMA2D_POSITION_BGPFCCR_AI     (uint32_t)POSITION_VAL(DMA2D_BGPFCCR_AI)    /*!< Required left shift to set background alpha inversion */ 
-
-#define DMA2D_POSITION_OPFCCR_RBS     (uint32_t)POSITION_VAL(DMA2D_OPFCCR_RBS)    /*!< Required left shift to set output Red/Blue swap     */                                                                                 
-#define DMA2D_POSITION_FGPFCCR_RBS    (uint32_t)POSITION_VAL(DMA2D_FGPFCCR_RBS)   /*!< Required left shift to set foreground Red/Blue swap */
-#define DMA2D_POSITION_BGPFCCR_RBS    (uint32_t)POSITION_VAL(DMA2D_BGPFCCR_RBS)   /*!< Required left shift to set background Red/Blue swap */
-                                                                                 
-#define DMA2D_POSITION_AMTCR_DT       (uint32_t)POSITION_VAL(DMA2D_AMTCR_DT)      /*!< Required left shift to set deadtime value */
-                                                                                 
-#define DMA2D_POSITION_FGPFCCR_AM     (uint32_t)POSITION_VAL(DMA2D_FGPFCCR_AM)    /*!< Required left shift to set foreground alpha mode */
-#define DMA2D_POSITION_BGPFCCR_AM     (uint32_t)POSITION_VAL(DMA2D_BGPFCCR_AM)    /*!< Required left shift to set background alpha mode */
-
-#define DMA2D_POSITION_FGPFCCR_ALPHA  (uint32_t)POSITION_VAL(DMA2D_FGPFCCR_ALPHA) /*!< Required left shift to set foreground alpha value */
-#define DMA2D_POSITION_BGPFCCR_ALPHA  (uint32_t)POSITION_VAL(DMA2D_BGPFCCR_ALPHA) /*!< Required left shift to set background alpha value */
-
-#define DMA2D_POSITION_NLR_PL         (uint32_t)POSITION_VAL(DMA2D_NLR_PL)        /*!< Required left shift to set pixels per lines value */
 /**
   * @}
   */
@@ -265,11 +233,11 @@ HAL_StatusTypeDef HAL_DMA2D_Init(DMA2D_HandleTypeDef *hdma2d)
 
 #if defined (DMA2D_OPFCCR_AI)
   /* DMA2D OPFCCR AI fields setting (Output Alpha Inversion)*/
-  MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_AI, (hdma2d->Init.AlphaInverted << DMA2D_POSITION_OPFCCR_AI));
+  MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_AI, (hdma2d->Init.AlphaInverted << DMA2D_OPFCCR_AI_Pos));
 #endif /* DMA2D_OPFCCR_AI */ 
   
 #if defined (DMA2D_OPFCCR_RBS) 
-  MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_RBS,(hdma2d->Init.RedBlueSwap << DMA2D_POSITION_OPFCCR_RBS));
+  MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_RBS,(hdma2d->Init.RedBlueSwap << DMA2D_OPFCCR_RBS_Pos));
 #endif /* DMA2D_OPFCCR_RBS */
   
 
@@ -746,7 +714,7 @@ HAL_StatusTypeDef HAL_DMA2D_EnableCLUT(DMA2D_HandleTypeDef *hdma2d, uint32_t Lay
   * @param  LayerIdx: DMA2D Layer index.
   *                   This parameter can be one of the following values:
   *                   0(background) / 1(foreground)
-  * @note Invoking this API is similar to calling HAL_DMA2D_ConfigCLUT() then HAL_DMA2D_EnableCLUT().                    
+  * @note Invoking this API is similar to calling HAL_DMA2D_ConfigCLUT() then HAL_DMA2D_EnableCLUT().
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_DMA2D_CLUTLoad(DMA2D_HandleTypeDef *hdma2d, DMA2D_CLUTCfgTypeDef CLUTCfg, uint32_t LayerIdx)
@@ -770,7 +738,7 @@ HAL_StatusTypeDef HAL_DMA2D_CLUTLoad(DMA2D_HandleTypeDef *hdma2d, DMA2D_CLUTCfgT
     
     /* Write background CLUT size and CLUT color mode */
     MODIFY_REG(hdma2d->Instance->BGPFCCR, (DMA2D_BGPFCCR_CS | DMA2D_BGPFCCR_CCM), 
-            ((CLUTCfg.Size << DMA2D_POSITION_BGPFCCR_CS) | (CLUTCfg.CLUTColorMode << DMA2D_POSITION_BGPFCCR_CCM)));
+            ((CLUTCfg.Size << DMA2D_BGPFCCR_CS_Pos) | (CLUTCfg.CLUTColorMode << DMA2D_BGPFCCR_CCM_Pos)));
 
     /* Enable the CLUT loading for the background */
     SET_BIT(hdma2d->Instance->BGPFCCR, DMA2D_BGPFCCR_START);
@@ -783,7 +751,7 @@ HAL_StatusTypeDef HAL_DMA2D_CLUTLoad(DMA2D_HandleTypeDef *hdma2d, DMA2D_CLUTCfgT
     
     /* Write foreground CLUT size and CLUT color mode */
     MODIFY_REG(hdma2d->Instance->FGPFCCR, (DMA2D_FGPFCCR_CS | DMA2D_FGPFCCR_CCM), 
-            ((CLUTCfg.Size << DMA2D_POSITION_BGPFCCR_CS) | (CLUTCfg.CLUTColorMode << DMA2D_POSITION_FGPFCCR_CCM)));       
+            ((CLUTCfg.Size << DMA2D_BGPFCCR_CS_Pos) | (CLUTCfg.CLUTColorMode << DMA2D_FGPFCCR_CCM_Pos)));
     
  /* Enable the CLUT loading for the foreground */
     SET_BIT(hdma2d->Instance->FGPFCCR, DMA2D_FGPFCCR_START);  
@@ -824,7 +792,7 @@ HAL_StatusTypeDef HAL_DMA2D_CLUTLoad_IT(DMA2D_HandleTypeDef *hdma2d, DMA2D_CLUTC
     
     /* Write background CLUT size and CLUT color mode */
     MODIFY_REG(hdma2d->Instance->BGPFCCR, (DMA2D_BGPFCCR_CS | DMA2D_BGPFCCR_CCM), 
-            ((CLUTCfg.Size << DMA2D_POSITION_BGPFCCR_CS) | (CLUTCfg.CLUTColorMode << DMA2D_POSITION_BGPFCCR_CCM)));
+            ((CLUTCfg.Size << DMA2D_BGPFCCR_CS_Pos) | (CLUTCfg.CLUTColorMode << DMA2D_BGPFCCR_CCM_Pos)));
             
     /* Enable the CLUT Transfer Complete, transfer Error, configuration Error and CLUT Access Error interrupts */
     __HAL_DMA2D_ENABLE_IT(hdma2d, DMA2D_IT_CTC | DMA2D_IT_TE | DMA2D_IT_CE |DMA2D_IT_CAE);            
@@ -840,7 +808,7 @@ HAL_StatusTypeDef HAL_DMA2D_CLUTLoad_IT(DMA2D_HandleTypeDef *hdma2d, DMA2D_CLUTC
     
     /* Write foreground CLUT size and CLUT color mode */
     MODIFY_REG(hdma2d->Instance->FGPFCCR, (DMA2D_FGPFCCR_CS | DMA2D_FGPFCCR_CCM), 
-            ((CLUTCfg.Size << DMA2D_POSITION_BGPFCCR_CS) | (CLUTCfg.CLUTColorMode << DMA2D_POSITION_FGPFCCR_CCM)));
+            ((CLUTCfg.Size << DMA2D_BGPFCCR_CS_Pos) | (CLUTCfg.CLUTColorMode << DMA2D_FGPFCCR_CCM_Pos)));
             
     /* Enable the CLUT Transfer Complete, transfer Error, configuration Error and CLUT Access Error interrupts */
     __HAL_DMA2D_ENABLE_IT(hdma2d, DMA2D_IT_CTC | DMA2D_IT_TE | DMA2D_IT_CE |DMA2D_IT_CAE);                   
@@ -1387,16 +1355,16 @@ HAL_StatusTypeDef HAL_DMA2D_ConfigLayer(DMA2D_HandleTypeDef *hdma2d, uint32_t La
   /* DMA2D BGPFCR register configuration -----------------------------------*/
   /* Prepare the value to be written to the BGPFCCR register */
   
-  regValue = pLayerCfg->InputColorMode | (pLayerCfg->AlphaMode << DMA2D_POSITION_BGPFCCR_AM);
+  regValue = pLayerCfg->InputColorMode | (pLayerCfg->AlphaMode << DMA2D_BGPFCCR_AM_Pos);
   regMask  = DMA2D_BGPFCCR_CM | DMA2D_BGPFCCR_AM | DMA2D_BGPFCCR_ALPHA;
   
 #if defined (DMA2D_FGPFCCR_AI) && defined (DMA2D_BGPFCCR_AI)
-  regValue |= (pLayerCfg->AlphaInverted << DMA2D_POSITION_BGPFCCR_AI);
+  regValue |= (pLayerCfg->AlphaInverted << DMA2D_BGPFCCR_AI_Pos);
   regMask  |= DMA2D_BGPFCCR_AI;  
 #endif /* (DMA2D_FGPFCCR_AI) && (DMA2D_BGPFCCR_AI)  */ 
   
 #if defined (DMA2D_FGPFCCR_RBS) && defined (DMA2D_BGPFCCR_RBS)
-  regValue |= (pLayerCfg->RedBlueSwap << DMA2D_POSITION_BGPFCCR_RBS);
+  regValue |= (pLayerCfg->RedBlueSwap << DMA2D_BGPFCCR_RBS_Pos);
   regMask  |= DMA2D_BGPFCCR_RBS;  
 #endif  
   
@@ -1406,7 +1374,7 @@ HAL_StatusTypeDef HAL_DMA2D_ConfigLayer(DMA2D_HandleTypeDef *hdma2d, uint32_t La
   }
   else
   {
-    regValue |=  (pLayerCfg->InputAlpha << DMA2D_POSITION_BGPFCCR_ALPHA);
+    regValue |=  (pLayerCfg->InputAlpha << DMA2D_BGPFCCR_ALPHA_Pos);
   }
   
   /* Configure the background DMA2D layer */
@@ -1480,7 +1448,7 @@ HAL_StatusTypeDef HAL_DMA2D_ConfigCLUT(DMA2D_HandleTypeDef *hdma2d, DMA2D_CLUTCf
      
     /* Write background CLUT size and CLUT color mode */
     MODIFY_REG(hdma2d->Instance->BGPFCCR, (DMA2D_BGPFCCR_CS | DMA2D_BGPFCCR_CCM), 
-            ((CLUTCfg.Size << DMA2D_POSITION_BGPFCCR_CS) | (CLUTCfg.CLUTColorMode << DMA2D_POSITION_BGPFCCR_CCM)));       
+            ((CLUTCfg.Size << DMA2D_BGPFCCR_CS_Pos) | (CLUTCfg.CLUTColorMode << DMA2D_BGPFCCR_CCM_Pos)));       
  }
  /* Configure the CLUT of the foreground DMA2D layer */
  else
@@ -1490,7 +1458,7 @@ HAL_StatusTypeDef HAL_DMA2D_ConfigCLUT(DMA2D_HandleTypeDef *hdma2d, DMA2D_CLUTCf
      
     /* Write foreground CLUT size and CLUT color mode */
     MODIFY_REG(hdma2d->Instance->FGPFCCR, (DMA2D_FGPFCCR_CS | DMA2D_FGPFCCR_CCM), 
-            ((CLUTCfg.Size << DMA2D_POSITION_BGPFCCR_CS) | (CLUTCfg.CLUTColorMode << DMA2D_POSITION_FGPFCCR_CCM)));       
+            ((CLUTCfg.Size << DMA2D_BGPFCCR_CS_Pos) | (CLUTCfg.CLUTColorMode << DMA2D_FGPFCCR_CCM_Pos)));       
   }
   
   /* Set the DMA2D state to Ready*/
@@ -1608,7 +1576,7 @@ HAL_StatusTypeDef HAL_DMA2D_ConfigDeadTime(DMA2D_HandleTypeDef *hdma2d, uint8_t 
   hdma2d->State = HAL_DMA2D_STATE_BUSY;
 
   /* Set DMA2D_AMTCR DT field */
-  MODIFY_REG(hdma2d->Instance->AMTCR, DMA2D_AMTCR_DT, (((uint32_t) DeadTime) << DMA2D_POSITION_AMTCR_DT));
+  MODIFY_REG(hdma2d->Instance->AMTCR, DMA2D_AMTCR_DT, (((uint32_t) DeadTime) << DMA2D_AMTCR_DT_Pos));
 
   hdma2d->State = HAL_DMA2D_STATE_READY;
 
@@ -1693,7 +1661,7 @@ static void DMA2D_SetConfig(DMA2D_HandleTypeDef *hdma2d, uint32_t pdata, uint32_
   uint32_t tmp4 = 0;
     
   /* Configure DMA2D data size */
-  MODIFY_REG(hdma2d->Instance->NLR, (DMA2D_NLR_NL|DMA2D_NLR_PL), (Height| (Width << DMA2D_POSITION_NLR_PL))); 
+  MODIFY_REG(hdma2d->Instance->NLR, (DMA2D_NLR_NL|DMA2D_NLR_PL), (Height| (Width << DMA2D_NLR_PL_Pos))); 
   
   /* Configure DMA2D destination address */
   WRITE_REG(hdma2d->Instance->OMAR, DstAddress);

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_adc_ex.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the ADC extension peripheral:
   *           + Extended features functions
@@ -44,7 +42,7 @@
      =================================
      [..]    
        (+) Start the ADC peripheral using HAL_ADCEx_InjectedStart() 
-       (+) Wait for end of conversion using HAL_ADC_PollForConversion(), at this stage
+       (+) Wait for end of conversion using HAL_ADCEx_InjectedPollForConversion(), at this stage
            user can specify the value of timeout according to his end application      
        (+) To read the ADC converted values, use the HAL_ADCEx_InjectedGetValue() function.
        (+) Stop the ADC peripheral using HAL_ADCEx_InjectedStop()
@@ -86,7 +84,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:

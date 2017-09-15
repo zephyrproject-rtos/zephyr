@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_rcc_ex.h
   * @author  MCD Application Team                                                                                                     
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Header file of RCC HAL Extension module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -2540,10 +2538,10 @@ typedef struct
   */
 #define __HAL_RCC_PLL_CONFIG(__RCC_PLLSource__, __PLLM__, __PLLN__, __PLLP__, __PLLQ__,__PLLR__)  \
                             (RCC->PLLCFGR = ((__RCC_PLLSource__) | (__PLLM__)                   | \
-                            ((__PLLN__) << POSITION_VAL(RCC_PLLCFGR_PLLN))                      | \
-                            ((((__PLLP__) >> 1) -1) << POSITION_VAL(RCC_PLLCFGR_PLLP))          | \
-                            ((__PLLQ__) << POSITION_VAL(RCC_PLLCFGR_PLLQ))                      | \
-                            ((__PLLR__) << POSITION_VAL(RCC_PLLCFGR_PLLR))))
+                            ((__PLLN__) << RCC_PLLCFGR_PLLN_Pos)                      | \
+                            ((((__PLLP__) >> 1) -1) << RCC_PLLCFGR_PLLP_Pos)          | \
+                            ((__PLLQ__) << RCC_PLLCFGR_PLLQ_Pos)                      | \
+                            ((__PLLR__) << RCC_PLLCFGR_PLLR_Pos)))
 #else
 /** @brief  Macro to configure the main PLL clock source, multiplication and division factors.
   * @note   This function must be used only when the main PLL is disabled.
@@ -2574,9 +2572,9 @@ typedef struct
   */
 #define __HAL_RCC_PLL_CONFIG(__RCC_PLLSource__, __PLLM__, __PLLN__, __PLLP__, __PLLQ__)     \
                             (RCC->PLLCFGR = (0x20000000 | (__RCC_PLLSource__) | (__PLLM__)| \
-                            ((__PLLN__) << POSITION_VAL(RCC_PLLCFGR_PLLN))                | \
-                            ((((__PLLP__) >> 1) -1) << POSITION_VAL(RCC_PLLCFGR_PLLP))    | \
-                            ((__PLLQ__) << POSITION_VAL(RCC_PLLCFGR_PLLQ))))
+                            ((__PLLN__) << RCC_PLLCFGR_PLLN_Pos)                          | \
+                            ((((__PLLP__) >> 1) -1) << RCC_PLLCFGR_PLLP_Pos)              | \
+                            ((__PLLQ__) << RCC_PLLCFGR_PLLQ_Pos)))
 #endif /* STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */ 
 /*---------------------------------------------------------------------------------------------*/
 
@@ -2612,14 +2610,14 @@ typedef struct
   * @note   You have to set the PLLSAIN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
   * @param  __PLLSAIP__: specifies the division factor for USB, RNG, SDMMC clocks
-  *         This parameter can be a value of @ref RCCEx_PLLSAIP_Clock_Divider.                                                  
+  *         This parameter can be a value of @ref RCCEx_PLLSAIP_Clock_Divider.
   * @param  __PLLSAIQ__: specifies the division factor for SAI clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   */   
 #define __HAL_RCC_PLLSAI_CONFIG(__PLLSAIN__, __PLLSAIP__, __PLLSAIQ__)                        \
-                               (RCC->PLLSAICFGR = ((__PLLSAIN__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIN)) |\
-                               ((__PLLSAIP__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIP))                    |\
-                               ((__PLLSAIQ__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIQ)))
+                               (RCC->PLLSAICFGR = ((__PLLSAIN__) << RCC_PLLSAICFGR_PLLSAIN_Pos) |\
+                               ((__PLLSAIP__) << RCC_PLLSAICFGR_PLLSAIP_Pos)                    |\
+                               ((__PLLSAIQ__) << RCC_PLLSAICFGR_PLLSAIQ_Pos))
 
 /** @brief  Macro to configure the PLLI2S clock multiplication and division factors.
   * @note   This macro must be used only when the PLLI2S is disabled.
@@ -2637,10 +2635,10 @@ typedef struct
   *         on the I2S clock frequency. 
   */
 #define __HAL_RCC_PLLI2S_CONFIG(__PLLI2SN__, __PLLI2SQ__, __PLLI2SR__)                        \
-                               (RCC->PLLI2SCFGR = ((__PLLI2SN__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SN)) |\
-                               ((__PLLI2SQ__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SQ))                    |\
-                               ((__PLLI2SR__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SR)))
-#else                                                  
+                               (RCC->PLLI2SCFGR = ((__PLLI2SN__) << RCC_PLLI2SCFGR_PLLI2SN_Pos) |\
+                               ((__PLLI2SQ__) << RCC_PLLI2SCFGR_PLLI2SQ_Pos)                    |\
+                               ((__PLLI2SR__) << RCC_PLLI2SCFGR_PLLI2SR_Pos))
+#else
 /** @brief  Macro to configure the PLLSAI clock multiplication and division factors.
   * @note   This function must be used only when the PLLSAI is disabled.
   * @note   PLLSAI clock source is common with the main PLL (configured in 
@@ -2657,10 +2655,10 @@ typedef struct
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   */   
 #define __HAL_RCC_PLLSAI_CONFIG(__PLLSAIN__, __PLLSAIP__, __PLLSAIQ__, __PLLSAIR__)                        \
-                               (RCC->PLLSAICFGR = ((__PLLSAIN__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIN)) |\
-                               ((__PLLSAIP__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIP))                    |\
-                               ((__PLLSAIQ__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIQ))                    |\
-                               ((__PLLSAIR__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIR)))
+                               (RCC->PLLSAICFGR = ((__PLLSAIN__) << RCC_PLLSAICFGR_PLLSAIN_Pos) |\
+                               ((__PLLSAIP__) << RCC_PLLSAICFGR_PLLSAIP_Pos)                    |\
+                               ((__PLLSAIQ__) << RCC_PLLSAICFGR_PLLSAIQ_Pos)                    |\
+                               ((__PLLSAIR__) << RCC_PLLSAICFGR_PLLSAIR_Pos))
 
 /** @brief  Macro to configure the PLLI2S clock multiplication and division factors.
   * @note   This macro must be used only when the PLLI2S is disabled.
@@ -2680,10 +2678,10 @@ typedef struct
   *         on the I2S clock frequency. 
   */
 #define __HAL_RCC_PLLI2S_CONFIG(__PLLI2SN__, __PLLI2SP__, __PLLI2SQ__, __PLLI2SR__)                        \
-                               (RCC->PLLI2SCFGR = ((__PLLI2SN__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SN)) |\
-                               ((__PLLI2SP__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SP))                    |\
-                               ((__PLLI2SQ__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SQ))                    |\
-                               ((__PLLI2SR__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SR)))
+                               (RCC->PLLI2SCFGR = ((__PLLI2SN__) << RCC_PLLI2SCFGR_PLLI2SN_Pos) |\
+                               ((__PLLI2SP__) << RCC_PLLI2SCFGR_PLLI2SP_Pos)                    |\
+                               ((__PLLI2SQ__) << RCC_PLLI2SCFGR_PLLI2SQ_Pos)                    |\
+                               ((__PLLI2SR__) << RCC_PLLI2SCFGR_PLLI2SR_Pos))
 #endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx */                               
     
 /** @brief  Macro to configure the SAI clock Divider coming from PLLI2S.

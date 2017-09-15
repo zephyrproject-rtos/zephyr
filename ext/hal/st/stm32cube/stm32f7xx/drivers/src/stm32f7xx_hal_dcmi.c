@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dcmi.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   DCMI HAL module driver
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Digital Camera Interface (DCMI) peripheral:
@@ -63,7 +61,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -107,13 +105,6 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define HAL_TIMEOUT_DCMI_STOP    ((uint32_t)1000) /* Set timeout to 1s  */
-
-#define DCMI_POSITION_CWSIZE_VLINE (uint32_t)POSITION_VAL(DCMI_CWSIZE_VLINE) /*!< Required left shift to set crop window vertical line count       */
-#define DCMI_POSITION_CWSTRT_VST   (uint32_t)POSITION_VAL(DCMI_CWSTRT_VST)   /*!< Required left shift to set crop window vertical start line count */
-
-#define DCMI_POSITION_ESCR_LSC     (uint32_t)POSITION_VAL(DCMI_ESCR_LSC)     /*!< Required left shift to set line start delimiter */
-#define DCMI_POSITION_ESCR_LEC     (uint32_t)POSITION_VAL(DCMI_ESCR_LEC)     /*!< Required left shift to set line end delimiter   */
-#define DCMI_POSITION_ESCR_FEC     (uint32_t)POSITION_VAL(DCMI_ESCR_FEC)     /*!< Required left shift to set frame end delimiter  */
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -196,9 +187,9 @@ HAL_StatusTypeDef HAL_DCMI_Init(DCMI_HandleTypeDef *hdcmi)
   if(hdcmi->Init.SynchroMode == DCMI_SYNCHRO_EMBEDDED)
   {
     hdcmi->Instance->ESCR = (((uint32_t)hdcmi->Init.SyncroCode.FrameStartCode)    |\
-                             ((uint32_t)hdcmi->Init.SyncroCode.LineStartCode << DCMI_POSITION_ESCR_LSC)|\
-                             ((uint32_t)hdcmi->Init.SyncroCode.LineEndCode << DCMI_POSITION_ESCR_LEC) |\
-                             ((uint32_t)hdcmi->Init.SyncroCode.FrameEndCode << DCMI_POSITION_ESCR_FEC));
+                             ((uint32_t)hdcmi->Init.SyncroCode.LineStartCode << DCMI_ESCR_LSC_Pos)|\
+                             ((uint32_t)hdcmi->Init.SyncroCode.LineEndCode << DCMI_ESCR_LEC_Pos) |\
+                             ((uint32_t)hdcmi->Init.SyncroCode.FrameEndCode << DCMI_ESCR_FEC_Pos));
 
   }
 
@@ -693,8 +684,8 @@ HAL_StatusTypeDef HAL_DCMI_ConfigCrop(DCMI_HandleTypeDef *hdcmi, uint32_t X0, ui
   assert_param(IS_DCMI_WINDOW_COORDINATE(YSize));
 	
   /* Configure CROP */
-  hdcmi->Instance->CWSIZER = (XSize | (YSize << DCMI_POSITION_CWSIZE_VLINE));
-  hdcmi->Instance->CWSTRTR = (X0 | (Y0 << DCMI_POSITION_CWSTRT_VST));
+  hdcmi->Instance->CWSIZER = (XSize | (YSize << DCMI_CWSIZE_VLINE_Pos));
+  hdcmi->Instance->CWSTRTR = (X0 | (Y0 << DCMI_CWSTRT_VST_Pos));
 
   /* Initialize the DCMI state*/
   hdcmi->State  = HAL_DCMI_STATE_READY;

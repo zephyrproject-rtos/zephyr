@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_nand.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   NAND HAL module driver.
   *          This file provides a generic firmware to drive NAND memories mounted 
   *          as external device.
@@ -58,7 +56,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -427,7 +425,7 @@ HAL_StatusTypeDef  HAL_NAND_ConfigDevice(NAND_HandleTypeDef *hnand, NAND_DeviceC
   hnand->Config.BlockSize          = pDeviceConfig->BlockSize;
   hnand->Config.BlockNbr           = pDeviceConfig->BlockNbr;
   hnand->Config.PlaneSize          = pDeviceConfig->PlaneSize;
-  hnand->Config.PlaneNbr           = pDeviceConfig->BlockNbr;
+  hnand->Config.PlaneNbr           = pDeviceConfig->PlaneNbr;
   hnand->Config.ExtraCommandEnable = pDeviceConfig->ExtraCommandEnable;
   
   return HAL_OK;
@@ -1663,7 +1661,7 @@ uint32_t HAL_NAND_Address_Inc(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pA
       pAddress->Block = 0;
       pAddress->Plane++;
 
-      if(pAddress->Plane == (hnand->Config.PlaneSize/ hnand->Config.BlockNbr))
+      if(pAddress->Plane == (hnand->Config.PlaneNbr))
       {
         status = NAND_INVALID_ADDRESS;
       }

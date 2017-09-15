@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_sd.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   SD card HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Secure Digital (SD) peripheral:
@@ -198,7 +196,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -373,6 +371,9 @@ HAL_StatusTypeDef HAL_SD_InitCard(SD_HandleTypeDef *hsd)
   
   /* Enable SDMMC Clock */
   __HAL_SD_ENABLE(hsd);
+  
+  /* Required power up waiting time before starting the SD initialization sequence */
+  HAL_Delay(2);
   
   /* Identify card operating voltage */
   errorstate = SD_PowerON(hsd);
@@ -2222,35 +2223,38 @@ static void SD_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 }
 
 /**
-  * @brief  DMA SD communication error callback 
-  * @param  hdma: DMA handle
-  * @retval None
-  */
+* @brief  DMA SD communication error callback 
+* @param  hdma: DMA handle
+* @retval None
+*/
 static void SD_DMAError(DMA_HandleTypeDef *hdma)   
 {
   SD_HandleTypeDef* hsd = (SD_HandleTypeDef* )(hdma->Parent);
   HAL_SD_CardStateTypeDef CardState;
   
-  if((hsd->hdmarx->ErrorCode == HAL_DMA_ERROR_TE) || (hsd->hdmatx->ErrorCode == HAL_DMA_ERROR_TE))
+  /* if DMA error is FIFO error ignore it */
+  if(HAL_DMA_GetError(hdma) != HAL_DMA_ERROR_FE)
   {
-    /* Clear All flags */
-    __HAL_SD_CLEAR_FLAG(hsd, SDMMC_STATIC_FLAGS);
-    
-    /* Disable All interrupts */
-    __HAL_SD_DISABLE_IT(hsd, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT|\
-      SDMMC_IT_TXUNDERR| SDMMC_IT_RXOVERR);
-    
-    hsd->ErrorCode |= HAL_SD_ERROR_DMA;
-    CardState = HAL_SD_GetCardState(hsd);
-    if((CardState == HAL_SD_CARD_RECEIVING) || (CardState == HAL_SD_CARD_SENDING))
+    if((hsd->hdmarx->ErrorCode == HAL_DMA_ERROR_TE) || (hsd->hdmatx->ErrorCode == HAL_DMA_ERROR_TE))
     {
-      hsd->ErrorCode |= SDMMC_CmdStopTransfer(hsd->Instance);
+      /* Clear All flags */
+      __HAL_SD_CLEAR_FLAG(hsd, SDMMC_STATIC_FLAGS);
+      
+      /* Disable All interrupts */
+      __HAL_SD_DISABLE_IT(hsd, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT|\
+        SDMMC_IT_TXUNDERR| SDMMC_IT_RXOVERR);
+      
+      hsd->ErrorCode |= HAL_SD_ERROR_DMA;
+      CardState = HAL_SD_GetCardState(hsd);
+      if((CardState == HAL_SD_CARD_RECEIVING) || (CardState == HAL_SD_CARD_SENDING))
+      {
+        hsd->ErrorCode |= SDMMC_CmdStopTransfer(hsd->Instance);
+      }
+      
+      hsd->State= HAL_SD_STATE_READY;
     }
-    
-    hsd->State= HAL_SD_STATE_READY;
+    HAL_SD_ErrorCallback(hsd);
   }
-
-  HAL_SD_ErrorCallback(hsd);
 }
 
 /**
