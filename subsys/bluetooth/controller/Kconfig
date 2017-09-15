@@ -397,6 +397,76 @@ config BT_CTLR_SCAN_REQ_RSSI
 
 endmenu
 
+comment "BLE Controller hardware configuration"
+
+menuconfig BT_CTLR_GPIO_PA
+	bool "Power Amplifier GPIO interface"
+	help
+	  Enable GPIO interface to a Power Amplifier. This allows hardware
+	  designs using PA to let the Controller toggle their state based on
+	  radio activity.
+
+if BT_CTLR_GPIO_PA
+
+config BT_CTLR_GPIO_PA_PIN
+	prompt "Power Amplifier GPIO pin number"
+	int
+	help
+	  GPIO Pin number connected to a Power Amplifier.
+
+config BT_CTLR_GPIO_PA_POL_INV
+	bool "Inverted polarity for the PA pin"
+	help
+	  Enable inverted polarity (active low) for the PA pin.
+
+config BT_CTLR_GPIO_PA_OFFSET
+	prompt "Time from PA ON to Tx ready"
+	int
+	default 5
+	range 0 10
+	help
+	  Time before Tx ready to turn on PA.
+
+endif # BT_CTLR_GPIO_PA
+
+menuconfig BT_CTLR_GPIO_LNA
+	bool "Low Noise Amplifier GPIO interface"
+	help
+	  Enable GPIO interface to a Low Noise Amplifier. This allows hardware
+	  designs using LNAs to let the Controller toggle their state based on
+	  radio activity.
+
+if BT_CTLR_GPIO_LNA
+
+config BT_CTLR_GPIO_LNA_PIN
+	prompt "Low Noise Amplifier GPIO pin number"
+	int
+	help
+	  GPIO Pin number connected to a Low Noise Amplifier.
+
+config BT_CTLR_GPIO_LNA_POL_INV
+	bool "Inverted polarity for the LNA pin"
+	help
+	  Enable inverted polarity (active low) for the LNA pin.
+
+config BT_CTLR_GPIO_LNA_OFFSET
+	prompt "Time from LNA ON to Rx ready"
+	int
+	default 5
+	range 0 10
+	help
+	  Time before Rx ready to turn on LNA.
+
+endif # BT_CTLR_GPIO_LNA
+
+config BT_CTLR_PA_LNA_GPIOTE_CHAN
+	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
+	depends on SOC_FAMILY_NRF5 && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
+	int
+	default 3
+	help
+	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
+
 comment "BLE Controller debug configuration"
 
 config BT_CTLR_ASSERT_HANDLER
