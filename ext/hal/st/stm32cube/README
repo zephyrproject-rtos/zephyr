@@ -19,7 +19,18 @@ driver/include/stm32f1xx_hal_conf_template.h
 into:
 driver/include/stm32f1xx_hal_conf.h
 
+IMPORTANT:
+----------
+STM32Cube, as an external library, is not supposed to be modifid.
+In practice, it might be required to patch it
+When updating a STM32Cube package to a new version, please have a look
+to the patch list in dedicated README file, to make sure you don't overwrite
+some earlier modifications of the package.
+In case of doubt, contact Zephyr code owner for stm32cube.
 
+
+How to use STM32Cube:
+=====================
 In order to enjoy ST CMSIS definitions:
     *CONFIG_HAS_STM32CUBE should be defined
     *stm32yyxx.h should be included in soc.h
@@ -37,4 +48,3 @@ obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32yyxx/drivers/src/stm32yyxx_hal_uart.o
 Additionally, in order to use STM32Cube LL (when needed):
     *include stm32yyxx_ll_usart.h in soc.h
        **E.g.: #include <stm32f1xx_ll_usart.h>
-
