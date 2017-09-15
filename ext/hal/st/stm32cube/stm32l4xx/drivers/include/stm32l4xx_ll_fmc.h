@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_fmc.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of FMC HAL module.
   ******************************************************************************
   * @attention
@@ -91,8 +89,12 @@ extern "C" {
 #if defined(FMC_BCR1_WFDIS)
 #define IS_FMC_WRITE_FIFO(__FIFO__)            (((__FIFO__) == FMC_WRITE_FIFO_DISABLE) || \
                                                 ((__FIFO__) == FMC_WRITE_FIFO_ENABLE))
-
 #endif /* FMC_BCR1_WFDIS */
+
+#if defined(FMC_BCRx_NBLSET)
+#define IS_FMC_NBLSETUP_TIME(__TIME__)         ((__TIME__) <= 3)
+#endif /* FMC_BCRx_NBLSET */
+
 #define IS_FMC_ACCESS_MODE(__MODE__) (((__MODE__) == FMC_ACCESS_MODE_A) || \
                                        ((__MODE__) == FMC_ACCESS_MODE_B) || \
                                        ((__MODE__) == FMC_ACCESS_MODE_C) || \
@@ -247,6 +249,16 @@ extern "C" {
   * @}
   */
 
+#if defined(FMC_BTRx_DATAHLD)
+/** @defgroup FMC_Data_Hold_Time
+  * @{
+  */
+#define IS_FMC_DATAHOLD_TIME(__TIME__) ((__TIME__) <= 3)
+/**
+  * @}
+  */
+#endif /* FMC_BTRx_DATAHLD */
+
 /** @defgroup FMC_Bus_Turn_around_Duration FMC Bus Turn around Duration
   * @{
   */
@@ -333,6 +345,13 @@ typedef struct
                                               This parameter can be a value of @ref FMC_Write_FIFO.
                                               @note This Parameter is not available for STM32L47x/L48x devices.         */
 
+#if defined(FMC_BCRx_NBLSET)
+  uint32_t NBLSetupTime;                 /*!< Defines the number of HCLK cycles to configure
+                                              the duration of the byte lane (NBL) setup time from NBLx low to Chip select NEx low.
+                                              This parameter can be a value between Min_Data = 0 and Max_Data = 3.
+                                              @note This parameter is used for SRAMs, ROMs and NOR Flash memories.       */
+#endif /* FMC_BCRx_NBLSET */
+
   uint32_t PageSize;                     /*!< Specifies the memory page size.
                                               This parameter can be a value of @ref FMC_Page_Size                        */
 }FMC_NORSRAM_InitTypeDef;
@@ -357,6 +376,16 @@ typedef struct
                                               This parameter can be a value between Min_Data = 1 and Max_Data = 255.
                                               @note This parameter is used for SRAMs, ROMs and asynchronous multiplexed
                                               NOR Flash memories.                                                        */
+
+#if defined(FMC_BTRx_DATAHLD)
+  uint32_t DataHoldTime;                 /*!< Defines the number of HCLK cycles to configure
+                                              the duration of the data hold time.
+                                              This parameter can be a value between Min_Data = 0 and Max_Data = 3.
+                                              @note This parameter value corresponds to x HCLK cycles for read and 
+                                              x+1 HCLK cycles for write.
+                                              @note This parameter is used for SRAMs, ROMs and asynchronous multiplexed
+                                              NOR Flash memories.                                                        */
+#endif /* FMC_BTRx_DATAHLD */
 
   uint32_t BusTurnAroundDuration;        /*!< Defines the number of HCLK cycles to configure
                                               the duration of the bus turnaround.
@@ -725,9 +754,9 @@ typedef struct
   * @brief FMC Interrupt definition
   * @{
   */
-#define FMC_IT_RISING_EDGE                ((uint32_t)FMC_SR_IREN)
-#define FMC_IT_LEVEL                      ((uint32_t)FMC_SR_ILEN)
-#define FMC_IT_FALLING_EDGE               ((uint32_t)FMC_SR_IFEN)
+#define FMC_IT_RISING_EDGE                      ((uint32_t)FMC_SR_IREN)
+#define FMC_IT_LEVEL                            ((uint32_t)FMC_SR_ILEN)
+#define FMC_IT_FALLING_EDGE                     ((uint32_t)FMC_SR_IFEN)
 
 /**
   * @}

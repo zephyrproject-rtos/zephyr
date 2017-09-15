@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dma2d.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of DMA2D HAL module.
   ******************************************************************************
   * @attention
@@ -43,7 +41,8 @@
  extern "C" {
 #endif
 
-#if defined(STM32L496xx) || defined(STM32L4A6xx)
+#if defined(STM32L496xx) || defined(STM32L4A6xx) || \
+    defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
@@ -112,6 +111,16 @@ typedef struct
   uint32_t             RedBlueSwap;       /*!< Select regular mode (RGB or ARGB) or swap mode (BGR or ABGR)
                                                for the output pixel format converter.
                                                This parameter can be one value of @ref DMA2D_RB_Swap. */                                                 
+
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  uint32_t             BytesSwap;         /*!< Select byte regular mode or bytes swap mode (two by two).
+                                               This parameter can be one value of @ref DMA2D_Bytes_Swap. */
+
+  uint32_t             LineOffsetMode;    /*!< Configures how is expressed the line offset for the foreground, background and output. 
+                                               This parameter can be one value of @ref DMA2D_Line_Offset_Mode. */
+
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+
 } DMA2D_InitTypeDef;
 
 
@@ -143,7 +152,6 @@ typedef struct
   
   uint32_t             RedBlueSwap;       /*!< Select regular mode (RGB or ARGB) or swap mode (BGR or ABGR).
                                                This parameter can be one value of @ref DMA2D_RB_Swap. */
-
 } DMA2D_LayerCfgTypeDef;
 
 /** 
@@ -204,10 +212,14 @@ typedef struct __DMA2D_HandleTypeDef
 /** @defgroup DMA2D_Mode DMA2D Mode 
   * @{
   */
-#define DMA2D_M2M                   ((uint32_t)0x00000000U)  /*!< DMA2D memory to memory transfer mode */
-#define DMA2D_M2M_PFC               DMA2D_CR_MODE_0          /*!< DMA2D memory to memory with pixel format conversion transfer mode */
-#define DMA2D_M2M_BLEND             DMA2D_CR_MODE_1          /*!< DMA2D memory to memory with blending transfer mode */
-#define DMA2D_R2M                   DMA2D_CR_MODE            /*!< DMA2D register to memory transfer mode */
+#define DMA2D_M2M                   ((uint32_t)0x00000000U)             /*!< DMA2D memory to memory transfer mode */
+#define DMA2D_M2M_PFC               DMA2D_CR_MODE_0                     /*!< DMA2D memory to memory with pixel format conversion transfer mode */
+#define DMA2D_M2M_BLEND             DMA2D_CR_MODE_1                     /*!< DMA2D memory to memory with blending transfer mode */
+#define DMA2D_R2M                   (DMA2D_CR_MODE_1 | DMA2D_CR_MODE_0) /*!< DMA2D register to memory transfer mode */
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+#define DMA2D_M2M_BLEND_FG          DMA2D_CR_MODE_2                     /*!< DMA2D memory to memory with blending transfer mode and fixed color FG */
+#define DMA2D_M2M_BLEND_BG          (DMA2D_CR_MODE_2 | DMA2D_CR_MODE_0) /*!< DMA2D memory to memory with blending transfer mode and fixed color BG */
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 /**
   * @}
   */
@@ -271,6 +283,27 @@ typedef struct __DMA2D_HandleTypeDef
   * @}
   */ 
 
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+/** @defgroup DMA2D_Line_Offset_Mode DMA2D Line Offset Mode
+  * @{
+  */
+#define DMA2D_LOM_PIXELS            ((uint32_t)0x00000000U)  /*!< Line offsets expressed in pixels */
+#define DMA2D_LOM_BYTES             DMA2D_CR_LOM             /*!< Line offsets expressed in bytes */
+/**
+  * @}
+  */
+
+/** @defgroup DMA2D_Bytes_Swap DMA2D Bytes Swap
+  * @{
+  */
+#define DMA2D_BYTES_REGULAR         ((uint32_t)0x00000000U)  /*!< Bytes in regular order in output FIFO */
+#define DMA2D_BYTES_SWAP            DMA2D_OPFCCR_SB          /*!< Bytes are swapped two by two in output FIFO */
+/**
+  * @}
+  */ 
+
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+
 /** @defgroup DMA2D_CLUT_CM DMA2D CLUT Color Mode
   * @{
   */
@@ -279,7 +312,6 @@ typedef struct __DMA2D_HandleTypeDef
 /**
   * @}
   */
-
 
 /** @defgroup DMA2D_Interrupts DMA2D Interrupts 
   * @{
@@ -562,8 +594,16 @@ uint32_t               HAL_DMA2D_GetError(DMA2D_HandleTypeDef *hdma2d);
   * @{
   */
 #define IS_DMA2D_LAYER(LAYER)                 ((LAYER) <= DMA2D_MAX_LAYER)
+
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+#define IS_DMA2D_MODE(MODE)                   (((MODE) == DMA2D_M2M)          || ((MODE) == DMA2D_M2M_PFC) || \
+                                               ((MODE) == DMA2D_M2M_BLEND)    || ((MODE) == DMA2D_R2M)     || \
+                                               ((MODE) == DMA2D_M2M_BLEND_FG) || ((MODE) == DMA2D_M2M_BLEND_BG))
+#else
 #define IS_DMA2D_MODE(MODE)                   (((MODE) == DMA2D_M2M)       || ((MODE) == DMA2D_M2M_PFC) || \
                                                ((MODE) == DMA2D_M2M_BLEND) || ((MODE) == DMA2D_R2M))
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+
 #define IS_DMA2D_CMODE(MODE_ARGB)             (((MODE_ARGB) == DMA2D_OUTPUT_ARGB8888) || ((MODE_ARGB) == DMA2D_OUTPUT_RGB888)   || \
                                                ((MODE_ARGB) == DMA2D_OUTPUT_RGB565)   || ((MODE_ARGB) == DMA2D_OUTPUT_ARGB1555) || \
                                                ((MODE_ARGB) == DMA2D_OUTPUT_ARGB4444))
@@ -587,6 +627,15 @@ uint32_t               HAL_DMA2D_GetError(DMA2D_HandleTypeDef *hdma2d);
 #define IS_DMA2D_RB_SWAP(RB_Swap) (((RB_Swap) == DMA2D_RB_REGULAR) || \
                                    ((RB_Swap) == DMA2D_RB_SWAP))
 
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+#define IS_DMA2D_LOM_MODE(LOM)          (((LOM) == DMA2D_LOM_PIXELS) || \
+                                         ((LOM) == DMA2D_LOM_BYTES))
+
+#define IS_DMA2D_BYTES_SWAP(BYTES_SWAP) (((BYTES_SWAP) == DMA2D_BYTES_REGULAR) || \
+                                         ((BYTES_SWAP) == DMA2D_BYTES_SWAP))
+
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+
 #define IS_DMA2D_CLUT_CM(CLUT_CM)             (((CLUT_CM) == DMA2D_CCM_ARGB8888) || ((CLUT_CM) == DMA2D_CCM_RGB888))
 #define IS_DMA2D_CLUT_SIZE(CLUT_SIZE)         ((CLUT_SIZE) <= DMA2D_CLUT_SIZE)
 #define IS_DMA2D_LINEWATERMARK(LineWatermark) ((LineWatermark) <= DMA2D_LINE_WATERMARK_MAX)
@@ -609,6 +658,7 @@ uint32_t               HAL_DMA2D_GetError(DMA2D_HandleTypeDef *hdma2d);
   */
 
 #endif /* STM32L496xx || STM32L4A6xx || */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
 #ifdef __cplusplus
 }

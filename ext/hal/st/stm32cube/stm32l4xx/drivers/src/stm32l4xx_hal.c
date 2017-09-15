@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   HAL module driver.
   *          This is the common part of the HAL initialization
   *
@@ -67,11 +65,11 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /**
- * @brief STM32L4xx HAL Driver version number V1.7.1
+ * @brief STM32L4xx HAL Driver version number
    */
 #define __STM32L4xx_HAL_VERSION_MAIN   (0x01) /*!< [31:24] main version */
-#define __STM32L4xx_HAL_VERSION_SUB1   (0x07) /*!< [23:16] sub1 version */
-#define __STM32L4xx_HAL_VERSION_SUB2   (0x01) /*!< [15:8]  sub2 version */
+#define __STM32L4xx_HAL_VERSION_SUB1   (0x08) /*!< [23:16] sub1 version */
+#define __STM32L4xx_HAL_VERSION_SUB2   (0x00) /*!< [15:8]  sub2 version */
 #define __STM32L4xx_HAL_VERSION_RC     (0x00) /*!< [7:0]  release candidate */
 #define __STM32L4xx_HAL_VERSION         ((__STM32L4xx_HAL_VERSION_MAIN << 24)\
                                         |(__STM32L4xx_HAL_VERSION_SUB1 << 16)\
@@ -253,7 +251,7 @@ __weak void HAL_MspDeInit(void)
   *       than the peripheral interrupt. Otherwise the caller ISR process will be blocked.
   *       The function is declared as __weak  to be overwritten  in case of other
   *       implementation  in user file.
-  * @param TickPriority: Tick interrupt priority.
+  * @param TickPriority  Tick interrupt priority.
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
@@ -325,7 +323,7 @@ __weak uint32_t HAL_GetTick(void)
   *       is incremented.
   * @note This function is declared as __weak to be overwritten in case of other
   *       implementations in user file.
-  * @param Delay: specifies the delay time length, in milliseconds.
+  * @param Delay  specifies the delay time length, in milliseconds.
   * @retval None
   */
 __weak void HAL_Delay(uint32_t Delay)
@@ -575,11 +573,11 @@ void HAL_SYSCFG_DisableMemorySwappingBank(void)
 #if defined(VREFBUF)
 /**
   * @brief Configure the internal voltage reference buffer voltage scale.
-  * @param  VoltageScaling: specifies the output voltage to achieve
+  * @param VoltageScaling  specifies the output voltage to achieve
   *          This parameter can be one of the following values:
   *            @arg SYSCFG_VREFBUF_VOLTAGE_SCALE0: VREF_OUT1 around 2.048 V. 
   *                                                This requires VDDA equal to or higher than 2.4 V.
-  *            @arg SYSCFG_VREFBUF_VOLTAGE_SCALE1: VREF_OUT1 around 2.5 V. 
+  *            @arg SYSCFG_VREFBUF_VOLTAGE_SCALE1: VREF_OUT2 around 2.5 V. 
   *                                                This requires VDDA equal to or higher than 2.8 V.
   * @retval None
   */
@@ -593,7 +591,7 @@ void HAL_SYSCFG_VREFBUF_VoltageScalingConfig(uint32_t VoltageScaling)
 
 /**
   * @brief Configure the internal voltage reference buffer high impedance mode.
-  * @param  Mode: specifies the high impedance mode
+  * @param Mode  specifies the high impedance mode
   *          This parameter can be one of the following values:
   *            @arg SYSCFG_VREFBUF_HIGH_IMPEDANCE_DISABLE: VREF+ pin is internally connect to VREFINT output.
   *            @arg SYSCFG_VREFBUF_HIGH_IMPEDANCE_ENABLE: VREF+ pin is high impedance.

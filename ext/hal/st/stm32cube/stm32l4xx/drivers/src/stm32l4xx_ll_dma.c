@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_dma.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   DMA LL module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -83,8 +81,11 @@
                                                  ((__VALUE__) == LL_DMA_MDATAALIGN_HALFWORD)  || \
                                                  ((__VALUE__) == LL_DMA_MDATAALIGN_WORD))
 
-#define IS_LL_DMA_NBDATA(__VALUE__)             ((__VALUE__)  <= (uint32_t)0x0000FFFFU)
+#define IS_LL_DMA_NBDATA(__VALUE__)             ((__VALUE__)  <= 0x0000FFFFU)
 
+#if defined(DMAMUX1)
+#define IS_LL_DMA_PERIPHREQUEST(__VALUE__)      ((__VALUE__) <= 93U)
+#else
 #define IS_LL_DMA_PERIPHREQUEST(__VALUE__)      (((__VALUE__) == LL_DMA_REQUEST_0)  || \
                                                  ((__VALUE__) == LL_DMA_REQUEST_1)  || \
                                                  ((__VALUE__) == LL_DMA_REQUEST_2)  || \
@@ -93,6 +94,7 @@
                                                  ((__VALUE__) == LL_DMA_REQUEST_5)  || \
                                                  ((__VALUE__) == LL_DMA_REQUEST_6)  || \
                                                  ((__VALUE__) == LL_DMA_REQUEST_7))
+#endif /* DMAMUX1 */
 
 #define IS_LL_DMA_PRIORITY(__VALUE__)           (((__VALUE__) == LL_DMA_PRIORITY_LOW)    || \
                                                  ((__VALUE__) == LL_DMA_PRIORITY_MEDIUM) || \
@@ -226,8 +228,13 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Channel)
     /* Reset DMAx_Channely memory address register */
     LL_DMA_WriteReg(tmp, CMAR, 0U);
 
+#if defined(DMAMUX1)
+    /* Reset Request register field for DMAx Channel */
+    LL_DMA_SetPeriphRequest(DMAx, Channel, LL_DMAMUX_REQUEST_MEM2MEM);
+#else
     /* Reset Request register field for DMAx Channel */
     LL_DMA_SetPeriphRequest(DMAx, Channel, LL_DMA_REQUEST_0);
+#endif /* DMAMUX1 */
 
     if (Channel == LL_DMA_CHANNEL_1)
     {
@@ -347,11 +354,19 @@ uint32_t LL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Channel, LL_DMA_InitTypeDef *DM
    */
   LL_DMA_SetDataLength(DMAx, Channel, DMA_InitStruct->NbData);
 
+#if defined(DMAMUX1)
+  /*--------------------------- DMAMUXx CCR Configuration ----------------------
+   * Configure the DMA request for DMA Channels on DMAMUX Channel x with parameter :
+   * - PeriphRequest: DMA_CxCR[7:0] bits
+   */
+  LL_DMA_SetPeriphRequest(DMAx, Channel, DMA_InitStruct->PeriphRequest);
+#else
   /*--------------------------- DMAx CSELR Configuration -----------------------
-   * Configure the peripheral base address with parameter :
+   * Configure the DMA request for DMA instance on Channel x with parameter :
    * - PeriphRequest: DMA_CSELR[31:0] bits
    */
   LL_DMA_SetPeriphRequest(DMAx, Channel, DMA_InitStruct->PeriphRequest);
+#endif /* DMAMUX1 */
 
   return SUCCESS;
 }
@@ -364,16 +379,20 @@ uint32_t LL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Channel, LL_DMA_InitTypeDef *DM
 void LL_DMA_StructInit(LL_DMA_InitTypeDef *DMA_InitStruct)
 {
   /* Set DMA_InitStruct fields to default values */
-  DMA_InitStruct->PeriphOrM2MSrcAddress  = (uint32_t)0x00000000U;
-  DMA_InitStruct->MemoryOrM2MDstAddress  = (uint32_t)0x00000000U;
+  DMA_InitStruct->PeriphOrM2MSrcAddress  = 0x00000000U;
+  DMA_InitStruct->MemoryOrM2MDstAddress  = 0x00000000U;
   DMA_InitStruct->Direction              = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
   DMA_InitStruct->Mode                   = LL_DMA_MODE_NORMAL;
   DMA_InitStruct->PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
   DMA_InitStruct->MemoryOrM2MDstIncMode  = LL_DMA_MEMORY_NOINCREMENT;
   DMA_InitStruct->PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
   DMA_InitStruct->MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
-  DMA_InitStruct->NbData                 = (uint32_t)0x00000000U;
+  DMA_InitStruct->NbData                 = 0x00000000U;
+#if defined(DMAMUX1)
+  DMA_InitStruct->PeriphRequest          = LL_DMAMUX_REQUEST_MEM2MEM;
+#else
   DMA_InitStruct->PeriphRequest          = LL_DMA_REQUEST_0;
+#endif /* DMAMUX1 */
   DMA_InitStruct->Priority               = LL_DMA_PRIORITY_LOW;
 }
 

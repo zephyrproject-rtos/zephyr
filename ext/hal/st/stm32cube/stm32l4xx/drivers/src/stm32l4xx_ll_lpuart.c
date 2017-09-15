@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_lpuart.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   LPUART LL module driver.
   ******************************************************************************
   * @attention
@@ -75,6 +73,21 @@
 
 /* Check of parameters for configuration of LPUART registers                  */
 
+#if defined(USART_PRESC_PRESCALER)
+#define IS_LL_LPUART_PRESCALER(__VALUE__)  (((__VALUE__) == LL_LPUART_PRESCALER_DIV1) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV2) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV4) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV6) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV8) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV10) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV12) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV16) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV32) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV64) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV128) \
+                                        || ((__VALUE__) == LL_LPUART_PRESCALER_DIV256))
+
+#endif
 /* __BAUDRATE__ Depending on constraints applicable for LPUART BRR register   */
 /*              value :                                                       */
 /*                - fck must be in the range [3 x baudrate, 4096 x baudrate]  */
@@ -172,6 +185,9 @@ ErrorStatus LL_LPUART_Init(USART_TypeDef *LPUARTx, LL_LPUART_InitTypeDef *LPUART
 
   /* Check the parameters */
   assert_param(IS_LPUART_INSTANCE(LPUARTx));
+#if defined(USART_PRESC_PRESCALER)
+  assert_param(IS_LL_LPUART_PRESCALER(LPUART_InitStruct->PrescalerValue));
+#endif
   assert_param(IS_LL_LPUART_BAUDRATE(LPUART_InitStruct->BaudRate));
   assert_param(IS_LL_LPUART_DATAWIDTH(LPUART_InitStruct->DataWidth));
   assert_param(IS_LL_LPUART_STOPBITS(LPUART_InitStruct->StopBits));
@@ -211,6 +227,9 @@ ErrorStatus LL_LPUART_Init(USART_TypeDef *LPUARTx, LL_LPUART_InitTypeDef *LPUART
     periphclk = LL_RCC_GetLPUARTClockFreq(LL_RCC_LPUART1_CLKSOURCE);
 
     /* Configure the LPUART Baud Rate :
+#if defined(USART_PRESC_PRESCALER)
+       - prescaler value is required
+#endif
        - valid baud rate value (different from 0) is required
        - Peripheral clock as returned by RCC service, should be valid (different from 0).
     */
@@ -220,11 +239,22 @@ ErrorStatus LL_LPUART_Init(USART_TypeDef *LPUARTx, LL_LPUART_InitTypeDef *LPUART
       status = SUCCESS;
       LL_LPUART_SetBaudRate(LPUARTx,
                             periphclk,
+#if defined(USART_PRESC_PRESCALER)
+                            LPUART_InitStruct->PrescalerValue,
+#endif
                             LPUART_InitStruct->BaudRate);
 
       /* Check BRR is greater than or equal to 0x300 */
       assert_param(IS_LL_LPUART_BRR(LPUARTx->BRR));
     }
+#if defined(USART_PRESC_PRESCALER)
+
+    /*---------------------------- LPUART PRESC Configuration -----------------------
+     * Configure LPUARTx PRESC (Prescaler) with parameters:
+     * - PrescalerValue: LPUART_PRESC_PRESCALER bits according to LPUART_InitStruct->PrescalerValue value.
+     */
+    LL_LPUART_SetPrescaler(LPUARTx, LPUART_InitStruct->PrescalerValue);
+#endif
   }
 
   return (status);
@@ -240,6 +270,9 @@ ErrorStatus LL_LPUART_Init(USART_TypeDef *LPUARTx, LL_LPUART_InitTypeDef *LPUART
 void LL_LPUART_StructInit(LL_LPUART_InitTypeDef *LPUART_InitStruct)
 {
   /* Set LPUART_InitStruct fields to default values */
+#if defined(USART_PRESC_PRESCALER)
+  LPUART_InitStruct->PrescalerValue      = LL_LPUART_PRESCALER_DIV1;
+#endif
   LPUART_InitStruct->BaudRate            = 9600U;
   LPUART_InitStruct->DataWidth           = LL_LPUART_DATAWIDTH_8B;
   LPUART_InitStruct->StopBits            = LL_LPUART_STOPBITS_1;

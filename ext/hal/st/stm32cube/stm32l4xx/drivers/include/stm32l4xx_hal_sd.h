@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_sd.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of SD HAL module.
   ******************************************************************************
   * @attention
@@ -52,10 +50,9 @@
   * @{
   */
 
-/** @defgroup SD SD
-  * @brief SD HAL module driver
+/** @addtogroup SD
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/ 
 /** @defgroup SD_Exported_Types SD Exported Types
@@ -126,6 +123,11 @@ typedef struct
 
   uint32_t LogBlockSize;                 /*!< Specifies logical block size in bytes           */
 
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  
+  uint32_t CardSpeed;                    /*!< Specifies the card Speed                        */
+
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 }HAL_SD_CardInfoTypeDef;
 
 /** 
@@ -153,10 +155,13 @@ typedef struct
   
   __IO uint32_t                ErrorCode;        /*!< SD Card Error codes                 */  
   
+#if !defined(STM32L4R5xx) && !defined(STM32L4R7xx) && !defined(STM32L4R9xx) && !defined(STM32L4S5xx) && !defined(STM32L4S7xx) && !defined(STM32L4S9xx)
+  
   DMA_HandleTypeDef            *hdmatx;          /*!< SD Tx DMA handle parameters         */
   
   DMA_HandleTypeDef            *hdmarx;          /*!< SD Rx DMA handle parameters         */
   
+#endif /* !STM32L4R5xx && !STM32L4R7xx && !STM32L4R9xx && !STM32L4S5xx && !STM32L4S7xx && !STM32L4S9xx */
   HAL_SD_CardInfoTypeDef       SdCard;           /*!< SD Card information                 */
   
   uint32_t                     CSD[4];           /*!< SD card specific data table         */
@@ -332,6 +337,13 @@ typedef struct
 /** @defgroup SD_Exported_Constansts_Group3 SD Supported Memory Cards
   * @{
   */
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+#define CARD_NORMAL_SPEED          ((uint32_t)0x00000000U)    /*!< Normal Speed Card <12.5Mo/s , Spec Version 1.01    */
+#define CARD_HIGH_SPEED            ((uint32_t)0x00000100U)    /*!< High Speed Card <25Mo/s , Spec version 2.00        */
+#define CARD_ULTRA_HIGH_SPEED      ((uint32_t)0x00000200U)    /*!< UHS-I SD Card <50Mo/s for SDR50, DDR5 Cards
+                                                                  and <104Mo/s for SDR104, Spec version 3.01          */
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+
 #define CARD_SDSC                  ((uint32_t)0x00000000U)
 #define CARD_SDHC_SDXC             ((uint32_t)0x00000001U)
 #define CARD_SECURED               ((uint32_t)0x00000003U)
@@ -359,6 +371,7 @@ typedef struct
  * @{
  */
  
+#if !defined(STM32L4R5xx) && !defined(STM32L4R7xx) && !defined(STM32L4R9xx) && !defined(STM32L4S5xx) && !defined(STM32L4S7xx) && !defined(STM32L4S9xx)
 /**
   * @brief  Enable the SD device.
   * @retval None
@@ -382,6 +395,7 @@ typedef struct
   * @retval None
   */
 #define __HAL_SD_DMA_DISABLE(__HANDLE__)  __SDMMC_DMA_DISABLE((__HANDLE__)->Instance)
+#endif /* !STM32L4R5xx && !STM32L4R7xx && !STM32L4R9xx && !STM32L4S5xx && !STM32L4S7xx && !STM32L4S9xx */
  
 /**
   * @brief  Enable the SD device interrupt.
@@ -615,6 +629,10 @@ typedef struct
   * @}
   */
   
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+/* Include SD HAL Extension module */
+#include "stm32l4xx_hal_sd_ex.h"
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SD_Exported_Functions SD Exported Functions
   * @{

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_crc.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of CRC HAL module.
   ******************************************************************************
   * @attention
@@ -156,7 +154,7 @@ typedef struct
 /** @defgroup CRC_Default_Polynomial_Value    Default CRC generating polynomial
   * @{
   */
-#define DEFAULT_CRC32_POLY      0x04C11DB7  /*!<  X^32 + X^26 + X^23 + X^22 + X^16 + X^12 + X^11 + X^10 +X^8 + X^7 + X^5 + X^4 + X^2+ X +1 */
+#define DEFAULT_CRC32_POLY      0x04C11DB7U  /*!<  X^32 + X^26 + X^23 + X^22 + X^16 + X^12 + X^11 + X^10 +X^8 + X^7 + X^5 + X^4 + X^2+ X +1 */
 /**
   * @}
   */
@@ -164,7 +162,7 @@ typedef struct
 /** @defgroup CRC_Default_InitValue    Default CRC computation initialization value
   * @{
   */
-#define DEFAULT_CRC_INITVALUE   0xFFFFFFFF  /*!< Initial CRC default value */
+#define DEFAULT_CRC_INITVALUE   0xFFFFFFFFU  /*!< Initial CRC default value */
 /**
   * @}
   */
@@ -172,8 +170,8 @@ typedef struct
 /** @defgroup CRC_Default_Polynomial    Indicates whether or not default polynomial is used
   * @{
   */
-#define DEFAULT_POLYNOMIAL_ENABLE       ((uint8_t)0x00)  /*!< Enable default generating polynomial 0x04C11DB7  */
-#define DEFAULT_POLYNOMIAL_DISABLE      ((uint8_t)0x01)  /*!< Disable default generating polynomial 0x04C11DB7 */
+#define DEFAULT_POLYNOMIAL_ENABLE      ((uint8_t)0x00U)  /*!< Enable default generating polynomial 0x04C11DB7  */
+#define DEFAULT_POLYNOMIAL_DISABLE     ((uint8_t)0x01U)  /*!< Disable default generating polynomial 0x04C11DB7 */
 /**
   * @}
   */
@@ -181,8 +179,8 @@ typedef struct
 /** @defgroup CRC_Default_InitValue_Use    Indicates whether or not default init value is used
   * @{
   */                                      
-#define DEFAULT_INIT_VALUE_ENABLE      ((uint8_t)0x00) /*!< Enable initial CRC default value  */
-#define DEFAULT_INIT_VALUE_DISABLE     ((uint8_t)0x01) /*!< Disable initial CRC default value */
+#define DEFAULT_INIT_VALUE_ENABLE      ((uint8_t)0x00U) /*!< Enable initial CRC default value  */
+#define DEFAULT_INIT_VALUE_DISABLE     ((uint8_t)0x01U) /*!< Disable initial CRC default value */
 /**
   * @}
   */
@@ -190,10 +188,10 @@ typedef struct
 /** @defgroup CRC_Polynomial_Sizes Polynomial sizes to configure the IP
   * @{
   */
-#define CRC_POLYLENGTH_32B                  ((uint32_t)0x00000000)        /*!< Resort to a 32-bit long generating polynomial */
-#define CRC_POLYLENGTH_16B                  ((uint32_t)CRC_CR_POLYSIZE_0) /*!< Resort to a 16-bit long generating polynomial */
-#define CRC_POLYLENGTH_8B                   ((uint32_t)CRC_CR_POLYSIZE_1) /*!< Resort to a 8-bit long generating polynomial  */
-#define CRC_POLYLENGTH_7B                   ((uint32_t)CRC_CR_POLYSIZE)   /*!< Resort to a 7-bit long generating polynomial  */
+#define CRC_POLYLENGTH_32B             (0x00000000U)       /*!< Resort to a 32-bit long generating polynomial */
+#define CRC_POLYLENGTH_16B             (CRC_CR_POLYSIZE_0) /*!< Resort to a 16-bit long generating polynomial */
+#define CRC_POLYLENGTH_8B              (CRC_CR_POLYSIZE_1) /*!< Resort to a 8-bit long generating polynomial  */
+#define CRC_POLYLENGTH_7B              (CRC_CR_POLYSIZE)   /*!< Resort to a 7-bit long generating polynomial  */
 /**
   * @}
   */
@@ -201,10 +199,10 @@ typedef struct
 /** @defgroup CRC_Polynomial_Size_Definitions CRC polynomial possible sizes actual definitions
   * @{
   */
-#define HAL_CRC_LENGTH_32B     32          /*!< 32-bit long CRC */
-#define HAL_CRC_LENGTH_16B     16          /*!< 16-bit long CRC */
-#define HAL_CRC_LENGTH_8B       8          /*!< 8-bit long CRC  */
-#define HAL_CRC_LENGTH_7B       7          /*!< 7-bit long CRC  */
+#define HAL_CRC_LENGTH_32B             32U          /*!< 32-bit long CRC */
+#define HAL_CRC_LENGTH_16B             16U          /*!< 16-bit long CRC */
+#define HAL_CRC_LENGTH_8B               8U          /*!< 8-bit long CRC  */
+#define HAL_CRC_LENGTH_7B               7U          /*!< 7-bit long CRC  */
 /**
   * @}
   */  
@@ -216,10 +214,10 @@ typedef struct
  * an error is triggered in HAL_CRC_Init() if InputDataFormat field is set 
  * to CRC_INPUT_FORMAT_UNDEFINED: the format MUST be defined by the user for 
  * the CRC APIs to provide a correct result */ 
-#define CRC_INPUTDATA_FORMAT_UNDEFINED             ((uint32_t)0x00000000)  /*!< Undefined input data format    */
-#define CRC_INPUTDATA_FORMAT_BYTES                 ((uint32_t)0x00000001)  /*!< Input data in byte format      */
-#define CRC_INPUTDATA_FORMAT_HALFWORDS             ((uint32_t)0x00000002)  /*!< Input data in half-word format */
-#define CRC_INPUTDATA_FORMAT_WORDS                 ((uint32_t)0x00000003)  /*!< Input data in word format      */                                               
+#define CRC_INPUTDATA_FORMAT_UNDEFINED     0x00000000U  /*!< Undefined input data format    */
+#define CRC_INPUTDATA_FORMAT_BYTES         0x00000001U  /*!< Input data in byte format      */
+#define CRC_INPUTDATA_FORMAT_HALFWORDS     0x00000002U  /*!< Input data in half-word format */
+#define CRC_INPUTDATA_FORMAT_WORDS         0x00000003U  /*!< Input data in word format      */                                               
 /**                                               
   * @}
   */

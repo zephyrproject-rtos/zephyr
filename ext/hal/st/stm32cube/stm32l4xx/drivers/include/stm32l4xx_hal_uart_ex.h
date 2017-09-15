@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_uart_ex.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of UART HAL Extended module.
   ******************************************************************************
   * @attention
@@ -84,24 +82,65 @@ typedef struct
   * @{
   */
 
-/** @defgroup UARTEx_Word_Length UART Word Length
+/** @defgroup UARTEx_Word_Length UARTEx Word Length
   * @{
   */
-#define UART_WORDLENGTH_7B                  ((uint32_t)USART_CR1_M1)   /*!< 7-bit long UART frame */
-#define UART_WORDLENGTH_8B                  ((uint32_t)0x00000000)     /*!< 8-bit long UART frame */
-#define UART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M0)   /*!< 9-bit long UART frame */
+#define UART_WORDLENGTH_7B           USART_CR1_M1   /*!< 7-bit long UART frame */
+#define UART_WORDLENGTH_8B           0x00000000U    /*!< 8-bit long UART frame */
+#define UART_WORDLENGTH_9B           USART_CR1_M0   /*!< 9-bit long UART frame */
 /**
   * @}
   */
   
-/** @defgroup UARTEx_WakeUp_Address_Length UART Extended WakeUp Address Length
+/** @defgroup UARTEx_WakeUp_Address_Length UARTEx WakeUp Address Length
   * @{
   */
-#define UART_ADDRESS_DETECT_4B              ((uint32_t)0x00000000)       /*!< 4-bit long wake-up address */
-#define UART_ADDRESS_DETECT_7B              ((uint32_t)USART_CR2_ADDM7)  /*!< 7-bit long wake-up address */
+#define UART_ADDRESS_DETECT_4B       0x00000000U      /*!< 4-bit long wake-up address */
+#define UART_ADDRESS_DETECT_7B       USART_CR2_ADDM7  /*!< 7-bit long wake-up address */
 /**
   * @}
   */
+
+#if defined(USART_CR2_SLVEN)
+/** @defgroup UARTEx_Slave_Select_management UARTEx Slave Select Management
+  * @{
+  */
+#define UART_NSS_HARD                0x00000000U          /*!< SPI slave selection depends on NSS input pin              */
+#define UART_NSS_SOFT                USART_CR2_DIS_NSS    /*!< SPI slave is always selected and NSS input pin is ignored */
+/**
+  * @}
+  */
+#endif
+
+#if defined(USART_CR1_FIFOEN)
+/** @defgroup UARTEx_TXFIFO_threshold_level UARTEx TXFIFO threshold level
+  * @brief    UART TXFIFO level 
+  * @{
+  */
+#define UART_TXFIFO_THRESHOLD_1_8   0x00000000U                               /*!< TXFIFO reaches 1/8 of its depth */
+#define UART_TXFIFO_THRESHOLD_1_4   USART_CR3_TXFTCFG_0                       /*!< TXFIFO reaches 1/4 of its depth */
+#define UART_TXFIFO_THRESHOLD_1_2   USART_CR3_TXFTCFG_1                       /*!< TXFIFO reaches 1/2 of its depth */
+#define UART_TXFIFO_THRESHOLD_3_4   (USART_CR3_TXFTCFG_0|USART_CR3_TXFTCFG_1) /*!< TXFIFO reaches 3/4 of its depth */
+#define UART_TXFIFO_THRESHOLD_7_8   USART_CR3_TXFTCFG_2                       /*!< TXFIFO reaches 7/8 of its depth */
+#define UART_TXFIFO_THRESHOLD_8_8   (USART_CR3_TXFTCFG_2|USART_CR3_TXFTCFG_0) /*!< TXFIFO becomes empty            */
+/**
+  * @}
+  */
+   
+/** @defgroup UARTEx_RXFIFO_threshold_level UARTEx RXFIFO threshold level
+  * @brief    UART RXFIFO level 
+  * @{
+  */
+#define UART_RXFIFO_THRESHOLD_1_8   0x00000000U                               /*!< RXFIFO FIFO reaches 1/8 of its depth */
+#define UART_RXFIFO_THRESHOLD_1_4   USART_CR3_RXFTCFG_0                       /*!< RXFIFO FIFO reaches 1/4 of its depth */
+#define UART_RXFIFO_THRESHOLD_1_2   USART_CR3_RXFTCFG_1                       /*!< RXFIFO FIFO reaches 1/2 of its depth */
+#define UART_RXFIFO_THRESHOLD_3_4   (USART_CR3_RXFTCFG_0|USART_CR3_RXFTCFG_1) /*!< RXFIFO FIFO reaches 3/4 of its depth */
+#define UART_RXFIFO_THRESHOLD_7_8   USART_CR3_RXFTCFG_2                       /*!< RXFIFO FIFO reaches 7/8 of its depth */
+#define UART_RXFIFO_THRESHOLD_8_8   (USART_CR3_RXFTCFG_2|USART_CR3_RXFTCFG_0) /*!< RXFIFO FIFO becomes full             */
+/**
+  * @}
+  */
+#endif
 
 /**
   * @}
@@ -124,7 +163,21 @@ HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity,
   * @}
   */
 
+/** @addtogroup UARTEx_Exported_Functions_Group2
+  * @{
+  */
+
 /* IO operation functions *****************************************************/
+void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
+
+#if defined(USART_CR1_FIFOEN)
+void HAL_UARTEx_RxFifoFullCallback(UART_HandleTypeDef *huart);
+void HAL_UARTEx_TxFifoEmptyCallback(UART_HandleTypeDef *huart);
+#endif
+  
+/**
+  * @}
+  */
 
 /** @addtogroup UARTEx_Exported_Functions_Group3
   * @{
@@ -135,12 +188,54 @@ HAL_StatusTypeDef HAL_UARTEx_StopModeWakeUpSourceConfig(UART_HandleTypeDef *huar
 HAL_StatusTypeDef HAL_UARTEx_EnableStopMode(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef HAL_UARTEx_DisableStopMode(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef HAL_MultiProcessorEx_AddressLength_Set(UART_HandleTypeDef *huart, uint32_t AddressLength);
-void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
+
+#if defined(USART_CR2_SLVEN)
+HAL_StatusTypeDef HAL_UARTEx_EnableSlaveMode(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UARTEx_DisableSlaveMode(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UARTEx_ConfigNSS(UART_HandleTypeDef *huart, uint32_t NSSConfig);
+#endif
+
+#if defined(USART_CR1_FIFOEN)
+HAL_StatusTypeDef HAL_UARTEx_EnableFifoMode(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UARTEx_DisableFifoMode(UART_HandleTypeDef *huart);
+HAL_StatusTypeDef HAL_UARTEx_SetTxFifoThreshold(UART_HandleTypeDef *huart, uint32_t Threshold);
+HAL_StatusTypeDef HAL_UARTEx_SetRxFifoThreshold(UART_HandleTypeDef *huart, uint32_t Threshold);
+#endif
+
 
 /**
   * @}
   */
 
+/**
+  * @}
+  */
+
+/* Private constants ---------------------------------------------------------*/
+/** @defgroup UARTEx_Private_Constants UARTEx Private Constants
+  * @{
+  */
+#if defined(USART_CR2_SLVEN)
+/** @defgroup UARTEx_Slave_Mode UARTEx Synchronous Slave mode
+  * @{
+  */
+#define UART_SLAVEMODE_DISABLE       0x00000000U       /*!< USART SPI Slave Mode Enable  */
+#define UART_SLAVEMODE_ENABLE        USART_CR2_SLVEN   /*!< USART SPI Slave Mode Disable */
+/**
+  * @}
+  */
+#endif
+
+#if defined(USART_CR1_FIFOEN)
+/** @defgroup UARTEx_FIFO_mode UARTEx FIFO mode
+  * @{
+  */
+#define UART_FIFOMODE_DISABLE        0x00000000U       /*!< FIFO mode disable */
+#define UART_FIFOMODE_ENABLE         USART_CR1_FIFOEN  /*!< FIFO mode enable  */
+/**
+  * @}
+  */
+#endif
 /**
   * @}
   */
@@ -151,11 +246,13 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
   */
 
 /** @brief  Report the UART clock source.
-  * @param  __HANDLE__: specifies the UART Handle.
-  * @param  __CLOCKSOURCE__: output variable.
+  * @param  __HANDLE__ specifies the UART Handle.
+  * @param  __CLOCKSOURCE__ output variable.
   * @retval UART clocking source, written in __CLOCKSOURCE__.
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 #define UART_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
   do {                                                        \
     if((__HANDLE__)->Instance == USART1)                      \
@@ -242,7 +339,7 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
           break;                                              \
        }                                                      \
     }                                                         \
-    else if ((__HANDLE__)->Instance == UART5)                 \
+    else if((__HANDLE__)->Instance == UART5)                  \
     {                                                         \
        switch(__HAL_RCC_GET_UART5_SOURCE())                   \
        {                                                      \
@@ -600,7 +697,7 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
 
 /**
   * @brief Ensure that UART frame length is valid.
-  * @param __LENGTH__: UART frame length. 
+  * @param __LENGTH__ UART frame length. 
   * @retval SET (__LENGTH__ is valid) or RESET (__LENGTH__ is invalid)
   */
 #define IS_UART_WORD_LENGTH(__LENGTH__) (((__LENGTH__) == UART_WORDLENGTH_7B) || \
@@ -609,11 +706,47 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
 
 /**
   * @brief Ensure that UART wake-up address length is valid.
-  * @param __ADDRESS__: UART wake-up address length. 
+  * @param __ADDRESS__ UART wake-up address length. 
   * @retval SET (__ADDRESS__ is valid) or RESET (__ADDRESS__ is invalid)
   */
 #define IS_UART_ADDRESSLENGTH_DETECT(__ADDRESS__) (((__ADDRESS__) == UART_ADDRESS_DETECT_4B) || \
                                                    ((__ADDRESS__) == UART_ADDRESS_DETECT_7B))
+
+#if defined(USART_CR2_SLVEN)
+/**
+  * @brief Ensure that UART Negative Slave Select (NSS) pin management is valid.
+  * @param __NSS__ UART Negative Slave Select pin management. 
+  * @retval SET (__NSS__ is valid) or RESET (__NSS__ is invalid)
+  */
+#define IS_UART_NSS(__NSS__) (((__NSS__) == UART_NSS_HARD) || \
+                              ((__NSS__) == UART_NSS_SOFT))
+#endif
+
+#if defined(USART_CR1_FIFOEN)
+/**
+  * @brief Ensure that UART TXFIFO threshold level is valid.
+  * @param __THRESHOLD__ UART TXFIFO threshold level. 
+  * @retval SET (__THRESHOLD__ is valid) or RESET (__THRESHOLD__ is invalid)
+  */
+#define IS_UART_TXFIFO_THRESHOLD(__THRESHOLD__)  (((__THRESHOLD__) == UART_TXFIFO_THRESHOLD_1_8)  || \
+                                                  ((__THRESHOLD__) == UART_TXFIFO_THRESHOLD_1_4)  || \
+                                                  ((__THRESHOLD__) == UART_TXFIFO_THRESHOLD_1_2)  || \
+                                                  ((__THRESHOLD__) == UART_TXFIFO_THRESHOLD_3_4)  || \
+                                                  ((__THRESHOLD__) == UART_TXFIFO_THRESHOLD_7_8)  || \
+                                                  ((__THRESHOLD__) == UART_TXFIFO_THRESHOLD_8_8))                                          
+
+/**
+  * @brief Ensure that USART RXFIFO threshold level is valid.
+  * @param __THRESHOLD__ USART RXFIFO threshold level. 
+  * @retval SET (__THRESHOLD__ is valid) or RESET (__THRESHOLD__ is invalid)
+  */
+#define IS_UART_RXFIFO_THRESHOLD(__THRESHOLD__)  (((__THRESHOLD__) == UART_RXFIFO_THRESHOLD_1_8)  || \
+                                                  ((__THRESHOLD__) == UART_RXFIFO_THRESHOLD_1_4)  || \
+                                                  ((__THRESHOLD__) == UART_RXFIFO_THRESHOLD_1_2)  || \
+                                                  ((__THRESHOLD__) == UART_RXFIFO_THRESHOLD_3_4)  || \
+                                                  ((__THRESHOLD__) == UART_RXFIFO_THRESHOLD_7_8)  || \
+                                                  ((__THRESHOLD__) == UART_RXFIFO_THRESHOLD_8_8))
+#endif
 
 /**
   * @}
