@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f756xx.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   CMSIS Cortex-M7 Device Peripheral Access Layer Header File.
   *
   *          This file contains:

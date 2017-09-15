@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_sai.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   SAI HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Serial Audio Interface (SAI) peripheral:
@@ -136,7 +134,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -197,7 +195,6 @@ typedef enum {
   */
 #define SAI_FIFO_SIZE         8
 #define SAI_DEFAULT_TIMEOUT   4 /* 4ms */
-#define SAI_xCR2_MUTECNT_OFFSET POSITION_VAL(SAI_xCR2_MUTECNT)
 /**
   * @}
   */
@@ -617,17 +614,14 @@ __weak void HAL_SAI_MspDeInit(SAI_HandleTypeDef *hsai)
     (+) Blocking mode functions are :
       (++) HAL_SAI_Transmit()
       (++) HAL_SAI_Receive()
-      (++) HAL_SAI_TransmitReceive()
 
     (+) Non Blocking mode functions with Interrupt are :
       (++) HAL_SAI_Transmit_IT()
       (++) HAL_SAI_Receive_IT()
-      (++) HAL_SAI_TransmitReceive_IT()
 
     (+) Non Blocking mode functions with DMA are :
       (++) HAL_SAI_Transmit_DMA()
       (++) HAL_SAI_Receive_DMA()
-      (++) HAL_SAI_TransmitReceive_DMA()
 
     (+) A set of Transfer Complete Callbacks are provided in non Blocking mode:
       (++) HAL_SAI_TxCpltCallback()
@@ -1039,6 +1033,9 @@ HAL_StatusTypeDef HAL_SAI_DMAStop(SAI_HandleTypeDef *hsai)
   /* Disable SAI peripheral */
   SAI_Disable(hsai);
 
+  /* Flush the fifo */
+  SET_BIT(hsai->Instance->CR2, SAI_xCR2_FFLUSH);
+
   hsai->State = HAL_SAI_STATE_READY;
 
   /* Process Unlocked */
@@ -1290,7 +1287,7 @@ HAL_StatusTypeDef HAL_SAI_EnableRxMuteMode(SAI_HandleTypeDef *hsai, SAIcallback 
   {
     /* set the mute counter */
     CLEAR_BIT(hsai->Instance->CR2, SAI_xCR2_MUTECNT);
-    SET_BIT(hsai->Instance->CR2, (uint32_t)((uint32_t)counter << SAI_xCR2_MUTECNT_OFFSET));
+    SET_BIT(hsai->Instance->CR2, (uint32_t)((uint32_t)counter << SAI_xCR2_MUTECNT_Pos));
     hsai->mutecallback = callback;
     /* enable the IT interrupt */
     __HAL_SAI_ENABLE_IT(hsai, SAI_IT_MUTEDET);
