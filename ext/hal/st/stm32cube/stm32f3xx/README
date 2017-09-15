@@ -14,4 +14,6 @@ Patch List:
   16 bits wide. Modification has been tested on L4 SoC.
   stm32yyxx_ll_spi.h being included in soc.h file, warning is generated
   at each compiled object, this commit allows a clean build.
+Impacted files:
+  drivers/include/stm32f3xx_ll_spi.h
 ST Bug tracker ID: 13359
