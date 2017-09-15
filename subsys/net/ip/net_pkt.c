@@ -1775,18 +1775,21 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 	struct net_buf *frag;
 	u16_t pos;
 
-	clone = net_pkt_get_reserve_tx(0, timeout);
 	if (!pkt) {
+		return NULL;
+	}
+
+	clone = net_pkt_get_reserve(pkt->slab, 0, timeout);
+	if (!clone) {
 		return NULL;
 	}
 
 	clone->frags = net_pkt_copy_all(pkt, 0, timeout);
 	if (!clone->frags) {
-		net_pkt_unref(pkt);
+		net_pkt_unref(clone);
 		return NULL;
 	}
 
-	clone->slab = pkt->slab;
 	clone->context = pkt->context;
 	clone->token = pkt->token;
 	clone->iface = pkt->iface;
