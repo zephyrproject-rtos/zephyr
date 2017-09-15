@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_i2s.h
   * @author  MCD Application Team
-  * @version V1.7.0
-  * @date    17-February-2017
+  * @version V1.7.1
+  * @date    14-April-2017
   * @brief   Header file of I2S HAL module.
   ******************************************************************************
   * @attention
@@ -143,7 +143,7 @@ typedef struct __I2S_HandleTypeDef
   __IO HAL_I2S_StateTypeDef  State;        /*!< I2S communication state           */
 
   __IO uint32_t              ErrorCode;    /*!< I2S Error code
-                                              This parameter can be a value of @ref I2S_Error */
+                                              This parameter can be a value of @ref I2S_ErrorCode */
 
 }I2S_HandleTypeDef;
 /**
