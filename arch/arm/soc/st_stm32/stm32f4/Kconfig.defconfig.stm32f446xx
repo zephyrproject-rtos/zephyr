@@ -1,0 +1,18 @@
+# Kconfig - ST STM32F446XX MCU configuration options
+#
+# Copyright (c) 2017 Pushpal Sidhu
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F446XE || SOC_STM32F446XC
+
+config SOC
+	string
+	default stm32f446xx
+
+config NUM_IRQS
+	int
+	default 97
+
+endif # SOC_STM32F446XE || SOC_STM32F446XC
